@@ -4,6 +4,8 @@ from sys import stderr
 
 dependencies = [
     {"name": "cpptrace", "version": "*", "header": False},
+    {"name": "jsoncpp", "version": "*", "header": False},
+    {"name": "tinyxml2", "version": "*", "header": False},
     {"name": "debugbreak", "version": "*", "header": True},
     {"name": "entt", "version": "*", "header": True},
     {"name": "magic_enum", "version": "*", "header": True},

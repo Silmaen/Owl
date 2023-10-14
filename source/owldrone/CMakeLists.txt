@@ -26,9 +26,21 @@ if (OWL_PLATFORM_WINDOWS)
     target_link_libraries(${CMAKE_PROJECT_NAME}drone PRIVATE strmiids)
 endif ()
 
+# jsoncpp
+find_package(jsoncpp REQUIRED)
+target_link_libraries(${CMAKE_PROJECT_NAME}drone PRIVATE JsonCpp::JsonCpp)
+
+# tinyxml2
+find_package(tinyxml2 REQUIRED)
+target_link_libraries(${CMAKE_PROJECT_NAME}drone PRIVATE tinyxml2::tinyxml2)
+
+# mavsdk
+find_package(MAVSDK REQUIRED)
+target_link_libraries(${CMAKE_PROJECT_NAME}drone PRIVATE MAVSDK::mavsdk)
+
 # ----==== third party ====----
 
-if (${PRJPREFIX}_BUILD_SHARED AND WIN32)
+if (WIN32)
     add_custom_command(TARGET ${CMAKE_PROJECT_NAME}drone POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_RUNTIME_DLLS:${CMAKE_PROJECT_NAME}drone>" "$<TARGET_FILE_DIR:${CMAKE_PROJECT_NAME}drone>"
             COMMAND_EXPAND_LISTS
