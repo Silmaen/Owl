@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include "controller/RemoteController.h"
+#include "controller/UAVState.h"
 #include <owl.h>
 
 namespace drone::panels {
@@ -62,17 +62,17 @@ public:
 	 * @brief Define the remote controller.
 	 * @param remote The new remote controller.
 	 */
-	void setRemoteController(const owl::shared<controller::RemoteController> &remote) { rc = remote; }
+	void setRemoteController(const owl::shared<controller::UAVState> &remote) { rc = remote; }
 
 	/**
 	 * @brief Access to the remote controller.
 	 * @return The remote controller.
 	 */
-	[[nodiscard]] const owl::shared<controller::RemoteController> &getRemoteController() const { return rc; }
+	[[nodiscard]] const owl::shared<controller::UAVState> &getRemoteController() const { return rc; }
 
 private:
 	/// pointer to the remote controller
-	owl::shared<controller::RemoteController> rc = nullptr;
+	owl::shared<controller::UAVState> rc = nullptr;
 };
 
 }// namespace drone::panels

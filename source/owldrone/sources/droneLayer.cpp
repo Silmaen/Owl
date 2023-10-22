@@ -49,7 +49,7 @@ void droneLayer::onAttach() {
 	textureLib.addFromStandardPath("icons/connect");
 
 	// remote controller
-	rc = owl::mk_shared<controller::RemoteController>();
+	rc = owl::mk_shared<controller::UAVState>();
 
 	// Panels
 	settings = owl::mk_shared<panels::Settings>();

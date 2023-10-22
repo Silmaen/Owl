@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include "controller/RemoteController.h"
+#include "controller/UAVState.h"
 #include "event/KeyEvent.h"
 #include "panels/BasePanel.h"
 #include <owl.h>
@@ -59,7 +59,7 @@ private:
 	DisplayMode mode = DisplayMode::Gauges;
 
 	// remote controller
-	owl::shared<controller::RemoteController> rc;
+	owl::shared<controller::UAVState> rc;
 
 	// Panels
 	owl::shared<panels::BasePanel> gauges;

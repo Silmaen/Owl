@@ -1,5 +1,5 @@
 /**
- * @file RemoteController.h
+ * @file UAVState.h
  * @author Silmaen
  * @date 21/09/2023
  * Copyright (c) 2023 All rights reserved.
@@ -14,38 +14,38 @@ namespace drone::controller {
 /**
  * @brief Class RemoteController
  */
-class RemoteController {
+class UAVState {
 public:
 	/**
 	 * @brief Constructor.
 	 * @param motorNumber The number of motor in the device.
 	 */
-	RemoteController(size_t motorNumber = 4);
+	explicit UAVState(size_t motorNumber = 4);
 
 	/**
 	 * @brief Destructor.
 	 */
-	virtual ~RemoteController();
+	virtual ~UAVState();
 
 	/**
 	 * @brief Copy constructor.
 	 */
-	RemoteController(const RemoteController &) = default;
+	UAVState(const UAVState &) = default;
 
 	/**
 	 * @brief Move constructor.
 	 */
-	RemoteController(RemoteController &&) = default;
+	UAVState(UAVState &&) = default;
 
 	/**
 	 * @brief Copy affectation operator.
 	 */
-	RemoteController &operator=(const RemoteController &) = default;
+	UAVState &operator=(const UAVState &) = default;
 
 	/**
 	 * @brief Move affectation operator.
 	 */
-	RemoteController &operator=(RemoteController &&) = default;
+	UAVState &operator=(UAVState &&) = default;
 
 
 	/**
