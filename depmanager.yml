@@ -1,6 +1,8 @@
 packages:
   googletest:
   cpptrace:
+  jsoncpp:
+  tinyxml2:
   debugbreak:
   entt:
   magic_enum:
