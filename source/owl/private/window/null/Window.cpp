@@ -14,8 +14,9 @@
 
 namespace owl::window::null {
 namespace {
-uint8_t s_WinCount = 0;
+uint8_t s_winCount = 0;
 }// namespace
+
 Window::Window(const Properties& iProps) {
 	OWL_PROFILE_FUNCTION()
 	init(iProps);
@@ -33,13 +34,13 @@ void Window::init(const Properties& iProps) {
 	m_windowData.size = {iProps.width, iProps.height};
 
 	OWL_CORE_INFO("Creating window {} ({}, {})", iProps.title, iProps.width, iProps.height)
-	++s_WinCount;
+	++s_winCount;
 	setVSync(true);
 }
 
 void Window::shutdown() {
 	OWL_PROFILE_FUNCTION()
-	--s_WinCount;
+	--s_winCount;
 }
 
 
@@ -52,4 +53,4 @@ void Window::setVSync(bool iEnabled) {
 
 auto Window::isVSync() const -> bool { return m_windowData.vSync; }
 
-}// namespace owl::input::null
+}// namespace owl::window::null

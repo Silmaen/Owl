@@ -7,6 +7,7 @@
  */
 
 #pragma once
+
 #include "core/Core.h"
 #include "event/Event.h"
 #include "math/vectors.h"
