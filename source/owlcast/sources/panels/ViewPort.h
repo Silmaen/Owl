@@ -9,12 +9,12 @@
 #pragma once
 #include <owl.h>
 
-namespace owl::raycaster {
+namespace owl::raycaster::panel {
 
 /**
  * @brief Class ViewPort.
  */
-class ViewPort final : public owl::gui::BaseDrawPanel {
+class ViewPort final : public gui::BaseDrawPanel {
 public:
 	/**
 	 * @brief Default constructor.
@@ -47,4 +47,4 @@ public:
 	void onUpdate(const core::Timestep& iTimeStep) override;
 };
 
-}// namespace owl::raycaster
+}// namespace owl::raycaster::panel

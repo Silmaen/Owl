@@ -8,7 +8,7 @@
 
 #include "MapWindow.h"
 
-namespace owl::raycaster {
+namespace owl::raycaster::panel {
 
 MapWindow::MapWindow() : BaseDrawPanel{"mapWindow"} {
 	const renderer::FramebufferSpecification specs{
@@ -29,4 +29,4 @@ MapWindow::~MapWindow() = default;
 
 void MapWindow::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) { OWL_PROFILE_FUNCTION() }
 
-}// namespace owl::raycaster
+}// namespace owl::raycaster::panel

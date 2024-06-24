@@ -47,11 +47,15 @@ public:
 	void onEvent(event::Event& ioEvent) override;
 	void onImGuiRender(const core::Timestep& iTimeStep) override;
 
+	enum struct Mode { Game, Editor };
+
 private:
 	/// The view port window.
-	uniq<ViewPort> m_viewPort;
+	uniq<panel::ViewPort> m_viewPort;
 	/// The map window.
-	uniq<MapWindow> m_mapWindow;
+	uniq<panel::MapWindow> m_mapWindow;
+
+	Mode currentMode = Mode::Game;
 
 	void renderMenu();
 

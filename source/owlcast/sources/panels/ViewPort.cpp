@@ -8,7 +8,7 @@
 
 #include "ViewPort.h"
 
-namespace owl::raycaster {
+namespace owl::raycaster::panel {
 
 ViewPort::ViewPort() : BaseDrawPanel{"viewport"} {
 	const renderer::FramebufferSpecification specs{
@@ -29,4 +29,4 @@ ViewPort::~ViewPort() = default;
 
 void ViewPort::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) { OWL_PROFILE_FUNCTION() }
 
-}// namespace owl::raycaster
+}// namespace owl::raycaster::panel

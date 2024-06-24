@@ -21,8 +21,8 @@ void EditorLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 	core::Application::get().enableDocking();
 
-	m_mapWindow = mkUniq<MapWindow>();
-	m_viewPort = mkUniq<ViewPort>();
+	m_mapWindow = mkUniq<panel::MapWindow>();
+	m_viewPort = mkUniq<panel::ViewPort>();
 }
 
 void EditorLayer::onDetach() {
