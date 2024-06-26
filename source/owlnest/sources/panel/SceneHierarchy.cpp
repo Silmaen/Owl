@@ -8,14 +8,13 @@
 
 #include "SceneHierarchy.h"
 
-#include <glm/gtc/type_ptr.hpp>
 #include <imgui_internal.h>
 
 namespace owl::panel {
 
-[[maybe_unused]] SceneHierarchy::SceneHierarchy(const shared<scene::Scene> &iScene) { setContext(iScene); }
+[[maybe_unused]] SceneHierarchy::SceneHierarchy(const shared<scene::Scene>& iScene) { setContext(iScene); }
 
-void SceneHierarchy::setContext(const shared<scene::Scene> &iContext) {
+void SceneHierarchy::setContext(const shared<scene::Scene>& iContext) {
 	m_context = iContext;
 	m_selection = {};
 }
@@ -24,7 +23,7 @@ void SceneHierarchy::onImGuiRender() {
 	ImGui::Begin("Scene Hierarchy");
 
 	if (m_context) {
-		for (auto &&[e]: m_context->registry.storage<entt::entity>().each()) {
+		for (auto&& [e]: m_context->registry.storage<entt::entity>().each()) {
 			scene::Entity entity = {e, m_context.get()};
 			drawEntityNode(entity);
 		}
@@ -49,14 +48,14 @@ void SceneHierarchy::onImGuiRender() {
 }
 
 // NOLINTBEGIN(performance-no-int-to-ptr)
-void SceneHierarchy::drawEntityNode(scene::Entity &ioEntity) {
-	const auto &tag = ioEntity.getComponent<scene::component::Tag>().tag;
+void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
+	const auto& tag = ioEntity.getComponent<scene::component::Tag>().tag;
 
 	const auto flags = static_cast<ImGuiTreeNodeFlags>(
 			((m_selection == ioEntity) ? ImGuiTreeNodeFlags_Selected : ImGuiTreeNodeFlags_None) |
 			ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth);
 	const bool opened = ImGui::TreeNodeEx(
-			reinterpret_cast<void *>(static_cast<uint64_t>(static_cast<uint32_t>(ioEntity))), flags, "%s", tag.c_str());
+			reinterpret_cast<void*>(static_cast<uint64_t>(static_cast<uint32_t>(ioEntity))), flags, "%s", tag.c_str());
 	if (ImGui::IsItemClicked()) {
 		m_selection = ioEntity;
 	}
@@ -69,7 +68,7 @@ void SceneHierarchy::drawEntityNode(scene::Entity &ioEntity) {
 	}
 
 	if (opened) {
-		if (ImGui::TreeNodeEx(reinterpret_cast<void *>(9817239),
+		if (ImGui::TreeNodeEx(reinterpret_cast<void*>(9817239),
 							  ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth, "%s", tag.c_str()))
 			ImGui::TreePop();
 		ImGui::TreePop();
@@ -84,10 +83,10 @@ void SceneHierarchy::drawEntityNode(scene::Entity &ioEntity) {
 // NOLINTEND(performance-no-int-to-ptr)
 
 namespace {
-void drawVec3Control(const std::string &iLabel, glm::vec3 &iValues, const float iResetValue = 0.0f,
+void drawVec3Control(const std::string& iLabel, math::vec3& iValues, const float iResetValue = 0.0f,
 					 const float iColumnWidth = 100.0f) {
-	const ImGuiIO &io = ImGui::GetIO();
-	auto *const boldFont = io.Fonts->Fonts[0];
+	const ImGuiIO& io = ImGui::GetIO();
+	auto* const boldFont = io.Fonts->Fonts[0];
 	ImGui::PushID(iLabel.c_str());
 
 	ImGui::Columns(2);
@@ -106,12 +105,12 @@ void drawVec3Control(const std::string &iLabel, glm::vec3 &iValues, const float 
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.8f, 0.1f, 0.15f, 1.0f});
 	ImGui::PushFont(boldFont);
 	if (ImGui::Button("X", buttonSize))
-		iValues.x = iResetValue;
+		iValues.x() = iResetValue;
 	ImGui::PopFont();
 	ImGui::PopStyleColor(3);
 
 	ImGui::SameLine();
-	ImGui::DragFloat("##X", &iValues.x, 0.1f, 0.0f, 0.0f, "%.2f");
+	ImGui::DragFloat("##X", &iValues.x(), 0.1f, 0.0f, 0.0f, "%.2f");
 	ImGui::PopItemWidth();
 	ImGui::SameLine();
 
@@ -120,12 +119,12 @@ void drawVec3Control(const std::string &iLabel, glm::vec3 &iValues, const float 
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.2f, 0.7f, 0.2f, 1.0f});
 	ImGui::PushFont(boldFont);
 	if (ImGui::Button("Y", buttonSize))
-		iValues.y = iResetValue;
+		iValues.y() = iResetValue;
 	ImGui::PopFont();
 	ImGui::PopStyleColor(3);
 
 	ImGui::SameLine();
-	ImGui::DragFloat("##Y", &iValues.y, 0.1f, 0.0f, 0.0f, "%.2f");
+	ImGui::DragFloat("##Y", &iValues.y(), 0.1f, 0.0f, 0.0f, "%.2f");
 	ImGui::PopItemWidth();
 	ImGui::SameLine();
 
@@ -134,12 +133,12 @@ void drawVec3Control(const std::string &iLabel, glm::vec3 &iValues, const float 
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{0.1f, 0.25f, 0.8f, 1.0f});
 	ImGui::PushFont(boldFont);
 	if (ImGui::Button("Z", buttonSize))
-		iValues.z = iResetValue;
+		iValues.z() = iResetValue;
 	ImGui::PopFont();
 	ImGui::PopStyleColor(3);
 
 	ImGui::SameLine();
-	ImGui::DragFloat("##Z", &iValues.z, 0.1f, 0.0f, 0.0f, "%.2f");
+	ImGui::DragFloat("##Z", &iValues.z(), 0.1f, 0.0f, 0.0f, "%.2f");
 	ImGui::PopItemWidth();
 
 	ImGui::PopStyleVar();
@@ -151,18 +150,18 @@ void drawVec3Control(const std::string &iLabel, glm::vec3 &iValues, const float 
 
 // NOLINTBEGIN(performance-no-int-to-ptr)
 template<typename T, typename UIFunction>
-void drawComponent(const std::string &iName, scene::Entity &ioEntity, UIFunction iUiFunction) {
+void drawComponent(const std::string& iName, scene::Entity& ioEntity, UIFunction iUiFunction) {
 	constexpr ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
 												 ImGuiTreeNodeFlags_SpanAvailWidth |
 												 ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
 	if (ioEntity.hasComponent<T>()) {
-		auto &component = ioEntity.getComponent<T>();
+		auto& component = ioEntity.getComponent<T>();
 		const ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
 		const float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
 		ImGui::Separator();
 		const bool open =
-				ImGui::TreeNodeEx(reinterpret_cast<void *>(typeid(T).hash_code()), treeNodeFlags, "%s", iName.c_str());
+				ImGui::TreeNodeEx(reinterpret_cast<void*>(typeid(T).hash_code()), treeNodeFlags, "%s", iName.c_str());
 		ImGui::PopStyleVar();
 		ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
 		if (ImGui::Button("+", ImVec2{lineHeight, lineHeight})) {
@@ -187,9 +186,9 @@ void drawComponent(const std::string &iName, scene::Entity &ioEntity, UIFunction
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
-void SceneHierarchy::drawComponents(scene::Entity &ioEntity) {
+void SceneHierarchy::drawComponents(scene::Entity& ioEntity) {
 	if (ioEntity.hasComponent<scene::component::Tag>()) {
-		auto &tag = ioEntity.getComponent<scene::component::Tag>().tag;
+		auto& tag = ioEntity.getComponent<scene::component::Tag>().tag;
 
 		char buffer[256];
 		memset(buffer, 0, sizeof(buffer));
@@ -226,18 +225,18 @@ void SceneHierarchy::drawComponents(scene::Entity &ioEntity) {
 	}
 	ImGui::PopItemWidth();
 
-	drawComponent<scene::component::Transform>("Transform", ioEntity, [](auto &component) {
+	drawComponent<scene::component::Transform>("Transform", ioEntity, [](auto& component) {
 		drawVec3Control("Translation", component.translation);
-		glm::vec3 rotation = glm::degrees(component.rotation);
+		math::vec3 rotation = math::degrees(component.rotation);
 		drawVec3Control("Rotation", rotation);
-		component.rotation = glm::radians(rotation);
+		component.rotation = math::radians(rotation);
 		drawVec3Control("Scale", component.scale, 1.0f);
 	});
-	drawComponent<scene::component::Camera>("Camera", ioEntity, [](auto &component) {
-		auto &camera = component.camera;
+	drawComponent<scene::component::Camera>("Camera", ioEntity, [](auto& component) {
+		auto& camera = component.camera;
 		ImGui::Checkbox("Primary", &component.primary);
-		const char *projectionTypeStrings[] = {"Perspective", "Orthographic"};
-		const char *currentProjectionTypeString = projectionTypeStrings[static_cast<int>(camera.getProjectionType())];
+		const char* projectionTypeStrings[] = {"Perspective", "Orthographic"};
+		const char* currentProjectionTypeString = projectionTypeStrings[static_cast<int>(camera.getProjectionType())];
 		if (ImGui::BeginCombo("Projection", currentProjectionTypeString)) {
 			for (int i = 0; i < 2; i++) {
 				const bool isSelected = currentProjectionTypeString == projectionTypeStrings[i];
@@ -251,9 +250,9 @@ void SceneHierarchy::drawComponents(scene::Entity &ioEntity) {
 			ImGui::EndCombo();
 		}
 		if (camera.getProjectionType() == scene::SceneCamera::ProjectionType::Perspective) {
-			float perspectiveVerticalFov = glm::degrees(camera.getPerspectiveVerticalFOV());
+			float perspectiveVerticalFov = math::degrees(camera.getPerspectiveVerticalFOV());
 			if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
-				camera.setPerspectiveVerticalFOV(glm::radians(perspectiveVerticalFov));
+				camera.setPerspectiveVerticalFOV(math::radians(perspectiveVerticalFov));
 			float perspectiveNear = camera.getPerspectiveNearClip();
 			if (ImGui::DragFloat("Near", &perspectiveNear))
 				camera.setPerspectiveNearClip(perspectiveNear);
@@ -274,12 +273,12 @@ void SceneHierarchy::drawComponents(scene::Entity &ioEntity) {
 			ImGui::Checkbox("Fixed Aspect Ratio", &component.fixedAspectRatio);
 		}
 	});
-	drawComponent<scene::component::SpriteRenderer>("Sprite Renderer", ioEntity, [](auto &component) {
-		ImGui::ColorEdit4("Color", glm::value_ptr(component.color));
+	drawComponent<scene::component::SpriteRenderer>("Sprite Renderer", ioEntity, [](auto& component) {
+		ImGui::ColorEdit4("Color", component.color.data());
 		ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
 		if (ImGui::BeginDragDropTarget()) {
-			if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-				const auto *const path = static_cast<const char *>(payload->Data);
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+				const auto* const path = static_cast<const char*>(payload->Data);
 				const std::filesystem::path texturePath = core::Application::get().getAssetDirectory() / path;
 				component.texture = renderer::Texture2D::create(texturePath);
 			}
@@ -287,8 +286,8 @@ void SceneHierarchy::drawComponents(scene::Entity &ioEntity) {
 		}
 		ImGui::DragFloat("Tiling Factor", &component.tilingFactor, 0.1f, 0.0f, 100.0f);
 	});
-	drawComponent<scene::component::CircleRenderer>("Circle Renderer", ioEntity, [](auto &component) {
-		ImGui::ColorEdit4("Color", glm::value_ptr(component.color));
+	drawComponent<scene::component::CircleRenderer>("Circle Renderer", ioEntity, [](auto& component) {
+		ImGui::ColorEdit4("Color", component.color.data());
 		ImGui::DragFloat("Thickness", &component.thickness, 0.025f, 0.0f, 1.0f);
 		ImGui::DragFloat("Fade", &component.fade, 0.00025f, 0.0f, 1.0f);
 	});

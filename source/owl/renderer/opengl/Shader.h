@@ -91,42 +91,42 @@ public:
 	 * @param[in] iName Shader's variable's name.
 	 * @param[in] iValue Shader's variable's value.
 	 */
-	void setFloat2(const std::string& iName, const glm::vec2& iValue) override;
+	void setFloat2(const std::string& iName, const math::vec2& iValue) override;
 
 	/**
 	 * @brief Set shader's internal vector 3 variable.
 	 * @param[in] iName Shader's variable's name.
 	 * @param[in] iValue Shader's variable's value.
 	 */
-	void setFloat3(const std::string& iName, const glm::vec3& iValue) override;
+	void setFloat3(const std::string& iName, const math::vec3& iValue) override;
 
 	/**
 	 * @brief Set shader's internal vector 4 variable.
 	 * @param[in] iName Shader's variable's name.
 	 * @param[in] iValue Shader's variable's value.
 	 */
-	void setFloat4(const std::string& iName, const glm::vec4& iValue) override;
+	void setFloat4(const std::string& iName, const math::vec4& iValue) override;
 
 	/**
 	 * @brief Set shader's internal Matrix 4 variable.
 	 * @param[in] iName Shader's variable's name.
 	 * @param[in] iValue Shader's variable's value.
 	 */
-	void setMat4(const std::string& iName, const glm::mat4& iValue) override;
+	void setMat4(const std::string& iName, const math::mat4& iValue) override;
 
 	/**
 	 * @brief Push a matrix to the GPU.
 	 * @param[in] iName Variable's name.
 	 * @param[in] iMatrix The matrix data.
 	 */
-	void uploadUniformMat3(const std::string& iName, const glm::mat3& iMatrix)const ;
+	void uploadUniformMat3(const std::string& iName, const math::mat3& iMatrix)const ;
 
 	/**
 	 * @brief Push a matrix to the GPU.
 	 * @param[in] iName Variable's name.
 	 * @param[in] iMatrix The matrix data.
 	 */
-	void uploadUniformMat4(const std::string& iName, const glm::mat4& iMatrix)const;
+	void uploadUniformMat4(const std::string& iName, const math::mat4& iMatrix)const;
 
 	/**
 	 * @brief Push an int to the GPU.
@@ -155,21 +155,21 @@ public:
 	 * @param[in] iName Variable's name.
 	 * @param[in] iValue The vector to push.
 	 */
-	void uploadUniformFloat2(const std::string& iName, const glm::vec2& iValue) const;
+	void uploadUniformFloat2(const std::string& iName, const math::vec2& iValue) const;
 
 	/**
 	 * @brief Push a 3-vector to the GPU.
 	 * @param[in] iName Variable's name.
 	 * @param[in] iValue The vector to push.
 	 */
-	void uploadUniformFloat3(const std::string& iName, const glm::vec3& iValue) const;
+	void uploadUniformFloat3(const std::string& iName, const math::vec3& iValue) const;
 
 	/**
 	 * @brief Push a 4-vector to the GPU.
 	 * @param[in] iName Variable's name.
 	 * @param[in] iValue The vector to push.
 	 */
-	void uploadUniformFloat4(const std::string& iName, const glm::vec4& iValue) const;
+	void uploadUniformFloat4(const std::string& iName, const math::vec4& iValue) const;
 
 private:
 	/// Id of the shader in the GPU.

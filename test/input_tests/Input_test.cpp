@@ -13,8 +13,8 @@ TEST(input, Input_uninitialized) {
 	Input::injectKey(0);
 	Input::injectMouseButton(0);
 	Input::injectMousePos(pos);
-	EXPECT_EQ(pos.x, 0);
-	EXPECT_EQ(pos.y, 0);
+	EXPECT_EQ(pos.x(), 0);
+	EXPECT_EQ(pos.y(), 0);
 	Input::invalidate();
 }
 

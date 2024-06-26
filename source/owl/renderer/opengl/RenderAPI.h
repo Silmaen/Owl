@@ -48,7 +48,7 @@ public:
 	 * @brief Define the background color.
 	 * @param[in] iColor The background color.
 	 */
-	void setClearColor(const glm::vec4 &iColor) override;
+	void setClearColor(const math::vec4 &iColor) override;
 
 	/**
 	 * @brief Clear the screen.

@@ -10,21 +10,15 @@
 #include "Shader.h"
 #include "core/Application.h"
 #include "core/external/opengl46.h"
+#include "core/external/shaderc.h"
 #include "core/utils/FileUtils.h"
 #include "renderer/utils/shaderFileUtils.h"
-
-OWL_DIAG_PUSH
-OWL_DIAG_DISABLE_CLANG("-Wdocumentation")
-#include <glm/gtc/type_ptr.hpp>
-OWL_DIAG_POP
-
-#include "core/external/shaderc.h"
 
 namespace owl::renderer::opengl {
 
 namespace utils {
 namespace {
-uint32_t shaderStageToGlShader(const ShaderType &iStage) {
+uint32_t shaderStageToGlShader(const ShaderType& iStage) {
 	switch (iStage) {
 		case ShaderType::Vertex:
 			return GL_VERTEX_SHADER;
@@ -44,25 +38,25 @@ uint32_t shaderStageToGlShader(const ShaderType &iStage) {
 
 }// namespace utils
 
-Shader::Shader(const std::string &iShaderName, const std::string &iRenderer, const std::string &iVertexSrc,
-			   const std::string &iFragmentSrc)
+Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& iVertexSrc,
+			   const std::string& iFragmentSrc)
 	: renderer::Shader{iShaderName, iRenderer} {
 	compile({{ShaderType::Vertex, iVertexSrc}, {ShaderType::Fragment, iFragmentSrc}});
 }
 
-Shader::Shader(const std::string &iShaderName, const std::string &iRenderer,
-			   const std::unordered_map<ShaderType, std::string> &iSources)
+Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
+			   const std::unordered_map<ShaderType, std::string>& iSources)
 	: renderer::Shader{iShaderName, iRenderer} {
 	compile(iSources);
 }
 
-Shader::Shader(const std::string &iShaderName, const std::string &iRenderer,
-			   const std::vector<std::filesystem::path> &iSources)
+Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
+			   const std::vector<std::filesystem::path>& iSources)
 	: renderer::Shader{iShaderName, iRenderer} {
 	OWL_PROFILE_FUNCTION()
 
 	std::unordered_map<ShaderType, std::string> strSources;
-	for (const auto &src: iSources) {
+	for (const auto& src: iSources) {
 		auto type = ShaderType::None;
 		if (src.extension() == ".frag")
 			type = ShaderType::Fragment;
@@ -83,7 +77,7 @@ Shader::~Shader() {
 	glDeleteProgram(m_programId);
 }
 
-void Shader::compile(const std::unordered_map<ShaderType, std::string> &iSources) {
+void Shader::compile(const std::unordered_map<ShaderType, std::string>& iSources) {
 	OWL_SCOPE_UNTRACK
 	OWL_PROFILE_FUNCTION()
 
@@ -102,16 +96,16 @@ void Shader::compile(const std::unordered_map<ShaderType, std::string> &iSources
 	OWL_CORE_INFO("Compilation of shader {} in {} ms", getName(), duration)
 }
 
-void Shader::compileOrGetVulkanBinaries(const std::unordered_map<ShaderType, std::string> &iSources) {
+void Shader::compileOrGetVulkanBinaries(const std::unordered_map<ShaderType, std::string>& iSources) {
 	OWL_PROFILE_FUNCTION()
 
 	shaderc::CompileOptions options;
 	options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
 	options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
-	auto &shaderData = m_vulkanSpirv;
+	auto& shaderData = m_vulkanSpirv;
 	shaderData.clear();
-	for (auto &&[stage, source]: iSources) {
+	for (auto&& [stage, source]: iSources) {
 		const std::filesystem::path basePath =
 				renderer::utils::getShaderPath(getName(), getRenderer(), "opengl", stage);
 		const std::filesystem::path cachedPath =
@@ -137,14 +131,14 @@ void Shader::compileOrGetVulkanBinaries(const std::unordered_map<ShaderType, std
 			renderer::utils::writeCachedShader(cachedPath, shaderData[stage]);
 		}
 	}
-	for (auto &&[stage, data]: shaderData)
+	for (auto&& [stage, data]: shaderData)
 		renderer::utils::shaderReflect(getName(), getRenderer(), "opengl", stage, data);
 }
 
 void Shader::compileOrGetOpenGlBinaries() {
 	OWL_PROFILE_FUNCTION()
 
-	auto &shaderData = m_openGlSpirv;
+	auto& shaderData = m_openGlSpirv;
 
 	shaderc::CompileOptions options;
 	options.SetTargetEnvironment(shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
@@ -152,7 +146,7 @@ void Shader::compileOrGetOpenGlBinaries() {
 
 	shaderData.clear();
 	m_openGlSource.clear();
-	for (auto &&[stage, spirv]: m_vulkanSpirv) {
+	for (auto&& [stage, spirv]: m_vulkanSpirv) {
 		const std::filesystem::path basePath =
 				renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl_vulkan", stage);
 		const std::filesystem::path cachedPath =
@@ -165,7 +159,7 @@ void Shader::compileOrGetOpenGlBinaries() {
 				OWL_CORE_INFO("Origin file newer than cached one, Recompiling.")
 			spirv_cross::CompilerGLSL glslCompiler(spirv);
 			m_openGlSource[stage] = glslCompiler.compile();
-			auto &source = m_openGlSource[stage];
+			auto& source = m_openGlSource[stage];
 			const shaderc::Compiler compiler;
 			const shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(
 					source, renderer::utils::shaderStageToShaderC(stage),
@@ -185,7 +179,7 @@ void Shader::createProgram() {
 
 	// list of shader's id
 	std::vector<GLuint> shaderIDs;
-	for (auto &&[stage, spirv]: m_openGlSpirv) {
+	for (auto&& [stage, spirv]: m_openGlSpirv) {
 		const GLuint shaderId = shaderIDs.emplace_back(glCreateShader(utils::shaderStageToGlShader(stage)));
 		OWL_CORE_ASSERT(!spirv.empty(), "Empty shader data")
 		glShaderBinary(1, &shaderId, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(),
@@ -229,86 +223,86 @@ void Shader::unbind() const {
 	glUseProgram(0);
 }
 
-void Shader::setInt(const std::string &iName, const int iValue) {
+void Shader::setInt(const std::string& iName, const int iValue) {
 	OWL_PROFILE_FUNCTION()
 
 	uploadUniformInt(iName, iValue);
 }
 
-void Shader::setIntArray(const std::string &iName, int *iValues, const uint32_t iCount) {
+void Shader::setIntArray(const std::string& iName, int* iValues, const uint32_t iCount) {
 	OWL_PROFILE_FUNCTION()
 
 	uploadUniformIntArray(iName, iValues, iCount);
 }
 
-void Shader::setFloat(const std::string &iName, const float iValue) {
+void Shader::setFloat(const std::string& iName, const float iValue) {
 	OWL_PROFILE_FUNCTION()
 
 	uploadUniformFloat(iName, iValue);
 }
 
-void Shader::setFloat2(const std::string &iName, const glm::vec2 &iValue) {
+void Shader::setFloat2(const std::string& iName, const math::vec2& iValue) {
 	OWL_PROFILE_FUNCTION()
 
 	uploadUniformFloat2(iName, iValue);
 }
 
-void Shader::setFloat3(const std::string &iName, const glm::vec3 &iValue) {
+void Shader::setFloat3(const std::string& iName, const math::vec3& iValue) {
 	OWL_PROFILE_FUNCTION()
 
 	uploadUniformFloat3(iName, iValue);
 }
 
-void Shader::setFloat4(const std::string &iName, const glm::vec4 &iValue) {
+void Shader::setFloat4(const std::string& iName, const math::vec4& iValue) {
 	OWL_PROFILE_FUNCTION()
 
 	uploadUniformFloat4(iName, iValue);
 }
 
-void Shader::setMat4(const std::string &iName, const glm::mat4 &iValue) {
+void Shader::setMat4(const std::string& iName, const math::mat4& iValue) {
 	OWL_PROFILE_FUNCTION()
 
 	uploadUniformMat4(iName, iValue);
 }
 
-void Shader::uploadUniformInt(const std::string &iName, const int iData) const {
+void Shader::uploadUniformInt(const std::string& iName, const int iData) const {
 	const GLint location = glGetUniformLocation(m_programId, iName.c_str());
 	glUniform1i(location, iData);
 }
 
-void Shader::uploadUniformIntArray(const std::string &iName, const int *iValues, const uint32_t iCount) const {
+void Shader::uploadUniformIntArray(const std::string& iName, const int* iValues, const uint32_t iCount) const {
 	const GLint location = glGetUniformLocation(m_programId, iName.c_str());
 	glUniform1iv(location, static_cast<GLsizei>(iCount), iValues);
 }
 
-void Shader::uploadUniformFloat(const std::string &iName, const float iValue) const {
+void Shader::uploadUniformFloat(const std::string& iName, const float iValue) const {
 	const GLint location = glGetUniformLocation(m_programId, iName.c_str());
 	glUniform1f(location, iValue);
 }
 
-void Shader::uploadUniformFloat2(const std::string &iName, const glm::vec2 &iValue) const {
+void Shader::uploadUniformFloat2(const std::string& iName, const math::vec2& iValue) const {
 	const GLint location = glGetUniformLocation(m_programId, iName.c_str());
-	glUniform2f(location, iValue.x, iValue.y);
+	glUniform2f(location, iValue.x(), iValue.y());
 }
 
-void Shader::uploadUniformFloat3(const std::string &iName, const glm::vec3 &iValue) const {
+void Shader::uploadUniformFloat3(const std::string& iName, const math::vec3& iValue) const {
 	const GLint location = glGetUniformLocation(m_programId, iName.c_str());
-	glUniform3f(location, iValue.x, iValue.y, iValue.z);
+	glUniform3f(location, iValue.x(), iValue.y(), iValue.z());
 }
 
-void Shader::uploadUniformFloat4(const std::string &iName, const glm::vec4 &iValue) const {
+void Shader::uploadUniformFloat4(const std::string& iName, const math::vec4& iValue) const {
 	const GLint location = glGetUniformLocation(m_programId, iName.c_str());
-	glUniform4f(location, iValue.x, iValue.y, iValue.z, iValue.w);
+	glUniform4f(location, iValue.x(), iValue.y(), iValue.z(), iValue.w());
 }
 
-void Shader::uploadUniformMat3(const std::string &iName, const glm::mat3 &iMatrix) const {
+void Shader::uploadUniformMat3(const std::string& iName, const math::mat3& iMatrix) const {
 	const GLint location = glGetUniformLocation(m_programId, iName.c_str());
-	glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(iMatrix));
+	glUniformMatrix3fv(location, 1, GL_FALSE, iMatrix.data());
 }
 
-void Shader::uploadUniformMat4(const std::string &iName, const glm::mat4 &iMatrix) const {
+void Shader::uploadUniformMat4(const std::string& iName, const math::mat4& iMatrix) const {
 	const GLint location = glGetUniformLocation(m_programId, iName.c_str());
-	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(iMatrix));
+	glUniformMatrix4fv(location, 1, GL_FALSE, iMatrix.data());
 }
 
 }// namespace owl::renderer::opengl

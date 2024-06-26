@@ -8,8 +8,6 @@
 
 #include "base2D.h"
 
-#include <glm/gtc/type_ptr.hpp>
-
 namespace owl {
 
 
@@ -25,17 +23,17 @@ void Base2D::onAttach() {
 
 void Base2D::onDetach() { OWL_PROFILE_FUNCTION() }
 
-void Base2D::onUpdate(const core::Timestep &iTs) {
+void Base2D::onUpdate(const core::Timestep& iTs) {
 	OWL_PROFILE_FUNCTION()
 
 	// Update
 	m_cameraController.onUpdate(iTs);
 	// sprite movement
 	if (input::Input::isKeyPressed(input::key::Right)) {
-		m_spritePosition.x += 0.05f;
+		m_spritePosition.x() += 0.05f;
 	}
 	if (input::Input::isKeyPressed(input::key::Left)) {
-		m_spritePosition.x -= 0.05f;
+		m_spritePosition.x() -= 0.05f;
 	}
 	if (input::Input::isKeyPressed(input::key::Up)) {
 		m_spriteRotation += 0.5f;
@@ -77,9 +75,9 @@ void Base2D::onUpdate(const core::Timestep &iTs) {
 				constexpr float scalex = 1.f;
 				const float x = -5.0f + static_cast<float>(idx) * scalex;
 				const float y = -5.0f + static_cast<float>(idy) * scaley;
-				const glm::vec4 color = {(x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f};
+				const math::vec4 color = {(x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f};
 				renderer::Renderer2D::drawQuad(
-						{.transform = renderer::utils::PRS{.position = {x, y, -0.05},
+						{.transform = renderer::utils::PRS{.position = {x, y, -0.05f},
 														   .size = {scalex * marg, scaley * marg}},
 						 .color = color,
 						 .entityID = id});
@@ -122,22 +120,22 @@ void Base2D::onUpdate(const core::Timestep &iTs) {
 	}
 }
 
-void Base2D::onEvent(event::Event &ioEvent) { m_cameraController.onEvent(ioEvent); }
+void Base2D::onEvent(event::Event& ioEvent) { m_cameraController.onEvent(ioEvent); }
 
 
-void Base2D::onImGuiRender(const core::Timestep &iTs) {
+void Base2D::onImGuiRender(const core::Timestep& iTs) {
 	{
 		//ImGui::ShowDemoWindow();
 	}
 	// ==================================================================
 	{
 		ImGui::Begin("Settings");
-		ImGui::ColorEdit4("Square Color", glm::value_ptr(m_squareColor));
+		ImGui::ColorEdit4("Square Color", m_squareColor.data());
 		ImGui::End();
 	}
 	// ==================================================================
 	{
-		const auto &tracker = debug::Tracker::get();
+		const auto& tracker = debug::Tracker::get();
 		ImGui::Begin("Statistics");
 		ImGui::Text("%s", fmt::format("FPS: {:.2f}", iTs.getFps()).c_str());
 		ImGui::Text("%s", fmt::format("Current used memory: {}", tracker.globals().allocatedMemory).c_str());
@@ -151,14 +149,14 @@ void Base2D::onImGuiRender(const core::Timestep &iTs) {
 		ImGui::Text("Quads: %d", stats.quadCount);
 		ImGui::Text("Vertices: %d", stats.getTotalVertexCount());
 		ImGui::Text("Indices: %d", stats.getTotalIndexCount());
-		ImGui::Text("Viewport size: %f %f", static_cast<double>(m_viewportSize.x),
-					static_cast<double>(m_viewportSize.y));
-		ImGui::Text("Aspect ratio: %f", static_cast<double>(m_viewportSize.x / m_viewportSize.y));
+		ImGui::Text("Viewport size: %f %f", static_cast<double>(m_viewportSize.x()),
+					static_cast<double>(m_viewportSize.y()));
+		ImGui::Text("Aspect ratio: %f", static_cast<double>(m_viewportSize.x() / m_viewportSize.y()));
 		ImGui::Text("Entity Id: %d", m_hoveredEntity);
 		ImGui::End();
 	}
-	m_viewportSize = {core::Application::get().getWindow().getWidth(),
-					  core::Application::get().getWindow().getHeight()};
+	m_viewportSize = {static_cast<float>(core::Application::get().getWindow().getWidth()),
+					  static_cast<float>(core::Application::get().getWindow().getHeight())};
 }
 
 }// namespace owl

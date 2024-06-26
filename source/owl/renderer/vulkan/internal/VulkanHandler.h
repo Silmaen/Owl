@@ -148,7 +148,7 @@ public:
 
 	void drawData(uint32_t iVertexCount, bool iIndexed = true);
 
-	void setClearColor(const glm::vec4 &iColor);
+	void setClearColor(const math::vec4 &iColor);
 
 	void setResize();
 
@@ -185,7 +185,7 @@ private:
 	/// The active framebuffer.
 	Framebuffer *m_currentframebuffer = nullptr;
 
-	glm::vec4 m_clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+	math::vec4 m_clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
 	/// List of piplines.
 	std::map<int32_t, PipeLineData> m_pipeLines;

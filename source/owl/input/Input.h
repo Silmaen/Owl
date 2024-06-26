@@ -75,7 +75,7 @@ public:
 	 * @brief Get mouse position.
 	 * @return Mouse Position.
 	 */
-	static glm::vec2 getMousePos();
+	static math::vec2 getMousePos();
 
 	/**
 	 * @brief Simulate key toggle.
@@ -93,7 +93,7 @@ public:
 	 * @brief Simulate mouse movement.
 	 * @param[in] iMousePos The new mouse pos.
 	 */
-	static void injectMousePos(const glm::vec2 &iMousePos);
+	static void injectMousePos(const math::vec2 &iMousePos);
 
 	/**
 	 * @brief Clear the previously defined injections.
@@ -122,7 +122,7 @@ private:
 	 * @brief Get mouse position, private implementation.
 	 * @return Mouse Position.
 	 */
-	virtual glm::vec2 getMousePos_impl() = 0;
+	virtual math::vec2 getMousePos_impl() = 0;
 	/**
 	 * @brief Simulate key toggle, private implementation.
 	 * @param[in] iKeycode the key to press/release.
@@ -138,7 +138,7 @@ private:
 	 * @brief Simulate mouse movement, private implementation.
 	 * @param[in] iMousePos The new mouse pos.
 	 */
-	virtual void injectMousePos_impl(const glm::vec2 &iMousePos) = 0;
+	virtual void injectMousePos_impl(const math::vec2 &iMousePos) = 0;
 
 	/**
 	 * @brief Clear the previously defined injections.

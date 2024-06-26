@@ -74,8 +74,8 @@ protected:
 	/// The camera
 	shared<renderer::CameraOrtho> m_camera;
 	/// View port bounds
-	glm::vec2 m_viewportLower = {0.0f, 0.0f};
-	glm::vec2 m_viewportUpper = {0.0f, 0.0f};
+	math::vec2 m_viewportLower = {0.0f, 0.0f};
+	math::vec2 m_viewportUpper = {0.0f, 0.0f};
 	bool m_viewportFocused = false;
 	bool m_viewportHovered = false;
 };

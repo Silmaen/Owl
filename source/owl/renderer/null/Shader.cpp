@@ -32,13 +32,13 @@ void Shader::setIntArray(const std::string &, int *, uint32_t) {}
 
 void Shader::setFloat(const std::string &, float) {}
 
-void Shader::setFloat2(const std::string &, const glm::vec2 &) {}
+void Shader::setFloat2(const std::string &, const math::vec2 &) {}
 
-void Shader::setFloat3(const std::string &, const glm::vec3 &) {}
+void Shader::setFloat3(const std::string &, const math::vec3 &) {}
 
-void Shader::setFloat4(const std::string &, const glm::vec4 &) {}
+void Shader::setFloat4(const std::string &, const math::vec4 &) {}
 
-void Shader::setMat4(const std::string &, const glm::mat4 &) {}
+void Shader::setMat4(const std::string &, const math::mat4 &) {}
 
 
 }// namespace owl::renderer::null

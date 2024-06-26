@@ -9,7 +9,6 @@
 #pragma once
 
 #include "core/Core.h"
-#include "core/external/glm.h"
 
 namespace owl::renderer {
 /**
@@ -46,13 +45,13 @@ public:
 	 * @brief Access to camera's position.
 	 * @return Camera's position.
 	 */
-	[[nodiscard]] const glm::vec3 &getPosition() const { return m_position; }
+	[[nodiscard]] const math::vec3 &getPosition() const { return m_position; }
 
 	/**
 	 * @brief Define camera's position.
 	 * @param[in] iPosition New camera position.
 	 */
-	void setPosition(const glm::vec3 &iPosition) {
+	void setPosition(const math::vec3 &iPosition) {
 		m_position = iPosition;
 		recalculateViewMatrix();
 	}
@@ -76,19 +75,19 @@ public:
 	 * @brief Access to projection matrix.
 	 * @return The projection matrix.
 	 */
-	[[nodiscard]] const glm::mat4 &getProjectionMatrix() const { return m_projectionMatrix; }
+	[[nodiscard]] const math::mat4 &getProjectionMatrix() const { return m_projectionMatrix; }
 
 	/**
 	 * @brief Access to view matrix.
 	 * @return The view matrix.
 	 */
-	[[nodiscard]] const glm::mat4 &getViewMatrix() const { return m_viewMatrix; }
+	[[nodiscard]] const math::mat4 &getViewMatrix() const { return m_viewMatrix; }
 
 	/**
 	 * @brief Access to view projection matrix.
 	 * @return The view position matrix.
 	 */
-	[[nodiscard]] const glm::mat4 &getViewProjectionMatrix() const { return m_viewProjectionMatrix; }
+	[[nodiscard]] const math::mat4 &getViewProjectionMatrix() const { return m_viewProjectionMatrix; }
 
 private:
 	/**
@@ -97,13 +96,13 @@ private:
 	void recalculateViewMatrix();
 
 	/// The projection matrix.
-	glm::mat4 m_projectionMatrix{};
+	math::mat4 m_projectionMatrix{};
 	/// The view matrix.
-	glm::mat4 m_viewMatrix{};
+	math::mat4 m_viewMatrix{};
 	/// The view projection matrix.
-	glm::mat4 m_viewProjectionMatrix{};
+	math::mat4 m_viewProjectionMatrix{};
 	/// Camera's position.
-	glm::vec3 m_position = {0.0f, 0.0f, 0.0f};
+	math::vec3 m_position = {0.0f, 0.0f, 0.0f};
 	/// Camera's rotation.
 	float m_rotation = 0.0f;
 };

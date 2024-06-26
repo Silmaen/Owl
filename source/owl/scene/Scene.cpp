@@ -106,7 +106,7 @@ void Scene::onUpdateRuntime(const core::Timestep &iTimeStep) {
 
 	// Render 2D
 	const renderer::Camera *mainCamera = nullptr;
-	glm::mat4 cameraTransform;
+	math::mat4 cameraTransform;
 	for (const auto view = registry.view<component::Transform, component::Camera>(); const auto entity: view) {
 		auto [transform, camera] = view.get<component::Transform, component::Camera>(entity);
 		if (camera.primary) {

@@ -37,18 +37,18 @@ TEST(Entity, cameraOrtho) {
 	EXPECT_EQ(cam.camera.getOrthographicNearClip(), -1);
 	EXPECT_EQ(cam.camera.getOrthographicSize(), 10);
 	auto proj = cam.camera.getProjection();
-	EXPECT_NEAR(proj[0][0], 0.2, 0.001);
+	EXPECT_NEAR(proj(0, 0), 0.2, 0.001);
 	cam.camera.setOrthographic(4, 0.1f, 14.0);
 	EXPECT_EQ(cam.camera.getOrthographicFarClip(), 14.0);
 	EXPECT_NEAR(cam.camera.getOrthographicNearClip(), 0.1, 0.001);
 	EXPECT_EQ(cam.camera.getOrthographicSize(), 4);
 	proj = cam.camera.getProjection();
-	EXPECT_NEAR(proj[0][0], 0.5, 0.001);
+	EXPECT_NEAR(proj(0, 0), 0.5, 0.001);
 	cam.camera.setOrthographicFarClip(1);
 	cam.camera.setOrthographicNearClip(-1);
 	cam.camera.setOrthographicSize(10);
 	proj = cam.camera.getProjection();
-	EXPECT_NEAR(proj[0][0], 0.2, 0.001);
+	EXPECT_NEAR(proj(0, 0), 0.2, 0.001);
 }
 
 TEST(Entity, cameraPerspective) {
@@ -62,9 +62,9 @@ TEST(Entity, cameraPerspective) {
 	EXPECT_EQ(cam.camera.getPerspectiveNearClip(), -0.25);
 	EXPECT_EQ(cam.camera.getPerspectiveVerticalFOV(), 45);
 	auto proj = cam.camera.getProjection();
-	EXPECT_NEAR(proj[0][0], 1.7925, 0.001);
+	EXPECT_NEAR(proj(0, 0), 1.7925, 0.001);
 	cam.camera.setPerspectiveFarClip(1);
 	cam.camera.setPerspectiveNearClip(-1);
 	cam.camera.setPerspectiveVerticalFOV(85);
-	EXPECT_NEAR(proj[0][0], 1.7925, 0.001);
+	EXPECT_NEAR(proj(0, 0), 1.7925, 0.001);
 }

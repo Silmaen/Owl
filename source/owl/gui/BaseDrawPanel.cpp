@@ -15,7 +15,7 @@
 
 namespace owl::gui {
 
-constexpr ImVec2 vec(glm::vec2 iVec) { return {iVec.x, iVec.y}; }
+constexpr ImVec2 vec(math::vec2 iVec) { return {iVec.x(), iVec.y()}; }
 
 BaseDrawPanel::BaseDrawPanel() = default;
 

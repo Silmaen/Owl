@@ -75,11 +75,6 @@ find_package(glfw3 REQUIRED)
 message(STATUS "Found glfw3 version ${glfw3_VERSION} @ ${glfw3_DIR}")
 target_link_libraries(${ENGINE_NAME} PRIVATE glfw)
 
-# glm
-find_package(glm REQUIRED)
-message(STATUS "Found glm version ${glm_VERSION} @ ${glm_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC glm::glm)
-
 # Vulkan
 # ----------------------
 find_package(VulkanHeaders REQUIRED)

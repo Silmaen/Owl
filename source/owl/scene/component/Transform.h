@@ -8,7 +8,6 @@
 
 #pragma once
 #include "core/Core.h"
-
 namespace owl::scene::component {
 
 /**
@@ -16,19 +15,19 @@ namespace owl::scene::component {
  */
 struct OWL_API Transform {
 	/// The translation.
-	glm::vec3 translation = {0.f, 0.f, 0.f};
+	math::vec3 translation = {0.f, 0.f, 0.f};
 	/// The rotation.
-	glm::vec3 rotation = {0.f, 0.f, 0.f};
+	math::vec3 rotation = {0.f, 0.f, 0.f};
 	/// The scale.
-	glm::vec3 scale = {1.f, 1.f, 1.f};
+	math::vec3 scale = {1.f, 1.f, 1.f};
 
 	/**
 	 * @brief Get the transformation matrix based on TRS.
 	 * @return The transformation matrix.
 	 */
-	[[nodiscard]] glm::mat4 getTransform() const {
-		return glm::translate(glm::mat4(1.0f), translation) * glm::toMat4(glm::quat(rotation)) *
-			   glm::scale(glm::mat4(1.f), scale);
+	[[nodiscard]] math::mat4 getTransform() const {
+		return math::translate(math::identity<float,4>(), translation) * math::toMat4(math::quat(rotation)) *
+			   math::scale(math::identity<float,4>(), scale);
 	}
 };
 

@@ -76,7 +76,7 @@ public:
 	 * @param[in] iAttachmentIndex Attachment's index.
 	 * @param[in] iColorValue Clearing color value.
 	 */
-	void clearAttachment(uint32_t iAttachmentIndex, glm::vec4 iColorValue) override;
+	void clearAttachment(uint32_t iAttachmentIndex, math::vec4 iColorValue) override;
 	/**
 	 * @brief Get renderer id.
 	 * @param[in] iIndex The color index.

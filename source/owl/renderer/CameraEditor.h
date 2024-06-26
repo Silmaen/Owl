@@ -23,10 +23,10 @@ class OWL_API CameraEditor final : public Camera {
 public:
 	CameraEditor() = default;
 	~CameraEditor() override;
-	CameraEditor(const CameraEditor &) = default;
-	CameraEditor(CameraEditor &&) = default;
-	CameraEditor &operator=(const CameraEditor &) = default;
-	CameraEditor &operator=(CameraEditor &&) = default;
+	CameraEditor(const CameraEditor&) = default;
+	CameraEditor(CameraEditor&&) = default;
+	CameraEditor& operator=(const CameraEditor&) = default;
+	CameraEditor& operator=(CameraEditor&&) = default;
 
 	/**
 	 * @brief Constructor
@@ -41,13 +41,13 @@ public:
 	 * @brief Update the camera (Need input setup).
 	 * @param[in] iTimeStep The timestamp.
 	 */
-	void onUpdate(const core::Timestep &iTimeStep);
+	void onUpdate(const core::Timestep& iTimeStep);
 
 	/**
 	 * @brief Treat an event.
 	 * @param[in,out] ioEvent Teh event to treat.
 	 */
-	void onEvent(event::Event &ioEvent);
+	void onEvent(event::Event& ioEvent);
 
 	/**
 	 * @brief Get the camera distance to the focal point.
@@ -65,7 +65,7 @@ public:
 	 * @brief Set the camera viewport size.
 	 * @param[in] iSize New size.
 	 */
-	void setViewportSize(const math::FrameSize &iSize) {
+	void setViewportSize(const math::FrameSize& iSize) {
 		m_viewportSize = iSize;
 		updateProjection();
 	}
@@ -74,42 +74,42 @@ public:
 	 * @brief Get the camera view matrix.
 	 * @return Camera view matrix.
 	 */
-	[[nodiscard]] const glm::mat4 &getViewMatrix() const { return m_viewMatrix; }
+	[[nodiscard]] const math::mat4& getViewMatrix() const { return m_viewMatrix; }
 
 	/**
 	 * @brief Get the camera view projection matrix.
 	 * @return Camera view projection matrix.
 	 */
-	[[nodiscard]] glm::mat4 getViewProjection() const { return m_projection * m_viewMatrix; }
+	[[nodiscard]] math::mat4 getViewProjection() const { return m_projection * m_viewMatrix; }
 
 	/**
 	 * @brief Get the camera up vector.
 	 * @return Camera up vector.
 	 */
-	[[nodiscard]] glm::vec3 getUpDirection() const;
+	[[nodiscard]] math::vec3 getUpDirection() const;
 
 	/**
 	 * @brief Get the camera right vector.
 	 * @return Camera right vector.
 	 */
-	[[nodiscard]] glm::vec3 getRightDirection() const;
+	[[nodiscard]] math::vec3 getRightDirection() const;
 
 	/**
 	 * @brief Get the camera forward vector.
 	 * @return Camera forward vector.
 	 */
-	[[nodiscard]] glm::vec3 getForwardDirection() const;
+	[[nodiscard]] math::vec3 getForwardDirection() const;
 	/**
 	 * @brief Get the camera position.
 	 * @return Camera position.
 	 */
-	[[nodiscard]] const glm::vec3 &getPosition() const { return m_position; }
+	[[nodiscard]] const math::vec3& getPosition() const { return m_position; }
 
 	/**
 	 * @brief Get the camera orientation quaternion.
 	 * @return Camera orientation.
 	 */
-	[[nodiscard]] glm::quat getOrientation() const;
+	[[nodiscard]] math::quat getOrientation() const;
 
 	/**
 	 * @brief Get the camera pitch.
@@ -139,19 +139,19 @@ private:
 	 * @param[in] iEvent Mouse scroll event.
 	 * @return If treated.
 	 */
-	bool onMouseScroll(const event::MouseScrolledEvent &iEvent);
+	bool onMouseScroll(const event::MouseScrolledEvent& iEvent);
 
 	/**
 	 * @brief Mouse panoramic move.
 	 * @param[in] iDelta The X Y deltas.
 	 */
-	void mousePan(const glm::vec2 &iDelta);
+	void mousePan(const math::vec2& iDelta);
 
 	/**
 	 * @brief Mouse rotation.
 	 * @param[in] iDelta The X Y deltas.
 	 */
-	void mouseRotate(const glm::vec2 &iDelta);
+	void mouseRotate(const math::vec2& iDelta);
 
 	/**
 	 * @brief Mouse zoom.
@@ -163,7 +163,7 @@ private:
 	 * @brief Calculate the camera position.
 	 * @return Camera position.
 	 */
-	[[nodiscard]] glm::vec3 calculatePosition() const;
+	[[nodiscard]] math::vec3 calculatePosition() const;
 
 	/**
 	 * @brief Get the pan speeds.
@@ -194,14 +194,14 @@ private:
 	float m_farClip = 1000.0f;
 
 	/// Internal view matrix.
-	glm::mat4 m_viewMatrix{};
+	math::mat4 m_viewMatrix{};
 	/// Camera position.
-	glm::vec3 m_position = {0.0f, 0.0f, 0.0f};
+	math::vec3 m_position = {0.0f, 0.0f, 0.0f};
 	/// Camera Focal point.
-	glm::vec3 m_focalPoint = {0.0f, 0.0f, 0.0f};
+	math::vec3 m_focalPoint = {0.0f, 0.0f, 0.0f};
 
 	/// Save mouse position for drag.
-	glm::vec2 m_initialMousePosition = {0.0f, 0.0f};
+	math::vec2 m_initialMousePosition = {0.0f, 0.0f};
 
 	/// Camera distance.
 	float m_distance = 10.0f;

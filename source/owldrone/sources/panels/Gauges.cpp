@@ -18,7 +18,7 @@ using namespace owl;
 
 namespace drone::panels {
 
-constexpr ImVec2 vec(glm::vec2 iVec) { return {iVec.x, iVec.y}; }
+constexpr ImVec2 vec(math::vec2 iVec) { return {iVec.x(), iVec.y()}; }
 
 Gauges::Gauges() {
 
@@ -57,18 +57,18 @@ Gauges::Gauges() {
 
 Gauges::~Gauges() = default;
 
-void Gauges::onUpdate(const core::Timestep &) {
+void Gauges::onUpdate(const core::Timestep&) {
 	OWL_PROFILE_FUNCTION()
 
 	// Updatte data from flight controller
-	if (const auto &rc = getRemoteController(); rc) {
+	if (const auto& rc = getRemoteController(); rc) {
 		static_pointer_cast<gauge::AirSpeed>(m_gauges[0])->setVelocity(rc->getHorizontalVelocity());
 		static_pointer_cast<gauge::VerticalSpeed>(m_gauges[1])->setVerticalVelocity(rc->getVerticalVelocity());
 		static_pointer_cast<gauge::Altitude>(m_gauges[2])->setAltitude(rc->getAltitude());
 		const auto angles = rc->getRotations();
-		static_pointer_cast<gauge::Compas>(m_gauges[3])->setHeading(angles.z);
+		static_pointer_cast<gauge::Compas>(m_gauges[3])->setHeading(angles.z());
 		static_pointer_cast<gauge::MotorRate>(m_gauges[4])->setMotorRates(rc->getMotorRates());
-		static_pointer_cast<gauge::ArtificialHorizon>(m_gauges[5])->setPitchRoll(angles.y, angles.x);
+		static_pointer_cast<gauge::ArtificialHorizon>(m_gauges[5])->setPitchRoll(angles.y(), angles.x());
 	}
 
 	// Draw into the frame buffer
@@ -89,25 +89,25 @@ void Gauges::onUpdate(const core::Timestep &) {
 	m_framebuffer->clearAttachment(1, -1);
 
 	// defines pos an scale
-	glm::vec3 pos = {-0.5f * scaling, 1.f * scaling, 0};
-	for (const auto &gauge: m_gauges) {
+	math::vec3 pos = {-0.5f * scaling, 1.f * scaling, 0};
+	for (const auto& gauge: m_gauges) {
 		gauge->setScale({scaling, scaling});
 		gauge->setPosition(pos);
-		pos.x *= -1;
-		if (pos.x < 0)
-			pos.y -= scaling;
+		pos.x() *= -1;
+		if (pos.x() < 0)
+			pos.y() -= scaling;
 	}
 	// Do the drawings!
 	// ===============================================================
 	renderer::Renderer2D::beginScene(*m_camera);
 
 	// draw all backgrounds
-	for (const auto &gauge: m_gauges) gauge->drawBack();
+	for (const auto& gauge: m_gauges) gauge->drawBack();
 	// draw all cursors
 
-	for (const auto &gauge: m_gauges) gauge->drawCursors();
+	for (const auto& gauge: m_gauges) gauge->drawCursors();
 	// draw all covers
-	for (const auto &gauge: m_gauges) gauge->drawCover();
+	for (const auto& gauge: m_gauges) gauge->drawCover();
 
 	renderer::Renderer2D::endScene();
 	// ===============================================================
@@ -134,7 +134,7 @@ void Gauges::onRender() {
 	const ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	m_viewportSize = {static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y)};
 	if (const uint64_t textureId = m_framebuffer->getColorAttachmentRendererId(0); textureId != 0)
-		ImGui::Image(reinterpret_cast<void *>(textureId), viewportPanelSize, vec(m_framebuffer->getLowerData()),
+		ImGui::Image(reinterpret_cast<void*>(textureId), viewportPanelSize, vec(m_framebuffer->getLowerData()),
 					 vec(m_framebuffer->getUpperData()));
 	else
 		OWL_WARN("No frameBuffer to render...")

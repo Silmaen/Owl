@@ -70,7 +70,7 @@ public:
 	 * @brief Reads the rotation vector.
 	 * @return The rotation vector.
 	 */
-	[[nodiscard]] const glm::vec3 &getRotations() const { return rotations; }
+	[[nodiscard]] const owl::math::vec3 &getRotations() const { return rotations; }
 
 	/**
 	 * @brief Reads the motor rates.
@@ -100,7 +100,7 @@ public:
 	 * @brief Defines the rotation vector.
 	 * @param rot The rotation vector.
 	 */
-	void setRotation(const glm::vec3 &rot) { rotations = rot; }
+	void setRotation(const owl::math::vec3 &rot) { rotations = rot; }
 
 	/**
 	 * @brief Defines the motor rates.
@@ -116,7 +116,7 @@ private:
 	/// The current altitude.
 	float altitude = 0;
 	/// The rotation vector roll pitch yaw.
-	glm::vec3 rotations = {0.f, 0.f, 0.f};
+	owl::math::vec3 rotations = {0.f, 0.f, 0.f};
 	/// The vertical velocity.
 	std::vector<float> motors;
 };

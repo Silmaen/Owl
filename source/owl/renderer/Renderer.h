@@ -100,7 +100,7 @@ private:
 	 */
 	struct SceneData {
 		/// View projection Matrix.
-		glm::mat4 viewProjectionMatrix;
+		math::mat4 viewProjectionMatrix;
 	};
 
 	/// The actual sceneData.

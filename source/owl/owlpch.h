@@ -43,9 +43,6 @@ OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
 
 // third party
 #include <entt/entt.hpp>
-#include <glm/glm.hpp>
-#include <glm/gtx/quaternion.hpp>
 #include <magic_enum.hpp>
 
 OWL_DIAG_POP
-

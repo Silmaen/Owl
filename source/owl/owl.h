@@ -15,9 +15,6 @@
 
 // ------- 3rd party -------
 #include <entt/entt.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtx/quaternion.hpp>
 #include <imgui.h>
 // -------------------------
 
@@ -45,6 +42,7 @@
 #include "input/Window.h"
 #include "input/video/Manager.h"
 #include "math/Transform.h"
+#include "math/linAlgebra.h"
 #include "math/simpleFunctions.h"
 
 // ------- scene -----------

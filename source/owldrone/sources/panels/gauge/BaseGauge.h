@@ -60,25 +60,25 @@ public:
 	 * @brief Define the scale of the gauge
 	 * @param sc New gauge's scale.
 	 */
-	void setScale(const glm::vec2 &sc) { transform.size = sc; }
+	void setScale(const owl::math::vec2 &sc) { transform.size = sc; }
 
 	/**
 	 * @brief Read the gauge's scale.
 	 * @return The gauge's scale.
 	 */
-	[[nodiscard]] const glm::vec2 &getScale() const { return transform.size; }
+	[[nodiscard]] const owl::math::vec2 &getScale() const { return transform.size; }
 
 	/**
 	 * @brief Define the position of the gauge
 	 * @param pos New gauge's position.
 	 */
-	void setPosition(const glm::vec3 &pos) { transform.position = pos; }
+	void setPosition(const owl::math::vec3 &pos) { transform.position = pos; }
 
 	/**
 	 * @brief Read the gauge's position.
 	 * @return The gauge's position.
 	 */
-	[[nodiscard]] const glm::vec3 &getPosition() const { return transform.position; }
+	[[nodiscard]] const owl::math::vec3 &getPosition() const { return transform.position; }
 
 	/**
 	 * @brief Access to the object's transformation.

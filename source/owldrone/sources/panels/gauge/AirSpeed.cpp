@@ -21,27 +21,19 @@ AirSpeed::AirSpeed() {
 }
 
 void AirSpeed::drawBack() {
-	owl::renderer::utils::PRS tran{
-			.position = getTransform().position,
-			.rotation = 0,
-			.size = getTransform().size};
-	tran.position.z = -0.1f;
-	owl::renderer::Renderer2D::drawQuad({.transform = tran,
-										 .texture = background});
+	owl::renderer::utils::PRS tran{.position = getTransform().position, .rotation = 0, .size = getTransform().size};
+	tran.position.z() = -0.1f;
+	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = background});
 }
 void AirSpeed::drawCursors() {
-	owl::renderer::utils::PRS tran{
-			.position = getTransform().position,
-			.rotation = velocityToAngle(),
-			.size = getTransform().size};
-	tran.position.z = -0.05f;
-	owl::renderer::Renderer2D::drawQuad({.transform = tran,
-										 .texture = cursor});
+	owl::renderer::utils::PRS tran{.position = getTransform().position,
+								   .rotation = velocityToAngle(),
+								   .size = getTransform().size};
+	tran.position.z() = -0.05f;
+	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = cursor});
 }
 
-float AirSpeed::velocityToAngle() const {
-	return -std::clamp(velocity, 0.f, maxVelocity) / maxVelocity * maxAngle;
-}
+float AirSpeed::velocityToAngle() const { return -std::clamp(velocity, 0.f, maxVelocity) / maxVelocity * maxAngle; }
 
 AirSpeed::~AirSpeed() = default;
 

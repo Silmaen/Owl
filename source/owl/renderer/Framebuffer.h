@@ -120,7 +120,7 @@ public:
 	 * @param[in] iAttachmentIndex Attachment's index.
 	 * @param[in] iColorValue Clearing color value.
 	 */
-	virtual void clearAttachment([[maybe_unused]] uint32_t iAttachmentIndex, [[maybe_unused]] glm::vec4 iColorValue) {}
+	virtual void clearAttachment([[maybe_unused]] uint32_t iAttachmentIndex, [[maybe_unused]] math::vec4 iColorValue) {}
 	/**
 	 * @brief Get renderer id.
 	 * @param[in] iIndex The color Index.
@@ -138,12 +138,12 @@ public:
 	 * @brief Get the lower point of the data.
 	 * @return The lower point of the data.
 	 */
-	[[nodiscard]] virtual glm::vec2 getLowerData() const { return {0, 0}; }
+	[[nodiscard]] virtual math::vec2 getLowerData() const { return {0, 0}; }
 	/**
 	 * @brief Get the upper point of the data.
 	 * @return The upper point of the data.
 	 */
-	[[nodiscard]] virtual glm::vec2 getUpperData() const { return {1, 1}; }
+	[[nodiscard]] virtual math::vec2 getUpperData() const { return {1, 1}; }
 
 	/**
 	 * @brief Get the specs.

@@ -24,11 +24,11 @@ public:
 		Vulkan = 2,///< Vulkan renderer API.
 	};
 
-	explicit RenderAPI(const Type &iType) : m_type{iType} {}
-	RenderAPI(const RenderAPI &) = delete;
-	RenderAPI(RenderAPI &&) = delete;
-	RenderAPI &operator=(const RenderAPI &) = delete;
-	RenderAPI &operator=(RenderAPI &&) = delete;
+	explicit RenderAPI(const Type& iType) : m_type{iType} {}
+	RenderAPI(const RenderAPI&) = delete;
+	RenderAPI(RenderAPI&&) = delete;
+	RenderAPI& operator=(const RenderAPI&) = delete;
+	RenderAPI& operator=(RenderAPI&&) = delete;
 
 	/**
 	 * @brief Destructor.
@@ -53,7 +53,7 @@ public:
 	 * @brief Define the background color.
 	 * @param[in] iColor The background color.
 	 */
-	virtual void setClearColor(const glm::vec4 &iColor) = 0;
+	virtual void setClearColor(const math::vec4& iColor) = 0;
 
 	/**
 	 * @brief Clear the screen.
@@ -65,7 +65,7 @@ public:
 	 * @param[in] iData Draw data to render.
 	 * @param[in] iIndexCount Number of vertex to draw (=0 all).
 	 */
-	virtual void drawData(const shared<DrawData> &iData, uint32_t iIndexCount) = 0;
+	virtual void drawData(const shared<DrawData>& iData, uint32_t iIndexCount) = 0;
 
 	/**
 	 * @brief Define the line width.
@@ -98,7 +98,7 @@ public:
 	 * @param[in] iType Type of API.
 	 * @return Render.
 	 */
-	static uniq<RenderAPI> create(const Type &iType);
+	static uniq<RenderAPI> create(const Type& iType);
 
 	/**
 	 * @brief Get the actual API state.
@@ -147,7 +147,7 @@ protected:
 	 * @brief Define the API State.
 	 * @param[in] iState The new API State.
 	 */
-	void setState(const State &iState) { m_state = iState; }
+	void setState(const State& iState) { m_state = iState; }
 
 private:
 	/// Type of Renderer API.

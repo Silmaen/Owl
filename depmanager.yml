@@ -9,7 +9,6 @@ packages:
   fmt:
   glad:
   glfw:
-  glm:
   imgui:
   imguizmo:
   mavsdk:

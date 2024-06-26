@@ -13,7 +13,7 @@ using namespace owl;
 
 namespace drone::panels {
 
-constexpr ImVec2 vec(glm::vec2 iVec) { return {iVec.x, iVec.y}; }
+constexpr ImVec2 vec(math::vec2 iVec) { return {iVec.x(), iVec.y()}; }
 
 Viewport::Viewport() {
 	const renderer::FramebufferSpecification specs{
@@ -37,10 +37,10 @@ Viewport::Viewport() {
 
 Viewport::~Viewport() = default;
 
-void Viewport::onUpdate(const core::Timestep &iTimeStep) {
+void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
-	auto &cam = IO::CameraSystem::get();
+	auto& cam = IO::CameraSystem::get();
 	cam.onUpdate(iTimeStep);
 
 	const auto spec = mp_framebuffer->getSpecification();
@@ -91,12 +91,12 @@ void Viewport::onRender() {
 	const ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	m_viewportSize = {static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y)};
 	if (const uint64_t textureId = mp_framebuffer->getColorAttachmentRendererId(0); textureId != 0)
-		ImGui::Image(reinterpret_cast<void *>(textureId), viewportPanelSize, vec(mp_framebuffer->getLowerData()),
+		ImGui::Image(reinterpret_cast<void*>(textureId), viewportPanelSize, vec(mp_framebuffer->getLowerData()),
 					 vec(mp_framebuffer->getUpperData()));
 
 	if (ImGui::BeginDragDropTarget()) {
-		if (const ImGuiPayload *payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-			const auto *const path = static_cast<const char *>(payload->Data);
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+			const auto* const path = static_cast<const char*>(payload->Data);
 			const std::filesystem::path scenePath = core::Application::get().getAssetDirectory() / path;
 			OWL_CORE_WARN("Could not load file {}: unsupported format.", scenePath.string())
 		}

@@ -20,23 +20,17 @@ Compas::Compas() {
 Compas::~Compas() = default;
 
 void Compas::drawBack() {
-	owl::renderer::utils::PRS tran{
-			.position = getTransform().position,
-			.rotation = headingToAngle(),
-			.size = getTransform().size};
-	tran.position.z = -0.1f;
-	owl::renderer::Renderer2D::drawQuad({.transform = tran,
-										 .texture = background});
+	owl::renderer::utils::PRS tran{.position = getTransform().position,
+								   .rotation = headingToAngle(),
+								   .size = getTransform().size};
+	tran.position.z() = -0.1f;
+	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = background});
 }
 
 void Compas::drawCursors() {
-	owl::renderer::utils::PRS tran{
-			.position = getTransform().position,
-			.rotation = 0,
-			.size = getTransform().size};
-	tran.position.z = -0.05f;
-	owl::renderer::Renderer2D::drawQuad({.transform = tran,
-										 .texture = cursor});
+	owl::renderer::utils::PRS tran{.position = getTransform().position, .rotation = 0, .size = getTransform().size};
+	tran.position.z() = -0.05f;
+	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = cursor});
 }
 
 float Compas::headingToAngle() {

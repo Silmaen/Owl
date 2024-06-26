@@ -42,7 +42,7 @@ TEST(Input, KeyOrthoControler) {
 		Input::injectKey(key::A);
 		ts.forceUpdate(delta);
 		coc.onUpdate(ts);
-		EXPECT_NEAR(coc.getCamera().getPosition().x, -0.003, 0.001);
+		EXPECT_NEAR(coc.getCamera().getPosition().x(), -0.003, 0.001);
 		Input::resetInjection();
 	}
 	coc.getCamera().setPosition({0, 0, 0});
@@ -50,21 +50,21 @@ TEST(Input, KeyOrthoControler) {
 		Input::injectKey(key::D);
 		ts.forceUpdate(delta);
 		coc.onUpdate(ts);
-		EXPECT_NEAR(coc.getCamera().getPosition().x, 0.0, 0.001);
+		EXPECT_NEAR(coc.getCamera().getPosition().x(), 0.0, 0.001);
 		Input::resetInjection();
 	}
 	{
 		Input::injectKey(key::W);
 		ts.forceUpdate(delta);
 		coc.onUpdate(ts);
-		EXPECT_NEAR(coc.getCamera().getPosition().y, 0.003, 0.001);
+		EXPECT_NEAR(coc.getCamera().getPosition().y(), 0.003, 0.001);
 		Input::resetInjection();
 	}
 	{
 		Input::injectKey(key::S);
 		ts.forceUpdate(delta);
 		coc.onUpdate(ts);
-		EXPECT_NEAR(coc.getCamera().getPosition().y, -0.0, 0.001);
+		EXPECT_NEAR(coc.getCamera().getPosition().y(), -0.0, 0.001);
 		Input::resetInjection();
 	}
 	{
@@ -117,7 +117,7 @@ TEST(Input, KeyOrthoControlerRotation) {
 		Input::injectKey(key::A);
 		ts.forceUpdate(delta);
 		coc.onUpdate(ts);
-		EXPECT_NEAR(coc.getCamera().getPosition().y, -0.003, 0.001);
+		EXPECT_NEAR(coc.getCamera().getPosition().y(), -0.003, 0.001);
 		Input::resetInjection();
 	}
 	coc.getCamera().setPosition({0, 0, 0});
@@ -125,21 +125,21 @@ TEST(Input, KeyOrthoControlerRotation) {
 		Input::injectKey(key::D);
 		ts.forceUpdate(delta);
 		coc.onUpdate(ts);
-		EXPECT_NEAR(coc.getCamera().getPosition().y, 0.0, 0.001);
+		EXPECT_NEAR(coc.getCamera().getPosition().y(), 0.0, 0.001);
 		Input::resetInjection();
 	}
 	{
 		Input::injectKey(key::W);
 		ts.forceUpdate(delta);
 		coc.onUpdate(ts);
-		EXPECT_NEAR(coc.getCamera().getPosition().x, 0.003, 0.001);
+		EXPECT_NEAR(coc.getCamera().getPosition().x(), 0.003, 0.001);
 		Input::resetInjection();
 	}
 	{
 		Input::injectKey(key::S);
 		ts.forceUpdate(delta);
 		coc.onUpdate(ts);
-		EXPECT_NEAR(coc.getCamera().getPosition().x, -0.0, 0.001);
+		EXPECT_NEAR(coc.getCamera().getPosition().x(), -0.0, 0.001);
 		Input::resetInjection();
 	}
 }

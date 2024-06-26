@@ -39,14 +39,14 @@ public:
 private:
 	input::CameraOrthoController m_cameraController;
 
-	glm::vec2 m_viewportSize = {0.0f, 0.0f};
+	math::vec2 m_viewportSize = {0.0f, 0.0f};
 
 	shared<renderer::Texture> m_checkerboardTexture;
-	glm::vec4 m_squareColor = {0.2f, 0.3f, 0.8f, 1.0f};
+	math::vec4 m_squareColor = {0.2f, 0.3f, 0.8f, 1.0f};
 	int32_t m_hoveredEntity = -1;
 
 	shared<renderer::Texture> m_spriteTexture;
-	glm::vec3 m_spritePosition{0, 0, 0.5};
+	math::vec3 m_spritePosition{0, 0, 0.5};
 	float m_spriteRotation{0.f};
 };
 

@@ -24,7 +24,7 @@ void RenderAPI::init() {
 void RenderAPI::setViewport([[maybe_unused]] const uint32_t iX, [[maybe_unused]] const uint32_t iY,
 							[[maybe_unused]] const uint32_t iWidth, [[maybe_unused]] const uint32_t iHeight) {}
 
-void RenderAPI::setClearColor([[maybe_unused]] const glm::vec4 &iColor) {}
+void RenderAPI::setClearColor([[maybe_unused]] const math::vec4 &iColor) {}
 
 void RenderAPI::clear() {}
 

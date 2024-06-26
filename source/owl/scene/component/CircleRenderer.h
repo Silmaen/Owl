@@ -15,7 +15,7 @@ namespace owl::scene::component {
  */
 struct OWL_API CircleRenderer {
 	/// The circle color.
-	glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
+	math::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 	/// The circle thickness.
 	float thickness = 1.0f;
 	/// The circle fading.

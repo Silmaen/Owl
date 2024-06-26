@@ -62,7 +62,7 @@ public:
 	 * @brief Binding to the definition of background color.
 	 * @param[in] iColor The new background color.
 	 */
-	static void setClearColor(const glm::vec4 &iColor) { mu_renderAPI->setClearColor(iColor); }
+	static void setClearColor(const math::vec4 &iColor) { mu_renderAPI->setClearColor(iColor); }
 
 	/**
 	 * @brief Binding to clear screen.

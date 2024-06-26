@@ -49,7 +49,7 @@ public:
 	 * @brief Get mouse position, private implementation.
 	 * @return Mouse Position.
 	 */
-	glm::vec2 getMousePos_impl() override;
+	math::vec2 getMousePos_impl() override;
 	/**
 	 * @brief Simulate key toggle, private implementation.
 	 * @param[in] iKeycode the key to press/release.
@@ -65,7 +65,7 @@ public:
 	 * @brief Simulate mouse movement, private implementation.
 	 * @param[in] iMousePos The new mouse pos.
 	 */
-	void injectMousePos_impl([[maybe_unused]] const glm::vec2 &iMousePos) override {}
+	void injectMousePos_impl([[maybe_unused]] const math::vec2 &iMousePos) override {}
 
 	/**
 	 * @brief Clear the previously defined injections.

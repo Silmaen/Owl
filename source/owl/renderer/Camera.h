@@ -30,16 +30,16 @@ public:
 	 * @brief Construct the camera with a projection.
 	 * @param[in] iProjection projection matrix.
 	 */
-	explicit Camera(const glm::mat4& iProjection) : m_projection{iProjection} {}
+	explicit Camera(const math::mat4& iProjection) : m_projection{iProjection} {}
 
 	/**
 	 * @brief Get the projection matrix of the camera.
 	 * @return The camera's projection matrix.
 	 */
-	[[nodiscard]] const glm::mat4& getProjection() const { return m_projection; }
+	[[nodiscard]] const math::mat4& getProjection() const { return m_projection; }
 
 protected:
 	/// Camera's projection.
-	glm::mat4 m_projection = glm::mat4(1.0f);
+	math::mat4 m_projection = math::identity<float,4>();
 };
 } // namespace owl::renderer

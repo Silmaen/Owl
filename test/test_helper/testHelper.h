@@ -11,14 +11,14 @@
 #include <gtest/gtest.h>
 
 // This macro is used to generate a disabled test case.
-#define TEST_DISABLED(test_case_name, test_name) \
+#define TEST_DISABLED(test_case_name, test_name)                                                                       \
 	GTEST_TEST_(test_case_name, DISABLED_UNIT##_##test_name, ::testing::Test, ::testing::internal::GetTestTypeId())
+
+template<typename T>
+class TestWithParam : public ::testing::Test, public ::testing::WithParamInterface<T> {};
 
 #include <filesystem>
 #include <fstream>
 #include <list>
 
 #include <entt/entt.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtx/quaternion.hpp>

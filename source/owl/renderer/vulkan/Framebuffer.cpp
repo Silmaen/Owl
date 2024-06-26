@@ -254,7 +254,7 @@ void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const int iVa
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
-void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const glm::vec4 iColorValue) {
+void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const math::vec4 iColorValue) {
 	if (m_specs.attachments[iAttachmentIndex].format == AttachmentSpecification::Format::RedInteger) {
 		OWL_CORE_WARN("Vulkan Framebuffer ({}): Try to color-clear non color attachment.", m_specs.debugName)
 		return;
@@ -263,10 +263,10 @@ void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const glm::ve
 	auto *const cmd = core.beginSingleTimeCommands();
 	const uint32_t imgIndex = attToImgIdx(iAttachmentIndex);
 	VkClearColorValue val;
-	val.float32[0] = iColorValue.r;
-	val.float32[1] = iColorValue.g;
-	val.float32[2] = iColorValue.b;
-	val.float32[3] = iColorValue.a;
+	val.float32[0] = iColorValue.r();
+	val.float32[1] = iColorValue.g();
+	val.float32[2] = iColorValue.b();
+	val.float32[3] = iColorValue.a();
 	constexpr VkImageSubresourceRange range{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 											.baseMipLevel = 0,
 											.levelCount = 1,

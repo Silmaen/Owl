@@ -71,7 +71,7 @@ void RenderAPI::setViewport(const uint32_t iX, const uint32_t iY, const uint32_t
 			   static_cast<int32_t>(iHeight));
 }
 
-void RenderAPI::setClearColor(const glm::vec4 &iColor) { glClearColor(iColor.r, iColor.g, iColor.b, iColor.a); }
+void RenderAPI::setClearColor(const math::vec4 &iColor) { glClearColor(iColor.r(), iColor.g(), iColor.b(), iColor.a()); }
 
 void RenderAPI::clear() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); }
 

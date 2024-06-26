@@ -16,7 +16,7 @@ bool Input::isKeyPressed_impl(const KeyCode iKeyCode) { return keyPressed.contai
 
 bool Input::isMouseButtonPressed_impl(const MouseCode iMouseCode) { return mouseBtnPressed.contains(iMouseCode); }
 
-glm::vec2 Input::getMousePos_impl() { return mousePos; }
+math::vec2 Input::getMousePos_impl() { return mousePos; }
 
 void Input::injectKey_impl(const KeyCode iKeyCode) {
 	if (keyPressed.contains(iKeyCode)) {
@@ -34,7 +34,7 @@ void Input::injectMouseButton_impl(const MouseCode iMouseCode) {
 	}
 }
 
-void Input::injectMousePos_impl(const glm::vec2 &iMousePos) { mousePos = iMousePos; }
+void Input::injectMousePos_impl(const math::vec2 &iMousePos) { mousePos = iMousePos; }
 
 void Input::resetInjection_impl() {
 	keyPressed.clear();

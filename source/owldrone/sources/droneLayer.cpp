@@ -38,7 +38,7 @@ void droneLayer::onAttach() {
 	IO::CameraSystem::get().actualiseList();
 
 	// icons
-	auto &textureLib = renderer::Renderer::getTextureLibrary();
+	auto& textureLib = renderer::Renderer::getTextureLibrary();
 	textureLib.addFromStandardPath("icons/exit");
 	textureLib.addFromStandardPath("icons/gauges");
 	textureLib.addFromStandardPath("icons/settings");
@@ -75,7 +75,7 @@ void droneLayer::onDetach() {
 	IO::DroneSettings::get().saveToFile(file);
 }
 
-void droneLayer::onUpdate(const core::Timestep &iTimeStep) {
+void droneLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
 	renderer::Renderer2D::resetStats();
@@ -92,16 +92,16 @@ void droneLayer::onUpdate(const core::Timestep &iTimeStep) {
 	}
 }
 
-void droneLayer::onEvent(event::Event &ioEvent) {
+void droneLayer::onEvent(event::Event& ioEvent) {
 
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::KeyPressedEvent>(
-			[this](auto &&PH1) { return onKeyPressed(std::forward<decltype(PH1)>(PH1)); });
+			[this](auto&& PH1) { return onKeyPressed(std::forward<decltype(PH1)>(PH1)); });
 	dispatcher.dispatch<event::MouseButtonPressedEvent>(
-			[this](auto &&PH1) { return onMouseButtonPressed(std::forward<decltype(PH1)>(PH1)); });
+			[this](auto&& PH1) { return onMouseButtonPressed(std::forward<decltype(PH1)>(PH1)); });
 }
 
-void droneLayer::onImGuiRender(const core::Timestep &iTimeStep) {
+void droneLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
 	// ==================================================================
@@ -126,8 +126,8 @@ void droneLayer::onImGuiRender(const core::Timestep &iTimeStep) {
 	renderToolbar();
 }
 
-void droneLayer::renderStats(const core::Timestep &iTimeStep) {
-	const auto &tracker = debug::Tracker::get();
+void droneLayer::renderStats(const core::Timestep& iTimeStep) {
+	const auto& tracker = debug::Tracker::get();
 	ImGui::Begin("Stats");
 	ImGui::Text("%s", fmt::format("FPS: {:.2f}", iTimeStep.getFps()).c_str());
 	ImGui::Separator();
@@ -150,7 +150,7 @@ void droneLayer::renderStats(const core::Timestep &iTimeStep) {
 }
 
 
-void droneLayer::renderFakeDrone(const core::Timestep &) {
+void droneLayer::renderFakeDrone(const core::Timestep&) {
 	ImGui::Begin("FakeDrone");
 	float vel = rc->getHorizontalVelocity();
 	if (ImGui::SliderFloat("Velocity", &vel, -5, 100))
@@ -164,14 +164,14 @@ void droneLayer::renderFakeDrone(const core::Timestep &) {
 	if (ImGui::SliderFloat("Altitude", &alt, -10, 250))
 		rc->setAltitude(alt);
 
-	glm::vec3 rot = rc->getRotations();
-	if (ImGui::SliderFloat3("Rotations", &rot.x, -180, 180))
+	math::vec3 rot = rc->getRotations();
+	if (ImGui::SliderFloat3("Rotations", &rot.x(), -180, 180))
 		rc->setRotation(rot);
 
 	auto motors = rc->getMotorRates();
 	bool modif = false;
 	int motorId = 1;
-	for (auto &mot: motors) {
+	for (auto& mot: motors) {
 		modif |= ImGui::SliderFloat(fmt::format("motor {}", motorId).c_str(), &mot, -10, 9000);
 		motorId++;
 	}
@@ -202,7 +202,7 @@ void droneLayer::renderMenu() {
 	}
 }
 
-bool droneLayer::onKeyPressed(event::KeyPressedEvent &ioEvent) {
+bool droneLayer::onKeyPressed(event::KeyPressedEvent& ioEvent) {
 	// Shortcuts
 	if (ioEvent.getRepeatCount() > 0)
 		return false;
@@ -211,7 +211,7 @@ bool droneLayer::onKeyPressed(event::KeyPressedEvent &ioEvent) {
 	return false;
 }
 
-bool droneLayer::onMouseButtonPressed(event::MouseButtonPressedEvent &ioEvent) {
+bool droneLayer::onMouseButtonPressed(event::MouseButtonPressedEvent& ioEvent) {
 	if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
 		return false;
 	}
@@ -228,10 +228,10 @@ void droneLayer::renderToolbar() {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-	const auto &colors = ImGui::GetStyle().Colors;
-	const auto &buttonHovered = colors[ImGuiCol_ButtonHovered];
+	const auto& colors = ImGui::GetStyle().Colors;
+	const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
-	const auto &buttonActive = colors[ImGuiCol_ButtonActive];
+	const auto& buttonActive = colors[ImGuiCol_ButtonActive];
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
 
 
@@ -240,7 +240,7 @@ void droneLayer::renderToolbar() {
 	float posX = padding;
 	const auto vsize = ImVec2(size, size);
 
-	auto &textureLib = renderer::Renderer::getTextureLibrary();
+	auto& textureLib = renderer::Renderer::getTextureLibrary();
 
 	// NOLINTBEGIN(performance-no-int-to-ptr)
 	ImGui::SetCursorPos(ImVec2(posX, padding));

@@ -21,23 +21,23 @@ CameraOrthoController::CameraOrthoController(const float iAspectRatio, const boo
 	  m_camera(-m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel, -m_zoomLevel, m_zoomLevel),
 	  m_rotation{iRotation} {}
 
-void CameraOrthoController::onUpdate(const core::Timestep &iTimeStep) {
+void CameraOrthoController::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 	const auto delta = iTimeStep.getSeconds();
-	const auto angle = static_cast<double>(glm::radians(m_cameraRotation));
+	const auto angle = static_cast<double>(math::radians(m_cameraRotation));
 	if (Input::isKeyPressed(key::A)) {
-		m_cameraPosition.x -= static_cast<float>(cos(angle)) * m_cameraTranslationSpeed * delta;
-		m_cameraPosition.y -= static_cast<float>(sin(angle)) * m_cameraTranslationSpeed * delta;
+		m_cameraPosition.x() -= static_cast<float>(cos(angle)) * m_cameraTranslationSpeed * delta;
+		m_cameraPosition.y() -= static_cast<float>(sin(angle)) * m_cameraTranslationSpeed * delta;
 	} else if (Input::isKeyPressed(key::D)) {
-		m_cameraPosition.x += static_cast<float>(cos(angle)) * m_cameraTranslationSpeed * delta;
-		m_cameraPosition.y += static_cast<float>(sin(angle)) * m_cameraTranslationSpeed * delta;
+		m_cameraPosition.x() += static_cast<float>(cos(angle)) * m_cameraTranslationSpeed * delta;
+		m_cameraPosition.y() += static_cast<float>(sin(angle)) * m_cameraTranslationSpeed * delta;
 	}
 	if (Input::isKeyPressed(key::W)) {
-		m_cameraPosition.x += static_cast<float>(sin(angle)) * m_cameraTranslationSpeed * delta;
-		m_cameraPosition.y += static_cast<float>(cos(angle)) * m_cameraTranslationSpeed * delta;
+		m_cameraPosition.x() += static_cast<float>(sin(angle)) * m_cameraTranslationSpeed * delta;
+		m_cameraPosition.y() += static_cast<float>(cos(angle)) * m_cameraTranslationSpeed * delta;
 	} else if (Input::isKeyPressed(key::S)) {
-		m_cameraPosition.x -= static_cast<float>(sin(angle)) * m_cameraTranslationSpeed * delta;
-		m_cameraPosition.y -= static_cast<float>(cos(angle)) * m_cameraTranslationSpeed * delta;
+		m_cameraPosition.x() -= static_cast<float>(sin(angle)) * m_cameraTranslationSpeed * delta;
+		m_cameraPosition.y() -= static_cast<float>(cos(angle)) * m_cameraTranslationSpeed * delta;
 	}
 	if (m_rotation) {
 		if (Input::isKeyPressed(key::Q))
@@ -54,17 +54,17 @@ void CameraOrthoController::onUpdate(const core::Timestep &iTimeStep) {
 	m_cameraTranslationSpeed = m_zoomLevel;
 }
 
-void CameraOrthoController::onEvent(event::Event &ioEvent) {
+void CameraOrthoController::onEvent(event::Event& ioEvent) {
 	OWL_PROFILE_FUNCTION()
 
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::MouseScrolledEvent>(
-			[this](auto &&PH1) { return onMouseScrolled(std::forward<decltype(PH1)>(PH1)); });
+			[this](auto&& PH1) { return onMouseScrolled(std::forward<decltype(PH1)>(PH1)); });
 	dispatcher.dispatch<event::WindowResizeEvent>(
-			[this](auto &&PH1) { return onWindowResized(std::forward<decltype(PH1)>(PH1)); });
+			[this](auto&& PH1) { return onWindowResized(std::forward<decltype(PH1)>(PH1)); });
 }
 
-bool CameraOrthoController::onMouseScrolled(const event::MouseScrolledEvent &iEvent) {
+bool CameraOrthoController::onMouseScrolled(const event::MouseScrolledEvent& iEvent) {
 	OWL_PROFILE_FUNCTION()
 
 	m_zoomLevel -= iEvent.getYOff() * sZoomScroll;
@@ -73,14 +73,14 @@ bool CameraOrthoController::onMouseScrolled(const event::MouseScrolledEvent &iEv
 	return false;
 }
 
-bool CameraOrthoController::onWindowResized(const event::WindowResizeEvent &iEvent) {
+bool CameraOrthoController::onWindowResized(const event::WindowResizeEvent& iEvent) {
 	OWL_PROFILE_FUNCTION()
 
 	onResize(iEvent.getSize());
 	return false;
 }
 
-void CameraOrthoController::onResize(const math::FrameSize &iSize) {
+void CameraOrthoController::onResize(const math::FrameSize& iSize) {
 	m_aspectRatio = iSize.ratio();
 	m_camera.setProjection(-m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel, -m_zoomLevel, m_zoomLevel);
 }

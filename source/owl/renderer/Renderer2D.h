@@ -25,11 +25,11 @@ namespace utils {
  */
 struct PRS {
 	/// The position.
-	glm::vec3 position = glm::vec3{0.f, 0.f, 0.f};
+	math::vec3 position = math::vec3{0.f, 0.f, 0.f};
 	/// The rotation.
 	float rotation = 0.f;
 	/// The size.
-	glm::vec2 size = glm::vec2{1.f, 1.f};
+	math::vec2 size = math::vec2{1.f, 1.f};
 };
 
 /**
@@ -37,7 +37,7 @@ struct PRS {
  * @param[in] iTransform The input PRS Structure.
  * @return The corresponding Transformation matrix.
  */
-OWL_API glm::mat4 toTransform(const PRS &iTransform);
+OWL_API math::mat4 toTransform(const PRS &iTransform);
 
 /**
  * @brief 2D transformation structure.
@@ -51,7 +51,7 @@ struct Transform2D {
 	 * @brief Constructor by transformation matrix.
 	 * @param[in] iMatrix Input transformation matrix.
 	 */
-	Transform2D(const glm::mat4 &iMatrix) : transform{iMatrix} {}
+	Transform2D(const math::mat4 &iMatrix) : transform{iMatrix} {}
 
 	/**
 	 * @brief Constructor by PRS.
@@ -62,7 +62,7 @@ struct Transform2D {
 	// NOLINTEND(google-explicit-constructor)
 
 	/// The transformation matrix.
-	glm::mat4 transform;
+	math::mat4 transform;
 };
 }// namespace utils
 
@@ -73,7 +73,7 @@ struct OWL_API Quad2DData {
 	/// Transformation of the square.
 	utils::Transform2D transform;
 	/// Color to apply to the quad.
-	glm::vec4 color = glm::vec4{1.f, 1.f, 1.f, 1.f};
+	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// Eventually the texture of the quad (plain color if nullptr).
 	shared<Texture> texture = nullptr;
 	/// Tilling factor of the texture.
@@ -89,7 +89,7 @@ struct OWL_API CircleData {
 	/// Transformation of the circle.
 	utils::Transform2D transform;
 	/// Color to apply to the circle.
-	glm::vec4 color = glm::vec4{1.f, 1.f, 1.f, 1.f};
+	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// Thickness of the line.
 	float thickness = 1.0f;
 	/// Fading of the circle.
@@ -103,11 +103,11 @@ struct OWL_API CircleData {
  */
 struct OWL_API LineData {
 	/// Starting point.
-	glm::vec3 point1;
+	math::vec3 point1;
 	/// Ending point.
-	glm::vec3 point2;
+	math::vec3 point2;
 	/// Color to apply to the line.
-	glm::vec4 color = glm::vec4{1.f, 1.f, 1.f, 1.f};
+	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// unique ID for the entity.
 	int entityID = -1;
 };
@@ -119,7 +119,7 @@ struct OWL_API RectData {
 	/// Transformation of the rectangle.
 	utils::Transform2D transform;
 	/// Color to apply to the rect.
-	glm::vec4 color = glm::vec4{1.f, 1.f, 1.f, 1.f};
+	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// unique ID for the entity.
 	int entityID = -1;
 };
@@ -131,11 +131,11 @@ struct OWL_API PolyLineData {
 	/// Transformation of the rectangle.
 	utils::Transform2D transform;
 	/// Set of points.
-	std::vector<glm::vec3> points;
+	std::vector<math::vec3> points;
 	/// If the ending point connected to starting point.
 	bool closed = false;
 	/// Color to apply to the rect.
-	glm::vec4 color = glm::vec4{1.f, 1.f, 1.f, 1.f};
+	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// unique ID for the entity.
 	int entityID = -1;
 };
@@ -183,7 +183,7 @@ public:
 	 * @param[in] iCamera The camera.
 	 * @param[in] iTransform The transformation.
 	 */
-	static void beginScene(const Camera &iCamera, const glm::mat4 &iTransform);
+	static void beginScene(const Camera &iCamera, const math::mat4 &iTransform);
 
 	/**
 	 * @brief Ends a scene.
@@ -248,7 +248,7 @@ public:
 	 * @param[in] iSrc The sprite to render.
 	 * @param[in] iEntityID The entity ID.
 	 */
-	static void drawSprite(const glm::mat4 &iTransform, const scene::component::SpriteRenderer &iSrc, int iEntityID);
+	static void drawSprite(const math::mat4 &iTransform, const scene::component::SpriteRenderer &iSrc, int iEntityID);
 
 	/**
 	 * @brief Statistics.

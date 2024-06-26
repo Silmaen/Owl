@@ -21,59 +21,59 @@
 namespace YAML {
 
 template<>
-struct convert<glm::vec3> {
-	static Node encode(const glm::vec3 &iRhs) {
+struct convert<owl::math::vec3> {
+	static Node encode(const owl::math::vec3& iRhs) {
 		Node node;
-		node.push_back(iRhs.x);
-		node.push_back(iRhs.y);
-		node.push_back(iRhs.z);
+		node.push_back(iRhs.x());
+		node.push_back(iRhs.y());
+		node.push_back(iRhs.z());
 		node.SetStyle(EmitterStyle::Flow);
 		return node;
 	}
 
-	static bool decode(const Node &iNode, glm::vec3 &iRhs) {
+	static bool decode(const Node& iNode, owl::math::vec3& iRhs) {
 		if (!iNode.IsSequence() || iNode.size() != 3)
 			return false;
-		iRhs.x = iNode[0].as<float>();
-		iRhs.y = iNode[1].as<float>();
-		iRhs.z = iNode[2].as<float>();
+		iRhs.x() = iNode[0].as<float>();
+		iRhs.y() = iNode[1].as<float>();
+		iRhs.z() = iNode[2].as<float>();
 		return true;
 	}
 };
 
 template<>
-struct convert<glm::vec4> {
-	static Node encode(const glm::vec4 &iRhs) {
+struct convert<owl::math::vec4> {
+	static Node encode(const owl::math::vec4& iRhs) {
 		Node node;
-		node.push_back(iRhs.x);
-		node.push_back(iRhs.y);
-		node.push_back(iRhs.z);
-		node.push_back(iRhs.w);
+		node.push_back(iRhs.x());
+		node.push_back(iRhs.y());
+		node.push_back(iRhs.z());
+		node.push_back(iRhs.w());
 		node.SetStyle(EmitterStyle::Flow);
 		return node;
 	}
 
-	static bool decode(const Node &iNode, glm::vec4 &iRhs) {
+	static bool decode(const Node& iNode, owl::math::vec4& iRhs) {
 		if (!iNode.IsSequence() || iNode.size() != 4)
 			return false;
-		iRhs.x = iNode[0].as<float>();
-		iRhs.y = iNode[1].as<float>();
-		iRhs.z = iNode[2].as<float>();
-		iRhs.w = iNode[3].as<float>();
+		iRhs.x() = iNode[0].as<float>();
+		iRhs.y() = iNode[1].as<float>();
+		iRhs.z() = iNode[2].as<float>();
+		iRhs.w() = iNode[3].as<float>();
 		return true;
 	}
 };
 
 // NOLINTBEGIN(misc-use-anonymous-namespace)
-static Emitter &operator<<(Emitter &out, const glm::vec3 &v) {
+static Emitter& operator<<(Emitter& out, const owl::math::vec3& v) {
 	out << Flow;
-	out << BeginSeq << v.x << v.y << v.z << EndSeq;
+	out << BeginSeq << v.x() << v.y() << v.z() << EndSeq;
 	return out;
 }
 
-static Emitter &operator<<(Emitter &out, const glm::vec4 &v) {
+static Emitter& operator<<(Emitter& out, const owl::math::vec4& v) {
 	out << Flow;
-	out << BeginSeq << v.x << v.y << v.z << v.w << EndSeq;
+	out << BeginSeq << v.x() << v.y() << v.z() << v.w() << EndSeq;
 	return out;
 }
 // NOLINTEND(misc-use-anonymous-namespace)
@@ -81,17 +81,17 @@ static Emitter &operator<<(Emitter &out, const glm::vec4 &v) {
 }// namespace YAML
 
 namespace owl::scene {
-SceneSerializer::SceneSerializer(const shared<Scene> &iScene) : mp_scene(iScene) {}
+SceneSerializer::SceneSerializer(const shared<Scene>& iScene) : mp_scene(iScene) {}
 
 namespace {
-void serializeEntity(YAML::Emitter &out, const Entity &iEntity) {
+void serializeEntity(YAML::Emitter& out, const Entity& iEntity) {
 	out << YAML::BeginMap;// Entity
 	out << YAML::Key << "Entity" << YAML::Value << iEntity.getUUID();
 
 	if (iEntity.hasComponent<component::Tag>()) {
 		out << YAML::Key << "Tag";
 		out << YAML::BeginMap;// Tag
-		const auto &tag = iEntity.getComponent<component::Tag>().tag;
+		const auto& tag = iEntity.getComponent<component::Tag>().tag;
 		out << YAML::Key << "tag" << YAML::Value << tag;
 		out << YAML::EndMap;// Tag
 	}
@@ -99,7 +99,7 @@ void serializeEntity(YAML::Emitter &out, const Entity &iEntity) {
 	if (iEntity.hasComponent<component::Transform>()) {
 		out << YAML::Key << "Transform";
 		out << YAML::BeginMap;// Transform
-		auto &tc = iEntity.getComponent<component::Transform>();
+		auto& tc = iEntity.getComponent<component::Transform>();
 		out << YAML::Key << "translation" << YAML::Value << tc.translation;
 		out << YAML::Key << "rotation" << YAML::Value << tc.rotation;
 		out << YAML::Key << "scale" << YAML::Value << tc.scale;
@@ -109,8 +109,8 @@ void serializeEntity(YAML::Emitter &out, const Entity &iEntity) {
 	if (iEntity.hasComponent<component::Camera>()) {
 		out << YAML::Key << "Camera";
 		out << YAML::BeginMap;// CameraComponent
-		const auto &cameraComponent = iEntity.getComponent<component::Camera>();
-		const auto &camera = cameraComponent.camera;
+		const auto& cameraComponent = iEntity.getComponent<component::Camera>();
+		const auto& camera = cameraComponent.camera;
 		out << YAML::Key << "camera" << YAML::Value;
 		out << YAML::BeginMap;// Camera
 		out << YAML::Key << "projectionType" << YAML::Value
@@ -130,7 +130,7 @@ void serializeEntity(YAML::Emitter &out, const Entity &iEntity) {
 	if (iEntity.hasComponent<component::SpriteRenderer>()) {
 		out << YAML::Key << "SpriteRenderer";
 		out << YAML::BeginMap;// SpriteRenderer
-		auto &spriteRendererComponent = iEntity.getComponent<component::SpriteRenderer>();
+		auto& spriteRendererComponent = iEntity.getComponent<component::SpriteRenderer>();
 		out << YAML::Key << "color" << YAML::Value << spriteRendererComponent.color;
 		if (spriteRendererComponent.texture) {
 			out << YAML::Key << "tilingFactor" << YAML::Value << spriteRendererComponent.tilingFactor;
@@ -141,7 +141,7 @@ void serializeEntity(YAML::Emitter &out, const Entity &iEntity) {
 	if (iEntity.hasComponent<component::CircleRenderer>()) {
 		out << YAML::Key << "CircleRenderer";
 		out << YAML::BeginMap;// CircleRenderer
-		auto &circleRendererComponent = iEntity.getComponent<component::CircleRenderer>();
+		auto& circleRendererComponent = iEntity.getComponent<component::CircleRenderer>();
 		out << YAML::Key << "color" << YAML::Value << circleRendererComponent.color;
 		out << YAML::Key << "thickness" << YAML::Value << circleRendererComponent.thickness;
 		out << YAML::Key << "fade" << YAML::Value << circleRendererComponent.fade;
@@ -152,12 +152,12 @@ void serializeEntity(YAML::Emitter &out, const Entity &iEntity) {
 }
 }// namespace
 
-void SceneSerializer::serialize(const std::filesystem::path &iFilepath) const {
+void SceneSerializer::serialize(const std::filesystem::path& iFilepath) const {
 	YAML::Emitter out;
 	out << YAML::BeginMap;
 	out << YAML::Key << "Scene" << YAML::Value << "untitled";
 	out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-	for (auto &&[e]: mp_scene->registry.storage<entt::entity>().each()) {
+	for (auto&& [e]: mp_scene->registry.storage<entt::entity>().each()) {
 		const Entity entity{e, mp_scene.get()};
 		if (!entity)
 			continue;
@@ -170,7 +170,7 @@ void SceneSerializer::serialize(const std::filesystem::path &iFilepath) const {
 	fileOut.close();
 }
 
-bool SceneSerializer::deserialize(const std::filesystem::path &iFilepath) const {
+bool SceneSerializer::deserialize(const std::filesystem::path& iFilepath) const {
 	try {
 		YAML::Node data = YAML::LoadFile(iFilepath.string());
 
@@ -195,15 +195,15 @@ bool SceneSerializer::deserialize(const std::filesystem::path &iFilepath) const 
 
 				if (auto transformComponent = entity["Transform"]; transformComponent) {
 					// Entities always have transforms
-					auto &tc = deserializedEntity.getComponent<component::Transform>();
-					tc.translation = transformComponent["translation"].as<glm::vec3>();
-					tc.rotation = transformComponent["rotation"].as<glm::vec3>();
-					tc.scale = transformComponent["scale"].as<glm::vec3>();
+					auto& tc = deserializedEntity.getComponent<component::Transform>();
+					tc.translation = transformComponent["translation"].as<math::vec3>();
+					tc.rotation = transformComponent["rotation"].as<math::vec3>();
+					tc.scale = transformComponent["scale"].as<math::vec3>();
 				}
 
 
 				if (auto cameraComponent = entity["Camera"]; cameraComponent) {
-					auto &cc = deserializedEntity.addComponent<component::Camera>();
+					auto& cc = deserializedEntity.addComponent<component::Camera>();
 					auto cameraProps = cameraComponent["camera"];
 					auto projType = magic_enum::enum_cast<SceneCamera::ProjectionType>(
 							cameraProps["projectionType"].as<std::string>());
@@ -223,8 +223,8 @@ bool SceneSerializer::deserialize(const std::filesystem::path &iFilepath) const 
 
 
 				if (auto spriteRendererComponent = entity["SpriteRenderer"]; spriteRendererComponent) {
-					auto &src = deserializedEntity.addComponent<component::SpriteRenderer>();
-					src.color = spriteRendererComponent["color"].as<glm::vec4>();
+					auto& src = deserializedEntity.addComponent<component::SpriteRenderer>();
+					src.color = spriteRendererComponent["color"].as<math::vec4>();
 					if (spriteRendererComponent["tilingFactor"])
 						src.tilingFactor = spriteRendererComponent["tilingFactor"].as<float>();
 					if (spriteRendererComponent["texture"])
@@ -234,8 +234,8 @@ bool SceneSerializer::deserialize(const std::filesystem::path &iFilepath) const 
 
 
 				if (auto circleRendererComponent = entity["CircleRenderer"]; circleRendererComponent) {
-					auto &src = deserializedEntity.addComponent<component::CircleRenderer>();
-					src.color = circleRendererComponent["color"].as<glm::vec4>();
+					auto& src = deserializedEntity.addComponent<component::CircleRenderer>();
+					src.color = circleRendererComponent["color"].as<math::vec4>();
 					src.thickness = circleRendererComponent["thickness"].as<float>();
 					src.fade = circleRendererComponent["fade"].as<float>();
 				}

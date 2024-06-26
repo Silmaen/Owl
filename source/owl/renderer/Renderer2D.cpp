@@ -22,11 +22,11 @@ constexpr uint32_t g_maxQuads = 20000;
 constexpr size_t g_quadVertexCount = 4;
 constexpr uint32_t g_maxVertices = g_maxQuads * g_quadVertexCount;
 constexpr uint32_t g_maxIndices = g_maxQuads * 6;
-constexpr glm::vec2 g_textureCoords[] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
-constexpr glm::vec4 g_quadVertexPositions[] = {{-0.5f, -0.5f, 0.0f, 1.0f},
-											   {0.5f, -0.5f, 0.0f, 1.0f},
-											   {0.5f, 0.5f, 0.0f, 1.0f},
-											   {-0.5f, 0.5f, 0.0f, 1.0f}};
+constexpr math::vec2 g_textureCoords[] = {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}};
+constexpr math::vec4 g_quadVertexPositions[] = {{-0.5f, -0.5f, 0.0f, 1.0f},
+												{0.5f, -0.5f, 0.0f, 1.0f},
+												{0.5f, 0.5f, 0.0f, 1.0f},
+												{-0.5f, 0.5f, 0.0f, 1.0f}};
 
 uint32_t g_maxTextureSlots = 0;
 }// namespace
@@ -35,9 +35,9 @@ uint32_t g_maxTextureSlots = 0;
  * @brief Structure holding quad vertex information.
  */
 struct QuadVertex {
-	glm::vec3 position;
-	glm::vec4 color;
-	glm::vec2 texCoord;
+	math::vec3 position;
+	math::vec4 color;
+	math::vec2 texCoord;
 	float texIndex;
 	float tilingFactor;
 	int entityID;
@@ -47,9 +47,9 @@ struct QuadVertex {
  * @brief Structure holding circle vertex information.
  */
 struct CircleVertex {
-	glm::vec3 worldPosition;
-	glm::vec3 localPosition;
-	glm::vec4 color;
+	math::vec3 worldPosition;
+	math::vec3 localPosition;
+	math::vec4 color;
 	float thickness;
 	float fade;
 	int entityID;
@@ -59,8 +59,8 @@ struct CircleVertex {
  * @brief Structure holding line vertex information.
  */
 struct LineVertex {
-	glm::vec3 position;
-	glm::vec4 color;
+	math::vec3 position;
+	math::vec4 color;
 	int entityID;
 };
 
@@ -75,7 +75,7 @@ struct VertexData {
 
 namespace {
 template<typename VertexType>
-void resetDrawData(VertexData<VertexType> &iData) {
+void resetDrawData(VertexData<VertexType>& iData) {
 	iData.indexCount = 0;
 	iData.vertexBuf.clear();
 	iData.vertexBuf.reserve(utils::g_maxVertices);
@@ -89,7 +89,7 @@ struct internalData {
 	/// Camera Data
 	struct CameraData {
 		/// Camera projection
-		glm::mat4 viewProjection;
+		math::mat4 viewProjection;
 	};
 	CameraData cameraBuffer{};
 	/// Quad Data
@@ -118,10 +118,10 @@ struct internalData {
 	bool doTriangleDraw = false;
 };
 
-glm::mat4 toTransform(const PRS &iTransform) {
-	return glm::translate(glm::mat4(1.0f), iTransform.position) *
-		   glm::rotate(glm::mat4(1.0f), glm::radians(iTransform.rotation), {0.0f, 0.0f, 1.0f}) *
-		   glm::scale(glm::mat4(1.0f), {iTransform.size.x, iTransform.size.y, 1.0f});
+math::mat4 toTransform(const PRS& iTransform) {
+	return math::translate(math::identity<float, 4>(), iTransform.position) *
+		   math::rotate(math::identity<float, 4>(), math::radians(iTransform.rotation), {0.0f, 0.0f, 1.0f}) *
+		   math::scale(math::identity<float, 4>(), {iTransform.size.x(), iTransform.size.y(), 1.0f});
 }
 
 }// namespace utils
@@ -217,7 +217,7 @@ void Renderer2D::shutdown() {
 	// clearing the internal g_data
 	g_data->cameraUniformBuffer.reset();
 	g_data->whiteTexture.reset();
-	for (auto &text: g_data->textureSlots) {
+	for (auto& text: g_data->textureSlots) {
 		if (text == nullptr)
 			continue;
 		text.reset();
@@ -228,7 +228,7 @@ void Renderer2D::shutdown() {
 	g_data.reset();
 }
 
-void Renderer2D::beginScene(const CameraOrtho &iCamera) {
+void Renderer2D::beginScene(const CameraOrtho& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
 	g_data->cameraBuffer.viewProjection = iCamera.getViewProjectionMatrix();
@@ -236,7 +236,7 @@ void Renderer2D::beginScene(const CameraOrtho &iCamera) {
 	startBatch();
 }
 
-void Renderer2D::beginScene(const CameraEditor &iCamera) {
+void Renderer2D::beginScene(const CameraEditor& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
 	g_data->cameraBuffer.viewProjection = iCamera.getViewProjection();
@@ -244,10 +244,10 @@ void Renderer2D::beginScene(const CameraEditor &iCamera) {
 	startBatch();
 }
 
-void Renderer2D::beginScene(const Camera &iCamera, const glm::mat4 &iTransform) {
+void Renderer2D::beginScene(const Camera& iCamera, const math::mat4& iTransform) {
 	OWL_PROFILE_FUNCTION()
 
-	g_data->cameraBuffer.viewProjection = iCamera.getProjection() * glm::inverse(iTransform);
+	g_data->cameraBuffer.viewProjection = iCamera.getProjection() * math::inverse(iTransform);
 	g_data->cameraUniformBuffer->setData(&g_data->cameraBuffer, sizeof(utils::internalData::CameraData), 0);
 	startBatch();
 }
@@ -315,49 +315,49 @@ void Renderer2D::setLineWidth(const float iWidth) { g_data->lineWidth = iWidth; 
 
 void Renderer2D::drawDebugTriangle() { g_data->doTriangleDraw = true; }
 
-void Renderer2D::drawLine(const LineData &iLineData) {
+void Renderer2D::drawLine(const LineData& iLineData) {
 	g_data->line.vertexBuf.emplace_back(utils::LineVertex{iLineData.point1, iLineData.color, iLineData.entityID});
 	g_data->line.vertexBuf.emplace_back(utils::LineVertex{iLineData.point2, iLineData.color, iLineData.entityID});
 	g_data->line.indexCount += 2;
 	g_data->stats.drawCalls++;
 }
 
-void Renderer2D::drawRect(const RectData &iRectData) {
-	const glm::mat4 trans = iRectData.transform.transform;
-	std::vector<glm::vec3> points;
+void Renderer2D::drawRect(const RectData& iRectData) {
+	const math::mat4 trans = iRectData.transform.transform;
+	std::vector<math::vec3> points;
 	static const std::vector<std::pair<uint8_t, uint8_t>> idx = {{0, 1}, {1, 2}, {2, 3}, {3, 0}};
-	for (const auto &vtx: utils::g_quadVertexPositions) points.emplace_back(trans * vtx);
-	for (const auto &[p1, p2]: idx) drawLine({points[p1], points[p2], iRectData.color, iRectData.entityID});
+	for (const auto& vtx: utils::g_quadVertexPositions) points.emplace_back(trans * vtx);
+	for (const auto& [p1, p2]: idx) drawLine({points[p1], points[p2], iRectData.color, iRectData.entityID});
 }
 
-void Renderer2D::drawPolyLine(const PolyLineData &iLineData) {
+void Renderer2D::drawPolyLine(const PolyLineData& iLineData) {
 	if (iLineData.points.size() < 2) {
 		OWL_CORE_WARN("Too few points in the multiline with ID {}", iLineData.entityID)
 		return;
 	}
-	const glm::mat4 trans = iLineData.transform.transform;
-	std::vector<glm::vec3> points;
+	const math::mat4 trans = iLineData.transform.transform;
+	std::vector<math::vec3> points;
 	std::vector<std::pair<uint32_t, uint32_t>> link;
 	uint32_t i = 0;
-	for (const auto &vtx: iLineData.points) {
-		points.emplace_back(trans * glm::vec4{vtx.x, vtx.y, vtx.z, 1.f});
+	for (const auto& vtx: iLineData.points) {
+		points.emplace_back(trans * math::vec4{vtx.x(), vtx.y(), vtx.z(), 1.f});
 		if (i < iLineData.points.size() - 1)
 			link.emplace_back(i, i + 1);
 		++i;
 	}
 	if (iLineData.closed)
 		link.emplace_back(iLineData.points.size() - 1, 0);
-	for (const auto &[p1, p2]: link) drawLine({points[p1], points[p2], iLineData.color, iLineData.entityID});
+	for (const auto& [p1, p2]: link) drawLine({points[p1], points[p2], iLineData.color, iLineData.entityID});
 }
 
-void Renderer2D::drawCircle(const CircleData &iCircleData) {
+void Renderer2D::drawCircle(const CircleData& iCircleData) {
 	OWL_PROFILE_FUNCTION()
 
 	// TODO(Silmaen): implement for circles
 	// if (g_data->circleIndexCount >= utils::maxIndices)
 	// 	nextBatch();
 
-	for (const auto &vtx: utils::g_quadVertexPositions) {
+	for (const auto& vtx: utils::g_quadVertexPositions) {
 		g_data->circle.vertexBuf.emplace_back(
 				utils::CircleVertex{.worldPosition = iCircleData.transform.transform * vtx,
 									.localPosition = vtx * 2.0f,
@@ -375,7 +375,7 @@ void Renderer2D::drawCircle(const CircleData &iCircleData) {
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
-void Renderer2D::drawQuad(const Quad2DData &iQuadData) {
+void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 	OWL_PROFILE_FUNCTION()
 	if (g_data->quad.indexCount >= utils::g_maxIndices)
 		nextBatch();
@@ -410,7 +410,7 @@ void Renderer2D::drawQuad(const Quad2DData &iQuadData) {
 }
 OWL_DIAG_POP
 
-void Renderer2D::drawSprite(const glm::mat4 &iTransform, const scene::component::SpriteRenderer &iSrc,
+void Renderer2D::drawSprite(const math::mat4& iTransform, const scene::component::SpriteRenderer& iSrc,
 							const int iEntityID) {
 	drawQuad({.transform = iTransform,
 			  .color = iSrc.color,

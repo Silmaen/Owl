@@ -10,12 +10,8 @@
 
 #include "Core.h"
 #include "external/spdlog.h"
+#include "math/linAlgebra.h"
 
-#define GLM_ENABLE_EXPERIMENTAL
-OWL_DIAG_PUSH
-OWL_DIAG_DISABLE_CLANG("-Wformat-nonliteral")
-#include "glm/gtx/string_cast.hpp"
-OWL_DIAG_POP
 /**
  * @brief Namespace for the core objects.
  */
@@ -34,7 +30,7 @@ public:
 	 * @param[in] iLevel Verbosity level of the logger.
 	 * @param[in] iFrequency Frequence of frame outputput (number of frames).
 	 */
-	static void init(const spdlog::level::level_enum &iLevel = spdlog::level::trace,
+	static void init(const spdlog::level::level_enum& iLevel = spdlog::level::trace,
 					 uint64_t iFrequency = gDefaultFrequency);
 
 	/**
@@ -53,7 +49,7 @@ public:
 	 * @brief Defines the Verbosity level
 	 * @param[in] iLevel Verbosity level.
 	 */
-	static void setVerbosityLevel(const spdlog::level::level_enum &iLevel);
+	static void setVerbosityLevel(const spdlog::level::level_enum& iLevel);
 
 	/**
 	 * @brief Destroy the logger.
@@ -96,51 +92,6 @@ private:
 	static uint64_t s_frequency;
 };
 }// namespace owl::core
-
-/**
- * @brief Overload stream operator for vectors.
- * @tparam OStream The stream type.
- * @tparam L The vector's length type.
- * @tparam T The vector's component type.
- * @tparam Q The vector's qualifier type.
- * @param[out] oStream The stream to write onto.
- * @param[in] iVector The vector to write.
- * @return The actualized stream.
- */
-template<typename OStream, glm::length_t L, typename T, glm::qualifier Q>
-OStream &operator<<(OStream &oStream, const glm::vec<L, T, Q> &iVector) {
-	return oStream << glm::to_string(iVector);
-}
-
-/**
- * @brief Overload stream operator for matrices.
- * @tparam OStream The stream type.
- * @tparam C The matrix's column length type.
- * @tparam R The matrix's Row length type.
- * @tparam T The matrix's component type.
- * @tparam Q The matrix's qualifier type.
- * @param[out] oStream The stream to write onto.
- * @param[in] iMatrix The matrix to write.
- * @return The actualized stream.
- */
-template<typename OStream, glm::length_t C, glm::length_t R, typename T, glm::qualifier Q>
-OStream &operator<<(OStream &oStream, const glm::mat<C, R, T, Q> &iMatrix) {
-	return oStream << glm::to_string(iMatrix);
-}
-
-/**
- * @brief Overload stream operator for quaternions.
- * @tparam OStream The stream type.
- * @tparam T The quaternion's component type.
- * @tparam Q The quaternion's qualifier type.
- * @param[out] oStream The stream to write onto.
- * @param[in] iQuaternion The quaternion to write.
- * @return The actualized stream.
- */
-template<typename OStream, typename T, glm::qualifier Q>
-OStream &operator<<(OStream &oStream, glm::qua<T, Q> iQuaternion) {
-	return oStream << glm::to_string(iQuaternion);
-}
 
 // Core log macros;
 #define OWL_CORE_FRAME_TRACE(...)                                                                                      \

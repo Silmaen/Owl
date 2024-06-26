@@ -17,7 +17,7 @@ namespace owl::scene::component {
  */
 struct OWL_API SpriteRenderer {
 	/// Sprite color.
-	glm::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
+	math::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 	/// Sprite's texture.
 	shared<renderer::Texture2D> texture = nullptr;
 	/// Texture's tiling factor.

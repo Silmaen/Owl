@@ -21,10 +21,10 @@ namespace owl::input {
  */
 class OWL_API CameraOrthoController final {
 public:
-	CameraOrthoController(const CameraOrthoController &) = default;
-	CameraOrthoController(CameraOrthoController &&) = default;
-	CameraOrthoController &operator=(const CameraOrthoController &) = default;
-	CameraOrthoController &operator=(CameraOrthoController &&) = default;
+	CameraOrthoController(const CameraOrthoController&) = default;
+	CameraOrthoController(CameraOrthoController&&) = default;
+	CameraOrthoController& operator=(const CameraOrthoController&) = default;
+	CameraOrthoController& operator=(CameraOrthoController&&) = default;
 
 	/**
 	 * @brief Constructor.
@@ -42,31 +42,31 @@ public:
 	 * @brief Frame function.
 	 * @param[in] iTimeStep Time step.
 	 */
-	void onUpdate(const core::Timestep &iTimeStep);
+	void onUpdate(const core::Timestep& iTimeStep);
 
 	/**
 	 * @brief Event Management.
 	 * @param[in,out] ioEvent The received event.
 	 */
-	void onEvent(event::Event &ioEvent);
+	void onEvent(event::Event& ioEvent);
 
 	/**
 	 * @brief Action when view port is resized.
 	 * @param[in] iSize New size.
 	 */
-	void onResize(const math::FrameSize &iSize);
+	void onResize(const math::FrameSize& iSize);
 
 	/**
 	 * @brief Access to the camera.
 	 * @return The camera.
 	 */
-	renderer::CameraOrtho &getCamera() { return m_camera; }
+	renderer::CameraOrtho& getCamera() { return m_camera; }
 
 	/**
 	 * @brief Access to the camera.
 	 * @return The camera.
 	 */
-	[[nodiscard]] const renderer::CameraOrtho &getCamera() const { return m_camera; }
+	[[nodiscard]] const renderer::CameraOrtho& getCamera() const { return m_camera; }
 
 	/**
 	 * @brief Access to the zoom level.
@@ -86,14 +86,14 @@ private:
 	 * @param[in] iEvent The Mouse event.
 	 * @return True if treated.
 	 */
-	bool onMouseScrolled(const event::MouseScrolledEvent &iEvent);
+	bool onMouseScrolled(const event::MouseScrolledEvent& iEvent);
 
 	/**
 	 * @brief Action on window resize.
 	 * @param[in] iEvent The Window resize event.
 	 * @return True if treated.
 	 */
-	bool onWindowResized(const event::WindowResizeEvent &iEvent);
+	bool onWindowResized(const event::WindowResizeEvent& iEvent);
 
 	/// Aspect ratio of the camera.
 	float m_aspectRatio;
@@ -104,7 +104,7 @@ private:
 	/// if camera's rotation allowed.
 	bool m_rotation;
 	/// Camera's position in the world.
-	glm::vec3 m_cameraPosition = {0.0f, 0.0f, 0.0f};
+	math::vec3 m_cameraPosition = {0.0f, 0.0f, 0.0f};
 	/// Camera's rotation in degrees, in the anti-clockwise direction.
 	float m_cameraRotation{0.0f};
 

@@ -91,27 +91,27 @@ public:
 	 * @param[in] iName Shader's variable's name.
 	 * @param[in] iValue Shader's variable's value.
 	 */
-	void setFloat2(const std::string &iName, const glm::vec2 &iValue) override;
+	void setFloat2(const std::string &iName, const math::vec2 &iValue) override;
 
 	/**
 	 * @brief Set shader's internal vector 3 variable.
 	 * @param[in] iName Shader's variable's name.
 	 * @param[in] iValue Shader's variable's value.
 	 */
-	void setFloat3(const std::string &iName, const glm::vec3 &iValue) override;
+	void setFloat3(const std::string &iName, const math::vec3 &iValue) override;
 
 	/**
 	 * @brief Set shader's internal vector 4 variable.
 	 * @param[in] iName Shader's variable's name.
 	 * @param[in] iValue Shader's variable's value.
 	 */
-	void setFloat4(const std::string &iName, const glm::vec4 &iValue) override;
+	void setFloat4(const std::string &iName, const math::vec4 &iValue) override;
 
 	/**
 	 * @brief Set shader's internal Matrix 4 variable.
 	 * @param[in] iName Shader's variable's name.
 	 * @param[in] iValue Shader's variable's value.
 	 */
-	void setMat4(const std::string &iName, const glm::mat4 &iValue) override;
+	void setMat4(const std::string &iName, const math::mat4 &iValue) override;
 };
 }// namespace owl::renderer::null

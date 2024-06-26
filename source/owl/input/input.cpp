@@ -20,7 +20,7 @@ uniq<Input> Input::mus_instance = nullptr;
 Input::~Input() = default;
 
 
-void Input::init(const Type &iType) {
+void Input::init(const Type& iType) {
 	if (mus_instance)
 		mus_instance.reset();
 	ms_type = iType;
@@ -50,11 +50,11 @@ bool Input::isMouseButtonPressed(const MouseCode iMouseCode) {
 	return false;
 }
 
-float Input::getMouseX() { return getMousePos().x; }
+float Input::getMouseX() { return getMousePos().x(); }
 
-float Input::getMouseY() { return getMousePos().y; }
+float Input::getMouseY() { return getMousePos().y(); }
 
-glm::vec2 Input::getMousePos() {
+math::vec2 Input::getMousePos() {
 	if (mus_instance)
 		return mus_instance->getMousePos_impl();
 	return {};
@@ -70,7 +70,7 @@ void Input::injectMouseButton(const MouseCode iMouseCode) {
 		mus_instance->injectMouseButton_impl(iMouseCode);
 }
 
-void Input::injectMousePos(const glm::vec2 &iMousePos) {
+void Input::injectMousePos(const math::vec2& iMousePos) {
 	if (mus_instance)
 		mus_instance->injectMousePos_impl(iMousePos);
 }

@@ -7,43 +7,43 @@
 using namespace owl::renderer;
 
 TEST(CameraEditor, defaultCreation) {
-	CameraEditor cam;
+	CameraEditor const cam;
 	EXPECT_EQ(cam.getDistance(), 10.f);
-	auto proj = cam.getViewProjection();
-	auto view = cam.getViewMatrix();
-	EXPECT_EQ(proj[0][0], view[0][0]);
-	EXPECT_TRUE(cam.getPosition() == glm::vec3(0.f, 0.f, 0.f));
+	const auto proj = cam.getViewProjection();
+	const auto view = cam.getViewMatrix();
+	EXPECT_EQ(proj(0, 0), view(0, 0));
+	EXPECT_TRUE(cam.getPosition() == owl::math::vec3({0.f, 0.f, 0.f}));
 	EXPECT_EQ(cam.getPitch(), 0.f);
 	EXPECT_EQ(cam.getYaw(), 0.f);
 
-	EXPECT_TRUE(cam.getForwardDirection() == glm::vec3(0.f, 0.f, -1.f));
-	EXPECT_TRUE(cam.getRightDirection() == glm::vec3(1.f, 0.f, 0.f));
-	EXPECT_TRUE(cam.getUpDirection() == glm::vec3(0.f, 1.f, 0.f));
-	EXPECT_LE(glm::length(cam.getOrientation() - glm::quat(1.f, 0.f, 0.f, 0.f)), 0.01);
+	EXPECT_TRUE(cam.getForwardDirection() == owl::math::vec3({0.f, 0.f, -1.f}));
+	EXPECT_TRUE(cam.getRightDirection() == owl::math::vec3({1.f, 0.f, 0.f}));
+	EXPECT_TRUE(cam.getUpDirection() == owl::math::vec3({0.f, 1.f, 0.f}));
+	EXPECT_LE((cam.getOrientation() - owl::math::quat(1.f, 0.f, 0.f, 0.f)).norm(), 0.01);
 }
 
 TEST(CameraEditor, fovCreation) {
-	CameraEditor cam(45, 1.5f, 0.1f, 15);
+	CameraEditor const cam(45, 1.5f, 0.1f, 15);
 	EXPECT_EQ(cam.getDistance(), 10.f);
-	auto proj = cam.getViewProjection();
-	auto view = cam.getViewMatrix();
-	EXPECT_EQ(view[0][0], 1.f);
-	EXPECT_NEAR(proj[0][0], 1.6094f, 0.001);
-	EXPECT_TRUE(cam.getPosition() == glm::vec3(0.f, 0.f, 10.f));
+	const auto proj = cam.getViewProjection();
+	const auto view = cam.getViewMatrix();
+	EXPECT_EQ(view(0, 0), 1.f);
+	EXPECT_NEAR(proj(0, 0), 1.6094f, 0.001);
+	EXPECT_TRUE(cam.getPosition() == owl::math::vec3({0.f, 0.f, 10.f}));
 	EXPECT_EQ(cam.getPitch(), 0.f);
 	EXPECT_EQ(cam.getYaw(), 0.f);
 
-	EXPECT_TRUE(cam.getForwardDirection() == glm::vec3(0.f, 0.f, -1.f));
-	EXPECT_TRUE(cam.getRightDirection() == glm::vec3(1.f, 0.f, 0.f));
-	EXPECT_TRUE(cam.getUpDirection() == glm::vec3(0.f, 1.f, 0.f));
-	EXPECT_LE(glm::length(cam.getOrientation() - glm::quat(1.f, 0.f, 0.f, 0.f)), 0.01);
+	EXPECT_TRUE(cam.getForwardDirection() == owl::math::vec3({0.f, 0.f, -1.f}));
+	EXPECT_TRUE(cam.getRightDirection() == owl::math::vec3({1.f, 0.f, 0.f}));
+	EXPECT_TRUE(cam.getUpDirection() == owl::math::vec3({0.f, 1.f, 0.f}));
+	EXPECT_LE((cam.getOrientation() - owl::math::quat(1.f, 0.f, 0.f, 0.f)).norm(), 0.01);
 }
 
 TEST(CameraEditor, ChangeViewport) {
 	CameraEditor cam(45, 1.5f, 0.1f, 15);
 	cam.setViewportSize({800, 600});
-	auto proj = cam.getViewProjection();
-	EXPECT_NEAR(proj[0][0], 1.8106f, 0.001);
+	const auto proj = cam.getViewProjection();
+	EXPECT_NEAR(proj(0, 0), 1.8106f, 0.001);
 }
 
 TEST(CameraEditor, Events) {

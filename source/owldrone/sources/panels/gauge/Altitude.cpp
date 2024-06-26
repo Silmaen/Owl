@@ -22,37 +22,25 @@ Altitude::Altitude() {
 }
 
 void Altitude::drawBack() {
-	owl::renderer::utils::PRS tran{
-			.position = getTransform().position,
-			.rotation = 0,
-			.size = getTransform().size};
-	tran.position.z = -0.1f;
-	owl::renderer::Renderer2D::drawQuad({.transform = tran,
-										 .texture = background});
+	owl::renderer::utils::PRS tran{.position = getTransform().position, .rotation = 0, .size = getTransform().size};
+	tran.position.z() = -0.1f;
+	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = background});
 }
 void Altitude::drawCursors() {
-	owl::renderer::utils::PRS tran{
-			.position = getTransform().position,
-			.rotation = 0,
-			.size = getTransform().size};
+	owl::renderer::utils::PRS tran{.position = getTransform().position, .rotation = 0, .size = getTransform().size};
 
 	tran.rotation = altitudeToAngle(100);
-	tran.position.z = -0.07f;
-	owl::renderer::Renderer2D::drawQuad({.transform = tran,
-										 .texture = cursor100});
+	tran.position.z() = -0.07f;
+	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = cursor100});
 	tran.rotation = altitudeToAngle(10);
-	tran.position.z = -0.06f;
-	owl::renderer::Renderer2D::drawQuad({.transform = tran,
-										 .texture = cursor10});
+	tran.position.z() = -0.06f;
+	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = cursor10});
 	tran.rotation = altitudeToAngle(1);
-	tran.position.z = -0.05f;
-	owl::renderer::Renderer2D::drawQuad({.transform = tran,
-										 .texture = cursor});
+	tran.position.z() = -0.05f;
+	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = cursor});
 }
 
-float Altitude::altitudeToAngle(float divider) const {
-	return -std::max(altitude / divider, 0.f) / 10 * 360;
-}
+float Altitude::altitudeToAngle(float divider) const { return -std::max(altitude / divider, 0.f) / 10 * 360; }
 
 Altitude::~Altitude() = default;
 

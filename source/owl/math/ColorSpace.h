@@ -15,7 +15,7 @@ namespace owl::math {
  * \param[in] iColor Input sRGB color.
  * \return Linear color.
  */
-constexpr glm::vec4 sRGBToLinear(const glm::vec4 &iColor) {
+constexpr math::vec4 sRGBToLinear(const math::vec4 &iColor) {
 	constexpr auto toLinear = [](const float srgb) {
 		return (srgb <= 0.04045f) ? (srgb / 12.92f) : std::pow((srgb + 0.055f) / 1.055f, 2.4f);
 	};
@@ -27,7 +27,7 @@ constexpr glm::vec4 sRGBToLinear(const glm::vec4 &iColor) {
  * \param[in] iColor Input linear color.
  * \return sRGB colr.
  */
-constexpr glm::vec4 linearTosRGB(const glm::vec4 &iColor) {
+constexpr math::vec4 linearTosRGB(const math::vec4 &iColor) {
 	constexpr auto toSRGB = [](const float rgb) {
 		constexpr float power = 1.0f / 2.4f;
 		return rgb <= 0.0031308f ? 12.92f * rgb : 1.055f * std::pow(rgb, power) - 0.055f;

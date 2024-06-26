@@ -311,7 +311,7 @@ void VulkanHandler::popPipeline(const int32_t iId) {
 	m_pipeLines.erase(iId);
 }
 
-void VulkanHandler::setClearColor(const glm::vec4 &iColor) { m_clearColor = iColor; }
+void VulkanHandler::setClearColor(const math::vec4 &iColor) { m_clearColor = iColor; }
 
 void VulkanHandler::clear() const { m_currentframebuffer->clearAttachment(0, m_clearColor); }
 

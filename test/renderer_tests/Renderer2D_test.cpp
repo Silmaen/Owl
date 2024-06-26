@@ -35,12 +35,12 @@ TEST(Renderer2D, fakeLineScene) {
 	Renderer2D::beginScene(cam);
 	Renderer2D::drawLine({.point1 = {0, 0, 0},
 						  .point2 = {1.f, 1.f, 0.f}});
-	PolyLineData data{.transform = utils::Transform2D{glm::identity<glm::mat4>()},
-					  .points = std::vector<glm::vec3>{}};
+	PolyLineData data{.transform = utils::Transform2D{owl::math::identity<float,4>()},
+					  .points = std::vector<owl::math::vec3>{}};
 	Renderer2D::drawPolyLine(data);
-	data.points.emplace_back(1.f, 1.f, 1.f);
-	data.points.emplace_back(1.f, 0.f, 1.f);
-	data.points.emplace_back(0.f, 1.f, 1.f);
+	data.points.emplace_back(owl::math::vec3{1.f, 1.f, 1.f});
+	data.points.emplace_back(owl::math::vec3{1.f, 0.f, 1.f});
+	data.points.emplace_back(owl::math::vec3{0.f, 1.f, 1.f});
 	data.closed = true;
 	Renderer2D::drawPolyLine(data);
 	Renderer2D::endScene();
@@ -62,10 +62,10 @@ TEST(Renderer2D, fakeCircleRectScene) {
 	Renderer::init();
 	const CameraEditor cam;
 	Renderer2D::resetStats();
-	Renderer2D::beginScene(cam, glm::identity<glm::mat4>());
-	Renderer2D::drawRect({.transform = utils::Transform2D{glm::identity<glm::mat4>()}});
+	Renderer2D::beginScene(cam, owl::math::identity<float,4>());
+	Renderer2D::drawRect({.transform = utils::Transform2D{owl::math::identity<float,4>()}});
 	Renderer2D::nextBatch();
-	Renderer2D::drawCircle({.transform = utils::Transform2D{glm::identity<glm::mat4>()}});
+	Renderer2D::drawCircle({.transform = utils::Transform2D{owl::math::identity<float,4>()}});
 	Renderer2D::endScene();
 	const auto st = Renderer2D::getStats();
 	EXPECT_EQ(st.drawCalls, 6);

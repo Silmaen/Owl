@@ -63,8 +63,8 @@ private:
 	/// Size of the viewport
 	owl::math::FrameSize m_viewportSize = {0, 0};
 	/// View port bounds
-	glm::vec2 m_viewportLower = {0.0f, 0.0f};
-	glm::vec2 m_viewportUpper = {0.0f, 0.0f};
+	owl::math::vec2 m_viewportLower = {0.0f, 0.0f};
+	owl::math::vec2 m_viewportUpper = {0.0f, 0.0f};
 
 	bool m_viewportFocused = false;
 	bool m_viewportHovered = false;

@@ -14,7 +14,6 @@ dependencies = [
     {"name": "fmt", "version": "*", "header": False},
     {"name": "glad", "version": "*", "header": False},
     {"name": "glfw", "version": "*", "header": False},
-    {"name": "glm", "version": "*", "header": False},
     {"name": "imgui", "version": "*", "header": False},
     {"name": "imguizmo", "version": "*", "header": False},
     {"name": "mavsdk", "version": "*", "header": False},
