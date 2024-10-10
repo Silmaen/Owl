@@ -7,12 +7,12 @@ using namespace owl::core;
 
 TEST(TimeStep, update) {
 	Timestep ts;
-#ifdef OWL_PLATFORM_ARM64
+#if defined(OWL_PLATFORM_ARM64) || defined(OWL_SANITIZER)
 	const float millis = 10.f;// due to some emulation slowness.
 #elif defined(OWL_STACKTRACE)
-	float const millis = 4.f;
+	constexpr float millis = 4.f;
 #else
-	float const millis = 1.f;
+	constexpr float millis = 1.f;
 #endif
 	EXPECT_LT(ts.getSeconds(), 0.001f * millis);// there can be a little delay.
 	EXPECT_LT(ts.getMilliseconds(), millis);// there can be a little delay.
