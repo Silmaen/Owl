@@ -13,7 +13,7 @@
 namespace owl::panel {
 
 namespace {
-std::filesystem::path s_assetPath;
+std::filesystem::path g_AssetPath;
 }// namespace
 ContentBrowser::ContentBrowser() { OWL_SCOPE_UNTRACK }
 
@@ -24,14 +24,14 @@ void ContentBrowser::detach() {
 }
 
 void ContentBrowser::attach() {
-	s_assetPath = core::Application::get().getAssetDirectory();
-	currentPath = s_assetPath;
-	if (const auto fileIconPath = s_assetPath / "icons" / "FileIcon.png"; exists(fileIconPath)) {
+	g_AssetPath = core::Application::get().getAssetDirectory();
+	currentPath = g_AssetPath;
+	if (const auto fileIconPath = g_AssetPath / "icons" / "FileIcon.png"; exists(fileIconPath)) {
 		fileIcon = renderer::Texture2D::create(fileIconPath);
 	} else {
 		OWL_CORE_WARN("Unable to find file icon at {}", fileIconPath.string())
 	}
-	if (const auto dirIconPath = s_assetPath / "icons" / "DirectoryIcon.png"; exists(dirIconPath)) {
+	if (const auto dirIconPath = g_AssetPath / "icons" / "DirectoryIcon.png"; exists(dirIconPath)) {
 		dirIcon = renderer::Texture2D::create(dirIconPath);
 	} else {
 		OWL_CORE_WARN("Unable to find directory icon at {}", dirIconPath.string())
@@ -41,7 +41,7 @@ void ContentBrowser::attach() {
 void ContentBrowser::onImGuiRender() {
 	ImGui::Begin("Content Browser");
 
-	if (currentPath != std::filesystem::path(s_assetPath)) {
+	if (currentPath != std::filesystem::path(g_AssetPath)) {
 		if (ImGui::Button("<-")) {
 			currentPath = currentPath.parent_path();
 		}
@@ -57,9 +57,11 @@ void ContentBrowser::onImGuiRender() {
 	columnCount = std::max(columnCount, 1);
 	ImGui::Columns(columnCount, nullptr, false);
 
-	for (const auto &directoryEntry: std::filesystem::directory_iterator(currentPath)) {
-		const auto &path = directoryEntry.path();
-		auto relativePath = std::filesystem::relative(path, s_assetPath);
+	uint32_t item = 0;
+	for (const auto& directoryEntry: std::filesystem::directory_iterator(currentPath)) {
+		++item;
+		const auto& path = directoryEntry.path();
+		auto relativePath = relative(path, g_AssetPath);
 		const std::string filenameString = relativePath.filename().string();
 		ImGui::PushID(filenameString.c_str());
 		const shared<renderer::Texture2D> icon = directoryEntry.is_directory() ? dirIcon : fileIcon;
@@ -69,8 +71,8 @@ void ContentBrowser::onImGuiRender() {
 			textureId = icon->getRendererId();
 		if (textureId != 0) {
 			// NOLINTBEGIN(performance-no-int-to-ptr)
-			ImGui::ImageButton(reinterpret_cast<ImTextureID>(textureId), {thumbnailSize, thumbnailSize}, {0, 1},
-							   {1, 0});
+			ImGui::ImageButton(fmt::format("content_btn_{}", item).c_str(), reinterpret_cast<ImTextureID>(textureId),
+							   {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
 			// NOLINTEND(performance-no-int-to-ptr)
 			if (ImGui::BeginDragDropSource()) {
 				ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", relativePath.string().c_str(),

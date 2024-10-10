@@ -42,7 +42,7 @@ Texture2D::Texture2D(std::filesystem::path iPath) : renderer::Texture2D{std::mov
 		OWL_PROFILE_SCOPE("stbi_load - OpenGL::Texture2D::Texture2D(const std::filesystem::path &)")
 		data = stbi_load(m_path.string().c_str(), &width, &height, &channels, 0);
 	}
-	if (data != nullptr) {
+	if (data == nullptr) {
 		OWL_CORE_WARN("OpenGL Texture: Failed to load image {}", m_path.string())
 		return;
 	}

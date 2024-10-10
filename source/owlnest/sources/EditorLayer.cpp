@@ -316,8 +316,8 @@ void EditorLayer::renderToolbar() {
 	if (textureId != 0) {
 
 		// NOLINTBEGIN(performance-no-int-to-ptr)
-		if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(textureId), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1),
-							   0)) {
+		if (ImGui::ImageButton("btn_start_stop", reinterpret_cast<ImTextureID>(textureId), ImVec2(size, size),
+							   ImVec2(0, 0), ImVec2(1, 1))) {
 			if (m_state == State::Edit)
 				onScenePlay();
 			else if (m_state == State::Play)

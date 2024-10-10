@@ -245,26 +245,29 @@ void DroneLayer::renderToolbar() {
 
 	// NOLINTBEGIN(performance-no-int-to-ptr)
 	ImGui::SetCursorPos(ImVec2(posX, padding));
-	if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(textureLib.get("icons/settings")->getRendererId()), vsize,
-						   ImVec2(0, 0), ImVec2(1, 1), 0)) {
+	if (ImGui::ImageButton("##toolbar_btn_settings",
+						   reinterpret_cast<ImTextureID>(textureLib.get("icons/settings")->getRendererId()), vsize,
+						   ImVec2(0, 0), ImVec2(1, 1))) {
 		mode = DisplayMode::Settings;
 	}
 	posX += size + 2.f * padding;
 	ImGui::SetCursorPos(ImVec2(posX, padding));
-	if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(textureLib.get("icons/gauges")->getRendererId()), vsize,
-						   ImVec2(0, 1), ImVec2(1, 0), 0)) {
+	if (ImGui::ImageButton("##toolbar_btn_gauges",
+						   reinterpret_cast<ImTextureID>(textureLib.get("icons/gauges")->getRendererId()), vsize,
+						   ImVec2(0, 1), ImVec2(1, 0))) {
 		mode = DisplayMode::Gauges;
 	}
 	const shared<renderer::Texture> iconCC =
 			isConnected() ? textureLib.get("icons/connected") : textureLib.get("icons/connect");
 	ImGui::SetCursorPos(ImVec2((ImGui::GetWindowContentRegionMax().x) - (2.f * size + 3.f * padding), padding));
-	if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(iconCC->getRendererId()), ImVec2(size, size), ImVec2(0, 1),
-						   ImVec2(1, 0), 0)) {
+	if (ImGui::ImageButton("##toolbar_btn_connect", reinterpret_cast<ImTextureID>(iconCC->getRendererId()),
+						   ImVec2(size, size), ImVec2(0, 1), ImVec2(1, 0))) {
 		toggleConnect();
 	}
 	ImGui::SetCursorPos(ImVec2((ImGui::GetWindowContentRegionMax().x) - (size + padding), padding));
-	if (ImGui::ImageButton(reinterpret_cast<ImTextureID>(textureLib.get("icons/exit")->getRendererId()), vsize,
-						   ImVec2(0, 1), ImVec2(1, 0), 0)) {
+	if (ImGui::ImageButton("##toolbar_btn_exit",
+						   reinterpret_cast<ImTextureID>(textureLib.get("icons/exit")->getRendererId()), vsize,
+						   ImVec2(0, 1), ImVec2(1, 0))) {
 		owl::core::Application::get().close();
 	}
 	// NOLINTEND(performance-no-int-to-ptr)
