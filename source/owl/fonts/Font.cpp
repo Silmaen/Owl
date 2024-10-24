@@ -41,13 +41,12 @@ auto createAndCacheAtlas([[maybe_unused]] const std::string& iFontName, [[maybe_
 			.format = renderer::ImageFormat::RGB8,
 			.generateMips = false};
 	shared<renderer::Texture2D> texture = renderer::Texture2D::create(spec);
-	texture->setData(reinterpret_cast<void*>(const_cast<uint8_t*>(bitmap.pixels)),
-					 static_cast<uint32_t>(bitmap.width * bitmap.height * 3));
+	texture->setData(const_cast<uint8_t*>(bitmap.pixels), static_cast<uint32_t>(bitmap.width * bitmap.height * 3));
 	return texture;
 }
 }// namespace
 
-Font::Font(const std::filesystem::path& iPath) {
+Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_default{iIsDefault} {
 	OWL_SCOPE_UNTRACK
 
 	if (!exists(iPath)) {
@@ -137,6 +136,7 @@ Font::Font(const std::filesystem::path& iPath) {
 #endif
 	destroyFont(font);
 	deinitializeFreetype(ft);
+	m_name = iPath.stem();
 }
 
 Font::~Font() = default;

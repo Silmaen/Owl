@@ -45,7 +45,7 @@ void BaseDrawPanel::onRender() {
 	const ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	m_viewportSize = {static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y)};
 	if (const uint64_t textureId = mp_framebuffer->getColorAttachmentRendererId(0); textureId != 0)
-		ImGui::Image(reinterpret_cast<void*>(textureId), viewportPanelSize, vec(mp_framebuffer->getLowerData()),
+		ImGui::Image(reinterpret_cast<ImTextureID*>(textureId), viewportPanelSize, vec(mp_framebuffer->getLowerData()),
 					 vec(mp_framebuffer->getUpperData()));
 	else
 		OWL_WARN("No frameBuffer to render...")

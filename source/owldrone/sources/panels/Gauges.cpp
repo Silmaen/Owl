@@ -115,7 +115,6 @@ void Gauges::onUpdate(const core::Timestep&) {
 	m_framebuffer->unbind();
 }
 
-// NOLINTBEGIN(performance-no-int-to-ptr)
 void Gauges::onRender() {
 	OWL_PROFILE_FUNCTION()
 
@@ -133,15 +132,14 @@ void Gauges::onRender() {
 
 	const ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	m_viewportSize = {static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y)};
-	if (const uint64_t textureId = m_framebuffer->getColorAttachmentRendererId(0); textureId != 0)
-		ImGui::Image(reinterpret_cast<void*>(textureId), viewportPanelSize, vec(m_framebuffer->getLowerData()),
-					 vec(m_framebuffer->getUpperData()));
-	else
-		OWL_WARN("No frameBuffer to render...")
+	if (const auto tex = gui::imTexture(m_framebuffer, 0); tex.has_value())
+			ImGui::Image(tex.value(), viewportPanelSize,
+						 vec(m_framebuffer->getLowerData()), vec(m_framebuffer->getUpperData()));
 
-	ImGui::End();
+	else OWL_WARN("No frameBuffer to render...")
+
+			ImGui::End();
 	ImGui::PopStyleVar();
 }
-// NOLINTEND(performance-no-int-to-ptr)
 
 }// namespace drone::panels

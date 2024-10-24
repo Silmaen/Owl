@@ -244,34 +244,52 @@ void DroneLayer::renderToolbar() {
 
 	auto& textureLib = renderer::Renderer::getTextureLibrary();
 
-	// NOLINTBEGIN(performance-no-int-to-ptr)
 	ImGui::SetCursorPos(ImVec2(posX, padding));
-	if (ImGui::ImageButton("##toolbar_btn_settings",
-						   reinterpret_cast<ImTextureID>(textureLib.get("icons/settings")->getRendererId()), vsize,
-						   ImVec2(0, 0), ImVec2(1, 1))) {
-		mode = DisplayMode::Settings;
+	if (const auto tex = gui::imTexture(textureLib.get("icons/settings")); tex.has_value()) {
+		if (ImGui::ImageButton("##toolbar_btn_settings", tex.value(), vsize, ImVec2(0, 0), ImVec2(1, 1))) {
+			mode = DisplayMode::Settings;
+		}
+	} else {
+		if (ImGui::Button("settings", vsize)) {
+			mode = DisplayMode::Settings;
+		}
 	}
 	posX += size + 2.f * padding;
 	ImGui::SetCursorPos(ImVec2(posX, padding));
-	if (ImGui::ImageButton("##toolbar_btn_gauges",
-						   reinterpret_cast<ImTextureID>(textureLib.get("icons/gauges")->getRendererId()), vsize,
-						   ImVec2(0, 1), ImVec2(1, 0))) {
-		mode = DisplayMode::Gauges;
+	if (const auto tex = gui::imTexture(textureLib.get("icons/gauges")); tex.has_value()) {
+		if (ImGui::ImageButton("##toolbar_btn_gauges", tex.value(), vsize, ImVec2(0, 0), ImVec2(1, 1))) {
+			mode = DisplayMode::Gauges;
+		}
+	} else {
+		if (ImGui::Button("gauges", vsize)) {
+			mode = mode = DisplayMode::Gauges;
+		}
 	}
+
+
 	const shared<renderer::Texture> iconCC =
 			isConnected() ? textureLib.get("icons/connected") : textureLib.get("icons/connect");
 	ImGui::SetCursorPos(ImVec2((ImGui::GetWindowContentRegionMax().x) - (2.f * size + 3.f * padding), padding));
-	if (ImGui::ImageButton("##toolbar_btn_connect", reinterpret_cast<ImTextureID>(iconCC->getRendererId()),
-						   ImVec2(size, size), ImVec2(0, 1), ImVec2(1, 0))) {
-		toggleConnect();
+	if (const auto tex = gui::imTexture(iconCC); tex.has_value()) {
+		if (ImGui::ImageButton("##toolbar_btn_connect", tex.value(), vsize, ImVec2(0, 0), ImVec2(1, 1))) {
+			toggleConnect();
+		}
+	} else {
+		if (ImGui::Button(isConnected() ? "disconnect" : "connect", vsize)) {
+			toggleConnect();
+		}
 	}
+
 	ImGui::SetCursorPos(ImVec2((ImGui::GetWindowContentRegionMax().x) - (size + padding), padding));
-	if (ImGui::ImageButton("##toolbar_btn_exit",
-						   reinterpret_cast<ImTextureID>(textureLib.get("icons/exit")->getRendererId()), vsize,
-						   ImVec2(0, 1), ImVec2(1, 0))) {
-		owl::core::Application::get().close();
+	if (const auto tex = gui::imTexture(textureLib.get("icons/exit")); tex.has_value()) {
+		if (ImGui::ImageButton("##toolbar_btn_exit", tex.value(), vsize, ImVec2(0, 0), ImVec2(1, 1))) {
+			core::Application::get().close();
+		}
+	} else {
+		if (ImGui::Button("exit", vsize)) {
+			core::Application::get().close();
+		}
 	}
-	// NOLINTEND(performance-no-int-to-ptr)
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
 	ImGui::End();

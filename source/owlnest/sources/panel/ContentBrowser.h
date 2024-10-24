@@ -57,8 +57,8 @@ private:
 	std::filesystem::path m_currentPath;
 	std::filesystem::path m_currentRootPath;
 
-	shared<renderer::Texture2D> m_fileIcon{nullptr};
-	shared<renderer::Texture2D> m_dirIcon{nullptr};
+	void renderTopBand();
+	void renderContent();
 };
 
 }// namespace owl::nest::panel

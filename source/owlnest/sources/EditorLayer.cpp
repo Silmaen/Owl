@@ -8,8 +8,6 @@
 
 #include "EditorLayer.h"
 
-#include "fonts/Font.h"
-
 // must be included AFTER imgui
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wzero-as-null-pointer-constant")
@@ -163,20 +161,13 @@ void EditorLayer::renderToolbar() {
 	const float size = ImGui::GetWindowHeight() - 4.0f;
 	const shared<renderer::Texture2D> icon = m_state == State::Edit ? m_iconPlay : m_iconStop;
 	ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
-	uint64_t textureId = 0;
-	if (icon)
-		textureId = icon->getRendererId();
-	if (textureId != 0) {
-
-		// NOLINTBEGIN(performance-no-int-to-ptr)
-		if (ImGui::ImageButton("btn_start_stop", reinterpret_cast<ImTextureID>(textureId), ImVec2(size, size),
-							   ImVec2(0, 0), ImVec2(1, 1))) {
+	if (const auto tex = gui::imTexture(icon); tex.has_value()) {
+		if (ImGui::ImageButton("btn_start_stop", tex.value(), ImVec2(size, size), ImVec2(0, 0), ImVec2(1, 1))) {
 			if (m_state == State::Edit)
 				onScenePlay();
 			else if (m_state == State::Play)
 				onSceneStop();
 		}
-		// NOLINTEND(performance-no-int-to-ptr)
 	} else {
 		if (m_state == State::Edit) {
 			if (ImGui::Button("play", ImVec2(size, size)))

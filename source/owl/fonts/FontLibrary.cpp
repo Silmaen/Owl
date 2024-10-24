@@ -15,7 +15,7 @@ namespace owl::fonts {
 
 namespace {
 
-std::list<std::filesystem::path> getFontPath() {
+auto getFontPath() -> std::list<std::filesystem::path> {
 	if (!core::Application::instanced())
 		return {};
 	const auto& app = core::Application::get();
@@ -51,7 +51,7 @@ void FontLibrary::loadFont(const std::string& iName) {
 			if (!item.is_regular_file() || item.path().extension() != ".ttf")
 				continue;
 			if (item.path().stem() == iName) {
-				m_fonts.emplace(iName, mkShared<Font>(item.path()));
+				m_fonts.emplace(iName, mkShared<Font>(item.path(), iName == m_defaultFontName));
 			}
 		}
 	}

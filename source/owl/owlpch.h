@@ -13,6 +13,9 @@
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
 
+#if !defined(__clang__) or __clang_major__ > 15
+#include <ranges>
+#endif
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -35,9 +38,6 @@ OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#if !defined(__clang__) or __clang_major__ > 15
-#include <ranges>
-#endif
 
 // Internal debug includes
 #include "debug/Profiler.h"
@@ -46,7 +46,7 @@ OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
 #include "math/math.h"
 
 // third party
-#include <entt/entt.hpp>
 #include <magic_enum.hpp>
+#include <entt/entt.hpp>
 
 OWL_DIAG_POP

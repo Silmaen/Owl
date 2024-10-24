@@ -128,12 +128,6 @@ struct InternalData {
 	/// next texture index
 	uint32_t textureSlotIndex = 1;// 0 = white texture
 };
-/*
-auto toTransform(const PRS& iTransform) -> math::mat4 {
-	return translate(math::identity<float, 4>(), iTransform.position) *
-		   rotate(math::identity<float, 4>(), math::radians(iTransform.rotation), {0.0f, 0.0f, 1.0f}) *
-		   scale(math::identity<float, 4>(), {iTransform.size.x(), iTransform.size.y(), 1.0f});
-}*/
 
 }// namespace utils
 
@@ -438,7 +432,9 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	{
 		math::vec2 cursor{0.f, 0.f};
 		for (size_t i = 0; i < iStringData.text.size(); i++) {
-			const char character = iStringData.text[i];
+			char character = iStringData.text[i];
+			if (isascii(character) == 0)
+				character = '?';
 			if (character == '\r')
 				continue;
 			if (character == '\n') {
@@ -450,8 +446,10 @@ void Renderer2D::drawString(const StringData& iStringData) {
 			quad.translate(cursor);
 			extents.update(quad);
 			if (i < iStringData.text.size() - 1) {
-				cursor.x() += iStringData.font->getAdvance(iStringData.text[i], iStringData.text[i + 1]) +
-							  iStringData.kerning;
+				char next = iStringData.text[i + 1];
+				if (isascii(next) == 0)
+					next = '?';
+				cursor.x() += iStringData.font->getAdvance(character, next) + iStringData.kerning;
 			}
 		}
 	}
@@ -459,10 +457,12 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	math::vec2 scale = extents.diagonal();
 	scale.x() = 1.f / scale.x();
 	scale.y() = 1.f / scale.y();
-	const math::vec2 offset = -extents.diagonal() / 2.f;
+	const math::vec2 offset = -extents.min() - 0.5f * extents.diagonal();
 	math::vec2 cursor{0.f, 0.f};
 	for (size_t i = 0; i < iStringData.text.size(); i++) {
-		const char character = iStringData.text[i];
+		char character = iStringData.text[i];
+		if (isascii(character) == 0)
+			character = '?';
 		if (character == '\r')
 			continue;
 		if (character == '\n') {
@@ -501,8 +501,10 @@ void Renderer2D::drawString(const StringData& iStringData) {
 		g_data->stats.quadCount++;
 		g_data->text.indexCount += 6;
 		if (i < iStringData.text.size() - 1) {
-			cursor.x() +=
-					iStringData.font->getAdvance(iStringData.text[i], iStringData.text[i + 1]) + iStringData.kerning;
+			char next = iStringData.text[i + 1];
+			if (isascii(next) == 0)
+				next = '?';
+			cursor.x() += iStringData.font->getAdvance(character, next) + iStringData.kerning;
 		}
 	}
 }

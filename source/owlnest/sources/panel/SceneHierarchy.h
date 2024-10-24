@@ -65,6 +65,9 @@ public:
 	void setSelectedEntity(const scene::Entity& iEntity) { m_selection = iEntity; }
 
 private:
+	void renderHierarchy();
+	void renderProperties();
+
 	/**
 	 * @brief Draw one entity node
 	 * @param[in,out] ioEntity The node to draw

@@ -72,7 +72,6 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	mp_framebuffer->unbind();
 }
 
-// NOLINTBEGIN(performance-no-int-to-ptr)
 void Viewport::onRender() {
 	OWL_PROFILE_FUNCTION()
 
@@ -90,8 +89,8 @@ void Viewport::onRender() {
 
 	const ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	m_viewportSize = {static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y)};
-	if (const uint64_t textureId = mp_framebuffer->getColorAttachmentRendererId(0); textureId != 0)
-		ImGui::Image(reinterpret_cast<void*>(textureId), viewportPanelSize, vec(mp_framebuffer->getLowerData()),
+	if (const auto tex = gui::imTexture(mp_framebuffer, 0); tex.has_value())
+		ImGui::Image(tex.value(), viewportPanelSize, vec(mp_framebuffer->getLowerData()),
 					 vec(mp_framebuffer->getUpperData()));
 
 	/*if (ImGui::BeginDragDropTarget()) {
@@ -108,6 +107,5 @@ void Viewport::onRender() {
 	ImGui::End();
 	ImGui::PopStyleVar();
 }
-// NOLINTEND(performance-no-int-to-ptr)
 
 }// namespace drone::panels

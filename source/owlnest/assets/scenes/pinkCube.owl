@@ -1,44 +1,5 @@
 Scene: untitled
 Entities:
-  - Entity: 2674427835904910172
-    Tag:
-      tag: title
-    Transform:
-      translation: [0, 0.899999976, 0]
-      rotation: [0, 0, 0]
-      scale: [2.5, 0.5, 1]
-    TextRenderer:
-      color: [1, 1, 1, 1]
-      kerning: 0
-      lineSpacing: 0
-      text: "Pink Cube\n"
-  - Entity: 13049489337967299327
-    Tag:
-      tag: Left
-    Transform:
-      translation: [-0.353553385, 0, 0.353553385]
-      rotation: [0, -0.785398185, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 0, 0.949019611, 1]
-  - Entity: 8277489167752238126
-    Tag:
-      tag: Right
-    Transform:
-      translation: [0.353553385, 0, 0.353553385]
-      rotation: [0, 0.785398185, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [0.549019635, 0, 0.588235319, 1]
-  - Entity: 15505402829428764199
-    Tag:
-      tag: Top
-    Transform:
-      translation: [0, 0.5, 0]
-      rotation: [1.57079637, 0.785398185, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [0.874509811, 0, 0.835294127, 1]
   - Entity: 8873392273389724098
     Tag:
       tag: Camera
@@ -57,10 +18,42 @@ Entities:
         orthographicFar: 21
       primary: true
       fixedAspectRatio: false
-  - Entity: 16732012497315007303
+  - Entity: 15505402829428764199
     Tag:
-      tag: Test
+      tag: Top
     Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
+      translation: [0, 0.5, 0]
+      rotation: [1.57079637, 0.785398185, 0]
       scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [0.874509811, 0, 0.835294127, 1]
+  - Entity: 8277489167752238126
+    Tag:
+      tag: Right
+    Transform:
+      translation: [0.353553385, 0, 0.353553385]
+      rotation: [0, 0.785398185, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [0.549019635, 0, 0.588235319, 1]
+  - Entity: 13049489337967299327
+    Tag:
+      tag: Left
+    Transform:
+      translation: [-0.353553385, 0, 0.353553385]
+      rotation: [0, -0.785398185, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 0, 0.949019611, 1]
+  - Entity: 2674427835904910172
+    Tag:
+      tag: Title
+    Transform:
+      translation: [0, 0.899999976, 0]
+      rotation: [0, 0, 0]
+      scale: [2.5, 0.5, 1]
+    TextRenderer:
+      color: [1, 1, 1, 1]
+      kerning: 0
+      lineSpacing: 0
+      text: "Pink Cube\n"

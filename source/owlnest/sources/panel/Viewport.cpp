@@ -108,11 +108,9 @@ void Viewport::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
 void Viewport::onRenderInternal() {
 	OWL_PROFILE_FUNCTION()
 
-	// NOLINTBEGIN(performance-no-int-to-ptr)
-	if (const uint64_t textureId = m_framebuffer->getColorAttachmentRendererId(0); textureId != 0)
-		ImGui::Image(reinterpret_cast<void*>(textureId), vec(getSize()), vec(m_framebuffer->getLowerData()),
+	if (const auto tex = gui::imTexture(m_framebuffer, 0); tex.has_value())
+		ImGui::Image(tex.value(), vec(getSize()), vec(m_framebuffer->getLowerData()),
 					 vec(m_framebuffer->getUpperData()));
-	// NOLINTEND(performance-no-int-to-ptr)
 	if (m_parent != nullptr) {
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {

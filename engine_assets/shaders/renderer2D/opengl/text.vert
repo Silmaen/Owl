@@ -22,7 +22,7 @@ layout (location = 3) out flat int o_EntityID;
 void main() {
     o_Vertex.Color = i_Color;
     o_Vertex.TexCoord = i_TexCoord;
-    o_EntityID = i_EntityID;
+    o_TexIndex = i_TexIndex;
     o_EntityID = i_EntityID;
     gl_Position = u_ViewProjection * vec4(i_Position, 1.0);
 }

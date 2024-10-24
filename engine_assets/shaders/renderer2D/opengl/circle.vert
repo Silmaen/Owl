@@ -27,7 +27,7 @@ void main() {
     o_vertex.Thickness = i_Thickness;
     o_vertex.Fade = i_Fade;
 
-    i_EntityID = i_EntityID;
+    o_EntityID = i_EntityID;
 
     gl_Position = u_ViewProjection * vec4(i_WorldPosition, 1.0);
 }

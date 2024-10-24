@@ -39,6 +39,7 @@
 #include "gui/BasePanel.h"
 #include "gui/Theme.h"
 #include "gui/UiLayer.h"
+#include "gui/utils.h"
 #include "input/CameraOrthoController.h"
 #include "input/Input.h"
 #include "input/Window.h"
@@ -50,13 +51,7 @@
 #include "scene/Scene.h"
 #include "scene/SceneCamera.h"
 #include "scene/SceneSerializer.h"
-#include "scene/component/Camera.h"
-#include "scene/component/CircleRenderer.h"
-#include "scene/component/ID.h"
-#include "scene/component/NativeScript.h"
-#include "scene/component/SpriteRenderer.h"
-#include "scene/component/Tag.h"
-#include "scene/component/Transform.h"
+#include "scene/component/components.h"
 //--------------------------
 
 // ------ renderer ---------

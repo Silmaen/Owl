@@ -10,14 +10,11 @@
 #include "SceneSerializer.h"
 
 #include "Entity.h"
-#include "component/Text.h"
-#include "scene/component/Camera.h"
-#include "scene/component/CircleRenderer.h"
-#include "scene/component/SpriteRenderer.h"
-#include "scene/component/Tag.h"
-#include "scene/component/Transform.h"
+#include "scene/component/components.h"
 
 #include "core/external/yaml.h"
+
+#include <core/Application.h>
 
 namespace YAML {
 
@@ -150,13 +147,14 @@ void serializeEntity(YAML::Emitter& ioOut, const Entity& iEntity) {
 	if (iEntity.hasComponent<component::Text>()) {
 		ioOut << YAML::Key << "TextRenderer";
 		ioOut << YAML::BeginMap;// TextRenderer
-		const auto& textComponent = iEntity.getComponent<component::Text>();
-		ioOut << YAML::Key << "color" << YAML::Value << textComponent.color;
-		ioOut << YAML::Key << "kerning" << YAML::Value << textComponent.kerning;
-		ioOut << YAML::Key << "lineSpacing" << YAML::Value << textComponent.lineSpacing;
-		ioOut << YAML::Key << "text" << YAML::Value << textComponent.text;
-		// Todo: manage fonts
-		//out << YAML::Key << "font" << YAML::Value << circleRendererComponent.font;
+		const auto& [text, font, color, kerning, lineSpacing] = iEntity.getComponent<component::Text>();
+		ioOut << YAML::Key << "color" << YAML::Value << color;
+		ioOut << YAML::Key << "kerning" << YAML::Value << kerning;
+		ioOut << YAML::Key << "lineSpacing" << YAML::Value << lineSpacing;
+		ioOut << YAML::Key << "text" << YAML::Value << text;
+		if (font && !font->isDefault()) {
+			ioOut << YAML::Key << "font" << YAML::Value << font->getName();
+		}
 		ioOut << YAML::EndMap;// CircleRenderer
 	}
 
@@ -242,13 +240,20 @@ auto SceneSerializer::deserialize(const std::filesystem::path& iFilepath) const 
 					fade = circleRendererComponent["fade"].as<float>();
 				}
 				if (auto testRendererComponent = entity["TextRenderer"]; testRendererComponent) {
-					auto& src = deserializedEntity.addComponent<component::Text>();
-					src.color = testRendererComponent["color"].as<math::vec4>();
-					src.kerning = testRendererComponent["kerning"].as<float>();
-					src.lineSpacing = testRendererComponent["lineSpacing"].as<float>();
-					src.text = testRendererComponent["text"].as<std::string>();
-					// TODO: manage fonts.
-					//src.font = testRendererComponent["font"].as<std::string>();
+					auto& [text, font, color, kerning, lineSpacing] =
+							deserializedEntity.addComponent<component::Text>();
+					color = testRendererComponent["color"].as<math::vec4>();
+					kerning = testRendererComponent["kerning"].as<float>();
+					lineSpacing = testRendererComponent["lineSpacing"].as<float>();
+					text = testRendererComponent["text"].as<std::string>();
+					if (core::Application::instanced()) {
+						auto& lib = core::Application::get().getFontLibrary();
+						if (testRendererComponent["font"]) {
+							font = lib.getFont(testRendererComponent["font"].as<std::string>());
+						} else {
+							font = lib.getDefaultFont();
+						}
+					}
 				}
 			}
 		}

@@ -25,7 +25,7 @@ public:
 	/**
 	 * @brief Default constructor.
 	 */
-	explicit Font(const std::filesystem::path& iPath);
+	explicit Font(const std::filesystem::path& iPath, bool iIsDefault = false);
 	/**
 	 * @brief Default destructor.
 	 */
@@ -58,15 +58,40 @@ public:
 		math::box2f uv;
 	};
 	[[nodiscard]] auto getGlyphBox(const char& iChar) const -> GlyphMetrics;
-
+	/**
+	 * @brief Get the line width.
+	 * @return The line width.
+	 */
 	[[nodiscard]] auto getScaledLineHeight() const -> float;
+	/**
+	 * @brief Compute the position of the next character.
+	 * @param iChar The current char.
+	 * @param iNextChar The next char.
+	 * @return ne position.
+	 */
 	[[nodiscard]] auto getAdvance(const char& iChar, const char& iNextChar) const -> float;
+
+	/**
+	 * @brief get the font's name.
+	 * @return The font name.
+	 */
+	auto getName() const -> const std::string& { return m_name; }
+
+	/**
+	 * @brief Look if it is the default font.
+	 * @return True if this is the default font.
+	 */
+	auto isDefault() const -> bool { return m_default; }
 
 private:
 	/// pointer to the texture.
 	shared<renderer::Texture2D> m_atlasTexture;
 	/// The internal atlas data.
 	shared<MsdfData> m_data;
+	/// The name of the font.
+	std::string m_name;
+	/// If this font is the default one.
+	bool m_default = false;
 };
 
 }// namespace owl::fonts
