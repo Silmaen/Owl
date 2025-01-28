@@ -1,8 +1,8 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
 #include <fonts/FontLibrary.h>
+#include <core/Application.h>
 
 using namespace owl::fonts;
 using namespace owl;

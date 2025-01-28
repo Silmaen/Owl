@@ -1,18 +1,34 @@
 #
 # base library
 #
+
+# List or source files
 file(GLOB_RECURSE SRCS
         *.cpp
 )
-file(GLOB_RECURSE HDRS
-        *.h
+file(GLOB_RECURSE HDRS_PRIVATE
+        private/*.h
 )
-list(REMOVE_ITEM
-        SRCS
-        ${CMAKE_CURRENT_SOURCE_DIR}/owlpch.cpp)
-list(REMOVE_ITEM
-        HDRS
-        ${CMAKE_CURRENT_SOURCE_DIR}/owlpch.h)
+add_library(${ENGINE_NAME}Private INTERFACE)
+target_include_directories(${ENGINE_NAME}Private INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/private>)
+target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PRJPREFIX}_ENGINE_BUILD)
+
+# exclude precompiled headers from source
+list(REMOVE_ITEM SRCS ${CMAKE_CURRENT_SOURCE_DIR}/private/${PRJPREFIX_LOWER}pch.cpp)
+list(REMOVE_ITEM HDRS_PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/${PRJPREFIX_LOWER}pch.h)
+# precompiled headers
+if (NOT ${PRJPREFIX}_ENABLE_CLANG_TIDY)
+    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/private/${PRJPREFIX_LOWER}pch.h")
+        target_precompile_headers(${ENGINE_NAME}Private INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/private/${PRJPREFIX_LOWER}pch.h)
+    endif ()
+endif ()
+
+# public headers (those in the package)
+file(GLOB_RECURSE HDRS_PUBLIC
+        public/*.h
+
+)
+
 if (${PRJPREFIX}_BUILD_SHARED)
     add_library(${ENGINE_NAME} SHARED)
     target_compile_definitions(${ENGINE_NAME} PUBLIC ${PRJPREFIX}_BUILD_SHARED)
@@ -26,30 +42,121 @@ target_sources(${ENGINE_NAME}
         ${SRCS}
         PUBLIC FILE_SET HEADERS
         BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} FILES
-        ${HDRS}
+        ${HDRS_PUBLIC}
 )
-target_include_directories(${ENGINE_NAME} PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+
+target_include_directories(${ENGINE_NAME}
+        PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/public>
         $<INSTALL_INTERFACE:include>
 )
 target_link_libraries(${ENGINE_NAME} PUBLIC ${CMAKE_PROJECT_NAME}_Base)
+target_link_libraries(${ENGINE_NAME} PRIVATE ${ENGINE_NAME}Private)
 
-# precompiled headers
-if (NOT ${PRJPREFIX}_ENABLE_CLANG_TIDY)
-    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${PRJPREFIX_LOWER}pch.h")
-        target_precompile_headers(${ENGINE_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/${PRJPREFIX_LOWER}pch.h)
-    endif ()
-endif ()
-# ----==== third party ====----
-# box2d
-find_package(box2d REQUIRED)
-message(STATUS "Found box2d version ${box2d_VERSION} @ ${box2d_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC box2d::box2d)
+
+# ---------========= PRIVATE third party =========---------
 
 # cpptrace
 find_package(cpptrace REQUIRED)
 message(STATUS "Found cpptrace version ${cpptrace_VERSION} @ ${cpptrace_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC cpptrace::cpptrace)
+target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace::cpptrace)
+
+# box2d
+find_package(box2d REQUIRED)
+message(STATUS "Found box2d version ${box2d_VERSION} @ ${box2d_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d::box2d)
+
+# glad
+find_package(glad 2.0 REQUIRED)
+message(STATUS "Found glad version ${glad_VERSION} @ ${glad_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE glad::glad)
+
+# GLFW
+find_package(glfw3 REQUIRED)
+message(STATUS "Found glfw3 version ${glfw3_VERSION} @ ${glfw3_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw)
+
+# magic_enum
+find_package(magic_enum REQUIRED)
+message(STATUS "Found magic_enum version ${magic_enum_VERSION} @ ${magic_enum_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE magic_enum::magic_enum)
+
+# msdf-atlas-gen
+find_package(msdf-atlas-gen REQUIRED)
+message(STATUS "Found msdf-atlas-gen version ${msdf-atlas-gen_VERSION} @ ${msdf-atlas-gen_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE msdf-atlas-gen::msdf-atlas-gen)
+
+# NativeFile Dialog
+find_package(nfd REQUIRED)
+message(STATUS "Found nfd version ${nfd_VERSION} @ ${nfd_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE nfd::nfd)
+
+# OpenAL
+find_package(OpenAL CONFIG REQUIRED)
+message(STATUS "Found OpenAL version ${OpenAL_VERSION} @ ${OpenAL_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE OpenAL::OpenAL)
+
+# SndFile
+find_package(SndFile CONFIG REQUIRED)
+message(STATUS "Found SndFile version ${SndFile_VERSION} @ ${SndFile_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE SndFile::sndfile)
+
+# stb_image
+find_package(stb_image REQUIRED)
+message(STATUS "Found stb_image version ${stb_image_VERSION} @ ${stb_image_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE stb_image::stb_image)
+
+# Vulkan
+# ----------------------
+find_package(VulkanHeaders REQUIRED)
+find_package(VulkanLoader REQUIRED)
+get_filename_component(VULKAN_DIR ${VulkanLoader_DIR} DIRECTORY)
+get_filename_component(VULKAN_DIR ${VULKAN_DIR} DIRECTORY)
+message(STATUS "Found Vulkan version ${VulkanLoader_VERSION} @ ${VULKAN_DIR}")
+target_link_libraries(${ENGINE_NAME} PRIVATE Vulkan::Loader)
+find_package(VulkanUtilityLibraries REQUIRED)
+message(STATUS "Found VulkanUtilityLibrary version ${VulkanLoader_VERSION} @ ${VULKAN_DIR}")
+target_link_libraries(${ENGINE_NAME} PRIVATE Vulkan::LayerSettings)
+target_link_libraries(${ENGINE_NAME} PRIVATE Vulkan::UtilityHeaders)
+# Vulkan layers
+if (${PRJPREFIX}_DEFINE_VULKAN_LAYERS)
+    if (${PRJPREFIX}_PLATFORM_WINDOWS)
+        set(${PRJPREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/bin)
+        set(${PRJPREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/bin)
+    else ()
+        set(${PRJPREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/share/vulkan/explicit_layer.d)
+        set(${PRJPREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/lib)
+    endif ()
+    target_compile_definitions(${ENGINE_NAME} PUBLIC
+            $<BUILD_INTERFACE:${PRJPREFIX}_VULKAN_LAYER_PATH="${${PRJPREFIX}_VULKAN_LAYER_PATH}">
+            $<BUILD_INTERFACE:${PRJPREFIX}_VULKAN_LAYER_BIN_PATH="${${PRJPREFIX}_VULKAN_LAYER_BIN_PATH}">)
+endif ()
+# Spir-V cross
+if (${PRJPREFIX}_BUILD_SHARED AND WIN32)
+    find_package(spirv_cross_c_shared REQUIRED)
+    message(STATUS "Found spirv_cross_c_shared version ${spirv_cross_c_shared_VERSION} @ ${spirv_cross_c_shared_DIR}")
+    target_link_libraries(${ENGINE_NAME}Private INTERFACE spirv-cross-c-shared)
+else ()
+    find_package(spirv_cross_core REQUIRED)
+    find_package(spirv_cross_glsl REQUIRED)
+    find_package(spirv_cross_hlsl REQUIRED)
+    find_package(spirv_cross_msl REQUIRED)
+    find_package(spirv_cross_cpp REQUIRED)
+    find_package(spirv_cross_reflect REQUIRED)
+    find_package(spirv_cross_c REQUIRED)
+    message(STATUS "Found spirv_cross_c version ${spirv_cross_c_VERSION} @ ${spirv_cross_c_DIR}")
+    target_link_libraries(${ENGINE_NAME}Private INTERFACE spirv-cross-cpp)
+endif ()
+
+# shaderc
+find_package(SPIRV-Tools REQUIRED)
+find_package(SPIRV-Tools-opt REQUIRED)
+find_package(glslang REQUIRED)
+find_package(shaderc REQUIRED)
+target_link_libraries(${ENGINE_NAME}Private INTERFACE shaderc::shaderc_shared)
+# ----------------------
+
+# ---------========= PUBLIC third party =========---------
 
 # debugbreak
 find_package(debugbreak REQUIRED)
@@ -66,114 +173,25 @@ find_package(fmt REQUIRED)
 message(STATUS "Found fmt version ${fmt_VERSION} @ ${fmt_DIR}")
 target_link_libraries(${ENGINE_NAME} PUBLIC fmt::fmt)
 
-# glad
-find_package(glad 2.0 REQUIRED)
-message(STATUS "Found glad version ${glad_VERSION} @ ${glad_DIR}")
-target_link_libraries(${ENGINE_NAME} PRIVATE glad::glad)
-
-# GLFW
-find_package(glfw3 REQUIRED)
-message(STATUS "Found glfw3 version ${glfw3_VERSION} @ ${glfw3_DIR}")
-target_link_libraries(${ENGINE_NAME} PRIVATE glfw)
-
-# Vulkan
-# ----------------------
-find_package(VulkanHeaders REQUIRED)
-find_package(VulkanLoader REQUIRED)
-get_filename_component(VULKAN_DIR ${VulkanLoader_DIR} DIRECTORY)
-get_filename_component(VULKAN_DIR ${VULKAN_DIR} DIRECTORY)
-message(STATUS "Found Vulkan version ${VulkanLoader_VERSION} @ ${VULKAN_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC Vulkan::Loader)
-find_package(VulkanUtilityLibraries REQUIRED)
-message(STATUS "Found VulkanUtilityLibrary version ${VulkanLoader_VERSION} @ ${VULKAN_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC Vulkan::LayerSettings)
-target_link_libraries(${ENGINE_NAME} PUBLIC Vulkan::UtilityHeaders)
-# Vulkan layers
-if (${PRJPREFIX}_DEFINE_VULKAN_LAYERS)
-    if (${PRJPREFIX}_PLATFORM_WINDOWS)
-        set(${PRJPREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/bin)
-        set(${PRJPREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/bin)
-    else ()
-        set(${PRJPREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/share/vulkan/explicit_layer.d)
-        set(${PRJPREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/lib)
-    endif ()
-    target_compile_definitions(${ENGINE_NAME} PUBLIC
-            $<BUILD_INTERFACE:${PRJPREFIX}_VULKAN_LAYER_PATH="${${PRJPREFIX}_VULKAN_LAYER_PATH}">
-            $<BUILD_INTERFACE:${PRJPREFIX}_VULKAN_LAYER_BIN_PATH="${${PRJPREFIX}_VULKAN_LAYER_BIN_PATH}">)
-endif ()
-# ----------------------
-
 # ImGui
 find_package(imgui REQUIRED)
 message(STATUS "Found imgui version ${imgui_VERSION} @ ${imgui_DIR}")
 target_link_libraries(${ENGINE_NAME} PUBLIC imgui::imgui)
+
+# ImGuizmo
 find_package(imguizmo REQUIRED)
 message(STATUS "Found imguizmo version ${imguizmo_VERSION} @ ${imguizmo_DIR}")
 target_link_libraries(${ENGINE_NAME} PUBLIC imguizmo::imguizmo)
-
-# magic_enum
-find_package(magic_enum REQUIRED)
-message(STATUS "Found magic_enum version ${magic_enum_VERSION} @ ${magic_enum_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC magic_enum::magic_enum)
-
-# msdf-atlas-gen
-find_package(msdf-atlas-gen REQUIRED)
-message(STATUS "Found msdf-atlas-gen version ${msdf-atlas-gen_VERSION} @ ${msdf-atlas-gen_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC msdf-atlas-gen::msdf-atlas-gen)
-
-# yaml
-find_package(yaml-cpp REQUIRED)
-message(STATUS "Found yaml-cpp version ${yaml-cpp_VERSION} @ ${yaml-cpp_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC yaml-cpp::yaml-cpp)
 
 # spdlog
 find_package(spdlog REQUIRED)
 message(STATUS "Found Spdlog version ${spdlog_VERSION} @ ${spdlog_DIR}")
 target_link_libraries(${ENGINE_NAME} PUBLIC spdlog::spdlog)
 
-# stb_image
-find_package(stb_image REQUIRED)
-message(STATUS "Found stb_image version ${stb_image_VERSION} @ ${stb_image_DIR}")
-target_link_libraries(${ENGINE_NAME} PRIVATE stb_image::stb_image)
-
-# NativeFile Dialog
-find_package(nfd REQUIRED)
-message(STATUS "Found nfd version ${nfd_VERSION} @ ${nfd_DIR}")
-target_link_libraries(${ENGINE_NAME} PRIVATE nfd::nfd)
-
-# Spir-V cross
-if (${PRJPREFIX}_BUILD_SHARED AND WIN32)
-    find_package(spirv_cross_c_shared REQUIRED)
-    message(STATUS "Found spirv_cross_c_shared version ${spirv_cross_c_shared_VERSION} @ ${spirv_cross_c_shared_DIR}")
-    target_link_libraries(${ENGINE_NAME} PRIVATE spirv-cross-c-shared)
-else ()
-    find_package(spirv_cross_core REQUIRED)
-    find_package(spirv_cross_glsl REQUIRED)
-    find_package(spirv_cross_hlsl REQUIRED)
-    find_package(spirv_cross_msl REQUIRED)
-    find_package(spirv_cross_cpp REQUIRED)
-    find_package(spirv_cross_reflect REQUIRED)
-    find_package(spirv_cross_c REQUIRED)
-    message(STATUS "Found spirv_cross_c version ${spirv_cross_c_VERSION} @ ${spirv_cross_c_DIR}")
-    target_link_libraries(${ENGINE_NAME} PRIVATE spirv-cross-cpp)
-endif ()
-
-# shaderc
-find_package(SPIRV-Tools REQUIRED)
-find_package(SPIRV-Tools-opt REQUIRED)
-find_package(glslang REQUIRED)
-find_package(shaderc REQUIRED)
-target_link_libraries(${ENGINE_NAME} PRIVATE shaderc::shaderc_shared)
-
-# OpenAL
-find_package(OpenAL CONFIG REQUIRED)
-message(STATUS "Found OpenAL version ${OpenAL_VERSION} @ ${OpenAL_DIR}")
-target_link_libraries(${ENGINE_NAME} PRIVATE OpenAL::OpenAL)
-
-# SndFile
-find_package(SndFile CONFIG REQUIRED)
-message(STATUS "Found SndFile version ${SndFile_VERSION} @ ${SndFile_DIR}")
-target_link_libraries(${ENGINE_NAME} PRIVATE SndFile::sndfile)
+# yaml
+find_package(yaml-cpp REQUIRED)
+message(STATUS "Found yaml-cpp version ${yaml-cpp_VERSION} @ ${yaml-cpp_DIR}")
+target_link_libraries(${ENGINE_NAME} PUBLIC yaml-cpp::yaml-cpp)
 
 # additional windows libs
 if (${PRJPREFIX}_PLATFORM_WINDOWS)
