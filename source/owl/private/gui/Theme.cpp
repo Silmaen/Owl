@@ -10,7 +10,7 @@
 
 #include "gui/Theme.h"
 
-#include "math/YamlSerializers.h"
+#include "../math/YamlSerializers.h"
 
 namespace owl::gui {
 

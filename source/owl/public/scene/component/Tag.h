@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "core/external/yaml.h"
 #include "core/Core.h"
+#include "core/Serializer.h"
 
 namespace owl::scene::component {
 
@@ -27,23 +27,15 @@ struct OWL_API Tag {
 
 	/**
 	 * @brief Write this component to a YAML context.
-	 * @param ioOut The YAML context.
+	 * @param iOut The YAML context.
 	 */
-	void serialize(YAML::Emitter& ioOut) const {
-		ioOut << YAML::Key << key();
-		ioOut << YAML::BeginMap;// Tag
-		ioOut << YAML::Key << "tag" << YAML::Value << tag;
-		ioOut << YAML::EndMap;// Tag
-	}
+	void serialize(const core::Serializer& iOut) const;
 
 	/**
 	 * @brief Read this component from YAML node.
 	 * @param iNode The YAML node to read.
 	 */
-	void deserialize(const YAML::Node& iNode) {
-		if (iNode["tag"])
-			tag = iNode["tag"].as<std::string>();
-	}
+	void deserialize(const core::Serializer& iNode);
 };
 
 }// namespace owl::scene::component

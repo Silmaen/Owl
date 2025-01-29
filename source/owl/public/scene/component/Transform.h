@@ -8,8 +8,8 @@
 
 #pragma once
 
+#include "core/Serializer.h"
 #include "math/Transform.h"
-#include "math/YamlSerializers.h"
 
 namespace owl::scene::component {
 
@@ -32,29 +32,15 @@ struct OWL_API Transform {
 
 	/**
 	 * @brief Write this component to a YAML context.
-	 * @param ioOut The YAML context.
+	 * @param iOut The YAML context.
 	 */
-	void serialize(YAML::Emitter& ioOut) const {
-		ioOut << YAML::Key << key();
-		ioOut << YAML::BeginMap;// Transform
-		ioOut << YAML::Key << "translation" << YAML::Value << transform.translation();
-		ioOut << YAML::Key << "rotation" << YAML::Value << transform.rotation();
-		ioOut << YAML::Key << "scale" << YAML::Value << transform.scale();
-		ioOut << YAML::EndMap;// Transform
-	}
+	void serialize(const core::Serializer& iOut) const;
 
 	/**
 	 * @brief Read this component from YAML node.
 	 * @param iNode The YAML node to read.
 	 */
-	void deserialize(const YAML::Node& iNode) {
-		if (iNode["translation"])
-			transform.translation() = iNode["translation"].as<math::vec3>();
-		if (iNode["rotation"])
-			transform.rotation() = iNode["rotation"].as<math::vec3>();
-		if (iNode["scale"])
-			transform.scale() = iNode["scale"].as<math::vec3>();
-	}
+	void deserialize(const core::Serializer& iNode);
 };
 
 }// namespace owl::scene::component

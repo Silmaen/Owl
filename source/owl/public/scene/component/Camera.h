@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "math/YamlSerializers.h"
+#include "core/Serializer.h"
 #include "scene/SceneCamera.h"
 
 namespace owl::scene::component {
@@ -29,22 +29,22 @@ struct OWL_API Camera {
 	 */
 	static auto name() -> const char* { return "Camera"; }
 	/**
-	 * @brief Get the YAML key for this component
-	 * @return The YAML key.
+	 * @brief Get the serializer key for this component
+	 * @return The serializer key.
 	 */
 	static auto key() -> const char* { return "Camera"; }
 
 	/**
-	 * @brief Write this component to a YAML context.
-	 * @param ioOut The YAML context.
+	 * @brief Write this component to a serializer context.
+	 * @param iOut The serializer context.
 	 */
-	void serialize(YAML::Emitter& ioOut) const;
+	void serialize(const core::Serializer& iOut) const;
 
 	/**
-	 * @brief Read this component from YAML node.
-	 * @param iNode The YAML node to read.
+	 * @brief Read this component from serializer node.
+	 * @param iNode The serializer node to read.
 	 */
-	void deserialize(const YAML::Node& iNode);
+	void deserialize(const core::Serializer& iNode);
 };
 
 }// namespace owl::scene::component

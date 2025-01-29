@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "math/YamlSerializers.h"
+#include "core/Serializer.h"
 
 namespace owl::scene::component {
 
@@ -35,29 +35,15 @@ struct OWL_API CircleRenderer {
 
 	/**
 	 * @brief Write this component to a YAML context.
-	 * @param ioOut The YAML context.
+	 * @param iOut The YAML context.
 	 */
-	void serialize(YAML::Emitter& ioOut) const {
-		ioOut << YAML::Key << key();
-		ioOut << YAML::BeginMap;// CircleRenderer
-		ioOut << YAML::Key << "color" << YAML::Value << color;
-		ioOut << YAML::Key << "thickness" << YAML::Value << thickness;
-		ioOut << YAML::Key << "fade" << YAML::Value << fade;
-		ioOut << YAML::EndMap;// CircleRenderer
-	}
+	void serialize(const core::Serializer& iOut) const;
 
 	/**
 	 * @brief Read this component from YAML node.
 	 * @param iNode The YAML node to read.
 	 */
-	void deserialize(const YAML::Node& iNode) {
-		if (iNode["color"])
-			color = iNode["color"].as<math::vec4>();
-		if (iNode["thickness"])
-			thickness = iNode["thickness"].as<float>();
-		if (iNode["fade"])
-			fade = iNode["fade"].as<float>();
-	}
+	void deserialize(const core::Serializer& iNode);
 };
 
 }// namespace owl::scene::component

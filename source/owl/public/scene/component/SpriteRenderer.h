@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "math/YamlSerializers.h"
+#include "core/Serializer.h"
 #include "renderer/Texture.h"
 
 namespace owl::scene::component {
@@ -36,31 +36,15 @@ struct OWL_API SpriteRenderer {
 
 	/**
 	 * @brief Write this component to a YAML context.
-	 * @param ioOut The YAML context.
+	 * @param iOut The YAML context.
 	 */
-	void serialize(YAML::Emitter& ioOut) const {
-		ioOut << YAML::Key << key();
-		ioOut << YAML::BeginMap;// SpriteRenderer
-		ioOut << YAML::Key << "color" << YAML::Value << color;
-		if (texture) {
-			ioOut << YAML::Key << "tilingFactor" << YAML::Value << tilingFactor;
-			ioOut << YAML::Key << "texture" << YAML::Value << texture->getSerializeString();
-		}
-		ioOut << YAML::EndMap;// SpriteRenderer
-	}
+	void serialize(const core::Serializer& iOut) const;
 
 	/**
 	 * @brief Read this component from YAML node.
 	 * @param iNode The YAML node to read.
 	 */
-	void deserialize(const YAML::Node& iNode) {
-		if (iNode["color"])
-			color = iNode["color"].as<math::vec4>();
-		if (iNode["tilingFactor"])
-			tilingFactor = iNode["tilingFactor"].as<float>();
-		if (iNode["texture"])
-			texture = renderer::Texture2D::createFromSerialized(iNode["texture"].as<std::string>());
-	}
+	void deserialize(const core::Serializer& iNode);
 };
 
 }// namespace owl::scene::component

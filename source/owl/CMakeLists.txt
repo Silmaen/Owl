@@ -12,6 +12,7 @@ file(GLOB_RECURSE HDRS_PRIVATE
 add_library(${ENGINE_NAME}Private INTERFACE)
 target_include_directories(${ENGINE_NAME}Private INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/private>)
 target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PRJPREFIX}_ENGINE_BUILD)
+target_sources(${ENGINE_NAME}Private INTERFACE ${HDRS_PRIVATE})
 
 # exclude precompiled headers from source
 list(REMOVE_ITEM SRCS ${CMAKE_CURRENT_SOURCE_DIR}/private/${PRJPREFIX_LOWER}pch.cpp)
@@ -156,6 +157,11 @@ find_package(shaderc REQUIRED)
 target_link_libraries(${ENGINE_NAME}Private INTERFACE shaderc::shaderc_shared)
 # ----------------------
 
+# yaml
+find_package(yaml-cpp REQUIRED)
+message(STATUS "Found yaml-cpp version ${yaml-cpp_VERSION} @ ${yaml-cpp_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp::yaml-cpp)
+
 # ---------========= PUBLIC third party =========---------
 
 # debugbreak
@@ -188,10 +194,6 @@ find_package(spdlog REQUIRED)
 message(STATUS "Found Spdlog version ${spdlog_VERSION} @ ${spdlog_DIR}")
 target_link_libraries(${ENGINE_NAME} PUBLIC spdlog::spdlog)
 
-# yaml
-find_package(yaml-cpp REQUIRED)
-message(STATUS "Found yaml-cpp version ${yaml-cpp_VERSION} @ ${yaml-cpp_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC yaml-cpp::yaml-cpp)
 
 # additional windows libs
 if (${PRJPREFIX}_PLATFORM_WINDOWS)

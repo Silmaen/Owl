@@ -46,8 +46,8 @@ concept isNamedComponent = isComponent<Component> && requires {
  * @brief Concept that type is serializable.
  */
 template<typename Component>
-concept isSerializableComponent = isComponent<Component> && requires(const Component& t, YAML::Emitter& ioOut) {
-	{ t.serialize(ioOut) } -> std::same_as<void>;
+concept isSerializableComponent = isComponent<Component> && requires(const Component& t, const core::Serializer& iOut) {
+	{ t.serialize(iOut) } -> std::same_as<void>;
 	{ Component::key() } -> std::convertible_to<const char*>;
 };
 
@@ -55,7 +55,7 @@ concept isSerializableComponent = isComponent<Component> && requires(const Compo
  * @brief Concept that type is deserializable.
  */
 template<typename Component>
-concept isDeserializableComponent = isComponent<Component> && requires(Component& t, const YAML::Node& iNode) {
+concept isDeserializableComponent = isComponent<Component> && requires(Component& t, const core::Serializer& iNode) {
 	{ t.deserialize(iNode) } -> std::same_as<void>;
 	{ Component::key() } -> std::convertible_to<const char*>;
 };
@@ -80,54 +80,5 @@ using serializableComponents = std::tuple<Tag, Transform, Camera, SpriteRenderer
  */
 using optionalComponents =
 		std::tuple<Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody, Player, Trigger, EntityLink>;
-
-/**
- * @brief Serialize a single component.
- * @tparam Component The Serializable component type.
- * @param iEntity The Entity to serialize.
- * @param ioOut The YAML context.
- */
-template<isSerializableComponent Component>
-void serializeComponent(const Entity& iEntity, YAML::Emitter& ioOut) {
-	if (iEntity.hasComponent<Component>()) {
-		iEntity.getComponent<Component>().serialize(ioOut);
-	}
-}
-
-/**
- * @brief Serialize a list of component.
- * @tparam Components The Serializable component types (deduced from the last parameter).
- * @param iEntity The Entity to serialize.
- * @param ioOut The YAML context.
- */
-template<isSerializableComponent... Components>
-void serializeComponents(const Entity& iEntity, YAML::Emitter& ioOut, std::tuple<Components...>) {
-	(..., serializeComponent<Components>(iEntity, ioOut));
-}
-
-/**
- * @brief Deserialize a single component.
- * @tparam Component The Serializable component type.
- * @param iEntity The Entity to deserialize.
- * @param iNode The YAML context.
- */
-template<isDeserializableComponent Component>
-void deserializeComponent(Entity& iEntity, const YAML::Node& iNode) {
-	if (auto node = iNode[Component::key()]; node) {
-		auto& comp = iEntity.addComponent<Component>();
-		comp.deserialize(node);
-	}
-}
-
-/**
- * @brief Deserialize a list of components.
- * @tparam Components The Serializable component types (deduced from the last parameter).
- * @param iEntity The Entity to deserialize.
- * @param iNode The YAML context.
- */
-template<isDeserializableComponent... Components>
-void deserializeComponents(Entity& iEntity, const YAML::Node& iNode, std::tuple<Components...>) {
-	(..., deserializeComponent<Components>(iEntity, iNode));
-}
 
 }// namespace owl::scene::component

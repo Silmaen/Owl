@@ -7,31 +7,32 @@
 */
 #include "owlpch.h"
 
+#include "core/SerializerImpl.h"
 #include "scene/component/PhysicBody.h"
 
 namespace owl::scene::component {
 
-void PhysicBody::serialize(YAML::Emitter& ioOut) const {
-	ioOut << YAML::Key << key();
-	ioOut << YAML::BeginMap;
-	ioOut << YAML::Key << "type" << YAML::Value << std::string(magic_enum::enum_name(body.type));
-	ioOut << YAML::Key << "fixedRotation" << YAML::Value << body.fixedRotation;
-	ioOut << YAML::Key << "colliderSize" << YAML::Value << body.colliderSize;
-	ioOut << YAML::Key << "density" << YAML::Value << body.density;
-	ioOut << YAML::Key << "restitution" << YAML::Value << body.restitution;
-	ioOut << YAML::Key << "friction" << YAML::Value << body.friction;
-	ioOut << YAML::EndMap;
+void PhysicBody::serialize(const core::Serializer& iOut) const {
+	iOut.getImpl()->emitter << YAML::Key << key();
+	iOut.getImpl()->emitter << YAML::BeginMap;
+	iOut.getImpl()->emitter << YAML::Key << "type" << YAML::Value << std::string(magic_enum::enum_name(body.type));
+	iOut.getImpl()->emitter << YAML::Key << "fixedRotation" << YAML::Value << body.fixedRotation;
+	iOut.getImpl()->emitter << YAML::Key << "colliderSize" << YAML::Value << body.colliderSize;
+	iOut.getImpl()->emitter << YAML::Key << "density" << YAML::Value << body.density;
+	iOut.getImpl()->emitter << YAML::Key << "restitution" << YAML::Value << body.restitution;
+	iOut.getImpl()->emitter << YAML::Key << "friction" << YAML::Value << body.friction;
+	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
-void PhysicBody::deserialize(const YAML::Node& iNode) {
-	body.type = magic_enum::enum_cast<SceneBody::BodyType>(iNode["type"].as<std::string>())
+void PhysicBody::deserialize(const core::Serializer& iNode) {
+	body.type = magic_enum::enum_cast<SceneBody::BodyType>(iNode.getImpl()->node["type"].as<std::string>())
 						.value_or(SceneBody::BodyType::Static);
-	body.fixedRotation = iNode["fixedRotation"].as<bool>();
+	body.fixedRotation = iNode.getImpl()->node["fixedRotation"].as<bool>();
 	body.bodyId = 0;
-	body.colliderSize = iNode["colliderSize"].as<math::vec3f>();
-	body.density = iNode["density"].as<float>();
-	body.restitution = iNode["restitution"].as<float>();
-	body.friction = iNode["friction"].as<float>();
+	body.colliderSize = iNode.getImpl()->node["colliderSize"].as<math::vec3f>();
+	body.density = iNode.getImpl()->node["density"].as<float>();
+	body.restitution = iNode.getImpl()->node["restitution"].as<float>();
+	body.friction = iNode.getImpl()->node["friction"].as<float>();
 }
 
 }// namespace owl::scene::component
