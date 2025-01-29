@@ -8,6 +8,7 @@
 
 #include "owlpch.h"
 
+#include "core/external/spdlog.h"
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
 OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
@@ -18,15 +19,37 @@ OWL_DIAG_POP
 
 namespace owl::core {
 
-std::shared_ptr<spdlog::logger> Log::s_coreLogger;
-std::shared_ptr<spdlog::logger> Log::s_clientLogger;
-spdlog::level::level_enum Log::s_verbosity = spdlog::level::trace;
+namespace {
+auto fromLevel(const Log::Level& iLevel) -> spdlog::level::level_enum {
+	switch (iLevel) {
+		case Log::Level::Error:
+			return spdlog::level::err;
+		case Log::Level::Warning:
+			return spdlog::level::warn;
+		case Log::Level::Info:
+			return spdlog::level::info;
+		case Log::Level::Debug:
+			return spdlog::level::debug;
+		case Log::Level::Trace:
+			return spdlog::level::trace;
+		case Log::Level::Off:
+			return spdlog::level::off;
+		case Log::Level::Critical:
+			return spdlog::level::critical;
+	}
+	return spdlog::level::off;
+}
+std::shared_ptr<spdlog::logger> g_CoreLogger;
+std::shared_ptr<spdlog::logger> g_ClientLogger;
+}// namespace
+
+Log::Level Log::s_verbosity = Level::Trace;
 uint64_t Log::s_frameCounter = 0;
 uint64_t Log::s_frequency = gDefaultFrequency;
 
-void Log::init(const spdlog::level::level_enum& iLevel, const uint64_t iFrequency) {
+void Log::init(const Level& iLevel, const uint64_t iFrequency) {
 	OWL_SCOPE_UNTRACK
-	if (s_coreLogger != nullptr) {
+	if (g_CoreLogger != nullptr) {
 		OWL_CORE_INFO("Logger already initiated.")
 		return;
 	}
@@ -41,35 +64,40 @@ void Log::init(const spdlog::level::level_enum& iLevel, const uint64_t iFrequenc
 	logSinks[0]->set_pattern("%^[%T] %n: %v%$");
 	logSinks[1]->set_pattern("[%T] [%l] %n: %v");
 
-	s_coreLogger = std::make_shared<spdlog::logger>("OWL", begin(logSinks), end(logSinks));
-	spdlog::register_logger(s_coreLogger);
+	g_CoreLogger = std::make_shared<spdlog::logger>("OWL", begin(logSinks), end(logSinks));
+	register_logger(g_CoreLogger);
 
-	s_clientLogger = std::make_shared<spdlog::logger>("APP", begin(logSinks), end(logSinks));
-	spdlog::register_logger(s_clientLogger);
+	g_ClientLogger = std::make_shared<spdlog::logger>("APP", begin(logSinks), end(logSinks));
+	register_logger(g_ClientLogger);
 	setVerbosityLevel(iLevel);
 	s_frameCounter = 0;
 	s_frequency = iFrequency;
 }
 
-void Log::setVerbosityLevel(const spdlog::level::level_enum& iLevel) {
+void Log::setVerbosityLevel(const Level& iLevel) {
 	s_verbosity = iLevel;
-	if (s_coreLogger) {
-		s_coreLogger->set_level(s_verbosity);
-		s_coreLogger->flush_on(s_verbosity);
+	if (g_CoreLogger) {
+		g_CoreLogger->set_level(fromLevel(s_verbosity));
+		g_CoreLogger->flush_on(fromLevel(s_verbosity));
 	}
-	if (s_clientLogger) {
-		s_clientLogger->set_level(s_verbosity);
-		s_clientLogger->flush_on(s_verbosity);
+	if (g_ClientLogger) {
+		g_ClientLogger->set_level(fromLevel(s_verbosity));
+		g_ClientLogger->flush_on(fromLevel(s_verbosity));
 	}
 }
 
 void Log::invalidate() {
 	OWL_SCOPE_UNTRACK
 	spdlog::drop_all();
-	s_coreLogger.reset();
-	s_clientLogger.reset();
+	g_CoreLogger.reset();
+	g_ClientLogger.reset();
 }
 
+auto Log::initiated() -> bool { return g_CoreLogger != nullptr; }
+
 void Log::newFrame() { ++s_frameCounter; }
+
+void Log::logCore(const Level& iLevel, const std::string_view& iMsg) { g_CoreLogger->log(fromLevel(iLevel), iMsg); }
+void Log::logClient(const Level& iLevel, const std::string_view& iMsg) { g_ClientLogger->log(fromLevel(iLevel), iMsg); }
 
 }// namespace owl::core

@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "core/Macros.h"
 #include "math/vectors.h"
 
 #include <filesystem>

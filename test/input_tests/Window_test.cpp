@@ -6,7 +6,7 @@
 using namespace owl::input;
 
 TEST(Window, creation) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	Properties props;
 	props.winType = Type(-1);
 	auto wnd = Window::create(props);

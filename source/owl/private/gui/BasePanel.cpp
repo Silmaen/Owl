@@ -5,7 +5,6 @@
  * Copyright © 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
-
 #include "owlpch.h"
 
 #include "gui/BasePanel.h"

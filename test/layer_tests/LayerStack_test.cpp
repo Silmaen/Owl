@@ -26,7 +26,7 @@ TEST(LayerStack, base) {
 }
 
 TEST(LayerStack, pushLayer) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	{
 		auto stack = LayerStack();
 		stack.pushLayer(owl::mkShared<Layer>("Layer 1"));

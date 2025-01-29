@@ -9,6 +9,8 @@
 #pragma once
 
 // -------- STD ------------
+#include <algorithm>
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <optional>

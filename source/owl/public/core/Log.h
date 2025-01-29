@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "Core.h"
-#include "external/spdlog.h"
+#include "core/Core.h"
+#include <fmt/format.h>
 
 /**
  * @brief Namespace for the core objects.
@@ -24,31 +24,28 @@ constexpr uint64_t gDefaultFrequency{100};
  */
 class OWL_API Log {
 public:
+	/// Log Level.
+	enum struct Level : uint8_t {
+		Trace,///< TRACE level
+		Debug,///< DEBUG level
+		Info,///< INFO level
+		Warning,///< WARNING level
+		Error,///< ERROR level
+		Critical,///< CRITICAL level
+		Off///< OFF level
+	};
 	/**
 	 * @brief initialize the logging system.
 	 * @param[in] iLevel Verbosity level of the logger.
 	 * @param[in] iFrequency Frequency of frame output (number of frames).
 	 */
-	static void init(const spdlog::level::level_enum& iLevel = spdlog::level::trace,
-					 uint64_t iFrequency = gDefaultFrequency);
-
-	/**
-	 * @brief Access to the logger for the core system.
-	 * @return The Core logger.
-	 */
-	static auto getCoreLogger() -> shared<spdlog::logger> { return s_coreLogger; }
-
-	/**
-	 * @brief Access to the logger for the application system.
-	 * @return The application logger.
-	 */
-	static auto getClientLogger() -> shared<spdlog::logger> { return s_clientLogger; }
+	static void init(const Level& iLevel = Level::Trace, uint64_t iFrequency = gDefaultFrequency);
 
 	/**
 	 * @brief Defines the Verbosity level
 	 * @param[in] iLevel Verbosity level.
 	 */
-	static void setVerbosityLevel(const spdlog::level::level_enum& iLevel);
+	static void setVerbosityLevel(const Level& iLevel);
 
 	/**
 	 * @brief Destroy the logger.
@@ -59,7 +56,7 @@ public:
 	 * @brief Check if logger is initiated.
 	 * @return True if initiated.
 	 */
-	static auto initiated() -> bool { return s_coreLogger != nullptr; }
+	static auto initiated() -> bool;
 
 	/**
 	 * @brief To know if in logging frame.
@@ -78,13 +75,23 @@ public:
 	 */
 	static void setFrameFrequency(const uint64_t iFrequency) { s_frequency = iFrequency; }
 
+	template<typename... Args>
+	static void logCore(const Level& iLevel, fmt::format_string<Args...> iFmt, Args&&... iArgs) {
+		logCore(iLevel, fmt::vformat(iFmt, fmt::make_format_args(iArgs...)));
+	}
+
+	static void logCore(const Level& iLevel, const std::string_view& iMsg);
+
+	template<typename... Args>
+	static void logClient(const Level& iLevel, fmt::format_string<Args...> iFmt, Args&&... iArgs) {
+		logCore(iLevel, fmt::vformat(iFmt, fmt::make_format_args(iArgs...)));
+	}
+
+	static void logClient(const Level& iLevel, const std::string_view& iMsg);
+
 private:
-	/// The core logger.
-	static shared<spdlog::logger> s_coreLogger;
-	/// The application logger.
-	static shared<spdlog::logger> s_clientLogger;
 	/// The level of verbosity.
-	static spdlog::level::level_enum s_verbosity;
+	static Level s_verbosity;
 	/// Counter for the frames.
 	static uint64_t s_frameCounter;
 	/// Frequency of frame trace.
@@ -95,19 +102,19 @@ private:
 // Core log macros;
 #define OWL_CORE_FRAME_TRACE(...)                                                                                      \
 	if (::owl::core::Log::frameLog()) {                                                                                \
-		::owl::core::Log::getCoreLogger()->trace(__VA_ARGS__);                                                         \
+		::owl::core::Log::logCore(::owl::core::Log::Level::Trace, __VA_ARGS__);                                        \
 	}
 #define OWL_CORE_FRAME_ADVANCE ::owl::core::Log::newFrame();
 
-#define OWL_CORE_TRACE(...) ::owl::core::Log::getCoreLogger()->trace(__VA_ARGS__);
-#define OWL_CORE_INFO(...) ::owl::core::Log::getCoreLogger()->info(__VA_ARGS__);
-#define OWL_CORE_WARN(...) ::owl::core::Log::getCoreLogger()->warn(__VA_ARGS__);
-#define OWL_CORE_ERROR(...) ::owl::core::Log::getCoreLogger()->error(__VA_ARGS__);
-#define OWL_CORE_CRITICAL(...) ::owl::core::Log::getCoreLogger()->critical(__VA_ARGS__);
+#define OWL_CORE_TRACE(...) ::owl::core::Log::logCore(::owl::core::Log::Level::Trace, __VA_ARGS__);
+#define OWL_CORE_INFO(...) ::owl::core::Log::logCore(::owl::core::Log::Level::Info, __VA_ARGS__);
+#define OWL_CORE_WARN(...) ::owl::core::Log::logCore(::owl::core::Log::Level::Warning, __VA_ARGS__);
+#define OWL_CORE_ERROR(...) ::owl::core::Log::logCore(::owl::core::Log::Level::Error, __VA_ARGS__);
+#define OWL_CORE_CRITICAL(...) ::owl::core::Log::logCore(::owl::core::Log::Level::Critical, __VA_ARGS__);
 
 // Client log macros
-#define OWL_TRACE(...) ::owl::core::Log::getClientLogger()->trace(__VA_ARGS__);
-#define OWL_INFO(...) ::owl::core::Log::getClientLogger()->info(__VA_ARGS__);
-#define OWL_WARN(...) ::owl::core::Log::getClientLogger()->warn(__VA_ARGS__);
-#define OWL_ERROR(...) ::owl::core::Log::getClientLogger()->error(__VA_ARGS__);
-#define OWL_CRITICAL(...) ::owl::core::Log::getClientLogger()->critical(__VA_ARGS__);
+#define OWL_TRACE(...) ::owl::core::Log::logClient(::owl::core::Log::Level::Trace, __VA_ARGS__);
+#define OWL_INFO(...) ::owl::core::Log::logClient(::owl::core::Log::Level::Info, __VA_ARGS__);
+#define OWL_WARN(...) ::owl::core::Log::logClient(::owl::core::Log::Level::Warning, __VA_ARGS__);
+#define OWL_ERROR(...) ::owl::core::Log::logClient(::owl::core::Log::Level::Error, __VA_ARGS__);
+#define OWL_CRITICAL(...) ::owl::core::Log::logClient(::owl::core::Log::Level::Critical, __VA_ARGS__);

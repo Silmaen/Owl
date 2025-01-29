@@ -9,7 +9,7 @@ using namespace owl::renderer;
 using namespace owl::core;
 
 TEST(TextureLibrary, creation) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	const AppParams params{.name = "super boby", .renderer = RenderAPI::Type::Null, .hasGui = false, .isDummy = true};
 	auto app = owl::mkShared<Application>(params);

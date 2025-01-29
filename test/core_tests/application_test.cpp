@@ -10,7 +10,7 @@
 using namespace owl::core;
 
 TEST(Core, ApplicationDummy) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	AppParams params;
 	params.isDummy = true;
 	params.renderer = owl::renderer::RenderAPI::Type::Null;
@@ -24,7 +24,7 @@ TEST(Core, ApplicationDummy) {
 }
 
 TEST(Core, ApplicationBasic) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	const AppParams params{.args = nullptr,
 						   .frameLogFrequency = 0,
 						   .name = "test",
@@ -58,7 +58,7 @@ TEST(Core, ApplicationBasic) {
 }
 
 TEST(Core, App) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	const AppParams params{.name = "super boby",
 						   .renderer = owl::renderer::RenderAPI::Type::Null,
 						   .hasGui = false,
@@ -94,7 +94,7 @@ TEST(Core, AppParamsSerialize) {
 }
 
 TEST(Core, fileToString) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	const std::string superStr = "yoho\nI'm fine!\n";
 	const auto tmpFile = std::filesystem::temp_directory_path() / "testFile.b";
 	{

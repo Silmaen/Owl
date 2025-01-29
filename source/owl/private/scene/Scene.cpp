@@ -5,7 +5,6 @@
  * Copyright © 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
-
 #include "owlpch.h"
 
 #include "scene/Scene.h"
@@ -13,9 +12,9 @@
 #include "renderer/Renderer2D.h"
 #include "scene/Entity.h"
 
-#include "physic/PhysicCommand.h"
 #include "core/Application.h"
 #include "input/Input.h"
+#include "physic/PhysicCommand.h"
 #include "scene/component/components.h"
 
 namespace owl::scene {

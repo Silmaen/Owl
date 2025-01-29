@@ -166,6 +166,12 @@ find_package(shaderc REQUIRED)
 target_link_libraries(${ENGINE_NAME}Private INTERFACE shaderc::shaderc_shared)
 # ----------------------
 
+# spdlog
+find_package(spdlog REQUIRED)
+message(STATUS "Found Spdlog version ${spdlog_VERSION} @ ${spdlog_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE spdlog::spdlog)
+
+
 # yaml
 find_package(yaml-cpp REQUIRED)
 message(STATUS "Found yaml-cpp version ${yaml-cpp_VERSION} @ ${yaml-cpp_DIR}")
@@ -187,12 +193,6 @@ target_link_libraries(${ENGINE_NAME} PUBLIC fmt::fmt)
 find_package(imgui REQUIRED)
 message(STATUS "Found imgui version ${imgui_VERSION} @ ${imgui_DIR}")
 target_link_libraries(${ENGINE_NAME} PUBLIC imgui::imgui)
-
-# spdlog
-find_package(spdlog REQUIRED)
-message(STATUS "Found Spdlog version ${spdlog_VERSION} @ ${spdlog_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC spdlog::spdlog)
-
 
 # additional windows libs
 if (${PRJPREFIX}_PLATFORM_WINDOWS)

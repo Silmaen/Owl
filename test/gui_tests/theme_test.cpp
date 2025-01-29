@@ -27,7 +27,7 @@ void badYmlFile(const char* iPath) {
 }// namespace
 
 TEST(Theme, Serialization) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	constexpr Theme theme;
 	std::filesystem::path filePath("theme_blablabla.yml");
 	theme.saveToFile(filePath);

@@ -17,7 +17,7 @@ TEST(FontLibrary, basic) {
 }
 
 TEST(FontLibrary, basic_with_app) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	auto app = owl::mkShared<Application>(AppParams{.args = nullptr,
 													.frameLogFrequency = 0,
 													.name = "test",

@@ -7,10 +7,9 @@
  */
 #include "owlpch.h"
 
-#include "gui/BaseDrawPanel.h"
-
 #include "core/Application.h"
 #include "debug/Profiler.h"
+#include "gui/BaseDrawPanel.h"
 #include "gui/utils.h"
 #include <imgui.h>
 

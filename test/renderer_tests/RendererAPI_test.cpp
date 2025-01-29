@@ -12,7 +12,7 @@
 using namespace owl::renderer;
 
 TEST(RenderAPI, RenderComamand) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type{255});
 	EXPECT_EQ(RenderCommand::getState(), RenderAPI::State::Error);
 	RenderCommand::create(RenderAPI::Type::Null);
@@ -36,7 +36,7 @@ TEST(RenderAPI, RenderComamand) {
 
 TEST(RenderAPI, badCreation) {
 	// bad Type value
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	const owl::uniq<RenderAPI> api = RenderAPI::create(RenderAPI::Type{255});
 	const auto gf = GraphContext::create(nullptr);
 	const auto fb = Framebuffer::create({});
@@ -57,7 +57,7 @@ TEST(RenderAPI, badCreation) {
 }
 
 TEST(RenderAPI, creation) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto api = RenderAPI::create(RenderAPI::Type::Null);
 	ASSERT_TRUE(api);
 	EXPECT_EQ(api->getState(), RenderAPI::State::Created);

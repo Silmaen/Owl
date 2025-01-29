@@ -10,7 +10,7 @@ using namespace owl::gui::component;
 using namespace owl::scene::component;
 
 TEST(Component, render) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	UiLayer layer;
 	layer.disableApp();
 	layer.enableDocking();

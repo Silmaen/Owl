@@ -11,7 +11,7 @@
 using namespace owl::scene;
 
 TEST(SceneSerializer, SaveLoad) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto sc = owl::mkShared<Scene>();
 	sc->createEntityWithUUID(5, "bobObject");
 	const SceneSerializer saver(sc);
@@ -30,7 +30,7 @@ TEST(SceneSerializer, SaveLoad) {
 }
 
 TEST(SceneSerializer, SaveLoadFULL) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto sc = owl::mkShared<Scene>();
 	auto ent = sc->createEntityWithUUID(5, "bobObject");
 	ent.addOrReplaceComponent<component::Camera>();
@@ -63,7 +63,7 @@ TEST(SceneSerializer, SaveLoadFULL) {
 }
 
 TEST(SceneSerializer, badScene) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto fs = std::filesystem::temp_directory_path() / "tempSave.yml";
 
 	// write bad file

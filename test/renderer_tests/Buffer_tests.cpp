@@ -9,7 +9,7 @@
 using namespace owl::renderer;
 
 TEST(Renderer, ShaderDataTypeSize) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	EXPECT_EQ(shaderDataTypeSize(ShaderDataType::Bool), 1);
 	EXPECT_EQ(shaderDataTypeSize(ShaderDataType::Float), 4);
 	EXPECT_EQ(shaderDataTypeSize(ShaderDataType::Float2), 8);
@@ -27,14 +27,14 @@ TEST(Renderer, ShaderDataTypeSize) {
 }
 
 TEST(Renderer, bufferLayout) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	static const std::unordered_map<ShaderDataType, uint32_t> ref{
 			{ShaderDataType::Bool, 1},           {ShaderDataType::Float, 1},  {ShaderDataType::Float2, 2},
 			{ShaderDataType::Float3, 3},         {ShaderDataType::Float4, 4}, {ShaderDataType::Mat3, 9},
 			{ShaderDataType::Mat4, 16},          {ShaderDataType::Int, 1},    {ShaderDataType::Int2, 2},
 			{ShaderDataType::Int3, 3},           {ShaderDataType::Int4, 4},   {ShaderDataType::None, 0},
 			{static_cast<ShaderDataType>(-1), 0}};
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	BufferLayout allTypes{{"bool", ShaderDataType::Bool},
 						  {"float", ShaderDataType::Float},
 						  {"float2", ShaderDataType::Float2},
@@ -59,7 +59,7 @@ TEST(Renderer, bufferLayout) {
 }
 
 TEST(Renderer, DrawDataNull) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	null::DrawData data;
 	{
 		const BufferLayout layout{
@@ -80,7 +80,7 @@ TEST(Renderer, DrawDataNull) {
 }
 
 TEST(Renderer, VertexBufferNull) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	{
 		null::VertexBuffer nullbuf(0);
 		EXPECT_EQ(nullbuf.getLayout().getStride(), 0);
@@ -105,7 +105,7 @@ TEST(Renderer, VertexBufferNull) {
 }
 
 TEST(Renderer, IndexBufferNull) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	std::vector<uint32_t> ind{0, 1, 2, 2, 1, 3};
 	const null::IndexBuffer nullbuf(ind.data(), static_cast<uint32_t>(ind.size()));
 	nullbuf.bind();

@@ -57,7 +57,7 @@ TEST(Scene, Copy) {
 }
 
 TEST(Scene, RenderEmpty) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	const owl::shared<Scene> sc = owl::mkShared<Scene>();
 	sc->onViewportResize({800, 600});
 	sc->onStartRuntime();
@@ -114,7 +114,7 @@ void createMinGameScene(Scene& ioScene) {
 }// namespace
 
 TEST(Scene, RenderGame_loose) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	owl::input::Input::init(owl::input::Type::Null);
 	Scene sc;
 	createMinGameScene(sc);
@@ -147,7 +147,7 @@ TEST(Scene, RenderGame_loose) {
 
 
 TEST(Scene, RenderGame_win) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	owl::input::Input::init(owl::input::Type::Null);
 	Scene sc;
 	createMinGameScene(sc);
