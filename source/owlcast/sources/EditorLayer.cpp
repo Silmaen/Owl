@@ -8,8 +8,8 @@
 
 #include "EditorLayer.h"
 
-#include <../../owl/core/Application.h>
-#include <../../owl/debug/Profiler.h>
+#include <core/Application.h>
+#include <debug/Profiler.h>
 
 namespace owl::raycaster {
 

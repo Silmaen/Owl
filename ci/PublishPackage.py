@@ -18,13 +18,16 @@ def get_git_hash():
     :return: The git hash.
     """
     from subprocess import run, PIPE
+
     global global_hash
     if global_hash not in ["0000000", "", None]:
         return global_hash[:7]
     try:
         ret = run("git log -1 --format=%h", stdout=PIPE, shell=True)
         if ret.returncode != 0:
-            print(f"WARNING: Error during git hash search: {ret.returncode}", file=stderr)
+            print(
+                f"WARNING: Error during git hash search: {ret.returncode}", file=stderr
+            )
             return global_hash
         global_hash = ret.stdout.decode().strip()
         return global_hash[:7]
@@ -34,7 +37,7 @@ def get_git_hash():
 
 
 def get_version():
-    with open(root / "CMakeLists.txt", 'r') as fb:
+    with open(root / "CMakeLists.txt", "r") as fb:
         lines = fb.readlines()
         for line in lines:
             if not line.strip().startswith("project"):
@@ -44,14 +47,18 @@ def get_version():
 
 def get_api_script(url: str):
     from requests import get
+
     try:
         if not url.startswith("http"):
             url = "https://" + url
         r = get(url, stream=True)
         if r.status_code != 200:
-            print(f"ERROR http error while getting the script: {r.status_code}", file=stderr)
+            print(
+                f"ERROR http error while getting the script: {r.status_code}",
+                file=stderr,
+            )
             exit(1)
-        with open(here / "api.py", 'wb') as f:
+        with open(here / "api.py", "wb") as f:
             for chunk in r.iter_content(chunk_size=8192):
                 if chunk:
                     f.write(chunk)
@@ -62,11 +69,16 @@ def get_api_script(url: str):
 
 def parse_args():
     from argparse import ArgumentParser
+
     global global_hash
     parser = ArgumentParser()
     parser.add_argument("--url", "-u", type=str, help="The packaging server url.")
-    parser.add_argument("--login", "-l", type=str, help="The user for the server connexion.")
-    parser.add_argument("--cred", "-c", type=str, help="The password for server connexion.")
+    parser.add_argument(
+        "--login", "-l", type=str, help="The user for the server connexion."
+    )
+    parser.add_argument(
+        "--cred", "-c", type=str, help="The password for server connexion."
+    )
     parser.add_argument("--preset", "-p", type=str, help="The package preset.")
     parser.add_argument("--branch", "-b", type=str, help="The branch.")
     parser.add_argument("--hash", type=str, help="The current git hash.")
@@ -91,7 +103,7 @@ def parse_args():
         "cred": args.cred,
         "preset": args.preset,
         "branch": args.branch,
-        "hash": args.hash[:7]
+        "hash": args.hash[:7],
     }
 
 
@@ -102,8 +114,14 @@ def get_info_from_preset(preset: str):
     os_name = platform.system().replace("Darwin", "MacOS").lower()
     if os_name == "linux":
         os_name += f" glibc_{platform.libc_ver()[1]}"
-    arch = platform.machine().lower().replace("amd", "x").replace("86_", "").replace("arch", "rm").replace(
-        "v8", "64")
+    arch = (
+        platform.machine()
+        .lower()
+        .replace("amd", "x")
+        .replace("86_", "")
+        .replace("arch", "rm")
+        .replace("v8", "64")
+    )
     info = {
         "branch": "main",
         "hash": get_git_hash(),
@@ -111,7 +129,8 @@ def get_info_from_preset(preset: str):
         "type": "no_type",
         "kind": "null",
         "os": os_name,
-        "arch": arch}
+        "arch": arch,
+    }
     # load the json file with preset information:
     with open(root / "cmake" / "CMakePresetsPackage.json") as js:
         data = load(js)
@@ -125,7 +144,7 @@ def get_info_from_preset(preset: str):
         print(f"ERROR: {preset} is not in packages list.", file=stderr)
         exit(1)
     base_name = preset_data["cacheVariables"]["OWL_PACKAGE_NAME"]
-    info["name"] = " ".join(re.findall('[A-Z][^A-Z]*', base_name))
+    info["name"] = " ".join(re.findall("[A-Z][^A-Z]*", base_name))
     if "app" in preset:
         info["type"] = "a"
     elif "engine" in preset:
@@ -137,16 +156,22 @@ def get_info_from_preset(preset: str):
     ext = "tar.gz"
     if os_name == "windows":
         ext = "zip"
-    filename = f"{base_name}-{get_version()}-{get_git_hash()}-{os_name.replace(' ', '-')}-{arch}-{info['kind']}.{ext}"
-    info["file"] = filename
-    info["flavor_name"] = f"{os_name} {arch} {info['kind']}"
+    if info["kind"] == "null":
+        filename = f"{base_name}-{get_version()}-{get_git_hash()}-{os_name.replace(' ', '-')}-{arch}-{info['kind']}.{ext}"
+        info["file"] = filename
+        info["flavor_name"] = f"{os_name} {arch} {info['kind']}"
+    else:
+        filename = f"{base_name}-{get_version()}-{get_git_hash()}-{os_name.replace(' ', '-')}-{arch}.{ext}"
+        info["file"] = filename
+        info["flavor_name"] = f"{os_name} {arch}"
     info["date"] = datetime.now().isoformat()
     return info
 
 
 def publish_package(info):
     from subprocess import run
-    cmd = f'python3 -u {here}/api.py push'
+
+    cmd = f"python3 -u {here}/api.py push"
     cmd += f' --type "{info["type"]}"'
     cmd += f' --hash "{info["hash"]}"'
     cmd += f' --branch "{info["branch"]}"'
@@ -178,7 +203,7 @@ def check_info(info):
     if info.get("type") in ["no_type", "", None]:
         print(f" *** BAD type {info.get('type')}", file=stderr)
         good = False
-    if info.get("kind") in ["null", "", None]:
+    if info.get("kind") in ["", None]:
         print(f" *** BAD kind {info.get('kind')}", file=stderr)
         good = False
     if info.get("os") in ["", None]:
