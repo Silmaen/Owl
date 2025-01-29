@@ -84,19 +84,8 @@ public:
 	 */
 	[[nodiscard]] auto getHoveredEntity() const -> scene::Entity { return m_hoveredEntity; }
 
-	/**
-	 * @brief Types of guizmo.
-	 */
-	enum struct GuizmoType : uint16_t {
-		None = 0,///< Nothing displayed.
-		Translation = 0b00000000000111,///< Translation control.
-		Rotation = 0b00000001111000,///< Rotation control.
-		Scale = 0b00001110000000,///< Scale control.
-		All = 0b11100001111111,///< All at once.
-	};
-
-	void setGuizmoType(const GuizmoType& iType);
-	[[nodiscard]] auto getGuizmoType() const -> GuizmoType;
+	void setGuizmoType(const gui::Guizmo::Type& iType);
+	[[nodiscard]] auto getGuizmoType() const -> gui::Guizmo::Type;
 	[[nodiscard]] auto getGuizmoTypeI() const -> uint16_t;
 
 private:
@@ -113,7 +102,7 @@ private:
 	/// The hovered entity
 	scene::Entity m_hoveredEntity;
 	/// The Gizmo type
-	GuizmoType m_gizmoType = GuizmoType::None;
+	gui::Guizmo::Type m_gizmoType = gui::Guizmo::Type::None;
 	/// The editor camera
 	renderer::CameraEditor m_editorCamera;
 };

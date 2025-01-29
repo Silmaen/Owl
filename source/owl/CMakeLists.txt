@@ -81,6 +81,11 @@ find_package(glfw3 REQUIRED)
 message(STATUS "Found glfw3 version ${glfw3_VERSION} @ ${glfw3_DIR}")
 target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw)
 
+# ImGuizmo
+find_package(imguizmo REQUIRED)
+message(STATUS "Found imguizmo version ${imguizmo_VERSION} @ ${imguizmo_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE imguizmo::imguizmo)
+
 # magic_enum
 find_package(magic_enum REQUIRED)
 message(STATUS "Found magic_enum version ${magic_enum_VERSION} @ ${magic_enum_DIR}")
@@ -182,11 +187,6 @@ target_link_libraries(${ENGINE_NAME} PUBLIC fmt::fmt)
 find_package(imgui REQUIRED)
 message(STATUS "Found imgui version ${imgui_VERSION} @ ${imgui_DIR}")
 target_link_libraries(${ENGINE_NAME} PUBLIC imgui::imgui)
-
-# ImGuizmo
-find_package(imguizmo REQUIRED)
-message(STATUS "Found imguizmo version ${imguizmo_VERSION} @ ${imguizmo_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC imguizmo::imguizmo)
 
 # spdlog
 find_package(spdlog REQUIRED)

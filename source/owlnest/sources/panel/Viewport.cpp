@@ -10,7 +10,6 @@
 
 #include "EditorLayer.h"
 
-#include <ImGuizmo.h>
 #include <owl.h>
 
 
@@ -160,8 +159,8 @@ void Viewport::renderOverlay() const {
 }
 
 
-void Viewport::setGuizmoType(const GuizmoType& iType) { m_gizmoType = iType; }
-auto Viewport::getGuizmoType() const -> GuizmoType { return m_gizmoType; }
+void Viewport::setGuizmoType(const gui::Guizmo::Type& iType) { m_gizmoType = iType; }
+auto Viewport::getGuizmoType() const -> gui::Guizmo::Type { return m_gizmoType; }
 auto Viewport::getGuizmoTypeI() const -> uint16_t { return static_cast<uint16_t>(m_gizmoType); }
 
 void Viewport::renderGizmo() {
@@ -173,11 +172,8 @@ void Viewport::renderGizmo() {
 
 	// Gizmos
 	if (const scene::Entity selectedEntity = m_parent->getSelectedEntity();
-		selectedEntity && m_gizmoType != GuizmoType::None) {
-		ImGuizmo::SetOrthographic(false);
-		ImGuizmo::SetDrawlist();
-
-		ImGuizmo::SetRect(m_lower.x(), m_lower.y(), m_upper.x() - m_lower.x(), m_upper.y() - m_lower.y());
+		selectedEntity && m_gizmoType != gui::Guizmo::Type::None) {
+		gui::Guizmo::initialize(m_lower, m_upper - m_lower);
 
 		// Runtime camera from entity
 		// auto cameraEntity = activeScene->getPrimaryCamera();
@@ -199,15 +195,12 @@ void Viewport::renderGizmo() {
 		const bool snap = input::Input::isKeyPressed(input::key::LeftControl);
 		float snapValue = 0.5f;// Snap to 0.5m for translation/scale
 		// Snap to 45 degrees for rotation
-		if (getGuizmoTypeI() == ImGuizmo::OPERATION::ROTATE)
+		if (gui::Guizmo::isRotate(m_gizmoType))
 			snapValue = 45.0f;
 
-		const float snapValues[3] = {snapValue, snapValue, snapValue};
+		gui::Guizmo::manipulate(cameraView, cameraProjection, m_gizmoType, transform, snap ? snapValue : 0.f);
 
-		Manipulate(cameraView.data(), cameraProjection.data(), static_cast<ImGuizmo::OPERATION>(m_gizmoType),
-				   ImGuizmo::LOCAL, transform.data(), nullptr, snap ? snapValues : nullptr);
-
-		if (ImGuizmo::IsUsing()) {
+		if (gui::Guizmo::isUsing()) {
 			math::Transform newTransform(transform);
 
 			const math::vec3 deltaRotation = newTransform.rotation() - tc.transform.rotation();
@@ -240,40 +233,40 @@ auto Viewport::onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool {
 			// Gizmos
 			case input::key::Q:
 				{
-					if (!ImGuizmo::IsUsing()) {
-						m_gizmoType = GuizmoType::None;
+					if (!gui::Guizmo::isUsing()) {
+						m_gizmoType = gui::Guizmo::Type::None;
 						return true;
 					}
 					break;
 				}
 			case input::key::W:
 				{
-					if (!ImGuizmo::IsUsing()) {
-						m_gizmoType = GuizmoType::Translation;
+					if (!gui::Guizmo::isUsing()) {
+						m_gizmoType = gui::Guizmo::Type::Translation;
 						return true;
 					}
 					break;
 				}
 			case input::key::E:
 				{
-					if (!ImGuizmo::IsUsing()) {
-						m_gizmoType = GuizmoType::Rotation;
+					if (!gui::Guizmo::isUsing()) {
+						m_gizmoType = gui::Guizmo::Type::Rotation;
 						return true;
 					}
 					break;
 				}
 			case input::key::R:
 				{
-					if (!ImGuizmo::IsUsing()) {
-						m_gizmoType = GuizmoType::Scale;
+					if (!gui::Guizmo::isUsing()) {
+						m_gizmoType = gui::Guizmo::Type::Scale;
 						return true;
 					}
 					break;
 				}
 			case input::key::T:
 				{
-					if (!ImGuizmo::IsUsing()) {
-						m_gizmoType = GuizmoType::All;
+					if (!gui::Guizmo::isUsing()) {
+						m_gizmoType = gui::Guizmo::Type::All;
 						return true;
 					}
 					break;
@@ -288,7 +281,7 @@ auto Viewport::onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool {
 auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool {
 	if (m_parent->getState() == EditorLayer::State::Edit) {
 		if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
-			if (isHovered() && !ImGuizmo::IsOver() && !input::Input::isKeyPressed(input::key::LeftAlt))
+			if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt))
 				m_parent->setSelectedEntity(getHoveredEntity());
 		}
 	}
