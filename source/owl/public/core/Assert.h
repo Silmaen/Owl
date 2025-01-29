@@ -10,7 +10,7 @@
 
 #include "core/Log.h"
 
-#ifdef OWL_DEBUG
+#if defined(OWL_DEBUG) && defined(OWL_ENGINE_BUILD)
 #define OWL_ENABLE_ASSERTS
 #endif
 

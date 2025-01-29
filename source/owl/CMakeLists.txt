@@ -54,18 +54,22 @@ target_include_directories(${ENGINE_NAME}
 target_link_libraries(${ENGINE_NAME} PUBLIC ${CMAKE_PROJECT_NAME}_Base)
 target_link_libraries(${ENGINE_NAME} PRIVATE ${ENGINE_NAME}Private)
 
-
 # ---------========= PRIVATE third party =========---------
+
+# box2d
+find_package(box2d REQUIRED)
+message(STATUS "Found box2d version ${box2d_VERSION} @ ${box2d_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d::box2d)
 
 # cpptrace
 find_package(cpptrace REQUIRED)
 message(STATUS "Found cpptrace version ${cpptrace_VERSION} @ ${cpptrace_DIR}")
 target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace::cpptrace)
 
-# box2d
-find_package(box2d REQUIRED)
-message(STATUS "Found box2d version ${box2d_VERSION} @ ${box2d_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d::box2d)
+# debugbreak
+find_package(debugbreak REQUIRED)
+message(STATUS "Found debugbreak version ${debugbreak_VERSION} @ ${debugbreak_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE debugbreak::debugbreak)
 
 # glad
 find_package(glad 2.0 REQUIRED)
@@ -163,11 +167,6 @@ message(STATUS "Found yaml-cpp version ${yaml-cpp_VERSION} @ ${yaml-cpp_DIR}")
 target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp::yaml-cpp)
 
 # ---------========= PUBLIC third party =========---------
-
-# debugbreak
-find_package(debugbreak REQUIRED)
-message(STATUS "Found debugbreak version ${debugbreak_VERSION} @ ${debugbreak_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC debugbreak::debugbreak)
 
 # Entt
 find_package(EnTT REQUIRED)

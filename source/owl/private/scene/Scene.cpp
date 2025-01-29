@@ -301,7 +301,7 @@ auto Scene::getPrimaryPlayer() -> Entity {
 
 template<typename T>
 void Scene::onComponentAdded([[maybe_unused]] const Entity& iEntity, [[maybe_unused]] T& ioComponent) {
-	OWL_ASSERT(false, "Unknown component")
+	OWL_CORE_ASSERT(false, "Unknown component")
 }
 
 template<>
