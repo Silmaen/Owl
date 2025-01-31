@@ -16,8 +16,8 @@ namespace owl::physic {
 
 class PhysicCommand::Impl {
 public:
-	Impl() {}
-	~Impl() {}
+	Impl() = default;
+	~Impl() = default;
 
 	b2WorldId worldId{0, 0};
 	uint64_t nextId = 1;

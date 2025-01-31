@@ -14,11 +14,19 @@ if (${PRJPREFIX}_PACKAGE_ENGINE)
     endforeach ()
     # Create file for use of find_package
     include(CMakePackageConfigHelpers)
+    write_basic_package_version_file(
+            ${CMAKE_CURRENT_BINARY_DIR}/OwlEngineConfigVersion.cmake
+            VERSION ${PROJECT_VERSION}
+            COMPATIBILITY AnyNewerVersion
+    )
     configure_package_config_file(
             ${CMAKE_CURRENT_LIST_DIR}/cmake/config/OwlEngineConfig.cmake.in
             ${CMAKE_CURRENT_BINARY_DIR}/OwlEngineConfig.cmake
             INSTALL_DESTINATION cmake)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/OwlEngineConfig.cmake DESTINATION cmake)
+    install(FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/OwlEngineConfig.cmake
+            ${CMAKE_CURRENT_BINARY_DIR}/OwlEngineConfigVersion.cmake
+            DESTINATION cmake)
 endif ()
 
 set(CPACK_PACKAGE_NAME "Owl")

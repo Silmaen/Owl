@@ -55,7 +55,7 @@ Application::Application(AppParams iAppParams) : m_initParams{std::move(iAppPara
 	}
 	// Looking for asset Directories
 	{
-#ifdef OWL_DEVELOPMENT
+#if defined(OWL_DEVELOPMENT) || defined(OWL_PACKAGE_ENGINE)
 		// first (lowest priority) - Engine assets.
 		if (const auto engineAsset = searchAssets("engine_assets"); engineAsset.has_value()) {
 			m_assetDirectories.push_front({"Engine assets", engineAsset.value()});

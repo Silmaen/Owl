@@ -274,6 +274,12 @@ void Scene::onViewportResize(const math::vec2ui& iSize) {
 	}
 }
 
+auto Scene::getAllEntities() const -> std::vector<Entity> {
+	std::vector<Entity> entities;
+	for (auto&& [e]: registry.storage<entt::entity>()->each()) { entities.emplace_back(e, const_cast<Scene*>(this)); }
+	return entities;
+}
+
 auto Scene::duplicateEntity(const Entity& iEntity) -> Entity {
 	const std::string name = iEntity.getName();
 	Entity newEntity = createEntity(name);
@@ -297,6 +303,7 @@ auto Scene::getPrimaryPlayer() -> Entity {
 	return {};
 }
 
+uint32_t Scene::getEntityCount() const { return static_cast<uint32_t>(registry.storage<Entity>()->size()); }
 
 template<typename T>
 void Scene::onComponentAdded([[maybe_unused]] const Entity& iEntity, [[maybe_unused]] T& ioComponent) {
