@@ -23,7 +23,7 @@ TEST(SceneSerializer, SaveLoad) {
 	const SceneSerializer loader(sc2);
 	EXPECT_TRUE(loader.deserialize(fs));
 
-	EXPECT_EQ(sc2->registry.storage<owl::scene::Entity>().size(), sc->registry.storage<owl::scene::Entity>().size());
+	EXPECT_EQ(sc2->getEntityCount(), sc->getEntityCount());
 	remove(fs);
 	EXPECT_FALSE(exists(fs));
 	owl::core::Log::invalidate();
@@ -56,7 +56,7 @@ TEST(SceneSerializer, SaveLoadFULL) {
 	const SceneSerializer loader(sc2);
 	EXPECT_TRUE(loader.deserialize(fs));
 
-	EXPECT_EQ(sc2->registry.storage<owl::scene::Entity>().size(), sc->registry.storage<owl::scene::Entity>().size());
+	EXPECT_EQ(sc2->getEntityCount(), sc->getEntityCount());
 	remove(fs);
 	EXPECT_FALSE(exists(fs));
 	owl::core::Log::invalidate();

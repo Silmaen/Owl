@@ -164,6 +164,7 @@ def get_info_from_preset(preset: str):
         filename = f"{base_name}-{get_version()}-{get_git_hash()}-{os_name.replace(' ', '-')}-{arch}.{ext}"
         info["file"] = filename
         info["flavor_name"] = f"{os_name} {arch}"
+        info["kind"] = f"shared"
     info["date"] = datetime.now().isoformat()
     return info
 

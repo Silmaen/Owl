@@ -12,6 +12,9 @@ file(GLOB_RECURSE HDRS_PRIVATE
 add_library(${ENGINE_NAME}Private INTERFACE)
 target_include_directories(${ENGINE_NAME}Private INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/private>)
 target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PRJPREFIX}_ENGINE_BUILD)
+if (${PRJPREFIX}_PACKAGE_ENGINE)
+    target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PRJPREFIX}_PACKAGE_ENGINE)
+endif ()
 target_sources(${ENGINE_NAME}Private INTERFACE ${HDRS_PRIVATE})
 
 # exclude precompiled headers from source

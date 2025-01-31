@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "core/UUID.h"
 #include "core/Timestep.h"
+#include "core/UUID.h"
 #include "renderer/Camera.h"
 
 #include <entt/entt.hpp>
@@ -114,6 +114,12 @@ public:
 	 */
 	auto getPrimaryPlayer() -> Entity;
 
+	/**
+	 * @brief Get the list of all entities.
+	 * @return List of all entities.
+	 */
+	auto getAllEntities() const -> std::vector<Entity>;
+
 	/// Entities registry.
 	entt::registry registry;
 
@@ -128,6 +134,12 @@ public:
 	};
 	/// The scene status.
 	Status status = Status::Editing;
+
+	/**
+	 * @brief Count the entities in the scene.
+	 * @return The count of Entity in the scene.
+	 */
+	uint32_t getEntityCount() const;
 
 private:
 	/**

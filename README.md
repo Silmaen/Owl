@@ -1,9 +1,11 @@
 # Owl
 
 ![GitHub License](https://img.shields.io/github/license/Silmaen/Owl)
-![GitHub tag checks state](https://img.shields.io/github/checks-status/Silmaen/Owl/main)
+![GitHub branch status](https://img.shields.io/github/checks-status/Silmaen/Owl/main)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Silmaen/Owl)
-[![GitHub Stars](https://img.shields.io/github/stars/silmaen/Owl)]()
+![GitHub top language](https://img.shields.io/github/languages/top/Silmaen/Owl)
+![GitHub Repo stars](https://img.shields.io/github/stars/Silmaen/Owl)
+![GitHub contributors](https://img.shields.io/github/contributors/Silmaen/Owl)
 
 ![](engine_assets/logo/logo_owl.png)
 
@@ -12,7 +14,9 @@ development.
 
 ## Documentation
 
-The full documentation is available on the dedicated website [owl](https:://owl.argawaen.net).
+The full documentation is available on the dedicated
+website [![Website](https://img.shields.io/website?url=https%3A%2F%2Fowl.argawaen.net&label=owl%20site&link=https%3A%2F%2Fowl.argawaen.net)
+](https:://owl.argawaen.net).
 
 ## Platform
 
@@ -58,13 +62,14 @@ The section [coding style](doc/CodingStyle.md) describes the guidelines to follo
 
 ### Dependencies manager
 
-Dependencies are managed by my dependency tool [DepManger](https://github.com/Silmaen/DepManager).
+Dependencies are managed by my dependency tool: [DepManger](https://github.com/Silmaen/DepManager)
+![GitHub Tag](https://img.shields.io/github/v/tag/Silmaen/DepManager).
 
 As we are using file based dependency definition in [depmanager.yml](depmanager.yml), the dependency will be
 automatically downloaded with the right version during cmake configure step (the depmanager client should be
 configured to use a repository that contains the right packages).
 
-Dependencies are hosted by my dependency server [DepMangerServer](https://github.com/Silmaen/DepManagerServer).
+Dependencies are hosted by my dependency server [DepManagerServer](https://github.com/Silmaen/DepManagerServer).
 
 Dependencies in the configuration file have explicit version number, that is done on purpose: it then requires
 a commit to upgrade (so keep a track of upgrades and keep stable the potential build of old revisions

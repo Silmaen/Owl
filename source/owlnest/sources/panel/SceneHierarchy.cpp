@@ -46,8 +46,7 @@ void SceneHierarchy::renderHierarchy() {
 		ImGui::PopID();
 
 		if (constexpr ImGuiTreeNodeFlags flag = ImGuiTreeNodeFlags_DefaultOpen; ImGui::TreeNodeEx("root", flag)) {
-			for (auto&& [e]: m_context->registry.storage<entt::entity>().each()) {
-				scene::Entity entity = {e, m_context.get()};
+			for (auto& entity: m_context->getAllEntities()) {
 				drawEntityNode(entity);
 			}
 			ImGui::TreePop();
