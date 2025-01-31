@@ -20,7 +20,7 @@ TEST(Tracker, base) {
 }
 
 TEST(Tracker, stacktrace) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	{
 		const auto& globals = TrackerAPI::globals();
 		const size_t initialAlloc = globals.allocs.size();

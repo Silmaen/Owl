@@ -6,7 +6,7 @@
 using namespace owl::renderer;
 
 TEST(Renderer, creation) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	Renderer::reset();
 	EXPECT_EQ(Renderer::getState(), Renderer::State::Created);
 	Renderer::init();
@@ -23,7 +23,7 @@ TEST(Renderer, creation) {
 }
 
 TEST(Renderer, fakeScene) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	Renderer::init();
 	const CameraOrtho cam(0, 0, 800, 600);

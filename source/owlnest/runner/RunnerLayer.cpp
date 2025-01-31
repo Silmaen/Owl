@@ -8,8 +8,22 @@
 
 #include "RunnerLayer.h"
 
+OWL_DIAG_PUSH
+OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
+OWL_DIAG_DISABLE_CLANG("-Wshadow")
+#include <yaml-cpp/yaml.h>
+OWL_DIAG_POP
+
+
 namespace owl::nest::runner {
 namespace {
+
+template<class T>
+void get(const YAML::Node& iNode, const std::string& iKey, T& oValue) {
+	if (const auto val = iNode[iKey]; val)
+		oValue = val.as<T>();
+}
+
 auto isSubdir(const std::filesystem::path& iFile, const std::filesystem::path& iDir)
 		-> std::optional<std::filesystem::path> {
 	if (!is_directory(iDir))

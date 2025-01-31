@@ -10,33 +10,36 @@
 #include "scene/SceneSerializer.h"
 
 #include "core/Application.h"
+#include "core/Serializer.h"
+#include "core/SerializerImpl.h"
 #include "scene/Entity.h"
-#include "scene/component/components.h"
+#include "scene/component/componentsSerialization.h"
 
 namespace owl::scene {
 SceneSerializer::SceneSerializer(const shared<Scene>& iScene) : mp_scene(iScene) {}
 
 namespace {
 
-void serializeEntity(YAML::Emitter& ioOut, const Entity& iEntity) {
-	ioOut << YAML::BeginMap;// Entity
-	ioOut << YAML::Key << "Entity" << YAML::Value << iEntity.getUUID();
-	serializeComponents(iEntity, ioOut, component::serializableComponents{});
-	ioOut << YAML::EndMap;// Entity
+void serializeEntity(const core::Serializer& iOut, const Entity& iEntity) {
+	iOut.getImpl()->emitter << YAML::BeginMap;// Entity
+	iOut.getImpl()->emitter << YAML::Key << "Entity" << YAML::Value << iEntity.getUUID();
+	serializeComponents(iEntity, iOut, component::serializableComponents{});
+	iOut.getImpl()->emitter << YAML::EndMap;// Entity
 }
 
-void deserializeEntity(const shared<Scene>& ioScene, const YAML::Node& iNode) {
-	auto uuid = iNode["Entity"].as<uint64_t>();
+void deserializeEntity(const shared<Scene>& ioScene, const core::Serializer& iNode) {
+	auto uuid = iNode.getImpl()->node["Entity"].as<uint64_t>();
 	std::string name;
-	if (auto tagComponent = iNode["Tag"]; tagComponent)
+	if (auto tagComponent = iNode.getImpl()->node["Tag"]; tagComponent)
 		name = tagComponent["tag"].as<std::string>();
 
+	const core::Serializer sNode;
 	OWL_CORE_TRACE("Deserialized entity with ID = {0}, name = {1}", uuid, name)
 	Entity entity = ioScene->createEntityWithUUID(core::UUID{uuid}, name);
-	if (auto node = iNode["Transform"]; node) {
+	if (sNode.getImpl()->node.reset(iNode.getImpl()->node["Transform"]); sNode.getImpl()->node) {
 		// Entities always have transforms
 		auto& comp = entity.getComponent<component::Transform>();
-		comp.deserialize(node);
+		comp.deserialize(sNode);
 	}
 	deserializeComponents(entity, iNode, component::optionalComponents{});
 }
@@ -44,35 +47,40 @@ void deserializeEntity(const shared<Scene>& ioScene, const YAML::Node& iNode) {
 }// namespace
 
 void SceneSerializer::serialize(const std::filesystem::path& iFilepath) const {
-	YAML::Emitter out;
-	out << YAML::BeginMap;
-	out << YAML::Key << "Scene" << YAML::Value << "untitled";
-	out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
+	const core::Serializer sOut;
+	sOut.getImpl()->emitter << YAML::BeginMap;
+	sOut.getImpl()->emitter << YAML::Key << "Scene" << YAML::Value << "untitled";
+	sOut.getImpl()->emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 	for (auto&& [e]: mp_scene->registry.storage<entt::entity>().each()) {
 		const Entity entity{e, mp_scene.get()};
 		if (!entity)
 			continue;
-		serializeEntity(out, entity);
+		serializeEntity(sOut, entity);
 	}
-	out << YAML::EndSeq;
-	out << YAML::EndMap;
+	sOut.getImpl()->emitter << YAML::EndSeq;
+	sOut.getImpl()->emitter << YAML::EndMap;
 	std::ofstream fileOut(iFilepath);
-	fileOut << out.c_str();
+	fileOut << sOut.getImpl()->emitter.c_str();
 	fileOut.close();
 }
 
 auto SceneSerializer::deserialize(const std::filesystem::path& iFilepath) const -> bool {
 	try {
-		const YAML::Node data = YAML::LoadFile(iFilepath.string());
+		const core::Serializer sData;
+		sData.getImpl()->node.reset(YAML::LoadFile(iFilepath.string()));
 
-		if (!data["Scene"]) {
+		if (!sData.getImpl()->node["Scene"]) {
 			OWL_CORE_ERROR("File {} is not a scene.", iFilepath.string())
 			return false;
 		}
-		auto sceneName = data["Scene"].as<std::string>();
+		auto sceneName = sData.getImpl()->node["Scene"].as<std::string>();
 		OWL_CORE_TRACE("Deserializing scene '{0}'", sceneName)
-		if (auto entities = data["Entities"]; entities) {
-			for (auto entity: entities) { deserializeEntity(mp_scene, entity); }
+		if (auto entities = sData.getImpl()->node["Entities"]; entities) {
+			for (auto entity: entities) {
+				const core::Serializer sEntity;
+				sEntity.getImpl()->node.reset(entity);
+				deserializeEntity(mp_scene, sEntity);
+			}
 		}
 	} catch (...) {
 		OWL_CORE_ERROR("Unable to load scene from file {}", iFilepath.string())

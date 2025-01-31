@@ -12,6 +12,7 @@ file(GLOB_RECURSE HDRS_PRIVATE
 add_library(${ENGINE_NAME}Private INTERFACE)
 target_include_directories(${ENGINE_NAME}Private INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/private>)
 target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PRJPREFIX}_ENGINE_BUILD)
+target_sources(${ENGINE_NAME}Private INTERFACE ${HDRS_PRIVATE})
 
 # exclude precompiled headers from source
 list(REMOVE_ITEM SRCS ${CMAKE_CURRENT_SOURCE_DIR}/private/${PRJPREFIX_LOWER}pch.cpp)
@@ -53,18 +54,22 @@ target_include_directories(${ENGINE_NAME}
 target_link_libraries(${ENGINE_NAME} PUBLIC ${CMAKE_PROJECT_NAME}_Base)
 target_link_libraries(${ENGINE_NAME} PRIVATE ${ENGINE_NAME}Private)
 
-
 # ---------========= PRIVATE third party =========---------
+
+# box2d
+find_package(box2d REQUIRED)
+message(STATUS "Found box2d version ${box2d_VERSION} @ ${box2d_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d::box2d)
 
 # cpptrace
 find_package(cpptrace REQUIRED)
 message(STATUS "Found cpptrace version ${cpptrace_VERSION} @ ${cpptrace_DIR}")
 target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace::cpptrace)
 
-# box2d
-find_package(box2d REQUIRED)
-message(STATUS "Found box2d version ${box2d_VERSION} @ ${box2d_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d::box2d)
+# debugbreak
+find_package(debugbreak REQUIRED)
+message(STATUS "Found debugbreak version ${debugbreak_VERSION} @ ${debugbreak_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE debugbreak::debugbreak)
 
 # glad
 find_package(glad 2.0 REQUIRED)
@@ -75,6 +80,11 @@ target_link_libraries(${ENGINE_NAME}Private INTERFACE glad::glad)
 find_package(glfw3 REQUIRED)
 message(STATUS "Found glfw3 version ${glfw3_VERSION} @ ${glfw3_DIR}")
 target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw)
+
+# ImGuizmo
+find_package(imguizmo REQUIRED)
+message(STATUS "Found imguizmo version ${imguizmo_VERSION} @ ${imguizmo_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE imguizmo::imguizmo)
 
 # magic_enum
 find_package(magic_enum REQUIRED)
@@ -156,12 +166,18 @@ find_package(shaderc REQUIRED)
 target_link_libraries(${ENGINE_NAME}Private INTERFACE shaderc::shaderc_shared)
 # ----------------------
 
-# ---------========= PUBLIC third party =========---------
+# spdlog
+find_package(spdlog REQUIRED)
+message(STATUS "Found Spdlog version ${spdlog_VERSION} @ ${spdlog_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE spdlog::spdlog)
 
-# debugbreak
-find_package(debugbreak REQUIRED)
-message(STATUS "Found debugbreak version ${debugbreak_VERSION} @ ${debugbreak_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC debugbreak::debugbreak)
+
+# yaml
+find_package(yaml-cpp REQUIRED)
+message(STATUS "Found yaml-cpp version ${yaml-cpp_VERSION} @ ${yaml-cpp_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp::yaml-cpp)
+
+# ---------========= PUBLIC third party =========---------
 
 # Entt
 find_package(EnTT REQUIRED)
@@ -177,21 +193,6 @@ target_link_libraries(${ENGINE_NAME} PUBLIC fmt::fmt)
 find_package(imgui REQUIRED)
 message(STATUS "Found imgui version ${imgui_VERSION} @ ${imgui_DIR}")
 target_link_libraries(${ENGINE_NAME} PUBLIC imgui::imgui)
-
-# ImGuizmo
-find_package(imguizmo REQUIRED)
-message(STATUS "Found imguizmo version ${imguizmo_VERSION} @ ${imguizmo_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC imguizmo::imguizmo)
-
-# spdlog
-find_package(spdlog REQUIRED)
-message(STATUS "Found Spdlog version ${spdlog_VERSION} @ ${spdlog_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC spdlog::spdlog)
-
-# yaml
-find_package(yaml-cpp REQUIRED)
-message(STATUS "Found yaml-cpp version ${yaml-cpp_VERSION} @ ${yaml-cpp_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC yaml-cpp::yaml-cpp)
 
 # additional windows libs
 if (${PRJPREFIX}_PLATFORM_WINDOWS)

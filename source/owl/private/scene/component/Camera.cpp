@@ -7,34 +7,32 @@
  */
 #include "owlpch.h"
 
+#include "core/SerializerImpl.h"
 #include "scene/component/Camera.h"
 
 namespace owl::scene::component {
-void Camera::serialize(YAML::Emitter& ioOut) const {
-	ioOut << YAML::Key << key();
-	ioOut << YAML::BeginMap;// CameraComponent
-	ioOut << YAML::Key << "camera" << YAML::Value;
-	ioOut << YAML::BeginMap;// Camera
-	ioOut << YAML::Key << "projectionType" << YAML::Value
-		  << std::string(magic_enum::enum_name(camera.getProjectionType()));
-	ioOut << YAML::Key << "perspectiveFOV" << YAML::Value << camera.getPerspectiveVerticalFOV();
-	ioOut << YAML::Key << "perspectiveNear" << YAML::Value << camera.getPerspectiveNearClip();
-	ioOut << YAML::Key << "perspectiveFar" << YAML::Value << camera.getPerspectiveFarClip();
-	ioOut << YAML::Key << "orthographicSize" << YAML::Value << camera.getOrthographicSize();
-	ioOut << YAML::Key << "orthographicNear" << YAML::Value << camera.getOrthographicNearClip();
-	ioOut << YAML::Key << "orthographicFar" << YAML::Value << camera.getOrthographicFarClip();
-	ioOut << YAML::EndMap;// Camera
-	ioOut << YAML::Key << "primary" << YAML::Value << primary;
-	ioOut << YAML::Key << "fixedAspectRatio" << YAML::Value << fixedAspectRatio;
-	ioOut << YAML::EndMap;// Camera
+
+void Camera::serialize(const core::Serializer& iOut) const {
+	iOut.getImpl()->emitter << YAML::Key << key();
+	iOut.getImpl()->emitter << YAML::BeginMap;// CameraComponent
+	iOut.getImpl()->emitter << YAML::Key << "camera" << YAML::Value;
+	iOut.getImpl()->emitter << YAML::BeginMap;// Camera
+	iOut.getImpl()->emitter << YAML::Key << "projectionType" << YAML::Value
+							<< std::string(magic_enum::enum_name(camera.getProjectionType()));
+	iOut.getImpl()->emitter << YAML::Key << "perspectiveFOV" << YAML::Value << camera.getPerspectiveVerticalFOV();
+	iOut.getImpl()->emitter << YAML::Key << "perspectiveNear" << YAML::Value << camera.getPerspectiveNearClip();
+	iOut.getImpl()->emitter << YAML::Key << "perspectiveFar" << YAML::Value << camera.getPerspectiveFarClip();
+	iOut.getImpl()->emitter << YAML::Key << "orthographicSize" << YAML::Value << camera.getOrthographicSize();
+	iOut.getImpl()->emitter << YAML::Key << "orthographicNear" << YAML::Value << camera.getOrthographicNearClip();
+	iOut.getImpl()->emitter << YAML::Key << "orthographicFar" << YAML::Value << camera.getOrthographicFarClip();
+	iOut.getImpl()->emitter << YAML::EndMap;// Camera
+	iOut.getImpl()->emitter << YAML::Key << "primary" << YAML::Value << primary;
+	iOut.getImpl()->emitter << YAML::Key << "fixedAspectRatio" << YAML::Value << fixedAspectRatio;
+	iOut.getImpl()->emitter << YAML::EndMap;// Camera
 }
 
-/**
-	 * @brief Read this component from YAML node.
-	 * @param iNode The YAML node to read.
-	 */
-void Camera::deserialize(const YAML::Node& iNode) {
-	auto cameraProps = iNode["camera"];
+void Camera::deserialize(const core::Serializer& iNode) {
+	auto cameraProps = iNode.getImpl()->node["camera"];
 	const auto projType =
 			magic_enum::enum_cast<SceneCamera::ProjectionType>(cameraProps["projectionType"].as<std::string>());
 	if (projType.has_value())
@@ -47,7 +45,8 @@ void Camera::deserialize(const YAML::Node& iNode) {
 	camera.setOrthographicNearClip(cameraProps["orthographicNear"].as<float>());
 	camera.setOrthographicFarClip(cameraProps["orthographicFar"].as<float>());
 
-	primary = iNode["primary"].as<bool>();
-	fixedAspectRatio = iNode["fixedAspectRatio"].as<bool>();
+	primary = iNode.getImpl()->node["primary"].as<bool>();
+	fixedAspectRatio = iNode.getImpl()->node["fixedAspectRatio"].as<bool>();
 }
+
 }// namespace owl::scene::component

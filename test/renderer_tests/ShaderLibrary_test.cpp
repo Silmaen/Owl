@@ -7,7 +7,7 @@
 using namespace owl::renderer;
 
 TEST(ShaderLibrary, creation) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	auto lib = Renderer::ShaderLibrary();
 	EXPECT_FALSE(lib.exists("bob"));
@@ -25,7 +25,7 @@ TEST(ShaderLibrary, creation) {
 }
 
 TEST(Shader, basis) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	const auto shader2 = Shader::create(Shader::Specification{{.name = "super", .renderer = "renderer"}});
 	shader2->bind();

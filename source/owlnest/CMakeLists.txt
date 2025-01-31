@@ -15,6 +15,12 @@ set_target_properties(${RUNNER_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAK
 target_include_directories(${RUNNER_NAME} PRIVATE sources)
 target_compile_definitions(${RUNNER_NAME} PRIVATE OWL_ASSETS_LOCATION="source/owlnest/assets")
 target_link_libraries(${RUNNER_NAME} PRIVATE ${ENGINE_NAME})
+# yaml
+if (NOT TARGET yaml-cpp::yaml-cpp)
+    find_package(yaml-cpp REQUIRED)
+    message(STATUS "Found yaml-cpp version ${yaml-cpp_VERSION} @ ${yaml-cpp_DIR}")
+endif ()
+target_link_libraries(${RUNNER_NAME} PRIVATE yaml-cpp::yaml-cpp)
 # ----==== app Runner ====----
 
 #
@@ -45,6 +51,9 @@ target_import_so_files(${OWL_PROJECT})
 # magic_enum
 find_package(magic_enum REQUIRED)
 target_link_libraries(${OWL_PROJECT} PRIVATE magic_enum::magic_enum)
+
+# yaml
+target_link_libraries(${OWL_PROJECT} PRIVATE yaml-cpp::yaml-cpp)
 
 # ----==== third party ====----
 

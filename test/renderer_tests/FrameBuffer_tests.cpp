@@ -7,7 +7,7 @@
 using namespace owl::renderer;
 
 TEST(Renderer, FramebufferBase) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 
 	auto fbuf = Framebuffer::create(

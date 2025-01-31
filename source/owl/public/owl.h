@@ -9,6 +9,8 @@
 #pragma once
 
 // -------- STD ------------
+#include <algorithm>
+#include <array>
 #include <filesystem>
 #include <fstream>
 #include <optional>
@@ -40,6 +42,7 @@
 // -------- gui ------------
 #include "gui/BaseDrawPanel.h"
 #include "gui/BasePanel.h"
+#include "gui/Guizmo.h"
 #include "gui/Theme.h"
 #include "gui/UiLayer.h"
 #include "gui/component/render.h"

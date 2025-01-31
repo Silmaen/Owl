@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "math/YamlSerializers.h"
+#include "core/Serializer.h"
 #include "scene/SceneTrigger.h"
 
 namespace owl::scene::component {
@@ -32,15 +32,15 @@ struct OWL_API Trigger {
 
 	/**
 	 * @brief Write this component to a YAML context.
-	 * @param ioOut The YAML context.
+	 * @param iOut The YAML context.
 	 */
-	void serialize([[maybe_unused]] YAML::Emitter& ioOut) const;
+	void serialize(const core::Serializer& iOut) const;
 
 	/**
 	 * @brief Read this component from YAML node.
 	 * @param iNode The YAML node to read.
 	 */
-	void deserialize([[maybe_unused]] const YAML::Node& iNode);
+	void deserialize(const core::Serializer& iNode);
 };
 
 }// namespace owl::scene::component

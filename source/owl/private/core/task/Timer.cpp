@@ -5,10 +5,10 @@
  * Copyright © 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
-
-#include "core/task/Timer.h"
+#include "owlpch.h"
 
 #include "core/task/Scheduler.h"
+#include "core/task/Timer.h"
 
 namespace owl::core::task {
 

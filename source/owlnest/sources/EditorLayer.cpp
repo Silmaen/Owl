@@ -11,11 +11,6 @@
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
 
-// must be included AFTER imgui
-OWL_DIAG_PUSH
-OWL_DIAG_DISABLE_CLANG("-Wzero-as-null-pointer-constant")
-#include <ImGuizmo.h>
-OWL_DIAG_POP
 
 namespace owl::nest {
 namespace {
@@ -51,34 +46,34 @@ void EditorLayer::onAttach() {
 	m_controlBar.addButton({{.id = "##ctrlTranslation", .visible = true},
 							"icons/control/ctrl_translation",
 							"T",
-							[this]() { return m_viewport.getGuizmoType() == panel::Viewport::GuizmoType::Translation; },
+							[this]() { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Translation; },
 							[this]() {
-								if (m_viewport.getGuizmoType() == panel::Viewport::GuizmoType::Translation)
-									m_viewport.setGuizmoType(panel::Viewport::GuizmoType::None);
+								if (m_viewport.getGuizmoType() == gui::Guizmo::Type::Translation)
+									m_viewport.setGuizmoType(gui::Guizmo::Type::None);
 								else
-									m_viewport.setGuizmoType(panel::Viewport::GuizmoType::Translation);
+									m_viewport.setGuizmoType(gui::Guizmo::Type::Translation);
 							},
 							{32, 32}});
 	m_controlBar.addButton({{.id = "##ctrlRotation", .visible = true},
 							"icons/control/ctrl_rotation",
 							"T",
-							[this]() { return m_viewport.getGuizmoType() == panel::Viewport::GuizmoType::Rotation; },
+							[this]() { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Rotation; },
 							[this]() {
-								if (m_viewport.getGuizmoType() == panel::Viewport::GuizmoType::Rotation)
-									m_viewport.setGuizmoType(panel::Viewport::GuizmoType::None);
+								if (m_viewport.getGuizmoType() == gui::Guizmo::Type::Rotation)
+									m_viewport.setGuizmoType(gui::Guizmo::Type::None);
 								else
-									m_viewport.setGuizmoType(panel::Viewport::GuizmoType::Rotation);
+									m_viewport.setGuizmoType(gui::Guizmo::Type::Rotation);
 							},
 							{32, 32}});
 	m_controlBar.addButton({{.id = "##ctrlScale", .visible = true},
 							"icons/control/ctrl_scale",
 							"T",
-							[this]() { return m_viewport.getGuizmoType() == panel::Viewport::GuizmoType::Scale; },
+							[this]() { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Scale; },
 							[this]() {
-								if (m_viewport.getGuizmoType() == panel::Viewport::GuizmoType::Scale)
-									m_viewport.setGuizmoType(panel::Viewport::GuizmoType::None);
+								if (m_viewport.getGuizmoType() == gui::Guizmo::Type::Scale)
+									m_viewport.setGuizmoType(gui::Guizmo::Type::None);
 								else
-									m_viewport.setGuizmoType(panel::Viewport::GuizmoType::Scale);
+									m_viewport.setGuizmoType(gui::Guizmo::Type::Scale);
 							},
 							{32, 32}});
 

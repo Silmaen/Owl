@@ -9,7 +9,7 @@ TEST(profiler, creation) {
 	auto& prof = Profiler::get();
 	prof.beginSession("bob", "");
 	prof.endSession();
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	prof.beginSession("bob", "");
 	prof.endSession();
 	const std::filesystem::path file("test_profile.json");
@@ -25,8 +25,8 @@ TEST(profiler, creation) {
 }
 
 TEST(profiler, timer) {
-	owl::core::Log::init(spdlog::level::off);
-	{ ProfileTimer const timer("toto"); }
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	{ const ProfileTimer timer("toto"); }
 	{
 		ProfileTimer timer("toto2");
 		timer.stop();

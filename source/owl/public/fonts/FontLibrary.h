@@ -10,6 +10,7 @@
 
 #include "fonts/Font.h"
 #include <list>
+#include <unordered_map>
 
 /**
  * @brief Namespace for font management.

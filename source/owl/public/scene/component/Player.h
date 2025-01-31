@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "math/YamlSerializers.h"
+#include "core/Serializer.h"
 #include "scene/ScenePlayer.h"
 
 namespace owl::scene::component {
@@ -34,35 +34,15 @@ struct OWL_API Player {
 
 	/**
 	 * @brief Write this component to a YAML context.
-	 * @param ioOut The YAML context.
+	 * @param iOut The YAML context.
 	 */
-	void serialize(YAML::Emitter& ioOut) const {
-		ioOut << YAML::Key << key();
-		ioOut << YAML::BeginMap;
-		ioOut << YAML::Key << "primary" << YAML::Value << primary;
-		ioOut << YAML::Key << "linearImpulse" << YAML::Value << player.linearImpulse;
-		ioOut << YAML::Key << "jumpImpulse" << YAML::Value << player.jumpImpulse;
-		ioOut << YAML::Key << "canJump" << YAML::Value << player.canJump;
-		ioOut << YAML::EndMap;
-	}
+	void serialize(const core::Serializer& iOut) const;
 
 	/**
 	 * @brief Read this component from YAML node.
 	 * @param iNode The YAML node to read.
 	 */
-	void deserialize(const YAML::Node& iNode) {
-		if (iNode["primary"])
-			primary = iNode["primary"].as<bool>();
-		if (iNode["linearImpulse"]) {
-			player.linearImpulse = iNode["linearImpulse"].as<float>();
-		}
-		if (iNode["jumpImpulse"]) {
-			player.jumpImpulse = iNode["jumpImpulse"].as<float>();
-		}
-		if (iNode["canJump"]) {
-			player.canJump = iNode["canJump"].as<bool>();
-		}
-	}
+	void deserialize(const core::Serializer& iNode);
 };
 
 }// namespace owl::scene::component

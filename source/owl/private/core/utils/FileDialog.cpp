@@ -78,7 +78,7 @@ auto FileDialog::openFile(const std::string& iFilter) -> std::filesystem::path {
 		NFD_FreePath(outPath);
 	} else {
 		OWL_CORE_ERROR("while opening file: {}", NFD::GetError())
-		OWL_ASSERT(false, "Error Opening file")
+		OWL_CORE_ASSERT(false, "Error Opening file")
 	}
 	for (const auto& [name, spec]: ff) {
 		delete name;
@@ -103,7 +103,7 @@ auto FileDialog::saveFile([[maybe_unused]] const std::string& iFilter) -> std::f
 		resultPath = std::filesystem::path{outPath};
 	} else {
 		OWL_CORE_ERROR("while opening file: {}", NFD::GetError())
-		OWL_ASSERT(false, "Error Opening file")
+		OWL_CORE_ASSERT(false, "Error Opening file")
 	}
 	for (const auto& [name, spec]: ff) {
 		delete name;

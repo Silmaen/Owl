@@ -11,7 +11,7 @@
 #include "core/Application.h"
 
 #include "core/Environment.h"
-#include "core/external/yaml.h"
+#include "external/yaml.h"
 #include "input/Input.h"
 #include "renderer/Renderer.h"
 #include "sound/SoundSystem.h"

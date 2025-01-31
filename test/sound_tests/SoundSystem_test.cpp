@@ -6,7 +6,7 @@
 using namespace owl::sound;
 
 TEST(SoundSystem, creation) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	SoundSystem::reset();
 	EXPECT_EQ(SoundSystem::getState(), SoundSystem::State::Created);
 	SoundSystem::init();
@@ -24,7 +24,7 @@ TEST(SoundSystem, creation) {
 }
 
 TEST(Renderer, fakeScene) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	SoundCommand::create(SoundAPI::Type::Null);
 	SoundSystem::init();
 	const owl::shared<SoundData> data = SoundData::create("");

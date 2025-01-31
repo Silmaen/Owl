@@ -5,11 +5,12 @@
  * Copyright © 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
+#include "owlpch.h"
 
 #include "scene/ScenePlayer.h"
 
-#include "physic/PhysicCommand.h"
 #include "input/Input.h"
+#include "physic/PhysicCommand.h"
 
 namespace owl::scene {
 

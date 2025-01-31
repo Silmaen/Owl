@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "fonts/Font.h"
-#include "math/YamlSerializers.h"
 #include "core/Application.h"
 #include "core/Core.h"
+#include "core/Serializer.h"
+#include "fonts/Font.h"
 
 namespace owl::scene::component {
 
@@ -42,39 +42,15 @@ struct OWL_API Text {
 
 	/**
 	 * @brief Write this component to a YAML context.
-	 * @param ioOut The YAML context.
+	 * @param iOut The YAML context.
 	 */
-	void serialize(YAML::Emitter& ioOut) const {
-		ioOut << YAML::Key << key();
-		ioOut << YAML::BeginMap;
-		ioOut << YAML::Key << "color" << YAML::Value << color;
-		ioOut << YAML::Key << "kerning" << YAML::Value << kerning;
-		ioOut << YAML::Key << "lineSpacing" << YAML::Value << lineSpacing;
-		ioOut << YAML::Key << "text" << YAML::Value << text;
-		if (font && !font->isDefault()) {
-			ioOut << YAML::Key << "font" << YAML::Value << font->getName();
-		}
-		ioOut << YAML::EndMap;
-	}
+	void serialize(const core::Serializer& iOut) const;
 
 	/**
 	 * @brief Read this component from YAML node.
 	 * @param iNode The YAML node to read.
 	 */
-	void deserialize(const YAML::Node& iNode) {
-		color = iNode["color"].as<math::vec4>();
-		kerning = iNode["kerning"].as<float>();
-		lineSpacing = iNode["lineSpacing"].as<float>();
-		text = iNode["text"].as<std::string>();
-		if (core::Application::instanced()) {
-			auto& lib = core::Application::get().getFontLibrary();
-			if (iNode["font"]) {
-				font = lib.getFont(iNode["font"].as<std::string>());
-			} else {
-				font = lib.getDefaultFont();
-			}
-		}
-	}
+	void deserialize(const core::Serializer& iNode);
 };
 
 }// namespace owl::scene::component

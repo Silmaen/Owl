@@ -10,7 +10,7 @@ using namespace owl::core;
 using namespace owl::math;
 
 TEST(Renderer2D, fakeEmptyScene) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	Renderer::init();
 	const CameraOrtho cam(0, 0, 800, 600);
@@ -27,7 +27,7 @@ TEST(Renderer2D, fakeEmptyScene) {
 }
 
 TEST(Renderer2D, fakeLineScene) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	Renderer::init();
 	const CameraEditor cam;
@@ -56,7 +56,7 @@ TEST(Renderer2D, fakeLineScene) {
 }
 
 TEST(Renderer2D, fakeCircleRectScene) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	Renderer::init();
 	const CameraEditor cam;
@@ -78,7 +78,7 @@ TEST(Renderer2D, fakeCircleRectScene) {
 
 
 TEST(Renderer2D, fakeQuadSpriteScene) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	Renderer::init();
 	const CameraEditor cam;
@@ -110,7 +110,7 @@ TEST(Renderer2D, fakeQuadSpriteScene) {
 }
 
 TEST(Renderer2D, fakeTextScene) {
-	Log::init(spdlog::level::off);
+	Log::init(owl::core::Log::Level::Off);
 	auto app = owl::mkShared<Application>(
 			AppParams{.renderer = RenderAPI::Type::Null, .hasGui = false, .useDebugging = false, .isDummy = true});
 	const auto font = app->getFontLibrary().getDefaultFont();

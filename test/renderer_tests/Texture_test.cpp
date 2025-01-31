@@ -34,7 +34,7 @@ TEST(TextureSpecifications, PixelSize) {
 }
 
 TEST(Texture, CreateFromString) {
-	owl::core::Log::init(spdlog::level::off);
+	owl::core::Log::init(owl::core::Log::Level::Off);
 	{
 		const auto tex = Texture2D::createFromSerialized("");
 		EXPECT_EQ(tex, nullptr);
