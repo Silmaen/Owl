@@ -34,7 +34,8 @@ void copyComponent(entt::registry& oDst, const entt::registry& iSrc,
 
 template<typename... Components>
 void copyComponentFromTuple(entt::registry& oDst, const entt::registry& iSrc,
-							const std::unordered_map<core::UUID, entt::entity>& iEnttMap, std::tuple<Components...>) {
+							const std::unordered_map<core::UUID, entt::entity>& iEnttMap,
+							const std::tuple<Components...>&) {
 	(..., copyComponent<Components>(oDst, iSrc, iEnttMap));
 }
 
@@ -45,11 +46,11 @@ void copyComponentIfExists(Entity& oDst, const Entity& iSrc) {
 }
 
 template<typename... Components>
-void copyComponentIfExistsFromTuple(Entity& oDst, const Entity& iSrc, std::tuple<Components...>) {
+void copyComponentIfExistsFromTuple(Entity& oDst, const Entity& iSrc, const std::tuple<Components...>&) {
 	(..., copyComponentIfExists<Components>(oDst, iSrc));
 }
 
-math::box2f getColliderBox(const Entity& iEntity) {
+auto getColliderBox(const Entity& iEntity) -> math::box2f {
 	auto& transform = iEntity.getComponent<component::Transform>().transform;
 	auto halfDiag = math::vec2f{transform.scale().x() * 0.5f, transform.scale().y() * 0.5f};
 	if (iEntity.hasComponent<component::PhysicBody>()) {
@@ -77,8 +78,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	std::unordered_map<core::UUID, entt::entity> enttMap;
 
 	// Create entities in new scene
-	auto idView = srcSceneRegistry.view<component::ID>();
-	for (const auto e: idView) {
+	for (const auto idView = srcSceneRegistry.view<component::ID>(); const auto e: idView) {
 		const core::UUID uuid = srcSceneRegistry.get<component::ID>(e).id;
 		const auto& name = srcSceneRegistry.get<component::Tag>(e).tag;
 		const Entity newEntity = newScene->createEntityWithUUID(uuid, name);
@@ -122,6 +122,7 @@ void Scene::onEndRuntime() {
 }
 
 void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
+	OWL_PROFILE_FUNCTION()
 	// find camera
 	renderer::Camera* mainCamera = nullptr;
 	math::mat4 cameraTransform;
@@ -208,9 +209,8 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 
 	// Trigger
 	for (const auto view = registry.view<component::Trigger>(); const auto ent: view) {
-		Entity entity{ent, this};
-		Entity player = getPrimaryPlayer();
-		if (getColliderBox(entity).intersect(getColliderBox(player))) {
+		const Entity entity{ent, this};
+		if (Entity player = getPrimaryPlayer(); getColliderBox(entity).intersect(getColliderBox(player))) {
 			entity.getComponent<component::Trigger>().trigger.onTriggered(player);
 		}
 	}
@@ -226,6 +226,8 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 }
 
 void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, const renderer::Camera& iCamera) {
+	OWL_PROFILE_FUNCTION()
+
 	renderer::Renderer2D::resetStats();
 	renderer::Renderer2D::beginScene(iCamera);
 	render();
@@ -233,6 +235,8 @@ void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, con
 }
 
 void Scene::render() {
+	OWL_PROFILE_FUNCTION()
+
 	// Draw sprites
 	for (const auto group = registry.group<component::Transform>(entt::get<component::SpriteRenderer>);
 		 auto entity: group) {
@@ -274,6 +278,12 @@ void Scene::onViewportResize(const math::vec2ui& iSize) {
 	}
 }
 
+auto Scene::getAllEntities() const -> std::vector<Entity> {
+	std::vector<Entity> entities;
+	for (auto&& [e]: registry.storage<entt::entity>()->each()) { entities.emplace_back(e, const_cast<Scene*>(this)); }
+	return entities;
+}
+
 auto Scene::duplicateEntity(const Entity& iEntity) -> Entity {
 	const std::string name = iEntity.getName();
 	Entity newEntity = createEntity(name);
@@ -297,6 +307,12 @@ auto Scene::getPrimaryPlayer() -> Entity {
 	return {};
 }
 
+auto Scene::getEntityCount() const -> uint32_t {
+	auto* st = registry.storage<Entity>();
+	if (st == nullptr)
+		return 0;
+	return static_cast<uint32_t>(st->size());
+}
 
 template<typename T>
 void Scene::onComponentAdded([[maybe_unused]] const Entity& iEntity, [[maybe_unused]] T& ioComponent) {

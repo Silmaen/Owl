@@ -51,8 +51,7 @@ void SceneSerializer::serialize(const std::filesystem::path& iFilepath) const {
 	sOut.getImpl()->emitter << YAML::BeginMap;
 	sOut.getImpl()->emitter << YAML::Key << "Scene" << YAML::Value << "untitled";
 	sOut.getImpl()->emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-	for (auto&& [e]: mp_scene->registry.storage<entt::entity>().each()) {
-		const Entity entity{e, mp_scene.get()};
+	for (const auto& entity: mp_scene->getAllEntities()) {
 		if (!entity)
 			continue;
 		serializeEntity(sOut, entity);

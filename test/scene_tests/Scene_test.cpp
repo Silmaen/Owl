@@ -52,8 +52,7 @@ TEST(Scene, Copy) {
 	owl::shared<Scene> sc2 = owl::mkShared<Scene>();
 	sc2->onViewportResize({800, 600});
 	sc2 = Scene::copy(sc);
-	EXPECT_TRUE(sc2->registry.storage<owl::scene::Entity>().size() ==
-				sc->registry.storage<owl::scene::Entity>().size());
+	EXPECT_TRUE(sc2->getEntityCount() == sc->getEntityCount());
 }
 
 TEST(Scene, RenderEmpty) {
