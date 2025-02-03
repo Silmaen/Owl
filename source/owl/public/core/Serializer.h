@@ -14,9 +14,19 @@ namespace owl::core {
 
 struct SerializerImpl;
 
+/**
+ * @brief Frontend class for serializing anything.
+ */
 class Serializer {
 public:
+	/**
+	 * @brief Default constructor.
+	 */
 	Serializer();
+	/**
+	 * @brief Get access to the backend implementation.
+	 * @return The backend implementation.
+	 */
 	auto getImpl() const -> const shared<SerializerImpl>&;
 
 private:
