@@ -80,7 +80,6 @@ def parse_args():
         "--cred", "-c", type=str, help="The password for server connexion."
     )
     parser.add_argument("--preset", "-p", type=str, help="The package preset.")
-    parser.add_argument("--branch", "-b", type=str, help="The branch.")
     parser.add_argument("--hash", type=str, help="The current git hash.")
     args = parser.parse_args()
 
@@ -102,7 +101,6 @@ def parse_args():
         "login": args.login,
         "cred": args.cred,
         "preset": args.preset,
-        "branch": args.branch,
         "hash": args.hash[:7],
     }
 
@@ -123,7 +121,7 @@ def get_info_from_preset(preset: str):
         .replace("v8", "64")
     )
     info = {
-        "branch": "main",
+        "branch": get_version(),
         "hash": get_git_hash(),
         "name": "noname",
         "type": "no_type",

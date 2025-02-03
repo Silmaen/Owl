@@ -1,7 +1,6 @@
 # Owl
 
 ![GitHub License](https://img.shields.io/github/license/Silmaen/Owl)
-![GitHub branch status](https://img.shields.io/github/checks-status/Silmaen/Owl/main)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Silmaen/Owl)
 ![GitHub top language](https://img.shields.io/github/languages/top/Silmaen/Owl)
 ![GitHub Repo stars](https://img.shields.io/github/stars/Silmaen/Owl)
@@ -16,7 +15,7 @@ development.
 
 The full documentation is available on the dedicated
 website [![Website](https://img.shields.io/website?url=https%3A%2F%2Fowl.argawaen.net&label=owl%20site&link=https%3A%2F%2Fowl.argawaen.net)
-](https:://owl.argawaen.net).
+](https://owl.argawaen.net).
 
 ## Platform
 
@@ -36,7 +35,7 @@ We try to be multiplatform and using different compilers:
 Different inputs backend are available:
 
 * `Null` - for no windowing nor mouse/keyboard/gamepad managed input (for server use)
-* `GLFW` - for windowing an user input management using glfw library.
+* `GLFW` - for windowing and user input management using glfw library.
 
 #### graphics
 
@@ -53,10 +52,6 @@ This engine supports different sound device for either input stream or sound pla
 
 * `Null` - for no sound (Server for example)
 * `OpenAL` - Use OpenAL (you must have Sound device that supports it, and the required lib/drivers installed)
-
-## Coding Style
-
-The section [coding style](doc/CodingStyle.md) describes the guidelines to follow in the development.
 
 ## Dependencies
 
@@ -104,6 +99,7 @@ Most user will use one of the cmake's preset defined.
             * [ ] collectible objets
             * [ ] switches 'key-locked'
         * [ ] enemies
+        * [ ] Possibility to jump between scenes.
     * Misc
         * [ ] Different Scene types
             * [ ] Games
