@@ -10,6 +10,7 @@ here = Path(__file__).resolve().parent
 root = here.parent
 packages_folder = root / "output" / "package"
 global_hash = "0000000"
+dry_run = False
 
 
 def get_git_hash():
@@ -43,6 +44,7 @@ def get_version():
             if not line.strip().startswith("project"):
                 continue
             return line.split("VERSION")[-1].strip().split()[0].strip()
+    return "Bad Version"
 
 
 def get_api_script(url: str):
@@ -69,8 +71,9 @@ def get_api_script(url: str):
 
 def parse_args():
     from argparse import ArgumentParser
+    from subprocess import run
 
-    global global_hash
+    global global_hash, dry_run
     parser = ArgumentParser()
     parser.add_argument("--url", "-u", type=str, help="The packaging server url.")
     parser.add_argument(
@@ -81,6 +84,11 @@ def parse_args():
     )
     parser.add_argument("--preset", "-p", type=str, help="The package preset.")
     parser.add_argument("--hash", type=str, help="The current git hash.")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="If we should skip the publication, but do all the check and print configurations.",
+    )
     args = parser.parse_args()
 
     if args.url in ["", None]:
@@ -95,13 +103,32 @@ def parse_args():
     if args.preset in ["", None]:
         print(f"ERROR empty package preset", file=stderr)
         exit(1)
-    global_hash = args.hash
+    if args.hash in ["", None]:
+        try:
+            ret = run(
+                "git log -1 --format=%h",
+                shell=True,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            global_hash = ret.stdout.splitlines(keepends=False)[0].strip()
+        except Exception as err:
+            print(f"ERROR cannot retrieve hash: {err}", file=stderr)
+            exit(1)
+    else:
+        global_hash = args.hash[:7]
+    if global_hash in ["", None]:
+        print(f"ERROR empty hash", file=stderr)
+        exit(1)
+    if args.dry_run:
+        dry_run = True
     return {
         "url": args.url,
         "login": args.login,
         "cred": args.cred,
         "preset": args.preset,
-        "hash": args.hash[:7],
+        "hash": global_hash,
     }
 
 
@@ -125,7 +152,6 @@ def get_info_from_preset(preset: str):
         "hash": get_git_hash(),
         "name": "noname",
         "type": "no_type",
-        "kind": "null",
         "os": os_name,
         "arch": arch,
     }
@@ -147,22 +173,13 @@ def get_info_from_preset(preset: str):
         info["type"] = "a"
     elif "engine" in preset:
         info["type"] = "e"
-    if "static" in preset:
-        info["kind"] = f"static"
-    elif "shared" in preset:
-        info["kind"] = f"shared"
+
     ext = "tar.gz"
     if os_name == "windows":
         ext = "zip"
-    if info["kind"] == "null":
-        filename = f"{base_name}-{get_version()}-{get_git_hash()}-{os_name.replace(' ', '-')}-{arch}-{info['kind']}.{ext}"
-        info["file"] = filename
-        info["flavor_name"] = f"{os_name} {arch} {info['kind']}"
-    else:
-        filename = f"{base_name}-{get_version()}-{get_git_hash()}-{os_name.replace(' ', '-')}-{arch}.{ext}"
-        info["file"] = filename
-        info["flavor_name"] = f"{os_name} {arch}"
-        info["kind"] = f"shared"
+    filename = f"{base_name}-{get_version()}-{get_git_hash()}-{os_name.replace(' ', '-')}-{arch}.{ext}"
+    info["file"] = filename
+    info["flavor_name"] = f"{os_name} {arch}"
     info["date"] = datetime.now().isoformat()
     return info
 
@@ -202,9 +219,6 @@ def check_info(info):
     if info.get("type") in ["no_type", "", None]:
         print(f" *** BAD type {info.get('type')}", file=stderr)
         good = False
-    if info.get("kind") in ["", None]:
-        print(f" *** BAD kind {info.get('kind')}", file=stderr)
-        good = False
     if info.get("os") in ["", None]:
         print(f" *** BAD os {info.get('os')}", file=stderr)
         good = False
@@ -213,6 +227,9 @@ def check_info(info):
         good = False
     if info.get("flavor_name") in ["", None]:
         print(f" *** BAD flavor_name {info.get('flavor_name')}", file=stderr)
+        good = False
+    if info.get("branch") in ["", None, "Bad Version"]:
+        print(f" *** BAD branch {info.get('branch')}", file=stderr)
         good = False
     if info.get("file") in ["", None]:
         print(f" *** BAD file {info.get('file')}", file=stderr)
@@ -236,13 +253,12 @@ def main():
     info["url"] = data["url"]
     info["login"] = data["login"]
     info["cred"] = data["cred"]
-    if data["branch"] not in ["", None]:
-        info["branch"] = data["branch"]
     if not check_info(info):
         print(f"ERROR: bad infos: {info}", file=stderr)
         exit(1)
     print(f"INFOS: {info}")
-    publish_package(info)
+    if not dry_run:
+        publish_package(info)
 
 
 if __name__ == "__main__":
