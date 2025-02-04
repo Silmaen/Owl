@@ -114,5 +114,5 @@ Most user will use one of the cmake's preset defined.
         * [ ] menu edition
         * [ ] Node editing
         * [ ] Export 'game' for the game runner (everything needed for the runner to become standalone).
-* [ ] v0.0.1 -- Expected March 2025 -- First basic Release
+* [X] v0.0.1 -- 2025-02-04 -- First basic Release
     * Minimal Vital: possibility to run very simple games defined in scenes
