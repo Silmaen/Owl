@@ -6,7 +6,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_MODULE_PATH}"
 set(PRJPREFIX OWL)
 set(PRJPREFIX_LOWER owl)
 set(ENGINE_NAME OwlEngine)
-project(Owl VERSION 0.0.1 LANGUAGES C CXX)
+project(Owl VERSION 0.0.2 LANGUAGES C CXX)
 #
 # ---=== Options ===---
 #

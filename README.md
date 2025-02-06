@@ -85,7 +85,7 @@ Most user will use one of the cmake's preset defined.
 
 ## RoadMap
 
-* [ ] v0.0.2 -- Future -- unordered Ideas & thoughts
+* [ ] v0.1.0 -- Future -- unordered Ideas & thoughts
     * [ ] sound
         * [ ] moving sound
     * [ ] graphics
@@ -93,26 +93,38 @@ Most user will use one of the cmake's preset defined.
         * [ ] animated textures.
         * [ ] advanced materials.
         * [ ] simple lighting.
-        * [ ] backgrounds/skyboxes
     * [ ] Gameplay
         * [ ] inventory
             * [ ] collectible objets
             * [ ] switches 'key-locked'
         * [ ] enemies
-        * [ ] Possibility to jump between scenes.
-    * Misc
+    * [ ] Misc
         * [ ] Different Scene types
             * [ ] Games
             * [ ] Menus
-        * [ ] Pausing games
-        * [ ] General settings management
         * [ ] Configurable keymap
         * [ ] asset packing
-            * [ ] game runner
-    * Game designer (Owl Map)
-        * [ ] Global game settings
+            * [ ] support for unpack in game runner
+    * [ ] Game designer (Owl Map)
         * [ ] menu edition
         * [ ] Node editing
+* [ ] v0.0.2
+    * [ ] Developers
+        * [ ] Public Engine projects should be 3rd party independent
+            * [ ] Remove EnTT public dependency
+            * [ ] Remove fmt public dependency
+            * [ ] Remove ImGui public dependency
+        * [ ] Reduce needed public binaries
+            * [ ] Work on 3rd party builds for dependencies reduction (more static link)
+    * [ ] graphics
+        * [ ] backgrounds/skyboxes
+    * [ ] Misc
+        * [ ] Pausing games
+        * [ ] General settings management
+    * [ ] Gameplay
+        * [ ] Possibility to jump between scenes.
+    * [ ] Game designer (Owl Map)
+        * [ ] Global game settings
         * [ ] Export 'game' for the game runner (everything needed for the runner to become standalone).
-* [X] v0.0.1 -- 2025-02-04 -- First basic Release
+* [X] v0.0.1 -- 2025-02-06 -- First basic Release
     * Minimal Vital: possibility to run very simple games defined in scenes
