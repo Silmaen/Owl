@@ -83,6 +83,11 @@ def parse_args():
         action="store_true",
         help="If we should skip the publication, but do all the check and print configurations.",
     )
+    parser.add_argument(
+        "--publish",
+        type=str,
+        help="empty: no effect, 'true': publish (override dry-run), else: don't publish",
+    )
     args = parser.parse_args()
 
     if args.url in ["", None]:
@@ -100,8 +105,11 @@ def parse_args():
     if global_hash in ["", None]:
         print(f"ERROR empty hash", file=stderr)
         exit(1)
-    if args.dry_run:
-        dry_run = True
+    if args.publish:
+        dry_run = str(args.publish).lower() == "true"
+    else:
+        if args.dry_run:
+            dry_run = True
     return {
         "url": args.url,
         "login": args.login,
@@ -114,7 +122,11 @@ def get_info_from_preset(preset: str):
     if not preset.startswith("Documentation"):
         print(f"ERROR: {preset} is not a Documentation preset.")
         exit(1)
-    info = {"branch": get_version(), "type": "d", "file": f"{preset}/Documentation/html"}
+    info = {
+        "branch": get_version(),
+        "type": "d",
+        "file": f"{preset}/Documentation/html",
+    }
     return info
 
 
@@ -150,7 +162,7 @@ def check_info(info):
         print(f" *** BAD file {info.get('file')}", file=stderr)
         good = False
     elif not (build_folder / info["file"]).exists():
-        print(f" *** Doc folder not exists {build_folder / info["file"]}", file=stderr)
+        print(f" *** Doc folder not exists {build_folder / info['file']}", file=stderr)
         good = False
     else:
         info["file"] = build_folder / info["file"]
@@ -171,6 +183,8 @@ def main():
     print(f"INFOS: {info}")
     if not dry_run:
         publish_package(info)
+    else:
+        print("dry_run")
 
 
 if __name__ == "__main__":
