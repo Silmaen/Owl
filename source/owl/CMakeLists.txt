@@ -74,6 +74,13 @@ find_package(debugbreak REQUIRED)
 message(STATUS "Found debugbreak version ${debugbreak_VERSION} @ ${debugbreak_DIR}")
 target_link_libraries(${ENGINE_NAME}Private INTERFACE debugbreak::debugbreak)
 
+# fmt
+if (${PRJPREFIX}_HAS_STD_FORMAT)
+    find_package(fmt REQUIRED)
+    message(STATUS "Found fmt version ${fmt_VERSION} @ ${fmt_DIR}")
+    target_link_libraries(${ENGINE_NAME}Private INTERFACE fmt::fmt)
+endif ()
+
 # glad
 find_package(glad 2.0 REQUIRED)
 message(STATUS "Found glad version ${glad_VERSION} @ ${glad_DIR}")
@@ -83,6 +90,11 @@ target_link_libraries(${ENGINE_NAME}Private INTERFACE glad::glad)
 find_package(glfw3 REQUIRED)
 message(STATUS "Found glfw3 version ${glfw3_VERSION} @ ${glfw3_DIR}")
 target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw)
+
+# ImGui
+find_package(imgui REQUIRED)
+message(STATUS "Found imgui version ${imgui_VERSION} @ ${imgui_DIR}")
+target_link_libraries(${ENGINE_NAME}Private INTERFACE imgui::imgui)
 
 # ImGuizmo
 find_package(imguizmo REQUIRED)
@@ -187,15 +199,15 @@ find_package(EnTT REQUIRED)
 message(STATUS "Found EnTT version ${EnTT_VERSION} @ ${EnTT_DIR}")
 target_link_libraries(${ENGINE_NAME} PUBLIC EnTT::EnTT)
 
-# fmt
-find_package(fmt REQUIRED)
-message(STATUS "Found fmt version ${fmt_VERSION} @ ${fmt_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC fmt::fmt)
 
-# ImGui
-find_package(imgui REQUIRED)
-message(STATUS "Found imgui version ${imgui_VERSION} @ ${imgui_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC imgui::imgui)
+if (NOT ${PRJPREFIX}_HAS_STD_FORMAT)
+    # fmt
+    find_package(fmt REQUIRED)
+    message(STATUS "Found fmt version ${fmt_VERSION} @ ${fmt_DIR}")
+    target_link_libraries(${ENGINE_NAME} PUBLIC fmt::fmt)
+endif ()
+
+# ---------========= PUBLIC third party =========---------
 
 # additional windows libs
 if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)

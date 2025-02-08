@@ -15,7 +15,7 @@
  */
 namespace owl::gui {
 /**
- * @brief Class ImGuiLayer
+ * @brief Class UiLayer
  */
 class OWL_API UiLayer final : public core::layer::Layer {
 public:

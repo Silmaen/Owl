@@ -130,8 +130,8 @@ Application::Application(AppParams iAppParams) : m_initParams{std::move(iAppPara
 
 	// create the GUI layer
 	if (m_initParams.hasGui) {
-		mp_imGuiLayer = mkShared<gui::UiLayer>();
-		pushOverlay(mp_imGuiLayer);
+		mp_guiLayer = mkShared<gui::UiLayer>();
+		pushOverlay(mp_guiLayer);
 
 		// applying the theme.
 		if (const auto defaultTheme = m_workingDirectory / "theme.yml"; exists(defaultTheme)) {
@@ -176,13 +176,13 @@ Application::Application(AppParams iAppParams) : m_initParams{std::move(iAppPara
 }
 
 void Application::enableDocking() const {
-	if (mp_imGuiLayer)
-		mp_imGuiLayer->enableDocking();
+	if (mp_guiLayer)
+		mp_guiLayer->enableDocking();
 }
 
 void Application::disableDocking() const {
-	if (mp_imGuiLayer)
-		mp_imGuiLayer->disableDocking();
+	if (mp_guiLayer)
+		mp_guiLayer->disableDocking();
 }
 
 Application::~Application() {
@@ -235,11 +235,11 @@ void Application::run() {
 
 				for (const auto& layer: m_layerStack) layer->onUpdate(m_stepper);
 			}
-			if (mp_imGuiLayer) {
+			if (mp_guiLayer) {
 				OWL_PROFILE_SCOPE("LayerStack onImUpdate")
-				mp_imGuiLayer->begin();
+				mp_guiLayer->begin();
 				for (const auto& layer: m_layerStack) layer->onImGuiRender(m_stepper);
-				mp_imGuiLayer->end();
+				mp_guiLayer->end();
 			}
 			renderer::RenderCommand::endFrame();
 		}

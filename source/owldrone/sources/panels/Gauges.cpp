@@ -13,6 +13,7 @@
 #include "gauge/Compas.h"
 #include "gauge/MotorRate.h"
 #include "gauge/VerticalSpeed.h"
+#include <gui/ImGuiUtils.h>
 
 using namespace owl;
 
@@ -130,7 +131,7 @@ void Gauges::onRender() {
 
 	m_viewportFocused = ImGui::IsWindowFocused();
 	m_viewportHovered = ImGui::IsWindowHovered();
-	core::Application::get().getImGuiLayer()->blockEvents(!m_viewportFocused && !m_viewportHovered);
+	core::Application::get().getGuiLayer()->blockEvents(!m_viewportFocused && !m_viewportHovered);
 
 	const ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	m_viewportSize = {static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y)};

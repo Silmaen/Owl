@@ -39,30 +39,16 @@
 namespace owl::debug {
 
 /**
- * @brief Verys simple structure to handle an integer describing a memory amount.
+ * @brief Very simple structure to handle an integer describing a memory amount.
  */
-struct MemorySize {
+struct OWL_API MemorySize {
 	/// The memory size.
 	std::size_t size = 0;
 	/**
 	 * @brief Pretty printer of the memory amount.
 	 * @return String representing the memory with units.
 	 */
-	[[nodiscard]] auto str() const -> std::string {
-		if (size < 1024)
-			return fmt::format("{} bytes", size);
-		float fsize = static_cast<float>(size) / 1024.0f;
-		if (fsize < 1024.0f)
-			return fmt::format("{:.3} kB", fsize);
-		fsize /= 1024.0f;
-		if (fsize < 1024.0f)
-			return fmt::format("{:.3} MB", fsize);
-		fsize /= 1024.0f;
-		if (fsize < 1024.0f)
-			return fmt::format("{:.3} GB", fsize);
-		fsize /= 1024.0f;
-		return fmt::format("{:.3} TB", fsize);
-	}
+	[[nodiscard]] auto str() const -> std::string;
 };
 
 #ifdef OWL_STACKTRACE

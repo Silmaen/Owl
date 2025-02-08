@@ -7,7 +7,7 @@
  */
 #include "owlpch.h"
 
-#include "gui/utils.h"
+#include "gui/ImGuiUtils.h"
 #include "gui/widgets/Button.h"
 #include "renderer/Renderer.h"
 #include "renderer/Texture.h"

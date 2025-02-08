@@ -8,6 +8,9 @@
 
 #include "base2D.h"
 
+#include <fmt/format.h>
+#include <imgui.h>
+
 namespace owl {
 
 

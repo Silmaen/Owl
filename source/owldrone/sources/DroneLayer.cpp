@@ -1,5 +1,5 @@
 /**
- * @file DroneLayer.cpp
+ * @file droneLayer.cpp
  * @author Silmaen
  * @date 16/09/2023
  * Copyright (c) 2023 All rights reserved.
@@ -16,7 +16,8 @@
 #include "panels/Settings.h"
 #include "panels/Viewport.h"
 
-#include <imgui.h>
+#include <fmt/format.h>
+#include <gui/ImGuiUtils.h>
 
 using namespace owl;
 

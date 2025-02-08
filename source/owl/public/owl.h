@@ -47,7 +47,6 @@
 #include "gui/Theme.h"
 #include "gui/UiLayer.h"
 #include "gui/component/render.h"
-#include "gui/utils.h"
 #include "gui/widgets/ButtonBar.h"
 // ------- scene -----------
 #include "scene/Entity.h"

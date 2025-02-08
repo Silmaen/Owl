@@ -207,3 +207,5 @@ include(cmake/DocumentationConfig.cmake)
 if (NOT ${PROJECT_PREFIX}_PACKAGING)
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE OWL_DEVELOPMENT)
 endif ()
+
+include(cmake/CheckCapabilities.cmake)

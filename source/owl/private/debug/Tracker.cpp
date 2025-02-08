@@ -151,6 +151,22 @@ struct TraceInternal {
 };
 #endif
 
+auto MemorySize::str() const -> std::string {
+	if (size < 1024)
+		return fmt::format("{} bytes", size);
+	float fsize = static_cast<float>(size) / 1024.0f;
+	if (fsize < 1024.0f)
+		return fmt::format("{:.3} kB", fsize);
+	fsize /= 1024.0f;
+	if (fsize < 1024.0f)
+		return fmt::format("{:.3} MB", fsize);
+	fsize /= 1024.0f;
+	if (fsize < 1024.0f)
+		return fmt::format("{:.3} GB", fsize);
+	fsize /= 1024.0f;
+	return fmt::format("{:.3} TB", fsize);
+}
+
 // =========================== TrackerAPI =================================
 
 void TrackerAPI::allocate(void* iMemoryPtr, const size_t iSize) {

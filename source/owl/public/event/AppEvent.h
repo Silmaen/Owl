@@ -45,15 +45,13 @@ public:
 	 * @brief Get the event as string.
 	 * @return String of the event.
 	 */
-	[[nodiscard]] auto toString() const -> std::string override {
-		return fmt::format("WindowResizeEvent: {}, {}", m_size.x(), m_size.y());
-	}
+	[[nodiscard]] auto toString() const -> std::string override;
 
 	/**
 	 * @brief Get the event's name.
 	 * @return Event's name.
 	 */
-	[[nodiscard]] auto getName() const -> std::string override { return fmt::format("WindowResizeEvent"); }
+	[[nodiscard]] auto getName() const -> std::string override;
 
 	/**
 	 * @brief Get the event's static type.
@@ -92,13 +90,13 @@ public:
 	 * @brief Get the event as string.
 	 * @return String of the event.
 	 */
-	[[nodiscard]] auto toString() const -> std::string override { return fmt::format("WindowCloseEvent"); }
+	[[nodiscard]] auto toString() const -> std::string override;
 
 	/**
 	 * @brief Get the event's name.
 	 * @return Event's name.
 	 */
-	[[nodiscard]] auto getName() const -> std::string override { return fmt::format("WindowCloseEvent"); }
+	[[nodiscard]] auto getName() const -> std::string override;
 
 	/**
 	 * @brief Get the event's static type.
@@ -133,13 +131,13 @@ public:
 	 * @brief Get the event as string.
 	 * @return String of the event.
 	 */
-	[[nodiscard]] auto toString() const -> std::string override { return fmt::format("AppTickEvent"); }
+	[[nodiscard]] auto toString() const -> std::string override;
 
 	/**
 	 * @brief Get the event's name.
 	 * @return Event's name.
 	 */
-	[[nodiscard]] auto getName() const -> std::string override { return fmt::format("AppTickEvent"); }
+	[[nodiscard]] auto getName() const -> std::string override;
 
 	/**
 	 * @brief Get the event's static type.
@@ -174,13 +172,13 @@ public:
 	 * @brief Get the event as string.
 	 * @return String of the event.
 	 */
-	[[nodiscard]] auto toString() const -> std::string override { return fmt::format("AppUpdateEvent"); }
+	[[nodiscard]] auto toString() const -> std::string override;
 
 	/**
 	 * @brief Get the event's name.
 	 * @return Event's name.
 	 */
-	[[nodiscard]] auto getName() const -> std::string override { return fmt::format("AppUpdateEvent"); }
+	[[nodiscard]] auto getName() const -> std::string override;
 
 	/**
 	 * @brief Get the event's static type.
@@ -215,13 +213,13 @@ public:
 	 * @brief Get the event as string.
 	 * @return String of the event.
 	 */
-	[[nodiscard]] auto toString() const -> std::string override { return fmt::format("AppRenderEvent"); }
+	[[nodiscard]] auto toString() const -> std::string override;
 
 	/**
 	 * @brief Get the event's name.
 	 * @return Event's name.
 	 */
-	[[nodiscard]] auto getName() const -> std::string override { return fmt::format("AppRenderEvent"); }
+	[[nodiscard]] auto getName() const -> std::string override;
 
 	/**
 	 * @brief Get the event's static type.

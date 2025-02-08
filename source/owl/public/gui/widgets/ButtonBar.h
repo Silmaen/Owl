@@ -16,7 +16,7 @@ namespace owl::gui::widgets {
  * @brief Data used for defining a button bar.
  */
 struct ButtonBarData : WidgetData {
-	/// If Imgui décoration should be drawn.
+	/// If Gui décoration should be drawn.
 	bool hasDecoration = true;
 	/// If scrollbars should eventually be drawn.
 	bool hasScrollBars = true;
