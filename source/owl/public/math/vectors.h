@@ -10,6 +10,8 @@
 
 #include "core/Core.h"
 
+#include <cmath>
+
 namespace owl::math {
 
 /**

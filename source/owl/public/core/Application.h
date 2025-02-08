@@ -8,15 +8,15 @@
 
 #pragma once
 
-#include "fonts/FontLibrary.h"
-#include "renderer/RenderAPI.h"
-#include "sound/SoundAPI.h"
 #include "Timestep.h"
 #include "core/task/Task.h"
 #include "event/AppEvent.h"
+#include "fonts/FontLibrary.h"
 #include "gui/UiLayer.h"
 #include "input/Window.h"
 #include "layer/LayerStack.h"
+#include "renderer/RenderAPI.h"
+#include "sound/SoundAPI.h"
 #include "task/Scheduler.h"
 
 #include <filesystem>
@@ -56,7 +56,7 @@ struct OWL_API AppParams {
 	renderer::RenderAPI::Type renderer{renderer::RenderAPI::Type::Vulkan};
 	/// sound system's type.
 	sound::SoundAPI::Type sound{sound::SoundAPI::Type::OpenAL};
-	/// If the application should use ImGui overlay.
+	/// If the application should use gui overlay.
 	bool hasGui{true};
 	/// If extra debugging symbols should be loaded.
 	bool useDebugging{false};
@@ -156,7 +156,7 @@ public:
 	 * @brief Access to the Gui layer.
 	 * @return The gui layer.
 	 */
-	auto getImGuiLayer() -> shared<gui::UiLayer> { return mp_imGuiLayer; }
+	auto getGuiLayer() -> shared<gui::UiLayer> { return mp_guiLayer; }
 
 	/**
 	 * @brief Request the application to terminate.
@@ -283,7 +283,7 @@ private:
 	/// Pointer to the window.
 	uniq<input::Window> mp_appWindow;
 	/// Pointer to the GUI Layer.
-	shared<gui::UiLayer> mp_imGuiLayer = nullptr;
+	shared<gui::UiLayer> mp_guiLayer = nullptr;
 	/// Running state.
 	State m_state = State::Created;
 	/// If Window minimized.

@@ -67,7 +67,7 @@ TEST(Core, App) {
 
 	EXPECT_EQ(app->getInitParams().hasGui, params.hasGui);
 	EXPECT_GE(app->getTimeStep().getMilliseconds(), 0);
-	EXPECT_EQ(Application::get().getImGuiLayer(), nullptr);
+	EXPECT_EQ(Application::get().getGuiLayer(), nullptr);
 	EXPECT_EQ(Application::get().getWindow().getGraphContext(), nullptr);
 	Application::invalidate();
 	app.reset();

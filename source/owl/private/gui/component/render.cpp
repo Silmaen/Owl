@@ -9,8 +9,8 @@
 #include "owlpch.h"
 
 #include "core/Application.h"
+#include "gui/ImGuiUtils.h"
 #include "gui/component/render.h"
-#include "gui/utils.h"
 
 #include "renderer/Renderer.h"
 

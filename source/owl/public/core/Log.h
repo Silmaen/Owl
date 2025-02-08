@@ -9,7 +9,11 @@
 #pragma once
 
 #include "core/Core.h"
+#ifdef OWL_HAS_STD_FORMAT
+#include <format>
+#else
 #include <fmt/format.h>
+#endif
 
 /**
  * @brief Namespace for the core objects.
@@ -75,18 +79,56 @@ public:
 	 */
 	static void setFrameFrequency(const uint64_t iFrequency) { s_frequency = iFrequency; }
 
+	/**
+	 * @brief Log as a core message.
+	 * @tparam Args Template of additional arguments.
+	 * @param iLevel Message Level.
+	 * @param iFmt Format string.
+	 * @param iArgs Argument to format string.
+	 */
+#ifdef OWL_HAS_STD_FORMAT
+	template<typename... Args>
+	static void logCore(const Level& iLevel, const std::string& iFmt, Args&&... iArgs) {
+		logCore(iLevel, std::vformat(iFmt, std::make_format_args(iArgs...)));
+	}
+#else
 	template<typename... Args>
 	static void logCore(const Level& iLevel, fmt::format_string<Args...> iFmt, Args&&... iArgs) {
 		logCore(iLevel, fmt::vformat(iFmt, fmt::make_format_args(iArgs...)));
 	}
+#endif
 
+	/**
+	 * @brief Log as a core message.
+	 * @param iLevel Message Level.
+	 * @param iMsg The message to log.
+	 */
 	static void logCore(const Level& iLevel, const std::string_view& iMsg);
 
+	/**
+	 * @brief Log as a core message.
+	 * @tparam Args Template of additional arguments.
+	 * @param iLevel Message Level.
+	 * @param iFmt Format string.
+	 * @param iArgs Argument to format string.
+	 */
+#ifdef OWL_HAS_STD_FORMAT
+	template<typename... Args>
+	static void logClient(const Level& iLevel, const std::string& iFmt, Args&&... iArgs) {
+		logClient(iLevel, std::vformat(iFmt, std::make_format_args(iArgs...)));
+	}
+#else
 	template<typename... Args>
 	static void logClient(const Level& iLevel, fmt::format_string<Args...> iFmt, Args&&... iArgs) {
-		logCore(iLevel, fmt::vformat(iFmt, fmt::make_format_args(iArgs...)));
+		logClient(iLevel, fmt::vformat(iFmt, fmt::make_format_args(iArgs...)));
 	}
+#endif
 
+	/**
+	 * @brief Log as a client message.
+	 * @param iLevel Message Level.
+	 * @param iMsg The message to log.
+	 */
 	static void logClient(const Level& iLevel, const std::string_view& iMsg);
 
 private:
