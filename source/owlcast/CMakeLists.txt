@@ -24,6 +24,26 @@ target_compile_definitions(${OWL_PROJECT} PRIVATE OWL_ASSETS_LOCATION="source/ow
 target_import_so_files(${OWL_PROJECT})
 # ----==== third party ====----
 
+#imgui
+if (NOT TARGET imgui::imgui)
+    if (NOT TARGET Vulkan::Headers)
+        find_package(VulkanHeaders REQUIRED)
+    endif ()
+    if (NOT TARGET Vulkan::Loader)
+        find_package(VulkanLoader REQUIRED)
+    endif ()
+    find_package(imgui REQUIRED)
+    message(STATUS "Found imgui version ${imgui_VERSION} @ ${imgui_DIR}")
+endif ()
+target_link_libraries(${OWL_PROJECT} PRIVATE imgui::imgui)
+
+# GLFW
+if (NOT TARGET glfw)
+    find_package(glfw3 REQUIRED)
+    message(STATUS "Found glfw3 version ${glfw3_VERSION} @ ${glfw3_DIR}")
+endif ()
+target_link_libraries(${OWL_PROJECT} PRIVATE glfw)
+
 # magic_enum
 find_package(magic_enum REQUIRED)
 target_link_libraries(${OWL_PROJECT} PRIVATE magic_enum::magic_enum)

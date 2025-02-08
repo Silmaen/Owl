@@ -10,11 +10,11 @@
 
 #include "gui/UiLayer.h"
 
-#include "gui/utils.h"
-#include "renderer/RenderCommand.h"
 #include "core/Application.h"
 #include "core/external/glfw3.h"
 #include "core/external/imgui.h"
+#include "gui/ImGuiUtils.h"
+#include "renderer/RenderCommand.h"
 #include "renderer/vulkan/internal/VulkanHandler.h"
 
 #include <input/Input.h>

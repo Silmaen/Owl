@@ -10,6 +10,7 @@
 
 #include <core/Application.h>
 #include <debug/Profiler.h>
+#include <imgui.h>
 
 namespace owl::raycaster {
 
