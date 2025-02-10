@@ -28,7 +28,7 @@ void BasePanel::onRender() {
 
 	m_focused = ImGui::IsWindowFocused();
 	m_hovered = ImGui::IsWindowHovered();
-	core::Application::get().getImGuiLayer()->blockEvents(!m_focused && !m_hovered);
+	core::Application::get().getGuiLayer()->blockEvents(!m_focused && !m_hovered);
 
 	const ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	m_size = {static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y)};

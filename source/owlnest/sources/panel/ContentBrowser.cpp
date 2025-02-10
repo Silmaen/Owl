@@ -9,6 +9,8 @@
 #include "ContentBrowser.h"
 
 #include <algorithm>
+#include <fmt/format.h>
+#include <gui/ImGuiUtils.h>
 #include <imgui_internal.h>
 
 namespace owl::nest::panel {
