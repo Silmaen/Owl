@@ -41,7 +41,7 @@ packages:
   mavsdk:
     version: 2.0.1
   openal:
-    version: 1.24.1
+    version: 1.24.2
     kind: "shared"
   libsndfile:
     version: 1.2.2
@@ -58,6 +58,12 @@ packages:
   vulkan_sdk:
     version: 1.3.275
     kind: "shared"
+  libpng:
+    version: 1.6.46
+    kind: "static"
+  freetype:
+    version: 2.13.3
+    kind: "static"
   msdfgen:
     version: 1.12
     kind: "static"
