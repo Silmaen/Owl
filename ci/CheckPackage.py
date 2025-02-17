@@ -167,19 +167,28 @@ def main():
         if not location.exists():
             print("The destination does not exist.", file=stderr)
         work_dir = location
+        archive_file = None
         if location.is_file():
-            print("Uncompacting")
-            if location.suffix == ".zip":
+            archive_file = location
+        else:
+            for f in location.iterdir():
+                if f.is_file() and f.suffix in [".zip", ".tgz"]:
+                    archive_file = Path(f)
+                    break
+        if archive_file:
+            print(f"Uncompacting: {archive_file}")
+            if archive_file.suffix == ".zip":
                 print(f"Uncompacting Zip file to {tt}")
-                with zipfile.ZipFile(location) as zf:
+                with zipfile.ZipFile(archive_file) as zf:
                     zf.extractall(tt)
-            elif location.suffix == ".tgz":
+            elif archive_file.suffix == ".tgz":
                 print(f"Uncompacting tgz file to {tt}")
-                with tarfile.open(location) as tar:
+                with tarfile.open(archive_file) as tar:
                     tar.extractall(tt)
             else:
                 print("The destination must be a .zip or .tgz file of an uncompressed folder.", file=stderr)
-            work_dir = tt / location.stem
+                exit(1)
+            work_dir = tt / archive_file.stem
             for f in work_dir.iterdir():
                 print(f"in folder: {f}")
         if (work_dir / "bin").exists():
