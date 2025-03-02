@@ -13,6 +13,7 @@
 #include "gauge/Compas.h"
 #include "gauge/MotorRate.h"
 #include "gauge/VerticalSpeed.h"
+#include <gui/ImGuiUtils.h>
 
 using namespace owl;
 
@@ -128,17 +129,18 @@ void Gauges::onRender() {
 
 	m_viewportFocused = ImGui::IsWindowFocused();
 	m_viewportHovered = ImGui::IsWindowHovered();
-	core::Application::get().getImGuiLayer()->blockEvents(!m_viewportFocused && !m_viewportHovered);
+	core::Application::get().getGuiLayer()->blockEvents(!m_viewportFocused && !m_viewportHovered);
 
 	const ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	m_viewportSize = {static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y)};
 	if (const auto tex = gui::imTexture(m_framebuffer, 0); tex.has_value())
-			ImGui::Image(tex.value(), viewportPanelSize,
-						 vec(m_framebuffer->getLowerData()), vec(m_framebuffer->getUpperData()));
+		ImGui::Image(tex.value(), viewportPanelSize, vec(m_framebuffer->getLowerData()),
+					 vec(m_framebuffer->getUpperData()));
 
-	else OWL_WARN("No frameBuffer to render...")
+	else
+		OWL_WARN("No frameBuffer to render...")
 
-			ImGui::End();
+	ImGui::End();
 	ImGui::PopStyleVar();
 }
 

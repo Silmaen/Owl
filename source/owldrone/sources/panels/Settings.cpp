@@ -6,9 +6,12 @@
  * All modification must get authorization from the author.
  */
 #include "Settings.h"
+
 #include "IO/CameraSystem.h"
 #include "IO/DeviceManager.h"
 #include "IO/DroneSettings.h"
+#include <fmt/format.h>
+#include <imgui.h>
 
 namespace drone::panels {
 

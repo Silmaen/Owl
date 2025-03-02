@@ -8,9 +8,10 @@
 
 #include "EditorLayer.h"
 
+#include <fmt/format.h>
+#include <gui/ImGuiUtils.h>
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
-
 
 namespace owl::nest {
 namespace {
