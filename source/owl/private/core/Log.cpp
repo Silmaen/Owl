@@ -97,7 +97,7 @@ auto Log::initiated() -> bool { return g_CoreLogger != nullptr; }
 
 void Log::newFrame() { ++s_frameCounter; }
 
-void Log::logCore(const Level& iLevel, const std::string_view& iMsg) { g_CoreLogger->log(fromLevel(iLevel), iMsg); }
+void Log::logCore(const Level& iLevel, const std::string& iMsg) { g_CoreLogger->log(fromLevel(iLevel), iMsg); }
 void Log::logClient(const Level& iLevel, const std::string_view& iMsg) { g_ClientLogger->log(fromLevel(iLevel), iMsg); }
 
 }// namespace owl::core

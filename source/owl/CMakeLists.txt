@@ -207,7 +207,6 @@ if (NOT ${PRJPREFIX}_HAS_STD_FORMAT)
     target_link_libraries(${ENGINE_NAME} PUBLIC fmt::fmt)
 endif ()
 
-# ---------========= PUBLIC third party =========---------
 
 # additional windows libs
 if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)

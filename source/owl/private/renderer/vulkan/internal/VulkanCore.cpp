@@ -77,7 +77,7 @@ VulkanCore::~VulkanCore() = default;
 
 void VulkanCore::init(const VulkanConfiguration& iConfiguration) {
 	m_config = iConfiguration;
-	m_instanceInfo = mkUniq<InstanceInformations>();
+	m_instanceInfo = mkUniq<InstanceInformation>();
 	if (!m_instanceInfo->hasMinimalVersion(1, 3)) {
 		OWL_CORE_ERROR("Vulkan: cannot initialize du to insufficient instance version. Require 1.3")
 		m_state = State::Error;
@@ -507,8 +507,8 @@ void VulkanCore::createCommandPool() {
 
 // ============= VulkanCore =====================
 
-// ============= InstanceInformations =====================
-InstanceInformations::InstanceInformations() {
+// ============= InstanceInformation =====================
+InstanceInformation::InstanceInformation() {
 	vkEnumerateInstanceVersion(&version);
 	OWL_CORE_INFO("Vulkan: Found API Version: {}.{}.", VK_API_VERSION_MAJOR(version), VK_API_VERSION_MINOR(version))
 	// Get the list of available layers
@@ -551,7 +551,7 @@ InstanceInformations::InstanceInformations() {
 	}
 }
 
-auto InstanceInformations::hasMinimalVersion(const uint8_t iMajor, const uint8_t iMinor, const uint8_t iPatch) const
+auto InstanceInformation::hasMinimalVersion(const uint8_t iMajor, const uint8_t iMinor, const uint8_t iPatch) const
 		-> bool {
 	return VK_API_VERSION_MAJOR(version) > iMajor ||
 		   (VK_API_VERSION_MAJOR(version) == iMajor && VK_API_VERSION_MINOR(version) > iMinor) ||
@@ -559,25 +559,25 @@ auto InstanceInformations::hasMinimalVersion(const uint8_t iMajor, const uint8_t
 			VK_API_VERSION_PATCH(version) >= iPatch);
 }
 
-auto InstanceInformations::hasLayer(const std::string& iLayer) const -> bool {
+auto InstanceInformation::hasLayer(const std::string& iLayer) const -> bool {
 	return std::ranges::find(supportedLayers.begin(), supportedLayers.end(), iLayer) != supportedLayers.end();
 }
 
-auto InstanceInformations::hasExtension(const std::string& iExtension) const -> bool {
+auto InstanceInformation::hasExtension(const std::string& iExtension) const -> bool {
 	return std::ranges::find(supportedExtensions.begin(), supportedExtensions.end(), iExtension) !=
 		   supportedExtensions.end();
 }
 
-auto InstanceInformations::hasLayers(const std::vector<std::string>& iLayers) const -> bool {
+auto InstanceInformation::hasLayers(const std::vector<std::string>& iLayers) const -> bool {
 	return std::ranges::all_of(iLayers.begin(), iLayers.end(),
 							   [&](const auto& iLayer) { return this->hasLayer(iLayer); });
 }
 
-auto InstanceInformations::hasExtensions(const std::vector<std::string>& iExtensions) const -> bool {
+auto InstanceInformation::hasExtensions(const std::vector<std::string>& iExtensions) const -> bool {
 	return std::ranges::all_of(iExtensions.begin(), iExtensions.end(),
 							   [&](const auto& iExtension) { return this->hasExtension(iExtension); });
 }
 
-// ============= InstanceInformations =====================
+// ============= InstanceInformation =====================
 
 }// namespace owl::renderer::vulkan::internal

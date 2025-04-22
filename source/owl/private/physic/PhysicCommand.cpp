@@ -10,7 +10,7 @@
 #include "physic/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/component/components.h"
-#include <box2d.h>
+#include <box2d/box2d.h>
 
 namespace owl::physic {
 
@@ -41,7 +41,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 	b2WorldDef def = b2DefaultWorldDef();
 	def.gravity = {.x = 0.0f, .y = -9.81f};
 	m_impl->worldId = b2CreateWorld(&def);
-	OWL_INFO("PhysicCommand::init(), world created ({} {})", m_impl->worldId.index1, m_impl->worldId.revision)
+	OWL_INFO("PhysicCommand::init(), world created ({} {})", m_impl->worldId.index1, m_impl->worldId.generation)
 
 	// Add entities...
 	for (const auto& view = m_scene->registry.view<scene::component::PhysicBody, scene::component::Transform>();
@@ -67,7 +67,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		bodyDef.rotation = b2MakeRot(transform.rotation().z());
 
 		const b2BodyId body = b2CreateBody(m_impl->worldId, &bodyDef);
-		OWL_INFO("PhysicCommand::init(), body created ({} {} {})", body.index1, body.world0, body.revision)
+		OWL_INFO("PhysicCommand::init(), body created ({} {} {})", body.index1, body.world0, body.generation)
 		sbody.bodyId = m_impl->nextId;
 		m_impl->bodies[m_impl->nextId] = body;
 		m_impl->nextId++;
@@ -76,8 +76,8 @@ void PhysicCommand::init(scene::Scene* iScene) {
 											   sbody.colliderSize.y() * transform.scale().y() * 0.5f);
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 		shapeDef.density = sbody.density;
-		shapeDef.friction = sbody.friction;
-		shapeDef.restitution = sbody.restitution;
+		shapeDef.material.friction = sbody.friction;
+		shapeDef.material.restitution = sbody.restitution;
 		b2CreatePolygonShape(body, &shapeDef, &dynamicBox);
 	}
 }
@@ -85,7 +85,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 void PhysicCommand::destroy() {
 	m_scene = nullptr;
 	b2DestroyWorld(m_impl->worldId);
-	m_impl->worldId = {.index1 = 0, .revision = 0};
+	m_impl->worldId = {.index1 = 0, .generation = 0};
 	m_impl->bodies.clear();
 	m_impl.reset();
 }

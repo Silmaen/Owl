@@ -31,8 +31,8 @@ struct VulkanConfiguration {
 /**
  * @brief Information about the vulkan's instance.
  */
-struct InstanceInformations {
-	InstanceInformations();
+struct InstanceInformation {
+	InstanceInformation();
 
 	[[nodiscard]] auto hasMinimalVersion(uint8_t iMajor, uint8_t iMinor, uint8_t iPatch = 0) const -> bool;
 
@@ -108,7 +108,7 @@ public:
 	void release();
 
 	/**
-	 * @brief Check if the currnt core is in good health.
+	 * @brief Check if the current core is in good health.
 	 * @return True if everything ok.
 	 */
 	[[nodiscard]] auto isHealthy() const -> bool;
@@ -177,6 +177,11 @@ public:
 	 */
 	[[nodiscard]] auto getCurrentSize() const -> math::vec2ui;
 
+	/**
+	 * @brief Get the Vulkan API version.
+	 * @return The Vulkan API version.s
+	 */
+	[[nodiscard]] auto getApiVersion() const -> uint32_t { return m_instanceInfo->version; }
 	/**
 	 * @brief Get the surface format.
 	 * @return The surface format.
@@ -248,7 +253,7 @@ private:
 	VkDebugUtilsMessengerEXT m_debugUtilsMessenger{};
 
 	/// Information about the instance.
-	uniq<InstanceInformations> m_instanceInfo{nullptr};
+	uniq<InstanceInformation> m_instanceInfo{nullptr};
 	/// If  validation layer are enabled.
 	bool m_hasValidation = false;
 	/// If debug message are enabled.

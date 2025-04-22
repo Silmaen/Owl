@@ -103,7 +103,7 @@ public:
 	 * @param iLevel Message Level.
 	 * @param iMsg The message to log.
 	 */
-	static void logCore(const Level& iLevel, const std::string_view& iMsg);
+	static void logCore(const Level& iLevel, const std::string& iMsg);
 
 	/**
 	 * @brief Log as a core message.
