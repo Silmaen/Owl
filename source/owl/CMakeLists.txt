@@ -2,6 +2,7 @@
 # base library
 #
 
+include(Vulkan)
 # List or source files
 file(GLOB_RECURSE SRCS
         *.cpp
@@ -58,144 +59,61 @@ target_link_libraries(${ENGINE_NAME} PUBLIC ${CMAKE_PROJECT_NAME}_Base)
 target_link_libraries(${ENGINE_NAME} PRIVATE ${ENGINE_NAME}Private)
 
 # ---------========= PRIVATE third party =========---------
-
+if (${PROJECT_PREFIX}_USE_RELEASE_THIRD_PARTY)
+    set(THIRD_PARTY_RELEASE FORCE_RELEASE)
+endif ()
 # box2d
-find_package(box2d REQUIRED)
-message(STATUS "Found box2d version ${box2d_VERSION} @ ${box2d_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d::box2d)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED ${THIRD_PARTY_RELEASE})
 
 # cpptrace
-find_package(cpptrace REQUIRED)
-message(STATUS "Found cpptrace version ${cpptrace_VERSION} @ ${cpptrace_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace::cpptrace)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace REQUIRED ${THIRD_PARTY_RELEASE})
 
 # debugbreak
-find_package(debugbreak REQUIRED)
-message(STATUS "Found debugbreak version ${debugbreak_VERSION} @ ${debugbreak_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE debugbreak::debugbreak)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE debugbreak REQUIRED ${THIRD_PARTY_RELEASE})
 
 # glad
-find_package(glad 2.0 REQUIRED)
-message(STATUS "Found glad version ${glad_VERSION} @ ${glad_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE glad::glad)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glad 2.0 REQUIRED ${THIRD_PARTY_RELEASE})
 
 # GLFW
-find_package(glfw3 REQUIRED)
-message(STATUS "Found glfw3 version ${glfw3_VERSION} @ ${glfw3_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw3 MODULE_TARGET glfw REQUIRED ${THIRD_PARTY_RELEASE})
 
 # ImGuizmo
-find_package(imguizmo REQUIRED)
-message(STATUS "Found imguizmo version ${imguizmo_VERSION} @ ${imguizmo_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE imguizmo::imguizmo)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE imguizmo REQUIRED ${THIRD_PARTY_RELEASE})
 
 # magic_enum
-find_package(magic_enum REQUIRED)
-message(STATUS "Found magic_enum version ${magic_enum_VERSION} @ ${magic_enum_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE magic_enum::magic_enum)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE magic_enum REQUIRED ${THIRD_PARTY_RELEASE})
 
 # msdf-atlas-gen
-find_package(msdf-atlas-gen REQUIRED)
-message(STATUS "Found msdf-atlas-gen version ${msdf-atlas-gen_VERSION} @ ${msdf-atlas-gen_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE msdf-atlas-gen::msdf-atlas-gen)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE msdf-atlas-gen REQUIRED ${THIRD_PARTY_RELEASE})
 
 # NativeFile Dialog
-find_package(nfd REQUIRED)
-message(STATUS "Found nfd version ${nfd_VERSION} @ ${nfd_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE nfd::nfd)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE nfd REQUIRED ${THIRD_PARTY_RELEASE})
 
 # OpenAL
-find_package(OpenAL CONFIG REQUIRED)
-message(STATUS "Found OpenAL version ${OpenAL_VERSION} @ ${OpenAL_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE OpenAL::OpenAL)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE OpenAL CONFIG REQUIRED ${THIRD_PARTY_RELEASE})
 
 # SndFile
-find_package(SndFile CONFIG REQUIRED)
-message(STATUS "Found SndFile version ${SndFile_VERSION} @ ${SndFile_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE SndFile::sndfile)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE SndFile REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "SndFile::sndfile")
 
 # stb_image
-find_package(stb_image REQUIRED)
-message(STATUS "Found stb_image version ${stb_image_VERSION} @ ${stb_image_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE stb_image::stb_image)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE stb_image REQUIRED ${THIRD_PARTY_RELEASE})
 
 # Vulkan
-# ----------------------
-find_package(VulkanHeaders REQUIRED)
-find_package(VulkanLoader REQUIRED)
-get_filename_component(VULKAN_DIR ${VulkanLoader_DIR} DIRECTORY)
-get_filename_component(VULKAN_DIR ${VULKAN_DIR} DIRECTORY)
-message(STATUS "Found Vulkan version ${VulkanLoader_VERSION} @ ${VULKAN_DIR}")
-target_link_libraries(${ENGINE_NAME} PRIVATE Vulkan::Loader)
-find_package(VulkanUtilityLibraries REQUIRED)
-message(STATUS "Found VulkanUtilityLibrary version ${VulkanLoader_VERSION} @ ${VULKAN_DIR}")
-target_link_libraries(${ENGINE_NAME} PRIVATE Vulkan::LayerSettings)
-target_link_libraries(${ENGINE_NAME} PRIVATE Vulkan::UtilityHeaders)
-# Vulkan layers
-if (${PROJECT_PREFIX}_DEFINE_VULKAN_LAYERS)
-    if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
-        set(${PROJECT_PREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/bin CACHE PATH "Vulkan layer path")
-        set(${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/bin CACHE PATH "Vulkan layer path")
-    else ()
-        set(${PROJECT_PREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/share/vulkan/explicit_layer.d CACHE PATH "Vulkan layer path")
-        set(${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/lib CACHE PATH "Vulkan layer path")
-    endif ()
-    target_compile_definitions(${ENGINE_NAME} PUBLIC
-            $<BUILD_INTERFACE:${PROJECT_PREFIX}_VULKAN_LAYER_PATH="${${PROJECT_PREFIX}_VULKAN_LAYER_PATH}">
-            $<BUILD_INTERFACE:${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH="${${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH}">)
-endif ()
-# Spir-V cross
-if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
-    find_package(spirv_cross_c_shared REQUIRED)
-    message(STATUS "Found spirv_cross_c_shared version ${spirv_cross_c_shared_VERSION} @ ${spirv_cross_c_shared_DIR}")
-    target_link_libraries(${ENGINE_NAME}Private INTERFACE spirv-cross-c-shared)
-else ()
-    find_package(spirv_cross_core REQUIRED)
-    find_package(spirv_cross_glsl REQUIRED)
-    find_package(spirv_cross_hlsl REQUIRED)
-    find_package(spirv_cross_msl REQUIRED)
-    find_package(spirv_cross_cpp REQUIRED)
-    find_package(spirv_cross_reflect REQUIRED)
-    find_package(spirv_cross_c REQUIRED)
-    message(STATUS "Found spirv_cross_c version ${spirv_cross_c_VERSION} @ ${spirv_cross_c_DIR}")
-    target_link_libraries(${ENGINE_NAME}Private INTERFACE spirv-cross-cpp)
-endif ()
-
-# shaderc
-find_package(SPIRV-Tools REQUIRED)
-find_package(SPIRV-Tools-opt REQUIRED)
-find_package(glslang REQUIRED)
-find_package(shaderc REQUIRED)
-target_link_libraries(${ENGINE_NAME}Private INTERFACE shaderc::shaderc_shared)
-# ----------------------
+owl_target_link_vulkan(${ENGINE_NAME})
 
 # spdlog
-find_package(spdlog REQUIRED)
-message(STATUS "Found Spdlog version ${spdlog_VERSION} @ ${spdlog_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE spdlog::spdlog)
-
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE spdlog REQUIRED ${THIRD_PARTY_RELEASE})
 
 # yaml
-find_package(yaml-cpp REQUIRED)
-message(STATUS "Found yaml-cpp version ${yaml-cpp_VERSION} @ ${yaml-cpp_DIR}")
-target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp::yaml-cpp)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
 
 # ---------========= PUBLIC third party =========---------
 
 # Entt
-find_package(EnTT REQUIRED)
-message(STATUS "Found EnTT version ${EnTT_VERSION} @ ${EnTT_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC EnTT::EnTT)
-
-# fmt
-#find_package(fmt REQUIRED)
-#message(STATUS "Found fmt version ${fmt_VERSION} @ ${fmt_DIR}")
-#target_link_libraries(${ENGINE_NAME} PUBLIC fmt::fmt)
+owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED ${THIRD_PARTY_RELEASE})
 
 # ImGui
-find_package(imgui REQUIRED)
-message(STATUS "Found imgui version ${imgui_VERSION} @ ${imgui_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC imgui::imgui)
+owl_target_link_libraries(${ENGINE_NAME} PUBLIC imgui REQUIRED ${THIRD_PARTY_RELEASE})
 
 # additional windows libs
 if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
