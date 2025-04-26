@@ -20,7 +20,7 @@
 namespace owl::renderer::vulkan {
 
 Framebuffer::Framebuffer(FramebufferSpecification iSpec) : m_specs{std::move(iSpec)} {
-	if (m_specs.samples > 1 && !m_specs.swapChainTarget) {
+	if (m_specs.samples > 1 && !isMainTarget()) {
 		OWL_CORE_ERROR("Vulkan Framebuffer ({}): only FrameBuffer for swapchain supports multiple sample.",
 					   m_specs.debugName)
 		return;
@@ -29,12 +29,12 @@ Framebuffer::Framebuffer(FramebufferSpecification iSpec) : m_specs{std::move(iSp
 		OWL_CORE_ERROR("Vulkan Framebuffer ({}): sample must be at least one.", m_specs.debugName)
 		return;
 	}
-	if (m_specs.swapChainTarget && m_specs.attachments[0].format != AttachmentSpecification::Format::Surface) {
+	if (isMainTarget() && m_specs.attachments[0].format != AttachmentSpecification::Format::Surface) {
 		OWL_CORE_ERROR("Vulkan Framebuffer ({}): format of swap chain's first attachment is not 'Surface'.",
 					   m_specs.debugName)
 		return;
 	}
-	if (m_specs.swapChainTarget) {
+	if (isMainTarget()) {
 		OWL_CORE_INFO("Vulkan Framebuffer ({}): creation for swapchain use.", m_specs.debugName)
 	} else {
 		OWL_CORE_INFO("Vulkan Framebuffer ({}): creation for simple frame buffer use.", m_specs.debugName)
@@ -60,19 +60,18 @@ void Framebuffer::invalidate() {
 	createImages();
 	createImageViews();
 	createFrameBuffer();
-	if (!m_specs.swapChainTarget)
+	if (!isMainTarget())
 		createDescriptorSets();
 }
 
 void Framebuffer::bind() {
 	if (m_framebuffers.empty())
 		return;
-	const auto& core = internal::VulkanCore::get();
+	//const auto& core = internal::VulkanCore::get();
 	auto& vkh = internal::VulkanHandler::get();
-	m_firstBatch = true;
-	vkWaitForFences(core.getLogicalDevice(), 1, getCurrentFence(), VK_TRUE, UINT64_MAX);
 	resetBatch();
-	if (!m_specs.swapChainTarget) {
+	//vkWaitForFences(core.getLogicalDevice(), 1, getCurrentFence(), VK_TRUE, UINT64_MAX);
+	if (!isMainTarget()) {
 		for (auto& img: m_images) {
 			internal::transitionImageLayout(img.image, VK_IMAGE_LAYOUT_UNDEFINED,
 											VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -80,10 +79,20 @@ void Framebuffer::bind() {
 	}
 	vkh.bindFramebuffer(this);
 }
+void Framebuffer::nextSubpass() {
+	auto& vkh = internal::VulkanHandler::get();
+	++m_currentSubPass;
+	if (m_currentSubPass >= getSubpassCount()) {
+		OWL_CORE_ERROR("Vulkan Framebuffer ({}): subpass index out of range.", m_specs.debugName)
+		--m_currentSubPass;
+		return;
+	}
+	vkh.nextSubpass(true);
+}
 
 void Framebuffer::unbind() {
 	auto& vkh = internal::VulkanHandler::get();
-	if (!m_specs.swapChainTarget) {
+	if (!isMainTarget()) {
 		for (auto& img: m_images) {
 			internal::transitionImageLayout(img.image, VK_IMAGE_LAYOUT_UNDEFINED,
 											VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -115,7 +124,7 @@ void Framebuffer::deepCleanup() {
 	}
 	m_samples.clear();
 	cleanup();
-	// Clenup renderpass
+	// Cleanup render pass
 	if (m_renderPass != nullptr) {
 		vkDestroyRenderPass(vkc.getLogicalDevice(), m_renderPass, nullptr);
 		m_renderPass = nullptr;
@@ -206,8 +215,8 @@ auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const
 									VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 	internal::copyImageToBuffer(m_images[imgIndex].image, stagingBuffer, {1, 1}, {iX, iY});
 	internal::transitionImageLayout(m_images[imgIndex].image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-									m_specs.swapChainTarget ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-															: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+									isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+												   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	void* data = nullptr;
 	if (const VkResult result = vkMapMemory(vkc.getLogicalDevice(), stagingBufferMemory, 0,
 											internal::attachmentFormatToSize(format), 0, &data);
@@ -245,8 +254,8 @@ void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const int iVa
 	vkCmdClearColorImage(cmd, m_images[imgIndex].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &val, 1, &range);
 
 	internal::transitionImageLayout(cmd, m_images[imgIndex].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-									m_specs.swapChainTarget ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-															: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+									isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+												   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 	core.endSingleTimeCommands(cmd);
 }
@@ -276,15 +285,15 @@ void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const math::v
 	vkCmdClearColorImage(cmd, m_images[imgIndex].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &val, 1, &range);
 	core.endSingleTimeCommands(cmd);
 	internal::transitionImageLayout(m_images[imgIndex].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-									m_specs.swapChainTarget ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-															: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+									isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+												   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 }
 OWL_DIAG_POP
 
 void Framebuffer::createImages() {
 	const auto& vkc = internal::VulkanCore::get();
 	m_swapChainImageCount = 0;
-	if (m_specs.swapChainTarget) {
+	if (isMainTarget()) {
 		auto* const gc = dynamic_cast<GraphContext*>(core::Application::get().getWindow().getGraphContext());
 		m_swapChainImageCount = vkc.getImagecount();
 		const auto queueFamilyIndices = vkc.getQueueIndices();
@@ -327,8 +336,6 @@ void Framebuffer::createImages() {
 					  m_swapChainImageCount)
 	} else
 		m_images.resize(m_specs.attachments.size());
-	// create swapchain images (nothing to do)
-	if (m_specs.swapChainTarget) {}
 	// Create remaining Memory images
 	for (uint32_t i = m_swapChainImageCount; i < m_images.size(); ++i) {
 		const uint32_t attIndex = imgIdxToAtt(i);
@@ -378,8 +385,8 @@ void Framebuffer::createImages() {
 			return;
 		}
 		internal::transitionImageLayout(m_images[i].image, VK_IMAGE_LAYOUT_UNDEFINED,
-										m_specs.swapChainTarget ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-																: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+										isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+													   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	}
 }
 
@@ -460,44 +467,78 @@ void Framebuffer::createRenderPass() {
 						   .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
 						   .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
 						   .stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE,
-						   .initialLayout = m_specs.swapChainTarget ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-																	: VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-						   .finalLayout = m_specs.swapChainTarget ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-																  : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+						   .initialLayout = isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+														   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+						   .finalLayout = isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+														 : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
 		++i;
 	}
-
-	const VkSubpassDescription subpass{.flags = {},
-									   .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-									   .inputAttachmentCount = 0,
-									   .pInputAttachments = nullptr,
-									   .colorAttachmentCount = static_cast<uint32_t>(attRefs.size()),
-									   .pColorAttachments = attRefs.data(),
-									   .pResolveAttachments = nullptr,
-									   .pDepthStencilAttachment = depthRefs.get(),
-									   .preserveAttachmentCount = 0,
-									   .pPreserveAttachments = nullptr};
-	constexpr VkSubpassDependency dependency{.srcSubpass = VK_SUBPASS_EXTERNAL,
-											 .dstSubpass = 0,
-											 .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-											 .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-											 .srcAccessMask = 0,
-											 .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-											 .dependencyFlags = {}};
+	constexpr VkAttachmentReference simpleAttachmentReference{.attachment = 0,
+															  .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+	std::vector subpasses = {// SubPass 0: the scene
+							 VkSubpassDescription{.flags = {},
+												  .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+												  .inputAttachmentCount = 0,
+												  .pInputAttachments = nullptr,
+												  .colorAttachmentCount = static_cast<uint32_t>(attRefs.size()),
+												  .pColorAttachments = attRefs.data(),
+												  .pResolveAttachments = nullptr,
+												  .pDepthStencilAttachment = depthRefs.get(),
+												  .preserveAttachmentCount = 0,
+												  .pPreserveAttachments = nullptr}};
+	//if (isMainTarget()) {
+	// SubPass 1: the GUI
+	subpasses.emplace_back(VkSubpassDescription{.flags = {},
+												.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+												.inputAttachmentCount = 0,
+												.pInputAttachments = nullptr,
+												.colorAttachmentCount = 1,
+												.pColorAttachments = &simpleAttachmentReference,
+												.pResolveAttachments = nullptr,
+												.pDepthStencilAttachment = nullptr,
+												.preserveAttachmentCount = 0,
+												.pPreserveAttachments = nullptr});
+	//}
+	std::vector dependencies = {VkSubpassDependency{.srcSubpass = VK_SUBPASS_EXTERNAL,
+													.dstSubpass = 0,
+													.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+													.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+													.srcAccessMask = 0,
+													.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+													.dependencyFlags = {}}};
+	//if (isMainTarget()) {
+	dependencies.emplace_back(VkSubpassDependency{.srcSubpass = 0,
+												  .dstSubpass = 1,
+												  .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+												  .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+												  .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+												  .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+												  .dependencyFlags = {}});
+	//}
+	m_SubPassCount = static_cast<uint32_t>(subpasses.size());
 	const VkRenderPassCreateInfo renderPassInfo{.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
 												.pNext = nullptr,
 												.flags = {},
 												.attachmentCount = static_cast<uint32_t>(attDesc.size()),
 												.pAttachments = attDesc.data(),
-												.subpassCount = 1,
-												.pSubpasses = &subpass,
-												.dependencyCount = 1,
-												.pDependencies = &dependency};
+												.subpassCount = static_cast<uint32_t>(subpasses.size()),
+												.pSubpasses = subpasses.data(),
+												.dependencyCount = static_cast<uint32_t>(dependencies.size()),
+												.pDependencies = dependencies.data()};
 	if (const VkResult result = vkCreateRenderPass(vkc.getLogicalDevice(), &renderPassInfo, nullptr, &m_renderPass);
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan framebuffer ({}): failed to create render pass ({})", m_specs.debugName,
 					   internal::resultString(result))
 	}
+}
+
+auto Framebuffer::isMainTarget() const -> bool { return m_specs.swapChainTarget; }
+
+auto Framebuffer::hasBeenCalled() const -> bool { return m_called || m_specs.swapChainTarget; }
+
+auto Framebuffer::getSubpassCount() const -> uint32_t {
+	return m_SubPassCount;
+	//return isMainTarget() ? 2 : 1;
 }
 
 void Framebuffer::nextFrame() { m_currentFrame = (m_currentFrame + 1) % m_specs.samples; }
@@ -518,7 +559,7 @@ void Framebuffer::createSyncObjects() {
 	const auto& core = internal::VulkanCore::get();
 	uint32_t idx = 0;
 	for (auto& [imgAvail, renderFinish, fence, cmd]: m_samples) {
-		if (m_specs.swapChainTarget) {
+		if (isMainTarget()) {
 			if (const VkResult result = vkCreateSemaphore(core.getLogicalDevice(), &semaphoreInfo, nullptr, &imgAvail);
 				result != VK_SUCCESS) {
 				OWL_CORE_ERROR("Vulkan framebuffer ({}): failed to create image available semaphore {} ({}).",

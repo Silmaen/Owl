@@ -58,6 +58,8 @@ Texture2D::Texture2D(std::filesystem::path iPath) : renderer::Texture2D{std::mov
 Texture2D::~Texture2D() {
 	if (m_textureId > 0)
 		internal::Descriptors::get().unregisterTexture(m_textureId);
+	else
+		OWL_CORE_WARN("Destroying text with null id.")
 }
 
 auto Texture2D::operator==(const Texture& iOther) const -> bool {

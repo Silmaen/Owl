@@ -187,9 +187,10 @@ void Descriptors::release() {
 	resetTextureBind();
 	m_textureBind.shrink_to_fit();
 	if (!m_textures.empty()) {
-		for (auto& tex: m_textures) {
-			tex.second->freeTexture();
-			tex.second.reset();
+		for (auto& [id, tex]: m_textures) {
+			OWL_CORE_TRACE("Vulkan Descriptors: releasing texture id {}", id)
+			tex->freeTexture();
+			tex.reset();
 		}
 	}
 	m_textures.clear();
@@ -240,7 +241,7 @@ void Descriptors::createDescriptors() {
 	};
 	const VkDescriptorPoolCreateInfo poolInfo{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 											  .pNext = nullptr,
-											  .flags = {},
+											  .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
 											  .maxSets = g_maxFrameInFlight,
 											  .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
 											  .pPoolSizes = poolSizes.data()};
@@ -359,7 +360,6 @@ void Descriptors::setUniformData(const void* iData, const size_t iSize) const {
 
 auto Descriptors::registerNewTexture() -> uint32_t { return m_textures.registerNewTexture(); }
 
-
 auto Descriptors::isTextureRegistered(const uint32_t iIndex) const -> bool {
 	if (iIndex == 0)
 		return false;
@@ -435,15 +435,18 @@ void Descriptors::createSingleImageDescriptorPool() {
 		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({})", resultString(result))
 	}
 }
+
 auto Descriptors::TextureList::contains(uint32_t iIndex) const -> bool {
 	return std::find_if(textures.begin(), textures.end(),
 						[&iIndex](const auto& iElem) { return iElem.first == iIndex; }) != textures.end();
 }
+
 auto Descriptors::TextureList::registerNewTexture() -> uint32_t {
 	++nextId;
 	textures.emplace_back(nextId, mkShared<TextureData>());
 	return nextId;
 }
+
 void Descriptors::TextureList::unregisterTexture(uint32_t iIndex) {
 	const auto iter = std::find_if(textures.begin(), textures.end(),
 							 [&iIndex](const auto& iElem) { return iElem.first == iIndex; });

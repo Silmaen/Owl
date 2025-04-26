@@ -1,4 +1,5 @@
 
+#include "core/utils/StringUtils.h"
 #include "testHelper.h"
 
 #include <debug/TrackerClient.h>
@@ -45,16 +46,16 @@ TEST(Tracker, stacktrace) {
 }
 
 TEST(MemorySize, formating) {
-	MemorySize st{.size = 488};
-	EXPECT_STREQ(st.str().c_str(), "488 bytes");
-	st.size += 1024;
-	EXPECT_STREQ(st.str().c_str(), "1.48 kB");
-	st.size *= 410;
-	st.size += 1024ull * 1024ull;
-	EXPECT_STREQ(st.str().c_str(), "1.59 MB");
-	st.size *= 154;
-	st.size += 77 * 1024ull * 1024ull * 1024ull;
-	EXPECT_STREQ(st.str().c_str(), "77.2 GB");
-	st.size += 1024ull * 1024ull * 1024ull * 1024ull;
-	EXPECT_STREQ(st.str().c_str(), "1.08 TB");
+	std::size_t st{488};
+	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "488 bytes");
+	st += 1024;
+	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "1.48 kB");
+	st *= 410;
+	st += 1024ull * 1024ull;
+	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "1.59 MB");
+	st *= 154;
+	st += 77 * 1024ull * 1024ull * 1024ull;
+	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "77.2 GB");
+	st += 1024ull * 1024ull * 1024ull * 1024ull;
+	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "1.08 TB");
 }

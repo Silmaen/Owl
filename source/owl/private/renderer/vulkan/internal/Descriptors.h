@@ -147,7 +147,7 @@ private:
 	VkDescriptorPool m_imguiDescriptorPool{nullptr};
 	/// The descriptor pool for the single images.
 	VkDescriptorPool m_singleImageDescriptorPool{nullptr};
-	/// List of descripto
+	/// List of descriptors
 	std::vector<VkDescriptorSet> m_descriptorSets;
 	std::vector<VkBuffer> m_uniformBuffers;
 	std::vector<VkDeviceMemory> m_uniformBuffersMemory;

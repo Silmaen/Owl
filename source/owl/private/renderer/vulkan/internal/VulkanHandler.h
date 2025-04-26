@@ -103,6 +103,14 @@ public:
 		if (m_state == State::Uninitialized)
 			m_validation = true;
 	}
+	void activateDebugMessage() {
+		if (m_state == State::Uninitialized)
+			m_debugMessage = true;
+	}
+
+	[[nodiscard]] auto getSwapChain() const -> Framebuffer* { return m_swapChain.get(); }
+
+	[[nodiscard]] auto getImGuiRenderPass() const -> VkRenderPass { return m_ImGuiRenderPass; }
 
 	[[nodiscard]] auto toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplVulkan_InitInfo;
 
@@ -127,6 +135,7 @@ public:
 
 	// Command buffer data
 	bool inBatch = false;
+	bool inFrame = false;
 	bool firstBatch = true;
 
 	void popPipeline(int32_t iId);
@@ -138,6 +147,8 @@ public:
 	void endBatch();
 
 	void beginFrame();
+
+	void nextSubpass(bool internal = false);
 
 	void endFrame();
 
@@ -154,6 +165,8 @@ public:
 	void bindFramebuffer(Framebuffer* iFrameBuffer);
 	void unbindFramebuffer();
 	[[nodiscard]] auto getCurrentFrameBufferName() const -> std::string;
+
+	[[nodiscard]] auto isMainFramebuffer() const -> bool;
 
 private:
 	/**
@@ -174,6 +187,7 @@ private:
 	int m_version = 0;
 	/// Enable Validation layers.
 	bool m_validation = false;
+	bool m_debugMessage = false;
 	bool m_resize = false;
 	VkRenderPass m_imGuiRenderPass{};
 

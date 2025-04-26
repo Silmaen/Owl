@@ -131,9 +131,12 @@ void Base2D::onImGuiRender(const core::Timestep& iTs) {
 	{
 		ImGui::Begin("Statistics");
 		ImGui::Text("%s", fmt::format("FPS: {:.2f}", iTs.getFps()).c_str());
-		ImGui::Text("%s",
-					fmt::format("Current used memory: {}", debug::TrackerAPI::globals().allocatedMemory.str()).c_str());
-		ImGui::Text("%s", fmt::format("Max used memory: {}", debug::TrackerAPI::globals().memoryPeek.str()).c_str());
+		ImGui::Text("%s", fmt::format("Current used memory: {}",
+									  core::utils::sizeToString(debug::TrackerAPI::globals().allocatedMemory))
+								  .c_str());
+		ImGui::Text("%s", fmt::format("Max used memory: {}",
+									  core::utils::sizeToString(debug::TrackerAPI::globals().memoryPeek))
+								  .c_str());
 		ImGui::Text("%s", fmt::format("Allocation calls: {}", debug::TrackerAPI::globals().allocationCalls).c_str());
 		ImGui::Text("%s",
 					fmt::format("Deallocation calls: {}", debug::TrackerAPI::globals().deallocationCalls).c_str());

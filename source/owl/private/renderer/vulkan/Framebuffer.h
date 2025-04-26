@@ -126,9 +126,19 @@ public:
 
 	[[nodiscard]] auto isFirstBatch() const -> bool { return m_firstBatch; }
 	void resetBatch() { m_firstBatch = true; }
-	void batchTouch() { m_firstBatch = false; }
+	void batchTouch() {
+		m_firstBatch = false;
+		m_called = true;
+	}
+	void resetSubPass() { m_currentSubPass = 0; }
 
 	[[nodiscard]] auto getCurrentImagePtr() const -> VkImage { return m_images[m_currentImage].image; }
+
+	[[nodiscard]] auto isMainTarget() const -> bool;
+	[[nodiscard]] auto hasBeenCalled() const -> bool;
+	[[nodiscard]] auto getSubpassCount() const -> uint32_t;
+	[[nodiscard]] auto getCurrentSubpass() const -> uint32_t { return m_currentSubPass; }
+	void nextSubpass();
 
 private:
 	/// The specs.
@@ -140,6 +150,9 @@ private:
 	VkSwapchainKHR m_swapChain = nullptr;
 	uint32_t m_swapChainImageCount = 0;
 	bool m_firstBatch = true;
+	bool m_called = false;
+	uint32_t m_currentSubPass = 0;
+	uint32_t m_SubPassCount = 0;
 
 	// one per sample...
 	/**

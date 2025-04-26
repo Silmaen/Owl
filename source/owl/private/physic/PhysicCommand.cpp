@@ -24,7 +24,7 @@ public:
 	std::unordered_map<uint64_t, b2BodyId> bodies;
 };
 
-shared<PhysicCommand::Impl> PhysicCommand::m_impl = std::make_shared<Impl>();
+shared<PhysicCommand::Impl> PhysicCommand::m_impl = nullptr;
 scene::Scene* PhysicCommand::m_scene = nullptr;
 
 PhysicCommand::PhysicCommand() = default;
@@ -36,6 +36,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 	}
 	if (isInitialized())
 		destroy();
+	m_impl = std::make_shared<Impl>();
 	m_scene = iScene;
 	b2WorldDef def = b2DefaultWorldDef();
 	def.gravity = {.x = 0.0f, .y = -9.81f};
@@ -86,6 +87,7 @@ void PhysicCommand::destroy() {
 	b2DestroyWorld(m_impl->worldId);
 	m_impl->worldId = {.index1 = 0, .revision = 0};
 	m_impl->bodies.clear();
+	m_impl.reset();
 }
 
 auto PhysicCommand::isInitialized() -> bool { return m_scene != nullptr; }

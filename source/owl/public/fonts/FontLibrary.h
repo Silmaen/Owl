@@ -38,6 +38,11 @@ public:
 	 * @brief Initialize the library.
 	 */
 	void init();
+
+	/**
+	 * @brief Destroy the library.
+	 */
+	void destroy();
 	/**
 	 * @brief Get the default font.
 	 * @return The default font.

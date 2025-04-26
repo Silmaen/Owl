@@ -73,11 +73,28 @@ public:
 	 */
 	[[nodiscard]] auto hasExtensions(const std::vector<std::string>& iExtensions) const -> bool;
 
+	/**
+	 * @brief Get a simple string describing the device.
+	 * @return The device name and few details.
+	 */
+	[[nodiscard]] auto getSimpleName() const -> std::string;
+	/**
+	 * @brief Get a detailed string describing the device.
+	 * @return The device name and some details.
+	 */
+	[[nodiscard]] auto getDetailedName() const -> std::string;
+	/**
+	 * @brief Get a string describing the device capabilities.
+	 * @return The device name and some details.
+	 */
+	[[nodiscard]] auto getCapabilityString() const -> std::string;
 
 	/**
 	 * @brief Force to check for surface changes.
 	 */
 	void updateSurfaceInformation();
+
+	[[nodiscard]] auto getTotalMemory() const -> size_t;
 
 	/// The physical device.
 	VkPhysicalDevice device = nullptr;

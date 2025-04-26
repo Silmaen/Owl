@@ -134,11 +134,11 @@ target_link_libraries(${ENGINE_NAME} PRIVATE Vulkan::UtilityHeaders)
 # Vulkan layers
 if (${PROJECT_PREFIX}_DEFINE_VULKAN_LAYERS)
     if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
-        set(${PROJECT_PREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/bin)
-        set(${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/bin)
+        set(${PROJECT_PREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/bin CACHE PATH "Vulkan layer path")
+        set(${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/bin CACHE PATH "Vulkan layer path")
     else ()
-        set(${PROJECT_PREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/share/vulkan/explicit_layer.d)
-        set(${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/lib)
+        set(${PROJECT_PREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/share/vulkan/explicit_layer.d CACHE PATH "Vulkan layer path")
+        set(${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/lib CACHE PATH "Vulkan layer path")
     endif ()
     target_compile_definitions(${ENGINE_NAME} PUBLIC
             $<BUILD_INTERFACE:${PROJECT_PREFIX}_VULKAN_LAYER_PATH="${${PROJECT_PREFIX}_VULKAN_LAYER_PATH}">

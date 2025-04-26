@@ -10,7 +10,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 2
-      texture: pat:/source/personnel/stack_owl/Owl/engine_assets/textures/CheckerBoard.png
+      texture: nam:textures/CheckerBoard.png
     Trigger:
       Type: Victory
   - Entity: 6663223909436446951
@@ -32,7 +32,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/source/personnel/stack_owl/Owl/engine_assets/textures/mario.png
+      texture: nam:textures/mario.png
     PhysicBody:
       type: Dynamic
       fixedRotation: true

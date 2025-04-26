@@ -140,6 +140,11 @@ public:
 	virtual void endBatch() {}
 
 	/**
+	 * @brief Change the subpass.
+	 */
+	virtual void nextSubpass() {}
+
+	/**
 	 * @brief Ends draw call for the current frame.
 	 */
 	virtual void endFrame() {}

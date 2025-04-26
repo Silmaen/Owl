@@ -82,7 +82,7 @@ struct OWL_API AllocationInfo {
 	/// Location in memory.
 	void* location = nullptr;
 	/// Size of the memory chunk.
-	MemorySize size{};
+	std::size_t size{0};
 #ifdef OWL_STACKTRACE
 	shared<TraceInternal> traceInternal = nullptr;
 #endif
@@ -93,6 +93,8 @@ struct OWL_API AllocationInfo {
 	 * @return String of the allocation.
 	 */
 	[[nodiscard]] OWL_API auto toStr(bool iTracePrint = true, bool iFullTrace = false) const -> std::string;
+
+	[[nodiscard]] OWL_API auto getLibName() const -> std::string;
 };
 
 /**
@@ -106,13 +108,13 @@ struct OWL_API AllocationState {
 	auto operator=(const AllocationState&) -> AllocationState& = default;
 	auto operator=(AllocationState&&) -> AllocationState& = default;
 	/// Amount of allocated memory.
-	MemorySize allocatedMemory{};
+	std::size_t allocatedMemory{0};
 	/// Amount of memory allocation calls.
 	size_t allocationCalls{0};
 	/// Amount of de-allocation calls.
 	size_t deallocationCalls{0};
 	/// Max seen amount of memory.
-	MemorySize memoryPeek{};
+	std::size_t memoryPeek{0};
 	/// list of allocated chunks of memory.
 	std::list<AllocationInfo> allocs;
 	/**

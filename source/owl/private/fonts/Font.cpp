@@ -138,7 +138,11 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	m_name = iPath.stem().string();
 }
 
-Font::~Font() = default;
+Font::~Font() {
+	if (m_atlasTexture) {
+		m_atlasTexture.reset();
+	}
+}
 
 auto Font::getGlyphBox(const char& iChar) const -> GlyphMetrics {
 	GlyphMetrics result{.quad = {{0, 0}, {0, 0}}, .uv = {{0, 0}, {0, 0}}};

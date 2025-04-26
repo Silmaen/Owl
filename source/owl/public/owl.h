@@ -24,6 +24,7 @@
 #include "core/layer/Layer.h"
 #include "core/utils/FileDialog.h"
 #include "core/utils/FileUtils.h"
+#include "core/utils/StringUtils.h"
 // -------------------------
 
 // ------ Debugging --------

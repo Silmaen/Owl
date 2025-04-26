@@ -79,14 +79,14 @@ void VulkanCore::init(const VulkanConfiguration& iConfiguration) {
 	m_config = iConfiguration;
 	m_instanceInfo = mkUniq<InstanceInformations>();
 	if (!m_instanceInfo->hasMinimalVersion(1, 3)) {
-		OWL_CORE_ERROR("Vulkan: cannot initialize du to insuficient instance version. Require 1.3")
+		OWL_CORE_ERROR("Vulkan: cannot initialize du to insufficient instance version. Require 1.3")
 		m_state = State::Error;
 		return;
 	}
 	createInstance();
 	if (m_state == State::Error)
 		return;
-	if (m_hasValidation) {
+	if (m_debugMessage) {
 		setupDebugging();
 		if (m_state == State::Error)
 			return;
@@ -140,12 +140,15 @@ OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 void VulkanCore::createInstance() {
 	// first check for requested Layers
 	std::vector<std::string> requestedLayers;
+	if (m_config.debugMessage)
+		m_debugMessage = true;
 	if (m_config.activeValidation) {
 		if (!m_instanceInfo->hasLayer("VK_LAYER_KHRONOS_validation")) {
 			OWL_CORE_WARN("Vulkan: Missing validation layers, go one without it.")
 		} else {
 			requestedLayers.emplace_back("VK_LAYER_KHRONOS_validation");
 			m_hasValidation = true;
+			m_debugMessage = true;
 		}
 	}
 	if (!m_instanceInfo->hasLayers(requestedLayers)) {
@@ -161,7 +164,7 @@ void VulkanCore::createInstance() {
 		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 		uniqueExtensions.insert(glfwExtensions, glfwExtensions + glfwExtensionCount);
 		uniqueExtensions.emplace(VK_KHR_SURFACE_EXTENSION_NAME);
-		if (m_hasValidation) {
+		if (m_debugMessage) {
 			uniqueExtensions.emplace(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}
 		requestedExtensions.assign(uniqueExtensions.begin(), uniqueExtensions.end());
@@ -184,9 +187,9 @@ void VulkanCore::createInstance() {
 									.flags = {},
 									.pApplicationInfo = &g_appInfo,
 									.enabledLayerCount = static_cast<uint32_t>(layers.size()),
-									.ppEnabledLayerNames = layers.data(),
+									.ppEnabledLayerNames = layers.empty() ? nullptr : layers.data(),
 									.enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
-									.ppEnabledExtensionNames = extensions.data()};
+									.ppEnabledExtensionNames = extensions.empty() ? nullptr : extensions.data()};
 	VkResult result = vkCreateInstance(&instanceCi, nullptr, &m_instance);
 	bool second = false;
 	if (result == VK_ERROR_LAYER_NOT_PRESENT) {
@@ -238,7 +241,9 @@ void VulkanCore::createLogicalDevice() {
 								  .queueCount = 1,
 								  .pQueuePriorities = &queuePriority});
 	}
-	const std::vector layerNames = {"VK_LAYER_KHRONOS_validation"};
+	std::vector<const char*> layerNames = {};
+	if (m_hasValidation)
+		layerNames.emplace_back("VK_LAYER_KHRONOS_validation");
 	const std::vector extensionNames = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 	constexpr VkPhysicalDeviceFeatures features = {.robustBufferAccess = VK_FALSE,
 												   .fullDrawIndexUint32 = VK_FALSE,
@@ -255,7 +260,7 @@ void VulkanCore::createLogicalDevice() {
 												   .depthBiasClamp = VK_FALSE,
 												   .fillModeNonSolid = VK_FALSE,
 												   .depthBounds = VK_FALSE,
-												   .wideLines = VK_FALSE,
+												   .wideLines = VK_TRUE,
 												   .largePoints = VK_FALSE,
 												   .alphaToOne = VK_FALSE,
 												   .multiViewport = VK_FALSE,
@@ -300,9 +305,7 @@ void VulkanCore::createLogicalDevice() {
 									  .flags = {},
 									  .queueCreateInfoCount = static_cast<uint32_t>(deviceQueuesCi.size()),
 									  .pQueueCreateInfos = deviceQueuesCi.data(),
-									  .enabledLayerCount = m_hasValidation
-																   ? static_cast<uint32_t>(extensionNames.size())
-																   : static_cast<uint32_t>(extensionNames.size()) - 1,
+									  .enabledLayerCount = static_cast<uint32_t>(layerNames.size()),
 									  .ppEnabledLayerNames = layerNames.data(),
 									  .enabledExtensionCount = static_cast<uint32_t>(extensionNames.size()),
 									  .ppEnabledExtensionNames = extensionNames.data(),
@@ -449,7 +452,7 @@ auto VulkanCore::beginSingleTimeCommands() const -> VkCommandBuffer {
 void VulkanCore::endSingleTimeCommands(VkCommandBuffer iCommandBuffer) const {
 	const auto& core = get();
 	if (const VkResult result = vkEndCommandBuffer(iCommandBuffer); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to end command buffer for buffer copy.")
+		OWL_CORE_ERROR("Vulkan: failed to end single time command buffer.")
 		return;
 	}
 
@@ -462,14 +465,13 @@ void VulkanCore::endSingleTimeCommands(VkCommandBuffer iCommandBuffer) const {
 								  .pCommandBuffers = &iCommandBuffer,
 								  .signalSemaphoreCount = 0,
 								  .pSignalSemaphores = nullptr};
-
 	if (const VkResult result = vkQueueSubmit(core.getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to submit to queue for buffer copy.")
+		OWL_CORE_ERROR("Vulkan: failed to submit to queue for single time command buffer.")
 		return;
 	}
 	if (const VkResult result = vkQueueWaitIdle(core.getGraphicQueue()); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to wait for idle queue for buffer copy.")
+		OWL_CORE_ERROR("Vulkan: failed to wait for idle queue for single time command buffer.")
 		return;
 	}
 

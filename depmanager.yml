@@ -31,13 +31,10 @@ packages:
     kind: "static"
   glfw:
     version: 3.4.0
-    kind: "static"
   imgui:
     version: 1.91.5-docking
-    kind: "static"
   imguizmo:
     version: 1.91.5
-    kind: "static"
   mavsdk:
     version: 2.0.1
   openal:
@@ -60,7 +57,6 @@ packages:
     kind: "shared"
   libpng:
     version: 1.6.46
-    kind: "static"
   freetype:
     version: 2.13.3
     kind: "static"

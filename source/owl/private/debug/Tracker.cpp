@@ -11,6 +11,8 @@
 
 #include "debug/Tracker.h"
 
+#include "core/utils/StringUtils.h"
+
 #ifdef OWL_STACKTRACE
 #include <cpptrace/cpptrace.hpp>
 #endif
@@ -190,10 +192,30 @@ AllocationInfo::AllocationInfo(void* iLocation, const size_t iSize) : location{i
 	traceInternal->fullTrace = cpptrace::generate_trace();
 #endif
 }
+auto AllocationInfo::getLibName() const -> std::string {
+#ifdef OWL_STACKTRACE
+	if (traceInternal && !traceInternal->fullTrace.empty()) {
+		auto last = traceInternal->getCallerInfo();
+		if (last.symbol.contains("owl::"))
+			return "owl";
+		// special case for openAL: looked into the file path
+		if (last.filename.contains("openal"))
+			return "openal";
+		if (last.symbol.contains("::"))
+			// the first level of namespace is the library name
+			return last.symbol.substr(0, last.symbol.find("::"));
+		if (last.filename.contains("yaml-cpp"))
+			return "YAML";
+	}
+	return "unknown";
+#else
+	return "";
+#endif
+}
 
 auto AllocationInfo::toStr([[maybe_unused]] const bool iTracePrint, [[maybe_unused]] const bool iFullTrace) const
 		-> std::string {
-	std::string result = fmt::format("memory chunk at {} size ({})", location, size.str());
+	std::string result = fmt::format("memory chunk at {} size ({})", location, core::utils::sizeToString(size));
 
 #ifdef OWL_STACKTRACE
 	if (!traceInternal || traceInternal->fullTrace.empty()) {
@@ -239,20 +261,20 @@ void AllocationState::freeMemory(void* iLocation, size_t iSize) {
 				[&iLocation](const AllocationInfo& iAllocInfo) { return iAllocInfo.location == iLocation; });
 		chunk != allocs.end()) {
 		if (iSize == 0) {
-			iSize = chunk->size.size;
+			iSize = chunk->size;
 		}
 		allocs.erase(chunk);
 		deallocationCalls++;
-		allocatedMemory.size -= iSize;
+		allocatedMemory -= iSize;
 	}
 }
 
 void AllocationState::resetState() {
 	allocs.clear();
-	allocatedMemory.size = 0;
+	allocatedMemory = 0;
 	allocationCalls = 0;
 	deallocationCalls = 0;
-	memoryPeek.size = 0;
+	memoryPeek = 0;
 }
 
 // =========================== scopes ==============================

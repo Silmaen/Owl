@@ -11,6 +11,7 @@
 #include "core/Application.h"
 
 #include "core/Environment.h"
+#include "core/utils/StringUtils.h"
 #include "external/yaml.h"
 #include "input/Input.h"
 #include "renderer/Renderer.h"
@@ -187,6 +188,7 @@ void Application::disableDocking() const {
 Application::~Application() {
 	OWL_PROFILE_FUNCTION()
 
+	m_fontLibrary.destroy();
 	if (renderer::RenderCommand::getState() != renderer::RenderAPI::State::Error) {
 		m_layerStack.clear();
 		input::Input::invalidate();
@@ -196,6 +198,11 @@ Application::~Application() {
 		renderer::RenderCommand::invalidate();
 		OWL_CORE_TRACE("Renderer shut down and invalidated.")
 		mp_appWindow.reset();
+	}
+	if (sound::SoundCommand::getState() != sound::SoundAPI::State::Error) {
+		sound::SoundSystem::shutdown();
+		sound::SoundCommand::invalidate();
+		OWL_CORE_TRACE("Sound system shut down and invalidated.")
 	}
 	invalidate();
 }
@@ -258,8 +265,8 @@ void Application::run() {
 				OWL_CORE_TRACE("Frame Leak Detected")
 				OWL_CORE_TRACE("-----------------------------------")
 				OWL_CORE_TRACE("")
-				OWL_CORE_TRACE(" LEAK Amount: {} in {} Unallocated chunks", memState.allocatedMemory.str(),
-							   memState.allocs.size())
+				OWL_CORE_TRACE(" LEAK Amount: {} in {} Unallocated chunks",
+							   owl::core::utils::sizeToString(memState.allocatedMemory), memState.allocs.size())
 				for (const auto& chunk: memState.allocs) { OWL_CORE_TRACE(" ** {}", chunk.toStr()) }
 				OWL_CORE_TRACE("----------------------------------")
 				OWL_CORE_TRACE("")

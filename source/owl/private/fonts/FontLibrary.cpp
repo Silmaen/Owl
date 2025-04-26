@@ -43,6 +43,11 @@ void FontLibrary::init() {
 	m_fonts["null"] = nullptr;
 }
 
+void FontLibrary::destroy() {
+	m_fonts.clear();
+	m_defaultFontName = "OpenSans-Regular";
+}
+
 FontLibrary::~FontLibrary() = default;
 
 void FontLibrary::loadFont(const std::string& iName) {
@@ -70,6 +75,7 @@ auto FontLibrary::getFont(const std::string& iName) -> const shared<Font>& {
 	}
 	return m_fonts.at(iName);
 }
+
 auto FontLibrary::getLoadedFontNames() const -> std::list<std::string> {
 	std::list<std::string> list;
 	for (const auto& [key, item]: m_fonts) { list.push_back(key); }
