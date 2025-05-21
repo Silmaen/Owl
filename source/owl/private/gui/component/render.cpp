@@ -112,9 +112,9 @@ void renderProps(Camera& ioComponent) {
 		ImGui::EndCombo();
 	}
 	if (camera.getProjectionType() == SceneCamera::ProjectionType::Perspective) {
-		float perspectiveVerticalFov = math::degrees(camera.getPerspectiveVerticalFOV());
+		float perspectiveVerticalFov = math::degrees(camera.getPerspectiveVerticalFov());
 		if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
-			camera.setPerspectiveVerticalFOV(math::radians(perspectiveVerticalFov));
+			camera.setPerspectiveVerticalFov(math::radians(perspectiveVerticalFov));
 		float perspectiveNear = camera.getPerspectiveNearClip();
 		if (ImGui::DragFloat("Near", &perspectiveNear))
 			camera.setPerspectiveNearClip(perspectiveNear);

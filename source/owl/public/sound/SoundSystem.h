@@ -22,7 +22,7 @@ namespace owl::sound {
  */
 class OWL_API SoundSystem {
 public:
-	using soundLibrary = core::assets::AssetLibrary<SoundData>;
+	using SoundLibrary = core::assets::AssetLibrary<SoundData>;
 	/**
 	 * @brief Default constructor.
 	 */
@@ -65,14 +65,14 @@ public:
 	 * @brief Access to the sound Library.
 	 * @return The sound library.
 	 */
-	static auto getSoundLibrary() -> soundLibrary& { return *m_soundLibrary; }
+	static auto getSoundLibrary() -> SoundLibrary& { return *m_soundLibrary; }
 
 private:
 	/// The state of the renderer.
 	static State m_internalState;
 
 	/// The sound's library.
-	static shared<soundLibrary> m_soundLibrary;
+	static shared<SoundLibrary> m_soundLibrary;
 };
 
 }// namespace owl::sound

@@ -22,9 +22,9 @@ public:
 	auto operator=(const VertexArray&) -> VertexArray& = default;
 	auto operator=(VertexArray&&) -> VertexArray& = default;
 
-	using vertexBuf = shared<VertexBuffer>;
-	using vertBufs = std::vector<vertexBuf>;
-	using indexBuf = shared<IndexBuffer>;
+	using VertexBuf = shared<VertexBuffer>;
+	using VertexBuffers = std::vector<VertexBuf>;
+	using IndexBuf = shared<IndexBuffer>;
 
 	/**
 	 * @brief Destructor.
@@ -44,25 +44,25 @@ public:
 	 * @brief Append a vertex buffer to the list.
 	 * @param[in] iVertexBuffer Vertex buffer to add.
 	 */
-	void addVertexBuffer(const vertexBuf& iVertexBuffer);
+	void addVertexBuffer(const VertexBuf& iVertexBuffer);
 
 	/**
 	 * @brief Define the Index buffer.
 	 * @param[in] iIndexBuffer New Index Buffer.
 	 */
-	void setIndexBuffer(const indexBuf& iIndexBuffer);
+	void setIndexBuffer(const IndexBuf& iIndexBuffer);
 
 	/**
 	 * @brief Access to vertex buffers.
 	 * @return Vertex buffers.
 	 */
-	[[nodiscard]] auto getVertexBuffers() const -> const vertBufs& { return m_vertexBuffers; }
+	[[nodiscard]] auto getVertexBuffers() const -> const VertexBuffers& { return m_vertexBuffers; }
 
 	/**
 	 * @brief Access to index buffer.
 	 * @return Index buffer.
 	 */
-	[[nodiscard]] auto getIndexBuffer() const -> const indexBuf& { return m_indexBuffer; }
+	[[nodiscard]] auto getIndexBuffer() const -> const IndexBuf& { return m_indexBuffer; }
 
 private:
 	/// Id in the OpenGL context.
@@ -70,8 +70,8 @@ private:
 	/// Offset on index.
 	uint32_t m_vertexBufferIndex = 0;
 	/// The vertex buffers.
-	vertBufs m_vertexBuffers;
+	VertexBuffers m_vertexBuffers;
 	/// The index buffer.
-	indexBuf m_indexBuffer;
+	IndexBuf m_indexBuffer;
 };
 }// namespace owl::renderer::opengl

@@ -15,7 +15,7 @@ namespace owl::renderer::vulkan {
 /**
  * @brief Specialized class for managing vulkan vertex buffer.
  */
-class VertexBuffer final : public ::owl::renderer::VertexBuffer {
+class VertexBuffer final : public renderer::VertexBuffer {
 public:
 	VertexBuffer(const VertexBuffer&) = delete;
 	VertexBuffer(VertexBuffer&&) = delete;

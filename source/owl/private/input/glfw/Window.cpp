@@ -22,7 +22,7 @@
 namespace owl::input::glfw {
 
 namespace {
-uint8_t s_glfwWindowCount = 0;
+uint8_t g_GlfwWindowCount = 0;
 
 void glfwErrorCallback(int iError, const char* iDescription) {
 	OWL_CORE_ERROR("GLFW Error ({}): {}", iError, iDescription)
@@ -52,7 +52,7 @@ void Window::init(const Properties& iProps) {
 
 		OWL_CORE_INFO("Creating window {} ({}, {})", iProps.title, iProps.width, iProps.height)
 
-		if (s_glfwWindowCount == 0) {
+		if (g_GlfwWindowCount == 0) {
 			OWL_PROFILE_SCOPE("glfwInit")
 			[[maybe_unused]] const int success = glfwInit();
 			OWL_CORE_ASSERT(success, "Could not initialize GLFW!")
@@ -79,7 +79,7 @@ void Window::init(const Properties& iProps) {
 			mp_glfwWindow = glfwCreateWindow(static_cast<int>(iProps.width), static_cast<int>(iProps.height),
 											 m_windowData.title.c_str(), nullptr, nullptr);
 		}
-		++s_glfwWindowCount;
+		++g_GlfwWindowCount;
 	}
 	// Set icon
 	{
@@ -93,8 +93,8 @@ void Window::init(const Properties& iProps) {
 	}
 	// Graph context
 	{
-		mu_context = renderer::GraphContext::create(mp_glfwWindow);
-		mu_context->init();
+		m_context = renderer::GraphContext::create(mp_glfwWindow);
+		m_context->init();
 
 		glfwSetWindowUserPointer(mp_glfwWindow, &m_windowData);
 		setVSync(true);
@@ -183,12 +183,12 @@ void Window::shutdown() {
 
 	if (mp_glfwWindow == nullptr)
 		return;
-	mu_context->waitIdle();
+	m_context->waitIdle();
 	glfwDestroyWindow(mp_glfwWindow);
-	--s_glfwWindowCount;
+	--g_GlfwWindowCount;
 	mp_glfwWindow = nullptr;
 
-	if (s_glfwWindowCount == 0) {
+	if (g_GlfwWindowCount == 0) {
 		glfwTerminate();
 	}
 }
@@ -198,7 +198,7 @@ void Window::onUpdate() {
 	OWL_PROFILE_FUNCTION()
 
 	glfwPollEvents();
-	mu_context->swapBuffers();
+	m_context->swapBuffers();
 }
 
 void Window::setVSync(const bool iEnabled) {

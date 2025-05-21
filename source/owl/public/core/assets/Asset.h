@@ -79,7 +79,7 @@ public:
 	 * @brief Access to the data.
 	 * @return The data;
 	 */
-	auto get() const -> const shared<DataType>& { return m_asset; }
+	[[nodiscard]] auto get() const -> const shared<DataType>& { return m_asset; }
 
 	/**
 	 * @brief Get the list of supported file extensions for this asset type.

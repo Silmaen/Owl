@@ -52,7 +52,7 @@ auto debugUtilsMessageCallback(const VkDebugUtilsMessageSeverityFlagBitsEXT iMes
 	return VK_FALSE;
 }
 
-VkDebugUtilsMessengerCreateInfoEXT s_debugUtilsMessagerCi{
+VkDebugUtilsMessengerCreateInfoEXT g_DebugUtilsMessagerCi{
 		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
 		.pNext = nullptr,
 		.flags = {},
@@ -64,8 +64,8 @@ VkDebugUtilsMessengerCreateInfoEXT s_debugUtilsMessagerCi{
 		.pfnUserCallback = debugUtilsMessageCallback,
 		.pUserData = nullptr};
 
-PFN_vkCreateDebugUtilsMessengerEXT g_vkCreateDebugUtilsMessengerEXT;
-PFN_vkDestroyDebugUtilsMessengerEXT g_vkDestroyDebugUtilsMessengerEXT;
+PFN_vkCreateDebugUtilsMessengerEXT g_VkCreateDebugUtilsMessengerExt;
+PFN_vkDestroyDebugUtilsMessengerEXT g_VkDestroyDebugUtilsMessengerExt;
 
 }// namespace
 
@@ -119,12 +119,12 @@ void VulkanCore::release() {
 		OWL_CORE_TRACE("Vulkan: logicalDevice destroyed.")
 	}
 	{
-		auto* const gc = dynamic_cast<vulkan::GraphContext*>(core::Application::get().getWindow().getGraphContext());
+		auto* const gc = dynamic_cast<GraphContext*>(core::Application::get().getWindow().getGraphContext());
 		gc->destroySurface(m_instance);
 		OWL_CORE_TRACE("Vulkan: Surface destroyed.")
 	}
 	if (m_debugUtilsMessenger != nullptr) {
-		g_vkDestroyDebugUtilsMessengerEXT(m_instance, m_debugUtilsMessenger, nullptr);
+		g_VkDestroyDebugUtilsMessengerExt(m_instance, m_debugUtilsMessenger, nullptr);
 		m_debugUtilsMessenger = nullptr;
 		OWL_CORE_TRACE("Vulkan: debugUtilsMessenger destroyed.")
 	}
@@ -180,7 +180,7 @@ void VulkanCore::createInstance() {
 	for (const auto& extension: requestedExtensions) extensions.emplace_back(extension.c_str());
 
 	VkInstanceCreateInfo instanceCi{.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-									.pNext = m_hasValidation ? &s_debugUtilsMessagerCi : nullptr,
+									.pNext = m_hasValidation ? &g_DebugUtilsMessagerCi : nullptr,
 									.flags = {},
 									.pApplicationInfo = &g_appInfo,
 									.enabledLayerCount = static_cast<uint32_t>(layers.size()),
@@ -317,13 +317,13 @@ void VulkanCore::createLogicalDevice() {
 void VulkanCore::setupDebugging() {
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG17("-Wcast-function-type-strict")
-	g_vkCreateDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
+	g_VkCreateDebugUtilsMessengerExt = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
 			vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT"));
-	g_vkDestroyDebugUtilsMessengerEXT = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
+	g_VkDestroyDebugUtilsMessengerExt = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
 			vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT"));
 	OWL_DIAG_POP
 	if (const VkResult result =
-				g_vkCreateDebugUtilsMessengerEXT(m_instance, &s_debugUtilsMessagerCi, nullptr, &m_debugUtilsMessenger);
+				g_VkCreateDebugUtilsMessengerExt(m_instance, &g_DebugUtilsMessagerCi, nullptr, &m_debugUtilsMessenger);
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan: Error while setup debugging ({})", resultString(result))
 		m_state = State::Error;
@@ -421,7 +421,7 @@ OWL_DIAG_POP
 auto VulkanCore::getMaxSamplerAnisotropy() const -> float { return m_phyProps->properties.limits.maxSamplerAnisotropy; }
 
 auto VulkanCore::beginSingleTimeCommands() const -> VkCommandBuffer {
-	const auto& core = VulkanCore::get();
+	const auto& core = get();
 	const VkCommandBufferAllocateInfo allocInfo{.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
 												.pNext = nullptr,
 												.commandPool = m_commandPool,
@@ -447,7 +447,7 @@ auto VulkanCore::beginSingleTimeCommands() const -> VkCommandBuffer {
 }
 
 void VulkanCore::endSingleTimeCommands(VkCommandBuffer iCommandBuffer) const {
-	const auto& core = VulkanCore::get();
+	const auto& core = get();
 	if (const VkResult result = vkEndCommandBuffer(iCommandBuffer); result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan: failed to end command buffer for buffer copy.")
 		return;

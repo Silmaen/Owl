@@ -12,7 +12,7 @@
 
 namespace owl::renderer {
 
-Renderer::State Renderer::m_internalState = Renderer::State::Created;
+Renderer::State Renderer::m_internalState = State::Created;
 shared<Renderer::SceneData> Renderer::m_sceneData = nullptr;
 shared<Renderer::ShaderLibrary> Renderer::m_shaderLibrary = nullptr;
 shared<Renderer::TextureLibrary> Renderer::m_textureLibrary = nullptr;

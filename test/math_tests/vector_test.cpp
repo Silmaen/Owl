@@ -64,7 +64,7 @@ TEST(math, vectorsComponents) {
 	EXPECT_NEAR(vect.r(), 36, 0.0001);
 	vect[1] = 36;
 	EXPECT_NEAR(vect.g(), 36, 0.0001);
-	const vec4 cvect{4, 5, 6, 7};
+	constexpr vec4 cvect{4, 5, 6, 7};
 	EXPECT_NEAR(cvect.x(), 4, 0.0001);
 	EXPECT_NEAR(cvect.y(), 5, 0.0001);
 	EXPECT_NEAR(cvect.z(), 6, 0.0001);
@@ -84,7 +84,7 @@ TEST(math, vectorsComponents) {
 
 TEST(math, vectorCrossProduct) {
 	vec3 test{1, 2, 3};
-	vec3 const test2{3, 4, 1};
+	constexpr vec3 test2{3, 4, 1};
 	vec3 res = test ^ test2;
 	EXPECT_NEAR(res.x(), -10, 0.001);
 	EXPECT_NEAR(res.y(), 8, 0.001);

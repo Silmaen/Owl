@@ -61,18 +61,18 @@ public:
 	 * @param r Roll.
 	 */
 	void setPitchRoll(float p, float r) {
-		pitch = p;
-		roll = r;
+		m_pitch = p;
+		m_roll = r;
 	}
 
 private:
-	float pitch = 0;
-	float roll = 0;
+	float m_pitch = 0;
+	float m_roll = 0;
 
-	owl::shared<owl::renderer::Texture> background = nullptr;
-	owl::shared<owl::renderer::Texture> rollRing = nullptr;
-	owl::shared<owl::renderer::Texture> olivePitch = nullptr;
-	owl::shared<owl::renderer::Texture> cursor = nullptr;
+	owl::shared<owl::renderer::Texture> m_background = nullptr;
+	owl::shared<owl::renderer::Texture> m_rollRing = nullptr;
+	owl::shared<owl::renderer::Texture> m_olivePitch = nullptr;
+	owl::shared<owl::renderer::Texture> m_cursor = nullptr;
 };
 
 }// namespace drone::panels::gauge

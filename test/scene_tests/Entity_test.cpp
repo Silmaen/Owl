@@ -60,11 +60,11 @@ TEST(Entity, cameraPerspective) {
 	EXPECT_EQ(cam.camera.getProjectionType(), SceneCamera::ProjectionType::Perspective);
 	EXPECT_EQ(cam.camera.getPerspectiveFarClip(), 125.0);
 	EXPECT_EQ(cam.camera.getPerspectiveNearClip(), -0.25);
-	EXPECT_EQ(cam.camera.getPerspectiveVerticalFOV(), 45);
+	EXPECT_EQ(cam.camera.getPerspectiveVerticalFov(), 45);
 	auto proj = cam.camera.getProjection();
 	EXPECT_NEAR(proj(0, 0), 1.7925, 0.001);
 	cam.camera.setPerspectiveFarClip(1);
 	cam.camera.setPerspectiveNearClip(-1);
-	cam.camera.setPerspectiveVerticalFOV(85);
+	cam.camera.setPerspectiveVerticalFov(85);
 	EXPECT_NEAR(proj(0, 0), 1.7925, 0.001);
 }

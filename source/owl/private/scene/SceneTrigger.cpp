@@ -18,7 +18,7 @@ SceneTrigger::SceneTrigger() = default;
 SceneTrigger::~SceneTrigger() = default;
 
 void SceneTrigger::onTriggered(Entity& ioEntity) {
-	auto scene = ioEntity.getScene();
+	auto* scene = ioEntity.getScene();
 	switch (type) {
 		case TriggerType::Victory:
 			m_triggered = true;

@@ -48,16 +48,15 @@ public:
 
 	/**
 	 * @brief Update panel Status.
-	 * @param ts The Time delta of the frame.
+	 * @param iTimeStep The Time delta of the frame.
 	 */
-	void onUpdate(const owl::core::Timestep& ts) override;
+	void onUpdate(const owl::core::Timestep& iTimeStep) override;
 
 	/**
 	 * @brief Do the rendering.
 	 */
 	void onRender() override;
 
-private:
 };
 
 }// namespace drone::panels

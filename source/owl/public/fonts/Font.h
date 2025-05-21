@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "renderer/Texture.h"
 #include "core/Core.h"
+#include "renderer/Texture.h"
 
 #include "math/box.h"
 
@@ -80,13 +80,13 @@ public:
 	 * @brief get the font's name.
 	 * @return The font name.
 	 */
-	auto getName() const -> const std::string& { return m_name; }
+	[[nodiscard]] auto getName() const -> const std::string& { return m_name; }
 
 	/**
 	 * @brief Look if it is the default font.
 	 * @return True if this is the default font.
 	 */
-	auto isDefault() const -> bool { return m_default; }
+	[[nodiscard]] auto isDefault() const -> bool { return m_default; }
 
 private:
 	/// pointer to the texture.

@@ -20,7 +20,7 @@
 #define OWL_DEALLOC_EXCEPT noexcept
 namespace {
 
-bool s_antiLoop = false;
+bool g_AntiLoop = false;
 
 class TrackerState {
 public:
@@ -103,7 +103,7 @@ public:
 	static void swapCurrent() {
 		if (!s_lastAllocationState)
 			allocate();
-		s_lastAllocationState->reset();
+		s_lastAllocationState->resetState();
 		std::swap(s_currentAllocationState, s_lastAllocationState);
 	}
 	[[nodiscard]] static auto getLastAllocationState() -> const AllocationState& {
@@ -152,27 +152,27 @@ struct TraceInternal {
 // =========================== TrackerAPI =================================
 
 void TrackerAPI::allocate(void* iMemoryPtr, const size_t iSize) {
-	if (s_antiLoop)
+	if (g_AntiLoop)
 		return;
-	s_antiLoop = true;
+	g_AntiLoop = true;
 	if (!TrackerState::get().canTrack()) {
-		s_antiLoop = false;
+		g_AntiLoop = false;
 		return;
 	}
 	StateManager::pushMemory(iMemoryPtr, iSize);
-	s_antiLoop = false;
+	g_AntiLoop = false;
 }
 
 void TrackerAPI::deallocate(void* iMemoryPtr, const size_t iSize) {
-	if (s_antiLoop)
+	if (g_AntiLoop)
 		return;
-	s_antiLoop = true;
+	g_AntiLoop = true;
 	if (!TrackerState::get().canTrack()) {
-		s_antiLoop = false;
+		g_AntiLoop = false;
 		return;
 	}
 	StateManager::freeMemory(iMemoryPtr, iSize);
-	s_antiLoop = false;
+	g_AntiLoop = false;
 }
 
 auto TrackerAPI::checkState() -> const AllocationState& {
@@ -222,13 +222,13 @@ auto AllocationInfo::toStr([[maybe_unused]] const bool iTracePrint, [[maybe_unus
 
 // =========================== Allocation state =================================
 
-AllocationState::~AllocationState() { s_antiLoop = true; }
+AllocationState::~AllocationState() { g_AntiLoop = true; }
 
 void AllocationState::pushMemory(void* iLocation, size_t iSize) {
 	allocationCalls++;
 	allocatedMemory.size += iSize;
 	memoryPeek.size = std::max(memoryPeek.size, allocatedMemory.size);
-	if (!s_antiLoop)
+	if (!g_AntiLoop)
 		fmt::println("Problème d'antiloop!!!");
 	allocs.emplace_back(iLocation, iSize);
 }
@@ -247,7 +247,7 @@ void AllocationState::freeMemory(void* iLocation, size_t iSize) {
 	}
 }
 
-void AllocationState::reset() {
+void AllocationState::resetState() {
 	allocs.clear();
 	allocatedMemory.size = 0;
 	allocationCalls = 0;
@@ -258,24 +258,24 @@ void AllocationState::reset() {
 // =========================== scopes ==============================
 
 ScopeUntrack::ScopeUntrack() {
-	s_antiLoop = true;
+	g_AntiLoop = true;
 	TrackerState::get().pushTrack(false);
-	s_antiLoop = false;
+	g_AntiLoop = false;
 }
 ScopeUntrack::~ScopeUntrack() {
-	s_antiLoop = true;
+	g_AntiLoop = true;
 	TrackerState::get().popTrack();
-	s_antiLoop = false;
+	g_AntiLoop = false;
 }
 ScopeTrack::ScopeTrack() {
-	s_antiLoop = true;
+	g_AntiLoop = true;
 	TrackerState::get().pushTrack(true);
-	s_antiLoop = false;
+	g_AntiLoop = false;
 }
 ScopeTrack::~ScopeTrack() {
-	s_antiLoop = true;
+	g_AntiLoop = true;
 	TrackerState::get().popTrack();
-	s_antiLoop = false;
+	g_AntiLoop = false;
 }
 
 }// namespace owl::debug

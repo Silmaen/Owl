@@ -175,16 +175,16 @@ private:
 	/// Enable Validation layers.
 	bool m_validation = false;
 	bool m_resize = false;
-	VkRenderPass m_ImGuiRenderPass{};
+	VkRenderPass m_imGuiRenderPass{};
 
-	/// The swapchain (main framebuffer).
+	/// The swap chain (main framebuffer).
 	uniq<Framebuffer> m_swapChain;
 	/// The active framebuffer.
-	Framebuffer* m_currentframebuffer = nullptr;
+	Framebuffer* m_currentFramebuffer = nullptr;
 
 	math::vec4 m_clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
 
-	/// List of piplines.
+	/// List of pipelines.
 	std::map<int32_t, PipeLineData> m_pipeLines;
 };
 }// namespace owl::renderer::vulkan::internal

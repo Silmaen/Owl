@@ -82,7 +82,7 @@ struct OWL_API AllocationInfo {
 	/// Location in memory.
 	void* location = nullptr;
 	/// Size of the memory chunk.
-	MemorySize size{0};
+	MemorySize size{};
 #ifdef OWL_STACKTRACE
 	shared<TraceInternal> traceInternal = nullptr;
 #endif
@@ -106,19 +106,19 @@ struct OWL_API AllocationState {
 	auto operator=(const AllocationState&) -> AllocationState& = default;
 	auto operator=(AllocationState&&) -> AllocationState& = default;
 	/// Amount of allocated memory.
-	MemorySize allocatedMemory{0};
+	MemorySize allocatedMemory{};
 	/// Amount of memory allocation calls.
 	size_t allocationCalls{0};
 	/// Amount of de-allocation calls.
 	size_t deallocationCalls{0};
 	/// Max seen amount of memory.
-	MemorySize memoryPeek{0};
+	MemorySize memoryPeek{};
 	/// list of allocated chunks of memory.
-	std::list<AllocationInfo> allocs{};
+	std::list<AllocationInfo> allocs;
 	/**
 	 * @brief Reset the database.
 	 */
-	void reset();
+	void resetState();
 	/**
 	 * @brief Add a chunk of memory to the database.
 	 * @param[in] iLocation Pointer to the allocated memory

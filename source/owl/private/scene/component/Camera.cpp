@@ -19,7 +19,7 @@ void Camera::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::BeginMap;// Camera
 	iOut.getImpl()->emitter << YAML::Key << "projectionType" << YAML::Value
 							<< std::string(magic_enum::enum_name(camera.getProjectionType()));
-	iOut.getImpl()->emitter << YAML::Key << "perspectiveFOV" << YAML::Value << camera.getPerspectiveVerticalFOV();
+	iOut.getImpl()->emitter << YAML::Key << "perspectiveFOV" << YAML::Value << camera.getPerspectiveVerticalFov();
 	iOut.getImpl()->emitter << YAML::Key << "perspectiveNear" << YAML::Value << camera.getPerspectiveNearClip();
 	iOut.getImpl()->emitter << YAML::Key << "perspectiveFar" << YAML::Value << camera.getPerspectiveFarClip();
 	iOut.getImpl()->emitter << YAML::Key << "orthographicSize" << YAML::Value << camera.getOrthographicSize();
@@ -37,7 +37,7 @@ void Camera::deserialize(const core::Serializer& iNode) {
 			magic_enum::enum_cast<SceneCamera::ProjectionType>(cameraProps["projectionType"].as<std::string>());
 	if (projType.has_value())
 		camera.setProjectionType(projType.value());
-	camera.setPerspectiveVerticalFOV(cameraProps["perspectiveFOV"].as<float>());
+	camera.setPerspectiveVerticalFov(cameraProps["perspectiveFOV"].as<float>());
 	camera.setPerspectiveNearClip(cameraProps["perspectiveNear"].as<float>());
 	camera.setPerspectiveFarClip(cameraProps["perspectiveFar"].as<float>());
 

@@ -8,15 +8,15 @@
 
 #include "owlpch.h"
 
-#include "input/Window.h"
 #include "glfw/Window.h"
+#include "input/Window.h"
 #include "null/Window.h"
 
 namespace owl::input {
 
 auto Window::create(const Properties& iProps) -> uniq<Window> {
 	switch (iProps.winType) {
-		case Type::GLFW:
+		case Type::Glfw:
 			return mkUniq<glfw::Window>(iProps);
 		case Type::Null:
 			return mkUniq<null::Window>(iProps);

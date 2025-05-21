@@ -83,13 +83,13 @@ auto getPixelFormatString(const uint32_t iPixelFormat) -> std::string {
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
-auto unFourCC(const uint32_t pixelFormat) -> std::string {
+auto unFourCC(const uint32_t iPixelFormat) -> std::string {
 	constexpr uint32_t mmask = 0xff;
 	char fcc[4];
-	fcc[0] = static_cast<char>(pixelFormat & mmask);
-	fcc[1] = static_cast<char>((pixelFormat >> 8u) & mmask);
-	fcc[2] = static_cast<char>((pixelFormat >> 16u) & mmask);
-	fcc[3] = static_cast<char>((pixelFormat >> 24u) & mmask);
+	fcc[0] = static_cast<char>(iPixelFormat & mmask);
+	fcc[1] = static_cast<char>((iPixelFormat >> 8u) & mmask);
+	fcc[2] = static_cast<char>((iPixelFormat >> 16u) & mmask);
+	fcc[3] = static_cast<char>((iPixelFormat >> 24u) & mmask);
 	return fcc;
 }
 OWL_DIAG_POP
@@ -123,8 +123,8 @@ auto getV4L2PixelFormat(const Device::PixelFormat& iPixelFormat) -> uint32_t {
 
 void updateList(std::vector<shared<video::Device>>& ioList) {
 	// check if all listed devices still exists
-	if (std::remove_if(ioList.begin(), ioList.end(), [](const shared<video::Device>& dev) {
-			return !std::static_pointer_cast<Device>(dev)->isValid();
+	if (std::remove_if(ioList.begin(), ioList.end(), [](const shared<video::Device>& iDev) {
+			return !std::static_pointer_cast<Device>(iDev)->isValid();
 		}) != ioList.end()) {
 		OWL_CORE_WARN("Possible problems during video input listing.")
 	}
@@ -183,7 +183,7 @@ Device::Device(std::string iFile) : video::Device{""}, m_file{std::move(iFile)} 
 	::close(fd);
 }
 
-Device::~Device() { close(); };
+Device::~Device() { close(); }
 
 void Device::open() {
 	OWL_CORE_INFO("Opening device ({}): {}", m_file, m_name)
@@ -276,7 +276,6 @@ void Device::open() {
 	if (ioctl(m_fileHandler, VIDIOC_QBUF, &m_bufferInfo) < 0) {
 		OWL_CORE_WARN("Device ({}) unable to queue the buffer.", m_file)
 		close();
-		return;
 	}
 }
 
@@ -304,7 +303,7 @@ void Device::fillFrame(shared<renderer::Texture>& ioFrame) {
 		return;// need to be open and ready!
 	// recreate the frame if not the right size.
 	if (!ioFrame || ioFrame->getSize() != m_size) {
-		ioFrame = renderer::Texture2D::create({m_size, renderer::ImageFormat::RGB8});
+		ioFrame = renderer::Texture2D::create({m_size, renderer::ImageFormat::Rgb8});
 	}
 	// dequeue the buffer
 	if (ioctl(m_fileHandler, VIDIOC_DQBUF, &m_bufferInfo) < 0) {
@@ -401,7 +400,7 @@ void Device::printSupportedFormat() const {
 	::close(fd);
 }
 
-auto Device::getFirstSupportedPixelFormat(int32_t iFd) const -> Device::PixelFormat {
+auto Device::getFirstSupportedPixelFormat(int32_t iFd) const -> PixelFormat {
 	if (iFd == -1)
 		iFd = m_fileHandler;
 	if (iFd == -1)

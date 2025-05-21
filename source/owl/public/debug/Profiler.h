@@ -14,14 +14,14 @@
 namespace owl::debug {
 
 /// The type for microseconds.
-using floatingPointMicroseconds = std::chrono::duration<double, std::micro>;
+using FloatingPointMicroseconds = std::chrono::duration<double, std::micro>;
 
 /**
  * @brief Data for profiling result.
  */
 struct ProfileResult {
 	std::string name;///< Result's name.
-	floatingPointMicroseconds start;///< Data's starting time point.
+	FloatingPointMicroseconds start;///< Data's starting time point.
 	std::chrono::microseconds elapsedTime;///< Data's elapsed time.
 	std::thread::id threadId;///< Data's thread ID.
 };

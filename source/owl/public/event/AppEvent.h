@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "math/vectors.h"
 #include "event/Event.h"
+#include "math/vectors.h"
 
 namespace owl::event {
 /**

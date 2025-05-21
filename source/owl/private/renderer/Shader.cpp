@@ -7,11 +7,11 @@
  */
 #include "owlpch.h"
 
-#include "renderer/Shader.h"
 #include "core/Application.h"
 #include "null/Shader.h"
 #include "opengl/Shader.h"
 #include "renderer/Renderer.h"
+#include "renderer/Shader.h"
 #include "vulkan/Shader.h"
 
 #include "utils/shaderFileUtils.h"
@@ -22,7 +22,7 @@ namespace owl::renderer {
 
 auto Shader::create(const Specification& iShaderName) -> shared<Shader> {
 	const auto type = RenderCommand::getApi();
-	std::filesystem::path shaderDir = std::filesystem::path{"shaders"};
+	auto shaderDir = std::filesystem::path{"shaders"};
 	if (!iShaderName.shaderName.renderer.empty()) {
 		shaderDir /= iShaderName.shaderName.renderer;
 	}
@@ -49,7 +49,7 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 	std::vector<std::filesystem::path> sources;
 	auto name = iFile.stem().string();
 	auto renderer = iFile.parent_path().parent_path().filename().string();
-	auto shad = composeName({name, renderer});
+	auto shad = composeName({.name=name, .renderer=renderer});
 	if (RenderCommand::requireInit()) {
 		if (exists(iFile) && is_regular_file(iFile)) {
 			sources = {iFile};

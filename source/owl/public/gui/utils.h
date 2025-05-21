@@ -8,9 +8,9 @@
 
 #pragma once
 
+#include "core/Core.h"
 #include "renderer/Framebuffer.h"
 #include "renderer/Texture.h"
-#include "core/Core.h"
 #include <imgui.h>
 
 namespace owl::gui {

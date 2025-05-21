@@ -8,7 +8,7 @@ using namespace owl::gui;
 using namespace owl::core;
 
 TEST(BaseDrawPanel, basic) {
-	Log::init(owl::core::Log::Level::Off);
+	Log::init(Log::Level::Off);
 	UiLayer layer;
 	layer.disableApp();
 	layer.enableDocking();

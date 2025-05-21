@@ -8,9 +8,9 @@
 
 #include "owlpch.h"
 
-#include "sound/SoundAPI.h"
 #include "null/SoundAPI.h"
 #include "openal/SoundAPI.h"
+#include "sound/SoundAPI.h"
 
 namespace owl::sound {
 
@@ -18,7 +18,7 @@ auto SoundAPI::create(const Type& iType) -> uniq<SoundAPI> {
 	switch (iType) {
 		case Type::Null:
 			return mkUniq<null::SoundAPI>();
-		case Type::OpenAL:
+		case Type::OpenAl:
 			return mkUniq<openal::SoundAPI>();
 	}
 

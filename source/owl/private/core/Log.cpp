@@ -45,7 +45,7 @@ std::shared_ptr<spdlog::logger> g_ClientLogger;
 
 Log::Level Log::s_verbosity = Level::Trace;
 uint64_t Log::s_frameCounter = 0;
-uint64_t Log::s_frequency = gDefaultFrequency;
+uint64_t Log::s_frequency = g_DefaultFrequency;
 
 void Log::init(const Level& iLevel, const uint64_t iFrequency) {
 	OWL_SCOPE_UNTRACK

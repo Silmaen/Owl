@@ -109,8 +109,8 @@ private:
 	/// Counter of the
 	size_t m_counter = 0;
 	/// Time point of the last call.
-	Timestep::timePoint m_lastCall;
-	void execute(Scheduler* iScheduler, const Timestep::timePoint& iCurrentTime);
+	Timestep::time_point m_lastCall;
+	void execute(Scheduler* iScheduler, const Timestep::time_point& iCurrentTime);
 };
 
 }// namespace owl::core::task

@@ -18,7 +18,9 @@ using namespace owl;
 
 namespace drone::panels {
 
+namespace {
 constexpr auto vec(math::vec2 iVec) -> ImVec2 { return {iVec.x(), iVec.y()}; }
+}// namespace
 
 Gauges::Gauges() {
 
@@ -133,12 +135,13 @@ void Gauges::onRender() {
 	const ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	m_viewportSize = {static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y)};
 	if (const auto tex = gui::imTexture(m_framebuffer, 0); tex.has_value())
-			ImGui::Image(tex.value(), viewportPanelSize,
-						 vec(m_framebuffer->getLowerData()), vec(m_framebuffer->getUpperData()));
+		ImGui::Image(tex.value(), viewportPanelSize, vec(m_framebuffer->getLowerData()),
+					 vec(m_framebuffer->getUpperData()));
 
-	else OWL_WARN("No frameBuffer to render...")
+	else
+		OWL_WARN("No frameBuffer to render...")
 
-			ImGui::End();
+	ImGui::End();
 	ImGui::PopStyleVar();
 }
 

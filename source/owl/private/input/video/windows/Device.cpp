@@ -340,7 +340,7 @@ void Device::fillFrame(shared<renderer::Texture>& iFrame) {
 	if (!iFrame || iFrame->getSize() != m_size) {
 		if (iFrame)
 			iFrame.reset();
-		iFrame = renderer::Texture2D::create({m_size, renderer::ImageFormat::RGB8});
+		iFrame = renderer::Texture2D::create({m_size, renderer::ImageFormat::Rgb8});
 	}
 	// For now only fill with black
 	WPointer<IMFSample> sample;

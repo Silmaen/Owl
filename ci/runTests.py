@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Script to run all unit tests found in the build directory and report results.
+"""
 from argparse import ArgumentParser
 from pathlib import Path
 from subprocess import run
@@ -8,6 +11,12 @@ root_dir = Path(__file__).resolve().parent.parent
 
 
 def runtest(build_path: str):
+    """
+    Run all unit tests found in the build directory.
+
+    :param build_path: Path to the build directory relative to source.
+    :return: True if all tests pass, False otherwise.
+    """
     build_dir = root_dir / build_path
     if not build_dir.exists():
         print(f"ERROR: no build dir '{build_dir}' found.", file=stderr)
@@ -42,6 +51,11 @@ def runtest(build_path: str):
 
 
 def main():
+    """
+    Main entry point for running tests.
+
+    :return: None
+    """
     parser = ArgumentParser()
     parser.add_argument(
         "build", type=str, help="The path to the build relative to source"

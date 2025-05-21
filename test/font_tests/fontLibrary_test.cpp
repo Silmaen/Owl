@@ -1,8 +1,8 @@
 
 #include "testHelper.h"
 
-#include <fonts/FontLibrary.h>
 #include <core/Application.h>
+#include <fonts/FontLibrary.h>
 
 using namespace owl::fonts;
 using namespace owl;
@@ -17,7 +17,7 @@ TEST(FontLibrary, basic) {
 }
 
 TEST(FontLibrary, basic_with_app) {
-	Log::init(owl::core::Log::Level::Off);
+	Log::init(Log::Level::Off);
 	auto app = owl::mkShared<Application>(AppParams{.args = nullptr,
 													.frameLogFrequency = 0,
 													.name = "test",
@@ -26,7 +26,7 @@ TEST(FontLibrary, basic_with_app) {
 													.width = 0,
 													.height = 0,
 													.argCount = 0,
-													.renderer = owl::renderer::RenderAPI::Type::Null,
+													.renderer = renderer::RenderAPI::Type::Null,
 													.hasGui = false,
 													.useDebugging = false,
 													.isDummy = true});

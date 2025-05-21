@@ -9,30 +9,30 @@
 #pragma once
 #include <math/math.h>
 
-static constexpr bool matrixCompare(const owl::math::mat4& gmat, const owl::math::mat4& mmat) {
+static constexpr bool matrixCompare(const owl::math::mat4& iFirstMatrix, const owl::math::mat4& iSecondMatrix) {
 	bool same = true;
 	for (size_t col = 0; col < 4; ++col) {
 		for (size_t row = 0; row < 4; ++row) {
-			if (std::abs(gmat(row, col) - mmat(row, col)) > 0.001f)
+			if (std::abs(iFirstMatrix(row, col) - iSecondMatrix(row, col)) > 0.001f)
 				same = false;
 		}
 	}
 	return same;
 }
 
-static constexpr bool vectorCompare(const owl::math::vec4& gvec, const owl::math::vec4& mvec) {
+static constexpr bool vectorCompare(const owl::math::vec4& iFirstVector, const owl::math::vec4& iSecondVector) {
 	bool same = true;
 	for (size_t col = 0; col < 4; ++col) {
-		if (std::abs(gvec[col] - mvec[col]) > 0.001f)
+		if (std::abs(iFirstVector[col] - iSecondVector[col]) > 0.001f)
 			same = false;
 	}
 	return same;
 }
 
-static constexpr bool quatCompare(const owl::math::quat& gvec, const owl::math::quat& mvec) {
+static constexpr bool quatCompare(const owl::math::quat& iFirstQuaternion, const owl::math::quat& iSecondQuaternion) {
 	bool same = true;
 	for (size_t col = 0; col < 4; ++col) {
-		if (std::abs(gvec[col] - mvec[col]) > 0.001f)
+		if (std::abs(iFirstQuaternion[col] - iSecondQuaternion[col]) > 0.001f)
 			same = false;
 	}
 	return same;

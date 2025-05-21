@@ -46,39 +46,41 @@ concept isNamedComponent = isComponent<Component> && requires {
  * @brief Concept that type is serializable.
  */
 template<typename Component>
-concept isSerializableComponent = isComponent<Component> && requires(const Component& t, const core::Serializer& iOut) {
-	{ t.serialize(iOut) } -> std::same_as<void>;
-	{ Component::key() } -> std::convertible_to<const char*>;
-};
+concept isSerializableComponent =
+		isComponent<Component> && requires(const Component& iComponent, const core::Serializer& iOut) {
+			{ iComponent.serialize(iOut) } -> std::same_as<void>;
+			{ Component::key() } -> std::convertible_to<const char*>;
+		};
 
 /**
  * @brief Concept that type is deserializable.
  */
 template<typename Component>
-concept isDeserializableComponent = isComponent<Component> && requires(Component& t, const core::Serializer& iNode) {
-	{ t.deserialize(iNode) } -> std::same_as<void>;
-	{ Component::key() } -> std::convertible_to<const char*>;
-};
+concept isDeserializableComponent =
+		isComponent<Component> && requires(Component& iComponent, const core::Serializer& iNode) {
+			{ iComponent.deserialize(iNode) } -> std::same_as<void>;
+			{ Component::key() } -> std::convertible_to<const char*>;
+		};
 
 /**
  * @brief List of copiable components.
  * @note All except ID and Tag.
  */
-using copiableComponents =
+using CopiableComponents =
 		std::tuple<Transform, Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody, Player, Trigger, EntityLink>;
 
 /**
  * @brief List all serializable components.
  * @note All except ID which is serialized directly in the entity.
  */
-using serializableComponents = std::tuple<Tag, Transform, Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody,
+using SerializableComponents = std::tuple<Tag, Transform, Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody,
 										  Player, Trigger, EntityLink>;
 
 /**
  * @brief List all optional components.
  * @note All except ID, Tag & Transform that are mandatory.
  */
-using optionalComponents =
+using OptionalComponents =
 		std::tuple<Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody, Player, Trigger, EntityLink>;
 
 }// namespace owl::scene::component

@@ -17,8 +17,8 @@ DrawData::~DrawData() = default;
 void DrawData::init(const BufferLayout& iLayout, const std::string& iRenderer, std::vector<uint32_t>& iIndices,
 					const std::string& iShaderName) {
 	if (iLayout.getStride() > 0) {
-		mp_vertexArray = mkShared<opengl::VertexArray>();
-		mp_vertexBuffer = mkShared<opengl::VertexBuffer>(iLayout.getStride() * iIndices.size());
+		mp_vertexArray = mkShared<VertexArray>();
+		mp_vertexBuffer = mkShared<VertexBuffer>(iLayout.getStride() * iIndices.size());
 		mp_vertexBuffer->setLayout(iLayout);
 		mp_vertexArray->addVertexBuffer(mp_vertexBuffer);
 		mp_vertexArray->setIndexBuffer(mkShared<IndexBuffer>(iIndices.data(), iIndices.size()));
@@ -53,7 +53,7 @@ auto DrawData::getIndexCount() const -> uint32_t {
 
 void DrawData::setShader(const std::string& iShaderName, const std::string& iRenderer) {
 	auto& shLib = Renderer::getShaderLibrary();
-	const auto baseName = Shader::composeName({iShaderName, iRenderer});
+	const auto baseName = Shader::composeName({.name=iShaderName, .renderer=iRenderer});
 	if (!shLib.exists(baseName))
 		shLib.load(baseName);
 	mp_shader = static_pointer_cast<Shader>(shLib.get(baseName));

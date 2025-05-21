@@ -45,7 +45,7 @@ PhysicalDeviceCapabilities::PhysicalDeviceCapabilities(const VkPhysicalDevice& i
 	if (hasExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
 		updateSurfaceInformation();
 		uint32_t index = 0;
-		auto* const gc = dynamic_cast<vulkan::GraphContext*>(core::Application::get().getWindow().getGraphContext());
+		const auto* gc = dynamic_cast<GraphContext*>(core::Application::get().getWindow().getGraphContext());
 		for (const auto& qFam: queueFamilies) {
 			if ((qFam.queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0u) {
 				graphicQueueIndex = index;
@@ -83,7 +83,7 @@ auto PhysicalDeviceCapabilities::hasLayers(const std::vector<std::string>& iLaye
 
 auto PhysicalDeviceCapabilities::hasExtensions(const std::vector<std::string>& iExtensions) const -> bool {
 	return std::ranges::all_of(iExtensions.begin(), iExtensions.end(),
-							   [&](const auto& extension) { return this->hasExtension(extension); });
+							   [&](const auto& iExtension) { return this->hasExtension(iExtension); });
 }
 
 auto PhysicalDeviceCapabilities::getScore() const -> uint32_t {
@@ -126,8 +126,8 @@ auto enumerateDevices(const VkInstance& iInstance) -> std::vector<PhysicalDevice
 	// sort by decreasing score...
 	if (!resultVec.empty())
 		std::ranges::sort(resultVec.begin(), resultVec.cend(),
-						  [](const PhysicalDeviceCapabilities& a, const PhysicalDeviceCapabilities& b) {
-							  return a.getScore() > b.getScore();
+						  [](const PhysicalDeviceCapabilities& iFirst, const PhysicalDeviceCapabilities& iSecond) {
+							  return iFirst.getScore() > iSecond.getScore();
 						  });
 	return resultVec;
 }

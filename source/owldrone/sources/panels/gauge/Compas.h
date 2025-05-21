@@ -46,7 +46,7 @@ public:
 	auto operator=(Compas&&) -> Compas& = default;
 
 	/**
-	 * @brief Draw the  gauge back ground.
+	 * @brief Draw the gauge background.
 	 */
 	void drawBack() override;
 
@@ -57,12 +57,12 @@ public:
 
 	/**
 	 * @brief Defines the heading.
-	 * @param h The heading.
+	 * @param iHeading The heading.
 	 */
-	void setHeading(float h) { heading = h; }
+	void setHeading(const float iHeading) { m_heading = iHeading; }
 
 private:
-	float heading = 0;
+	float m_heading = 0;
 	auto headingToAngle() -> float;
 
 	owl::shared<owl::renderer::Texture> background = nullptr;

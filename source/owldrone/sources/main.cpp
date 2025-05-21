@@ -16,21 +16,21 @@ OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
 class OwlNest final : public owl::core::Application {
 public:
 	OwlNest() = delete;
-	explicit OwlNest(const owl::core::AppParams& param) : owl::core::Application(param) {
-		if (getState() == owl::core::Application::State::Running)
+	explicit OwlNest(const owl::core::AppParams& iParameters) : Application(iParameters) {
+		if (getState() == State::Running)
 			pushLayer(owl::mkShared<drone::DroneLayer>());
 	}
 };
 OWL_DIAG_POP
 
-auto owl::core::createApplication(int argc, char** argv) -> owl::shared<owl::core::Application> {
-	return mkShared<OwlNest>(core::AppParams{
-			.args = argv,
+auto owl::core::createApplication(int iArgc, char** iArgv) -> shared<Application> {
+	return mkShared<OwlNest>(AppParams{
+			.args = iArgv,
 			.name = "Owl Drone - Navigator for drone",
 #ifdef OWL_ASSETS_LOCATION
 			.assetsPattern = OWL_ASSETS_LOCATION,
 #endif
 			.icon = "icons/logo_drone.png",
-			.argCount = argc,
+			.argCount = iArgc,
 	});
 }

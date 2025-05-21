@@ -17,7 +17,7 @@ namespace owl::renderer::vulkan::internal {
 
 
 void TextureData::freeTexture() {
-	const auto& core = internal::VulkanCore::get();
+	const auto& core = VulkanCore::get();
 	const auto& pool = Descriptors::get().getSingleImageDescriptorPool();
 	vkDeviceWaitIdle(core.getLogicalDevice());
 	if (textureDescriptorSet != nullptr) {
@@ -91,7 +91,7 @@ void TextureData::createDescriptorSet() {
 }
 
 void TextureData::createView() {
-	const auto& vkc = internal::VulkanCore::get();
+	const auto& vkc = VulkanCore::get();
 	const VkImageViewCreateInfo createInfo{.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 										   .pNext = nullptr,
 										   .flags = {},
@@ -114,7 +114,7 @@ void TextureData::createView() {
 }
 
 void TextureData::createSampler() {
-	const auto& vkc = internal::VulkanCore::get();
+	const auto& vkc = VulkanCore::get();
 	const VkSamplerCreateInfo samplerInfo{.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
 										  .pNext = nullptr,
 										  .flags = {},
@@ -142,7 +142,7 @@ void TextureData::createSampler() {
 }
 void TextureData::createImage(const math::vec2ui& iDimensions) {
 	freeTexture();
-	const auto& vkc = internal::VulkanCore::get();
+	const auto& vkc = VulkanCore::get();
 	const VkImageCreateInfo imageInfo{
 			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 			.pNext = nullptr,
@@ -175,7 +175,6 @@ void TextureData::createImage(const math::vec2ui& iDimensions) {
 	if (const VkResult result = vkAllocateMemory(vkc.getLogicalDevice(), &allocInfo, nullptr, &textureImageMemory);
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan Texture: failed to allocate image memory ({}).", internal::resultString(result))
-		return;
 	}
 }
 
@@ -275,7 +274,7 @@ void Descriptors::createDescriptors() {
 	}
 
 	// Descriptor sets
-	std::vector<VkDescriptorSetLayout> layouts(g_maxFrameInFlight, m_descriptorSetLayout);
+	std::vector layouts(g_maxFrameInFlight, m_descriptorSetLayout);
 	const VkDescriptorSetAllocateInfo allocInfo{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 												.pNext = nullptr,
 												.descriptorPool = m_descriptorPool,
@@ -446,15 +445,15 @@ auto Descriptors::TextureList::registerNewTexture() -> uint32_t {
 	return nextId;
 }
 void Descriptors::TextureList::unregisterTexture(uint32_t iIndex) {
-	auto iter = std::find_if(textures.begin(), textures.end(),
+	const auto iter = std::find_if(textures.begin(), textures.end(),
 							 [&iIndex](const auto& iElem) { return iElem.first == iIndex; });
 	if (iter == textures.end())
 		return;
 	iter->second->freeTexture();
 	textures.erase(iter);
 }
-auto Descriptors::TextureList::getTextureData(uint32_t iIndex) -> Descriptors::TextureList::tex {
-	auto iter = std::find_if(textures.begin(), textures.end(),
+auto Descriptors::TextureList::getTextureData(uint32_t iIndex) -> tex {
+	const auto iter = std::find_if(textures.begin(), textures.end(),
 							 [&iIndex](const auto& iElem) { return iElem.first == iIndex; });
 	if (iter == textures.end())
 		return nullptr;

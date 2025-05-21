@@ -32,14 +32,14 @@ public:
 	 * @brief Initialize the renderer.
 	 */
 	static void init() {
-		if (mu_renderAPI)
-			mu_renderAPI->init();
+		if (m_renderAPI)
+			m_renderAPI->init();
 	}
 
 	/**
 	 * @brief Reset RenderAPI.
 	 */
-	static void invalidate() { mu_renderAPI.reset(); }
+	static void invalidate() { m_renderAPI.reset(); }
 
 	/**
 	 * @brief Get the state of the API.
@@ -55,19 +55,19 @@ public:
 	 * @param[in] iHeight Viewport Height.
 	 */
 	static void setViewport(const uint32_t iX, const uint32_t iY, const uint32_t iWidth, const uint32_t iHeight) {
-		mu_renderAPI->setViewport(iX, iY, iWidth, iHeight);
+		m_renderAPI->setViewport(iX, iY, iWidth, iHeight);
 	}
 
 	/**
 	 * @brief Binding to the definition of background color.
 	 * @param[in] iColor The new background color.
 	 */
-	static void setClearColor(const math::vec4& iColor) { mu_renderAPI->setClearColor(iColor); }
+	static void setClearColor(const math::vec4& iColor) { m_renderAPI->setClearColor(iColor); }
 
 	/**
 	 * @brief Binding to clear screen.
 	 */
-	static void clear() { mu_renderAPI->clear(); }
+	static void clear() { m_renderAPI->clear(); }
 
 	/**
 	 * @brief Binding the draw of vertex array.
@@ -75,7 +75,7 @@ public:
 	 * @param[in] iIndexCount Number of vertex to draw (=0 all).
 	 */
 	static void drawData(const shared<DrawData>& iData, const uint32_t iIndexCount = 0) {
-		mu_renderAPI->drawData(iData, iIndexCount);
+		m_renderAPI->drawData(iData, iIndexCount);
 	}
 	/**
 		 * @brief Binding the draw of vertex array as lines.
@@ -83,7 +83,7 @@ public:
 		 * @param[in] iIndexCount Number of vertex to draw (=0 all).
 		 */
 	static void drawLine(const shared<DrawData>& iData, const uint32_t iIndexCount = 0) {
-		mu_renderAPI->drawLine(iData, iIndexCount);
+		m_renderAPI->drawLine(iData, iIndexCount);
 	}
 
 	/**
@@ -97,8 +97,8 @@ public:
 	 * @return API Type.
 	 */
 	static auto getApi() -> RenderAPI::Type {
-		if (mu_renderAPI)
-			return mu_renderAPI->getApi();
+		if (m_renderAPI)
+			return m_renderAPI->getApi();
 		return static_cast<RenderAPI::Type>(-1);// NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
 	}
 
@@ -107,8 +107,8 @@ public:
 	 * @return Number of texture slots.
 	 */
 	static auto getMaxTextureSlots() -> uint32_t {
-		if (mu_renderAPI)
-			return mu_renderAPI->getMaxTextureSlots();
+		if (m_renderAPI)
+			return m_renderAPI->getMaxTextureSlots();
 		return 0;
 	}
 
@@ -116,48 +116,48 @@ public:
 	 * @brief Reset value for the frame to render.
 	 */
 	static void beginFrame() {
-		if (mu_renderAPI)
-			mu_renderAPI->beginFrame();
+		if (m_renderAPI)
+			m_renderAPI->beginFrame();
 	}
 
 	/**
 	 * @brief Reset value for the batch to render.
 	 */
 	static void beginBatch() {
-		if (mu_renderAPI)
-			mu_renderAPI->beginBatch();
+		if (m_renderAPI)
+			m_renderAPI->beginBatch();
 	}
 
 	/**
 	 * @brief Reset value for the teture load.
 	 */
 	static void beginTextureLoad() {
-		if (mu_renderAPI)
-			mu_renderAPI->beginTextureLoad();
+		if (m_renderAPI)
+			m_renderAPI->beginTextureLoad();
 	}
 
 	/**
 	 * @brief Ends draw call for the current batch.
 	 */
 	static void endBatch() {
-		if (mu_renderAPI)
-			mu_renderAPI->endBatch();
+		if (m_renderAPI)
+			m_renderAPI->endBatch();
 	}
 
 	/**
 	 * @brief Ends draw call for the current frame.
 	 */
 	static void endFrame() {
-		if (mu_renderAPI)
-			mu_renderAPI->endFrame();
+		if (m_renderAPI)
+			m_renderAPI->endFrame();
 	}
 
 	/**
 	 * @brief Ends texture load.
 	 */
 	static void endTextureLoad() {
-		if (mu_renderAPI)
-			mu_renderAPI->endTextureLoad();
+		if (m_renderAPI)
+			m_renderAPI->endTextureLoad();
 	}
 
 	/**
@@ -165,13 +165,13 @@ public:
 	 * @return True if initialization required.
 	 */
 	static auto requireInit() -> bool {
-		if (mu_renderAPI)
-			return mu_renderAPI->requireInit();
+		if (m_renderAPI)
+			return m_renderAPI->requireInit();
 		return false;
 	}
 
 private:
 	/// Pointer to the render API
-	static uniq<RenderAPI> mu_renderAPI;
+	static uniq<RenderAPI> m_renderAPI;
 };
 }// namespace owl::renderer

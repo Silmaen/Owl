@@ -42,9 +42,9 @@ void EditorLayer::onEvent(event::Event& ioEvent) {
 
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::KeyPressedEvent>(
-			[this](auto&& PH1) { return onKeyPressed(std::forward<decltype(PH1)>(PH1)); });
+			[this]<typename T0>(T0&& ioArgs) { return onKeyPressed(std::forward<T0>(ioArgs)); });
 	dispatcher.dispatch<event::MouseButtonPressedEvent>(
-			[this](auto&& PH1) { return onMouseButtonPressed(std::forward<decltype(PH1)>(PH1)); });
+			[this]<typename T0>(T0&& ioArgs) { return onMouseButtonPressed(std::forward<T0>(ioArgs)); });
 }
 
 // NOLINTBEGIN(readability-convert-member-functions-to-static)

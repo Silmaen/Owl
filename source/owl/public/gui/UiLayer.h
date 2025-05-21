@@ -7,8 +7,8 @@
  */
 #pragma once
 
-#include "core/layer/Layer.h"
 #include "Theme.h"
+#include "core/layer/Layer.h"
 
 /**
  * @brief Namespace for gui

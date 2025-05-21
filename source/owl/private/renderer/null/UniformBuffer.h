@@ -46,6 +46,5 @@ public:
 	 */
 	void setData(const void* iData, uint32_t iSize, uint32_t iOffset) override;
 
-private:
 };
 }// namespace owl::renderer::null

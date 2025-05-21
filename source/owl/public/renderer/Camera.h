@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "math/matrixCreation.h"
 #include "core/Core.h"
+#include "math/matrixCreation.h"
 
 namespace owl::renderer {
 /**

@@ -22,13 +22,13 @@ public:
 };
 OWL_DIAG_POP
 
-auto owl::core::createApplication(int argc, char** argv) -> shared<Application> {
+auto owl::core::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 	return owl::mkShared<Sandbox>(AppParams{
-			.args = argv,
+			.args = iArgv,
 			.name = "Sandbox",
 #ifdef OWL_ASSETS_LOCATION
 			.assetsPattern = OWL_ASSETS_LOCATION,
 #endif
-			.argCount = argc,
+			.argCount = iArgc,
 	});
 }

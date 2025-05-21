@@ -8,7 +8,7 @@ using namespace owl::math;
 TEST(math, baseAngles) {
 	EXPECT_NEAR(degrees(radians(45.f)), 45.f, 0.001);
 	EXPECT_NEAR(radians(degrees(1.2f)), 1.2f, 0.001);
-	const vec3 rot{15, 25, 35};
+	constexpr vec3 rot{15, 25, 35};
 	vec3 trot = degrees(radians(rot));
 	EXPECT_NEAR(rot.x(), trot.x(), 0.001);
 	EXPECT_NEAR(rot.y(), trot.y(), 0.001);

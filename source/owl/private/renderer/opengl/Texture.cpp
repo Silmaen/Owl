@@ -16,13 +16,13 @@ namespace owl::renderer::opengl {
 namespace {
 auto glDataFormat(const ImageFormat& iFormat) -> GLenum {
 	switch (iFormat) {
-		case ImageFormat::RGBA8:
+		case ImageFormat::Rgba8:
 			return GL_RGBA;
-		case ImageFormat::RGB8:
+		case ImageFormat::Rgb8:
 			return GL_RGB;
 		case ImageFormat::R8:
 			return GL_RED;
-		case ImageFormat::RGBA32F:
+		case ImageFormat::Rgba32F:
 			return GL_RGBA32F;
 		case ImageFormat::None:
 			return GL_NONE;
@@ -31,13 +31,13 @@ auto glDataFormat(const ImageFormat& iFormat) -> GLenum {
 }
 auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
 	switch (iFormat) {
-		case ImageFormat::RGBA8:
+		case ImageFormat::Rgba8:
 			return GL_RGBA8;
-		case ImageFormat::RGB8:
+		case ImageFormat::Rgb8:
 			return GL_RGB8;
 		case ImageFormat::R8:
 			return GL_RED_INTEGER;
-		case ImageFormat::RGBA32F:
+		case ImageFormat::Rgba32F:
 			return GL_RGBA32F;
 		case ImageFormat::None:
 			return GL_NONE;
@@ -68,7 +68,7 @@ Texture2D::Texture2D(std::filesystem::path iPath) : renderer::Texture2D{std::mov
 		OWL_CORE_ERROR("OpenGL Texture: Impossible to load {}, invalid number of channels {}: must be 3 or 4.")
 		return;
 	}
-	m_specification.format = channels == 4 ? ImageFormat::RGBA8 : ImageFormat::RGB8;
+	m_specification.format = channels == 4 ? ImageFormat::Rgba8 : ImageFormat::Rgb8;
 	m_specification.size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_textureId);

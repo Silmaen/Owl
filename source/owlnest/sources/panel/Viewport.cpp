@@ -185,7 +185,7 @@ void Viewport::renderGizmo() {
 		math::mat4 cameraProjection = m_editorCamera.getProjection();
 		if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan)
 			cameraProjection(1, 1) *= -1.f;
-		math::mat4 cameraView = m_editorCamera.getView();
+		const math::mat4 cameraView = m_editorCamera.getView();
 
 		// Entity transform
 		auto& tc = selectedEntity.getComponent<scene::component::Transform>();

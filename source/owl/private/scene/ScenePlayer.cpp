@@ -26,8 +26,8 @@ void ScenePlayer::parseInputs(const Entity& iPlayer) {
 		physic::PhysicCommand::impulse(iPlayer, {-linearImpulse, 0});
 	}
 	if (canJump && input::Input::isKeyPressed(input::key::Space)) {
-		auto vel = physic::PhysicCommand::getVelocity(iPlayer);
-		if (std::abs(vel.y()) < 0.001f) {// no vertical velocity means on the ground!
+		if (const auto vel = physic::PhysicCommand::getVelocity(iPlayer);
+			std::abs(vel.y()) < 0.001f) {// no vertical velocity means on the ground!
 			physic::PhysicCommand::impulse(iPlayer, {0, jumpImpulse});
 		}
 	}

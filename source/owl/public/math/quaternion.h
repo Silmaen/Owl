@@ -106,10 +106,10 @@ public:
 	[[nodiscard]] constexpr auto z() const -> const BaseType& { return m_data[2]; }
 	[[nodiscard]] constexpr auto w() const -> const BaseType& { return m_data[3]; }
 	// iterator
-	auto begin() -> typename std::array<BaseType, 4>::iterator { return m_data.begin(); }
-	auto end() -> typename std::array<BaseType, 4>::iterator { return m_data.end(); }
-	[[nodiscard]] auto begin() const -> typename std::array<BaseType, 4>::const_iterator { return m_data.begin(); }
-	[[nodiscard]] auto end() const -> typename std::array<BaseType, 4>::const_iterator { return m_data.end(); }
+	auto begin() -> std::array<BaseType, 4>::iterator { return m_data.begin(); }
+	auto end() -> std::array<BaseType, 4>::iterator { return m_data.end(); }
+	[[nodiscard]] auto begin() const -> std::array<BaseType, 4>::const_iterator { return m_data.begin(); }
+	[[nodiscard]] auto end() const -> std::array<BaseType, 4>::const_iterator { return m_data.end(); }
 	// base operator
 	/**
 	 * @brief Self Addition operator.

@@ -23,7 +23,7 @@ public:
 	/**
 	 * @brief Default constructor.
 	 */
-	SoundAPI() : sound::SoundAPI{Type::OpenAL} {}
+	SoundAPI() : sound::SoundAPI{Type::OpenAl} {}
 	SoundAPI(const SoundAPI&) = delete;
 	SoundAPI(SoundAPI&&) = delete;
 	auto operator=(const SoundAPI&) -> SoundAPI& = delete;

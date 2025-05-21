@@ -158,6 +158,5 @@ public:
 	 */
 	static auto create(const FramebufferSpecification& iSpec) -> shared<Framebuffer>;
 
-private:
 };
 }// namespace owl::renderer

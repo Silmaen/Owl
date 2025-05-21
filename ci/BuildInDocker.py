@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Script to build a project inside a Docker container using CMake presets.
+"""
 import os
 from argparse import ArgumentParser
 from json import load
@@ -18,6 +21,14 @@ supported_platform = ["linux/arm64", "linux/amd64"]
 
 
 def run_cmd(cmd: str, print_out: bool = False, output: bool = False):
+    """
+    Run a shell command.
+
+    :param cmd: The command to run.
+    :param print_out: If True, print output to stdout.
+    :param output: If True, return output.
+    :return: Tuple of (return code, output string).
+    """
     from subprocess import run, STDOUT, PIPE
     try:
         if print_out:
@@ -35,6 +46,13 @@ def run_cmd(cmd: str, print_out: bool = False, output: bool = False):
 
 
 def execute(image: str, platform: str):
+    """
+    Execute the docker run command with the given image and platform.
+
+    :param image: Docker image to use.
+    :param platform: Platform to use.
+    :return: None
+    """
     cmd = f'docker run --rm -u $(id -u):$(id -g)'
     cmd += f' -v {ccache}:/.ccache'
     cmd += f' -v {edm}:/.edm'
@@ -48,6 +66,11 @@ def execute(image: str, platform: str):
 
 
 def create_dir():
+    """
+    Create required directories for cache and scripts.
+
+    :return: None
+    """
     try:
         ccache.mkdir(parents=True, exist_ok=True)
         edm.mkdir(parents=True, exist_ok=True)
@@ -58,6 +81,12 @@ def create_dir():
 
 
 def create_script(preset: str):
+    """
+    Create the shell script to be executed inside the docker container.
+
+    :param preset: The CMake preset to use.
+    :return: None
+    """
     try:
         with open(script_file, "w") as sc:
             sc.write("#!/bin/bash\n\n")
@@ -75,6 +104,11 @@ def create_script(preset: str):
 
 
 def main():
+    """
+    Main entry point for building in Docker.
+
+    :return: None
+    """
     parser = ArgumentParser()
     parser.add_argument("--preset", "-p", required=True, type=str, help="The cmake preset to use")
     parser.add_argument("--image", "-i", type=str, help="The docker image to run")

@@ -44,7 +44,7 @@ void GraphContext::swapBuffers() {
 	glfwSwapBuffers(mp_windowHandle);
 }
 
-auto GraphContext::getVersion() const -> GraphContext::Version {
+auto GraphContext::getVersion() const -> Version {
 #ifdef OLD_GLAD
 	return {.major = GLVersion.major, .minor = GLVersion.minor};
 #else

@@ -17,7 +17,7 @@
 namespace owl::core {
 
 /// Default frequency for frame output.
-constexpr uint64_t gDefaultFrequency{100};
+constexpr uint64_t g_DefaultFrequency{100};
 
 /**
  * @brief Logging system.
@@ -39,7 +39,7 @@ public:
 	 * @param[in] iLevel Verbosity level of the logger.
 	 * @param[in] iFrequency Frequency of frame output (number of frames).
 	 */
-	static void init(const Level& iLevel = Level::Trace, uint64_t iFrequency = gDefaultFrequency);
+	static void init(const Level& iLevel = Level::Trace, uint64_t iFrequency = g_DefaultFrequency);
 
 	/**
 	 * @brief Defines the Verbosity level

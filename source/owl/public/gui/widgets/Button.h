@@ -27,7 +27,7 @@ struct ButtonData : WidgetData {
 /**
  * @brief Class describing a button gui widget.
  */
-class OWL_API Button : public Widget<ButtonData> {
+class OWL_API Button final: public Widget<ButtonData> {
 public:
 	/**
 	 * @brief Default destructor.

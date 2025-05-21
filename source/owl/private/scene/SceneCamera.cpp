@@ -26,7 +26,7 @@ void SceneCamera::setOrthographic(const float iSize, const float iNearClip, cons
 
 void SceneCamera::setPerspective(const float iVerticalFov, const float iNearClip, const float iFarClip) {
 	m_projectionType = ProjectionType::Perspective;
-	m_perspectiveFOV = iVerticalFov;
+	m_perspectiveFov = iVerticalFov;
 	m_perspectiveNear = iNearClip;
 	m_perspectiveFar = iFarClip;
 	recalculateProjection();
@@ -41,7 +41,7 @@ void SceneCamera::setViewportSize(const math::vec2ui& iSize) {
 
 void SceneCamera::recalculateProjection() {
 	if (m_projectionType == ProjectionType::Perspective) {
-		m_projection = math::perspective(m_perspectiveFOV, m_aspectRatio, m_perspectiveNear, m_perspectiveFar);
+		m_projection = math::perspective(m_perspectiveFov, m_aspectRatio, m_perspectiveNear, m_perspectiveFar);
 	} else {
 		const float orthoLeft = -m_orthographicSize * m_aspectRatio * 0.5f;
 		const float orthoRight = m_orthographicSize * m_aspectRatio * 0.5f;

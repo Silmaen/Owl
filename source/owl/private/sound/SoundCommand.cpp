@@ -12,13 +12,13 @@
 
 namespace owl::sound {
 
-uniq<SoundAPI> SoundCommand::m_soundAPI = nullptr;
+uniq<SoundAPI> SoundCommand::m_soundApi = nullptr;
 
-void SoundCommand::create(const SoundAPI::Type& iType) { m_soundAPI = SoundAPI::create(iType); }
+void SoundCommand::create(const SoundAPI::Type& iType) { m_soundApi = SoundAPI::create(iType); }
 
 auto SoundCommand::getState() -> SoundAPI::State {
-	if (m_soundAPI)
-		return m_soundAPI->getState();
+	if (m_soundApi)
+		return m_soundApi->getState();
 	return SoundAPI::State::Error;
 }
 

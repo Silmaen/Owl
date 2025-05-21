@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
+"""
+Script to check and manage remote dependencies using depmanager.
+"""
 from pathlib import Path
 from sys import stderr
 
 
 class HostInfo:
+    """
+    Host system information.
+    """
     def __init__(self):
         self.os = "unknown"
         self.arch = "unknown"
@@ -12,6 +18,11 @@ class HostInfo:
         self.__analyse()
 
     def is_valid(self) -> bool:
+        """
+        Check if the host info is valid.
+
+        :return: True if valid, False otherwise.
+        """
         if self.os in [None, "", "unknown"]:
             return False
         if self.arch in [None, "", "unknown"]:
@@ -19,6 +30,10 @@ class HostInfo:
         return True
 
     def __analyse(self):
+        """
+        Analyse the host system to fill in OS, arch, release, and libc.
+        :return: None
+        """
         import platform
 
         if Path("/etc/os-release").exists():
@@ -41,6 +56,11 @@ hi = HostInfo()
 
 
 def has_depmanager():
+    """
+    Check if depmanager is available.
+
+    :return: True if depmanager is available, exits otherwise.
+    """
     import subprocess
 
     try:
@@ -55,6 +75,12 @@ def has_depmanager():
 
 
 def check_remote(remote: dict):
+    """
+    Check and add a remote if needed.
+
+    :param remote: Dictionary with remote info.
+    :return: None
+    """
     if "url" not in remote:
         return
     if remote["url"] in ["", None]:
@@ -80,6 +106,11 @@ def check_remote(remote: dict):
 
 
 def main():
+    """
+    Main entry point for dependency check.
+
+    :return: None
+    """
     from argparse import ArgumentParser as ap
 
     arg_p = ap()

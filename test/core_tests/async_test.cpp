@@ -21,7 +21,7 @@ TEST(core_task, SchedulerBasic) {
 	std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
 
 	// add an empty task
-	EXPECT_EQ(scheduler.pushTask(Task([&]() {})), 1);
+	EXPECT_EQ(scheduler.pushTask(Task([&] {})), 1);
 	EXPECT_FALSE(scheduler.isTaskFinished(1));
 	EXPECT_FALSE(scheduler.isTaskRunning(1));
 	EXPECT_TRUE(scheduler.isTaskInQueue(1));
@@ -52,7 +52,7 @@ TEST(core_task, SchedulerTasks) {
 		Scheduler scheduler;
 		Timestep ts;
 
-		scheduler.pushTask(Task([&]() {}, [&]() { counter++; }));
+		scheduler.pushTask(Task([&] {}, [&] { counter++; }));
 		ts.forceUpdate(std::chrono::milliseconds(100));
 		scheduler.frame(ts);
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
@@ -61,15 +61,15 @@ TEST(core_task, SchedulerTasks) {
 		scheduler.frame(ts);
 		std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
 		EXPECT_EQ(counter, 1);
-		scheduler.pushTask(Task([&]() {}, [&]() { counter++; }));
-		scheduler.pushTask(Task([&]() {}, [&]() { counter++; }));
-		scheduler.pushTask(Task([&]() {}, [&]() { counter++; }));
+		scheduler.pushTask(Task([&] {}, [&] { counter++; }));
+		scheduler.pushTask(Task([&] {}, [&] { counter++; }));
+		scheduler.pushTask(Task([&] {}, [&] { counter++; }));
 		EXPECT_TRUE(scheduler.isTaskInQueue(4));
 		scheduler.clearQueue();
 		EXPECT_EQ(counter, 1);
 		EXPECT_FALSE(scheduler.isTaskInQueue(4));
 		// this task should be destroyed with the scheduler, with no possibility to run.
-		EXPECT_EQ(scheduler.pushTask(Task([&]() { counter++; }, [&]() { counter++; })), 5);
+		EXPECT_EQ(scheduler.pushTask(Task([&] { counter++; }, [&] { counter++; })), 5);
 	}
 	EXPECT_EQ(counter, 1);
 }

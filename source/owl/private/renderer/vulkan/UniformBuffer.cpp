@@ -23,7 +23,7 @@ UniformBuffer::UniformBuffer(const uint32_t iSize, uint32_t, const std::string &
 UniformBuffer::~UniformBuffer() = default;
 
 void UniformBuffer::setData(const void *iData, const uint32_t iSize, uint32_t) {
-	auto &vkd = internal::Descriptors::get();
+	const auto &vkd = internal::Descriptors::get();
 	vkd.setUniformData(iData, iSize);
 }
 

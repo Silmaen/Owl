@@ -21,7 +21,7 @@ TEST(input, Input_uninitialized) {
 }
 
 TEST(input, Input_doubleinit) {
-	Input::init(Type::GLFW);
+	Input::init(Type::Glfw);
 	Input::init(Type::Null);
 	Input::injectKey(3);
 	EXPECT_TRUE(Input::isKeyPressed(3));

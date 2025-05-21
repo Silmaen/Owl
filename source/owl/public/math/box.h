@@ -36,8 +36,8 @@ public:
 	}
 
 	// Accessor
-	constexpr auto min() const noexcept -> const Vector<BaseType, Dim>& { return m_min; }
-	constexpr auto max() const noexcept -> const Vector<BaseType, Dim>& { return m_max; }
+	[[nodiscard]] constexpr auto min() const noexcept -> const Vector<BaseType, Dim>& { return m_min; }
+	[[nodiscard]] constexpr auto max() const noexcept -> const Vector<BaseType, Dim>& { return m_max; }
 	constexpr auto min() noexcept -> Vector<BaseType, Dim>& { return m_min; }
 	constexpr auto max() noexcept -> Vector<BaseType, Dim>& { return m_max; }
 
@@ -90,10 +90,10 @@ public:
 		}
 	}
 
-	auto diagonal() const noexcept -> Vector<BaseType, Dim> { return m_max - m_min; }
+	[[nodiscard]] auto diagonal() const noexcept -> Vector<BaseType, Dim> { return m_max - m_min; }
 
 	// intersection
-	constexpr auto contains(const Vector<BaseType, Dim>& iPoint) const noexcept -> bool {
+	[[nodiscard]] constexpr auto contains(const Vector<BaseType, Dim>& iPoint) const noexcept -> bool {
 		for (std::size_t i = 0; i < Dim; i++) {
 			if (m_min[i] > iPoint[i] || m_max[i] < iPoint[i])
 				return false;
@@ -101,7 +101,7 @@ public:
 		return true;
 	}
 
-	constexpr auto intersect(const Box& iOther) const noexcept -> bool {
+	[[nodiscard]] constexpr auto intersect(const Box& iOther) const noexcept -> bool {
 		for (std::size_t i = 0; i < Dim; i++) {
 			if (m_min[i] > iOther.m_max[i] || m_max[i] < iOther.m_min[i])
 				return false;

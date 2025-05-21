@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "math/trigonometry.h"
 #include "core/Core.h"
+#include "math/trigonometry.h"
 #include "renderer/Camera.h"
 
 namespace owl::scene {
@@ -126,14 +126,14 @@ public:
 	 * @brief Get the perspective vertical field of vew.
 	 * @return The perspective vertical field of view.
 	 */
-	[[nodiscard]] auto getPerspectiveVerticalFOV() const -> float { return m_perspectiveFOV; }
+	[[nodiscard]] auto getPerspectiveVerticalFov() const -> float { return m_perspectiveFov; }
 
 	/**
 	 * @brief Defines perspective vertical field of view.
 	 * @param[in] iVerticalFov New vertical field of view.
 	 */
-	void setPerspectiveVerticalFOV(const float iVerticalFov) {
-		m_perspectiveFOV = iVerticalFov;
+	void setPerspectiveVerticalFov(const float iVerticalFov) {
+		m_perspectiveFov = iVerticalFov;
 		recalculateProjection();
 	}
 
@@ -176,7 +176,7 @@ private:
 	ProjectionType m_projectionType = ProjectionType::Orthographic;
 
 	/// Perspective field of view.
-	float m_perspectiveFOV = math::radians(45.0f);
+	float m_perspectiveFov = math::radians(45.0f);
 	/// Perspective near clip distance.
 	float m_perspectiveNear = 0.01f;
 	/// Perspective far clip distance.

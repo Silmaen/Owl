@@ -9,14 +9,14 @@
 
 namespace drone::panels::gauge {
 namespace {
-const char* texName = "textures/GaugeCover";
+auto g_TexName = "textures/GaugeCover";
 }// namespace
 
 BaseGauge::BaseGauge() {
 	auto textureLib = owl::renderer::Renderer::getTextureLibrary();
-	if (!textureLib.exists(texName))
-		textureLib.load(texName);
-	m_coverTexture = textureLib.get(texName);
+	if (!textureLib.exists(g_TexName))
+		textureLib.load(g_TexName);
+	m_coverTexture = textureLib.get(g_TexName);
 }
 
 BaseGauge::~BaseGauge() = default;

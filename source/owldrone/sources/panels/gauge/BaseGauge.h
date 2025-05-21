@@ -58,9 +58,9 @@ public:
 
 	/**
 	 * @brief Define the scale of the gauge
-	 * @param sc New gauge's scale.
+	 * @param iScale New gauge's scale.
 	 */
-	void setScale(const owl::math::vec3& sc) { m_scale = sc; }
+	void setScale(const owl::math::vec3& iScale) { m_scale = iScale; }
 
 	/**
 	 * @brief Read the gauge's scale.
@@ -70,9 +70,9 @@ public:
 
 	/**
 	 * @brief Define the position of the gauge
-	 * @param pos New gauge's position.
+	 * @param iPosition New gauge's position.
 	 */
-	void setPosition(const owl::math::vec3& pos) { m_position = pos; }
+	void setPosition(const owl::math::vec3& iPosition) { m_position = iPosition; }
 
 	/**
 	 * @brief Read the gauge's position.

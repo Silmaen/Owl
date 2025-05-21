@@ -34,19 +34,19 @@
       "image": "builder-gcc12-ubuntu2204"
     },
     "linux-clang-release": {
-      "image": "builder-clang15-ubuntu2204"
+      "image": "builder-clang18-ubuntu2404"
     },
     "linux-clang-debug": {
-      "image": "builder-clang15-ubuntu2204"
+      "image": "builder-clang18-ubuntu2404"
     },
     "package-engine": {
-      "image": "builder-clang15-ubuntu2204"
+      "image": "builder-clang18-ubuntu2404"
     },
     "package-app-nest": {
-      "image": "builder-clang15-ubuntu2204"
+      "image": "builder-clang18-ubuntu2404"
     },
     "package-app-drone": {
-      "image": "builder-clang15-ubuntu2204"
+      "image": "builder-clang18-ubuntu2404"
     }
   }
 }

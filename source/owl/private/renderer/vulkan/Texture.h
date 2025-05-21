@@ -15,7 +15,7 @@ namespace owl::renderer::vulkan {
 /**
  * @brief Specialized class managing Vulkan texture.
  */
-class OWL_API Texture2D final : public ::owl::renderer::Texture2D {
+class OWL_API Texture2D final : public renderer::Texture2D {
 public:
 	Texture2D(const Texture2D&) = default;
 	Texture2D(Texture2D&&) = default;

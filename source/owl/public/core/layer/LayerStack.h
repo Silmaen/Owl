@@ -18,15 +18,15 @@ namespace owl::core::layer {
 class OWL_API LayerStack final {
 public:
 	/// Type for the list of Layer.
-	using layerList = std::vector<shared<Layer>>;
+	using LayerList = std::vector<shared<Layer>>;
 	/// Iterator in the layer list.
-	using iterator = layerList::iterator;
+	using iterator = LayerList::iterator;
 	/// Const iterator in the layer list.
-	using const_iterator = layerList::const_iterator;
+	using const_iterator = LayerList::const_iterator;
 	/// Reverse iterator in the layer list.
-	using reverse_iterator = layerList::reverse_iterator;
+	using reverse_iterator = LayerList::reverse_iterator;
 	/// Const reverse iterator in the layer list.
-	using const_reverse_iterator = layerList::const_reverse_iterator;
+	using const_reverse_iterator = LayerList::const_reverse_iterator;
 	LayerStack(const LayerStack&) = delete;
 	LayerStack(LayerStack&&) = delete;
 	auto operator=(const LayerStack&) -> LayerStack& = delete;
@@ -121,7 +121,7 @@ public:
 
 private:
 	/// The layers.
-	layerList m_layers;
+	LayerList m_layers;
 	/// The inserting index.
 	unsigned int m_layerInsertIndex = 0;
 };

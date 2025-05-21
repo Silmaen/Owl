@@ -13,7 +13,7 @@ namespace drone::panels {
 /**
  * @brief Class Viewport
  */
-class Viewport : public BasePanel {
+class Viewport final: public BasePanel {
 public:
 	/**
 	 * @brief Constructor.

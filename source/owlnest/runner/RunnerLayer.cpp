@@ -98,7 +98,6 @@ void RunnerLayer::onAttach() {
 	if (const scene::SceneSerializer sc(m_activeScene); !sc.deserialize(m_config.firstScene)) {
 		OWL_CORE_ERROR("Failed to load first scene")
 		app.close();
-		return;
 	}
 }
 

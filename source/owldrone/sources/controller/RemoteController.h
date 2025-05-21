@@ -18,9 +18,9 @@ class RemoteController final {
 public:
 	/**
 	 * @brief Constructor.
-	 * @param motorNumber The number of motor in the device.
+	 * @param iMotorNumber The number of motor in the device.
 	 */
-	explicit RemoteController(size_t motorNumber = 4);
+	explicit RemoteController(size_t iMotorNumber = 4);
 
 	/**
 	 * @brief Destructor.
@@ -80,33 +80,33 @@ public:
 
 	/**
 	 * @brief Defines the horizontal velocity.
-	 * @param velocity The horizontal velocity.
+	 * @param iVelocity The horizontal velocity.
 	 */
-	void setHorizontalVelocity(float velocity) { m_horizontalVelocity = velocity; }
+	void setHorizontalVelocity(const float iVelocity) { m_horizontalVelocity = iVelocity; }
 
 	/**
 	 * @brief Defines the vertical velocity.
-	 * @param velocity The vertical velocity.
+	 * @param iVelocity The vertical velocity.
 	 */
-	void setVerticalVelocity(float velocity) { m_verticalVelocity = velocity; }
+	void setVerticalVelocity(const float iVelocity) { m_verticalVelocity = iVelocity; }
 
 	/**
 	 * @brief Defines the current m_altitude.
-	 * @param alt The m_altitude.
+	 * @param iAltitude The m_altitude.
 	 */
-	void setAltitude(float alt) { m_altitude = alt; }
+	void setAltitude(const float iAltitude) { m_altitude = iAltitude; }
 
 	/**
 	 * @brief Defines the rotation vector.
-	 * @param rot The rotation vector.
+	 * @param iRotation The rotation vector.
 	 */
-	void setRotation(const owl::math::vec3& rot) { m_rotations = rot; }
+	void setRotation(const owl::math::vec3& iRotation) { m_rotations = iRotation; }
 
 	/**
 	 * @brief Defines the motor rates.
-	 * @param mot The motor rates.
+	 * @param iMotorRates The motor rates.
 	 */
-	void setMotorRates(const std::vector<float>& mot);
+	void setMotorRates(const std::vector<float>& iMotorRates);
 
 private:
 	/// The horizontal velocity.

@@ -97,7 +97,7 @@ Application::Application(AppParams iAppParams) : m_initParams{std::move(iAppPara
 	// create main window
 	{
 		mp_appWindow = input::Window::create({
-				.winType = m_initParams.isDummy ? input::Type::Null : input::Type::GLFW,
+				.winType = m_initParams.isDummy ? input::Type::Null : input::Type::Glfw,
 				.title = m_initParams.name,
 				.iconPath =
 						m_initParams.icon.empty()
@@ -252,8 +252,8 @@ void Application::run() {
 
 #if OWL_TRACKER_VERBOSITY >= 3
 		{
-			const auto& memState = debug::TrackerAPI::checkState();
-			if (memState.allocationCalls > memState.deallocationCalls && frameCount > 0) {
+			if (const auto& memState = debug::TrackerAPI::checkState();
+				memState.allocationCalls > memState.deallocationCalls && frameCount > 0) {
 				OWL_CORE_TRACE("----------------------------------")
 				OWL_CORE_TRACE("Frame Leak Detected")
 				OWL_CORE_TRACE("-----------------------------------")

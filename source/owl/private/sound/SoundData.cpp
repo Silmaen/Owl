@@ -16,6 +16,7 @@
 namespace owl::sound {
 
 SoundData::SoundData(const Specification& iSpec) : m_specification{iSpec} {}
+SoundData::SoundData(Specification&& iSpec) : m_specification{std::move(iSpec)} {}
 
 SoundData::~SoundData() = default;
 
@@ -23,14 +24,14 @@ auto SoundData::create(const Specification& iSpec) -> shared<SoundData> {
 	switch (SoundCommand::getApi()) {
 		case SoundAPI::Type::Null:
 			return mkShared<null::SoundData>(iSpec);
-		case SoundAPI::Type::OpenAL:
+		case SoundAPI::Type::OpenAl:
 			return mkShared<openal::SoundData>(iSpec);
 	}
 	OWL_CORE_ERROR("Unknown Sound API Type!")
 	return nullptr;
 }
-auto SoundData::create(const std::filesystem::path& iSpec) -> shared<SoundData> {
-	return create(Specification{.file = iSpec});
+auto SoundData::create(const std::filesystem::path& iPath) -> shared<SoundData> {
+	return create(Specification{.file = iPath});
 }
 
 }// namespace owl::sound

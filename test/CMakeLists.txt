@@ -17,43 +17,43 @@ foreach (child ${children})
         if ("${SRCS} " STREQUAL " ")
             message(STATUS "Test folder '${child}' is empty, skipping")
         else ()
-            add_executable(${PRJPREFIX_LOWER}_${child}_unit_test ${SRCS})
-            set_target_properties(${PRJPREFIX_LOWER}_${child}_unit_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-            target_include_directories(${PRJPREFIX_LOWER}_${child}_unit_test PUBLIC test_helper)
-            target_link_libraries(${PRJPREFIX_LOWER}_${child}_unit_test GTest::gtest GTest::gtest_main)
-            target_link_libraries(${PRJPREFIX_LOWER}_${child}_unit_test ${ENGINE_NAME})
-            target_link_libraries(${PRJPREFIX_LOWER}_${child}_unit_test ${ENGINE_NAME}Private)
-            target_link_libraries(${PRJPREFIX_LOWER}_${child}_unit_test Owl_BaseTest)
-            add_test(${PRJPREFIX_LOWER}_${child}_UTests ${CMAKE_BINARY_DIR}/bin/${PRJPREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml)
-            set_tests_properties(${PRJPREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 3600)
-            if (${PRJPREFIX}_BUILD_SHARED AND WIN32)
-                add_custom_command(TARGET ${PRJPREFIX_LOWER}_${child}_unit_test POST_BUILD
+            add_executable(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${SRCS})
+            set_target_properties(${PROJECT_PREFIX_LOWER}_${child}_unit_test PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+            target_include_directories(${PROJECT_PREFIX_LOWER}_${child}_unit_test PUBLIC test_helper)
+            target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test GTest::gtest GTest::gtest_main)
+            target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${ENGINE_NAME})
+            target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${ENGINE_NAME}Private)
+            target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test Owl_BaseTest)
+            add_test(${PROJECT_PREFIX_LOWER}_${child}_UTests ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml)
+            set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 3600)
+            if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
+                add_custom_command(TARGET ${PROJECT_PREFIX_LOWER}_${child}_unit_test POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GTest_DIR}/../../../bin/libgtest$<$<CONFIG:Debug>:d>.dll" "${CMAKE_BINARY_DIR}/bin"
                         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GTest_DIR}/../../../bin/libgtest_main$<$<CONFIG:Debug>:d>.dll" "${CMAKE_BINARY_DIR}/bin"
                         COMMAND_EXPAND_LISTS
                 )
             endif ()
 
-            add_dependencies(All_Tests ${PRJPREFIX_LOWER}_${child}_unit_test)
+            add_dependencies(All_Tests ${PROJECT_PREFIX_LOWER}_${child}_unit_test)
             add_custom_command(TARGET All_Tests POST_BUILD
-                    COMMAND ${PRJPREFIX_LOWER}_${child}_unit_test
+                    COMMAND ${PROJECT_PREFIX_LOWER}_${child}_unit_test
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
         endif ()
     endif ()
 endforeach ()
 
-if (${PRJPREFIX}_ENABLE_COVERAGE)
+if (${PROJECT_PREFIX}_ENABLE_COVERAGE)
 
     set(COVERAGE_RESULT_DIR ${CMAKE_BINARY_DIR}/Coverage)
     file(MAKE_DIRECTORY ${COVERAGE_RESULT_DIR})
-    if ("d${${PRJPREFIX}_GCOV}" STREQUAL "d")
-        if (${PRJPREFIX}_COMPILER_GCC)
+    if ("d${${PROJECT_PREFIX}_GCOV}" STREQUAL "d")
+        if (${PROJECT_PREFIX}_COMPILER_GCC)
             set(COVERAGE_GCOV "gcov")
-        elseif (${PRJPREFIX}_COMPILER_CLANG)
+        elseif (${PROJECT_PREFIX}_COMPILER_CLANG)
             set(COVERAGE_GCOV "llvm gcov")
         endif ()
     else ()
-        set(COVERAGE_GCOV "${${PRJPREFIX}_GCOV}")
+        set(COVERAGE_GCOV "${${PROJECT_PREFIX}_GCOV}")
     endif ()
     set(CMD ${GCOVR} -r ${CMAKE_SOURCE_DIR} -o ${COVERAGE_RESULT_DIR}/index.html --gcov-executable ${COVERAGE_GCOV} .)
 
