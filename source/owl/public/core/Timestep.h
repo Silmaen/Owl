@@ -11,7 +11,7 @@
 #include "Core.h"
 
 namespace owl::core {
-constexpr float sMillis{1000.f};
+constexpr float g_Millis{1000.f};
 /**
  * @brief Time Steps.
  */
@@ -20,7 +20,7 @@ public:
 	/// The type of clock.
 	using clock = std::chrono::steady_clock;
 	/// The type of time point.
-	using timePoint = clock::time_point;
+	using time_point = clock::time_point;
 	/// The tipe of duration.
 	using duration = clock::duration;
 
@@ -36,7 +36,7 @@ public:
 	 * @brief Time step update.
 	 */
 	void update() {
-		const timePoint tp = clock::now();
+		const time_point tp = clock::now();
 		m_delta = tp - m_lastCall;
 		m_lastCall = tp;
 		m_statFps[m_index] = getFps();
@@ -61,7 +61,7 @@ public:
 	 * @return Seconds elapsed.
 	 */
 	[[nodiscard]] auto getSeconds() const -> float {
-		return static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(m_delta).count()) / sMillis;
+		return static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(m_delta).count()) / g_Millis;
 	}
 
 	/**
@@ -69,14 +69,14 @@ public:
 	 * @return Milliseconds elapsed.
 	 */
 	[[nodiscard]] auto getMilliseconds() const -> float {
-		return static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(m_delta).count()) / sMillis;
+		return static_cast<float>(std::chrono::duration_cast<std::chrono::microseconds>(m_delta).count()) / g_Millis;
 	}
 
 	/**
 	 * @brief Get the mean number of update call in one second.
 	 * @return The Frame per second number.
 	 */
-	[[nodiscard]] auto getFps() const -> float { return sMillis / getMilliseconds(); }
+	[[nodiscard]] auto getFps() const -> float { return g_Millis / getMilliseconds(); }
 
 	/**
 	 * @brief Get the mean number of update call in one second.
@@ -94,11 +94,11 @@ public:
 	 * @brief Get the current time point.
 	 * @return The current time point.
 	 */
-	[[nodiscard]] auto getTimePoint() const -> const timePoint& { return m_lastCall; }
+	[[nodiscard]] auto getTimePoint() const -> const time_point& { return m_lastCall; }
 
 private:
 	/// Last update call point.
-	timePoint m_lastCall;
+	time_point m_lastCall;
 	/// The delta with the previous update call.
 	duration m_delta{};
 	/// Number of the current frame.

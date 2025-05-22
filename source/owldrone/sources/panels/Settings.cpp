@@ -33,10 +33,10 @@ void Settings::onRender() {
 			settings.useCamera = val && (nbCam > 0);
 		}
 		if (val && (nbCam > 0)) {
-			auto Cam = camSys.getCurrentCameraName();
+			auto cam = camSys.getCurrentCameraName();
 			int32_t sCam = camSys.getCurrentCameraId();
 			const int32_t cCam = sCam;
-			if (ImGui::BeginCombo("Camera", fmt::format("Camera {}: {}", sCam, Cam).c_str())) {
+			if (ImGui::BeginCombo("Camera", fmt::format("Camera {}: {}", sCam, cam).c_str())) {
 				int32_t i = 0;
 				for (const auto& camera: cameras) {
 					const bool isSelected = (i == cCam);
@@ -94,7 +94,7 @@ void Settings::onRender() {
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Refresh List")) {
-				drone::IO::CameraSystem::get().actualiseList();
+				IO::CameraSystem::get().actualiseList();
 			}
 		}
 	}

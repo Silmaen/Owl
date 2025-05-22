@@ -7,8 +7,8 @@
  */
 
 #pragma once
-#include "input/KeyCodes.h"
 #include "event/Event.h"
+#include "input/KeyCodes.h"
 
 namespace owl::event {
 

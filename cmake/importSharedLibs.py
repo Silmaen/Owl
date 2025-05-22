@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Script to import the Shared libs into the binary dir.
+"""
 from pathlib import Path
 from shutil import copy2
 from sys import stderr
@@ -8,11 +11,22 @@ root_path = script_path.parent
 
 
 def list_missing_so(binary: Path, has_missing: bool):
+    """
+    List missing and external shared object dependencies for a given binary.
+
+    :param binary: The binary file to inspect.
+    :param has_missing: Whether to check for missing dependencies.
+    :return: A tuple containing a list of missing shared objects and a list of external shared objects.
+    """
     from subprocess import run, STDOUT, PIPE
+
     try:
         out = run(f"ldd {binary}", shell=True, stdout=PIPE, stderr=STDOUT)
         if out.returncode != 0:
-            print(f"Error while searching dependencies: {out.returncode}\n{out.stdout.decode()}", file=stderr)
+            print(
+                f"Error while searching dependencies: {out.returncode}\n{out.stdout.decode()}",
+                file=stderr,
+            )
             exit(1)
         lines = out.stdout.decode().replace("\t", "").splitlines(keepends=False)
         missing_so = []
@@ -36,6 +50,12 @@ def list_missing_so(binary: Path, has_missing: bool):
 
 
 def list_available_so(paths: str):
+    """
+    List all available shared object files (.so) in the provided paths.
+
+    :param paths: A semicolon-separated string of paths to search for shared objects.
+    :return: A list of Path objects pointing to available shared object files.
+    """
     so_list = []
     try:
         for path in [Path(p) for p in paths.split(";")]:
@@ -48,10 +68,21 @@ def list_available_so(paths: str):
 
 
 def main():
+    """
+    Main function to import missing shared libraries into the binary directory.
+
+    Parses command-line arguments, checks for missing dependencies, and copies the required
+    shared libraries from the provided library paths to the binary's directory.
+    """
     from argparse import ArgumentParser
+
     parser = ArgumentParser()
-    parser.add_argument("binary", type=str, help="The binary file to search for dependency")
-    parser.add_argument("lib_list", type=str, help="A string in the format of CMAKE_MODULE_PATH")
+    parser.add_argument(
+        "binary", type=str, help="The binary file to search for dependency"
+    )
+    parser.add_argument(
+        "lib_list", type=str, help="A string in the format of CMAKE_MODULE_PATH"
+    )
     args = parser.parse_args()
 
     binary_file = Path(args.binary).resolve()
@@ -86,7 +117,10 @@ def main():
                         copy2(av, binary_dir / miss)
                         print(f" Importing {miss} from {av}")
                     except Exception as err:
-                        print(f"ERROR while copy {av} to {binary_dir / miss} : {err}", file=stderr)
+                        print(
+                            f"ERROR while copy {av} to {binary_dir / miss} : {err}",
+                            file=stderr,
+                        )
                         exit(1)
                     go_on = True
                     found = True
@@ -99,7 +133,10 @@ def main():
                 copy2(ext[1], binary_dir / ext[0])
                 print(f" Importing {ext[0]} from {ext[1]}")
             except Exception as err:
-                print(f"ERROR while copy {ext[1]} to {binary_dir / ext[0]} : {err}", file=stderr)
+                print(
+                    f"ERROR while copy {ext[1]} to {binary_dir / ext[0]} : {err}",
+                    file=stderr,
+                )
                 exit(1)
     missing, extern = list_missing_so(binary_file, has_missing)
     if len(missing) + len(extern) == 0:

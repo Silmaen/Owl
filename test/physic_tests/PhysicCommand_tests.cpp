@@ -11,7 +11,7 @@ using namespace owl::physic;
 using namespace owl::scene;
 
 TEST(PhysicCommand, Creation) {
-	owl::core::Log::init(owl::core::Log::Level::Off);
+	Log::init(Log::Level::Off);
 	Scene scene;
 	// create a scene with physic
 
@@ -53,12 +53,12 @@ TEST(PhysicCommand, Creation) {
 
 	PhysicCommand::destroy();
 	EXPECT_FALSE(PhysicCommand::isInitialized());
-	owl::core::Log::invalidate();
+	Log::invalidate();
 }
 
 
 TEST(PhysicCommand, badImpulse) {
-	Log::init(owl::core::Log::Level::Off);
+	Log::init(Log::Level::Off);
 	// Single body scene...
 	Scene scene;
 	auto b1 = scene.createEntity("body1");
@@ -94,7 +94,7 @@ TEST(PhysicCommand, badImpulse) {
 
 
 TEST(PhysicCommand, Impulse) {
-	Log::init(owl::core::Log::Level::Off);
+	Log::init(Log::Level::Off);
 	// Single body scene...
 	Scene scene;
 	auto b1 = scene.createEntity("body1");

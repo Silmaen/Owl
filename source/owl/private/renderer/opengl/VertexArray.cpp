@@ -64,7 +64,7 @@ void VertexArray::unbind() {
 	glBindVertexArray(0);
 }
 
-void VertexArray::addVertexBuffer(const vertexBuf& iVertexBuffer) {
+void VertexArray::addVertexBuffer(const VertexBuf& iVertexBuffer) {
 	OWL_PROFILE_FUNCTION()
 
 	OWL_CORE_ASSERT(!iVertexBuffer->getLayout().getElements().empty(), "Vertex Buffer has no layout!")
@@ -125,7 +125,7 @@ void VertexArray::addVertexBuffer(const vertexBuf& iVertexBuffer) {
 	m_vertexBuffers.push_back(iVertexBuffer);
 }
 
-void VertexArray::setIndexBuffer(const indexBuf& iIndexBuffer) {
+void VertexArray::setIndexBuffer(const IndexBuf& iIndexBuffer) {
 	OWL_PROFILE_FUNCTION()
 
 	glBindVertexArray(m_rendererId);

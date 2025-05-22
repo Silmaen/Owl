@@ -71,8 +71,8 @@ public:
 	 * @return Trhe transformation matrix.
 	 */
 	auto operator()() const -> mat4;
-	// NOLINTEND(google-explicit-constructor)
 	// NOLINTEND(hicpp-explicit-conversions)
+	// NOLINTEND(google-explicit-constructor)
 
 	// Accessors.
 	[[nodiscard]] constexpr auto translation() const -> const vec3& { return m_translation; }

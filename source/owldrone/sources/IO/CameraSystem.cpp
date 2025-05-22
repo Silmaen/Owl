@@ -17,7 +17,7 @@ CameraSystem::~CameraSystem() = default;
 void CameraSystem::onUpdate(const owl::core::Timestep& iTs) {
 	++m_frameCount;
 	auto& cameraManager = owl::input::video::Manager::get();
-	auto& settings = IO::DroneSettings::get();
+	auto& settings = DroneSettings::get();
 
 	// read image from camera
 	if (m_frameCount % m_frameCheck == 0) {
@@ -63,7 +63,7 @@ void CameraSystem::resize(const owl::math::vec2ui& iSize) {
 	m_size = iSize;
 	m_frame.reset();
 	m_frame = owl::renderer::Texture2D::create(
-			{.size = m_size, .format = owl::renderer::ImageFormat::RGB8, .generateMips = false});
+			{.size = m_size, .format = owl::renderer::ImageFormat::Rgb8, .generateMips = false});
 }
 
 // NOLINTBEGIN(readability-convert-member-functions-to-static)

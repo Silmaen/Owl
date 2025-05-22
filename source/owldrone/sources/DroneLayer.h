@@ -46,21 +46,21 @@ private:
 	[[nodiscard]] auto isConnected() const -> bool;
 	void toggleConnect();
 
-	bool connected = false;
-	bool showStats = true;
-	bool showFakeDrone = true;
+	bool m_connected = false;
+	bool m_showStats = true;
+	bool m_showFakeDrone = true;
 
 	enum struct DisplayMode : uint8_t { Settings, Gauges };
 
-	DisplayMode mode = DisplayMode::Gauges;
+	DisplayMode m_mode = DisplayMode::Gauges;
 
 	// remote controller
-	owl::shared<controller::RemoteController> rc;
+	owl::shared<controller::RemoteController> m_rc;
 
 	// Panels
-	owl::shared<panels::BasePanel> gauges;
-	owl::shared<panels::BasePanel> information;
-	owl::shared<panels::BasePanel> settings;
-	owl::shared<panels::BasePanel> viewport;
+	owl::shared<panels::BasePanel> m_gauges;
+	owl::shared<panels::BasePanel> m_information;
+	owl::shared<panels::BasePanel> m_settings;
+	owl::shared<panels::BasePanel> m_viewport;
 };
 }// namespace drone

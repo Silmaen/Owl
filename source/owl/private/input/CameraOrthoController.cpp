@@ -14,9 +14,9 @@ namespace owl::input {
 
 namespace {
 
-constexpr float sHalfTurn{180.f};
-constexpr float sFullTurn{360.f};
-constexpr float sZoomScroll{0.25f};
+constexpr float g_HalfTurn{180.f};
+constexpr float g_FullTurn{360.f};
+constexpr float g_ZoomScroll{0.25f};
 
 }// namespace
 
@@ -48,10 +48,10 @@ void CameraOrthoController::onUpdate(const core::Timestep& iTimeStep) {
 			m_cameraRotation += m_cameraRotationSpeed * delta;
 		if (Input::isKeyPressed(key::E))
 			m_cameraRotation -= m_cameraRotationSpeed * delta;
-		if (m_cameraRotation > sHalfTurn)
-			m_cameraRotation -= sFullTurn;
-		else if (m_cameraRotation <= -sHalfTurn)
-			m_cameraRotation += sFullTurn;
+		if (m_cameraRotation > g_HalfTurn)
+			m_cameraRotation -= g_FullTurn;
+		else if (m_cameraRotation <= -g_HalfTurn)
+			m_cameraRotation += g_FullTurn;
 		m_camera.setRotation(m_cameraRotation);
 	}
 	m_camera.setPosition(m_cameraPosition);
@@ -63,16 +63,16 @@ void CameraOrthoController::onEvent(event::Event& ioEvent) {
 
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::MouseScrolledEvent>(
-			[this](auto&& PH1) -> bool { return onMouseScrolled(std::forward<decltype(PH1)>(PH1)); });
+			[this]<typename T0>(T0&& ioArgs) -> bool { return onMouseScrolled(std::forward<T0>(ioArgs)); });
 	dispatcher.dispatch<event::WindowResizeEvent>(
-			[this](auto&& PH1) -> bool { return onWindowResized(std::forward<decltype(PH1)>(PH1)); });
+			[this]<typename T0>(T0&& ioArgs) -> bool { return onWindowResized(std::forward<T0>(ioArgs)); });
 }
 
 auto CameraOrthoController::onMouseScrolled(const event::MouseScrolledEvent& iEvent) -> bool {
 	OWL_PROFILE_FUNCTION()
 
-	m_zoomLevel -= iEvent.getYOff() * sZoomScroll;
-	m_zoomLevel = std::max(m_zoomLevel, sZoomScroll);
+	m_zoomLevel -= iEvent.getYOff() * g_ZoomScroll;
+	m_zoomLevel = std::max(m_zoomLevel, g_ZoomScroll);
 	m_camera.setProjection(-m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel, -m_zoomLevel, m_zoomLevel);
 	return false;
 }

@@ -26,7 +26,7 @@ struct ButtonBarData : WidgetData {
 /**
  * @brief Class describing a button bar gui widget.
  */
-class OWL_API ButtonBar : public Widget<ButtonBarData> {
+class OWL_API ButtonBar final : public Widget<ButtonBarData> {
 public:
 	/**
 	 * @brief Default destructor.

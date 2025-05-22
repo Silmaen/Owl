@@ -49,7 +49,6 @@ public:
 	 */
 	void frame(const core::Timestep& iTs) override;
 
-private:
 };
 
 }// namespace owl::sound::null

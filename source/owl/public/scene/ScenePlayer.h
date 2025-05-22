@@ -57,7 +57,6 @@ public:
 	/// If the player can jump.
 	bool canJump = true;
 
-private:
 };
 
 }// namespace owl::scene

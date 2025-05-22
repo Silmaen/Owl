@@ -13,7 +13,7 @@
 
 namespace owl::gui {
 
-BasePanel::BasePanel(std::string&& iName) : m_name{std::move(iName)} {};
+BasePanel::BasePanel(std::string&& iName) : m_name{std::move(iName)} {}
 
 BasePanel::~BasePanel() = default;
 

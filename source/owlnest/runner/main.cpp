@@ -24,15 +24,15 @@ public:
 };
 OWL_DIAG_POP
 
-auto core::createApplication(int argc, char** argv) -> shared<Application> {
+auto core::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 	return mkShared<OwlNest>(AppParams{
-			.args = argv,
+			.args = iArgv,
 			.name = "Owl Runner",
 #ifdef OWL_ASSETS_LOCATION
 			.assetsPattern = OWL_ASSETS_LOCATION,
 #endif
 			.icon = "icons/logo_owl_icon.png",
-			.argCount = argc,
+			.argCount = iArgc,
 	});
 }
 

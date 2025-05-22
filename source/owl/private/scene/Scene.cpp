@@ -86,7 +86,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	}
 
 	// Copy components (except IDComponent and TagComponent)
-	copyComponentFromTuple(dstSceneRegistry, srcSceneRegistry, enttMap, component::copiableComponents{});
+	copyComponentFromTuple(dstSceneRegistry, srcSceneRegistry, enttMap, component::CopiableComponents{});
 
 	return newScene;
 }
@@ -287,7 +287,7 @@ auto Scene::getAllEntities() const -> std::vector<Entity> {
 auto Scene::duplicateEntity(const Entity& iEntity) -> Entity {
 	const std::string name = iEntity.getName();
 	Entity newEntity = createEntity(name);
-	copyComponentIfExistsFromTuple(newEntity, iEntity, component::copiableComponents{});
+	copyComponentIfExistsFromTuple(newEntity, iEntity, component::CopiableComponents{});
 	return newEntity;
 }
 
@@ -308,7 +308,7 @@ auto Scene::getPrimaryPlayer() -> Entity {
 }
 
 auto Scene::getEntityCount() const -> uint32_t {
-	auto* st = registry.storage<Entity>();
+	const auto* st = registry.storage<Entity>();
 	if (st == nullptr)
 		return 0;
 	return static_cast<uint32_t>(st->size());

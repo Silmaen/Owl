@@ -16,7 +16,7 @@ namespace owl::scene {
 /**
  * @brief Class describing a trigger in the scene.
  */
-class OWL_API SceneTrigger {
+class OWL_API SceneTrigger final {
 public:
 	/**
 	 * @brief Default constructor.
@@ -25,7 +25,7 @@ public:
 	/**
 	 * @brief Default destructor.
 	 */
-	virtual ~SceneTrigger();
+	~SceneTrigger();
 	/**
 	 * @brief Default copy constructor.
 	 */
@@ -57,13 +57,13 @@ public:
 		Death,/// Player loose.
 	};
 	/// The type of trigger.
-	TriggerType type;
+	TriggerType type = TriggerType::Victory;
 
 	/**
 	 * @brief Check if triggered.
 	 * @return True if triggered.
 	 */
-	auto isTriggered() const -> bool { return m_triggered; }
+	[[nodiscard]] auto isTriggered() const -> bool { return m_triggered; }
 
 private:
 	/// If triggered.

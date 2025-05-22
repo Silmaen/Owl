@@ -9,12 +9,10 @@
 
 #include "scene/SceneBody.h"
 
-namespace owl {
-namespace scene {
+namespace owl::scene {
 
 SceneBody::SceneBody() = default;
 
 SceneBody::~SceneBody() = default;
 
-}// namespace scene
-}// namespace owl
+}// namespace owl::scene

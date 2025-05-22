@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Script to configure, build, install, and package a project using CMake presets.
+"""
 
 from sys import version_info as py_version, stderr
 
@@ -28,6 +31,12 @@ env.pop('CPATH', None)
 
 
 def get_target_arch(cmake_preset: str):
+    """
+    Get the target architecture from the cmake preset name.
+
+    :param cmake_preset: The cmake preset name.
+    :return: Architecture string.
+    """
     if "aarch64" in cmake_preset:
         return "aarch64"
     return "x64"
@@ -35,7 +44,9 @@ def get_target_arch(cmake_preset: str):
 
 def host_system_introspection():
     """
-    Look into the system
+    Look into the system and set global system_name, architecture, and distribution.
+
+    :return: None
     """
     global system_name, architecture, distribution
     system_name = system().lower()
@@ -80,6 +91,12 @@ def host_system_introspection():
 
 
 def is_mobile_compilation(preset_name: str):
+    """
+    Check if the preset is for mobile compilation.
+
+    :param preset_name: The preset name.
+    :return: True if mobile, False otherwise.
+    """
     if "android" in preset_name:
         return True
     if "ios" in preset_name:
@@ -90,6 +107,7 @@ def is_mobile_compilation(preset_name: str):
 def configure(preset: str, clean: bool):
     """
     Cmake configure with preset.
+
     :param preset: Name of the preset to configure.
     :param clean: If the build dir should be cleaned before build.
     :return: True if success.
@@ -124,7 +142,8 @@ def configure(preset: str, clean: bool):
 
 def build(preset: str, configs: list):
     """
-    Build the preset for the given configs
+    Build the preset for the given configs.
+
     :param preset: the preset to build
     :param configs: the list of configs
     :return: True if OK
@@ -148,7 +167,8 @@ def build(preset: str, configs: list):
 
 def pack(preset: str, configs: list):
     """
-    Create the package the preset for the given configs
+    Create the package for the preset and given configs.
+
     :param preset: the preset to build
     :param configs: the list of configs
     :return: True if OK
@@ -185,7 +205,8 @@ def pack(preset: str, configs: list):
 
 def install(preset: str, configs: list, clean: bool):
     """
-    Do an installation the preset for the given configs
+    Do an installation for the preset and given configs.
+
     :param preset: the preset to build
     :param configs: the list of configs
     :param clean: If the build dir should be cleaned before build.
@@ -218,7 +239,9 @@ def install(preset: str, configs: list, clean: bool):
 
 def main():
     """
-    Main entry point
+    Main entry point for package build.
+
+    :return: None
     """
     global build_hash
     host_system_introspection()

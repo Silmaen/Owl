@@ -16,7 +16,7 @@
  * @brief Concept tha check existence of a conversion function from string to specification.
  */
 template<typename T>
-concept HasStringSpec = requires {
+concept hasStringSpec = requires {
 	{ T::stringToSpecification(std::declval<const std::string&>()) } -> std::same_as<typename T::Specification>;
 };
 
@@ -30,9 +30,9 @@ namespace owl::core::assets {
  * @tparam DataType The underlying data type.
  */
 template<assetDataType DataType>
-class AssetLibrary {
+class AssetLibrary final {
 public:
-	using assetType = Asset<DataType>;
+	using AssetType = Asset<DataType>;
 	/**
 	 * @brief Default constructor.
 	 */
@@ -41,7 +41,7 @@ public:
 	/**
 	 * @brief Default destructor.
 	 */
-	virtual ~AssetLibrary() = default;
+	~AssetLibrary() = default;
 
 	/**
 	 * @brief Default copy constructor.
@@ -68,7 +68,7 @@ public:
 	 * @param[in] iName Name of the asset.
 	 * @param[in] iAsset The asset to add.
 	 */
-	void add(const std::string& iName, shared<DataType>& iAsset) { m_assets.emplace(iName, assetType{iAsset}); }
+	void add(const std::string& iName, shared<DataType>& iAsset) { m_assets.emplace(iName, AssetType{iAsset}); }
 
 	/**
 	 * @brief Load an asset from a file base on name.
@@ -88,7 +88,7 @@ public:
 				return nullptr;
 			}
 			asset = DataType::create(assetFile.value());
-		} else if constexpr (HasStringSpec<DataType>) {
+		} else if constexpr (hasStringSpec<DataType>) {
 			asset = DataType::create(DataType::stringToSpecification(iName));
 		}
 		if (asset == nullptr) {
@@ -133,7 +133,7 @@ public:
 	 * @param[in] iSpec The specifications of the asset.
 	 * @return The asset.
 	 */
-	auto load(const std::string& iName, const typename DataType::Specification& iSpec) -> shared<DataType> {
+	auto load(const std::string& iName, const DataType::Specification& iSpec) -> shared<DataType> {
 		if (exists(iName)) {
 			OWL_CORE_WARN("AssetLibrary::load({}, <Specification>) already exists!", iName)
 			return m_assets[iName].get();
@@ -173,10 +173,10 @@ public:
 	 * @return The list of asset founds.
 	 */
 	[[nodiscard]] auto list() const -> std::vector<std::string> {
-		if (assetType::extensions().empty())
+		if (AssetType::extensions().empty())
 			return {};
 		std::vector<std::string> result;
-		std::vector<std::string> ext = assetType::extensions();
+		std::vector<std::string> ext = AssetType::extensions();
 		// get a list of directory to search.
 		std::list<Application::AssetDirectory> assetDirectories;
 		if (Application::instanced()) {
@@ -200,9 +200,9 @@ public:
 	 * @return Path to the file or nullopt if not found.
 	 */
 	[[nodiscard]] auto find(const std::string& iName) const -> std::optional<std::filesystem::path> {
-		if (assetType::extensions().empty())
+		if (AssetType::extensions().empty())
 			return std::nullopt;
-		std::vector<std::string> ext = assetType::extensions();
+		const std::vector<std::string> ext = AssetType::extensions();
 		// get a list of directory to search.
 		std::list<Application::AssetDirectory> assetDirectories;
 		if (Application::instanced()) {
@@ -250,7 +250,7 @@ public:
 
 private:
 	/// The list of assets.
-	std::unordered_map<std::string, assetType> m_assets;
+	std::unordered_map<std::string, AssetType> m_assets;
 };
 
 }// namespace owl::core::assets

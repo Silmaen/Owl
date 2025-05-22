@@ -19,8 +19,8 @@ DroneSettings::DroneSettings() = default;
 
 DroneSettings::~DroneSettings() = default;
 
-void DroneSettings::readFromFile(const std::filesystem::path& file) {
-	YAML::Node data = YAML::LoadFile(file.string());
+void DroneSettings::readFromFile(const std::filesystem::path& iFile) {
+	YAML::Node data = YAML::LoadFile(iFile.string());
 
 	if (auto appConfig = data["DroneConfig"]; appConfig) {
 		if (appConfig["useCamera"])
@@ -34,7 +34,7 @@ void DroneSettings::readFromFile(const std::filesystem::path& file) {
 	}
 }
 
-void DroneSettings::saveToFile(const std::filesystem::path& file) const {
+void DroneSettings::saveToFile(const std::filesystem::path& iFile) const {
 	YAML::Emitter out;
 	out << YAML::BeginMap;
 	out << YAML::Key << "DroneConfig" << YAML::Value << YAML::BeginMap;
@@ -45,7 +45,7 @@ void DroneSettings::saveToFile(const std::filesystem::path& file) const {
 	out << YAML::EndMap;
 	out << YAML::EndMap;
 
-	std::ofstream fileOut(file);
+	std::ofstream fileOut(iFile);
 	fileOut << out.c_str();
 	fileOut.close();
 }

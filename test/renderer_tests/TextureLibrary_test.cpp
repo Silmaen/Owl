@@ -9,7 +9,7 @@ using namespace owl::renderer;
 using namespace owl::core;
 
 TEST(TextureLibrary, creation) {
-	Log::init(owl::core::Log::Level::Off);
+	Log::init(Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	const AppParams params{.name = "super boby", .renderer = RenderAPI::Type::Null, .hasGui = false, .isDummy = true};
 	auto app = owl::mkShared<Application>(params);
@@ -23,7 +23,7 @@ TEST(TextureLibrary, creation) {
 		EXPECT_NE(lib.get("CheckerBoard"), nullptr);
 	}
 	{
-		auto bob = Texture2D::create(Texture2D::Specification{{1, 1}, ImageFormat::RGB8});
+		auto bob = Texture2D::create(Texture2D::Specification{.size={1, 1}, .format=ImageFormat::Rgb8});
 		lib.add("checkerboard", bob);
 		lib.add("superbob", bob);
 		EXPECT_TRUE(lib.exists("superbob"));

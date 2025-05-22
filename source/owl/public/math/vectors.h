@@ -118,16 +118,16 @@ public:
 	constexpr auto operator!=(const Vector& iOther) const noexcept -> bool { return m_data != iOther.m_data; }
 	/**
 	 * @brief Access to components values.
-	 * @param i The component's number.
+	 * @param iIndex The component's number.
 	 * @return Component's value.
 	 */
-	constexpr auto operator[](std::size_t i) noexcept -> BaseType& { return m_data[i]; }
+	constexpr auto operator[](std::size_t iIndex) noexcept -> BaseType& { return m_data[iIndex]; }
 	/**
 	 * @brief Access to const components values.
-	 * @param i The component's number.
+	 * @param iIndex The component's number.
 	 * @return Const component's value.
 	 */
-	constexpr auto operator[](std::size_t i) const noexcept -> const BaseType& { return m_data[i]; }
+	constexpr auto operator[](std::size_t iIndex) const noexcept -> const BaseType& { return m_data[iIndex]; }
 	constexpr auto x() noexcept -> BaseType& requires(Dim >= 1) { return m_data[0]; }
 
 	constexpr auto y() noexcept -> BaseType& requires(Dim >= 2) { return m_data[1]; }
@@ -160,14 +160,14 @@ public:
 
 	[[nodiscard]] constexpr auto a() const noexcept -> const BaseType& requires(Dim == 4) { return w(); }
 	// iterator
-	constexpr auto begin() noexcept -> typename std::array<BaseType, Dim>::iterator {
+	constexpr auto begin() noexcept -> std::array<BaseType, Dim>::iterator {
 		return m_data.begin();
 	}
-	constexpr auto end() noexcept -> typename std::array<BaseType, Dim>::iterator { return m_data.end(); }
-	[[nodiscard]] constexpr auto begin() const noexcept -> typename std::array<BaseType, Dim>::const_iterator {
+	constexpr auto end() noexcept -> std::array<BaseType, Dim>::iterator { return m_data.end(); }
+	[[nodiscard]] constexpr auto begin() const noexcept -> std::array<BaseType, Dim>::const_iterator {
 		return m_data.begin();
 	}
-	[[nodiscard]] constexpr auto end() const noexcept -> typename std::array<BaseType, Dim>::const_iterator {
+	[[nodiscard]] constexpr auto end() const noexcept -> std::array<BaseType, Dim>::const_iterator {
 		return m_data.end();
 	}
 	// base operator

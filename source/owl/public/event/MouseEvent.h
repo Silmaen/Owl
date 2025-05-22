@@ -7,8 +7,8 @@
  */
 
 #pragma once
-#include "input/MouseCode.h"
 #include "event/Event.h"
+#include "input/MouseCode.h"
 
 namespace owl::event {
 /**

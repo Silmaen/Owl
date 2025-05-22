@@ -82,7 +82,7 @@ auto isDepthFormat(const AttachmentSpecification::Format iFormat) -> bool {
 	return false;
 }
 
-auto FBTextureFormatToGL(const AttachmentSpecification::Format iFormat) -> GLenum {
+auto fbTextureFormatToGl(const AttachmentSpecification::Format iFormat) -> GLenum {
 	switch (iFormat) {
 		case AttachmentSpecification::Format::Rgba8:
 		case AttachmentSpecification::Format::Surface:
@@ -218,7 +218,7 @@ auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const
 void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const int iValue) {
 	OWL_CORE_ASSERT(iAttachmentIndex < m_colorAttachments.size(), "clearAttachment bad attachment index")
 	const auto& spec = m_colorAttachmentSpecifications[iAttachmentIndex];
-	glClearTexImage(m_colorAttachments[iAttachmentIndex], 0, utils::FBTextureFormatToGL(spec.format), GL_INT, &iValue);
+	glClearTexImage(m_colorAttachments[iAttachmentIndex], 0, utils::fbTextureFormatToGl(spec.format), GL_INT, &iValue);
 }
 
 }// namespace owl::renderer::opengl

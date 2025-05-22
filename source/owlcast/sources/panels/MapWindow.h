@@ -46,7 +46,6 @@ public:
 	 */
 	void onUpdate(const core::Timestep& iTimeStep) override;
 
-private:
 };
 
 }// namespace owl::raycaster

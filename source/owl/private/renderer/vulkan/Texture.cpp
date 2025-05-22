@@ -48,7 +48,7 @@ Texture2D::Texture2D(std::filesystem::path iPath) : renderer::Texture2D{std::mov
 		OWL_CORE_ERROR("Vulkan Texture: Impossible to load {}, invalid number of channels {}: must be 3 or 4.")
 		return;
 	}
-	m_specification.format = channels == 4 ? ImageFormat::RGBA8 : ImageFormat::RGB8;
+	m_specification.format = channels == 4 ? ImageFormat::Rgba8 : ImageFormat::Rgb8;
 	m_specification.size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 	setData(data, m_specification.size.surface() * static_cast<uint32_t>(channels));
 
@@ -84,10 +84,10 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 						   stagingBufferMemory);
 	void* dataPixel = nullptr;
 	vkMapMemory(vkc.getLogicalDevice(), stagingBufferMemory, 0, imageSize, 0, &dataPixel);
-	if (m_specification.format == ImageFormat::RGBA8) {
+	if (m_specification.format == ImageFormat::Rgba8) {
 		// input data already in the right format, just copy
 		memcpy(dataPixel, iData, imageSize);
-	} else if (m_specification.format == ImageFormat::RGB8) {
+	} else if (m_specification.format == ImageFormat::Rgb8) {
 		// need to insert alpha chanel.
 		const auto* dataChar = static_cast<uint8_t*>(iData);
 		auto* dataPixelChar = static_cast<uint8_t*>(dataPixel);

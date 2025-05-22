@@ -9,11 +9,11 @@
 
 namespace drone::controller {
 
-RemoteController::RemoteController(size_t motorNumber) { m_motors.resize(motorNumber); }
+RemoteController::RemoteController(size_t iMotorNumber) { m_motors.resize(iMotorNumber); }
 
-void RemoteController::setMotorRates(const std::vector<float>& mot) {
-	if (mot.size() == m_motors.size()) {
-		m_motors = mot;
+void RemoteController::setMotorRates(const std::vector<float>& iMotorRates) {
+	if (iMotorRates.size() == m_motors.size()) {
+		m_motors = iMotorRates;
 	}
 }
 

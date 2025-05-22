@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Script to publish documentation packages to a remote server.
+"""
 from pathlib import Path
 from sys import stderr
 
@@ -11,7 +14,8 @@ dry_run = False
 
 def get_git_hash():
     """
-    Get the git hash without using the git command
+    Get the git hash without using the git command.
+
     :return: The git hash.
     """
     from subprocess import run, PIPE
@@ -34,6 +38,11 @@ def get_git_hash():
 
 
 def get_version():
+    """
+    Get the project version from CMakeLists.txt.
+
+    :return: The version string.
+    """
     with open(root / "CMakeLists.txt", "r") as fb:
         lines = fb.readlines()
         for line in lines:
@@ -44,6 +53,12 @@ def get_version():
 
 
 def get_api_script(url: str):
+    """
+    Download the api.py script from the given URL.
+
+    :param url: The URL to download from.
+    :return: None
+    """
     from requests import get
 
     try:
@@ -66,6 +81,11 @@ def get_api_script(url: str):
 
 
 def parse_args():
+    """
+    Parse command line arguments.
+
+    :return: Dictionary of parsed arguments.
+    """
     from argparse import ArgumentParser
 
     global global_hash, dry_run
@@ -119,6 +139,12 @@ def parse_args():
 
 
 def get_info_from_preset(preset: str):
+    """
+    Get documentation info from the preset name.
+
+    :param preset: The preset name.
+    :return: Dictionary with info.
+    """
     if not preset.startswith("Documentation"):
         print(f"ERROR: {preset} is not a Documentation preset.")
         exit(1)
@@ -131,6 +157,12 @@ def get_info_from_preset(preset: str):
 
 
 def publish_package(info):
+    """
+    Publish the documentation package.
+
+    :param info: Dictionary with info.
+    :return: None
+    """
     from subprocess import run
 
     cmd = f"python3 -u {here}/api.py push"
@@ -151,6 +183,12 @@ def publish_package(info):
 
 
 def check_info(info):
+    """
+    Check the validity of the info dictionary.
+
+    :param info: Dictionary with info.
+    :return: True if valid, False otherwise.
+    """
     good = True
     if info.get("type") in ["no_type", "", None]:
         print(f" *** BAD type {info.get('type')}", file=stderr)
@@ -170,6 +208,11 @@ def check_info(info):
 
 
 def main():
+    """
+    Main entry point for documentation publication.
+
+    :return: None
+    """
     data = parse_args()
     get_api_script(data["url"] + "/static/scripts/api.py")
     info = get_info_from_preset(data["preset"])

@@ -46,7 +46,7 @@ public:
 	auto operator=(MotorRate&&) -> MotorRate& = default;
 
 	/**
-	 * @brief Draw the  gauge back ground.
+	 * @brief Draw the gauge background.
 	 */
 	void drawBack() override;
 
@@ -57,20 +57,20 @@ public:
 
 	/**
 	 * @brief Defines the motor rates.
-	 * @param r Motor rates.
+	 * @param iRates Motor rates.
 	 */
-	void setMotorRates(const std::vector<float>& r) { rates = r; }
+	void setMotorRates(const std::vector<float>& iRates) { m_rates = iRates; }
 
 private:
-	std::vector<float> rates;
+	std::vector<float> m_rates;
 
-	[[nodiscard]] auto rateToAngle(uint8_t idx) const -> float;
+	[[nodiscard]] auto rateToAngle(uint8_t iRate) const -> float;
 
-	owl::shared<owl::renderer::Texture> background = nullptr;
-	owl::shared<owl::renderer::Texture> cursor1 = nullptr;
-	owl::shared<owl::renderer::Texture> cursor2 = nullptr;
-	owl::shared<owl::renderer::Texture> cursor3 = nullptr;
-	owl::shared<owl::renderer::Texture> cursor4 = nullptr;
+	owl::shared<owl::renderer::Texture> m_background = nullptr;
+	owl::shared<owl::renderer::Texture> m_cursor1 = nullptr;
+	owl::shared<owl::renderer::Texture> m_cursor2 = nullptr;
+	owl::shared<owl::renderer::Texture> m_cursor3 = nullptr;
+	owl::shared<owl::renderer::Texture> m_cursor4 = nullptr;
 };
 
 }// namespace drone::panels::gauge

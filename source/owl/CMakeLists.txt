@@ -11,19 +11,19 @@ file(GLOB_RECURSE HDRS_PRIVATE
 )
 add_library(${ENGINE_NAME}Private INTERFACE)
 target_include_directories(${ENGINE_NAME}Private INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/private>)
-target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PRJPREFIX}_ENGINE_BUILD)
-if (${PRJPREFIX}_PACKAGE_ENGINE)
-    target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PRJPREFIX}_PACKAGE_ENGINE)
+target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PROJECT_PREFIX}_ENGINE_BUILD)
+if (${PROJECT_PREFIX}_PACKAGE_ENGINE)
+    target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PROJECT_PREFIX}_PACKAGE_ENGINE)
 endif ()
 target_sources(${ENGINE_NAME}Private INTERFACE ${HDRS_PRIVATE})
 
 # exclude precompiled headers from source
-list(REMOVE_ITEM SRCS ${CMAKE_CURRENT_SOURCE_DIR}/private/${PRJPREFIX_LOWER}pch.cpp)
-list(REMOVE_ITEM HDRS_PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/${PRJPREFIX_LOWER}pch.h)
+list(REMOVE_ITEM SRCS ${CMAKE_CURRENT_SOURCE_DIR}/private/${PROJECT_PREFIX_LOWER}pch.cpp)
+list(REMOVE_ITEM HDRS_PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/private/${PROJECT_PREFIX_LOWER}pch.h)
 # precompiled headers
-if (NOT ${PRJPREFIX}_ENABLE_CLANG_TIDY)
-    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/private/${PRJPREFIX_LOWER}pch.h")
-        target_precompile_headers(${ENGINE_NAME}Private INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/private/${PRJPREFIX_LOWER}pch.h)
+if (NOT ${PROJECT_PREFIX}_ENABLE_CLANG_TIDY)
+    if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/private/${PROJECT_PREFIX_LOWER}pch.h")
+        target_precompile_headers(${ENGINE_NAME}Private INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/private/${PROJECT_PREFIX_LOWER}pch.h)
     endif ()
 endif ()
 
@@ -33,10 +33,10 @@ file(GLOB_RECURSE HDRS_PUBLIC
 
 )
 
-if (${PRJPREFIX}_BUILD_SHARED)
+if (${PROJECT_PREFIX}_BUILD_SHARED)
     add_library(${ENGINE_NAME} SHARED)
-    target_compile_definitions(${ENGINE_NAME} PUBLIC ${PRJPREFIX}_BUILD_SHARED)
-    target_compile_definitions(${ENGINE_NAME} PRIVATE ${PRJPREFIX}_BUILD_DLL)
+    target_compile_definitions(${ENGINE_NAME} PUBLIC ${PROJECT_PREFIX}_BUILD_SHARED)
+    target_compile_definitions(${ENGINE_NAME} PRIVATE ${PROJECT_PREFIX}_BUILD_DLL)
 else ()
     add_library(${ENGINE_NAME} STATIC)
     set_target_properties(${ENGINE_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
@@ -132,20 +132,20 @@ message(STATUS "Found VulkanUtilityLibrary version ${VulkanLoader_VERSION} @ ${V
 target_link_libraries(${ENGINE_NAME} PRIVATE Vulkan::LayerSettings)
 target_link_libraries(${ENGINE_NAME} PRIVATE Vulkan::UtilityHeaders)
 # Vulkan layers
-if (${PRJPREFIX}_DEFINE_VULKAN_LAYERS)
-    if (${PRJPREFIX}_PLATFORM_WINDOWS)
-        set(${PRJPREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/bin)
-        set(${PRJPREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/bin)
+if (${PROJECT_PREFIX}_DEFINE_VULKAN_LAYERS)
+    if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
+        set(${PROJECT_PREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/bin)
+        set(${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/bin)
     else ()
-        set(${PRJPREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/share/vulkan/explicit_layer.d)
-        set(${PRJPREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/lib)
+        set(${PROJECT_PREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/share/vulkan/explicit_layer.d)
+        set(${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/lib)
     endif ()
     target_compile_definitions(${ENGINE_NAME} PUBLIC
-            $<BUILD_INTERFACE:${PRJPREFIX}_VULKAN_LAYER_PATH="${${PRJPREFIX}_VULKAN_LAYER_PATH}">
-            $<BUILD_INTERFACE:${PRJPREFIX}_VULKAN_LAYER_BIN_PATH="${${PRJPREFIX}_VULKAN_LAYER_BIN_PATH}">)
+            $<BUILD_INTERFACE:${PROJECT_PREFIX}_VULKAN_LAYER_PATH="${${PROJECT_PREFIX}_VULKAN_LAYER_PATH}">
+            $<BUILD_INTERFACE:${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH="${${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH}">)
 endif ()
 # Spir-V cross
-if (${PRJPREFIX}_BUILD_SHARED AND WIN32)
+if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
     find_package(spirv_cross_c_shared REQUIRED)
     message(STATUS "Found spirv_cross_c_shared version ${spirv_cross_c_shared_VERSION} @ ${spirv_cross_c_shared_DIR}")
     target_link_libraries(${ENGINE_NAME}Private INTERFACE spirv-cross-c-shared)
@@ -198,10 +198,10 @@ message(STATUS "Found imgui version ${imgui_VERSION} @ ${imgui_DIR}")
 target_link_libraries(${ENGINE_NAME} PUBLIC imgui::imgui)
 
 # additional windows libs
-if (${PRJPREFIX}_PLATFORM_WINDOWS)
+if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
     target_link_libraries(${ENGINE_NAME} PUBLIC Mf Mfplat Mfreadwrite)
 
-    if (${PRJPREFIX}_BUILD_SHARED)
+    if (${PROJECT_PREFIX}_BUILD_SHARED)
         add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_RUNTIME_DLLS:${ENGINE_NAME}>" "$<TARGET_FILE_DIR:${ENGINE_NAME}>"
                 COMMAND_EXPAND_LISTS
@@ -226,20 +226,20 @@ if (${PRJPREFIX}_PLATFORM_WINDOWS)
                 COMMENT "Copy the OpenAL shared dll"
         )
     endif ()
-elseif (${PRJPREFIX}_PLATFORM_LINUX)
+elseif (${PROJECT_PREFIX}_PLATFORM_LINUX)
     target_import_so_files(${ENGINE_NAME})
 endif ()
 # ------------------------------------------------------------------------------
 #    Installations
 # ------------------------------------------------------------------------------
-if (${PRJPREFIX}_PACKAGE_ENGINE)
+if (${PROJECT_PREFIX}_PACKAGE_ENGINE)
     foreach (config IN ITEMS Debug Release)
         install(TARGETS ${ENGINE_NAME} EXPORT OwlTargets${CMAKE_SYSTEM_NAME}${CMAKE_SYSTEM_PROCESSOR}-${config}
                 CONFIGURATIONS ${config}
-                LIBRARY DESTINATION ${${PRJPREFIX}_INSTALL_BIN}/${config}
-                ARCHIVE DESTINATION ${${PRJPREFIX}_INSTALL_LIB}/${config}
-                RUNTIME DESTINATION ${${PRJPREFIX}_INSTALL_BIN}/${config}
-                FRAMEWORK DESTINATION ${${PRJPREFIX}_INSTALL_BIN}/${config}
+                LIBRARY DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/${config}
+                ARCHIVE DESTINATION ${${PROJECT_PREFIX}_INSTALL_LIB}/${config}
+                RUNTIME DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/${config}
+                FRAMEWORK DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/${config}
                 FILE_SET HEADERS DESTINATION include
                 COMPONENT Engine
         )
@@ -247,7 +247,7 @@ if (${PRJPREFIX}_PACKAGE_ENGINE)
                 CONFIGURATIONS ${config}
                 COMPONENT Engine)
         install(DIRECTORY ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/
-                DESTINATION ${${PRJPREFIX}_INSTALL_BIN}/${config}
+                DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/${config}
                 CONFIGURATIONS ${config}
                 COMPONENT Engine
         )
@@ -258,15 +258,15 @@ if (${PRJPREFIX}_PACKAGE_ENGINE)
     )
 else ()
     install(TARGETS ${ENGINE_NAME}
-            LIBRARY DESTINATION ${${PRJPREFIX}_INSTALL_BIN}
-            RUNTIME DESTINATION ${${PRJPREFIX}_INSTALL_BIN}
-            FRAMEWORK DESTINATION ${${PRJPREFIX}_INSTALL_BIN}
+            LIBRARY DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
+            RUNTIME DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
+            FRAMEWORK DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
     )
     install(DIRECTORY ${CMAKE_BINARY_DIR}/bin/
-            DESTINATION ${${PRJPREFIX}_INSTALL_BIN}
+            DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
     )
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
-            DESTINATION ${${PRJPREFIX}_INSTALL_BIN}/assets
+            DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/assets
             COMPONENT Engine
     )
 endif ()

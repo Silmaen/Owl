@@ -97,12 +97,12 @@ ProfileTimer::~ProfileTimer() {
 
 void ProfileTimer::stop() {
 	const auto endTimePoint = std::chrono::steady_clock::now();
-	const auto highResStart = floatingPointMicroseconds{m_startTimePoint.time_since_epoch()};
+	const auto highResStart = FloatingPointMicroseconds{m_startTimePoint.time_since_epoch()};
 	const auto elapsedTime =
 			std::chrono::time_point_cast<std::chrono::microseconds>(endTimePoint).time_since_epoch() -
 			std::chrono::time_point_cast<std::chrono::microseconds>(m_startTimePoint).time_since_epoch();
 
-	Profiler::get().writeProfile({m_name, highResStart, elapsedTime, std::this_thread::get_id()});
+	Profiler::get().writeProfile({.name=m_name, .start=highResStart, .elapsedTime=elapsedTime, .threadId=std::this_thread::get_id()});
 
 	m_stopped = true;
 }

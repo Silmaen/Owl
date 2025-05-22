@@ -28,15 +28,15 @@ public:
 
 	/**
 	 * @brief Reads the configuration from file.
-	 * @param file The file name to read.
+	 * @param iFile The file name to read.
 	 */
-	void readFromFile(const std::filesystem::path& file);
+	void readFromFile(const std::filesystem::path& iFile);
 
 	/**
 	 * @brief Save the configuration to file.
-	 * @param file The file name to write.
+	 * @param iFile The file name to write.
 	 */
-	void saveToFile(const std::filesystem::path& file) const;
+	void saveToFile(const std::filesystem::path& iFile) const;
 
 	/**
 	 * @brief Access to Settings singleton.

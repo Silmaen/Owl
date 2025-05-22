@@ -59,7 +59,7 @@ TEST(compare, Matrix) {
 TEST(compare, Vector) {
 	{
 		math::vec4 gmat;
-		const math::vec4 mmat{1, 2, 3, 4};
+		constexpr math::vec4 mmat{1, 2, 3, 4};
 		float* gg = gmat.data();
 		const float* mm = mmat.data();
 		for (size_t it = 0; it < 4; ++it) gg[it] = mm[it];

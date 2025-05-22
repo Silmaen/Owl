@@ -32,9 +32,9 @@ void Compas::drawCursors() {
 }
 
 auto Compas::headingToAngle() -> float {
-	while (heading > 360) heading -= 360;
-	while (heading < 0) heading += 360;
-	return heading;
+	while (m_heading > 360) m_heading -= 360;
+	while (m_heading < 0) m_heading += 360;
+	return m_heading;
 }
 
 }// namespace drone::panels::gauge

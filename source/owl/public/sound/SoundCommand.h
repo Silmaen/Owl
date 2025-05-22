@@ -42,14 +42,14 @@ public:
 	 * @brief Initialize the renderer.
 	 */
 	static void init() {
-		if (m_soundAPI)
-			m_soundAPI->init();
+		if (m_soundApi)
+			m_soundApi->init();
 	}
 
 	/**
 	 * @brief Reset RenderAPI.
 	 */
-	static void invalidate() { m_soundAPI.reset(); }
+	static void invalidate() { m_soundApi.reset(); }
 
 	/**
 	 * @brief Get the state of the API.
@@ -62,8 +62,8 @@ public:
 	 * @return API Type.
 	 */
 	static auto getApi() -> SoundAPI::Type {
-		if (m_soundAPI)
-			return m_soundAPI->getApi();
+		if (m_soundApi)
+			return m_soundApi->getApi();
 		return static_cast<SoundAPI::Type>(-1);// NOLINT(clang-analyzer-optin.core.EnumCastOutOfRange)
 	}
 
@@ -72,8 +72,8 @@ public:
 	 * @return True if initialization required.
 	 */
 	static auto requireInit() -> bool {
-		if (m_soundAPI)
-			return m_soundAPI->requireInit();
+		if (m_soundApi)
+			return m_soundApi->requireInit();
 		return false;
 	}
 	/**
@@ -81,8 +81,8 @@ public:
 	 * @param[in] iData The Sound to play.
 	 */
 	static void playSound(const shared<SoundData>& iData) {
-		if (m_soundAPI)
-			return m_soundAPI->playSound(iData);
+		if (m_soundApi)
+			m_soundApi->playSound(iData);
 	}
 
 	/**
@@ -90,13 +90,13 @@ public:
 	 * @param iTs The time step.
 	 */
 	static void frame(const core::Timestep& iTs) {
-		if (m_soundAPI)
-			m_soundAPI->frame(iTs);
+		if (m_soundApi)
+			m_soundApi->frame(iTs);
 	}
 
 private:
 	/// Pointer to the render API
-	static uniq<SoundAPI> m_soundAPI;
+	static uniq<SoundAPI> m_soundApi;
 };
 
 }// namespace owl::sound

@@ -59,16 +59,16 @@ public:
 	 * @brief Define the m_altitude.
 	 * @param alt The new m_altitude from UAV.
 	 */
-	void setAltitude(float alt) { altitude = alt; }
+	void setAltitude(float alt) { m_altitude = alt; }
 
 private:
-	float altitude = 0.f;
+	float m_altitude = 0.f;
 
-	[[nodiscard]] auto altitudeToAngle(float divider = 1.0) const -> float;
+	[[nodiscard]] auto altitudeToAngle(float iDivider = 1.0) const -> float;
 
-	owl::shared<owl::renderer::Texture> background = nullptr;
-	owl::shared<owl::renderer::Texture> cursor = nullptr;
-	owl::shared<owl::renderer::Texture> cursor10 = nullptr;
-	owl::shared<owl::renderer::Texture> cursor100 = nullptr;
+	owl::shared<owl::renderer::Texture> m_background = nullptr;
+	owl::shared<owl::renderer::Texture> m_cursor = nullptr;
+	owl::shared<owl::renderer::Texture> m_cursor10 = nullptr;
+	owl::shared<owl::renderer::Texture> m_cursor100 = nullptr;
 };
 }// namespace drone::panels::gauge

@@ -46,30 +46,30 @@ void DroneLayer::onAttach() {
 	textureLib.load("icons/connect");
 
 	// remote controller
-	rc = owl::mkShared<controller::RemoteController>();
+	m_rc = owl::mkShared<controller::RemoteController>();
 
 	// Panels
-	settings = owl::mkShared<panels::Settings>();
-	gauges = owl::mkShared<panels::Gauges>();
-	information = owl::mkShared<panels::Information>();
-	viewport = owl::mkShared<panels::Viewport>();
+	m_settings = owl::mkShared<panels::Settings>();
+	m_gauges = owl::mkShared<panels::Gauges>();
+	m_information = owl::mkShared<panels::Information>();
+	m_viewport = owl::mkShared<panels::Viewport>();
 
 	// attach remote controller
-	settings->setRemoteController(rc);
-	gauges->setRemoteController(rc);
-	information->setRemoteController(rc);
-	viewport->setRemoteController(rc);
+	m_settings->setRemoteController(m_rc);
+	m_gauges->setRemoteController(m_rc);
+	m_information->setRemoteController(m_rc);
+	m_viewport->setRemoteController(m_rc);
 }
 
 void DroneLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
 
 	IO::CameraSystem::get().invalidate();
-	rc.reset();
-	settings.reset();
-	gauges.reset();
-	information.reset();
-	viewport.reset();
+	m_rc.reset();
+	m_settings.reset();
+	m_gauges.reset();
+	m_information.reset();
+	m_viewport.reset();
 
 	const auto file = core::Application::get().getWorkingDirectory() / "droneConfig.yml";
 	IO::DroneSettings::get().saveToFile(file);
@@ -80,14 +80,14 @@ void DroneLayer::onUpdate(const core::Timestep& iTimeStep) {
 
 	renderer::Renderer2D::resetStats();
 
-	switch (mode) {
+	switch (m_mode) {
 		case DisplayMode::Settings:
-			settings->onUpdate(iTimeStep);
+			m_settings->onUpdate(iTimeStep);
 			break;
 		case DisplayMode::Gauges:
-			viewport->onUpdate(iTimeStep);
-			gauges->onUpdate(iTimeStep);
-			information->onUpdate(iTimeStep);
+			m_viewport->onUpdate(iTimeStep);
+			m_gauges->onUpdate(iTimeStep);
+			m_information->onUpdate(iTimeStep);
 			break;
 	}
 }
@@ -96,30 +96,30 @@ void DroneLayer::onEvent(event::Event& ioEvent) {
 
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::KeyPressedEvent>(
-			[this](auto&& PH1) { return onKeyPressed(std::forward<decltype(PH1)>(PH1)); });
+			[this]<typename T0>(T0&& ioArgs) { return onKeyPressed(std::forward<T0>(ioArgs)); });
 	dispatcher.dispatch<event::MouseButtonPressedEvent>(
-			[this](auto&& PH1) { return onMouseButtonPressed(std::forward<decltype(PH1)>(PH1)); });
+			[this]<typename T0>(T0&& ioArgs) { return onMouseButtonPressed(std::forward<T0>(ioArgs)); });
 }
 
 void DroneLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
 	// ==================================================================
-	if (showStats)
+	if (m_showStats)
 		renderStats(iTimeStep);
 	//=============================================================
 	renderMenu();
 	//============================================================
-	switch (mode) {
+	switch (m_mode) {
 		case DisplayMode::Settings:
-			settings->onRender();
+			m_settings->onRender();
 			break;
 		case DisplayMode::Gauges:
-			if (showFakeDrone)
+			if (m_showFakeDrone)
 				renderFakeDrone(iTimeStep);
-			viewport->onRender();
-			gauges->onRender();
-			information->onRender();
+			m_viewport->onRender();
+			m_gauges->onRender();
+			m_information->onRender();
 			break;
 	}
 	// ===== Toolbar: last, to be on top ========================
@@ -144,31 +144,31 @@ void DroneLayer::renderStats(const core::Timestep& iTimeStep) {
 	ImGui::Text("Indices: %ud", stats.getTotalIndexCount());
 	ImGui::Separator();
 	ImGui::Text("%s", fmt::format("UAV stats").c_str());
-	ImGui::Text("%s", fmt::format("Vel: {}", rc->getHorizontalVelocity()).c_str());
-	ImGui::Text("%s", fmt::format("VSI: {} ", rc->getVerticalVelocity()).c_str());
+	ImGui::Text("%s", fmt::format("Vel: {}", m_rc->getHorizontalVelocity()).c_str());
+	ImGui::Text("%s", fmt::format("VSI: {} ", m_rc->getVerticalVelocity()).c_str());
 	ImGui::End();
 }
 
 
 void DroneLayer::renderFakeDrone(const core::Timestep&) {
 	ImGui::Begin("FakeDrone");
-	float vel = rc->getHorizontalVelocity();
+	float vel = m_rc->getHorizontalVelocity();
 	if (ImGui::SliderFloat("Velocity", &vel, -5, 100))
-		rc->setHorizontalVelocity(vel);
+		m_rc->setHorizontalVelocity(vel);
 
-	float verVel = rc->getVerticalVelocity();
+	float verVel = m_rc->getVerticalVelocity();
 	if (ImGui::SliderFloat("VerticalVelocity", &verVel, -25, 25))
-		rc->setVerticalVelocity(verVel);
+		m_rc->setVerticalVelocity(verVel);
 
-	float alt = rc->getAltitude();
+	float alt = m_rc->getAltitude();
 	if (ImGui::SliderFloat("Altitude", &alt, -10, 250))
-		rc->setAltitude(alt);
+		m_rc->setAltitude(alt);
 
-	math::vec3 rot = rc->getRotations();
+	math::vec3 rot = m_rc->getRotations();
 	if (ImGui::SliderFloat3("Rotations", &rot.x(), -180, 180))
-		rc->setRotation(rot);
+		m_rc->setRotation(rot);
 
-	auto motors = rc->getMotorRates();
+	auto motors = m_rc->getMotorRates();
 	bool modif = false;
 	int motorId = 1;
 	for (auto& mot: motors) {
@@ -176,7 +176,7 @@ void DroneLayer::renderFakeDrone(const core::Timestep&) {
 		motorId++;
 	}
 	if (modif)
-		rc->setMotorRates(motors);
+		m_rc->setMotorRates(motors);
 
 
 	ImGui::End();
@@ -186,12 +186,12 @@ void DroneLayer::renderMenu() {
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Exit"))
-				owl::core::Application::get().close();
+				core::Application::get().close();
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Debug")) {
-			ImGui::MenuItem("Show Stats", nullptr, &showStats, true);
-			ImGui::MenuItem("Show fake drone", nullptr, &showFakeDrone, true);
+			ImGui::MenuItem("Show Stats", nullptr, &m_showStats, true);
+			ImGui::MenuItem("Show fake drone", nullptr, &m_showFakeDrone, true);
 
 			ImGui::EndMenu();
 		}
@@ -247,30 +247,30 @@ void DroneLayer::renderToolbar() {
 	ImGui::SetCursorPos(ImVec2(posX, padding));
 	if (const auto tex = gui::imTexture(textureLib.get("icons/settings")); tex.has_value()) {
 		if (ImGui::ImageButton("##toolbar_btn_settings", tex.value(), vsize)) {
-			mode = DisplayMode::Settings;
+			m_mode = DisplayMode::Settings;
 		}
 	} else {
 		if (ImGui::Button("settings", vsize)) {
-			mode = DisplayMode::Settings;
+			m_mode = DisplayMode::Settings;
 		}
 	}
 	posX += size + 2.f * padding;
 	ImGui::SetCursorPos(ImVec2(posX, padding));
 	if (const auto tex = gui::imTexture(textureLib.get("icons/gauges")); tex.has_value()) {
 		if (ImGui::ImageButton("##toolbar_btn_gauges", tex.value(), vsize)) {
-			mode = DisplayMode::Gauges;
+			m_mode = DisplayMode::Gauges;
 		}
 	} else {
 		if (ImGui::Button("gauges", vsize)) {
-			mode = DisplayMode::Gauges;
+			m_mode = DisplayMode::Gauges;
 		}
 	}
 
 
-	const shared<renderer::Texture> iconCC =
+	const shared<renderer::Texture> iconCc =
 			isConnected() ? textureLib.get("icons/connected") : textureLib.get("icons/connect");
 	ImGui::SetCursorPos(ImVec2((ImGui::GetWindowContentRegionMax().x) - (2.f * size + 3.f * padding), padding));
-	if (const auto tex = gui::imTexture(iconCC); tex.has_value()) {
+	if (const auto tex = gui::imTexture(iconCc); tex.has_value()) {
 		if (ImGui::ImageButton("##toolbar_btn_connect", tex.value(), vsize)) {
 			toggleConnect();
 		}
@@ -296,7 +296,7 @@ void DroneLayer::renderToolbar() {
 }
 OWL_DIAG_POP
 
-auto DroneLayer::isConnected() const -> bool { return connected; }
-void DroneLayer::toggleConnect() { connected = !connected; }
+auto DroneLayer::isConnected() const -> bool { return m_connected; }
+void DroneLayer::toggleConnect() { m_connected = !m_connected; }
 
 }// namespace drone

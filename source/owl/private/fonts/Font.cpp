@@ -38,7 +38,7 @@ auto createAndCacheAtlas([[maybe_unused]] const std::string& iFontName, [[maybe_
 	auto bitmap = static_cast<msdfgen::BitmapConstRef<T, N>>(generator.atlasStorage());
 	const renderer::Texture::Specification spec{
 			.size = {static_cast<uint32_t>(bitmap.width), static_cast<uint32_t>(bitmap.height)},
-			.format = renderer::ImageFormat::RGB8,
+			.format = renderer::ImageFormat::Rgb8,
 			.generateMips = false};
 	shared<renderer::Texture2D> texture = renderer::Texture2D::create(spec);
 	texture->setData(const_cast<uint8_t*>(bitmap.pixels), static_cast<uint32_t>(bitmap.width * bitmap.height * 3));
@@ -94,17 +94,16 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	emSize = atlasPacker.getScale();
 
 #define DEFAULT_ANGLE_THRESHOLD 3.0
-	constexpr uint64_t LCG_MULTIPLIER = 6364136223846793005;
-	constexpr uint64_t LCG_INCREMENT = 1442695040888963407;
+	constexpr uint64_t lcgMultiplier = 6364136223846793005;
+	constexpr uint64_t lcgIncrement = 1442695040888963407;
 #define THREAD_COUNT 8
 	// if MSDF || MTSDF
 	uint64_t coloringSeed = 0;
 	if constexpr ((false)) {
 		msdf_atlas::Workload(
-				[&glyphs = m_data->glyphs, &coloringSeed](int i, [[maybe_unused]] int threadNo) -> bool {
+				[&glyphs = m_data->glyphs, &coloringSeed](const int i, [[maybe_unused]] int iThreadNo) -> bool {
 					const uint64_t glyphSeed =
-							(LCG_MULTIPLIER * (coloringSeed ^ static_cast<uint64_t>(i)) + LCG_INCREMENT) *
-							!!coloringSeed;
+							(lcgMultiplier * (coloringSeed ^ static_cast<uint64_t>(i)) + lcgIncrement) * !!coloringSeed;
 					glyphs[static_cast<size_t>(i)].edgeColoring(msdfgen::edgeColoringInkTrap, DEFAULT_ANGLE_THRESHOLD,
 																glyphSeed);
 					return true;
@@ -114,7 +113,7 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	} else {
 		uint64_t glyphSeed = coloringSeed;
 		for (msdf_atlas::GlyphGeometry& glyph: m_data->glyphs) {
-			glyphSeed *= LCG_MULTIPLIER;
+			glyphSeed *= lcgMultiplier;
 			glyph.edgeColoring(msdfgen::edgeColoringInkTrap, DEFAULT_ANGLE_THRESHOLD, glyphSeed);
 		}
 	}

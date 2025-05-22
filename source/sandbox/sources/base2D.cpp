@@ -11,7 +11,7 @@
 namespace owl {
 
 
-Base2D::Base2D() : core::layer::Layer("base2D"), m_cameraController{1280.0f / 720.0f, true} {}
+Base2D::Base2D() : Layer("base2D"), m_cameraController{1280.0f / 720.0f, true} {}
 
 void Base2D::onAttach() {
 	OWL_PROFILE_FUNCTION()

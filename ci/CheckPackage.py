@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Script to check library dependencies in packaged binaries for different platforms.
+"""
 
 import argparse
 import shutil
@@ -78,28 +81,32 @@ platforms = [
 
 def is_ignored(lib_name, ignore_list):
     """
+    Check if a library name is in the ignore list.
 
-    :param lib_name:
-    :param ignore_list:
-    :return:
+    :param lib_name: Name of the library.
+    :param ignore_list: List of libraries to ignore.
+    :return: True if ignored, False otherwise.
     """
     return any(ignore in lib_name for ignore in ignore_list)
 
 
 def in_same_dir(dep: str, bin_dir: Path) -> bool:
     """
+    Check if a dependency exists in the same directory as the binary.
 
-    :param dep:
-    :param bin_dir:
-    :return:
+    :param dep: Dependency filename.
+    :param bin_dir: Directory to check.
+    :return: True if exists, False otherwise.
     """
     return (bin_dir / dep).exists()
 
 
 def check_shared_lib_linux(lib):
     """
+    Check shared library dependencies on Linux.
 
-    :param lib:
+    :param lib: Path to the library file.
+    :return: None
     """
     try:
         result = subprocess.run(
@@ -127,8 +134,10 @@ def check_shared_lib_linux(lib):
 
 def check_dll_dependencies_windows(dll: Path):
     """
+    Check DLL dependencies on Windows.
 
-    :param dll:
+    :param dll: Path to the DLL file.
+    :return: None
     """
     try:
         result = subprocess.run(
@@ -154,7 +163,9 @@ def check_dll_dependencies_windows(dll: Path):
 
 def main():
     """
-    Main entry point.
+    Main entry point for checking package dependencies.
+
+    :return: None
     """
     parser = argparse.ArgumentParser(description="Check library dependencies.")
     parser.add_argument(
@@ -207,7 +218,7 @@ def main():
                 elif system() == "Windows":
                     check_dll_dependencies_windows(file)
                 else:
-                    print("Système d'exploitation non supporté.")
+                    print("Unsupported Operating System.")
     finally:
         shutil.rmtree(tt)
 

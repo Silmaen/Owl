@@ -46,8 +46,8 @@ void EditorLayer::onAttach() {
 	m_controlBar.addButton({{.id = "##ctrlTranslation", .visible = true},
 							"icons/control/ctrl_translation",
 							"T",
-							[this]() { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Translation; },
-							[this]() {
+							[this] { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Translation; },
+							[this] {
 								if (m_viewport.getGuizmoType() == gui::Guizmo::Type::Translation)
 									m_viewport.setGuizmoType(gui::Guizmo::Type::None);
 								else
@@ -57,8 +57,8 @@ void EditorLayer::onAttach() {
 	m_controlBar.addButton({{.id = "##ctrlRotation", .visible = true},
 							"icons/control/ctrl_rotation",
 							"T",
-							[this]() { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Rotation; },
-							[this]() {
+							[this] { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Rotation; },
+							[this] {
 								if (m_viewport.getGuizmoType() == gui::Guizmo::Type::Rotation)
 									m_viewport.setGuizmoType(gui::Guizmo::Type::None);
 								else
@@ -68,8 +68,8 @@ void EditorLayer::onAttach() {
 	m_controlBar.addButton({{.id = "##ctrlScale", .visible = true},
 							"icons/control/ctrl_scale",
 							"T",
-							[this]() { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Scale; },
-							[this]() {
+							[this] { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Scale; },
+							[this] {
 								if (m_viewport.getGuizmoType() == gui::Guizmo::Type::Scale)
 									m_viewport.setGuizmoType(gui::Guizmo::Type::None);
 								else

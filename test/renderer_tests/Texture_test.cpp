@@ -25,11 +25,11 @@ TEST(TextureSpecifications, PixelSize) {
 	EXPECT_EQ(spec.getPixelSize(), 1);
 	spec.format = ImageFormat::None;
 	EXPECT_EQ(spec.getPixelSize(), 0);
-	spec.format = ImageFormat::RGB8;
+	spec.format = ImageFormat::Rgb8;
 	EXPECT_EQ(spec.getPixelSize(), 3);
-	spec.format = ImageFormat::RGBA8;
+	spec.format = ImageFormat::Rgba8;
 	EXPECT_EQ(spec.getPixelSize(), 4);
-	spec.format = ImageFormat::RGBA32F;
+	spec.format = ImageFormat::Rgba32F;
 	EXPECT_EQ(spec.getPixelSize(), 16);
 }
 

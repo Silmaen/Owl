@@ -10,11 +10,11 @@
 
 #include "gui/UiLayer.h"
 
-#include "gui/utils.h"
-#include "renderer/RenderCommand.h"
 #include "core/Application.h"
 #include "core/external/glfw3.h"
 #include "core/external/imgui.h"
+#include "gui/utils.h"
+#include "renderer/RenderCommand.h"
 #include "renderer/vulkan/internal/VulkanHandler.h"
 
 #include <input/Input.h>
@@ -68,7 +68,7 @@ void UiLayer::onAttach() {
 
 	setTheme();
 
-	if (m_withApp && core::Application::get().getWindow().getType() == input::Type::GLFW) {
+	if (m_withApp && core::Application::get().getWindow().getType() == input::Type::Glfw) {
 		auto* window = static_cast<GLFWwindow*>(core::Application::get().getWindow().getNativeWindow());
 		if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::OpenGL) {
 			ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -96,7 +96,7 @@ void UiLayer::onDetach() {
 		vkDeviceWaitIdle(vkc.getLogicalDevice());
 		ImGui_ImplVulkan_Shutdown();
 	}
-	if (m_withApp && core::Application::get().getWindow().getType() == input::Type::GLFW) {
+	if (m_withApp && core::Application::get().getWindow().getType() == input::Type::Glfw) {
 		ImGui_ImplGlfw_Shutdown();
 	}
 	ImGui::DestroyContext();
@@ -116,14 +116,14 @@ void UiLayer::begin() const {
 	else if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan) {
 		ImGui_ImplVulkan_NewFrame();
 	} else {
-		ImGuiIO& io = ImGui::GetIO();
+		const ImGuiIO& io = ImGui::GetIO();
 		// fake load fonts
 		unsigned char* pixels = nullptr;
-		int width;
-		int height;
+		int width = 0;
+		int height = 0;
 		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 	}
-	if (m_withApp && core::Application::get().getWindow().getType() == input::Type::GLFW) {
+	if (m_withApp && core::Application::get().getWindow().getType() == input::Type::Glfw) {
 		ImGui_ImplGlfw_NewFrame();
 	} else {
 		ImGuiIO& io = ImGui::GetIO();
@@ -312,7 +312,7 @@ void UiLayer::initializeDocking() {
 	}
 	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle
 	// the pass-thru hole, so we ask Begin() to not render a background.
-	if ((dockSpaceFlags & ImGuiDockNodeFlags_PassthruCentralNode) != 0)
+	if constexpr ((dockSpaceFlags & ImGuiDockNodeFlags_PassthruCentralNode) != 0)
 		windowFlags |= ImGuiWindowFlags_NoBackground;
 	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
 	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,

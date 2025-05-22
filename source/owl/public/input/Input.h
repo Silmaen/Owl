@@ -38,7 +38,7 @@ public:
 	 * @brief Initialize the input;
 	 * @param[in] iType the type of input
 	 */
-	static void init(const Type& iType = Type::GLFW);
+	static void init(const Type& iType = Type::Glfw);
 
 	/**
 	 * @brief Destroy the inout instance.
@@ -102,9 +102,9 @@ public:
 
 private:
 	/// The Input type.
-	static Type ms_type;
+	static Type m_type;
 	/// The input instance.
-	static uniq<Input> mus_instance;
+	static uniq<Input> m_instance;
 
 	/**
 	 * @brief Keyboard pressed check, private implementation.

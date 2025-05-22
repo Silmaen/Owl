@@ -12,7 +12,7 @@
 
 namespace drone::IO {
 
-static const std::string s_deviceFriendlyName{"unknown"};
+static const std::string g_DeviceFriendlyName{"unknown"};
 /**
  * @brief Description of a device
  */
@@ -31,7 +31,7 @@ struct Device {
 	 */
 	[[nodiscard]] auto getFriendlyName() const -> const std::string& {
 		if (name.empty())
-			return s_deviceFriendlyName;
+			return g_DeviceFriendlyName;
 		return name;
 	}
 	/**
@@ -46,14 +46,14 @@ struct Device {
 /**
  * @brief Class DeviceManager.
  */
-class DeviceManager {
+class DeviceManager final {
 public:
 	using DeviceList = std::vector<Device>;
 
 	/**
 	 * @brief Destructor.
 	 */
-	virtual ~DeviceManager();
+	~DeviceManager();
 
 	DeviceManager(const DeviceManager&) = delete;
 	DeviceManager(DeviceManager&&) = delete;

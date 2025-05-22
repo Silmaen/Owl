@@ -18,7 +18,7 @@ TEST(Box, Simple) {
 	box2.update(vec2{45, 66});
 	box2.update(vec2{-45, -66});
 	EXPECT_TRUE(box2.contains(vec2(0, 0)));
-	box2f box3{vec2{2, 3}, vec2{1, 2}};
+	const box2f box3{vec2{2, 3}, vec2{1, 2}};
 	EXPECT_NEAR(box3.diagonal().normSq(), 2, 1e-4);
 }
 

@@ -12,12 +12,12 @@
 namespace owl::sound {
 
 SoundSystem::State SoundSystem::m_internalState = State::Created;
-shared<SoundSystem::soundLibrary> SoundSystem::m_soundLibrary = nullptr;
+shared<SoundSystem::SoundLibrary> SoundSystem::m_soundLibrary = nullptr;
 
 void SoundSystem::init() {
 	OWL_PROFILE_FUNCTION()
 
-	m_soundLibrary = std::make_shared<soundLibrary>();
+	m_soundLibrary = std::make_shared<SoundLibrary>();
 
 	SoundCommand::init();
 	if (SoundCommand::getState() != SoundAPI::State::Ready) {

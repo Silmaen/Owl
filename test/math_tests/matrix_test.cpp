@@ -16,7 +16,7 @@ TEST(math, matrixRowCol) {
 }
 
 TEST(math, matrixBase) {
-	const mat3 mat{1, 2, 3, 4, 5, 6, 7, 8, 9};
+	constexpr mat3 mat{1, 2, 3, 4, 5, 6, 7, 8, 9};
 	EXPECT_NEAR(mat.norm(), 16.15549, 0.001);
 	EXPECT_FALSE(mat == mat3({9, 8, 7, 6, 5, 4, 3, 2, 1}));
 	EXPECT_TRUE(mat != mat3({9, 8, 7, 6, 5, 4, 3, 2, 1}));
@@ -34,8 +34,8 @@ TEST(math, matrixBase) {
 }
 
 TEST(math, matrixAddition) {
-	const mat3 mat1{1, 2, 3, 4, 5, 6, 7, 8, 9};
-	const mat3 mat2{9, 8, 7, 6, 5, 4, 3, 2, 1};
+	constexpr mat3 mat1{1, 2, 3, 4, 5, 6, 7, 8, 9};
+	constexpr mat3 mat2{9, 8, 7, 6, 5, 4, 3, 2, 1};
 	mat3 madd = mat1 + mat2;
 	EXPECT_NEAR(madd(1, 1), 10, 0.0001);
 	madd = mat2 - mat1;
@@ -43,7 +43,7 @@ TEST(math, matrixAddition) {
 }
 
 TEST(math, matrixScalar) {
-	const mat3 mat1{1, 2, 3, 4, 5, 6, 7, 8, 9};
+	constexpr mat3 mat1{1, 2, 3, 4, 5, 6, 7, 8, 9};
 	mat3 madd = mat1 * 2;
 	EXPECT_NEAR(madd(1, 1), 10, 0.0001);
 	madd = 7 * mat1;
@@ -54,11 +54,11 @@ TEST(math, matrixScalar) {
 
 
 TEST(math, matrixProduct) {
-	const mat3 mat1{1, 2, 3, 4, 5, 6, 7, 8, 9};
-	const mat3 mat2{9, 8, 7, 6, 5, 4, 3, 2, 1};
+	constexpr mat3 mat1{1, 2, 3, 4, 5, 6, 7, 8, 9};
+	constexpr mat3 mat2{9, 8, 7, 6, 5, 4, 3, 2, 1};
 	mat3 madd = mat1 * mat2;
 	EXPECT_NEAR(madd(1, 1), 69, 0.0001);
-	const mat3 mat3{1, 0, 0, 0, 1, 0, 0, 0, 1};
+	constexpr mat3 mat3{1, 0, 0, 0, 1, 0, 0, 0, 1};
 	madd = mat1 * mat3;
 	EXPECT_NEAR(madd(1, 1), 5, 0.0001);
 	madd *= mat1;
@@ -66,8 +66,8 @@ TEST(math, matrixProduct) {
 }
 
 TEST(math, matrixVector) {
-	const mat3 mat{1, 2, 3, 2, 4, 5, 3, 5, 6};
-	const vec3 vec{1, 2, 3};
+	constexpr mat3 mat{1, 2, 3, 2, 4, 5, 3, 5, 6};
+	constexpr vec3 vec{1, 2, 3};
 	const vec3 result = mat * vec;
 	const vec3 tluser = vec * mat;
 	EXPECT_NEAR(result.x(), tluser.x(), 0.0001f);
@@ -96,7 +96,7 @@ TEST(math, matrixVector) {
 
 TEST(math, matrixInverse) {
 	{
-		const mat2 mat{1, 18, 18, 45};
+		constexpr mat2 mat{1, 18, 18, 45};
 		const mat2 dmat = inverse(mat);
 		const mat2 ident = mat * dmat;
 		EXPECT_NEAR(ident(0, 0), 1, 0.0001f);
@@ -105,7 +105,7 @@ TEST(math, matrixInverse) {
 		EXPECT_NEAR(ident(1, 0), 0, 0.0001f);
 	}
 	{
-		const mat4 mat{1, 18, 4, 45, 18, 7, 69, 71, 4, 69, 32, 2, 45, 71, 2, 42};
+		constexpr mat4 mat{1, 18, 4, 45, 18, 7, 69, 71, 4, 69, 32, 2, 45, 71, 2, 42};
 		const mat4 dmat = inverse(mat);
 		const mat4 ident = mat * dmat;
 		EXPECT_NEAR(ident(0, 0), 1, 0.0001f);

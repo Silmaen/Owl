@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Script to publish built packages to a remote server.
+"""
 import platform
 import re
 from datetime import datetime
@@ -15,7 +18,8 @@ dry_run = False
 
 def get_git_hash():
     """
-    Get the git hash without using the git command
+    Get the git hash without using the git command.
+
     :return: The git hash.
     """
     from subprocess import run, PIPE
@@ -38,6 +42,11 @@ def get_git_hash():
 
 
 def get_version():
+    """
+    Get the project version from CMakeLists.txt.
+
+    :return: The version string.
+    """
     with open(root / "CMakeLists.txt", "r") as fb:
         lines = fb.readlines()
         for line in lines:
@@ -48,6 +57,12 @@ def get_version():
 
 
 def get_api_script(url: str):
+    """
+    Download the api.py script from the given URL.
+
+    :param url: The URL to download from.
+    :return: None
+    """
     from requests import get
 
     try:
@@ -70,6 +85,11 @@ def get_api_script(url: str):
 
 
 def parse_args():
+    """
+    Parse command line arguments.
+
+    :return: Dictionary of parsed arguments.
+    """
     from argparse import ArgumentParser
     from subprocess import run
 
@@ -133,6 +153,12 @@ def parse_args():
 
 
 def get_info_from_preset(preset: str):
+    """
+    Get package info from the preset name.
+
+    :param preset: The preset name.
+    :return: Dictionary with info.
+    """
     if not preset.startswith("package"):
         print(f"ERROR: {preset} is not a package preset.")
         exit(1)
@@ -185,6 +211,12 @@ def get_info_from_preset(preset: str):
 
 
 def publish_package(info):
+    """
+    Publish the package.
+
+    :param info: Dictionary with info.
+    :return: None
+    """
     from subprocess import run
 
     cmd = f"python3 -u {here}/api.py push"
@@ -209,6 +241,12 @@ def publish_package(info):
 
 
 def check_info(info):
+    """
+    Check the validity of the info dictionary.
+
+    :param info: Dictionary with info.
+    :return: True if valid, False otherwise.
+    """
     good = True
     if info.get("hash") in ["0000000", "", None]:
         print(f" *** BAD hash {info.get('hash')}", file=stderr)
@@ -246,6 +284,11 @@ def check_info(info):
 
 
 def main():
+    """
+    Main entry point for package publication.
+
+    :return: None
+    """
     data = parse_args()
     get_api_script(data["url"] + "/static/scripts/api.py")
     info = get_info_from_preset(data["preset"])

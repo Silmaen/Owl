@@ -22,7 +22,7 @@ public:
 	/// Render API types.
 	enum struct Type : uint8_t {
 		Null = 0,///< Null Sound system.
-		OpenAL = 1,///< OpenAL Sound system.
+		OpenAl = 1,///< OpenAL Sound system.
 	};
 	/**
 	 * @brief Default constructor.
@@ -72,7 +72,7 @@ public:
 	 * @brief Check if the API type require initializations.
 	 * @return tRue if initialization required.
 	 */
-	[[nodiscard]] auto requireInit() const -> bool { return m_type == Type::OpenAL; }
+	[[nodiscard]] auto requireInit() const -> bool { return m_type == Type::OpenAl; }
 
 	/**
 	 * @brief Play a sound.

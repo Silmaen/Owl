@@ -54,14 +54,14 @@ public:
 	 * @brief Define the velocity.
 	 * @param vel The new velocity from UAV.
 	 */
-	void setVelocity(float vel) { velocity = vel; }
+	void setVelocity(float vel) { m_velocity = vel; }
 
 private:
-	float velocity = 0.f;
+	float m_velocity = 0.f;
 
 	[[nodiscard]] auto velocityToAngle() const -> float;
 
-	owl::shared<owl::renderer::Texture> background = nullptr;
-	owl::shared<owl::renderer::Texture> cursor = nullptr;
+	owl::shared<owl::renderer::Texture> m_background = nullptr;
+	owl::shared<owl::renderer::Texture> m_cursor = nullptr;
 };
 }// namespace drone::panels::gauge

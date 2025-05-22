@@ -23,7 +23,7 @@ namespace {
 void serializeEntity(const core::Serializer& iOut, const Entity& iEntity) {
 	iOut.getImpl()->emitter << YAML::BeginMap;// Entity
 	iOut.getImpl()->emitter << YAML::Key << "Entity" << YAML::Value << iEntity.getUUID();
-	serializeComponents(iEntity, iOut, component::serializableComponents{});
+	serializeComponents(iEntity, iOut, component::SerializableComponents{});
 	iOut.getImpl()->emitter << YAML::EndMap;// Entity
 }
 
@@ -41,7 +41,7 @@ void deserializeEntity(const shared<Scene>& ioScene, const core::Serializer& iNo
 		auto& comp = entity.getComponent<component::Transform>();
 		comp.deserialize(sNode);
 	}
-	deserializeComponents(entity, iNode, component::optionalComponents{});
+	deserializeComponents(entity, iNode, component::OptionalComponents{});
 }
 
 }// namespace

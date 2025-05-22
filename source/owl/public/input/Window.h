@@ -7,10 +7,10 @@
  */
 
 #pragma once
-#include "math/vectors.h"
-#include "renderer/GraphContext.h"
 #include "core/Core.h"
 #include "event/Event.h"
+#include "math/vectors.h"
+#include "renderer/GraphContext.h"
 
 namespace owl::input {
 
@@ -19,7 +19,7 @@ namespace owl::input {
  */
 enum struct Type : uint8_t {
 	Null,/// Windows null
-	GLFW/// Windows managed by Glfw library.
+	Glfw/// Windows managed by Glfw library.
 };
 
 /**
@@ -27,7 +27,7 @@ enum struct Type : uint8_t {
  */
 struct Properties {
 	/// Type of Window manager.
-	Type winType = Type::GLFW;
+	Type winType = Type::Glfw;
 	/// Window title.
 	std::string title = "Owl Engine";
 	/// Path to the icons in the assets.
@@ -121,7 +121,7 @@ public:
 	 * @brief Access to the graph context.
 	 * @return Graph context.
 	 */
-	[[nodiscard]] auto getGraphContext() const -> renderer::GraphContext* { return mu_context.get(); }
+	[[nodiscard]] auto getGraphContext() const -> renderer::GraphContext* { return m_context.get(); }
 
 	/**
 	 * @brief Terminate the window.
@@ -130,7 +130,7 @@ public:
 
 protected:
 	/// Pointer to the Graphic Context.
-	uniq<renderer::GraphContext> mu_context;
+	uniq<renderer::GraphContext> m_context;
 };
 
 }// namespace owl::input

@@ -29,7 +29,7 @@ void Timer::frame(const Timestep& iTimestep, Scheduler* iScheduler) {
 	}
 }
 
-void Timer::execute(Scheduler* iScheduler, const Timestep::timePoint& iCurrentTime) {
+void Timer::execute(Scheduler* iScheduler, const Timestep::time_point& iCurrentTime) {
 	m_lastCall = iCurrentTime;
 	m_counter++;
 	if (m_param.async && iScheduler != nullptr) {

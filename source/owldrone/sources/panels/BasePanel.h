@@ -49,9 +49,9 @@ public:
 
 	/**
 	 * @brief Update panel Status.
-	 * @param ts The Time delta of the frame.
+	 * @param iTs The Time delta of the frame.
 	 */
-	virtual void onUpdate(const owl::core::Timestep& ts) = 0;
+	virtual void onUpdate(const owl::core::Timestep& iTs) = 0;
 
 	/**
 	 * @brief Do the rendering.
@@ -60,19 +60,19 @@ public:
 
 	/**
 	 * @brief Define the remote controller.
-	 * @param remote The new remote controller.
+	 * @param iRemote The new remote controller.
 	 */
-	void setRemoteController(const owl::shared<controller::RemoteController>& remote) { rc = remote; }
+	void setRemoteController(const owl::shared<controller::RemoteController>& iRemote) { m_rc = iRemote; }
 
 	/**
 	 * @brief Access to the remote controller.
 	 * @return The remote controller.
 	 */
-	[[nodiscard]] auto getRemoteController() const -> const owl::shared<controller::RemoteController>& { return rc; }
+	[[nodiscard]] auto getRemoteController() const -> const owl::shared<controller::RemoteController>& { return m_rc; }
 
 private:
 	/// pointer to the remote controller
-	owl::shared<controller::RemoteController> rc = nullptr;
+	owl::shared<controller::RemoteController> m_rc = nullptr;
 };
 
 }// namespace drone::panels

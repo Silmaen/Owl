@@ -22,9 +22,9 @@ namespace owl::renderer {
 enum struct ImageFormat : uint8_t {
 	None,///< Nothing.
 	R8,///< One 8bits channel
-	RGB8,///< Three 8bits-channels.
-	RGBA8,///< Four 8bits-channels.
-	RGBA32F,///< Four float channels.
+	Rgb8,///< Three 8bits-channels.
+	Rgba8,///< Four 8bits-channels.
+	Rgba32F,///< Four float channels.
 };
 
 class TextureLibrary;
@@ -53,7 +53,7 @@ public:
 		/// Texture size.
 		math::vec2ui size;
 		/// Pixel format.
-		ImageFormat format = ImageFormat::RGBA8;
+		ImageFormat format = ImageFormat::Rgba8;
 		/// If mips should be generated
 		bool generateMips = true;
 		/**

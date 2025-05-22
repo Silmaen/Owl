@@ -9,30 +9,30 @@
 
 namespace drone::panels::gauge {
 
-constexpr float maxVelocity = 65;
-constexpr float maxAngle = 275;
+constexpr float g_MaxVelocity = 65;
+constexpr float g_MaxAngle = 275;
 
 AirSpeed::AirSpeed() {
 	auto textureLib = owl::renderer::Renderer::getTextureLibrary();
 	textureLib.load("textures/GaugeSPDBack");
 	textureLib.load("textures/GaugeSPDCursor");
-	background = textureLib.get("textures/GaugeSPDBack");
-	cursor = textureLib.get("textures/GaugeSPDCursor");
+	m_background = textureLib.get("textures/GaugeSPDBack");
+	m_cursor = textureLib.get("textures/GaugeSPDCursor");
 }
 
 void AirSpeed::drawBack() {
 	owl::math::Transform tran{getPosition(), {0, 0, 0}, getScale()};
 	tran.translation().z() = -0.1f;
-	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = background});
+	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = m_background});
 }
 void AirSpeed::drawCursors() {
 	owl::math::Transform tran{getPosition(), {0, 0, velocityToAngle()}, getScale()};
 	tran.translation().z() = -0.05f;
-	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = cursor});
+	owl::renderer::Renderer2D::drawQuad({.transform = tran, .texture = m_cursor});
 }
 
 auto AirSpeed::velocityToAngle() const -> float {
-	return -std::clamp(velocity, 0.f, maxVelocity) / maxVelocity * maxAngle;
+	return -std::clamp(m_velocity, 0.f, g_MaxVelocity) / g_MaxVelocity * g_MaxAngle;
 }
 
 AirSpeed::~AirSpeed() = default;

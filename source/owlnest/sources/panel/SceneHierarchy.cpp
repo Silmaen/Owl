@@ -139,12 +139,12 @@ void drawComponent(scene::Entity& ioEntity) {
 
 
 template<isNamedComponent... Component>
-void addComponentsFromTuple(scene::Entity& ioEntity, std::tuple<Component...>) {
+void addComponentsFromTuple(scene::Entity& ioEntity, const std::tuple<Component...>&) {
 	(..., addComponentPop<Component>(ioEntity));
 }
 
 template<isNamedComponent... Component>
-void drawComponentsFromTuple(scene::Entity& ioEntity, std::tuple<Component...>) {
+void drawComponentsFromTuple(scene::Entity& ioEntity, const std::tuple<Component...>&) {
 	(..., drawComponent<Component>(ioEntity));
 }
 
@@ -163,11 +163,11 @@ void SceneHierarchy::drawComponents(scene::Entity& ioEntity) {
 	if (ImGui::Button("Add Component"))
 		ImGui::OpenPopup("AddComponent");
 	if (ImGui::BeginPopup("AddComponent")) {
-		addComponentsFromTuple(m_selection, optionalComponents{});
+		addComponentsFromTuple(m_selection, OptionalComponents{});
 		ImGui::EndPopup();
 	}
 	ImGui::PopItemWidth();
-	drawComponentsFromTuple(m_selection, gui::component::drawableComponents{});
+	drawComponentsFromTuple(m_selection, gui::component::DrawableComponents{});
 }
 
 }// namespace owl::nest::panel

@@ -36,7 +36,7 @@ struct OWL_API NativeScript {
 	// NOLINTBEGIN(cppcoreguidelines-owning-memory)
 	template<typename T>
 	void bind() {
-		instantiateScript = []() { return static_cast<ScriptableEntity*>(new T()); };
+		instantiateScript = [] { return static_cast<ScriptableEntity*>(new T()); };
 		destroyScript = [](NativeScript* ioNsc) {
 			delete ioNsc->instance;
 			ioNsc->instance = nullptr;

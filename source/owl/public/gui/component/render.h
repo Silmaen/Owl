@@ -72,7 +72,7 @@ OWL_API void renderProps(scene::component::EntityLink& ioComponent);
 /**
  * @brief List of components that have a render function.
  */
-using drawableComponents =
+using DrawableComponents =
 		std::tuple<scene::component::Transform, scene::component::Camera, scene::component::SpriteRenderer,
 				   scene::component::CircleRenderer, scene::component::Text, scene::component::PhysicBody,
 				   scene::component::Player, scene::component::Trigger, scene::component::EntityLink>;

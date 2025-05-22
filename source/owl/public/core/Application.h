@@ -8,15 +8,15 @@
 
 #pragma once
 
-#include "fonts/FontLibrary.h"
-#include "renderer/RenderAPI.h"
-#include "sound/SoundAPI.h"
 #include "Timestep.h"
 #include "core/task/Task.h"
 #include "event/AppEvent.h"
+#include "fonts/FontLibrary.h"
 #include "gui/UiLayer.h"
 #include "input/Window.h"
 #include "layer/LayerStack.h"
+#include "renderer/RenderAPI.h"
+#include "sound/SoundAPI.h"
 #include "task/Scheduler.h"
 
 #include <filesystem>
@@ -43,9 +43,9 @@ struct OWL_API AppParams {
 	/// Application's title.
 	std::string name{"Owl Engine"};
 	/// Application's assets pattern.
-	std::string assetsPattern{""};
+	std::string assetsPattern{};
 	/// Application's icon.
-	std::string icon{""};
+	std::string icon{};
 	/// Windows width.
 	uint32_t width{g_DefaultWindowsWidth};
 	/// Windows height.
@@ -55,7 +55,7 @@ struct OWL_API AppParams {
 	/// Renderer's type.
 	renderer::RenderAPI::Type renderer{renderer::RenderAPI::Type::Vulkan};
 	/// sound system's type.
-	sound::SoundAPI::Type sound{sound::SoundAPI::Type::OpenAL};
+	sound::SoundAPI::Type sound{sound::SoundAPI::Type::OpenAl};
 	/// If the application should use ImGui overlay.
 	bool hasGui{true};
 	/// If extra debugging symbols should be loaded.

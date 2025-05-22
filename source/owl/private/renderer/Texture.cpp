@@ -9,10 +9,10 @@
 
 #include "renderer/Texture.h"
 
-#include "renderer/Renderer.h"
 #include "core/Application.h"
 #include "null/Texture.h"
 #include "opengl/Texture.h"
+#include "renderer/Renderer.h"
 #include "vulkan/Texture.h"
 
 namespace owl::renderer {
@@ -46,20 +46,20 @@ void Texture::Specification::fromString(const std::string& iString) {
 	std::getline(ss, token, ':');
 	size.y() = static_cast<uint32_t>(std::stoul(token));
 	std::getline(ss, token, ':');
-	format = magic_enum::enum_cast<ImageFormat>(token).value_or(ImageFormat::RGB8);
+	format = magic_enum::enum_cast<ImageFormat>(token).value_or(ImageFormat::Rgb8);
 	std::getline(ss, token, ':');
 	generateMips = token != "false";
 }
 
 auto Texture::Specification::getPixelSize() const -> uint8_t {
 	switch (format) {
-		case ImageFormat::RGB8:
+		case ImageFormat::Rgb8:
 			return 3;
-		case ImageFormat::RGBA8:
+		case ImageFormat::Rgba8:
 			return 4;
 		case ImageFormat::R8:
 			return 1;
-		case ImageFormat::RGBA32F:
+		case ImageFormat::Rgba32F:
 			return 16;
 		case ImageFormat::None:
 			return 0;
@@ -124,7 +124,7 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 	const auto key = iTextureSerializedName.substr(0, 4);
 	const auto val = iTextureSerializedName.substr(4);
 	if (key == "emp:")
-		return create(Specification{.size = {0, 0}, .format = ImageFormat::RGB8});
+		return create(Specification{.size = {0, 0}, .format = ImageFormat::Rgb8});
 	if (key == "nam:")
 		return create(val);
 	if (key == "pat:")

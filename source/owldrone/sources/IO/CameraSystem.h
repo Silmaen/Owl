@@ -19,7 +19,7 @@ public:
 	/**
 	 * @brief Destructor.
 	 */
-	virtual ~CameraSystem();
+	~CameraSystem();
 
 	CameraSystem(const CameraSystem&) = delete;
 	CameraSystem(CameraSystem&&) = delete;

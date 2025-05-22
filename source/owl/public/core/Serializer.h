@@ -27,7 +27,7 @@ public:
 	 * @brief Get access to the backend implementation.
 	 * @return The backend implementation.
 	 */
-	auto getImpl() const -> const shared<SerializerImpl>&;
+	[[nodiscard]] auto getImpl() const -> const shared<SerializerImpl>&;
 
 private:
 	shared<SerializerImpl> mp_impl;

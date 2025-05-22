@@ -46,7 +46,7 @@ public:
 	auto operator=(VerticalSpeed&&) -> VerticalSpeed& = default;
 
 	/**
-	 * @brief Draw the  gauge back ground.
+	 * @brief Draw the gauge background.
 	 */
 	void drawBack() override;
 
@@ -57,16 +57,16 @@ public:
 
 	/**
 	 * @brief Define the velocity.
-	 * @param vel The new velocity from UAV.
+	 * @param iVel The new velocity from UAV.
 	 */
-	void setVerticalVelocity(float vel) { verticalVelocity = vel; }
+	void setVerticalVelocity(const float iVel) { m_verticalVelocity = iVel; }
 
 private:
-	float verticalVelocity = 0.f;
+	float m_verticalVelocity = 0.f;
 
 	[[nodiscard]] auto velocityToAngle() const -> float;
 
-	owl::shared<owl::renderer::Texture> background = nullptr;
-	owl::shared<owl::renderer::Texture> cursor = nullptr;
+	owl::shared<owl::renderer::Texture> m_background = nullptr;
+	owl::shared<owl::renderer::Texture> m_cursor = nullptr;
 };
 }// namespace drone::panels::gauge

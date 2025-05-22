@@ -25,9 +25,9 @@ void GraphContext::swapBuffers() {
 
 void GraphContext::init() {}
 
-auto GraphContext::getVersion() const -> GraphContext::Version {
+auto GraphContext::getVersion() const -> Version {
 	const int version = internal::VulkanHandler::get().getVersion();
-	return {static_cast<int32_t>(VK_API_VERSION_MAJOR(version)), static_cast<int32_t>(VK_API_VERSION_MAJOR(version))};
+	return {.major=static_cast<int32_t>(VK_API_VERSION_MAJOR(version)), .minor=static_cast<int32_t>(VK_API_VERSION_MAJOR(version))};
 }
 
 auto GraphContext::createSurface(const VkInstance& iInstance) -> VkResult {

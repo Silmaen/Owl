@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "core/assets/AssetLibrary.h"
 #include "CameraOrtho.h"
 #include "RenderCommand.h"
 #include "Shader.h"
+#include "core/assets/AssetLibrary.h"
 
 /**
  * @brief Namespace for the renderer elements.

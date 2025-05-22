@@ -3,38 +3,38 @@
 #
 cmake_minimum_required(VERSION 3.24)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_MODULE_PATH}")
-set(PRJPREFIX OWL)
-set(PRJPREFIX_LOWER owl)
+set(PROJECT_PREFIX OWL)
+set(PROJECT_PREFIX_LOWER owl)
 set(ENGINE_NAME OwlEngine)
 project(Owl VERSION 0.0.2 LANGUAGES C CXX)
 #
 # ---=== Options ===---
 #
-option(${PRJPREFIX}_BUILD_SHARED "If the Library must be build as shared library" ON)
-option(${PRJPREFIX}_SKIP_DEPMANAGER "Don't use depmanager" OFF)
-option(${PRJPREFIX}_DEFINE_VULKAN_LAYERS "Copy vulkan layers in the binary directory" ON)
+option(${PROJECT_PREFIX}_BUILD_SHARED "If the Library must be build as shared library" ON)
+option(${PROJECT_PREFIX}_SKIP_DEPMANAGER "Don't use depmanager" OFF)
+option(${PROJECT_PREFIX}_DEFINE_VULKAN_LAYERS "Copy vulkan layers in the binary directory" ON)
 
-option(${PRJPREFIX}_DOC_ONLY "To only generate documentation" OFF)
-option(${PRJPREFIX}_BUILD_NEST "If wanted to generate Owl Nest" ON)
-option(${PRJPREFIX}_BUILD_SANDBOX "If wanted to generate Sandbox" ON)
-option(${PRJPREFIX}_BUILD_DRONE "If wanted to generate OWl Drone" ON)
-option(${PRJPREFIX}_BUILD_CAST "If wanted to generate OWl Cast" ON)
+option(${PROJECT_PREFIX}_DOC_ONLY "To only generate documentation" OFF)
+option(${PROJECT_PREFIX}_BUILD_NEST "If wanted to generate Owl Nest" ON)
+option(${PROJECT_PREFIX}_BUILD_SANDBOX "If wanted to generate Sandbox" ON)
+option(${PROJECT_PREFIX}_BUILD_DRONE "If wanted to generate OWl Drone" ON)
+option(${PROJECT_PREFIX}_BUILD_CAST "If wanted to generate OWl Cast" ON)
 
-option(${PRJPREFIX}_TESTING "Enable the unit tests" ON)
-option(${PRJPREFIX}_ENABLE_COVERAGE "Run code coverage during test run" OFF)
-option(${PRJPREFIX}_ENABLE_STACKTRACE "Use stacktrace within the memory tracker (slow down the code)" OFF)
-option(${PRJPREFIX}_ENABLE_PROFILING "Output profiling informations during execution" OFF)
+option(${PROJECT_PREFIX}_TESTING "Enable the unit tests" ON)
+option(${PROJECT_PREFIX}_ENABLE_COVERAGE "Run code coverage during test run" OFF)
+option(${PROJECT_PREFIX}_ENABLE_STACKTRACE "Use stacktrace within the memory tracker (slow down the code)" OFF)
+option(${PROJECT_PREFIX}_ENABLE_PROFILING "Output profiling information during execution" OFF)
 
 #
 # ---=== Base Configs ===---
 #
 include(BaseConfig)
 
-if (NOT ${PRJPREFIX}_DOC_ONLY)
+if (NOT ${PROJECT_PREFIX}_DOC_ONLY)
     #
     # ---=== Sanitizers ===---
     #
-    include(SaniTests)
+    include(Sanitizers)
 
     #
     # ---=== The Program ===---
@@ -44,7 +44,7 @@ if (NOT ${PRJPREFIX}_DOC_ONLY)
     #
     # ---=== TESTING PROCEDURES ===---
     #
-    if (${PRJPREFIX}_TESTING AND NOT ${PRJPREFIX}_ENABLE_CLANG_TIDY)
+    if (${PROJECT_PREFIX}_TESTING AND NOT ${PROJECT_PREFIX}_ENABLE_CLANG_TIDY)
         enable_testing()
         add_subdirectory(test)
     endif ()
@@ -62,7 +62,7 @@ endif ()
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Include CPack package
-if (${PRJPREFIX}_PACKAGING)
+if (${PROJECT_PREFIX}_PACKAGING)
     include(CPackConfig.cmake)
     include(CPack)
 endif ()

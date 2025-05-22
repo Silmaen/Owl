@@ -8,7 +8,7 @@ using namespace owl::input;
 TEST(Window, creation) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	Properties props;
-	props.winType = Type(-1);
+	props.winType = static_cast<Type>(-1);
 	auto wnd = Window::create(props);
 	EXPECT_FALSE(wnd);
 	props.winType = Type::Null;

@@ -62,7 +62,7 @@ public:
 	 * @brief Get the type of window manager.
 	 * @return The window manager's type.
 	 */
-	[[nodiscard]] auto getType() const -> Type override { return Type::GLFW; }
+	[[nodiscard]] auto getType() const -> Type override { return Type::Glfw; }
 
 	/**
 	 * @brief Define the Event Callback function.

@@ -13,10 +13,10 @@ namespace owl::raycaster {
 MapWindow::MapWindow() : BaseDrawPanel{"mapWindow"} {
 	const renderer::FramebufferSpecification specs{
 			.size = {1280, 720},
-			.attachments = {{renderer::AttachmentSpecification::Format::Surface,
-							 renderer::AttachmentSpecification::Tiling::Optimal},
-							{renderer::AttachmentSpecification::Format::RedInteger,
-							 renderer::AttachmentSpecification::Tiling::Optimal}},
+			.attachments = {{.format=renderer::AttachmentSpecification::Format::Surface,
+							 .tiling=renderer::AttachmentSpecification::Tiling::Optimal},
+							{.format=renderer::AttachmentSpecification::Format::RedInteger,
+							 .tiling=renderer::AttachmentSpecification::Tiling::Optimal}},
 			.samples = 1,
 			.swapChainTarget = false,
 			.debugName = "mapWindow"};

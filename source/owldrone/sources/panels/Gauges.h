@@ -48,9 +48,9 @@ public:
 
 	/**
 	 * @brief Update panel Status.
-	 * @param ts The Time delta of the frame.
+	 * @param iTimeStep The Time delta of the frame.
 	 */
-	void onUpdate(const owl::core::Timestep& ts) override;
+	void onUpdate(const owl::core::Timestep& iTimeStep) override;
 
 	/**
 	 * @brief Do the rendering.
@@ -69,7 +69,7 @@ private:
 	bool m_viewportFocused = false;
 	bool m_viewportHovered = false;
 
-	// The gauges..
+	// The gauges...
 	std::vector<owl::shared<gauge::BaseGauge>> m_gauges;
 
 	/// The camera
