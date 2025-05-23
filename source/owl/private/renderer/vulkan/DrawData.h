@@ -67,7 +67,7 @@ public:
 	 */
 	void setShader(const std::string& iShaderName, const std::string& iRenderer) override;
 
-	[[nodiscard]] auto getName() const -> std::string { return fmt::format("{}_{}", m_renderer, m_shaderName); }
+	[[nodiscard]] auto getName() const -> std::string { return std::format("{}_{}", m_renderer, m_shaderName); }
 
 private:
 	/// index of the pipeline.

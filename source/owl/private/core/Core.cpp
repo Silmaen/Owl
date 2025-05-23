@@ -24,7 +24,7 @@ auto getVersionMinor() -> uint8_t { return OWL_MINOR; }
 auto getVersionPatch() -> uint8_t { return OWL_PATCH; }
 
 auto getVersionString() -> std::string {
-	return fmt::format("{}.{}.{}", getVersionMajor(), getVersionMinor(), getVersionPatch());
+	return std::format("{}.{}.{}", getVersionMajor(), getVersionMinor(), getVersionPatch());
 }
 
 }// namespace owl

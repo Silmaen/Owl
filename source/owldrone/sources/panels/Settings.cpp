@@ -36,11 +36,11 @@ void Settings::onRender() {
 			auto cam = camSys.getCurrentCameraName();
 			int32_t sCam = camSys.getCurrentCameraId();
 			const int32_t cCam = sCam;
-			if (ImGui::BeginCombo("Camera", fmt::format("Camera {}: {}", sCam, cam).c_str())) {
+			if (ImGui::BeginCombo("Camera", std::format("Camera {}: {}", sCam, cam).c_str())) {
 				int32_t i = 0;
 				for (const auto& camera: cameras) {
 					const bool isSelected = (i == cCam);
-					if (ImGui::Selectable(fmt::format("Camera {}: {}", i, camera).c_str(), isSelected))
+					if (ImGui::Selectable(std::format("Camera {}: {}", i, camera).c_str(), isSelected))
 						sCam = i;
 					// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
 					if (isSelected)
@@ -75,10 +75,10 @@ void Settings::onRender() {
 				cName = device->getFriendlyName();
 				cPort = device->port;
 			}
-			if (ImGui::BeginCombo("Serial port", fmt::format("Serial {} ({})", cName, cPort).c_str())) {
+			if (ImGui::BeginCombo("Serial port", std::format("Serial {} ({})", cName, cPort).c_str())) {
 				for (const auto& dev: devices) {
 					const bool isSelected = (dev.port == cPort);
-					if (ImGui::Selectable(fmt::format("Serial {} ({})", dev.getFriendlyName(), dev.port).c_str(),
+					if (ImGui::Selectable(std::format("Serial {} ({})", dev.getFriendlyName(), dev.port).c_str(),
 										  isSelected))
 						cPort = dev.port;
 					// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)

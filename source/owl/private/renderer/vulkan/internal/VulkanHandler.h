@@ -67,7 +67,7 @@ public:
 		ErrorCreatingDescriptorPool,
 		ErrorCreatingCommandPool,
 		ErrorCreatingCommandBuffer,
-		ErrorSubmitingDrawCommand,
+		ErrorSubmittingDrawCommand,
 		ErrorPresentingQueue,
 		ErrorAcquiringNextImage,
 		ErrorResetCommandBuffer,
@@ -89,12 +89,6 @@ public:
 	 * @param[in] iState The new state.
 	 */
 	void setState(const State& iState) { m_state = iState; }
-
-	/**
-	 * @brief The vulkan version.
-	 * @return The actual Vulkan version
-	 */
-	[[nodiscard]] auto getVersion() const -> int { return m_version; }
 
 	/**
 	 * @brief Activate the validation layer, if not already initialized.
@@ -183,8 +177,6 @@ private:
 
 	/// The current state of the handler.
 	State m_state = State::Uninitialized;
-	/// Loaded version.
-	int m_version = 0;
 	/// Enable Validation layers.
 	bool m_validation = false;
 	bool m_debugMessage = false;

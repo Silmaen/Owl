@@ -61,16 +61,10 @@ ignore_list_win = [
     "avrt.dll",
     "mf.dll",
     "mfplat.dll",
-    "mfreadwrite.dll"
+    "mfreadwrite.dll",
 ]
 
-tocheck = [
-    "libOwlEngine",
-    "OwlNest",
-    "OwlDrone",
-    "OwlRunner",
-    "OwlSandbox"
-]
+to_check = ["libOwlEngine", "OwlNest", "OwlDrone", "OwlRunner", "OwlSandbox"]
 
 platforms = [
     "Windows_x64",
@@ -150,7 +144,9 @@ def check_dll_dependencies_windows(dll: Path):
         for line in result.stdout.splitlines():
             if "DLL Name" in line:
                 dep = line.split()[-1].lower()
-                if not is_ignored(dep, ignore_list_win) and not in_same_dir(dep, bin_dir):
+                if not is_ignored(dep, ignore_list_win) and not in_same_dir(
+                    dep, bin_dir
+                ):
                     non_system_deps.append(dep)
 
         if non_system_deps:
@@ -168,15 +164,14 @@ def main():
     :return: None
     """
     parser = argparse.ArgumentParser(description="Check library dependencies.")
-    parser.add_argument(
-        "location", type=str, help="Destination to check."
-    )
+    parser.add_argument("location", type=str, help="Destination to check.")
     args = parser.parse_args()
     location = Path(args.location).resolve()
     tt = Path(tempfile.mkdtemp())
     try:
         if not location.exists():
             print("The destination does not exist.", file=stderr)
+            exit(1)
         work_dir = location
         archive_file = None
         if location.is_file():
@@ -197,7 +192,10 @@ def main():
                 with tarfile.open(archive_file) as tar:
                     tar.extractall(tt)
             else:
-                print("The destination must be a .zip or .tgz file of an uncompressed folder.", file=stderr)
+                print(
+                    "The destination must be a .zip or .tgz file of an uncompressed folder.",
+                    file=stderr,
+                )
                 exit(1)
             work_dir = tt / archive_file.stem
             for f in work_dir.iterdir():
@@ -211,7 +209,7 @@ def main():
         for file in work_dir.iterdir():
             if not file.is_file():
                 continue
-            if file.stem in tocheck:
+            if file.stem in to_check:
                 print(f"Checking {file.name}")
                 if system() == "Linux":
                     check_shared_lib_linux(file)

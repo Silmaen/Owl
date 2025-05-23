@@ -34,7 +34,7 @@ auto Shader::create(const Specification& iShaderName) -> shared<Shader> {
 		shaderDir /= "null";
 	shaderDir /= iShaderName.shaderName.name;
 	if (RenderCommand::requireInit()) {
-		const auto result = Renderer::getTextureLibrary().find(fmt::format("{}.vert", shaderDir.string()));
+		const auto result = Renderer::getTextureLibrary().find(std::format("{}.vert", shaderDir.string()));
 		if (!result.has_value()) {
 			OWL_CORE_ERROR("Shader::Create: Failed to load shader {}, unable to find assets",
 						   iShaderName.shaderName.name)
@@ -118,7 +118,7 @@ auto Shader::decomposeName(const std::string& iFullName) -> ShaderName {
 auto Shader::composeName(const ShaderName& iNames) -> std::string {
 	if (iNames.renderer.empty())
 		return iNames.name;
-	return fmt::format("{}#{}", iNames.renderer, iNames.name);
+	return std::format("{}#{}", iNames.renderer, iNames.name);
 }
 
 }// namespace owl::renderer

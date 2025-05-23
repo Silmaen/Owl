@@ -59,7 +59,7 @@ public:
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override {
-		return fmt::format("KeyPressedEvent: {} (repeat = {})", m_keyCode, m_repeatCount);
+		return std::format("KeyPressedEvent: {} (repeat = {})", m_keyCode, m_repeatCount);
 	}
 
 	/**
@@ -101,7 +101,7 @@ public:
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override {
-		return fmt::format("KeyReleasedEvent: {}", m_keyCode);
+		return std::format("KeyReleasedEvent: {}", m_keyCode);
 	}
 
 	/**
@@ -138,7 +138,7 @@ public:
 	 * @brief Get the event as string.
 	 * @return String of the event.
 	 */
-	[[nodiscard]] auto toString() const -> std::string override { return fmt::format("KeyTypedEvent: {}", m_keyCode); }
+	[[nodiscard]] auto toString() const -> std::string override { return std::format("KeyTypedEvent: {}", m_keyCode); }
 
 	/**
 	 * @brief Get the event's name.

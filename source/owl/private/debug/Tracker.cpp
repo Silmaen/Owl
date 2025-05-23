@@ -7,6 +7,7 @@
  */
 
 #include "owlpch.h"
+#include <iostream>
 #include <stack>
 
 #include "debug/Tracker.h"
@@ -69,7 +70,7 @@ auto operator new(const size_t iSize) -> void* {
 	return mem;
 }
 
-void operator delete(void* iMemory, const size_t iSize) OWL_DEALLOC_EXCEPT {
+void operator delete(void* iMemory, size_t iSize) OWL_DEALLOC_EXCEPT {
 	owl::debug::TrackerAPI::deallocate(iMemory, iSize);
 	free(iMemory);
 }
@@ -215,23 +216,23 @@ auto AllocationInfo::getLibName() const -> std::string {
 
 auto AllocationInfo::toStr([[maybe_unused]] const bool iTracePrint, [[maybe_unused]] const bool iFullTrace) const
 		-> std::string {
-	std::string result = fmt::format("memory chunk at {} size ({})", location, core::utils::sizeToString(size));
+	std::string result = std::format("memory chunk at {} size ({})", location, core::utils::sizeToString(size));
 
 #ifdef OWL_STACKTRACE
 	if (!traceInternal || traceInternal->fullTrace.empty()) {
-		result += fmt::format(" <empty Trace>");
+		result += std::format(" <empty Trace>");
 	} else {
 		auto last = traceInternal->getCallerInfo();
-		result += fmt::format(" allocated {} ({}:{}:{})", last.symbol, last.filename, last.line.value_or(0),
+		result += std::format(" allocated {} ({}:{}:{})", last.symbol, last.filename, last.line.value_or(0),
 							  last.column.value_or(0));
 		if (iTracePrint) {
-			result += fmt::format("\n *** {} StackTrace (most recent call first) *** \n",
+			result += std::format("\n *** {} StackTrace (most recent call first) *** \n",
 								  iFullTrace ? "Full" : "Simplified");
 			uint32_t frameId = 0;
 			for (auto frame: traceInternal->fullTrace) {
 				if (!iFullTrace && !frame.symbol.starts_with("owl::"))
 					continue;
-				result += fmt::format("#{} at {}:{}:{} symbol {}{} ({:#x})\n", frameId, frame.filename,
+				result += std::format("#{} at {}:{}:{} symbol {}{} ({:#x})\n", frameId, frame.filename,
 									  frame.line.value_or(0), frame.column.value_or(0),
 									  frame.is_inline ? "(inline) " : "", frame.symbol, frame.raw_address);
 				++frameId;
@@ -251,7 +252,7 @@ void AllocationState::pushMemory(void* iLocation, size_t iSize) {
 	allocatedMemory += iSize;
 	memoryPeek = std::max(memoryPeek, allocatedMemory);
 	if (!g_AntiLoop)
-		fmt::println("Problème d'antiloop!!!");
+		std::cerr << "Problème d'antiloop!!!\n";
 	allocs.emplace_back(iLocation, iSize);
 }
 

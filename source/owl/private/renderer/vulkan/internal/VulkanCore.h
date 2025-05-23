@@ -89,7 +89,7 @@ public:
 
 	/**
 	 * @brief Singleton get instance.
-	 * @return Intance of Vulkan core.
+	 * @return Instance of Vulkan core.
 	 */
 	static auto get() -> VulkanCore& {
 		static VulkanCore instance;
@@ -98,7 +98,7 @@ public:
 
 	/**
 	 * @brief Initialize the vulkan core.
-	 * @param[in] iConfiguration The Given configuratio.
+	 * @param[in] iConfiguration The Given configuration.
 	 */
 	void init(const VulkanConfiguration& iConfiguration);
 
@@ -108,7 +108,7 @@ public:
 	void release();
 
 	/**
-	 * @brief Check if the currnt core is in good health.
+	 * @brief Check if the current core is in good health.
 	 * @return True if everything ok.
 	 */
 	[[nodiscard]] auto isHealthy() const -> bool;
@@ -132,10 +132,16 @@ public:
 	[[nodiscard]] auto getLogicalDevice() const -> VkDevice { return m_logicalDevice; }
 
 	/**
+	 * @brief Get The API version of the vulkan instance.
+	 * @return The API version of the vulkan instance.
+	 */
+	[[nodiscard]] auto getApiVersion() const -> uint32_t { return m_instanceInfo->version; }
+
+	/**
 	 * @brief The different core states
 	 */
 	enum struct State : uint8_t {
-		/// Just created or reseted.
+		/// Just created or reset.
 		Created,
 		/// Initialized and ready.
 		Initialized,
@@ -218,8 +224,8 @@ public:
 	 * @param[in] iMemProperties Memory properties.
 	 * @return The memory type index.
 	 */
-	[[nodiscard]] auto findMemoryTypeIndex(uint32_t iTypeFilter, VkMemoryPropertyFlags iMemProperties) const
-			-> uint32_t;
+	[[nodiscard]] auto findMemoryTypeIndex(uint32_t iTypeFilter,
+										   VkMemoryPropertyFlags iMemProperties) const -> uint32_t;
 
 	[[nodiscard]] auto getMaxSamplerAnisotropy() const -> float;
 

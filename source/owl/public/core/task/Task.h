@@ -8,6 +8,7 @@
 
 #pragma once
 #include "core/Core.h"
+#include <functional>
 #include <future>
 
 namespace owl::core::task {
@@ -15,7 +16,7 @@ namespace owl::core::task {
 class Scheduler;
 
 /**
- * @brief Class defining a simple task for mutlithreading.
+ * @brief Class defining a simple task for multithreading.
  */
 class OWL_API Task final {
 public:
@@ -31,6 +32,9 @@ public:
 	 * @brief Default move constructor.
 	 */
 	Task(Task&&) noexcept;
+	Task(const Task&) = delete;
+	auto operator=(const Task&) -> Task& = delete;
+	auto operator=(Task&&) -> Task& = delete;
 
 	/// @brief The task State.
 	enum struct State : uint8_t {

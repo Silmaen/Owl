@@ -7,6 +7,7 @@
  */
 #include "ArtificialHorizon.h"
 #include <cmath>
+#include <numbers>
 
 namespace drone::panels::gauge {
 

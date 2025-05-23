@@ -10,6 +10,7 @@
 #include "core/Application.h"
 #include "core/utils/FileDialog.h"
 
+#include <cstring>
 #include <nfd.hpp>
 
 namespace owl::core::utils {

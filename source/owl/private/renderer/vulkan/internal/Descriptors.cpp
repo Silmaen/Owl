@@ -355,7 +355,10 @@ void Descriptors::registerUniform(const uint32_t iSize) {
 
 void Descriptors::setUniformData(const void* iData, const size_t iSize) const {
 	const auto& vkh = VulkanHandler::get();
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 	memcpy(m_uniformBuffersMapped[vkh.getCurrentFrameIndex()], iData, iSize);
+	OWL_DIAG_POP
 }
 
 auto Descriptors::registerNewTexture() -> uint32_t { return m_textures.registerNewTexture(); }
@@ -449,7 +452,7 @@ auto Descriptors::TextureList::registerNewTexture() -> uint32_t {
 
 void Descriptors::TextureList::unregisterTexture(uint32_t iIndex) {
 	const auto iter = std::find_if(textures.begin(), textures.end(),
-							 [&iIndex](const auto& iElem) { return iElem.first == iIndex; });
+								   [&iIndex](const auto& iElem) { return iElem.first == iIndex; });
 	if (iter == textures.end())
 		return;
 	iter->second->freeTexture();
@@ -457,7 +460,7 @@ void Descriptors::TextureList::unregisterTexture(uint32_t iIndex) {
 }
 auto Descriptors::TextureList::getTextureData(uint32_t iIndex) -> tex {
 	const auto iter = std::find_if(textures.begin(), textures.end(),
-							 [&iIndex](const auto& iElem) { return iElem.first == iIndex; });
+								   [&iIndex](const auto& iElem) { return iElem.first == iIndex; });
 	if (iter == textures.end())
 		return nullptr;
 	return iter->second;

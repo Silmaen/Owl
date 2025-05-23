@@ -51,12 +51,12 @@ void appendEnv(const std::string& iKey, const std::string& iValue, const std::st
 
 template<typename T>
 void setEnvValue(const std::string& iKey, const T& iValue) {
-	setEnv(iKey, fmt::format("{}", iValue));
+	setEnv(iKey, std::format("{}", iValue));
 }
 
 template<typename T>
 void appendEnvValue(const std::string& iKey, const T& iValue) {
-	appendEnv(iKey, fmt::format("{}", iValue));
+	appendEnv(iKey, std::format("{}", iValue));
 }
 
 }// namespace owl::core
