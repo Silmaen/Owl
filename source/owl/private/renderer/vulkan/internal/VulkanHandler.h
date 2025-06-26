@@ -110,7 +110,7 @@ public:
 
 	[[nodiscard]] auto getSwapChain() const -> Framebuffer* { return m_swapChain.get(); }
 
-	[[nodiscard]] auto getImGuiRenderPass() const -> VkRenderPass { return m_ImGuiRenderPass; }
+	[[nodiscard]] auto getImGuiRenderPass() const -> VkRenderPass { return m_imGuiRenderPass; }
 
 	[[nodiscard]] auto toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplVulkan_InitInfo;
 

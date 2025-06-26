@@ -235,7 +235,7 @@ private:
 	 */
 	VulkanCore();
 
-	/// Vulkan requested configuation.
+	/// Vulkan requested configuration.
 	VulkanConfiguration m_config{};
 
 	/// Vulkan instance.

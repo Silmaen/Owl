@@ -334,7 +334,7 @@ void VulkanHandler::beginFrame() {
 	const auto& core = VulkanCore::get();
 	inFrame = true;
 	if (!isMainFramebuffer()) {
-		OWL_CORE_WARN("Vulkan begin frame on non main framebuffer: {}.", m_currentframebuffer->getName())
+		OWL_CORE_WARN("Vulkan begin frame on non main framebuffer: {}.", m_currentFramebuffer->getName())
 		unbindFramebuffer();
 	}
 	unbindFramebuffer();
@@ -350,7 +350,7 @@ void VulkanHandler::beginFrame() {
 			return;
 		}
 		if (result != VK_SUBOPTIMAL_KHR) {
-			OWL_CORE_ERROR("Vulkan fb [{}]: failed to acquire next image ({}).", m_currentframebuffer->getName(),
+			OWL_CORE_ERROR("Vulkan fb [{}]: failed to acquire next image ({}).", m_currentFramebuffer->getName(),
 						   resultString(result))
 			m_state = State::ErrorAcquiringNextImage;
 			return;
@@ -364,7 +364,7 @@ void VulkanHandler::endFrame() {
 	if (m_state != State::Running)
 		return;
 	if (!isMainFramebuffer()) {
-		OWL_CORE_WARN("Vulkan ending frame on non main framebuffer: {}.", m_currentframebuffer->getName())
+		OWL_CORE_WARN("Vulkan ending frame on non main framebuffer: {}.", m_currentFramebuffer->getName())
 		unbindFramebuffer();
 	}
 	//OWL_CORE_TRACE("Vulkan fb [{}]: Ending frame {} / {}.", m_currentframebuffer->getName(),
@@ -381,7 +381,7 @@ void VulkanHandler::nextSubpass(bool internal) {
 	if (internal) {
 		vkCmdNextSubpass(getCurrentCommandBuffer(), VK_SUBPASS_CONTENTS_INLINE);
 	} else {
-		m_currentframebuffer->nextSubpass();
+		m_currentFramebuffer->nextSubpass();
 	}
 }
 
@@ -396,7 +396,7 @@ void VulkanHandler::beginBatch() {
 	if (const VkResult result = vkResetCommandBuffer(getCurrentCommandBuffer(), /*VkCommandBufferResetFlagBits*/ 0);
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan fb [{}]: failed to reset recording command buffer ({}).",
-					   m_currentframebuffer->getName(), resultString(result))
+					   m_currentFramebuffer->getName(), resultString(result))
 		m_state = State::ErrorResetCommandBuffer;
 		return;
 	}
@@ -406,7 +406,7 @@ void VulkanHandler::beginBatch() {
 												 .pInheritanceInfo = nullptr};
 	if (const VkResult result = vkBeginCommandBuffer(getCurrentCommandBuffer(), &beginInfo); result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan fb [{}]: failed to begin recording command buffer ({}).",
-					   m_currentframebuffer->getName(), resultString(result))
+					   m_currentFramebuffer->getName(), resultString(result))
 		m_state = State::ErrorBeginCommandBuffer;
 		return;
 	}
@@ -420,7 +420,7 @@ void VulkanHandler::beginBatch() {
 			.clearValueCount = 0,
 			.pClearValues = nullptr};
 	vkCmdBeginRenderPass(getCurrentCommandBuffer(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	m_currentframebuffer->resetSubPass();
+	m_currentFramebuffer->resetSubPass();
 	const VkViewport viewport{.x = 0.0f,
 							  .y = 0.0f,
 							  .width = static_cast<float>(m_currentFramebuffer->getSpecification().size.x()),
@@ -433,25 +433,25 @@ void VulkanHandler::beginBatch() {
 }
 
 void VulkanHandler::endBatch() {
-	while (m_currentframebuffer->getCurrentSubpass() != m_currentframebuffer->getSubpassCount() - 1) {
-		m_currentframebuffer->nextSubpass();
+	while (m_currentFramebuffer->getCurrentSubpass() != m_currentFramebuffer->getSubpassCount() - 1) {
+		m_currentFramebuffer->nextSubpass();
 	}
 	vkCmdEndRenderPass(getCurrentCommandBuffer());
 	if (const VkResult result = vkEndCommandBuffer(getCurrentCommandBuffer()); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan fb [{}]: failed to end command buffer ({}).", m_currentframebuffer->getName(),
+		OWL_CORE_ERROR("Vulkan fb [{}]: failed to end command buffer ({}).", m_currentFramebuffer->getName(),
 					   resultString(result))
 		m_state = State::ErrorEndCommandBuffer;
 		return;
 	}
 	const std::vector<VkPipelineStageFlags> waitStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-	const std::vector<VkSemaphore> signalSemaphores = {m_currentframebuffer->getCurrentFinishedSemaphore()};
+	const std::vector<VkSemaphore> signalSemaphores = {m_currentFramebuffer->getCurrentFinishedSemaphore()};
 	std::vector<VkSemaphore> waiter;
 
-	if (m_currentframebuffer->isMainTarget() && m_currentframebuffer->isFirstBatch())
-		waiter.push_back(m_currentframebuffer->getCurrentImageAvailableSemaphore());
+	if (m_currentFramebuffer->isMainTarget() && m_currentFramebuffer->isFirstBatch())
+		waiter.push_back(m_currentFramebuffer->getCurrentImageAvailableSemaphore());
 	else {
-		if (m_currentframebuffer->hasBeenCalled())
-			waiter.push_back(m_currentframebuffer->getCurrentFinishedSemaphore());
+		if (m_currentFramebuffer->hasBeenCalled())
+			waiter.push_back(m_currentFramebuffer->getCurrentFinishedSemaphore());
 	}
 
 	const VkSubmitInfo submitInfo{.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -460,20 +460,20 @@ void VulkanHandler::endBatch() {
 								  .pWaitSemaphores = waiter.data(),
 								  .pWaitDstStageMask = waitStages.data(),
 								  .commandBufferCount = 1,
-								  .pCommandBuffers = m_currentframebuffer->getCurrentCommandbuffer(),
+								  .pCommandBuffers = m_currentFramebuffer->getCurrentCommandbuffer(),
 								  .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
 								  .pSignalSemaphores = signalSemaphores.data()};
 	const auto& core = VulkanCore::get();
 	if (const VkResult result =
 				vkQueueSubmit(core.getGraphicQueue(), 1, &submitInfo, *m_currentFramebuffer->getCurrentFence());
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan fb [{}]: failed to submit draw command buffer ({}).", m_currentframebuffer->getName(),
+		OWL_CORE_ERROR("Vulkan fb [{}]: failed to submit draw command buffer ({}).", m_currentFramebuffer->getName(),
 					   resultString(result))
 		m_state = State::ErrorSubmitingDrawCommand;
 		return;
 	}
 	inBatch = false;
-	m_currentframebuffer->batchTouch();
+	m_currentFramebuffer->batchTouch();
 }
 
 void VulkanHandler::swapFrame() {
@@ -481,8 +481,8 @@ void VulkanHandler::swapFrame() {
 		return;
 	if (inFrame)
 		endFrame();
-	std::array waiter = {m_currentframebuffer->getCurrentFinishedSemaphore()};
-	const std::array swapChains = {m_currentframebuffer->getSwapChain()};
+	std::array waiter = {m_currentFramebuffer->getCurrentFinishedSemaphore()};
+	const std::array swapChains = {m_currentFramebuffer->getSwapChain()};
 
 	const VkPresentInfoKHR presentInfo{.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 									   .pNext = nullptr,
@@ -490,7 +490,7 @@ void VulkanHandler::swapFrame() {
 									   .pWaitSemaphores = waiter.data(),
 									   .swapchainCount = static_cast<uint32_t>(swapChains.size()),
 									   .pSwapchains = swapChains.data(),
-									   .pImageIndices = m_currentframebuffer->getCurrentImage(),
+									   .pImageIndices = m_currentFramebuffer->getCurrentImage(),
 									   .pResults = nullptr};
 	const auto& core = VulkanCore::get();
 	if (const VkResult result = vkQueuePresentKHR(core.getPresentQueue(), &presentInfo);
@@ -531,11 +531,11 @@ void VulkanHandler::bindFramebuffer(Framebuffer* iFrameBuffer) {
 		endBatch();
 	}
 #ifdef VKFB_DEBUG
-	if (m_currentframebuffer && iFrameBuffer && m_currentframebuffer != iFrameBuffer)
-		OWL_CORE_TRACE("Vulkan Change framebuffer [{}] -> [{}].", m_currentframebuffer->getName(),
+	if (m_currentFramebuffer && iFrameBuffer && m_currentFramebuffer != iFrameBuffer)
+		OWL_CORE_TRACE("Vulkan Change framebuffer [{}] -> [{}].", m_currentFramebuffer->getName(),
 					   iFrameBuffer->getName())
 #endif
-	m_currentframebuffer = iFrameBuffer;
+	m_currentFramebuffer = iFrameBuffer;
 }
 
 void VulkanHandler::unbindFramebuffer() {
@@ -544,14 +544,14 @@ void VulkanHandler::unbindFramebuffer() {
 		endBatch();
 	}
 #ifdef VKFB_DEBUG
-	if (m_currentframebuffer && m_swapChain.get() && m_currentframebuffer != m_swapChain.get())
-		OWL_CORE_TRACE("Vulkan Change framebuffer [{}] -> [{}].", m_currentframebuffer->getName(),
+	if (m_currentFramebuffer && m_swapChain.get() && m_currentFramebuffer != m_swapChain.get())
+		OWL_CORE_TRACE("Vulkan Change framebuffer [{}] -> [{}].", m_currentFramebuffer->getName(),
 					   m_swapChain.get()->getName())
 #endif
-	m_currentframebuffer = m_swapChain.get();
+	m_currentFramebuffer = m_swapChain.get();
 }
 
-auto VulkanHandler::isMainFramebuffer() const -> bool { return m_currentframebuffer == m_swapChain.get(); }
+auto VulkanHandler::isMainFramebuffer() const -> bool { return m_currentFramebuffer == m_swapChain.get(); }
 
 auto VulkanHandler::getCurrentFrameBufferName() const -> std::string {
 	if (m_currentFramebuffer == nullptr)

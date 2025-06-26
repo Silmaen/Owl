@@ -93,6 +93,12 @@ elseif (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 18)
         target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
                 -Wno-switch-default
+                -Wno-unsafe-buffer-usage
+        )
+    endif ()
+    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 20)
+        target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
+                -Wno-unsafe-buffer-usage-in-libc-call
         )
     endif ()
     set(${PROJECT_PREFIX}_COMPILER_CLANG ON)

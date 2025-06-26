@@ -280,13 +280,13 @@ void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const math::v
 											.levelCount = 1,
 											.baseArrayLayer = 0,
 											.layerCount = 1};
-	internal::transitionImageLayout(m_images[imgIndex].image, VK_IMAGE_LAYOUT_UNDEFINED,
+	internal::transitionImageLayout(cmd, m_images[imgIndex].image, VK_IMAGE_LAYOUT_UNDEFINED,
 									VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	vkCmdClearColorImage(cmd, m_images[imgIndex].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &val, 1, &range);
-	core.endSingleTimeCommands(cmd);
-	internal::transitionImageLayout(m_images[imgIndex].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	internal::transitionImageLayout(cmd, m_images[imgIndex].image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 									isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 												   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	core.endSingleTimeCommands(cmd);
 }
 OWL_DIAG_POP
 
@@ -463,9 +463,9 @@ void Framebuffer::createRenderPass() {
 		attDesc.push_back({.flags = {},
 						   .format = internal::attachmentFormatToVulkan(format),
 						   .samples = VK_SAMPLE_COUNT_1_BIT,
-						   .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+						   .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 						   .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-						   .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+						   .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 						   .stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE,
 						   .initialLayout = isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 														   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,

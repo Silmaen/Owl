@@ -248,8 +248,8 @@ AllocationState::~AllocationState() { g_AntiLoop = true; }
 
 void AllocationState::pushMemory(void* iLocation, size_t iSize) {
 	allocationCalls++;
-	allocatedMemory.size += iSize;
-	memoryPeek.size = std::max(memoryPeek.size, allocatedMemory.size);
+	allocatedMemory += iSize;
+	memoryPeek = std::max(memoryPeek, allocatedMemory);
 	if (!g_AntiLoop)
 		fmt::println("Problème d'antiloop!!!");
 	allocs.emplace_back(iLocation, iSize);

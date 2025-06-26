@@ -47,15 +47,15 @@ TEST(Tracker, stacktrace) {
 
 TEST(MemorySize, formating) {
 	std::size_t st{488};
-	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "488 bytes");
+	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "488 B");
 	st += 1024;
-	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "1.48 kB");
+	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "1.48 KB");
 	st *= 410;
 	st += 1024ull * 1024ull;
 	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "1.59 MB");
 	st *= 154;
 	st += 77 * 1024ull * 1024ull * 1024ull;
-	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "77.2 GB");
+	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "77.24 GB");
 	st += 1024ull * 1024ull * 1024ull * 1024ull;
 	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "1.08 TB");
 }

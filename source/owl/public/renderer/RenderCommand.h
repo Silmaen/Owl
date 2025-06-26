@@ -148,8 +148,8 @@ public:
 	 * @brief Change to the next subpass.
 	 */
 	static void nextSubpass() {
-		if (mu_renderAPI)
-			mu_renderAPI->nextSubpass();
+		if (m_renderAPI)
+			m_renderAPI->nextSubpass();
 	}
 
 	/**
