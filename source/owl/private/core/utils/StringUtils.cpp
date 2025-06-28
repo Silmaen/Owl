@@ -13,7 +13,7 @@ namespace owl::core::utils {
 
 auto sizeToString(const size_t iSize) -> std::string {
 	auto size = static_cast<double>(iSize);
-	std::string unit{"B"};
+	std::string_view unit{"B"};
 	if (size > 1024) {
 		size /= 1024;
 		unit = "KB";
