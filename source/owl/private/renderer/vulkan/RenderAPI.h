@@ -96,6 +96,12 @@ public:
 	 * @brief Ends draw call for the current batch.
 	 */
 	void endBatch() override;
+
+	/**
+	 * @brief Change the subpass.
+	 */
+	void nextSubpass() override;
+
 	/**
 	 * @brief Ends draw call for the current frame.
 	 */

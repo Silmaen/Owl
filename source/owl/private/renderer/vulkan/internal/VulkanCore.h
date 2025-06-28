@@ -24,6 +24,8 @@ constexpr uint32_t g_maxFrameInFlight = 2;
 struct VulkanConfiguration {
 	/// If the validation layers should be activated.
 	bool activeValidation = false;
+	/// If the debug message should be activated.
+	bool debugMessage = false;
 };
 
 /**
@@ -233,7 +235,7 @@ private:
 	 */
 	VulkanCore();
 
-	/// Vulkan requested configuation.
+	/// Vulkan requested configuration.
 	VulkanConfiguration m_config{};
 
 	/// Vulkan instance.
@@ -249,6 +251,8 @@ private:
 	uniq<InstanceInformations> m_instanceInfo{nullptr};
 	/// If  validation layer are enabled.
 	bool m_hasValidation = false;
+	/// If debug message are enabled.
+	bool m_debugMessage = false;
 	/// The internal state.
 	State m_state = State::Created;
 	/// Save of the current physical device properties.

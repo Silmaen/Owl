@@ -11,6 +11,7 @@
 #include "PhysicalDeviceCapabilities.h"
 
 #include "core/Application.h"
+#include "core/utils/StringUtils.h"
 #include "renderer/vulkan/GraphContext.h"
 #include "utils.h"
 
@@ -92,9 +93,16 @@ auto PhysicalDeviceCapabilities::getScore() const -> uint32_t {
 	if (surfaceFormats.empty() || presentModes.empty())
 		return 0;
 	uint32_t score = 0;
+	if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM ||
+		properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_OTHER)
+		return 0;
 	if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
 		score += 1000;// favor graphic card over CPU-integrated GPU
+	if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU ||
+		properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU)
+		score += 100;// favor graphic card over CPU
 	score += properties.limits.maxImageDimension2D;
+	score += getTotalMemory() / 1024 / 1024 / 1024;
 	// checking the queue families
 	if (graphicQueueIndex == std::numeric_limits<uint32_t>::max() || (features.samplerAnisotropy == 0u))
 		score *= 0;
@@ -129,6 +137,11 @@ auto enumerateDevices(const VkInstance& iInstance) -> std::vector<PhysicalDevice
 						  [](const PhysicalDeviceCapabilities& iFirst, const PhysicalDeviceCapabilities& iSecond) {
 							  return iFirst.getScore() > iSecond.getScore();
 						  });
+	OWL_CORE_TRACE("Vulkan: Found {} physical devices.", resultVec.size())
+	for (const auto& device: resultVec) {
+		OWL_CORE_TRACE("{}", device.getDetailedName())
+		OWL_CORE_TRACE("{}", device.getCapabilityString())
+	}
 	return resultVec;
 }
 
@@ -148,4 +161,50 @@ void PhysicalDeviceCapabilities::updateSurfaceInformation() {
 		vkGetPhysicalDeviceSurfacePresentModesKHR(device, gc->getSurface(), &presentModeCount, presentModes.data());
 	}
 }
+namespace {
+std::string vkDeviceTypeToString(const VkPhysicalDeviceType& iType) {
+	switch (iType) {
+		case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+			return "Other";
+		case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+			return "Integrated GPU";
+		case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+			return "Discrete GPU";
+		case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+			return "Virtual GPU";
+		case VK_PHYSICAL_DEVICE_TYPE_CPU:
+			return "CPU";
+		case VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM:
+			return "Unknown";
+	}
+	return "Unknown";
+}
+}// namespace
+auto PhysicalDeviceCapabilities::getSimpleName() const -> std::string {
+
+	return fmt::format("{} ({})", properties.deviceName, vkDeviceTypeToString(properties.deviceType));
+}
+auto PhysicalDeviceCapabilities::getDetailedName() const -> std::string {
+	std::string result;
+	fmt::format_to(std::back_inserter(result), "{}\n", getSimpleName());
+	fmt::format_to(std::back_inserter(result), "  - Score: {}", getScore());
+	return result;
+}
+auto PhysicalDeviceCapabilities::getCapabilityString() const -> std::string {
+	std::string result;
+	fmt::format_to(std::back_inserter(result), "Device Capabilities:\n");
+	fmt::format_to(std::back_inserter(result), "--------------------\n");
+	fmt::format_to(std::back_inserter(result), " Memory : {}\n", core::utils::sizeToString(getTotalMemory()));
+	return result;
+}
+
+[[nodiscard]] auto PhysicalDeviceCapabilities::getTotalMemory() const -> size_t {
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG("-Wunsafe-buffer-usage")
+	size_t total = 0;
+	for (uint32_t i = 0; i < memoryProperties.memoryHeapCount; ++i) { total += memoryProperties.memoryHeaps[i].size; }
+	OWL_DIAG_PUSH
+	return total;
+}
+
 }// namespace owl::renderer::vulkan::internal

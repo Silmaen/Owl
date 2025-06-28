@@ -30,8 +30,10 @@ void RenderAPI::init() {
 		return;
 
 	auto& vkh = internal::VulkanHandler::get();
-	if (extraDebugging)
+	if (extraDebugging) {
 		vkh.activateValidation();
+		vkh.activateDebugMessage();
+	}
 	vkh.initVulkan();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
 		setState(State::Error);
@@ -90,6 +92,11 @@ void RenderAPI::beginBatch() {
 void RenderAPI::endBatch() {
 	auto& vkh = internal::VulkanHandler::get();
 	vkh.endBatch();
+}
+
+void RenderAPI::nextSubpass() {
+	auto& vkh = internal::VulkanHandler::get();
+	vkh.nextSubpass();
 }
 
 void RenderAPI::endFrame() {

@@ -145,6 +145,14 @@ public:
 	}
 
 	/**
+	 * @brief Change to the next subpass.
+	 */
+	static void nextSubpass() {
+		if (m_renderAPI)
+			m_renderAPI->nextSubpass();
+	}
+
+	/**
 	 * @brief Ends draw call for the current frame.
 	 */
 	static void endFrame() {

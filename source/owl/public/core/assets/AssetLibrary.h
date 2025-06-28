@@ -238,7 +238,6 @@ public:
 				} else {
 					for (auto& e: ext) {
 						filePath.replace_extension(e);
-						OWL_CORE_INFO("Checking sub {}", filePath.string())
 						if (std::filesystem::exists(filePath))
 							return filePath;
 					}

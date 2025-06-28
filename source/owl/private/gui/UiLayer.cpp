@@ -159,6 +159,7 @@ void UiLayer::end() const {
 	else if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan) {
 		const auto& vkh = renderer::vulkan::internal::VulkanHandler::get();
 		renderer::RenderCommand::beginBatch();
+		renderer::RenderCommand::nextSubpass();
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkh.getCurrentCommandBuffer());
 		renderer::RenderCommand::endBatch();
 	}

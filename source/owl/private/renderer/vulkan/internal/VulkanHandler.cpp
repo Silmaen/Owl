@@ -9,9 +9,9 @@
 
 #include "VulkanHandler.h"
 
-#include "renderer/GraphContext.h"
 #include "Descriptors.h"
 #include "core/Application.h"
+#include "renderer/GraphContext.h"
 #include "utils.h"
 
 namespace owl::renderer::vulkan::internal {
@@ -46,7 +46,7 @@ void VulkanHandler::initVulkan() {
 void VulkanHandler::release() {
 	auto& core = VulkanCore::get();
 	if (core.getInstance() == nullptr)
-		return;// nothing can exists without instance.
+		return;// nothing can exist without instance.
 
 	for (auto&& [id, pipeLine]: m_pipeLines) {
 		if (pipeLine.pipeLine != nullptr)
@@ -96,7 +96,7 @@ auto VulkanHandler::toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplV
 			.ImageCount = m_swapChain->getImageCount(),
 			.MSAASamples = VK_SAMPLE_COUNT_1_BIT,
 			.PipelineCache = VK_NULL_HANDLE,
-			.Subpass = 0,
+			.Subpass = 1,
 			.UseDynamicRendering = false,
 			.PipelineRenderingCreateInfo = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
 											.pNext = nullptr,
@@ -112,7 +112,7 @@ auto VulkanHandler::toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplV
 
 void VulkanHandler::createCore() {
 	auto& core = VulkanCore::get();
-	core.init({.activeValidation = m_validation});
+	core.init({.activeValidation = m_validation, .debugMessage = m_debugMessage});
 	if (core.getState() == VulkanCore::State::Error)
 		m_state = State::ErrorCreatingCore;
 }
@@ -332,6 +332,11 @@ void VulkanHandler::beginFrame() {
 	if (m_state != State::Running)
 		return;
 	const auto& core = VulkanCore::get();
+	inFrame = true;
+	if (!isMainFramebuffer()) {
+		OWL_CORE_WARN("Vulkan begin frame on non main framebuffer: {}.", m_currentFramebuffer->getName())
+		unbindFramebuffer();
+	}
 	unbindFramebuffer();
 	m_currentFramebuffer->resetBatch();
 	vkWaitForFences(core.getLogicalDevice(), 1, m_currentFramebuffer->getCurrentFence(), VK_TRUE, UINT64_MAX);
@@ -345,7 +350,8 @@ void VulkanHandler::beginFrame() {
 			return;
 		}
 		if (result != VK_SUBOPTIMAL_KHR) {
-			OWL_CORE_ERROR("Vulkan: failed to aquire next image ({}).", resultString(result))
+			OWL_CORE_ERROR("Vulkan fb [{}]: failed to acquire next image ({}).", m_currentFramebuffer->getName(),
+						   resultString(result))
 			m_state = State::ErrorAcquiringNextImage;
 			return;
 		}
@@ -357,22 +363,40 @@ void VulkanHandler::beginFrame() {
 void VulkanHandler::endFrame() {
 	if (m_state != State::Running)
 		return;
+	if (!isMainFramebuffer()) {
+		OWL_CORE_WARN("Vulkan ending frame on non main framebuffer: {}.", m_currentFramebuffer->getName())
+		unbindFramebuffer();
+	}
+	//OWL_CORE_TRACE("Vulkan fb [{}]: Ending frame {} / {}.", m_currentframebuffer->getName(),
 	if (inBatch)
 		endBatch();
-	unbindFramebuffer();
-	m_currentFramebuffer->resetBatch();
+	inFrame = false;
+}
+
+void VulkanHandler::nextSubpass(bool internal) {
+	if (!inBatch) {
+		OWL_CORE_WARN("Vulkan next subpass called outside of batch.")
+		return;
+	}
+	if (internal) {
+		vkCmdNextSubpass(getCurrentCommandBuffer(), VK_SUBPASS_CONTENTS_INLINE);
+	} else {
+		m_currentFramebuffer->nextSubpass();
+	}
 }
 
 void VulkanHandler::beginBatch() {
+	if (!inFrame)
+		beginFrame();
 	inBatch = true;
-
 	const auto& core = VulkanCore::get();
 	vkWaitForFences(core.getLogicalDevice(), 1, m_currentFramebuffer->getCurrentFence(), VK_TRUE, UINT64_MAX);
 	vkResetFences(core.getLogicalDevice(), 1, m_currentFramebuffer->getCurrentFence());
 
 	if (const VkResult result = vkResetCommandBuffer(getCurrentCommandBuffer(), /*VkCommandBufferResetFlagBits*/ 0);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to reset recording command buffer ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan fb [{}]: failed to reset recording command buffer ({}).",
+					   m_currentFramebuffer->getName(), resultString(result))
 		m_state = State::ErrorResetCommandBuffer;
 		return;
 	}
@@ -381,7 +405,8 @@ void VulkanHandler::beginBatch() {
 												 .flags = {},
 												 .pInheritanceInfo = nullptr};
 	if (const VkResult result = vkBeginCommandBuffer(getCurrentCommandBuffer(), &beginInfo); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to begin recording command buffer ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan fb [{}]: failed to begin recording command buffer ({}).",
+					   m_currentFramebuffer->getName(), resultString(result))
 		m_state = State::ErrorBeginCommandBuffer;
 		return;
 	}
@@ -395,6 +420,7 @@ void VulkanHandler::beginBatch() {
 			.clearValueCount = 0,
 			.pClearValues = nullptr};
 	vkCmdBeginRenderPass(getCurrentCommandBuffer(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	m_currentFramebuffer->resetSubPass();
 	const VkViewport viewport{.x = 0.0f,
 							  .y = 0.0f,
 							  .width = static_cast<float>(m_currentFramebuffer->getSpecification().size.x()),
@@ -407,60 +433,63 @@ void VulkanHandler::beginBatch() {
 }
 
 void VulkanHandler::endBatch() {
-	static bool alreadyRun = false;
+	while (m_currentFramebuffer->getCurrentSubpass() != m_currentFramebuffer->getSubpassCount() - 1) {
+		m_currentFramebuffer->nextSubpass();
+	}
 	vkCmdEndRenderPass(getCurrentCommandBuffer());
 	if (const VkResult result = vkEndCommandBuffer(getCurrentCommandBuffer()); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to end command buffer ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan fb [{}]: failed to end command buffer ({}).", m_currentFramebuffer->getName(),
+					   resultString(result))
 		m_state = State::ErrorEndCommandBuffer;
+		return;
 	}
-	constexpr VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-	const VkSemaphore signalSemaphores[] = {m_currentFramebuffer->getCurrentFinishedSemaphore()};
-	VkSemaphore* waiter = nullptr;
-	if (alreadyRun) {
-		VkSemaphore waitSemaphoresStart = m_currentFramebuffer->getCurrentImageAvailableSemaphore();
-		VkSemaphore waitSemaphores = m_currentFramebuffer->getCurrentFinishedSemaphore();
-		waiter = m_currentFramebuffer->isFirstBatch() ? &waitSemaphoresStart : &waitSemaphores;
+	const std::vector<VkPipelineStageFlags> waitStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+	const std::vector<VkSemaphore> signalSemaphores = {m_currentFramebuffer->getCurrentFinishedSemaphore()};
+	std::vector<VkSemaphore> waiter;
+
+	if (m_currentFramebuffer->isMainTarget() && m_currentFramebuffer->isFirstBatch())
+		waiter.push_back(m_currentFramebuffer->getCurrentImageAvailableSemaphore());
+	else {
+		if (m_currentFramebuffer->hasBeenCalled())
+			waiter.push_back(m_currentFramebuffer->getCurrentFinishedSemaphore());
 	}
+
 	const VkSubmitInfo submitInfo{.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 								  .pNext = nullptr,
-								  .waitSemaphoreCount = alreadyRun ? 1u : 0u,
-								  .pWaitSemaphores = waiter,
-								  .pWaitDstStageMask = waitStages,
+								  .waitSemaphoreCount = static_cast<uint32_t>(waiter.size()),
+								  .pWaitSemaphores = waiter.data(),
+								  .pWaitDstStageMask = waitStages.data(),
 								  .commandBufferCount = 1,
 								  .pCommandBuffers = m_currentFramebuffer->getCurrentCommandbuffer(),
-								  .signalSemaphoreCount = 1,
-								  .pSignalSemaphores = signalSemaphores};
+								  .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
+								  .pSignalSemaphores = signalSemaphores.data()};
 	const auto& core = VulkanCore::get();
 	if (const VkResult result =
 				vkQueueSubmit(core.getGraphicQueue(), 1, &submitInfo, *m_currentFramebuffer->getCurrentFence());
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to submit draw command buffer ({}).", resultString(result))
+		OWL_CORE_ERROR("Vulkan fb [{}]: failed to submit draw command buffer ({}).", m_currentFramebuffer->getName(),
+					   resultString(result))
 		m_state = State::ErrorSubmitingDrawCommand;
 		return;
 	}
 	inBatch = false;
-#ifdef OWL_DEBUG
-	// TODO(Silmaen): Investigate why we got a crash in release with wait semaphore
-	if (!alreadyRun)
-		alreadyRun = true;
-#endif
 	m_currentFramebuffer->batchTouch();
 }
 
 void VulkanHandler::swapFrame() {
 	if (m_state != State::Running)
 		return;
-	if (inBatch)
+	if (inFrame)
 		endFrame();
-	const VkSemaphore signalSemaphores[] = {m_currentFramebuffer->getCurrentFinishedSemaphore()};
-	const VkSwapchainKHR swapChains[] = {m_currentFramebuffer->getSwapChain()};
+	std::array waiter = {m_currentFramebuffer->getCurrentFinishedSemaphore()};
+	const std::array swapChains = {m_currentFramebuffer->getSwapChain()};
 
 	const VkPresentInfoKHR presentInfo{.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 									   .pNext = nullptr,
-									   .waitSemaphoreCount = 1,
-									   .pWaitSemaphores = signalSemaphores,
-									   .swapchainCount = 1,
-									   .pSwapchains = swapChains,
+									   .waitSemaphoreCount = static_cast<uint32_t>(waiter.size()),
+									   .pWaitSemaphores = waiter.data(),
+									   .swapchainCount = static_cast<uint32_t>(swapChains.size()),
+									   .pSwapchains = swapChains.data(),
 									   .pImageIndices = m_currentFramebuffer->getCurrentImage(),
 									   .pResults = nullptr};
 	const auto& core = VulkanCore::get();
@@ -496,13 +525,33 @@ void VulkanHandler::setResize() {
 	m_resize = true;
 }
 
-void VulkanHandler::bindFramebuffer(Framebuffer* iFrameBuffer) { m_currentFramebuffer = iFrameBuffer; }
+void VulkanHandler::bindFramebuffer(Framebuffer* iFrameBuffer) {
+	if (inBatch) {
+		OWL_CORE_WARN("VBulkan: bind framebuffer called in batch, ending batch!")
+		endBatch();
+	}
+#ifdef VKFB_DEBUG
+	if (m_currentFramebuffer && iFrameBuffer && m_currentFramebuffer != iFrameBuffer)
+		OWL_CORE_TRACE("Vulkan Change framebuffer [{}] -> [{}].", m_currentFramebuffer->getName(),
+					   iFrameBuffer->getName())
+#endif
+	m_currentFramebuffer = iFrameBuffer;
+}
 
 void VulkanHandler::unbindFramebuffer() {
-	if (inBatch)
+	if (inBatch) {
+		OWL_CORE_WARN("Vulkan: unbind framebuffer called in batch, ending batch!")
 		endBatch();
+	}
+#ifdef VKFB_DEBUG
+	if (m_currentFramebuffer && m_swapChain.get() && m_currentFramebuffer != m_swapChain.get())
+		OWL_CORE_TRACE("Vulkan Change framebuffer [{}] -> [{}].", m_currentFramebuffer->getName(),
+					   m_swapChain.get()->getName())
+#endif
 	m_currentFramebuffer = m_swapChain.get();
 }
+
+auto VulkanHandler::isMainFramebuffer() const -> bool { return m_currentFramebuffer == m_swapChain.get(); }
 
 auto VulkanHandler::getCurrentFrameBufferName() const -> std::string {
 	if (m_currentFramebuffer == nullptr)
