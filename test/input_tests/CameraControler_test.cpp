@@ -31,7 +31,7 @@ TEST(Input, EventCameraControler) {
 }
 
 TEST(Input, KeyOrthoControler) {
-	Input::init(Type::Null);
+	Input::init(owl::window::Type::Null);
 	owl::core::Timestep ts;
 	const owl::core::Timestep::duration delta = std::chrono::milliseconds(3);
 	ts.forceUpdate(delta);
@@ -84,7 +84,7 @@ TEST(Input, KeyOrthoControler) {
 }
 
 TEST(Input, KeyOrthoControlerRotation) {
-	Input::init(Type::Null);
+	Input::init(owl::window::Type::Null);
 	owl::core::Timestep ts;
 	const owl::core::Timestep::duration delta = std::chrono::milliseconds(3);
 	ts.forceUpdate(delta);

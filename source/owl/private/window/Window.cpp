@@ -8,11 +8,11 @@
 
 #include "owlpch.h"
 
+#include "../../public/window/Window.h"
 #include "glfw/Window.h"
-#include "input/Window.h"
 #include "null/Window.h"
 
-namespace owl::input {
+namespace owl::window {
 
 auto Window::create(const Properties& iProps) -> uniq<Window> {
 	switch (iProps.winType) {

@@ -114,7 +114,7 @@ void createMinGameScene(Scene& ioScene) {
 
 TEST(Scene, RenderGame_loose) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	owl::input::Input::init(owl::input::Type::Null);
+	owl::input::Input::init(owl::window::Type::Null);
 	Scene sc;
 	createMinGameScene(sc);
 	owl::core::Timestep ts;
@@ -147,7 +147,7 @@ TEST(Scene, RenderGame_loose) {
 
 TEST(Scene, RenderGame_win) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	owl::input::Input::init(owl::input::Type::Null);
+	owl::input::Input::init(owl::window::Type::Null);
 	Scene sc;
 	createMinGameScene(sc);
 	owl::core::Timestep ts;

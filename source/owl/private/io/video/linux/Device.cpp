@@ -10,7 +10,7 @@
 #include "Device.h"
 
 #if defined(OWL_PLATFORM_LINUX)
-#include "input/video/Manager.h"
+#include "io/video/Manager.h"
 
 #include <cstring>
 #include <fcntl.h>
@@ -21,7 +21,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-namespace owl::input::video::linux64 {
+namespace owl::io::video::linux64 {
 
 namespace {
 
@@ -420,6 +420,6 @@ auto Device::getFirstSupportedPixelFormat(int32_t iFd) const -> PixelFormat {
 	return PixelFormat::Unknwon;
 }
 
-}// namespace owl::input::video::linux64
+}// namespace owl::io::video::linux64
 
 #endif

@@ -12,7 +12,7 @@
 #include "core/Log.h"
 #include "debug/Profiler.h"
 
-namespace owl::input::null {
+namespace owl::window::null {
 namespace {
 uint8_t s_WinCount = 0;
 }// namespace

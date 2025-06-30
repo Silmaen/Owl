@@ -13,7 +13,7 @@
 /**
  * @brief namespace for video input devices.
  */
-namespace owl::input::video {
+namespace owl::io::video {
 
 constexpr size_t g_maxDevices = 10;
 
@@ -110,4 +110,4 @@ private:
 	size_t m_currentDevice = g_maxDevices;
 };
 
-}// namespace owl::input::video
+}// namespace owl::io::video

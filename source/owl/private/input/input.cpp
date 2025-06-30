@@ -14,21 +14,21 @@
 
 namespace owl::input {
 
-Type Input::m_type = Type::Glfw;
+window::Type Input::m_type = window::Type::Glfw;
 uniq<Input> Input::m_instance = nullptr;
 
 Input::~Input() = default;
 
 
-void Input::init(const Type& iType) {
+void Input::init(const window::Type& iType) {
 	if (m_instance)
 		m_instance.reset();
 	m_type = iType;
 	switch (m_type) {
-		case Type::Glfw:
+		case window::Type::Glfw:
 			m_instance = mkUniq<glfw::Input>();
 			return;
-		case Type::Null:
+		case window::Type::Null:
 			m_instance = mkUniq<null::Input>();
 	}
 }

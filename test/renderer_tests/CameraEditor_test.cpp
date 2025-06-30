@@ -63,7 +63,7 @@ TEST(CameraEditor, Events) {
 TEST(CameraEditor, Frames) {
 	owl::core::Timestep ts;
 	CameraEditor cam(45, 1.5f, 0.1f, 15);
-	owl::input::Input::init(owl::input::Type::Null);
+	owl::input::Input::init(owl::window::Type::Null);
 	ts.update();
 	cam.onUpdate(ts);
 	owl::input::Input::injectKey(owl::input::key::LeftAlt);// activate mouse ctrl

@@ -16,7 +16,7 @@ CameraSystem::~CameraSystem() = default;
 
 void CameraSystem::onUpdate(const owl::core::Timestep& iTs) {
 	++m_frameCount;
-	auto& cameraManager = owl::input::video::Manager::get();
+	auto& cameraManager = owl::io::video::Manager::get();
 	auto& settings = DroneSettings::get();
 
 	// read image from camera
@@ -69,7 +69,7 @@ void CameraSystem::resize(const owl::math::vec2ui& iSize) {
 // NOLINTBEGIN(readability-convert-member-functions-to-static)
 void CameraSystem::setCamera(int32_t iId) {
 	auto& settings = DroneSettings::get();
-	auto& videoInputManager = owl::input::video::Manager::get();
+	auto& videoInputManager = owl::io::video::Manager::get();
 	iId = owl::math::clamp(iId, 0, static_cast<int32_t>(videoInputManager.getDeviceCount() - 1));
 	settings.cameraId = iId;
 	if (iId == videoInputManager.getCurrentDeviceId())
@@ -79,22 +79,20 @@ void CameraSystem::setCamera(int32_t iId) {
 }
 
 void CameraSystem::actualiseList() {
-	auto& videoInputManager = owl::input::video::Manager::get();
+	auto& videoInputManager = owl::io::video::Manager::get();
 	videoInputManager.updateDeviceList();
 	if (videoInputManager.getDeviceCount() == 0)
 		OWL_WARN("No video capture device found.")
 }
 
 auto CameraSystem::getListOfCameraNames() const -> std::vector<std::string> {
-	return owl::input::video::Manager::get().getDevicesNames();
+	return owl::io::video::Manager::get().getDevicesNames();
 }
 
-auto CameraSystem::getCurrentCameraId() const -> int32_t {
-	return owl::input::video::Manager::get().getCurrentDeviceId();
-}
+auto CameraSystem::getCurrentCameraId() const -> int32_t { return owl::io::video::Manager::get().getCurrentDeviceId(); }
 
 auto CameraSystem::getCurrentCameraName() const -> std::string {
-	const auto& sys = owl::input::video::Manager::get();
+	const auto& sys = owl::io::video::Manager::get();
 	if (!sys.isOpened())
 		return "";
 	return sys.getDevicesNames()[static_cast<size_t>(sys.getCurrentDeviceId())];

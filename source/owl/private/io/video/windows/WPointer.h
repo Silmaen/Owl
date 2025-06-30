@@ -10,7 +10,7 @@
 /**
  * @brief Windows-specific functions.
  */
-namespace owl::input::video::windows {
+namespace owl::io::video::windows {
 /**
  * @brief Class for managing a windows pointer.
  *

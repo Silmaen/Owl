@@ -97,8 +97,8 @@ Application::Application(AppParams iAppParams) : m_initParams{std::move(iAppPara
 
 	// create main window
 	{
-		mp_appWindow = input::Window::create({
-				.winType = m_initParams.isDummy ? input::Type::Null : input::Type::Glfw,
+		mp_appWindow = window::Window::create({
+				.winType = m_initParams.isDummy ? window::Type::Null : window::Type::Glfw,
 				.title = m_initParams.name,
 				.iconPath =
 						m_initParams.icon.empty()

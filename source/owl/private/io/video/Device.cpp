@@ -7,12 +7,12 @@
  */
 #include "owlpch.h"
 
-#include "input/video/Device.h"
+#include "io/video/Device.h"
 
 #include <cstring>
 #include <stb_image.h>
 
-namespace owl::input::video {
+namespace owl::io::video {
 
 namespace {
 
@@ -151,4 +151,4 @@ auto Device::isPixelFormatSupported(const PixelFormat& iPixFormat) -> bool {
 	return false;
 }
 
-}// namespace owl::input::video
+}// namespace owl::io::video

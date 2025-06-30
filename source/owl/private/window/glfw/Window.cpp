@@ -19,7 +19,7 @@
 #include "renderer/RenderAPI.h"
 #include "renderer/RenderCommand.h"
 
-namespace owl::input::glfw {
+namespace owl::window::glfw {
 
 namespace {
 uint8_t g_GlfwWindowCount = 0;
@@ -116,7 +116,7 @@ void Window::init(const Properties& iProps) {
 		});
 		glfwSetKeyCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iKey, [[maybe_unused]] int iScancode,
 											 const int iAction, [[maybe_unused]] int iMods) {
-			const auto cKey = static_cast<KeyCode>(iKey);
+			const auto cKey = static_cast<input::KeyCode>(iKey);
 			switch (iAction) {
 				case GLFW_PRESS:
 					{
@@ -142,7 +142,7 @@ void Window::init(const Properties& iProps) {
 		});
 
 		glfwSetCharCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const unsigned int iKeycode) {
-			event::KeyTypedEvent event(static_cast<KeyCode>(iKeycode));
+			event::KeyTypedEvent event(static_cast<input::KeyCode>(iKeycode));
 			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 		});
 
@@ -151,13 +151,13 @@ void Window::init(const Properties& iProps) {
 			switch (iAction) {
 				case GLFW_PRESS:
 					{
-						event::MouseButtonPressedEvent event(static_cast<MouseCode>(iButton));
+						event::MouseButtonPressedEvent event(static_cast<input::MouseCode>(iButton));
 						static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 						break;
 					}
 				case GLFW_RELEASE:
 					{
-						event::MouseButtonReleasedEvent event(static_cast<MouseCode>(iButton));
+						event::MouseButtonReleasedEvent event(static_cast<input::MouseCode>(iButton));
 						static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 						break;
 					}
@@ -216,4 +216,4 @@ void Window::setVSync(const bool iEnabled) {
 
 auto Window::isVSync() const -> bool { return m_windowData.vSync; }
 
-}// namespace owl::input::glfw
+}// namespace owl::window::glfw

@@ -8,17 +8,17 @@
 
 #pragma once
 
-#include "core/external/glfw3.h"
-#include "input/Window.h"
+#include "window/Window.h"
 
 /**
  * @brief Namespace for the glfw  elements.
  */
-namespace owl::input::glfw {
+namespace owl::window::null {
+
 /**
- * @brief Specialization class for glfw window.
+ * @brief Specialization class for null window.
  */
-class OWL_API Window final : public input::Window {
+class OWL_API Window final : public window::Window {
 public:
 	Window(const Window&) = delete;
 	Window(Window&&) = delete;
@@ -58,11 +58,12 @@ public:
 	 * @return Texture's size.
 	 */
 	[[nodiscard]] auto getSize() const -> const math::vec2ui& override { return m_windowData.size; }
+
 	/**
 	 * @brief Get the type of window manager.
 	 * @return The window manager's type.
 	 */
-	[[nodiscard]] auto getType() const -> Type override { return Type::Glfw; }
+	[[nodiscard]] auto getType() const -> Type override { return Type::Null; }
 
 	/**
 	 * @brief Define the Event Callback function.
@@ -100,7 +101,7 @@ private:
 	void init(const Properties& iProps);
 
 	/// Pointer to the GLFW window.
-	GLFWwindow* mp_glfwWindow{nullptr};
+	void* mp_glfwWindow = nullptr;
 
 	/**
 	 * @brief Window's data.
@@ -109,9 +110,9 @@ private:
 		/// Window's title.
 		std::string title;
 		/// Window's size.
-		math::vec2ui size;
+		math::vec2ui size{0, 0};
 		/// Window's VSync property.
-		bool vSync{false};
+		bool vSync = false;
 		/// Event Call back.
 		EventCallback eventCallback;
 	};
@@ -119,4 +120,5 @@ private:
 	/// The Window's data.
 	WindowData m_windowData{};
 };
-}// namespace owl::input::glfw
+
+}// namespace owl::window::null

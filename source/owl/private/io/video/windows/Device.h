@@ -11,14 +11,14 @@
 #ifdef OWL_PLATFORM_WINDOWS
 
 #include "WPointer.h"
-#include "input/video/Device.h"
+#include "io/video/Device.h"
 #include <mfidl.h>
 #include <mfreadwrite.h>
 
 /**
  * @brief Windows video devices.
  */
-namespace owl::input::video::windows {
+namespace owl::io::video::windows {
 
 /**
  * @brief Search for devices and them to the given list.
@@ -82,6 +82,6 @@ private:
 	WPointer<IMFSourceReader> m_sourceReader;
 };
 
-}// namespace owl::input::video::windows
+}// namespace owl::io::video::windows
 
 #endif

@@ -10,7 +10,7 @@
 #include "core/Core.h"
 #include "renderer/Texture.h"
 
-namespace owl::input::video {
+namespace owl::io::video {
 
 /**
  * @brief Class describing the video input device.
@@ -118,4 +118,4 @@ protected:
 	[[nodiscard]] auto getRgbBuffer(const uint8_t* iInputBuffer, int32_t iBufferSize) const -> std::vector<uint8_t>;
 };
 
-}// namespace owl::input::video
+}// namespace owl::io::video

@@ -8,12 +8,12 @@
 
 #pragma once
 
+#include "../window/Window.h"
 #include "Timestep.h"
 #include "core/task/Task.h"
 #include "event/AppEvent.h"
 #include "fonts/FontLibrary.h"
 #include "gui/UiLayer.h"
-#include "input/Window.h"
 #include "layer/LayerStack.h"
 #include "renderer/RenderAPI.h"
 #include "sound/SoundAPI.h"
@@ -150,7 +150,7 @@ public:
 	 * @brief Access to the window.
 	 * @return The Window.
 	 */
-	[[nodiscard]] auto getWindow() const -> const input::Window& { return *mp_appWindow.get(); }
+	[[nodiscard]] auto getWindow() const -> const window::Window& { return *mp_appWindow.get(); }
 
 	/**
 	 * @brief Access to the Gui layer.
@@ -281,7 +281,7 @@ private:
 	auto onWindowResized(const event::WindowResizeEvent& iEvent) -> bool;
 
 	/// Pointer to the window.
-	uniq<input::Window> mp_appWindow;
+	uniq<window::Window> mp_appWindow;
 	/// Pointer to the GUI Layer.
 	shared<gui::UiLayer> mp_imGuiLayer = nullptr;
 	/// Running state.
