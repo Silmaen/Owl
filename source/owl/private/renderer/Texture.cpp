@@ -32,11 +32,11 @@ Texture::Texture(const Specification& iSpecs) : m_specification{iSpecs} {}
 	if (!m_path.empty()) {
 		return "pat:" + m_path.string();
 	}
-	return fmt::format("spec:{}", m_specification.toString());
+	return std::format("spec:{}", m_specification.toString());
 }
 
 auto Texture::Specification::toString() const -> std::string {
-	return fmt::format("{}:{}:{}:{}", size.x(), size.y(), magic_enum::enum_name(format), generateMips);
+	return std::format("{}:{}:{}:{}", size.x(), size.y(), magic_enum::enum_name(format), generateMips);
 }
 void Texture::Specification::fromString(const std::string& iString) {
 	std::stringstream ss(iString);

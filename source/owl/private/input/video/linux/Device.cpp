@@ -12,12 +12,14 @@
 #if defined(OWL_PLATFORM_LINUX)
 #include "input/video/Manager.h"
 
+#include <cstring>
 #include <fcntl.h>
 #include <filesystem>
 #include <linux/media.h>
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <unistd.h>
 
 namespace owl::input::video::linux64 {
 
@@ -132,7 +134,7 @@ void updateList(std::vector<shared<video::Device>>& ioList) {
 	// search for new devices.
 	size_t devCounter = 0;
 	for (size_t iCam = 0; iCam < g_maxDevices; ++iCam) {
-		auto testDev = mkShared<Device>(fmt::format("/dev/video{}", iCam).c_str());
+		auto testDev = mkShared<Device>(std::format("/dev/video{}", iCam).c_str());
 		if (!testDev->isValid()) {
 			continue;
 		}
@@ -173,7 +175,7 @@ Device::Device(std::string iFile) : video::Device{""}, m_file{std::move(iFile)} 
 			if (mdi.bus_info[0] != 0)
 				m_busInfo = mdi.bus_info;
 			else
-				m_busInfo = fmt::format("platform: {}", mdi.driver);
+				m_busInfo = std::format("platform: {}", mdi.driver);
 			if (mdi.model[0] != 0)
 				m_name = mdi.model;
 			else
@@ -241,7 +243,10 @@ void Device::open() {
 	}
 	// define the bufferInfo
 	{
+		OWL_DIAG_PUSH
+		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 		memset(&m_bufferInfo, 0, sizeof(m_bufferInfo));
+		OWL_DIAG_POP
 		m_bufferInfo.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		m_bufferInfo.memory = V4L2_MEMORY_MMAP;
 		m_bufferInfo.index = 0;

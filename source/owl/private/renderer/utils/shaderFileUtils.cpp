@@ -41,7 +41,7 @@ auto getShaderCachedPath(const std::string& iShaderName, const std::string& iRen
 auto getShaderPath(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
 				   const ShaderType& iType) -> std::filesystem::path {
 	return Renderer::getTextureLibrary()
-			.find(fmt::format("shaders/{}/{}/{}{}", iRenderer, iRendererApi, iShaderName, getExtension(iType)))
+			.find(std::format("shaders/{}/{}/{}{}", iRenderer, iRendererApi, iShaderName, getExtension(iType)))
 			.value_or(std::filesystem::path{});
 }
 
@@ -51,14 +51,14 @@ auto getRelativeShaderPath(const std::string& iShaderName, const std::string& iR
 }
 
 auto getExtension(const ShaderType& iStage) -> std::string {
-	auto ext = fmt::format(".{}", magic_enum::enum_name(iStage).substr(0, 4));
+	auto ext = std::format(".{}", magic_enum::enum_name(iStage).substr(0, 4));
 	std::ranges::transform(ext.begin(), ext.end(), ext.begin(),
 						   [](const unsigned char iChar) { return std::tolower(iChar); });
 	return ext;
 }
 
 auto getCacheExtension(const ShaderType& iStage) -> std::string {
-	auto ext = fmt::format(".{}.spv", magic_enum::enum_name(iStage).substr(0, 4));
+	auto ext = std::format(".{}.spv", magic_enum::enum_name(iStage).substr(0, 4));
 	std::ranges::transform(ext.begin(), ext.end(), ext.begin(),
 						   [](const unsigned char iChar) { return std::tolower(iChar); });
 	return ext;

@@ -58,6 +58,16 @@
 #else
 #define OWL_DIAG_DISABLE_CLANG18(diag)
 #endif
+#if __clang_major__ > 18
+#define OWL_DIAG_DISABLE_CLANG19(diag) OWL_DO_PRAGMA(clang diagnostic ignored diag)
+#else
+#define OWL_DIAG_DISABLE_CLANG19(diag)
+#endif
+#if __clang_major__ > 19
+#define OWL_DIAG_DISABLE_CLANG20(diag) OWL_DO_PRAGMA(clang diagnostic ignored diag)
+#else
+#define OWL_DIAG_DISABLE_CLANG20(diag)
+#endif
 #define OWL_DIAG_DISABLE_GCC(diag)
 #define OWL_DIAG_DISABLE_CLANG_CL(diag)
 #define OWL_DIAG_DISABLE_MSVC(diag)
@@ -68,6 +78,8 @@
 #define OWL_DIAG_DISABLE_CLANG16(diag)
 #define OWL_DIAG_DISABLE_CLANG17(diag)
 #define OWL_DIAG_DISABLE_CLANG18(diag)
+#define OWL_DIAG_DISABLE_CLANG19(diag)
+#define OWL_DIAG_DISABLE_CLANG20(diag)
 #define OWL_DIAG_DISABLE_GCC(diag) OWL_DO_PRAGMA(GCC diagnostic ignored diag)
 #define OWL_DIAG_DISABLE_CLANG_CL(diag)
 #define OWL_DIAG_DISABLE_MSVC(diag)
@@ -80,6 +92,8 @@
 #define OWL_DIAG_DISABLE_CLANG16(diag)
 #define OWL_DIAG_DISABLE_CLANG17(diag)
 #define OWL_DIAG_DISABLE_CLANG18(diag)
+#define OWL_DIAG_DISABLE_CLANG19(diag)
+#define OWL_DIAG_DISABLE_CLANG20(diag)
 #define OWL_DIAG_DISABLE_MSVC(diag)
 #elif defined(OWL_COMPILER_MSVC)
 #define OWL_DIAG_POP OWL_DO_PRAGMA(warning(pop))
@@ -88,6 +102,8 @@
 #define OWL_DIAG_DISABLE_CLANG16(diag)
 #define OWL_DIAG_DISABLE_CLANG17(diag)
 #define OWL_DIAG_DISABLE_CLANG18(diag)
+#define OWL_DIAG_DISABLE_CLANG19(diag)
+#define OWL_DIAG_DISABLE_CLANG20(diag)
 #define OWL_DIAG_DISABLE_GCC(diag)
 #define OWL_DIAG_DISABLE_CLANG_CL(diag)
 #define OWL_DIAG_DISABLE_MSVC(diag) OWL_DO_PRAGMA(warning(disable : diag))
@@ -98,6 +114,8 @@
 #define OWL_DIAG_DISABLE_CLANG16(diag)
 #define OWL_DIAG_DISABLE_CLANG17(diag)
 #define OWL_DIAG_DISABLE_CLANG18(diag)
+#define OWL_DIAG_DISABLE_CLANG19(diag)
+#define OWL_DIAG_DISABLE_CLANG20(diag)
 #define OWL_DIAG_DISABLE_GCC(diag)
 #define OWL_DIAG_DISABLE_CLANG_CL(diag)
 #define OWL_DIAG_DISABLE_MSVC(diag)

@@ -85,7 +85,8 @@ auto VulkanHandler::toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplV
 	auto& vkd = Descriptors::get();
 	vkd.createImguiDescriptorPool();
 	ioFormats = m_swapChain->getColorAttachmentFormats();
-	return {.Instance = core.getInstance(),
+	return {.ApiVersion = core.getApiVersion(),
+			.Instance = core.getInstance(),
 			.PhysicalDevice = core.getPhysicalDevice(),
 			.Device = core.getLogicalDevice(),
 			.QueueFamily = core.getGraphQueueFamilyIndex(),
@@ -97,6 +98,7 @@ auto VulkanHandler::toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplV
 			.MSAASamples = VK_SAMPLE_COUNT_1_BIT,
 			.PipelineCache = VK_NULL_HANDLE,
 			.Subpass = 1,
+			.DescriptorPoolSize = 0,// Use the default descriptor pool
 			.UseDynamicRendering = false,
 			.PipelineRenderingCreateInfo = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
 											.pNext = nullptr,
@@ -469,7 +471,7 @@ void VulkanHandler::endBatch() {
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan fb [{}]: failed to submit draw command buffer ({}).", m_currentFramebuffer->getName(),
 					   resultString(result))
-		m_state = State::ErrorSubmitingDrawCommand;
+		m_state = State::ErrorSubmittingDrawCommand;
 		return;
 	}
 	inBatch = false;

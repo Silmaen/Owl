@@ -9,7 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
-#include <fmt/format.h>
+#include <format>
 
 /**
  * @brief Namespace for the core objects.
@@ -76,15 +76,15 @@ public:
 	static void setFrameFrequency(const uint64_t iFrequency) { s_frequency = iFrequency; }
 
 	template<typename... Args>
-	static void logCore(const Level& iLevel, fmt::format_string<Args...> iFmt, Args&&... iArgs) {
-		logCore(iLevel, fmt::vformat(iFmt, fmt::make_format_args(iArgs...)));
+	static void logCore(const Level& iLevel, std::format_string<Args...> iFmt, Args&&... iArgs) {
+		logCore(iLevel, std::format(iFmt, std::forward<Args>(iArgs)...));
 	}
 
 	static void logCore(const Level& iLevel, const std::string_view& iMsg);
 
 	template<typename... Args>
-	static void logClient(const Level& iLevel, fmt::format_string<Args...> iFmt, Args&&... iArgs) {
-		logCore(iLevel, fmt::vformat(iFmt, fmt::make_format_args(iArgs...)));
+	static void logClient(const Level& iLevel, std::format_string<Args...> iFmt, Args&&... iArgs) {
+		logCore(iLevel, std::format(iFmt, std::forward<Args>(iArgs)...));
 	}
 
 	static void logClient(const Level& iLevel, const std::string_view& iMsg);

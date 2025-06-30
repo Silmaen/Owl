@@ -182,19 +182,19 @@ std::string vkDeviceTypeToString(const VkPhysicalDeviceType& iType) {
 }// namespace
 auto PhysicalDeviceCapabilities::getSimpleName() const -> std::string {
 
-	return fmt::format("{} ({})", properties.deviceName, vkDeviceTypeToString(properties.deviceType));
+	return std::format("{} ({})", properties.deviceName, vkDeviceTypeToString(properties.deviceType));
 }
 auto PhysicalDeviceCapabilities::getDetailedName() const -> std::string {
 	std::string result;
-	fmt::format_to(std::back_inserter(result), "{}\n", getSimpleName());
-	fmt::format_to(std::back_inserter(result), "  - Score: {}", getScore());
+	std::format_to(std::back_inserter(result), "{}\n", getSimpleName());
+	std::format_to(std::back_inserter(result), "  - Score: {}", getScore());
 	return result;
 }
 auto PhysicalDeviceCapabilities::getCapabilityString() const -> std::string {
 	std::string result;
-	fmt::format_to(std::back_inserter(result), "Device Capabilities:\n");
-	fmt::format_to(std::back_inserter(result), "--------------------\n");
-	fmt::format_to(std::back_inserter(result), " Memory : {}\n", core::utils::sizeToString(getTotalMemory()));
+	std::format_to(std::back_inserter(result), "Device Capabilities:\n");
+	std::format_to(std::back_inserter(result), "--------------------\n");
+	std::format_to(std::back_inserter(result), " Memory : {}\n", core::utils::sizeToString(getTotalMemory()));
 	return result;
 }
 

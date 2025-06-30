@@ -389,7 +389,7 @@ function(target_import_so_files TARGET)
         if (${TARGET_TYPE} STREQUAL "EXECUTABLE" OR ${TARGET_TYPE} STREQUAL "SHARED_LIBRARY")
             message(STATUS "Target: ${TARGET} of type ${TARGET_TYPE}: copy additional shared libs.")
             add_custom_command(TARGET ${TARGET} POST_BUILD
-                    COMMAND ${Python_EXECUTABLE} -u ${PROJECT_SOURCE_DIR}/cmake/importSharedLibs.py
+                    COMMAND ${Python3_EXECUTABLE} -u ${PROJECT_SOURCE_DIR}/cmake/importSharedLibs.py
                     "$<TARGET_FILE:${TARGET}>" \"${CMAKE_PREFIX_PATH}\"
                     COMMENT "Copy the needed shared libraries"
                     USES_TERMINAL
@@ -423,14 +423,18 @@ function(print_system_n_target_infos)
     message(STATUS " OS       : ${${PROJECT_PREFIX}_PLATFORM_STR}")
     message(STATUS " ARCH     : ${${PROJECT_PREFIX}_ARCH_STR}")
     message(STATUS " COMPILER : ${${PROJECT_PREFIX}_COMPILER_STR} - ${CMAKE_CXX_COMPILER_VERSION} (${CMAKE_CXX_COMPILER})")
-    if (${CMAKE_CXX_COMPILER_TARGET})
+    if (NOT ${CMAKE_CXX_COMPILER_TARGET} STREQUAL "")
         message(STATUS " TARGET   : ${CMAKE_CXX_COMPILER_TARGET}")
     endif ()
-    if (${CMAKE_CXX_COMPILER_ABI})
+    if (NOT ${CMAKE_CXX_COMPILER_ABI} STREQUAL "")
         message(STATUS " ABI      : ${CMAKE_CXX_COMPILER_ABI}")
     endif ()
-    if (${CMAKE_CXX_COMPILER_ARCHITECTURE_ID})
+    if (NOT ${CMAKE_CXX_COMPILER_ARCHITECTURE_ID} STREQUAL "")
         message(STATUS " ARCH     : ${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}")
     endif ()
+    #dump_cmake_variables("^CMAKE_CXX.*")
+    message(STATUS " LINKER   : ${CMAKE_CXX_COMPILER_LINKER_ID} - ${CMAKE_CXX_COMPILER_LINKER_VERSION} (${CMAKE_CXX_COMPILER_LINKER})")
+    message(STATUS " FEATURES : ${CMAKE_CXX_COMPILE_FEATURES}")
+    message(STATUS " FLAGS    : ${CMAKE_CXX_FLAGS}")
     message(STATUS "--------------------------------")
 endfunction()

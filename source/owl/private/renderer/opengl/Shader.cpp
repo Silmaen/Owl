@@ -201,7 +201,7 @@ void Shader::createProgram() {
 		}
 		glDeleteProgram(program);
 		for (const auto id: shaderIDs) glDeleteShader(id);
-		OWL_CORE_ASSERT(false, fmt::format("Failed to create shader {}", getName()))
+		OWL_CORE_ASSERT(false, std::format("Failed to create shader {}", getName()))
 		return;
 	}
 	for (const auto id: shaderIDs) {

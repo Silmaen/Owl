@@ -40,14 +40,14 @@ public:
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override {
-		return fmt::format("MouseMovedEvent: {:.1f}, {:.1f}", m_mouseX, m_mouseY);
+		return std::format("MouseMovedEvent: {:.1f}, {:.1f}", m_mouseX, m_mouseY);
 	}
 
 	/**
 	 * @brief Get the event's name.
 	 * @return Event's name.
 	 */
-	[[nodiscard]] auto getName() const -> std::string override { return fmt::format("MouseMovedEvent"); }
+	[[nodiscard]] auto getName() const -> std::string override { return std::format("MouseMovedEvent"); }
 
 	/**
 	 * @brief Get the event's category flags.
@@ -103,14 +103,14 @@ public:
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override {
-		return fmt::format("MouseScrolledEvent: {}, {}", getXOff(), getYOff());
+		return std::format("MouseScrolledEvent: {}, {}", getXOff(), getYOff());
 	}
 
 	/**
 	 * @brief Get the event's name.
 	 * @return Event's name.
 	 */
-	[[nodiscard]] auto getName() const -> std::string override { return fmt::format("MouseScrolledEvent"); }
+	[[nodiscard]] auto getName() const -> std::string override { return std::format("MouseScrolledEvent"); }
 
 	/**
 	 * @brief Get the event's static type.
@@ -181,7 +181,7 @@ public:
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override {
-		return fmt::format("MouseButtonPressedEvent: {}", m_mouseButton);
+		return std::format("MouseButtonPressedEvent: {}", m_mouseButton);
 	}
 
 	/**
@@ -219,7 +219,7 @@ public:
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override {
-		return fmt::format("MouseButtonReleasedEvent: {}", m_mouseButton);
+		return std::format("MouseButtonReleasedEvent: {}", m_mouseButton);
 	}
 
 	/**

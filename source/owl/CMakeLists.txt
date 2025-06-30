@@ -188,9 +188,9 @@ message(STATUS "Found EnTT version ${EnTT_VERSION} @ ${EnTT_DIR}")
 target_link_libraries(${ENGINE_NAME} PUBLIC EnTT::EnTT)
 
 # fmt
-find_package(fmt REQUIRED)
-message(STATUS "Found fmt version ${fmt_VERSION} @ ${fmt_DIR}")
-target_link_libraries(${ENGINE_NAME} PUBLIC fmt::fmt)
+#find_package(fmt REQUIRED)
+#message(STATUS "Found fmt version ${fmt_VERSION} @ ${fmt_DIR}")
+#target_link_libraries(${ENGINE_NAME} PUBLIC fmt::fmt)
 
 # ImGui
 find_package(imgui REQUIRED)

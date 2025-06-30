@@ -5,19 +5,19 @@ remote:
   pull-newer: true
 packages:
   box2d:
-    version: 3.0.0
+    version: 3.1.0
     kind: "static"
   googletest:
-    version: 1.15.2
+    version: 1.16.0
   cpptrace:
-    version: 0.7.4
+    version: 0.8.3
     kind: "static"
   debugbreak:
     version: 1.0
   entt:
     version: 3.14.0
   libdwarf:
-    version: 0.11.1
+    version: 0.12.0
     kind: "static"
   magic_enum:
     version: 0.9.7
@@ -31,14 +31,17 @@ packages:
     kind: "static"
   glfw:
     version: 3.4.0
+    kind: "static"
   imgui:
-    version: 1.91.5-docking
+    version: 1.91.9-docking
+    kind: "static"
   imguizmo:
-    version: 1.91.5
+    version: 1.91.9
+    kind: "static"
   mavsdk:
     version: 2.0.1
   openal:
-    version: 1.24.2
+    version: 1.24.3
     kind: "shared"
   libsndfile:
     version: 1.2.2
@@ -56,7 +59,8 @@ packages:
     version: 1.3.275
     kind: "shared"
   libpng:
-    version: 1.6.46
+    version: 1.6.47
+    kind: "static"
   freetype:
     version: 2.13.3
     kind: "static"
@@ -67,10 +71,10 @@ packages:
     version: 1.3
     kind: "static"
   tinyxml2:
-    version: 10.0.0
+    version: 11.0.0
     kind: "static"
   zstd:
-    version: 1.5.6
+    version: 1.5.7
     kind: "static"
   zlib:
     version: 1.3.1

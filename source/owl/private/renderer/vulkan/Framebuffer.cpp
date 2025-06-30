@@ -228,7 +228,10 @@ auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const
 		return 0;
 	}
 	int32_t pixel = 0;
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 	memcpy(&pixel, data, internal::attachmentFormatToSize(format));
+	OWL_DIAG_POP
 	vkDestroyBuffer(vkc.getLogicalDevice(), stagingBuffer, nullptr);
 	vkFreeMemory(vkc.getLogicalDevice(), stagingBufferMemory, nullptr);
 	return pixel;

@@ -214,6 +214,8 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 	std::vector<char> buffer(static_cast<size_t>(sfInfo.frames / splblockalign * byteblockalign));
 
 	sf_count_t numFrames = 0;
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG19("-Wunsafe-buffer-usage")
 	if (sampleFormat == SoundDataType::Int16)
 		numFrames = sf_readf_short(file, reinterpret_cast<int16_t*>(buffer.data()), sfInfo.frames);
 	else if (sampleFormat == SoundDataType::Float)
@@ -224,6 +226,7 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 		if (numFrames > 0)
 			numFrames = numFrames / byteblockalign * splblockalign;
 	}
+	OWL_DIAG_POP
 	if (numFrames < 1) {
 		sf_close(file);
 		OWL_CORE_WARN("SoundData: Failed to read samples.")

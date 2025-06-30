@@ -10,7 +10,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_library(${CMAKE_PROJECT_NAME}_Base INTERFACE)
 add_library(${CMAKE_PROJECT_NAME}_BaseTest INTERFACE)
 add_dependencies(${CMAKE_PROJECT_NAME}_BaseTest ${CMAKE_PROJECT_NAME}_Base)
-find_package(Python REQUIRED)
+find_package(Python3 REQUIRED)
 
 #
 # ---=== Supported OS ===---
@@ -56,12 +56,17 @@ endif ()
 #
 # ---=== Supported Compiler ===----
 #
-set(${PROJECT_PREFIX}_GNU_MINIMAL 11)
-set(${PROJECT_PREFIX}_CLANG_MINIMAL 14)
+set(${PROJECT_PREFIX}_GNU_MINIMAL_STRICT 11)
+set(${PROJECT_PREFIX}_CLANG_MINIMAL_STRICT 15)
+set(${PROJECT_PREFIX}_GNU_MINIMAL 13)
+set(${PROJECT_PREFIX}_CLANG_MINIMAL 18)
 
 if (${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
-    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${${PROJECT_PREFIX}_GNU_MINIMAL})
+    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${${PROJECT_PREFIX}_GNU_MINIMAL_STRICT})
         message(FATAL_ERROR "${CMAKE_CXX_COMPILER_ID} compiler version too old: ${CMAKE_CXX_COMPILER_VERSION}, need ${${PROJECT_PREFIX}_GNU_MINIMAL}")
+    endif ()
+    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${${PROJECT_PREFIX}_GNU_MINIMAL})
+        message(WARNING "${CMAKE_CXX_COMPILER_ID} compiler version too old: ${CMAKE_CXX_COMPILER_VERSION}, need ${${PROJECT_PREFIX}_GNU_MINIMAL}")
     endif ()
     target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
             -Werror -Wall -Wextra -pedantic
@@ -76,8 +81,11 @@ if (${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
     set(${PROJECT_PREFIX}_COMPILER_GCC ON)
     set(${PROJECT_PREFIX}_COMPILER_STR "gcc")
 elseif (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${${PROJECT_PREFIX}_CLANG_MINIMAL_STRICT})
+        message(FATAL_ERROR "${CMAKE_CXX_COMPILER_ID} compiler version too old: ${CMAKE_CXX_COMPILER_VERSION}, need ${${PROJECT_PREFIX}_GNU_MINIMAL}")
+    endif ()
     if (${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${${PROJECT_PREFIX}_CLANG_MINIMAL})
-        message(FATAL_ERROR "${CMAKE_CXX_COMPILER_ID} compiler version too old: ${CMAKE_CXX_COMPILER_VERSION}, need ${${PROJECT_PREFIX}_CLANG_MINIMAL}")
+        message(WARNING "${CMAKE_CXX_COMPILER_ID} compiler version too old: ${CMAKE_CXX_COMPILER_VERSION}, need ${${PROJECT_PREFIX}_CLANG_MINIMAL}")
     endif ()
     target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
             -Werror -Weverything -pedantic
@@ -86,9 +94,7 @@ elseif (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
             -Wno-c++20-compat
             -Wno-padded
             -Wno-exit-time-destructors
-    )
-    target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
-            -Wno-global-constructors # Ony in gtest -> only for tests
+            -Wno-global-constructors # Only in gtest -> only for tests
     )
     if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 18)
         target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE

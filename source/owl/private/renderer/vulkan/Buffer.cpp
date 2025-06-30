@@ -96,7 +96,10 @@ void VertexBuffer::setData(const void* iData, const uint32_t iSize) {
 
 		void* dataInternal = nullptr;
 		vkMapMemory(vkc.getLogicalDevice(), stagingBufferMemory, 0, iSize, 0, &dataInternal);
+		OWL_DIAG_PUSH
+		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 		memcpy(dataInternal, iData, iSize);
+		OWL_DIAG_POP
 		vkUnmapMemory(vkc.getLogicalDevice(), stagingBufferMemory);
 
 		internal::copyBuffer(stagingBuffer, m_vertexBuffer, iSize);
@@ -159,7 +162,10 @@ IndexBuffer::IndexBuffer(const uint32_t* iIndices, const uint32_t iSize) : m_cou
 		const auto& vkc = internal::VulkanCore::get();
 
 		vkMapMemory(vkc.getLogicalDevice(), stagingBufferMemory, 0, bufferSize, 0, &dataInternal);
+		OWL_DIAG_PUSH
+		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 		memcpy(dataInternal, iIndices, bufferSize);
+		OWL_DIAG_POP
 		vkUnmapMemory(vkc.getLogicalDevice(), stagingBufferMemory);
 		internal::copyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
 		vkDestroyBuffer(vkc.getLogicalDevice(), stagingBuffer, nullptr);

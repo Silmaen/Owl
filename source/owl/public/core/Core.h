@@ -44,6 +44,7 @@
 #endif
 
 #include <memory>
+#include <string>
 
 /**
  * @brief Base Namespace for the project.

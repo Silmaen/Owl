@@ -1,52 +1,58 @@
 {
   "images": {
     "CodeCoverage": {
-      "image": "builder-gcc14-ubuntu2404"
+      "image": "builder-gcc13-ubuntu2204"
     },
     "CodeCoverage_gcc": {
-      "image": "builder-gcc14-ubuntu2404"
+      "image": "builder-gcc13-ubuntu2204"
     },
     "CodeCoverage_clang": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
     },
     "Documentation": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
     },
     "clang-tidy": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
     },
     "sanitizer-address": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
     },
     "sanitizer-thread": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
     },
     "sanitizer-undefined-behavior": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
     },
     "sanitizer-leak": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
     },
     "linux-gcc-release": {
-      "image": "builder-gcc12-ubuntu2204"
+      "image": "builder-gcc13-ubuntu2204"
     },
     "linux-gcc-debug": {
-      "image": "builder-gcc12-ubuntu2204"
+      "image": "builder-gcc13-ubuntu2204"
     },
     "linux-clang-release": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
     },
     "linux-clang-debug": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
+    },
+    "linux-clang-libc-release": {
+      "image": "builder-clang-llvm20-ubuntu2204"
+    },
+    "linux-clang-libc-debug": {
+      "image": "builder-clang-llvm20-ubuntu2204"
     },
     "package-engine": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
     },
     "package-app-nest": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
     },
     "package-app-drone": {
-      "image": "builder-clang18-ubuntu2404"
+      "image": "builder-clang-llvm18-ubuntu2204"
     }
   }
 }

@@ -9,6 +9,8 @@
 
 #include "debug/Profiler.h"
 
+#include <mutex>
+
 namespace owl::debug {
 
 Profiler::Profiler() = default;
@@ -102,7 +104,10 @@ void ProfileTimer::stop() {
 			std::chrono::time_point_cast<std::chrono::microseconds>(endTimePoint).time_since_epoch() -
 			std::chrono::time_point_cast<std::chrono::microseconds>(m_startTimePoint).time_since_epoch();
 
-	Profiler::get().writeProfile({.name=m_name, .start=highResStart, .elapsedTime=elapsedTime, .threadId=std::this_thread::get_id()});
+	Profiler::get().writeProfile({.name = m_name,
+								  .start = highResStart,
+								  .elapsedTime = elapsedTime,
+								  .threadId = std::this_thread::get_id()});
 
 	m_stopped = true;
 }

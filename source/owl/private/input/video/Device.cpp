@@ -8,6 +8,8 @@
 #include "owlpch.h"
 
 #include "input/video/Device.h"
+
+#include <cstring>
 #include <stb_image.h>
 
 namespace owl::input::video {
@@ -98,7 +100,7 @@ void convertMJpegToRgb24(const uint8_t* iJpegBuffer, const int32_t iJpegSize, co
 		for (int j = 0; j < width; ++j) {
 			const int sourceIndex = (i * width + j) * 3;
 			const int destinationIndex = ((i + 1) * width - j - 1) * 3;// Inversion horizontale
-			std::memcpy(oRgb24Buffer + destinationIndex, buffer + sourceIndex, 3);
+			memcpy(oRgb24Buffer + destinationIndex, buffer + sourceIndex, 3);
 		}
 	}
 	//std::memcpy(rgb24Buffer, buffer, frameSize.surface() * 3);
@@ -120,7 +122,10 @@ auto Device::getRgbBuffer(const uint8_t* iInputBuffer, const int32_t iBufferSize
 		convertNv12ToRgb24(iInputBuffer, m_size, output.data());
 	} else if (m_pixFormat == PixelFormat::Rgb24) {
 		output.resize(3ull * m_size.surface());
+		OWL_DIAG_PUSH
+		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 		memcpy(output.data(), iInputBuffer, output.size());
+		OWL_DIAG_POP
 	} else if (m_pixFormat == PixelFormat::YuYv) {
 		output.resize(3ull * m_size.surface());
 		convertYuYvToRgb24(iInputBuffer, m_size, output.data());

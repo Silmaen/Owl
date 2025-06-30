@@ -122,7 +122,7 @@ void ContentBrowser::renderContent() {
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
 		const auto tex = getFileIcon(path);
 		if (tex.has_value()) {
-			ImGui::ImageButton(fmt::format("content_btn_{}", item).c_str(), tex.value(), {thumbnailSize, thumbnailSize},
+			ImGui::ImageButton(std::format("content_btn_{}", item).c_str(), tex.value(), {thumbnailSize, thumbnailSize},
 							   {0, 1}, {1, 0});
 		} else {
 			ImGui::Button(filenameString.c_str(), {thumbnailSize, thumbnailSize});

@@ -32,9 +32,9 @@ auto sizeToString(const size_t iSize) -> std::string {
 	}
 	// Format the size to 2 decimal places
 	if (unit == "B") {
-		return fmt::format("{} {}", iSize, unit);
+		return std::format("{} {}", iSize, unit);
 	}
-	return fmt::format("{:.2f} {}", size, unit);
+	return std::format("{:.2f} {}", size, unit);
 }
 
 }// namespace owl::core::utils
