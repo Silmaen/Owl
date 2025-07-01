@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "KeyCodes.h"
-#include "MouseCode.h"
-#include "Window.h"
 #include "core/Core.h"
+#include "input/KeyCodes.h"
+#include "input/MouseCode.h"
+#include "window/Window.h"
 
 namespace owl::input {
 /**
@@ -38,7 +38,7 @@ public:
 	 * @brief Initialize the input;
 	 * @param[in] iType the type of input
 	 */
-	static void init(const Type& iType = Type::Glfw);
+	static void init(const window::Type& iType = window::Type::Glfw);
 
 	/**
 	 * @brief Destroy the inout instance.
@@ -102,7 +102,7 @@ public:
 
 private:
 	/// The Input type.
-	static Type m_type;
+	static window::Type m_type;
 	/// The input instance.
 	static uniq<Input> m_instance;
 

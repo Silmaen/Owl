@@ -36,9 +36,9 @@
 #include "event/MouseEvent.h"
 #include "input/CameraOrthoController.h"
 #include "input/Input.h"
-#include "input/Window.h"
-#include "input/video/Manager.h"
+#include "io/video/Manager.h"
 #include "math/math.h"
+#include "window/Window.h"
 
 // -------- gui ------------
 #include "gui/BaseDrawPanel.h"

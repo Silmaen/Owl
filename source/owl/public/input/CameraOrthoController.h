@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "renderer/CameraOrtho.h"
 #include "core/Timestep.h"
 #include "event/AppEvent.h"
 #include "event/MouseEvent.h"
+#include "renderer/CameraOrtho.h"
 
 namespace owl::input {
 /**

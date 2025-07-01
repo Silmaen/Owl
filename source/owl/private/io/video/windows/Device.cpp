@@ -16,7 +16,7 @@
 #include <mfapi.h>
 #include <windows.h>
 
-namespace owl::input::video::windows {
+namespace owl::io::video::windows {
 
 namespace {
 
@@ -380,6 +380,6 @@ void Device::fillFrame(shared<renderer::Texture>& iFrame) {
 
 auto Device::isValid() const -> bool { return !m_name.empty() && !m_busInfo.empty(); }
 
-}// namespace owl::input::video::windows
+}// namespace owl::io::video::windows
 
 #endif

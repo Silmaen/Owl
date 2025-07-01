@@ -68,7 +68,7 @@ void UiLayer::onAttach() {
 
 	setTheme();
 
-	if (m_withApp && core::Application::get().getWindow().getType() == input::Type::Glfw) {
+	if (m_withApp && core::Application::get().getWindow().getType() == window::Type::Glfw) {
 		auto* window = static_cast<GLFWwindow*>(core::Application::get().getWindow().getNativeWindow());
 		if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::OpenGL) {
 			ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -96,7 +96,7 @@ void UiLayer::onDetach() {
 		vkDeviceWaitIdle(vkc.getLogicalDevice());
 		ImGui_ImplVulkan_Shutdown();
 	}
-	if (m_withApp && core::Application::get().getWindow().getType() == input::Type::Glfw) {
+	if (m_withApp && core::Application::get().getWindow().getType() == window::Type::Glfw) {
 		ImGui_ImplGlfw_Shutdown();
 	}
 	ImGui::DestroyContext();
@@ -123,7 +123,7 @@ void UiLayer::begin() const {
 		int height = 0;
 		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 	}
-	if (m_withApp && core::Application::get().getWindow().getType() == input::Type::Glfw) {
+	if (m_withApp && core::Application::get().getWindow().getType() == window::Type::Glfw) {
 		ImGui_ImplGlfw_NewFrame();
 	} else {
 		ImGuiIO& io = ImGui::GetIO();

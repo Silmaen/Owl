@@ -11,8 +11,9 @@
 #include "event/Event.h"
 #include "math/vectors.h"
 #include "renderer/GraphContext.h"
+#include <functional>
 
-namespace owl::input {
+namespace owl::window {
 
 /**
  * @brief Types of input Manager.
@@ -133,4 +134,4 @@ protected:
 	uniq<renderer::GraphContext> m_context;
 };
 
-}// namespace owl::input
+}// namespace owl::window

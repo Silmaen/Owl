@@ -7,7 +7,7 @@
  */
 #include "owlpch.h"
 
-#include "input/video/Manager.h"
+#include "io/video/Manager.h"
 
 #if defined(OWL_PLATFORM_WINDOWS)
 #include "windows/Device.h"
@@ -15,7 +15,7 @@
 #include "linux/Device.h"
 #endif
 
-namespace owl::input::video {
+namespace owl::io::video {
 
 Manager::Manager() { updateDeviceList(); }
 
@@ -72,4 +72,4 @@ auto Manager::getCurrentDeviceId() const -> int8_t {
 	return static_cast<int8_t>(m_currentDevice);
 }
 
-}// namespace owl::input::video
+}// namespace owl::io::video

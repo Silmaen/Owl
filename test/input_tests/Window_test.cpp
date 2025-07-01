@@ -1,9 +1,9 @@
 
 #include "testHelper.h"
 
-#include <input/Window.h>
+#include <window/Window.h>
 
-using namespace owl::input;
+using namespace owl::window;
 
 TEST(Window, creation) {
 	owl::core::Log::init(owl::core::Log::Level::Off);

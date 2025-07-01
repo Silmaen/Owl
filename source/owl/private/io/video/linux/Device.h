@@ -7,7 +7,7 @@
  */
 
 #pragma once
-#include "input/video/Device.h"
+#include "io/video/Device.h"
 
 #ifdef OWL_PLATFORM_LINUX
 #include <linux/videodev2.h>
@@ -15,7 +15,7 @@
 /**
  * @brief Linux video devices.
  */
-namespace owl::input::video::linux64 {
+namespace owl::io::video::linux64 {
 
 /**
  * @brief Search for devices and them to the given list.
@@ -99,6 +99,6 @@ private:
 	[[nodiscard]] auto getFirstSupportedPixelFormat(int32_t iFd = -1) const -> PixelFormat;
 };
 
-}// namespace owl::input::video::linux64
+}// namespace owl::io::video::linux64
 
 #endif

@@ -148,8 +148,8 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 	ImGui::Text("%s", std::format("FPS: {:.2f}", iTimeStep.getFps()).c_str());
 	ImGui::Separator();
 	ImGui::Text("%s",
-				std::format("Current used memory: {}", debug::TrackerAPI::globals().allocatedMemory).c_str());
-	ImGui::Text("%s", std::format("Max used memory: {}", debug::TrackerAPI::globals().memoryPeek).c_str());
+				std::format("Current used memory: {}", core::utils::sizeToString(debug::TrackerAPI::globals().allocatedMemory)).c_str());
+	ImGui::Text("%s", std::format("Max used memory: {}", core::utils::sizeToString(debug::TrackerAPI::globals().memoryPeek)).c_str());
 	ImGui::Text("%s", std::format("Allocation calls: {}", debug::TrackerAPI::globals().allocationCalls).c_str());
 	ImGui::Text("%s", std::format("Deallocation calls: {}", debug::TrackerAPI::globals().deallocationCalls).c_str());
 	ImGui::Text("%s",
