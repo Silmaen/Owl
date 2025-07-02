@@ -7,7 +7,6 @@
  */
 #include "Settings.h"
 #include "IO/CameraSystem.h"
-#include "IO/DeviceManager.h"
 #include "IO/DroneSettings.h"
 
 namespace drone::panels {
@@ -61,7 +60,7 @@ void Settings::onRender() {
 	static bool comOpen = true;
 	if (ImGui::CollapsingHeader("Serial Port Setting", static_cast<ImGuiTreeNodeFlags>(comOpen))) {
 		bool val = settings.useSerialPort;
-		auto& deviceManager = IO::DeviceManager::get();
+		auto& deviceManager = owl::io::serial::Manager::get();
 		const auto& devices = deviceManager.getAllDevices();
 		const size_t nbCom = devices.size();
 		if (ImGui::Checkbox("Use the serial ports", &val)) {
@@ -73,21 +72,21 @@ void Settings::onRender() {
 			std::string cPort{};
 			if (device) {
 				cName = device->getFriendlyName();
-				cPort = device->port;
+				cPort = device->port();
 			}
 			if (ImGui::BeginCombo("Serial port", std::format("Serial {} ({})", cName, cPort).c_str())) {
 				for (const auto& dev: devices) {
-					const bool isSelected = (dev.port == cPort);
-					if (ImGui::Selectable(std::format("Serial {} ({})", dev.getFriendlyName(), dev.port).c_str(),
+					const bool isSelected = (dev.port() == cPort);
+					if (ImGui::Selectable(std::format("Serial {} ({})", dev.getFriendlyName(), dev.port()).c_str(),
 										  isSelected))
-						cPort = dev.port;
+						cPort = dev.port();
 					// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
 					if (isSelected)
 						ImGui::SetItemDefaultFocus();
 				}
 				ImGui::EndCombo();
 				if (!cPort.empty()) {
-					if (!device || cPort != device->port) {
+					if (!device || cPort != device->port()) {
 						deviceManager.setCurrentDevice(cPort);
 					}
 				}

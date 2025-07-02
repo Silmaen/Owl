@@ -8,9 +8,9 @@
 
 #include "owlpch.h"
 
-#include "../../public/window/Window.h"
 #include "glfw/Window.h"
 #include "null/Window.h"
+#include "window/Window.h"
 
 namespace owl::window {
 
@@ -26,4 +26,4 @@ auto Window::create(const Properties& iProps) -> uniq<Window> {
 
 Window::~Window() = default;
 
-}// namespace owl::input
+}// namespace owl::window
