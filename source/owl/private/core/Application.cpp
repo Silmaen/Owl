@@ -354,11 +354,20 @@ void AppParams::loadFromFile(const std::filesystem::path& iFile) {
 		get(appConfig, "height", height);
 		std::string rendererStr;
 		get(appConfig, "renderer", rendererStr);
-		if (const auto dRenderer = magic_enum::enum_cast<renderer::RenderAPI::Type>(rendererStr); dRenderer.has_value())
-			renderer = dRenderer.value();
+		if (rendererStr == "null") {
+			renderer = renderer::RenderAPI::Type::Null;
+		} else {
+			if (const auto dRenderer = magic_enum::enum_cast<renderer::RenderAPI::Type>(rendererStr);
+				dRenderer.has_value())
+				renderer = dRenderer.value();
+		}
 		get(appConfig, "sound", rendererStr);
-		if (const auto dSound = magic_enum::enum_cast<sound::SoundAPI::Type>(rendererStr); dSound.has_value())
-			sound = dSound.value();
+		if (rendererStr == "null") {
+			sound = sound::SoundAPI::Type::Null;
+		} else {
+			if (const auto dSound = magic_enum::enum_cast<sound::SoundAPI::Type>(rendererStr); dSound.has_value())
+				sound = dSound.value();
+		}
 		get(appConfig, "hasGui", hasGui);
 		get(appConfig, "useDebugging", useDebugging);
 		get(appConfig, "frameLogFrequency", frameLogFrequency);
