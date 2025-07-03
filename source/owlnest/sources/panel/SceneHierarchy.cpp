@@ -46,9 +46,7 @@ void SceneHierarchy::renderHierarchy() {
 		ImGui::PopID();
 
 		if (constexpr ImGuiTreeNodeFlags flag = ImGuiTreeNodeFlags_DefaultOpen; ImGui::TreeNodeEx("root", flag)) {
-			for (auto& entity: m_context->getAllEntities()) {
-				drawEntityNode(entity);
-			}
+			for (auto& entity: m_context->getAllEntities()) { drawEntityNode(entity); }
 			ImGui::TreePop();
 		}
 	}
@@ -113,7 +111,7 @@ void drawComponent(scene::Entity& ioEntity) {
 		auto& component = ioEntity.getComponent<T>();
 		const ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
-		const float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+		const float lineHeight = ImGui::GetFontSize() + GImGui->Style.FramePadding.y * 2.0f;
 		ImGui::Separator();
 		const bool open = ImGui::TreeNodeEx(T::name(), treeNodeFlags);
 
