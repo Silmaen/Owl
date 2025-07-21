@@ -30,11 +30,7 @@ if (OWL_PLATFORM_WINDOWS)
 endif ()
 
 # yaml
-if (NOT TARGET yaml-cpp::yaml-cpp)
-    find_package(yaml-cpp REQUIRED)
-    message(STATUS "Found yaml-cpp version ${yaml-cpp_VERSION} @ ${yaml-cpp_DIR}")
-endif ()
-target_link_libraries(${OWL_PROJECT} PRIVATE yaml-cpp::yaml-cpp)
+owl_target_link_libraries(${OWL_PROJECT} PRIVATE yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
 
 # ----==== third party ====----
 

@@ -46,7 +46,7 @@ void UiLayer::onAttach() {
 
 	// Docking configuration
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;// Enable Docking
-	io.ConfigDockingWithShift = true;
+	io.ConfigDockingWithShift = false;
 	io.ConfigDockingTransparentPayload = true;
 	// ViewPort configuration
 	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;// Enable Multi-Viewport
@@ -83,7 +83,6 @@ void UiLayer::onAttach() {
 		std::vector<VkFormat> formats;
 		ImGui_ImplVulkan_InitInfo info = vkh.toImGuiInfo(formats);
 		ImGui_ImplVulkan_Init(&info);
-		ImGui_ImplVulkan_CreateFontsTexture();
 	}
 }
 
@@ -294,8 +293,8 @@ OWL_DIAG_POP
 
 void UiLayer::initializeDocking() {
 	static bool dockSpaceOpen = true;
-	static constexpr bool optFullScreenPersistant = true;
-	constexpr bool optFullScreen = optFullScreenPersistant;
+	static constexpr bool optFullScreenPersistent = true;
+	constexpr bool optFullScreen = optFullScreenPersistent;
 	static constexpr ImGuiDockNodeFlags dockSpaceFlags = ImGuiDockNodeFlags_None;
 	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 	// because it would be confusing to have two docking targets within each others.
@@ -333,6 +332,8 @@ void UiLayer::initializeDocking() {
 	if ((io.ConfigFlags & ImGuiConfigFlags_DockingEnable) != 0) {
 		const ImGuiID dockSpaceId = ImGui::GetID("OwlDockSpace");
 		ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f), dockSpaceFlags);
+	} else {
+		OWL_CORE_WARN("Docking is not enabled.")
 	}
 	style.WindowMinSize.x = minWinSizeX;
 }
