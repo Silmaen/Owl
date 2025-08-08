@@ -107,6 +107,9 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE spdlog REQUIRED ${THIR
 # yaml
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
 
+# zeus
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zeus REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "zeus::expected")
+
 # ---------========= PUBLIC third party =========---------
 
 # Entt
@@ -114,6 +117,7 @@ owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED ${THIRD_PARTY_RELE
 
 # ImGui
 owl_target_link_libraries(${ENGINE_NAME} PUBLIC imgui REQUIRED ${THIRD_PARTY_RELEASE})
+
 
 # additional windows libs
 if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)

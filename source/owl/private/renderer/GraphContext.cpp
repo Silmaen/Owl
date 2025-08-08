@@ -7,16 +7,17 @@
  */
 #include "owlpch.h"
 
-#include "renderer/GraphContext.h"
-#include "renderer/Renderer.h"
 #include "null/GraphContext.h"
 #include "opengl/GraphContext.h"
+#include "renderer/GraphContext.h"
+#include "renderer/Renderer.h"
 #include "vulkan/GraphContext.h"
 
 namespace owl::renderer {
 
 auto GraphContext::create(void* ioWindow) -> uniq<GraphContext> {
-	switch (RenderCommand::getApi()) {
+	const auto api = RenderCommand::getApi();
+	switch (api) {
 		case RenderAPI::Type::Null:
 			return mkUniq<null::GraphContext>(static_cast<GLFWwindow*>(ioWindow));
 		case RenderAPI::Type::OpenGL:
@@ -25,7 +26,7 @@ auto GraphContext::create(void* ioWindow) -> uniq<GraphContext> {
 			return mkUniq<vulkan::GraphContext>(static_cast<GLFWwindow*>(ioWindow));
 	}
 
-	OWL_CORE_ERROR("Unknown RendererAPI!")
+	OWL_CORE_ERROR("Unknown RendererAPI ({})", static_cast<int>(api))
 	return nullptr;
 }
 

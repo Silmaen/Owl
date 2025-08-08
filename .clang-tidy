@@ -1,9 +1,9 @@
 # Generated from CLion Inspection settings
 ---
 WarningsAsErrors: '*'
-HeaderFilterRegex: '.*(\.h)$'
+HeaderFilterRegex: '.*(\.h|\.hpp)$'
 ExcludeHeaderFilterRegex: ''
-HeaderFileExtensions: [ 'h' ]
+HeaderFileExtensions: [ 'h', 'hpp' ]
 ImplementationFileExtensions: [ 'cpp' ]
 FormatStyle: 'file'
 Checks: '*,
