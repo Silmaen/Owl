@@ -21,6 +21,7 @@
 #include "core/Application.h"
 #include "core/Log.h"
 #include "core/Timestep.h"
+#include "core/external/expected.h"
 #include "core/layer/Layer.h"
 #include "core/utils/FileDialog.h"
 #include "core/utils/FileUtils.h"

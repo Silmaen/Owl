@@ -18,7 +18,8 @@ namespace owl::renderer {
 DrawData::~DrawData() = default;
 
 auto DrawData::create() -> shared<DrawData> {
-	switch (RenderCommand::getApi()) {
+	const auto api = RenderCommand::getApi();
+	switch (api) {
 		case RenderAPI::Type::Null:
 			return mkShared<null::DrawData>();
 		case RenderAPI::Type::OpenGL:
@@ -26,7 +27,7 @@ auto DrawData::create() -> shared<DrawData> {
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::DrawData>();
 	}
-	OWL_CORE_ERROR("Unknown Graphic API Type!")
+	OWL_CORE_ERROR("Unknown RendererAPI ({})", static_cast<int>(api))
 	return nullptr;
 }
 

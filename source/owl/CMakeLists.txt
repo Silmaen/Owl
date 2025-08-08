@@ -115,6 +115,9 @@ owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED ${THIRD_PARTY_RELE
 # ImGui
 owl_target_link_libraries(${ENGINE_NAME} PUBLIC imgui REQUIRED ${THIRD_PARTY_RELEASE})
 
+# zeus
+owl_target_link_libraries(${ENGINE_NAME} PUBLIC zeus REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "zeus::expected")
+
 # additional windows libs
 if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
     target_link_libraries(${ENGINE_NAME} PUBLIC Mf Mfplat Mfreadwrite)
