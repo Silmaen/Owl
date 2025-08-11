@@ -17,7 +17,8 @@
 namespace owl::renderer {
 
 auto Framebuffer::create(const FramebufferSpecification& iSpec) -> shared<Framebuffer> {
-	switch (RenderCommand::getApi()) {
+	const auto api = RenderCommand::getApi();
+	switch (api) {
 		case RenderAPI::Type::Null:
 			return mkShared<null::Framebuffer>(iSpec);
 		case RenderAPI::Type::OpenGL:
@@ -25,7 +26,7 @@ auto Framebuffer::create(const FramebufferSpecification& iSpec) -> shared<Frameb
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::Framebuffer>(iSpec);
 	}
-	OWL_CORE_ERROR("Unknown Graphic API Type!")
+	OWL_CORE_ERROR("Unknown RendererAPI ({})", static_cast<int>(api))
 	return nullptr;
 }
 

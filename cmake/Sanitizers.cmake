@@ -19,7 +19,7 @@ if (${PROJECT_PREFIX}_ENABLE_CLANG_TIDY)
         message(STATUS "Found clang-tidy: ${CLANG_TIDY_EXECUTABLE}")
         set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
         set(CMAKE_CXX_SCAN_FOR_MODULES ON)
-        set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXECUTABLE}" -p "${CMAKE_BINARY_DIR}")
+        set(CMAKE_CXX_CLANG_TIDY "${CLANG_TIDY_EXECUTABLE}" -extra-arg=-Wno-unknown-warning-option -p "${CMAKE_BINARY_DIR}")
 
         target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_USE_CLANG_TIDY)
         message(STATUS "CLANG-TIDY activated.")

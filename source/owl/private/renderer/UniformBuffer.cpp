@@ -16,7 +16,8 @@
 namespace owl::renderer {
 
 auto UniformBuffer::create(uint32_t iSize, uint32_t iBinding, const std::string& iRenderer) -> shared<UniformBuffer> {
-	switch (RenderCommand::getApi()) {
+	const auto api = RenderCommand::getApi();
+	switch (api) {
 		case RenderAPI::Type::Null:
 			return mkShared<null::UniformBuffer>(iSize, iBinding);
 		case RenderAPI::Type::OpenGL:
@@ -24,7 +25,7 @@ auto UniformBuffer::create(uint32_t iSize, uint32_t iBinding, const std::string&
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::UniformBuffer>(iSize, iBinding, iRenderer);
 	}
-	OWL_CORE_ERROR("Unknown Graphic API Type!")
+	OWL_CORE_ERROR("Unknown RendererAPI ({})", static_cast<int>(api))
 	return nullptr;
 }
 

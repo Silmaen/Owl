@@ -72,7 +72,8 @@ Texture2D::Texture2D(std::filesystem::path iPath) : Texture{std::move(iPath)} {}
 Texture2D::Texture2D(const Specification& iSpecs) : Texture{iSpecs} {}
 
 auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> {
-	switch (RenderCommand::getApi()) {
+	const auto api = RenderCommand::getApi();
+	switch (api) {
 		case RenderAPI::Type::Null:
 			{
 				if (auto texture = mkShared<null::Texture2D>(iFile); texture->isLoaded())// No data
@@ -93,13 +94,14 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 			}
 	}
 
-	OWL_CORE_ERROR("Unknown RendererAPI!")
+	OWL_CORE_ERROR("Unknown RendererAPI ({})", static_cast<int>(api))
 	return nullptr;
 }
 
 auto Texture2D::create(const Specification& iSpecs) -> shared<Texture2D> {
 	shared<Texture2D> tex;
-	switch (RenderCommand::getApi()) {
+	const auto api = RenderCommand::getApi();
+	switch (api) {
 		case RenderAPI::Type::Null:
 			tex = mkShared<null::Texture2D>(iSpecs);
 			break;
@@ -110,12 +112,9 @@ auto Texture2D::create(const Specification& iSpecs) -> shared<Texture2D> {
 			tex = mkShared<vulkan::Texture2D>(iSpecs);
 			break;
 	}
-	if (tex) {
-		return tex;
-	}
 
-	OWL_CORE_ERROR("Unknown RendererAPI!")
-	return nullptr;
+	OWL_CORE_ERROR("Unknown RendererAPI ({})", static_cast<int>(api))
+	return tex;
 }
 
 auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) -> shared<Texture2D> {
