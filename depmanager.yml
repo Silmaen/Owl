@@ -28,10 +28,10 @@ packages:
     kind: "static"
   glfw:
     version: 3.4.0
-    kind: "static"
+    kind: "shared"
   imgui:
     version: 1.92.0-docking
-    kind: "static"
+    kind: "shared"
   imguizmo:
     version: 1.92.0
     kind: "static"
@@ -57,7 +57,7 @@ packages:
     kind: "shared"
   libpng:
     version: 1.6.50
-    kind: "static"
+    kind: "shared"
   freetype:
     version: 2.13.3
     kind: "static"

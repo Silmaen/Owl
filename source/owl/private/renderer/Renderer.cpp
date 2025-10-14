@@ -20,9 +20,12 @@ shared<Renderer::TextureLibrary> Renderer::m_textureLibrary = nullptr;
 void Renderer::init() {
 	OWL_PROFILE_FUNCTION()
 
-	m_sceneData = mkShared<SceneData>();
-	m_shaderLibrary = mkShared<ShaderLibrary>();
-	m_textureLibrary = mkShared<TextureLibrary>();
+	if (m_sceneData == nullptr)
+		m_sceneData = mkShared<SceneData>();
+	if (m_shaderLibrary == nullptr)
+		m_shaderLibrary = mkShared<ShaderLibrary>();
+	if (m_textureLibrary == nullptr)
+		m_textureLibrary = mkShared<TextureLibrary>();
 
 	RenderCommand::init();
 	if (RenderCommand::getState() != RenderAPI::State::Ready) {
@@ -54,6 +57,18 @@ void Renderer::endScene() {}
 
 void Renderer::onWindowResized(const uint32_t iWidth, const uint32_t iHeight) {
 	RenderCommand::setViewport(0, 0, iWidth, iHeight);
+}
+
+auto Renderer::getShaderLibrary() -> ShaderLibrary& {
+	if (m_shaderLibrary == nullptr)
+		m_shaderLibrary = mkShared<ShaderLibrary>();
+	return *m_shaderLibrary;
+}
+
+auto Renderer::getTextureLibrary() -> TextureLibrary& {
+	if (m_textureLibrary == nullptr)
+		m_textureLibrary = mkShared<TextureLibrary>();
+	return *m_textureLibrary;
 }
 
 }// namespace owl::renderer
