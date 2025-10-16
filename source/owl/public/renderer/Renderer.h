@@ -85,13 +85,13 @@ public:
 	 * @brief Access to the shader Library.
 	 * @return The shader library.
 	 */
-	static auto getShaderLibrary() -> ShaderLibrary& { return *m_shaderLibrary; }
+	static auto getShaderLibrary() -> ShaderLibrary&;
 
 	/**
 	 * @brief Access to the texture Library.
 	 * @return The texture library.
 	 */
-	static auto getTextureLibrary() -> TextureLibrary& { return *m_textureLibrary; }
+	static auto getTextureLibrary() -> TextureLibrary&;
 
 private:
 	/// The state of the renderer.

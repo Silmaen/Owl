@@ -103,18 +103,15 @@ auto Texture2D::create(const Specification& iSpecs) -> shared<Texture2D> {
 	const auto api = RenderCommand::getApi();
 	switch (api) {
 		case RenderAPI::Type::Null:
-			tex = mkShared<null::Texture2D>(iSpecs);
-			break;
+			return mkShared<null::Texture2D>(iSpecs);
 		case RenderAPI::Type::OpenGL:
-			tex = mkShared<opengl::Texture2D>(iSpecs);
-			break;
+			return mkShared<opengl::Texture2D>(iSpecs);
 		case RenderAPI::Type::Vulkan:
-			tex = mkShared<vulkan::Texture2D>(iSpecs);
-			break;
+			return mkShared<vulkan::Texture2D>(iSpecs);
 	}
 
 	OWL_CORE_ERROR("Unknown RendererAPI ({})", static_cast<int>(api))
-	return tex;
+	return nullptr;
 }
 
 auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) -> shared<Texture2D> {
