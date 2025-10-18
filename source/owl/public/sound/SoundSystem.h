@@ -10,7 +10,7 @@
 
 #include "SoundCommand.h"
 
-#include <core/assets/AssetLibrary.h>
+#include <data/assets/AssetLibrary.h>
 
 /**
  * @brief Namespace for sound management.
@@ -22,7 +22,7 @@ namespace owl::sound {
  */
 class OWL_API SoundSystem {
 public:
-	using SoundLibrary = core::assets::AssetLibrary<SoundData>;
+	using SoundLibrary = data::assets::AssetLibrary<SoundData>;
 	/**
 	 * @brief Default constructor.
 	 */

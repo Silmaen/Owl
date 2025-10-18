@@ -12,6 +12,7 @@ file(GLOB_RECURSE HDRS
 add_executable(${OWL_PROJECT}
         ${SRCS} ${HDRS})
 set_target_properties(${OWL_PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set_target_properties(${OWL_PROJECT} PROPERTIES FOLDER "App")
 
 target_include_directories(${OWL_PROJECT} PRIVATE sources)
 

@@ -14,6 +14,9 @@
 #include "renderer/GraphContext.h"
 #include <functional>
 
+/**
+ * @brief Base namespace for window management
+ */
 namespace owl::window {
 
 /**

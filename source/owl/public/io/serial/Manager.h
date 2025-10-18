@@ -33,7 +33,7 @@ public:
 	 * @brief Singleton accessor.
 	 * @return Instance of the manager.
 	 */
-	static Manager& get() {
+	static auto get() -> Manager& {
 		static Manager instance;
 		return instance;
 	}
@@ -42,7 +42,7 @@ public:
 	 * @brief Get the number of found devices.
 	 * @return The number of found devices.
 	 */
-	[[nodiscard]] size_t getDeviceCount() const { return m_devices.size(); }
+	[[nodiscard]] auto getDeviceCount() const -> size_t { return m_devices.size(); }
 
 	/**
 	 * @brief Request a refresh of the devices list.
@@ -53,27 +53,27 @@ public:
 	 * @brief Check if some devices exist in the list.
 	 * @return True if a device exist.
 	 */
-	[[nodiscard]] bool hasDevice() const { return !m_devices.empty(); }
+	[[nodiscard]] auto hasDevice() const -> bool { return !m_devices.empty(); }
 
 	/**
 	 * @brief Get all the devices.
 	 * @return List of all devices.
 	 */
-	[[nodiscard]] const DeviceList& getAllDevices() const { return m_devices; }
+	[[nodiscard]] auto getAllDevices() const -> const DeviceList& { return m_devices; }
 
 	/**
 	 * @brief Get device by its name.
 	 * @param iName Name of device.
 	 * @return Pointer to the device of nullptr if not exists.
 	 */
-	[[nodiscard]] shared<Device> getDeviceByName(const std::string& iName) const;
+	[[nodiscard]] auto getDeviceByName(const std::string& iName) const -> shared<Device>;
 
 	/**
 	 * @brief Get device by its port.
 	 * @param iPort Port of device.
 	 * @return Pointer to the device of nullptr if not exists.
 	 */
-	[[nodiscard]] shared<Device> getDeviceByPort(const std::string& iPort) const;
+	[[nodiscard]] auto getDeviceByPort(const std::string& iPort) const -> shared<Device>;
 
 	/**
 	 * @brief Define the new current device.
@@ -85,7 +85,7 @@ public:
 	 * @brief Get a pointer to the current Device.
 	 * @return Pointer to the current device.
 	 */
-	[[nodiscard]] const shared<Device>& getCurrentDevice() const { return m_currentDevice; }
+	[[nodiscard]] auto getCurrentDevice() const -> const shared<Device>& { return m_currentDevice; }
 
 private:
 	/**

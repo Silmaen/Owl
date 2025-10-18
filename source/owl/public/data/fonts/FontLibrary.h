@@ -8,14 +8,14 @@
 
 #pragma once
 
-#include "fonts/Font.h"
+#include "data/fonts/Font.h"
 #include <list>
 #include <unordered_map>
 
 /**
  * @brief Namespace for font management.
  */
-namespace owl::fonts {
+namespace owl::data::fonts {
 
 /**
  * @brief Class for managing the fonts.
@@ -79,4 +79,4 @@ private:
 	void loadFont(const std::string& iName);
 };
 
-}// namespace owl::fonts
+}// namespace owl::data::fonts

@@ -11,7 +11,7 @@
 #include "core/Application.h"
 #include "core/Core.h"
 #include "core/Serializer.h"
-#include "fonts/Font.h"
+#include "data/fonts/Font.h"
 
 namespace owl::scene::component {
 
@@ -22,7 +22,7 @@ struct OWL_API Text {
 	/// The text.
 	std::string text;
 	/// The tex's font.
-	shared<fonts::Font> font = nullptr;
+	shared<data::fonts::Font> font = nullptr;
 	/// The display color.
 	math::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 	/// The kerning.

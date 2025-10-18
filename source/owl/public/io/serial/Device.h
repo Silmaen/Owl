@@ -7,7 +7,17 @@
  */
 
 #pragma once
+/**
+ * @namespace owl::io
+ * @brief Base namespace for IO operations.
+ */
+#include "core/Core.h"
+#include <string>
 
+
+/**
+ * @brief Base namespace for serial IO operations.
+ */
 namespace owl::io::serial {
 
 static const std::string g_deviceFriendlyName{"unknown"};
@@ -35,12 +45,12 @@ public:
 	/**
 	 * @brief Copy assignation.
 	 */
-	Device& operator=(const Device&) = default;
+	auto operator=(const Device&) -> Device& = default;
 
 	/**
 	 * @brief Move assignation.
 	 */
-	Device& operator=(Device&&) = default;
+	auto operator=(Device&&) -> Device& = default;
 
 	/**
 	 * @brief Element Constructor.
@@ -59,7 +69,7 @@ public:
 	 * @brief Access to a friendly name for the device
 	 * @return Friendly name of the device.
 	 */
-	[[nodiscard]] const std::string& getFriendlyName() const {
+	[[nodiscard]] auto getFriendlyName() const -> const std::string& {
 		if (m_name.empty())
 			return g_deviceFriendlyName;
 		return m_name;
@@ -68,7 +78,7 @@ public:
 	 * @brief Hashing function.
 	 * @return Device's hash.
 	 */
-	[[nodiscard]] size_t hash() const {
+	[[nodiscard]] auto hash() const -> size_t {
 		return std::hash<std::string>{}(m_port) ^ (std::hash<std::string>{}(m_name) << 1u);
 	}
 
@@ -76,37 +86,37 @@ public:
 	 * @brief Access to the port.
 	 * @return Const reference to the port.
 	 */
-	const std::string& port() const { return m_port; }
+	[[nodiscard]] auto port() const -> const std::string& { return m_port; }
 
 	/**
 	 * @brief Access to the port.
 	 * @return Reference to the port.
 	 */
-	std::string& port() { return m_port; }
+	auto port() -> std::string& { return m_port; }
 
 	/**
 	 * @brief Access to the name.
 	 * @return Const reference to the name.
 	 */
-	const std::string& name() const { return m_name; }
+	[[nodiscard]] auto name() const -> const std::string& { return m_name; }
 
 	/**
 	 * @brief Access to the name.
 	 * @return Reference to the name.
 	 */
-	std::string& name() { return m_name; }
+	auto name() -> std::string& { return m_name; }
 
 	/**
 	 * @brief Access to the busInfo.
 	 * @return Const reference to the busInfo.
 	 */
-	const std::string& busInfo() const { return m_busInfo; }
+	[[nodiscard]] auto busInfo() const -> const std::string& { return m_busInfo; }
 
 	/**
 	 * @brief Access to the busInfo.
 	 * @return Reference to the busInfo.
 	 */
-	std::string& busInfo() { return m_busInfo; }
+	auto busInfo() -> std::string& { return m_busInfo; }
 
 private:
 	/// The port of the device.

@@ -11,7 +11,7 @@
 #include "CameraOrtho.h"
 #include "RenderCommand.h"
 #include "Shader.h"
-#include "core/assets/AssetLibrary.h"
+#include "data/assets/AssetLibrary.h"
 
 /**
  * @brief Namespace for the renderer elements.
@@ -23,8 +23,8 @@ namespace owl::renderer {
  */
 class OWL_API Renderer {
 public:
-	using TextureLibrary = core::assets::AssetLibrary<Texture2D>;
-	using ShaderLibrary = core::assets::AssetLibrary<Shader>;
+	using TextureLibrary = data::assets::AssetLibrary<Texture2D>;
+	using ShaderLibrary = data::assets::AssetLibrary<Shader>;
 	Renderer() = default;
 	Renderer(const Renderer&) = delete;
 	Renderer(Renderer&&) = delete;

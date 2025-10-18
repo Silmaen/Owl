@@ -10,7 +10,11 @@
 
 #include "core/Core.h"
 
-namespace owl::core::assets {
+/**
+ * @namespace owl::data
+ * @brief Namespace for data management.
+ */
+namespace owl::data::assets {
 
 /**
  * @brief Concept to ensure DataType meets specific requirements.
@@ -92,4 +96,4 @@ private:
 	shared<DataType> m_asset;
 };
 
-}// namespace owl::core::assets
+}// namespace owl::data::assets

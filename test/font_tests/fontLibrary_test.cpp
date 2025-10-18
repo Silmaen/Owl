@@ -2,9 +2,9 @@
 #include "testHelper.h"
 
 #include <core/Application.h>
-#include <fonts/FontLibrary.h>
+#include <data/fonts/FontLibrary.h>
 
-using namespace owl::fonts;
+using namespace owl::data::fonts;
 using namespace owl;
 using namespace owl::core;
 
