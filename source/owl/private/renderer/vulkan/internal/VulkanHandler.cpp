@@ -85,31 +85,38 @@ auto VulkanHandler::toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplV
 	auto& vkd = Descriptors::get();
 	vkd.createImguiDescriptorPool();
 	ioFormats = m_swapChain->getColorAttachmentFormats();
-	return {.ApiVersion = core.getApiVersion(),
+	return {
+			.ApiVersion = core.getApiVersion(),
 			.Instance = core.getInstance(),
 			.PhysicalDevice = core.getPhysicalDevice(),
 			.Device = core.getLogicalDevice(),
 			.QueueFamily = core.getGraphQueueFamilyIndex(),
 			.Queue = core.getGraphicQueue(),
 			.DescriptorPool = vkd.getImguiDescriptorPool(),
-			.RenderPass = m_swapChain->getRenderPass(),
+			.DescriptorPoolSize = 0,// Use the default descriptor pool
 			.MinImageCount = m_swapChain->getImageCount(),
 			.ImageCount = m_swapChain->getImageCount(),
-			.MSAASamples = VK_SAMPLE_COUNT_1_BIT,
 			.PipelineCache = VK_NULL_HANDLE,
-			.Subpass = 1,
-			.DescriptorPoolSize = 0,// Use the default descriptor pool
+			.PipelineInfoMain =
+					{.RenderPass = m_swapChain->getRenderPass(),
+					 .Subpass = 1,
+					 .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
+					 .PipelineRenderingCreateInfo = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
+													 .pNext = nullptr,
+													 .viewMask = 0,
+													 .colorAttachmentCount = static_cast<uint32_t>(ioFormats.size()),
+													 .pColorAttachmentFormats = ioFormats.data(),
+													 .depthAttachmentFormat = VK_FORMAT_D24_UNORM_S8_UINT,
+													 .stencilAttachmentFormat = VK_FORMAT_D24_UNORM_S8_UINT},
+					 .SwapChainImageUsage = {}},
+			.PipelineInfoForViewports = {},
 			.UseDynamicRendering = false,
-			.PipelineRenderingCreateInfo = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
-											.pNext = nullptr,
-											.viewMask = 0,
-											.colorAttachmentCount = static_cast<uint32_t>(ioFormats.size()),
-											.pColorAttachmentFormats = ioFormats.data(),
-											.depthAttachmentFormat = VK_FORMAT_D24_UNORM_S8_UINT,
-											.stencilAttachmentFormat = VK_FORMAT_D24_UNORM_S8_UINT},
 			.Allocator = nullptr,
 			.CheckVkResultFn = func,
-			.MinAllocationSize = 1048576u};
+			.MinAllocationSize = 1048576u,
+			.CustomShaderVertCreateInfo = {},
+			.CustomShaderFragCreateInfo = {},
+	};
 }
 
 void VulkanHandler::createCore() {

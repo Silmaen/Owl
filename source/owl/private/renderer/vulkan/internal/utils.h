@@ -107,6 +107,10 @@ static constexpr auto resultString(const VkResult iResult) -> std::string {
 			return "VK_ERROR_COMPRESSION_EXHAUSTED_EXT";
 		case VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT:
 			return "VK_ERROR_INCOMPATIBLE_SHADER_BINARY_EXT";
+		case VK_ERROR_NOT_ENOUGH_SPACE_KHR:
+			return "VK_ERROR_NOT_ENOUGH_SPACE_KHR";
+		case VK_PIPELINE_BINARY_MISSING_KHR:
+			return "VK_PIPELINE_BINARY_MISSING_KHR";
 		case VK_RESULT_MAX_ENUM:
 			return "VK_RESULT_MAX_ENUM";
 	}

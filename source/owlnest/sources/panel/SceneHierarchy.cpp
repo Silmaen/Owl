@@ -105,8 +105,8 @@ void addComponentPop(scene::Entity& ioEntity) {
 template<isNamedComponent T>
 void drawComponent(scene::Entity& ioEntity) {
 	constexpr ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
-												 ImGuiTreeNodeFlags_SpanAvailWidth |
-												 ImGuiTreeNodeFlags_AllowItemOverlap | ImGuiTreeNodeFlags_FramePadding;
+												 ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
+												 ImGuiTreeNodeFlags_FramePadding;
 	if (ioEntity.hasComponent<T>()) {
 		auto& component = ioEntity.getComponent<T>();
 		const ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();

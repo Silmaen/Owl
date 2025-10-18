@@ -10,14 +10,14 @@ packages:
   googletest:
     version: 1.17.0
   cpptrace:
-    version: 1.0.2
+    version: 1.0.4
     kind: "static"
   debugbreak:
     version: 1.0
   entt:
     version: 3.15.0
   libdwarf:
-    version: 2.0.0
+    version: 2.2.0
     kind: "static"
   magic_enum:
     version: 0.9.7
@@ -30,10 +30,10 @@ packages:
     version: 3.4.0
     kind: "shared"
   imgui:
-    version: 1.92.0-docking
+    version: 1.92.4-docking
     kind: "shared"
   imguizmo:
-    version: 1.92.0
+    version: 1.92.4
     kind: "static"
   mavsdk:
     version: 2.0.1
@@ -44,7 +44,7 @@ packages:
     version: 1.2.2
     kind: "static"
   spdlog:
-    version: 1.15.3
+    version: 1.16.0
     kind: "static"
   yaml-cpp:
     version: 0.8.0
@@ -53,13 +53,13 @@ packages:
     version: 1.2.1
     kind: "static"
   vulkan_sdk:
-    version: 1.3.275
+    version: 1.4.328
     kind: "shared"
   libpng:
     version: 1.6.50
     kind: "shared"
   freetype:
-    version: 2.13.3
+    version: 2.14.1
     kind: "static"
   msdfgen:
     version: 1.12.1
