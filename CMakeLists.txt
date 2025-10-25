@@ -58,6 +58,7 @@ if (NOT ${PROJECT_PREFIX}_DOC_ONLY)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/bin"
             COMMENT "Cleaning the binary directory ${CMAKE_BINARY_DIR}/bin"
     )
+    set_target_properties(clean_bin PROPERTIES FOLDER "Utils")
 endif ()
 
 

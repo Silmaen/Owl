@@ -15,6 +15,7 @@ set_target_properties(${RUNNER_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAK
 target_include_directories(${RUNNER_NAME} PRIVATE sources)
 target_compile_definitions(${RUNNER_NAME} PRIVATE OWL_ASSETS_LOCATION="source/owlnest/assets")
 target_link_libraries(${RUNNER_NAME} PRIVATE ${ENGINE_NAME})
+set_target_properties(${RUNNER_NAME} PROPERTIES FOLDER "App")
 
 # yaml
 owl_target_link_libraries(${RUNNER_NAME} PRIVATE yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
@@ -32,6 +33,7 @@ file(GLOB_RECURSE HDRS
 add_executable(${OWL_PROJECT}
         ${SRCS} ${HDRS})
 set_target_properties(${OWL_PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set_target_properties(${OWL_PROJECT} PROPERTIES FOLDER "App")
 
 target_include_directories(${OWL_PROJECT} PRIVATE sources)
 

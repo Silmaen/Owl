@@ -13,8 +13,14 @@
 
 namespace owl::core {
 
+/**
+ * @brief
+ *  Implementation structure for the Serializer class.
+ */
 struct SerializerImpl {
+	/// YAML Emitter.
 	YAML::Emitter emitter;
+	/// YAML Node.
 	YAML::Node node;
 };
 

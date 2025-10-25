@@ -7,14 +7,14 @@
  */
 #include "owlpch.h"
 
-#include "fonts/Font.h"
+#include "data/fonts/Font.h"
 
 #include "core/Application.h"
 
 #undef INFINITE
 #include <msdf-atlas-gen/msdf-atlas-gen.h>
 
-namespace owl::fonts {
+namespace owl::data::fonts {
 
 struct MsdfData {
 	std::vector<msdf_atlas::GlyphGeometry> glyphs;
@@ -195,4 +195,4 @@ auto Font::getAdvance(const char& iChar, const char& iNextChar) const -> float {
 	return fsScale * static_cast<float>(advance);
 }
 
-}// namespace owl::fonts
+}// namespace owl::data::fonts

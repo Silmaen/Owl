@@ -362,7 +362,7 @@ public:
 	 * @param iOther Other vector to multiply.
 	 * @return Vector result.
 	 */
-	constexpr auto operator^(const Vector& iOther) noexcept -> Vector
+	constexpr auto operator^(const Vector& iOther) const noexcept -> Vector
 		requires(Dim == 3)
 	{
 		Vector res{*this};

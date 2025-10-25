@@ -112,10 +112,10 @@ Most user will use one of the cmake's preset defined.
     * [ ] Developers
         * [ ] Public Engine projects should be 3rd party independent
             * [ ] Remove EnTT public dependency
-            * [ ] Remove fmt public dependency
+            * [X] Remove fmt public dependency
             * [ ] Remove ImGui public dependency
-        * [ ] Reduce needed public binaries
-            * [ ] Work on 3rd party builds for dependencies reduction (more static link)
+        * [X] Reduce needed public binaries
+            * [X] Work on 3rd party builds for dependencies reduction (more static link)
     * [ ] graphics
         * [ ] backgrounds/skyboxes
     * [ ] Misc
@@ -123,6 +123,12 @@ Most user will use one of the cmake's preset defined.
         * [ ] General settings management
     * [ ] Gameplay
         * [ ] Possibility to jump between scenes.
+    * [ ] Objects
+        * [X] Support for Mesh objects
+            * [ ] Support for mesh loading (obj, gltf, etc.)
+            * [ ] Support for basic mesh manipulation (scale, rotate, translate)
+            * [ ] Support for mesh collision
+            * [ ] Support for mesh materials (basic colors, textures)
     * [ ] Game designer (Owl Map)
         * [ ] Global game settings
         * [ ] Export 'game' for the game runner (everything needed for the runner to become standalone).

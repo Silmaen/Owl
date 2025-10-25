@@ -7,11 +7,11 @@
  */
 #include "owlpch.h"
 
-#include "fonts/FontLibrary.h"
+#include "data/fonts/FontLibrary.h"
 
 #include "core/Application.h"
 
-namespace owl::fonts {
+namespace owl::data::fonts {
 
 namespace {
 
@@ -100,4 +100,4 @@ auto FontLibrary::getFoundFontNames() const -> std::list<std::string> {
 	return list;
 }
 
-}// namespace owl::fonts
+}// namespace owl::data::fonts

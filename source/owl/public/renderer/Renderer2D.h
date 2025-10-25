@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include "fonts/Font.h"
-#include "math/Transform.h"
 #include "Camera.h"
 #include "CameraEditor.h"
 #include "CameraOrtho.h"
 #include "Texture.h"
+#include "data/fonts/Font.h"
+#include "math/Transform.h"
 #include "scene/component/SpriteRenderer.h"
 
 
@@ -102,7 +102,7 @@ struct OWL_API StringData {
 	/// Test to render
 	std::string text;
 	/// font to use (or default one)
-	shared<fonts::Font> font = nullptr;
+	shared<data::fonts::Font> font = nullptr;
 	/// Color to render.
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// The kerning.

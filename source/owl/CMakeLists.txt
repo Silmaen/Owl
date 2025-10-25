@@ -49,6 +49,7 @@ target_sources(${ENGINE_NAME}
         BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} FILES
         ${HDRS_PUBLIC}
 )
+set_target_properties(${ENGINE_NAME} PROPERTIES FOLDER "Engine")
 
 target_include_directories(${ENGINE_NAME}
         PUBLIC
@@ -109,6 +110,13 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED ${TH
 
 # zeus
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zeus REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "zeus::expected")
+
+# TBB (optionnal)
+find_package(TBB QUIET)
+if (TBB_FOUND)
+    target_link_libraries(${ENGINE_NAME}Private INTERFACE TBB::tbb)
+    target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PROJECT_PREFIX}_ENGINE_USE_TBB)
+endif ()
 
 # ---------========= PUBLIC third party =========---------
 

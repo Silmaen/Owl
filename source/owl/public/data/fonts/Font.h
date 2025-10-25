@@ -13,7 +13,7 @@
 
 #include "math/box.h"
 
-namespace owl::fonts {
+namespace owl::data::fonts {
 
 struct MsdfData;
 
@@ -99,4 +99,4 @@ private:
 	bool m_default = false;
 };
 
-}// namespace owl::fonts
+}// namespace owl::data::fonts

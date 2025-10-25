@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "core/assets/Asset.h"
+#include "data/assets/Asset.h"
 
 #include "core/Application.h"
 
@@ -23,7 +23,7 @@ concept hasStringSpec = requires {
 /**
  * @brief Namespace for asset management.
  */
-namespace owl::core::assets {
+namespace owl::data::assets {
 
 /**
  * @brief Class managing a library of assets.
@@ -178,9 +178,9 @@ public:
 		std::vector<std::string> result;
 		std::vector<std::string> ext = AssetType::extensions();
 		// get a list of directory to search.
-		std::list<Application::AssetDirectory> assetDirectories;
-		if (Application::instanced()) {
-			assetDirectories = Application::get().getAssetDirectories();
+		std::list<core::Application::AssetDirectory> assetDirectories;
+		if (core::Application::instanced()) {
+			assetDirectories = core::Application::get().getAssetDirectories();
 		} else {
 			assetDirectories.push_back({"cwd", std::filesystem::current_path()});
 		}
@@ -204,9 +204,9 @@ public:
 			return std::nullopt;
 		const std::vector<std::string> ext = AssetType::extensions();
 		// get a list of directory to search.
-		std::list<Application::AssetDirectory> assetDirectories;
-		if (Application::instanced()) {
-			assetDirectories = Application::get().getAssetDirectories();
+		std::list<core::Application::AssetDirectory> assetDirectories;
+		if (core::Application::instanced()) {
+			assetDirectories = core::Application::get().getAssetDirectories();
 		} else {
 			assetDirectories.push_back({"cwd", std::filesystem::current_path()});
 		}
@@ -252,4 +252,4 @@ private:
 	std::unordered_map<std::string, AssetType> m_assets;
 };
 
-}// namespace owl::core::assets
+}// namespace owl::data::assets

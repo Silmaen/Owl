@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "../window/Window.h"
+#include "window/Window.h"
 #include "Timestep.h"
 #include "core/task/Task.h"
 #include "event/AppEvent.h"
-#include "fonts/FontLibrary.h"
+#include "data/fonts/FontLibrary.h"
 #include "gui/UiLayer.h"
 #include "layer/LayerStack.h"
 #include "renderer/RenderAPI.h"
@@ -233,13 +233,13 @@ public:
 	 * @brief Access to the font library.
 	 * @return The Font Library.
 	 */
-	[[nodiscard]] auto getFontLibrary() -> fonts::FontLibrary& { return m_fontLibrary; }
+	[[nodiscard]] auto getFontLibrary() -> data::fonts::FontLibrary& { return m_fontLibrary; }
 
 	/**
 	 * @brief Access to the font library.
 	 * @return The Font Library.
 	 */
-	[[nodiscard]] auto getFontLibrary() const -> const fonts::FontLibrary& { return m_fontLibrary; }
+	[[nodiscard]] auto getFontLibrary() const -> const data::fonts::FontLibrary& { return m_fontLibrary; }
 
 	/**
 	 * @brief Access to the task scheduler.
@@ -299,7 +299,7 @@ private:
 	/// Initialization parameters.
 	AppParams m_initParams;
 	/// The font library.
-	fonts::FontLibrary m_fontLibrary;
+	data::fonts::FontLibrary m_fontLibrary;
 	/// The application Instance.
 	static Application* s_instance;
 	/// The task Scheduler.
