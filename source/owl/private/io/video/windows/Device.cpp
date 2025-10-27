@@ -9,7 +9,7 @@
 
 #include "Device.h"
 
-#if defined(OWL_PLATFORM_WINDOWS)
+#ifdef OWL_PLATFORM_WINDOWS
 
 #include "WPointer.h"
 #include <initguid.h>

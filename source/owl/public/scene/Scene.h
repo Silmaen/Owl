@@ -118,7 +118,7 @@ public:
 	 * @brief Get the list of all entities.
 	 * @return List of all entities.
 	 */
-	auto getAllEntities() const -> std::vector<Entity>;
+	[[nodiscard]] auto getAllEntities() const -> std::vector<Entity>;
 
 	/// Entities registry.
 	entt::registry registry;
@@ -139,7 +139,7 @@ public:
 	 * @brief Count the entities in the scene.
 	 * @return The count of Entity in the scene.
 	 */
-	uint32_t getEntityCount() const;
+	[[nodiscard]] auto getEntityCount() const -> uint32_t;
 
 private:
 	/**

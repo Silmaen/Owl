@@ -1,0 +1,16 @@
+g multiple_triangles
+# vertices coordinates
+v 0.0 0.0 0.0
+v 1.0 0.0 0.0
+v 0.0 1.0 0.0
+v 1.0 1.0 0.0
+# texture coordinates
+vt 0.0 0.0
+vt 1.0 0.0
+vt 0.0 1.0
+vt 1.0 1.0
+# normal vectors
+vn 0.0 0.0 1.0
+# face definitions
+f 1/1/1 2/2/1 3/3/1
+f 2/2/1 4/4/1 3/3/1

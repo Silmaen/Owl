@@ -154,9 +154,6 @@ public:
 		: MeshComponentBase<true, ElementType>(iCursor), m_extraData(&iExtraData),
 		  m_extraDataContainer(const_cast<::owl::data::extradata::ExtraDataContainer*>(
 				  this->m_cursor->getExtraDataContainer(m_extraData->getPid()))) {
-		OWL_CORE_ASSERT(m_extraDataContainer != nullptr,
-						"MeshExtraDataReader: Extra data with PID {} not found in mesh.",
-						static_cast<uint32_t>(m_extraData->getPid()))
 		if (iReset)
 			reset(iIndex);
 	}
@@ -223,7 +220,7 @@ public:
 	 */
 	auto value() const -> shared<TExtraData> {
 		OWL_CORE_ASSERT(this->hasValue(), "MeshExtraDataReader::value")
-		return m_extraDataContainer->getExtraDataAs<TExtraData>(m_currentIndex);
+		return m_extraDataContainer==nullptr ? nullptr : m_extraDataContainer->getExtraDataAs<TExtraData>(m_currentIndex);
 	}
 	/**
 	 * @brief
@@ -232,7 +229,7 @@ public:
 	 */
 	auto value() -> shared<TExtraData> {
 		OWL_CORE_ASSERT(this->hasValue(), "MeshExtraDataReader::value")
-		return m_extraDataContainer->getExtraDataAs<TExtraData>(m_currentIndex);
+		return m_extraDataContainer==nullptr ? nullptr : m_extraDataContainer->getExtraDataAs<TExtraData>(m_currentIndex);
 	}
 
 protected:

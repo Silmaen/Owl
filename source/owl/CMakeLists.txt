@@ -99,6 +99,15 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE SndFile REQUIRED ${THI
 # stb_image
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE stb_image REQUIRED ${THIRD_PARTY_RELEASE})
 
+# tinygltf
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE TinyGLTF REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "tinygltf::tinygltf")
+
+# tinyobjloader
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE tinyobjloader REQUIRED ${THIRD_PARTY_RELEASE})
+
+# ufbx
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE ufbx REQUIRED ${THIRD_PARTY_RELEASE})
+
 # Vulkan
 owl_target_link_vulkan(${ENGINE_NAME})
 

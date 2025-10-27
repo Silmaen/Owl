@@ -46,6 +46,6 @@ public:
 	 * @brief Get version number of the backend API.
 	 * @return The version number.
 	 */
-	[[nodiscard]] auto getVersion() const -> Version override { return {0, 0}; }
+	[[nodiscard]] auto getVersion() const -> Version override { return {.major=0, .minor=0}; }
 };
 }// namespace owl::renderer::null
