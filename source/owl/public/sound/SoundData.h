@@ -61,7 +61,7 @@ public:
 	 * @brief Get the system id.
 	 * @return The system id.
 	 */
-	virtual auto getSystemId() const -> uint64_t = 0;
+	[[nodiscard]] virtual auto getSystemId() const -> uint64_t = 0;
 
 	/**
 	 * @brief Create a new sound data buffer base on specifications.

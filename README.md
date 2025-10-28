@@ -81,7 +81,7 @@ Most are configured as git submodules.
 
 To build the engine Cmake (>3.24) is required.
 
-Most user will use one of the cmake's preset defined.
+Most user will use one of the cmake preset defined.
 
 ## RoadMap
 
@@ -125,7 +125,7 @@ Most user will use one of the cmake's preset defined.
         * [ ] Possibility to jump between scenes.
     * [ ] Objects
         * [X] Support for Mesh objects
-            * [ ] Support for mesh loading (obj, gltf, etc.)
+            * [X] Support for mesh loading (obj, gltf, glb, fbx)
             * [ ] Support for basic mesh manipulation (scale, rotate, translate)
             * [ ] Support for mesh collision
             * [ ] Support for mesh materials (basic colors, textures)
