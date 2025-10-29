@@ -78,6 +78,18 @@ public:
 	 */
 	[[nodiscard]] auto getValue() const -> const Type& override { return m_normal; }
 
+	/**
+	 * @brief Set the underlying value.
+	 * @param iValue The value to set.
+	 */
+	void setValue(const Type& iValue) override { m_normal = iValue; }
+
+	/**
+	 * @brief Set the underlying value.
+	 * @param iValue The value to set.
+	 */
+	void setValue(Type&& iValue) override { m_normal = std::move(iValue); }
+
 private:
 	/// normal for the vertex.
 	Type m_normal;

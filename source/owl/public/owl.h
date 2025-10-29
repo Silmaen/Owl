@@ -27,6 +27,14 @@
 #include "core/utils/StringUtils.h"
 // -------------------------
 
+// ------- data ------------
+#include "data/geometry/MeshLoader.h"
+#include "data/geometry/MeshRange.h"
+#include "data/geometry/extradata/TriangleNormals.h"
+#include "data/geometry/extradata/TriangleUVCoordinate.h"
+#include "data/geometry/extradata/VertexNormal.h"
+// -------------------------
+
 // ------ Debugging --------
 #include "debug/Profiler.h"
 #include "debug/Tracker.h"

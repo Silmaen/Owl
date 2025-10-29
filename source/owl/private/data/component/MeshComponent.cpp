@@ -29,9 +29,28 @@ void MeshVertexCoordinate<IsConst>::reset(size_t iStart) {
 	}
 }
 
+template<bool IsConst>
+MeshTriangleVertices<IsConst>::MeshTriangleVertices(TriangleVertices, CursorType& iCursor, const size_t iIndex,
+													const bool iReset)
+	: MeshComponentBase<IsConst, geometry::MeshElementType::Triangle>(iCursor) {
+	if (iReset)
+		reset(iIndex);
+}
+
+template<bool IsConst>
+void MeshTriangleVertices<IsConst>::reset(size_t iStart) {
+	if constexpr (IsConst) {
+		m_pointIte = this->m_cursor->getMesh()->getTriangleIterator(iStart);
+	} else {
+		m_pointIte = const_cast<geometry::StaticMesh*>(this->m_cursor->getMesh())->getTriangleIterator(iStart);
+	}
+}
+
 // Explicit template instantiation
 template class MeshVertexCoordinate<true>;
 template class MeshVertexCoordinate<false>;
+template class MeshTriangleVertices<true>;
+template class MeshTriangleVertices<false>;
 
 EditMeshVertexCoordinate::EditMeshVertexCoordinate(EditCoordinate, CursorType& iCursor, size_t iIndex)
 	: MeshVertexCoordinate(Coordinates, iCursor, iIndex) {

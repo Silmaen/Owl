@@ -34,13 +34,17 @@ auto StaticMesh::operator=(StaticMesh&&) noexcept -> StaticMesh& = default;
 [[nodiscard]] auto StaticMesh::getTriangles() const -> const std::vector<primitive::Triangle>& { return m_triangles; }
 [[nodiscard]] auto StaticMesh::getTriangles() -> std::vector<primitive::Triangle>& { return m_triangles; }
 
-[[nodiscard]] auto StaticMesh::getVertexIterator(const size_t iIndex) -> std::vector<primitive::MeshVertex>::iterator {
+[[nodiscard]] auto StaticMesh::getVertexIterator(const size_t iIndex) -> VertexIterator {
 	return m_vertices.begin() + static_cast<std::vector<primitive::MeshVertex>::difference_type>(iIndex);
 }
-
-[[nodiscard]] auto StaticMesh::getVertexIterator(const size_t iIndex) const
-		-> std::vector<primitive::MeshVertex>::const_iterator {
+[[nodiscard]] auto StaticMesh::getVertexIterator(const size_t iIndex) const -> ConstVertexIterator {
 	return m_vertices.begin() + static_cast<std::vector<primitive::MeshVertex>::difference_type>(iIndex);
+}
+[[nodiscard]] auto StaticMesh::getTriangleIterator(const size_t iIndex) -> TriangleIterator {
+	return m_triangles.begin() + static_cast<std::vector<primitive::Triangle>::difference_type>(iIndex);
+}
+[[nodiscard]] auto StaticMesh::getTriangleIterator(const size_t iIndex) const -> ConstTriangleIterator {
+	return m_triangles.begin() + static_cast<std::vector<primitive::Triangle>::difference_type>(iIndex);
 }
 
 void StaticMesh::addTriangle(const std::array<uint32_t, 3>& iVertexIndices) {

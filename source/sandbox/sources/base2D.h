@@ -48,6 +48,7 @@ private:
 	shared<renderer::Texture> m_spriteTexture;
 	math::vec3 m_spritePosition{0, 0, 0.5};
 	float m_spriteRotation{0.f};
+	shared<data::geometry::StaticMesh> m_mesh;
 };
 
 }// namespace owl
