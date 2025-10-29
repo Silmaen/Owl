@@ -78,6 +78,18 @@ public:
 	 */
 	[[nodiscard]] auto getValue() const -> const Type& override { return m_uvCoords; }
 
+	/**
+	 * @brief Set the underlying value.
+	 * @param iValue The value to set.
+	 */
+	void setValue(const Type& iValue) override { m_uvCoords = iValue; }
+
+	/**
+	 * @brief Set the underlying value.
+	 * @param iValue The value to set.
+	 */
+	void setValue(Type&& iValue) override { m_uvCoords = std::move(iValue); }
+
 private:
 	/// UV coordinates for each vertex of the triangle.
 	Type m_uvCoords;
@@ -89,8 +101,8 @@ private:
 namespace owl::data::component {
 
 /// @brief Read iterate component for triangle UV coordinates.
-const inline ReadMeshTriangleExtraData<geometry::extradata::TriangleUVCoordinate> UvCoords;
+inline constexpr ReadMeshTriangleExtraData<geometry::extradata::TriangleUVCoordinate> UvCoords;
 /// @brief Write iterate component for triangle UV coordinates.
-const inline WriteMeshTriangleExtraData<geometry::extradata::TriangleUVCoordinate> WriteUvCoords;
+inline constexpr WriteMeshTriangleExtraData<geometry::extradata::TriangleUVCoordinate> WriteUvCoords;
 
 }// namespace owl::data::component

@@ -91,13 +91,18 @@ and publish the engine as a package on the configured repository of DepManager.
 ## RoadMap
 
 * [ ] v0.1.0 -- Future -- unordered Ideas & thoughts
+    * [ ] Developers
+        * [ ] Public Engine projects should be 3rd party independent
+            * [ ] Remove EnTT public dependency
+            * [ ] Remove ImGui public dependency
     * [ ] sound
-        * [ ] moving sound
+        * [ ] sound effects
     * [ ] graphics
-        * [ ] HUD display
         * [ ] animated textures.
         * [ ] advanced materials.
         * [ ] simple lighting.
+        * [ ] animated sprites
+        * [ ] particle systems
     * [ ] Gameplay
         * [ ] inventory
             * [ ] collectible objets
@@ -107,35 +112,47 @@ and publish the engine as a package on the configured repository of DepManager.
         * [ ] Different Scene types
             * [ ] Games
             * [ ] Menus
+    * [ ] Game designer (Owl Nest)
+        * [ ] Global game settings
+        * [ ] menu edition
+        * [ ] Node editing
+        * [ ] Animation editor for sprites
+        * [ ] Sound management interface
+* [ ] v0.0.3
+    * [ ] graphics
+        * [ ] HUD display
+    * [ ] Misc
         * [ ] Configurable keymap
         * [ ] asset packing
             * [ ] support for unpack in game runner
-    * [ ] Game designer (Owl Map)
-        * [ ] menu edition
-        * [ ] Node editing
-* [ ] v0.0.2
-    * [ ] Developers
-        * [ ] Public Engine projects should be 3rd party independent
-            * [ ] Remove EnTT public dependency
-            * [X] Remove fmt public dependency
-            * [ ] Remove ImGui public dependency
-        * [X] Reduce needed public binaries
-            * [X] Work on 3rd party builds for dependencies reduction (more static link)
+    * [ ] sound
+        * [ ] background music
+        * [ ] moving sound sources
+        * [ ] sound volume management
     * [ ] graphics
-        * [ ] backgrounds/skyboxes
+        * [ ] animated sprites
+* [ ] v0.0.2
     * [ ] Misc
         * [ ] Pausing games
         * [ ] General settings management
+    * [ ] Game designer (Owl Nest)
+        * [ ] Export 'game' for the game runner (everything needed for the runner to become standalone).
+    * [ ] graphics
+        * [ ] backgrounds/skyboxes
     * [ ] Gameplay
         * [ ] Possibility to jump between scenes.
-    * [ ] Objects
-        * [X] Support for Mesh objects
+        * [X] basic physics engine
+            * [X] collision detection
+            * [X] simple gravity
+    * [X] Developers
+        * [X] Public Engine projects should be 3rd party independent
+            * [X] Remove fmt public dependency
+        * [X] Reduce needed public binaries
+            * [X] Work on 3rd party builds for dependencies reduction (more static link)
+    * [X] Objects
+        * [X] Support for Mesh objects (in a 2D renderer engine)
             * [X] Support for mesh loading (obj, gltf, glb, fbx)
-            * [ ] Support for basic mesh manipulation (scale, rotate, translate)
-            * [ ] Support for mesh collision
-            * [ ] Support for mesh materials (basic colors, textures)
-    * [ ] Game designer (Owl Map)
-        * [ ] Global game settings
-        * [ ] Export 'game' for the game runner (everything needed for the runner to become standalone).
+            * [X] Support for basic mesh manipulation (scale, rotate, translate)
+            * [X] Support for mesh materials (basic colors, textures)
 * [X] v0.0.1 -- 2025-02-06 -- First basic Release
     * Minimal Vital: possibility to run very simple games defined in scenes

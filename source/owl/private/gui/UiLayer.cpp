@@ -40,6 +40,11 @@ void UiLayer::onAttach() {
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
+	if (ImGui::GetCurrentContext() != nullptr) {
+		OWL_CORE_INFO("ImGui context created")
+	} else {
+		OWL_CORE_ERROR("ImGui context creation failed")
+	}
 	ImGuiIO& io = ImGui::GetIO();
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;// Enable Keyboard Controls
 	// io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;		// Enable Gamepad

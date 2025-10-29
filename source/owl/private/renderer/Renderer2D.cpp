@@ -14,6 +14,10 @@
 #include "renderer/RenderCommand.h"
 #include "renderer/UniformBuffer.h"
 
+#include <data/geometry/MeshRange.h>
+#include <data/geometry/extradata/TriangleNormals.h>
+#include <data/geometry/extradata/TriangleUVCoordinate.h>
+
 namespace owl::renderer {
 
 namespace utils {
@@ -76,6 +80,15 @@ struct TextVertex {
 	int entityId;
 };
 
+struct MeshVertex {
+	math::vec3 position;
+	math::vec4 color;
+	math::vec2 texCoord;
+	float texIndex;
+	math::vec3 normal;
+	int entityId;
+};
+
 /**
  * @brief Base structure for rendering an object type
  */
@@ -116,6 +129,10 @@ struct InternalData {
 	/// text Data
 	VertexData<TextVertex> text;
 	shared<DrawData> drawText;
+
+	/// text Data
+	VertexData<MeshVertex> mesh;
+	shared<DrawData> drawMesh;
 	/// Statistics
 	Renderer2D::Statistics stats;
 	// Textures Data
@@ -204,6 +221,24 @@ void Renderer2D::init() {
 					{"i_EntityID", ShaderDataType::Int},
 			},
 			"renderer2D", quadIndices, "text");
+
+	// mesh
+	g_Data->drawMesh = DrawData::create();
+	std::vector<uint32_t> meshIndices;
+	{
+		meshIndices.resize(utils::g_maxIndices);
+		for (uint32_t i = 0; i < utils::g_maxIndices; ++i) { meshIndices[i] = i; }
+	}
+	g_Data->drawMesh->init(
+			{
+					{"i_Position", ShaderDataType::Float3},
+					{"i_Color", ShaderDataType::Float4},
+					{"i_TexCoord", ShaderDataType::Float2},
+					{"i_TexIndex", ShaderDataType::Float},
+					{"i_Normal", ShaderDataType::Float3},
+					{"i_EntityID", ShaderDataType::Int},
+			},
+			"renderer2D", meshIndices, "mesh");
 
 	g_Data->whiteTexture = Texture2D::create(Texture2D::Specification{.size = {1, 1}, .format = ImageFormat::Rgba8});
 	uint32_t whiteTextureData = 0xffffffff;
@@ -294,6 +329,14 @@ void Renderer2D::flush() {
 		RenderCommand::drawData(g_Data->drawText, g_Data->text.indexCount);
 		g_Data->stats.drawCalls++;
 	}
+	if (g_Data->mesh.indexCount > 0) {
+		g_Data->drawMesh->setVertexData(
+				g_Data->mesh.vertexBuf.data(),
+				static_cast<uint32_t>(g_Data->mesh.vertexBuf.size() * sizeof(utils::MeshVertex)));
+		// draw call
+		RenderCommand::drawData(g_Data->drawMesh, g_Data->mesh.indexCount);
+		g_Data->stats.drawCalls++;
+	}
 	RenderCommand::endBatch();
 }
 
@@ -302,6 +345,7 @@ void Renderer2D::startBatch() {
 	utils::resetDrawData(g_Data->circle);
 	utils::resetDrawData(g_Data->line);
 	utils::resetDrawData(g_Data->text);
+	utils::resetDrawData(g_Data->mesh);
 	g_Data->textureSlotIndex = 1;
 }
 
@@ -510,10 +554,63 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	}
 }
 
+void Renderer2D::drawMesh(const MeshData& iMeshData) {
+	OWL_PROFILE_FUNCTION()
+
+	if (iMeshData.mesh == nullptr) {
+		OWL_CORE_ERROR("Renderer2D::drawMesh: Mesh not set")
+		return;
+	}
+	const auto& mesh = *iMeshData.mesh;
+	for (const auto& [coords, normal, uv]:
+		 data::geometry::MeshTriangleRange(mesh, data::component::TrianglesVertices, data::component::TriangleNormals,
+										   data::component::UvCoords)) {
+		float textureIndex = 0.0f;// TODO(Silmaen): manage textures for meshes
+		if (iMeshData.texture != nullptr) {
+			for (uint32_t i = 1; i < g_Data->textureSlotIndex; i++) {
+				if (*g_Data->textureSlots[i] == *iMeshData.texture) {
+					textureIndex = static_cast<float>(i);
+					break;
+				}
+			}
+			if (textureIndex == 0.0f) {
+				if (g_Data->textureSlotIndex >= utils::g_MaxTextureSlots)
+					nextBatch();
+				textureIndex = static_cast<float>(g_Data->textureSlotIndex);
+				g_Data->textureSlots[g_Data->textureSlotIndex] = std::static_pointer_cast<Texture2D>(iMeshData.texture);
+				g_Data->textureSlotIndex++;
+			}
+		}
+		for (const uint8_t i: std::array<uint8_t, 3>{0, 1, 2}) {
+			math::vec3 normalValue{0.f, 0.f, 1.f};
+			if (normal.hasValue())
+				normalValue = normal.value()->getNormal(i);
+			math::vec2 uvValue{0.f, 0.f};
+			if (uv.hasValue())
+				uvValue = uv.value()->getUvCoord(i);
+			math::vec3 pos{coords.value().at(i)->getPosition()};
+			g_Data->mesh.vertexBuf.emplace_back(
+					utils::MeshVertex{.position = iMeshData.transform() * math::vec4(pos.x(), pos.y(), pos.z(), 1.f),
+									  .color = iMeshData.color,
+									  .texCoord = uvValue,
+									  .texIndex = textureIndex,
+									  .normal = iMeshData.transform() *
+												math::vec4(normalValue.x(), normalValue.y(), normalValue.z(), 1.f),
+									  .entityId = iMeshData.entityId});
+			g_Data->mesh.indexCount++;
+			g_Data->stats.meshTriangleCount++;
+		}
+		if (g_Data->mesh.indexCount >= utils::g_maxIndices) {
+			nextBatch();
+		}
+	}
+}
+
 void Renderer2D::resetStats() {
 	g_Data->stats.drawCalls = 0;
 	g_Data->stats.quadCount = 0;
 	g_Data->stats.lineCount = 0;
+	g_Data->stats.meshTriangleCount = 0;
 }
 
 auto Renderer2D::getStats() -> Statistics { return g_Data->stats; }

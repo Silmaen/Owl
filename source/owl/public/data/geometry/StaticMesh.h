@@ -26,8 +26,8 @@ class OWL_API StaticMesh {
 public:
 	using VertexIterator = std::vector<geometry::primitive::MeshVertex>::iterator;
 	using ConstVertexIterator = std::vector<geometry::primitive::MeshVertex>::const_iterator;
-	using TriangleIterator = MeshRangeIterator<false, MeshElementType::Triangle>;
-	using ConstTriangleIterator = MeshRangeIterator<true, MeshElementType::Triangle>;
+	using TriangleIterator = std::vector<geometry::primitive::Triangle>::iterator;
+	using ConstTriangleIterator = std::vector<geometry::primitive::Triangle>::const_iterator;
 	/**
 	 * @brief Default constructor.
 	 */
@@ -101,6 +101,19 @@ public:
 	 * @return The triangles.
 	 */
 	auto getTriangles() -> std::vector<primitive::Triangle>&;
+	/**
+	 * @brief Get the Triangle iterator at the given index.
+	 * @param iIndex The index of the vertex.
+	 * @return The Triangle iterator.
+	 */
+	[[nodiscard]] auto getTriangleIterator(size_t iIndex) -> TriangleIterator;
+
+	/**
+	 * @brief Get the Triangle iterator at the given index.
+	 * @param iIndex The index of the vertex.
+	 * @return The Triangle iterator.
+	 */
+	[[nodiscard]] auto getTriangleIterator(size_t iIndex) const -> ConstTriangleIterator;
 
 	/**
 	 * @brief Check if the mesh is empty.

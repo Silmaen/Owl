@@ -16,6 +16,8 @@
 #include "math/Transform.h"
 #include "scene/component/SpriteRenderer.h"
 
+#include <data/geometry/StaticMesh.h>
+
 
 namespace owl::renderer {
 
@@ -114,6 +116,22 @@ struct OWL_API StringData {
 };
 
 /**
+ * @brief Data for drawing a mesh.
+ */
+struct OWL_API MeshData {
+	/// Transformation of the render.
+	math::Transform transform;
+	/// Color to render.
+	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
+	/// Eventually the texture of the mesh (plain color if nullptr).
+	shared<Texture> texture = nullptr;
+	/// Mesh to render
+	shared<data::geometry::StaticMesh> mesh;
+	/// unique ID for the entity.
+	int entityId = -1;
+};
+
+/**
  * @brief Class Renderer2D.
  */
 class OWL_API Renderer2D {
@@ -187,10 +205,16 @@ public:
 	static void drawQuad(const Quad2DData& iQuadData);
 
 	/**
-	 * @brief Draws a Quad on the screen.
+	 * @brief Draws a String on the screen.
 	 * @param[in] iStringData String's properties.
 	 */
 	static void drawString(const StringData& iStringData);
+
+	/**
+	 * @brief Draws a Mesh on the screen.
+	 * @param[in] iMeshData String's properties.
+	 */
+	static void drawMesh(const MeshData& iMeshData);
 
 	/**
 	 * @brief Statistics.
@@ -202,10 +226,15 @@ public:
 		uint32_t quadCount = 0;
 		/// Amount of lines drawn.
 		uint32_t lineCount = 0;
+		uint32_t meshTriangleCount = 0;
 		/// Compute the amount of vertices.
-		[[nodiscard]] auto getTotalVertexCount() const -> uint32_t { return quadCount * 4 + lineCount * 2; }
+		[[nodiscard]] auto getTotalVertexCount() const -> uint32_t {
+			return quadCount * 4 + lineCount * 2 + meshTriangleCount * 3;
+		}
 		/// Compute the amount of indices.
-		[[nodiscard]] auto getTotalIndexCount() const -> uint32_t { return quadCount * 6 + lineCount * 2; }
+		[[nodiscard]] auto getTotalIndexCount() const -> uint32_t {
+			return quadCount * 6 + lineCount * 2 + meshTriangleCount * 3;
+		}
 	};
 
 	/**

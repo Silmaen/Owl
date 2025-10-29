@@ -8,16 +8,16 @@
 
 #pragma once
 
-#include "window/Window.h"
 #include "Timestep.h"
 #include "core/task/Task.h"
-#include "event/AppEvent.h"
 #include "data/fonts/FontLibrary.h"
+#include "event/AppEvent.h"
 #include "gui/UiLayer.h"
 #include "layer/LayerStack.h"
 #include "renderer/RenderAPI.h"
 #include "sound/SoundAPI.h"
 #include "task/Scheduler.h"
+#include "window/Window.h"
 
 #include <filesystem>
 #include <list>

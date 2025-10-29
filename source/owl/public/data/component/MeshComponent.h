@@ -10,6 +10,7 @@
 
 #include "data/geometry/MeshCursorBase.h"
 #include "data/geometry/primitive/MeshVertex.h"
+#include "data/geometry/primitive/Triangle.h"
 
 /**
  * @brief Namespace for data components used in ranges.
@@ -19,6 +20,8 @@ namespace owl::data::component {
 class EditMeshVertexCoordinate;
 template<bool IsConst = true>
 class MeshVertexCoordinate;
+template<bool IsConst = true>
+class MeshTriangleVertices;
 
 /**
  * @brief
@@ -38,10 +41,22 @@ struct EditCoordinate {
 	using ComponentType = EditMeshVertexCoordinate;
 };
 
+/**
+ * @brief
+ *  Read structure for point's coordinates.
+ */
+struct TriangleVertices {
+	using DataType = std::array<geometry::primitive::MeshVertex*, 3>;
+	using ComponentType = MeshTriangleVertices<>;
+};
+
 /// Component on point to access to its coordinates read only.
 constexpr inline Coordinate Coordinates;
 /// Component on point to access to its coordinates.
 constexpr inline EditCoordinate EditCoordinates;
+/// Component on triangle to access to its vertices' coordinates read only.
+constexpr inline TriangleVertices TrianglesVertices;
+
 
 /**
  * @brief
@@ -184,5 +199,85 @@ public:
 	 */
 	void setValue(const math::vec3& iPt);
 };
+
+template<bool IsConst>
+class OWL_API MeshTriangleVertices : public MeshComponentBase<IsConst, geometry::MeshElementType::Triangle> {
+public:
+	using CursorType = MeshComponentBase<IsConst, geometry::MeshElementType::Triangle>::CursorType;
+
+	/**
+	 * @brief
+	 *  Constructor.
+	 * @param[in] iCursor Cursor used to iterate.
+	 * @param[in] iIndex Starting index.
+	 * @param[in] iReset True if the component's iterator must be reset.
+	 */
+	MeshTriangleVertices(TriangleVertices, CursorType& iCursor, size_t iIndex = 0, bool iReset = true);
+
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
+	MeshTriangleVertices(const MeshTriangleVertices&) = default;
+
+	/**
+	 * @brief
+	 *  Assignment operator.
+	 * @return Current MeshTriangleVertexCoordinate.
+	 */
+	auto operator=(const MeshTriangleVertices&) -> MeshTriangleVertices& = default;
+
+	/**
+	 * @brief
+	 *  Deleted move constructor.
+	 */
+	MeshTriangleVertices(MeshTriangleVertices&&) noexcept = delete;
+
+	/**
+	 * @brief
+	 *  Deleted move operator.
+	 */
+	auto operator=(MeshTriangleVertices&&) noexcept -> MeshTriangleVertices& = delete;
+	/**
+	 * @brief Default destructor.
+	 */
+	~MeshTriangleVertices() = default;
+
+	/**
+	 * @brief
+	 *  Reset the component's iterator.
+	 * @param[in] iStart Starting index.
+	 */
+	void reset(size_t iStart = 0);
+
+	/**
+	 * @brief
+	 *  Move to the next element.
+	 * @param[in] iIncrement Increment value.
+	 */
+	void moveNext(const size_t iIncrement = 1) {
+		if (iIncrement == 1)
+			++m_pointIte;
+		else
+			m_pointIte += static_cast<typename PointIterator::difference_type>(iIncrement);
+	}
+
+	/**
+	 * @brief
+	 *  Get the current point's coordinates.
+	 * @return Point's coordinates.
+	 */
+	[[nodiscard]] auto value() const -> const std::array<geometry::primitive::MeshVertex*, 3>& {
+		return m_pointIte->getVertices();
+	}
+
+protected:
+	// Utiliser le bon type d'itérateur selon IsConst
+	using PointIterator = std::conditional_t<IsConst, std::vector<geometry::primitive::Triangle>::const_iterator,
+											 std::vector<geometry::primitive::Triangle>::iterator>;
+	/// Iterator on point.
+	PointIterator m_pointIte;
+};
+
 
 }// namespace owl::data::component

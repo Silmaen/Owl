@@ -48,4 +48,5 @@ inline auto getTestFilesDir() -> std::filesystem::path {
 	}
 	throw std::runtime_error(std::format("Test files directory not found at {}.", testFilesDir.string()));
 }
+
 }// namespace owl::test

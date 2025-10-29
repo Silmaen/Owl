@@ -77,6 +77,18 @@ public:
 	 */
 	[[nodiscard]] auto getValue() const -> const Type& override { return m_normals; }
 
+	/**
+	 * @brief Set the underlying value.
+	 * @param iValue The value to set.
+	 */
+	void setValue(const Type& iValue) override { m_normals = iValue; }
+
+	/**
+	 * @brief Set the underlying value.
+	 * @param iValue The value to set.
+	 */
+	void setValue(Type&& iValue) override { m_normals = std::move(iValue); }
+
 private:
 	/// normal for each vertex of the triangle.
 	Type m_normals;
@@ -88,8 +100,8 @@ private:
 namespace owl::data::component {
 
 /// @brief Read iterate component for triangle normals.
-const inline ReadMeshTriangleExtraData<geometry::extradata::TriangleNormals> TriangleNormals;
+inline constexpr ReadMeshTriangleExtraData<geometry::extradata::TriangleNormals> TriangleNormals;
 /// @brief Write iterate component for triangle normals.
-const inline WriteMeshTriangleExtraData<geometry::extradata::TriangleNormals> WriteTriangleNormals;
+inline constexpr WriteMeshTriangleExtraData<geometry::extradata::TriangleNormals> WriteTriangleNormals;
 
 }// namespace owl::data::component

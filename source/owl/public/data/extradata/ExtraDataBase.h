@@ -62,6 +62,17 @@ public:
 	 * @return The stored value.
 	 */
 	[[nodiscard]] virtual auto getValue() const -> const Type& = 0;
+
+	/**
+	 * @brief Set the underlying value.
+	 * @param iValue The value to set.
+	 */
+	virtual void setValue(const Type& iValue) = 0;
+	/**
+	 * @brief Set the underlying value.
+	 * @param iValue The value to set.
+	 */
+	virtual void setValue(Type&& iValue) = 0;
 };
 
 }// namespace owl::data::extradata
