@@ -17,7 +17,9 @@ namespace owl::input {
 /// Wrap Key code size.
 using KeyCode = uint16_t;
 
-/// namespace for key codes.
+/**
+ * @brief Namespace for key codes.
+ */
 namespace key {
 enum : KeyCode {
 	// From glfw3.h

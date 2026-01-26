@@ -65,7 +65,7 @@ packages:
     version: 1.4.328
     kind: "shared"
   freetype:
-    version: 2.14.1
+    version: 2.13.3
     kind: "static"
   tinygltf:
     version: 2.9.6

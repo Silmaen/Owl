@@ -2,7 +2,6 @@
 # base library
 #
 
-include(Vulkan)
 # List or source files
 file(GLOB_RECURSE SRCS
         *.cpp

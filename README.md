@@ -83,6 +83,11 @@ To build the engine Cmake (>3.24) is required.
 
 Most user will use one of the cmake preset defined.
 
+## CI usage
+
+The CI is configured to build the engine on each commit, and run some tests. It is also configured to build
+and publish the engine as a package on the configured repository of DepManager.
+
 ## RoadMap
 
 * [ ] v0.1.0 -- Future -- unordered Ideas & thoughts

@@ -2,8 +2,7 @@
 if (NOT CMAKE_BUILD_TYPE MATCHES "Debug")
     message(FATAL_ERROR "Coverage only works on debug builds")
 endif ()
-#set(GCOVR ${Python_EXECUTABLE} -u -m gcovr)
-set(GCOVR gcovr)
+set(GCOVR ${Poetry_PREFIX} gcovr)
 # Get gcov version
 execute_process(COMMAND ${GCOVR} --version
         OUTPUT_VARIABLE GCOVR_VERSION)

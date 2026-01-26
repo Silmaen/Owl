@@ -1,6 +1,12 @@
 #
 #
-#
+# load custom Environment variables
+include(Environment)
+# Setup Poetry, and sync python dependencies
+include(Poetry)
+# Initialize Dependency Manager
+include(Depmanager)
+# Load Utility functions
 include(OwlUtils)
 #
 set(CMAKE_CXX_STANDARD 23)
@@ -10,7 +16,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_library(${CMAKE_PROJECT_NAME}_Base INTERFACE)
 add_library(${CMAKE_PROJECT_NAME}_BaseTest INTERFACE)
 add_dependencies(${CMAKE_PROJECT_NAME}_BaseTest ${CMAKE_PROJECT_NAME}_Base)
-find_package(Python3 REQUIRED)
 
 #
 # ---=== Supported OS ===---
@@ -126,12 +131,6 @@ endif ()
 
 # sum up the system
 print_system_n_target_infos()
-#
-# Third parties
-#
-if (NOT ${PROJECT_PREFIX}_SKIP_DEPMANAGER)
-    include(Depmanager)
-endif ()
 
 #
 # --== Properties ==--
@@ -220,3 +219,5 @@ include(cmake/DocumentationConfig.cmake)
 if (NOT ${PROJECT_PREFIX}_PACKAGING)
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE OWL_DEVELOPMENT)
 endif ()
+include(Sanitizers)
+include(Vulkan)

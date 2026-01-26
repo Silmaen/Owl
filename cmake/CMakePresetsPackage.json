@@ -36,7 +36,7 @@
       }
     },
     {
-      "name": "package-engine",
+      "name": "package-engine-windows",
       "inherits": [
         "packaging"
       ],
@@ -50,7 +50,25 @@
       }
     },
     {
-      "name": "packaging-app",
+      "name": "package-engine-linux",
+      "inherits": [
+        "package-engine-windows"
+      ],
+      "vendor": {
+        "silmaen": {
+          "docker_registry": "registry.argawaen.net",
+          "docker_namespace": "builder",
+          "docker_image": "builder-clang18-ubuntu2404",
+          "docker_parameters": "-u %env.BUILDER_UID%:%env.BUILDER_GID% --platform=%docker_build_platform% -v %teamcity.agent.home.dir%/user/cache_dir:/tmp/cache_dir --network host -v %teamcity.agent.home.dir%/user:/home/user -e HOME=/home/user",
+          "publish_doc": true
+        }
+      },
+      "cacheVariables": {
+        "OWL_ENABLE_DOCUMENTATION": "ON"
+      }
+    },
+    {
+      "name": "packaging-app-windows",
       "generator": "Ninja",
       "hidden": true,
       "inherits": [
@@ -61,9 +79,24 @@
       }
     },
     {
-      "name": "package-app-nest",
+      "name": "packaging-app-linux",
+      "hidden": true,
       "inherits": [
-        "packaging-app"
+        "packaging-app-windows"
+      ],
+      "vendor": {
+        "silmaen": {
+          "docker_registry": "registry.argawaen.net",
+          "docker_namespace": "builder",
+          "docker_image": "builder-clang18-ubuntu2404",
+          "docker_parameters": "-u %env.BUILDER_UID%:%env.BUILDER_GID% --platform=%docker_build_platform% -v %teamcity.agent.home.dir%/user/cache_dir:/tmp/cache_dir --network host -v %teamcity.agent.home.dir%/user:/home/user -e HOME=/home/user"
+        }
+      }
+    },
+    {
+      "name": "package-app-nest-windows",
+      "inherits": [
+        "packaging-app-windows"
       ],
       "cacheVariables": {
         "OWL_PACKAGE_NAME": "OwlNest",
@@ -75,9 +108,37 @@
       }
     },
     {
-      "name": "package-app-drone",
+      "name": "package-app-drone-windows",
       "inherits": [
-        "packaging-app"
+        "packaging-app-windows"
+      ],
+      "cacheVariables": {
+        "OWL_PACKAGE_NAME": "OwlDrone",
+        "OWL_BUILD_NEST": "OFF",
+        "OWL_BUILD_SANDBOX": "OFF",
+        "OWL_BUILD_DRONE": "ON",
+        "OWL_BUILD_CAST": "OFF",
+        "OWL_PACKAGE_ENGINE": "OFF"
+      }
+    },
+    {
+      "name": "package-app-nest-linux",
+      "inherits": [
+        "packaging-app-linux"
+      ],
+      "cacheVariables": {
+        "OWL_PACKAGE_NAME": "OwlNest",
+        "OWL_BUILD_NEST": "ON",
+        "OWL_BUILD_SANDBOX": "OFF",
+        "OWL_BUILD_DRONE": "OFF",
+        "OWL_BUILD_CAST": "OFF",
+        "OWL_PACKAGE_ENGINE": "OFF"
+      }
+    },
+    {
+      "name": "package-app-drone-linux",
+      "inherits": [
+        "packaging-app-linux"
       ],
       "cacheVariables": {
         "OWL_PACKAGE_NAME": "OwlDrone",
