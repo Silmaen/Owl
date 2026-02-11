@@ -2,8 +2,6 @@
 Action to publish built packages to a remote server.
 """
 import re
-from datetime import datetime
-
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.publish import (
@@ -13,6 +11,7 @@ from ci.utils.publish import (
     get_platform_info,
     run_api_push,
 )
+from datetime import datetime
 
 
 class PublishPackage(BaseAction):
@@ -50,7 +49,8 @@ class PublishPackage(BaseAction):
 
         # Validate that preset has OWL_PACKAGE_NAME
         if not preset.run_package:
-            log.error(f"Preset '{preset.cmake_preset}' does not have OWL_PACKAGE_NAME set.")
+            log.error(
+                f"Preset '{preset.cmake_preset}' does not have OWL_PACKAGE_NAME set.")
             return 1
 
         # Determine package type from preset name
@@ -90,7 +90,7 @@ class PublishPackage(BaseAction):
         filename = f"{base_name}-{version}-{git_hash}-{os_str}-{plat['arch']}.{ext}"
 
         # Check that the package file exists
-        packages_folder = root / "output" / "package"
+        packages_folder = preset.get_build_dir()
         package_file = packages_folder / filename
 
         # Build info dict
