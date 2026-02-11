@@ -15,7 +15,14 @@
       },
       "generator": "Ninja",
       "binaryDir": "output/build/${presetName}",
-      "installDir": "output/install/${presetName}"
+      "installDir": "output/install/${presetName}",
+      "vendor": {
+        "silmaen": {
+          "docker_registry": "registry.argawaen.net",
+          "docker_namespace": "builder",
+          "docker_parameters": "-u %env.BUILDER_UID%:%env.BUILDER_GID% --platform=%docker_build_platform% -v %teamcity.agent.home.dir%/user/cache_dir:/tmp/cache_dir --network host --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v %teamcity.agent.home.dir%/user:/home/user -e HOME=/home/user"
+        }
+      }
     },
     {
       "name": "gcc-release",
@@ -48,26 +55,6 @@
     {
       "name": "clang-debug",
       "inherits": "clang-release",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      }
-    },
-    {
-      "name": "clang-libc-release",
-      "inherits": "base",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_CXX_FLAGS_INIT": "-stdlib=libc++",
-        "CMAKE_EXE_LINKER_FLAGS_INIT": "-fuse-ld=lld",
-        "CMAKE_SHARED_LINKER_FLAGS_INIT": "-fuse-ld=lld"
-      }
-    },
-    {
-      "name": "clang-libc-debug",
-      "inherits": "clang-libc-release",
       "hidden": true,
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug"

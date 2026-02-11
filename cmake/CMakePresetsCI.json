@@ -7,146 +7,62 @@
   },
   "include": [
     "CMakePresetsBase.json",
+    "CMakePresetsLinux.json",
     "CMakePresetsMinGW.json"
   ],
   "configurePresets": [
     {
-      "name": "Documentation",
-      "inherits": "base",
-      "cacheVariables": {
-        "OWL_DOC_ONLY": "ON",
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++"
-      }
-    },
-    {
-      "name": "CodeCoverage_gcc",
-      "inherits": "gcc-debug",
-      "cacheVariables": {
-        "OWL_ENABLE_COVERAGE": "ON",
-        "OWL_ENABLE_STACKTRACE": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "CodeCoverage_clang",
-      "inherits": "clang-debug",
-      "cacheVariables": {
-        "OWL_ENABLE_COVERAGE": "ON",
-        "OWL_ENABLE_STACKTRACE": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "CodeCoverage_gcc_mingw",
-      "inherits": "mingw-gcc-debug",
-      "cacheVariables": {
-        "OWL_ENABLE_COVERAGE": "ON",
-        "OWL_ENABLE_STACKTRACE": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      }
-    },
-    {
-      "name": "CodeCoverage_clang_mingw",
-      "inherits": "mingw-clang-debug",
-      "cacheVariables": {
-        "OWL_ENABLE_COVERAGE": "ON",
-        "OWL_ENABLE_STACKTRACE": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      }
-    },
-    {
-      "name": "clang-tidy",
-      "inherits": "clang-debug",
+      "name": "linux-clang-tidy",
+      "inherits": "linux-clang-debug",
       "cacheVariables": {
         "OWL_ENABLE_CLANG_TIDY": "ON",
+        "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
       }
     },
     {
-      "name": "clang-tidy_mingw",
-      "inherits": "mingw-clang-debug",
+      "name": "windows-clang-tidy",
+      "inherits": "windows-clang-debug",
       "cacheVariables": {
         "OWL_ENABLE_CLANG_TIDY": "ON",
+        "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
       }
     },
     {
-      "name": "sanitizer-address",
-      "inherits": "clang-debug",
+      "name": "linux-sanitizer-address",
+      "inherits": "linux-clang-debug",
       "cacheVariables": {
         "OWL_ENABLE_ADDRESS_SANITIZER": "ON",
+        "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
       }
     },
     {
-      "name": "sanitizer-thread",
-      "inherits": "clang-debug",
+      "name": "linux-sanitizer-thread",
+      "inherits": "linux-clang-debug",
       "cacheVariables": {
         "OWL_ENABLE_THREAD_SANITIZER": "ON",
+        "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
       }
     },
     {
-      "name": "sanitizer-undefined-behavior",
-      "inherits": "clang-debug",
+      "name": "linux-sanitizer-undefined-behavior",
+      "inherits": "linux-clang-debug",
       "cacheVariables": {
         "OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER": "ON",
+        "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
       }
     },
     {
-      "name": "sanitizer-leak",
-      "inherits": "clang-debug",
+      "name": "linux-sanitizer-leak",
+      "inherits": "linux-clang-debug",
       "cacheVariables": {
         "OWL_ENABLE_LEAK_SANITIZER": "ON",
+        "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
       }
     }
   ]

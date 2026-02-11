@@ -10,32 +10,48 @@
   ],
   "configurePresets": [
     {
-      "name": "mingw-gcc-release",
+      "name": "windows-gcc-release",
       "inherits": [
         "toolset-mingw",
         "gcc-release"
       ]
     },
     {
-      "name": "mingw-gcc-debug",
+      "name": "windows-gcc-debug",
       "inherits": [
         "toolset-mingw",
         "gcc-debug"
-      ]
+      ],
+      "cacheVariables": {
+        "OWL_ENABLE_COVERAGE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": "windows-gcc-release"
+        }
+      }
     },
     {
-      "name": "mingw-clang-release",
+      "name": "windows-clang-release",
       "inherits": [
         "toolset-mingw",
         "clang-release"
       ]
     },
     {
-      "name": "mingw-clang-debug",
+      "name": "windows-clang-debug",
       "inherits": [
         "toolset-mingw",
         "clang-debug"
-      ]
+      ],
+      "cacheVariables": {
+        "OWL_ENABLE_COVERAGE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": "windows-clang-release"
+        }
+      }
     }
   ]
 }

@@ -126,7 +126,7 @@ Application::Application(AppParams iAppParams) : m_initParams{std::move(iAppPara
 	}
 
 	// set up the callbacks
-	mp_appWindow->setEventCallback([this]<typename T0>(T0&& ioPh1) { onEvent(std::forward<T0>(ioPh1)); });
+	mp_appWindow->setEventCallback([this]<typename T0>(T0&& ioPh1) -> auto { onEvent(std::forward<T0>(ioPh1)); });
 
 	// create the GUI layer
 	if (m_initParams.hasGui) {

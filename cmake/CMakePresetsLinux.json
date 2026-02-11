@@ -10,69 +10,78 @@
   ],
   "configurePresets": [
     {
-      "name": "linux-gcc-release",
-      "inherits": [
-        "gcc-release"
-      ],
+      "name": "linux-base",
+      "hidden": true,
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Linux"
+      },
+      "vendor": {
+        "silmaen": {
+          "docker_image": "builder-clang18-ubuntu2404"
+        }
+      }
+    },
+    {
+      "name": "toolset-mold",
+      "inherits": [
+        "linux-base"
+      ],
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_EXE_LINKER_FLAGS": "-fuse-ld=mold",
+        "CMAKE_SHARED_LINKER_FLAGS": "-fuse-ld=mold"
+      }
+    },
+    {
+      "name": "linux-gcc-release",
+      "inherits": [
+        "toolset-mold",
+        "gcc-release"
+      ],
+      "vendor": {
+        "silmaen": {
+          "docker_image": "builder-gcc14-ubuntu2404"
+        }
       }
     },
     {
       "name": "linux-gcc-debug",
       "inherits": [
+        "toolset-mold",
         "gcc-debug"
       ],
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
+      "cacheVariables": {
+        "OWL_ENABLE_COVERAGE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "docker_image": "builder-gcc14-ubuntu2404",
+          "release_preset": "linux-gcc-release"
+        }
       }
     },
     {
       "name": "linux-clang-release",
       "inherits": [
+        "linux-base",
         "clang-release"
-      ],
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
+      ]
     },
     {
       "name": "linux-clang-debug",
       "inherits": [
+        "linux-base",
         "clang-debug"
       ],
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "linux-clang-libc-release",
-      "inherits": [
-        "clang-libc-release"
-      ],
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "linux-clang-libc-debug",
-      "inherits": [
-        "clang-libc-debug"
-      ],
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
+      "cacheVariables": {
+        "OWL_ENABLE_COVERAGE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": "linux-clang-release"
+        }
       }
     }
   ]

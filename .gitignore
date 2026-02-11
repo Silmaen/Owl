@@ -35,6 +35,8 @@
 cmake-*
 .idea
 output*
+.env
+.venv
 
 # Cache
 *.spv
