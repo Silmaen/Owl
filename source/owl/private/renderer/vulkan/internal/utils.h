@@ -11,7 +11,7 @@
 #include <vulkan/vulkan.h>
 
 namespace owl::renderer::vulkan::internal {
-static constexpr auto resultString(const VkResult iResult) -> std::string {
+static constexpr auto resultString(const VkResult iResult) -> std::string_view {
 	switch (iResult) {
 		case VK_SUCCESS:
 			return "VK_SUCCESS";

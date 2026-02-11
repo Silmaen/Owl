@@ -45,6 +45,8 @@ auto MeshLoader::loadObj([[maybe_unused]] const std::filesystem::path& iFilePath
 	if (!warn.empty()) {
 		OWL_CORE_WARN("MeshLoader::loadObj: {}", warn)
 	}
+	// Reserve space for vertices
+	mesh->reserveVertices(attrib.vertices.size() / 3);
 	// insert all vertices
 	uint8_t coordIdx = 0;
 	vec3 position;
@@ -61,6 +63,12 @@ auto MeshLoader::loadObj([[maybe_unused]] const std::filesystem::path& iFilePath
 	std::vector<std::array<vec3, 3>> normals;
 	const bool hasUv = !attrib.texcoords.empty();
 	const bool hasNormals = !attrib.normals.empty();
+	// Estimate triangle count for reserve
+	size_t estimatedTriangles = 0;
+	for (const auto& shape: shapes) { estimatedTriangles += shape.mesh.num_face_vertices.size(); }
+	mesh->reserveTriangles(estimatedTriangles);
+	uvCoords.reserve(estimatedTriangles);
+	normals.reserve(estimatedTriangles);
 	// insert all triangles
 	for (const auto& shape: shapes) {
 		size_t indexOffset = 0;
@@ -90,7 +98,6 @@ auto MeshLoader::loadObj([[maybe_unused]] const std::filesystem::path& iFilePath
 					faceNormals[v].x() = attrib.normals[3u * static_cast<uint32_t>(idx.normal_index) + 0u];
 					faceNormals[v].y() = attrib.normals[3u * static_cast<uint32_t>(idx.normal_index) + 1u];
 					faceNormals[v].z() = attrib.normals[3u * static_cast<uint32_t>(idx.normal_index) + 2u];
-					faceNormals[v] = vec3(0.0f, 0.0f, 0.0f);
 				}
 			}
 			if (hasUv)
@@ -145,6 +152,18 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 	std::vector<std::array<vec3, 3>> normals;
 	bool hasUv = false;
 	bool hasNormals = false;
+
+	// Reserve space based on total counts across all meshes
+	size_t totalVertices = 0;
+	size_t totalFaces = 0;
+	for (size_t i = 0; i < scene->meshes.count; ++i) {
+		totalVertices += scene->meshes.data[i]->num_vertices;
+		totalFaces += scene->meshes.data[i]->num_faces;
+	}
+	mesh->reserveVertices(totalVertices);
+	mesh->reserveTriangles(totalFaces);
+	uvCoords.reserve(totalFaces);
+	normals.reserve(totalFaces);
 
 	for (size_t meshIdx = 0; meshIdx < scene->meshes.count; ++meshIdx) {
 		const ufbx_mesh* fbxMesh = scene->meshes.data[meshIdx];
@@ -274,6 +293,21 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 	bool hasUv = false;
 	bool hasNormals = false;
 
+	// Reserve space based on primitive counts
+	{
+		size_t totalVertices = 0;
+		size_t totalIndices = 0;
+		for (const auto& primitive: gltfModel.meshes.at(0).primitives) {
+			if (const auto posIt = primitive.attributes.find("POSITION"); posIt != primitive.attributes.end())
+				totalVertices += gltfModel.accessors.at(static_cast<size_type>(posIt->second)).count;
+			if (primitive.indices >= 0)
+				totalIndices += gltfModel.accessors.at(static_cast<size_type>(primitive.indices)).count;
+		}
+		mesh->reserveVertices(totalVertices);
+		mesh->reserveTriangles(totalIndices / 3);
+		uvCoords.reserve(totalIndices / 3);
+		normals.reserve(totalIndices / 3);
+	}
 
 	for (const tinygltf::Mesh& gltfMesh = gltfModel.meshes.at(0); const auto& primitive: gltfMesh.primitives) {
 		// Positions

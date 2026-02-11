@@ -65,15 +65,18 @@ void FontLibrary::loadFont(const std::string& iName) {
 auto FontLibrary::getDefaultFont() const -> const shared<Font>& { return m_fonts.at(m_defaultFontName); }
 
 auto FontLibrary::getFont(const std::string& iName) -> const shared<Font>& {
-	if (!m_fonts.contains(iName)) {
+	auto it = m_fonts.find(iName);
+	if (it == m_fonts.end()) {
 		loadFont(iName);
-		if (m_fonts[iName] == nullptr) {
+		it = m_fonts.find(iName);
+		if (it == m_fonts.end() || it->second == nullptr) {
 			OWL_CORE_ERROR("Font '{}' not found", iName)
-			m_fonts.erase(iName);
+			if (it != m_fonts.end())
+				m_fonts.erase(it);
 			return m_fonts.at("null");
 		}
 	}
-	return m_fonts.at(iName);
+	return it->second;
 }
 
 auto FontLibrary::getLoadedFontNames() const -> std::list<std::string> {

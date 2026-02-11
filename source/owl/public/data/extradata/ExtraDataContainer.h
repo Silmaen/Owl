@@ -81,6 +81,12 @@ public:
 	 */
 	void resize(size_t iNewSize);
 
+	/**
+	 * @brief Reserve capacity in the extra data container.
+	 * @param iCapacity The capacity to reserve.
+	 */
+	void reserve(const size_t iCapacity) { m_extraDataList.reserve(iCapacity); }
+
 private:
 	/// Product ID of the extra data.
 	core::FactoryPid m_edPid{core::INVALID_FACTORY_PID};

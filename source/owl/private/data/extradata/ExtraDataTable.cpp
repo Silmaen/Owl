@@ -18,6 +18,10 @@ void ExtraDataTable::clear() {
 	m_size = 0;
 }
 
+void ExtraDataTable::reserve(const size_t iCapacity) {
+	for (auto& container: m_extraDataList) { container.reserve(iCapacity); }
+}
+
 void ExtraDataTable::resize(const size_t iNewSize) {
 	if (iNewSize == m_size)
 		return;
@@ -28,6 +32,7 @@ void ExtraDataTable::resize(const size_t iNewSize) {
 auto ExtraDataTable::clone() const -> ExtraDataTable {
 	ExtraDataTable newTable;
 	newTable.m_size = m_size;
+	newTable.m_extraDataList.reserve(m_extraDataList.size());
 	for (const auto& container: m_extraDataList) { newTable.m_extraDataList.push_back(container); }
 	return newTable;
 }

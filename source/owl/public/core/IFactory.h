@@ -41,7 +41,7 @@ public:
 	IFactory(const IFactory&) = delete;
 	IFactory(IFactory&&) = delete;
 	auto operator=(const IFactory&) -> IFactory& = delete;
-	auto operator=(IFactory&&) -> IFactory = delete;
+	auto operator=(IFactory&&) -> IFactory& = delete;
 	/**
 	 * @brief
 	 *  Allocate the unique instance of the class if needed and return it
