@@ -47,6 +47,11 @@
         "OWL_BUILD_DRONE": "OFF",
         "OWL_BUILD_CAST": "OFF",
         "OWL_PACKAGE_ENGINE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "archive_format": "zip"
+        }
       }
     },
     {
@@ -76,6 +81,11 @@
       ],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
+      },
+      "vendor": {
+        "silmaen": {
+          "archive_format": "zip"
+        }
       }
     },
     {
@@ -86,6 +96,7 @@
       ],
       "vendor": {
         "silmaen": {
+          "archive_format": "tar.gz",
           "docker_registry": "registry.argawaen.net",
           "docker_namespace": "builder",
           "docker_image": "builder-clang18-ubuntu2404",
