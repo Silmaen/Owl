@@ -18,8 +18,8 @@ void Map::reset(const size_t iWidth, const size_t iHeight) {
 	m_width = iWidth;
 	m_height = iHeight;
 	m_cells.resize(iWidth * iHeight);
-	PlayerInitialPosition = {0, 0};
-	PlayerInitialDirection = {0, 1};
+	m_playerInitialPosition = {0, 0};
+	m_playerInitialDirection = {0, 1};
 }
 
 }// namespace owl::raycaster::game
