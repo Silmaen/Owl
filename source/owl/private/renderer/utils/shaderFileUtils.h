@@ -39,7 +39,29 @@ auto readCachedShader(const std::filesystem::path& iFile) -> std::vector<uint32_
 
 auto writeCachedShader(const std::filesystem::path& iFile, const std::vector<uint32_t>& iData) -> bool;
 
-void shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
-				   ShaderType iStage, const std::vector<uint32_t>& iShaderData);
+struct ShaderReflectionData {
+	struct UniformBuffer {
+		std::string name;
+		uint32_t binding = 0;
+		size_t size = 0;
+		size_t memberCount = 0;
+	};
+	struct SampledImage {
+		std::string name;
+		uint32_t binding = 0;
+		uint32_t descriptorCount = 0;
+	};
+	std::vector<UniformBuffer> uniformBuffers;
+	std::vector<SampledImage> sampledImages;
+};
+
+auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
+				   ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData;
+
+auto computeShaderHash(const std::string& iSource) -> std::string;
+
+auto isShaderCacheValid(const std::filesystem::path& iCachedPath, const std::string& iSource) -> bool;
+
+void writeShaderHash(const std::filesystem::path& iCachedPath, const std::string& iSource);
 
 }// namespace owl::renderer::utils

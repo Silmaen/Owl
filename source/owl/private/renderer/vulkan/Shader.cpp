@@ -75,8 +75,8 @@ Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 			   const std::vector<std::filesystem::path>& iSources)
 	: renderer::Shader{iShaderName, iRenderer} {
 	OWL_PROFILE_FUNCTION()
-	std::unordered_map<ShaderType, std::string> strSources;
 
+	std::unordered_map<ShaderType, std::string> strSources;
 	for (const auto& src: iSources) {
 		auto type = ShaderType::None;
 		if (src.extension() == ".frag")
@@ -131,7 +131,7 @@ void Shader::compileOrGetVulkanBinaries(const std::unordered_map<ShaderType, std
 	OWL_PROFILE_FUNCTION()
 
 	shaderc::CompileOptions options;
-	options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_0);
+	options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
 	options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
 	auto& shaderData = m_vulkanSpirv;
@@ -141,13 +141,13 @@ void Shader::compileOrGetVulkanBinaries(const std::unordered_map<ShaderType, std
 				renderer::utils::getShaderPath(getName(), getRenderer(), "vulkan", stage);
 		const std::filesystem::path cachedPath =
 				renderer::utils::getShaderCachedPath(getName(), getRenderer(), "vulkan", stage);
-		if (exists(cachedPath) && last_write_time(cachedPath) > last_write_time(basePath)) {
-			// Cache exists: read it
+		if (renderer::utils::isShaderCacheValid(cachedPath, source)) {
+			// Cache exists and hash matches: read it
 			OWL_CORE_INFO("Using cached Vulkan Shader {}-{}", getName(), magic_enum::enum_name(stage))
 			shaderData[stage] = renderer::utils::readCachedShader(cachedPath);
 		} else {
 			if (exists(cachedPath))
-				OWL_CORE_INFO("Origin file newer than cached one, Recompiling.")
+				OWL_CORE_INFO("Source hash mismatch, Recompiling.")
 			OWL_CORE_TRACE("Compile shader file: {}",
 						   renderer::utils::getRelativeShaderPath(getName(), getRenderer(), "vulkan", stage).string())
 			const shaderc::Compiler compiler;
@@ -163,6 +163,7 @@ void Shader::compileOrGetVulkanBinaries(const std::unordered_map<ShaderType, std
 			OWL_CORE_TRACE("Write compiled shader file, size {}", shaderData[stage].size())
 			if (!renderer::utils::writeCachedShader(cachedPath, shaderData[stage]))
 				OWL_CORE_WARN("Failed to write the compiled shader.")
+			renderer::utils::writeShaderHash(cachedPath, source);
 		}
 	}
 	for (auto&& [stage, data]: shaderData)

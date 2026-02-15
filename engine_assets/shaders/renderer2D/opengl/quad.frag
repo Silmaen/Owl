@@ -17,42 +17,8 @@ layout (binding = 0) uniform sampler2D u_Textures[32];
 
 void main() {
     vec4 texColor = i_Vertex.Color;
-    switch (int(i_TexIndex)) {
-        case 0: texColor *= texture(u_Textures[0], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 1: texColor *= texture(u_Textures[1], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 2: texColor *= texture(u_Textures[2], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 3: texColor *= texture(u_Textures[3], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 4: texColor *= texture(u_Textures[4], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 5: texColor *= texture(u_Textures[5], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 6: texColor *= texture(u_Textures[6], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 7: texColor *= texture(u_Textures[7], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 8: texColor *= texture(u_Textures[8], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 9: texColor *= texture(u_Textures[9], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 10: texColor *= texture(u_Textures[10], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 11: texColor *= texture(u_Textures[11], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 12: texColor *= texture(u_Textures[12], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 13: texColor *= texture(u_Textures[13], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 14: texColor *= texture(u_Textures[14], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 15: texColor *= texture(u_Textures[15], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 16: texColor *= texture(u_Textures[16], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 17: texColor *= texture(u_Textures[17], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 18: texColor *= texture(u_Textures[18], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 19: texColor *= texture(u_Textures[19], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 20: texColor *= texture(u_Textures[20], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 21: texColor *= texture(u_Textures[21], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 22: texColor *= texture(u_Textures[22], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 23: texColor *= texture(u_Textures[23], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 24: texColor *= texture(u_Textures[24], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 25: texColor *= texture(u_Textures[25], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 26: texColor *= texture(u_Textures[26], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 27: texColor *= texture(u_Textures[27], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 28: texColor *= texture(u_Textures[28], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 29: texColor *= texture(u_Textures[29], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 30: texColor *= texture(u_Textures[30], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-        case 31: texColor *= texture(u_Textures[31], i_Vertex.TexCoord * i_Vertex.TilingFactor); break;
-    }
+    texColor *= texture(u_Textures[int(i_TexIndex)], i_Vertex.TexCoord * i_Vertex.TilingFactor);
+    if (texColor.a < 0.001) discard;
     o_Color = texColor;
-    if (o_Color.a == 0)discard;
-
-    o_EntityID = i_EntityID;// placeholder for our entity ID
+    o_EntityID = i_EntityID;
 }

@@ -18,16 +18,14 @@ struct VertexOutput {
     float Fade;
 };
 
-layout (location = 0) out VertexOutput o_vertex;
+layout (location = 0) out VertexOutput o_Vertex;
 layout (location = 4) out flat int o_EntityID;
 
 void main() {
-    o_vertex.LocalPosition = i_LocalPosition;
-    o_vertex.Color = i_Color;
-    o_vertex.Thickness = i_Thickness;
-    o_vertex.Fade = i_Fade;
-
+    o_Vertex.LocalPosition = i_LocalPosition;
+    o_Vertex.Color = i_Color;
+    o_Vertex.Thickness = i_Thickness;
+    o_Vertex.Fade = i_Fade;
     o_EntityID = i_EntityID;
-
     gl_Position = u_ViewProjection * vec4(i_WorldPosition, 1.0);
 }

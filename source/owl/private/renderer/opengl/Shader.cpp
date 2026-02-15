@@ -83,11 +83,8 @@ void Shader::compile(const std::unordered_map<ShaderType, std::string>& iSources
 
 	const auto start = std::chrono::steady_clock::now();
 
-	// todo: direct check for openGL binaries...
-	renderer::utils::createCacheDirectoryIfNeeded(getRenderer(), "opengl_vulkan");
-	compileOrGetVulkanBinaries(iSources);
 	renderer::utils::createCacheDirectoryIfNeeded(getRenderer(), "opengl");
-	compileOrGetOpenGlBinaries();
+	compileOrGetOpenGlBinaries(iSources);
 	createProgram();
 
 	const auto timer = std::chrono::steady_clock::now() - start;
@@ -96,46 +93,7 @@ void Shader::compile(const std::unordered_map<ShaderType, std::string>& iSources
 	OWL_CORE_INFO("Compilation of shader {} in {} ms", getName(), duration)
 }
 
-void Shader::compileOrGetVulkanBinaries(const std::unordered_map<ShaderType, std::string>& iSources) {
-	OWL_PROFILE_FUNCTION()
-
-	shaderc::CompileOptions options;
-	options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_2);
-	options.SetOptimizationLevel(shaderc_optimization_level_performance);
-
-	auto& shaderData = m_vulkanSpirv;
-	shaderData.clear();
-	for (auto&& [stage, source]: iSources) {
-		const std::filesystem::path basePath =
-				renderer::utils::getShaderPath(getName(), getRenderer(), "opengl", stage);
-		const std::filesystem::path cachedPath =
-				renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl_vulkan", stage);
-
-		if (exists(cachedPath) && (last_write_time(cachedPath) > last_write_time(basePath))) {
-			// Cache exists: read it
-			OWL_CORE_INFO("Using cached Vulkan Shader {}-{}", getName(), magic_enum::enum_name(stage))
-			shaderData[stage] = renderer::utils::readCachedShader(cachedPath);
-		} else {
-			if (exists(cachedPath))
-				OWL_CORE_INFO("Origin file newer than cached one, Recompiling.")
-			const shaderc::Compiler compiler;
-			const shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(
-					source, renderer::utils::shaderStageToShaderC(stage),
-					renderer::utils::getShaderPath(getName(), getRenderer(), "opengl", stage).string().c_str(),
-					options);
-			if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-				OWL_CORE_ERROR(module.GetErrorMessage())
-				OWL_CORE_ASSERT(false, "Failed Compilation")
-			}
-			shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
-			renderer::utils::writeCachedShader(cachedPath, shaderData[stage]);
-		}
-	}
-	for (auto&& [stage, data]: shaderData)
-		renderer::utils::shaderReflect(getName(), getRenderer(), "opengl", stage, data);
-}
-
-void Shader::compileOrGetOpenGlBinaries() {
+void Shader::compileOrGetOpenGlBinaries(const std::unordered_map<ShaderType, std::string>& iSources) {
 	OWL_PROFILE_FUNCTION()
 
 	auto& shaderData = m_openGlSpirv;
@@ -145,33 +103,33 @@ void Shader::compileOrGetOpenGlBinaries() {
 	options.SetOptimizationLevel(shaderc_optimization_level_performance);
 
 	shaderData.clear();
-	m_openGlSource.clear();
-	for (auto&& [stage, spirv]: m_vulkanSpirv) {
+	for (auto&& [stage, source]: iSources) {
 		const std::filesystem::path basePath =
-				renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl_vulkan", stage);
+				renderer::utils::getShaderPath(getName(), getRenderer(), "opengl", stage);
 		const std::filesystem::path cachedPath =
 				renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
-		if (exists(cachedPath) && (last_write_time(cachedPath) > last_write_time(basePath))) {
+		if (renderer::utils::isShaderCacheValid(cachedPath, source)) {
 			OWL_CORE_INFO("Using cached OpenGL Shader {}-{}", getName(), magic_enum::enum_name(stage))
 			shaderData[stage] = renderer::utils::readCachedShader(cachedPath);
 		} else {
 			if (exists(cachedPath))
-				OWL_CORE_INFO("Origin file newer than cached one, Recompiling.")
-			spirv_cross::CompilerGLSL glslCompiler(spirv);
-			m_openGlSource[stage] = glslCompiler.compile();
-			auto& source = m_openGlSource[stage];
+				OWL_CORE_INFO("Source hash mismatch, Recompiling.")
 			const shaderc::Compiler compiler;
 			const shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(
 					source, renderer::utils::shaderStageToShaderC(stage),
-					renderer::utils::getShaderPath(getName(), getRenderer(), "opengl", stage).string().c_str());
+					renderer::utils::getShaderPath(getName(), getRenderer(), "opengl", stage).string().c_str(),
+					options);
 			if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
 				OWL_CORE_ERROR(module.GetErrorMessage())
 				OWL_CORE_ASSERT(false, "Compilation error")
 			}
 			shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
 			renderer::utils::writeCachedShader(cachedPath, shaderData[stage]);
+			renderer::utils::writeShaderHash(cachedPath, source);
 		}
 	}
+	for (auto&& [stage, data]: shaderData)
+		renderer::utils::shaderReflect(getName(), getRenderer(), "opengl", stage, data);
 }
 
 void Shader::createProgram() {

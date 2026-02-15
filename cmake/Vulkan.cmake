@@ -49,5 +49,6 @@ function(owl_target_link_vulkan target_name)
     find_package(glslang REQUIRED)
     find_package(shaderc REQUIRED)
     target_link_libraries(${target_name}Private INTERFACE shaderc::shaderc_shared)
+
     set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG ${StateSave})
 endfunction()

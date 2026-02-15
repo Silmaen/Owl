@@ -149,6 +149,7 @@ void VulkanCore::createInstance() {
 			requestedLayers.emplace_back("VK_LAYER_KHRONOS_validation");
 			m_hasValidation = true;
 			m_debugMessage = true;
+			OWL_CORE_INFO("Vulkan: Validation layers enabled.")
 		}
 	}
 	if (!m_instanceInfo->hasLayers(requestedLayers)) {
