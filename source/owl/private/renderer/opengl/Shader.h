@@ -181,12 +181,9 @@ private:
 	 */
 	void compile(const std::unordered_map<ShaderType, std::string>& iSources);
 
-	void compileOrGetVulkanBinaries(const std::unordered_map<ShaderType, std::string>& iSources);
-	void compileOrGetOpenGlBinaries();
+	void compileOrGetOpenGlBinaries(const std::unordered_map<ShaderType, std::string>& iSources);
 	void createProgram();
 
-	std::unordered_map<ShaderType, std::vector<uint32_t>> m_vulkanSpirv;
 	std::unordered_map<ShaderType, std::vector<uint32_t>> m_openGlSpirv;
-	std::unordered_map<ShaderType, std::string> m_openGlSource;
 };
 }// namespace owl::renderer::opengl

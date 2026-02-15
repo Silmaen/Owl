@@ -29,8 +29,8 @@ foreach (child ${children})
             set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 3600)
             if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
                 add_custom_command(TARGET ${PROJECT_PREFIX_LOWER}_${child}_unit_test POST_BUILD
-                        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GTest_DIR}/../../../bin/libgtest$<$<CONFIG:Debug>:d>.dll" "${CMAKE_BINARY_DIR}/bin"
-                        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${GTest_DIR}/../../../bin/libgtest_main$<$<CONFIG:Debug>:d>.dll" "${CMAKE_BINARY_DIR}/bin"
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GTest::gtest>" "${CMAKE_BINARY_DIR}/bin"
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GTest::gtest_main>" "${CMAKE_BINARY_DIR}/bin"
                         COMMAND_EXPAND_LISTS
                 )
             endif ()

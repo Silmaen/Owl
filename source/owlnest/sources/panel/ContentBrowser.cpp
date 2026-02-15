@@ -49,7 +49,7 @@ auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<ImTextureI
 		return gui::imTexture(textureLibrary.get("icons/files/ttf_icon"));
 	if (iPath.extension() == ".yml" || iPath.extension() == ".yaml")
 		return gui::imTexture(textureLibrary.get("icons/files/yml_icon"));
-	return gui::imTexture(textureLibrary.get("icons/files/text_file_icon"));
+	return gui::imTexture(textureLibrary.get("icons/files/text_icon"));
 }
 
 }// namespace

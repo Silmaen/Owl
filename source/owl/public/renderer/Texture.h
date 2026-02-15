@@ -27,7 +27,6 @@ enum struct ImageFormat : uint8_t {
 	Rgba32F,///< Four float channels.
 };
 
-class TextureLibrary;
 /**
  * @brief Abstract class managing texture.
  */
@@ -148,8 +147,8 @@ protected:
 private:
 	/// The texture's name.
 	std::string m_name;
-	/// Library is a friend to be able to modify name.
-	friend class TextureLibrary;
+	/// Texture2D needs access to set name during deserialization.
+	friend class Texture2D;
 };
 
 /**

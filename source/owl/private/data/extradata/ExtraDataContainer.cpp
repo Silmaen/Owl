@@ -57,14 +57,15 @@ auto ExtraDataContainer::getExtraData(size_t iIndex) const -> shared<ExtraDataBa
 
 auto ExtraDataContainer::clone() const -> ExtraDataContainer {
 	ExtraDataContainer newEdc(m_edPid, 0);
+	const core::IFactory& gFactory = core::IFactory::getInstance();
+	std::string pKey;
+	if (!gFactory.getKey(m_edPid, pKey))
+		return newEdc;
+	newEdc.m_extraDataList.reserve(m_extraDataList.size());
 	for (const auto& ed: m_extraDataList) {
-		// Clone each extra data
-		const core::IFactory& gFactory = core::IFactory::getInstance();
-		if (std::string pKey; gFactory.getKey(ed->getPid(), pKey)) {
-			if (auto* newEd = dynamic_cast<ExtraDataBase*>(core::IFactory::getInstance().createProduct(pKey))) {
-				*newEd = *ed;
-				newEdc.m_extraDataList.push_back(shared<ExtraDataBase>(newEd));
-			}
+		if (auto* newEd = dynamic_cast<ExtraDataBase*>(gFactory.createProduct(pKey))) {
+			*newEd = *ed;
+			newEdc.m_extraDataList.push_back(shared<ExtraDataBase>(newEd));
 		}
 	}
 	return newEdc;

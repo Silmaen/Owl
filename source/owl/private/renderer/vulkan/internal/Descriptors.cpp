@@ -298,12 +298,30 @@ void Descriptors::updateDescriptor(const size_t iFrame) {
 	if (!m_uniformBuffers.empty()) {
 		bufferInfos.push_back({.buffer = m_uniformBuffers[iFrame], .offset = 0, .range = m_uniformSize});
 	}
+	constexpr uint32_t maxSamplerDescriptors = 32;
 	std::vector<VkDescriptorImageInfo> imageInfos;
-	imageInfos.reserve(m_textureBind.size());
+	imageInfos.reserve(maxSamplerDescriptors);
+	VkDescriptorImageInfo fallbackImageInfo{};
 	for (const auto& id: m_textureBind) {
-		imageInfos.push_back({.sampler = m_textures.getTextureData(id)->textureSampler,
-							  .imageView = m_textures.getTextureData(id)->textureImageView,
-							  .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+		const auto texData = m_textures.getTextureData(id);
+		if (texData == nullptr || texData->textureSampler == nullptr || texData->textureImageView == nullptr) {
+			imageInfos.push_back(fallbackImageInfo);
+			continue;
+		}
+		const VkDescriptorImageInfo info{.sampler = texData->textureSampler,
+										 .imageView = texData->textureImageView,
+										 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+		if (fallbackImageInfo.sampler == nullptr)
+			fallbackImageInfo = info;
+		imageInfos.push_back(info);
+	}
+	// Fill remaining slots with the first valid texture to keep all descriptors valid.
+	if (fallbackImageInfo.sampler != nullptr) {
+		for (auto& info: imageInfos) {
+			if (info.sampler == nullptr)
+				info = fallbackImageInfo;
+		}
+		while (imageInfos.size() < maxSamplerDescriptors) { imageInfos.push_back(fallbackImageInfo); }
 	}
 	std::vector<VkWriteDescriptorSet> descriptorWrites;
 	if (!bufferInfos.empty()) {

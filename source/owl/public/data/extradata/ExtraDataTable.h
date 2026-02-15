@@ -131,6 +131,13 @@ public:
 	 */
 	void resize(size_t iNewSize);
 
+	/**
+	 * @brief
+	 *  Reserve capacity in all extra data containers.
+	 * @param iCapacity The capacity to reserve.
+	 */
+	void reserve(size_t iCapacity);
+
 private:
 	/**
 	 * @brief
@@ -142,7 +149,7 @@ private:
 	 *  Each ExtraDataContainer contains only one ExtraData type but as many as the object where ExtraData
 	 *  is related (eg. Vertex, Triangle, etc.).
 	 */
-	std::list<ExtraDataContainer> m_extraDataList;
+	std::vector<ExtraDataContainer> m_extraDataList;
 };
 
 }// namespace owl::data::extradata

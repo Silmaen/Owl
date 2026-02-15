@@ -109,6 +109,24 @@ public:
 	[[nodiscard]] auto isEmpty() const -> bool { return getTriangleCount() == 0 && getVertexCount() == 0; }
 
 	/**
+	 * @brief Reserve capacity for vertices.
+	 * @param iCount The number of vertices to reserve space for.
+	 */
+	void reserveVertices(const size_t iCount) {
+		m_vertices.reserve(iCount);
+		m_verticesExtraDataContainer.reserve(iCount);
+	}
+
+	/**
+	 * @brief Reserve capacity for triangles.
+	 * @param iCount The number of triangles to reserve space for.
+	 */
+	void reserveTriangles(const size_t iCount) {
+		m_triangles.reserve(iCount);
+		m_trianglesExtraDataContainer.reserve(iCount);
+	}
+
+	/**
 	 * @brief Add a vertex to the mesh.
 	 * @param iVertex The vertex to add.
 	 */

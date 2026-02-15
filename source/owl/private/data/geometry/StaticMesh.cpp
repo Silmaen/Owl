@@ -79,9 +79,8 @@ void StaticMesh::clear() {
 }
 
 auto StaticMesh::addVertexExtraData(const core::FactoryPid iExtraDataId) -> bool {
-	if (!isExtraDataDefinedOnAllVertices(iExtraDataId))
-		m_verticesExtraDataContainer.addExtraData(iExtraDataId);
-	return isExtraDataDefinedOnAllVertices(iExtraDataId);
+	m_verticesExtraDataContainer.addExtraData(iExtraDataId);
+	return m_verticesExtraDataContainer.isExtraDataDefined(iExtraDataId);
 }
 
 auto StaticMesh::deleteVertexExtraData(const core::FactoryPid iExtraDataId) -> bool {
@@ -97,9 +96,8 @@ auto StaticMesh::getVertexExtraData(const core::FactoryPid iExtraDataId) const -
 
 
 auto StaticMesh::addTriangleExtraData(const core::FactoryPid iExtraDataId) -> bool {
-	if (!isExtraDataDefinedOnAllTriangles(iExtraDataId))
-		m_trianglesExtraDataContainer.addExtraData(iExtraDataId);
-	return isExtraDataDefinedOnAllTriangles(iExtraDataId);
+	m_trianglesExtraDataContainer.addExtraData(iExtraDataId);
+	return m_trianglesExtraDataContainer.isExtraDataDefined(iExtraDataId);
 }
 
 

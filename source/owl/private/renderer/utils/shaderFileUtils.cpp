@@ -112,27 +112,65 @@ auto shaderStageToShaderC(const ShaderType& iStage) -> shaderc_shader_kind {
 	return static_cast<shaderc_shader_kind>(0);
 }
 
-void shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
-				   const ShaderType iStage, [[maybe_unused]] const std::vector<uint32_t>& iShaderData) {
+auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
+				   const ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData {
+	ShaderReflectionData result;
 	OWL_CORE_TRACE("Shader reflect - {0} : <assets>/{1}", magic_enum::enum_name(iStage),
 				   renderer::utils::getRelativeShaderPath(iShaderName, iRenderer, iRendererApi, iStage).string())
-#ifdef OWL_SHADER_REFLECT_RESOURCES
+	if (iShaderData.empty())
+		return result;
 	const spirv_cross::Compiler compiler(iShaderData);
 	const spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-	OWL_CORE_TRACE("    {} resources", resources.sampled_images.size())
-	if (resources.uniform_buffers.empty()) {
-		OWL_CORE_TRACE("  No Uniform buffer")
-	} else {
-		OWL_CORE_TRACE("  Uniform buffers:")
-		for (const auto& resource: resources.uniform_buffers) {
-			const auto& bufferType = compiler.get_type(resource.base_type_id);
-			OWL_CORE_TRACE("   {}", resource.name)
-			OWL_CORE_TRACE("     Size = {}", compiler.get_declared_struct_size(bufferType))
-			OWL_CORE_TRACE("     Binding = {}", compiler.get_decoration(resource.id, spv::DecorationBinding))
-			OWL_CORE_TRACE("     Members = {}", bufferType.member_types.size())
-		}
+	OWL_CORE_TRACE("    {} sampled images", resources.sampled_images.size())
+	for (const auto& resource: resources.uniform_buffers) {
+		const auto& bufferType = compiler.get_type(resource.base_type_id);
+		const auto binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+		const auto size = compiler.get_declared_struct_size(bufferType);
+		OWL_CORE_TRACE("  Uniform buffer: {} Size={} Binding={} Members={}", resource.name, size, binding,
+					   bufferType.member_types.size())
+		result.uniformBuffers.push_back({.name = resource.name,
+										 .binding = binding,
+										 .size = size,
+										 .memberCount = bufferType.member_types.size()});
 	}
-#endif
+	for (const auto& resource: resources.sampled_images) {
+		const auto binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
+		const auto& type = compiler.get_type(resource.type_id);
+		const uint32_t descriptorCount = type.array.empty() ? 1 : type.array[0];
+		OWL_CORE_TRACE("  Sampled image: {} Binding={} Count={}", resource.name, binding, descriptorCount)
+		result.sampledImages.push_back(
+				{.name = resource.name, .binding = binding, .descriptorCount = descriptorCount});
+	}
+	return result;
+}
+
+auto computeShaderHash(const std::string& iSource) -> std::string {
+	std::hash<std::string> hasher;
+	return std::to_string(hasher(iSource));
+}
+
+auto isShaderCacheValid(const std::filesystem::path& iCachedPath, const std::string& iSource) -> bool {
+	if (!exists(iCachedPath))
+		return false;
+	const auto hashPath = std::filesystem::path(iCachedPath.string() + ".hash");
+	if (!exists(hashPath))
+		return false;
+	std::ifstream in(hashPath, std::ios::in);
+	if (!in.is_open())
+		return false;
+	std::string storedHash;
+	std::getline(in, storedHash);
+	in.close();
+	return storedHash == computeShaderHash(iSource);
+}
+
+void writeShaderHash(const std::filesystem::path& iCachedPath, const std::string& iSource) {
+	const auto hashPath = std::filesystem::path(iCachedPath.string() + ".hash");
+	std::ofstream out(hashPath, std::ios::out);
+	if (out.is_open()) {
+		out << computeShaderHash(iSource);
+		out.close();
+	}
 }
 
 }// namespace owl::renderer::utils

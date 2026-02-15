@@ -27,12 +27,12 @@ public:
 	/**
 	 * @brief Default destructor.
 	 */
-	virtual ~Triangle();
+	~Triangle();
 
 	Triangle(const Triangle&) = default;
-	Triangle(Triangle&&) = default;
+	Triangle(Triangle&&) noexcept = default;
 	auto operator=(const Triangle&) -> Triangle& = default;
-	auto operator=(Triangle&&) -> Triangle& = default;
+	auto operator=(Triangle&&) noexcept -> Triangle& = default;
 
 	/**
 	 * @brief Get the index of the triangle.
