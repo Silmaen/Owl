@@ -119,4 +119,8 @@ void RenderAPI::endTextureLoad() {
 	vkd.commitTextureBind(internal::VulkanHandler::get().getCurrentFrameIndex());
 }
 
+void RenderAPI::setDepthMask([[maybe_unused]] const bool iEnabled) {
+	// Vulkan depth write is managed through pipeline state; no-op for now.
+}
+
 }// namespace owl::renderer::vulkan

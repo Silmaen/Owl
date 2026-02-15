@@ -106,5 +106,11 @@ public:
 	 * @brief Ends draw call for the current frame.
 	 */
 	void endFrame() override;
+
+	/**
+	 * @brief Enable or disable depth buffer writing.
+	 * @param[in] iEnabled True to enable depth writing, false to disable.
+	 */
+	void setDepthMask(bool iEnabled) override;
 };
 }// namespace owl::renderer::vulkan

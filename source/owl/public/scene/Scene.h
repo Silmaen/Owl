@@ -155,6 +155,8 @@ private:
 	void render();
 	/// The viewport's size.
 	math::vec2ui m_viewportSize = {0, 0};
+	/// Inverse of camera view rotation matrix (for skybox rendering).
+	math::mat4 m_inverseViewRotation = math::identity<float, 4>();
 
 	friend class Entity;
 	friend class ScriptableEntity;

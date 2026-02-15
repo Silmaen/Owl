@@ -237,4 +237,83 @@ void renderProps(Trigger& ioComponent) {
 
 void renderProps(EntityLink& ioComponent) { ImGui::InputText("linked Entity Name", &ioComponent.linkedEntityName); }
 
+void renderProps(BackgroundTexture& ioComponent) {
+	constexpr std::array modeNames = {"Background", "Skybox"};
+	int modeIndex = static_cast<int>(ioComponent.mode);
+	if (ImGui::Combo("Mode", &modeIndex, modeNames.data(), static_cast<int>(modeNames.size())))
+		ioComponent.mode = static_cast<BackgroundTexture::Mode>(modeIndex);
+
+	if (ioComponent.mode == BackgroundTexture::Mode::Background) {
+		constexpr std::array typeNames = {"Solid Color", "Gradient", "Texture"};
+		int typeIndex = static_cast<int>(ioComponent.type);
+		if (ImGui::Combo("Type", &typeIndex, typeNames.data(), static_cast<int>(typeNames.size())))
+			ioComponent.type = static_cast<BackgroundTexture::Type>(typeIndex);
+
+		if (ioComponent.type == BackgroundTexture::Type::SolidColor) {
+			ImGui::ColorEdit4("Color", ioComponent.color.data());
+		} else if (ioComponent.type == BackgroundTexture::Type::Gradient) {
+			ImGui::ColorEdit4("Bottom Color", ioComponent.color.data());
+			ImGui::ColorEdit4("Top Color", ioComponent.topColor.data());
+		} else {
+			// Texture mode
+			ImGui::ColorEdit4("Tint", ioComponent.color.data());
+			if (const auto tex = imTexture(ioComponent.texture); tex.has_value()) {
+				if (ImGui::ImageButton("Texture", tex.value(), {100.0f, 100.0f}, {0, 1}, {1, 0}) &&
+					ioComponent.texture != nullptr) {
+					ImGui::OpenPopup("BgTextureSettings");
+				}
+			} else {
+				if (ImGui::Button("Texture", {100.0f, 100.0f}) && ioComponent.texture != nullptr) {
+					ImGui::OpenPopup("BgTextureSettings");
+				}
+			}
+			if (ImGui::BeginDragDropTarget()) {
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+					const auto* const path = static_cast<const char*>(payload->Data);
+					const std::filesystem::path texturePath =
+							renderer::Renderer::getTextureLibrary().find(path).value();
+					ioComponent.texture = renderer::Texture2D::create(texturePath);
+				}
+				ImGui::EndDragDropTarget();
+			}
+			bool removeTexture = false;
+			if (ImGui::BeginPopup("BgTextureSettings")) {
+				if (ImGui::MenuItem("Remove texture"))
+					removeTexture = true;
+				ImGui::EndPopup();
+			}
+			if (removeTexture)
+				ioComponent.texture.reset();
+		}
+	} else {
+		// Skybox mode
+		if (const auto tex = imTexture(ioComponent.texture); tex.has_value()) {
+			if (ImGui::ImageButton("Skybox Texture", tex.value(), {100.0f, 100.0f}, {0, 1}, {1, 0}) &&
+				ioComponent.texture != nullptr) {
+				ImGui::OpenPopup("SkyboxTextureSettings");
+			}
+		} else {
+			if (ImGui::Button("Skybox Texture", {100.0f, 100.0f}) && ioComponent.texture != nullptr) {
+				ImGui::OpenPopup("SkyboxTextureSettings");
+			}
+		}
+		if (ImGui::BeginDragDropTarget()) {
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+				const auto* const path = static_cast<const char*>(payload->Data);
+				const std::filesystem::path texturePath = renderer::Renderer::getTextureLibrary().find(path).value();
+				ioComponent.texture = renderer::Texture2D::create(texturePath);
+			}
+			ImGui::EndDragDropTarget();
+		}
+		bool removeTexture = false;
+		if (ImGui::BeginPopup("SkyboxTextureSettings")) {
+			if (ImGui::MenuItem("Remove texture"))
+				removeTexture = true;
+			ImGui::EndPopup();
+		}
+		if (removeTexture)
+			ioComponent.texture.reset();
+	}
+}
+
 }// namespace owl::gui::component

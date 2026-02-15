@@ -9,6 +9,7 @@
 
 #include "scene/Scene.h"
 
+#include "renderer/BackgroundRenderer.h"
 #include "renderer/Renderer2D.h"
 #include "scene/Entity.h"
 
@@ -218,6 +219,12 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 	// Render 2D
 	if (mainCamera != nullptr) {
 		mainCamera->setTransform(cameraTransform);
+		// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
+		math::mat4 viewRotation = mainCamera->getView();
+		viewRotation(0, 3) = 0.0f;
+		viewRotation(1, 3) = 0.0f;
+		viewRotation(2, 3) = 0.0f;
+		m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
 		renderer::Renderer2D::resetStats();
 		renderer::Renderer2D::beginScene(*mainCamera);
 		render();
@@ -228,6 +235,13 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
+	// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
+	math::mat4 viewRotation = iCamera.getView();
+	viewRotation(0, 3) = 0.0f;
+	viewRotation(1, 3) = 0.0f;
+	viewRotation(2, 3) = 0.0f;
+	m_inverseViewRotation = inverse(iCamera.getProjection() * viewRotation);
+
 	renderer::Renderer2D::resetStats();
 	renderer::Renderer2D::beginScene(iCamera);
 	render();
@@ -236,6 +250,17 @@ void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, con
 
 void Scene::render() {
 	OWL_PROFILE_FUNCTION()
+
+	// Draw background (only the first entity with this component)
+	if (const auto bgView = registry.view<component::BackgroundTexture>(); !bgView.empty()) {
+		const auto& bg = bgView.get<component::BackgroundTexture>(bgView.front());
+		const int mode = bg.mode == component::BackgroundTexture::Mode::Skybox ? 3 : static_cast<int>(bg.type);
+		renderer::BackgroundRenderer::drawBackground({.mode = mode,
+													  .color = bg.color,
+													  .topColor = bg.topColor,
+													  .inverseViewRotation = m_inverseViewRotation,
+													  .texture = bg.texture});
+	}
 
 	// Draw sprites
 	for (const auto group = registry.group<component::Transform>(entt::get<component::SpriteRenderer>);
@@ -377,5 +402,10 @@ OWL_API void Scene::onComponentAdded<component::Trigger>([[maybe_unused]] const 
 template<>
 OWL_API void Scene::onComponentAdded<component::EntityLink>([[maybe_unused]] const Entity& iEntity,
 															[[maybe_unused]] component::EntityLink& ioComponent) {}
+
+template<>
+OWL_API void
+Scene::onComponentAdded<component::BackgroundTexture>([[maybe_unused]] const Entity& iEntity,
+													  [[maybe_unused]] component::BackgroundTexture& ioComponent) {}
 
 }// namespace owl::scene

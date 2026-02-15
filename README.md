@@ -114,15 +114,13 @@ and publish the engine as a package on the configured repository of DepManager.
         * [ ] menu edition
         * [ ] Node editing
 * [ ] v0.0.2
-    * [ ] Developers
-        * [ ] Public Engine projects should be 3rd party independent
-            * [ ] Remove EnTT public dependency
+    * [X] Developers
+        * [X] Public Engine projects should be 3rd party independent
             * [X] Remove fmt public dependency
-            * [ ] Remove ImGui public dependency
         * [X] Reduce needed public binaries
             * [X] Work on 3rd party builds for dependencies reduction (more static link)
-    * [ ] graphics
-        * [ ] backgrounds/skyboxes
+    * [X] graphics
+        * [X] backgrounds/skyboxes
     * [ ] Misc
         * [ ] Pausing games
         * [ ] General settings management
