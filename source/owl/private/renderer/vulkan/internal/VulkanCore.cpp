@@ -59,8 +59,7 @@ VkDebugUtilsMessengerCreateInfoEXT g_DebugUtilsMessagerCi{
 		.messageSeverity =
 				VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
 		.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-					   VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
-					   VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT,
+					   VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
 		.pfnUserCallback = debugUtilsMessageCallback,
 		.pUserData = nullptr};
 
@@ -246,6 +245,13 @@ void VulkanCore::createLogicalDevice() {
 	if (m_hasValidation)
 		layerNames.emplace_back("VK_LAYER_KHRONOS_validation");
 	const std::vector extensionNames = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+	VkPhysicalDeviceVulkan13Features features13{};
+	features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	features13.shaderDemoteToHelperInvocation = VK_TRUE;
+	VkPhysicalDeviceVulkan12Features features12{};
+	features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+	features12.pNext = &features13;
+	features12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 	constexpr VkPhysicalDeviceFeatures features = {.robustBufferAccess = VK_FALSE,
 												   .fullDrawIndexUint32 = VK_FALSE,
 												   .imageCubeArray = VK_FALSE,
@@ -302,7 +308,7 @@ void VulkanCore::createLogicalDevice() {
 												   .variableMultisampleRate = VK_FALSE,
 												   .inheritedQueries = VK_FALSE};
 	const VkDeviceCreateInfo deviceCi{.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-									  .pNext = nullptr,
+									  .pNext = &features12,
 									  .flags = {},
 									  .queueCreateInfoCount = static_cast<uint32_t>(deviceQueuesCi.size()),
 									  .pQueueCreateInfos = deviceQueuesCi.data(),

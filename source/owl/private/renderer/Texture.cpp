@@ -121,8 +121,21 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 	const auto val = iTextureSerializedName.substr(4);
 	if (key == "emp:")
 		return create(Specification{.size = {0, 0}, .format = ImageFormat::Rgb8});
-	if (key == "nam:")
-		return create(val);
+	if (key == "nam:") {
+		// Resolve the asset name through registered asset directories.
+		if (core::Application::instanced()) {
+			const std::filesystem::path name(val);
+			for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+				if (const std::filesystem::path filePath = assetsPath / name; std::filesystem::exists(filePath)) {
+					auto texture = create(filePath);
+					if (texture != nullptr)
+						texture->m_name = val;
+					return texture;
+				}
+			}
+		}
+		return create(std::filesystem::path(val));
+	}
 	if (key == "pat:")
 		return create(std::filesystem::path(val));
 	if (key == "siz:") {
