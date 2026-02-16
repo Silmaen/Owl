@@ -36,6 +36,8 @@ void Button::onRenderBase() const {
 	if (action) {
 		m_data.onClick();
 	}
+	if (!m_data.tooltip.empty() && ImGui::IsItemHovered())
+		ImGui::SetTooltip("%s", m_data.tooltip.c_str());
 	if (selectedRot) {
 		ImGui::PopStyleColor();
 	}

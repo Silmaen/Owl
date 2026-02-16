@@ -21,6 +21,7 @@
 #include "Text.h"
 #include "Transform.h"
 #include "Trigger.h"
+#include "Visibility.h"
 
 namespace owl::scene::component {
 
@@ -34,7 +35,7 @@ concept isComponent = std::is_same_v<Component, BackgroundTexture> || std::is_sa
 					  std::is_same_v<Component, PhysicBody> || std::is_same_v<Component, Player> ||
 					  std::is_same_v<Component, SpriteRenderer> || std::is_same_v<Component, Tag> ||
 					  std::is_same_v<Component, Text> || std::is_same_v<Component, Transform> ||
-					  std::is_same_v<Component, Trigger>;
+					  std::is_same_v<Component, Trigger> || std::is_same_v<Component, Visibility>;
 
 /**
  * @brief Concept that type has a name() method.
@@ -69,14 +70,14 @@ concept isDeserializableComponent =
  * @note All except ID and Tag.
  */
 using CopiableComponents = std::tuple<Transform, Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody, Player,
-									  Trigger, EntityLink, BackgroundTexture>;
+									  Trigger, EntityLink, BackgroundTexture, Visibility>;
 
 /**
  * @brief List all serializable components.
  * @note All except ID which is serialized directly in the entity.
  */
 using SerializableComponents = std::tuple<Tag, Transform, Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody,
-										  Player, Trigger, EntityLink, BackgroundTexture>;
+										  Player, Trigger, EntityLink, BackgroundTexture, Visibility>;
 
 /**
  * @brief List all optional components.

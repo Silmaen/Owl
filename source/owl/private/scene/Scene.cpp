@@ -101,6 +101,7 @@ auto Scene::createEntityWithUUID(const core::UUID iUuid, const std::string& iNam
 	id = iUuid;
 	auto& [tag] = entity.addComponent<component::Tag>();
 	tag = iName.empty() ? "Entity" : iName;
+	entity.addComponent<component::Visibility>();
 	return entity;
 }
 
@@ -322,18 +323,28 @@ void Scene::render() {
 
 	// Draw background (only the first entity with this component)
 	if (const auto bgView = registry.view<component::BackgroundTexture>(); !bgView.empty()) {
-		const auto& bg = bgView.get<component::BackgroundTexture>(bgView.front());
-		const int mode = bg.mode == component::BackgroundTexture::Mode::Skybox ? 3 : static_cast<int>(bg.type);
-		renderer::BackgroundRenderer::drawBackground({.mode = mode,
-													  .color = bg.color,
-													  .topColor = bg.topColor,
-													  .inverseViewRotation = m_inverseViewRotation,
-													  .texture = bg.texture});
+		const auto bgEntity = bgView.front();
+		const auto* vis = registry.try_get<component::Visibility>(bgEntity);
+		const bool shouldRender = !vis || ((status == Status::Editing) ? vis->editorVisible : vis->gameVisible);
+		if (shouldRender) {
+			const auto& bg = bgView.get<component::BackgroundTexture>(bgEntity);
+			const int mode = bg.mode == component::BackgroundTexture::Mode::Skybox ? 3 : static_cast<int>(bg.type);
+			renderer::BackgroundRenderer::drawBackground({.mode = mode,
+														  .color = bg.color,
+														  .topColor = bg.topColor,
+														  .inverseViewRotation = m_inverseViewRotation,
+														  .texture = bg.texture});
+		}
 	}
 
 	// Draw sprites
 	for (const auto group = registry.group<component::Transform>(entt::get<component::SpriteRenderer>);
 		 auto entity: group) {
+		if (const auto* vis = registry.try_get<component::Visibility>(entity)) {
+			const bool shouldRender = (status == Status::Editing) ? vis->editorVisible : vis->gameVisible;
+			if (!shouldRender)
+				continue;
+		}
 		auto [transform, sprite] = group.get<component::Transform, component::SpriteRenderer>(entity);
 		renderer::Renderer2D::drawQuad({.transform = transform.transform,
 										.color = sprite.color,
@@ -343,6 +354,11 @@ void Scene::render() {
 	}
 	// Draw circles
 	for (const auto view = registry.view<component::Transform, component::CircleRenderer>(); auto entity: view) {
+		if (const auto* vis = registry.try_get<component::Visibility>(entity)) {
+			const bool shouldRender = (status == Status::Editing) ? vis->editorVisible : vis->gameVisible;
+			if (!shouldRender)
+				continue;
+		}
 		auto [transform, circle] = view.get<component::Transform, component::CircleRenderer>(entity);
 		renderer::Renderer2D::drawCircle({.transform = transform.transform,
 										  .color = circle.color,
@@ -352,6 +368,11 @@ void Scene::render() {
 	}
 	// Draw text
 	for (const auto view = registry.view<component::Transform, component::Text>(); auto entity: view) {
+		if (const auto* vis = registry.try_get<component::Visibility>(entity)) {
+			const bool shouldRender = (status == Status::Editing) ? vis->editorVisible : vis->gameVisible;
+			if (!shouldRender)
+				continue;
+		}
 		auto [transform, text] = view.get<component::Transform, component::Text>(entity);
 		renderer::Renderer2D::drawString({.transform = transform.transform,
 										  .text = text.text,
@@ -476,5 +497,9 @@ template<>
 OWL_API void
 Scene::onComponentAdded<component::BackgroundTexture>([[maybe_unused]] const Entity& iEntity,
 													  [[maybe_unused]] component::BackgroundTexture& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Visibility>([[maybe_unused]] const Entity& iEntity,
+															[[maybe_unused]] component::Visibility& ioComponent) {}
 
 }// namespace owl::scene

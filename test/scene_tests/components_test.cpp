@@ -13,6 +13,7 @@ TEST(SceneComponent, key) {
 	EXPECT_EQ(owl::scene::component::Text::key(), "TextRenderer");
 	EXPECT_EQ(owl::scene::component::Transform::key(), "Transform");
 	EXPECT_EQ(owl::scene::component::Trigger::key(), "Trigger");
+	EXPECT_EQ(owl::scene::component::Visibility::key(), "Visibility");
 }
 
 TEST(SceneComponent, name) {
@@ -25,4 +26,5 @@ TEST(SceneComponent, name) {
 	EXPECT_EQ(owl::scene::component::Text::name(), "Text Renderer");
 	EXPECT_EQ(owl::scene::component::Transform::name(), "Transform");
 	EXPECT_EQ(owl::scene::component::Trigger::name(), "Trigger");
+	EXPECT_EQ(owl::scene::component::Visibility::name(), "Visibility");
 }

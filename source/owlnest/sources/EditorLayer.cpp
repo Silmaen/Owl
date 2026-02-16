@@ -23,6 +23,10 @@ void loadIcons() {
 	textureLibrary.load("icons/PauseButton");
 	textureLibrary.load("icons/StopButton");
 	textureLibrary.load("icons/StepButton");
+	textureLibrary.load("icons/visibility/camera_on");
+	textureLibrary.load("icons/visibility/camera_off");
+	textureLibrary.load("icons/visibility/eye_open");
+	textureLibrary.load("icons/visibility/eye_closed");
 }
 void loadSounds() {
 	auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
@@ -57,7 +61,8 @@ void EditorLayer::onAttach() {
 								else
 									m_viewport.setGuizmoType(gui::Guizmo::Type::Translation);
 							},
-							{32, 32}});
+							{32, 32},
+							"Translation (W)"});
 	m_controlBar.addButton({{.id = "##ctrlRotation", .visible = true},
 							"icons/control/ctrl_rotation",
 							"T",
@@ -68,7 +73,8 @@ void EditorLayer::onAttach() {
 								else
 									m_viewport.setGuizmoType(gui::Guizmo::Type::Rotation);
 							},
-							{32, 32}});
+							{32, 32},
+							"Rotation (E)"});
 	m_controlBar.addButton({{.id = "##ctrlScale", .visible = true},
 							"icons/control/ctrl_scale",
 							"T",
@@ -79,7 +85,8 @@ void EditorLayer::onAttach() {
 								else
 									m_viewport.setGuizmoType(gui::Guizmo::Type::Scale);
 							},
-							{32, 32}});
+							{32, 32},
+							"Scale (R)"});
 
 	m_contentBrowser.attach();
 	newScene();
@@ -266,6 +273,8 @@ void EditorLayer::renderToolbar() {
 			if (ImGui::Button("play", {buttonImageSize, buttonImageSize}))
 				onScenePlay();
 		}
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("Play");
 	} else {
 		// Play or Pause mode: two buttons (Pause/Resume + Stop)
 		const shared<renderer::Texture> pauseResumeIcon = m_state == State::Play
@@ -287,6 +296,8 @@ void EditorLayer::renderToolbar() {
 					onSceneResume();
 			}
 		}
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip(m_state == State::Play ? "Pause" : "Resume");
 
 		ImGui::SameLine();
 
@@ -298,6 +309,8 @@ void EditorLayer::renderToolbar() {
 			if (ImGui::Button("stop", {buttonImageSize, buttonImageSize}))
 				onSceneStop();
 		}
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("Stop");
 
 		if (m_state == State::Pause) {
 			ImGui::SameLine();
@@ -309,6 +322,8 @@ void EditorLayer::renderToolbar() {
 				if (ImGui::Button("step", {buttonImageSize, buttonImageSize}))
 					onSceneStep();
 			}
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("Step");
 		}
 	}
 	ImGui::PopStyleVar(2);

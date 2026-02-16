@@ -41,6 +41,11 @@ void deserializeEntity(const shared<Scene>& ioScene, const core::Serializer& iNo
 		auto& comp = entity.getComponent<component::Transform>();
 		comp.deserialize(sNode);
 	}
+	if (sNode.getImpl()->node.reset(iNode.getImpl()->node["Visibility"]); sNode.getImpl()->node) {
+		// Entities always have visibility
+		auto& comp = entity.getComponent<component::Visibility>();
+		comp.deserialize(sNode);
+	}
 	deserializeComponents(entity, iNode, component::OptionalComponents{});
 }
 

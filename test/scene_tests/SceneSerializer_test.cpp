@@ -62,6 +62,35 @@ TEST(SceneSerializer, SaveLoadFULL) {
 	owl::core::Log::invalidate();
 }
 
+TEST(SceneSerializer, VisibilityRoundTrip) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	const auto sc = owl::mkShared<Scene>();
+	auto ent = sc->createEntityWithUUID(42, "visTest");
+	auto& vis = ent.getComponent<component::Visibility>();
+	vis.gameVisible = false;
+	vis.editorVisible = false;
+
+	const SceneSerializer saver(sc);
+	const auto fs = std::filesystem::temp_directory_path() / "tempVisibility.yml";
+	saver.serialize(fs);
+
+	ASSERT_TRUE(exists(fs));
+	const auto sc2 = owl::mkShared<Scene>();
+	const SceneSerializer loader(sc2);
+	EXPECT_TRUE(loader.deserialize(fs));
+
+	EXPECT_EQ(sc2->getEntityCount(), sc->getEntityCount());
+	const auto entities = sc2->getAllEntities();
+	ASSERT_EQ(entities.size(), 1u);
+	const auto& vis2 = entities[0].getComponent<component::Visibility>();
+	EXPECT_FALSE(vis2.gameVisible);// persisted
+	EXPECT_TRUE(vis2.editorVisible);// reset to true (not serialized)
+
+	remove(fs);
+	EXPECT_FALSE(exists(fs));
+	owl::core::Log::invalidate();
+}
+
 TEST(SceneSerializer, badScene) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto fs = std::filesystem::temp_directory_path() / "tempSave.yml";

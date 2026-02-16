@@ -254,6 +254,8 @@ void DroneLayer::renderToolbar() {
 			m_mode = DisplayMode::Settings;
 		}
 	}
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Settings");
 	posX += size + 2.f * padding;
 	ImGui::SetCursorPos(ImVec2(posX, padding));
 	if (const auto tex = gui::imTexture(textureLib.get("icons/gauges")); tex.has_value()) {
@@ -265,6 +267,8 @@ void DroneLayer::renderToolbar() {
 			m_mode = DisplayMode::Gauges;
 		}
 	}
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Gauges");
 
 
 	const shared<renderer::Texture> iconCc =
@@ -279,6 +283,8 @@ void DroneLayer::renderToolbar() {
 			toggleConnect();
 		}
 	}
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip(isConnected() ? "Disconnect" : "Connect");
 
 	ImGui::SetCursorPos(ImVec2((ImGui::GetWindowContentRegionMax().x) - (size + padding), padding));
 	if (const auto tex = gui::imTexture(textureLib.get("icons/exit")); tex.has_value()) {
@@ -290,6 +296,8 @@ void DroneLayer::renderToolbar() {
 			core::Application::get().close();
 		}
 	}
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Exit");
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
 	ImGui::End();
