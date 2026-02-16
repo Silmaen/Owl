@@ -140,8 +140,17 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_viewport.onRender();
 	m_parameters.onImGuiRender();
 	//=============================================================
+	{
+		const auto& lower = m_viewport.getLowerBound();
+		const auto& upper = m_viewport.getUpperBound();
+		const float centerX = (lower.x() + upper.x()) * 0.5f;
+		ImGui::SetNextWindowPos({centerX, lower.y() + 8.0f}, ImGuiCond_Always, {0.5f, 0.0f});
+	}
 	renderToolbar();
 	if (m_state == State::Edit) {
+		const auto& upper = m_viewport.getUpperBound();
+		const auto& lower = m_viewport.getLowerBound();
+		ImGui::SetNextWindowPos({upper.x() - 8.0f, lower.y() + 8.0f}, ImGuiCond_Always, {1.0f, 0.0f});
 		m_controlBar.onRender();
 	}
 }
