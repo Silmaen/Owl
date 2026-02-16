@@ -77,6 +77,15 @@ public:
 	[[nodiscard]] auto getSize() const -> const math::vec2ui& { return m_size; }
 
 	/**
+	 * @brief Get the lower bound of the panel.
+	 */
+	[[nodiscard]] auto getLowerBound() const -> const math::vec2& { return m_lower; }
+	/**
+	 * @brief Get the upper bound of the panel.
+	 */
+	[[nodiscard]] auto getUpperBound() const -> const math::vec2& { return m_upper; }
+
+	/**
 	 * @brief If the panel is hovered.
 	 */
 	[[nodiscard]] auto isHovered() const -> bool { return m_hovered; }

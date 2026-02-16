@@ -350,22 +350,28 @@ void VulkanHandler::beginFrame() {
 	m_currentFramebuffer->resetBatch();
 	vkWaitForFences(core.getLogicalDevice(), 1, m_currentFramebuffer->getCurrentFence(), VK_TRUE, UINT64_MAX);
 	uint32_t imageIndex = 0;
-	if (const VkResult result = vkAcquireNextImageKHR(
+	VkResult result = vkAcquireNextImageKHR(
+			core.getLogicalDevice(), m_currentFramebuffer->getSwapChain(), UINT64_MAX,
+			m_currentFramebuffer->getCurrentImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		m_currentFramebuffer->resize(toSize(core.getCurrentExtent()));
+		m_resize = false;
+		result = vkAcquireNextImageKHR(
 				core.getLogicalDevice(), m_currentFramebuffer->getSwapChain(), UINT64_MAX,
 				m_currentFramebuffer->getCurrentImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
-		result != VK_SUCCESS) {
-		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-			m_currentFramebuffer->resize(toSize(core.getCurrentExtent()));
-			return;
-		}
-		if (result != VK_SUBOPTIMAL_KHR) {
-			OWL_CORE_ERROR("Vulkan fb [{}]: failed to acquire next image ({}).", m_currentFramebuffer->getName(),
-						   resultString(result))
-			m_state = State::ErrorAcquiringNextImage;
-			return;
-		}
-		vkResetFences(core.getLogicalDevice(), 1, m_currentFramebuffer->getCurrentFence());
 	}
+	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+		m_resize = true;
+		return;
+	}
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+		OWL_CORE_ERROR("Vulkan fb [{}]: failed to acquire next image ({}).", m_currentFramebuffer->getName(),
+					   resultString(result))
+		m_state = State::ErrorAcquiringNextImage;
+		return;
+	}
+	if (result == VK_SUBOPTIMAL_KHR)
+		vkResetFences(core.getLogicalDevice(), 1, m_currentFramebuffer->getCurrentFence());
 	m_currentFramebuffer->setCurrentImage(imageIndex);
 }
 
@@ -453,12 +459,16 @@ void VulkanHandler::endBatch() {
 		return;
 	}
 	const std::vector<VkPipelineStageFlags> waitStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-	const std::vector<VkSemaphore> signalSemaphores = {m_currentFramebuffer->getCurrentFinishedSemaphore()};
+	const bool skipSemaphores = m_resize && m_currentFramebuffer->isMainTarget();
+	std::vector<VkSemaphore> signalSemaphores;
+	if (!skipSemaphores)
+		signalSemaphores.push_back(m_currentFramebuffer->getCurrentFinishedSemaphore());
 	std::vector<VkSemaphore> waiter;
 
-	if (m_currentFramebuffer->isMainTarget() && m_currentFramebuffer->isFirstBatch())
-		waiter.push_back(m_currentFramebuffer->getCurrentImageAvailableSemaphore());
-	else {
+	if (m_currentFramebuffer->isMainTarget() && m_currentFramebuffer->isFirstBatch()) {
+		if (!skipSemaphores)
+			waiter.push_back(m_currentFramebuffer->getCurrentImageAvailableSemaphore());
+	} else {
 		if (m_currentFramebuffer->hasBeenCalled())
 			waiter.push_back(m_currentFramebuffer->getCurrentFinishedSemaphore());
 	}
@@ -490,6 +500,14 @@ void VulkanHandler::swapFrame() {
 		return;
 	if (inFrame)
 		endFrame();
+	// Handle pending resize without presenting — the finished semaphore may not have been signaled.
+	if (m_resize) {
+		m_resize = false;
+		const auto& core = VulkanCore::get();
+		m_currentFramebuffer->resize(toSize(core.getCurrentExtent()));
+		m_currentFramebuffer->nextFrame();
+		return;
+	}
 	std::array waiter = {m_currentFramebuffer->getCurrentFinishedSemaphore()};
 	const std::array swapChains = {m_currentFramebuffer->getSwapChain()};
 
