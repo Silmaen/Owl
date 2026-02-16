@@ -20,7 +20,9 @@ void loadIcons() {
 	textureLibrary.load("icons/control/ctrl_scale");
 	textureLibrary.load("icons/control/ctrl_translation");
 	textureLibrary.load("icons/PlayButton");
+	textureLibrary.load("icons/PauseButton");
 	textureLibrary.load("icons/StopButton");
+	textureLibrary.load("icons/StepButton");
 }
 void loadSounds() {
 	auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
@@ -139,6 +141,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_contentBrowser.onImGuiRender();
 	m_viewport.onRender();
 	m_parameters.onImGuiRender();
+	m_logPanel.onImGuiRender();
 	//=============================================================
 	{
 		const auto& lower = m_viewport.getLowerBound();
@@ -226,10 +229,23 @@ void EditorLayer::renderMenu() {
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 void EditorLayer::renderToolbar() {
+	constexpr float buttonImageSize = 32.0f;
+	const int buttonCount = (m_state == State::Edit) ? 1 : (m_state == State::Pause ? 3 : 2);
+
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+
+	// Compute toolbar window size to exactly fit the buttons
+	const auto& style = ImGui::GetStyle();
+	const float buttonWidgetWidth = buttonImageSize + style.FramePadding.x * 2.0f;
+	const float buttonWidgetHeight = buttonImageSize + style.FramePadding.y * 2.0f;
+	const float toolbarWidth = static_cast<float>(buttonCount) * buttonWidgetWidth +
+							   static_cast<float>(buttonCount - 1) * style.ItemSpacing.x;
+	const float toolbarHeight = buttonWidgetHeight + 4.0f;// 4 = 2 * windowPaddingY
+	ImGui::SetNextWindowSize({toolbarWidth, toolbarHeight});
+
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-	const auto& colors = ImGui::GetStyle().Colors;
+	const auto& colors = style.Colors;
 	const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
 	const auto& buttonActive = colors[ImGuiCol_ButtonActive];
@@ -238,25 +254,61 @@ void EditorLayer::renderToolbar() {
 	ImGui::Begin("##toolbar", nullptr,
 				 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-	const float size = ImGui::GetWindowHeight() - 4.0f;
 	auto& textureLibrary = renderer::Renderer::getTextureLibrary();
-	const shared<renderer::Texture> icon =
-			m_state == State::Edit ? textureLibrary.get("icons/PlayButton") : textureLibrary.get("icons/StopButton");
-	ImGui::SetCursorPosX((ImGui::GetWindowContentRegionMax().x * 0.5f) - (size * 0.5f));
-	if (const auto tex = gui::imTexture(icon); tex.has_value()) {
-		if (ImGui::ImageButton("btn_start_stop", tex.value(), {size, size})) {
-			if (m_state == State::Edit)
+
+	if (m_state == State::Edit) {
+		// Edit mode: single Play button centered
+		const shared<renderer::Texture> icon = textureLibrary.get("icons/PlayButton");
+		if (const auto tex = gui::imTexture(icon); tex.has_value()) {
+			if (ImGui::ImageButton("btn_play", tex.value(), {buttonImageSize, buttonImageSize}))
 				onScenePlay();
-			else if (m_state == State::Play)
-				onSceneStop();
+		} else {
+			if (ImGui::Button("play", {buttonImageSize, buttonImageSize}))
+				onScenePlay();
 		}
 	} else {
-		if (m_state == State::Edit) {
-			if (ImGui::Button("play", {size, size}))
-				onScenePlay();
-		} else if (m_state == State::Play) {
-			if (ImGui::Button("stop", {size, size}))
+		// Play or Pause mode: two buttons (Pause/Resume + Stop)
+		const shared<renderer::Texture> pauseResumeIcon = m_state == State::Play
+																  ? textureLibrary.get("icons/PauseButton")
+																  : textureLibrary.get("icons/PlayButton");
+		if (const auto tex = gui::imTexture(pauseResumeIcon); tex.has_value()) {
+			if (ImGui::ImageButton("btn_pause_resume", tex.value(), {buttonImageSize, buttonImageSize})) {
+				if (m_state == State::Play)
+					onScenePause();
+				else
+					onSceneResume();
+			}
+		} else {
+			if (m_state == State::Play) {
+				if (ImGui::Button("pause", {buttonImageSize, buttonImageSize}))
+					onScenePause();
+			} else {
+				if (ImGui::Button("resume", {buttonImageSize, buttonImageSize}))
+					onSceneResume();
+			}
+		}
+
+		ImGui::SameLine();
+
+		const shared<renderer::Texture> stopIcon = textureLibrary.get("icons/StopButton");
+		if (const auto tex = gui::imTexture(stopIcon); tex.has_value()) {
+			if (ImGui::ImageButton("btn_stop", tex.value(), {buttonImageSize, buttonImageSize}))
 				onSceneStop();
+		} else {
+			if (ImGui::Button("stop", {buttonImageSize, buttonImageSize}))
+				onSceneStop();
+		}
+
+		if (m_state == State::Pause) {
+			ImGui::SameLine();
+			const shared<renderer::Texture> stepIcon = textureLibrary.get("icons/StepButton");
+			if (const auto tex = gui::imTexture(stepIcon); tex.has_value()) {
+				if (ImGui::ImageButton("btn_step", tex.value(), {buttonImageSize, buttonImageSize}))
+					onSceneStep();
+			} else {
+				if (ImGui::Button("step", {buttonImageSize, buttonImageSize}))
+					onSceneStep();
+			}
 		}
 	}
 	ImGui::PopStyleVar(2);
@@ -385,6 +437,10 @@ void EditorLayer::onScenePlay() {
 	}
 }
 
+void EditorLayer::onScenePause() { m_state = State::Pause; }
+
+void EditorLayer::onSceneResume() { m_state = State::Play; }
+
 void EditorLayer::onSceneStop() {
 	m_state = State::Edit;
 
@@ -392,6 +448,16 @@ void EditorLayer::onSceneStop() {
 	m_activeScene = m_editorScene;
 
 	m_sceneHierarchy.setContext(m_activeScene);
+}
+
+void EditorLayer::onSceneStep() { m_stepRequested = true; }
+
+auto EditorLayer::consumeStepRequest() -> bool {
+	if (m_stepRequested) {
+		m_stepRequested = false;
+		return true;
+	}
+	return false;
 }
 
 void EditorLayer::onDuplicateEntity() const {

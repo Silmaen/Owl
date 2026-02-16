@@ -83,6 +83,11 @@ public:
 	void onUpdateRuntime(const core::Timestep& iTimeStep);
 
 	/**
+	 * @brief Render the runtime scene without simulation (for pause mode).
+	 */
+	void onRenderRuntime();
+
+	/**
 	 * @brief Update actions in the editor, external camera, no gameplay.
 	 * @param[in] iTimeStep The time step.
 	 * @param[in] iCamera The editor camera.

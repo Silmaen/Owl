@@ -130,6 +130,10 @@ and publish the engine as a package on the configured repository of DepManager.
         * [ ] asset packing
             * [ ] support for unpack in game runner
         * [ ] Add view of level links
+        * [ ] Entity management
+            * [ ] add shortcut to add/remove entities
+                * [ ] deletion confirmation
+            * [ ] Entities can have different display in editor and in game
 * [ ] v0.0.2 -- release expected for 2026-03-01
     * [X] Developers
         * [X] Public Engine projects should be 3rd party independent
@@ -138,12 +142,18 @@ and publish the engine as a package on the configured repository of DepManager.
             * [X] Work on 3rd party builds for dependencies reduction (more static link)
     * [X] graphics
         * [X] backgrounds/skyboxes
-    * [ ] Misc
-        * [ ] Pausing games
+    * [X] Misc
+        * [X] Pausing games
+            * [X] possibility to pause/unpause the game
+            * [X] possibility to step the game frame by frame when paused
         * [X] General settings management
     * [ ] Gameplay
         * [ ] Possibility to jump between scenes.
     * [X] Game designer (Owl Map)
         * [X] Global game settings
+        * [X] Add frame with the logs.
+        * [ ] Entity visibility
+            * [ ] In game visibility
+            * [ ] In editor visibility
 * [X] v0.0.1 -- 2025-02-06 -- First basic Release
     * Minimal Vital: possibility to run very simple games defined in scenes

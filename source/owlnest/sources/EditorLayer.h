@@ -12,6 +12,7 @@
 
 #include "EditorSettings.h"
 #include "panel/ContentBrowser.h"
+#include "panel/LogPanel.h"
 #include "panel/Parameters.h"
 #include "panel/SceneHierarchy.h"
 #include "panel/Viewport.h"
@@ -41,7 +42,7 @@ public:
 	void onEvent(event::Event& ioEvent) override;
 	void onImGuiRender(const core::Timestep& iTimeStep) override;
 
-	enum struct State : uint8_t { Edit, Play };
+	enum struct State : uint8_t { Edit, Play, Pause };
 	[[nodiscard]] auto getState() const -> const State& { return m_state; }
 
 	void newScene();
@@ -55,6 +56,12 @@ public:
 	auto getSelectedEntity() const -> scene::Entity;
 	void setSelectedEntity(scene::Entity iEntity);
 
+	/**
+	 * @brief Consume a pending step-frame request.
+	 * @return True if a step was requested (and is now consumed).
+	 */
+	auto consumeStepRequest() -> bool;
+
 private:
 	void renderStats(const core::Timestep& iTimeStep);
 	void renderMenu();
@@ -63,7 +70,10 @@ private:
 	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
 	auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
 	void onScenePlay();
+	void onScenePause();
+	void onSceneResume();
 	void onSceneStop();
+	void onSceneStep();
 	void onDuplicateEntity() const;
 
 	gui::widgets::ButtonBar m_controlBar;
@@ -71,6 +81,7 @@ private:
 	input::CameraOrthoController m_cameraController;
 
 	State m_state = State::Edit;
+	bool m_stepRequested = false;
 
 	shared<scene::Scene> m_activeScene;
 	shared<scene::Scene> m_editorScene;
@@ -87,5 +98,6 @@ private:
 	panel::ContentBrowser m_contentBrowser;
 	panel::Viewport m_viewport;
 	panel::Parameters m_parameters;
+	panel::LogPanel m_logPanel;
 };
 }// namespace owl::nest

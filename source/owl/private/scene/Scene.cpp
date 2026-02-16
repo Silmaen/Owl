@@ -232,6 +232,75 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 	}
 }
 
+void Scene::onRenderRuntime() {
+	OWL_PROFILE_FUNCTION()
+	// find camera
+	renderer::Camera* mainCamera = nullptr;
+	math::mat4 cameraTransform;
+	math::Transform camTransform;
+	for (const auto view = registry.view<component::Transform, component::Camera>(); const auto entity: view) {
+		auto [transform, camera] = view.get<component::Transform, component::Camera>(entity);
+		if (camera.primary) {
+			mainCamera = &camera.camera;
+			cameraTransform = transform.transform();
+			camTransform = transform.transform();
+			break;
+		}
+	}
+
+	if (status == Status::Victory) {
+		if (mainCamera != nullptr) {
+			const auto font = core::Application::get().getFontLibrary().getDefaultFont();
+			math::Transform textTransform = camTransform;
+			textTransform.translation().z() = 0;
+			textTransform.scale().x() = 3.f;
+			mainCamera->setTransform(cameraTransform);
+			renderer::Renderer2D::resetStats();
+			renderer::Renderer2D::beginScene(*mainCamera);
+			renderer::Renderer2D::drawString({.transform = textTransform,
+											  .text = "Victory!",
+											  .font = font,
+											  .color = {1, 1, 1, 1},
+											  .entityId = 0});
+			renderer::Renderer2D::endScene();
+		}
+		return;
+	}
+	if (status == Status::Death) {
+		if (mainCamera != nullptr) {
+			const auto font = core::Application::get().getFontLibrary().getDefaultFont();
+			math::Transform textTransform = camTransform;
+			textTransform.translation().z() = 0;
+			textTransform.scale().x() = 3.f;
+			mainCamera->setTransform(cameraTransform);
+			renderer::Renderer2D::resetStats();
+			renderer::Renderer2D::beginScene(*mainCamera);
+			renderer::Renderer2D::drawString({.transform = textTransform,
+											  .text = "You loose!",
+											  .font = font,
+											  .color = {1, 1, 1, 1},
+											  .entityId = 0});
+			renderer::Renderer2D::endScene();
+		}
+		return;
+	}
+
+	// Render 2D
+	if (mainCamera != nullptr) {
+		mainCamera->setTransform(cameraTransform);
+		// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
+		math::mat4 viewRotation = mainCamera->getView();
+		viewRotation(0, 3) = 0.0f;
+		viewRotation(1, 3) = 0.0f;
+		viewRotation(2, 3) = 0.0f;
+		m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
+		renderer::Renderer2D::resetStats();
+		renderer::Renderer2D::beginScene(*mainCamera);
+		render();
+		renderer::Renderer2D::endScene();
+	}
+}
+
 void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
