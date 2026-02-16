@@ -10,7 +10,9 @@
 
 #include <owl.h>
 
+#include "EditorSettings.h"
 #include "panel/ContentBrowser.h"
+#include "panel/Parameters.h"
 #include "panel/SceneHierarchy.h"
 #include "panel/Viewport.h"
 
@@ -75,8 +77,8 @@ private:
 
 	std::filesystem::path m_currentScenePath;
 
-	// stats
-	bool m_showStats = true;
+	// settings
+	EditorSettings m_settings;
 	size_t m_lastAllocCalls = 0;
 	size_t m_lastDeallocCalls = 0;
 
@@ -84,5 +86,6 @@ private:
 	panel::SceneHierarchy m_sceneHierarchy;
 	panel::ContentBrowser m_contentBrowser;
 	panel::Viewport m_viewport;
+	panel::Parameters m_parameters;
 };
 }// namespace owl::nest

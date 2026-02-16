@@ -51,7 +51,8 @@ target_import_so_files(${OWL_PROJECT})
 owl_target_link_libraries(${OWL_PROJECT} PRIVATE magic_enum REQUIRED ${THIRD_PARTY_RELEASE})
 
 # yaml
-owl_target_link_libraries(${OWL_PROJECT} PRIVATE yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
+find_package(yaml-cpp REQUIRED)
+target_link_libraries(${OWL_PROJECT} PRIVATE yaml-cpp::yaml-cpp)
 
 # ----==== third party ====----
 
@@ -63,7 +64,7 @@ if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
 endif ()
 
 add_custom_command(TARGET ${OWL_PROJECT} PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/imgui.ini" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/imgui.ini"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/imgui.ini" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/OwlNest_imgui.ini"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/theme.yml" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/theme.yml"
         VERBATIM)
 

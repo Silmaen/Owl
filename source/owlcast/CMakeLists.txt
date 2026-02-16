@@ -39,7 +39,7 @@ if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
 endif ()
 
 add_custom_command(TARGET ${OWL_PROJECT} PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/imgui.ini" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/imgui.ini"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/imgui.ini" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/OwlCast_imgui.ini"
         VERBATIM)
 
 install(TARGETS ${OWL_PROJECT}

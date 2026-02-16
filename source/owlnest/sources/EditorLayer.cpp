@@ -35,6 +35,8 @@ void EditorLayer::onAttach() {
 
 	core::Application::get().enableDocking();
 
+	if (const auto f = core::Application::get().getWorkingDirectory() / "OwlNest_settings.yml"; exists(f))
+		m_settings.loadFromFile(f);
 
 	m_viewport.attach();
 	m_viewport.attachParent(this);
@@ -83,6 +85,8 @@ void EditorLayer::onAttach() {
 
 void EditorLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
+
+	m_settings.saveToFile(core::Application::get().getWorkingDirectory() / "OwlNest_settings.yml");
 
 	m_viewport.detach();
 	OWL_TRACE("EditorLayer: viewport freed.")
@@ -134,6 +138,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_sceneHierarchy.onImGuiRender();
 	m_contentBrowser.onImGuiRender();
 	m_viewport.onRender();
+	m_parameters.onImGuiRender();
 	//=============================================================
 	renderToolbar();
 	if (m_state == State::Edit) {
@@ -142,7 +147,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 }
 
 void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
-	if (!m_showStats)
+	if (!m_settings.showStats)
 		return;
 	ImGui::Begin("Stats");
 	ImGui::Text("%s", std::format("FPS: {:.2f}", iTimeStep.getFps()).c_str());
@@ -198,9 +203,11 @@ void EditorLayer::renderMenu() {
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Settings")) {
-			if (ImGui::MenuItem("Show Stats", nullptr, m_showStats)) {
-				m_showStats = !m_showStats;
+			if (ImGui::MenuItem("Show Stats", nullptr, m_settings.showStats)) {
+				m_settings.showStats = !m_settings.showStats;
 			}
+			if (ImGui::MenuItem("Parameters"))
+				m_parameters.open();
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
