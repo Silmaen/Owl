@@ -86,6 +86,11 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 					m_parent->getActiveScene()->onUpdateRuntime(iTimeStep);
 					break;
 				}
+			case EditorLayer::State::Pause:
+				{
+					m_parent->getActiveScene()->onRenderRuntime();
+					break;
+				}
 		}
 
 
@@ -133,7 +138,7 @@ void Viewport::renderOverlay() const {
 	if (m_parent == nullptr)
 		return;
 
-	if (m_parent->getState() == EditorLayer::State::Play) {
+	if (m_parent->getState() != EditorLayer::State::Edit) {
 		const scene::Entity camera = m_parent->getActiveScene()->getPrimaryCamera();
 		auto& cam = camera.getComponent<scene::component::Camera>().camera;
 		cam.setTransform(camera.getComponent<scene::component::Transform>().transform());

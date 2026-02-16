@@ -138,8 +138,8 @@ and publish the engine as a package on the configured repository of DepManager.
             * [X] Work on 3rd party builds for dependencies reduction (more static link)
     * [X] graphics
         * [X] backgrounds/skyboxes
-    * [ ] Misc
-        * [ ] Pausing games
+    * [X] Misc
+        * [X] Pausing games
         * [X] General settings management
     * [ ] Gameplay
         * [ ] Possibility to jump between scenes.

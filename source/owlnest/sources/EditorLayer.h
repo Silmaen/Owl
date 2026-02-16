@@ -41,7 +41,7 @@ public:
 	void onEvent(event::Event& ioEvent) override;
 	void onImGuiRender(const core::Timestep& iTimeStep) override;
 
-	enum struct State : uint8_t { Edit, Play };
+	enum struct State : uint8_t { Edit, Play, Pause };
 	[[nodiscard]] auto getState() const -> const State& { return m_state; }
 
 	void newScene();
@@ -63,6 +63,8 @@ private:
 	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
 	auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
 	void onScenePlay();
+	void onScenePause();
+	void onSceneResume();
 	void onSceneStop();
 	void onDuplicateEntity() const;
 
