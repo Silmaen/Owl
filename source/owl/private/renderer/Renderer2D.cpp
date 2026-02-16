@@ -10,6 +10,7 @@
 #include "renderer/Renderer2D.h"
 
 #include "core/Application.h"
+#include "renderer/BackgroundRenderer.h"
 #include "renderer/DrawData.h"
 #include "renderer/RenderCommand.h"
 #include "renderer/UniformBuffer.h"
@@ -255,11 +256,24 @@ void Renderer2D::endScene() {
 }
 
 void Renderer2D::flush() {
+	// Register background texture in our texture slots (if pending)
+	float bgTexIndex = 0.0f;
+	if (BackgroundRenderer::hasPending()) {
+		if (auto bgTex = BackgroundRenderer::getPendingTexture()) {
+			bgTexIndex = static_cast<float>(g_Data->textureSlotIndex);
+			g_Data->textureSlots[g_Data->textureSlotIndex] = bgTex;
+			g_Data->textureSlotIndex++;
+		}
+	}
+
 	// bind textures
 	RenderCommand::beginBatch();
 	RenderCommand::beginTextureLoad();
 	for (uint32_t i = 0; i < g_Data->textureSlotIndex; i++) g_Data->textureSlots[i]->bind(i);
 	RenderCommand::endTextureLoad();
+
+	// Draw background first (within the same render pass)
+	BackgroundRenderer::flushPending(bgTexIndex);
 
 	if (g_Data->quad.indexCount > 0) {
 		g_Data->drawQuad->setVertexData(

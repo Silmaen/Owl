@@ -148,7 +148,7 @@ IndexBuffer::IndexBuffer(const uint32_t* iIndices, const uint32_t iSize) : m_cou
 		OWL_CORE_WARN("Vulkan index buffer: Trying to create index buffer data after VulkanHandler release...")
 		return;
 	}
-	const VkDeviceSize bufferSize = sizeof(uint16_t) * iSize;
+	const VkDeviceSize bufferSize = sizeof(uint32_t) * iSize;
 	internal::createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
 						   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_indexBuffer, m_indexBufferMemory);
 

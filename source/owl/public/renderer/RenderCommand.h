@@ -169,6 +169,15 @@ public:
 	}
 
 	/**
+	 * @brief Enable or disable depth buffer writing.
+	 * @param[in] iEnabled True to enable depth writing, false to disable.
+	 */
+	static void setDepthMask(const bool iEnabled) {
+		if (m_renderAPI)
+			m_renderAPI->setDepthMask(iEnabled);
+	}
+
+	/**
 	 * @brief Check if the API type require initializations.
 	 * @return True if initialization required.
 	 */

@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "renderer/BackgroundRenderer.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 
@@ -34,11 +35,13 @@ void Renderer::init() {
 	}
 
 	Renderer2D::init();
+	BackgroundRenderer::init();
 
 	m_internalState = State::Running;
 }
 
 void Renderer::shutdown() {
+	BackgroundRenderer::shutdown();
 	Renderer2D::shutdown();
 	reset();
 	m_internalState = State::Stopped;

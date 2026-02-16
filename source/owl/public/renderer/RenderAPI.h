@@ -149,6 +149,12 @@ public:
 	 */
 	virtual void endFrame() {}
 
+	/**
+	 * @brief Enable or disable depth buffer writing.
+	 * @param[in] iEnabled True to enable depth writing, false to disable.
+	 */
+	virtual void setDepthMask([[maybe_unused]] bool iEnabled) {}
+
 protected:
 	/**
 	 * @brief Define the API State.

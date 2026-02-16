@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "BackgroundTexture.h"
 #include "Camera.h"
 #include "CircleRenderer.h"
 #include "EntityLink.h"
@@ -27,12 +28,13 @@ namespace owl::scene::component {
  * @brief Concept that type is a component.
  */
 template<typename Component>
-concept isComponent = std::is_same_v<Component, Camera> || std::is_same_v<Component, CircleRenderer> ||
-					  std::is_same_v<Component, EntityLink> || std::is_same_v<Component, ID> ||
-					  std::is_same_v<Component, NativeScript> || std::is_same_v<Component, PhysicBody> ||
-					  std::is_same_v<Component, Player> || std::is_same_v<Component, SpriteRenderer> ||
-					  std::is_same_v<Component, Tag> || std::is_same_v<Component, Text> ||
-					  std::is_same_v<Component, Transform> || std::is_same_v<Component, Trigger>;
+concept isComponent = std::is_same_v<Component, BackgroundTexture> || std::is_same_v<Component, Camera> ||
+					  std::is_same_v<Component, CircleRenderer> || std::is_same_v<Component, EntityLink> ||
+					  std::is_same_v<Component, ID> || std::is_same_v<Component, NativeScript> ||
+					  std::is_same_v<Component, PhysicBody> || std::is_same_v<Component, Player> ||
+					  std::is_same_v<Component, SpriteRenderer> || std::is_same_v<Component, Tag> ||
+					  std::is_same_v<Component, Text> || std::is_same_v<Component, Transform> ||
+					  std::is_same_v<Component, Trigger>;
 
 /**
  * @brief Concept that type has a name() method.
@@ -66,21 +68,22 @@ concept isDeserializableComponent =
  * @brief List of copiable components.
  * @note All except ID and Tag.
  */
-using CopiableComponents =
-		std::tuple<Transform, Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody, Player, Trigger, EntityLink>;
+using CopiableComponents = std::tuple<Transform, Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody, Player,
+									  Trigger, EntityLink, BackgroundTexture>;
 
 /**
  * @brief List all serializable components.
  * @note All except ID which is serialized directly in the entity.
  */
 using SerializableComponents = std::tuple<Tag, Transform, Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody,
-										  Player, Trigger, EntityLink>;
+										  Player, Trigger, EntityLink, BackgroundTexture>;
 
 /**
  * @brief List all optional components.
  * @note All except ID, Tag & Transform that are mandatory.
  */
 using OptionalComponents =
-		std::tuple<Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody, Player, Trigger, EntityLink>;
+		std::tuple<Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody, Player, Trigger, EntityLink,
+				   BackgroundTexture>;
 
 }// namespace owl::scene::component
