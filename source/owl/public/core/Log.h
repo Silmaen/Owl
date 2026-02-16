@@ -11,6 +11,10 @@
 #include "core/Core.h"
 #include <format>
 
+namespace owl::debug {
+class LogBuffer;
+}
+
 /**
  * @brief Namespace for the core objects.
  */
@@ -88,6 +92,12 @@ public:
 	}
 
 	static void logClient(const Level& iLevel, const std::string_view& iMsg);
+
+	/**
+	 * @brief Access the shared log buffer for UI display.
+	 * @return Reference to the global LogBuffer.
+	 */
+	static auto getLogBuffer() -> debug::LogBuffer&;
 
 private:
 	/// The level of verbosity.

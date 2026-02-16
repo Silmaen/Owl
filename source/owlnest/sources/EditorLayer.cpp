@@ -22,6 +22,7 @@ void loadIcons() {
 	textureLibrary.load("icons/PlayButton");
 	textureLibrary.load("icons/PauseButton");
 	textureLibrary.load("icons/StopButton");
+	textureLibrary.load("icons/StepButton");
 }
 void loadSounds() {
 	auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
@@ -140,6 +141,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_contentBrowser.onImGuiRender();
 	m_viewport.onRender();
 	m_parameters.onImGuiRender();
+	m_logPanel.onImGuiRender();
 	//=============================================================
 	{
 		const auto& lower = m_viewport.getLowerBound();
@@ -228,7 +230,7 @@ OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 void EditorLayer::renderToolbar() {
 	constexpr float buttonImageSize = 32.0f;
-	const int buttonCount = (m_state == State::Edit) ? 1 : 2;
+	const int buttonCount = (m_state == State::Edit) ? 1 : (m_state == State::Pause ? 3 : 2);
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
@@ -295,6 +297,18 @@ void EditorLayer::renderToolbar() {
 		} else {
 			if (ImGui::Button("stop", {buttonImageSize, buttonImageSize}))
 				onSceneStop();
+		}
+
+		if (m_state == State::Pause) {
+			ImGui::SameLine();
+			const shared<renderer::Texture> stepIcon = textureLibrary.get("icons/StepButton");
+			if (const auto tex = gui::imTexture(stepIcon); tex.has_value()) {
+				if (ImGui::ImageButton("btn_step", tex.value(), {buttonImageSize, buttonImageSize}))
+					onSceneStep();
+			} else {
+				if (ImGui::Button("step", {buttonImageSize, buttonImageSize}))
+					onSceneStep();
+			}
 		}
 	}
 	ImGui::PopStyleVar(2);
@@ -434,6 +448,16 @@ void EditorLayer::onSceneStop() {
 	m_activeScene = m_editorScene;
 
 	m_sceneHierarchy.setContext(m_activeScene);
+}
+
+void EditorLayer::onSceneStep() { m_stepRequested = true; }
+
+auto EditorLayer::consumeStepRequest() -> bool {
+	if (m_stepRequested) {
+		m_stepRequested = false;
+		return true;
+	}
+	return false;
 }
 
 void EditorLayer::onDuplicateEntity() const {

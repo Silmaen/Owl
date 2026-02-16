@@ -88,7 +88,10 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				}
 			case EditorLayer::State::Pause:
 				{
-					m_parent->getActiveScene()->onRenderRuntime();
+					if (m_parent->consumeStepRequest())
+						m_parent->getActiveScene()->onUpdateRuntime(iTimeStep);
+					else
+						m_parent->getActiveScene()->onRenderRuntime();
 					break;
 				}
 		}

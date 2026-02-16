@@ -9,9 +9,11 @@
 #include "owlpch.h"
 
 #include "core/external/spdlog.h"
+#include "debug/LogSink.h"
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
 OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
+#include <spdlog/sinks/base_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 OWL_DIAG_POP
@@ -20,6 +22,9 @@ OWL_DIAG_POP
 namespace owl::core {
 
 namespace {
+
+debug::LogBuffer g_logBuffer;
+
 auto fromLevel(const Log::Level& iLevel) -> spdlog::level::level_enum {
 	switch (iLevel) {
 		case Log::Level::Error:
@@ -39,6 +44,50 @@ auto fromLevel(const Log::Level& iLevel) -> spdlog::level::level_enum {
 	}
 	return spdlog::level::off;
 }
+
+auto toLevel(const spdlog::level::level_enum iLevel) -> Log::Level {
+	switch (iLevel) {
+		case spdlog::level::trace:
+			return Log::Level::Trace;
+		case spdlog::level::debug:
+			return Log::Level::Debug;
+		case spdlog::level::info:
+			return Log::Level::Info;
+		case spdlog::level::warn:
+			return Log::Level::Warning;
+		case spdlog::level::err:
+			return Log::Level::Error;
+		case spdlog::level::critical:
+			return Log::Level::Critical;
+		case spdlog::level::off:
+		case spdlog::level::n_levels:
+			return Log::Level::Off;
+	}
+	return Log::Level::Off;
+}
+
+/**
+ * @brief spdlog sink that pushes entries into a LogBuffer for UI display.
+ */
+class EditorLogSink final : public spdlog::sinks::base_sink<std::mutex> {
+public:
+	explicit EditorLogSink(debug::LogBuffer& ioBuffer) : m_buffer{ioBuffer} {}
+
+protected:
+	void sink_it_(const spdlog::details::log_msg& iMsg) override {
+		debug::LogEntry entry;
+		entry.level = toLevel(iMsg.level);
+		entry.loggerName = std::string(iMsg.logger_name.data(), iMsg.logger_name.size());
+		entry.message = std::string(iMsg.payload.data(), iMsg.payload.size());
+		entry.timestamp = iMsg.time;
+		m_buffer.push(std::move(entry));
+	}
+	void flush_() override {}
+
+private:
+	debug::LogBuffer& m_buffer;
+};
+
 std::shared_ptr<spdlog::logger> g_CoreLogger;
 std::shared_ptr<spdlog::logger> g_ClientLogger;
 }// namespace
@@ -60,6 +109,8 @@ void Log::init(const Level& iLevel, const uint64_t iFrequency) {
 #else
 	logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("Owl.log", true));
 #endif
+
+	logSinks.emplace_back(std::make_shared<EditorLogSink>(g_logBuffer));
 
 	logSinks[0]->set_pattern("%^[%T] %n: %v%$");
 	logSinks[1]->set_pattern("[%T] [%l] %n: %v");
@@ -99,5 +150,7 @@ void Log::newFrame() { ++s_frameCounter; }
 
 void Log::logCore(const Level& iLevel, const std::string_view& iMsg) { g_CoreLogger->log(fromLevel(iLevel), iMsg); }
 void Log::logClient(const Level& iLevel, const std::string_view& iMsg) { g_ClientLogger->log(fromLevel(iLevel), iMsg); }
+
+auto Log::getLogBuffer() -> debug::LogBuffer& { return g_logBuffer; }
 
 }// namespace owl::core
