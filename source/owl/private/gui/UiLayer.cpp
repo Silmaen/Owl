@@ -41,6 +41,14 @@ void UiLayer::onAttach() {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
+	if (m_withApp) {
+		const auto& params = core::Application::get().getInitParams();
+		if (params.argCount > 0 && params.args != nullptr) {
+			const auto stem = std::filesystem::path(params[0]).stem().string();
+			m_iniFilePath = (core::Application::get().getWorkingDirectory() / (stem + "_imgui.ini")).string();
+			io.IniFilename = m_iniFilePath.c_str();
+		}
+	}
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;// Enable Keyboard Controls
 	// io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;		// Enable Gamepad
 

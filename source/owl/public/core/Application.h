@@ -204,6 +204,12 @@ public:
 	 * @brief Access to init parameters.
 	 * @return Init parameters.
 	 */
+	[[nodiscard]] auto getInitParams() -> AppParams& { return m_initParams; }
+
+	/**
+	 * @brief Access to init parameters.
+	 * @return Init parameters.
+	 */
 	[[nodiscard]] auto getInitParams() const -> const AppParams& { return m_initParams; }
 
 	/**

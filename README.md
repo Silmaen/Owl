@@ -91,29 +91,46 @@ and publish the engine as a package on the configured repository of DepManager.
 ## RoadMap
 
 * [ ] v0.1.0 -- Future -- unordered Ideas & thoughts
-    * [ ] sound
-        * [ ] moving sound
     * [ ] graphics
         * [ ] HUD display
         * [ ] animated textures.
         * [ ] advanced materials.
-        * [ ] simple lighting.
     * [ ] Gameplay
         * [ ] inventory
             * [ ] collectible objets
             * [ ] switches 'key-locked'
         * [ ] enemies
+    * [ ] Game designer (Owl Map)
+        * [ ] menu edition
+        * [ ] Node editing
+* [ ] v0.0.3 -- release expected for 2026-07-01
+    * [ ] sound
+        * [ ] Sound effects
+        * [ ] Music
+        * [ ] Sound management (play, stop, loop, volume, etc.)
+        * [ ] Sound spatialization (3D sound)
+        * [ ] moving sound
+    * [ ] graphics
+        * [ ] animated sprites.
+        * [ ] Basic 3D rendering
+            * [ ] simple lighting.
+    * [ ] Objects
+        * [X] Support for Mesh objects
+            * [X] Support for mesh loading (obj, gltf, glb, fbx)
+            * [ ] Support for basic mesh manipulation (scale, rotate, translate)
+            * [ ] Support for mesh collision
+            * [ ] Support for mesh materials (basic colors, textures)
     * [ ] Misc
         * [ ] Different Scene types
             * [ ] Games
             * [ ] Menus
         * [ ] Configurable keymap
+    * [ ] Game designer (Owl Map)
+        * [ ] Export 'game' for the game runner (everything needed for the runner to become standalone).
         * [ ] asset packing
             * [ ] support for unpack in game runner
-    * [ ] Game designer (Owl Map)
-        * [ ] menu edition
-        * [ ] Node editing
-* [ ] v0.0.2
+        * [ ] Add view of level links
+* [ ] v0.0.2 -- release expected for 2026-03-01
     * [X] Developers
         * [X] Public Engine projects should be 3rd party independent
             * [X] Remove fmt public dependency
@@ -123,17 +140,10 @@ and publish the engine as a package on the configured repository of DepManager.
         * [X] backgrounds/skyboxes
     * [ ] Misc
         * [ ] Pausing games
-        * [ ] General settings management
+        * [X] General settings management
     * [ ] Gameplay
         * [ ] Possibility to jump between scenes.
-    * [ ] Objects
-        * [X] Support for Mesh objects
-            * [X] Support for mesh loading (obj, gltf, glb, fbx)
-            * [ ] Support for basic mesh manipulation (scale, rotate, translate)
-            * [ ] Support for mesh collision
-            * [ ] Support for mesh materials (basic colors, textures)
-    * [ ] Game designer (Owl Map)
-        * [ ] Global game settings
-        * [ ] Export 'game' for the game runner (everything needed for the runner to become standalone).
+    * [X] Game designer (Owl Map)
+        * [X] Global game settings
 * [X] v0.0.1 -- 2025-02-06 -- First basic Release
     * Minimal Vital: possibility to run very simple games defined in scenes

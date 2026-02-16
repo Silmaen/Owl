@@ -10,6 +10,8 @@
 #include "Theme.h"
 #include "core/layer/Layer.h"
 
+#include <string>
+
 /**
  * @brief Namespace for gui
  */
@@ -100,6 +102,8 @@ private:
 	bool m_dockingEnable = false;
 	/// If is attached.
 	bool m_withApp = true;
+	/// Path string for ImGui ini file (must outlive ImGui context).
+	std::string m_iniFilePath;
 
 	/// Function that initialize the docking port.
 	static void initializeDocking();
