@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Owl is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.3, Null), input backends (GLFW, Null), and sound backends (OpenAL, Null). It uses an Entity-Component-System architecture (EnTT) and includes a scene editor (Owl Nest).
+Owl (v0.0.2) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.3, Null), input backends (GLFW, Null), and sound backends (OpenAL, Null). It uses an Entity-Component-System architecture (EnTT) and includes a scene editor (Owl Nest). Supported platforms: Linux (x64/arm64) and Windows (x64, MinGW).
 
 ## Build Commands
 
@@ -17,8 +17,8 @@ cmake --build output/build/linux-gcc-release
 ```
 
 ### Available presets:
-- `linux-gcc-release`, `linux-gcc-debug`
-- `linux-clang-release`, `linux-clang-debug`
+- Linux: `linux-gcc-release`, `linux-gcc-debug`, `linux-clang-release`, `linux-clang-debug`
+- Windows (MinGW): `mingw-gcc-release`, `mingw-gcc-debug`, `mingw-clang-release`, `mingw-clang-debug`
 - CI-only: `linux-clang-tidy`, `linux-sanitizer-address`, `linux-sanitizer-thread`, `linux-sanitizer-undefined-behavior`, `linux-sanitizer-leak`
 
 ### Run tests:
@@ -61,20 +61,28 @@ poetry run python ci_action.py Documentation <preset>
 - `sandbox/` — Testing/prototyping app
 
 ### Tests (`test/`)
-- Google Test framework, 14 test categories matching engine modules
+- Google Test framework, 13 test categories: core, debug, event, font, gui, input, layer, math, mesh, physic, renderer, scene, sound
 - Each category builds as `owl_<category>_unit_test`
 - Test helper utilities in `test/test_helper/`
 
 ### CI system (`ci/`)
 - Python-based CI orchestration, entry point: `ci_action.py`
-- Actions in `ci/actions/` (Build, Test, Coverage, Documentation, Package, Clean)
+- Actions in `ci/actions/`: Build, Test, Coverage, Documentation, Package, Clean, Help, DefineVariables, PublishDoc, PublishPackage
 - All actions extend `ci.actions.base.action.BaseAction`
-- Utilities in `ci/utils/` (preset parsing, cmake discovery, command execution)
+- Utilities in `ci/utils/`: preset parsing, cmake discovery, command execution, logging, publishing, python helpers, TeamCity integration
+
+### Engine assets (`engine_assets/`)
+- Runtime assets bundled with the engine: fonts, shaders, textures, logo
+
+### CMake modules (`cmake/`)
+- Build configuration modules: `BaseConfig.cmake`, `Depmanager.cmake`, `OwlUtils.cmake`, `Sanitizers.cmake`, `Vulkan.cmake`, `Poetry.cmake`, `CoverageConfig.cmake`
+- Preset definitions: `CMakePresetsBase.json`, `CMakePresetsLinux.json`, `CMakePresetsMinGW.json`, `CMakePresetsCI.json`, `CMakePresetsPackage.json`
 
 ### Dependencies
-- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml`
+- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (29 external dependencies)
 - Dependencies auto-download during CMake configure step
 - Versions are pinned explicitly in `depmanager.yml`
+- Key libraries: EnTT (ECS), ImGui (GUI), Box2D (physics), spdlog (logging), yaml-cpp (serialization), Vulkan SDK, GLFW, OpenAL, glad, freetype, msdfgen/msdf-atlas-gen (fonts), tinygltf/tinyobjloader/ufbx (mesh loading)
 
 ## Code Style
 
@@ -100,5 +108,12 @@ Enforced by `.clang-format` (LLVM-based) and `.clang-tidy`. Key conventions:
 | `OWL_BUILD_CAST` | ON | Build cast app |
 | `OWL_TESTING` | ON | Enable unit tests |
 | `OWL_ENABLE_COVERAGE` | OFF | Code coverage (auto-enabled in debug presets) |
-| `OWL_ENABLE_STACKTRACE` | OFF | Memory tracker stacktrace |
+| `OWL_ENABLE_STACKTRACE` | OFF | Memory tracker stacktrace (performance impact) |
 | `OWL_ENABLE_PROFILING` | OFF | Profiling output |
+| `OWL_USE_RELEASE_THIRD_PARTY` | ON | Use release builds of third-party libraries |
+| `OWL_DEFINE_VULKAN_LAYERS` | OFF | Copy Vulkan layers to binary directory |
+| `OWL_ENABLE_CLANG_TIDY` | OFF | Enable clang-tidy static analysis |
+| `OWL_ENABLE_ADDRESS_SANITIZER` | OFF | AddressSanitizer (CI presets) |
+| `OWL_ENABLE_THREAD_SANITIZER` | OFF | ThreadSanitizer (CI presets) |
+| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF | UBSanitizer (CI presets) |
+| `OWL_ENABLE_LEAK_SANITIZER` | OFF | LeakSanitizer (CI presets) |

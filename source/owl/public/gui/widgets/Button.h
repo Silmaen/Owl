@@ -22,6 +22,7 @@ struct ButtonData : WidgetData {
 	std::function<bool()> isSelected{[] { return false; }};
 	std::function<void()> onClick{[] {}};
 	math::vec2 size{0, 0};
+	std::string tooltip{""};
 };
 
 /**

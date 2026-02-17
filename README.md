@@ -152,8 +152,8 @@ and publish the engine as a package on the configured repository of DepManager.
     * [X] Game designer (Owl Map)
         * [X] Global game settings
         * [X] Add frame with the logs.
-        * [ ] Entity visibility
-            * [ ] In game visibility
-            * [ ] In editor visibility
+        * [X] Entity visibility
+            * [X] In game visibility
+            * [X] In editor visibility
 * [X] v0.0.1 -- 2025-02-06 -- First basic Release
     * Minimal Vital: possibility to run very simple games defined in scenes

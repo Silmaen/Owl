@@ -19,6 +19,27 @@ TEST(Scene, creation) {
 	EXPECT_FALSE(ent);
 }
 
+TEST(Scene, VisibilityAutoAdded) {
+	Scene sc;
+	auto ent = sc.createEntity("test");
+	EXPECT_TRUE(ent.hasComponent<component::Visibility>());
+	const auto& vis = ent.getComponent<component::Visibility>();
+	EXPECT_TRUE(vis.gameVisible);
+	EXPECT_TRUE(vis.editorVisible);
+}
+
+TEST(Scene, VisibilityDuplicate) {
+	const owl::shared<Scene> sc = owl::mkShared<Scene>();
+	auto ent = sc->createEntity("original");
+	auto& vis = ent.getComponent<component::Visibility>();
+	vis.gameVisible = false;
+	vis.editorVisible = false;
+	auto dup = sc->duplicateEntity(ent);
+	const auto& dupVis = dup.getComponent<component::Visibility>();
+	EXPECT_FALSE(dupVis.gameVisible);
+	EXPECT_FALSE(dupVis.editorVisible);
+}
+
 TEST(Scene, camera) {
 	Scene sc;
 	auto cam = sc.getPrimaryCamera();

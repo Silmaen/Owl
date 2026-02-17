@@ -8,8 +8,10 @@
 
 #include "SceneHierarchy.h"
 
+#include <gui/utils.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
+#include <renderer/Renderer.h>
 
 using namespace owl::scene::component;
 
@@ -60,6 +62,61 @@ void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
 	if (ioEntity == m_selection)
 		flag |= ImGuiTreeNodeFlags_Selected;
 	const bool open = ImGui::TreeNodeEx(tag.c_str(), flag);
+	const bool treeNodeClicked = ImGui::IsItemClicked();
+
+	// Visibility toggle buttons (right-aligned)
+	{
+		auto& vis = ioEntity.getComponent<Visibility>();
+		auto& texLib = owl::renderer::Renderer::getTextureLibrary();
+
+		const float btnSize = ImGui::GetTextLineHeight();
+		const float spacing = ImGui::GetStyle().ItemSpacing.x;
+
+		// Position: right edge minus space for 2 buttons
+		ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - (btnSize + spacing) * 2);
+
+		// Transparent button background
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1, 1, 1, 0.15f));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+
+		// --- Editor visibility button (left) — eye icon ---
+		ImGui::PushID("editorVis");
+		const auto edIconName = vis.editorVisible ? "icons/visibility/eye_open" : "icons/visibility/eye_closed";
+		const ImVec4 edTint = vis.editorVisible ? ImVec4{1.0f, 1.0f, 1.0f, 1.0f} : ImVec4{0.5f, 0.5f, 0.5f, 0.5f};
+		if (const auto texId = owl::gui::imTexture(texLib.get(edIconName))) {
+			if (ImGui::ImageButton("##edVis", *texId, {btnSize, btnSize}, {0, 0}, {1, 1}, {0, 0, 0, 0}, edTint))
+				vis.editorVisible = !vis.editorVisible;
+		} else {
+			if (ImGui::Button(vis.editorVisible ? "E" : "-", {btnSize, btnSize}))
+				vis.editorVisible = !vis.editorVisible;
+		}
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("Editor Visibility");
+		ImGui::PopID();
+
+		ImGui::SameLine();
+
+		// --- Game visibility button (right) — camera icon ---
+		ImGui::PushID("gameVis");
+		const auto gameIconName = vis.gameVisible ? "icons/visibility/camera_on" : "icons/visibility/camera_off";
+		const ImVec4 gameTint =
+				vis.gameVisible ? ImVec4{1.0f, 1.0f, 1.0f, 1.0f} : ImVec4{0.5f, 0.5f, 0.5f, 0.5f};
+		if (const auto texId = owl::gui::imTexture(texLib.get(gameIconName))) {
+			if (ImGui::ImageButton("##gameVis", *texId, {btnSize, btnSize}, {0, 0}, {1, 1}, {0, 0, 0, 0}, gameTint))
+				vis.gameVisible = !vis.gameVisible;
+		} else {
+			if (ImGui::Button(vis.gameVisible ? "V" : "-", {btnSize, btnSize}))
+				vis.gameVisible = !vis.gameVisible;
+		}
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("Game Visibility");
+		ImGui::PopID();
+
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor(2);
+	}
+
 	if (open) {
 		// Draw the content (need tree management)
 	}
@@ -76,7 +133,7 @@ void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
 	if (open)
 		ImGui::TreePop();
 
-	if (ImGui::IsItemClicked()) {
+	if (treeNodeClicked) {
 		m_selection = ioEntity;
 	}
 }
@@ -120,6 +177,8 @@ void drawComponent(scene::Entity& ioEntity) {
 		if (ImGui::Button("+", ImVec2{lineHeight, lineHeight})) {
 			ImGui::OpenPopup("ComponentSettings");
 		}
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("Component Settings");
 		bool removeComponent = false;
 		if (ImGui::BeginPopup("ComponentSettings")) {
 			if (ImGui::MenuItem("Remove component"))

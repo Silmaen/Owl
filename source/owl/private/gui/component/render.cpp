@@ -316,4 +316,9 @@ void renderProps(BackgroundTexture& ioComponent) {
 	}
 }
 
+void renderProps(Visibility& ioComponent) {
+	ImGui::Checkbox("Game Visible", &ioComponent.gameVisible);
+	ImGui::Checkbox("Editor Visible", &ioComponent.editorVisible);
+}
+
 }// namespace owl::gui::component
