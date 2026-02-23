@@ -152,5 +152,36 @@ auto PhysicCommand::getVelocity(const scene::Entity& iEntity) -> math::vec2f {
 	return {x, y};
 }
 
+void PhysicCommand::setTransform(const scene::Entity& iEntity, const math::vec2f& iPosition, const float iRotation) {
+	if (!isInitialized()) {
+		OWL_CORE_WARN("PhysicCommand::setTransform(), Physic engine not initialized.")
+		return;
+	}
+	if (!iEntity) {
+		OWL_CORE_WARN("PhysicCommand::setTransform(), entity is null.")
+		return;
+	}
+	if (!iEntity.hasComponent<scene::component::PhysicBody>())
+		return;
+	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
+	b2Body_SetTransform(m_impl->bodies[body.bodyId], {iPosition.x(), iPosition.y()}, b2MakeRot(iRotation));
+}
+
+void PhysicCommand::setVelocity(const scene::Entity& iEntity, const math::vec2f& iVelocity) {
+	if (!isInitialized()) {
+		OWL_CORE_WARN("PhysicCommand::setVelocity(), Physic engine not initialized.")
+		return;
+	}
+	if (!iEntity) {
+		OWL_CORE_WARN("PhysicCommand::setVelocity(), entity is null.")
+		return;
+	}
+	if (!iEntity.hasComponent<scene::component::PhysicBody>())
+		return;
+	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
+	if (body.type == scene::SceneBody::BodyType::Static)
+		return;
+	b2Body_SetLinearVelocity(m_impl->bodies[body.bodyId], {iVelocity.x(), iVelocity.y()});
+}
 
 }// namespace owl::physic

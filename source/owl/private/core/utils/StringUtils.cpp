@@ -6,8 +6,9 @@
  * All modification must get authorization from the author.
  */
 
-#include "core/utils/StringUtils.h"
 #include "owlpch.h"
+
+#include "core/utils/StringUtils.h"
 
 namespace owl::core::utils {
 

@@ -17,7 +17,7 @@ namespace owl::renderer {
  */
 struct AttachmentSpecification {
 	/// Format for the texture frame buffer.
-	enum class Format : uint8_t {
+	enum struct Format : uint8_t {
 		None = 0,
 		/// Color.
 		Rgba8,
@@ -33,7 +33,7 @@ struct AttachmentSpecification {
 	Format format = Format::None;
 
 	/// The tiling attributes.
-	enum class Tiling : uint8_t {
+	enum struct Tiling : uint8_t {
 		/// Linear tiling.
 		Linear,
 		/// Optimal tiling.

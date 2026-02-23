@@ -17,7 +17,7 @@ namespace owl::renderer {
 /**
  * @brief Types of Shader.
  */
-enum class ShaderType : uint8_t {
+enum struct ShaderType : uint8_t {
 	None,///< No type of unknown.
 	Vertex,///< Vertex shader.
 	Fragment,///< Fragment shader.

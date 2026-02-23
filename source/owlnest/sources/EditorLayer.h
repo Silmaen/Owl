@@ -62,6 +62,11 @@ public:
 	 */
 	auto consumeStepRequest() -> bool;
 
+	/**
+	 * @brief Handle a cross-level teleport request from the active scene.
+	 */
+	void handleTeleportRequest();
+
 private:
 	void renderStats(const core::Timestep& iTimeStep);
 	void renderMenu();
@@ -82,6 +87,10 @@ private:
 
 	State m_state = State::Edit;
 	bool m_stepRequested = false;
+
+	bool m_pendingTeleportVelocity = false;
+	math::vec2f m_teleportVelocity = {0.f, 0.f};
+	std::string m_teleportTargetName;
 
 	shared<scene::Scene> m_activeScene;
 	shared<scene::Scene> m_editorScene;

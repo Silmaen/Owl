@@ -1,160 +1,86 @@
 # Owl
 
+![Version](https://img.shields.io/badge/version-0.0.2-blue)
+![C++23](https://img.shields.io/badge/C%2B%2B-23-blue?logo=cplusplus)
+![CMake 3.24+](https://img.shields.io/badge/CMake-3.24%2B-blue?logo=cmake)
 ![GitHub License](https://img.shields.io/github/license/Silmaen/Owl)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Silmaen/Owl)
 ![GitHub top language](https://img.shields.io/github/languages/top/Silmaen/Owl)
 ![GitHub Repo stars](https://img.shields.io/github/stars/Silmaen/Owl)
-![GitHub contributors](https://img.shields.io/github/contributors/Silmaen/Owl)
 
 ![](engine_assets/logo/logo_owl.png)
 
-Owl aims to be a simple game engine. The main goal of this engine is learning game engine
-development.
+Owl is a C++23 game engine built for learning game engine development. It features multiple
+graphics, input, and sound backends, an Entity-Component-System architecture, and a scene
+editor.
 
-## Documentation
+The full generated documentation is available online:
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fowl.argawaen.net&label=owl%20site&link=https%3A%2F%2Fowl.argawaen.net)](https://owl.argawaen.net)
 
-The full documentation is available on the dedicated
-website [![Website](https://img.shields.io/website?url=https%3A%2F%2Fowl.argawaen.net&label=owl%20site&link=https%3A%2F%2Fowl.argawaen.net)
-](https://owl.argawaen.net).
+**Documentation pages** ([browse on GitHub](doc/pages)):
 
-## Platform
+- \subpage architecture -- Engine modules, backends, and shader pipeline
+- \subpage building -- Prerequisites, presets, testing, and CMake options
+- \subpage roadmap -- Planned and completed features by version
+- \subpage contributing -- Code style, conventions, and workflow
 
-We try to be multiplatform and using different compilers:
+## Features
 
-* Windows `x64`
-    * mingw `g++ 14` (and above)
-    * mingw `clang++ 19` (and above)
-* Linux `x64` & `arm64`
-    * Ubuntu `22.04` (glibc 2.35) g++ 12 (and above)
-    * Ubuntu `22.04` (glibc 2.35) clang++ 15 (and above)
+- ![OpenGL](https://img.shields.io/badge/OpenGL-4.5-5586A4?logo=opengl) ![Vulkan](https://img.shields.io/badge/Vulkan-1.4%2B-AC162C?logo=vulkan)
+  **Rendering** with Slang shaders compiled to SPIR-V
+- ![EnTT](https://img.shields.io/badge/ECS-EnTT-green) **Entity-Component-System** architecture
+- ![Box2D](https://img.shields.io/badge/Physics-Box2D-orange) 2D physics simulation
+- ![OpenAL](https://img.shields.io/badge/Audio-OpenAL-8B0000) Sound playback backend
+- ![ImGui](https://img.shields.io/badge/Editor-ImGui-blue) Owl Nest scene editor
+- ![Mesh](https://img.shields.io/badge/Mesh-OBJ%20%7C%20glTF%20%7C%20FBX-purple) 3D model loading
+- ![Linux](https://img.shields.io/badge/Linux-x64%20%7C%20arm64-FCC624?logo=linux&logoColor=black) ![Windows](https://img.shields.io/badge/Windows-x64-0078D4?logo=windows&logoColor=white)
+  Cross-platform
 
-### backends API
+## Supported Platforms
 
-#### inputs
+![Linux](https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black)
+![Windows](https://img.shields.io/badge/Windows-0078D4?logo=windows&logoColor=white)
 
-Different inputs backend are available:
+| OS      | Architecture | Compilers                      |
+|---------|--------------|--------------------------------|
+| Linux   | x64, arm64   | GCC 13+, Clang 18+             |
+| Windows | x64          | MinGW GCC 14+, MinGW Clang 19+ |
 
-* `Null` - for no windowing nor mouse/keyboard/gamepad managed input (for server use)
-* `GLFW` - for windowing and user input management using glfw library.
+## Backends
 
-#### graphics
+![OpenGL](https://img.shields.io/badge/OpenGL-4.5-5586A4?logo=opengl)
+![Vulkan](https://img.shields.io/badge/Vulkan-1.4%2B-AC162C?logo=vulkan)
+![GLFW](https://img.shields.io/badge/GLFW-Input-yellow)
+![OpenAL](https://img.shields.io/badge/OpenAL-Audio-8B0000)
 
-This engine requires a graphic card that supports one of the following renderer:
+| Category | Backends                      |
+|----------|-------------------------------|
+| Graphics | OpenGL 4.5, Vulkan 1.4+, Null |
+| Input    | GLFW, Null                    |
+| Sound    | OpenAL, Null                  |
 
-* `Null` - for no graphic rendering (Server for example)
-* `OpenGL` - Use OpenGL 4.5 (you must have Graphics device that supports it. Known that most arm644 device does not
-  support it)
-* `Vulkan` - Use Vulkan 1.4 (you must have Graphics device that supports it)
+## Quick Start
 
-#### sound
+```bash
+# Install Python dependencies (for DepManager and CI tools)
+poetry sync --no-root
 
-This engine supports different sound device for either input stream or sound play:
+# Configure and build
+cmake --preset linux-gcc-release -S .
+cmake --build output/build/linux-gcc-release
 
-* `Null` - for no sound (Server for example)
-* `OpenAL` - Use OpenAL (you must have Sound device that supports it, and the required lib/drivers installed)
+# Run tests
+ctest --test-dir output/build/linux-gcc-release --output-on-failure
+```
+
+See @ref building for the full build guide and all available presets.
 
 ## Dependencies
 
-### Dependencies manager
+Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager)
+![GitHub Tag](https://img.shields.io/github/v/tag/Silmaen/DepManager)
+and declared in [depmanager.yml](depmanager.yml). They are automatically downloaded
+during CMake configure.
 
-Dependencies are managed by my dependency tool: [DepManger](https://github.com/Silmaen/DepManager)
-![GitHub Tag](https://img.shields.io/github/v/tag/Silmaen/DepManager).
-
-As we are using file based dependency definition in [depmanager.yml](depmanager.yml), the dependency will be
-automatically downloaded with the right version during cmake configure step (the depmanager client should be
-configured to use a repository that contains the right packages).
-
-Dependencies are hosted by my dependency server [DepManagerServer](https://github.com/Silmaen/DepManagerServer).
-
-Dependencies in the configuration file have explicit version number, that is done on purpose: it then requires
-a commit to upgrade (so keep a track of upgrades and keep stable the potential build of old revisions
-of this code).
-
-### Dependencies sources
-
-All the dependencies and their recipes for DepManager are available in a separate
-repository [OwlDependencies](https://github.com/Silmaen/OwlDependencies).
-
-Most are configured as git submodules.
-
-## Build
-
-To build the engine Cmake (>3.24) is required.
-
-Most user will use one of the cmake preset defined.
-
-## CI usage
-
-The CI is configured to build the engine on each commit, and run some tests. It is also configured to build
-and publish the engine as a package on the configured repository of DepManager.
-
-## RoadMap
-
-* [ ] v0.1.0 -- Future -- unordered Ideas & thoughts
-    * [ ] graphics
-        * [ ] HUD display
-        * [ ] animated textures.
-        * [ ] advanced materials.
-    * [ ] Gameplay
-        * [ ] inventory
-            * [ ] collectible objets
-            * [ ] switches 'key-locked'
-        * [ ] enemies
-    * [ ] Game designer (Owl Map)
-        * [ ] menu edition
-        * [ ] Node editing
-* [ ] v0.0.3 -- release expected for 2026-07-01
-    * [ ] sound
-        * [ ] Sound effects
-        * [ ] Music
-        * [ ] Sound management (play, stop, loop, volume, etc.)
-        * [ ] Sound spatialization (3D sound)
-        * [ ] moving sound
-    * [ ] graphics
-        * [ ] animated sprites.
-        * [ ] Basic 3D rendering
-            * [ ] simple lighting.
-    * [ ] Objects
-        * [X] Support for Mesh objects
-            * [X] Support for mesh loading (obj, gltf, glb, fbx)
-            * [ ] Support for basic mesh manipulation (scale, rotate, translate)
-            * [ ] Support for mesh collision
-            * [ ] Support for mesh materials (basic colors, textures)
-    * [ ] Misc
-        * [ ] Different Scene types
-            * [ ] Games
-            * [ ] Menus
-        * [ ] Configurable keymap
-    * [ ] Game designer (Owl Map)
-        * [ ] Export 'game' for the game runner (everything needed for the runner to become standalone).
-        * [ ] asset packing
-            * [ ] support for unpack in game runner
-        * [ ] Add view of level links
-        * [ ] Entity management
-            * [ ] add shortcut to add/remove entities
-                * [ ] deletion confirmation
-            * [ ] Entities can have different display in editor and in game
-* [ ] v0.0.2 -- release expected for 2026-03-15
-    * [X] Developers
-        * [X] Public Engine projects should be 3rd party independent
-            * [X] Remove fmt public dependency
-        * [X] Reduce needed public binaries
-            * [X] Work on 3rd party builds for dependencies reduction (more static link)
-    * [X] graphics
-        * [X] backgrounds/skyboxes
-        * [X] Migrate shaders to slang
-    * [X] Misc
-        * [X] Pausing games
-            * [X] possibility to pause/unpause the game
-            * [X] possibility to step the game frame by frame when paused
-        * [X] General settings management
-    * [ ] Gameplay
-        * [ ] Possibility to jump between scenes.
-    * [X] Game designer (Owl Map)
-        * [X] Global game settings
-        * [X] Add frame with the logs.
-        * [X] Entity visibility
-            * [X] In game visibility
-            * [X] In editor visibility
-* [X] v0.0.1 -- 2025-02-06 -- First basic Release
-    * Minimal Vital: possibility to run very simple games defined in scenes
+Dependency recipes are maintained in a separate repository:
+[OwlDependencies](https://github.com/Silmaen/OwlDependencies).

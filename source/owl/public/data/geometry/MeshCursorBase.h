@@ -16,7 +16,7 @@ class StaticMesh;
 /**
  * @brief Type of static mesh element.
  */
-enum class MeshElementType : uint8_t {
+enum struct MeshElementType : uint8_t {
 	Vertex,///< Vertex element
 	Triangle///< Triangle element
 };

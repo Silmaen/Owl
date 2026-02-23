@@ -18,7 +18,7 @@ namespace owl::event {
 /**
  * @brief Type of events.
  */
-enum class Type : uint8_t {
+enum struct Type : uint8_t {
 	None = 0,/// No type.
 
 	WindowClose,/// Window close.

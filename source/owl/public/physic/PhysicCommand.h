@@ -66,7 +66,22 @@ public:
 	 * @param iEntity The entity to check.
 	 * @return The entity velocity or null.
 	 */
-	static math::vec2f getVelocity(const scene::Entity& iEntity);
+	static auto getVelocity(const scene::Entity& iEntity) -> math::vec2f;
+
+	/**
+	 * @brief Set the transform (position and rotation) of the given entity's physics body.
+	 * @param iEntity The entity to modify.
+	 * @param iPosition The new position.
+	 * @param iRotation The new rotation angle (radians).
+	 */
+	static void setTransform(const scene::Entity& iEntity, const math::vec2f& iPosition, float iRotation);
+
+	/**
+	 * @brief Set the linear velocity of the given entity's physics body.
+	 * @param iEntity The entity to modify.
+	 * @param iVelocity The new velocity.
+	 */
+	static void setVelocity(const scene::Entity& iEntity, const math::vec2f& iVelocity);
 
 private:
 	/// Implementation class.

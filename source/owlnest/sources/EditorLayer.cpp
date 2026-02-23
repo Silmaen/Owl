@@ -8,6 +8,8 @@
 
 #include "EditorLayer.h"
 
+#include <physic/PhysicCommand.h>
+#include <scene/component/components.h>
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
 
@@ -27,6 +29,10 @@ void loadIcons() {
 	textureLibrary.load("icons/visibility/camera_off");
 	textureLibrary.load("icons/visibility/eye_open");
 	textureLibrary.load("icons/visibility/eye_closed");
+	textureLibrary.load("icons/triggers/trigger_victory");
+	textureLibrary.load("icons/triggers/trigger_death");
+	textureLibrary.load("icons/triggers/trigger_target");
+	textureLibrary.load("icons/triggers/trigger_teleport");
 }
 void loadSounds() {
 	auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
@@ -119,6 +125,41 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	if (m_state == State::Edit) {
 		if (m_viewport.isFocused())
 			m_cameraController.onUpdate(iTimeStep);
+	}
+
+	// After a cross-level teleport, the new scene is in Editing state.
+	// Start its runtime and apply the pending velocity.
+	if ((m_state == State::Play || m_state == State::Pause) &&
+		m_activeScene->status == scene::Scene::Status::Editing) {
+		m_activeScene->onStartRuntime();
+		if (m_pendingTeleportVelocity) {
+			m_pendingTeleportVelocity = false;
+			if (scene::Entity player = m_activeScene->getPrimaryPlayer()) {
+				for (const auto view =
+							 m_activeScene->registry.view<scene::component::Tag, scene::component::Transform>();
+					 const auto ent: view) {
+					if (view.get<scene::component::Tag>(ent).tag == m_teleportTargetName) {
+						const auto& targetTransform = view.get<scene::component::Transform>(ent).transform;
+						const float targetRotation = targetTransform.rotation().z();
+						const float cosR = std::cos(targetRotation);
+						const float sinR = std::sin(targetRotation);
+						const math::vec2f finalVelocity = {
+								m_teleportVelocity.x() * cosR - m_teleportVelocity.y() * sinR,
+								m_teleportVelocity.x() * sinR + m_teleportVelocity.y() * cosR};
+						physic::PhysicCommand::setTransform(player,
+															{targetTransform.translation().x(),
+															 targetTransform.translation().y()},
+															targetRotation);
+						physic::PhysicCommand::setVelocity(player, finalVelocity);
+						auto& playerTransform = player.getComponent<scene::component::Transform>().transform;
+						playerTransform.translation().x() = targetTransform.translation().x();
+						playerTransform.translation().y() = targetTransform.translation().y();
+						playerTransform.rotation().z() = targetRotation;
+						break;
+					}
+				}
+			}
+		}
 	}
 
 	// update the viewport
@@ -458,6 +499,7 @@ void EditorLayer::onSceneResume() { m_state = State::Play; }
 
 void EditorLayer::onSceneStop() {
 	m_state = State::Edit;
+	m_pendingTeleportVelocity = false;
 
 	m_activeScene->onEndRuntime();
 	m_activeScene = m_editorScene;
@@ -473,6 +515,51 @@ auto EditorLayer::consumeStepRequest() -> bool {
 		return true;
 	}
 	return false;
+}
+
+void EditorLayer::handleTeleportRequest() {
+	if (!m_activeScene->teleportRequest.pending)
+		return;
+	const auto request = m_activeScene->teleportRequest;
+	m_activeScene->teleportRequest.pending = false;
+
+	// Ensure the level name has an .owl extension.
+	std::string resolvedName = request.levelName;
+	if (std::filesystem::path(resolvedName).extension() != ".owl")
+		resolvedName += ".owl";
+
+	const auto& app = core::Application::get();
+	std::filesystem::path levelPath;
+	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
+		if (exists(assetsPath / resolvedName)) {
+			levelPath = assetsPath / resolvedName;
+			break;
+		}
+		if (exists(assetsPath / "scenes" / resolvedName)) {
+			levelPath = assetsPath / "scenes" / resolvedName;
+			break;
+		}
+	}
+	if (levelPath.empty()) {
+		OWL_CORE_ERROR("Teleport: level '{}' not found", resolvedName)
+		return;
+	}
+
+	m_activeScene->onEndRuntime();
+
+	auto newScene = mkShared<scene::Scene>();
+	if (const scene::SceneSerializer sc(newScene); !sc.deserialize(levelPath)) {
+		OWL_CORE_ERROR("Teleport: failed to load level '{}'", request.levelName)
+		return;
+	}
+	newScene->onViewportResize(m_viewport.getSize());
+
+	m_pendingTeleportVelocity = true;
+	m_teleportVelocity = request.initialVelocity;
+	m_teleportTargetName = request.targetName;
+
+	m_activeScene = newScene;
+	m_sceneHierarchy.setContext(m_activeScene);
 }
 
 void EditorLayer::onDuplicateEntity() const {
