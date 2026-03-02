@@ -10,7 +10,6 @@
 #include "Shader.h"
 #include "core/Application.h"
 #include "core/external/opengl46.h"
-#include "core/external/shaderc.h"
 #include "core/utils/FileUtils.h"
 #include "renderer/utils/shaderFileUtils.h"
 
@@ -38,16 +37,15 @@ auto shaderStageToGlShader(const ShaderType& iStage) -> uint32_t {
 
 }// namespace utils
 
-Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& iVertexSrc,
-			   const std::string& iFragmentSrc)
+Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& /*iVertexSrc*/,
+			   const std::string& /*iFragmentSrc*/)
 	: renderer::Shader{iShaderName, iRenderer} {
-	compile({{ShaderType::Vertex, iVertexSrc}, {ShaderType::Fragment, iFragmentSrc}});
+	OWL_CORE_WARN("OpenGL Shader: Separate vertex/fragment source constructor is deprecated, use Slang source.")
 }
 
-Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
-			   const std::unordered_map<ShaderType, std::string>& iSources)
+Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& iSlangSource)
 	: renderer::Shader{iShaderName, iRenderer} {
-	compile(iSources);
+	compile(iSlangSource);
 }
 
 Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
@@ -55,20 +53,11 @@ Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 	: renderer::Shader{iShaderName, iRenderer} {
 	OWL_PROFILE_FUNCTION()
 
-	std::unordered_map<ShaderType, std::string> strSources;
-	for (const auto& src: iSources) {
-		auto type = ShaderType::None;
-		if (src.extension() == ".frag")
-			type = ShaderType::Fragment;
-		if (src.extension() == ".vert")
-			type = ShaderType::Vertex;
-		if (type == ShaderType::None) {
-			OWL_CORE_ASSERT(false, "Unknown Shader Type")
-			continue;
-		}
-		strSources.emplace(type, core::utils::fileToString(src));
+	if (iSources.size() == 1 && iSources[0].extension() == ".slang") {
+		compile(core::utils::fileToString(iSources[0]));
+	} else {
+		OWL_CORE_ERROR("OpenGL Shader: Expected a single .slang file, got {} files.", iSources.size())
 	}
-	compile(strSources);
 }
 
 Shader::~Shader() {
@@ -77,14 +66,14 @@ Shader::~Shader() {
 	glDeleteProgram(m_programId);
 }
 
-void Shader::compile(const std::unordered_map<ShaderType, std::string>& iSources) {
+void Shader::compile(const std::string& iSlangSource) {
 	OWL_SCOPE_UNTRACK
 	OWL_PROFILE_FUNCTION()
 
 	const auto start = std::chrono::steady_clock::now();
 
 	renderer::utils::createCacheDirectoryIfNeeded(getRenderer(), "opengl");
-	compileOrGetOpenGlBinaries(iSources);
+	compileOrGetOpenGlBinaries(iSlangSource);
 	createProgram();
 
 	const auto timer = std::chrono::steady_clock::now() - start;
@@ -93,39 +82,41 @@ void Shader::compile(const std::unordered_map<ShaderType, std::string>& iSources
 	OWL_CORE_INFO("Compilation of shader {} in {} ms", getName(), duration)
 }
 
-void Shader::compileOrGetOpenGlBinaries(const std::unordered_map<ShaderType, std::string>& iSources) {
+void Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) {
 	OWL_PROFILE_FUNCTION()
 
 	auto& shaderData = m_openGlSpirv;
-
-	shaderc::CompileOptions options;
-	options.SetTargetEnvironment(shaderc_target_env_opengl, shaderc_env_version_opengl_4_5);
-	options.SetOptimizationLevel(shaderc_optimization_level_performance);
-
 	shaderData.clear();
-	for (auto&& [stage, source]: iSources) {
-		const std::filesystem::path basePath =
-				renderer::utils::getShaderPath(getName(), getRenderer(), "opengl", stage);
-		const std::filesystem::path cachedPath =
-				renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
-		if (renderer::utils::isShaderCacheValid(cachedPath, source)) {
+
+	// Check if all cached stages are valid
+	bool allCached = true;
+	for (const auto stage: {ShaderType::Vertex, ShaderType::Fragment}) {
+		const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
+		if (!renderer::utils::isShaderCacheValid(cachedPath, iSlangSource)) {
+			allCached = false;
+			break;
+		}
+	}
+
+	if (allCached) {
+		for (const auto stage: {ShaderType::Vertex, ShaderType::Fragment}) {
+			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
 			OWL_CORE_INFO("Using cached OpenGL Shader {}-{}", getName(), magic_enum::enum_name(stage))
 			shaderData[stage] = renderer::utils::readCachedShader(cachedPath);
-		} else {
-			if (exists(cachedPath))
-				OWL_CORE_INFO("Source hash mismatch, Recompiling.")
-			const shaderc::Compiler compiler;
-			const shaderc::SpvCompilationResult module = compiler.CompileGlslToSpv(
-					source, renderer::utils::shaderStageToShaderC(stage),
-					renderer::utils::getShaderPath(getName(), getRenderer(), "opengl", stage).string().c_str(),
-					options);
-			if (module.GetCompilationStatus() != shaderc_compilation_status_success) {
-				OWL_CORE_ERROR(module.GetErrorMessage())
-				OWL_CORE_ASSERT(false, "Compilation error")
-			}
-			shaderData[stage] = std::vector<uint32_t>(module.cbegin(), module.cend());
-			renderer::utils::writeCachedShader(cachedPath, shaderData[stage]);
-			renderer::utils::writeShaderHash(cachedPath, source);
+		}
+	} else {
+		OWL_CORE_TRACE("Compiling Slang shader '{}' for OpenGL...", getName())
+		auto compiled = renderer::utils::compileSlangToSpirv(iSlangSource, getName(), false);
+		if (!compiled.success) {
+			OWL_CORE_ERROR("Slang compilation failed for shader '{}'.", getName())
+			return;
+		}
+		shaderData = std::move(compiled.spirvData);
+		for (auto&& [stage, data]: shaderData) {
+			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
+			if (!renderer::utils::writeCachedShader(cachedPath, data))
+				OWL_CORE_WARN("Failed to write the compiled shader.")
+			renderer::utils::writeShaderHash(cachedPath, iSlangSource);
 		}
 	}
 	for (auto&& [stage, data]: shaderData)

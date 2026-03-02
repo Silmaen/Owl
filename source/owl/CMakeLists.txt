@@ -146,18 +146,21 @@ if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
                 COMMENT "Copy the shared dll"
         )
     else ()
-        set(shader_libs
-                libshaderc_shared
-                SPIRV
+        set(vulkan_libs
                 vulkan-1
         )
-        foreach (l_lib ${shader_libs})
+        foreach (l_lib ${vulkan_libs})
             add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${shaderc_DIR}/../../bin/${l_lib}.dll" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${VulkanLoader_DIR}/../../bin/${l_lib}.dll" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
                     COMMAND_EXPAND_LISTS
                     COMMENT "Copy the vulkan shared dll"
             )
         endforeach ()
+        add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "${slang_DIR}/../../bin/slang.dll" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                COMMAND_EXPAND_LISTS
+                COMMENT "Copy the slang shared dll"
+        )
         add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OpenAL_DIR}/../../../bin/OpenAL32$<$<CONFIG:Debug>:d>.dll" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
                 COMMAND_EXPAND_LISTS

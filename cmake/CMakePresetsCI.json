@@ -18,6 +18,11 @@
         "OWL_ENABLE_CLANG_TIDY": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": ""
+        }
       }
     },
     {
@@ -27,6 +32,11 @@
         "OWL_ENABLE_CLANG_TIDY": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": ""
+        }
       }
     },
     {
@@ -36,6 +46,11 @@
         "OWL_ENABLE_ADDRESS_SANITIZER": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": ""
+        }
       }
     },
     {
@@ -45,6 +60,11 @@
         "OWL_ENABLE_THREAD_SANITIZER": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": ""
+        }
       }
     },
     {
@@ -54,6 +74,11 @@
         "OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": ""
+        }
       }
     },
     {
@@ -63,6 +88,11 @@
         "OWL_ENABLE_LEAK_SANITIZER": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": ""
+        }
       }
     }
   ]

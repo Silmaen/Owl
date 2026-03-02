@@ -21,20 +21,14 @@
 namespace owl::renderer {
 
 auto Shader::create(const Specification& iShaderName) -> shared<Shader> {
-	const auto type = RenderCommand::getApi();
 	auto shaderDir = std::filesystem::path{"shaders"};
 	if (!iShaderName.shaderName.renderer.empty()) {
 		shaderDir /= iShaderName.shaderName.renderer;
 	}
-	if (type == RenderAPI::Type::OpenGL)
-		shaderDir /= "opengl";
-	else if (type == RenderAPI::Type::Vulkan)
-		shaderDir /= "vulkan";
-	else
-		shaderDir /= "null";
+	shaderDir /= "slang";
 	shaderDir /= iShaderName.shaderName.name;
 	if (RenderCommand::requireInit()) {
-		const auto result = Renderer::getTextureLibrary().find(std::format("{}.vert", shaderDir.string()));
+		const auto result = Renderer::getTextureLibrary().find(std::format("{}.slang", shaderDir.string()));
 		if (!result.has_value()) {
 			OWL_CORE_ERROR("Shader::Create: Failed to load shader {}, unable to find assets",
 						   iShaderName.shaderName.name)
@@ -51,7 +45,11 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 	auto renderer = iFile.parent_path().parent_path().filename().string();
 	auto shad = composeName({.name=name, .renderer=renderer});
 	if (RenderCommand::requireInit()) {
-		if (exists(iFile) && is_regular_file(iFile)) {
+		// Try to find as a .slang file first
+		const auto slangPath = std::filesystem::path(iFile.string() + ".slang");
+		if (exists(slangPath) && is_regular_file(slangPath)) {
+			sources = {slangPath};
+		} else if (exists(iFile) && is_regular_file(iFile)) {
 			sources = {iFile};
 		} else if (is_directory(iFile)) {
 			for (const auto& f: std::filesystem::directory_iterator(iFile)) {

@@ -33,13 +33,12 @@ public:
 		   const std::string& iFragmentSrc);
 
 	/**
-	 * @brief Constructor.
+	 * @brief Constructor from a single Slang source string.
 	 * @param[in] iShaderName Shader's name.
 	 * @param[in] iRenderer Name of the shader's related renderer.
-	 * @param[in] iSources The shader's sources with type.
+	 * @param[in] iSlangSource The Slang shader source code.
 	 */
-	Shader(const std::string& iShaderName, const std::string& iRenderer,
-		   const std::unordered_map<ShaderType, std::string>& iSources);
+	Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& iSlangSource);
 
 	/**
 	 * @brief Constructor.
@@ -122,8 +121,8 @@ public:
 	auto getStagesInfo() -> std::vector<VkPipelineShaderStageCreateInfo>;
 
 private:
-	void createShader(const std::unordered_map<ShaderType, std::string>& iSources);
-	void compileOrGetVulkanBinaries(const std::unordered_map<ShaderType, std::string>& iSources);
+	void createShader(const std::string& iSlangSource);
+	void compileOrGetVulkanBinaries(const std::string& iSlangSource);
 
 	std::unordered_map<ShaderType, std::vector<uint32_t>> m_vulkanSpirv;
 };

@@ -44,7 +44,7 @@ This engine requires a graphic card that supports one of the following renderer:
 * `Null` - for no graphic rendering (Server for example)
 * `OpenGL` - Use OpenGL 4.5 (you must have Graphics device that supports it. Known that most arm644 device does not
   support it)
-* `Vulkan` - Use Vulkan 1.3 (you must have Graphics device that supports it)
+* `Vulkan` - Use Vulkan 1.4 (you must have Graphics device that supports it)
 
 #### sound
 
@@ -134,7 +134,7 @@ and publish the engine as a package on the configured repository of DepManager.
             * [ ] add shortcut to add/remove entities
                 * [ ] deletion confirmation
             * [ ] Entities can have different display in editor and in game
-* [ ] v0.0.2 -- release expected for 2026-03-01
+* [ ] v0.0.2 -- release expected for 2026-03-15
     * [X] Developers
         * [X] Public Engine projects should be 3rd party independent
             * [X] Remove fmt public dependency
@@ -142,6 +142,7 @@ and publish the engine as a package on the configured repository of DepManager.
             * [X] Work on 3rd party builds for dependencies reduction (more static link)
     * [X] graphics
         * [X] backgrounds/skyboxes
+        * [X] Migrate shaders to slang
     * [X] Misc
         * [X] Pausing games
             * [X] possibility to pause/unpause the game

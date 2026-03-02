@@ -43,12 +43,10 @@ function(owl_target_link_vulkan target_name)
         target_link_libraries(${target_name}Private INTERFACE spirv-cross-cpp)
     endif ()
 
-    # shaderc
-    find_package(SPIRV-Tools REQUIRED)
-    find_package(SPIRV-Tools-opt REQUIRED)
-    find_package(glslang REQUIRED)
-    find_package(shaderc REQUIRED)
-    target_link_libraries(${target_name}Private INTERFACE shaderc::shaderc_shared)
+    # Slang shader compiler
+    find_package(slang REQUIRED)
+    message(STATUS "Found slang version ${slang_VERSION} @ ${slang_DIR}")
+    target_link_libraries(${target_name}Private INTERFACE slang::slang)
 
     set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG ${StateSave})
 endfunction()
