@@ -9,10 +9,9 @@
 #pragma once
 
 #include "renderer/Shader.h"
-#include "core/external/shaderc.h"
 
 /**
- * @brief Namespace gathering utility functions used accross different renderers.
+ * @brief Namespace gathering utility functions used across different renderers.
  */
 namespace owl::renderer::utils {
 
@@ -32,8 +31,6 @@ auto getRelativeShaderPath(const std::string& iShaderName, const std::string& iR
 auto getExtension(const ShaderType& iStage) -> std::string;
 
 auto getCacheExtension(const ShaderType& iStage) -> std::string;
-
-auto shaderStageToShaderC(const ShaderType& iStage) -> shaderc_shader_kind;
 
 auto readCachedShader(const std::filesystem::path& iFile) -> std::vector<uint32_t>;
 
@@ -55,13 +52,21 @@ struct ShaderReflectionData {
 	std::vector<SampledImage> sampledImages;
 };
 
-auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
-				   ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData;
+OWL_API auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
+						   ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData;
 
-auto computeShaderHash(const std::string& iSource) -> std::string;
+OWL_API auto computeShaderHash(const std::string& iSource) -> std::string;
 
 auto isShaderCacheValid(const std::filesystem::path& iCachedPath, const std::string& iSource) -> bool;
 
 void writeShaderHash(const std::filesystem::path& iCachedPath, const std::string& iSource);
+
+struct SlangCompilationResult {
+	std::unordered_map<ShaderType, std::vector<uint32_t>> spirvData;
+	bool success = false;
+};
+
+OWL_API auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleName, bool iForVulkan)
+		-> SlangCompilationResult;
 
 }// namespace owl::renderer::utils

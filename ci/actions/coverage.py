@@ -27,7 +27,9 @@ class Coverage(BaseAction):
             exit_code = run_command(
                 ["gcovr", "-j", "0", "-r", f"{root}", "-o",
                  f'{preset.get_build_dir() / "Coverage" / "index.html"}',
-                 '--gcov-executable', f'{gcov_executable}', "."])
+                 '--gcov-executable', f'{gcov_executable}',
+                 '--gcov-ignore-parse-errors', 'suspicious_hits.warn_once_per_file',
+                 "."])
             if exit_code != 0:
                 log.error("Coverage analysis failed.")
                 return exit_code

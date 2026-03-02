@@ -32,13 +32,12 @@ public:
 		   const std::string& iFragmentSrc);
 
 	/**
-	 * @brief Constructor.
+	 * @brief Constructor from a single Slang source string.
 	 * @param[in] iShaderName Shader's name.
 	 * @param[in] iRenderer Name of the shader's related renderer.
-	 * @param[in] iSources The shader's sources with type.
+	 * @param[in] iSlangSource The Slang shader source code.
 	 */
-	Shader(const std::string& iShaderName, const std::string& iRenderer,
-		   const std::unordered_map<ShaderType, std::string>& iSources);
+	Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& iSlangSource);
 
 	/**
 	 * @brief Constructor.
@@ -176,12 +175,12 @@ private:
 	uint32_t m_programId = 0;
 
 	/**
-	 * @brief Compile the given shader source code.
-	 * @param[in] iSources The shader's sources with type.
+	 * @brief Compile the given Slang shader source code.
+	 * @param[in] iSlangSource The Slang shader source code.
 	 */
-	void compile(const std::unordered_map<ShaderType, std::string>& iSources);
+	void compile(const std::string& iSlangSource);
 
-	void compileOrGetOpenGlBinaries(const std::unordered_map<ShaderType, std::string>& iSources);
+	void compileOrGetOpenGlBinaries(const std::string& iSlangSource);
 	void createProgram();
 
 	std::unordered_map<ShaderType, std::vector<uint32_t>> m_openGlSpirv;

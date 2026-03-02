@@ -111,6 +111,8 @@ static constexpr auto resultString(const VkResult iResult) -> std::string_view {
 			return "VK_ERROR_NOT_ENOUGH_SPACE_KHR";
 		case VK_PIPELINE_BINARY_MISSING_KHR:
 			return "VK_PIPELINE_BINARY_MISSING_KHR";
+		case VK_ERROR_PRESENT_TIMING_QUEUE_FULL_EXT:
+			return "VK_ERROR_PRESENT_TIMING_QUEUE_FULL_EXT";
 		case VK_RESULT_MAX_ENUM:
 			return "VK_RESULT_MAX_ENUM";
 	}

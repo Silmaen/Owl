@@ -9,7 +9,15 @@
 #include "owlpch.h"
 
 #include "core/Application.h"
+#include "core/external/slang.h"
 #include "shaderFileUtils.h"
+OWL_DIAG_PUSH
+OWL_DIAG_DISABLE_CLANG("-Wswitch-enum")
+OWL_DIAG_DISABLE_CLANG("-Wdouble-promotion")
+OWL_DIAG_DISABLE_CLANG("-Wsign-conversion")
+#include <spirv_cross.hpp>
+#include <spirv_glsl.hpp>
+OWL_DIAG_POP
 
 #include "renderer/Renderer.h"
 
@@ -95,23 +103,6 @@ auto writeCachedShader(const std::filesystem::path& iFile, const std::vector<uin
 	return false;
 }
 
-auto shaderStageToShaderC(const ShaderType& iStage) -> shaderc_shader_kind {
-	switch (iStage) {
-		case ShaderType::Vertex:
-			return shaderc_glsl_vertex_shader;
-		case ShaderType::Fragment:
-			return shaderc_glsl_fragment_shader;
-		case ShaderType::Geometry:
-			return shaderc_glsl_geometry_shader;
-		case ShaderType::Compute:
-			return shaderc_glsl_compute_shader;
-		case ShaderType::None:
-			break;
-	}
-	OWL_CORE_ASSERT(false, "Unsupported Shader Type")
-	return static_cast<shaderc_shader_kind>(0);
-}
-
 auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
 				   const ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData {
 	ShaderReflectionData result;
@@ -171,6 +162,120 @@ void writeShaderHash(const std::filesystem::path& iCachedPath, const std::string
 		out << computeShaderHash(iSource);
 		out.close();
 	}
+}
+
+namespace {
+auto getOrCreateGlobalSession() -> Slang::ComPtr<slang::IGlobalSession> {
+	static Slang::ComPtr<slang::IGlobalSession> session;
+	if (!session) {
+		if (SLANG_FAILED(slang::createGlobalSession(session.writeRef()))) {
+			OWL_CORE_ERROR("Slang: Failed to create global session.")
+			return nullptr;
+		}
+	}
+	return session;
+}
+
+auto extractSpirv(slang::IBlob* iBlob) -> std::vector<uint32_t> {
+	const auto* data = static_cast<const uint32_t*>(iBlob->getBufferPointer());
+	const auto size = iBlob->getBufferSize() / sizeof(uint32_t);
+	return {data, data + size};
+}
+}// namespace
+
+auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleName, const bool iForVulkan)
+		-> SlangCompilationResult {
+	OWL_PROFILE_FUNCTION()
+
+	SlangCompilationResult result;
+	auto globalSession = getOrCreateGlobalSession();
+	if (!globalSession)
+		return result;
+
+	slang::TargetDesc targetDesc{};
+	targetDesc.format = SLANG_SPIRV;
+	targetDesc.profile = globalSession->findProfile(iForVulkan ? "spirv_1_6" : "glsl_450");
+	targetDesc.flags = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
+
+	const char* backendDefine = iForVulkan ? "BACKEND_VULKAN" : "BACKEND_OPENGL";
+	slang::PreprocessorMacroDesc macroDesc{};
+	macroDesc.name = backendDefine;
+	macroDesc.value = "1";
+
+	slang::SessionDesc sessionDesc{};
+	sessionDesc.targets = &targetDesc;
+	sessionDesc.targetCount = 1;
+	sessionDesc.preprocessorMacros = &macroDesc;
+	sessionDesc.preprocessorMacroCount = 1;
+
+	Slang::ComPtr<slang::ISession> session;
+	if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) {
+		OWL_CORE_ERROR("Slang: Failed to create session for module '{}'.", iModuleName)
+		return result;
+	}
+
+	Slang::ComPtr<slang::IBlob> diagnosticBlob;
+	auto* module = session->loadModuleFromSourceString(iModuleName.c_str(), iModuleName.c_str(), iSource.c_str(),
+													   diagnosticBlob.writeRef());
+	if (!module) {
+		if (diagnosticBlob)
+			OWL_CORE_ERROR("Slang: Module load failed for '{}': {}", iModuleName,
+						   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
+		return result;
+	}
+	if (diagnosticBlob && diagnosticBlob->getBufferSize() > 0) {
+		const std::string_view diag(static_cast<const char*>(diagnosticBlob->getBufferPointer()),
+									diagnosticBlob->getBufferSize());
+		// Filter out harmless warning 41012 (capabilities auto-upgrade)
+		if (diag.find("warning 41012") == std::string_view::npos)
+			OWL_CORE_WARN("Slang: Warnings for '{}': {}", iModuleName, diag)
+	}
+
+	struct EntryPointInfo {
+		const char* name;
+		ShaderType type;
+	};
+	constexpr EntryPointInfo entryPoints[] = {{"vertexMain", ShaderType::Vertex},
+											  {"fragmentMain", ShaderType::Fragment}};
+
+	for (const auto& [name, type]: entryPoints) {
+		Slang::ComPtr<slang::IEntryPoint> entryPoint;
+		if (SLANG_FAILED(module->findEntryPointByName(name, entryPoint.writeRef()))) {
+			OWL_CORE_ERROR("Slang: Entry point '{}' not found in module '{}'.", name, iModuleName)
+			return result;
+		}
+
+		slang::IComponentType* components[] = {module, entryPoint};
+		Slang::ComPtr<slang::IComponentType> composedProgram;
+		if (SLANG_FAILED(
+					session->createCompositeComponentType(components, 2, composedProgram.writeRef(), diagnosticBlob.writeRef()))) {
+			OWL_CORE_ERROR("Slang: Failed to compose program for entry point '{}' in module '{}'.", name, iModuleName)
+			return result;
+		}
+
+		Slang::ComPtr<slang::IComponentType> linkedProgram;
+		if (SLANG_FAILED(composedProgram->link(linkedProgram.writeRef(), diagnosticBlob.writeRef()))) {
+			if (diagnosticBlob)
+				OWL_CORE_ERROR("Slang: Linking failed for '{}': {}", name,
+							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
+			return result;
+		}
+
+		Slang::ComPtr<slang::IBlob> spirvBlob;
+		if (SLANG_FAILED(linkedProgram->getEntryPointCode(0, 0, spirvBlob.writeRef(), diagnosticBlob.writeRef()))) {
+			if (diagnosticBlob)
+				OWL_CORE_ERROR("Slang: Code generation failed for '{}': {}", name,
+							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
+			return result;
+		}
+
+		result.spirvData[type] = extractSpirv(spirvBlob);
+		OWL_CORE_TRACE("Slang: Compiled entry point '{}' ({}) -> {} SPIR-V words.", name,
+					   magic_enum::enum_name(type), result.spirvData[type].size())
+	}
+
+	result.success = true;
+	return result;
 }
 
 }// namespace owl::renderer::utils
