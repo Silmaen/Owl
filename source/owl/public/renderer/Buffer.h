@@ -14,7 +14,7 @@ namespace owl::renderer {
 /**
  * @brief Type of data.
  */
-enum class ShaderDataType : uint8_t {
+enum struct ShaderDataType : uint8_t {
 	None = 0,
 	Float,
 	Float2,

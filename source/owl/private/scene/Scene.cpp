@@ -213,7 +213,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 	for (const auto view = registry.view<component::Trigger>(); const auto ent: view) {
 		const Entity entity{ent, this};
 		if (Entity player = getPrimaryPlayer(); getColliderBox(entity).intersect(getColliderBox(player))) {
-			entity.getComponent<component::Trigger>().trigger.onTriggered(player);
+			entity.getComponent<component::Trigger>().trigger.onTriggered(player, entity);
 		}
 	}
 

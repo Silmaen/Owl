@@ -1,0 +1,111 @@
+Scene: untitled
+Entities:
+  - Entity: 9578704081447035116
+    Tag:
+      tag: Camera
+    Transform:
+      translation: [-5.72035027, 1.37000847, 4]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 10
+        orthographicNear: -1
+        orthographicFar: 1
+      primary: true
+      fixedAspectRatio: false
+    EntityLink:
+      linkedEntityName: Player
+    Visibility:
+      gameVisible: true
+  - Entity: 9684783930941100990
+    Tag:
+      tag: Teleport1
+    Transform:
+      translation: [-0.420158446, 0.687017262, 0]
+      rotation: [0, 0, 0]
+      scale: [0.137067258, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+    Trigger:
+      Type: Teleport
+      LevelName: test_levels
+      TargetName: Target1
+    Visibility:
+      gameVisible: true
+  - Entity: 8214567140797483137
+    Tag:
+      tag: Target1
+    Transform:
+      translation: [4.69625711, 0.691418409, -6.10351562e-05]
+      rotation: [0, 3.14159274, 0]
+      scale: [1, 0.99999994, 1]
+    Trigger:
+      Type: Target
+    Visibility:
+      gameVisible: true
+  - Entity: 3763666503769867403
+    Tag:
+      tag: Player
+    Transform:
+      translation: [-5.73427296, 2.22982883, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/source/personnel/stack_owl/Owl/engine_assets/textures/mario.png
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Player:
+      primary: true
+      linearImpulse: 0.200000003
+      jumpImpulse: 5
+      canJump: true
+    Visibility:
+      gameVisible: true
+  - Entity: 10565902069703672599
+    Tag:
+      tag: initial wall
+    Transform:
+      translation: [-6.90431976, 3.15763474, 0]
+      rotation: [0, 0, 0]
+      scale: [0.266876847, 6.65786695, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+    PhysicBody:
+      type: Static
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: false
+  - Entity: 16364389999255203851
+    Tag:
+      tag: ground
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [13.5721035, 0.329143107, 1]
+    SpriteRenderer:
+      color: [0.967971504, 0.43403706, 0, 1]
+    PhysicBody:
+      type: Static
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true

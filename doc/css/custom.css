@@ -1,0 +1,119 @@
+/* Custom styles for Owl Engine documentation */
+
+/* ── Status badges (dark-mode aware) ── */
+
+.badge-done,
+.badge-progress,
+.badge-planned {
+	display: inline-block;
+	padding: 1px 8px;
+	border-radius: 10px;
+	font-size: 0.8em;
+	font-weight: 600;
+	line-height: 1.5;
+	vertical-align: middle;
+	letter-spacing: 0.02em;
+}
+
+.badge-done {
+	background: #d4edda;
+	color: #155724;
+}
+
+.badge-progress {
+	background: #fff3cd;
+	color: #856404;
+}
+
+.badge-planned {
+	background: #cce5ff;
+	color: #004085;
+}
+
+html.dark-mode .badge-done {
+	background: #1e3a2a;
+	color: #82d9a0;
+}
+
+html.dark-mode .badge-progress {
+	background: #3b3013;
+	color: #f0c040;
+}
+
+html.dark-mode .badge-planned {
+	background: #172d4a;
+	color: #6db3f2;
+}
+
+@media (prefers-color-scheme: dark) {
+	html:not(.light-mode) .badge-done {
+		background: #1e3a2a;
+		color: #82d9a0;
+	}
+	html:not(.light-mode) .badge-progress {
+		background: #3b3013;
+		color: #f0c040;
+	}
+	html:not(.light-mode) .badge-planned {
+		background: #172d4a;
+		color: #6db3f2;
+	}
+}
+
+/* ── Shields.io badge alignment (README / external badges) ── */
+
+.contents img[src*="shields.io"] {
+	vertical-align: middle;
+	margin-right: 0.25em;
+}
+
+/* ── Tighter spacing for badge lists ── */
+
+.contents ul li {
+	margin-top: 0.15em;
+	margin-bottom: 0.15em;
+}
+
+/* ── Modern typography and spacing ── */
+
+.contents h1, .contents h2, .contents h3 {
+	letter-spacing: -0.01em;
+}
+
+.contents h2 {
+	margin-top: 1.5em;
+	padding-bottom: 0.3em;
+	border-bottom: 1px solid var(--separator-color);
+}
+
+/* ── Directory tables: alternating rows in dark mode ── */
+
+html.dark-mode table.directory tr.even {
+	background-color: rgba(255, 255, 255, .04);
+}
+
+html.dark-mode table.directory tr.odd {
+	background-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+	html:not(.light-mode) table.directory tr.even {
+		background-color: rgba(255, 255, 255, .04);
+	}
+	html:not(.light-mode) table.directory tr.odd {
+		background-color: transparent;
+	}
+}
+
+/* ── Smoother transitions ── */
+
+#side-nav, #nav-tree, #top, .contents, #MSearchBox {
+	transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* ── Refined code blocks ── */
+
+div.fragment {
+	border: 1px solid var(--separator-color);
+	border-radius: var(--border-radius-large);
+}

@@ -84,14 +84,17 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 			case EditorLayer::State::Play:
 				{
 					m_parent->getActiveScene()->onUpdateRuntime(iTimeStep);
+					m_parent->handleTeleportRequest();
 					break;
 				}
 			case EditorLayer::State::Pause:
 				{
-					if (m_parent->consumeStepRequest())
+					if (m_parent->consumeStepRequest()) {
 						m_parent->getActiveScene()->onUpdateRuntime(iTimeStep);
-					else
+						m_parent->handleTeleportRequest();
+					} else {
 						m_parent->getActiveScene()->onRenderRuntime();
+					}
 					break;
 				}
 		}
@@ -159,6 +162,39 @@ void Viewport::renderOverlay() const {
 			renderer::Renderer2D::drawRect({.transform = transform, .color = math::vec4(0.95f, 0.55f, 0.f, 1)});
 			// Overlay
 			renderer::Renderer2D::drawQuad({.transform = transform, .color = math::vec4{0.95f, 0.55f, 0.f, 0.2f}});
+		}
+
+		// Draw trigger type icons
+		auto& textureLibrary = renderer::Renderer::getTextureLibrary();
+		auto& activeScene = *m_parent->getActiveScene();
+		for (const auto view =
+					 activeScene.registry.view<scene::component::Trigger, scene::component::Transform>();
+			 const auto entity: view) {
+			auto [trigger, tc] = view.get<scene::component::Trigger, scene::component::Transform>(entity);
+			std::string iconName;
+			switch (trigger.trigger.type) {
+				case scene::SceneTrigger::TriggerType::Victory:
+					iconName = "icons/triggers/trigger_victory";
+					break;
+				case scene::SceneTrigger::TriggerType::Death:
+					iconName = "icons/triggers/trigger_death";
+					break;
+				case scene::SceneTrigger::TriggerType::Target:
+					iconName = "icons/triggers/trigger_target";
+					break;
+				case scene::SceneTrigger::TriggerType::Teleport:
+					iconName = "icons/triggers/trigger_teleport";
+					break;
+			}
+			if (const auto icon = textureLibrary.get(iconName); icon != nullptr) {
+				math::Transform iconTransform = tc.transform;
+				iconTransform.translation().z() += 0.01f;
+				iconTransform.scale() = {0.5f, 0.5f, 1.f};
+				renderer::Renderer2D::drawQuad({.transform = iconTransform,
+												.color = {1.f, 1.f, 1.f, 0.7f},
+												.texture = icon,
+												.entityId = static_cast<int>(entity)});
+			}
 		}
 	}
 

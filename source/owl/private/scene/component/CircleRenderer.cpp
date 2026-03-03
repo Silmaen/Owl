@@ -1,4 +1,3 @@
-
 /**
  * @file CircleRenderer.cpp
  * @author Silmaen

@@ -1,5 +1,5 @@
 /**
- * @file Player.h
+ * @file Trigger.h
  * @author Silmaen
  * @date 30/12/2024
  * Copyright © 2024 All rights reserved.

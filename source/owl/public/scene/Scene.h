@@ -141,6 +141,24 @@ public:
 	Status status = Status::Editing;
 
 	/**
+	 * @brief Describes a pending teleport request (set by Teleport triggers).
+	 */
+	struct TeleportRequest {
+		/// Whether a teleport is pending.
+		bool pending = false;
+		/// Level to load (empty = same level).
+		std::string levelName;
+		/// Name of the target entity to teleport to.
+		std::string targetName;
+		/// Player velocity to apply after teleport (rotated by delta).
+		math::vec2f initialVelocity = {0.f, 0.f};
+		/// Rotation delta between trigger and target.
+		float rotationDelta = 0.f;
+	};
+	/// Pending teleport request (used for cross-level teleport).
+	TeleportRequest teleportRequest;
+
+	/**
 	 * @brief Count the entities in the scene.
 	 * @return The count of Entity in the scene.
 	 */

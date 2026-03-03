@@ -45,9 +45,10 @@ public:
 
 	/**
 	 * @brief Action on a new trigger.
-	 * @param ioEntity The entity that have trigger.
+	 * @param ioPlayer The player entity that triggered.
+	 * @param iTriggerEntity The entity carrying the trigger component.
 	 */
-	void onTriggered(Entity& ioEntity);
+	void onTriggered(Entity& ioPlayer, const Entity& iTriggerEntity);
 
 	/**
 	 * @brief The type of trigger
@@ -55,9 +56,16 @@ public:
 	enum struct TriggerType : uint8_t {
 		Victory,/// Player win.
 		Death,/// Player loose.
+		Target,/// Passive position marker (no action on collision).
+		Teleport,/// Teleport the player to a named target entity, optionally in another level.
 	};
 	/// The type of trigger.
 	TriggerType type = TriggerType::Victory;
+
+	/// Name of the level to load (Teleport type, empty = same level).
+	std::string levelName;
+	/// Name of the target entity to teleport to (Teleport type).
+	std::string targetName;
 
 	/**
 	 * @brief Check if triggered.

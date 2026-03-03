@@ -120,13 +120,14 @@ Shaders are written in **Slang** (`.slang` files), a single-source shading langu
 
 ### Dependencies
 
-- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (31 external dependencies)
+- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (30 external dependencies)
 - Dependencies auto-download during CMake configure step
 - Versions are pinned explicitly in `depmanager.yml`
 - Key libraries: EnTT (ECS), ImGui/ImGuizmo (GUI), Box2D (physics), spdlog (logging), yaml-cpp (serialization), Vulkan
   SDK, GLFW, OpenAL, glad, freetype, msdfgen/msdf-atlas-gen (fonts), tinygltf/tinyobjloader/ufbx (mesh loading),
-  magic_enum (enum reflection), cpptrace/libdwarf (debugging), zeus (math), nfd (file dialogs), tinyxml2 (XML), libpng,
-  zlib/zstd (compression)
+  magic_enum (enum reflection), cpptrace/libdwarf/debugbreak (debugging), zeus (math), nfd (file dialogs), tinyxml2
+  (XML), libpng, zlib/zstd (compression), libsndfile (audio files), stb_image (image loading), googletest (testing),
+  mavsdk (drone MAVLink SDK)
 
 ## DepManager (`dmgr`) Usage
 
@@ -256,5 +257,6 @@ Enforced by `.clang-format` (LLVM-based) and `.clang-tidy`. Key conventions:
 | `OWL_ENABLE_THREAD_SANITIZER`             | OFF     | ThreadSanitizer (CI presets)                   |
 | `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF     | UBSanitizer (CI presets)                       |
 | `OWL_ENABLE_LEAK_SANITIZER`               | OFF     | LeakSanitizer (CI presets)                     |
+| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only, CI presets)        |
 | `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation        |
 | `OWL_PACKAGING`                           | OFF     | Enable packaging mode                          |

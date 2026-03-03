@@ -233,6 +233,10 @@ void renderProps(Trigger& ioComponent) {
 		}
 		ImGui::EndCombo();
 	}
+	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Teleport) {
+		ImGui::InputText("Level Name", &ioComponent.trigger.levelName);
+		ImGui::InputText("Target Name", &ioComponent.trigger.targetName);
+	}
 }
 
 void renderProps(EntityLink& ioComponent) { ImGui::InputText("linked Entity Name", &ioComponent.linkedEntityName); }

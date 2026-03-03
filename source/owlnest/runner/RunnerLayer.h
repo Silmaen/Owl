@@ -48,8 +48,16 @@ private:
 	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
 	auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
 
+	void handleTeleportRequest();
+
 	shared<scene::Scene> m_activeScene;
 	math::vec2ui m_viewportSize = {0, 0};
 	RunnerConfig m_config;
+	/// If true, need to apply velocity after physics init on next frame.
+	bool m_pendingTeleportVelocity = false;
+	/// Stored velocity to apply after cross-level teleport physics init.
+	math::vec2f m_teleportVelocity = {0.f, 0.f};
+	/// Stored target name for cross-level teleport (to apply rotation after loading).
+	std::string m_teleportTargetName;
 };
 }// namespace owl::nest::runner

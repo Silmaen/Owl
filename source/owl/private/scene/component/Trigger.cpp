@@ -16,6 +16,10 @@ void Trigger::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "Type" << YAML::Value << std::string(magic_enum::enum_name(trigger.type));
+	if (trigger.type == SceneTrigger::TriggerType::Teleport) {
+		iOut.getImpl()->emitter << YAML::Key << "LevelName" << YAML::Value << trigger.levelName;
+		iOut.getImpl()->emitter << YAML::Key << "TargetName" << YAML::Value << trigger.targetName;
+	}
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
@@ -30,6 +34,10 @@ void Trigger::deserialize(const core::Serializer& iNode) {
 		if (triggerType.has_value())
 			trigger.type = triggerType.value();
 	}
+	if (iNode.getImpl()->node["LevelName"])
+		trigger.levelName = iNode.getImpl()->node["LevelName"].as<std::string>();
+	if (iNode.getImpl()->node["TargetName"])
+		trigger.targetName = iNode.getImpl()->node["TargetName"].as<std::string>();
 }
 
 }// namespace owl::scene::component

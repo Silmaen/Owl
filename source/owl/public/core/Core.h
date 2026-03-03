@@ -1,5 +1,5 @@
 /**
- * @file Application.h
+ * @file Core.h
  * @author Silmaen
  * @date 04/12/2022
  * Copyright © 2022 All rights reserved.
