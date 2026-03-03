@@ -77,6 +77,9 @@ class PresetConfig:
                 f"Failed to load preset configuration for '{self.cmake_preset}'.")
             return
 
+        def is_true(value: Any) -> bool:
+            return value in ["ON", "True", "true", "1", True]
+
         if "vendor" in self.raw_config:
             vendor = self.raw_config["vendor"]
             if "silmaen" in vendor:
@@ -102,9 +105,7 @@ class PresetConfig:
                     if vendor_conf["release_preset"] in list_cmake_presets():
                         self.release_preset = vendor_conf["release_preset"]
                 if "publish_doc" in vendor_conf:
-                    self.publish_doc = vendor_conf["publish_doc"] in [
-                        "ON", "True", "true", "1"
-                    ]
+                    self.publish_doc = is_true(vendor_conf["publish_doc"])
 
         if "generator" in self.raw_config:
             self.cmake_generator = self.raw_config["generator"]
@@ -117,20 +118,15 @@ class PresetConfig:
                     "CMAKE_CONFIGURATION_TYPES"
                 ].split(";")
             if "OWL_TESTING" in cache_variables:
-                self.run_tests = cache_variables["OWL_TESTING"] in [
-                    "ON", "True", "true", "1"
-                ]
+                self.run_tests = is_true(cache_variables["OWL_TESTING"])
             if "OWL_ENABLE_COVERAGE" in cache_variables:
-                self.run_coverage = cache_variables["OWL_ENABLE_COVERAGE"] in [
-                    "ON", "True", "true", "1"
-                ] and self.run_tests
+                self.run_coverage = is_true(
+                    cache_variables["OWL_ENABLE_COVERAGE"]) and self.run_tests
             if "OWL_ENABLE_DOCUMENTATION" in cache_variables:
-                self.run_documentation = cache_variables[
-                                             "OWL_ENABLE_DOCUMENTATION"] in [
-                                             "ON", "True", "true", "1"
-                                         ] and (
-                                                 "Release" in self.cmake_build_types or
-                                                 self.release_preset not in [None, ""])
+                self.run_documentation = (
+                            is_true(cache_variables["OWL_ENABLE_DOCUMENTATION"])
+                            and ("Release" in self.cmake_build_types or
+                                 self.release_preset not in [None, ""]))
             if "OWL_PACKAGE_NAME" in cache_variables:
                 self.run_package = cache_variables["OWL_PACKAGE_NAME"] not in [None,
                                                                                ""]
