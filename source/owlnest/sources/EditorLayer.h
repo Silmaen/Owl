@@ -61,9 +61,11 @@ public:
 	void closeProject();
 	void importScene();
 	void updateWindowTitle();
+	void packScene();
+	void packGame();
 
 	[[nodiscard]] auto getActiveScene() const -> const shared<scene::Scene>& { return m_activeScene; }
-	auto getSelectedEntity() const -> scene::Entity;
+	[[nodiscard]] auto getSelectedEntity() const -> scene::Entity;
 	void setSelectedEntity(scene::Entity iEntity);
 
 	/**
@@ -83,7 +85,7 @@ private:
 	void renderToolbar();
 
 	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
-	auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
+	static auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
 	void onScenePlay();
 	void onScenePause();
 	void onSceneResume();

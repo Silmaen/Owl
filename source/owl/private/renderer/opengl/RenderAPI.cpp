@@ -7,8 +7,8 @@
  */
 #include "owlpch.h"
 
-#include "core/Application.h"
 #include "RenderAPI.h"
+#include "core/Application.h"
 #include "core/external/opengl46.h"
 
 namespace owl::renderer::opengl {

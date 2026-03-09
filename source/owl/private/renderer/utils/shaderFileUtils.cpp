@@ -136,7 +136,7 @@ auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer,
 }
 
 auto computeShaderHash(const std::string& iSource) -> std::string {
-	std::hash<std::string> hasher;
+	const std::hash<std::string> hasher;
 	return std::to_string(hasher(iSource));
 }
 
@@ -167,7 +167,7 @@ void writeShaderHash(const std::filesystem::path& iCachedPath, const std::string
 namespace {
 auto getOrCreateGlobalSession() -> Slang::ComPtr<slang::IGlobalSession> {
 	static Slang::ComPtr<slang::IGlobalSession> session;
-	if (!session) {
+	if (session == nullptr) {
 		if (SLANG_FAILED(slang::createGlobalSession(session.writeRef()))) {
 			OWL_CORE_ERROR("Slang: Failed to create global session.")
 			return nullptr;
@@ -189,7 +189,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 
 	SlangCompilationResult result;
 	auto globalSession = getOrCreateGlobalSession();
-	if (!globalSession)
+	if (globalSession == nullptr)
 		return result;
 
 	slang::TargetDesc targetDesc{};
@@ -217,13 +217,13 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 	Slang::ComPtr<slang::IBlob> diagnosticBlob;
 	auto* module = session->loadModuleFromSourceString(iModuleName.c_str(), iModuleName.c_str(), iSource.c_str(),
 													   diagnosticBlob.writeRef());
-	if (!module) {
-		if (diagnosticBlob)
+	if (module == nullptr) {
+		if (diagnosticBlob != nullptr)
 			OWL_CORE_ERROR("Slang: Module load failed for '{}': {}", iModuleName,
 						   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 		return result;
 	}
-	if (diagnosticBlob && diagnosticBlob->getBufferSize() > 0) {
+	if (diagnosticBlob != nullptr && diagnosticBlob->getBufferSize() > 0) {
 		const std::string_view diag(static_cast<const char*>(diagnosticBlob->getBufferPointer()),
 									diagnosticBlob->getBufferSize());
 		// Filter out harmless warning 41012 (capabilities auto-upgrade)
@@ -255,7 +255,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 
 		Slang::ComPtr<slang::IComponentType> linkedProgram;
 		if (SLANG_FAILED(composedProgram->link(linkedProgram.writeRef(), diagnosticBlob.writeRef()))) {
-			if (diagnosticBlob)
+			if (diagnosticBlob != nullptr)
 				OWL_CORE_ERROR("Slang: Linking failed for '{}': {}", name,
 							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 			return result;
@@ -263,7 +263,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 
 		Slang::ComPtr<slang::IBlob> spirvBlob;
 		if (SLANG_FAILED(linkedProgram->getEntryPointCode(0, 0, spirvBlob.writeRef(), diagnosticBlob.writeRef()))) {
-			if (diagnosticBlob)
+			if (diagnosticBlob != nullptr)
 				OWL_CORE_ERROR("Slang: Code generation failed for '{}': {}", name,
 							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 			return result;

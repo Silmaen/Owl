@@ -22,7 +22,8 @@ namespace owl::core {
 
 Application* Application::s_instance = nullptr;
 
-Application::Application(AppParams iAppParams) : m_initParams{std::move(iAppParams)} {
+Application::Application(AppParams iAppParams)// NOLINT(readability-function-cognitive-complexity)
+	: m_initParams{std::move(iAppParams)} {
 	OWL_PROFILE_FUNCTION()
 
 	OWL_CORE_ASSERT(!s_instance, "Application already exists!")
@@ -54,20 +55,50 @@ Application::Application(AppParams iAppParams) : m_initParams{std::move(iAppPara
 
 		Log::setFrameFrequency(m_initParams.frameLogFrequency);
 	}
+	// Open asset pack if specified — extract engine assets before directory search.
+	if (!m_initParams.packFile.empty()) {
+		auto packPath = std::filesystem::path(m_initParams.packFile);
+		if (packPath.is_relative())
+			packPath = m_workingDirectory / packPath;
+		if (openPack(packPath)) {
+			const auto assetsDir = m_workingDirectory / "assets";
+			for (const auto& entryPath: m_packReader.listEntries()) {
+				if (!entryPath.starts_with("shaders/") && !entryPath.starts_with("fonts/"))
+					continue;
+				// Skip extraction if a valid .spv cache already exists for this shader.
+				if (entryPath.ends_with(".slang")) {
+					const auto spvPath = assetsDir / (entryPath + ".spv");
+					if (exists(spvPath))
+						continue;
+				}
+				auto data = m_packReader.readEntry(entryPath);
+				if (!data)
+					continue;
+				const auto destFile = assetsDir / entryPath;
+				std::filesystem::create_directories(destFile.parent_path());
+				std::ofstream out(destFile, std::ios::binary);
+				if (out.good())
+					out.write(reinterpret_cast<const char*>(data->data()), static_cast<std::streamsize>(data->size()));
+			}
+		} else {
+			OWL_CORE_ERROR("Failed to open asset pack: {}", packPath.string())
+		}
+	}
 	// Looking for asset Directories
 	{
+		const bool hasPack = hasOpenPack();
 #if defined(OWL_DEVELOPMENT) || defined(OWL_PACKAGE_ENGINE)
 		// first (lowest priority) - Engine assets.
 		if (const auto engineAsset = searchAssets("engine_assets"); engineAsset.has_value()) {
 			m_assetDirectories.push_front({"Engine assets", engineAsset.value()});
-		} else {
+		} else if (!hasPack) {
 			OWL_CORE_ERROR("Unable to find engine assets")
 		}
 #endif
 		// second working dir asset directory
 		if (exists(m_workingDirectory / "assets")) {
 			m_assetDirectories.push_front({"working dir assets", m_workingDirectory / "assets"});
-		} else {
+		} else if (!hasPack) {
 			OWL_CORE_WARN("Unable to find working dir assets")
 		}
 #ifdef OWL_DEVELOPMENT
@@ -75,7 +106,7 @@ Application::Application(AppParams iAppParams) : m_initParams{std::move(iAppPara
 		if (!m_initParams.assetsPattern.empty()) {
 			if (const auto engineAsset = searchAssets(m_initParams.assetsPattern); engineAsset.has_value()) {
 				m_assetDirectories.push_front({"App assets", engineAsset.value()});
-			} else {
+			} else if (!hasPack) {
 				OWL_CORE_ERROR("Unable to find app assets")
 			}
 		}
@@ -123,6 +154,36 @@ Application::Application(AppParams iAppParams) : m_initParams{std::move(iAppPara
 		// wait for all asynchron tasks
 		m_scheduler.waitEmptyQueue();
 		OWL_CORE_INFO("Renderer initiated.")
+	}
+
+	// Clean up extracted pack assets after init — keep only .spv compilation cache.
+	if (hasOpenPack()) {
+		const auto assetsDir = m_workingDirectory / "assets";
+		if (exists(assetsDir)) {
+			// Delete all non-.spv files that were extracted from the pack.
+			for (const auto& entry: std::filesystem::recursive_directory_iterator(assetsDir)) {
+				if (!entry.is_regular_file())
+					continue;
+				if (entry.path().extension() == ".spv")
+					continue;
+				std::filesystem::remove(entry.path());
+			}
+			// Remove empty directories (bottom-up by collecting then sorting by depth).
+			std::vector<std::filesystem::path> dirs;
+			for (const auto& entry: std::filesystem::recursive_directory_iterator(assetsDir)) {
+				if (entry.is_directory())
+					dirs.push_back(entry.path());
+			}
+			std::sort(dirs.begin(), dirs.end(),
+					  [](const auto& iA, const auto& iB) { return iA.string().size() > iB.string().size(); });
+			for (const auto& dir: dirs) {
+				if (std::filesystem::is_empty(dir))
+					std::filesystem::remove(dir);
+			}
+			// Remove the assets directory itself if empty.
+			if (std::filesystem::is_empty(assetsDir))
+				std::filesystem::remove(assetsDir);
+		}
 	}
 
 	// set up the callbacks
@@ -405,5 +466,35 @@ void AppParams::saveToFile(const std::filesystem::path& iFile) const {
 	fileOut.close();
 }
 
+
+auto Application::openPack(const std::filesystem::path& iPackFile) -> bool {
+	closePack();
+	if (!m_packReader.open(iPackFile)) {
+		OWL_CORE_ERROR("Failed to open asset pack: {}", iPackFile.string())
+		return false;
+	}
+	OWL_CORE_INFO("Opened asset pack: {} ({} entries)", iPackFile.string(),
+				  m_packReader.getHeader().entryCount)
+	return true;
+}
+
+void Application::closePack() {
+	if (m_packReader.isOpen())
+		m_packReader.close();
+}
+
+auto Application::hasOpenPack() const -> bool { return m_packReader.isOpen(); }
+
+auto Application::loadFromPack(const std::string& iPath) const -> std::optional<std::vector<uint8_t>> {
+	if (!m_packReader.isOpen())
+		return std::nullopt;
+	return m_packReader.readEntry(iPath);
+}
+
+auto Application::packContains(const std::string& iPath) const -> bool {
+	if (!m_packReader.isOpen())
+		return false;
+	return m_packReader.contains(iPath);
+}
 
 }// namespace owl::core

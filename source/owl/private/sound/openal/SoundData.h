@@ -46,7 +46,7 @@ public:
 	 * @brief Get the system id.
 	 * @return The system id.
 	 */
-	auto getSystemId() const -> uint64_t override { return m_buffer; }
+	[[nodiscard]] auto getSystemId() const -> uint64_t override { return m_buffer; }
 
 private:
 	uint32_t m_buffer;

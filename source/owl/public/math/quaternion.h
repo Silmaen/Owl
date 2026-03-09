@@ -324,7 +324,7 @@ private:
 template<typename BaseType>
 constexpr auto rotate(const Quaternion<BaseType>& iQuaternion,
 					  const Vector<BaseType, 3>& iVector) -> Vector<BaseType, 3> {
-	Vector<BaseType, 3> qv{iQuaternion.x(), iQuaternion.y(), iQuaternion.z()};
+	const Vector<BaseType, 3> qv{iQuaternion.x(), iQuaternion.y(), iQuaternion.z()};
 	const Vector<BaseType, 3> uv(qv ^ iVector);
 	const Vector<BaseType, 3> uuv(qv ^ uv);
 	return iVector + (((uv * iQuaternion.w()) + uuv) * BaseType{2});

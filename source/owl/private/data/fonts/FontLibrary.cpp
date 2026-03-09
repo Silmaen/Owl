@@ -10,6 +10,7 @@
 #include "data/fonts/FontLibrary.h"
 
 #include "core/Application.h"
+#include "io/pack/PackReader.h"
 
 namespace owl::data::fonts {
 
@@ -51,6 +52,28 @@ void FontLibrary::destroy() {
 FontLibrary::~FontLibrary() = default;
 
 void FontLibrary::loadFont(const std::string& iName) {
+	// Try loading from pack first.
+	if (core::Application::instanced() && core::Application::get().hasOpenPack()) {
+		const auto& reader = core::Application::get().getPackReader();
+		for (const auto& entry: reader.listEntries(io::pack::AssetType::Font)) {
+			if (std::filesystem::path(entry).stem() == iName) {
+				auto data = core::Application::get().loadFromPack(entry);
+				if (data) {
+					const auto tempDir = std::filesystem::temp_directory_path() / "owl_pack_cache";
+					std::filesystem::create_directories(tempDir);
+					const auto tempFile = tempDir / std::filesystem::path(entry).filename();
+					{
+						std::ofstream out(tempFile, std::ios::binary);
+						out.write(reinterpret_cast<const char*>(data->data()),
+								  static_cast<std::streamsize>(data->size()));
+					}
+					m_fonts.emplace(iName, mkShared<Font>(tempFile, iName == m_defaultFontName));
+					return;
+				}
+			}
+		}
+	}
+	// Fallback: load from filesystem.
 	for (const auto& path: getFontPath()) {
 		for (const auto& item: std::filesystem::recursive_directory_iterator(path)) {
 			if (!item.is_regular_file() || item.path().extension() != ".ttf")
@@ -85,7 +108,7 @@ auto FontLibrary::getLoadedFontNames() const -> std::list<std::string> {
 	return list;
 }
 
-auto FontLibrary::getFoundFontNames() const -> std::list<std::string> {
+auto FontLibrary::getFoundFontNames() -> std::list<std::string> {
 	std::list<std::string> list;
 	for (const auto& path: getFontPath()) {
 		for (const auto& item: std::filesystem::recursive_directory_iterator(path)) {

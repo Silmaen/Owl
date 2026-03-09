@@ -9,9 +9,9 @@
 #pragma once
 #include <utility>
 
-#include "event/Event.h"
 #include "core/Core.h"
 #include "core/Timestep.h"
+#include "event/Event.h"
 
 /**
  * @brief Namespace for the layer definition

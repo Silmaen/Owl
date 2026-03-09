@@ -93,4 +93,31 @@ auto SceneSerializer::deserialize(const std::filesystem::path& iFilepath) const 
 	return true;
 }
 
+auto SceneSerializer::deserializeFromBuffer(const std::vector<uint8_t>& iData,
+										   const std::string& iSourceName) const -> bool {
+	try {
+		const std::string yamlStr(iData.begin(), iData.end());
+		const core::Serializer sData;
+		sData.getImpl()->node.reset(YAML::Load(yamlStr));
+
+		if (!sData.getImpl()->node["Scene"]) {
+			OWL_CORE_ERROR("Buffer {} is not a scene.", iSourceName)
+			return false;
+		}
+		auto sceneName = sData.getImpl()->node["Scene"].as<std::string>();
+		OWL_CORE_TRACE("Deserializing scene '{0}' from buffer", sceneName)
+		if (auto entities = sData.getImpl()->node["Entities"]; entities) {
+			for (auto entity: entities) {
+				const core::Serializer sEntity;
+				sEntity.getImpl()->node.reset(entity);
+				deserializeEntity(mp_scene, sEntity);
+			}
+		}
+	} catch (...) {
+		OWL_CORE_ERROR("Unable to load scene from buffer {}", iSourceName)
+		return false;
+	}
+	return true;
+}
+
 }// namespace owl::scene

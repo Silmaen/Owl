@@ -46,7 +46,7 @@ public:
 	 * @brief Get the system id.
 	 * @return The system id.
 	 */
-	auto getSystemId() const -> uint64_t override { return 0; }
+	[[nodiscard]] auto getSystemId() const -> uint64_t override { return 0; }
 };
 
 }// namespace owl::sound::null

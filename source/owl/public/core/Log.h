@@ -13,7 +13,7 @@
 
 namespace owl::debug {
 class LogBuffer;
-}
+} // namespace owl::debug
 
 /**
  * @brief Namespace for the core objects.

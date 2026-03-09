@@ -25,7 +25,7 @@ public:
 	/**
 	 * @brief Default destructor.
 	 */
-	~ScenePlayer();
+	~ScenePlayer() = default;
 	/**
 	 * @brief Default copy constructor.
 	 */
@@ -46,7 +46,7 @@ public:
 	/**
 	 * @brief Look the inputs for actions.
 	 */
-	void parseInputs(const Entity& iPlayer);
+	void parseInputs(const Entity& iPlayer) const;
 
 	/// The intensity of the linear impulsion.
 	float linearImpulse = 0.1f;

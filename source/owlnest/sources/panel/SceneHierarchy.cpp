@@ -82,7 +82,7 @@ void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
 
 		// --- Editor visibility button (left) — eye icon ---
 		ImGui::PushID("editorVis");
-		const auto edIconName = vis.editorVisible ? "icons/visibility/eye_open" : "icons/visibility/eye_closed";
+		const auto* const edIconName = vis.editorVisible ? "icons/visibility/eye_open" : "icons/visibility/eye_closed";
 		const ImVec4 edTint = vis.editorVisible ? ImVec4{1.0f, 1.0f, 1.0f, 1.0f} : ImVec4{0.5f, 0.5f, 0.5f, 0.5f};
 		if (const auto texId = owl::gui::imTexture(texLib.get(edIconName))) {
 			if (ImGui::ImageButton("##edVis", *texId, {btnSize, btnSize}, {0, 0}, {1, 1}, {0, 0, 0, 0}, edTint))
@@ -99,7 +99,7 @@ void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
 
 		// --- Game visibility button (right) — camera icon ---
 		ImGui::PushID("gameVis");
-		const auto gameIconName = vis.gameVisible ? "icons/visibility/camera_on" : "icons/visibility/camera_off";
+		const auto* const gameIconName = vis.gameVisible ? "icons/visibility/camera_on" : "icons/visibility/camera_off";
 		const ImVec4 gameTint =
 				vis.gameVisible ? ImVec4{1.0f, 1.0f, 1.0f, 1.0f} : ImVec4{0.5f, 0.5f, 0.5f, 0.5f};
 		if (const auto texId = owl::gui::imTexture(texLib.get(gameIconName))) {

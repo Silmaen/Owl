@@ -251,7 +251,7 @@ public:
 	auto get() -> decltype(auto) {
 		static_assert(sizeof...(Components) > 0);
 		OWL_CORE_ASSERT(m_components, "")
-		return std::get<N>(*m_components);
+		return std::get<N>(*m_components);// NOLINT(bugprone-unchecked-optional-access)
 	}
 
 	/**
@@ -263,10 +263,10 @@ public:
 	 * @return A const reference to the selected component.
 	 */
 	template<std::size_t N>
-	auto get() const -> decltype(auto) {
+	[[nodiscard]] auto get() const -> decltype(auto) {
 		static_assert(sizeof...(Components) > 0);
 		OWL_CORE_ASSERT(m_components, "")
-		return std::get<N>(*m_components);
+		return std::get<N>(*m_components);// NOLINT(bugprone-unchecked-optional-access)
 	}
 
 private:
@@ -330,27 +330,27 @@ private:
 // Don't add this part to the documentation
 /// @cond
 
-namespace std {
+namespace std {// NOLINT(cert-dcl58-cpp)
 
 template<typename... Components>
-struct tuple_size<owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex, Components...>>
+struct tuple_size<owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex, Components...>>// NOLINT(cert-dcl58-cpp)
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 template<typename... Components>
-struct tuple_size<owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex, Components...>>
+struct tuple_size<owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex, Components...>>// NOLINT(cert-dcl58-cpp)
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 
 template<typename... Components>
-struct tuple_size<owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Triangle, Components...>>
+struct tuple_size<owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Triangle, Components...>>// NOLINT(cert-dcl58-cpp)
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 template<typename... Components>
-struct tuple_size<owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Triangle, Components...>>
+struct tuple_size<owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Triangle, Components...>>// NOLINT(cert-dcl58-cpp)
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 template<std::size_t N, typename... Components>
-struct tuple_element<
+struct tuple_element<// NOLINT(cert-dcl58-cpp)
 		N, owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex, Components...>> {
 	using type = std::tuple_element_t<
 			N, typename owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex,
@@ -358,14 +358,14 @@ struct tuple_element<
 };
 
 template<std::size_t N, typename... Components>
-struct tuple_element<
+struct tuple_element<// NOLINT(cert-dcl58-cpp)
 		N, owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex, Components...>> {
 	using type = std::tuple_element_t<
 			N, typename owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex,
 														Components...>::ComponentsT>;
 };
 template<std::size_t N, typename... Components>
-struct tuple_element<
+struct tuple_element<// NOLINT(cert-dcl58-cpp)
 		N, owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Triangle, Components...>> {
 	using type = std::tuple_element_t<
 			N, typename owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex,
@@ -373,7 +373,7 @@ struct tuple_element<
 };
 
 template<std::size_t N, typename... Components>
-struct tuple_element<
+struct tuple_element<// NOLINT(cert-dcl58-cpp)
 		N, owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Triangle, Components...>> {
 	using type = std::tuple_element_t<
 			N, typename owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex,

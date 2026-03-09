@@ -28,7 +28,7 @@ struct OWL_API LogEntry {
 	/// The log message text.
 	std::string message;
 	/// The timestamp when the entry was logged.
-	std::chrono::system_clock::time_point timestamp{};
+	std::chrono::system_clock::time_point timestamp;
 };
 
 /**

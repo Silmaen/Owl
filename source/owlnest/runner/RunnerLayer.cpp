@@ -42,17 +42,23 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 	YAML::Node data = YAML::LoadFile(iPath.string());
 	const auto& app = core::Application::get();
 	firstScene.clear();
+	packFile.clear();
 	if (const auto appConfig = data["RunnerConfig"]; appConfig) {
-		std::string bob;
-		get(appConfig, "FirstScene", bob);
-		OWL_CORE_INFO("FirstScene: {}", bob)
+		get(appConfig, "PackFile", packFile);
+		std::string sceneName;
+		get(appConfig, "FirstScene", sceneName);
+		OWL_CORE_INFO("FirstScene: {}", sceneName)
+		// Try to resolve to a filesystem path.
 		for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
-			OWL_CORE_INFO("Checking: {}", (assetsPath / bob).string())
-			if (exists(assetsPath / bob)) {
-				firstScene = (assetsPath / bob).string();
+			OWL_CORE_INFO("Checking: {}", (assetsPath / sceneName).string())
+			if (exists(assetsPath / sceneName)) {
+				firstScene = (assetsPath / sceneName).string();
 				break;
 			}
 		}
+		// If not found on disk (e.g. pack-only), keep the raw name for pack lookup.
+		if (firstScene.empty())
+			firstScene = sceneName;
 	}
 }
 
@@ -80,7 +86,7 @@ RunnerLayer::RunnerLayer() : Layer("RunnerLayer") {}
 void RunnerLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
-	// Lod the config file
+	// Load the config file
 	auto& app = core::Application::get();
 	{
 		const auto config = app.getWorkingDirectory() / "runner.yml";
@@ -91,8 +97,33 @@ void RunnerLayer::onAttach() {
 		}
 		m_config.loadYaml(config);
 	}
+
 	m_viewportSize = app.getWindow().getSize();
 	m_activeScene = mkShared<scene::Scene>();
+
+	// Try loading first scene from pack, then from filesystem.
+	if (app.hasOpenPack()) {
+		// Resolve first scene name for pack lookup.
+		std::string sceneName = m_config.firstScene;
+		// If firstScene was resolved to an absolute path, try to find it in pack by filename.
+		if (std::filesystem::path(sceneName).is_absolute()) {
+			for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
+				if (sceneName.starts_with(assetsPath.string())) {
+					sceneName = relative(std::filesystem::path(sceneName), assetsPath).string();
+					break;
+				}
+			}
+		}
+		if (auto data = app.loadFromPack(sceneName); data) {
+			if (const scene::SceneSerializer sc(m_activeScene); !sc.deserializeFromBuffer(*data, sceneName)) {
+				OWL_CORE_ERROR("Failed to load first scene from pack")
+				app.close();
+			}
+			return;
+		}
+	}
+
+	// Fallback: load from filesystem.
 	if (!std::filesystem::exists(m_config.firstScene)) {
 		OWL_CORE_ERROR("Runner first scene {} not found", m_config.firstScene)
 		app.close();
@@ -127,7 +158,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 				if (m_pendingTeleportVelocity) {
 					// Apply stored velocity and position after physics init on new scene.
 					m_pendingTeleportVelocity = false;
-					if (scene::Entity player = m_activeScene->getPrimaryPlayer()) {
+					if (const scene::Entity player = m_activeScene->getPrimaryPlayer()) {
 						// Find target entity and position player there.
 						for (const auto view = m_activeScene->registry
 													   .view<scene::component::Tag, scene::component::Transform>();
@@ -180,8 +211,30 @@ void RunnerLayer::handleTeleportRequest() {
 	if (std::filesystem::path(resolvedName).extension() != ".owl")
 		resolvedName += ".owl";
 
-	// Resolve level path.
 	const auto& app = core::Application::get();
+
+	// End current runtime.
+	m_activeScene->onEndRuntime();
+
+	// Try loading from pack first.
+	if (app.hasOpenPack()) {
+		// Try various pack paths: direct name, scenes/ prefix.
+		for (const auto& tryName: {resolvedName, "scenes/" + resolvedName}) {
+			if (auto data = app.loadFromPack(tryName); data) {
+				auto newScene = mkShared<scene::Scene>();
+				if (const scene::SceneSerializer sc(newScene); sc.deserializeFromBuffer(*data, tryName)) {
+					newScene->onViewportResize(m_viewportSize);
+					m_pendingTeleportVelocity = true;
+					m_teleportVelocity = request.initialVelocity;
+					m_teleportTargetName = request.targetName;
+					m_activeScene = newScene;
+					return;
+				}
+			}
+		}
+	}
+
+	// Fallback: resolve level path from filesystem.
 	std::filesystem::path levelPath;
 	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
 		if (exists(assetsPath / resolvedName)) {
@@ -197,9 +250,6 @@ void RunnerLayer::handleTeleportRequest() {
 		OWL_CORE_ERROR("Teleport: level '{}' not found", resolvedName)
 		return;
 	}
-
-	// End current runtime.
-	m_activeScene->onEndRuntime();
 
 	// Load new scene.
 	auto newScene = mkShared<scene::Scene>();
@@ -220,9 +270,9 @@ void RunnerLayer::handleTeleportRequest() {
 void RunnerLayer::onEvent(event::Event& ioEvent) {
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::KeyPressedEvent>(
-			[this]<typename T0>(T0&& ioPh1) { return onKeyPressed(std::forward<T0>(ioPh1)); });
+			[]<typename T0>(T0&& ioPh1) { return onKeyPressed(std::forward<T0>(ioPh1)); });
 	dispatcher.dispatch<event::MouseButtonPressedEvent>(
-			[this]<typename T0>(T0&& ioPh1) { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
+			[]<typename T0>(T0&& ioPh1) { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
 }
 
 void RunnerLayer::onImGuiRender(const core::Timestep&) {

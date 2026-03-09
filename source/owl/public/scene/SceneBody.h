@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "math/vectors.h"
 #include "core/Core.h"
+#include "math/vectors.h"
 
 namespace owl::scene {
 
@@ -25,7 +25,7 @@ public:
 	/**
 	 * @brief Default destructor.
 	 */
-	~SceneBody();
+	~SceneBody() = default;
 	/**
 	 * @brief Default copy constructor.
 	 */

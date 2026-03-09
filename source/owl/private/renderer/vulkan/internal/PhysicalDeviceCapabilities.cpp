@@ -162,7 +162,7 @@ void PhysicalDeviceCapabilities::updateSurfaceInformation() {
 	}
 }
 namespace {
-std::string vkDeviceTypeToString(const VkPhysicalDeviceType& iType) {
+auto vkDeviceTypeToString(const VkPhysicalDeviceType& iType) -> std::string {
 	switch (iType) {
 		case VK_PHYSICAL_DEVICE_TYPE_OTHER:
 			return "Other";

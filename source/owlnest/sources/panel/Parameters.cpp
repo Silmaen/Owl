@@ -42,7 +42,7 @@ auto Parameters::apply() -> bool {
 	return m_localParams.renderer != m_originalRenderer || m_localParams.sound != m_originalSound;
 }
 
-void Parameters::onImGuiRender() {
+void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-complexity)
 	if (m_pendingOpen) {
 		ImGui::OpenPopup(g_popupName);
 		m_pendingOpen = false;

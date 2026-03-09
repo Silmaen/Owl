@@ -18,6 +18,8 @@ ExtraDataContainer::ExtraDataContainer(ExtraDataContainer&& iOther) noexcept
 	: m_edPid(iOther.m_edPid), m_extraDataList(std::move(iOther.m_extraDataList)) {}
 
 auto ExtraDataContainer::operator=(const ExtraDataContainer& iOther) -> ExtraDataContainer& {
+	if (this == &iOther)
+		return *this;
 	*this = iOther.clone();
 	return *this;
 }

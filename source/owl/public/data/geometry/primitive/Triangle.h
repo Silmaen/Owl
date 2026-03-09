@@ -27,7 +27,7 @@ public:
 	/**
 	 * @brief Default destructor.
 	 */
-	~Triangle();
+	~Triangle() = default;
 
 	Triangle(const Triangle&) = default;
 	Triangle(Triangle&&) noexcept = default;

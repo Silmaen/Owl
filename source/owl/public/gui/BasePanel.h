@@ -22,7 +22,7 @@ public:
 	/**
 	 * @brief Default constructor.
 	 */
-	BasePanel(std::string&& iName);
+	explicit BasePanel(std::string&& iName);
 	/**
 	 * @brief Default destructor.
 	 */

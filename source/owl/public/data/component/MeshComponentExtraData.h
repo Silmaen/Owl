@@ -218,7 +218,7 @@ public:
 	 *  Get the extra data of the current element.
 	 * @return An extra data.
 	 */
-	auto value() const -> shared<TExtraData> {
+	[[nodiscard]] auto value() const -> shared<TExtraData> {
 		OWL_CORE_ASSERT(this->hasValue(), "MeshExtraDataReader::value")
 		return m_extraDataContainer==nullptr ? nullptr : m_extraDataContainer->getExtraDataAs<TExtraData>(m_currentIndex);
 	}
@@ -227,7 +227,7 @@ public:
 	 *  Get the extra data of the current element.
 	 * @return An extra data.
 	 */
-	auto value() -> shared<TExtraData> {
+	[[nodiscard]] auto value() -> shared<TExtraData> {
 		OWL_CORE_ASSERT(this->hasValue(), "MeshExtraDataReader::value")
 		return m_extraDataContainer==nullptr ? nullptr : m_extraDataContainer->getExtraDataAs<TExtraData>(m_currentIndex);
 	}

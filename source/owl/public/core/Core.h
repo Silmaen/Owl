@@ -108,7 +108,7 @@ using shared = std::shared_ptr<T>;
  * @return Shared pointer.
  */
 template<typename T, typename... Args>
-constexpr auto mkShared(Args&&... iArgs) -> shared<T> {
+constexpr auto mkShared(Args&&... iArgs) -> shared<T> {// NOLINT(misc-no-recursion)
 	return std::make_shared<T>(std::forward<Args>(iArgs)...);
 }
 

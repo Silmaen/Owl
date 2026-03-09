@@ -12,7 +12,7 @@
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wold-style-cast")
 OWL_DIAG_DISABLE_CLANG("-Wsign-conversion")
-#include <slang.h>
-#include <slang-com-ptr.h>
 #include <slang-com-helper.h>
+#include <slang-com-ptr.h>
+#include <slang.h>
 OWL_DIAG_POP

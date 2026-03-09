@@ -140,22 +140,22 @@ public:
 	 * @brief
 	 * Default copy constructor
 	 */
-	FactoryProduct(const FactoryProduct& iOther) = default;
+	FactoryProduct(const FactoryProduct&) = default;
 	/**
 	 * @brief
 	 * Default move constructor
 	 */
-	FactoryProduct(FactoryProduct&& iOther) = default;
+	FactoryProduct(FactoryProduct&&) = default;
 	/**
 	 * @brief
 	 * Default copy operator
 	 */
-	auto operator=(const FactoryProduct& iOther) -> FactoryProduct& = default;
+	auto operator=(const FactoryProduct&) -> FactoryProduct& = default;
 	/**
 	 * @brief
 	 * Default move operator
 	 */
-	auto operator=(FactoryProduct&& iOther) -> FactoryProduct& = default;
+	auto operator=(FactoryProduct&&) -> FactoryProduct& = default;
 	/**
 	 * @brief
 	 *  Return the product identifier
@@ -214,15 +214,20 @@ struct OWL_API ProductAllocator {
 	explicit ProductAllocator(SingleAllocator iSingleAlloc = nullptr, MultipleAllocator iMultipleAlloc = nullptr);
 };
 
+//NOLINTBEGIN(cppcoreguidelines-owning-memory)
 template<typename T>
 auto factorySingleProductAllocator() -> FactoryProduct* {
 	return new T();
 }
+//NOLINTEND(cppcoreguidelines-owning-memory)
 
 template<typename T>
 auto factoryMultipleProductAllocator(const unsigned int iNumber, std::vector<FactoryProduct*>& iTable) -> bool {
 	iTable.resize(iNumber);
+
+	//NOLINTBEGIN(cppcoreguidelines-owning-memory)
 	for (unsigned int ii = 0; ii < iNumber; ++ii) iTable[ii] = new T;
+	//NOLINTEND(cppcoreguidelines-owning-memory)
 	return iTable.size() == iNumber;
 }
 

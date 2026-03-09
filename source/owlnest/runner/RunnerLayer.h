@@ -8,12 +8,15 @@
 
 #pragma once
 
+#include <io/pack/PackReader.h>
 #include <owl.h>
 
 namespace owl::nest::runner {
 
 struct RunnerConfig {
 	std::string firstScene;
+	/// Optional path to an asset pack file.
+	std::string packFile;
 	void loadYaml(const std::filesystem::path& iPath);
 	void saveYaml(const std::filesystem::path& iPath) const;
 };
@@ -42,11 +45,11 @@ public:
 	void onEvent(event::Event& ioEvent) override;
 	void onImGuiRender(const core::Timestep& iTimeStep) override;
 
-	auto getActiveScene() const -> const shared<scene::Scene>& { return m_activeScene; }
+	[[nodiscard]] auto getActiveScene() const -> const shared<scene::Scene>& { return m_activeScene; }
 
 private:
-	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
-	auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
+	static auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
+	static auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
 
 	void handleTeleportRequest();
 

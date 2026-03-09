@@ -8,6 +8,8 @@
 
 #include "EditorLayer.h"
 
+#include <io/pack/AssetScanner.h>
+#include <io/pack/PackWriter.h>
 #include <physic/PhysicCommand.h>
 #include <scene/component/components.h>
 #include <sound/SoundCommand.h>
@@ -134,7 +136,7 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 		m_activeScene->onStartRuntime();
 		if (m_pendingTeleportVelocity) {
 			m_pendingTeleportVelocity = false;
-			if (scene::Entity player = m_activeScene->getPrimaryPlayer()) {
+			if (const scene::Entity player = m_activeScene->getPrimaryPlayer()) {
 				for (const auto view =
 							 m_activeScene->registry.view<scene::component::Tag, scene::component::Transform>();
 					 const auto ent: view) {
@@ -174,7 +176,7 @@ void EditorLayer::onEvent(event::Event& ioEvent) {
 	dispatcher.dispatch<event::KeyPressedEvent>(
 			[this]<typename T0>(T0&& ioPh1) { return onKeyPressed(std::forward<T0>(ioPh1)); });
 	dispatcher.dispatch<event::MouseButtonPressedEvent>(
-			[this]<typename T0>(T0&& ioPh1) { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
+			[]<typename T0>(T0&& ioPh1) { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
 }
 
 void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
@@ -281,6 +283,11 @@ void EditorLayer::renderMenu() {
 			if (ImGui::MenuItem("Import Scene"))
 				importScene();
 			ImGui::Separator();
+			if (ImGui::MenuItem("Pack Scene", nullptr, false, !m_currentScenePath.empty()))
+				packScene();
+			if (ImGui::MenuItem("Pack Game"))
+				packGame();
+			ImGui::Separator();
 			if (ImGui::MenuItem("Project Settings"))
 				m_projectSettings.open(m_project);
 			ImGui::EndMenu();
@@ -301,7 +308,11 @@ OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 void EditorLayer::renderToolbar() {
 	constexpr float buttonImageSize = 32.0f;
-	const int buttonCount = (m_state == State::Edit) ? 1 : (m_state == State::Pause ? 3 : 2);
+	int buttonCount = 2;
+	if (m_state == State::Edit)
+		buttonCount = 1;
+	else if (m_state == State::Pause)
+		buttonCount = 3;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
@@ -681,5 +692,140 @@ void EditorLayer::onDuplicateEntity() const {
 auto EditorLayer::getSelectedEntity() const -> scene::Entity { return m_sceneHierarchy.getSelectedEntity(); }
 
 void EditorLayer::setSelectedEntity(const scene::Entity iEntity) { m_sceneHierarchy.setSelectedEntity(iEntity); }
+
+void EditorLayer::packScene() {
+	if (m_currentScenePath.empty())
+		return;
+
+	const auto destPath = core::utils::FileDialog::saveFile("Owl Scene Pack (*.owlpack)|owlpack\n");
+	if (destPath.empty())
+		return;
+
+	// Scan the current scene for assets.
+	const auto assets = io::pack::AssetScanner::scanScene(m_currentScenePath);
+	if (assets.empty()) {
+		OWL_CORE_WARN("No assets found to pack for scene {}", m_currentScenePath.string())
+		return;
+	}
+
+	// Build the scene pack.
+	io::pack::PackWriter writer;
+	for (const auto& ref: assets) {
+		writer.addFile(ref.diskPath, ref.packPath, ref.assetType);
+	}
+
+	auto outputPath = destPath;
+	if (outputPath.extension() != ".owlpack")
+		outputPath.replace_extension(".owlpack");
+	if (!writer.write(outputPath)) {
+		OWL_CORE_ERROR("Failed to write scene pack to {}", outputPath.string())
+		return;
+	}
+
+	OWL_CORE_INFO("Scene packed: {} ({} assets) -> {}", m_currentScenePath.filename().string(), assets.size(),
+				  outputPath.string())
+}
+
+namespace {
+
+void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem::path& iDestDir) {
+	for (const auto& entry: std::filesystem::directory_iterator(iSrcDir)) {
+		if (!entry.is_regular_file() && !entry.is_symlink())
+			continue;
+		const auto ext = entry.path().extension().string();
+		const auto filename = entry.path().filename().string();
+		// Copy .so files (Linux) and .dll files (Windows).
+		if (ext == ".so" || filename.find(".so.") != std::string::npos || ext == ".dll") {
+			const auto dest = iDestDir / entry.path().filename();
+			if (!exists(dest))
+				std::filesystem::copy(entry.path(), dest, std::filesystem::copy_options::copy_symlinks);
+		}
+	}
+}
+
+}// namespace
+
+void EditorLayer::packGame() {
+	if (!m_project.isLoaded())
+		return;
+
+	// Ask for destination folder.
+	const auto destDir = core::utils::FileDialog::pickFolder();
+	if (destDir.empty())
+		return;
+
+	// Create output directory structure.
+	const auto gameDir = destDir / m_project.name;
+	std::filesystem::create_directories(gameDir);
+
+	// Scan all assets reachable from the first scene.
+	const auto assets =
+			io::pack::AssetScanner::scanProject(m_project.projectDirectory, m_project.firstScene);
+	if (assets.empty()) {
+		OWL_CORE_WARN("No assets found to pack")
+		return;
+	}
+
+	// Build the asset pack.
+	io::pack::PackWriter writer;
+	for (const auto& ref: assets) {
+		writer.addFile(ref.diskPath, ref.packPath, ref.assetType);
+	}
+
+	const auto packFilename = m_project.name + ".owlpack";
+	const auto packPath = gameDir / packFilename;
+	if (!writer.write(packPath)) {
+		OWL_CORE_ERROR("Failed to write game pack to {}", packPath.string())
+		return;
+	}
+
+	// Generate runner.yml with pack reference.
+	{
+		std::string firstScene = m_project.firstScene;
+		if (std::filesystem::path(firstScene).extension() != ".owl")
+			firstScene += ".owl";
+		// Find the matching pack path for the first scene.
+		for (const auto& ref: assets) {
+			if (ref.assetType == io::pack::AssetType::Scene && ref.packPath.ends_with(firstScene)) {
+				firstScene = ref.packPath;
+				break;
+			}
+		}
+		std::ofstream configOut(gameDir / "runner.yml");
+		configOut << "RunnerConfig:\n";
+		configOut << "  FirstScene: " << firstScene << "\n";
+		configOut << "  PackFile: " << packFilename << "\n";
+	}
+
+	// Copy the runner executable.
+	const auto& app = core::Application::get();
+	const auto runnerSrcDir = app.getWorkingDirectory();
+	// Find the runner executable next to the current OwlNest binary.
+	std::filesystem::path runnerExe;
+	for (const auto& candidate: {"OwlRunner", "OwlRunner.exe"}) {
+		if (const auto p = runnerSrcDir / candidate; exists(p)) {
+			runnerExe = p;
+			break;
+		}
+	}
+	if (runnerExe.empty()) {
+		OWL_CORE_ERROR("OwlRunner executable not found in {}", runnerSrcDir.string())
+		return;
+	}
+	std::filesystem::copy_file(runnerExe, gameDir / runnerExe.filename(),
+							   std::filesystem::copy_options::overwrite_existing);
+	// Set executable permission on Linux.
+#ifdef OWL_PLATFORM_LINUX
+	std::filesystem::permissions(gameDir / runnerExe.filename(),
+								std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec |
+										std::filesystem::perms::others_exec,
+								std::filesystem::perm_options::add);
+#endif
+
+	// Copy shared libraries.
+	copySharedLibs(runnerSrcDir, gameDir);
+
+	OWL_CORE_INFO("Game exported: {} ({} assets) -> {}", m_project.name, assets.size(), gameDir.string())
+}
 
 }// namespace owl::nest
