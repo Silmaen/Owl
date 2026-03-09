@@ -59,10 +59,26 @@ The project produces several executables built on top of the `OwlEngine` shared 
 
 | Application | Directory          | Description                                    |
 |-------------|--------------------|------------------------------------------------|
-| Owl Nest    | `source/owlnest/`  | Scene editor (editor + runner executables)      |
+| Owl Nest    | `source/owlnest/`  | Scene editor with project management (editor + runner executables) |
 | Owl Drone   | `source/owldrone/` | Drone navigator (MAVLink via MAVSDK)            |
 | Owl Cast    | `source/owlcast/`  | Cast application                                |
 | Sandbox     | `source/sandbox/`  | Testing and prototyping playground              |
+
+## Project System
+
+Owl Nest supports a project-based workflow. A project is a directory containing an
+`owl_project.yml` configuration file:
+
+```yaml
+OwlProject:
+  name: "My Project"
+  firstScene: "scenes/Example.owl"
+```
+
+When a project is opened, its directory is added as a high-priority asset directory,
+making its contents visible in the content browser. The editor window title reflects
+the active project name. Scenes can be imported into the project via the **Project >
+Import Scene** menu item.
 
 ## Shader Pipeline
 

@@ -31,7 +31,7 @@ The full generated documentation is available online:
 - ![EnTT](https://img.shields.io/badge/ECS-EnTT-green) **Entity-Component-System** architecture
 - ![Box2D](https://img.shields.io/badge/Physics-Box2D-orange) 2D physics simulation
 - ![OpenAL](https://img.shields.io/badge/Audio-OpenAL-8B0000) Sound playback backend
-- ![ImGui](https://img.shields.io/badge/Editor-ImGui-blue) Owl Nest scene editor
+- ![ImGui](https://img.shields.io/badge/Editor-ImGui-blue) Owl Nest scene editor with project management
 - ![Mesh](https://img.shields.io/badge/Mesh-OBJ%20%7C%20glTF%20%7C%20FBX-purple) 3D model loading
 - ![Linux](https://img.shields.io/badge/Linux-x64%20%7C%20arm64-FCC624?logo=linux&logoColor=black) ![Windows](https://img.shields.io/badge/Windows-x64-0078D4?logo=windows&logoColor=white)
   Cross-platform

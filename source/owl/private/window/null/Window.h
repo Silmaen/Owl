@@ -89,6 +89,12 @@ public:
 	[[nodiscard]] auto getNativeWindow() const -> void* override { return mp_glfwWindow; }
 
 	/**
+	 * @brief Set the window title.
+	 * @param[in] iTitle The new title.
+	 */
+	void setTitle(const std::string& iTitle) override { m_windowData.title = iTitle; }
+
+	/**
 	 * @brief Terminate the window.
 	 */
 	void shutdown() override;

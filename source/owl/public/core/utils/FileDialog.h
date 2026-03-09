@@ -33,6 +33,12 @@ public:
 	 * @return A valid file path or null if canceled.
 	 */
 	static auto saveFile(const std::string& iFilter) -> std::filesystem::path;
+
+	/**
+	 * @brief Open a dialog to select a folder.
+	 * @return A valid directory path or empty if canceled.
+	 */
+	static auto pickFolder() -> std::filesystem::path;
 };
 
 }// namespace owl::core::utils

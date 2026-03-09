@@ -189,6 +189,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_contentBrowser.onImGuiRender();
 	m_viewport.onRender();
 	m_parameters.onImGuiRender();
+	m_projectSettings.onImGuiRender();
+	if (m_projectSettings.hasResult()) {
+		m_project = m_projectSettings.consumeResult();
+		saveProject();
+		updateWindowTitle();
+	}
 	m_logPanel.onImGuiRender();
 	//=============================================================
 	{
@@ -248,6 +254,15 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 void EditorLayer::renderMenu() {
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("New Project"))
+				newProject();
+			if (ImGui::MenuItem("Open Project"))
+				openProject();
+			if (ImGui::MenuItem("Save Project", nullptr, false, m_project.isLoaded()))
+				saveProject();
+			if (ImGui::MenuItem("Close Project", nullptr, false, m_project.isLoaded()))
+				closeProject();
+			ImGui::Separator();
 			if (ImGui::MenuItem("New", "Ctrl+N"))
 				newScene();
 			ImGui::Separator();
@@ -260,6 +275,14 @@ void EditorLayer::renderMenu() {
 			ImGui::Separator();
 			if (ImGui::MenuItem("Exit"))
 				core::Application::get().close();
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Project", m_project.isLoaded())) {
+			if (ImGui::MenuItem("Import Scene"))
+				importScene();
+			ImGui::Separator();
+			if (ImGui::MenuItem("Project Settings"))
+				m_projectSettings.open(m_project);
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Settings")) {
@@ -560,6 +583,91 @@ void EditorLayer::handleTeleportRequest() {
 
 	m_activeScene = newScene;
 	m_sceneHierarchy.setContext(m_activeScene);
+}
+
+void EditorLayer::newProject() {
+	const auto dir = core::utils::FileDialog::pickFolder();
+	if (dir.empty())
+		return;
+	if (!exists(dir))
+		create_directories(dir);
+	create_directories(dir / "scenes");
+
+	Project project;
+	project.name = dir.filename().string();
+	project.projectDirectory = dir;
+	project.saveToFile(dir / "owl_project.yml");
+
+	openProject(dir);
+}
+
+void EditorLayer::openProject() {
+	const auto dir = core::utils::FileDialog::pickFolder();
+	if (!dir.empty())
+		openProject(dir);
+}
+
+void EditorLayer::openProject(const std::filesystem::path& iDir) {
+	const auto configFile = iDir / "owl_project.yml";
+	if (!exists(configFile)) {
+		OWL_CORE_WARN("No owl_project.yml found in {}", iDir.string())
+		return;
+	}
+	if (m_project.isLoaded())
+		closeProject();
+
+	m_project.loadFromFile(configFile);
+	core::Application::get().addAssetDirectory(
+			{std::format("Project: {}", m_project.name), m_project.projectDirectory});
+	m_contentBrowser.attach();
+	updateWindowTitle();
+
+	if (!m_project.firstScene.empty()) {
+		const auto scenePath = m_project.projectDirectory / m_project.firstScene;
+		if (exists(scenePath))
+			openScene(scenePath);
+	}
+}
+
+void EditorLayer::saveProject() {
+	if (!m_project.isLoaded())
+		return;
+	m_project.saveToFile(m_project.projectDirectory / "owl_project.yml");
+}
+
+void EditorLayer::closeProject() {
+	if (!m_project.isLoaded())
+		return;
+	core::Application::get().removeAssetDirectory(m_project.projectDirectory);
+	m_contentBrowser.attach();
+	m_project = {};
+	updateWindowTitle();
+}
+
+void EditorLayer::importScene() {
+	if (!m_project.isLoaded())
+		return;
+	const auto filepath = core::utils::FileDialog::openFile("Owl Scene (*.owl)|owl\n");
+	if (filepath.empty())
+		return;
+	const auto scenesDir = m_project.projectDirectory / "scenes";
+	if (!exists(scenesDir))
+		create_directories(scenesDir);
+	const auto dest = scenesDir / filepath.filename();
+	if (exists(dest)) {
+		OWL_CORE_WARN("Scene '{}' already exists in project", filepath.filename().string())
+		return;
+	}
+	std::filesystem::copy_file(filepath, dest);
+	OWL_CORE_INFO("Imported scene '{}' into project", filepath.filename().string())
+}
+
+void EditorLayer::updateWindowTitle() {
+	auto& app = core::Application::get();
+	if (m_project.isLoaded())
+		app.setWindowTitle(std::format("{} - {}", app.getInitParams().name, m_project.name));
+	else
+		app.setWindowTitle(app.getInitParams().name);
 }
 
 void EditorLayer::onDuplicateEntity() const {

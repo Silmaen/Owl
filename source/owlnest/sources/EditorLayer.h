@@ -11,9 +11,11 @@
 #include <owl.h>
 
 #include "EditorSettings.h"
+#include "Project.h"
 #include "panel/ContentBrowser.h"
 #include "panel/LogPanel.h"
 #include "panel/Parameters.h"
+#include "panel/ProjectSettings.h"
 #include "panel/SceneHierarchy.h"
 #include "panel/Viewport.h"
 
@@ -51,6 +53,14 @@ public:
 	void saveSceneAs();
 	void saveSceneAs(const std::filesystem::path& iScenePath);
 	void saveCurrentScene();
+
+	void newProject();
+	void openProject();
+	void openProject(const std::filesystem::path& iDir);
+	void saveProject();
+	void closeProject();
+	void importScene();
+	void updateWindowTitle();
 
 	[[nodiscard]] auto getActiveScene() const -> const shared<scene::Scene>& { return m_activeScene; }
 	auto getSelectedEntity() const -> scene::Entity;
@@ -97,6 +107,9 @@ private:
 
 	std::filesystem::path m_currentScenePath;
 
+	// project
+	Project m_project;
+
 	// settings
 	EditorSettings m_settings;
 	size_t m_lastAllocCalls = 0;
@@ -107,6 +120,7 @@ private:
 	panel::ContentBrowser m_contentBrowser;
 	panel::Viewport m_viewport;
 	panel::Parameters m_parameters;
+	panel::ProjectSettings m_projectSettings;
 	panel::LogPanel m_logPanel;
 };
 }// namespace owl::nest

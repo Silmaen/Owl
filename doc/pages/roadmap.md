@@ -50,7 +50,14 @@ Unordered ideas and long-term goals.
     - <span class="badge-planned">Planned</span> Different scene types
         - Games and menus
     - <span class="badge-planned">Planned</span> Configurable keymap
-- Game Designer (Owl Map)
+- Game Designer (Owl Nest)
+    - <span class="badge-done">Done</span> Project system
+        - Create, open, save, and close projects (`owl_project.yml`)
+        - Dynamic asset directory management for project folders
+        - Project name displayed in window title
+    - <span class="badge-done">Done</span> Project settings panel
+        - Edit project name and first scene (dropdown of available scenes)
+    - <span class="badge-done">Done</span> Scene import into project
     - <span class="badge-planned">Planned</span> Export game for runner
         - Standalone game runner package
     - <span class="badge-planned">Planned</span> Asset packing

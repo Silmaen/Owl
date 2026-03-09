@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.24)
 set(PROJECT_PREFIX OWL)
 set(PROJECT_PREFIX_LOWER owl)
 set(ENGINE_NAME OwlEngine)
-project(Owl VERSION 0.0.2 LANGUAGES C CXX)
+project(Owl VERSION 0.0.3 LANGUAGES C CXX)
 #
 # ---=== Options ===---
 #
