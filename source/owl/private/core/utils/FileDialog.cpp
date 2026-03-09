@@ -114,4 +114,22 @@ auto FileDialog::saveFile([[maybe_unused]] const std::string& iFilter) -> std::f
 	return resultPath;
 }
 
+auto FileDialog::pickFolder() -> std::filesystem::path {
+	NFD::Init();
+	nfdu8char_t* outPath = nullptr;
+	std::filesystem::path resultPath;
+	const std::string tmp = Application::get().getAssetDirectories().front().assetsPath.string();
+	if (const auto result = NFD_PickFolderU8(&outPath, tmp.c_str()); result == NFD_CANCEL) {
+		resultPath = std::filesystem::path{};
+	} else if (result == NFD_OKAY) {
+		resultPath = std::filesystem::path{outPath};
+		NFD_FreePath(outPath);
+	} else {
+		OWL_CORE_ERROR("while picking folder: {}", NFD::GetError())
+		OWL_CORE_ASSERT(false, "Error picking folder")
+	}
+	NFD::Quit();
+	return resultPath;
+}
+
 }// namespace owl::core::utils

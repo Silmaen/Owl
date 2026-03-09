@@ -159,6 +159,12 @@ public:
 	auto getImGuiLayer() -> shared<gui::UiLayer> { return mp_imGuiLayer; }
 
 	/**
+	 * @brief Set the window title.
+	 * @param[in] iTitle The new title.
+	 */
+	void setWindowTitle(const std::string& iTitle);
+
+	/**
 	 * @brief Request the application to terminate.
 	 */
 	void close();
@@ -189,6 +195,18 @@ public:
 	 * @return The current working directory.
 	 */
 	[[nodiscard]] auto getAssetDirectories() const -> const std::list<AssetDirectory>& { return m_assetDirectories; }
+
+	/**
+	 * @brief Add an asset directory (inserted at front, highest priority).
+	 * @param[in] iDir The asset directory to add.
+	 */
+	void addAssetDirectory(const AssetDirectory& iDir);
+
+	/**
+	 * @brief Remove an asset directory by path.
+	 * @param[in] iPath The path of the asset directory to remove.
+	 */
+	void removeAssetDirectory(const std::filesystem::path& iPath);
 
 	/**
 		 * @brief Enable the docking environment.

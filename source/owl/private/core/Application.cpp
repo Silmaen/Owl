@@ -207,6 +207,17 @@ Application::~Application() {
 	invalidate();
 }
 
+void Application::addAssetDirectory(const AssetDirectory& iDir) { m_assetDirectories.push_front(iDir); }
+
+void Application::removeAssetDirectory(const std::filesystem::path& iPath) {
+	m_assetDirectories.remove_if([&iPath](const AssetDirectory& iDir) { return iDir.assetsPath == iPath; });
+}
+
+void Application::setWindowTitle(const std::string& iTitle) {
+	if (mp_appWindow)
+		mp_appWindow->setTitle(iTitle);
+}
+
 void Application::close() { m_state = State::Stopped; }
 
 void Application::invalidate() { s_instance = nullptr; }

@@ -70,7 +70,9 @@ poetry run python ci_action.py Documentation <preset>
 
 ### Applications (`source/`)
 
-- `owlnest/` — Scene editor (two executables: editor + runner)
+- `owlnest/` — Scene editor with project management (two executables: editor + runner)
+  - Project system: `owl_project.yml` config, dynamic asset directories, scene import
+  - Project settings panel, window title reflects active project
 - `owldrone/` — Drone navigator
 - `owlcast/` — Cast application
 - `sandbox/` — Testing/prototyping app

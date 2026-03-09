@@ -129,6 +129,12 @@ public:
 	[[nodiscard]] auto getGraphContext() const -> renderer::GraphContext* { return m_context.get(); }
 
 	/**
+	 * @brief Set the window title.
+	 * @param[in] iTitle The new title.
+	 */
+	virtual void setTitle(const std::string& iTitle) = 0;
+
+	/**
 	 * @brief Terminate the window.
 	 */
 	virtual void shutdown() = 0;
