@@ -12,7 +12,7 @@
 
 namespace owl::nest {
 class EditorLayer;
-}
+}// namespace owl::nest
 
 namespace owl::nest::panel {
 /**

@@ -21,7 +21,7 @@ public:
 	/**
 	 * @brief Default constructor.
 	 */
-	BaseDrawPanel(std::string&& iName);
+	explicit BaseDrawPanel(std::string&& iName);
 	/**
 	 * @brief Default destructor.
 	 */

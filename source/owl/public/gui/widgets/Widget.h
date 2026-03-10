@@ -19,7 +19,7 @@ namespace owl::gui::widgets {
  * @brief Base widget's data information.
  */
 struct WidgetData {
-	std::string id{};
+	std::string id;
 	bool visible = true;
 };
 

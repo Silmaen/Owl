@@ -12,7 +12,7 @@
 
 namespace owl::core::task {
 
-Timer::Timer(const TimerParam& iParam) : m_param{iParam} { m_lastCall = Timestep::clock::now(); }
+Timer::Timer(TimerParam iParam) : m_param{std::move(iParam)} { m_lastCall = Timestep::clock::now(); }
 
 Timer::~Timer() = default;
 

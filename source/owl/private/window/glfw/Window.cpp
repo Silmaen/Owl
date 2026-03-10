@@ -180,7 +180,7 @@ void Window::init(const Properties& iProps) {
 
 void Window::setTitle(const std::string& iTitle) {
 	m_windowData.title = iTitle;
-	if (mp_glfwWindow)
+	if (mp_glfwWindow != nullptr)
 		glfwSetWindowTitle(mp_glfwWindow, iTitle.c_str());
 }
 

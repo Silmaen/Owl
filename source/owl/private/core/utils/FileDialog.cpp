@@ -50,10 +50,10 @@ auto parseFilter(const std::string& iFilter) -> std::vector<nfdu8filteritem_t> {
 			continue;
 		OWL_DIAG_PUSH
 		OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
-		auto* const s0 = new nfdu8char_t[items[0].size() + 1];
+		auto* const s0 = new nfdu8char_t[items[0].size() + 1];// NOLINT(cppcoreguidelines-owning-memory)
 		memcpy(s0, items[0].data(), items[0].size());
 		s0[items[0].size()] = '\0';
-		auto* const s1 = new nfdu8char_t[items[1].size() + 1];
+		auto* const s1 = new nfdu8char_t[items[1].size() + 1];// NOLINT(cppcoreguidelines-owning-memory)
 		memcpy(s1, items[1].data(), items[1].size());
 		s1[items[1].size()] = '\0';
 		OWL_DIAG_POP
@@ -82,8 +82,8 @@ auto FileDialog::openFile(const std::string& iFilter) -> std::filesystem::path {
 		OWL_CORE_ASSERT(false, "Error Opening file")
 	}
 	for (const auto& [name, spec]: ff) {
-		delete name;
-		delete spec;
+		delete[] name;// NOLINT(cppcoreguidelines-owning-memory)
+		delete[] spec;// NOLINT(cppcoreguidelines-owning-memory)
 	}
 	NFD::Quit();
 	return resultPath;
@@ -107,8 +107,8 @@ auto FileDialog::saveFile([[maybe_unused]] const std::string& iFilter) -> std::f
 		OWL_CORE_ASSERT(false, "Error Opening file")
 	}
 	for (const auto& [name, spec]: ff) {
-		delete name;
-		delete spec;
+		delete[] name;// NOLINT(cppcoreguidelines-owning-memory)
+		delete[] spec;// NOLINT(cppcoreguidelines-owning-memory)
 	}
 	NFD::Quit();
 	return resultPath;

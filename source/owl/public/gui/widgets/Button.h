@@ -17,12 +17,12 @@ namespace owl::gui::widgets {
 	 * @brief Data associated with Button.
 	 */
 struct ButtonData : WidgetData {
-	std::string icon{""};
-	std::string replacementText{""};
-	std::function<bool()> isSelected{[] { return false; }};
-	std::function<void()> onClick{[] {}};
+	std::string icon;
+	std::string replacementText;
+	std::function<bool()> isSelected{[] -> bool { return false; }};
+	std::function<void()> onClick{[] -> void {}};
 	math::vec2 size{0, 0};
-	std::string tooltip{""};
+	std::string tooltip;
 };
 
 /**

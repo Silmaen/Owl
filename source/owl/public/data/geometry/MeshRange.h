@@ -64,7 +64,7 @@ public:
 	 *  Return an iterator on the first element of the mesh.
 	 * @return Iterator on the first element.
 	 */
-	auto begin() const -> const_iterator { return const_iterator(*m_mesh, m_firstIndex, m_components); }
+	[[nodiscard]] auto begin() const -> const_iterator { return const_iterator(*m_mesh, m_firstIndex, m_components); }
 
 	/**
 	 * @brief
@@ -78,14 +78,14 @@ public:
 	 *  Return a const iterator on the first element of the mesh.
 	 * @return Const iterator on the first element.
 	 */
-	auto cbegin() const -> const_iterator { return const_iterator(*m_mesh, m_firstIndex, m_components); }
+	[[nodiscard]] auto cbegin() const -> const_iterator { return const_iterator(*m_mesh, m_firstIndex, m_components); }
 
 	/**
 	 * @brief
 	 *  Return an iterator on the element following the last element of the mesh.
 	 * @return Iterator on the element following the last element.
 	 */
-	auto end() const -> const_iterator {
+	[[nodiscard]] auto end() const -> const_iterator {
 		OWL_CORE_ASSERT(m_endIndex != INVALID_INDEX, "")
 		return const_iterator(*m_mesh, m_endIndex, m_components);
 	}
@@ -105,7 +105,7 @@ public:
 	 *  Return a const iterator on the element following the last element of the mesh.
 	 * @return Const iterator on the element following the last element.
 	 */
-	auto cend() const -> const_iterator {
+	[[nodiscard]] auto cend() const -> const_iterator {
 		OWL_CORE_ASSERT(m_endIndex != INVALID_INDEX, "")
 		return const_iterator(*m_mesh, m_endIndex, m_components);
 	}
@@ -115,7 +115,7 @@ public:
 	 *  Get the mesh used to iterate.
 	 * @return A mesh.
 	 */
-	auto getObject() const -> MeshType& { return *m_mesh; }
+	[[nodiscard]] auto getObject() const -> MeshType& { return *m_mesh; }
 
 	/**
 	 * @brief

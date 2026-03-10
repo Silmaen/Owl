@@ -14,7 +14,7 @@ namespace owl::data::extradata {
 
 template<typename ExtraDataType>
 [[nodiscard]] auto registerExtraDataInternal() -> ExtraDataRegisterScope {
-	[[maybe_unused]] core::FactoryPid pid = core::factoryRegisterType<ExtraDataType>();
+	[[maybe_unused]] const core::FactoryPid pid = core::factoryRegisterType<ExtraDataType>();
 	return ExtraDataRegisterScope{};
 }
 

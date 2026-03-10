@@ -2,9 +2,6 @@
 ---
 WarningsAsErrors: '*'
 HeaderFilterRegex: '.*(\.h|\.hpp)$'
-ExcludeHeaderFilterRegex: ''
-HeaderFileExtensions: [ 'h', 'hpp' ]
-ImplementationFileExtensions: [ 'cpp' ]
 FormatStyle: 'file'
 Checks: '*,
   -abseil-*,
@@ -21,6 +18,8 @@ Checks: '*,
   -openmp-*,
   -zircon-*,
   -bugprone-easily-swappable-parameters,
+  -bugprone-unchecked-optional-access,
+  -bugprone-unused-local-non-trivial-variable,
   -cert-err58-cpp,
   -concurrency-mt-unsafe,
   -cppcoreguidelines-avoid-c-arrays,
@@ -35,6 +34,7 @@ Checks: '*,
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -cppcoreguidelines-pro-type-union-access,
   -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-rvalue-reference-param-not-moved,
   -google-*,
   google-explicit-constructor,
   google-readability-casting,
@@ -45,7 +45,10 @@ Checks: '*,
   -misc-include-cleaner,
   -misc-non-private-member-variables-in-classes,
   -modernize-avoid-c-arrays,
+  -performance-trivially-destructible,
   -portability-avoid-pragma-once,
+  -readability-avoid-nested-conditional-operator,
+  -readability-avoid-unconditional-preprocessor-if,
   -readability-braces-around-statements,
   -readability-identifier-length,
   -readability-math-missing-parentheses,

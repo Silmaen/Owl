@@ -103,7 +103,7 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 		msdf_atlas::Workload(
 				[&glyphs = m_data->glyphs, &coloringSeed](const int i, [[maybe_unused]] int iThreadNo) -> bool {
 					const uint64_t glyphSeed =
-							(lcgMultiplier * (coloringSeed ^ static_cast<uint64_t>(i)) + lcgIncrement) * !!coloringSeed;
+							(lcgMultiplier * (coloringSeed ^ static_cast<uint64_t>(i)) + lcgIncrement) * static_cast<uint64_t>(coloringSeed != 0);
 					glyphs[static_cast<size_t>(i)].edgeColoring(msdfgen::edgeColoringInkTrap, DEFAULT_ANGLE_THRESHOLD,
 																glyphSeed);
 					return true;
@@ -119,7 +119,7 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	}
 	m_atlasTexture = createAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>(
 			"Test", static_cast<float>(emSize), m_data->glyphs, m_data->fontGeometry, size);
-#if 0
+#if 0// NOLINT(readability-avoid-unconditional-preprocessor-if)
 	msdfgen::Shape shape;
 	if (msdfgen::loadGlyph(shape, font, 'C'))
 	{
@@ -185,10 +185,10 @@ auto Font::getScaledLineHeight() const -> float {
 }
 
 auto Font::getAdvance(const char& iChar, const char& iNextChar) const -> float {
-	const auto ucode = static_cast<msdf_atlas::unicode_t>(iChar);
+	const auto ucode = static_cast<msdf_atlas::unicode_t>(static_cast<unsigned char>(iChar));
 	const auto* glyph = m_data->fontGeometry.getGlyph(ucode);
 	double advance = glyph->getAdvance();
-	const auto nextCharacter = static_cast<msdfgen::unicode_t>(iNextChar);
+	const auto nextCharacter = static_cast<msdfgen::unicode_t>(static_cast<unsigned char>(iNextChar));
 	m_data->fontGeometry.getAdvance(advance, ucode, nextCharacter);
 	const auto& metrics = m_data->fontGeometry.getMetrics();
 	const float fsScale = 1.0f / static_cast<float>(metrics.ascenderY - metrics.descenderY);

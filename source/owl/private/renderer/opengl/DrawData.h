@@ -7,10 +7,10 @@
  */
 #pragma once
 
-#include "renderer/DrawData.h"
 #include "Buffer.h"
 #include "Shader.h"
 #include "VertexArray.h"
+#include "renderer/DrawData.h"
 
 namespace owl::renderer::opengl {
 /**

@@ -99,7 +99,7 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 }
 
 auto Texture2D::create(const Specification& iSpecs) -> shared<Texture2D> {
-	shared<Texture2D> tex;
+	const shared<Texture2D> tex;
 	const auto api = RenderCommand::getApi();
 	switch (api) {
 		case RenderAPI::Type::Null:
@@ -122,6 +122,24 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 	if (key == "emp:")
 		return create(Specification{.size = {0, 0}, .format = ImageFormat::Rgb8});
 	if (key == "nam:") {
+		// Check pack first.
+		if (core::Application::instanced() && core::Application::get().hasOpenPack()) {
+			if (auto data = core::Application::get().loadFromPack(val); data) {
+				const auto tempDir = std::filesystem::temp_directory_path() / "owl_pack_cache";
+				std::filesystem::create_directories(tempDir);
+				const auto tempFile = tempDir / std::filesystem::path(val).filename();
+				{
+					std::ofstream out(tempFile, std::ios::binary);
+					out.write(reinterpret_cast<const char*>(data->data()),
+							  static_cast<std::streamsize>(data->size()));
+				}
+				auto texture = create(tempFile);
+				if (texture != nullptr) {
+					texture->m_name = val;
+					return texture;
+				}
+			}
+		}
 		// Resolve the asset name through registered asset directories.
 		if (core::Application::instanced()) {
 			const std::filesystem::path name(val);

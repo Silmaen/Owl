@@ -325,7 +325,7 @@ void Scene::render() {
 	if (const auto bgView = registry.view<component::BackgroundTexture>(); !bgView.empty()) {
 		const auto bgEntity = bgView.front();
 		const auto* vis = registry.try_get<component::Visibility>(bgEntity);
-		const bool shouldRender = !vis || ((status == Status::Editing) ? vis->editorVisible : vis->gameVisible);
+		const bool shouldRender = (vis == nullptr) || ((status == Status::Editing) ? vis->editorVisible : vis->gameVisible);
 		if (shouldRender) {
 			const auto& bg = bgView.get<component::BackgroundTexture>(bgEntity);
 			const int mode = bg.mode == component::BackgroundTexture::Mode::Skybox ? 3 : static_cast<int>(bg.type);
@@ -395,7 +395,7 @@ void Scene::onViewportResize(const math::vec2ui& iSize) {
 
 auto Scene::getAllEntities() const -> std::vector<Entity> {
 	std::vector<Entity> entities;
-	for (auto&& [e]: registry.storage<entt::entity>()->each()) { entities.emplace_back(e, const_cast<Scene*>(this)); }
+	for (auto&& [e]: registry.storage<entt::entity>()->each()) { entities.emplace_back(e, const_cast<Scene*>(this)); }// NOLINT(cppcoreguidelines-pro-type-const-cast)
 	return entities;
 }
 

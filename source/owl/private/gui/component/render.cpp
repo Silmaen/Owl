@@ -151,8 +151,8 @@ void renderProps(SpriteRenderer& ioComponent) {
 	if (ImGui::BeginDragDropTarget()) {
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
 			const auto* const path = static_cast<const char*>(payload->Data);
-			const std::filesystem::path texturePath = renderer::Renderer::getTextureLibrary().find(path).value();
-			ioComponent.texture = renderer::Texture2D::create(texturePath);
+			if (const auto texturePath = renderer::Renderer::getTextureLibrary().find(path))
+				ioComponent.texture = renderer::Texture2D::create(*texturePath);
 		}
 		ImGui::EndDragDropTarget();
 	}
@@ -179,7 +179,7 @@ void renderProps(Text& ioComponent) {
 		auto& fontLib = core::Application::get().getFontLibrary();
 		const std::string display = ioComponent.font->isDefault() ? "(default)" : ioComponent.font->getName();
 		if (ImGui::BeginCombo("Font", display.c_str())) {
-			for (const auto& font: fontLib.getFoundFontNames()) {
+			for (const auto& font: data::fonts::FontLibrary::getFoundFontNames()) {
 				if (ImGui::Selectable(font.c_str(), ioComponent.font->getName() == font)) {
 					ioComponent.font = fontLib.getFont(font);
 				}
@@ -274,9 +274,8 @@ void renderProps(BackgroundTexture& ioComponent) {
 			if (ImGui::BeginDragDropTarget()) {
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
 					const auto* const path = static_cast<const char*>(payload->Data);
-					const std::filesystem::path texturePath =
-							renderer::Renderer::getTextureLibrary().find(path).value();
-					ioComponent.texture = renderer::Texture2D::create(texturePath);
+					if (const auto texturePath = renderer::Renderer::getTextureLibrary().find(path))
+						ioComponent.texture = renderer::Texture2D::create(*texturePath);
 				}
 				ImGui::EndDragDropTarget();
 			}

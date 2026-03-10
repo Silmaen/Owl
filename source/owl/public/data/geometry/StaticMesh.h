@@ -161,14 +161,6 @@ public:
 	}
 	/**
 	 * @brief Add a triangle to the mesh.
-	 * @param iTriangle The triangle to add.
-	 */
-	void addTriangle(primitive::Triangle&& iTriangle) {
-		m_triangles.push_back(std::move(iTriangle));
-		m_trianglesExtraDataContainer.resize(m_triangles.size());
-	}
-	/**
-	 * @brief Add a triangle to the mesh.
 	 * @param iVertexIndices The indices of the triangle's vertices.
 	 */
 	void addTriangle(const std::array<uint32_t, 3>& iVertexIndices);

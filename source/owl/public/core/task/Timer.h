@@ -38,7 +38,7 @@ public:
 	 * @brief Default constructor.
 	 * @param[in] iParam Timer parameter.
 	 */
-	explicit Timer(const TimerParam& iParam);
+	explicit Timer(TimerParam iParam);
 	/**
 	 * @brief Default destructor.
 	 */

@@ -35,6 +35,15 @@ public:
 	 */
 	[[nodiscard]] auto deserialize(const std::filesystem::path& iFilepath) const -> bool;
 
+	/**
+	 * @brief Load the scene from a memory buffer.
+	 * @param[in] iData The raw YAML data.
+	 * @param[in] iSourceName Optional source name for error messages.
+	 * @return True if everything works.
+	 */
+	[[nodiscard]] auto deserializeFromBuffer(const std::vector<uint8_t>& iData,
+											 const std::string& iSourceName = "<buffer>") const -> bool;
+
 private:
 	/// Parent Scene.
 	shared<Scene> mp_scene;

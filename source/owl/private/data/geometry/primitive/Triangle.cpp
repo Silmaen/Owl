@@ -13,8 +13,6 @@ namespace owl::data::geometry::primitive {
 
 Triangle::Triangle() = default;
 
-Triangle::~Triangle() = default;
-
 [[nodiscard]] auto Triangle::getVertex(const uint8_t iIndex) -> MeshVertex* { return m_vertices.at(iIndex); }
 [[nodiscard]] auto Triangle::getVertex(const uint8_t iIndex) const -> const MeshVertex* {
 	return m_vertices.at(iIndex);

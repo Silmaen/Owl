@@ -36,7 +36,7 @@ public:
 	/**
 	 * @brief Default move constructor.
 	 */
-	Scheduler(Scheduler&&) = default;
+	Scheduler(Scheduler&&)  noexcept = default;
 	/**
 	 * @brief Default copy affectation operator.
 	 */

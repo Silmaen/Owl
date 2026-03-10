@@ -16,9 +16,7 @@ namespace owl::scene {
 
 ScenePlayer::ScenePlayer() = default;
 
-ScenePlayer::~ScenePlayer() = default;
-
-void ScenePlayer::parseInputs(const Entity& iPlayer) {
+void ScenePlayer::parseInputs(const Entity& iPlayer) const {
 	if (input::Input::isKeyPressed(input::key::D)) {
 		physic::PhysicCommand::impulse(iPlayer, {linearImpulse, 0});
 	}

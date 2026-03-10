@@ -220,7 +220,7 @@ public:
 					if (std::filesystem::exists(filePath))
 						return filePath;
 				} else {
-					for (auto& e: ext) {
+					for (const auto& e: ext) {
 						std::filesystem::path filePathWithExt = filePath.string() + e;
 						if (std::filesystem::exists(filePathWithExt))
 							return filePathWithExt;
@@ -236,7 +236,7 @@ public:
 					if (std::filesystem::exists(filePath))
 						return filePath;
 				} else {
-					for (auto& e: ext) {
+					for (const auto& e: ext) {
 						filePath.replace_extension(e);
 						if (std::filesystem::exists(filePath))
 							return filePath;

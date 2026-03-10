@@ -119,6 +119,9 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED ${TH
 # zeus
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zeus REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "zeus::expected")
 
+# zstd
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zstd REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "zstd::libzstd_static")
+
 # TBB (optionnal)
 find_package(TBB QUIET)
 if (TBB_FOUND)

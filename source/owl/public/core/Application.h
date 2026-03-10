@@ -8,16 +8,17 @@
 
 #pragma once
 
-#include "window/Window.h"
 #include "Timestep.h"
 #include "core/task/Task.h"
-#include "event/AppEvent.h"
 #include "data/fonts/FontLibrary.h"
+#include "event/AppEvent.h"
 #include "gui/UiLayer.h"
+#include "io/pack/PackReader.h"
 #include "layer/LayerStack.h"
 #include "renderer/RenderAPI.h"
 #include "sound/SoundAPI.h"
 #include "task/Scheduler.h"
+#include "window/Window.h"
 
 #include <filesystem>
 #include <list>
@@ -62,6 +63,8 @@ struct OWL_API AppParams {
 	bool useDebugging{false};
 	/// Run application in Dummy mode.
 	bool isDummy{false};
+	/// Optional path to an asset pack file (opened before renderer init).
+	std::string packFile{};
 
 	/**
 	 * @brief Access to the given command line argument.
@@ -277,6 +280,44 @@ public:
 	 */
 	[[nodiscard]] auto getTaskScheduler() const -> const task::Scheduler& { return m_scheduler; }
 
+	/**
+	 * @brief Open an asset pack file for runtime loading.
+	 * @param[in] iPackFile Path to the pack file.
+	 * @return True if the pack was opened successfully.
+	 */
+	auto openPack(const std::filesystem::path& iPackFile) -> bool;
+
+	/**
+	 * @brief Close the current asset pack.
+	 */
+	void closePack();
+
+	/**
+	 * @brief Check if an asset pack is currently open.
+	 * @return True if a pack is open.
+	 */
+	[[nodiscard]] auto hasOpenPack() const -> bool;
+
+	/**
+	 * @brief Read an asset from the open pack.
+	 * @param[in] iPath The asset path inside the pack.
+	 * @return The raw asset data, or nullopt if not found.
+	 */
+	[[nodiscard]] auto loadFromPack(const std::string& iPath) const -> std::optional<std::vector<uint8_t>>;
+
+	/**
+	 * @brief Check if the open pack contains an asset.
+	 * @param[in] iPath The asset path inside the pack.
+	 * @return True if the asset exists in the pack.
+	 */
+	[[nodiscard]] auto packContains(const std::string& iPath) const -> bool;
+
+	/**
+	 * @brief Access the pack reader.
+	 * @return The pack reader (may not be open).
+	 */
+	[[nodiscard]] auto getPackReader() const -> const io::pack::PackReader& { return m_packReader; }
+
 private:
 	/**
 	 * @brief Helper function used to search for assets location.
@@ -328,6 +369,8 @@ private:
 	static Application* s_instance;
 	/// The task Scheduler.
 	task::Scheduler m_scheduler;
+	/// The asset pack reader.
+	io::pack::PackReader m_packReader;
 
 	/// Mark the main entrypoint function as friend.
 	friend auto ::main(int iArgc, char** iArgv) -> int;

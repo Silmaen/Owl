@@ -65,7 +65,7 @@ public:
 	 * @brief Get a list of possible fonts.
 	 * @return List of font files found.
 	 */
-	auto getFoundFontNames() const -> std::list<std::string>;
+	static auto getFoundFontNames() -> std::list<std::string>;
 
 private:
 	/// Default font name for faster search.

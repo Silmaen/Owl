@@ -21,6 +21,8 @@ StaticMesh::StaticMesh(const StaticMesh& iOther) { *this = iOther.clone(); }
 StaticMesh::StaticMesh(StaticMesh&&) noexcept = default;
 
 auto StaticMesh::operator=(const StaticMesh& iOther) -> StaticMesh& {
+	if (this == &iOther)
+		return *this;
 	*this = iOther.clone();
 	return *this;
 }
@@ -47,7 +49,7 @@ void StaticMesh::addTriangle(const std::array<uint32_t, 3>& iVertexIndices) {
 	primitive::Triangle triangle;
 	triangle.setIndex(static_cast<uint32_t>(m_triangles.size()));
 	for (uint8_t i = 0; i < 3; ++i) { triangle.setVertex(i, &m_vertices.at(iVertexIndices[i])); }
-	m_triangles.push_back(std::move(triangle));
+	m_triangles.push_back(triangle);
 	m_trianglesExtraDataContainer.resize(m_triangles.size());
 }
 
@@ -71,7 +73,7 @@ void StaticMesh::clear() {
 			newTri.setVertex(i, &newMesh.m_vertices.at(static_cast<size_t>(std::distance(
 										m_vertices.data(), const_cast<const primitive::MeshVertex*>(vs[i])))));
 		}
-		newMesh.m_triangles.emplace_back(std::move(newTri));
+		newMesh.m_triangles.emplace_back(newTri);
 	}
 	newMesh.m_verticesExtraDataContainer = m_verticesExtraDataContainer.clone();
 	newMesh.m_trianglesExtraDataContainer = m_trianglesExtraDataContainer.clone();

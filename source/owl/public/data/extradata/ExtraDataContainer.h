@@ -47,7 +47,7 @@ public:
 	 * @return Pointer on the extra data if found, nullptr otherwise.
 	 */
 	template<class ExtraDataType>
-	auto getExtraDataAs(const size_t iIndex) const -> shared<ExtraDataType> {
+	[[nodiscard]] auto getExtraDataAs(const size_t iIndex) const -> shared<ExtraDataType> {
 		if (const ExtraDataPtr ed = getExtraData(iIndex)) {
 			return std::static_pointer_cast<ExtraDataType>(ed);
 		}

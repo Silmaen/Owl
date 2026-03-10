@@ -21,8 +21,8 @@ public:
 
 	Manager(const Manager&) = delete;
 	Manager(Manager&&) = delete;
-	Manager& operator=(const Manager&) = delete;
-	Manager& operator=(Manager&&) = delete;
+	auto operator=(const Manager&) -> Manager& = delete;
+	auto operator=(Manager&&) -> Manager& = delete;
 
 	/**
 	 * @brief Destructor.

@@ -13,6 +13,4 @@ namespace owl::scene {
 
 SceneBody::SceneBody() = default;
 
-SceneBody::~SceneBody() = default;
-
 }// namespace owl::scene
