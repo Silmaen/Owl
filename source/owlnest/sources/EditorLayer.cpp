@@ -8,6 +8,8 @@
 
 #include "EditorLayer.h"
 
+#include <gui/IconBank.h>
+#include <gui/utils.h>
 #include <io/pack/AssetScanner.h>
 #include <io/pack/PackWriter.h>
 #include <physic/PhysicCommand.h>
@@ -18,19 +20,95 @@
 
 namespace owl::nest {
 namespace {
-void loadIcons() {
+
+void buildIconBank() {
+	auto& iconBank = gui::IconBank::instance();
+
+	// Resolve icon file paths from asset directories
 	auto& textureLibrary = renderer::Renderer::getTextureLibrary();
-	textureLibrary.load("icons/control/ctrl_rotation");
-	textureLibrary.load("icons/control/ctrl_scale");
-	textureLibrary.load("icons/control/ctrl_translation");
-	textureLibrary.load("icons/PlayButton");
-	textureLibrary.load("icons/PauseButton");
-	textureLibrary.load("icons/StopButton");
-	textureLibrary.load("icons/StepButton");
-	textureLibrary.load("icons/visibility/camera_on");
-	textureLibrary.load("icons/visibility/camera_off");
-	textureLibrary.load("icons/visibility/eye_open");
-	textureLibrary.load("icons/visibility/eye_closed");
+	const auto resolve = [&](const std::string& iName) -> std::filesystem::path {
+		if (const auto path = textureLibrary.find(iName); path.has_value())
+			return path.value();
+		return {};
+	};
+
+	// clang-format off
+	std::vector<std::pair<std::string, std::filesystem::path>> icons = {
+		// Control icons
+		{"ctrl_rotation",     resolve("ctrl_rotation")},
+		{"ctrl_scale",        resolve("ctrl_scale")},
+		{"ctrl_translation",  resolve("ctrl_translation")},
+		// Playback icons
+		{"PlayButton",        resolve("icons/PlayButton")},
+		{"PauseButton",       resolve("icons/PauseButton")},
+		{"StopButton",        resolve("icons/StopButton")},
+		{"StepButton",        resolve("icons/StepButton")},
+		// Visibility icons
+		{"camera_on",         resolve("icons/visibility/camera_on")},
+		{"camera_off",        resolve("icons/visibility/camera_off")},
+		{"eye_open",          resolve("icons/visibility/eye_open")},
+		{"eye_closed",        resolve("icons/visibility/eye_closed")},
+		// Trigger icons
+		{"trigger_victory",   resolve("icons/triggers/trigger_victory")},
+		{"trigger_death",     resolve("icons/triggers/trigger_death")},
+		{"trigger_target",    resolve("icons/triggers/trigger_target")},
+		{"trigger_teleport",  resolve("icons/triggers/trigger_teleport")},
+		// File browser icons
+		{"folder_icon",       resolve("icons/files/folder_icon")},
+		{"glsl_icon",         resolve("icons/files/glsl_icon")},
+		{"jpg_icon",          resolve("icons/files/jpg_icon")},
+		{"json_icon",         resolve("icons/files/json_icon")},
+		{"owl_icon",          resolve("icons/files/owl_icon")},
+		{"png_icon",          resolve("icons/files/png_icon")},
+		{"svg_icon",          resolve("icons/files/svg_icon")},
+		{"text_icon",         resolve("icons/files/text_icon")},
+		{"ttf_icon",          resolve("icons/files/ttf_icon")},
+		{"yml_icon",          resolve("icons/files/yml_icon")},
+		// Action icons (context menus, toolbar, etc.)
+		{"delete",            resolve("icons/actions/delete")},
+		{"rename",            resolve("icons/actions/rename")},
+		{"new_folder",        resolve("icons/actions/new_folder")},
+		{"import_file",       resolve("icons/actions/import_file")},
+		{"import_folder",     resolve("icons/actions/import_folder")},
+		{"add_entity",        resolve("icons/actions/add_entity")},
+		{"delete_entity",     resolve("icons/actions/delete_entity")},
+		{"save",              resolve("icons/actions/save")},
+		{"open",              resolve("icons/actions/open")},
+		{"new_scene",         resolve("icons/actions/new_scene")},
+		{"duplicate",         resolve("icons/actions/duplicate")},
+		{"undo",              resolve("icons/actions/undo")},
+		{"redo",              resolve("icons/actions/redo")},
+		{"component_camera",  resolve("icons/actions/component_camera")},
+		{"component_sprite",  resolve("icons/actions/component_sprite")},
+		{"component_physics", resolve("icons/actions/component_physics")},
+		{"component_script",  resolve("icons/actions/component_script")},
+		{"component_sound",   resolve("icons/actions/component_sound")},
+		{"settings",          resolve("icons/actions/settings")},
+		{"search",            resolve("icons/actions/search")},
+		{"pack",              resolve("icons/actions/pack")},
+		// UI / navigation icons
+		{"back",              resolve("icons/actions/back")},
+		{"scene_hierarchy",   resolve("icons/actions/scene_hierarchy")},
+		{"content_browser",   resolve("icons/actions/content_browser")},
+		{"stats",             resolve("icons/actions/stats")},
+		{"properties",        resolve("icons/actions/properties")},
+		{"log",               resolve("icons/actions/log")},
+		{"viewport",          resolve("icons/actions/viewport")},
+		{"close",             resolve("icons/actions/close")},
+		{"project",           resolve("icons/actions/project")},
+		{"exit",              resolve("icons/actions/exit")},
+	};
+	// clang-format on
+
+	// Remove entries with empty paths
+	std::erase_if(icons, [](const auto& iEntry) { return iEntry.second.empty(); });
+
+	iconBank.build(icons, 128);
+}
+void loadTriggerTextures() {
+	// Trigger icons are also used for Renderer2D viewport drawing (not just ImGui),
+	// so they need to remain in the texture library as individual textures.
+	auto& textureLibrary = renderer::Renderer::getTextureLibrary();
 	textureLibrary.load("icons/triggers/trigger_victory");
 	textureLibrary.load("icons/triggers/trigger_death");
 	textureLibrary.load("icons/triggers/trigger_target");
@@ -52,15 +130,26 @@ void EditorLayer::onAttach() {
 	if (const auto f = core::Application::get().getWorkingDirectory() / "OwlNest_settings.yml"; exists(f))
 		m_settings.loadFromFile(f);
 
+	// Apply theme from saved settings
+	if (m_settings.themePreset != "Custom") {
+		for (const auto& [preset, name]: gui::Theme::getPresetNames()) {
+			if (name == m_settings.themePreset) {
+				gui::UiLayer::setTheme(gui::Theme::fromPreset(preset));
+				break;
+			}
+		}
+	}
+
 	m_viewport.attach();
 	m_viewport.attachParent(this);
 
-	loadIcons();
+	buildIconBank();
+	loadTriggerTextures();
 	loadSounds();
 
 	m_controlBar.init(gui::widgets::ButtonBarData{{.id = "##controlBar", .visible = true}, false, false, true});
 	m_controlBar.addButton({{.id = "##ctrlTranslation", .visible = true},
-							"icons/control/ctrl_translation",
+							"ctrl_translation",
 							"T",
 							[this] { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Translation; },
 							[this] {
@@ -72,7 +161,7 @@ void EditorLayer::onAttach() {
 							{32, 32},
 							"Translation (W)"});
 	m_controlBar.addButton({{.id = "##ctrlRotation", .visible = true},
-							"icons/control/ctrl_rotation",
+							"ctrl_rotation",
 							"T",
 							[this] { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Rotation; },
 							[this] {
@@ -84,7 +173,7 @@ void EditorLayer::onAttach() {
 							{32, 32},
 							"Rotation (E)"});
 	m_controlBar.addButton({{.id = "##ctrlScale", .visible = true},
-							"icons/control/ctrl_scale",
+							"ctrl_scale",
 							"T",
 							[this] { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Scale; },
 							[this] {
@@ -177,6 +266,10 @@ void EditorLayer::onEvent(event::Event& ioEvent) {
 			[this]<typename T0>(T0&& ioPh1) { return onKeyPressed(std::forward<T0>(ioPh1)); });
 	dispatcher.dispatch<event::MouseButtonPressedEvent>(
 			[]<typename T0>(T0&& ioPh1) { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
+	dispatcher.dispatch<event::FileDropEvent>([this](const event::FileDropEvent& iEvent) {
+		m_contentBrowser.handleFileDrop(iEvent.getPaths());
+		return true;
+	});
 }
 
 void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
@@ -253,51 +346,80 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 	ImGui::End();
 }
 
+void EditorLayer::renderThemeMenu() {
+	if (!ImGui::BeginMenu("Theme"))
+		return;
+	for (const auto& [preset, name]: gui::Theme::getPresetNames()) {
+		const bool selected = m_settings.themePreset == name;
+		if (ImGui::MenuItem(name.c_str(), nullptr, selected)) {
+			m_settings.themePreset = name;
+			gui::UiLayer::setTheme(gui::Theme::fromPreset(preset));
+		}
+	}
+	ImGui::Separator();
+	const bool selected = m_settings.themePreset == "Custom";
+	if (ImGui::MenuItem("Custom (theme.yml)", nullptr, selected)) {
+		m_settings.themePreset = "Custom";
+		if (const auto themePath = core::Application::get().getWorkingDirectory() / "theme.yml"; exists(themePath)) {
+			gui::Theme theme;
+			theme.loadFromFile(themePath);
+			gui::UiLayer::setTheme(theme);
+		}
+	}
+	ImGui::EndMenu();
+}
+
 void EditorLayer::renderMenu() {
+	const auto& iconBank = gui::IconBank::instance();
+
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
-			if (ImGui::MenuItem("New Project"))
+			if (iconBank.menuItem("new_folder", "New Project"))
 				newProject();
-			if (ImGui::MenuItem("Open Project"))
+			if (iconBank.menuItem("open", "Open Project"))
 				openProject();
-			if (ImGui::MenuItem("Save Project", nullptr, false, m_project.isLoaded()))
+			if (iconBank.menuItem("save", "Save Project", nullptr, m_project.isLoaded()))
 				saveProject();
-			if (ImGui::MenuItem("Close Project", nullptr, false, m_project.isLoaded()))
+			if (iconBank.menuItem("close", "Close Project", nullptr, m_project.isLoaded()))
 				closeProject();
 			ImGui::Separator();
-			if (ImGui::MenuItem("New", "Ctrl+N"))
+			if (iconBank.menuItem("new_scene", "New", "Ctrl+N"))
 				newScene();
 			ImGui::Separator();
-			if (ImGui::MenuItem("Open Scene", "Ctrl+O"))
+			if (iconBank.menuItem("open", "Open Scene", "Ctrl+O"))
 				openScene();
-			if (ImGui::MenuItem("Save Scene", "Ctrl+S", false, !m_currentScenePath.empty()))
-				saveCurrentScene();
-			if (ImGui::MenuItem("Save Scene as..", "Ctrl+Shift+S"))
+			if (iconBank.menuItem("save", "Save Scene", "Ctrl+S"))
+				if (!m_currentScenePath.empty())
+					saveCurrentScene();
+			if (iconBank.menuItem("save", "Save Scene as..", "Ctrl+Shift+S"))
 				saveSceneAs();
 			ImGui::Separator();
-			if (ImGui::MenuItem("Exit"))
+			if (iconBank.menuItem("exit", "Exit"))
 				core::Application::get().close();
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Project", m_project.isLoaded())) {
-			if (ImGui::MenuItem("Import Scene"))
+			if (iconBank.menuItem("import_file", "Import Scene"))
 				importScene();
 			ImGui::Separator();
-			if (ImGui::MenuItem("Pack Scene", nullptr, false, !m_currentScenePath.empty()))
-				packScene();
-			if (ImGui::MenuItem("Pack Game"))
+			if (iconBank.menuItem("pack", "Pack Scene"))
+				if (!m_currentScenePath.empty())
+					packScene();
+			if (iconBank.menuItem("pack", "Pack Game"))
 				packGame();
 			ImGui::Separator();
-			if (ImGui::MenuItem("Project Settings"))
+			if (iconBank.menuItem("settings", "Project Settings"))
 				m_projectSettings.open(m_project);
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Settings")) {
-			if (ImGui::MenuItem("Show Stats", nullptr, m_settings.showStats)) {
+			if (iconBank.menuItem("stats", "Show Stats")) {
 				m_settings.showStats = !m_settings.showStats;
 			}
-			if (ImGui::MenuItem("Parameters"))
+			if (iconBank.menuItem("settings", "Parameters"))
 				m_parameters.open();
+			ImGui::Separator();
+			renderThemeMenu();
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
@@ -314,8 +436,8 @@ void EditorLayer::renderToolbar() {
 	else if (m_state == State::Pause)
 		buttonCount = 3;
 
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, gui::vec(math::vec2{0.f, 2.f}));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, gui::vec(math::vec2{0.f, 0.f}));
 
 	// Compute toolbar window size to exactly fit the buttons
 	const auto& style = ImGui::GetStyle();
@@ -326,77 +448,61 @@ void EditorLayer::renderToolbar() {
 	const float toolbarHeight = buttonWidgetHeight + 4.0f;// 4 = 2 * windowPaddingY
 	ImGui::SetNextWindowSize({toolbarWidth, toolbarHeight});
 
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+	constexpr math::vec4 transparent{0.f, 0.f, 0.f, 0.f};
+	ImGui::PushStyleColor(ImGuiCol_Button, gui::vec(transparent));
 	const auto& colors = style.Colors;
 	const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+						  gui::vec(math::vec4{buttonHovered.x, buttonHovered.y, buttonHovered.z, 0.5f}));
 	const auto& buttonActive = colors[ImGuiCol_ButtonActive];
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(buttonActive.x, buttonActive.y, buttonActive.z, 0.5f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+						  gui::vec(math::vec4{buttonActive.x, buttonActive.y, buttonActive.z, 0.5f}));
 
 	ImGui::Begin("##toolbar", nullptr,
 				 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-	auto& textureLibrary = renderer::Renderer::getTextureLibrary();
+	auto& iconBank = gui::IconBank::instance();
+
+	// Helper to render an icon button with fallback
+	const auto iconButton = [&](const char* iId, const char* iIconName, const char* iFallback,
+								const float iSize) -> bool {
+		const auto sizeVec = gui::vec(math::vec2{iSize, iSize});
+		if (const auto info = iconBank.getIcon(iIconName); info.has_value())
+			return ImGui::ImageButton(iId, static_cast<ImTextureID>(info->textureId), sizeVec, gui::vec(info->uv0),
+									  gui::vec(info->uv1));
+		return ImGui::Button(iFallback, sizeVec);
+	};
 
 	if (m_state == State::Edit) {
 		// Edit mode: single Play button centered
-		const shared<renderer::Texture> icon = textureLibrary.get("icons/PlayButton");
-		if (const auto tex = gui::imTexture(icon); tex.has_value()) {
-			if (ImGui::ImageButton("btn_play", tex.value(), {buttonImageSize, buttonImageSize}))
-				onScenePlay();
-		} else {
-			if (ImGui::Button("play", {buttonImageSize, buttonImageSize}))
-				onScenePlay();
-		}
+		if (iconButton("btn_play", "PlayButton", "play", buttonImageSize))
+			onScenePlay();
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Play");
 	} else {
 		// Play or Pause mode: two buttons (Pause/Resume + Stop)
-		const shared<renderer::Texture> pauseResumeIcon = m_state == State::Play
-																  ? textureLibrary.get("icons/PauseButton")
-																  : textureLibrary.get("icons/PlayButton");
-		if (const auto tex = gui::imTexture(pauseResumeIcon); tex.has_value()) {
-			if (ImGui::ImageButton("btn_pause_resume", tex.value(), {buttonImageSize, buttonImageSize})) {
-				if (m_state == State::Play)
-					onScenePause();
-				else
-					onSceneResume();
-			}
-		} else {
-			if (m_state == State::Play) {
-				if (ImGui::Button("pause", {buttonImageSize, buttonImageSize}))
-					onScenePause();
-			} else {
-				if (ImGui::Button("resume", {buttonImageSize, buttonImageSize}))
-					onSceneResume();
-			}
+		const auto* const pauseResumeIcon = m_state == State::Play ? "PauseButton" : "PlayButton";
+		if (iconButton("btn_pause_resume", pauseResumeIcon, m_state == State::Play ? "pause" : "resume",
+					   buttonImageSize)) {
+			if (m_state == State::Play)
+				onScenePause();
+			else
+				onSceneResume();
 		}
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip(m_state == State::Play ? "Pause" : "Resume");
 
 		ImGui::SameLine();
 
-		const shared<renderer::Texture> stopIcon = textureLibrary.get("icons/StopButton");
-		if (const auto tex = gui::imTexture(stopIcon); tex.has_value()) {
-			if (ImGui::ImageButton("btn_stop", tex.value(), {buttonImageSize, buttonImageSize}))
-				onSceneStop();
-		} else {
-			if (ImGui::Button("stop", {buttonImageSize, buttonImageSize}))
-				onSceneStop();
-		}
+		if (iconButton("btn_stop", "StopButton", "stop", buttonImageSize))
+			onSceneStop();
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Stop");
 
 		if (m_state == State::Pause) {
 			ImGui::SameLine();
-			const shared<renderer::Texture> stepIcon = textureLibrary.get("icons/StepButton");
-			if (const auto tex = gui::imTexture(stepIcon); tex.has_value()) {
-				if (ImGui::ImageButton("btn_step", tex.value(), {buttonImageSize, buttonImageSize}))
-					onSceneStep();
-			} else {
-				if (ImGui::Button("step", {buttonImageSize, buttonImageSize}))
-					onSceneStep();
-			}
+			if (iconButton("btn_step", "StepButton", "step", buttonImageSize))
+				onSceneStep();
 			if (ImGui::IsItemHovered())
 				ImGui::SetTooltip("Step");
 		}

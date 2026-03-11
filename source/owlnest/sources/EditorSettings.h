@@ -18,6 +18,8 @@ namespace owl::nest {
 struct EditorSettings {
 	/// Whether the stats panel is visible.
 	bool showStats = true;
+	/// Current theme preset name (empty or "Custom" means use theme.yml).
+	std::string themePreset = "Dark";
 
 	/**
 	 * @brief Load settings from a YAML file.
