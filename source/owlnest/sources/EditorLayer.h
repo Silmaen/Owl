@@ -82,6 +82,7 @@ public:
 private:
 	void renderStats(const core::Timestep& iTimeStep);
 	void renderMenu();
+	void renderThemeMenu();
 	void renderToolbar();
 
 	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;

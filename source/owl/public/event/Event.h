@@ -38,7 +38,9 @@ enum struct Type : uint8_t {
 	MouseButtonPressed,/// Mouse's button pressed.
 	MouseButtonReleased,/// Mouse's button released.
 	MouseMoved,/// Mouse moved.
-	MouseScrolled/// Mouse wheel scrolled.
+	MouseScrolled,/// Mouse wheel scrolled.
+
+	FileDrop/// File(s) dropped from OS.
 };
 
 /**
