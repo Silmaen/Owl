@@ -2,6 +2,8 @@
 #include "testHelper.h"
 
 #include <core/task/Scheduler.h>
+#include <core/task/SchedulerImpl.h>
+#include <core/task/ParallelUtils.h>
 
 using namespace owl::core;
 using namespace owl::core::task;
@@ -121,4 +123,75 @@ TEST(core_task, SchedulerTimers) {
 	scheduler.frame(ts);// a_t2
 	std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
 	EXPECT_EQ(counter, 8);
+}
+
+TEST(core_task, SchedulerConcurrency) {
+	Scheduler scheduler;
+	Timestep ts;
+	const auto hwThreads = std::thread::hardware_concurrency();
+	std::atomic_uint32_t running = 0;
+	std::atomic_uint32_t maxConcurrent = 0;
+	std::atomic_uint32_t completed = 0;
+
+	// Submit hwThreads tasks that all run simultaneously.
+	for (unsigned i = 0; i < hwThreads; ++i) {
+		scheduler.pushTask(Task([&] {
+			++running;
+			// Record peak concurrency.
+			auto cur = running.load();
+			auto prev = maxConcurrent.load();
+			while (cur > prev && !maxConcurrent.compare_exchange_weak(prev, cur)) {}
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			--running;
+		}, [&] { ++completed; }));
+	}
+	scheduler.waitEmptyQueue();
+	EXPECT_EQ(completed, hwThreads);
+	// Should achieve more concurrency than the old hardcoded limit of 5.
+	if (hwThreads > 5) {
+		EXPECT_GT(maxConcurrent, 5u);
+	}
+}
+
+TEST(core_task, SchedulerStress) {
+	Scheduler scheduler;
+	constexpr size_t taskCount = 100;
+	std::atomic_uint32_t counter = 0;
+
+	for (size_t i = 0; i < taskCount; ++i) {
+		scheduler.pushTask(Task([&] { ++counter; }));
+	}
+	scheduler.waitEmptyQueue();
+	EXPECT_EQ(counter, taskCount);
+}
+
+TEST(core_task, ParallelForEach) {
+	tf::Executor executor{4};
+	constexpr size_t count = 1000;
+	std::vector<std::atomic_int> values(count);
+	for (auto& v: values) { v.store(0); }
+
+	std::vector<size_t> indices(count);
+	std::iota(indices.begin(), indices.end(), 0);
+
+	std::function<void(size_t)> func = [&](const size_t iIdx) { values[iIdx].store(1); };
+	parallelForEach(executor, indices.begin(), indices.end(), func);
+
+	for (size_t i = 0; i < count; ++i) {
+		EXPECT_EQ(values[i].load(), 1) << "Index " << i << " was not processed";
+	}
+}
+
+TEST(core_task, ParallelForIndex) {
+	tf::Executor executor{4};
+	constexpr size_t count = 500;
+	std::vector<std::atomic_int> values(count);
+	for (auto& v: values) { v.store(0); }
+
+	std::function<void(size_t)> func = [&](const size_t iIdx) { values[iIdx].store(static_cast<int>(iIdx * 2)); };
+	parallelForIndex(executor, size_t{0}, count, size_t{1}, func);
+
+	for (size_t i = 0; i < count; ++i) {
+		EXPECT_EQ(values[i].load(), static_cast<int>(i * 2)) << "Index " << i << " has wrong value";
+	}
 }

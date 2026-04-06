@@ -26,13 +26,6 @@ Task::~Task() {
 	}
 }
 
-void Task::run() {
-	if (m_state == State::Waiting) {
-		m_future = std::async(std::launch::async, m_action);
-		m_state = State::Running;
-	}
-}
-
 void Task::poll() {
 	if (m_state == State::Running) {
 		if (m_future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {

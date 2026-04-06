@@ -8,98 +8,102 @@
 #include "owlpch.h"
 
 #include "core/task/Scheduler.h"
+#include "core/task/SchedulerImpl.h"
 
 namespace owl::core::task {
 
-Scheduler::Scheduler() = default;
+Scheduler::Scheduler() : mp_impl{mkUniq<SchedulerImpl>()} {}
 
 Scheduler::~Scheduler() {
-	while (!m_tasksQueue.empty()) {
-		// try pop
-		m_tasksQueue.pop();
-	}
+	mp_impl->tasksQueue.clear();
 	waitRunning();
 }
 
 auto Scheduler::pushTask(Task&& iTask) -> size_t {
-	const size_t taskId = m_nextTaskId;
+	const size_t taskId = mp_impl->nextTaskId;
 	iTask.m_taskId = taskId;
-	m_tasksQueue.push(mkShared<Task>(std::move(iTask)));
-	++m_nextTaskId;
+	mp_impl->tasksQueue.push_back(mkShared<Task>(std::move(iTask)));
+	++mp_impl->nextTaskId;
 	return taskId;
 }
 
 void Scheduler::frame(const Timestep& iTimestep) {
 	// process asynchron tasks.
-	frameInternal();
+	mp_impl->frameInternal();
 
 	// Process timers
-	for (const auto& timer: m_timers) {
-		// frame the timer
+	for (const auto& timer: mp_impl->timers) {
 		timer->frame(iTimestep, this);
 	}
-	std::erase_if(m_timers, [](const shared<Timer>& iTimer) { return iTimer->getState() == Timer::State::Expired; });
+	std::erase_if(mp_impl->timers,
+				  [](const shared<Timer>& iTimer) { return iTimer->getState() == Timer::State::Expired; });
 }
 
-void Scheduler::frameInternal(const bool iTreatQueue) {
+void Scheduler::waitRunning() {
+	while (!mp_impl->runningTasks.empty()) {
+		mp_impl->frameInternal(false);
+		if (!mp_impl->runningTasks.empty())
+			std::this_thread::yield();
+	}
+}
+
+void Scheduler::waitEmptyQueue() {
+	while (!mp_impl->tasksQueue.empty() || !mp_impl->runningTasks.empty()) {
+		mp_impl->frameInternal();
+		if (!mp_impl->tasksQueue.empty() || !mp_impl->runningTasks.empty())
+			std::this_thread::yield();
+	}
+}
+
+auto Scheduler::isTaskFinished(const size_t& iTaskId) -> bool {
+	return iTaskId < mp_impl->nextTaskId && !(isTaskRunning(iTaskId) || isTaskInQueue(iTaskId));
+}
+
+auto Scheduler::isTaskRunning(const size_t& iTaskId) -> bool {
+	return std::ranges::find_if(mp_impl->runningTasks, [&iTaskId](const shared<Task>& iTask) {
+			   return iTask->m_taskId == iTaskId;
+		   }) != mp_impl->runningTasks.end();
+}
+
+auto Scheduler::isTaskInQueue(const size_t& iTaskId) -> bool {
+	return std::ranges::find_if(mp_impl->tasksQueue, [&iTaskId](const shared<Task>& iTask) {
+			   return iTask->m_taskId == iTaskId;
+		   }) != mp_impl->tasksQueue.end();
+}
+
+void Scheduler::clearQueue() { mp_impl->tasksQueue.clear(); }
+
+auto Scheduler::pushTimer(const TimerParam& iTimerParam) -> weak<Timer> {
+	mp_impl->timers.push_back(mkShared<Timer>(iTimerParam));
+	return mp_impl->timers.back();
+}
+
+void Scheduler::clearTimers() { mp_impl->timers.clear(); }
+
+void SchedulerImpl::frameInternal(const bool iTreatQueue) {
 	// Poll all running tasks.
-	for (const auto& task: m_runningTasks) {
-		// Polling Task!
+	for (const auto& task: runningTasks) {
 		task->poll();
 	}
 
 	// Check finished tasks.
-	std::erase_if(m_runningTasks,
+	std::erase_if(runningTasks,
 				  [](const shared<Task>& iTask) { return iTask->getState() == Task::State::Terminated; });
 
-	// push new tasks
-	while (iTreatQueue && !m_tasksQueue.empty() && (m_runningTasks.size() < m_maxRunningTasks)) {
-		m_tasksQueue.front()->run();
-		m_runningTasks.push_back(std::move(m_tasksQueue.front()));
-		m_tasksQueue.pop();
+	// Launch new tasks from the queue using the Taskflow executor.
+	while (iTreatQueue && !tasksQueue.empty() && (runningTasks.size() < maxRunningTasks)) {
+		auto& task = tasksQueue.front();
+		// Bridge std::promise to keep std::future<void> in the public Task header.
+		auto promise = std::make_shared<std::promise<void>>();
+		task->m_future = promise->get_future();
+		executor.silent_async([action = task->m_action, promise]() {
+			action();
+			promise->set_value();
+		});
+		task->m_state = Task::State::Running;
+		runningTasks.push_back(std::move(task));
+		tasksQueue.pop_front();
 	}
 }
-
-void Scheduler::waitRunning() {
-	while (!m_runningTasks.empty()) { frameInternal(false); }
-}
-
-void Scheduler::waitEmptyQueue() {
-	while (!m_tasksQueue.empty() || !m_runningTasks.empty()) { frameInternal(); }
-}
-
-auto Scheduler::isTaskFinished(const size_t& iTaskId) -> bool {
-	//     not known                not         (running      or      in queue )
-	return iTaskId < m_nextTaskId && !(isTaskRunning(iTaskId) || isTaskInQueue(iTaskId));
-}
-
-auto Scheduler::isTaskRunning(const size_t& iTaskId) -> bool {
-	return std::ranges::find_if(m_runningTasks, [&iTaskId](const shared<Task>& iTask) {
-			   return iTask->m_taskId == iTaskId;
-		   }) != m_runningTasks.end();
-}
-auto Scheduler::isTaskInQueue(const size_t& iTaskId) -> bool {
-	bool found = false;
-	std::queue<shared<Task>> tasks;
-	while (!m_tasksQueue.empty()) {
-		tasks.push(m_tasksQueue.front());
-		if (m_tasksQueue.front()->m_taskId == iTaskId)
-			found = true;
-		m_tasksQueue.pop();
-	}
-	std::swap(tasks, m_tasksQueue);
-	return found;
-}
-
-void Scheduler::clearQueue() {
-	while (!m_tasksQueue.empty()) { m_tasksQueue.pop(); }
-}
-
-auto Scheduler::pushTimer(const TimerParam& iTimerParam) -> weak<Timer> {
-	m_timers.push_back(mkShared<Timer>(iTimerParam));
-	return m_timers.back();
-}
-
-void Scheduler::clearTimers() { m_timers.clear(); }
 
 }// namespace owl::core::task

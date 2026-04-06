@@ -8,7 +8,6 @@
 
 #include "owlpch.h"
 
-#include "core/execution_utils.h"
 #include "data/geometry/StaticMesh.h"
 
 namespace owl::data::geometry {

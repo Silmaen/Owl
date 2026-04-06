@@ -17,7 +17,8 @@
       "cacheVariables": {
         "OWL_ENABLE_CLANG_TIDY": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
-        "OWL_ENABLE_STACKTRACE": "ON"
+        "OWL_ENABLE_STACKTRACE": "OFF",
+        "OWL_TESTING": "OFF"
       },
       "vendor": {
         "silmaen": {
@@ -31,7 +32,8 @@
       "cacheVariables": {
         "OWL_ENABLE_CLANG_TIDY": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
-        "OWL_ENABLE_STACKTRACE": "ON"
+        "OWL_ENABLE_STACKTRACE": "OFF",
+        "OWL_TESTING": "OFF"
       },
       "vendor": {
         "silmaen": {
