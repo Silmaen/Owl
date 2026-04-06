@@ -480,6 +480,204 @@ def icon_exit():
     finish(img, "exit")
 
 
+def icon_component_camera():
+    """Film camera - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE
+    # Camera body
+    d.rounded_rectangle([P(90, 140), P(330, 380)], radius=w * 4, outline=WHITE, width=w)
+    # Lens (triangle/trapezoid)
+    d.polygon([P(330, 195), P(420, 145), P(420, 375), P(330, 325)], outline=WHITE, width=w)
+    # Small record dot
+    r = 20
+    d.ellipse([P(175 - r, 220 - r), P(175 + r, 220 + r)], outline=WHITE, width=w)
+    finish(img, "component_camera")
+
+
+def icon_component_sprite():
+    """Image/picture frame - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE
+    # Frame
+    d.rounded_rectangle([P(90, 100), P(422, 412)], radius=w * 3, outline=WHITE, width=w)
+    # Mountain landscape inside
+    d.line([P(130, 360), P(210, 240), P(270, 310), P(340, 190), P(390, 360)], fill=WHITE, width=w, joint="curve")
+    # Sun
+    r = 28
+    d.ellipse([P(160 - r, 170 - r), P(160 + r, 170 + r)], outline=WHITE, width=w)
+    finish(img, "component_sprite")
+
+
+def icon_component_physics():
+    """Bouncing ball with motion lines - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE
+    # Ball
+    r = int(80 * SCALE)
+    cx, cy = int(280 * SCALE), int(220 * SCALE)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=WHITE, width=w)
+    # Ground line
+    d.line([P(80, 400), P(432, 400)], fill=WHITE, width=w)
+    # Bounce arc
+    d.arc([P(100, 150), P(350, 410)], start=220, end=320, fill=WHITE, width=w)
+    # Motion lines
+    for dy in [-30, 0, 30]:
+        d.line([P(120, 210 + dy), P(170, 210 + dy)], fill=WHITE, width=w)
+    finish(img, "component_physics")
+
+
+def icon_component_script():
+    """Code brackets - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE + LINE // 2
+    # Left bracket <
+    d.line([P(210, 130), P(120, 256), P(210, 382)], fill=WHITE, width=w, joint="curve")
+    # Right bracket >
+    d.line([P(302, 130), P(392, 256), P(302, 382)], fill=WHITE, width=w, joint="curve")
+    # Slash /
+    d.line([P(285, 110), P(227, 402)], fill=WHITE, width=w)
+    finish(img, "component_script")
+
+
+def icon_component_sound():
+    """Speaker with sound waves - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE
+    # Speaker body
+    d.polygon([P(100, 210), P(170, 210), P(240, 140), P(240, 372), P(170, 302), P(100, 302)],
+              outline=WHITE, width=w)
+    # Sound waves
+    d.arc([P(260, 180), P(340, 332)], start=310, end=50, fill=WHITE, width=w)
+    d.arc([P(280, 130), P(400, 382)], start=315, end=45, fill=WHITE, width=w)
+    finish(img, "component_sound")
+
+
+def icon_component_transform():
+    """Move/transform arrows - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE
+    cx, cy = 210, 280
+    # Horizontal arrow (X - right)
+    d.line([P(cx, cy), P(cx + 180, cy)], fill=WHITE, width=w)
+    d.line([P(cx + 140, cy - 35), P(cx + 185, cy), P(cx + 140, cy + 35)], fill=WHITE, width=w)
+    # Vertical arrow (Y - up)
+    d.line([P(cx, cy), P(cx, cy - 180)], fill=WHITE, width=w)
+    d.line([P(cx - 35, cy - 140), P(cx, cy - 185), P(cx + 35, cy - 140)], fill=WHITE, width=w)
+    # Small square at origin
+    s = 18
+    d.rectangle([P(cx - s, cy - s), P(cx + s, cy + s)], outline=WHITE, width=w)
+    finish(img, "component_transform")
+
+
+def icon_component_circle():
+    """Circle shape - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE
+    cx, cy = S // 2, S // 2
+    r = int(170 * SCALE)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=WHITE, width=w)
+    # Dashed inner radius line
+    d.line([(cx, cy), (cx + r, cy)], fill=WHITE, width=w // 2 + 1)
+    # Center dot
+    dr = w
+    d.ellipse([cx - dr, cy - dr, cx + dr, cy + dr], fill=WHITE)
+    finish(img, "component_circle")
+
+
+def icon_component_text():
+    """Text/typography T - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE + LINE // 2
+    # Top bar of T
+    d.line([P(120, 130), P(392, 130)], fill=WHITE, width=w)
+    # Vertical stroke
+    d.line([P(256, 130), P(256, 400)], fill=WHITE, width=w)
+    # Bottom serif
+    d.line([P(200, 400), P(312, 400)], fill=WHITE, width=w)
+    finish(img, "component_text")
+
+
+def icon_component_trigger():
+    """Lightning bolt - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE
+    # Lightning bolt shape
+    pts = [P(280, 80), P(170, 260), P(250, 260), P(190, 440), P(340, 220), P(260, 220)]
+    d.polygon(pts, outline=WHITE, width=w)
+    finish(img, "component_trigger")
+
+
+def icon_component_player():
+    """Person/character - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE
+    cx = 256
+    # Head
+    r = 45
+    d.ellipse([P(cx - r, 90 - 5), P(cx + r, 90 + 2 * r - 5)], outline=WHITE, width=w)
+    # Body
+    d.line([P(cx, 180), P(cx, 310)], fill=WHITE, width=w)
+    # Arms
+    d.line([P(cx - 80, 230), P(cx, 210), P(cx + 80, 230)], fill=WHITE, width=w, joint="curve")
+    # Legs
+    d.line([P(cx, 310), P(cx - 65, 430)], fill=WHITE, width=w)
+    d.line([P(cx, 310), P(cx + 65, 430)], fill=WHITE, width=w)
+    finish(img, "component_player")
+
+
+def icon_component_link():
+    """Chain link - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE
+    # Two interlocking chain links (rotated ovals)
+    d.rounded_rectangle([P(90, 175), P(290, 337)], radius=int(80 * SCALE), outline=WHITE, width=w)
+    d.rounded_rectangle([P(222, 175), P(422, 337)], radius=int(80 * SCALE), outline=WHITE, width=w)
+    finish(img, "component_link")
+
+
+def icon_component_background():
+    """Landscape/image background - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE
+    # Frame
+    d.rounded_rectangle([P(80, 110), P(432, 402)], radius=w * 3, outline=WHITE, width=w)
+    # Horizon line
+    d.line([P(80, 300), P(432, 300)], fill=WHITE, width=w // 2 + 1)
+    # Mountains
+    d.line([P(120, 300), P(220, 180), P(290, 260), P(370, 160), P(432, 250)], fill=WHITE, width=w, joint="curve")
+    finish(img, "component_background")
+
+
+def icon_component_visibility():
+    """Eye - outline style."""
+    img = new_img()
+    d = ImageDraw.Draw(img)
+    w = LINE
+    cx, cy = S // 2, S // 2
+    # Eye shape (two arcs)
+    d.arc([P(80, 150), P(432, 380)], start=0, end=180, fill=WHITE, width=w)
+    d.arc([P(80, 132), P(432, 362)], start=180, end=360, fill=WHITE, width=w)
+    # Iris
+    r = int(55 * SCALE)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=WHITE, width=w)
+    # Pupil
+    pr = int(25 * SCALE)
+    d.ellipse([cx - pr, cy - pr, cx + pr, cy + pr], fill=WHITE)
+    finish(img, "component_visibility")
+
+
 if __name__ == "__main__":
     print("Generating OwlNest icons (512x512 white outline)...")
     icon_delete()
@@ -508,4 +706,18 @@ if __name__ == "__main__":
     icon_close()
     icon_project()
     icon_exit()
-    print(f"Done! 26 icons generated.")
+    # Component icons
+    icon_component_camera()
+    icon_component_sprite()
+    icon_component_physics()
+    icon_component_script()
+    icon_component_sound()
+    icon_component_transform()
+    icon_component_circle()
+    icon_component_text()
+    icon_component_trigger()
+    icon_component_player()
+    icon_component_link()
+    icon_component_background()
+    icon_component_visibility()
+    print("Done! 39 icons generated.")

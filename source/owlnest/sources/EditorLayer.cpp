@@ -97,6 +97,20 @@ void buildIconBank() {
 		{"close",             resolve("icons/actions/close")},
 		{"project",           resolve("icons/actions/project")},
 		{"exit",              resolve("icons/actions/exit")},
+		// Component icons
+		{"comp_transform",    resolve("icons/actions/component_transform")},
+		{"comp_camera",       resolve("icons/actions/component_camera")},
+		{"comp_sprite",       resolve("icons/actions/component_sprite")},
+		{"comp_circle",       resolve("icons/actions/component_circle")},
+		{"comp_text",         resolve("icons/actions/component_text")},
+		{"comp_physics",      resolve("icons/actions/component_physics")},
+		{"comp_script",       resolve("icons/actions/component_script")},
+		{"comp_sound",        resolve("icons/actions/component_sound")},
+		{"comp_trigger",      resolve("icons/actions/component_trigger")},
+		{"comp_player",       resolve("icons/actions/component_player")},
+		{"comp_link",         resolve("icons/actions/component_link")},
+		{"comp_background",   resolve("icons/actions/component_background")},
+		{"comp_visibility",   resolve("icons/actions/component_visibility")},
 	};
 	// clang-format on
 
@@ -199,6 +213,34 @@ void EditorLayer::onAttach() {
 				&& !gui::Guizmo::isUsing())
 				m_viewport.setGuizmoType(gui::Guizmo::Type::All);
 		});
+	// Playback actions
+	m_actionRegistry.registerAction("scene.play", "Play/Resume",
+		{input::key::F5, Modifiers::None},
+		[this] {
+			if (m_state == State::Edit)
+				onScenePlay();
+			else if (m_state == State::Pause)
+				onSceneResume();
+		});
+	m_actionRegistry.registerAction("scene.pause", "Pause",
+		{input::key::F6, Modifiers::None},
+		[this] { if (m_state == State::Play) onScenePause(); });
+	m_actionRegistry.registerAction("scene.stop", "Stop",
+		{input::key::F7, Modifiers::None},
+		[this] { if (m_state == State::Play || m_state == State::Pause) onSceneStop(); });
+	m_actionRegistry.registerAction("scene.step", "Step Frame",
+		{input::key::F8, Modifiers::None},
+		[this] { if (m_state == State::Pause) onSceneStep(); });
+	// Entity actions
+	m_actionRegistry.registerAction("entity.delete", "Delete Entity",
+		{input::key::Delete, Modifiers::None},
+		[this] {
+			if (m_state != State::Edit) return;
+			if (auto ent = getSelectedEntity(); ent) {
+				m_activeScene->destroyEntity(ent);
+				setSelectedEntity({});
+			}
+		});
 	// clang-format on
 
 	// Apply saved keybinding overrides
@@ -216,7 +258,7 @@ void EditorLayer::onAttach() {
 									m_viewport.setGuizmoType(gui::Guizmo::Type::Translation);
 							},
 							{32, 32},
-							"Translation (W)"});
+							std::format("Translation ({})", m_actionRegistry.getShortcutString("guizmo.translate"))});
 	m_controlBar.addButton({{.id = "##ctrlRotation", .visible = true},
 							"ctrl_rotation",
 							"T",
@@ -228,7 +270,7 @@ void EditorLayer::onAttach() {
 									m_viewport.setGuizmoType(gui::Guizmo::Type::Rotation);
 							},
 							{32, 32},
-							"Rotation (E)"});
+							std::format("Rotation ({})", m_actionRegistry.getShortcutString("guizmo.rotate"))});
 	m_controlBar.addButton({{.id = "##ctrlScale", .visible = true},
 							"ctrl_scale",
 							"T",
@@ -240,9 +282,10 @@ void EditorLayer::onAttach() {
 									m_viewport.setGuizmoType(gui::Guizmo::Type::Scale);
 							},
 							{32, 32},
-							"Scale (R)"});
+							std::format("Scale ({})", m_actionRegistry.getShortcutString("guizmo.scale"))});
 
 	m_contentBrowser.attach();
+	m_contentBrowser.setSceneOpenCallback([this](const std::filesystem::path& iPath) { openScene(iPath); });
 	newScene();
 }
 

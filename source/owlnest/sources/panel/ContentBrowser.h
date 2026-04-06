@@ -65,6 +65,14 @@ public:
 	 */
 	void handleFileDrop(const std::vector<std::filesystem::path>& iPaths) const;
 
+	/**
+	 * @brief Set a callback invoked when a scene file is double-clicked.
+	 * @param[in] iCallback Function taking the scene file path.
+	 */
+	void setSceneOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_sceneOpenCallback = std::move(iCallback);
+	}
+
 private:
 	/// The actual folder
 	std::filesystem::path m_currentPath;
@@ -76,6 +84,8 @@ private:
 	/// Rename state
 	bool m_renaming = false;
 	std::string m_renameBuffer;
+	/// Delete confirmation state
+	bool m_pendingDelete = false;
 
 	/// Render the navigation/top toolbar.
 	void renderTopBand();
@@ -99,6 +109,9 @@ private:
 	 * @param[in] iDestDir Destination directory.
 	 */
 	static void moveItem(const std::filesystem::path& iSource, const std::filesystem::path& iDestDir);
+
+	/// Callback for opening a scene file from the browser.
+	std::function<void(const std::filesystem::path&)> m_sceneOpenCallback;
 };
 
 }// namespace owl::nest::panel

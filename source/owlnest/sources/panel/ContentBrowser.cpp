@@ -13,6 +13,7 @@
 #include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <imgui_internal.h>
+#include <imgui_stdlib.h>
 
 namespace owl::nest::panel {
 
@@ -159,8 +160,11 @@ void ContentBrowser::renderContent() {
 
 		ImGui::PopStyleColor();
 		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-			if (directoryEntry.is_directory())
+			if (directoryEntry.is_directory()) {
 				m_currentPath /= path.filename();
+			} else if (path.extension() == ".owl" && m_sceneOpenCallback) {
+				m_sceneOpenCallback(path);
+			}
 		}
 		if (iconInfo.has_value())
 			ImGui::TextWrapped("%s", filenameString.c_str());
@@ -219,15 +223,21 @@ void ContentBrowser::renderContextMenu() {
 		ImGui::TextDisabled("%s", itemName.c_str());
 		ImGui::Separator();
 
+		// Open scene file
+		if (!isDir && m_selectedPath.extension() == ".owl" && m_sceneOpenCallback) {
+			if (iconBank.menuItem("open", "Open Scene")) {
+				m_sceneOpenCallback(m_selectedPath);
+			}
+			ImGui::Separator();
+		}
+
 		if (iconBank.menuItem("rename", "Rename")) {
 			m_renaming = true;
 			m_renameBuffer = itemName;
 		}
 
 		if (iconBank.menuItem("delete", isDir ? "Delete Folder" : "Delete")) {
-			deleteSelected();
-			ImGui::EndPopup();
-			return;
+			m_pendingDelete = true;
 		}
 
 		ImGui::Separator();
@@ -253,11 +263,19 @@ void ContentBrowser::renderContextMenu() {
 
 	if (ImGui::BeginPopupModal("RenameItem", &m_renaming, ImGuiWindowFlags_AlwaysAutoResize)) {
 		ImGui::Text("Rename: %s", m_selectedPath.filename().string().c_str());
-		m_renameBuffer.resize(256);
-		if (ImGui::InputText("##rename", m_renameBuffer.data(), m_renameBuffer.capacity(),
-							 ImGuiInputTextFlags_EnterReturnsTrue)) {
-			if (const std::string newName(m_renameBuffer); !newName.empty()) {
-				const auto newPath = m_selectedPath.parent_path() / newName;
+		const bool submitted =
+				ImGui::InputText("##rename", &m_renameBuffer, ImGuiInputTextFlags_EnterReturnsTrue);
+		ImGui::SameLine();
+		const bool okClicked = ImGui::Button("OK");
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel")) {
+			m_renaming = false;
+			m_selectedPath.clear();
+			ImGui::CloseCurrentPopup();
+		}
+		if (submitted || okClicked) {
+			if (!m_renameBuffer.empty()) {
+				const auto newPath = m_selectedPath.parent_path() / m_renameBuffer;
 				std::error_code ec;
 				std::filesystem::rename(m_selectedPath, newPath, ec);
 				if (ec)
@@ -265,10 +283,32 @@ void ContentBrowser::renderContextMenu() {
 			}
 			m_renaming = false;
 			m_selectedPath.clear();
+			ImGui::CloseCurrentPopup();
 		}
-		if (ImGui::Button("Cancel")) {
-			m_renaming = false;
+		ImGui::EndPopup();
+	}
+
+	// Delete confirmation popup
+	if (m_pendingDelete && !m_selectedPath.empty()) {
+		ImGui::OpenPopup("ConfirmDelete");
+		m_pendingDelete = false;
+	}
+	if (ImGui::BeginPopupModal("ConfirmDelete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		ImGui::Text("Delete '%s'?", m_selectedPath.filename().string().c_str());
+		if (is_directory(m_selectedPath))
+			ImGui::TextColored({1.0f, 0.6f, 0.2f, 1.0f}, "This will delete all contents of the folder.");
+		ImGui::Separator();
+		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		const float totalWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
+		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
+		if (ImGui::Button("Delete", {buttonWidth, 0})) {
+			deleteSelected();
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", {buttonWidth, 0})) {
 			m_selectedPath.clear();
+			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
 	}

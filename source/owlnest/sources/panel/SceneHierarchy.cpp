@@ -18,6 +18,31 @@ using namespace owl::scene::component;
 
 namespace owl::nest::panel {
 
+namespace {
+
+/// Map component display name to icon bank name.
+auto componentIconName(const char* iCompName) -> const char* {
+	static const std::unordered_map<std::string_view, const char*> map = {
+			{"Transform", "comp_transform"},
+			{"Camera", "comp_camera"},
+			{"Sprite Renderer", "comp_sprite"},
+			{"Circle Renderer", "comp_circle"},
+			{"Text Renderer", "comp_text"},
+			{"Physical body", "comp_physics"},
+			{"Native Script", "comp_script"},
+			{"Trigger", "comp_trigger"},
+			{"Player", "comp_player"},
+			{"Entity Link", "comp_link"},
+			{"Background Texture", "comp_background"},
+			{"Visibility", "comp_visibility"},
+	};
+	if (const auto it = map.find(iCompName); it != map.end())
+		return it->second;
+	return nullptr;
+}
+
+}// namespace
+
 [[maybe_unused]] SceneHierarchy::SceneHierarchy(const shared<scene::Scene>& iScene) { setContext(iScene); }
 
 void SceneHierarchy::setContext(const shared<scene::Scene>& iContext) {
@@ -132,7 +157,13 @@ void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
 	}
 	ImGui::PushID("...");
 	if (ImGui::BeginPopupContextItem()) {
-		if (owl::gui::IconBank::instance().menuItem("delete_entity", "Delete Entity")) {
+		auto& ib = owl::gui::IconBank::instance();
+		if (ib.menuItem("add_entity", "Create Empty Entity"))
+			m_context->createEntity("Empty Entity");
+		if (ib.menuItem("duplicate", "Duplicate Entity"))
+			m_context->duplicateEntity(ioEntity);
+		ImGui::Separator();
+		if (ib.menuItem("delete_entity", "Delete Entity")) {
 			if (m_selection == ioEntity)
 				m_selection = {};
 			m_context->destroyEntity(ioEntity);
@@ -162,7 +193,13 @@ namespace {
 template<isNamedComponent Comp>
 void addComponentPop(scene::Entity& ioEntity) {
 	if (!ioEntity.hasComponent<Comp>()) {
-		if (ImGui::MenuItem(Comp::name())) {
+		const auto* iconId = componentIconName(Comp::name());
+		bool clicked = false;
+		if (iconId)
+			clicked = gui::IconBank::instance().menuItem(iconId, Comp::name());
+		else
+			clicked = ImGui::MenuItem(Comp::name());
+		if (clicked) {
 			ioEntity.addComponent<Comp>();
 			ImGui::CloseCurrentPopup();
 		}
@@ -180,7 +217,24 @@ void drawComponent(scene::Entity& ioEntity) {
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
 		const float lineHeight = ImGui::GetFontSize() + GImGui->Style.FramePadding.y * 2.0f;
 		ImGui::Separator();
-		const bool open = ImGui::TreeNodeEx(T::name(), treeNodeFlags);
+
+		// Build label with icon spacing
+		const auto* iconId = componentIconName(T::name());
+		std::string label = iconId ? std::format("     {}", T::name()) : std::string(T::name());
+		const bool open = ImGui::TreeNodeEx(label.c_str(), treeNodeFlags);
+
+		// Draw icon over the padding space in the tree node header
+		if (iconId) {
+			if (const auto iconInfo = gui::IconBank::instance().getIcon(iconId)) {
+				constexpr float iconSz = 16.0f;
+				const auto itemMin = ImGui::GetItemRectMin();
+				const float iconY = itemMin.y + (lineHeight - iconSz) * 0.5f;
+				const float iconX = itemMin.x + ImGui::GetTreeNodeToLabelSpacing() + 2.0f;
+				ImGui::GetWindowDrawList()->AddImage(iconInfo->textureId, {iconX, iconY},
+													{iconX + iconSz, iconY + iconSz}, gui::vec(iconInfo->uv0),
+													gui::vec(iconInfo->uv1));
+			}
+		}
 
 		ImGui::PopStyleVar();
 		ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
