@@ -93,67 +93,7 @@ void SettingsPanel::renderKeybindingsSection(EditorSettings& ioSettings, ActionR
 		// Column 1: Shortcut button (clickable for capture)
 		ImGui::TableSetColumnIndex(1);
 		if (m_capturing && m_captureActionId == action.id) {
-			// Currently capturing a new key for this action
-			ImGui::Button("Press a key...", {-FLT_MIN, 0});
-
-			// Check for Escape to cancel
-			if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-				m_capturing = false;
-				m_captureActionId.clear();
-				m_conflictMessage.clear();
-				ioRegistry.setSuspended(false);
-			} else {
-				// Scan for a non-modifier key press
-				// ImGui key enum starts at ImGuiKey_NamedKey_BEGIN
-				for (auto imKey = ImGuiKey_NamedKey_BEGIN; imKey < ImGuiKey_NamedKey_END;
-					 imKey = static_cast<ImGuiKey>(imKey + 1)) {
-					if (!ImGui::IsKeyPressed(imKey))
-						continue;
-					// Convert ImGui key to GLFW key code
-					const auto glfwKey = static_cast<input::KeyCode>(ImGuiKeyToGlfwKey(imKey));
-					if (glfwKey == 0)
-						continue;
-					// Skip modifier keys
-					if (glfwKey >= input::key::LeftShift && glfwKey <= input::key::RightSuper)
-						continue;
-
-					// Build shortcut from current modifier state
-					Modifiers mods = Modifiers::None;
-					if (ImGui::GetIO().KeyCtrl)
-						mods = mods | Modifiers::Ctrl;
-					if (ImGui::GetIO().KeyShift)
-						mods = mods | Modifiers::Shift;
-					if (ImGui::GetIO().KeyAlt)
-						mods = mods | Modifiers::Alt;
-
-					const Shortcut newShortcut{glfwKey, mods};
-
-					// Check conflict
-					const auto conflict = ioRegistry.findConflict(newShortcut, action.id);
-					if (!conflict.empty()) {
-						m_conflictMessage = std::format("Conflict with '{}'", conflict);
-					} else {
-						ioRegistry.rebind(action.id, newShortcut);
-						m_capturing = false;
-						m_captureActionId.clear();
-						m_conflictMessage.clear();
-						ioRegistry.setSuspended(false);
-					}
-					break;
-				}
-			}
-
-			// Show conflict warning
-			if (!m_conflictMessage.empty()) {
-				ImGui::TextColored({1.0f, 0.4f, 0.4f, 1.0f}, "%s", m_conflictMessage.c_str());
-				ImGui::SameLine();
-				if (ImGui::SmallButton("Cancel")) {
-					m_capturing = false;
-					m_captureActionId.clear();
-					m_conflictMessage.clear();
-					ioRegistry.setSuspended(false);
-				}
-			}
+			handleKeyCapture(action, ioRegistry);
 		} else {
 			// Normal display: button with current shortcut
 			const auto label =
@@ -183,6 +123,64 @@ void SettingsPanel::renderKeybindingsSection(EditorSettings& ioSettings, ActionR
 		ImGui::PopID();
 	}
 	ImGui::EndTable();
+}
+
+void SettingsPanel::handleKeyCapture(ActionEntry& ioAction, ActionRegistry& ioRegistry) {
+	ImGui::Button("Press a key...", {-FLT_MIN, 0});
+
+	// Check for Escape to cancel
+	if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+		m_capturing = false;
+		m_captureActionId.clear();
+		m_conflictMessage.clear();
+		ioRegistry.setSuspended(false);
+	} else {
+		// Scan for a non-modifier key press
+		for (auto imKey = ImGuiKey_NamedKey_BEGIN; imKey < ImGuiKey_NamedKey_END;
+			 imKey = static_cast<ImGuiKey>(imKey + 1)) {
+			if (!ImGui::IsKeyPressed(imKey))
+				continue;
+			const auto glfwKey = static_cast<input::KeyCode>(ImGuiKeyToGlfwKey(imKey));
+			if (glfwKey == 0)
+				continue;
+			if (glfwKey >= input::key::LeftShift && glfwKey <= input::key::RightSuper)
+				continue;
+
+			// Build shortcut from current modifier state
+			Modifiers mods = Modifiers::None;
+			if (ImGui::GetIO().KeyCtrl)
+				mods = mods | Modifiers::Ctrl;
+			if (ImGui::GetIO().KeyShift)
+				mods = mods | Modifiers::Shift;
+			if (ImGui::GetIO().KeyAlt)
+				mods = mods | Modifiers::Alt;
+
+			const Shortcut newShortcut{glfwKey, mods};
+			const auto conflict = ioRegistry.findConflict(newShortcut, ioAction.id);
+			if (!conflict.empty()) {
+				m_conflictMessage = std::format("Conflict with '{}'", conflict);
+			} else {
+				ioRegistry.rebind(ioAction.id, newShortcut);
+				m_capturing = false;
+				m_captureActionId.clear();
+				m_conflictMessage.clear();
+				ioRegistry.setSuspended(false);
+			}
+			break;
+		}
+	}
+
+	// Show conflict warning
+	if (!m_conflictMessage.empty()) {
+		ImGui::TextColored({1.0f, 0.4f, 0.4f, 1.0f}, "%s", m_conflictMessage.c_str());
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Cancel")) {
+			m_capturing = false;
+			m_captureActionId.clear();
+			m_conflictMessage.clear();
+			ioRegistry.setSuspended(false);
+		}
+	}
 }
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)

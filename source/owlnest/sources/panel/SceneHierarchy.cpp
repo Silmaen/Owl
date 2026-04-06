@@ -220,7 +220,7 @@ void drawComponent(scene::Entity& ioEntity) {
 
 		// Build label with icon spacing
 		const auto* iconId = componentIconName(T::name());
-		std::string label = iconId ? std::format("     {}", T::name()) : std::string(T::name());
+		const std::string label = iconId ? std::format("     {}", T::name()) : std::string(T::name());
 		const bool open = ImGui::TreeNodeEx(label.c_str(), treeNodeFlags);
 
 		// Draw icon over the padding space in the tree node header

@@ -46,8 +46,10 @@ private:
 	/// Conflict warning message (empty = no conflict).
 	std::string m_conflictMessage;
 
-	void renderThemeSection(EditorSettings& ioSettings);
+	static void renderThemeSection(EditorSettings& ioSettings);
 	void renderKeybindingsSection(EditorSettings& ioSettings, ActionRegistry& ioRegistry);
+	/// Handle key capture logic for a single action row.
+	void handleKeyCapture(ActionEntry& ioAction, ActionRegistry& ioRegistry);
 	/// Convert an ImGui key enum to a GLFW key code.
 	static auto ImGuiKeyToGlfwKey(ImGuiKey iKey) -> int;
 };

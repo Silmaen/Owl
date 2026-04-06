@@ -17,7 +17,11 @@ enum struct Modifiers : uint8_t {
 	None = 0,
 	Ctrl = 1 << 0,
 	Shift = 1 << 1,
+	CtrlShift = Ctrl | Shift,
 	Alt = 1 << 2,
+	CtrlAlt = Ctrl | Alt,
+	ShiftAlt = Shift | Alt,
+	CtrlShiftAlt = Ctrl | Shift | Alt,
 };
 
 /// Bitwise OR for Modifiers.

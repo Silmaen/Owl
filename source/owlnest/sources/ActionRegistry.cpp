@@ -228,7 +228,7 @@ auto ActionRegistry::dispatch(const event::KeyPressedEvent& iEvent) -> bool {
 			}
 		}
 	}
-	if (bestMatch) {
+	if (bestMatch != nullptr) {
 		bestMatch->callback();
 		return true;
 	}
