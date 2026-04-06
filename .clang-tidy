@@ -55,6 +55,7 @@ Checks: '*,
   -readability-uppercase-literal-suffix,
   -*magic-numbers,
   -*named-parameter,
+  -clang-analyzer-optin.*,
 '
 
 CheckOptions:
