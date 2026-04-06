@@ -239,6 +239,21 @@ Enforced by `.clang-format` (LLVM-based) and `.clang-tidy`. Key conventions:
 - Logging: `OWL_CORE_TRACE`, `OWL_CORE_INFO`, `OWL_CORE_WARN`, `OWL_CORE_ERROR`, `OWL_CORE_CRITICAL` (client equivalents
   without `_CORE`)
 
+### Type usage
+
+- **Prefer `owl::math` vector types** (`math::vec2`, `math::vec4`, `math::vec2ui`, etc.) over third-party equivalents
+  (`ImVec2`, `ImVec4`, etc.). Convert to third-party types only at the call site (e.g., `gui::vec(myVec)` for ImGui).
+  This applies to public API, struct members, local variables, and function parameters alike.
+- **Use `math::vec2ui` for 2D sizes and coordinates** (image dimensions, grid positions, atlas offsets, etc.) instead of
+  separate `uint32_t` width/height pairs.
+- **Avoid raw pointers for data buffers.** Use `std::vector<T>` for owned data, `std::span<T>` /
+  `std::span<const T>` for non-owning views. When interfacing with C APIs that return raw pointers
+  (e.g., `stbi_load`), wrap them immediately in a RAII type (`std::unique_ptr` with custom deleter) and copy into a
+  `std::vector` as soon as practical.
+- **Doxygen:** Every public class, method, enum value, and struct field must have a `@brief` or `///` comment. For
+  functions, document all parameters (`@param[in]`/`@param[out]`) and return values (`@return`). Private members should
+  at minimum have a `///` one-liner.
+
 ## CMake Options
 
 | Option                                    | Default | Description                                    |

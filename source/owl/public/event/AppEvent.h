@@ -11,6 +11,8 @@
 #include "event/Event.h"
 #include "math/vectors.h"
 
+#include <vector>
+
 namespace owl::event {
 /**
 	 * @brief Window Resize Event.
@@ -241,4 +243,58 @@ public:
 	 */
 	[[nodiscard]] auto getCategoryFlags() const -> uint8_t override;
 };
+/**
+ * @brief File Drop Event — emitted when files are dragged from the OS onto the window.
+ */
+class OWL_API FileDropEvent final : public Event {
+public:
+	/**
+	 * @brief Constructor.
+	 * @param[in] iPaths The dropped file paths.
+	 */
+	explicit FileDropEvent(std::vector<std::filesystem::path> iPaths) : m_paths{std::move(iPaths)} {}
+
+	/**
+	 * @brief Get the dropped file paths.
+	 * @return The dropped paths.
+	 */
+	[[nodiscard]] auto getPaths() const -> const std::vector<std::filesystem::path>& { return m_paths; }
+
+	/**
+	 * @brief Get the event as string.
+	 * @return String of the event.
+	 */
+	[[nodiscard]] auto toString() const -> std::string override {
+		return std::format("FileDropEvent: {} file(s)", m_paths.size());
+	}
+
+	/**
+	 * @brief Get the event's name.
+	 * @return Event's name.
+	 */
+	[[nodiscard]] auto getName() const -> std::string override { return std::format("FileDropEvent"); }
+
+	/**
+	 * @brief Get the event's static type.
+	 * @return Event's static type.
+	 */
+	[[nodiscard]] static auto getStaticType() -> Type { return Type::FileDrop; }
+
+	/**
+	 * @brief Get the event's type.
+	 * @return Event's type.
+	 */
+	[[nodiscard]] auto getType() const -> Type override { return getStaticType(); }
+
+	/**
+	 * @brief Get the event's category flags.
+	 * @return Event's category flags.
+	 */
+	[[nodiscard]] auto getCategoryFlags() const -> uint8_t override;
+
+private:
+	/// The dropped file paths.
+	std::vector<std::filesystem::path> m_paths;
+};
+
 }// namespace owl::event

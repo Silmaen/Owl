@@ -23,6 +23,13 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 	if (auto config = data["EditorSettings"]; config) {
 		if (config["showStats"])
 			showStats = config["showStats"].as<bool>();
+		if (config["themePreset"])
+			themePreset = config["themePreset"].as<std::string>();
+		if (const auto bindings = config["keybindings"]; bindings && bindings.IsMap()) {
+			keybindingOverrides.clear();
+			for (const auto& pair: bindings)
+				keybindingOverrides[pair.first.as<std::string>()] = pair.second.as<std::string>();
+		}
 	}
 }
 
@@ -31,6 +38,13 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::BeginMap;
 	out << YAML::Key << "EditorSettings" << YAML::Value << YAML::BeginMap;
 	out << YAML::Key << "showStats" << YAML::Value << showStats;
+	out << YAML::Key << "themePreset" << YAML::Value << themePreset;
+	if (!keybindingOverrides.empty()) {
+		out << YAML::Key << "keybindings" << YAML::Value << YAML::BeginMap;
+		for (const auto& [id, shortcut]: keybindingOverrides)
+			out << YAML::Key << id << YAML::Value << shortcut;
+		out << YAML::EndMap;
+	}
 	out << YAML::EndMap;
 	out << YAML::EndMap;
 

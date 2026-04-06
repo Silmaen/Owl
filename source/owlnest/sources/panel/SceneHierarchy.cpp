@@ -8,6 +8,7 @@
 
 #include "SceneHierarchy.h"
 
+#include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
@@ -16,6 +17,31 @@
 using namespace owl::scene::component;
 
 namespace owl::nest::panel {
+
+namespace {
+
+/// Map component display name to icon bank name.
+auto componentIconName(const char* iCompName) -> const char* {
+	static const std::unordered_map<std::string_view, const char*> map = {
+			{"Transform", "comp_transform"},
+			{"Camera", "comp_camera"},
+			{"Sprite Renderer", "comp_sprite"},
+			{"Circle Renderer", "comp_circle"},
+			{"Text Renderer", "comp_text"},
+			{"Physical body", "comp_physics"},
+			{"Native Script", "comp_script"},
+			{"Trigger", "comp_trigger"},
+			{"Player", "comp_player"},
+			{"Entity Link", "comp_link"},
+			{"Background Texture", "comp_background"},
+			{"Visibility", "comp_visibility"},
+	};
+	if (const auto it = map.find(iCompName); it != map.end())
+		return it->second;
+	return nullptr;
+}
+
+}// namespace
 
 [[maybe_unused]] SceneHierarchy::SceneHierarchy(const shared<scene::Scene>& iScene) { setContext(iScene); }
 
@@ -41,7 +67,7 @@ void SceneHierarchy::renderHierarchy() {
 		// Right-click on blank space
 		ImGui::PushID("...");
 		if (ImGui::BeginPopupContextWindow(nullptr, 1)) {
-			if (ImGui::MenuItem("Create Empty Entity"))
+			if (owl::gui::IconBank::instance().menuItem("add_entity", "Create Empty Entity"))
 				m_context->createEntity("Empty Entity");
 			ImGui::EndPopup();
 		}
@@ -67,7 +93,7 @@ void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
 	// Visibility toggle buttons (right-aligned)
 	{
 		auto& vis = ioEntity.getComponent<Visibility>();
-		auto& texLib = owl::renderer::Renderer::getTextureLibrary();
+		auto& iconBank = owl::gui::IconBank::instance();
 
 		const float btnSize = ImGui::GetTextLineHeight();
 		const float spacing = ImGui::GetStyle().ItemSpacing.x;
@@ -76,19 +102,27 @@ void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
 		ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - (btnSize + spacing) * 2);
 
 		// Transparent button background
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1, 1, 1, 0.15f));
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+		constexpr math::vec4 transparent{0.f, 0.f, 0.f, 0.f};
+		constexpr math::vec4 subtleHighlight{1.f, 1.f, 1.f, 0.15f};
+		ImGui::PushStyleColor(ImGuiCol_Button, gui::vec(transparent));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, gui::vec(subtleHighlight));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, gui::vec(math::vec2{0.f, 0.f}));
+
+		constexpr math::vec4 fullTint{1.0f, 1.0f, 1.0f, 1.0f};
+		constexpr math::vec4 dimTint{0.5f, 0.5f, 0.5f, 0.5f};
+		const math::vec2 btnSizeVec{btnSize, btnSize};
 
 		// --- Editor visibility button (left) — eye icon ---
 		ImGui::PushID("editorVis");
-		const auto* const edIconName = vis.editorVisible ? "icons/visibility/eye_open" : "icons/visibility/eye_closed";
-		const ImVec4 edTint = vis.editorVisible ? ImVec4{1.0f, 1.0f, 1.0f, 1.0f} : ImVec4{0.5f, 0.5f, 0.5f, 0.5f};
-		if (const auto texId = owl::gui::imTexture(texLib.get(edIconName))) {
-			if (ImGui::ImageButton("##edVis", *texId, {btnSize, btnSize}, {0, 0}, {1, 1}, {0, 0, 0, 0}, edTint))
+		const auto* const edIconName = vis.editorVisible ? "eye_open" : "eye_closed";
+		const auto edTint = vis.editorVisible ? fullTint : dimTint;
+		if (const auto iconInfo = iconBank.getIcon(edIconName)) {
+			if (ImGui::ImageButton("##edVis", static_cast<ImTextureID>(iconInfo->textureId), gui::vec(btnSizeVec),
+								   gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1), gui::vec(transparent),
+								   gui::vec(edTint)))
 				vis.editorVisible = !vis.editorVisible;
 		} else {
-			if (ImGui::Button(vis.editorVisible ? "E" : "-", {btnSize, btnSize}))
+			if (ImGui::Button(vis.editorVisible ? "E" : "-", gui::vec(btnSizeVec)))
 				vis.editorVisible = !vis.editorVisible;
 		}
 		if (ImGui::IsItemHovered())
@@ -99,14 +133,15 @@ void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
 
 		// --- Game visibility button (right) — camera icon ---
 		ImGui::PushID("gameVis");
-		const auto* const gameIconName = vis.gameVisible ? "icons/visibility/camera_on" : "icons/visibility/camera_off";
-		const ImVec4 gameTint =
-				vis.gameVisible ? ImVec4{1.0f, 1.0f, 1.0f, 1.0f} : ImVec4{0.5f, 0.5f, 0.5f, 0.5f};
-		if (const auto texId = owl::gui::imTexture(texLib.get(gameIconName))) {
-			if (ImGui::ImageButton("##gameVis", *texId, {btnSize, btnSize}, {0, 0}, {1, 1}, {0, 0, 0, 0}, gameTint))
+		const auto* const gameIconName = vis.gameVisible ? "camera_on" : "camera_off";
+		const auto gameTint = vis.gameVisible ? fullTint : dimTint;
+		if (const auto iconInfo = iconBank.getIcon(gameIconName)) {
+			if (ImGui::ImageButton("##gameVis", static_cast<ImTextureID>(iconInfo->textureId), gui::vec(btnSizeVec),
+								   gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1), gui::vec(transparent),
+								   gui::vec(gameTint)))
 				vis.gameVisible = !vis.gameVisible;
 		} else {
-			if (ImGui::Button(vis.gameVisible ? "V" : "-", {btnSize, btnSize}))
+			if (ImGui::Button(vis.gameVisible ? "V" : "-", gui::vec(btnSizeVec)))
 				vis.gameVisible = !vis.gameVisible;
 		}
 		if (ImGui::IsItemHovered())
@@ -122,7 +157,13 @@ void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
 	}
 	ImGui::PushID("...");
 	if (ImGui::BeginPopupContextItem()) {
-		if (ImGui::MenuItem("Delete Entity")) {
+		auto& ib = owl::gui::IconBank::instance();
+		if (ib.menuItem("add_entity", "Create Empty Entity"))
+			m_context->createEntity("Empty Entity");
+		if (ib.menuItem("duplicate", "Duplicate Entity"))
+			m_context->duplicateEntity(ioEntity);
+		ImGui::Separator();
+		if (ib.menuItem("delete_entity", "Delete Entity")) {
 			if (m_selection == ioEntity)
 				m_selection = {};
 			m_context->destroyEntity(ioEntity);
@@ -152,7 +193,13 @@ namespace {
 template<isNamedComponent Comp>
 void addComponentPop(scene::Entity& ioEntity) {
 	if (!ioEntity.hasComponent<Comp>()) {
-		if (ImGui::MenuItem(Comp::name())) {
+		const auto* iconId = componentIconName(Comp::name());
+		bool clicked = false;
+		if (iconId)
+			clicked = gui::IconBank::instance().menuItem(iconId, Comp::name());
+		else
+			clicked = ImGui::MenuItem(Comp::name());
+		if (clicked) {
 			ioEntity.addComponent<Comp>();
 			ImGui::CloseCurrentPopup();
 		}
@@ -170,7 +217,24 @@ void drawComponent(scene::Entity& ioEntity) {
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
 		const float lineHeight = ImGui::GetFontSize() + GImGui->Style.FramePadding.y * 2.0f;
 		ImGui::Separator();
-		const bool open = ImGui::TreeNodeEx(T::name(), treeNodeFlags);
+
+		// Build label with icon spacing
+		const auto* iconId = componentIconName(T::name());
+		const std::string label = iconId ? std::format("     {}", T::name()) : std::string(T::name());
+		const bool open = ImGui::TreeNodeEx(label.c_str(), treeNodeFlags);
+
+		// Draw icon over the padding space in the tree node header
+		if (iconId) {
+			if (const auto iconInfo = gui::IconBank::instance().getIcon(iconId)) {
+				constexpr float iconSz = 16.0f;
+				const auto itemMin = ImGui::GetItemRectMin();
+				const float iconY = itemMin.y + (lineHeight - iconSz) * 0.5f;
+				const float iconX = itemMin.x + ImGui::GetTreeNodeToLabelSpacing() + 2.0f;
+				ImGui::GetWindowDrawList()->AddImage(iconInfo->textureId, {iconX, iconY},
+													{iconX + iconSz, iconY + iconSz}, gui::vec(iconInfo->uv0),
+													gui::vec(iconInfo->uv1));
+			}
+		}
 
 		ImGui::PopStyleVar();
 		ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);

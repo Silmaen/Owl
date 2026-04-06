@@ -91,7 +91,6 @@ public:
 private:
 	void renderGizmo();
 	void renderOverlay() const;
-	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
 	auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
 	/// The camera.
 	shared<renderer::Camera> m_camera;

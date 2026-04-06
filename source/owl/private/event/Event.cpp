@@ -23,6 +23,7 @@ auto WindowCloseEvent::getCategoryFlags() const -> uint8_t { return Application;
 auto AppTickEvent::getCategoryFlags() const -> uint8_t { return Application; }
 auto AppUpdateEvent::getCategoryFlags() const -> uint8_t { return Application; }
 auto AppRenderEvent::getCategoryFlags() const -> uint8_t { return Application; }
+auto FileDropEvent::getCategoryFlags() const -> uint8_t { return Application; }
 
 auto KeyEvent::getCategoryFlags() const -> uint8_t { return Input | Keyboard; }
 auto KeyPressedEvent::getName() const -> std::string { return std::format("KeyPressedEvent"); }

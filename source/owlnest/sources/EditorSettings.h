@@ -9,6 +9,7 @@
 #pragma once
 
 #include <owl.h>
+#include <unordered_map>
 
 namespace owl::nest {
 
@@ -18,6 +19,10 @@ namespace owl::nest {
 struct EditorSettings {
 	/// Whether the stats panel is visible.
 	bool showStats = true;
+	/// Current theme preset name (empty or "Custom" means use theme.yml).
+	std::string themePreset = "Dark";
+	/// Custom keybinding overrides (action ID -> shortcut string). Only non-default bindings.
+	std::unordered_map<std::string, std::string> keybindingOverrides;
 
 	/**
 	 * @brief Load settings from a YAML file.

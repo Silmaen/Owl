@@ -12,7 +12,19 @@
 namespace owl::gui {
 
 /**
- * @brief Definition  of the GUI theme.
+ * @brief Available built-in theme presets.
+ */
+enum class ThemePreset : uint8_t {
+	Custom,/// Custom theme loaded from file.
+	Dark,/// Default dark theme.
+	Light,/// Light theme.
+	DarkBlue,/// Dark blue theme.
+	Nord,/// Nord color palette theme.
+	Solarized,/// Solarized dark theme.
+};
+
+/**
+ * @brief Definition of the GUI theme.
  */
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 struct OWL_API Theme {
@@ -94,6 +106,19 @@ struct OWL_API Theme {
 	 * @param[in] iFile The file to save.
 	 */
 	void saveToFile(const std::filesystem::path& iFile) const;
+
+	/**
+	 * @brief Create a theme from a built-in preset.
+	 * @param[in] iPreset The preset to use.
+	 * @return The generated theme.
+	 */
+	static auto fromPreset(ThemePreset iPreset) -> Theme;
+
+	/**
+	 * @brief Get the list of available preset names.
+	 * @return Vector of preset name strings.
+	 */
+	static auto getPresetNames() -> std::vector<std::pair<ThemePreset, std::string>>;
 };
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 

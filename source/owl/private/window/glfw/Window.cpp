@@ -175,6 +175,15 @@ void Window::init(const Properties& iProps) {
 			event::MouseMovedEvent event(static_cast<float>(iX), static_cast<float>(iY));
 			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 		});
+
+		glfwSetDropCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iCount, const char** iPaths) {
+			std::vector<std::filesystem::path> paths;
+			paths.reserve(static_cast<size_t>(iCount));
+			for (int i = 0; i < iCount; ++i)
+				paths.emplace_back(iPaths[i]);
+			event::FileDropEvent event(std::move(paths));
+			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
+		});
 	}
 }
 
