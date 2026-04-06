@@ -147,6 +147,63 @@ void EditorLayer::onAttach() {
 	loadTriggerTextures();
 	loadSounds();
 
+	// Register all editor actions with default keybindings
+	// clang-format off
+	m_actionRegistry.registerAction("scene.new", "New Scene",
+		{input::key::N, Modifiers::Ctrl},
+		[this] { if (m_state == State::Edit) newScene(); });
+	m_actionRegistry.registerAction("scene.open", "Open Scene",
+		{input::key::O, Modifiers::Ctrl},
+		[this] { if (m_state == State::Edit) openScene(); });
+	m_actionRegistry.registerAction("scene.save", "Save Scene",
+		{input::key::S, Modifiers::Ctrl},
+		[this] { if (m_state == State::Edit && !m_currentScenePath.empty()) saveCurrentScene(); });
+	m_actionRegistry.registerAction("scene.saveAs", "Save Scene As",
+		{input::key::S, Modifiers::Ctrl | Modifiers::Shift},
+		[this] { if (m_state == State::Edit) saveSceneAs(); });
+	m_actionRegistry.registerAction("entity.duplicate", "Duplicate Entity",
+		{input::key::D, Modifiers::Ctrl},
+		[this] { if (m_state == State::Edit) onDuplicateEntity(); });
+	m_actionRegistry.registerAction("guizmo.none", "Guizmo: None",
+		{input::key::Q, Modifiers::None},
+		[this] {
+			if (m_state == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
+				&& !gui::Guizmo::isUsing())
+				m_viewport.setGuizmoType(gui::Guizmo::Type::None);
+		});
+	m_actionRegistry.registerAction("guizmo.translate", "Guizmo: Translate",
+		{input::key::W, Modifiers::None},
+		[this] {
+			if (m_state == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
+				&& !gui::Guizmo::isUsing())
+				m_viewport.setGuizmoType(gui::Guizmo::Type::Translation);
+		});
+	m_actionRegistry.registerAction("guizmo.rotate", "Guizmo: Rotate",
+		{input::key::E, Modifiers::None},
+		[this] {
+			if (m_state == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
+				&& !gui::Guizmo::isUsing())
+				m_viewport.setGuizmoType(gui::Guizmo::Type::Rotation);
+		});
+	m_actionRegistry.registerAction("guizmo.scale", "Guizmo: Scale",
+		{input::key::R, Modifiers::None},
+		[this] {
+			if (m_state == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
+				&& !gui::Guizmo::isUsing())
+				m_viewport.setGuizmoType(gui::Guizmo::Type::Scale);
+		});
+	m_actionRegistry.registerAction("guizmo.all", "Guizmo: All",
+		{input::key::T, Modifiers::None},
+		[this] {
+			if (m_state == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
+				&& !gui::Guizmo::isUsing())
+				m_viewport.setGuizmoType(gui::Guizmo::Type::All);
+		});
+	// clang-format on
+
+	// Apply saved keybinding overrides
+	m_actionRegistry.loadOverrides(m_settings.keybindingOverrides);
+
 	m_controlBar.init(gui::widgets::ButtonBarData{{.id = "##controlBar", .visible = true}, false, false, true});
 	m_controlBar.addButton({{.id = "##ctrlTranslation", .visible = true},
 							"ctrl_translation",
@@ -192,6 +249,8 @@ void EditorLayer::onAttach() {
 void EditorLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
 
+	// Sync keybinding overrides before saving
+	m_settings.keybindingOverrides = m_actionRegistry.getOverrides();
 	m_settings.saveToFile(core::Application::get().getWorkingDirectory() / "OwlNest_settings.yml");
 
 	m_viewport.detach();
@@ -291,6 +350,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		updateWindowTitle();
 	}
 	m_logPanel.onImGuiRender();
+	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
 	//=============================================================
 	{
 		const auto& lower = m_viewport.getLowerBound();
@@ -346,29 +406,6 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 	ImGui::End();
 }
 
-void EditorLayer::renderThemeMenu() {
-	if (!ImGui::BeginMenu("Theme"))
-		return;
-	for (const auto& [preset, name]: gui::Theme::getPresetNames()) {
-		const bool selected = m_settings.themePreset == name;
-		if (ImGui::MenuItem(name.c_str(), nullptr, selected)) {
-			m_settings.themePreset = name;
-			gui::UiLayer::setTheme(gui::Theme::fromPreset(preset));
-		}
-	}
-	ImGui::Separator();
-	const bool selected = m_settings.themePreset == "Custom";
-	if (ImGui::MenuItem("Custom (theme.yml)", nullptr, selected)) {
-		m_settings.themePreset = "Custom";
-		if (const auto themePath = core::Application::get().getWorkingDirectory() / "theme.yml"; exists(themePath)) {
-			gui::Theme theme;
-			theme.loadFromFile(themePath);
-			gui::UiLayer::setTheme(theme);
-		}
-	}
-	ImGui::EndMenu();
-}
-
 void EditorLayer::renderMenu() {
 	const auto& iconBank = gui::IconBank::instance();
 
@@ -383,15 +420,16 @@ void EditorLayer::renderMenu() {
 			if (iconBank.menuItem("close", "Close Project", nullptr, m_project.isLoaded()))
 				closeProject();
 			ImGui::Separator();
-			if (iconBank.menuItem("new_scene", "New", "Ctrl+N"))
+			if (iconBank.menuItem("new_scene", "New", m_actionRegistry.getShortcutString("scene.new").c_str()))
 				newScene();
 			ImGui::Separator();
-			if (iconBank.menuItem("open", "Open Scene", "Ctrl+O"))
+			if (iconBank.menuItem("open", "Open Scene", m_actionRegistry.getShortcutString("scene.open").c_str()))
 				openScene();
-			if (iconBank.menuItem("save", "Save Scene", "Ctrl+S"))
+			if (iconBank.menuItem("save", "Save Scene", m_actionRegistry.getShortcutString("scene.save").c_str()))
 				if (!m_currentScenePath.empty())
 					saveCurrentScene();
-			if (iconBank.menuItem("save", "Save Scene as..", "Ctrl+Shift+S"))
+			if (iconBank.menuItem("save", "Save Scene as..",
+								  m_actionRegistry.getShortcutString("scene.saveAs").c_str()))
 				saveSceneAs();
 			ImGui::Separator();
 			if (iconBank.menuItem("exit", "Exit"))
@@ -419,7 +457,8 @@ void EditorLayer::renderMenu() {
 			if (iconBank.menuItem("settings", "Parameters"))
 				m_parameters.open();
 			ImGui::Separator();
-			renderThemeMenu();
+			if (iconBank.menuItem("settings", "Editor Settings"))
+				m_settingsPanel.open();
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
@@ -561,58 +600,7 @@ void EditorLayer::saveCurrentScene() {
 }
 
 auto EditorLayer::onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool {
-	// Shortcuts
-	if (static_cast<int>(ioEvent.getRepeatCount()) > 0)
-		return false;
-	if (m_state == State::Edit) {
-		const bool control = input::Input::isKeyPressed(input::key::LeftControl) ||
-							 input::Input::isKeyPressed(input::key::RightControl);
-		const bool shift =
-				input::Input::isKeyPressed(input::key::LeftShift) || input::Input::isKeyPressed(input::key::RightShift);
-		switch (ioEvent.getKeyCode()) {
-			case input::key::N:
-				{
-					if (control) {
-						newScene();
-						return true;
-					}
-					break;
-				}
-			case input::key::O:
-				{
-					if (control) {
-						openScene();
-						return true;
-					}
-					break;
-				}
-			case input::key::S:
-				{
-					if (control) {
-						if (shift) {
-							saveSceneAs();
-							return true;
-						}
-						saveCurrentScene();
-						return true;
-					}
-					break;
-				}
-			// Scene Commands
-			case input::key::D:
-				{
-					if (control) {
-						onDuplicateEntity();
-						return true;
-					}
-					break;
-				}
-			default:
-				break;
-		}
-	}
-
-	return false;
+	return m_actionRegistry.dispatch(ioEvent);
 }
 
 auto EditorLayer::onMouseButtonPressed([[maybe_unused]] const event::MouseButtonPressedEvent& ioEvent) -> bool {

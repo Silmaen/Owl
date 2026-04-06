@@ -10,6 +10,7 @@
 
 #include <owl.h>
 
+#include "ActionRegistry.h"
 #include "EditorSettings.h"
 #include "Project.h"
 #include "panel/ContentBrowser.h"
@@ -17,6 +18,7 @@
 #include "panel/Parameters.h"
 #include "panel/ProjectSettings.h"
 #include "panel/SceneHierarchy.h"
+#include "panel/SettingsPanel.h"
 #include "panel/Viewport.h"
 
 namespace owl::nest {
@@ -82,7 +84,6 @@ public:
 private:
 	void renderStats(const core::Timestep& iTimeStep);
 	void renderMenu();
-	void renderThemeMenu();
 	void renderToolbar();
 
 	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
@@ -125,5 +126,9 @@ private:
 	panel::Parameters m_parameters;
 	panel::ProjectSettings m_projectSettings;
 	panel::LogPanel m_logPanel;
+	panel::SettingsPanel m_settingsPanel;
+
+	// Action registry
+	ActionRegistry m_actionRegistry;
 };
 }// namespace owl::nest

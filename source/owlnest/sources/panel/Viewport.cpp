@@ -260,66 +260,8 @@ void Viewport::onEvent(event::Event& ioEvent) {
 		m_editorCamera.onEvent(ioEvent);
 
 	event::EventDispatcher dispatcher(ioEvent);
-	dispatcher.dispatch<event::KeyPressedEvent>(
-			[this]<typename T0>(T0&& ioPh1) { return onKeyPressed(std::forward<T0>(ioPh1)); });
 	dispatcher.dispatch<event::MouseButtonPressedEvent>(
 			[this]<typename T0>(T0&& ioPh1) { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
-}
-
-auto Viewport::onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool {
-	// Shortcuts
-	if (static_cast<int>(ioEvent.getRepeatCount()) > 0)
-		return false;
-	if (!isFocused() && !isHovered())
-		return false;
-	if (m_parent->getState() == EditorLayer::State::Edit) {
-		switch (ioEvent.getKeyCode()) {
-			// Gizmos
-			case input::key::Q:
-				{
-					if (!gui::Guizmo::isUsing()) {
-						m_gizmoType = gui::Guizmo::Type::None;
-						return true;
-					}
-					break;
-				}
-			case input::key::W:
-				{
-					if (!gui::Guizmo::isUsing()) {
-						m_gizmoType = gui::Guizmo::Type::Translation;
-						return true;
-					}
-					break;
-				}
-			case input::key::E:
-				{
-					if (!gui::Guizmo::isUsing()) {
-						m_gizmoType = gui::Guizmo::Type::Rotation;
-						return true;
-					}
-					break;
-				}
-			case input::key::R:
-				{
-					if (!gui::Guizmo::isUsing()) {
-						m_gizmoType = gui::Guizmo::Type::Scale;
-						return true;
-					}
-					break;
-				}
-			case input::key::T:
-				{
-					if (!gui::Guizmo::isUsing()) {
-						m_gizmoType = gui::Guizmo::Type::All;
-						return true;
-					}
-					break;
-				}
-			default:
-				break;
-		}
-	}
-	return false;
 }
 
 auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool {
