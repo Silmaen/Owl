@@ -193,7 +193,7 @@ AllocationInfo::AllocationInfo(void* iLocation, const size_t iSize) : location{i
 	traceInternal->fullTrace = cpptrace::generate_trace();
 #endif
 }
-auto AllocationInfo::getLibName() const -> std::string {
+auto AllocationInfo::getLibName() const -> std::string { // NOLINT(readability-convert-member-functions-to-static)
 #ifdef OWL_STACKTRACE
 	if (traceInternal && !traceInternal->fullTrace.empty()) {
 		auto last = traceInternal->getCallerInfo();

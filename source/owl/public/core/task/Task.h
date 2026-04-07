@@ -14,6 +14,7 @@
 namespace owl::core::task {
 
 class Scheduler;
+struct SchedulerImpl;
 
 /**
  * @brief Class defining a simple task for multithreading.
@@ -50,11 +51,6 @@ public:
 	[[nodiscard]] auto getState() const -> const State& { return m_state; }
 
 	/**
-	 * @brief Start the Task.
-	 */
-	void run();
-
-	/**
 	 * @brief Check if process is still running. If terminated, execute it corresponding termination program.
 	 */
 	void poll();
@@ -72,6 +68,7 @@ private:
 	size_t m_taskId = 0;
 
 	friend class Scheduler;
+	friend struct SchedulerImpl;
 };
 
 }// namespace owl::core::task

@@ -122,12 +122,8 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zeus REQUIRED ${THIRD_
 # zstd
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zstd REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "zstd::libzstd_static")
 
-# TBB (optionnal)
-find_package(TBB QUIET)
-if (TBB_FOUND)
-    target_link_libraries(${ENGINE_NAME}Private INTERFACE TBB::tbb)
-    target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PROJECT_PREFIX}_ENGINE_USE_TBB)
-endif ()
+# taskflow
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Taskflow REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "Taskflow::Taskflow")
 
 # ---------========= PUBLIC third party =========---------
 

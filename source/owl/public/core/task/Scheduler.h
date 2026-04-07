@@ -9,12 +9,13 @@
 #pragma once
 #include "Task.h"
 #include "Timer.h"
-#include <queue>
 
 /**
  * @brief Namespace for task management.
  */
 namespace owl::core::task {
+
+struct SchedulerImpl;
 
 /**
  * @brief Class that manage the tasks.
@@ -30,21 +31,21 @@ public:
 	 */
 	~Scheduler();
 	/**
-	 * @brief Default copy constructor.
+	 * @brief Deleted copy constructor.
 	 */
-	Scheduler(const Scheduler&) = default;
+	Scheduler(const Scheduler&) = delete;
 	/**
-	 * @brief Default move constructor.
+	 * @brief Deleted move constructor.
 	 */
-	Scheduler(Scheduler&&)  noexcept = default;
+	Scheduler(Scheduler&&) = delete;
 	/**
-	 * @brief Default copy affectation operator.
+	 * @brief Deleted copy affectation operator.
 	 */
-	auto operator=(const Scheduler&) -> Scheduler& = default;
+	auto operator=(const Scheduler&) -> Scheduler& = delete;
 	/**
-	 * @brief Default move affectation operator.
+	 * @brief Deleted move affectation operator.
 	 */
-	auto operator=(Scheduler&&) -> Scheduler& = default;
+	auto operator=(Scheduler&&) -> Scheduler& = delete;
 
 	/**
 	 * @brief Insert Task to the queue.
@@ -66,7 +67,7 @@ public:
 
 	/**
 	 * @brief Wait for all running tasks to finish.
-	 * @note The tasks in queue will  ot be launched.
+	 * @note The tasks in queue will not be launched.
 	 */
 	void waitRunning();
 
@@ -107,17 +108,8 @@ public:
 	void clearTimers();
 
 private:
-	void frameInternal(bool iTreatQueue = true);
-	/// The tasks in queue.
-	std::queue<shared<Task>> m_tasksQueue;
-	/// The Running tasks.
-	std::vector<shared<Task>> m_runningTasks;
-	/// The maximum number of running tasks.
-	size_t m_maxRunningTasks = 5;
-	/// The next task ID.
-	size_t m_nextTaskId = 1;
-	/// List of timers.
-	std::vector<shared<Timer>> m_timers;
+	/// Private implementation hiding Taskflow internals.
+	uniq<SchedulerImpl> mp_impl;
 };
 
 }// namespace owl::core::task

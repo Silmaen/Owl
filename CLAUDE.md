@@ -120,16 +120,31 @@ Shaders are written in **Slang** (`.slang` files), a single-source shading langu
   - `NonUniformResourceIndex()` for texture array indexing (works on both backends)
   - No sRGB conversion in shaders (framebuffers use UNORM format without hardware sRGB)
 
+### Task System
+
+The engine includes a task scheduler for asynchronous work, backed by [Taskflow](https://github.com/taskflow/taskflow)
+4.0 (header-only, PRIVATE dependency — not exposed in public headers).
+
+- **Public API** (`source/owl/public/core/task/`): `Task`, `Scheduler`, `Timer` — applications use these without
+  knowing about Taskflow
+- **Private implementation** (`source/owl/private/core/task/`): `SchedulerImpl` owns a `tf::Executor` (thread pool
+  sized to `hardware_concurrency`), `ParallelUtils.h` provides `parallelForEach`/`parallelForIndex` templates
+- **External header wrapper:** `source/owl/private/core/external/taskflow.h` (diagnostic suppression)
+- **Design:** Scheduler is main-thread-only (no mutex), worker tasks run on the Taskflow thread pool, termination
+  callbacks execute on the main thread during `poll()`
+- **If an app needs Taskflow directly**, it must link it explicitly in its own `CMakeLists.txt` — the engine does not
+  propagate Taskflow headers
+
 ### Dependencies
 
-- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (30 external dependencies)
+- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (31 external dependencies)
 - Dependencies auto-download during CMake configure step
 - Versions are pinned explicitly in `depmanager.yml`
 - Key libraries: EnTT (ECS), ImGui/ImGuizmo (GUI), Box2D (physics), spdlog (logging), yaml-cpp (serialization), Vulkan
   SDK, GLFW, OpenAL, glad, freetype, msdfgen/msdf-atlas-gen (fonts), tinygltf/tinyobjloader/ufbx (mesh loading),
   magic_enum (enum reflection), cpptrace/libdwarf/debugbreak (debugging), zeus (math), nfd (file dialogs), tinyxml2
   (XML), libpng, zlib/zstd (compression), libsndfile (audio files), stb_image (image loading), googletest (testing),
-  mavsdk (drone MAVLink SDK)
+  mavsdk (drone MAVLink SDK), Taskflow (task parallelism)
 
 ## DepManager (`dmgr`) Usage
 
