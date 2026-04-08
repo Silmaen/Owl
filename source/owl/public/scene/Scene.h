@@ -10,6 +10,7 @@
 
 #include "core/Timestep.h"
 #include "core/UUID.h"
+#include "math/Transform.h"
 #include "renderer/Camera.h"
 
 #include <entt/entt.hpp>
@@ -124,6 +125,74 @@ public:
 	 * @return List of all entities.
 	 */
 	[[nodiscard]] auto getAllEntities() const -> std::vector<Entity>;
+
+	/**
+	 * @brief Get root entities only (those with no parent).
+	 * @return List of root entities.
+	 */
+	[[nodiscard]] auto getRootEntities() const -> std::vector<Entity>;
+
+	/**
+	 * @brief Get the children of an entity.
+	 * @param[in] iEntity The parent entity.
+	 * @return List of child entities.
+	 */
+	[[nodiscard]] auto getChildren(const Entity& iEntity) const -> std::vector<Entity>;
+
+	/**
+	 * @brief Find an entity by its UUID.
+	 * @param[in] iUuid The UUID to search for.
+	 * @return The entity, or an invalid entity if not found.
+	 */
+	[[nodiscard]] auto findEntityByUUID(core::UUID iUuid) const -> Entity;
+
+	/**
+	 * @brief Compute the world-space transform for an entity (walks parent chain).
+	 * @param[in] iEntity The entity.
+	 * @return The world-space transform.
+	 */
+	[[nodiscard]] auto getWorldTransform(const Entity& iEntity) const -> math::Transform;
+
+	/**
+	 * @brief Check if an entity is effectively visible (walks parent chain).
+	 * @param[in] iEntity The entity.
+	 * @param[in] iEditorMode True if checking editor visibility, false for game visibility.
+	 * @return True if the entity and all its ancestors are visible.
+	 */
+	[[nodiscard]] auto isEffectivelyVisible(const Entity& iEntity, bool iEditorMode) const -> bool;
+
+	/**
+	 * @brief Set the parent of an entity. Handles reparenting and local transform recomputation.
+	 * @param[in] iChild The entity to reparent.
+	 * @param[in] iNewParent The new parent entity.
+	 */
+	void setParent(const Entity& iChild, const Entity& iNewParent) const;
+
+	/**
+	 * @brief Remove an entity from its parent (make it a root entity).
+	 * @param[in] iChild The entity to unparent.
+	 */
+	void unparent(const Entity& iChild) const;
+
+	/**
+	 * @brief Destroy an entity and all its children recursively.
+	 * @param[in,out] ioEntity Entity to destroy with children.
+	 */
+	void destroyEntityWithChildren(Entity& ioEntity);
+
+	/**
+	 * @brief Duplicate an entity and all its descendants recursively.
+	 * @param[in] iEntity Root entity of the subtree to duplicate.
+	 * @return The duplicated root entity.
+	 */
+	auto duplicateSubtree(const Entity& iEntity) -> Entity;
+
+	/**
+	 * @brief Rebuild children lists from parent references.
+	 *
+	 * Called after deserialization to reconstruct childrenIds from parentId relationships.
+	 */
+	void rebuildHierarchyChildren();
 
 	/// Entities registry.
 	entt::registry registry;

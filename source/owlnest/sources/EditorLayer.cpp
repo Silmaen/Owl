@@ -34,36 +34,35 @@ void buildIconBank() {
 
 	// clang-format off
 	std::vector<std::pair<std::string, std::filesystem::path>> icons = {
-		// Control icons
-		{"ctrl_rotation",     resolve("ctrl_rotation")},
-		{"ctrl_scale",        resolve("ctrl_scale")},
-		{"ctrl_translation",  resolve("ctrl_translation")},
-		// Playback icons
-		{"PlayButton",        resolve("icons/PlayButton")},
-		{"PauseButton",       resolve("icons/PauseButton")},
-		{"StopButton",        resolve("icons/StopButton")},
-		{"StepButton",        resolve("icons/StepButton")},
+		// Toolbar icons (playback + gizmo controls)
+		{"ctrl_rotation",     resolve("icons/toolbar/ctrl_rotation")},
+		{"ctrl_scale",        resolve("icons/toolbar/ctrl_scale")},
+		{"ctrl_translation",  resolve("icons/toolbar/ctrl_translation")},
+		{"PlayButton",        resolve("icons/toolbar/play")},
+		{"PauseButton",       resolve("icons/toolbar/pause")},
+		{"StopButton",        resolve("icons/toolbar/stop")},
+		{"StepButton",        resolve("icons/toolbar/step")},
 		// Visibility icons
 		{"camera_on",         resolve("icons/visibility/camera_on")},
 		{"camera_off",        resolve("icons/visibility/camera_off")},
 		{"eye_open",          resolve("icons/visibility/eye_open")},
 		{"eye_closed",        resolve("icons/visibility/eye_closed")},
 		// Trigger icons
-		{"trigger_victory",   resolve("icons/triggers/trigger_victory")},
-		{"trigger_death",     resolve("icons/triggers/trigger_death")},
-		{"trigger_target",    resolve("icons/triggers/trigger_target")},
-		{"trigger_teleport",  resolve("icons/triggers/trigger_teleport")},
+		{"trigger_victory",   resolve("icons/triggers/victory")},
+		{"trigger_death",     resolve("icons/triggers/death")},
+		{"trigger_target",    resolve("icons/triggers/target")},
+		{"trigger_teleport",  resolve("icons/triggers/teleport")},
 		// File browser icons
-		{"folder_icon",       resolve("icons/files/folder_icon")},
-		{"glsl_icon",         resolve("icons/files/glsl_icon")},
-		{"jpg_icon",          resolve("icons/files/jpg_icon")},
-		{"json_icon",         resolve("icons/files/json_icon")},
-		{"owl_icon",          resolve("icons/files/owl_icon")},
-		{"png_icon",          resolve("icons/files/png_icon")},
-		{"svg_icon",          resolve("icons/files/svg_icon")},
-		{"text_icon",         resolve("icons/files/text_icon")},
-		{"ttf_icon",          resolve("icons/files/ttf_icon")},
-		{"yml_icon",          resolve("icons/files/yml_icon")},
+		{"folder_icon",       resolve("icons/browser/folder")},
+		{"glsl_icon",         resolve("icons/browser/glsl")},
+		{"jpg_icon",          resolve("icons/browser/jpg")},
+		{"json_icon",         resolve("icons/browser/json")},
+		{"owl_icon",          resolve("icons/browser/owl")},
+		{"png_icon",          resolve("icons/browser/png")},
+		{"svg_icon",          resolve("icons/browser/svg_file")},
+		{"text_icon",         resolve("icons/browser/text")},
+		{"ttf_icon",          resolve("icons/browser/ttf")},
+		{"yml_icon",          resolve("icons/browser/yml")},
 		// Action icons (context menus, toolbar, etc.)
 		{"delete",            resolve("icons/actions/delete")},
 		{"rename",            resolve("icons/actions/rename")},
@@ -71,62 +70,62 @@ void buildIconBank() {
 		{"import_file",       resolve("icons/actions/import_file")},
 		{"import_folder",     resolve("icons/actions/import_folder")},
 		{"add_entity",        resolve("icons/actions/add_entity")},
+		{"add_child_entity",  resolve("icons/actions/add_child_entity")},
+		{"add_component",     resolve("icons/actions/add_component")},
 		{"delete_entity",     resolve("icons/actions/delete_entity")},
+		{"delete_cascade",    resolve("icons/actions/delete_cascade")},
+		{"unparent",          resolve("icons/actions/unparent")},
 		{"save",              resolve("icons/actions/save")},
 		{"open",              resolve("icons/actions/open")},
 		{"new_scene",         resolve("icons/actions/new_scene")},
 		{"duplicate",         resolve("icons/actions/duplicate")},
 		{"undo",              resolve("icons/actions/undo")},
 		{"redo",              resolve("icons/actions/redo")},
-		{"component_camera",  resolve("icons/actions/component_camera")},
-		{"component_sprite",  resolve("icons/actions/component_sprite")},
-		{"component_physics", resolve("icons/actions/component_physics")},
-		{"component_script",  resolve("icons/actions/component_script")},
-		{"component_sound",   resolve("icons/actions/component_sound")},
 		{"settings",          resolve("icons/actions/settings")},
 		{"search",            resolve("icons/actions/search")},
 		{"pack",              resolve("icons/actions/pack")},
 		// UI / navigation icons
 		{"back",              resolve("icons/actions/back")},
-		{"scene_hierarchy",   resolve("icons/actions/scene_hierarchy")},
-		{"content_browser",   resolve("icons/actions/content_browser")},
-		{"stats",             resolve("icons/actions/stats")},
-		{"properties",        resolve("icons/actions/properties")},
-		{"log",               resolve("icons/actions/log")},
-		{"viewport",          resolve("icons/actions/viewport")},
 		{"close",             resolve("icons/actions/close")},
 		{"project",           resolve("icons/actions/project")},
 		{"exit",              resolve("icons/actions/exit")},
+		// Panel icons
+		{"scene_hierarchy",   resolve("icons/panels/scene_hierarchy")},
+		{"content_browser",   resolve("icons/panels/content_browser")},
+		{"stats",             resolve("icons/panels/stats")},
+		{"properties",        resolve("icons/panels/properties")},
+		{"log",               resolve("icons/panels/log")},
+		{"viewport",          resolve("icons/panels/viewport")},
 		// Component icons
-		{"comp_transform",    resolve("icons/actions/component_transform")},
-		{"comp_camera",       resolve("icons/actions/component_camera")},
-		{"comp_sprite",       resolve("icons/actions/component_sprite")},
-		{"comp_circle",       resolve("icons/actions/component_circle")},
-		{"comp_text",         resolve("icons/actions/component_text")},
-		{"comp_physics",      resolve("icons/actions/component_physics")},
-		{"comp_script",       resolve("icons/actions/component_script")},
-		{"comp_sound",        resolve("icons/actions/component_sound")},
-		{"comp_trigger",      resolve("icons/actions/component_trigger")},
-		{"comp_player",       resolve("icons/actions/component_player")},
-		{"comp_link",         resolve("icons/actions/component_link")},
-		{"comp_background",   resolve("icons/actions/component_background")},
-		{"comp_visibility",   resolve("icons/actions/component_visibility")},
+		{"comp_transform",    resolve("icons/components/transform")},
+		{"comp_camera",       resolve("icons/components/camera")},
+		{"comp_sprite",       resolve("icons/components/sprite")},
+		{"comp_circle",       resolve("icons/components/circle")},
+		{"comp_text",         resolve("icons/components/text")},
+		{"comp_physics",      resolve("icons/components/physics")},
+		{"comp_script",       resolve("icons/components/script")},
+		{"comp_sound",        resolve("icons/components/sound")},
+		{"comp_trigger",      resolve("icons/components/trigger")},
+		{"comp_player",       resolve("icons/components/player")},
+		{"comp_link",         resolve("icons/components/link")},
+		{"comp_background",   resolve("icons/components/background")},
+		{"comp_visibility",   resolve("icons/components/visibility")},
 	};
 	// clang-format on
 
 	// Remove entries with empty paths
 	std::erase_if(icons, [](const auto& iEntry) { return iEntry.second.empty(); });
 
-	iconBank.build(icons, 128);
+	iconBank.build(icons, 64);
 }
 void loadTriggerTextures() {
 	// Trigger icons are also used for Renderer2D viewport drawing (not just ImGui),
 	// so they need to remain in the texture library as individual textures.
 	auto& textureLibrary = renderer::Renderer::getTextureLibrary();
-	textureLibrary.load("icons/triggers/trigger_victory");
-	textureLibrary.load("icons/triggers/trigger_death");
-	textureLibrary.load("icons/triggers/trigger_target");
-	textureLibrary.load("icons/triggers/trigger_teleport");
+	textureLibrary.load("icons/triggers/victory");
+	textureLibrary.load("icons/triggers/death");
+	textureLibrary.load("icons/triggers/target");
+	textureLibrary.load("icons/triggers/teleport");
 }
 void loadSounds() {
 	auto& soundLibrary = sound::SoundSystem::getSoundLibrary();

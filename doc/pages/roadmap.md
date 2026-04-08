@@ -50,6 +50,17 @@ Unordered ideas and long-term goals.
     - <span class="badge-planned">Planned</span> Different scene types
         - Games and menus
     - <span class="badge-planned">Planned</span> Configurable keymap
+- Scene
+    - <span class="badge-done">Done</span> Scene hierarchy (parent-child entities)
+        - Transform and visibility inheritance
+        - Reparenting preserves world position
+        - Delete orphans children to grandparent, or cascade delete
+        - Duplicate entity or entire subtree
+    - <span class="badge-done">Done</span> Asset packing (`.owlpack` binary format)
+        - zstd compression, XOR-obfuscated TOC
+        - Pack-aware loading in runner
+    - <span class="badge-done">Done</span> Task system (Taskflow backend)
+        - Async work scheduling, parallel utilities
 - Game Designer (Owl Nest)
     - <span class="badge-done">Done</span> Project system
         - Create, open, save, and close projects (`owl_project.yml`)
@@ -58,13 +69,19 @@ Unordered ideas and long-term goals.
     - <span class="badge-done">Done</span> Project settings panel
         - Edit project name and first scene (dropdown of available scenes)
     - <span class="badge-done">Done</span> Scene import into project
-    - <span class="badge-planned">Planned</span> Export game for runner
+    - <span class="badge-done">Done</span> Export game for runner
         - Standalone game runner package
-    - <span class="badge-planned">Planned</span> Asset packing
-        - With unpack support in runner
+    - <span class="badge-done">Done</span> Scene hierarchy panel
+        - Tree display with drag-drop reparenting
+        - Context menu: create root/child entity, duplicate/subtree, unparent, delete/cascade
+        - Visibility toggle buttons per entity (editor + game)
+    - <span class="badge-done">Done</span> Icon system overhaul
+        - SVG sources organized by usage (toolbar, browser, components, actions, etc.)
+        - Rasterized to PNG at tier-appropriate sizes (512/64/32)
+        - Atlas with mipmaps and bilinear filtering
+    - <span class="badge-planned">Planned</span> Runtime SVG icon rendering
+        - Load SVGs at runtime (lunasvg), dynamic theme colors
     - <span class="badge-planned">Planned</span> View of level links
-    - <span class="badge-planned">Planned</span> Entity management shortcuts
-        - Add/remove with delete confirmation
     - <span class="badge-planned">Planned</span> Separate editor/game display
         - Entities rendered differently
 

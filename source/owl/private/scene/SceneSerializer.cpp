@@ -46,6 +46,11 @@ void deserializeEntity(const shared<Scene>& ioScene, const core::Serializer& iNo
 		auto& comp = entity.getComponent<component::Visibility>();
 		comp.deserialize(sNode);
 	}
+	if (sNode.getImpl()->node.reset(iNode.getImpl()->node["Hierarchy"]); sNode.getImpl()->node) {
+		// Entities always have hierarchy
+		auto& comp = entity.getComponent<component::Hierarchy>();
+		comp.deserialize(sNode);
+	}
 	deserializeComponents(entity, iNode, component::OptionalComponents{});
 }
 
@@ -86,6 +91,7 @@ auto SceneSerializer::deserialize(const std::filesystem::path& iFilepath) const 
 				deserializeEntity(mp_scene, sEntity);
 			}
 		}
+		mp_scene->rebuildHierarchyChildren();
 	} catch (...) {
 		OWL_CORE_ERROR("Unable to load scene from file {}", iFilepath.string())
 		return false;
@@ -113,6 +119,7 @@ auto SceneSerializer::deserializeFromBuffer(const std::vector<uint8_t>& iData,
 				deserializeEntity(mp_scene, sEntity);
 			}
 		}
+		mp_scene->rebuildHierarchyChildren();
 	} catch (...) {
 		OWL_CORE_ERROR("Unable to load scene from buffer {}", iSourceName)
 		return false;
