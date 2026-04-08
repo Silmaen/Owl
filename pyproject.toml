@@ -16,6 +16,7 @@ gcovr = "^8.6"
 [tool.poetry.group.dev.dependencies]
 rich = "^14.3.2"
 pillow = "^12.1.1"
+cairosvg = "^2.9.0"
 
 [build-system]
 requires = ["poetry-core"]

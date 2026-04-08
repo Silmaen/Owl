@@ -70,9 +70,9 @@ private:
 
 	/**
 	 * @brief Draw one entity node
-	 * @param[in,out] ioEntity The node to draw
+	 * @param[in] iEntity The node to draw
 	 */
-	void drawEntityNode(scene::Entity& ioEntity);
+	void drawEntityNode(const scene::Entity& iEntity);
 	/**
 	 * @brief Draw the properties of a component
 	 * @param[in,out] ioEntity The entity

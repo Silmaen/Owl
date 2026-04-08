@@ -52,7 +52,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		 const auto& e: view) {
 		const scene::Entity entity{e, m_scene};
 		auto& [sbody] = entity.getComponent<scene::component::PhysicBody>();
-		auto& [transform] = entity.getComponent<scene::component::Transform>();
+		const math::Transform worldTransform = m_scene->getWorldTransform(entity);
 		b2BodyDef bodyDef = b2DefaultBodyDef();
 		switch (sbody.type) {
 			case scene::SceneBody::BodyType::Static:
@@ -66,9 +66,9 @@ void PhysicCommand::init(scene::Scene* iScene) {
 				break;
 		}
 		bodyDef.fixedRotation = sbody.fixedRotation;
-		bodyDef.position.x = transform.translation().x();
-		bodyDef.position.y = transform.translation().y();
-		bodyDef.rotation = b2MakeRot(transform.rotation().z());
+		bodyDef.position.x = worldTransform.translation().x();
+		bodyDef.position.y = worldTransform.translation().y();
+		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
 
 		const b2BodyId body = b2CreateBody(m_impl->worldId, &bodyDef);
 		OWL_INFO("PhysicCommand::init(), body created ({} {} {})", body.index1, body.world0, body.generation)
@@ -76,8 +76,8 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		m_impl->bodies[m_impl->nextId] = body;
 		m_impl->nextId++;
 
-		const b2Polygon dynamicBox = b2MakeBox(sbody.colliderSize.x() * transform.scale().x() * 0.5f,
-											   sbody.colliderSize.y() * transform.scale().y() * 0.5f);
+		const b2Polygon dynamicBox = b2MakeBox(sbody.colliderSize.x() * worldTransform.scale().x() * 0.5f,
+											   sbody.colliderSize.y() * worldTransform.scale().y() * 0.5f);
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 		shapeDef.density = sbody.density;
 		shapeDef.material.friction = sbody.friction;
@@ -108,10 +108,29 @@ void PhysicCommand::frame(const core::Timestep& iTimestep) {
 	for (const auto view = m_scene->registry.view<scene::component::Transform, scene::component::PhysicBody>();
 		 const auto entity: view) {
 		auto&& [transform, physic] = view.get<scene::component::Transform, scene::component::PhysicBody>(entity);
-		auto [x, y] = b2Body_GetPosition(m_impl->bodies[physic.body.bodyId]);
-		transform.transform.translation().x() = x;
-		transform.transform.translation().y() = y;
-		transform.transform.rotation().z() = b2Rot_GetAngle(b2Body_GetRotation(m_impl->bodies[physic.body.bodyId]));
+		const auto [x, y] = b2Body_GetPosition(m_impl->bodies[physic.body.bodyId]);
+		const float angle = b2Rot_GetAngle(b2Body_GetRotation(m_impl->bodies[physic.body.bodyId]));
+		// Convert world position from Box2D back to local space.
+		const scene::Entity ent{entity, m_scene};
+		const auto& hierarchy = ent.getComponent<scene::component::Hierarchy>();
+		if (hierarchy.parentId != core::UUID{0}) {
+			if (const scene::Entity parent = m_scene->findEntityByUUID(hierarchy.parentId); parent) {
+				const math::mat4 parentWorldInv = math::inverse(m_scene->getWorldTransform(parent)());
+				const math::vec4 localPos = parentWorldInv * math::vec4{x, y, transform.transform.translation().z(), 1.0f};
+				transform.transform.translation().x() = localPos.x();
+				transform.transform.translation().y() = localPos.y();
+				const float parentWorldRotZ = m_scene->getWorldTransform(parent).rotation().z();
+				transform.transform.rotation().z() = angle - parentWorldRotZ;
+			} else {
+				transform.transform.translation().x() = x;
+				transform.transform.translation().y() = y;
+				transform.transform.rotation().z() = angle;
+			}
+		} else {
+			transform.transform.translation().x() = x;
+			transform.transform.translation().y() = y;
+			transform.transform.rotation().z() = angle;
+		}
 	}
 }
 

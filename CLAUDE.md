@@ -4,9 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Owl (v0.0.2) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.3, Null), input backends (
-GLFW, Null), and sound backends (OpenAL, Null). It uses an Entity-Component-System architecture (EnTT) and includes a
-scene editor (Owl Nest). Supported platforms: Linux (x64/arm64) and Windows (x64, MinGW).
+Owl (v0.0.3-dev) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.3, Null), input backends
+(GLFW, Null), and sound backends (OpenAL, Null). It uses an Entity-Component-System architecture (EnTT) with
+**hierarchical parent-child entities** and includes a scene editor (Owl Nest). Supported platforms: Linux (x64/arm64)
+and Windows (x64, MinGW).
 
 ## Build Commands
 
@@ -72,6 +73,7 @@ poetry run python ci_action.py Documentation <preset>
 
 - `owlnest/` — Scene editor with project management (two executables: editor + runner)
   - Project system: `owl_project.yml` config, dynamic asset directories, scene import
+  - Scene hierarchy panel with drag-drop reparenting and context menus
   - Project settings panel, window title reflects active project
 - `owldrone/` — Drone navigator
 - `owlcast/` — Cast application
@@ -95,6 +97,33 @@ poetry run python ci_action.py Documentation <preset>
 ### Engine assets (`engine_assets/`)
 
 - Runtime assets bundled with the engine: fonts, shaders, textures, logo
+
+### Scene Hierarchy
+
+Entities support parent-child relationships via the mandatory `Hierarchy` component (`parentId` UUID + `childrenIds`
+vector). Every entity has this component; root entities have `parentId == 0`.
+
+- **Transform**: `component::Transform` stores LOCAL transform. World transform computed via `Scene::getWorldTransform()`
+- **Visibility**: inherited — hidden parent hides all descendants (`Scene::isEffectivelyVisible()`)
+- **Reparenting**: `Scene::setParent()` checks circular refs, recomputes local transform to preserve world position
+- **Deletion**: `destroyEntity()` reparents children to grandparent; `destroyEntityWithChildren()` cascade-deletes
+- **Duplication**: `duplicateEntity()` creates root copy; `duplicateSubtree()` recursively duplicates with new UUIDs
+- **Serialization**: `parentId` saved in YAML; `childrenIds` rebuilt post-load via `rebuildHierarchyChildren()`
+- **Physics**: Box2D bodies are independent of hierarchy. `PhysicCommand` uses world transforms for init/sync and
+  converts back to local space. A non-physics child follows its physics parent; two physics entities move independently
+  regardless of parent-child relationship.
+
+### Icon System
+
+Editor icons use SVG sources rasterized to PNG. SVG and PNG share identical directory structure:
+
+- **SVG sources**: `source/owlnest/assets_sources/icons/<category>/`
+- **PNG outputs**: `source/owlnest/assets/icons/<category>/`
+- **Categories**: `toolbar/` (64px), `browser/` (512px), `visibility/` (32px), `triggers/` (32px),
+  `components/` (32px), `panels/` (32px), `actions/` (32px), `templates/` (SVG only)
+- **Rasterization**: `poetry run python source/owlnest/assets/icons/generate_icons.py` (uses `cairosvg`)
+- **Runtime**: `IconBank` packs PNGs into a 64px-cell GPU atlas with mipmaps
+- **Adding an icon**: create SVG in the right category dir, run the rasterizer, register in `buildIconBank()`
 
 ### CMake modules (`cmake/`)
 

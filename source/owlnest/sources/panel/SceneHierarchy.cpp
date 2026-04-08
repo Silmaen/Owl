@@ -74,25 +74,61 @@ void SceneHierarchy::renderHierarchy() {
 		ImGui::PopID();
 
 		if (constexpr ImGuiTreeNodeFlags flag = ImGuiTreeNodeFlags_DefaultOpen; ImGui::TreeNodeEx("root", flag)) {
-			for (auto& entity: m_context->getAllEntities()) { drawEntityNode(entity); }
+			// Drop target on root node: unparent dragged entity.
+			if (ImGui::BeginDragDropTarget()) {
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+					const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
+					if (auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child)
+						m_context->unparent(child);
+				}
+				ImGui::EndDragDropTarget();
+			}
+			for (auto& entity: m_context->getRootEntities()) { drawEntityNode(entity); }
 			ImGui::TreePop();
 		}
 	}
 	ImGui::End();
 }
 
-void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
-	const auto& tag = ioEntity.getComponent<Tag>().tag;
+// NOLINTNEXTLINE(misc-no-recursion)
+void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
+	const auto& tag = iEntity.getComponent<Tag>().tag;
+	const auto& hierarchy = iEntity.getComponent<Hierarchy>();
+	const bool hasChildren = !hierarchy.childrenIds.empty();
 
-	ImGuiTreeNodeFlags flag = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_DefaultOpen;// (need tree management)
-	if (ioEntity == m_selection)
+	ImGuiTreeNodeFlags flag = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow;
+	if (!hasChildren)
+		flag |= ImGuiTreeNodeFlags_Leaf;
+	if (iEntity == m_selection)
 		flag |= ImGuiTreeNodeFlags_Selected;
+
+	ImGui::PushID(static_cast<int>(static_cast<uint32_t>(iEntity)));
 	const bool open = ImGui::TreeNodeEx(tag.c_str(), flag);
-	const bool treeNodeClicked = ImGui::IsItemClicked();
+	const bool treeNodeClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen();
+	// Bind context menu to the tree node item (must be right after TreeNodeEx).
+	ImGui::OpenPopupOnItemClick("EntityContext", ImGuiPopupFlags_MouseButtonRight);
+
+	// Drag source for reparenting.
+	if (ImGui::BeginDragDropSource()) {
+		const uint64_t uuid = iEntity.getUUID();
+		ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &uuid, sizeof(uuid));
+		ImGui::Text("%s", tag.c_str());
+		ImGui::EndDragDropSource();
+	}
+
+	// Drop target for reparenting.
+	if (ImGui::BeginDragDropTarget()) {
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+			const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
+			if (auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child && child != iEntity)
+				m_context->setParent(child, iEntity);
+		}
+		ImGui::EndDragDropTarget();
+	}
 
 	// Visibility toggle buttons (right-aligned)
 	{
-		auto& vis = ioEntity.getComponent<Visibility>();
+		auto& vis = iEntity.getComponent<Visibility>();
 		auto& iconBank = owl::gui::IconBank::instance();
 
 		const float btnSize = ImGui::GetTextLineHeight();
@@ -152,31 +188,60 @@ void SceneHierarchy::drawEntityNode(scene::Entity& ioEntity) {
 		ImGui::PopStyleColor(2);
 	}
 
-	if (open) {
-		// Draw the content (need tree management)
-	}
-	ImGui::PushID("...");
-	if (ImGui::BeginPopupContextItem()) {
+	// Context menu (opened via OpenPopupOnItemClick on the tree node).
+	if (ImGui::BeginPopup("EntityContext")) {
 		auto& ib = owl::gui::IconBank::instance();
-		if (ib.menuItem("add_entity", "Create Empty Entity"))
+		// --- Create ---
+		if (ib.menuItem("add_entity", "Create Root Entity"))
 			m_context->createEntity("Empty Entity");
-		if (ib.menuItem("duplicate", "Duplicate Entity"))
-			m_context->duplicateEntity(ioEntity);
+		if (ib.menuItem("add_child_entity", "Create Child Entity")) {
+			auto child = m_context->createEntity("Child Entity");
+			m_context->setParent(child, iEntity);
+		}
 		ImGui::Separator();
-		if (ib.menuItem("delete_entity", "Delete Entity")) {
-			if (m_selection == ioEntity)
+		// --- Duplicate ---
+		if (ib.menuItem("duplicate", "Duplicate Entity"))
+			m_context->duplicateEntity(iEntity);
+		if (hasChildren) {
+			if (ib.menuItem("duplicate", "Duplicate Subtree"))
+				m_context->duplicateSubtree(iEntity);
+		}
+		// --- Hierarchy ---
+		if (hierarchy.parentId != core::UUID{0}) {
+			if (ib.menuItem("unparent", "Unparent"))
+				m_context->unparent(iEntity);
+		}
+		ImGui::Separator();
+		// --- Delete ---
+		if (ib.menuItem("delete_entity", hasChildren ? "Delete Entity Only" : "Delete Entity")) {
+			if (m_selection == iEntity)
 				m_selection = {};
-			m_context->destroyEntity(ioEntity);
+			auto entity = iEntity;
+			m_context->destroyEntity(entity);
+		}
+		if (hasChildren) {
+			if (ib.menuItem("delete_cascade", "Delete with Children")) {
+				if (m_selection == iEntity)
+					m_selection = {};
+				auto entity = iEntity;
+				m_context->destroyEntityWithChildren(entity);
+			}
 		}
 		ImGui::EndPopup();
 	}
-	ImGui::PopID();
-	if (open)
-		ImGui::TreePop();
 
-	if (treeNodeClicked) {
-		m_selection = ioEntity;
+	if (open) {
+		// Recursively draw children.
+		for (const auto childId: hierarchy.childrenIds) {
+			if (const auto child = m_context->findEntityByUUID(childId); child)
+				drawEntityNode(child);
+		}
+		ImGui::TreePop();
 	}
+	ImGui::PopID();
+
+	if (treeNodeClicked)
+		m_selection = iEntity;
 }
 
 // Function displaying the Entity Property panel.
@@ -281,8 +346,29 @@ void SceneHierarchy::drawComponents(scene::Entity& ioEntity) {
 	ImGui::Text("Entity name");
 
 	ImGui::PushItemWidth(-1);
-	if (ImGui::Button("Add Component"))
-		ImGui::OpenPopup("AddComponent");
+	{
+		auto& iconBank = owl::gui::IconBank::instance();
+		constexpr float iconSz = 16.0f;
+		bool clicked = false;
+		if (const auto iconInfo = iconBank.getIcon("add_component")) {
+			const float buttonWidth = ImGui::CalcTextSize("Add Component").x + iconSz +
+									  ImGui::GetStyle().ItemSpacing.x + ImGui::GetStyle().FramePadding.x * 2;
+			clicked = ImGui::Button("##AddComp", ImVec2{buttonWidth, 0});
+			const auto btnMin = ImGui::GetItemRectMin();
+			const auto btnMax = ImGui::GetItemRectMax();
+			const float iconY = btnMin.y + (btnMax.y - btnMin.y - iconSz) * 0.5f;
+			ImGui::GetWindowDrawList()->AddImage(iconInfo->textureId, {btnMin.x + 4, iconY},
+												 {btnMin.x + 4 + iconSz, iconY + iconSz},
+												 gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1));
+			const float textX = btnMin.x + iconSz + ImGui::GetStyle().ItemSpacing.x;
+			const float textY = btnMin.y + ImGui::GetStyle().FramePadding.y;
+			ImGui::GetWindowDrawList()->AddText({textX, textY}, IM_COL32_WHITE, "Add Component");
+		} else {
+			clicked = ImGui::Button("Add Component");
+		}
+		if (clicked)
+			ImGui::OpenPopup("AddComponent");
+	}
 	if (ImGui::BeginPopup("AddComponent")) {
 		addComponentsFromTuple(m_selection, OptionalComponents{});
 		ImGui::EndPopup();

@@ -58,8 +58,7 @@ void boxFilterDownscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSi
 	for (uint32_t dy = 0; dy < iDstSize.y(); ++dy) {
 		for (uint32_t dx = 0; dx < iDstSize.x(); ++dx) {
 			const math::vec2ui srcMin{dx * iSrcSize.x() / iDstSize.x(), dy * iSrcSize.y() / iDstSize.y()};
-			const math::vec2ui srcMax{(dx + 1) * iSrcSize.x() / iDstSize.x(),
-									  (dy + 1) * iSrcSize.y() / iDstSize.y()};
+			const math::vec2ui srcMax{(dx + 1) * iSrcSize.x() / iDstSize.x(), (dy + 1) * iSrcSize.y() / iDstSize.y()};
 
 			math::vec4ui accum{0, 0, 0, 0};
 			uint32_t count = 0;
@@ -83,23 +82,35 @@ void boxFilterDownscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSi
 }
 
 /**
- * @brief Simple nearest-neighbor upscale of an RGBA image.
+ * @brief Bilinear upscale of an RGBA image.
  * @param[in] iSrc Source pixel data (RGBA, 4 bytes per pixel).
  * @param[in] iSrcSize Source dimensions (width, height).
  * @param[out] oDst Destination pixel buffer.
  * @param[in] iDstSize Destination dimensions (width, height).
  */
-void nearestUpscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize, std::span<uint8_t> oDst,
-					const math::vec2ui iDstSize) {
+void bilinearUpscale(const std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize, std::span<uint8_t> oDst,
+					 const math::vec2ui iDstSize) {
+	const float scaleX = static_cast<float>(iSrcSize.x()) / static_cast<float>(iDstSize.x());
+	const float scaleY = static_cast<float>(iSrcSize.y()) / static_cast<float>(iDstSize.y());
 	for (uint32_t dy = 0; dy < iDstSize.y(); ++dy) {
 		for (uint32_t dx = 0; dx < iDstSize.x(); ++dx) {
-			const math::vec2ui src{dx * iSrcSize.x() / iDstSize.x(), dy * iSrcSize.y() / iDstSize.y()};
-			const uint32_t srcIdx = (src.y() * iSrcSize.x() + src.x()) * 4;
+			const float srcX = (static_cast<float>(dx) + 0.5f) * scaleX - 0.5f;
+			const float srcY = (static_cast<float>(dy) + 0.5f) * scaleY - 0.5f;
+			const auto x0 = static_cast<uint32_t>(std::max(0.f, std::floor(srcX)));
+			const auto y0 = static_cast<uint32_t>(std::max(0.f, std::floor(srcY)));
+			const uint32_t x1 = std::min(x0 + 1, iSrcSize.x() - 1);
+			const uint32_t y1 = std::min(y0 + 1, iSrcSize.y() - 1);
+			const float fx = srcX - static_cast<float>(x0);
+			const float fy = srcY - static_cast<float>(y0);
 			const uint32_t dstIdx = (dy * iDstSize.x() + dx) * 4;
-			oDst[dstIdx + 0] = iSrc[srcIdx + 0];
-			oDst[dstIdx + 1] = iSrc[srcIdx + 1];
-			oDst[dstIdx + 2] = iSrc[srcIdx + 2];
-			oDst[dstIdx + 3] = iSrc[srcIdx + 3];
+			for (uint32_t c = 0; c < 4; ++c) {
+				const auto v00 = static_cast<float>(iSrc[(y0 * iSrcSize.x() + x0) * 4 + c]);
+				const auto v10 = static_cast<float>(iSrc[(y0 * iSrcSize.x() + x1) * 4 + c]);
+				const auto v01 = static_cast<float>(iSrc[(y1 * iSrcSize.x() + x0) * 4 + c]);
+				const auto v11 = static_cast<float>(iSrc[(y1 * iSrcSize.x() + x1) * 4 + c]);
+				const float val = v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) + v01 * (1 - fx) * fy + v11 * fx * fy;
+				oDst[dstIdx + c] = static_cast<uint8_t>(std::clamp(val, 0.f, 255.f));
+			}
 		}
 	}
 }
@@ -146,7 +157,7 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 			if (srcSize.x() > cellSize.x() || srcSize.y() > cellSize.y()) {
 				boxFilterDownscale(pixels, srcSize, resized, cellSize);
 			} else {
-				nearestUpscale(pixels, srcSize, resized, cellSize);
+				bilinearUpscale(pixels, srcSize, resized, cellSize);
 			}
 			pixels = std::move(resized);
 		}
@@ -180,7 +191,7 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 	renderer::Texture::Specification spec;
 	spec.size = atlasSize;
 	spec.format = renderer::ImageFormat::Rgba8;
-	spec.generateMips = false;
+	spec.generateMips = true;
 	m_atlas = renderer::Texture2D::create(spec);
 	if (m_atlas != nullptr) {
 		m_atlas->setData(atlasData.data(), static_cast<uint32_t>(atlasData.size()));
@@ -214,7 +225,7 @@ auto IconBank::instance() -> IconBank& {
 }
 
 auto IconBank::menuItem(const std::string& iIconName, const char* iLabel, const char* iShortcut,
-					   const bool iEnabled) const -> bool {
+						const bool iEnabled) const -> bool {
 	if (const auto info = getIcon(iIconName); info.has_value()) {
 		constexpr float iconSize = 16.0f;
 		if (!iEnabled) {

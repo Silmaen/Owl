@@ -147,7 +147,7 @@ void Viewport::renderOverlay() const {
 	if (m_parent->getState() != EditorLayer::State::Edit) {
 		const scene::Entity camera = m_parent->getActiveScene()->getPrimaryCamera();
 		auto& cam = camera.getComponent<scene::component::Camera>().camera;
-		cam.setTransform(camera.getComponent<scene::component::Transform>().transform());
+		cam.setTransform(m_parent->getActiveScene()->getWorldTransform(camera)());
 		renderer::Renderer2D::beginScene(cam);
 	} else {
 		renderer::Renderer2D::beginScene(m_editorCamera);
@@ -156,12 +156,13 @@ void Viewport::renderOverlay() const {
 	if (m_parent->getState() == EditorLayer::State::Edit) {
 		// Draw selected entity outline
 		if (const scene::Entity selectedEntity = m_parent->getSelectedEntity()) {
-			const auto [transform] = selectedEntity.getComponent<scene::component::Transform>();
+			const math::Transform worldTransform = m_parent->getActiveScene()->getWorldTransform(selectedEntity);
 			// Orange
 			// surrounding square
-			renderer::Renderer2D::drawRect({.transform = transform, .color = math::vec4(0.95f, 0.55f, 0.f, 1)});
+			renderer::Renderer2D::drawRect({.transform = worldTransform, .color = math::vec4(0.95f, 0.55f, 0.f, 1)});
 			// Overlay
-			renderer::Renderer2D::drawQuad({.transform = transform, .color = math::vec4{0.95f, 0.55f, 0.f, 0.2f}});
+			renderer::Renderer2D::drawQuad(
+					{.transform = worldTransform, .color = math::vec4{0.95f, 0.55f, 0.f, 0.2f}});
 		}
 
 		// Draw trigger type icons
@@ -174,20 +175,21 @@ void Viewport::renderOverlay() const {
 			std::string iconName;
 			switch (trigger.trigger.type) {
 				case scene::SceneTrigger::TriggerType::Victory:
-					iconName = "icons/triggers/trigger_victory";
+					iconName = "icons/triggers/victory";
 					break;
 				case scene::SceneTrigger::TriggerType::Death:
-					iconName = "icons/triggers/trigger_death";
+					iconName = "icons/triggers/death";
 					break;
 				case scene::SceneTrigger::TriggerType::Target:
-					iconName = "icons/triggers/trigger_target";
+					iconName = "icons/triggers/target";
 					break;
 				case scene::SceneTrigger::TriggerType::Teleport:
-					iconName = "icons/triggers/trigger_teleport";
+					iconName = "icons/triggers/teleport";
 					break;
 			}
 			if (const auto icon = textureLibrary.get(iconName); icon != nullptr) {
-				math::Transform iconTransform = tc.transform;
+				const scene::Entity ent{entity, &activeScene};
+				math::Transform iconTransform = activeScene.getWorldTransform(ent);
 				iconTransform.translation().z() += 0.01f;
 				iconTransform.scale() = {0.5f, 0.5f, 1.f};
 				renderer::Renderer2D::drawQuad({.transform = iconTransform,
@@ -219,21 +221,15 @@ void Viewport::renderGizmo() {
 		selectedEntity && m_gizmoType != gui::Guizmo::Type::None) {
 		gui::Guizmo::initialize(m_lower, m_upper - m_lower);
 
-		// Runtime camera from entity
-		// auto cameraEntity = activeScene->getPrimaryCamera();
-		// const auto &camera = cameraEntity.getComponent<scene::component::Camera>().camera;
-		// const math::mat4 &cameraProjection = camera.getProjection();
-		// math::mat4 cameraView = math::inverse(cameraEntity.getComponent<scene::component::Transform>().getTransform());
-
 		// Editor camera
 		math::mat4 cameraProjection = m_editorCamera.getProjection();
 		if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan)
 			cameraProjection(1, 1) *= -1.f;
 		const math::mat4 cameraView = m_editorCamera.getView();
 
-		// Entity transform
+		// Entity transform: use world transform for gizmo display.
 		auto& tc = selectedEntity.getComponent<scene::component::Transform>();
-		math::mat4 transform = tc.transform();
+		math::mat4 transform = m_parent->getActiveScene()->getWorldTransform(selectedEntity)();
 
 		// Snapping
 		const bool snap = input::Input::isKeyPressed(input::key::LeftControl);
@@ -245,12 +241,21 @@ void Viewport::renderGizmo() {
 		gui::Guizmo::manipulate(cameraView, cameraProjection, m_gizmoType, transform, snap ? snapValue : 0.f);
 
 		if (gui::Guizmo::isUsing()) {
-			math::Transform newTransform(transform);
-
-			const math::vec3 deltaRotation = newTransform.rotation() - tc.transform.rotation();
-			tc.transform.translation() = newTransform.translation();
+			// Convert gizmo result (world space) back to local space.
+			const auto& hierarchy = selectedEntity.getComponent<scene::component::Hierarchy>();
+			math::mat4 localMat = transform;
+			if (hierarchy.parentId != core::UUID{0}) {
+				if (const auto parent = m_parent->getActiveScene()->findEntityByUUID(hierarchy.parentId); parent) {
+					const math::mat4 parentWorldInv =
+							math::inverse(m_parent->getActiveScene()->getWorldTransform(parent)());
+					localMat = parentWorldInv * transform;
+				}
+			}
+			const math::Transform newLocal{localMat};
+			const math::vec3 deltaRotation = newLocal.rotation() - tc.transform.rotation();
+			tc.transform.translation() = newLocal.translation();
 			tc.transform.rotation() += deltaRotation;
-			tc.transform.scale() = newTransform.scale();
+			tc.transform.scale() = newLocal.scale();
 		}
 	}
 }

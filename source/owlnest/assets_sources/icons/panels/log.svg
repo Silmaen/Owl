@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect x="85" y="95" width="342" height="280" rx="32" stroke="white" stroke-width="32" fill="none"/>
+  <path d="M 85,145 L 427,145" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="115" cy="120" r="8" fill="white" stroke="none"/>
+  <circle cx="150" cy="120" r="8" fill="white" stroke="none"/>
+  <circle cx="185" cy="120" r="8" fill="white" stroke="none"/>
+  <path d="M 115,195 L 165,195" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 175,195 L 340,195" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 115,245 L 290,245" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 115,295 L 155,295" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 210,375 L 210,415" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 302,375 L 302,415" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 170,415 L 342,415" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
