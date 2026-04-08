@@ -2,7 +2,7 @@
  * @file IconBank.cpp
  * @author Silmaen
  * @date 10/03/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,6 +11,9 @@
 #include "gui/IconBank.h"
 #include "gui/utils.h"
 
+#include "core/external/lunasvg.h"
+
+#include <fstream>
 #include <span>
 #include <stb_image.h>
 
@@ -47,19 +50,119 @@ auto loadImageFile(const std::filesystem::path& iPath, math::vec2ui& oSize) -> s
 }
 
 /**
+ * @brief Read a file as a string.
+ * @param[in] iPath The file path.
+ * @return The file content, or empty string on failure.
+ */
+auto readFileAsString(const std::filesystem::path& iPath) -> std::string {
+	std::ifstream file(iPath, std::ios::binary);
+	if (!file.is_open())
+		return {};
+	return {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+}
+
+/**
+ * @brief Convert a math::vec4 color (0-1 floats) to a hex string like "#rrggbb".
+ * @param[in] iColor The color.
+ * @return The hex color string.
+ */
+auto colorToHex(const math::vec4& iColor) -> std::string {
+	const auto r = static_cast<uint8_t>(std::clamp(iColor.x(), 0.f, 1.f) * 255.f);
+	const auto g = static_cast<uint8_t>(std::clamp(iColor.y(), 0.f, 1.f) * 255.f);
+	const auto b = static_cast<uint8_t>(std::clamp(iColor.z(), 0.f, 1.f) * 255.f);
+	return std::format("#{:02x}{:02x}{:02x}", r, g, b);
+}
+
+/**
+ * @brief Case-insensitive replace all occurrences of a hex color in a string.
+ * @param[in,out] ioStr The string to modify.
+ * @param[in] iFrom The color to find (lowercase, e.g., "#ffffff").
+ * @param[in] iTo The replacement string.
+ */
+void replaceColorInPlace(std::string& ioStr, const std::string& iFrom, const std::string& iTo) {
+	if (iFrom == iTo)
+		return;
+	// Build uppercase variant for case-insensitive matching.
+	std::string fromUpper = iFrom;
+	for (auto& ch: fromUpper) ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+	std::size_t pos = 0;
+	while (pos < ioStr.size()) {
+		// Try lowercase match.
+		if (const auto found = ioStr.find(iFrom, pos); found != std::string::npos) {
+			ioStr.replace(found, iFrom.size(), iTo);
+			pos = found + iTo.size();
+			continue;
+		}
+		// Try uppercase match.
+		if (const auto found = ioStr.find(fromUpper, pos); found != std::string::npos) {
+			ioStr.replace(found, fromUpper.size(), iTo);
+			pos = found + iTo.size();
+			continue;
+		}
+		break;
+	}
+}
+
+/**
+ * @brief Load an SVG file, apply theme color substitution, rasterize to RGBA pixels.
+ * @param[in] iPath The SVG file path.
+ * @param[in] iTargetSize Target pixel size (square).
+ * @param[in] iColors Theme colors for substitution.
+ * @return Owned pixel buffer (RGBA straight alpha, 4 bytes per pixel), or empty vector on failure.
+ */
+auto loadSvgFile(const std::filesystem::path& iPath, const uint32_t iTargetSize,
+				 const IconThemeColors& iColors) -> std::vector<uint8_t> {
+	auto svgContent = readFileAsString(iPath);
+	if (svgContent.empty())
+		return {};
+	// Apply theme color substitution in memory (never modifies the file).
+	replaceColorInPlace(svgContent, "#ffffff", colorToHex(iColors.primary));
+	replaceColorInPlace(svgContent, "#ff00ff", colorToHex(iColors.secondary));
+	// Rasterize via lunasvg.
+	const auto doc = lunasvg::Document::loadFromData(svgContent);
+	if (!doc)
+		return {};
+	const auto bitmap = doc->renderToBitmap(static_cast<int>(iTargetSize), static_cast<int>(iTargetSize));
+	if (bitmap.isNull())
+		return {};
+	// Convert from ARGB premultiplied (lunasvg) to RGBA straight alpha.
+	// Also flip vertically (lunasvg is top-down, OpenGL atlas expects bottom-up).
+	const auto pixelCount = static_cast<size_t>(iTargetSize) * iTargetSize;
+	std::vector<uint8_t> pixels(pixelCount * 4);
+	const auto* src = bitmap.data();
+	for (uint32_t y = 0; y < iTargetSize; ++y) {
+		const uint32_t flippedY = iTargetSize - 1 - y;
+		for (uint32_t x = 0; x < iTargetSize; ++x) {
+			const size_t srcIdx = (static_cast<size_t>(y) * iTargetSize + x) * 4;
+			const size_t dstIdx = (static_cast<size_t>(flippedY) * iTargetSize + x) * 4;
+			const uint8_t a = src[srcIdx + 3];
+			if (a == 0) {
+				pixels[dstIdx + 0] = 0;
+				pixels[dstIdx + 1] = 0;
+				pixels[dstIdx + 2] = 0;
+				pixels[dstIdx + 3] = 0;
+			} else {
+				// Unpremultiply and swizzle BGRA → RGBA.
+				pixels[dstIdx + 0] = static_cast<uint8_t>(static_cast<uint16_t>(src[srcIdx + 2]) * 255 / a);
+				pixels[dstIdx + 1] = static_cast<uint8_t>(static_cast<uint16_t>(src[srcIdx + 1]) * 255 / a);
+				pixels[dstIdx + 2] = static_cast<uint8_t>(static_cast<uint16_t>(src[srcIdx + 0]) * 255 / a);
+				pixels[dstIdx + 3] = a;
+			}
+		}
+	}
+	return pixels;
+}
+
+/**
  * @brief Simple box-filter downscale of an RGBA image.
- * @param[in] iSrc Source pixel data (RGBA, 4 bytes per pixel).
- * @param[in] iSrcSize Source dimensions (width, height).
- * @param[out] oDst Destination pixel buffer.
- * @param[in] iDstSize Destination dimensions (width, height).
  */
 void boxFilterDownscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize, std::span<uint8_t> oDst,
 						const math::vec2ui iDstSize) {
 	for (uint32_t dy = 0; dy < iDstSize.y(); ++dy) {
 		for (uint32_t dx = 0; dx < iDstSize.x(); ++dx) {
 			const math::vec2ui srcMin{dx * iSrcSize.x() / iDstSize.x(), dy * iSrcSize.y() / iDstSize.y()};
-			const math::vec2ui srcMax{(dx + 1) * iSrcSize.x() / iDstSize.x(), (dy + 1) * iSrcSize.y() / iDstSize.y()};
-
+			const math::vec2ui srcMax{(dx + 1) * iSrcSize.x() / iDstSize.x(),
+									  (dy + 1) * iSrcSize.y() / iDstSize.y()};
 			math::vec4ui accum{0, 0, 0, 0};
 			uint32_t count = 0;
 			for (uint32_t sy = srcMin.y(); sy < srcMax.y(); ++sy) {
@@ -83,12 +186,8 @@ void boxFilterDownscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSi
 
 /**
  * @brief Bilinear upscale of an RGBA image.
- * @param[in] iSrc Source pixel data (RGBA, 4 bytes per pixel).
- * @param[in] iSrcSize Source dimensions (width, height).
- * @param[out] oDst Destination pixel buffer.
- * @param[in] iDstSize Destination dimensions (width, height).
  */
-void bilinearUpscale(const std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize, std::span<uint8_t> oDst,
+void bilinearUpscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize, std::span<uint8_t> oDst,
 					 const math::vec2ui iDstSize) {
 	const float scaleX = static_cast<float>(iSrcSize.x()) / static_cast<float>(iDstSize.x());
 	const float scaleY = static_cast<float>(iSrcSize.y()) / static_cast<float>(iDstSize.y());
@@ -108,7 +207,8 @@ void bilinearUpscale(const std::span<const uint8_t> iSrc, const math::vec2ui iSr
 				const auto v10 = static_cast<float>(iSrc[(y0 * iSrcSize.x() + x1) * 4 + c]);
 				const auto v01 = static_cast<float>(iSrc[(y1 * iSrcSize.x() + x0) * 4 + c]);
 				const auto v11 = static_cast<float>(iSrc[(y1 * iSrcSize.x() + x1) * 4 + c]);
-				const float val = v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) + v01 * (1 - fx) * fy + v11 * fx * fy;
+				const float val =
+						v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) + v01 * (1 - fx) * fy + v11 * fx * fy;
 				oDst[dstIdx + c] = static_cast<uint8_t>(std::clamp(val, 0.f, 255.f));
 			}
 		}
@@ -118,8 +218,12 @@ void bilinearUpscale(const std::span<const uint8_t> iSrc, const math::vec2ui iSr
 }// namespace
 
 void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::path>>& iIcons,
-					 const uint32_t iCellSize) {
+					 const uint32_t iCellSize, const IconThemeColors& iColors) {
 	clear();
+
+	// Store for rebuild.
+	m_iconList = iIcons;
+	m_cellSize = iCellSize;
 
 	if (iIcons.empty())
 		return;
@@ -143,23 +247,32 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 			continue;
 		}
 
-		math::vec2ui srcSize{};
-		auto pixels = loadImageFile(filePath, srcSize);
+		std::vector<uint8_t> pixels;
+		const bool isSvg = filePath.extension() == ".svg";
+
+		if (isSvg) {
+			// Load SVG: rasterize at exact cell size with theme colors.
+			pixels = loadSvgFile(filePath, iCellSize, iColors);
+		} else {
+			// Load raster image (PNG/JPG) via stb_image.
+			math::vec2ui srcSize{};
+			pixels = loadImageFile(filePath, srcSize);
+			// Resize to cell size if needed.
+			if (!pixels.empty() && srcSize != cellSize) {
+				std::vector<uint8_t> resized(static_cast<size_t>(cellSize.x()) * cellSize.y() * 4);
+				if (srcSize.x() > cellSize.x() || srcSize.y() > cellSize.y()) {
+					boxFilterDownscale(pixels, srcSize, resized, cellSize);
+				} else {
+					bilinearUpscale(pixels, srcSize, resized, cellSize);
+				}
+				pixels = std::move(resized);
+			}
+		}
+
 		if (pixels.empty()) {
 			OWL_CORE_WARN("IconBank: failed to load icon: {}", filePath.string())
 			++index;
 			continue;
-		}
-
-		// Resize to cell size if needed
-		if (srcSize != cellSize) {
-			std::vector<uint8_t> resized(static_cast<size_t>(cellSize.x()) * cellSize.y() * 4);
-			if (srcSize.x() > cellSize.x() || srcSize.y() > cellSize.y()) {
-				boxFilterDownscale(pixels, srcSize, resized, cellSize);
-			} else {
-				bilinearUpscale(pixels, srcSize, resized, cellSize);
-			}
-			pixels = std::move(resized);
 		}
 
 		// Blit into atlas
@@ -181,7 +294,7 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 		const math::vec2 uvMax{static_cast<float>(cellOrigin.x() + cellSize.x()) / atlasF.x(),
 							   static_cast<float>(cellOrigin.y() + cellSize.y()) / atlasF.y()};
 
-		// Store UVs — Y-flip for engine convention (stb loads top-down, OpenGL is bottom-up)
+		// Store UVs — Y-flip for engine convention (top-down image data, bottom-up OpenGL)
 		m_uvMap[name] = {{uvMin.x(), uvMax.y()}, {uvMax.x(), uvMin.y()}};
 
 		++index;
@@ -196,6 +309,12 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 	if (m_atlas != nullptr) {
 		m_atlas->setData(atlasData.data(), static_cast<uint32_t>(atlasData.size()));
 	}
+}
+
+void IconBank::rebuild(const IconThemeColors& iColors) {
+	if (m_iconList.empty())
+		return;
+	build(m_iconList, m_cellSize, iColors);
 }
 
 auto IconBank::getIcon(const std::string& iName) const -> std::optional<IconInfo> {

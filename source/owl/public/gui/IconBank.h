@@ -16,10 +16,18 @@
 
 namespace owl::gui {
 
+/// Theme colors used for dynamic SVG icon rendering.
+struct OWL_API IconThemeColors {
+	/// Primary icon color (replaces white `#ffffff` in SVGs).
+	math::vec4 primary{1, 1, 1, 1};
+	/// Secondary/accent icon color (replaces fuchsia `#ff00ff` in SVGs).
+	math::vec4 secondary{1, 1, 0, 1};
+};
+
 /**
  * @brief A texture atlas that packs multiple icons into a single GPU texture.
  *
- * Icons are loaded from individual image files, optionally resized to a uniform cell size,
+ * Icons are loaded from SVG or image files, optionally with theme color substitution,
  * and packed into a grid atlas. Each icon can be looked up by name to get the atlas texture ID
  * and UV coordinates for rendering with ImGui.
  */
@@ -42,10 +50,24 @@ public:
 
 	/**
 	 * @brief Build the atlas from a list of named icon file paths.
-	 * @param[in] iIcons List of (name, file_path) pairs.
-	 * @param[in] iCellSize Target cell size for each icon in the atlas (icons are resized to fit).
+	 *
+	 * SVG files are rasterized via lunasvg with theme color substitution.
+	 * PNG/JPG files are loaded via stb_image (fallback).
+	 *
+	 * @param[in] iIcons List of (name, file_path) pairs (`.svg`, `.png`, or `.jpg`).
+	 * @param[in] iCellSize Target cell size for each icon in the atlas.
+	 * @param[in] iColors Theme colors for SVG rendering.
 	 */
-	void build(const std::vector<std::pair<std::string, std::filesystem::path>>& iIcons, uint32_t iCellSize = 128);
+	void build(const std::vector<std::pair<std::string, std::filesystem::path>>& iIcons, uint32_t iCellSize = 64,
+			   const IconThemeColors& iColors = {});
+
+	/**
+	 * @brief Rebuild the atlas with new theme colors.
+	 *
+	 * Re-renders all SVG icons using the stored icon list and new colors.
+	 * @param[in] iColors The new theme colors.
+	 */
+	void rebuild(const IconThemeColors& iColors);
 
 	/**
 	 * @brief Look up an icon by name.
@@ -87,13 +109,17 @@ public:
 	 * @return True if the menu item was clicked.
 	 */
 	auto menuItem(const std::string& iIconName, const char* iLabel, const char* iShortcut = nullptr,
-				 bool iEnabled = true) const -> bool;
+				  bool iEnabled = true) const -> bool;
 
 private:
 	/// The atlas texture.
 	shared<renderer::Texture2D> m_atlas;
 	/// Mapping from icon name to UV coordinates {uv0, uv1}.
 	std::unordered_map<std::string, std::pair<math::vec2, math::vec2>> m_uvMap;
+	/// Stored icon list for rebuild.
+	std::vector<std::pair<std::string, std::filesystem::path>> m_iconList;
+	/// Stored cell size for rebuild.
+	uint32_t m_cellSize = 64;
 };
 
 }// namespace owl::gui

@@ -34,6 +34,9 @@ packages:
   libdwarf:
     version: 2.2.0
     kind: "static"
+  lunasvg:
+    version: 3.5.0
+    kind: "static"
   libpng:
     version: 1.6.50
     kind: "shared"

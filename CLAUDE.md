@@ -115,15 +115,18 @@ vector). Every entity has this component; root entities have `parentId == 0`.
 
 ### Icon System
 
-Editor icons use SVG sources rasterized to PNG. SVG and PNG share identical directory structure:
+Editor icons are **SVG files loaded at runtime** via lunasvg with dynamic theme color substitution.
 
-- **SVG sources**: `source/owlnest/assets_sources/icons/<category>/`
-- **PNG outputs**: `source/owlnest/assets/icons/<category>/`
-- **Categories**: `toolbar/` (64px), `browser/` (512px), `visibility/` (32px), `triggers/` (32px),
-  `components/` (32px), `panels/` (32px), `actions/` (32px), `templates/` (SVG only)
-- **Rasterization**: `poetry run python source/owlnest/assets/icons/generate_icons.py` (uses `cairosvg`)
-- **Runtime**: `IconBank` packs PNGs into a 64px-cell GPU atlas with mipmaps
-- **Adding an icon**: create SVG in the right category dir, run the rasterizer, register in `buildIconBank()`
+- **SVG sources**: `source/owlnest/assets_sources/icons/<category>/` — never modified programmatically
+- **Categories**: `toolbar/`, `browser/`, `visibility/`, `triggers/`, `components/`, `panels/`, `actions/`,
+  `templates/` (not rendered)
+- **Runtime**: `IconBank::build()` loads SVGs, substitutes white (`#ffffff`) → theme text color and
+  fuchsia (`#ff00ff`) → theme accent color in memory, rasterizes via lunasvg, packs into 64px atlas with mipmaps
+- **Theme rebuild**: `IconBank::rebuild(colors)` re-rasterizes all SVGs when the theme changes
+- **Scene icons**: trigger overlay PNGs (512x512) pre-rasterized via
+  `poetry run python source/owlnest/assets/icons/generate_icons.py` (uses `cairosvg`)
+- **Adding an icon**: create SVG in the right category dir in `assets_sources/icons/`, register in
+  `buildIconBank()` in `EditorLayer.cpp`
 
 ### CMake modules (`cmake/`)
 
@@ -172,8 +175,8 @@ The engine includes a task scheduler for asynchronous work, backed by [Taskflow]
 - Key libraries: EnTT (ECS), ImGui/ImGuizmo (GUI), Box2D (physics), spdlog (logging), yaml-cpp (serialization), Vulkan
   SDK, GLFW, OpenAL, glad, freetype, msdfgen/msdf-atlas-gen (fonts), tinygltf/tinyobjloader/ufbx (mesh loading),
   magic_enum (enum reflection), cpptrace/libdwarf/debugbreak (debugging), zeus (math), nfd (file dialogs), tinyxml2
-  (XML), libpng, zlib/zstd (compression), libsndfile (audio files), stb_image (image loading), googletest (testing),
-  mavsdk (drone MAVLink SDK), Taskflow (task parallelism)
+  (XML), libpng, zlib/zstd (compression), libsndfile (audio files), stb_image (image loading), lunasvg (SVG rendering),
+  googletest (testing), mavsdk (drone MAVLink SDK), Taskflow (task parallelism)
 
 ## DepManager (`dmgr`) Usage
 

@@ -12,6 +12,8 @@ Unordered ideas and long-term goals.
     - <span class="badge-planned">Planned</span> HUD display
     - <span class="badge-planned">Planned</span> Animated textures
     - <span class="badge-planned">Planned</span> Advanced materials
+    - <span class="badge-planned">Planned</span> Basic 3D rendering
+        - <span class="badge-planned">Planned</span> Simple lighting
 - Gameplay
     - <span class="badge-planned">Planned</span> Inventory system
     - <span class="badge-planned">Planned</span> Collectible objects
@@ -19,9 +21,28 @@ Unordered ideas and long-term goals.
     - <span class="badge-planned">Planned</span> Key-locked switches
         - Part of inventory
     - <span class="badge-planned">Planned</span> Enemies
-- Game Designer (Owl Map)
+- Game Designer (Owl Nest)
     - <span class="badge-planned">Planned</span> Menu edition
-    - <span class="badge-planned">Planned</span> Node editing
+    - <span class="badge-planned">Planned</span> Multiple open scene support editing
+- Scene
+    - <span class="badge-planned">Planned</span> Scene scripting
+        - Lua or similar embedded language
+    - <span class="badge-planned">Planned</span> More Scene events and triggers
+        - E.g. on enter, on interact, on timer, etc.
+        - Trigger actions: play sound, change scene, modify objects, etc.
+        - Event parameters: e.g. trigger volume, interaction range, timer duration, etc.
+        - Editor support for placing triggers and defining events
+    - <span class="badge-planned">Planned</span> Allow common properties across different scene (player spawn point,
+      lighting, background, etc.)
+- Objects
+    - <span class="badge-planned">Planned</span> Basic mesh manipulation
+        - Scale, rotate, translate
+    - <span class="badge-planned">Planned</span> Mesh collision
+    - <span class="badge-planned">Planned</span> Mesh materials
+        - Basic colors and textures
+- Miscellaneous
+    - <span class="badge-planned">Planned</span> Different scene types
+        - Games and menus
 
 ## v0.0.3 -- Expected 2026-07-01
 
@@ -35,21 +56,12 @@ Unordered ideas and long-term goals.
     - <span class="badge-planned">Planned</span> Moving sound
 - Graphics
     - <span class="badge-planned">Planned</span> Animated sprites
-    - <span class="badge-planned">Planned</span> Basic 3D rendering
-        - <span class="badge-planned">Planned</span> Simple lighting
 - Objects
     - <span class="badge-done">Done</span> Mesh object support
     - <span class="badge-done">Done</span> Mesh loading (OBJ, glTF, GLB, FBX)
         - Via tinygltf, tinyobjloader, ufbx
-    - <span class="badge-planned">Planned</span> Basic mesh manipulation
-        - Scale, rotate, translate
-    - <span class="badge-planned">Planned</span> Mesh collision
-    - <span class="badge-planned">Planned</span> Mesh materials
-        - Basic colors and textures
 - Miscellaneous
-    - <span class="badge-planned">Planned</span> Different scene types
-        - Games and menus
-    - <span class="badge-planned">Planned</span> Configurable keymap
+    - <span class="badge-done">Done</span> Configurable keymap
 - Scene
     - <span class="badge-done">Done</span> Scene hierarchy (parent-child entities)
         - Transform and visibility inheritance
@@ -75,14 +87,13 @@ Unordered ideas and long-term goals.
         - Tree display with drag-drop reparenting
         - Context menu: create root/child entity, duplicate/subtree, unparent, delete/cascade
         - Visibility toggle buttons per entity (editor + game)
-    - <span class="badge-done">Done</span> Icon system overhaul
+    - <span class="badge-done">Done</span> Icon system with runtime SVG rendering
         - SVG sources organized by usage (toolbar, browser, components, actions, etc.)
-        - Rasterized to PNG at tier-appropriate sizes (512/64/32)
-        - Atlas with mipmaps and bilinear filtering
-    - <span class="badge-planned">Planned</span> Runtime SVG icon rendering
-        - Load SVGs at runtime (lunasvg), dynamic theme colors
-    - <span class="badge-planned">Planned</span> View of level links
-    - <span class="badge-planned">Planned</span> Separate editor/game display
+        - Runtime rasterization via lunasvg with dynamic theme color substitution
+        - White → theme text color, fuchsia → theme accent color
+        - Atlas with mipmaps, rebuild on theme change
+    - <span class="badge-done">Done</span> View of level links
+    - <span class="badge-done">Done</span> Separate editor/game display
         - Entities rendered differently
 
 ## v0.0.2 -- 2026-03-03
