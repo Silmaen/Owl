@@ -77,13 +77,94 @@ public:
 		return false;
 	}
 	/**
-	 * @brief Play a sound.
+	 * @brief Play a sound (fire-and-forget, backward compatibility).
 	 * @param[in] iData The Sound to play.
 	 */
 	static void playSound(const shared<SoundData>& iData) {
 		if (m_soundApi)
 			m_soundApi->playSound(iData);
 	}
+
+	/**
+	 * @brief Play a sound with full parameters.
+	 * @param[in] iData The Sound to play.
+	 * @param[in] iParams The playback parameters.
+	 * @return Handle to the sound source for subsequent control.
+	 */
+	static auto play(const shared<SoundData>& iData, const PlayParams& iParams) -> SoundHandle;
+
+	/**
+	 * @brief Stop a playing sound.
+	 * @param[in] iHandle The sound handle.
+	 */
+	static void stop(SoundHandle iHandle);
+
+	/**
+	 * @brief Pause a playing sound.
+	 * @param[in] iHandle The sound handle.
+	 */
+	static void pause(SoundHandle iHandle);
+
+	/**
+	 * @brief Resume a paused sound.
+	 * @param[in] iHandle The sound handle.
+	 */
+	static void resume(SoundHandle iHandle);
+
+	/**
+	 * @brief Set the volume of a sound source.
+	 * @param[in] iHandle The sound handle.
+	 * @param[in] iVolume The volume gain.
+	 */
+	static void setVolume(SoundHandle iHandle, float iVolume);
+
+	/**
+	 * @brief Set the pitch of a sound source.
+	 * @param[in] iHandle The sound handle.
+	 * @param[in] iPitch The pitch multiplier.
+	 */
+	static void setPitch(SoundHandle iHandle, float iPitch);
+
+	/**
+	 * @brief Set whether a sound source loops.
+	 * @param[in] iHandle The sound handle.
+	 * @param[in] iLoop True to loop.
+	 */
+	static void setLoop(SoundHandle iHandle, bool iLoop);
+
+	/**
+	 * @brief Set the 3D position of a sound source.
+	 * @param[in] iHandle The sound handle.
+	 * @param[in] iPosition The 3D position.
+	 */
+	static void setPosition(SoundHandle iHandle, const math::vec3f& iPosition);
+
+	/**
+	 * @brief Set the 3D velocity of a sound source.
+	 * @param[in] iHandle The sound handle.
+	 * @param[in] iVelocity The 3D velocity.
+	 */
+	static void setVelocity(SoundHandle iHandle, const math::vec3f& iVelocity);
+
+	/**
+	 * @brief Set the listener 3D position.
+	 * @param[in] iPosition The listener position.
+	 */
+	static void setListenerPosition(const math::vec3f& iPosition);
+
+	/**
+	 * @brief Set the listener orientation.
+	 * @param[in] iForward The forward direction vector.
+	 * @param[in] iUp The up direction vector.
+	 */
+	static void setListenerOrientation(const math::vec3f& iForward, const math::vec3f& iUp);
+
+	/**
+	 * @brief Check if a sound source is currently playing.
+	 * @param[in] iHandle The sound handle.
+	 * @return True if the source is playing.
+	 */
+	[[nodiscard]] static auto isPlaying(SoundHandle iHandle) -> bool;
 
 	/**
 	 * @brief The function to call every frame.

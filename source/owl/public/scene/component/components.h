@@ -17,6 +17,8 @@
 #include "NativeScript.h"
 #include "PhysicBody.h"
 #include "Player.h"
+#include "SoundListener.h"
+#include "SoundSource.h"
 #include "SpriteRenderer.h"
 #include "Tag.h"
 #include "Text.h"
@@ -34,7 +36,8 @@ concept isComponent = std::is_same_v<Component, BackgroundTexture> || std::is_sa
 					  std::is_same_v<Component, CircleRenderer> || std::is_same_v<Component, EntityLink> ||
 					  std::is_same_v<Component, Hierarchy> || std::is_same_v<Component, ID> ||
 					  std::is_same_v<Component, NativeScript> || std::is_same_v<Component, PhysicBody> ||
-					  std::is_same_v<Component, Player> || std::is_same_v<Component, SpriteRenderer> ||
+					  std::is_same_v<Component, Player> || std::is_same_v<Component, SoundListener> ||
+					  std::is_same_v<Component, SoundSource> || std::is_same_v<Component, SpriteRenderer> ||
 					  std::is_same_v<Component, Tag> || std::is_same_v<Component, Text> ||
 					  std::is_same_v<Component, Transform> || std::is_same_v<Component, Trigger> ||
 					  std::is_same_v<Component, Visibility>;
@@ -72,14 +75,16 @@ concept isDeserializableComponent =
  * @note All except ID and Tag.
  */
 using CopiableComponents = std::tuple<Transform, Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody, Player,
-									  Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy>;
+									  Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy, SoundSource,
+									  SoundListener>;
 
 /**
  * @brief List all serializable components.
  * @note All except ID which is serialized directly in the entity.
  */
 using SerializableComponents = std::tuple<Tag, Transform, Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody,
-										  Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy>;
+										  Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy,
+										  SoundSource, SoundListener>;
 
 /**
  * @brief List all optional components.
@@ -87,6 +92,6 @@ using SerializableComponents = std::tuple<Tag, Transform, Camera, SpriteRenderer
  */
 using OptionalComponents =
 		std::tuple<Camera, SpriteRenderer, CircleRenderer, Text, PhysicBody, Player, Trigger, EntityLink,
-				   BackgroundTexture>;
+				   BackgroundTexture, SoundSource, SoundListener>;
 
 }// namespace owl::scene::component

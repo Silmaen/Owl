@@ -19,10 +19,11 @@ The full generated documentation is available online:
 
 **Documentation pages** ([browse on GitHub](doc/pages)):
 
-- \subpage architecture -- Engine modules, backends, and shader pipeline
-- \subpage building -- Prerequisites, presets, testing, and CMake options
-- \subpage roadmap -- Planned and completed features by version
-- \subpage contributing -- Code style, conventions, and workflow
+- [Architecture](doc/pages/architecture.md) -- Engine modules, backends, and shader pipeline
+- [Sound System](doc/pages/sound.md) -- Sound system: components, spatial audio, and gameplay triggers
+- [Building](doc/pages/building.md) -- Prerequisites, presets, testing, and CMake options
+- [Roadmap](doc/pages/roadmap.md) -- Planned and completed features by version
+- [Contributing](doc/pages/contributing.md) -- Code style, conventions, and workflow
 
 ## Features
 
@@ -73,7 +74,7 @@ cmake --build output/build/linux-gcc-release
 ctest --test-dir output/build/linux-gcc-release --output-on-failure
 ```
 
-See @ref building for the full build guide and all available presets.
+See [Building](doc/pages/building.md) for the full build guide and all available presets.
 
 ## Dependencies
 

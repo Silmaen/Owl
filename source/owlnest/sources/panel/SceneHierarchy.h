@@ -75,9 +75,9 @@ private:
 	void drawEntityNode(const scene::Entity& iEntity);
 	/**
 	 * @brief Draw the properties of a component
-	 * @param[in,out] ioEntity The entity
+	 * @param[in,out] iEntity The entity
 	 */
-	void drawComponents(scene::Entity& ioEntity);
+	void drawComponents(const scene::Entity& iEntity);
 	/// The scene
 	shared<scene::Scene> m_context = nullptr;
 	/// The selected item

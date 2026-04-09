@@ -47,13 +47,22 @@ Unordered ideas and long-term goals.
 ## v0.0.3 -- Expected 2026-07-01
 
 - Sound
-    - <span class="badge-planned">Planned</span> Sound effects
-    - <span class="badge-planned">Planned</span> Music
-    - <span class="badge-planned">Planned</span> Sound management
-        - Play, stop, loop, volume, etc.
-    - <span class="badge-planned">Planned</span> Sound spatialization
-        - 3D positional audio
-    - <span class="badge-planned">Planned</span> Moving sound
+    - <span class="badge-done">Done</span> Sound effects
+        - One-shot and looping playback via SoundSource component
+        - SoundHelper for gameplay-triggered sounds
+    - <span class="badge-done">Done</span> Music
+        - Background music as SoundSource with loop and non-spatial settings
+        - Category system (SFX, Music, Ambient) for future per-category mixing
+    - <span class="badge-done">Done</span> Sound management
+        - Play, stop, pause, resume, loop, volume, pitch
+        - SoundHandle-based control of individual sound sources
+        - Extended format support (.wav, .ogg, .flac, .mp3)
+    - <span class="badge-done">Done</span> Sound spatialization
+        - 3D positional audio via OpenAL with distance attenuation
+        - SoundListener component marks the "ear" entity
+        - Configurable max distance and rolloff per source
+    - <span class="badge-done">Done</span> Moving sound
+        - Spatial source positions synced from entity world transforms each frame
 - Graphics
     - <span class="badge-planned">Planned</span> Animated sprites
 - Objects

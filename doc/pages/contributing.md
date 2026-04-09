@@ -17,22 +17,22 @@ and static analysis.
 
 ### Naming Conventions
 
-| Element            | Convention        | Example              |
-|--------------------|-------------------|----------------------|
-| Member variables   | `m_` prefix       | `m_width`            |
-| Input parameters   | `i` prefix        | `iFilename`          |
-| Output parameters  | `o` prefix        | `oResult`            |
-| In/out parameters  | `io` prefix       | `ioBuffer`           |
-| Local variables    | camelCase          | `frameCount`         |
+| Element           | Convention  | Example      |
+|-------------------|-------------|--------------|
+| Member variables  | `m_` prefix | `m_width`    |
+| Input parameters  | `i` prefix  | `iFilename`  |
+| Output parameters | `o` prefix  | `oResult`    |
+| In/out parameters | `io` prefix | `ioBuffer`   |
+| Local variables   | camelCase   | `frameCount` |
 
 ### Smart Pointers
 
 Use Owl aliases instead of `std` types:
 
-| Owl Alias          | Standard Equivalent              |
-|--------------------|----------------------------------|
-| `shared<T>`        | `std::shared_ptr<T>`             |
-| `mkShared<T>()`    | `std::make_shared<T>()`          |
+| Owl Alias       | Standard Equivalent     |
+|-----------------|-------------------------|
+| `shared<T>`     | `std::shared_ptr<T>`    |
+| `mkShared<T>()` | `std::make_shared<T>()` |
 
 ### Enumerations
 
@@ -67,19 +67,19 @@ Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager) 
    ```
 3. Do **not** call `find_package()` directly for DepManager-managed dependencies
 
-See @ref building for the full build setup.
+See [Building](building.md) for the full build setup.
 
 ## Logging
 
 Use the engine logging macros:
 
-| Level     | Engine Macro           | Client Macro      |
-|-----------|------------------------|--------------------|
-| Trace     | `OWL_CORE_TRACE`       | `OWL_TRACE`       |
-| Info      | `OWL_CORE_INFO`        | `OWL_INFO`        |
-| Warning   | `OWL_CORE_WARN`        | `OWL_WARN`        |
-| Error     | `OWL_CORE_ERROR`       | `OWL_ERROR`       |
-| Critical  | `OWL_CORE_CRITICAL`    | `OWL_CRITICAL`    |
+| Level    | Engine Macro        | Client Macro   |
+|----------|---------------------|----------------|
+| Trace    | `OWL_CORE_TRACE`    | `OWL_TRACE`    |
+| Info     | `OWL_CORE_INFO`     | `OWL_INFO`     |
+| Warning  | `OWL_CORE_WARN`     | `OWL_WARN`     |
+| Error    | `OWL_CORE_ERROR`    | `OWL_ERROR`    |
+| Critical | `OWL_CORE_CRITICAL` | `OWL_CRITICAL` |
 
 ## Git Workflow
 

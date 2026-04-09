@@ -17,6 +17,8 @@
 #include "input/Input.h"
 #include "physic/PhysicCommand.h"
 #include "scene/component/components.h"
+#include "sound/SoundCommand.h"
+#include "sound/SoundSystem.h"
 
 namespace owl::scene {
 namespace {
@@ -136,10 +138,57 @@ void Scene::onStartRuntime() {
 	OWL_PROFILE_FUNCTION()
 	status = Status::Playing;
 	physic::PhysicCommand::init(this);
+
+	// Initialize sound listener from primary SoundListener entity
+	for (const auto view = registry.view<component::Transform, component::SoundListener>(); const auto entity: view) {
+		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
+			listener.primary) {
+			const Entity ent{entity, this};
+			const auto wt = getWorldTransform(ent);
+			sound::SoundCommand::setListenerPosition(
+					{wt.translation().x(), wt.translation().y(), wt.translation().z()});
+			// Derive forward/up from rotation (Z-axis rotation for 2D)
+			const float rotZ = wt.rotation().z();
+			sound::SoundCommand::setListenerOrientation({std::sin(rotZ), std::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
+			break;
+		}
+	}
+	// Start sounds with playOnStart
+	if (sound::SoundSystem::getState() != sound::SoundSystem::State::Running &&
+		sound::SoundSystem::getState() != sound::SoundSystem::State::Error)
+		return;
+	auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
+	for (const auto view = registry.view<component::Transform, component::SoundSource>(); const auto entity: view) {
+		auto& [soundComp] = view.get<component::SoundSource>(entity);
+		if (!soundComp.playOnStart || soundComp.soundAsset.empty())
+			continue;
+		const auto soundData = soundLibrary.get(soundComp.soundAsset);
+		if (!soundData)
+			continue;
+		const Entity ent{entity, this};
+		const auto wt = getWorldTransform(ent);
+		const sound::PlayParams params{.volume = soundComp.volume,
+									   .pitch = soundComp.pitch,
+									   .loop = soundComp.loop,
+									   .spatial = soundComp.spatial,
+									   .position = {wt.translation().x(), wt.translation().y(), wt.translation().z()},
+									   .maxDistance = soundComp.maxDistance,
+									   .rolloff = soundComp.rolloff};
+		soundComp.runtimeHandle = sound::SoundCommand::play(soundData, params);
+	}
 }
 
 void Scene::onEndRuntime() {
 	OWL_PROFILE_FUNCTION()
+
+	// Stop all active sounds
+	for (const auto view = registry.view<component::SoundSource>(); const auto entity: view) {
+		if (auto& [soundComp] = view.get<component::SoundSource>(entity);
+			soundComp.runtimeHandle != sound::invalidSoundHandle) {
+			sound::SoundCommand::stop(soundComp.runtimeHandle);
+			soundComp.runtimeHandle = sound::invalidSoundHandle;
+		}
+	}
 
 	physic::PhysicCommand::destroy();
 	status = Status::Editing;
@@ -247,6 +296,29 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 		} else {
 			transform.transform.translation() = linkedWorld.translation();
 		}
+	}
+
+	// Sound: update listener and spatial source positions
+	for (const auto view = registry.view<component::Transform, component::SoundListener>(); const auto entity: view) {
+		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
+			listener.primary) {
+			const Entity ent{entity, this};
+			const auto wt = getWorldTransform(ent);
+			sound::SoundCommand::setListenerPosition(
+					{wt.translation().x(), wt.translation().y(), wt.translation().z()});
+			const float rotZ = wt.rotation().z();
+			sound::SoundCommand::setListenerOrientation({std::sin(rotZ), std::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
+			break;
+		}
+	}
+	for (const auto view = registry.view<component::Transform, component::SoundSource>(); const auto entity: view) {
+		auto& [soundComp] = view.get<component::SoundSource>(entity);
+		if (soundComp.runtimeHandle == sound::invalidSoundHandle || !soundComp.spatial)
+			continue;
+		const Entity ent{entity, this};
+		const auto wt = getWorldTransform(ent);
+		sound::SoundCommand::setPosition(soundComp.runtimeHandle,
+										 {wt.translation().x(), wt.translation().y(), wt.translation().z()});
 	}
 
 	// Trigger
@@ -761,5 +833,14 @@ OWL_API void Scene::onComponentAdded<component::Visibility>([[maybe_unused]] con
 template<>
 OWL_API void Scene::onComponentAdded<component::Hierarchy>([[maybe_unused]] const Entity& iEntity,
 														   [[maybe_unused]] component::Hierarchy& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::SoundSource>([[maybe_unused]] const Entity& iEntity,
+															 [[maybe_unused]] component::SoundSource& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::SoundListener>([[maybe_unused]] const Entity& iEntity,
+															   [[maybe_unused]] component::SoundListener& ioComponent) {
+}
 
 }// namespace owl::scene

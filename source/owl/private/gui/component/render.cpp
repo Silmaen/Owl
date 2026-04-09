@@ -324,4 +324,29 @@ void renderProps(Visibility& ioComponent) {
 	ImGui::Checkbox("Editor Visible", &ioComponent.editorVisible);
 }
 
+void renderProps(SoundSource& ioComponent) {
+	ImGui::InputText("Sound Asset", &ioComponent.sound.soundAsset);
+	const std::string currentCategory{magic_enum::enum_name(ioComponent.sound.category)};
+	if (ImGui::BeginCombo("Category", currentCategory.c_str())) {
+		for (const auto& catName: magic_enum::enum_names<SceneSound::Category>()) {
+			const std::string sName{catName};
+			if (ImGui::Selectable(sName.c_str(), currentCategory == sName))
+				ioComponent.sound.category =
+						magic_enum::enum_cast<SceneSound::Category>(sName).value_or(SceneSound::Category::SFX);
+		}
+		ImGui::EndCombo();
+	}
+	ImGui::DragFloat("Volume", &ioComponent.sound.volume, 0.01f, 0.0f, 2.0f);
+	ImGui::DragFloat("Pitch", &ioComponent.sound.pitch, 0.01f, 0.1f, 3.0f);
+	ImGui::Checkbox("Loop", &ioComponent.sound.loop);
+	ImGui::Checkbox("Spatial", &ioComponent.sound.spatial);
+	ImGui::Checkbox("Play On Start", &ioComponent.sound.playOnStart);
+	if (ioComponent.sound.spatial) {
+		ImGui::DragFloat("Max Distance", &ioComponent.sound.maxDistance, 0.5f, 1.0f, 500.0f);
+		ImGui::DragFloat("Rolloff", &ioComponent.sound.rolloff, 0.01f, 0.0f, 10.0f);
+	}
+}
+
+void renderProps(SoundListener& ioComponent) { ImGui::Checkbox("Primary", &ioComponent.primary); }
+
 }// namespace owl::gui::component

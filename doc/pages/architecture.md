@@ -6,23 +6,25 @@ This page describes the high-level architecture of the Owl engine.
 
 ## Engine Modules
 
+![Engine Architecture](../images/engine_architecture.svg)
+
 The engine library (`source/owl/`) is organized into the following modules:
 
-| Module       | Description                                                  |
-|--------------|--------------------------------------------------------------|
-| `core`       | Application lifecycle, logging, assertions, smart pointers   |
-| `renderer`   | Rendering abstraction, buffers, shaders, framebuffers        |
-| `scene`      | Entity-Component-System (EnTT), scene graph, components      |
-| `physic`     | 2D physics (Box2D integration)                               |
-| `sound`      | Audio playback and device management                         |
-| `input`      | Keyboard, mouse, and gamepad input abstraction               |
-| `window`     | Window creation and management                               |
-| `gui`        | ImGui/ImGuizmo integration for editor UI                     |
-| `data`       | Geometry, mesh loading (OBJ, glTF, FBX), data structures     |
-| `math`       | Math utilities (zeus library)                                |
-| `debug`      | Profiling, memory tracking, stack traces (cpptrace)          |
-| `event`      | Event system (application, input, window events)             |
-| `io`         | File I/O, serialization (YAML, XML)                          |
+| Module     | Description                                                |
+|------------|------------------------------------------------------------|
+| `core`     | Application lifecycle, logging, assertions, smart pointers |
+| `renderer` | Rendering abstraction, buffers, shaders, framebuffers      |
+| `scene`    | Entity-Component-System (EnTT), scene graph, components    |
+| `physic`   | 2D physics (Box2D integration)                             |
+| `sound`    | Audio playback and device management                       |
+| `input`    | Keyboard, mouse, and gamepad input abstraction             |
+| `window`   | Window creation and management                             |
+| `gui`      | ImGui/ImGuizmo integration for editor UI                   |
+| `data`     | Geometry, mesh loading (OBJ, glTF, FBX), data structures   |
+| `math`     | Math utilities (zeus library)                              |
+| `debug`    | Profiling, memory tracking, stack traces (cpptrace)        |
+| `event`    | Event system (application, input, window events)           |
+| `io`       | File I/O, serialization (YAML, XML)                        |
 
 Public headers live in `source/owl/public/` and implementation files in `source/owl/private/`,
 both mirroring the module structure.
@@ -31,38 +33,56 @@ both mirroring the module structure.
 
 Owl uses a backend abstraction so that different platform APIs can be swapped at runtime.
 
+![Backend Abstraction](../images/backend_abstraction.svg)
+
 ### Graphics Backends
 
-| Backend    | API          | Notes                                           |
-|------------|--------------|-------------------------------------------------|
-| `OpenGL`   | OpenGL 4.5   | Widely supported on desktop; limited on ARM64   |
-| `Vulkan`   | Vulkan 1.3+  | Modern low-level API; full desktop support      |
-| `Null`     | None         | Headless mode for servers or testing            |
+| Backend  | API         | Notes                                         |
+|----------|-------------|-----------------------------------------------|
+| `OpenGL` | OpenGL 4.5  | Widely supported on desktop; limited on ARM64 |
+| `Vulkan` | Vulkan 1.3+ | Modern low-level API; full desktop support    |
+| `Null`   | None        | Headless mode for servers or testing          |
 
 ### Input Backends
 
-| Backend | Library | Notes                              |
-|---------|---------|------------------------------------|
-| `GLFW`  | GLFW    | Windowing, keyboard, mouse, gamepad|
-| `Null`  | None    | Headless mode                      |
+| Backend | Library | Notes                               |
+|---------|---------|-------------------------------------|
+| `GLFW`  | GLFW    | Windowing, keyboard, mouse, gamepad |
+| `Null`  | None    | Headless mode                       |
 
 ### Sound Backends
 
-| Backend  | Library | Notes                             |
-|----------|---------|-----------------------------------|
-| `OpenAL` | OpenAL  | Audio playback and spatial sound  |
-| `Null`   | None    | Silent mode                       |
+| Backend  | Library | Notes                            |
+|----------|---------|----------------------------------|
+| `OpenAL` | OpenAL  | Audio playback and spatial sound |
+| `Null`   | None    | Silent mode                      |
+
+## Sound System
+
+The sound module provides audio playback through a backend-agnostic API.
+
+![Sound Architecture](../images/sound_architecture.svg)
+
+The system follows the same abstraction pattern as graphics and input:
+`SoundCommand` delegates to a `SoundAPI` implementation (OpenAL or Null),
+selected at application startup.
+
+At the scene level, **SoundSource** and **SoundListener** ECS components
+drive spatial audio during runtime. The OpenAL backend uses the inverse-distance-clamped
+attenuation model for 3D positional sound.
+
+See [Sound System](sound.md) for the full user guide covering components, spatial audio, and gameplay triggers.
 
 ## Applications
 
 The project produces several executables built on top of the `OwlEngine` shared library:
 
-| Application | Directory          | Description                                    |
-|-------------|--------------------|------------------------------------------------|
+| Application | Directory          | Description                                                        |
+|-------------|--------------------|--------------------------------------------------------------------|
 | Owl Nest    | `source/owlnest/`  | Scene editor with project management (editor + runner executables) |
-| Owl Drone   | `source/owldrone/` | Drone navigator (MAVLink via MAVSDK)            |
-| Owl Cast    | `source/owlcast/`  | Cast application                                |
-| Sandbox     | `source/sandbox/`  | Testing and prototyping playground              |
+| Owl Drone   | `source/owldrone/` | Drone navigator (MAVLink via MAVSDK)                               |
+| Owl Cast    | `source/owlcast/`  | Cast application                                                   |
+| Sandbox     | `source/sandbox/`  | Testing and prototyping playground                                 |
 
 ## Project System
 
@@ -82,20 +102,29 @@ Import Scene** menu item.
 
 ## Shader Pipeline
 
+![Shader Pipeline](../images/shader_pipeline.svg)
+
 Shaders are written in **Slang** (`.slang` files), a single-source shading language:
 
 1. **Source**: `engine_assets/shaders/<renderer>/slang/<name>.slang`
-2. **Compilation**: `compileSlangToSpirv()` compiles Slang to SPIR-V at runtime using the Slang C++ API, with `BACKEND_VULKAN` or `BACKEND_OPENGL` preprocessor defines
-3. **Reflection**: `shaderReflect()` uses spirv-cross to extract uniform buffers and sampled images from the SPIR-V bytecode
+2. **Compilation**: `compileSlangToSpirv()` compiles Slang to SPIR-V at runtime using the Slang C++ API, with
+   `BACKEND_VULKAN` or `BACKEND_OPENGL` preprocessor defines
+3. **Reflection**: `shaderReflect()` uses spirv-cross to extract uniform buffers and sampled images from the SPIR-V
+   bytecode
 4. **Caching**: SPIR-V binaries are cached as `.spv` files with hash-based validation
 
 Key conventions:
+
 - Entry points: `[shader("vertex")] vertexMain` and `[shader("fragment")] fragmentMain`
 - Matrices: `column_major float4x4` for C++ interop (Slang defaults to row-major)
 - Vulkan bindings: `[[vk::binding(N)]]` for explicit descriptor bindings
 - Backend branching: `#ifdef BACKEND_VULKAN` for texture binding differences
 
 ## Scene Hierarchy
+
+![Scene Lifecycle](../images/scene_lifecycle.svg)
+
+![ECS Pipeline](../images/ecs_pipeline.svg)
 
 Entities support parent-child relationships via the **Hierarchy** component (mandatory on every entity).
 
@@ -117,25 +146,25 @@ If any ancestor is hidden (editor or game mode), the entity is effectively hidde
 
 ### Hierarchy Operations
 
-| Operation | Behavior |
-|-----------|----------|
-| **Set parent** | Circular reference check, local transform recomputed to preserve world position |
-| **Unparent** | Entity becomes root, world transform stored as new local |
-| **Delete entity** | Children reparented to grandparent (or root); world position preserved |
-| **Delete with children** | Cascade delete of entire subtree |
-| **Duplicate entity** | Duplicate is a root entity with no children |
-| **Duplicate subtree** | Recursive duplicate with new UUIDs and correct parent references |
+| Operation                | Behavior                                                                        |
+|--------------------------|---------------------------------------------------------------------------------|
+| **Set parent**           | Circular reference check, local transform recomputed to preserve world position |
+| **Unparent**             | Entity becomes root, world transform stored as new local                        |
+| **Delete entity**        | Children reparented to grandparent (or root); world position preserved          |
+| **Delete with children** | Cascade delete of entire subtree                                                |
+| **Duplicate entity**     | Duplicate is a root entity with no children                                     |
+| **Duplicate subtree**    | Recursive duplicate with new UUIDs and correct parent references                |
 
 ### Physics and Hierarchy
 
 Physics bodies (Box2D) operate in **world space** independently of the scene hierarchy.
 The hierarchy does **not** create physical constraints between entities.
 
-| Situation | Behavior |
-|-----------|----------|
+| Situation                                | Behavior                                                                                                                                    |
+|------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
 | Non-physics parent moves → physics child | Child **stays in place** (Box2D controls its world position). Its local transform is recalculated each frame relative to the moving parent. |
-| Physics parent falls → physics child | Each body moves **independently** according to Box2D simulation. No physical link. |
-| Physics parent moves → non-physics child | Child **follows** the parent via transform inheritance (normal hierarchy behavior). |
+| Physics parent falls → physics child     | Each body moves **independently** according to Box2D simulation. No physical link.                                                          |
+| Physics parent moves → non-physics child | Child **follows** the parent via transform inheritance (normal hierarchy behavior).                                                         |
 
 To physically attach a child body to a parent body (e.g., an object welded to a platform),
 use Box2D joints (weld, revolute, etc.) — this is separate from the hierarchy system.
@@ -161,16 +190,16 @@ Editor icons are **SVG files loaded and rasterized at runtime** via
 
 SVG sources are organized by usage in `source/owlnest/assets_sources/icons/`:
 
-| Directory      | Content                                           |
-|----------------|---------------------------------------------------|
-| `toolbar/`     | Playback buttons (play, pause, stop, step), gizmo controls (ctrl_*) |
-| `browser/`     | Content browser file type icons (folder, glsl, png, ...) |
-| `visibility/`  | Eye/camera visibility toggles                     |
-| `triggers/`    | Trigger type overlay icons (victory, death, ...)   |
-| `components/`  | Component display icons (transform, camera, ...)   |
-| `panels/`      | Panel icons (scene_hierarchy, properties, ...)     |
-| `actions/`     | Menu/action icons (save, delete, duplicate, ...)   |
-| `templates/`   | SVG base templates (not rendered)                  |
+| Directory     | Content                                                             |
+|---------------|---------------------------------------------------------------------|
+| `toolbar/`    | Playback buttons (play, pause, stop, step), gizmo controls (ctrl_*) |
+| `browser/`    | Content browser file type icons (folder, glsl, png, ...)            |
+| `visibility/` | Eye/camera visibility toggles                                       |
+| `triggers/`   | Trigger type overlay icons (victory, death, ...)                    |
+| `components/` | Component display icons (transform, camera, ...)                    |
+| `panels/`     | Panel icons (scene_hierarchy, properties, ...)                      |
+| `actions/`    | Menu/action icons (save, delete, duplicate, ...)                    |
+| `templates/`  | SVG base templates (not rendered)                                   |
 
 ### Runtime Rendering and Theming
 
@@ -178,6 +207,7 @@ At startup, `IconBank::build()` loads SVG files via lunasvg, applies color subst
 memory, rasterizes to pixel buffers, and packs into a GPU texture atlas (64px cell, mipmaps).
 
 **Color convention** (SVG files are never modified on disk):
+
 - White (`#ffffff`) → substituted with theme primary text color
 - Fuchsia (`#ff00ff`) → substituted with theme accent color
 - All other colors (R/G/B gizmo axes, etc.) → kept as-is
@@ -204,10 +234,22 @@ The engine includes a task scheduler backed by [Taskflow](https://github.com/tas
 - **Parallel utilities**: `parallelForEach` / `parallelForIndex` templates
 - Taskflow is a PRIVATE dependency — not exposed in public headers
 
+## Asset Packing
+
+![Asset Packing](../images/asset_packing.svg)
+
+Owl Nest can export a standalone game package via **Project > Pack Game**. The `AssetScanner`
+recursively parses scene files starting from the project's first scene, discovers all referenced
+assets (textures, fonts, sounds, meshes), and follows teleport links to other scenes.
+
+Discovered assets are compressed with **zstd** and written to a `.owlpack` binary archive
+with an XOR-obfuscated table of contents. At runtime, the game runner transparently loads
+assets from the pack file via `PackReader`.
+
 ## Dependency Management
 
 Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager) and declared
 in `depmanager.yml` at the project root. During CMake configure, the `cmake/Depmanager.cmake`
 module automatically downloads missing packages from the configured remote server.
 
-See @ref building for instructions on configuring and building with dependencies.
+See [Building](building.md) for instructions on configuring and building with dependencies.

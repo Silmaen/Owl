@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+  <!-- Dark background for readability on both light and dark pages -->
+  <rect id="background" x="0" y="0" width="800" height="480" rx="12" ry="12" fill="#1c2128"/>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#58a6ff"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold">Scene Lifecycle</text>
+
+  <!-- ===== State Boxes (Row 1) ===== -->
+
+  <!-- Editing (left) -->
+  <rect x="30" y="55" width="120" height="44" rx="22" ry="22" fill="#3fb950" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="90" y="83" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="bold">Editing</text>
+
+  <!-- Playing (center) -->
+  <rect x="340" y="55" width="120" height="44" rx="22" ry="22" fill="#1f6feb" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="400" y="83" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="bold">Playing</text>
+
+  <!-- Editing (right) -->
+  <rect x="650" y="55" width="120" height="44" rx="22" ry="22" fill="#3fb950" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="710" y="83" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="bold">Editing</text>
+
+  <!-- ===== Transition Arrows ===== -->
+
+  <!-- Editing -> Playing -->
+  <line x1="150" y1="77" x2="335" y2="77" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="242" y="70" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold">Play pressed</text>
+
+  <!-- Playing -> Editing (right) -->
+  <line x1="460" y1="77" x2="645" y2="77" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="552" y="70" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold">Stop pressed</text>
+
+  <!-- Playing -> Playing loop arrow (top) -->
+  <path d="M 375,55 C 375,18 425,18 425,55" fill="none" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="400" y="14" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold">Each Frame</text>
+
+  <!-- ===== Dashed connectors down to detail boxes ===== -->
+  <line x1="242" y1="85" x2="148" y2="130" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="400" y1="99" x2="400" y2="130" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,3"/>
+  <line x1="552" y1="85" x2="648" y2="130" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <!-- ===== Detail Boxes (Row 2) - non-overlapping ===== -->
+
+  <!-- onStartRuntime box (left column) -->
+  <rect x="20" y="130" width="230" height="200" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="135" y="155" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold">onStartRuntime()</text>
+  <line x1="30" y1="164" x2="240" y2="164" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="40" y="186" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Init physics (Box2D world)</text>
+  <text x="40" y="208" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Init sound listener</text>
+  <text x="40" y="230" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Start playOnStart sounds</text>
+  <text x="40" y="252" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Init scripts</text>
+  <text x="40" y="274" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Resolve trigger targets</text>
+  <text x="40" y="296" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Status = Playing</text>
+  <rect x="30" y="304" width="110" height="18" rx="4" ry="4" fill="#3fb950" opacity="0.2"/>
+  <text x="40" y="318" fill="#3fb950" font-family="system-ui, -apple-system, sans-serif" font-size="11">one-time init</text>
+
+  <!-- onUpdateRuntime box (center column) -->
+  <rect x="265" y="130" width="270" height="200" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="400" y="155" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold">onUpdateRuntime()</text>
+  <line x1="275" y1="164" x2="525" y2="164" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="285" y="186" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Update scripts (NativeScript)</text>
+  <text x="285" y="208" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Parse player inputs</text>
+  <text x="285" y="230" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Physics step (Box2D world)</text>
+  <text x="285" y="252" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Sync transforms (physics bodies)</text>
+  <text x="285" y="274" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Sync sound listener position</text>
+  <text x="285" y="296" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Check triggers (overlaps, teleports)</text>
+  <text x="285" y="318" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Render scene (cameras, sprites)</text>
+
+  <!-- onEndRuntime box (right column) -->
+  <rect x="550" y="130" width="230" height="200" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="665" y="155" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold">onEndRuntime()</text>
+  <line x1="560" y1="164" x2="770" y2="164" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="570" y="186" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Stop all sounds</text>
+  <text x="570" y="208" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Destroy physics world</text>
+  <text x="570" y="230" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Destroy scripts</text>
+  <text x="570" y="252" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Restore editor scene</text>
+  <text x="570" y="274" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Status = Editing</text>
+  <rect x="560" y="282" width="110" height="18" rx="4" ry="4" fill="#8b949e" opacity="0.2"/>
+  <text x="570" y="296" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11">full cleanup</text>
+
+  <!-- ===== Legend ===== -->
+  <rect x="210" y="370" width="380" height="95" rx="8" ry="8" fill="none" stroke="#8b949e" stroke-width="0.75" stroke-dasharray="4,3"/>
+  <text x="400" y="392" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="12">Legend</text>
+
+  <rect x="230" y="405" width="14" height="14" rx="4" ry="4" fill="#3fb950"/>
+  <text x="252" y="417" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Editing state (no runtime systems active)</text>
+
+  <rect x="230" y="428" width="14" height="14" rx="4" ry="4" fill="#1f6feb"/>
+  <text x="252" y="440" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Playing state (all runtime systems running)</text>
+
+  <line x1="230" y1="455" x2="260" y2="455" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="278" y="459" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">State transition</text>
+</svg>

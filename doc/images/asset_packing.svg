@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" viewBox="0 0 800 520">
+  <!-- Dark background for readability on both light and dark pages -->
+  <rect id="background" x="0" y="0" width="800" height="520" rx="12" ry="12" fill="#1c2128"/>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#58a6ff"/>
+    </marker>
+    <marker id="arrowhead-down" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#58a6ff"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#e6edf3">Asset Packing Pipeline</text>
+
+  <!-- Step 1: Project Directory -->
+  <rect x="20" y="55" width="130" height="160" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="85" y="78" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#e6edf3">Project Directory</text>
+  <line x1="35" y1="88" x2="135" y2="88" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="40" y="108" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">owl_project.yml</text>
+  <text x="40" y="126" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">scenes/</text>
+  <text x="40" y="144" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">textures/</text>
+  <text x="40" y="162" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">sounds/</text>
+  <text x="40" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">fonts/</text>
+
+  <!-- Arrow 1 -->
+  <line x1="150" y1="135" x2="178" y2="135" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Step 2: AssetScanner (accent) -->
+  <rect x="188" y="55" width="150" height="160" rx="8" ry="8" fill="#1f6feb" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="263" y="78" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#e6edf3">AssetScanner</text>
+  <line x1="198" y1="88" x2="328" y2="88" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+  <text x="198" y="108" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#e6edf3">scanProject() parses</text>
+  <text x="198" y="122" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#e6edf3">firstScene from config</text>
+  <text x="198" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#e6edf3">Recursively follows</text>
+  <text x="198" y="154" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#e6edf3">scene YAML references</text>
+  <text x="198" y="172" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#e6edf3">Resolves: textures,</text>
+  <text x="198" y="186" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#e6edf3">fonts, sounds, meshes</text>
+  <text x="198" y="204" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#e6edf3">Follows teleport links</text>
+
+  <!-- Arrow 2 -->
+  <line x1="338" y1="135" x2="366" y2="135" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Step 3: Asset References (sharp corners) -->
+  <rect x="376" y="75" width="120" height="120" rx="0" ry="0" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="436" y="100" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold" fill="#e6edf3">Asset</text>
+  <text x="436" y="116" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold" fill="#e6edf3">References</text>
+  <line x1="386" y1="125" x2="486" y2="125" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="392" y="145" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">packPath</text>
+  <text x="392" y="163" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">diskPath</text>
+  <text x="392" y="181" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">assetType</text>
+
+  <!-- Arrow 3 -->
+  <line x1="496" y1="135" x2="524" y2="135" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Step 4: PackWriter (accent) -->
+  <rect x="534" y="70" width="130" height="130" rx="8" ry="8" fill="#1f6feb" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="599" y="95" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#e6edf3">PackWriter</text>
+  <line x1="544" y1="105" x2="654" y2="105" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+  <text x="550" y="125" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#e6edf3">zstd compression</text>
+  <text x="550" y="143" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#e6edf3">per entry</text>
+  <text x="550" y="167" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#e6edf3">XOR-obfuscated</text>
+  <text x="550" y="185" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#e6edf3">TOC at file end</text>
+
+  <!-- Arrow 4 -->
+  <line x1="664" y1="135" x2="692" y2="135" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Step 5: .owlpack file (green accent, document shape) -->
+  <g transform="translate(702, 85)">
+    <!-- Document shape: rectangle with folded corner -->
+    <path d="M0,8 Q0,0 8,0 L62,0 L78,20 L78,92 Q78,100 70,100 L8,100 Q0,100 0,92 Z" fill="#3fb950" stroke="#3fb950" stroke-width="1.5"/>
+    <path d="M62,0 L62,20 L78,20" fill="#2ea043" stroke="#3fb950" stroke-width="1"/>
+    <text x="39" y="50" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold" fill="#0d1117">.owlpack</text>
+    <text x="39" y="70" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#0d1117">binary</text>
+    <text x="39" y="84" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#0d1117">archive</text>
+  </g>
+
+  <!-- Divider line for runtime section -->
+  <line x1="20" y1="280" x2="780" y2="280" stroke="#8b949e" stroke-width="0.5" stroke-dasharray="6,4"/>
+  <text x="400" y="300" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#8b949e" font-style="italic">Runtime Loading</text>
+
+  <!-- Arrow down from .owlpack to PackReader -->
+  <line x1="741" y1="195" x2="741" y2="250" stroke="#58a6ff" stroke-width="2"/>
+  <line x1="741" y1="250" x2="420" y2="250" stroke="#58a6ff" stroke-width="2"/>
+  <line x1="420" y1="250" x2="420" y2="318" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead-down)"/>
+
+  <!-- Step 6: PackReader -->
+  <rect x="340" y="328" width="160" height="80" rx="8" ry="8" fill="#1f6feb" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="420" y="355" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#e6edf3">PackReader</text>
+  <line x1="350" y1="363" x2="490" y2="363" stroke="rgba(255,255,255,0.3)" stroke-width="0.5"/>
+  <text x="356" y="382" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#e6edf3">loadFromPack(path)</text>
+  <text x="356" y="398" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#e6edf3">packContains(path)</text>
+
+  <!-- Arrow from PackReader to Transparent Loading -->
+  <line x1="500" y1="368" x2="548" y2="368" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Transparent Loading box -->
+  <rect x="558" y="328" width="200" height="80" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="658" y="355" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold" fill="#e6edf3">Transparent Loading</text>
+  <line x1="568" y1="363" x2="748" y2="363" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="574" y="382" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">Textures, Fonts, Scenes</text>
+  <text x="574" y="398" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">check pack before filesystem</text>
+
+  <!-- Runner config note -->
+  <rect x="40" y="338" width="170" height="60" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="125" y="362" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#e6edf3">runner.yml</text>
+  <text x="56" y="382" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#8b949e">PackFile: game.owlpack</text>
+
+  <!-- Arrow from runner.yml to PackReader -->
+  <line x1="210" y1="368" x2="330" y2="368" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Format detail: header info -->
+  <rect x="40" y="440" width="720" height="60" rx="8" ry="8" fill="none" stroke="#8b949e" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="400" y="462" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">File format: 40-byte header (magic "OWLP") + zstd-compressed data blocks + XOR-obfuscated TOC at end</text>
+  <text x="400" y="482" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">Cache: extracted to owl_pack_cache/ temp directory for backend-agnostic loading</text>
+</svg>

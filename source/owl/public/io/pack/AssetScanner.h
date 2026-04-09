@@ -80,6 +80,13 @@ private:
 	[[nodiscard]] static auto resolveFont(const std::string& iFontName) -> std::optional<AssetReference>;
 
 	/**
+	 * @brief Resolve a sound asset name to a disk path.
+	 * @param[in] iSoundAsset The sound asset relative path.
+	 * @return The resolved reference, or nullopt.
+	 */
+	[[nodiscard]] static auto resolveSound(const std::string& iSoundAsset) -> std::optional<AssetReference>;
+
+	/**
 	 * @brief Resolve a teleport level name to a scene file path.
 	 * @param[in] iLevelName The level name from the Trigger component.
 	 * @return The resolved scene file path, or nullopt.
