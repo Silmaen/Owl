@@ -130,20 +130,8 @@
   <text x="400" y="440" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-style="italic">Applications</text>
 
   <!-- owlnest -->
-  <rect x="60" y="455" width="150" height="40" rx="8" ry="8" fill="#2d333b" stroke="#1f6feb" stroke-width="1.5"/>
-  <text x="135" y="480" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">Owl Nest (Editor)</text>
-
-  <!-- owldrone -->
-  <rect x="240" y="455" width="140" height="40" rx="8" ry="8" fill="#2d333b" stroke="#1f6feb" stroke-width="1.5"/>
-  <text x="310" y="480" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">Owl Drone</text>
-
-  <!-- owlcast -->
-  <rect x="410" y="455" width="140" height="40" rx="8" ry="8" fill="#2d333b" stroke="#1f6feb" stroke-width="1.5"/>
-  <text x="480" y="480" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">Owl Cast</text>
-
-  <!-- sandbox -->
-  <rect x="580" y="455" width="140" height="40" rx="8" ry="8" fill="#2d333b" stroke="#1f6feb" stroke-width="1.5"/>
-  <text x="650" y="480" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">Sandbox</text>
+  <rect x="300" y="455" width="200" height="40" rx="8" ry="8" fill="#2d333b" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="400" y="480" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">Owl Nest (Editor)</text>
 
   <!-- ===== External Dependencies footer ===== -->
   <line x1="20" y1="525" x2="780" y2="525" stroke="#8b949e" stroke-width="1" stroke-dasharray="8,4"/>

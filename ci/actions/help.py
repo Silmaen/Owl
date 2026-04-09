@@ -33,7 +33,7 @@ class Help(BaseAction):
             return self.print_preset_info(preset)
         log.info(f"You're a smart developer, but you are lost..")
         log.info(f"I will help you find the way back to the path of the light!")
-        log.info(f"We both known there this is the onlt path. All else is darkness.")
+        log.info(f"We both know that this is the only path. All else is darkness.")
         log.info(f"Follow me, and I will guide you!")
         log.info(f"Just kidding, read the documentation instead :)")
         log.info(

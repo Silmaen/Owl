@@ -43,9 +43,6 @@
       "cacheVariables": {
         "OWL_PACKAGE_NAME": "OwlEngine",
         "OWL_BUILD_NEST": "OFF",
-        "OWL_BUILD_SANDBOX": "ON",
-        "OWL_BUILD_DRONE": "OFF",
-        "OWL_BUILD_CAST": "OFF",
         "OWL_PACKAGE_ENGINE": "ON"
       },
       "vendor": {
@@ -113,23 +110,6 @@
       "cacheVariables": {
         "OWL_PACKAGE_NAME": "OwlNest",
         "OWL_BUILD_NEST": "ON",
-        "OWL_BUILD_SANDBOX": "OFF",
-        "OWL_BUILD_DRONE": "OFF",
-        "OWL_BUILD_CAST": "OFF",
-        "OWL_PACKAGE_ENGINE": "OFF"
-      }
-    },
-    {
-      "name": "package-app-drone-windows",
-      "inherits": [
-        "packaging-app-windows"
-      ],
-      "cacheVariables": {
-        "OWL_PACKAGE_NAME": "OwlDrone",
-        "OWL_BUILD_NEST": "OFF",
-        "OWL_BUILD_SANDBOX": "OFF",
-        "OWL_BUILD_DRONE": "ON",
-        "OWL_BUILD_CAST": "OFF",
         "OWL_PACKAGE_ENGINE": "OFF"
       }
     },
@@ -141,23 +121,6 @@
       "cacheVariables": {
         "OWL_PACKAGE_NAME": "OwlNest",
         "OWL_BUILD_NEST": "ON",
-        "OWL_BUILD_SANDBOX": "OFF",
-        "OWL_BUILD_DRONE": "OFF",
-        "OWL_BUILD_CAST": "OFF",
-        "OWL_PACKAGE_ENGINE": "OFF"
-      }
-    },
-    {
-      "name": "package-app-drone-linux",
-      "inherits": [
-        "packaging-app-linux"
-      ],
-      "cacheVariables": {
-        "OWL_PACKAGE_NAME": "OwlDrone",
-        "OWL_BUILD_NEST": "OFF",
-        "OWL_BUILD_SANDBOX": "OFF",
-        "OWL_BUILD_DRONE": "ON",
-        "OWL_BUILD_CAST": "OFF",
         "OWL_PACKAGE_ENGINE": "OFF"
       }
     }

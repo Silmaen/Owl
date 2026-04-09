@@ -53,11 +53,7 @@ def _determine_log_level(line: str, mode: int = MODE_BY_CONTENT) -> int:
         for pattern in ninja_error_exclusions:
             if re.search(pattern, line):
                 return INFO
-        else:
-            for pattern in ninja_error_exclusions:
-                if re.search(pattern, line):
-                    return INFO
-            return ERROR
+        return ERROR
     else:
         # old content-based detection (may trigger false positives)
         line_lower = line.lower()

@@ -95,7 +95,7 @@
 
   <!-- Vulkan box -->
   <rect x="450" y="478" width="200" height="60" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
-  <text x="550" y="505" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#e6edf3">Vulkan 1.3</text>
+  <text x="550" y="505" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#e6edf3">Vulkan 1.4</text>
   <text x="550" y="525" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">vkCreateShaderModule</text>
 
   <!-- Key conventions note at bottom -->
