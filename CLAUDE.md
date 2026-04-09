@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Owl (v0.0.3) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
+Owl (v0.1.0-dev) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
 (GLFW, Null), and sound backends (OpenAL, Null). It uses an Entity-Component-System architecture (EnTT) with
 **hierarchical parent-child entities** and includes a scene editor (Owl Nest). Supported platforms: Linux (x64/arm64)
 and Windows (x64, MinGW).
@@ -183,8 +183,8 @@ OwlEngine can be built as a depmanager package for use by external projects (e.g
 # Build the OwlEngine package locally
 poetry run depmanager build .
 
-# The package will be available as owl_engine:0.0.3 in the local depmanager cache
-poetry run depmanager pack ls -p owl_engine:0.0.3
+# The package will be available as owl_engine:0.1.0 in the local depmanager cache
+poetry run depmanager pack ls -p owl_engine:0.1.0
 ```
 
 **Recipe details** (`owl_engine.py`):
@@ -198,7 +198,7 @@ poetry run depmanager pack ls -p owl_engine:0.0.3
 ```yaml
 packages:
   owl_engine:
-    version: 0.0.3
+    version: 0.1.0
     kind: "shared"
 ```
 
@@ -344,6 +344,6 @@ Enforced by `.clang-format` (LLVM-based) and `.clang-tidy`. Key conventions:
 | `OWL_ENABLE_THREAD_SANITIZER`             | OFF     | ThreadSanitizer (CI presets)                   |
 | `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF     | UBSanitizer (CI presets)                       |
 | `OWL_ENABLE_LEAK_SANITIZER`               | OFF     | LeakSanitizer (CI presets)                     |
-| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only, CI presets)        |
+| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only, CI presets)       |
 | `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation        |
 | `OWL_PACKAGING`                           | OFF     | Enable packaging mode                          |
