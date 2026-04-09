@@ -342,7 +342,7 @@ application (Linux / Windows).
       - Key-locked switches
   - ![Planned][planned] Enemies
 
-## v0.0.3 -- Expected 2026-04-09
+## v0.0.3 -- 2026-04-09
 
 - Sound
     - ![Done][done] Sound effects
