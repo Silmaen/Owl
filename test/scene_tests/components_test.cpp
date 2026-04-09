@@ -3,6 +3,7 @@
 #include <scene/component/components.h>
 
 TEST(SceneComponent, key) {
+	EXPECT_EQ(owl::scene::component::AnimatedSpriteRenderer::key(), "AnimatedSpriteRenderer");
 	EXPECT_EQ(owl::scene::component::Camera::key(), "Camera");
 	EXPECT_EQ(owl::scene::component::CircleRenderer::key(), "CircleRenderer");
 	EXPECT_EQ(owl::scene::component::EntityLink::key(), "EntityLink");
@@ -17,6 +18,7 @@ TEST(SceneComponent, key) {
 }
 
 TEST(SceneComponent, name) {
+	EXPECT_EQ(owl::scene::component::AnimatedSpriteRenderer::name(), "Animated Sprite");
 	EXPECT_EQ(owl::scene::component::Camera::name(), "Camera");
 	EXPECT_EQ(owl::scene::component::CircleRenderer::name(), "Circle Renderer");
 	EXPECT_EQ(owl::scene::component::EntityLink::name(), "Entity Link");

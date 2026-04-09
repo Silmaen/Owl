@@ -24,8 +24,6 @@ constexpr uint32_t g_maxQuads = 20000;
 constexpr size_t g_quadVertexCount = 4;
 constexpr uint32_t g_maxVertices = g_maxQuads * g_quadVertexCount;
 constexpr uint32_t g_maxIndices = g_maxQuads * 6;
-constexpr std::array g_textureCoords{math::vec2{0.0f, 0.0f}, math::vec2{1.0f, 0.0f}, math::vec2{1.0f, 1.0f},
-									 math::vec2{0.0f, 1.0f}};
 constexpr std::array g_quadVertexPositions = {math::vec4{-0.5f, -0.5f, 0.0f, 1.0f}, math::vec4{0.5f, -0.5f, 0.0f, 1.0f},
 											  math::vec4{0.5f, 0.5f, 0.0f, 1.0f}, math::vec4{-0.5f, 0.5f, 0.0f, 1.0f}};
 
@@ -411,7 +409,7 @@ void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 		g_Data->quad.vertexBuf.emplace_back(
 				utils::QuadVertex{.position = iQuadData.transform() * utils::g_quadVertexPositions[i],
 								  .color = iQuadData.color,
-								  .texCoord = utils::g_textureCoords[i],
+								  .texCoord = iQuadData.textureCoords[i],
 								  .texIndex = textureIndex,
 								  .tilingFactor = iQuadData.tilingFactor,
 								  .entityId = iQuadData.entityId});

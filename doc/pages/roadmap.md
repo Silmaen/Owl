@@ -44,7 +44,7 @@ Unordered ideas and long-term goals.
     - <span class="badge-planned">Planned</span> Different scene types
         - Games and menus
 
-## v0.0.3 -- Expected 2026-07-01
+## v0.0.3 -- Expected 2026-04-09
 
 - Sound
     - <span class="badge-done">Done</span> Sound effects
@@ -64,7 +64,10 @@ Unordered ideas and long-term goals.
     - <span class="badge-done">Done</span> Moving sound
         - Spatial source positions synced from entity world transforms each frame
 - Graphics
-    - <span class="badge-planned">Planned</span> Animated sprites
+    - <span class="badge-done">Done</span> Animated sprites
+        - AnimatedSpriteRenderer component with spritesheet grid support
+        - Frame-by-frame animation with configurable speed, loop, and frame range
+        - Custom UV coordinates in Renderer2D for sub-texture rendering
 - Objects
     - <span class="badge-done">Done</span> Mesh object support
     - <span class="badge-done">Done</span> Mesh loading (OBJ, glTF, GLB, FBX)

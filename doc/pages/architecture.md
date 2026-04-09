@@ -29,6 +29,10 @@ The engine library (`source/owl/`) is organized into the following modules:
 Public headers live in `source/owl/public/` and implementation files in `source/owl/private/`,
 both mirroring the module structure.
 
+**Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
+[Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·
+[Editor (Owl Nest)](editor.md)
+
 ## Backend System
 
 Owl uses a backend abstraction so that different platform APIs can be swapped at runtime.
@@ -42,6 +46,8 @@ Owl uses a backend abstraction so that different platform APIs can be swapped at
 | `OpenGL` | OpenGL 4.5  | Widely supported on desktop; limited on ARM64 |
 | `Vulkan` | Vulkan 1.3+ | Modern low-level API; full desktop support    |
 | `Null`   | None        | Headless mode for servers or testing          |
+
+See [Renderer](renderer.md) for the full rendering pipeline, batch system, and camera details.
 
 ### Input Backends
 
@@ -113,6 +119,8 @@ Shaders are written in **Slang** (`.slang` files), a single-source shading langu
    bytecode
 4. **Caching**: SPIR-V binaries are cached as `.spv` files with hash-based validation
 
+See [Renderer > Shader System](renderer.md#renderer) for the shader class API.
+
 Key conventions:
 
 - Entry points: `[shader("vertex")] vertexMain` and `[shader("fragment")] fragmentMain`
@@ -127,6 +135,7 @@ Key conventions:
 ![ECS Pipeline](../images/ecs_pipeline.svg)
 
 Entities support parent-child relationships via the **Hierarchy** component (mandatory on every entity).
+See [Scene & Components](scene.md) for the full component reference and entity lifecycle.
 
 ### Transform Inheritance
 
