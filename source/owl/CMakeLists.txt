@@ -80,6 +80,9 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw3 MODULE_TARGET gl
 # ImGuizmo
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE imguizmo REQUIRED ${THIRD_PARTY_RELEASE})
 
+# lunasvg
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lunasvg REQUIRED ${THIRD_PARTY_RELEASE})
+
 # magic_enum
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE magic_enum REQUIRED ${THIRD_PARTY_RELEASE})
 

@@ -1,18 +1,11 @@
 #!/usr/bin/env python3
-"""Rasterize SVG icon sources to PNG at the correct size tier.
+"""Rasterize SVG icon sources to PNG for scene-rendered assets.
+
+Only icons that need PNG files for Renderer2D (scene overlays) are rasterized.
+All other icons are loaded as SVG at runtime by the engine via lunasvg.
 
 SVG sources live in assets_sources/icons/<subdir>/.
 PNGs are written to assets/icons/<subdir>/ (this directory).
-
-Directory structure (identical for SVG and PNG):
-  - toolbar/      : 64x64   (play, pause, stop, step, ctrl_*)
-  - browser/      : 512x512 (file type icons for content browser)
-  - visibility/   : 32x32   (eye_open, eye_closed, camera_on, camera_off)
-  - triggers/     : 32x32   (victory, death, target, teleport)
-  - components/   : 32x32   (transform, camera, sprite, etc.)
-  - panels/       : 32x32   (scene_hierarchy, content_browser, etc.)
-  - actions/      : 32x32   (save, open, delete, etc.)
-  - templates/    : SVG-only (base templates, not rasterized)
 """
 
 from __future__ import annotations
@@ -26,33 +19,14 @@ import cairosvg
 # ---------------------------------------------------------------------------
 SCRIPT_DIR = Path(__file__).resolve().parent  # assets/icons/
 SVG_BASE = SCRIPT_DIR.parent.parent / "assets_sources" / "icons"  # assets_sources/icons/
-PNG_BASE = SCRIPT_DIR  # assets/icons/
 
 # ---------------------------------------------------------------------------
-# Size tier configuration: subdir -> png size
+# Only these subdirectories need PNG rasterization (for Renderer2D scene use).
+# All other icons are loaded as SVG at runtime by the engine.
 # ---------------------------------------------------------------------------
-TIER_BY_DIR: dict[str, int] = {
-    "toolbar": 64,
-    "browser": 512,
-    "visibility": 32,
-    "triggers": 32,
-    "components": 32,
-    "panels": 32,
-    "actions": 32,
+RASTERIZE_DIRS: dict[str, int] = {
+    "triggers": 512,  # Scene overlay icons at high resolution
 }
-
-# Subdirectories to skip (SVG-only, not rasterized)
-SKIP_DIRS: set[str] = {"templates"}
-
-DEFAULT_SIZE = 32
-
-
-def get_tier_size(svg_path: Path) -> int:
-    """Determine the PNG output size for a given SVG source."""
-    rel_dir = svg_path.parent.name
-    if rel_dir in TIER_BY_DIR:
-        return TIER_BY_DIR[rel_dir]
-    return DEFAULT_SIZE
 
 
 def rasterize_svg(svg_path: Path, png_path: Path, size: int):
@@ -73,22 +47,18 @@ def main():
         return
 
     count = 0
-    for svg_path in sorted(SVG_BASE.rglob("*.svg")):
-        rel = svg_path.relative_to(SVG_BASE)
-        # Skip SVGs at the root level (should not exist after reorganization).
-        if rel.parent == Path("."):
+    for subdir, size in RASTERIZE_DIRS.items():
+        svg_dir = SVG_BASE / subdir
+        if not svg_dir.is_dir():
+            print(f"WARNING: SVG directory not found: {svg_dir}")
             continue
-        # Skip template-only directories.
-        if rel.parts[0] in SKIP_DIRS:
-            continue
-        png_path = PNG_BASE / rel.with_suffix(".png")
-        size = get_tier_size(svg_path)
+        for svg_path in sorted(svg_dir.glob("*.svg")):
+            png_path = SCRIPT_DIR / subdir / svg_path.with_suffix(".png").name
+            rasterize_svg(svg_path, png_path, size)
+            count += 1
+            print(f"  {subdir}/{svg_path.stem}.png ({size}x{size})")
 
-        rasterize_svg(svg_path, png_path, size)
-        count += 1
-        print(f"  {rel.with_suffix('.png')} ({size}x{size})")
-
-    print(f"Done! {count} icons rasterized.")
+    print(f"Done! {count} scene icons rasterized.")
 
 
 if __name__ == "__main__":

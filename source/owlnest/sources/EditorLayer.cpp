@@ -24,11 +24,18 @@ namespace {
 void buildIconBank() {
 	auto& iconBank = gui::IconBank::instance();
 
-	// Resolve icon file paths from asset directories
-	auto& textureLibrary = renderer::Renderer::getTextureLibrary();
+	// Resolve icon file paths: try SVG in assets_sources first, then PNG in assets.
+	const auto& assetDirs = core::Application::get().getAssetDirectories();
 	const auto resolve = [&](const std::string& iName) -> std::filesystem::path {
-		if (const auto path = textureLibrary.find(iName); path.has_value())
-			return path.value();
+		for (const auto& dir: assetDirs) {
+			// SVG sources in assets_sources/ (parallel to the assets/ directory).
+			const auto svgDir = dir.assetsPath.parent_path() / "assets_sources";
+			if (const auto p = svgDir / (iName + ".svg"); exists(p))
+				return p;
+			// PNG fallback in assets/.
+			if (const auto p = dir.assetsPath / (iName + ".png"); exists(p))
+				return p;
+		}
 		return {};
 	};
 
@@ -116,7 +123,15 @@ void buildIconBank() {
 	// Remove entries with empty paths
 	std::erase_if(icons, [](const auto& iEntry) { return iEntry.second.empty(); });
 
-	iconBank.build(icons, 64);
+	// Extract theme colors for icon rendering from the active ImGui style.
+	const auto& style = ImGui::GetStyle();
+	const gui::IconThemeColors themeColors{
+			.primary = {style.Colors[ImGuiCol_Text].x, style.Colors[ImGuiCol_Text].y,
+						style.Colors[ImGuiCol_Text].z, style.Colors[ImGuiCol_Text].w},
+			.secondary = {style.Colors[ImGuiCol_ButtonActive].x, style.Colors[ImGuiCol_ButtonActive].y,
+						  style.Colors[ImGuiCol_ButtonActive].z, style.Colors[ImGuiCol_ButtonActive].w},
+	};
+	iconBank.build(icons, 64, themeColors);
 }
 void loadTriggerTextures() {
 	// Trigger icons are also used for Renderer2D viewport drawing (not just ImGui),

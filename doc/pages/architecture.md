@@ -154,43 +154,46 @@ Unparent, Delete Entity Only, Delete with Children.
 
 ## Icon System
 
-Editor icons are managed as **SVG sources** rasterized to **PNG** at build time.
+Editor icons are **SVG files loaded and rasterized at runtime** via
+[lunasvg](https://github.com/nicbarker/lunasvg), with dynamic theme color substitution.
 
 ### Directory Structure
 
-SVG sources and PNG outputs share the same directory layout:
+SVG sources are organized by usage in `source/owlnest/assets_sources/icons/`:
 
-| Directory      | Size    | Content                                           |
-|----------------|---------|---------------------------------------------------|
-| `toolbar/`     | 64x64   | Playback buttons (play, pause, stop, step), gizmo controls (ctrl_*) |
-| `browser/`     | 512x512 | Content browser file type icons (folder, glsl, png, ...) |
-| `visibility/`  | 32x32   | Eye/camera visibility toggles                     |
-| `triggers/`    | 32x32   | Trigger type overlay icons (victory, death, ...)   |
-| `components/`  | 32x32   | Component display icons (transform, camera, ...)   |
-| `panels/`      | 32x32   | Panel icons (scene_hierarchy, properties, ...)     |
-| `actions/`     | 32x32   | Menu/action icons (save, delete, duplicate, ...)   |
-| `templates/`   | —       | SVG base templates (not rasterized)                |
+| Directory      | Content                                           |
+|----------------|---------------------------------------------------|
+| `toolbar/`     | Playback buttons (play, pause, stop, step), gizmo controls (ctrl_*) |
+| `browser/`     | Content browser file type icons (folder, glsl, png, ...) |
+| `visibility/`  | Eye/camera visibility toggles                     |
+| `triggers/`    | Trigger type overlay icons (victory, death, ...)   |
+| `components/`  | Component display icons (transform, camera, ...)   |
+| `panels/`      | Panel icons (scene_hierarchy, properties, ...)     |
+| `actions/`     | Menu/action icons (save, delete, duplicate, ...)   |
+| `templates/`   | SVG base templates (not rendered)                  |
 
-- **SVG sources**: `source/owlnest/assets_sources/icons/<category>/`
-- **PNG outputs**: `source/owlnest/assets/icons/<category>/`
+### Runtime Rendering and Theming
 
-### Rasterization
+At startup, `IconBank::build()` loads SVG files via lunasvg, applies color substitution in
+memory, rasterizes to pixel buffers, and packs into a GPU texture atlas (64px cell, mipmaps).
+
+**Color convention** (SVG files are never modified on disk):
+- White (`#ffffff`) → substituted with theme primary text color
+- Fuchsia (`#ff00ff`) → substituted with theme accent color
+- All other colors (R/G/B gizmo axes, etc.) → kept as-is
+
+When the theme changes, `IconBank::rebuild()` re-rasterizes all SVGs with the new colors.
+
+### Scene-Rendered Icons (Triggers)
+
+Trigger overlay icons are also rendered in the viewport via `Renderer2D` and require PNG
+textures at 512x512. These are pre-rasterized from the same SVG sources:
 
 ```bash
 poetry run python source/owlnest/assets/icons/generate_icons.py
 ```
 
-Uses `cairosvg` to rasterize SVGs at the appropriate size tier.
-
-### Runtime Atlas
-
-At startup, `IconBank::build()` packs all PNG icons into a single GPU texture atlas
-(64px cell size, with mipmaps). Icons are looked up by name via `IconBank::getIcon()`.
-
-### Future: Runtime SVG Rendering
-
-A planned improvement is to load SVGs directly at runtime using a C++ library (e.g., lunasvg),
-enabling dynamic color theming where icon colors follow the editor theme.
+This script only rasterizes the `triggers/` category using `cairosvg`.
 
 ## Task System
 
