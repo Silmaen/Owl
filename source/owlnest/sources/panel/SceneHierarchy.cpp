@@ -35,6 +35,8 @@ auto componentIconName(const char* iCompName) -> const char* {
 			{"Entity Link", "comp_link"},
 			{"Background Texture", "comp_background"},
 			{"Visibility", "comp_visibility"},
+			{"Sound Source", "comp_sound"},
+			{"Sound Listener", "comp_sound"},
 	};
 	if (const auto it = map.find(iCompName); it != map.end())
 		return it->second;
@@ -67,7 +69,7 @@ void SceneHierarchy::renderHierarchy() {
 		// Right-click on blank space
 		ImGui::PushID("...");
 		if (ImGui::BeginPopupContextWindow(nullptr, 1)) {
-			if (owl::gui::IconBank::instance().menuItem("add_entity", "Create Empty Entity"))
+			if (gui::IconBank::instance().menuItem("add_entity", "Create Empty Entity"))
 				m_context->createEntity("Empty Entity");
 			ImGui::EndPopup();
 		}
@@ -78,7 +80,7 @@ void SceneHierarchy::renderHierarchy() {
 			if (ImGui::BeginDragDropTarget()) {
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
 					const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
-					if (auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child)
+					if (const auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child)
 						m_context->unparent(child);
 				}
 				ImGui::EndDragDropTarget();
@@ -93,8 +95,8 @@ void SceneHierarchy::renderHierarchy() {
 // NOLINTNEXTLINE(misc-no-recursion)
 void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 	const auto& tag = iEntity.getComponent<Tag>().tag;
-	const auto& hierarchy = iEntity.getComponent<Hierarchy>();
-	const bool hasChildren = !hierarchy.childrenIds.empty();
+	const auto& [parentId, childrenIds] = iEntity.getComponent<Hierarchy>();
+	const bool hasChildren = !childrenIds.empty();
 
 	ImGuiTreeNodeFlags flag = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow;
 	if (!hasChildren)
@@ -120,7 +122,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 	if (ImGui::BeginDragDropTarget()) {
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
 			const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
-			if (auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child && child != iEntity)
+			if (const auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child && child != iEntity)
 				m_context->setParent(child, iEntity);
 		}
 		ImGui::EndDragDropTarget();
@@ -128,8 +130,8 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 
 	// Visibility toggle buttons (right-aligned)
 	{
-		auto& vis = iEntity.getComponent<Visibility>();
-		auto& iconBank = owl::gui::IconBank::instance();
+		auto& [gameVisible, editorVisible] = iEntity.getComponent<Visibility>();
+		const auto& iconBank = gui::IconBank::instance();
 
 		const float btnSize = ImGui::GetTextLineHeight();
 		const float spacing = ImGui::GetStyle().ItemSpacing.x;
@@ -150,16 +152,16 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 
 		// --- Editor visibility button (left) — eye icon ---
 		ImGui::PushID("editorVis");
-		const auto* const edIconName = vis.editorVisible ? "eye_open" : "eye_closed";
-		const auto edTint = vis.editorVisible ? fullTint : dimTint;
+		const auto* const edIconName = editorVisible ? "eye_open" : "eye_closed";
+		const auto edTint = editorVisible ? fullTint : dimTint;
 		if (const auto iconInfo = iconBank.getIcon(edIconName)) {
 			if (ImGui::ImageButton("##edVis", static_cast<ImTextureID>(iconInfo->textureId), gui::vec(btnSizeVec),
 								   gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1), gui::vec(transparent),
 								   gui::vec(edTint)))
-				vis.editorVisible = !vis.editorVisible;
+				editorVisible = !editorVisible;
 		} else {
-			if (ImGui::Button(vis.editorVisible ? "E" : "-", gui::vec(btnSizeVec)))
-				vis.editorVisible = !vis.editorVisible;
+			if (ImGui::Button(editorVisible ? "E" : "-", gui::vec(btnSizeVec)))
+				editorVisible = !editorVisible;
 		}
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Editor Visibility");
@@ -169,16 +171,16 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 
 		// --- Game visibility button (right) — camera icon ---
 		ImGui::PushID("gameVis");
-		const auto* const gameIconName = vis.gameVisible ? "camera_on" : "camera_off";
-		const auto gameTint = vis.gameVisible ? fullTint : dimTint;
+		const auto* const gameIconName = gameVisible ? "camera_on" : "camera_off";
+		const auto gameTint = gameVisible ? fullTint : dimTint;
 		if (const auto iconInfo = iconBank.getIcon(gameIconName)) {
 			if (ImGui::ImageButton("##gameVis", static_cast<ImTextureID>(iconInfo->textureId), gui::vec(btnSizeVec),
 								   gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1), gui::vec(transparent),
 								   gui::vec(gameTint)))
-				vis.gameVisible = !vis.gameVisible;
+				gameVisible = !gameVisible;
 		} else {
-			if (ImGui::Button(vis.gameVisible ? "V" : "-", gui::vec(btnSizeVec)))
-				vis.gameVisible = !vis.gameVisible;
+			if (ImGui::Button(gameVisible ? "V" : "-", gui::vec(btnSizeVec)))
+				gameVisible = !gameVisible;
 		}
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Game Visibility");
@@ -190,12 +192,12 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 
 	// Context menu (opened via OpenPopupOnItemClick on the tree node).
 	if (ImGui::BeginPopup("EntityContext")) {
-		auto& ib = owl::gui::IconBank::instance();
+		const auto& ib = gui::IconBank::instance();
 		// --- Create ---
 		if (ib.menuItem("add_entity", "Create Root Entity"))
 			m_context->createEntity("Empty Entity");
 		if (ib.menuItem("add_child_entity", "Create Child Entity")) {
-			auto child = m_context->createEntity("Child Entity");
+			const auto child = m_context->createEntity("Child Entity");
 			m_context->setParent(child, iEntity);
 		}
 		ImGui::Separator();
@@ -207,7 +209,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 				m_context->duplicateSubtree(iEntity);
 		}
 		// --- Hierarchy ---
-		if (hierarchy.parentId != core::UUID{0}) {
+		if (parentId != core::UUID{0}) {
 			if (ib.menuItem("unparent", "Unparent"))
 				m_context->unparent(iEntity);
 		}
@@ -232,7 +234,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 
 	if (open) {
 		// Recursively draw children.
-		for (const auto childId: hierarchy.childrenIds) {
+		for (const auto childId: childrenIds) {
 			if (const auto child = m_context->findEntityByUUID(childId); child)
 				drawEntityNode(child);
 		}
@@ -296,8 +298,8 @@ void drawComponent(scene::Entity& ioEntity) {
 				const float iconY = itemMin.y + (lineHeight - iconSz) * 0.5f;
 				const float iconX = itemMin.x + ImGui::GetTreeNodeToLabelSpacing() + 2.0f;
 				ImGui::GetWindowDrawList()->AddImage(iconInfo->textureId, {iconX, iconY},
-													{iconX + iconSz, iconY + iconSz}, gui::vec(iconInfo->uv0),
-													gui::vec(iconInfo->uv1));
+													 {iconX + iconSz, iconY + iconSz}, gui::vec(iconInfo->uv0),
+													 gui::vec(iconInfo->uv1));
 			}
 		}
 
@@ -337,9 +339,9 @@ void drawComponentsFromTuple(scene::Entity& ioEntity, const std::tuple<Component
 }// namespace
 
 
-void SceneHierarchy::drawComponents(scene::Entity& ioEntity) {
-	if (ioEntity.hasComponent<Tag>()) {
-		auto& tag = ioEntity.getComponent<Tag>().tag;
+void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
+	if (iEntity.hasComponent<Tag>()) {
+		auto& tag = iEntity.getComponent<Tag>().tag;
 		ImGui::InputText("##Tag", &tag);
 	}
 	ImGui::SameLine();
@@ -347,10 +349,10 @@ void SceneHierarchy::drawComponents(scene::Entity& ioEntity) {
 
 	ImGui::PushItemWidth(-1);
 	{
-		auto& iconBank = owl::gui::IconBank::instance();
-		constexpr float iconSz = 16.0f;
+		const auto& iconBank = gui::IconBank::instance();
 		bool clicked = false;
 		if (const auto iconInfo = iconBank.getIcon("add_component")) {
+			constexpr float iconSz = 16.0f;
 			const float buttonWidth = ImGui::CalcTextSize("Add Component").x + iconSz +
 									  ImGui::GetStyle().ItemSpacing.x + ImGui::GetStyle().FramePadding.x * 2;
 			clicked = ImGui::Button("##AddComp", ImVec2{buttonWidth, 0});
@@ -358,8 +360,8 @@ void SceneHierarchy::drawComponents(scene::Entity& ioEntity) {
 			const auto btnMax = ImGui::GetItemRectMax();
 			const float iconY = btnMin.y + (btnMax.y - btnMin.y - iconSz) * 0.5f;
 			ImGui::GetWindowDrawList()->AddImage(iconInfo->textureId, {btnMin.x + 4, iconY},
-												 {btnMin.x + 4 + iconSz, iconY + iconSz},
-												 gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1));
+												 {btnMin.x + 4 + iconSz, iconY + iconSz}, gui::vec(iconInfo->uv0),
+												 gui::vec(iconInfo->uv1));
 			const float textX = btnMin.x + iconSz + ImGui::GetStyle().ItemSpacing.x;
 			const float textY = btnMin.y + ImGui::GetStyle().FramePadding.y;
 			ImGui::GetWindowDrawList()->AddText({textX, textY}, IM_COL32_WHITE, "Add Component");

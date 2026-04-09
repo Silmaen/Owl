@@ -82,13 +82,26 @@ OWL_API void renderProps(scene::component::BackgroundTexture& ioComponent);
 OWL_API void renderProps(scene::component::Visibility& ioComponent);
 
 /**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::SoundSource& ioComponent);
+
+/**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::SoundListener& ioComponent);
+
+/**
  * @brief List of components that have a render function.
  */
 using DrawableComponents =
 		std::tuple<scene::component::Transform, scene::component::Camera, scene::component::SpriteRenderer,
 				   scene::component::CircleRenderer, scene::component::Text, scene::component::PhysicBody,
 				   scene::component::Player, scene::component::Trigger, scene::component::EntityLink,
-				   scene::component::BackgroundTexture, scene::component::Visibility>;
+				   scene::component::BackgroundTexture, scene::component::Visibility, scene::component::SoundSource,
+				   scene::component::SoundListener>;
 
 
 }// namespace owl::gui::component

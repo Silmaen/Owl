@@ -22,5 +22,66 @@ auto SoundCommand::getState() -> SoundAPI::State {
 	return SoundAPI::State::Error;
 }
 
+auto SoundCommand::play(const shared<SoundData>& iData, const PlayParams& iParams) -> SoundHandle {
+	if (m_soundApi)
+		return m_soundApi->play(iData, iParams);
+	return invalidSoundHandle;
+}
+
+void SoundCommand::stop(const SoundHandle iHandle) {
+	if (m_soundApi)
+		m_soundApi->stop(iHandle);
+}
+
+void SoundCommand::pause(const SoundHandle iHandle) {
+	if (m_soundApi)
+		m_soundApi->pause(iHandle);
+}
+
+void SoundCommand::resume(const SoundHandle iHandle) {
+	if (m_soundApi)
+		m_soundApi->resume(iHandle);
+}
+
+void SoundCommand::setVolume(const SoundHandle iHandle, const float iVolume) {
+	if (m_soundApi)
+		m_soundApi->setVolume(iHandle, iVolume);
+}
+
+void SoundCommand::setPitch(const SoundHandle iHandle, const float iPitch) {
+	if (m_soundApi)
+		m_soundApi->setPitch(iHandle, iPitch);
+}
+
+void SoundCommand::setLoop(const SoundHandle iHandle, const bool iLoop) {
+	if (m_soundApi)
+		m_soundApi->setLoop(iHandle, iLoop);
+}
+
+void SoundCommand::setPosition(const SoundHandle iHandle, const math::vec3f& iPosition) {
+	if (m_soundApi)
+		m_soundApi->setPosition(iHandle, iPosition);
+}
+
+void SoundCommand::setVelocity(const SoundHandle iHandle, const math::vec3f& iVelocity) {
+	if (m_soundApi)
+		m_soundApi->setVelocity(iHandle, iVelocity);
+}
+
+void SoundCommand::setListenerPosition(const math::vec3f& iPosition) {
+	if (m_soundApi)
+		m_soundApi->setListenerPosition(iPosition);
+}
+
+void SoundCommand::setListenerOrientation(const math::vec3f& iForward, const math::vec3f& iUp) {
+	if (m_soundApi)
+		m_soundApi->setListenerOrientation(iForward, iUp);
+}
+
+auto SoundCommand::isPlaying(const SoundHandle iHandle) -> bool {
+	if (m_soundApi)
+		return m_soundApi->isPlaying(iHandle);
+	return false;
+}
 
 }// namespace owl::sound

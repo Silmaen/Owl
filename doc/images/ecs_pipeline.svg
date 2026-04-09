@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="750" viewBox="0 0 800 750">
+  <!-- Dark background for readability on both light and dark pages -->
+  <rect id="background" x="0" y="0" width="800" height="750" rx="12" ry="12" fill="#1c2128"/>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#58a6ff"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="32" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold">ECS Component Pipeline</text>
+
+  <!-- ===== Row 1: createEntity ===== -->
+  <rect x="260" y="55" width="280" height="46" rx="8" ry="8" fill="#1f6feb" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="400" y="84" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold">Scene::createEntity()</text>
+
+  <!-- Arrow Row1 -> Row2 -->
+  <line x1="400" y1="101" x2="400" y2="130" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- ===== Row 2: EnTT Registry ===== -->
+  <rect x="100" y="135" width="600" height="170" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="400" y="160" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold">EnTT Registry</text>
+  <line x1="110" y1="170" x2="690" y2="170" stroke="#8b949e" stroke-width="0.5"/>
+
+  <!-- Mandatory components sub-box -->
+  <rect x="120" y="180" width="270" height="110" rx="6" ry="6" fill="none" stroke="#3fb950" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="255" y="200" text-anchor="middle" fill="#3fb950" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold">Mandatory Components</text>
+  <text x="140" y="222" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="13">ID (uint64 UUID)</text>
+  <text x="140" y="242" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="13">Tag (name string)</text>
+  <text x="140" y="262" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="13">Transform (local pos/rot/scale)</text>
+  <text x="140" y="282" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="13">Hierarchy + Visibility</text>
+
+  <!-- Optional components sub-box -->
+  <rect x="410" y="180" width="270" height="110" rx="6" ry="6" fill="none" stroke="#58a6ff" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="545" y="200" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold">Optional Components</text>
+  <text x="430" y="222" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="13">Camera</text>
+  <text x="430" y="242" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="13">SpriteRenderer / CircleRenderer</text>
+  <text x="430" y="262" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="13">PhysicBody / Trigger</text>
+  <text x="430" y="282" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="13">SoundSource / SoundListener</text>
+
+  <!-- ===== Row 3: Serialization (two paths) ===== -->
+
+  <!-- Left arrow (serialize) -->
+  <line x1="280" y1="305" x2="200" y2="370" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="218" y="332" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold">serialize()</text>
+
+  <!-- Right arrow (deserialize) -->
+  <line x1="600" y1="370" x2="520" y2="305" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="582" y="332" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold">deserialize()</text>
+
+  <!-- .owl YAML file (left - document shape) -->
+  <polygon points="110,375 280,375 280,425 110,425 110,375" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <!-- Folded corner -->
+  <polygon points="255,375 280,375 280,395" fill="#3d444d" stroke="#8b949e" stroke-width="0.75"/>
+  <text x="190" y="406" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">.owl YAML file</text>
+
+  <!-- .owl YAML file (right - document shape) -->
+  <polygon points="520,375 690,375 690,425 520,425 520,375" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <!-- Folded corner -->
+  <polygon points="665,375 690,375 690,395" fill="#3d444d" stroke="#8b949e" stroke-width="0.75"/>
+  <text x="600" y="406" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">.owl YAML file</text>
+
+  <!-- Bidirectional label -->
+  <line x1="285" y1="400" x2="515" y2="400" stroke="#8b949e" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="400" y="395" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11">same file format</text>
+
+  <!-- Central arrow down to Runtime -->
+  <line x1="400" y1="305" x2="400" y2="470" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="415" y="445" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold">runtime</text>
+
+  <!-- ===== Row 4: Runtime ===== -->
+  <rect x="80" y="475" width="640" height="250" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="400" y="500" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold">Runtime</text>
+  <line x1="90" y1="510" x2="710" y2="510" stroke="#8b949e" stroke-width="0.5"/>
+
+  <!-- onStartRuntime sub-section -->
+  <rect x="100" y="520" width="190" height="110" rx="6" ry="6" fill="none" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="195" y="542" text-anchor="middle" fill="#3fb950" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold">onStartRuntime</text>
+  <line x1="110" y1="550" x2="280" y2="550" stroke="#3fb950" stroke-width="0.5"/>
+  <text x="120" y="570" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Components</text>
+  <text x="195" y="585" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="16">--></text>
+  <text x="120" y="605" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Backend init</text>
+  <text x="120" y="622" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11">(physics, sounds, scripts)</text>
+
+  <!-- onUpdateRuntime sub-section -->
+  <rect x="305" y="520" width="190" height="110" rx="6" ry="6" fill="none" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="400" y="542" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold">onUpdateRuntime</text>
+  <line x1="315" y1="550" x2="485" y2="550" stroke="#1f6feb" stroke-width="0.5"/>
+  <text x="325" y="570" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Components</text>
+  <text x="400" y="585" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="16">&lt;--&gt;</text>
+  <text x="325" y="605" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Backends sync</text>
+  <text x="325" y="622" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11">(each frame, bidirectional)</text>
+
+  <!-- onEndRuntime sub-section -->
+  <rect x="510" y="520" width="190" height="110" rx="6" ry="6" fill="none" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="605" y="542" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold">onEndRuntime</text>
+  <line x1="520" y1="550" x2="690" y2="550" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="530" y="570" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Cleanup</text>
+  <text x="605" y="585" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="16">X</text>
+  <text x="530" y="605" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="12">Destroy backends</text>
+  <text x="530" y="622" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11">(physics, sounds, scripts)</text>
+
+  <!-- Flow arrows between runtime phases -->
+  <line x1="290" y1="575" x2="300" y2="575" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="495" y1="575" x2="505" y2="575" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- Phase labels under runtime box -->
+  <text x="195" y="705" text-anchor="middle" fill="#3fb950" font-family="system-ui, -apple-system, sans-serif" font-size="11">Play pressed</text>
+  <text x="400" y="705" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="11">Every frame</text>
+  <text x="605" y="705" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11">Stop pressed</text>
+
+  <!-- Vertical tick marks connecting labels -->
+  <line x1="195" y1="640" x2="195" y2="695" stroke="#3fb950" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="400" y1="640" x2="400" y2="695" stroke="#58a6ff" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="605" y1="640" x2="605" y2="695" stroke="#8b949e" stroke-width="1" stroke-dasharray="3,3"/>
+</svg>

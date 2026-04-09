@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="620" viewBox="0 0 800 620">
+  <!-- Dark background for readability on both light and dark pages -->
+  <rect id="background" x="0" y="0" width="800" height="620" rx="12" ry="12" fill="#1c2128"/>
+  <!-- Arrowhead marker definition -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#58a6ff"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="bold">Owl Engine Architecture</text>
+
+  <!-- ===== Top Layer: Application ===== -->
+  <rect x="200" y="50" width="400" height="44" rx="8" ry="8" fill="#1f6feb" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="400" y="77" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold">core::Application</text>
+
+  <!-- Arrows from Application to backend modules -->
+  <line x1="290" y1="94" x2="90"  y2="140" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="340" y1="94" x2="250" y2="140" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="400" y1="94" x2="400" y2="140" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="460" y1="94" x2="550" y2="140" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="510" y1="94" x2="710" y2="140" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- ===== Second Layer: Backend-driven modules ===== -->
+  <!-- Section label -->
+  <text x="400" y="132" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-style="italic">Backend Modules</text>
+
+  <!-- window -->
+  <rect x="30" y="140" width="120" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="90" y="165" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">window</text>
+
+  <!-- renderer -->
+  <rect x="190" y="140" width="120" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="250" y="165" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">renderer</text>
+
+  <!-- input -->
+  <rect x="340" y="140" width="120" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="400" y="165" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">input</text>
+
+  <!-- sound -->
+  <rect x="490" y="140" width="120" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="550" y="165" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">sound</text>
+
+  <!-- gui -->
+  <rect x="650" y="140" width="120" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="710" y="165" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">gui</text>
+
+  <!-- ===== Backend sub-boxes below renderer, input, sound ===== -->
+
+  <!-- Arrows: renderer -> backends -->
+  <line x1="225" y1="180" x2="205" y2="210" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <line x1="250" y1="180" x2="250" y2="210" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <line x1="275" y1="180" x2="295" y2="210" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- OpenGL -->
+  <rect x="170" y="212" width="68" height="30" rx="6" ry="6" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="204" y="232" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="11">OpenGL</text>
+
+  <!-- Vulkan -->
+  <rect x="246" y="212" width="68" height="30" rx="6" ry="6" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="280" y="232" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="11">Vulkan</text>
+
+  <!-- Null (renderer) -->
+  <rect x="170" y="248" width="68" height="30" rx="6" ry="6" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="204" y="268" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="11">Null</text>
+
+  <!-- Arrows: input -> backends -->
+  <line x1="385" y1="180" x2="375" y2="210" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <line x1="415" y1="180" x2="425" y2="210" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- GLFW -->
+  <rect x="345" y="212" width="60" height="30" rx="6" ry="6" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="375" y="232" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="11">GLFW</text>
+
+  <!-- Null (input) -->
+  <rect x="413" y="212" width="60" height="30" rx="6" ry="6" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="443" y="232" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="11">Null</text>
+
+  <!-- Arrows: sound -> backends -->
+  <line x1="535" y1="180" x2="525" y2="210" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <line x1="565" y1="180" x2="575" y2="210" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- OpenAL -->
+  <rect x="495" y="212" width="64" height="30" rx="6" ry="6" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="527" y="232" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="11">OpenAL</text>
+
+  <!-- Null (sound) -->
+  <rect x="567" y="212" width="60" height="30" rx="6" ry="6" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="597" y="232" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="11">Null</text>
+
+  <!-- ===== Dashed separator line ===== -->
+  <line x1="20" y1="310" x2="780" y2="310" stroke="#8b949e" stroke-width="1" stroke-dasharray="8,4"/>
+  <text x="400" y="330" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-style="italic">Cross-cutting Modules</text>
+
+  <!-- ===== Third Layer: Cross-cutting modules ===== -->
+  <!-- 7 boxes in a row, each ~96px wide with ~10px gap -->
+
+  <!-- scene -->
+  <rect x="16" y="345" width="96" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="64" y="370" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">scene</text>
+
+  <!-- physic -->
+  <rect x="124" y="345" width="96" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="172" y="370" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">physic</text>
+
+  <!-- data -->
+  <rect x="232" y="345" width="96" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="280" y="370" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">data</text>
+
+  <!-- io -->
+  <rect x="340" y="345" width="96" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="388" y="370" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">io</text>
+
+  <!-- math -->
+  <rect x="448" y="345" width="96" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="496" y="370" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">math</text>
+
+  <!-- event -->
+  <rect x="556" y="345" width="96" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="604" y="370" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">event</text>
+
+  <!-- debug -->
+  <rect x="664" y="345" width="96" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="712" y="370" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">debug</text>
+
+  <!-- ===== Applications layer ===== -->
+  <line x1="20" y1="420" x2="780" y2="420" stroke="#8b949e" stroke-width="1" stroke-dasharray="8,4"/>
+  <text x="400" y="440" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-style="italic">Applications</text>
+
+  <!-- owlnest -->
+  <rect x="60" y="455" width="150" height="40" rx="8" ry="8" fill="#2d333b" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="135" y="480" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">Owl Nest (Editor)</text>
+
+  <!-- owldrone -->
+  <rect x="240" y="455" width="140" height="40" rx="8" ry="8" fill="#2d333b" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="310" y="480" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">Owl Drone</text>
+
+  <!-- owlcast -->
+  <rect x="410" y="455" width="140" height="40" rx="8" ry="8" fill="#2d333b" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="480" y="480" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">Owl Cast</text>
+
+  <!-- sandbox -->
+  <rect x="580" y="455" width="140" height="40" rx="8" ry="8" fill="#2d333b" stroke="#1f6feb" stroke-width="1.5"/>
+  <text x="650" y="480" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">Sandbox</text>
+
+  <!-- ===== External Dependencies footer ===== -->
+  <line x1="20" y1="525" x2="780" y2="525" stroke="#8b949e" stroke-width="1" stroke-dasharray="8,4"/>
+  <text x="400" y="545" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-style="italic">Key External Dependencies</text>
+
+  <!-- Dependency badges -->
+  <rect x="30"  y="558" width="75" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="67"  y="576" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">EnTT</text>
+
+  <rect x="115" y="558" width="75" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="152" y="576" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">ImGui</text>
+
+  <rect x="200" y="558" width="75" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="237" y="576" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Box2D</text>
+
+  <rect x="285" y="558" width="75" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="322" y="576" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">spdlog</text>
+
+  <rect x="370" y="558" width="75" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="407" y="576" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">yaml-cpp</text>
+
+  <rect x="455" y="558" width="75" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="492" y="576" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Slang</text>
+
+  <rect x="540" y="558" width="75" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="577" y="576" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Taskflow</text>
+
+  <rect x="625" y="558" width="75" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="662" y="576" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">lunasvg</text>
+
+  <rect x="710" y="558" width="75" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="747" y="576" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">spirv-cross</text>
+</svg>

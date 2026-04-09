@@ -32,7 +32,7 @@ auto makeRelativePath(const std::filesystem::path& iAbsolute) -> std::string {
 }
 
 auto hasAsset(const std::vector<AssetReference>& iAssets, const std::string& iPackPath) -> bool {
-	return std::ranges::any_of(iAssets, [&iPackPath](const auto& ref) { return ref.packPath == iPackPath; });
+	return std::ranges::any_of(iAssets, [&iPackPath](const auto& ref) -> auto { return ref.packPath == iPackPath; });
 }
 
 }// namespace
@@ -96,6 +96,22 @@ auto AssetScanner::resolveFont(const std::string& iFontName) -> std::optional<As
 	return std::nullopt;
 }
 
+auto AssetScanner::resolveSound(const std::string& iSoundAsset) -> std::optional<AssetReference> {
+	if (iSoundAsset.empty())
+		return std::nullopt;
+	if (!core::Application::instanced())
+		return std::nullopt;
+	for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+		if (auto p = assetsPath / iSoundAsset; exists(p))
+			return AssetReference{.packPath = iSoundAsset, .diskPath = p, .assetType = AssetType::Sound};
+		if (auto p = assetsPath / "sounds" / iSoundAsset; exists(p)) {
+			const auto rel = std::filesystem::path("sounds") / iSoundAsset;
+			return AssetReference{.packPath = rel.string(), .diskPath = p, .assetType = AssetType::Sound};
+		}
+	}
+	return std::nullopt;
+}
+
 auto AssetScanner::resolveScene(const std::string& iLevelName) -> std::optional<std::filesystem::path> {
 	if (iLevelName.empty())
 		return std::nullopt;
@@ -125,8 +141,7 @@ void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,//
 	ioVisitedScenes.insert(sceneStr);
 
 	// Add the scene file itself.
-	const auto scenePack = makeRelativePath(iSceneFile);
-	if (!hasAsset(ioAssets, scenePack)) {
+	if (const auto scenePack = makeRelativePath(iSceneFile); !hasAsset(ioAssets, scenePack)) {
 		ioAssets.push_back({.packPath = scenePack, .diskPath = iSceneFile, .assetType = AssetType::Scene});
 	}
 
@@ -170,6 +185,14 @@ void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,//
 				}
 			}
 		}
+		// Scan SoundSource sound asset.
+		if (auto soundSrc = entity["SoundSource"]; soundSrc) {
+			if (auto asset = soundSrc["soundAsset"]; asset) {
+				if (auto ref = resolveSound(asset.as<std::string>()); ref && !hasAsset(ioAssets, ref->packPath)) {
+					ioAssets.push_back(*ref);
+				}
+			}
+		}
 		// Scan Trigger for teleport scene references.
 		if (auto trigger = entity["Trigger"]; trigger) {
 			if (auto type = trigger["Type"]; type && type.as<std::string>() == "Teleport") {
@@ -188,26 +211,22 @@ void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 		return;
 	for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
 		// Collect all shader files.
-		const auto shadersDir = assetsPath / "shaders";
-		if (exists(shadersDir)) {
+		if (const auto shadersDir = assetsPath / "shaders"; exists(shadersDir)) {
 			for (const auto& item: std::filesystem::recursive_directory_iterator(shadersDir)) {
 				if (!item.is_regular_file())
 					continue;
-				const auto rel = relative(item.path(), assetsPath).string();
-				if (!hasAsset(ioAssets, rel)) {
+				if (const auto rel = relative(item.path(), assetsPath).string(); !hasAsset(ioAssets, rel)) {
 					ioAssets.push_back({.packPath = rel, .diskPath = item.path(), .assetType = AssetType::Other});
 				}
 			}
 		}
 		// Collect the default font (OpenSans-Regular).
-		const auto fontsDir = assetsPath / "fonts";
-		if (exists(fontsDir)) {
+		if (const auto fontsDir = assetsPath / "fonts"; exists(fontsDir)) {
 			for (const auto& item: std::filesystem::recursive_directory_iterator(fontsDir)) {
 				if (!item.is_regular_file() || item.path().extension() != ".ttf")
 					continue;
 				if (item.path().stem() == "OpenSans-Regular") {
-					const auto rel = relative(item.path(), assetsPath).string();
-					if (!hasAsset(ioAssets, rel)) {
+					if (const auto rel = relative(item.path(), assetsPath).string(); !hasAsset(ioAssets, rel)) {
 						ioAssets.push_back(
 								{.packPath = rel, .diskPath = item.path(), .assetType = AssetType::Font});
 					}

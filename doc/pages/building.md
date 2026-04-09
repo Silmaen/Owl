@@ -6,14 +6,14 @@ This page explains how to configure, build, and test the Owl engine.
 
 ## Prerequisites
 
-| Tool         | Version   | Notes                                       |
-|--------------|-----------|---------------------------------------------|
-| CMake        | 3.24+     | Build system generator                      |
-| Ninja        |           | Recommended build backend                   |
-| GCC          | 13+       | Or Clang 18+                                |
-| Python       | 3.12+     | For CI tooling and DepManager               |
-| Poetry       |           | Python dependency manager                   |
-| DepManager   |           | C++ dependency manager (installed via Poetry)|
+| Tool       | Version | Notes                                         |
+|------------|---------|-----------------------------------------------|
+| CMake      | 3.24+   | Build system generator                        |
+| Ninja      |         | Recommended build backend                     |
+| Clang      | 18+     | Or GCC 13+                                    |
+| Python     | 3.12+   | For CI tooling and DepManager                 |
+| Poetry     |         | Python dependency manager                     |
+| DepManager |         | C++ dependency manager (installed via Poetry) |
 
 Install Python dependencies:
 
@@ -34,38 +34,38 @@ cmake --build output/build/<preset>
 
 #### Standard Presets
 
-| Preset                   | OS      | Compiler | Config  |
-|--------------------------|---------|----------|---------|
-| `linux-gcc-release`      | Linux   | GCC      | Release |
-| `linux-gcc-debug`        | Linux   | GCC      | Debug   |
-| `linux-clang-release`    | Linux   | Clang    | Release |
-| `linux-clang-debug`      | Linux   | Clang    | Debug   |
-| `windows-gcc-release`    | Windows | MinGW GCC| Release |
-| `windows-gcc-debug`      | Windows | MinGW GCC| Debug   |
-| `windows-clang-release`  | Windows | MinGW Clang| Release |
-| `windows-clang-debug`    | Windows | MinGW Clang| Debug   |
+| Preset                  | OS      | Compiler    | Config  |
+|-------------------------|---------|-------------|---------|
+| `linux-gcc-release`     | Linux   | GCC         | Release |
+| `linux-gcc-debug`       | Linux   | GCC         | Debug   |
+| `linux-clang-release`   | Linux   | Clang       | Release |
+| `linux-clang-debug`     | Linux   | Clang       | Debug   |
+| `windows-gcc-release`   | Windows | MinGW GCC   | Release |
+| `windows-gcc-debug`     | Windows | MinGW GCC   | Debug   |
+| `windows-clang-release` | Windows | MinGW Clang | Release |
+| `windows-clang-debug`   | Windows | MinGW Clang | Debug   |
 
 #### CI Presets
 
-| Preset                                  | Purpose                        |
-|-----------------------------------------|--------------------------------|
-| `linux-clang-tidy`                      | Static analysis (clang-tidy)   |
-| `windows-clang-tidy`                    | Static analysis (clang-tidy)   |
-| `linux-sanitizer-address`               | AddressSanitizer               |
-| `linux-sanitizer-thread`                | ThreadSanitizer                |
-| `linux-sanitizer-undefined-behavior`    | UndefinedBehaviorSanitizer     |
-| `linux-sanitizer-leak`                  | LeakSanitizer                  |
+| Preset                               | Purpose                      |
+|--------------------------------------|------------------------------|
+| `linux-clang-tidy`                   | Static analysis (clang-tidy) |
+| `windows-clang-tidy`                 | Static analysis (clang-tidy) |
+| `linux-sanitizer-address`            | AddressSanitizer             |
+| `linux-sanitizer-thread`             | ThreadSanitizer              |
+| `linux-sanitizer-undefined-behavior` | UndefinedBehaviorSanitizer   |
+| `linux-sanitizer-leak`               | LeakSanitizer                |
 
 #### Packaging Presets
 
-| Preset                        | Description                         |
-|-------------------------------|-------------------------------------|
-| `package-engine-linux`        | Package engine library for Linux    |
-| `package-engine-windows`      | Package engine library for Windows  |
-| `package-app-nest-linux`      | Package Owl Nest for Linux          |
-| `package-app-nest-windows`    | Package Owl Nest for Windows        |
-| `package-app-drone-linux`     | Package Owl Drone for Linux         |
-| `package-app-drone-windows`   | Package Owl Drone for Windows       |
+| Preset                      | Description                        |
+|-----------------------------|------------------------------------|
+| `package-engine-linux`      | Package engine library for Linux   |
+| `package-engine-windows`    | Package engine library for Windows |
+| `package-app-nest-linux`    | Package Owl Nest for Linux         |
+| `package-app-nest-windows`  | Package Owl Nest for Windows       |
+| `package-app-drone-linux`   | Package Owl Drone for Linux        |
+| `package-app-drone-windows` | Package Owl Drone for Windows      |
 
 ## Running Tests
 
@@ -92,11 +92,11 @@ poetry run python ci_action.py Documentation <preset>
 
 ## Build Output Locations
 
-| Output     | Path                              |
-|------------|-----------------------------------|
-| Binaries   | `output/build/<preset>/bin/`      |
-| Libraries  | `output/build/<preset>/lib/`      |
-| Install    | `output/install/<preset>/`        |
+| Output    | Path                         |
+|-----------|------------------------------|
+| Binaries  | `output/build/<preset>/bin/` |
+| Libraries | `output/build/<preset>/lib/` |
+| Install   | `output/install/<preset>/`   |
 
 ## CMake Options
 
@@ -117,7 +117,7 @@ poetry run python ci_action.py Documentation <preset>
 | `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF     | AddressSanitizer                               |
 | `OWL_ENABLE_THREAD_SANITIZER`             | OFF     | ThreadSanitizer                                |
 | `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF     | UndefinedBehaviorSanitizer                     |
-| `OWL_ENABLE_LEAK_SANITIZER`              | OFF     | LeakSanitizer                                  |
+| `OWL_ENABLE_LEAK_SANITIZER`               | OFF     | LeakSanitizer                                  |
 | `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only)                   |
 | `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation        |
 | `OWL_PACKAGING`                           | OFF     | Enable packaging mode                          |

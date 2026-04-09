@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="620" viewBox="0 0 800 620">
+  <!-- Dark background for readability on both light and dark pages -->
+  <rect id="background" x="0" y="0" width="800" height="620" rx="12" ry="12" fill="#1c2128"/>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#58a6ff"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="30" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#e6edf3">Shader Pipeline</text>
+
+  <!-- Step 1: .slang source files -->
+  <rect x="260" y="50" width="280" height="110" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="400" y="76" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#e6edf3">.slang Source Files</text>
+  <line x1="275" y1="86" x2="525" y2="86" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="280" y="106" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#8b949e">Entry points:</text>
+  <text x="375" y="106" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#e6edf3">vertexMain, fragmentMain</text>
+  <text x="280" y="126" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#8b949e">Backend defines:</text>
+  <text x="280" y="146" font-family="system-ui, -apple-system, sans-serif" font-size="12" fill="#e6edf3">BACKEND_VULKAN / BACKEND_OPENGL</text>
+
+  <!-- Arrow 1: down -->
+  <line x1="400" y1="160" x2="400" y2="193" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Step 2: Slang C++ API (accent) -->
+  <rect x="280" y="203" width="240" height="60" rx="8" ry="8" fill="#1f6feb" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="400" y="230" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#e6edf3">Slang C++ API</text>
+  <text x="400" y="250" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="rgba(255,255,255,0.7)">compileSlangToSpirv()</text>
+
+  <!-- Arrow 2: down -->
+  <line x1="400" y1="263" x2="400" y2="296" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Step 3: SPIR-V bytecode (central box) -->
+  <rect x="300" y="306" width="200" height="50" rx="8" ry="8" fill="#2d333b" stroke="#e6edf3" stroke-width="2"/>
+  <text x="400" y="337" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#e6edf3">SPIR-V Bytecode</text>
+
+  <!-- === LEFT BRANCH: spirv-cross reflection === -->
+
+  <!-- Arrow left from SPIR-V -->
+  <line x1="300" y1="331" x2="218" y2="331" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- spirv-cross reflection box -->
+  <rect x="60" y="306" width="148" height="50" rx="8" ry="8" fill="#1f6feb" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="134" y="328" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#e6edf3">spirv-cross</text>
+  <text x="134" y="344" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="rgba(255,255,255,0.7)">shaderReflect()</text>
+
+  <!-- Arrow down from spirv-cross -->
+  <line x1="134" y1="356" x2="134" y2="389" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Metadata box -->
+  <rect x="34" y="399" width="200" height="65" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="134" y="422" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold" fill="#e6edf3">Reflection Metadata</text>
+  <line x1="49" y1="430" x2="219" y2="430" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="54" y="448" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">Uniform buffers</text>
+  <text x="54" y="462" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">Sampled images</text>
+
+  <!-- === RIGHT BRANCH: .spv cache === -->
+
+  <!-- Arrow right from SPIR-V -->
+  <line x1="500" y1="331" x2="578" y2="331" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- .spv cache (green accent) -->
+  <g transform="translate(588, 296)">
+    <!-- Document shape -->
+    <path d="M0,8 Q0,0 8,0 L120,0 L140,18 L140,62 Q140,70 132,70 L8,70 Q0,70 0,62 Z" fill="#3fb950" stroke="#3fb950" stroke-width="1.5"/>
+    <path d="M120,0 L120,18 L140,18" fill="#2ea043" stroke="#3fb950" stroke-width="1"/>
+    <text x="70" y="36" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold" fill="#0d1117">.spv Cache</text>
+    <text x="70" y="54" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#0d1117">hash-validated</text>
+  </g>
+
+  <!-- Cache detail labels -->
+  <text x="658" y="388" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#8b949e">computeShaderHash()</text>
+  <text x="658" y="402" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#8b949e">isShaderCacheValid()</text>
+
+  <!-- === DOWN BRANCH: Backend consumption === -->
+
+  <!-- Arrow down from SPIR-V -->
+  <line x1="400" y1="356" x2="400" y2="440" stroke="#58a6ff" stroke-width="2"/>
+
+  <!-- Split into two -->
+  <line x1="400" y1="440" x2="250" y2="440" stroke="#58a6ff" stroke-width="2"/>
+  <line x1="400" y1="440" x2="550" y2="440" stroke="#58a6ff" stroke-width="2"/>
+
+  <!-- Arrow down-left -->
+  <line x1="250" y1="440" x2="250" y2="468" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Arrow down-right -->
+  <line x1="550" y1="440" x2="550" y2="468" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- OpenGL box -->
+  <rect x="150" y="478" width="200" height="60" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="250" y="505" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#e6edf3">OpenGL 4.5</text>
+  <text x="250" y="525" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">glShaderBinary</text>
+
+  <!-- Vulkan box -->
+  <rect x="450" y="478" width="200" height="60" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="550" y="505" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold" fill="#e6edf3">Vulkan 1.3</text>
+  <text x="550" y="525" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" fill="#8b949e">vkCreateShaderModule</text>
+
+  <!-- Key conventions note at bottom -->
+  <rect x="100" y="560" width="600" height="45" rx="8" ry="8" fill="none" stroke="#8b949e" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="400" y="580" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#8b949e">Conventions: column_major float4x4 for C++ matrices | [[vk::binding(N)]] for Vulkan descriptors</text>
+  <text x="400" y="596" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="10" fill="#8b949e">NonUniformResourceIndex() for texture arrays | No sRGB conversion (UNORM framebuffers)</text>
+</svg>
