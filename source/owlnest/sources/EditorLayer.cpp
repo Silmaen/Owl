@@ -107,6 +107,7 @@ void buildIconBank() {
 		{"comp_transform",    resolve("icons/components/transform")},
 		{"comp_camera",       resolve("icons/components/camera")},
 		{"comp_sprite",       resolve("icons/components/sprite")},
+		{"comp_animated_sprite", resolve("icons/components/animated_sprite")},
 		{"comp_circle",       resolve("icons/components/circle")},
 		{"comp_text",         resolve("icons/components/text")},
 		{"comp_physics",      resolve("icons/components/physics")},

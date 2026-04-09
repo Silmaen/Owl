@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
+  <rect id="background" x="0" y="0" width="800" height="400" rx="12" ry="12" fill="#1c2128"/>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#58a6ff"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#8b949e"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="28" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold">Camera System</text>
+
+  <!-- Base class -->
+  <rect x="290" y="48" width="220" height="50" rx="8" ry="8" fill="#1f6feb" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="400" y="69" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold">Camera (base)</text>
+  <text x="400" y="87" text-anchor="middle" fill="#adbac7" font-family="system-ui, -apple-system, sans-serif" font-size="10">projection, view, viewProjection</text>
+
+  <!-- Inheritance arrows -->
+  <line x1="330" y1="98" x2="150" y2="148" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="400" y1="98" x2="400" y2="148" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <line x1="470" y1="98" x2="650" y2="148" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+  <!-- CameraOrtho -->
+  <rect x="40" y="150" width="220" height="68" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="150" y="172" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold">CameraOrtho</text>
+  <text x="150" y="190" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">position, rotation</text>
+  <text x="150" y="204" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">left, right, bottom, top, near, far</text>
+
+  <!-- CameraEditor -->
+  <rect x="290" y="150" width="220" height="68" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="400" y="172" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold">CameraEditor</text>
+  <text x="400" y="190" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">focalPoint, distance, pitch, yaw</text>
+  <text x="400" y="204" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">pan, rotate, zoom (mouse input)</text>
+
+  <!-- SceneCamera -->
+  <rect x="540" y="150" width="220" height="68" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
+  <text x="650" y="172" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="bold">SceneCamera</text>
+  <text x="650" y="190" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">ProjectionType: Ortho | Perspective</text>
+  <text x="650" y="204" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">fov, size, near/far clips</text>
+
+  <!-- Composition arrows -->
+  <line x1="150" y1="218" x2="150" y2="268" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowGray)"/>
+  <line x1="400" y1="218" x2="400" y2="268" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowGray)"/>
+  <line x1="650" y1="218" x2="650" y2="268" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowGray)"/>
+
+  <!-- Composition labels -->
+  <text x="95" y="248" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-style="italic">owned by</text>
+  <text x="345" y="248" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-style="italic">used by</text>
+  <text x="595" y="248" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-style="italic">owned by</text>
+
+  <!-- Owners -->
+  <rect x="40" y="270" width="220" height="46" rx="8" ry="8" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="150" y="290" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="12">CameraOrthoController</text>
+  <text x="150" y="306" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9">WASD move, scroll zoom, rotation</text>
+
+  <rect x="290" y="270" width="220" height="46" rx="8" ry="8" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="400" y="290" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="12">Editor Viewport</text>
+  <text x="400" y="306" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9">orbit camera for scene editing</text>
+
+  <rect x="540" y="270" width="220" height="46" rx="8" ry="8" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="650" y="290" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="12">component::Camera</text>
+  <text x="650" y="306" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9">primary flag, scene camera entity</text>
+
+  <!-- Legend -->
+  <line x1="150" y1="340" x2="190" y2="340" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
+  <text x="200" y="344" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Inherits from</text>
+  <line x1="380" y1="340" x2="420" y2="340" stroke="#8b949e" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#arrowGray)"/>
+  <text x="430" y="344" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Composition (owns/uses)</text>
+</svg>

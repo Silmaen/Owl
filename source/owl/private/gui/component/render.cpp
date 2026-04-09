@@ -167,6 +167,54 @@ void renderProps(SpriteRenderer& ioComponent) {
 	ImGui::DragFloat("Tiling Factor", &ioComponent.tilingFactor, 0.1f, 0.0f, 100.0f);
 }
 
+void renderProps(AnimatedSpriteRenderer& ioComponent) {
+	ImGui::ColorEdit4("Color", ioComponent.color.data());
+	if (const auto tex = imTexture(ioComponent.texture); tex.has_value()) {
+		if (ImGui::ImageButton("Spritesheet", tex.value(), {100.0f, 100.0f}, {0, 1}, {1, 0}) &&
+			ioComponent.texture != nullptr) {
+			ImGui::OpenPopup("AnimTextureSettings");
+		}
+	} else {
+		if (ImGui::Button("Spritesheet", {100.0f, 100.0f}) && ioComponent.texture != nullptr) {
+			ImGui::OpenPopup("AnimTextureSettings");
+		}
+	}
+	if (ImGui::BeginDragDropTarget()) {
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+			const auto* const path = static_cast<const char*>(payload->Data);
+			if (const auto texturePath = renderer::Renderer::getTextureLibrary().find(path))
+				ioComponent.texture = renderer::Texture2D::create(*texturePath);
+		}
+		ImGui::EndDragDropTarget();
+	}
+	bool removeTexture = false;
+	if (ImGui::BeginPopup("AnimTextureSettings")) {
+		if (ImGui::MenuItem("Remove texture"))
+			removeTexture = true;
+		ImGui::EndPopup();
+	}
+	if (removeTexture)
+		ioComponent.texture.reset();
+
+	const int maxFrame = static_cast<int>(std::max(ioComponent.columns * ioComponent.rows, 1u) - 1);
+	int cols = static_cast<int>(ioComponent.columns);
+	if (ImGui::DragInt("Columns", &cols, 1, 1, 256))
+		ioComponent.columns = static_cast<uint32_t>(std::max(cols, 1));
+	int rows = static_cast<int>(ioComponent.rows);
+	if (ImGui::DragInt("Rows", &rows, 1, 1, 256))
+		ioComponent.rows = static_cast<uint32_t>(std::max(rows, 1));
+	int first = static_cast<int>(ioComponent.firstFrame);
+	if (ImGui::DragInt("First Frame", &first, 1, 0, maxFrame))
+		ioComponent.firstFrame = static_cast<uint32_t>(std::clamp(first, 0, maxFrame));
+	int last = static_cast<int>(ioComponent.lastFrame);
+	if (ImGui::DragInt("Last Frame", &last, 1, static_cast<int>(ioComponent.firstFrame), maxFrame))
+		ioComponent.lastFrame =
+				static_cast<uint32_t>(std::clamp(last, static_cast<int>(ioComponent.firstFrame), maxFrame));
+	ImGui::DragFloat("Frame Duration", &ioComponent.frameDuration, 0.01f, 0.001f, 10.0f, "%.3f s");
+	ImGui::Checkbox("Loop", &ioComponent.loop);
+	ImGui::Text("Current Frame: %u", ioComponent.m_currentFrame);
+}
+
 void renderProps(CircleRenderer& ioComponent) {
 	ImGui::ColorEdit4("Color", ioComponent.color.data());
 	ImGui::DragFloat("Thickness", &ioComponent.thickness, 0.025f, 0.0f, 1.0f);

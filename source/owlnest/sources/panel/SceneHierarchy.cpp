@@ -26,6 +26,7 @@ auto componentIconName(const char* iCompName) -> const char* {
 			{"Transform", "comp_transform"},
 			{"Camera", "comp_camera"},
 			{"Sprite Renderer", "comp_sprite"},
+			{"Animated Sprite", "comp_animated_sprite"},
 			{"Circle Renderer", "comp_circle"},
 			{"Text Renderer", "comp_text"},
 			{"Physical body", "comp_physics"},

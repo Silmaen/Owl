@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="580" viewBox="0 0 800 580">
+  <rect id="background" x="0" y="0" width="800" height="580" rx="12" ry="12" fill="#1c2128"/>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#58a6ff"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="28" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold">Component Overview</text>
+
+  <!-- Central Entity box -->
+  <rect x="310" y="45" width="180" height="44" rx="10" ry="10" fill="#1f6feb" stroke="#e6edf3" stroke-width="2"/>
+  <text x="400" y="72" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold">Entity</text>
+
+  <!-- Arrows from Entity to groups -->
+  <line x1="340" y1="89" x2="140" y2="125" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <line x1="400" y1="89" x2="400" y2="125" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <line x1="460" y1="89" x2="660" y2="125" stroke="#58a6ff" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- ===== Mandatory (blue) ===== -->
+  <rect x="20" y="128" width="240" height="160" rx="8" ry="8" fill="none" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="140" y="148" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold">Mandatory</text>
+
+  <rect x="35" y="158" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="85" y="175" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">ID (UUID)</text>
+
+  <rect x="145" y="158" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="195" y="175" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">Tag (name)</text>
+
+  <rect x="35" y="190" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="85" y="207" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">Transform</text>
+
+  <rect x="145" y="190" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="195" y="207" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">Visibility</text>
+
+  <rect x="35" y="222" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
+  <text x="85" y="239" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">Hierarchy</text>
+
+  <text x="140" y="270" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9">Every entity has these</text>
+
+  <!-- ===== Rendering (green) ===== -->
+  <rect x="280" y="128" width="240" height="160" rx="8" ry="8" fill="none" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="400" y="148" text-anchor="middle" fill="#3fb950" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold">Rendering</text>
+
+  <rect x="295" y="158" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#3fb950" stroke-width="1"/>
+  <text x="345" y="175" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">SpriteRenderer</text>
+
+  <rect x="405" y="158" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#3fb950" stroke-width="1"/>
+  <text x="455" y="175" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="9">AnimatedSprite</text>
+
+  <rect x="295" y="190" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#3fb950" stroke-width="1"/>
+  <text x="345" y="207" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">CircleRenderer</text>
+
+  <rect x="405" y="190" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#3fb950" stroke-width="1"/>
+  <text x="455" y="207" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">Text</text>
+
+  <rect x="340" y="222" width="120" height="24" rx="5" ry="5" fill="#1a2332" stroke="#3fb950" stroke-width="1"/>
+  <text x="400" y="239" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">BackgroundTexture</text>
+
+  <text x="400" y="270" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9">Visual representation</text>
+
+  <!-- ===== Gameplay (red/orange) ===== -->
+  <rect x="540" y="128" width="240" height="160" rx="8" ry="8" fill="none" stroke="#d29922" stroke-width="1.5"/>
+  <text x="660" y="148" text-anchor="middle" fill="#d29922" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold">Gameplay</text>
+
+  <rect x="555" y="158" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#d29922" stroke-width="1"/>
+  <text x="605" y="175" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">Player</text>
+
+  <rect x="665" y="158" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#d29922" stroke-width="1"/>
+  <text x="715" y="175" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">PhysicBody</text>
+
+  <rect x="555" y="190" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#d29922" stroke-width="1"/>
+  <text x="605" y="207" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">Trigger</text>
+
+  <rect x="665" y="190" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#d29922" stroke-width="1"/>
+  <text x="715" y="207" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">EntityLink</text>
+
+  <rect x="610" y="222" width="100" height="24" rx="5" ry="5" fill="#1a2332" stroke="#d29922" stroke-width="1"/>
+  <text x="660" y="239" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">NativeScript</text>
+
+  <text x="660" y="270" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9">Logic and interaction</text>
+
+  <!-- ===== Lower row ===== -->
+  <!-- Camera (orange) -->
+  <rect x="80" y="320" width="200" height="90" rx="8" ry="8" fill="none" stroke="#f0883e" stroke-width="1.5"/>
+  <text x="180" y="340" text-anchor="middle" fill="#f0883e" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold">Camera</text>
+
+  <rect x="95" y="352" width="170" height="24" rx="5" ry="5" fill="#1a2332" stroke="#f0883e" stroke-width="1"/>
+  <text x="180" y="369" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">Camera → SceneCamera</text>
+
+  <text x="180" y="398" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9">Ortho / Perspective projection</text>
+
+  <!-- Audio (yellow) -->
+  <rect x="300" y="320" width="200" height="90" rx="8" ry="8" fill="none" stroke="#d2a8ff" stroke-width="1.5"/>
+  <text x="400" y="340" text-anchor="middle" fill="#d2a8ff" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="bold">Audio</text>
+
+  <rect x="315" y="352" width="80" height="24" rx="5" ry="5" fill="#1a2332" stroke="#d2a8ff" stroke-width="1"/>
+  <text x="355" y="369" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">SoundSource</text>
+
+  <rect x="405" y="352" width="80" height="24" rx="5" ry="5" fill="#1a2332" stroke="#d2a8ff" stroke-width="1"/>
+  <text x="445" y="369" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">SoundListener</text>
+
+  <text x="400" y="398" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9">3D spatial audio</text>
+
+  <!-- Component Tuples legend -->
+  <line x1="20" y1="440" x2="780" y2="440" stroke="#8b949e" stroke-width="1" stroke-dasharray="8,4"/>
+  <text x="400" y="460" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-style="italic">Component Tuples (compile-time registration)</text>
+
+  <rect x="40" y="472" width="220" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="150" y="490" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">CopiableComponents (all − ID, Tag)</text>
+
+  <rect x="280" y="472" width="240" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="400" y="490" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">SerializableComponents (all − ID)</text>
+
+  <rect x="540" y="472" width="230" height="26" rx="6" ry="6" fill="#1a2332" stroke="#8b949e" stroke-width="1"/>
+  <text x="655" y="490" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="10">OptionalComponents (all − ID, Tag, Transform)</text>
+
+  <!-- Legend -->
+  <rect x="100" y="520" width="14" height="14" rx="3" ry="3" fill="none" stroke="#58a6ff" stroke-width="1.5"/>
+  <text x="120" y="532" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Mandatory</text>
+  <rect x="210" y="520" width="14" height="14" rx="3" ry="3" fill="none" stroke="#3fb950" stroke-width="1.5"/>
+  <text x="230" y="532" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Rendering</text>
+  <rect x="320" y="520" width="14" height="14" rx="3" ry="3" fill="none" stroke="#d29922" stroke-width="1.5"/>
+  <text x="340" y="532" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Gameplay</text>
+  <rect x="420" y="520" width="14" height="14" rx="3" ry="3" fill="none" stroke="#f0883e" stroke-width="1.5"/>
+  <text x="440" y="532" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Camera</text>
+  <rect x="510" y="520" width="14" height="14" rx="3" ry="3" fill="none" stroke="#d2a8ff" stroke-width="1.5"/>
+  <text x="530" y="532" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Audio</text>
+</svg>

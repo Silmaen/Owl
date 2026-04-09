@@ -36,6 +36,15 @@ TEST(SceneSerializer, SaveLoadFULL) {
 	ent.addOrReplaceComponent<component::Camera>();
 	ent.addOrReplaceComponent<component::CircleRenderer>();
 	ent.addOrReplaceComponent<component::SpriteRenderer>();
+	{
+		auto& animSpr = ent.addOrReplaceComponent<component::AnimatedSpriteRenderer>();
+		animSpr.columns = 4;
+		animSpr.rows = 2;
+		animSpr.firstFrame = 1;
+		animSpr.lastFrame = 6;
+		animSpr.frameDuration = 0.05f;
+		animSpr.loop = false;
+	}
 	ent.addOrReplaceComponent<component::Player>();
 	auto ent2 = sc->createEntityWithUUID(7, "bobObject2");
 	auto& spr = ent2.addOrReplaceComponent<component::SpriteRenderer>();

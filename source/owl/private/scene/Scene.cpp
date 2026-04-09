@@ -176,6 +176,14 @@ void Scene::onStartRuntime() {
 									   .rolloff = soundComp.rolloff};
 		soundComp.runtimeHandle = sound::SoundCommand::play(soundData, params);
 	}
+
+	// Reset animated sprites
+	for (const auto view = registry.view<component::AnimatedSpriteRenderer>(); const auto entity: view) {
+		auto& anim = view.get<component::AnimatedSpriteRenderer>(entity);
+		anim.m_currentFrame = anim.firstFrame;
+		anim.m_elapsedTime = 0.0f;
+		anim.m_playing = true;
+	}
 }
 
 void Scene::onEndRuntime() {
@@ -330,6 +338,29 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 		}
 	}
 
+	// Update animated sprites
+	for (const auto view = registry.view<component::AnimatedSpriteRenderer>(); const auto entity: view) {
+		auto& anim = view.get<component::AnimatedSpriteRenderer>(entity);
+		if (!anim.m_playing || anim.columns == 0 || anim.rows == 0 || anim.frameDuration <= 0.0f)
+			continue;
+		const uint32_t totalFrames =
+				anim.lastFrame >= anim.firstFrame ? anim.lastFrame - anim.firstFrame + 1 : 1;
+		anim.m_elapsedTime += iTimeStep.getSeconds();
+		if (anim.m_elapsedTime >= anim.frameDuration) {
+			const auto framesToAdvance = static_cast<uint32_t>(anim.m_elapsedTime / anim.frameDuration);
+			anim.m_elapsedTime -= static_cast<float>(framesToAdvance) * anim.frameDuration;
+			if (anim.loop) {
+				anim.m_currentFrame = anim.firstFrame +
+									  (anim.m_currentFrame - anim.firstFrame + framesToAdvance) % totalFrames;
+			} else {
+				const uint32_t newFrame = anim.m_currentFrame + framesToAdvance;
+				anim.m_currentFrame = std::min(newFrame, anim.lastFrame);
+				if (anim.m_currentFrame >= anim.lastFrame)
+					anim.m_playing = false;
+			}
+		}
+	}
+
 	// Render 2D
 	if (mainCamera != nullptr) {
 		mainCamera->setTransform(cameraTransform);
@@ -462,6 +493,30 @@ void Scene::render() {
 										.color = sprite.color,
 										.texture = sprite.texture,
 										.tilingFactor = sprite.tilingFactor,
+										.entityId = static_cast<int>(entity)});
+	}
+	// Draw animated sprites
+	for (const auto view = registry.view<component::Transform, component::AnimatedSpriteRenderer>();
+		 auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, editorMode))
+			continue;
+		auto [transform, anim] = view.get<component::Transform, component::AnimatedSpriteRenderer>(entity);
+		const math::Transform worldTransform = getWorldTransform(ent);
+		const uint32_t safeCols = std::max(anim.columns, 1u);
+		const uint32_t safeRows = std::max(anim.rows, 1u);
+		const uint32_t frame = std::clamp(anim.m_currentFrame, anim.firstFrame, anim.lastFrame);
+		const uint32_t col = frame % safeCols;
+		const uint32_t row = frame / safeCols;
+		const float uMin = static_cast<float>(col) / static_cast<float>(safeCols);
+		const float uMax = static_cast<float>(col + 1) / static_cast<float>(safeCols);
+		const float vMax = 1.0f - static_cast<float>(row) / static_cast<float>(safeRows);
+		const float vMin = 1.0f - static_cast<float>(row + 1) / static_cast<float>(safeRows);
+		renderer::Renderer2D::drawQuad({.transform = worldTransform,
+										.color = anim.color,
+										.texture = anim.texture,
+										.textureCoords = {math::vec2{uMin, vMin}, math::vec2{uMax, vMin},
+														  math::vec2{uMax, vMax}, math::vec2{uMin, vMax}},
 										.entityId = static_cast<int>(entity)});
 	}
 	// Draw circles
@@ -785,6 +840,10 @@ template<>
 OWL_API void
 Scene::onComponentAdded<component::SpriteRenderer>([[maybe_unused]] const Entity& iEntity,
 												   [[maybe_unused]] component::SpriteRenderer& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::AnimatedSpriteRenderer>(
+		[[maybe_unused]] const Entity& iEntity, [[maybe_unused]] component::AnimatedSpriteRenderer& ioComponent) {}
 
 template<>
 OWL_API void

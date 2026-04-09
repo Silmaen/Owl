@@ -26,6 +26,8 @@ TEST(Component, render) {
 	renderProps(cam2);
 	SpriteRenderer spr{};
 	renderProps(spr);
+	AnimatedSpriteRenderer animSpr{};
+	renderProps(animSpr);
 	CircleRenderer circ;
 	renderProps(circ);
 	Text text{};

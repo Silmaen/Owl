@@ -1,0 +1,185 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="480" viewBox="0 0 800 480">
+  <!-- Dark background -->
+  <rect x="0" y="0" width="800" height="480" rx="12" ry="12" fill="#1c2128"/>
+
+  <!-- Title -->
+  <text x="400" y="24" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="bold">Owl Nest Editor Panel Layout</text>
+
+  <!-- ============================================================ -->
+  <!-- Top: Menu Bar (full width) -->
+  <!-- ============================================================ -->
+  <rect x="16" y="36" width="768" height="32" rx="6" ry="6" fill="#2d333b" stroke="#8b949e" stroke-width="1"/>
+  <text x="28" y="56" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold">Menu Bar</text>
+  <!-- Menu items -->
+  <text x="90" y="56" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">File</text>
+  <text x="112" y="56" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="10">|</text>
+  <text x="120" y="56" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Project</text>
+  <text x="157" y="56" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="10">|</text>
+  <text x="165" y="56" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="10">Settings</text>
+
+  <!-- Toolbar icons area (right side of menu bar) -->
+  <!-- Play -->
+  <rect x="560" y="42" width="20" height="20" rx="3" ry="3" fill="#1f6feb" stroke="#58a6ff" stroke-width="0.8"/>
+  <polygon points="567,46 567,58 577,52" fill="#e6edf3"/>
+  <!-- Pause -->
+  <rect x="584" y="42" width="20" height="20" rx="3" ry="3" fill="#2d333b" stroke="#8b949e" stroke-width="0.8"/>
+  <rect x="589" y="46" width="3" height="12" rx="1" ry="1" fill="#8b949e"/>
+  <rect x="596" y="46" width="3" height="12" rx="1" ry="1" fill="#8b949e"/>
+  <!-- Stop -->
+  <rect x="608" y="42" width="20" height="20" rx="3" ry="3" fill="#2d333b" stroke="#8b949e" stroke-width="0.8"/>
+  <rect x="613" y="47" width="10" height="10" rx="1" ry="1" fill="#8b949e"/>
+
+  <!-- Separator -->
+  <line x1="636" y1="44" x2="636" y2="60" stroke="#8b949e" stroke-width="0.5"/>
+
+  <!-- Gizmo: Translate -->
+  <rect x="644" y="42" width="20" height="20" rx="3" ry="3" fill="#2d333b" stroke="#8b949e" stroke-width="0.8"/>
+  <line x1="654" y1="56" x2="654" y2="46" stroke="#58a6ff" stroke-width="1.5"/>
+  <polygon points="654,44 651,48 657,48" fill="#58a6ff"/>
+  <line x1="654" y1="56" x2="660" y2="56" stroke="#58a6ff" stroke-width="1.5"/>
+  <!-- Gizmo: Rotate -->
+  <rect x="668" y="42" width="20" height="20" rx="3" ry="3" fill="#2d333b" stroke="#8b949e" stroke-width="0.8"/>
+  <circle cx="678" cy="52" r="6" fill="none" stroke="#8b949e" stroke-width="1.2" stroke-dasharray="3,2"/>
+  <!-- Gizmo: Scale -->
+  <rect x="692" y="42" width="20" height="20" rx="3" ry="3" fill="#2d333b" stroke="#8b949e" stroke-width="0.8"/>
+  <rect x="697" y="47" width="10" height="10" rx="0" ry="0" fill="none" stroke="#8b949e" stroke-width="1"/>
+  <rect x="699" y="49" width="6" height="6" rx="0" ry="0" fill="#8b949e" opacity="0.4"/>
+
+  <!-- ============================================================ -->
+  <!-- Left Panel: Scene Hierarchy -->
+  <!-- ============================================================ -->
+  <rect x="16" y="76" width="180" height="200" rx="6" ry="6" fill="#2d333b" stroke="#8b949e" stroke-width="1"/>
+  <!-- Header -->
+  <rect x="16" y="76" width="180" height="24" rx="6" ry="6" fill="#1f6feb"/>
+  <rect x="16" y="88" width="180" height="12" rx="0" ry="0" fill="#1f6feb"/>
+  <text x="106" y="93" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold">Scene Hierarchy</text>
+  <!-- Tree lines -->
+  <line x1="36" y1="112" x2="36" y2="180" stroke="#8b949e" stroke-width="0.8"/>
+  <line x1="36" y1="118" x2="52" y2="118" stroke="#8b949e" stroke-width="0.8"/>
+  <circle cx="56" cy="118" r="3" fill="#58a6ff"/>
+  <text x="64" y="121" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="9">Player</text>
+  <line x1="36" y1="136" x2="52" y2="136" stroke="#8b949e" stroke-width="0.8"/>
+  <circle cx="56" cy="136" r="3" fill="#58a6ff"/>
+  <text x="64" y="139" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="9">Camera</text>
+  <line x1="36" y1="154" x2="52" y2="154" stroke="#8b949e" stroke-width="0.8"/>
+  <circle cx="56" cy="154" r="3" fill="#58a6ff"/>
+  <text x="64" y="157" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="9">Platform</text>
+  <!-- Child indent -->
+  <line x1="52" y1="154" x2="52" y2="180" stroke="#8b949e" stroke-width="0.6"/>
+  <line x1="52" y1="172" x2="68" y2="172" stroke="#8b949e" stroke-width="0.6"/>
+  <circle cx="72" cy="172" r="2.5" fill="#8b949e"/>
+  <text x="78" y="175" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="8">Sprite</text>
+
+  <!-- ============================================================ -->
+  <!-- Left Panel (lower): Properties -->
+  <!-- ============================================================ -->
+  <rect x="16" y="284" width="180" height="180" rx="6" ry="6" fill="#2d333b" stroke="#8b949e" stroke-width="1"/>
+  <!-- Header -->
+  <rect x="16" y="284" width="180" height="24" rx="6" ry="6" fill="#1f6feb"/>
+  <rect x="16" y="296" width="180" height="12" rx="0" ry="0" fill="#1f6feb"/>
+  <text x="106" y="301" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold">Properties</text>
+  <!-- Component icon + label -->
+  <rect x="28" y="316" width="12" height="12" rx="2" ry="2" fill="#58a6ff" opacity="0.6"/>
+  <text x="46" y="326" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="9">Transform</text>
+  <rect x="28" y="336" width="156" height="8" rx="2" ry="2" fill="#1c2128" stroke="#8b949e" stroke-width="0.5"/>
+  <rect x="28" y="350" width="156" height="8" rx="2" ry="2" fill="#1c2128" stroke="#8b949e" stroke-width="0.5"/>
+  <rect x="28" y="364" width="156" height="8" rx="2" ry="2" fill="#1c2128" stroke="#8b949e" stroke-width="0.5"/>
+  <!-- Another component -->
+  <rect x="28" y="384" width="12" height="12" rx="2" ry="2" fill="#58a6ff" opacity="0.6"/>
+  <text x="46" y="394" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="9">Sprite Renderer</text>
+  <rect x="28" y="404" width="156" height="8" rx="2" ry="2" fill="#1c2128" stroke="#8b949e" stroke-width="0.5"/>
+  <!-- Add component button -->
+  <rect x="40" y="426" width="140" height="20" rx="4" ry="4" fill="#1f6feb" stroke="#58a6ff" stroke-width="0.8"/>
+  <text x="110" y="440" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="9">+ Add Component</text>
+
+  <!-- ============================================================ -->
+  <!-- Center: Viewport -->
+  <!-- ============================================================ -->
+  <rect x="204" y="76" width="408" height="280" rx="6" ry="6" fill="#161b22" stroke="#8b949e" stroke-width="1"/>
+  <!-- Header -->
+  <rect x="204" y="76" width="408" height="24" rx="6" ry="6" fill="#2d333b" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="408" y="93" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="bold">Viewport</text>
+  <!-- Camera icon in corner -->
+  <rect x="218" y="112" width="28" height="18" rx="3" ry="3" fill="#2d333b" stroke="#8b949e" stroke-width="0.6" opacity="0.7"/>
+  <circle cx="232" cy="121" r="5" fill="none" stroke="#8b949e" stroke-width="0.8"/>
+  <circle cx="232" cy="121" r="2" fill="#8b949e"/>
+  <!-- Grid lines (scene background) -->
+  <line x1="300" y1="108" x2="300" y2="348" stroke="#8b949e" stroke-width="0.15" opacity="0.4"/>
+  <line x1="400" y1="108" x2="400" y2="348" stroke="#8b949e" stroke-width="0.15" opacity="0.4"/>
+  <line x1="500" y1="108" x2="500" y2="348" stroke="#8b949e" stroke-width="0.15" opacity="0.4"/>
+  <line x1="212" y1="180" x2="604" y2="180" stroke="#8b949e" stroke-width="0.15" opacity="0.4"/>
+  <line x1="212" y1="250" x2="604" y2="250" stroke="#8b949e" stroke-width="0.15" opacity="0.4"/>
+  <!-- Gizmo illustration in center -->
+  <line x1="408" y1="230" x2="408" y2="192" stroke="#3fb950" stroke-width="1.8"/>
+  <polygon points="408,188 405,194 411,194" fill="#3fb950"/>
+  <line x1="408" y1="230" x2="444" y2="230" stroke="#f85149" stroke-width="1.8"/>
+  <polygon points="448,230 442,227 442,233" fill="#f85149"/>
+  <!-- Entity rect (selection highlight) -->
+  <rect x="388" y="210" width="40" height="40" rx="2" ry="2" fill="none" stroke="#58a6ff" stroke-width="1.2" stroke-dasharray="4,2"/>
+
+  <!-- ============================================================ -->
+  <!-- Stats overlay (floating in viewport corner) -->
+  <!-- ============================================================ -->
+  <rect x="534" y="112" width="70" height="56" rx="4" ry="4" fill="#2d333b" stroke="#8b949e" stroke-width="0.6" opacity="0.85"/>
+  <text x="542" y="124" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="8" font-weight="bold">Stats</text>
+  <text x="542" y="136" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="7">FPS: 60.00</text>
+  <text x="542" y="146" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="7">Draw Calls: 12</text>
+  <text x="542" y="156" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="7">Quads: 48</text>
+  <text x="542" y="166" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="7">Memory: 24 MB</text>
+
+  <!-- ============================================================ -->
+  <!-- Right Panel placeholder (can be used for additional panels) -->
+  <!-- Intentionally blank to match the actual layout flexibility -->
+  <!-- ============================================================ -->
+
+  <!-- ============================================================ -->
+  <!-- Bottom: Content Browser + Log tabs -->
+  <!-- ============================================================ -->
+  <rect x="204" y="364" width="580" height="100" rx="6" ry="6" fill="#2d333b" stroke="#8b949e" stroke-width="1"/>
+  <!-- Tab bar -->
+  <rect x="204" y="364" width="580" height="22" rx="6" ry="6" fill="#21262d"/>
+  <rect x="204" y="376" width="580" height="10" rx="0" ry="0" fill="#21262d"/>
+  <!-- Active tab: Content Browser -->
+  <rect x="210" y="366" width="110" height="18" rx="4" ry="4" fill="#1f6feb"/>
+  <text x="265" y="379" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="bold">Content Browser</text>
+  <!-- Inactive tab: Log -->
+  <rect x="326" y="366" width="50" height="18" rx="4" ry="4" fill="#2d333b" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="351" y="379" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9">Log</text>
+  <!-- File grid -->
+  <rect x="218" y="396" width="44" height="50" rx="3" ry="3" fill="#1c2128" stroke="#8b949e" stroke-width="0.5"/>
+  <rect x="226" y="402" width="28" height="24" rx="2" ry="2" fill="#58a6ff" opacity="0.3"/>
+  <text x="240" y="440" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="7">scenes/</text>
+
+  <rect x="272" y="396" width="44" height="50" rx="3" ry="3" fill="#1c2128" stroke="#8b949e" stroke-width="0.5"/>
+  <rect x="280" y="402" width="28" height="24" rx="2" ry="2" fill="#58a6ff" opacity="0.3"/>
+  <text x="294" y="440" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="7">textures/</text>
+
+  <rect x="326" y="396" width="44" height="50" rx="3" ry="3" fill="#1c2128" stroke="#8b949e" stroke-width="0.5"/>
+  <rect x="334" y="402" width="28" height="24" rx="2" ry="2" fill="#58a6ff" opacity="0.3"/>
+  <text x="348" y="440" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="7">sounds/</text>
+
+  <rect x="380" y="396" width="44" height="50" rx="3" ry="3" fill="#1c2128" stroke="#8b949e" stroke-width="0.5"/>
+  <rect x="388" y="402" width="28" height="24" rx="2" ry="2" fill="#1f6feb" opacity="0.4"/>
+  <text x="402" y="440" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="7">level.owl</text>
+
+  <!-- ============================================================ -->
+  <!-- Right side: empty docking area indication -->
+  <!-- ============================================================ -->
+  <rect x="620" y="76" width="164" height="280" rx="6" ry="6" fill="#2d333b" stroke="#8b949e" stroke-width="0.5" stroke-dasharray="4,3"/>
+  <text x="702" y="220" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-style="italic">Dockable Area</text>
+  <text x="702" y="234" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="8" font-style="italic">(Settings, Parameters,</text>
+  <text x="702" y="246" text-anchor="middle" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="8" font-style="italic">Project Settings)</text>
+
+  <!-- ============================================================ -->
+  <!-- Labels / Legend -->
+  <!-- ============================================================ -->
+  <rect x="16" y="468" width="768" height="1" rx="0" ry="0" fill="#8b949e" opacity="0.3"/>
+  <rect x="24" y="474" width="8" height="4" rx="1" ry="1" fill="#1f6feb"/>
+  <text x="38" y="478" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="8">active / accent</text>
+  <rect x="120" y="474" width="8" height="4" rx="1" ry="1" fill="#2d333b" stroke="#8b949e" stroke-width="0.5"/>
+  <text x="134" y="478" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="8">panel background</text>
+  <rect x="240" y="474" width="8" height="4" rx="1" ry="1" fill="none" stroke="#8b949e" stroke-width="0.5" stroke-dasharray="2,1"/>
+  <text x="254" y="478" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="8">optional / dockable</text>
+  <rect x="370" y="474" width="8" height="4" rx="1" ry="1" fill="#58a6ff" opacity="0.3"/>
+  <text x="384" y="478" fill="#8b949e" font-family="system-ui, -apple-system, sans-serif" font-size="8">selectable item</text>
+</svg>
