@@ -29,9 +29,9 @@ The engine library (`source/owl/`) is organized into the following modules:
 Public headers live in `source/owl/public/` and implementation files in `source/owl/private/`,
 both mirroring the module structure.
 
-**Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
-[Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·
-[Editor (Owl Nest)](editor.md)
+**Dedicated guides:** [Renderer](@ref renderer) · [Scene & Components](@ref scene) ·
+[Events & Input](@ref event-input) · [Physics](@ref physics) · [Sound](@ref sound) ·
+[Editor (Owl Nest)](@ref editor)
 
 ## Backend System
 
@@ -44,10 +44,10 @@ Owl uses a backend abstraction so that different platform APIs can be swapped at
 | Backend  | API         | Notes                                         |
 |----------|-------------|-----------------------------------------------|
 | `OpenGL` | OpenGL 4.5  | Widely supported on desktop; limited on ARM64 |
-| `Vulkan` | Vulkan 1.3+ | Modern low-level API; full desktop support    |
+| `Vulkan` | Vulkan 1.4+ | Modern low-level API; full desktop support    |
 | `Null`   | None        | Headless mode for servers or testing          |
 
-See [Renderer](renderer.md) for the full rendering pipeline, batch system, and camera details.
+See [Renderer](@ref renderer) for the full rendering pipeline, batch system, and camera details.
 
 ### Input Backends
 
@@ -77,7 +77,7 @@ At the scene level, **SoundSource** and **SoundListener** ECS components
 drive spatial audio during runtime. The OpenAL backend uses the inverse-distance-clamped
 attenuation model for 3D positional sound.
 
-See [Sound System](sound.md) for the full user guide covering components, spatial audio, and gameplay triggers.
+See [Sound System](@ref sound) for the full user guide covering components, spatial audio, and gameplay triggers.
 
 ## Applications
 
@@ -86,9 +86,6 @@ The project produces several executables built on top of the `OwlEngine` shared 
 | Application | Directory          | Description                                                        |
 |-------------|--------------------|--------------------------------------------------------------------|
 | Owl Nest    | `source/owlnest/`  | Scene editor with project management (editor + runner executables) |
-| Owl Drone   | `source/owldrone/` | Drone navigator (MAVLink via MAVSDK)                               |
-| Owl Cast    | `source/owlcast/`  | Cast application                                                   |
-| Sandbox     | `source/sandbox/`  | Testing and prototyping playground                                 |
 
 ## Project System
 
@@ -119,7 +116,7 @@ Shaders are written in **Slang** (`.slang` files), a single-source shading langu
    bytecode
 4. **Caching**: SPIR-V binaries are cached as `.spv` files with hash-based validation
 
-See [Renderer > Shader System](renderer.md#renderer) for the shader class API.
+See [Renderer > Shader System](@ref renderer) for the shader class API.
 
 Key conventions:
 
@@ -135,7 +132,7 @@ Key conventions:
 ![ECS Pipeline](../images/ecs_pipeline.svg)
 
 Entities support parent-child relationships via the **Hierarchy** component (mandatory on every entity).
-See [Scene & Components](scene.md) for the full component reference and entity lifecycle.
+See [Scene & Components](@ref scene) for the full component reference and entity lifecycle.
 
 ### Transform Inheritance
 
@@ -261,4 +258,4 @@ Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager) 
 in `depmanager.yml` at the project root. During CMake configure, the `cmake/Depmanager.cmake`
 module automatically downloads missing packages from the configured remote server.
 
-See [Building](building.md) for instructions on configuring and building with dependencies.
+See [Building](@ref building) for instructions on configuring and building with dependencies.

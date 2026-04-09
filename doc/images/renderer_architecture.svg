@@ -66,7 +66,7 @@
   <text x="150" y="424" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="13">OpenGL 4.5</text>
 
   <rect x="300" y="402" width="140" height="34" rx="6" ry="6" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
-  <text x="370" y="424" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="13">Vulkan 1.3</text>
+  <text x="370" y="424" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="13">Vulkan 1.4</text>
 
   <rect x="520" y="402" width="140" height="34" rx="6" ry="6" fill="#1a2332" stroke="#58a6ff" stroke-width="1"/>
   <text x="590" y="424" text-anchor="middle" fill="#58a6ff" font-family="system-ui, -apple-system, sans-serif" font-size="13">Null (headless)</text>

@@ -64,7 +64,7 @@ ignore_list_win = [
     "mfreadwrite.dll",
 ]
 
-to_check = ["libOwlEngine", "OwlNest", "OwlDrone", "OwlRunner", "OwlSandbox"]
+to_check = ["libOwlEngine", "OwlNest", "OwlRunner"]
 
 platforms = [
     "Windows_x64",

@@ -64,8 +64,6 @@ cmake --build output/build/<preset>
 | `package-engine-windows`    | Package engine library for Windows |
 | `package-app-nest-linux`    | Package Owl Nest for Linux         |
 | `package-app-nest-windows`  | Package Owl Nest for Windows       |
-| `package-app-drone-linux`   | Package Owl Drone for Linux        |
-| `package-app-drone-windows` | Package Owl Drone for Windows      |
 
 ## Running Tests
 
@@ -104,9 +102,6 @@ poetry run python ci_action.py Documentation <preset>
 |-------------------------------------------|---------|------------------------------------------------|
 | `OWL_BUILD_SHARED`                        | ON      | Build engine as shared library                 |
 | `OWL_BUILD_NEST`                          | ON      | Build Owl Nest editor                          |
-| `OWL_BUILD_SANDBOX`                       | ON      | Build sandbox app                              |
-| `OWL_BUILD_DRONE`                         | ON      | Build drone app                                |
-| `OWL_BUILD_CAST`                          | ON      | Build cast app                                 |
 | `OWL_TESTING`                             | ON      | Enable unit tests                              |
 | `OWL_ENABLE_COVERAGE`                     | OFF     | Code coverage (auto-enabled in debug presets)  |
 | `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (performance impact) |

@@ -14,9 +14,6 @@ option(${PROJECT_PREFIX}_USE_RELEASE_THIRD_PARTY "Use release version of third p
 option(${PROJECT_PREFIX}_DEFINE_VULKAN_LAYERS "Copy vulkan layers in the binary directory" OFF)
 
 option(${PROJECT_PREFIX}_BUILD_NEST "If wanted to generate Owl Nest" ON)
-option(${PROJECT_PREFIX}_BUILD_SANDBOX "If wanted to generate Sandbox" ON)
-option(${PROJECT_PREFIX}_BUILD_DRONE "If wanted to generate OWl Drone" ON)
-option(${PROJECT_PREFIX}_BUILD_CAST "If wanted to generate OWl Cast" ON)
 
 option(${PROJECT_PREFIX}_TESTING "Enable the unit tests" ON)
 option(${PROJECT_PREFIX}_ENABLE_COVERAGE "Run code coverage during test run" OFF)

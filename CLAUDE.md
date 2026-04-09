@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Owl (v0.0.3-dev) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.3, Null), input backends
+Owl (v0.0.3) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
 (GLFW, Null), and sound backends (OpenAL, Null). It uses an Entity-Component-System architecture (EnTT) with
 **hierarchical parent-child entities** and includes a scene editor (Owl Nest). Supported platforms: Linux (x64/arm64)
 and Windows (x64, MinGW).
@@ -27,8 +27,7 @@ cmake --build output/build/linux-gcc-release
 - Windows (MinGW): `windows-gcc-release`, `windows-gcc-debug`, `windows-clang-release`, `windows-clang-debug`
 - CI-only: `linux-clang-tidy`, `windows-clang-tidy`, `linux-sanitizer-address`, `linux-sanitizer-thread`,
   `linux-sanitizer-undefined-behavior`, `linux-sanitizer-leak`
-- Packaging: `package-engine-linux`, `package-engine-windows`, `package-app-nest-linux`, `package-app-nest-windows`,
-  `package-app-drone-linux`, `package-app-drone-windows`
+- Packaging: `package-engine-linux`, `package-engine-windows`, `package-app-nest-linux`, `package-app-nest-windows`
 
 ### Run tests:
 
@@ -75,9 +74,6 @@ poetry run python ci_action.py Documentation <preset>
   - Project system: `owl_project.yml` config, dynamic asset directories, scene import
   - Scene hierarchy panel with drag-drop reparenting and context menus
   - Project settings panel, window title reflects active project
-- `owldrone/` — Drone navigator
-- `owlcast/` — Cast application
-- `sandbox/` — Testing/prototyping app
 
 ### Tests (`test/`)
 
@@ -169,14 +165,44 @@ The engine includes a task scheduler for asynchronous work, backed by [Taskflow]
 
 ### Dependencies
 
-- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (31 external dependencies)
+- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (30 external dependencies)
 - Dependencies auto-download during CMake configure step
 - Versions are pinned explicitly in `depmanager.yml`
 - Key libraries: EnTT (ECS), ImGui/ImGuizmo (GUI), Box2D (physics), spdlog (logging), yaml-cpp (serialization), Vulkan
   SDK, GLFW, OpenAL, glad, freetype, msdfgen/msdf-atlas-gen (fonts), tinygltf/tinyobjloader/ufbx (mesh loading),
   magic_enum (enum reflection), cpptrace/libdwarf/debugbreak (debugging), zeus (math), nfd (file dialogs), tinyxml2
   (XML), libpng, zlib/zstd (compression), libsndfile (audio files), stb_image (image loading), lunasvg (SVG rendering),
-  googletest (testing), mavsdk (drone MAVLink SDK), Taskflow (task parallelism)
+  googletest (testing), Taskflow (task parallelism)
+
+### DepManager Packaging (OwlEngine as a package)
+
+OwlEngine can be built as a depmanager package for use by external projects (e.g., OwlDrone). The recipe is defined in
+`owl_engine.py` at the project root, following the same pattern as recipes in the OwlDependencies project.
+
+```bash
+# Build the OwlEngine package locally
+poetry run depmanager build .
+
+# The package will be available as owl_engine:0.0.3 in the local depmanager cache
+poetry run depmanager pack ls -p owl_engine:0.0.3
+```
+
+**Recipe details** (`owl_engine.py`):
+- Produces both `shared` and `static` variants
+- Public dependencies: EnTT, imgui (declared in recipe `dependencies`)
+- Disables editor, tests, and sets packaging mode during build
+- Installs: library (`lib/`), public headers (`include/`), engine assets (`assets/`), CMake config files
+  (`lib/cmake/OwlEngine/`)
+
+**Downstream usage** (in consuming project's `depmanager.yml`):
+```yaml
+packages:
+  owl_engine:
+    version: 0.0.3
+    kind: "shared"
+```
+
+Then in CMakeLists.txt: `find_package(OwlEngine CONFIG REQUIRED)` and link with `Owl::OwlEngine`.
 
 ## DepManager (`dmgr`) Usage
 
@@ -307,9 +333,6 @@ Enforced by `.clang-format` (LLVM-based) and `.clang-tidy`. Key conventions:
 |-------------------------------------------|---------|------------------------------------------------|
 | `OWL_BUILD_SHARED`                        | ON      | Build engine as shared library                 |
 | `OWL_BUILD_NEST`                          | ON      | Build Owl Nest editor                          |
-| `OWL_BUILD_SANDBOX`                       | ON      | Build sandbox app                              |
-| `OWL_BUILD_DRONE`                         | ON      | Build drone app                                |
-| `OWL_BUILD_CAST`                          | ON      | Build cast app                                 |
 | `OWL_TESTING`                             | ON      | Enable unit tests                              |
 | `OWL_ENABLE_COVERAGE`                     | OFF     | Code coverage (auto-enabled in debug presets)  |
 | `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (performance impact) |

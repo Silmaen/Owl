@@ -1,6 +1,6 @@
 # Owl
 
-![Version](https://img.shields.io/badge/version-0.0.2-blue)
+![Version](https://img.shields.io/badge/version-0.0.3-blue)
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-blue?logo=cplusplus)
 ![CMake 3.24+](https://img.shields.io/badge/CMake-3.24%2B-blue?logo=cmake)
 ![GitHub License](https://img.shields.io/github/license/Silmaen/Owl)
@@ -19,11 +19,11 @@ The full generated documentation is available online:
 
 **Documentation pages** ([browse on GitHub](doc/pages)):
 
-- [Architecture](doc/pages/architecture.md) -- Engine modules, backends, and shader pipeline
-- [Sound System](doc/pages/sound.md) -- Sound system: components, spatial audio, and gameplay triggers
-- [Building](doc/pages/building.md) -- Prerequisites, presets, testing, and CMake options
-- [Roadmap](doc/pages/roadmap.md) -- Planned and completed features by version
-- [Contributing](doc/pages/contributing.md) -- Code style, conventions, and workflow
+- [Architecture](@ref architecture) -- Engine modules, backends, and shader pipeline
+- [Sound System](@ref sound) -- Sound system: components, spatial audio, and gameplay triggers
+- [Building](@ref building) -- Prerequisites, presets, testing, and CMake options
+- [Roadmap](@ref roadmap) -- Planned and completed features by version
+- [Contributing](@ref contributing) -- Code style, conventions, and workflow
 
 ## Features
 
@@ -74,7 +74,7 @@ cmake --build output/build/linux-gcc-release
 ctest --test-dir output/build/linux-gcc-release --output-on-failure
 ```
 
-See [Building](doc/pages/building.md) for the full build guide and all available presets.
+See [Building](@ref building) for the full build guide and all available presets.
 
 ## Dependencies
 

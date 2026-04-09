@@ -3,15 +3,12 @@
 #
 if (${PROJECT_PREFIX}_PACKAGE_ENGINE)
     include(GNUInstallDirs)
-    # Create config file for FindPackage
-    foreach (config IN ITEMS Debug Release)
-        install(EXPORT OwlTargets${CMAKE_SYSTEM_NAME}${CMAKE_SYSTEM_PROCESSOR}-${config}
-                FILE OwlTargets${CMAKE_SYSTEM_NAME}.cmake
-                NAMESPACE Owl::
-                CONFIGURATIONS ${config}
-                DESTINATION cmake
-                COMPONENT Engine)
-    endforeach ()
+    # Install CMake export targets
+    install(EXPORT OwlEngineTargets
+            FILE OwlEngineTargets.cmake
+            NAMESPACE Owl::
+            DESTINATION lib/cmake/OwlEngine
+            COMPONENT Engine)
     # Create file for use of find_package
     include(CMakePackageConfigHelpers)
     write_basic_package_version_file(
@@ -22,11 +19,11 @@ if (${PROJECT_PREFIX}_PACKAGE_ENGINE)
     configure_package_config_file(
             ${CMAKE_CURRENT_LIST_DIR}/cmake/config/OwlEngineConfig.cmake.in
             ${CMAKE_CURRENT_BINARY_DIR}/OwlEngineConfig.cmake
-            INSTALL_DESTINATION cmake)
+            INSTALL_DESTINATION lib/cmake/OwlEngine)
     install(FILES
             ${CMAKE_CURRENT_BINARY_DIR}/OwlEngineConfig.cmake
             ${CMAKE_CURRENT_BINARY_DIR}/OwlEngineConfigVersion.cmake
-            DESTINATION cmake)
+            DESTINATION lib/cmake/OwlEngine)
 endif ()
 
 set(CPACK_PACKAGE_NAME "Owl")

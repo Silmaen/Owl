@@ -176,25 +176,15 @@ endif ()
 #    Installations
 # ------------------------------------------------------------------------------
 if (${PROJECT_PREFIX}_PACKAGE_ENGINE)
-    foreach (config IN ITEMS Debug Release)
-        install(TARGETS ${ENGINE_NAME} EXPORT OwlTargets${CMAKE_SYSTEM_NAME}${CMAKE_SYSTEM_PROCESSOR}-${config}
-                CONFIGURATIONS ${config}
-                LIBRARY DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/${config}
-                ARCHIVE DESTINATION ${${PROJECT_PREFIX}_INSTALL_LIB}/${config}
-                RUNTIME DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/${config}
-                FRAMEWORK DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/${config}
-                FILE_SET HEADERS DESTINATION include
-                COMPONENT Engine
-        )
-        install(TARGETS ${CMAKE_PROJECT_NAME}_Base EXPORT OwlTargets${CMAKE_SYSTEM_NAME}${CMAKE_SYSTEM_PROCESSOR}-${config}
-                CONFIGURATIONS ${config}
-                COMPONENT Engine)
-        install(DIRECTORY ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/
-                DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/${config}
-                CONFIGURATIONS ${config}
-                COMPONENT Engine
-        )
-    endforeach ()
+    install(TARGETS ${ENGINE_NAME} ${CMAKE_PROJECT_NAME}_Base
+            EXPORT OwlEngineTargets
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION bin
+            FRAMEWORK DESTINATION lib
+            FILE_SET HEADERS DESTINATION include
+            COMPONENT Engine
+    )
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
             DESTINATION assets
             COMPONENT Engine

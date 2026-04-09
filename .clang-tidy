@@ -4,7 +4,7 @@
 # every header in every TU, which was the main cause of slow analysis.
 ---
 WarningsAsErrors: '*'
-HeaderFilterRegex: '.*/source/owl/.*\.h$|.*/source/owlnest/.*\.h$|.*/source/owldrone/.*\.h$|.*/source/owlcast/.*\.h$|.*/source/sandbox/.*\.h$'
+HeaderFilterRegex: '.*/source/owl/.*\.h$|.*/source/owlnest/.*\.h$'
 FormatStyle: 'file'
 Checks: '-*,
   bugprone-*,

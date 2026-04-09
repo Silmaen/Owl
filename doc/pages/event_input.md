@@ -273,6 +273,6 @@ auto EditorLayer::onKeyPressed(const event::KeyPressedEvent& iEvent) -> bool {
 }
 ```
 
-See [Architecture](architecture.md) for the overall engine structure,
-[Editor](editor.md) for the Owl Nest application, and [Scene](scene.md) for
+See [Architecture](@ref architecture) for the overall engine structure,
+[Editor](@ref editor) for the Owl Nest application, and [Scene](@ref scene) for
 the entity-component system.

@@ -8,7 +8,7 @@ management, cameras, framebuffers, and backend abstraction.
 ## Overview
 
 Owl provides a 2D batch renderer built on an abstract backend layer (OpenGL 4.5,
-Vulkan 1.3, or Null for headless). All rendering goes through static facade classes:
+Vulkan 1.4, or Null for headless). All rendering goes through static facade classes:
 `RenderCommand` for low-level GPU operations, `Renderer2D` for batched 2D primitives
 (quads, circles, lines, text), and `BackgroundRenderer` for fullscreen backgrounds.
 
@@ -45,7 +45,7 @@ is selected at startup via `RenderCommand::create(Type)`.
 | Backend    | API         | Notes                                          |
 |------------|-------------|-------------------------------------------------|
 | `OpenGL`   | OpenGL 4.5  | Widely supported on desktop; limited on ARM64  |
-| `Vulkan`   | Vulkan 1.3+ | Modern low-level API; full desktop support     |
+| `Vulkan`   | Vulkan 1.4+ | Modern low-level API; full desktop support     |
 | `Null`     | None        | Headless mode for servers or testing           |
 
 **Key `RenderAPI` methods:**
@@ -62,7 +62,7 @@ is selected at startup via `RenderCommand::create(Type)`.
 | `beginFrame()` / `endFrame()` | Frame lifecycle (Vulkan swap chain)     |
 | `beginBatch()` / `endBatch()` | Batch render pass (Vulkan subpass)      |
 
-See [Architecture](architecture.md) for the backend selection and application startup flow.
+See [Architecture](@ref architecture) for the backend selection and application startup flow.
 
 ## Renderer2D: The Batch Renderer {#renderer2d}
 
@@ -284,7 +284,7 @@ to render the scene and support mouse-based entity picking.
 ## Shader System
 
 Shaders are written in **Slang** and compiled to SPIR-V at runtime.
-See [Architecture > Shader Pipeline](architecture.md#shader-pipeline) for the
+See [Architecture > Shader Pipeline](@ref architecture) for the
 compilation, reflection, and caching pipeline.
 
 ### Shader API
