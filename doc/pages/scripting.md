@@ -198,6 +198,54 @@ Supported component names for `has_component`: `"Transform"`, `"PhysicBody"`,
 | `log.warn(msg)`  | Log at warning level |
 | `log.error(msg)` | Log at error level   |
 
+### `ui`
+
+| Function                                    | Description                          |
+|---------------------------------------------|--------------------------------------|
+| `ui.set_text(entity_id, text)`             | Set UIText content                   |
+| `ui.get_text(entity_id)`                   | Get UIText content                   |
+| `ui.set_visible(entity_id, bool)`          | Set entity game visibility           |
+| `ui.set_progress(entity_id, value)`        | Set UIProgressBar value (0..1)       |
+| `ui.get_slider_value(entity_id)`           | Get UISlider value                   |
+| `ui.set_slider_value(entity_id, value)`    | Set UISlider value                   |
+| `ui.set_button_enabled(entity_id, bool)`   | Enable/disable a UIButton            |
+| `ui.transition_fade_in(duration)`          | Start fade-in transition (seconds)   |
+| `ui.transition_fade_out(duration)`         | Start fade-out transition (seconds)  |
+| `ui.is_transition_active()`               | Check if a transition is in progress |
+
+## Screen Transitions
+
+Use `ui.transition_fade_out()` and `ui.transition_fade_in()` to create smooth
+transitions between scenes. The transitions render a full-screen black overlay
+with animated alpha.
+
+```lua
+function on_start_clicked()
+    ui.transition_fade_out(0.5)  -- fade to black over 0.5 seconds
+end
+
+function on_update(dt)
+    -- After fade completes, load next scene
+    if not ui.is_transition_active() and fading then
+        scene.load_scene("game_level_1")
+    end
+end
+```
+
+## Scene Templates
+
+The engine includes template scenes in `engine_assets/templates/` that provide
+starting points for common game screens:
+
+| Template          | Description                                    |
+|-------------------|------------------------------------------------|
+| `main_menu.owl`   | Title text, Start and Quit buttons             |
+| `pause_menu.owl`  | Semi-transparent panel, Resume and Quit buttons|
+| `game_over.owl`   | Game Over text, Retry and Main Menu buttons    |
+
+Copy a template into your project's assets and customize the text, colors, and
+Lua callbacks to match your game.
+
 ## Scene Lifecycle Integration
 
 ### onStartRuntime

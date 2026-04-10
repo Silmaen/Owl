@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Outer panel -->
+  <rect x="70" y="80" width="372" height="352" rx="24" stroke="white" stroke-width="32" fill="none"/>
+  <!-- Inner horizontal divider -->
+  <line x1="70" y1="180" x2="442" y2="180" stroke="white" stroke-width="24"/>
+  <!-- Inner vertical divider -->
+  <line x1="256" y1="180" x2="256" y2="432" stroke="white" stroke-width="24"/>
+</svg>

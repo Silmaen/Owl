@@ -98,4 +98,11 @@ auto RenderAPI::getMaxTextureSlots() const -> uint32_t {
 
 void RenderAPI::setDepthMask(const bool iEnabled) { glDepthMask(iEnabled ? GL_TRUE : GL_FALSE); }
 
+void RenderAPI::setDepthTest(const bool iEnabled) {
+	if (iEnabled)
+		glEnable(GL_DEPTH_TEST);
+	else
+		glDisable(GL_DEPTH_TEST);
+}
+
 }// namespace owl::renderer::opengl

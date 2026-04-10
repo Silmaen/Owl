@@ -106,6 +106,54 @@ OWL_API void renderProps(scene::component::SoundListener& ioComponent);
 OWL_API void renderProps(scene::component::LuaScript& ioComponent);
 
 /**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::Canvas& ioComponent);
+
+/**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UIRect& ioComponent);
+
+/**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UIText& ioComponent);
+
+/**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UIImage& ioComponent);
+
+/**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UIPanel& ioComponent);
+
+/**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UIButton& ioComponent);
+
+/**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UISlider& ioComponent);
+
+/**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::UIProgressBar& ioComponent);
+
+/**
  * @brief List of components that have a render function.
  */
 using DrawableComponents =
@@ -114,7 +162,9 @@ using DrawableComponents =
 				   scene::component::Text, scene::component::PhysicBody, scene::component::Player,
 				   scene::component::Trigger, scene::component::EntityLink, scene::component::BackgroundTexture,
 				   scene::component::Visibility, scene::component::SoundSource, scene::component::SoundListener,
-				   scene::component::LuaScript>;
+				   scene::component::LuaScript, scene::component::Canvas, scene::component::UIRect,
+				   scene::component::UIText, scene::component::UIImage, scene::component::UIPanel,
+				   scene::component::UIButton, scene::component::UISlider, scene::component::UIProgressBar>;
 
 
 }// namespace owl::gui::component

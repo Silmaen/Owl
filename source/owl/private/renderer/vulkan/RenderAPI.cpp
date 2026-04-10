@@ -123,4 +123,12 @@ void RenderAPI::setDepthMask([[maybe_unused]] const bool iEnabled) {
 	// Vulkan depth write is managed through pipeline state; no-op for now.
 }
 
+void RenderAPI::setDepthTest(const bool iEnabled) {
+	auto& vkh = internal::VulkanHandler::get();
+	vkh.depthTestEnabled = iEnabled;
+	// Also apply immediately if a command buffer is active.
+	if (const auto& cmd = vkh.getCurrentCommandBuffer(); cmd != nullptr)
+		vkCmdSetDepthTestEnable(cmd, iEnabled ? VK_TRUE : VK_FALSE);
+}
+
 }// namespace owl::renderer::vulkan

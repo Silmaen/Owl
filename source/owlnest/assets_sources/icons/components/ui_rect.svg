@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Dashed rectangle (layout rect) -->
+  <rect x="80" y="120" width="352" height="272" rx="12" stroke="white" stroke-width="28" fill="none" stroke-dasharray="40,20"/>
+  <!-- Anchor crosshair at center -->
+  <line x1="256" y1="220" x2="256" y2="290" stroke="white" stroke-width="24" stroke-linecap="round"/>
+  <line x1="220" y1="256" x2="292" y2="256" stroke="white" stroke-width="24" stroke-linecap="round"/>
+</svg>

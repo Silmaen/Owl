@@ -66,6 +66,13 @@ public:
 	/// @param[in] iOtherEntityId UUID of the other entity.
 	void onCollision(uint64_t iOtherEntityId);
 
+	/**
+	 * @brief Call an arbitrary named function in the script.
+	 * @param[in] iName The function name.
+	 * @return True if the function existed and was called successfully.
+	 */
+	[[nodiscard]] auto callFunction(const std::string& iName) -> bool;
+
 	// ---- Property access ----
 
 	/// @brief Set a float property on the instance.

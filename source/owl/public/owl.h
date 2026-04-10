@@ -58,6 +58,8 @@
 #include "scene/Scene.h"
 #include "scene/SceneCamera.h"
 #include "scene/SceneSerializer.h"
+#include "scene/ScreenTransition.h"
+#include "scene/UIInputSystem.h"
 #include "scene/component/components.h"
 //--------------------------
 

@@ -436,4 +436,110 @@ void renderProps(LuaScript& ioComponent) {
 	}
 }
 
+void renderProps(Canvas& ioComponent) {
+	const std::string currentSpace{magic_enum::enum_name(ioComponent.space)};
+	if (ImGui::BeginCombo("Space", currentSpace.c_str())) {
+		for (const auto& spaceName: magic_enum::enum_names<Canvas::Space>()) {
+			const std::string sName{spaceName};
+			if (ImGui::Selectable(sName.c_str(), currentSpace == sName))
+				ioComponent.space = magic_enum::enum_cast<Canvas::Space>(sName).value_or(Canvas::Space::ScreenOverlay);
+		}
+		ImGui::EndCombo();
+	}
+	ImGui::DragInt("Sort Order", &ioComponent.sortOrder);
+}
+
+void renderProps(UIRect& ioComponent) {
+	const std::string currentAnchor{magic_enum::enum_name(ioComponent.anchor)};
+	if (ImGui::BeginCombo("Anchor", currentAnchor.c_str())) {
+		for (const auto& anchorName: magic_enum::enum_names<UIRect::Anchor>()) {
+			const std::string sName{anchorName};
+			if (ImGui::Selectable(sName.c_str(), currentAnchor == sName))
+				ioComponent.anchor = magic_enum::enum_cast<UIRect::Anchor>(sName).value_or(UIRect::Anchor::Center);
+		}
+		ImGui::EndCombo();
+	}
+	float pivotArr[2] = {ioComponent.pivot.x(), ioComponent.pivot.y()};
+	if (ImGui::DragFloat2("Pivot", pivotArr, 0.01f, 0.0f, 1.0f)) {
+		ioComponent.pivot.x() = pivotArr[0];
+		ioComponent.pivot.y() = pivotArr[1];
+	}
+	float sizeArr[2] = {ioComponent.size.x(), ioComponent.size.y()};
+	if (ImGui::DragFloat2("Size", sizeArr, 1.0f, 0.0f, 10000.0f)) {
+		ioComponent.size.x() = sizeArr[0];
+		ioComponent.size.y() = sizeArr[1];
+	}
+	float offsetArr[2] = {ioComponent.anchorOffset.x(), ioComponent.anchorOffset.y()};
+	if (ImGui::DragFloat2("Offset", offsetArr, 1.0f)) {
+		ioComponent.anchorOffset.x() = offsetArr[0];
+		ioComponent.anchorOffset.y() = offsetArr[1];
+	}
+}
+
+void renderProps(UIText& ioComponent) {
+	ImGui::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
+	ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
+	const std::string currentAlign{magic_enum::enum_name(ioComponent.alignment)};
+	if (ImGui::BeginCombo("Alignment", currentAlign.c_str())) {
+		for (const auto& alignName: magic_enum::enum_names<UIText::Alignment>()) {
+			const std::string sName{alignName};
+			if (ImGui::Selectable(sName.c_str(), currentAlign == sName))
+				ioComponent.alignment =
+						magic_enum::enum_cast<UIText::Alignment>(sName).value_or(UIText::Alignment::Left);
+		}
+		ImGui::EndCombo();
+	}
+	ImGui::DragFloat("Kerning", &ioComponent.kerning, 0.1f);
+	ImGui::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.1f);
+}
+
+void renderProps(UIImage& ioComponent) {
+	ImGui::ColorEdit4("Tint", reinterpret_cast<float*>(&ioComponent.tint));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+}
+
+void renderProps(UIPanel& ioComponent) {
+	ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Border Color", reinterpret_cast<float*>(&ioComponent.borderColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::DragFloat("Border Width", &ioComponent.borderWidth, 0.5f, 0.0f, 20.0f);
+	const std::string currentLayout{magic_enum::enum_name(ioComponent.layout)};
+	if (ImGui::BeginCombo("Layout", currentLayout.c_str())) {
+		for (const auto& layoutName: magic_enum::enum_names<UIPanel::Layout>()) {
+			const std::string sName{layoutName};
+			if (ImGui::Selectable(sName.c_str(), currentLayout == sName))
+				ioComponent.layout =
+						magic_enum::enum_cast<UIPanel::Layout>(sName).value_or(UIPanel::Layout::None);
+		}
+		ImGui::EndCombo();
+	}
+	if (ioComponent.layout != UIPanel::Layout::None) {
+		ImGui::DragFloat("Spacing", &ioComponent.spacing, 0.5f, 0.0f, 100.0f);
+		ImGui::DragFloat("Padding", &ioComponent.padding, 0.5f, 0.0f, 100.0f);
+	}
+}
+
+void renderProps(UIButton& ioComponent) {
+	ImGui::ColorEdit4("Normal Color", reinterpret_cast<float*>(&ioComponent.normalColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Hover Color", reinterpret_cast<float*>(&ioComponent.hoverColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Pressed Color", reinterpret_cast<float*>(&ioComponent.pressedColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Disabled Color", reinterpret_cast<float*>(&ioComponent.disabledColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::InputText("On Click Callback", &ioComponent.onClickCallback);
+}
+
+void renderProps(UISlider& ioComponent) {
+	ImGui::DragFloat("Value", &ioComponent.value, 0.01f, ioComponent.minValue, ioComponent.maxValue);
+	ImGui::DragFloat("Min", &ioComponent.minValue, 0.1f);
+	ImGui::DragFloat("Max", &ioComponent.maxValue, 0.1f);
+	ImGui::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Handle Color", reinterpret_cast<float*>(&ioComponent.handleColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::InputText("On Value Changed", &ioComponent.onValueChangedCallback);
+}
+
+void renderProps(UIProgressBar& ioComponent) {
+	ImGui::DragFloat("Value", &ioComponent.value, 0.01f, 0.0f, 1.0f);
+	ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+}
+
 }// namespace owl::gui::component

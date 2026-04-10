@@ -178,6 +178,15 @@ public:
 	}
 
 	/**
+	 * @brief Enable or disable depth testing.
+	 * @param[in] iEnabled True to enable depth testing, false to disable.
+	 */
+	static void setDepthTest(const bool iEnabled) {
+		if (m_renderAPI)
+			m_renderAPI->setDepthTest(iEnabled);
+	}
+
+	/**
 	 * @brief Check if the API type require initializations.
 	 * @return True if initialization required.
 	 */

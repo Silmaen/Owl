@@ -120,6 +120,14 @@ void buildIconBank() {
 		{"comp_link",         resolve("icons/components/link")},
 		{"comp_background",   resolve("icons/components/background")},
 		{"comp_visibility",   resolve("icons/components/visibility")},
+		{"comp_canvas",       resolve("icons/components/canvas")},
+		{"comp_ui_rect",      resolve("icons/components/ui_rect")},
+		{"comp_ui_text",      resolve("icons/components/ui_text")},
+		{"comp_ui_image",     resolve("icons/components/ui_image")},
+		{"comp_ui_panel",     resolve("icons/components/ui_panel")},
+		{"comp_ui_button",    resolve("icons/components/ui_button")},
+		{"comp_ui_slider",    resolve("icons/components/ui_slider")},
+		{"comp_ui_progress",  resolve("icons/components/ui_progress")},
 	};
 	// clang-format on
 
@@ -798,6 +806,8 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 void EditorLayer::saveProject() {
 	if (!m_project.isLoaded())
 		return;
+	if (m_state == State::Edit)
+		saveCurrentScene();
 	m_project.saveToFile(m_project.projectDirectory / "owl_project.yml");
 }
 

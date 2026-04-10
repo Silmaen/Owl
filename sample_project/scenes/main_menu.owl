@@ -1,0 +1,159 @@
+Scene: untitled
+Entities:
+  - Entity: 12304005224497022934
+    Tag:
+      tag: VersionLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 8797183574659062688
+    UIRect:
+      anchor: BottomRight
+      pivotX: 1
+      pivotY: 0
+      sizeX: 180
+      sizeY: 25
+      offsetX: -15
+      offsetY: 15
+    UIText:
+      text: v0.1.0-dev
+      color: [0.5, 0.5, 0.5, 0.699999988]
+      fontSize: 12
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 3224690628006215049
+    Tag:
+      tag: PlayButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 8797183574659062688
+    UIButton:
+      normalColor: [0.150000006, 0.349999994, 0.649999976, 1]
+      hoverColor: [0.25, 0.449999988, 0.75, 1]
+      pressedColor: [0.100000001, 0.25, 0.5, 1]
+      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
+      onClickCallback: on_play_clicked
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 200
+      sizeY: 50
+      offsetX: 0
+      offsetY: 0
+    UIText:
+      text: Play
+      color: [1, 1, 1, 1]
+      fontSize: 26
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 2550293993158311280
+    Tag:
+      tag: TitleText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 8797183574659062688
+    UIRect:
+      anchor: TopCenter
+      pivotX: 0.5
+      pivotY: 1
+      sizeX: 600
+      sizeY: 80
+      offsetX: 0
+      offsetY: -80
+    UIText:
+      text: Owl Feature Demo
+      color: [1, 0.850000024, 0.200000003, 1]
+      fontSize: 42
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 8797183574659062688
+    Tag:
+      tag: MenuCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    LuaScript:
+      scriptPath: scripts/main_menu.lua
+  - Entity: 10774928363415025913
+    Tag:
+      tag: DecoCircle2
+    Transform:
+      translation: [4, 1.5, 0]
+      rotation: [0, 0, 0]
+      scale: [2, 2, 1]
+    CircleRenderer:
+      color: [0.400000006, 0.200000003, 0.5, 0.300000012]
+      thickness: 0.150000006
+      fade: 0.0500000007
+    Visibility:
+      gameVisible: true
+  - Entity: 3550243053970409875
+    Tag:
+      tag: DecoCircle1
+    Transform:
+      translation: [-3, -1, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 3, 1]
+    CircleRenderer:
+      color: [0.150000006, 0.25, 0.5, 0.400000006]
+      thickness: 0.200000003
+      fade: 0.0500000007
+    Visibility:
+      gameVisible: true
+  - Entity: 12917652997129510525
+    Tag:
+      tag: Background
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [20, 15, 1]
+    SpriteRenderer:
+      color: [0.0799999982, 0.0799999982, 0.180000007, 1]
+    Visibility:
+      gameVisible: true
+  - Entity: 9441464555110826767
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 10
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    Visibility:
+      gameVisible: true

@@ -1,0 +1,110 @@
+Scene: Main Menu
+Entities:
+  - Entity: 1000
+    Tag:
+      tag: UICanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+  - Entity: 1001
+    Tag:
+      tag: Title
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 1000
+    UIRect:
+      anchor: TopCenter
+      pivotX: 0.5
+      pivotY: 1
+      sizeX: 400
+      sizeY: 60
+      offsetX: 0
+      offsetY: -80
+    UIText:
+      text: "Game Title"
+      color: [1, 1, 1, 1]
+      fontSize: 48
+      alignment: Center
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 1002
+    Tag:
+      tag: StartButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 1000
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 200
+      sizeY: 50
+      offsetX: 0
+      offsetY: 30
+    UIButton:
+      normalColor: [0.3, 0.3, 0.3, 1]
+      hoverColor: [0.4, 0.4, 0.4, 1]
+      pressedColor: [0.2, 0.2, 0.2, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_start_clicked
+    UIText:
+      text: "Start"
+      color: [1, 1, 1, 1]
+      fontSize: 24
+      alignment: Center
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 1003
+    Tag:
+      tag: QuitButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 1000
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 200
+      sizeY: 50
+      offsetX: 0
+      offsetY: -40
+    UIButton:
+      normalColor: [0.3, 0.3, 0.3, 1]
+      hoverColor: [0.4, 0.4, 0.4, 1]
+      pressedColor: [0.2, 0.2, 0.2, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_quit_clicked
+    UIText:
+      text: "Quit"
+      color: [1, 1, 1, 1]
+      fontSize: 24
+      alignment: Center
+      kerning: 0
+      lineSpacing: 0

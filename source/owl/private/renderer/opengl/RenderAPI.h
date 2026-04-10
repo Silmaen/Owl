@@ -80,5 +80,6 @@ public:
 	 * @param[in] iEnabled True to enable depth writing, false to disable.
 	 */
 	void setDepthMask(bool iEnabled) override;
+	void setDepthTest(bool iEnabled) override;
 };
 }// namespace owl::renderer::opengl

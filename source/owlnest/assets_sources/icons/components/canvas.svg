@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Monitor/screen shape -->
+  <rect x="80" y="80" width="352" height="260" rx="20" stroke="white" stroke-width="32" fill="none"/>
+  <!-- Stand -->
+  <line x1="256" y1="340" x2="256" y2="410" stroke="white" stroke-width="32" stroke-linecap="round"/>
+  <line x1="170" y1="410" x2="342" y2="410" stroke="white" stroke-width="32" stroke-linecap="round"/>
+</svg>
