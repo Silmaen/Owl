@@ -61,6 +61,11 @@
 #include "scene/component/components.h"
 //--------------------------
 
+// ------- script ----------
+#include "script/ScriptEngine.h"
+#include "script/ScriptInstance.h"
+// -------------------------
+
 // ------ renderer ---------
 #include "renderer/Buffer.h"
 #include "renderer/CameraEditor.h"

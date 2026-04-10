@@ -70,6 +70,7 @@ void buildIconBank() {
 		{"text_icon",         resolve("icons/browser/text")},
 		{"ttf_icon",          resolve("icons/browser/ttf")},
 		{"yml_icon",          resolve("icons/browser/yml")},
+		{"lua_icon",          resolve("icons/browser/lua")},
 		// Action icons (context menus, toolbar, etc.)
 		{"delete",            resolve("icons/actions/delete")},
 		{"rename",            resolve("icons/actions/rename")},
@@ -112,6 +113,7 @@ void buildIconBank() {
 		{"comp_text",         resolve("icons/components/text")},
 		{"comp_physics",      resolve("icons/components/physics")},
 		{"comp_script",       resolve("icons/components/script")},
+		{"comp_lua_script",   resolve("icons/components/lua_script")},
 		{"comp_sound",        resolve("icons/components/sound")},
 		{"comp_trigger",      resolve("icons/components/trigger")},
 		{"comp_player",       resolve("icons/components/player")},
@@ -127,8 +129,8 @@ void buildIconBank() {
 	// Extract theme colors for icon rendering from the active ImGui style.
 	const auto& style = ImGui::GetStyle();
 	const gui::IconThemeColors themeColors{
-			.primary = {style.Colors[ImGuiCol_Text].x, style.Colors[ImGuiCol_Text].y,
-						style.Colors[ImGuiCol_Text].z, style.Colors[ImGuiCol_Text].w},
+			.primary = {style.Colors[ImGuiCol_Text].x, style.Colors[ImGuiCol_Text].y, style.Colors[ImGuiCol_Text].z,
+						style.Colors[ImGuiCol_Text].w},
 			.secondary = {style.Colors[ImGuiCol_ButtonActive].x, style.Colors[ImGuiCol_ButtonActive].y,
 						  style.Colors[ImGuiCol_ButtonActive].z, style.Colors[ImGuiCol_ButtonActive].w},
 	};
@@ -337,8 +339,7 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 
 	// After a cross-level teleport, the new scene is in Editing state.
 	// Start its runtime and apply the pending velocity.
-	if ((m_state == State::Play || m_state == State::Pause) &&
-		m_activeScene->status == scene::Scene::Status::Editing) {
+	if ((m_state == State::Play || m_state == State::Pause) && m_activeScene->status == scene::Scene::Status::Editing) {
 		m_activeScene->onStartRuntime();
 		if (m_pendingTeleportVelocity) {
 			m_pendingTeleportVelocity = false;
@@ -354,10 +355,9 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 						const math::vec2f finalVelocity = {
 								m_teleportVelocity.x() * cosR - m_teleportVelocity.y() * sinR,
 								m_teleportVelocity.x() * sinR + m_teleportVelocity.y() * cosR};
-						physic::PhysicCommand::setTransform(player,
-															{targetTransform.translation().x(),
-															 targetTransform.translation().y()},
-															targetRotation);
+						physic::PhysicCommand::setTransform(
+								player, {targetTransform.translation().x(), targetTransform.translation().y()},
+								targetRotation);
 						physic::PhysicCommand::setVelocity(player, finalVelocity);
 						auto& playerTransform = player.getComponent<scene::component::Transform>().transform;
 						playerTransform.translation().x() = targetTransform.translation().x();
@@ -431,9 +431,12 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 	ImGui::Begin("Stats");
 	ImGui::Text("%s", std::format("FPS: {:.2f}", iTimeStep.getFps()).c_str());
 	ImGui::Separator();
+	ImGui::Text("%s", std::format("Current used memory: {}",
+								  core::utils::sizeToString(debug::TrackerAPI::globals().allocatedMemory))
+							  .c_str());
 	ImGui::Text("%s",
-				std::format("Current used memory: {}", core::utils::sizeToString(debug::TrackerAPI::globals().allocatedMemory)).c_str());
-	ImGui::Text("%s", std::format("Max used memory: {}", core::utils::sizeToString(debug::TrackerAPI::globals().memoryPeek)).c_str());
+				std::format("Max used memory: {}", core::utils::sizeToString(debug::TrackerAPI::globals().memoryPeek))
+						.c_str());
 	ImGui::Text("%s", std::format("Allocation calls: {}", debug::TrackerAPI::globals().allocationCalls).c_str());
 	ImGui::Text("%s", std::format("Deallocation calls: {}", debug::TrackerAPI::globals().deallocationCalls).c_str());
 	ImGui::Text("%s",
@@ -558,7 +561,7 @@ void EditorLayer::renderToolbar() {
 	ImGui::Begin("##toolbar", nullptr,
 				 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-	auto& iconBank = gui::IconBank::instance();
+	const auto& iconBank = gui::IconBank::instance();
 
 	// Helper to render an icon button with fallback
 	const auto iconButton = [&](const char* iId, const char* iIconName, const char* iFallback,
@@ -733,7 +736,7 @@ void EditorLayer::handleTeleportRequest() {
 
 	m_activeScene->onEndRuntime();
 
-	auto newScene = mkShared<scene::Scene>();
+	const auto newScene = mkShared<scene::Scene>();
 	if (const scene::SceneSerializer sc(newScene); !sc.deserialize(levelPath)) {
 		OWL_CORE_ERROR("Teleport: failed to load level '{}'", request.levelName)
 		return;
@@ -862,9 +865,7 @@ void EditorLayer::packScene() {
 
 	// Build the scene pack.
 	io::pack::PackWriter writer;
-	for (const auto& ref: assets) {
-		writer.addFile(ref.diskPath, ref.packPath, ref.assetType);
-	}
+	for (const auto& ref: assets) { writer.addFile(ref.diskPath, ref.packPath, ref.assetType); }
 
 	auto outputPath = destPath;
 	if (outputPath.extension() != ".owlpack")
@@ -911,8 +912,7 @@ void EditorLayer::packGame() {
 	std::filesystem::create_directories(gameDir);
 
 	// Scan all assets reachable from the first scene.
-	const auto assets =
-			io::pack::AssetScanner::scanProject(m_project.projectDirectory, m_project.firstScene);
+	const auto assets = io::pack::AssetScanner::scanProject(m_project.projectDirectory, m_project.firstScene);
 	if (assets.empty()) {
 		OWL_CORE_WARN("No assets found to pack")
 		return;
@@ -920,9 +920,7 @@ void EditorLayer::packGame() {
 
 	// Build the asset pack.
 	io::pack::PackWriter writer;
-	for (const auto& ref: assets) {
-		writer.addFile(ref.diskPath, ref.packPath, ref.assetType);
-	}
+	for (const auto& ref: assets) { writer.addFile(ref.diskPath, ref.packPath, ref.assetType); }
 
 	const auto packFilename = m_project.name + ".owlpack";
 	const auto packPath = gameDir / packFilename;
@@ -969,9 +967,9 @@ void EditorLayer::packGame() {
 	// Set executable permission on Linux.
 #ifdef OWL_PLATFORM_LINUX
 	std::filesystem::permissions(gameDir / runnerExe.filename(),
-								std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec |
-										std::filesystem::perms::others_exec,
-								std::filesystem::perm_options::add);
+								 std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec |
+										 std::filesystem::perms::others_exec,
+								 std::filesystem::perm_options::add);
 #endif
 
 	// Copy shared libraries.

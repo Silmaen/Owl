@@ -46,3 +46,4 @@ cache
 /CMakeUserPresets.json
 api.py
 Doxyfile
+*.log

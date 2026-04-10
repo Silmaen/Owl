@@ -1,4 +1,4 @@
-# Physics System {#physics}
+# Physics System {#page-physics}
 
 [TOC]
 
@@ -19,7 +19,7 @@ active during **Play mode** -- entities are not simulated while editing.
 ![Physics Integration](../images/physics_integration.svg)
 
 The physics module follows the same facade + pimpl pattern used by the sound and
-renderer modules (see [Architecture](@ref architecture)):
+renderer modules (see [Architecture](@ref page-architecture)):
 
 | Class                    | Role                                                                 |
 |--------------------------|----------------------------------------------------------------------|
@@ -161,7 +161,7 @@ Jump is only applied when the entity's vertical velocity is near zero (i.e. the
 player is on the ground). The `Player` component requires a `PhysicBody` on the
 same entity.
 
-See [Scene System](@ref scene) for more details on the entity component model.
+See [Scene System](@ref page-scene) for more details on the entity component model.
 
 ## Trigger Collision
 
@@ -198,5 +198,5 @@ space when the entity has a parent, using the inverse of the parent's world
 transform. This ensures the local `Transform` component stays consistent with
 the hierarchy while Box2D remains the authority on world position.
 
-See [Scene System](@ref scene) for details on the hierarchy system, world
+See [Scene System](@ref page-scene) for details on the hierarchy system, world
 transform computation, and reparenting behavior.

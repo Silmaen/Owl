@@ -1,4 +1,4 @@
-# Event and Input System {#event-input}
+# Event and Input System {#page-event-input}
 
 [TOC]
 
@@ -273,6 +273,6 @@ auto EditorLayer::onKeyPressed(const event::KeyPressedEvent& iEvent) -> bool {
 }
 ```
 
-See [Architecture](@ref architecture) for the overall engine structure,
-[Editor](@ref editor) for the Owl Nest application, and [Scene](@ref scene) for
+See [Architecture](@ref page-architecture) for the overall engine structure,
+[Editor](@ref page-editor) for the Owl Nest application, and [Scene](@ref page-scene) for
 the entity-component system.

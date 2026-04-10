@@ -1,4 +1,4 @@
-# Scene and Component System {#scene}
+# Scene and Component System {#page-scene}
 
 [TOC]
 
@@ -152,7 +152,7 @@ YAML key: `SpriteRenderer`
 | `loop`         | `bool`     | `true`   | Loop animation                  |
 
 YAML key: `AnimatedSpriteRenderer`.
-See [Renderer > Animated Sprites](@ref renderer) for UV computation details.
+See [Renderer > Animated Sprites](@ref page-renderer) for UV computation details.
 
 #### CircleRenderer
 
@@ -196,7 +196,7 @@ YAML key: `BackgroundTexture`. Only the first entity with this component is rend
 | `fixedAspectRatio`| `bool`       | `false` | Lock aspect ratio             |
 | `camera`         | `SceneCamera` | —       | Orthographic or perspective   |
 
-YAML key: `Camera`. See [Renderer > Camera System](@ref renderer).
+YAML key: `Camera`. See [Renderer > Camera System](@ref page-renderer).
 
 ### Gameplay Components
 
@@ -222,7 +222,7 @@ YAML key: `Player`. Input is parsed from keyboard each frame via `parseInputs()`
 | `restitution`  | `float`    | `0.0`       | Bounciness (0–1)             |
 | `friction`     | `float`    | `0.5`       | Surface friction             |
 
-YAML key: `PhysicBody`. See [Physics](@ref physics) for the full physics guide.
+YAML key: `PhysicBody`. See [Physics](@ref page-physics) for the full physics guide.
 
 #### Trigger
 
@@ -253,7 +253,7 @@ YAML key: `NativeScript` (not typically serialized in scenes).
 
 ### Audio Components
 
-See [Sound System](@ref sound) for the full audio guide.
+See [Sound System](@ref page-sound) for the full audio guide.
 
 - **SoundSource** (YAML: `SoundSource`): audio playback with 3D spatial support
 - **SoundListener** (YAML: `SoundListener`): marks the entity as the audio "ear"
@@ -294,7 +294,7 @@ If any ancestor is hidden, the entity is effectively hidden.
 ### Physics and Hierarchy
 
 Physics bodies (Box2D) operate in **world space** independently of the scene hierarchy.
-See [Physics > Hierarchy Interaction](@ref physics) for details.
+See [Physics > Hierarchy Interaction](@ref page-physics) for details.
 
 ## Scene Serialization
 

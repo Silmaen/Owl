@@ -1,4 +1,4 @@
-# Roadmap {#roadmap}
+# Roadmap {#page-roadmap}
 
 [TOC]
 
@@ -242,23 +242,22 @@ a 2D lighting system.
 **Goal:** Users can design a complete game in Owl Nest and package it as a standalone distributable
 application (Linux / Windows).
 
-- Scripting (Lua)
-  - ![Planned][planned] Lua interpreter integration
-    - Embed Lua 5.4 via DepManager, `LuaEngine` wrapper in `source/owl/private/script/`
+- Scripting (Lua) — See [Lua Scripting](@ref page-scripting)
+  - ![Done][done] Lua interpreter integration
+    - Embed Lua 5.5 via DepManager, `LuaEngine` wrapper in `source/owl/private/script/`
     - Public API: `ScriptEngine`, `ScriptInstance` in `source/owl/public/script/`
-  - ![Planned][planned] LuaScript component
+  - ![Done][done] LuaScript component
       - Path to `.lua` file, exposed properties table editable in inspector
       - Lifecycle callbacks: `on_create`, `on_update`, `on_destroy`, `on_collision`
-  - ![Planned][planned] Engine API exposed to Lua
-      - Entity manipulation (get/add/has component, destroy)
+  - ![Done][done] Engine API exposed to Lua
+      - Entity manipulation (get/has component, get name, destroy)
       - Transform, Physics (impulse, velocity), Input (keys, mouse), Sound (play, stop, volume)
-      - Scene (find entity, create entity, load scene, status), Time, Logging
-  - ![Planned][planned] Editor support for Lua scripts
-      - Inspector: display/edit exposed script properties
-      - Content Browser: `.lua` icon, open in external editor
+      - Scene (find entity, create entity, destroy entity), Time, Logging
+  - ![Done][done] Editor support for Lua scripts
+      - Inspector: display/edit exposed script properties with Refresh button
+      - Content Browser: `.lua` icon
       - Serialization: script path and property values saved in `.owl`
-      - Hot-reload in Edit mode when file changes on disk
-  - ![Planned][planned] Lua scripts in Runner
+  - ![Done][done] Lua scripts in Runner
       - Runner loads and executes `.lua` files from `.owlpack`
       - Same lifecycle as editor (on_create, on_update, etc.)
 - In-Game UI

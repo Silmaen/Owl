@@ -39,6 +39,8 @@ auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<gui::IconB
 		return iconBank.getIcon("ttf_icon");
 	if (iPath.extension() == ".yml" || iPath.extension() == ".yaml")
 		return iconBank.getIcon("yml_icon");
+	if (iPath.extension() == ".lua")
+		return iconBank.getIcon("lua_icon");
 	return iconBank.getIcon("text_icon");
 }
 

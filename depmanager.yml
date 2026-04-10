@@ -34,6 +34,9 @@ packages:
   libdwarf:
     version: 2.2.0
     kind: "static"
+  lua:
+    version: 5.5.0
+    kind: "static"
   lunasvg:
     version: 3.5.0
     kind: "static"

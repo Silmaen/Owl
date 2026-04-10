@@ -112,6 +112,25 @@ auto AssetScanner::resolveSound(const std::string& iSoundAsset) -> std::optional
 	return std::nullopt;
 }
 
+auto AssetScanner::resolveScript(const std::string& iScriptPath) -> std::optional<AssetReference> {
+	if (iScriptPath.empty())
+		return std::nullopt;
+	// If the path is absolute and exists, use it directly.
+	if (const std::filesystem::path absPath(iScriptPath); absPath.is_absolute() && exists(absPath))
+		return AssetReference{.packPath = makeRelativePath(absPath), .diskPath = absPath, .assetType = AssetType::Script};
+	if (!core::Application::instanced())
+		return std::nullopt;
+	for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+		if (auto p = assetsPath / iScriptPath; exists(p))
+			return AssetReference{.packPath = iScriptPath, .diskPath = p, .assetType = AssetType::Script};
+		if (auto p = assetsPath / "scripts" / iScriptPath; exists(p)) {
+			const auto rel = std::filesystem::path("scripts") / iScriptPath;
+			return AssetReference{.packPath = rel.string(), .diskPath = p, .assetType = AssetType::Script};
+		}
+	}
+	return std::nullopt;
+}
+
 auto AssetScanner::resolveScene(const std::string& iLevelName) -> std::optional<std::filesystem::path> {
 	if (iLevelName.empty())
 		return std::nullopt;
@@ -189,6 +208,14 @@ void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,//
 		if (auto soundSrc = entity["SoundSource"]; soundSrc) {
 			if (auto asset = soundSrc["soundAsset"]; asset) {
 				if (auto ref = resolveSound(asset.as<std::string>()); ref && !hasAsset(ioAssets, ref->packPath)) {
+					ioAssets.push_back(*ref);
+				}
+			}
+		}
+		// Scan LuaScript script path.
+		if (auto luaScript = entity["LuaScript"]; luaScript) {
+			if (auto scriptPath = luaScript["scriptPath"]; scriptPath) {
+				if (auto ref = resolveScript(scriptPath.as<std::string>()); ref && !hasAsset(ioAssets, ref->packPath)) {
 					ioAssets.push_back(*ref);
 				}
 			}

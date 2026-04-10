@@ -1,4 +1,4 @@
-# Contributing {#contributing}
+# Contributing {#page-contributing}
 
 [TOC]
 
@@ -67,7 +67,7 @@ Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager) 
    ```
 3. Do **not** call `find_package()` directly for DepManager-managed dependencies
 
-See [Building](@ref building) for the full build setup.
+See [Building](@ref page-building) for the full build setup.
 
 ## Logging
 

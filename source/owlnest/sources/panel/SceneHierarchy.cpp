@@ -38,6 +38,7 @@ auto componentIconName(const char* iCompName) -> const char* {
 			{"Visibility", "comp_visibility"},
 			{"Sound Source", "comp_sound"},
 			{"Sound Listener", "comp_sound"},
+			{"Lua Script", "comp_lua_script"},
 	};
 	if (const auto it = map.find(iCompName); it != map.end())
 		return it->second;

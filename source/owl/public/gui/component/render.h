@@ -100,6 +100,12 @@ OWL_API void renderProps(scene::component::SoundSource& ioComponent);
 OWL_API void renderProps(scene::component::SoundListener& ioComponent);
 
 /**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::LuaScript& ioComponent);
+
+/**
  * @brief List of components that have a render function.
  */
 using DrawableComponents =
@@ -107,7 +113,8 @@ using DrawableComponents =
 				   scene::component::AnimatedSpriteRenderer, scene::component::CircleRenderer,
 				   scene::component::Text, scene::component::PhysicBody, scene::component::Player,
 				   scene::component::Trigger, scene::component::EntityLink, scene::component::BackgroundTexture,
-				   scene::component::Visibility, scene::component::SoundSource, scene::component::SoundListener>;
+				   scene::component::Visibility, scene::component::SoundSource, scene::component::SoundListener,
+				   scene::component::LuaScript>;
 
 
 }// namespace owl::gui::component

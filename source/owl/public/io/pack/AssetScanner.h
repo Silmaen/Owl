@@ -87,6 +87,13 @@ private:
 	[[nodiscard]] static auto resolveSound(const std::string& iSoundAsset) -> std::optional<AssetReference>;
 
 	/**
+	 * @brief Resolve a script path to a disk path.
+	 * @param[in] iScriptPath The script relative path from LuaScript component.
+	 * @return The resolved reference, or nullopt.
+	 */
+	[[nodiscard]] static auto resolveScript(const std::string& iScriptPath) -> std::optional<AssetReference>;
+
+	/**
 	 * @brief Resolve a teleport level name to a scene file path.
 	 * @param[in] iLevelName The level name from the Trigger component.
 	 * @return The resolved scene file path, or nullopt.
