@@ -1,4 +1,4 @@
-# Renderer System {#renderer}
+# Renderer System {#page-renderer}
 
 [TOC]
 
@@ -62,7 +62,7 @@ is selected at startup via `RenderCommand::create(Type)`.
 | `beginFrame()` / `endFrame()` | Frame lifecycle (Vulkan swap chain)     |
 | `beginBatch()` / `endBatch()` | Batch render pass (Vulkan subpass)      |
 
-See [Architecture](@ref architecture) for the backend selection and application startup flow.
+See [Architecture](@ref page-architecture) for the backend selection and application startup flow.
 
 ## Renderer2D: The Batch Renderer {#renderer2d}
 
@@ -284,7 +284,7 @@ to render the scene and support mouse-based entity picking.
 ## Shader System
 
 Shaders are written in **Slang** and compiled to SPIR-V at runtime.
-See [Architecture > Shader Pipeline](@ref architecture) for the
+See [Architecture > Shader Pipeline](@ref page-architecture) for the
 compilation, reflection, and caching pipeline.
 
 ### Shader API

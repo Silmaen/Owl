@@ -64,7 +64,7 @@ poetry run python ci_action.py Documentation <preset>
 ### Engine library (`source/owl/`)
 
 - `public/` — Public API headers organized by module: `core/`, `data/`, `debug/`, `event/`, `gui/`, `input/`, `io/`,
-  `math/`, `physic/`, `renderer/`, `scene/`, `sound/`, `window/`
+  `math/`, `physic/`, `renderer/`, `scene/`, `script/`, `sound/`, `window/`
 - `private/` — Implementation files mirroring the public structure
 - Builds as `OwlEngine` (shared by default, controlled by `OWL_BUILD_SHARED`)
 
@@ -77,8 +77,8 @@ poetry run python ci_action.py Documentation <preset>
 
 ### Tests (`test/`)
 
-- Google Test framework, 13 test categories: core, debug, event, font, gui, input, layer, math, mesh, physic, renderer,
-  scene, sound
+- Google Test framework, 14 test categories: core, debug, event, font, gui, input, layer, math, mesh, physic, renderer,
+  scene, script, sound
 - Each category builds as `owl_<category>_unit_test`
 - Test helper utilities in `test/test_helper/`
 
@@ -163,16 +163,34 @@ The engine includes a task scheduler for asynchronous work, backed by [Taskflow]
 - **If an app needs Taskflow directly**, it must link it explicitly in its own `CMakeLists.txt` — the engine does not
   propagate Taskflow headers
 
+### Lua Scripting
+
+The engine embeds Lua 5.5 for gameplay scripting, attached to entities via the `LuaScript` component.
+
+- **Public API** (`source/owl/public/script/`): `ScriptEngine` (singleton manager), `ScriptInstance` (per-entity
+  isolated Lua state), `ScriptProperty` (typed property descriptor)
+- **Private implementation** (`source/owl/private/script/`): `LuaEngine` (low-level `lua_State*` wrapper),
+  `LuaBindings` (registers engine API tables: transform, physics, input, sound, scene, entity, time, log)
+- **External header wrapper:** `source/owl/private/core/external/lua.h` (diagnostic suppression for Lua C headers)
+- **Component:** `scene::component::LuaScript` — `scriptPath` + `properties` vector + runtime `instance`
+- **Sandboxing:** only `base`, `table`, `string`, `math`, `utf8`, `coroutine` libs; `io`, `os`, `dofile`,
+  `loadfile` removed
+- **Isolation:** each `ScriptInstance` owns its own `LuaEngine` (separate `lua_State`), no global pollution
+- **Lifecycle:** `ScriptEngine::init()` in `Scene::onStartRuntime()`, instances call `on_create`/`on_update`/`on_destroy`
+- **Properties:** declared in Lua via `properties = { {name, type, default}, ... }`, parsed by
+  `ScriptEngine::extractProperties()`, applied as globals before `on_create`
+- **Pack support:** scripts loaded from `.owlpack` via `Application::loadFromPack()` with filesystem fallback
+
 ### Dependencies
 
-- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (30 external dependencies)
+- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (31 external dependencies)
 - Dependencies auto-download during CMake configure step
 - Versions are pinned explicitly in `depmanager.yml`
 - Key libraries: EnTT (ECS), ImGui/ImGuizmo (GUI), Box2D (physics), spdlog (logging), yaml-cpp (serialization), Vulkan
   SDK, GLFW, OpenAL, glad, freetype, msdfgen/msdf-atlas-gen (fonts), tinygltf/tinyobjloader/ufbx (mesh loading),
   magic_enum (enum reflection), cpptrace/libdwarf/debugbreak (debugging), zeus (math), nfd (file dialogs), tinyxml2
   (XML), libpng, zlib/zstd (compression), libsndfile (audio files), stb_image (image loading), lunasvg (SVG rendering),
-  googletest (testing), Taskflow (task parallelism)
+  googletest (testing), Taskflow (task parallelism), Lua (scripting)
 
 ### DepManager Packaging (OwlEngine as a package)
 

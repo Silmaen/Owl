@@ -397,4 +397,43 @@ void renderProps(SoundSource& ioComponent) {
 
 void renderProps(SoundListener& ioComponent) { ImGui::Checkbox("Primary", &ioComponent.primary); }
 
+void renderProps(LuaScript& ioComponent) {
+	ImGui::InputText("Script Path", &ioComponent.scriptPath);
+	if (ImGui::Button("Refresh Properties") && !ioComponent.scriptPath.empty()) {
+		ioComponent.properties = script::ScriptEngine::extractProperties(ioComponent.scriptPath);
+	}
+	if (!ioComponent.properties.empty()) {
+		ImGui::Separator();
+		ImGui::Text("Properties:");
+		for (auto& prop: ioComponent.properties) {
+			switch (prop.type) {
+				case script::ScriptPropertyType::Float: {
+					auto val = std::get<float>(prop.value);
+					if (ImGui::DragFloat(prop.name.c_str(), &val, 0.1f))
+						prop.value = val;
+					break;
+				}
+				case script::ScriptPropertyType::Int: {
+					auto val = static_cast<int>(std::get<int64_t>(prop.value));
+					if (ImGui::DragInt(prop.name.c_str(), &val))
+						prop.value = static_cast<int64_t>(val);
+					break;
+				}
+				case script::ScriptPropertyType::String: {
+					auto val = std::get<std::string>(prop.value);
+					if (ImGui::InputText(prop.name.c_str(), &val))
+						prop.value = val;
+					break;
+				}
+				case script::ScriptPropertyType::Bool: {
+					auto val = std::get<bool>(prop.value);
+					if (ImGui::Checkbox(prop.name.c_str(), &val))
+						prop.value = val;
+					break;
+				}
+			}
+		}
+	}
+}
+
 }// namespace owl::gui::component

@@ -65,6 +65,9 @@ endif ()
 # box2d
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED ${THIRD_PARTY_RELEASE})
 
+# lua
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lua CONFIG REQUIRED ${THIRD_PARTY_RELEASE})
+
 # cpptrace
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace REQUIRED ${THIRD_PARTY_RELEASE})
 

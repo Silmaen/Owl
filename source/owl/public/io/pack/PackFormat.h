@@ -54,6 +54,7 @@ enum struct AssetType : uint8_t {
 	Sound = 3,
 	Mesh = 4,
 	Other = 5,
+	Script = 6,
 };
 
 /// Pack file header (40 bytes, fixed size).

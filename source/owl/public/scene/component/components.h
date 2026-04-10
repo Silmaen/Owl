@@ -15,6 +15,7 @@
 #include "EntityLink.h"
 #include "Hierarchy.h"
 #include "ID.h"
+#include "LuaScript.h"
 #include "NativeScript.h"
 #include "PhysicBody.h"
 #include "Player.h"
@@ -37,12 +38,12 @@ concept isComponent = std::is_same_v<Component, AnimatedSpriteRenderer> ||
 					  std::is_same_v<Component, BackgroundTexture> || std::is_same_v<Component, Camera> ||
 					  std::is_same_v<Component, CircleRenderer> || std::is_same_v<Component, EntityLink> ||
 					  std::is_same_v<Component, Hierarchy> || std::is_same_v<Component, ID> ||
-					  std::is_same_v<Component, NativeScript> || std::is_same_v<Component, PhysicBody> ||
-					  std::is_same_v<Component, Player> || std::is_same_v<Component, SoundListener> ||
-					  std::is_same_v<Component, SoundSource> || std::is_same_v<Component, SpriteRenderer> ||
-					  std::is_same_v<Component, Tag> || std::is_same_v<Component, Text> ||
-					  std::is_same_v<Component, Transform> || std::is_same_v<Component, Trigger> ||
-					  std::is_same_v<Component, Visibility>;
+					  std::is_same_v<Component, LuaScript> || std::is_same_v<Component, NativeScript> ||
+					  std::is_same_v<Component, PhysicBody> || std::is_same_v<Component, Player> ||
+					  std::is_same_v<Component, SoundListener> || std::is_same_v<Component, SoundSource> ||
+					  std::is_same_v<Component, SpriteRenderer> || std::is_same_v<Component, Tag> ||
+					  std::is_same_v<Component, Text> || std::is_same_v<Component, Transform> ||
+					  std::is_same_v<Component, Trigger> || std::is_same_v<Component, Visibility>;
 
 /**
  * @brief Concept that type has a name() method.
@@ -86,7 +87,8 @@ using CopiableComponents =
  */
 using SerializableComponents =
 		std::tuple<Tag, Transform, Camera, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, PhysicBody,
-				   Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener>;
+				   Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener,
+				   LuaScript>;
 
 /**
  * @brief List all optional components.
@@ -94,6 +96,6 @@ using SerializableComponents =
  */
 using OptionalComponents =
 		std::tuple<Camera, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, PhysicBody, Player, Trigger,
-				   EntityLink, BackgroundTexture, SoundSource, SoundListener>;
+				   EntityLink, BackgroundTexture, SoundSource, SoundListener, LuaScript>;
 
 }// namespace owl::scene::component

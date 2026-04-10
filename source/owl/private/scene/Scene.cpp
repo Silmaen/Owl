@@ -17,6 +17,8 @@
 #include "input/Input.h"
 #include "physic/PhysicCommand.h"
 #include "scene/component/components.h"
+#include "script/ScriptEngine.h"
+#include "script/ScriptInstance.h"
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
 
@@ -154,27 +156,69 @@ void Scene::onStartRuntime() {
 		}
 	}
 	// Start sounds with playOnStart
-	if (sound::SoundSystem::getState() != sound::SoundSystem::State::Running &&
-		sound::SoundSystem::getState() != sound::SoundSystem::State::Error)
-		return;
-	auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
-	for (const auto view = registry.view<component::Transform, component::SoundSource>(); const auto entity: view) {
-		auto& [soundComp] = view.get<component::SoundSource>(entity);
-		if (!soundComp.playOnStart || soundComp.soundAsset.empty())
+	if (sound::SoundSystem::getState() == sound::SoundSystem::State::Running ||
+		sound::SoundSystem::getState() == sound::SoundSystem::State::Error) {
+		auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
+		for (const auto view = registry.view<component::Transform, component::SoundSource>();
+			 const auto entity: view) {
+			auto& [soundComp] = view.get<component::SoundSource>(entity);
+			if (!soundComp.playOnStart || soundComp.soundAsset.empty())
+				continue;
+			const auto soundData = soundLibrary.get(soundComp.soundAsset);
+			if (!soundData)
+				continue;
+			const Entity ent{entity, this};
+			const auto wt = getWorldTransform(ent);
+			const sound::PlayParams params{
+					.volume = soundComp.volume,
+					.pitch = soundComp.pitch,
+					.loop = soundComp.loop,
+					.spatial = soundComp.spatial,
+					.position = {wt.translation().x(), wt.translation().y(), wt.translation().z()},
+					.maxDistance = soundComp.maxDistance,
+					.rolloff = soundComp.rolloff};
+			soundComp.runtimeHandle = sound::SoundCommand::play(soundData, params);
+		}
+	}
+
+	// Initialize Lua scripting
+	script::ScriptEngine::init(this);
+	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
+		auto& luaScript = view.get<component::LuaScript>(entity);
+		if (luaScript.scriptPath.empty())
 			continue;
-		const auto soundData = soundLibrary.get(soundComp.soundAsset);
-		if (!soundData)
-			continue;
-		const Entity ent{entity, this};
-		const auto wt = getWorldTransform(ent);
-		const sound::PlayParams params{.volume = soundComp.volume,
-									   .pitch = soundComp.pitch,
-									   .loop = soundComp.loop,
-									   .spatial = soundComp.spatial,
-									   .position = {wt.translation().x(), wt.translation().y(), wt.translation().z()},
-									   .maxDistance = soundComp.maxDistance,
-									   .rolloff = soundComp.rolloff};
-		soundComp.runtimeHandle = sound::SoundCommand::play(soundData, params);
+		luaScript.instance = mkUniq<script::ScriptInstance>();
+		const auto uuid = static_cast<uint64_t>(registry.get<component::ID>(entity).id);
+		bool loaded = false;
+		if (core::Application::instanced()) {
+			auto& app = core::Application::get();
+			if (app.packContains(luaScript.scriptPath))
+				if (const auto data = app.loadFromPack(luaScript.scriptPath))
+					loaded = luaScript.instance->createFromBuffer(*data, luaScript.scriptPath, uuid);
+		}
+		if (!loaded)
+			loaded = luaScript.instance->create(luaScript.scriptPath, uuid);
+		if (loaded) {
+			for (const auto& prop: luaScript.properties) {
+				switch (prop.type) {
+					case script::ScriptPropertyType::Float:
+						luaScript.instance->setProperty(prop.name, std::get<float>(prop.value));
+						break;
+					case script::ScriptPropertyType::Int:
+						luaScript.instance->setProperty(prop.name, std::get<int64_t>(prop.value));
+						break;
+					case script::ScriptPropertyType::String:
+						luaScript.instance->setProperty(prop.name, std::get<std::string>(prop.value));
+						break;
+					case script::ScriptPropertyType::Bool:
+						luaScript.instance->setProperty(prop.name, std::get<bool>(prop.value));
+						break;
+				}
+			}
+			luaScript.instance->onCreate();
+		} else {
+			luaScript.instance.reset();
+		}
 	}
 
 	// Reset animated sprites
@@ -197,6 +241,15 @@ void Scene::onEndRuntime() {
 			soundComp.runtimeHandle = sound::invalidSoundHandle;
 		}
 	}
+
+	// Destroy Lua scripts
+	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
+		auto& luaScript = view.get<component::LuaScript>(entity);
+		if (luaScript.instance && luaScript.instance->isValid())
+			luaScript.instance->onDestroy();
+		luaScript.instance.reset();
+	}
+	script::ScriptEngine::shutdown();
 
 	physic::PhysicCommand::destroy();
 	status = Status::Editing;
@@ -255,7 +308,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 		}
 		return;
 	}
-	// update scripts
+	// update native scripts
 	registry.view<component::NativeScript>().each([iTimeStep, this](auto ioEntity, auto& ioNsc) -> auto {
 		if (!ioNsc.instance) {
 			ioNsc.instance = ioNsc.instantiateScript();
@@ -264,6 +317,13 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 		}
 		ioNsc.instance->onUpdate(iTimeStep);
 	});
+
+	// update Lua scripts
+	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
+		auto& luaScript = view.get<component::LuaScript>(entity);
+		if (luaScript.instance && luaScript.instance->isValid())
+			luaScript.instance->onUpdate(iTimeStep.getSeconds());
+	}
 
 	// Inputs
 	if (const Entity player = getPrimaryPlayer()) {
@@ -901,5 +961,9 @@ template<>
 OWL_API void Scene::onComponentAdded<component::SoundListener>([[maybe_unused]] const Entity& iEntity,
 															   [[maybe_unused]] component::SoundListener& ioComponent) {
 }
+
+template<>
+OWL_API void Scene::onComponentAdded<component::LuaScript>([[maybe_unused]] const Entity& iEntity,
+															[[maybe_unused]] component::LuaScript& ioComponent) {}
 
 }// namespace owl::scene
