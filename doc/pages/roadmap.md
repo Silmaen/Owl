@@ -247,7 +247,7 @@ a 2D lighting system.
 **Goal:** Users can design a complete game in Owl Nest and package it as a standalone distributable
 application (Linux / Windows).
 
-- Scripting (Lua) — See [Lua Scripting](@ref page-scripting)
+- Scripting (Lua) — See [Lua Scripting](scripting.md)
     - ![Done][done] Lua interpreter integration
         - Embed Lua 5.5 via DepManager, `LuaEngine` wrapper in `source/owl/private/script/`
         - Public API: `ScriptEngine`, `ScriptInstance` in `source/owl/public/script/`

@@ -18,7 +18,7 @@ abstract backend layer (OpenAL or Null). Audio files are loaded into memory as
 ## Architecture
 
 The sound system follows the same backend abstraction pattern as the renderer and
-input modules (see [Architecture](@ref page-architecture)):
+input modules (see [Architecture](architecture.md)):
 
 | Class          | Role                                                     |
 |----------------|----------------------------------------------------------|
@@ -208,4 +208,4 @@ and scene files.
 
 At runtime, the game runner loads sound assets transparently from the pack file.
 
-See [Architecture](@ref page-architecture) for more details on the asset packing pipeline.
+See [Architecture](architecture.md) for more details on the asset packing pipeline.

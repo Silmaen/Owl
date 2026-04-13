@@ -328,7 +328,7 @@ The `Project` class (`source/owlnest/sources/Project.h`) holds three fields: `na
 | Close Project   | File > Close Project  | Unload the project and clear the asset browser |
 | Import Scene    | Project > Import Scene| Copy an external `.owl` file into the project  |
 | Pack Scene      | Project > Pack Scene  | Pack current scene's assets into `.owlpack`    |
-| Pack Game       | Project > Pack Game   | Scan and pack all project assets (see [Architecture](@ref page-architecture)) |
+| Pack Game       | Project > Pack Game   | Scan and pack all project assets (see [Architecture](architecture.md)) |
 
 The **Edit** menu provides undo/redo operations:
 
@@ -460,5 +460,5 @@ The registry provides conflict detection: when a new binding collides with an ex
 action, a warning is displayed showing the conflicting action name. Dispatch can be
 temporarily suspended (e.g. during key capture) via `ActionRegistry::setSuspended()`.
 
-See [Architecture](@ref page-architecture) for the overall engine structure and
-[Sound](@ref page-sound) for the audio system integrated with the editor.
+See [Architecture](architecture.md) for the overall engine structure and
+[Sound](sound.md) for the audio system integrated with the editor.

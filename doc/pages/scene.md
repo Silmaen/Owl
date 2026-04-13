@@ -152,7 +152,7 @@ YAML key: `SpriteRenderer`
 | `loop`         | `bool`     | `true`   | Loop animation                  |
 
 YAML key: `AnimatedSpriteRenderer`.
-See [Renderer > Animated Sprites](@ref page-renderer) for UV computation details.
+See [Renderer > Animated Sprites](renderer.md) for UV computation details.
 
 #### CircleRenderer
 
@@ -196,7 +196,7 @@ YAML key: `BackgroundTexture`. Only the first entity with this component is rend
 | `fixedAspectRatio`| `bool`       | `false` | Lock aspect ratio             |
 | `camera`         | `SceneCamera` | —       | Orthographic or perspective   |
 
-YAML key: `Camera`. See [Renderer > Camera System](@ref page-renderer).
+YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 
 ### Gameplay Components
 
@@ -222,7 +222,7 @@ YAML key: `Player`. Input is parsed from keyboard each frame via `parseInputs()`
 | `restitution`  | `float`    | `0.0`       | Bounciness (0–1)             |
 | `friction`     | `float`    | `0.5`       | Surface friction             |
 
-YAML key: `PhysicBody`. See [Physics](@ref page-physics) for the full physics guide.
+YAML key: `PhysicBody`. See [Physics](physics.md) for the full physics guide.
 
 #### Trigger
 
@@ -253,14 +253,14 @@ YAML key: `NativeScript` (not typically serialized in scenes).
 
 ### Audio Components
 
-See [Sound System](@ref page-sound) for the full audio guide.
+See [Sound System](sound.md) for the full audio guide.
 
 - **SoundSource** (YAML: `SoundSource`): audio playback with 3D spatial support
 - **SoundListener** (YAML: `SoundListener`): marks the entity as the audio "ear"
 
 ### Scripting Components
 
-See [Scripting](@ref page-scripting) for the full Lua API reference.
+See [Scripting](scripting.md) for the full Lua API reference.
 
 #### LuaScript
 
@@ -353,7 +353,7 @@ children (direct or nested) of an entity with a `Canvas` component.
 | `overriddenComponents`| `vector<string>`           | —            | Per-component override keys preserved on update|
 
 Placed only on the root entity of a prefab instance. Children are tracked via the
-`uuidMapping`. See [Editor Prefab Workflow](@ref page-editor) for usage details.
+`uuidMapping`. See [Editor Prefab Workflow](editor.md) for usage details.
 
 ## Transform Hierarchy
 
@@ -391,7 +391,7 @@ If any ancestor is hidden, the entity is effectively hidden.
 ### Physics and Hierarchy
 
 Physics bodies (Box2D) operate in **world space** independently of the scene hierarchy.
-See [Physics > Hierarchy Interaction](@ref page-physics) for details.
+See [Physics > Hierarchy Interaction](physics.md) for details.
 
 ## Scene Serialization
 
