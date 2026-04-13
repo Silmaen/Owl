@@ -131,4 +131,24 @@ auto SceneSerializer::deserializeFromBuffer(const std::vector<uint8_t>& iData,
 	return true;
 }
 
+auto SceneSerializer::serializeEntityToString(const Entity& iEntity) -> std::string {
+	const core::Serializer sOut;
+	serializeEntity(sOut, iEntity);
+	return sOut.getImpl()->emitter.c_str();
+}
+
+auto SceneSerializer::deserializeEntityFromString(const shared<Scene>& ioScene,
+												  const std::string& iYamlData) -> bool {
+	try {
+		const core::Serializer sEntity;
+		sEntity.getImpl()->node.reset(YAML::Load(iYamlData));
+		deserializeEntity(ioScene, sEntity);
+		ioScene->rebuildHierarchyChildren();
+	} catch (...) {
+		OWL_CORE_ERROR("Unable to deserialize entity from string")
+		return false;
+	}
+	return true;
+}
+
 }// namespace owl::scene

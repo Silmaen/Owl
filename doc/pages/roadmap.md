@@ -328,9 +328,9 @@ application (Linux / Windows).
   - ![Planned][planned] Enhanced inspector
       - Curve editor for animated properties
       - Texture/sound preview in inspector, drag-drop assets to fields
-  - ![Planned][planned] Undo / Redo
-      - Reversible command system for all editor actions
-      - Configurable undo stack depth, Ctrl+Z / Ctrl+Y
+  - ![Done][done] Undo / Redo
+      - Reversible command system for all editor actions (entity, component, hierarchy, gizmo)
+      - Configurable undo stack depth, Ctrl+Z / Ctrl+Y, merge coalescing, dirty flag in title
 - Scene & Triggers
   - ![Planned][planned] More scene events and triggers
       - On enter, on interact, on timer, etc.

@@ -8,6 +8,8 @@
 
 #include "EditorLayer.h"
 
+#include "commands/EntityCommands.h"
+
 #include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <io/pack/AssetScanner.h>
@@ -181,6 +183,8 @@ void EditorLayer::onAttach() {
 
 	m_viewport.attach();
 	m_viewport.attachParent(this);
+	m_viewport.setUndoManager(&m_undoManager);
+	m_sceneHierarchy.setUndoManager(&m_undoManager);
 
 	buildIconBank();
 	loadTriggerTextures();
@@ -262,10 +266,18 @@ void EditorLayer::onAttach() {
 		[this] {
 			if (m_state != State::Edit) return;
 			if (auto ent = getSelectedEntity(); ent) {
+				m_undoManager.push(mkUniq<commands::DeleteEntityCommand>(ent));
 				m_activeScene->destroyEntity(ent);
 				setSelectedEntity({});
 			}
 		});
+	// Undo/Redo
+	m_actionRegistry.registerAction("edit.undo", "Undo",
+		{input::key::Z, Modifiers::Ctrl},
+		[this] { performUndo(); });
+	m_actionRegistry.registerAction("edit.redo", "Redo",
+		{input::key::Y, Modifiers::Ctrl},
+		[this] { performRedo(); });
 	// clang-format on
 
 	// Apply saved keybinding overrides
@@ -475,7 +487,7 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 	ImGui::End();
 }
 
-void EditorLayer::renderMenu() {
+void EditorLayer::renderMenu() {// NOLINT(readability-function-cognitive-complexity)
 	const auto& iconBank = gui::IconBank::instance();
 
 	if (ImGui::BeginMenuBar()) {
@@ -503,6 +515,21 @@ void EditorLayer::renderMenu() {
 			ImGui::Separator();
 			if (iconBank.menuItem("exit", "Exit"))
 				core::Application::get().close();
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Edit")) {
+			const bool canUndo = m_undoManager.canUndo() && m_state == State::Edit;
+			const bool canRedo = m_undoManager.canRedo() && m_state == State::Edit;
+			const auto undoLabel =
+					canUndo ? std::format("Undo {}", m_undoManager.undoDescription()) : std::string("Undo");
+			const auto redoLabel =
+					canRedo ? std::format("Redo {}", m_undoManager.redoDescription()) : std::string("Redo");
+			if (iconBank.menuItem("undo", undoLabel.c_str(),
+								  m_actionRegistry.getShortcutString("edit.undo").c_str(), canUndo))
+				performUndo();
+			if (iconBank.menuItem("redo", redoLabel.c_str(),
+								  m_actionRegistry.getShortcutString("edit.redo").c_str(), canRedo))
+				performRedo();
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Project", m_project.isLoaded())) {
@@ -625,6 +652,7 @@ void EditorLayer::newScene() {
 	m_activeScene = mkShared<scene::Scene>();
 	m_activeScene->onViewportResize(m_viewport.getSize());
 	m_sceneHierarchy.setContext(m_activeScene);
+	m_undoManager.clear();
 }
 
 void EditorLayer::openScene() {
@@ -647,6 +675,7 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 		m_sceneHierarchy.setContext(m_editorScene);
 		m_activeScene = m_editorScene;
 		m_currentScenePath = iScenePath;
+		m_undoManager.clear();
 	}
 }
 
@@ -666,6 +695,7 @@ void EditorLayer::saveCurrentScene() {
 		saveSceneAs();
 	else
 		saveSceneAs(m_currentScenePath);
+	m_undoManager.markSaved();
 }
 
 auto EditorLayer::onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool {
@@ -863,18 +893,41 @@ void EditorLayer::importScene() {
 
 void EditorLayer::updateWindowTitle() {
 	auto& app = core::Application::get();
+	const auto* const dirty = m_undoManager.isDirty() ? " *" : "";
 	if (m_project.isLoaded())
-		app.setWindowTitle(std::format("{} - {}", app.getInitParams().name, m_project.name));
+		app.setWindowTitle(std::format("{} - {}{}", app.getInitParams().name, m_project.name, dirty));
 	else
-		app.setWindowTitle(app.getInitParams().name);
+		app.setWindowTitle(std::format("{}{}", app.getInitParams().name, dirty));
 }
 
-void EditorLayer::onDuplicateEntity() const {
+void EditorLayer::onDuplicateEntity() {
 	if (m_state != State::Edit)
 		return;
 
-	if (const scene::Entity selectedEntity = m_sceneHierarchy.getSelectedEntity(); selectedEntity)
-		m_editorScene->duplicateEntity(selectedEntity);
+	if (const scene::Entity selectedEntity = m_sceneHierarchy.getSelectedEntity(); selectedEntity) {
+		auto dup = m_editorScene->duplicateEntity(selectedEntity);
+		m_undoManager.push(mkUniq<commands::DuplicateEntityCommand>(selectedEntity, dup));
+	}
+}
+
+void EditorLayer::performUndo() {
+	if (m_state != State::Edit || !m_activeScene)
+		return;
+	m_undoManager.undo(*m_activeScene);
+	if (const auto hint = m_undoManager.lastSelectionHint(); hint != core::UUID{0}) {
+		if (auto entity = m_activeScene->findEntityByUUID(hint); entity)
+			setSelectedEntity(entity);
+	}
+}
+
+void EditorLayer::performRedo() {
+	if (m_state != State::Edit || !m_activeScene)
+		return;
+	m_undoManager.redo(*m_activeScene);
+	if (const auto hint = m_undoManager.lastSelectionHint(); hint != core::UUID{0}) {
+		if (auto entity = m_activeScene->findEntityByUUID(hint); entity)
+			setSelectedEntity(entity);
+	}
 }
 
 auto EditorLayer::getSelectedEntity() const -> scene::Entity { return m_sceneHierarchy.getSelectedEntity(); }

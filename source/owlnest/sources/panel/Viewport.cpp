@@ -8,9 +8,12 @@
 
 #include "Viewport.h"
 
+#include "../UndoManager.h"
+#include "../commands/ComponentCommands.h"
 #include "EditorLayer.h"
 
 #include <owl.h>
+#include <scene/SceneSerializer.h>
 
 
 namespace owl::nest::panel {
@@ -247,7 +250,13 @@ void Viewport::renderGizmo() {
 
 		gui::Guizmo::manipulate(cameraView, cameraProjection, m_gizmoType, transform, snap ? snapValue : 0.f);
 
-		if (gui::Guizmo::isUsing()) {
+		const bool isUsing = gui::Guizmo::isUsing();
+
+		// Capture "before" snapshot when gizmo manipulation starts.
+		if (isUsing && !m_gizmoWasUsing && mp_undoManager != nullptr)
+			m_gizmoBeforeYaml = scene::SceneSerializer::serializeEntityToString(selectedEntity);
+
+		if (isUsing) {
 			// Convert gizmo result (world space) back to local space.
 			const auto& hierarchy = selectedEntity.getComponent<scene::component::Hierarchy>();
 			math::mat4 localMat = transform;
@@ -264,6 +273,21 @@ void Viewport::renderGizmo() {
 			tc.transform.rotation() += deltaRotation;
 			tc.transform.scale() = newLocal.scale();
 		}
+
+		// Push undo command when gizmo manipulation ends.
+		if (!isUsing && m_gizmoWasUsing && mp_undoManager != nullptr && !m_gizmoBeforeYaml.empty()) {
+			const auto afterYaml = scene::SceneSerializer::serializeEntityToString(selectedEntity);
+			if (m_gizmoBeforeYaml != afterYaml) {
+				auto cmd = mkUniq<commands::ModifyEntityCommand>(
+						selectedEntity.getUUID(),
+						EntitySnapshot{selectedEntity.getUUID(), m_gizmoBeforeYaml},
+						"Transform (Gizmo)");
+				cmd->captureAfter(selectedEntity);
+				mp_undoManager->push(std::move(cmd));
+			}
+			m_gizmoBeforeYaml.clear();
+		}
+		m_gizmoWasUsing = isUsing;
 	}
 }
 
