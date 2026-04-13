@@ -12,6 +12,7 @@
 
 #include "ActionRegistry.h"
 #include "EditorSettings.h"
+#include "UndoManager.h"
 #include "Project.h"
 #include "panel/ContentBrowser.h"
 #include "panel/LogPanel.h"
@@ -98,7 +99,11 @@ private:
 	void onSceneResume();
 	void onSceneStop();
 	void onSceneStep();
-	void onDuplicateEntity() const;
+	void onDuplicateEntity();
+	/// Perform undo and restore entity selection from the command's hint.
+	void performUndo();
+	/// Perform redo and restore entity selection from the command's hint.
+	void performRedo();
 
 	gui::widgets::ButtonBar m_controlBar;
 
@@ -132,6 +137,9 @@ private:
 	panel::ProjectSettings m_projectSettings;
 	panel::LogPanel m_logPanel;
 	panel::SettingsPanel m_settingsPanel;
+
+	// Undo/Redo
+	UndoManager m_undoManager;
 
 	// Action registry
 	ActionRegistry m_actionRegistry;

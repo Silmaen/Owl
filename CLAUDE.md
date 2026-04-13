@@ -109,6 +109,22 @@ vector). Every entity has this component; root entities have `parentId == 0`.
   converts back to local space. A non-physics child follows its physics parent; two physics entities move independently
   regardless of parent-child relationship.
 
+### Undo/Redo System
+
+The editor includes a Command Pattern undo/redo system (`source/owlnest/sources/`).
+
+- **`UndoCommand`** (`UndoCommand.h`): abstract base — `undo()`, `redo()`, `description()`, `mergeWith()`, `typeId()`
+- **`UndoManager`** (`UndoManager.h`): undo/redo stacks, merge coalescing (1s timeout), dirty tracking, max depth (100)
+- **`EntitySnapshot`** (`EntitySnapshot.h`): captures/restores entity state via `SceneSerializer::serializeEntityToString()`
+- **Commands** (`commands/`): `EntityCommands` (create, delete, duplicate ± subtree), `ComponentCommands` (add, remove,
+  modify with merge), `HierarchyCommands` (reparent, unparent)
+- **Integration**: `EditorLayer` owns `UndoManager`, passes pointer to `SceneHierarchy` and `Viewport` panels
+- **Shortcuts**: Ctrl+Z / Ctrl+Y via `ActionRegistry`, Edit menu with dynamic labels
+- **Gizmo**: Viewport captures transform before/after manipulation, pushes `ModifyEntityCommand`
+- **Property edits**: `drawComponent<T>` compares entity YAML before/after `renderProps()`, merge coalesces rapid changes
+- **Selection**: restored after undo/redo via `selectAfterUndo`/`selectAfterRedo` hints on each command
+- **Dirty flag**: `*` in window title when unsaved changes exist, cleared on save
+
 ### Icon System
 
 Editor icons are **SVG files loaded at runtime** via lunasvg with dynamic theme color substitution.

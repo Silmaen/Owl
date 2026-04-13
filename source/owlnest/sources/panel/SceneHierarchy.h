@@ -10,6 +10,10 @@
 
 #include <owl.h>
 
+namespace owl::nest {
+class UndoManager;
+}
+
 namespace owl::nest::panel {
 /**
  * @brief Class SceneHierarchy
@@ -64,9 +68,14 @@ public:
 	[[nodiscard]] auto getSelectedEntity() const -> scene::Entity { return m_selection; }
 	void setSelectedEntity(const scene::Entity& iEntity) { m_selection = iEntity; }
 
+	/// Set the undo manager for recording undoable operations.
+	void setUndoManager(UndoManager* iUndoManager) { mp_undoManager = iUndoManager; }
+
 private:
 	void renderHierarchy();
 	void renderProperties();
+	/// Draw the context menu for an entity node.
+	void drawEntityContextMenu(const scene::Entity& iEntity, bool iHasChildren, core::UUID iParentId);
 
 	/**
 	 * @brief Draw one entity node
@@ -82,5 +91,7 @@ private:
 	shared<scene::Scene> m_context = nullptr;
 	/// The selected item
 	scene::Entity m_selection;
+	/// Undo manager (non-owning, optional).
+	UndoManager* mp_undoManager = nullptr;
 };
 }// namespace owl::nest::panel

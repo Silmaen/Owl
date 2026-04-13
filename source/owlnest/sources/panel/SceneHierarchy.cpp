@@ -8,7 +8,13 @@
 
 #include "SceneHierarchy.h"
 
+#include "../UndoManager.h"
+#include "../commands/ComponentCommands.h"
+#include "../commands/EntityCommands.h"
+#include "../commands/HierarchyCommands.h"
+
 #include <gui/IconBank.h>
+#include <scene/SceneSerializer.h>
 #include <gui/utils.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
@@ -79,8 +85,11 @@ void SceneHierarchy::renderHierarchy() {
 		// Right-click on blank space
 		ImGui::PushID("...");
 		if (ImGui::BeginPopupContextWindow(nullptr, 1)) {
-			if (gui::IconBank::instance().menuItem("add_entity", "Create Empty Entity"))
-				m_context->createEntity("Empty Entity");
+			if (gui::IconBank::instance().menuItem("add_entity", "Create Empty Entity")) {
+				auto entity = m_context->createEntity("Empty Entity");
+				if (mp_undoManager != nullptr)
+					mp_undoManager->push(mkUniq<commands::CreateEntityCommand>(entity));
+			}
 			ImGui::EndPopup();
 		}
 		ImGui::PopID();
@@ -90,8 +99,11 @@ void SceneHierarchy::renderHierarchy() {
 			if (ImGui::BeginDragDropTarget()) {
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
 					const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
-					if (const auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child)
+					if (const auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child) {
+						if (mp_undoManager != nullptr)
+							mp_undoManager->push(mkUniq<commands::UnparentCommand>(child));
 						m_context->unparent(child);
+					}
 				}
 				ImGui::EndDragDropTarget();
 			}
@@ -132,8 +144,11 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 	if (ImGui::BeginDragDropTarget()) {
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
 			const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
-			if (const auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child && child != iEntity)
+			if (const auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child && child != iEntity) {
+				if (mp_undoManager != nullptr)
+					mp_undoManager->push(mkUniq<commands::ReparentCommand>(child, iEntity.getUUID()));
 				m_context->setParent(child, iEntity);
+			}
 		}
 		ImGui::EndDragDropTarget();
 	}
@@ -200,47 +215,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		ImGui::PopStyleColor(2);
 	}
 
-	// Context menu (opened via OpenPopupOnItemClick on the tree node).
-	if (ImGui::BeginPopup("EntityContext")) {
-		const auto& ib = gui::IconBank::instance();
-		// --- Create ---
-		if (ib.menuItem("add_entity", "Create Root Entity"))
-			m_context->createEntity("Empty Entity");
-		if (ib.menuItem("add_child_entity", "Create Child Entity")) {
-			const auto child = m_context->createEntity("Child Entity");
-			m_context->setParent(child, iEntity);
-		}
-		ImGui::Separator();
-		// --- Duplicate ---
-		if (ib.menuItem("duplicate", "Duplicate Entity"))
-			m_context->duplicateEntity(iEntity);
-		if (hasChildren) {
-			if (ib.menuItem("duplicate", "Duplicate Subtree"))
-				m_context->duplicateSubtree(iEntity);
-		}
-		// --- Hierarchy ---
-		if (parentId != core::UUID{0}) {
-			if (ib.menuItem("unparent", "Unparent"))
-				m_context->unparent(iEntity);
-		}
-		ImGui::Separator();
-		// --- Delete ---
-		if (ib.menuItem("delete_entity", hasChildren ? "Delete Entity Only" : "Delete Entity")) {
-			if (m_selection == iEntity)
-				m_selection = {};
-			auto entity = iEntity;
-			m_context->destroyEntity(entity);
-		}
-		if (hasChildren) {
-			if (ib.menuItem("delete_cascade", "Delete with Children")) {
-				if (m_selection == iEntity)
-					m_selection = {};
-				auto entity = iEntity;
-				m_context->destroyEntityWithChildren(entity);
-			}
-		}
-		ImGui::EndPopup();
-	}
+	drawEntityContextMenu(iEntity, hasChildren, parentId);
 
 	if (open) {
 		// Recursively draw children.
@@ -256,6 +231,68 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		m_selection = iEntity;
 }
 
+void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const bool iHasChildren,
+											const core::UUID iParentId) {
+	if (!ImGui::BeginPopup("EntityContext"))
+		return;
+	const auto& ib = gui::IconBank::instance();
+	// --- Create ---
+	if (ib.menuItem("add_entity", "Create Root Entity")) {
+		auto entity = m_context->createEntity("Empty Entity");
+		if (mp_undoManager != nullptr)
+			mp_undoManager->push(mkUniq<commands::CreateEntityCommand>(entity));
+	}
+	if (ib.menuItem("add_child_entity", "Create Child Entity")) {
+		auto child = m_context->createEntity("Child Entity");
+		m_context->setParent(child, iEntity);
+		if (mp_undoManager != nullptr)
+			mp_undoManager->push(mkUniq<commands::CreateEntityCommand>(child));
+	}
+	ImGui::Separator();
+	// --- Duplicate ---
+	if (ib.menuItem("duplicate", "Duplicate Entity")) {
+		auto dup = m_context->duplicateEntity(iEntity);
+		if (mp_undoManager != nullptr)
+			mp_undoManager->push(mkUniq<commands::DuplicateEntityCommand>(iEntity, dup));
+	}
+	if (iHasChildren) {
+		if (ib.menuItem("duplicate", "Duplicate Subtree")) {
+			auto dup = m_context->duplicateSubtree(iEntity);
+			if (mp_undoManager != nullptr)
+				mp_undoManager->push(mkUniq<commands::DuplicateSubtreeCommand>(iEntity, dup, *m_context));
+		}
+	}
+	// --- Hierarchy ---
+	if (iParentId != core::UUID{0}) {
+		if (ib.menuItem("unparent", "Unparent")) {
+			if (mp_undoManager != nullptr)
+				mp_undoManager->push(mkUniq<commands::UnparentCommand>(iEntity));
+			m_context->unparent(iEntity);
+		}
+	}
+	ImGui::Separator();
+	// --- Delete ---
+	if (ib.menuItem("delete_entity", iHasChildren ? "Delete Entity Only" : "Delete Entity")) {
+		if (mp_undoManager != nullptr)
+			mp_undoManager->push(mkUniq<commands::DeleteEntityCommand>(iEntity));
+		if (m_selection == iEntity)
+			m_selection = {};
+		auto entity = iEntity;
+		m_context->destroyEntity(entity);
+	}
+	if (iHasChildren) {
+		if (ib.menuItem("delete_cascade", "Delete with Children")) {
+			if (mp_undoManager != nullptr)
+				mp_undoManager->push(mkUniq<commands::DeleteSubtreeCommand>(iEntity, *m_context));
+			if (m_selection == iEntity)
+				m_selection = {};
+			auto entity = iEntity;
+			m_context->destroyEntityWithChildren(entity);
+		}
+	}
+	ImGui::EndPopup();
+}
+
 // Function displaying the Entity Property panel.
 
 void SceneHierarchy::renderProperties() {
@@ -268,7 +305,7 @@ void SceneHierarchy::renderProperties() {
 namespace {
 
 template<isNamedComponent Comp>
-void addComponentPop(scene::Entity& ioEntity) {
+void addComponentPop(scene::Entity& ioEntity, UndoManager* iUndoManager) {
 	if (!ioEntity.hasComponent<Comp>()) {
 		const auto* iconId = componentIconName(Comp::name());
 		bool clicked = false;
@@ -277,14 +314,20 @@ void addComponentPop(scene::Entity& ioEntity) {
 		else
 			clicked = ImGui::MenuItem(Comp::name());
 		if (clicked) {
+			auto before = iUndoManager != nullptr ? EntitySnapshot::capture(ioEntity) : EntitySnapshot{};
 			ioEntity.addComponent<Comp>();
+			if (iUndoManager != nullptr) {
+				auto after = EntitySnapshot::capture(ioEntity);
+				iUndoManager->push(
+						mkUniq<commands::AddComponentCommand>(std::move(before), std::move(after), Comp::name()));
+			}
 			ImGui::CloseCurrentPopup();
 		}
 	}
 }
 
 template<isNamedComponent T>
-void drawComponent(scene::Entity& ioEntity) {
+void drawComponent(scene::Entity& ioEntity, UndoManager* iUndoManager) {
 	constexpr ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
 												 ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
 												 ImGuiTreeNodeFlags_FramePadding;
@@ -327,23 +370,46 @@ void drawComponent(scene::Entity& ioEntity) {
 			ImGui::EndPopup();
 		}
 		if (open) {
+			// Capture state before renderProps for undo tracking.
+			const auto beforeYaml =
+					iUndoManager != nullptr ? scene::SceneSerializer::serializeEntityToString(ioEntity) : std::string{};
 			gui::component::renderProps(component);
+			// Compare entity state after renderProps — push undo command if changed.
+			// Merge coalescing handles rapid DragFloat changes automatically.
+			if (iUndoManager != nullptr) {
+				const auto afterYaml = scene::SceneSerializer::serializeEntityToString(ioEntity);
+				if (beforeYaml != afterYaml) {
+					auto cmd = mkUniq<commands::ModifyEntityCommand>(
+							ioEntity.getUUID(),
+							EntitySnapshot{ioEntity.getUUID(), beforeYaml},
+							std::format("Modify {}", T::name()));
+					cmd->captureAfter(ioEntity);
+					iUndoManager->push(std::move(cmd));
+				}
+			}
 			ImGui::TreePop();
 		}
-		if (removeComponent)
+		if (removeComponent) {
+			auto before = iUndoManager != nullptr ? EntitySnapshot::capture(ioEntity) : EntitySnapshot{};
 			ioEntity.removeComponent<T>();
+			if (iUndoManager != nullptr) {
+				auto after = EntitySnapshot::capture(ioEntity);
+				iUndoManager->push(mkUniq<commands::RemoveComponentCommand>(std::move(before), std::move(after),
+																			T::name()));
+			}
+		}
 	}
 }
 
 
 template<isNamedComponent... Component>
-void addComponentsFromTuple(scene::Entity& ioEntity, const std::tuple<Component...>&) {
-	(..., addComponentPop<Component>(ioEntity));
+void addComponentsFromTuple(scene::Entity& ioEntity, UndoManager* iUndoManager, const std::tuple<Component...>&) {
+	(..., addComponentPop<Component>(ioEntity, iUndoManager));
 }
 
 template<isNamedComponent... Component>
-void drawComponentsFromTuple(scene::Entity& ioEntity, const std::tuple<Component...>&) {
-	(..., drawComponent<Component>(ioEntity));
+void drawComponentsFromTuple(scene::Entity& ioEntity, UndoManager* iUndoManager, const std::tuple<Component...>&) {
+	(..., drawComponent<Component>(ioEntity, iUndoManager));
 }
 
 }// namespace
@@ -352,7 +418,25 @@ void drawComponentsFromTuple(scene::Entity& ioEntity, const std::tuple<Component
 void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 	if (iEntity.hasComponent<Tag>()) {
 		auto& tag = iEntity.getComponent<Tag>().tag;
+		const auto beforeTag = mp_undoManager != nullptr ? tag : std::string{};
 		ImGui::InputText("##Tag", &tag);
+		if (mp_undoManager != nullptr && ImGui::IsItemDeactivatedAfterEdit() && tag != beforeTag) {
+			// Capture after state (tag already changed in-place by InputText).
+			auto cmd = mkUniq<commands::ModifyEntityCommand>(
+					iEntity.getUUID(),
+					EntitySnapshot{iEntity.getUUID(),
+								   scene::SceneSerializer::serializeEntityToString(iEntity)},
+					"Rename Entity");
+			// The "before" snapshot has the old tag — reconstruct it.
+			auto& tagRef = iEntity.getComponent<Tag>().tag;
+			const auto currentTag = tagRef;
+			tagRef = beforeTag;
+			cmd = mkUniq<commands::ModifyEntityCommand>(
+					iEntity.getUUID(), EntitySnapshot::capture(iEntity), "Rename Entity");
+			tagRef = currentTag;
+			cmd->captureAfter(iEntity);
+			mp_undoManager->push(std::move(cmd));
+		}
 	}
 	ImGui::SameLine();
 	ImGui::Text("Entity name");
@@ -382,11 +466,11 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 			ImGui::OpenPopup("AddComponent");
 	}
 	if (ImGui::BeginPopup("AddComponent")) {
-		addComponentsFromTuple(m_selection, OptionalComponents{});
+		addComponentsFromTuple(m_selection, mp_undoManager, OptionalComponents{});
 		ImGui::EndPopup();
 	}
 	ImGui::PopItemWidth();
-	drawComponentsFromTuple(m_selection, gui::component::DrawableComponents{});
+	drawComponentsFromTuple(m_selection, mp_undoManager, gui::component::DrawableComponents{});
 }
 
 }// namespace owl::nest::panel

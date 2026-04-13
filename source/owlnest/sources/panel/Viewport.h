@@ -12,6 +12,7 @@
 
 namespace owl::nest {
 class EditorLayer;
+class UndoManager;
 }// namespace owl::nest
 
 namespace owl::nest::panel {
@@ -88,6 +89,9 @@ public:
 	[[nodiscard]] auto getGuizmoType() const -> gui::Guizmo::Type;
 	[[nodiscard]] auto getGuizmoTypeI() const -> uint16_t;
 
+	/// Set the undo manager for recording gizmo transform edits.
+	void setUndoManager(UndoManager* iUndoManager) { mp_undoManager = iUndoManager; }
+
 private:
 	void renderGizmo();
 	void renderOverlay() const;
@@ -104,6 +108,12 @@ private:
 	gui::Guizmo::Type m_gizmoType = gui::Guizmo::Type::None;
 	/// The editor camera
 	renderer::CameraEditor m_editorCamera;
+	/// Undo manager (non-owning, optional).
+	UndoManager* mp_undoManager = nullptr;
+	/// Whether the gizmo was being used last frame.
+	bool m_gizmoWasUsing = false;
+	/// Entity YAML snapshot captured when gizmo manipulation began.
+	std::string m_gizmoBeforeYaml;
 };
 
 }// namespace owl::nest::panel
