@@ -29,6 +29,12 @@ public:
 	void serialize(const std::filesystem::path& iFilepath) const;
 
 	/**
+	 * @brief Serialize the scene to a YAML string.
+	 * @return The YAML string.
+	 */
+	[[nodiscard]] auto serializeToString() const -> std::string;
+
+	/**
 	 * @brief Load the scene from a file.
 	 * @param[in] iFilepath The file to load.
 	 * @return True if everything works.

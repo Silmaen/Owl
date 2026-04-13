@@ -213,6 +213,31 @@ Supported component names for `has_component`: `"Transform"`, `"PhysicBody"`,
 | `ui.transition_fade_out(duration)`         | Start fade-out transition (seconds)  |
 | `ui.is_transition_active()`               | Check if a transition is in progress |
 
+### `gamestate`
+
+| Function                      | Description                                       |
+|-------------------------------|---------------------------------------------------|
+| `gamestate.set(key, value)`  | Store a value (auto-detects int/float/string/bool) |
+| `gamestate.get(key)`         | Get value or nil if missing                        |
+| `gamestate.get(key, default)` | Get value or default if missing                   |
+| `gamestate.remove(key)`     | Remove a key                                       |
+| `gamestate.clear()`         | Remove all entries                                 |
+
+The game state persists across scene transitions and is included in save files.
+
+### `save`
+
+| Function                    | Description                          |
+|-----------------------------|--------------------------------------|
+| `save.save_game(slot)`     | Save scene + game state to slot      |
+| `save.load_game(slot)`     | Load a save (deferred to next frame) |
+| `save.has_save(slot)`      | Check if a save exists               |
+| `save.delete_save(slot)`   | Delete a save file                   |
+| `save.list_saves()`        | Returns table of `{slot, timestamp, scene}` |
+
+Save files are stored in the user directory (`~/.local/share/<game>/saves/` on Linux,
+`%APPDATA%/<game>/saves/` on Windows) as YAML `.owl_save` files.
+
 ## Screen Transitions
 
 Use `ui.transition_fade_out()` and `ui.transition_fade_in()` to create smooth

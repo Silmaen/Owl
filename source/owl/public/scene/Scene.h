@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "GameState.h"
 #include "core/Timestep.h"
 #include "core/UUID.h"
 #include "math/Transform.h"
@@ -228,12 +229,33 @@ public:
 	TeleportRequest teleportRequest;
 
 	/**
+	 * @brief Describes a pending save/load request (set by Lua scripts).
+	 */
+	struct SaveLoadRequest {
+		/// Whether a save or load is pending.
+		bool pending = false;
+		/// True = load, false = save.
+		bool isLoad = false;
+		/// Save slot number.
+		uint32_t slot = 0;
+	};
+	/// Pending save/load request.
+	SaveLoadRequest saveLoadRequest;
+
+	/**
 	 * @brief Count the entities in the scene.
 	 * @return The count of Entity in the scene.
 	 */
 	[[nodiscard]] auto getEntityCount() const -> uint32_t;
 
+	/// @brief Access the game state.
+	[[nodiscard]] auto getGameState() -> GameState& { return m_gameState; }
+	/// @brief Access the game state (const).
+	[[nodiscard]] auto getGameState() const -> const GameState& { return m_gameState; }
+
 private:
+	/// Game state key-value store (progression data).
+	GameState m_gameState;
 	/**
 	 * @brief Action when component is added to an entity.
 	 * @tparam T Type of the added component.

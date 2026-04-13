@@ -81,6 +81,11 @@ public:
 	 */
 	void handleTeleportRequest();
 
+	/**
+	 * @brief Handle a save/load request from a Lua script.
+	 */
+	void handleSaveLoadRequest();
+
 private:
 	void renderStats(const core::Timestep& iTimeStep);
 	void renderMenu();

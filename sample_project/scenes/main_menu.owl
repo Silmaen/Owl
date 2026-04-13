@@ -1,6 +1,6 @@
 Scene: untitled
 Entities:
-  - Entity: 12304005224497022934
+  - Entity: 11439558800589019929
     Tag:
       tag: VersionLabel
     Transform:
@@ -10,7 +10,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 8797183574659062688
+      parentId: 506113327976133848
     UIRect:
       anchor: BottomRight
       pivotX: 1
@@ -26,7 +26,7 @@ Entities:
       alignment: Left
       kerning: 0
       lineSpacing: 0
-  - Entity: 3224690628006215049
+  - Entity: 5763928307238698336
     Tag:
       tag: PlayButton
     Transform:
@@ -36,7 +36,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 8797183574659062688
+      parentId: 506113327976133848
     UIButton:
       normalColor: [0.150000006, 0.349999994, 0.649999976, 1]
       hoverColor: [0.25, 0.449999988, 0.75, 1]
@@ -58,7 +58,7 @@ Entities:
       alignment: Left
       kerning: 0
       lineSpacing: 0
-  - Entity: 2550293993158311280
+  - Entity: 14903473678503738473
     Tag:
       tag: TitleText
     Transform:
@@ -68,7 +68,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 8797183574659062688
+      parentId: 506113327976133848
     UIRect:
       anchor: TopCenter
       pivotX: 0.5
@@ -84,7 +84,7 @@ Entities:
       alignment: Left
       kerning: 0
       lineSpacing: 0
-  - Entity: 8797183574659062688
+  - Entity: 506113327976133848
     Tag:
       tag: MenuCanvas
     Transform:
@@ -100,7 +100,7 @@ Entities:
       {}
     LuaScript:
       scriptPath: scripts/main_menu.lua
-  - Entity: 10774928363415025913
+  - Entity: 3987458127797256319
     Tag:
       tag: DecoCircle2
     Transform:
@@ -113,7 +113,7 @@ Entities:
       fade: 0.0500000007
     Visibility:
       gameVisible: true
-  - Entity: 3550243053970409875
+  - Entity: 9296366239817679739
     Tag:
       tag: DecoCircle1
     Transform:
@@ -126,7 +126,7 @@ Entities:
       fade: 0.0500000007
     Visibility:
       gameVisible: true
-  - Entity: 12917652997129510525
+  - Entity: 5965508402957414446
     Tag:
       tag: Background
     Transform:
@@ -137,7 +137,7 @@ Entities:
       color: [0.0799999982, 0.0799999982, 0.180000007, 1]
     Visibility:
       gameVisible: true
-  - Entity: 9441464555110826767
+  - Entity: 6526514907656323801
     Tag:
       tag: MainCamera
     Transform:

@@ -201,6 +201,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	shared<Scene> newScene = mkShared<Scene>();
 
 	newScene->m_viewportSize = iOther->m_viewportSize;
+	newScene->m_gameState = iOther->m_gameState;
 
 	auto& srcSceneRegistry = iOther->registry;
 	auto& dstSceneRegistry = newScene->registry;

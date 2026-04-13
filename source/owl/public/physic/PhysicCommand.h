@@ -83,6 +83,32 @@ public:
 	 */
 	static void setVelocity(const scene::Entity& iEntity, const math::vec2f& iVelocity);
 
+	/**
+	 * @brief Snapshot of a physics body's runtime state (for save/load).
+	 */
+	struct PhysicsSnapshot {
+		/// Linear velocity.
+		math::vec2f linearVelocity{0.f, 0.f};
+		/// Angular velocity.
+		float angularVelocity = 0.f;
+		/// Whether the body is awake.
+		bool awake = true;
+	};
+
+	/**
+	 * @brief Get a snapshot of a physics entity's runtime state.
+	 * @param[in] iEntity The entity with a PhysicBody.
+	 * @return The snapshot (zero values if entity has no body or physics not initialized).
+	 */
+	[[nodiscard]] static auto getSnapshot(const scene::Entity& iEntity) -> PhysicsSnapshot;
+
+	/**
+	 * @brief Apply a snapshot to a physics entity (restore velocity/wake state).
+	 * @param[in] iEntity The entity with a PhysicBody.
+	 * @param[in] iSnapshot The snapshot to apply.
+	 */
+	static void applySnapshot(const scene::Entity& iEntity, const PhysicsSnapshot& iSnapshot);
+
 private:
 	/// Implementation class.
 	class Impl;

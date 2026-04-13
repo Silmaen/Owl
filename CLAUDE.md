@@ -181,6 +181,22 @@ The engine embeds Lua 5.5 for gameplay scripting, attached to entities via the `
   `ScriptEngine::extractProperties()`, applied as globals before `on_create`
 - **Pack support:** scripts loaded from `.owlpack` via `Application::loadFromPack()` with filesystem fallback
 
+### Game State & Save System
+
+The engine includes a save/load system for game progression.
+
+- **`GameState`** (`source/owl/public/scene/GameState.h`): key-value store (`variant<int64_t, float, string, bool>`),
+  lives on `Scene`, copied across transitions, serialized in save files
+- **`SaveManager`** (`source/owl/public/scene/SaveManager.h`): static class for save/load to user directories
+  (`~/.local/share/<game>/saves/` on Linux, `%APPDATA%/<game>/saves/` on Windows)
+- **Save format:** YAML `.owl_save` files containing: header (version, timestamp, scenePath), GameState entries,
+  full scene data (entities + components), physics snapshots (velocities, wake state)
+- **Lua API:** `gamestate` table (set/get/remove/clear) + `save` table (save_game/load_game/list_saves/has_save/delete_save)
+- **Deferred load:** `save.load_game(slot)` sets `Scene::saveLoadRequest`, handled by RunnerLayer/EditorLayer after
+  `onUpdateRuntime()` (safe mid-script)
+- **Physics snapshots:** `PhysicCommand::getSnapshot/applySnapshot` captures and restores Box2D velocities after
+  `onStartRuntime()` on load
+
 ### Dependencies
 
 - Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (31 external dependencies)

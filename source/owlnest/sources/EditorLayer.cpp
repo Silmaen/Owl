@@ -775,6 +775,29 @@ void EditorLayer::newProject() {
 	openProject(dir);
 }
 
+void EditorLayer::handleSaveLoadRequest() {
+	if (!m_activeScene || !m_activeScene->saveLoadRequest.pending)
+		return;
+	const auto slr = m_activeScene->saveLoadRequest;
+	m_activeScene->saveLoadRequest.pending = false;
+	if (slr.isLoad) {
+		auto newScene = mkShared<scene::Scene>();
+		if (auto loadResult = scene::SaveManager::load(slr.slot, newScene); loadResult.success) {
+			m_activeScene->onEndRuntime();
+			m_activeScene = newScene;
+			m_activeScene->onViewportResize(m_viewport.getSize());
+			m_activeScene->onStartRuntime();
+			// Apply physics snapshots after physics initialization.
+			for (const auto& [uuid, snap]: loadResult.physicsSnapshots)
+				if (auto entity = m_activeScene->findEntityByUUID(core::UUID{uuid}); entity)
+					physic::PhysicCommand::applySnapshot(entity, snap);
+			m_sceneHierarchy.setContext(m_activeScene);
+		}
+	} else {
+		std::ignore = scene::SaveManager::save(slr.slot, m_activeScene, m_currentScenePath.string());
+	}
+}
+
 void EditorLayer::openProject() {
 	const auto dir = core::utils::FileDialog::pickFolder();
 	if (!dir.empty())
