@@ -29,9 +29,9 @@ The engine library (`source/owl/`) is organized into the following modules:
 Public headers live in `source/owl/public/` and implementation files in `source/owl/private/`,
 both mirroring the module structure.
 
-**Dedicated guides:** [Renderer](@ref page-renderer) · [Scene & Components](@ref page-scene) ·
-[Events & Input](@ref page-event-input) · [Physics](@ref page-physics) · [Sound](@ref page-sound) ·
-[Lua Scripting](@ref page-scripting) · [Editor (Owl Nest)](@ref page-editor)
+**Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
+[Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·
+[Lua Scripting](scripting.md) · [Editor (Owl Nest)](editor.md)
 
 ## Backend System
 
@@ -47,7 +47,7 @@ Owl uses a backend abstraction so that different platform APIs can be swapped at
 | `Vulkan` | Vulkan 1.4+ | Modern low-level API; full desktop support    |
 | `Null`   | None        | Headless mode for servers or testing          |
 
-See [Renderer](@ref page-renderer) for the full rendering pipeline, batch system, and camera details.
+See [Renderer](renderer.md) for the full rendering pipeline, batch system, and camera details.
 
 ### Input Backends
 
@@ -77,7 +77,7 @@ At the scene level, **SoundSource** and **SoundListener** ECS components
 drive spatial audio during runtime. The OpenAL backend uses the inverse-distance-clamped
 attenuation model for 3D positional sound.
 
-See [Sound System](@ref page-sound) for the full user guide covering components, spatial audio, and gameplay triggers.
+See [Sound System](sound.md) for the full user guide covering components, spatial audio, and gameplay triggers.
 
 ## Applications
 
@@ -116,7 +116,7 @@ Shaders are written in **Slang** (`.slang` files), a single-source shading langu
    bytecode
 4. **Caching**: SPIR-V binaries are cached as `.spv` files with hash-based validation
 
-See [Renderer > Shader System](@ref page-renderer) for the shader class API.
+See [Renderer > Shader System](renderer.md) for the shader class API.
 
 Key conventions:
 
@@ -132,7 +132,7 @@ Key conventions:
 ![ECS Pipeline](../images/ecs_pipeline.svg)
 
 Entities support parent-child relationships via the **Hierarchy** component (mandatory on every entity).
-See [Scene & Components](@ref page-scene) for the full component reference and entity lifecycle.
+See [Scene & Components](scene.md) for the full component reference and entity lifecycle.
 
 ### Transform Inheritance
 
@@ -258,4 +258,4 @@ Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager) 
 in `depmanager.yml` at the project root. During CMake configure, the `cmake/Depmanager.cmake`
 module automatically downloads missing packages from the configured remote server.
 
-See [Building](@ref page-building) for instructions on configuring and building with dependencies.
+See [Building](building.md) for instructions on configuring and building with dependencies.
