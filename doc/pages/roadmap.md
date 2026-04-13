@@ -261,24 +261,26 @@ application (Linux / Windows).
       - Runner loads and executes `.lua` files from `.owlpack`
       - Same lifecycle as editor (on_create, on_update, etc.)
 - In-Game UI
-  - ![Planned][planned] Canvas UI system
-    - `Canvas` component attached to camera or as screen overlay
-    - Coordinate space: screen pixels or viewport percentage
-    - Rendered via existing 2D pipeline (textured quads + text)
-  - ![Planned][planned] Base widgets
+  - ![Done][done] Canvas UI system
+    - `Canvas` component marks UI root, `UIRect` for screen-space layout (anchor, pivot, size, offset)
+    - Screen-space orthographic rendering via existing Renderer2D pipeline
+    - Sort order for layering multiple canvases
+  - ![Done][done] Base widgets
       - UIText (font, size, color, alignment), UIImage (sprite, tint)
-      - UIButton (normal/hover/pressed states, Lua callback)
+      - UIButton (normal/hover/pressed/disabled states, Lua callback)
       - UIPanel (background, border, vertical/horizontal layout)
-      - UISlider, UIProgressBar
-  - ![Planned][planned] UI input handling
-      - Focus/navigation system (mouse + keyboard/gamepad)
-      - UI consumes click events before scene, custom cursor support
-  - ![Planned][planned] UI editor in Owl Nest
-      - Canvas mode in Viewport: visual widget placement (drag, resize, anchors)
-      - Real-time preview, properties editable in inspector
-  - ![Planned][planned] Standard game screens
-      - Predefined templates: Main Menu, Pause, Game Over, Settings
-      - Screen transitions (fade, slide)
+      - UISlider (draggable, min/max, callback), UIProgressBar (value, colors)
+  - ![Done][done] UI input handling
+      - UIInputSystem: hit-test, hover/pressed state tracking
+      - UI consumes mouse events before scene, Lua callback on button click
+      - Lua `ui` table: set_text, set_visible, set_progress, slider get/set, button enable/disable
+  - ![Done][done] UI editor in Owl Nest
+      - Canvas and UIRect visible in editor viewport with cyan outlines
+      - All widget properties editable in inspector
+      - Component icons for Canvas, UIRect, UIText, UIImage, UIPanel, UIButton, UISlider, UIProgressBar
+  - ![Done][done] Standard game screens
+      - Template scenes: Main Menu, Pause Menu, Game Over (`engine_assets/templates/`)
+      - Screen transitions: FadeIn/FadeOut via `ScreenTransition` + Lua `ui.transition_fade_in/out`
 - Game State & Save System
   - ![Planned][planned] Serializable GameState
       - Key-value dictionary (int, float, string, bool) for progression, inventory, flags

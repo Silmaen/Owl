@@ -1,0 +1,110 @@
+Scene: Game Over
+Entities:
+  - Entity: 3000
+    Tag:
+      tag: GameOverCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 20
+  - Entity: 3001
+    Tag:
+      tag: GameOverTitle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 3000
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 400
+      sizeY: 60
+      offsetX: 0
+      offsetY: 60
+    UIText:
+      text: "Game Over"
+      color: [1, 0.3, 0.3, 1]
+      fontSize: 48
+      alignment: Center
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 3002
+    Tag:
+      tag: RetryButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 3000
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 180
+      sizeY: 45
+      offsetX: 0
+      offsetY: -20
+    UIButton:
+      normalColor: [0.3, 0.3, 0.5, 1]
+      hoverColor: [0.4, 0.4, 0.6, 1]
+      pressedColor: [0.2, 0.2, 0.4, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_retry_clicked
+    UIText:
+      text: "Retry"
+      color: [1, 1, 1, 1]
+      fontSize: 22
+      alignment: Center
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 3003
+    Tag:
+      tag: MainMenuButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 3000
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 180
+      sizeY: 45
+      offsetX: 0
+      offsetY: -80
+    UIButton:
+      normalColor: [0.3, 0.3, 0.3, 1]
+      hoverColor: [0.4, 0.4, 0.4, 1]
+      pressedColor: [0.2, 0.2, 0.2, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_main_menu_clicked
+    UIText:
+      text: "Main Menu"
+      color: [1, 1, 1, 1]
+      fontSize: 22
+      alignment: Center
+      kerning: 0
+      lineSpacing: 0

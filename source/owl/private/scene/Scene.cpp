@@ -10,12 +10,16 @@
 #include "scene/Scene.h"
 
 #include "renderer/BackgroundRenderer.h"
+#include "renderer/CameraOrtho.h"
+#include "renderer/RenderCommand.h"
 #include "renderer/Renderer2D.h"
 #include "scene/Entity.h"
 
 #include "core/Application.h"
 #include "input/Input.h"
 #include "physic/PhysicCommand.h"
+#include "scene/ScreenTransition.h"
+#include "scene/UIInputSystem.h"
 #include "scene/component/components.h"
 #include "script/ScriptEngine.h"
 #include "script/ScriptInstance.h"
@@ -64,6 +68,127 @@ auto getColliderBox(const Entity& iEntity, const math::Transform& iWorldTransfor
 	}
 	const math::vec2f center = {iWorldTransform.translation().x(), iWorldTransform.translation().y()};
 	return {center - halfDiag, center + halfDiag};
+}
+
+/// Compute the natural aspect ratio of a text string for a given font.
+auto computeTextAspect(const shared<data::fonts::Font>& iFont, const std::string& iText, const float iKerning,
+					   const float iLineSpacing) -> float {
+	if (!iFont || iText.empty())
+		return 1.f;
+	math::box2f extents;
+	math::vec2 cursor{0.f, 0.f};
+	for (size_t ci = 0; ci < iText.size(); ++ci) {
+		char ch = iText[ci];
+		if (isascii(ch) == 0)
+			ch = '?';
+		if (ch == '\n') {
+			cursor.x() = 0;
+			cursor.y() -= iFont->getScaledLineHeight() + iLineSpacing;
+			continue;
+		}
+		if (ch == '\r')
+			continue;
+		auto [quad, uv] = iFont->getGlyphBox(ch);
+		quad.translate(cursor);
+		extents.update(quad);
+		if (ci < iText.size() - 1) {
+			char next = iText[ci + 1];
+			if (isascii(next) == 0)
+				next = '?';
+			cursor.x() += iFont->getAdvance(ch, next) + iKerning;
+		}
+	}
+	const auto diag = extents.diagonal();
+	return diag.y() > 0.f ? diag.x() / diag.y() : 1.f;
+}
+
+/// Render a single UI child entity's visual components.
+void renderUIChild(const Entity& iChild, const math::Transform& iTransform, const float iPxScaleY) {
+	const int entId = static_cast<int>(static_cast<entt::entity>(iChild));
+	// Sprite.
+	if (iChild.hasComponent<component::SpriteRenderer>()) {
+		const auto& sprite = iChild.getComponent<component::SpriteRenderer>();
+		renderer::Renderer2D::drawQuad(
+				{.transform = iTransform, .color = sprite.color, .texture = sprite.texture,
+				 .tilingFactor = sprite.tilingFactor, .entityId = entId});
+	}
+	// Text (world-space component on a UI entity).
+	if (iChild.hasComponent<component::Text>()) {
+		const auto& text = iChild.getComponent<component::Text>();
+		renderer::Renderer2D::drawString(
+				{.transform = iTransform, .text = text.text, .font = text.font, .color = text.color,
+				 .kerning = text.kerning, .lineSpacing = text.lineSpacing, .entityId = entId});
+	}
+	// Circle.
+	if (iChild.hasComponent<component::CircleRenderer>()) {
+		const auto& circle = iChild.getComponent<component::CircleRenderer>();
+		renderer::Renderer2D::drawCircle(
+				{.transform = iTransform, .color = circle.color, .thickness = circle.thickness,
+				 .fade = circle.fade, .entityId = entId});
+	}
+	// UIPanel.
+	if (iChild.hasComponent<component::UIPanel>()) {
+		const auto& panel = iChild.getComponent<component::UIPanel>();
+		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = panel.backgroundColor, .entityId = entId});
+	}
+	// UIImage.
+	if (iChild.hasComponent<component::UIImage>()) {
+		const auto& img = iChild.getComponent<component::UIImage>();
+		renderer::Renderer2D::drawQuad(
+				{.transform = iTransform, .color = img.tint, .texture = img.texture, .entityId = entId});
+	}
+	// UIText.
+	if (iChild.hasComponent<component::UIText>()) {
+		const auto& uiText = iChild.getComponent<component::UIText>();
+		shared<data::fonts::Font> font = uiText.font;
+		if (!font && core::Application::instanced())
+			font = core::Application::get().getFontLibrary().getDefaultFont();
+		const float textAspect = computeTextAspect(font, uiText.text, uiText.kerning, uiText.lineSpacing);
+		math::Transform textTransform;
+		textTransform.translation() = iTransform.translation();
+		const float baseScale = uiText.fontSize * iPxScaleY;
+		textTransform.scale() = {baseScale * textAspect, baseScale, 1.f};
+		renderer::Renderer2D::drawString(
+				{.transform = textTransform, .text = uiText.text, .font = font, .color = uiText.color,
+				 .kerning = uiText.kerning, .lineSpacing = uiText.lineSpacing, .entityId = entId});
+	}
+	// UIButton.
+	if (iChild.hasComponent<component::UIButton>()) {
+		const auto& button = iChild.getComponent<component::UIButton>();
+		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = button.getCurrentColor(), .entityId = entId});
+	}
+	// UIProgressBar.
+	if (iChild.hasComponent<component::UIProgressBar>()) {
+		const auto& bar = iChild.getComponent<component::UIProgressBar>();
+		const float worldWidth = iTransform.scale().x();
+		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = bar.backgroundColor, .entityId = entId});
+		const float fillFraction = std::clamp(bar.value, 0.f, 1.f);
+		if (fillFraction > 0.f) {
+			math::Transform fillTransform = iTransform;
+			fillTransform.scale().x() *= fillFraction;
+			fillTransform.translation().x() -= worldWidth * (1.f - fillFraction) * 0.5f;
+			renderer::Renderer2D::drawQuad({.transform = fillTransform, .color = bar.fillColor, .entityId = entId});
+		}
+	}
+	// UISlider.
+	if (iChild.hasComponent<component::UISlider>()) {
+		const auto& slider = iChild.getComponent<component::UISlider>();
+		const float worldWidth = iTransform.scale().x();
+		const float worldHeight = iTransform.scale().y();
+		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = slider.trackColor, .entityId = entId});
+		const float norm = slider.getNormalized();
+		if (norm > 0.f) {
+			math::Transform fillTransform = iTransform;
+			fillTransform.scale().x() *= norm;
+			fillTransform.translation().x() -= worldWidth * (1.f - norm) * 0.5f;
+			renderer::Renderer2D::drawQuad({.transform = fillTransform, .color = slider.fillColor, .entityId = entId});
+		}
+		math::Transform handleTransform = iTransform;
+		handleTransform.scale() = {worldHeight, worldHeight, 1.f};
+		handleTransform.translation().x() = iTransform.translation().x() - worldWidth * 0.5f + norm * worldWidth;
+		renderer::Renderer2D::drawQuad(
+				{.transform = handleTransform, .color = slider.handleColor, .entityId = entId});
+	}
 }
 
 }// namespace
@@ -192,12 +317,25 @@ void Scene::onStartRuntime() {
 		bool loaded = false;
 		if (core::Application::instanced()) {
 			auto& app = core::Application::get();
+			// Try pack first.
 			if (app.packContains(luaScript.scriptPath))
 				if (const auto data = app.loadFromPack(luaScript.scriptPath))
 					loaded = luaScript.instance->createFromBuffer(*data, luaScript.scriptPath, uuid);
+			// Resolve against asset directories.
+			if (!loaded) {
+				for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
+					if (const auto resolved = assetsPath / luaScript.scriptPath; exists(resolved)) {
+						loaded = luaScript.instance->create(resolved.string(), uuid);
+						break;
+					}
+				}
+			}
 		}
+		// Fallback: try raw path (absolute or CWD-relative).
 		if (!loaded)
 			loaded = luaScript.instance->create(luaScript.scriptPath, uuid);
+		if (!loaded)
+			OWL_CORE_ERROR("onStartRuntime: FAILED to load script '{}'", luaScript.scriptPath)
 		if (loaded) {
 			for (const auto& prop: luaScript.properties) {
 				switch (prop.type) {
@@ -271,7 +409,6 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 			break;
 		}
 	}
-
 	if (status == Status::Victory) {
 		if (mainCamera != nullptr) {
 			const auto font = core::Application::get().getFontLibrary().getDefaultFont();
@@ -433,7 +570,10 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 		renderer::Renderer2D::resetStats();
 		renderer::Renderer2D::beginScene(*mainCamera);
 		render();
+		renderUI(*mainCamera);
 		renderer::Renderer2D::endScene();
+		ScreenTransition::update(iTimeStep.getSeconds());
+		ScreenTransition::render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
 	}
 }
 
@@ -503,7 +643,9 @@ void Scene::onRenderRuntime() {
 		renderer::Renderer2D::resetStats();
 		renderer::Renderer2D::beginScene(*mainCamera);
 		render();
+		renderUI(*mainCamera);
 		renderer::Renderer2D::endScene();
+		ScreenTransition::render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
 	}
 }
 
@@ -520,6 +662,7 @@ void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, con
 	renderer::Renderer2D::resetStats();
 	renderer::Renderer2D::beginScene(iCamera);
 	render();
+	renderUI(iCamera);
 	renderer::Renderer2D::endScene();
 }
 
@@ -607,6 +750,77 @@ void Scene::render() {
 										  .lineSpacing = text.lineSpacing,
 										  .entityId = static_cast<int>(entity)});
 	}
+}
+
+void Scene::renderUI(const renderer::Camera& iCamera) {
+	OWL_PROFILE_FUNCTION()
+	if (m_viewportSize.x() == 0 || m_viewportSize.y() == 0)
+		return;
+
+	const bool editorMode = status == Status::Editing;
+	const auto vpWidth = static_cast<float>(m_viewportSize.x());
+	const auto vpHeight = static_cast<float>(m_viewportSize.y());
+
+	// Collect Canvas entities, sorted by sortOrder.
+	struct CanvasEntry {
+		entt::entity entity;
+		int32_t sortOrder;
+	};
+	std::vector<CanvasEntry> canvases;
+	for (const auto view = registry.view<component::Canvas>(); const auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, editorMode))
+			continue;
+		canvases.push_back({entity, view.get<component::Canvas>(entity).sortOrder});
+	}
+	if (canvases.empty())
+		return;
+	std::ranges::sort(canvases, [](const auto& iA, const auto& iB) -> auto { return iA.sortOrder < iB.sortOrder; });
+
+	// Convert pixel coordinates to world coordinates using the inverse VP matrix.
+	// Determine world-space viewport bounds using min/max to handle Y-flip (Vulkan vs OpenGL).
+	const math::mat4 invVP = math::inverse(iCamera.getViewProjection());
+	const math::vec4 cornerA4 = invVP * math::vec4{-1.f, -1.f, 0.f, 1.f};
+	const math::vec4 cornerB4 = invVP * math::vec4{1.f, 1.f, 0.f, 1.f};
+	// Perspective divide (for robustness, though w should be 1 for ortho).
+	const math::vec2 cornerA = {cornerA4.x() / cornerA4.w(), cornerA4.y() / cornerA4.w()};
+	const math::vec2 cornerB = {cornerB4.x() / cornerB4.w(), cornerB4.y() / cornerB4.w()};
+	const math::vec2 worldMin = {std::min(cornerA.x(), cornerB.x()), std::min(cornerA.y(), cornerB.y())};
+	const math::vec2 worldMax = {std::max(cornerA.x(), cornerB.x()), std::max(cornerA.y(), cornerB.y())};
+	const float worldW = worldMax.x() - worldMin.x();
+	const float worldH = worldMax.y() - worldMin.y();
+	// Pixel (0,0)=bottom-left, (vpW,vpH)=top-right → world (worldMin → worldMax).
+	const auto pixelToWorld = [&](const float iPx, const float iPy) -> math::vec2 {
+		return {worldMin.x() + (iPx / vpWidth) * worldW, worldMin.y() + (iPy / vpHeight) * worldH};
+	};
+	const float pxScaleX = worldW / vpWidth;
+	const float pxScaleY = worldH / vpHeight;
+
+	for (const auto& [canvasEnt, sortOrder]: canvases) {
+		const Entity canvasEntity{canvasEnt, this};
+		const math::vec2 canvasSize = {vpWidth, vpHeight};
+
+		// Render children of the Canvas that have UIRect + visual components.
+		const auto& [parentId, childrenIds] = canvasEntity.getComponent<component::Hierarchy>();
+		for (const auto childId: childrenIds) {
+			const Entity child = findEntityByUUID(childId);
+			if (!child || !child.hasComponent<component::UIRect>())
+				continue;
+			if (!isEffectivelyVisible(child, editorMode))
+				continue;
+
+			const auto& rect = child.getComponent<component::UIRect>();
+			const math::vec2 posPx = rect.computePosition(canvasSize);
+			const math::vec2 posWorld = pixelToWorld(posPx.x(), posPx.y());
+
+			math::Transform uiTransform;
+			uiTransform.translation() = {posWorld.x(), posWorld.y(), 0.5f};
+			uiTransform.scale() = {rect.size.x() * pxScaleX, rect.size.y() * pxScaleY, 1.f};
+
+			renderUIChild(child, uiTransform, pxScaleY);
+		}
+	}
+
 }
 
 void Scene::onViewportResize(const math::vec2ui& iSize) {
@@ -965,5 +1179,38 @@ OWL_API void Scene::onComponentAdded<component::SoundListener>([[maybe_unused]] 
 template<>
 OWL_API void Scene::onComponentAdded<component::LuaScript>([[maybe_unused]] const Entity& iEntity,
 															[[maybe_unused]] component::LuaScript& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Canvas>([[maybe_unused]] const Entity& iEntity,
+														 [[maybe_unused]] component::Canvas& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UIRect>([[maybe_unused]] const Entity& iEntity,
+														 [[maybe_unused]] component::UIRect& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UIText>([[maybe_unused]] const Entity& iEntity,
+														 [[maybe_unused]] component::UIText& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UIImage>([[maybe_unused]] const Entity& iEntity,
+														  [[maybe_unused]] component::UIImage& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UIPanel>([[maybe_unused]] const Entity& iEntity,
+														  [[maybe_unused]] component::UIPanel& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UIButton>([[maybe_unused]] const Entity& iEntity,
+														   [[maybe_unused]] component::UIButton& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UISlider>([[maybe_unused]] const Entity& iEntity,
+														   [[maybe_unused]] component::UISlider& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UIProgressBar>([[maybe_unused]] const Entity& iEntity,
+																[[maybe_unused]] component::UIProgressBar& ioComponent) {
+}
 
 }// namespace owl::scene

@@ -245,6 +245,9 @@ private:
 
 	/// Draw the elements.
 	void render();
+	/// Draw screen-space UI overlays (Canvas entities) within the current render batch.
+	/// @param[in] iCamera The active camera (for pixel-to-world conversion).
+	void renderUI(const renderer::Camera& iCamera);
 	/// The viewport's size.
 	math::vec2ui m_viewportSize = {0, 0};
 	/// Inverse of camera view rotation matrix (for skybox rendering).

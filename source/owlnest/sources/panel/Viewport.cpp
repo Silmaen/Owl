@@ -83,6 +83,11 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				}
 			case EditorLayer::State::Play:
 				{
+					// UIRect uses Y=0 at bottom; ImGui mouse Y=0 at top → always flip.
+					const math::vec2 vpMouse = {mx, viewportSizeInternal.y() - my};
+					const bool mousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+					scene::UIInputSystem::update(m_parent->getActiveScene().get(),
+												 m_framebuffer->getSpecification().size, vpMouse, mousePressed);
 					m_parent->getActiveScene()->onUpdateRuntime(iTimeStep);
 					m_parent->handleTeleportRequest();
 					break;
@@ -202,6 +207,7 @@ void Viewport::renderOverlay() const {
 
 
 	renderer::Renderer2D::endScene();
+
 }
 
 

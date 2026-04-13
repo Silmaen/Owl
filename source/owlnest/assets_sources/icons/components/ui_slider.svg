@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Track -->
+  <line x1="80" y1="256" x2="432" y2="256" stroke="white" stroke-width="24" stroke-linecap="round"/>
+  <!-- Handle -->
+  <circle cx="280" cy="256" r="48" stroke="white" stroke-width="28" fill="none"/>
+</svg>

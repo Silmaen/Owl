@@ -155,6 +155,12 @@ public:
 	 */
 	virtual void setDepthMask([[maybe_unused]] bool iEnabled) {}
 
+	/**
+	 * @brief Enable or disable depth testing.
+	 * @param[in] iEnabled True to enable depth testing, false to disable.
+	 */
+	virtual void setDepthTest([[maybe_unused]] bool iEnabled) {}
+
 protected:
 	/**
 	 * @brief Define the API State.

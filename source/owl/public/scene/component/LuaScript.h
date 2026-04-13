@@ -21,6 +21,26 @@ namespace owl::scene::component {
  * the instance is runtime-only and created during onStartRuntime.
  */
 struct OWL_API LuaScript {
+	LuaScript() = default;
+	/// @brief Copy constructor — copies script data but not the runtime instance.
+	LuaScript(const LuaScript& iOther)
+		: scriptPath{iOther.scriptPath}, properties{iOther.properties}, instance{nullptr} {}
+	/// @brief Move constructor.
+	LuaScript(LuaScript&&) = default;
+	/// @brief Copy assignment — copies script data but not the runtime instance.
+	auto operator=(const LuaScript& iOther) -> LuaScript& {
+		if (this != &iOther) {
+			scriptPath = iOther.scriptPath;
+			properties = iOther.properties;
+			instance = nullptr;
+		}
+		return *this;
+	}
+	/// @brief Move assignment.
+	auto operator=(LuaScript&&) -> LuaScript& = default;
+	/// @brief Destructor.
+	~LuaScript() = default;
+
 	/// Path to the .lua script file (relative to assets).
 	std::string scriptPath;
 	/// Exposed properties editable in the inspector.

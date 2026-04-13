@@ -8,7 +8,10 @@
 
 #include "RunnerLayer.h"
 
+#include <input/Input.h>
+#include <input/MouseCode.h>
 #include <physic/PhysicCommand.h>
+#include <scene/UIInputSystem.h>
 #include <scene/component/components.h>
 
 OWL_DIAG_PUSH
@@ -189,6 +192,9 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 					}
 				}
 			} else {
+				scene::UIInputSystem::update(m_activeScene.get(), m_viewportSize,
+											 input::Input::getMousePos(),
+											 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft));
 				m_activeScene->onUpdateRuntime(iTimeStep);
 				handleTeleportRequest();
 			}

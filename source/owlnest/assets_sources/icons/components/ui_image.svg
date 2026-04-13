@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Image frame -->
+  <rect x="80" y="100" width="352" height="312" rx="20" stroke="white" stroke-width="32" fill="none"/>
+  <!-- Mountain landscape -->
+  <polyline points="80,350 190,240 280,320 340,260 432,350" stroke="white" stroke-width="28" fill="none" stroke-linejoin="round"/>
+  <!-- Sun -->
+  <circle cx="350" cy="180" r="35" fill="white"/>
+</svg>

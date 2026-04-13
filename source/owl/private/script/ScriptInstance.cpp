@@ -101,6 +101,12 @@ void ScriptInstance::onCollision(const uint64_t iOtherEntityId) {
 	std::ignore = mp_impl->engine.callFunction("on_collision", iOtherEntityId);
 }
 
+auto ScriptInstance::callFunction(const std::string& iName) -> bool {
+	if (!isValid())
+		return false;
+	return mp_impl->engine.callFunction(iName);
+}
+
 // ---- Property access ----
 
 void ScriptInstance::setProperty(const std::string& iName, const float iValue) {

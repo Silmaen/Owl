@@ -130,6 +130,8 @@ public:
 	// Command buffer data
 	bool inBatch = false;
 	bool inFrame = false;
+	/// Desired depth test state for the next batch.
+	bool depthTestEnabled = true;
 	bool firstBatch = true;
 
 	void popPipeline(int32_t iId);

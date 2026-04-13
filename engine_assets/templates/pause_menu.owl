@@ -1,0 +1,137 @@
+Scene: Pause Menu
+Entities:
+  - Entity: 2000
+    Tag:
+      tag: PauseCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 10
+  - Entity: 2001
+    Tag:
+      tag: PauseBackground
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 2000
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 300
+      sizeY: 250
+      offsetX: 0
+      offsetY: 0
+    UIPanel:
+      backgroundColor: [0.1, 0.1, 0.1, 0.85]
+      borderColor: [1, 1, 1, 0.3]
+      borderWidth: 2
+      layout: None
+      spacing: 0
+      padding: 0
+  - Entity: 2002
+    Tag:
+      tag: PauseTitle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 2000
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 250
+      sizeY: 40
+      offsetX: 0
+      offsetY: 70
+    UIText:
+      text: "Paused"
+      color: [1, 1, 1, 1]
+      fontSize: 32
+      alignment: Center
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 2003
+    Tag:
+      tag: ResumeButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 2000
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 180
+      sizeY: 45
+      offsetX: 0
+      offsetY: 10
+    UIButton:
+      normalColor: [0.3, 0.5, 0.3, 1]
+      hoverColor: [0.4, 0.6, 0.4, 1]
+      pressedColor: [0.2, 0.4, 0.2, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_resume_clicked
+    UIText:
+      text: "Resume"
+      color: [1, 1, 1, 1]
+      fontSize: 22
+      alignment: Center
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 2004
+    Tag:
+      tag: QuitToMenuButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      editorVisible: true
+      gameVisible: true
+    Hierarchy:
+      parentId: 2000
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 180
+      sizeY: 45
+      offsetX: 0
+      offsetY: -50
+    UIButton:
+      normalColor: [0.5, 0.3, 0.3, 1]
+      hoverColor: [0.6, 0.4, 0.4, 1]
+      pressedColor: [0.4, 0.2, 0.2, 1]
+      disabledColor: [0.15, 0.15, 0.15, 0.5]
+      onClickCallback: on_quit_to_menu_clicked
+    UIText:
+      text: "Quit to Menu"
+      color: [1, 1, 1, 1]
+      fontSize: 22
+      alignment: Center
+      kerning: 0
+      lineSpacing: 0

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Track outline -->
+  <rect x="80" y="200" width="352" height="112" rx="16" stroke="white" stroke-width="28" fill="none"/>
+  <!-- Fill (partial) -->
+  <rect x="94" y="214" width="210" height="84" rx="8" fill="white"/>
+</svg>
