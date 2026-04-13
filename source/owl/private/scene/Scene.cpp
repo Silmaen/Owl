@@ -1214,4 +1214,9 @@ OWL_API void Scene::onComponentAdded<component::UIProgressBar>([[maybe_unused]] 
 																[[maybe_unused]] component::UIProgressBar& ioComponent) {
 }
 
+template<>
+OWL_API void Scene::onComponentAdded<component::PrefabLink>([[maybe_unused]] const Entity& iEntity,
+															 [[maybe_unused]] component::PrefabLink& ioComponent) {
+}
+
 }// namespace owl::scene

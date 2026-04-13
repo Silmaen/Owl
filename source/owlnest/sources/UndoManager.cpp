@@ -15,8 +15,8 @@ void UndoManager::push(uniq<UndoCommand> iCommand) {
 	if (m_mergeEnabled && !m_undoStack.empty()) {
 		auto& top = m_undoStack.back();
 		if (top->typeId() != 0 && top->typeId() == iCommand->typeId()) {
-			const auto elapsed = iCommand->timestamp - top->timestamp;
-			if (elapsed <= MergeTimeoutMs && top->mergeWith(*iCommand))
+			const auto elapsed = iCommand->m_timestamp - top->m_timestamp;
+			if (elapsed <= s_mergeTimeoutMs && top->mergeWith(*iCommand))
 				return;// Merged: discard the new command
 		}
 	}
@@ -32,7 +32,7 @@ void UndoManager::push(uniq<UndoCommand> iCommand) {
 
 void UndoManager::execute(uniq<UndoCommand> iCommand, scene::Scene& ioScene) {
 	iCommand->redo(ioScene);
-	m_lastSelectionHint = iCommand->selectAfterRedo;
+	m_lastSelectionHint = iCommand->m_selectAfterRedo;
 	push(std::move(iCommand));
 }
 
@@ -42,7 +42,7 @@ void UndoManager::undo(scene::Scene& ioScene) {
 	auto command = std::move(m_undoStack.back());
 	m_undoStack.pop_back();
 	command->undo(ioScene);
-	m_lastSelectionHint = command->selectAfterUndo;
+	m_lastSelectionHint = command->m_selectAfterUndo;
 	m_redoStack.push_back(std::move(command));
 }
 
@@ -52,7 +52,7 @@ void UndoManager::redo(scene::Scene& ioScene) {
 	auto command = std::move(m_redoStack.back());
 	m_redoStack.pop_back();
 	command->redo(ioScene);
-	m_lastSelectionHint = command->selectAfterRedo;
+	m_lastSelectionHint = command->m_selectAfterRedo;
 	m_undoStack.push_back(std::move(command));
 }
 

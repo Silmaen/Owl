@@ -55,7 +55,7 @@ public:
 	 * @param[in] iEntity The entity to serialize.
 	 * @return The YAML string for this entity.
 	 */
-	static auto serializeEntityToString(const Entity& iEntity) -> std::string;
+	[[nodiscard]] static auto serializeEntityToString(const Entity& iEntity) -> std::string;
 
 	/**
 	 * @brief Deserialize a single entity from a YAML string into a scene.
@@ -63,7 +63,8 @@ public:
 	 * @param[in] iYamlData The YAML string (as produced by serializeEntityToString).
 	 * @return True if successful.
 	 */
-	static auto deserializeEntityFromString(const shared<Scene>& ioScene, const std::string& iYamlData) -> bool;
+	[[nodiscard]] static auto deserializeEntityFromString(const shared<Scene>& ioScene,
+														  const std::string& iYamlData) -> bool;
 
 private:
 	/// Parent Scene.

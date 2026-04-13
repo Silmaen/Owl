@@ -542,4 +542,12 @@ void renderProps(UIProgressBar& ioComponent) {
 	ImGui::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 }
 
+void renderProps(PrefabLink& ioComponent) {
+	ImGui::Text("Asset: %s", ioComponent.prefabAssetPath.c_str());
+	ImGui::Text("Synced Version: %u", ioComponent.syncedVersion);
+	ImGui::Text("Mapped Entities: %zu", ioComponent.uuidMapping.size());
+	if (!ioComponent.overriddenComponents.empty())
+		ImGui::Text("Overrides: %zu", ioComponent.overriddenComponents.size());
+}
+
 }// namespace owl::gui::component

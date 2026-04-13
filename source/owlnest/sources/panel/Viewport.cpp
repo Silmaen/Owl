@@ -8,9 +8,10 @@
 
 #include "Viewport.h"
 
+#include "EditorLayer.h"
+
 #include "../UndoManager.h"
 #include "../commands/ComponentCommands.h"
-#include "EditorLayer.h"
 
 #include <owl.h>
 #include <scene/SceneSerializer.h>
@@ -132,13 +133,17 @@ void Viewport::onRenderInternal() {
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
 				const auto* path = static_cast<const char*>(payload->Data);
-				// this is not a texture file, but as soon as you give a file with extension,
-				// any 'AssetLibrary' will search for its path.
-				if (const auto scenePath = renderer::Renderer::getTextureLibrary().find(path);
-					scenePath.has_value() && scenePath.value().extension() == ".owl")
+				const std::filesystem::path relPath{path};
+				if (relPath.extension() == ".owlprefab") {
+					if (const auto fullPath = renderer::Renderer::getTextureLibrary().find(path);
+						fullPath.has_value())
+						m_parent->instantiatePrefab(fullPath.value(), path);
+				} else if (const auto scenePath = renderer::Renderer::getTextureLibrary().find(path);
+						   scenePath.has_value() && scenePath.value().extension() == ".owl") {
 					m_parent->openScene(scenePath.value());
-				else
-					OWL_CORE_WARN("Could not load {}: not a scene file", path)
+				} else {
+					OWL_CORE_WARN("Could not load {}: unsupported file type", path)
+				}
 			}
 			ImGui::EndDragDropTarget();
 		}

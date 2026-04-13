@@ -12,19 +12,41 @@
 #include "../commands/ComponentCommands.h"
 #include "../commands/EntityCommands.h"
 #include "../commands/HierarchyCommands.h"
+#include "../commands/PrefabCommands.h"
 
+#include <core/utils/FileDialog.h>
 #include <gui/IconBank.h>
-#include <scene/SceneSerializer.h>
 #include <gui/utils.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
-#include <renderer/Renderer.h>
+#include <scene/PrefabSerializer.h>
+#include <scene/SceneSerializer.h>
 
 using namespace owl::scene::component;
 
 namespace owl::nest::panel {
 
 namespace {
+
+/// Check if an entity is the root of a prefab instance.
+auto isPrefabRoot(const scene::Entity& iEntity) -> bool {
+	return iEntity && iEntity.hasComponent<PrefabLink>();
+}
+
+/// Walk the parent chain to find the prefab root (entity with PrefabLink), or return invalid entity.
+auto findPrefabRoot(const scene::Entity& iEntity, const scene::Scene& iScene) -> scene::Entity {
+	auto current = iEntity;
+	while (current) {
+		if (current.hasComponent<PrefabLink>())
+			return current;
+		const auto pid = current.getComponent<Hierarchy>().parentId;
+		if (pid == core::UUID{0})
+			break;
+		current = iScene.findEntityByUUID(pid);
+	}
+	return {};
+}
+
 
 /// Map component display name to icon bank name.
 auto componentIconName(const char* iCompName) -> const char* {
@@ -53,6 +75,7 @@ auto componentIconName(const char* iCompName) -> const char* {
 			{"UI Button", "comp_ui_button"},
 			{"UI Slider", "comp_ui_slider"},
 			{"UI Progress Bar", "comp_ui_progress"},
+			{"Prefab Link", "prefab_icon"},
 	};
 	if (const auto it = map.find(iCompName); it != map.end())
 		return it->second;
@@ -125,6 +148,11 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		flag |= ImGuiTreeNodeFlags_Leaf;
 	if (iEntity == m_selection)
 		flag |= ImGuiTreeNodeFlags_Selected;
+
+	// Tint prefab instance entities with a distinct color.
+	const bool isPartOfPrefab = static_cast<bool>(findPrefabRoot(iEntity, *m_context));
+	if (isPartOfPrefab)
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.4f, 0.7f, 1.0f, 1.0f});
 
 	ImGui::PushID(static_cast<int>(static_cast<uint32_t>(iEntity)));
 	const bool open = ImGui::TreeNodeEx(tag.c_str(), flag);
@@ -226,6 +254,8 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		ImGui::TreePop();
 	}
 	ImGui::PopID();
+	if (isPartOfPrefab)
+		ImGui::PopStyleColor();
 
 	if (treeNodeClicked)
 		m_selection = iEntity;
@@ -261,6 +291,52 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 			if (mp_undoManager != nullptr)
 				mp_undoManager->push(mkUniq<commands::DuplicateSubtreeCommand>(iEntity, dup, *m_context));
 		}
+	}
+	// --- Prefab ---
+	ImGui::Separator();
+	if (isPrefabRoot(iEntity)) {
+		const auto& link = iEntity.getComponent<PrefabLink>();
+		// Resolve the full path from asset directories.
+		std::filesystem::path prefabFullPath;
+		for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+			if (const auto p = assetsPath / link.prefabAssetPath; exists(p)) {
+				prefabFullPath = p;
+				break;
+			}
+		}
+		const bool prefabExists = !prefabFullPath.empty();
+		if (ib.menuItem("prefab_icon", "Update from Prefab", nullptr, prefabExists)) {
+			auto before = SubtreeSnapshot::capture(iEntity, *m_context);
+			if (scene::PrefabSerializer::applyToInstance(prefabFullPath, iEntity, *m_context)) {
+				auto root = m_context->findEntityByUUID(before.entities[0].uuid);
+				if (root && mp_undoManager != nullptr) {
+					auto after = SubtreeSnapshot::capture(root, *m_context);
+					mp_undoManager->push(mkUniq<commands::ApplyPrefabCommand>(
+							std::move(before), std::move(after), "Update from Prefab"));
+				}
+			}
+		}
+		if (ib.menuItem("prefab_icon", "Revert to Prefab", nullptr, prefabExists)) {
+			auto before = SubtreeSnapshot::capture(iEntity, *m_context);
+			if (scene::PrefabSerializer::revertInstance(prefabFullPath, iEntity, *m_context)) {
+				auto root = m_context->findEntityByUUID(before.entities[0].uuid);
+				if (root && mp_undoManager != nullptr) {
+					auto after = SubtreeSnapshot::capture(root, *m_context);
+					mp_undoManager->push(mkUniq<commands::ApplyPrefabCommand>(
+							std::move(before), std::move(after), "Revert to Prefab"));
+				}
+			}
+		}
+		ImGui::Separator();
+		if (ib.menuItem("prefab_icon", "Unlink Prefab"))
+			iEntity.removeComponent<PrefabLink>();
+		ImGui::Separator();
+	}
+	if (ib.menuItem("prefab_icon", "Create Prefab...")) {
+		if (const auto filepath =
+					core::utils::FileDialog::saveFile("Owl Prefab (*.owlprefab)|owlprefab\n");
+			!filepath.empty())
+			scene::PrefabSerializer::serialize(iEntity, *m_context, filepath, iEntity.getName());
 	}
 	// --- Hierarchy ---
 	if (iParentId != core::UUID{0}) {

@@ -16,7 +16,7 @@ namespace owl::nest::commands {
 
 CreateEntityCommand::CreateEntityCommand(const scene::Entity& iEntity)
 	: m_snapshot{EntitySnapshot::capture(iEntity)}, m_name{iEntity.getName()} {
-	selectAfterRedo = m_snapshot.uuid;
+	m_selectAfterRedo = m_snapshot.uuid;
 }
 
 CreateEntityCommand::~CreateEntityCommand() = default;
@@ -39,7 +39,7 @@ auto CreateEntityCommand::description() const -> std::string {
 
 DeleteEntityCommand::DeleteEntityCommand(const scene::Entity& iEntity)
 	: m_snapshot{EntitySnapshot::capture(iEntity)}, m_name{iEntity.getName()} {
-	selectAfterUndo = m_snapshot.uuid;
+	m_selectAfterUndo = m_snapshot.uuid;
 	if (iEntity.hasComponent<scene::component::Hierarchy>()) {
 		const auto& hier = iEntity.getComponent<scene::component::Hierarchy>();
 		m_parentUuid = hier.parentId;
@@ -81,7 +81,7 @@ auto DeleteEntityCommand::description() const -> std::string {
 
 DeleteSubtreeCommand::DeleteSubtreeCommand(const scene::Entity& iEntity, const scene::Scene& iScene)
 	: m_snapshot{SubtreeSnapshot::capture(iEntity, iScene)}, m_name{iEntity.getName()} {
-	selectAfterUndo = iEntity.getUUID();
+	m_selectAfterUndo = iEntity.getUUID();
 	if (iEntity.hasComponent<scene::component::Hierarchy>())
 		m_parentUuid = iEntity.getComponent<scene::component::Hierarchy>().parentId;
 }
@@ -112,7 +112,7 @@ auto DeleteSubtreeCommand::description() const -> std::string {
 
 DuplicateEntityCommand::DuplicateEntityCommand(const scene::Entity& iOriginal, const scene::Entity& iDuplicate)
 	: m_duplicateSnapshot{EntitySnapshot::capture(iDuplicate)}, m_name{iOriginal.getName()} {
-	selectAfterRedo = m_duplicateSnapshot.uuid;
+	m_selectAfterRedo = m_duplicateSnapshot.uuid;
 }
 
 DuplicateEntityCommand::~DuplicateEntityCommand() = default;
@@ -134,7 +134,7 @@ DuplicateSubtreeCommand::DuplicateSubtreeCommand(const scene::Entity& iOriginal,
 												  const scene::Entity& iDuplicateRoot,
 												  const scene::Scene& iScene)
 	: m_duplicateSnapshot{SubtreeSnapshot::capture(iDuplicateRoot, iScene)}, m_name{iOriginal.getName()} {
-	selectAfterRedo = iDuplicateRoot.getUUID();
+	m_selectAfterRedo = iDuplicateRoot.getUUID();
 }
 
 DuplicateSubtreeCommand::~DuplicateSubtreeCommand() = default;

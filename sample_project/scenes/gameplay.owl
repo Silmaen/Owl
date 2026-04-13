@@ -1,6 +1,6 @@
 Scene: untitled
 Entities:
-  - Entity: 3390700139273672982
+  - Entity: 4300643385728847383
     Tag:
       tag: Instructions
     Transform:
@@ -10,7 +10,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 4739816410711037725
+      parentId: 11869020258647563947
     UIRect:
       anchor: TopCenter
       pivotX: 0.5
@@ -26,7 +26,7 @@ Entities:
       alignment: Left
       kerning: 0
       lineSpacing: 0
-  - Entity: 12262595315916714206
+  - Entity: 5259481851938398742
     Tag:
       tag: HealthBar
     Transform:
@@ -36,7 +36,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 4739816410711037725
+      parentId: 11869020258647563947
     UIProgressBar:
       value: 1
       backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
@@ -49,7 +49,7 @@ Entities:
       sizeY: 20
       offsetX: -15
       offsetY: -12
-  - Entity: 6498125632015805988
+  - Entity: 16504595022592545320
     Tag:
       tag: ScoreText
     Transform:
@@ -59,7 +59,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 4739816410711037725
+      parentId: 11869020258647563947
     UIRect:
       anchor: TopLeft
       pivotX: 0
@@ -75,7 +75,7 @@ Entities:
       alignment: Left
       kerning: 0
       lineSpacing: 0
-  - Entity: 4739816410711037725
+  - Entity: 11869020258647563947
     Tag:
       tag: HUDCanvas
     Transform:
@@ -91,7 +91,7 @@ Entities:
       {}
     LuaScript:
       scriptPath: scripts/hud.lua
-  - Entity: 11497950037243815862
+  - Entity: 6351573552896613116
     Tag:
       tag: Platform
     Transform:
@@ -111,7 +111,7 @@ Entities:
         - name: distance
           type: float
           value: 4
-  - Entity: 3230411580518895333
+  - Entity: 6230402400317737473
     Tag:
       tag: Coin3
     Transform:
@@ -124,7 +124,7 @@ Entities:
       fade: 0.0199999996
     Visibility:
       gameVisible: true
-  - Entity: 3603146494683799141
+  - Entity: 11236469058558340125
     Tag:
       tag: Coin2
     Transform:
@@ -137,7 +137,7 @@ Entities:
       fade: 0.0199999996
     Visibility:
       gameVisible: true
-  - Entity: 18201903898569370461
+  - Entity: 9259357561902917940
     Tag:
       tag: Coin1
     Transform:
@@ -150,7 +150,7 @@ Entities:
       fade: 0.0199999996
     Visibility:
       gameVisible: true
-  - Entity: 9842297893642504667
+  - Entity: 1222461563050012475
     Tag:
       tag: RightWall
     Transform:
@@ -168,7 +168,7 @@ Entities:
       friction: 0.5
     Visibility:
       gameVisible: true
-  - Entity: 18366242389457489760
+  - Entity: 14565798960414247633
     Tag:
       tag: LeftWall
     Transform:
@@ -186,7 +186,7 @@ Entities:
       friction: 0.5
     Visibility:
       gameVisible: true
-  - Entity: 11094101643435879899
+  - Entity: 14834159957891896914
     Tag:
       tag: Ground
     Transform:
@@ -204,7 +204,7 @@ Entities:
       friction: 0.5
     Visibility:
       gameVisible: true
-  - Entity: 12982920603213516933
+  - Entity: 3318257048235807768
     Tag:
       tag: PlayerHat
     Transform:
@@ -216,8 +216,8 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 6366394617431139968
-  - Entity: 6366394617431139968
+      parentId: 14914421175331741429
+  - Entity: 14914421175331741429
     Tag:
       tag: Player
     Transform:
@@ -251,7 +251,7 @@ Entities:
         - name: score
           type: int
           value: 0
-  - Entity: 15572488143164479933
+  - Entity: 10808589479005778453
     Tag:
       tag: MainCamera
     Transform:

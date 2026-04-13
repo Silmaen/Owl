@@ -154,6 +154,12 @@ OWL_API void renderProps(scene::component::UISlider& ioComponent);
 OWL_API void renderProps(scene::component::UIProgressBar& ioComponent);
 
 /**
+ * @brief Render a read-only Gui displaying the prefab link info.
+ * @param ioComponent The component to display.
+ */
+OWL_API void renderProps(scene::component::PrefabLink& ioComponent);
+
+/**
  * @brief List of components that have a render function.
  */
 using DrawableComponents =
@@ -162,9 +168,10 @@ using DrawableComponents =
 				   scene::component::Text, scene::component::PhysicBody, scene::component::Player,
 				   scene::component::Trigger, scene::component::EntityLink, scene::component::BackgroundTexture,
 				   scene::component::Visibility, scene::component::SoundSource, scene::component::SoundListener,
-				   scene::component::LuaScript, scene::component::Canvas, scene::component::UIRect,
-				   scene::component::UIText, scene::component::UIImage, scene::component::UIPanel,
-				   scene::component::UIButton, scene::component::UISlider, scene::component::UIProgressBar>;
+				   scene::component::LuaScript, scene::component::PrefabLink, scene::component::Canvas,
+				   scene::component::UIRect, scene::component::UIText, scene::component::UIImage,
+				   scene::component::UIPanel, scene::component::UIButton, scene::component::UISlider,
+				   scene::component::UIProgressBar>;
 
 
 }// namespace owl::gui::component

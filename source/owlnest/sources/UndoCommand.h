@@ -42,12 +42,12 @@ public:
 	[[nodiscard]] virtual auto typeId() const -> size_t { return 0; }
 
 	/// Timestamp of command creation (for merge timeout).
-	std::chrono::steady_clock::time_point timestamp = std::chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point m_timestamp = std::chrono::steady_clock::now();
 
-	/// Optional: UUID of the entity to select after undo/redo (0 = don't change selection).
-	core::UUID selectAfterUndo{0};
-	/// Optional: UUID of the entity to select after redo (0 = don't change selection).
-	core::UUID selectAfterRedo{0};
+	/// UUID of the entity to select after undo (0 = don't change selection).
+	core::UUID m_selectAfterUndo{0};
+	/// UUID of the entity to select after redo (0 = don't change selection).
+	core::UUID m_selectAfterRedo{0};
 };
 
 }// namespace owl::nest

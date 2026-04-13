@@ -125,6 +125,24 @@ The editor includes a Command Pattern undo/redo system (`source/owlnest/sources/
 - **Selection**: restored after undo/redo via `selectAfterUndo`/`selectAfterRedo` hints on each command
 - **Dirty flag**: `*` in window title when unsaved changes exist, cleared on save
 
+### Prefab System
+
+The engine supports reusable entity subtree templates (`.owlprefab` files).
+
+- **`PrefabSerializer`** (`source/owl/public/scene/PrefabSerializer.h`): static methods for serialize, instantiate,
+  readInfo, applyToInstance, revertInstance
+- **File format:** YAML with `Prefab:` / `Version:` / `Entities:` keys, same entity format as scenes
+- **`PrefabLink`** component (`source/owl/public/scene/component/PrefabLink.h`): placed on instance root, stores
+  `prefabAssetPath`, `syncedVersion`, `uuidMapping` (instance↔canonical UUID pairs), `overriddenComponents`
+- **Instantiation:** loads prefab into temp scene, creates new entities with fresh UUIDs, remaps hierarchy parentIds,
+  copies all components via serialization round-trip, adds PrefabLink to root
+- **Update propagation:** `applyToInstance()` merges prefab YAML per-entity — non-overridden components from prefab,
+  overridden components preserved from instance. `revertInstance()` clears overrides then applies.
+- **Editor integration:** "Create Prefab..." in hierarchy context menu, `.owlprefab` drag-drop from ContentBrowser to
+  Viewport, blue tint on prefab instance entities in hierarchy, "Update from Prefab" / "Revert to Prefab" /
+  "Unlink Prefab" context menu actions, read-only PrefabLink display in inspector
+- **Undo/redo:** `InstantiatePrefabCommand`, `ApplyPrefabCommand` (covers both update and revert)
+
 ### Icon System
 
 Editor icons are **SVG files loaded at runtime** via lunasvg with dynamic theme color substitution.

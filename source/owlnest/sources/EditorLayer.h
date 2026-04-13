@@ -12,8 +12,8 @@
 
 #include "ActionRegistry.h"
 #include "EditorSettings.h"
-#include "UndoManager.h"
 #include "Project.h"
+#include "UndoManager.h"
 #include "panel/ContentBrowser.h"
 #include "panel/LogPanel.h"
 #include "panel/Parameters.h"
@@ -66,6 +66,7 @@ public:
 	void updateWindowTitle();
 	void packScene();
 	void packGame();
+	void instantiatePrefab(const std::filesystem::path& iPrefabPath, const std::string& iAssetRelativePath = {});
 
 	[[nodiscard]] auto getActiveScene() const -> const shared<scene::Scene>& { return m_activeScene; }
 	[[nodiscard]] auto getSelectedEntity() const -> scene::Entity;

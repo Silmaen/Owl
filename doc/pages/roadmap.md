@@ -21,39 +21,39 @@ This page tracks planned and completed features across Owl releases.
 Handle large game worlds efficiently.
 
 - Modding
-  - ![Planned][planned] Mod loading system
-      - Discover and load mod packs (`.owlmod`) at runtime
-      - Mod manifest: name, version, dependencies, load order
-      - Override or extend game assets (textures, scripts, scenes)
-  - ![Planned][planned] Lua mod API
-      - Register custom components from Lua
-      - Hook into game events (on_scene_load, on_entity_spawn, etc.)
-      - Sandboxed execution (no filesystem access by default)
-  - ![Planned][planned] In-game mod manager
-      - UI to enable/disable/reorder mods
-      - Mod conflict detection
+    - ![Planned][planned] Mod loading system
+        - Discover and load mod packs (`.owlmod`) at runtime
+        - Mod manifest: name, version, dependencies, load order
+        - Override or extend game assets (textures, scripts, scenes)
+    - ![Planned][planned] Lua mod API
+        - Register custom components from Lua
+        - Hook into game events (on_scene_load, on_entity_spawn, etc.)
+        - Sandboxed execution (no filesystem access by default)
+    - ![Planned][planned] In-game mod manager
+        - UI to enable/disable/reorder mods
+        - Mod conflict detection
 - Performance
-  - ![Planned][planned] Level streaming
-      - Load/unload scene chunks on demand based on player position
-      - Background loading via task system
-      - Seamless transitions (no loading screen)
-  - ![Planned][planned] Asset pipeline (cooking)
-      - Offline asset preprocessing: texture compression, atlas generation, mesh optimization
-      - Cooked assets for faster runtime loading
-      - Incremental cooking (only changed assets)
+    - ![Planned][planned] Level streaming
+        - Load/unload scene chunks on demand based on player position
+        - Background loading via task system
+        - Seamless transitions (no loading screen)
+    - ![Planned][planned] Asset pipeline (cooking)
+        - Offline asset preprocessing: texture compression, atlas generation, mesh optimization
+        - Cooked assets for faster runtime loading
+        - Incremental cooking (only changed assets)
 - Platforms
-  - ![Planned][planned] Web export (WebAssembly + WebGL/WebGPU)
-      - Emscripten build target
-      - HTML5 template with loading screen
-      - Async asset loading adapted for web
-  - ![Planned][planned] Android support
-      - Touch input backend
-      - OpenGL ES / Vulkan mobile renderer
-      - APK packaging from Owl Nest
-  - ![Planned][planned] Gamepad improvements
-      - Controller remapping UI
-      - Haptic feedback / vibration API
-      - Analog stick dead zone and curve configuration
+    - ![Planned][planned] Web export (WebAssembly + WebGL/WebGPU)
+        - Emscripten build target
+        - HTML5 template with loading screen
+        - Async asset loading adapted for web
+    - ![Planned][planned] Android support
+        - Touch input backend
+        - OpenGL ES / Vulkan mobile renderer
+        - APK packaging from Owl Nest
+    - ![Planned][planned] Gamepad improvements
+        - Controller remapping UI
+        - Haptic feedback / vibration API
+        - Analog stick dead zone and curve configuration
 
 ## v0.4.0 -- Expected 2026-12-01
 
@@ -61,63 +61,63 @@ Handle large game worlds efficiently.
 polished audio/narrative experiences, and networked multiplayer.
 
 - Networking
-  - ![Planned][planned] Network transport layer
-      - UDP-based reliable messaging (or integrate a library like ENet/GameNetworkingSockets)
-      - Client-server model with authoritative server
-      - Connection management: connect, disconnect, reconnect, timeout
-  - ![Planned][planned] Entity replication
-      - Mark components as replicated (sync from server to clients)
-      - Interpolation and prediction for smooth movement
-      - Authority model: server-owned vs client-owned entities
-  - ![Planned][planned] RPC system
-      - Lua API: `rpc_server(func, args)`, `rpc_client(func, args)`, `rpc_all(func, args)`
-      - Reliable and unreliable RPC channels
-  - ![Planned][planned] Lobby and session management
-      - Host/join game, player list, ready state
-      - Lua callbacks: `on_player_join`, `on_player_leave`
-  - ![Planned][planned] Network debugging tools
-      - Latency/packet-loss simulation in editor
-      - Network stats overlay (ping, bandwidth, entity count)
+    - ![Planned][planned] Network transport layer
+        - UDP-based reliable messaging (or integrate a library like ENet/GameNetworkingSockets)
+        - Client-server model with authoritative server
+        - Connection management: connect, disconnect, reconnect, timeout
+    - ![Planned][planned] Entity replication
+        - Mark components as replicated (sync from server to clients)
+        - Interpolation and prediction for smooth movement
+        - Authority model: server-owned vs client-owned entities
+    - ![Planned][planned] RPC system
+        - Lua API: `rpc_server(func, args)`, `rpc_client(func, args)`, `rpc_all(func, args)`
+        - Reliable and unreliable RPC channels
+    - ![Planned][planned] Lobby and session management
+        - Host/join game, player list, ready state
+        - Lua callbacks: `on_player_join`, `on_player_leave`
+    - ![Planned][planned] Network debugging tools
+        - Latency/packet-loss simulation in editor
+        - Network stats overlay (ping, bandwidth, entity count)
 - AI
-  - ![Planned][planned] Pathfinding
-      - Navigation mesh generation from scene geometry
-      - A* pathfinding on NavMesh
-      - Dynamic obstacle avoidance
-  - ![Planned][planned] Behavior trees
-      - Visual behavior tree editor in Owl Nest (node graph)
-      - Standard nodes: sequence, selector, parallel, decorator, condition, action
-      - Lua-scriptable leaf nodes for custom actions/conditions
-      - Saveable `.owlbt` behavior tree assets
-  - ![Planned][planned] Steering behaviors
-      - Seek, flee, arrive, wander, pursue, evade
-      - Flocking (separation, alignment, cohesion)
-      - Composable via behavior tree or Lua
+    - ![Planned][planned] Pathfinding
+        - Navigation mesh generation from scene geometry
+        - A* pathfinding on NavMesh
+        - Dynamic obstacle avoidance
+    - ![Planned][planned] Behavior trees
+        - Visual behavior tree editor in Owl Nest (node graph)
+        - Standard nodes: sequence, selector, parallel, decorator, condition, action
+        - Lua-scriptable leaf nodes for custom actions/conditions
+        - Saveable `.owlbt` behavior tree assets
+    - ![Planned][planned] Steering behaviors
+        - Seek, flee, arrive, wander, pursue, evade
+        - Flocking (separation, alignment, cohesion)
+        - Composable via behavior tree or Lua
 - Physics
-  - ![Planned][planned] Physics queries
-      - Raycast, box cast, circle/sphere cast with filtering
-      - Overlap queries (find all entities in area)
-      - Lua API: `physics.raycast(origin, direction, distance)`
-  - ![Planned][planned] Joints and constraints
-      - Distance, revolute, prismatic, weld joints
-      - Motor joints for vehicles/mechanisms
-      - Visual joint editor in Owl Nest
-  - ![Planned][planned] Collision callbacks
-      - `on_collision_enter`, `on_collision_exit`, `on_trigger_enter`, `on_trigger_exit`
-      - Collision layers and masks for filtering
+    - ![Planned][planned] Physics queries
+        - Raycast, box cast, circle/sphere cast with filtering
+        - Overlap queries (find all entities in area)
+        - Lua API: `physics.raycast(origin, direction, distance)`
+    - ![Planned][planned] Joints and constraints
+        - Distance, revolute, prismatic, weld joints
+        - Motor joints for vehicles/mechanisms
+        - Visual joint editor in Owl Nest
+    - ![Planned][planned] Collision callbacks
+        - `on_collision_enter`, `on_collision_exit`, `on_trigger_enter`, `on_trigger_exit`
+        - Collision layers and masks for filtering
 - Audio
-  - ![Planned][planned] Audio mixer
-      - Bus system: Master → Music / SFX / Ambient / Voice
-      - Per-bus volume, mute, effects
-      - Crossfade between music tracks
-  - ![Planned][planned] Audio effects
-      - Reverb zones (e.g. cave vs outdoor)
-      - Low-pass/high-pass filters (e.g. underwater, behind walls)
+    - ![Planned][planned] Audio mixer
+        - Bus system: Master → Music / SFX / Ambient / Voice
+        - Per-bus volume, mute, effects
+        - Crossfade between music tracks
+    - ![Planned][planned] Audio effects
+        - Reverb zones (e.g. cave vs outdoor)
+        - Low-pass/high-pass filters (e.g. underwater, behind walls)
 - Narrative
-  - ![Planned][planned] Dialogue system
-      - Dialogue tree asset (`.owldlg`) with branching conversations
-      - Visual dialogue editor in Owl Nest (node graph)
-      - Lua hooks for conditions and consequences
-      - Subtitle rendering via in-game UI
+    - ![Planned][planned] Dialogue system
+        - Dialogue tree asset (`.owldlg`) with branching conversations
+        - Visual dialogue editor in Owl Nest (node graph)
+        - Lua hooks for conditions and consequences
+        - Subtitle rendering via in-game UI
 
 ## v0.3.0 -- Expected 2026-10-01
 
@@ -125,48 +125,48 @@ polished audio/narrative experiences, and networked multiplayer.
 scene authoring.
 
 - Graphics
-  - ![Planned][planned] 3D render pipeline
-      - Forward rendering with depth buffer
-      - Camera: perspective projection, free-look, orbit controls
-  - ![Planned][planned] Lighting system
-      - Directional light (sun), point lights, spot lights
-      - Shadow mapping (at least for directional light)
-      - Ambient light and basic global illumination approximation
-  - ![Planned][planned] Material system
-      - PBR materials (albedo, normal, metallic, roughness, AO)
-      - Material editor in Owl Nest inspector
-      - Material library / reusable material assets
-  - ![Planned][planned] Mesh rendering
-      - Static mesh component with transform
-      - Instanced rendering for repeated meshes
-      - LOD support (multiple detail levels per mesh)
-  - ![Planned][planned] Skeletal animation
-      - Bone hierarchy and skinning
-      - Animation clips with blending and transitions
-      - Animation state machine component
-  - ![Planned][planned] Particle system
-      - GPU-accelerated particle emitters
-      - Configurable: lifetime, velocity, color over time, size, gravity
-      - Emitter shapes: point, sphere, cone, box
-      - Editor: visual particle preview and property curves
-  - ![Planned][planned] Post-processing pipeline
-      - Configurable post-process stack per camera
-      - Effects: bloom, vignette, color grading (LUT), chromatic aberration, film grain
-      - Motion blur, depth of field
-  - ![Planned][planned] Weather and environment effects
-      - Rain, snow, fog, day-night cycle
-      - Configurable via Lua or scene properties
+    - ![Planned][planned] 3D render pipeline
+        - Forward rendering with depth buffer
+        - Camera: perspective projection, free-look, orbit controls
+    - ![Planned][planned] Lighting system
+        - Directional light (sun), point lights, spot lights
+        - Shadow mapping (at least for directional light)
+        - Ambient light and basic global illumination approximation
+    - ![Planned][planned] Material system
+        - PBR materials (albedo, normal, metallic, roughness, AO)
+        - Material editor in Owl Nest inspector
+        - Material library / reusable material assets
+    - ![Planned][planned] Mesh rendering
+        - Static mesh component with transform
+        - Instanced rendering for repeated meshes
+        - LOD support (multiple detail levels per mesh)
+    - ![Planned][planned] Skeletal animation
+        - Bone hierarchy and skinning
+        - Animation clips with blending and transitions
+        - Animation state machine component
+    - ![Planned][planned] Particle system
+        - GPU-accelerated particle emitters
+        - Configurable: lifetime, velocity, color over time, size, gravity
+        - Emitter shapes: point, sphere, cone, box
+        - Editor: visual particle preview and property curves
+    - ![Planned][planned] Post-processing pipeline
+        - Configurable post-process stack per camera
+        - Effects: bloom, vignette, color grading (LUT), chromatic aberration, film grain
+        - Motion blur, depth of field
+    - ![Planned][planned] Weather and environment effects
+        - Rain, snow, fog, day-night cycle
+        - Configurable via Lua or scene properties
 - Scene
-  - ![Planned][planned] 3D physics
-      - 3D rigid body component (replace or extend Box2D with a 3D engine)
-      - Collision shapes: box, sphere, capsule, mesh
-      - Raycasting queries for gameplay (line-of-sight, ground detection)
-      - Joints and constraints
-  - ![Planned][planned] 3D scene editing in Owl Nest
-      - 3D viewport with orbit/fly camera
-      - 3D gizmos (translate, rotate, scale in 3 axes)
-      - Grid snapping, vertex snapping
-      - Mesh import preview
+    - ![Planned][planned] 3D physics
+        - 3D rigid body component (replace or extend Box2D with a 3D engine)
+        - Collision shapes: box, sphere, capsule, mesh
+        - Raycasting queries for gameplay (line-of-sight, ground detection)
+        - Joints and constraints
+    - ![Planned][planned] 3D scene editing in Owl Nest
+        - 3D viewport with orbit/fly camera
+        - 3D gizmos (translate, rotate, scale in 3 axes)
+        - Grid snapping, vertex snapping
+        - Mesh import preview
 
 ## v0.2.0 -- Expected 2026-08-01
 
@@ -175,67 +175,72 @@ scene authoring.
 a 2D lighting system.
 
 - Raycasting Renderer
-  - ![Planned][planned] Raycasting core
-      - DDA raycasting algorithm rendering a 2D grid map as pseudo-3D
-      - Textured walls with perspective-correct mapping
-      - Configurable field of view and resolution
-  - ![Planned][planned] Floors and ceilings
-      - Textured floor/ceiling casting
-      - Skybox or solid color above horizon
-  - ![Planned][planned] Sprites (billboards)
-      - Entities rendered as camera-facing sprites in the raycast view
-      - Distance-based sorting and scaling
-  - ![Planned][planned] Map features
-      - Doors (opening/closing with animation)
-      - Thin walls and transparent walls
-      - Variable wall heights
-  - ![Planned][planned] Raycasting map editor in Owl Nest
-      - 2D grid editor for wall placement and texture assignment
-      - Top-down preview alongside first-person preview
-      - Entity placement on the grid
-  - ![Planned][planned] Lighting for raycasting
-      - Distance-based shading (fog/darkness)
-      - Optional point lights with falloff
+    - ![Planned][planned] Raycasting core
+        - DDA raycasting algorithm rendering a 2D grid map as pseudo-3D
+        - Textured walls with perspective-correct mapping
+        - Configurable field of view and resolution
+    - ![Planned][planned] Floors and ceilings
+        - Textured floor/ceiling casting
+        - Skybox or solid color above horizon
+    - ![Planned][planned] Sprites (billboards)
+        - Entities rendered as camera-facing sprites in the raycast view
+        - Distance-based sorting and scaling
+    - ![Planned][planned] Map features
+        - Doors (opening/closing with animation)
+        - Thin walls and transparent walls
+        - Variable wall heights
+    - ![Planned][planned] Raycasting map editor in Owl Nest
+        - 2D grid editor for wall placement and texture assignment
+        - Top-down preview alongside first-person preview
+        - Entity placement on the grid
+    - ![Planned][planned] Lighting for raycasting
+        - Distance-based shading (fog/darkness)
+        - Optional point lights with falloff
 - Voxel Engine
-  - ![Planned][planned] Voxel world core
-      - Chunk-based world (e.g. 16x16x256 chunks)
-      - Block type registry with textures per face
-      - Chunk loading/unloading around camera
-  - ![Planned][planned] Chunk meshing
-      - Greedy meshing or similar algorithm for efficient geometry
-      - Only exposed faces rendered (hidden face culling)
-      - Frustum culling per chunk
-  - ![Planned][planned] Terrain generation
-      - Procedural terrain via noise functions (Perlin/Simplex)
-      - Configurable biomes, terrain height, cave generation
-      - Seed-based reproducible worlds
-  - ![Planned][planned] Block interaction
-      - Block placement and destruction
-      - Block picking (raycast from camera to find targeted block)
-      - Block metadata (orientation, state)
-  - ![Planned][planned] Voxel rendering
-      - Ambient occlusion per vertex for block edges
-      - Basic directional lighting
-      - Water/transparent block rendering with proper sorting
-  - ![Planned][planned] Voxel editor in Owl Nest
-      - Brush tools for painting blocks
-      - Prefab structures (trees, buildings) as reusable block templates
-      - Chunk inspector for debugging
+    - ![Planned][planned] Voxel world core
+        - Chunk-based world (e.g. 16x16x256 chunks)
+        - Block type registry with textures per face
+        - Chunk loading/unloading around camera
+    - ![Planned][planned] Chunk meshing
+        - Greedy meshing or similar algorithm for efficient geometry
+        - Only exposed faces rendered (hidden face culling)
+        - Frustum culling per chunk
+    - ![Planned][planned] Terrain generation
+        - Procedural terrain via noise functions (Perlin/Simplex)
+        - Configurable biomes, terrain height, cave generation
+        - Seed-based reproducible worlds
+    - ![Planned][planned] Block interaction
+        - Block placement and destruction
+        - Block picking (raycast from camera to find targeted block)
+        - Block metadata (orientation, state)
+    - ![Planned][planned] Voxel rendering
+        - Ambient occlusion per vertex for block edges
+        - Basic directional lighting
+        - Water/transparent block rendering with proper sorting
+    - ![Planned][planned] Voxel editor in Owl Nest
+        - Brush tools for painting blocks
+        - Prefab structures (trees, buildings) as reusable block templates
+        - Chunk inspector for debugging
 - 2D Lighting
-  - ![Planned][planned] 2D lighting system
-      - Point lights, spot lights in 2D scenes
-      - Normal-mapped sprites for dynamic 2D lighting
-      - Shadow casting from 2D occluders
+    - ![Planned][planned] 2D lighting system
+        - Point lights, spot lights in 2D scenes
+        - Normal-mapped sprites for dynamic 2D lighting
+        - Shadow casting from 2D occluders
 - Renderer Architecture
-  - ![Planned][planned] Renderer abstraction
-      - Clean separation so scenes can select their renderer type
-      - Scene property: renderer mode (2D, Raycasting, Voxel)
-      - Shared resource management (textures, shaders) across renderers
-  - ![Planned][planned] Tilemap system for 2D
-      - Tile-based map component as an alternative to individual sprite entities
-      - Tileset definition (texture atlas + tile properties)
-      - Tile layers with collision, parallax scrolling
-      - Tilemap editor in Owl Nest (paint, fill, erase tools)
+    - ![Planned][planned] Renderer abstraction
+        - Clean separation so scenes can select their renderer type
+        - Scene property: renderer mode (2D, Raycasting, Voxel)
+        - Shared resource management (textures, shaders) across renderers
+    - ![Planned][planned] Tilemap system for 2D
+        - Tile-based map component as an alternative to individual sprite entities
+        - Tileset definition (texture atlas + tile properties)
+        - Tile layers with collision, parallax scrolling
+        - Tilemap editor in Owl Nest (paint, fill, erase tools)
+- Gameplay
+    - ![Planned][planned] Inventory system
+        - Collectible objects
+        - Key-locked switches
+    - ![Planned][planned] Enemies
 
 ## v0.1.0 -- Expected 2026-06-01
 
@@ -243,107 +248,106 @@ a 2D lighting system.
 application (Linux / Windows).
 
 - Scripting (Lua) — See [Lua Scripting](@ref page-scripting)
-  - ![Done][done] Lua interpreter integration
-    - Embed Lua 5.5 via DepManager, `LuaEngine` wrapper in `source/owl/private/script/`
-    - Public API: `ScriptEngine`, `ScriptInstance` in `source/owl/public/script/`
-  - ![Done][done] LuaScript component
-      - Path to `.lua` file, exposed properties table editable in inspector
-      - Lifecycle callbacks: `on_create`, `on_update`, `on_destroy`, `on_collision`
-  - ![Done][done] Engine API exposed to Lua
-      - Entity manipulation (get/has component, get name, destroy)
-      - Transform, Physics (impulse, velocity), Input (keys, mouse), Sound (play, stop, volume)
-      - Scene (find entity, create entity, destroy entity), Time, Logging
-  - ![Done][done] Editor support for Lua scripts
-      - Inspector: display/edit exposed script properties with Refresh button
-      - Content Browser: `.lua` icon
-      - Serialization: script path and property values saved in `.owl`
-  - ![Done][done] Lua scripts in Runner
-      - Runner loads and executes `.lua` files from `.owlpack`
-      - Same lifecycle as editor (on_create, on_update, etc.)
+    - ![Done][done] Lua interpreter integration
+        - Embed Lua 5.5 via DepManager, `LuaEngine` wrapper in `source/owl/private/script/`
+        - Public API: `ScriptEngine`, `ScriptInstance` in `source/owl/public/script/`
+    - ![Done][done] LuaScript component
+        - Path to `.lua` file, exposed properties table editable in inspector
+        - Lifecycle callbacks: `on_create`, `on_update`, `on_destroy`, `on_collision`
+    - ![Done][done] Engine API exposed to Lua
+        - Entity manipulation (get/has component, get name, destroy)
+        - Transform, Physics (impulse, velocity), Input (keys, mouse), Sound (play, stop, volume)
+        - Scene (find entity, create entity, destroy entity), Time, Logging
+    - ![Done][done] Editor support for Lua scripts
+        - Inspector: display/edit exposed script properties with Refresh button
+        - Content Browser: `.lua` icon
+        - Serialization: script path and property values saved in `.owl`
+    - ![Done][done] Lua scripts in Runner
+        - Runner loads and executes `.lua` files from `.owlpack`
+        - Same lifecycle as editor (on_create, on_update, etc.)
 - In-Game UI
-  - ![Done][done] Canvas UI system
-    - `Canvas` component marks UI root, `UIRect` for screen-space layout (anchor, pivot, size, offset)
-    - Screen-space orthographic rendering via existing Renderer2D pipeline
-    - Sort order for layering multiple canvases
-  - ![Done][done] Base widgets
-      - UIText (font, size, color, alignment), UIImage (sprite, tint)
-      - UIButton (normal/hover/pressed/disabled states, Lua callback)
-      - UIPanel (background, border, vertical/horizontal layout)
-      - UISlider (draggable, min/max, callback), UIProgressBar (value, colors)
-  - ![Done][done] UI input handling
-      - UIInputSystem: hit-test, hover/pressed state tracking
-      - UI consumes mouse events before scene, Lua callback on button click
-      - Lua `ui` table: set_text, set_visible, set_progress, slider get/set, button enable/disable
-  - ![Done][done] UI editor in Owl Nest
-      - Canvas and UIRect visible in editor viewport with cyan outlines
-      - All widget properties editable in inspector
-      - Component icons for Canvas, UIRect, UIText, UIImage, UIPanel, UIButton, UISlider, UIProgressBar
-  - ![Done][done] Standard game screens
-      - Template scenes: Main Menu, Pause Menu, Game Over (`engine_assets/templates/`)
-      - Screen transitions: FadeIn/FadeOut via `ScreenTransition` + Lua `ui.transition_fade_in/out`
+    - ![Done][done] Canvas UI system
+        - `Canvas` component marks UI root, `UIRect` for screen-space layout (anchor, pivot, size, offset)
+        - Screen-space orthographic rendering via existing Renderer2D pipeline
+        - Sort order for layering multiple canvases
+    - ![Done][done] Base widgets
+        - UIText (font, size, color, alignment), UIImage (sprite, tint)
+        - UIButton (normal/hover/pressed/disabled states, Lua callback)
+        - UIPanel (background, border, vertical/horizontal layout)
+        - UISlider (draggable, min/max, callback), UIProgressBar (value, colors)
+    - ![Done][done] UI input handling
+        - UIInputSystem: hit-test, hover/pressed state tracking
+        - UI consumes mouse events before scene, Lua callback on button click
+        - Lua `ui` table: set_text, set_visible, set_progress, slider get/set, button enable/disable
+    - ![Done][done] UI editor in Owl Nest
+        - Canvas and UIRect visible in editor viewport with cyan outlines
+        - All widget properties editable in inspector
+        - Component icons for Canvas, UIRect, UIText, UIImage, UIPanel, UIButton, UISlider, UIProgressBar
+    - ![Done][done] Standard game screens
+        - Template scenes: Main Menu, Pause Menu, Game Over (`engine_assets/templates/`)
+        - Screen transitions: FadeIn/FadeOut via `ScreenTransition` + Lua `ui.transition_fade_in/out`
 - Game State & Save System
-  - ![Done][done] Serializable GameState
-      - `GameState` key-value store (int, float, string, bool) on Scene
-      - Lua API: `gamestate.set/get/remove/clear`, auto-type detection
-      - Copied across scene transitions, serialized in save files
-  - ![Done][done] Save / Load
-      - `SaveManager`: save/load to `~/.local/share/<game>/saves/` (Linux) or `%APPDATA%/<game>/saves/` (Windows)
-      - Multiple save slots, `save.save_game(slot)`, `save.load_game(slot)`, `save.list_saves()`
-      - Deferred load pattern (safe mid-script), handled by RunnerLayer/EditorLayer
-  - ![Done][done] Full scene state save
-      - Complete scene + GameState + physics snapshots (velocities, wake state)
-      - `PhysicCommand::getSnapshot/applySnapshot` for Box2D state capture/restore
-      - `loaded_from_save` flag set in GameState on load
+    - ![Done][done] Serializable GameState
+        - `GameState` key-value store (int, float, string, bool) on Scene
+        - Lua API: `gamestate.set/get/remove/clear`, auto-type detection
+        - Copied across scene transitions, serialized in save files
+    - ![Done][done] Save / Load
+        - `SaveManager`: save/load to `~/.local/share/<game>/saves/` (Linux) or `%APPDATA%/<game>/saves/` (Windows)
+        - Multiple save slots, `save.save_game(slot)`, `save.load_game(slot)`, `save.list_saves()`
+        - Deferred load pattern (safe mid-script), handled by RunnerLayer/EditorLayer
+    - ![Done][done] Full scene state save
+        - Complete scene + GameState + physics snapshots (velocities, wake state)
+        - `PhysicCommand::getSnapshot/applySnapshot` for Box2D state capture/restore
+        - `loaded_from_save` flag set in GameState on load
 - Runner & Distribution
-  - ![Planned][planned] Extended project configuration
-    - `owl_project.yml` fields: version, author, icon, window size, fullscreen, resizable
-    - Runner reads all config at startup
-  - ![Planned][planned] Improved Runner
-      - Window title and icon from project config
-      - Optional splash screen during loading
-      - Fullscreen / windowed / borderless support
-      - Fallback system menu if no Main Menu scene defined
-  - ![Planned][planned] Persistent player settings
-      - `settings.yml` in user directory: resolution, fullscreen, volume (master/music/SFX)
-      - Lua API: `get_setting(key)`, `set_setting(key, value)`
-  - ![Planned][planned] Improved packaging pipeline
-      - Rename Runner executable to game name
-      - Linux: launcher script with proper `LD_LIBRARY_PATH`
-      - Windows: distributable `.zip` with all DLLs
-      - Include metadata (version, author) in package
-  - ![Planned][planned] Packaging wizard in Owl Nest
-      - Panel/dialog: target platform, output directory, progress bar, build report
-      - Pre-packaging validation: check firstScene exists, all assets found
+    - ![Planned][planned] Extended project configuration
+        - `owl_project.yml` fields: version, author, icon, window size, fullscreen, resizable
+        - Runner reads all config at startup
+    - ![Planned][planned] Improved Runner
+        - Window title and icon from project config
+        - Optional splash screen during loading
+        - Fullscreen / windowed / borderless support
+        - Fallback system menu if no Main Menu scene defined
+    - ![Planned][planned] Persistent player settings
+        - `settings.yml` in user directory: resolution, fullscreen, volume (master/music/SFX)
+        - Lua API: `get_setting(key)`, `set_setting(key, value)`
+    - ![Planned][planned] Improved packaging pipeline
+        - Rename Runner executable to game name
+        - Linux: launcher script with proper `LD_LIBRARY_PATH`
+        - Windows: distributable `.zip` with all DLLs
+        - Include metadata (version, author) in package
+    - ![Planned][planned] Packaging wizard in Owl Nest
+        - Panel/dialog: target platform, output directory, progress bar, build report
+        - Pre-packaging validation: check firstScene exists, all assets found
 - Editor Improvements (Owl Nest)
-  - ![Planned][planned] Prefab system
-    - `.owlprefab` files: serialized entity subtrees
-    - Create from entity (context menu), instantiate from Content Browser
-    - Prefab ↔ instance link: edits to prefab propagate, per-instance overrides
-  - ![Planned][planned] Animation editor
-      - Timeline for `AnimatedSpriteRenderer`: frame-by-frame preview
-      - Visual configuration of frame count, frame rate, loop mode
-  - ![Planned][planned] Scene flow view
-      - Graph showing scenes and their connections (via teleporters)
-      - Click to navigate to a scene, detect orphaned/unreachable scenes
-  - ![Planned][planned] Enhanced inspector
-      - Curve editor for animated properties
-      - Texture/sound preview in inspector, drag-drop assets to fields
-  - ![Done][done] Undo / Redo
-      - Reversible command system for all editor actions (entity, component, hierarchy, gizmo)
-      - Configurable undo stack depth, Ctrl+Z / Ctrl+Y, merge coalescing, dirty flag in title
+    - ![Planned][planned] Multiple document windows
+        - Detachable panels (hierarchy, inspector, content browser)
+        - Multiple scene or other editor tabs open simultaneously
+        - Remember and restore layout between sessions
+    - ![Done][done] Prefab system
+        - `.owlprefab` files: serialized entity subtrees with UUID remapping
+        - Create from entity (context menu), instantiate via Content Browser drag-drop
+        - PrefabLink component: instance ↔ prefab link, update/revert with override preservation
+    - ![Planned][planned] Animation editor
+        - Timeline for `AnimatedSpriteRenderer`: frame-by-frame preview
+        - Visual configuration of frame count, frame rate, loop mode
+    - ![Planned][planned] Scene flow view
+        - Graph showing scenes and their connections (via teleporters)
+        - Click to navigate to a scene, detect orphaned/unreachable scenes
+    - ![Planned][planned] Enhanced inspector
+        - Curve editor for animated properties
+        - Texture/sound preview in inspector, drag-drop assets to fields
+    - ![Done][done] Undo / Redo
+        - Reversible command system for all editor actions (entity, component, hierarchy, gizmo)
+        - Configurable undo stack depth, Ctrl+Z / Ctrl+Y, merge coalescing, dirty flag in title
 - Scene & Triggers
-  - ![Planned][planned] More scene events and triggers
-      - On enter, on interact, on timer, etc.
-      - Trigger actions: play sound, change scene, modify objects, etc.
-      - Event parameters: trigger volume, interaction range, timer duration
-      - Editor support for placing triggers and defining events
-  - ![Planned][planned] Common properties across scenes
-      - Player spawn point, lighting, background, etc.
-- Gameplay
-  - ![Planned][planned] Inventory system
-      - Collectible objects
-      - Key-locked switches
-  - ![Planned][planned] Enemies
+    - ![Planned][planned] More scene events and triggers
+        - On enter, on interact, on timer, etc.
+        - Trigger actions: play sound, change scene, modify objects, etc.
+        - Event parameters: trigger volume, interaction range, timer duration
+        - Editor support for placing triggers and defining events
+    - ![Planned][planned] Common properties across scenes
+        - Player spawn point, lighting, background, etc.
 
 ## v0.0.3 -- 2026-04-09
 
@@ -444,5 +448,7 @@ defined in scenes.
 - ![Planned][planned] Features that are planned but not yet being worked on
 
 [done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square
+
 [progress]: https://img.shields.io/badge/-In_Progress-d29922?style=flat-square
+
 [planned]: https://img.shields.io/badge/-Planned-1f6feb?style=flat-square
