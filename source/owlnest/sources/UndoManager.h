@@ -92,7 +92,7 @@ private:
 	/// Whether merge coalescing is enabled.
 	bool m_mergeEnabled = true;
 	/// Merge timeout in milliseconds.
-	static constexpr auto MergeTimeoutMs = std::chrono::milliseconds{1000};
+	static constexpr auto s_mergeTimeoutMs = std::chrono::milliseconds{1000};
 	/// Undo stack size at last save (for dirty tracking).
 	int64_t m_savedIndex = 0;
 	/// Entity UUID to select after last undo/redo operation.

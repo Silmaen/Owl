@@ -31,6 +31,8 @@ auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<gui::IconB
 		return iconBank.getIcon("json_icon");
 	if (iPath.extension() == ".owl")
 		return iconBank.getIcon("owl_icon");
+	if (iPath.extension() == ".owlprefab")
+		return iconBank.getIcon("prefab_icon");
 	if (iPath.extension() == ".png")
 		return iconBank.getIcon("png_icon");
 	if (iPath.extension() == ".svg")

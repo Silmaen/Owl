@@ -27,7 +27,7 @@ struct EntitySnapshot {
 	 * @param[in] iEntity The entity to snapshot.
 	 * @return The snapshot.
 	 */
-	static auto capture(const scene::Entity& iEntity) -> EntitySnapshot;
+	[[nodiscard]] static auto capture(const scene::Entity& iEntity) -> EntitySnapshot;
 
 	/**
 	 * @brief Restore an entity into a scene from this snapshot.
@@ -52,7 +52,7 @@ struct SubtreeSnapshot {
 	 * @param[in] iScene The scene.
 	 * @return The subtree snapshot.
 	 */
-	static auto capture(const scene::Entity& iRootEntity, const scene::Scene& iScene) -> SubtreeSnapshot;
+	[[nodiscard]] static auto capture(const scene::Entity& iRootEntity, const scene::Scene& iScene) -> SubtreeSnapshot;
 
 	/**
 	 * @brief Restore the entire subtree into a scene.

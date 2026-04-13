@@ -258,6 +258,103 @@ See [Sound System](@ref page-sound) for the full audio guide.
 - **SoundSource** (YAML: `SoundSource`): audio playback with 3D spatial support
 - **SoundListener** (YAML: `SoundListener`): marks the entity as the audio "ear"
 
+### Scripting Components
+
+See [Scripting](@ref page-scripting) for the full Lua API reference.
+
+#### LuaScript
+
+| Field        | Type                     | YAML Key    | Description                                     |
+|--------------|--------------------------|-------------|-------------------------------------------------|
+| `scriptPath` | `string`                 | `LuaScript` | Relative path to the `.lua` script file         |
+| `properties` | `vector<ScriptProperty>` | —           | Typed property list declared in the Lua script   |
+
+Each script instance runs in an isolated `lua_State`. Lifecycle callbacks: `on_create`,
+`on_update(dt)`, `on_destroy`. Properties are parsed from the Lua `properties` table and
+injected as globals before `on_create`.
+
+### UI Components
+
+UI elements render in screen space via a **Canvas** parent entity. All UI entities must be
+children (direct or nested) of an entity with a `Canvas` component.
+
+#### Canvas
+
+| Field | Type | YAML Key | Description                   |
+|-------|------|----------|-------------------------------|
+| —     | —    | `Canvas` | Marks the entity as a UI root |
+
+#### UIRect
+
+| Field    | Type   | YAML Key | Description                                      |
+|----------|--------|----------|--------------------------------------------------|
+| `anchor` | `vec4` | `UIRect` | Normalized anchor rectangle (min x/y, max x/y)   |
+| `pivot`  | `vec2` | —        | Normalized pivot point                            |
+| `size`   | `vec2` | —        | Size in pixels                                    |
+| `offset` | `vec2` | —        | Offset from anchored position                     |
+
+#### UIText
+
+| Field       | Type     | Description         |
+|-------------|----------|---------------------|
+| `text`      | `string` | Display text        |
+| `fontAsset` | `string` | Font file path      |
+| `fontSize`  | `float`  | Size in pixels      |
+| `color`     | `vec4`   | Text color (RGBA)   |
+
+#### UIImage
+
+| Field        | Type     | Description           |
+|--------------|----------|-----------------------|
+| `imageAsset` | `string` | Texture file path     |
+| `tint`       | `vec4`   | Tint color multiplier |
+
+#### UIPanel
+
+| Field   | Type   | Description         |
+|---------|--------|---------------------|
+| `color` | `vec4` | Background color    |
+
+#### UIButton
+
+| Field        | Type     | Description                   |
+|--------------|----------|-------------------------------|
+| `label`      | `string` | Button text                   |
+| `normalColor`| `vec4`   | Default background color      |
+| `hoverColor` | `vec4`   | Color when hovered            |
+| `pressColor` | `vec4`   | Color when pressed            |
+| `action`     | `string` | Lua callback on click         |
+
+#### UISlider
+
+| Field      | Type    | Description        |
+|------------|---------|--------------------|
+| `value`    | `float` | Current value      |
+| `minValue` | `float` | Minimum value      |
+| `maxValue` | `float` | Maximum value      |
+
+#### UIProgressBar
+
+| Field             | Type    | Description          |
+|-------------------|---------|----------------------|
+| `value`           | `float` | Current value (0–1)  |
+| `backgroundColor` | `vec4`  | Track color          |
+| `fillColor`       | `vec4`  | Fill bar color       |
+
+### Prefab Components
+
+#### PrefabLink
+
+| Field                 | Type                       | YAML Key     | Description                                    |
+|-----------------------|----------------------------|--------------|------------------------------------------------|
+| `prefabAssetPath`     | `string`                   | `PrefabLink` | Relative path to the `.owlprefab` source file  |
+| `syncedVersion`       | `uint32_t`                 | —            | Prefab version when last synced                |
+| `uuidMapping`         | `vector<UuidMapEntry>`     | —            | Instance UUID ↔ canonical UUID pairs           |
+| `overriddenComponents`| `vector<string>`           | —            | Per-component override keys preserved on update|
+
+Placed only on the root entity of a prefab instance. Children are tracked via the
+`uuidMapping`. See [Editor Prefab Workflow](@ref page-editor) for usage details.
+
 ## Transform Hierarchy
 
 ![ECS Pipeline](../images/ecs_pipeline.svg)

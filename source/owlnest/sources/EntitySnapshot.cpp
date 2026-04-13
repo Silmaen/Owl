@@ -26,7 +26,7 @@ auto EntitySnapshot::restore(scene::Scene& ioScene) const -> scene::Entity {
 	if (yamlData.empty())
 		return {};
 	auto sceneRef = shared<scene::Scene>(shared<scene::Scene>{}, &ioScene);
-	scene::SceneSerializer::deserializeEntityFromString(sceneRef, yamlData);
+	std::ignore = scene::SceneSerializer::deserializeEntityFromString(sceneRef, yamlData);
 	return ioScene.findEntityByUUID(uuid);
 }
 

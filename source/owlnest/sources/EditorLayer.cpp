@@ -9,12 +9,14 @@
 #include "EditorLayer.h"
 
 #include "commands/EntityCommands.h"
+#include "commands/PrefabCommands.h"
 
 #include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <io/pack/AssetScanner.h>
 #include <io/pack/PackWriter.h>
 #include <physic/PhysicCommand.h>
+#include <scene/PrefabSerializer.h>
 #include <scene/component/components.h>
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
@@ -73,6 +75,7 @@ void buildIconBank() {
 		{"ttf_icon",          resolve("icons/browser/ttf")},
 		{"yml_icon",          resolve("icons/browser/yml")},
 		{"lua_icon",          resolve("icons/browser/lua")},
+		{"prefab_icon",       resolve("icons/browser/prefab")},
 		// Action icons (context menus, toolbar, etc.)
 		{"delete",            resolve("icons/actions/delete")},
 		{"rename",            resolve("icons/actions/rename")},
@@ -1062,6 +1065,21 @@ void EditorLayer::packGame() {
 	copySharedLibs(runnerSrcDir, gameDir);
 
 	OWL_CORE_INFO("Game exported: {} ({} assets) -> {}", m_project.name, assets.size(), gameDir.string())
+}
+
+void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath,
+									const std::string& iAssetRelativePath) {
+	if (m_state != State::Edit || !m_activeScene)
+		return;
+	auto root = scene::PrefabSerializer::instantiate(iPrefabPath, m_activeScene, iAssetRelativePath);
+	if (!root) {
+		OWL_WARN("Failed to instantiate prefab: {}", iPrefabPath.string())
+		return;
+	}
+	const auto info = scene::PrefabSerializer::readInfo(iPrefabPath);
+	const auto name = info.has_value() ? info->name : iPrefabPath.stem().string();
+	m_undoManager.push(mkUniq<commands::InstantiatePrefabCommand>(root, *m_activeScene, name));
+	setSelectedEntity(root);
 }
 
 }// namespace owl::nest

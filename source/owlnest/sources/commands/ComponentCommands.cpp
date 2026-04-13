@@ -25,8 +25,8 @@ void restoreEntity(scene::Scene& ioScene, const EntitySnapshot& iSnapshot) {
 
 AddComponentCommand::AddComponentCommand(EntitySnapshot iBefore, EntitySnapshot iAfter, std::string iComponentName)
 	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)}, m_componentName{std::move(iComponentName)} {
-	selectAfterUndo = m_after.uuid;
-	selectAfterRedo = m_after.uuid;
+	m_selectAfterUndo = m_after.uuid;
+	m_selectAfterRedo = m_after.uuid;
 }
 
 AddComponentCommand::~AddComponentCommand() = default;
@@ -47,8 +47,8 @@ auto AddComponentCommand::description() const -> std::string {
 RemoveComponentCommand::RemoveComponentCommand(EntitySnapshot iBefore, EntitySnapshot iAfter,
 											   std::string iComponentName)
 	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)}, m_componentName{std::move(iComponentName)} {
-	selectAfterUndo = m_before.uuid;
-	selectAfterRedo = m_before.uuid;
+	m_selectAfterUndo = m_before.uuid;
+	m_selectAfterRedo = m_before.uuid;
 }
 
 RemoveComponentCommand::~RemoveComponentCommand() = default;
@@ -65,8 +65,8 @@ auto RemoveComponentCommand::description() const -> std::string {
 
 ModifyEntityCommand::ModifyEntityCommand(core::UUID iEntityUuid, EntitySnapshot iBefore, std::string iDescription)
 	: m_entityUuid{iEntityUuid}, m_before{std::move(iBefore)}, m_description{std::move(iDescription)} {
-	selectAfterUndo = m_entityUuid;
-	selectAfterRedo = m_entityUuid;
+	m_selectAfterUndo = m_entityUuid;
+	m_selectAfterRedo = m_entityUuid;
 }
 
 ModifyEntityCommand::~ModifyEntityCommand() = default;
@@ -89,7 +89,7 @@ auto ModifyEntityCommand::mergeWith(const UndoCommand& iOther) -> bool {
 		return false;
 	// Keep our "before" state, take the other's "after" state.
 	m_after = other->m_after;
-	timestamp = other->timestamp;
+	m_timestamp = other->m_timestamp;
 	return true;
 }
 

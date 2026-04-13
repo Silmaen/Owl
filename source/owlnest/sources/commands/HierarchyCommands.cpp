@@ -21,8 +21,8 @@ ReparentCommand::ReparentCommand(const scene::Entity& iChild, const core::UUID i
 	  m_newParentUuid{iNewParentUuid},
 	  m_oldLocalTransform{iChild.getComponent<scene::component::Transform>().transform},
 	  m_name{iChild.getName()} {
-	selectAfterUndo = m_childUuid;
-	selectAfterRedo = m_childUuid;
+	m_selectAfterUndo = m_childUuid;
+	m_selectAfterRedo = m_childUuid;
 }
 
 ReparentCommand::~ReparentCommand() = default;
@@ -60,8 +60,8 @@ UnparentCommand::UnparentCommand(const scene::Entity& iChild)
 	  m_oldParentUuid{iChild.getComponent<scene::component::Hierarchy>().parentId},
 	  m_oldLocalTransform{iChild.getComponent<scene::component::Transform>().transform},
 	  m_name{iChild.getName()} {
-	selectAfterUndo = m_childUuid;
-	selectAfterRedo = m_childUuid;
+	m_selectAfterUndo = m_childUuid;
+	m_selectAfterRedo = m_childUuid;
 }
 
 UnparentCommand::~UnparentCommand() = default;

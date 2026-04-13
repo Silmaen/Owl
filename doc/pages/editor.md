@@ -110,9 +110,17 @@ menu with the following actions:
 | Create Child Entity   | Add a new entity as a child of the selected entity        |
 | Duplicate             | Shallow-copy the selected entity (root copy)              |
 | Duplicate Subtree     | Recursively duplicate the entity and all descendants      |
+| Create Prefab...      | Save the entity subtree as a `.owlprefab` file            |
+| Update from Prefab    | Refresh non-overridden components from the prefab file    |
+| Revert to Prefab      | Reset all overrides, making the instance match the prefab |
+| Unlink Prefab         | Remove the PrefabLink, turning it into a regular entity   |
 | Unparent              | Move the entity to root level, preserving world transform |
 | Delete                | Remove the entity, reparenting children to grandparent    |
 | Delete with Children  | Cascade-delete the entity and all descendants             |
+
+Prefab-related actions only appear when the selected entity is a prefab instance (has a
+`PrefabLink` component). Prefab instance entities are displayed with a blue text tint in
+the hierarchy tree.
 
 ### Properties
 
@@ -136,6 +144,10 @@ Each component has a collapsible header with a dedicated editor widget:
 - **Link** -- External entity reference
 - **Background** -- Background layer settings
 - **Visibility** -- Per-entity visibility toggle (inherited by children)
+- **Lua Script** -- Script asset path, editable property list
+- **Canvas** -- UI container for screen-space overlay elements
+- **UI Rect / Text / Image / Panel / Button / Slider / Progress Bar** -- In-game UI elements
+- **Prefab Link** -- Read-only display: source asset path, synced version, mapped entity count
 
 **Add Component.** The "Add Component" button at the bottom opens a dropdown listing
 all optional component types that the entity does not already have.
@@ -152,8 +164,8 @@ supports navigation, file operations, and drag-drop integration with other panel
 The browser roots at the project's asset directory and prevents navigation above it.
 
 **File type icons.** Files are displayed with type-specific icons loaded from the
-icon bank: `.owl` (scene), `.png`, `.jpg`, `.svg`, `.ttf` (font), `.yml`, `.json`,
-`.glsl`, and plain text. Folders use a distinct folder icon.
+icon bank: `.owl` (scene), `.owlprefab` (prefab), `.png`, `.jpg`, `.svg`, `.ttf` (font),
+`.yml`, `.json`, `.glsl`, `.lua`, and plain text. Folders use a distinct folder icon.
 
 **Interactions:**
 
@@ -161,6 +173,7 @@ icon bank: `.owl` (scene), `.png`, `.jpg`, `.svg`, `.ttf` (font), `.yml`, `.json
 |------------------------------|-----------------------------------------------|
 | Double-click folder          | Navigate into the folder                      |
 | Double-click `.owl` file     | Open the scene in the editor                  |
+| Drag `.owlprefab` to Viewport| Instantiate the prefab into the scene          |
 | Drag texture to Properties   | Assign the texture to a Sprite Renderer field |
 | Drag sound to Properties     | Assign the sound to a Sound Source field       |
 | Right-click background       | Context menu: New Folder, Import File/Folder  |
@@ -317,8 +330,51 @@ The `Project` class (`source/owlnest/sources/Project.h`) holds three fields: `na
 | Pack Scene      | Project > Pack Scene  | Pack current scene's assets into `.owlpack`    |
 | Pack Game       | Project > Pack Game   | Scan and pack all project assets (see [Architecture](@ref page-architecture)) |
 
+The **Edit** menu provides undo/redo operations:
+
+| Operation | Menu Path    | Description                                              |
+|-----------|-------------|----------------------------------------------------------|
+| Undo      | Edit > Undo | Reverse the most recent editing action (Ctrl+Z)          |
+| Redo      | Edit > Redo | Re-apply an undone action (Ctrl+Y)                       |
+
+The Edit menu labels dynamically show the description of the next undo/redo action
+(e.g., "Undo Delete 'Player'").
+
 **Window title.** The editor window title reflects the active project name and current
-scene, updated by `updateWindowTitle()`.
+scene, updated by `updateWindowTitle()`. An asterisk (`*`) suffix indicates unsaved
+changes (based on the undo history dirty state).
+
+## Prefab Workflow
+
+Prefabs are reusable entity subtree templates stored as `.owlprefab` files. They allow
+creating complex entity hierarchies once and reusing them across scenes.
+
+### Creating a Prefab
+
+Right-click any entity in the Scene Hierarchy and select **Create Prefab...**. A file save
+dialog opens; the entity and all its descendants are serialized to the chosen `.owlprefab`
+file. The current entity UUIDs become the canonical UUIDs for the prefab.
+
+### Instantiating a Prefab
+
+Drag a `.owlprefab` file from the Content Browser into the Viewport. The engine creates
+new entities with fresh UUIDs and adds a `PrefabLink` component to the root entity. The
+link stores the source asset path and a UUID mapping connecting each instance entity to its
+canonical prefab counterpart.
+
+### Updating Instances
+
+When the source `.owlprefab` file is edited (e.g., by modifying the original entity and
+re-creating the prefab), instances can be updated:
+
+- **Update from Prefab** -- Refreshes all components that have not been locally overridden.
+  Components that were modified on the instance are preserved.
+- **Revert to Prefab** -- Clears all local overrides and resets the instance to match the
+  prefab exactly.
+- **Unlink Prefab** -- Removes the `PrefabLink` component, turning the instance into a
+  standalone entity subtree with no connection to the source file.
+
+All prefab operations are fully undoable.
 
 ## Toolbar
 
@@ -352,6 +408,17 @@ Settings panel. The table below lists factory defaults.
 | Open Scene     | Ctrl+O           | `scene.open`     |
 | Save Scene     | Ctrl+S           | `scene.save`     |
 | Save Scene As  | Ctrl+Shift+S     | `scene.saveAs`   |
+
+### Edit Operations
+
+| Action | Default Shortcut | Action ID    |
+|--------|------------------|--------------|
+| Undo   | Ctrl+Z           | `edit.undo`  |
+| Redo   | Ctrl+Y           | `edit.redo`  |
+
+All entity, component, hierarchy, and gizmo editing operations are undoable. Rapid
+consecutive edits on the same property (e.g. dragging a slider) are automatically
+coalesced into a single undo step.
 
 ### Entity Operations
 
