@@ -1,5 +1,6 @@
 -- Player controller
--- Demonstrates: input, physics, entity lookup, ui.set_text, scene.destroy_entity
+-- Demonstrates: input, physics, entity lookup, ui.set_text, scene.destroy_entity,
+--               gamestate, save.save_game
 
 properties = {
     { name = "speed",     type = "float", default = 8.0 },
@@ -7,10 +8,21 @@ properties = {
 }
 
 local score_text_id = 0
+local total_coins = 3
 
 function on_create()
-    log.info("Player created with speed=" .. speed)
+    -- Restore score from gamestate if continuing from a save
+    local saved_score = gamestate.get("score", 0)
+    if saved_score > 0 then
+        score = saved_score
+        log.info("Player restored from save with score=" .. score)
+    else
+        log.info("Player created with speed=" .. speed)
+    end
     score_text_id = scene.find_entity("ScoreText")
+    if score_text_id ~= 0 then
+        ui.set_text(score_text_id, "Score: " .. score)
+    end
 end
 
 function on_update(dt)
@@ -42,11 +54,25 @@ function on_update(dt)
                 score = score + 10
                 log.info("Collected " .. coinName .. "! Score: " .. score)
                 scene.destroy_entity(coinId)
+                -- Store score in gamestate (persists across saves)
+                gamestate.set("score", score)
                 if score_text_id ~= 0 then
                     ui.set_text(score_text_id, "Score: " .. score)
                 end
+                -- Auto-save when all coins collected
+                if score >= total_coins * 10 then
+                    log.info("All coins collected! Auto-saving to slot 1...")
+                    save.save_game(1)
+                end
             end
         end
+    end
+
+    -- Quick-save with F5
+    if input.is_key_pressed(294) then  -- F5
+        gamestate.set("score", score)
+        save.save_game(1)
+        log.info("Quick-saved to slot 1")
     end
 end
 

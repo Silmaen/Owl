@@ -65,6 +65,8 @@ struct OWL_API AppParams {
 	bool isDummy{false};
 	/// Optional path to an asset pack file (opened before renderer init).
 	std::string packFile{};
+	/// Game name for save directories (set by project system).
+	std::string gameName{};
 
 	/**
 	 * @brief Access to the given command line argument.

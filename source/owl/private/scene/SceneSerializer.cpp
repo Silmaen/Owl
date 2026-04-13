@@ -56,7 +56,7 @@ void deserializeEntity(const shared<Scene>& ioScene, const core::Serializer& iNo
 
 }// namespace
 
-void SceneSerializer::serialize(const std::filesystem::path& iFilepath) const {
+auto SceneSerializer::serializeToString() const -> std::string {
 	const core::Serializer sOut;
 	sOut.getImpl()->emitter << YAML::BeginMap;
 	sOut.getImpl()->emitter << YAML::Key << "Scene" << YAML::Value << "untitled";
@@ -68,8 +68,12 @@ void SceneSerializer::serialize(const std::filesystem::path& iFilepath) const {
 	}
 	sOut.getImpl()->emitter << YAML::EndSeq;
 	sOut.getImpl()->emitter << YAML::EndMap;
+	return sOut.getImpl()->emitter.c_str();
+}
+
+void SceneSerializer::serialize(const std::filesystem::path& iFilepath) const {
 	std::ofstream fileOut(iFilepath);
-	fileOut << sOut.getImpl()->emitter.c_str();
+	fileOut << serializeToString();
 	fileOut.close();
 }
 

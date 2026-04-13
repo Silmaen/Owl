@@ -197,6 +197,24 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 											 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft));
 				m_activeScene->onUpdateRuntime(iTimeStep);
 				handleTeleportRequest();
+				if (m_activeScene && m_activeScene->saveLoadRequest.pending) {
+					const auto slr = m_activeScene->saveLoadRequest;
+					m_activeScene->saveLoadRequest.pending = false;
+					if (slr.isLoad) {
+						auto newScene = owl::mkShared<scene::Scene>();
+						if (auto loadResult = scene::SaveManager::load(slr.slot, newScene); loadResult.success) {
+							m_activeScene->onEndRuntime();
+							m_activeScene = newScene;
+							m_activeScene->onViewportResize(m_viewportSize);
+							m_activeScene->onStartRuntime();
+							for (const auto& [uuid, snap]: loadResult.physicsSnapshots)
+								if (auto entity = m_activeScene->findEntityByUUID(core::UUID{uuid}); entity)
+									physic::PhysicCommand::applySnapshot(entity, snap);
+						}
+					} else {
+						std::ignore = scene::SaveManager::save(slr.slot, m_activeScene, "");
+					}
+				}
 			}
 		}
 	} else {

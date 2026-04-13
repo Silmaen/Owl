@@ -90,6 +90,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 												 m_framebuffer->getSpecification().size, vpMouse, mousePressed);
 					m_parent->getActiveScene()->onUpdateRuntime(iTimeStep);
 					m_parent->handleTeleportRequest();
+					m_parent->handleSaveLoadRequest();
 					break;
 				}
 			case EditorLayer::State::Pause:

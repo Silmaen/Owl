@@ -14,6 +14,7 @@
 #include "input/Input.h"
 #include "physic/PhysicCommand.h"
 #include "scene/Entity.h"
+#include "scene/SaveManager.h"
 #include "scene/Scene.h"
 #include "scene/ScreenTransition.h"
 #include "scene/component/components.h"
@@ -447,6 +448,129 @@ auto luaUiIsTransitionActive(lua_State* iState) -> int {
 	return 1;
 }
 
+// ============================================================
+// gamestate table
+// ============================================================
+
+auto luaGamestateSet(lua_State* iState) -> int {
+	auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene == nullptr)
+		return 0;
+	const char* key = luaL_checkstring(iState, 1);
+	if (lua_isboolean(iState, 2) != 0)
+		activeScene->getGameState().set(key, lua_toboolean(iState, 2) != 0);
+	else if (lua_isinteger(iState, 2) != 0)
+		activeScene->getGameState().set(key, static_cast<int64_t>(lua_tointeger(iState, 2)));
+	else if (lua_isnumber(iState, 2) != 0)
+		activeScene->getGameState().set(key, static_cast<float>(lua_tonumber(iState, 2)));
+	else if (lua_isstring(iState, 2) != 0)
+		activeScene->getGameState().set(key, std::string(lua_tostring(iState, 2)));
+	return 0;
+}
+
+auto luaGamestateGet(lua_State* iState) -> int {
+	auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene == nullptr) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	const char* key = luaL_checkstring(iState, 1);
+	const auto val = activeScene->getGameState().get(key);
+	if (!val.has_value()) {
+		// Return default (arg 2) or nil.
+		if (lua_gettop(iState) >= 2) {
+			lua_pushvalue(iState, 2);
+		} else {
+			lua_pushnil(iState);
+		}
+		return 1;
+	}
+	std::visit(
+			[iState](const auto& iVal) {
+				using T = std::decay_t<decltype(iVal)>;
+				if constexpr (std::is_same_v<T, int64_t>)
+					lua_pushinteger(iState, static_cast<lua_Integer>(iVal));
+				else if constexpr (std::is_same_v<T, float>)
+					lua_pushnumber(iState, static_cast<lua_Number>(iVal));
+				else if constexpr (std::is_same_v<T, std::string>)
+					lua_pushstring(iState, iVal.c_str());
+				else if constexpr (std::is_same_v<T, bool>)
+					lua_pushboolean(iState, iVal ? 1 : 0);
+			},
+			val.value());
+	return 1;
+}
+
+auto luaGamestateRemove(lua_State* iState) -> int {
+	auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene != nullptr)
+		activeScene->getGameState().remove(luaL_checkstring(iState, 1));
+	return 0;
+}
+
+auto luaGamestateClear(lua_State* iState) -> int {
+	std::ignore = iState;
+	auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene != nullptr)
+		activeScene->getGameState().clear();
+	return 0;
+}
+
+// ============================================================
+// save table
+// ============================================================
+
+auto luaSaveSaveGame(lua_State* iState) -> int {
+	auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene == nullptr)
+		return 0;
+	const auto slot = static_cast<uint32_t>(luaL_checkinteger(iState, 1));
+	// Deferred save — handled by RunnerLayer/EditorLayer after onUpdateRuntime.
+	activeScene->saveLoadRequest.pending = true;
+	activeScene->saveLoadRequest.isLoad = false;
+	activeScene->saveLoadRequest.slot = slot;
+	return 0;
+}
+
+auto luaSaveLoadGame(lua_State* iState) -> int {
+	auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene == nullptr)
+		return 0;
+	const auto slot = static_cast<uint32_t>(luaL_checkinteger(iState, 1));
+	activeScene->saveLoadRequest.pending = true;
+	activeScene->saveLoadRequest.isLoad = true;
+	activeScene->saveLoadRequest.slot = slot;
+	return 0;
+}
+
+auto luaSaveHasSave(lua_State* iState) -> int {
+	const auto slot = static_cast<uint32_t>(luaL_checkinteger(iState, 1));
+	lua_pushboolean(iState, scene::SaveManager::hasSave(slot) ? 1 : 0);
+	return 1;
+}
+
+auto luaSaveDeleteSave(lua_State* iState) -> int {
+	const auto slot = static_cast<uint32_t>(luaL_checkinteger(iState, 1));
+	scene::SaveManager::deleteSave(slot);
+	return 0;
+}
+
+auto luaSaveListSaves(lua_State* iState) -> int {
+	const auto saves = scene::SaveManager::listSaves();
+	lua_newtable(iState);
+	for (size_t i = 0; i < saves.size(); ++i) {
+		lua_newtable(iState);
+		lua_pushinteger(iState, static_cast<lua_Integer>(saves[i].slot));
+		lua_setfield(iState, -2, "slot");
+		lua_pushstring(iState, saves[i].timestamp.c_str());
+		lua_setfield(iState, -2, "timestamp");
+		lua_pushstring(iState, saves[i].scenePath.c_str());
+		lua_setfield(iState, -2, "scene");
+		lua_rawseti(iState, -2, static_cast<lua_Integer>(i) + 1);
+	}
+	return 1;
+}
+
 /// Helper: register a table of C functions.
 void registerTable(lua_State* iState, const char* iTableName, const luaL_Reg* iFunctions) {
 	lua_newtable(iState);
@@ -537,6 +661,26 @@ void registerBindings(lua_State* iState) {
 	registerTable(iState, "log", logFuncs);
 	registerTable(iState, "entity", entityFuncs);
 	registerTable(iState, "ui", uiFuncs);
+
+	// clang-format off
+	static const luaL_Reg gamestateFuncs[] = {
+		{"set", luaGamestateSet},
+		{"get", luaGamestateGet},
+		{"remove", luaGamestateRemove},
+		{"clear", luaGamestateClear},
+		{nullptr, nullptr}
+	};
+	static const luaL_Reg saveFuncs[] = {
+		{"save_game", luaSaveSaveGame},
+		{"load_game", luaSaveLoadGame},
+		{"has_save", luaSaveHasSave},
+		{"delete_save", luaSaveDeleteSave},
+		{"list_saves", luaSaveListSaves},
+		{nullptr, nullptr}
+	};
+	// clang-format on
+	registerTable(iState, "gamestate", gamestateFuncs);
+	registerTable(iState, "save", saveFuncs);
 }
 
 }// namespace owl::script

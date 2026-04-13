@@ -55,6 +55,8 @@
 #include "gui/widgets/ButtonBar.h"
 // ------- scene -----------
 #include "scene/Entity.h"
+#include "scene/GameState.h"
+#include "scene/SaveManager.h"
 #include "scene/Scene.h"
 #include "scene/SceneCamera.h"
 #include "scene/SceneSerializer.h"

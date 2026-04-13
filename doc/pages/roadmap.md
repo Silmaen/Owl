@@ -282,16 +282,18 @@ application (Linux / Windows).
       - Template scenes: Main Menu, Pause Menu, Game Over (`engine_assets/templates/`)
       - Screen transitions: FadeIn/FadeOut via `ScreenTransition` + Lua `ui.transition_fade_in/out`
 - Game State & Save System
-  - ![Planned][planned] Serializable GameState
-      - Key-value dictionary (int, float, string, bool) for progression, inventory, flags
-      - Lua API: `gamestate.set("key", value)`, `gamestate.get("key", default)`
-  - ![Planned][planned] Save / Load
-      - Save to user directory (`~/.local/share/<game>/` on Linux, `%APPDATA%/<game>/` on Windows)
-      - Multiple save slots, list available saves
-      - Lua API: `save_game(slot)`, `load_game(slot)`, `list_saves()`
-  - ![Planned][planned] Full scene state save
-      - Serialize active scene + player position + physics state on save
-      - Restore complete scene on load (not just variables)
+  - ![Done][done] Serializable GameState
+      - `GameState` key-value store (int, float, string, bool) on Scene
+      - Lua API: `gamestate.set/get/remove/clear`, auto-type detection
+      - Copied across scene transitions, serialized in save files
+  - ![Done][done] Save / Load
+      - `SaveManager`: save/load to `~/.local/share/<game>/saves/` (Linux) or `%APPDATA%/<game>/saves/` (Windows)
+      - Multiple save slots, `save.save_game(slot)`, `save.load_game(slot)`, `save.list_saves()`
+      - Deferred load pattern (safe mid-script), handled by RunnerLayer/EditorLayer
+  - ![Done][done] Full scene state save
+      - Complete scene + GameState + physics snapshots (velocities, wake state)
+      - `PhysicCommand::getSnapshot/applySnapshot` for Box2D state capture/restore
+      - `loaded_from_save` flag set in GameState on load
 - Runner & Distribution
   - ![Planned][planned] Extended project configuration
     - `owl_project.yml` fields: version, author, icon, window size, fullscreen, resizable

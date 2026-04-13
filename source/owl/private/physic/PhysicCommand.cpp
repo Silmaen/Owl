@@ -203,4 +203,32 @@ void PhysicCommand::setVelocity(const scene::Entity& iEntity, const math::vec2f&
 	b2Body_SetLinearVelocity(m_impl->bodies[body.bodyId], {iVelocity.x(), iVelocity.y()});
 }
 
+auto PhysicCommand::getSnapshot(const scene::Entity& iEntity) -> PhysicsSnapshot {
+	PhysicsSnapshot snapshot;
+	if (!isInitialized() || !iEntity || !iEntity.hasComponent<scene::component::PhysicBody>())
+		return snapshot;
+	const auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
+	if (body.type == scene::SceneBody::BodyType::Static)
+		return snapshot;
+	const auto bodyId = m_impl->bodies[body.bodyId];
+	const auto [vx, vy] = b2Body_GetLinearVelocity(bodyId);
+	snapshot.linearVelocity = {vx, vy};
+	snapshot.angularVelocity = b2Body_GetAngularVelocity(bodyId);
+	snapshot.awake = b2Body_IsAwake(bodyId);
+	return snapshot;
+}
+
+void PhysicCommand::applySnapshot(const scene::Entity& iEntity, const PhysicsSnapshot& iSnapshot) {
+	if (!isInitialized() || !iEntity || !iEntity.hasComponent<scene::component::PhysicBody>())
+		return;
+	const auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
+	if (body.type == scene::SceneBody::BodyType::Static)
+		return;
+	const auto bodyId = m_impl->bodies[body.bodyId];
+	b2Body_SetLinearVelocity(bodyId, {iSnapshot.linearVelocity.x(), iSnapshot.linearVelocity.y()});
+	b2Body_SetAngularVelocity(bodyId, iSnapshot.angularVelocity);
+	if (iSnapshot.awake)
+		b2Body_SetAwake(bodyId, true);
+}
+
 }// namespace owl::physic
