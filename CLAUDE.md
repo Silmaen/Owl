@@ -71,9 +71,11 @@ poetry run python ci_action.py Documentation <preset>
 ### Applications (`source/`)
 
 - `owlnest/` — Scene editor with project management (two executables: editor + runner)
-  - Project system: `owl_project.yml` config, dynamic asset directories, scene import
+  - Project system: `owl_project.yml` config (name, version, author, description, icon, window settings),
+    dynamic asset directories, scene import
   - Scene hierarchy panel with drag-drop reparenting and context menus
-  - Project settings panel, window title reflects active project
+  - Project settings panel with full editing UI (metadata + window config), window title reflects active project
+  - Runner reads extended config from `runner.yml` at startup (title, icon, size, fullscreen, resizable)
 
 ### Tests (`test/`)
 

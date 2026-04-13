@@ -1,257 +1,28 @@
 Scene: untitled
 Entities:
-  - Entity: 13847793459865201823
+  - Entity: 16906436666699620562
     Tag:
-      tag: Instructions
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 2808653168279387643
-    UIRect:
-      anchor: TopCenter
-      pivotX: 0.5
-      pivotY: 1
-      sizeX: 400
-      sizeY: 30
-      offsetX: 0
-      offsetY: -10
-    UIText:
-      text: WASD to move - Collect all coins!
-      color: [1, 1, 1, 0.600000024]
-      fontSize: 14
-      alignment: Left
-      kerning: 0
-      lineSpacing: 0
-  - Entity: 15438644963606971471
-    Tag:
-      tag: HealthBar
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 2808653168279387643
-    UIProgressBar:
-      value: 1
-      backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
-      fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
-    UIRect:
-      anchor: TopRight
-      pivotX: 1
-      pivotY: 1
-      sizeX: 180
-      sizeY: 20
-      offsetX: -15
-      offsetY: -12
-  - Entity: 15208283429529089003
-    Tag:
-      tag: ScoreText
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 2808653168279387643
-    UIRect:
-      anchor: TopLeft
-      pivotX: 0
-      pivotY: 1
-      sizeX: 200
-      sizeY: 35
-      offsetX: 15
-      offsetY: -10
-    UIText:
-      text: "Score: 0"
-      color: [1, 1, 0.300000012, 1]
-      fontSize: 22
-      alignment: Left
-      kerning: 0
-      lineSpacing: 0
-  - Entity: 2808653168279387643
-    Tag:
-      tag: HUDCanvas
+      tag: Statics
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Canvas:
-      space: ScreenOverlay
-      sortOrder: 0
     Visibility:
       gameVisible: true
     Hierarchy:
       {}
-    LuaScript:
-      scriptPath: scripts/hud.lua
-  - Entity: 11714490617733352126
+  - Entity: 4061571659130098002
     Tag:
-      tag: Platform
+      tag: Coins
     Transform:
-      translation: [2, -2, 0]
-      rotation: [0, 0, 0]
-      scale: [3, 0.400000006, 1]
-    SpriteRenderer:
-      color: [0.550000012, 0.349999994, 0.150000006, 1]
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/moving_platform.lua
-      properties:
-        - name: speed
-          type: float
-          value: 2
-        - name: distance
-          type: float
-          value: 4
-  - Entity: 11819876889351034017
-    Tag:
-      tag: Coin3
-    Transform:
-      translation: [5, 1, 0]
-      rotation: [0, 0, 0]
-      scale: [0.699999988, 0.699999988, 1]
-    CircleRenderer:
-      color: [1, 0.850000024, 0, 1]
-      thickness: 1
-      fade: 0.0199999996
-    Visibility:
-      gameVisible: true
-  - Entity: 9445743928933211269
-    Tag:
-      tag: Coin2
-    Transform:
-      translation: [-2, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [0.699999988, 0.699999988, 1]
-    CircleRenderer:
-      color: [1, 0.850000024, 0, 1]
-      thickness: 1
-      fade: 0.0199999996
-    Visibility:
-      gameVisible: true
-  - Entity: 15536329761968156913
-    Tag:
-      tag: Coin1
-    Transform:
-      translation: [3, -1, 0]
-      rotation: [0, 0, 0]
-      scale: [0.699999988, 0.699999988, 1]
-    CircleRenderer:
-      color: [1, 0.850000024, 0, 1]
-      thickness: 1
-      fade: 0.0199999996
-    Visibility:
-      gameVisible: true
-  - Entity: 13481496502820562240
-    Tag:
-      tag: RightWall
-    Transform:
-      translation: [8, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 10, 1]
-    SpriteRenderer:
-      color: [0.349999994, 0.349999994, 0.349999994, 1]
-    PhysicBody:
-      type: Static
-      fixedRotation: false
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.5
-    Visibility:
-      gameVisible: true
-  - Entity: 17522008803733617163
-    Tag:
-      tag: LeftWall
-    Transform:
-      translation: [-8, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 10, 1]
-    SpriteRenderer:
-      color: [0.349999994, 0.349999994, 0.349999994, 1]
-    PhysicBody:
-      type: Static
-      fixedRotation: false
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.5
-    Visibility:
-      gameVisible: true
-  - Entity: 15820483765576570374
-    Tag:
-      tag: Ground
-    Transform:
-      translation: [0, -4, 0]
-      rotation: [0, 0, 0]
-      scale: [20, 1, 1]
-    SpriteRenderer:
-      color: [0.25, 0.449999988, 0.200000003, 1]
-    PhysicBody:
-      type: Static
-      fixedRotation: false
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.5
-    Visibility:
-      gameVisible: true
-  - Entity: 10278795856559282619
-    Tag:
-      tag: PlayerHat
-    Transform:
-      translation: [3, -1.45000005, 0.100000001]
-      rotation: [0, -0, 0]
-      scale: [0.5, 0.25, 1]
-    SpriteRenderer:
-      color: [1, 0.850000024, 0.100000001, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 17962914942571151273
-  - Entity: 17962914942571151273
-    Tag:
-      tag: Player
-    Transform:
-      translation: [-3, 2, 0]
+      translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [0.300000012, 0.600000024, 1, 1]
-    PhysicBody:
-      type: Dynamic
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.5
-    Player:
-      primary: true
-      linearImpulse: 8
-      jumpImpulse: 0.200000003
-      canJump: true
     Visibility:
       gameVisible: true
     Hierarchy:
       {}
-    LuaScript:
-      scriptPath: scripts/player.lua
-      properties:
-        - name: speed
-          type: float
-          value: 8
-        - name: score
-          type: int
-          value: 0
-  - Entity: 2419322528981516067
+  - Entity: 9302882731347678808
     Tag:
       tag: MainCamera
     Transform:
@@ -273,3 +44,266 @@ Entities:
       gameVisible: true
     SoundListener:
       primary: true
+  - Entity: 17930151766052866950
+    Tag:
+      tag: Player
+    Transform:
+      translation: [-3, 2, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [0.300000012, 0.600000024, 1, 1]
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Player:
+      primary: true
+      linearImpulse: 0.5
+      jumpImpulse: 10
+      canJump: true
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    LuaScript:
+      scriptPath: scripts/player.lua
+      properties:
+        - name: speed
+          type: float
+          value: 8
+        - name: score
+          type: int
+          value: 0
+  - Entity: 1730919783482497603
+    Tag:
+      tag: PlayerHat
+    Transform:
+      translation: [0.0115146637, 0.62121439, 0.100061037]
+      rotation: [0, 0, 0]
+      scale: [0.5, 0.25, 1]
+    SpriteRenderer:
+      color: [1, 0.850000024, 0.100000001, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 17930151766052866950
+  - Entity: 16086434730771396997
+    Tag:
+      tag: Ground
+    Transform:
+      translation: [0, -4, 0]
+      rotation: [0, -0, 0]
+      scale: [20, 1, 1]
+    SpriteRenderer:
+      color: [0.25, 0.449999988, 0.200000003, 1]
+    PhysicBody:
+      type: Static
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 16906436666699620562
+  - Entity: 17964739401868668468
+    Tag:
+      tag: LeftWall
+    Transform:
+      translation: [-8, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 10, 1]
+    SpriteRenderer:
+      color: [0.349999994, 0.349999994, 0.349999994, 1]
+    PhysicBody:
+      type: Static
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 16906436666699620562
+  - Entity: 16206352315621006945
+    Tag:
+      tag: RightWall
+    Transform:
+      translation: [8, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 10, 1]
+    SpriteRenderer:
+      color: [0.349999994, 0.349999994, 0.349999994, 1]
+    PhysicBody:
+      type: Static
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 16906436666699620562
+  - Entity: 15907129206711874527
+    Tag:
+      tag: Coin1
+    Transform:
+      translation: [3, -1, 0]
+      rotation: [0, -0, 0]
+      scale: [0.699999988, 0.699999988, 1]
+    CircleRenderer:
+      color: [1, 0.850000024, 0, 1]
+      thickness: 1
+      fade: 0.0199999996
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4061571659130098002
+  - Entity: 12569581219728626295
+    Tag:
+      tag: Coin2
+    Transform:
+      translation: [-2, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [0.699999988, 0.699999988, 1]
+    CircleRenderer:
+      color: [1, 0.850000024, 0, 1]
+      thickness: 1
+      fade: 0.0199999996
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4061571659130098002
+  - Entity: 7921277306416716434
+    Tag:
+      tag: Coin3
+    Transform:
+      translation: [5, 1, 0]
+      rotation: [0, -0, 0]
+      scale: [0.699999988, 0.699999988, 1]
+    CircleRenderer:
+      color: [1, 0.850000024, 0, 1]
+      thickness: 1
+      fade: 0.0199999996
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 4061571659130098002
+  - Entity: 2942636188237257583
+    Tag:
+      tag: Platform
+    Transform:
+      translation: [2, -2, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 0.400000006, 1]
+    SpriteRenderer:
+      color: [0.550000012, 0.349999994, 0.150000006, 1]
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/moving_platform.lua
+      properties:
+        - name: speed
+          type: float
+          value: 2
+        - name: distance
+          type: float
+          value: 4
+  - Entity: 12597920178830243714
+    Tag:
+      tag: HUDCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    LuaScript:
+      scriptPath: scripts/hud.lua
+  - Entity: 6272576117750894292
+    Tag:
+      tag: ScoreText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 12597920178830243714
+    UIRect:
+      anchor: TopLeft
+      pivotX: 0
+      pivotY: 1
+      sizeX: 200
+      sizeY: 35
+      offsetX: 15
+      offsetY: -10
+    UIText:
+      text: "Score: 0"
+      color: [1, 1, 0.300000012, 1]
+      fontSize: 22
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 7667929828493048409
+    Tag:
+      tag: HealthBar
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 12597920178830243714
+    UIProgressBar:
+      value: 1
+      backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
+      fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
+    UIRect:
+      anchor: TopRight
+      pivotX: 1
+      pivotY: 1
+      sizeX: 180
+      sizeY: 20
+      offsetX: -15
+      offsetY: -12
+  - Entity: 2650311757949129561
+    Tag:
+      tag: Instructions
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 12597920178830243714
+    UIRect:
+      anchor: TopCenter
+      pivotX: 0.5
+      pivotY: 1
+      sizeX: 400
+      sizeY: 30
+      offsetX: 0
+      offsetY: -10
+    UIText:
+      text: WASD to move - Collect all coins!
+      color: [1, 1, 1, 0.600000024]
+      fontSize: 14
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0

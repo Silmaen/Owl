@@ -87,8 +87,12 @@ void Window::init(const Properties& iProps) {
 		int channels = 0;
 		if (!iProps.iconPath.empty()) {
 			icon.pixels = stbi_load(iProps.iconPath.c_str(), &icon.width, &icon.height, &channels, 4);
-			glfwSetWindowIcon(mp_glfwWindow, 1, &icon);
-			stbi_image_free(icon.pixels);
+			if (icon.pixels != nullptr) {
+				glfwSetWindowIcon(mp_glfwWindow, 1, &icon);
+				stbi_image_free(icon.pixels);
+			} else {
+				OWL_CORE_WARN("Failed to load window icon: {}", iProps.iconPath)
+			}
 		}
 	}
 	// Graph context
@@ -191,6 +195,53 @@ void Window::setTitle(const std::string& iTitle) {
 	m_windowData.title = iTitle;
 	if (mp_glfwWindow != nullptr)
 		glfwSetWindowTitle(mp_glfwWindow, iTitle.c_str());
+}
+
+void Window::setFullscreen(const bool iFullscreen) {
+	if (m_windowData.fullscreen == iFullscreen || mp_glfwWindow == nullptr)
+		return;
+	m_windowData.fullscreen = iFullscreen;
+	if (iFullscreen) {
+		m_windowData.windowedSize = m_windowData.size;
+		GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+		glfwSetWindowMonitor(mp_glfwWindow, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+	} else {
+		glfwSetWindowMonitor(mp_glfwWindow, nullptr, 100, 100,
+							 static_cast<int>(m_windowData.windowedSize.x()),
+							 static_cast<int>(m_windowData.windowedSize.y()), 0);
+	}
+}
+
+auto Window::isFullscreen() const -> bool { return m_windowData.fullscreen; }
+
+void Window::setResizable(const bool iResizable) {
+	if (mp_glfwWindow != nullptr)
+		glfwSetWindowAttrib(mp_glfwWindow, GLFW_RESIZABLE, iResizable ? GLFW_TRUE : GLFW_FALSE);
+}
+
+void Window::setSize(const uint32_t iWidth, const uint32_t iHeight) {
+	m_windowData.size = {iWidth, iHeight};
+	if (mp_glfwWindow != nullptr)
+		glfwSetWindowSize(mp_glfwWindow, static_cast<int>(iWidth), static_cast<int>(iHeight));
+}
+
+void Window::setIcon(const std::filesystem::path& iIconPath) {
+	if (mp_glfwWindow == nullptr)
+		return;
+	if (!exists(iIconPath)) {
+		OWL_CORE_WARN("Window icon not found: {}", iIconPath.string())
+		return;
+	}
+	GLFWimage icon;
+	int channels = 0;
+	icon.pixels = stbi_load(iIconPath.string().c_str(), &icon.width, &icon.height, &channels, 4);
+	if (icon.pixels != nullptr) {
+		glfwSetWindowIcon(mp_glfwWindow, 1, &icon);
+		stbi_image_free(icon.pixels);
+	} else {
+		OWL_CORE_WARN("Failed to load window icon: {}", iIconPath.string())
+	}
 }
 
 void Window::shutdown() {

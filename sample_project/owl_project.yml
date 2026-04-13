@@ -1,3 +1,12 @@
 OwlProject:
-  name: Owl Feature Demo
+  name: OwlFeatureDemo
   firstScene: scenes/main_menu.owl
+  version: 0.1.0
+  author: Silmaen
+  description: ho ho ho
+  icon: logo/logo_owl.png
+  window:
+    width: 1280
+    height: 720
+    fullscreen: false
+    resizable: true

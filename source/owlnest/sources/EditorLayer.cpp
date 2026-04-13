@@ -1034,6 +1034,30 @@ void EditorLayer::packGame() {
 		configOut << "RunnerConfig:\n";
 		configOut << "  FirstScene: " << firstScene << "\n";
 		configOut << "  PackFile: " << packFilename << "\n";
+		configOut << "  GameName: " << m_project.name << "\n";
+		if (!m_project.version.empty())
+			configOut << "  Version: " << m_project.version << "\n";
+		if (!m_project.author.empty())
+			configOut << "  Author: " << m_project.author << "\n";
+		if (!m_project.icon.empty())
+			configOut << "  Icon: " << m_project.icon << "\n";
+		configOut << "  WindowWidth: " << m_project.window.width << "\n";
+		configOut << "  WindowHeight: " << m_project.window.height << "\n";
+		configOut << "  Fullscreen: " << (m_project.window.fullscreen ? "true" : "false") << "\n";
+		configOut << "  Resizable: " << (m_project.window.resizable ? "true" : "false") << "\n";
+	}
+
+	// Copy the game icon to the export directory if specified.
+	if (!m_project.icon.empty()) {
+		const auto iconSrc = m_project.projectDirectory / m_project.icon;
+		if (exists(iconSrc)) {
+			const auto iconDst = gameDir / m_project.icon;
+			std::filesystem::create_directories(iconDst.parent_path());
+			std::error_code ec;
+			std::filesystem::copy(iconSrc, iconDst, std::filesystem::copy_options::overwrite_existing, ec);
+			if (ec)
+				OWL_CORE_WARN("Failed to copy game icon: {}", ec.message())
+		}
 	}
 
 	// Copy the runner executable.

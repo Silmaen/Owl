@@ -59,6 +59,14 @@ private:
 	Project m_localProject;
 	/// Name buffer for ImGui input.
 	std::string m_nameBuffer;
+	/// Version buffer.
+	std::string m_versionBuffer;
+	/// Author buffer.
+	std::string m_authorBuffer;
+	/// Description buffer.
+	std::string m_descriptionBuffer;
+	/// Icon path buffer.
+	std::string m_iconBuffer;
 	/// Selected index in the scene list.
 	int m_selectedSceneIndex = -1;
 	/// List of available scene paths (relative to project directory).

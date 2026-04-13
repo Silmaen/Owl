@@ -12,6 +12,8 @@
 #include "event/Event.h"
 #include "math/vectors.h"
 #include "renderer/GraphContext.h"
+
+#include <filesystem>
 #include <functional>
 
 /**
@@ -133,6 +135,37 @@ public:
 	 * @param[in] iTitle The new title.
 	 */
 	virtual void setTitle(const std::string& iTitle) = 0;
+
+	/**
+	 * @brief Set fullscreen mode.
+	 * @param[in] iFullscreen True for fullscreen, false for windowed.
+	 */
+	virtual void setFullscreen(bool iFullscreen) = 0;
+
+	/**
+	 * @brief Check if the window is in fullscreen mode.
+	 * @return True if fullscreen.
+	 */
+	[[nodiscard]] virtual auto isFullscreen() const -> bool = 0;
+
+	/**
+	 * @brief Set whether the window is resizable.
+	 * @param[in] iResizable True to allow resizing.
+	 */
+	virtual void setResizable(bool iResizable) = 0;
+
+	/**
+	 * @brief Set the window size.
+	 * @param[in] iWidth New width in pixels.
+	 * @param[in] iHeight New height in pixels.
+	 */
+	virtual void setSize(uint32_t iWidth, uint32_t iHeight) = 0;
+
+	/**
+	 * @brief Set the window icon from an image file.
+	 * @param[in] iIconPath Path to the icon image (PNG recommended).
+	 */
+	virtual void setIcon(const std::filesystem::path& iIconPath) = 0;
 
 	/**
 	 * @brief Terminate the window.

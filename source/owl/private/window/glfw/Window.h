@@ -92,6 +92,11 @@ public:
 	 * @param[in] iTitle The new title.
 	 */
 	void setTitle(const std::string& iTitle) override;
+	void setFullscreen(bool iFullscreen) override;
+	[[nodiscard]] auto isFullscreen() const -> bool override;
+	void setResizable(bool iResizable) override;
+	void setSize(uint32_t iWidth, uint32_t iHeight) override;
+	void setIcon(const std::filesystem::path& iIconPath) override;
 
 	/**
 	 * @brief Terminate the window.
@@ -116,8 +121,12 @@ private:
 		std::string title;
 		/// Window's size.
 		math::vec2ui size;
+		/// Windowed-mode size (for fullscreen restore).
+		math::vec2ui windowedSize;
 		/// Window's VSync property.
 		bool vSync{false};
+		/// Whether the window is fullscreen.
+		bool fullscreen{false};
 		/// Event Call back.
 		EventCallback eventCallback;
 	};

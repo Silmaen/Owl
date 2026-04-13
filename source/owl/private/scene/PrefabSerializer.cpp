@@ -288,7 +288,8 @@ auto PrefabSerializer::applyToInstance(const std::filesystem::path& iFilepath, c
 		return false;
 	}
 
-	auto& prefabLink = ioInstanceRoot.getComponent<component::PrefabLink>();
+	// Copy PrefabLink by value — the original component will be destroyed during the loop below.
+	const auto prefabLink = ioInstanceRoot.getComponent<component::PrefabLink>();
 	const auto canonicalYaml = buildCanonicalYamlMap(*loaded->scene);
 
 	// For each entity in the UUID mapping, update non-overridden components.

@@ -13,11 +13,32 @@
 
 namespace owl::nest::runner {
 
+/// Configuration loaded from runner.yml.
 struct RunnerConfig {
+	/// Relative path to the first scene.
 	std::string firstScene;
 	/// Optional path to an asset pack file.
 	std::string packFile;
+	/// Game display name (for window title and save directory).
+	std::string gameName;
+	/// Game version string.
+	std::string version;
+	/// Author name.
+	std::string author;
+	/// Relative path to the game icon.
+	std::string icon;
+	/// Window width in pixels.
+	uint32_t windowWidth{1280};
+	/// Window height in pixels.
+	uint32_t windowHeight{720};
+	/// Whether to start in fullscreen mode.
+	bool fullscreen{false};
+	/// Whether the window is resizable.
+	bool resizable{true};
+
+	/// Load configuration from a YAML file.
 	void loadYaml(const std::filesystem::path& iPath);
+	/// Save configuration to a YAML file.
 	void saveYaml(const std::filesystem::path& iPath) const;
 };
 

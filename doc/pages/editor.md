@@ -242,8 +242,18 @@ active project's configuration:
 |--------------|----------------------------------------------------------|
 | Project Name | Display name shown in the window title bar               |
 | First Scene  | Dropdown of `.owl` files found in the project directory  |
+| Version      | Freeform version string (e.g., "1.0.0")                  |
+| Author       | Author or studio name                                    |
+| Description  | Short project description                                |
+| Icon         | Relative path to a PNG icon for the game window          |
+| Width        | Default window width in pixels (320–7680)                |
+| Height       | Default window height in pixels (240–4320)               |
+| Fullscreen   | Whether the game starts in fullscreen mode               |
+| Resizable    | Whether the game window can be resized                   |
 
-Changes are applied on confirmation and saved to `owl_project.yml`.
+Changes are applied on confirmation and saved to `owl_project.yml`. The window settings
+are also written to `runner.yml` during game export (`Project > Pack Game`) and applied
+by the Runner at startup.
 
 ## Editor State Machine
 
