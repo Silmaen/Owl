@@ -21,6 +21,9 @@
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
 
+#include <chrono>
+#include <cstdlib>
+
 
 namespace owl::nest {
 namespace {
@@ -985,6 +988,74 @@ void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem:
 	}
 }
 
+/// Sanitize a string for use as a filename (replace unsafe characters with _).
+auto sanitizeFilename(const std::string& iName) -> std::string {
+	std::string result;
+	result.reserve(iName.size());
+	for (const auto ch: iName) {
+		if (ch == '/' || ch == '\\' || ch == ':' || ch == '*' || ch == '?' || ch == '"' || ch == '<' || ch == '>' ||
+			ch == '|' || ch == ' ')
+			result += '_';
+		else
+			result += ch;
+	}
+	return result;
+}
+
+/// Write a Linux launcher shell script that sets LD_LIBRARY_PATH.
+void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string& iExeName) {
+	std::ofstream script(iGameDir / "launch.sh");
+	script << "#!/bin/sh\n";
+	script << "# Launcher for " << iExeName << "\n";
+	script << "SCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"\n";
+	script << "export LD_LIBRARY_PATH=\"${SCRIPT_DIR}:${LD_LIBRARY_PATH}\"\n";
+	script << "exec \"${SCRIPT_DIR}/" << iExeName << "\" \"$@\"\n";
+	script.close();
+	std::filesystem::permissions(iGameDir / "launch.sh",
+								 std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec |
+										 std::filesystem::perms::others_exec,
+								 std::filesystem::perm_options::add);
+}
+
+/// Write a game_info.yml metadata file.
+void writeMetadata(const std::filesystem::path& iGameDir, const std::string& iGameName,
+				   const std::string& iVersion, const std::string& iAuthor, const std::string& iDescription) {
+	const auto now = std::chrono::system_clock::now();
+	const auto days = std::chrono::floor<std::chrono::days>(now);
+	const std::chrono::year_month_day ymd{days};
+	const auto packDate = std::format("{:%Y-%m-%d}", ymd);
+#ifdef OWL_PLATFORM_LINUX
+	constexpr auto platform = "linux-x64";
+#elif defined(OWL_PLATFORM_WINDOWS)
+	constexpr auto platform = "windows-x64";
+#else
+	constexpr auto platform = "unknown";
+#endif
+	std::ofstream meta(iGameDir / "game_info.yml");
+	meta << "GameInfo:\n";
+	meta << "  Name: " << iGameName << "\n";
+	if (!iVersion.empty())
+		meta << "  Version: " << iVersion << "\n";
+	if (!iAuthor.empty())
+		meta << "  Author: " << iAuthor << "\n";
+	if (!iDescription.empty())
+		meta << "  Description: " << iDescription << "\n";
+	meta << "  EngineVersion: " << owl::getVersionString() << "\n";
+	meta << "  PackDate: " << packDate << "\n";
+	meta << "  Platform: " << platform << "\n";
+}
+
+#ifdef OWL_PLATFORM_WINDOWS
+/// Create a .zip archive from a directory using PowerShell.
+auto createZipArchive(const std::filesystem::path& iSourceDir,
+					  const std::filesystem::path& iOutputZip) -> bool {
+	const auto cmd = std::format(
+			"powershell -NoProfile -Command \"Compress-Archive -Path '{}\\*' -DestinationPath '{}' -Force\"",
+			iSourceDir.string(), iOutputZip.string());
+	return std::system(cmd.c_str()) == 0;// NOLINT(concurrency-mt-unsafe)
+}
+#endif
+
 }// namespace
 
 void EditorLayer::packGame() {
@@ -996,8 +1067,9 @@ void EditorLayer::packGame() {
 	if (destDir.empty())
 		return;
 
-	// Create output directory structure.
-	const auto gameDir = destDir / m_project.name;
+	// Create output directory with sanitized name.
+	const auto gameName = sanitizeFilename(m_project.name);
+	const auto gameDir = destDir / gameName;
 	std::filesystem::create_directories(gameDir);
 
 	// Scan all assets reachable from the first scene.
@@ -1011,7 +1083,7 @@ void EditorLayer::packGame() {
 	io::pack::PackWriter writer;
 	for (const auto& ref: assets) { writer.addFile(ref.diskPath, ref.packPath, ref.assetType); }
 
-	const auto packFilename = m_project.name + ".owlpack";
+	const auto packFilename = gameName + ".owlpack";
 	const auto packPath = gameDir / packFilename;
 	if (!writer.write(packPath)) {
 		OWL_CORE_ERROR("Failed to write game pack to {}", packPath.string())
@@ -1060,10 +1132,9 @@ void EditorLayer::packGame() {
 		}
 	}
 
-	// Copy the runner executable.
+	// Copy and rename the runner executable.
 	const auto& app = core::Application::get();
 	const auto runnerSrcDir = app.getWorkingDirectory();
-	// Find the runner executable next to the current OwlNest binary.
 	std::filesystem::path runnerExe;
 	for (const auto& candidate: {"OwlRunner", "OwlRunner.exe"}) {
 		if (const auto p = runnerSrcDir / candidate; exists(p)) {
@@ -1075,11 +1146,14 @@ void EditorLayer::packGame() {
 		OWL_CORE_ERROR("OwlRunner executable not found in {}", runnerSrcDir.string())
 		return;
 	}
-	std::filesystem::copy_file(runnerExe, gameDir / runnerExe.filename(),
-							   std::filesystem::copy_options::overwrite_existing);
-	// Set executable permission on Linux.
+	std::string exeFilename = gameName;
+#ifdef OWL_PLATFORM_WINDOWS
+	exeFilename += ".exe";
+#endif
+	const auto destExe = gameDir / exeFilename;
+	std::filesystem::copy_file(runnerExe, destExe, std::filesystem::copy_options::overwrite_existing);
 #ifdef OWL_PLATFORM_LINUX
-	std::filesystem::permissions(gameDir / runnerExe.filename(),
+	std::filesystem::permissions(destExe,
 								 std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec |
 										 std::filesystem::perms::others_exec,
 								 std::filesystem::perm_options::add);
@@ -1087,6 +1161,25 @@ void EditorLayer::packGame() {
 
 	// Copy shared libraries.
 	copySharedLibs(runnerSrcDir, gameDir);
+
+	// Linux: launcher script with LD_LIBRARY_PATH.
+#ifdef OWL_PLATFORM_LINUX
+	writeLinuxLauncher(gameDir, exeFilename);
+#endif
+
+	// Metadata file.
+	writeMetadata(gameDir, m_project.name, m_project.version, m_project.author, m_project.description);
+
+	// Windows: create distributable .zip archive.
+#ifdef OWL_PLATFORM_WINDOWS
+	{
+		const auto zipPath = destDir / (gameName + ".zip");
+		if (createZipArchive(gameDir, zipPath))
+			OWL_CORE_INFO("Created distributable archive: {}", zipPath.string())
+		else
+			OWL_CORE_WARN("Failed to create .zip archive")
+	}
+#endif
 
 	OWL_CORE_INFO("Game exported: {} ({} assets) -> {}", m_project.name, assets.size(), gameDir.string())
 }

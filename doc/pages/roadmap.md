@@ -121,8 +121,8 @@ polished audio/narrative experiences, and networked multiplayer.
 
 ## v0.3.0 -- Expected 2026-10-01
 
-**Goal:** Full 3D rendering pipeline with lighting, materials, post-processing, and mesh-based
-scene authoring.
+**Goal:** Full 3D rendering pipeline with lighting, materials, post-processing, mesh-based
+scene authoring, and cross-platform packaging from any host.
 
 - Graphics
     - ![Planned][planned] 3D render pipeline
@@ -167,6 +167,15 @@ scene authoring.
         - 3D gizmos (translate, rotate, scale in 3 axes)
         - Grid snapping, vertex snapping
         - Mesh import preview
+- Cross-Platform Packaging
+    - ![Planned][planned] Cross-compile packaging from any host
+        - Package a Linux game from Windows and a Windows game from Linux
+        - Pre-built runner binaries per target platform (downloaded or bundled)
+        - Cross-platform shared library bundling (resolve target-platform `.so`/`.dll`)
+    - ![Planned][planned] Target platform selector in Pack Game
+        - Choose target: Linux x64, Windows x64 (independently of host)
+        - Automatic runner binary selection for target platform
+        - Platform-specific post-processing (launcher script for Linux, .zip for Windows)
 
 ## v0.2.0 -- Expected 2026-08-01
 
@@ -244,6 +253,50 @@ a 2D lighting system.
     - ![Planned][planned] Scene transition effects
         - Configurable fade, wipe, or custom shader transitions between scenes
         - Lua API to trigger transitions with parameters (duration, type)
+          all
+
+## v0.1.1 -- Editor Polish & Multi-Document
+
+**Goal:** Transform the editor from a single-scene tool into a multi-document workspace
+with dedicated editors for different asset types.
+
+- Multi-Document Architecture
+    - ![Planned][planned] Document tab system
+        - Tab bar for open documents (scenes, scripts, node graphs)
+        - Each tab owns its own panel context (hierarchy, inspector, etc.)
+        - Remember and restore open tabs between sessions
+    - ![Planned][planned] Detachable panels
+        - Panels can be dragged out into floating windows
+        - Independent ImGui viewports per floating window
+- Script Editor
+    - ![Planned][planned] Integrated Lua script editor
+        - Syntax-highlighted text editor for `.lua` files (open from Content Browser)
+        - Save / reload with Ctrl+S, auto-reload on external change
+        - Basic error display (line number + message from Lua compilation)
+    - ![Planned][planned] Script debugging aids
+        - Breakpoint markers (visual only — log-based, not a step debugger)
+        - Live variable watch panel (read globals from running ScriptInstance)
+- Node Graph Editor
+    - ![Planned][planned] Node graph framework
+        - Generic node canvas: nodes with typed input/output pins, bezier connections
+        - Pan/zoom, selection, copy/paste, undo/redo integration
+        - Serialization to/from YAML (reusable for animation, shaders, AI, etc.)
+    - ![Planned][planned] Scene flow view (first node graph usage)
+        - Scenes as nodes, teleport triggers as connections
+        - Click to navigate to a scene, detect orphaned/unreachable scenes
+        - Visual editing of teleport links
+- Asset Editors
+    - ![Planned][planned] Animation editor
+        - Timeline for `AnimatedSpriteRenderer`: frame-by-frame preview
+        - Visual configuration of frame count, frame rate, loop mode
+        - Opens as a document tab (not a modal)
+    - ![Planned][planned] Enhanced inspector
+        - Curve editor for animated properties
+        - Texture/sound preview in inspector, drag-drop assets to fields
+- Packaging
+    - ![Planned][planned] Packaging wizard in Owl Nest
+        - Panel/dialog: target platform, output directory, progress bar, build report
+        - Pre-packaging validation: check firstScene exists, all assets found
 
 ## v0.1.0 -- Expected 2026-06-01
 
@@ -315,32 +368,16 @@ application (Linux / Windows).
         - Built-in keys: resolution, fullscreen, resizable, volume (master/music/sfx) + custom game keys
         - Lua API: `settings.get/set/save/load/reset/reset_all/apply`
         - Auto-apply builtins to window + sound listener gain
-    - ![Planned][planned] Improved packaging pipeline
-        - Rename Runner executable to game name
-        - Linux: launcher script with proper `LD_LIBRARY_PATH`
-        - Windows: distributable `.zip` with all DLLs
-        - Include metadata (version, author) in package
-    - ![Planned][planned] Packaging wizard in Owl Nest
-        - Panel/dialog: target platform, output directory, progress bar, build report
-        - Pre-packaging validation: check firstScene exists, all assets found
+    - ![Done][done] Improved packaging pipeline
+        - Renamed Runner executable to sanitized game name
+        - Linux: `launch.sh` script with `LD_LIBRARY_PATH`
+        - Windows: automatic `.zip` archive via PowerShell
+        - `game_info.yml` metadata (name, version, author, engine version, platform, date)
 - Editor Improvements (Owl Nest)
-    - ![Planned][planned] Multiple document windows
-        - Detachable panels (hierarchy, inspector, content browser)
-        - Multiple scene or other editor tabs open simultaneously
-        - Remember and restore layout between sessions
     - ![Done][done] Prefab system
         - `.owlprefab` files: serialized entity subtrees with UUID remapping
         - Create from entity (context menu), instantiate via Content Browser drag-drop
         - PrefabLink component: instance ↔ prefab link, update/revert with override preservation
-    - ![Planned][planned] Animation editor
-        - Timeline for `AnimatedSpriteRenderer`: frame-by-frame preview
-        - Visual configuration of frame count, frame rate, loop mode
-    - ![Planned][planned] Scene flow view
-        - Graph showing scenes and their connections (via teleporters)
-        - Click to navigate to a scene, detect orphaned/unreachable scenes
-    - ![Planned][planned] Enhanced inspector
-        - Curve editor for animated properties
-        - Texture/sound preview in inspector, drag-drop assets to fields
     - ![Done][done] Undo / Redo
         - Reversible command system for all editor actions (entity, component, hierarchy, gizmo)
         - Configurable undo stack depth, Ctrl+Z / Ctrl+Y, merge coalescing, dirty flag in title
@@ -350,11 +387,12 @@ application (Linux / Windows).
         - Trigger actions: play sound, change scene, modify objects, etc.
         - Event parameters: trigger volume, interaction range, timer duration
         - Editor support for placing triggers and defining events
-    - ![Planned][planned] Common properties across scenes
-        - Player spawn point, lighting, background, etc.
+    - ![Done][done] Common properties across scenes
+        - Covered by `SettingsManager`: game defaults in `game_settings.yml`, shared across all scenes
 - Sample Game
-    - ![Planned][planned] Complete Game with victor, defeat, multiple levels, and a variety of gameplay mechanics
-    - ![Planned][planned] Showcase of all engine features, plus polished art and sound assets
+    - ![Planned][planned] Complete game demonstrator
+        - Victory, defeat, multiple levels, variety of gameplay mechanics
+        - Showcase of all engine features (scripting, UI, physics, sound, save/load, settings, prefabs)
 
 ## v0.0.3 -- 2026-04-09
 
