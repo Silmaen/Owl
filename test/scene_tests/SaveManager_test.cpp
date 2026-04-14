@@ -131,3 +131,277 @@ TEST(SaveManager, getScenePath) {
 
 	core::Log::invalidate();
 }
+
+TEST(SaveManager, loadNonExistentSlot) {
+	core::Log::init(core::Log::Level::Off);
+	TestSaveGuard guard;
+
+	auto scn = mkShared<Scene>();
+	const auto result = SaveManager::load(999, scn);
+	EXPECT_FALSE(result.success);
+	EXPECT_TRUE(result.physicsSnapshots.empty());
+
+	core::Log::invalidate();
+}
+
+TEST(SaveManager, loadCorruptSaveFile) {
+	core::Log::init(core::Log::Level::Off);
+	TestSaveGuard guard;
+
+	// Create a corrupt save file manually.
+	const auto savePath = SaveManager::getSaveDirectory() / "save_50.owl_save";
+	{
+		std::ofstream file(savePath);
+		file << "this is not valid YAML: [[[";
+		file.close();
+	}
+	EXPECT_TRUE(SaveManager::hasSave(50));
+
+	auto scn = mkShared<Scene>();
+	const auto result = SaveManager::load(50, scn);
+	EXPECT_FALSE(result.success);
+
+	// getScenePath on corrupt file should return empty.
+	EXPECT_TRUE(SaveManager::getScenePath(50).empty());
+
+	SaveManager::deleteSave(50);
+	core::Log::invalidate();
+}
+
+TEST(SaveManager, loadSaveWithoutSceneData) {
+	core::Log::init(core::Log::Level::Off);
+	TestSaveGuard guard;
+
+	// Write a valid YAML save file that is missing SceneData.
+	const auto savePath = SaveManager::getSaveDirectory() / "save_51.owl_save";
+	{
+		std::ofstream file(savePath);
+		file << "OwlSave:\n";
+		file << "  version: 1\n";
+		file << "  timestamp: '2026-04-14T00:00:00'\n";
+		file << "  scenePath: test.owl\n";
+		file << "GameState:\n";
+		file << "  Entries: []\n";
+		file.close();
+	}
+	EXPECT_TRUE(SaveManager::hasSave(51));
+
+	auto scn = mkShared<Scene>();
+	const auto result = SaveManager::load(51, scn);
+	// Load succeeds even without SceneData (just no entities loaded).
+	EXPECT_TRUE(result.success);
+
+	SaveManager::deleteSave(51);
+	core::Log::invalidate();
+}
+
+TEST(SaveManager, loadSaveWithPhysicsSnapshots) {
+	core::Log::init(core::Log::Level::Off);
+	TestSaveGuard guard;
+
+	// Write a save file with explicit PhysicsSnapshots section.
+	const auto savePath = SaveManager::getSaveDirectory() / "save_52.owl_save";
+	{
+		std::ofstream file(savePath);
+		file << "OwlSave:\n";
+		file << "  version: 1\n";
+		file << "  timestamp: '2026-04-14T12:00:00'\n";
+		file << "  scenePath: scenes/physics_test.owl\n";
+		file << "PhysicsSnapshots:\n";
+		file << "  - uuid: 100\n";
+		file << "    vx: 1.5\n";
+		file << "    vy: -2.5\n";
+		file << "    av: 0.3\n";
+		file << "    awake: true\n";
+		file << "  - uuid: 200\n";
+		file << "    vx: 0.0\n";
+		file << "    vy: 0.0\n";
+		file << "    av: 0.0\n";
+		file << "    awake: false\n";
+		file.close();
+	}
+
+	auto scn = mkShared<Scene>();
+	const auto result = SaveManager::load(52, scn);
+	EXPECT_TRUE(result.success);
+	EXPECT_EQ(result.physicsSnapshots.size(), 2);
+
+	// Verify first snapshot.
+	ASSERT_TRUE(result.physicsSnapshots.contains(100));
+	const auto& snap1 = result.physicsSnapshots.at(100);
+	EXPECT_NEAR(snap1.linearVelocity.x(), 1.5f, 0.01f);
+	EXPECT_NEAR(snap1.linearVelocity.y(), -2.5f, 0.01f);
+	EXPECT_NEAR(snap1.angularVelocity, 0.3f, 0.01f);
+	EXPECT_TRUE(snap1.awake);
+
+	// Verify second snapshot.
+	ASSERT_TRUE(result.physicsSnapshots.contains(200));
+	const auto& snap2 = result.physicsSnapshots.at(200);
+	EXPECT_NEAR(snap2.linearVelocity.x(), 0.0f, 0.01f);
+	EXPECT_NEAR(snap2.linearVelocity.y(), 0.0f, 0.01f);
+	EXPECT_NEAR(snap2.angularVelocity, 0.0f, 0.01f);
+	EXPECT_FALSE(snap2.awake);
+
+	SaveManager::deleteSave(52);
+	core::Log::invalidate();
+}
+
+TEST(SaveManager, loadSaveWithPartialPhysicsSnapshot) {
+	core::Log::init(core::Log::Level::Off);
+	TestSaveGuard guard;
+
+	// A snapshot entry missing some fields should use defaults.
+	const auto savePath = SaveManager::getSaveDirectory() / "save_53.owl_save";
+	{
+		std::ofstream file(savePath);
+		file << "OwlSave:\n";
+		file << "  version: 1\n";
+		file << "  timestamp: '2026-04-14T12:00:00'\n";
+		file << "  scenePath: test.owl\n";
+		file << "PhysicsSnapshots:\n";
+		file << "  - uuid: 300\n";
+		file << "    vx: 5.0\n";
+		// Missing vy, av, awake — should be defaults.
+		file.close();
+	}
+
+	auto scn = mkShared<Scene>();
+	const auto result = SaveManager::load(53, scn);
+	EXPECT_TRUE(result.success);
+	ASSERT_EQ(result.physicsSnapshots.size(), 1);
+	ASSERT_TRUE(result.physicsSnapshots.contains(300));
+	const auto& snap = result.physicsSnapshots.at(300);
+	EXPECT_NEAR(snap.linearVelocity.x(), 5.0f, 0.01f);
+	// Default values for missing fields.
+	EXPECT_NEAR(snap.linearVelocity.y(), 0.0f, 0.01f);
+	EXPECT_NEAR(snap.angularVelocity, 0.0f, 0.01f);
+	EXPECT_TRUE(snap.awake);// PhysicsSnapshot default is true.
+
+	SaveManager::deleteSave(53);
+	core::Log::invalidate();
+}
+
+TEST(SaveManager, loadSavePhysicsSnapshotMissingUuid) {
+	core::Log::init(core::Log::Level::Off);
+	TestSaveGuard guard;
+
+	// A snapshot entry without uuid should be skipped.
+	const auto savePath = SaveManager::getSaveDirectory() / "save_54.owl_save";
+	{
+		std::ofstream file(savePath);
+		file << "OwlSave:\n";
+		file << "  version: 1\n";
+		file << "  timestamp: '2026-04-14T12:00:00'\n";
+		file << "  scenePath: test.owl\n";
+		file << "PhysicsSnapshots:\n";
+		file << "  - vx: 1.0\n";
+		file << "    vy: 2.0\n";
+		file << "  - uuid: 400\n";
+		file << "    vx: 3.0\n";
+		file.close();
+	}
+
+	auto scn = mkShared<Scene>();
+	const auto result = SaveManager::load(54, scn);
+	EXPECT_TRUE(result.success);
+	// Only the entry with uuid should be present.
+	EXPECT_EQ(result.physicsSnapshots.size(), 1);
+	EXPECT_TRUE(result.physicsSnapshots.contains(400));
+
+	SaveManager::deleteSave(54);
+	core::Log::invalidate();
+}
+
+TEST(SaveManager, listSavesWithCorruptFile) {
+	core::Log::init(core::Log::Level::Off);
+	TestSaveGuard guard;
+
+	// Create one valid save.
+	auto scn = mkShared<Scene>();
+	scn->createEntity("E1");
+	EXPECT_TRUE(SaveManager::save(1, scn, "scene1.owl"));
+
+	// Create a corrupt save file.
+	const auto corruptPath = SaveManager::getSaveDirectory() / "save_2.owl_save";
+	{
+		std::ofstream file(corruptPath);
+		file << "not valid yaml: [[[{{{";
+		file.close();
+	}
+
+	// listSaves should skip the corrupt file and still return the valid one.
+	const auto saves = SaveManager::listSaves();
+	EXPECT_EQ(saves.size(), 1);
+	EXPECT_EQ(saves[0].slot, 1);
+
+	SaveManager::deleteSave(2);
+	core::Log::invalidate();
+}
+
+TEST(SaveManager, listSavesIgnoresNonSaveFiles) {
+	core::Log::init(core::Log::Level::Off);
+	TestSaveGuard guard;
+
+	auto scn = mkShared<Scene>();
+	scn->createEntity("E1");
+	EXPECT_TRUE(SaveManager::save(1, scn, "scene1.owl"));
+
+	// Create a non .owl_save file in the save directory.
+	const auto otherPath = SaveManager::getSaveDirectory() / "notes.txt";
+	{
+		std::ofstream file(otherPath);
+		file << "some notes";
+		file.close();
+	}
+
+	const auto saves = SaveManager::listSaves();
+	EXPECT_EQ(saves.size(), 1);
+	EXPECT_EQ(saves[0].slot, 1);
+
+	std::filesystem::remove(otherPath);
+	core::Log::invalidate();
+}
+
+TEST(SaveManager, deleteSaveNonExistent) {
+	core::Log::init(core::Log::Level::Off);
+	TestSaveGuard guard;
+
+	// Deleting a non-existent save should not crash.
+	SaveManager::deleteSave(999);
+	EXPECT_FALSE(SaveManager::hasSave(999));
+
+	core::Log::invalidate();
+}
+
+TEST(SaveManager, defaultGameName) {
+	core::Log::init(core::Log::Level::Off);
+	// Set empty game name — should use "OwlGame" as default.
+	SaveManager::setGameName("");
+	const auto dir = SaveManager::getSaveDirectory();
+	EXPECT_TRUE(dir.string().find("OwlGame") != std::string::npos);
+
+	// Cleanup.
+	if (exists(dir))
+		std::filesystem::remove_all(dir.parent_path());
+	core::Log::invalidate();
+}
+
+TEST(SaveManager, loadSetsLoadedFromSave) {
+	core::Log::init(core::Log::Level::Off);
+	TestSaveGuard guard;
+
+	auto scn = mkShared<Scene>();
+	scn->createEntity("E1");
+	EXPECT_TRUE(SaveManager::save(1, scn, "test.owl"));
+
+	auto loaded = mkShared<Scene>();
+	const auto result = SaveManager::load(1, loaded);
+	EXPECT_TRUE(result.success);
+
+	// Verify the loaded_from_save flag is set.
+	const auto val = loaded->getGameState().get("loaded_from_save");
+	ASSERT_TRUE(val.has_value());
+	EXPECT_TRUE(std::get<bool>(val.value()));
+
+	core::Log::invalidate();
+}

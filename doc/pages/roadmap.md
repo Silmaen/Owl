@@ -300,14 +300,13 @@ application (Linux / Windows).
         - `PhysicCommand::getSnapshot/applySnapshot` for Box2D state capture/restore
         - `loaded_from_save` flag set in GameState on load
 - Runner & Distribution
-    - ![Planned][planned] Extended project configuration
-        - `owl_project.yml` fields: version, author, icon, window size, fullscreen, resizable
-        - Runner reads all config at startup
-    - ![Planned][planned] Improved Runner
-        - Window title and icon from project config
-        - Optional splash screen during loading
-        - Fullscreen / windowed / borderless support
-        - Fallback system menu if no Main Menu scene defined
+    - ![Done][done] Extended project configuration
+        - `owl_project.yml` fields: version, author, description, icon, window size, fullscreen, resizable
+        - ProjectSettings panel with full editing UI
+    - ![Done][done] Improved Runner
+        - Window title, icon, and size from project config (via extended `runner.yml`)
+        - Fullscreen / resizable support via new Window API
+        - `packGame()` exports all project settings + icon file
     - ![Planned][planned] Persistent player settings
         - `settings.yml` in user directory: resolution, fullscreen, volume (master/music/SFX)
         - Lua API: `get_setting(key)`, `set_setting(key, value)`

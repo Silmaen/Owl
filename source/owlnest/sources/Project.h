@@ -20,8 +20,30 @@ struct Project {
 	std::string name;
 	/// Relative path to the first scene.
 	std::string firstScene;
+	/// Project version string (freeform, e.g., "1.0.0").
+	std::string version;
+	/// Author or studio name.
+	std::string author;
+	/// Short project description.
+	std::string description;
+	/// Relative path to the project icon (PNG, relative to project directory).
+	std::string icon;
 	/// Absolute path to the project root directory.
 	std::filesystem::path projectDirectory;
+
+	/// Window configuration settings.
+	struct WindowSettings {
+		/// Default window width in pixels.
+		uint32_t width{1280};
+		/// Default window height in pixels.
+		uint32_t height{720};
+		/// Whether to start in fullscreen mode.
+		bool fullscreen{false};
+		/// Whether the window is resizable.
+		bool resizable{true};
+	};
+	/// Window settings for the game.
+	WindowSettings window;
 
 	/**
 	 * @brief Load project configuration from a YAML file.

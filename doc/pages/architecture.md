@@ -246,7 +246,8 @@ The engine includes a task scheduler backed by [Taskflow](https://github.com/tas
 
 Owl Nest can export a standalone game package via **Project > Pack Game**. The `AssetScanner`
 recursively parses scene files starting from the project's first scene, discovers all referenced
-assets (textures, fonts, sounds, meshes), and follows teleport links to other scenes.
+assets (textures, fonts, sounds, scripts, meshes), follows teleport trigger links to other scenes,
+and scans Lua scripts for `scene.load_scene()` calls to discover dynamically referenced scenes.
 
 Discovered assets are compressed with **zstd** and written to a `.owlpack` binary archive
 with an XOR-obfuscated table of contents. At runtime, the game runner transparently loads

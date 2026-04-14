@@ -48,6 +48,14 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 	packFile.clear();
 	if (const auto appConfig = data["RunnerConfig"]; appConfig) {
 		get(appConfig, "PackFile", packFile);
+		get(appConfig, "GameName", gameName);
+		get(appConfig, "Version", version);
+		get(appConfig, "Author", author);
+		get(appConfig, "Icon", icon);
+		get(appConfig, "WindowWidth", windowWidth);
+		get(appConfig, "WindowHeight", windowHeight);
+		get(appConfig, "Fullscreen", fullscreen);
+		get(appConfig, "Resizable", resizable);
 		std::string sceneName;
 		get(appConfig, "FirstScene", sceneName);
 		OWL_CORE_INFO("FirstScene: {}", sceneName)
@@ -101,7 +109,15 @@ void RunnerLayer::onAttach() {
 		m_config.loadYaml(config);
 	}
 
-	m_viewportSize = app.getWindow().getSize();
+	// Apply window settings from config.
+	auto& window = app.getWindow();
+	if (!m_config.gameName.empty())
+		window.setTitle(m_config.gameName);
+	if (m_config.fullscreen)
+		window.setFullscreen(true);
+	window.setResizable(m_config.resizable);
+
+	m_viewportSize = window.getSize();
 	m_activeScene = mkShared<scene::Scene>();
 
 	// Try loading first scene from pack, then from filesystem.

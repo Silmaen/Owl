@@ -93,6 +93,11 @@ public:
 	 * @param[in] iTitle The new title.
 	 */
 	void setTitle(const std::string& iTitle) override { m_windowData.title = iTitle; }
+	void setFullscreen(bool) override {}
+	[[nodiscard]] auto isFullscreen() const -> bool override { return false; }
+	void setResizable(bool) override {}
+	void setSize(const uint32_t iWidth, const uint32_t iHeight) override { m_windowData.size = {iWidth, iHeight}; }
+	void setIcon(const std::filesystem::path&) override {}
 
 	/**
 	 * @brief Terminate the window.

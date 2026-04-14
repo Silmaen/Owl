@@ -60,6 +60,16 @@ private:
 								   std::vector<AssetReference>& ioAssets);
 
 	/**
+	 * @brief Scan a Lua script for scene.load_scene() calls and add referenced scenes.
+	 * @param[in] iScriptPath Absolute path to the Lua script file.
+	 * @param[in,out] ioVisitedScenes Set of already-visited scene paths.
+	 * @param[in,out] ioAssets Accumulated assets.
+	 */
+	static void scanLuaScriptForScenes(const std::filesystem::path& iScriptPath,
+									   std::set<std::string>& ioVisitedScenes,
+									   std::vector<AssetReference>& ioAssets);
+
+	/**
 	 * @brief Collect engine assets required at runtime (shaders, default font).
 	 * @param[in,out] ioAssets The asset list to append to.
 	 */

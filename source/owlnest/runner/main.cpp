@@ -10,6 +10,9 @@
 #include "RunnerLayer.h"
 #include <core/EntryPoint.h>
 
+#include <cstdio>
+#include <format>
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_DISABLE_CLANG("-Wshadow")
@@ -20,19 +23,47 @@ namespace owl {
 
 namespace {
 
-/// Read the pack file path from runner.yml if present.
-auto readPackFileFromConfig(const std::filesystem::path& iWorkDir) -> std::string {
+/// Early configuration read from runner.yml before Application creation.
+struct EarlyConfig {
+	/// Pack file path.
+	std::string packFile;
+	/// Game display name for the window title.
+	std::string gameName{"Owl Runner"};
+	/// Icon file path.
+	std::string icon{"icons/logo_owl_icon.png"};
+	/// Window width.
+	uint32_t width{1280};
+	/// Window height.
+	uint32_t height{720};
+};
+
+/// Read runner.yml for fields needed before Application creation.
+auto readEarlyConfig(const std::filesystem::path& iWorkDir) -> EarlyConfig {
+	EarlyConfig cfg;
 	const auto config = iWorkDir / "runner.yml";
 	if (!std::filesystem::exists(config))
-		return {};
+		return cfg;
 	try {
 		const auto data = YAML::LoadFile(config.string());
 		if (const auto rc = data["RunnerConfig"]; rc) {
 			if (const auto pf = rc["PackFile"]; pf)
-				return pf.as<std::string>();
+				cfg.packFile = pf.as<std::string>();
+			if (const auto gn = rc["GameName"]; gn)
+				cfg.gameName = gn.as<std::string>();
+			if (const auto ic = rc["Icon"]; ic) {
+				// Only use the icon if the file exists on disk (not just in the pack).
+				if (const auto iconPath = ic.as<std::string>(); std::filesystem::exists(iWorkDir / iconPath))
+					cfg.icon = iconPath;
+			}
+			if (const auto w = rc["WindowWidth"]; w)
+				cfg.width = w.as<uint32_t>();
+			if (const auto h = rc["WindowHeight"]; h)
+				cfg.height = h.as<uint32_t>();
 		}
-	} catch (...) { return {}; }
-	return {};
+	} catch (const std::exception& iEx) {
+		std::fputs(std::format("Warning: failed to parse runner.yml: {}\n", iEx.what()).c_str(), stderr);
+	}
+	return cfg;
 }
 
 }// namespace
@@ -53,22 +84,24 @@ auto core::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 	// Set working directory to the executable's directory so packaged games
 	// work regardless of where the user launches from.
 	if (iArgc > 0 && iArgv[0] != nullptr) {
-		if (auto exeDir = std::filesystem::absolute(std::filesystem::path(iArgv[0])).parent_path();
+		if (const auto exeDir = std::filesystem::absolute(std::filesystem::path(iArgv[0])).parent_path();
 			std::filesystem::exists(exeDir)) {
 			std::filesystem::current_path(exeDir);
 		}
 	}
 
 	const auto workDir = std::filesystem::current_path();
-	const auto packFile = readPackFileFromConfig(workDir);
+	const auto [packFile, gameName, icon, width, height] = readEarlyConfig(workDir);
 
 	return mkShared<OwlNest>(AppParams{
 			.args = iArgv,
-			.name = "Owl Runner",
+			.name = gameName,
 #ifdef OWL_ASSETS_LOCATION
 			.assetsPattern = OWL_ASSETS_LOCATION,
 #endif
-			.icon = "icons/logo_owl_icon.png",
+			.icon = icon,
+			.width = width,
+			.height = height,
 			.argCount = iArgc,
 			.packFile = packFile,
 	});

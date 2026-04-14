@@ -10,6 +10,9 @@
 
 #include "core/Application.h"
 
+#include <fstream>
+#include <regex>
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_DISABLE_CLANG("-Wshadow")
@@ -151,6 +154,23 @@ auto AssetScanner::resolveScene(const std::string& iLevelName) -> std::optional<
 	return std::nullopt;
 }
 
+/// Scan a Lua script file for scene.load_scene() calls and recursively add referenced scenes.
+void AssetScanner::scanLuaScriptForScenes(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-recursion)
+										  std::set<std::string>& ioVisitedScenes,
+										  std::vector<AssetReference>& ioAssets) {
+	if (!exists(iScriptPath))
+		return;
+	std::ifstream scriptFile(iScriptPath);
+	const std::string scriptContent((std::istreambuf_iterator<char>(scriptFile)), std::istreambuf_iterator<char>());
+	static const std::regex sceneLoadPattern(R"(scene\.load_scene\s*\(\s*["']([^"']+)["']\s*\))");
+	auto begin = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), sceneLoadPattern);
+	const auto end = std::sregex_iterator();
+	for (auto it = begin; it != end; ++it) {
+		if (auto scenePath = resolveScene((*it)[1].str()); scenePath)
+			scanSceneRecursive(*scenePath, ioVisitedScenes, ioAssets);
+	}
+}
+
 void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,// NOLINT(misc-no-recursion)
 									  std::set<std::string>& ioVisitedScenes,
 									  std::vector<AssetReference>& ioAssets) {
@@ -212,11 +232,12 @@ void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,//
 				}
 			}
 		}
-		// Scan LuaScript script path.
+		// Scan LuaScript script path and content for scene references.
 		if (auto luaScript = entity["LuaScript"]; luaScript) {
 			if (auto scriptPath = luaScript["scriptPath"]; scriptPath) {
 				if (auto ref = resolveScript(scriptPath.as<std::string>()); ref && !hasAsset(ioAssets, ref->packPath)) {
 					ioAssets.push_back(*ref);
+					scanLuaScriptForScenes(ref->diskPath, ioVisitedScenes, ioAssets);
 				}
 			}
 		}

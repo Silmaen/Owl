@@ -158,6 +158,12 @@ public:
 	[[nodiscard]] auto getWindow() const -> const window::Window& { return *mp_appWindow.get(); }
 
 	/**
+	 * @brief Mutable access to the window (for runtime property changes).
+	 * @return The Window.
+	 */
+	[[nodiscard]] auto getWindow() -> window::Window& { return *mp_appWindow.get(); }
+
+	/**
 	 * @brief Access to the Gui layer.
 	 * @return The gui layer.
 	 */

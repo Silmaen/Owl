@@ -26,7 +26,7 @@ using namespace owl::scene;
 
 TEST(GenerateSampleScenes, mainMenu) {
 	core::Log::init(core::Log::Level::Off);
-	const auto dir = owl::test::getRootPath() / "sample_project" / "scenes";
+	const auto dir = std::filesystem::temp_directory_path() / "owl_test_scenes";
 	std::filesystem::create_directories(dir);
 
 	auto scn = mkShared<Scene>();
@@ -114,12 +114,13 @@ TEST(GenerateSampleScenes, mainMenu) {
 	const SceneSerializer serializer(scn);
 	serializer.serialize(dir / "main_menu.owl");
 	EXPECT_TRUE(std::filesystem::exists(dir / "main_menu.owl"));
+	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
 }
 
 TEST(GenerateSampleScenes, gameplay) {
 	core::Log::init(core::Log::Level::Off);
-	const auto dir = owl::test::getRootPath() / "sample_project" / "scenes";
+	const auto dir = std::filesystem::temp_directory_path() / "owl_test_scenes";
 	std::filesystem::create_directories(dir);
 
 	auto scn = mkShared<Scene>();
@@ -144,6 +145,7 @@ TEST(GenerateSampleScenes, gameplay) {
 	auto& player = playerEntity.addComponent<component::Player>();
 	player.primary = true;
 	player.player.linearImpulse = 8.f;
+	player.player.jumpImpulse = 12.f;
 	auto& playerScript = playerEntity.addComponent<component::LuaScript>();
 	playerScript.scriptPath = "scripts/player.lua";
 	playerScript.properties.push_back(
@@ -250,5 +252,6 @@ TEST(GenerateSampleScenes, gameplay) {
 	const SceneSerializer serializer(scn);
 	serializer.serialize(dir / "gameplay.owl");
 	EXPECT_TRUE(std::filesystem::exists(dir / "gameplay.owl"));
+	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
 }
