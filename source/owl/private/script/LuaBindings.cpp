@@ -15,6 +15,7 @@
 #include "physic/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/SaveManager.h"
+#include "scene/SettingsManager.h"
 #include "scene/Scene.h"
 #include "scene/ScreenTransition.h"
 #include "scene/component/components.h"
@@ -679,8 +680,54 @@ void registerBindings(lua_State* iState) {
 		{nullptr, nullptr}
 	};
 	// clang-format on
+	// clang-format off
+	static const luaL_Reg settingsFuncs[] = {
+		{"set", [](lua_State* s) -> int {
+			const char* key = luaL_checkstring(s, 1);
+			if (lua_isboolean(s, 2) != 0)
+				scene::SettingsManager::set(key, lua_toboolean(s, 2) != 0);
+			else if (lua_isinteger(s, 2) != 0)
+				scene::SettingsManager::set(key, static_cast<int64_t>(lua_tointeger(s, 2)));
+			else if (lua_isnumber(s, 2) != 0)
+				scene::SettingsManager::set(key, static_cast<float>(lua_tonumber(s, 2)));
+			else if (lua_isstring(s, 2) != 0)
+				scene::SettingsManager::set(key, std::string(lua_tostring(s, 2)));
+			return 0;
+		}},
+		{"get", [](lua_State* s) -> int {
+			const char* key = luaL_checkstring(s, 1);
+			const auto val = scene::SettingsManager::get(key);
+			if (!val.has_value()) {
+				if (lua_gettop(s) >= 2)
+					lua_pushvalue(s, 2);
+				else
+					lua_pushnil(s);
+				return 1;
+			}
+			std::visit([s](const auto& v) {
+				using T = std::decay_t<decltype(v)>;
+				if constexpr (std::is_same_v<T, int64_t>)
+					lua_pushinteger(s, static_cast<lua_Integer>(v));
+				else if constexpr (std::is_same_v<T, float>)
+					lua_pushnumber(s, static_cast<lua_Number>(v));
+				else if constexpr (std::is_same_v<T, std::string>)
+					lua_pushstring(s, v.c_str());
+				else if constexpr (std::is_same_v<T, bool>)
+					lua_pushboolean(s, v ? 1 : 0);
+			}, val.value());
+			return 1;
+		}},
+		{"save", [](lua_State*) -> int { scene::SettingsManager::saveUserSettings(); return 0; }},
+		{"load", [](lua_State*) -> int { scene::SettingsManager::loadUserSettings(); return 0; }},
+		{"reset", [](lua_State* s) -> int { scene::SettingsManager::resetToDefault(luaL_checkstring(s, 1)); return 0; }},
+		{"reset_all", [](lua_State*) -> int { scene::SettingsManager::resetAllToDefaults(); return 0; }},
+		{"apply", [](lua_State*) -> int { scene::SettingsManager::applyBuiltins(); return 0; }},
+		{nullptr, nullptr}
+	};
+	// clang-format on
 	registerTable(iState, "gamestate", gamestateFuncs);
 	registerTable(iState, "save", saveFuncs);
+	registerTable(iState, "settings", settingsFuncs);
 }
 
 }// namespace owl::script

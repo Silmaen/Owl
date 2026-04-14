@@ -156,6 +156,12 @@ public:
 	virtual void setListenerOrientation(const math::vec3f& iForward, const math::vec3f& iUp) = 0;
 
 	/**
+	 * @brief Set the listener gain (master volume scaling).
+	 * @param[in] iGain Gain value (0.0 = silent, 1.0 = full).
+	 */
+	virtual void setListenerGain(float iGain) = 0;
+
+	/**
 	 * @brief Check if a sound source is currently playing.
 	 * @param[in] iHandle The sound handle.
 	 * @return True if the source is playing.

@@ -78,6 +78,11 @@ void SoundCommand::setListenerOrientation(const math::vec3f& iForward, const mat
 		m_soundApi->setListenerOrientation(iForward, iUp);
 }
 
+void SoundCommand::setListenerGain(const float iGain) {
+	if (m_soundApi)
+		m_soundApi->setListenerGain(iGain);
+}
+
 auto SoundCommand::isPlaying(const SoundHandle iHandle) -> bool {
 	if (m_soundApi)
 		return m_soundApi->isPlaying(iHandle);

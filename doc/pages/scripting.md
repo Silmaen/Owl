@@ -238,6 +238,52 @@ The game state persists across scene transitions and is included in save files.
 Save files are stored in the user directory (`~/.local/share/<game>/saves/` on Linux,
 `%APPDATA%/<game>/saves/` on Windows) as YAML `.owl_save` files.
 
+### `settings`
+
+Persistent game settings with a two-layer system: game defaults (`game_settings.yml` in
+project assets) overlaid with user overrides (`settings.yml` in user directory).
+
+| Function                    | Description                                        |
+|-----------------------------|----------------------------------------------------|
+| `settings.get(key)`        | Get a setting (override > default > nil)           |
+| `settings.get(key, def)`   | Get a setting with a fallback value                |
+| `settings.set(key, value)` | Set a user override (int, float, string, or bool)  |
+| `settings.save()`          | Save user overrides to `settings.yml`              |
+| `settings.load()`          | Reload user overrides from `settings.yml`          |
+| `settings.reset(key)`      | Remove a user override (revert to default)         |
+| `settings.reset_all()`     | Remove all user overrides                          |
+| `settings.apply()`         | Apply built-in settings to window and sound        |
+
+**Built-in keys** (auto-applied by `settings.apply()`):
+
+| Key                  | Type  | Description                       |
+|----------------------|-------|-----------------------------------|
+| `resolution_width`   | int   | Window width in pixels            |
+| `resolution_height`  | int   | Window height in pixels           |
+| `fullscreen`         | bool  | Fullscreen mode                   |
+| `resizable`          | bool  | Window resizable                  |
+| `volume_master`      | float | Master volume (0.0–1.0)          |
+| `volume_music`       | float | Music volume (for scripts)        |
+| `volume_sfx`         | float | SFX volume (for scripts)          |
+
+Custom game-specific keys (e.g., `player_speed`, `player_jump_impulse`) can be defined in
+`game_settings.yml` and read from Lua the same way.
+
+**Game defaults file** (`game_settings.yml` in project assets):
+
+```yaml
+GameSettings:
+  - key: player_speed
+    type: float
+    value: 8.0
+  - key: volume_master
+    type: float
+    value: 1.0
+```
+
+**User overrides** are saved to `~/.local/share/<game>/settings.yml` (Linux) or
+`%APPDATA%/<game>/settings.yml` (Windows).
+
 ## Screen Transitions
 
 Use `ui.transition_fade_out()` and `ui.transition_fade_in()` to create smooth

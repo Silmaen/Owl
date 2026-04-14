@@ -240,6 +240,21 @@ The engine includes a task scheduler backed by [Taskflow](https://github.com/tas
 - **Parallel utilities**: `parallelForEach` / `parallelForIndex` templates
 - Taskflow is a PRIVATE dependency — not exposed in public headers
 
+## Game Settings
+
+The `SettingsManager` provides a persistent two-layer key-value store for game configuration:
+
+- **Game defaults** — loaded from `game_settings.yml` in the project assets (packed with the game)
+- **User overrides** — loaded from `settings.yml` in the user directory (`~/.local/share/<game>/`
+  on Linux, `%APPDATA%/<game>/` on Windows)
+
+Built-in keys (`resolution_width`, `resolution_height`, `fullscreen`, `resizable`,
+`volume_master`, `volume_music`, `volume_sfx`) are auto-applied to the Window and
+SoundCommand via `SettingsManager::applyBuiltins()`. Custom keys (e.g., `player_speed`)
+are stored and accessible from Lua but not automatically applied.
+
+See [Lua Scripting > settings](scripting.md) for the Lua API.
+
 ## Asset Packing
 
 ![Asset Packing](../images/asset_packing.svg)

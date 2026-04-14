@@ -241,6 +241,9 @@ a 2D lighting system.
         - Collectible objects
         - Key-locked switches
     - ![Planned][planned] Enemies
+    - ![Planned][planned] Scene transition effects
+        - Configurable fade, wipe, or custom shader transitions between scenes
+        - Lua API to trigger transitions with parameters (duration, type)
 
 ## v0.1.0 -- Expected 2026-06-01
 
@@ -307,9 +310,11 @@ application (Linux / Windows).
         - Window title, icon, and size from project config (via extended `runner.yml`)
         - Fullscreen / resizable support via new Window API
         - `packGame()` exports all project settings + icon file
-    - ![Planned][planned] Persistent player settings
-        - `settings.yml` in user directory: resolution, fullscreen, volume (master/music/SFX)
-        - Lua API: `get_setting(key)`, `set_setting(key, value)`
+    - ![Done][done] Persistent game settings
+        - Two-layer system: `game_settings.yml` (game defaults in assets) + `settings.yml` (user overrides)
+        - Built-in keys: resolution, fullscreen, resizable, volume (master/music/sfx) + custom game keys
+        - Lua API: `settings.get/set/save/load/reset/reset_all/apply`
+        - Auto-apply builtins to window + sound listener gain
     - ![Planned][planned] Improved packaging pipeline
         - Rename Runner executable to game name
         - Linux: launcher script with proper `LD_LIBRARY_PATH`
@@ -347,6 +352,9 @@ application (Linux / Windows).
         - Editor support for placing triggers and defining events
     - ![Planned][planned] Common properties across scenes
         - Player spawn point, lighting, background, etc.
+- Sample Game
+    - ![Planned][planned] Complete Game with victor, defeat, multiple levels, and a variety of gameplay mechanics
+    - ![Planned][planned] Showcase of all engine features, plus polished art and sound assets
 
 ## v0.0.3 -- 2026-04-09
 

@@ -233,6 +233,20 @@ The engine includes a save/load system for game progression.
 - **Physics snapshots:** `PhysicCommand::getSnapshot/applySnapshot` captures and restores Box2D velocities after
   `onStartRuntime()` on load
 
+### Game Settings
+
+The engine includes a persistent settings system for both game constants and player preferences.
+
+- **`SettingsManager`** (`source/owl/public/scene/SettingsManager.h`): two-layer static key-value store
+  (defaults from `game_settings.yml` + user overrides in `settings.yml`)
+- **Game defaults:** `game_settings.yml` in project assets — game designer constants (player speed, jump impulse, etc.)
+- **User overrides:** `settings.yml` in user directory (`~/.local/share/<game>/` on Linux, `%APPDATA%/<game>/` on Windows)
+- **Built-in keys:** `resolution_width`, `resolution_height`, `fullscreen`, `resizable`, `volume_master`,
+  `volume_music`, `volume_sfx` — auto-applied to Window and SoundCommand via `applyBuiltins()`
+- **Lua API:** `settings` table (get/set/save/load/reset/reset_all/apply)
+- **Runner integration:** defaults populated from `runner.yml`, then `game_settings.yml` loaded, then user
+  `settings.yml` loaded, then `applyBuiltins()` called — all before first scene load
+
 ### Dependencies
 
 - Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (31 external dependencies)
