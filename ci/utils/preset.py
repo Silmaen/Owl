@@ -44,7 +44,7 @@ class PresetConfig:
         self.release_preset: Optional[str] = None
         self.run_coverage: bool = False
         self.run_tests: bool = True
-        self.run_documentation: bool = True
+        self.run_documentation: bool = False
         self.run_package: bool = False
         self.publish_doc: bool = False
 
