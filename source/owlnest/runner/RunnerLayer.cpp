@@ -11,6 +11,8 @@
 #include <input/Input.h>
 #include <input/MouseCode.h>
 #include <physic/PhysicCommand.h>
+#include <scene/SaveManager.h>
+#include <scene/SettingsManager.h>
 #include <scene/UIInputSystem.h>
 #include <scene/component/components.h>
 
@@ -109,13 +111,36 @@ void RunnerLayer::onAttach() {
 		m_config.loadYaml(config);
 	}
 
-	// Apply window settings from config.
+	// Initialize settings system.
+	if (!m_config.gameName.empty()) {
+		scene::SettingsManager::setGameName(m_config.gameName);
+		scene::SaveManager::setGameName(m_config.gameName);
+	}
+	// Populate defaults from runner config.
+	scene::SettingsManager::setDefault(scene::SettingsManager::KeyResolutionWidth,
+									   static_cast<int64_t>(m_config.windowWidth));
+	scene::SettingsManager::setDefault(scene::SettingsManager::KeyResolutionHeight,
+									   static_cast<int64_t>(m_config.windowHeight));
+	scene::SettingsManager::setDefault(scene::SettingsManager::KeyFullscreen, m_config.fullscreen);
+	scene::SettingsManager::setDefault(scene::SettingsManager::KeyResizable, m_config.resizable);
+	scene::SettingsManager::setDefault(scene::SettingsManager::KeyVolumeMaster, 1.0f);
+	scene::SettingsManager::setDefault(scene::SettingsManager::KeyVolumeMusic, 1.0f);
+	scene::SettingsManager::setDefault(scene::SettingsManager::KeyVolumeSfx, 1.0f);
+	// Load game defaults from assets (game_settings.yml).
+	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
+		if (const auto gameSettingsPath = assetsPath / "game_settings.yml"; exists(gameSettingsPath)) {
+			scene::SettingsManager::loadDefaults(gameSettingsPath);
+			break;
+		}
+	}
+	// Load user overrides.
+	scene::SettingsManager::loadUserSettings();
+
+	// Apply window settings (from settings, with runner config as fallback).
 	auto& window = app.getWindow();
 	if (!m_config.gameName.empty())
 		window.setTitle(m_config.gameName);
-	if (m_config.fullscreen)
-		window.setFullscreen(true);
-	window.setResizable(m_config.resizable);
+	scene::SettingsManager::applyBuiltins();
 
 	m_viewportSize = window.getSize();
 	m_activeScene = mkShared<scene::Scene>();

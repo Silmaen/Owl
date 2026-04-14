@@ -16,3 +16,8 @@ function on_play_clicked()
     log.info("Play button clicked! Loading gameplay scene...")
     scene.load_scene("scenes/gameplay.owl")
 end
+
+function on_settings_clicked()
+    log.info("Settings button clicked! Loading settings menu...")
+    scene.load_scene("scenes/settings_menu.owl")
+end

@@ -306,6 +306,7 @@ containing an `owl_project.yml` configuration file and asset subdirectories.
 ```
 my_game/
   owl_project.yml
+  game_settings.yml
   scenes/
     main.owl
     level_2.owl
@@ -315,7 +316,14 @@ my_game/
     jump.wav
   fonts/
     main.ttf
+  scripts/
+    player.lua
 ```
+
+The optional `game_settings.yml` file defines default game settings (player speed, volumes,
+etc.) as key-value pairs. These defaults are loaded by the Runner at startup and can be
+overridden by the player via the Lua `settings` API. See
+[Lua Scripting > settings](scripting.md) for details.
 
 ### owl_project.yml
 

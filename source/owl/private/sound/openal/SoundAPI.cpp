@@ -189,6 +189,8 @@ void SoundAPI::setListenerOrientation(const math::vec3f& iForward, const math::v
 	alListenerfv(AL_ORIENTATION, ori.data());
 }
 
+void SoundAPI::setListenerGain(const float iGain) { alListenerf(AL_GAIN, iGain); }
+
 auto SoundAPI::isPlaying(const SoundHandle iHandle) const -> bool {
 	if (const auto it = m_handleToSource.find(iHandle); it != m_handleToSource.end()) {
 		ALint state = 0;

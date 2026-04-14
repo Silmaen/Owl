@@ -11,6 +11,11 @@ local score_text_id = 0
 local total_coins = 3
 
 function on_create()
+    -- Read player settings (game_settings.yml defaults, overridable by user).
+    speed = settings.get("player_speed", speed)
+    local jump = settings.get("player_jump_impulse", 12.0)
+    log.info("Player speed=" .. speed .. " jump=" .. jump)
+
     -- Restore score from gamestate if continuing from a save
     local saved_score = gamestate.get("score", 0)
     if saved_score > 0 then
