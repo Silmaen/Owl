@@ -39,7 +39,7 @@ ScriptInstance::ScriptInstance(ScriptInstance&& iOther) noexcept = default;
 
 auto ScriptInstance::operator=(ScriptInstance&& iOther) noexcept -> ScriptInstance& = default;
 
-auto ScriptInstance::create(const std::string& iScriptPath, const uint64_t iEntityId) -> bool {
+auto ScriptInstance::create(const std::string& iScriptPath, const uint64_t iEntityId) const -> bool {
 	OWL_PROFILE_FUNCTION()
 	if (!mp_impl->engine.isValid())
 		return false;
@@ -57,7 +57,7 @@ auto ScriptInstance::create(const std::string& iScriptPath, const uint64_t iEnti
 }
 
 auto ScriptInstance::createFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName,
-									  const uint64_t iEntityId) -> bool {
+									  const uint64_t iEntityId) const -> bool {
 	OWL_PROFILE_FUNCTION()
 	if (!mp_impl->engine.isValid())
 		return false;
@@ -74,13 +74,13 @@ auto ScriptInstance::createFromBuffer(const std::vector<uint8_t>& iData, const s
 
 auto ScriptInstance::isValid() const -> bool { return mp_impl && mp_impl->loaded && mp_impl->engine.isValid(); }
 
-void ScriptInstance::onCreate() {
+void ScriptInstance::onCreate() const {
 	if (!isValid())
 		return;
 	std::ignore = mp_impl->engine.callFunction("on_create");
 }
 
-void ScriptInstance::onUpdate(const float iDeltaTime) {
+void ScriptInstance::onUpdate(const float iDeltaTime) const {
 	if (!isValid())
 		return;
 	// Store delta time in Lua registry for the time.delta() binding.
@@ -89,19 +89,19 @@ void ScriptInstance::onUpdate(const float iDeltaTime) {
 	std::ignore = mp_impl->engine.callFunction("on_update", iDeltaTime);
 }
 
-void ScriptInstance::onDestroy() {
+void ScriptInstance::onDestroy() const {
 	if (!isValid())
 		return;
 	std::ignore = mp_impl->engine.callFunction("on_destroy");
 }
 
-void ScriptInstance::onCollision(const uint64_t iOtherEntityId) {
+void ScriptInstance::onCollision(const uint64_t iOtherEntityId) const {
 	if (!isValid())
 		return;
 	std::ignore = mp_impl->engine.callFunction("on_collision", iOtherEntityId);
 }
 
-auto ScriptInstance::callFunction(const std::string& iName) -> bool {
+auto ScriptInstance::callFunction(const std::string& iName) const -> bool {
 	if (!isValid())
 		return false;
 	return mp_impl->engine.callFunction(iName);
@@ -109,49 +109,49 @@ auto ScriptInstance::callFunction(const std::string& iName) -> bool {
 
 // ---- Property access ----
 
-void ScriptInstance::setProperty(const std::string& iName, const float iValue) {
+void ScriptInstance::setProperty(const std::string& iName, const float iValue) const {
 	if (!isValid())
 		return;
 	mp_impl->engine.setGlobal(iName, iValue);
 }
 
-void ScriptInstance::setProperty(const std::string& iName, const int64_t iValue) {
+void ScriptInstance::setProperty(const std::string& iName, const int64_t iValue) const {
 	if (!isValid())
 		return;
 	mp_impl->engine.setGlobal(iName, iValue);
 }
 
-void ScriptInstance::setProperty(const std::string& iName, const std::string& iValue) {
+void ScriptInstance::setProperty(const std::string& iName, const std::string& iValue) const {
 	if (!isValid())
 		return;
 	mp_impl->engine.setGlobal(iName, iValue);
 }
 
-void ScriptInstance::setProperty(const std::string& iName, const bool iValue) {
+void ScriptInstance::setProperty(const std::string& iName, const bool iValue) const {
 	if (!isValid())
 		return;
 	mp_impl->engine.setGlobal(iName, iValue);
 }
 
-auto ScriptInstance::getPropertyFloat(const std::string& iName) -> std::optional<float> {
+auto ScriptInstance::getPropertyFloat(const std::string& iName) const -> std::optional<float> {
 	if (!isValid())
 		return std::nullopt;
 	return mp_impl->engine.getGlobalFloat(iName);
 }
 
-auto ScriptInstance::getPropertyInt(const std::string& iName) -> std::optional<int64_t> {
+auto ScriptInstance::getPropertyInt(const std::string& iName) const -> std::optional<int64_t> {
 	if (!isValid())
 		return std::nullopt;
 	return mp_impl->engine.getGlobalInt(iName);
 }
 
-auto ScriptInstance::getPropertyString(const std::string& iName) -> std::optional<std::string> {
+auto ScriptInstance::getPropertyString(const std::string& iName) const -> std::optional<std::string> {
 	if (!isValid())
 		return std::nullopt;
 	return mp_impl->engine.getGlobalString(iName);
 }
 
-auto ScriptInstance::getPropertyBool(const std::string& iName) -> std::optional<bool> {
+auto ScriptInstance::getPropertyBool(const std::string& iName) const -> std::optional<bool> {
 	if (!isValid())
 		return std::nullopt;
 	return mp_impl->engine.getGlobalBool(iName);

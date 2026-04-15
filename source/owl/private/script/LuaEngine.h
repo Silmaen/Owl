@@ -43,7 +43,7 @@ public:
 	 * @param[in] iPath Path to the .lua file.
 	 * @return True on success.
 	 */
-	[[nodiscard]] auto loadScript(const std::filesystem::path& iPath) -> bool;
+	[[nodiscard]] auto loadScript(const std::filesystem::path& iPath) const -> bool;
 
 	/**
 	 * @brief Load and execute a Lua script from a memory buffer.
@@ -51,21 +51,21 @@ public:
 	 * @param[in] iName Chunk name for error messages.
 	 * @return True on success.
 	 */
-	[[nodiscard]] auto loadBuffer(const std::vector<uint8_t>& iData, const std::string& iName) -> bool;
+	[[nodiscard]] auto loadBuffer(const std::vector<uint8_t>& iData, const std::string& iName) const -> bool;
 
 	/**
 	 * @brief Check whether a global function exists in the Lua state.
 	 * @param[in] iName Function name.
 	 * @return True if the global is a function.
 	 */
-	[[nodiscard]] auto hasFunction(const std::string& iName) -> bool;
+	[[nodiscard]] auto hasFunction(const std::string& iName) const -> bool;
 
 	/**
 	 * @brief Call a global Lua function with no arguments.
 	 * @param[in] iName Function name.
 	 * @return True on success.
 	 */
-	[[nodiscard]] auto callFunction(const std::string& iName) -> bool;
+	[[nodiscard]] auto callFunction(const std::string& iName) const -> bool;
 
 	/**
 	 * @brief Call a global Lua function with a single float argument (typically deltaTime).
@@ -73,7 +73,7 @@ public:
 	 * @param[in] iArg Float argument.
 	 * @return True on success.
 	 */
-	[[nodiscard]] auto callFunction(const std::string& iName, float iArg) -> bool;
+	[[nodiscard]] auto callFunction(const std::string& iName, float iArg) const -> bool;
 
 	/**
 	 * @brief Call a global Lua function with a single uint64_t argument (typically entity ID).
@@ -81,53 +81,53 @@ public:
 	 * @param[in] iArg Integer argument.
 	 * @return True on success.
 	 */
-	[[nodiscard]] auto callFunction(const std::string& iName, uint64_t iArg) -> bool;
+	[[nodiscard]] auto callFunction(const std::string& iName, uint64_t iArg) const -> bool;
 
 	// ---- Global variable access ----
 
 	/// @brief Get a global float value.
 	/// @param[in] iName Variable name.
 	/// @return The value, or std::nullopt if not found or wrong type.
-	[[nodiscard]] auto getGlobalFloat(const std::string& iName) -> std::optional<float>;
+	[[nodiscard]] auto getGlobalFloat(const std::string& iName) const -> std::optional<float>;
 
 	/// @brief Get a global integer value.
 	/// @param[in] iName Variable name.
 	/// @return The value, or std::nullopt if not found or wrong type.
-	[[nodiscard]] auto getGlobalInt(const std::string& iName) -> std::optional<int64_t>;
+	[[nodiscard]] auto getGlobalInt(const std::string& iName) const -> std::optional<int64_t>;
 
 	/// @brief Get a global string value.
 	/// @param[in] iName Variable name.
 	/// @return The value, or std::nullopt if not found or wrong type.
-	[[nodiscard]] auto getGlobalString(const std::string& iName) -> std::optional<std::string>;
+	[[nodiscard]] auto getGlobalString(const std::string& iName) const -> std::optional<std::string>;
 
 	/// @brief Get a global boolean value.
 	/// @param[in] iName Variable name.
 	/// @return The value, or std::nullopt if not found or wrong type.
-	[[nodiscard]] auto getGlobalBool(const std::string& iName) -> std::optional<bool>;
+	[[nodiscard]] auto getGlobalBool(const std::string& iName) const -> std::optional<bool>;
 
 	/// @brief Set a global float value.
 	/// @param[in] iName Variable name.
 	/// @param[in] iValue Value to set.
-	void setGlobal(const std::string& iName, float iValue);
+	void setGlobal(const std::string& iName, float iValue) const;
 
 	/// @brief Set a global integer value.
 	/// @param[in] iName Variable name.
 	/// @param[in] iValue Value to set.
-	void setGlobal(const std::string& iName, int64_t iValue);
+	void setGlobal(const std::string& iName, int64_t iValue) const;
 
 	/// @brief Set a global string value.
 	/// @param[in] iName Variable name.
 	/// @param[in] iValue Value to set.
-	void setGlobal(const std::string& iName, const std::string& iValue);
+	void setGlobal(const std::string& iName, const std::string& iValue) const;
 
 	/// @brief Set a global boolean value.
 	/// @param[in] iName Variable name.
 	/// @param[in] iValue Value to set.
-	void setGlobal(const std::string& iName, bool iValue);
+	void setGlobal(const std::string& iName, bool iValue) const;
 
 	/// @brief Get the raw Lua state pointer (for binding registration).
 	/// @return The Lua state, or nullptr if invalid.
-	[[nodiscard]] auto getState() -> lua_State*;
+	[[nodiscard]] auto getState() const -> lua_State*;
 
 private:
 	/// The Lua state.

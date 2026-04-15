@@ -26,3 +26,12 @@ GameSettings:
   - key: player_jump_impulse
     type: float
     value: 12.0
+  - key: health_decay_rate
+    type: float
+    value: 0.04
+  - key: coin_heal_amount
+    type: float
+    value: 0.3
+  - key: hazard_timer_interval
+    type: float
+    value: 5.0

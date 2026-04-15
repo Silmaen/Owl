@@ -48,7 +48,7 @@ public:
 	 * @param ioPlayer The player entity that triggered.
 	 * @param iTriggerEntity The entity carrying the trigger component.
 	 */
-	void onTriggered(Entity& ioPlayer, const Entity& iTriggerEntity);
+	void onTriggered(const Entity& ioPlayer, const Entity& iTriggerEntity);
 
 	/**
 	 * @brief Called when the player enters the trigger volume (edge).

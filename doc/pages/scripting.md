@@ -200,40 +200,40 @@ Supported component names for `has_component`: `"Transform"`, `"PhysicBody"`,
 
 ### `ui`
 
-| Function                                    | Description                          |
-|---------------------------------------------|--------------------------------------|
-| `ui.set_text(entity_id, text)`             | Set UIText content                   |
-| `ui.get_text(entity_id)`                   | Get UIText content                   |
-| `ui.set_visible(entity_id, bool)`          | Set entity game visibility           |
-| `ui.set_progress(entity_id, value)`        | Set UIProgressBar value (0..1)       |
-| `ui.get_slider_value(entity_id)`           | Get UISlider value                   |
-| `ui.set_slider_value(entity_id, value)`    | Set UISlider value                   |
-| `ui.set_button_enabled(entity_id, bool)`   | Enable/disable a UIButton            |
-| `ui.transition_fade_in(duration)`          | Start fade-in transition (seconds)   |
-| `ui.transition_fade_out(duration)`         | Start fade-out transition (seconds)  |
-| `ui.is_transition_active()`               | Check if a transition is in progress |
+| Function                                 | Description                          |
+|------------------------------------------|--------------------------------------|
+| `ui.set_text(entity_id, text)`           | Set UIText content                   |
+| `ui.get_text(entity_id)`                 | Get UIText content                   |
+| `ui.set_visible(entity_id, bool)`        | Set entity game visibility           |
+| `ui.set_progress(entity_id, value)`      | Set UIProgressBar value (0..1)       |
+| `ui.get_slider_value(entity_id)`         | Get UISlider value                   |
+| `ui.set_slider_value(entity_id, value)`  | Set UISlider value                   |
+| `ui.set_button_enabled(entity_id, bool)` | Enable/disable a UIButton            |
+| `ui.transition_fade_in(duration)`        | Start fade-in transition (seconds)   |
+| `ui.transition_fade_out(duration)`       | Start fade-out transition (seconds)  |
+| `ui.is_transition_active()`              | Check if a transition is in progress |
 
 ### `gamestate`
 
-| Function                      | Description                                       |
-|-------------------------------|---------------------------------------------------|
-| `gamestate.set(key, value)`  | Store a value (auto-detects int/float/string/bool) |
-| `gamestate.get(key)`         | Get value or nil if missing                        |
-| `gamestate.get(key, default)` | Get value or default if missing                   |
-| `gamestate.remove(key)`     | Remove a key                                       |
-| `gamestate.clear()`         | Remove all entries                                 |
+| Function                      | Description                                        |
+|-------------------------------|----------------------------------------------------|
+| `gamestate.set(key, value)`   | Store a value (auto-detects int/float/string/bool) |
+| `gamestate.get(key)`          | Get value or nil if missing                        |
+| `gamestate.get(key, default)` | Get value or default if missing                    |
+| `gamestate.remove(key)`       | Remove a key                                       |
+| `gamestate.clear()`           | Remove all entries                                 |
 
 The game state persists across scene transitions and is included in save files.
 
 ### `save`
 
-| Function                    | Description                          |
-|-----------------------------|--------------------------------------|
-| `save.save_game(slot)`     | Save scene + game state to slot      |
-| `save.load_game(slot)`     | Load a save (deferred to next frame) |
-| `save.has_save(slot)`      | Check if a save exists               |
-| `save.delete_save(slot)`   | Delete a save file                   |
-| `save.list_saves()`        | Returns table of `{slot, timestamp, scene}` |
+| Function                 | Description                                 |
+|--------------------------|---------------------------------------------|
+| `save.save_game(slot)`   | Save scene + game state to slot             |
+| `save.load_game(slot)`   | Load a save (deferred to next frame)        |
+| `save.has_save(slot)`    | Check if a save exists                      |
+| `save.delete_save(slot)` | Delete a save file                          |
+| `save.list_saves()`      | Returns table of `{slot, timestamp, scene}` |
 
 Save files are stored in the user directory (`~/.local/share/<game>/saves/` on Linux,
 `%APPDATA%/<game>/saves/` on Windows) as YAML `.owl_save` files.
@@ -243,28 +243,28 @@ Save files are stored in the user directory (`~/.local/share/<game>/saves/` on L
 Persistent game settings with a two-layer system: game defaults (`game_settings.yml` in
 project assets) overlaid with user overrides (`settings.yml` in user directory).
 
-| Function                    | Description                                        |
-|-----------------------------|----------------------------------------------------|
-| `settings.get(key)`        | Get a setting (override > default > nil)           |
-| `settings.get(key, def)`   | Get a setting with a fallback value                |
-| `settings.set(key, value)` | Set a user override (int, float, string, or bool)  |
-| `settings.save()`          | Save user overrides to `settings.yml`              |
-| `settings.load()`          | Reload user overrides from `settings.yml`          |
-| `settings.reset(key)`      | Remove a user override (revert to default)         |
-| `settings.reset_all()`     | Remove all user overrides                          |
-| `settings.apply()`         | Apply built-in settings to window and sound        |
+| Function                   | Description                                       |
+|----------------------------|---------------------------------------------------|
+| `settings.get(key)`        | Get a setting (override > default > nil)          |
+| `settings.get(key, def)`   | Get a setting with a fallback value               |
+| `settings.set(key, value)` | Set a user override (int, float, string, or bool) |
+| `settings.save()`          | Save user overrides to `settings.yml`             |
+| `settings.load()`          | Reload user overrides from `settings.yml`         |
+| `settings.reset(key)`      | Remove a user override (revert to default)        |
+| `settings.reset_all()`     | Remove all user overrides                         |
+| `settings.apply()`         | Apply built-in settings to window and sound       |
 
 **Built-in keys** (auto-applied by `settings.apply()`):
 
-| Key                  | Type  | Description                       |
-|----------------------|-------|-----------------------------------|
-| `resolution_width`   | int   | Window width in pixels            |
-| `resolution_height`  | int   | Window height in pixels           |
-| `fullscreen`         | bool  | Fullscreen mode                   |
-| `resizable`          | bool  | Window resizable                  |
-| `volume_master`      | float | Master volume (0.0–1.0)          |
-| `volume_music`       | float | Music volume (for scripts)        |
-| `volume_sfx`         | float | SFX volume (for scripts)          |
+| Key                 | Type  | Description                |
+|---------------------|-------|----------------------------|
+| `resolution_width`  | int   | Window width in pixels     |
+| `resolution_height` | int   | Window height in pixels    |
+| `fullscreen`        | bool  | Fullscreen mode            |
+| `resizable`         | bool  | Window resizable           |
+| `volume_master`     | float | Master volume (0.0–1.0)    |
+| `volume_music`      | float | Music volume (for scripts) |
+| `volume_sfx`        | float | SFX volume (for scripts)   |
 
 Custom game-specific keys (e.g., `player_speed`, `player_jump_impulse`) can be defined in
 `game_settings.yml` and read from Lua the same way.
@@ -288,26 +288,26 @@ GameSettings:
 
 Control trigger entities from Lua.
 
-| Function                       | Description                   |
-|--------------------------------|-------------------------------|
-| `trigger.start_timer(eid)`    | Start/restart a Timer trigger |
-| `trigger.stop_timer(eid)`     | Stop a Timer trigger          |
-| `trigger.reset_timer(eid)`    | Reset elapsed time to 0       |
+| Function                   | Description                   |
+|----------------------------|-------------------------------|
+| `trigger.start_timer(eid)` | Start/restart a Timer trigger |
+| `trigger.stop_timer(eid)`  | Stop a Timer trigger          |
+| `trigger.reset_timer(eid)` | Reset elapsed time to 0       |
 
 ## Trigger System
 
 Triggers are entities with a `Trigger` component. They detect overlap with the player
 and fire events. The engine provides 7 trigger types:
 
-| Type          | Behavior                                                   |
-|---------------|------------------------------------------------------------|
-| **Victory**   | Sets scene status to Victory (game won)                    |
-| **Death**     | Sets scene status to Death (game over)                     |
-| **Target**    | Passive position marker (no action on overlap)             |
-| **Teleport**  | Teleports the player to a target entity, optionally cross-level |
-| **Timer**     | Fires a Lua callback after a configurable duration         |
-| **Interaction** | Fires a Lua callback when the player presses E in range |
-| **LuaCallback** | Fires a Lua callback every frame while overlapping       |
+| Type            | Behavior                                                        |
+|-----------------|-----------------------------------------------------------------|
+| **Victory**     | Sets scene status to Victory (game won)                         |
+| **Death**       | Sets scene status to Death (game over)                          |
+| **Target**      | Passive position marker (no action on overlap)                  |
+| **Teleport**    | Teleports the player to a target entity, optionally cross-level |
+| **Timer**       | Fires a Lua callback after a configurable duration              |
+| **Interaction** | Fires a Lua callback when the player presses E in range         |
+| **LuaCallback** | Fires a Lua callback every frame while overlapping              |
 
 ### Trigger Callbacks
 
@@ -328,10 +328,10 @@ end
 Each type also has a primary callback. The callback name is configurable in the
 inspector (the **Callback** field); if left empty, the default name is used:
 
-| Type            | Default Callback | When it fires                        |
-|-----------------|------------------|--------------------------------------|
-| **Timer**       | `on_timer`       | When the timer duration expires      |
-| **Interaction** | `on_interact`    | When the player presses E in range   |
+| Type            | Default Callback | When it fires                         |
+|-----------------|------------------|---------------------------------------|
+| **Timer**       | `on_timer`       | When the timer duration expires       |
+| **Interaction** | `on_interact`    | When the player presses E in range    |
 | **LuaCallback** | `on_triggered`   | Every frame while the player overlaps |
 
 ### Timer Example
@@ -384,11 +384,11 @@ end
 The engine includes template scenes in `engine_assets/templates/` that provide
 starting points for common game screens:
 
-| Template          | Description                                    |
-|-------------------|------------------------------------------------|
-| `main_menu.owl`   | Title text, Start and Quit buttons             |
-| `pause_menu.owl`  | Semi-transparent panel, Resume and Quit buttons|
-| `game_over.owl`   | Game Over text, Retry and Main Menu buttons    |
+| Template         | Description                                     |
+|------------------|-------------------------------------------------|
+| `main_menu.owl`  | Title text, Start and Quit buttons              |
+| `pause_menu.owl` | Semi-transparent panel, Resume and Quit buttons |
+| `game_over.owl`  | Game Over text, Retry and Main Menu buttons     |
 
 Copy a template into your project's assets and customize the text, colors, and
 Lua callbacks to match your game.

@@ -13,18 +13,18 @@ scenes, inspect entities, browse project assets, and test gameplay in real time.
 
 The editor ships as two executables:
 
-| Executable   | Purpose                                                         |
-|--------------|-----------------------------------------------------------------|
-| `owl_nest`   | Scene editor with full docking UI, gizmos, and project tools    |
-| `owl_runner` | Standalone game runner that loads a packed or unpacked project   |
+| Executable   | Purpose                                                        |
+|--------------|----------------------------------------------------------------|
+| `owl_nest`   | Scene editor with full docking UI, gizmos, and project tools   |
+| `owl_runner` | Standalone game runner that loads a packed or unpacked project |
 
 Both executables share the same scene runtime. The editor adds the editing chrome
 (panels, gizmos, toolbar) while the runner provides a clean playback environment.
 
 The editor operates as a state machine with three states:
 
-| State   | Description                                                     |
-|---------|-----------------------------------------------------------------|
+| State     | Description                                                     |
+|-----------|-----------------------------------------------------------------|
 | **Edit**  | Editor camera active, no simulation, scene is directly editable |
 | **Play**  | Scene copy is simulated, runtime camera active, physics running |
 | **Pause** | Simulation frozen, render-only mode with step-frame support     |
@@ -56,10 +56,10 @@ and persists via the ImGui `imgui.ini` file.
 The viewport is the main rendering surface. It draws the active scene into an
 off-screen `Framebuffer` with two color attachments:
 
-| Attachment | Format           | Purpose                                |
-|------------|------------------|----------------------------------------|
-| 0          | Surface (RGBA8)  | Visible color output                   |
-| 1          | RedInteger       | Entity ID for mouse picking            |
+| Attachment | Format          | Purpose                     |
+|------------|-----------------|-----------------------------|
+| 0          | Surface (RGBA8) | Visible color output        |
+| 1          | RedInteger      | Entity ID for mouse picking |
 
 **Editor camera.** In Edit mode the viewport uses a `CameraEditor` (orbit
 camera) controlled by mouse drag and scroll. The camera updates only when the
@@ -70,13 +70,13 @@ panels.
 the viewport. The gizmo type is controlled by the toolbar buttons or keyboard
 shortcuts (Q/W/E/R/T):
 
-| Type        | Key | Description                          |
-|-------------|-----|--------------------------------------|
-| None        | Q   | No gizmo, click-to-select only       |
-| Translation | W   | Move the entity along axes           |
-| Rotation    | E   | Rotate the entity around axes        |
-| Scale       | R   | Scale the entity along axes          |
-| All         | T   | Combined translate + rotate + scale  |
+| Type        | Key | Description                         |
+|-------------|-----|-------------------------------------|
+| None        | Q   | No gizmo, click-to-select only      |
+| Translation | W   | Move the entity along axes          |
+| Rotation    | E   | Rotate the entity around axes       |
+| Scale       | R   | Scale the entity along axes         |
+| All         | T   | Combined translate + rotate + scale |
 
 **Entity picking.** Clicking in the viewport reads the RedInteger attachment at the
 mouse position. If the value is a valid entity ID (not -1), the corresponding entity
@@ -104,19 +104,19 @@ and recomputes the local transform to preserve the entity's world position.
 **Context menu.** Right-clicking an entity (or the panel background) opens a context
 menu with the following actions:
 
-| Action                | Description                                               |
-|-----------------------|-----------------------------------------------------------|
-| Create Root Entity    | Add a new entity at the root level                        |
-| Create Child Entity   | Add a new entity as a child of the selected entity        |
-| Duplicate             | Shallow-copy the selected entity (root copy)              |
-| Duplicate Subtree     | Recursively duplicate the entity and all descendants      |
-| Create Prefab...      | Save the entity subtree as a `.owlprefab` file            |
-| Update from Prefab    | Refresh non-overridden components from the prefab file    |
-| Revert to Prefab      | Reset all overrides, making the instance match the prefab |
-| Unlink Prefab         | Remove the PrefabLink, turning it into a regular entity   |
-| Unparent              | Move the entity to root level, preserving world transform |
-| Delete                | Remove the entity, reparenting children to grandparent    |
-| Delete with Children  | Cascade-delete the entity and all descendants             |
+| Action               | Description                                               |
+|----------------------|-----------------------------------------------------------|
+| Create Root Entity   | Add a new entity at the root level                        |
+| Create Child Entity  | Add a new entity as a child of the selected entity        |
+| Duplicate            | Shallow-copy the selected entity (root copy)              |
+| Duplicate Subtree    | Recursively duplicate the entity and all descendants      |
+| Create Prefab...     | Save the entity subtree as a `.owlprefab` file            |
+| Update from Prefab   | Refresh non-overridden components from the prefab file    |
+| Revert to Prefab     | Reset all overrides, making the instance match the prefab |
+| Unlink Prefab        | Remove the PrefabLink, turning it into a regular entity   |
+| Unparent             | Move the entity to root level, preserving world transform |
+| Delete               | Remove the entity, reparenting children to grandparent    |
+| Delete with Children | Cascade-delete the entity and all descendants             |
 
 Prefab-related actions only appear when the selected entity is a prefab instance (has a
 `PrefabLink` component). Prefab instance entities are displayed with a blue text tint in
@@ -170,16 +170,16 @@ icon bank: `.owl` (scene), `.owlprefab` (prefab), `.png`, `.jpg`, `.svg`, `.ttf`
 
 **Interactions:**
 
-| Action                       | Effect                                        |
-|------------------------------|-----------------------------------------------|
-| Double-click folder          | Navigate into the folder                      |
-| Double-click `.owl` file     | Open the scene in the editor                  |
-| Drag `.owlprefab` to Viewport| Instantiate the prefab into the scene          |
-| Drag texture to Properties   | Assign the texture to a Sprite Renderer field |
-| Drag sound to Properties     | Assign the sound to a Sound Source field       |
-| Right-click background       | Context menu: New Folder, Import File/Folder  |
-| Right-click file/folder      | Context menu: Rename, Delete                  |
-| OS file drop                 | Copy dropped files into the current directory |
+| Action                        | Effect                                        |
+|-------------------------------|-----------------------------------------------|
+| Double-click folder           | Navigate into the folder                      |
+| Double-click `.owl` file      | Open the scene in the editor                  |
+| Drag `.owlprefab` to Viewport | Instantiate the prefab into the scene         |
+| Drag texture to Properties    | Assign the texture to a Sprite Renderer field |
+| Drag sound to Properties      | Assign the sound to a Sound Source field      |
+| Right-click background        | Context menu: New Folder, Import File/Folder  |
+| Right-click file/folder       | Context menu: Rename, Delete                  |
+| OS file drop                  | Copy dropped files into the current directory |
 
 ### Log Panel
 
@@ -203,18 +203,18 @@ information. It can be toggled via **Settings > Show Stats** in the menu bar.
 
 Displayed metrics:
 
-| Metric              | Source                              |
-|---------------------|-------------------------------------|
-| FPS                 | `Timestep::getFps()`                |
-| Current memory      | `TrackerAPI::globals().allocatedMemory` |
-| Peak memory         | `TrackerAPI::globals().memoryPeek`  |
-| Allocation calls    | Per-frame allocation count          |
-| Deallocation calls  | Per-frame deallocation count        |
-| Hovered entity      | Entity name under the mouse cursor  |
-| Draw calls          | `Renderer2D::Statistics::drawCalls` |
-| Quad count          | `Renderer2D::Statistics::quadCount` |
-| Vertex / index count| Derived from quad count             |
-| Viewport size       | Current framebuffer dimensions      |
+| Metric               | Source                                  |
+|----------------------|-----------------------------------------|
+| FPS                  | `Timestep::getFps()`                    |
+| Current memory       | `TrackerAPI::globals().allocatedMemory` |
+| Peak memory          | `TrackerAPI::globals().memoryPeek`      |
+| Allocation calls     | Per-frame allocation count              |
+| Deallocation calls   | Per-frame deallocation count            |
+| Hovered entity       | Entity name under the mouse cursor      |
+| Draw calls           | `Renderer2D::Statistics::drawCalls`     |
+| Quad count           | `Renderer2D::Statistics::quadCount`     |
+| Vertex / index count | Derived from quad count                 |
+| Viewport size        | Current framebuffer dimensions          |
 
 ### Settings
 
@@ -239,18 +239,18 @@ settings.
 The Project Settings dialog is opened via **Project > Project Settings**. It edits the
 active project's configuration:
 
-| Field        | Description                                              |
-|--------------|----------------------------------------------------------|
-| Project Name | Display name shown in the window title bar               |
-| First Scene  | Dropdown of `.owl` files found in the project directory  |
-| Version      | Freeform version string (e.g., "1.0.0")                  |
-| Author       | Author or studio name                                    |
-| Description  | Short project description                                |
-| Icon         | Relative path to a PNG icon for the game window          |
-| Width        | Default window width in pixels (320–7680)                |
-| Height       | Default window height in pixels (240–4320)               |
-| Fullscreen   | Whether the game starts in fullscreen mode               |
-| Resizable    | Whether the game window can be resized                   |
+| Field        | Description                                             |
+|--------------|---------------------------------------------------------|
+| Project Name | Display name shown in the window title bar              |
+| First Scene  | Dropdown of `.owl` files found in the project directory |
+| Version      | Freeform version string (e.g., "1.0.0")                 |
+| Author       | Author or studio name                                   |
+| Description  | Short project description                               |
+| Icon         | Relative path to a PNG icon for the game window         |
+| Width        | Default window width in pixels (320–7680)               |
+| Height       | Default window height in pixels (240–4320)              |
+| Fullscreen   | Whether the game starts in fullscreen mode              |
+| Resizable    | Whether the game window can be resized                  |
 
 Changes are applied on confirmation and saved to `owl_project.yml`. The window settings
 are also written to `runner.yml` during game export (`Project > Pack Game`) and applied
@@ -339,22 +339,22 @@ The `Project` class (`source/owlnest/sources/Project.h`) holds three fields: `na
 
 ### Workflow Operations
 
-| Operation       | Menu Path             | Description                                    |
-|-----------------|-----------------------|------------------------------------------------|
-| New Project     | File > New Project    | Create a directory and blank `owl_project.yml` |
-| Open Project    | File > Open Project   | Select a directory containing `owl_project.yml`|
-| Save Project    | File > Save Project   | Write current project settings to YAML         |
-| Close Project   | File > Close Project  | Unload the project and clear the asset browser |
-| Import Scene    | Project > Import Scene| Copy an external `.owl` file into the project  |
-| Pack Scene      | Project > Pack Scene  | Pack current scene's assets into `.owlpack`    |
-| Pack Game       | Project > Pack Game   | Scan and pack all project assets (see [Architecture](architecture.md)) |
+| Operation     | Menu Path              | Description                                                            |
+|---------------|------------------------|------------------------------------------------------------------------|
+| New Project   | File > New Project     | Create a directory and blank `owl_project.yml`                         |
+| Open Project  | File > Open Project    | Select a directory containing `owl_project.yml`                        |
+| Save Project  | File > Save Project    | Write current project settings to YAML                                 |
+| Close Project | File > Close Project   | Unload the project and clear the asset browser                         |
+| Import Scene  | Project > Import Scene | Copy an external `.owl` file into the project                          |
+| Pack Scene    | Project > Pack Scene   | Pack current scene's assets into `.owlpack`                            |
+| Pack Game     | Project > Pack Game    | Scan and pack all project assets (see [Architecture](architecture.md)) |
 
 The **Edit** menu provides undo/redo operations:
 
-| Operation | Menu Path    | Description                                              |
-|-----------|-------------|----------------------------------------------------------|
-| Undo      | Edit > Undo | Reverse the most recent editing action (Ctrl+Z)          |
-| Redo      | Edit > Redo | Re-apply an undone action (Ctrl+Y)                       |
+| Operation | Menu Path   | Description                                     |
+|-----------|-------------|-------------------------------------------------|
+| Undo      | Edit > Undo | Reverse the most recent editing action (Ctrl+Z) |
+| Redo      | Edit > Redo | Re-apply an undone action (Ctrl+Y)              |
 
 The Edit menu labels dynamically show the description of the next undo/redo action
 (e.g., "Undo Delete 'Player'").
@@ -402,11 +402,11 @@ Its contents change depending on the editor state.
 
 ### Playback Controls
 
-| State   | Buttons Available                        |
-|---------|------------------------------------------|
-| Edit    | Play                                     |
-| Play    | Pause, Stop                              |
-| Pause   | Resume, Stop, Step Frame                 |
+| State | Buttons Available        |
+|-------|--------------------------|
+| Edit  | Play                     |
+| Play  | Pause, Stop              |
+| Pause | Resume, Stop, Step Frame |
 
 ### Gizmo Controls
 
@@ -421,19 +421,19 @@ Settings panel. The table below lists factory defaults.
 
 ### Scene Operations
 
-| Action         | Default Shortcut | Action ID        |
-|----------------|------------------|------------------|
-| New Scene      | Ctrl+N           | `scene.new`      |
-| Open Scene     | Ctrl+O           | `scene.open`     |
-| Save Scene     | Ctrl+S           | `scene.save`     |
-| Save Scene As  | Ctrl+Shift+S     | `scene.saveAs`   |
+| Action        | Default Shortcut | Action ID      |
+|---------------|------------------|----------------|
+| New Scene     | Ctrl+N           | `scene.new`    |
+| Open Scene    | Ctrl+O           | `scene.open`   |
+| Save Scene    | Ctrl+S           | `scene.save`   |
+| Save Scene As | Ctrl+Shift+S     | `scene.saveAs` |
 
 ### Edit Operations
 
-| Action | Default Shortcut | Action ID    |
-|--------|------------------|--------------|
-| Undo   | Ctrl+Z           | `edit.undo`  |
-| Redo   | Ctrl+Y           | `edit.redo`  |
+| Action | Default Shortcut | Action ID   |
+|--------|------------------|-------------|
+| Undo   | Ctrl+Z           | `edit.undo` |
+| Redo   | Ctrl+Y           | `edit.redo` |
 
 All entity, component, hierarchy, and gizmo editing operations are undoable. Rapid
 consecutive edits on the same property (e.g. dragging a slider) are automatically
@@ -448,25 +448,25 @@ coalesced into a single undo step.
 
 ### Gizmo Modes
 
-| Action             | Default Shortcut | Action ID          |
-|--------------------|------------------|--------------------|
-| Gizmo: None        | Q                | `guizmo.none`      |
-| Gizmo: Translate   | W                | `guizmo.translate` |
-| Gizmo: Rotate      | E                | `guizmo.rotate`    |
-| Gizmo: Scale       | R                | `guizmo.scale`     |
-| Gizmo: All         | T                | `guizmo.all`       |
+| Action           | Default Shortcut | Action ID          |
+|------------------|------------------|--------------------|
+| Gizmo: None      | Q                | `guizmo.none`      |
+| Gizmo: Translate | W                | `guizmo.translate` |
+| Gizmo: Rotate    | E                | `guizmo.rotate`    |
+| Gizmo: Scale     | R                | `guizmo.scale`     |
+| Gizmo: All       | T                | `guizmo.all`       |
 
 Gizmo shortcuts are only active when the viewport is focused or hovered, and no
 gizmo manipulation is in progress.
 
 ### Playback
 
-| Action       | Default Shortcut | Action ID     |
-|--------------|------------------|---------------|
-| Play/Resume  | F5               | `scene.play`  |
-| Pause        | F6               | `scene.pause` |
-| Stop         | F7               | `scene.stop`  |
-| Step Frame   | F8               | `scene.step`  |
+| Action      | Default Shortcut | Action ID     |
+|-------------|------------------|---------------|
+| Play/Resume | F5               | `scene.play`  |
+| Pause       | F6               | `scene.pause` |
+| Stop        | F7               | `scene.stop`  |
+| Step Frame  | F8               | `scene.step`  |
 
 ### Rebinding
 

@@ -79,8 +79,8 @@ poetry run python ci_action.py Documentation <preset>
 
 ### Tests (`test/`)
 
-- Google Test framework, 14 test categories: core, debug, event, font, gui, input, layer, math, mesh, physic, renderer,
-  scene, script, sound
+- Google Test framework, 15 test categories: core, debug, event, font, gui, input, io, layer, math, mesh, physic,
+  renderer, scene, script, sound
 - Each category builds as `owl_<category>_unit_test`
 - Test helper utilities in `test/test_helper/`
 

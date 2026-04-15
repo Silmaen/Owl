@@ -18,7 +18,13 @@ void SpriteRenderer::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::BeginMap;// SpriteRenderer
 	iOut.getImpl()->emitter << YAML::Key << "color" << YAML::Value << color;
 	if (texture) {
-		iOut.getImpl()->emitter << YAML::Key << "tilingFactor" << YAML::Value << tilingFactor;
+		if (std::abs(tilingFactor.x() - tilingFactor.y()) < 1e-6f)
+			iOut.getImpl()->emitter << YAML::Key << "tilingFactor" << YAML::Value << tilingFactor.x();
+		else {
+			iOut.getImpl()->emitter << YAML::Key << "tilingFactor" << YAML::Value
+									<< YAML::Flow << YAML::BeginSeq << tilingFactor.x() << tilingFactor.y()
+									<< YAML::EndSeq;
+		}
 		iOut.getImpl()->emitter << YAML::Key << "texture" << YAML::Value << texture->getSerializeString();
 	}
 	iOut.getImpl()->emitter << YAML::EndMap;// SpriteRenderer
@@ -27,8 +33,12 @@ void SpriteRenderer::serialize(const core::Serializer& iOut) const {
 void SpriteRenderer::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["color"])
 		color = iNode.getImpl()->node["color"].as<math::vec4>();
-	if (iNode.getImpl()->node["tilingFactor"])
-		tilingFactor = iNode.getImpl()->node["tilingFactor"].as<float>();
+	if (auto tfNode = iNode.getImpl()->node["tilingFactor"]; tfNode) {
+		if (tfNode.IsSequence() && tfNode.size() >= 2)
+			tilingFactor = {tfNode[0].as<float>(), tfNode[1].as<float>()};
+		else
+			tilingFactor = {tfNode.as<float>(), tfNode.as<float>()};
+	}
 	if (iNode.getImpl()->node["texture"])
 		texture = renderer::Texture2D::createFromSerialized(iNode.getImpl()->node["texture"].as<std::string>());
 }

@@ -185,6 +185,8 @@ public:
 			assetDirectories.push_back({"cwd", std::filesystem::current_path()});
 		}
 		for (const auto& [title, assetsPath]: assetDirectories) {
+			if (!std::filesystem::exists(assetsPath))
+				continue;
 			for (const auto& entry: std::filesystem::recursive_directory_iterator(assetsPath)) {
 				if (std::find(ext.begin(), ext.end(), entry.path().extension()) != ext.end()) {
 					result.push_back(relative(entry.path(), assetsPath).string());
@@ -228,6 +230,8 @@ public:
 				}
 			}
 			// Check sub-folders
+			if (!std::filesystem::exists(assetsPath))
+				continue;
 			for (const auto& entry: std::filesystem::recursive_directory_iterator(assetsPath)) {
 				if (!entry.is_directory())
 					continue;

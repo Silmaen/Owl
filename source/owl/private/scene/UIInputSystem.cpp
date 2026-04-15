@@ -32,31 +32,65 @@ auto hitTestRect(const component::UIRect& iRect, const math::vec2& iParentSize, 
 	const math::vec2 center = iRect.computePosition(iParentSize);
 	const float halfW = iRect.size.x() * 0.5f;
 	const float halfH = iRect.size.y() * 0.5f;
-	return iPoint.x() >= center.x() - halfW && iPoint.x() <= center.x() + halfW &&
-		   iPoint.y() >= center.y() - halfH && iPoint.y() <= center.y() + halfH;
+	return iPoint.x() >= center.x() - halfW && iPoint.x() <= center.x() + halfW && iPoint.y() >= center.y() - halfH &&
+		   iPoint.y() <= center.y() + halfH;
 }
 
-/// Find the nearest ancestor (or self) with a LuaScript component and call a named function.
-void invokeLuaCallback(Scene* iScene, const Entity& iEntity, const std::string& iCallbackName,
+/**
+ * @brief Walk up hierarchy from an entity to find the nearest ancestor with a LuaScript component.
+ * @param[in] iScene The scene containing the entity.
+ * @param[in] iEntity The starting entity.
+ * @return The nearest ancestor (or self) with a LuaScript, or invalid Entity if none found.
+ */
+auto findScriptOwner(const Scene* iScene, Entity iEntity) -> Entity {
+	while (iEntity) {
+		if (iEntity.hasComponent<component::LuaScript>())
+			break;
+		const auto pid = iEntity.getComponent<component::Hierarchy>().parentId;
+		iEntity = pid != core::UUID{0} ? iScene->findEntityByUUID(pid) : Entity{};
+	}
+	return iEntity;
+}
+
+/**
+ * @brief Find the nearest ancestor with a LuaScript and call a named function.
+ * @param[in] iScene The scene containing the entity.
+ * @param[in] iEntity The entity whose ancestor to search.
+ * @param[in] iCallbackName The Lua function name to invoke.
+ * @param[in] iEntityId The clicked entity UUID, passed as _clicked_entity property.
+ */
+void invokeLuaCallback(const Scene* iScene, const Entity& iEntity, const std::string& iCallbackName,
 					   const uint64_t iEntityId) {
 	if (iCallbackName.empty())
 		return;
-	// Walk up hierarchy to find the LuaScript instance.
-	Entity current = iEntity;
-	while (current) {
-		if (current.hasComponent<component::LuaScript>()) {
-			auto& luaScript = current.getComponent<component::LuaScript>();
-			if (luaScript.instance && luaScript.instance->isValid()) {
-				luaScript.instance->setProperty("_clicked_entity", static_cast<int64_t>(iEntityId));
-				std::ignore = luaScript.instance->callFunction(iCallbackName);
-			}
-			return;
-		}
-		// Walk to parent.
-		const auto& [parentId, childrenIds] = current.getComponent<component::Hierarchy>();
-		if (parentId == core::UUID{0})
-			break;
-		current = iScene->findEntityByUUID(parentId);
+	const Entity owner = findScriptOwner(iScene, iEntity);
+	if (!owner)
+		return;
+	if (const auto& luaScript = owner.getComponent<component::LuaScript>();
+		luaScript.instance && luaScript.instance->isValid()) {
+		luaScript.instance->setProperty("_clicked_entity", static_cast<int64_t>(iEntityId));
+		std::ignore = luaScript.instance->callFunction(iCallbackName);
+	}
+}
+
+/**
+ * @brief Invoke a slider value-changed callback on the nearest ancestor LuaScript.
+ * @param[in] iScene The scene containing the entity.
+ * @param[in] iEntity The slider entity whose ancestor to search.
+ * @param[in] iCallbackName The Lua function name to invoke.
+ * @param[in] iValue The new slider value, passed as _slider_value property.
+ */
+void invokeSliderCallback(const Scene* iScene, const Entity& iEntity, const std::string& iCallbackName,
+						  const float iValue) {
+	if (iCallbackName.empty())
+		return;
+	const Entity owner = findScriptOwner(iScene, iEntity);
+	if (!owner)
+		return;
+	if (const auto& luaScript = owner.getComponent<component::LuaScript>();
+		luaScript.instance && luaScript.instance->isValid()) {
+		luaScript.instance->setProperty("_slider_value", iValue);
+		std::ignore = luaScript.instance->callFunction(iCallbackName);
 	}
 }
 
@@ -82,16 +116,15 @@ void UIInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 	std::vector<CanvasEntry> canvases;
 	for (const auto view = iScene->registry.view<component::Canvas>(); const auto entity: view)
 		canvases.push_back({entity, view.get<component::Canvas>(entity).sortOrder});
-	std::ranges::sort(canvases,
-					  [](const auto& iA, const auto& iB) -> auto { return iA.sortOrder > iB.sortOrder; });
+	std::ranges::sort(canvases, [](const auto& iA, const auto& iB) -> auto { return iA.sortOrder > iB.sortOrder; });
 
 	for (const auto& [canvasEnt, sortOrder]: canvases) {
 		const Entity canvasEntity{canvasEnt, iScene};
 		if (!iScene->isEffectivelyVisible(canvasEntity, false))
 			continue;
 
-		const auto& [parentId, childrenIds] = canvasEntity.getComponent<component::Hierarchy>();
-		for (const auto childId: childrenIds) {
+		for (const auto& [parentId, childrenIds] = canvasEntity.getComponent<component::Hierarchy>();
+			 const auto childId: childrenIds) {
 			const Entity child = iScene->findEntityByUUID(childId);
 			if (!child || !child.hasComponent<component::UIRect>())
 				continue;
@@ -129,7 +162,11 @@ void UIInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 					const math::vec2 center = rect.computePosition(vpSize);
 					const float leftEdge = center.x() - rect.size.x() * 0.5f;
 					const float normalized = std::clamp((iMousePos.x() - leftEdge) / rect.size.x(), 0.f, 1.f);
-					slider.value = slider.minValue + normalized * (slider.maxValue - slider.minValue);
+					if (const float newValue = slider.minValue + normalized * (slider.maxValue - slider.minValue);
+						std::abs(newValue - slider.value) > 1e-6f) {
+						slider.value = newValue;
+						invokeSliderCallback(iScene, child, slider.onValueChangedCallback, slider.value);
+					}
 				} else if (hovered) {
 					s_consuming = true;
 				}

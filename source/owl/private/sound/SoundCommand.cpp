@@ -83,6 +83,11 @@ void SoundCommand::setListenerGain(const float iGain) {
 		m_soundApi->setListenerGain(iGain);
 }
 
+void SoundCommand::stopAll() {
+	if (m_soundApi)
+		m_soundApi->stopAll();
+}
+
 auto SoundCommand::isPlaying(const SoundHandle iHandle) -> bool {
 	if (m_soundApi)
 		return m_soundApi->isPlaying(iHandle);

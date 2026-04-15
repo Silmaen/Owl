@@ -12,8 +12,6 @@
 
 #include "core/external/lua.h"
 
-#include <fstream>
-
 namespace owl::script {
 
 LuaEngine::LuaEngine() : mp_state{luaL_newstate()} {
@@ -38,7 +36,7 @@ LuaEngine::LuaEngine() : mp_state{luaL_newstate()} {
 
 	// Remove dangerous base functions.
 	lua_getglobal(mp_state, "_G");
-	for (const auto* func : {"dofile", "loadfile"}) {
+	for (const auto* func: {"dofile", "loadfile"}) {
 		lua_pushnil(mp_state);
 		lua_setfield(mp_state, -2, func);
 	}
@@ -56,7 +54,7 @@ LuaEngine::~LuaEngine() {
 
 auto LuaEngine::isValid() const -> bool { return mp_state != nullptr; }
 
-auto LuaEngine::loadScript(const std::filesystem::path& iPath) -> bool {
+auto LuaEngine::loadScript(const std::filesystem::path& iPath) const -> bool {
 	OWL_PROFILE_FUNCTION()
 	if (mp_state == nullptr) {
 		OWL_CORE_ERROR("LuaEngine: Cannot load script, Lua state is invalid.")
@@ -70,7 +68,7 @@ auto LuaEngine::loadScript(const std::filesystem::path& iPath) -> bool {
 	return true;
 }
 
-auto LuaEngine::loadBuffer(const std::vector<uint8_t>& iData, const std::string& iName) -> bool {
+auto LuaEngine::loadBuffer(const std::vector<uint8_t>& iData, const std::string& iName) const -> bool {
 	OWL_PROFILE_FUNCTION()
 	if (mp_state == nullptr) {
 		OWL_CORE_ERROR("LuaEngine: Cannot load buffer, Lua state is invalid.")
@@ -91,7 +89,7 @@ auto LuaEngine::loadBuffer(const std::vector<uint8_t>& iData, const std::string&
 	return true;
 }
 
-auto LuaEngine::hasFunction(const std::string& iName) -> bool {
+auto LuaEngine::hasFunction(const std::string& iName) const -> bool {
 	if (mp_state == nullptr)
 		return false;
 	lua_getglobal(mp_state, iName.c_str());
@@ -100,7 +98,7 @@ auto LuaEngine::hasFunction(const std::string& iName) -> bool {
 	return isFunc;
 }
 
-auto LuaEngine::callFunction(const std::string& iName) -> bool {
+auto LuaEngine::callFunction(const std::string& iName) const -> bool {
 	OWL_PROFILE_FUNCTION()
 	if (mp_state == nullptr)
 		return false;
@@ -117,7 +115,7 @@ auto LuaEngine::callFunction(const std::string& iName) -> bool {
 	return true;
 }
 
-auto LuaEngine::callFunction(const std::string& iName, const float iArg) -> bool {
+auto LuaEngine::callFunction(const std::string& iName, const float iArg) const -> bool {
 	OWL_PROFILE_FUNCTION()
 	if (mp_state == nullptr)
 		return false;
@@ -135,7 +133,7 @@ auto LuaEngine::callFunction(const std::string& iName, const float iArg) -> bool
 	return true;
 }
 
-auto LuaEngine::callFunction(const std::string& iName, const uint64_t iArg) -> bool {
+auto LuaEngine::callFunction(const std::string& iName, const uint64_t iArg) const -> bool {
 	OWL_PROFILE_FUNCTION()
 	if (mp_state == nullptr)
 		return false;
@@ -155,7 +153,7 @@ auto LuaEngine::callFunction(const std::string& iName, const uint64_t iArg) -> b
 
 // ---- Global variable getters ----
 
-auto LuaEngine::getGlobalFloat(const std::string& iName) -> std::optional<float> {
+auto LuaEngine::getGlobalFloat(const std::string& iName) const -> std::optional<float> {
 	if (mp_state == nullptr)
 		return std::nullopt;
 	lua_getglobal(mp_state, iName.c_str());
@@ -168,7 +166,7 @@ auto LuaEngine::getGlobalFloat(const std::string& iName) -> std::optional<float>
 	return val;
 }
 
-auto LuaEngine::getGlobalInt(const std::string& iName) -> std::optional<int64_t> {
+auto LuaEngine::getGlobalInt(const std::string& iName) const -> std::optional<int64_t> {
 	if (mp_state == nullptr)
 		return std::nullopt;
 	lua_getglobal(mp_state, iName.c_str());
@@ -181,7 +179,7 @@ auto LuaEngine::getGlobalInt(const std::string& iName) -> std::optional<int64_t>
 	return val;
 }
 
-auto LuaEngine::getGlobalString(const std::string& iName) -> std::optional<std::string> {
+auto LuaEngine::getGlobalString(const std::string& iName) const -> std::optional<std::string> {
 	if (mp_state == nullptr)
 		return std::nullopt;
 	lua_getglobal(mp_state, iName.c_str());
@@ -194,7 +192,7 @@ auto LuaEngine::getGlobalString(const std::string& iName) -> std::optional<std::
 	return val;
 }
 
-auto LuaEngine::getGlobalBool(const std::string& iName) -> std::optional<bool> {
+auto LuaEngine::getGlobalBool(const std::string& iName) const -> std::optional<bool> {
 	if (mp_state == nullptr)
 		return std::nullopt;
 	lua_getglobal(mp_state, iName.c_str());
@@ -209,34 +207,34 @@ auto LuaEngine::getGlobalBool(const std::string& iName) -> std::optional<bool> {
 
 // ---- Global variable setters ----
 
-void LuaEngine::setGlobal(const std::string& iName, const float iValue) {
+void LuaEngine::setGlobal(const std::string& iName, const float iValue) const {
 	if (mp_state == nullptr)
 		return;
 	lua_pushnumber(mp_state, static_cast<lua_Number>(iValue));
 	lua_setglobal(mp_state, iName.c_str());
 }
 
-void LuaEngine::setGlobal(const std::string& iName, const int64_t iValue) {
+void LuaEngine::setGlobal(const std::string& iName, const int64_t iValue) const {
 	if (mp_state == nullptr)
 		return;
 	lua_pushinteger(mp_state, static_cast<lua_Integer>(iValue));
 	lua_setglobal(mp_state, iName.c_str());
 }
 
-void LuaEngine::setGlobal(const std::string& iName, const std::string& iValue) {
+void LuaEngine::setGlobal(const std::string& iName, const std::string& iValue) const {
 	if (mp_state == nullptr)
 		return;
 	lua_pushstring(mp_state, iValue.c_str());
 	lua_setglobal(mp_state, iName.c_str());
 }
 
-void LuaEngine::setGlobal(const std::string& iName, const bool iValue) {
+void LuaEngine::setGlobal(const std::string& iName, const bool iValue) const {
 	if (mp_state == nullptr)
 		return;
 	lua_pushboolean(mp_state, iValue ? 1 : 0);
 	lua_setglobal(mp_state, iName.c_str());
 }
 
-auto LuaEngine::getState() -> lua_State* { return mp_state; }
+auto LuaEngine::getState() const -> lua_State* { return mp_state; }
 
 }// namespace owl::script

@@ -1,0 +1,491 @@
+Scene: untitled
+Entities:
+  - Entity: 600000000000000001
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 10
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    Visibility:
+      gameVisible: true
+    SoundListener:
+      primary: true
+  - Entity: 600000000000000002
+    Tag:
+      tag: SkyBackground
+    Transform:
+      translation: [0, 0, -2]
+      rotation: [0, 0, 0]
+      scale: [25, 20, 1]
+    BackgroundTexture:
+      mode: 0
+      type: 2
+      color: [0.665201783, 0.66672951, 0.679715276, 1]
+      topColor: [0.800000012, 0.899999976, 1, 1]
+      texture: pat:/source/personnel/stack_owl/Owl/sample_project/textures/sky.png
+    Visibility:
+      gameVisible: true
+  - Entity: 600000000000000003
+    Tag:
+      tag: SpawnPoint
+    Transform:
+      translation: [-8, -1, 0]
+      rotation: [0, 0, 0]
+      scale: [0.5, 0.5, 1]
+    Trigger:
+      Type: Target
+    Visibility:
+      gameVisible: true
+  - Entity: 600000000000000004
+    Tag:
+      tag: Player
+    Transform:
+      translation: [-8, -1, 0]
+      rotation: [0, 0, 0]
+      scale: [0.800000012, 0.800000012, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/player.png
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Player:
+      primary: true
+      linearImpulse: 0.300000012
+      jumpImpulse: 5
+      canJump: true
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/player.lua
+      properties:
+        - name: speed
+          type: float
+          value: 8
+        - name: score
+          type: int
+          value: 0
+  - Entity: 600000000000000005
+    Tag:
+      tag: Ground
+    Transform:
+      translation: [-4.50816345, -4, 0]
+      rotation: [0, -0, 0]
+      scale: [10.000001, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: [10, 1]
+      texture: nam:textures/ground.png
+    PhysicBody:
+      type: Static
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 11749637529868581305
+  - Entity: 600000000000000006
+    Tag:
+      tag: Ground2
+    Transform:
+      translation: [6.54135227, -4, 0]
+      rotation: [0, -0, 0]
+      scale: [6, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: [10, 1]
+      texture: nam:textures/ground.png
+    PhysicBody:
+      type: Static
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 11749637529868581305
+  - Entity: 600000000000000007
+    Tag:
+      tag: fall
+    Transform:
+      translation: [2.0216136, -4.92675781, 0]
+      rotation: [0, -0, 0]
+      scale: [3.51264262, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 0.5]
+      tilingFactor: 3
+      texture: nam:textures/hazard.png
+    Trigger:
+      Type: Death
+      LevelName: scenes/game_over.owl
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 11749637529868581305
+  - Entity: 600000000000000010
+    Tag:
+      tag: FloatingPlatform1
+    Transform:
+      translation: [-1.98151398, -1, -0.0975646973]
+      rotation: [0, 0, 0]
+      scale: [2, 0.400000006, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: [10, 1]
+      texture: nam:textures/platform.png
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/moving_platform.lua
+      properties:
+        - name: speed
+          type: float
+          value: 1.5
+        - name: distance
+          type: float
+          value: 2
+  - Entity: 600000000000000011
+    Tag:
+      tag: FloatingPlatform2
+    Transform:
+      translation: [5, -1.12056732e-05, 0]
+      rotation: [0, 0, 0]
+      scale: [2, 0.400000006, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: [10, 1]
+      texture: nam:textures/platform.png
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/moving_platform.lua
+      properties:
+        - name: speed
+          type: float
+          value: 2.5
+        - name: distance
+          type: float
+          value: 3
+  - Entity: 600000000000000020
+    Tag:
+      tag: Coin1
+    Transform:
+      translation: [-6, -2, 0]
+      rotation: [0, -0, 0]
+      scale: [0.600000024, 0.600000024, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: "nam:textures/animated_coin.png"
+      columns: 6
+      rows: 3
+      firstFrame: 0
+      lastFrame: 17
+      frameDuration: 0.08
+      loop: true
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_coin_collected
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 11811210366503991305
+    LuaScript:
+      scriptPath: scripts/coin.lua
+  - Entity: 600000000000000021
+    Tag:
+      tag: Coin2
+    Transform:
+      translation: [-2, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [0.600000024, 0.600000024, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: "nam:textures/animated_coin.png"
+      columns: 6
+      rows: 3
+      firstFrame: 0
+      lastFrame: 17
+      frameDuration: 0.08
+      loop: true
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_coin_collected
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 11811210366503991305
+    LuaScript:
+      scriptPath: scripts/coin.lua
+  - Entity: 600000000000000022
+    Tag:
+      tag: Coins
+    Transform:
+      translation: [5, 2, 0]
+      rotation: [0, -0, 0]
+      scale: [0.600000024, 0.600000024, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: "nam:textures/animated_coin.png"
+      columns: 6
+      rows: 3
+      firstFrame: 0
+      lastFrame: 17
+      frameDuration: 0.08
+      loop: true
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_coin_collected
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 11811210366503991305
+    LuaScript:
+      scriptPath: scripts/coin.lua
+  - Entity: 600000000000000030
+    Tag:
+      tag: LeftWall
+    Transform:
+      translation: [-10, 0.471172333, -2.98023224e-08]
+      rotation: [0, -0, 0]
+      scale: [1.00000012, 10, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: [1, 10]
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 11749637529868581305
+  - Entity: 600000000000000031
+    Tag:
+      tag: RightWall
+    Transform:
+      translation: [10.0377502, 0.490020752, 0]
+      rotation: [0, -0, 0]
+      scale: [1.00000012, 10, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: [1, 10]
+      texture: nam:textures/brick.png
+    PhysicBody:
+      type: Static
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 11749637529868581305
+  - Entity: 600000000000000040
+    Tag:
+      tag: HazardTimer
+    Transform:
+      translation: [1.5, -2, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Trigger:
+      Type: Timer
+      TimerDuration: 3
+      TimerRepeating: true
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/hazard_timer.lua
+  - Entity: 600000000000000050
+    Tag:
+      tag: HUDCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    LuaScript:
+      scriptPath: scripts/hud.lua
+  - Entity: 600000000000000051
+    Tag:
+      tag: ScoreText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 600000000000000050
+    UIRect:
+      anchor: TopLeft
+      pivotX: 0
+      pivotY: 1
+      sizeX: 200
+      sizeY: 35
+      offsetX: 15
+      offsetY: -10
+    UIText:
+      text: "Score: 0"
+      color: [1, 1, 0.300000012, 1]
+      fontSize: 22
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 600000000000000052
+    Tag:
+      tag: HealthBar
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 600000000000000050
+    UIProgressBar:
+      value: 1
+      backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
+      fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
+    UIRect:
+      anchor: TopRight
+      pivotX: 1
+      pivotY: 1
+      sizeX: 180
+      sizeY: 20
+      offsetX: -15
+      offsetY: -12
+  - Entity: 600000000000000053
+    Tag:
+      tag: LevelLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 600000000000000050
+    UIRect:
+      anchor: TopCenter
+      pivotX: 0.5
+      pivotY: 1
+      sizeX: 500
+      sizeY: 30
+      offsetX: 0
+      offsetY: -10
+    UIText:
+      text: Level 2 - Collect coins and survive!
+      color: [1, 1, 1, 0.600000024]
+      fontSize: 13
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 600000000000000070
+    Tag:
+      tag: MusicStatus
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 600000000000000050
+    UIRect:
+      anchor: TopRight
+      pivotX: 1
+      pivotY: 1
+      sizeX: 120
+      sizeY: 20
+      offsetX: -15
+      offsetY: -35
+    UIText:
+      text: "Music: ON (M)"
+      color: [0.600000024, 0.800000012, 0.600000024, 0.600000024]
+      fontSize: 10
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 600000000000000061
+    Tag:
+      tag: VictoryLabel
+    Transform:
+      translation: [8, -1, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 0.400000006, 1]
+    TextRenderer:
+      color: [0.200000003, 1, 0.300000012, 0.800000012]
+      kerning: 0
+      lineSpacing: 0
+      text: "Victory!"
+    Visibility:
+      gameVisible: true
+  - Entity: 600000000000000060
+    Tag:
+      tag: VictoryZone
+    Transform:
+      translation: [8, -2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1.5, 2, 1]
+    SpriteRenderer:
+      color: [0.200000003, 1, 0.300000012, 0.300000012]
+    Trigger:
+      Type: Victory
+      LevelName: scenes/victory.owl
+    Visibility:
+      gameVisible: true
+  - Entity: 11811210366503991305
+    Tag:
+      tag: Coins
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+  - Entity: 11749637529868581305
+    Tag:
+      tag: Static
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}

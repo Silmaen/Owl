@@ -40,7 +40,7 @@ public:
 	 * @param[in] iEntityId The owning entity's UUID (as uint64_t).
 	 * @return True on success.
 	 */
-	[[nodiscard]] auto create(const std::string& iScriptPath, uint64_t iEntityId) -> bool;
+	[[nodiscard]] auto create(const std::string& iScriptPath, uint64_t iEntityId) const -> bool;
 
 	/**
 	 * @brief Initialize this instance from a buffer (pack loading).
@@ -50,48 +50,48 @@ public:
 	 * @return True on success.
 	 */
 	[[nodiscard]] auto createFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName,
-										uint64_t iEntityId) -> bool;
+										uint64_t iEntityId) const -> bool;
 
 	/// @brief Check whether the instance is valid and ready.
 	[[nodiscard]] auto isValid() const -> bool;
 
 	/// @brief Call the script's on_create callback.
-	void onCreate();
+	void onCreate() const;
 	/// @brief Call the script's on_update callback.
 	/// @param[in] iDeltaTime Frame delta time in seconds.
-	void onUpdate(float iDeltaTime);
+	void onUpdate(float iDeltaTime) const;
 	/// @brief Call the script's on_destroy callback.
-	void onDestroy();
+	void onDestroy() const;
 	/// @brief Call the script's on_collision callback.
 	/// @param[in] iOtherEntityId UUID of the other entity.
-	void onCollision(uint64_t iOtherEntityId);
+	void onCollision(uint64_t iOtherEntityId) const;
 
 	/**
 	 * @brief Call an arbitrary named function in the script.
 	 * @param[in] iName The function name.
 	 * @return True if the function existed and was called successfully.
 	 */
-	[[nodiscard]] auto callFunction(const std::string& iName) -> bool;
+	[[nodiscard]] auto callFunction(const std::string& iName) const -> bool;
 
 	// ---- Property access ----
 
 	/// @brief Set a float property on the instance.
-	void setProperty(const std::string& iName, float iValue);
+	void setProperty(const std::string& iName, float iValue) const;
 	/// @brief Set an integer property on the instance.
-	void setProperty(const std::string& iName, int64_t iValue);
+	void setProperty(const std::string& iName, int64_t iValue) const;
 	/// @brief Set a string property on the instance.
-	void setProperty(const std::string& iName, const std::string& iValue);
+	void setProperty(const std::string& iName, const std::string& iValue) const;
 	/// @brief Set a boolean property on the instance.
-	void setProperty(const std::string& iName, bool iValue);
+	void setProperty(const std::string& iName, bool iValue) const;
 
 	/// @brief Get a float property from the instance.
-	[[nodiscard]] auto getPropertyFloat(const std::string& iName) -> std::optional<float>;
+	[[nodiscard]] auto getPropertyFloat(const std::string& iName) const -> std::optional<float>;
 	/// @brief Get an integer property from the instance.
-	[[nodiscard]] auto getPropertyInt(const std::string& iName) -> std::optional<int64_t>;
+	[[nodiscard]] auto getPropertyInt(const std::string& iName) const -> std::optional<int64_t>;
 	/// @brief Get a string property from the instance.
-	[[nodiscard]] auto getPropertyString(const std::string& iName) -> std::optional<std::string>;
+	[[nodiscard]] auto getPropertyString(const std::string& iName) const -> std::optional<std::string>;
 	/// @brief Get a boolean property from the instance.
-	[[nodiscard]] auto getPropertyBool(const std::string& iName) -> std::optional<bool>;
+	[[nodiscard]] auto getPropertyBool(const std::string& iName) const -> std::optional<bool>;
 
 private:
 	/// Forward-declared implementation.

@@ -16,9 +16,13 @@ void Trigger::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "Type" << YAML::Value << std::string(magic_enum::enum_name(trigger.type));
-	if (trigger.type == SceneTrigger::TriggerType::Teleport) {
-		iOut.getImpl()->emitter << YAML::Key << "LevelName" << YAML::Value << trigger.levelName;
-		iOut.getImpl()->emitter << YAML::Key << "TargetName" << YAML::Value << trigger.targetName;
+	if (trigger.type == SceneTrigger::TriggerType::Teleport ||
+		trigger.type == SceneTrigger::TriggerType::Victory ||
+		trigger.type == SceneTrigger::TriggerType::Death) {
+		if (!trigger.levelName.empty())
+			iOut.getImpl()->emitter << YAML::Key << "LevelName" << YAML::Value << trigger.levelName;
+		if (!trigger.targetName.empty())
+			iOut.getImpl()->emitter << YAML::Key << "TargetName" << YAML::Value << trigger.targetName;
 	}
 	if (trigger.type == SceneTrigger::TriggerType::Timer) {
 		iOut.getImpl()->emitter << YAML::Key << "TimerDuration" << YAML::Value << trigger.timerDuration;

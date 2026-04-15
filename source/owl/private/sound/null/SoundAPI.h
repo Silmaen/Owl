@@ -67,6 +67,8 @@ public:
 	void setListenerOrientation(const math::vec3f& iForward, const math::vec3f& iUp) override;
 	/// @copydoc sound::SoundAPI::setListenerGain
 	void setListenerGain(float) override {}
+	/// @copydoc sound::SoundAPI::stopAll
+	void stopAll() override {}
 	/// @copydoc sound::SoundAPI::isPlaying
 	[[nodiscard]] auto isPlaying(SoundHandle iHandle) const -> bool override;
 

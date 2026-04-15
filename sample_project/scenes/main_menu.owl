@@ -20,7 +20,7 @@ Entities:
       offsetX: -15
       offsetY: 15
     UIText:
-      text: v0.1.0-dev
+      text: v0.1.0
       color: [0.5, 0.5, 0.5, 0.699999988]
       fontSize: 12
       alignment: Left
@@ -58,6 +58,38 @@ Entities:
       alignment: Left
       kerning: 0
       lineSpacing: 0
+  - Entity: 700000000000000003
+    Tag:
+      tag: ContinueButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 827593881302582438
+    UIButton:
+      normalColor: [0.100000001, 0.449999988, 0.300000012, 1]
+      hoverColor: [0.150000006, 0.550000012, 0.400000006, 1]
+      pressedColor: [0.0500000007, 0.349999994, 0.200000003, 1]
+      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
+      onClickCallback: on_continue_clicked
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 200
+      sizeY: 40
+      offsetX: 0
+      offsetY: -50
+    UIText:
+      text: Continue
+      color: [1, 1, 1, 1]
+      fontSize: 20
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
   - Entity: 4492837156209384711
     Tag:
       tag: SettingsButton
@@ -82,7 +114,7 @@ Entities:
       sizeX: 200
       sizeY: 40
       offsetX: 0
-      offsetY: -60
+      offsetY: -100
     UIText:
       text: Settings
       color: [1, 1, 1, 1]
@@ -90,6 +122,60 @@ Entities:
       alignment: Left
       kerning: 0
       lineSpacing: 0
+  - Entity: 5503948271630582844
+    Tag:
+      tag: QuitButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 827593881302582438
+    UIButton:
+      normalColor: [0.400000006, 0.150000006, 0.150000006, 1]
+      hoverColor: [0.550000012, 0.200000003, 0.200000003, 1]
+      pressedColor: [0.300000012, 0.100000001, 0.100000001, 1]
+      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
+      onClickCallback: on_quit_clicked
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 200
+      sizeY: 40
+      offsetX: 0
+      offsetY: -150
+    UIText:
+      text: Quit
+      color: [1, 1, 1, 1]
+      fontSize: 20
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 700000000000000001
+    Tag:
+      tag: LogoImage
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 827593881302582438
+    UIRect:
+      anchor: TopCenter
+      pivotX: 0.5
+      pivotY: 1
+      sizeX: 120
+      sizeY: 120
+      offsetX: 0
+      offsetY: -20
+    UIImage:
+      tint: [1, 1, 1, 1]
+      texture: "nam:textures/logo_owl.png"
   - Entity: 15166799538320535829
     Tag:
       tag: TitleText
@@ -108,11 +194,121 @@ Entities:
       sizeX: 600
       sizeY: 80
       offsetX: 0
-      offsetY: -80
+      offsetY: -150
     UIText:
       text: Owl Feature Demo
       color: [1, 0.850000024, 0.200000003, 1]
       fontSize: 42
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 700000000000000002
+    Tag:
+      tag: ButtonPanel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 827593881302582438
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 250
+      sizeY: 230
+      offsetX: 0
+      offsetY: -30
+    UIPanel:
+      backgroundColor: [0.100000001, 0.100000001, 0.150000006, 0.600000024]
+      borderColor: [0.400000006, 0.400000006, 0.5, 0.400000006]
+      borderWidth: 1
+      layout: None
+      spacing: 0
+      padding: 0
+  - Entity: 700000000000000010
+    Tag:
+      tag: SaveInfoText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 827593881302582438
+    UIRect:
+      anchor: BottomLeft
+      pivotX: 0
+      pivotY: 0
+      sizeX: 350
+      sizeY: 25
+      offsetX: 15
+      offsetY: 15
+    UIText:
+      text: ""
+      color: [0.600000024, 0.600000024, 0.699999988, 0.800000012]
+      fontSize: 11
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 700000000000000011
+    Tag:
+      tag: DeleteSaveButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 827593881302582438
+    UIButton:
+      normalColor: [0.5, 0.150000006, 0.150000006, 0.800000012]
+      hoverColor: [0.699999988, 0.200000003, 0.200000003, 1]
+      pressedColor: [0.400000006, 0.100000001, 0.100000001, 1]
+      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
+      onClickCallback: on_delete_save_clicked
+    UIRect:
+      anchor: BottomLeft
+      pivotX: 0
+      pivotY: 0
+      sizeX: 120
+      sizeY: 25
+      offsetX: 15
+      offsetY: 42
+    UIText:
+      text: Delete Save
+      color: [1, 1, 1, 0.899999976]
+      fontSize: 11
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 700000000000000012
+    Tag:
+      tag: MousePosLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 827593881302582438
+    UIRect:
+      anchor: TopLeft
+      pivotX: 0
+      pivotY: 1
+      sizeX: 200
+      sizeY: 20
+      offsetX: 10
+      offsetY: -10
+    UIText:
+      text: ""
+      color: [0.400000006, 0.400000006, 0.5, 0.5]
+      fontSize: 10
       alignment: Left
       kerning: 0
       lineSpacing: 0
@@ -165,8 +361,11 @@ Entities:
       translation: [0, 0, -1]
       rotation: [0, 0, 0]
       scale: [20, 15, 1]
-    SpriteRenderer:
-      color: [0.0799999982, 0.0799999982, 0.180000007, 1]
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.0784313753, 0.0784313753, 0.180392161, 1]
+      topColor: [0.800000012, 0.899999976, 1, 1]
     Visibility:
       gameVisible: true
   - Entity: 2720930421051253109

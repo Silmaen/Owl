@@ -70,6 +70,14 @@ private:
 									   std::vector<AssetReference>& ioAssets);
 
 	/**
+	 * @brief Scan a Lua script for sound.play() calls and add referenced sound assets.
+	 * @param[in] iScriptPath Absolute path to the Lua script file.
+	 * @param[in,out] ioAssets Accumulated assets.
+	 */
+	static void scanLuaScriptForSounds(const std::filesystem::path& iScriptPath,
+									   std::vector<AssetReference>& ioAssets);
+
+	/**
 	 * @brief Collect engine assets required at runtime (shaders, default font).
 	 * @param[in,out] ioAssets The asset list to append to.
 	 */

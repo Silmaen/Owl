@@ -21,12 +21,12 @@ active during **Play mode** -- entities are not simulated while editing.
 The physics module follows the same facade + pimpl pattern used by the sound and
 renderer modules (see [Architecture](architecture.md)):
 
-| Class                    | Role                                                                 |
-|--------------------------|----------------------------------------------------------------------|
-| `PhysicCommand`          | Static facade: `init` / `destroy` / `frame` / `impulse` / `velocity` / `transform` |
-| `PhysicCommand::Impl`    | Pimpl class wrapping the Box2D `b2WorldId` and a body-id map        |
-| `SceneBody`              | Data class holding physics properties (type, density, friction, ...) |
-| `component::PhysicBody`  | ECS component wrapping a single `SceneBody` instance                |
+| Class                   | Role                                                                               |
+|-------------------------|------------------------------------------------------------------------------------|
+| `PhysicCommand`         | Static facade: `init` / `destroy` / `frame` / `impulse` / `velocity` / `transform` |
+| `PhysicCommand::Impl`   | Pimpl class wrapping the Box2D `b2WorldId` and a body-id map                       |
+| `SceneBody`             | Data class holding physics properties (type, density, friction, ...)               |
+| `component::PhysicBody` | ECS component wrapping a single `SceneBody` instance                               |
 
 `PhysicCommand` holds a `shared<Impl>` pointer and a raw `Scene*` that are set
 during `init()` and cleared during `destroy()`. All public methods are static
@@ -37,15 +37,15 @@ and delegate to the implementation through these two members.
 The `PhysicBody` component wraps a `SceneBody` data class with the following
 fields:
 
-| Field          | Type        | Default      | Description                                           |
-|----------------|-------------|--------------|-------------------------------------------------------|
-| type           | `BodyType`  | `Dynamic`    | How Box2D treats the body (see table below)           |
-| fixedRotation  | `bool`      | `false`      | Lock rotation so the body cannot spin                 |
-| colliderSize   | `vec3f`     | `{1, 1, 1}`  | Half-extents of the box collider (x, y used for 2D)  |
-| density        | `float`     | `1.0`        | Material density, affects mass                        |
-| restitution    | `float`     | `0.0`        | Bounciness coefficient (0 = no bounce, 1 = full)     |
-| friction       | `float`     | `0.5`        | Surface friction coefficient                          |
-| bodyId         | `uint64_t`  | `0`          | Runtime-only internal id (not serialized)             |
+| Field         | Type       | Default     | Description                                         |
+|---------------|------------|-------------|-----------------------------------------------------|
+| type          | `BodyType` | `Dynamic`   | How Box2D treats the body (see table below)         |
+| fixedRotation | `bool`     | `false`     | Lock rotation so the body cannot spin               |
+| colliderSize  | `vec3f`    | `{1, 1, 1}` | Half-extents of the box collider (x, y used for 2D) |
+| density       | `float`    | `1.0`       | Material density, affects mass                      |
+| restitution   | `float`    | `0.0`       | Bounciness coefficient (0 = no bounce, 1 = full)    |
+| friction      | `float`    | `0.5`       | Surface friction coefficient                        |
+| bodyId        | `uint64_t` | `0`         | Runtime-only internal id (not serialized)           |
 
 The `bodyId` field is assigned during `PhysicCommand::init()` and maps to the
 corresponding `b2BodyId` in the implementation's body table.
@@ -54,7 +54,7 @@ corresponding `b2BodyId` in the implementation's body table.
 
 | Value       | Description                                                        |
 |-------------|--------------------------------------------------------------------|
-| `Static`    | Immovable body, participates in collision but never moves           |
+| `Static`    | Immovable body, participates in collision but never moves          |
 | `Dynamic`   | Fully simulated body, affected by forces, impulses, and gravity    |
 | `Kinematic` | Moved programmatically, not affected by forces but can push others |
 
@@ -111,16 +111,16 @@ body-id map, and resets the `Impl` pointer and scene pointer. After this call,
 
 `PhysicCommand` exposes the following static methods for gameplay code:
 
-| Method                                        | Description                                      |
-|-----------------------------------------------|--------------------------------------------------|
-| `init(scene)`                                 | Create Box2D world and bodies from scene         |
-| `destroy()`                                   | Destroy Box2D world and clear all bodies         |
-| `isInitialized()`                             | Check if the physics world is active             |
-| `frame(timestep)`                             | Step the simulation and sync transforms          |
-| `impulse(entity, vec2f)`                      | Apply a linear impulse to the entity's center    |
-| `getVelocity(entity) -> vec2f`                | Read the entity's current linear velocity        |
-| `setVelocity(entity, vec2f)`                  | Override the entity's linear velocity            |
-| `setTransform(entity, position, rotation)`    | Teleport the body to a new position and angle    |
+| Method                                     | Description                                   |
+|--------------------------------------------|-----------------------------------------------|
+| `init(scene)`                              | Create Box2D world and bodies from scene      |
+| `destroy()`                                | Destroy Box2D world and clear all bodies      |
+| `isInitialized()`                          | Check if the physics world is active          |
+| `frame(timestep)`                          | Step the simulation and sync transforms       |
+| `impulse(entity, vec2f)`                   | Apply a linear impulse to the entity's center |
+| `getVelocity(entity) -> vec2f`             | Read the entity's current linear velocity     |
+| `setVelocity(entity, vec2f)`               | Override the entity's linear velocity         |
+| `setTransform(entity, position, rotation)` | Teleport the body to a new position and angle |
 
 All methods silently return if the physics world is not initialized or if the
 entity does not have a `PhysicBody` component. `impulse`, `getVelocity`, and
@@ -151,11 +151,11 @@ through `ScenePlayer::parseInputs()`. Each frame during runtime the scene
 finds the primary `Player` entity and calls `parseInputs`, which reads
 keyboard state and applies impulses via `PhysicCommand`:
 
-| Field          | Type    | Default | Description                                  |
-|----------------|---------|---------|----------------------------------------------|
-| linearImpulse  | `float` | `0.1`   | Horizontal impulse applied on A/D keys       |
-| jumpImpulse    | `float` | `0.2`   | Vertical impulse applied on Space             |
-| canJump        | `bool`  | `true`  | Whether jumping is allowed                   |
+| Field         | Type    | Default | Description                            |
+|---------------|---------|---------|----------------------------------------|
+| linearImpulse | `float` | `0.1`   | Horizontal impulse applied on A/D keys |
+| jumpImpulse   | `float` | `0.2`   | Vertical impulse applied on Space      |
+| canJump       | `bool`  | `true`  | Whether jumping is allowed             |
 
 Jump is only applied when the entity's vertical velocity is near zero (i.e. the
 player is on the ground). The `Player` component requires a `PhysicBody` on the
@@ -170,12 +170,12 @@ Trigger detection runs after the physics step in `onUpdateRuntime()`: for each
 entity with a `Trigger` component, the scene computes the axis-aligned bounding
 boxes of both the trigger and the primary player and checks for intersection.
 
-| Trigger Type | Effect                                                       |
-|--------------|--------------------------------------------------------------|
-| `Victory`    | Sets scene status to `Victory`, displays win screen          |
-| `Death`      | Sets scene status to `Death`, displays loss screen           |
-| `Teleport`   | Queues a level load (optionally cross-level) to a target     |
-| `Target`     | Passive position marker, no action on collision              |
+| Trigger Type | Effect                                                   |
+|--------------|----------------------------------------------------------|
+| `Victory`    | Sets scene status to `Victory`, displays win screen      |
+| `Death`      | Sets scene status to `Death`, displays loss screen       |
+| `Teleport`   | Queues a level load (optionally cross-level) to a target |
+| `Target`     | Passive position marker, no action on collision          |
 
 Teleport triggers use `levelName` (scene file to load, empty = same level) and
 `targetName` (entity to teleport to). The player's velocity is preserved across
@@ -187,11 +187,11 @@ Physics bodies operate in **world space** and are independent of the scene
 hierarchy. The table below summarizes the interaction between parent-child
 relationships and physics:
 
-| Parent            | Child             | Behavior                                                |
-|-------------------|-------------------|---------------------------------------------------------|
-| Non-physics       | Physics           | Moving the parent does **not** move the physics child -- the child stays in its Box2D position |
-| Physics           | Physics           | Both bodies move **independently** -- Box2D simulates each body on its own regardless of parent-child link |
-| Physics           | Non-physics       | The non-physics child **follows** the parent via the normal hierarchy transform chain |
+| Parent      | Child       | Behavior                                                                                                   |
+|-------------|-------------|------------------------------------------------------------------------------------------------------------|
+| Non-physics | Physics     | Moving the parent does **not** move the physics child -- the child stays in its Box2D position             |
+| Physics     | Physics     | Both bodies move **independently** -- Box2D simulates each body on its own regardless of parent-child link |
+| Physics     | Non-physics | The non-physics child **follows** the parent via the normal hierarchy transform chain                      |
 
 During `frame()`, world positions read from Box2D are converted back to local
 space when the entity has a parent, using the inverse of the parent's world

@@ -402,6 +402,14 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 		}
 	}
 
+	// Handle deferred quit request from Lua (scene.quit()).
+	if (m_stopRequested) {
+		m_stopRequested = false;
+		if (m_state == State::Play || m_state == State::Pause)
+			onSceneStop();
+		return;
+	}
+
 	// update the viewport
 	m_viewport.onUpdate(iTimeStep);
 }
@@ -784,6 +792,9 @@ void EditorLayer::handleTeleportRequest() {
 		return;
 	}
 
+	// Preserve game state across scene transition.
+	const auto previousGameState = m_activeScene->getGameState();
+
 	m_activeScene->onEndRuntime();
 
 	const auto newScene = mkShared<scene::Scene>();
@@ -791,6 +802,7 @@ void EditorLayer::handleTeleportRequest() {
 		OWL_CORE_ERROR("Teleport: failed to load level '{}'", request.levelName)
 		return;
 	}
+	newScene->getGameState() = previousGameState;
 	newScene->onViewportResize(m_viewport.getSize());
 
 	m_pendingTeleportVelocity = true;
@@ -1008,8 +1020,8 @@ auto sanitizeFilename(const std::string& iName) -> std::string {
 	return result;
 }
 
-/// Write a Linux launcher shell script that sets LD_LIBRARY_PATH.
 #ifdef OWL_PLATFORM_LINUX
+/// Write a Linux launcher shell script that sets LD_LIBRARY_PATH.
 void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string& iExeName) {
 	std::ofstream script(iGameDir / "launch.sh");
 	script << "#!/bin/sh\n";
@@ -1090,6 +1102,10 @@ void EditorLayer::packGame() {
 	io::pack::PackWriter writer;
 	for (const auto& ref: assets) { writer.addFile(ref.diskPath, ref.packPath, ref.assetType); }
 
+	// Include game_settings.yml if present.
+	if (const auto gsPath = m_project.projectDirectory / "game_settings.yml"; exists(gsPath))
+		writer.addFile(gsPath, "game_settings.yml", io::pack::AssetType::Other);
+
 	const auto packFilename = gameName + ".owlpack";
 	const auto packPath = gameDir / packFilename;
 	if (!writer.write(packPath)) {
@@ -1153,11 +1169,10 @@ void EditorLayer::packGame() {
 		OWL_CORE_ERROR("OwlRunner executable not found in {}", runnerSrcDir.string())
 		return;
 	}
-
 #ifdef OWL_PLATFORM_WINDOWS
-	const std::string& exeFilename = gameName + ".exe";
+	const auto exeFilename = gameName + ".exe";
 #else
-	const std::string& exeFilename = gameName;
+	const auto& exeFilename = gameName;
 #endif
 	const auto destExe = gameDir / exeFilename;
 	std::filesystem::copy_file(runnerExe, destExe, std::filesystem::copy_options::overwrite_existing);

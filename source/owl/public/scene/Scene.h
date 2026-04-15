@@ -242,6 +242,9 @@ public:
 	/// Pending save/load request.
 	SaveLoadRequest saveLoadRequest;
 
+	/// Set to true when the game requests to quit (Lua scene.quit()).
+	bool quitRequested = false;
+
 	/**
 	 * @brief Count the entities in the scene.
 	 * @return The count of Entity in the scene.
