@@ -284,6 +284,82 @@ GameSettings:
 **User overrides** are saved to `~/.local/share/<game>/settings.yml` (Linux) or
 `%APPDATA%/<game>/settings.yml` (Windows).
 
+### `trigger`
+
+Control trigger entities from Lua.
+
+| Function                       | Description                   |
+|--------------------------------|-------------------------------|
+| `trigger.start_timer(eid)`    | Start/restart a Timer trigger |
+| `trigger.stop_timer(eid)`     | Stop a Timer trigger          |
+| `trigger.reset_timer(eid)`    | Reset elapsed time to 0       |
+
+## Trigger System
+
+Triggers are entities with a `Trigger` component. They detect overlap with the player
+and fire events. The engine provides 7 trigger types:
+
+| Type          | Behavior                                                   |
+|---------------|------------------------------------------------------------|
+| **Victory**   | Sets scene status to Victory (game won)                    |
+| **Death**     | Sets scene status to Death (game over)                     |
+| **Target**    | Passive position marker (no action on overlap)             |
+| **Teleport**  | Teleports the player to a target entity, optionally cross-level |
+| **Timer**     | Fires a Lua callback after a configurable duration         |
+| **Interaction** | Fires a Lua callback when the player presses E in range |
+| **LuaCallback** | Fires a Lua callback every frame while overlapping       |
+
+### Trigger Callbacks
+
+All overlap-based triggers (except Victory, Death, Target) fire edge events:
+
+```lua
+-- Called once when the player enters the trigger volume
+function on_trigger_enter(other_id)
+    log.info("Player entered!")
+end
+
+-- Called once when the player exits the trigger volume
+function on_trigger_exit(other_id)
+    log.info("Player left!")
+end
+```
+
+Each type also has a primary callback. The callback name is configurable in the
+inspector (the **Callback** field); if left empty, the default name is used:
+
+| Type            | Default Callback | When it fires                        |
+|-----------------|------------------|--------------------------------------|
+| **Timer**       | `on_timer`       | When the timer duration expires      |
+| **Interaction** | `on_interact`    | When the player presses E in range   |
+| **LuaCallback** | `on_triggered`   | Every frame while the player overlaps |
+
+### Timer Example
+
+```lua
+-- Attach this script to an entity with a Timer trigger (2s, repeating).
+local count = 0
+
+function on_timer()
+    count = count + 1
+    log.info("Timer fired! Count: " .. count)
+end
+```
+
+### Interaction Example
+
+```lua
+-- Attach this script to an entity with an Interaction trigger.
+function on_interact()
+    log.info("Player interacted with this object!")
+    -- Open a door, pick up an item, start dialogue, etc.
+end
+
+function on_trigger_enter()
+    log.info("Press E to interact")
+end
+```
+
 ## Screen Transitions
 
 Use `ui.transition_fade_out()` and `ui.transition_fade_in()` to create smooth

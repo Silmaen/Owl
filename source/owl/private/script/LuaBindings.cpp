@@ -725,9 +725,42 @@ void registerBindings(lua_State* iState) {
 		{nullptr, nullptr}
 	};
 	// clang-format on
+	// clang-format off
+	static const luaL_Reg triggerFuncs[] = {
+		{"start_timer", [](lua_State* s) -> int {
+			auto* activeScene = ScriptEngine::getActiveScene();
+			if (activeScene == nullptr) return 0;
+			const auto uid = static_cast<uint64_t>(luaL_checkinteger(s, 1));
+			if (auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+				entity && entity.hasComponent<scene::component::Trigger>())
+				entity.getComponent<scene::component::Trigger>().trigger.startTimer();
+			return 0;
+		}},
+		{"stop_timer", [](lua_State* s) -> int {
+			auto* activeScene = ScriptEngine::getActiveScene();
+			if (activeScene == nullptr) return 0;
+			const auto uid = static_cast<uint64_t>(luaL_checkinteger(s, 1));
+			if (auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+				entity && entity.hasComponent<scene::component::Trigger>())
+				entity.getComponent<scene::component::Trigger>().trigger.stopTimer();
+			return 0;
+		}},
+		{"reset_timer", [](lua_State* s) -> int {
+			auto* activeScene = ScriptEngine::getActiveScene();
+			if (activeScene == nullptr) return 0;
+			const auto uid = static_cast<uint64_t>(luaL_checkinteger(s, 1));
+			if (auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+				entity && entity.hasComponent<scene::component::Trigger>())
+				entity.getComponent<scene::component::Trigger>().trigger.resetTimer();
+			return 0;
+		}},
+		{nullptr, nullptr}
+	};
+	// clang-format on
 	registerTable(iState, "gamestate", gamestateFuncs);
 	registerTable(iState, "save", saveFuncs);
 	registerTable(iState, "settings", settingsFuncs);
+	registerTable(iState, "trigger", triggerFuncs);
 }
 
 }// namespace owl::script

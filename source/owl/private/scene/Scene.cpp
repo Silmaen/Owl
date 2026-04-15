@@ -367,6 +367,14 @@ void Scene::onStartRuntime() {
 		anim.m_elapsedTime = 0.0f;
 		anim.m_playing = true;
 	}
+
+	// Start timer triggers and reset overlap state.
+	for (const auto view = registry.view<component::Trigger>(); const auto ent: view) {
+		auto& trigger = view.get<component::Trigger>(ent).trigger;
+		trigger.setOverlapping(false);
+		if (trigger.type == SceneTrigger::TriggerType::Timer)
+			trigger.startTimer();
+	}
 }
 
 void Scene::onEndRuntime() {
@@ -527,12 +535,31 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 										 {wt.translation().x(), wt.translation().y(), wt.translation().z()});
 	}
 
-	// Trigger
-	for (const auto view = registry.view<component::Trigger>(); const auto ent: view) {
-		const Entity entity{ent, this};
-		if (Entity player = getPrimaryPlayer(); getColliderBox(entity, getWorldTransform(entity))
-														.intersect(getColliderBox(player, getWorldTransform(player)))) {
-			entity.getComponent<component::Trigger>().trigger.onTriggered(player, entity);
+	// Triggers: edge detection (enter/exit/stay) + timer updates.
+	{
+		auto player = getPrimaryPlayer();
+		for (const auto view = registry.view<component::Trigger>(); const auto ent: view) {
+			const Entity entity{ent, this};
+			auto& trigger = entity.getComponent<component::Trigger>().trigger;
+
+			// Timer triggers: update independently of overlap.
+			if (trigger.type == SceneTrigger::TriggerType::Timer) {
+				trigger.updateTimer(iTimeStep.getSeconds(), entity);
+				continue;
+			}
+
+			// Overlap-based triggers.
+			if (!player)
+				continue;
+			const bool overlapping = getColliderBox(entity, getWorldTransform(entity))
+											 .intersect(getColliderBox(player, getWorldTransform(player)));
+			if (overlapping && !trigger.wasOverlapping())
+				trigger.onTriggerEnter(player, entity);
+			if (overlapping)
+				trigger.onTriggered(player, entity);
+			if (!overlapping && trigger.wasOverlapping())
+				trigger.onTriggerExit(player, entity);
+			trigger.setOverlapping(overlapping);
 		}
 	}
 

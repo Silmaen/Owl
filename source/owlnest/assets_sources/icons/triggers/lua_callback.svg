@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Gear/cog shape representing custom callback -->
+  <path d="M 236,80 L 276,80 L 286,130 L 310,140 L 350,110 L 380,140 L 350,180 L 360,200 L 410,210
+           L 410,250 L 360,260 L 350,284 L 380,320 L 350,350 L 310,320 L 286,330 L 276,380
+           L 236,380 L 226,330 L 202,320 L 162,350 L 132,320 L 162,284 L 152,260 L 102,250
+           L 102,210 L 152,200 L 162,180 L 132,140 L 162,110 L 202,140 L 226,130 Z"
+        stroke="white" stroke-width="18" fill="none" stroke-linejoin="round"/>
+  <!-- Center: Lua moon -->
+  <circle cx="256" cy="230" r="50" stroke="white" stroke-width="16" fill="none"/>
+  <!-- Brackets: { } -->
+  <text x="180" y="460" font-size="80" font-family="monospace" font-weight="bold" fill="white">{</text>
+  <text x="300" y="460" font-size="80" font-family="monospace" font-weight="bold" fill="white">}</text>
+</svg>
