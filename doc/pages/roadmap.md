@@ -323,7 +323,7 @@ with dedicated editors for different asset types.
         - Add distinct icons for new trigger types (timer, interaction, lua callback)
         - Consistent visual language across all icon categories
 
-## v0.1.0 -- Expected 2026-06-01
+## v0.1.0 -- 2026-04-16
 
 **Goal:** Users can design a complete game in Owl Nest and package it as a standalone distributable
 application (Linux / Windows).
