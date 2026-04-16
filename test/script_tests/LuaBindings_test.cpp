@@ -21,24 +21,23 @@ using namespace owl::script;
 
 TEST(LuaBindings, transformGetSetPosition) {
 	core::Log::init(core::Log::Level::Off);
-	auto scn = mkShared<scene::Scene>();
-	auto entity = scn->createEntity("TestEntity");
-	auto& tc = entity.getComponent<scene::component::Transform>();
-	tc.transform.translation() = {1.0f, 2.0f, 3.0f};
+	const auto scn = mkShared<scene::Scene>();
+	const auto entity = scn->createEntity("TestEntity");
+	auto& [transform] = entity.getComponent<scene::component::Transform>();
+	transform.translation() = {1.0f, 2.0f, 3.0f};
 
 	ScriptEngine::init(scn.get());
 
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
 	// Use entity_id global (set by ScriptInstance::create*) to avoid uint64 literal precision issues.
-	const std::string script =
-			"px = 0\npy = 0\npz = 0\n"
-			"function on_create()\n"
-			"  px, py, pz = transform.get_position(entity_id)\n"
-			"  transform.set_position(entity_id, 10.0, 20.0, 30.0)\n"
-			"end\n";
+	const std::string script = "px = 0\npy = 0\npz = 0\n"
+							   "function on_create()\n"
+							   "  px, py, pz = transform.get_position(entity_id)\n"
+							   "  transform.set_position(entity_id, 10.0, 20.0, 30.0)\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "transform_test", uuid));
 	inst.onCreate();
 
@@ -48,9 +47,9 @@ TEST(LuaBindings, transformGetSetPosition) {
 	EXPECT_NEAR(inst.getPropertyFloat("pz").value_or(0), 3.0f, 0.01f);
 
 	// Verify Lua wrote back to the component.
-	EXPECT_NEAR(tc.transform.translation().x(), 10.0f, 0.01f);
-	EXPECT_NEAR(tc.transform.translation().y(), 20.0f, 0.01f);
-	EXPECT_NEAR(tc.transform.translation().z(), 30.0f, 0.01f);
+	EXPECT_NEAR(transform.translation().x(), 10.0f, 0.01f);
+	EXPECT_NEAR(transform.translation().y(), 20.0f, 0.01f);
+	EXPECT_NEAR(transform.translation().z(), 30.0f, 0.01f);
 
 	ScriptEngine::shutdown();
 	core::Log::invalidate();
@@ -64,14 +63,13 @@ TEST(LuaBindings, sceneFindEntity) {
 
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"found_id = 0\n"
-			"function on_create()\n"
-			"  found_id = scene.find_entity('MyTarget')\n"
-			"end\n";
+	const std::string script = "found_id = 0\n"
+							   "function on_create()\n"
+							   "  found_id = scene.find_entity('MyTarget')\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "find_test", 1));
 	inst.onCreate();
 
@@ -88,11 +86,10 @@ TEST(LuaBindings, sceneFindEntityNotFound) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"found_id = -1\n"
-			"function on_create()\n"
-			"  found_id = scene.find_entity('NonExistent')\n"
-			"end\n";
+	const std::string script = "found_id = -1\n"
+							   "function on_create()\n"
+							   "  found_id = scene.find_entity('NonExistent')\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;
@@ -116,13 +113,12 @@ TEST(LuaBindings, entityHasComponent) {
 	ScriptEngine::init(scn.get());
 
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
-	const std::string script =
-			"has_transform = false\n"
-			"has_physic = false\n"
-			"function on_create()\n"
-			"  has_transform = entity.has_component(entity_id, 'Transform')\n"
-			"  has_physic = entity.has_component(entity_id, 'PhysicBody')\n"
-			"end\n";
+	const std::string script = "has_transform = false\n"
+							   "has_physic = false\n"
+							   "function on_create()\n"
+							   "  has_transform = entity.has_component(entity_id, 'Transform')\n"
+							   "  has_physic = entity.has_component(entity_id, 'PhysicBody')\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;
@@ -144,11 +140,10 @@ TEST(LuaBindings, entityGetName) {
 	ScriptEngine::init(scn.get());
 
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
-	const std::string script =
-			"ent_name = ''\n"
-			"function on_create()\n"
-			"  ent_name = entity.get_name(entity_id)\n"
-			"end\n";
+	const std::string script = "ent_name = ''\n"
+							   "function on_create()\n"
+							   "  ent_name = entity.get_name(entity_id)\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;
@@ -166,13 +161,12 @@ TEST(LuaBindings, logDoesNotCrash) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"function on_create()\n"
-			"  log.trace('trace msg')\n"
-			"  log.info('info msg')\n"
-			"  log.warn('warn msg')\n"
-			"  log.error('error msg')\n"
-			"end\n";
+	const std::string script = "function on_create()\n"
+							   "  log.trace('trace msg')\n"
+							   "  log.info('info msg')\n"
+							   "  log.warn('warn msg')\n"
+							   "  log.error('error msg')\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;
@@ -188,11 +182,10 @@ TEST(LuaBindings, timeDelta) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"dt_val = 0\n"
-			"function on_update(dt)\n"
-			"  dt_val = time.delta()\n"
-			"end\n";
+	const std::string script = "dt_val = 0\n"
+							   "function on_update(dt)\n"
+							   "  dt_val = time.delta()\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;

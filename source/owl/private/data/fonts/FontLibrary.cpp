@@ -75,6 +75,8 @@ void FontLibrary::loadFont(const std::string& iName) {
 	}
 	// Fallback: load from filesystem.
 	for (const auto& path: getFontPath()) {
+		if (!std::filesystem::exists(path))
+			continue;
 		for (const auto& item: std::filesystem::recursive_directory_iterator(path)) {
 			if (!item.is_regular_file() || item.path().extension() != ".ttf")
 				continue;
@@ -111,6 +113,8 @@ auto FontLibrary::getLoadedFontNames() const -> std::list<std::string> {
 auto FontLibrary::getFoundFontNames() -> std::list<std::string> {
 	std::list<std::string> list;
 	for (const auto& path: getFontPath()) {
+		if (!std::filesystem::exists(path))
+			continue;
 		for (const auto& item: std::filesystem::recursive_directory_iterator(path)) {
 			if (!item.is_regular_file() || item.path().extension() != ".ttf")
 				continue;

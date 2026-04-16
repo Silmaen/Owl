@@ -15,9 +15,9 @@
 #include "physic/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/SaveManager.h"
-#include "scene/SettingsManager.h"
 #include "scene/Scene.h"
 #include "scene/ScreenTransition.h"
+#include "scene/SettingsManager.h"
 #include "scene/component/components.h"
 #include "script/ScriptEngine.h"
 #include "sound/SoundCommand.h"
@@ -26,12 +26,12 @@
 namespace owl::script {
 namespace {
 
-/// Helper: find entity by UUID in the active scene.
-auto findEntity(lua_State* iState, const int iArgIndex) -> std::optional<scene::Entity> {
-	auto* activeScene = ScriptEngine::getActiveScene();
+/// Helper: find entity by UUID in the active scene (reads first Lua argument).
+auto findEntity(lua_State* iState) -> std::optional<scene::Entity> {
+	const auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene == nullptr)
 		return std::nullopt;
-	const auto uuid = static_cast<uint64_t>(luaL_checkinteger(iState, iArgIndex));
+	const auto uuid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
 	if (auto entity = activeScene->findEntityByUUID(core::UUID{uuid}); entity)
 		return entity;
 	return std::nullopt;
@@ -42,7 +42,7 @@ auto findEntity(lua_State* iState, const int iArgIndex) -> std::optional<scene::
 // ============================================================
 
 auto luaTransformGetPosition(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::Transform>()) {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Transform>()) {
 		const auto& t = entity->getComponent<scene::component::Transform>().transform;
 		lua_pushnumber(iState, static_cast<lua_Number>(t.translation().x()));
 		lua_pushnumber(iState, static_cast<lua_Number>(t.translation().y()));
@@ -56,7 +56,7 @@ auto luaTransformGetPosition(lua_State* iState) -> int {
 }
 
 auto luaTransformSetPosition(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::Transform>()) {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Transform>()) {
 		auto& t = entity->getComponent<scene::component::Transform>().transform;
 		t.translation().x() = static_cast<float>(luaL_checknumber(iState, 2));
 		t.translation().y() = static_cast<float>(luaL_checknumber(iState, 3));
@@ -66,7 +66,7 @@ auto luaTransformSetPosition(lua_State* iState) -> int {
 }
 
 auto luaTransformGetRotation(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::Transform>()) {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Transform>()) {
 		const auto& t = entity->getComponent<scene::component::Transform>().transform;
 		lua_pushnumber(iState, static_cast<lua_Number>(t.rotation().x()));
 		lua_pushnumber(iState, static_cast<lua_Number>(t.rotation().y()));
@@ -80,7 +80,7 @@ auto luaTransformGetRotation(lua_State* iState) -> int {
 }
 
 auto luaTransformSetRotation(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::Transform>()) {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Transform>()) {
 		auto& t = entity->getComponent<scene::component::Transform>().transform;
 		t.rotation().x() = static_cast<float>(luaL_checknumber(iState, 2));
 		t.rotation().y() = static_cast<float>(luaL_checknumber(iState, 3));
@@ -90,7 +90,7 @@ auto luaTransformSetRotation(lua_State* iState) -> int {
 }
 
 auto luaTransformGetScale(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::Transform>()) {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Transform>()) {
 		const auto& t = entity->getComponent<scene::component::Transform>().transform;
 		lua_pushnumber(iState, static_cast<lua_Number>(t.scale().x()));
 		lua_pushnumber(iState, static_cast<lua_Number>(t.scale().y()));
@@ -104,7 +104,7 @@ auto luaTransformGetScale(lua_State* iState) -> int {
 }
 
 auto luaTransformSetScale(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::Transform>()) {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Transform>()) {
 		auto& t = entity->getComponent<scene::component::Transform>().transform;
 		t.scale().x() = static_cast<float>(luaL_checknumber(iState, 2));
 		t.scale().y() = static_cast<float>(luaL_checknumber(iState, 3));
@@ -118,7 +118,7 @@ auto luaTransformSetScale(lua_State* iState) -> int {
 // ============================================================
 
 auto luaPhysicsImpulse(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1)) {
+	if (const auto entity = findEntity(iState)) {
 		const auto fx = static_cast<float>(luaL_checknumber(iState, 2));
 		const auto fy = static_cast<float>(luaL_checknumber(iState, 3));
 		physic::PhysicCommand::impulse(*entity, {fx, fy});
@@ -127,7 +127,7 @@ auto luaPhysicsImpulse(lua_State* iState) -> int {
 }
 
 auto luaPhysicsGetVelocity(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1)) {
+	if (const auto entity = findEntity(iState)) {
 		const auto vel = physic::PhysicCommand::getVelocity(*entity);
 		lua_pushnumber(iState, static_cast<lua_Number>(vel.x()));
 		lua_pushnumber(iState, static_cast<lua_Number>(vel.y()));
@@ -139,7 +139,7 @@ auto luaPhysicsGetVelocity(lua_State* iState) -> int {
 }
 
 auto luaPhysicsSetVelocity(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1)) {
+	if (const auto entity = findEntity(iState)) {
 		const auto vx = static_cast<float>(luaL_checknumber(iState, 2));
 		const auto vy = static_cast<float>(luaL_checknumber(iState, 3));
 		physic::PhysicCommand::setVelocity(*entity, {vx, vy});
@@ -148,7 +148,7 @@ auto luaPhysicsSetVelocity(lua_State* iState) -> int {
 }
 
 auto luaPhysicsSetTransform(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1)) {
+	if (const auto entity = findEntity(iState)) {
 		const auto px = static_cast<float>(luaL_checknumber(iState, 2));
 		const auto py = static_cast<float>(luaL_checknumber(iState, 3));
 		const auto rot = static_cast<float>(luaL_checknumber(iState, 4));
@@ -194,7 +194,8 @@ auto luaSoundPlay(lua_State* iState) -> int {
 		return 1;
 	}
 	auto& library = sound::SoundSystem::getSoundLibrary();
-	const auto data = library.get(assetPath);
+	// Auto-load the sound if not already in the library.
+	const auto data = library.exists(assetPath) ? library.get(assetPath) : library.load(assetPath);
 	if (!data) {
 		lua_pushinteger(iState, static_cast<lua_Integer>(sound::invalidSoundHandle));
 		return 1;
@@ -258,7 +259,7 @@ auto luaSceneCreateEntity(lua_State* iState) -> int {
 		return 1;
 	}
 	const char* name = luaL_checkstring(iState, 1);
-	auto entity = activeScene->createEntity(name);
+	const auto entity = activeScene->createEntity(name);
 	lua_pushinteger(iState, static_cast<lua_Integer>(static_cast<uint64_t>(entity.getUUID())));
 	return 1;
 }
@@ -283,6 +284,13 @@ auto luaSceneLoadScene(lua_State* iState) -> int {
 	activeScene->teleportRequest.targetName.clear();
 	activeScene->teleportRequest.initialVelocity = {0.f, 0.f};
 	activeScene->teleportRequest.rotationDelta = 0.f;
+	return 0;
+}
+
+auto luaSceneQuit([[maybe_unused]] lua_State* iState) -> int {
+	auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene != nullptr)
+		activeScene->quitRequested = true;
 	return 0;
 }
 
@@ -329,7 +337,7 @@ auto luaLogError(lua_State* iState) -> int {
 // ============================================================
 
 auto luaEntityHasComponent(lua_State* iState) -> int {
-	const auto entity = findEntity(iState, 1);
+	const auto entity = findEntity(iState);
 	if (!entity) {
 		lua_pushboolean(iState, 0);
 		return 1;
@@ -369,7 +377,7 @@ auto luaEntityHasComponent(lua_State* iState) -> int {
 }
 
 auto luaEntityGetName(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1)) {
+	if (const auto entity = findEntity(iState)) {
 		lua_pushstring(iState, entity->getName().c_str());
 		return 1;
 	}
@@ -382,13 +390,13 @@ auto luaEntityGetName(lua_State* iState) -> int {
 // ============================================================
 
 auto luaUiSetText(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::UIText>())
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UIText>())
 		entity->getComponent<scene::component::UIText>().text = luaL_checkstring(iState, 2);
 	return 0;
 }
 
 auto luaUiGetText(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::UIText>()) {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UIText>()) {
 		lua_pushstring(iState, entity->getComponent<scene::component::UIText>().text.c_str());
 		return 1;
 	}
@@ -397,19 +405,19 @@ auto luaUiGetText(lua_State* iState) -> int {
 }
 
 auto luaUiSetVisible(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::Visibility>())
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Visibility>())
 		entity->getComponent<scene::component::Visibility>().gameVisible = lua_toboolean(iState, 2) != 0;
 	return 0;
 }
 
 auto luaUiSetProgress(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::UIProgressBar>())
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UIProgressBar>())
 		entity->getComponent<scene::component::UIProgressBar>().value = static_cast<float>(luaL_checknumber(iState, 2));
 	return 0;
 }
 
 auto luaUiGetSliderValue(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::UISlider>()) {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UISlider>()) {
 		lua_pushnumber(iState, static_cast<lua_Number>(entity->getComponent<scene::component::UISlider>().value));
 		return 1;
 	}
@@ -418,16 +426,16 @@ auto luaUiGetSliderValue(lua_State* iState) -> int {
 }
 
 auto luaUiSetSliderValue(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::UISlider>())
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UISlider>())
 		entity->getComponent<scene::component::UISlider>().value = static_cast<float>(luaL_checknumber(iState, 2));
 	return 0;
 }
 
 auto luaUiSetButtonEnabled(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState, 1); entity && entity->hasComponent<scene::component::UIButton>()) {
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UIButton>()) {
 		auto& button = entity->getComponent<scene::component::UIButton>();
 		button.state = lua_toboolean(iState, 2) != 0 ? scene::component::UIButton::State::Normal
-													  : scene::component::UIButton::State::Disabled;
+													 : scene::component::UIButton::State::Disabled;
 	}
 	return 0;
 }
@@ -487,8 +495,8 @@ auto luaGamestateGet(lua_State* iState) -> int {
 		return 1;
 	}
 	std::visit(
-			[iState](const auto& iVal) {
-				using T = std::decay_t<decltype(iVal)>;
+			[iState]<typename T0>(const T0& iVal) -> void {
+				using T = std::decay_t<T0>;
 				if constexpr (std::is_same_v<T, int64_t>)
 					lua_pushinteger(iState, static_cast<lua_Integer>(iVal));
 				else if constexpr (std::is_same_v<T, float>)
@@ -509,8 +517,7 @@ auto luaGamestateRemove(lua_State* iState) -> int {
 	return 0;
 }
 
-auto luaGamestateClear(lua_State* iState) -> int {
-	std::ignore = iState;
+auto luaGamestateClear([[maybe_unused]] lua_State* iState) -> int { // NOLINT(readability-non-const-parameter)
 	auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene != nullptr)
 		activeScene->getGameState().clear();
@@ -620,9 +627,10 @@ void registerBindings(lua_State* iState) {
 		{"create_entity", luaSceneCreateEntity},
 		{"destroy_entity", luaSceneDestroyEntity},
 		{"load_scene", luaSceneLoadScene},
+		{"quit", luaSceneQuit},
 		{nullptr, nullptr}
 	};
-	static const luaL_Reg timeFuncs[] = {
+	static  constexpr luaL_Reg timeFuncs[] = {
 		{"delta", luaTimeDelta},
 		{nullptr, nullptr}
 	};
@@ -633,7 +641,7 @@ void registerBindings(lua_State* iState) {
 		{"error", luaLogError},
 		{nullptr, nullptr}
 	};
-	static const luaL_Reg entityFuncs[] = {
+	static  constexpr luaL_Reg entityFuncs[] = {
 		{"has_component", luaEntityHasComponent},
 		{"get_name", luaEntityGetName},
 		{nullptr, nullptr}
@@ -704,8 +712,8 @@ void registerBindings(lua_State* iState) {
 					lua_pushnil(s);
 				return 1;
 			}
-			std::visit([s](const auto& v) {
-				using T = std::decay_t<decltype(v)>;
+			std::visit([s]<typename T0>(const T0& v) -> void {
+				using T = std::decay_t<T0>;
 				if constexpr (std::is_same_v<T, int64_t>)
 					lua_pushinteger(s, static_cast<lua_Integer>(v));
 				else if constexpr (std::is_same_v<T, float>)
@@ -726,30 +734,30 @@ void registerBindings(lua_State* iState) {
 	};
 	// clang-format on
 	// clang-format off
-	static const luaL_Reg triggerFuncs[] = {
+	static  constexpr luaL_Reg triggerFuncs[] = {
 		{"start_timer", [](lua_State* s) -> int {
-			auto* activeScene = ScriptEngine::getActiveScene();
+			const auto* activeScene = ScriptEngine::getActiveScene();
 			if (activeScene == nullptr) return 0;
 			const auto uid = static_cast<uint64_t>(luaL_checkinteger(s, 1));
-			if (auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+			if (const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
 				entity && entity.hasComponent<scene::component::Trigger>())
 				entity.getComponent<scene::component::Trigger>().trigger.startTimer();
 			return 0;
 		}},
 		{"stop_timer", [](lua_State* s) -> int {
-			auto* activeScene = ScriptEngine::getActiveScene();
+			const auto* activeScene = ScriptEngine::getActiveScene();
 			if (activeScene == nullptr) return 0;
 			const auto uid = static_cast<uint64_t>(luaL_checkinteger(s, 1));
-			if (auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+			if (const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
 				entity && entity.hasComponent<scene::component::Trigger>())
 				entity.getComponent<scene::component::Trigger>().trigger.stopTimer();
 			return 0;
 		}},
 		{"reset_timer", [](lua_State* s) -> int {
-			auto* activeScene = ScriptEngine::getActiveScene();
+			const auto* activeScene = ScriptEngine::getActiveScene();
 			if (activeScene == nullptr) return 0;
 			const auto uid = static_cast<uint64_t>(luaL_checkinteger(s, 1));
-			if (auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+			if (const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
 				entity && entity.hasComponent<scene::component::Trigger>())
 				entity.getComponent<scene::component::Trigger>().trigger.resetTimer();
 			return 0;

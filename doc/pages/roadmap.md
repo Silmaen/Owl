@@ -297,6 +297,15 @@ with dedicated editors for different asset types.
     - ![Planned][planned] Packaging wizard in Owl Nest
         - Panel/dialog: target platform, output directory, progress bar, build report
         - Pre-packaging validation: check firstScene exists, all assets found
+- Menu & Project Workflow
+    - ![Planned][planned] Separate Project and Scene menus
+        - Dedicated **Project** menu: New, Open, Save, Close, Recent Projects, Project Settings, Pack
+        - Dedicated **Scene** menu: New, Open, Save, Save As, Import
+        - Project operations take priority (opening a project auto-loads its first scene)
+    - ![Planned][planned] Recent projects
+        - Persist a list of recently opened project directories in editor settings
+        - "Open Recent" submenu in the Project menu (most recent first, max ~10 entries)
+        - Welcome screen / startup dialog showing recent projects for quick access
 - UX & Quality
     - ![Planned][planned] In-editor help pages
         - Built-in documentation browser (searchable, linked from panels)
@@ -406,9 +415,13 @@ application (Linux / Windows).
     - ![Done][done] Common properties across scenes
         - Covered by `SettingsManager`: game defaults in `game_settings.yml`, shared across all scenes
 - Sample Game
-    - ![Planned][planned] Complete game demonstrator
-        - Victory, defeat, multiple levels, variety of gameplay mechanics
-        - Showcase of all engine features (scripting, UI, physics, sound, save/load, settings, prefabs)
+    - ![Done][done] Complete game demonstrator
+        - 6 scenes: main menu (logo, save management), gameplay, level 2, settings (with reset),
+          victory, game over — all with fade transitions
+        - Full Lua API coverage: all 13 API tables exercised (transform, physics, input, scene,
+          entity, ui, gamestate, save, settings, sound, log, trigger, time)
+        - All 8 UI widget types, all 7 trigger types, animated sprites, sounds + music
+          with pause/resume/volume, mouse input, runtime entity creation, entity inspection
 
 ## v0.0.3 -- 2026-04-09
 

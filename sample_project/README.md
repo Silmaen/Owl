@@ -9,54 +9,114 @@ living showcase — it must be updated whenever new features are added to the en
 2. **File > Open Project** and select `sample_project/owl_project.yml`
 3. The Main Menu scene loads automatically
 
-## Scenes
+## How to Play
 
-### `scenes/main_menu.owl` -- Main Menu
-- **Canvas UI**: title text (UIText), play button (UIButton), version label
-- **Lua script** (`scripts/main_menu.lua`): button click callback, scene loading, save detection
-- **Features tested**: Canvas, UIRect anchoring (TopCenter, Center, BottomRight), UIButton states,
-  UIText, scene.load_scene, gamestate, save.has_save
+- **Main Menu**: Play, Continue (loads last save), Settings, Delete Save, or Quit
+- **Gameplay**: WASD to move, Space to jump, collect all 3 coins before health runs out
+  - Coins heal you (+30% health each)
+  - Health slowly decreases (hazard simulation)
+  - Press **E** near the checkpoint circle to save (also stops hazard timer)
+  - **M** to toggle music pause/resume
+  - **F5** to quick-save anywhere
+  - **Escape** to return to main menu
+  - Level 1: reach the portal to advance to level 2
+  - Level 2: collect all coins, then reach the victory zone
+- **Victory**: victory screen with final score and fade transition
+- **Game Over**: health reaches 0 → game over with retry/menu options
+- **Settings**: adjust master volume and player speed, Reset Defaults button
 
-### `scenes/gameplay.owl` -- Gameplay
-- **Player**: SpriteRenderer + PhysicBody (dynamic) + Player component + LuaScript
-  - WASD movement via `physics.impulse()`
-  - Coin collection via `scene.find_entity()` + distance check + `scene.destroy_entity()`
-  - Score stored in `gamestate` (persists across saves)
-  - Auto-save to slot 1 when all coins collected
-  - Quick-save with F5
-- **PlayerHat**: child entity of Player — tests **hierarchy** (follows parent)
-- **Ground + Walls**: static PhysicBody entities
-- **Coins**: CircleRenderer — destroyed on collection
-- **Moving Platform**: LuaScript with `transform.get/set_position`, oscillates via `math.sin`
-- **HUD Canvas**: screen-space overlay
-  - **ScoreText** (UIText, TopLeft): updated via `ui.set_text()` from player script
-  - **HealthBar** (UIProgressBar, TopRight): animated via `ui.set_progress()` from HUD script
-  - **Instructions** (UIText, TopCenter): static help text
+## Scenes (6)
 
-## Lua Scripts
+| Scene               | Purpose                                                             |
+|---------------------|---------------------------------------------------------------------|
+| `main_menu.owl`     | Logo, title, Play/Continue/Settings/Quit, save info, mouse coords   |
+| `gameplay.owl`      | Level 1: player, coins, platforms, triggers, HUD, portal to level 2 |
+| `level2.owl`        | Level 2: harder layout, victory zone, hazard timer                  |
+| `settings_menu.owl` | Volume + speed sliders, reset defaults, back button                 |
+| `victory.owl`       | Win screen with score, menu button                                  |
+| `game_over.owl`     | Lose screen with score, retry + menu buttons                        |
 
-| Script | Features Exercised |
-|--------|-------------------|
-| `scripts/main_menu.lua` | UI callbacks, `scene.load_scene`, `gamestate.get/set`, `save.has_save`, `log.info` |
-| `scripts/player.lua` | `input.is_key_pressed`, `physics.impulse`, `transform.get_position`, `scene.find_entity`, `scene.destroy_entity`, `gamestate.set`, `save.save_game`, properties |
-| `scripts/moving_platform.lua` | `transform.get/set_position`, `transform.set_rotation`, `math.sin`, properties |
-| `scripts/hud.lua` | `ui.set_progress`, `scene.find_entity` |
+## Gameplay Features
+
+- **Victory condition**: collect all coins + reach victory zone (level 2) or auto-win (level 1 via portal)
+- **Defeat condition**: health depletes to 0 → game over scene
+- **Health system**: slowly decreases, healed by coin pickups
+- **Checkpoint**: Interaction trigger (press E) saves and stops hazard timer
+- **Hazard timer**: Timer trigger, stopped by checkpoint, restarts via marker entity
+- **Death zone**: Death trigger below the ground
+- **Music toggle**: M key pauses/resumes background music
+- **Escape to menu**: Escape key returns to main menu
+- **Quick-save**: F5 saves to slot 1
+- **Continue**: main menu loads save slot 1
+- **Delete save**: main menu can delete save data
+- **Retry**: game over screen offers restart
+- **Mouse tracking**: mouse coordinates displayed on main menu
+
+## Prefabs
+
+- `prefabs/coin.owlprefab` — Reusable coin template (CircleRenderer + Trigger + LuaScript)
+
+## Lua Scripts (11)
+
+| Script                | Features Exercised                                                                                                                                                                                                                                                               |
+|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `main_menu.lua`       | `save.has_save/load_game/list_saves/delete_save`, `ui.set_button_enabled/set_visible/get_text`, `input.get_mouse_x/y`, `ui.transition_fade_in/out`, `scene.load_scene`, `gamestate`                                                                                              |
+| `player.lua`          | `input.is_key_pressed`, `physics.impulse/get_velocity`, `entity.has_component/get_name`, `sound.play/stop/pause/resume/set_volume`, `ui.set_visible/set_text/set_progress`, `scene.find/destroy/create_entity`, `settings.get`, `gamestate`, `save`, `ui.transition_fade_in/out` |
+| `moving_platform.lua` | `transform.get/set_position/rotation`, `math.sin`, properties                                                                                                                                                                                                                    |
+| `hud.lua`             | HUD initialization                                                                                                                                                                                                                                                               |
+| `settings_menu.lua`   | `settings.get/set/save/load/apply/reset_all`, `ui.set_text/set_slider_value/get_slider_value`, `ui.transition_fade_in/out`                                                                                                                                                       |
+| `coin.lua`            | LuaCallback trigger, `gamestate`, `scene.destroy_entity`, `sound.play`, rotation animation                                                                                                                                                                                       |
+| `hazard_timer.lua`    | Timer trigger (repeating), `trigger.start_timer`, `scene.find/destroy_entity`, `transform.set_scale`                                                                                                                                                                             |
+| `checkpoint.lua`      | Interaction trigger, `save.save_game`, `trigger.stop_timer/reset_timer`, `scene.create_entity`, `entity.get_name`, `physics.set_transform`                                                                                                                                       |
+| `portal.lua`          | Teleport trigger, `sound.play`, visual animation                                                                                                                                                                                                                                 |
+| `victory.lua`         | `gamestate.get/remove`, `ui.set_text`, `ui.transition_fade_in/out`                                                                                                                                                                                                               |
+| `game_over.lua`       | `gamestate.get/clear`, `ui.transition_fade_in/out`, retry/menu buttons                                                                                                                                                                                                           |
+| `death_zone.lua`      | LuaCallback trigger, `sound.play`, `scene.load_scene`                                                                                                                                                                                                                            |
 
 ## Engine Features Covered
 
-- [x] Lua scripting (lifecycle callbacks, properties, all API tables)
-- [x] Canvas UI (screen-space overlay rendering)
-- [x] UIRect (anchoring: TopLeft, TopCenter, TopRight, Center, BottomRight)
-- [x] UIText (fontSize, color, aspect-ratio-preserved rendering)
-- [x] UIButton (states, click callback via Lua)
-- [x] UIProgressBar (animated value via Lua)
-- [x] Scene transitions (`scene.load_scene`)
-- [x] Physics (dynamic + static bodies, impulse, velocity)
-- [x] Entity hierarchy (parent-child transform inheritance)
-- [x] SpriteRenderer + CircleRenderer
-- [x] Scene entity management (find, create, destroy)
-- [x] Camera (orthographic)
-- [x] SoundListener
-- [x] Input system (keyboard: WASD + F5)
-- [x] GameState (key-value store, cross-scene persistence)
-- [x] Save/Load system (auto-save on completion, quick-save F5, save detection on menu)
+### Components Used
+- [x] Transform, Camera, Canvas, SpriteRenderer, CircleRenderer, AnimatedSpriteRenderer, TextRenderer
+- [x] PhysicBody (dynamic + static), Player
+- [x] Trigger (Death, Victory, Teleport, Timer, Interaction, LuaCallback, Target)
+- [x] Hierarchy (parent-child), Visibility, Tag, ID
+- [x] LuaScript (with properties)
+- [x] SoundListener, BackgroundTexture
+- [x] UIRect, UIText, UIButton, UISlider, UIProgressBar, UIImage, UIPanel
+
+### Lua API Coverage
+- [x] `transform` (get/set position, rotation, scale)
+- [x] `physics` (impulse, get_velocity, set_transform)
+- [x] `input` (is_key_pressed, is_mouse_button_pressed, get_mouse_x, get_mouse_y)
+- [x] `scene` (find_entity, destroy_entity, create_entity, load_scene)
+- [x] `entity` (has_component, get_name)
+- [x] `ui` (set_text, get_text, set_visible, set_progress, set_slider_value, get_slider_value, set_button_enabled, transition_fade_in/out, is_transition_active)
+- [x] `gamestate` (set, get, remove, clear)
+- [x] `save` (save_game, load_game, has_save, list_saves, delete_save)
+- [x] `settings` (get, set, save, load, apply, reset, reset_all)
+- [x] `sound` (play, stop, pause, resume, set_volume)
+- [x] `log` (trace, info, warn, error)
+- [x] `trigger` (start_timer, stop_timer, reset_timer)
+- [x] Trigger callbacks (on_trigger_enter/exit, on_timer, on_interact, custom)
+
+### Gameplay Systems
+- [x] Scene transitions (6 scenes interconnected) with fade effects
+- [x] Victory / defeat flow with Victory and Death trigger zones
+- [x] Health system with HUD (progress bar + score text)
+- [x] Save system (quick-save, checkpoint, auto-save, continue, delete save, list saves)
+- [x] Settings persistence (game defaults + user overrides + reset to defaults)
+- [x] Entity hierarchy (PlayerHat follows Player)
+- [x] Trigger zones (all 7 types demonstrated)
+- [x] Prefab template (coin.owlprefab)
+- [x] AnimatedSpriteRenderer (coin rotation spritesheet, 18 frames)
+- [x] Sound effects + music with pause/resume/volume control
+- [x] UIImage (owl logo), UIPanel (button backdrop), all 8 widget types
+- [x] BackgroundTexture (sky gradient)
+- [x] Mouse input tracking
+- [x] Runtime entity creation (session/checkpoint markers)
+- [x] Dynamic entity inspection (has_component, get_name)
+- [x] Timer control from scripts (start/stop/reset)
+
+### Not Yet Demonstrated (engine-level, no Lua API)
+- [ ] NativeScript (C++ scripting, only Lua demonstrated)
+- [ ] EntityLink / PrefabLink components (editor-level features)

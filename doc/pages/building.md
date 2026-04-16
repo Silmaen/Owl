@@ -58,12 +58,12 @@ cmake --build output/build/<preset>
 
 #### Packaging Presets
 
-| Preset                      | Description                        |
-|-----------------------------|------------------------------------|
-| `package-engine-linux`      | Package engine library for Linux   |
-| `package-engine-windows`    | Package engine library for Windows |
-| `package-app-nest-linux`    | Package Owl Nest for Linux         |
-| `package-app-nest-windows`  | Package Owl Nest for Windows       |
+| Preset                     | Description                        |
+|----------------------------|------------------------------------|
+| `package-engine-linux`     | Package engine library for Linux   |
+| `package-engine-windows`   | Package engine library for Windows |
+| `package-app-nest-linux`   | Package Owl Nest for Linux         |
+| `package-app-nest-windows` | Package Owl Nest for Windows       |
 
 ## Running Tests
 
@@ -73,8 +73,8 @@ Tests use Google Test and are enabled by default (`OWL_TESTING=ON`):
 ctest --test-dir output/build/<preset> --output-on-failure
 ```
 
-Test executables are named `owl_<category>_unit_test` with 13 categories: core, debug,
-event, font, gui, input, layer, math, mesh, physic, renderer, scene, sound.
+Test executables are named `owl_<category>_unit_test` with 15 categories: core, debug,
+event, font, gui, input, io, layer, math, mesh, physic, renderer, scene, script, sound.
 
 ## CI System
 

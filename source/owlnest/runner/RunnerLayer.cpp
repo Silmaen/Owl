@@ -127,10 +127,21 @@ void RunnerLayer::onAttach() {
 	scene::SettingsManager::setDefault(scene::SettingsManager::KeyVolumeMusic, 1.0f);
 	scene::SettingsManager::setDefault(scene::SettingsManager::KeyVolumeSfx, 1.0f);
 	// Load game defaults from assets (game_settings.yml).
-	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
-		if (const auto gameSettingsPath = assetsPath / "game_settings.yml"; exists(gameSettingsPath)) {
-			scene::SettingsManager::loadDefaults(gameSettingsPath);
-			break;
+	{
+		bool loaded = false;
+		for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
+			if (const auto gameSettingsPath = assetsPath / "game_settings.yml"; exists(gameSettingsPath)) {
+				scene::SettingsManager::loadDefaults(gameSettingsPath);
+				loaded = true;
+				break;
+			}
+		}
+		// Fallback: try loading from pack.
+		if (!loaded && app.hasOpenPack()) {
+			if (auto data = app.loadFromPack("game_settings.yml"); data) {
+				const std::string content(data->begin(), data->end());
+				scene::SettingsManager::loadDefaultsFromString(content);
+			}
 		}
 	}
 	// Load user overrides.
@@ -233,10 +244,18 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 					}
 				}
 			} else {
-				scene::UIInputSystem::update(m_activeScene.get(), m_viewportSize,
-											 input::Input::getMousePos(),
+				// UIRect uses Y=0 at bottom; window mouse Y=0 at top → flip Y.
+				const math::vec2 mousePos = {input::Input::getMousePos().x(),
+											 static_cast<float>(m_viewportSize.y()) - input::Input::getMousePos().y()};
+				scene::UIInputSystem::update(m_activeScene.get(), m_viewportSize, mousePos,
 											 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft));
 				m_activeScene->onUpdateRuntime(iTimeStep);
+				// Handle quit request from Lua (scene.quit()).
+				if (m_activeScene->quitRequested) {
+					m_activeScene->onEndRuntime();
+					core::Application::get().close();
+					return;
+				}
 				handleTeleportRequest();
 				if (m_activeScene && m_activeScene->saveLoadRequest.pending) {
 					const auto slr = m_activeScene->saveLoadRequest;
@@ -278,16 +297,19 @@ void RunnerLayer::handleTeleportRequest() {
 
 	const auto& app = core::Application::get();
 
+	// Preserve game state across scene transition.
+	const auto previousGameState = m_activeScene->getGameState();
+
 	// End current runtime.
 	m_activeScene->onEndRuntime();
 
 	// Try loading from pack first.
 	if (app.hasOpenPack()) {
-		// Try various pack paths: direct name, scenes/ prefix.
 		for (const auto& tryName: {resolvedName, "scenes/" + resolvedName}) {
 			if (auto data = app.loadFromPack(tryName); data) {
 				auto newScene = mkShared<scene::Scene>();
 				if (const scene::SceneSerializer sc(newScene); sc.deserializeFromBuffer(*data, tryName)) {
+					newScene->getGameState() = previousGameState;
 					newScene->onViewportResize(m_viewportSize);
 					m_pendingTeleportVelocity = true;
 					m_teleportVelocity = request.initialVelocity;
@@ -322,6 +344,7 @@ void RunnerLayer::handleTeleportRequest() {
 		OWL_CORE_ERROR("Teleport: failed to load level '{}'", request.levelName)
 		return;
 	}
+	newScene->getGameState() = previousGameState;
 	newScene->onViewportResize(m_viewportSize);
 
 	// Store velocity and target for application after physics init.

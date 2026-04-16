@@ -22,8 +22,7 @@ namespace {
 void dispatchLuaCallback(const Entity& iEntity, const std::string& iFuncName, const uint64_t iArg) {
 	if (!iEntity.hasComponent<component::LuaScript>())
 		return;
-	auto& ls = iEntity.getComponent<component::LuaScript>();
-	if (ls.instance && ls.instance->isValid())
+	if (const auto& ls = iEntity.getComponent<component::LuaScript>(); ls.instance && ls.instance->isValid())
 		std::ignore = ls.instance->callFunction(iFuncName);
 	static_cast<void>(iArg);
 }
@@ -32,8 +31,7 @@ void dispatchLuaCallback(const Entity& iEntity, const std::string& iFuncName, co
 void dispatchLuaCallbackNoArg(const Entity& iEntity, const std::string& iFuncName) {
 	if (!iEntity.hasComponent<component::LuaScript>())
 		return;
-	auto& ls = iEntity.getComponent<component::LuaScript>();
-	if (ls.instance && ls.instance->isValid())
+	if (const auto& ls = iEntity.getComponent<component::LuaScript>(); ls.instance && ls.instance->isValid())
 		std::ignore = ls.instance->callFunction(iFuncName);
 }
 
@@ -43,25 +41,35 @@ SceneTrigger::SceneTrigger() = default;
 
 SceneTrigger::~SceneTrigger() = default;
 
-void SceneTrigger::onTriggered(Entity& ioPlayer, const Entity& iTriggerEntity) {
+void SceneTrigger::onTriggered(const Entity& ioPlayer, const Entity& iTriggerEntity) {
 	auto* scene = ioPlayer.getScene();
 	switch (type) {
 		case TriggerType::Victory:
 			if (m_triggered)
 				return;
 			m_triggered = true;
-			scene->status = Scene::Status::Victory;
+			if (!levelName.empty()) {
+				// Load custom victory scene.
+				scene->teleportRequest = {.pending = true, .levelName = levelName, .targetName = {}};
+			} else {
+				scene->status = Scene::Status::Victory;
+			}
 			break;
 		case TriggerType::Death:
 			if (m_triggered)
 				return;
 			m_triggered = true;
-			scene->status = Scene::Status::Death;
+			if (!levelName.empty()) {
+				// Load custom game over scene.
+				scene->teleportRequest = {.pending = true, .levelName = levelName, .targetName = {}};
+			} else {
+				scene->status = Scene::Status::Death;
+			}
 			break;
 		case TriggerType::Target:
 			// Passive marker, no action on collisions
 		case TriggerType::Timer:
-			// Timer triggers don't fire on overlap — handled by updateTimer().
+			// Target: passive marker. Timer: handled by updateTimer(), not overlap.
 			break;
 		case TriggerType::Interaction:
 			{

@@ -93,6 +93,9 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 					scene::UIInputSystem::update(m_parent->getActiveScene().get(),
 												 m_framebuffer->getSpecification().size, vpMouse, mousePressed);
 					m_parent->getActiveScene()->onUpdateRuntime(iTimeStep);
+					// Handle quit request from Lua (scene.quit()) → request stop.
+					if (m_parent->getActiveScene()->quitRequested)
+						m_parent->requestStop();
 					m_parent->handleTeleportRequest();
 					m_parent->handleSaveLoadRequest();
 					break;

@@ -56,8 +56,8 @@ void serializeValue(YAML::Emitter& iOut, const std::string& iKey, const Settings
 	iOut << YAML::BeginMap;
 	iOut << YAML::Key << "key" << YAML::Value << iKey;
 	std::visit(
-			[&](const auto& iVal) {
-				using T = std::decay_t<decltype(iVal)>;
+			[&]<typename T0>(const T0& iVal) -> auto {
+				using T = std::decay_t<T0>;
 				if constexpr (std::is_same_v<T, int64_t>) {
 					iOut << YAML::Key << "type" << YAML::Value << "int";
 					iOut << YAML::Key << "value" << YAML::Value << iVal;
@@ -84,8 +84,7 @@ auto deserializeEntries(const YAML::Node& iNode) -> std::unordered_map<std::stri
 		if (!entry["key"] || !entry["type"] || !entry["value"])
 			continue;
 		const auto entryKey = entry["key"].as<std::string>();
-		const auto type = entry["type"].as<std::string>();
-		if (type == "int")
+		if (const auto type = entry["type"].as<std::string>(); type == "int")
 			result[entryKey] = entry["value"].as<int64_t>();
 		else if (type == "float")
 			result[entryKey] = entry["value"].as<float>();
@@ -106,9 +105,15 @@ void SettingsManager::loadDefaults(const std::filesystem::path& iPath) {
 		const auto data = YAML::LoadFile(iPath.string());
 		if (const auto entries = data["GameSettings"]; entries)
 			s_defaults = deserializeEntries(entries);
-	} catch (...) {
-		OWL_CORE_WARN("Failed to load game settings from {}", iPath.string())
-	}
+	} catch (...) { OWL_CORE_WARN("Failed to load game settings from {}", iPath.string()) }
+}
+
+void SettingsManager::loadDefaultsFromString(const std::string& iContent) {
+	try {
+		const auto data = YAML::Load(iContent);
+		if (const auto entries = data["GameSettings"]; entries)
+			s_defaults = deserializeEntries(entries);
+	} catch (...) { OWL_CORE_WARN("Failed to parse game settings from string") }
 }
 
 void SettingsManager::loadUserSettings() {
@@ -119,9 +124,7 @@ void SettingsManager::loadUserSettings() {
 		const auto data = YAML::LoadFile(path.string());
 		if (const auto entries = data["UserSettings"]; entries)
 			s_overrides = deserializeEntries(entries);
-	} catch (...) {
-		OWL_CORE_WARN("Failed to load user settings from {}", path.string())
-	}
+	} catch (...) { OWL_CORE_WARN("Failed to load user settings from {}", path.string()) }
 }
 
 void SettingsManager::saveUserSettings() {
@@ -130,8 +133,7 @@ void SettingsManager::saveUserSettings() {
 	YAML::Emitter out;
 	out << YAML::BeginMap;
 	out << YAML::Key << "UserSettings" << YAML::Value << YAML::BeginSeq;
-	for (const auto& [key, value]: s_overrides)
-		serializeValue(out, key, value);
+	for (const auto& [key, value]: s_overrides) serializeValue(out, key, value);
 	out << YAML::EndSeq;
 	out << YAML::EndMap;
 	std::ofstream fileOut(path);
@@ -168,10 +170,8 @@ auto SettingsManager::has(const std::string& iKey) -> bool {
 
 auto SettingsManager::keys() -> std::vector<std::string> {
 	std::unordered_set<std::string> allKeys;
-	for (const auto& [key, val]: s_defaults)
-		allKeys.insert(key);
-	for (const auto& [key, val]: s_overrides)
-		allKeys.insert(key);
+	for (const auto& key: s_defaults | std::views::keys) allKeys.insert(key);
+	for (const auto& key: s_overrides | std::views::keys) allKeys.insert(key);
 	return {allKeys.begin(), allKeys.end()};
 }
 
@@ -182,8 +182,7 @@ void SettingsManager::applyBuiltins() {
 
 	// Window settings.
 	const auto width = getAs<int64_t>(KeyResolutionWidth);
-	const auto height = getAs<int64_t>(KeyResolutionHeight);
-	if (width.has_value() && height.has_value())
+	if (const auto height = getAs<int64_t>(KeyResolutionHeight); width.has_value() && height.has_value())
 		window.setSize(static_cast<uint32_t>(width.value()), static_cast<uint32_t>(height.value()));
 
 	if (const auto fs = getAs<bool>(KeyFullscreen); fs.has_value())

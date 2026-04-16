@@ -61,6 +61,12 @@ public:
 	static void loadDefaults(const std::filesystem::path& iPath);
 
 	/**
+	 * @brief Load game defaults from a YAML string (for pack-based loading).
+	 * @param[in] iContent The YAML content as a string.
+	 */
+	static void loadDefaultsFromString(const std::string& iContent);
+
+	/**
 	 * @brief Load user overrides from settings.yml.
 	 */
 	static void loadUserSettings();
@@ -144,19 +150,19 @@ public:
 	static void clear();
 
 	/// Built-in setting key constants.
-	static constexpr const char* KeyResolutionWidth = "resolution_width";
+	static constexpr auto KeyResolutionWidth = "resolution_width";
 	/// Built-in key for window height.
-	static constexpr const char* KeyResolutionHeight = "resolution_height";
+	static constexpr auto KeyResolutionHeight = "resolution_height";
 	/// Built-in key for fullscreen mode.
-	static constexpr const char* KeyFullscreen = "fullscreen";
+	static constexpr auto KeyFullscreen = "fullscreen";
 	/// Built-in key for resizable window.
-	static constexpr const char* KeyResizable = "resizable";
+	static constexpr auto KeyResizable = "resizable";
 	/// Built-in key for master volume.
-	static constexpr const char* KeyVolumeMaster = "volume_master";
+	static constexpr auto KeyVolumeMaster = "volume_master";
 	/// Built-in key for music volume.
-	static constexpr const char* KeyVolumeMusic = "volume_music";
+	static constexpr auto KeyVolumeMusic = "volume_music";
 	/// Built-in key for SFX volume.
-	static constexpr const char* KeyVolumeSfx = "volume_sfx";
+	static constexpr auto KeyVolumeSfx = "volume_sfx";
 
 private:
 	/// Game name for directory path.

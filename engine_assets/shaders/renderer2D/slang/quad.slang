@@ -17,14 +17,14 @@ struct VertexInput {
 	[[vk::location(1)]] float4 color        : COLOR;
 	[[vk::location(2)]] float2 texCoord     : TEXCOORD0;
 	[[vk::location(3)]] float  texIndex     : TEXCOORD1;
-	[[vk::location(4)]] float  tilingFactor : TEXCOORD2;
+	[[vk::location(4)]] float2 tilingFactor : TEXCOORD2;
 	[[vk::location(5)]] int    entityID     : TEXCOORD3;
 };
 
 struct FragmentInput {
 	[[vk::location(0)]] float4 color        : COLOR;
 	[[vk::location(1)]] float2 texCoord     : TEXCOORD0;
-	[[vk::location(2)]] float  tilingFactor : TEXCOORD1;
+	[[vk::location(2)]] float2 tilingFactor : TEXCOORD1;
 	[[vk::location(3)]] nointerpolation float texIndex : TEXCOORD2;
 	[[vk::location(4)]] nointerpolation int   entityID : TEXCOORD3;
 };

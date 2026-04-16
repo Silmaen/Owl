@@ -18,44 +18,44 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 
 ### Creation
 
-| Method                         | Description                                    |
-|--------------------------------|------------------------------------------------|
-| `Scene::createEntity(name)`    | Create entity with auto-generated UUID         |
-| `Scene::createEntityWithUUID(uuid, name)` | Create with explicit UUID          |
+| Method                                    | Description                            |
+|-------------------------------------------|----------------------------------------|
+| `Scene::createEntity(name)`               | Create entity with auto-generated UUID |
+| `Scene::createEntityWithUUID(uuid, name)` | Create with explicit UUID              |
 
 ### Destruction
 
-| Method                                | Behavior                                          |
-|---------------------------------------|---------------------------------------------------|
-| `Scene::destroyEntity(entity)`        | Children reparented to grandparent; world position preserved |
-| `Scene::destroyEntityWithChildren(entity)` | Cascade delete of entire subtree            |
+| Method                                     | Behavior                                                     |
+|--------------------------------------------|--------------------------------------------------------------|
+| `Scene::destroyEntity(entity)`             | Children reparented to grandparent; world position preserved |
+| `Scene::destroyEntityWithChildren(entity)` | Cascade delete of entire subtree                             |
 
 ### Component API
 
-| Method                          | Description                               |
-|---------------------------------|-------------------------------------------|
-| `entity.addComponent<T>(args)`  | Attach a new component                    |
-| `entity.addOrReplaceComponent<T>(args)` | Attach or overwrite                 |
-| `entity.getComponent<T>()`      | Get reference to component                |
-| `entity.hasComponent<T>()`      | Check if component exists                 |
-| `entity.removeComponent<T>()`   | Detach a component                        |
+| Method                                  | Description                |
+|-----------------------------------------|----------------------------|
+| `entity.addComponent<T>(args)`          | Attach a new component     |
+| `entity.addOrReplaceComponent<T>(args)` | Attach or overwrite        |
+| `entity.getComponent<T>()`              | Get reference to component |
+| `entity.hasComponent<T>()`              | Check if component exists  |
+| `entity.removeComponent<T>()`           | Detach a component         |
 
 ### Queries
 
-| Method                        | Returns                                        |
-|-------------------------------|------------------------------------------------|
-| `getAllEntities()`            | All entities as `vector<Entity>`               |
-| `getRootEntities()`          | Entities with `parentId == 0`                  |
-| `getChildren(entity)`        | Direct children as `vector<Entity>`            |
-| `findEntityByUUID(uuid)`     | Entity matching UUID, or null                  |
-| `getEntityCount()`           | Total entity count                             |
+| Method                   | Returns                             |
+|--------------------------|-------------------------------------|
+| `getAllEntities()`       | All entities as `vector<Entity>`    |
+| `getRootEntities()`      | Entities with `parentId == 0`       |
+| `getChildren(entity)`    | Direct children as `vector<Entity>` |
+| `findEntityByUUID(uuid)` | Entity matching UUID, or null       |
+| `getEntityCount()`       | Total entity count                  |
 
 ### Duplication
 
-| Method                     | Behavior                                                  |
-|----------------------------|-----------------------------------------------------------|
-| `duplicateEntity(entity)`  | Create root copy with new UUID, no children               |
-| `duplicateSubtree(entity)` | Recursive duplicate with new UUIDs and correct hierarchy  |
+| Method                     | Behavior                                                 |
+|----------------------------|----------------------------------------------------------|
+| `duplicateEntity(entity)`  | Create root copy with new UUID, no children              |
+| `duplicateSubtree(entity)` | Recursive duplicate with new UUIDs and correct hierarchy |
 
 ## Scene Lifecycle
 
@@ -63,23 +63,23 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 
 ### Status
 
-| Status    | Description                          |
-|-----------|--------------------------------------|
-| `Editing` | Editor mode, no simulation           |
-| `Playing` | Runtime: physics, scripts, triggers  |
-| `Victory` | Victory overlay displayed            |
-| `Death`   | Death overlay displayed              |
+| Status    | Description                         |
+|-----------|-------------------------------------|
+| `Editing` | Editor mode, no simulation          |
+| `Playing` | Runtime: physics, scripts, triggers |
+| `Victory` | Victory overlay displayed           |
+| `Death`   | Death overlay displayed             |
 
 ### Lifecycle Methods
 
-| Method                       | When Called          | What It Does                                                |
-|------------------------------|----------------------|-------------------------------------------------------------|
-| `onStartRuntime()`           | Play pressed         | Initialize physics, start sounds with `playOnStart`, reset animated sprites |
-| `onUpdateRuntime(timestep)`  | Each frame (Play)    | Scripts, input, physics, entity links, sounds, animated sprites, triggers, then render |
-| `onRenderRuntime()`          | Each frame (Pause)   | Render only, no simulation                                  |
-| `onUpdateEditor(timestep, camera)` | Each frame (Edit) | Render with editor camera                                 |
-| `onEndRuntime()`             | Stop pressed         | Stop sounds, destroy physics                                |
-| `onViewportResize(size)`     | Viewport resized     | Resize all cameras                                          |
+| Method                             | When Called        | What It Does                                                                           |
+|------------------------------------|--------------------|----------------------------------------------------------------------------------------|
+| `onStartRuntime()`                 | Play pressed       | Initialize physics, start sounds with `playOnStart`, reset animated sprites            |
+| `onUpdateRuntime(timestep)`        | Each frame (Play)  | Scripts, input, physics, entity links, sounds, animated sprites, triggers, then render |
+| `onRenderRuntime()`                | Each frame (Pause) | Render only, no simulation                                                             |
+| `onUpdateEditor(timestep, camera)` | Each frame (Edit)  | Render with editor camera                                                              |
+| `onEndRuntime()`                   | Stop pressed       | Stop sounds, destroy physics                                                           |
+| `onViewportResize(size)`           | Viewport resized   | Resize all cameras                                                                     |
 
 ## Component Reference {#components}
 
@@ -91,17 +91,17 @@ These are automatically added to every entity and cannot be removed.
 
 #### ID
 
-| Field | Type   | Description        |
-|-------|--------|--------------------|
-| `id`  | `UUID` | Unique identifier  |
+| Field | Type   | Description       |
+|-------|--------|-------------------|
+| `id`  | `UUID` | Unique identifier |
 
 Serialized directly as the entity key in YAML (`Entity: <uuid>`).
 
 #### Tag
 
-| Field | Type     | YAML Key | Description     |
-|-------|----------|----------|-----------------|
-| `tag` | `string` | `Tag`    | Display name    |
+| Field | Type     | YAML Key | Description  |
+|-------|----------|----------|--------------|
+| `tag` | `string` | `Tag`    | Display name |
 
 #### Transform
 
@@ -114,87 +114,87 @@ on demand via `Scene::getWorldTransform(entity)`.
 
 #### Visibility
 
-| Field           | Type   | YAML Key     | Serialized | Description                     |
-|-----------------|--------|--------------|------------|---------------------------------|
-| `gameVisible`   | `bool` | `Visibility` | Yes        | Rendered during gameplay        |
+| Field           | Type   | YAML Key     | Serialized | Description                              |
+|-----------------|--------|--------------|------------|------------------------------------------|
+| `gameVisible`   | `bool` | `Visibility` | Yes        | Rendered during gameplay                 |
 | `editorVisible` | `bool` | —            | No         | Rendered in editor (always true on load) |
 
 #### Hierarchy
 
-| Field        | Type                | YAML Key    | Description                        |
-|--------------|---------------------|-------------|------------------------------------|
-| `parentId`   | `UUID`              | `Hierarchy` | Parent UUID (0 = root)             |
-| `childrenIds`| `vector<UUID>`      | —           | Rebuilt from `parentId` after load |
+| Field         | Type           | YAML Key    | Description                        |
+|---------------|----------------|-------------|------------------------------------|
+| `parentId`    | `UUID`         | `Hierarchy` | Parent UUID (0 = root)             |
+| `childrenIds` | `vector<UUID>` | —           | Rebuilt from `parentId` after load |
 
 ### Rendering Components
 
 #### SpriteRenderer
 
-| Field         | Type             | Default         | Description              |
-|---------------|------------------|-----------------|--------------------------|
-| `color`       | `math::vec4`     | `{1, 1, 1, 1}` | Tint color               |
-| `texture`     | `Texture2D`      | `nullptr`       | Sprite texture           |
-| `tilingFactor`| `float`          | `1.0`           | Texture repetition       |
+| Field          | Type         | Default        | Description        |
+|----------------|--------------|----------------|--------------------|
+| `color`        | `math::vec4` | `{1, 1, 1, 1}` | Tint color         |
+| `texture`      | `Texture2D`  | `nullptr`      | Sprite texture     |
+| `tilingFactor` | `float`      | `1.0`          | Texture repetition |
 
 YAML key: `SpriteRenderer`
 
 #### AnimatedSpriteRenderer
 
-| Field          | Type       | Default  | Description                     |
-|----------------|------------|----------|---------------------------------|
-| `color`        | `vec4`     | white    | Tint color                      |
-| `texture`      | `Texture2D`| null    | Spritesheet                     |
-| `columns`      | `uint32_t` | `1`      | Grid columns                    |
-| `rows`         | `uint32_t` | `1`      | Grid rows                       |
-| `firstFrame`   | `uint32_t` | `0`      | Start frame                     |
-| `lastFrame`    | `uint32_t` | `0`      | End frame                       |
-| `frameDuration`| `float`    | `0.1`    | Seconds per frame               |
-| `loop`         | `bool`     | `true`   | Loop animation                  |
+| Field           | Type        | Default | Description       |
+|-----------------|-------------|---------|-------------------|
+| `color`         | `vec4`      | white   | Tint color        |
+| `texture`       | `Texture2D` | null    | Spritesheet       |
+| `columns`       | `uint32_t`  | `1`     | Grid columns      |
+| `rows`          | `uint32_t`  | `1`     | Grid rows         |
+| `firstFrame`    | `uint32_t`  | `0`     | Start frame       |
+| `lastFrame`     | `uint32_t`  | `0`     | End frame         |
+| `frameDuration` | `float`     | `0.1`   | Seconds per frame |
+| `loop`          | `bool`      | `true`  | Loop animation    |
 
 YAML key: `AnimatedSpriteRenderer`.
 See [Renderer > Animated Sprites](renderer.md) for UV computation details.
 
 #### CircleRenderer
 
-| Field       | Type         | Default         | Description          |
-|-------------|--------------|-----------------|----------------------|
+| Field       | Type         | Default        | Description          |
+|-------------|--------------|----------------|----------------------|
 | `color`     | `math::vec4` | `{1, 1, 1, 1}` | Circle color         |
-| `thickness` | `float`      | `1.0`           | Ring thickness (0–1) |
-| `fade`      | `float`      | `0.005`         | Edge fade amount     |
+| `thickness` | `float`      | `1.0`          | Ring thickness (0–1) |
+| `fade`      | `float`      | `0.005`        | Edge fade amount     |
 
 YAML key: `CircleRenderer`
 
 #### Text
 
-| Field         | Type     | Default         | Description          |
-|---------------|----------|-----------------|----------------------|
-| `text`        | `string` | `""`            | Text content         |
-| `font`        | `Font`   | default font    | MSDF font            |
+| Field         | Type     | Default        | Description          |
+|---------------|----------|----------------|----------------------|
+| `text`        | `string` | `""`           | Text content         |
+| `font`        | `Font`   | default font   | MSDF font            |
 | `color`       | `vec4`   | `{1, 1, 1, 1}` | Text color           |
-| `kerning`     | `float`  | `0.0`           | Extra letter spacing |
-| `lineSpacing` | `float`  | `0.0`           | Extra line spacing   |
+| `kerning`     | `float`  | `0.0`          | Extra letter spacing |
+| `lineSpacing` | `float`  | `0.0`          | Extra line spacing   |
 
 YAML key: `TextRenderer`
 
 #### BackgroundTexture
 
-| Field      | Type      | Default            | Description                    |
-|------------|-----------|--------------------|--------------------------------|
-| `mode`     | `Mode`    | `Background`       | `Background` or `Skybox`       |
-| `type`     | `Type`    | `SolidColor`       | `SolidColor`, `Gradient`, `Texture` |
-| `color`    | `vec4`    | `{0.2, 0.3, 0.8, 1}` | Main / bottom color         |
-| `topColor` | `vec4`    | `{0.8, 0.9, 1, 1}` | Top color (gradient)          |
-| `texture`  | `Texture2D`| `nullptr`         | Background or equirectangular  |
+| Field      | Type        | Default              | Description                         |
+|------------|-------------|----------------------|-------------------------------------|
+| `mode`     | `Mode`      | `Background`         | `Background` or `Skybox`            |
+| `type`     | `Type`      | `SolidColor`         | `SolidColor`, `Gradient`, `Texture` |
+| `color`    | `vec4`      | `{0.2, 0.3, 0.8, 1}` | Main / bottom color                 |
+| `topColor` | `vec4`      | `{0.8, 0.9, 1, 1}`   | Top color (gradient)                |
+| `texture`  | `Texture2D` | `nullptr`            | Background or equirectangular       |
 
 YAML key: `BackgroundTexture`. Only the first entity with this component is rendered.
 
 ### Camera Component
 
-| Field            | Type          | Default | Description                   |
-|------------------|---------------|---------|-------------------------------|
-| `primary`        | `bool`        | `true`  | Active camera for rendering   |
-| `fixedAspectRatio`| `bool`       | `false` | Lock aspect ratio             |
-| `camera`         | `SceneCamera` | —       | Orthographic or perspective   |
+| Field              | Type          | Default | Description                 |
+|--------------------|---------------|---------|-----------------------------|
+| `primary`          | `bool`        | `true`  | Active camera for rendering |
+| `fixedAspectRatio` | `bool`        | `false` | Lock aspect ratio           |
+| `camera`           | `SceneCamera` | —       | Orthographic or perspective |
 
 YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 
@@ -202,39 +202,39 @@ YAML key: `Camera`. See [Renderer > Camera System](renderer.md).
 
 #### Player
 
-| Field           | Type    | Default | Description                     |
-|-----------------|---------|---------|---------------------------------|
-| `primary`       | `bool`  | `true`  | Active player                   |
-| `linearImpulse` | `float` | `0.1`   | Horizontal movement force       |
-| `jumpImpulse`   | `float` | `0.2`   | Vertical jump force             |
-| `canJump`       | `bool`  | `true`  | Whether jumping is allowed      |
+| Field           | Type    | Default | Description                |
+|-----------------|---------|---------|----------------------------|
+| `primary`       | `bool`  | `true`  | Active player              |
+| `linearImpulse` | `float` | `0.1`   | Horizontal movement force  |
+| `jumpImpulse`   | `float` | `0.2`   | Vertical jump force        |
+| `canJump`       | `bool`  | `true`  | Whether jumping is allowed |
 
 YAML key: `Player`. Input is parsed from keyboard each frame via `parseInputs()`.
 
 #### PhysicBody
 
-| Field          | Type       | Default     | Description                  |
-|----------------|------------|-------------|------------------------------|
-| `type`         | `BodyType` | `Dynamic`   | `Static`, `Dynamic`, `Kinematic` |
-| `fixedRotation`| `bool`     | `false`     | Prevent body rotation        |
-| `colliderSize` | `vec3f`    | `{1,1,1}`  | Box collider dimensions      |
-| `density`      | `float`    | `1.0`       | Material density             |
-| `restitution`  | `float`    | `0.0`       | Bounciness (0–1)             |
-| `friction`     | `float`    | `0.5`       | Surface friction             |
+| Field           | Type       | Default   | Description                      |
+|-----------------|------------|-----------|----------------------------------|
+| `type`          | `BodyType` | `Dynamic` | `Static`, `Dynamic`, `Kinematic` |
+| `fixedRotation` | `bool`     | `false`   | Prevent body rotation            |
+| `colliderSize`  | `vec3f`    | `{1,1,1}` | Box collider dimensions          |
+| `density`       | `float`    | `1.0`     | Material density                 |
+| `restitution`   | `float`    | `0.0`     | Bounciness (0–1)                 |
+| `friction`      | `float`    | `0.5`     | Surface friction                 |
 
 YAML key: `PhysicBody`. See [Physics](physics.md) for the full physics guide.
 
 #### Trigger
 
-| Field              | Type          | Default    | Description                                      |
-|--------------------|---------------|------------|--------------------------------------------------|
-| `type`             | `TriggerType` | `Victory`  | `Victory`, `Death`, `Target`, `Teleport`, `Timer`, `Interaction`, `LuaCallback` |
-| `levelName`        | `string`      | `""`       | Target scene (Teleport type)                     |
-| `targetName`       | `string`      | `""`       | Target entity name (Teleport type)               |
-| `timerDuration`    | `float`       | `1.0`      | Duration in seconds (Timer type)                 |
-| `timerRepeating`   | `bool`        | `false`    | Whether the timer repeats (Timer type)           |
-| `interactionRange` | `float`       | `1.5`      | Range multiplier (Interaction type)              |
-| `callbackName`     | `string`      | `""`       | Custom Lua callback name (empty = type default)  |
+| Field              | Type          | Default   | Description                                                                     |
+|--------------------|---------------|-----------|---------------------------------------------------------------------------------|
+| `type`             | `TriggerType` | `Victory` | `Victory`, `Death`, `Target`, `Teleport`, `Timer`, `Interaction`, `LuaCallback` |
+| `levelName`        | `string`      | `""`      | Target scene (Teleport type)                                                    |
+| `targetName`       | `string`      | `""`      | Target entity name (Teleport type)                                              |
+| `timerDuration`    | `float`       | `1.0`     | Duration in seconds (Timer type)                                                |
+| `timerRepeating`   | `bool`        | `false`   | Whether the timer repeats (Timer type)                                          |
+| `interactionRange` | `float`       | `1.5`     | Range multiplier (Interaction type)                                             |
+| `callbackName`     | `string`      | `""`      | Custom Lua callback name (empty = type default)                                 |
 
 YAML key: `Trigger`. Overlap-based triggers detect player collision and fire Lua callbacks.
 All overlap triggers also dispatch `on_trigger_enter` / `on_trigger_exit` edge events.
@@ -242,9 +242,9 @@ See [Lua Scripting > Trigger System](scripting.md) for callback details and exam
 
 #### EntityLink
 
-| Field              | Type     | Default | Description                      |
-|--------------------|----------|---------|----------------------------------|
-| `linkedEntityName` | `string` | `""`    | Name of the entity to follow     |
+| Field              | Type     | Default | Description                  |
+|--------------------|----------|---------|------------------------------|
+| `linkedEntityName` | `string` | `""`    | Name of the entity to follow |
 
 YAML key: `EntityLink`. The linked entity's world position is copied to this entity
 each frame, converting to local space when parented.
@@ -269,10 +269,10 @@ See [Scripting](scripting.md) for the full Lua API reference.
 
 #### LuaScript
 
-| Field        | Type                     | YAML Key    | Description                                     |
-|--------------|--------------------------|-------------|-------------------------------------------------|
-| `scriptPath` | `string`                 | `LuaScript` | Relative path to the `.lua` script file         |
-| `properties` | `vector<ScriptProperty>` | —           | Typed property list declared in the Lua script   |
+| Field        | Type                     | YAML Key    | Description                                    |
+|--------------|--------------------------|-------------|------------------------------------------------|
+| `scriptPath` | `string`                 | `LuaScript` | Relative path to the `.lua` script file        |
+| `properties` | `vector<ScriptProperty>` | —           | Typed property list declared in the Lua script |
 
 Each script instance runs in an isolated `lua_State`. Lifecycle callbacks: `on_create`,
 `on_update(dt)`, `on_destroy`. Properties are parsed from the Lua `properties` table and
@@ -291,21 +291,21 @@ children (direct or nested) of an entity with a `Canvas` component.
 
 #### UIRect
 
-| Field    | Type   | YAML Key | Description                                      |
-|----------|--------|----------|--------------------------------------------------|
-| `anchor` | `vec4` | `UIRect` | Normalized anchor rectangle (min x/y, max x/y)   |
-| `pivot`  | `vec2` | —        | Normalized pivot point                            |
-| `size`   | `vec2` | —        | Size in pixels                                    |
-| `offset` | `vec2` | —        | Offset from anchored position                     |
+| Field    | Type   | YAML Key | Description                                    |
+|----------|--------|----------|------------------------------------------------|
+| `anchor` | `vec4` | `UIRect` | Normalized anchor rectangle (min x/y, max x/y) |
+| `pivot`  | `vec2` | —        | Normalized pivot point                         |
+| `size`   | `vec2` | —        | Size in pixels                                 |
+| `offset` | `vec2` | —        | Offset from anchored position                  |
 
 #### UIText
 
-| Field       | Type     | Description         |
-|-------------|----------|---------------------|
-| `text`      | `string` | Display text        |
-| `fontAsset` | `string` | Font file path      |
-| `fontSize`  | `float`  | Size in pixels      |
-| `color`     | `vec4`   | Text color (RGBA)   |
+| Field       | Type     | Description       |
+|-------------|----------|-------------------|
+| `text`      | `string` | Display text      |
+| `fontAsset` | `string` | Font file path    |
+| `fontSize`  | `float`  | Size in pixels    |
+| `color`     | `vec4`   | Text color (RGBA) |
 
 #### UIImage
 
@@ -316,46 +316,46 @@ children (direct or nested) of an entity with a `Canvas` component.
 
 #### UIPanel
 
-| Field   | Type   | Description         |
-|---------|--------|---------------------|
-| `color` | `vec4` | Background color    |
+| Field   | Type   | Description      |
+|---------|--------|------------------|
+| `color` | `vec4` | Background color |
 
 #### UIButton
 
-| Field        | Type     | Description                   |
-|--------------|----------|-------------------------------|
-| `label`      | `string` | Button text                   |
-| `normalColor`| `vec4`   | Default background color      |
-| `hoverColor` | `vec4`   | Color when hovered            |
-| `pressColor` | `vec4`   | Color when pressed            |
-| `action`     | `string` | Lua callback on click         |
+| Field         | Type     | Description              |
+|---------------|----------|--------------------------|
+| `label`       | `string` | Button text              |
+| `normalColor` | `vec4`   | Default background color |
+| `hoverColor`  | `vec4`   | Color when hovered       |
+| `pressColor`  | `vec4`   | Color when pressed       |
+| `action`      | `string` | Lua callback on click    |
 
 #### UISlider
 
-| Field      | Type    | Description        |
-|------------|---------|--------------------|
-| `value`    | `float` | Current value      |
-| `minValue` | `float` | Minimum value      |
-| `maxValue` | `float` | Maximum value      |
+| Field      | Type    | Description   |
+|------------|---------|---------------|
+| `value`    | `float` | Current value |
+| `minValue` | `float` | Minimum value |
+| `maxValue` | `float` | Maximum value |
 
 #### UIProgressBar
 
-| Field             | Type    | Description          |
-|-------------------|---------|----------------------|
-| `value`           | `float` | Current value (0–1)  |
-| `backgroundColor` | `vec4`  | Track color          |
-| `fillColor`       | `vec4`  | Fill bar color       |
+| Field             | Type    | Description         |
+|-------------------|---------|---------------------|
+| `value`           | `float` | Current value (0–1) |
+| `backgroundColor` | `vec4`  | Track color         |
+| `fillColor`       | `vec4`  | Fill bar color      |
 
 ### Prefab Components
 
 #### PrefabLink
 
-| Field                 | Type                       | YAML Key     | Description                                    |
-|-----------------------|----------------------------|--------------|------------------------------------------------|
-| `prefabAssetPath`     | `string`                   | `PrefabLink` | Relative path to the `.owlprefab` source file  |
-| `syncedVersion`       | `uint32_t`                 | —            | Prefab version when last synced                |
-| `uuidMapping`         | `vector<UuidMapEntry>`     | —            | Instance UUID ↔ canonical UUID pairs           |
-| `overriddenComponents`| `vector<string>`           | —            | Per-component override keys preserved on update|
+| Field                  | Type                   | YAML Key     | Description                                     |
+|------------------------|------------------------|--------------|-------------------------------------------------|
+| `prefabAssetPath`      | `string`               | `PrefabLink` | Relative path to the `.owlprefab` source file   |
+| `syncedVersion`        | `uint32_t`             | —            | Prefab version when last synced                 |
+| `uuidMapping`          | `vector<UuidMapEntry>` | —            | Instance UUID ↔ canonical UUID pairs            |
+| `overriddenComponents` | `vector<string>`       | —            | Per-component override keys preserved on update |
 
 Placed only on the root entity of a prefab instance. Children are tracked via the
 `uuidMapping`. See [Editor Prefab Workflow](editor.md) for usage details.
@@ -402,11 +402,11 @@ See [Physics > Hierarchy Interaction](physics.md) for details.
 
 `SceneSerializer` handles YAML I/O:
 
-| Method                              | Description                       |
-|-------------------------------------|-----------------------------------|
-| `serialize(path)`                   | Write scene to `.owl` file        |
-| `deserialize(path)`                | Read scene from file              |
-| `deserializeFromBuffer(data, name)` | Read from memory (pack file)      |
+| Method                              | Description                  |
+|-------------------------------------|------------------------------|
+| `serialize(path)`                   | Write scene to `.owl` file   |
+| `deserialize(path)`                 | Read scene from file         |
+| `deserializeFromBuffer(data, name)` | Read from memory (pack file) |
 
 ### YAML Format
 

@@ -166,6 +166,11 @@ public:
 	static void setListenerGain(float iGain);
 
 	/**
+	 * @brief Stop all currently playing sounds and release their sources.
+	 */
+	static void stopAll();
+
+	/**
 	 * @brief Check if a sound source is currently playing.
 	 * @param[in] iHandle The sound handle.
 	 * @return True if the source is playing.
@@ -182,7 +187,7 @@ public:
 	}
 
 private:
-	/// Pointer to the render API
+	/// Pointer to the sound API.
 	static uniq<SoundAPI> m_soundApi;
 };
 

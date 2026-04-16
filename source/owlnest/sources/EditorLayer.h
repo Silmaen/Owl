@@ -83,6 +83,9 @@ public:
 	 */
 	void handleTeleportRequest();
 
+	/// @brief Request to stop play mode (called from Viewport on scene.quit()).
+	void requestStop() { m_stopRequested = true; }
+
 	/**
 	 * @brief Handle a save/load request from a Lua script.
 	 */
@@ -112,6 +115,7 @@ private:
 
 	State m_state = State::Edit;
 	bool m_stepRequested = false;
+	bool m_stopRequested = false;
 
 	bool m_pendingTeleportVelocity = false;
 	math::vec2f m_teleportVelocity = {0.f, 0.f};

@@ -57,14 +57,14 @@ TEST(SceneCoverage, CopyDuplicatesComponentData) {
 	auto ent = original->createEntity("Sprite");
 	auto& sprite = ent.addOrReplaceComponent<SpriteRenderer>();
 	sprite.color = {0.5f, 0.5f, 0.5f, 1.0f};
-	sprite.tilingFactor = 3.0f;
+	sprite.tilingFactor = {3.0f, 3.0f};
 
 	auto copy = Scene::copy(original);
 	const auto allCopy = copy->getAllEntities();
 	ASSERT_EQ(allCopy.size(), 1u);
 	EXPECT_TRUE(allCopy[0].hasComponent<SpriteRenderer>());
 	const auto& copiedSprite = allCopy[0].getComponent<SpriteRenderer>();
-	EXPECT_FLOAT_EQ(copiedSprite.tilingFactor, 3.0f);
+	EXPECT_FLOAT_EQ(copiedSprite.tilingFactor.x(), 3.0f);
 	EXPECT_FLOAT_EQ(copiedSprite.color.x(), 0.5f);
 }
 
@@ -395,14 +395,14 @@ TEST(SceneCoverage, DuplicateSubtreePreservesComponents) {
 	const shared<Scene> sc = mkShared<Scene>();
 	auto root = sc->createEntity("root");
 	auto& sprite = root.addOrReplaceComponent<SpriteRenderer>();
-	sprite.tilingFactor = 5.0f;
+	sprite.tilingFactor = {5.0f, 5.0f};
 	auto child = sc->createEntity("child");
 	child.addOrReplaceComponent<CircleRenderer>();
 	sc->setParent(child, root);
 
 	auto dupRoot = sc->duplicateSubtree(root);
 	EXPECT_TRUE(dupRoot.hasComponent<SpriteRenderer>());
-	EXPECT_FLOAT_EQ(dupRoot.getComponent<SpriteRenderer>().tilingFactor, 5.0f);
+	EXPECT_FLOAT_EQ(dupRoot.getComponent<SpriteRenderer>().tilingFactor.x(), 5.0f);
 
 	auto dupChild = sc->findEntityByUUID(dupRoot.getComponent<Hierarchy>().childrenIds[0]);
 	ASSERT_TRUE(dupChild);

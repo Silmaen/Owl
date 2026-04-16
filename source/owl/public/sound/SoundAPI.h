@@ -71,7 +71,7 @@ public:
 
 	/**
 	 * @brief Check if the API type require initializations.
-	 * @return tRue if initialization required.
+	 * @return True if initialization required.
 	 */
 	[[nodiscard]] auto requireInit() const -> bool { return m_type == Type::OpenAl; }
 
@@ -160,6 +160,11 @@ public:
 	 * @param[in] iGain Gain value (0.0 = silent, 1.0 = full).
 	 */
 	virtual void setListenerGain(float iGain) = 0;
+
+	/**
+	 * @brief Stop all playing sounds and release their sources.
+	 */
+	virtual void stopAll() = 0;
 
 	/**
 	 * @brief Check if a sound source is currently playing.

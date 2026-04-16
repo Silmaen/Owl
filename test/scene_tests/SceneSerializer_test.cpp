@@ -54,7 +54,7 @@ TEST(SceneSerializer, SaveLoadFULL) {
 	ent2.addOrReplaceComponent<component::Trigger>();
 	spr.texture =
 			owl::mkShared<owl::renderer::null::Texture2D>(owl::renderer::Texture2D::Specification{.size = {1, 1}});
-	spr.tilingFactor = 12.3f;
+	spr.tilingFactor = {12.3f, 12.3f};
 
 	const SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tempSave.yml";

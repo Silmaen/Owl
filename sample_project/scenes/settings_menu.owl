@@ -179,6 +179,38 @@ Entities:
       fillColor: [0.200000003, 0.800000012, 0.300000012, 1]
       handleColor: [1, 1, 1, 1]
       onValueChangedCallback: on_speed_changed
+  - Entity: 800000000000000001
+    Tag:
+      tag: ResetButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1234567890123456789
+    UIButton:
+      normalColor: [0.449999988, 0.349999994, 0.100000001, 1]
+      hoverColor: [0.600000024, 0.449999988, 0.150000006, 1]
+      pressedColor: [0.349999994, 0.25, 0.0500000007, 1]
+      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
+      onClickCallback: on_reset_clicked
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 200
+      sizeY: 40
+      offsetX: 0
+      offsetY: -60
+    UIText:
+      text: Reset Defaults
+      color: [1, 1, 1, 1]
+      fontSize: 18
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
   - Entity: 9012345678901234567
     Tag:
       tag: BackButton

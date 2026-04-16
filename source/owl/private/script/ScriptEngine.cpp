@@ -63,7 +63,7 @@ auto ScriptEngine::loadScriptFromBuffer(const std::vector<uint8_t>& iData, const
 }
 
 auto ScriptEngine::extractProperties(const std::filesystem::path& iPath) -> std::vector<ScriptProperty> {
-	LuaEngine tempEngine;
+	const LuaEngine tempEngine;
 	if (!tempEngine.isValid() || !tempEngine.loadScript(iPath))
 		return {};
 	auto* state = tempEngine.getState();
@@ -84,8 +84,7 @@ auto ScriptEngine::extractProperties(const std::filesystem::path& iPath) -> std:
 
 			lua_getfield(state, -1, "type");
 			if (lua_isstring(state, -1) != 0) {
-				const std::string typeName = lua_tostring(state, -1);
-				if (typeName == "float")
+				if (const std::string typeName = lua_tostring(state, -1); typeName == "float")
 					prop.type = ScriptPropertyType::Float;
 				else if (typeName == "int")
 					prop.type = ScriptPropertyType::Int;
@@ -109,7 +108,7 @@ auto ScriptEngine::extractProperties(const std::filesystem::path& iPath) -> std:
 					prop.value = lua_isstring(state, -1) != 0 ? std::string(lua_tostring(state, -1)) : std::string{};
 					break;
 				case ScriptPropertyType::Bool:
-					prop.value = lua_isboolean(state, -1) != 0 ? (lua_toboolean(state, -1) != 0) : false;
+					prop.value = lua_isboolean(state, -1) != 0 ? lua_toboolean(state, -1) != 0 : false;
 					break;
 			}
 			lua_pop(state, 1);
@@ -125,7 +124,7 @@ auto ScriptEngine::extractProperties(const std::filesystem::path& iPath) -> std:
 
 auto ScriptEngine::extractPropertiesFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName)
 		-> std::vector<ScriptProperty> {
-	LuaEngine tempEngine;
+	const LuaEngine tempEngine;
 	if (!tempEngine.isValid() || !tempEngine.loadBuffer(iData, iName))
 		return {};
 	auto* state = tempEngine.getState();
@@ -146,8 +145,7 @@ auto ScriptEngine::extractPropertiesFromBuffer(const std::vector<uint8_t>& iData
 
 			lua_getfield(state, -1, "type");
 			if (lua_isstring(state, -1) != 0) {
-				const std::string typeName = lua_tostring(state, -1);
-				if (typeName == "float")
+				if (const std::string typeName = lua_tostring(state, -1); typeName == "float")
 					prop.type = ScriptPropertyType::Float;
 				else if (typeName == "int")
 					prop.type = ScriptPropertyType::Int;
@@ -171,7 +169,7 @@ auto ScriptEngine::extractPropertiesFromBuffer(const std::vector<uint8_t>& iData
 					prop.value = lua_isstring(state, -1) != 0 ? std::string(lua_tostring(state, -1)) : std::string{};
 					break;
 				case ScriptPropertyType::Bool:
-					prop.value = lua_isboolean(state, -1) != 0 ? (lua_toboolean(state, -1) != 0) : false;
+					prop.value = lua_isboolean(state, -1) != 0 ? lua_toboolean(state, -1) != 0 : false;
 					break;
 			}
 			lua_pop(state, 1);

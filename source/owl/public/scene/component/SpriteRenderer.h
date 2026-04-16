@@ -21,8 +21,8 @@ struct OWL_API SpriteRenderer {
 	math::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 	/// Sprite's texture.
 	shared<renderer::Texture2D> texture = nullptr;
-	/// Texture's tiling factor.
-	float tilingFactor = 1.0f;
+	/// Texture tiling factor (X and Y).
+	math::vec2 tilingFactor{1.0f, 1.0f};
 	/**
 	 * @brief Get the class title.
 	 * @return The class title.

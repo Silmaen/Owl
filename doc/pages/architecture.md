@@ -83,9 +83,9 @@ See [Sound System](sound.md) for the full user guide covering components, spatia
 
 The project produces several executables built on top of the `OwlEngine` shared library:
 
-| Application | Directory          | Description                                                        |
-|-------------|--------------------|--------------------------------------------------------------------|
-| Owl Nest    | `source/owlnest/`  | Scene editor with project management (editor + runner executables) |
+| Application | Directory         | Description                                                        |
+|-------------|-------------------|--------------------------------------------------------------------|
+| Owl Nest    | `source/owlnest/` | Scene editor with project management (editor + runner executables) |
 
 ## Project System
 

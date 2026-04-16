@@ -29,8 +29,8 @@ struct OWL_API Quad2DData {
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// Eventually the texture of the quad (plain color if nullptr).
 	shared<Texture> texture = nullptr;
-	/// Tilling factor of the texture.
-	float tilingFactor = 1.f;
+	/// Tiling factor of the texture (X and Y).
+	math::vec2 tilingFactor{1.f, 1.f};
 	/// Per-vertex texture coordinates. Defaults to full UV (0,0 to 1,1).
 	std::array<math::vec2, 4> textureCoords = {math::vec2{0.0f, 0.0f}, math::vec2{1.0f, 0.0f},
 											   math::vec2{1.0f, 1.0f}, math::vec2{0.0f, 1.0f}};

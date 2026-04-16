@@ -164,7 +164,16 @@ void renderProps(SpriteRenderer& ioComponent) {
 	}
 	if (removeTexture)
 		ioComponent.texture.reset();
-	ImGui::DragFloat("Tiling Factor", &ioComponent.tilingFactor, 0.1f, 0.0f, 100.0f);
+	// Tiling: linked by default (same X and Y), checkbox to unlink.
+	static bool s_tilingLinked = true;
+	ImGui::Checkbox("Link Tiling X/Y", &s_tilingLinked);
+	if (s_tilingLinked) {
+		auto uniform = ioComponent.tilingFactor.x();
+		if (ImGui::DragFloat("Tiling Factor", &uniform, 0.1f, 0.0f, 100.0f))
+			ioComponent.tilingFactor = {uniform, uniform};
+	} else {
+		ImGui::DragFloat2("Tiling Factor", &ioComponent.tilingFactor.x(), 0.1f, 0.0f, 100.0f);
+	}
 }
 
 void renderProps(AnimatedSpriteRenderer& ioComponent) {
@@ -280,6 +289,12 @@ void renderProps(Trigger& ioComponent) {
 			}
 		}
 		ImGui::EndCombo();
+	}
+	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Victory ||
+		ioComponent.trigger.type == SceneTrigger::TriggerType::Death) {
+		ImGui::InputText("Scene", &ioComponent.trigger.levelName);
+		if (ioComponent.trigger.levelName.empty())
+			ImGui::TextDisabled("Empty = built-in screen");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Teleport) {
 		ImGui::InputText("Level Name", &ioComponent.trigger.levelName);

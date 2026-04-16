@@ -20,13 +20,13 @@ provides frame-by-frame polling for key and mouse state.
 
 Every event derives from `owl::event::Event` (declared in `event/Event.h`):
 
-| Method              | Return Type | Description                              |
-|---------------------|-------------|------------------------------------------|
-| `getType()`         | `Type`      | Runtime event type enum value            |
-| `getCategoryFlags()`| `uint8_t`   | Bitmask of categories this event belongs to |
-| `getName()`         | `std::string` | Human-readable event name              |
-| `toString()`        | `std::string` | Detailed string for logging            |
-| `isInCategory(cat)` | `bool`      | Test against a `Category` bitmask        |
+| Method               | Return Type   | Description                                 |
+|----------------------|---------------|---------------------------------------------|
+| `getType()`          | `Type`        | Runtime event type enum value               |
+| `getCategoryFlags()` | `uint8_t`     | Bitmask of categories this event belongs to |
+| `getName()`          | `std::string` | Human-readable event name                   |
+| `toString()`         | `std::string` | Detailed string for logging                 |
+| `isInCategory(cat)`  | `bool`        | Test against a `Category` bitmask           |
 
 The `handled` flag (`bool`, default `false`) is public. Set it to `true` in a
 dispatch callback to prevent layers below from seeing the event.
@@ -35,36 +35,36 @@ dispatch callback to prevent layers below from seeing the event.
 
 The `event::Type` enum lists all 17 event types:
 
-| Group       | Type                  | Class                     |
-|-------------|-----------------------|---------------------------|
-| Window      | `WindowClose`         | `WindowCloseEvent`        |
-| Window      | `WindowResize`        | `WindowResizeEvent`       |
-| Window      | `WindowFocus`         | (reserved)                |
-| Window      | `WindowLostFocus`     | (reserved)                |
-| Window      | `WindowMoved`         | (reserved)                |
-| Application | `AppTick`             | `AppTickEvent`            |
-| Application | `AppUpdate`           | `AppUpdateEvent`          |
-| Application | `AppRender`           | `AppRenderEvent`          |
-| Keyboard    | `KeyPressed`          | `KeyPressedEvent`         |
-| Keyboard    | `KeyReleased`         | `KeyReleasedEvent`        |
-| Keyboard    | `KeyTyped`            | `KeyTypedEvent`           |
-| Mouse       | `MouseButtonPressed`  | `MouseButtonPressedEvent` |
-| Mouse       | `MouseButtonReleased` | `MouseButtonReleasedEvent`|
-| Mouse       | `MouseMoved`          | `MouseMovedEvent`         |
-| Mouse       | `MouseScrolled`       | `MouseScrolledEvent`      |
-| File        | `FileDrop`            | `FileDropEvent`           |
+| Group       | Type                  | Class                      |
+|-------------|-----------------------|----------------------------|
+| Window      | `WindowClose`         | `WindowCloseEvent`         |
+| Window      | `WindowResize`        | `WindowResizeEvent`        |
+| Window      | `WindowFocus`         | (reserved)                 |
+| Window      | `WindowLostFocus`     | (reserved)                 |
+| Window      | `WindowMoved`         | (reserved)                 |
+| Application | `AppTick`             | `AppTickEvent`             |
+| Application | `AppUpdate`           | `AppUpdateEvent`           |
+| Application | `AppRender`           | `AppRenderEvent`           |
+| Keyboard    | `KeyPressed`          | `KeyPressedEvent`          |
+| Keyboard    | `KeyReleased`         | `KeyReleasedEvent`         |
+| Keyboard    | `KeyTyped`            | `KeyTypedEvent`            |
+| Mouse       | `MouseButtonPressed`  | `MouseButtonPressedEvent`  |
+| Mouse       | `MouseButtonReleased` | `MouseButtonReleasedEvent` |
+| Mouse       | `MouseMoved`          | `MouseMovedEvent`          |
+| Mouse       | `MouseScrolled`       | `MouseScrolledEvent`       |
+| File        | `FileDrop`            | `FileDropEvent`            |
 
 ### Category Bitmask
 
 Categories allow testing multiple event types at once via `isInCategory()`:
 
-| Category      | Value | Description                     |
-|---------------|-------|---------------------------------|
-| `Application` | 1     | Window and application events   |
-| `Input`       | 2     | Any user input event            |
-| `Keyboard`    | 4     | Keyboard events                 |
-| `Mouse`       | 8     | Mouse movement and scroll       |
-| `MouseButton` | 16    | Mouse button press/release      |
+| Category      | Value | Description                   |
+|---------------|-------|-------------------------------|
+| `Application` | 1     | Window and application events |
+| `Input`       | 2     | Any user input event          |
+| `Keyboard`    | 4     | Keyboard events               |
+| `Mouse`       | 8     | Mouse movement and scroll     |
+| `MouseButton` | 16    | Mouse button press/release    |
 
 A single event can belong to multiple categories. For example, `MouseButtonPressedEvent`
 has flags `Input | Mouse | MouseButton` (value `2 | 8 | 16 = 26`).
@@ -102,15 +102,15 @@ OR-ed into `event.handled`.
 
 ### KeyEvent (base for keyboard events)
 
-| Method          | Return Type        | Description           |
-|-----------------|--------------------|-----------------------|
-| `getKeyCode()`  | `input::KeyCode`   | GLFW-compatible key code |
+| Method         | Return Type      | Description              |
+|----------------|------------------|--------------------------|
+| `getKeyCode()` | `input::KeyCode` | GLFW-compatible key code |
 
 ### KeyPressedEvent
 
-| Method            | Return Type | Description                         |
-|-------------------|-------------|-------------------------------------|
-| `getRepeatCount()`| `uint16_t`  | 0 for initial press, >0 for repeats |
+| Method             | Return Type | Description                         |
+|--------------------|-------------|-------------------------------------|
+| `getRepeatCount()` | `uint16_t`  | 0 for initial press, >0 for repeats |
 
 ### KeyReleasedEvent / KeyTypedEvent
 
@@ -119,39 +119,39 @@ character input (distinct from physical key presses).
 
 ### MouseMovedEvent
 
-| Method   | Return Type | Description              |
-|----------|-------------|--------------------------|
-| `getX()` | `float`     | Mouse X position (pixels)|
-| `getY()` | `float`     | Mouse Y position (pixels)|
+| Method   | Return Type | Description               |
+|----------|-------------|---------------------------|
+| `getX()` | `float`     | Mouse X position (pixels) |
+| `getY()` | `float`     | Mouse Y position (pixels) |
 
 ### MouseScrolledEvent
 
-| Method     | Return Type | Description              |
-|------------|-------------|--------------------------|
-| `getXOff()`| `float`     | Horizontal scroll offset |
-| `getYOff()`| `float`     | Vertical scroll offset   |
+| Method      | Return Type | Description              |
+|-------------|-------------|--------------------------|
+| `getXOff()` | `float`     | Horizontal scroll offset |
+| `getYOff()` | `float`     | Vertical scroll offset   |
 
 ### MouseButtonPressedEvent / MouseButtonReleasedEvent
 
 Both inherit from `MouseButtonEvent`:
 
-| Method             | Return Type        | Description    |
-|--------------------|--------------------|----------------|
-| `getMouseButton()` | `input::MouseCode` | Button code    |
+| Method             | Return Type        | Description |
+|--------------------|--------------------|-------------|
+| `getMouseButton()` | `input::MouseCode` | Button code |
 
 ### WindowResizeEvent
 
-| Method        | Return Type          | Description        |
-|---------------|----------------------|--------------------|
-| `getWidth()`  | `uint32_t`           | New window width   |
-| `getHeight()` | `uint32_t`           | New window height  |
-| `getSize()`   | `const math::vec2ui&`| Width and height   |
+| Method        | Return Type           | Description       |
+|---------------|-----------------------|-------------------|
+| `getWidth()`  | `uint32_t`            | New window width  |
+| `getHeight()` | `uint32_t`            | New window height |
+| `getSize()`   | `const math::vec2ui&` | Width and height  |
 
 ### FileDropEvent
 
-| Method       | Return Type                              | Description            |
-|--------------|------------------------------------------|------------------------|
-| `getPaths()` | `const std::vector<std::filesystem::path>&` | Dropped file paths  |
+| Method       | Return Type                                 | Description        |
+|--------------|---------------------------------------------|--------------------|
+| `getPaths()` | `const std::vector<std::filesystem::path>&` | Dropped file paths |
 
 Emitted when the user drags files from the OS file manager onto the application
 window. The editor uses this to import assets.
@@ -162,17 +162,17 @@ The `owl::input::Input` static class provides per-frame state queries,
 independent of the event dispatch flow. Initialize it once with
 `Input::init(windowType)` (called automatically by `Application`).
 
-| Method                               | Return Type  | Description                          |
-|--------------------------------------|--------------|--------------------------------------|
-| `isKeyPressed(KeyCode)`              | `bool`       | True if the key is currently held    |
-| `isMouseButtonPressed(MouseCode)`    | `bool`       | True if the mouse button is held     |
-| `getMouseX()`                        | `float`      | Current mouse X position             |
-| `getMouseY()`                        | `float`      | Current mouse Y position             |
-| `getMousePos()`                      | `math::vec2` | Current mouse position as a vector   |
-| `injectKey(KeyCode)`                 | `void`       | Simulate a key toggle (for testing)  |
-| `injectMouseButton(MouseCode)`       | `void`       | Simulate a mouse button toggle       |
-| `injectMousePos(const math::vec2&)`  | `void`       | Simulate mouse movement              |
-| `resetInjection()`                   | `void`       | Clear all injected state             |
+| Method                              | Return Type  | Description                         |
+|-------------------------------------|--------------|-------------------------------------|
+| `isKeyPressed(KeyCode)`             | `bool`       | True if the key is currently held   |
+| `isMouseButtonPressed(MouseCode)`   | `bool`       | True if the mouse button is held    |
+| `getMouseX()`                       | `float`      | Current mouse X position            |
+| `getMouseY()`                       | `float`      | Current mouse Y position            |
+| `getMousePos()`                     | `math::vec2` | Current mouse position as a vector  |
+| `injectKey(KeyCode)`                | `void`       | Simulate a key toggle (for testing) |
+| `injectMouseButton(MouseCode)`      | `void`       | Simulate a mouse button toggle      |
+| `injectMousePos(const math::vec2&)` | `void`       | Simulate mouse movement             |
+| `resetInjection()`                  | `void`       | Clear all injected state            |
 
 **Type aliases:** `KeyCode` is `uint16_t` (GLFW-compatible values defined in
 `input/KeyCodes.h`). `MouseCode` is `uint8_t` (values in `input/MouseCode.h`,
@@ -199,19 +199,19 @@ controller.onEvent(event);
 
 ### Controls
 
-| Input         | Action                                   |
-|---------------|------------------------------------------|
-| W / A / S / D | Translate camera up / left / down / right|
-| Mouse scroll  | Zoom in / out (adjusts zoom level)       |
+| Input         | Action                                                     |
+|---------------|------------------------------------------------------------|
+| W / A / S / D | Translate camera up / left / down / right                  |
+| Mouse scroll  | Zoom in / out (adjusts zoom level)                         |
 | Q / E         | Rotate counter-clockwise / clockwise (if rotation enabled) |
 
 ### Properties
 
-| Property             | Type    | Default | Description                          |
-|----------------------|---------|---------|--------------------------------------|
-| `translationSpeed`   | `float` | 5.0     | Camera movement speed (units/second) |
-| `rotationSpeed`      | `float` | 180.0   | Rotation speed (degrees/second)      |
-| `zoomLevel`          | `float` | 1.0     | Current zoom (affects ortho bounds)  |
+| Property           | Type    | Default | Description                          |
+|--------------------|---------|---------|--------------------------------------|
+| `translationSpeed` | `float` | 5.0     | Camera movement speed (units/second) |
+| `rotationSpeed`    | `float` | 180.0   | Rotation speed (degrees/second)      |
+| `zoomLevel`        | `float` | 1.0     | Current zoom (affects ortho bounds)  |
 
 Translation speed scales with the current zoom level so that movement feels
 consistent regardless of zoom. The controller also handles `WindowResizeEvent`
@@ -225,29 +225,29 @@ to named actions with callbacks.
 
 ### Modifiers
 
-| Value       | Description              |
-|-------------|--------------------------|
-| `None`      | No modifier              |
-| `Ctrl`      | Control key              |
-| `Shift`     | Shift key                |
-| `Alt`       | Alt key                  |
-| `CtrlShift` | Control + Shift          |
-| `CtrlAlt`   | Control + Alt            |
-| `ShiftAlt`  | Shift + Alt              |
+| Value          | Description           |
+|----------------|-----------------------|
+| `None`         | No modifier           |
+| `Ctrl`         | Control key           |
+| `Shift`        | Shift key             |
+| `Alt`          | Alt key               |
+| `CtrlShift`    | Control + Shift       |
+| `CtrlAlt`      | Control + Alt         |
+| `ShiftAlt`     | Shift + Alt           |
 | `CtrlShiftAlt` | Control + Shift + Alt |
 
 ### API
 
-| Method                                          | Description                                |
-|-------------------------------------------------|--------------------------------------------|
-| `registerAction(id, displayName, shortcut, cb)` | Register an action with its default binding|
-| `dispatch(KeyPressedEvent)`                     | Match event to an action and invoke it     |
-| `rebind(id, newShortcut)`                       | Change an action's shortcut at runtime     |
-| `findConflict(shortcut, excludeId)`             | Check if a shortcut is already in use      |
-| `resetToDefaults()`                             | Restore all shortcuts to factory defaults  |
-| `getShortcutString(id)`                         | Display string like "Ctrl+S"               |
-| `loadOverrides(map)` / `getOverrides()`         | Persist custom bindings across sessions    |
-| `setSuspended(bool)`                            | Pause dispatching during key capture UI    |
+| Method                                          | Description                                 |
+|-------------------------------------------------|---------------------------------------------|
+| `registerAction(id, displayName, shortcut, cb)` | Register an action with its default binding |
+| `dispatch(KeyPressedEvent)`                     | Match event to an action and invoke it      |
+| `rebind(id, newShortcut)`                       | Change an action's shortcut at runtime      |
+| `findConflict(shortcut, excludeId)`             | Check if a shortcut is already in use       |
+| `resetToDefaults()`                             | Restore all shortcuts to factory defaults   |
+| `getShortcutString(id)`                         | Display string like "Ctrl+S"                |
+| `loadOverrides(map)` / `getOverrides()`         | Persist custom bindings across sessions     |
+| `setSuspended(bool)`                            | Pause dispatching during key capture UI     |
 
 ### Usage
 

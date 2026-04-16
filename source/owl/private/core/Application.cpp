@@ -175,7 +175,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 					dirs.push_back(entry.path());
 			}
 			std::sort(dirs.begin(), dirs.end(),
-					  [](const auto& iA, const auto& iB) { return iA.string().size() > iB.string().size(); });
+					  [](const auto& iA, const auto& iB) -> auto { return iA.string().size() > iB.string().size(); });
 			for (const auto& dir: dirs) {
 				if (std::filesystem::is_empty(dir))
 					std::filesystem::remove(dir);

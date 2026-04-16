@@ -38,7 +38,7 @@ struct QuadVertex {
 	math::vec4 color;
 	math::vec2 texCoord;
 	float texIndex;
-	float tilingFactor;
+	math::vec2 tilingFactor;
 	int entityId;
 };
 
@@ -167,7 +167,7 @@ void Renderer2D::init() {
 					{"i_Color", ShaderDataType::Float4},
 					{"i_TexCoord", ShaderDataType::Float2},
 					{"i_TexIndex", ShaderDataType::Float},
-					{"i_TilingFactor", ShaderDataType::Float},
+					{"i_TilingFactor", ShaderDataType::Float2},
 					{"i_EntityID", ShaderDataType::Int},
 			},
 			"renderer2D", quadIndices, "quad");
