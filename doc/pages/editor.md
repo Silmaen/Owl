@@ -86,7 +86,7 @@ is selected in the Scene Hierarchy and Properties panels.
 
 - Physics collider wireframes (box and circle shapes)
 - Camera frustum visualization for non-primary cameras
-- Trigger zone icons (victory, death, target, teleport)
+- Trigger zone icons (victory, death, target, teleport, timer, interaction, lua callback)
 
 ### Scene Hierarchy
 
@@ -139,7 +139,8 @@ Each component has a collapsible header with a dedicated editor widget:
 - **Native Script** -- Script class name
 - **Sound Source** -- Sound asset picker, volume, pitch, loop, spatial, play-on-start
 - **Sound Listener** -- Primary listener toggle
-- **Trigger** -- Trigger type dropdown, associated data fields
+- **Trigger** -- Trigger type dropdown (Victory, Death, Target, Teleport, Timer, Interaction,
+  LuaCallback), configurable callback name, type-specific fields (duration, range, level name)
 - **Player** -- Player tag configuration
 - **Link** -- External entity reference
 - **Background** -- Background layer settings

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Hand/pointer -->
+  <path d="M 200,380 L 200,200 C 200,180 220,160 240,160 C 260,160 280,180 280,200 L 280,260
+           C 290,250 310,245 320,255 L 320,270
+           C 330,260 350,255 360,265 L 360,280
+           C 370,270 390,265 400,275 L 400,370
+           C 400,430 360,470 300,470 L 250,470
+           C 220,470 200,450 200,420 Z"
+        stroke="white" stroke-width="22" fill="none" stroke-linejoin="round"/>
+  <!-- Key hint: E -->
+  <rect x="120" y="60" width="80" height="80" rx="12" stroke="white" stroke-width="16" fill="none"/>
+  <text x="160" y="120" text-anchor="middle" font-size="56" font-family="sans-serif" font-weight="bold" fill="white">E</text>
+</svg>

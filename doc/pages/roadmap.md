@@ -297,6 +297,22 @@ with dedicated editors for different asset types.
     - ![Planned][planned] Packaging wizard in Owl Nest
         - Panel/dialog: target platform, output directory, progress bar, build report
         - Pre-packaging validation: check firstScene exists, all assets found
+- UX & Quality
+    - ![Planned][planned] In-editor help pages
+        - Built-in documentation browser (searchable, linked from panels)
+        - Context-sensitive help (F1 on a component opens its doc page)
+        - Getting started guide accessible from the welcome screen
+    - ![Planned][planned] Tooltips everywhere
+        - Descriptive tooltips on all toolbar buttons, panel headers, and component fields
+        - Tooltip on trigger types explaining what each type does
+        - Tooltip on settings fields explaining the effect
+    - ![Planned][planned] Unique ImGui IDs audit
+        - Ensure all ImGui widgets have unique IDs (fix duplicate ID warnings)
+        - Use `PushID`/`PopID` consistently for entity lists, component editors, etc.
+    - ![Planned][planned] Icon clarity pass
+        - Review and redesign confusing or too-similar icons
+        - Add distinct icons for new trigger types (timer, interaction, lua callback)
+        - Consistent visual language across all icon categories
 
 ## v0.1.0 -- Expected 2026-06-01
 
@@ -382,11 +398,11 @@ application (Linux / Windows).
         - Reversible command system for all editor actions (entity, component, hierarchy, gizmo)
         - Configurable undo stack depth, Ctrl+Z / Ctrl+Y, merge coalescing, dirty flag in title
 - Scene & Triggers
-    - ![Planned][planned] More scene events and triggers
-        - On enter, on interact, on timer, etc.
-        - Trigger actions: play sound, change scene, modify objects, etc.
-        - Event parameters: trigger volume, interaction range, timer duration
-        - Editor support for placing triggers and defining events
+    - ![Done][done] More scene events and triggers
+        - New trigger types: Timer (duration + repeat), Interaction (key press in range), LuaCallback (generic)
+        - Edge detection: `on_trigger_enter`/`on_trigger_exit` callbacks on all trigger types
+        - Lua API: `trigger.start_timer`/`stop_timer`/`reset_timer` for timer control
+        - Editor: Duration/Repeating fields for Timer, Interaction Range for Interaction
     - ![Done][done] Common properties across scenes
         - Covered by `SettingsManager`: game defaults in `game_settings.yml`, shared across all scenes
 - Sample Game

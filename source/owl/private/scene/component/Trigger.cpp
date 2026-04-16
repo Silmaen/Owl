@@ -20,6 +20,16 @@ void Trigger::serialize(const core::Serializer& iOut) const {
 		iOut.getImpl()->emitter << YAML::Key << "LevelName" << YAML::Value << trigger.levelName;
 		iOut.getImpl()->emitter << YAML::Key << "TargetName" << YAML::Value << trigger.targetName;
 	}
+	if (trigger.type == SceneTrigger::TriggerType::Timer) {
+		iOut.getImpl()->emitter << YAML::Key << "TimerDuration" << YAML::Value << trigger.timerDuration;
+		iOut.getImpl()->emitter << YAML::Key << "TimerRepeating" << YAML::Value << trigger.timerRepeating;
+	}
+	if (trigger.type == SceneTrigger::TriggerType::Interaction) {
+		iOut.getImpl()->emitter << YAML::Key << "InteractionRange" << YAML::Value << trigger.interactionRange;
+	}
+	if (!trigger.callbackName.empty()) {
+		iOut.getImpl()->emitter << YAML::Key << "CallbackName" << YAML::Value << trigger.callbackName;
+	}
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
@@ -38,6 +48,14 @@ void Trigger::deserialize(const core::Serializer& iNode) {
 		trigger.levelName = iNode.getImpl()->node["LevelName"].as<std::string>();
 	if (iNode.getImpl()->node["TargetName"])
 		trigger.targetName = iNode.getImpl()->node["TargetName"].as<std::string>();
+	if (iNode.getImpl()->node["TimerDuration"])
+		trigger.timerDuration = iNode.getImpl()->node["TimerDuration"].as<float>();
+	if (iNode.getImpl()->node["TimerRepeating"])
+		trigger.timerRepeating = iNode.getImpl()->node["TimerRepeating"].as<bool>();
+	if (iNode.getImpl()->node["InteractionRange"])
+		trigger.interactionRange = iNode.getImpl()->node["InteractionRange"].as<float>();
+	if (iNode.getImpl()->node["CallbackName"])
+		trigger.callbackName = iNode.getImpl()->node["CallbackName"].as<std::string>();
 }
 
 }// namespace owl::scene::component

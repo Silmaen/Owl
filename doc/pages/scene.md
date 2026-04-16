@@ -226,14 +226,19 @@ YAML key: `PhysicBody`. See [Physics](physics.md) for the full physics guide.
 
 #### Trigger
 
-| Field       | Type          | Default    | Description                         |
-|-------------|---------------|------------|-------------------------------------|
-| `type`      | `TriggerType` | `Victory`  | `Victory`, `Death`, `Target`, `Teleport` |
-| `levelName` | `string`      | `""`       | Target scene (Teleport type)        |
-| `targetName`| `string`      | `""`       | Target entity name in destination   |
+| Field              | Type          | Default    | Description                                      |
+|--------------------|---------------|------------|--------------------------------------------------|
+| `type`             | `TriggerType` | `Victory`  | `Victory`, `Death`, `Target`, `Teleport`, `Timer`, `Interaction`, `LuaCallback` |
+| `levelName`        | `string`      | `""`       | Target scene (Teleport type)                     |
+| `targetName`       | `string`      | `""`       | Target entity name (Teleport type)               |
+| `timerDuration`    | `float`       | `1.0`      | Duration in seconds (Timer type)                 |
+| `timerRepeating`   | `bool`        | `false`    | Whether the timer repeats (Timer type)           |
+| `interactionRange` | `float`       | `1.5`      | Range multiplier (Interaction type)              |
+| `callbackName`     | `string`      | `""`       | Custom Lua callback name (empty = type default)  |
 
-YAML key: `Trigger`. Collision between the player and a trigger entity activates the
-trigger effect: change scene status, or queue a teleport request.
+YAML key: `Trigger`. Overlap-based triggers detect player collision and fire Lua callbacks.
+All overlap triggers also dispatch `on_trigger_enter` / `on_trigger_exit` edge events.
+See [Lua Scripting > Trigger System](scripting.md) for callback details and examples.
 
 #### EntityLink
 

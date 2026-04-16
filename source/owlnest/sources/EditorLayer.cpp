@@ -66,6 +66,9 @@ void buildIconBank() {
 		{"trigger_death",     resolve("icons/triggers/death")},
 		{"trigger_target",    resolve("icons/triggers/target")},
 		{"trigger_teleport",  resolve("icons/triggers/teleport")},
+		{"trigger_timer",     resolve("icons/triggers/timer")},
+		{"trigger_interact",  resolve("icons/triggers/interaction")},
+		{"trigger_lua",       resolve("icons/triggers/lua_callback")},
 		// File browser icons
 		{"folder_icon",       resolve("icons/browser/folder")},
 		{"glsl_icon",         resolve("icons/browser/glsl")},
@@ -160,6 +163,9 @@ void loadTriggerTextures() {
 	textureLibrary.load("icons/triggers/death");
 	textureLibrary.load("icons/triggers/target");
 	textureLibrary.load("icons/triggers/teleport");
+	textureLibrary.load("icons/triggers/timer");
+	textureLibrary.load("icons/triggers/interaction");
+	textureLibrary.load("icons/triggers/lua_callback");
 }
 void loadSounds() {
 	auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
@@ -530,11 +536,11 @@ void EditorLayer::renderMenu() {// NOLINT(readability-function-cognitive-complex
 					canUndo ? std::format("Undo {}", m_undoManager.undoDescription()) : std::string("Undo");
 			const auto redoLabel =
 					canRedo ? std::format("Redo {}", m_undoManager.redoDescription()) : std::string("Redo");
-			if (iconBank.menuItem("undo", undoLabel.c_str(),
-								  m_actionRegistry.getShortcutString("edit.undo").c_str(), canUndo))
+			if (iconBank.menuItem("undo", undoLabel.c_str(), m_actionRegistry.getShortcutString("edit.undo").c_str(),
+								  canUndo))
 				performUndo();
-			if (iconBank.menuItem("redo", redoLabel.c_str(),
-								  m_actionRegistry.getShortcutString("edit.redo").c_str(), canRedo))
+			if (iconBank.menuItem("redo", redoLabel.c_str(), m_actionRegistry.getShortcutString("edit.redo").c_str(),
+								  canRedo))
 				performRedo();
 			ImGui::EndMenu();
 		}
@@ -1003,6 +1009,7 @@ auto sanitizeFilename(const std::string& iName) -> std::string {
 }
 
 /// Write a Linux launcher shell script that sets LD_LIBRARY_PATH.
+#ifdef OWL_PLATFORM_LINUX
 void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string& iExeName) {
 	std::ofstream script(iGameDir / "launch.sh");
 	script << "#!/bin/sh\n";
@@ -1016,10 +1023,11 @@ void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string
 										 std::filesystem::perms::others_exec,
 								 std::filesystem::perm_options::add);
 }
+#endif
 
 /// Write a game_info.yml metadata file.
-void writeMetadata(const std::filesystem::path& iGameDir, const std::string& iGameName,
-				   const std::string& iVersion, const std::string& iAuthor, const std::string& iDescription) {
+void writeMetadata(const std::filesystem::path& iGameDir, const std::string& iGameName, const std::string& iVersion,
+				   const std::string& iAuthor, const std::string& iDescription) {
 	const auto now = std::chrono::system_clock::now();
 	const auto days = std::chrono::floor<std::chrono::days>(now);
 	const std::chrono::year_month_day ymd{days};
@@ -1047,8 +1055,7 @@ void writeMetadata(const std::filesystem::path& iGameDir, const std::string& iGa
 
 #ifdef OWL_PLATFORM_WINDOWS
 /// Create a .zip archive from a directory using PowerShell.
-auto createZipArchive(const std::filesystem::path& iSourceDir,
-					  const std::filesystem::path& iOutputZip) -> bool {
+auto createZipArchive(const std::filesystem::path& iSourceDir, const std::filesystem::path& iOutputZip) -> bool {
 	const auto cmd = std::format(
 			"powershell -NoProfile -Command \"Compress-Archive -Path '{}\\*' -DestinationPath '{}' -Force\"",
 			iSourceDir.string(), iOutputZip.string());
@@ -1146,9 +1153,11 @@ void EditorLayer::packGame() {
 		OWL_CORE_ERROR("OwlRunner executable not found in {}", runnerSrcDir.string())
 		return;
 	}
-	std::string exeFilename = gameName;
+
 #ifdef OWL_PLATFORM_WINDOWS
-	exeFilename += ".exe";
+	const std::string& exeFilename = gameName + ".exe";
+#else
+	const std::string& exeFilename = gameName;
 #endif
 	const auto destExe = gameDir / exeFilename;
 	std::filesystem::copy_file(runnerExe, destExe, std::filesystem::copy_options::overwrite_existing);
@@ -1184,8 +1193,7 @@ void EditorLayer::packGame() {
 	OWL_CORE_INFO("Game exported: {} ({} assets) -> {}", m_project.name, assets.size(), gameDir.string())
 }
 
-void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath,
-									const std::string& iAssetRelativePath) {
+void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, const std::string& iAssetRelativePath) {
 	if (m_state != State::Edit || !m_activeScene)
 		return;
 	auto root = scene::PrefabSerializer::instantiate(iPrefabPath, m_activeScene, iAssetRelativePath);

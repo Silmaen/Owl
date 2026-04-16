@@ -285,6 +285,30 @@ void renderProps(Trigger& ioComponent) {
 		ImGui::InputText("Level Name", &ioComponent.trigger.levelName);
 		ImGui::InputText("Target Name", &ioComponent.trigger.targetName);
 	}
+	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Timer) {
+		ImGui::DragFloat("Duration (s)", &ioComponent.trigger.timerDuration, 0.1f, 0.01f, 3600.0f);
+		ImGui::Checkbox("Repeating", &ioComponent.trigger.timerRepeating);
+		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+		if (ioComponent.trigger.callbackName.empty())
+			ImGui::TextDisabled("Default: on_timer");
+	}
+	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Interaction) {
+		ImGui::DragFloat("Interaction Range", &ioComponent.trigger.interactionRange, 0.05f, 0.1f, 20.0f);
+		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+		if (ioComponent.trigger.callbackName.empty())
+			ImGui::TextDisabled("Default: on_interact");
+	}
+	if (ioComponent.trigger.type == SceneTrigger::TriggerType::LuaCallback) {
+		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+		if (ioComponent.trigger.callbackName.empty())
+			ImGui::TextDisabled("Default: on_triggered");
+	}
+	// Info: all overlap triggers also fire on_trigger_enter / on_trigger_exit.
+	if (ioComponent.trigger.type != SceneTrigger::TriggerType::Victory &&
+		ioComponent.trigger.type != SceneTrigger::TriggerType::Death &&
+		ioComponent.trigger.type != SceneTrigger::TriggerType::Target) {
+		ImGui::TextDisabled("Also fires: on_trigger_enter / on_trigger_exit");
+	}
 }
 
 void renderProps(EntityLink& ioComponent) { ImGui::InputText("linked Entity Name", &ioComponent.linkedEntityName); }

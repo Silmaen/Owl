@@ -200,8 +200,18 @@ void Viewport::renderOverlay() const {
 				case scene::SceneTrigger::TriggerType::Teleport:
 					iconName = "icons/triggers/teleport";
 					break;
+				case scene::SceneTrigger::TriggerType::Timer:
+					iconName = "icons/triggers/timer";
+					break;
+				case scene::SceneTrigger::TriggerType::Interaction:
+					iconName = "icons/triggers/interaction";
+					break;
+				case scene::SceneTrigger::TriggerType::LuaCallback:
+					iconName = "icons/triggers/lua_callback";
+					break;
 			}
-			if (const auto icon = textureLibrary.get(iconName); icon != nullptr) {
+			if (!iconName.empty()) {
+				if (const auto icon = textureLibrary.get(iconName); icon != nullptr) {
 				const scene::Entity ent{entity, &activeScene};
 				math::Transform iconTransform = activeScene.getWorldTransform(ent);
 				iconTransform.translation().z() += 0.01f;
@@ -210,6 +220,7 @@ void Viewport::renderOverlay() const {
 												.color = {1.f, 1.f, 1.f, 0.7f},
 												.texture = icon,
 												.entityId = static_cast<int>(entity)});
+				}
 			}
 		}
 	}
