@@ -13,11 +13,19 @@ namespace owl::nest::panel {
 void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& ioRegistry) {
 	if (!m_visible)
 		return;
-	ImGui::Begin("Settings", &m_visible);
+	ImGui::Begin("Editor Settings", &m_visible);
+	renderGeneralSection(ioSettings);
+	ImGui::Separator();
 	renderThemeSection(ioSettings);
 	ImGui::Separator();
 	renderKeybindingsSection(ioSettings, ioRegistry);
 	ImGui::End();
+}
+
+void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
+	if (!ImGui::CollapsingHeader("General", ImGuiTreeNodeFlags_DefaultOpen))
+		return;
+	ImGui::Checkbox("Show Stats Panel", &ioSettings.showStats);
 }
 
 void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {

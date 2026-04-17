@@ -96,6 +96,8 @@ private:
 	void renderStats(const core::Timestep& iTimeStep);
 	void renderMenu();
 	void renderToolbar();
+	/// Render the welcome screen shown when no project is loaded.
+	void renderWelcomeScreen();
 
 	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
 	static auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
@@ -117,6 +119,8 @@ private:
 	State m_state = State::Edit;
 	bool m_stepRequested = false;
 	bool m_stopRequested = false;
+	/// Whether the welcome screen should be shown (hidden when user closes it).
+	bool m_showWelcomeScreen = true;
 
 	bool m_pendingTeleportVelocity = false;
 	math::vec2f m_teleportVelocity = {0.f, 0.f};

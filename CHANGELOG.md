@@ -24,6 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub community files (CONTRIBUTING, CODE_OF_CONDUCT, SECURITY, CHANGELOG)
 - `scene.quit()` Lua API for clean application exit
 - `SettingsManager::loadDefaultsFromString()` for pack-based settings loading
+- Recent projects: persisted list (up to 10) in `EditorSettings::recentProjects`
+- "Open Recent" submenu in File menu with per-entry tooltip
+- Welcome screen modal shown when no project is loaded, closable via `x` button or `File > Welcome Screen`
+- Reorganized menu structure:
+  - **File**: project operations (New, Open, Recent, Save, Close, Pack Game, Welcome, Exit)
+  - **Edit**: Undo/Redo + Engine Settings, Editor Settings, Project Settings
+  - **Current**: scene operations (New, Open, Save, Save As, Import, Pack Scene)
+- "Show Stats" moved into Editor Settings panel (General section) — no longer a menu item
+- Doxygen favicon using owl logo (32x32 + 16x16)
 
 ### Fixed
 
