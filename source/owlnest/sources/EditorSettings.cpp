@@ -16,6 +16,22 @@ OWL_DIAG_POP
 
 namespace owl::nest {
 
+void EditorSettings::pushRecentProject(const std::filesystem::path& iProjectDir) {
+	const auto canonical = iProjectDir.lexically_normal().generic_string();
+	// Remove any existing entry for this project.
+	std::erase_if(recentProjects, [&canonical](const std::string& iEntry) { return iEntry == canonical; });
+	// Insert at the front.
+	recentProjects.insert(recentProjects.begin(), canonical);
+	// Cap the list length.
+	if (recentProjects.size() > maxRecentProjects)
+		recentProjects.resize(maxRecentProjects);
+}
+
+void EditorSettings::removeRecentProject(const std::filesystem::path& iProjectDir) {
+	const auto canonical = iProjectDir.lexically_normal().generic_string();
+	std::erase_if(recentProjects, [&canonical](const std::string& iEntry) { return iEntry == canonical; });
+}
+
 void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 	if (!exists(iFile))
 		return;
@@ -29,6 +45,11 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			keybindingOverrides.clear();
 			for (const auto& pair: bindings)
 				keybindingOverrides[pair.first.as<std::string>()] = pair.second.as<std::string>();
+		}
+		if (const auto recents = config["recentProjects"]; recents && recents.IsSequence()) {
+			recentProjects.clear();
+			for (const auto& entry: recents)
+				recentProjects.push_back(entry.as<std::string>());
 		}
 	}
 }
@@ -44,6 +65,12 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 		for (const auto& [id, shortcut]: keybindingOverrides)
 			out << YAML::Key << id << YAML::Value << shortcut;
 		out << YAML::EndMap;
+	}
+	if (!recentProjects.empty()) {
+		out << YAML::Key << "recentProjects" << YAML::Value << YAML::BeginSeq;
+		for (const auto& path: recentProjects)
+			out << path;
+		out << YAML::EndSeq;
 	}
 	out << YAML::EndMap;
 	out << YAML::EndMap;

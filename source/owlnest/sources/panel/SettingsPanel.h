@@ -46,6 +46,7 @@ private:
 	/// Conflict warning message (empty = no conflict).
 	std::string m_conflictMessage;
 
+	static void renderGeneralSection(EditorSettings& ioSettings);
 	static void renderThemeSection(EditorSettings& ioSettings);
 	void renderKeybindingsSection(EditorSettings& ioSettings, ActionRegistry& ioRegistry);
 	/// Handle key capture logic for a single action row.

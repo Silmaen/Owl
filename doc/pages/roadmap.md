@@ -329,14 +329,16 @@ asynchronous with progress feedback.
         - Panel/dialog: target platform, output directory, progress bar, build report
         - Pre-packaging validation: check firstScene exists, all assets found
 - Menu & Project Workflow
-    - ![Planned][planned] Separate Project and Scene menus
-        - Dedicated **Project** menu: New, Open, Save, Close, Recent Projects, Project Settings, Pack
-        - Dedicated **Scene** menu: New, Open, Save, Save As, Import
-        - Project operations take priority (opening a project auto-loads its first scene)
-    - ![Planned][planned] Recent projects
-        - Persist a list of recently opened project directories in editor settings
-        - "Open Recent" submenu in the Project menu (most recent first, max ~10 entries)
-        - Welcome screen / startup dialog showing recent projects for quick access
+    - ![Done][done] Reorganized menu structure
+        - **File** menu: project operations (New, Open, Open Recent, Save, Close, Pack Game, Welcome Screen, Exit)
+        - **Edit** menu: Undo/Redo + Engine Settings, Editor Settings, Project Settings
+        - **Current** menu: scene operations (New Scene, Open Scene, Save, Save As, Import Scene, Pack Scene)
+        - "Show Stats" moved into Editor Settings panel (General section)
+    - ![Done][done] Recent projects
+        - Persisted in `EditorSettings::recentProjects` (capped at 10 entries, most recent first)
+        - "Open Recent" submenu in the File menu with per-entry tooltip showing full path
+        - Welcome screen modal shown when no project is loaded: New/Open buttons + recent list
+        - Double-click a recent entry to open, `x` button to remove individual entries
 - UX & Quality
     - ![Planned][planned] In-editor help pages
         - Built-in documentation browser (searchable, linked from panels)

@@ -450,6 +450,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_logPanel.onImGuiRender();
 	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
 	m_asyncProgress.onImGuiRender();
+	renderWelcomeScreen();
 	//=============================================================
 	{
 		const auto& lower = m_viewport.getLowerBound();
@@ -464,6 +465,67 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		ImGui::SetNextWindowPos({upper.x() - 8.0f, lower.y() + 8.0f}, ImGuiCond_Always, {1.0f, 0.0f});
 		m_controlBar.onRender();
 	}
+}
+
+void EditorLayer::renderWelcomeScreen() {
+	if (m_project.isLoaded() || !m_showWelcomeScreen)
+		return;
+
+	const auto* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	ImGui::SetNextWindowSize(ImVec2(520, 400), ImGuiCond_Appearing);
+
+	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
+	bool open = true;
+	if (ImGui::Begin("Welcome to Owl Nest", &open, flags)) {
+		ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f), "Welcome to Owl Nest");
+		ImGui::TextWrapped("Get started by creating a new project or opening an existing one.");
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		if (ImGui::Button("New Project...", ImVec2(150, 0)))
+			newProject();
+		ImGui::SameLine();
+		if (ImGui::Button("Open Project...", ImVec2(150, 0)))
+			openProject();
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Text("Recent Projects");
+		ImGui::Spacing();
+
+		if (m_settings.recentProjects.empty()) {
+			ImGui::TextDisabled("No recent projects.");
+		} else {
+			std::filesystem::path toOpen;
+			std::filesystem::path toRemove;
+			ImGui::BeginChild("##recents", ImVec2(0, 200), ImGuiChildFlags_Borders);
+			for (const auto& recent: m_settings.recentProjects) {
+				const std::filesystem::path path(recent);
+				const auto name = path.filename().string();
+				ImGui::PushID(recent.c_str());
+				if (ImGui::Selectable(name.c_str(), false, ImGuiSelectableFlags_AllowDoubleClick)) {
+					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+						toOpen = path;
+				}
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("%s", recent.c_str());
+				ImGui::SameLine(ImGui::GetContentRegionAvail().x - 20);
+				if (ImGui::SmallButton("x"))
+					toRemove = path;
+				ImGui::PopID();
+			}
+			ImGui::EndChild();
+			if (!toOpen.empty())
+				openProject(toOpen);
+			if (!toRemove.empty())
+				m_settings.removeRecentProject(toRemove);
+		}
+	}
+	ImGui::End();
+	if (!open)
+		m_showWelcomeScreen = false;
 }
 
 void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
@@ -512,32 +574,43 @@ void EditorLayer::renderMenu() {// NOLINT(readability-function-cognitive-complex
 	const auto& iconBank = gui::IconBank::instance();
 
 	if (ImGui::BeginMenuBar()) {
+		// === File menu: everything about projects ===
 		if (ImGui::BeginMenu("File")) {
 			if (iconBank.menuItem("new_folder", "New Project"))
 				newProject();
 			if (iconBank.menuItem("open", "Open Project"))
 				openProject();
+			// Open Recent submenu.
+			if (ImGui::BeginMenu("Open Recent", !m_settings.recentProjects.empty())) {
+				std::filesystem::path toOpen;
+				for (const auto& recent: m_settings.recentProjects) {
+					const std::filesystem::path path(recent);
+					const auto label = path.filename().string() + "  (" + path.parent_path().string() + ")";
+					if (ImGui::MenuItem(label.c_str()))
+						toOpen = path;
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Clear Recent Projects"))
+					m_settings.recentProjects.clear();
+				ImGui::EndMenu();
+				if (!toOpen.empty())
+					openProject(toOpen);
+			}
 			if (iconBank.menuItem("save", "Save Project", nullptr, m_project.isLoaded()))
 				saveProject();
 			if (iconBank.menuItem("close", "Close Project", nullptr, m_project.isLoaded()))
 				closeProject();
 			ImGui::Separator();
-			if (iconBank.menuItem("new_scene", "New", m_actionRegistry.getShortcutString("scene.new").c_str()))
-				newScene();
+			if (iconBank.menuItem("pack", "Pack Game", nullptr, m_project.isLoaded()))
+				packGame();
 			ImGui::Separator();
-			if (iconBank.menuItem("open", "Open Scene", m_actionRegistry.getShortcutString("scene.open").c_str()))
-				openScene();
-			if (iconBank.menuItem("save", "Save Scene", m_actionRegistry.getShortcutString("scene.save").c_str()))
-				if (!m_currentScenePath.empty())
-					saveCurrentScene();
-			if (iconBank.menuItem("save", "Save Scene as..",
-								  m_actionRegistry.getShortcutString("scene.saveAs").c_str()))
-				saveSceneAs();
-			ImGui::Separator();
+			if (!m_project.isLoaded() && ImGui::MenuItem("Welcome Screen"))
+				m_showWelcomeScreen = true;
 			if (iconBank.menuItem("exit", "Exit"))
 				core::Application::get().close();
 			ImGui::EndMenu();
 		}
+		// === Edit menu: undo/redo + settings ===
 		if (ImGui::BeginMenu("Edit")) {
 			const bool canUndo = m_undoManager.canUndo() && m_state == State::Edit;
 			const bool canRedo = m_undoManager.canRedo() && m_state == State::Edit;
@@ -551,31 +624,33 @@ void EditorLayer::renderMenu() {// NOLINT(readability-function-cognitive-complex
 			if (iconBank.menuItem("redo", redoLabel.c_str(), m_actionRegistry.getShortcutString("edit.redo").c_str(),
 								  canRedo))
 				performRedo();
-			ImGui::EndMenu();
-		}
-		if (ImGui::BeginMenu("Project", m_project.isLoaded())) {
-			if (iconBank.menuItem("import_file", "Import Scene"))
-				importScene();
 			ImGui::Separator();
-			if (iconBank.menuItem("pack", "Pack Scene"))
-				if (!m_currentScenePath.empty())
-					packScene();
-			if (iconBank.menuItem("pack", "Pack Game"))
-				packGame();
-			ImGui::Separator();
-			if (iconBank.menuItem("settings", "Project Settings"))
+			if (iconBank.menuItem("settings", "Engine Settings"))
+				m_parameters.open();
+			if (iconBank.menuItem("settings", "Editor Settings"))
+				m_settingsPanel.open();
+			if (iconBank.menuItem("settings", "Project Settings", nullptr, m_project.isLoaded()))
 				m_projectSettings.open(m_project);
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Settings")) {
-			if (iconBank.menuItem("stats", "Show Stats")) {
-				m_settings.showStats = !m_settings.showStats;
-			}
-			if (iconBank.menuItem("settings", "Parameters"))
-				m_parameters.open();
+		// === Current menu: everything about the currently open scene ===
+		if (ImGui::BeginMenu("Current", m_project.isLoaded())) {
+			if (iconBank.menuItem("new_scene", "New Scene", m_actionRegistry.getShortcutString("scene.new").c_str()))
+				newScene();
+			if (iconBank.menuItem("open", "Open Scene", m_actionRegistry.getShortcutString("scene.open").c_str()))
+				openScene();
 			ImGui::Separator();
-			if (iconBank.menuItem("settings", "Editor Settings"))
-				m_settingsPanel.open();
+			if (iconBank.menuItem("save", "Save Scene", m_actionRegistry.getShortcutString("scene.save").c_str(),
+								  !m_currentScenePath.empty()))
+				saveCurrentScene();
+			if (iconBank.menuItem("save", "Save Scene as..",
+								  m_actionRegistry.getShortcutString("scene.saveAs").c_str()))
+				saveSceneAs();
+			ImGui::Separator();
+			if (iconBank.menuItem("import_file", "Import Scene"))
+				importScene();
+			if (iconBank.menuItem("pack", "Pack Scene", nullptr, !m_currentScenePath.empty()))
+				packScene();
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
@@ -917,6 +992,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	const auto configFile = iDir / "owl_project.yml";
 	if (!exists(configFile)) {
 		OWL_CORE_WARN("No owl_project.yml found in {}", iDir.string())
+		m_settings.removeRecentProject(iDir);
 		return;
 	}
 	if (m_project.isLoaded())
@@ -927,6 +1003,9 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 			{std::format("Project: {}", m_project.name), m_project.projectDirectory});
 	m_contentBrowser.attach();
 	updateWindowTitle();
+
+	// Add to recent projects list.
+	m_settings.pushRecentProject(iDir);
 
 	if (!m_project.firstScene.empty()) {
 		const auto scenePath = m_project.projectDirectory / m_project.firstScene;
