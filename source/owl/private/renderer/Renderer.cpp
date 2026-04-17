@@ -20,6 +20,15 @@ shared<Renderer::TextureLibrary> Renderer::m_textureLibrary = nullptr;
 
 void Renderer::init() {
 	OWL_PROFILE_FUNCTION()
+	initContext();
+	if (m_internalState == State::Error)
+		return;
+	initShaders();
+}
+
+void Renderer::initContext() {
+	OWL_PROFILE_FUNCTION()
+	m_internalState = State::Created;
 
 	if (m_sceneData == nullptr)
 		m_sceneData = mkShared<SceneData>();
@@ -33,8 +42,17 @@ void Renderer::init() {
 		m_internalState = State::Error;
 		return;
 	}
+}
 
+void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
+	OWL_PROFILE_FUNCTION()
+
+	if (iProgress)
+		iProgress(0, 5, "renderer2D (quad, circle, line, text)");
 	Renderer2D::init();
+
+	if (iProgress)
+		iProgress(4, 5, "background");
 	BackgroundRenderer::init();
 
 	m_internalState = State::Running;

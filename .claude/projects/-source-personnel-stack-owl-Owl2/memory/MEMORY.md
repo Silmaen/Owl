@@ -1,3 +1,0 @@
-- [Roadmap v0.1.0](project_roadmap_010.md) — Release plan: users define games in OwlNest and package for distribution
-- [Docs in English](feedback_docs_english.md) — All project documentation must be in English, never French
-- [Use existing files](feedback_use_existing_files.md) — Always search for existing files before creating new ones

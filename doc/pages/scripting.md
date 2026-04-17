@@ -29,6 +29,26 @@ script do not affect other scripts. The Lua environment is **sandboxed**: the `i
 `ScriptEngine` and `ScriptInstance` are the public API (`source/owl/public/script/`).
 `LuaEngine` and `LuaBindings` are engine-private (`source/owl/private/script/`).
 
+```mermaid
+flowchart LR
+    subgraph Public API
+        SE[ScriptEngine]
+        SI[ScriptInstance]
+    end
+    subgraph Private
+        LE[LuaEngine]
+        LB[LuaBindings]
+    end
+    subgraph Scene
+        LS[LuaScript Component]
+    end
+    LS -->|owns| SI
+    SE -->|manages| SI
+    SI -->|wraps| LE
+    LE -->|registers| LB
+    LB -->|exposes| API[transform, physics, input, sound, scene, entity, ui, gamestate, save, settings, log, trigger, time]
+```
+
 ## Adding a Script to an Entity
 
 1. Create a `.lua` file in your project's asset directory (e.g. `scripts/player.lua`)

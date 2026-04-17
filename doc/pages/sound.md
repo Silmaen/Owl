@@ -20,6 +20,18 @@ abstract backend layer (OpenAL or Null). Audio files are loaded into memory as
 The sound system follows the same backend abstraction pattern as the renderer and
 input modules (see [Architecture](architecture.md)):
 
+```mermaid
+flowchart TD
+    Lua["Lua sound.play()"] --> SC[SoundCommand]
+    SS[SoundSource Component] --> SH[SoundHelper]
+    SH --> SC
+    SC --> API{SoundAPI}
+    API -->|OpenAL| OAL[OpenAL Backend]
+    API -->|Null| NUL[Null Backend]
+    SC --> SL[SoundLibrary]
+    SL --> SD[SoundData buffers]
+```
+
 | Class          | Role                                                     |
 |----------------|----------------------------------------------------------|
 | `SoundSystem`  | Lifecycle (init / shutdown / reset), owns `SoundLibrary` |
@@ -123,7 +135,7 @@ Where `referenceDistance = 1.0` and `distance` is clamped to `[0, maxDistance]`.
 For one-shot sounds triggered by gameplay code (e.g. from a `NativeScript`), use
 the `SoundHelper` utility:
 
-```cpp
+```c++
 #include <sound/SoundHelper.h>
 
 // Play the sound configured on the entity's SoundSource component:
@@ -138,7 +150,7 @@ owl::sound::SoundHelper::stopEntitySound(entity);
 
 For more control, use `SoundCommand` directly:
 
-```cpp
+```c++
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
 

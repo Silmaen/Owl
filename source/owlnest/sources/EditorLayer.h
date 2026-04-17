@@ -17,6 +17,7 @@
 #include "panel/ContentBrowser.h"
 #include "panel/LogPanel.h"
 #include "panel/Parameters.h"
+#include "panel/AsyncProgressModal.h"
 #include "panel/ProjectSettings.h"
 #include "panel/SceneHierarchy.h"
 #include "panel/SettingsPanel.h"
@@ -142,6 +143,7 @@ private:
 	panel::ProjectSettings m_projectSettings;
 	panel::LogPanel m_logPanel;
 	panel::SettingsPanel m_settingsPanel;
+	panel::AsyncProgressModal m_asyncProgress;
 
 	// Undo/Redo
 	UndoManager m_undoManager;

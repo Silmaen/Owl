@@ -946,6 +946,8 @@ WARN_LOGFILE           =
 
 INPUT                  = ../../../source/owl/public \
                          ../../../README.md \
+                         ../../../CHANGELOG.md \
+                         ../../../CONTRIBUTING.md \
                          ../../../doc
 
 # This tag can be used to specify the character encoding of the source files
@@ -1409,7 +1411,9 @@ HTML_EXTRA_STYLESHEET  = ../../../doc/css/doxygen-awesome.css \
 
 HTML_EXTRA_FILES       = ../../../doc/css/doxygen-awesome-darkmode-toggle.js \
                          ../../../doc/css/doxygen-awesome-fragment-copy-button.js \
-                         ../../../doc/css/doxygen-awesome-paragraph-link.js
+                         ../../../doc/css/doxygen-awesome-paragraph-link.js \
+                         ../../../doc/favicon.png \
+                         ../../../doc/favicon-16.png
 
 # The HTML_COLORSTYLE tag can be used to specify if the generated HTML output
 # should be rendered with a dark or light theme.

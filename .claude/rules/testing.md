@@ -14,7 +14,7 @@ paths:
 
 ## Test File Structure
 
-```cpp
+```c++
 /**
  * @file MyTest.cpp
  * @author Silmaen
@@ -43,7 +43,7 @@ TEST(CategoryName, TestName) {
 ## Expensive Test Fixtures
 
 For tests requiring slow one-time setup (e.g., Slang shader compilation ~50s), use `SetUpTestSuite`:
-```cpp
+```c++
 class MyFixture : public testing::Test {
 protected:
     static void SetUpTestSuite() {

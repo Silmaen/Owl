@@ -8,6 +8,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <!--BEGIN PROJECT_NAME--><title>$projectname: $title</title><!--END PROJECT_NAME-->
 <!--BEGIN !PROJECT_NAME--><title>$title</title><!--END !PROJECT_NAME-->
+<link rel="icon" type="image/png" sizes="32x32" href="$relpath^favicon.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="$relpath^favicon-16.png"/>
 <link href="$relpath^tabs.css" rel="stylesheet" type="text/css"/>
 <!--BEGIN DISABLE_INDEX-->
   <!--BEGIN FULL_SIDEBAR-->
@@ -29,6 +31,24 @@ $extrastylesheet
     DoxygenAwesomeDarkModeToggle.init()
     DoxygenAwesomeFragmentCopyButton.init()
     DoxygenAwesomeParagraphLink.init()
+</script>
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    document.addEventListener('DOMContentLoaded', function() {
+        // Doxygen renders ```mermaid fences as <div class="fragment"> blocks.
+        // Detect them by content and convert to <pre class="mermaid"> for rendering.
+        var keywords = /^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|journey|gitGraph|mindmap|timeline|block)/;
+        document.querySelectorAll('.fragment').forEach(function(el) {
+            var text = el.textContent.trim();
+            if (keywords.test(text)) {
+                var pre = document.createElement('pre');
+                pre.className = 'mermaid';
+                pre.textContent = text;
+                el.parentNode.replaceChild(pre, el);
+            }
+        });
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    });
 </script>
 </head>
 <body>

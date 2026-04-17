@@ -103,6 +103,32 @@ making its contents visible in the content browser. The editor window title refl
 the active project name. Scenes can be imported into the project via the **Project >
 Import Scene** menu item.
 
+### Async Packaging Flow
+
+Long-running operations (game packaging, scene packing) are executed asynchronously
+via the engine's task scheduler, with a modal progress overlay in the editor:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant EditorLayer
+    participant Scheduler
+    participant Worker Thread
+
+    User->>EditorLayer: Pack Game
+    EditorLayer->>EditorLayer: File dialog (sync)
+    EditorLayer->>EditorLayer: Snapshot project data
+    EditorLayer->>Scheduler: pushTask(scan + pack + copy)
+    EditorLayer->>EditorLayer: Open progress modal
+    loop Every frame
+        EditorLayer->>EditorLayer: Render progress bar
+        Scheduler->>Worker Thread: poll()
+    end
+    Worker Thread-->>Scheduler: Task complete
+    Scheduler-->>EditorLayer: Termination callback
+    EditorLayer->>EditorLayer: Close modal
+```
+
 ## Shader Pipeline
 
 ![Shader Pipeline](../images/shader_pipeline.svg)
