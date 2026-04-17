@@ -11,6 +11,7 @@
 #include "PackFormat.h"
 
 #include <filesystem>
+#include <functional>
 
 namespace owl::io::pack {
 
@@ -42,14 +43,23 @@ public:
 	 */
 	void addData(const std::vector<uint8_t>& iData, const std::string& iPackPath, AssetType iType);
 
+	/// Callback invoked per entry during write (current entry index, total entries).
+	using ProgressCallback = std::function<void(uint32_t, uint32_t)>;
+	/// Callback to check if the operation should be cancelled (return true to cancel).
+	using CancelCheck = std::function<bool()>;
+
 	/**
 	 * @brief Write the pack file to disk.
 	 * @param[in] iOutputFile The output file path.
 	 * @param[in] iFlags Pack flags (compression, obfuscation).
-	 * @return True on success.
+	 * @param[in] iProgress Optional progress callback invoked per entry.
+	 * @param[in] iCancelCheck Optional cancel check invoked per entry.
+	 * @return True on success, false on error or cancellation.
 	 */
 	[[nodiscard]] auto write(const std::filesystem::path& iOutputFile,
-							 PackFlags iFlags = PackFlags::Default) const -> bool;
+							 PackFlags iFlags = PackFlags::Default,
+							 const ProgressCallback& iProgress = {},
+							 const CancelCheck& iCancelCheck = {}) const -> bool;
 
 	/**
 	 * @brief Get the number of pending entries.

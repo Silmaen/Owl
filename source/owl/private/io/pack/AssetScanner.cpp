@@ -102,6 +102,9 @@ auto AssetScanner::resolveFont(const std::string& iFontName) -> std::optional<As
 auto AssetScanner::resolveSound(const std::string& iSoundAsset) -> std::optional<AssetReference> {
 	if (iSoundAsset.empty())
 		return std::nullopt;
+	// Absolute path: resolve directly.
+	if (const std::filesystem::path absPath(iSoundAsset); absPath.is_absolute() && exists(absPath))
+		return AssetReference{.packPath = makeRelativePath(absPath), .diskPath = absPath, .assetType = AssetType::Sound};
 	if (!core::Application::instanced())
 		return std::nullopt;
 	for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
@@ -141,6 +144,10 @@ auto AssetScanner::resolveScene(const std::string& iLevelName) -> std::optional<
 	std::string resolvedName = iLevelName;
 	if (std::filesystem::path(resolvedName).extension() != ".owl")
 		resolvedName += ".owl";
+
+	// Absolute path: resolve directly.
+	if (std::filesystem::path absPath(resolvedName); absPath.is_absolute() && exists(absPath))
+		return absPath;
 
 	if (!core::Application::instanced())
 		return std::nullopt;
@@ -196,6 +203,9 @@ void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,//
 	if (ioVisitedScenes.contains(sceneStr))
 		return;
 	ioVisitedScenes.insert(sceneStr);
+
+	if (!exists(iSceneFile))
+		return;
 
 	// Add the scene file itself.
 	if (const auto scenePack = makeRelativePath(iSceneFile); !hasAsset(ioAssets, scenePack)) {

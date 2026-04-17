@@ -75,7 +75,7 @@ The `EventDispatcher` pattern provides type-safe event handling. Create a
 dispatcher from an `Event&`, then call `dispatch<T>()` with a callback for each
 event type you care about:
 
-```cpp
+```c++
 void EditorLayer::onEvent(event::Event& ioEvent) {
     event::EventDispatcher dispatcher(ioEvent);
     dispatcher.dispatch<event::WindowResizeEvent>(
@@ -186,7 +186,7 @@ Null input backend, allowing tests to simulate user input without a real window.
 `owl::input::CameraOrthoController` wraps a `CameraOrtho` with keyboard and
 mouse controls suitable for 2D scene editing or gameplay:
 
-```cpp
+```c++
 // Create with aspect ratio; enable rotation with second parameter
 input::CameraOrthoController controller(16.0f / 9.0f, true);
 
@@ -255,7 +255,7 @@ Actions are registered during editor initialization in `EditorLayer`. The
 settings panel (`SettingsPanel`) provides a UI for viewing and rebinding
 shortcuts, including conflict detection.
 
-```cpp
+```c++
 m_actionRegistry.registerAction(
     "scene.save", "Save Scene",
     {input::key::S, Modifiers::Ctrl},
@@ -265,7 +265,7 @@ m_actionRegistry.registerAction(
 When a `KeyPressedEvent` reaches the editor layer, it is forwarded to the
 registry:
 
-```cpp
+```c++
 auto EditorLayer::onKeyPressed(const event::KeyPressedEvent& iEvent) -> bool {
     if (iEvent.getRepeatCount() > 0)
         return false;

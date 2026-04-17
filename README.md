@@ -1,6 +1,6 @@
 # Owl
 
-![Version](https://img.shields.io/badge/version-0.1.0--dev-blue)
+![Version](https://img.shields.io/badge/version-0.1.1-blue)
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-blue?logo=cplusplus)
 ![CMake 3.24+](https://img.shields.io/badge/CMake-3.24%2B-blue?logo=cmake)
 ![GitHub License](https://img.shields.io/github/license/Silmaen/Owl)
@@ -20,11 +20,17 @@ The full generated documentation is available online:
 **Documentation pages** ([browse on GitHub](doc/pages)):
 
 - [Architecture](doc/pages/architecture.md) -- Engine modules, backends, and shader pipeline
+- [Editor](doc/pages/editor.md) -- Owl Nest editor: panels, prefabs, icons, undo/redo
+- [Scene System](doc/pages/scene.md) -- Hierarchy, components, serialization, triggers
+- [Renderer](doc/pages/renderer.md) -- 2D renderer, shaders, textures, backgrounds
+- [Physics](doc/pages/physics.md) -- Box2D integration, collisions, triggers
 - [Sound System](doc/pages/sound.md) -- Sound system: components, spatial audio, and gameplay triggers
+- [Events & Input](doc/pages/event_input.md) -- Event system, keyboard, mouse, gamepad
 - [Lua Scripting](doc/pages/scripting.md) -- Lua scripting: API, lifecycle, sandboxing
 - [Building](doc/pages/building.md) -- Prerequisites, presets, testing, and CMake options
 - [Roadmap](doc/pages/roadmap.md) -- Planned and completed features by version
-- [Contributing](doc/pages/contributing.md) -- Code style, conventions, and workflow
+- [Changelog](CHANGELOG.md) -- Version history and release notes
+- [Contributing](CONTRIBUTING.md) -- How to contribute (code style, PRs, issues)
 
 ## Features
 

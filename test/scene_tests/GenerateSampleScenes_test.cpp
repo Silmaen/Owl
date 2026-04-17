@@ -106,7 +106,7 @@ TEST(GenerateSampleScenes, mainMenu) {
 	verRect.size = {180.f, 25.f};
 	verRect.anchorOffset = {-15.f, 15.f};
 	auto& verText = versionEntity.addComponent<component::UIText>();
-	verText.text = "v0.1.0-dev";
+	verText.text = "testing-version";
 	verText.color = {0.5f, 0.5f, 0.5f, 0.7f};
 	verText.fontSize = 12.f;
 	scn->setParent(versionEntity, canvasEntity);

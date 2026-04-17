@@ -327,7 +327,7 @@ the format `"renderer/name"` (e.g., `"renderer2D/quad"`), composed and decompose
 A `BufferLayout` is an initializer list of `BufferElement{name, type}` entries. Offsets
 and stride are computed automatically. For example, the quad vertex layout:
 
-```cpp
+```c++
 BufferLayout{{
     {"i_Position", ShaderDataType::Float3},
     {"i_Color", ShaderDataType::Float4},
@@ -451,7 +451,7 @@ Renderer2D uses a single uniform buffer at binding 0 for the camera view-project
 
 Drawing primitives manually (outside the ECS):
 
-```cpp
+```c++
 renderer::Renderer2D::resetStats();
 renderer::Renderer2D::beginScene(camera);
 

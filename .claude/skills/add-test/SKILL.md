@@ -13,7 +13,7 @@ Arguments: `<category>` (e.g., scene, renderer, core) and `<test-name>`.
 2. If the directory doesn't exist, this is a new test category — create it.
 3. Create the test file `test/<category>_tests/<test-name>_test.cpp` with this template:
 
-```cpp
+```c++
 /**
  * @file <test-name>_test.cpp
  * @author Silmaen

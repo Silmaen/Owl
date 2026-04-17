@@ -13,6 +13,8 @@
 #include "Shader.h"
 #include "data/assets/AssetLibrary.h"
 
+#include <functional>
+
 /**
  * @brief Namespace for the renderer elements.
  */
@@ -37,9 +39,29 @@ public:
 	~Renderer() = default;
 
 	/**
-	 * @brief Initialize the renderer.
+	 * @brief Initialize the renderer (context + shaders in one call).
 	 */
 	static void init();
+
+	/**
+	 * @brief Initialize the rendering context only (no shader compilation).
+	 *
+	 * Call initShaders() separately to compile shaders. This allows showing a
+	 * loading screen between context init and shader compilation.
+	 */
+	static void initContext();
+
+	/// Callback type for shader compilation progress (current index, total count, shader name).
+	using ShaderProgressCallback = std::function<void(uint32_t, uint32_t, const std::string&)>;
+
+	/**
+	 * @brief Compile all renderer shaders.
+	 *
+	 * Must be called after initContext(). If a progress callback is provided, it is
+	 * called before each shader compilation with the shader index, total count, and name.
+	 * @param[in] iProgress Optional progress callback.
+	 */
+	static void initShaders(const ShaderProgressCallback& iProgress = {});
 
 	/**
 	 * @brief Stops the renderer.

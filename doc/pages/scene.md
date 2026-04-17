@@ -61,6 +61,18 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 
 ![Scene Lifecycle](../images/scene_lifecycle.svg)
 
+```mermaid
+stateDiagram-v2
+    [*] --> Editing : Scene loaded
+    Editing --> Playing : onStartRuntime()
+    Playing --> Editing : onEndRuntime()
+    Playing --> Playing : onUpdateRuntime() each frame
+    Playing --> Victory : Victory trigger
+    Playing --> Death : Death trigger
+    Victory --> Editing : onEndRuntime()
+    Death --> Editing : onEndRuntime()
+```
+
 ### Status
 
 | Status    | Description                         |

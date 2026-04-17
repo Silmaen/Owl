@@ -30,7 +30,8 @@ void PackWriter::addData(const std::vector<uint8_t>& iData, const std::string& i
 	m_entries.push_back({iPackPath, iData, iType});
 }
 
-auto PackWriter::write(const std::filesystem::path& iOutputFile, const PackFlags iFlags) const -> bool {
+auto PackWriter::write(const std::filesystem::path& iOutputFile, const PackFlags iFlags,
+					   const ProgressCallback& iProgress, const CancelCheck& iCancelCheck) const -> bool {
 	std::ofstream file(iOutputFile, std::ios::binary);
 	if (!file.is_open())
 		return false;
@@ -48,7 +49,13 @@ auto PackWriter::write(const std::filesystem::path& iOutputFile, const PackFlags
 	std::vector<TocEntry> tocEntries;
 	tocEntries.reserve(m_entries.size());
 
-	for (uint32_t idx = 0; idx < m_entries.size(); ++idx) {
+	const auto totalEntries = static_cast<uint32_t>(m_entries.size());
+	for (uint32_t idx = 0; idx < totalEntries; ++idx) {
+		if (iCancelCheck && iCancelCheck())
+			return false;
+		if (iProgress)
+			iProgress(idx, totalEntries);
+
 		const auto& entry = m_entries[idx];
 
 		TocEntry tocEntry;

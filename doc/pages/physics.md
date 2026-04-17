@@ -21,6 +21,16 @@ active during **Play mode** -- entities are not simulated while editing.
 The physics module follows the same facade + pimpl pattern used by the sound and
 renderer modules (see [Architecture](architecture.md)):
 
+```mermaid
+flowchart LR
+    Lua["Lua physics.*"] --> PC[PhysicCommand]
+    Scene --> PC
+    PC --> Impl[PhysicCommand::Impl]
+    Impl --> B2[Box2D b2WorldId]
+    PB[PhysicBody Component] --> SB[SceneBody]
+    SB --> Impl
+```
+
 | Class                   | Role                                                                               |
 |-------------------------|------------------------------------------------------------------------------------|
 | `PhysicCommand`         | Static facade: `init` / `destroy` / `frame` / `impulse` / `velocity` / `transform` |
@@ -128,7 +138,7 @@ entity does not have a `PhysicBody` component. `impulse`, `getVelocity`, and
 
 ### Example: applying an impulse from a NativeScript
 
-```cpp
+```c++
 #include <physic/PhysicCommand.h>
 
 void MyScript::onUpdate(const owl::core::Timestep& iTimeStep) {

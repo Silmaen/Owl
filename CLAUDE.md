@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Owl (v0.1.0-dev) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
+Owl (v0.1.1-dev) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
 (GLFW, Null), and sound backends (OpenAL, Null). It uses an Entity-Component-System architecture (EnTT) with
 **hierarchical parent-child entities** and includes a scene editor (Owl Nest). Supported platforms: Linux (x64/arm64)
 and Windows (x64, MinGW).
@@ -267,8 +267,8 @@ OwlEngine can be built as a depmanager package for use by external projects (e.g
 # Build the OwlEngine package locally
 poetry run depmanager build .
 
-# The package will be available as owl_engine:0.1.0 in the local depmanager cache
-poetry run depmanager pack ls -p owl_engine:0.1.0
+# The package will be available as owl_engine:0.1.1 in the local depmanager cache
+poetry run depmanager pack ls -p owl_engine:0.1.1
 ```
 
 **Recipe details** (`owl_engine.py`):
@@ -282,7 +282,7 @@ poetry run depmanager pack ls -p owl_engine:0.1.0
 ```yaml
 packages:
   owl_engine:
-    version: 0.1.0
+    version: 0.1.1
     kind: "shared"
 ```
 
@@ -410,6 +410,10 @@ Enforced by `.clang-format` (LLVM-based) and `.clang-tidy`. Key conventions:
 - **Doxygen:** Every public class, method, enum value, and struct field must have a `@brief` or `///` comment. For
   functions, document all parameters (`@param[in]`/`@param[out]`) and return values (`@return`). Private members should
   at minimum have a `///` one-liner.
+- **Mermaid diagrams:** Use standard ` ```mermaid ` fenced blocks in documentation `.md` files for architecture
+  diagrams, flow charts, and sequence diagrams. These render natively on GitHub and are post-processed by mermaid.js
+  in the Doxygen HTML output. Prefer mermaid over ASCII art or external image files for any diagram that can be
+  expressed as text.
 
 ## CMake Options
 

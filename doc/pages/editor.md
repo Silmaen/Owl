@@ -23,6 +23,17 @@ Both executables share the same scene runtime. The editor adds the editing chrom
 
 The editor operates as a state machine with three states:
 
+```mermaid
+stateDiagram-v2
+    [*] --> Edit
+    Edit --> Play : F5 (Play)
+    Play --> Pause : F6 (Pause)
+    Pause --> Play : F6 (Resume)
+    Play --> Edit : F7 (Stop)
+    Pause --> Edit : F7 (Stop)
+    Pause --> Pause : F8 (Step Frame)
+```
+
 | State     | Description                                                     |
 |-----------|-----------------------------------------------------------------|
 | **Edit**  | Editor camera active, no simulation, scene is directly editable |

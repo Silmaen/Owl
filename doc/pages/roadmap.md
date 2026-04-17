@@ -258,8 +258,39 @@ a 2D lighting system.
 ## v0.1.1 -- Editor Polish & Multi-Document
 
 **Goal:** Transform the editor from a single-scene tool into a multi-document workspace
-with dedicated editors for different asset types.
+with dedicated editors for different asset types. All long-running operations become
+asynchronous with progress feedback.
 
+- Async Operations & Progress
+    - ![Done][done] Async task integration in Owl Nest
+        - `AsyncProgressModal` reusable panel: modal progress bar + cancel button + error display
+        - `AsyncProgressState` thread-safe shared state (atomics + mutex)
+        - Leverages existing Taskflow-based `Scheduler`, termination callbacks on main thread
+    - ![Done][done] Async packaging
+        - Pack Game and Pack Scene: asset scanning, compression, pack writing — all off main thread
+        - Real-time progress bar (per-entry callback via `PackWriter::ProgressCallback`)
+        - Cancel support via `PackWriter::CancelCheck`
+    - ![Done][done] Async scene save
+        - `saveSceneAs()`: serialize to string on main thread, write file on background thread
+        - "Saving..." overlay with progress indicator
+    - ![Done][done] Async scene loading
+        - `openScene()`: read file bytes on background thread, deserialize on main thread in callback
+        - "Loading Scene..." overlay while file I/O is in progress
+    - ![Done][done] Deferred shader compilation with loading screen
+        - `Renderer::init()` split into `initContext()` + `initShaders(callback)`
+        - ImGui loading overlay displayed between each shader compilation (5 shaders)
+        - Per-shader progress ("Compiling shader 3/5: quad...") with progress bar
+        - Cache hit skips compilation (~1ms), first-time compile shows real progress (~50s total)
+    - ![Planned][planned] Async texture loading with placeholders
+        - Load textures from pack on background thread (decompress + decode)
+        - Display 1x1 white placeholder until real texture is ready
+        - Smooth scene transitions without frame hitches in the runner
+    - ![Planned][planned] Async scene transitions in runner
+        - `handleTeleportRequest()`: load next scene asynchronously with fade overlay
+        - Keep rendering current scene until new scene is ready
+    - ![Planned][planned] Async content browser scanning
+        - `ContentBrowser::attach()`: scan project directory tree in background
+        - Progressive population of file list as entries are discovered
 - Multi-Document Architecture
     - ![Planned][planned] Document tab system
         - Tab bar for open documents (scenes, scripts, node graphs)
@@ -323,7 +354,7 @@ with dedicated editors for different asset types.
         - Add distinct icons for new trigger types (timer, interaction, lua callback)
         - Consistent visual language across all icon categories
 
-## v0.1.0 -- Expected 2026-06-01
+## v0.1.0 -- 2026-04-16
 
 **Goal:** Users can design a complete game in Owl Nest and package it as a standalone distributable
 application (Linux / Windows).

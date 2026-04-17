@@ -17,6 +17,11 @@
 #include "renderer/Renderer.h"
 #include "sound/SoundSystem.h"
 
+OWL_DIAG_PUSH
+OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
+#include <imgui.h>
+OWL_DIAG_POP
+
 namespace owl::core {
 
 
@@ -142,9 +147,9 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		OWL_CORE_INFO("Window Created.")
 	}
 
-	// initialize the renderer
+	// initialize the renderer context (no shader compilation yet)
 	{
-		renderer::Renderer::init();
+		renderer::Renderer::initContext();
 		// check renderer initialization
 		if (renderer::RenderCommand::getState() != renderer::RenderAPI::State::Ready) {
 			OWL_CORE_ERROR("ERROR while Initializing Renderer")
@@ -153,7 +158,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		}
 		// wait for all asynchron tasks
 		m_scheduler.waitEmptyQueue();
-		OWL_CORE_INFO("Renderer initiated.")
+		OWL_CORE_TRACE("Renderer context initiated.")
 	}
 
 	// Clean up extracted pack assets after init — keep only .spv compilation cache.
@@ -225,6 +230,39 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		// wait for all asynchron tasks
 		m_scheduler.waitEmptyQueue();
 		OWL_CORE_INFO("Sound system initiated.")
+	}
+
+	// Compile renderer shaders with an ImGui loading screen.
+	{
+		renderer::Renderer::initShaders([this](const uint32_t iCurrent, const uint32_t iTotal,
+											   const std::string& iName) {
+			OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
+			// Render a loading frame if ImGui is available.
+			if (mp_imGuiLayer && mp_appWindow && !m_minimized) {
+				renderer::RenderCommand::beginFrame();
+				if (renderer::RenderCommand::getState() == renderer::RenderAPI::State::Ready) {
+					mp_imGuiLayer->begin();
+					const auto* viewport = ImGui::GetMainViewport();
+					ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+					ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_Always);
+					if (ImGui::Begin("##Loading", nullptr,
+									 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+											 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+											 ImGuiWindowFlags_AlwaysAutoResize)) {
+						ImGui::Text("Loading engine...");
+						const auto progress = static_cast<float>(iCurrent) / static_cast<float>(iTotal);
+						ImGui::ProgressBar(progress, ImVec2(-1, 0));
+						ImGui::Text("Compiling shader: %s", iName.c_str());
+					}
+					ImGui::End();
+					mp_imGuiLayer->end();
+				}
+				renderer::RenderCommand::endFrame();
+				mp_appWindow->onUpdate();
+			}
+		});
+		m_scheduler.waitEmptyQueue();
+		OWL_CORE_INFO("Renderer initiated.")
 	}
 
 	// update the state here. (required for font initialization)
