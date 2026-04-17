@@ -55,10 +55,54 @@ void ContentBrowser::detach() {}
 void ContentBrowser::attach() {
 	m_currentRootPath = core::Application::get().getAssetDirectories().front().assetsPath;
 	m_currentPath = m_currentRootPath;
+	m_cachedEntries.clear();
+	m_cachedPath.clear();
+	requestScan(m_currentPath);
+}
+
+void ContentBrowser::requestScan(const std::filesystem::path& iPath) {
+	// If already scanning this exact path, skip.
+	if (m_scanInProgress.load() && m_pendingScanPath == iPath)
+		return;
+	m_pendingScanPath = iPath;
+	m_scanInProgress.store(true);
+	m_pendingEntries = mkShared<std::vector<std::filesystem::directory_entry>>();
+
+	auto buffer = m_pendingEntries;
+	auto* flag = &m_scanInProgress;
+	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
+			[buffer, iPath]() {
+				if (!exists(iPath) || !is_directory(iPath))
+					return;
+				std::error_code ec;
+				for (const auto& entry: std::filesystem::directory_iterator(iPath, ec))
+					buffer->push_back(entry);
+				std::ranges::sort(*buffer, [](const auto& iA, const auto& iB) -> auto {
+					if (iA.is_directory() != iB.is_directory())
+						return iA.is_directory();
+					return iA.path().filename().string() < iB.path().filename().string();
+				});
+			},
+			[flag]() { flag->store(false); }));
 }
 
 void ContentBrowser::onImGuiRender() {
 	ImGui::Begin("Content Browser");
+
+	// Swap in the latest background scan when it completes.
+	if (!m_scanInProgress.load() && m_pendingEntries) {
+		m_cachedEntries = std::move(*m_pendingEntries);
+		m_cachedPath = m_pendingScanPath;
+		m_pendingEntries.reset();
+	}
+
+	// Navigation or external trigger may require a rescan.
+	if (m_currentPath != m_cachedPath && m_currentPath != m_pendingScanPath)
+		requestScan(m_currentPath);
+	else if (m_rescanRequested) {
+		m_rescanRequested = false;
+		requestScan(m_currentPath);
+	}
 
 	// ----------------------------------------
 	// Top band
@@ -119,7 +163,7 @@ void ContentBrowser::renderContent() {
 
 	bool openContextMenu = false;
 	uint32_t item = 0;
-	for (const auto& directoryEntry: std::filesystem::directory_iterator(m_currentPath)) {
+	for (const auto& directoryEntry: m_cachedEntries) {
 		++item;
 		const auto& path = directoryEntry.path();
 		auto relativePath = relative(path, m_currentRootPath);
@@ -284,6 +328,8 @@ void ContentBrowser::renderContextMenu() {
 				std::filesystem::rename(m_selectedPath, newPath, ec);
 				if (ec)
 					OWL_CORE_ERROR("Failed to rename '{}': {}", m_selectedPath.filename().string(), ec.message())
+				else
+					m_rescanRequested = true;
 			}
 			m_renaming = false;
 			m_selectedPath.clear();
@@ -333,9 +379,10 @@ void ContentBrowser::deleteSelected() {
 		OWL_CORE_ERROR("Failed to delete '{}': {}", m_selectedPath.filename().string(), ec.message())
 
 	m_selectedPath.clear();
+	m_rescanRequested = true;
 }
 
-void ContentBrowser::createFolder() const {
+void ContentBrowser::createFolder() {
 	const auto baseName = m_currentPath / "New Folder";
 	auto folderPath = baseName;
 	uint32_t counter = 1;
@@ -348,9 +395,11 @@ void ContentBrowser::createFolder() const {
 	std::filesystem::create_directory(folderPath, ec);
 	if (ec)
 		OWL_CORE_ERROR("Failed to create folder: {}", ec.message())
+	else
+		m_rescanRequested = true;
 }
 
-void ContentBrowser::importFiles() const {
+void ContentBrowser::importFiles() {
 	const auto file = core::utils::FileDialog::openFile("");
 	if (file.empty())
 		return;
@@ -360,9 +409,11 @@ void ContentBrowser::importFiles() const {
 	std::filesystem::copy(file, destPath, std::filesystem::copy_options::overwrite_existing, ec);
 	if (ec)
 		OWL_CORE_ERROR("Failed to import '{}': {}", file.filename().string(), ec.message())
+	else
+		m_rescanRequested = true;
 }
 
-void ContentBrowser::importFolder() const {
+void ContentBrowser::importFolder() {
 	const auto folder = core::utils::FileDialog::pickFolder();
 	if (folder.empty())
 		return;
@@ -372,9 +423,11 @@ void ContentBrowser::importFolder() const {
 	std::filesystem::copy(folder, destPath, std::filesystem::copy_options::recursive, ec);
 	if (ec)
 		OWL_CORE_ERROR("Failed to import folder '{}': {}", folder.filename().string(), ec.message())
+	else
+		m_rescanRequested = true;
 }
 
-void ContentBrowser::handleFileDrop(const std::vector<std::filesystem::path>& iPaths) const {
+void ContentBrowser::handleFileDrop(const std::vector<std::filesystem::path>& iPaths) {
 	for (const auto& sourcePath: iPaths) {
 		if (!exists(sourcePath))
 			continue;
@@ -388,6 +441,8 @@ void ContentBrowser::handleFileDrop(const std::vector<std::filesystem::path>& iP
 		}
 		if (ec)
 			OWL_CORE_ERROR("Failed to import dropped file '{}': {}", sourcePath.filename().string(), ec.message())
+		else
+			m_rescanRequested = true;
 	}
 }
 
@@ -409,6 +464,8 @@ void ContentBrowser::moveItem(const std::filesystem::path& iSource, const std::f
 		if (ec)
 			OWL_CORE_ERROR("Failed to move '{}': {}", iSource.filename().string(), ec.message())
 	}
+	if (!ec)
+		m_rescanRequested = true;
 }
 
 }// namespace owl::nest::panel

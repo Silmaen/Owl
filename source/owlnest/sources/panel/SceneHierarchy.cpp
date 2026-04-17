@@ -408,6 +408,9 @@ void drawComponent(scene::Entity& ioEntity, UndoManager* iUndoManager) {
 												 ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
 												 ImGuiTreeNodeFlags_FramePadding;
 	if (ioEntity.hasComponent<T>()) {
+		// Component-scoped ID prevents label collisions across different component types
+		// that share field names (e.g. "Color" in SpriteRenderer and CircleRenderer).
+		ImGui::PushID(T::name());
 		auto& component = ioEntity.getComponent<T>();
 		const ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
@@ -474,6 +477,7 @@ void drawComponent(scene::Entity& ioEntity, UndoManager* iUndoManager) {
 																			T::name()));
 			}
 		}
+		ImGui::PopID();
 	}
 }
 

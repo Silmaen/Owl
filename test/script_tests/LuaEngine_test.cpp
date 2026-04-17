@@ -43,7 +43,8 @@ TEST(LuaEngine, loadAndCallFunction) {
 	LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
-	const auto dir = owl::test::getRootPath() / "output" / "test_tmp";
+	const auto dir = std::filesystem::temp_directory_path() / "owl_luaengine_test_1";
+	std::filesystem::remove_all(dir);
 	const auto path = writeTempScript(dir, "test_basic.lua",
 									  "function on_create()\n"
 									  "  result = 42\n"

@@ -13,6 +13,10 @@
 #include <filesystem>
 #include <set>
 
+namespace YAML {
+class Node;
+}// namespace YAML
+
 namespace owl::io::pack {
 
 /**
@@ -35,18 +39,21 @@ public:
 	/**
 	 * @brief Scan a single scene file and return all referenced assets.
 	 * @param[in] iSceneFile Absolute path to the scene file.
+	 * @param[out] oWarnings Optional output filled with messages for unresolvable references.
 	 * @return All discovered asset references (including the scene itself).
 	 */
-	[[nodiscard]] static auto scanScene(const std::filesystem::path& iSceneFile) -> std::vector<AssetReference>;
+	[[nodiscard]] static auto scanScene(const std::filesystem::path& iSceneFile,
+										std::vector<std::string>* oWarnings = nullptr) -> std::vector<AssetReference>;
 
 	/**
 	 * @brief Scan all scenes reachable from a project's first scene.
 	 * @param[in] iProjectDir The project root directory.
 	 * @param[in] iFirstScene Relative path to the first scene.
+	 * @param[out] oWarnings Optional output filled with messages for unresolvable references.
 	 * @return Deduplicated list of all assets across all reachable scenes.
 	 */
-	[[nodiscard]] static auto scanProject(const std::filesystem::path& iProjectDir,
-										  const std::string& iFirstScene) -> std::vector<AssetReference>;
+	[[nodiscard]] static auto scanProject(const std::filesystem::path& iProjectDir, const std::string& iFirstScene,
+										  std::vector<std::string>* oWarnings = nullptr) -> std::vector<AssetReference>;
 
 private:
 	/**
@@ -54,28 +61,40 @@ private:
 	 * @param[in] iSceneFile Scene file to scan.
 	 * @param[in,out] ioVisitedScenes Set of already-visited scene paths (avoids cycles).
 	 * @param[in,out] ioAssets Accumulated deduplicated assets.
+	 * @param[in,out] ioWarnings Optional pointer to collect unresolved-reference warnings.
 	 */
 	static void scanSceneRecursive(const std::filesystem::path& iSceneFile,
 								   std::set<std::string>& ioVisitedScenes,
-								   std::vector<AssetReference>& ioAssets);
+								   std::vector<AssetReference>& ioAssets,
+								   std::vector<std::string>* ioWarnings);
+
+	/// Scan a single entity node for referenced assets.
+	static void scanEntity(const YAML::Node& iEntity, const std::string& iSceneName,
+						   std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
+						   std::vector<std::string>* ioWarnings);
+
 
 	/**
 	 * @brief Scan a Lua script for scene.load_scene() calls and add referenced scenes.
 	 * @param[in] iScriptPath Absolute path to the Lua script file.
 	 * @param[in,out] ioVisitedScenes Set of already-visited scene paths.
 	 * @param[in,out] ioAssets Accumulated assets.
+	 * @param[in,out] ioWarnings Optional pointer to collect unresolved-reference warnings.
 	 */
 	static void scanLuaScriptForScenes(const std::filesystem::path& iScriptPath,
 									   std::set<std::string>& ioVisitedScenes,
-									   std::vector<AssetReference>& ioAssets);
+									   std::vector<AssetReference>& ioAssets,
+									   std::vector<std::string>* ioWarnings);
 
 	/**
 	 * @brief Scan a Lua script for sound.play() calls and add referenced sound assets.
 	 * @param[in] iScriptPath Absolute path to the Lua script file.
 	 * @param[in,out] ioAssets Accumulated assets.
+	 * @param[in,out] ioWarnings Optional pointer to collect unresolved-reference warnings.
 	 */
 	static void scanLuaScriptForSounds(const std::filesystem::path& iScriptPath,
-									   std::vector<AssetReference>& ioAssets);
+									   std::vector<AssetReference>& ioAssets,
+									   std::vector<std::string>* ioWarnings);
 
 	/**
 	 * @brief Collect engine assets required at runtime (shaders, default font).

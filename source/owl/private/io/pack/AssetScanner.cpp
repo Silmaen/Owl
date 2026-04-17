@@ -38,6 +38,13 @@ auto hasAsset(const std::vector<AssetReference>& iAssets, const std::string& iPa
 	return std::ranges::any_of(iAssets, [&iPackPath](const auto& ref) -> auto { return ref.packPath == iPackPath; });
 }
 
+/// Add a warning for an unresolvable reference. Skips if warnings are not being collected.
+void pushWarning(std::vector<std::string>* ioWarnings, const std::string& iKind, const std::string& iName,
+				 const std::string& iSource) {
+	if (ioWarnings != nullptr && !iName.empty())
+		ioWarnings->push_back(std::format("{} '{}' referenced by {} not found", iKind, iName, iSource));
+}
+
 }// namespace
 
 auto AssetScanner::resolveTexture(const std::string& iSerialized) -> std::optional<AssetReference> {
@@ -166,7 +173,8 @@ auto AssetScanner::resolveScene(const std::string& iLevelName) -> std::optional<
 /// scene paths (e.g., assigned to a variable for deferred loading).
 void AssetScanner::scanLuaScriptForScenes(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-recursion)
 										  std::set<std::string>& ioVisitedScenes,
-										  std::vector<AssetReference>& ioAssets) {
+										  std::vector<AssetReference>& ioAssets,
+										  std::vector<std::string>* ioWarnings) {
 	if (!exists(iScriptPath))
 		return;
 	std::ifstream scriptFile(iScriptPath);
@@ -176,13 +184,18 @@ void AssetScanner::scanLuaScriptForScenes(const std::filesystem::path& iScriptPa
 	auto begin = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), sceneStringPattern);
 	const auto end = std::sregex_iterator();
 	for (auto it = begin; it != end; ++it) {
-		if (auto scenePath = resolveScene((*it)[1].str()); scenePath)
-			scanSceneRecursive(*scenePath, ioVisitedScenes, ioAssets);
+		const auto sceneName = (*it)[1].str();
+		if (auto scenePath = resolveScene(sceneName); scenePath)
+			scanSceneRecursive(*scenePath, ioVisitedScenes, ioAssets, ioWarnings);
+		else if (ioWarnings != nullptr)
+			ioWarnings->push_back(std::format("Scene '{}' referenced by {} not found", sceneName,
+											  iScriptPath.filename().string()));
 	}
 }
 
 void AssetScanner::scanLuaScriptForSounds(const std::filesystem::path& iScriptPath,
-										  std::vector<AssetReference>& ioAssets) {
+										  std::vector<AssetReference>& ioAssets,
+										  std::vector<std::string>* ioWarnings) {
 	if (!exists(iScriptPath))
 		return;
 	std::ifstream scriptFile(iScriptPath);
@@ -191,14 +204,21 @@ void AssetScanner::scanLuaScriptForSounds(const std::filesystem::path& iScriptPa
 	auto begin = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), soundPlayPattern);
 	const auto end = std::sregex_iterator();
 	for (auto it = begin; it != end; ++it) {
-		if (auto ref = resolveSound((*it)[1].str()); ref && !hasAsset(ioAssets, ref->packPath))
-			ioAssets.push_back(*ref);
+		const auto soundName = (*it)[1].str();
+		if (auto ref = resolveSound(soundName); ref) {
+			if (!hasAsset(ioAssets, ref->packPath))
+				ioAssets.push_back(*ref);
+		} else if (ioWarnings != nullptr) {
+			ioWarnings->push_back(std::format("Sound '{}' referenced by {} not found", soundName,
+											  iScriptPath.filename().string()));
+		}
 	}
 }
 
 void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,// NOLINT(misc-no-recursion)
 									  std::set<std::string>& ioVisitedScenes,
-									  std::vector<AssetReference>& ioAssets) {
+									  std::vector<AssetReference>& ioAssets,
+									  std::vector<std::string>* ioWarnings) {
 	const auto sceneStr = iSceneFile.string();
 	if (ioVisitedScenes.contains(sceneStr))
 		return;
@@ -227,56 +247,70 @@ void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,//
 	if (!entities)
 		return;
 
-	// Helper: add a texture from a component node if present.
-	const auto addTexture = [&ioAssets](const YAML::Node& iComponent, const std::string& iField = "texture") {
-		if (auto tex = iComponent[iField]; tex) {
-			if (auto ref = resolveTexture(tex.as<std::string>()); ref && !hasAsset(ioAssets, ref->packPath))
-				ioAssets.push_back(*ref);
+	const auto sceneName = iSceneFile.filename().string();
+	for (auto entity: entities)
+		scanEntity(entity, sceneName, ioVisitedScenes, ioAssets, ioWarnings);
+}
+
+// NOLINTNEXTLINE(misc-no-recursion)
+void AssetScanner::scanEntity(const YAML::Node& iEntity, const std::string& iSceneName,
+							  std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
+							  std::vector<std::string>* ioWarnings) {
+	const auto addTextureField = [&](const YAML::Node& iComponent) {
+		if (auto tex = iComponent["texture"]; tex) {
+			const auto val = tex.as<std::string>();
+			if (auto ref = resolveTexture(val); ref) {
+				if (!hasAsset(ioAssets, ref->packPath))
+					ioAssets.push_back(*ref);
+			} else
+				pushWarning(ioWarnings, "Texture", val, iSceneName);
 		}
 	};
-
-	for (auto entity: entities) {
-		// Scan texture-bearing components.
-		if (auto sprite = entity["SpriteRenderer"]; sprite)
-			addTexture(sprite);
-		if (auto anim = entity["AnimatedSpriteRenderer"]; anim)
-			addTexture(anim);
-		if (auto bg = entity["BackgroundTexture"]; bg)
-			addTexture(bg);
-		if (auto img = entity["UIImage"]; img)
-			addTexture(img);
-		// Scan TextRenderer font.
-		if (auto text = entity["TextRenderer"]; text) {
-			if (auto font = text["font"]; font) {
-				if (auto ref = resolveFont(font.as<std::string>()); ref && !hasAsset(ioAssets, ref->packPath))
+	if (auto sprite = iEntity["SpriteRenderer"]; sprite)
+		addTextureField(sprite);
+	if (auto anim = iEntity["AnimatedSpriteRenderer"]; anim)
+		addTextureField(anim);
+	if (auto bg = iEntity["BackgroundTexture"]; bg)
+		addTextureField(bg);
+	if (auto img = iEntity["UIImage"]; img)
+		addTextureField(img);
+	if (auto text = iEntity["TextRenderer"]; text)
+		if (auto font = text["font"]; font) {
+			const auto name = font.as<std::string>();
+			if (auto ref = resolveFont(name); ref && !hasAsset(ioAssets, ref->packPath))
+				ioAssets.push_back(*ref);
+			else if (!ref)
+				pushWarning(ioWarnings, "Font", name, iSceneName);
+		}
+	if (auto soundSrc = iEntity["SoundSource"]; soundSrc)
+		if (auto asset = soundSrc["soundAsset"]; asset) {
+			const auto name = asset.as<std::string>();
+			if (auto ref = resolveSound(name); ref && !hasAsset(ioAssets, ref->packPath))
+				ioAssets.push_back(*ref);
+			else if (!ref)
+				pushWarning(ioWarnings, "Sound", name, iSceneName);
+		}
+	if (auto luaScript = iEntity["LuaScript"]; luaScript)
+		if (auto scriptPath = luaScript["scriptPath"]; scriptPath) {
+			const auto name = scriptPath.as<std::string>();
+			if (auto ref = resolveScript(name); ref) {
+				if (!hasAsset(ioAssets, ref->packPath))
 					ioAssets.push_back(*ref);
+				scanLuaScriptForScenes(ref->diskPath, ioVisitedScenes, ioAssets, ioWarnings);
+				scanLuaScriptForSounds(ref->diskPath, ioAssets, ioWarnings);
+			} else
+				pushWarning(ioWarnings, "Script", name, iSceneName);
+		}
+	if (auto trigger = iEntity["Trigger"]; trigger)
+		if (auto level = trigger["LevelName"]; level) {
+			const auto name = level.as<std::string>();
+			if (!name.empty()) {
+				if (auto scenePath = resolveScene(name); scenePath)
+					scanSceneRecursive(*scenePath, ioVisitedScenes, ioAssets, ioWarnings);
+				else
+					pushWarning(ioWarnings, "Trigger scene", name, iSceneName);
 			}
 		}
-		// Scan SoundSource sound asset.
-		if (auto soundSrc = entity["SoundSource"]; soundSrc) {
-			if (auto asset = soundSrc["soundAsset"]; asset) {
-				if (auto ref = resolveSound(asset.as<std::string>()); ref && !hasAsset(ioAssets, ref->packPath))
-					ioAssets.push_back(*ref);
-			}
-		}
-		// Scan LuaScript: script path, scene references, and sound references.
-		if (auto luaScript = entity["LuaScript"]; luaScript) {
-			if (auto scriptPath = luaScript["scriptPath"]; scriptPath) {
-				if (auto ref = resolveScript(scriptPath.as<std::string>()); ref && !hasAsset(ioAssets, ref->packPath)) {
-					ioAssets.push_back(*ref);
-					scanLuaScriptForScenes(ref->diskPath, ioVisitedScenes, ioAssets);
-					scanLuaScriptForSounds(ref->diskPath, ioAssets);
-				}
-			}
-		}
-		// Scan Trigger for scene references (Teleport, Death, Victory with LevelName).
-		if (auto trigger = entity["Trigger"]; trigger) {
-			if (auto level = trigger["LevelName"]; level && !level.as<std::string>().empty()) {
-				if (auto scenePath = resolveScene(level.as<std::string>()); scenePath)
-					scanSceneRecursive(*scenePath, ioVisitedScenes, ioAssets);
-			}
-		}
-	}
 }
 
 void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
@@ -309,16 +343,17 @@ void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 	}
 }
 
-auto AssetScanner::scanScene(const std::filesystem::path& iSceneFile) -> std::vector<AssetReference> {
+auto AssetScanner::scanScene(const std::filesystem::path& iSceneFile,
+							 std::vector<std::string>* oWarnings) -> std::vector<AssetReference> {
 	std::set<std::string> visited;
 	std::vector<AssetReference> assets;
-	scanSceneRecursive(iSceneFile, visited, assets);
+	scanSceneRecursive(iSceneFile, visited, assets, oWarnings);
 	collectEngineAssets(assets);
 	return assets;
 }
 
-auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir,
-							   const std::string& iFirstScene) -> std::vector<AssetReference> {
+auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir, const std::string& iFirstScene,
+							   std::vector<std::string>* oWarnings) -> std::vector<AssetReference> {
 	// Resolve the first scene path.
 	std::filesystem::path firstScenePath;
 	std::string resolvedName = iFirstScene;
@@ -345,10 +380,13 @@ auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir,
 			firstScenePath = p2;
 	}
 
-	if (firstScenePath.empty())
+	if (firstScenePath.empty()) {
+		if (oWarnings != nullptr)
+			oWarnings->push_back(std::format("First scene '{}' not found in project", iFirstScene));
 		return {};
+	}
 
-	return scanScene(firstScenePath);
+	return scanScene(firstScenePath, oWarnings);
 }
 
 }// namespace owl::io::pack

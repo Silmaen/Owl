@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <io/pack/AssetScanner.h>
 #include <owl.h>
 
 #include "ActionRegistry.h"
@@ -98,6 +99,10 @@ private:
 	void renderToolbar();
 	/// Render the welcome screen shown when no project is loaded.
 	void renderWelcomeScreen();
+	/// Render the pre-packaging validation modal (missing assets confirmation).
+	void renderPackValidationModal();
+	/// Start the async packaging process (called after validation).
+	void startPackGame();
 
 	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
 	static auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
@@ -121,6 +126,15 @@ private:
 	bool m_stopRequested = false;
 	/// Whether the welcome screen should be shown (hidden when user closes it).
 	bool m_showWelcomeScreen = true;
+
+	/// Pending pack destination directory (validated, awaiting user confirmation).
+	std::filesystem::path m_pendingPackDestDir;
+	/// Warnings collected during pre-packaging validation (empty when no issues).
+	std::vector<std::string> m_pendingPackWarnings;
+	/// Pre-scanned assets shared between validation and pack tasks (avoids double scan).
+	shared<std::vector<io::pack::AssetReference>> m_pendingPackAssets;
+	/// True when the validation modal should be shown on the next frame.
+	bool m_showPackValidation = false;
 
 	bool m_pendingTeleportVelocity = false;
 	math::vec2f m_teleportVelocity = {0.f, 0.f};

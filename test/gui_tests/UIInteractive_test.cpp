@@ -100,7 +100,8 @@ TEST(UIInputSystem, resetAndConsuming) {
 
 TEST(UIInteractive, serializeDeserializeViaScene) {
 	core::Log::init(core::Log::Level::Off);
-	const auto dir = owl::test::getRootPath() / "output" / "test_tmp";
+	const auto dir = std::filesystem::temp_directory_path() / "owl_ui_interactive_test";
+	std::filesystem::remove_all(dir);
 	std::filesystem::create_directories(dir);
 	const auto scenePath = dir / "ui_interactive_test.owl";
 

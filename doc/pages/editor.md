@@ -210,7 +210,8 @@ message. Scrolling up manually disables auto-scroll until re-enabled.
 ### Stats
 
 The Stats panel is a small overlay window that displays real-time performance
-information. It can be toggled via **Settings > Show Stats** in the menu bar.
+information. It can be toggled via the **Show Stats Panel** checkbox in
+**Edit > Editor Settings** (General section).
 
 Displayed metrics:
 
@@ -229,8 +230,10 @@ Displayed metrics:
 
 ### Settings
 
-The Settings panel is a dockable window opened via **Settings > Editor Settings**.
-It contains two sections:
+The Settings panel is a dockable window opened via **Edit > Editor Settings**.
+It contains three sections:
+
+**General.** Toggles like the Show Stats Panel checkbox.
 
 **Theme selection.** A dropdown listing built-in theme presets (e.g. "Dark"). Changing
 the theme calls `UiLayer::setTheme()` and triggers `IconBank::rebuild()` to re-rasterize
@@ -242,8 +245,8 @@ Click a binding cell to enter key-capture mode: press any key combination to reb
 The panel detects conflicts (two actions sharing the same shortcut) and displays a
 warning. A "Reset to Defaults" button restores all factory bindings.
 
-Keybinding overrides are persisted in `OwlNest_settings.yml` alongside other editor
-settings.
+Keybinding overrides and recent projects are persisted in `OwlNest_settings.yml`
+alongside other editor settings.
 
 ### Project Settings
 
@@ -350,22 +353,51 @@ The `Project` class (`source/owlnest/sources/Project.h`) holds three fields: `na
 
 ### Workflow Operations
 
-| Operation     | Menu Path              | Description                                                            |
-|---------------|------------------------|------------------------------------------------------------------------|
-| New Project   | File > New Project     | Create a directory and blank `owl_project.yml`                         |
-| Open Project  | File > Open Project    | Select a directory containing `owl_project.yml`                        |
-| Save Project  | File > Save Project    | Write current project settings to YAML                                 |
-| Close Project | File > Close Project   | Unload the project and clear the asset browser                         |
-| Import Scene  | Project > Import Scene | Copy an external `.owl` file into the project                          |
-| Pack Scene    | Project > Pack Scene   | Pack current scene's assets into `.owlpack`                            |
-| Pack Game     | Project > Pack Game    | Scan and pack all project assets (see [Architecture](architecture.md)) |
+The editor menus are organized around three axes: **File** (project), **Edit**
+(history + settings), and **Current** (active scene).
 
-The **Edit** menu provides undo/redo operations:
+**File** — project operations:
 
-| Operation | Menu Path   | Description                                     |
-|-----------|-------------|-------------------------------------------------|
-| Undo      | Edit > Undo | Reverse the most recent editing action (Ctrl+Z) |
-| Redo      | Edit > Redo | Re-apply an undone action (Ctrl+Y)              |
+| Operation     | Menu Path             | Description                                          |
+|---------------|-----------------------|------------------------------------------------------|
+| New Project   | File > New Project    | Create a directory and blank `owl_project.yml`       |
+| Open Project  | File > Open Project   | Select a directory containing `owl_project.yml`      |
+| Open Recent   | File > Open Recent    | Sub-menu of recently opened projects (up to 10)      |
+| Save Project  | File > Save Project   | Write current project settings to YAML               |
+| Close Project | File > Close Project  | Unload the project and clear the asset browser       |
+| Pack Game     | File > Pack Game      | Scan and pack all project assets (async, see below)  |
+| Welcome       | File > Welcome Screen | Re-open the welcome screen when no project is loaded |
+
+**Edit** — history and settings:
+
+| Operation        | Menu Path               | Description                                     |
+|------------------|-------------------------|-------------------------------------------------|
+| Undo             | Edit > Undo             | Reverse the most recent editing action (Ctrl+Z) |
+| Redo             | Edit > Redo             | Re-apply an undone action (Ctrl+Y)              |
+| Engine Settings  | Edit > Engine Settings  | Engine parameters dialog                        |
+| Editor Settings  | Edit > Editor Settings  | Theme, stats toggle, keybindings                |
+| Project Settings | Edit > Project Settings | Edit the active project's metadata              |
+
+**Current** — active scene operations (disabled if no project is loaded):
+
+| Operation     | Menu Path                 | Description                                             |
+|---------------|---------------------------|---------------------------------------------------------|
+| New Scene     | Current > New Scene       | Clear the viewport and start a fresh scene              |
+| Open Scene    | Current > Open Scene      | Load a `.owl` file (async read + deserialize)           |
+| Save Scene    | Current > Save Scene      | Save to the current path (async write)                  |
+| Save Scene as | Current > Save Scene as.. | Save to a new path                                      |
+| Import Scene  | Current > Import Scene    | Copy an external `.owl` file into the project           |
+| Pack Scene    | Current > Pack Scene      | Pack the current scene's assets into `.owlpack` (async) |
+
+**Welcome screen.** When the editor starts without a loaded project, a Welcome modal is
+shown with **New Project**, **Open Project**, and a list of recent projects (double-click
+to open, `x` to remove). The modal is closable via its `×` button and can be reopened
+from **File > Welcome Screen**.
+
+**Async operations.** Pack Game, Pack Scene, Open Scene, and Save Scene all run off the
+main thread via a progress modal (`AsyncProgressModal`). Pack Game additionally runs a
+**pre-packaging validation** step that lists missing references (textures, sounds,
+scripts, scenes) before proceeding — the user can either cancel or confirm to pack anyway.
 
 The Edit menu labels dynamically show the description of the next undo/redo action
 (e.g., "Undo Delete 'Player'").

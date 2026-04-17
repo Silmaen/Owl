@@ -23,6 +23,12 @@ using namespace owl::scene::component;
 namespace owl::gui::component {
 
 namespace {
+/// Attach a tooltip to the last rendered item (shown after a short hover delay).
+void fieldTooltip(const char* iText) {
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+		ImGui::SetTooltip("%s", iText);
+}
+
 void drawVec3Control(const std::string& iLabel, math::vec3& iValues, const float iResetValue = 0.0f,
 					 const float iColumnWidth = 100.0f) {
 	const ImGuiIO& io = ImGui::GetIO();
@@ -100,39 +106,47 @@ void renderProps(Transform& ioComponent) {
 void renderProps(Camera& ioComponent) {
 	auto& camera = ioComponent.camera;
 	ImGui::Checkbox("Primary", &ioComponent.primary);
+	fieldTooltip("Mark this camera as the primary camera. Only one primary camera per scene at runtime.");
 	if (ImGui::BeginCombo("Projection", std::string(magic_enum::enum_name(camera.getProjectionType())).c_str())) {
 		for (const SceneCamera::ProjectionType& projType: magic_enum::enum_values<SceneCamera::ProjectionType>()) {
 			const bool isSelected = camera.getProjectionType() == projType;
-			if (ImGui::Selectable(std::string(magic_enum::enum_name(projType)).c_str(), isSelected)) {
+			if (ImGui::Selectable(std::string(magic_enum::enum_name(projType)).c_str(), isSelected))
 				camera.setProjectionType(projType);
-			}
 			if (isSelected)
 				ImGui::SetItemDefaultFocus();
 		}
 		ImGui::EndCombo();
 	}
+	fieldTooltip("Perspective: 3D with vanishing point. Orthographic: 2D/isometric with parallel projection.");
 	if (camera.getProjectionType() == SceneCamera::ProjectionType::Perspective) {
 		float perspectiveVerticalFov = math::degrees(camera.getPerspectiveVerticalFov());
 		if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
 			camera.setPerspectiveVerticalFov(math::radians(perspectiveVerticalFov));
+		fieldTooltip("Vertical field of view in degrees. Typical values: 60-90 degrees.");
 		float perspectiveNear = camera.getPerspectiveNearClip();
 		if (ImGui::DragFloat("Near", &perspectiveNear))
 			camera.setPerspectiveNearClip(perspectiveNear);
+		fieldTooltip("Near clipping plane distance. Objects closer than this are not rendered.");
 		float perspectiveFar = camera.getPerspectiveFarClip();
 		if (ImGui::DragFloat("Far", &perspectiveFar))
 			camera.setPerspectiveFarClip(perspectiveFar);
+		fieldTooltip("Far clipping plane distance. Objects farther than this are not rendered.");
 	}
 	if (camera.getProjectionType() == SceneCamera::ProjectionType::Orthographic) {
 		float orthoSize = camera.getOrthographicSize();
 		if (ImGui::DragFloat("Size", &orthoSize))
 			camera.setOrthographicSize(orthoSize);
+		fieldTooltip("Vertical half-size of the visible area in world units. Smaller = more zoomed in.");
 		float orthoNear = camera.getOrthographicNearClip();
 		if (ImGui::DragFloat("Near", &orthoNear))
 			camera.setOrthographicNearClip(orthoNear);
+		fieldTooltip("Near clipping plane distance.");
 		float orthoFar = camera.getOrthographicFarClip();
 		if (ImGui::DragFloat("Far", &orthoFar))
 			camera.setOrthographicFarClip(orthoFar);
+		fieldTooltip("Far clipping plane distance.");
 		ImGui::Checkbox("Fixed Aspect Ratio", &ioComponent.fixedAspectRatio);
+		fieldTooltip("Lock aspect ratio to prevent distortion when the viewport resizes.");
 	}
 }
 
@@ -251,70 +265,125 @@ void renderProps(Text& ioComponent) {
 }
 
 void renderProps(PhysicBody& ioComponent) {
-	// the type.
+	constexpr auto bodyTypeDesc = [](const SceneBody::BodyType iType) -> const char* {
+		switch (iType) {
+			case SceneBody::BodyType::Static:
+				return "Static: never moves. Participates in collisions but is never simulated.";
+			case SceneBody::BodyType::Dynamic:
+				return "Dynamic: fully simulated. Affected by gravity, forces, impulses, and collisions.";
+			case SceneBody::BodyType::Kinematic:
+				return "Kinematic: moved programmatically. Not affected by forces but can push dynamic bodies.";
+		}
+		return "";
+	};
 	const std::string currentName{magic_enum::enum_name(ioComponent.body.type)};
 	if (ImGui::BeginCombo("Type", currentName.c_str())) {
 		for (const auto& name: magic_enum::enum_names<SceneBody::BodyType>()) {
 			const std::string sName{name};
-			if (ImGui::Selectable(sName.c_str(), currentName == sName)) {
-				ioComponent.body.type =
-						magic_enum::enum_cast<SceneBody::BodyType>(sName).value_or(SceneBody::BodyType::Static);
-			}
+			const auto type = magic_enum::enum_cast<SceneBody::BodyType>(sName).value_or(SceneBody::BodyType::Static);
+			if (ImGui::Selectable(sName.c_str(), currentName == sName))
+				ioComponent.body.type = type;
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+				ImGui::SetTooltip("%s", bodyTypeDesc(type));
 		}
 		ImGui::EndCombo();
 	}
+	fieldTooltip(bodyTypeDesc(ioComponent.body.type));
 	ImGui::Checkbox("Fixed Rotation", &ioComponent.body.fixedRotation);
+	fieldTooltip("Lock rotation — the body cannot spin (useful for platformer characters).");
 	drawVec3Control("Size", ioComponent.body.colliderSize, 1.0f);
 	ImGui::DragFloat("Density", &ioComponent.body.density, 0.00025f, 0.0f, 10.0f);
+	fieldTooltip("Material density. Affects mass proportionally to collider size.");
 	ImGui::DragFloat("Restitution", &ioComponent.body.restitution, 0.00025f, 0.0f, 1.0f);
+	fieldTooltip("Bounciness. 0 = no bounce, 1 = perfectly elastic.");
 	ImGui::DragFloat("Friction", &ioComponent.body.friction, 0.00025f, 0.0f, 1.0f);
+	fieldTooltip("Surface friction coefficient. 0 = ice, 1 = rubber.");
 }
 
 void renderProps(Player& ioComponent) {
 	ImGui::Checkbox("Primary", &ioComponent.primary);
+	fieldTooltip("Mark this entity as the primary player. Only one primary player per scene.");
 	ImGui::DragFloat("Linear Impulse", &ioComponent.player.linearImpulse, 0.025f, 0.0f, 10.0f);
+	fieldTooltip("Horizontal impulse magnitude applied when moving left/right.");
 	ImGui::DragFloat("Jump Impulse", &ioComponent.player.jumpImpulse, 0.025f, 0.0f, 10.0f);
+	fieldTooltip("Vertical impulse magnitude applied on jump.");
 	ImGui::Checkbox("Can jump", &ioComponent.player.canJump);
+	fieldTooltip("Whether the player is allowed to jump. Toggle off for floating/swimming characters.");
 }
 
 void renderProps(Trigger& ioComponent) {
+	// Tooltip explanations for each trigger type.
+	constexpr auto triggerDescription = [](const SceneTrigger::TriggerType iType) -> const char* {
+		switch (iType) {
+			case SceneTrigger::TriggerType::Victory:
+				return "Victory: player winning this level. Loads the victory scene or built-in screen.";
+			case SceneTrigger::TriggerType::Death:
+				return "Death: player losing this level. Loads the game-over scene or built-in screen.";
+			case SceneTrigger::TriggerType::Target:
+				return "Target: passive spawn/teleport destination marker. Does nothing on its own.";
+			case SceneTrigger::TriggerType::Teleport:
+				return "Teleport: load another scene when the player overlaps. Optional target entity name "
+					   "determines spawn position.";
+			case SceneTrigger::TriggerType::Timer:
+				return "Timer: fires a Lua callback at a fixed interval. One-shot or repeating.";
+			case SceneTrigger::TriggerType::Interaction:
+				return "Interaction: fires a Lua callback when the player is within range and presses E.";
+			case SceneTrigger::TriggerType::LuaCallback:
+				return "LuaCallback: fires a generic Lua callback when the player overlaps.";
+		}
+		return "";
+	};
+
 	// the type.
 	const std::string currentName{magic_enum::enum_name(ioComponent.trigger.type)};
 	if (ImGui::BeginCombo("Type", currentName.c_str())) {
 		for (const auto& name: magic_enum::enum_names<SceneTrigger::TriggerType>()) {
 			const std::string sName{name};
-			if (ImGui::Selectable(sName.c_str(), currentName == sName)) {
-				ioComponent.trigger.type = magic_enum::enum_cast<SceneTrigger::TriggerType>(sName).value_or(
-						SceneTrigger::TriggerType::Victory);
-			}
+			const auto type = magic_enum::enum_cast<SceneTrigger::TriggerType>(sName).value_or(
+					SceneTrigger::TriggerType::Victory);
+			if (ImGui::Selectable(sName.c_str(), currentName == sName))
+				ioComponent.trigger.type = type;
+			if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+				ImGui::SetTooltip("%s", triggerDescription(type));
 		}
 		ImGui::EndCombo();
 	}
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+		ImGui::SetTooltip("%s", triggerDescription(ioComponent.trigger.type));
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Victory ||
 		ioComponent.trigger.type == SceneTrigger::TriggerType::Death) {
 		ImGui::InputText("Scene", &ioComponent.trigger.levelName);
+		fieldTooltip("Path to the scene to load (e.g. scenes/victory.owl). Leave empty to use the built-in screen.");
 		if (ioComponent.trigger.levelName.empty())
 			ImGui::TextDisabled("Empty = built-in screen");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Teleport) {
 		ImGui::InputText("Level Name", &ioComponent.trigger.levelName);
+		fieldTooltip("Destination scene path (e.g. scenes/level2.owl).");
 		ImGui::InputText("Target Name", &ioComponent.trigger.targetName);
+		fieldTooltip("Name of the entity (Target trigger) that marks where the player appears in the new scene.");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Timer) {
 		ImGui::DragFloat("Duration (s)", &ioComponent.trigger.timerDuration, 0.1f, 0.01f, 3600.0f);
+		fieldTooltip("Time in seconds before the callback fires.");
 		ImGui::Checkbox("Repeating", &ioComponent.trigger.timerRepeating);
+		fieldTooltip("If checked, the timer restarts after each fire. Otherwise it fires once.");
 		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+		fieldTooltip("Lua function name to call. Defaults to on_timer if empty.");
 		if (ioComponent.trigger.callbackName.empty())
 			ImGui::TextDisabled("Default: on_timer");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Interaction) {
 		ImGui::DragFloat("Interaction Range", &ioComponent.trigger.interactionRange, 0.05f, 0.1f, 20.0f);
+		fieldTooltip("Distance within which the player can press E to interact.");
 		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+		fieldTooltip("Lua function name to call. Defaults to on_interact if empty.");
 		if (ioComponent.trigger.callbackName.empty())
 			ImGui::TextDisabled("Default: on_interact");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::LuaCallback) {
 		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+		fieldTooltip("Lua function name to call when the player overlaps. Defaults to on_triggered if empty.");
 		if (ioComponent.trigger.callbackName.empty())
 			ImGui::TextDisabled("Default: on_triggered");
 	}
@@ -413,6 +482,7 @@ void renderProps(Visibility& ioComponent) {
 
 void renderProps(SoundSource& ioComponent) {
 	ImGui::InputText("Sound Asset", &ioComponent.sound.soundAsset);
+	fieldTooltip("Path to the audio file relative to the project (e.g. sounds/explosion.wav).");
 	const std::string currentCategory{magic_enum::enum_name(ioComponent.sound.category)};
 	if (ImGui::BeginCombo("Category", currentCategory.c_str())) {
 		for (const auto& catName: magic_enum::enum_names<SceneSound::Category>()) {
@@ -423,18 +493,29 @@ void renderProps(SoundSource& ioComponent) {
 		}
 		ImGui::EndCombo();
 	}
+	fieldTooltip("Category used for per-category volume mixing. SFX, Music, or Ambient.");
 	ImGui::DragFloat("Volume", &ioComponent.sound.volume, 0.01f, 0.0f, 2.0f);
+	fieldTooltip("Gain factor (0 = silent, 1 = normal, 2 = 200%).");
 	ImGui::DragFloat("Pitch", &ioComponent.sound.pitch, 0.01f, 0.1f, 3.0f);
+	fieldTooltip("Pitch multiplier. 1 = normal, 0.5 = octave down, 2 = octave up.");
 	ImGui::Checkbox("Loop", &ioComponent.sound.loop);
+	fieldTooltip("If checked, the sound restarts automatically after it finishes.");
 	ImGui::Checkbox("Spatial", &ioComponent.sound.spatial);
+	fieldTooltip("Enable 3D positional audio (mono sources only; stereo is not spatialized).");
 	ImGui::Checkbox("Play On Start", &ioComponent.sound.playOnStart);
+	fieldTooltip("Automatically start playback when the scene enters Play mode.");
 	if (ioComponent.sound.spatial) {
 		ImGui::DragFloat("Max Distance", &ioComponent.sound.maxDistance, 0.5f, 1.0f, 500.0f);
+		fieldTooltip("Maximum audible distance in world units.");
 		ImGui::DragFloat("Rolloff", &ioComponent.sound.rolloff, 0.01f, 0.0f, 10.0f);
+		fieldTooltip("Distance attenuation curve. Higher = faster falloff.");
 	}
 }
 
-void renderProps(SoundListener& ioComponent) { ImGui::Checkbox("Primary", &ioComponent.primary); }
+void renderProps(SoundListener& ioComponent) {
+	ImGui::Checkbox("Primary", &ioComponent.primary);
+	fieldTooltip("Mark as the active listener (the 'ear' for 3D audio). Only one primary per scene.");
+}
 
 void renderProps(LuaScript& ioComponent) {
 	ImGui::InputText("Script Path", &ioComponent.scriptPath);
@@ -444,7 +525,10 @@ void renderProps(LuaScript& ioComponent) {
 	if (!ioComponent.properties.empty()) {
 		ImGui::Separator();
 		ImGui::Text("Properties:");
-		for (auto& prop: ioComponent.properties) {
+		for (size_t idx = 0; idx < ioComponent.properties.size(); ++idx) {
+			auto& prop = ioComponent.properties[idx];
+			// Index-based PushID prevents collisions if two properties share a name.
+			ImGui::PushID(static_cast<int>(idx));
 			switch (prop.type) {
 				case script::ScriptPropertyType::Float: {
 					auto val = std::get<float>(prop.value);
@@ -471,6 +555,7 @@ void renderProps(LuaScript& ioComponent) {
 					break;
 				}
 			}
+			ImGui::PopID();
 		}
 	}
 }
@@ -485,7 +570,9 @@ void renderProps(Canvas& ioComponent) {
 		}
 		ImGui::EndCombo();
 	}
+	fieldTooltip("ScreenOverlay: always on top, scaled to window. WorldSpace: rendered in the 3D scene.");
 	ImGui::DragInt("Sort Order", &ioComponent.sortOrder);
+	fieldTooltip("Higher sort order renders on top. Used to layer multiple canvases.");
 }
 
 void renderProps(UIRect& ioComponent) {
@@ -498,21 +585,25 @@ void renderProps(UIRect& ioComponent) {
 		}
 		ImGui::EndCombo();
 	}
+	fieldTooltip("Reference point on the parent canvas (e.g. TopLeft, Center). Widget is positioned relative to this.");
 	float pivotArr[2] = {ioComponent.pivot.x(), ioComponent.pivot.y()};
 	if (ImGui::DragFloat2("Pivot", pivotArr, 0.01f, 0.0f, 1.0f)) {
 		ioComponent.pivot.x() = pivotArr[0];
 		ioComponent.pivot.y() = pivotArr[1];
 	}
+	fieldTooltip("Origin within the widget itself (0,0) = top-left, (0.5,0.5) = center, (1,1) = bottom-right.");
 	float sizeArr[2] = {ioComponent.size.x(), ioComponent.size.y()};
 	if (ImGui::DragFloat2("Size", sizeArr, 1.0f, 0.0f, 10000.0f)) {
 		ioComponent.size.x() = sizeArr[0];
 		ioComponent.size.y() = sizeArr[1];
 	}
+	fieldTooltip("Width and height of the widget in pixels.");
 	float offsetArr[2] = {ioComponent.anchorOffset.x(), ioComponent.anchorOffset.y()};
 	if (ImGui::DragFloat2("Offset", offsetArr, 1.0f)) {
 		ioComponent.anchorOffset.x() = offsetArr[0];
 		ioComponent.anchorOffset.y() = offsetArr[1];
 	}
+	fieldTooltip("Pixel offset from the anchor point. Positive X goes right, positive Y goes down.");
 }
 
 void renderProps(UIText& ioComponent) {
@@ -559,20 +650,29 @@ void renderProps(UIPanel& ioComponent) {
 
 void renderProps(UIButton& ioComponent) {
 	ImGui::ColorEdit4("Normal Color", reinterpret_cast<float*>(&ioComponent.normalColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	fieldTooltip("Button background color in the default (not hovered, not pressed) state.");
 	ImGui::ColorEdit4("Hover Color", reinterpret_cast<float*>(&ioComponent.hoverColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	fieldTooltip("Button background color when the mouse is hovering over it.");
 	ImGui::ColorEdit4("Pressed Color", reinterpret_cast<float*>(&ioComponent.pressedColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	fieldTooltip("Button background color while the mouse button is held down.");
 	ImGui::ColorEdit4("Disabled Color", reinterpret_cast<float*>(&ioComponent.disabledColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	fieldTooltip("Button background color when disabled (cannot be clicked).");
 	ImGui::InputText("On Click Callback", &ioComponent.onClickCallback);
+	fieldTooltip("Lua function name to call when the button is clicked (e.g. on_play_clicked).");
 }
 
 void renderProps(UISlider& ioComponent) {
 	ImGui::DragFloat("Value", &ioComponent.value, 0.01f, ioComponent.minValue, ioComponent.maxValue);
+	fieldTooltip("Current slider value, clamped between Min and Max.");
 	ImGui::DragFloat("Min", &ioComponent.minValue, 0.1f);
+	fieldTooltip("Minimum allowed value.");
 	ImGui::DragFloat("Max", &ioComponent.maxValue, 0.1f);
+	fieldTooltip("Maximum allowed value.");
 	ImGui::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	ImGui::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	ImGui::ColorEdit4("Handle Color", reinterpret_cast<float*>(&ioComponent.handleColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	ImGui::InputText("On Value Changed", &ioComponent.onValueChangedCallback);
+	fieldTooltip("Lua function called when the value changes. Receives the new value in _slider_value.");
 }
 
 void renderProps(UIProgressBar& ioComponent) {
