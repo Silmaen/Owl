@@ -13,6 +13,8 @@
 #include "gui/utils.h"
 
 #include "renderer/Renderer.h"
+#include "sound/SoundCommand.h"
+#include "sound/SoundSystem.h"
 
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
@@ -483,6 +485,32 @@ void renderProps(Visibility& ioComponent) {
 void renderProps(SoundSource& ioComponent) {
 	ImGui::InputText("Sound Asset", &ioComponent.sound.soundAsset);
 	fieldTooltip("Path to the audio file relative to the project (e.g. sounds/explosion.wav).");
+	// Inspector preview: play the asset to verify it.
+	static sound::SoundHandle s_previewHandle = sound::invalidSoundHandle;
+	const bool playing =
+			s_previewHandle != sound::invalidSoundHandle && sound::SoundCommand::isPlaying(s_previewHandle);
+	const bool canPlay = !ioComponent.sound.soundAsset.empty() &&
+						 sound::SoundCommand::getState() == sound::SoundAPI::State::Ready;
+	ImGui::BeginDisabled(!canPlay);
+	if (ImGui::Button(playing ? "Stop##soundPreview" : "Play##soundPreview")) {
+		if (playing) {
+			sound::SoundCommand::stop(s_previewHandle);
+			s_previewHandle = sound::invalidSoundHandle;
+		} else {
+			auto& library = sound::SoundSystem::getSoundLibrary();
+			const auto data = library.exists(ioComponent.sound.soundAsset)
+									  ? library.get(ioComponent.sound.soundAsset)
+									  : library.load(ioComponent.sound.soundAsset);
+			if (data) {
+				sound::PlayParams params;
+				params.volume = ioComponent.sound.volume;
+				params.pitch = ioComponent.sound.pitch;
+				s_previewHandle = sound::SoundCommand::play(data, params);
+			}
+		}
+	}
+	ImGui::EndDisabled();
+	fieldTooltip("Preview the sound with current volume and pitch. Not spatialized.");
 	const std::string currentCategory{magic_enum::enum_name(ioComponent.sound.category)};
 	if (ImGui::BeginCombo("Category", currentCategory.c_str())) {
 		for (const auto& catName: magic_enum::enum_names<SceneSound::Category>()) {

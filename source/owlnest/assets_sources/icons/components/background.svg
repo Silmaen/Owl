@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Backdrop frame -->
   <rect x="80" y="110" width="352" height="292" rx="24" stroke="white" stroke-width="32" fill="none"/>
-  <path d="M 80,300 L 432,300" stroke="white" stroke-width="16" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 120,300 L 220,180 L 290,260 L 370,160 L 432,250" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Sky with stars (distinct from sprite/ui_image which use a sun) -->
+  <circle cx="160" cy="180" r="14" fill="white"/>
+  <circle cx="250" cy="160" r="10" fill="white"/>
+  <circle cx="340" cy="200" r="14" fill="white"/>
+  <circle cx="380" cy="150" r="8" fill="white"/>
+  <!-- Distant horizon silhouette -->
+  <path d="M 80,320 L 170,270 L 250,300 L 330,255 L 432,310 L 432,400 L 80,400 Z"
+        fill="white" stroke="none"/>
 </svg>

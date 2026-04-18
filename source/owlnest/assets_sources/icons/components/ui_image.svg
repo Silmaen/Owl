@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Image frame -->
-  <rect x="80" y="100" width="352" height="312" rx="20" stroke="white" stroke-width="32" fill="none"/>
-  <!-- Mountain landscape -->
-  <polyline points="80,350 190,240 280,320 340,260 432,350" stroke="white" stroke-width="28" fill="none" stroke-linejoin="round"/>
-  <!-- Sun -->
-  <circle cx="350" cy="180" r="35" fill="white"/>
+  <!-- Outer UI widget frame -->
+  <rect x="80" y="100" width="352" height="312" rx="24" stroke="white" stroke-width="32" fill="none"/>
+  <!-- Filled amber inner tile (the "image payload") -->
+  <rect x="130" y="150" width="252" height="212" rx="12" fill="#ff00ff" stroke="none"/>
+  <!-- Corner cut (matches sprite aesthetic but filled) -->
+  <circle cx="190" cy="210" r="18" fill="white"/>
+  <path d="M 140,340 L 220,270 L 290,310 L 360,250 L 372,290 L 372,355 L 140,355 Z"
+        fill="white" stroke="none"/>
 </svg>

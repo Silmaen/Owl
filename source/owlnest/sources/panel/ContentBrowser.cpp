@@ -43,6 +43,32 @@ auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<gui::IconB
 		return iconBank.getIcon("yml_icon");
 	if (iPath.extension() == ".lua")
 		return iconBank.getIcon("lua_icon");
+	if (iPath.extension() == ".wav")
+		return iconBank.getIcon("wav_icon");
+	if (iPath.extension() == ".mp3")
+		return iconBank.getIcon("mp3_icon");
+	if (iPath.extension() == ".ogg")
+		return iconBank.getIcon("ogg_icon");
+	if (iPath.extension() == ".flac")
+		return iconBank.getIcon("flac_icon");
+	if (iPath.extension() == ".obj")
+		return iconBank.getIcon("obj_icon");
+	if (iPath.extension() == ".gltf")
+		return iconBank.getIcon("gltf_icon");
+	if (iPath.extension() == ".glb")
+		return iconBank.getIcon("glb_icon");
+	if (iPath.extension() == ".fbx")
+		return iconBank.getIcon("fbx_icon");
+	if (iPath.extension() == ".py")
+		return iconBank.getIcon("py_icon");
+	if (iPath.extension() == ".cpp" || iPath.extension() == ".cxx" || iPath.extension() == ".cc")
+		return iconBank.getIcon("cpp_icon");
+	if (iPath.extension() == ".h" || iPath.extension() == ".hpp" || iPath.extension() == ".hxx")
+		return iconBank.getIcon("h_icon");
+	if (iPath.extension() == ".c")
+		return iconBank.getIcon("c_icon");
+	if (iPath.extension() == ".md")
+		return iconBank.getIcon("md_icon");
 	return iconBank.getIcon("text_icon");
 }
 
@@ -314,9 +340,10 @@ void ContentBrowser::renderContextMenu() {
 		const bool submitted =
 				ImGui::InputText("##rename", &m_renameBuffer, ImGuiInputTextFlags_EnterReturnsTrue);
 		ImGui::SameLine();
-		const bool okClicked = ImGui::Button("OK");
+		const auto& buttonBank = gui::IconBank::instance();
+		const bool okClicked = buttonBank.iconButton("rename", "OK");
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel")) {
+		if (buttonBank.iconButton("close", "Cancel")) {
 			m_renaming = false;
 			m_selectedPath.clear();
 			ImGui::CloseCurrentPopup();
@@ -348,15 +375,17 @@ void ContentBrowser::renderContextMenu() {
 		if (is_directory(m_selectedPath))
 			ImGui::TextColored({1.0f, 0.6f, 0.2f, 1.0f}, "This will delete all contents of the folder.");
 		ImGui::Separator();
-		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		const auto& buttonBank = gui::IconBank::instance();
+		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
+								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		const float totalWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
-		if (ImGui::Button("Delete", {buttonWidth, 0})) {
+		if (buttonBank.iconButton("delete", "Delete", {buttonWidth, 0})) {
 			deleteSelected();
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel", {buttonWidth, 0})) {
+		if (buttonBank.iconButton("close", "Cancel", {buttonWidth, 0})) {
 			m_selectedPath.clear();
 			ImGui::CloseCurrentPopup();
 		}

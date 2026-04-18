@@ -9,6 +9,7 @@
 #include "LogPanel.h"
 
 #include <debug/LogSink.h>
+#include <gui/IconBank.h>
 
 namespace owl::nest::panel {
 
@@ -123,7 +124,7 @@ void LogPanel::onImGuiRender() {
 	ImGui::Begin("Log");
 
 	// Toolbar: Clear, Auto-scroll, level filters, logger filters, search
-	if (ImGui::Button("Clear"))
+	if (gui::IconBank::instance().iconButton("delete", "Clear"))
 		core::Log::getLogBuffer().clear();
 	ImGui::SameLine();
 	ImGui::Checkbox("Auto-scroll", &m_autoScroll);

@@ -8,6 +8,7 @@
 
 #include "Parameters.h"
 
+#include <gui/IconBank.h>
 #include <magic_enum/magic_enum.hpp>
 
 namespace owl::nest::panel {
@@ -108,21 +109,23 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 		ImGui::Separator();
 
 		// --- OK / Apply / Cancel (centered) ---
-		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		const auto& iconBank = gui::IconBank::instance();
+		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
+								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		const float totalWidth = buttonWidth * 3.0f + ImGui::GetStyle().ItemSpacing.x * 2.0f;
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
-		if (ImGui::Button("OK##params", {buttonWidth, 0})) {
+		if (iconBank.iconButton("save", "OK##params", {buttonWidth, 0})) {
 			const bool needRestart = apply();
 			m_showRestartWarning = needRestart;
 			m_pendingClose = true;
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Apply", {buttonWidth, 0})) {
+		if (iconBank.iconButton("save", "Apply", {buttonWidth, 0})) {
 			if (apply())
 				m_showRestartWarning = true;
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel", {buttonWidth, 0})) {
+		if (iconBank.iconButton("close", "Cancel", {buttonWidth, 0})) {
 			ImGui::CloseCurrentPopup();
 		}
 
@@ -132,7 +135,7 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 		if (ImGui::BeginPopupModal(g_restartPopupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 			ImGui::Text("Renderer or Sound backend has changed.\nPlease restart the application for the changes to take effect.");
 			ImGui::Separator();
-			if (ImGui::Button("OK##restart")) {
+			if (iconBank.iconButton("close", "OK##restart")) {
 				m_showRestartWarning = false;
 				ImGui::CloseCurrentPopup();
 			}

@@ -99,8 +99,12 @@ private:
 	void renderToolbar();
 	/// Render the welcome screen shown when no project is loaded.
 	void renderWelcomeScreen();
+	/// Render the packaging wizard dialog (shown before running pack).
+	void renderPackWizardModal();
 	/// Render the pre-packaging validation modal (missing assets confirmation).
 	void renderPackValidationModal();
+	/// Launch the async validation + pack pipeline with the current wizard settings.
+	void launchPackValidation();
 	/// Start the async packaging process (called after validation).
 	void startPackGame();
 
@@ -135,6 +139,12 @@ private:
 	shared<std::vector<io::pack::AssetReference>> m_pendingPackAssets;
 	/// True when the validation modal should be shown on the next frame.
 	bool m_showPackValidation = false;
+	/// True when the packaging wizard modal is visible.
+	bool m_showPackWizard = false;
+	/// Compress blobs in the output pack (zstd).
+	bool m_packCompress = true;
+	/// XOR-obfuscate the pack TOC to deter casual inspection.
+	bool m_packObfuscate = true;
 
 	bool m_pendingTeleportVelocity = false;
 	math::vec2f m_teleportVelocity = {0.f, 0.f};

@@ -8,6 +8,8 @@
 
 #include "SettingsPanel.h"
 
+#include <gui/IconBank.h>
+
 namespace owl::nest::panel {
 
 void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& ioRegistry) {
@@ -71,11 +73,11 @@ void SettingsPanel::renderKeybindingsSection(EditorSettings& ioSettings, ActionR
 	if (!ImGui::CollapsingHeader("Keybindings", ImGuiTreeNodeFlags_DefaultOpen))
 		return;
 
-	if (ImGui::Button("Reset All to Defaults")) {
+	if (gui::IconBank::instance().iconButton("undo", "Reset All to Defaults")) {
 		ioRegistry.resetToDefaults();
 		ioSettings.keybindingOverrides.clear();
-		m_capturing = false;
 		m_conflictMessage.clear();
+		m_capturing = false;
 	}
 
 	ImGui::Spacing();

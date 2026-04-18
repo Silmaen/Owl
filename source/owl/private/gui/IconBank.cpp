@@ -359,4 +359,40 @@ auto IconBank::menuItem(const std::string& iIconName, const char* iLabel, const 
 	return ImGui::MenuItem(iLabel, iShortcut, false, iEnabled);
 }
 
+auto IconBank::iconButton(const std::string& iIconName, const char* iLabel, const math::vec2& iSize) const -> bool {
+	const auto info = getIcon(iIconName);
+	if (!info.has_value())
+		return ImGui::Button(iLabel, vec(iSize));
+
+	const float iconSize = ImGui::GetFontSize();
+	const float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
+	const ImVec2 labelSize = ImGui::CalcTextSize(iLabel, nullptr, true);
+	const ImVec2 framePad = ImGui::GetStyle().FramePadding;
+
+	ImVec2 size{iSize.x(), iSize.y()};
+	if (size.x <= 0.f)
+		size.x = iconSize + spacing + labelSize.x + framePad.x * 2.f;
+	if (size.y <= 0.f)
+		size.y = std::max(iconSize, labelSize.y) + framePad.y * 2.f;
+
+	ImGui::PushID(iLabel);
+	const bool clicked = ImGui::Button("##iconbtn", size);
+	const ImVec2 btnMin = ImGui::GetItemRectMin();
+	const ImVec2 btnMax = ImGui::GetItemRectMax();
+	auto* drawList = ImGui::GetWindowDrawList();
+
+	const float contentW = iconSize + spacing + labelSize.x;
+	const float startX = btnMin.x + ((btnMax.x - btnMin.x) - contentW) * 0.5f;
+	const float centerY = (btnMin.y + btnMax.y) * 0.5f;
+
+	const ImVec2 iconMin{startX, centerY - iconSize * 0.5f};
+	const ImVec2 iconMax{startX + iconSize, centerY + iconSize * 0.5f};
+	drawList->AddImage(static_cast<ImTextureID>(info->textureId), iconMin, iconMax, vec(info->uv0), vec(info->uv1));
+
+	const ImVec2 textPos{startX + iconSize + spacing, centerY - labelSize.y * 0.5f};
+	drawList->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), iLabel);
+	ImGui::PopID();
+	return clicked;
+}
+
 }// namespace owl::gui
