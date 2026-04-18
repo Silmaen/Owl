@@ -15,7 +15,6 @@
 #include "EditorSettings.h"
 #include "Project.h"
 #include "document/DocumentManager.h"
-#include "document/DocumentTabBar.h"
 #include "document/SceneDocument.h"
 #include "panel/AsyncProgressModal.h"
 #include "panel/ContentBrowser.h"
@@ -24,7 +23,6 @@
 #include "panel/ProjectSettings.h"
 #include "panel/SceneHierarchy.h"
 #include "panel/SettingsPanel.h"
-#include "panel/Viewport.h"
 
 namespace owl::nest {
 /**
@@ -97,6 +95,10 @@ public:
 	[[nodiscard]] auto getDocumentManager() -> DocumentManager& { return m_documents; }
 	/// @brief Close the document with the given id (handles dirty + tab sync).
 	void closeDocument(core::UUID iId);
+	/// @brief Request closing a document. Prompts for confirmation when dirty.
+	void requestCloseDocument(core::UUID iId);
+	/// @brief Close the currently active document (with dirty prompt if needed).
+	void requestCloseActiveDocument();
 
 private:
 	void renderStats(const core::Timestep& iTimeStep);
@@ -108,6 +110,8 @@ private:
 	void renderPackWizardModal();
 	/// Render the pre-packaging validation modal (missing assets confirmation).
 	void renderPackValidationModal();
+	/// Render the dirty-close confirmation modal for `m_pendingCloseDocId`.
+	void renderCloseDocumentModal();
 	/// Launch the async validation + pack pipeline with the current wizard settings.
 	void launchPackValidation();
 	/// Start the async packaging process (called after validation).
@@ -117,6 +121,10 @@ private:
 	auto ensureActiveSceneDocument() -> SceneDocument&;
 	/// @brief Get the active SceneDocument, or nullptr if the active doc is not a scene.
 	[[nodiscard]] auto activeSceneDocument() const -> SceneDocument*;
+	/// @brief Shortcut to the active document's Viewport, or nullptr.
+	[[nodiscard]] auto activeViewport() const -> panel::Viewport*;
+	/// @brief Active viewport size, or a sensible default (1280x720) when no viewport exists yet.
+	[[nodiscard]] auto activeViewportSize() const -> math::vec2ui;
 
 	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
 	static auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
@@ -153,6 +161,11 @@ private:
 	/// XOR-obfuscate the pack TOC to deter casual inspection.
 	bool m_packObfuscate = true;
 
+	/// Pending document id to close (awaits dirty-confirmation modal). 0 when idle.
+	core::UUID m_pendingCloseDocId{0};
+	/// True when the close-confirmation modal should open on the next frame.
+	bool m_openCloseDocModal = false;
+
 	// project
 	Project m_project;
 
@@ -174,7 +187,6 @@ private:
 	// Panels
 	panel::SceneHierarchy m_sceneHierarchy;
 	panel::ContentBrowser m_contentBrowser;
-	panel::Viewport m_viewport;
 	panel::Parameters m_parameters;
 	panel::ProjectSettings m_projectSettings;
 	panel::LogPanel m_logPanel;

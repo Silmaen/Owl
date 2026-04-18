@@ -10,6 +10,7 @@
 
 #include "Document.h"
 #include "UndoManager.h"
+#include "panel/Viewport.h"
 
 namespace owl::nest {
 
@@ -89,6 +90,10 @@ public:
 	/// @brief Apply a pending teleport velocity on the player spawned in the new scene.
 	void applyPendingTeleportVelocity();
 
+	/// @brief Access this document's viewport panel (renders into its own framebuffer + ImGui tab).
+	[[nodiscard]] auto getViewport() -> panel::Viewport& { return m_viewport; }
+	[[nodiscard]] auto getViewport() const -> const panel::Viewport& { return m_viewport; }
+
 private:
 	shared<scene::Scene> m_editorScene;
 	shared<scene::Scene> m_activeScene;
@@ -104,6 +109,7 @@ private:
 
 	UndoManager m_undoManager;
 	EditorLayer* mp_editor = nullptr;
+	panel::Viewport m_viewport;
 };
 
 }// namespace owl::nest

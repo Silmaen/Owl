@@ -320,13 +320,18 @@ asynchronous with progress feedback.
           a new tab (or reuses an already-open one)
         - Background simulation: non-active tabs in Play mode advance physics/scripts without
           rendering (`Scene::onUpdateRuntime` gained an `iRender` flag)
-    - ![Planned][planned] Per-document viewport (side-by-side via docking)
-        - Each `SceneDocument` owns its own `Viewport` with a unique ImGui window id
-        - Users can detach a viewport tab (ImGui docking) to see multiple scenes at once
-        - Hierarchy / inspector still follow the document whose viewport has focus
-    - ![Planned][planned] Detachable panels
-        - Panels can be dragged out into floating windows
-        - Independent ImGui viewports per floating window
+    - ![Done][done] Per-document viewport (side-by-side via docking)
+        - Each `SceneDocument` owns its own `Viewport` with its own framebuffer and a stable
+          `##scene_<uuid>` ImGui window id
+        - ImGui docking groups viewports as tabs automatically; tear one off to see scenes
+          side-by-side. Dirty marker via `ImGuiWindowFlags_UnsavedDocument`, close via native
+          `p_open`. New viewports auto-dock to the central node on first open
+        - Active document = last-focused viewport; hierarchy / inspector follow it
+    - ![Done][done] Detachable panels
+        - Fournit par le docking natif d'ImGui (`ImGuiConfigFlags_DockingEnable` +
+          `ImGuiConfigFlags_ViewportsEnable` activés dans `UiLayer`)
+        - N'importe quel panneau (hierarchy, viewport, content browser, log…) peut être
+          drag-out en fenêtre OS indépendante ou docké dans un autre nœud
 - Script Editor
     - ![Planned][planned] Integrated Lua script editor
         - Syntax-highlighted text editor for `.lua` files (open from Content Browser)

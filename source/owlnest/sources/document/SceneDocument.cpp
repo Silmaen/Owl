@@ -29,9 +29,14 @@ void SceneDocument::onAttach(EditorLayer* iEditor) {
 		m_activeScene = mkShared<scene::Scene>();
 	if (!m_editorScene)
 		m_editorScene = m_activeScene;
+	m_viewport.attach();
+	m_viewport.attachParent(iEditor);
+	m_viewport.setDocument(this);
+	m_viewport.setUndoManager(&m_undoManager);
 }
 
 void SceneDocument::onDetach() {
+	m_viewport.detach();
 	if (m_state != State::Edit && m_activeScene)
 		m_activeScene->onEndRuntime();
 	m_activeScene.reset();
@@ -39,16 +44,16 @@ void SceneDocument::onDetach() {
 	mp_editor = nullptr;
 }
 
-void SceneDocument::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
-	// EditorLayer drives the per-frame scene update (via Viewport). Nothing to do here in Phase 1.
+void SceneDocument::onUpdate(const core::Timestep& iTimeStep) {
+	m_viewport.onUpdate(iTimeStep);
 }
 
-void SceneDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {
-	// Events are routed via the global ActionRegistry in Phase 1.
+void SceneDocument::onEvent(event::Event& ioEvent) {
+	m_viewport.onEvent(ioEvent);
 }
 
 void SceneDocument::onImGuiRender() {
-	// The per-document viewport is rendered from EditorLayer in Phase 1.
+	m_viewport.onRender();
 }
 
 auto SceneDocument::save() -> bool {

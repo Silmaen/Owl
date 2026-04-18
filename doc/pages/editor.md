@@ -68,9 +68,11 @@ script or node graph) lives in its own tab. Internally the editor owns a
 **active**. Global panels (Scene Hierarchy, Properties, Viewport) always
 reflect the active document.
 
-- **Document tab bar** — rendered inside the Viewport header; lists every open
-  document. Click a tab to make it active. A `*` marks unsaved changes, a ▶ /
-  ❙❙ badge marks the document currently in Play / Pause mode.
+- **Document tabs** — each open scene has its own `Viewport` window (stable
+  `##scene_<uuid>` id). ImGui's docking groups viewports in the same dock node
+  as tabs automatically; drag a tab out to float it or dock it somewhere else
+  and see several scenes side-by-side. The unsaved-document flag
+  (`ImGuiWindowFlags_UnsavedDocument`) renders a dot on the tab when dirty.
 - **Close** — the tab's `x` closes it immediately when clean; a "Discard
   changes / Cancel" modal appears if the document has unsaved edits.
 - **Shortcuts** — `Ctrl+W` close active document, `Ctrl+Tab` / `Ctrl+Shift+Tab`

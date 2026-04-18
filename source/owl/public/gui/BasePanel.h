@@ -63,8 +63,12 @@ public:
 	virtual void onEvent([[maybe_unused]] event::Event& ioEvent) {}
 	/**
 	 * @brief Update internal variables and do the rendering.
+	 *
+	 * Virtual so specialised panels (e.g. a per-document viewport with its own
+	 * close button and unsaved-document flag) can fully take over the window
+	 * setup while still reusing the stock bookkeeping of focus / hover / size.
 	 */
-	void onRender();
+	virtual void onRender();
 
 	/**
 	 * @brief Do the rendering.

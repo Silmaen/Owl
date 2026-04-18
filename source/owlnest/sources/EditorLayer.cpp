@@ -197,6 +197,18 @@ auto EditorLayer::activeSceneDocument() const -> SceneDocument* {
 	return static_cast<SceneDocument*>(doc);
 }
 
+auto EditorLayer::activeViewport() const -> panel::Viewport* {
+	if (auto* doc = activeSceneDocument(); doc != nullptr)
+		return &doc->getViewport();
+	return nullptr;
+}
+
+auto EditorLayer::activeViewportSize() const -> math::vec2ui {
+	if (const auto* v = activeViewport(); v != nullptr && v->getSize().surface() > 0)
+		return v->getSize();
+	return {1280u, 720u};
+}
+
 auto EditorLayer::ensureActiveSceneDocument() -> SceneDocument& {
 	if (auto* existing = activeSceneDocument(); existing != nullptr)
 		return *existing;
@@ -261,13 +273,12 @@ void EditorLayer::syncActiveDocumentPanels() {
 		static const shared<scene::Scene> s_empty;
 		m_sceneHierarchy.setContext(s_empty);
 		m_sceneHierarchy.setUndoManager(nullptr);
-		m_viewport.setUndoManager(nullptr);
 		updateWindowTitle();
 		return;
 	}
 	m_sceneHierarchy.setContext(doc->getActiveScene());
 	m_sceneHierarchy.setUndoManager(&doc->undoManager());
-	m_viewport.setUndoManager(&doc->undoManager());
+	// The per-document viewport owns its own undo pointer already (set in SceneDocument::onAttach).
 	updateWindowTitle();
 }
 
@@ -280,6 +291,52 @@ void EditorLayer::closeDocument(const core::UUID iId) {
 	// Ensure there is always at least one scene document to edit.
 	if (m_documents.empty())
 		ensureActiveSceneDocument();
+}
+
+void EditorLayer::requestCloseDocument(const core::UUID iId) {
+	const auto* doc = m_documents.find(iId);
+	if (doc == nullptr)
+		return;
+	if (doc->isDirty()) {
+		m_pendingCloseDocId = iId;
+		m_openCloseDocModal = true;
+	} else {
+		closeDocument(iId);
+	}
+}
+
+void EditorLayer::requestCloseActiveDocument() {
+	if (const auto* doc = m_documents.getActive(); doc != nullptr)
+		requestCloseDocument(doc->id());
+}
+
+void EditorLayer::renderCloseDocumentModal() {
+	if (m_openCloseDocModal) {
+		ImGui::OpenPopup("Close Unsaved Document?");
+		m_openCloseDocModal = false;
+	}
+	if (ImGui::BeginPopupModal("Close Unsaved Document?", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		if (const auto* doc = m_documents.find(m_pendingCloseDocId); doc != nullptr) {
+			ImGui::Text("'%s' has unsaved changes.", doc->title().c_str());
+			ImGui::Spacing();
+			const auto& iconBank = gui::IconBank::instance();
+			if (iconBank.iconButton("delete", "Discard changes", {160, 0})) {
+				const auto id = m_pendingCloseDocId;
+				m_pendingCloseDocId = core::UUID{0};
+				ImGui::CloseCurrentPopup();
+				closeDocument(id);
+			}
+			ImGui::SameLine();
+			if (iconBank.iconButton("close", "Cancel", {120, 0})) {
+				m_pendingCloseDocId = core::UUID{0};
+				ImGui::CloseCurrentPopup();
+			}
+		} else {
+			m_pendingCloseDocId = core::UUID{0};
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
 }
 
 void EditorLayer::onAttach() {
@@ -300,12 +357,8 @@ void EditorLayer::onAttach() {
 		}
 	}
 
-	m_viewport.attach();
-	m_viewport.attachParent(this);
-
-	// Create the initial scene document. Its undo manager drives the hierarchy panel and viewport.
+	// Create the initial scene document. Its onAttach() initialises its own Viewport.
 	auto& initialDoc = ensureActiveSceneDocument();
-	m_viewport.setUndoManager(&initialDoc.undoManager());
 	m_sceneHierarchy.setUndoManager(&initialDoc.undoManager());
 
 	buildIconBank();
@@ -336,37 +389,37 @@ void EditorLayer::onAttach() {
 	m_actionRegistry.registerAction("guizmo.none", "Guizmo: None",
 		{input::key::Q, Modifiers::None},
 		[this] {
-			if (getState() == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
-				&& !gui::Guizmo::isUsing())
-				m_viewport.setGuizmoType(gui::Guizmo::Type::None);
+			if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+				(vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
+				vp->setGuizmoType(gui::Guizmo::Type::None);
 		});
 	m_actionRegistry.registerAction("guizmo.translate", "Guizmo: Translate",
 		{input::key::W, Modifiers::None},
 		[this] {
-			if (getState() == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
-				&& !gui::Guizmo::isUsing())
-				m_viewport.setGuizmoType(gui::Guizmo::Type::Translation);
+			if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+				(vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
+				vp->setGuizmoType(gui::Guizmo::Type::Translation);
 		});
 	m_actionRegistry.registerAction("guizmo.rotate", "Guizmo: Rotate",
 		{input::key::E, Modifiers::None},
 		[this] {
-			if (getState() == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
-				&& !gui::Guizmo::isUsing())
-				m_viewport.setGuizmoType(gui::Guizmo::Type::Rotation);
+			if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+				(vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
+				vp->setGuizmoType(gui::Guizmo::Type::Rotation);
 		});
 	m_actionRegistry.registerAction("guizmo.scale", "Guizmo: Scale",
 		{input::key::R, Modifiers::None},
 		[this] {
-			if (getState() == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
-				&& !gui::Guizmo::isUsing())
-				m_viewport.setGuizmoType(gui::Guizmo::Type::Scale);
+			if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+				(vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
+				vp->setGuizmoType(gui::Guizmo::Type::Scale);
 		});
 	m_actionRegistry.registerAction("guizmo.all", "Guizmo: All",
 		{input::key::T, Modifiers::None},
 		[this] {
-			if (getState() == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
-				&& !gui::Guizmo::isUsing())
-				m_viewport.setGuizmoType(gui::Guizmo::Type::All);
+			if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+				(vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
+				vp->setGuizmoType(gui::Guizmo::Type::All);
 		});
 	// Playback actions
 	m_actionRegistry.registerAction("scene.play", "Play/Resume",
@@ -409,17 +462,7 @@ void EditorLayer::onAttach() {
 	// Document-level shortcuts
 	m_actionRegistry.registerAction("doc.close", "Close Document",
 		{input::key::W, Modifiers::Ctrl},
-		[this] {
-			if (const auto* doc = m_documents.getActive(); doc != nullptr) {
-				if (doc->isDirty()) {
-					// Defer the close to the tab bar (which shows the confirmation prompt).
-					// Users can also press Ctrl+W again after confirming in the modal.
-					OWL_INFO("Close requested on dirty document — please confirm in the tab bar.")
-				} else {
-					closeDocument(doc->id());
-				}
-			}
-		});
+		[this] { requestCloseActiveDocument(); });
 	m_actionRegistry.registerAction("doc.next", "Next Document",
 		{input::key::Tab, Modifiers::Ctrl},
 		[this] {
@@ -454,40 +497,33 @@ void EditorLayer::onAttach() {
 	m_actionRegistry.loadOverrides(m_settings.keybindingOverrides);
 
 	m_controlBar.init(gui::widgets::ButtonBarData{{.id = "##controlBar", .visible = true}, false, false, true});
+	const auto gizmoGet = [this](const gui::Guizmo::Type iType) {
+		auto* vp = activeViewport();
+		return vp != nullptr && vp->getGuizmoType() == iType;
+	};
+	const auto gizmoToggle = [this](const gui::Guizmo::Type iType) {
+		if (auto* vp = activeViewport(); vp != nullptr)
+			vp->setGuizmoType(vp->getGuizmoType() == iType ? gui::Guizmo::Type::None : iType);
+	};
 	m_controlBar.addButton({{.id = "##ctrlTranslation", .visible = true},
 							"ctrl_translation",
 							"T",
-							[this] { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Translation; },
-							[this] {
-								if (m_viewport.getGuizmoType() == gui::Guizmo::Type::Translation)
-									m_viewport.setGuizmoType(gui::Guizmo::Type::None);
-								else
-									m_viewport.setGuizmoType(gui::Guizmo::Type::Translation);
-							},
+							[gizmoGet] { return gizmoGet(gui::Guizmo::Type::Translation); },
+							[gizmoToggle] { gizmoToggle(gui::Guizmo::Type::Translation); },
 							{32, 32},
 							std::format("Translation ({})", m_actionRegistry.getShortcutString("guizmo.translate"))});
 	m_controlBar.addButton({{.id = "##ctrlRotation", .visible = true},
 							"ctrl_rotation",
 							"T",
-							[this] { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Rotation; },
-							[this] {
-								if (m_viewport.getGuizmoType() == gui::Guizmo::Type::Rotation)
-									m_viewport.setGuizmoType(gui::Guizmo::Type::None);
-								else
-									m_viewport.setGuizmoType(gui::Guizmo::Type::Rotation);
-							},
+							[gizmoGet] { return gizmoGet(gui::Guizmo::Type::Rotation); },
+							[gizmoToggle] { gizmoToggle(gui::Guizmo::Type::Rotation); },
 							{32, 32},
 							std::format("Rotation ({})", m_actionRegistry.getShortcutString("guizmo.rotate"))});
 	m_controlBar.addButton({{.id = "##ctrlScale", .visible = true},
 							"ctrl_scale",
 							"T",
-							[this] { return m_viewport.getGuizmoType() == gui::Guizmo::Type::Scale; },
-							[this] {
-								if (m_viewport.getGuizmoType() == gui::Guizmo::Type::Scale)
-									m_viewport.setGuizmoType(gui::Guizmo::Type::None);
-								else
-									m_viewport.setGuizmoType(gui::Guizmo::Type::Scale);
-							},
+							[gizmoGet] { return gizmoGet(gui::Guizmo::Type::Scale); },
+							[gizmoToggle] { gizmoToggle(gui::Guizmo::Type::Scale); },
 							{32, 32},
 							std::format("Scale ({})", m_actionRegistry.getShortcutString("guizmo.scale"))});
 
@@ -503,15 +539,13 @@ void EditorLayer::onDetach() {
 	m_settings.keybindingOverrides = m_actionRegistry.getOverrides();
 	m_settings.saveToFile(core::Application::get().getWorkingDirectory() / "OwlNest_settings.yml");
 
-	m_viewport.detach();
-	OWL_TRACE("EditorLayer: viewport freed.")
 	m_contentBrowser.detach();
 	OWL_TRACE("EditorLayer: deleted editor FrameBuffer.")
 
 	m_controlBar.clearButtons();
 
 	m_documents.clear();
-	OWL_TRACE("EditorLayer: closed all documents.")
+	OWL_TRACE("EditorLayer: closed all documents (and their viewports).")
 }
 
 void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
@@ -536,19 +570,17 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 		}
 	}
 
-	if (activeDoc == nullptr) {
-		m_viewport.onUpdate(iTimeStep);
+	if (activeDoc == nullptr)
 		return;
-	}
 
-	// resize
-	m_cameraController.onResize(m_viewport.getSize());
+	auto& viewport = activeDoc->getViewport();
+	m_cameraController.onResize(viewport.getSize());
 	if (const auto& scene = activeDoc->getActiveScene())
-		scene->onViewportResize(m_viewport.getSize());
+		scene->onViewportResize(viewport.getSize());
 
 	// Update scene
 	if (activeDoc->state() == SceneDocument::State::Edit) {
-		if (m_viewport.isFocused())
+		if (viewport.isFocused())
 			m_cameraController.onUpdate(iTimeStep);
 	}
 
@@ -571,13 +603,14 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 		return;
 	}
 
-	// update the viewport (drives active scene's update + render into the framebuffer)
-	m_viewport.onUpdate(iTimeStep);
+	// Drive the active document's scene update (which renders into its own framebuffer).
+	activeDoc->onUpdate(iTimeStep);
 }
 
 void EditorLayer::onEvent(event::Event& ioEvent) {
 	m_cameraController.onEvent(ioEvent);
-	m_viewport.onEvent(ioEvent);
+	if (auto* doc = activeSceneDocument(); doc != nullptr)
+		doc->onEvent(ioEvent);
 
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::KeyPressedEvent>(
@@ -598,13 +631,18 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	//=============================================================
 	renderMenu();
 	//=============================================================
-	// Tab bar now lives inside the Viewport (via Viewport::onHeaderRender).
-	// Render the viewport first so tab-bar clicks land before panels that depend
-	// on the active document refresh their context.
+	// Each scene document renders its own viewport (ImGui's docking groups them as tabs when
+	// docked into the same node; users can tear one off to see scenes side-by-side). Render
+	// viewports first so tab-focus changes update the active document before the global panels
+	// (hierarchy, content browser) reflect it.
 	const auto* activeBefore = m_documents.getActive();
-	m_viewport.onRender();
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr)
+			docPtr->onImGuiRender();
+	}
 	if (m_documents.getActive() != activeBefore)
 		syncActiveDocumentPanels();
+	renderCloseDocumentModal();
 	//=============================================================
 	m_sceneHierarchy.onImGuiRender();
 	m_contentBrowser.onImGuiRender();
@@ -629,18 +667,16 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	const auto* activeDoc = activeSceneDocument();
 	const bool toolbarVisible = activeDoc != nullptr && (playingDoc == nullptr || playingDoc == activeDoc);
 	if (toolbarVisible) {
-		{
-			const auto& lower = m_viewport.getLowerBound();
-			const auto& upper = m_viewport.getUpperBound();
+		if (auto* vp = activeViewport(); vp != nullptr) {
+			const auto& lower = vp->getLowerBound();
+			const auto& upper = vp->getUpperBound();
 			const float centerX = (lower.x() + upper.x()) * 0.5f;
 			ImGui::SetNextWindowPos({centerX, lower.y() + 8.0f}, ImGuiCond_Always, {0.5f, 0.0f});
-		}
-		renderToolbar();
-		if (getState() == State::Edit) {
-			const auto& upper = m_viewport.getUpperBound();
-			const auto& lower = m_viewport.getLowerBound();
-			ImGui::SetNextWindowPos({upper.x() - 8.0f, lower.y() + 8.0f}, ImGuiCond_Always, {1.0f, 0.0f});
-			m_controlBar.onRender();
+			renderToolbar();
+			if (getState() == State::Edit) {
+				ImGui::SetNextWindowPos({upper.x() - 8.0f, lower.y() + 8.0f}, ImGuiCond_Always, {1.0f, 0.0f});
+				m_controlBar.onRender();
+			}
 		}
 	}
 }
@@ -731,8 +767,8 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 	m_lastDeallocCalls = debug::TrackerAPI::globals().deallocationCalls;
 	ImGui::Separator();
 	std::string name = "None";
-	if (const auto ent = m_viewport.getHoveredEntity()) {
-		if (ent.hasComponent<scene::component::Tag>())
+	if (const auto* vp = activeViewport(); vp != nullptr) {
+		if (const auto ent = vp->getHoveredEntity(); ent && ent.hasComponent<scene::component::Tag>())
 			name = ent.getComponent<scene::component::Tag>().tag;
 	}
 	ImGui::Text("Hovered Entity: %s", name.c_str());
@@ -743,9 +779,9 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 	ImGui::Text("Quads: %ud", stats.quadCount);
 	ImGui::Text("Vertices: %ud", stats.getTotalVertexCount());
 	ImGui::Text("Indices: %ud", stats.getTotalIndexCount());
-	ImGui::Text("Viewport size: %f %f", static_cast<double>(m_viewport.getSize().x()),
-				static_cast<double>(m_viewport.getSize().y()));
-	ImGui::Text("Aspect ratio: %f", static_cast<double>(m_viewport.getSize().ratio()));
+	const auto vpSize = activeViewportSize();
+	ImGui::Text("Viewport size: %u x %u", vpSize.x(), vpSize.y());
+	ImGui::Text("Aspect ratio: %f", static_cast<double>(vpSize.ratio()));
 	ImGui::End();
 }
 
@@ -828,6 +864,9 @@ void EditorLayer::renderMenu() {// NOLINT(readability-function-cognitive-complex
 			if (iconBank.menuItem("save", "Save Scene as..",
 								  m_actionRegistry.getShortcutString("scene.saveAs").c_str()))
 				saveSceneAs();
+			if (iconBank.menuItem("close", "Close Scene",
+								  m_actionRegistry.getShortcutString("doc.close").c_str(), doc != nullptr))
+				requestCloseActiveDocument();
 			ImGui::Separator();
 			if (iconBank.menuItem("import_file", "Import Scene"))
 				importScene();
@@ -938,7 +977,7 @@ void EditorLayer::newScene() {
 		doc->onAttach(this);
 		target = static_cast<SceneDocument*>(m_documents.add(std::move(doc)));
 	}
-	target->newScene(m_viewport.getSize());
+	target->newScene(activeViewportSize());
 	m_documents.setActive(target);
 	syncActiveDocumentPanels();
 }
@@ -1006,7 +1045,7 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 						doc->onAttach(this);
 						target = static_cast<SceneDocument*>(m_documents.add(std::move(doc)));
 					}
-					target->applyLoadedScene(newScene, scenePath, m_viewport.getSize());
+					target->applyLoadedScene(newScene, scenePath, activeViewportSize());
 					m_documents.setActive(target);
 					syncActiveDocumentPanels();
 				} else {
@@ -1114,7 +1153,7 @@ void EditorLayer::handleTeleportRequest() {
 	auto* doc = activeSceneDocument();
 	if (doc == nullptr)
 		return;
-	doc->handleTeleportRequest(m_viewport.getSize());
+	doc->handleTeleportRequest(activeViewportSize());
 	m_sceneHierarchy.setContext(doc->getActiveScene());
 }
 
@@ -1138,7 +1177,7 @@ void EditorLayer::handleSaveLoadRequest() {
 	auto* doc = activeSceneDocument();
 	if (doc == nullptr)
 		return;
-	doc->handleSaveLoadRequest(m_viewport.getSize());
+	doc->handleSaveLoadRequest(activeViewportSize());
 	m_sceneHierarchy.setContext(doc->getActiveScene());
 }
 
