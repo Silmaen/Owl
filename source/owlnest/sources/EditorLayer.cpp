@@ -190,6 +190,47 @@ void loadSounds() {
 }// namespace
 EditorLayer::EditorLayer() : Layer("EditorLayer"), m_cameraController{1280.0f / 720.0f} {}
 
+auto EditorLayer::activeSceneDocument() const -> SceneDocument* {
+	auto* doc = m_documents.getActive();
+	if (doc == nullptr || doc->type() != DocumentType::Scene)
+		return nullptr;
+	return static_cast<SceneDocument*>(doc);
+}
+
+auto EditorLayer::ensureActiveSceneDocument() -> SceneDocument& {
+	if (auto* existing = activeSceneDocument(); existing != nullptr)
+		return *existing;
+	auto doc = mkUniq<SceneDocument>();
+	doc->onAttach(this);
+	auto* raw = m_documents.add(std::move(doc));
+	// m_documents.add() sets it active.
+	return *static_cast<SceneDocument*>(raw);
+}
+
+auto EditorLayer::getState() const -> State {
+	if (const auto* doc = activeSceneDocument(); doc != nullptr)
+		return doc->state();
+	return State::Edit;
+}
+
+auto EditorLayer::getActiveScene() const -> const shared<scene::Scene>& {
+	if (const auto* doc = activeSceneDocument(); doc != nullptr)
+		return doc->getActiveScene();
+	static const shared<scene::Scene> s_empty;
+	return s_empty;
+}
+
+auto EditorLayer::activeUndoManager() -> UndoManager* {
+	if (auto* doc = activeSceneDocument(); doc != nullptr)
+		return &doc->undoManager();
+	return nullptr;
+}
+
+void EditorLayer::requestStop() {
+	if (auto* doc = activeSceneDocument(); doc != nullptr)
+		doc->requestStop();
+}
+
 void EditorLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
@@ -210,8 +251,11 @@ void EditorLayer::onAttach() {
 
 	m_viewport.attach();
 	m_viewport.attachParent(this);
-	m_viewport.setUndoManager(&m_undoManager);
-	m_sceneHierarchy.setUndoManager(&m_undoManager);
+
+	// Create the initial scene document. Its undo manager drives the hierarchy panel and viewport.
+	auto& initialDoc = ensureActiveSceneDocument();
+	m_viewport.setUndoManager(&initialDoc.undoManager());
+	m_sceneHierarchy.setUndoManager(&initialDoc.undoManager());
 
 	buildIconBank();
 	loadTriggerTextures();
@@ -221,51 +265,55 @@ void EditorLayer::onAttach() {
 	// clang-format off
 	m_actionRegistry.registerAction("scene.new", "New Scene",
 		{input::key::N, Modifiers::Ctrl},
-		[this] { if (m_state == State::Edit) newScene(); });
+		[this] { if (getState() == State::Edit) newScene(); });
 	m_actionRegistry.registerAction("scene.open", "Open Scene",
 		{input::key::O, Modifiers::Ctrl},
-		[this] { if (m_state == State::Edit) openScene(); });
+		[this] { if (getState() == State::Edit) openScene(); });
 	m_actionRegistry.registerAction("scene.save", "Save Scene",
 		{input::key::S, Modifiers::Ctrl},
-		[this] { if (m_state == State::Edit && !m_currentScenePath.empty()) saveCurrentScene(); });
+		[this] {
+			const auto* doc = activeSceneDocument();
+			if (getState() == State::Edit && doc != nullptr && !doc->filePath().empty())
+				saveCurrentScene();
+		});
 	m_actionRegistry.registerAction("scene.saveAs", "Save Scene As",
 		{input::key::S, Modifiers::Ctrl | Modifiers::Shift},
-		[this] { if (m_state == State::Edit) saveSceneAs(); });
+		[this] { if (getState() == State::Edit) saveSceneAs(); });
 	m_actionRegistry.registerAction("entity.duplicate", "Duplicate Entity",
 		{input::key::D, Modifiers::Ctrl},
-		[this] { if (m_state == State::Edit) onDuplicateEntity(); });
+		[this] { if (getState() == State::Edit) onDuplicateEntity(); });
 	m_actionRegistry.registerAction("guizmo.none", "Guizmo: None",
 		{input::key::Q, Modifiers::None},
 		[this] {
-			if (m_state == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
+			if (getState() == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
 				&& !gui::Guizmo::isUsing())
 				m_viewport.setGuizmoType(gui::Guizmo::Type::None);
 		});
 	m_actionRegistry.registerAction("guizmo.translate", "Guizmo: Translate",
 		{input::key::W, Modifiers::None},
 		[this] {
-			if (m_state == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
+			if (getState() == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
 				&& !gui::Guizmo::isUsing())
 				m_viewport.setGuizmoType(gui::Guizmo::Type::Translation);
 		});
 	m_actionRegistry.registerAction("guizmo.rotate", "Guizmo: Rotate",
 		{input::key::E, Modifiers::None},
 		[this] {
-			if (m_state == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
+			if (getState() == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
 				&& !gui::Guizmo::isUsing())
 				m_viewport.setGuizmoType(gui::Guizmo::Type::Rotation);
 		});
 	m_actionRegistry.registerAction("guizmo.scale", "Guizmo: Scale",
 		{input::key::R, Modifiers::None},
 		[this] {
-			if (m_state == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
+			if (getState() == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
 				&& !gui::Guizmo::isUsing())
 				m_viewport.setGuizmoType(gui::Guizmo::Type::Scale);
 		});
 	m_actionRegistry.registerAction("guizmo.all", "Guizmo: All",
 		{input::key::T, Modifiers::None},
 		[this] {
-			if (m_state == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
+			if (getState() == State::Edit && (m_viewport.isFocused() || m_viewport.isHovered())
 				&& !gui::Guizmo::isUsing())
 				m_viewport.setGuizmoType(gui::Guizmo::Type::All);
 		});
@@ -273,28 +321,30 @@ void EditorLayer::onAttach() {
 	m_actionRegistry.registerAction("scene.play", "Play/Resume",
 		{input::key::F5, Modifiers::None},
 		[this] {
-			if (m_state == State::Edit)
+			if (getState() == State::Edit)
 				onScenePlay();
-			else if (m_state == State::Pause)
+			else if (getState() == State::Pause)
 				onSceneResume();
 		});
 	m_actionRegistry.registerAction("scene.pause", "Pause",
 		{input::key::F6, Modifiers::None},
-		[this] { if (m_state == State::Play) onScenePause(); });
+		[this] { if (getState() == State::Play) onScenePause(); });
 	m_actionRegistry.registerAction("scene.stop", "Stop",
 		{input::key::F7, Modifiers::None},
-		[this] { if (m_state == State::Play || m_state == State::Pause) onSceneStop(); });
+		[this] { if (getState() == State::Play || getState() == State::Pause) onSceneStop(); });
 	m_actionRegistry.registerAction("scene.step", "Step Frame",
 		{input::key::F8, Modifiers::None},
-		[this] { if (m_state == State::Pause) onSceneStep(); });
+		[this] { if (getState() == State::Pause) onSceneStep(); });
 	// Entity actions
 	m_actionRegistry.registerAction("entity.delete", "Delete Entity",
 		{input::key::Delete, Modifiers::None},
 		[this] {
-			if (m_state != State::Edit) return;
+			if (getState() != State::Edit) return;
+			auto* doc = activeSceneDocument();
+			if (doc == nullptr) return;
 			if (auto ent = getSelectedEntity(); ent) {
-				m_undoManager.push(mkUniq<commands::DeleteEntityCommand>(ent));
-				m_activeScene->destroyEntity(ent);
+				doc->undoManager().push(mkUniq<commands::DeleteEntityCommand>(ent));
+				doc->getActiveScene()->destroyEntity(ent);
 				setSelectedEntity({});
 			}
 		});
@@ -367,60 +417,43 @@ void EditorLayer::onDetach() {
 
 	m_controlBar.clearButtons();
 
-	m_activeScene.reset();
-	OWL_TRACE("EditorLayer: deleted activeScene.")
+	m_documents.clear();
+	OWL_TRACE("EditorLayer: closed all documents.")
 }
 
 void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr) {
+		m_viewport.onUpdate(iTimeStep);
+		return;
+	}
+
 	// resize
 	m_cameraController.onResize(m_viewport.getSize());
-	m_activeScene->onViewportResize(m_viewport.getSize());
+	if (const auto& active = doc->getActiveScene())
+		active->onViewportResize(m_viewport.getSize());
 
 	// Update scene
-	if (m_state == State::Edit) {
+	if (doc->state() == SceneDocument::State::Edit) {
 		if (m_viewport.isFocused())
 			m_cameraController.onUpdate(iTimeStep);
 	}
 
 	// After a cross-level teleport, the new scene is in Editing state.
 	// Start its runtime and apply the pending velocity.
-	if ((m_state == State::Play || m_state == State::Pause) && m_activeScene->status == scene::Scene::Status::Editing) {
-		m_activeScene->onStartRuntime();
-		if (m_pendingTeleportVelocity) {
-			m_pendingTeleportVelocity = false;
-			if (const scene::Entity player = m_activeScene->getPrimaryPlayer()) {
-				for (const auto view =
-							 m_activeScene->registry.view<scene::component::Tag, scene::component::Transform>();
-					 const auto ent: view) {
-					if (view.get<scene::component::Tag>(ent).tag == m_teleportTargetName) {
-						const auto& targetTransform = view.get<scene::component::Transform>(ent).transform;
-						const float targetRotation = targetTransform.rotation().z();
-						const float cosR = std::cos(targetRotation);
-						const float sinR = std::sin(targetRotation);
-						const math::vec2f finalVelocity = {
-								m_teleportVelocity.x() * cosR - m_teleportVelocity.y() * sinR,
-								m_teleportVelocity.x() * sinR + m_teleportVelocity.y() * cosR};
-						physic::PhysicCommand::setTransform(
-								player, {targetTransform.translation().x(), targetTransform.translation().y()},
-								targetRotation);
-						physic::PhysicCommand::setVelocity(player, finalVelocity);
-						auto& playerTransform = player.getComponent<scene::component::Transform>().transform;
-						playerTransform.translation().x() = targetTransform.translation().x();
-						playerTransform.translation().y() = targetTransform.translation().y();
-						playerTransform.rotation().z() = targetRotation;
-						break;
-					}
-				}
-			}
-		}
+	const auto& activeScene = doc->getActiveScene();
+	if ((doc->state() == SceneDocument::State::Play || doc->state() == SceneDocument::State::Pause) && activeScene &&
+		activeScene->status == scene::Scene::Status::Editing) {
+		activeScene->onStartRuntime();
+		doc->applyPendingTeleportVelocity();
 	}
 
 	// Handle deferred quit request from Lua (scene.quit()).
-	if (m_stopRequested) {
-		m_stopRequested = false;
-		if (m_state == State::Play || m_state == State::Pause)
+	if (doc->isStopRequested()) {
+		doc->clearStopRequest();
+		if (doc->state() == SceneDocument::State::Play || doc->state() == SceneDocument::State::Pause)
 			onSceneStop();
 		return;
 	}
@@ -476,7 +509,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		ImGui::SetNextWindowPos({centerX, lower.y() + 8.0f}, ImGuiCond_Always, {0.5f, 0.0f});
 	}
 	renderToolbar();
-	if (m_state == State::Edit) {
+	if (getState() == State::Edit) {
 		const auto& upper = m_viewport.getUpperBound();
 		const auto& lower = m_viewport.getLowerBound();
 		ImGui::SetNextWindowPos({upper.x() - 8.0f, lower.y() + 8.0f}, ImGuiCond_Always, {1.0f, 0.0f});
@@ -630,12 +663,13 @@ void EditorLayer::renderMenu() {// NOLINT(readability-function-cognitive-complex
 		}
 		// === Edit menu: undo/redo + settings ===
 		if (ImGui::BeginMenu("Edit")) {
-			const bool canUndo = m_undoManager.canUndo() && m_state == State::Edit;
-			const bool canRedo = m_undoManager.canRedo() && m_state == State::Edit;
+			const auto* undoMgr = activeUndoManager();
+			const bool canUndo = undoMgr != nullptr && undoMgr->canUndo() && getState() == State::Edit;
+			const bool canRedo = undoMgr != nullptr && undoMgr->canRedo() && getState() == State::Edit;
 			const auto undoLabel =
-					canUndo ? std::format("Undo {}", m_undoManager.undoDescription()) : std::string("Undo");
+					canUndo ? std::format("Undo {}", undoMgr->undoDescription()) : std::string("Undo");
 			const auto redoLabel =
-					canRedo ? std::format("Redo {}", m_undoManager.redoDescription()) : std::string("Redo");
+					canRedo ? std::format("Redo {}", undoMgr->redoDescription()) : std::string("Redo");
 			if (iconBank.menuItem("undo", undoLabel.c_str(), m_actionRegistry.getShortcutString("edit.undo").c_str(),
 								  canUndo))
 				performUndo();
@@ -658,8 +692,10 @@ void EditorLayer::renderMenu() {// NOLINT(readability-function-cognitive-complex
 			if (iconBank.menuItem("open", "Open Scene", m_actionRegistry.getShortcutString("scene.open").c_str()))
 				openScene();
 			ImGui::Separator();
+			const auto* doc = activeSceneDocument();
+			const bool hasPath = doc != nullptr && !doc->filePath().empty();
 			if (iconBank.menuItem("save", "Save Scene", m_actionRegistry.getShortcutString("scene.save").c_str(),
-								  !m_currentScenePath.empty()))
+								  hasPath))
 				saveCurrentScene();
 			if (iconBank.menuItem("save", "Save Scene as..",
 								  m_actionRegistry.getShortcutString("scene.saveAs").c_str()))
@@ -667,7 +703,7 @@ void EditorLayer::renderMenu() {// NOLINT(readability-function-cognitive-complex
 			ImGui::Separator();
 			if (iconBank.menuItem("import_file", "Import Scene"))
 				importScene();
-			if (iconBank.menuItem("pack", "Pack Scene", nullptr, !m_currentScenePath.empty()))
+			if (iconBank.menuItem("pack", "Pack Scene", nullptr, hasPath))
 				packScene();
 			ImGui::EndMenu();
 		}
@@ -679,10 +715,11 @@ OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 void EditorLayer::renderToolbar() {
 	constexpr float buttonImageSize = 32.0f;
+	const auto state = getState();
 	int buttonCount = 2;
-	if (m_state == State::Edit)
+	if (state == State::Edit)
 		buttonCount = 1;
-	else if (m_state == State::Pause)
+	else if (state == State::Pause)
 		buttonCount = 3;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, gui::vec(math::vec2{0.f, 2.f}));
@@ -722,7 +759,7 @@ void EditorLayer::renderToolbar() {
 		return ImGui::Button(iFallback, sizeVec);
 	};
 
-	if (m_state == State::Edit) {
+	if (state == State::Edit) {
 		// Edit mode: single Play button centered
 		if (iconButton("btn_play", "PlayButton", "play", buttonImageSize))
 			onScenePlay();
@@ -730,16 +767,16 @@ void EditorLayer::renderToolbar() {
 			ImGui::SetTooltip("Play");
 	} else {
 		// Play or Pause mode: two buttons (Pause/Resume + Stop)
-		const auto* const pauseResumeIcon = m_state == State::Play ? "PauseButton" : "PlayButton";
-		if (iconButton("btn_pause_resume", pauseResumeIcon, m_state == State::Play ? "pause" : "resume",
+		const auto* const pauseResumeIcon = state == State::Play ? "PauseButton" : "PlayButton";
+		if (iconButton("btn_pause_resume", pauseResumeIcon, state == State::Play ? "pause" : "resume",
 					   buttonImageSize)) {
-			if (m_state == State::Play)
+			if (state == State::Play)
 				onScenePause();
 			else
 				onSceneResume();
 		}
 		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip(m_state == State::Play ? "Pause" : "Resume");
+			ImGui::SetTooltip(state == State::Play ? "Pause" : "Resume");
 
 		ImGui::SameLine();
 
@@ -748,7 +785,7 @@ void EditorLayer::renderToolbar() {
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Stop");
 
-		if (m_state == State::Pause) {
+		if (state == State::Pause) {
 			ImGui::SameLine();
 			if (iconButton("btn_step", "StepButton", "step", buttonImageSize))
 				onSceneStep();
@@ -763,10 +800,12 @@ void EditorLayer::renderToolbar() {
 OWL_DIAG_POP
 
 void EditorLayer::newScene() {
-	m_activeScene = mkShared<scene::Scene>();
-	m_activeScene->onViewportResize(m_viewport.getSize());
-	m_sceneHierarchy.setContext(m_activeScene);
-	m_undoManager.clear();
+	auto& doc = ensureActiveSceneDocument();
+	doc.newScene(m_viewport.getSize());
+	m_sceneHierarchy.setContext(doc.getActiveScene());
+	m_sceneHierarchy.setUndoManager(&doc.undoManager());
+	m_viewport.setUndoManager(&doc.undoManager());
+	updateWindowTitle();
 }
 
 void EditorLayer::openScene() {
@@ -779,7 +818,7 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 		OWL_CORE_WARN("Cannot Open file {}: not a scene", iScenePath.string())
 		return;
 	}
-	if (m_state != State::Edit)
+	if (getState() != State::Edit)
 		onSceneStop();
 
 	// Read file on background thread, deserialize on main thread in callback.
@@ -813,12 +852,12 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 				const auto newScene = mkShared<scene::Scene>();
 				if (const scene::SceneSerializer serializer(newScene);
 					serializer.deserializeFromBuffer(*fileData, scenePath.string())) {
-					m_editorScene = newScene;
-					m_editorScene->onViewportResize(m_viewport.getSize());
-					m_sceneHierarchy.setContext(m_editorScene);
-					m_activeScene = m_editorScene;
-					m_currentScenePath = scenePath;
-					m_undoManager.clear();
+					auto& doc = ensureActiveSceneDocument();
+					doc.applyLoadedScene(newScene, scenePath, m_viewport.getSize());
+					m_sceneHierarchy.setContext(doc.getActiveScene());
+					m_sceneHierarchy.setUndoManager(&doc.undoManager());
+					m_viewport.setUndoManager(&doc.undoManager());
+					updateWindowTitle();
 				} else {
 					state->setError("Failed to deserialize scene.");
 				}
@@ -832,10 +871,14 @@ void EditorLayer::saveSceneAs() {
 }
 
 void EditorLayer::saveSceneAs(const std::filesystem::path& iScenePath) {
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr || !doc->getActiveScene())
+		return;
+
 	// Serialize to string on main thread (read-only, safe), write file on background thread.
-	const scene::SceneSerializer serializer(m_activeScene);
+	const scene::SceneSerializer serializer(doc->getActiveScene());
 	auto yamlData = mkShared<std::string>(serializer.serializeToString());
-	m_currentScenePath = iScenePath;
+	doc->setScenePath(iScenePath);
 
 	auto state = mkShared<AsyncProgressState>();
 	state->setMessage("Saving scene...");
@@ -856,14 +899,19 @@ void EditorLayer::saveSceneAs(const std::filesystem::path& iScenePath) {
 				OWL_CORE_INFO("Scene saved to {}", path.string())
 			},
 			[state]() { state->completed.store(true); }));
+	updateWindowTitle();
 }
 
 void EditorLayer::saveCurrentScene() {
-	if (m_currentScenePath.empty())
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr)
+		return;
+	const auto path = doc->filePath();
+	if (path.empty())
 		saveSceneAs();
 	else
-		saveSceneAs(m_currentScenePath);
-	m_undoManager.markSaved();
+		saveSceneAs(path);
+	doc->undoManager().markSaved();
 }
 
 auto EditorLayer::onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool {
@@ -876,89 +924,47 @@ auto EditorLayer::onMouseButtonPressed([[maybe_unused]] const event::MouseButton
 }
 
 void EditorLayer::onScenePlay() {
-	if (m_editorScene) {
-		auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
-		sound::SoundCommand::playSound(soundLibrary.get("clic.wav"));
-
-		m_state = State::Play;
-		m_activeScene = scene::Scene::copy(m_editorScene);
-		m_activeScene->onStartRuntime();
-
-		m_sceneHierarchy.setContext(m_activeScene);
-	}
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr)
+		return;
+	doc->onScenePlay();
+	m_sceneHierarchy.setContext(doc->getActiveScene());
 }
 
-void EditorLayer::onScenePause() { m_state = State::Pause; }
+void EditorLayer::onScenePause() {
+	if (auto* doc = activeSceneDocument(); doc != nullptr)
+		doc->onScenePause();
+}
 
-void EditorLayer::onSceneResume() { m_state = State::Play; }
+void EditorLayer::onSceneResume() {
+	if (auto* doc = activeSceneDocument(); doc != nullptr)
+		doc->onSceneResume();
+}
 
 void EditorLayer::onSceneStop() {
-	m_state = State::Edit;
-	m_pendingTeleportVelocity = false;
-
-	m_activeScene->onEndRuntime();
-	m_activeScene = m_editorScene;
-
-	m_sceneHierarchy.setContext(m_activeScene);
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr)
+		return;
+	doc->onSceneStop();
+	m_sceneHierarchy.setContext(doc->getActiveScene());
 }
 
-void EditorLayer::onSceneStep() { m_stepRequested = true; }
+void EditorLayer::onSceneStep() {
+	if (auto* doc = activeSceneDocument(); doc != nullptr)
+		doc->onSceneStep();
+}
 
 auto EditorLayer::consumeStepRequest() -> bool {
-	if (m_stepRequested) {
-		m_stepRequested = false;
-		return true;
-	}
-	return false;
+	auto* doc = activeSceneDocument();
+	return doc != nullptr && doc->consumeStepRequest();
 }
 
 void EditorLayer::handleTeleportRequest() {
-	if (!m_activeScene->teleportRequest.pending)
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr)
 		return;
-	const auto request = m_activeScene->teleportRequest;
-	m_activeScene->teleportRequest.pending = false;
-
-	// Ensure the level name has an .owl extension.
-	std::string resolvedName = request.levelName;
-	if (std::filesystem::path(resolvedName).extension() != ".owl")
-		resolvedName += ".owl";
-
-	const auto& app = core::Application::get();
-	std::filesystem::path levelPath;
-	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
-		if (exists(assetsPath / resolvedName)) {
-			levelPath = assetsPath / resolvedName;
-			break;
-		}
-		if (exists(assetsPath / "scenes" / resolvedName)) {
-			levelPath = assetsPath / "scenes" / resolvedName;
-			break;
-		}
-	}
-	if (levelPath.empty()) {
-		OWL_CORE_ERROR("Teleport: level '{}' not found", resolvedName)
-		return;
-	}
-
-	// Preserve game state across scene transition.
-	const auto previousGameState = m_activeScene->getGameState();
-
-	m_activeScene->onEndRuntime();
-
-	const auto newScene = mkShared<scene::Scene>();
-	if (const scene::SceneSerializer sc(newScene); !sc.deserialize(levelPath)) {
-		OWL_CORE_ERROR("Teleport: failed to load level '{}'", request.levelName)
-		return;
-	}
-	newScene->getGameState() = previousGameState;
-	newScene->onViewportResize(m_viewport.getSize());
-
-	m_pendingTeleportVelocity = true;
-	m_teleportVelocity = request.initialVelocity;
-	m_teleportTargetName = request.targetName;
-
-	m_activeScene = newScene;
-	m_sceneHierarchy.setContext(m_activeScene);
+	doc->handleTeleportRequest(m_viewport.getSize());
+	m_sceneHierarchy.setContext(doc->getActiveScene());
 }
 
 void EditorLayer::newProject() {
@@ -978,26 +984,11 @@ void EditorLayer::newProject() {
 }
 
 void EditorLayer::handleSaveLoadRequest() {
-	if (!m_activeScene || !m_activeScene->saveLoadRequest.pending)
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr)
 		return;
-	const auto slr = m_activeScene->saveLoadRequest;
-	m_activeScene->saveLoadRequest.pending = false;
-	if (slr.isLoad) {
-		auto newScene = mkShared<scene::Scene>();
-		if (auto loadResult = scene::SaveManager::load(slr.slot, newScene); loadResult.success) {
-			m_activeScene->onEndRuntime();
-			m_activeScene = newScene;
-			m_activeScene->onViewportResize(m_viewport.getSize());
-			m_activeScene->onStartRuntime();
-			// Apply physics snapshots after physics initialization.
-			for (const auto& [uuid, snap]: loadResult.physicsSnapshots)
-				if (auto entity = m_activeScene->findEntityByUUID(core::UUID{uuid}); entity)
-					physic::PhysicCommand::applySnapshot(entity, snap);
-			m_sceneHierarchy.setContext(m_activeScene);
-		}
-	} else {
-		std::ignore = scene::SaveManager::save(slr.slot, m_activeScene, m_currentScenePath.string());
-	}
+	doc->handleSaveLoadRequest(m_viewport.getSize());
+	m_sceneHierarchy.setContext(doc->getActiveScene());
 }
 
 void EditorLayer::openProject() {
@@ -1035,7 +1026,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 void EditorLayer::saveProject() {
 	if (!m_project.isLoaded())
 		return;
-	if (m_state == State::Edit)
+	if (getState() == State::Edit)
 		saveCurrentScene();
 	m_project.saveToFile(m_project.projectDirectory / "owl_project.yml");
 }
@@ -1069,7 +1060,8 @@ void EditorLayer::importScene() {
 
 void EditorLayer::updateWindowTitle() {
 	auto& app = core::Application::get();
-	const auto* const dirty = m_undoManager.isDirty() ? " *" : "";
+	const auto* doc = activeSceneDocument();
+	const auto* const dirty = (doc != nullptr && doc->isDirty()) ? " *" : "";
 	if (m_project.isLoaded())
 		app.setWindowTitle(std::format("{} - {}{}", app.getInitParams().name, m_project.name, dirty));
 	else
@@ -1077,31 +1069,36 @@ void EditorLayer::updateWindowTitle() {
 }
 
 void EditorLayer::onDuplicateEntity() {
-	if (m_state != State::Edit)
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr || doc->state() != SceneDocument::State::Edit)
 		return;
 
 	if (const scene::Entity selectedEntity = m_sceneHierarchy.getSelectedEntity(); selectedEntity) {
-		auto dup = m_editorScene->duplicateEntity(selectedEntity);
-		m_undoManager.push(mkUniq<commands::DuplicateEntityCommand>(selectedEntity, dup));
+		auto dup = doc->getEditorScene()->duplicateEntity(selectedEntity);
+		doc->undoManager().push(mkUniq<commands::DuplicateEntityCommand>(selectedEntity, dup));
 	}
 }
 
 void EditorLayer::performUndo() {
-	if (m_state != State::Edit || !m_activeScene)
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr || doc->state() != SceneDocument::State::Edit || !doc->getActiveScene())
 		return;
-	m_undoManager.undo(*m_activeScene);
-	if (const auto hint = m_undoManager.lastSelectionHint(); hint != core::UUID{0}) {
-		if (auto entity = m_activeScene->findEntityByUUID(hint); entity)
+	auto& undo = doc->undoManager();
+	undo.undo(*doc->getActiveScene());
+	if (const auto hint = undo.lastSelectionHint(); hint != core::UUID{0}) {
+		if (auto entity = doc->getActiveScene()->findEntityByUUID(hint); entity)
 			setSelectedEntity(entity);
 	}
 }
 
 void EditorLayer::performRedo() {
-	if (m_state != State::Edit || !m_activeScene)
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr || doc->state() != SceneDocument::State::Edit || !doc->getActiveScene())
 		return;
-	m_undoManager.redo(*m_activeScene);
-	if (const auto hint = m_undoManager.lastSelectionHint(); hint != core::UUID{0}) {
-		if (auto entity = m_activeScene->findEntityByUUID(hint); entity)
+	auto& undo = doc->undoManager();
+	undo.redo(*doc->getActiveScene());
+	if (const auto hint = undo.lastSelectionHint(); hint != core::UUID{0}) {
+		if (auto entity = doc->getActiveScene()->findEntityByUUID(hint); entity)
 			setSelectedEntity(entity);
 	}
 }
@@ -1111,7 +1108,8 @@ auto EditorLayer::getSelectedEntity() const -> scene::Entity { return m_sceneHie
 void EditorLayer::setSelectedEntity(const scene::Entity iEntity) { m_sceneHierarchy.setSelectedEntity(iEntity); }
 
 void EditorLayer::packScene() {
-	if (m_currentScenePath.empty() || m_asyncProgress.isActive())
+	const auto* doc = activeSceneDocument();
+	if (doc == nullptr || doc->filePath().empty() || m_asyncProgress.isActive())
 		return;
 
 	const auto destPath = core::utils::FileDialog::saveFile("Owl Scene Pack (*.owlpack)|owlpack\n");
@@ -1123,8 +1121,8 @@ void EditorLayer::packScene() {
 		outputPath.replace_extension(".owlpack");
 
 	// Snapshot for thread safety.
-	const auto scenePath = m_currentScenePath;
-	const auto sceneFilename = m_currentScenePath.filename().string();
+	const auto scenePath = doc->filePath();
+	const auto sceneFilename = scenePath.filename().string();
 
 	auto state = mkShared<AsyncProgressState>();
 	m_asyncProgress.open("Packing Scene...", state, true);
@@ -1643,16 +1641,18 @@ void EditorLayer::startPackGame() {
 }
 
 void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, const std::string& iAssetRelativePath) {
-	if (m_state != State::Edit || !m_activeScene)
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr || doc->state() != SceneDocument::State::Edit || !doc->getActiveScene())
 		return;
-	auto root = scene::PrefabSerializer::instantiate(iPrefabPath, m_activeScene, iAssetRelativePath);
+	const auto& activeScene = doc->getActiveScene();
+	auto root = scene::PrefabSerializer::instantiate(iPrefabPath, activeScene, iAssetRelativePath);
 	if (!root) {
 		OWL_WARN("Failed to instantiate prefab: {}", iPrefabPath.string())
 		return;
 	}
 	const auto info = scene::PrefabSerializer::readInfo(iPrefabPath);
 	const auto name = info.has_value() ? info->name : iPrefabPath.stem().string();
-	m_undoManager.push(mkUniq<commands::InstantiatePrefabCommand>(root, *m_activeScene, name));
+	doc->undoManager().push(mkUniq<commands::InstantiatePrefabCommand>(root, *activeScene, name));
 	setSelectedEntity(root);
 }
 
