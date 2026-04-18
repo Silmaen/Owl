@@ -253,7 +253,13 @@ a 2D lighting system.
     - ![Planned][planned] Scene transition effects
         - Configurable fade, wipe, or custom shader transitions between scenes
         - Lua API to trigger transitions with parameters (duration, type)
-          all
+- Editor Infrastructure
+    - ![Planned][planned] Custom ImGui-based file picker
+        - Replace the native file dialog (NFD/GTK) which briefly freezes the UI on Linux
+          when GTK initializes (triggers IDE "antiloop" detection)
+        - Pure ImGui implementation integrated with the task scheduler for async folder scanning
+        - Benefits: consistent look-and-feel, truly non-blocking, theme-aware
+        - Replaces the current sync `FileDialog::openFile/saveFile/pickFolder` blocking calls
 
 ## v0.1.1 -- Editor Polish & Multi-Document
 
@@ -285,12 +291,16 @@ asynchronous with progress feedback.
         - Load textures from pack on background thread (decompress + decode)
         - Display 1x1 white placeholder until real texture is ready
         - Smooth scene transitions without frame hitches in the runner
-    - ![Planned][planned] Async scene transitions in runner
-        - `handleTeleportRequest()`: load next scene asynchronously with fade overlay
-        - Keep rendering current scene until new scene is ready
-    - ![Planned][planned] Async content browser scanning
-        - `ContentBrowser::attach()`: scan project directory tree in background
-        - Progressive population of file list as entries are discovered
+    - ![Done][done] Async scene transitions in runner
+        - `RunnerLayer::handleTeleportRequest()` reads scene bytes in background (from pack or file)
+        - Deserializes and swaps the active scene on the main thread when bytes are ready
+        - Old scene paused (onEndRuntime called) while loading — last rendered frame stays visible
+        - GameState + velocity + target name preserved across the async transition
+    - ![Done][done] Async content browser scanning
+        - `ContentBrowser` caches directory entries (no more per-frame `directory_iterator`)
+        - Scans are performed asynchronously via the task scheduler when path changes
+        - Rescan triggered after create folder / import / rename / delete / drop / move
+        - Sorted entries (folders first, then alphabetical)
 - Multi-Document Architecture
     - ![Planned][planned] Document tab system
         - Tab bar for open documents (scenes, scripts, node graphs)
@@ -325,9 +335,12 @@ asynchronous with progress feedback.
         - Curve editor for animated properties
         - Texture/sound preview in inspector, drag-drop assets to fields
 - Packaging
-    - ![Planned][planned] Packaging wizard in Owl Nest
-        - Panel/dialog: target platform, output directory, progress bar, build report
-        - Pre-packaging validation: check firstScene exists, all assets found
+    - ![In Progress][progress] Packaging wizard in Owl Nest
+        - ![Done][done] Pre-packaging validation: `AssetScanner` warnings output for unresolvable texture/sound/script/scene/font references
+        - ![Done][done] Validation modal before pack with issue list + "Proceed anyway" / "Cancel" buttons
+        - ![Done][done] OwlRunner executable check + empty-assets check
+        - ![Planned][planned] Dedicated wizard panel with target platform selection (currently just a folder dialog)
+        - ![Planned][planned] Post-pack build report panel
 - Menu & Project Workflow
     - ![Done][done] Reorganized menu structure
         - **File** menu: project operations (New, Open, Open Recent, Save, Close, Pack Game, Welcome Screen, Exit)
@@ -344,13 +357,23 @@ asynchronous with progress feedback.
         - Built-in documentation browser (searchable, linked from panels)
         - Context-sensitive help (F1 on a component opens its doc page)
         - Getting started guide accessible from the welcome screen
-    - ![Planned][planned] Tooltips everywhere
-        - Descriptive tooltips on all toolbar buttons, panel headers, and component fields
-        - Tooltip on trigger types explaining what each type does
-        - Tooltip on settings fields explaining the effect
-    - ![Planned][planned] Unique ImGui IDs audit
-        - Ensure all ImGui widgets have unique IDs (fix duplicate ID warnings)
-        - Use `PushID`/`PopID` consistently for entity lists, component editors, etc.
+    - ![Done][done] Tooltips everywhere with hover delay
+        - Reusable `fieldTooltip()` helper with `DelayNormal` (~0.4s) hover delay
+        - Tooltips on all 7 trigger types with descriptions
+        - Tooltips on trigger sub-fields (Scene, Level Name, Target Name, Duration, Range, Callback)
+        - Tooltips on PhysicBody fields (Type, Density, Restitution, Friction, Fixed Rotation)
+        - Tooltips on Player fields (Primary, Linear/Jump Impulse, Can jump)
+        - Tooltips on Camera fields (Primary, Projection type, FOV, Near/Far, Ortho Size, Fixed Aspect)
+        - Tooltips on SoundSource fields (Asset, Category, Volume, Pitch, Loop, Spatial, Max Distance, Rolloff)
+        - Tooltips on SoundListener (Primary)
+        - Tooltips on Canvas (Space, Sort Order), UIRect (Anchor, Pivot, Size, Offset)
+        - Tooltips on UIButton colors + On Click callback, UISlider value/min/max + On Value Changed
+    - ![Done][done] Unique ImGui IDs audit
+        - Component-scoped `PushID(T::name())` in `drawComponent<T>` — prevents label collisions
+          between components that share field names (e.g. "Color" in SpriteRenderer and CircleRenderer)
+        - Index-based `PushID` in LuaScript property loop — prevents collision if two properties share a name
+        - Entity list in SceneHierarchy already uses UUID-based PushID (verified safe)
+        - ContentBrowser and SettingsPanel already use unique per-item IDs (verified safe)
     - ![Planned][planned] Icon clarity pass
         - Review and redesign confusing or too-similar icons
         - Add distinct icons for new trigger types (timer, interaction, lua callback)

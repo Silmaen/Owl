@@ -58,7 +58,8 @@ TEST(LuaScriptComponent, createAndAccess) {
 
 TEST(LuaScriptComponent, serializeDeserializeViaScene) {
 	core::Log::init(core::Log::Level::Off);
-	const auto dir = owl::test::getRootPath() / "output" / "test_tmp";
+	const auto dir = std::filesystem::temp_directory_path() / "owl_luascriptcomponent_test_1";
+	std::filesystem::remove_all(dir);
 	std::filesystem::create_directories(dir);
 	const auto scenePath = dir / "lua_serialize_test.owl";
 
@@ -116,7 +117,8 @@ TEST(LuaScriptComponent, serializeDeserializeViaScene) {
 
 TEST(LuaScriptComponent, serializeEmptyProperties) {
 	core::Log::init(core::Log::Level::Off);
-	const auto dir = owl::test::getRootPath() / "output" / "test_tmp";
+	const auto dir = std::filesystem::temp_directory_path() / "owl_luascriptcomponent_test_2";
+	std::filesystem::remove_all(dir);
 	std::filesystem::create_directories(dir);
 	const auto scenePath = dir / "lua_empty_props_test.owl";
 
@@ -159,7 +161,8 @@ TEST(LuaScriptComponent, emptyScriptPathSkipped) {
 
 TEST(LuaScriptComponent, sceneLifecycle) {
 	core::Log::init(core::Log::Level::Off);
-	const auto dir = owl::test::getRootPath() / "output" / "test_tmp";
+	const auto dir = std::filesystem::temp_directory_path() / "owl_luascriptcomponent_test_3";
+	std::filesystem::remove_all(dir);
 	const auto path = writeTempScript(dir, "lifecycle_comp.lua",
 									  "created = false\n"
 									  "updated_count = 0\n"
@@ -204,7 +207,8 @@ TEST(LuaScriptComponent, sceneLifecycle) {
 
 TEST(LuaScriptComponent, propertiesAppliedOnStart) {
 	core::Log::init(core::Log::Level::Off);
-	const auto dir = owl::test::getRootPath() / "output" / "test_tmp";
+	const auto dir = std::filesystem::temp_directory_path() / "owl_luascriptcomponent_test_4";
+	std::filesystem::remove_all(dir);
 	const auto path = writeTempScript(dir, "props_apply.lua",
 									  "speed = 0\n"
 									  "label = ''\n"

@@ -451,6 +451,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
 	m_asyncProgress.onImGuiRender();
 	renderWelcomeScreen();
+	renderPackValidationModal();
 	//=============================================================
 	{
 		const auto& lower = m_viewport.getLowerBound();
@@ -1152,7 +1153,8 @@ void EditorLayer::packScene() {
 namespace {
 
 void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem::path& iDestDir) {
-	for (const auto& entry: std::filesystem::directory_iterator(iSrcDir)) {
+	std::error_code ec;
+	for (const auto& entry: std::filesystem::directory_iterator(iSrcDir, ec)) {
 		if (!entry.is_regular_file() && !entry.is_symlink())
 			continue;
 		const auto ext = entry.path().extension().string();
@@ -1160,8 +1162,12 @@ void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem:
 		// Copy .so files (Linux) and .dll files (Windows).
 		if (ext == ".so" || filename.find(".so.") != std::string::npos || ext == ".dll") {
 			const auto dest = iDestDir / entry.path().filename();
-			if (!exists(dest))
-				std::filesystem::copy(entry.path(), dest, std::filesystem::copy_options::copy_symlinks);
+			if (!exists(dest)) {
+				std::error_code copyEc;
+				std::filesystem::copy(entry.path(), dest, std::filesystem::copy_options::copy_symlinks, copyEc);
+				if (copyEc)
+					OWL_CORE_WARN("Failed to copy {}: {}", entry.path().string(), copyEc.message())
+			}
 		}
 	}
 }
@@ -1190,10 +1196,11 @@ void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string
 	script << "export LD_LIBRARY_PATH=\"${SCRIPT_DIR}:${LD_LIBRARY_PATH}\"\n";
 	script << "exec \"${SCRIPT_DIR}/" << iExeName << "\" \"$@\"\n";
 	script.close();
+	std::error_code ec;
 	std::filesystem::permissions(iGameDir / "launch.sh",
 								 std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec |
 										 std::filesystem::perms::others_exec,
-								 std::filesystem::perm_options::add);
+								 std::filesystem::perm_options::add, ec);
 }
 #endif
 
@@ -1238,13 +1245,108 @@ auto createZipArchive(const std::filesystem::path& iSourceDir, const std::filesy
 }// namespace
 
 void EditorLayer::packGame() {
-	if (!m_project.isLoaded() || m_asyncProgress.isActive())
+	if (!m_project.isLoaded() || m_asyncProgress.isActive() || m_showPackValidation)
 		return;
 
 	// Ask for destination folder (synchronous — OS dialog).
 	const auto destDir = core::utils::FileDialog::pickFolder();
 	if (destDir.empty())
 		return;
+
+	m_pendingPackDestDir = destDir;
+	m_pendingPackWarnings.clear();
+
+	// Launch async validation: scan project + collect warnings off the main thread.
+	auto state = mkShared<AsyncProgressState>();
+	state->setMessage("Validating project...");
+	state->progress.store(0.3f);
+	m_asyncProgress.open("Validating...", state, false);
+
+	const auto projectDir = m_project.projectDirectory;
+	const auto firstScene = m_project.firstScene;
+	auto warningsOut = mkShared<std::vector<std::string>>();
+	auto assetsOut = mkShared<std::vector<io::pack::AssetReference>>();
+	const auto runnerSrcDir = core::Application::get().getWorkingDirectory();
+
+	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
+			[state, projectDir, firstScene, warningsOut, assetsOut, runnerSrcDir]() {
+				// Scan the project and collect warnings for missing references.
+				*assetsOut = io::pack::AssetScanner::scanProject(projectDir, firstScene, warningsOut.get());
+				state->progress.store(0.8f);
+				// Runner executable check.
+				bool hasRunner = false;
+				for (const auto& candidate: {"OwlRunner", "OwlRunner.exe"}) {
+					if (exists(runnerSrcDir / candidate)) {
+						hasRunner = true;
+						break;
+					}
+				}
+				if (!hasRunner)
+					warningsOut->emplace_back(
+							"OwlRunner executable not found — packed game will not be playable.");
+				if (assetsOut->empty())
+					warningsOut->emplace_back("No assets to pack — check firstScene and its references.");
+				state->progress.store(1.0f);
+			},
+			// Termination (main thread): close the "Validating..." modal and decide next step.
+			[this, state, warningsOut, assetsOut]() {
+				state->completed.store(true);
+				m_asyncProgress.close();
+				m_pendingPackWarnings = std::move(*warningsOut);
+				m_pendingPackAssets = assetsOut;
+				if (m_pendingPackWarnings.empty()) {
+					startPackGame();
+				} else {
+					m_showPackValidation = true;
+				}
+			}));
+}
+
+void EditorLayer::renderPackValidationModal() {
+	if (!m_showPackValidation)
+		return;
+	if (!ImGui::IsPopupOpen("Packaging Validation"))
+		ImGui::OpenPopup("Packaging Validation");
+
+	const auto* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	ImGui::SetNextWindowSize(ImVec2(520, 0), ImGuiCond_Always);
+
+	if (ImGui::BeginPopupModal("Packaging Validation", nullptr,
+							   ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+		ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f), "%zu issue(s) found before packaging:",
+						   m_pendingPackWarnings.size());
+		ImGui::Separator();
+		ImGui::BeginChild("##packWarnings", ImVec2(0, 200), ImGuiChildFlags_Borders);
+		for (const auto& warning: m_pendingPackWarnings)
+			ImGui::BulletText("%s", warning.c_str());
+		ImGui::EndChild();
+		ImGui::TextDisabled("The game may be missing assets or not playable. Proceed anyway?");
+		ImGui::Spacing();
+		if (ImGui::Button("Proceed anyway", ImVec2(150, 0))) {
+			m_showPackValidation = false;
+			ImGui::CloseCurrentPopup();
+			startPackGame();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+			m_showPackValidation = false;
+			m_pendingPackWarnings.clear();
+			m_pendingPackDestDir.clear();
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+}
+
+void EditorLayer::startPackGame() {
+	const auto destDir = m_pendingPackDestDir;
+	m_pendingPackDestDir.clear();
+	m_pendingPackWarnings.clear();
+
+	// Reuse the pre-scanned assets from the validation pass (avoids a double scan).
+	auto preScanned = m_pendingPackAssets;
+	m_pendingPackAssets.reset();
 
 	// Snapshot project data (copy by value for thread safety).
 	const auto gameName = sanitizeFilename(m_project.name);
@@ -1259,7 +1361,17 @@ void EditorLayer::packGame() {
 	const auto runnerSrcDir = core::Application::get().getWorkingDirectory();
 
 	const auto gameDir = destDir / gameName;
-	std::filesystem::create_directories(gameDir);
+	if (std::error_code ec; !std::filesystem::create_directories(gameDir, ec) && ec) {
+		OWL_CORE_ERROR("Pack: cannot create output directory '{}': {}", gameDir.string(), ec.message())
+		// Open an error modal so the user sees the failure instead of a silent abort.
+		auto errState = mkShared<AsyncProgressState>();
+		errState->setError(std::format("Cannot create output directory '{}': {}.\n"
+									   "Tip: make sure the parent path contains only directories, "
+									   "not a file with the same name as the output folder.",
+									   gameDir.string(), ec.message()));
+		m_asyncProgress.open("Packaging Error", errState, false);
+		return;
+	}
 
 	// Create shared progress state and open the modal.
 	auto state = mkShared<AsyncProgressState>();
@@ -1269,10 +1381,15 @@ void EditorLayer::packGame() {
 	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			// --- Worker function (runs on thread pool) ---
 			[state, gameName, gameDir, projectDir, firstScene, projectName, projectVersion, projectAuthor, projectDesc,
-			 projectIcon, windowCfg, runnerSrcDir]() {
-				// Phase 1: Scan assets (0% – 20%).
-				state->setMessage("Scanning assets...");
-				const auto assets = io::pack::AssetScanner::scanProject(projectDir, firstScene);
+			 projectIcon, windowCfg, runnerSrcDir, preScanned]() {
+				// Phase 1: Use pre-scanned assets (from validation) or re-scan if missing.
+				std::vector<io::pack::AssetReference> assets;
+				if (preScanned && !preScanned->empty()) {
+					assets = *preScanned;
+				} else {
+					state->setMessage("Scanning assets...");
+					assets = io::pack::AssetScanner::scanProject(projectDir, firstScene);
+				}
 				if (assets.empty()) {
 					state->setError("No assets found to pack.");
 					return;
@@ -1370,14 +1487,27 @@ void EditorLayer::packGame() {
 				const auto& exeFilename = gameName;
 #endif
 				const auto destExe = gameDir / exeFilename;
-				std::filesystem::copy_file(runnerExe, destExe,
-										   std::filesystem::copy_options::overwrite_existing);
+				{
+					std::error_code ec;
+					std::filesystem::copy_file(runnerExe, destExe,
+											   std::filesystem::copy_options::overwrite_existing, ec);
+					if (ec) {
+						state->setError(std::format("Failed to copy runner: {}", ec.message()));
+						return;
+					}
+				}
 #ifdef OWL_PLATFORM_LINUX
-				std::filesystem::permissions(destExe,
-											 std::filesystem::perms::owner_exec |
-													 std::filesystem::perms::group_exec |
-													 std::filesystem::perms::others_exec,
-											 std::filesystem::perm_options::add);
+				{
+					std::error_code ec;
+					std::filesystem::permissions(destExe,
+												 std::filesystem::perms::owner_exec |
+														 std::filesystem::perms::group_exec |
+														 std::filesystem::perms::others_exec,
+												 std::filesystem::perm_options::add, ec);
+					if (ec)
+						OWL_CORE_WARN("Failed to set exec permissions on {}: {}", destExe.string(),
+									  ec.message())
+				}
 #endif
 				copySharedLibs(runnerSrcDir, gameDir);
 #ifdef OWL_PLATFORM_LINUX

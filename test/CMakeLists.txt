@@ -27,6 +27,13 @@ foreach (child ${children})
             target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test Owl_BaseTest)
             add_test(${PROJECT_PREFIX_LOWER}_${child}_UTests ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml)
             set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 3600)
+            # Tests that touch shared process-level resources (freetype, GLFW init, OpenAL, msdfgen globals)
+            # are serialized via RESOURCE_LOCK to avoid sporadic SEGFAULTs in parallel ctest runs.
+            if (${child} STREQUAL "font_tests" OR ${child} STREQUAL "core_tests" OR
+                ${child} STREQUAL "gui_tests" OR ${child} STREQUAL "renderer_tests" OR
+                ${child} STREQUAL "sound_tests" OR ${child} STREQUAL "script_tests")
+                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES RESOURCE_LOCK owl_engine_globals)
+            endif ()
             if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
                 add_custom_command(TARGET ${PROJECT_PREFIX_LOWER}_${child}_unit_test POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GTest::gtest>" "${CMAKE_BINARY_DIR}/bin"

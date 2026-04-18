@@ -52,7 +52,8 @@ TEST(ScriptEngine, loadScript) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const auto dir = owl::test::getRootPath() / "output" / "test_tmp";
+	const auto dir = std::filesystem::temp_directory_path() / "owl_scriptengine_test_1";
+	std::filesystem::remove_all(dir);
 	const auto path = writeTempScript(dir, "engine_test.lua", "test_var = 123\n");
 
 	EXPECT_TRUE(ScriptEngine::loadScript(path));
@@ -85,7 +86,8 @@ TEST(ScriptEngine, loadScriptNotInitialized) {
 
 TEST(ScriptEngine, extractProperties) {
 	core::Log::init(core::Log::Level::Off);
-	const auto dir = owl::test::getRootPath() / "output" / "test_tmp";
+	const auto dir = std::filesystem::temp_directory_path() / "owl_scriptengine_test_2";
+	std::filesystem::remove_all(dir);
 	const auto path = writeTempScript(dir, "props_test.lua",
 									  "properties = {\n"
 									  "  { name = 'speed', type = 'float', default = 5.0 },\n"

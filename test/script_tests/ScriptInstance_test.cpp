@@ -38,7 +38,8 @@ TEST(ScriptInstance, createAndLifecycle) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const auto dir = owl::test::getRootPath() / "output" / "test_tmp";
+	const auto dir = std::filesystem::temp_directory_path() / "owl_scriptinstance_test_1";
+	std::filesystem::remove_all(dir);
 	const auto path = writeTempScript(dir, "lifecycle.lua",
 									  "created = false\n"
 									  "updated = false\n"

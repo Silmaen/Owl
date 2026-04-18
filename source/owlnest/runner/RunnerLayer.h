@@ -72,7 +72,27 @@ private:
 	static auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
 	static auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
 
+	/// State of an in-flight cross-level teleport loaded asynchronously.
+	struct PendingTransition {
+		/// Bytes read from file or pack (filled on worker thread).
+		shared<std::vector<uint8_t>> data;
+		/// Resolved source name (for logging).
+		std::string sourceName;
+		/// GameState snapshot to copy into the new scene.
+		scene::GameState previousGameState;
+		/// Velocity to apply after the new scene's physics init.
+		math::vec2f velocity = {0.f, 0.f};
+		/// Name of the target entity for rotation/position.
+		std::string targetName;
+		/// True when the worker thread is done loading.
+		std::atomic<bool> ready{false};
+		/// True when the worker found no scene data (error state).
+		std::atomic<bool> failed{false};
+	};
+
 	void handleTeleportRequest();
+	/// Finish a pending async transition: deserialize on main thread and swap scene.
+	void finishTransition();
 
 	shared<scene::Scene> m_activeScene;
 	math::vec2ui m_viewportSize = {0, 0};
@@ -83,5 +103,7 @@ private:
 	math::vec2f m_teleportVelocity = {0.f, 0.f};
 	/// Stored target name for cross-level teleport (to apply rotation after loading).
 	std::string m_teleportTargetName;
+	/// In-flight async scene transition (nullptr when idle).
+	shared<PendingTransition> m_transition;
 };
 }// namespace owl::nest::runner

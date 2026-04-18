@@ -244,35 +244,43 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 					}
 				}
 			} else {
-				// UIRect uses Y=0 at bottom; window mouse Y=0 at top → flip Y.
-				const math::vec2 mousePos = {input::Input::getMousePos().x(),
-											 static_cast<float>(m_viewportSize.y()) - input::Input::getMousePos().y()};
-				scene::UIInputSystem::update(m_activeScene.get(), m_viewportSize, mousePos,
-											 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft));
-				m_activeScene->onUpdateRuntime(iTimeStep);
-				// Handle quit request from Lua (scene.quit()).
-				if (m_activeScene->quitRequested) {
-					m_activeScene->onEndRuntime();
-					core::Application::get().close();
-					return;
-				}
-				handleTeleportRequest();
-				if (m_activeScene && m_activeScene->saveLoadRequest.pending) {
-					const auto slr = m_activeScene->saveLoadRequest;
-					m_activeScene->saveLoadRequest.pending = false;
-					if (slr.isLoad) {
-						auto newScene = owl::mkShared<scene::Scene>();
-						if (auto loadResult = scene::SaveManager::load(slr.slot, newScene); loadResult.success) {
-							m_activeScene->onEndRuntime();
-							m_activeScene = newScene;
-							m_activeScene->onViewportResize(m_viewportSize);
-							m_activeScene->onStartRuntime();
-							for (const auto& [uuid, snap]: loadResult.physicsSnapshots)
-								if (auto entity = m_activeScene->findEntityByUUID(core::UUID{uuid}); entity)
-									physic::PhysicCommand::applySnapshot(entity, snap);
+				// While an async transition is loading, skip input + runtime updates.
+				// The old scene has already ended; just render the last frame and wait.
+				if (m_transition) {
+					handleTeleportRequest();
+				} else {
+					// UIRect uses Y=0 at bottom; window mouse Y=0 at top → flip Y.
+					const math::vec2 mousePos = {
+							input::Input::getMousePos().x(),
+							static_cast<float>(m_viewportSize.y()) - input::Input::getMousePos().y()};
+					scene::UIInputSystem::update(m_activeScene.get(), m_viewportSize, mousePos,
+												 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft));
+					m_activeScene->onUpdateRuntime(iTimeStep);
+					// Handle quit request from Lua (scene.quit()).
+					if (m_activeScene->quitRequested) {
+						m_activeScene->onEndRuntime();
+						core::Application::get().close();
+						return;
+					}
+					handleTeleportRequest();
+					if (m_activeScene && m_activeScene->saveLoadRequest.pending) {
+						const auto slr = m_activeScene->saveLoadRequest;
+						m_activeScene->saveLoadRequest.pending = false;
+						if (slr.isLoad) {
+							auto newScene = owl::mkShared<scene::Scene>();
+							if (auto loadResult = scene::SaveManager::load(slr.slot, newScene);
+								loadResult.success) {
+								m_activeScene->onEndRuntime();
+								m_activeScene = newScene;
+								m_activeScene->onViewportResize(m_viewportSize);
+								m_activeScene->onStartRuntime();
+								for (const auto& [uuid, snap]: loadResult.physicsSnapshots)
+									if (auto entity = m_activeScene->findEntityByUUID(core::UUID{uuid}); entity)
+										physic::PhysicCommand::applySnapshot(entity, snap);
+							}
+						} else {
+							std::ignore = scene::SaveManager::save(slr.slot, m_activeScene, "");
 						}
-					} else {
-						std::ignore = scene::SaveManager::save(slr.slot, m_activeScene, "");
 					}
 				}
 			}
@@ -284,6 +292,13 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 }
 
 void RunnerLayer::handleTeleportRequest() {
+	// If a transition is already in flight, wait for it to complete.
+	if (m_transition) {
+		if (m_transition->ready.load())
+			finishTransition();
+		return;
+	}
+
 	if (!m_activeScene->teleportRequest.pending)
 		return;
 	// Copy request and reset.
@@ -297,60 +312,85 @@ void RunnerLayer::handleTeleportRequest() {
 
 	const auto& app = core::Application::get();
 
-	// Preserve game state across scene transition.
-	const auto previousGameState = m_activeScene->getGameState();
+	// Build the transition state now, capturing the current GameState and velocity.
+	auto transition = mkShared<PendingTransition>();
+	transition->previousGameState = m_activeScene->getGameState();
+	transition->velocity = request.initialVelocity;
+	transition->targetName = request.targetName;
+	transition->data = mkShared<std::vector<uint8_t>>();
+	transition->sourceName = resolvedName;
 
-	// End current runtime.
+	// End the old runtime now — we stop simulating the old scene while loading.
 	m_activeScene->onEndRuntime();
 
-	// Try loading from pack first.
-	if (app.hasOpenPack()) {
-		for (const auto& tryName: {resolvedName, "scenes/" + resolvedName}) {
-			if (auto data = app.loadFromPack(tryName); data) {
-				auto newScene = mkShared<scene::Scene>();
-				if (const scene::SceneSerializer sc(newScene); sc.deserializeFromBuffer(*data, tryName)) {
-					newScene->getGameState() = previousGameState;
-					newScene->onViewportResize(m_viewportSize);
-					m_pendingTeleportVelocity = true;
-					m_teleportVelocity = request.initialVelocity;
-					m_teleportTargetName = request.targetName;
-					m_activeScene = newScene;
+	// Capture variables needed by the worker.
+	const bool hasPack = app.hasOpenPack();
+	std::vector<std::pair<std::string, std::filesystem::path>> searchRoots;
+	for (const auto& [title, assetsPath]: app.getAssetDirectories())
+		searchRoots.emplace_back(title, assetsPath);
+
+	m_transition = transition;
+
+	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
+			// Worker: read scene bytes from pack or filesystem.
+			[transition, hasPack, searchRoots, resolvedName, &app]() {
+				if (hasPack) {
+					for (const auto& tryName: {resolvedName, "scenes/" + resolvedName}) {
+						if (auto data = app.loadFromPack(tryName); data) {
+							*transition->data = std::move(*data);
+							transition->sourceName = tryName;
+							return;
+						}
+					}
+				}
+				for (const auto& [title, assetsPath]: searchRoots) {
+					std::filesystem::path levelPath;
+					if (exists(assetsPath / resolvedName))
+						levelPath = assetsPath / resolvedName;
+					else if (exists(assetsPath / "scenes" / resolvedName))
+						levelPath = assetsPath / "scenes" / resolvedName;
+					if (levelPath.empty())
+						continue;
+					std::ifstream file(levelPath, std::ios::binary | std::ios::ate);
+					if (!file.is_open())
+						continue;
+					const auto size = static_cast<size_t>(file.tellg());
+					file.seekg(0);
+					transition->data->resize(size);
+					file.read(reinterpret_cast<char*>(transition->data->data()),
+							  static_cast<std::streamsize>(size));
+					transition->sourceName = levelPath.string();
 					return;
 				}
-			}
-		}
-	}
+				transition->failed.store(true);
+			},
+			// Termination (main thread): mark ready so the next frame can deserialize + swap.
+			[transition]() { transition->ready.store(true); }));
+}
 
-	// Fallback: resolve level path from filesystem.
-	std::filesystem::path levelPath;
-	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
-		if (exists(assetsPath / resolvedName)) {
-			levelPath = assetsPath / resolvedName;
-			break;
-		}
-		if (exists(assetsPath / "scenes" / resolvedName)) {
-			levelPath = assetsPath / "scenes" / resolvedName;
-			break;
-		}
-	}
-	if (levelPath.empty()) {
-		OWL_CORE_ERROR("Teleport: level '{}' not found", resolvedName)
+void RunnerLayer::finishTransition() {
+	if (!m_transition)
+		return;
+	const auto transition = m_transition;
+	m_transition.reset();
+
+	if (transition->failed.load()) {
+		OWL_CORE_ERROR("Teleport: level '{}' not found", transition->sourceName)
 		return;
 	}
 
-	// Load new scene.
 	auto newScene = mkShared<scene::Scene>();
-	if (const scene::SceneSerializer sc(newScene); !sc.deserialize(levelPath)) {
-		OWL_CORE_ERROR("Teleport: failed to load level '{}'", request.levelName)
+	if (const scene::SceneSerializer sc(newScene);
+		!sc.deserializeFromBuffer(*transition->data, transition->sourceName)) {
+		OWL_CORE_ERROR("Teleport: failed to deserialize level '{}'", transition->sourceName)
 		return;
 	}
-	newScene->getGameState() = previousGameState;
+	newScene->getGameState() = transition->previousGameState;
 	newScene->onViewportResize(m_viewportSize);
 
-	// Store velocity and target for application after physics init.
 	m_pendingTeleportVelocity = true;
-	m_teleportVelocity = request.initialVelocity;
-	m_teleportTargetName = request.targetName;
+	m_teleportVelocity = transition->velocity;
+	m_teleportTargetName = transition->targetName;
 
 	m_activeScene = newScene;
 }
