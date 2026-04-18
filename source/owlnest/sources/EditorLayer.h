@@ -15,6 +15,7 @@
 #include "EditorSettings.h"
 #include "Project.h"
 #include "document/DocumentManager.h"
+#include "document/DocumentTabBar.h"
 #include "document/SceneDocument.h"
 #include "panel/AsyncProgressModal.h"
 #include "panel/ContentBrowser.h"
@@ -92,6 +93,11 @@ public:
 	/// @brief Access the active document's undo manager, or nullptr if no doc is open.
 	[[nodiscard]] auto activeUndoManager() -> UndoManager*;
 
+	/// @brief Access the document manager (used by the Viewport tab bar).
+	[[nodiscard]] auto getDocumentManager() -> DocumentManager& { return m_documents; }
+	/// @brief Close the document with the given id (handles dirty + tab sync).
+	void closeDocument(core::UUID iId);
+
 private:
 	void renderStats(const core::Timestep& iTimeStep);
 	void renderMenu();
@@ -157,6 +163,13 @@ private:
 
 	// Open documents (scenes for now; later also Lua scripts, node graphs...).
 	DocumentManager m_documents;
+
+	/// @brief Find an open SceneDocument whose on-disk path matches `iPath`.
+	[[nodiscard]] auto findSceneDocumentByPath(const std::filesystem::path& iPath) const -> SceneDocument*;
+	/// @brief Keep panels synced with the currently active document.
+	void syncActiveDocumentPanels();
+	/// @brief Get the document currently in Play or Pause mode (at most one).
+	[[nodiscard]] auto findPlayingSceneDocument() const -> SceneDocument*;
 
 	// Panels
 	panel::SceneHierarchy m_sceneHierarchy;

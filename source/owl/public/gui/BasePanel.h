@@ -72,6 +72,13 @@ public:
 	virtual void onRenderInternal() = 0;
 
 	/**
+	 * @brief Optional header area drawn after `ImGui::Begin` and before the size of the
+	 * content region is captured. Useful for tab bars or toolbars that should eat a
+	 * portion of the panel height. Default implementation draws nothing.
+	 */
+	virtual void onHeaderRender() {}
+
+	/**
 	 * @brief get the panel size.
 	 */
 	[[nodiscard]] auto getSize() const -> const math::vec2ui& { return m_size; }

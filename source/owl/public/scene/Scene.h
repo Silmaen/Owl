@@ -80,9 +80,15 @@ public:
 
 	/**
 	 * @brief Update actions for the runtime.
+	 *
+	 * Advances physics, scripts, triggers, and animations. When `iRender` is true
+	 * (the default) also draws the scene with the primary camera. Set it to
+	 * false to run simulation in the background without touching the renderer
+	 * (used by the editor for non-active document tabs in Play mode).
 	 * @param[in] iTimeStep The time step.
+	 * @param[in] iRender When true, issue the Renderer2D draw pass at the end.
 	 */
-	void onUpdateRuntime(const core::Timestep& iTimeStep);
+	void onUpdateRuntime(const core::Timestep& iTimeStep, bool iRender = true);
 
 	/**
 	 * @brief Render the runtime scene without simulation (for pause mode).

@@ -10,6 +10,8 @@
 
 #include <owl.h>
 
+#include "document/DocumentTabBar.h"
+
 namespace owl::nest {
 class EditorLayer;
 class UndoManager;
@@ -29,22 +31,10 @@ public:
 	 * @brief Default destructor.
 	 */
 	~Viewport() override;
-	/**
-	 * @brief Default copy constructor.
-	 */
-	Viewport(const Viewport&) = default;
-	/**
-	 * @brief Default move constructor.
-	 */
-	Viewport(Viewport&&) = default;
-	/**
-	 * @brief Default copy affectation operator.
-	 */
-	auto operator=(const Viewport&) -> Viewport& = default;
-	/**
-	 * @brief Default move affectation operator.
-	 */
-	auto operator=(Viewport&&) -> Viewport& = default;
+	Viewport(const Viewport&) = delete;
+	Viewport(Viewport&&) = delete;
+	auto operator=(const Viewport&) -> Viewport& = delete;
+	auto operator=(Viewport&&) -> Viewport& = delete;
 
 	/**
 	 * @brief Initialization when attached.
@@ -68,6 +58,11 @@ public:
 	 * @brief Do the rendering.
 	 */
 	void onRenderInternal() override;
+
+	/**
+	 * @brief Render the document tab bar above the scene image.
+	 */
+	void onHeaderRender() override;
 
 	/**
 	 * @brief Defines the camera.
@@ -114,6 +109,8 @@ private:
 	bool m_gizmoWasUsing = false;
 	/// Entity YAML snapshot captured when gizmo manipulation began.
 	std::string m_gizmoBeforeYaml;
+	/// Document tab bar rendered at the top of the viewport.
+	DocumentTabBar m_tabBar;
 };
 
 }// namespace owl::nest::panel

@@ -60,6 +60,32 @@ All panels can be rearranged, resized, and tabbed together freely through
 the ImGui docking system. The layout is initialized by `EditorLayer::onAttach()`
 and persists via the ImGui `imgui.ini` file.
 
+## Documents
+
+Owl Nest is multi-document: each open scene (and, in future versions, each Lua
+script or node graph) lives in its own tab. Internally the editor owns a
+`DocumentManager` that holds the open documents and tracks which one is
+**active**. Global panels (Scene Hierarchy, Properties, Viewport) always
+reflect the active document.
+
+- **Document tab bar** — rendered inside the Viewport header; lists every open
+  document. Click a tab to make it active. A `*` marks unsaved changes, a ▶ /
+  ❙❙ badge marks the document currently in Play / Pause mode.
+- **Close** — the tab's `x` closes it immediately when clean; a "Discard
+  changes / Cancel" modal appears if the document has unsaved edits.
+- **Shortcuts** — `Ctrl+W` close active document, `Ctrl+Tab` / `Ctrl+Shift+Tab`
+  cycle forward/backward.
+- **Play scope** — only one document can run at a time. When a document is in
+  Play or Pause and the user switches to a different tab, the toolbar
+  (Play/Pause/Stop/Step) and gizmo controls are hidden; the playing document
+  keeps running in the background (physics/scripts advance without rendering)
+  and its tab badge makes its state visible.
+- **Per-document state** — each document owns its own undo stack, dirty flag,
+  selection, and playback state.
+
+Key types live in `source/owlnest/sources/document/`: `Document` (interface),
+`DocumentManager`, `SceneDocument`, `DocumentTabBar`.
+
 ## Panels Reference
 
 ### Viewport

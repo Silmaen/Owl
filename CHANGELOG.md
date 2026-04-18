@@ -31,6 +31,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Detects missing `OwlRunner` executable and empty asset list
     - Post-pack build report: asset count, pack size (MiB), and total duration displayed in the
       completion modal
+- **Multi-document architecture**
+    - New abstractions in `source/owlnest/sources/document/`: `Document` (interface),
+      `DocumentManager` (open list + active tracking), `SceneDocument` (scene wrapper),
+      `DocumentTabBar` (tab bar rendered inside the Viewport header, with dirty `*`, play/pause
+      badge, close prompt)
+    - Scene-scoped state (`editorScene`, `activeScene`, path, Play/Pause/Stop, teleport request,
+      save/load request, undo stack) moved from `EditorLayer` into `SceneDocument`
+    - `EditorLayer` becomes a host of `DocumentManager`; all scene operations delegate to the
+      active document
+    - Each open scene is its own tab rendered **inside the Viewport panel** (no separate
+      "Documents" window). `File > Open Scene` opens in a new tab (or switches to the existing
+      one when already open), `File > New Scene` creates an Untitled tab
+    - Play/Pause/Stop/Step toolbar + gizmo control bar are hidden when the active tab is not the
+      document currently running (only one document can Play at a time)
+    - Per-document undo/redo stack (Ctrl+Z / Ctrl+Y acts on the active doc)
+    - New shortcuts: `Ctrl+W` close active document, `Ctrl+Tab` / `Ctrl+Shift+Tab` cycle
+    - Dirty close prompt: closing a tab with unsaved changes opens a "Discard changes / Cancel"
+      modal
+    - Background simulation: non-active tabs in Play mode advance their physics/scripts without
+      rendering (new `iRender` flag on `Scene::onUpdateRuntime`); only the active tab issues the
+      Renderer2D draw pass, which eliminates visual flicker between tabs
+    - `gui::BasePanel` gains an optional `onHeaderRender()` hook so panels can inject tab bars or
+      toolbars above their content region
 - **File type icons + icon buttons**
     - Per-extension content-browser icons built from the `base_file_ext_icon` template with a
       ribbon label and a central type glyph

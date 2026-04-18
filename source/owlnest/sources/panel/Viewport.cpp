@@ -23,6 +23,13 @@ Viewport::Viewport() : BasePanel{"SceneView"} {}
 
 Viewport::~Viewport() = default;
 
+void Viewport::onHeaderRender() {
+	if (m_parent == nullptr)
+		return;
+	if (const auto closed = m_tabBar.onImGuiRender(m_parent->getDocumentManager()); closed != core::UUID{0})
+		m_parent->closeDocument(closed);
+}
+
 void Viewport::attach() {
 	const renderer::FramebufferSpecification specs{
 			.size = {1280, 720},

@@ -231,6 +231,57 @@ void EditorLayer::requestStop() {
 		doc->requestStop();
 }
 
+auto EditorLayer::findSceneDocumentByPath(const std::filesystem::path& iPath) const -> SceneDocument* {
+	const auto canonical = std::filesystem::weakly_canonical(iPath);
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Scene) {
+			auto* scene = static_cast<SceneDocument*>(docPtr.get());
+			if (!scene->filePath().empty() &&
+				std::filesystem::weakly_canonical(scene->filePath()) == canonical)
+				return scene;
+		}
+	}
+	return nullptr;
+}
+
+auto EditorLayer::findPlayingSceneDocument() const -> SceneDocument* {
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Scene) {
+			auto* scene = static_cast<SceneDocument*>(docPtr.get());
+			if (scene->state() != SceneDocument::State::Edit)
+				return scene;
+		}
+	}
+	return nullptr;
+}
+
+void EditorLayer::syncActiveDocumentPanels() {
+	auto* doc = activeSceneDocument();
+	if (doc == nullptr) {
+		static const shared<scene::Scene> s_empty;
+		m_sceneHierarchy.setContext(s_empty);
+		m_sceneHierarchy.setUndoManager(nullptr);
+		m_viewport.setUndoManager(nullptr);
+		updateWindowTitle();
+		return;
+	}
+	m_sceneHierarchy.setContext(doc->getActiveScene());
+	m_sceneHierarchy.setUndoManager(&doc->undoManager());
+	m_viewport.setUndoManager(&doc->undoManager());
+	updateWindowTitle();
+}
+
+void EditorLayer::closeDocument(const core::UUID iId) {
+	const bool wasActive = (m_documents.getActive() != nullptr && m_documents.getActive()->id() == iId);
+	if (!m_documents.remove(iId))
+		return;
+	if (wasActive)
+		syncActiveDocumentPanels();
+	// Ensure there is always at least one scene document to edit.
+	if (m_documents.empty())
+		ensureActiveSceneDocument();
+}
+
 void EditorLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
@@ -355,6 +406,48 @@ void EditorLayer::onAttach() {
 	m_actionRegistry.registerAction("edit.redo", "Redo",
 		{input::key::Y, Modifiers::Ctrl},
 		[this] { performRedo(); });
+	// Document-level shortcuts
+	m_actionRegistry.registerAction("doc.close", "Close Document",
+		{input::key::W, Modifiers::Ctrl},
+		[this] {
+			if (const auto* doc = m_documents.getActive(); doc != nullptr) {
+				if (doc->isDirty()) {
+					// Defer the close to the tab bar (which shows the confirmation prompt).
+					// Users can also press Ctrl+W again after confirming in the modal.
+					OWL_INFO("Close requested on dirty document — please confirm in the tab bar.")
+				} else {
+					closeDocument(doc->id());
+				}
+			}
+		});
+	m_actionRegistry.registerAction("doc.next", "Next Document",
+		{input::key::Tab, Modifiers::Ctrl},
+		[this] {
+			const auto& docs = m_documents.list();
+			if (docs.size() < 2) return;
+			auto* current = m_documents.getActive();
+			for (size_t i = 0; i < docs.size(); ++i) {
+				if (docs[i].get() == current) {
+					m_documents.setActive(docs[(i + 1) % docs.size()].get());
+					syncActiveDocumentPanels();
+					return;
+				}
+			}
+		});
+	m_actionRegistry.registerAction("doc.prev", "Previous Document",
+		{input::key::Tab, Modifiers::Ctrl | Modifiers::Shift},
+		[this] {
+			const auto& docs = m_documents.list();
+			if (docs.size() < 2) return;
+			auto* current = m_documents.getActive();
+			for (size_t i = 0; i < docs.size(); ++i) {
+				if (docs[i].get() == current) {
+					m_documents.setActive(docs[(i + docs.size() - 1) % docs.size()].get());
+					syncActiveDocumentPanels();
+					return;
+				}
+			}
+		});
 	// clang-format on
 
 	// Apply saved keybinding overrides
@@ -424,41 +517,61 @@ void EditorLayer::onDetach() {
 void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
-	auto* doc = activeSceneDocument();
-	if (doc == nullptr) {
+	// Inactive documents in Play mode still advance their simulation without rendering —
+	// lets a scene keep running in the background while the user edits another tab.
+	auto* activeDoc = activeSceneDocument();
+	for (const auto& docPtr: m_documents.list()) {
+		if (!docPtr || docPtr->type() != DocumentType::Scene)
+			continue;
+		auto* scene = static_cast<SceneDocument*>(docPtr.get());
+		if (scene == activeDoc)
+			continue;
+		if (scene->state() != SceneDocument::State::Play)
+			continue;
+		if (const auto& s = scene->getActiveScene(); s) {
+			if (s->status == scene::Scene::Status::Editing)
+				s->onStartRuntime();
+			s->onUpdateRuntime(iTimeStep, /*iRender=*/false);
+			scene->applyPendingTeleportVelocity();
+		}
+	}
+
+	if (activeDoc == nullptr) {
 		m_viewport.onUpdate(iTimeStep);
 		return;
 	}
 
 	// resize
 	m_cameraController.onResize(m_viewport.getSize());
-	if (const auto& active = doc->getActiveScene())
-		active->onViewportResize(m_viewport.getSize());
+	if (const auto& scene = activeDoc->getActiveScene())
+		scene->onViewportResize(m_viewport.getSize());
 
 	// Update scene
-	if (doc->state() == SceneDocument::State::Edit) {
+	if (activeDoc->state() == SceneDocument::State::Edit) {
 		if (m_viewport.isFocused())
 			m_cameraController.onUpdate(iTimeStep);
 	}
 
 	// After a cross-level teleport, the new scene is in Editing state.
 	// Start its runtime and apply the pending velocity.
-	const auto& activeScene = doc->getActiveScene();
-	if ((doc->state() == SceneDocument::State::Play || doc->state() == SceneDocument::State::Pause) && activeScene &&
-		activeScene->status == scene::Scene::Status::Editing) {
+	const auto& activeScene = activeDoc->getActiveScene();
+	if ((activeDoc->state() == SceneDocument::State::Play ||
+		 activeDoc->state() == SceneDocument::State::Pause) &&
+		activeScene && activeScene->status == scene::Scene::Status::Editing) {
 		activeScene->onStartRuntime();
-		doc->applyPendingTeleportVelocity();
+		activeDoc->applyPendingTeleportVelocity();
 	}
 
 	// Handle deferred quit request from Lua (scene.quit()).
-	if (doc->isStopRequested()) {
-		doc->clearStopRequest();
-		if (doc->state() == SceneDocument::State::Play || doc->state() == SceneDocument::State::Pause)
+	if (activeDoc->isStopRequested()) {
+		activeDoc->clearStopRequest();
+		if (activeDoc->state() == SceneDocument::State::Play ||
+			activeDoc->state() == SceneDocument::State::Pause)
 			onSceneStop();
 		return;
 	}
 
-	// update the viewport
+	// update the viewport (drives active scene's update + render into the framebuffer)
 	m_viewport.onUpdate(iTimeStep);
 }
 
@@ -485,9 +598,16 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	//=============================================================
 	renderMenu();
 	//=============================================================
+	// Tab bar now lives inside the Viewport (via Viewport::onHeaderRender).
+	// Render the viewport first so tab-bar clicks land before panels that depend
+	// on the active document refresh their context.
+	const auto* activeBefore = m_documents.getActive();
+	m_viewport.onRender();
+	if (m_documents.getActive() != activeBefore)
+		syncActiveDocumentPanels();
+	//=============================================================
 	m_sceneHierarchy.onImGuiRender();
 	m_contentBrowser.onImGuiRender();
-	m_viewport.onRender();
 	m_parameters.onImGuiRender();
 	m_projectSettings.onImGuiRender();
 	if (m_projectSettings.hasResult()) {
@@ -502,18 +622,26 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	renderPackWizardModal();
 	renderPackValidationModal();
 	//=============================================================
-	{
-		const auto& lower = m_viewport.getLowerBound();
-		const auto& upper = m_viewport.getUpperBound();
-		const float centerX = (lower.x() + upper.x()) * 0.5f;
-		ImGui::SetNextWindowPos({centerX, lower.y() + 8.0f}, ImGuiCond_Always, {0.5f, 0.0f});
-	}
-	renderToolbar();
-	if (getState() == State::Edit) {
-		const auto& upper = m_viewport.getUpperBound();
-		const auto& lower = m_viewport.getLowerBound();
-		ImGui::SetNextWindowPos({upper.x() - 8.0f, lower.y() + 8.0f}, ImGuiCond_Always, {1.0f, 0.0f});
-		m_controlBar.onRender();
+	// Toolbar (play/pause/stop/step) + gizmo control bar are hidden when another
+	// document is currently in Play/Pause mode and the user is viewing a different tab —
+	// these controls only make sense for the doc actually running.
+	const auto* playingDoc = findPlayingSceneDocument();
+	const auto* activeDoc = activeSceneDocument();
+	const bool toolbarVisible = activeDoc != nullptr && (playingDoc == nullptr || playingDoc == activeDoc);
+	if (toolbarVisible) {
+		{
+			const auto& lower = m_viewport.getLowerBound();
+			const auto& upper = m_viewport.getUpperBound();
+			const float centerX = (lower.x() + upper.x()) * 0.5f;
+			ImGui::SetNextWindowPos({centerX, lower.y() + 8.0f}, ImGuiCond_Always, {0.5f, 0.0f});
+		}
+		renderToolbar();
+		if (getState() == State::Edit) {
+			const auto& upper = m_viewport.getUpperBound();
+			const auto& lower = m_viewport.getLowerBound();
+			ImGui::SetNextWindowPos({upper.x() - 8.0f, lower.y() + 8.0f}, ImGuiCond_Always, {1.0f, 0.0f});
+			m_controlBar.onRender();
+		}
 	}
 }
 
@@ -800,12 +928,19 @@ void EditorLayer::renderToolbar() {
 OWL_DIAG_POP
 
 void EditorLayer::newScene() {
-	auto& doc = ensureActiveSceneDocument();
-	doc.newScene(m_viewport.getSize());
-	m_sceneHierarchy.setContext(doc.getActiveScene());
-	m_sceneHierarchy.setUndoManager(&doc.undoManager());
-	m_viewport.setUndoManager(&doc.undoManager());
-	updateWindowTitle();
+	// Reuse an already-empty untitled tab when possible; otherwise create a new one.
+	SceneDocument* target = nullptr;
+	if (auto* current = activeSceneDocument();
+		current != nullptr && current->filePath().empty() && !current->isDirty())
+		target = current;
+	if (target == nullptr) {
+		auto doc = mkUniq<SceneDocument>();
+		doc->onAttach(this);
+		target = static_cast<SceneDocument*>(m_documents.add(std::move(doc)));
+	}
+	target->newScene(m_viewport.getSize());
+	m_documents.setActive(target);
+	syncActiveDocumentPanels();
 }
 
 void EditorLayer::openScene() {
@@ -818,6 +953,14 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 		OWL_CORE_WARN("Cannot Open file {}: not a scene", iScenePath.string())
 		return;
 	}
+
+	// If this scene is already open in a tab, just make it active.
+	if (auto* existing = findSceneDocumentByPath(iScenePath); existing != nullptr) {
+		m_documents.setActive(existing);
+		syncActiveDocumentPanels();
+		return;
+	}
+
 	if (getState() != State::Edit)
 		onSceneStop();
 
@@ -852,12 +995,20 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 				const auto newScene = mkShared<scene::Scene>();
 				if (const scene::SceneSerializer serializer(newScene);
 					serializer.deserializeFromBuffer(*fileData, scenePath.string())) {
-					auto& doc = ensureActiveSceneDocument();
-					doc.applyLoadedScene(newScene, scenePath, m_viewport.getSize());
-					m_sceneHierarchy.setContext(doc.getActiveScene());
-					m_sceneHierarchy.setUndoManager(&doc.undoManager());
-					m_viewport.setUndoManager(&doc.undoManager());
-					updateWindowTitle();
+					// Create a new SceneDocument tab for this scene; if the current active doc is
+					// an empty Untitled scene (no path, no undo history) reuse it instead.
+					SceneDocument* target = nullptr;
+					if (auto* current = activeSceneDocument();
+						current != nullptr && current->filePath().empty() && !current->isDirty())
+						target = current;
+					if (target == nullptr) {
+						auto doc = mkUniq<SceneDocument>();
+						doc->onAttach(this);
+						target = static_cast<SceneDocument*>(m_documents.add(std::move(doc)));
+					}
+					target->applyLoadedScene(newScene, scenePath, m_viewport.getSize());
+					m_documents.setActive(target);
+					syncActiveDocumentPanels();
 				} else {
 					state->setError("Failed to deserialize scene.");
 				}
