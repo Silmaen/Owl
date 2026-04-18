@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <ellipse cx="226.0" cy="256.0" rx="150.0" ry="150.0" fill="none" stroke="white" stroke-width="32"/>
-  <path d="M 146,256 L 306,256" stroke="white" stroke-width="48" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 226,176 L 226,336" stroke="white" stroke-width="48" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M 330,256 L 390,256" stroke="white" stroke-width="32" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <ellipse cx="430.0" cy="256.0" rx="40.0" ry="40.0" fill="none" stroke="white" stroke-width="32"/>
+  <!-- Parent entity (large circle, upper-left) -->
+  <ellipse cx="160" cy="160" rx="80" ry="80" fill="none" stroke="white" stroke-width="32"/>
+  <!-- Tree connector (L-shape) -->
+  <path d="M 160,240 L 160,370 L 290,370" stroke="white" stroke-width="32" fill="none"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Child entity (smaller circle, lower-right) with "+" inside -->
+  <ellipse cx="360" cy="370" rx="70" ry="70" fill="none" stroke="white" stroke-width="32"/>
+  <path d="M 305,370 L 415,370" stroke="white" stroke-width="40" fill="none" stroke-linecap="round"/>
+  <path d="M 360,315 L 360,425" stroke="white" stroke-width="40" fill="none" stroke-linecap="round"/>
 </svg>

@@ -331,16 +331,18 @@ asynchronous with progress feedback.
         - Timeline for `AnimatedSpriteRenderer`: frame-by-frame preview
         - Visual configuration of frame count, frame rate, loop mode
         - Opens as a document tab (not a modal)
-    - ![Planned][planned] Enhanced inspector
-        - Curve editor for animated properties
-        - Texture/sound preview in inspector, drag-drop assets to fields
+    - ![In Progress][progress] Enhanced inspector
+        - ![Done][done] Sound preview button on SoundSource component (Play / Stop, uses current volume and pitch)
+        - ![Planned][planned] Texture thumbnail preview, font preview
+        - ![Planned][planned] Drag-drop assets from content browser to inspector fields
+        - ![Planned][planned] Curve editor for animated properties
 - Packaging
-    - ![In Progress][progress] Packaging wizard in Owl Nest
-        - ![Done][done] Pre-packaging validation: `AssetScanner` warnings output for unresolvable texture/sound/script/scene/font references
-        - ![Done][done] Validation modal before pack with issue list + "Proceed anyway" / "Cancel" buttons
-        - ![Done][done] OwlRunner executable check + empty-assets check
-        - ![Planned][planned] Dedicated wizard panel with target platform selection (currently just a folder dialog)
-        - ![Planned][planned] Post-pack build report panel
+    - ![Done][done] Packaging wizard in Owl Nest
+        - Pre-packaging validation: `AssetScanner` warnings output for unresolvable texture/sound/script/scene/font references
+        - Validation modal before pack with issue list + "Proceed anyway" / "Cancel" buttons
+        - OwlRunner executable check + empty-assets check
+        - Dedicated wizard panel: destination input + Browse, target platform (read-only), compress/obfuscate options
+        - Post-pack build report: asset count, pack size (MiB), duration shown on completion
 - Menu & Project Workflow
     - ![Done][done] Reorganized menu structure
         - **File** menu: project operations (New, Open, Open Recent, Save, Close, Pack Game, Welcome Screen, Exit)
@@ -374,10 +376,16 @@ asynchronous with progress feedback.
         - Index-based `PushID` in LuaScript property loop — prevents collision if two properties share a name
         - Entity list in SceneHierarchy already uses UUID-based PushID (verified safe)
         - ContentBrowser and SettingsPanel already use unique per-item IDs (verified safe)
-    - ![Planned][planned] Icon clarity pass
-        - Review and redesign confusing or too-similar icons
-        - Add distinct icons for new trigger types (timer, interaction, lua callback)
-        - Consistent visual language across all icon categories
+    - ![Done][done] Icon clarity pass
+        - Content-browser icons are per-extension (sound: `wav`/`mp3`/`ogg`/`flac`, mesh:
+          `obj`/`gltf`/`glb`/`fbx`, source: `py`/`cpp`/`h`/`c`, docs: `md`) with a ribbon label
+          and a central type glyph sharing the `base_file_ext_icon` template
+        - Existing icons (`png`, `jpg`, `svg`, `glsl`, `owl`, `yml`, `ttf`, `lua`, `json`) now
+          carry a central type glyph
+        - Secondary accent color is a fixed amber/gold (`#ffc726`) matching the Owl Nest brand
+        - `IconBank::iconButton(name, label, size)` helper renders an icon-prefixed button, reused
+          across Welcome, Packaging Wizard, validation modal, AsyncProgressModal, Content Browser
+          dialogs, Log panel, Settings/Parameters/Project Settings
 
 ## v0.1.0 -- 2026-04-16
 

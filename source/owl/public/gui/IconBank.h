@@ -21,7 +21,8 @@ struct OWL_API IconThemeColors {
 	/// Primary icon color (replaces white `#ffffff` in SVGs).
 	math::vec4 primary{1, 1, 1, 1};
 	/// Secondary/accent icon color (replaces fuchsia `#ff00ff` in SVGs).
-	math::vec4 secondary{1, 1, 0, 1};
+	/// Defaults to the Owl Nest amber/gold accent used for inner highlights.
+	math::vec4 secondary{1.0f, 0.78f, 0.15f, 1.0f};
 };
 
 /**
@@ -110,6 +111,19 @@ public:
 	 */
 	auto menuItem(const std::string& iIconName, const char* iLabel, const char* iShortcut = nullptr,
 				  bool iEnabled = true) const -> bool;
+
+	/**
+	 * @brief Render an ImGui button with an icon prefix before the label.
+	 *
+	 * Falls back to a regular button (no icon) when the icon is missing. The icon
+	 * scales with the current font size.
+	 * @param[in] iIconName Name of the icon in the bank.
+	 * @param[in] iLabel Button label displayed after the icon.
+	 * @param[in] iSize Size passed to `ImGui::Button` (pass `{0, 0}` for auto-fit).
+	 * @return True if the button was clicked.
+	 */
+	auto iconButton(const std::string& iIconName, const char* iLabel, const math::vec2& iSize = {0.f, 0.f}) const
+			-> bool;
 
 private:
 	/// The atlas texture.

@@ -8,6 +8,7 @@
 
 #include "ProjectSettings.h"
 
+#include <gui/IconBank.h>
 #include <imgui_stdlib.h>
 
 namespace owl::nest::panel {
@@ -104,10 +105,12 @@ void ProjectSettings::onImGuiRender() {
 
 		ImGui::Separator();
 
-		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		const auto& iconBank = gui::IconBank::instance();
+		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
+								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		const float totalWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
-		if (ImGui::Button("OK##projSettings", {buttonWidth, 0})) {
+		if (iconBank.iconButton("save", "OK##projSettings", {buttonWidth, 0})) {
 			m_localProject.name = m_nameBuffer;
 			m_localProject.firstScene =
 					m_selectedSceneIndex >= 0 ? m_availableScenes[static_cast<size_t>(m_selectedSceneIndex)] : "";
@@ -119,7 +122,7 @@ void ProjectSettings::onImGuiRender() {
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel", {buttonWidth, 0})) {
+		if (iconBank.iconButton("close", "Cancel", {buttonWidth, 0})) {
 			ImGui::CloseCurrentPopup();
 		}
 

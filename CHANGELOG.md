@@ -20,12 +20,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Deferred shader compilation** with ImGui loading screen at startup
     - `Renderer::initContext()` / `Renderer::initShaders(callback)` split
     - Per-shader progress displayed before editor/runner starts
-- **Pre-packaging validation** panel
-    - `AssetScanner::scanScene` / `scanProject` accept optional `std::vector<std::string>* oWarnings`
-      output for unresolvable texture, sound, font, script, and trigger-scene references
-    - Validation modal shown before pack: bullet list of issues + "Proceed anyway" / "Cancel"
+- **Packaging wizard panel**
+    - Dedicated dialog opens when clicking Pack Game (replaces the bare folder dialog)
+    - Fields: destination path with Browse button, target platform (read-only), compress/obfuscate options
+    - Pre-packaging validation phase runs async and collects warnings for unresolvable texture,
+      sound, font, script, and trigger-scene references (`AssetScanner::scanScene/scanProject`
+      accept an optional `std::vector<std::string>* oWarnings` output)
+    - Validation modal shown if warnings: bullet list + "Proceed anyway" / "Cancel"
     - Async validation phase reuses its scanned assets for the pack phase (avoids double scan)
     - Detects missing `OwlRunner` executable and empty asset list
+    - Post-pack build report: asset count, pack size (MiB), and total duration displayed in the
+      completion modal
+- **File type icons + icon buttons**
+    - Per-extension content-browser icons built from the `base_file_ext_icon` template with a
+      ribbon label and a central type glyph
+    - Sound (`wav`, `mp3`, `ogg`, `flac`) — speaker; mesh (`obj`, `gltf`, `glb`, `fbx`) — isometric
+      cube; source (`py`, `cpp`, `h`, `c`) — language-specific silhouette; docs (`md`) — markdown
+      mark with down arrow
+    - Central glyphs added to existing icons: `png`/`jpg` (image with sun + mountains), `svg`
+      (vector anchor points), `glsl` (GPU chip), `owl` (isometric scene floor), `yml` (gear),
+      `ttf` ("Aa" sample), `lua` (crescent moon + star), `json` (curly braces with colon dots)
+    - Theme accent (secondary) now resolves to an amber/gold matching the Owl Nest brand (fixed
+      `#ffc726`), no longer tied to `ImGuiCol_ButtonActive`
+    - Clarity pass on non-browser icons for readability at 64 px atlas size:
+        - Thickened strokes previously under 3 atlas-px: `save` internal lines, `circle` radius,
+          `interaction` key outline
+        - Redesigned `content_browser` (grid of four tiles, selected tile filled), `animated_sprite`
+          (filmstrip with sprocket holes), `new_scene` (clean "+" in place of 8-point spark)
+        - Replaced `<text>`-rendered glyphs with paths in `interaction` (letter E) and
+          `lua_callback` (code-block chevron + amber dot)
+        - Disambiguated overlapping silhouettes: `add_child_entity` now shows a parent → child
+          tree; `background` (night sky with stars + horizon), `sprite` (outlined landscape),
+          `ui_image` (amber inner tile) are visually distinct instead of three image variants
+    - Icons added to Welcome screen (New / Open Project), Pack Wizard (Browse / Start / Cancel),
+      validation modal (Proceed / Cancel), AsyncProgressModal (Close / Cancel), Content Browser
+      rename and delete dialogs, Log panel Clear, Settings/Parameters/Project Settings OK/Cancel
+- **Sound preview in inspector**
+    - Play / Stop button on the SoundSource component to preview the sound using the current
+      volume and pitch settings (non-spatial)
 - **Recent projects** persisted in `EditorSettings::recentProjects` (up to 10 entries)
     - "Open Recent" submenu in File menu with full-path tooltip per entry
     - Welcome screen modal when no project is loaded (New / Open / Recent list, closable via `x` or

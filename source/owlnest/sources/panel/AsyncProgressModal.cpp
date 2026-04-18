@@ -8,6 +8,8 @@
 
 #include "panel/AsyncProgressModal.h"
 
+#include <gui/IconBank.h>
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 #include <imgui.h>
@@ -41,23 +43,30 @@ void AsyncProgressModal::onImGuiRender() {
 		const float progress = m_state->progress.load();
 		const auto message = m_state->getMessage();
 
+		const auto& iconBank = gui::IconBank::instance();
 		if (m_state->hasError.load()) {
 			// Error state: show error in red + Close button.
 			const auto errorMsg = m_state->getError();
 			ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error:");
 			ImGui::TextWrapped("%s", errorMsg.c_str());
 			ImGui::Spacing();
-			if (ImGui::Button("Close", ImVec2(120, 0))) {
+			if (iconBank.iconButton("close", "Close", {120, 0})) {
 				ImGui::CloseCurrentPopup();
 				close();
 			}
 		} else if (m_state->completed.load()) {
-			// Completed: show success + Close button.
+			// Completed: show success + summary message + Close button.
 			ImGui::ProgressBar(1.0f, ImVec2(-1, 0), "Done!");
 			ImGui::Spacing();
 			ImGui::TextColored(ImVec4(0.3f, 1.0f, 0.3f, 1.0f), "Operation completed successfully.");
+			const auto summary = m_state->getMessage();
+			if (!summary.empty() && summary != "Done!") {
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::TextWrapped("%s", summary.c_str());
+			}
 			ImGui::Spacing();
-			if (ImGui::Button("Close", ImVec2(120, 0))) {
+			if (iconBank.iconButton("close", "Close", {120, 0})) {
 				ImGui::CloseCurrentPopup();
 				close();
 			}
@@ -69,10 +78,10 @@ void AsyncProgressModal::onImGuiRender() {
 			if (m_cancellable) {
 				if (m_state->cancelRequested.load()) {
 					ImGui::BeginDisabled();
-					ImGui::Button("Cancelling...", ImVec2(120, 0));
+					iconBank.iconButton("close", "Cancelling...", {140, 0});
 					ImGui::EndDisabled();
 				} else {
-					if (ImGui::Button("Cancel", ImVec2(120, 0)))
+					if (iconBank.iconButton("close", "Cancel", {120, 0}))
 						m_state->cancelRequested.store(true);
 				}
 			}

@@ -21,6 +21,8 @@
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
 
+#include <imgui_stdlib.h>
+
 #include <chrono>
 #include <cstdlib>
 
@@ -82,6 +84,19 @@ void buildIconBank() {
 		{"yml_icon",          resolve("icons/browser/yml")},
 		{"lua_icon",          resolve("icons/browser/lua")},
 		{"prefab_icon",       resolve("icons/browser/prefab")},
+		{"wav_icon",          resolve("icons/browser/wav")},
+		{"mp3_icon",          resolve("icons/browser/mp3")},
+		{"ogg_icon",          resolve("icons/browser/ogg")},
+		{"flac_icon",         resolve("icons/browser/flac")},
+		{"obj_icon",          resolve("icons/browser/obj")},
+		{"gltf_icon",         resolve("icons/browser/gltf")},
+		{"glb_icon",          resolve("icons/browser/glb")},
+		{"fbx_icon",          resolve("icons/browser/fbx")},
+		{"py_icon",           resolve("icons/browser/py")},
+		{"cpp_icon",          resolve("icons/browser/cpp")},
+		{"h_icon",            resolve("icons/browser/h")},
+		{"c_icon",            resolve("icons/browser/c")},
+		{"md_icon",           resolve("icons/browser/md")},
 		// Action icons (context menus, toolbar, etc.)
 		{"delete",            resolve("icons/actions/delete")},
 		{"rename",            resolve("icons/actions/rename")},
@@ -145,13 +160,13 @@ void buildIconBank() {
 	// Remove entries with empty paths
 	std::erase_if(icons, [](const auto& iEntry) { return iEntry.second.empty(); });
 
-	// Extract theme colors for icon rendering from the active ImGui style.
+	// Extract theme colors for icon rendering. Primary follows the text color; secondary is a fixed
+	// amber/gold matching the Owl Nest brand (used as accent for highlights inside icons).
 	const auto& style = ImGui::GetStyle();
 	const gui::IconThemeColors themeColors{
 			.primary = {style.Colors[ImGuiCol_Text].x, style.Colors[ImGuiCol_Text].y, style.Colors[ImGuiCol_Text].z,
 						style.Colors[ImGuiCol_Text].w},
-			.secondary = {style.Colors[ImGuiCol_ButtonActive].x, style.Colors[ImGuiCol_ButtonActive].y,
-						  style.Colors[ImGuiCol_ButtonActive].z, style.Colors[ImGuiCol_ButtonActive].w},
+			.secondary = {1.0f, 0.78f, 0.15f, 1.0f},
 	};
 	iconBank.build(icons, 64, themeColors);
 }
@@ -451,6 +466,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
 	m_asyncProgress.onImGuiRender();
 	renderWelcomeScreen();
+	renderPackWizardModal();
 	renderPackValidationModal();
 	//=============================================================
 	{
@@ -485,10 +501,11 @@ void EditorLayer::renderWelcomeScreen() {
 		ImGui::Separator();
 		ImGui::Spacing();
 
-		if (ImGui::Button("New Project...", ImVec2(150, 0)))
+		const auto& iconBank = gui::IconBank::instance();
+		if (iconBank.iconButton("project", "New Project...", {150, 0}))
 			newProject();
 		ImGui::SameLine();
-		if (ImGui::Button("Open Project...", ImVec2(150, 0)))
+		if (iconBank.iconButton("open", "Open Project...", {150, 0}))
 			openProject();
 
 		ImGui::Spacing();
@@ -1143,9 +1160,13 @@ void EditorLayer::packScene() {
 					return;
 				}
 				state->progress.store(1.0f);
-				state->setMessage("Done!");
-				OWL_CORE_INFO("Scene packed: {} ({} assets) -> {}", sceneFilename, assets.size(),
-							  outputPath.string())
+				std::error_code sizeEc;
+				const auto packBytes = exists(outputPath) ? std::filesystem::file_size(outputPath, sizeEc) : 0;
+				const auto mib = static_cast<double>(packBytes) / (1024.0 * 1024.0);
+				state->setMessage(std::format("Packed {} assets ({:.2f} MiB)\nOutput: {}", assets.size(), mib,
+											  outputPath.string()));
+				OWL_CORE_INFO("Scene packed: {} ({} assets, {:.2f} MiB) -> {}", sceneFilename, assets.size(),
+							  mib, outputPath.string())
 			},
 			[state]() { state->completed.store(true); }));
 }
@@ -1245,15 +1266,91 @@ auto createZipArchive(const std::filesystem::path& iSourceDir, const std::filesy
 }// namespace
 
 void EditorLayer::packGame() {
-	if (!m_project.isLoaded() || m_asyncProgress.isActive() || m_showPackValidation)
+	if (!m_project.isLoaded() || m_asyncProgress.isActive() || m_showPackValidation || m_showPackWizard)
 		return;
+	// Open the packaging wizard to let the user choose destination + options.
+	m_pendingPackDestDir.clear();
+	m_showPackWizard = true;
+}
 
-	// Ask for destination folder (synchronous — OS dialog).
-	const auto destDir = core::utils::FileDialog::pickFolder();
-	if (destDir.empty())
+void EditorLayer::renderPackWizardModal() {
+	if (!m_showPackWizard)
 		return;
+	if (!ImGui::IsPopupOpen("Packaging Wizard"))
+		ImGui::OpenPopup("Packaging Wizard");
 
-	m_pendingPackDestDir = destDir;
+	const auto* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	ImGui::SetNextWindowSize(ImVec2(560, 0), ImGuiCond_Always);
+
+	if (ImGui::BeginPopupModal("Packaging Wizard", nullptr,
+							   ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+		ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.2f, 1.0f), "Pack Game");
+		ImGui::TextWrapped("Project: %s  (version: %s)", m_project.name.c_str(),
+						   m_project.version.empty() ? "-" : m_project.version.c_str());
+		ImGui::Spacing();
+		ImGui::Separator();
+
+		// Target platform (read-only — current build platform).
+		const char* platform =
+#ifdef OWL_PLATFORM_WINDOWS
+				"Windows (x64)";
+#else
+				"Linux (x64)";
+#endif
+		ImGui::Text("Target platform: %s", platform);
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+			ImGui::SetTooltip("The pack is built for the current platform. Cross-compilation is planned for v0.3.");
+
+		// Destination folder with Browse button.
+		ImGui::Spacing();
+		ImGui::Text("Output folder:");
+		auto destStr = m_pendingPackDestDir.string();
+		ImGui::SetNextItemWidth(-120);
+		if (ImGui::InputText("##dest", &destStr))
+			m_pendingPackDestDir = std::filesystem::path(destStr);
+		ImGui::SameLine();
+		if (gui::IconBank::instance().iconButton("open", "Browse...##packDest")) {
+			const auto picked = core::utils::FileDialog::pickFolder();
+			if (!picked.empty())
+				m_pendingPackDestDir = picked;
+		}
+
+		// Options.
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Text("Options");
+		ImGui::Checkbox("Compress pack (zstd)", &m_packCompress);
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+			ImGui::SetTooltip("Compress asset blobs with zstd. Smaller output at the cost of a slower pack.");
+		ImGui::Checkbox("Obfuscate TOC (XOR)", &m_packObfuscate);
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+			ImGui::SetTooltip("XOR-obfuscate the table of contents to deter casual pack inspection.");
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		const bool canStart = !m_pendingPackDestDir.empty();
+		const auto& iconBank = gui::IconBank::instance();
+		ImGui::BeginDisabled(!canStart);
+		if (iconBank.iconButton("pack", "Start Packaging", {180, 0})) {
+			m_showPackWizard = false;
+			ImGui::CloseCurrentPopup();
+			launchPackValidation();
+		}
+		ImGui::EndDisabled();
+		if (!canStart && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+			ImGui::SetTooltip("Choose an output folder to enable packaging.");
+		ImGui::SameLine();
+		if (iconBank.iconButton("close", "Cancel##packWiz", {120, 0})) {
+			m_showPackWizard = false;
+			m_pendingPackDestDir.clear();
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+}
+
+void EditorLayer::launchPackValidation() {
 	m_pendingPackWarnings.clear();
 
 	// Launch async validation: scan project + collect warnings off the main thread.
@@ -1270,10 +1367,8 @@ void EditorLayer::packGame() {
 
 	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			[state, projectDir, firstScene, warningsOut, assetsOut, runnerSrcDir]() {
-				// Scan the project and collect warnings for missing references.
 				*assetsOut = io::pack::AssetScanner::scanProject(projectDir, firstScene, warningsOut.get());
 				state->progress.store(0.8f);
-				// Runner executable check.
 				bool hasRunner = false;
 				for (const auto& candidate: {"OwlRunner", "OwlRunner.exe"}) {
 					if (exists(runnerSrcDir / candidate)) {
@@ -1288,17 +1383,15 @@ void EditorLayer::packGame() {
 					warningsOut->emplace_back("No assets to pack — check firstScene and its references.");
 				state->progress.store(1.0f);
 			},
-			// Termination (main thread): close the "Validating..." modal and decide next step.
 			[this, state, warningsOut, assetsOut]() {
 				state->completed.store(true);
 				m_asyncProgress.close();
 				m_pendingPackWarnings = std::move(*warningsOut);
 				m_pendingPackAssets = assetsOut;
-				if (m_pendingPackWarnings.empty()) {
+				if (m_pendingPackWarnings.empty())
 					startPackGame();
-				} else {
+				else
 					m_showPackValidation = true;
-				}
 			}));
 }
 
@@ -1323,13 +1416,14 @@ void EditorLayer::renderPackValidationModal() {
 		ImGui::EndChild();
 		ImGui::TextDisabled("The game may be missing assets or not playable. Proceed anyway?");
 		ImGui::Spacing();
-		if (ImGui::Button("Proceed anyway", ImVec2(150, 0))) {
+		const auto& iconBank = gui::IconBank::instance();
+		if (iconBank.iconButton("pack", "Proceed anyway", {170, 0})) {
 			m_showPackValidation = false;
 			ImGui::CloseCurrentPopup();
 			startPackGame();
 		}
 		ImGui::SameLine();
-		if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+		if (iconBank.iconButton("close", "Cancel", {120, 0})) {
 			m_showPackValidation = false;
 			m_pendingPackWarnings.clear();
 			m_pendingPackDestDir.clear();
@@ -1381,7 +1475,12 @@ void EditorLayer::startPackGame() {
 	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			// --- Worker function (runs on thread pool) ---
 			[state, gameName, gameDir, projectDir, firstScene, projectName, projectVersion, projectAuthor, projectDesc,
-			 projectIcon, windowCfg, runnerSrcDir, preScanned]() {
+			 projectIcon, windowCfg, runnerSrcDir, preScanned, compress = m_packCompress,
+			 obfuscate = m_packObfuscate]() {
+				const auto startTime = std::chrono::steady_clock::now();
+				const auto packFlags =
+						(compress ? io::pack::PackFlags::Compressed : io::pack::PackFlags::None) |
+						(obfuscate ? io::pack::PackFlags::Obfuscated : io::pack::PackFlags::None);
 				// Phase 1: Use pre-scanned assets (from validation) or re-scan if missing.
 				std::vector<io::pack::AssetReference> assets;
 				if (preScanned && !preScanned->empty()) {
@@ -1408,7 +1507,7 @@ void EditorLayer::startPackGame() {
 				const auto packFilename = gameName + ".owlpack";
 				const auto packPath = gameDir / packFilename;
 				const bool writeOk = writer.write(
-						packPath, io::pack::PackFlags::Default,
+						packPath, packFlags,
 						[&state](const uint32_t iCurrent, const uint32_t iTotal) {
 							state->progress.store(0.2f + 0.6f * static_cast<float>(iCurrent) /
 																  static_cast<float>(iTotal));
@@ -1521,9 +1620,23 @@ void EditorLayer::startPackGame() {
 				}
 #endif
 				state->progress.store(1.0f);
-				state->setMessage("Done!");
-				OWL_CORE_INFO("Game exported: {} ({} assets) -> {}", projectName, assets.size(),
-							  gameDir.string())
+
+				// Compute post-pack report: duration, pack size, output path.
+				const auto endTime = std::chrono::steady_clock::now();
+				const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+												endTime - startTime).count();
+				const auto packFile = gameDir / (gameName + ".owlpack");
+				std::error_code sizeEc;
+				const auto packBytes = exists(packFile) ? std::filesystem::file_size(packFile, sizeEc) : 0;
+				const auto mib = static_cast<double>(packBytes) / (1024.0 * 1024.0);
+				state->setMessage(std::format("Packed {} assets ({:.2f} MiB)\n"
+											  "Output: {}\n"
+											  "Duration: {:.1f}s",
+											  assets.size(), mib, gameDir.string(),
+											  static_cast<double>(durationMs) / 1000.0));
+				OWL_CORE_INFO("Game exported: {} ({} assets, {:.2f} MiB) -> {} in {:.1f}s",
+							  projectName, assets.size(), mib, gameDir.string(),
+							  static_cast<double>(durationMs) / 1000.0)
 			},
 			// --- Termination callback (runs on main thread) ---
 			[state]() { state->completed.store(true); }));

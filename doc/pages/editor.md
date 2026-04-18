@@ -176,8 +176,26 @@ supports navigation, file operations, and drag-drop integration with other panel
 The browser roots at the project's asset directory and prevents navigation above it.
 
 **File type icons.** Files are displayed with type-specific icons loaded from the
-icon bank: `.owl` (scene), `.owlprefab` (prefab), `.png`, `.jpg`, `.svg`, `.ttf` (font),
-`.yml`, `.json`, `.glsl`, `.lua`, and plain text. Folders use a distinct folder icon.
+icon bank. Each icon shares the same file-frame template, carries an extension ribbon
+label (e.g. `WAV`, `CPP`) and a central type glyph:
+
+| Category  | Extensions                           | Central glyph            |
+|-----------|--------------------------------------|--------------------------|
+| Scene     | `.owl`                               | Isometric scene floor    |
+| Prefab    | `.owlprefab`                         | Puzzle-piece "P" badge   |
+| Image     | `.png`, `.jpg`, `.svg`               | Frame with sun + peaks   |
+| Font      | `.ttf`                               | "Aa" sample              |
+| Config    | `.yml`, `.json`                      | Gear / curly braces      |
+| Shader    | `.glsl`                              | GPU chip with pins       |
+| Script    | `.lua`                               | Crescent moon + star     |
+| Sound     | `.wav`, `.mp3`, `.ogg`, `.flac`      | Speaker with waves       |
+| Mesh      | `.obj`, `.gltf`, `.glb`, `.fbx`      | Isometric cube wireframe |
+| Source    | `.py`, `.cpp`/`.cxx`, `.h`/`.hpp`, `.c` | Language-specific glyph  |
+| Doc       | `.md`                                | Markdown mark + arrow    |
+| Fallback  | plain text                           | Text lines               |
+
+Folders use a distinct folder icon. The secondary accent (amber `#ffc726`) highlights
+glyph details; the primary color follows the active ImGui theme text color.
 
 **Interactions:**
 
@@ -237,7 +255,13 @@ It contains three sections:
 
 **Theme selection.** A dropdown listing built-in theme presets (e.g. "Dark"). Changing
 the theme calls `UiLayer::setTheme()` and triggers `IconBank::rebuild()` to re-rasterize
-all SVG icons with the new theme colors.
+all SVG icons with the new theme colors. The primary color follows the theme text color;
+the secondary accent is a fixed amber/gold (`#ffc726`) matching the Owl Nest brand.
+
+**Icon buttons.** Dialog and panel buttons use `IconBank::iconButton(name, label, size)`
+to render an icon-prefixed button that falls back to a plain button when the icon is
+missing. `IconBank::menuItem(name, label, shortcut)` does the equivalent for menu
+entries.
 
 **Keybinding editor.** A table listing all registered actions with their current
 shortcuts. Each row shows the action name, default shortcut, and current binding.
