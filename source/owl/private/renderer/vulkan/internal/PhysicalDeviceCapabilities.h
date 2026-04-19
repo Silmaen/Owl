@@ -111,6 +111,7 @@ public:
 	/// List of queue families.
 	std::vector<VkQueueFamilyProperties> queueFamilies;
 	/// Capability of the physical surface
+	// NOLINTNEXTLINE(bugprone-invalid-enum-default-initialization)
 	VkSurfaceCapabilitiesKHR surfaceCapabilities{};
 	/// List of supported surface format.
 	std::vector<VkSurfaceFormatKHR> surfaceFormats;

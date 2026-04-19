@@ -36,7 +36,7 @@ void Scheduler::frame(const Timestep& iTimestep) {
 		timer->frame(iTimestep, this);
 	}
 	std::erase_if(mp_impl->timers,
-				  [](const shared<Timer>& iTimer) { return iTimer->getState() == Timer::State::Expired; });
+				  [](const shared<Timer>& iTimer) -> bool { return iTimer->getState() == Timer::State::Expired; });
 }
 
 void Scheduler::waitRunning() {
@@ -60,13 +60,13 @@ auto Scheduler::isTaskFinished(const size_t& iTaskId) -> bool {
 }
 
 auto Scheduler::isTaskRunning(const size_t& iTaskId) -> bool {
-	return std::ranges::find_if(mp_impl->runningTasks, [&iTaskId](const shared<Task>& iTask) {
+	return std::ranges::find_if(mp_impl->runningTasks, [&iTaskId](const shared<Task>& iTask) -> bool {
 			   return iTask->m_taskId == iTaskId;
 		   }) != mp_impl->runningTasks.end();
 }
 
 auto Scheduler::isTaskInQueue(const size_t& iTaskId) -> bool {
-	return std::ranges::find_if(mp_impl->tasksQueue, [&iTaskId](const shared<Task>& iTask) {
+	return std::ranges::find_if(mp_impl->tasksQueue, [&iTaskId](const shared<Task>& iTask) -> bool {
 			   return iTask->m_taskId == iTaskId;
 		   }) != mp_impl->tasksQueue.end();
 }
@@ -88,7 +88,7 @@ void SchedulerImpl::frameInternal(const bool iTreatQueue) {
 
 	// Check finished tasks.
 	std::erase_if(runningTasks,
-				  [](const shared<Task>& iTask) { return iTask->getState() == Task::State::Terminated; });
+				  [](const shared<Task>& iTask) -> bool { return iTask->getState() == Task::State::Terminated; });
 
 	// Launch new tasks from the queue using the Taskflow executor.
 	while (iTreatQueue && !tasksQueue.empty() && (runningTasks.size() < maxRunningTasks)) {
@@ -96,7 +96,7 @@ void SchedulerImpl::frameInternal(const bool iTreatQueue) {
 		// Bridge std::promise to keep std::future<void> in the public Task header.
 		auto promise = std::make_shared<std::promise<void>>();
 		task->m_future = promise->get_future();
-		executor.silent_async([action = task->m_action, promise]() {
+		executor.silent_async([action = task->m_action, promise]() -> void {
 			action();
 			promise->set_value();
 		});

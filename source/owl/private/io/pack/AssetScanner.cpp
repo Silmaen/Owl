@@ -256,7 +256,7 @@ void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,//
 void AssetScanner::scanEntity(const YAML::Node& iEntity, const std::string& iSceneName,
 							  std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
 							  std::vector<std::string>* ioWarnings) {
-	const auto addTextureField = [&](const YAML::Node& iComponent) {
+	const auto addTextureField = [&](const YAML::Node& iComponent) -> void {
 		if (auto tex = iComponent["texture"]; tex) {
 			const auto val = tex.as<std::string>();
 			if (auto ref = resolveTexture(val); ref) {

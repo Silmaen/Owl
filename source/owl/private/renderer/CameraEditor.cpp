@@ -45,7 +45,7 @@ void CameraEditor::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
 void CameraEditor::onEvent(event::Event& ioEvent) {
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::MouseScrolledEvent>(
-			[&]<typename T0>(T0&& ioTz1) { return onMouseScroll(std::forward<T0>(ioTz1)); });
+			[&]<typename T0>(T0&& ioTz1) -> bool { return onMouseScroll(std::forward<T0>(ioTz1)); });
 }
 
 auto CameraEditor::getUpDirection() const -> math::vec3 {

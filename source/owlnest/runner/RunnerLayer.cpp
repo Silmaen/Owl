@@ -333,7 +333,7 @@ void RunnerLayer::handleTeleportRequest() {
 
 	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			// Worker: read scene bytes from pack or filesystem.
-			[transition, hasPack, searchRoots, resolvedName, &app]() {
+			[transition, hasPack, searchRoots, resolvedName, &app]() -> void {
 				if (hasPack) {
 					for (const auto& tryName: {resolvedName, "scenes/" + resolvedName}) {
 						if (auto data = app.loadFromPack(tryName); data) {
@@ -365,7 +365,7 @@ void RunnerLayer::handleTeleportRequest() {
 				transition->failed.store(true);
 			},
 			// Termination (main thread): mark ready so the next frame can deserialize + swap.
-			[transition]() { transition->ready.store(true); }));
+			[transition]() -> void { transition->ready.store(true); }));
 }
 
 void RunnerLayer::finishTransition() {
@@ -398,9 +398,9 @@ void RunnerLayer::finishTransition() {
 void RunnerLayer::onEvent(event::Event& ioEvent) {
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::KeyPressedEvent>(
-			[]<typename T0>(T0&& ioPh1) { return onKeyPressed(std::forward<T0>(ioPh1)); });
+			[]<typename T0>(T0&& ioPh1) -> bool { return onKeyPressed(std::forward<T0>(ioPh1)); });
 	dispatcher.dispatch<event::MouseButtonPressedEvent>(
-			[]<typename T0>(T0&& ioPh1) { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
+			[]<typename T0>(T0&& ioPh1) -> bool { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
 }
 
 void RunnerLayer::onImGuiRender(const core::Timestep&) {

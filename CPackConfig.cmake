@@ -35,16 +35,32 @@ set(CPACK_PACKAGE_VERSION_MAJOR ${CMAKE_PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${CMAKE_PROJECT_VERSION_MINOR})
 set(CPACK_PACKAGE_VERSION_PATCH ${CMAKE_PROJECT_VERSION_PATCH})
 set(CPACK_PACKAGE_VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
-# Get the latest abbreviated commit hash of the working branch
+# Get the latest abbreviated commit hash of the working branch.
+#
+# Git may legitimately fail here (shallow clones, out-of-tree builds, and — the case that
+# motivated this fallback — a checkout made on a Windows agent mounted into a Linux container,
+# where `.git/objects/info/alternates` points to a Windows path that can't be resolved).  When
+# that happens we fall back to TeamCity's `BUILD_VCS_NUMBER` environment variable; if that is
+# also unavailable we settle for a literal so the downstream `SUBSTRING` stays well-formed.
 if (NOT ${PROJECT_PREFIX}_GIT_HASH)
     execute_process(
             COMMAND git log -1 --format=%h
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             OUTPUT_VARIABLE ${PROJECT_PREFIX}_GIT_HASH
             OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE _owl_git_hash_result
+            ERROR_QUIET
     )
+    if (NOT _owl_git_hash_result EQUAL 0 OR "${${PROJECT_PREFIX}_GIT_HASH}" STREQUAL "")
+        if (DEFINED ENV{BUILD_VCS_NUMBER} AND NOT "$ENV{BUILD_VCS_NUMBER}" STREQUAL "")
+            set(${PROJECT_PREFIX}_GIT_HASH "$ENV{BUILD_VCS_NUMBER}")
+        else ()
+            set(${PROJECT_PREFIX}_GIT_HASH "unknown")
+        endif ()
+    endif ()
 endif ()
-string(SUBSTRING ${${PROJECT_PREFIX}_GIT_HASH} 0 7 ${PROJECT_PREFIX}_GIT_HASH)
+# Quoting the expansion guards against an empty value collapsing into zero arguments.
+string(SUBSTRING "${${PROJECT_PREFIX}_GIT_HASH}" 0 7 ${PROJECT_PREFIX}_GIT_HASH)
 if (${PROJECT_PREFIX}_PACK_TIME)
     string(TIMESTAMP NOW "-%Y%m%d_%H%M")
 endif ()

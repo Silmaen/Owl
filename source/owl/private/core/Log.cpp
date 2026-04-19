@@ -23,6 +23,7 @@ namespace owl::core {
 
 namespace {
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization)
 debug::LogBuffer g_logBuffer;
 
 auto fromLevel(const Log::Level& iLevel) -> spdlog::level::level_enum {

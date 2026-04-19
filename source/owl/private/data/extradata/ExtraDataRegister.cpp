@@ -38,6 +38,7 @@ auto factoryExtraDataRegistration() -> ExtraDataRegistrationScopeVector {
 	return extraDataRegistrationScopes;
 }
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization)
 [[maybe_unused]] ExtraDataRegistrationScopeVector s_globalExtraDataRegistration = factoryExtraDataRegistration();
 
 }// namespace

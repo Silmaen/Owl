@@ -38,6 +38,9 @@ OWL_DIAG_POP
  */
 template<typename ExtraData, typename DataType>
 class OWL_API MeshExtraData : public ExtraDataBase {
+	friend ExtraData;
+	MeshExtraData() = default;
+
 public:
 	using Type = DataType;
 	/**

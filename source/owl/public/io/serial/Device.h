@@ -20,6 +20,7 @@
  */
 namespace owl::io::serial {
 
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization)
 static const std::string g_deviceFriendlyName{"unknown"};
 
 /**

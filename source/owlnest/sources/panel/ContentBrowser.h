@@ -59,6 +59,15 @@ public:
 		m_sceneOpenCallback = std::move(iCallback);
 	}
 
+	/**
+	 * @brief Set a callback invoked when a code / text file is double-clicked
+	 * (`.lua`, `.py`, `.cpp`, `.yml`, `.json`, `.md`, `.svg`, etc.).
+	 * @param[in] iCallback Function taking the file path.
+	 */
+	void setCodeOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_codeOpenCallback = std::move(iCallback);
+	}
+
 private:
 	/// The actual folder
 	std::filesystem::path m_currentPath;
@@ -114,6 +123,7 @@ private:
 
 	/// Callback for opening a scene file from the browser.
 	std::function<void(const std::filesystem::path&)> m_sceneOpenCallback;
+	std::function<void(const std::filesystem::path&)> m_codeOpenCallback;
 };
 
 }// namespace owl::nest::panel

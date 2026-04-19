@@ -73,10 +73,11 @@ void Viewport::onRender() {
 		const auto* centralNode = ImGui::DockBuilderGetCentralNode(dockspaceId))
 		ImGui::SetNextWindowDockID(centralNode->ID, ImGuiCond_FirstUseEver);
 
-	// No close button on the tab — scenes are closed via `File/Current > Close Scene` or Ctrl+W,
-	// which routes through a dirty-confirmation modal.
+	// The tab shows the native ImGui close X.  When the user clicks it `m_pOpen` is set
+	// to false; `EditorLayer` polls this after rendering and routes through the dirty
+	// confirmation modal before actually closing the document.
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-	const bool visible = ImGui::Begin(m_name.c_str(), nullptr, flags);
+	const bool visible = ImGui::Begin(m_name.c_str(), &m_pOpen, flags);
 	m_focused = ImGui::IsWindowFocused();
 	m_hovered = ImGui::IsWindowHovered();
 	core::Application::get().getImGuiLayer()->blockEvents(!m_focused && !m_hovered);
@@ -213,16 +214,7 @@ void Viewport::onRenderInternal() {
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
 				const auto* path = static_cast<const char*>(payload->Data);
-				const std::filesystem::path relPath{path};
-				if (relPath.extension() == ".owlprefab") {
-					if (const auto fullPath = renderer::Renderer::getTextureLibrary().find(path); fullPath.has_value())
-						m_parent->instantiatePrefab(fullPath.value(), path);
-				} else if (const auto scenePath = renderer::Renderer::getTextureLibrary().find(path);
-						   scenePath.has_value() && scenePath.value().extension() == ".owl") {
-					m_parent->openScene(scenePath.value());
-				} else {
-					OWL_CORE_WARN("Could not load {}: unsupported file type", path)
-				}
+				m_parent->handleContentBrowserDrop(std::filesystem::path{path});
 			}
 			ImGui::EndDragDropTarget();
 		}
@@ -381,7 +373,7 @@ void Viewport::onEvent(event::Event& ioEvent) {
 
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::MouseButtonPressedEvent>(
-			[this]<typename T0>(T0&& ioPh1) { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
+			[this]<typename T0>(T0&& ioPh1) -> auto { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
 }
 
 auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool {

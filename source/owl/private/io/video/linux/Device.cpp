@@ -125,7 +125,7 @@ auto getV4L2PixelFormat(const Device::PixelFormat& iPixelFormat) -> uint32_t {
 
 void updateList(std::vector<shared<video::Device>>& ioList) {
 	// check if all listed devices still exists
-	if (std::remove_if(ioList.begin(), ioList.end(), [](const shared<video::Device>& iDev) {
+	if (std::remove_if(ioList.begin(), ioList.end(), [](const shared<video::Device>& iDev) -> bool {
 			return !std::static_pointer_cast<Device>(iDev)->isValid();
 		}) != ioList.end()) {
 		OWL_CORE_WARN("Possible problems during video input listing.")
@@ -139,7 +139,7 @@ void updateList(std::vector<shared<video::Device>>& ioList) {
 			continue;
 		}
 		// don't add a device that already exists
-		if (std::find_if(ioList.begin(), ioList.end(), [&testDev](const shared<video::Device>& dev) {
+		if (std::find_if(ioList.begin(), ioList.end(), [&testDev](const shared<video::Device>& dev) -> bool {
 				return testDev->getBusInfo() == static_pointer_cast<Device>(dev)->getBusInfo();
 			}) != ioList.end())
 			continue;

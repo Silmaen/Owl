@@ -79,7 +79,7 @@ void Manager::updateDeviceList() {
 
 auto Manager::getDeviceByName(const std::string& iName) const -> shared<Device> {
 	const auto it = std::ranges::find_if(m_devices.begin(), m_devices.end(),
-										 [&iName](const Device& iDevice) { return iDevice.name() == iName; });
+										 [&iName](const Device& iDevice) -> bool { return iDevice.name() == iName; });
 	if (it == m_devices.end())
 		return nullptr;
 	return owl::mkShared<Device>(*it);
@@ -87,7 +87,7 @@ auto Manager::getDeviceByName(const std::string& iName) const -> shared<Device> 
 
 auto Manager::getDeviceByPort(const std::string& iPort) const -> shared<Device> {
 	const auto it = std::ranges::find_if(m_devices.begin(), m_devices.end(),
-										 [&iPort](const Device& iDevice) { return iDevice.port() == iPort; });
+										 [&iPort](const Device& iDevice) -> bool { return iDevice.port() == iPort; });
 	if (it == m_devices.end())
 		return nullptr;
 	return owl::mkShared<Device>(*it);

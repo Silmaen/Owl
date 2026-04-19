@@ -20,7 +20,7 @@
         "silmaen": {
           "docker_registry": "registry.argawaen.net",
           "docker_namespace": "builder",
-          "docker_parameters": "-u %env.BUILDER_UID%:%env.BUILDER_GID% --platform=%docker_build_platform% -v %teamcity.agent.home.dir%/user/cache_dir:/tmp/cache_dir --network host --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v %teamcity.agent.home.dir%/user:/home/user -e HOME=/home/user"
+          "docker_parameters": "-u %env.BUILDER_UID%:%env.BUILDER_GID% --platform=%docker_build_platform% -v %teamcity.agent.home.dir%/user/cache_dir:/tmp/cache_dir --network host --cap-add=SYS_PTRACE --security-opt seccomp=unconfined -v %teamcity.agent.home.dir%/user:/home/user -e HOME=/home/user -e TEAMCITY_VERSION=%teamcity.version%"
         }
       }
     },

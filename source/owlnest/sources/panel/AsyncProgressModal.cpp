@@ -50,7 +50,7 @@ void AsyncProgressModal::onImGuiRender() {
 			ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "Error:");
 			ImGui::TextWrapped("%s", errorMsg.c_str());
 			ImGui::Spacing();
-			if (iconBank.iconButton("close", "Close", {120, 0})) {
+			if (iconBank.iconButton("close", "Close", {ImGui::GetFontSize() * 7.f, 0})) {
 				ImGui::CloseCurrentPopup();
 				close();
 			}
@@ -66,7 +66,7 @@ void AsyncProgressModal::onImGuiRender() {
 				ImGui::TextWrapped("%s", summary.c_str());
 			}
 			ImGui::Spacing();
-			if (iconBank.iconButton("close", "Close", {120, 0})) {
+			if (iconBank.iconButton("close", "Close", {ImGui::GetFontSize() * 7.f, 0})) {
 				ImGui::CloseCurrentPopup();
 				close();
 			}
@@ -78,10 +78,10 @@ void AsyncProgressModal::onImGuiRender() {
 			if (m_cancellable) {
 				if (m_state->cancelRequested.load()) {
 					ImGui::BeginDisabled();
-					iconBank.iconButton("close", "Cancelling...", {140, 0});
+					iconBank.iconButton("close", "Cancelling...", {ImGui::GetFontSize() * 8.f, 0});
 					ImGui::EndDisabled();
 				} else {
-					if (iconBank.iconButton("close", "Cancel", {120, 0}))
+					if (iconBank.iconButton("close", "Cancel", {ImGui::GetFontSize() * 7.f, 0}))
 						m_state->cancelRequested.store(true);
 				}
 			}

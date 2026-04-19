@@ -32,7 +32,7 @@ TEST(FontLibrary, basic_with_app) {
 													.isDummy = true});
 	auto& fontLibrary = app->getFontLibrary();
 	EXPECT_EQ(fontLibrary.getLoadedFontNames().size(), 2);
-	EXPECT_EQ(fontLibrary.getFoundFontNames().size(), 12);
+	EXPECT_EQ(fontLibrary.getFoundFontNames().size(), 16);
 
 	EXPECT_EQ(fontLibrary.getFont("null"), nullptr);
 	const auto myFont = fontLibrary.getDefaultFont();

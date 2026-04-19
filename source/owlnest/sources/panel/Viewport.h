@@ -66,6 +66,11 @@ public:
 	/// Set the undo manager for recording gizmo transform edits.
 	void setUndoManager(UndoManager* iUndoManager) { mp_undoManager = iUndoManager; }
 
+	/// @brief True while the user hasn't clicked the tab's close X this frame.
+	[[nodiscard]] auto isOpen() const -> bool { return m_pOpen; }
+	/// @brief Reset the open flag (used by `EditorLayer` after a close is handled or cancelled).
+	void setOpen(const bool iOpen) { m_pOpen = iOpen; }
+
 private:
 	void renderGizmo();
 	void renderOverlay() const;
@@ -92,6 +97,8 @@ private:
 	std::string m_gizmoBeforeYaml;
 	/// Whether the window was focused last frame (used to detect a focus transition).
 	bool m_wasFocused = false;
+	/// ImGui close state — set to false by ImGui when the tab's close X is clicked.
+	bool m_pOpen = true;
 };
 
 }// namespace owl::nest::panel

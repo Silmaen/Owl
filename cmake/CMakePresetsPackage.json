@@ -60,8 +60,8 @@
         "silmaen": {
           "docker_registry": "registry.argawaen.net",
           "docker_namespace": "builder",
-          "docker_image": "builder-clang18-ubuntu2404",
-          "docker_parameters": "-u %env.BUILDER_UID%:%env.BUILDER_GID% --platform=%docker_build_platform% -v %teamcity.agent.home.dir%/user/cache_dir:/tmp/cache_dir --network host -v %teamcity.agent.home.dir%/user:/home/user -e HOME=/home/user",
+          "docker_image": "builder-clang-llvm22-ubuntu2404",
+          "docker_parameters": "-u %env.BUILDER_UID%:%env.BUILDER_GID% --platform=%docker_build_platform% -v %teamcity.agent.home.dir%/user/cache_dir:/tmp/cache_dir --network host -v %teamcity.agent.home.dir%/user:/home/user -e HOME=/home/user -e TEAMCITY_VERSION=%teamcity.version%",
           "publish_doc": true,
           "archive_format": "tar.gz"
         }
@@ -97,8 +97,8 @@
           "archive_format": "tar.gz",
           "docker_registry": "registry.argawaen.net",
           "docker_namespace": "builder",
-          "docker_image": "builder-clang18-ubuntu2404",
-          "docker_parameters": "-u %env.BUILDER_UID%:%env.BUILDER_GID% --platform=%docker_build_platform% -v %teamcity.agent.home.dir%/user/cache_dir:/tmp/cache_dir --network host -v %teamcity.agent.home.dir%/user:/home/user -e HOME=/home/user"
+          "docker_image": "builder-clang-llvm22-ubuntu2404",
+          "docker_parameters": "-u %env.BUILDER_UID%:%env.BUILDER_GID% --platform=%docker_build_platform% -v %teamcity.agent.home.dir%/user/cache_dir:/tmp/cache_dir --network host -v %teamcity.agent.home.dir%/user:/home/user -e HOME=/home/user -e TEAMCITY_VERSION=%teamcity.version%"
         }
       }
     },

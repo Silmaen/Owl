@@ -105,7 +105,7 @@ void Window::init(const Properties& iProps) {
 	}
 	// Set GLFW callbacks
 	{
-		glfwSetWindowSizeCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iWidth, const int iHeight) {
+		glfwSetWindowSizeCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iWidth, const int iHeight) -> void {
 			auto* const data = static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow));
 			data->size.x() = static_cast<uint32_t>(iWidth);
 			data->size.y() = static_cast<uint32_t>(iHeight);
@@ -114,12 +114,12 @@ void Window::init(const Properties& iProps) {
 			data->eventCallback(event);
 		});
 
-		glfwSetWindowCloseCallback(mp_glfwWindow, [](GLFWwindow* iWindow) {
+		glfwSetWindowCloseCallback(mp_glfwWindow, [](GLFWwindow* iWindow) -> void {
 			event::WindowCloseEvent event;
 			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 		});
 		glfwSetKeyCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iKey, [[maybe_unused]] int iScancode,
-											 const int iAction, [[maybe_unused]] int iMods) {
+											 const int iAction, [[maybe_unused]] int iMods) -> void {
 			const auto cKey = static_cast<input::KeyCode>(iKey);
 			switch (iAction) {
 				case GLFW_PRESS:
@@ -145,13 +145,13 @@ void Window::init(const Properties& iProps) {
 			}
 		});
 
-		glfwSetCharCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const unsigned int iKeycode) {
+		glfwSetCharCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const unsigned int iKeycode) -> void {
 			event::KeyTypedEvent event(static_cast<input::KeyCode>(iKeycode));
 			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 		});
 
 		glfwSetMouseButtonCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iButton, const int iAction,
-													 [[maybe_unused]] const int iMods) {
+													 [[maybe_unused]] const int iMods) -> void {
 			switch (iAction) {
 				case GLFW_PRESS:
 					{
@@ -170,17 +170,17 @@ void Window::init(const Properties& iProps) {
 			}
 		});
 
-		glfwSetScrollCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const double iXOffset, const double iYOffset) {
+		glfwSetScrollCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const double iXOffset, const double iYOffset) -> void {
 			event::MouseScrolledEvent event(static_cast<float>(iXOffset), static_cast<float>(iYOffset));
 			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 		});
 
-		glfwSetCursorPosCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const double iX, const double iY) {
+		glfwSetCursorPosCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const double iX, const double iY) -> void {
 			event::MouseMovedEvent event(static_cast<float>(iX), static_cast<float>(iY));
 			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 		});
 
-		glfwSetDropCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iCount, const char** iPaths) {
+		glfwSetDropCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iCount, const char** iPaths) -> void {
 			std::vector<std::filesystem::path> paths;
 			paths.reserve(static_cast<size_t>(iCount));
 			for (int i = 0; i < iCount; ++i)

@@ -9,7 +9,7 @@ readme = "README.md"
 python = "^3.12"
 
 [tool.poetry.group.build.dependencies]
-depmanager = "^0.5.4"
+depmanager = "^0.5.5"
 black = "^26.1.0"
 gcovr = "^8.6"
 

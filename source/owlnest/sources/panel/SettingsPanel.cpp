@@ -10,6 +10,8 @@
 
 #include <gui/IconBank.h>
 
+#include <algorithm>
+
 namespace owl::nest::panel {
 
 void SettingsPanel::onImGuiRender(EditorSettings& ioSettings, ActionRegistry& ioRegistry) {
@@ -28,6 +30,22 @@ void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
 	if (!ImGui::CollapsingHeader("General", ImGuiTreeNodeFlags_DefaultOpen))
 		return;
 	ImGui::Checkbox("Show Stats Panel", &ioSettings.showStats);
+
+	ImGui::Spacing();
+	ImGui::TextUnformatted("Code editor font size");
+	ImGui::SameLine();
+	if (ImGui::SliderInt("##codeEditorFontSize", &ioSettings.codeEditorFontSize, 8, 32, "%d px"))
+		ioSettings.codeEditorFontSize = std::clamp(ioSettings.codeEditorFontSize, 8, 48);
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+		ImGui::SetTooltip("Pixel size used inside the code/text editor tabs. Takes effect on the next startup. Default is 13.");
+
+	ImGui::Spacing();
+	ImGui::TextUnformatted("UI font size");
+	ImGui::SameLine();
+	if (ImGui::SliderInt("##uiFontSize", &ioSettings.uiFontSize, 14, 24, "%d px"))
+		ioSettings.uiFontSize = std::clamp(ioSettings.uiFontSize, 14, 24);
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+		ImGui::SetTooltip("Pixel size of the main UI font. Takes effect on the next startup.");
 }
 
 void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {

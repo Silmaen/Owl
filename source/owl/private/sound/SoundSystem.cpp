@@ -12,6 +12,7 @@
 namespace owl::sound {
 
 SoundSystem::State SoundSystem::m_internalState = State::Created;
+// NOLINTNEXTLINE(bugprone-throwing-static-initialization)
 shared<SoundSystem::SoundLibrary> SoundSystem::m_soundLibrary = mkShared<SoundSystem::SoundLibrary>();
 
 void SoundSystem::init() {

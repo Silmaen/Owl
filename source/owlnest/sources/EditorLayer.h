@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <gui/widgets/Ribbon.h>
 #include <io/pack/AssetScanner.h>
 #include <owl.h>
 
@@ -56,6 +57,9 @@ public:
 	void newScene();
 	void openScene();
 	void openScene(const std::filesystem::path& iScenePath);
+
+	/// @brief Open a text/code file as a new `CodeEditorDocument` (or switch to one already open).
+	void openCodeFile(const std::filesystem::path& iPath);
 	void saveSceneAs();
 	void saveSceneAs(const std::filesystem::path& iScenePath);
 	void saveCurrentScene();
@@ -64,6 +68,8 @@ public:
 	void openProject();
 	void openProject(const std::filesystem::path& iDir);
 	void saveProject();
+	/// @brief Duplicate the current project to a user-picked directory and switch to it.
+	void saveProjectAs();
 	void closeProject();
 	void importScene();
 	void updateWindowTitle();
@@ -93,6 +99,10 @@ public:
 
 	/// @brief Access the document manager (used by the Viewport tab bar).
 	[[nodiscard]] auto getDocumentManager() -> DocumentManager& { return m_documents; }
+	/// @brief Access the editor settings (font size, theme, etc.).
+	[[nodiscard]] auto getSettings() const -> const EditorSettings& { return m_settings; }
+	/// @brief Route a Content Browser file drop to `openScene` / `openCodeFile` / prefab instantiation.
+	void handleContentBrowserDrop(const std::filesystem::path& iRelativePath);
 	/// @brief Close the document with the given id (handles dirty + tab sync).
 	void closeDocument(core::UUID iId);
 	/// @brief Request closing a document. Prompts for confirmation when dirty.
@@ -102,8 +112,15 @@ public:
 
 private:
 	void renderStats(const core::Timestep& iTimeStep);
-	void renderMenu();
-	void renderToolbar();
+	/// Populate `m_ribbon` with the File, Edit, and contextual tabs bound to ActionRegistry.
+	/// The contextual tab contents depend on the active document type.
+	void buildRibbon();
+	/// Contextual tab for scene documents (Playback, Gizmo, Scene file ops, Package).
+	void buildSceneTab();
+	/// Contextual tab for code / text documents (Save, Save As, Close, language…).
+	void buildCodeTab();
+	/// Rebuild the ribbon when the active document type changes.
+	void refreshRibbonForActiveDoc();
 	/// Render the welcome screen shown when no project is loaded.
 	void renderWelcomeScreen();
 	/// Render the packaging wizard dialog (shown before running pack).
@@ -112,6 +129,8 @@ private:
 	void renderPackValidationModal();
 	/// Render the dirty-close confirmation modal for `m_pendingCloseDocId`.
 	void renderCloseDocumentModal();
+	/// Render the recent-projects popup (triggered from the ribbon File > Recent button).
+	void renderRecentProjectsPopup();
 	/// Launch the async validation + pack pipeline with the current wizard settings.
 	void launchPackValidation();
 	/// Start the async packaging process (called after validation).
@@ -139,7 +158,10 @@ private:
 	/// Perform redo and restore entity selection from the command's hint.
 	void performRedo();
 
-	gui::widgets::ButtonBar m_controlBar;
+	gui::widgets::Ribbon m_ribbon;
+	/// Last document type for which the ribbon's contextual tab was populated.  When the active
+	/// document switches to a different type, we rebuild the ribbon.
+	std::optional<DocumentType> m_lastRibbonDocType;
 
 	input::CameraOrthoController m_cameraController;
 
@@ -165,6 +187,13 @@ private:
 	core::UUID m_pendingCloseDocId{0};
 	/// True when the close-confirmation modal should open on the next frame.
 	bool m_openCloseDocModal = false;
+	/// Set by the ribbon's "Recent" button; drives `renderRecentProjectsPopup`.
+	bool m_openRecentProjectsPopup = false;
+	/// Documents that must actually be closed at the start of the next frame.  Deferring the
+	/// destruction avoids a use-after-free on the Viewport's Vulkan color-attachment: during the
+	/// current frame, ImGui's draw list still references the texture and only samples it at the
+	/// `UiLayer::end()` flush.
+	std::vector<core::UUID> m_deferredCloseIds;
 
 	// project
 	Project m_project;

@@ -461,14 +461,13 @@ function(owl_target_link_libraries Target LinkType Module)
             endif ()
         endforeach ()
 
-        if (ForceRelease)
-            set(StateSave ${CMAKE_MAP_IMPORTED_CONFIG_DEBUG})
-            set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG Release)
-        endif ()
+        # `CMAKE_MAP_IMPORTED_CONFIG_DEBUG` is actually consulted at GENERATE time (link
+        # resolution + `$<TARGET_RUNTIME_DLLS:...>` evaluation), so forcing it just around
+        # `find_package` was a no-op.  The mapping is now applied once at directory scope in the
+        # top-level CMakeLists.txt (see `CMAKE_MAP_IMPORTED_CONFIG_DEBUG`), so both link and DLL
+        # copy consistently pick the Release variant in a Debug build when
+        # `OWL_USE_RELEASE_THIRD_PARTY` is ON.
         find_package(${Module} ${FindPackageArgs})
-        if (ForceRelease)
-            set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG ${StateSave})
-        endif ()
         if (NOT TARGET ${ModuleTarget})
             message(FATAL_ERROR "Module ${ModuleTarget} not found. Please ensure it is built and available in the CMake path.")
         endif ()

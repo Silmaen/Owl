@@ -459,7 +459,7 @@ void Descriptors::createSingleImageDescriptorPool() {
 
 auto Descriptors::TextureList::contains(uint32_t iIndex) const -> bool {
 	return std::find_if(textures.begin(), textures.end(),
-						[&iIndex](const auto& iElem) { return iElem.first == iIndex; }) != textures.end();
+						[&iIndex](const auto& iElem) -> bool { return iElem.first == iIndex; }) != textures.end();
 }
 
 auto Descriptors::TextureList::registerNewTexture() -> uint32_t {
@@ -470,7 +470,7 @@ auto Descriptors::TextureList::registerNewTexture() -> uint32_t {
 
 void Descriptors::TextureList::unregisterTexture(uint32_t iIndex) {
 	const auto iter = std::find_if(textures.begin(), textures.end(),
-								   [&iIndex](const auto& iElem) { return iElem.first == iIndex; });
+								   [&iIndex](const auto& iElem) -> bool { return iElem.first == iIndex; });
 	if (iter == textures.end())
 		return;
 	iter->second->freeTexture();
@@ -478,7 +478,7 @@ void Descriptors::TextureList::unregisterTexture(uint32_t iIndex) {
 }
 auto Descriptors::TextureList::getTextureData(uint32_t iIndex) -> tex {
 	const auto iter = std::find_if(textures.begin(), textures.end(),
-								   [&iIndex](const auto& iElem) { return iElem.first == iIndex; });
+								   [&iIndex](const auto& iElem) -> bool { return iElem.first == iIndex; });
 	if (iter == textures.end())
 		return nullptr;
 	return iter->second;

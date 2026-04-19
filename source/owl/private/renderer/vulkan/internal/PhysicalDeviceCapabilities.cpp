@@ -65,26 +65,26 @@ PhysicalDeviceCapabilities::~PhysicalDeviceCapabilities() = default;
 
 auto PhysicalDeviceCapabilities::hasLayer(const std::string& iLayer) const -> bool {
 	return std::ranges::find_if(supportedLayers.begin(), supportedLayers.end(),
-								[&iLayer](const VkLayerProperties& iLayerProp) {
+								[&iLayer](const VkLayerProperties& iLayerProp) -> bool {
 									return iLayerProp.layerName == iLayer;
 								}) != supportedLayers.end();
 }
 
 auto PhysicalDeviceCapabilities::hasExtension(const std::string& iExtension) const -> bool {
 	return std::ranges::find_if(supportedExtensions.begin(), supportedExtensions.end(),
-								[&iExtension](const VkExtensionProperties& iExtensionProp) {
+								[&iExtension](const VkExtensionProperties& iExtensionProp) -> bool {
 									return iExtensionProp.extensionName == iExtension;
 								}) != supportedExtensions.end();
 }
 
 auto PhysicalDeviceCapabilities::hasLayers(const std::vector<std::string>& iLayers) const -> bool {
 	return std::ranges::all_of(iLayers.begin(), iLayers.end(),
-							   [&](const auto& iLayer) { return this->hasLayer(iLayer); });
+							   [&](const auto& iLayer) -> bool { return this->hasLayer(iLayer); });
 }
 
 auto PhysicalDeviceCapabilities::hasExtensions(const std::vector<std::string>& iExtensions) const -> bool {
 	return std::ranges::all_of(iExtensions.begin(), iExtensions.end(),
-							   [&](const auto& iExtension) { return this->hasExtension(iExtension); });
+							   [&](const auto& iExtension) -> bool { return this->hasExtension(iExtension); });
 }
 
 auto PhysicalDeviceCapabilities::getScore() const -> uint32_t {
@@ -134,7 +134,7 @@ auto enumerateDevices(const VkInstance& iInstance) -> std::vector<PhysicalDevice
 	// sort by decreasing score...
 	if (!resultVec.empty())
 		std::ranges::sort(resultVec.begin(), resultVec.cend(),
-						  [](const PhysicalDeviceCapabilities& iFirst, const PhysicalDeviceCapabilities& iSecond) {
+						  [](const PhysicalDeviceCapabilities& iFirst, const PhysicalDeviceCapabilities& iSecond) -> bool {
 							  return iFirst.getScore() > iSecond.getScore();
 						  });
 	OWL_CORE_TRACE("Vulkan: Found {} physical devices.", resultVec.size())

@@ -23,7 +23,7 @@ auto DocumentManager::add(uniq<Document> iDocument) -> Document* {
 
 auto DocumentManager::remove(const core::UUID iId) -> bool {
 	const auto it = std::ranges::find_if(
-			m_documents, [iId](const uniq<Document>& iDoc) { return iDoc && iDoc->id() == iId; });
+			m_documents, [iId](const uniq<Document>& iDoc) -> bool { return iDoc && iDoc->id() == iId; });
 	if (it == m_documents.end())
 		return false;
 	const bool wasActive = (mp_active == it->get());
@@ -63,7 +63,7 @@ void DocumentManager::setActive(Document* iDocument) {
 
 auto DocumentManager::find(const core::UUID iId) const -> Document* {
 	const auto it = std::ranges::find_if(
-			m_documents, [iId](const uniq<Document>& iDoc) { return iDoc && iDoc->id() == iId; });
+			m_documents, [iId](const uniq<Document>& iDoc) -> bool { return iDoc && iDoc->id() == iId; });
 	return (it == m_documents.end()) ? nullptr : it->get();
 }
 

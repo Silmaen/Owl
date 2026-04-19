@@ -35,9 +35,15 @@ foreach (child ${children})
                 set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES RESOURCE_LOCK owl_engine_globals)
             endif ()
             if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
+                # Copy gtest + every runtime DLL the test binary's full link graph pulls in next to
+                # the executable.  The engine's own post-build copies OwlEngine-side deps, but a
+                # test may surface additional transitive DLLs that weren't on the engine's
+                # `TARGET_RUNTIME_DLLS` evaluation (different linkage path).  Idempotent via
+                # `copy_if_different`.
                 add_custom_command(TARGET ${PROJECT_PREFIX_LOWER}_${child}_unit_test POST_BUILD
                         COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GTest::gtest>" "${CMAKE_BINARY_DIR}/bin"
                         COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GTest::gtest_main>" "${CMAKE_BINARY_DIR}/bin"
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_RUNTIME_DLLS:${PROJECT_PREFIX_LOWER}_${child}_unit_test>" "${CMAKE_BINARY_DIR}/bin"
                         COMMAND_EXPAND_LISTS
                 )
             endif ()

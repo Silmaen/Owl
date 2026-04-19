@@ -11,7 +11,6 @@
 #include <core/EntryPoint.h>
 
 #include <cstdio>
-#include <format>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -61,7 +60,9 @@ auto readEarlyConfig(const std::filesystem::path& iWorkDir) -> EarlyConfig {
 				cfg.height = h.as<uint32_t>();
 		}
 	} catch (const std::exception& iEx) {
-		std::fputs(std::format("Warning: failed to parse runner.yml: {}\n", iEx.what()).c_str(), stderr);
+		std::fputs("Warning: failed to parse runner.yml: ", stderr);
+		std::fputs(iEx.what(), stderr);
+		std::fputc('\n', stderr);
 	}
 	return cfg;
 }

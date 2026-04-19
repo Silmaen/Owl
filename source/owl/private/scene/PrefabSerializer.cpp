@@ -289,6 +289,7 @@ auto PrefabSerializer::applyToInstance(const std::filesystem::path& iFilepath, c
 	}
 
 	// Copy PrefabLink by value — the original component will be destroyed during the loop below.
+	// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 	const auto prefabLink = ioInstanceRoot.getComponent<component::PrefabLink>();
 	const auto canonicalYaml = buildCanonicalYamlMap(*loaded->scene);
 

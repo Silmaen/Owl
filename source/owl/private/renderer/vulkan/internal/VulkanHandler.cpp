@@ -101,6 +101,7 @@ auto VulkanHandler::toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplV
 					{.RenderPass = m_swapChain->getRenderPass(),
 					 .Subpass = 1,
 					 .MSAASamples = VK_SAMPLE_COUNT_1_BIT,
+					 .ExtraDynamicStates = {},
 					 .PipelineRenderingCreateInfo = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
 													 .pNext = nullptr,
 													 .viewMask = 0,
@@ -246,7 +247,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 			.pAttachments = att.data(),
 			.blendConstants = {0.f, 0.f, 0.f, 0.f}};
 	constexpr VkDynamicState dynamicStates[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
-											VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE};
+												VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE};
 	const VkPipelineDynamicStateCreateInfo dynamicState{.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
 														.pNext = nullptr,
 														.flags = {},
@@ -351,15 +352,15 @@ void VulkanHandler::beginFrame() {
 	m_currentFramebuffer->resetBatch();
 	vkWaitForFences(core.getLogicalDevice(), 1, m_currentFramebuffer->getCurrentFence(), VK_TRUE, UINT64_MAX);
 	uint32_t imageIndex = 0;
-	VkResult result = vkAcquireNextImageKHR(
-			core.getLogicalDevice(), m_currentFramebuffer->getSwapChain(), UINT64_MAX,
-			m_currentFramebuffer->getCurrentImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(core.getLogicalDevice(), m_currentFramebuffer->getSwapChain(), UINT64_MAX,
+											m_currentFramebuffer->getCurrentImageAvailableSemaphore(), VK_NULL_HANDLE,
+											&imageIndex);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		m_currentFramebuffer->resize(toSize(core.getCurrentExtent()));
 		m_resize = false;
-		result = vkAcquireNextImageKHR(
-				core.getLogicalDevice(), m_currentFramebuffer->getSwapChain(), UINT64_MAX,
-				m_currentFramebuffer->getCurrentImageAvailableSemaphore(), VK_NULL_HANDLE, &imageIndex);
+		result = vkAcquireNextImageKHR(core.getLogicalDevice(), m_currentFramebuffer->getSwapChain(), UINT64_MAX,
+									   m_currentFramebuffer->getCurrentImageAvailableSemaphore(), VK_NULL_HANDLE,
+									   &imageIndex);
 	}
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		m_resize = true;
