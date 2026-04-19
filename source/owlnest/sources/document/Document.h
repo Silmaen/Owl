@@ -77,7 +77,7 @@ public:
 
 private:
 	/// Stable identifier used by the UI (tab id, ImGui window suffix).
-	core::UUID m_id{};
+	core::UUID m_id;
 };
 
 }// namespace owl::nest
