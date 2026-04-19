@@ -63,13 +63,24 @@ public:
 	virtual void onEvent([[maybe_unused]] event::Event& ioEvent) {}
 	/**
 	 * @brief Update internal variables and do the rendering.
+	 *
+	 * Virtual so specialised panels (e.g. a per-document viewport with its own
+	 * close button and unsaved-document flag) can fully take over the window
+	 * setup while still reusing the stock bookkeeping of focus / hover / size.
 	 */
-	void onRender();
+	virtual void onRender();
 
 	/**
 	 * @brief Do the rendering.
 	 */
 	virtual void onRenderInternal() = 0;
+
+	/**
+	 * @brief Optional header area drawn after `ImGui::Begin` and before the size of the
+	 * content region is captured. Useful for tab bars or toolbars that should eat a
+	 * portion of the panel height. Default implementation draws nothing.
+	 */
+	virtual void onHeaderRender() {}
 
 	/**
 	 * @brief get the panel size.

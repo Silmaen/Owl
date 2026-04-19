@@ -31,6 +31,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Detects missing `OwlRunner` executable and empty asset list
     - Post-pack build report: asset count, pack size (MiB), and total duration displayed in the
       completion modal
+- **Multi-document architecture**
+    - New abstractions in `source/owlnest/sources/document/`: `Document` (interface),
+      `DocumentManager` (open list + active tracking), `SceneDocument` (scene wrapper)
+    - Scene-scoped state (`editorScene`, `activeScene`, path, Play/Pause/Stop, teleport request,
+      save/load request, undo stack, **the Viewport panel**) moved from `EditorLayer` into
+      `SceneDocument`
+    - `EditorLayer` becomes a host of `DocumentManager`; all scene operations delegate to the
+      active document
+    - **Per-document Viewport**: each `SceneDocument` owns its own `Viewport` instance with its
+      own framebuffer and a stable ImGui window id (`##scene_<uuid>`). ImGui's docking groups
+      viewports that share a dock node as tabs automatically, and users can tear a tab off to
+      see several scenes side-by-side
+    - Dirty marker rendered via `ImGuiWindowFlags_UnsavedDocument`. No close `x` and no collapse
+      button on viewport tabs (`ImGuiWindowFlags_NoCollapse`, `p_open = nullptr`) — scenes are
+      closed via `Current > Close Scene` or `Ctrl+W`, which route through a "Discard changes /
+      Cancel" modal when the document is dirty. New viewports auto-dock to the central node on
+      first open
+    - `File > Open Scene` opens in a new tab (or switches to the existing one when already open),
+      `File > New Scene` creates an Untitled tab (or reuses a pristine one)
+    - Play/Pause/Stop/Step toolbar + gizmo control bar are hidden when the active tab is not the
+      document currently running; the toolbar positions itself over the *active* viewport's
+      bounds (updated when the user switches tabs)
+    - Per-document undo/redo stack (Ctrl+Z / Ctrl+Y acts on the active doc)
+    - New shortcuts: `Ctrl+W` close active document, `Ctrl+Tab` / `Ctrl+Shift+Tab` cycle
+    - Background simulation: non-active tabs in Play mode advance their physics/scripts without
+      rendering (new `iRender` flag on `Scene::onUpdateRuntime`); only the active viewport
+      writes to its framebuffer
+    - `gui::BasePanel::onRender()` becomes virtual so specialised panels (the per-document
+      Viewport) can provide their own `ImGui::Begin` with close button + unsaved-document flag
+      while reusing the focus/hover/size bookkeeping
 - **File type icons + icon buttons**
     - Per-extension content-browser icons built from the `base_file_ext_icon` template with a
       ribbon label and a central type glyph

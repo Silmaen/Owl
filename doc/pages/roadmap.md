@@ -20,6 +20,12 @@ This page tracks planned and completed features across Owl releases.
 **Goal:** Let players extend and modify games built with Owl. Bring Owl games to more platforms.
 Handle large game worlds efficiently.
 
+- Editor UX
+    - ![Planned][planned] Session restore (persisted open tabs)
+        - Remember the list of open documents between launches (per project)
+        - Restore active tab, selection, and viewport layout
+        - Stored in `EditorSettings` or `owl_project.yml`
+
 - Modding
     - ![Planned][planned] Mod loading system
         - Discover and load mod packs (`.owlmod`) at runtime
@@ -302,13 +308,30 @@ asynchronous with progress feedback.
         - Rescan triggered after create folder / import / rename / delete / drop / move
         - Sorted entries (folders first, then alphabetical)
 - Multi-Document Architecture
-    - ![Planned][planned] Document tab system
-        - Tab bar for open documents (scenes, scripts, node graphs)
-        - Each tab owns its own panel context (hierarchy, inspector, etc.)
-        - Remember and restore open tabs between sessions
-    - ![Planned][planned] Detachable panels
-        - Panels can be dragged out into floating windows
-        - Independent ImGui viewports per floating window
+    - ![Done][done] Document tab system
+        - `Document` / `DocumentManager` / `SceneDocument` / `DocumentTabBar` in
+          `source/owlnest/sources/document/`
+        - Per-document undo stack, dirty marker, Play/Pause/Stop state
+        - Active document concept; global panels (hierarchy, inspector) follow it
+        - Tab bar rendered **inside the Viewport header** with dirty `*`, play/pause badge,
+          close button with confirmation prompt (no separate "Documents" window)
+        - Play/Gizmo toolbars hidden when viewing a tab that is not the one running
+        - `Ctrl+W` close, `Ctrl+Tab` / `Ctrl+Shift+Tab` cycle, `File > Open Scene` opens in
+          a new tab (or reuses an already-open one)
+        - Background simulation: non-active tabs in Play mode advance physics/scripts without
+          rendering (`Scene::onUpdateRuntime` gained an `iRender` flag)
+    - ![Done][done] Per-document viewport (side-by-side via docking)
+        - Each `SceneDocument` owns its own `Viewport` with its own framebuffer and a stable
+          `##scene_<uuid>` ImGui window id
+        - ImGui docking groups viewports as tabs automatically; tear one off to see scenes
+          side-by-side. Dirty marker via `ImGuiWindowFlags_UnsavedDocument`, close via native
+          `p_open`. New viewports auto-dock to the central node on first open
+        - Active document = last-focused viewport; hierarchy / inspector follow it
+    - ![Done][done] Detachable panels
+        - Fournit par le docking natif d'ImGui (`ImGuiConfigFlags_DockingEnable` +
+          `ImGuiConfigFlags_ViewportsEnable` activés dans `UiLayer`)
+        - N'importe quel panneau (hierarchy, viewport, content browser, log…) peut être
+          drag-out en fenêtre OS indépendante ou docké dans un autre nœud
 - Script Editor
     - ![Planned][planned] Integrated Lua script editor
         - Syntax-highlighted text editor for `.lua` files (open from Content Browser)
@@ -386,6 +409,17 @@ asynchronous with progress feedback.
         - `IconBank::iconButton(name, label, size)` helper renders an icon-prefixed button, reused
           across Welcome, Packaging Wizard, validation modal, AsyncProgressModal, Content Browser
           dialogs, Log panel, Settings/Parameters/Project Settings
+    - ![Planned][planned] Ribbon-style main menu
+        - Replace the current `ImGui::BeginMenuBar` dropdowns with a Microsoft Office-style
+          ribbon: horizontal banner with top-level tabs (File, Edit, Current, Help…)
+        - Each tab hosts grouped buttons in two sizes:
+            - **Large** — icon on top, text underneath (primary actions: Save, Pack Game, Play)
+            - **Small** — icon on the left, text on the right (secondary actions, stacked three
+              per column so three small buttons fit in the vertical space of one large button +
+              its caption)
+        - Reuses `IconBank` icons; groups are labelled (e.g. "Project", "Scene", "Playback")
+        - Keeps the existing `ActionRegistry` bindings so keyboard shortcuts stay in sync
+        - Integrates with the Document tab bar (ribbon above, tabs inside the Viewport below)
 
 ## v0.1.0 -- 2026-04-16
 

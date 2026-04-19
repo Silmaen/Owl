@@ -20,18 +20,22 @@ BasePanel::~BasePanel() = default;
 void BasePanel::onRender() {
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
 	ImGui::Begin(m_name.c_str());
-	const auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
-	const auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
-	const auto viewportOffset = ImGui::GetWindowPos();
-	m_lower = {viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y};
-	m_upper = {viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y};
-
 	m_focused = ImGui::IsWindowFocused();
 	m_hovered = ImGui::IsWindowHovered();
 	core::Application::get().getImGuiLayer()->blockEvents(!m_focused && !m_hovered);
 
-	const ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
-	m_size = {static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y)};
+	// Optional header (e.g. tab bar). Drawn before bounds capture so it eats its own height.
+	onHeaderRender();
+
+	// Bounds of the scene-rendering region (below the header, above the end of the window).
+	const auto cursorStart = ImGui::GetCursorScreenPos();
+	const auto contentRegionAvail = ImGui::GetContentRegionAvail();
+	const float safeW = std::max(0.f, contentRegionAvail.x);
+	const float safeH = std::max(0.f, contentRegionAvail.y);
+	m_lower = {cursorStart.x, cursorStart.y};
+	m_upper = {cursorStart.x + safeW, cursorStart.y + safeH};
+	m_size = {static_cast<uint32_t>(safeW), static_cast<uint32_t>(safeH)};
+
 	onRenderInternal();
 
 	ImGui::End();

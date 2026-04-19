@@ -399,7 +399,7 @@ void Scene::onEndRuntime() {
 	status = Status::Editing;
 }
 
-void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
+void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender) {
 	OWL_PROFILE_FUNCTION()
 	// find camera
 	renderer::Camera* mainCamera = nullptr;
@@ -416,7 +416,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 		}
 	}
 	if (status == Status::Victory) {
-		if (mainCamera != nullptr) {
+		if (iRender && mainCamera != nullptr) {
 			const auto font = core::Application::get().getFontLibrary().getDefaultFont();
 			math::Transform textTransform = camTransform;
 			textTransform.translation().z() = 0;
@@ -434,7 +434,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 		return;
 	}
 	if (status == Status::Death) {
-		if (mainCamera != nullptr) {
+		if (iRender && mainCamera != nullptr) {
 			const auto font = core::Application::get().getFontLibrary().getDefaultFont();
 			math::Transform textTransform = camTransform;
 			textTransform.translation().z() = 0;
@@ -583,7 +583,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep) {
 	}
 
 	// Render 2D
-	if (mainCamera != nullptr) {
+	if (iRender && mainCamera != nullptr) {
 		mainCamera->setTransform(cameraTransform);
 		// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
 		math::mat4 viewRotation = mainCamera->getView();

@@ -14,15 +14,15 @@
 #include "ActionRegistry.h"
 #include "EditorSettings.h"
 #include "Project.h"
-#include "UndoManager.h"
+#include "document/DocumentManager.h"
+#include "document/SceneDocument.h"
+#include "panel/AsyncProgressModal.h"
 #include "panel/ContentBrowser.h"
 #include "panel/LogPanel.h"
 #include "panel/Parameters.h"
-#include "panel/AsyncProgressModal.h"
 #include "panel/ProjectSettings.h"
 #include "panel/SceneHierarchy.h"
 #include "panel/SettingsPanel.h"
-#include "panel/Viewport.h"
 
 namespace owl::nest {
 /**
@@ -49,8 +49,9 @@ public:
 	void onEvent(event::Event& ioEvent) override;
 	void onImGuiRender(const core::Timestep& iTimeStep) override;
 
-	enum struct State : uint8_t { Edit, Play, Pause };
-	[[nodiscard]] auto getState() const -> const State& { return m_state; }
+	/// @brief Scene-state alias — the active document owns the authoritative value.
+	using State = SceneDocument::State;
+	[[nodiscard]] auto getState() const -> State;
 
 	void newScene();
 	void openScene();
@@ -70,28 +71,34 @@ public:
 	void packGame();
 	void instantiatePrefab(const std::filesystem::path& iPrefabPath, const std::string& iAssetRelativePath = {});
 
-	[[nodiscard]] auto getActiveScene() const -> const shared<scene::Scene>& { return m_activeScene; }
+	/// @brief Active scene from the currently active document (empty shared if none).
+	[[nodiscard]] auto getActiveScene() const -> const shared<scene::Scene>&;
 	[[nodiscard]] auto getSelectedEntity() const -> scene::Entity;
 	void setSelectedEntity(scene::Entity iEntity);
 
-	/**
-	 * @brief Consume a pending step-frame request.
-	 * @return True if a step was requested (and is now consumed).
-	 */
+	/// @brief Consume a pending step-frame request from the active document.
 	auto consumeStepRequest() -> bool;
 
-	/**
-	 * @brief Handle a cross-level teleport request from the active scene.
-	 */
+	/// @brief Handle a cross-level teleport request from the active document's scene.
 	void handleTeleportRequest();
 
-	/// @brief Request to stop play mode (called from Viewport on scene.quit()).
-	void requestStop() { m_stopRequested = true; }
+	/// @brief Request to stop play mode on the active document (e.g. from Lua `scene.quit()`).
+	void requestStop();
 
-	/**
-	 * @brief Handle a save/load request from a Lua script.
-	 */
+	/// @brief Handle a save/load request from Lua on the active document's scene.
 	void handleSaveLoadRequest();
+
+	/// @brief Access the active document's undo manager, or nullptr if no doc is open.
+	[[nodiscard]] auto activeUndoManager() -> UndoManager*;
+
+	/// @brief Access the document manager (used by the Viewport tab bar).
+	[[nodiscard]] auto getDocumentManager() -> DocumentManager& { return m_documents; }
+	/// @brief Close the document with the given id (handles dirty + tab sync).
+	void closeDocument(core::UUID iId);
+	/// @brief Request closing a document. Prompts for confirmation when dirty.
+	void requestCloseDocument(core::UUID iId);
+	/// @brief Close the currently active document (with dirty prompt if needed).
+	void requestCloseActiveDocument();
 
 private:
 	void renderStats(const core::Timestep& iTimeStep);
@@ -103,10 +110,21 @@ private:
 	void renderPackWizardModal();
 	/// Render the pre-packaging validation modal (missing assets confirmation).
 	void renderPackValidationModal();
+	/// Render the dirty-close confirmation modal for `m_pendingCloseDocId`.
+	void renderCloseDocumentModal();
 	/// Launch the async validation + pack pipeline with the current wizard settings.
 	void launchPackValidation();
 	/// Start the async packaging process (called after validation).
 	void startPackGame();
+
+	/// @brief Access (or create) the single SceneDocument during Phase 1.
+	auto ensureActiveSceneDocument() -> SceneDocument&;
+	/// @brief Get the active SceneDocument, or nullptr if the active doc is not a scene.
+	[[nodiscard]] auto activeSceneDocument() const -> SceneDocument*;
+	/// @brief Shortcut to the active document's Viewport, or nullptr.
+	[[nodiscard]] auto activeViewport() const -> panel::Viewport*;
+	/// @brief Active viewport size, or a sensible default (1280x720) when no viewport exists yet.
+	[[nodiscard]] auto activeViewportSize() const -> math::vec2ui;
 
 	auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
 	static auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
@@ -125,9 +143,6 @@ private:
 
 	input::CameraOrthoController m_cameraController;
 
-	State m_state = State::Edit;
-	bool m_stepRequested = false;
-	bool m_stopRequested = false;
 	/// Whether the welcome screen should be shown (hidden when user closes it).
 	bool m_showWelcomeScreen = true;
 
@@ -146,14 +161,10 @@ private:
 	/// XOR-obfuscate the pack TOC to deter casual inspection.
 	bool m_packObfuscate = true;
 
-	bool m_pendingTeleportVelocity = false;
-	math::vec2f m_teleportVelocity = {0.f, 0.f};
-	std::string m_teleportTargetName;
-
-	shared<scene::Scene> m_activeScene;
-	shared<scene::Scene> m_editorScene;
-
-	std::filesystem::path m_currentScenePath;
+	/// Pending document id to close (awaits dirty-confirmation modal). 0 when idle.
+	core::UUID m_pendingCloseDocId{0};
+	/// True when the close-confirmation modal should open on the next frame.
+	bool m_openCloseDocModal = false;
 
 	// project
 	Project m_project;
@@ -163,18 +174,24 @@ private:
 	size_t m_lastAllocCalls = 0;
 	size_t m_lastDeallocCalls = 0;
 
+	// Open documents (scenes for now; later also Lua scripts, node graphs...).
+	DocumentManager m_documents;
+
+	/// @brief Find an open SceneDocument whose on-disk path matches `iPath`.
+	[[nodiscard]] auto findSceneDocumentByPath(const std::filesystem::path& iPath) const -> SceneDocument*;
+	/// @brief Keep panels synced with the currently active document.
+	void syncActiveDocumentPanels();
+	/// @brief Get the document currently in Play or Pause mode (at most one).
+	[[nodiscard]] auto findPlayingSceneDocument() const -> SceneDocument*;
+
 	// Panels
 	panel::SceneHierarchy m_sceneHierarchy;
 	panel::ContentBrowser m_contentBrowser;
-	panel::Viewport m_viewport;
 	panel::Parameters m_parameters;
 	panel::ProjectSettings m_projectSettings;
 	panel::LogPanel m_logPanel;
 	panel::SettingsPanel m_settingsPanel;
 	panel::AsyncProgressModal m_asyncProgress;
-
-	// Undo/Redo
-	UndoManager m_undoManager;
 
 	// Action registry
 	ActionRegistry m_actionRegistry;
