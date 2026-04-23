@@ -35,7 +35,7 @@ void DrawData::bind() const {
 
 void DrawData::unbind() const {
 	if (mp_vertexArray)
-		mp_vertexArray->unbind();
+		VertexArray::unbind();
 	if (mp_shader)
 		mp_shader->unbind();
 }

@@ -18,7 +18,7 @@ namespace owl::math {
  * \return Linear color.
  */
 constexpr auto sRgbToLinear(const vec4& iColor) -> vec4 {
-	constexpr auto toLinear = [](const float iSrgb) {
+	constexpr auto toLinear = [](const float iSrgb) -> float {
 		return iSrgb <= 0.04045f ? iSrgb / 12.92f : std::pow((iSrgb + 0.055f) / 1.055f, 2.4f);
 	};
 	return {toLinear(iColor.r()), toLinear(iColor.g()), toLinear(iColor.b()), iColor.a()};
@@ -30,7 +30,7 @@ constexpr auto sRgbToLinear(const vec4& iColor) -> vec4 {
  * \return sRGB colr.
  */
 constexpr auto linearTosRgb(const vec4& iColor) -> vec4 {
-	constexpr auto toSrgb = [](const float iRgb) {
+	constexpr auto toSrgb = [](const float iRgb) -> float {
 		constexpr float power = 1.0f / 2.4f;
 		return iRgb <= 0.0031308f ? 12.92f * iRgb : 1.055f * std::pow(iRgb, power) - 0.055f;
 	};

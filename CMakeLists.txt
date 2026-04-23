@@ -26,6 +26,15 @@ option(${PROJECT_PREFIX}_ENABLE_PROFILING "Output profiling information during e
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_MODULE_PATH}")
 include(BaseConfig)
 
+# When third-party packages are consumed as Release builds, map Debug builds to the Release
+# imported-config so both link resolution AND `$<TARGET_RUNTIME_DLLS:...>` pick the same variant.
+# Set at directory scope so it propagates to every `add_subdirectory`.  Without this, Windows
+# Debug builds linked against `libd.lib` but the post-build copy brought `lib.dll`, causing the
+# loader to fail with `STATUS_DLL_NOT_FOUND` (0xc0000135) on every test binary.
+if (${PROJECT_PREFIX}_USE_RELEASE_THIRD_PARTY)
+    set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG Release)
+endif ()
+
 #
 # ---=== The Program ===---
 #

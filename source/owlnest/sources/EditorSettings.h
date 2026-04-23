@@ -24,6 +24,12 @@ struct EditorSettings {
 	bool showStats = true;
 	/// Current theme preset name (empty or "Custom" means use theme.yml).
 	std::string themePreset = "Dark";
+	/// Font size (pixels) used inside the code editor tabs.
+	int codeEditorFontSize = 17;
+	/// Pixel size of the main UI font.  Applied at the next startup (atlas is built once in
+	/// `UiLayer::onAttach`).  Default 18 — the previous default was 20 but 18 leaves more room
+	/// for docked panels on dense layouts.
+	int uiFontSize = 18;
 	/// Custom keybinding overrides (action ID -> shortcut string). Only non-default bindings.
 	std::unordered_map<std::string, std::string> keybindingOverrides;
 	/// Recently opened project directories (most recent first).

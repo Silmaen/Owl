@@ -50,6 +50,13 @@ target_import_so_files(${OWL_PROJECT})
 # magic_enum
 owl_target_link_libraries(${OWL_PROJECT} PRIVATE magic_enum REQUIRED ${THIRD_PARTY_RELEASE})
 
+# ImGui
+owl_target_link_libraries(${ENGINE_NAME} PRIVATE imgui REQUIRED ${THIRD_PARTY_RELEASE})
+
+# imgui_color_text_edit (syntax-highlighting text editor widget)
+owl_target_link_libraries(${OWL_PROJECT} PRIVATE imgui_color_text_edit REQUIRED ${THIRD_PARTY_RELEASE}
+        MODULE_TARGET "imgui_color_text_edit::imgui_color_text_edit")
+
 # yaml
 find_package(yaml-cpp REQUIRED)
 target_link_libraries(${OWL_PROJECT} PRIVATE yaml-cpp::yaml-cpp)

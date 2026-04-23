@@ -26,10 +26,13 @@ packages:
   googletest:
     version: 1.17.0
   imgui:
-    version: 1.92.4-docking
+    version: 1.92.7-docking
     kind: "shared"
+  imgui_color_text_edit:
+    version: 1.92.7
+    kind: "static"
   imguizmo:
-    version: 1.92.4
+    version: 1.92.7
     kind: "static"
   libdwarf:
     version: 2.2.0

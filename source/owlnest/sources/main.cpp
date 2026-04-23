@@ -8,7 +8,9 @@
 #include <owl.h>
 
 #include "EditorLayer.h"
+#include "EditorSettings.h"
 #include <core/EntryPoint.h>
+#include <gui/UiLayer.h>
 
 namespace owl {
 
@@ -25,6 +27,13 @@ public:
 OWL_DIAG_POP
 
 auto core::createApplication(int iArgc, char** iArgv) -> shared<Application> {
+	// Load the editor settings early — the UI font size must be known before the engine builds the
+	// ImGui font atlas in `UiLayer::onAttach`, which runs during `Application` construction.
+	nest::EditorSettings preSettings;
+	if (const auto settingsFile = std::filesystem::current_path() / "OwlNest_settings.yml"; exists(settingsFile))
+		preSettings.loadFromFile(settingsFile);
+	gui::UiLayer::setUiFontSize(static_cast<float>(preSettings.uiFontSize));
+	gui::UiLayer::setCodeFontSize(static_cast<float>(preSettings.codeEditorFontSize));
 	return mkShared<OwlNest>(AppParams{
 			.args = iArgv,
 			.name = "Owl Nest - Owl Engine Editor",

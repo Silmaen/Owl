@@ -18,7 +18,8 @@ class UndoManager;
 /// @brief Kind of editable document opened in a tab.
 enum struct DocumentType : uint8_t {
 	Scene,///< A `.owl` scene edited in the Viewport.
-	// Future: LuaScript, NodeGraph, Animation...
+	Code, ///< A text/source file edited with syntax highlighting.
+	// Future: NodeGraph, Animation...
 };
 
 /**

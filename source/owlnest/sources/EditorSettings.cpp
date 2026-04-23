@@ -8,6 +8,8 @@
 
 #include "EditorSettings.h"
 
+#include <algorithm>
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_DISABLE_CLANG("-Wshadow")
@@ -19,7 +21,7 @@ namespace owl::nest {
 void EditorSettings::pushRecentProject(const std::filesystem::path& iProjectDir) {
 	const auto canonical = iProjectDir.lexically_normal().generic_string();
 	// Remove any existing entry for this project.
-	std::erase_if(recentProjects, [&canonical](const std::string& iEntry) { return iEntry == canonical; });
+	std::erase_if(recentProjects, [&canonical](const std::string& iEntry) -> bool { return iEntry == canonical; });
 	// Insert at the front.
 	recentProjects.insert(recentProjects.begin(), canonical);
 	// Cap the list length.
@@ -29,7 +31,7 @@ void EditorSettings::pushRecentProject(const std::filesystem::path& iProjectDir)
 
 void EditorSettings::removeRecentProject(const std::filesystem::path& iProjectDir) {
 	const auto canonical = iProjectDir.lexically_normal().generic_string();
-	std::erase_if(recentProjects, [&canonical](const std::string& iEntry) { return iEntry == canonical; });
+	std::erase_if(recentProjects, [&canonical](const std::string& iEntry) -> bool { return iEntry == canonical; });
 }
 
 void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
@@ -41,6 +43,10 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			showStats = config["showStats"].as<bool>();
 		if (config["themePreset"])
 			themePreset = config["themePreset"].as<std::string>();
+		if (config["codeEditorFontSize"])
+			codeEditorFontSize = std::clamp(config["codeEditorFontSize"].as<int>(), 8, 48);
+		if (config["uiFontSize"])
+			uiFontSize = std::clamp(config["uiFontSize"].as<int>(), 14, 24);
 		if (const auto bindings = config["keybindings"]; bindings && bindings.IsMap()) {
 			keybindingOverrides.clear();
 			for (const auto& pair: bindings)
@@ -60,6 +66,8 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "EditorSettings" << YAML::Value << YAML::BeginMap;
 	out << YAML::Key << "showStats" << YAML::Value << showStats;
 	out << YAML::Key << "themePreset" << YAML::Value << themePreset;
+	out << YAML::Key << "codeEditorFontSize" << YAML::Value << codeEditorFontSize;
+	out << YAML::Key << "uiFontSize" << YAML::Value << uiFontSize;
 	if (!keybindingOverrides.empty()) {
 		out << YAML::Key << "keybindings" << YAML::Value << YAML::BeginMap;
 		for (const auto& [id, shortcut]: keybindingOverrides)

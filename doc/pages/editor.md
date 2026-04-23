@@ -60,6 +60,85 @@ All panels can be rearranged, resized, and tabbed together freely through
 the ImGui docking system. The layout is initialized by `EditorLayer::onAttach()`
 and persists via the ImGui `imgui.ini` file.
 
+## Ribbon Menu
+
+The menu bar is a Microsoft Office-style **ribbon** rendered between the OS
+window title and the dockspace. Top-level tabs hold grouped buttons in two
+sizes:
+
+- **Large** — 32 px icon with the label below (primary actions).
+- **Small** — 16 px icon with the label to the right; three small buttons stack
+  vertically to fit in the space of one large button + caption.
+
+The **File** tab is highlighted (title rendered in the theme accent color via
+`Ribbon::setTabHighlighted`) so it reads as the primary entry point. The
+contextual last tab switches between **Scene** and **Text** based on the active
+document type.
+
+| Tab   | Group    | Contents                                                          |
+|-------|----------|-------------------------------------------------------------------|
+| File  | Project  | New / Open (large), Save / Save As / Close (small)                |
+| File  | Recent   | Recent (large — opens a popup listing the recent projects)        |
+| File  | Package  | Pack Game (large)                                                 |
+| File  | Session  | Exit (large)                                                      |
+| Edit  | History  | Undo / Redo (large)                                               |
+| Edit  | Settings | Engine / Editor / Project (small)                                 |
+| Scene | File     | New / Open (large), Save / Save As / Import (small), Close (large)|
+| Scene | Playback | Play / Stop (large), Pause / Step (small)                         |
+| Scene | Gizmo    | Translate / Rotate / Scale (large, toggle)                        |
+| Scene | Package  | Pack Scene (large)                                                |
+| Text  | File     | Save / Close (large)                                              |
+
+Every button is backed by an `ActionRegistry` callback so keyboard shortcuts
+stay in sync. Grayed buttons (`isEnabled` returns false) indicate the action is
+not currently applicable.
+
+The widget lives in `gui::widgets::Ribbon`
+(`source/owl/public/gui/widgets/Ribbon.h`) and is plugged into the dockspace
+via `UiLayer::setTopBarCallback`.
+
+## Fonts
+
+The editor uses two ImGui fonts, both shipped as loose TTFs under
+`engine_assets/fonts/` and loaded at runtime via `AddFontFromFileTTF`:
+
+- **Roboto** (Regular / Bold / Italic) in `engine_assets/fonts/roboto/` — default
+  UI font at `EditorSettings::uiFontSize` (default 18 px, range 14–24).
+- **JetBrains Mono** Regular in `engine_assets/fonts/jetbrainsmono/` — dedicated
+  monospace font for the Code Document tabs, rasterised at
+  `EditorSettings::codeEditorFontSize` (default 17 px, range 8–48).
+
+Both sizes are applied when the atlas is built in `UiLayer::onAttach`, so
+changing them from the Editor Settings panel takes effect on the **next startup**.
+`main.cpp` reads the persisted settings before constructing the `Application` and
+pushes the values via `UiLayer::setUiFontSize` / `setCodeFontSize`.
+
+## Code Documents
+
+Owl Nest opens text / source files as their own tab (`DocumentType::Code`).
+Double-click a supported file in the Content Browser and a code editor tab
+appears next to the scene tabs.
+
+| Language | Extensions                                      | Highlighter |
+|----------|-------------------------------------------------|-------------|
+| Lua      | `.lua`                                          | built-in    |
+| C        | `.c`                                            | built-in    |
+| C++      | `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.hxx`     | built-in    |
+| Python   | `.py`                                           | built-in    |
+| YAML     | `.yml`, `.yaml`                                 | custom      |
+| JSON     | `.json`                                         | built-in    |
+| Markdown | `.md`, `.markdown`                              | built-in    |
+| XML/SVG  | `.xml`, `.svg`                                  | custom      |
+
+- Powered by the **imgui_color_text_edit** widget (MIT), fetched through DepManager
+  (`imgui_color_text_edit` 1.92.6 in `depmanager.yml`; `imgui` aligned to 1.92.6-docking).
+- Ctrl+S saves in place; `Scene > Close` (or Ctrl+W) closes with a
+  discard/cancel prompt when the buffer is dirty.
+- The footer status line shows the detected language, cursor line/column, and
+  INS/OVR insert mode.
+- Live preview for Markdown and SVG is on the roadmap — for now those documents
+  are edited with syntax highlighting only.
+
 ## Documents
 
 Owl Nest is multi-document: each open scene (and, in future versions, each Lua

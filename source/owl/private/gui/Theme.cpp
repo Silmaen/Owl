@@ -234,14 +234,14 @@ auto makeLightTheme() -> Theme {
 	t.highlight = {0.20f, 0.55f, 0.90f, 1.0f};
 	t.propertyField = {0.85f, 0.85f, 0.85f, 1.0f};
 
-	t.windowRounding = 6.f;
-	t.frameRounding = 3.f;
+	t.windowRounding = 3.f;
+	t.frameRounding = 2.f;
 	t.frameBorderSize = 1.0f;
 	t.indentSpacing = 11.f;
-	t.tabRounding = 6.f;
+	t.tabRounding = 2.f;
 	t.tabOverline = 2.f;
 	t.tabBorder = 0.f;
-	t.controlsRounding = 6.f;
+	t.controlsRounding = 3.f;
 	return t;
 }
 
@@ -303,14 +303,14 @@ auto makeDarkBlueTheme() -> Theme {
 	t.highlight = {0.30f, 0.58f, 0.92f, 1.0f};
 	t.propertyField = {0.12f, 0.15f, 0.22f, 1.0f};
 
-	t.windowRounding = 5.f;
-	t.frameRounding = 3.f;
+	t.windowRounding = 3.f;
+	t.frameRounding = 2.f;
 	t.frameBorderSize = 1.0f;
 	t.indentSpacing = 11.f;
-	t.tabRounding = 5.f;
+	t.tabRounding = 2.f;
 	t.tabOverline = 2.f;
 	t.tabBorder = 0.f;
-	t.controlsRounding = 5.f;
+	t.controlsRounding = 3.f;
 	return t;
 }
 
@@ -373,14 +373,14 @@ auto makeNordTheme() -> Theme {
 	t.highlight = {0.533f, 0.753f, 0.816f, 1.0f};
 	t.propertyField = {0.212f, 0.235f, 0.282f, 1.0f};
 
-	t.windowRounding = 6.f;
-	t.frameRounding = 4.f;
+	t.windowRounding = 3.f;
+	t.frameRounding = 2.f;
 	t.frameBorderSize = 0.f;
 	t.indentSpacing = 11.f;
-	t.tabRounding = 4.f;
+	t.tabRounding = 2.f;
 	t.tabOverline = 2.f;
 	t.tabBorder = 0.f;
-	t.controlsRounding = 8.f;
+	t.controlsRounding = 3.f;
 	return t;
 }
 
@@ -443,14 +443,14 @@ auto makeSolarizedTheme() -> Theme {
 	t.highlight = {0.149f, 0.545f, 0.824f, 1.0f};
 	t.propertyField = {0.027f, 0.212f, 0.259f, 1.0f};
 
-	t.windowRounding = 4.f;
+	t.windowRounding = 3.f;
 	t.frameRounding = 2.f;
 	t.frameBorderSize = 1.0f;
 	t.indentSpacing = 11.f;
-	t.tabRounding = 4.f;
+	t.tabRounding = 2.f;
 	t.tabOverline = 2.f;
 	t.tabBorder = 0.f;
-	t.controlsRounding = 4.f;
+	t.controlsRounding = 3.f;
 	return t;
 }
 

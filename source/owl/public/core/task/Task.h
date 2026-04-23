@@ -24,7 +24,7 @@ public:
 	/**
 	 * @brief Default constructor.
 	 */
-	explicit Task(const std::function<void()>& iExec, const std::function<void()>& iEnds = [] {});
+	explicit Task(const std::function<void()>& iExec, const std::function<void()>& iEnds = []() -> void {});
 	/**
 	 * @brief Default destructor.
 	 */

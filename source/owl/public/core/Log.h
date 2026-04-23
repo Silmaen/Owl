@@ -80,15 +80,21 @@ public:
 	static void setFrameFrequency(const uint64_t iFrequency) { s_frequency = iFrequency; }
 
 	template<typename... Args>
-	static void logCore(const Level& iLevel, std::format_string<Args...> iFmt, Args&&... iArgs) {
-		logCore(iLevel, std::format(iFmt, std::forward<Args>(iArgs)...));
+	static void logCore(const Level& iLevel, std::format_string<Args...> iFmt, Args&&... iArgs) noexcept {
+		try {
+			logCore(iLevel, std::format(iFmt, std::forward<Args>(iArgs)...));
+		} catch (...) {// NOLINT(bugprone-empty-catch) logging must never propagate exceptions
+		}
 	}
 
 	static void logCore(const Level& iLevel, const std::string_view& iMsg);
 
 	template<typename... Args>
-	static void logClient(const Level& iLevel, std::format_string<Args...> iFmt, Args&&... iArgs) {
-		logCore(iLevel, std::format(iFmt, std::forward<Args>(iArgs)...));
+	static void logClient(const Level& iLevel, std::format_string<Args...> iFmt, Args&&... iArgs) noexcept {
+		try {
+			logCore(iLevel, std::format(iFmt, std::forward<Args>(iArgs)...));
+		} catch (...) {// NOLINT(bugprone-empty-catch) logging must never propagate exceptions
+		}
 	}
 
 	static void logClient(const Level& iLevel, const std::string_view& iMsg);

@@ -199,6 +199,7 @@ public:
 	 * @param[in] iPid 	The factory PID of the extra data.
 	 * @return The extra data iterator.
 	 */
+	// NOLINTNEXTLINE(bugprone-derived-method-shadowing-base-method)
 	[[nodiscard]] auto getExtraDataContainer(const core::FactoryPid& iPid) const
 			-> const extradata::ExtraDataContainer*;
 };
@@ -221,6 +222,7 @@ public:
 	 * @param[in] iPid 	The factory PID of the extra data.
 	 * @return The extra data iterator.
 	 */
+	// NOLINTNEXTLINE(bugprone-derived-method-shadowing-base-method)
 	[[nodiscard]] auto getExtraDataContainer(const core::FactoryPid& iPid) const
 			-> const extradata::ExtraDataContainer*;
 };
@@ -242,6 +244,7 @@ public:
 	 * @param[in] iPid 	The factory PID of the extra data.
 	 * @return The extra data iterator.
 	 */
+	// NOLINTNEXTLINE(bugprone-derived-method-shadowing-base-method)
 	[[nodiscard]] auto getExtraDataContainer(const core::FactoryPid& iPid) const
 			-> const extradata::ExtraDataContainer*;
 };

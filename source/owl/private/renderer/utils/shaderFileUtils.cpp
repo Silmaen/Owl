@@ -61,14 +61,14 @@ auto getRelativeShaderPath(const std::string& iShaderName, const std::string& iR
 auto getExtension(const ShaderType& iStage) -> std::string {
 	auto ext = std::format(".{}", magic_enum::enum_name(iStage).substr(0, 4));
 	std::ranges::transform(ext.begin(), ext.end(), ext.begin(),
-						   [](const unsigned char iChar) { return std::tolower(iChar); });
+						   [](const unsigned char iChar) -> int { return std::tolower(iChar); });
 	return ext;
 }
 
 auto getCacheExtension(const ShaderType& iStage) -> std::string {
 	auto ext = std::format(".{}.spv", magic_enum::enum_name(iStage).substr(0, 4));
 	std::ranges::transform(ext.begin(), ext.end(), ext.begin(),
-						   [](const unsigned char iChar) { return std::tolower(iChar); });
+						   [](const unsigned char iChar) -> int { return std::tolower(iChar); });
 	return ext;
 }
 
@@ -245,7 +245,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 			return result;
 		}
 
-		slang::IComponentType* components[] = {module, entryPoint};
+		slang::IComponentType* const components[] = {module, entryPoint};
 		Slang::ComPtr<slang::IComponentType> composedProgram;
 		if (SLANG_FAILED(
 					session->createCompositeComponentType(components, 2, composedProgram.writeRef(), diagnosticBlob.writeRef()))) {

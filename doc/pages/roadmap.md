@@ -332,14 +332,31 @@ asynchronous with progress feedback.
           `ImGuiConfigFlags_ViewportsEnable` activés dans `UiLayer`)
         - N'importe quel panneau (hierarchy, viewport, content browser, log…) peut être
           drag-out en fenêtre OS indépendante ou docké dans un autre nœud
-- Script Editor
-    - ![Planned][planned] Integrated Lua script editor
-        - Syntax-highlighted text editor for `.lua` files (open from Content Browser)
-        - Save / reload with Ctrl+S, auto-reload on external change
-        - Basic error display (line number + message from Lua compilation)
+- Script / Code Editor
+    - ![Done][done] Generic code editor document
+        - New `CodeEditorDocument` (DocumentType::Code) — second kind of document after
+          `SceneDocument`, opens from ContentBrowser double-click on a text/source file
+        - Powered by **imgui_color_text_edit** 1.92.6 fetched via DepManager (`depmanager.yml`);
+          `imgui` aligned to the same docking branch 1.92.6-docking
+        - Syntax highlighting: **Lua**, **C**, **C++**, **Python**, **JSON**, **Markdown**
+          (built-in) plus **YAML** and **SVG/XML** (custom definitions in
+          `source/owlnest/sources/document/codeEditor/LanguageDefinitions.*`)
+        - Dedicated **JetBrains Mono** font for the editor buffers (monospace column alignment),
+          shipped externally in `engine_assets/fonts/jetbrainsmono/` and rasterised at the user-
+          configured size (`EditorSettings::codeEditorFontSize`, 8–48, default 17; restart
+          required — the atlas is built once in `UiLayer::onAttach`)
+        - Matching `EditorSettings::uiFontSize` slider (14–24, default 18) for the main Roboto UI
+          font; both are applied from `main.cpp` before `Application` construction via
+          `UiLayer::setUiFontSize` / `setCodeFontSize`
+        - Dirty via `ImGuiWindowFlags_UnsavedDocument`, Ctrl+S to save, close via
+          `Ctrl+W` / `Scene > Close` modal
     - ![Planned][planned] Script debugging aids
         - Breakpoint markers (visual only — log-based, not a step debugger)
         - Live variable watch panel (read globals from running ScriptInstance)
+    - ![Planned][planned] Live preview for markup documents
+        - Markdown preview rendered side-by-side (Doxygen-like) with the editor
+        - SVG preview rendered via the existing `lunasvg` integration
+        - Toggle button in the ribbon (or split-view inside the code document)
 - Node Graph Editor
     - ![Planned][planned] Node graph framework
         - Generic node canvas: nodes with typed input/output pins, bezier connections
@@ -367,16 +384,19 @@ asynchronous with progress feedback.
         - Dedicated wizard panel: destination input + Browse, target platform (read-only), compress/obfuscate options
         - Post-pack build report: asset count, pack size (MiB), duration shown on completion
 - Menu & Project Workflow
-    - ![Done][done] Reorganized menu structure
-        - **File** menu: project operations (New, Open, Open Recent, Save, Close, Pack Game, Welcome Screen, Exit)
-        - **Edit** menu: Undo/Redo + Engine Settings, Editor Settings, Project Settings
-        - **Current** menu: scene operations (New Scene, Open Scene, Save, Save As, Import Scene, Pack Scene)
-        - "Show Stats" moved into Editor Settings panel (General section)
+    - ![Done][done] Ribbon replaces the classic menu bar (see the **Ribbon-style main menu**
+      entry below) — all project / scene actions now live in its File / Edit / Scene|Text tabs,
+      and "Show Stats" moved into the Editor Settings panel
     - ![Done][done] Recent projects
         - Persisted in `EditorSettings::recentProjects` (capped at 10 entries, most recent first)
-        - "Open Recent" submenu in the File menu with per-entry tooltip showing full path
+        - "Recent" button in the ribbon File tab opens a popup listing the projects (full path as
+          shortcut text, click to open)
         - Welcome screen modal shown when no project is loaded: New/Open buttons + recent list
         - Double-click a recent entry to open, `x` button to remove individual entries
+    - ![Done][done] Save Project As
+        - `EditorLayer::saveProjectAs()` prompts for a destination folder and duplicates the
+          current project recursively via `std::filesystem::copy`, then switches the editor to
+          the new directory
 - UX & Quality
     - ![Planned][planned] In-editor help pages
         - Built-in documentation browser (searchable, linked from panels)
@@ -409,17 +429,43 @@ asynchronous with progress feedback.
         - `IconBank::iconButton(name, label, size)` helper renders an icon-prefixed button, reused
           across Welcome, Packaging Wizard, validation modal, AsyncProgressModal, Content Browser
           dialogs, Log panel, Settings/Parameters/Project Settings
-    - ![Planned][planned] Ribbon-style main menu
-        - Replace the current `ImGui::BeginMenuBar` dropdowns with a Microsoft Office-style
-          ribbon: horizontal banner with top-level tabs (File, Edit, Current, Help…)
-        - Each tab hosts grouped buttons in two sizes:
-            - **Large** — icon on top, text underneath (primary actions: Save, Pack Game, Play)
-            - **Small** — icon on the left, text on the right (secondary actions, stacked three
-              per column so three small buttons fit in the vertical space of one large button +
-              its caption)
-        - Reuses `IconBank` icons; groups are labelled (e.g. "Project", "Scene", "Playback")
-        - Keeps the existing `ActionRegistry` bindings so keyboard shortcuts stay in sync
-        - Integrates with the Document tab bar (ribbon above, tabs inside the Viewport below)
+    - ![Done][done] Ribbon-style main menu
+        - `gui::widgets::Ribbon` widget with tabs → groups → large / small buttons (3 small =
+          1 large height) in `source/owl/public/gui/widgets/`
+        - `UiLayer::setTopBarCallback` reserves space above the DockSpace for the ribbon
+        - Replaces the former `ImGui::BeginMenuBar` drop-downs, the floating Play/Pause toolbar,
+          and the gizmo `ButtonBar`
+        - File / Edit / Scene|Text tabs built from the existing `ActionRegistry` (shortcuts
+          preserved and shown in tooltips); the contextual last tab switches Scene ↔ Text based
+          on the active document type
+        - `Ribbon::setTabHighlighted` renders the File tab title in the theme accent color; tab
+          bar padding and a brighter `TabSelected` make the active tab clearly identifiable
+        - Theme presets: `windowRounding` / `tabRounding` / `controlsRounding` reduced to 2–3 px
+          for a crisper look across Dark / Light / DarkBlue / Nord / Solarized
+- Build & CI
+    - ![Done][done] Linux ARM64 CI restored
+        - Poetry venvs were colliding across architectures because the default cache path
+          (`~/.cache/pypoetry/virtualenvs/`) ignores the host arch when naming venvs — a shared
+          `$HOME` mount between x86_64 and ARM64 agents caused ARM64 to load x86_64 wheels and
+          crash at `cryptography/_rust.abi3.so` import
+        - New `ci/utils/venv.py` runs every invocation with three layered checks: no venv →
+          skip; platform-signature marker matches → skip (fast path, one file read); marker
+          missing/mismatched → run a functional `from cryptography.fernet import Fernet` test
+          under `poetry run python`. Only when that import fails does `ci_action.py` export
+          `OWL_CI_REFRESH_VENV=1`, which `cmake/Poetry.cmake` consumes to run
+          `poetry env remove --all` before the next `poetry sync` and re-stamp the marker
+        - Check is not gated on TeamCity detection: TC Docker jobs don't propagate
+          `TEAMCITY_VERSION` into the container, so an env-var gate would silently no-op —
+          the layered approach keeps same-arch reruns nearly free while reliably self-healing
+          on arch switches or corrupted venvs
+    - ![Done][done] Windows Debug builds fixed
+        - `owl_target_link_libraries` forced Release third-party imports via a helper save/restore
+          of `CMAKE_MAP_IMPORTED_CONFIG_DEBUG` around `find_package` — but that variable is read
+          at generate time, not find time, so the mapping was lost. Debug builds linked against
+          `*d.lib` (binaries imported `*d.dll`) while `$<TARGET_RUNTIME_DLLS>` copied the Release
+          variants → every test exited with `STATUS_DLL_NOT_FOUND` (0xc0000135)
+        - Mapping now applied at top-level directory scope in `CMakeLists.txt`, gated by
+          `OWL_USE_RELEASE_THIRD_PARTY`, so link and DLL copy agree in Debug
 
 ## v0.1.0 -- 2026-04-16
 

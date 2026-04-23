@@ -235,7 +235,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	// Compile renderer shaders with an ImGui loading screen.
 	{
 		renderer::Renderer::initShaders([this](const uint32_t iCurrent, const uint32_t iTotal,
-											   const std::string& iName) {
+											   const std::string& iName) -> void {
 			OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
 			// Render a loading frame if ImGui is available.
 			if (mp_imGuiLayer && mp_appWindow && !m_minimized) {
@@ -309,7 +309,7 @@ Application::~Application() {
 void Application::addAssetDirectory(const AssetDirectory& iDir) { m_assetDirectories.push_front(iDir); }
 
 void Application::removeAssetDirectory(const std::filesystem::path& iPath) {
-	m_assetDirectories.remove_if([&iPath](const AssetDirectory& iDir) { return iDir.assetsPath == iPath; });
+	m_assetDirectories.remove_if([&iPath](const AssetDirectory& iDir) -> bool { return iDir.assetsPath == iPath; });
 }
 
 void Application::setWindowTitle(const std::string& iTitle) {
@@ -392,9 +392,9 @@ void Application::onEvent(event::Event& ioEvent) {
 
 	event::EventDispatcher dispatcher(ioEvent);
 	dispatcher.dispatch<event::WindowCloseEvent>(
-			[this]<typename T0>(T0&& ioPh1) { return onWindowClosed(std::forward<T0>(ioPh1)); });
+			[this]<typename T0>(T0&& ioPh1) -> bool { return onWindowClosed(std::forward<T0>(ioPh1)); });
 	dispatcher.dispatch<event::WindowResizeEvent>(
-			[this]<typename T0>(T0&& ioPh1) { return onWindowResized(std::forward<T0>(ioPh1)); });
+			[this]<typename T0>(T0&& ioPh1) -> bool { return onWindowResized(std::forward<T0>(ioPh1)); });
 
 #if !defined(__clang__) or __clang_major__ > 15
 	for (const auto& it: std::ranges::reverse_view(m_layerStack)) {

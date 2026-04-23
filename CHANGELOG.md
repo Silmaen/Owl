@@ -31,6 +31,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Detects missing `OwlRunner` executable and empty asset list
     - Post-pack build report: asset count, pack size (MiB), and total duration displayed in the
       completion modal
+- **Ribbon menu + generic code editor**
+    - New `gui::widgets::Ribbon` widget (`source/owl/public/gui/widgets/Ribbon.h` +
+      `private/gui/widgets/Ribbon.cpp`) — Office-style horizontal banner with top-level tabs →
+      groups → large buttons (32 px icon + label underneath) and small buttons (16 px icon + label
+      on the right, 3 per column). Button callbacks drive enabled/checked/click state
+    - `UiLayer::setTopBarCallback()` reserves space between `ImGui::Begin(OwlDockSpace)` and
+      `ImGui::DockSpace()` for the ribbon. The classic `ImGuiWindowFlags_MenuBar` is gone
+    - `Ribbon::setTabHighlighted()` renders the tab title with the theme accent (secondary) color
+      — applied to the **File** tab so it reads as the primary entry point
+    - Tab-bar padding (`FramePadding {14, 6}`) gives the titles breathing room; `TabSelected`
+      pushed brighter so the active tab stands out clearly against dimmed siblings
+    - `EditorLayer` replaces the menu bar + floating Play/Pause toolbar + gizmo `ButtonBar` with
+      a single ribbon, a contextual **Scene** / **Text** tab switches on the active document type
+      - **File**: Project (New / Open large, Save / Save As / Close small), Recent (large button
+        opens a popup listing `EditorSettings::recentProjects`), Package (Pack Game large),
+        Session (**Exit large**)
+      - **Edit**: History (Undo / Redo large), Settings (Engine / Editor / Project small)
+      - **Scene**: File (New / Open large, Save / Save As / Import small, **Close large** last),
+        Playback (Play / Stop large, Pause / Step small), Gizmo (Translate / Rotate / Scale
+        **large**), Package (Pack Scene large)
+      - **Text**: File (Save / **Close** large)
+    - New `saveProjectAs()`: picks a destination folder, duplicates the current project
+      recursively via `std::filesystem::copy`, then switches the editor to the new location
+    - New `CodeEditorDocument` (`DocumentType::Code`): a second kind of `Document` that opens
+      text/source files as their own tab. Backed by **imgui_color_text_edit** 1.92.6 pulled via
+      DepManager (bumped `imgui` to 1.92.6-docking to match)
+    - Built-in syntax highlighting: **Lua**, **C**, **C++**, **Python**, **JSON**, **Markdown**
+      (from the library); custom definitions added for **YAML** and **SVG/XML** in
+      `source/owlnest/sources/document/codeEditor/LanguageDefinitions.{h,cpp}`
+    - ContentBrowser double-click routes `.lua/.py/.c/.cpp/.cc/.cxx/.h/.hpp/.hxx/.yml/.yaml/.json/
+      .md/.markdown/.svg/.xml` to a new code-editor tab (or re-activates the existing one)
+    - Status footer in each code editor shows language + line/column + INS/OVR. Ctrl+S saves;
+      dirty tracked via `TextEditor::GetText() != savedText`
+    - Rich rendering of Markdown and SVG inside the editor is deferred to a future release —
+      added to the roadmap
+- **Editor fonts**
+    - Engine fonts (Roboto Regular / Bold / Italic, JetBrains Mono Regular) ship as loose TTFs in
+      `engine_assets/fonts/{roboto,jetbrainsmono}/` and are loaded via `AddFontFromFileTTF`
+      (resolved through `Application::getAssetDirectories()`). The previous `.embed` hex-array
+      headers have been dropped from the binary
+    - Dedicated code-editor font: **JetBrains Mono** monospace for column-aligned glyphs in the
+      TextEditor widget, rasterised at the user-configured size
+    - `UiLayer::setUiFontSize()` + `setCodeFontSize()` static setters applied from `main.cpp`
+      before the `Application` is constructed — the atlas is built once in `UiLayer::onAttach`;
+      size changes take effect on the next startup
+    - New `EditorSettings::uiFontSize` (14–24, default **18**) and `codeEditorFontSize`
+      (8–48, default **17**) sliders in the Editor Settings panel
+    - Modal button widths (close-doc, welcome, pack wizard, pack validation, async progress) are
+      now `ImGui::GetFontSize() * N` so they scale with the UI font size instead of clipping
 - **Multi-document architecture**
     - New abstractions in `source/owlnest/sources/document/`: `Document` (interface),
       `DocumentManager` (open list + active tracking), `SceneDocument` (scene wrapper)
@@ -92,11 +141,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - "Open Recent" submenu in File menu with full-path tooltip per entry
     - Welcome screen modal when no project is loaded (New / Open / Recent list, closable via `x` or
       `File > Welcome Screen`)
-- **Reorganized menu structure**
-    - **File**: project operations (New, Open, Recent, Save, Close, Pack Game, Welcome, Exit)
-    - **Edit**: Undo/Redo + Engine Settings, Editor Settings, Project Settings
-    - **Current**: scene operations (New Scene, Open Scene, Save, Save As, Import Scene, Pack Scene)
-    - "Show Stats" moved into Editor Settings panel (General section)
+- **Editor menu replaced by the ribbon** — the former `ImGui::BeginMenuBar` drop-downs, the
+  floating Play/Pause toolbar, and the gizmo `ButtonBar` are all gone. All actions now live in
+  the ribbon (File / Edit / Scene|Text tabs). "Show Stats" moved into the Editor Settings panel
 - **Tooltips everywhere** with hover delay (~0.4s)
     - Descriptive tooltips on all 7 trigger types (Victory, Death, Target, Teleport, Timer,
       Interaction, LuaCallback) and their sub-fields
@@ -132,9 +179,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LuaBindings: removed unused `iArgIndex` parameter from `findEntity`
 - `ContentBrowser`: mutation methods (create/import/rename/delete/drop) now flag `m_rescanRequested`
   instead of relying on per-frame directory scans
+- UI rounding reduced across all theme presets — `windowRounding` / `tabRounding` /
+  `controlsRounding` now 2–3 px (was 4–10) for a crisper, more technical look
+- `UiLayer::codeFontSize()` is no longer a `constexpr 13.f` — it returns the user-configured size
+  set via `UiLayer::setCodeFontSize()` at startup
 
 ### Fixed
 
+- **ARM64 Linux CI restored** — Poetry's default venv cache (`~/.cache/pypoetry/virtualenvs/`)
+  names venvs from `(project, pyproject, python version)` without the architecture. CI agents
+  running different archs on a shared `$HOME` (or bind-mounted workspace) collided on the same
+  venv path; the ARM64 runner then loaded the x86_64 `cryptography/_rust.abi3.so` and crashed
+  at import with `cannot open shared object file`. `ci.utils.venv` now layers three checks in
+  cheapest-first order: (1) no venv → skip; (2) compare an `arch-OS-impl-pyver` marker file
+  inside the venv against the live host; (3) if the marker is missing/mismatched, run a
+  functional `from cryptography.fernet import Fernet` test under `poetry run python`. When the
+  test fails, `ci_action.py` exports `OWL_CI_REFRESH_VENV=1`; `cmake/Poetry.cmake` consumes it
+  via `poetry env remove --all` before sync and (re)writes the marker afterwards. The check
+  runs unconditionally (TC-via-Docker doesn't propagate `TEAMCITY_VERSION`, so an env-var gate
+  would no-op), yet same-arch reruns still pay almost nothing thanks to the marker fast path.
+- **Windows Debug test binaries no longer fail with `STATUS_DLL_NOT_FOUND` (0xc0000135)** —
+  the helper `owl_target_link_libraries()` was setting `CMAKE_MAP_IMPORTED_CONFIG_DEBUG=Release`
+  only around `find_package()`, but that variable is read at generate time (link resolution +
+  `$<TARGET_RUNTIME_DLLS>` evaluation), not at find time. In Debug builds the linker picked
+  `glfw3d.lib` (imports `glfw3d.dll`) while the post-build copy grabbed the release `glfw3.dll`
+  — every test binary then failed to load. The mapping is now applied at top-level directory
+  scope in `CMakeLists.txt`, gated by `OWL_USE_RELEASE_THIRD_PARTY`, so link and DLL copy agree
+- Tests now get a `$<TARGET_RUNTIME_DLLS:<test>>` post-build copy next to their binary (belt-
+  and-braces — picks up any DLL surfaced through the test's own link graph that the engine's
+  post-build didn't cover)
+- **Use-after-free SIGSEGV when closing a document tab** — closing a `SceneDocument` inline from
+  `onImGuiRender` freed its Vulkan color-attachment while ImGui's draw list still referenced it
+  (the sampler then read freed GPU memory at `UiLayer::end()` submit). `EditorLayer::closeDocument`
+  now queues the id in `m_deferredCloseIds` and drains at the start of the next frame, after the
+  prior frame's ImGui commands are submitted
+- **SIGSEGV in the `ImGuiLayer.creation` unit test** — `UiLayer::onAttach` called
+  `OWL_CORE_ERROR` when the Roboto/JetBrains Mono TTFs couldn't be resolved, but `disableApp()`
+  left the Log singleton uninitialised, so the error path deref'd null. The external-font block
+  is now gated on `m_withApp`; standalone uses fall back to ImGui's built-in default font
 - Pack filesystem errors no longer crash the editor: `create_directories`, `copy_file`, and
   `permissions` now use `std::error_code` with a user-facing error modal when the destination path
   conflicts with an existing file of the same name

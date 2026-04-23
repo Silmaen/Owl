@@ -49,7 +49,7 @@ void GameState::serialize(const core::Serializer& iOut) const {
 		iOut.getImpl()->emitter << YAML::BeginMap;
 		iOut.getImpl()->emitter << YAML::Key << "key" << YAML::Value << key;
 		std::visit(
-				[&](const auto& iVal) {
+				[&](const auto& iVal) -> void {
 					using T = std::decay_t<decltype(iVal)>;
 					if constexpr (std::is_same_v<T, int64_t>) {
 						iOut.getImpl()->emitter << YAML::Key << "type" << YAML::Value << "int";

@@ -193,7 +193,7 @@ AllocationInfo::AllocationInfo(void* iLocation, const size_t iSize) : location{i
 	traceInternal->fullTrace = cpptrace::generate_trace();
 #endif
 }
-auto AllocationInfo::getLibName() const -> std::string { // NOLINT(readability-convert-member-functions-to-static)
+auto AllocationInfo::getLibName() const -> std::string {// NOLINT(readability-convert-member-functions-to-static)
 #ifdef OWL_STACKTRACE
 	if (traceInternal && !traceInternal->fullTrace.empty()) {
 		auto last = traceInternal->getCallerInfo();
@@ -259,7 +259,7 @@ void AllocationState::pushMemory(void* iLocation, size_t iSize) {
 void AllocationState::freeMemory(void* iLocation, size_t iSize) {
 	if (const auto chunk = std::ranges::find_if(
 				allocs.begin(), allocs.end(),
-				[&iLocation](const AllocationInfo& iAllocInfo) { return iAllocInfo.location == iLocation; });
+				[&iLocation](const AllocationInfo& iAllocInfo) -> bool { return iAllocInfo.location == iLocation; });
 		chunk != allocs.end()) {
 		if (iSize == 0) {
 			iSize = chunk->size;

@@ -85,16 +85,16 @@ struct OWL_API Theme {
 
 	math::vec4 propertyField{0.0588f, 0.0588f, 0.0588f, 1.0};
 
-	float windowRounding{7.f};
-	float frameRounding{2.5f};
+	float windowRounding{3.f};
+	float frameRounding{2.f};
 	float frameBorderSize{1.0f};
 	float indentSpacing{11.f};
 
-	float tabRounding{10.f};
+	float tabRounding{2.f};
 	float tabOverline{1.f};
 	float tabBorder{1.f};
 
-	float controlsRounding{9};
+	float controlsRounding{3.f};
 	/**
 	 * @brief Load from a yaml config file.
 	 * @param[in] iFile The file to load.

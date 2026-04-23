@@ -97,7 +97,7 @@ void ContentBrowser::requestScan(const std::filesystem::path& iPath) {
 	auto buffer = m_pendingEntries;
 	auto* flag = &m_scanInProgress;
 	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
-			[buffer, iPath]() {
+			[buffer, iPath]() -> void {
 				if (!exists(iPath) || !is_directory(iPath))
 					return;
 				std::error_code ec;
@@ -109,7 +109,7 @@ void ContentBrowser::requestScan(const std::filesystem::path& iPath) {
 					return iA.path().filename().string() < iB.path().filename().string();
 				});
 			},
-			[flag]() { flag->store(false); }));
+			[flag]() -> void { flag->store(false); }));
 }
 
 void ContentBrowser::onImGuiRender() {
@@ -238,6 +238,13 @@ void ContentBrowser::renderContent() {
 				m_currentPath /= path.filename();
 			} else if (path.extension() == ".owl" && m_sceneOpenCallback) {
 				m_sceneOpenCallback(path);
+			} else if (m_codeOpenCallback) {
+				const auto ext = path.extension().string();
+				static const std::vector<std::string> codeExts = {
+						".lua", ".py",  ".c",    ".cpp", ".cc",  ".cxx", ".h", ".hpp",
+						".hxx", ".yml", ".yaml", ".json", ".md", ".markdown", ".svg", ".xml"};
+				if (std::ranges::find(codeExts, ext) != codeExts.end())
+					m_codeOpenCallback(path);
 			}
 		}
 		if (iconInfo.has_value())

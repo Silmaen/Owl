@@ -9,16 +9,34 @@ from ci.actions.base.action import BaseAction, PresetConfig
 class DefineTeamCityVariables(BaseAction):
     """
     Action to define various variables for a given preset.
+
+    Extra arguments (after ``--``):
+      * ``--emulated`` -- declare the current agent as emulated (slow).
+        Documentation, code coverage and the release build preset are
+        forced off so TeamCity skips those steps entirely. Typical usage
+        on a qemu-based ARM agent::
+
+            poetry run python ci_action.py DefineTeamCityVariables \\
+                linux-clang-release -- --emulated
     """
 
     def run(self, preset: PresetConfig, extra_args=None) -> int:
         """
         Define variables for the given preset and set them as TeamCity parameters.
         :param preset: The preset to check.
-        :param extra_args: Optional extra arguments (unused).
+        :param extra_args: Optional extra arguments. Supports ``--emulated``.
         :return: Exit code indicating success or failure.
         """
         log.info(f"Defining variables for preset '{preset}'")
+
+        parsed = self.parse_extra_args(extra_args)
+        emulated = parsed.get("emulated") == "true"
+        if emulated:
+            log.info("Emulated agent flag set: forcing coverage / documentation / "
+                     "release_preset off in the exported TeamCity variables.")
+            preset.run_coverage = False
+            preset.run_documentation = False
+            preset.release_preset = None
 
         from ci.utils.teamcity import set_teamcity_parameter
 

@@ -26,10 +26,37 @@ OWL_DIAG_POP
 
 namespace owl::gui {
 
-/// memory fonts...
-#include "Roboto-Bold.embed"
-#include "Roboto-Italic.embed"
-#include "Roboto-Regular.embed"
+namespace {
+/// Requested UI font size, applied on the next `UiLayer::onAttach`.  Stored as a module-local so it
+/// can be set from `main` before the engine pushes the `UiLayer` overlay.
+float g_uiFontSize = 20.f;
+/// Requested code-editor font size, applied on the next `UiLayer::onAttach`.
+float g_codeFontSize = 13.f;
+
+/// Search for `iRelative` (e.g. `"fonts/roboto/Roboto-Regular.ttf"`) across the engine asset
+/// directories.  Returns the first match, or an empty path when none exists.
+auto resolveAssetFile(const std::filesystem::path& iRelative) -> std::filesystem::path {
+	if (!core::Application::instanced())
+		return {};
+	const auto& app = core::Application::get();
+	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
+		const auto full = assetsPath / iRelative;
+		if (exists(full))
+			return full;
+	}
+	return {};
+}
+}// namespace
+
+void UiLayer::setUiFontSize(const float iSize) {
+	g_uiFontSize = std::clamp(iSize, 12.f, 32.f);
+}
+
+void UiLayer::setCodeFontSize(const float iSize) {
+	g_codeFontSize = std::clamp(iSize, 8.f, 48.f);
+}
+
+auto UiLayer::codeFontSize() -> float { return g_codeFontSize; }
 
 UiLayer::UiLayer() : Layer("ImGuiLayer") {}
 UiLayer::~UiLayer() = default;
@@ -61,17 +88,35 @@ void UiLayer::onAttach() {
 	io.ConfigViewportsNoDecoration = true;
 	io.ConfigViewportsNoAutoMerge = false;
 
-	// Better fonts
-	ImFontConfig fontConfig;
-	fontConfig.FontDataOwnedByAtlas = false;
-	// NOLINTBEGIN(cppcoreguidelines-pro-type-const-cast)
-	ImFont* robotoFont = io.Fonts->AddFontFromMemoryTTF(const_cast<void*>(static_cast<const void*>(g_RobotoRegular)),
-														sizeof(g_RobotoRegular), 20.0f, &fontConfig);
-	io.Fonts->AddFontFromMemoryTTF(const_cast<void*>(static_cast<const void*>(g_RobotoBold)), sizeof(g_RobotoBold),
-								   20.0f, &fontConfig);
-	io.Fonts->AddFontFromMemoryTTF(const_cast<void*>(static_cast<const void*>(g_RobotoItalic)), sizeof(g_RobotoItalic),
-								   20.0f, &fontConfig);
-	// NOLINTEND(cppcoreguidelines-pro-type-const-cast)
+	// Better fonts — resolved from `engine_assets/fonts/` at runtime.  When running without an
+	// `Application` (standalone unit tests calling `disableApp()`), asset directories and the Log
+	// singleton are unavailable, so we skip external fonts and let ImGui fall back to its bundled
+	// default font — this keeps `UiLayer` exercisable from tests without a full engine context.
+	const ImFontConfig fontConfig;
+	const float uiSize = g_uiFontSize;
+	ImFont* robotoFont = nullptr;
+	if (m_withApp) {
+		if (const auto p = resolveAssetFile("fonts/roboto/Roboto-Regular.ttf"); !p.empty())
+			robotoFont = io.Fonts->AddFontFromFileTTF(p.string().c_str(), uiSize, &fontConfig);
+		if (robotoFont == nullptr) {
+			OWL_CORE_ERROR("UiLayer: could not load Roboto-Regular.ttf from engine_assets/fonts/roboto/")
+			robotoFont = io.Fonts->AddFontDefault();
+		}
+		if (const auto p = resolveAssetFile("fonts/roboto/Roboto-Bold.ttf"); !p.empty())
+			io.Fonts->AddFontFromFileTTF(p.string().c_str(), uiSize, &fontConfig);
+		if (const auto p = resolveAssetFile("fonts/roboto/Roboto-Italic.ttf"); !p.empty())
+			io.Fonts->AddFontFromFileTTF(p.string().c_str(), uiSize, &fontConfig);
+		// Dedicated code-editor font: JetBrains Mono, monospace, rasterised at the user-configured
+		// size (`g_codeFontSize`) so the TextEditor widget gets clean glyph metrics with no runtime
+		// bitmap scaling.
+		if (const auto p = resolveAssetFile("fonts/jetbrainsmono/JetBrainsMono-Regular.ttf"); !p.empty())
+			mp_codeFont = io.Fonts->AddFontFromFileTTF(p.string().c_str(), g_codeFontSize, &fontConfig);
+		else
+			OWL_CORE_ERROR(
+					"UiLayer: could not load JetBrainsMono-Regular.ttf — code editor will fall back to UI font")
+	} else {
+		robotoFont = io.Fonts->AddFontDefault();
+	}
 	io.FontDefault = robotoFont;
 
 	setTheme();
@@ -299,14 +344,15 @@ void UiLayer::setTheme(const Theme& iTheme) {
 }
 OWL_DIAG_POP
 
-void UiLayer::initializeDocking() {
+void UiLayer::initializeDocking() const {
 	static bool dockSpaceOpen = true;
 	static constexpr bool optFullScreenPersistent = true;
 	constexpr bool optFullScreen = optFullScreenPersistent;
 	static constexpr ImGuiDockNodeFlags dockSpaceFlags = ImGuiDockNodeFlags_None;
 	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 	// because it would be confusing to have two docking targets within each others.
-	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	// No menu bar anymore: the application provides its own top bar via `setTopBarCallback`.
+	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
 	if (optFullScreen) {
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(viewport->Pos);
@@ -332,6 +378,10 @@ void UiLayer::initializeDocking() {
 	ImGui::PopStyleVar();
 	if (optFullScreen)
 		ImGui::PopStyleVar(2);
+	// Render the optional top bar (e.g. ribbon) before the DockSpace so it reserves its height
+	// and the DockSpace fills the remaining region.
+	if (m_topBarCallback)
+		m_topBarCallback();
 	// DockSpace
 	const ImGuiIO& io = ImGui::GetIO();
 	ImGuiStyle& style = ImGui::GetStyle();

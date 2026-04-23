@@ -37,6 +37,22 @@ def main():
     # Filter out the '--' separator if present, keep only --key=value or --flag args
     extra_args = [a for a in remaining if a != "--"]
 
+    # Detect a corrupted / cross-arch Poetry venv before invoking CMake.  We run the check
+    # unconditionally (not gated on TeamCity) because TC's Docker-based jobs don't propagate
+    # `TEAMCITY_VERSION` into the container: the previous gate silently skipped the protection
+    # and let broken venvs reach `poetry sync` (which then no-op'd on the already-synced
+    # lockfile).  `needs_refresh` is cheap on the happy path — one `poetry env info --path`
+    # call + one file read — and only spawns a full Python import test when the platform
+    # signature doesn't match. See `ci/utils/venv.py`.
+    from ci.utils.venv import needs_refresh, current_platform_signature
+    import os
+    if "OWL_CI_REFRESH_VENV" not in os.environ and needs_refresh():
+        os.environ["OWL_CI_REFRESH_VENV"] = "1"
+        log.info(
+            "Poetry venv appears broken for this host — forcing refresh "
+            f"(now: {current_platform_signature()})"
+        )
+
     from logging import INFO
 
     log_level = INFO

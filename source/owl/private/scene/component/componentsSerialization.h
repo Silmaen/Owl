@@ -34,7 +34,7 @@ void serializeComponent(const Entity& iEntity, const core::Serializer& iOut) {
  * @param iOut The YAML context.
  */
 template<isSerializableComponent... Components>
-void serializeComponents(const Entity& iEntity, const core::Serializer& iOut, std::tuple<Components...>) {
+void serializeComponents(const Entity& iEntity, const core::Serializer& iOut, const std::tuple<Components...>&) {
 	(..., serializeComponent<Components>(iEntity, iOut));
 }
 
@@ -61,7 +61,7 @@ void deserializeComponent(Entity& iEntity, const core::Serializer& iNode) {
  * @param iNode The YAML context.
  */
 template<isDeserializableComponent... Components>
-void deserializeComponents(Entity& iEntity, const core::Serializer& iNode, std::tuple<Components...>) {
+void deserializeComponents(Entity& iEntity, const core::Serializer& iNode, const std::tuple<Components...>&) {
 	(..., deserializeComponent<Components>(iEntity, iNode));
 }
 

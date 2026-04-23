@@ -10,7 +10,10 @@
 #include "Theme.h"
 #include "core/layer/Layer.h"
 
+#include <functional>
 #include <string>
+
+struct ImFont;
 
 /**
  * @brief Namespace for gui
@@ -95,6 +98,34 @@ public:
 	 */
 	static auto getActiveWidgetId() -> uint32_t;
 
+	/**
+	 * @brief Register a callback rendered at the top of the main dockspace window.
+	 *
+	 * The callback runs each frame after `ImGui::Begin` of the main dockspace window
+	 * and before `ImGui::DockSpace`. Intended for a ribbon or application toolbar
+	 * that should sit above the docked panels. Pass an empty function to disable.
+	 */
+	void setTopBarCallback(std::function<void()> iCallback) { m_topBarCallback = std::move(iCallback); }
+
+	/// @brief Pixel size at which the dedicated code-editor font was rasterised on `onAttach`.
+	/// Rendering at this size is crisp; other sizes would require bitmap scaling.
+	static auto codeFontSize() -> float;
+
+	/// @brief ImGui font loaded at `codeFontSize()` and dedicated to the code editor tabs.
+	/// Null when docking has not been initialised yet.
+	[[nodiscard]] auto getCodeFont() const -> ImFont* { return mp_codeFont; }
+
+	/// @brief Set the UI font size used on the next `onAttach`.  Clamped to `[12, 32]`.
+	/// @param[in] iSize Desired pixel size.
+	/// Must be called before the `UiLayer` is constructed (the font atlas is built in `onAttach`
+	/// and is not rebuilt until restart).
+	static void setUiFontSize(float iSize);
+
+	/// @brief Set the code-editor font size used on the next `onAttach`.  Clamped to `[8, 48]`.
+	/// @param[in] iSize Desired pixel size.
+	/// Must be called before the `UiLayer` is constructed.
+	static void setCodeFontSize(float iSize);
+
 private:
 	/// If event should be bocked.
 	bool m_blockEvent = true;
@@ -104,8 +135,12 @@ private:
 	bool m_withApp = true;
 	/// Path string for ImGui ini file (must outlive ImGui context).
 	std::string m_iniFilePath;
+	/// Optional top-bar rendered between the dockspace window `Begin` and `DockSpace()`.
+	std::function<void()> m_topBarCallback;
+	/// Dedicated code-editor font (Roboto at `codeFontSize()`).  Set in `onAttach`.
+	ImFont* mp_codeFont = nullptr;
 
-	/// Function that initialize the docking port.
-	static void initializeDocking();
+	/// Function that initializes the docking port (calls `m_topBarCallback` if set).
+	void initializeDocking() const;
 };
 }// namespace owl::gui

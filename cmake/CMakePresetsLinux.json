@@ -19,7 +19,7 @@
       },
       "vendor": {
         "silmaen": {
-          "docker_image": "builder-clang18-ubuntu2404"
+          "docker_image": "builder-clang-llvm22-ubuntu2404"
         }
       }
     },

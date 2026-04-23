@@ -577,12 +577,12 @@ auto InstanceInformations::hasExtension(const std::string& iExtension) const -> 
 
 auto InstanceInformations::hasLayers(const std::vector<std::string>& iLayers) const -> bool {
 	return std::ranges::all_of(iLayers.begin(), iLayers.end(),
-							   [&](const auto& iLayer) { return this->hasLayer(iLayer); });
+							   [&](const auto& iLayer) -> bool { return this->hasLayer(iLayer); });
 }
 
 auto InstanceInformations::hasExtensions(const std::vector<std::string>& iExtensions) const -> bool {
 	return std::ranges::all_of(iExtensions.begin(), iExtensions.end(),
-							   [&](const auto& iExtension) { return this->hasExtension(iExtension); });
+							   [&](const auto& iExtension) -> bool { return this->hasExtension(iExtension); });
 }
 
 // ============= InstanceInformations =====================
