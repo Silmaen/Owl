@@ -54,6 +54,12 @@ void Window::init(const Properties& iProps) {
 
 		if (g_GlfwWindowCount == 0) {
 			OWL_PROFILE_SCOPE("glfwInit")
+			// Opt-in: force X11 (via XWayland on a Wayland session) when OWL_FORCE_X11=1.
+			// Useful to get glfwSetWindowIcon working at dev time without installing a
+			// system-wide .desktop file. Default path stays on the native platform (Wayland
+			// when available) to preserve high-refresh-rate presentation.
+			if (const char* forceX11 = std::getenv("OWL_FORCE_X11"); forceX11 && forceX11[0] == '1')
+				glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
 			[[maybe_unused]] const int success = glfwInit();
 			OWL_CORE_ASSERT(success, "Could not initialize GLFW!")
 			glfwSetErrorCallback(glfwErrorCallback);
@@ -81,8 +87,9 @@ void Window::init(const Properties& iProps) {
 		}
 		++g_GlfwWindowCount;
 	}
-	// Set icon
-	{
+	// Set icon — skipped on Wayland since the protocol doesn't support glfwSetWindowIcon
+	// (the compositor derives the icon from a .desktop file matched via app_id).
+	if (glfwGetPlatform() != GLFW_PLATFORM_WAYLAND) {
 		GLFWimage icon;
 		int channels = 0;
 		if (!iProps.iconPath.empty()) {
@@ -229,6 +236,8 @@ void Window::setSize(const uint32_t iWidth, const uint32_t iHeight) {
 void Window::setIcon(const std::filesystem::path& iIconPath) {
 	if (mp_glfwWindow == nullptr)
 		return;
+	if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND)
+		return;// Wayland compositor picks the icon from a .desktop file, not the app.
 	if (!exists(iIconPath)) {
 		OWL_CORE_WARN("Window icon not found: {}", iIconPath.string())
 		return;

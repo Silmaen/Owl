@@ -42,8 +42,12 @@ void GraphContext::destroySurface(const VkInstance& iInstance) {
 }
 
 void GraphContext::waitIdle() {
-	OWL_CORE_TRACE("GraphContext Wait for Idle.")
 	const auto& vkh = internal::VulkanCore::get();
+	// Safe no-op if the logical device has already been destroyed (e.g. when Window::shutdown is
+	// invoked after the Vulkan RenderAPI teardown).
+	if (vkh.getLogicalDevice() == nullptr)
+		return;
+	OWL_CORE_TRACE("GraphContext Wait for Idle.")
 	vkDeviceWaitIdle(vkh.getLogicalDevice());
 }
 
