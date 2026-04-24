@@ -393,6 +393,27 @@ void RunnerLayer::finishTransition() {
 	m_teleportTargetName = transition->targetName;
 
 	m_activeScene = newScene;
+
+	// Diagnostic: how many textures still need to finish decoding after the swap?
+	// With async texture loading, the placeholder is on screen immediately and real pixels arrive
+	// over the next frames as scheduler tasks complete. A high number on a small scene may indicate
+	// either a slow disk/pack or that async tasks are not draining.
+	{
+		size_t pending = 0;
+		const auto countOne = [&pending](const auto& iTex) -> void {
+			if (iTex && iTex->getLoadState() == renderer::LoadState::Pending)
+				++pending;
+		};
+		m_activeScene->registry.view<scene::component::SpriteRenderer>().each(
+				[&](const auto&, const scene::component::SpriteRenderer& iSr) -> void { countOne(iSr.texture); });
+		m_activeScene->registry.view<scene::component::AnimatedSpriteRenderer>().each(
+				[&](const auto&, const scene::component::AnimatedSpriteRenderer& iAr) -> void { countOne(iAr.texture); });
+		m_activeScene->registry.view<scene::component::BackgroundTexture>().each(
+				[&](const auto&, const scene::component::BackgroundTexture& iBt) -> void { countOne(iBt.texture); });
+		m_activeScene->registry.view<scene::component::UIImage>().each(
+				[&](const auto&, const scene::component::UIImage& iUi) -> void { countOne(iUi.texture); });
+		OWL_CORE_TRACE("Teleport finished: {} texture(s) still decoding on workers", pending)
+	}
 }
 
 void RunnerLayer::onEvent(event::Event& ioEvent) {

@@ -13,6 +13,7 @@
 #include "../commands/EntityCommands.h"
 #include "../commands/HierarchyCommands.h"
 #include "../commands/PrefabCommands.h"
+#include "../document/Document.h"
 
 #include <core/utils/FileDialog.h>
 #include <gui/IconBank.h>
@@ -100,6 +101,12 @@ void SceneHierarchy::onImGuiRender() {
 
 void SceneHierarchy::renderHierarchy() {
 	ImGui::Begin("Scene Hierarchy");
+
+	if (mp_activeDocument != nullptr && mp_activeDocument->overridesGlobalPanels()) {
+		mp_activeDocument->renderHierarchyPanel();
+		ImGui::End();
+		return;
+	}
 
 	if (m_context) {
 		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
@@ -373,7 +380,9 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 
 void SceneHierarchy::renderProperties() {
 	ImGui::Begin("Properties");
-	if (m_selection)
+	if (mp_activeDocument != nullptr && mp_activeDocument->overridesGlobalPanels())
+		mp_activeDocument->renderPropertiesPanel();
+	else if (m_selection)
 		drawComponents(m_selection);
 	ImGui::End();
 }
@@ -381,7 +390,7 @@ void SceneHierarchy::renderProperties() {
 namespace {
 
 template<isNamedComponent Comp>
-void addComponentPop(scene::Entity& ioEntity, UndoManager* iUndoManager) {
+void addComponentPop(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 	if (!ioEntity.hasComponent<Comp>()) {
 		const auto* iconId = componentIconName(Comp::name());
 		bool clicked = false;
@@ -403,7 +412,7 @@ void addComponentPop(scene::Entity& ioEntity, UndoManager* iUndoManager) {
 }
 
 template<isNamedComponent T>
-void drawComponent(scene::Entity& ioEntity, UndoManager* iUndoManager) {
+void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 	constexpr ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
 												 ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
 												 ImGuiTreeNodeFlags_FramePadding;
@@ -483,12 +492,12 @@ void drawComponent(scene::Entity& ioEntity, UndoManager* iUndoManager) {
 
 
 template<isNamedComponent... Component>
-void addComponentsFromTuple(scene::Entity& ioEntity, UndoManager* iUndoManager, const std::tuple<Component...>&) {
+void addComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const std::tuple<Component...>&) {
 	(..., addComponentPop<Component>(ioEntity, iUndoManager));
 }
 
 template<isNamedComponent... Component>
-void drawComponentsFromTuple(scene::Entity& ioEntity, UndoManager* iUndoManager, const std::tuple<Component...>&) {
+void drawComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const std::tuple<Component...>&) {
 	(..., drawComponent<Component>(ioEntity, iUndoManager));
 }
 

@@ -81,7 +81,7 @@ void ModifyEntityCommand::redo(scene::Scene& ioScene) { restoreEntity(ioScene, m
 
 auto ModifyEntityCommand::description() const -> std::string { return m_description; }
 
-auto ModifyEntityCommand::mergeWith(const UndoCommand& iOther) -> bool {
+auto ModifyEntityCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
 	const auto* other = dynamic_cast<const ModifyEntityCommand*>(&iOther);
 	if (other == nullptr)
 		return false;

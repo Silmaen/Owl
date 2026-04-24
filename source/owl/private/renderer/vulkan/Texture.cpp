@@ -12,8 +12,7 @@
 #include "internal/Descriptors.h"
 #include "internal/VulkanHandler.h"
 #include "internal/utils.h"
-
-#include <stb_image.h>
+#include "renderer/TextureDecoder.h"
 
 namespace owl::renderer::vulkan {
 
@@ -30,29 +29,13 @@ void createImage(const uint32_t iIndex, const math::vec2ui& iDimensions) {
 Texture2D::Texture2D(const Specification& iSpecs) : renderer::Texture2D{iSpecs} {}
 
 Texture2D::Texture2D(std::filesystem::path iPath) : renderer::Texture2D{std::move(iPath)} {
-	int width = 0;
-	int height = 0;
-	int channels = 0;
-	stbi_set_flip_vertically_on_load(1);
-	stbi_uc* data = nullptr;
-	{
-		OWL_PROFILE_SCOPE("stbi_load - vulkan::Texture2D::Texture2D(const std::filesystem::path &)")
-		data = stbi_load(m_path.string().c_str(), &width, &height, &channels, 0);
-	}
-	if (data == nullptr) {
-		OWL_CORE_WARN("Vulkan Texture: Failed to load image {}", m_path.string())
+	const auto decoded = decodeImageFile(m_path);
+	if (!decoded.valid) {
 		return;
 	}
-
-	if ((channels != 4) && (channels != 3)) {
-		OWL_CORE_ERROR("Vulkan Texture: Impossible to load {}, invalid number of channels {}: must be 3 or 4.")
-		return;
-	}
-	m_specification.format = channels == 4 ? ImageFormat::Rgba8 : ImageFormat::Rgb8;
-	m_specification.size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
-	setData(data, m_specification.size.surface() * static_cast<uint32_t>(channels));
-
-	stbi_image_free(data);
+	m_specification.format = decoded.format;
+	m_specification.size = decoded.size;
+	setData(const_cast<uint8_t*>(decoded.pixels.data()), static_cast<uint32_t>(decoded.pixels.size()));
 }
 
 Texture2D::~Texture2D() {

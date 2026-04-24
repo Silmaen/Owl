@@ -10,11 +10,40 @@
 
 #include <owl.h>
 
+#include <chrono>
+#include <string>
+
 namespace owl::nest {
 
 /**
- * @brief Abstract base class for undoable editor commands.
+ * @brief Marker base class for every target type an UndoCommand can act on.
+ *
+ * Concrete editor targets such as `scene::Scene` and `gui::widgets::NodeCanvas`
+ * are used as the `Target` template parameter of `UndoCommand`. `IUndoTarget`
+ * itself is intentionally empty — it only exists so that unrelated targets do
+ * not need a common artificial base class while still giving the command
+ * hierarchy a single conceptual root.
  */
+struct IUndoTarget {
+	IUndoTarget() = default;
+	IUndoTarget(const IUndoTarget&) = default;
+	IUndoTarget(IUndoTarget&&) = default;
+	auto operator=(const IUndoTarget&) -> IUndoTarget& = default;
+	auto operator=(IUndoTarget&&) -> IUndoTarget& = default;
+	virtual ~IUndoTarget() = default;
+};
+
+/**
+ * @brief Abstract base class for undoable editor commands.
+ * @tparam Target Concrete editor state the command mutates (e.g. `scene::Scene`
+ *         for scene edits, `gui::widgets::NodeCanvas` for node-graph edits).
+ *
+ * Each command captures just enough state to reverse itself. The owning
+ * `UndoManager<Target>` drives the execute/undo/redo lifecycle and calls
+ * `mergeWith` to coalesce rapid property edits within
+ * `UndoManager::s_mergeTimeoutMs`.
+ */
+template<typename Target>
 class UndoCommand {
 public:
 	UndoCommand(const UndoCommand&) = delete;
@@ -22,12 +51,12 @@ public:
 	auto operator=(const UndoCommand&) -> UndoCommand& = delete;
 	auto operator=(UndoCommand&&) -> UndoCommand& = default;
 	UndoCommand() = default;
-	virtual ~UndoCommand();
+	virtual ~UndoCommand() = default;
 
 	/// Execute the undo action, restoring previous state.
-	virtual void undo(scene::Scene& ioScene) = 0;
+	virtual void undo(Target& ioTarget) = 0;
 	/// Execute the redo action, reapplying the change.
-	virtual void redo(scene::Scene& ioScene) = 0;
+	virtual void redo(Target& ioTarget) = 0;
 	/// Human-readable description for menu/tooltip display.
 	[[nodiscard]] virtual auto description() const -> std::string = 0;
 
@@ -49,5 +78,8 @@ public:
 	/// UUID of the entity to select after redo (0 = don't change selection).
 	core::UUID m_selectAfterRedo{0};
 };
+
+/// @brief Convenience alias for scene-level undo commands (the vast majority of editor actions).
+using SceneUndoCommand = UndoCommand<scene::Scene>;
 
 }// namespace owl::nest

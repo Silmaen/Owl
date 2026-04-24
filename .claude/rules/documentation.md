@@ -1,5 +1,8 @@
 # Documentation Conventions
 
+See also `.claude/rules/ongoing-quality.md` for the cross-cutting "keep docs in sync with code"
+policy that applies to every PR.
+
 ## Documentation Pages (`doc/pages/*.md`)
 
 ### Format

@@ -11,6 +11,8 @@
 #include "commands/EntityCommands.h"
 #include "commands/PrefabCommands.h"
 #include "document/CodeEditorDocument.h"
+#include "document/NodeGraphDocument.h"
+#include "document/SceneFlowDocument.h"
 
 #include <gui/IconBank.h>
 #include <gui/utils.h>
@@ -233,7 +235,7 @@ auto EditorLayer::getActiveScene() const -> const shared<scene::Scene>& {
 	return s_empty;
 }
 
-auto EditorLayer::activeUndoManager() -> UndoManager* {
+auto EditorLayer::activeUndoManager() -> SceneUndoManager* {
 	if (auto* doc = activeSceneDocument(); doc != nullptr)
 		return &doc->undoManager();
 	return nullptr;
@@ -279,6 +281,9 @@ void EditorLayer::syncActiveDocumentPanels() {
 		m_sceneHierarchy.setUndoManager(&doc->undoManager());
 		// The per-document viewport owns its own undo pointer already (set in SceneDocument::onAttach).
 	}
+	// Whichever document is active drives the override on the global panels — when it overrides,
+	// SceneHierarchy delegates its `Scene Hierarchy` / `Properties` content to the document.
+	m_sceneHierarchy.setActiveDocument(m_documents.getActive());
 	updateWindowTitle();
 	refreshRibbonForActiveDoc();
 }
@@ -296,6 +301,9 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 	} else if (ext == ".owl") {
 		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
 			openScene(full.value());
+	} else if (ext == ".owlflow") {
+		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
+			openNodeGraphFile(full.value());
 	} else if (std::ranges::find(codeExts, ext) != codeExts.end()) {
 		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
 			openCodeFile(full.value());
@@ -555,6 +563,8 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.attach();
 	m_contentBrowser.setSceneOpenCallback([this](const std::filesystem::path& iPath) -> void { openScene(iPath); });
 	m_contentBrowser.setCodeOpenCallback([this](const std::filesystem::path& iPath) -> void { openCodeFile(iPath); });
+	m_contentBrowser.setNodeGraphOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openNodeGraphFile(iPath); });
 	newScene();
 }
 
@@ -697,6 +707,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 			if (!code->isOpen()) {
 				toClose.push_back(code->id());
 				code->setOpen(true);
+			}
+		} else if (doc->type() == DocumentType::NodeGraph) {
+			auto* graph = static_cast<NodeGraphDocument*>(doc);
+			if (!graph->isOpen()) {
+				toClose.push_back(graph->id());
+				graph->setOpen(true);
 			}
 		}
 	}
@@ -880,6 +896,12 @@ void EditorLayer::buildRibbon() {
 											  .isEnabled = [this] () -> bool { return m_project.isLoaded(); },
 											  .onClick = [this] () -> void { packGame(); },
 											  .size = Size::Large});
+	const auto gViews = m_ribbon.addGroup(fileTab, "Views");
+	m_ribbon.addButton(fileTab, gViews, Button{.iconName = "open", .label = "Scene Flow",
+											   .tooltip = "Show the project scenes as a graph (teleport links)",
+											   .isEnabled = [this] () -> bool { return m_project.isLoaded(); },
+											   .onClick = [this] () -> void { openSceneFlowView(); },
+											   .size = Size::Large});
 	const auto gExit = m_ribbon.addGroup(fileTab, "Session");
 	m_ribbon.addButton(fileTab, gExit, Button{.iconName = "exit", .label = "Exit",
 											  .tooltip = "Quit Owl Nest",
@@ -924,6 +946,8 @@ void EditorLayer::buildRibbon() {
 	if (const auto* active = m_documents.getActive(); active != nullptr) {
 		if (active->type() == DocumentType::Code)
 			buildCodeTab();
+		else if (active->type() == DocumentType::NodeGraph)
+			buildNodeGraphTab();
 		else
 			buildSceneTab();
 		m_lastRibbonDocType = active->type();
@@ -1073,6 +1097,40 @@ void EditorLayer::buildCodeTab() {
 											  .size = Size::Large});
 }
 
+void EditorLayer::buildNodeGraphTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto tipWithShortcut = [this](std::string_view iBase, const char* iActionId) -> std::string {
+		const auto sc = m_actionRegistry.getShortcutString(iActionId);
+		return sc.empty() ? std::string{iBase} : std::format("{} ({})", iBase, sc);
+	};
+	const auto graphTab = m_ribbon.addTab("Graph");
+	const auto gFile = m_ribbon.addGroup(graphTab, "File");
+	m_ribbon.addButton(graphTab, gFile,
+					   Button{.iconName = "save", .label = "Save",
+							  .tooltip = tipWithShortcut("Save", "scene.save"),
+							  .isEnabled = [this] () -> bool {
+								  const auto* d = m_documents.getActive();
+								  return d != nullptr && d->type() == DocumentType::NodeGraph &&
+										 !d->filePath().empty();
+							  },
+							  .onClick = [this] () -> void {
+								  if (auto* d = m_documents.getActive();
+									  d != nullptr && d->type() == DocumentType::NodeGraph)
+									  std::ignore = d->save();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(graphTab, gFile,
+					   Button{.iconName = "close", .label = "Close",
+							  .tooltip = tipWithShortcut("Close Document", "doc.close"),
+							  .isEnabled = [this] () -> bool {
+								  const auto* d = m_documents.getActive();
+								  return d != nullptr && d->type() == DocumentType::NodeGraph;
+							  },
+							  .onClick = [this] () -> void { requestCloseActiveDocument(); },
+							  .size = Size::Large});
+}
+
 void EditorLayer::refreshRibbonForActiveDoc() {
 	const auto* active = m_documents.getActive();
 	const auto currentType =
@@ -1186,6 +1244,49 @@ void EditorLayer::openCodeFile(const std::filesystem::path& iPath) {
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
 		OWL_CORE_WARN("Failed to open code file: {}", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openSceneFlowView() {
+	if (!m_project.isLoaded())
+		return;
+	// Re-use an already-open Scene Flow document if present.
+	for (const auto& docPtr: m_documents.list()) {
+		if (auto* graph = dynamic_cast<SceneFlowDocument*>(docPtr.get())) {
+			graph->refreshFromProject(m_project);
+			m_documents.setActive(graph);
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<SceneFlowDocument>();
+	doc->onAttach(this);
+	doc->refreshFromProject(m_project);
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openNodeGraphFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	// If already open, re-activate the existing tab.
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::NodeGraph && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<NodeGraphDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open node-graph file: {}", iPath.string())
 		doc->onDetach();
 		return;
 	}

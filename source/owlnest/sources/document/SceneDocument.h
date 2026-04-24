@@ -47,8 +47,8 @@ public:
 	auto save() -> bool override;
 	auto saveAs(const std::filesystem::path& iPath) -> bool override;
 
-	[[nodiscard]] auto undoManager() -> UndoManager& override { return m_undoManager; }
-	[[nodiscard]] auto undoManager() const -> const UndoManager& override { return m_undoManager; }
+	[[nodiscard]] auto undoManager() -> SceneUndoManager& override { return m_undoManager; }
+	[[nodiscard]] auto undoManager() const -> const SceneUndoManager& override { return m_undoManager; }
 
 	// --- Scene-specific API --------------------------------------------------
 
@@ -107,7 +107,7 @@ private:
 	math::vec2f m_teleportVelocity = {0.f, 0.f};
 	std::string m_teleportTargetName;
 
-	UndoManager m_undoManager;
+	SceneUndoManager m_undoManager;
 	EditorLayer* mp_editor = nullptr;
 	panel::Viewport m_viewport;
 };

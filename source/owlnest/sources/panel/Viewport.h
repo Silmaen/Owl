@@ -10,10 +10,11 @@
 
 #include <owl.h>
 
+#include "../UndoManager.h"
+
 namespace owl::nest {
 class EditorLayer;
 class SceneDocument;
-class UndoManager;
 }// namespace owl::nest
 
 namespace owl::nest::panel {
@@ -64,7 +65,7 @@ public:
 	[[nodiscard]] auto getGuizmoTypeI() const -> uint16_t;
 
 	/// Set the undo manager for recording gizmo transform edits.
-	void setUndoManager(UndoManager* iUndoManager) { mp_undoManager = iUndoManager; }
+	void setUndoManager(SceneUndoManager* iUndoManager) { mp_undoManager = iUndoManager; }
 
 	/// @brief True while the user hasn't clicked the tab's close X this frame.
 	[[nodiscard]] auto isOpen() const -> bool { return m_pOpen; }
@@ -90,7 +91,7 @@ private:
 	/// The editor camera
 	renderer::CameraEditor m_editorCamera;
 	/// Undo manager (non-owning, optional).
-	UndoManager* mp_undoManager = nullptr;
+	SceneUndoManager* mp_undoManager = nullptr;
 	/// Whether the gizmo was being used last frame.
 	bool m_gizmoWasUsing = false;
 	/// Entity YAML snapshot captured when gizmo manipulation began.

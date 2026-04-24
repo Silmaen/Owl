@@ -203,11 +203,13 @@ render pass (critical for Vulkan's `DONT_CARE` loadOp).
 
 `Texture2D` represents a 2D image on the GPU. Factory methods dispatch to the active backend.
 
-| Factory Method                 | Description                                |
-|--------------------------------|--------------------------------------------|
-| `create(path)`                 | Load from image file (`.png`, `.jpg`)      |
-| `create(spec)`                 | Create from `Specification` (size, format) |
-| `createFromSerialized(string)` | Deserialize from scene YAML string         |
+| Factory Method                              | Description                                                              |
+|---------------------------------------------|--------------------------------------------------------------------------|
+| `create(path)`                              | Load from image file (`.png`, `.jpg`), blocking                          |
+| `create(spec)`                              | Create from `Specification` (size, format)                               |
+| `createFromSerialized(string)`              | Deserialize from scene YAML string, blocking                             |
+| `createFromSerializedAsync(string, sched)`  | Same, but decodes on a worker; placeholder visible while state `Pending` |
+| `createFromSerializedForDeserialize(str)`   | Wrapper used by scene components: async when an `Application` is alive   |
 
 ### Specification
 
@@ -239,6 +241,50 @@ Textures serialize to a prefixed string via `getSerializeString()`:
 
 `createFromSerialized()` reverses this process, resolving `nam:` assets through the
 asset directories (or pack file if one is open).
+
+### Async Texture Loading
+
+For `nam:`/`pat:` references, `createFromSerializedAsync()` decodes image bytes on a
+worker thread instead of blocking the caller. It keeps the runtime smooth during scene
+transitions that pull many textures at once (no frame hitch on decode).
+
+The flow:
+
+```mermaid
+sequenceDiagram
+    participant Caller as Scene component::deserialize
+    participant Texture as Texture2D::createFromSerializedAsync
+    participant Decoder as TextureDecoder (main thread)
+    participant Worker as Scheduler worker
+    participant GPU as GPU upload
+    Caller->>Texture: createFromSerializedAsync(name, sched)
+    Texture->>Decoder: resolve bytes + peek size
+    Decoder-->>Texture: (width, height) from PNG/JPG header
+    Texture->>GPU: allocate Rgba8 texture, setData(white)
+    Texture->>Worker: Scheduler::pushTask(decode + terminate)
+    Texture-->>Caller: shared<Texture2D>, state = Pending
+    Note over Caller,GPU: Frame continues rendering; texture shows white
+    Worker->>Worker: decodeImageBytes(bytes, Rgba8)
+    Worker->>GPU: termination callback: setData(decoded pixels)
+    Note over GPU: state → Ready (or Failed; placeholder stays visible)
+```
+
+Key properties:
+
+- **Placeholder-sized, not 1×1:** the texture is created at the real image dimensions
+  (peeked from the PNG/JPG header, microseconds) so binding code, UV coords, and atlas
+  math are correct from frame 0.
+- **Always `Rgba8`:** the worker decodes with `desired_channels = 4`, so the placeholder
+  size and the final `setData` size always match.
+- **Thread-safe decode:** `stbi_set_flip_vertically_on_load_thread()` ensures per-thread
+  flip state; multiple textures can decode concurrently.
+- **Fallback paths:** `emp:`/`siz:` and unresolvable `nam:` delegate to the synchronous
+  factory. Unit tests and `PackWriter` that run without an `Application` still use the
+  blocking path.
+
+Query `Texture2D::getLoadState()` to distinguish `Pending` / `Ready` / `Failed`. The
+runner logs the number of still-pending textures after each scene transition as a
+diagnostic aid.
 
 ### Texture Library
 

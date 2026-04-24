@@ -31,7 +31,8 @@ both mirroring the module structure.
 
 **Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
 [Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·
-[Lua Scripting](scripting.md) · [Editor (Owl Nest)](editor.md)
+[Lua Scripting](scripting.md) · [Editor (Owl Nest)](editor.md) ·
+[Node Graph Framework](node_graph.md)
 
 ## Backend System
 

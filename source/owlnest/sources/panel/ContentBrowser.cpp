@@ -238,6 +238,8 @@ void ContentBrowser::renderContent() {
 				m_currentPath /= path.filename();
 			} else if (path.extension() == ".owl" && m_sceneOpenCallback) {
 				m_sceneOpenCallback(path);
+			} else if (path.extension() == ".owlflow" && m_nodeGraphOpenCallback) {
+				m_nodeGraphOpenCallback(path);
 			} else if (m_codeOpenCallback) {
 				const auto ext = path.extension().string();
 				static const std::vector<std::string> codeExts = {

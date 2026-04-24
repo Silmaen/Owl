@@ -9,6 +9,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Scene Flow refinements**
+    - Pin labels are now drawn **inside** the node frame (via a new `NodePin::labelColor` field
+      and a `CustomDraw` override on `NodeCanvas`). GraphEditor receives `nullptr` for slot names
+      so it stops rendering them outside the rect — labels stay aligned with their slot circles
+      regardless of zoom
+    - Compact pin labels: **just the source identifier** prefixed by a single-glyph kind hint
+      (`† DangerZone`, `★ VictoryZone`, `λ checkpoint`, plain `LevelPortal` for Teleport).
+      Destination is implicit from the link, no need to repeat in the label
+    - **Right-click hit-test fix** — `GraphEditor` only sets `nodeOver` when a slot is hovered;
+      clicks on the node body returned `-1`. `NodeCanvas` now does its own canvas-space hit-test
+      against stored node rects when GraphEditor reports no node. Right-click on the body shows
+      the Edit / Delete menu as expected
+    - **Layered layout** replaces the random 4-column grid: BFS from `Project::firstScene`
+      assigns each scene a column = its depth, orphans land in a "limbo" column on the right.
+      Within each column, scenes are sorted alphabetically. Reduces link crossings substantially
+      on the sample project
+- **Scene Flow UX pass**
+    - Nodes auto-size from their title and pin labels (`NodeCanvas::measureNode` exposes the
+      `ImGui::CalcTextSize`-based size); the SceneFlow grid layout uses **actual** node widths /
+      heights to compute column / row offsets so nothing overlaps regardless of label length
+    - `NodeCanvas` now sets `GraphEditor::Options::mDrawIONameOnHover = false` — pin labels are
+      drawn permanently (they used to only appear on hover, making the graph illegible at a glance)
+    - Scene titles drop the `.owl` extension (implicit since every node is a scene)
+    - Output pin labels show the **source trigger entity name** parsed from the scene's YAML
+      (e.g. `LevelPortal → level2 @ SpawnPoint`); transitions of type `Death` and `Victory` are
+      now extracted too (they also serialize a `LevelName`) and styled distinctly:
+      `[death] DangerZone → game_over`, `[victory] VictoryZone → victory`
+    - Best-effort scan of attached Lua scripts for `scene.load_scene("...")` calls — adds extra
+      output pins tagged `scene_lua_exit` so Lua-driven transitions appear alongside Trigger ones
+    - Right-click menu: on a node → **Edit scene** (opens it in a new tab) / **Delete scene**
+      (with confirmation modal); on empty space → **Add new scene...** (creates an empty `.owl`
+      under `scenes/<name>.owl` and opens it). Canvas auto-rescans after create/delete
+    - The global **Scene Hierarchy** and **Properties** panels now host SceneFlow content while
+      that document is active: the hierarchy lists every scene (orphans drawn red, click-to-select,
+      double-click to open), the properties panel shows the selected scene's path, transitions
+      (color-coded: red = death, green = victory, blue = Lua) and an "Open this scene" button.
+      Wired through new `Document::overridesGlobalPanels()` / `renderHierarchyPanel()` /
+      `renderPropertiesPanel()` virtuals — generic for future node-graph documents
+- **Node graph framework + Scene Flow view**
+    - Reusable `gui::widgets::NodeCanvas` widget (public header
+      `source/owl/public/gui/widgets/NodeCanvas.h`) — nodes with typed input/output pins, UUID-based
+      identity, pan/zoom/selection, link validator, callbacks for link create/delete, node move,
+      node select and **double-click** (detected in the wrapper since GraphEditor has no native
+      double-click signal). Pimpl over `GraphEditor` from the existing `imguizmo` 1.92.7 DepManager
+      package — the bundle ships GraphEditor + ImSequencer + ImCurveEdit + ImGradient + ImZoomSlider
+      + ImLightRig alongside ImGuizmo, so no new dependency was needed
+    - `gui::widgets::NodeCanvasSerializer` — domain-agnostic YAML round-trip (`.owlflow` format)
+      for full canvas save/load, plus `serializeSubset`/`pasteSubset` for copy/paste with fresh UUIDs
+    - `NodeGraphDocument` — third `DocumentType` alongside Scene and Code, generic node-graph
+      document with its own `NodeGraphUndoManager` (typed `UndoManager<NodeCanvas>`); pastes, saves
+      and loads through the serializer. Content Browser wires `.owlflow` double-click to a new
+      `EditorLayer::openNodeGraphFile` handler; ribbon contextual tab "Graph" with save/close
+    - Node-graph undo commands (`source/owlnest/sources/commands/NodeGraphCommands.{h,cpp}`):
+      `AddNodeCommand`, `RemoveNodeCommand` (restores attached links on undo), `MoveNodeCommand`
+      (merge-coalesces rapid drag into a single step), `AddLinkCommand`, `RemoveLinkCommand`
+    - `SceneFlowDocument` — first consumer of the framework, specialises `NodeGraphDocument`
+      to render the project's scenes as a graph: one node per `.owl` file, entry pin + one output
+      pin per Teleport trigger found in that scene, links wired from output → destination entry,
+      orphan scenes (unreachable from `Project::firstScene`) drawn with a red title. Double-click
+      navigates to a scene via `EditorLayer::openScene`. Exposed from the ribbon File tab via
+      a new "Views → Scene Flow" button. Link create/delete and per-pin target editing (writing
+      new trigger entities back into the source scene) are deferred — they require composite
+      `SceneUndo + NodeGraphUndo` commands and stay out of this first slice
+    - 16 new unit tests: `test/gui_tests/NodeCanvas_test.cpp` (topology, link validator veto,
+      cascaded link removal, selection round-trip, pin→node lookup, clear) and
+      `test/gui_tests/NodeCanvasSerializer_test.cpp` (empty/full canvas round-trip, custom data
+      preservation, malformed YAML rejection, subset serialize, paste with fresh UUIDs)
+- **Undo system templatized over its target type**
+    - `UndoCommand<Target>` + `UndoManager<Target>` in `source/owlnest/sources/UndoCommand.h` /
+      `UndoManager.h` — both now header-only templates, `IUndoTarget` as common marker base
+    - `SceneUndoCommand` / `SceneUndoManager` aliases preserve the current editor behaviour one-to-one;
+      every existing command (`Entity*`, `Component*`, `Hierarchy*`, `Prefab*`) migrated to
+      `SceneUndoCommand`
+    - Unblocks a future node-graph undo stack parallel to the scene one (workstream B-5/B-6)
+- **Async texture loading with placeholders**
+    - `TextureDecoder` helper (`renderer/TextureDecoder.h`) — CPU-only decode primitive
+      (`peekImageSize`, `decodeImageBytes`, `decodeImageFile`) with per-thread stb_image flip state
+      so multiple workers can decode concurrently
+    - New `Texture2D::createFromSerializedAsync(name, scheduler)` returns immediately with a
+      placeholder-sized Rgba8 texture filled white; worker decodes, termination callback uploads
+      real pixels on the main thread and flips `LoadState` to `Ready` (or `Failed`, keeping the
+      placeholder visible)
+    - Dimensions peeked from the PNG/JPG header up front, so every texture is created at its real
+      size from frame 0 — binding, UV coords and atlas math unaffected
+    - `Texture2D::createFromSerializedForDeserialize()` wrapper used by scene components
+      (`SpriteRenderer`, `AnimatedSpriteRenderer`, `BackgroundTexture`, `UIImage`) — async when an
+      `Application` is alive, synchronous fallback for `PackWriter` and unit tests
+    - `RunnerLayer::finishTransition()` logs the count of still-pending textures after a teleport
+      as a diagnostic trace — smooth scene changes in the runner, no more frame hitch on rich
+      scenes
 - **Async operations in editor** with progress modal (`AsyncProgressModal` panel)
     - Pack Game / Pack Scene: async with per-entry progress bar and cancel support
     - Save Scene: serialize on main thread, write file on background thread
@@ -186,6 +276,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Sample project main menu Lua flood** — `string.format("%d, %d", mx, my)` on the float mouse
+  coordinates now `math.floor`s them first; was triggering `bad argument #2 to 'format' (number
+  has no integer representation)` on every frame in `main_menu.lua:89`
 - **ARM64 Linux CI restored** — Poetry's default venv cache (`~/.cache/pypoetry/virtualenvs/`)
   names venvs from `(project, pyproject, python version)` without the architecture. CI agents
   running different archs on a shared `$HOME` (or bind-mounted workspace) collided on the same

@@ -50,6 +50,9 @@ public:
 	void onEvent(event::Event& ioEvent) override;
 	void onImGuiRender(const core::Timestep& iTimeStep) override;
 
+	/// @brief Read access to the loaded project (used by side panels / Scene Flow document).
+	[[nodiscard]] auto getProject() const -> const Project& { return m_project; }
+
 	/// @brief Scene-state alias — the active document owns the authoritative value.
 	using State = SceneDocument::State;
 	[[nodiscard]] auto getState() const -> State;
@@ -60,6 +63,12 @@ public:
 
 	/// @brief Open a text/code file as a new `CodeEditorDocument` (or switch to one already open).
 	void openCodeFile(const std::filesystem::path& iPath);
+
+	/// @brief Open a `.owlflow` node-graph file as a new `NodeGraphDocument` (or switch to one already open).
+	void openNodeGraphFile(const std::filesystem::path& iPath);
+
+	/// @brief Open (or refresh) the Scene Flow view — a `NodeGraphDocument` subclass populated from the current project.
+	void openSceneFlowView();
 	void saveSceneAs();
 	void saveSceneAs(const std::filesystem::path& iScenePath);
 	void saveCurrentScene();
@@ -95,7 +104,7 @@ public:
 	void handleSaveLoadRequest();
 
 	/// @brief Access the active document's undo manager, or nullptr if no doc is open.
-	[[nodiscard]] auto activeUndoManager() -> UndoManager*;
+	[[nodiscard]] auto activeUndoManager() -> SceneUndoManager*;
 
 	/// @brief Access the document manager (used by the Viewport tab bar).
 	[[nodiscard]] auto getDocumentManager() -> DocumentManager& { return m_documents; }
@@ -117,6 +126,7 @@ private:
 	void buildRibbon();
 	/// Contextual tab for scene documents (Playback, Gizmo, Scene file ops, Package).
 	void buildSceneTab();
+	void buildNodeGraphTab();
 	/// Contextual tab for code / text documents (Save, Save As, Close, language…).
 	void buildCodeTab();
 	/// Rebuild the ribbon when the active document type changes.

@@ -14,7 +14,22 @@
 
 #include <filesystem>
 
+namespace owl::core::task {
+class Scheduler;
+}// namespace owl::core::task
+
 namespace owl::renderer {
+
+/**
+ * @brief Async load progress of a texture created via `Texture2D::createFromSerializedAsync`.
+ *
+ * Textures created synchronously keep the default value `Ready`.
+ */
+enum struct LoadState : uint8_t {
+	Pending,///< Decoder still running on a worker; GPU currently holds the placeholder pixels.
+	Ready,///< Real pixels uploaded.
+	Failed,///< Worker failed (bytes missing, decode error); placeholder stays visible.
+};
 
 /**
  * @brief Pixel format of images.
@@ -138,11 +153,19 @@ public:
 	 */
 	[[nodiscard]] auto getSpecification() const -> const Specification& { return m_specification; }
 
+	/**
+	 * @brief Current async-load state.
+	 * @return `Ready` for synchronously loaded textures; `Pending`/`Failed` for textures created via `Texture2D::createFromSerializedAsync`.
+	 */
+	[[nodiscard]] auto getLoadState() const -> LoadState { return m_loadState; }
+
 protected:
 	/// Eventually the specifications.
 	Specification m_specification;
 	/// Path to the texture file.
 	std::filesystem::path m_path;
+	/// Current async-load state (only written from the main thread).
+	LoadState m_loadState{LoadState::Ready};
 
 private:
 	/// The texture's name.
@@ -181,6 +204,32 @@ public:
 	 * @return Pointer to the texture.
 	 */
 	static auto createFromSerialized(const std::string& iTextureSerializedName) -> shared<Texture2D>;
+
+	/**
+	 * @brief Create a texture from a serialized name without blocking on decode.
+	 * @param[in] iTextureSerializedName Serialized reference (`nam:`, `pat:`, `siz:`, `emp:`).
+	 * @param[in] ioScheduler Scheduler used to run the decode on a worker thread.
+	 * @return A valid texture with `LoadState::Pending` whose GPU contents currently hold a 1-channel
+	 *         white placeholder sized to the peeked image dimensions. Contents are swapped on the
+	 *         main thread when the decode termination callback fires, moving the state to
+	 *         `Ready` (on success) or `Failed` (placeholder kept).
+	 *
+	 * Falls back to the synchronous `createFromSerialized` when the name does not designate a
+	 * decodable image (`emp:`, `siz:`) or when dimensions cannot be peeked cheaply.
+	 */
+	static auto createFromSerializedAsync(const std::string& iTextureSerializedName,
+										  core::task::Scheduler& ioScheduler) -> shared<Texture2D>;
+
+	/**
+	 * @brief Convenience wrapper used by scene component deserializers.
+	 * @param[in] iTextureSerializedName Serialized reference.
+	 * @return Async texture when an `Application` with a scheduler is alive; otherwise the
+	 *         synchronous `createFromSerialized` result.
+	 *
+	 * Lets deserialization code stay a single call regardless of whether the host process has
+	 * booted an `Application` (runner, editor) or not (unit tests, offline tools such as `PackWriter`).
+	 */
+	static auto createFromSerializedForDeserialize(const std::string& iTextureSerializedName) -> shared<Texture2D>;
 
 	/**
 	 * @brief Creates the texture with the given size.

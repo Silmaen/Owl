@@ -18,7 +18,7 @@ namespace owl::nest::commands {
  *
  * Redo restores the instantiated subtree; undo destroys it.
  */
-class InstantiatePrefabCommand final : public UndoCommand {
+class InstantiatePrefabCommand final : public SceneUndoCommand {
 public:
 	InstantiatePrefabCommand(const InstantiatePrefabCommand&) = delete;
 	InstantiatePrefabCommand(InstantiatePrefabCommand&&) = default;
@@ -50,7 +50,7 @@ private:
  *
  * Captures the full instance subtree before and after the operation.
  */
-class ApplyPrefabCommand final : public UndoCommand {
+class ApplyPrefabCommand final : public SceneUndoCommand {
 public:
 	ApplyPrefabCommand(const ApplyPrefabCommand&) = delete;
 	ApplyPrefabCommand(ApplyPrefabCommand&&) = default;
