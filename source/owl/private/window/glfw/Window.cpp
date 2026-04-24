@@ -58,7 +58,7 @@ void Window::init(const Properties& iProps) {
 			// Useful to get glfwSetWindowIcon working at dev time without installing a
 			// system-wide .desktop file. Default path stays on the native platform (Wayland
 			// when available) to preserve high-refresh-rate presentation.
-			if (const char* forceX11 = std::getenv("OWL_FORCE_X11"); forceX11 && forceX11[0] == '1')
+			if (const char* forceX11 = std::getenv("OWL_FORCE_X11"); (forceX11 != nullptr) && forceX11[0] == '1')
 				glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
 			[[maybe_unused]] const int success = glfwInit();
 			OWL_CORE_ASSERT(success, "Could not initialize GLFW!")
