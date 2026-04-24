@@ -211,18 +211,25 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		OWL_CORE_TRACE("GUI Layer created.")
 	}
 
-	// Create the sound system
+	// Create the sound system, with fallback to Null if the requested backend is unavailable
+	// (typical in headless / container environments without an audio device).
 	{
-		sound::SoundCommand::create(m_initParams.isDummy ? sound::SoundAPI::Type::Null : m_initParams.sound);
-		// check sound system creation
-		if (sound::SoundCommand::getState() != sound::SoundAPI::State::Created) {
-			OWL_CORE_ERROR("ERROR while Creating Sound system")
-			m_state = State::Error;
-			return;
+		const auto requestedSound =
+				m_initParams.isDummy ? sound::SoundAPI::Type::Null : m_initParams.sound;
+		sound::SoundCommand::create(requestedSound);
+		bool soundReady = sound::SoundCommand::getState() == sound::SoundAPI::State::Created;
+		if (soundReady) {
+			sound::SoundSystem::init();
+			soundReady = sound::SoundCommand::getState() == sound::SoundAPI::State::Ready;
 		}
-		sound::SoundSystem::init();
-		// check sound system initialization
-		if (sound::SoundCommand::getState() != sound::SoundAPI::State::Ready) {
+		if (!soundReady && requestedSound != sound::SoundAPI::Type::Null) {
+			OWL_CORE_WARN("Sound backend unavailable -- falling back to Null sound (audio disabled).")
+			sound::SoundSystem::shutdown();
+			sound::SoundCommand::create(sound::SoundAPI::Type::Null);
+			sound::SoundSystem::init();
+			soundReady = sound::SoundCommand::getState() == sound::SoundAPI::State::Ready;
+		}
+		if (!soundReady) {
 			OWL_CORE_ERROR("ERROR while Initializing Sound system")
 			m_state = State::Error;
 			return;
@@ -289,13 +296,29 @@ Application::~Application() {
 
 	m_fontLibrary.destroy();
 	if (renderer::RenderCommand::getState() != renderer::RenderAPI::State::Error) {
+		// Ensure the GPU is idle before tearing anything down.
+		if (mp_appWindow && mp_appWindow->getGraphContext() != nullptr)
+			mp_appWindow->getGraphContext()->waitIdle();
+		// 1. Release layers first — they may own GPU resources (e.g. ImGui Vulkan backend).
 		m_layerStack.clear();
 		input::Input::invalidate();
-		mp_appWindow->shutdown();
-		OWL_CORE_TRACE("Application window shut down.")
-		renderer::Renderer::shutdown();
+		// 2. Release Renderer2D / BackgroundRenderer resources (only if shaders were initialized).
+		if (renderer::Renderer::getState() == renderer::Renderer::State::Running) {
+			renderer::Renderer::shutdown();
+		} else {
+			renderer::Renderer::reset();
+		}
+		// 3. Destroy the RenderAPI: VulkanHandler::release() tears down pipelines, swapchain,
+		//    descriptors, device, and surface (using the window's GraphContext) and then the
+		//    Vulkan instance. This must happen BEFORE the window/GLFW teardown, otherwise the
+		//    Vulkan surface outlives its backing native window and crashes on destruction.
 		renderer::RenderCommand::invalidate();
 		OWL_CORE_TRACE("Renderer shut down and invalidated.")
+		// 4. Finally tear down the window (destroys GLFW window / terminates GLFW).
+		if (mp_appWindow) {
+			mp_appWindow->shutdown();
+			OWL_CORE_TRACE("Application window shut down.")
+		}
 		mp_appWindow.reset();
 	}
 	if (sound::SoundCommand::getState() != sound::SoundAPI::State::Error) {

@@ -24,6 +24,22 @@ else ()
         message(FATAL_ERROR "Depmanager cmake modules not found at: ${depmanager_cmake_dir}")
     endif ()
 
+    # The upstream DepManager.cmake uses `find_program(DM_INTERNAL_COMMAND depmanager)` which
+    # searches $PATH and can pick a stale system-wide binary (e.g. leftover `/usr/local/bin/depmanager`
+    # whose shebang points at a system Python that no longer has the module installed). Resolve
+    # the binary from the Poetry venv ourselves and pre-seed the cache so the upstream find_program
+    # short-circuits.
+    execute_process(COMMAND ${Poetry_PREFIX} python -c "import shutil, sys; p = shutil.which('depmanager'); print(p) if p else sys.exit(1)"
+            OUTPUT_VARIABLE _owl_depmanager_path
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE _owl_depmanager_find_result)
+    if (_owl_depmanager_find_result EQUAL 0 AND _owl_depmanager_path)
+        set(DM_INTERNAL_COMMAND "${_owl_depmanager_path}" CACHE FILEPATH "Path to depmanager binary" FORCE)
+        message(STATUS "Depmanager binary pinned to Poetry venv: ${DM_INTERNAL_COMMAND}")
+    endif ()
+    unset(_owl_depmanager_path)
+    unset(_owl_depmanager_find_result)
+
     list(PREPEND CMAKE_MODULE_PATH ${depmanager_cmake_dir})
     include(DepManager)
 endif ()
