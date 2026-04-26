@@ -9,7 +9,7 @@
 
 #include "Texture.h"
 #include "core/external/opengl46.h"
-#include <stb_image.h>
+#include "renderer/TextureDecoder.h"
 
 namespace owl::renderer::opengl {
 
@@ -49,27 +49,12 @@ auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
 Texture2D::Texture2D(std::filesystem::path iPath) : renderer::Texture2D{std::move(iPath)} {
 	OWL_PROFILE_FUNCTION()
 
-	int width = 0;
-	int height = 0;
-	int channels = 0;
-	stbi_set_flip_vertically_on_load(1);
-	stbi_uc* data = nullptr;
-	{
-		OWL_PROFILE_SCOPE("stbi_load - OpenGL::Texture2D::Texture2D(const std::filesystem::path &)")
-		data = stbi_load(m_path.string().c_str(), &width, &height, &channels, 0);
-	}
-	if (data == nullptr) {
-		OWL_CORE_WARN("OpenGL Texture: Failed to load image {}", m_path.string())
+	const auto decoded = decodeImageFile(m_path);
+	if (!decoded.valid) {
 		return;
 	}
-
-
-	if ((channels != 4) && (channels != 3)) {
-		OWL_CORE_ERROR("OpenGL Texture: Impossible to load {}, invalid number of channels {}: must be 3 or 4.")
-		return;
-	}
-	m_specification.format = channels == 4 ? ImageFormat::Rgba8 : ImageFormat::Rgb8;
-	m_specification.size = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+	m_specification.format = decoded.format;
+	m_specification.size = decoded.size;
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_textureId);
 	glTextureStorage2D(m_textureId, 1, glInternalDataFormat(m_specification.format),
@@ -81,11 +66,7 @@ Texture2D::Texture2D(std::filesystem::path iPath) : renderer::Texture2D{std::mov
 	glTextureParameteri(m_textureId, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTextureParameteri(m_textureId, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	glTextureSubImage2D(m_textureId, 0, 0, 0, static_cast<GLsizei>(m_specification.size.x()),
-						static_cast<GLsizei>(m_specification.size.y()), glDataFormat(m_specification.format),
-						GL_UNSIGNED_BYTE, data);
-
-	stbi_image_free(data);
+	setData(const_cast<uint8_t*>(decoded.pixels.data()), static_cast<uint32_t>(decoded.pixels.size()));
 }
 
 Texture2D::Texture2D(const Specification& iSpecs) : renderer::Texture2D{iSpecs} {

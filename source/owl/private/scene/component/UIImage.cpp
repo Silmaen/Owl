@@ -26,7 +26,8 @@ void UIImage::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["tint"])
 		tint = iNode.getImpl()->node["tint"].as<math::vec4>();
 	if (iNode.getImpl()->node["texture"])
-		texture = renderer::Texture2D::createFromSerialized(iNode.getImpl()->node["texture"].as<std::string>());
+		texture = renderer::Texture2D::createFromSerializedForDeserialize(
+				iNode.getImpl()->node["texture"].as<std::string>());
 }
 
 }// namespace owl::scene::component

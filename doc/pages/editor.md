@@ -141,11 +141,16 @@ appears next to the scene tabs.
 
 ## Documents
 
-Owl Nest is multi-document: each open scene (and, in future versions, each Lua
-script or node graph) lives in its own tab. Internally the editor owns a
-`DocumentManager` that holds the open documents and tracks which one is
-**active**. Global panels (Scene Hierarchy, Properties, Viewport) always
-reflect the active document.
+Owl Nest is multi-document: each open scene, code file or node graph lives
+in its own tab. Internally the editor owns a `DocumentManager` that holds
+the open documents and tracks which one is **active**. Global panels
+(Scene Hierarchy, Properties, Viewport) always reflect the active document.
+
+| Kind        | File     | Description                                                      |
+|-------------|----------|------------------------------------------------------------------|
+| Scene       | `.owl`   | Scene graph editor with viewport, per-document undo/redo stack   |
+| Code        | `.lua`, `.py`, `.json`, `.md`, `.svg`... | Syntax-highlighted text editor (ImGuiColorTextEdit) |
+| Node Graph  | `.owlflow` (or derived like **Scene Flow**) | Generic node canvas — see [Node Graph](node_graph.md) |
 
 - **Document tabs** — each open scene has its own `Viewport` window (stable
   `##scene_<uuid>` id). ImGui's docking groups viewports in the same dock node
@@ -165,7 +170,17 @@ reflect the active document.
   selection, and playback state.
 
 Key types live in `source/owlnest/sources/document/`: `Document` (interface),
-`DocumentManager`, `SceneDocument`, `DocumentTabBar`.
+`DocumentManager`, `SceneDocument`, `CodeEditorDocument`, `NodeGraphDocument`,
+`SceneFlowDocument`, `DocumentTabBar`.
+
+### Scene Flow view
+
+Opens from **File → Views → Scene Flow** in the ribbon. Presents every `.owl`
+scene in the current project as a node on a canvas, with Teleport triggers
+drawn as output pins wired to the destination scene's entry pin. Scenes
+unreachable from `Project::firstScene` are drawn with a red title (via BFS).
+**Double-click** a node to navigate to that scene. Link create/delete is
+planned as a follow-up — see [Node Graph](node_graph.md) for details.
 
 ## Panels Reference
 

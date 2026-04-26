@@ -32,7 +32,8 @@ void AnimatedSpriteRenderer::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["color"])
 		color = iNode.getImpl()->node["color"].as<math::vec4>();
 	if (iNode.getImpl()->node["texture"])
-		texture = renderer::Texture2D::createFromSerialized(iNode.getImpl()->node["texture"].as<std::string>());
+		texture = renderer::Texture2D::createFromSerializedForDeserialize(
+				iNode.getImpl()->node["texture"].as<std::string>());
 	if (iNode.getImpl()->node["columns"])
 		columns = iNode.getImpl()->node["columns"].as<uint32_t>();
 	if (iNode.getImpl()->node["rows"])

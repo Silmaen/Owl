@@ -68,6 +68,14 @@ public:
 		m_codeOpenCallback = std::move(iCallback);
 	}
 
+	/**
+	 * @brief Set a callback invoked when a node-graph file (`.owlflow`) is double-clicked.
+	 * @param[in] iCallback Function taking the node-graph file path.
+	 */
+	void setNodeGraphOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_nodeGraphOpenCallback = std::move(iCallback);
+	}
+
 private:
 	/// The actual folder
 	std::filesystem::path m_currentPath;
@@ -124,6 +132,7 @@ private:
 	/// Callback for opening a scene file from the browser.
 	std::function<void(const std::filesystem::path&)> m_sceneOpenCallback;
 	std::function<void(const std::filesystem::path&)> m_codeOpenCallback;
+	std::function<void(const std::filesystem::path&)> m_nodeGraphOpenCallback;
 };
 
 }// namespace owl::nest::panel

@@ -6,6 +6,33 @@ This page tracks planned and completed features across Owl releases.
 
 **Ongoing across all releases:**
 
+These cross-cutting efforts are never "done" — they are maintained and improved continuously across
+every release. No feature should regress the baseline on these axes; each release is expected to
+move the needle forward.
+
+- ![Planned][planned] Code quality
+    - Keep clang-tidy / clang-format clean (no new warnings, no `// NOLINT` without justification)
+    - Refactor away duplication and dead code as it appears (no abstractions for hypothetical needs)
+    - Respect the conventions in `.claude/rules/cpp-style.md` (naming, trailing return types,
+      smart-pointer aliases, `@brief` on every public API)
+    - Treat every PR as an opportunity to leave the touched files cleaner than found
+- ![Planned][planned] Test coverage
+    - Grow coverage alongside every new feature (no new public API without tests)
+    - Maintain coverage trend upward, never downward — use
+      `poetry run python ci_action.py Coverage <preset>` to measure
+    - Unit tests for pure logic, integration tests for systems that cross module boundaries
+    - Fill gaps in existing modules opportunistically (backfill tests for untested legacy paths)
+- ![Planned][planned] Performance
+    - Profile before optimizing — measure with the in-editor profiler or external tools
+    - Watch for regressions in hot paths (renderer, physics step, scene update, script tick)
+    - Prefer algorithmic wins over micro-optimizations; document non-obvious perf tradeoffs
+    - Memory: avoid per-frame allocations, reuse buffers, stream large assets
+- ![Planned][planned] Documentation quality
+    - Every public class, method, enum value, and struct field has a `@brief` / `///` comment
+    - Private members get at least a `///` one-liner
+    - Keep `doc/pages/*.md` in sync with behaviour — update pages in the same PR as the feature
+    - Prefer mermaid diagrams over ASCII art or external images for architecture/flow/sequence
+    - Update `CHANGELOG.md` (Unreleased section) and this roadmap as features land
 - ![Planned][planned] Profiling tools
     - In-editor frame profiler (CPU/GPU timeline)
     - Memory usage breakdown by asset type
@@ -293,10 +320,18 @@ asynchronous with progress feedback.
         - ImGui loading overlay displayed between each shader compilation (5 shaders)
         - Per-shader progress ("Compiling shader 3/5: quad...") with progress bar
         - Cache hit skips compilation (~1ms), first-time compile shows real progress (~50s total)
-    - ![Planned][planned] Async texture loading with placeholders
-        - Load textures from pack on background thread (decompress + decode)
-        - Display 1x1 white placeholder until real texture is ready
-        - Smooth scene transitions without frame hitches in the runner
+    - ![Done][done] Async texture loading with placeholders
+        - `TextureDecoder` helper (`peekImageSize`/`decodeImageBytes`/`decodeImageFile`) with
+          per-thread stb_image flip state for safe concurrent decoding
+        - `Texture2D::createFromSerializedAsync` returns immediately with a placeholder-sized
+          Rgba8 texture filled white; dimensions peeked cheaply from the PNG/JPG header so the
+          real size is correct from frame 0 (not a 1×1 bump later)
+        - Worker thread decodes, termination callback uploads real pixels and flips
+          `LoadState` to `Ready` (or `Failed`, leaving the placeholder visible)
+        - `createFromSerializedForDeserialize` wrapper lets `SpriteRenderer`,
+          `AnimatedSpriteRenderer`, `BackgroundTexture`, `UIImage` stay a single-line call
+          that goes async under an `Application`, synchronous for `PackWriter` / tests
+        - Runner diagnostic trace after each teleport lists the count of still-pending textures
     - ![Done][done] Async scene transitions in runner
         - `RunnerLayer::handleTeleportRequest()` reads scene bytes in background (from pack or file)
         - Deserializes and swaps the active scene on the main thread when bytes are ready
@@ -358,14 +393,27 @@ asynchronous with progress feedback.
         - SVG preview rendered via the existing `lunasvg` integration
         - Toggle button in the ribbon (or split-view inside the code document)
 - Node Graph Editor
-    - ![Planned][planned] Node graph framework
-        - Generic node canvas: nodes with typed input/output pins, bezier connections
-        - Pan/zoom, selection, copy/paste, undo/redo integration
-        - Serialization to/from YAML (reusable for animation, shaders, AI, etc.)
-    - ![Planned][planned] Scene flow view (first node graph usage)
-        - Scenes as nodes, teleport triggers as connections
-        - Click to navigate to a scene, detect orphaned/unreachable scenes
-        - Visual editing of teleport links
+    - ![Done][done] Node graph framework
+        - Reusable `gui::widgets::NodeCanvas` widget — UUID-based nodes/pins/links, typed pins,
+          link validator, pan/zoom/selection, double-click detection, callbacks for
+          create/delete/move. Pimpl wrapper over `GraphEditor` from the ImGuizmo bundle (no new
+          DepManager dependency)
+        - `UndoCommand<Target>` / `UndoManager<Target>` templatized, with `SceneUndoCommand`
+          alias preserving editor behaviour — also `NodeGraphUndoManager` for canvas edits
+        - `NodeCanvasSerializer` — `.owlflow` YAML round-trip (full + subset for copy/paste
+          with fresh UUIDs)
+        - `NodeGraphDocument` as a third `DocumentType`, ribbon contextual "Graph" tab,
+          `.owlflow` content-browser handling + drag-drop routing
+        - Node-graph undo commands: AddNode / RemoveNode (restores attached links) / MoveNode
+          (drag-coalesced) / AddLink / RemoveLink
+    - ![In Progress][progress] Scene flow view (first node graph usage)
+        - ![Done][done] Scenes as nodes, teleport triggers as output pins, links wired from
+          output → destination scene entry, orphan detection (BFS from `Project::firstScene`,
+          unreachable scenes drawn in red). Exposed from the File ribbon tab → Views → Scene Flow
+        - ![Done][done] Double-click a node → navigates to that scene via `EditorLayer::openScene`
+        - ![Planned][planned] Visual create/delete of teleport links (requires a composite
+          `SceneUndo + NodeGraphUndo` command that writes/removes `Trigger` entities in the source
+          scene) and per-pin `targetName` editing from the canvas
 - Asset Editors
     - ![Planned][planned] Animation editor
         - Timeline for `AnimatedSpriteRenderer`: frame-by-frame preview

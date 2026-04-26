@@ -18,7 +18,7 @@ namespace owl::nest::commands {
  *
  * Redo creates the entity; undo destroys it.
  */
-class CreateEntityCommand final : public UndoCommand {
+class CreateEntityCommand final : public SceneUndoCommand {
 public:
 	CreateEntityCommand(const CreateEntityCommand&) = delete;
 	CreateEntityCommand(CreateEntityCommand&&) = default;
@@ -45,7 +45,7 @@ private:
  *
  * Redo destroys the entity; undo restores it from snapshot.
  */
-class DeleteEntityCommand final : public UndoCommand {
+class DeleteEntityCommand final : public SceneUndoCommand {
 public:
 	DeleteEntityCommand(const DeleteEntityCommand&) = delete;
 	DeleteEntityCommand(DeleteEntityCommand&&) = default;
@@ -76,7 +76,7 @@ private:
  *
  * Redo destroys the subtree; undo restores the entire subtree from snapshot.
  */
-class DeleteSubtreeCommand final : public UndoCommand {
+class DeleteSubtreeCommand final : public SceneUndoCommand {
 public:
 	DeleteSubtreeCommand(const DeleteSubtreeCommand&) = delete;
 	DeleteSubtreeCommand(DeleteSubtreeCommand&&) = default;
@@ -106,7 +106,7 @@ private:
  *
  * Redo creates the duplicate; undo destroys it.
  */
-class DuplicateEntityCommand final : public UndoCommand {
+class DuplicateEntityCommand final : public SceneUndoCommand {
 public:
 	DuplicateEntityCommand(const DuplicateEntityCommand&) = delete;
 	DuplicateEntityCommand(DuplicateEntityCommand&&) = default;
@@ -134,7 +134,7 @@ private:
  *
  * Redo creates the duplicate subtree; undo destroys it.
  */
-class DuplicateSubtreeCommand final : public UndoCommand {
+class DuplicateSubtreeCommand final : public SceneUndoCommand {
 public:
 	DuplicateSubtreeCommand(const DuplicateSubtreeCommand&) = delete;
 	DuplicateSubtreeCommand(DuplicateSubtreeCommand&&) = default;

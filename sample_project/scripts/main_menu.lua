@@ -86,7 +86,7 @@ function on_update(dt)
         local my = input.get_mouse_y()
         local lmb = input.is_mouse_button_pressed(0)
         local indicator = lmb and " [click]" or ""
-        ui.set_text(mouse_label_id, string.format("Mouse: %d, %d%s", mx, my, indicator))
+        ui.set_text(mouse_label_id, string.format("Mouse: %d, %d%s", math.floor(mx), math.floor(my), indicator))
     end
 end
 

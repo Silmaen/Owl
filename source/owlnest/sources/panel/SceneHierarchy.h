@@ -10,8 +10,10 @@
 
 #include <owl.h>
 
+#include "../UndoManager.h"
+
 namespace owl::nest {
-class UndoManager;
+class Document;
 }
 
 namespace owl::nest::panel {
@@ -69,7 +71,12 @@ public:
 	void setSelectedEntity(const scene::Entity& iEntity) { m_selection = iEntity; }
 
 	/// Set the undo manager for recording undoable operations.
-	void setUndoManager(UndoManager* iUndoManager) { mp_undoManager = iUndoManager; }
+	void setUndoManager(SceneUndoManager* iUndoManager) { mp_undoManager = iUndoManager; }
+
+	/// @brief Track the currently active document so its custom panels can override the scene-based
+	///        rendering when `Document::overridesGlobalPanels()` is true.
+	/// @param[in] iDoc Active document (non-owning, may be null when no document is open).
+	void setActiveDocument(Document* iDoc) { mp_activeDocument = iDoc; }
 
 private:
 	void renderHierarchy();
@@ -92,6 +99,8 @@ private:
 	/// The selected item
 	scene::Entity m_selection;
 	/// Undo manager (non-owning, optional).
-	UndoManager* mp_undoManager = nullptr;
+	SceneUndoManager* mp_undoManager = nullptr;
+	/// Active document — when it `overridesGlobalPanels()` the panel delegates its content to it.
+	Document* mp_activeDocument = nullptr;
 };
 }// namespace owl::nest::panel

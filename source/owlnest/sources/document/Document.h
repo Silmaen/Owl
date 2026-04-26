@@ -10,16 +10,18 @@
 
 #include <owl.h>
 
+#include "../UndoManager.h"
+
 namespace owl::nest {
 
 class EditorLayer;
-class UndoManager;
 
 /// @brief Kind of editable document opened in a tab.
 enum struct DocumentType : uint8_t {
 	Scene,///< A `.owl` scene edited in the Viewport.
 	Code, ///< A text/source file edited with syntax highlighting.
-	// Future: NodeGraph, Animation...
+	NodeGraph,///< A `.owlflow` node-graph document (Scene Flow, future animation graphs, behavior trees...).
+	// Future: Animation...
 };
 
 /**
@@ -73,8 +75,18 @@ public:
 	virtual auto saveAs(const std::filesystem::path& iPath) -> bool = 0;
 
 	/// @brief Access to the document's undo/redo stack.
-	[[nodiscard]] virtual auto undoManager() -> UndoManager& = 0;
-	[[nodiscard]] virtual auto undoManager() const -> const UndoManager& = 0;
+	[[nodiscard]] virtual auto undoManager() -> SceneUndoManager& = 0;
+	[[nodiscard]] virtual auto undoManager() const -> const SceneUndoManager& = 0;
+
+	/// @brief When true, the editor's global Scene Hierarchy + Properties panels delegate rendering
+	///        to `renderHierarchyPanel()` / `renderPropertiesPanel()` while this document is active.
+	/// @return False by default — only documents that do not edit a `scene::Scene` (e.g. node-graph
+	///         views) typically override this.
+	[[nodiscard]] virtual auto overridesGlobalPanels() const -> bool { return false; }
+	/// @brief Custom content for the global "Scene Hierarchy" panel (called between `ImGui::Begin`/`End`).
+	virtual void renderHierarchyPanel() {}
+	/// @brief Custom content for the global "Properties" panel (called between `ImGui::Begin`/`End`).
+	virtual void renderPropertiesPanel() {}
 
 private:
 	/// Stable identifier used by the UI (tab id, ImGui window suffix).

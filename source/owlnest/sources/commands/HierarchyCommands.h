@@ -19,7 +19,7 @@ namespace owl::nest::commands {
  *
  * Redo calls setParent(child, newParent). Undo restores the old parent and local transform.
  */
-class ReparentCommand final : public UndoCommand {
+class ReparentCommand final : public SceneUndoCommand {
 public:
 	ReparentCommand(const ReparentCommand&) = delete;
 	ReparentCommand(ReparentCommand&&) = default;
@@ -50,7 +50,7 @@ private:
  *
  * Redo calls unparent(child). Undo restores the old parent and local transform.
  */
-class UnparentCommand final : public UndoCommand {
+class UnparentCommand final : public SceneUndoCommand {
 public:
 	UnparentCommand(const UnparentCommand&) = delete;
 	UnparentCommand(UnparentCommand&&) = default;

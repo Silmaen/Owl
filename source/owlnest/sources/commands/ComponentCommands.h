@@ -19,7 +19,7 @@ namespace owl::nest::commands {
  * Redo re-adds the component; undo removes it.
  * Captures the entity state after the add so redo can restore the exact component data.
  */
-class AddComponentCommand final : public UndoCommand {
+class AddComponentCommand final : public SceneUndoCommand {
 public:
 	AddComponentCommand(const AddComponentCommand&) = delete;
 	AddComponentCommand(AddComponentCommand&&) = default;
@@ -52,7 +52,7 @@ private:
  *
  * Redo re-removes the component; undo restores it.
  */
-class RemoveComponentCommand final : public UndoCommand {
+class RemoveComponentCommand final : public SceneUndoCommand {
 public:
 	RemoveComponentCommand(const RemoveComponentCommand&) = delete;
 	RemoveComponentCommand(RemoveComponentCommand&&) = default;
@@ -86,7 +86,7 @@ private:
  * Captures full entity state before/after. Supports merging rapid consecutive
  * edits on the same entity via typeId() + mergeWith().
  */
-class ModifyEntityCommand final : public UndoCommand {
+class ModifyEntityCommand final : public SceneUndoCommand {
 public:
 	ModifyEntityCommand(const ModifyEntityCommand&) = delete;
 	ModifyEntityCommand(ModifyEntityCommand&&) = default;
@@ -107,7 +107,7 @@ public:
 	void undo(scene::Scene& ioScene) override;
 	void redo(scene::Scene& ioScene) override;
 	[[nodiscard]] auto description() const -> std::string override;
-	[[nodiscard]] auto mergeWith(const UndoCommand& iOther) -> bool override;
+	[[nodiscard]] auto mergeWith(const SceneUndoCommand& iOther) -> bool override;
 	[[nodiscard]] auto typeId() const -> size_t override;
 
 private:

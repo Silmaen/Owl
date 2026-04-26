@@ -54,8 +54,8 @@ public:
 	auto save() -> bool override;
 	auto saveAs(const std::filesystem::path& iPath) -> bool override;
 
-	[[nodiscard]] auto undoManager() -> UndoManager& override { return m_undoManager; }
-	[[nodiscard]] auto undoManager() const -> const UndoManager& override { return m_undoManager; }
+	[[nodiscard]] auto undoManager() -> SceneUndoManager& override { return m_undoManager; }
+	[[nodiscard]] auto undoManager() const -> const SceneUndoManager& override { return m_undoManager; }
 
 	// --- Code-editor-specific API --------------------------------------------
 
@@ -76,7 +76,7 @@ private:
 	// (heavy) vendored header — only the .cpp does.
 	uniq<TextEditor> mp_editor;
 	/// Unused (kept to satisfy the Document interface); code edits live in the TextEditor's own stack.
-	UndoManager m_undoManager;
+	SceneUndoManager m_undoManager;
 	/// Snapshot of the text at last save — used for the dirty indicator.
 	std::string m_savedText;
 	EditorLayer* mp_editorLayer = nullptr;
