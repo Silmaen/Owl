@@ -135,6 +135,11 @@ The `textureCoords` field defaults to full-texture UVs. Custom UVs are used by t
 | `lineSpacing` | `float`           | `0.0`          | Extra line spacing   |
 | `entityId`    | `int`             | `-1`           | Entity ID            |
 
+**Text encoding.** `text` is consumed as UTF-8. The MSDF atlas covers Latin-1 codepoints
+(`0x20`-`0xFF`); `Renderer2D::drawString` decodes UTF-8 input into single-byte Latin-1 up
+front, mapping accented glyphs (`éàüÇ`…) to their atlas codepoint and substituting
+`?` for codepoints beyond `U+00FF`.
+
 ### Batching Internals
 
 The batch renderer collects draw calls into CPU-side vertex buffers and submits them
@@ -458,10 +463,11 @@ Frames are numbered in **row-major order** starting from the top-left (frame 0).
 | `rows`           | `uint32_t`  | `1`     | Yes        | Grid rows                         |
 | `firstFrame`     | `uint32_t`  | `0`     | Yes        | Animation start frame (inclusive) |
 | `lastFrame`      | `uint32_t`  | `0`     | Yes        | Animation end frame (inclusive)   |
-| `frameDuration`  | `float`     | `0.1`   | Yes        | Seconds per frame                 |
-| `loop`           | `bool`      | `true`  | Yes        | Whether to loop                   |
-| `m_currentFrame` | `uint32_t`  | `0`     | No         | Currently displayed frame         |
-| `m_elapsedTime`  | `float`     | `0.0`   | No         | Time accumulator                  |
+| `frameDuration`  | `float`       | `0.1`   | Yes        | Seconds per frame                       |
+| `loop`           | `bool`        | `true`  | Yes        | Whether to loop                         |
+| `speedCurve`     | `math::Curve` | empty   | Yes (omitted when empty) | Speed multiplier vs. normalized progress |
+| `m_currentFrame` | `uint32_t`    | `0`     | No         | Currently displayed frame               |
+| `m_elapsedTime`  | `float`       | `0.0`   | No         | Time accumulator                        |
 | `m_playing`      | `bool`      | `true`  | No         | Playing state                     |
 
 ### UV Computation

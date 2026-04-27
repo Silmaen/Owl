@@ -419,11 +419,41 @@ asynchronous with progress feedback.
         - Timeline for `AnimatedSpriteRenderer`: frame-by-frame preview
         - Visual configuration of frame count, frame rate, loop mode
         - Opens as a document tab (not a modal)
-    - ![In Progress][progress] Enhanced inspector
+    - ![Done][done] Enhanced inspector
         - ![Done][done] Sound preview button on SoundSource component (Play / Stop, uses current volume and pitch)
-        - ![Planned][planned] Texture thumbnail preview, font preview
-        - ![Planned][planned] Drag-drop assets from content browser to inspector fields
-        - ![Planned][planned] Curve editor for animated properties
+        - ![Done][done] Texture thumbnail preview, font preview
+            - Texture rows show a 100x100 thumbnail with a `(loading...)` / `(failed)` overlay
+              while async-loaded textures are still decoding (`renderer::LoadState`)
+            - Font preview: small sample-string strip rendered through a new
+              `gui::FontPreviewCache` (lazy off-screen render of `Aa Bb 1!? éàüÇ` via
+              `Renderer2D::drawString`, cached per font name); pumped from
+              `EditorLayer::onUpdate` and freed on `UiLayer::onDetach`. First frame falls
+              back to the MSDF atlas image
+            - Latin-1 / UTF-8 glyph rendering fixed in `Font::getGlyphBox` and
+              `Renderer2D::drawString` so accented characters render correctly everywhere
+              (not just in the inspector preview)
+        - ![Done][done] Drag-drop assets from content browser to inspector fields
+            - Reusable `gui::widgets::assetDropTarget(AssetKind, path)` helper layered on the
+              existing `CONTENT_BROWSER_ITEM` payload — per-extension validation via a new
+              `AssetKind` enum (Texture / Font / Sound / LuaScript / AnyScript / Scene /
+              Prefab / Any)
+            - `gui::widgets::textureField()` consolidates the previously inlined
+              thumbnail/popup/remove pattern into one helper used by every texture-aware
+              component (Sprite / AnimatedSprite / BackgroundTexture / UIImage)
+            - Drop targets wired on Text font, SoundSource asset and LuaScript path on top
+              of their existing widgets
+        - ![Done][done] Curve editor for animated properties
+            - New `math::Curve` (`source/owl/public/math/Curve.h`) — sorted keyframe list
+              with Constant / Linear / Smooth interpolation, flat-hold extrapolation, and
+              YAML round-trip (default-empty curves are omitted from `.owl` output to
+              preserve byte-identical scenes)
+            - `gui::widgets::curveEditor()` widget wraps ImCurveEdit from the existing
+              imguizmo bundle (no new DepManager dependency); auto-fits the canvas
+              viewing range (X always shows `[0, 1]`, Y auto-fits keys with 20% margin,
+              always includes the zero baseline)
+            - First end-to-end consumer: `AnimatedSpriteRenderer.speedCurve` remaps
+              per-frame `dt` by `speedCurve.evaluate(progress)` where `progress` is the
+              normalized position inside `[firstFrame, lastFrame]`
 - Packaging
     - ![Done][done] Packaging wizard in Owl Nest
         - Pre-packaging validation: `AssetScanner` warnings output for unresolvable texture/sound/script/scene/font references

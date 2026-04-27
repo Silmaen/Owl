@@ -195,6 +195,37 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 	}
 }
 
+/// Advance one animated sprite by `iTimeStep`, applying `speedCurve` if set.
+void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core::Timestep& iTimeStep) {
+	if (!ioAnim.m_playing || ioAnim.columns == 0 || ioAnim.rows == 0 || ioAnim.frameDuration <= 0.0f)
+		return;
+	const uint32_t totalFrames =
+			ioAnim.lastFrame >= ioAnim.firstFrame ? ioAnim.lastFrame - ioAnim.firstFrame + 1 : 1;
+	float deltaSeconds = iTimeStep.getSeconds();
+	if (!ioAnim.speedCurve.empty()) {
+		const float progress =
+				totalFrames > 1
+						? static_cast<float>(ioAnim.m_currentFrame - ioAnim.firstFrame) /
+								  static_cast<float>(totalFrames - 1)
+						: 0.f;
+		deltaSeconds *= ioAnim.speedCurve.evaluate(progress);
+	}
+	ioAnim.m_elapsedTime += deltaSeconds;
+	if (ioAnim.m_elapsedTime < ioAnim.frameDuration)
+		return;
+	const auto framesToAdvance = static_cast<uint32_t>(ioAnim.m_elapsedTime / ioAnim.frameDuration);
+	ioAnim.m_elapsedTime -= static_cast<float>(framesToAdvance) * ioAnim.frameDuration;
+	if (ioAnim.loop) {
+		ioAnim.m_currentFrame =
+				ioAnim.firstFrame + (ioAnim.m_currentFrame - ioAnim.firstFrame + framesToAdvance) % totalFrames;
+		return;
+	}
+	const uint32_t newFrame = ioAnim.m_currentFrame + framesToAdvance;
+	ioAnim.m_currentFrame = std::min(newFrame, ioAnim.lastFrame);
+	if (ioAnim.m_currentFrame >= ioAnim.lastFrame)
+		ioAnim.m_playing = false;
+}
+
 }// namespace
 
 Scene::Scene() = default;
@@ -561,26 +592,8 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	}
 
 	// Update animated sprites
-	for (const auto view = registry.view<component::AnimatedSpriteRenderer>(); const auto entity: view) {
-		auto& anim = view.get<component::AnimatedSpriteRenderer>(entity);
-		if (!anim.m_playing || anim.columns == 0 || anim.rows == 0 || anim.frameDuration <= 0.0f)
-			continue;
-		const uint32_t totalFrames = anim.lastFrame >= anim.firstFrame ? anim.lastFrame - anim.firstFrame + 1 : 1;
-		anim.m_elapsedTime += iTimeStep.getSeconds();
-		if (anim.m_elapsedTime >= anim.frameDuration) {
-			const auto framesToAdvance = static_cast<uint32_t>(anim.m_elapsedTime / anim.frameDuration);
-			anim.m_elapsedTime -= static_cast<float>(framesToAdvance) * anim.frameDuration;
-			if (anim.loop) {
-				anim.m_currentFrame =
-						anim.firstFrame + (anim.m_currentFrame - anim.firstFrame + framesToAdvance) % totalFrames;
-			} else {
-				const uint32_t newFrame = anim.m_currentFrame + framesToAdvance;
-				anim.m_currentFrame = std::min(newFrame, anim.lastFrame);
-				if (anim.m_currentFrame >= anim.lastFrame)
-					anim.m_playing = false;
-			}
-		}
-	}
+	for (const auto view = registry.view<component::AnimatedSpriteRenderer>(); const auto entity: view)
+		updateAnimatedSprite(view.get<component::AnimatedSpriteRenderer>(entity), iTimeStep);
 
 	// Render 2D
 	if (iRender && mainCamera != nullptr) {

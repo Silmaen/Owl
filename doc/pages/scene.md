@@ -152,19 +152,23 @@ YAML key: `SpriteRenderer`
 
 #### AnimatedSpriteRenderer
 
-| Field           | Type        | Default | Description       |
-|-----------------|-------------|---------|-------------------|
-| `color`         | `vec4`      | white   | Tint color        |
-| `texture`       | `Texture2D` | null    | Spritesheet       |
-| `columns`       | `uint32_t`  | `1`     | Grid columns      |
-| `rows`          | `uint32_t`  | `1`     | Grid rows         |
-| `firstFrame`    | `uint32_t`  | `0`     | Start frame       |
-| `lastFrame`     | `uint32_t`  | `0`     | End frame         |
-| `frameDuration` | `float`     | `0.1`   | Seconds per frame |
-| `loop`          | `bool`      | `true`  | Loop animation    |
+| Field           | Type          | Default | Description                                              |
+|-----------------|---------------|---------|----------------------------------------------------------|
+| `color`         | `vec4`        | white   | Tint color                                               |
+| `texture`       | `Texture2D`   | null    | Spritesheet                                              |
+| `columns`       | `uint32_t`    | `1`     | Grid columns                                             |
+| `rows`          | `uint32_t`    | `1`     | Grid rows                                                |
+| `firstFrame`    | `uint32_t`    | `0`     | Start frame                                              |
+| `lastFrame`     | `uint32_t`    | `0`     | End frame                                                |
+| `frameDuration` | `float`       | `0.1`   | Seconds per frame                                        |
+| `loop`          | `bool`        | `true`  | Loop animation                                           |
+| `speedCurve`    | `math::Curve` | empty   | Optional speed remap sampled by normalized progress      |
 
-YAML key: `AnimatedSpriteRenderer`.
-See [Renderer > Animated Sprites](renderer.md) for UV computation details.
+YAML key: `AnimatedSpriteRenderer`. When `speedCurve` is empty (default) the field is
+omitted from serialized scenes — older `.owl` files round-trip byte-identical. When set,
+each frame's `dt` is multiplied by `speedCurve.evaluate(progress)` where `progress` is the
+normalized position inside `[firstFrame, lastFrame]`. See
+[Renderer > Animated Sprites](renderer.md) for UV computation details.
 
 #### CircleRenderer
 

@@ -6,11 +6,13 @@ This page explains how to configure, build, and test the Owl engine.
 
 ## Prerequisites
 
+### Software
+
 | Tool       | Version | Notes                                         |
 |------------|---------|-----------------------------------------------|
 | CMake      | 3.24+   | Build system generator                        |
 | Ninja      |         | Recommended build backend                     |
-| Clang      | 18+     | Or GCC 13+                                    |
+| Clang      | 22+     | Or GCC 14+                                    |
 | Python     | 3.12+   | For CI tooling and DepManager                 |
 | Poetry     |         | Python dependency manager                     |
 | DepManager |         | C++ dependency manager (installed via Poetry) |
@@ -20,6 +22,21 @@ Install Python dependencies:
 ```bash
 poetry sync --no-root
 ```
+
+### Third-party packages
+
+Owl pulls every native dependency through DepManager, which fetches pre-built packages from a
+remote server during `cmake --preset`. Before the first configure you must:
+
+1. Stand up a [DepManager server](https://github.com/Silmaen/DepManagerServer) (or point Owl at
+   an existing one) and register it via `poetry run depmanager remote add ...`.
+2. Populate that server with the libraries pinned in `depmanager.yml` (Box2D, EnTT, GLFW,
+   ImGui, ImGuizmo, msdfgen, Vulkan SDK, OpenAL, libsndfile, Lua, zstd, Taskflow…).
+
+If you don't have packages built yet, the [OwlDependencies](https://github.com/Silmaen/OwlDependencies)
+repository ships ready-to-use build recipes for every dependency Owl depends on; build them locally
+with `poetry run depmanager build <recipe-dir>` and push them to your server. Once the server is
+populated, the next CMake configure auto-downloads everything Owl needs.
 
 ## Configure and Build
 

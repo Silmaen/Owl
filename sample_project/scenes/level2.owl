@@ -204,6 +204,12 @@ Entities:
       lastFrame: 17
       frameDuration: 0.08
       loop: true
+      speedCurve:
+        interpolation: Smooth
+        keys:
+          - [0, 0.5]
+          - [0.5, 2.5]
+          - [1, 0.5]
     Trigger:
       Type: LuaCallback
       CallbackName: on_coin_collected
@@ -229,6 +235,12 @@ Entities:
       lastFrame: 17
       frameDuration: 0.08
       loop: true
+      speedCurve:
+        interpolation: Smooth
+        keys:
+          - [0, 0.5]
+          - [0.5, 2.5]
+          - [1, 0.5]
     Trigger:
       Type: LuaCallback
       CallbackName: on_coin_collected
@@ -254,6 +266,12 @@ Entities:
       lastFrame: 17
       frameDuration: 0.08
       loop: true
+      speedCurve:
+        interpolation: Smooth
+        keys:
+          - [0, 0.5]
+          - [0.5, 2.5]
+          - [1, 0.5]
     Trigger:
       Type: LuaCallback
       CallbackName: on_coin_collected

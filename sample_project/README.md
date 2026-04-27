@@ -108,11 +108,15 @@ living showcase — it must be updated whenever new features are added to the en
 - [x] Entity hierarchy (PlayerHat follows Player)
 - [x] Trigger zones (all 7 types demonstrated)
 - [x] Prefab template (coin.owlprefab)
-- [x] AnimatedSpriteRenderer (coin rotation spritesheet, 18 frames)
+- [x] AnimatedSpriteRenderer (coin rotation spritesheet, 18 frames; level 2 coins use a `speedCurve` to pulse between half- and 2.5x-speed)
 - [x] Sound effects + music with pause/resume/volume control
 - [x] UIImage (owl logo), UIPanel (button backdrop), all 8 widget types
 - [x] BackgroundTexture (sky gradient)
 - [x] Mouse input tracking
+- [x] UTF-8 / Latin-1 text rendering — main menu subtitle "Démo des fonctionnalités v0.1.1 - caractères éàüÇ"
+      exercises the renderer's UTF-8 decoding path and the MSDF atlas's full Latin-1 charset.
+- [x] AnimatedSpriteRenderer speed curve — level 2 coins remap playback time via a Smooth
+      `math::Curve` (slow at the loop boundary, fast in the middle).
 - [x] Runtime entity creation (session/checkpoint markers)
 - [x] Dynamic entity inspection (has_component, get_name)
 - [x] Timer control from scripts (start/stop/reset)

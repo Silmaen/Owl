@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Serializer.h"
+#include "math/Curve.h"
 #include "renderer/Texture.h"
 
 namespace owl::scene::component {
@@ -36,6 +37,15 @@ struct OWL_API AnimatedSpriteRenderer {
 	float frameDuration = 0.1f;
 	/// Whether the animation loops.
 	bool loop = true;
+	/**
+	 * @brief Optional speed-remap curve sampled by playback progress.
+	 *
+	 * Empty curve keeps playback at constant speed (default behaviour). When non-empty,
+	 * each frame's `dt` is multiplied by `speedCurve.evaluate(progress)` where `progress`
+	 * is the normalized position inside the animation range (`m_currentFrame` relative
+	 * to `[firstFrame, lastFrame]`). Negative values stall, values > 1 fast-forward.
+	 */
+	math::Curve speedCurve;
 
 	/// Accumulated time since last frame advance (runtime only, not serialized).
 	float m_elapsedTime = 0.0f;

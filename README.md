@@ -51,8 +51,8 @@ The full generated documentation is available online:
 
 | OS      | Architecture | Compilers                      |
 |---------|--------------|--------------------------------|
-| Linux   | x64, arm64   | GCC 13+, Clang 18+             |
-| Windows | x64          | MinGW GCC 14+, MinGW Clang 19+ |
+| Linux   | x64, arm64   | GCC 14+, Clang 22+             |
+| Windows | x64          | MinGW GCC 15+, MinGW Clang 22+ |
 
 ## Backends
 
