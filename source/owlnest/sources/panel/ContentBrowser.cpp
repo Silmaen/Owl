@@ -33,6 +33,8 @@ auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<gui::IconB
 		return iconBank.getIcon("owl_icon");
 	if (iPath.extension() == ".owlprefab")
 		return iconBank.getIcon("prefab_icon");
+	if (iPath.extension() == ".owlanim")
+		return iconBank.getIcon("owlanim_icon");
 	if (iPath.extension() == ".png")
 		return iconBank.getIcon("png_icon");
 	if (iPath.extension() == ".svg")
@@ -240,6 +242,8 @@ void ContentBrowser::renderContent() {
 				m_sceneOpenCallback(path);
 			} else if (path.extension() == ".owlflow" && m_nodeGraphOpenCallback) {
 				m_nodeGraphOpenCallback(path);
+			} else if (path.extension() == ".owlanim" && m_animationOpenCallback) {
+				m_animationOpenCallback(path);
 			} else if (m_codeOpenCallback) {
 				const auto ext = path.extension().string();
 				static const std::vector<std::string> codeExts = {

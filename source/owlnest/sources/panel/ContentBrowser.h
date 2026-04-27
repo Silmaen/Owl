@@ -76,6 +76,14 @@ public:
 		m_nodeGraphOpenCallback = std::move(iCallback);
 	}
 
+	/**
+	 * @brief Set a callback invoked when an animation clip (`.owlanim`) is double-clicked.
+	 * @param[in] iCallback Function taking the animation clip file path.
+	 */
+	void setAnimationOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_animationOpenCallback = std::move(iCallback);
+	}
+
 private:
 	/// The actual folder
 	std::filesystem::path m_currentPath;
@@ -133,6 +141,7 @@ private:
 	std::function<void(const std::filesystem::path&)> m_sceneOpenCallback;
 	std::function<void(const std::filesystem::path&)> m_codeOpenCallback;
 	std::function<void(const std::filesystem::path&)> m_nodeGraphOpenCallback;
+	std::function<void(const std::filesystem::path&)> m_animationOpenCallback;
 };
 
 }// namespace owl::nest::panel

@@ -10,6 +10,7 @@
 
 #include "commands/EntityCommands.h"
 #include "commands/PrefabCommands.h"
+#include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/SceneFlowDocument.h"
@@ -88,6 +89,7 @@ void buildIconBank() {
 		{"yml_icon",          resolve("icons/browser/yml")},
 		{"lua_icon",          resolve("icons/browser/lua")},
 		{"prefab_icon",       resolve("icons/browser/prefab")},
+		{"owlanim_icon",      resolve("icons/browser/owlanim")},
 		{"wav_icon",          resolve("icons/browser/wav")},
 		{"mp3_icon",          resolve("icons/browser/mp3")},
 		{"ogg_icon",          resolve("icons/browser/ogg")},
@@ -305,6 +307,9 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 	} else if (ext == ".owlflow") {
 		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
 			openNodeGraphFile(full.value());
+	} else if (ext == ".owlanim") {
+		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
+			openAnimationFile(full.value());
 	} else if (std::ranges::find(codeExts, ext) != codeExts.end()) {
 		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
 			openCodeFile(full.value());
@@ -566,6 +571,8 @@ void EditorLayer::onAttach() {
 	m_contentBrowser.setCodeOpenCallback([this](const std::filesystem::path& iPath) -> void { openCodeFile(iPath); });
 	m_contentBrowser.setNodeGraphOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openNodeGraphFile(iPath); });
+	m_contentBrowser.setAnimationOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openAnimationFile(iPath); });
 	newScene();
 }
 
@@ -907,6 +914,11 @@ void EditorLayer::buildRibbon() {
 											   .isEnabled = [this] () -> bool { return m_project.isLoaded(); },
 											   .onClick = [this] () -> void { openSceneFlowView(); },
 											   .size = Size::Large});
+	const auto gAssets = m_ribbon.addGroup(fileTab, "Assets");
+	m_ribbon.addButton(fileTab, gAssets, Button{.iconName = "new_scene", .label = "New Animation",
+												.tooltip = "Create a new spritesheet animation clip (.owlanim)",
+												.onClick = [this] () -> void { newAnimationClip(); },
+												.size = Size::Large});
 	const auto gExit = m_ribbon.addGroup(fileTab, "Session");
 	m_ribbon.addButton(fileTab, gExit, Button{.iconName = "exit", .label = "Exit",
 											  .tooltip = "Quit Owl Nest",
@@ -953,6 +965,8 @@ void EditorLayer::buildRibbon() {
 			buildCodeTab();
 		else if (active->type() == DocumentType::NodeGraph)
 			buildNodeGraphTab();
+		else if (active->type() == DocumentType::Animation)
+			buildAnimationTab();
 		else
 			buildSceneTab();
 		m_lastRibbonDocType = active->type();
@@ -1136,6 +1150,119 @@ void EditorLayer::buildNodeGraphTab() {
 							  .size = Size::Large});
 }
 
+void EditorLayer::buildAnimationTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto tipWithShortcut = [this](std::string_view iBase, const char* iActionId) -> std::string {
+		const auto sc = m_actionRegistry.getShortcutString(iActionId);
+		return sc.empty() ? std::string{iBase} : std::format("{} ({})", iBase, sc);
+	};
+	const auto activeAnim = [this] () -> AnimationDocument* {
+		auto* d = m_documents.getActive();
+		if (d != nullptr && d->type() == DocumentType::Animation)
+			return static_cast<AnimationDocument*>(d);
+		return nullptr;
+	};
+
+	const auto animTab = m_ribbon.addTab("Animation");
+	const auto gPlay = m_ribbon.addGroup(animTab, "Playback");
+	m_ribbon.addButton(animTab, gPlay,
+					   Button{.iconName = "PlayButton", .label = "Play",
+							  .tooltip = "Resume preview playback",
+							  .isEnabled = [activeAnim] () -> bool {
+								  auto* a = activeAnim();
+								  return a != nullptr && !a->isPlaying();
+							  },
+							  .onClick = [activeAnim] () -> void {
+								  if (auto* a = activeAnim())
+									  a->play();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(animTab, gPlay,
+					   Button{.iconName = "PauseButton", .label = "Pause",
+							  .tooltip = "Pause preview playback",
+							  .isEnabled = [activeAnim] () -> bool {
+								  auto* a = activeAnim();
+								  return a != nullptr && a->isPlaying();
+							  },
+							  .onClick = [activeAnim] () -> void {
+								  if (auto* a = activeAnim())
+									  a->pause();
+							  },
+							  .size = Size::Small});
+	m_ribbon.addButton(animTab, gPlay,
+					   Button{.iconName = "StopButton", .label = "Stop",
+							  .tooltip = "Stop and rewind to first frame",
+							  .isEnabled = [activeAnim] () -> bool { return activeAnim() != nullptr; },
+							  .onClick = [activeAnim] () -> void {
+								  if (auto* a = activeAnim())
+									  a->stop();
+							  },
+							  .size = Size::Small});
+
+	const auto gFrame = m_ribbon.addGroup(animTab, "Frame");
+	m_ribbon.addButton(animTab, gFrame,
+					   Button{.iconName = "back", .label = "Previous",
+							  .tooltip = "Step back one frame",
+							  .isEnabled = [activeAnim] () -> bool { return activeAnim() != nullptr; },
+							  .onClick = [activeAnim] () -> void {
+								  if (auto* a = activeAnim())
+									  a->stepPrevious();
+							  },
+							  .size = Size::Small});
+	m_ribbon.addButton(animTab, gFrame,
+					   Button{.iconName = "StepButton", .label = "Next",
+							  .tooltip = "Step forward one frame",
+							  .isEnabled = [activeAnim] () -> bool { return activeAnim() != nullptr; },
+							  .onClick = [activeAnim] () -> void {
+								  if (auto* a = activeAnim())
+									  a->stepNext();
+							  },
+							  .size = Size::Small});
+
+	const auto gFile = m_ribbon.addGroup(animTab, "File");
+	m_ribbon.addButton(animTab, gFile,
+					   Button{.iconName = "save", .label = "Save",
+							  .tooltip = tipWithShortcut("Save", "scene.save"),
+							  .isEnabled = [this] () -> bool {
+								  const auto* d = m_documents.getActive();
+								  return d != nullptr && d->type() == DocumentType::Animation &&
+										 !d->filePath().empty();
+							  },
+							  .onClick = [this] () -> void {
+								  if (auto* d = m_documents.getActive();
+									  d != nullptr && d->type() == DocumentType::Animation)
+									  std::ignore = d->save();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(animTab, gFile,
+					   Button{.iconName = "save", .label = "Save As",
+							  .tooltip = "Save the clip to a new file",
+							  .isEnabled = [this] () -> bool {
+								  const auto* d = m_documents.getActive();
+								  return d != nullptr && d->type() == DocumentType::Animation;
+							  },
+							  .onClick = [this] () -> void {
+								  if (const auto path = core::utils::FileDialog::saveFile(
+											  "Owl Animation (*.owlanim)|owlanim\n");
+									  !path.empty()) {
+									  if (auto* d = m_documents.getActive();
+										  d != nullptr && d->type() == DocumentType::Animation)
+										  std::ignore = d->saveAs(path);
+								  }
+							  },
+							  .size = Size::Small});
+	m_ribbon.addButton(animTab, gFile,
+					   Button{.iconName = "close", .label = "Close",
+							  .tooltip = tipWithShortcut("Close Document", "doc.close"),
+							  .isEnabled = [this] () -> bool {
+								  const auto* d = m_documents.getActive();
+								  return d != nullptr && d->type() == DocumentType::Animation;
+							  },
+							  .onClick = [this] () -> void { requestCloseActiveDocument(); },
+							  .size = Size::Large});
+}
+
 void EditorLayer::refreshRibbonForActiveDoc() {
 	const auto* active = m_documents.getActive();
 	const auto currentType =
@@ -1295,6 +1422,36 @@ void EditorLayer::openNodeGraphFile(const std::filesystem::path& iPath) {
 		doc->onDetach();
 		return;
 	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openAnimationFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Animation && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<AnimationDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open animation file: {}", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::newAnimationClip() {
+	auto doc = mkUniq<AnimationDocument>();
+	doc->onAttach(this);
 	auto* raw = m_documents.add(std::move(doc));
 	m_documents.setActive(raw);
 	syncActiveDocumentPanels();
