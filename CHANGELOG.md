@@ -29,6 +29,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       the document. Dedicated browser icon (filmstrip glyph).
     - `sample_project/animations/coin.owlanim` showcases the new asset (mirrors the
       level 2 coin animation, including the Smooth speed curve).
+- **Scene Flow editing**
+    - Visual create of teleport links — every scene node carries a ghost `+ Add teleport`
+      output pin. Dragging it onto another scene's entry pin spawns a `Trigger`
+      (`Type=Teleport`, `LevelName=<dest>`) entity in the source scene at world origin and
+      wires the canvas link in one undoable step.
+    - Visual delete of teleport links — pressing Delete on a Teleport link destroys the
+      matching `Trigger` entity, removes the canvas pin, and erases the link in one undoable
+      step.
+    - Per-pin `targetName` editing — right-click a scene node → `Edit teleport target →
+      <pin>` opens a modal that mutates the live `Trigger.targetName` and pushes a
+      `ModifyEntityCommand` on the source scene's undo manager (rapid keystrokes coalesce).
+    - New `commands::SceneFlowCompositeCommand` glues a `SceneUndoCommand` with a
+      `NodeGraphUndoCommand` so a single undo step reverses both halves; complemented by
+      `AddPinAndLinkCommand` / `RemovePinAndLinkCommand` for the canvas pin+link bundle.
+    - New `EditorLayer::loadOrOpenSceneDocument(path)` synchronously opens a `SceneDocument`
+      for an on-disk scene without yanking focus — used by Scene Flow link edits to mutate a
+      scene that may not currently be in a tab.
+    - Per-layer vertical centring in the BFS auto-layout so single-node layers no longer hug
+      the top edge.
+- **NodeCanvas widget polish**
+    - Text level-of-detail: pin labels stop drawing below `0.6` zoom and node titles below
+      `0.3`, leaving the silhouette + connectors visible for graph-overview navigation.
+      Exposed via free helpers `gui::widgets::shouldDrawPinLabels` /
+      `shouldDrawNodeTitles` for downstream reuse and unit tests.
+    - New public pin-manipulation API on `NodeCanvas`: `addOutputPin` / `addInputPin` /
+      `removeOutputPin` / `removeInputPin`. Pin removal automatically strips dangling links.
 - **Inspector field interactions**
     - Drag-drop from Content Browser to inspector fields via shared
       `gui::widgets::assetDropTarget` helper (`source/owl/public/gui/widgets/AssetField.h`).
