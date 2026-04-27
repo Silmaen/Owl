@@ -9,6 +9,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Inspector field interactions**
+    - Drag-drop from Content Browser to inspector fields via shared
+      `gui::widgets::assetDropTarget` helper (`source/owl/public/gui/widgets/AssetField.h`).
+      Per-extension validation through a new `AssetKind` enum (Texture, Font, Sound,
+      LuaScript, AnyScript, Scene, Prefab, Any). Re-uses the existing `CONTENT_BROWSER_ITEM`
+      ImGui payload — no new wire format. Drops accepted on Sprite/AnimatedSprite/
+      BackgroundTexture/UIImage textures, Text font, SoundSource asset, LuaScript path.
+    - `gui::widgets::textureField()` consolidates the previously inlined texture-picker
+      pattern (thumbnail / popup / "Remove texture") into one helper used by every
+      texture-aware component. Removes ~150 lines of duplicated drag-drop boilerplate
+      from `gui/component/render.cpp`.
+    - Texture thumbnails now show a `(loading...)` overlay while an async-loaded texture
+      decodes (`LoadState::Pending`) and a red `(failed)` overlay on `LoadState::Failed`.
+    - Font preview: Text component shows a sample-string rendering of the selected font
+      ("Aa Bb 1!? éàüÇ" — covers lower/upper case, digits, punctuation and accented
+      Latin-1 glyphs). Backed by a new `gui::FontPreviewCache` that lazily renders each
+      font into a 256x64 framebuffer via `Renderer2D::drawString` and caches the result;
+      pumped from `EditorLayer::onUpdate` and freed on `UiLayer::onDetach`.
+    - Latin-1 glyph rendering fix — `Font::getGlyphBox` and `Renderer2D::drawString` no
+      longer sign-extend `char` codepoints into garbage 32-bit values; the renderer
+      additionally decodes UTF-8 source text into Latin-1 codepoints up front, so
+      accented glyphs (`éàüÇ`…) coming from YAML scenes or Lua strings render correctly
+      everywhere instead of falling back to `?` or `Ã©` byte pairs.
+- **Sample project showcases v0.1.1 features**
+    - Main-menu subtitle exercises UTF-8 / Latin-1 rendering (`Démo des fonctionnalités…
+      caractères éàüÇ`).
+    - Level-2 coins use a Smooth `AnimatedSpriteRenderer.speedCurve` so the rotation
+      pulses (slow at the loop boundary, fast in the middle).
+- **Curve editor for animated properties**
+    - New `math::Curve` (`source/owl/public/math/Curve.h`) — sorted keyframe list with
+      Constant / Linear / Smooth interpolation, flat-hold extrapolation, and YAML
+      round-trip (handled inline in component serializers, default-empty curves omit
+      `speedCurve` from the YAML to preserve byte-identical scene files).
+    - New `gui::widgets::curveEditor` widget (`gui/widgets/CurveEditor.h`) — wraps
+      ImCurveEdit from the existing imguizmo bundle (no new DepManager dependency).
+      Drag points, double-click to add, right-click to remove; companion combo selects
+      the interpolation mode.
+    - First end-to-end consumer: `AnimatedSpriteRenderer.speedCurve` remaps per-frame
+      animation advancement (`Scene::onUpdate` multiplies dt by
+      `speedCurve.evaluate(progress)` when the curve is non-empty).
 - **Scene Flow refinements**
     - Pin labels are now drawn **inside** the node frame (via a new `NodePin::labelColor` field
       and a `CustomDraw` override on `NodeCanvas`). GraphEditor receives `nullptr` for slot names

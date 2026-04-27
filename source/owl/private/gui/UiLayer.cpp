@@ -13,6 +13,7 @@
 #include "core/Application.h"
 #include "core/external/glfw3.h"
 #include "core/external/imgui.h"
+#include "gui/FontPreviewCache.h"
 #include "gui/utils.h"
 #include "renderer/RenderCommand.h"
 #include "renderer/vulkan/internal/VulkanHandler.h"
@@ -141,6 +142,8 @@ void UiLayer::onAttach() {
 
 void UiLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
+	// Free font-preview framebuffers before tearing down the renderer.
+	FontPreviewCache::get().clear();
 	if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::OpenGL)
 		ImGui_ImplOpenGL3_Shutdown();
 	if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan) {

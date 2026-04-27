@@ -14,6 +14,7 @@
 #include "document/NodeGraphDocument.h"
 #include "document/SceneFlowDocument.h"
 
+#include <gui/FontPreviewCache.h>
 #include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <io/pack/AssetScanner.h>
@@ -588,6 +589,10 @@ void EditorLayer::onDetach() {
 
 void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
+
+	// Render any queued font-preview thumbnails before scene/document updates so the next
+	// inspector frame can sample them. Safe here: no Renderer2D scene is active yet.
+	gui::FontPreviewCache::get().pumpPending();
 
 	// Inactive documents in Play mode still advance their simulation without rendering —
 	// lets a scene keep running in the background while the user edits another tab.

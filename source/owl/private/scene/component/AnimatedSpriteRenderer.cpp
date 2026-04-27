@@ -11,7 +11,45 @@
 #include "math/YamlSerializers.h"
 #include "scene/component/AnimatedSpriteRenderer.h"
 
+#include <magic_enum/magic_enum.hpp>
+
 namespace owl::scene::component {
+
+namespace {
+
+void emitSpeedCurve(YAML::Emitter& ioEmitter, const math::Curve& iCurve) {
+	if (iCurve.empty())
+		return;
+	ioEmitter << YAML::Key << "speedCurve";
+	ioEmitter << YAML::Value << YAML::BeginMap;
+	ioEmitter << YAML::Key << "interpolation" << YAML::Value
+			  << std::string{magic_enum::enum_name(iCurve.getInterpolation())};
+	ioEmitter << YAML::Key << "keys" << YAML::Value << YAML::BeginSeq;
+	for (const auto& key: iCurve.keys()) {
+		ioEmitter << YAML::Flow << YAML::BeginSeq << key.time << key.value << YAML::EndSeq;
+	}
+	ioEmitter << YAML::EndSeq;
+	ioEmitter << YAML::EndMap;
+}
+
+void readSpeedCurve(const YAML::Node& iNode, math::Curve& oCurve) {
+	oCurve.clear();
+	if (!iNode || !iNode.IsMap())
+		return;
+	if (const auto interp = iNode["interpolation"]) {
+		const auto cast = magic_enum::enum_cast<math::CurveInterpolation>(interp.as<std::string>());
+		if (cast.has_value())
+			oCurve.setInterpolation(cast.value());
+	}
+	if (const auto keys = iNode["keys"]; keys && keys.IsSequence()) {
+		for (const auto& entry: keys) {
+			if (entry.IsSequence() && entry.size() >= 2)
+				oCurve.addKey({entry[0].as<float>(), entry[1].as<float>()});
+		}
+	}
+}
+
+}// namespace
 
 void AnimatedSpriteRenderer::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
@@ -25,6 +63,7 @@ void AnimatedSpriteRenderer::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "lastFrame" << YAML::Value << lastFrame;
 	iOut.getImpl()->emitter << YAML::Key << "frameDuration" << YAML::Value << frameDuration;
 	iOut.getImpl()->emitter << YAML::Key << "loop" << YAML::Value << loop;
+	emitSpeedCurve(iOut.getImpl()->emitter, speedCurve);
 	iOut.getImpl()->emitter << YAML::EndMap;// AnimatedSpriteRenderer
 }
 
@@ -46,6 +85,7 @@ void AnimatedSpriteRenderer::deserialize(const core::Serializer& iNode) {
 		frameDuration = iNode.getImpl()->node["frameDuration"].as<float>();
 	if (iNode.getImpl()->node["loop"])
 		loop = iNode.getImpl()->node["loop"].as<bool>();
+	readSpeedCurve(iNode.getImpl()->node["speedCurve"], speedCurve);
 }
 
 }// namespace owl::scene::component

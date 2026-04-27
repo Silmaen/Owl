@@ -6,6 +6,8 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <fstream>
+
 TEST(SceneComponent, key) {
 	EXPECT_EQ(owl::scene::component::AnimatedSpriteRenderer::key(), "AnimatedSpriteRenderer");
 	EXPECT_EQ(owl::scene::component::Camera::key(), "Camera");
@@ -172,6 +174,100 @@ TEST(SceneComponent, TextEmptyString) {
 	EXPECT_TRUE(text2.text.empty());
 	EXPECT_NEAR(text2.kerning, 0.0f, 0.001f);
 	EXPECT_NEAR(text2.lineSpacing, 0.0f, 0.001f);
+
+	remove(fs);
+	owl::core::Application::invalidate();
+	app.reset();
+	owl::core::Log::invalidate();
+}
+
+namespace {
+auto makeAppForAnimRoundTrip(const char* iName) -> owl::shared<owl::core::Application> {
+	return owl::mkShared<owl::core::Application>(owl::core::AppParams{.args = nullptr,
+																	   .frameLogFrequency = 0,
+																	   .name = iName,
+																	   .assetsPattern = "",
+																	   .icon = "",
+																	   .width = 0,
+																	   .height = 0,
+																	   .argCount = 0,
+																	   .renderer = owl::renderer::RenderAPI::Type::Null,
+																	   .hasGui = false,
+																	   .useDebugging = false,
+																	   .isDummy = true});
+}
+}// namespace
+
+TEST(SceneComponent, AnimatedSpriteRendererSerializesSpeedCurve) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	auto app = makeAppForAnimRoundTrip("animSpeedCurve");
+
+	const auto sc = owl::mkShared<owl::scene::Scene>();
+	auto ent = sc->createEntityWithUUID(200, "AnimEntity");
+	auto& anim = ent.addOrReplaceComponent<owl::scene::component::AnimatedSpriteRenderer>();
+	anim.columns = 4;
+	anim.rows = 2;
+	anim.firstFrame = 0;
+	anim.lastFrame = 7;
+	anim.frameDuration = 0.05f;
+	anim.speedCurve.setInterpolation(owl::math::CurveInterpolation::Smooth);
+	anim.speedCurve.addKey({0.f, 0.5f});
+	anim.speedCurve.addKey({0.5f, 2.f});
+	anim.speedCurve.addKey({1.f, 1.f});
+
+	const owl::scene::SceneSerializer saver(sc);
+	const auto fs = std::filesystem::temp_directory_path() / "tempAnimSpeedCurve.yml";
+	saver.serialize(fs);
+	ASSERT_TRUE(exists(fs));
+
+	const auto sc2 = owl::mkShared<owl::scene::Scene>();
+	const owl::scene::SceneSerializer loader(sc2);
+	EXPECT_TRUE(loader.deserialize(fs));
+
+	const auto entities = sc2->getAllEntities();
+	ASSERT_EQ(entities.size(), 1u);
+	const auto& anim2 = entities[0].getComponent<owl::scene::component::AnimatedSpriteRenderer>();
+	ASSERT_EQ(anim2.speedCurve.keyCount(), 3u);
+	EXPECT_FLOAT_EQ(anim2.speedCurve.key(0).time, 0.f);
+	EXPECT_FLOAT_EQ(anim2.speedCurve.key(0).value, 0.5f);
+	EXPECT_FLOAT_EQ(anim2.speedCurve.key(1).time, 0.5f);
+	EXPECT_FLOAT_EQ(anim2.speedCurve.key(1).value, 2.f);
+	EXPECT_FLOAT_EQ(anim2.speedCurve.key(2).time, 1.f);
+	EXPECT_FLOAT_EQ(anim2.speedCurve.key(2).value, 1.f);
+	EXPECT_EQ(anim2.speedCurve.getInterpolation(), owl::math::CurveInterpolation::Smooth);
+
+	remove(fs);
+	owl::core::Application::invalidate();
+	app.reset();
+	owl::core::Log::invalidate();
+}
+
+TEST(SceneComponent, AnimatedSpriteRendererDefaultEmptyCurveOmitsKey) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	auto app = makeAppForAnimRoundTrip("animDefaultCurve");
+
+	const auto sc = owl::mkShared<owl::scene::Scene>();
+	auto ent = sc->createEntityWithUUID(201, "AnimEntityDefault");
+	auto& anim = ent.addOrReplaceComponent<owl::scene::component::AnimatedSpriteRenderer>();
+	anim.columns = 2;
+	anim.rows = 1;
+	anim.firstFrame = 0;
+	anim.lastFrame = 1;
+	// speedCurve left empty by default.
+	ASSERT_TRUE(anim.speedCurve.empty());
+
+	const owl::scene::SceneSerializer saver(sc);
+	const auto fs = std::filesystem::temp_directory_path() / "tempAnimDefaultCurve.yml";
+	saver.serialize(fs);
+	ASSERT_TRUE(exists(fs));
+
+	std::string content;
+	{
+		std::ifstream input(fs);
+		content.assign((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+	}// ifstream destructor releases the Windows file handle before `remove`.
+	EXPECT_EQ(content.find("speedCurve"), std::string::npos)
+			<< "Default empty speedCurve must not emit YAML to keep existing scenes byte-identical";
 
 	remove(fs);
 	owl::core::Application::invalidate();

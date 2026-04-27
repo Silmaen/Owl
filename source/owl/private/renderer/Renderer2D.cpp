@@ -132,6 +132,40 @@ struct InternalData {
 
 namespace {
 shared<utils::InternalData> g_Data;
+
+/// Convert a UTF-8 byte sequence into Latin-1 (ISO 8859-1) so it can be indexed into the
+/// MSDF atlas, which carries glyphs for codepoints 0x20-0xFF. Codepoints beyond U+00FF are
+/// replaced with `?`. ASCII bytes pass through unchanged.
+auto utf8ToLatin1(const std::string& iText) -> std::string {
+	std::string out;
+	out.reserve(iText.size());
+	for (size_t i = 0; i < iText.size(); ++i) {
+		const auto byte = static_cast<unsigned char>(iText[i]);
+		if (byte < 0x80) {
+			out.push_back(static_cast<char>(byte));
+			continue;
+		}
+		if ((byte & 0xE0) == 0xC0 && i + 1 < iText.size()) {
+			if (const auto next = static_cast<unsigned char>(iText[i + 1]); (next & 0xC0) == 0x80) {
+				const uint32_t codepoint = static_cast<uint32_t>(byte & 0x1Fu) << 6 | static_cast<uint32_t>(next & 0x3Fu);
+				if (codepoint <= 0xFFu) {
+					out.push_back(static_cast<char>(codepoint));
+					++i;
+					continue;
+				}
+			}
+		}
+		// Codepoint outside Latin-1 (or malformed sequence): substitute and skip continuation bytes.
+		out.push_back('?');
+		while (i + 1 < iText.size()) {
+			if (const auto next = static_cast<unsigned char>(iText[i + 1]); (next & 0xC0) == 0x80)
+				++i;
+			else
+				break;
+		}
+	}
+	return out;
+}
 }// namespace
 
 void Renderer2D::init() {
@@ -424,6 +458,10 @@ void Renderer2D::drawString(const StringData& iStringData) {
 		return;
 	}
 
+	// MSDF atlas indexes by Latin-1 codepoint; convert UTF-8 source text once up front so the
+	// per-glyph loop can keep iterating bytes.
+	const std::string text = utf8ToLatin1(iStringData.text);
+
 	// Manage texture
 	const shared<Texture2D> fontAtlas = iStringData.font->getAtlasTexture();
 	float textureIndex = 0.0f;
@@ -444,9 +482,10 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	math::box2f extents;
 	{
 		math::vec2 cursor{0.f, 0.f};
-		for (size_t i = 0; i < iStringData.text.size(); i++) {
-			char character = iStringData.text[i];
-			if (isascii(character) == 0)
+		for (size_t i = 0; i < text.size(); i++) {
+			char character = text[i];
+			// Reject control bytes outside the printable Latin-1 range (the MSDF atlas covers 0x20-0xFF).
+			if (const auto code = static_cast<unsigned char>(character); code < 0x20 && character != '\r' && character != '\n')
 				character = '?';
 			if (character == '\r')
 				continue;
@@ -458,9 +497,9 @@ void Renderer2D::drawString(const StringData& iStringData) {
 			auto [quad, uv] = iStringData.font->getGlyphBox(character);
 			quad.translate(cursor);
 			extents.update(quad);
-			if (i < iStringData.text.size() - 1) {
-				char next = iStringData.text[i + 1];
-				if (isascii(next) == 0)
+			if (i < text.size() - 1) {
+				char next = text[i + 1];
+				if (const auto nextCode = static_cast<unsigned char>(next); nextCode < 0x20)
 					next = '?';
 				cursor.x() += iStringData.font->getAdvance(character, next) + iStringData.kerning;
 			}
@@ -472,9 +511,9 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	scale.y() = 1.f / scale.y();
 	const math::vec2 offset = -extents.min() - 0.5f * extents.diagonal();
 	math::vec2 cursor{0.f, 0.f};
-	for (size_t i = 0; i < iStringData.text.size(); i++) {
-		char character = iStringData.text[i];
-		if (isascii(character) == 0)
+	for (size_t i = 0; i < text.size(); i++) {
+		char character = text[i];
+		if (const auto code = static_cast<unsigned char>(character); code < 0x20 && character != '\r' && character != '\n')
 			character = '?';
 		if (character == '\r')
 			continue;
@@ -513,9 +552,9 @@ void Renderer2D::drawString(const StringData& iStringData) {
 															  .entityId = iStringData.entityId});
 		g_Data->stats.quadCount++;
 		g_Data->text.indexCount += 6;
-		if (i < iStringData.text.size() - 1) {
-			char next = iStringData.text[i + 1];
-			if (isascii(next) == 0)
+		if (i < text.size() - 1) {
+			char next = text[i + 1];
+			if (const auto nextCode = static_cast<unsigned char>(next); nextCode < 0x20)
 				next = '?';
 			cursor.x() += iStringData.font->getAdvance(character, next) + iStringData.kerning;
 		}

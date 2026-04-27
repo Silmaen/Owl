@@ -289,6 +289,55 @@ all optional component types that the entity does not already have.
 **Remove Component.** Right-clicking a component header shows a "Remove Component"
 option (except for mandatory components like Transform and Hierarchy).
 
+#### Inspector field interactions
+
+Asset fields in the Properties panel accept drag-drops from the Content Browser via the
+shared `gui::widgets::assetDropTarget` helper. The drop is filtered by extension; payloads
+that do not match the field's `AssetKind` are silently rejected.
+
+| Field                                                       | Accepted extensions               |
+|-------------------------------------------------------------|-----------------------------------|
+| `SpriteRenderer.texture`                                    | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`, `.hdr` |
+| `AnimatedSpriteRenderer.texture`                            | same as Texture                   |
+| `BackgroundTexture.texture` (Background-Texture and Skybox) | same as Texture                   |
+| `UIImage.texture`                                           | same as Texture                   |
+| `Text.font`                                                 | `.ttf`, `.otf`                    |
+| `SoundSource.soundAsset`                                    | `.wav`, `.mp3`, `.ogg`, `.flac`   |
+| `LuaScript.scriptPath`                                      | `.lua`                            |
+
+**Texture preview.** Texture fields render a 100x100 thumbnail of the loaded image. While an
+async-loaded texture is still decoding, a `(loading...)` overlay is drawn over the bottom of
+the thumbnail; failed loads show a red `(failed)` overlay and keep the placeholder visible.
+
+**Font preview.** Selecting a non-default font in a Text component displays a 220x44 strip
+showing the sample string `Aa Bb 1!? éàüÇ` rendered with the selected font (lower/upper
+case, digits, punctuation, accented Latin-1). Previews are produced by `gui::FontPreviewCache`
+on first request and cached for subsequent frames; the cache is pumped from
+`EditorLayer::onUpdate` and freed on editor shutdown. While the first frame's render is
+in flight, the panel temporarily falls back to the font's MSDF atlas thumbnail.
+
+**Curve editor.** `AnimatedSpriteRenderer` exposes an optional `Speed Curve` collapsible
+section powered by ImCurveEdit. Drag points to adjust the curve, double-click to add a key,
+right-click to remove. The interpolation combo selects between Constant, Linear, and Smooth
+modes. An empty curve (the default) keeps playback at constant speed and is omitted from the
+serialized YAML, so existing scenes are byte-identical.
+
+```yaml
+AnimatedSpriteRenderer:
+  columns: 4
+  rows: 2
+  firstFrame: 0
+  lastFrame: 7
+  frameDuration: 0.05
+  loop: true
+  speedCurve:
+    interpolation: Smooth
+    keys:
+      - [0.0, 0.5]
+      - [0.5, 2.0]
+      - [1.0, 1.0]
+```
+
 ### Content Browser
 
 The Content Browser provides a file grid view of the project's asset directory. It

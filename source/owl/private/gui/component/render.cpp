@@ -9,8 +9,11 @@
 #include "owlpch.h"
 
 #include "core/Application.h"
+#include "gui/FontPreviewCache.h"
 #include "gui/component/render.h"
 #include "gui/utils.h"
+#include "gui/widgets/AssetField.h"
+#include "gui/widgets/CurveEditor.h"
 
 #include "renderer/Renderer.h"
 #include "sound/SoundCommand.h"
@@ -154,32 +157,7 @@ void renderProps(Camera& ioComponent) {
 
 void renderProps(SpriteRenderer& ioComponent) {
 	ImGui::ColorEdit4("Color", ioComponent.color.data());
-	if (const auto tex = imTexture(ioComponent.texture); tex.has_value()) {
-		if (ImGui::ImageButton("Texture", tex.value(), {100.0f, 100.0f}, {0, 1}, {1, 0}) &&
-			ioComponent.texture != nullptr) {
-			ImGui::OpenPopup("TextureSettings");
-		}
-	} else {
-		if (ImGui::Button("Texture", {100.0f, 100.0f}) && ioComponent.texture != nullptr) {
-			ImGui::OpenPopup("TextureSettings");
-		}
-	}
-	if (ImGui::BeginDragDropTarget()) {
-		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-			const auto* const path = static_cast<const char*>(payload->Data);
-			if (const auto texturePath = renderer::Renderer::getTextureLibrary().find(path))
-				ioComponent.texture = renderer::Texture2D::create(*texturePath);
-		}
-		ImGui::EndDragDropTarget();
-	}
-	bool removeTexture = false;
-	if (ImGui::BeginPopup("TextureSettings")) {
-		if (ImGui::MenuItem("Remove texture"))
-			removeTexture = true;
-		ImGui::EndPopup();
-	}
-	if (removeTexture)
-		ioComponent.texture.reset();
+	widgets::textureField("Texture", ioComponent.texture);
 	// Tiling: linked by default (same X and Y), checkbox to unlink.
 	static bool s_tilingLinked = true;
 	ImGui::Checkbox("Link Tiling X/Y", &s_tilingLinked);
@@ -194,32 +172,7 @@ void renderProps(SpriteRenderer& ioComponent) {
 
 void renderProps(AnimatedSpriteRenderer& ioComponent) {
 	ImGui::ColorEdit4("Color", ioComponent.color.data());
-	if (const auto tex = imTexture(ioComponent.texture); tex.has_value()) {
-		if (ImGui::ImageButton("Spritesheet", tex.value(), {100.0f, 100.0f}, {0, 1}, {1, 0}) &&
-			ioComponent.texture != nullptr) {
-			ImGui::OpenPopup("AnimTextureSettings");
-		}
-	} else {
-		if (ImGui::Button("Spritesheet", {100.0f, 100.0f}) && ioComponent.texture != nullptr) {
-			ImGui::OpenPopup("AnimTextureSettings");
-		}
-	}
-	if (ImGui::BeginDragDropTarget()) {
-		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-			const auto* const path = static_cast<const char*>(payload->Data);
-			if (const auto texturePath = renderer::Renderer::getTextureLibrary().find(path))
-				ioComponent.texture = renderer::Texture2D::create(*texturePath);
-		}
-		ImGui::EndDragDropTarget();
-	}
-	bool removeTexture = false;
-	if (ImGui::BeginPopup("AnimTextureSettings")) {
-		if (ImGui::MenuItem("Remove texture"))
-			removeTexture = true;
-		ImGui::EndPopup();
-	}
-	if (removeTexture)
-		ioComponent.texture.reset();
+	widgets::textureField("Spritesheet", ioComponent.texture);
 
 	const int maxFrame = static_cast<int>(std::max(ioComponent.columns * ioComponent.rows, 1u) - 1);
 	int cols = static_cast<int>(ioComponent.columns);
@@ -238,6 +191,11 @@ void renderProps(AnimatedSpriteRenderer& ioComponent) {
 	ImGui::DragFloat("Frame Duration", &ioComponent.frameDuration, 0.01f, 0.001f, 10.0f, "%.3f s");
 	ImGui::Checkbox("Loop", &ioComponent.loop);
 	ImGui::Text("Current Frame: %u", ioComponent.m_currentFrame);
+	if (ImGui::CollapsingHeader("Speed Curve")) {
+		fieldTooltip("Optional speed remap. Empty = constant playback speed; non-empty multiplies dt by "
+					 "curve.evaluate(progress).");
+		widgets::curveEditor("##speedCurve", ioComponent.speedCurve);
+	}
 }
 
 void renderProps(CircleRenderer& ioComponent) {
@@ -258,6 +216,20 @@ void renderProps(Text& ioComponent) {
 				}
 			}
 			ImGui::EndCombo();
+		}
+		std::filesystem::path dropped;
+		if (widgets::assetDropTarget(widgets::AssetKind::Font, dropped))
+			ioComponent.font = fontLib.getFont(dropped.stem().string());
+		if (ioComponent.font && !ioComponent.font->isDefault()) {
+			constexpr ImVec2 previewSize{220.f, 44.f};
+			if (const auto previewFb = FontPreviewCache::get().request(ioComponent.font); previewFb) {
+				if (const auto preview = imTexture(previewFb, 0); preview.has_value())
+					ImGui::Image(preview.value(), previewSize, gui::vec(previewFb->getLowerData()),
+								 gui::vec(previewFb->getUpperData()));
+			} else if (const auto atlas = imTexture(ioComponent.font->getAtlasTexture()); atlas.has_value()) {
+				// First-frame fallback: atlas thumbnail until pumpPending() renders the sample-string preview.
+				ImGui::Image(atlas.value(), previewSize, {0, 1}, {1, 0});
+			}
 		}
 	}
 
@@ -419,61 +391,11 @@ void renderProps(BackgroundTexture& ioComponent) {
 		} else {
 			// Texture mode
 			ImGui::ColorEdit4("Tint", ioComponent.color.data());
-			if (const auto tex = imTexture(ioComponent.texture); tex.has_value()) {
-				if (ImGui::ImageButton("Texture", tex.value(), {100.0f, 100.0f}, {0, 1}, {1, 0}) &&
-					ioComponent.texture != nullptr) {
-					ImGui::OpenPopup("BgTextureSettings");
-				}
-			} else {
-				if (ImGui::Button("Texture", {100.0f, 100.0f}) && ioComponent.texture != nullptr) {
-					ImGui::OpenPopup("BgTextureSettings");
-				}
-			}
-			if (ImGui::BeginDragDropTarget()) {
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-					const auto* const path = static_cast<const char*>(payload->Data);
-					if (const auto texturePath = renderer::Renderer::getTextureLibrary().find(path))
-						ioComponent.texture = renderer::Texture2D::create(*texturePath);
-				}
-				ImGui::EndDragDropTarget();
-			}
-			bool removeTexture = false;
-			if (ImGui::BeginPopup("BgTextureSettings")) {
-				if (ImGui::MenuItem("Remove texture"))
-					removeTexture = true;
-				ImGui::EndPopup();
-			}
-			if (removeTexture)
-				ioComponent.texture.reset();
+			widgets::textureField("Texture", ioComponent.texture);
 		}
 	} else {
 		// Skybox mode
-		if (const auto tex = imTexture(ioComponent.texture); tex.has_value()) {
-			if (ImGui::ImageButton("Skybox Texture", tex.value(), {100.0f, 100.0f}, {0, 1}, {1, 0}) &&
-				ioComponent.texture != nullptr) {
-				ImGui::OpenPopup("SkyboxTextureSettings");
-			}
-		} else {
-			if (ImGui::Button("Skybox Texture", {100.0f, 100.0f}) && ioComponent.texture != nullptr) {
-				ImGui::OpenPopup("SkyboxTextureSettings");
-			}
-		}
-		if (ImGui::BeginDragDropTarget()) {
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-				const auto* const path = static_cast<const char*>(payload->Data);
-				const std::filesystem::path texturePath = renderer::Renderer::getTextureLibrary().find(path).value();
-				ioComponent.texture = renderer::Texture2D::create(texturePath);
-			}
-			ImGui::EndDragDropTarget();
-		}
-		bool removeTexture = false;
-		if (ImGui::BeginPopup("SkyboxTextureSettings")) {
-			if (ImGui::MenuItem("Remove texture"))
-				removeTexture = true;
-			ImGui::EndPopup();
-		}
-		if (removeTexture)
-			ioComponent.texture.reset();
+		widgets::textureField("Skybox Texture", ioComponent.texture);
 	}
 }
 
@@ -485,6 +407,8 @@ void renderProps(Visibility& ioComponent) {
 void renderProps(SoundSource& ioComponent) {
 	ImGui::InputText("Sound Asset", &ioComponent.sound.soundAsset);
 	fieldTooltip("Path to the audio file relative to the project (e.g. sounds/explosion.wav).");
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Sound, dropped))
+		ioComponent.sound.soundAsset = dropped.string();
 	// Inspector preview: play the asset to verify it.
 	static sound::SoundHandle s_previewHandle = sound::invalidSoundHandle;
 	const bool playing =
@@ -547,6 +471,10 @@ void renderProps(SoundListener& ioComponent) {
 
 void renderProps(LuaScript& ioComponent) {
 	ImGui::InputText("Script Path", &ioComponent.scriptPath);
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::LuaScript, dropped)) {
+		ioComponent.scriptPath = dropped.string();
+		ioComponent.properties = script::ScriptEngine::extractProperties(ioComponent.scriptPath);
+	}
 	if (ImGui::Button("Refresh Properties") && !ioComponent.scriptPath.empty()) {
 		ioComponent.properties = script::ScriptEngine::extractProperties(ioComponent.scriptPath);
 	}
@@ -653,6 +581,7 @@ void renderProps(UIText& ioComponent) {
 }
 
 void renderProps(UIImage& ioComponent) {
+	widgets::textureField("Texture", ioComponent.texture);
 	ImGui::ColorEdit4("Tint", reinterpret_cast<float*>(&ioComponent.tint));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 }
 
