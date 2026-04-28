@@ -33,8 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       accented glyphs (`éàüÇ`…) coming from YAML scenes or Lua strings render correctly
       everywhere instead of falling back to `?` or `Ã©` byte pairs.
 - **Sample project showcases v0.1.1 features**
-    - Main-menu subtitle exercises UTF-8 / Latin-1 rendering (`Démo des fonctionnalités…
-      caractères éàüÇ`).
+    - Main-menu subtitle exercises UTF-8 / Latin-1 rendering
+      (`Démo des fonctionnalités… caractères éàüÇ`).
     - Level-2 coins use a Smooth `AnimatedSpriteRenderer.speedCurve` so the rotation
       pulses (slow at the loop boundary, fast in the middle).
 - **Curve editor for animated properties**
@@ -80,7 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       output pins tagged `scene_lua_exit` so Lua-driven transitions appear alongside Trigger ones
     - Right-click menu: on a node → **Edit scene** (opens it in a new tab) / **Delete scene**
       (with confirmation modal); on empty space → **Add new scene...** (creates an empty `.owl`
-      under `scenes/<name>.owl` and opens it). Canvas auto-rescans after create/delete
+      under `scenes/NAME.owl` and opens it). Canvas auto-rescans after create/delete
     - The global **Scene Hierarchy** and **Properties** panels now host SceneFlow content while
       that document is active: the hierarchy lists every scene (orphans drawn red, click-to-select,
       double-click to open), the properties panel shows the selected scene's path, transitions
@@ -98,7 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `gui::widgets::NodeCanvasSerializer` — domain-agnostic YAML round-trip (`.owlflow` format)
       for full canvas save/load, plus `serializeSubset`/`pasteSubset` for copy/paste with fresh UUIDs
     - `NodeGraphDocument` — third `DocumentType` alongside Scene and Code, generic node-graph
-      document with its own `NodeGraphUndoManager` (typed `UndoManager<NodeCanvas>`); pastes, saves
+      document with its own `NodeGraphUndoManager` (a `UndoManager` typed for `NodeCanvas`); pastes, saves
       and loads through the serializer. Content Browser wires `.owlflow` double-click to a new
       `EditorLayer::openNodeGraphFile` handler; ribbon contextual tab "Graph" with save/close
     - Node-graph undo commands (`source/owlnest/sources/commands/NodeGraphCommands.{h,cpp}`):
@@ -117,7 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       `test/gui_tests/NodeCanvasSerializer_test.cpp` (empty/full canvas round-trip, custom data
       preservation, malformed YAML rejection, subset serialize, paste with fresh UUIDs)
 - **Undo system templatized over its target type**
-    - `UndoCommand<Target>` + `UndoManager<Target>` in `source/owlnest/sources/UndoCommand.h` /
+    - Templatized `UndoCommand` + `UndoManager` (parameterized over the edited `Target`) in `source/owlnest/sources/UndoCommand.h` /
       `UndoManager.h` — both now header-only templates, `IUndoTarget` as common marker base
     - `SceneUndoCommand` / `SceneUndoManager` aliases preserve the current editor behaviour one-to-one;
       every existing command (`Entity*`, `Component*`, `Hierarchy*`, `Prefab*`) migrated to
@@ -155,7 +155,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Fields: destination path with Browse button, target platform (read-only), compress/obfuscate options
     - Pre-packaging validation phase runs async and collects warnings for unresolvable texture,
       sound, font, script, and trigger-scene references (`AssetScanner::scanScene/scanProject`
-      accept an optional `std::vector<std::string>* oWarnings` output)
+      accept an optional `std::vector` of warning strings as output)
     - Validation modal shown if warnings: bullet list + "Proceed anyway" / "Cancel"
     - Async validation phase reuses its scanned assets for the pack phase (avoids double scan)
     - Detects missing `OwlRunner` executable and empty asset list
@@ -190,8 +190,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Built-in syntax highlighting: **Lua**, **C**, **C++**, **Python**, **JSON**, **Markdown**
       (from the library); custom definitions added for **YAML** and **SVG/XML** in
       `source/owlnest/sources/document/codeEditor/LanguageDefinitions.{h,cpp}`
-    - ContentBrowser double-click routes `.lua/.py/.c/.cpp/.cc/.cxx/.h/.hpp/.hxx/.yml/.yaml/.json/
-      .md/.markdown/.svg/.xml` to a new code-editor tab (or re-activates the existing one)
+    - ContentBrowser double-click routes
+      `.lua`/`.py`/`.c`/`.cpp`/`.cc`/`.cxx`/`.h`/`.hpp`/`.hxx`/`.yml`/`.yaml`/`.json`/`.md`/`.markdown`/`.svg`/`.xml`
+      to a new code-editor tab (or re-activates the existing one)
     - Status footer in each code editor shows language + line/column + INS/OVR. Ctrl+S saves;
       dirty tracked via `TextEditor::GetText() != savedText`
     - Rich rendering of Markdown and SVG inside the editor is deferred to a future release —
@@ -219,7 +220,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `EditorLayer` becomes a host of `DocumentManager`; all scene operations delegate to the
       active document
     - **Per-document Viewport**: each `SceneDocument` owns its own `Viewport` instance with its
-      own framebuffer and a stable ImGui window id (`##scene_<uuid>`). ImGui's docking groups
+      own framebuffer and a stable ImGui window id (`##scene_UUID`). ImGui's docking groups
       viewports that share a dock node as tabs automatically, and users can tear a tab off to
       see several scenes side-by-side
     - Dirty marker rendered via `ImGuiWindowFlags_UnsavedDocument`. No close `x` and no collapse
@@ -256,7 +257,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
           `interaction` key outline
         - Redesigned `content_browser` (grid of four tiles, selected tile filled), `animated_sprite`
           (filmstrip with sprocket holes), `new_scene` (clean "+" in place of 8-point spark)
-        - Replaced `<text>`-rendered glyphs with paths in `interaction` (letter E) and
+        - Replaced SVG `text`-rendered glyphs with paths in `interaction` (letter E) and
           `lua_callback` (code-block chevron + amber dot)
         - Disambiguated overlapping silhouettes: `add_child_entity` now shows a parent → child
           tree; `background` (night sky with stars + horizon), `sprite` (outlined landscape),
@@ -297,7 +298,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - AssetScanner unit tests (18 tests covering all asset types, recursion, deduplication,
       cancellation)
 - **Code quality**
-    - Component-scoped `PushID(T::name())` in `drawComponent<T>` to prevent ImGui label collisions
+    - Component-scoped `PushID(T::name())` in the templated `drawComponent` helper to prevent ImGui label collisions
       across components that share field names (e.g., "Color" in multiple renderers)
     - Index-based `PushID` in LuaScript property loop
 
@@ -317,8 +318,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Sample project main menu Lua flood** — `string.format("%d, %d", mx, my)` on the float mouse
-  coordinates now `math.floor`s them first; was triggering `bad argument #2 to 'format' (number
-  has no integer representation)` on every frame in `main_menu.lua:89`
+  coordinates now `math.floor`s them first; was triggering
+  `bad argument #2 to 'format' (number has no integer representation)` on every frame in
+  `main_menu.lua:89`
 - **ARM64 Linux CI restored** — Poetry's default venv cache (`~/.cache/pypoetry/virtualenvs/`)
   names venvs from `(project, pyproject, python version)` without the architecture. CI agents
   running different archs on a shared `$HOME` (or bind-mounted workspace) collided on the same
@@ -331,16 +333,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   via `poetry env remove --all` before sync and (re)writes the marker afterwards. The check
   runs unconditionally (TC-via-Docker doesn't propagate `TEAMCITY_VERSION`, so an env-var gate
   would no-op), yet same-arch reruns still pay almost nothing thanks to the marker fast path.
-- **Windows Debug test binaries no longer fail with `STATUS_DLL_NOT_FOUND` (0xc0000135)** —
-  the helper `owl_target_link_libraries()` was setting `CMAKE_MAP_IMPORTED_CONFIG_DEBUG=Release`
+- **Windows Debug test binaries no longer fail to load** (was
+  `STATUS_DLL_NOT_FOUND` / `0xc0000135`). The helper
+  `owl_target_link_libraries()` was setting `CMAKE_MAP_IMPORTED_CONFIG_DEBUG=Release`
   only around `find_package()`, but that variable is read at generate time (link resolution +
-  `$<TARGET_RUNTIME_DLLS>` evaluation), not at find time. In Debug builds the linker picked
+  `TARGET_RUNTIME_DLLS` generator-expression evaluation), not at find time. In Debug builds the linker picked
   `glfw3d.lib` (imports `glfw3d.dll`) while the post-build copy grabbed the release `glfw3.dll`
   — every test binary then failed to load. The mapping is now applied at top-level directory
   scope in `CMakeLists.txt`, gated by `OWL_USE_RELEASE_THIRD_PARTY`, so link and DLL copy agree
-- Tests now get a `$<TARGET_RUNTIME_DLLS:<test>>` post-build copy next to their binary (belt-
-  and-braces — picks up any DLL surfaced through the test's own link graph that the engine's
-  post-build didn't cover)
+- Tests now get a `TARGET_RUNTIME_DLLS` generator-expression post-build copy next to their binary
+  (belt-and-braces — picks up any DLL surfaced through the test's own link graph that the
+  engine's post-build didn't cover)
 - **Use-after-free SIGSEGV when closing a document tab** — closing a `SceneDocument` inline from
   `onImGuiRender` freed its Vulkan color-attachment while ImGui's draw list still referenced it
   (the sampler then read freed GPU memory at `UiLayer::end()` submit). `EditorLayer::closeDocument`
@@ -357,7 +360,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AssetScanner: skip nonexistent scene files instead of adding them to the asset list
 - `recursive_directory_iterator` crash on missing directories (AssetLibrary, FontLibrary)
 - Mouse Y inversion in packed runner UI (UIInputSystem coordinates)
-- `writeLinuxLauncher` undefined on Windows (guarded with `#ifdef OWL_PLATFORM_LINUX`)
+- `writeLinuxLauncher` undefined on Windows (guarded with an `OWL_PLATFORM_LINUX` ifdef)
 - `game_settings.yml` not included in packed game
 - Markdown table alignment across all doc pages
 - Clang-tidy cognitive complexity in UIInputSystem and AssetScanner (extracted helper functions)
