@@ -119,9 +119,10 @@ silently skips the protection). The check uses three stacked signals, cheapest f
 1. **No venv yet** → nothing to refresh (`poetry sync` will create one).
 2. **Platform signature matches** — `<arch>-<os>-<impl>-<pyver>` read from a marker file inside
    the venv, written by `cmake/Poetry.cmake` after each successful sync. Match → keep venv.
-3. **Functional import test** — signature missing/mismatched, so `poetry run python -c "from
-   cryptography.fernet import Fernet"` is run. If it fails, `OWL_CI_REFRESH_VENV=1` is exported;
-   otherwise the venv is kept (covers legacy venvs that predate the marker).
+3. **Functional import test** — signature missing/mismatched, so
+   `poetry run python -c "from cryptography.fernet import Fernet"` is run. If it fails,
+   `OWL_CI_REFRESH_VENV=1` is exported; otherwise the venv is kept (covers legacy venvs that
+   predate the marker).
 
 `cmake/Poetry.cmake` consumes `OWL_CI_REFRESH_VENV` by running `poetry env remove --all` before
 `poetry sync`, then re-writes the platform marker with the current signature. Happy-path

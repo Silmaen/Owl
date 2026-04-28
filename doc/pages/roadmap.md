@@ -540,7 +540,7 @@ asynchronous with progress feedback.
         - `owl_target_link_libraries` forced Release third-party imports via a helper save/restore
           of `CMAKE_MAP_IMPORTED_CONFIG_DEBUG` around `find_package` — but that variable is read
           at generate time, not find time, so the mapping was lost. Debug builds linked against
-          `*d.lib` (binaries imported `*d.dll`) while `$<TARGET_RUNTIME_DLLS>` copied the Release
+          `*d.lib` (binaries imported `*d.dll`) while the `TARGET_RUNTIME_DLLS` generator expression copied the Release
           variants → every test exited with `STATUS_DLL_NOT_FOUND` (0xc0000135)
         - Mapping now applied at top-level directory scope in `CMakeLists.txt`, gated by
           `OWL_USE_RELEASE_THIRD_PARTY`, so link and DLL copy agree in Debug

@@ -107,10 +107,10 @@ any future swap to a different node-graph library only touches the `.cpp`.
 
 ### Double-click detection
 
-`GraphEditor` has no native double-click signal — only `SelectNode(index,
-selected)`. The wrapper tracks the last clicked node UUID and timestamp;
-if the same node is re-selected within 300 ms the double-click callback
-fires instead of the single-click one.
+`GraphEditor` has no native double-click signal — only
+`SelectNode(index, selected)`. The wrapper tracks the last clicked node UUID
+and timestamp; if the same node is re-selected within 300 ms the double-click
+callback fires instead of the single-click one.
 
 ## `gui::widgets::NodeCanvasSerializer`
 
@@ -210,21 +210,21 @@ Behaviour in this first slice:
   - resolves every `LuaScript.scriptPath` against the project directory and
     runs a best-effort regex scan (`scene\.load_scene\(["']…["']\)`) for
     Lua-driven transitions. Detected destinations become extra output pins
-    tagged `scene_lua_exit` and labelled `[lua:<script>] → <dest>`.
+    tagged `scene_lua_exit` and labelled `[lua:SCRIPT] → DEST`.
 - **Auto-size** — every node's bounding box is computed from its title and
   pin labels (`NodeCanvas::measureNode`), so long entity / scene names stay
   readable. Titles drop the implicit `.owl` extension. The grid layout
   uses the actual per-column max width and per-row max height so wide
   nodes never overlap their neighbours.
-- **Pin styling** — labels are rendered **inside** the node frame
+- **Pin styling** — labels are rendered inside the node frame
   (`NodeCanvas::CustomDraw`); GraphEditor receives `nullptr` for slot
   names so nothing leaks outside the rect. Each pin can carry its own
   `NodePin::labelColor`. Pin labels are compact — just the source
-  identifier with a single-glyph kind hint:
-  - Teleport: `LevelPortal` (white)
-  - Death:    `† DangerZone` (red)
-  - Victory:  `★ VictoryZone` (green)
-  - Lua:      `λ checkpoint` (blue)
+  identifier with a single-glyph kind hint. Teleport pins are white
+  with the bare scene name (e.g. `LevelPortal`); Death pins are red
+  and prefix the entity name with `[X]`; Victory pins are green with
+  a `[*]` prefix; Lua transitions are blue with a `[l]` prefix
+  followed by the script slug.
 - **Layered layout** — `refreshFromProject` runs a BFS from the project's
   first scene to assign each scene its column = depth. Orphans go to a
   "limbo" column past the reachable graph. Within a column, scenes are
@@ -235,22 +235,20 @@ Behaviour in this first slice:
   red title.
 - **Navigation** — double-click a scene node opens that scene through
   `EditorLayer::openScene`.
-- **Right-click menu**:
-  - on a node: **Edit scene** (opens it as a new tab) and **Delete scene**
-    (confirmation modal, removes the file from disk, rescans);
-  - on empty space: **Add new scene...** — typed name is appended `.owl`
-    if missing and put under `scenes/` if no slash; the new file is opened
-    as a tab and the canvas rescans.
+- **Right-click menu** — on a node: **Edit scene** (opens it as a new tab)
+  and **Delete scene** (confirmation modal, removes the file from disk,
+  rescans). On empty space: **Add new scene...** — typed name is appended
+  `.owl` if missing and put under `scenes/` if no slash; the new file is
+  opened as a tab and the canvas rescans.
 - **Hierarchy + Properties integration** — while the SceneFlow document is
   active, the global Scene Hierarchy and Properties panels host SceneFlow
-  content (no separate floating overlay):
-  - the hierarchy lists every scene with its title color (red = orphan),
-    single-click selects in the canvas, double-click opens;
-  - the properties panel shows the selected scene's path, outgoing
-    transitions (color-coded by kind), and an **Open this scene** button.
-  - This is wired through three new generic virtuals on `Document`:
-    `overridesGlobalPanels()`, `renderHierarchyPanel()`,
-    `renderPropertiesPanel()`. Future node-graph documents (animation,
+  content (no separate floating overlay). The hierarchy lists every scene
+  with its title color (red = orphan); single-click selects in the canvas,
+  double-click opens. The properties panel shows the selected scene's path,
+  outgoing transitions (color-coded by kind), and an **Open this scene**
+  button. This is wired through three new generic virtuals on `Document`:
+  `overridesGlobalPanels()`, `renderHierarchyPanel()`,
+  `renderPropertiesPanel()`. Future node-graph documents (animation,
     behavior tree...) can reuse the same hook.
 
 Opened from **File → Views → Scene Flow** in the ribbon. The document
