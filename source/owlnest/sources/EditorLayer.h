@@ -67,6 +67,12 @@ public:
 	/// @brief Open a `.owlflow` node-graph file as a new `NodeGraphDocument` (or switch to one already open).
 	void openNodeGraphFile(const std::filesystem::path& iPath);
 
+	/// @brief Open a `.owlanim` animation clip as a new `AnimationDocument` (or switch to one already open).
+	void openAnimationFile(const std::filesystem::path& iPath);
+
+	/// @brief Create a new untitled `AnimationDocument`.
+	void newAnimationClip();
+
 	/// @brief Open (or refresh) the Scene Flow view — a `NodeGraphDocument` subclass populated from the current project.
 	void openSceneFlowView();
 	void saveSceneAs();
@@ -127,6 +133,8 @@ private:
 	/// Contextual tab for scene documents (Playback, Gizmo, Scene file ops, Package).
 	void buildSceneTab();
 	void buildNodeGraphTab();
+	/// Contextual tab for animation-clip documents (Playback, Frame, File).
+	void buildAnimationTab();
 	/// Contextual tab for code / text documents (Save, Save As, Close, language…).
 	void buildCodeTab();
 	/// Rebuild the ribbon when the active document type changes.

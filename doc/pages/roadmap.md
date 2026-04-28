@@ -415,10 +415,19 @@ asynchronous with progress feedback.
           `SceneUndo + NodeGraphUndo` command that writes/removes `Trigger` entities in the source
           scene) and per-pin `targetName` editing from the canvas
 - Asset Editors
-    - ![Planned][planned] Animation editor
-        - Timeline for `AnimatedSpriteRenderer`: frame-by-frame preview
-        - Visual configuration of frame count, frame rate, loop mode
-        - Opens as a document tab (not a modal)
+    - ![Done][done] Animation editor
+        - New reusable asset format `.owlanim` (`scene::AnimationClip`) — texture, grid,
+          frame range, frame duration, loop, optional speed curve. YAML round-trip with
+          unit-test coverage in `test/scene_tests/AnimationClip_test.cpp`
+        - `AnimationDocument` opens as a document tab (4th `DocumentType`) with three
+          panels: live spritesheet preview, properties (texture drop, columns/rows,
+          first/last, frame duration, loop, embedded `curveEditor` for the speed curve),
+          and a frame-range timeline backed by the new `gui::widgets::sequencer()` wrapper
+          around `ImSequencer` from the imguizmo bundle (no new DepManager dep)
+        - Ribbon contextual `Animation` tab with Playback (Play/Pause/Stop), Frame
+          (Previous/Next) and File (Save / Save As / Close) groups
+        - Content Browser double-click + drag-drop on `.owlanim`, dedicated icon, ribbon
+          File → "New Animation" entry to spawn an untitled clip
     - ![Done][done] Enhanced inspector
         - ![Done][done] Sound preview button on SoundSource component (Play / Stop, uses current volume and pitch)
         - ![Done][done] Texture thumbnail preview, font preview

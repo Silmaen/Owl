@@ -56,6 +56,12 @@ living showcase — it must be updated whenever new features are added to the en
 
 - `prefabs/coin.owlprefab` — Reusable coin template (CircleRenderer + Trigger + LuaScript)
 
+## Animation Clips
+
+- `animations/coin.owlanim` — Spritesheet animation clip (6×3 grid, 18 frames, Smooth
+  speed curve). Open with the new Animation editor (double-click in the Content
+  Browser) to scrub the timeline, tweak the speed curve, or change the frame range.
+
 ## Lua Scripts (11)
 
 | Script                | Features Exercised                                                                                                                                                                                                                                                               |
@@ -117,6 +123,10 @@ living showcase — it must be updated whenever new features are added to the en
       exercises the renderer's UTF-8 decoding path and the MSDF atlas's full Latin-1 charset.
 - [x] AnimatedSpriteRenderer speed curve — level 2 coins remap playback time via a Smooth
       `math::Curve` (slow at the loop boundary, fast in the middle).
+- [x] Reusable `.owlanim` asset — `animations/coin.owlanim` mirrors the level 2 coin
+      animation (texture, 6×3 grid, 18 frames at 0.08 s, loop, Smooth speed curve).
+      Double-click it in the Content Browser to open it in the new Animation editor
+      (live preview, properties panel, frame-range timeline backed by ImSequencer).
 - [x] Runtime entity creation (session/checkpoint markers)
 - [x] Dynamic entity inspection (has_component, get_name)
 - [x] Timer control from scripts (start/stop/reset)

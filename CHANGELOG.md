@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Animation editor**
+    - New reusable `.owlanim` asset (`scene::AnimationClip` —
+      `source/owl/public/scene/AnimationClip.h`): texture, grid, frame range, frame
+      duration, loop, optional speed curve, with YAML round-trip and unit tests in
+      `test/scene_tests/AnimationClip_test.cpp`.
+    - `nest::AnimationDocument` opens as a 4th document type (alongside Scene, Code,
+      NodeGraph). Three-panel layout: live spritesheet preview, properties (texture
+      drop target, columns / rows / first / last frame, frame duration, loop, speed
+      curve via `gui::widgets::curveEditor`), and a frame-range timeline.
+    - New `gui::widgets::sequencer()` widget (`source/owl/public/gui/widgets/Sequencer.h`)
+      wraps `ImSequencer` from the existing imguizmo bundle — owl-friendly API
+      (`SequencerEntry` / `SequencerOptions`), no third-party types leak through the
+      public surface.
+    - Contextual ribbon `Animation` tab when an `AnimationDocument` is active:
+      Playback (Play / Pause / Stop), Frame (Previous / Next) and File (Save / Save
+      As / Close) groups. Ribbon File → "New Animation" entry creates an untitled
+      clip; double-click / drag-drop in the Content Browser routes `.owlanim` files to
+      the document. Dedicated browser icon (filmstrip glyph).
+    - `sample_project/animations/coin.owlanim` showcases the new asset (mirrors the
+      level 2 coin animation, including the Smooth speed curve).
 - **Inspector field interactions**
     - Drag-drop from Content Browser to inspector fields via shared
       `gui::widgets::assetDropTarget` helper (`source/owl/public/gui/widgets/AssetField.h`).

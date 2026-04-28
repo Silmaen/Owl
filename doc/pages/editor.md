@@ -151,6 +151,7 @@ the open documents and tracks which one is **active**. Global panels
 | Scene       | `.owl`   | Scene graph editor with viewport, per-document undo/redo stack   |
 | Code        | `.lua`, `.py`, `.json`, `.md`, `.svg`... | Syntax-highlighted text editor (ImGuiColorTextEdit) |
 | Node Graph  | `.owlflow` (or derived like **Scene Flow**) | Generic node canvas — see [Node Graph](node_graph.md) |
+| Animation   | `.owlanim`  | Spritesheet animation clip editor (timeline + preview + properties) |
 
 - **Document tabs** — each open scene has its own `Viewport` window (stable
   `##scene_<uuid>` id). ImGui's docking groups viewports in the same dock node
@@ -338,6 +339,60 @@ AnimatedSpriteRenderer:
       - [1.0, 1.0]
 ```
 
+### Animation Editor (`.owlanim`)
+
+`.owlanim` files are reusable spritesheet animation clips, edited in their own document
+tab (the fourth `DocumentType` after Scene, Code, and NodeGraph). Behind the scenes the
+clip is `scene::AnimationClip` — the same playback parameters as
+`AnimatedSpriteRenderer` minus the per-instance tint, which stays on the consuming
+component.
+
+**Opening / creating.**
+
+- Double-click any `.owlanim` in the Content Browser, or drag-drop one onto the editor.
+- Ribbon → File → **New Animation** spawns an empty untitled clip; the first `Save` /
+  `Save As` writes it to disk.
+
+**Layout.** Three panels in one tab:
+
+- **Preview** — live spritesheet thumbnail at the current frame, with Play / Pause /
+  Stop and step-frame transport buttons underneath.
+- **Properties** — texture drop target, columns / rows / first frame / last frame,
+  frame duration, loop, and the optional speed curve (embedded `curveEditor`).
+- **Timeline** — `gui::widgets::sequencer()` bar; drag the handles to move
+  `firstFrame` / `lastFrame`, click the ruler to scrub the playhead (which pauses
+  playback so the user sees the picked frame).
+
+**Ribbon `Animation` tab.** Shown only when an `AnimationDocument` is active.
+
+| Group    | Buttons                                          |
+| -------- | ------------------------------------------------ |
+| Playback | Play, Pause, Stop                                |
+| Frame    | Previous, Next                                   |
+| File     | Save, Save As, Close                             |
+
+**On-disk format.**
+
+```yaml
+AnimationClip: walk
+Version: 1
+texture: characters/hero
+columns: 4
+rows: 2
+firstFrame: 0
+lastFrame: 7
+frameDuration: 0.1
+loop: true
+speedCurve:
+  interpolation: Linear
+  keys:
+    - [0.0, 1.0]
+    - [1.0, 1.0]
+```
+
+The schema mirrors the corresponding fields of `AnimatedSpriteRenderer` 1:1, so a future
+"Source clip" reference on the component can be added without a YAML migration.
+
 ### Content Browser
 
 The Content Browser provides a file grid view of the project's asset directory. It
@@ -354,6 +409,7 @@ label (e.g. `WAV`, `CPP`) and a central type glyph:
 |-----------|--------------------------------------|--------------------------|
 | Scene     | `.owl`                               | Isometric scene floor    |
 | Prefab    | `.owlprefab`                         | Puzzle-piece "P" badge   |
+| Animation | `.owlanim`                           | Filmstrip with play head |
 | Image     | `.png`, `.jpg`, `.svg`               | Frame with sun + peaks   |
 | Font      | `.ttf`                               | "Aa" sample              |
 | Config    | `.yml`, `.json`                      | Gear / curly braces      |
