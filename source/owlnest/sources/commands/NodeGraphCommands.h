@@ -95,4 +95,37 @@ private:
 	gui::widgets::Link m_link;
 };
 
+/// @brief Append an output pin to an existing node. Symmetric `RemoveOutputPinCommand` undoes it.
+class AddOutputPinCommand final : public NodeGraphUndoCommand {
+public:
+	/// @param[in] iNodeId Node that owns the pin.
+	/// @param[in] iPin Pin snapshot to add (its UUID is reused on every redo).
+	AddOutputPinCommand(core::UUID iNodeId, gui::widgets::NodePin iPin);
+
+	void undo(NodeCanvas& ioTarget) override;
+	void redo(NodeCanvas& ioTarget) override;
+	[[nodiscard]] auto description() const -> std::string override { return "Add Pin"; }
+
+private:
+	core::UUID m_nodeId;
+	gui::widgets::NodePin m_pin;
+};
+
+/// @brief Remove an output pin (and any links still attached to it). Undo restores the pin only —
+///        attached links must be tracked by the caller if it cares about restoring them.
+class RemoveOutputPinCommand final : public NodeGraphUndoCommand {
+public:
+	/// @param[in] iNodeId Node that owns the pin.
+	/// @param[in] iPin Pin snapshot captured before removal (used to restore on undo).
+	RemoveOutputPinCommand(core::UUID iNodeId, gui::widgets::NodePin iPin);
+
+	void undo(NodeCanvas& ioTarget) override;
+	void redo(NodeCanvas& ioTarget) override;
+	[[nodiscard]] auto description() const -> std::string override { return "Remove Pin"; }
+
+private:
+	core::UUID m_nodeId;
+	gui::widgets::NodePin m_pin;
+};
+
 }// namespace owl::nest::commands

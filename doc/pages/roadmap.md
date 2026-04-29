@@ -93,6 +93,14 @@ Handle large game worlds efficiently.
 **Goal:** Give game designers tools to create intelligent NPCs, richer physical interactions,
 polished audio/narrative experiences, and networked multiplayer.
 
+- Editor UX
+    - ![Planned][planned] Node-graph link waypoints
+        - Right-click on a coloured link in `NodeCanvas` (Scene Flow today, future graphs too)
+          to insert an intermediate point at the cursor position
+        - Drag to relocate, Delete to remove — waypoints persist in the `.owlflow` YAML
+        - The Bezier routing splits at each waypoint into a series of cubic segments so the user
+          can manually steer links around node clusters when the auto-deflection heuristic
+          isn't enough
 - Networking
     - ![Planned][planned] Network transport layer
         - UDP-based reliable messaging (or integrate a library like ENet/GameNetworkingSockets)
@@ -406,14 +414,28 @@ asynchronous with progress feedback.
           `.owlflow` content-browser handling + drag-drop routing
         - Node-graph undo commands: AddNode / RemoveNode (restores attached links) / MoveNode
           (drag-coalesced) / AddLink / RemoveLink
-    - ![In Progress][progress] Scene flow view (first node graph usage)
+    - ![Done][done] Scene flow view (first node graph usage)
         - ![Done][done] Scenes as nodes, teleport triggers as output pins, links wired from
           output → destination scene entry, orphan detection (BFS from `Project::firstScene`,
           unreachable scenes drawn in red). Exposed from the File ribbon tab → Views → Scene Flow
         - ![Done][done] Double-click a node → navigates to that scene via `EditorLayer::openScene`
-        - ![Planned][planned] Visual create/delete of teleport links (requires a composite
-          `SceneUndo + NodeGraphUndo` command that writes/removes `Trigger` entities in the source
-          scene) and per-pin `targetName` editing from the canvas
+        - ![Done][done] Visual create of teleport links — every scene node carries a ghost
+          `+ Add teleport` output pin; dragging it onto another scene's entry creates a `Trigger`
+          (`Type=Teleport`, `LevelName=<dest>`) entity in the source scene at world origin and
+          wires the canvas link in one undoable step. Source scene is opened silently via
+          `EditorLayer::loadOrOpenSceneDocument` if not already in a tab.
+        - ![Done][done] Visual delete of teleport links — pressing Delete on a Teleport link
+          destroys the matching `Trigger` entity, removes the canvas pin, and erases the link in
+          a single undoable step.
+        - ![Done][done] Per-pin `targetName` editing — right-click a scene node → `Edit teleport
+          target → <pin>` opens a modal that mutates the live `Trigger.targetName` and pushes a
+          `ModifyEntityCommand` on the source scene's undo manager (rapid keystrokes coalesce).
+        - ![Done][done] New `commands::SceneFlowCompositeCommand` glues a `SceneUndoCommand` and
+          a `NodeGraphUndoCommand` so a single undo step reverses both halves; complemented by
+          `AddPinAndLinkCommand` / `RemovePinAndLinkCommand` for the canvas pin+link bundle.
+        - ![Done][done] Canvas polish — text level-of-detail (pin labels hide below 0.6 zoom,
+          node titles below 0.3) plus per-layer vertical centring so single-node columns align
+          around the same horizontal mid-line as the rest of the graph.
 - Asset Editors
     - ![Done][done] Animation editor
         - New reusable asset format `.owlanim` (`scene::AnimationClip`) — texture, grid,

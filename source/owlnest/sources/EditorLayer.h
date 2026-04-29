@@ -73,6 +73,16 @@ public:
 	/// @brief Create a new untitled `AnimationDocument`.
 	void newAnimationClip();
 
+	/// @brief Synchronously open (or return) a `SceneDocument` for the given on-disk scene.
+	/// @param[in] iScenePath Absolute or project-relative path to a `.owl` file.
+	/// @return Pointer to the live `SceneDocument`, or `nullptr` on missing/invalid file.
+	///
+	/// Unlike `openScene`, this does **not** route through the async progress modal and does
+	/// **not** switch the active document — it is meant for editor-side actions (Scene Flow link
+	/// edits, future cross-scene tooling) that need to mutate a scene's entities without yanking
+	/// the user's focus. The file is read and deserialized synchronously on the main thread.
+	auto loadOrOpenSceneDocument(const std::filesystem::path& iScenePath) -> SceneDocument*;
+
 	/// @brief Open (or refresh) the Scene Flow view — a `NodeGraphDocument` subclass populated from the current project.
 	void openSceneFlowView();
 	void saveSceneAs();

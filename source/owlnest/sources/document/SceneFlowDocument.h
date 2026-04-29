@@ -10,6 +10,8 @@
 
 #include "NodeGraphDocument.h"
 
+#include <unordered_map>
+
 namespace owl::nest {
 
 struct Project;
@@ -66,8 +68,28 @@ private:
 	void deleteSceneFile(const std::filesystem::path& iAbsolutePath);
 	/// @brief Resolve a node id to its absolute scene path through `customData`.
 	[[nodiscard]] auto absolutePathFor(core::UUID iNodeId) const -> std::filesystem::path;
+	/// @brief Resolve a node id to its project-relative scene path (e.g. `scenes/level1.owl`).
+	[[nodiscard]] auto relativePathFor(core::UUID iNodeId) const -> std::string;
 	/// @brief Render the right-click popup if pending, plus any modal dialogs.
 	void renderPopups();
+	/// @brief Render the right-click context menu (over a node OR over empty canvas space).
+	void renderContextMenu();
+	/// @brief Render the "Add new scene…" modal triggered from the context menu.
+	void renderAddSceneModal();
+	/// @brief Render the "Delete scene?" confirmation modal.
+	void renderDeleteSceneModal();
+	/// @brief Validate a drag from `iFromPin` to `iToPin`. Only ghost-pin → entry-pin is accepted today.
+	[[nodiscard]] auto validateLinkDraft(core::UUID iFromPin, core::UUID iToPin) const -> bool;
+	/// @brief Handle a successful link draft: cancel the auto-link, create a Trigger entity and a
+	///        real output pin, push a composite undo step.
+	void onLinkDrafted(core::UUID iLinkId, core::UUID iFromPin, core::UUID iToPin);
+	/// @brief Handle a link erase: restore the link, push a composite that destroys the matching
+	///        Trigger entity, removes the pin, and removes the link.
+	void onLinkErased(core::UUID iLinkId);
+	/// @brief Open the targetName modal for the given Teleport output pin.
+	void openTargetNameModal(core::UUID iPinId);
+	/// @brief Render the targetName modal if pending.
+	void renderTargetNameModal();
 
 	/// Absolute project root — stored so double-click / context actions can resolve relative paths.
 	std::filesystem::path m_projectDirectory;
@@ -90,6 +112,25 @@ private:
 
 	/// Path of the scene pending deletion confirmation; empty = no modal.
 	std::filesystem::path m_pendingDeletePath;
+
+	/// @brief Per-link bookkeeping for Teleport links — used to find the live Trigger entity on delete.
+	struct LinkOrigin {
+		std::filesystem::path scenePath;///< Source scene on disk.
+		core::UUID triggerEntityUuid{0};///< Trigger entity in the source scene.
+		core::UUID sourceNodeId{0};///< Canvas node owning the output pin.
+		core::UUID outputPinId{0};///< The output pin id.
+		core::UUID inputPinId{0};///< The input pin (destination scene's entry).
+	};
+	/// Live links → Teleport bookkeeping. Refreshed by `refreshFromProject`, mutated on link create/delete.
+	std::unordered_map<core::UUID, LinkOrigin> m_linkOrigins;
+	/// Per-pin Teleport bookkeeping (for the targetName edit popup which only knows the pin).
+	std::unordered_map<core::UUID, LinkOrigin> m_pinToOrigin;
+	/// One ghost "+ Add teleport" pin per scene node. Drag from this pin = create a new Trigger.
+	std::unordered_map<core::UUID, core::UUID> m_nodeToGhostPin;
+	/// Pin that owns the open targetName modal; 0 = no modal.
+	core::UUID m_targetNameModalPin{0};
+	/// Buffer for the targetName ImGui input.
+	char m_targetNameBuf[128] = {};
 };
 
 }// namespace owl::nest

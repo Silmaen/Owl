@@ -1457,6 +1457,41 @@ void EditorLayer::newAnimationClip() {
 	syncActiveDocumentPanels();
 }
 
+auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePath) -> SceneDocument* {
+	if (iScenePath.empty())
+		return nullptr;
+	if (auto* existing = findSceneDocumentByPath(iScenePath); existing != nullptr)
+		return existing;
+	if (!std::filesystem::exists(iScenePath))
+		return nullptr;
+
+	// Synchronous load: small files, single user-initiated action context. Bypasses the async
+	// progress modal so editor-side tooling (Scene Flow link edits) does not flash a UI dialog
+	// for every Trigger create/delete.
+	std::ifstream file(iScenePath, std::ios::binary | std::ios::ate);
+	if (!file.is_open()) {
+		OWL_CORE_WARN("loadOrOpenSceneDocument: cannot open '{}'", iScenePath.string())
+		return nullptr;
+	}
+	const auto size = static_cast<size_t>(file.tellg());
+	file.seekg(0);
+	std::vector<uint8_t> bytes(size);
+	file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size));
+	const auto newScene = mkShared<scene::Scene>();
+	const scene::SceneSerializer serializer(newScene);
+	if (!serializer.deserializeFromBuffer(bytes, iScenePath.string())) {
+		OWL_CORE_WARN("loadOrOpenSceneDocument: failed to deserialize '{}'", iScenePath.string())
+		return nullptr;
+	}
+	auto doc = mkUniq<SceneDocument>();
+	doc->onAttach(this);
+	auto* target = static_cast<SceneDocument*>(m_documents.add(std::move(doc)));
+	target->applyLoadedScene(newScene, iScenePath, activeViewportSize());
+	// Intentionally do NOT call setActive() — Scene Flow edits should leave the user's focus
+	// on the document they were inspecting.
+	return target;
+}
+
 void EditorLayer::saveSceneAs() {
 	if (const auto filepath = core::utils::FileDialog::saveFile("Owl Scene (*.owl)|owl\n"); !filepath.empty())
 		saveSceneAs(filepath);

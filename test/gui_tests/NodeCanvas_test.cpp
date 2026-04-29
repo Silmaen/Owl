@@ -78,7 +78,10 @@ TEST(NodeCanvas, RemoveNodeDropsAttachedLinks) {
 			<< "Links touching a removed node's pins must be dropped along with the node.";
 }
 
-TEST(NodeCanvas, LinkValidatorCanVetoConnection) {
+TEST(NodeCanvas, ProgrammaticAddLinkBypassesValidator) {
+	// Validator gates **user drags** (`Impl::AddLink` from GraphEditor) only — programmatic adds
+	// must always succeed so refresh paths and undo/redo of removed links work regardless of the
+	// validator's domain rules.
 	NodeCanvas canvas;
 	auto nodeA = makeNode("A", {0.0f, 0.0f}, {}, {"out"});
 	auto nodeB = makeNode("B", {100.0f, 0.0f}, {"in"}, {});
@@ -89,8 +92,8 @@ TEST(NodeCanvas, LinkValidatorCanVetoConnection) {
 
 	canvas.setLinkValidator([](core::UUID, core::UUID) -> bool { return false; });
 	const auto id = canvas.addLink(pinOut, pinIn);
-	EXPECT_EQ(static_cast<uint64_t>(id), 0u);
-	EXPECT_EQ(canvas.links().size(), 0u);
+	EXPECT_NE(static_cast<uint64_t>(id), 0u);
+	EXPECT_EQ(canvas.links().size(), 1u);
 }
 
 TEST(NodeCanvas, FindNodeByPinWalksBothSides) {
@@ -155,4 +158,89 @@ TEST(NodeCanvas, RemoveLinkByIdWorks) {
 	canvas.removeLink(linkId);
 	EXPECT_EQ(canvas.findLink(linkId), nullptr);
 	EXPECT_EQ(canvas.links().size(), 0u);
+}
+
+TEST(NodeCanvas, AddOutputPinAppendsAndKeepsId) {
+	NodeCanvas canvas;
+	const auto nodeId = canvas.addNode(makeNode("A", {0.0f, 0.0f}));
+	NodePin pin;
+	pin.label = "out";
+	pin.typeTag = "generic";
+	const auto pinId = canvas.addOutputPin(nodeId, pin);
+	EXPECT_NE(static_cast<uint64_t>(pinId), 0u);
+	const auto* node = canvas.findNode(nodeId);
+	ASSERT_NE(node, nullptr);
+	ASSERT_EQ(node->outputs.size(), 1u);
+	EXPECT_EQ(node->outputs[0].id, pinId);
+	EXPECT_EQ(node->outputs[0].kind, PinKind::Output);
+}
+
+TEST(NodeCanvas, AddOutputPinFailsForUnknownNode) {
+	NodeCanvas canvas;
+	NodePin pin;
+	pin.label = "out";
+	const auto pinId = canvas.addOutputPin(core::UUID{99999}, pin);
+	EXPECT_EQ(static_cast<uint64_t>(pinId), 0u);
+}
+
+TEST(NodeCanvas, RemoveOutputPinDropsDanglingLinks) {
+	NodeCanvas canvas;
+	auto nodeA = makeNode("A", {0.0f, 0.0f}, {}, {"out"});
+	auto nodeB = makeNode("B", {100.0f, 0.0f}, {"in"}, {});
+	const auto pinOut = nodeA.outputs[0].id;
+	const auto pinIn = nodeB.inputs[0].id;
+	const auto idA = canvas.addNode(std::move(nodeA));
+	canvas.addNode(std::move(nodeB));
+	canvas.addLink(pinOut, pinIn);
+	ASSERT_EQ(canvas.links().size(), 1u);
+
+	canvas.removeOutputPin(idA, pinOut);
+	const auto* node = canvas.findNode(idA);
+	ASSERT_NE(node, nullptr);
+	EXPECT_TRUE(node->outputs.empty());
+	EXPECT_TRUE(canvas.links().empty()) << "Removing a pin must strip every link still attached to it.";
+}
+
+TEST(NodeCanvas, AddInputPinAppendsAndKeepsId) {
+	NodeCanvas canvas;
+	const auto nodeId = canvas.addNode(makeNode("A", {0.0f, 0.0f}));
+	NodePin pin;
+	pin.label = "in";
+	pin.typeTag = "generic";
+	const auto pinId = canvas.addInputPin(nodeId, pin);
+	EXPECT_NE(static_cast<uint64_t>(pinId), 0u);
+	const auto* node = canvas.findNode(nodeId);
+	ASSERT_NE(node, nullptr);
+	ASSERT_EQ(node->inputs.size(), 1u);
+	EXPECT_EQ(node->inputs[0].kind, PinKind::Input);
+}
+
+TEST(NodeCanvas, RemoveInputPinDropsDanglingLinks) {
+	NodeCanvas canvas;
+	auto nodeA = makeNode("A", {0.0f, 0.0f}, {}, {"out"});
+	auto nodeB = makeNode("B", {100.0f, 0.0f}, {"in"}, {});
+	const auto pinOut = nodeA.outputs[0].id;
+	const auto pinIn = nodeB.inputs[0].id;
+	canvas.addNode(std::move(nodeA));
+	const auto idB = canvas.addNode(std::move(nodeB));
+	canvas.addLink(pinOut, pinIn);
+	ASSERT_EQ(canvas.links().size(), 1u);
+
+	canvas.removeInputPin(idB, pinIn);
+	EXPECT_TRUE(canvas.links().empty());
+}
+
+TEST(NodeCanvas, ZoomLodThresholds) {
+	// Pin labels appear above 0.6, disappear at or below.
+	EXPECT_TRUE(shouldDrawPinLabels(1.0f));
+	EXPECT_TRUE(shouldDrawPinLabels(0.61f));
+	EXPECT_FALSE(shouldDrawPinLabels(0.6f));
+	EXPECT_FALSE(shouldDrawPinLabels(0.3f));
+
+	// Node titles survive longer — only fade out at the lowest zoom band.
+	EXPECT_TRUE(shouldDrawNodeTitles(1.0f));
+	EXPECT_TRUE(shouldDrawNodeTitles(0.5f));
+	EXPECT_TRUE(shouldDrawNodeTitles(0.31f));
+	EXPECT_FALSE(shouldDrawNodeTitles(0.3f));
+	EXPECT_FALSE(shouldDrawNodeTitles(0.05f));
 }

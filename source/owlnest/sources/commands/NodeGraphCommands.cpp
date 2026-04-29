@@ -91,4 +91,20 @@ void RemoveLinkCommand::undo(NodeCanvas& ioTarget) {
 
 void RemoveLinkCommand::redo(NodeCanvas& ioTarget) { ioTarget.removeLink(m_link.id); }
 
+// --- AddOutputPinCommand ---------------------------------------------------
+
+AddOutputPinCommand::AddOutputPinCommand(core::UUID iNodeId, gui::widgets::NodePin iPin)
+	: m_nodeId{iNodeId}, m_pin{std::move(iPin)} {}
+
+void AddOutputPinCommand::undo(NodeCanvas& ioTarget) { ioTarget.removeOutputPin(m_nodeId, m_pin.id); }
+void AddOutputPinCommand::redo(NodeCanvas& ioTarget) { ioTarget.addOutputPin(m_nodeId, m_pin); }
+
+// --- RemoveOutputPinCommand ------------------------------------------------
+
+RemoveOutputPinCommand::RemoveOutputPinCommand(core::UUID iNodeId, gui::widgets::NodePin iPin)
+	: m_nodeId{iNodeId}, m_pin{std::move(iPin)} {}
+
+void RemoveOutputPinCommand::undo(NodeCanvas& ioTarget) { ioTarget.addOutputPin(m_nodeId, m_pin); }
+void RemoveOutputPinCommand::redo(NodeCanvas& ioTarget) { ioTarget.removeOutputPin(m_nodeId, m_pin.id); }
+
 }// namespace owl::nest::commands

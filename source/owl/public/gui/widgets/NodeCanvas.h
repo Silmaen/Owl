@@ -66,6 +66,17 @@ struct Link {
 	core::UUID toPin;///< Input pin on the destination node.
 };
 
+/// @brief Should the canvas draw pin labels at the given zoom level?
+/// @param[in] iZoomFactor Current `GraphEditor` view zoom (1.0 = native).
+/// @return True while the zoom is high enough to make labels readable.
+[[nodiscard]] OWL_API auto shouldDrawPinLabels(float iZoomFactor) -> bool;
+
+/// @brief Should the canvas draw a node's title text at the given zoom level?
+/// @param[in] iZoomFactor Current `GraphEditor` view zoom (1.0 = native).
+/// @return True while the zoom is high enough to make the title readable. The
+///         node silhouette and connectors are always drawn regardless.
+[[nodiscard]] OWL_API auto shouldDrawNodeTitles(float iZoomFactor) -> bool;
+
 /**
  * @brief A generic node-graph canvas widget.
  *
@@ -95,6 +106,15 @@ public:
 	auto addNode(Node iNode) -> core::UUID;
 	/// @brief Remove a node along with every attached link.
 	void removeNode(core::UUID iId);
+	/// @brief Append an output pin to an existing node. Returns the pin's UUID, or 0 when
+	///        the node id is unknown. A fresh UUID is generated when `iPin.id` is zero.
+	auto addOutputPin(core::UUID iNodeId, NodePin iPin) -> core::UUID;
+	/// @brief Append an input pin to an existing node. See `addOutputPin` for semantics.
+	auto addInputPin(core::UUID iNodeId, NodePin iPin) -> core::UUID;
+	/// @brief Remove an output pin from a node. Drops every link still connected to it.
+	void removeOutputPin(core::UUID iNodeId, core::UUID iPinId);
+	/// @brief Remove an input pin from a node. Drops every link still connected to it.
+	void removeInputPin(core::UUID iNodeId, core::UUID iPinId);
 	/// @brief Add a link between two pins. Returns 0 if the validator vetoes it.
 	auto addLink(core::UUID iFromPin, core::UUID iToPin) -> core::UUID;
 	/// @brief Remove a link by id.
@@ -153,6 +173,11 @@ public:
 
 	/// @brief Enable/disable user edits (still rendered, but ignores input).
 	void setEnabled(bool iEnabled);
+
+	/// @brief Request that the next `onRender()` call zoom + pan the view so every node fits.
+	/// Single-shot — the canvas resets the request automatically once handled, matching the
+	/// `GraphEditor::Fit_AllNodes` parameter convention.
+	void requestFitToContent();
 
 private:
 	struct Impl;
