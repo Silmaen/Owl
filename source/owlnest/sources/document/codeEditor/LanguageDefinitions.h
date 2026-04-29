@@ -26,6 +26,7 @@ enum struct Language : uint8_t {
 	Json,
 	Markdown,
 	Xml,
+	Bash,///< POSIX shell / bash scripts. Custom highlighter (no built-in in `imgui_color_text_edit`).
 };
 
 /// @brief Best-effort language detection from a filesystem extension (e.g. `.lua`, `.py`).

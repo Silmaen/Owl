@@ -25,6 +25,15 @@ foreach (child ${children})
             target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${ENGINE_NAME})
             target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${ENGINE_NAME}Private)
             target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test Owl_BaseTest)
+            # scene_tests includes the editor's MarkdownDocument parser source directly so we add
+            # the editor source root to the include path and link md4c (the parser dependency).
+            # Plain-form linking is required to stay consistent with the calls above.
+            if (${child} STREQUAL "scene_tests")
+                target_include_directories(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
+                        ${CMAKE_SOURCE_DIR}/source/owlnest/sources)
+                find_package(md4c CONFIG REQUIRED)
+                target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test md4c::md4c)
+            endif ()
             add_test(${PROJECT_PREFIX_LOWER}_${child}_UTests ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml)
             set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 3600)
             # Tests that touch shared process-level resources (freetype, GLFW init, OpenAL, msdfgen globals)

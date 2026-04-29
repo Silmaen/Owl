@@ -48,6 +48,20 @@ See [Contributing Guide](doc/pages/contributing.md) for the full style reference
 4. Write clear, focused commit messages
 5. Open a pull request against `main` with a description of what and why
 
+## Documentation Conventions
+
+`doc/pages/*.md` plus the canonical root files (`README.md`, `CHANGELOG.md`,
+`CONTRIBUTING.md`) feed both Doxygen and the in-editor help panel. The bundle
+step (`cmake/HelpAssets.cmake`) strips Doxygen anchors (`{#page-name}`),
+`[TOC]` lines, and rewrites `(../images/foo.svg)` to `(images/foo.svg)`, so
+those source-side conventions remain valid for Doxygen builds.
+
+Mermaid diagrams (` ```mermaid ` fences) render natively on GitHub and through
+mermaid.js in the Doxygen HTML output. The in-editor help panel does **not**
+execute JavaScript: mermaid blocks render as plain code blocks there. Prefer
+mermaid for architecture / flow / sequence diagrams; the SVGs in `doc/images/`
+remain valid for static figures.
+
 ## Adding Tests
 
 Tests use Google Test and are auto-discovered from `test/<category>_tests/` directories.

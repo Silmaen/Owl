@@ -10,6 +10,9 @@
 
 #include "Core.h"
 
+#include <chrono>
+#include <vector>
+
 namespace owl::core {
 constexpr float g_Millis{1000.f};
 /**

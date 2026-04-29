@@ -94,7 +94,7 @@ void SchedulerImpl::frameInternal(const bool iTreatQueue) {
 	while (iTreatQueue && !tasksQueue.empty() && (runningTasks.size() < maxRunningTasks)) {
 		auto& task = tasksQueue.front();
 		// Bridge std::promise to keep std::future<void> in the public Task header.
-		auto promise = std::make_shared<std::promise<void>>();
+		auto promise = mkShared<std::promise<void>>();
 		task->m_future = promise->get_future();
 		executor.silent_async([action = task->m_action, promise]() -> void {
 			action();

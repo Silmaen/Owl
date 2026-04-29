@@ -208,6 +208,15 @@ scene authoring, and cross-platform packaging from any host.
         - 3D gizmos (translate, rotate, scale in 3 axes)
         - Grid snapping, vertex snapping
         - Mesh import preview
+- Scripting
+    - ![Planned][planned] Script debugging aids
+        - Breakpoint markers (visual only — log-based, not a step debugger);
+          the underlying `TextEditor::AddMarker` API is already exposed by the
+          `imgui_color_text_edit` package
+        - Live variable watch panel (read globals from running `ScriptInstance`
+          via `lua_pushglobaltable` + `lua_next`)
+        - Deferred from v0.1.1 — needs the watch UI design pinned down before
+          implementation
 - Cross-Platform Packaging
     - ![Planned][planned] Cross-compile packaging from any host
         - Package a Linux game from Windows and a Windows game from Linux
@@ -217,6 +226,31 @@ scene authoring, and cross-platform packaging from any host.
         - Choose target: Linux x64, Windows x64 (independently of host)
         - Automatic runner binary selection for target platform
         - Platform-specific post-processing (launcher script for Linux, .zip for Windows)
+- In-Editor Documentation
+    - ![Planned][planned] Mermaid diagram rendering in the help panel
+        - Today the md4c-based renderer treats ` ```mermaid ` fences as plain code blocks; the
+          actual diagrams (used by `architecture.md`, `editor.md`, `node_graph.md`, `physics.md`,
+          `renderer.md`, `scene.md`, `scripting.md`, `sound.md`) only render on GitHub / Doxygen
+        - Build-time pre-render of mermaid blocks → SVG (or PNG) files in
+          `engine_assets/help/images/mermaid/`, with the markdown rewriter swapping each fence
+          for an `![alt](images/mermaid/<sha>.svg)` reference. No runtime JS/Node dependency
+          (constraint set in v0.1.1) — pre-rendering can run with a depmanager-shipped tool or
+          a custom subset renderer in C++
+        - Update `cmake/HelpAssets.cmake` to invoke the pre-renderer and surface the cache files
+        - Tests: assert each bundled `engine_assets/help/*.md` no longer contains ` ```mermaid `
+          after the bundle step and that the rasterised diagram files exist
+    - ![Planned][planned] Help-panel rendering polish (V2)
+        - Hanging indent in unordered/ordered lists (current V1 wraps to column 0 — see
+          `MarkdownPreview::renderList` comment)
+        - Inline `code` rendered as a flat span (today it goes through `SmallButton` for the
+          tinted background — works but adds a clickable affordance that reads as a button)
+        - Ordered-list numbering survives `is_tight` md4c quirks (current OL counter is
+          renderer-side, not parser-side)
+        - Native rendering of GFM task lists `[ ]` / `[x]` (currently shown as inline text)
+        - Optional dark/light theme switch for the help panel content (today inherits from the
+          editor theme via `ImGuiCol_Text` / `Owl::Theme::buttonHovered`)
+        - Side-by-side preview of the source `.md` next to the rendered output (debug aid for
+          contributors editing pages)
 
 ## v0.2.0 -- Expected 2026-08-01
 
@@ -302,7 +336,7 @@ a 2D lighting system.
         - Benefits: consistent look-and-feel, truly non-blocking, theme-aware
         - Replaces the current sync `FileDialog::openFile/saveFile/pickFolder` blocking calls
 
-## v0.1.1 -- Editor Polish & Multi-Document
+## v0.1.1 -- 2026-04-30
 
 **Goal:** Transform the editor from a single-scene tool into a multi-document workspace
 with dedicated editors for different asset types. All long-running operations become
@@ -393,13 +427,23 @@ asynchronous with progress feedback.
           `UiLayer::setUiFontSize` / `setCodeFontSize`
         - Dirty via `ImGuiWindowFlags_UnsavedDocument`, Ctrl+S to save, close via
           `Ctrl+W` / `Scene > Close` modal
-    - ![Planned][planned] Script debugging aids
-        - Breakpoint markers (visual only — log-based, not a step debugger)
-        - Live variable watch panel (read globals from running ScriptInstance)
-    - ![Planned][planned] Live preview for markup documents
-        - Markdown preview rendered side-by-side (Doxygen-like) with the editor
-        - SVG preview rendered via the existing `lunasvg` integration
-        - Toggle button in the ribbon (or split-view inside the code document)
+    - ![Done][done] Live preview for markup documents
+        - `MarkdownPreview` (`source/owlnest/sources/document/codeEditor/`) is a
+          full Markdown renderer: `MarkdownDocument` parses CommonMark + GFM via
+          **md4c** (new DepManager recipe `OwlDependencies/Libs/md4c/`, replaces
+          the previous `imgui_markdown` integration) and the renderer walks the
+          parsed block list to emit ImGui draw calls — scaled headings, GFM
+          tables (`BeginTable`), code blocks rendered with a cached read-only
+          `TextEditor` (full syntax highlighting), local images via `lunasvg` /
+          `stb_image`, external `https://` images and links open in the user's
+          default browser via the new `core::utils::openExternalUrl`. Update is
+          debounced (~250 ms); auto-enabled on `.md`, toggleable from the
+          **Text → Preview** ribbon button.
+        - `SvgPreview` rasterizes the live SVG via `lunasvg` into a `Texture2D`
+          (debounced, capped at 2048 px per side, ARGB-premul → RGBA-straight
+          conversion shared with `IconBank`); auto-enabled on `.svg` / `.xml`
+        - `CodeEditorDocument` gained a vertical splitter between the editor and
+          the preview pane, with a draggable handle and per-document split ratio
 - Node Graph Editor
     - ![Done][done] Node graph framework
         - Reusable `gui::widgets::NodeCanvas` widget — UUID-based nodes/pins/links, typed pins,
@@ -487,7 +531,8 @@ asynchronous with progress feedback.
               normalized position inside `[firstFrame, lastFrame]`
 - Packaging
     - ![Done][done] Packaging wizard in Owl Nest
-        - Pre-packaging validation: `AssetScanner` warnings output for unresolvable texture/sound/script/scene/font references
+        - Pre-packaging validation: `AssetScanner` warnings output for unresolvable texture/sound/script/scene/font
+          references
         - Validation modal before pack with issue list + "Proceed anyway" / "Cancel" buttons
         - OwlRunner executable check + empty-assets check
         - Dedicated wizard panel: destination input + Browse, target platform (read-only), compress/obfuscate options
@@ -507,10 +552,23 @@ asynchronous with progress feedback.
           current project recursively via `std::filesystem::copy`, then switches the editor to
           the new directory
 - UX & Quality
-    - ![Planned][planned] In-editor help pages
-        - Built-in documentation browser (searchable, linked from panels)
-        - Context-sensitive help (F1 on a component opens its doc page)
-        - Getting started guide accessible from the welcome screen
+    - ![Done][done] In-editor help pages
+        - `cmake/HelpAssets.cmake` bundles `doc/pages/*.md` plus `README` /
+          `CHANGELOG` / `CONTRIBUTING` into `engine_assets/help/` at configure
+          time and writes an `index.yml` describing every page (title parsed
+          from the first H1 line, Doxygen anchor stripped). The bundle ships
+          inside packaged builds via the existing `engine_assets/` install rule
+        - `panel::HelpPanel` reads the index, renders the selected `.md`
+          through `codeEditor::MarkdownPreview`, supports search, categorised
+          navigation, and a back/forward history. Internal `[link](other.md)`
+          clicks navigate within the panel; external `http(s)://` links log
+          the URL for now
+        - F1 (`help.context` action) opens the page that documents the component
+          header most recently hovered in the SceneHierarchy inspector
+          (`SceneHierarchy::lastHoveredComponentName`), falling back to the
+          editor overview when nothing is hovered
+        - The Welcome screen surfaces a **Getting Started** entry pointing to
+          `getting_started.md`, and the File ribbon tab gained a **Help** group
     - ![Done][done] Tooltips everywhere with hover delay
         - Reusable `fieldTooltip()` helper with `DelayNormal` (~0.4s) hover delay
         - Tooltips on all 7 trigger types with descriptions

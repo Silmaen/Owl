@@ -78,6 +78,12 @@ public:
 	/// @param[in] iDoc Active document (non-owning, may be null when no document is open).
 	void setActiveDocument(Document* iDoc) { mp_activeDocument = iDoc; }
 
+	/// @brief Name of the component header most recently hovered while the inspector was rendered.
+	///
+	/// Cleared on every frame at the start of `onImGuiRender`. Used by `EditorLayer::onContextualHelp`
+	/// (F1) to pick the help page that documents the component currently under the mouse.
+	[[nodiscard]] static auto lastHoveredComponentName() -> const std::string&;
+
 private:
 	void renderHierarchy();
 	void renderProperties();

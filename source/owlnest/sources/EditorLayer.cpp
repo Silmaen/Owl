@@ -136,6 +136,8 @@ void buildIconBank() {
 		{"properties",        resolve("icons/panels/properties")},
 		{"log",               resolve("icons/panels/log")},
 		{"viewport",          resolve("icons/panels/viewport")},
+		{"info",              resolve("icons/panels/info")},
+		{"preview",           resolve("icons/panels/preview")},
 		// Component icons
 		{"comp_transform",    resolve("icons/components/transform")},
 		{"comp_camera",       resolve("icons/components/camera")},
@@ -554,6 +556,9 @@ void EditorLayer::onAttach() {
 				}
 			}
 		});
+	m_actionRegistry.registerAction("help.context", "Help",
+		{input::key::F1, Modifiers::None},
+		[this] () -> void { onContextualHelp(); });
 	// clang-format on
 
 	// Apply saved keybinding overrides
@@ -745,6 +750,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	}
 	m_logPanel.onImGuiRender();
 	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
+	m_helpPanel.onImGuiRender(iTimeStep);
 	m_asyncProgress.onImGuiRender();
 	renderWelcomeScreen();
 	renderPackWizardModal();
@@ -774,6 +780,9 @@ void EditorLayer::renderWelcomeScreen() {
 		ImGui::SameLine();
 		if (iconBank.iconButton("open", "Open Project...", {ImGui::GetFontSize() * 8.f, 0}))
 			openProject();
+		ImGui::SameLine();
+		if (iconBank.iconButton("info", "Getting Started", {ImGui::GetFontSize() * 8.f, 0}))
+			m_helpPanel.open("getting_started");
 
 		ImGui::Spacing();
 		ImGui::Separator();
@@ -919,6 +928,11 @@ void EditorLayer::buildRibbon() {
 												.tooltip = "Create a new spritesheet animation clip (.owlanim)",
 												.onClick = [this] () -> void { newAnimationClip(); },
 												.size = Size::Large});
+	const auto gHelp = m_ribbon.addGroup(fileTab, "Help");
+	m_ribbon.addButton(fileTab, gHelp, Button{.iconName = "info", .label = "Help",
+											  .tooltip = tipWithShortcut("Open the editor help", "help.context"),
+											  .onClick = [this] () -> void { m_helpPanel.open(); },
+											  .size = Size::Large});
 	const auto gExit = m_ribbon.addGroup(fileTab, "Session");
 	m_ribbon.addButton(fileTab, gExit, Button{.iconName = "exit", .label = "Exit",
 											  .tooltip = "Quit Owl Nest",
@@ -1114,6 +1128,20 @@ void EditorLayer::buildCodeTab() {
 											  },
 											  .onClick = [this] () -> void { requestCloseActiveDocument(); },
 											  .size = Size::Large});
+	const auto gPreview = m_ribbon.addGroup(codeTab, "Preview");
+	m_ribbon.addButton(codeTab, gPreview,
+					   Button{.iconName = "preview",
+							  .label = "Preview",
+							  .tooltip = "Toggle the live preview pane (Markdown / SVG)",
+							  .isEnabled = [this] () -> bool {
+								  auto* d = dynamic_cast<CodeEditorDocument*>(m_documents.getActive());
+								  return d != nullptr && d->canShowPreview();
+							  },
+							  .onClick = [this] () -> void {
+								  if (auto* d = dynamic_cast<CodeEditorDocument*>(m_documents.getActive()))
+									  d->togglePreview();
+							  },
+							  .size = Size::Large});
 }
 
 void EditorLayer::buildNodeGraphTab() {
@@ -2309,6 +2337,33 @@ void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, co
 	const auto name = info.has_value() ? info->name : iPrefabPath.stem().string();
 	doc->undoManager().push(mkUniq<commands::InstantiatePrefabCommand>(root, *activeScene, name));
 	setSelectedEntity(root);
+}
+
+void EditorLayer::onContextualHelp() {
+	// Mapping from component type name (component::T::name()) to the help page id that best
+	// documents that area. Unmapped or no-hover → editor overview.
+	static const std::unordered_map<std::string, std::string> kComponentToPage = {
+		{"Transform", "scene"},      {"Hierarchy", "scene"},
+		{"Visibility", "scene"},     {"Tag", "scene"},
+		{"PhysicBody", "physics"},   {"Trigger", "scene"},
+		{"LuaScript", "scripting"},  {"NativeScript", "scripting"},
+		{"Camera", "scene"},         {"SoundSource", "sound"},
+		{"SoundListener", "sound"},  {"SpriteRenderer", "renderer"},
+		{"AnimatedSpriteRenderer", "renderer"}, {"CircleRenderer", "renderer"},
+		{"BackgroundTexture", "renderer"}, {"Text", "renderer"},
+		{"Player", "scene"},         {"PrefabLink", "scene"},
+		{"EntityLink", "scene"},     {"Canvas", "editor"},
+		{"UIRect", "editor"},        {"UIText", "editor"},
+		{"UIImage", "editor"},       {"UIButton", "editor"},
+		{"UIPanel", "editor"},       {"UIProgressBar", "editor"},
+		{"UISlider", "editor"},
+	};
+	const auto& hovered = panel::SceneHierarchy::lastHoveredComponentName();
+	if (const auto it = kComponentToPage.find(hovered); it != kComponentToPage.end()) {
+		m_helpPanel.open(it->second);
+		return;
+	}
+	m_helpPanel.open();
 }
 
 }// namespace owl::nest

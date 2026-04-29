@@ -71,7 +71,7 @@ If an SVG already exists, keep it alongside the mermaid version for Doxygen comp
 Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/):
 
 ```markdown
-## [Unreleased] (0.1.1-dev)
+## [0.1.1] (0.1.1)
 
 ### Added
 - New feature description

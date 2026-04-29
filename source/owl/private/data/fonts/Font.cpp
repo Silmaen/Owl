@@ -73,7 +73,7 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	for (auto [begin, end]: charsetRanges) {
 		for (uint32_t c = begin; c <= end; c++) charset.add(c);
 	}
-	m_data = std::make_shared<MsdfData>();
+	m_data = mkShared<MsdfData>();
 	constexpr double fontScale = 1.0;
 	m_data->fontGeometry = msdf_atlas::FontGeometry(&m_data->glyphs);
 	int glyphsLoaded = m_data->fontGeometry.loadCharset(font, fontScale, charset);

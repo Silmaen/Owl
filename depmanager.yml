@@ -50,6 +50,9 @@ packages:
     version: 1.2.2
   magic_enum:
     version: 0.9.7
+  md4c:
+    version: 0.5.2
+    kind: "static"
   msdfgen:
     version: 1.12.1
     kind: "static"

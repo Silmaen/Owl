@@ -36,6 +36,16 @@ if (${PROJECT_PREFIX}_USE_RELEASE_THIRD_PARTY)
 endif ()
 
 #
+# ---=== Bundle help pages ===---
+# Copy the Markdown documentation pages from `doc/pages/` plus the canonical
+# README/CHANGELOG/CONTRIBUTING into `engine_assets/help/`, and generate a
+# small `index.yml` describing each page (id, title, category). The runtime
+# `HelpPanel` reads this directory; the existing `engine_assets/` install
+# rule embeds it into packaged builds automatically.
+include(HelpAssets)
+owl_bundle_help_assets()
+
+#
 # ---=== The Program ===---
 #
 add_subdirectory(source)

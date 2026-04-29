@@ -48,3 +48,6 @@ api.py
 Doxyfile
 *.log
 agent-*
+
+# Generated help bundle (owl_bundle_help_assets in cmake/HelpAssets.cmake)
+/engine_assets/help/

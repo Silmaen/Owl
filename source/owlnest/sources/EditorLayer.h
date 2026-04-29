@@ -19,6 +19,7 @@
 #include "document/SceneDocument.h"
 #include "panel/AsyncProgressModal.h"
 #include "panel/ContentBrowser.h"
+#include "panel/HelpPanel.h"
 #include "panel/LogPanel.h"
 #include "panel/Parameters.h"
 #include "panel/ProjectSettings.h"
@@ -249,7 +250,14 @@ private:
 	panel::LogPanel m_logPanel;
 	panel::SettingsPanel m_settingsPanel;
 	panel::AsyncProgressModal m_asyncProgress;
+	panel::HelpPanel m_helpPanel;
 
+public:
+	/// @brief Open the in-editor help on the contextual page for the component currently hovered
+	///        in the SceneHierarchy inspector, or the editor overview when none is hovered.
+	void onContextualHelp();
+
+private:
 	// Action registry
 	ActionRegistry m_actionRegistry;
 };

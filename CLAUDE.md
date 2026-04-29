@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Owl (v0.1.1-dev) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
+Owl (v0.1.1) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
 (GLFW, Null), and sound backends (OpenAL, Null). It uses an Entity-Component-System architecture (EnTT) with
 **hierarchical parent-child entities** and includes a scene editor (Owl Nest). Supported platforms: Linux (x64/arm64)
 and Windows (x64, MinGW).
