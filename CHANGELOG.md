@@ -5,10 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] (0.1.1-dev)
+## [0.1.1] - 2026-04-30
 
 ### Added
 
+- **Full Markdown rendering for the in-editor help and live preview**
+    - New `codeEditor::MarkdownDocument` parser backed by **md4c 0.5.2** (new
+      DepManager recipe at `OwlDependencies/Libs/md4c/`) — CommonMark + GFM
+      tables / strikethrough / autolinks. Public block model
+      (`MdHeading`, `MdParagraph`, `MdCodeBlock`, `MdImage`, `MdTable`,
+      `MdList`, `MdBlockQuote`, `MdHRule`) covers everything the help pages use.
+      Lazy implicit-paragraph creation handles md4c's tight-list quirk where
+      `MD_BLOCK_P` is skipped inside `MD_BLOCK_LI`.
+    - Rewritten `codeEditor::MarkdownPreview` walks the parsed block list and
+      emits ImGui draw calls directly: scaled headings (1.60× / 1.30× / 1.15× of
+      body via `PushFont(font, size)`), inline emphasis / strong / strikethrough
+      / inline code, GFM tables with `BeginTable` (borders + row stripes), code
+      blocks rendered through cached read-only `TextEditor` widgets with full
+      syntax highlighting (Lua / C / C++ / Python / YAML / JSON / Markdown / XML
+      / **Bash** — new `Language::Bash` definition with POSIX/bash keywords and
+      common shell built-ins), block / inline images loaded via `lunasvg` (SVG)
+      and `stb_image` (raster) with on-disk cache per source path. PNG/JPG
+      textures load through the engine's `pat:` serialized form and are
+      displayed with flipped UVs to compensate for stb_image's bottom-up loading.
+    - External links and `https://` images are preserved in the rendered output;
+      clicks open the user's default browser via the new
+      `core::utils::openExternalUrl` helper (Linux: `xdg-open` via fork+execvp;
+      Windows: `ShellExecuteW`; URL scheme restricted to `http(s)://` and
+      `mailto:` for safety).
+    - `cmake/HelpAssets.cmake` now scrubs Doxygen syntax at bundle time:
+      `# Title {#page-anchor}` → `# Title`, `[TOC]` lines dropped,
+      `(../images/foo.svg)` rewritten to `(images/foo.svg)`,
+      `(engine_assets/<dir>/foo.png)` (used by the README logo) rewritten to
+      `(images/foo.png)`, and `doc/images/` plus `engine_assets/logo/` copied
+      into `engine_assets/help/images/`. HTTPS images referenced from any
+      bundled markdown (e.g. the 24 shields.io badges in the README) are
+      downloaded once via `file(DOWNLOAD)` into
+      `engine_assets/help/images/badges/<sha1>.svg` and the references
+      rewritten to local paths so the runtime renderer never has to fetch.
+    - `nest::panel::HelpPanel` now defaults to the project README on first
+      open; a draggable splitter between the page tree and the content pane
+      lets the user resize the navigation column (clamped to a 120 px minimum
+      per side).
+    - `imgui_markdown` removed from `depmanager.yml` (replaced).
+- **Live preview for markup documents**
+    - `codeEditor::SvgPreview` rasterises the live SVG buffer through `lunasvg`
+      into a `Texture2D` (cap 2048 px / side, ARGB-premul → RGBA-straight).
+    - `CodeEditorDocument` now offers a vertical splitter with a draggable
+      handle when the active language is Markdown or XML/SVG. Auto-enabled on
+      load, toggleable via the new **Text → Preview** ribbon button.
+- **In-editor help pages**
+    - `cmake/HelpAssets.cmake` bundles `doc/pages/*.md` plus root README /
+      CHANGELOG / CONTRIBUTING into `engine_assets/help/` at configure time and
+      generates an `index.yml` (id, title, category, path).
+    - `nest::panel::HelpPanel` reads the index, renders the selected page via
+      `MarkdownPreview`, supports search, categorised navigation, back/forward
+      history. Internal `[link](other.md)` clicks navigate within the panel.
+    - `help.context` action (default shortcut **F1**) opens the help page that
+      documents the SceneHierarchy component header most recently hovered
+      (`SceneHierarchy::lastHoveredComponentName`); falls back to the editor
+      overview when nothing is hovered.
+    - File ribbon tab gained a **Help** group; the Welcome screen surfaces a
+      **Getting Started** entry pointing to the new
+      `doc/pages/getting_started.md`.
 - **Animation editor**
     - New reusable `.owlanim` asset (`scene::AnimationClip` —
       `source/owl/public/scene/AnimationClip.h`): texture, grid, frame range, frame
@@ -140,7 +199,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       node select and **double-click** (detected in the wrapper since GraphEditor has no native
       double-click signal). Pimpl over `GraphEditor` from the existing `imguizmo` 1.92.7 DepManager
       package — the bundle ships GraphEditor + ImSequencer + ImCurveEdit + ImGradient + ImZoomSlider
-      + ImLightRig alongside ImGuizmo, so no new dependency was needed
+        + ImLightRig alongside ImGuizmo, so no new dependency was needed
     - `gui::widgets::NodeCanvasSerializer` — domain-agnostic YAML round-trip (`.owlflow` format)
       for full canvas save/load, plus `serializeSubset`/`pasteSubset` for copy/paste with fresh UUIDs
     - `NodeGraphDocument` — third `DocumentType` alongside Scene and Code, generic node-graph
@@ -163,7 +222,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       `test/gui_tests/NodeCanvasSerializer_test.cpp` (empty/full canvas round-trip, custom data
       preservation, malformed YAML rejection, subset serialize, paste with fresh UUIDs)
 - **Undo system templatized over its target type**
-    - Templatized `UndoCommand` + `UndoManager` (parameterized over the edited `Target`) in `source/owlnest/sources/UndoCommand.h` /
+    - Templatized `UndoCommand` + `UndoManager` (parameterized over the edited `Target`) in
+      `source/owlnest/sources/UndoCommand.h` /
       `UndoManager.h` — both now header-only templates, `IUndoTarget` as common marker base
     - `SceneUndoCommand` / `SceneUndoManager` aliases preserve the current editor behaviour one-to-one;
       every existing command (`Entity*`, `Component*`, `Hierarchy*`, `Prefab*`) migrated to
@@ -220,14 +280,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       pushed brighter so the active tab stands out clearly against dimmed siblings
     - `EditorLayer` replaces the menu bar + floating Play/Pause toolbar + gizmo `ButtonBar` with
       a single ribbon, a contextual **Scene** / **Text** tab switches on the active document type
-      - **File**: Project (New / Open large, Save / Save As / Close small), Recent (large button
-        opens a popup listing `EditorSettings::recentProjects`), Package (Pack Game large),
-        Session (**Exit large**)
-      - **Edit**: History (Undo / Redo large), Settings (Engine / Editor / Project small)
-      - **Scene**: File (New / Open large, Save / Save As / Import small, **Close large** last),
-        Playback (Play / Stop large, Pause / Step small), Gizmo (Translate / Rotate / Scale
-        **large**), Package (Pack Scene large)
-      - **Text**: File (Save / **Close** large)
+        - **File**: Project (New / Open large, Save / Save As / Close small), Recent (large button
+          opens a popup listing `EditorSettings::recentProjects`), Package (Pack Game large),
+          Session (**Exit large**)
+        - **Edit**: History (Undo / Redo large), Settings (Engine / Editor / Project small)
+        - **Scene**: File (New / Open large, Save / Save As / Import small, **Close large** last),
+          Playback (Play / Stop large, Pause / Step small), Gizmo (Translate / Rotate / Scale
+          **large**), Package (Pack Scene large)
+        - **Text**: File (Save / **Close** large)
     - New `saveProjectAs()`: picks a destination folder, duplicates the current project
       recursively via `std::filesystem::copy`, then switches the editor to the new location
     - New `CodeEditorDocument` (`DocumentType::Code`): a second kind of `Document` that opens
@@ -350,7 +410,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Version bumped to **0.1.1-dev**
+- Version bumped to **0.1.1**
 - Tests that touch process-level resources (freetype, GLFW, OpenAL, msdfgen, script) now serialize
   via CMake `RESOURCE_LOCK` to avoid sporadic SEGFAULTs in parallel ctest runs
 - LuaBindings: removed unused `iArgIndex` parameter from `findEntity`
@@ -415,6 +475,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `std::filesystem::temp_directory_path()`
 - First-time Slang shader compilation no longer freezes the window — loading screen animates
   between each shader
+- Test scene textures (`source/owlnest/assets/scenes/test_levels{,2}.owl`) used absolute
+  `pat:/source/.../mario.png` paths inherited from a previous host layout — converted to
+  portable `nam:textures/mario.png` so they resolve through the engine's asset directories.
 
 ## [0.1.0] - 2026-04-16
 

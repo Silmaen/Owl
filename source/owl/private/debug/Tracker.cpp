@@ -7,7 +7,7 @@
  */
 
 #include "owlpch.h"
-#include <iostream>
+#include <cstdio>
 #include <stack>
 
 #include "debug/Tracker.h"
@@ -89,9 +89,9 @@ namespace {
 class StateManager {
 public:
 	static void allocate() {
-		s_globalAllocationState = std::make_shared<AllocationState>();
-		s_currentAllocationState = std::make_shared<AllocationState>();
-		s_lastAllocationState = std::make_shared<AllocationState>();
+		s_globalAllocationState = mkShared<AllocationState>();
+		s_currentAllocationState = mkShared<AllocationState>();
+		s_lastAllocationState = mkShared<AllocationState>();
 	}
 	static void pushMemory(void* iLocation, const size_t iSize) {
 		if (!s_globalAllocationState)
@@ -252,7 +252,11 @@ void AllocationState::pushMemory(void* iLocation, size_t iSize) {
 	allocatedMemory += iSize;
 	memoryPeek = std::max(memoryPeek, allocatedMemory);
 	if (!g_AntiLoop)
-		std::cerr << "Problème d'antiloop!!!\n";
+		// Bypass the spdlog-backed `OWL_CORE_*` macros: those allocate, which would re-enter the
+		// tracker and recurse forever. We also avoid `std::println` here because libstdc++ marks
+		// the format helpers as potentially throwing, which would propagate through any caller
+		// that is itself `noexcept` (e.g. an allocator hook). Plain `std::fputs` is non-throwing.
+		std::fputs("Tracker: anti-loop guard tripped during pushMemory\n", stderr);
 	allocs.emplace_back(iLocation, iSize);
 }
 

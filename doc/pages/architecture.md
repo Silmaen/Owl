@@ -10,21 +10,22 @@ This page describes the high-level architecture of the Owl engine.
 
 The engine library (`source/owl/`) is organized into the following modules:
 
-| Module     | Description                                                |
-|------------|------------------------------------------------------------|
-| `core`     | Application lifecycle, logging, assertions, smart pointers |
-| `renderer` | Rendering abstraction, buffers, shaders, framebuffers      |
-| `scene`    | Entity-Component-System (EnTT), scene graph, components    |
-| `physic`   | 2D physics (Box2D integration)                             |
-| `sound`    | Audio playback and device management                       |
-| `input`    | Keyboard, mouse, and gamepad input abstraction             |
-| `window`   | Window creation and management                             |
-| `gui`      | ImGui/ImGuizmo integration for editor UI                   |
-| `data`     | Geometry, mesh loading (OBJ, glTF, FBX), data structures   |
-| `math`     | Math utilities (zeus library)                              |
-| `debug`    | Profiling, memory tracking, stack traces (cpptrace)        |
-| `event`    | Event system (application, input, window events)           |
-| `io`       | File I/O, serialization (YAML, XML)                        |
+| Module     | Description                                                       |
+|------------|-------------------------------------------------------------------|
+| `core`     | Application lifecycle, logging, assertions, smart pointers, tasks |
+| `renderer` | Rendering abstraction, buffers, shaders, framebuffers             |
+| `scene`    | Entity-Component-System (EnTT), scene graph, components, save/load |
+| `script`   | Lua 5.5 embedded scripting (sandboxed `LuaEngine` per entity)     |
+| `physic`   | 2D physics (Box2D integration)                                    |
+| `sound`    | Audio playback and device management                              |
+| `input`    | Keyboard, mouse, and gamepad input abstraction                    |
+| `window`   | Window creation and management                                    |
+| `gui`      | ImGui/ImGuizmo integration for editor UI                          |
+| `data`     | Geometry, mesh loading (OBJ, glTF, FBX), data structures          |
+| `math`     | Math utilities (zeus library)                                     |
+| `debug`    | Profiling, memory tracking, stack traces (cpptrace)               |
+| `event`    | Event system (application, input, window events)                  |
+| `io`       | File I/O, serialization (YAML, XML, asset packing)                |
 
 Public headers live in `source/owl/public/` and implementation files in `source/owl/private/`,
 both mirroring the module structure.

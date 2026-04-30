@@ -131,13 +131,35 @@ appears next to the scene tabs.
 | XML/SVG  | `.xml`, `.svg`                                  | custom      |
 
 - Powered by the **imgui_color_text_edit** widget (MIT), fetched through DepManager
-  (`imgui_color_text_edit` 1.92.6 in `depmanager.yml`; `imgui` aligned to 1.92.6-docking).
+  (`imgui_color_text_edit` 1.92.7 in `depmanager.yml`; `imgui` aligned to 1.92.7-docking).
 - Ctrl+S saves in place; `Scene > Close` (or Ctrl+W) closes with a
   discard/cancel prompt when the buffer is dirty.
 - The footer status line shows the detected language, cursor line/column, and
   INS/OVR insert mode.
-- Live preview for Markdown and SVG is on the roadmap — for now those documents
-  are edited with syntax highlighting only.
+
+### Live Preview (Markdown, SVG)
+
+When the active document is Markdown or XML/SVG the editor splits horizontally
+into the source buffer (left) and a live preview pane (right). A draggable
+splitter sets the per-document ratio; the **Text → Preview** ribbon button
+toggles the preview off when more horizontal room is needed.
+
+- Markdown is parsed by `md4c` (CommonMark + GFM tables / strikethrough /
+  autolinks, DepManager package) into a typed block list — `MdHeading`,
+  `MdParagraph`, `MdCodeBlock`, `MdImage`, `MdTable`, `MdList`, `MdBlockQuote`,
+  `MdHRule` (`MarkdownDocument.h`). The renderer walks the list and emits
+  ImGui calls directly: scaled headings via `PushFont(font, baseSize × ratio)`,
+  inline emphasis / strong / strikethrough / inline code / links, GFM tables
+  through `BeginTable`, code blocks through cached read-only `TextEditor`
+  widgets with full syntax highlighting (Lua, C, C++, Python, YAML, JSON,
+  Markdown, XML, **Bash**), local images via `lunasvg` (SVG) or `stb_image`
+  (raster), and external `https://` links / images that open in the user's
+  default browser via `core::utils::openExternalUrl`.
+- SVG is rasterised by `lunasvg` into a `Texture2D` capped at 2048 px per side;
+  parse failures render a "Failed to parse SVG" message in place of the image.
+- Both renderers are debounced (~250 ms) so editing doesn't re-rasterise on
+  every keystroke. The same `MarkdownPreview` widget is also used by the in-
+  editor help browser (see **Help & Documentation** below).
 
 ## Documents
 
@@ -707,6 +729,54 @@ Its contents change depending on the editor state.
 In Edit mode a secondary button bar appears in the top-right corner of the viewport.
 It contains toggle buttons for Translation, Rotation, and Scale gizmo modes. Clicking
 an active gizmo button deactivates it (returning to None mode).
+
+## Help & Documentation
+
+Owl Nest ships a built-in help browser that mirrors the Doxygen documentation
+maintained in `doc/pages/`. The bundle is produced by `cmake/HelpAssets.cmake`
+at configure time:
+
+- `doc/pages/*.md` plus the canonical root files (`README.md`, `CHANGELOG.md`,
+  `CONTRIBUTING.md`) are copied into `engine_assets/help/`.
+- An `index.yml` describing every page (id, title, category, path) is generated
+  alongside; `panel::HelpPanel` reads it on first open.
+
+### Opening Help
+
+| Action                            | How                                              |
+|-----------------------------------|--------------------------------------------------|
+| Default landing page (`Owl` README) | **File → Help** ribbon button                  |
+| Contextual help                   | `F1` (`help.context` action)                     |
+| Getting Started guide             | **Getting Started** button on the Welcome screen |
+
+`F1` reads the component header most recently hovered in the SceneHierarchy
+inspector (`SceneHierarchy::lastHoveredComponentName`) and routes to the page
+that documents that area — e.g. hovering `LuaScript` opens `scripting.md`,
+hovering `PhysicBody` opens `physics.md`. When nothing is hovered the help
+panel opens on the editor overview.
+
+### Inside the Panel
+
+- **Left side** — tree of pages grouped by category, with a search filter.
+- **Right side** — Markdown content rendered through the same
+  `MarkdownPreview` widget that powers the live preview pane in code documents.
+- **Splitter** — a draggable handle between the two panes adjusts the tree
+  width; both sides are clamped to a minimum of 120 px.
+- **Back / Forward** — navigation history; clicking an internal link
+  (`[scripting](scripting.md)`) pushes the current page onto the back stack.
+- External `http(s)://` and `mailto:` links open in the user's default browser
+  via `core::utils::openExternalUrl` (Linux: `xdg-open`; Windows:
+  `ShellExecuteW`). Other schemes are rejected and logged at warn level.
+- HTTPS images referenced from the markdown (e.g. shields.io badges in the
+  README) are downloaded once at configure time by `cmake/HelpAssets.cmake`,
+  cached under `engine_assets/help/images/badges/<sha1>.svg`, and rewritten in
+  the bundled markdown so the runtime renders them as ordinary local SVGs.
+
+To add a new page: create the `.md` under `doc/pages/`, start with the
+`# Title {#page-name}` / `[TOC]` header pair (Doxygen anchor), and re-run
+`cmake --preset ...` so the bundle is regenerated. The bundle step strips
+`{#page-name}` and `[TOC]` lines from the in-editor copy so the rendered
+view stays clean.
 
 ## Keyboard Shortcuts
 

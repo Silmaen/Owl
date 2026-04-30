@@ -40,7 +40,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 	}
 	if (isInitialized())
 		destroy();
-	m_impl = std::make_shared<Impl>();
+	m_impl = mkShared<Impl>();
 	m_scene = iScene;
 	b2WorldDef def = b2DefaultWorldDef();
 	def.gravity = {.x = 0.0f, .y = -9.81f};

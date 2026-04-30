@@ -57,6 +57,20 @@ owl_target_link_libraries(${ENGINE_NAME} PRIVATE imgui REQUIRED ${THIRD_PARTY_RE
 owl_target_link_libraries(${OWL_PROJECT} PRIVATE imgui_color_text_edit REQUIRED ${THIRD_PARTY_RELEASE}
         MODULE_TARGET "imgui_color_text_edit::imgui_color_text_edit")
 
+# md4c (CommonMark + GFM tables/strikethrough/autolinks parser, used by the
+# editor's MarkdownPreview / HelpPanel renderer).
+owl_target_link_libraries(${OWL_PROJECT} PRIVATE md4c REQUIRED ${THIRD_PARTY_RELEASE}
+        MODULE_TARGET "md4c::md4c")
+
+# lunasvg (live SVG rendering for the code editor preview)
+# `find_package(Threads)` is required *before* lunasvg because its transitive
+# `plutovg::plutovg` import target references `Threads::Threads` in its link
+# interface. The engine library only links lunasvg into an INTERFACE target so
+# CMake never has to resolve that property; here we link it into a real
+# executable target which forces full resolution.
+find_package(Threads REQUIRED)
+owl_target_link_libraries(${OWL_PROJECT} PRIVATE lunasvg REQUIRED ${THIRD_PARTY_RELEASE})
+
 # yaml
 find_package(yaml-cpp REQUIRED)
 target_link_libraries(${OWL_PROJECT} PRIVATE yaml-cpp::yaml-cpp)

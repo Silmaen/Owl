@@ -54,8 +54,18 @@ void CodeEditorDocument::onDetach() {
 	mp_editorLayer = nullptr;
 }
 
-void CodeEditorDocument::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
-	// Nothing — text editing lives inside onImGuiRender.
+void CodeEditorDocument::onUpdate(const core::Timestep& iTimeStep) {
+	if (!mp_editor || !m_previewVisible)
+		return;
+	if (m_language == codeEditor::Language::Markdown) {
+		m_mdPreview.update(iTimeStep, mp_editor->GetText());
+	} else if (m_language == codeEditor::Language::Xml) {
+		// Use the latest known preview area; the rasterized side is bounded by the
+		// shorter dimension of the panel (set during onImGuiRender via the size we
+		// pass below). We feed a hint based on a typical pane size — render() reads
+		// the actual ImGui content region.
+		m_svgPreview.update(iTimeStep, mp_editor->GetText(), math::vec2ui{512, 512});
+	}
 }
 
 void CodeEditorDocument::onEvent([[maybe_unused]] event::Event& ioEvent) {
@@ -100,8 +110,12 @@ void CodeEditorDocument::onImGuiRender() {
 			}
 		}
 		const auto avail = ImGui::GetContentRegionAvail();
-		const ImVec2 size{std::max(0.f, avail.x), std::max(0.f, avail.y - ImGui::GetFrameHeightWithSpacing())};
-		mp_editor->Render("##text_editor", size);
+		const float bodyH = std::max(0.f, avail.y - ImGui::GetFrameHeightWithSpacing());
+		const bool showPreview = m_previewVisible && canShowPreview();
+		const float editorW = showPreview ? std::max(60.f, avail.x * m_splitRatio) : avail.x;
+		const float previewW = showPreview ? std::max(60.f, avail.x - editorW - 6.f) : 0.f;
+
+		mp_editor->Render("##text_editor", ImVec2{editorW, bodyH});
 		// Accept Content Browser drag-drops on the editor area (same dispatch as the Viewport).
 		if (mp_editorLayer != nullptr && ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
@@ -109,6 +123,23 @@ void CodeEditorDocument::onImGuiRender() {
 				mp_editorLayer->handleContentBrowserDrop(std::filesystem::path{path});
 			}
 			ImGui::EndDragDropTarget();
+		}
+		if (showPreview) {
+			ImGui::SameLine(0.f, 0.f);
+			// Draggable splitter: a 6px-wide invisible button between editor and preview.
+			ImGui::Button("##split", ImVec2{6.f, bodyH});
+			if (ImGui::IsItemActive()) {
+				const float dx = ImGui::GetIO().MouseDelta.x;
+				if (avail.x > 0.f)
+					m_splitRatio = std::clamp(m_splitRatio + dx / avail.x, 0.1f, 0.9f);
+			}
+			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+				ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+			ImGui::SameLine(0.f, 0.f);
+			if (m_language == codeEditor::Language::Markdown)
+				m_mdPreview.render(ImVec2{previewW, bodyH});
+			else if (m_language == codeEditor::Language::Xml)
+				m_svgPreview.render(ImVec2{previewW, bodyH});
 		}
 		// Footer status line.
 		int line = 0;
@@ -143,6 +174,8 @@ auto CodeEditorDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	m_savedText = txt;
 	m_language = codeEditor::detectLanguage(m_path);
 	codeEditor::applyLanguage(*mp_editor, m_language);
+	if (canShowPreview())
+		m_previewVisible = true;
 	return true;
 }
 
@@ -162,6 +195,8 @@ auto CodeEditorDocument::loadFromFile(const std::filesystem::path& iPath) -> boo
 	m_path = iPath;
 	m_language = codeEditor::detectLanguage(m_path);
 	codeEditor::applyLanguage(*mp_editor, m_language);
+	if (canShowPreview())
+		m_previewVisible = true;
 	return true;
 }
 

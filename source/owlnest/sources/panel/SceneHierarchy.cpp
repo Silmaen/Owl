@@ -29,6 +29,13 @@ namespace owl::nest::panel {
 
 namespace {
 
+/// @brief Component name written by `drawComponent` while its header is hovered.
+///
+/// Read by `EditorLayer::onContextualHelp` so pressing F1 over a specific
+/// component header opens the documentation page that covers it. Empty when
+/// no component is being hovered.
+std::string g_lastHoveredComponentName;
+
 /// Check if an entity is the root of a prefab instance.
 auto isPrefabRoot(const scene::Entity& iEntity) -> bool {
 	return iEntity && iEntity.hasComponent<PrefabLink>();
@@ -93,9 +100,14 @@ void SceneHierarchy::setContext(const shared<scene::Scene>& iContext) {
 }
 
 void SceneHierarchy::onImGuiRender() {
+	// Reset the hovered-component sink at the start of every frame; `drawComponent`
+	// repopulates it as the user moves the mouse over individual component headers.
+	g_lastHoveredComponentName.clear();
 	renderHierarchy();
 	renderProperties();
 }
+
+auto SceneHierarchy::lastHoveredComponentName() -> const std::string& { return g_lastHoveredComponentName; }
 
 // Function displaying the Hierarchy panel.
 
@@ -430,6 +442,10 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 		const auto* iconId = componentIconName(T::name());
 		const std::string label = iconId ? std::format("     {}", T::name()) : std::string(T::name());
 		const bool open = ImGui::TreeNodeEx(label.c_str(), treeNodeFlags);
+
+		// Track which component header is currently hovered so F1 can open the matching help page.
+		if (ImGui::IsItemHovered())
+			g_lastHoveredComponentName = T::name();
 
 		// Draw icon over the padding space in the tree node header
 		if (iconId) {

@@ -11,6 +11,8 @@
 #include "Document.h"
 #include "UndoManager.h"
 #include "codeEditor/LanguageDefinitions.h"
+#include "codeEditor/MarkdownPreview.h"
+#include "codeEditor/SvgPreview.h"
 
 class TextEditor;
 
@@ -69,6 +71,15 @@ public:
 	/// @brief Reset the open flag (used by `EditorLayer` after a close is handled or cancelled).
 	void setOpen(const bool iOpen) { m_pOpen = iOpen; }
 
+	/// @brief True if a live preview pane is currently shown next to the editor.
+	[[nodiscard]] auto isPreviewVisible() const -> bool { return m_previewVisible; }
+	/// @brief Toggle the live preview pane (only meaningful for Markdown / SVG documents).
+	void togglePreview() { m_previewVisible = !m_previewVisible; }
+	/// @brief True if the active language has a live preview implementation.
+	[[nodiscard]] auto canShowPreview() const -> bool {
+		return m_language == codeEditor::Language::Markdown || m_language == codeEditor::Language::Xml;
+	}
+
 private:
 	std::filesystem::path m_path;
 	codeEditor::Language m_language = codeEditor::Language::PlainText;
@@ -82,6 +93,14 @@ private:
 	EditorLayer* mp_editorLayer = nullptr;
 	/// ImGui close state — set to false by ImGui when the tab's close X is clicked.
 	bool m_pOpen = true;
+	/// Whether the live preview pane is visible.
+	bool m_previewVisible = false;
+	/// Horizontal split between the editor (left) and the preview (right), in [0.1, 0.9].
+	float m_splitRatio = 0.5f;
+	/// Markdown renderer (used when language == Markdown).
+	codeEditor::MarkdownPreview m_mdPreview;
+	/// SVG renderer (used when language == Xml).
+	codeEditor::SvgPreview m_svgPreview;
 };
 
 }// namespace owl::nest

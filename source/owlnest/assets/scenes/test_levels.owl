@@ -46,7 +46,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/source/personnel/stack_owl/Owl/engine_assets/textures/mario.png
+      texture: nam:textures/mario.png
     PhysicBody:
       type: Dynamic
       fixedRotation: true
