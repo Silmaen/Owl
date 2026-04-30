@@ -64,8 +64,9 @@ TEST(HelpIndex, IndexHasCoreLandingPages) {
 		EXPECT_FALSE(id.empty());
 		EXPECT_FALSE(path.empty());
 		// Each indexed page must be physically present in the bundle.
-		if (!path.empty())
+		if (!path.empty()) {
 			EXPECT_TRUE(fs::exists(helpRoot() / path)) << "missing bundled page: " << path;
+		}
 		ids.insert(id);
 	}
 	// Pages used by HelpPanel's default routing or by F1 contextual help.
