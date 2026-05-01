@@ -10,6 +10,7 @@
 
 #include "CameraOrtho.h"
 #include "RenderCommand.h"
+#include "RenderStack.h"
 #include "Shader.h"
 #include "data/assets/AssetLibrary.h"
 
@@ -115,6 +116,22 @@ public:
 	 */
 	static auto getTextureLibrary() -> TextureLibrary&;
 
+	/**
+	 * @brief Install the active renderer stack (called when scenes activate).
+	 *
+	 * The stack is consulted by future per-layer dispatch code. Passing an empty
+	 * stack clears the active configuration; callers fall back to the legacy
+	 * direct `Renderer2D` path (current default for v0.2.0).
+	 * @param[in] iStack The new active stack (moved in).
+	 */
+	static void setRenderStack(RenderStack iStack);
+
+	/**
+	 * @brief Access the active renderer stack (may be empty).
+	 * @return The active stack.
+	 */
+	[[nodiscard]] static auto getRenderStack() -> const RenderStack&;
+
 private:
 	/// The state of the renderer.
 	static State m_internalState;
@@ -133,6 +150,8 @@ private:
 	static shared<ShaderLibrary> m_shaderLibrary;
 	/// Actual library of textures.
 	static shared<TextureLibrary> m_textureLibrary;
+	/// Active renderer stack (may be empty — legacy `Renderer2D` path is then used).
+	static RenderStack m_renderStack;
 };
 
 }// namespace owl::renderer

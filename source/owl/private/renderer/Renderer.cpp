@@ -10,6 +10,7 @@
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
+#include "renderer/Renderer2DLayer.h"
 
 namespace owl::renderer {
 
@@ -17,6 +18,7 @@ Renderer::State Renderer::m_internalState = State::Created;
 shared<Renderer::SceneData> Renderer::m_sceneData = nullptr;
 shared<Renderer::ShaderLibrary> Renderer::m_shaderLibrary = nullptr;
 shared<Renderer::TextureLibrary> Renderer::m_textureLibrary = nullptr;
+RenderStack Renderer::m_renderStack;
 
 void Renderer::init() {
 	OWL_PROFILE_FUNCTION()
@@ -55,6 +57,10 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 		iProgress(4, 5, "background");
 	BackgroundRenderer::init();
 
+	// Register built-in render layer types with the factory. Adding more layer types
+	// (raycasting, voxel, ...) is just another registerWithFactory() call here.
+	Renderer2DLayer::registerWithFactory();
+
 	m_internalState = State::Running;
 }
 
@@ -70,7 +76,12 @@ void Renderer::reset() {
 	m_sceneData.reset();
 	m_shaderLibrary.reset();
 	m_textureLibrary.reset();
+	m_renderStack = RenderStack{};
 }
+
+void Renderer::setRenderStack(RenderStack iStack) { m_renderStack = std::move(iStack); }
+
+auto Renderer::getRenderStack() -> const RenderStack& { return m_renderStack; }
 
 void Renderer::beginScene(const Camera& iCamera) { m_sceneData->viewProjectionMatrix = iCamera.getViewProjection(); }
 

@@ -60,6 +60,9 @@ auto SceneSerializer::serializeToString() const -> std::string {
 	const core::Serializer sOut;
 	sOut.getImpl()->emitter << YAML::BeginMap;
 	sOut.getImpl()->emitter << YAML::Key << "Scene" << YAML::Value << "untitled";
+	if (const auto& enabled = mp_scene->getEnabledRenderers(); !enabled.isEmpty()) {
+		sOut.getImpl()->emitter << YAML::Key << "EnabledRenderers" << YAML::Value << enabled.toYaml();
+	}
 	sOut.getImpl()->emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 	for (const auto& entity: mp_scene->getAllEntities()) {
 		if (!entity)
@@ -88,6 +91,8 @@ auto SceneSerializer::deserialize(const std::filesystem::path& iFilepath) const 
 		}
 		auto sceneName = sData.getImpl()->node["Scene"].as<std::string>();
 		OWL_CORE_TRACE("Deserializing scene '{0}'", sceneName)
+		if (const auto enabled = sData.getImpl()->node["EnabledRenderers"]; enabled)
+			mp_scene->getEnabledRenderers() = renderer::EnabledRenderersConfig::fromYaml(enabled);
 		if (auto entities = sData.getImpl()->node["Entities"]; entities) {
 			for (auto entity: entities) {
 				const core::Serializer sEntity;
@@ -116,6 +121,8 @@ auto SceneSerializer::deserializeFromBuffer(const std::vector<uint8_t>& iData,
 		}
 		auto sceneName = sData.getImpl()->node["Scene"].as<std::string>();
 		OWL_CORE_TRACE("Deserializing scene '{0}' from buffer", sceneName)
+		if (const auto enabled = sData.getImpl()->node["EnabledRenderers"]; enabled)
+			mp_scene->getEnabledRenderers() = renderer::EnabledRenderersConfig::fromYaml(enabled);
 		if (auto entities = sData.getImpl()->node["Entities"]; entities) {
 			for (auto entity: entities) {
 				const core::Serializer sEntity;

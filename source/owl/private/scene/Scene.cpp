@@ -237,6 +237,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 
 	newScene->m_viewportSize = iOther->m_viewportSize;
 	newScene->m_gameState = iOther->m_gameState;
+	newScene->m_enabledRenderers = iOther->m_enabledRenderers;
 
 	auto& srcSceneRegistry = iOther->registry;
 	auto& dstSceneRegistry = newScene->registry;
@@ -1251,5 +1252,9 @@ OWL_API void Scene::onComponentAdded<component::UIProgressBar>([[maybe_unused]] 
 template<>
 OWL_API void Scene::onComponentAdded<component::PrefabLink>([[maybe_unused]] const Entity& iEntity,
 															[[maybe_unused]] component::PrefabLink& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::RendererTag>([[maybe_unused]] const Entity& iEntity,
+															 [[maybe_unused]] component::RendererTag& ioComponent) {}
 
 }// namespace owl::scene

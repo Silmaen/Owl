@@ -42,7 +42,7 @@ move the needle forward.
     - Batched draw calls, texture atlasing
     - Multithreaded render preparation
 
-## v0.5.0 -- Expected 2027-02-01
+## v0.5.0 -- Expected 2027-06-01
 
 **Goal:** Let players extend and modify games built with Owl. Bring Owl games to more platforms.
 Handle large game worlds efficiently.
@@ -88,7 +88,7 @@ Handle large game worlds efficiently.
         - Haptic feedback / vibration API
         - Analog stick dead zone and curve configuration
 
-## v0.4.0 -- Expected 2026-12-01
+## v0.4.0 -- Expected 2027-04-01
 
 **Goal:** Give game designers tools to create intelligent NPCs, richer physical interactions,
 polished audio/narrative experiences, and networked multiplayer.
@@ -160,7 +160,7 @@ polished audio/narrative experiences, and networked multiplayer.
         - Lua hooks for conditions and consequences
         - Subtitle rendering via in-game UI
 
-## v0.3.0 -- Expected 2026-10-01
+## v0.3.0 -- Expected 2027-02-01
 
 **Goal:** Full 3D rendering pipeline with lighting, materials, post-processing, mesh-based
 scene authoring, and cross-platform packaging from any host.
@@ -254,10 +254,50 @@ scene authoring, and cross-platform packaging from any host.
 
 ## v0.2.0 -- Expected 2026-08-01
 
-**Goal:** Introduce new rendering modes alongside the existing 2D renderer: a raycasting renderer
-(pseudo-3D like Wolfenstein 3D / DOOM), a voxel engine (block-based worlds like Minecraft), and
-a 2D lighting system.
+**Goal:** Introduce a composable **renderer stack** so scenes can mix and match rendering
+modes (e.g. raycasting world + 2D HUD), then deliver the first non-2D mode (raycasting),
+the tilemap system, and scene-to-scene transition effects.
 
+- Renderer Stack Architecture
+    - ![Done][done] Foundation (engine API + serialization + tests)
+        - `RenderLayer` interface, `RenderStack` orchestrator, `RenderLayerFactory`
+          registry in `source/owl/public/renderer/`. `Renderer2DLayer` adapter
+          wraps the existing `Renderer2D` (no rewrite) and is auto-registered
+          during `Renderer::initShaders`.
+        - `RendererTag` component on entities (`{ rendererName: string }`),
+          wired into `CopiableComponents` / `SerializableComponents` /
+          `OptionalComponents` and auto-handled by `SceneSerializer`.
+        - YAML round-trip: `RendererStack:` block in `owl_project.yml`
+          (project-level layer definitions with `Type` / `Name` /
+          `DefaultConfig`) and `EnabledRenderers:` block in `.owl` files
+          (per-scene enable + `Overrides` deep-merged on top of project
+          defaults). Iterative merge keeps `misc-no-recursion` clean.
+        - Backward compatible by construction: project without `RendererStack`
+          → implicit `[Renderer2D(default)]`; scene without `EnabledRenderers`
+          → all renderers active; entity without `RendererTag` → first renderer
+          in stack.
+        - Tests cover factory, stack build, scene-override merge, frame
+          callback order, find-by-name, plus per-scene and per-entity
+          serialization round-trips.
+    - ![Planned][planned] Runtime install + per-entity dispatch
+        - Build the `RenderStack` from `Project::rendererStack` +
+          `Scene::getEnabledRenderers()` and install via
+          `Renderer::setRenderStack` at scene activation in `EditorLayer` /
+          `RunnerLayer`.
+        - Route `Scene::render` draws through the stack so `RendererTag` is
+          honoured (currently the legacy direct-`Renderer2D` path is still in
+          use; the second consumer arrives with the raycasting layer below).
+    - ![Planned][planned] Editor UI for the stack
+        - `ProjectSettings` panel: add/remove/reorder renderer entries with
+          per-type `DefaultConfig` editing.
+        - `SceneHierarchy` inspector: dropdown for `RendererTag.rendererName`
+          populated from the active scene's enabled renderers, with
+          "Default (first)" as the no-component option.
+    - ![Planned][planned] Tilemap system for 2D
+        - Tile-based map component as an alternative to individual sprite entities
+        - Tileset definition (texture atlas + tile properties)
+        - Tile layers with collision, parallax scrolling
+        - Tilemap editor in Owl Nest (paint, fill, erase tools)
 - Raycasting Renderer
     - ![Planned][planned] Raycasting core
         - DDA raycasting algorithm rendering a 2D grid map as pseudo-3D
@@ -280,6 +320,16 @@ a 2D lighting system.
     - ![Planned][planned] Lighting for raycasting
         - Distance-based shading (fog/darkness)
         - Optional point lights with falloff
+- Gameplay
+    - ![Planned][planned] Scene transition effects
+        - Configurable fade, wipe, or custom shader transitions between scenes
+        - Lua API to trigger transitions with parameters (duration, type)
+
+## v0.2.1 -- Expected 2026-10-01
+
+**Goal:** Add the second non-2D rendering mode — a voxel engine for block-based worlds
+(Minecraft-style), riding on the renderer stack architecture established in v0.2.0.
+
 - Voxel Engine
     - ![Planned][planned] Voxel world core
         - Chunk-based world (e.g. 16x16x256 chunks)
@@ -305,29 +355,17 @@ a 2D lighting system.
         - Brush tools for painting blocks
         - Prefab structures (trees, buildings) as reusable block templates
         - Chunk inspector for debugging
+
+## v0.2.2 -- Expected 2026-12-01
+
+**Goal:** Round out the 2D experience with dynamic lighting, ship the long-awaited
+custom file picker, and add core gameplay primitives (inventory, enemies).
+
 - 2D Lighting
     - ![Planned][planned] 2D lighting system
         - Point lights, spot lights in 2D scenes
         - Normal-mapped sprites for dynamic 2D lighting
         - Shadow casting from 2D occluders
-- Renderer Architecture
-    - ![Planned][planned] Renderer abstraction
-        - Clean separation so scenes can select their renderer type
-        - Scene property: renderer mode (2D, Raycasting, Voxel)
-        - Shared resource management (textures, shaders) across renderers
-    - ![Planned][planned] Tilemap system for 2D
-        - Tile-based map component as an alternative to individual sprite entities
-        - Tileset definition (texture atlas + tile properties)
-        - Tile layers with collision, parallax scrolling
-        - Tilemap editor in Owl Nest (paint, fill, erase tools)
-- Gameplay
-    - ![Planned][planned] Inventory system
-        - Collectible objects
-        - Key-locked switches
-    - ![Planned][planned] Enemies
-    - ![Planned][planned] Scene transition effects
-        - Configurable fade, wipe, or custom shader transitions between scenes
-        - Lua API to trigger transitions with parameters (duration, type)
 - Editor Infrastructure
     - ![Planned][planned] Custom ImGui-based file picker
         - Replace the native file dialog (NFD/GTK) which briefly freezes the UI on Linux
@@ -335,6 +373,11 @@ a 2D lighting system.
         - Pure ImGui implementation integrated with the task scheduler for async folder scanning
         - Benefits: consistent look-and-feel, truly non-blocking, theme-aware
         - Replaces the current sync `FileDialog::openFile/saveFile/pickFolder` blocking calls
+- Gameplay
+    - ![Planned][planned] Inventory system
+        - Collectible objects
+        - Key-locked switches
+    - ![Planned][planned] Enemies
 
 ## v0.1.1 -- 2026-04-30
 

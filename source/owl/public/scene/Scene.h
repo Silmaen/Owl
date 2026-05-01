@@ -13,6 +13,7 @@
 #include "core/UUID.h"
 #include "math/Transform.h"
 #include "renderer/Camera.h"
+#include "renderer/RenderStack.h"
 
 #include <entt/entt.hpp>
 /**
@@ -262,9 +263,18 @@ public:
 	/// @brief Access the game state (const).
 	[[nodiscard]] auto getGameState() const -> const GameState& { return m_gameState; }
 
+	/// @brief Access the scene's enabled-renderers config (mutable).
+	[[nodiscard]] auto getEnabledRenderers() -> renderer::EnabledRenderersConfig& { return m_enabledRenderers; }
+	/// @brief Access the scene's enabled-renderers config (const).
+	[[nodiscard]] auto getEnabledRenderers() const -> const renderer::EnabledRenderersConfig& {
+		return m_enabledRenderers;
+	}
+
 private:
 	/// Game state key-value store (progression data).
 	GameState m_gameState;
+	/// Scene-level enable/override of the project renderer stack (empty → all active with defaults).
+	renderer::EnabledRenderersConfig m_enabledRenderers;
 	/**
 	 * @brief Action when component is added to an entity.
 	 * @tparam T Type of the added component.
