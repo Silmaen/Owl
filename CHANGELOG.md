@@ -5,6 +5,56 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Renderer stack foundation** — composable per-scene renderer pipeline.
+    - New public API in `source/owl/public/renderer/`: `RenderLayer` (interface),
+      `RenderStack` (ordered orchestrator), `RenderLayerFactory` (string-keyed
+      registry), `RendererStackConfig` and `EnabledRenderersConfig` (YAML
+      round-trip data structures).
+    - `Renderer2DLayer` adapter wraps the existing `Renderer2D` static facade
+      and is auto-registered with the factory under the type key `"Renderer2D"`
+      during `Renderer::initShaders`.
+    - `Renderer::setRenderStack` / `getRenderStack` expose the active stack;
+      `Renderer::reset` clears it.
+    - New `scene::component::RendererTag` component (`{ rendererName: string }`)
+      pins individual entities to a specific layer in the stack. Untagged
+      entities fall back to the first layer (= legacy `Renderer2D` behaviour
+      in mono-renderer projects). Component is added to `CopiableComponents`,
+      `SerializableComponents`, and `OptionalComponents` and is auto-handled
+      by `SceneSerializer`.
+    - `Project` (editor) and `Scene` round-trip the stack configuration:
+      `RendererStack:` block in `owl_project.yml` (project-level layer
+      definitions with `Type` / `Name` / `DefaultConfig`) and
+      `EnabledRenderers:` block in `.owl` files (per-scene enable flag and
+      `Overrides` map merged on top of the project defaults).
+    - **Backward compatible**: project without `RendererStack` falls back to
+      an implicit `[Renderer2D(default)]` stack; scene without
+      `EnabledRenderers` activates every project layer; entity without
+      `RendererTag` is rendered by the first layer. Existing `.owl` and
+      `owl_project.yml` files load unchanged.
+    - Tests: `RenderLayerFactory_test` (4 cases), `RenderStack_test`
+      (8 cases — config round-trip, scene override merge, frame callback
+      order, find-by-name), `RendererTag_test` (4 cases — round-trip on
+      entity and on `EnabledRenderers`).
+- **`get_git_hash` resilience** in `ci/utils/publish.py`.
+    - Falls back to TeamCity's `BUILD_VCS_NUMBER` env var, then to direct
+      reading of `.git/HEAD` and the matching ref file (or `packed-refs`).
+      Survives a stale `.git/objects/info/alternates` (e.g. a Windows path
+      on a Linux agent when a TeamCity workspace is reused across OSes).
+    - Also captures `stderr` from the `git` subprocess so the noisy
+      `fatal: bad object HEAD` output no longer leaks to the build log.
+
+### Changed
+
+- Version bumped to **0.2.0**.
+- `doc/pages/roadmap.md` re-organised: v0.2.0 narrowed to renderer stack +
+  raycasting + tilemap + scene transitions; voxel engine moved to v0.2.1;
+  custom file picker, 2D lighting, inventory, and enemies moved to v0.2.2.
+  v0.3.0 / v0.4.0 / v0.5.0 expected dates shifted by one cycle.
+
 ## [0.1.1] - 2026-04-30
 
 ### Added

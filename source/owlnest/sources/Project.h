@@ -9,6 +9,7 @@
 #pragma once
 
 #include <owl.h>
+#include <renderer/RenderStack.h>
 
 namespace owl::nest {
 
@@ -44,6 +45,9 @@ struct Project {
 	};
 	/// Window settings for the game.
 	WindowSettings window;
+
+	/// Project-level renderer stack definition. Empty → engine falls back to a single Renderer2D.
+	renderer::RendererStackConfig rendererStack;
 
 	/**
 	 * @brief Load project configuration from a YAML file.

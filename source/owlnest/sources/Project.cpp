@@ -43,6 +43,8 @@ void Project::loadFromFile(const std::filesystem::path& iFile) {
 			if (win["resizable"])
 				window.resizable = win["resizable"].as<bool>();
 		}
+		if (const auto stack = config["RendererStack"]; stack)
+			rendererStack = renderer::RendererStackConfig::fromYaml(stack);
 	}
 	projectDirectory = iFile.parent_path();
 }
@@ -67,6 +69,8 @@ void Project::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "fullscreen" << YAML::Value << window.fullscreen;
 	out << YAML::Key << "resizable" << YAML::Value << window.resizable;
 	out << YAML::EndMap;// window
+	if (!rendererStack.isEmpty())
+		out << YAML::Key << "RendererStack" << YAML::Value << rendererStack.toYaml();
 	out << YAML::EndMap;// OwlProject
 	out << YAML::EndMap;
 

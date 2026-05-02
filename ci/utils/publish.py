@@ -1,6 +1,7 @@
 """
 Utility functions for publishing packages and documentation to a remote server.
 """
+import os
 import platform
 import re
 from pathlib import Path
@@ -51,22 +52,97 @@ def get_project_version() -> str:
     return "Bad Version"
 
 
+def _hash_from_teamcity_env() -> str | None:
+    """Return the SHA exposed by TeamCity as BUILD_VCS_NUMBER, if present and plausible."""
+    sha = os.environ.get("BUILD_VCS_NUMBER", "").strip()
+    if len(sha) >= 7 and all(c in "0123456789abcdef" for c in sha.lower()):
+        return sha
+    return None
+
+
+def _hash_from_git_refs(repo: Path) -> str | None:
+    """
+    Resolve HEAD by reading ``.git/HEAD`` and the matching ref file or ``packed-refs``.
+
+    Pure text-file walk, no access to the object store — survives a stale
+    ``.git/objects/info/alternates`` (typical when a workspace is reused
+    across Windows and Linux TeamCity agents).
+    """
+    git_dir = repo / ".git"
+    if not git_dir.exists():
+        return None
+    head = git_dir / "HEAD"
+    if not head.exists():
+        return None
+    try:
+        content = head.read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    # Detached HEAD: file holds the SHA directly.
+    if not content.startswith("ref:"):
+        return content if len(content) >= 7 else None
+    ref = content.split(":", 1)[1].strip()
+    # Loose ref.
+    loose = git_dir / ref
+    if loose.exists():
+        try:
+            sha = loose.read_text(encoding="utf-8").strip()
+            if len(sha) >= 7:
+                return sha
+        except OSError:
+            pass
+    # Packed ref.
+    packed = git_dir / "packed-refs"
+    if packed.exists():
+        try:
+            for line in packed.read_text(encoding="utf-8").splitlines():
+                if line.startswith("#") or line.startswith("^"):
+                    continue
+                parts = line.strip().split(" ", 1)
+                if len(parts) == 2 and parts[1] == ref and len(parts[0]) >= 7:
+                    return parts[0]
+        except OSError:
+            pass
+    return None
+
+
 def get_git_hash() -> str:
     """
     Retrieve the short git hash (7 chars) for the current HEAD.
+
+    Tries, in order:
+    1. ``git log -1 --format=%h`` (the normal path);
+    2. TeamCity's ``BUILD_VCS_NUMBER`` env var (set on every agent);
+    3. Direct read of ``.git/HEAD`` and the matching ref file
+       (resilient to a broken ``.git/objects/info/alternates``,
+       e.g. a Windows path on a Linux agent — see TeamCity workspace reuse).
+
     :return: The short git hash, or "0000000" on failure.
     """
     from subprocess import run, PIPE
 
     try:
-        ret = run(["git", "log", "-1", "--format=%h"], stdout=PIPE, text=True)
-        if ret.returncode != 0:
-            log.warning(f"Error during git hash retrieval: {ret.returncode}")
-            return "0000000"
-        return ret.stdout.strip()[:7]
+        ret = run(["git", "log", "-1", "--format=%h"], stdout=PIPE, stderr=PIPE, text=True)
+        if ret.returncode == 0:
+            sha = ret.stdout.strip()[:7]
+            if sha:
+                return sha
+        log.warning(
+            f"git log returned {ret.returncode}, falling back to BUILD_VCS_NUMBER / .git/HEAD"
+        )
     except Exception as err:
-        log.error(f"Exception during git hash retrieval: {err}")
-        return "0000000"
+        log.warning(f"git log raised {err}, falling back to BUILD_VCS_NUMBER / .git/HEAD")
+
+    sha = _hash_from_teamcity_env()
+    if sha:
+        return sha[:7]
+
+    sha = _hash_from_git_refs(root)
+    if sha:
+        return sha[:7]
+
+    log.error("Could not retrieve git hash via git, BUILD_VCS_NUMBER, or .git/HEAD.")
+    return "0000000"
 
 
 def get_platform_info() -> dict[str, str]:

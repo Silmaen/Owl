@@ -22,7 +22,11 @@ and GPU-managed texture slot allocation.
 | Class                   | Role                                                                       |
 |-------------------------|----------------------------------------------------------------------------|
 | `Renderer`              | Lifecycle (init/shutdown/reset), owns `ShaderLibrary` and `TextureLibrary` |
+| `RenderStack`           | Ordered list of active `RenderLayer` instances for the current scene       |
+| `RenderLayer`           | Abstract interface for one renderer in the stack (begin/render/end)        |
+| `RenderLayerFactory`    | String-keyed registry of layer constructors (`"Renderer2D"`, ...)          |
 | `Renderer2D`            | Static 2D batch renderer: quads, circles, lines, text                      |
+| `Renderer2DLayer`       | `RenderLayer` adapter wrapping `Renderer2D` (registered at engine init)    |
 | `BackgroundRenderer`    | Deferred fullscreen background/skybox rendering                            |
 | `RenderCommand`         | Static facade delegating to the active `RenderAPI`                         |
 | `RenderAPI`             | Abstract interface (OpenGL, Vulkan, Null)                                  |
@@ -36,6 +40,117 @@ and GPU-managed texture slot allocation.
 | `Shader`                | Abstract shader (Slang source, SPIR-V compiled)                            |
 | `Texture` / `Texture2D` | Abstract texture, 2D texture with file/spec creation                       |
 | `UniformBuffer`         | GPU-side uniform data block                                                |
+
+## Renderer Stack {#renderer-stack}
+
+The renderer stack lets a single scene compose **multiple ordered renderers**
+into the same frame — for example a raycasting layer for the world plus a
+`Renderer2D` layer on top for a HUD. The stack is defined at the project level
+(in `owl_project.yml`), filtered and configured per scene (in `.owl` files),
+and routed per entity via the optional `RendererTag` component.
+
+In v0.2.0 the foundation ships first: interfaces, factory, YAML round-trip,
+and a `Renderer2DLayer` adapter wrapping the existing batch renderer. Per-entity
+dispatch becomes meaningful once the raycasting layer lands later in v0.2.0;
+until then the stack is configured but the legacy direct-`Renderer2D` path in
+`Scene::render` continues to drive draw calls — observable behaviour is
+unchanged for projects that opt into nothing.
+
+### Configuration model
+
+```mermaid
+flowchart LR
+    project["owl_project.yml<br/><b>RendererStack</b><br/>(ordered list)"] -->|defaults| build["RenderStack::buildFromConfig"]
+    scene[".owl scene<br/><b>EnabledRenderers</b><br/>(per-instance enable + overrides)"] -->|merged| build
+    build -->|ordered layers| stack["RenderStack<br/>(active)"]
+    entity["Entity<br/><b>RendererTag.rendererName</b>"] -.->|routes draws to| stack
+```
+
+**Project YAML** (`owl_project.yml`):
+
+```yaml
+RendererStack:
+  - Type: Renderer2D       # factory key — must match a registered type
+    Name: world            # unique instance name within the stack
+    DefaultConfig: {}      # optional, layer-specific knobs
+  - Type: Renderer2D
+    Name: hud
+```
+
+The list order is the back-to-front render order. A project with no
+`RendererStack:` entry is treated as `[{Type: Renderer2D, Name: default}]`.
+
+**Scene YAML** (`.owl`):
+
+```yaml
+EnabledRenderers:
+  - Name: world
+    Enabled: true
+    Overrides: {}
+  - Name: hud
+    Enabled: true
+```
+
+A scene with no `EnabledRenderers:` activates **every** project layer with its
+project default config. `Overrides` is deep-merged on top of `DefaultConfig`
+(override wins on key collision).
+
+**Entity component** (`RendererTag`):
+
+```yaml
+- Entity:
+    Components:
+      RendererTag:
+        Name: hud
+      UIText:
+        ...
+```
+
+| Tag state                                    | Routing                                                  |
+|----------------------------------------------|----------------------------------------------------------|
+| Component absent                             | First layer of the active stack (legacy `Renderer2D`)    |
+| Component present, name matches a layer      | That layer renders the entity                            |
+| Component present, name unknown to the stack | Entity skipped, one-shot warning per scene activation    |
+
+This is fully backward compatible: existing `.owl` files and `owl_project.yml`
+load unchanged — none of these blocks are required.
+
+### Frame flow
+
+```mermaid
+sequenceDiagram
+    participant Scene
+    participant RenderStack
+    participant LayerA as RenderLayer (e.g. raycasting)
+    participant LayerB as RenderLayer (e.g. Renderer2DLayer)
+    Scene->>RenderStack: beginFrame(camera)
+    RenderStack->>LayerA: onBeginFrame(camera)
+    RenderStack->>LayerB: onBeginFrame(camera)
+    Scene->>RenderStack: renderScene(scene)
+    RenderStack->>LayerA: onRender(scene)
+    RenderStack->>LayerB: onRender(scene)
+    Scene->>RenderStack: endFrame()
+    RenderStack->>LayerB: onEndFrame()
+    Note right of LayerB: reverse order
+    RenderStack->>LayerA: onEndFrame()
+```
+
+`onBeginFrame` and `onRender` walk the stack in declaration order; `onEndFrame`
+walks in reverse so layers can flush nested resources cleanly.
+
+### Adding a new layer type
+
+1. Subclass `RenderLayer` and implement the four virtuals
+   (`onBeginFrame`, `onRender`, `onEndFrame`, `applyConfig`).
+2. Provide a `static void registerWithFactory()` that calls
+   `RenderLayerFactory::registerType("MyType", ...)` exactly once.
+3. Invoke `MyLayer::registerWithFactory()` from `Renderer::initShaders` so the
+   type is available before any project loads.
+4. Bump the project YAML to reference the new `Type: MyType` and any
+   `DefaultConfig` keys your `applyConfig` consumes.
+
+The factory pattern keeps the engine extensible: third-party code (mods, tests)
+can register layer types without touching engine sources.
 
 ## Backend Abstraction
 
