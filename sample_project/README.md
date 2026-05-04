@@ -9,75 +9,94 @@ living showcase — it must be updated whenever new features are added to the en
 2. **File > Open Project** and select `sample_project/owl_project.yml`
 3. The Main Menu scene loads automatically
 
-## How to Play
+## How to Play (v0.2.0 flow)
 
-- **Main Menu**: Play, Continue (loads last save), Settings, Delete Save, or Quit
-- **Gameplay**: WASD to move, Space to jump, collect all 3 coins before health runs out
-  - Coins heal you (+30% health each)
-  - Health slowly decreases (hazard simulation)
-  - Press **E** near the checkpoint circle to save (also stops hazard timer)
-  - **M** to toggle music pause/resume
-  - **F5** to quick-save anywhere
-  - **Escape** to return to main menu
-  - Level 1: reach the portal to advance to level 2
-  - Level 2: collect all coins, then reach the victory zone
-- **Victory**: victory screen with final score and fade transition
-- **Game Over**: health reaches 0 → game over with retry/menu options
-- **Settings**: adjust master volume and player speed, Reset Defaults button
+The sample game has been rebuilt around the new tilemap system:
 
-## Scenes (6)
+1. **Main Menu** → press **Démarrer** to begin a new run, or **Continuer** if a
+   pause snapshot exists.
+2. **World Map** (`world_map.owl`) — top-down tilemap view. WASD to move
+   around a grass plain bordered by mountains. Hazards: lava patches and
+   the water moat south of the house cause **instant death**.
+   Cross the bridge to reach the central house and press **E** in front of
+   its door to enter.
+3. **Inside the House** (`platformer_house.owl`) — side-scroller platformer.
+   A/D to run, W / Space / Up to jump. Hazards: lava pits at floor level
+   (instant death), spike traps (lose ~1/3 of your health bar each contact).
+   Reach the gold checkered **victory zone** at the top-right to clear the
+   level.
+4. Clearing the level closes the house door (the door entity reports as
+   already explored on subsequent visits) and bumps `houses_visited` in
+   gamestate. When `houses_visited == houses_total`, a **purple teleporter**
+   appears in the upper-left of the world map — walk over it to teleport
+   to the **Victory** screen.
+5. **ESC** at any point in gameplay pauses the run and returns to the Main
+   Menu, where the **Démarrer** button label switches to **Continuer** and
+   resumes you exactly where you left off (same scene, same position,
+   same health).
 
-| Scene               | Purpose                                                             |
-|---------------------|---------------------------------------------------------------------|
-| `main_menu.owl`     | Logo, title, Play/Continue/Settings/Quit, save info, mouse coords   |
-| `gameplay.owl`      | Level 1: player, coins, platforms, triggers, HUD, portal to level 2 |
-| `level2.owl`        | Level 2: harder layout, victory zone, hazard timer                  |
-| `settings_menu.owl` | Volume + speed sliders, reset defaults, back button                 |
-| `victory.owl`       | Win screen with score, menu button                                  |
-| `game_over.owl`     | Lose screen with score, retry + menu buttons                        |
+## Scenes
+
+| Scene                     | Purpose                                                                |
+|---------------------------|------------------------------------------------------------------------|
+| `main_menu.owl`           | Logo, dynamic Démarrer/Continuer button, Settings, Delete Save, Quit   |
+| `world_map.owl`           | Top-down 32×24 tilemap world: plain + mountains + central house + hazards (water = damage, lava = death) + hidden teleporter |
+| `platformer_house.owl`    | Side-scroller 60×16 inside the house: static platforms, kinematic moving platforms (h + v), lava pits (death), spike traps (damage), 8 collectible coins, victory portal |
+| `settings_menu.owl`       | Volume + speed sliders, reset defaults, back button                    |
+| `victory.owl`             | Win screen with score, menu button                                     |
+| `game_over.owl`           | Lose screen with score, retry (→ world map) + menu buttons             |
+
+## Tilesets
+
+| Tileset                   | Atlas size | Tiles | Notable collidables / hazards |
+|---------------------------|-----------|-------|-------------------------------|
+| `world_topdown.owltileset` | 4×4 / 64px | 16    | mountain, tree, fence, sign, house wall/roof (collidable); water + lava (visual; hazard via separate trigger entities) |
+| `world_platform.owltileset`| 4×2 / 64px | 8     | floor, platform, brick (collidable); lava + spikes (visual; hazard triggers overlay) |
 
 ## Gameplay Features
 
-- **Victory condition**: collect all coins + reach victory zone (level 2) or auto-win (level 1 via portal)
-- **Defeat condition**: health depletes to 0 → game over scene
-- **Health system**: slowly decreases, healed by coin pickups
-- **Checkpoint**: Interaction trigger (press E) saves and stops hazard timer
-- **Hazard timer**: Timer trigger, stopped by checkpoint, restarts via marker entity
-- **Death zone**: Death trigger below the ground
-- **Music toggle**: M key pauses/resumes background music
-- **Escape to menu**: Escape key returns to main menu
-- **Quick-save**: F5 saves to slot 1
-- **Continue**: main menu loads save slot 1
-- **Delete save**: main menu can delete save data
-- **Retry**: game over screen offers restart
-- **Mouse tracking**: mouse coordinates displayed on main menu
-
-## Prefabs
-
-- `prefabs/coin.owlprefab` — Reusable coin template (CircleRenderer + Trigger + LuaScript)
+- **Win condition**: clear the platformer level inside the house, return to the world
+  map (door reports as explored), step on the teleporter that appears once every house
+  is done → Victory.
+- **Defeat condition**: HP bar depletes to 0 → Game Over.
+- **World hazards**: water = damage-over-time (-0.6 HP/s), lava = instant death.
+- **Platformer hazards**: lava pits = instant death, spike traps = -0.34 HP per touch.
+- **Coins**: 8 collectibles inside the house, score persists across the run via gamestate.
+- **ESC pause + Continue**: ESC at any time saves a pause snapshot (`continue_*` keys
+  in gamestate) and returns to the main menu; the primary button toggles between
+  Démarrer (fresh run) and Continuer (resume exact scene + position + health).
+- **Save system**: quick-save with F5 (legacy), slot 1 + slot 2 by `SaveManager`,
+  Continue from menu re-loads slot 1.
+- **Settings persistence**: master volume + player speed editable in-game, persisted
+  across launches via `SettingsManager`.
 
 ## Animation Clips
 
-- `animations/coin.owlanim` — Spritesheet animation clip (6×3 grid, 18 frames, Smooth
-  speed curve). Open with the new Animation editor (double-click in the Content
-  Browser) to scrub the timeline, tweak the speed curve, or change the frame range.
+The platformer's collectible coins are driven by an inline `AnimatedSpriteRenderer`
+component (texture `animated_coin.png`, 6×3 grid, 18 frames). A reusable `.owlanim`
+asset is bundled under `engine_assets/animations/coin.owlanim` for the Animation
+editor and as a regression-test fixture, but the sample itself does not reference
+it directly.
 
-## Lua Scripts (11)
+## Lua Scripts
 
-| Script                | Features Exercised                                                                                                                                                                                                                                                               |
-|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `main_menu.lua`       | `save.has_save/load_game/list_saves/delete_save`, `ui.set_button_enabled/set_visible/get_text`, `input.get_mouse_x/y`, `ui.transition_fade_in/out`, `scene.load_scene`, `gamestate`                                                                                              |
-| `player.lua`          | `input.is_key_pressed`, `physics.impulse/get_velocity`, `entity.has_component/get_name`, `sound.play/stop/pause/resume/set_volume`, `ui.set_visible/set_text/set_progress`, `scene.find/destroy/create_entity`, `settings.get`, `gamestate`, `save`, `ui.transition_fade_in/out` |
-| `moving_platform.lua` | `transform.get/set_position/rotation`, `math.sin`, properties                                                                                                                                                                                                                    |
-| `hud.lua`             | HUD initialization                                                                                                                                                                                                                                                               |
-| `settings_menu.lua`   | `settings.get/set/save/load/apply/reset_all`, `ui.set_text/set_slider_value/get_slider_value`, `ui.transition_fade_in/out`                                                                                                                                                       |
-| `coin.lua`            | LuaCallback trigger, `gamestate`, `scene.destroy_entity`, `sound.play`, rotation animation                                                                                                                                                                                       |
-| `hazard_timer.lua`    | Timer trigger (repeating), `trigger.start_timer`, `scene.find/destroy_entity`, `transform.set_scale`                                                                                                                                                                             |
-| `checkpoint.lua`      | Interaction trigger, `save.save_game`, `trigger.stop_timer/reset_timer`, `scene.create_entity`, `entity.get_name`, `physics.set_transform`                                                                                                                                       |
-| `portal.lua`          | Teleport trigger, `sound.play`, visual animation                                                                                                                                                                                                                                 |
-| `victory.lua`         | `gamestate.get/remove`, `ui.set_text`, `ui.transition_fade_in/out`                                                                                                                                                                                                               |
-| `game_over.lua`       | `gamestate.get/clear`, `ui.transition_fade_in/out`, retry/menu buttons                                                                                                                                                                                                           |
-| `death_zone.lua`      | LuaCallback trigger, `sound.play`, `scene.load_scene`                                                                                                                                                                                                                            |
+| Script                       | Features exercised                                                                                                                                                                |
+|------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `main_menu.lua`              | Dynamic Démarrer/Continuer button, save slot info, settings dispatch, fade transitions, `gamestate` continue snapshot, `save.has_save/list/delete`, `scene.load_scene`            |
+| `world_player.lua`           | Top-down 4-direction movement (gravity-cancelled `set_velocity` hack), camera-follow, ESC pause, teleporter visibility gate, world-return position restore                        |
+| `platformer_player.lua`      | Tight side-scroller controls (state machine grounded / rising / falling, coyote time, jump buffer), no air control, camera-follow, HUD update, ESC pause                          |
+| `house_door.lua`             | `Trigger.Type=Interaction`, gates entry on `house_<n>_done` flag, saves world-return position, loads platformer scene                                                              |
+| `level_complete.lua`         | Marks the visited house as done, increments `houses_visited`, returns to the world map                                                                                            |
+| `teleporter.lua`             | `Trigger.Type=Interaction`, loads the victory scene (visibility currently controlled by `world_player.lua`)                                                                       |
+| `lava_damage.lua`            | `Trigger.Type=LuaCallback`, continuous health drain via `time.delta()` (used by the world-map water trigger boxes)                                                                |
+| `spike_damage.lua`           | `Trigger.Type=LuaCallback`, instantaneous HP step on each entry (platformer spikes)                                                                                                |
+| `coin.lua`                   | `Trigger.Type=LuaCallback`, score increment, sprite spin, sound + entity destroy                                                                                                  |
+| `moving_platform_h.lua`      | Kinematic body driven by `physics.set_velocity` along X — pushes the player horizontally                                                                                          |
+| `moving_platform_v.lua`      | Same idea on Y — pushes the player vertically                                                                                                                                      |
+| `hud.lua`                    | Passive HUD root (HealthBar + ScoreText drawn under it, kept in sync by player scripts)                                                                                            |
+| `settings_menu.lua`          | `settings.get/set/save/load/apply/reset_all`, slider handling, fade transitions                                                                                                   |
+| `victory.lua`                | `gamestate.get`, fade transitions                                                                                                                                                  |
+| `game_over.lua`              | Retry → world map, Menu → main menu, gamestate clear                                                                                                                              |
 
 ## Engine Features Covered
 
@@ -106,31 +125,32 @@ living showcase — it must be updated whenever new features are added to the en
 - [x] Trigger callbacks (on_trigger_enter/exit, on_timer, on_interact, custom)
 
 ### Gameplay Systems
-- [x] Scene transitions (6 scenes interconnected) with fade effects
-- [x] Victory / defeat flow with Victory and Death trigger zones
-- [x] Health system with HUD (progress bar + score text)
-- [x] Save system (quick-save, checkpoint, auto-save, continue, delete save, list saves)
+- [x] Scene transitions (menu / world map / platformer / victory / game-over / settings)
+      with fade effects
+- [x] Victory / defeat flow with Victory and Death trigger zones (lava death, water
+      damage tick, spike damage tick)
+- [x] Health system with HUD (UIProgressBar + ScoreText)
+- [x] Save system (quick-save F5, slot 1, list / delete saves from menu)
+- [x] Continue from menu — restores `continue_scene` + position + health from gamestate
+      after an ESC pause, so the user resumes exactly where they left off
 - [x] Settings persistence (game defaults + user overrides + reset to defaults)
-- [x] Entity hierarchy (PlayerHat follows Player)
-- [x] Trigger zones (all 7 types demonstrated)
-- [x] Prefab template (coin.owlprefab)
-- [x] AnimatedSpriteRenderer (coin rotation spritesheet, 18 frames; level 2 coins use a `speedCurve` to pulse between half- and 2.5x-speed)
-- [x] Sound effects + music with pause/resume/volume control
-- [x] UIImage (owl logo), UIPanel (button backdrop), all 8 widget types
-- [x] BackgroundTexture (sky gradient)
-- [x] Mouse input tracking
-- [x] UTF-8 / Latin-1 text rendering — main menu subtitle "Démo des fonctionnalités v0.1.1 - caractères éàüÇ"
-      exercises the renderer's UTF-8 decoding path and the MSDF atlas's full Latin-1 charset.
-- [x] AnimatedSpriteRenderer speed curve — level 2 coins remap playback time via a Smooth
-      `math::Curve` (slow at the loop boundary, fast in the middle).
-- [x] Reusable `.owlanim` asset — `animations/coin.owlanim` mirrors the level 2 coin
-      animation (texture, 6×3 grid, 18 frames at 0.08 s, loop, Smooth speed curve).
-      Double-click it in the Content Browser to open it in the new Animation editor
-      (live preview, properties panel, frame-range timeline backed by ImSequencer).
-- [x] Runtime entity creation (session/checkpoint markers)
-- [x] Dynamic entity inspection (has_component, get_name)
-- [x] Timer control from scripts (start/stop/reset)
+- [x] Trigger zones (Death, LuaCallback, Interaction, Teleport)
+- [x] Tilemap system — world map (32×24, top-down) and platformer (60×16, side-view)
+      both use `Tilemap` components + per-tile collidable flags from
+      `world_topdown.owltileset` / `world_platform.owltileset`
+- [x] Static + Kinematic platforms — `PhysicBody Static` for jumpable ledges,
+      `PhysicBody Kinematic` driven by `physics.set_velocity` for moving platforms
+      that push the player
+- [x] AnimatedSpriteRenderer — 8 collectible coins on the platformer use the
+      `animated_coin.png` 6×3 spritesheet (18 frames at 0.08 s, loop)
+- [x] Sound effects (jump, coin pickup, victory, menu start)
+- [x] UIImage (owl logo), UIPanel, UIButton, UISlider, UIProgressBar, UIText —
+      all 8 widget types in use across menu / settings / HUD
+- [x] BackgroundTexture (sky gradient on world map, dark gradient inside the house)
+- [x] Mouse input tracking — mouse coordinates displayed on the main menu
 
-### Not Yet Demonstrated (engine-level, no Lua API)
-- [ ] NativeScript (C++ scripting, only Lua demonstrated)
-- [ ] EntityLink / PrefabLink components (editor-level features)
+### Not Yet Demonstrated
+- [ ] NativeScript (C++ scripting, only Lua exercised)
+- [ ] EntityLink / PrefabLink components (no prefab in the current sample)
+- [ ] Timer triggers (the original `hazard_timer.lua` was retired with the legacy
+      gameplay scenes)

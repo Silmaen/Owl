@@ -1,0 +1,15 @@
+AnimationClip: coin
+Version: 1
+texture: nam:textures/animated_coin.png
+columns: 6
+rows: 3
+firstFrame: 0
+lastFrame: 17
+frameDuration: 0.08
+loop: true
+speedCurve:
+  interpolation: Smooth
+  keys:
+    - [0, 0.5]
+    - [0.5, 2.5]
+    - [1, 0.5]

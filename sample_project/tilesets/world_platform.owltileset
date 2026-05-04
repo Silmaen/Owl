@@ -1,0 +1,16 @@
+Tileset: world_platform
+Version: 1
+texture: nam:textures/world_platform.png
+tileWidth: 64
+tileHeight: 64
+columns: 4
+rows: 2
+tiles:
+  - { index: 0, collidable: true, name: "floor" }
+  - { index: 1, collidable: true, name: "platform" }
+  - { index: 2, collidable: true, name: "brick_wall" }
+  - { index: 3, name: "ladder" }
+  - { index: 4, name: "lava_deadly" }
+  - { index: 5, name: "spike_damage" }
+  - { index: 6, name: "wall_bg" }
+  - { index: 7, name: "victory_zone" }

@@ -9,6 +9,7 @@
 #include "Viewport.h"
 
 #include "EditorLayer.h"
+#include "TilePalette.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
 
@@ -17,6 +18,7 @@
 
 #include <owl.h>
 #include <scene/SceneSerializer.h>
+#include <scene/component/Tilemap.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -385,6 +387,77 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 				m_parent->setSelectedEntity(getHoveredEntity());
 	}
 	return false;
+}
+
+void Viewport::processTilemapPaint(const TilePalette& iPalette, scene::Entity& ioSelected) {
+	if (mp_document == nullptr || mp_document->state() != SceneDocument::State::Edit)
+		return;
+	if (!iPalette.isPaintActive() || !ioSelected || !ioSelected.hasComponent<scene::component::Tilemap>())
+		return;
+	if (!isHovered() || gui::Guizmo::isOver())
+		return;
+	const bool leftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+	const bool rightDown = ImGui::IsMouseDown(ImGuiMouseButton_Right);
+	if (!leftDown && !rightDown)
+		return;
+
+	auto& tilemap = ioSelected.getComponent<scene::component::Tilemap>();
+	const auto& activeScene = mp_document->getActiveScene();
+	if (!activeScene)
+		return;
+
+	// Mouse → NDC (Y-up). The viewport is a sub-rectangle of the host window.
+	const auto [mx, my] = ImGui::GetMousePos();
+	const math::vec2 vpSize = m_upper - m_lower;
+	if (vpSize.x() <= 0.f || vpSize.y() <= 0.f)
+		return;
+	const float ndcX = ((mx - m_lower.x()) / vpSize.x()) * 2.f - 1.f;
+	const float ndcY = -(((my - m_lower.y()) / vpSize.y()) * 2.f - 1.f);
+
+	// Unproject: world = inv(view * projection) * vec4(ndc, 0, 1).
+	const math::mat4 invVp = math::inverse(m_editorCamera.getViewProjection());
+	const math::vec4 worldH = invVp * math::vec4{ndcX, ndcY, 0.f, 1.f};
+	const float worldX = worldH.x() / worldH.w();
+	const float worldY = worldH.y() / worldH.w();
+
+	// Convert to tilemap-local cell coords. We rely on the entity's translation +
+	// the centred-grid origin used by Scene::render so the math matches the visual.
+	const math::Transform worldXf = activeScene->getWorldTransform(ioSelected);
+	const float cellSize = std::max(0.0001f, tilemap.cellSize);
+	const float originX = -static_cast<float>(tilemap.width - 1) * 0.5f * cellSize;
+	const float originY = static_cast<float>(tilemap.height - 1) * 0.5f * cellSize;
+	const float relX = worldX - worldXf.translation().x() - originX;
+	const float relY = worldXf.translation().y() + originY - worldY;
+	const int cellX = static_cast<int>(std::floor((relX / cellSize) + 0.5f));
+	const int cellY = static_cast<int>(std::floor((relY / cellSize) + 0.5f));
+	if (cellX < 0 || cellY < 0 || cellX >= static_cast<int>(tilemap.width) ||
+		cellY >= static_cast<int>(tilemap.height))
+		return;
+
+	const uint32_t layerIdx = iPalette.getSelectedLayer();
+	if (layerIdx >= tilemap.layers.size())
+		return;
+	const int32_t brush =
+			rightDown ? scene::component::g_EmptyTileIndex : iPalette.getSelectedTile();
+	const int32_t current =
+			tilemap.getTile(layerIdx, static_cast<uint32_t>(cellX), static_cast<uint32_t>(cellY));
+	if (current == brush)
+		return;
+
+	// Capture pre-edit snapshot for the undo stack (one command per cell change is OK
+	// thanks to UndoManager's merge coalescing on rapid identical-target edits).
+	std::string before;
+	if (mp_undoManager != nullptr)
+		before = scene::SceneSerializer::serializeEntityToString(ioSelected);
+	tilemap.setTile(layerIdx, static_cast<uint32_t>(cellX), static_cast<uint32_t>(cellY), brush);
+	if (mp_undoManager != nullptr) {
+		auto cmd = mkUniq<commands::ModifyEntityCommand>(
+				ioSelected.getUUID(),
+				EntitySnapshot{ioSelected.getUUID(), before},
+				"Paint tile");
+		cmd->captureAfter(ioSelected);
+		mp_undoManager->push(std::move(cmd));
+	}
 }
 
 }// namespace owl::nest::panel

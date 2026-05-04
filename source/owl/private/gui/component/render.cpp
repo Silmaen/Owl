@@ -646,4 +646,87 @@ void renderProps(PrefabLink& ioComponent) {
 		ImGui::Text("Overrides: %zu", ioComponent.overriddenComponents.size());
 }
 
+void renderProps(Tilemap& ioComponent) {
+	// --- Tileset asset slot ----------------------------------------------------------------
+	const std::string label =
+			ioComponent.tilesetPath.empty() ? "<drop a .owltileset>" : ioComponent.tilesetPath.generic_string();
+	ImGui::Text("Tileset");
+	ImGui::SameLine();
+	if (ImGui::Button(label.c_str(), ImVec2(-1.f, 0.f))) {
+		// Click clears the tileset reference.
+		ioComponent.tilesetPath.clear();
+		ioComponent.tileset.reset();
+	}
+	fieldTooltip("Drop a .owltileset asset here, or click to clear.");
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Tileset, dropped)) {
+		ioComponent.tilesetPath = dropped;
+		ioComponent.tileset.reset();// force lazy reload at next render
+	}
+
+	// --- Grid dimensions -------------------------------------------------------------------
+	int width = static_cast<int>(ioComponent.width);
+	int height = static_cast<int>(ioComponent.height);
+	if (ImGui::DragInt("Width", &width, 1.f, 1, 1024)) {
+		ioComponent.resize(static_cast<uint32_t>(std::max(1, width)), ioComponent.height);
+	}
+	fieldTooltip("Number of cells horizontally. Existing tiles are preserved on resize.");
+	if (ImGui::DragInt("Height", &height, 1.f, 1, 1024)) {
+		ioComponent.resize(ioComponent.width, static_cast<uint32_t>(std::max(1, height)));
+	}
+	fieldTooltip("Number of cells vertically. Existing tiles are preserved on resize.");
+	ImGui::DragFloat("Cell Size", &ioComponent.cellSize, 0.05f, 0.01f, 100.f, "%.3f");
+	fieldTooltip("World-space size of one cell. The grid is centred on the entity origin.");
+
+	// --- Layers ----------------------------------------------------------------------------
+	ImGui::Separator();
+	ImGui::Text("Layers (%zu)", ioComponent.layers.size());
+	ImGui::SameLine();
+	if (ImGui::SmallButton("+ Add layer")) {
+		ioComponent.addLayer(std::format("layer{}", ioComponent.layers.size()));
+	}
+	int eraseIndex = -1;
+	int moveUpIndex = -1;
+	int moveDownIndex = -1;
+	for (size_t i = 0; i < ioComponent.layers.size(); ++i) {
+		auto& layer = ioComponent.layers[i];
+		ImGui::PushID(static_cast<int>(i));
+		ImGui::Separator();
+		ImGui::InputText("Name", &layer.name);
+		ImGui::Checkbox("Visible", &layer.visible);
+		float parallax[2] = {layer.parallax.x(), layer.parallax.y()};
+		if (ImGui::DragFloat2("Parallax", parallax, 0.01f, 0.f, 4.f, "%.2f")) {
+			layer.parallax = math::vec2{parallax[0], parallax[1]};
+		}
+		fieldTooltip("Per-axis camera-position multiplier. (1, 1) = move with world; (0, 0) = camera-locked.");
+		// Tile count occupied (helpful summary).
+		size_t occupied = 0;
+		for (const auto t: layer.tiles)
+			if (t >= 0)
+				++occupied;
+		ImGui::Text("Tiles: %zu / %u", occupied, ioComponent.width * ioComponent.height);
+		// Reorder + delete row.
+		if (ImGui::SmallButton("up") && i > 0)
+			moveUpIndex = static_cast<int>(i);
+		ImGui::SameLine();
+		if (ImGui::SmallButton("down") && i + 1 < ioComponent.layers.size())
+			moveDownIndex = static_cast<int>(i);
+		ImGui::SameLine();
+		if (ImGui::SmallButton("delete"))
+			eraseIndex = static_cast<int>(i);
+		ImGui::PopID();
+	}
+	if (eraseIndex >= 0) {
+		const auto idx = static_cast<size_t>(eraseIndex);
+		ioComponent.layers.erase(ioComponent.layers.begin() + static_cast<ptrdiff_t>(idx));
+	}
+	if (moveUpIndex > 0) {
+		const auto idx = static_cast<size_t>(moveUpIndex);
+		std::swap(ioComponent.layers[idx], ioComponent.layers[idx - 1]);
+	}
+	if (moveDownIndex >= 0) {
+		const auto idx = static_cast<size_t>(moveDownIndex);
+		std::swap(ioComponent.layers[idx], ioComponent.layers[idx + 1]);
+	}
+}
+
 }// namespace owl::gui::component

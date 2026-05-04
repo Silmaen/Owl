@@ -21,6 +21,24 @@ function on_create()
     delete_save_id = scene.find_entity("DeleteSaveButton")
     mouse_label_id = scene.find_entity("MousePosLabel")
 
+    -- Hide the legacy ContinueButton — the primary PlayButton now toggles
+    -- between "Démarrer" and "Continuer" depending on whether an in-game
+    -- pause snapshot exists in gamestate.
+    if continue_id ~= 0 then
+        ui.set_visible(continue_id, false)
+    end
+
+    -- Update the PlayButton label according to the pause-continue snapshot.
+    local play_id = scene.find_entity("PlayButton")
+    if play_id ~= 0 then
+        local has_resume = gamestate.get("has_continue", false)
+        if has_resume then
+            ui.set_text(play_id, "Continuer")
+        else
+            ui.set_text(play_id, "Démarrer")
+        end
+    end
+
     refresh_save_info()
 end
 
@@ -91,12 +109,24 @@ function on_update(dt)
 end
 
 function on_play_clicked()
-    log.info("Play button clicked! Loading gameplay...")
-    sound.play("sounds/start.wav")
-    gamestate.set("score", 0)
-    gamestate.remove("health")
-    pending_scene = "scenes/gameplay.owl"
-    ui.transition_fade_out(0.3)
+    -- Either resume a paused session ("Continuer") or start a fresh run ("Démarrer").
+    local has_resume = gamestate.get("has_continue", false)
+    if has_resume then
+        local target = gamestate.get("continue_scene", "scenes/world_map.owl")
+        log.info("Continue clicked — resuming '" .. target .. "'")
+        sound.play("sounds/start.wav")
+        -- Position is restored by the destination scene's player script
+        -- (world_player.lua / platformer_player.lua read continue_x/y/z).
+        gamestate.set("has_continue", false)
+        pending_scene = target
+        ui.transition_fade_out(0.3)
+    else
+        log.info("Start clicked — fresh run, loading world map.")
+        sound.play("sounds/start.wav")
+        gamestate.clear()
+        pending_scene = "scenes/world_map.owl"
+        ui.transition_fade_out(0.3)
+    end
 end
 
 function on_continue_clicked()

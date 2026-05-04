@@ -160,18 +160,24 @@ OWL_API void renderProps(scene::component::UIProgressBar& ioComponent);
 OWL_API void renderProps(scene::component::PrefabLink& ioComponent);
 
 /**
+ * @brief Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::Tilemap& ioComponent);
+
+/**
  * @brief List of components that have a render function.
  */
 using DrawableComponents =
 		std::tuple<scene::component::Transform, scene::component::Camera, scene::component::SpriteRenderer,
 				   scene::component::AnimatedSpriteRenderer, scene::component::CircleRenderer,
-				   scene::component::Text, scene::component::PhysicBody, scene::component::Player,
-				   scene::component::Trigger, scene::component::EntityLink, scene::component::BackgroundTexture,
-				   scene::component::Visibility, scene::component::SoundSource, scene::component::SoundListener,
-				   scene::component::LuaScript, scene::component::PrefabLink, scene::component::Canvas,
-				   scene::component::UIRect, scene::component::UIText, scene::component::UIImage,
-				   scene::component::UIPanel, scene::component::UIButton, scene::component::UISlider,
-				   scene::component::UIProgressBar>;
+				   scene::component::Text, scene::component::Tilemap, scene::component::PhysicBody,
+				   scene::component::Player, scene::component::Trigger, scene::component::EntityLink,
+				   scene::component::BackgroundTexture, scene::component::Visibility, scene::component::SoundSource,
+				   scene::component::SoundListener, scene::component::LuaScript, scene::component::PrefabLink,
+				   scene::component::Canvas, scene::component::UIRect, scene::component::UIText,
+				   scene::component::UIImage, scene::component::UIPanel, scene::component::UIButton,
+				   scene::component::UISlider, scene::component::UIProgressBar>;
 
 
 }// namespace owl::gui::component

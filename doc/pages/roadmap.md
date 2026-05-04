@@ -293,11 +293,22 @@ the tilemap system, and scene-to-scene transition effects.
         - `SceneHierarchy` inspector: dropdown for `RendererTag.rendererName`
           populated from the active scene's enabled renderers, with
           "Default (first)" as the no-component option.
-    - ![Planned][planned] Tilemap system for 2D
-        - Tile-based map component as an alternative to individual sprite entities
-        - Tileset definition (texture atlas + tile properties)
-        - Tile layers with collision, parallax scrolling
-        - Tilemap editor in Owl Nest (paint, fill, erase tools)
+    - ![Done][done] Tilemap system for 2D
+        - `scene::Tileset` asset (`.owltileset`): texture atlas + tile size +
+          `columns × rows` grid + per-tile metadata (collidable flag, name).
+          Sparse YAML round-trip.
+        - `scene::component::Tilemap`: tileset reference, `width × height`
+          cell grid, multi-layer support (each with name / visibility /
+          parallax / tile data). Comma-separated tile encoding in YAML for
+          compact storage on large grids.
+        - Renderer: per-cell quads from atlas UVs in `Scene::render`.
+        - Physics: one static Box2D body per Tilemap entity, one box
+          fixture per collidable cell, generated at `onStartRuntime`.
+        - Editor: inspector with tileset drop slot + grid resize + layer
+          add/delete/reorder + per-layer parallax/visibility; **Tile Palette**
+          panel for tile + active-layer + eraser selection; viewport paint
+          mode (left-click paints, right-click erases) with `ModifyEntityCommand`
+          undo per click. Fill / flood / rect tools deferred to a follow-up.
 - Raycasting Renderer
     - ![Planned][planned] Raycasting core
         - DDA raycasting algorithm rendering a 2D grid map as pseudo-3D
@@ -373,11 +384,50 @@ custom file picker, and add core gameplay primitives (inventory, enemies).
         - Pure ImGui implementation integrated with the task scheduler for async folder scanning
         - Benefits: consistent look-and-feel, truly non-blocking, theme-aware
         - Replaces the current sync `FileDialog::openFile/saveFile/pickFolder` blocking calls
+    - ![Planned][planned] Editor camera controls overhaul
+        - Current `CameraEditor` is awkward to manipulate (orbit feels off-axis,
+          pan/zoom thresholds are inconsistent, RMB-drag direction sometimes fights
+          the user). Re-tune sensitivity per axis, add deadzones, support
+          Maya/Blender-style middle-click navigation as an option, surface the
+          settings under `Settings > Editor > Camera`.
+    - ![Planned][planned] "Look through scene camera" mode
+        - Let the user temporarily drive the editor viewport from any
+          `component::Camera` entity in the scene (primary or otherwise),
+          for previewing what the runtime camera will see without entering Play.
+          Toggleable from the camera entity's context menu or a viewport overlay
+          dropdown. Reverts to the editor camera on demand.
 - Gameplay
     - ![Planned][planned] Inventory system
         - Collectible objects
         - Key-locked switches
     - ![Planned][planned] Enemies
+- Known bug fixes (deferred from v0.2.0)
+    - ![Planned][planned] Editor keyboard shortcuts unreliable
+        - Ctrl+S in particular often fails to fire. Suspected cause: the
+          `KeyPressedEvent` reaches `EditorLayer::onEvent` → `ActionRegistry::dispatch`
+          but the action's predicate (e.g. focus check, active-document type) silently
+          returns. Investigate whether ImGui's text widgets consume the key before
+          Owl's event layer sees it, or whether `ActionRegistry::dispatch` swallows
+          the event when the predicate fails (it does — the key is "claimed" even
+          though nothing happened). Add per-shortcut "claimed" feedback (toast on log)
+          and audit every action's predicate path.
+    - ![Planned][planned] World-map top-down player drifts vertically
+        - `world_player.lua` cancels engine gravity by adding `+9.81 * dt` to the
+          desired vy each frame. The cancellation is exact when nothing else is
+          touching the body, but as soon as the player collides (mountain border,
+          fence, fountain corner from above) the contact resolution doesn't match
+          the expected steady-state and the net vy ends up biased — visible as a
+          slight upward "sticky" feel near top contacts. Proper fix: expose
+          `physics.set_gravity_scale(id, scale)` in the engine and set scale=0 for
+          the top-down player, instead of the per-frame impulse hack.
+    - ![Planned][planned] World-map teleporter triggers while invisible
+        - `Visibility.gameVisible = false` hides the entity but does NOT skip its
+          trigger overlap detection — `Scene::onUpdateRuntime` runs the trigger loop
+          for every entity with a `Trigger` component regardless of visibility. So
+          the teleporter fires and loads `victory.owl` even when houses_visited <
+          houses_total. Fix options: (a) engine skips triggers on invisible entities
+          (matching Hierarchy `isEffectivelyVisible`), or (b) `teleporter.lua` early-
+          returns from `on_teleporter_enter` when the unlock condition isn't met.
 
 ## v0.1.1 -- 2026-04-30
 

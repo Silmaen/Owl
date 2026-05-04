@@ -25,6 +25,7 @@
 #include "panel/ProjectSettings.h"
 #include "panel/SceneHierarchy.h"
 #include "panel/SettingsPanel.h"
+#include "panel/TilePalette.h"
 
 namespace owl::nest {
 /**
@@ -89,6 +90,11 @@ public:
 	void saveSceneAs();
 	void saveSceneAs(const std::filesystem::path& iScenePath);
 	void saveCurrentScene();
+	/// @brief Dispatch the Ctrl+S save shortcut to the active document, whichever its kind
+	///        (`SceneDocument` → async scene serialise; `CodeEditorDocument` → write the
+	///        Lua / Markdown / SVG file directly). No-op outside Edit state or when the
+	///        active document has no on-disk path yet.
+	void saveActiveDocument();
 
 	void newProject();
 	void openProject();
@@ -251,6 +257,7 @@ private:
 	panel::SettingsPanel m_settingsPanel;
 	panel::AsyncProgressModal m_asyncProgress;
 	panel::HelpPanel m_helpPanel;
+	panel::TilePalette m_tilePalette;
 
 public:
 	/// @brief Open the in-editor help on the contextual page for the component currently hovered

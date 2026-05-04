@@ -123,10 +123,11 @@ TEST_F(AnimationClipFixture, FileRoundTripInTempDir) {
 	std::filesystem::remove(tmp);
 }
 
-TEST_F(AnimationClipFixture, SampleProjectCoinClipLoads) {
-	const auto path = owl::test::getRootPath() / "sample_project" / "animations" / "coin.owlanim";
+TEST_F(AnimationClipFixture, BundledCoinClipLoads) {
+	// Fixture lives under engine_assets/ — tests must not depend on sample_project/.
+	const auto path = owl::test::getRootPath() / "engine_assets" / "animations" / "coin.owlanim";
 	if (!std::filesystem::exists(path))
-		GTEST_SKIP() << "Sample asset missing: " << path;
+		GTEST_SKIP() << "Engine asset missing: " << path;
 
 	AnimationClip clip;
 	ASSERT_TRUE(clip.loadFromFile(path));

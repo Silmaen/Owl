@@ -46,6 +46,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       on a Linux agent when a TeamCity workspace is reused across OSes).
     - Also captures `stderr` from the `git` subprocess so the noisy
       `fatal: bad object HEAD` output no longer leaks to the build log.
+- **Tilemap system (engine + editor)** — grid-based level authoring with
+  shared tile atlases.
+    - New `scene::Tileset` asset (`.owltileset`): texture + tile size +
+      `columns × rows` grid + per-tile metadata (collidable flag, optional
+      designer name). Sparse YAML serialization (only non-default tiles
+      emitted). Public API: `getTileUv`, `getTileMeta`, `isCollidable`,
+      `serializeToString` / `deserializeFromString`, `saveToFile` /
+      `loadFromFile`.
+    - New `scene::component::Tilemap` component: tileset reference (path),
+      `width × height` cell grid, multi-layer support with per-layer name,
+      visibility, parallax factor, and a flat row-major tile-index buffer.
+      Tile data is encoded as a comma-separated string in YAML to keep
+      large grids (4k+ cells) readable. Lazy resolution of the tileset asset
+      via `Application::getAssetDirectories()` at first render.
+    - Renderer integration: `Scene::render` walks Tilemap entities, draws one
+      `Renderer2D::drawQuad` per non-empty cell with the tileset's atlas UVs.
+      Layer order is back-to-front, invisible layers are skipped.
+    - Physics integration: `PhysicCommand::init` generates one static Box2D
+      body per Tilemap entity with one box fixture per collidable cell.
+      Tilemaps with no collidable tile in their tileset are skipped (no
+      empty body created).
+    - Editor — Inspector: tileset asset slot with `.owltileset` drag-drop
+      target, grid resize (preserves overlapping cells), cell-size field,
+      layer list with name / visibility / parallax / occupancy + add /
+      delete / move-up / move-down per layer.
+    - Editor — Tile Palette panel: shows the active tileset's atlas as a
+      clickable tile grid, eraser button, active-layer dropdown. Tracks
+      selection from the SceneHierarchy panel automatically.
+    - Editor — Viewport paint mode: when a Tilemap entity is selected and
+      the Tile Palette has a brush, left-click paints the selected tile and
+      right-click erases. Each paint operation pushes a `ModifyEntityCommand`
+      on the per-document undo stack (rapid clicks coalesce via merge).
+    - ContentBrowser: `.owltileset` icon + drag-drop to inspector field
+      (filtered through `widgets::AssetKind::Tileset`).
+    - Tests: `Tileset_test` (9 cases — resize, UV math, sparse round-trip,
+      file round-trip, malformed input, out-of-range tile metadata),
+      `Tilemap_test` (6 cases — layer add, get/set, resize-with-preservation,
+      multi-layer YAML round-trip including parallax).
+
+- **Sample game rebuilt around the tilemap system** with a two-stage world
+  flow:
+    - **`world_map.owl`** (NEW): top-down 32×24 tilemap (`world_topdown.owltileset`,
+      16 tiles) — grass plain bordered by mountains, central house with
+      door, water + lava hazards (instant death via `Trigger::Death`),
+      hidden teleporter that appears once every house has been explored.
+      Top-down player using `physics.set_velocity` with per-frame gravity
+      cancellation (Box2D world gravity is hardcoded to -9.81 in v0.2.x).
+    - **`platformer_house.owl`** (NEW): side-scroller 28×16 inside the house
+      (`world_platform.owltileset`, 8 tiles) — jumping puzzle with brick
+      walls, platforms, ladder, lava pits (death), spike traps (damage),
+      victory zone. Reuses Player component for jump impulse.
+    - **Cross-scene flow**: Main menu → world map → enter house → platformer
+      → victory closes that house → world map → teleporter (visible once
+      `houses_visited == houses_total`) → Victory screen.
+    - **ESC continue mechanic**: ESC in any gameplay scene saves a snapshot
+      (`continue_scene`/`continue_x/y/z`/`has_continue` keys in gamestate)
+      and returns to the menu. The menu's primary button label flips
+      between **"Démarrer"** (fresh run) and **"Continuer"** (resume); the
+      destination scene's player script restores position from the snapshot.
+    - **Shared HUD**: `HUDCanvas` + `HealthBar` (UIProgressBar) + control
+      hint (UIText) embedded directly in both gameplay scenes; player
+      scripts push `gamestate.health` to the bar each frame. Spike hits in
+      the platformer deduct ~0.34 of the health bar per contact.
+    - New scripts: `world_player.lua`, `platformer_player.lua`,
+      `house_door.lua`, `teleporter.lua`, `spike_damage.lua`,
+      `level_complete.lua`. Reworked `main_menu.lua` (dynamic button label
+      + clear continue snapshot on fresh start) and `game_over.lua`
+      (retry now returns to the world map).
 
 ### Changed
 
