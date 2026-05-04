@@ -3,6 +3,8 @@ Entities:
   - Entity: 200000000000000006
     Tag:
       tag: MenuButton
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -35,6 +37,8 @@ Entities:
   - Entity: 200000000000000005
     Tag:
       tag: ScoreLabel
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -61,6 +65,8 @@ Entities:
   - Entity: 200000000000000004
     Tag:
       tag: VictoryTitle
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -87,6 +93,8 @@ Entities:
   - Entity: 200000000000000003
     Tag:
       tag: VictoryCanvas
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]

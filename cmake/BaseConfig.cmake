@@ -170,6 +170,14 @@ if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
             endif ()
         endforeach ()
         target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -U_GLIBCXX_DEBUG)
+        # PE/COFF section table is 16-bit by default (max 65535 sections). Heavy template
+        # instantiations in Scene.cpp / SceneSerializer.cpp now exceed that limit on
+        # mingw-gcc 15+ and the linker reports "relocation truncated to fit" against
+        # `.text$<symbol>` / `.pdata$<symbol>` / `.xdata$<symbol>`. The big-obj COFF
+        # variant lifts the limit to ~4 billion sections; required to keep the project
+        # link-clean as the engine grows. Apply globally to avoid whack-a-mole as more
+        # template-heavy TUs land.
+        target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -Wa,-mbig-obj)
     endif ()
 elseif (${PROJECT_PREFIX}_PLATFORM_LINUX)
     set(CMAKE_PLATFORM_USES_PATH_WHEN_NO_SONAME OFF)

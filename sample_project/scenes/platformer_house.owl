@@ -3,6 +3,8 @@ Entities:
   - Entity: 3000000000000000063
     Tag:
       tag: HudHint
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -29,6 +31,8 @@ Entities:
   - Entity: 3000000000000000062
     Tag:
       tag: ScoreText
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -55,6 +59,8 @@ Entities:
   - Entity: 3000000000000000061
     Tag:
       tag: HealthBar
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -78,6 +84,8 @@ Entities:
   - Entity: 3000000000000000060
     Tag:
       tag: HUDCanvas
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]

@@ -84,6 +84,15 @@ public:
 	static void setVelocity(const scene::Entity& iEntity, const math::vec2f& iVelocity);
 
 	/**
+	 * @brief Set the gravity scale of the given dynamic body. A value of 0
+	 * cancels gravity for that body without changing its mass; useful for
+	 * top-down characters that share a 2D world with platformer scenes.
+	 * @param iEntity The entity to modify (must have a dynamic PhysicBody).
+	 * @param iScale The new gravity scale (1 = full world gravity, 0 = none).
+	 */
+	static void setGravityScale(const scene::Entity& iEntity, float iScale);
+
+	/**
 	 * @brief Snapshot of a physics body's runtime state (for save/load).
 	 */
 	struct PhysicsSnapshot {

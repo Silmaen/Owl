@@ -294,10 +294,24 @@ private:
 	/// Draw screen-space UI overlays (Canvas entities) within the current render batch.
 	/// @param[in] iCamera The active camera (for pixel-to-world conversion).
 	void renderUI(const renderer::Camera& iCamera);
+	/// Orchestrate per-layer rendering when the engine has an active `RenderStack`,
+	/// or fall back to a single legacy pass when the stack is empty. Centralises the
+	/// `Renderer2D::resetStats / beginScene / endScene` book-keeping.
+	void renderWithStack(const renderer::Camera& iCamera);
+	/// Whether the current draw pass should include this entity, based on its
+	/// optional `RendererTag` and the layer being processed.
+	[[nodiscard]] auto layerAccepts(const Entity& iEntity) const -> bool;
 	/// The viewport's size.
 	math::vec2ui m_viewportSize = {0, 0};
 	/// Inverse of camera view rotation matrix (for skybox rendering).
 	math::mat4 m_inverseViewRotation = math::identity<float, 4>();
+	/// Name of the `RenderLayer` currently being filled (empty during the legacy
+	/// single-pass path). Set by `renderWithStack` before each `render()` /
+	/// `renderUI()` call so per-layer entity filtering can run.
+	std::string m_currentLayerName;
+	/// Whether the layer being processed is the first one in the stack — entities
+	/// without a `RendererTag` are routed there by default.
+	bool m_currentLayerIsFirst = true;
 
 	friend class Entity;
 	friend class ScriptableEntity;

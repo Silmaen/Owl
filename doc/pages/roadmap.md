@@ -252,6 +252,88 @@ scene authoring, and cross-platform packaging from any host.
         - Side-by-side preview of the source `.md` next to the rendered output (debug aid for
           contributors editing pages)
 
+## v0.2.2 -- Expected 2026-12-01
+
+**Goal:** Round out the 2D experience with dynamic lighting, ship the long-awaited
+custom file picker, and add core gameplay primitives (inventory, enemies).
+
+- 2D Lighting
+    - ![Planned][planned] 2D lighting system
+        - Point lights, spot lights in 2D scenes
+        - Normal-mapped sprites for dynamic 2D lighting
+        - Shadow casting from 2D occluders
+- Editor Infrastructure
+    - ![Planned][planned] Custom ImGui-based file picker
+        - Replace the native file dialog (NFD/GTK) which briefly freezes the UI on Linux
+          when GTK initializes (triggers IDE "antiloop" detection)
+        - Pure ImGui implementation integrated with the task scheduler for async folder scanning
+        - Benefits: consistent look-and-feel, truly non-blocking, theme-aware
+        - Replaces the current sync `FileDialog::openFile/saveFile/pickFolder` blocking calls
+    - ![Planned][planned] Editor camera controls overhaul
+        - Current `CameraEditor` is awkward to manipulate (orbit feels off-axis,
+          pan/zoom thresholds are inconsistent, RMB-drag direction sometimes fights
+          the user). Re-tune sensitivity per axis, add deadzones, support
+          Maya/Blender-style middle-click navigation as an option, surface the
+          settings under `Settings > Editor > Camera`.
+    - ![Planned][planned] "Look through scene camera" mode
+        - Let the user temporarily drive the editor viewport from any
+          `component::Camera` entity in the scene (primary or otherwise),
+          for previewing what the runtime camera will see without entering Play.
+          Toggleable from the camera entity's context menu or a viewport overlay
+          dropdown. Reverts to the editor camera on demand.
+- Gameplay
+    - ![Planned][planned] Inventory system
+        - Collectible objects
+        - Key-locked switches
+    - ![Planned][planned] Enemies
+- Known bug fixes (deferred from v0.2.0 — all closed during v0.2.0)
+    - ![Done][done] Editor keyboard shortcuts unreliable — *fixed in v0.2.0*
+        - Modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) now bypass
+          `ImGui::GetIO().WantCaptureKeyboard`, matching the convention used by
+          VS Code / Blender / Unity. Modifier-less shortcuts still yield to
+          focused text widgets. When a shortcut would have matched but is
+          suppressed by capture, `ActionRegistry::dispatch` logs a TRACE entry.
+    - ![Done][done] World-map top-down player drifts vertically — *fixed in v0.2.0*
+        - New `physics.set_gravity_scale(entity, scale)` Lua API exposes
+          `b2Body_SetGravityScale`. `world_player.lua` now sets scale = 0 in
+          `on_create` instead of the per-frame `+9.81 * dt` cancellation hack.
+    - ![Done][done] Hidden triggers fired regardless of visibility — *fixed in v0.2.0*
+        - `Scene::onUpdateRuntime` now skips trigger entities whose
+          `Visibility.gameVisible` is false (or whose ancestor is hidden);
+          any in-progress timer is stopped and prior overlap state is cleared
+          with a synthetic `onTriggerExit`.
+
+## v0.2.1 -- Expected 2026-10-01
+
+**Goal:** Add the second non-2D rendering mode — a voxel engine for block-based worlds
+(Minecraft-style), riding on the renderer stack architecture established in v0.2.0.
+
+- Voxel Engine
+    - ![Planned][planned] Voxel world core
+        - Chunk-based world (e.g. 16x16x256 chunks)
+        - Block type registry with textures per face
+        - Chunk loading/unloading around camera
+    - ![Planned][planned] Chunk meshing
+        - Greedy meshing or similar algorithm for efficient geometry
+        - Only exposed faces rendered (hidden face culling)
+        - Frustum culling per chunk
+    - ![Planned][planned] Terrain generation
+        - Procedural terrain via noise functions (Perlin/Simplex)
+        - Configurable biomes, terrain height, cave generation
+        - Seed-based reproducible worlds
+    - ![Planned][planned] Block interaction
+        - Block placement and destruction
+        - Block picking (raycast from camera to find targeted block)
+        - Block metadata (orientation, state)
+    - ![Planned][planned] Voxel rendering
+        - Ambient occlusion per vertex for block edges
+        - Basic directional lighting
+        - Water/transparent block rendering with proper sorting
+    - ![Planned][planned] Voxel editor in Owl Nest
+        - Brush tools for painting blocks
+        - Prefab structures (trees, buildings) as reusable block templates
+        - Chunk inspector for debugging
+
 ## v0.2.0 -- Expected 2026-08-01
 
 **Goal:** Introduce a composable **renderer stack** so scenes can mix and match rendering
@@ -279,20 +361,27 @@ the tilemap system, and scene-to-scene transition effects.
         - Tests cover factory, stack build, scene-override merge, frame
           callback order, find-by-name, plus per-scene and per-entity
           serialization round-trips.
-    - ![Planned][planned] Runtime install + per-entity dispatch
-        - Build the `RenderStack` from `Project::rendererStack` +
-          `Scene::getEnabledRenderers()` and install via
-          `Renderer::setRenderStack` at scene activation in `EditorLayer` /
-          `RunnerLayer`.
-        - Route `Scene::render` draws through the stack so `RendererTag` is
-          honoured (currently the legacy direct-`Renderer2D` path is still in
-          use; the second consumer arrives with the raycasting layer below).
-    - ![Planned][planned] Editor UI for the stack
-        - `ProjectSettings` panel: add/remove/reorder renderer entries with
-          per-type `DefaultConfig` editing.
-        - `SceneHierarchy` inspector: dropdown for `RendererTag.rendererName`
-          populated from the active scene's enabled renderers, with
-          "Default (first)" as the no-component option.
+    - ![Done][done] Runtime install + per-entity dispatch
+        - `EditorLayer::syncActiveDocumentPanels` builds the `RenderStack` from
+          `Project::rendererStack` + `Scene::getEnabledRenderers()` and installs
+          it via `Renderer::setRenderStack` on every active-document change;
+          the runner does the equivalent at scene load.
+        - `Scene::renderWithStack` orchestrates per-layer passes (`onBeginFrame`
+          → `render` → `renderUI` → `onEndFrame`) and `Scene::layerAccepts`
+          routes entities by their `RendererTag` (untagged → first layer;
+          backgrounds draw only on the first pass).
+    - ![Done][done] Editor UI for the stack
+        - **Project Settings** modal: ordered list of layers with Type combo
+          (factory keys), Name input, up/down reorder buttons, remove button,
+          `+ Add Layer`. Stack changes hot-reload without reopening the project.
+        - **Scene Hierarchy** inspector: editable `RendererTag` dropdown of the
+          active stack's layer names + a `(default — first layer)` choice;
+          surfaces a one-shot warning when the chosen name doesn't match any
+          active layer.
+        - **Sample project** (`sample_project/owl_project.yml`) opts into a
+          two-layer stack `[Renderer2D(world), Renderer2D(ui)]` and tags all
+          UI entities across every scene with `RendererTag: { Name: ui }` to
+          dissociate scene rendering from HUD/menu rendering end-to-end.
     - ![Done][done] Tilemap system for 2D
         - `scene::Tileset` asset (`.owltileset`): texture atlas + tile size +
           `columns × rows` grid + per-tile metadata (collidable flag, name).
@@ -335,99 +424,6 @@ the tilemap system, and scene-to-scene transition effects.
     - ![Planned][planned] Scene transition effects
         - Configurable fade, wipe, or custom shader transitions between scenes
         - Lua API to trigger transitions with parameters (duration, type)
-
-## v0.2.1 -- Expected 2026-10-01
-
-**Goal:** Add the second non-2D rendering mode — a voxel engine for block-based worlds
-(Minecraft-style), riding on the renderer stack architecture established in v0.2.0.
-
-- Voxel Engine
-    - ![Planned][planned] Voxel world core
-        - Chunk-based world (e.g. 16x16x256 chunks)
-        - Block type registry with textures per face
-        - Chunk loading/unloading around camera
-    - ![Planned][planned] Chunk meshing
-        - Greedy meshing or similar algorithm for efficient geometry
-        - Only exposed faces rendered (hidden face culling)
-        - Frustum culling per chunk
-    - ![Planned][planned] Terrain generation
-        - Procedural terrain via noise functions (Perlin/Simplex)
-        - Configurable biomes, terrain height, cave generation
-        - Seed-based reproducible worlds
-    - ![Planned][planned] Block interaction
-        - Block placement and destruction
-        - Block picking (raycast from camera to find targeted block)
-        - Block metadata (orientation, state)
-    - ![Planned][planned] Voxel rendering
-        - Ambient occlusion per vertex for block edges
-        - Basic directional lighting
-        - Water/transparent block rendering with proper sorting
-    - ![Planned][planned] Voxel editor in Owl Nest
-        - Brush tools for painting blocks
-        - Prefab structures (trees, buildings) as reusable block templates
-        - Chunk inspector for debugging
-
-## v0.2.2 -- Expected 2026-12-01
-
-**Goal:** Round out the 2D experience with dynamic lighting, ship the long-awaited
-custom file picker, and add core gameplay primitives (inventory, enemies).
-
-- 2D Lighting
-    - ![Planned][planned] 2D lighting system
-        - Point lights, spot lights in 2D scenes
-        - Normal-mapped sprites for dynamic 2D lighting
-        - Shadow casting from 2D occluders
-- Editor Infrastructure
-    - ![Planned][planned] Custom ImGui-based file picker
-        - Replace the native file dialog (NFD/GTK) which briefly freezes the UI on Linux
-          when GTK initializes (triggers IDE "antiloop" detection)
-        - Pure ImGui implementation integrated with the task scheduler for async folder scanning
-        - Benefits: consistent look-and-feel, truly non-blocking, theme-aware
-        - Replaces the current sync `FileDialog::openFile/saveFile/pickFolder` blocking calls
-    - ![Planned][planned] Editor camera controls overhaul
-        - Current `CameraEditor` is awkward to manipulate (orbit feels off-axis,
-          pan/zoom thresholds are inconsistent, RMB-drag direction sometimes fights
-          the user). Re-tune sensitivity per axis, add deadzones, support
-          Maya/Blender-style middle-click navigation as an option, surface the
-          settings under `Settings > Editor > Camera`.
-    - ![Planned][planned] "Look through scene camera" mode
-        - Let the user temporarily drive the editor viewport from any
-          `component::Camera` entity in the scene (primary or otherwise),
-          for previewing what the runtime camera will see without entering Play.
-          Toggleable from the camera entity's context menu or a viewport overlay
-          dropdown. Reverts to the editor camera on demand.
-- Gameplay
-    - ![Planned][planned] Inventory system
-        - Collectible objects
-        - Key-locked switches
-    - ![Planned][planned] Enemies
-- Known bug fixes (deferred from v0.2.0)
-    - ![Planned][planned] Editor keyboard shortcuts unreliable
-        - Ctrl+S in particular often fails to fire. Suspected cause: the
-          `KeyPressedEvent` reaches `EditorLayer::onEvent` → `ActionRegistry::dispatch`
-          but the action's predicate (e.g. focus check, active-document type) silently
-          returns. Investigate whether ImGui's text widgets consume the key before
-          Owl's event layer sees it, or whether `ActionRegistry::dispatch` swallows
-          the event when the predicate fails (it does — the key is "claimed" even
-          though nothing happened). Add per-shortcut "claimed" feedback (toast on log)
-          and audit every action's predicate path.
-    - ![Planned][planned] World-map top-down player drifts vertically
-        - `world_player.lua` cancels engine gravity by adding `+9.81 * dt` to the
-          desired vy each frame. The cancellation is exact when nothing else is
-          touching the body, but as soon as the player collides (mountain border,
-          fence, fountain corner from above) the contact resolution doesn't match
-          the expected steady-state and the net vy ends up biased — visible as a
-          slight upward "sticky" feel near top contacts. Proper fix: expose
-          `physics.set_gravity_scale(id, scale)` in the engine and set scale=0 for
-          the top-down player, instead of the per-frame impulse hack.
-    - ![Planned][planned] World-map teleporter triggers while invisible
-        - `Visibility.gameVisible = false` hides the entity but does NOT skip its
-          trigger overlap detection — `Scene::onUpdateRuntime` runs the trigger loop
-          for every entity with a `Trigger` component regardless of visibility. So
-          the teleporter fires and loads `victory.owl` even when houses_visited <
-          houses_total. Fix options: (a) engine skips triggers on invisible entities
-          (matching Hierarchy `isEffectivelyVisible`), or (b) `teleporter.lua` early-
-          returns from `on_teleporter_enter` when the unlock condition isn't met.
 
 ## v0.1.1 -- 2026-04-30
 

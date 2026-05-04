@@ -20,6 +20,11 @@ namespace owl::renderer {
  * Stored in `owl_project.yml` under `RendererStack:`. Combined with the scene's
  * `EnabledRenderers` overrides at scene activation time.
  */
+// NOLINTBEGIN(bugprone-exception-escape)
+// `YAML::Node::operator=` may throw `InvalidNode`; the implicit copy/move-assignment
+// of this struct inherits that, but in practice the entries we copy/move are always
+// well-formed and the throw never happens. Suppress here rather than at every call
+// site (vector reallocation, `std::swap`, …).
 struct OWL_API RendererStackEntry {
 	/// Factory type key (e.g. `"Renderer2D"`).
 	std::string typeKey;
@@ -28,6 +33,7 @@ struct OWL_API RendererStackEntry {
 	/// Default config (project-level). May be empty.
 	YAML::Node defaultConfig;
 };
+// NOLINTEND(bugprone-exception-escape)
 
 /**
  * @brief Project-level renderer stack definition (ordered list of entries).

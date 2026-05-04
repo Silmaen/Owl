@@ -1,10 +1,10 @@
 -- World map player controller (top-down view).
 -- Demonstrates: top-down 4-directional movement using physics.set_velocity
--- with per-frame gravity cancellation, gamestate-based pause/continue.
+-- with gravity scale = 0 to opt out of the global Box2D gravity.
 --
--- The world physic uses a downward gravity (Box2D world is hardcoded -9.81 in
--- v0.2.x). For a top-down view we cancel it each frame by adding +g*dt to the
--- desired vertical velocity, so the body moves only by what input requests.
+-- The world physic uses a downward gravity (-9.81 on Y). For top-down play we
+-- set this body's gravity scale to 0 once at create time, so set_velocity is
+-- the sole source of motion (no per-frame cancellation hack).
 
 properties = {
     { name = "speed", type = "float", default = 5.0 },
@@ -19,6 +19,8 @@ local camera_id = 0
 
 function on_create()
     log.info("WorldPlayer created with speed=" .. speed)
+    -- Top-down: opt out of the world's downward gravity for this body.
+    physics.set_gravity_scale(entity_id, 0.0)
     -- Initialise houses_total once per game (defaults to 1 in this sample).
     local total = gamestate.get("houses_total", 0)
     if total == 0 then
@@ -79,8 +81,7 @@ function on_update(dt)
     if input.is_key_pressed(65) then mvx = mvx - speed end
     if input.is_key_pressed(68) then mvx = mvx + speed end
 
-    -- Cancel built-in gravity (-9.81 on Y) so the body moves only by input.
-    physics.set_velocity(entity_id, mvx, mvy + 9.81 * dt)
+    physics.set_velocity(entity_id, mvx, mvy)
 
     -- Camera always centred on the player. No clamping — if the player walks past the
     -- mountain border, we want to see the void rather than have the camera lag behind.

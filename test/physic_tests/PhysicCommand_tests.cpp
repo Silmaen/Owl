@@ -115,3 +115,50 @@ TEST(PhysicCommand, Impulse) {
 
 	Log::invalidate();
 }
+
+// A dynamic body with `gravityScale = 0` must not accumulate any velocity from world gravity.
+// This is the API the top-down `world_player.lua` uses to opt out of gravity entirely.
+TEST(PhysicCommand, GravityScaleZeroCancelsFalling) {
+	Log::init(Log::Level::Off);
+	Scene scene;
+	auto b1 = scene.createEntity("body1");
+	{
+		auto& [body] = b1.addComponent<component::PhysicBody>();
+		body.type = SceneBody::BodyType::Dynamic;
+	}
+	PhysicCommand::init(&scene);
+	PhysicCommand::setGravityScale(b1, 0.f);
+	Timestep ts;
+	ts.forceUpdate(std::chrono::milliseconds(500));
+	for (int i = 0; i < 10; ++i)
+		PhysicCommand::frame(ts);
+	// Vertical velocity must stay at 0 — Box2D world gravity has no effect on this body.
+	EXPECT_NEAR(PhysicCommand::getVelocity(b1).y(), 0.0, 1e-3);
+	Log::invalidate();
+}
+
+// `setGravityScale` must be a no-op (no crash) for the cases we silently swallow elsewhere:
+// uninitialized engine, null entity, no physic body, or a static body. Dynamic bodies
+// must be registered in the physics world (i.e. created BEFORE `init`) before we can
+// dereference their `bodyId` — that path is covered by `GravityScaleZeroCancelsFalling`.
+TEST(PhysicCommand, GravityScaleNoOpEdgeCases) {
+	Log::init(Log::Level::Off);
+	Scene scene;
+	auto noBody = scene.createEntity("nobody");
+	auto staticBody = scene.createEntity("static");
+	{
+		auto& [body] = staticBody.addComponent<component::PhysicBody>();
+		body.type = SceneBody::BodyType::Static;
+	}
+
+	// Uninitialized: warns but does not crash.
+	PhysicCommand::setGravityScale(noBody, 0.f);
+	PhysicCommand::init(&scene);
+	// Null entity.
+	PhysicCommand::setGravityScale({}, 0.f);
+	// Entity without PhysicBody.
+	PhysicCommand::setGravityScale(noBody, 0.f);
+	// Static body — silently ignored (only Dynamic is meaningful).
+	PhysicCommand::setGravityScale(staticBody, 0.f);
+	Log::invalidate();
+}

@@ -207,8 +207,6 @@ auto ActionRegistry::dispatch(const event::KeyPressedEvent& iEvent) -> bool {
 		return false;
 	if (static_cast<int>(iEvent.getRepeatCount()) > 0)
 		return false;
-	if (ImGui::GetIO().WantCaptureKeyboard)
-		return false;
 
 	const auto keyCode = iEvent.getKeyCode();
 	if (isModifierKey(keyCode))
@@ -228,11 +226,18 @@ auto ActionRegistry::dispatch(const event::KeyPressedEvent& iEvent) -> bool {
 			}
 		}
 	}
-	if (bestMatch != nullptr) {
-		bestMatch->callback();
-		return true;
+	if (bestMatch == nullptr)
+		return false;
+	// Modifier-less shortcuts (e.g. plain "Q" / "S" / function keys without Ctrl) must yield to
+	// any focused ImGui text widget so users can type freely. Modifier shortcuts (Ctrl/Shift/Alt
+	// based) keep working everywhere — that is the de-facto editor convention and matches the
+	// behaviour of VS Code, Blender, Unity, etc.
+	if (bestMatch->currentShortcut.modifiers == Modifiers::None && ImGui::GetIO().WantCaptureKeyboard) {
+		OWL_TRACE("ActionRegistry: shortcut '{}' suppressed by ImGui keyboard capture.", bestMatch->id)
+		return false;
 	}
-	return false;
+	bestMatch->callback();
+	return true;
 }
 
 auto ActionRegistry::getShortcutString(const std::string& iId) const -> std::string {

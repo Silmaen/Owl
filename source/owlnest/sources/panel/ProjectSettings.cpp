@@ -10,11 +10,83 @@
 
 #include <gui/IconBank.h>
 #include <imgui_stdlib.h>
+#include <renderer/RenderLayerFactory.h>
 
 namespace owl::nest::panel {
 
 namespace {
 constexpr auto g_popupName = "Project Settings";
+
+/// @brief Render the renderer-stack editor: ordered list of layers with
+/// Type / Name editing and reorder/remove buttons. Mutates `ioStack` in place.
+auto drawRendererStackEditor(renderer::RendererStackConfig& ioStack) -> void {
+	const auto availableTypes = renderer::RenderLayerFactory::registeredTypes();
+	auto& entries = ioStack.entries;
+
+	int moveUp = -1;
+	int moveDown = -1;
+	int removeAt = -1;
+
+	for (int i = 0; i < static_cast<int>(entries.size()); ++i) {
+		auto& e = entries[static_cast<size_t>(i)];
+		ImGui::PushID(i);
+		ImGui::SetNextItemWidth(140.f);
+		const char* typePreview = e.typeKey.empty() ? "(none)" : e.typeKey.c_str();
+		if (ImGui::BeginCombo("##type", typePreview)) {
+			for (const auto& t: availableTypes) {
+				const bool selected = (e.typeKey == t);
+				if (ImGui::Selectable(t.c_str(), selected))
+					e.typeKey = t;
+				if (selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(160.f);
+		ImGui::InputText("##name", &e.name);
+		ImGui::SameLine();
+		ImGui::BeginDisabled(i == 0);
+		if (ImGui::ArrowButton("##up", ImGuiDir_Up))
+			moveUp = i;
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		ImGui::BeginDisabled(i + 1 == static_cast<int>(entries.size()));
+		if (ImGui::ArrowButton("##down", ImGuiDir_Down))
+			moveDown = i;
+		ImGui::EndDisabled();
+		ImGui::SameLine();
+		if (ImGui::SmallButton("X"))
+			removeAt = i;
+		ImGui::PopID();
+	}
+
+	if (moveUp > 0) {
+		const auto idx = static_cast<size_t>(moveUp);
+		std::swap(entries[idx], entries[idx - 1]);
+	}
+	if (moveDown >= 0 && moveDown + 1 < static_cast<int>(entries.size())) {
+		const auto idx = static_cast<size_t>(moveDown);
+		std::swap(entries[idx], entries[idx + 1]);
+	}
+	if (removeAt >= 0)
+		entries.erase(entries.begin() + removeAt);
+
+	if (ImGui::SmallButton("+ Add Layer")) {
+		renderer::RendererStackEntry entry;
+		entry.typeKey = availableTypes.empty() ? std::string{"Renderer2D"} : availableTypes.front();
+		// Generate a default unique name layer_N.
+		int idx = 0;
+		std::string candidate;
+		do {
+			candidate = std::format("layer_{}", idx++);
+		} while (ioStack.find(candidate) != nullptr);
+		entry.name = candidate;
+		entries.push_back(std::move(entry));
+	}
+	ImGui::SameLine();
+	ImGui::TextDisabled("(empty → fallback to single Renderer2D)");
+}
 }// namespace
 
 void ProjectSettings::open(const Project& iProject) {
@@ -91,6 +163,10 @@ void ProjectSettings::onImGuiRender() {
 		ImGui::InputText("Author", &m_authorBuffer);
 		ImGui::InputText("Description", &m_descriptionBuffer);
 		ImGui::InputText("Icon", &m_iconBuffer);
+
+		ImGui::Separator();
+		ImGui::Text("Renderer Stack");
+		drawRendererStackEditor(m_localProject.rendererStack);
 
 		ImGui::Separator();
 		ImGui::Text("Window");

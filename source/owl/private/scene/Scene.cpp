@@ -11,6 +11,7 @@
 
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
+#include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 #include "scene/Entity.h"
 #include "scene/Tileset.h"
@@ -571,11 +572,24 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	}
 
 	// Triggers: edge detection (enter/exit/stay) + timer updates.
+	// An entity hidden via `Visibility` (or whose ancestor is hidden) is treated as
+	// disabled for gameplay purposes — its triggers do not fire and any prior overlap
+	// state is reset so the next time it becomes visible the player has to re-enter.
 	{
 		auto player = getPrimaryPlayer();
 		for (const auto view = registry.view<component::Trigger>(); const auto ent: view) {
 			const Entity entity{ent, this};
 			auto& trigger = entity.getComponent<component::Trigger>().trigger;
+
+			if (!isEffectivelyVisible(entity, /*iEditorMode=*/false)) {
+				// Hidden trigger: cancel any in-progress timer and clear overlap state.
+				if (trigger.type == SceneTrigger::TriggerType::Timer)
+					trigger.stopTimer();
+				if (trigger.wasOverlapping() && player)
+					trigger.onTriggerExit(player, entity);
+				trigger.setOverlapping(false);
+				continue;
+			}
 
 			// Timer triggers: update independently of overlap.
 			if (trigger.type == SceneTrigger::TriggerType::Timer) {
@@ -620,11 +634,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		viewRotation(1, 3) = 0.0f;
 		viewRotation(2, 3) = 0.0f;
 		m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
-		renderer::Renderer2D::resetStats();
-		renderer::Renderer2D::beginScene(*mainCamera);
-		render();
-		renderUI(*mainCamera);
-		renderer::Renderer2D::endScene();
+		renderWithStack(*mainCamera);
 		ScreenTransition::update(iTimeStep.getSeconds());
 		ScreenTransition::render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
 	}
@@ -693,11 +703,7 @@ void Scene::onRenderRuntime() {
 		viewRotation(1, 3) = 0.0f;
 		viewRotation(2, 3) = 0.0f;
 		m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
-		renderer::Renderer2D::resetStats();
-		renderer::Renderer2D::beginScene(*mainCamera);
-		render();
-		renderUI(*mainCamera);
-		renderer::Renderer2D::endScene();
+		renderWithStack(*mainCamera);
 		ScreenTransition::render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
 	}
 }
@@ -711,12 +717,44 @@ void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, con
 	viewRotation(1, 3) = 0.0f;
 	viewRotation(2, 3) = 0.0f;
 	m_inverseViewRotation = inverse(iCamera.getProjection() * viewRotation);
+	renderWithStack(iCamera);
+}
 
+auto Scene::layerAccepts(const Entity& iEntity) const -> bool {
+	if (m_currentLayerName.empty())
+		return true;// legacy single-pass — every entity is drawn.
+	if (!iEntity.hasComponent<component::RendererTag>())
+		return m_currentLayerIsFirst;// untagged entities default to the first layer.
+	return iEntity.getComponent<component::RendererTag>().rendererName == m_currentLayerName;
+}
+
+void Scene::renderWithStack(const renderer::Camera& iCamera) {
+	OWL_PROFILE_FUNCTION()
+	const auto& stack = renderer::Renderer::getRenderStack();
+	if (stack.isEmpty()) {
+		// Legacy single-pass: nothing tagged, one Renderer2D batch.
+		renderer::Renderer2D::resetStats();
+		renderer::Renderer2D::beginScene(iCamera);
+		m_currentLayerName.clear();
+		m_currentLayerIsFirst = true;
+		render();
+		renderUI(iCamera);
+		renderer::Renderer2D::endScene();
+		return;
+	}
 	renderer::Renderer2D::resetStats();
-	renderer::Renderer2D::beginScene(iCamera);
-	render();
-	renderUI(iCamera);
-	renderer::Renderer2D::endScene();
+	bool first = true;
+	for (const auto& layer: stack.getLayers()) {
+		layer->onBeginFrame(iCamera);
+		m_currentLayerName = layer->getName();
+		m_currentLayerIsFirst = first;
+		render();
+		renderUI(iCamera);
+		layer->onEndFrame();
+		first = false;
+	}
+	m_currentLayerName.clear();
+	m_currentLayerIsFirst = true;
 }
 
 void Scene::render() {
@@ -724,16 +762,19 @@ void Scene::render() {
 
 	const bool editorMode = status == Status::Editing;
 
-	// Draw background (only the first entity with this component)
-	if (const auto bgView = registry.view<component::BackgroundTexture>(); !bgView.empty()) {
-		if (const auto bgEntity = bgView.front(); isEffectivelyVisible(Entity{bgEntity, this}, editorMode)) {
-			const auto& [mode, type, color, topColor, texture] = bgView.get<component::BackgroundTexture>(bgEntity);
-			const int i_mode = mode == component::BackgroundTexture::Mode::Skybox ? 3 : static_cast<int>(type);
-			renderer::BackgroundRenderer::drawBackground({.mode = i_mode,
-														  .color = color,
-														  .topColor = topColor,
-														  .inverseViewRotation = m_inverseViewRotation,
-														  .texture = texture});
+	// Draw background (only the first entity with this component, and only on the first layer
+	// when running through the stack — backgrounds always sit behind every layer).
+	if (m_currentLayerIsFirst) {
+		if (const auto bgView = registry.view<component::BackgroundTexture>(); !bgView.empty()) {
+			if (const auto bgEntity = bgView.front(); isEffectivelyVisible(Entity{bgEntity, this}, editorMode)) {
+				const auto& [mode, type, color, topColor, texture] = bgView.get<component::BackgroundTexture>(bgEntity);
+				const int i_mode = mode == component::BackgroundTexture::Mode::Skybox ? 3 : static_cast<int>(type);
+				renderer::BackgroundRenderer::drawBackground({.mode = i_mode,
+															  .color = color,
+															  .topColor = topColor,
+															  .inverseViewRotation = m_inverseViewRotation,
+															  .texture = texture});
+			}
 		}
 	}
 
@@ -744,6 +785,8 @@ void Scene::render() {
 	for (const auto view = registry.view<component::Transform, component::Tilemap>(); auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
+			continue;
+		if (!layerAccepts(ent))
 			continue;
 		auto& tilemap = view.get<component::Tilemap>(entity);
 		if (!tilemap.tileset || !tilemap.tileset->texture)
@@ -790,6 +833,8 @@ void Scene::render() {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
 			continue;
+		if (!layerAccepts(ent))
+			continue;
 		auto [transform, sprite] = group.get<component::Transform, component::SpriteRenderer>(entity);
 		const math::Transform worldTransform = getWorldTransform(ent);
 		renderer::Renderer2D::drawQuad({.transform = worldTransform,
@@ -803,6 +848,8 @@ void Scene::render() {
 		 auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
+			continue;
+		if (!layerAccepts(ent))
 			continue;
 		auto [transform, anim] = view.get<component::Transform, component::AnimatedSpriteRenderer>(entity);
 		const math::Transform worldTransform = getWorldTransform(ent);
@@ -827,6 +874,8 @@ void Scene::render() {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
 			continue;
+		if (!layerAccepts(ent))
+			continue;
 		auto [transform, circle] = view.get<component::Transform, component::CircleRenderer>(entity);
 		const math::Transform worldTransform = getWorldTransform(ent);
 		renderer::Renderer2D::drawCircle({.transform = worldTransform,
@@ -839,6 +888,8 @@ void Scene::render() {
 	for (const auto view = registry.view<component::Transform, component::Text>(); auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
+			continue;
+		if (!layerAccepts(ent))
 			continue;
 		auto [transform, text] = view.get<component::Transform, component::Text>(entity);
 		const math::Transform worldTransform = getWorldTransform(ent);
@@ -892,7 +943,10 @@ void Scene::renderUI(const renderer::Camera& iCamera) {
 	};
 	std::vector<CanvasEntry> canvases;
 	for (const auto view = registry.view<component::Canvas>(); const auto entity: view) {
-		if (const Entity ent{entity, this}; !isEffectivelyVisible(ent, editorMode))
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, editorMode))
+			continue;
+		if (!layerAccepts(ent))
 			continue;
 		canvases.push_back({entity, view.get<component::Canvas>(entity).sortOrder});
 	}

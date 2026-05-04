@@ -3,6 +3,8 @@ Entities:
   - Entity: 300000000000000007
     Tag:
       tag: MenuButton
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -35,6 +37,8 @@ Entities:
   - Entity: 300000000000000006
     Tag:
       tag: RetryButton
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -67,6 +71,8 @@ Entities:
   - Entity: 300000000000000005
     Tag:
       tag: ScoreLabel
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -93,6 +99,8 @@ Entities:
   - Entity: 300000000000000004
     Tag:
       tag: GameOverTitle
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -119,6 +127,8 @@ Entities:
   - Entity: 300000000000000003
     Tag:
       tag: GameOverCanvas
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]

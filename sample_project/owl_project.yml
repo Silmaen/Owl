@@ -10,3 +10,8 @@ OwlProject:
     height: 720
     fullscreen: false
     resizable: true
+  RendererStack:
+    - Type: Renderer2D
+      Name: world
+    - Type: Renderer2D
+      Name: ui

@@ -157,12 +157,13 @@ The following Lua tables are available in every script.
 
 ### `physics`
 
-| Function                                      | Description                    |
-|-----------------------------------------------|--------------------------------|
-| `physics.impulse(entity_id, fx, fy)`          | Apply an impulse force         |
-| `physics.get_velocity(entity_id)`             | Returns `vx, vy`               |
-| `physics.set_velocity(entity_id, vx, vy)`     | Set linear velocity            |
-| `physics.set_transform(entity_id, x, y, rot)` | Set body position and rotation |
+| Function                                       | Description                                    |
+|------------------------------------------------|------------------------------------------------|
+| `physics.impulse(entity_id, fx, fy)`           | Apply an impulse force                         |
+| `physics.get_velocity(entity_id)`              | Returns `vx, vy`                               |
+| `physics.set_velocity(entity_id, vx, vy)`      | Set linear velocity                            |
+| `physics.set_transform(entity_id, x, y, rot)`  | Set body position and rotation                 |
+| `physics.set_gravity_scale(entity_id, scale)`  | Scale world gravity for this body (0 = none)   |
 
 ### `input`
 

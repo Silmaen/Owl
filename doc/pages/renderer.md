@@ -49,12 +49,16 @@ into the same frame — for example a raycasting layer for the world plus a
 (in `owl_project.yml`), filtered and configured per scene (in `.owl` files),
 and routed per entity via the optional `RendererTag` component.
 
-In v0.2.0 the foundation ships first: interfaces, factory, YAML round-trip,
-and a `Renderer2DLayer` adapter wrapping the existing batch renderer. Per-entity
-dispatch becomes meaningful once the raycasting layer lands later in v0.2.0;
-until then the stack is configured but the legacy direct-`Renderer2D` path in
-`Scene::render` continues to drive draw calls — observable behaviour is
-unchanged for projects that opt into nothing.
+In v0.2.0 the foundation ships with the runtime now wired end-to-end:
+`EditorLayer::syncActiveDocumentPanels` (and the runner equivalent) builds the
+`RenderStack` from `Project::rendererStack` + `Scene::getEnabledRenderers()` and
+installs it via `Renderer::setRenderStack`. `Scene::renderWithStack` then runs
+one pass per layer (`onBeginFrame` → `render` → `renderUI` → `onEndFrame`),
+filtering entities by their `RendererTag` so each layer only sees the entities
+that opt into it. Untagged entities default to the first layer and backgrounds
+draw only on the first pass to preserve the legacy z-order. A project with no
+`RendererStack:` entry falls back to a single implicit `Renderer2D` and behaves
+identically to the legacy single-pass path.
 
 ### Configuration model
 

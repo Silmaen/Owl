@@ -196,3 +196,32 @@ TEST(Scene, RenderGame_win) {
 	owl::input::Input::invalidate();
 	owl::core::Log::invalidate();
 }
+
+// Hidden trigger zones must not fire — even if the player overlaps them, an entity whose
+// `Visibility.gameVisible` is false (or whose ancestor is hidden) is treated as gameplay-disabled.
+TEST(Scene, InvisibleTriggerDoesNotFire) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	owl::input::Input::init(owl::window::Type::Null);
+	Scene sc;
+	createMinGameScene(sc);
+	// Hide the win zone — the player normally moves into it and triggers Victory.
+	for (const auto ent: sc.getAllEntities()) {
+		if (ent.getName() == "win")
+			ent.getComponent<component::Visibility>().gameVisible = false;
+	}
+	owl::core::Timestep ts;
+	ts.forceUpdate(std::chrono::milliseconds(500));
+	sc.onStartRuntime();
+	sc.onUpdateRuntime(ts);
+	owl::input::Input::injectKey(owl::input::key::D);
+	for (int i = 0; i < 4; ++i) {
+		ts.forceUpdate(std::chrono::milliseconds(500));
+		sc.onUpdateRuntime(ts);
+	}
+	// With the win zone hidden the scene must remain in Playing — never reach Victory.
+	EXPECT_EQ(sc.status, Scene::Status::Playing);
+	sc.onEndRuntime();
+
+	owl::input::Input::invalidate();
+	owl::core::Log::invalidate();
+}

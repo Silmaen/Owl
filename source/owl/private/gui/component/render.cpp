@@ -646,6 +646,39 @@ void renderProps(PrefabLink& ioComponent) {
 		ImGui::Text("Overrides: %zu", ioComponent.overriddenComponents.size());
 }
 
+void renderProps(RendererTag& ioComponent) {
+	const auto& stack = renderer::Renderer::getRenderStack();
+	const auto& layers = stack.getLayers();
+	const char* preview = ioComponent.rendererName.empty() ? "(default — first layer)" : ioComponent.rendererName.c_str();
+	if (ImGui::BeginCombo("Layer", preview)) {
+		const bool defaultSelected = ioComponent.rendererName.empty();
+		if (ImGui::Selectable("(default — first layer)", defaultSelected))
+			ioComponent.rendererName.clear();
+		if (defaultSelected)
+			ImGui::SetItemDefaultFocus();
+		for (const auto& layer: layers) {
+			const auto& lname = layer->getName();
+			const bool selected = (ioComponent.rendererName == lname);
+			if (ImGui::Selectable(lname.c_str(), selected))
+				ioComponent.rendererName = lname;
+			if (selected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Routes this entity to a specific renderer in the project's stack. "
+				 "Empty falls back to the first layer.");
+	// Surface a one-shot warning if the chosen name doesn't match any active layer.
+	if (!ioComponent.rendererName.empty()) {
+		const bool known = std::ranges::any_of(layers, [&](const auto& l) -> bool {
+			return l->getName() == ioComponent.rendererName;
+		});
+		if (!known) {
+			ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.10f, 1.0f), "Unknown layer — entity will be skipped.");
+		}
+	}
+}
+
 void renderProps(Tilemap& ioComponent) {
 	// --- Tileset asset slot ----------------------------------------------------------------
 	const std::string label =
