@@ -192,6 +192,36 @@ YAML key: `CircleRenderer`
 
 YAML key: `TextRenderer`
 
+#### Tilemap
+
+| Field          | Type             | Default      | Description                                                |
+|----------------|------------------|--------------|------------------------------------------------------------|
+| `tilesetPath`  | `path`           | `""`         | Relative path (project root) to a `.owltileset` asset      |
+| `width`        | `uint32`         | `16`         | Grid width in cells                                        |
+| `height`       | `uint32`         | `16`         | Grid height in cells                                       |
+| `cellSize`     | `float`          | `1.0`        | World-space size of one cell                               |
+| `layers`       | `vector<Layer>`  | `[]`         | Ordered back-to-front layers (see below)                   |
+
+Each layer carries its own grid + parallax:
+
+| Layer field    | Type             | Default        | Description                                              |
+|----------------|------------------|----------------|----------------------------------------------------------|
+| `name`         | `string`         | `""`           | Designer-friendly layer name                             |
+| `visible`      | `bool`           | `true`         | Whether the layer is rendered                            |
+| `parallax`     | `vec2`           | `{1, 1}`       | Per-axis camera multiplier (1 = world, 0 = camera-locked)|
+| `tiles`        | flat `int32` row-major | all `-1` | Per-cell tile index (`-1` = empty), encoded as comma-separated string in YAML |
+
+YAML key: `Tilemap`. The grid is centred on the entity origin (rows extend downward
+along Y). Tiles index the asset's atlas in row-major order; collidable tiles
+(declared in the tileset) emit one static Box2D fixture per occurrence at
+`onStartRuntime`. The tileset is lazily resolved against
+`Application::getAssetDirectories()` on first render.
+
+The companion **`Tileset`** asset (`.owltileset`) holds the atlas texture +
+`tileWidth`/`tileHeight` + `columns × rows` + sparse per-tile metadata
+(`collidable`, `name`). See `scene::Tileset` and the Tile Palette panel for
+authoring.
+
 #### BackgroundTexture
 
 | Field      | Type        | Default              | Description                         |

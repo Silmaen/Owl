@@ -1,0 +1,78 @@
+Scene: TilemapDemo
+Entities:
+  - Entity: 1000000000000000001
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 11
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    Visibility:
+      gameVisible: true
+    SoundListener:
+      primary: true
+  - Entity: 1000000000000000002
+    Tag:
+      tag: SkyBackground
+    Transform:
+      translation: [0, 0, -2]
+      rotation: [0, 0, 0]
+      scale: [25, 20, 1]
+    BackgroundTexture:
+      mode: 0
+      type: 1
+      color: [0.20, 0.30, 0.55, 1]
+      topColor: [0.55, 0.75, 0.95, 1]
+    Visibility:
+      gameVisible: true
+  - Entity: 1000000000000000003
+    Tag:
+      tag: TilemapDemo
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Tilemap:
+      tilesetPath: tilesets/demo.owltileset
+      width: 16
+      height: 10
+      cellSize: 1
+      layers:
+        - name: background
+          parallax: [0.5, 0.5]
+          tiles: "-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,7,-1,-1,-1,-1,-1,7,-1,-1,-1,-1,7,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1"
+        - name: world
+          tiles: "-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,-1,3,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,4,-1,3,-1,-1,-1,-1,-1,3,3,3,-1,-1,-1,-1,-1,4,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,0,0,0,0,0,0,0,0,0,6,0,0,-1,-1,-1,-1,1,1,1,1,1,1,1,1,1,1,1,1,5,5,5,5"
+  - Entity: 1000000000000000004
+    Tag:
+      tag: FallingBall
+    Transform:
+      translation: [-2, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [0.7, 0.7, 1]
+    CircleRenderer:
+      color: [0.95, 0.45, 0.15, 1]
+      thickness: 1
+      fade: 0.005
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0.45
+      friction: 0.4
+    Visibility:
+      gameVisible: true

@@ -90,6 +90,7 @@ void buildIconBank() {
 		{"lua_icon",          resolve("icons/browser/lua")},
 		{"prefab_icon",       resolve("icons/browser/prefab")},
 		{"owlanim_icon",      resolve("icons/browser/owlanim")},
+		{"owltileset_icon",   resolve("icons/browser/owltileset")},
 		{"wav_icon",          resolve("icons/browser/wav")},
 		{"mp3_icon",          resolve("icons/browser/mp3")},
 		{"ogg_icon",          resolve("icons/browser/ogg")},
@@ -438,13 +439,9 @@ void EditorLayer::onAttach() {
 	m_actionRegistry.registerAction("scene.open", "Open Scene",
 		{input::key::O, Modifiers::Ctrl},
 		[this] () -> void { if (getState() == State::Edit) openScene(); });
-	m_actionRegistry.registerAction("scene.save", "Save Scene",
+	m_actionRegistry.registerAction("scene.save", "Save Document",
 		{input::key::S, Modifiers::Ctrl},
-		[this] () -> void {
-			const auto* doc = activeSceneDocument();
-			if (getState() == State::Edit && doc != nullptr && !doc->filePath().empty())
-				saveCurrentScene();
-		});
+		[this] () -> void { saveActiveDocument(); });
 	m_actionRegistry.registerAction("scene.saveAs", "Save Scene As",
 		{input::key::S, Modifiers::Ctrl | Modifiers::Shift},
 		[this] () -> void { if (getState() == State::Edit) saveSceneAs(); });
@@ -740,6 +737,13 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	renderCloseDocumentModal();
 	//=============================================================
 	m_sceneHierarchy.onImGuiRender();
+	m_tilePalette.setSelectedEntity(m_sceneHierarchy.getSelectedEntity());
+	m_tilePalette.onImGuiRender();
+	// Forward paint-mode clicks to the active scene's viewport (no-op when nothing paintable).
+	if (auto selected = m_sceneHierarchy.getSelectedEntity(); selected) {
+		if (auto* activeDoc = dynamic_cast<SceneDocument*>(m_documents.getActive()))
+			activeDoc->getViewport().processTilemapPaint(m_tilePalette, selected);
+	}
 	m_contentBrowser.onImGuiRender();
 	m_parameters.onImGuiRender();
 	m_projectSettings.onImGuiRender();
@@ -1567,6 +1571,27 @@ void EditorLayer::saveCurrentScene() {
 	else
 		saveSceneAs(path);
 	doc->undoManager().markSaved();
+}
+
+void EditorLayer::saveActiveDocument() {
+	if (getState() != State::Edit)
+		return;
+	auto* active = m_documents.getActive();
+	if (active == nullptr)
+		return;
+	if (auto* codeDoc = dynamic_cast<CodeEditorDocument*>(active); codeDoc != nullptr) {
+		if (codeDoc->filePath().empty())
+			return;
+		if (codeDoc->save())
+			OWL_INFO("Code editor: saved '{}'", codeDoc->filePath().string())
+		else
+			OWL_ERROR("Code editor: FAILED to save '{}'", codeDoc->filePath().string())
+		return;
+	}
+	if (const auto* sceneDoc = dynamic_cast<SceneDocument*>(active); sceneDoc != nullptr) {
+		if (!sceneDoc->filePath().empty())
+			saveCurrentScene();
+	}
 }
 
 auto EditorLayer::onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool {

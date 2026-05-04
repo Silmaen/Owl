@@ -63,6 +63,8 @@ auto isPathOfKind(const std::filesystem::path& iPath, const AssetKind iKind) -> 
 			return ext == ".owl";
 		case AssetKind::Prefab:
 			return ext == ".owlprefab";
+		case AssetKind::Tileset:
+			return ext == ".owltileset";
 		case AssetKind::Any:
 			return true;
 	}

@@ -13,6 +13,7 @@
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer2D.h"
 #include "scene/Entity.h"
+#include "scene/Tileset.h"
 
 #include "core/Application.h"
 #include "input/Input.h"
@@ -301,6 +302,9 @@ void Scene::destroyEntity(Entity& ioEntity) {
 void Scene::onStartRuntime() {
 	OWL_PROFILE_FUNCTION()
 	status = Status::Playing;
+	// Tilemap tilesets are normally resolved on first render; we need them
+	// before physics init so collidable cells generate static fixtures.
+	resolveAllTilemapTilesets();
 	physic::PhysicCommand::init(this);
 
 	// Initialize sound listener from primary SoundListener entity
@@ -437,10 +441,12 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	renderer::Camera* mainCamera = nullptr;
 	math::mat4 cameraTransform;
 	math::Transform camTransform;
+	entt::entity primaryCameraEntity = entt::null;
 	for (const auto view = registry.view<component::Transform, component::Camera>(); const auto entity: view) {
 		auto [transform, camera] = view.get<component::Transform, component::Camera>(entity);
 		if (camera.primary) {
 			mainCamera = &camera.camera;
+			primaryCameraEntity = entity;
 			const Entity camEntity{entity, this};
 			camTransform = getWorldTransform(camEntity);
 			cameraTransform = camTransform();
@@ -598,6 +604,15 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 
 	// Render 2D
 	if (iRender && mainCamera != nullptr) {
+		// Re-read the camera transform AFTER scripts have run — Lua follow-cam logic
+		// updates the Camera entity's Transform via transform.set_position(); without
+		// this refresh, the renderer would use the position from the start of the
+		// frame, which causes the camera to appear locked or laggy.
+		if (primaryCameraEntity != entt::null) {
+			const Entity camEntity{primaryCameraEntity, this};
+			camTransform = getWorldTransform(camEntity);
+			cameraTransform = camTransform();
+		}
 		mainCamera->setTransform(cameraTransform);
 		// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
 		math::mat4 viewRotation = mainCamera->getView();
@@ -722,6 +737,53 @@ void Scene::render() {
 		}
 	}
 
+	// Draw tilemaps first so they sit behind every sprite / circle / text in the scene.
+	// Renderer2D batches do not depth-sort within a frame; the painter's order wins,
+	// hence tilemaps are drawn before the foreground entities.
+	resolveAllTilemapTilesets();
+	for (const auto view = registry.view<component::Transform, component::Tilemap>(); auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, editorMode))
+			continue;
+		auto& tilemap = view.get<component::Tilemap>(entity);
+		if (!tilemap.tileset || !tilemap.tileset->texture)
+			continue;
+		const math::Transform worldTransform = getWorldTransform(ent);
+		const float cellSize = tilemap.cellSize;
+		const int entityId = static_cast<int>(entity);
+		const float originX = -static_cast<float>(tilemap.width - 1) * 0.5f * cellSize;
+		const float originY = static_cast<float>(tilemap.height - 1) * 0.5f * cellSize;
+		for (const auto& layer: tilemap.layers) {
+			if (!layer.visible)
+				continue;
+			for (uint32_t y = 0; y < tilemap.height; ++y) {
+				for (uint32_t x = 0; x < tilemap.width; ++x) {
+					const size_t flat = static_cast<size_t>(y) * tilemap.width + x;
+					if (flat >= layer.tiles.size())
+						continue;
+					const int32_t tileIdx = layer.tiles[flat];
+					if (tileIdx < 0)
+						continue;
+					math::Transform cellTransform = worldTransform;
+					cellTransform.translation().x() += (originX + static_cast<float>(x) * cellSize);
+					cellTransform.translation().y() += (originY - static_cast<float>(y) * cellSize);
+					// Slight overscale (0.5%) so adjacent tiles overlap at rasterisation
+					// boundaries — without it, sub-pixel motion of the camera causes the
+					// shared edge between two tiles to flicker.
+					constexpr float kSeamOverlap = 1.005f;
+					cellTransform.scale().x() *= cellSize * kSeamOverlap;
+					cellTransform.scale().y() *= cellSize * kSeamOverlap;
+					renderer::Renderer2D::drawQuad(
+							{.transform = cellTransform,
+							 .color = math::vec4{1.f, 1.f, 1.f, 1.f},
+							 .texture = tilemap.tileset->texture,
+							 .textureCoords = tilemap.tileset->getTileUv(static_cast<uint32_t>(tileIdx)),
+							 .entityId = entityId});
+				}
+			}
+		}
+	}
+
 	// Draw sprites
 	for (const auto group = registry.group<component::Transform>(entt::get<component::SpriteRenderer>);
 		 auto entity: group) {
@@ -787,6 +849,30 @@ void Scene::render() {
 										  .kerning = text.kerning,
 										  .lineSpacing = text.lineSpacing,
 										  .entityId = static_cast<int>(entity)});
+	}
+}
+
+void Scene::resolveAllTilemapTilesets() {
+	if (!core::Application::instanced())
+		return;
+	const auto& app = core::Application::get();
+	for (const auto view = registry.view<component::Tilemap>(); auto entity: view) {
+		auto& tilemap = view.get<component::Tilemap>(entity);
+		if (tilemap.tileset || tilemap.tilesetPath.empty())
+			continue;
+		auto resolved = mkShared<Tileset>();
+		bool loaded = false;
+		for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
+			if (const auto fullPath = assetsPath / tilemap.tilesetPath; exists(fullPath)) {
+				loaded = resolved->loadFromFile(fullPath);
+				if (loaded)
+					break;
+			}
+		}
+		if (!loaded && exists(tilemap.tilesetPath))
+			loaded = resolved->loadFromFile(tilemap.tilesetPath);
+		if (loaded)
+			tilemap.tileset = std::move(resolved);
 	}
 }
 
@@ -1256,5 +1342,9 @@ OWL_API void Scene::onComponentAdded<component::PrefabLink>([[maybe_unused]] con
 template<>
 OWL_API void Scene::onComponentAdded<component::RendererTag>([[maybe_unused]] const Entity& iEntity,
 															 [[maybe_unused]] component::RendererTag& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Tilemap>([[maybe_unused]] const Entity& iEntity,
+														 [[maybe_unused]] component::Tilemap& ioComponent) {}
 
 }// namespace owl::scene

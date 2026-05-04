@@ -1,0 +1,16 @@
+Tileset: demo
+Version: 1
+texture: nam:textures/demo_tileset.png
+tileWidth: 64
+tileHeight: 64
+columns: 4
+rows: 2
+tiles:
+  - { index: 0, name: "grass" }
+  - { index: 1, name: "dirt" }
+  - { index: 2, collidable: true, name: "stone" }
+  - { index: 3, collidable: true, name: "brick" }
+  - { index: 4, name: "ladder" }
+  - { index: 5, name: "water" }
+  - { index: 6, collidable: true, name: "spike" }
+  - { index: 7, name: "bush" }

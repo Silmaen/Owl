@@ -286,6 +286,11 @@ private:
 
 	/// Draw the elements.
 	void render();
+	/// Resolve `Tilemap.tileset` from `Tilemap.tilesetPath` for every tilemap in the scene
+	/// that hasn't been resolved yet. Idempotent. Called eagerly from `onStartRuntime` so
+	/// that physics initialisation can read the tileset's collidable flags, and lazily by
+	/// the renderer for the editor preview path.
+	void resolveAllTilemapTilesets();
 	/// Draw screen-space UI overlays (Canvas entities) within the current render batch.
 	/// @param[in] iCamera The active camera (for pixel-to-world conversion).
 	void renderUI(const renderer::Camera& iCamera);

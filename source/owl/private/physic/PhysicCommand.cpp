@@ -9,6 +9,7 @@
 
 #include "physic/PhysicCommand.h"
 #include "scene/Entity.h"
+#include "scene/Tileset.h"
 #include "scene/component/components.h"
 #include <box2d/box2d.h>
 
@@ -83,6 +84,62 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		shapeDef.material.friction = sbody.friction;
 		shapeDef.material.restitution = sbody.restitution;
 		b2CreatePolygonShape(body, &shapeDef, &dynamicBox);
+	}
+
+	// Generate static colliders from tilemaps. One static b2Body per tilemap entity,
+	// one polygon shape per collidable cell. The body is destroyed with b2DestroyWorld.
+	for (const auto view = m_scene->registry.view<scene::component::Tilemap, scene::component::Transform>();
+		 const auto e: view) {
+		const scene::Entity entity{e, m_scene};
+		const auto& tilemap = entity.getComponent<scene::component::Tilemap>();
+		if (!tilemap.tileset || tilemap.layers.empty())
+			continue;
+		// Skip if every tile in the tileset is non-collidable — common for purely cosmetic
+		// tilemaps (backgrounds). Avoids creating an empty body for nothing.
+		const auto* tilesetPtr = tilemap.tileset.get();
+		bool anyCollidable = false;
+		for (uint32_t i = 0; i < tilesetPtr->tileCount(); ++i) {
+			if (tilesetPtr->isCollidable(i)) {
+				anyCollidable = true;
+				break;
+			}
+		}
+		if (!anyCollidable)
+			continue;
+		const math::Transform worldTransform = m_scene->getWorldTransform(entity);
+		b2BodyDef bodyDef = b2DefaultBodyDef();
+		bodyDef.type = b2_staticBody;
+		bodyDef.position.x = worldTransform.translation().x();
+		bodyDef.position.y = worldTransform.translation().y();
+		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
+		const b2BodyId tileBody = b2CreateBody(m_impl->worldId, &bodyDef);
+		m_impl->bodies[m_impl->nextId] = tileBody;
+		m_impl->nextId++;
+
+		const float cellSize = tilemap.cellSize;
+		const float originX = -static_cast<float>(tilemap.width - 1) * 0.5f * cellSize;
+		const float originY = static_cast<float>(tilemap.height - 1) * 0.5f * cellSize;
+		const float halfX = cellSize * worldTransform.scale().x() * 0.5f;
+		const float halfY = cellSize * worldTransform.scale().y() * 0.5f;
+		b2ShapeDef shapeDef = b2DefaultShapeDef();
+		shapeDef.density = 0.f;// static
+		shapeDef.material.friction = 0.5f;
+		for (const auto& layer: tilemap.layers) {
+			for (uint32_t y = 0; y < tilemap.height; ++y) {
+				for (uint32_t x = 0; x < tilemap.width; ++x) {
+					const size_t flat = static_cast<size_t>(y) * tilemap.width + x;
+					if (flat >= layer.tiles.size())
+						continue;
+					const int32_t tileIdx = layer.tiles[flat];
+					if (tileIdx < 0 || !tilesetPtr->isCollidable(static_cast<uint32_t>(tileIdx)))
+						continue;
+					const float cx = (originX + static_cast<float>(x) * cellSize) * worldTransform.scale().x();
+					const float cy = (originY - static_cast<float>(y) * cellSize) * worldTransform.scale().y();
+					const b2Polygon cellBox = b2MakeOffsetBox(halfX, halfY, b2Vec2{.x = cx, .y = cy}, b2MakeRot(0.f));
+					b2CreatePolygonShape(tileBody, &shapeDef, &cellBox);
+				}
+			}
+		}
 	}
 }
 

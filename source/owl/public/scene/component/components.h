@@ -27,6 +27,7 @@
 #include "SpriteRenderer.h"
 #include "Tag.h"
 #include "Text.h"
+#include "Tilemap.h"
 #include "Transform.h"
 #include "Trigger.h"
 #include "UIButton.h"
@@ -54,7 +55,8 @@ concept isComponent = std::is_same_v<Component, AnimatedSpriteRenderer> ||
 					  std::is_same_v<Component, RendererTag> || std::is_same_v<Component, SoundListener> ||
 					  std::is_same_v<Component, SoundSource> || std::is_same_v<Component, SpriteRenderer> ||
 					  std::is_same_v<Component, Tag> || std::is_same_v<Component, Text> ||
-					  std::is_same_v<Component, Transform> || std::is_same_v<Component, Trigger> ||
+					  std::is_same_v<Component, Tilemap> || std::is_same_v<Component, Transform> ||
+					  std::is_same_v<Component, Trigger> ||
 					  std::is_same_v<Component, UIButton> || std::is_same_v<Component, UIImage> ||
 					  std::is_same_v<Component, UIPanel> || std::is_same_v<Component, UIProgressBar> ||
 					  std::is_same_v<Component, UIRect> || std::is_same_v<Component, UISlider> ||
@@ -93,17 +95,17 @@ concept isDeserializableComponent =
  * @note All except ID and Tag.
  */
 using CopiableComponents =
-		std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, PhysicBody,
-				   Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy, SoundSource, SoundListener,
-				   LuaScript, PrefabLink, RendererTag, UIButton, UIImage, UIPanel, UIProgressBar, UIRect, UISlider,
-				   UIText>;
+		std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap,
+				   PhysicBody, Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy, SoundSource,
+				   SoundListener, LuaScript, PrefabLink, RendererTag, UIButton, UIImage, UIPanel, UIProgressBar, UIRect,
+				   UISlider, UIText>;
 
 /**
  * @brief List all serializable components.
  * @note All except ID which is serialized directly in the entity.
  */
 using SerializableComponents =
-		std::tuple<Tag, Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text,
+		std::tuple<Tag, Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap,
 				   PhysicBody, Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy, SoundSource,
 				   SoundListener, LuaScript, PrefabLink, RendererTag, UIButton, UIImage, UIPanel, UIProgressBar, UIRect,
 				   UISlider, UIText>;
@@ -113,8 +115,8 @@ using SerializableComponents =
  * @note All except ID, Tag & Transform that are mandatory.
  */
 using OptionalComponents =
-		std::tuple<Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, PhysicBody, Player,
-				   Trigger, EntityLink, BackgroundTexture, SoundSource, SoundListener, LuaScript, PrefabLink,
+		std::tuple<Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap, PhysicBody,
+				   Player, Trigger, EntityLink, BackgroundTexture, SoundSource, SoundListener, LuaScript, PrefabLink,
 				   RendererTag, UIButton, UIImage, UIPanel, UIProgressBar, UIRect, UISlider, UIText>;
 
 }// namespace owl::scene::component

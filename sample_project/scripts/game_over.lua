@@ -26,9 +26,9 @@ function on_update(dt)
 end
 
 function on_retry_clicked()
-    -- Clear state and restart gameplay
+    -- Clear state and restart from the world map.
     gamestate.clear()
-    pending_scene = "scenes/gameplay.owl"
+    pending_scene = "scenes/world_map.owl"
     ui.transition_fade_out(0.3)
 end
 
