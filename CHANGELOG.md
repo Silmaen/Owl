@@ -9,6 +9,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Renderer stack runtime + editor UI** — the foundation laid earlier in this
+  cycle is now actually wired to rendering and exposed in the editor.
+    - `Scene::renderWithStack` orchestrates per-layer passes for the active
+      `RenderStack` (or falls back to the legacy single-pass when the stack is
+      empty). Each pass calls `onBeginFrame` / `render` / `renderUI` /
+      `onEndFrame` on the layer and routes entities by their `RendererTag`
+      (untagged entities go to the first layer; backgrounds draw only on the
+      first pass to keep the legacy z-order).
+    - `EditorLayer::syncActiveDocumentPanels` now installs the project's
+      `RendererStack` (filtered by the active scene's `EnabledRenderers`) on
+      the engine `Renderer` whenever the active document changes — the
+      runner does the equivalent at scene load.
+    - **Project Settings** modal (`source/owlnest/sources/panel/ProjectSettings.cpp`)
+      now has a "Renderer Stack" editor — ordered list of layers with a Type
+      combo (factory keys), Name input, up/down reorder buttons, remove
+      button, and `+ Add Layer`.
+    - **Scene Hierarchy inspector** renders an editable `RendererTag`
+      component (dropdown of the active stack's layer names + a `(default —
+      first layer)` choice). Surfaces a one-shot warning when the chosen name
+      doesn't match any active layer.
+    - **Scene Hierarchy panel** groups root entities by renderer layer when
+      the active stack has more than one layer (each layer is a tree node
+      under `root`, untagged roots land under the first layer, entities with
+      an unknown tag fall into a trailing `(unrouted)` group). Dragging a
+      root entity onto a layer node both unparents it (if needed) and sets
+      its `RendererTag.rendererName` in a single `ModifyEntityCommand` (one
+      Ctrl+Z reverts the whole drop).
+    - **Sample project** (`sample_project/owl_project.yml`) opts into the
+      stack with two `Renderer2D` layers — `world` and `ui`. Every UI entity
+      across `main_menu`, `settings_menu`, `world_map`, `platformer_house`,
+      `victory`, `game_over` carries `RendererTag: { Name: ui }` so the HUD
+      / menu UI is rendered on the dedicated layer.
+- **Lua `physics.set_gravity_scale(entity, scale)`** — exposes
+  `b2Body_SetGravityScale` for dynamic bodies. Setting `scale = 0` cancels
+  world gravity for that body without touching mass; the top-down
+  `world_player.lua` now calls this once in `on_create` instead of the
+  per-frame `+9.81 * dt` cancellation hack.
+- **Hidden triggers don't fire** — `Scene::onUpdateRuntime` now skips trigger
+  entities whose `Visibility.gameVisible` is false (or whose ancestor is
+  hidden). Any in-progress timer is stopped and prior overlap state is
+  cleared with a synthetic `onTriggerExit`, so re-showing the trigger
+  requires a fresh enter to fire it.
+- **Tests**: `Scene.InvisibleTriggerDoesNotFire`,
+  `PhysicCommand.GravityScaleZeroCancelsFalling`,
+  `PhysicCommand.GravityScaleNoOpEdgeCases`.
+
+### Fixed
+
+- **mingw-gcc 15 link**: pass `-Wa,-mbig-obj` globally on Windows GCC builds so
+  template-heavy translation units (notably `Scene.cpp` after the renderer-stack
+  + tilemap additions) no longer overflow the 16-bit PE/COFF section table —
+  silenced the cascade of "relocation truncated to fit" + "undefined reference
+  to `std::move_iterator<...>`" link errors.
+- **`HelpIndex.BadgesAreFetchedAndCachedLocally`** now skips cleanly when the
+  configure-time badge fetch produced no cached SVGs (e.g. the build agent has
+  no outbound HTTPS — the typical ARM64 / sandboxed CI runner). The rewriting
+  assertions still fire whenever at least one badge was downloaded.
+
+### Changed
+
+- **Editor shortcuts** — modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) now
+  fire even when an ImGui text widget would otherwise capture the keyboard,
+  matching the convention used by VS Code / Blender / Unity. Modifier-less
+  shortcuts still yield to text input (so typing `s` in a name field doesn't
+  trigger Save). When a shortcut would have matched but is suppressed by the
+  capture check, `ActionRegistry` logs a `TRACE` line so the failure is
+  diagnosable.
+
 - **Renderer stack foundation** — composable per-scene renderer pipeline.
     - New public API in `source/owl/public/renderer/`: `RenderLayer` (interface),
       `RenderStack` (ordered orchestrator), `RenderLayerFactory` (string-keyed

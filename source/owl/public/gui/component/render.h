@@ -166,6 +166,12 @@ OWL_API void renderProps(scene::component::PrefabLink& ioComponent);
 OWL_API void renderProps(scene::component::Tilemap& ioComponent);
 
 /**
+ * @brief Render a Gui for editing the renderer tag (dropdown of stack layers).
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::RendererTag& ioComponent);
+
+/**
  * @brief List of components that have a render function.
  */
 using DrawableComponents =
@@ -175,9 +181,9 @@ using DrawableComponents =
 				   scene::component::Player, scene::component::Trigger, scene::component::EntityLink,
 				   scene::component::BackgroundTexture, scene::component::Visibility, scene::component::SoundSource,
 				   scene::component::SoundListener, scene::component::LuaScript, scene::component::PrefabLink,
-				   scene::component::Canvas, scene::component::UIRect, scene::component::UIText,
-				   scene::component::UIImage, scene::component::UIPanel, scene::component::UIButton,
-				   scene::component::UISlider, scene::component::UIProgressBar>;
+				   scene::component::RendererTag, scene::component::Canvas, scene::component::UIRect,
+				   scene::component::UIText, scene::component::UIImage, scene::component::UIPanel,
+				   scene::component::UIButton, scene::component::UISlider, scene::component::UIProgressBar>;
 
 
 }// namespace owl::gui::component

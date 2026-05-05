@@ -150,11 +150,103 @@ void SceneHierarchy::renderHierarchy() {
 				}
 				ImGui::EndDragDropTarget();
 			}
-			for (auto& entity: m_context->getRootEntities()) { drawEntityNode(entity); }
+			renderRootEntities();
 			ImGui::TreePop();
 		}
 	}
 	ImGui::End();
+}
+
+void SceneHierarchy::renderRootEntities() {
+	const auto& stack = renderer::Renderer::getRenderStack();
+	const auto& layers = stack.getLayers();
+	const auto roots = m_context->getRootEntities();
+
+	// 0 or 1 layer → flat list (legacy behaviour, no extra nesting).
+	if (layers.size() < 2) {
+		for (auto entity: roots)
+			drawEntityNode(entity);
+		return;
+	}
+
+	// > 1 layer → bucket roots by their effective layer name. Untagged (or empty
+	// `rendererName`) entities land under the first layer; entities with an unknown
+	// name land in a trailing "(unrouted)" group.
+	const std::string firstLayerName = layers.front()->getName();
+	std::unordered_map<std::string, std::vector<scene::Entity>> bucketed;
+	std::vector<scene::Entity> unrouted;
+	for (auto entity: roots) {
+		std::string effective;
+		if (entity.hasComponent<RendererTag>()) {
+			const auto& name = entity.getComponent<RendererTag>().rendererName;
+			effective = name.empty() ? firstLayerName : name;
+		} else {
+			effective = firstLayerName;
+		}
+		const bool known = std::ranges::any_of(layers, [&](const auto& l) -> bool {
+			return l->getName() == effective;
+		});
+		if (known)
+			bucketed[effective].push_back(entity);
+		else
+			unrouted.push_back(entity);
+	}
+
+	for (const auto& layer: layers) {
+		const auto& name = layer->getName();
+		const auto count = bucketed.contains(name) ? bucketed.at(name).size() : 0u;
+		const std::string label = std::format("{}  ({})###layer_{}", name, count, name);
+		ImGui::PushID(name.c_str());
+		const bool open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+		// Drop target: route the dropped entity to this layer (unparent if needed, then set
+		// `RendererTag.rendererName`). Both mutations are captured in a single
+		// `ModifyEntityCommand` so one Ctrl+Z reverts the whole drop.
+		if (ImGui::BeginDragDropTarget()) {
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
+				const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
+				if (auto e = m_context->findEntityByUUID(core::UUID{droppedUuid}); e) {
+					auto before = mp_undoManager != nullptr ? EntitySnapshot::capture(e) : EntitySnapshot{};
+					if (e.getComponent<Hierarchy>().parentId != core::UUID{0})
+						m_context->unparent(e);
+					auto& tag = e.hasComponent<RendererTag>() ? e.getComponent<RendererTag>()
+															  : e.addComponent<RendererTag>();
+					tag.rendererName = name;
+					if (mp_undoManager != nullptr) {
+						auto cmd = mkUniq<commands::ModifyEntityCommand>(
+								e.getUUID(), std::move(before), std::format("Route to layer '{}'", name));
+						cmd->captureAfter(e);
+						mp_undoManager->push(std::move(cmd));
+					}
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+		if (open) {
+			if (const auto it = bucketed.find(name); it != bucketed.end()) {
+				for (auto entity: it->second)
+					drawEntityNode(entity);
+			}
+			ImGui::TreePop();
+		}
+		ImGui::PopID();
+	}
+
+	if (!unrouted.empty()) {
+		ImGui::PushID("__unrouted__");
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.55f, 0.20f, 1.0f));
+		const std::string label = std::format("(unrouted)  ({})###layer_unrouted", unrouted.size());
+		const bool open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+		ImGui::PopStyleColor();
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+			ImGui::SetTooltip("These root entities have a RendererTag whose name does not match\n"
+							  "any active layer — they will be skipped at render time.");
+		if (open) {
+			for (auto entity: unrouted)
+				drawEntityNode(entity);
+			ImGui::TreePop();
+		}
+		ImGui::PopID();
+	}
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)

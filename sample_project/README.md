@@ -83,7 +83,7 @@ it directly.
 | Script                       | Features exercised                                                                                                                                                                |
 |------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `main_menu.lua`              | Dynamic Démarrer/Continuer button, save slot info, settings dispatch, fade transitions, `gamestate` continue snapshot, `save.has_save/list/delete`, `scene.load_scene`            |
-| `world_player.lua`           | Top-down 4-direction movement (gravity-cancelled `set_velocity` hack), camera-follow, ESC pause, teleporter visibility gate, world-return position restore                        |
+| `world_player.lua`           | Top-down 4-direction movement (gravity scale = 0 + `set_velocity`), camera-follow, ESC pause, teleporter visibility gate, world-return position restore                          |
 | `platformer_player.lua`      | Tight side-scroller controls (state machine grounded / rising / falling, coyote time, jump buffer), no air control, camera-follow, HUD update, ESC pause                          |
 | `house_door.lua`             | `Trigger.Type=Interaction`, gates entry on `house_<n>_done` flag, saves world-return position, loads platformer scene                                                              |
 | `level_complete.lua`         | Marks the visited house as done, increments `houses_visited`, returns to the world map                                                                                            |
@@ -111,7 +111,7 @@ it directly.
 
 ### Lua API Coverage
 - [x] `transform` (get/set position, rotation, scale)
-- [x] `physics` (impulse, get_velocity, set_transform)
+- [x] `physics` (impulse, get_velocity, set_velocity, set_transform, set_gravity_scale)
 - [x] `input` (is_key_pressed, is_mouse_button_pressed, get_mouse_x, get_mouse_y)
 - [x] `scene` (find_entity, destroy_entity, create_entity, load_scene)
 - [x] `entity` (has_component, get_name)

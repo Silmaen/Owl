@@ -3,6 +3,8 @@ Entities:
   - Entity: 16128583253515789582
     Tag:
       tag: VersionLabel
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -29,6 +31,8 @@ Entities:
   - Entity: 6578682931661001362
     Tag:
       tag: PlayButton
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -61,6 +65,8 @@ Entities:
   - Entity: 700000000000000003
     Tag:
       tag: ContinueButton
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -93,6 +99,8 @@ Entities:
   - Entity: 4492837156209384711
     Tag:
       tag: SettingsButton
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -125,6 +133,8 @@ Entities:
   - Entity: 5503948271630582844
     Tag:
       tag: QuitButton
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -157,6 +167,8 @@ Entities:
   - Entity: 700000000000000001
     Tag:
       tag: LogoImage
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -179,6 +191,8 @@ Entities:
   - Entity: 15166799538320535829
     Tag:
       tag: TitleText
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -205,6 +219,8 @@ Entities:
   - Entity: 15166799538320535830
     Tag:
       tag: SubtitleText
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -231,6 +247,8 @@ Entities:
   - Entity: 700000000000000002
     Tag:
       tag: ButtonPanel
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -257,6 +275,8 @@ Entities:
   - Entity: 700000000000000010
     Tag:
       tag: SaveInfoText
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -283,6 +303,8 @@ Entities:
   - Entity: 700000000000000011
     Tag:
       tag: DeleteSaveButton
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -315,6 +337,8 @@ Entities:
   - Entity: 700000000000000012
     Tag:
       tag: MousePosLabel
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -341,6 +365,8 @@ Entities:
   - Entity: 827593881302582438
     Tag:
       tag: MenuCanvas
+    RendererTag:
+      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]

@@ -260,6 +260,25 @@ void PhysicCommand::setVelocity(const scene::Entity& iEntity, const math::vec2f&
 	b2Body_SetLinearVelocity(m_impl->bodies[body.bodyId], {iVelocity.x(), iVelocity.y()});
 }
 
+void PhysicCommand::setGravityScale(const scene::Entity& iEntity, const float iScale) {
+	if (!isInitialized()) {
+		OWL_CORE_WARN("PhysicCommand::setGravityScale(), Physic engine not initialized.")
+		return;
+	}
+	if (!iEntity) {
+		OWL_CORE_WARN("PhysicCommand::setGravityScale(), entity is null.")
+		return;
+	}
+	if (!iEntity.hasComponent<scene::component::PhysicBody>())
+		return;
+	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
+	if (body.type != scene::SceneBody::BodyType::Dynamic)
+		return;
+	b2Body_SetGravityScale(m_impl->bodies[body.bodyId], iScale);
+	// Wake the body so the new scale takes effect immediately.
+	b2Body_SetAwake(m_impl->bodies[body.bodyId], true);
+}
+
 auto PhysicCommand::getSnapshot(const scene::Entity& iEntity) -> PhysicsSnapshot {
 	PhysicsSnapshot snapshot;
 	if (!isInitialized() || !iEntity || !iEntity.hasComponent<scene::component::PhysicBody>())

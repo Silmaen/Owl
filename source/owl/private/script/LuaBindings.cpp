@@ -157,6 +157,14 @@ auto luaPhysicsSetTransform(lua_State* iState) -> int {
 	return 0;
 }
 
+auto luaPhysicsSetGravityScale(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState)) {
+		const auto scale = static_cast<float>(luaL_checknumber(iState, 2));
+		physic::PhysicCommand::setGravityScale(*entity, scale);
+	}
+	return 0;
+}
+
 // ============================================================
 // input table
 // ============================================================
@@ -605,6 +613,7 @@ void registerBindings(lua_State* iState) {
 		{"get_velocity", luaPhysicsGetVelocity},
 		{"set_velocity", luaPhysicsSetVelocity},
 		{"set_transform", luaPhysicsSetTransform},
+		{"set_gravity_scale", luaPhysicsSetGravityScale},
 		{nullptr, nullptr}
 	};
 	static const luaL_Reg inputFuncs[] = {

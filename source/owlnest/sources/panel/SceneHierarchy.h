@@ -87,6 +87,10 @@ public:
 private:
 	void renderHierarchy();
 	void renderProperties();
+	/// Draw root entities. Falls back to a flat list when the active `RenderStack` has 0 or 1
+	/// layer; otherwise groups roots into a tree node per layer (entities are routed by their
+	/// `RendererTag` — untagged ones land under the first layer).
+	void renderRootEntities();
 	/// Draw the context menu for an entity node.
 	void drawEntityContextMenu(const scene::Entity& iEntity, bool iHasChildren, core::UUID iParentId);
 

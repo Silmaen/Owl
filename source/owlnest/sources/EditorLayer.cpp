@@ -290,6 +290,19 @@ void EditorLayer::syncActiveDocumentPanels() {
 	// Whichever document is active drives the override on the global panels — when it overrides,
 	// SceneHierarchy delegates its `Scene Hierarchy` / `Properties` content to the document.
 	m_sceneHierarchy.setActiveDocument(m_documents.getActive());
+	// Build the renderer stack for the active scene from the project's `RendererStack` and the
+	// scene's `EnabledRenderers` overrides. Empty config → engine falls back to a single
+	// implicit `[Renderer2D(default)]`. Done on every active-document change so scenes that
+	// override layer config see it applied immediately when focused.
+	if (doc != nullptr && doc->getActiveScene()) {
+		const auto& stackCfg = m_project.rendererStack.isEmpty()
+									   ? renderer::RendererStackConfig::makeDefault()
+									   : m_project.rendererStack;
+		auto stack = renderer::RenderStack::buildFromConfig(stackCfg, doc->getActiveScene()->getEnabledRenderers());
+		renderer::Renderer::setRenderStack(std::move(stack));
+	} else {
+		renderer::Renderer::setRenderStack(renderer::RenderStack{});
+	}
 	updateWindowTitle();
 	refreshRibbonForActiveDoc();
 }
@@ -750,7 +763,9 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	if (m_projectSettings.hasResult()) {
 		m_project = m_projectSettings.consumeResult();
 		saveProject();
-		updateWindowTitle();
+		// Rebuild the render stack from the (possibly edited) project config so renderer-stack
+		// edits take effect without reopening the project.
+		syncActiveDocumentPanels();
 	}
 	m_logPanel.onImGuiRender();
 	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
