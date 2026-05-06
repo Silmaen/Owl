@@ -1,11 +1,12 @@
 #include "testHelper.h"
 
-#include "renderer/Texture.h"
-#include "renderer/null/Texture.h"
+#include "renderer/gpu/Texture.h"
+#include "renderer/gpu/null/Texture.h"
 
-#include "renderer/RenderCommand.h"
+#include "renderer/gpu/RenderCommand.h"
 
 using namespace owl::renderer;
+using namespace owl::renderer::gpu;
 
 TEST(TextureSpecifications, stringDefinition) {
 	Texture::Specification spec{.size = {15, 156}, .format = ImageFormat::R8, .generateMips = true};

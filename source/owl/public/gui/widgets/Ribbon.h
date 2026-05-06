@@ -63,7 +63,7 @@ public:
 	struct Tab {
 		std::string label;
 		std::vector<Group> groups;
-		/// When true, the tab title is drawn with the theme's accent (secondary) color to draw
+		/// When true, the tab title is drawn with the theme's accent (secondary) colour to draw
 		/// attention — used to highlight the File tab.
 		bool highlighted = false;
 	};
@@ -77,7 +77,7 @@ public:
 
 	/// @brief Add an empty tab to the ribbon. Returns its index.
 	auto addTab(std::string iLabel) -> size_t;
-	/// @brief Mark `iTabIndex` as highlighted (drawn with the theme accent color in the tab bar).
+	/// @brief Mark `iTabIndex` as highlighted (drawn with the theme accent colour in the tab bar).
 	void setTabHighlighted(size_t iTabIndex, bool iHighlighted);
 	/// @brief Add an empty group to `iTabIndex`. Returns the group index.
 	auto addGroup(size_t iTabIndex, std::string iLabel) -> size_t;

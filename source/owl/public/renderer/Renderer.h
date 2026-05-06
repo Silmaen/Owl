@@ -8,26 +8,46 @@
 
 #pragma once
 
-#include "CameraOrtho.h"
-#include "RenderCommand.h"
-#include "RenderStack.h"
-#include "Shader.h"
 #include "data/assets/AssetLibrary.h"
+#include "gpu/RenderCommand.h"
+#include "gpu/Shader.h"
+#include "gpu/Texture.h"
+#include "renderer/CameraOrtho.h"
+#include "renderer/RenderStack.h"
 
 #include <functional>
 
 /**
- * @brief Namespace for the renderer elements.
+ * @brief Top-level renderer namespace.
+ *
+ * Hosts the engine's high-level renderer facade (`Renderer`), the camera
+ * abstractions (`Camera`, `CameraOrtho`, `CameraEditor`), the deferred
+ * background renderer, and the texture decoder. Specialized renderers live
+ * in nested namespaces:
+ *   - `owl::renderer::gpu` — backend abstractions (`Texture`, `gpu::Shader`,
+ *     `Buffer`, `gpu::RenderAPI`, `gpu::RenderCommand`, …) and their per-API impls.
+ *   - `owl::renderer`   — render-stack orchestration (`RenderLayer`,
+ *     `RenderLayerFactory`, `RenderStack`).
+ *   - `owl::renderer` (formerly `owl::renderer::draw`)    — concrete draw-type renderers, split by
+ *     family in sub-namespaces (`r2d` for the 2D batch renderer, `raycast`
+ *     for the Wolfenstein-style raycaster).
  */
 namespace owl::renderer {
 
 /**
- * @brief Base renderer class.
+ * @brief Engine-wide renderer facade.
+ *
+ * Owns the shader and texture libraries and the active `RenderStack`,
+ * orchestrates startup / shutdown, and forwards backend-level calls
+ * (clear, viewport resize) to the active `gpu::RenderCommand`. There is exactly
+ * one renderer per `Application`.
  */
 class OWL_API Renderer {
 public:
-	using TextureLibrary = data::assets::AssetLibrary<Texture2D>;
-	using ShaderLibrary = data::assets::AssetLibrary<Shader>;
+	/// Strongly-typed alias for the cached `gpu::Texture2D` asset library.
+	using TextureLibrary = data::assets::AssetLibrary<gpu::Texture2D>;
+	/// Strongly-typed alias for the cached `gpu::Shader` asset library.
+	using ShaderLibrary = data::assets::AssetLibrary<gpu::Shader>;
 	Renderer() = default;
 	Renderer(const Renderer&) = delete;
 	Renderer(Renderer&&) = delete;
@@ -84,7 +104,11 @@ public:
 		Error,///< Render has an error.
 	};
 
-	static auto getState() -> State { return m_internalState; }
+	/**
+	 * @brief Read the current lifecycle state.
+	 * @return The state.
+	 */
+	[[nodiscard]] static auto getState() -> State { return m_internalState; }
 
 	/**
 	 * @brief Event on Window size change.

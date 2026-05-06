@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "Camera.h"
+#include "math/vectors.h"
+#include "renderer/Camera.h"
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wshadow")
@@ -21,6 +22,17 @@ namespace owl::scene {
 class Scene;
 }// namespace owl::scene
 
+/**
+ * @brief Render-stack orchestration types.
+ *
+ * Defines the abstract `RenderLayer` interface (one rendering pass), the
+ * `RenderLayerFactory` (string-keyed registry of layer constructors), the
+ * `RenderStack` runtime container, plus the YAML configuration data
+ * structures (`RendererStackEntry`, `RendererStackConfig`,
+ * `EnabledRenderersConfig`) that describe how a project / scene composes
+ * its layers. Concrete `RenderLayer` implementations live in the
+ * `owl::renderer::draw::*` sub-namespaces.
+ */
 namespace owl::renderer {
 
 /**
@@ -100,6 +112,37 @@ public:
 	 * @param[in] iConfig YAML node holding the merged config (may be Null).
 	 */
 	virtual void applyConfig(const YAML::Node& iConfig) = 0;
+
+	/**
+	 * @brief Inform the layer of the active viewport size (in pixels).
+	 *
+	 * Called by `Scene::renderWithStack` right before each `onBeginFrame`, with
+	 * the current scene viewport. Layers that don't care about pixel-space
+	 * mapping (e.g. `Renderer2DLayer`) ignore it; layers that build a
+	 * pixel-accurate ortho projection (e.g. `RendererRaycastLayer`) override
+	 * this hook to capture the size. Default implementation is a no-op so
+	 * adding new layer types remains backwards-compatible.
+	 * @param[in] iViewport The viewport size in pixels.
+	 */
+	virtual void setViewport([[maybe_unused]] const math::vec2ui& iViewport) {}
+
+	/**
+	 * @brief View-projection matrix the layer binds during its `onBeginFrame`.
+	 *
+	 * Used by `Scene::renderUI` to convert pixel coordinates into the same
+	 * coordinate frame the layer's `Renderer2D` is currently submitting to,
+	 * so a HUD overlay lands at the right screen pixels regardless of which
+	 * layer hosts it. The default implementation returns the active scene
+	 * camera's VP — appropriate for world-space layers. Layers that bind a
+	 * pixel-space ortho (raycaster, screen-space `Renderer2DLayer`) override
+	 * this hook to return the same ortho matrix they pass to
+	 * `Renderer2D::beginScene`.
+	 * @param[in] iCamera The active scene camera.
+	 * @return The view-projection matrix bound by this layer.
+	 */
+	[[nodiscard]] virtual auto getEffectiveViewProjection(const Camera& iCamera) const -> math::mat4 {
+		return iCamera.getViewProjection();
+	}
 };
 
 }// namespace owl::renderer

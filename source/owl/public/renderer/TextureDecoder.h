@@ -9,8 +9,8 @@
 #pragma once
 
 #include "core/Core.h"
+#include "gpu/Texture.h"
 #include "math/vectors.h"
-#include "renderer/Texture.h"
 
 #include <filesystem>
 #include <optional>
@@ -29,7 +29,7 @@ struct OWL_API DecodedImage {
 	/// Width and height in pixels; zero on failure.
 	math::vec2ui size{0, 0};
 	/// Pixel format deduced from the number of channels (`Rgb8` / `Rgba8`).
-	ImageFormat format{ImageFormat::Rgba8};
+	gpu::ImageFormat format{gpu::ImageFormat::Rgba8};
 	/// Raw tightly packed pixel data; empty on failure.
 	std::vector<uint8_t> pixels;
 	/// True when decoding succeeded; callers should gate any usage on this flag.

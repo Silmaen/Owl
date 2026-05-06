@@ -1,10 +1,11 @@
 
 #include "testHelper.h"
 
-#include <renderer/RenderCommand.h>
-#include <renderer/null/Framebuffer.h>
+#include <renderer/gpu/RenderCommand.h>
+#include <renderer/gpu/null/Framebuffer.h>
 
 using namespace owl::renderer;
+using namespace owl::renderer::gpu;
 
 TEST(Renderer, FramebufferBase) {
 	owl::core::Log::init(owl::core::Log::Level::Off);

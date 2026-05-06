@@ -9,7 +9,7 @@
 #pragma once
 
 #include "core/Serializer.h"
-#include "renderer/Texture.h"
+#include "renderer/gpu/Texture.h"
 
 namespace owl::scene::component {
 
@@ -20,8 +20,8 @@ namespace owl::scene::component {
  */
 struct OWL_API UIImage {
 	/// Texture to display.
-	shared<renderer::Texture2D> texture = nullptr;
-	/// Tint color (multiplied with texture).
+	shared<renderer::gpu::Texture2D> texture = nullptr;
+	/// Tint colour (multiplied with texture).
 	math::vec4 tint{1.0f, 1.0f, 1.0f, 1.0f};
 
 	/// @brief Get the class title.

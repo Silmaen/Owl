@@ -19,27 +19,36 @@ and GPU-managed texture slot allocation.
 
 ![Renderer Architecture](../images/renderer_architecture.svg)
 
-| Class                   | Role                                                                       |
-|-------------------------|----------------------------------------------------------------------------|
-| `Renderer`              | Lifecycle (init/shutdown/reset), owns `ShaderLibrary` and `TextureLibrary` |
-| `RenderStack`           | Ordered list of active `RenderLayer` instances for the current scene       |
-| `RenderLayer`           | Abstract interface for one renderer in the stack (begin/render/end)        |
-| `RenderLayerFactory`    | String-keyed registry of layer constructors (`"Renderer2D"`, ...)          |
-| `Renderer2D`            | Static 2D batch renderer: quads, circles, lines, text                      |
-| `Renderer2DLayer`       | `RenderLayer` adapter wrapping `Renderer2D` (registered at engine init)    |
-| `BackgroundRenderer`    | Deferred fullscreen background/skybox rendering                            |
-| `RenderCommand`         | Static facade delegating to the active `RenderAPI`                         |
-| `RenderAPI`             | Abstract interface (OpenGL, Vulkan, Null)                                  |
-| `GraphContext`          | Graphics context abstraction (init, buffer swapping)                       |
-| `Camera`                | Base class: projection, view, viewProjection matrices                      |
-| `CameraOrtho`           | Standalone orthographic camera with position/rotation                      |
-| `CameraEditor`          | Editor orbit camera (focal point, pan, zoom, rotate)                       |
-| `SceneCamera`           | Scene camera supporting both orthographic and perspective                  |
-| `Framebuffer`           | Off-screen render target with typed attachments                            |
-| `DrawData`              | Vertex/index buffer + shader binding for a draw call                       |
-| `Shader`                | Abstract shader (Slang source, SPIR-V compiled)                            |
-| `Texture` / `Texture2D` | Abstract texture, 2D texture with file/spec creation                       |
-| `UniformBuffer`         | GPU-side uniform data block                                                |
+The renderer module is split into sub-namespaces / sub-folders by renderer
+kind: `owl::renderer::stack` (orchestration), `owl::renderer::renderer2d`
+(2D batch), `owl::renderer::rendererraycast` (raycaster). The base building
+blocks (`Camera`, `Texture`, `Shader`, `Buffer`, `Framebuffer`, `RenderAPI`,
+`RenderCommand`) stay in `owl::renderer` because they're shared by every
+renderer kind.
+
+| Class                                            | Role                                                                       |
+|--------------------------------------------------|----------------------------------------------------------------------------|
+| `Renderer`                                       | Lifecycle (init/shutdown/reset), owns `ShaderLibrary` and `TextureLibrary` |
+| `stack::RenderStack`                             | Ordered list of active `RenderLayer` instances for the current scene       |
+| `stack::RenderLayer`                             | Abstract interface for one renderer in the stack (begin/render/end)        |
+| `stack::RenderLayerFactory`                      | String-keyed registry of layer constructors (`"Renderer2D"`, ...)          |
+| `renderer2d::Renderer2D`                         | Static 2D batch renderer: quads, circles, lines, text                      |
+| `renderer2d::Renderer2DLayer`                    | `RenderLayer` adapter wrapping `Renderer2D` (registered at engine init)    |
+| `rendererraycast::RendererRaycast`               | Static facade for the CPU-DDA raycaster                                    |
+| `rendererraycast::RendererRaycastLayer`          | `RenderLayer` adapter for the raycaster (factory key `"RendererRaycast"`)  |
+| `BackgroundRenderer`                             | Deferred fullscreen background/skybox rendering                            |
+| `RenderCommand`                                  | Static facade delegating to the active `RenderAPI`                         |
+| `RenderAPI`                                      | Abstract interface (OpenGL, Vulkan, Null)                                  |
+| `GraphContext`                                   | Graphics context abstraction (init, buffer swapping)                       |
+| `Camera`                                         | Base class: projection, view, viewProjection matrices                      |
+| `CameraOrtho`                                    | Standalone orthographic camera with position/rotation                      |
+| `CameraEditor`                                   | Editor orbit camera (focal point, pan, zoom, rotate)                       |
+| `SceneCamera`                                    | Scene camera supporting both orthographic and perspective                  |
+| `Framebuffer`                                    | Off-screen render target with typed attachments                            |
+| `DrawData`                                       | Vertex/index buffer + shader binding for a draw call                       |
+| `Shader`                                         | Abstract shader (Slang source, SPIR-V compiled)                            |
+| `Texture` / `Texture2D`                          | Abstract texture, 2D texture with file/spec creation                       |
+| `UniformBuffer`                                  | GPU-side uniform data block                                                |
 
 ## Renderer Stack {#renderer-stack}
 
@@ -156,6 +165,89 @@ walks in reverse so layers can flush nested resources cleanly.
 The factory pattern keeps the engine extensible: third-party code (mods, tests)
 can register layer types without touching engine sources.
 
+## Raycaster {#renderer-raycaster}
+
+`RendererRaycast` (in `renderer/rendererraycast/`) is the first non-2D
+renderer to ride on the stack. It synthesises a Wolfenstein-style first-person
+view from a top-down 2D `scene::component::Tilemap`: each non-empty cell is a
+wall, each empty cell is walkable space.
+
+### Pipeline (v0.2.0)
+
+```mermaid
+flowchart LR
+    Player["Player Entity<br/>(Transform + Camera)"] -->|inverseView pos+yaw| RC["RendererRaycast::beginScene"]
+    Tilemap["Tilemap entity<br/>(walls layer)"] -->|cell grid| RC
+    Atlas["Tileset atlas<br/>(wall textures)"] -->|sampled UVs| RC
+    RC -->|backdrop quads| R2D["Renderer2D batch<br/>(pixel-space ortho)"]
+    RC -->|per-column DDA<br/>→ stripe quads| R2D
+    R2D -->|GPU draw calls| FB["Framebuffer"]
+```
+
+The raycaster's `RenderLayer` switches `Renderer2D` to a pixel-space ortho
+camera in `onBeginFrame`, lets `Scene::render` dispatch every accepted
+tilemap into `RendererRaycast::drawTilemapWalls`, then closes the
+`Renderer2D` batch in `onEndFrame`. The DDA traversal runs on the CPU per
+screen column, producing one textured `Renderer2D::drawQuad` per stripe; the
+sky / floor backdrop is emitted lazily on the first wall draw so empty
+passes (no tilemap routed) stay genuinely no-op.
+
+### Configuration
+
+In `owl_project.yml`:
+
+```yaml
+RendererStack:
+  - Type: Renderer2D
+    Name: world
+  - Type: RendererRaycast
+    Name: raycast_world
+    DefaultConfig:
+      Fov: 75.0                       # horizontal field of view, degrees
+      MaxDistance: 32.0               # max DDA budget, in cells
+      CeilingColor: [0.18, 0.20, 0.30, 1.0]
+      FloorColor:   [0.20, 0.16, 0.12, 1.0]
+      NumRays: 0                      # 0 = derive from viewport width
+  - Type: Renderer2D
+    Name: ui
+```
+
+A scene that wants a raycast world disables the 2D `world` layer:
+
+```yaml
+EnabledRenderers:
+  - Name: world
+    Enabled: false
+  - Name: raycast_world
+    Enabled: true
+  - Name: ui
+    Enabled: true
+```
+
+Tag the wall tilemap with `RendererTag: { Name: raycast_world }` to route it
+to the raycaster.
+
+### Player pose convention
+
+The raycaster extracts the camera's 2D pose from the inverse view matrix
+(i.e. the camera entity's world transform):
+
+| 2D quantity   | Source                                                                          |
+|---------------|---------------------------------------------------------------------------------|
+| Position      | `inverseView * (0, 0, 0, 1)` — the entity's world `(x, y)`                      |
+| Forward       | `inverseView * (0, 1, 0, 0)` — the entity's local +Y mapped to world XY         |
+| Right (× FOV) | `inverseView * (1, 0, 0, 0)` scaled by `tan(fov/2) * aspect` — the FOV "plane"  |
+
+Convention:
+- An entity with `rotation: [0, 0, 0]` faces world **+Y** (forward = `(0, 1)`).
+- Increasing the entity's Z rotation rotates the facing **counter-clockwise**
+  in world XY — `rotation: [0, 0, π/2]` faces world **−X** (forward = `(−1, 0)`).
+- Rotation values are stored in **radians** in the `Transform` component
+  (matching the rest of Owl's transform pipeline).
+
+The accompanying `scripts/raycast_player.lua` in the sample project
+implements WASD strafing + Q/E turning following this convention.
+
 ## Backend Abstraction
 
 The `RenderAPI` class defines a platform-independent interface. A concrete implementation
@@ -173,7 +265,7 @@ is selected at startup via `RenderCommand::create(Type)`.
 |-------------------------------|------------------------------------------|
 | `init()`                      | Initialize the graphics backend          |
 | `setViewport(x,y,w,h)`        | Set render viewport                      |
-| `setClearColor(vec4)`         | Set screen clear color                   |
+| `setClearColor(vec4)`         | Set screen clear colour                   |
 | `clear()`                     | Clear the screen                         |
 | `drawData(data, cnt)`         | Issue a draw call with vertex/index data |
 | `drawLine(data, cnt)`         | Issue a line-mode draw call              |
@@ -202,7 +294,7 @@ See [Architecture](architecture.md) for the backend selection and application st
 
 | Method         | Input Struct   | Description                                |
 |----------------|----------------|--------------------------------------------|
-| `drawQuad`     | `Quad2DData`   | Textured/colored quad with UV and tiling   |
+| `drawQuad`     | `Quad2DData`   | Textured/coloured quad with UV and tiling   |
 | `drawCircle`   | `CircleData`   | SDF circle with thickness and fade         |
 | `drawLine`     | `LineData`     | Single line segment                        |
 | `drawRect`     | `RectData`     | Wireframe rectangle (4 lines)              |
@@ -214,8 +306,8 @@ See [Architecture](architecture.md) for the backend selection and application st
 | Field           | Type                        | Default                     | Description                   |
 |-----------------|-----------------------------|-----------------------------|-------------------------------|
 | `transform`     | `math::Transform`           | —                           | Quad transformation           |
-| `color`         | `math::vec4`                | `{1, 1, 1, 1}`              | Color tint                    |
-| `texture`       | `shared<Texture>`           | `nullptr`                   | Texture (plain color if null) |
+| `color`         | `math::vec4`                | `{1, 1, 1, 1}`              | Colour tint                    |
+| `texture`       | `shared<Texture>`           | `nullptr`                   | Texture (plain colour if null) |
 | `tilingFactor`  | `float`                     | `1.0`                       | Texture repetition factor     |
 | `textureCoords` | `std::array<math::vec2, 4>` | `{(0,0),(1,0),(1,1),(0,1)}` | Per-vertex UV coordinates     |
 | `entityId`      | `int`                       | `-1`                        | Entity ID for mouse picking   |
@@ -228,7 +320,7 @@ The `textureCoords` field defaults to full-texture UVs. Custom UVs are used by t
 | Field       | Type              | Default        | Description           |
 |-------------|-------------------|----------------|-----------------------|
 | `transform` | `math::Transform` | —              | Circle transformation |
-| `color`     | `math::vec4`      | `{1, 1, 1, 1}` | Circle color          |
+| `color`     | `math::vec4`      | `{1, 1, 1, 1}` | Circle colour          |
 | `thickness` | `float`           | `1.0`          | Ring thickness (0–1)  |
 | `fade`      | `float`           | `0.005`        | Edge fade amount      |
 | `entityId`  | `int`             | `-1`           | Entity ID for picking |
@@ -239,7 +331,7 @@ The `textureCoords` field defaults to full-texture UVs. Custom UVs are used by t
 |------------|--------------|----------------|-------------|
 | `point1`   | `math::vec3` | —              | Start point |
 | `point2`   | `math::vec3` | —              | End point   |
-| `color`    | `math::vec4` | `{1, 1, 1, 1}` | Line color  |
+| `color`    | `math::vec4` | `{1, 1, 1, 1}` | Line colour  |
 | `entityId` | `int`        | `-1`           | Entity ID   |
 
 ### StringData
@@ -249,7 +341,7 @@ The `textureCoords` field defaults to full-texture UVs. Custom UVs are used by t
 | `transform`   | `math::Transform` | —              | Text transformation  |
 | `text`        | `std::string`     | —              | Text content         |
 | `font`        | `shared<Font>`    | `nullptr`      | Font (or default)    |
-| `color`       | `math::vec4`      | `{1, 1, 1, 1}` | Text color           |
+| `color`       | `math::vec4`      | `{1, 1, 1, 1}` | Text colour           |
 | `kerning`     | `float`           | `0.0`          | Extra letter spacing |
 | `lineSpacing` | `float`           | `0.0`          | Extra line spacing   |
 | `entityId`    | `int`             | `-1`           | Entity ID            |
@@ -316,8 +408,8 @@ render pass (critical for Vulkan's `DONT_CARE` loadOp).
 | Field                 | Type                | Default              | Description                              |
 |-----------------------|---------------------|----------------------|------------------------------------------|
 | `mode`                | `int`               | `0`                  | 0=Solid, 1=Gradient, 2=Texture, 3=Skybox |
-| `color`               | `math::vec4`        | `{0.2, 0.3, 0.8, 1}` | Main/bottom color                        |
-| `topColor`            | `math::vec4`        | `{0.8, 0.9, 1, 1}`   | Top color (gradient mode)                |
+| `color`               | `math::vec4`        | `{0.2, 0.3, 0.8, 1}` | Main/bottom colour                        |
+| `topColor`            | `math::vec4`        | `{0.8, 0.9, 1, 1}`   | Top colour (gradient mode)                |
 | `inverseViewRotation` | `math::mat4`        | identity             | Inverse view-rotation (skybox)           |
 | `texture`             | `shared<Texture2D>` | `nullptr`            | Background or equirectangular texture    |
 
@@ -423,7 +515,7 @@ A `Framebuffer` represents an off-screen render target with one or more typed at
 
 | Format            | Description                  | Typical Use        |
 |-------------------|------------------------------|--------------------|
-| `Rgba8`           | 8-bit RGBA color             | Scene color output |
+| `Rgba8`           | 8-bit RGBA colour             | Scene colour output |
 | `RedInteger`      | Single integer per pixel     | Entity ID picking  |
 | `Depth24Stencil8` | 24-bit depth + 8-bit stencil | Depth testing      |
 | `Surface`         | Swap chain surface (Vulkan)  | Final presentation |
@@ -529,7 +621,7 @@ Orbit camera used in the editor viewport. Controls:
 
 | Property     | Type         | Default     | Description        |
 |--------------|--------------|-------------|--------------------|
-| `focalPoint` | `math::vec3` | `{0, 0, 0}` | Orbit center       |
+| `focalPoint` | `math::vec3` | `{0, 0, 0}` | Orbit centre       |
 | `distance`   | `float`      | `10.0`      | Distance to focal  |
 | `pitch`      | `float`      | `0.0`       | Vertical angle     |
 | `yaw`        | `float`      | `0.0`       | Horizontal angle   |
@@ -576,7 +668,7 @@ Frames are numbered in **row-major order** starting from the top-left (frame 0).
 
 | Field            | Type        | Default | Serialized | Description                       |
 |------------------|-------------|---------|------------|-----------------------------------|
-| `color`          | `vec4`      | white   | Yes        | Tint color                        |
+| `color`          | `vec4`      | white   | Yes        | Tint colour                        |
 | `texture`        | `Texture2D` | null    | Yes        | Spritesheet texture               |
 | `columns`        | `uint32_t`  | `1`     | Yes        | Grid columns                      |
 | `rows`           | `uint32_t`  | `1`     | Yes        | Grid rows                         |
@@ -603,7 +695,7 @@ vMin = 1 - (row + 1) / rows   vMax = 1 - row / rows
 The resulting UV rect is passed as `textureCoords` to `Renderer2D::drawQuad()`.
 This formula is purely UV-based and does not depend on pixel dimensions.
 
-### Runtime Behavior
+### Runtime Behaviour
 
 - **On Play:** `m_currentFrame` resets to `firstFrame`, `m_elapsedTime` to 0
 - **Each frame:** accumulate `iTimeStep.getSeconds()`, advance frame(s) when threshold met

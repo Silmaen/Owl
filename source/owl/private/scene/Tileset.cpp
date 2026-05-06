@@ -72,6 +72,8 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 	emitter << YAML::Key << "tileHeight" << YAML::Value << tileHeight;
 	emitter << YAML::Key << "columns" << YAML::Value << columns;
 	emitter << YAML::Key << "rows" << YAML::Value << rows;
+	if (filterMode == renderer::gpu::FilterMode::Nearest)
+		emitter << YAML::Key << "filterMode" << YAML::Value << "Nearest";
 
 	// Sparse: emit only the entries that differ from the default.
 	const uint32_t total = tileCount();
@@ -111,8 +113,17 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 	if (!root || !root.IsMap() || !root["Tileset"])
 		return false;
 	Tileset parsed;
-	if (root["texture"])
-		parsed.texture = renderer::Texture2D::createFromSerializedForDeserialize(root["texture"].as<std::string>());
+	if (const auto fm = root["filterMode"]; fm && fm.IsScalar()) {
+		if (const auto v = fm.as<std::string>(); v == "Nearest")
+			parsed.filterMode = renderer::gpu::FilterMode::Nearest;
+		else
+			parsed.filterMode = renderer::gpu::FilterMode::Linear;
+	}
+	if (root["texture"]) {
+		parsed.texture = renderer::gpu::Texture2D::createFromSerializedForDeserialize(root["texture"].as<std::string>());
+		if (parsed.texture)
+			parsed.texture->setFilterMode(parsed.filterMode);
+	}
 	if (root["tileWidth"])
 		parsed.tileWidth = std::max(1u, root["tileWidth"].as<uint32_t>());
 	if (root["tileHeight"])

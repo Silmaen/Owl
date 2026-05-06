@@ -10,17 +10,17 @@
 
 #include "core/Core.h"
 #include "math/vectors.h"
-#include "renderer/Texture.h"
+#include "renderer/gpu/Texture.h"
 
 #include <unordered_map>
 
 namespace owl::gui {
 
-/// Theme colors used for dynamic SVG icon rendering.
+/// Theme colours used for dynamic SVG icon rendering.
 struct OWL_API IconThemeColors {
-	/// Primary icon color (replaces white `#ffffff` in SVGs).
+	/// Primary icon colour (replaces white `#ffffff` in SVGs).
 	math::vec4 primary{1, 1, 1, 1};
-	/// Secondary/accent icon color (replaces fuchsia `#ff00ff` in SVGs).
+	/// Secondary/accent icon colour (replaces fuchsia `#ff00ff` in SVGs).
 	/// Defaults to the Owl Nest amber/gold accent used for inner highlights.
 	math::vec4 secondary{1.0f, 0.78f, 0.15f, 1.0f};
 };
@@ -28,7 +28,7 @@ struct OWL_API IconThemeColors {
 /**
  * @brief A texture atlas that packs multiple icons into a single GPU texture.
  *
- * Icons are loaded from SVG or image files, optionally with theme color substitution,
+ * Icons are loaded from SVG or image files, optionally with theme colour substitution,
  * and packed into a grid atlas. Each icon can be looked up by name to get the atlas texture ID
  * and UV coordinates for rendering with ImGui.
  */
@@ -52,21 +52,21 @@ public:
 	/**
 	 * @brief Build the atlas from a list of named icon file paths.
 	 *
-	 * SVG files are rasterized via lunasvg with theme color substitution.
+	 * SVG files are rasterized via lunasvg with theme colour substitution.
 	 * PNG/JPG files are loaded via stb_image (fallback).
 	 *
 	 * @param[in] iIcons List of (name, file_path) pairs (`.svg`, `.png`, or `.jpg`).
 	 * @param[in] iCellSize Target cell size for each icon in the atlas.
-	 * @param[in] iColors Theme colors for SVG rendering.
+	 * @param[in] iColors Theme colours for SVG rendering.
 	 */
 	void build(const std::vector<std::pair<std::string, std::filesystem::path>>& iIcons, uint32_t iCellSize = 64,
 			   const IconThemeColors& iColors = {});
 
 	/**
-	 * @brief Rebuild the atlas with new theme colors.
+	 * @brief Rebuild the atlas with new theme colours.
 	 *
-	 * Re-renders all SVG icons using the stored icon list and new colors.
-	 * @param[in] iColors The new theme colors.
+	 * Re-renders all SVG icons using the stored icon list and new colours.
+	 * @param[in] iColors The new theme colours.
 	 */
 	void rebuild(const IconThemeColors& iColors);
 
@@ -88,7 +88,7 @@ public:
 	 * @brief Get the atlas texture.
 	 * @return The atlas texture.
 	 */
-	[[nodiscard]] auto getAtlasTexture() const -> const shared<renderer::Texture2D>& { return m_atlas; }
+	[[nodiscard]] auto getAtlasTexture() const -> const shared<renderer::gpu::Texture2D>& { return m_atlas; }
 
 	/**
 	 * @brief Release the atlas texture and clear all entries.
@@ -127,7 +127,7 @@ public:
 
 private:
 	/// The atlas texture.
-	shared<renderer::Texture2D> m_atlas;
+	shared<renderer::gpu::Texture2D> m_atlas;
 	/// Mapping from icon name to UV coordinates {uv0, uv1}.
 	std::unordered_map<std::string, std::pair<math::vec2, math::vec2>> m_uvMap;
 	/// Stored icon list for rebuild.

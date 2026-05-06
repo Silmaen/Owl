@@ -5,7 +5,7 @@
 This page documents Owl's generic node-graph widget and the editor subsystems
 built on top of it. The framework is designed to be **reusable**: the Scene
 Flow view is the first consumer; future releases reuse the same canvas for
-animation graphs, behavior trees and dialogue trees.
+animation graphs, behaviour trees and dialogue trees.
 
 ## Current status
 
@@ -71,7 +71,7 @@ installs.
 |---------------|----------------------------------------------------------------------|
 | `PinKind`     | `Input` / `Output` — side of the node the pin sits on                |
 | `NodePin`     | UUID + label + `typeTag` (opaque string for client-side validation)  |
-| `Node`        | UUID + title + 2D position + input/output pins + `customData` + color|
+| `Node`        | UUID + title + 2D position + input/output pins + `customData` + colour|
 | `Link`        | UUID + source output pin UUID + destination input pin UUID           |
 
 `customData` is an opaque YAML blob owned by the client — it travels
@@ -243,13 +243,13 @@ Behaviour in this first slice:
 - **Hierarchy + Properties integration** — while the SceneFlow document is
   active, the global Scene Hierarchy and Properties panels host SceneFlow
   content (no separate floating overlay). The hierarchy lists every scene
-  with its title color (red = orphan); single-click selects in the canvas,
+  with its title colour (red = orphan); single-click selects in the canvas,
   double-click opens. The properties panel shows the selected scene's path,
-  outgoing transitions (color-coded by kind), and an **Open this scene**
+  outgoing transitions (colour-coded by kind), and an **Open this scene**
   button. This is wired through three new generic virtuals on `Document`:
   `overridesGlobalPanels()`, `renderHierarchyPanel()`,
   `renderPropertiesPanel()`. Future node-graph documents (animation,
-    behavior tree...) can reuse the same hook.
+    behaviour tree...) can reuse the same hook.
 
 Opened from **File → Views → Scene Flow** in the ribbon. The document
 persists for the editor session and can be refreshed by re-opening the
@@ -270,7 +270,7 @@ command is planned as a follow-up.
 |-------------------------|----------------------------------|-------------|
 | `SceneFlowDocument`     | Scene graph overview             | (derived)   |
 | Animation graph (v0.3)  | Anim state machine               | `.owlanim`  |
-| Behavior tree (v0.4)    | AI behavior trees                | `.owlbt`    |
+| Behaviour tree (v0.4)    | AI behaviour trees                | `.owlbt`    |
 | Dialogue tree (v0.4)    | Branching conversations          | `.owldlg`   |
 
 The node canvas is free of domain knowledge so all of these can share a

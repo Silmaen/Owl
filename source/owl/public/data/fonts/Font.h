@@ -9,7 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
-#include "renderer/Texture.h"
+#include "renderer/gpu/Texture.h"
 
 #include "math/box.h"
 
@@ -51,7 +51,7 @@ public:
 	 * @brief Get the atlas texture corresponding to the Font.
 	 * @return The atlas texture.
 	 */
-	[[nodiscard]] auto getAtlasTexture() const -> shared<renderer::Texture2D> { return m_atlasTexture; }
+	[[nodiscard]] auto getAtlasTexture() const -> shared<renderer::gpu::Texture2D> { return m_atlasTexture; }
 
 	/**
 	 * @brief Metrics of the glyphs.
@@ -90,7 +90,7 @@ public:
 
 private:
 	/// pointer to the texture.
-	shared<renderer::Texture2D> m_atlasTexture;
+	shared<renderer::gpu::Texture2D> m_atlasTexture;
 	/// The internal atlas data.
 	shared<MsdfData> m_data;
 	/// The name of the font.

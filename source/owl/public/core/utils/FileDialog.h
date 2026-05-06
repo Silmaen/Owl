@@ -23,20 +23,20 @@ public:
 	/**
 	 * @brief Open a file dialog to search for an existing file.
 	 * @param[in] iFilter Filter to apply during the search.
-	 * @return A valid file path or null if canceled.
+	 * @return A valid file path or null if cancelled.
 	 */
 	static auto openFile(const std::string& iFilter) -> std::filesystem::path;
 
 	/**
 	 * @brief Open a file dialog to define a file to create.
 	 * @param[in] iFilter Filter to apply during the search.
-	 * @return A valid file path or null if canceled.
+	 * @return A valid file path or null if cancelled.
 	 */
 	static auto saveFile(const std::string& iFilter) -> std::filesystem::path;
 
 	/**
 	 * @brief Open a dialog to select a folder.
-	 * @return A valid directory path or empty if canceled.
+	 * @return A valid directory path or empty if cancelled.
 	 */
 	static auto pickFolder() -> std::filesystem::path;
 };

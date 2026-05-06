@@ -7,9 +7,9 @@
  */
 #include "owlpch.h"
 
+#include "renderer/Renderer.h"
 #include "gui/utils.h"
 #include "gui/widgets/AssetField.h"
-#include "renderer/Renderer.h"
 
 #include <algorithm>
 #include <cstring>
@@ -31,14 +31,14 @@ auto matches(const std::string& iExt, std::initializer_list<std::string_view> iA
 	return std::ranges::any_of(iAllowed, [&](const std::string_view iCand) -> bool { return iExt == iCand; });
 }
 
-void drawLoadStateOverlay(const renderer::LoadState iState, const ImVec2 iAnchor, const ImVec2 iSize) {
-	if (iState == renderer::LoadState::Ready)
+void drawLoadStateOverlay(const renderer::gpu::LoadState iState, const ImVec2 iAnchor, const ImVec2 iSize) {
+	if (iState == renderer::gpu::LoadState::Ready)
 		return;
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	const ImU32 bg = IM_COL32(0, 0, 0, 160);
 	drawList->AddRectFilled({iAnchor.x, iAnchor.y + iSize.y - 18.f}, {iAnchor.x + iSize.x, iAnchor.y + iSize.y}, bg);
-	const char* label = iState == renderer::LoadState::Pending ? "(loading...)" : "(failed)";
-	const ImU32 fg = iState == renderer::LoadState::Failed ? IM_COL32(255, 80, 80, 255) : IM_COL32(255, 255, 255, 220);
+	const char* label = iState == renderer::gpu::LoadState::Pending ? "(loading...)" : "(failed)";
+	const ImU32 fg = iState == renderer::gpu::LoadState::Failed ? IM_COL32(255, 80, 80, 255) : IM_COL32(255, 255, 255, 220);
 	drawList->AddText({iAnchor.x + 4.f, iAnchor.y + iSize.y - 16.f}, fg, label);
 }
 
@@ -88,7 +88,7 @@ auto assetDropTarget(const AssetKind iKind, std::filesystem::path& oRelativePath
 	return accepted;
 }
 
-auto textureField(const char* iLabel, shared<renderer::Texture2D>& ioTexture, const ImVec2 iSize) -> bool {
+auto textureField(const char* iLabel, shared<renderer::gpu::Texture2D>& ioTexture, const ImVec2 iSize) -> bool {
 	bool changed = false;
 	const ImVec2 anchor = ImGui::GetCursorScreenPos();
 	const std::string popupId = std::string{iLabel} + "##settings";
@@ -104,7 +104,7 @@ auto textureField(const char* iLabel, shared<renderer::Texture2D>& ioTexture, co
 	std::filesystem::path dropped;
 	if (assetDropTarget(AssetKind::Texture, dropped)) {
 		if (const auto resolved = renderer::Renderer::getTextureLibrary().find(dropped.string())) {
-			ioTexture = renderer::Texture2D::create(*resolved);
+			ioTexture = renderer::gpu::Texture2D::create(*resolved);
 			changed = true;
 		}
 	}

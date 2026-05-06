@@ -9,7 +9,7 @@
 #pragma once
 
 #include "core/Serializer.h"
-#include "renderer/Texture.h"
+#include "renderer/gpu/Texture.h"
 
 namespace owl::scene::component {
 
@@ -17,10 +17,10 @@ namespace owl::scene::component {
  * @brief Struct for draw a quad sprite.
  */
 struct OWL_API SpriteRenderer {
-	/// Sprite color.
+	/// Sprite colour.
 	math::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 	/// Sprite's texture.
-	shared<renderer::Texture2D> texture = nullptr;
+	shared<renderer::gpu::Texture2D> texture = nullptr;
 	/// Texture tiling factor (X and Y).
 	math::vec2 tilingFactor{1.0f, 1.0f};
 	/**

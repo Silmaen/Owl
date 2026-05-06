@@ -9,8 +9,8 @@
 
 #include "renderer/BackgroundRenderer.h"
 
-#include "renderer/DrawData.h"
-#include "renderer/RenderCommand.h"
+#include "renderer/gpu/DrawData.h"
+#include "renderer/gpu/RenderCommand.h"
 
 namespace owl::renderer {
 
@@ -38,7 +38,7 @@ struct BackgroundVertex {
  * @brief Internal data for the background renderer.
  */
 struct InternalData {
-	shared<DrawData> drawData;
+	shared<gpu::DrawData> drawData;
 	bool pending = false;
 	BackgroundRenderer::BackgroundData pendingData;
 };
@@ -58,20 +58,20 @@ void BackgroundRenderer::init() {
 
 	std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
 
-	g_data->drawData = DrawData::create();
+	g_data->drawData = gpu::DrawData::create();
 	g_data->drawData->init(
 			{
-					{"i_Position", ShaderDataType::Float3},
-					{"i_TexCoord", ShaderDataType::Float2},
-					{"i_TexIndex", ShaderDataType::Float},
-					{"i_Color", ShaderDataType::Float4},
-					{"i_TopColor", ShaderDataType::Float4},
-					{"i_Mode", ShaderDataType::Int},
-					{"i_EntityID", ShaderDataType::Int},
-					{"i_InvVR0", ShaderDataType::Float4},
-					{"i_InvVR1", ShaderDataType::Float4},
-					{"i_InvVR2", ShaderDataType::Float4},
-					{"i_InvVR3", ShaderDataType::Float4},
+					{"i_Position", gpu::ShaderDataType::Float3},
+					{"i_TexCoord", gpu::ShaderDataType::Float2},
+					{"i_TexIndex", gpu::ShaderDataType::Float},
+					{"i_Color", gpu::ShaderDataType::Float4},
+					{"i_TopColor", gpu::ShaderDataType::Float4},
+					{"i_Mode", gpu::ShaderDataType::Int},
+					{"i_EntityID", gpu::ShaderDataType::Int},
+					{"i_InvVR0", gpu::ShaderDataType::Float4},
+					{"i_InvVR1", gpu::ShaderDataType::Float4},
+					{"i_InvVR2", gpu::ShaderDataType::Float4},
+					{"i_InvVR3", gpu::ShaderDataType::Float4},
 			},
 			"background", indices, "background");
 }
@@ -97,11 +97,9 @@ void BackgroundRenderer::drawBackground(const BackgroundData& iData) {
 	g_data->pendingData = iData;
 }
 
-auto BackgroundRenderer::hasPending() -> bool {
-	return g_data && g_data->pending;
-}
+auto BackgroundRenderer::hasPending() -> bool { return g_data && g_data->pending; }
 
-auto BackgroundRenderer::getPendingTexture() -> shared<Texture2D> {
+auto BackgroundRenderer::getPendingTexture() -> shared<gpu::Texture2D> {
 	if (!g_data || !g_data->pending)
 		return nullptr;
 	const auto& data = g_data->pendingData;
@@ -118,7 +116,7 @@ void BackgroundRenderer::flushPending(const float iTexIndex) {
 
 	const auto& data = g_data->pendingData;
 
-	RenderCommand::setDepthMask(false);
+	gpu::RenderCommand::setDepthMask(false);
 
 	// Extract matrix columns
 	const auto& m = data.inverseViewRotation;
@@ -129,24 +127,56 @@ void BackgroundRenderer::flushPending(const float iTexIndex) {
 
 	// Upload fullscreen quad vertices: NDC (-1,-1) to (1,1), UVs (0,0) to (1,1)
 	const std::array<BackgroundVertex, 4> vertices = {
-			BackgroundVertex{
-					{-1.0f, -1.0f, 0.0f}, {0.0f, 0.0f}, iTexIndex, data.color, data.topColor, data.mode, -1,
-					col0, col1, col2, col3},
-			BackgroundVertex{
-					{1.0f, -1.0f, 0.0f}, {1.0f, 0.0f}, iTexIndex, data.color, data.topColor, data.mode, -1,
-					col0, col1, col2, col3},
-			BackgroundVertex{
-					{1.0f, 1.0f, 0.0f}, {1.0f, 1.0f}, iTexIndex, data.color, data.topColor, data.mode, -1,
-					col0, col1, col2, col3},
-			BackgroundVertex{
-					{-1.0f, 1.0f, 0.0f}, {0.0f, 1.0f}, iTexIndex, data.color, data.topColor, data.mode, -1,
-					col0, col1, col2, col3},
+			BackgroundVertex{{-1.0f, -1.0f, 0.0f},
+							 {0.0f, 0.0f},
+							 iTexIndex,
+							 data.color,
+							 data.topColor,
+							 data.mode,
+							 -1,
+							 col0,
+							 col1,
+							 col2,
+							 col3},
+			BackgroundVertex{{1.0f, -1.0f, 0.0f},
+							 {1.0f, 0.0f},
+							 iTexIndex,
+							 data.color,
+							 data.topColor,
+							 data.mode,
+							 -1,
+							 col0,
+							 col1,
+							 col2,
+							 col3},
+			BackgroundVertex{{1.0f, 1.0f, 0.0f},
+							 {1.0f, 1.0f},
+							 iTexIndex,
+							 data.color,
+							 data.topColor,
+							 data.mode,
+							 -1,
+							 col0,
+							 col1,
+							 col2,
+							 col3},
+			BackgroundVertex{{-1.0f, 1.0f, 0.0f},
+							 {0.0f, 1.0f},
+							 iTexIndex,
+							 data.color,
+							 data.topColor,
+							 data.mode,
+							 -1,
+							 col0,
+							 col1,
+							 col2,
+							 col3},
 	};
 	g_data->drawData->setVertexData(vertices.data(), static_cast<uint32_t>(vertices.size() * sizeof(BackgroundVertex)));
 
-	RenderCommand::drawData(g_data->drawData, 6);
+	gpu::RenderCommand::drawData(g_data->drawData, 6);
 
-	RenderCommand::setDepthMask(true);
+	gpu::RenderCommand::setDepthMask(true);
 
 	g_data->pending = false;
 }

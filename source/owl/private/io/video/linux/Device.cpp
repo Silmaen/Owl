@@ -303,12 +303,12 @@ void Device::close() {
 
 auto Device::isOpened() const -> bool { return m_fileHandler != 0; }
 
-void Device::fillFrame(shared<renderer::Texture>& ioFrame) {
+void Device::fillFrame(shared<renderer::gpu::Texture>& ioFrame) {
 	if (!m_streaming)
 		return;// need to be open and ready!
 	// recreate the frame if not the right size.
 	if (!ioFrame || ioFrame->getSize() != m_size) {
-		ioFrame = renderer::Texture2D::create({m_size, renderer::ImageFormat::Rgb8});
+		ioFrame = renderer::gpu::Texture2D::create({m_size, renderer::gpu::ImageFormat::Rgb8});
 	}
 	// dequeue the buffer
 	if (ioctl(m_fileHandler, VIDIOC_DQBUF, &m_bufferInfo) < 0) {

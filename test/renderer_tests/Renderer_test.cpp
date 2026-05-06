@@ -4,6 +4,7 @@
 #include <renderer/Renderer.h>
 
 using namespace owl::renderer;
+using namespace owl::renderer::gpu;
 
 TEST(Renderer, creation) {
 	owl::core::Log::init(owl::core::Log::Level::Off);

@@ -39,7 +39,7 @@ TEST(RendererTagComponent, serializeRoundTrip) {
 																		   .width = 0,
 																		   .height = 0,
 																		   .argCount = 0,
-																		   .renderer = owl::renderer::RenderAPI::Type::Null,
+																		   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
 																		   .hasGui = false,
 																		   .useDebugging = false,
 																		   .isDummy = true});
@@ -79,7 +79,7 @@ TEST(RendererTagComponent, sceneEnabledRenderersRoundTrip) {
 																		   .width = 0,
 																		   .height = 0,
 																		   .argCount = 0,
-																		   .renderer = owl::renderer::RenderAPI::Type::Null,
+																		   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
 																		   .hasGui = false,
 																		   .useDebugging = false,
 																		   .isDummy = true});

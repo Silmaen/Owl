@@ -97,7 +97,7 @@ public:
 	 * @brief Grab a frame and put it into the Texture.
 	 * @param[in] iFrame The texture to update.
 	 */
-	void fillFrame(shared<renderer::Texture>& iFrame) const;
+	void fillFrame(shared<renderer::gpu::Texture>& iFrame) const;
 
 private:
 	/**

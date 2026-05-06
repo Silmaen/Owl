@@ -10,7 +10,7 @@
 
 #include "core/Serializer.h"
 #include "math/Curve.h"
-#include "renderer/Texture.h"
+#include "renderer/gpu/Texture.h"
 
 namespace owl::scene::component {
 
@@ -21,10 +21,10 @@ namespace owl::scene::component {
  * Frames are numbered in row-major order starting from the top-left (frame 0).
  */
 struct OWL_API AnimatedSpriteRenderer {
-	/// Sprite color tint.
+	/// Sprite colour tint.
 	math::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 	/// Spritesheet texture.
-	shared<renderer::Texture2D> texture = nullptr;
+	shared<renderer::gpu::Texture2D> texture = nullptr;
 	/// Number of columns in the spritesheet grid.
 	uint32_t columns = 1;
 	/// Number of rows in the spritesheet grid.

@@ -47,7 +47,7 @@ TEST(Theme, FromPresetLight) {
 	const auto theme = Theme::fromPreset(ThemePreset::Light);
 	// Light theme has different background than dark.
 	const auto dark = Theme::fromPreset(ThemePreset::Dark);
-	// At minimum one color should differ.
+	// At minimum one colour should differ.
 	const bool differs = theme.windowBackground != dark.windowBackground || theme.text != dark.text;
 	EXPECT_TRUE(differs);
 }
@@ -85,7 +85,7 @@ TEST(Theme, SaveLoadRoundtrip) {
 	EXPECT_NEAR(loaded.tabBorder, original.tabBorder, 0.001f);
 	EXPECT_NEAR(loaded.controlsRounding, original.controlsRounding, 0.001f);
 
-	// Check a few colors.
+	// Check a few colours.
 	EXPECT_NEAR(loaded.text.x(), original.text.x(), 0.001f);
 	EXPECT_NEAR(loaded.windowBackground.x(), original.windowBackground.x(), 0.001f);
 	EXPECT_NEAR(loaded.button.x(), original.button.x(), 0.001f);

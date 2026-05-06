@@ -295,7 +295,7 @@ auto pinTypeTag(TransitionKind iKind) -> std::string_view {
 	return "scene_exit";
 }
 
-/// @brief Per-kind label color used by `NodeCanvas::CustomDraw` for the in-node text.
+/// @brief Per-kind label colour used by `NodeCanvas::CustomDraw` for the in-node text.
 auto pinLabelColor(TransitionKind iKind) -> math::vec4 {
 	switch (iKind) {
 		case TransitionKind::Lua:

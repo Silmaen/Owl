@@ -169,7 +169,7 @@ void buildIconBank() {
 	// Remove entries with empty paths
 	std::erase_if(icons, [](const auto& iEntry) -> auto { return iEntry.second.empty(); });
 
-	// Extract theme colors for icon rendering. Primary follows the text color; secondary is a fixed
+	// Extract theme colours for icon rendering. Primary follows the text colour; secondary is a fixed
 	// amber/gold matching the Owl Nest brand (used as accent for highlights inside icons).
 	const auto& style = ImGui::GetStyle();
 	const gui::IconThemeColors themeColors{
@@ -693,7 +693,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 
 	// Drain any deferred close requests from the previous frame.  Closing happens here — after the
 	// prior frame's ImGui render has been submitted — so no live ImGui draw list references the
-	// freed color-attachment textures.
+	// freed colour-attachment textures.
 	if (!m_deferredCloseIds.empty()) {
 		auto ids = std::move(m_deferredCloseIds);
 		m_deferredCloseIds.clear();

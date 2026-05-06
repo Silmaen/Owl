@@ -13,5 +13,14 @@ OwlProject:
   RendererStack:
     - Type: Renderer2D
       Name: world
+    - Type: RendererRaycast
+      Name: raycast_world
+      DefaultConfig:
+        Fov: 75.0
+        MaxDistance: 32.0
+        CeilingColor: [0.18, 0.20, 0.30, 1.0]
+        FloorColor: [0.20, 0.16, 0.12, 1.0]
     - Type: Renderer2D
       Name: ui
+      DefaultConfig:
+        Space: Screen

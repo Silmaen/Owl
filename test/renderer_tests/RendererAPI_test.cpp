@@ -1,15 +1,16 @@
 
 #include "testHelper.h"
 
-#include <renderer/Framebuffer.h>
-#include <renderer/GraphContext.h>
-#include <renderer/RenderAPI.h>
-#include <renderer/RenderCommand.h>
-#include <renderer/Shader.h>
-#include <renderer/Texture.h>
-#include <renderer/UniformBuffer.h>
+#include <renderer/gpu/RenderCommand.h>
+#include <renderer/gpu/Framebuffer.h>
+#include <renderer/gpu/GraphContext.h>
+#include <renderer/gpu/RenderAPI.h>
+#include <renderer/gpu/Shader.h>
+#include <renderer/gpu/Texture.h>
+#include <renderer/gpu/UniformBuffer.h>
 
 using namespace owl::renderer;
+using namespace owl::renderer::gpu;
 
 TEST(RenderAPI, RenderComamand) {
 	owl::core::Log::init(owl::core::Log::Level::Off);

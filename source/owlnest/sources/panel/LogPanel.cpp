@@ -59,14 +59,14 @@ constexpr ImVec4 g_cyanColor{0.3f, 0.9f, 1.0f, 1.0f};
 constexpr ImVec4 g_timestampColor{0.5f, 0.5f, 0.5f, 1.0f};
 constexpr float g_fontScale = 0.85f;
 
-/// Render text with numbers highlighted in cyan, rest in the given base color.
+/// Render text with numbers highlighted in cyan, rest in the given base colour.
 void renderColoredText(const std::string_view iText, const ImVec4& iBaseColor) {
 	size_t pos = 0;
 	while (pos < iText.size()) {
 		// Find the start of a number (digit or leading minus/dot before digits).
 		const size_t numStart = iText.find_first_of("0123456789", pos);
 		if (numStart == std::string_view::npos) {
-			// No more numbers, render the rest in base color.
+			// No more numbers, render the rest in base colour.
 			ImGui::PushStyleColor(ImGuiCol_Text, iBaseColor);
 			ImGui::SameLine(0.0f, 0.0f);
 			ImGui::TextUnformatted(iText.data() + pos, iText.data() + iText.size());
@@ -210,7 +210,7 @@ void LogPanel::onImGuiRender() {
 		ImGui::TextUnformatted(timestamp.c_str());
 		ImGui::PopStyleColor();
 
-		// Level label + logger name in level color
+		// Level label + logger name in level colour
 		ImGui::SameLine(0.0f, 0.0f);
 		ImGui::PushStyleColor(ImGuiCol_Text, levelColor);
 		ImGui::TextUnformatted(std::format(" {} {}: ", getLevelLabel(entry.level), entry.loggerName).c_str());

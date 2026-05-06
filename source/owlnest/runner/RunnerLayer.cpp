@@ -205,8 +205,8 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 	if (m_activeScene != nullptr) {
 		{
 			OWL_PROFILE_SCOPE("Render Preparation")
-			renderer::RenderCommand::setClearColor({0.1f, 0.1f, 0.1f, 1});
-			renderer::RenderCommand::clear();
+			renderer::gpu::RenderCommand::setClearColor({0.1f, 0.1f, 0.1f, 1});
+			renderer::gpu::RenderCommand::clear();
 			m_activeScene->onViewportResize(m_viewportSize);
 			if (m_activeScene->status == scene::Scene::Status::Editing) {
 				m_activeScene->onStartRuntime();
@@ -401,7 +401,7 @@ void RunnerLayer::finishTransition() {
 	{
 		size_t pending = 0;
 		const auto countOne = [&pending](const auto& iTex) -> void {
-			if (iTex && iTex->getLoadState() == renderer::LoadState::Pending)
+			if (iTex && iTex->getLoadState() == renderer::gpu::LoadState::Pending)
 				++pending;
 		};
 		m_activeScene->registry.view<scene::component::SpriteRenderer>().each(

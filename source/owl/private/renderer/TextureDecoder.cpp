@@ -26,7 +26,7 @@ auto makeDecodedImage(stbi_uc* iData, int iWidth, int iHeight, int iChannels) ->
 		return out;
 	}
 	out.size = {static_cast<uint32_t>(iWidth), static_cast<uint32_t>(iHeight)};
-	out.format = iChannels == 4 ? ImageFormat::Rgba8 : ImageFormat::Rgb8;
+	out.format = iChannels == 4 ? gpu::ImageFormat::Rgba8 : gpu::ImageFormat::Rgb8;
 	const auto byteCount = static_cast<size_t>(iWidth) * static_cast<size_t>(iHeight) * static_cast<size_t>(iChannels);
 	out.pixels.assign(iData, iData + byteCount);
 	stbi_image_free(iData);

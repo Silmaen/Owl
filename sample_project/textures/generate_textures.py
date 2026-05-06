@@ -62,9 +62,51 @@ def make_portal():
     img.save(OUT / "portal.png")
 
 
+def make_raycast_walls():
+    """4×4 atlas (512×512, 128 px tiles) for the raycast demo, built from the
+    reference PNGs under `raycast_refs/`. The atlas slot order is chosen so the
+    RayCaster `textureId / 2` mapping in `E1L1.map` lands directly on the right
+    tile (slot 0 doorpattern, 1 greystone, 2 bluestone, 3 wood); the remaining
+    reference textures fill slots 4–12 for future use. Larger source textures
+    (greystone / wood are 512², bluestone is 256²) are downsampled with
+    `LANCZOS`; smaller ones (most are 64²) are nearest-neighbour upscaled to
+    keep the pixel-art crispness intact (the engine renders the atlas with
+    `filterMode: Nearest` so any GPU-side filter would just blur this back).
+    """
+    cols, rows = 4, 4
+    tile = 128
+    refs = OUT / "raycast_refs"
+    if not refs.is_dir():
+        print(f"! reference directory not found: {refs}; skipping raycast_walls.png")
+        return
+    slots = [
+        "doorpattern", "greystone", "bluestone", "wood",
+        "barrel", "brickpattern", "colorstone", "eagle",
+        "greenlight", "mossy", "pillar", "purplestone",
+        "redbrick",
+        None, None, None,
+    ]
+    atlas = Image.new("RGBA", (cols * tile, rows * tile), (0, 0, 0, 0))
+    for i, name in enumerate(slots):
+        if name is None:
+            continue
+        src = refs / f"{name}.png"
+        if not src.is_file():
+            print(f"! missing reference texture {src}")
+            continue
+        img = Image.open(src).convert("RGBA")
+        if img.size != (tile, tile):
+            resample = Image.Resampling.LANCZOS if img.size[0] > tile else Image.Resampling.NEAREST
+            img = img.resize((tile, tile), resample)
+        col, row = i % cols, i // cols
+        atlas.paste(img, (col * tile, row * tile))
+    atlas.save(OUT / "raycast_walls.png")
+
+
 if __name__ == "__main__":
     make_platform()
     make_player()
     make_hazard()
     make_portal()
-    print("Generated 4 textures in", OUT)
+    make_raycast_walls()
+    print("Generated textures in", OUT)

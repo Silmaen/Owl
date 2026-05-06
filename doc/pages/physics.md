@@ -127,7 +127,7 @@ body-id map, and resets the `Impl` pointer and scene pointer. After this call,
 | `destroy()`                                | Destroy Box2D world and clear all bodies      |
 | `isInitialized()`                          | Check if the physics world is active          |
 | `frame(timestep)`                          | Step the simulation and sync transforms       |
-| `impulse(entity, vec2f)`                   | Apply a linear impulse to the entity's center |
+| `impulse(entity, vec2f)`                   | Apply a linear impulse to the entity's centre |
 | `getVelocity(entity) -> vec2f`             | Read the entity's current linear velocity     |
 | `setVelocity(entity, vec2f)`               | Override the entity's linear velocity         |
 | `setTransform(entity, position, rotation)` | Teleport the body to a new position and angle |
@@ -197,7 +197,7 @@ Physics bodies operate in **world space** and are independent of the scene
 hierarchy. The table below summarizes the interaction between parent-child
 relationships and physics:
 
-| Parent      | Child       | Behavior                                                                                                   |
+| Parent      | Child       | Behaviour                                                                                                   |
 |-------------|-------------|------------------------------------------------------------------------------------------------------------|
 | Non-physics | Physics     | Moving the parent does **not** move the physics child -- the child stays in its Box2D position             |
 | Physics     | Physics     | Both bodies move **independently** -- Box2D simulates each body on its own regardless of parent-child link |
@@ -209,4 +209,4 @@ transform. This ensures the local `Transform` component stays consistent with
 the hierarchy while Box2D remains the authority on world position.
 
 See [Scene System](scene.md) for details on the hierarchy system, world
-transform computation, and reparenting behavior.
+transform computation, and reparenting behaviour.

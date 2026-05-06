@@ -10,13 +10,13 @@
 
 #include "gui/UiLayer.h"
 
+#include "renderer/gpu/RenderCommand.h"
 #include "core/Application.h"
 #include "core/external/glfw3.h"
 #include "core/external/imgui.h"
 #include "gui/FontPreviewCache.h"
 #include "gui/utils.h"
-#include "renderer/RenderCommand.h"
-#include "renderer/vulkan/internal/VulkanHandler.h"
+#include "renderer/gpu/vulkan/internal/VulkanHandler.h"
 
 #include <input/Input.h>
 
@@ -124,16 +124,16 @@ void UiLayer::onAttach() {
 
 	if (m_withApp && core::Application::get().getWindow().getType() == window::Type::Glfw) {
 		auto* window = static_cast<GLFWwindow*>(core::Application::get().getWindow().getNativeWindow());
-		if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::OpenGL) {
+		if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL) {
 			ImGui_ImplGlfw_InitForOpenGL(window, true);
-		} else if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan) {
+		} else if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
 			ImGui_ImplGlfw_InitForVulkan(window, true);
 		}
 	}
-	if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::OpenGL) {
+	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL) {
 		ImGui_ImplOpenGL3_Init("#version 410");
-	} else if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan) {
-		auto& vkh = renderer::vulkan::internal::VulkanHandler::get();
+	} else if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
+		auto& vkh = renderer::gpu::vulkan::internal::VulkanHandler::get();
 		std::vector<VkFormat> formats;
 		ImGui_ImplVulkan_InitInfo info = vkh.toImGuiInfo(formats);
 		ImGui_ImplVulkan_Init(&info);
@@ -144,10 +144,10 @@ void UiLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
 	// Free font-preview framebuffers before tearing down the renderer.
 	FontPreviewCache::get().clear();
-	if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::OpenGL)
+	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL)
 		ImGui_ImplOpenGL3_Shutdown();
-	if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan) {
-		const auto& vkc = renderer::vulkan::internal::VulkanCore::get();
+	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
+		const auto& vkc = renderer::gpu::vulkan::internal::VulkanCore::get();
 		vkDeviceWaitIdle(vkc.getLogicalDevice());
 		ImGui_ImplVulkan_Shutdown();
 	}
@@ -166,9 +166,9 @@ void UiLayer::onEvent(event::Event& ioEvent) {
 }
 
 void UiLayer::begin() const {
-	if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::OpenGL)
+	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL)
 		ImGui_ImplOpenGL3_NewFrame();
-	else if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan) {
+	else if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
 		ImGui_ImplVulkan_NewFrame();
 	} else {
 		const ImGuiIO& io = ImGui::GetIO();
@@ -205,25 +205,25 @@ void UiLayer::end() const {
 	}
 	ImGui::EndFrame();
 	// Rendering
-	if (renderer::RenderCommand::getApi() != renderer::RenderAPI::Type::OpenGL &&
-		renderer::RenderCommand::getApi() != renderer::RenderAPI::Type::Vulkan)
+	if (renderer::gpu::RenderCommand::getApi() != renderer::gpu::RenderAPI::Type::OpenGL &&
+		renderer::gpu::RenderCommand::getApi() != renderer::gpu::RenderAPI::Type::Vulkan)
 		return;
 	ImGui::Render();
-	if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::OpenGL)
+	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL)
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-	else if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan) {
-		const auto& vkh = renderer::vulkan::internal::VulkanHandler::get();
-		renderer::RenderCommand::beginBatch();
-		renderer::RenderCommand::nextSubpass();
+	else if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
+		const auto& vkh = renderer::gpu::vulkan::internal::VulkanHandler::get();
+		renderer::gpu::RenderCommand::beginBatch();
+		renderer::gpu::RenderCommand::nextSubpass();
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkh.getCurrentCommandBuffer());
-		renderer::RenderCommand::endBatch();
+		renderer::gpu::RenderCommand::endBatch();
 	}
 
 	if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
 		GLFWwindow* backupCurrentContext = glfwGetCurrentContext();
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
-		if (renderer::RenderCommand::getApi() != renderer::RenderAPI::Type::OpenGL)
+		if (renderer::gpu::RenderCommand::getApi() != renderer::gpu::RenderAPI::Type::OpenGL)
 			glfwMakeContextCurrent(backupCurrentContext);
 	}
 }
@@ -239,17 +239,17 @@ void UiLayer::setTheme(const Theme& iTheme) {
 
 	auto& colors = ImGui::GetStyle().Colors;
 	// ======================
-	// Colors
+	// Colours
 
 	// Text 1 2
 	colors[ImGuiCol_Text] = vec(iTheme.text);
-	// colors[ImGuiCol_TextDisabled] = vec(iTheme.textDisabled);
+	// colours[ImGuiCol_TextDisabled] = vec(iTheme.textDisabled);
 	// Window Background 2 3 4 5
 	colors[ImGuiCol_WindowBg] = vec(iTheme.windowBackground);
 	colors[ImGuiCol_ChildBg] = vec(iTheme.childBackground);
 	colors[ImGuiCol_PopupBg] = vec(iTheme.backgroundPopup);
 	colors[ImGuiCol_Border] = vec(iTheme.border);
-	// colors[ImGuiCol_BorderShadow] = vec(iTheme.border);
+	// colours[ImGuiCol_BorderShadow] = vec(iTheme.border);
 	// Frame BG 7 8 9
 	colors[ImGuiCol_FrameBg] = vec(iTheme.frameBackground);
 	colors[ImGuiCol_FrameBgHovered] = vec(iTheme.frameBackgroundHovered);
@@ -298,26 +298,26 @@ void UiLayer::setTheme(const Theme& iTheme) {
 	colors[ImGuiCol_DockingPreview] = vec(iTheme.dockingPreview);
 	colors[ImGuiCol_DockingEmptyBg] = vec(iTheme.dockingEmptyBackground);
 	// PlotLines 42 43 44 44
-	// colors[ImGuiCol_PlotLines] = vec(iTheme.Text);
-	// colors[ImGuiCol_PlotLinesHovered] = vec(iTheme.Text);
-	// colors[ImGuiCol_PlotHistogram] = vec(iTheme.Text);
-	// colors[ImGuiCol_PlotHistogramHovered] = vec(iTheme.Text);
+	// colours[ImGuiCol_PlotLines] = vec(iTheme.Text);
+	// colours[ImGuiCol_PlotLinesHovered] = vec(iTheme.Text);
+	// colours[ImGuiCol_PlotHistogram] = vec(iTheme.Text);
+	// colours[ImGuiCol_PlotHistogramHovered] = vec(iTheme.Text);
 	/// Tables 46 47 48 49 50
 	colors[ImGuiCol_TableHeaderBg] = vec(iTheme.groupHeader);
-	// colors[ImGuiCol_TableBorderStrong] = vec.(iTheme.Text);
+	// colours[ImGuiCol_TableBorderStrong] = vec.(iTheme.Text);
 	colors[ImGuiCol_TableBorderLight] = vec(iTheme.border);
-	// colors[ImGuiCol_TableRowBg] = vec.(iTheme.Text);
-	// colors[ImGuiCol_TableRowBgAlt] = vec.(iTheme.Text);
+	// colours[ImGuiCol_TableRowBg] = vec.(iTheme.Text);
+	// colours[ImGuiCol_TableRowBgAlt] = vec.(iTheme.Text);
 	// Text Selected 51
-	// colors[ImGuiCol_TextSelectedBg] = vec.(iTheme.Text);
+	// colours[ImGuiCol_TextSelectedBg] = vec.(iTheme.Text);
 	// Drag n DRop 52
-	// colors[ImGuiCol_DragDropTarget] = vec.(iTheme.Text);
+	// colours[ImGuiCol_DragDropTarget] = vec.(iTheme.Text);
 	// Nav 53 54 55
-	// colors[ImGuiCol_NavHighlight] = vec.(iTheme.Text);
-	// colors[ImGuiCol_NavWindowingHighlight] = vec.(iTheme.Text);
-	// colors[ImGuiCol_NavWindowingDimBg] = vec.(iTheme.Text);
+	// colours[ImGuiCol_NavHighlight] = vec.(iTheme.Text);
+	// colours[ImGuiCol_NavWindowingHighlight] = vec.(iTheme.Text);
+	// colours[ImGuiCol_NavWindowingDimBg] = vec.(iTheme.Text);
 	// Modal window 56
-	// colors[ImGuiCol_ModalWindowDimBg] = vec.(iTheme.Text);
+	// colours[ImGuiCol_ModalWindowDimBg] = vec.(iTheme.Text);
 
 	//========================================================
 	// Style

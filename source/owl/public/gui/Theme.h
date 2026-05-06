@@ -19,7 +19,7 @@ enum class ThemePreset : uint8_t {
 	Dark,/// Default dark theme.
 	Light,/// Light theme.
 	DarkBlue,/// Dark blue theme.
-	Nord,/// Nord color palette theme.
+	Nord,/// Nord colour palette theme.
 	Solarized,/// Solarized dark theme.
 };
 

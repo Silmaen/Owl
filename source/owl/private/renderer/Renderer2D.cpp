@@ -11,9 +11,9 @@
 
 #include "core/Application.h"
 #include "renderer/BackgroundRenderer.h"
-#include "renderer/DrawData.h"
-#include "renderer/RenderCommand.h"
-#include "renderer/UniformBuffer.h"
+#include "renderer/gpu/DrawData.h"
+#include "renderer/gpu/RenderCommand.h"
+#include "renderer/gpu/UniformBuffer.h"
 
 namespace owl::renderer {
 
@@ -71,7 +71,7 @@ struct TextVertex {
 	math::vec4 color;
 	math::vec2 texCoord;
 	float texIndex;
-	// todo bg color
+	// todo bg colour
 	int entityId;
 };
 
@@ -105,25 +105,25 @@ struct InternalData {
 	CameraData cameraBuffer{};
 	/// Quad Data
 	VertexData<QuadVertex> quad;
-	shared<DrawData> drawQuad;
+	shared<gpu::DrawData> drawQuad;
 	/// Circle Data
 	VertexData<CircleVertex> circle;
-	shared<DrawData> drawCircle;
+	shared<gpu::DrawData> drawCircle;
 	/// Line Data
 	VertexData<LineVertex> line;
-	shared<DrawData> drawLine;
+	shared<gpu::DrawData> drawLine;
 	/// text Data
 	VertexData<TextVertex> text;
-	shared<DrawData> drawText;
+	shared<gpu::DrawData> drawText;
 	/// Statistics
 	Renderer2D::Statistics stats;
 	// Textures Data
-	/// One white texture for coloring
-	shared<Texture2D> whiteTexture;
+	/// One white texture for colouring
+	shared<gpu::Texture2D> whiteTexture;
 
-	shared<UniformBuffer> cameraUniformBuffer;
+	shared<gpu::UniformBuffer> cameraUniformBuffer;
 	/// Array of textures
-	std::vector<shared<Texture2D>> textureSlots;
+	std::vector<shared<gpu::Texture2D>> textureSlots;
 	/// next texture index
 	uint32_t textureSlotIndex = 1;// 0 = white texture
 };
@@ -147,7 +147,8 @@ auto utf8ToLatin1(const std::string& iText) -> std::string {
 		}
 		if ((byte & 0xE0) == 0xC0 && i + 1 < iText.size()) {
 			if (const auto next = static_cast<unsigned char>(iText[i + 1]); (next & 0xC0) == 0x80) {
-				const uint32_t codepoint = static_cast<uint32_t>(byte & 0x1Fu) << 6 | static_cast<uint32_t>(next & 0x3Fu);
+				const uint32_t codepoint =
+						static_cast<uint32_t>(byte & 0x1Fu) << 6 | static_cast<uint32_t>(next & 0x3Fu);
 				if (codepoint <= 0xFFu) {
 					out.push_back(static_cast<char>(codepoint));
 					++i;
@@ -194,60 +195,61 @@ void Renderer2D::init() {
 		}
 	}
 	// quads
-	g_Data->drawQuad = DrawData::create();
+	g_Data->drawQuad = gpu::DrawData::create();
 	g_Data->drawQuad->init(
 			{
-					{"i_Position", ShaderDataType::Float3},
-					{"i_Color", ShaderDataType::Float4},
-					{"i_TexCoord", ShaderDataType::Float2},
-					{"i_TexIndex", ShaderDataType::Float},
-					{"i_TilingFactor", ShaderDataType::Float2},
-					{"i_EntityID", ShaderDataType::Int},
+					{"i_Position", gpu::ShaderDataType::Float3},
+					{"i_Color", gpu::ShaderDataType::Float4},
+					{"i_TexCoord", gpu::ShaderDataType::Float2},
+					{"i_TexIndex", gpu::ShaderDataType::Float},
+					{"i_TilingFactor", gpu::ShaderDataType::Float2},
+					{"i_EntityID", gpu::ShaderDataType::Int},
 			},
 			"renderer2D", quadIndices, "quad");
 	// circles
-	g_Data->drawCircle = DrawData::create();
+	g_Data->drawCircle = gpu::DrawData::create();
 	g_Data->drawCircle->init(
 			{
-					{"i_WorldPosition", ShaderDataType::Float3},
-					{"i_LocalPosition", ShaderDataType::Float3},
-					{"i_Color", ShaderDataType::Float4},
-					{"i_Thickness", ShaderDataType::Float},
-					{"i_Fade", ShaderDataType::Float},
-					{"i_EntityID", ShaderDataType::Int},
+					{"i_WorldPosition", gpu::ShaderDataType::Float3},
+					{"i_LocalPosition", gpu::ShaderDataType::Float3},
+					{"i_Color", gpu::ShaderDataType::Float4},
+					{"i_Thickness", gpu::ShaderDataType::Float},
+					{"i_Fade", gpu::ShaderDataType::Float},
+					{"i_EntityID", gpu::ShaderDataType::Int},
 			},
 			"renderer2D", quadIndices, "circle");
 	// Lines
-	g_Data->drawLine = DrawData::create();
+	g_Data->drawLine = gpu::DrawData::create();
 	g_Data->drawLine->init(
 			{
-					{"i_Position", ShaderDataType::Float3},
-					{"i_Color", ShaderDataType::Float4},
-					{"i_EntityID", ShaderDataType::Int},
+					{"i_Position", gpu::ShaderDataType::Float3},
+					{"i_Color", gpu::ShaderDataType::Float4},
+					{"i_EntityID", gpu::ShaderDataType::Int},
 			},
 			"renderer2D", quadIndices, "line");
 	// Text
-	g_Data->drawText = DrawData::create();
+	g_Data->drawText = gpu::DrawData::create();
 	g_Data->drawText->init(
 			{
-					{"i_Position", ShaderDataType::Float3},
-					{"i_Color", ShaderDataType::Float4},
-					{"i_TexCoord", ShaderDataType::Float2},
-					{"i_TexIndex", ShaderDataType::Float},
-					{"i_EntityID", ShaderDataType::Int},
+					{"i_Position", gpu::ShaderDataType::Float3},
+					{"i_Color", gpu::ShaderDataType::Float4},
+					{"i_TexCoord", gpu::ShaderDataType::Float2},
+					{"i_TexIndex", gpu::ShaderDataType::Float},
+					{"i_EntityID", gpu::ShaderDataType::Int},
 			},
 			"renderer2D", quadIndices, "text");
 
-	g_Data->whiteTexture = Texture2D::create(Texture2D::Specification{.size = {1, 1}, .format = ImageFormat::Rgba8});
+	g_Data->whiteTexture =
+			gpu::Texture2D::create(gpu::Texture2D::Specification{.size = {1, 1}, .format = gpu::ImageFormat::Rgba8});
 	uint32_t whiteTextureData = 0xffffffff;
 	g_Data->whiteTexture->setData(&whiteTextureData, sizeof(uint32_t));
 
 
 	// Set all texture slots to 0
-	utils::g_MaxTextureSlots = RenderCommand::getMaxTextureSlots();
+	utils::g_MaxTextureSlots = gpu::RenderCommand::getMaxTextureSlots();
 	g_Data->textureSlots.resize(utils::g_MaxTextureSlots);
 	g_Data->textureSlots[0] = g_Data->whiteTexture;
-	g_Data->cameraUniformBuffer = UniformBuffer::create(sizeof(utils::InternalData::CameraData), 0, "Renderer2D");
+	g_Data->cameraUniformBuffer = gpu::UniformBuffer::create(sizeof(utils::InternalData::CameraData), 0, "Renderer2D");
 	g_Data->cameraUniformBuffer->bind();
 }
 
@@ -299,10 +301,10 @@ void Renderer2D::flush() {
 	}
 
 	// bind textures
-	RenderCommand::beginBatch();
-	RenderCommand::beginTextureLoad();
+	gpu::RenderCommand::beginBatch();
+	gpu::RenderCommand::beginTextureLoad();
 	for (uint32_t i = 0; i < g_Data->textureSlotIndex; i++) g_Data->textureSlots[i]->bind(i);
-	RenderCommand::endTextureLoad();
+	gpu::RenderCommand::endTextureLoad();
 
 	// Draw background first (within the same render pass)
 	BackgroundRenderer::flushPending(bgTexIndex);
@@ -313,7 +315,7 @@ void Renderer2D::flush() {
 				static_cast<uint32_t>(g_Data->quad.vertexBuf.size() * sizeof(utils::QuadVertex)));
 
 		// draw call
-		RenderCommand::drawData(g_Data->drawQuad, g_Data->quad.indexCount);
+		gpu::RenderCommand::drawData(g_Data->drawQuad, g_Data->quad.indexCount);
 		g_Data->stats.drawCalls++;
 	}
 	if (g_Data->circle.indexCount > 0) {
@@ -321,7 +323,7 @@ void Renderer2D::flush() {
 				g_Data->circle.vertexBuf.data(),
 				static_cast<uint32_t>(g_Data->circle.vertexBuf.size() * sizeof(utils::CircleVertex)));
 		// draw call
-		RenderCommand::drawData(g_Data->drawCircle, g_Data->circle.indexCount);
+		gpu::RenderCommand::drawData(g_Data->drawCircle, g_Data->circle.indexCount);
 		g_Data->stats.drawCalls++;
 	}
 	if (g_Data->line.indexCount > 0) {
@@ -329,7 +331,7 @@ void Renderer2D::flush() {
 				g_Data->line.vertexBuf.data(),
 				static_cast<uint32_t>(g_Data->line.vertexBuf.size() * sizeof(utils::LineVertex)));
 		// draw call
-		RenderCommand::drawLine(g_Data->drawLine, g_Data->line.indexCount);
+		gpu::RenderCommand::drawLine(g_Data->drawLine, g_Data->line.indexCount);
 		g_Data->stats.drawCalls++;
 	}
 	if (g_Data->text.indexCount > 0) {
@@ -337,10 +339,10 @@ void Renderer2D::flush() {
 				g_Data->text.vertexBuf.data(),
 				static_cast<uint32_t>(g_Data->text.vertexBuf.size() * sizeof(utils::TextVertex)));
 		// draw call
-		RenderCommand::drawData(g_Data->drawText, g_Data->text.indexCount);
+		gpu::RenderCommand::drawData(g_Data->drawText, g_Data->text.indexCount);
 		g_Data->stats.drawCalls++;
 	}
-	RenderCommand::endBatch();
+	gpu::RenderCommand::endBatch();
 }
 
 void Renderer2D::startBatch() {
@@ -435,7 +437,8 @@ void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 			if (g_Data->textureSlotIndex >= utils::g_MaxTextureSlots)
 				nextBatch();
 			textureIndex = static_cast<float>(g_Data->textureSlotIndex);
-			g_Data->textureSlots[g_Data->textureSlotIndex] = std::static_pointer_cast<Texture2D>(iQuadData.texture);
+			g_Data->textureSlots[g_Data->textureSlotIndex] =
+					std::static_pointer_cast<gpu::Texture2D>(iQuadData.texture);
 			g_Data->textureSlotIndex++;
 		}
 	}
@@ -463,7 +466,7 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	const std::string text = utf8ToLatin1(iStringData.text);
 
 	// Manage texture
-	const shared<Texture2D> fontAtlas = iStringData.font->getAtlasTexture();
+	const shared<gpu::Texture2D> fontAtlas = iStringData.font->getAtlasTexture();
 	float textureIndex = 0.0f;
 	for (uint32_t i = 1; i < g_Data->textureSlotIndex; i++) {
 		if (*g_Data->textureSlots[i] == *fontAtlas) {
@@ -485,7 +488,8 @@ void Renderer2D::drawString(const StringData& iStringData) {
 		for (size_t i = 0; i < text.size(); i++) {
 			char character = text[i];
 			// Reject control bytes outside the printable Latin-1 range (the MSDF atlas covers 0x20-0xFF).
-			if (const auto code = static_cast<unsigned char>(character); code < 0x20 && character != '\r' && character != '\n')
+			if (const auto code = static_cast<unsigned char>(character);
+				code < 0x20 && character != '\r' && character != '\n')
 				character = '?';
 			if (character == '\r')
 				continue;
@@ -513,7 +517,8 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	math::vec2 cursor{0.f, 0.f};
 	for (size_t i = 0; i < text.size(); i++) {
 		char character = text[i];
-		if (const auto code = static_cast<unsigned char>(character); code < 0x20 && character != '\r' && character != '\n')
+		if (const auto code = static_cast<unsigned char>(character);
+			code < 0x20 && character != '\r' && character != '\n')
 			character = '?';
 		if (character == '\r')
 			continue;

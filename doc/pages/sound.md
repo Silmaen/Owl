@@ -101,7 +101,7 @@ are derived from the entity's world transform.
 
 Categories help organize sounds by their typical use case. The category field is
 stored for future per-category volume mixing but does not currently affect playback
-behavior.
+behaviour.
 
 | Category | Typical Use                | Typical Settings                                  |
 |----------|----------------------------|---------------------------------------------------|

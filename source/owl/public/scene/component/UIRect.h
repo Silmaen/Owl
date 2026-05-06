@@ -23,13 +23,13 @@ struct OWL_API UIRect {
 	/// Anchor presets for positioning within the parent.
 	enum struct Anchor : uint8_t {
 		TopLeft,///< Top-left of parent.
-		TopCenter,///< Top-center of parent.
+		TopCenter,///< Top-centre of parent.
 		TopRight,///< Top-right of parent.
 		MiddleLeft,///< Middle-left of parent.
-		Center,///< Center of parent.
+		Center,///< Centre of parent.
 		MiddleRight,///< Middle-right of parent.
 		BottomLeft,///< Bottom-left of parent.
-		BottomCenter,///< Bottom-center of parent.
+		BottomCenter,///< Bottom-centre of parent.
 		BottomRight,///< Bottom-right of parent.
 	};
 	/// Anchor preset.

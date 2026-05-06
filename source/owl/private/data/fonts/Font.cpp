@@ -26,7 +26,7 @@ template<typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GenF
 auto createAndCacheAtlas([[maybe_unused]] const std::string& iFontName, [[maybe_unused]] float iFontSize,
 						 const std::vector<msdf_atlas::GlyphGeometry>& iGlyphs,
 						 [[maybe_unused]] const msdf_atlas::FontGeometry& iFontGeometry, math::vec2i iSize)
-		-> shared<renderer::Texture2D> {
+		-> shared<renderer::gpu::Texture2D> {
 	msdf_atlas::GeneratorAttributes attributes;
 	attributes.config.overlapSupport = true;
 	attributes.scanlinePass = true;
@@ -36,11 +36,11 @@ auto createAndCacheAtlas([[maybe_unused]] const std::string& iFontName, [[maybe_
 	generator.setThreadCount(8);
 	generator.generate(iGlyphs.data(), static_cast<int>(iGlyphs.size()));
 	auto bitmap = static_cast<msdfgen::BitmapConstRef<T, N>>(generator.atlasStorage());
-	const renderer::Texture::Specification spec{
+	const renderer::gpu::Texture::Specification spec{
 			.size = {static_cast<uint32_t>(bitmap.width), static_cast<uint32_t>(bitmap.height)},
-			.format = renderer::ImageFormat::Rgb8,
+			.format = renderer::gpu::ImageFormat::Rgb8,
 			.generateMips = false};
-	shared<renderer::Texture2D> texture = renderer::Texture2D::create(spec);
+	shared<renderer::gpu::Texture2D> texture = renderer::gpu::Texture2D::create(spec);
 	texture->setData(const_cast<uint8_t*>(bitmap.pixels), static_cast<uint32_t>(bitmap.width * bitmap.height * 3));
 	return texture;
 }

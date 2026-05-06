@@ -16,13 +16,13 @@ namespace owl::scene::component {
 /**
  * @brief UI panel widget component.
  *
- * Renders a colored rectangle background. Can optionally lay out children
+ * Renders a coloured rectangle background. Can optionally lay out children
  * vertically or horizontally.
  */
 struct OWL_API UIPanel {
-	/// Background color.
+	/// Background colour.
 	math::vec4 backgroundColor{0.2f, 0.2f, 0.2f, 0.8f};
-	/// Border color.
+	/// Border colour.
 	math::vec4 borderColor{1.0f, 1.0f, 1.0f, 1.0f};
 	/// Border width in pixels (0 = no border).
 	float borderWidth = 0.f;

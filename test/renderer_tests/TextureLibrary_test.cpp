@@ -1,11 +1,12 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
-#include <renderer/RenderCommand.h>
+#include <renderer/gpu/RenderCommand.h>
 #include <renderer/Renderer.h>
+#include <core/Application.h>
 
 using namespace owl::renderer;
+using namespace owl::renderer::gpu;
 using namespace owl::core;
 
 TEST(TextureLibrary, creation) {

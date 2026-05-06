@@ -35,7 +35,7 @@ TEST(FontCoverage, glyphBoxNewline) {
 															.width = 0,
 															.height = 0,
 															.argCount = 0,
-															.renderer = renderer::RenderAPI::Type::Null,
+															.renderer = renderer::gpu::RenderAPI::Type::Null,
 															.hasGui = false,
 															.useDebugging = false,
 															.isDummy = true});
@@ -65,7 +65,7 @@ TEST(FontCoverage, glyphBoxTab) {
 															.width = 0,
 															.height = 0,
 															.argCount = 0,
-															.renderer = renderer::RenderAPI::Type::Null,
+															.renderer = renderer::gpu::RenderAPI::Type::Null,
 															.hasGui = false,
 															.useDebugging = false,
 															.isDummy = true});
@@ -97,7 +97,7 @@ TEST(FontCoverage, glyphBoxStandardChars) {
 															.width = 0,
 															.height = 0,
 															.argCount = 0,
-															.renderer = renderer::RenderAPI::Type::Null,
+															.renderer = renderer::gpu::RenderAPI::Type::Null,
 															.hasGui = false,
 															.useDebugging = false,
 															.isDummy = true});
@@ -127,7 +127,7 @@ TEST(FontCoverage, getAdvanceMultipleChars) {
 															.width = 0,
 															.height = 0,
 															.argCount = 0,
-															.renderer = renderer::RenderAPI::Type::Null,
+															.renderer = renderer::gpu::RenderAPI::Type::Null,
 															.hasGui = false,
 															.useDebugging = false,
 															.isDummy = true});

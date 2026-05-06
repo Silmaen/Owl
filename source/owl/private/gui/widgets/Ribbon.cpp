@@ -251,7 +251,7 @@ void Ribbon::onRender() {
 	ImGui::BeginChild("##ribbon", ImVec2{0.f, height()}, ImGuiChildFlags_None,
 					  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-	// Breathing room inside each tab title + a stronger selected-tab color so the active one
+	// Breathing room inside each tab title + a stronger selected-tab colour so the active one
 	// stands out from the dimmed siblings (the theme's default `TabSelected` is too subtle).
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{14.f, 6.f});
 	const ImVec4 accent = ImGui::GetStyleColorVec4(ImGuiCol_TabSelectedOverline);

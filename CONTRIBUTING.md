@@ -75,7 +75,7 @@ See [Building](doc/pages/building.md) for details.
 ## Reporting Issues
 
 - Use GitHub Issues for bug reports and feature requests
-- Include steps to reproduce, expected behavior, and actual behavior
+- Include steps to reproduce, expected behaviour, and actual behaviour
 - Attach logs or screenshots when relevant
 
 ## License

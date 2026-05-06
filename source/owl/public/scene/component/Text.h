@@ -23,7 +23,7 @@ struct OWL_API Text {
 	std::string text;
 	/// The tex's font.
 	shared<data::fonts::Font> font = nullptr;
-	/// The display color.
+	/// The display colour.
 	math::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 	/// The kerning.
 	float kerning = 0.0f;

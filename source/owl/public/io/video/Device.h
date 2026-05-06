@@ -8,7 +8,7 @@
 
 #pragma once
 #include "core/Core.h"
-#include "renderer/Texture.h"
+#include "renderer/gpu/Texture.h"
 
 namespace owl::io::video {
 
@@ -63,7 +63,7 @@ public:
 	 * @brief Retrieve a frame.
 	 * @param[in] iFrame The frame to update.
 	 */
-	virtual void fillFrame(shared<renderer::Texture>& iFrame) = 0;
+	virtual void fillFrame(shared<renderer::gpu::Texture>& iFrame) = 0;
 
 	/**
 	 * @brief Get the unique bus information.

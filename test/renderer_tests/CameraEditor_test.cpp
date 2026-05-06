@@ -5,6 +5,7 @@
 #include <renderer/CameraEditor.h>
 
 using namespace owl::renderer;
+using namespace owl::renderer::gpu;
 
 TEST(CameraEditor, defaultCreation) {
 	const CameraEditor cam;

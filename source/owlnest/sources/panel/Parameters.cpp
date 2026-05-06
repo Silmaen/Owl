@@ -67,8 +67,8 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 		// --- Renderer Section ---
 		if (ImGui::CollapsingHeader("Renderer", ImGuiTreeNodeFlags_DefaultOpen)) {
 			if (ImGui::BeginCombo("##Renderer", std::string(magic_enum::enum_name(m_localParams.renderer)).c_str())) {
-				for (const auto& type: magic_enum::enum_values<renderer::RenderAPI::Type>()) {
-					if (type == renderer::RenderAPI::Type::Null)
+				for (const auto& type: magic_enum::enum_values<renderer::gpu::RenderAPI::Type>()) {
+					if (type == renderer::gpu::RenderAPI::Type::Null)
 						continue;
 					const bool isSelected = m_localParams.renderer == type;
 					if (ImGui::Selectable(std::string(magic_enum::enum_name(type)).c_str(), isSelected))
@@ -108,7 +108,7 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 
 		ImGui::Separator();
 
-		// --- OK / Apply / Cancel (centered) ---
+		// --- OK / Apply / Cancel (centred) ---
 		const auto& iconBank = gui::IconBank::instance();
 		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
 								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;

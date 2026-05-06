@@ -30,7 +30,7 @@ auto packColor(const math::vec4& iColor) -> uint32_t {
 /**
  * @brief Adapter exposing a `std::vector<SequencerEntry>` as an `ImSequencer::SequenceInterface`.
  *
- * ImSequencer hands back `int*` to start/end/color so it can mutate them in place; we mirror
+ * ImSequencer hands back `int*` to start/end/colour so it can mutate them in place; we mirror
  * the entry data into stable side-by-side `int` vectors before each `Sequencer()` call and
  * sync changes back into the user's `SequencerEntry` vector when something was modified.
  */

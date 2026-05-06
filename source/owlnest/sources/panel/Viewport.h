@@ -100,7 +100,7 @@ private:
 	/// The camera.
 	shared<renderer::Camera> m_camera;
 	/// The frame buffer where to do the render.
-	shared<renderer::Framebuffer> m_framebuffer;
+	shared<renderer::gpu::Framebuffer> m_framebuffer;
 	/// Pointer to the parent layer.
 	EditorLayer* m_parent = nullptr;
 	/// Pointer to the scene document that owns this viewport.

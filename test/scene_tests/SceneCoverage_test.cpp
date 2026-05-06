@@ -587,7 +587,7 @@ TEST(SceneCoverage, GameStateConstAccess) {
 }
 
 // ============================================================================
-// Scene::onViewportResize — camera aspect ratio behavior
+// Scene::onViewportResize — camera aspect ratio behaviour
 // ============================================================================
 
 TEST(SceneCoverage, OnViewportResizeFixedAspectRatioCamera) {

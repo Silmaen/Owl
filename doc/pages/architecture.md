@@ -180,7 +180,7 @@ If any ancestor is hidden (editor or game mode), the entity is effectively hidde
 
 ### Hierarchy Operations
 
-| Operation                | Behavior                                                                        |
+| Operation                | Behaviour                                                                        |
 |--------------------------|---------------------------------------------------------------------------------|
 | **Set parent**           | Circular reference check, local transform recomputed to preserve world position |
 | **Unparent**             | Entity becomes root, world transform stored as new local                        |
@@ -194,11 +194,11 @@ If any ancestor is hidden (editor or game mode), the entity is effectively hidde
 Physics bodies (Box2D) operate in **world space** independently of the scene hierarchy.
 The hierarchy does **not** create physical constraints between entities.
 
-| Situation                                | Behavior                                                                                                                                    |
+| Situation                                | Behaviour                                                                                                                                    |
 |------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
 | Non-physics parent moves → physics child | Child **stays in place** (Box2D controls its world position). Its local transform is recalculated each frame relative to the moving parent. |
 | Physics parent falls → physics child     | Each body moves **independently** according to Box2D simulation. No physical link.                                                          |
-| Physics parent moves → non-physics child | Child **follows** the parent via transform inheritance (normal hierarchy behavior).                                                         |
+| Physics parent moves → non-physics child | Child **follows** the parent via transform inheritance (normal hierarchy behaviour).                                                         |
 
 To physically attach a child body to a parent body (e.g., an object welded to a platform),
 use Box2D joints (weld, revolute, etc.) — this is separate from the hierarchy system.
@@ -218,7 +218,7 @@ Unparent, Delete Entity Only, Delete with Children.
 ## Icon System
 
 Editor icons are **SVG files loaded and rasterized at runtime** via
-[lunasvg](https://github.com/nicbarker/lunasvg), with dynamic theme color substitution.
+[lunasvg](https://github.com/nicbarker/lunasvg), with dynamic theme colour substitution.
 
 ### Directory Structure
 
@@ -237,16 +237,16 @@ SVG sources are organized by usage in `source/owlnest/assets_sources/icons/`:
 
 ### Runtime Rendering and Theming
 
-At startup, `IconBank::build()` loads SVG files via lunasvg, applies color substitution in
+At startup, `IconBank::build()` loads SVG files via lunasvg, applies colour substitution in
 memory, rasterizes to pixel buffers, and packs into a GPU texture atlas (64px cell, mipmaps).
 
-**Color convention** (SVG files are never modified on disk):
+**Colour convention** (SVG files are never modified on disk):
 
-- White (`#ffffff`) → substituted with theme primary text color
-- Fuchsia (`#ff00ff`) → substituted with theme accent color
-- All other colors (R/G/B gizmo axes, etc.) → kept as-is
+- White (`#ffffff`) → substituted with theme primary text colour
+- Fuchsia (`#ff00ff`) → substituted with theme accent colour
+- All other colours (R/G/B gizmo axes, etc.) → kept as-is
 
-When the theme changes, `IconBank::rebuild()` re-rasterizes all SVGs with the new colors.
+When the theme changes, `IconBank::rebuild()` re-rasterizes all SVGs with the new colours.
 
 ### Scene-Rendered Icons (Triggers)
 

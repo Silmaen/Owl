@@ -3,10 +3,11 @@
 
 #include <math/vectors.h>
 #include <ranges>
-#include <renderer/null/Buffer.h>
-#include <renderer/null/DrawData.h>
+#include <renderer/gpu/null/Buffer.h>
+#include <renderer/gpu/null/DrawData.h>
 
 using namespace owl::renderer;
+using namespace owl::renderer::gpu;
 
 TEST(Renderer, ShaderDataTypeSize) {
 	owl::core::Log::init(owl::core::Log::Level::Off);

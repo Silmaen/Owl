@@ -261,7 +261,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 	if (iEntity == m_selection)
 		flag |= ImGuiTreeNodeFlags_Selected;
 
-	// Tint prefab instance entities with a distinct color.
+	// Tint prefab instance entities with a distinct colour.
 	const bool isPartOfPrefab = static_cast<bool>(findPrefabRoot(iEntity, *m_context));
 	if (isPartOfPrefab)
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.4f, 0.7f, 1.0f, 1.0f});
@@ -523,7 +523,7 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 												 ImGuiTreeNodeFlags_FramePadding;
 	if (ioEntity.hasComponent<T>()) {
 		// Component-scoped ID prevents label collisions across different component types
-		// that share field names (e.g. "Color" in SpriteRenderer and CircleRenderer).
+		// that share field names (e.g. "Colour" in SpriteRenderer and CircleRenderer).
 		ImGui::PushID(T::name());
 		auto& component = ioEntity.getComponent<T>();
 		const ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();

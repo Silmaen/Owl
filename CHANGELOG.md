@@ -9,6 +9,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Raycasting renderer (core)** — first non-2D renderer in the stack, a
+  Wolfenstein-style DDA raycaster.
+    - New static facade `renderer::rendererraycast::RendererRaycast`
+      (`init` / `shutdown` / `beginScene` / `drawTilemapWalls` / `endScene` +
+      `Statistics`). The DDA traversal runs on the CPU per screen column and
+      emits textured `Renderer2D` quads (one per stripe) — leveraging the
+      existing 2D pipeline so no new Slang shader is required for v0.2.0. A
+      future PR can move the inner loop to a dedicated full-screen shader.
+    - `RendererRaycastLayer` adapter (`RenderLayer` interface, factory key
+      `"RendererRaycast"`). Reads per-instance config from the project's
+      `DefaultConfig` / scene's `Overrides` (`Fov`, `MaxDistance`,
+      `CeilingColor`, `FloorColor`, `NumRays`).
+    - `Tilemap` is reused as the wall grid — the same component drives the
+      Renderer2D path and the raycast path. `Scene::render` dispatches each
+      tilemap to whichever renderer matches the active layer's type key.
+    - Sky / floor backdrop is emitted lazily on the first wall draw so a
+      scene that doesn't route any tilemap to the raycaster keeps the layer
+      genuinely no-op (no overdraw on the 2D pass underneath).
+    - **Sample project**:
+        - New tileset `tilesets/raycast_walls.owltileset` (4×4 atlas, 128 px/tile,
+          NEAREST-filtered) built from 13 reference textures kept under
+          `textures/raycast_refs/` (doorpattern / greystone / bluestone / wood
+          for E1L1 walls + barrel / brickpattern / colorstone / eagle /
+          greenlight / mossy / pillar / purplestone / redbrick reserved for
+          future use).
+        - New scene `scenes/raycast_demo.owl` — full **Wolfenstein 3D E1L1**
+          (64×64) imported from the user's reference raycaster (cells +
+          player start + initial direction). Player rotation derived from
+          the reference's `playerStartDir` mapped through Owl's yaw
+          convention (rotation = -π/2 → forward = +X, matching E1L1's
+          (1,0) start direction). Objects (barrels, eagles, etc.) are
+          intentionally not imported — only the wall layout.
+        - New scripts `scripts/raycast_player.lua` (classic Wolfenstein
+          controls — AZERTY-friendly: GLFW key positions `W`/`S` map to
+          AZERTY `Z`/`S` for forward/back, `A`/`D` map to AZERTY `Q`/`D`
+          for turn left/right, no strafing) and
+          `scripts/raycast_house_door.lua` (transition into the raycast
+          scene from the world map).
+        - `world_map.owl` ships a second house structure (7-cell-wide, 4-cell-tall
+          variant — distinct from the existing 5×5 house) painted directly into
+          the tilemap (cols 22-28, rows 11-14 with `house_roof` / `house_wall`
+          / `house_door` tiles). The existing east-going stone path is extended
+          to reach the new door (row 14 cols 20-21, row 13 col 21).
+          `RaycastHouseDoor` is the invisible interaction trigger sitting on
+          the door tile.
+        - `owl_project.yml` adds a `RendererRaycast` slot named
+          `raycast_world` between `world` and `ui` — disabled by default in
+          existing scenes (no-op pass) and explicitly enabled by
+          `raycast_demo.owl` via `EnabledRenderers`.
+    - Tests: `RendererRaycast_test` covers factory registration, YAML config
+      parsing, viewport latching, empty-tilemap silence, all-rays-miss in an
+      empty grid, all-rays-hit against a wall row, and stats reset.
 - **Renderer stack runtime + editor UI** — the foundation laid earlier in this
   cycle is now actually wired to rendering and exposed in the editor.
     - `Scene::renderWithStack` orchestrates per-layer passes for the active
@@ -55,8 +107,131 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `PhysicCommand.GravityScaleZeroCancelsFalling`,
   `PhysicCommand.GravityScaleNoOpEdgeCases`.
 
+### Changed
+
+- **Scene `EnabledRenderers` now overrides layer order**, not just enable/disable.
+  Layers listed in the scene appear in the order written; project layers the scene
+  does not mention are appended afterwards in project order with their default
+  config. A scene that omits `EnabledRenderers` keeps the previous behaviour
+  (project order, all enabled). Three new tests in `RenderStack_test`:
+  `sceneOverridesLayerOrder`, `sceneSilenceKeepsProjectOrder`,
+  `sceneIgnoresUnknownLayerName`.
+- **Oxford English spelling sweep across all comments and prose** — 251 word
+  substitutions across 74 files (`.h` / `.cpp` comments and `.md` prose).
+  Identifiers, YAML keys, code spans inside backticks, and string literals are
+  preserved verbatim — only doxygen and Markdown prose were rewritten (colour /
+  behaviour / centre / labelled / cancelled / neighbour / favour / honour /
+  catalogue / analogue / etc.). `-ize` / `-yse` endings kept per Oxford.
+
 ### Fixed
 
+- **Asymmetric `CameraOrtho` projections were broken on Vulkan** — the
+  Vulkan Y-flip in `CameraOrtho::setProjection` only multiplied the matrix's
+  `(1, 1)` (Y scale) by `-1`. That trick is sufficient for symmetric ortho
+  (where the offset `(1, 3)` is `0`) but breaks for any asymmetric pixel-space
+  ortho such as `(0, vw, 0, vh)` used by `RendererRaycastLayer`,
+  `ScreenTransition`, and `Renderer2DLayer` (Space=Screen): with the offset
+  left at `-1`, the entire `[0, vh]` world-Y range mapped outside Vulkan's
+  `[-1, 1]` clip volume, pinning every screen-space quad to the very top
+  (in framebuffer coords) and clipping the rest. The raycaster's wall stripes
+  ended up at "world y=0" → user perception **bottom of screen** ("only the
+  feet of the walls"). Fix: also negate `(1, 3)` so the whole Y row of the
+  projection flips coherently. Symmetric ortho behaviour is unchanged
+  (`(1, 3) == 0` so negating it is a no-op).
+- **Raycast player rotation had no effect** — `raycast_player.lua` updated
+  the player's `Transform.rotation` via `transform.set_rotation`, but the
+  Box2D body's rotation stayed at the scene-file initial value. Every
+  physics step then re-synced body→Transform, silently overwriting the
+  Lua-set rotation. The script now routes rotation through
+  `physics.set_transform` (which calls `b2Body_SetTransform`), so the body
+  itself rotates and the new rotation survives the sync. Same fix in
+  `on_create` for the gamestate-restore path.
+- **Raycast layer drew only the sky/floor backdrop, no walls** — both the
+  backdrop quads and the wall stripes were emitted at z=0 in pixel space, so
+  the default `GL_LESS` depth function let the backdrop write `0` to the depth
+  buffer first and rejected every stripe drawn afterwards. The user saw a
+  uniform sky/floor with no 3D walls. `RendererRaycastLayer::onBeginFrame`
+  now disables the depth test for the layer (painter's order is the right
+  semantic for a screen-space pass) and `onEndFrame` restores it before the
+  next layer runs.
+- **HUD rotated with the player camera in the raycast scene** — `Scene::renderUI`
+  used to compute pixel-to-world via the world camera's inverse VP and the
+  *world-axis-aligned* bounding box of the resulting corners, so a rotated
+  player camera (the raycaster's player faces +X via a -π/2 Z rotation)
+  produced a HUD whose origin tracked the world's bottom-left, not the
+  screen's. The fix:
+  - New `Renderer2DLayer` config `Space: Screen` (vs default `World`) — when
+    set, the layer binds a pixel-space ortho instead of the scene camera so
+    HUD overlays draw in screen pixels regardless of the player camera's
+    rotation. The sample project's `ui` layer opts in.
+  - New `RenderLayer::getEffectiveViewProjection(camera)` virtual — each
+    layer reports the VP it just bound to `Renderer2D` (world VP for sprite
+    layers, pixel-ortho VP for raycast / screen-overlay layers).
+  - `Scene::renderUI` now takes that VP, derives camera-aligned right / up
+    axes (no more world-axis-aligned bbox), and inherits the layer's screen
+    rotation onto each UI quad's transform. `UIText` / `UIProgressBar` /
+    `UISlider` now shift their fill / handle along the layer's local +X axis
+    rather than world +X so the bar grows along the HUD instead of sliding
+    diagonally.
+
+- **Empty render-stack layers caused multi-scene flicker** — `Scene::renderWithStack`
+  invoked every layer in the active stack regardless of whether any entity was
+  routed to it. On Vulkan, an empty `Renderer2D::beginScene/endScene` pair around
+  zero draw calls still triggers a render pass that clears state mid-frame, which
+  manifested as background-vs-world flicker on `world_map.owl` and per-object
+  flicker on `platformer_house.owl` (both have the project's `raycast_world` slot
+  in their stack but no entity tagged for it). New `Scene::layerHasContent` scans
+  visible renderable components (`Tilemap` / `SpriteRenderer` /
+  `AnimatedSpriteRenderer` / `CircleRenderer` / `Text` / `Canvas` /
+  `BackgroundTexture`) and skips any layer with zero matches before the
+  begin/end-frame cycle. Lets every legacy 2D scene drop the
+  `EnabledRenderers: raycast_world: false` workaround — the engine now figures
+  it out.
+- **Raycaster broken empty-cell convention** — the demo CSV used `0` for
+  empty cells but Owl's `Tilemap` convention is `-1` (`g_EmptyTileIndex`).
+  The DDA terminated on every traversed cell because cell 0 was treated as
+  a hit on tile 0, returning a transparent stripe at perpDist ~0.6 — i.e.
+  the player could only ever "see" the immediate neighbour cell, masked by
+  the backdrop. Causes the entire view to render as flickering shapes
+  hovering over the sky/floor. Conversion of the E1L1 import + the test
+  scene's CSV now uses `-1` everywhere.
+- **Raycaster wall texture blurriness** — Owl's default texture sampler
+  uses `GL_LINEAR` for minification with mipmaps, so any wall further than
+  ~1.5 cells got bilinearly blurred into mush. New `renderer::FilterMode`
+  enum (`Linear` / `Nearest`); `Texture::Specification::filterMode` honoured
+  by the OpenGL backend (NEAREST + no mipmap when `Nearest`); `Tileset`
+  YAML accepts a `filterMode: Nearest` key. The raycast atlas declares
+  `Nearest` so wall textures stay pixel-crisp at every distance, matching
+  the original Wolfenstein 3D look.
+- **Raycaster stripe flicker** — under camera motion the wall stripes
+  visibly shimmered. Two root causes: (1) a 1.5 % stripe-width overlap
+  introduced sub-pixel double-coverage at every column boundary, and the
+  GPU's top-left rule alternated which neighbour won per frame; (2) the
+  `lineHeight = vpH / perpDist` value was a fractional pixel count that
+  oscillated as the player walked, so the top / bottom edges of every
+  stripe popped between neighbour pixel rows. Fix: emit each stripe as
+  exactly `viewportWidth / numRays` pixels wide with no overlap, snap the
+  horizon to an integer pixel and `lineHeight` to an even integer so every
+  stripe's pixel coverage is deterministic per frame. Sky / floor backdrop
+  shares the same horizon constant.
+- **Editor renders tilemaps in 2D regardless of `RendererTag`** —
+  `Scene::renderWithStack` now short-circuits to the legacy single-pass
+  when `status == Editing`, so the level designer keeps the top-down
+  Renderer2D view even when the project's stack contains a
+  `RendererRaycast` layer (editing a tilemap from inside a first-person
+  raycast view is unusable). The multi-layer pipeline kicks back in when
+  the scene enters Play mode.
+- **Raycaster cell-coordinate conversion** — the half-extent in
+  `RendererRaycast::drawTilemapWalls` was `(W − 1) / 2` instead of `W / 2`,
+  shifting the camera by half a cell in cell-coord space (e.g. world X = 0.5
+  was mapped to cellCoord 8.0 — the edge between cells 7 and 8 — instead
+  of cellCoord 8.5, the centre of cell 8). Walls still rendered, but the
+  player's apparent position drifted by half a cell. Same fix on Y.
+- **Raycaster FOV** — the camera plane was multiplied by `viewport aspect`,
+  which over-stretched the view cone on wide displays (a 75° configured
+  FOV became ~107° at 16:9). Removed the aspect multiplier to match the
+  classical Wolfenstein convention (`plane = perp · tan(fov/2)`). The
+  configured `Fov` is now the actual horizontal FOV at any aspect ratio.
 - **mingw-gcc 15 link**: pass `-Wa,-mbig-obj` globally on Windows GCC builds so
   template-heavy translation units (notably `Scene.cpp` after the renderer-stack
   + tilemap additions) no longer overflow the 16-bit PE/COFF section table —
@@ -69,6 +244,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Renderer folder reorganized** — files split by renderer kind into
+  matching sub-namespaces, in preparation for additional renderer types
+  (voxel, future raycast variants).
+    - `source/owl/{public,private}/renderer/stack/` houses the stack-level
+      orchestration (`RenderLayer`, `RenderLayerFactory`, `RenderStack`,
+      plus the YAML config structs `RendererStackEntry`,
+      `RendererStackConfig`, `EnabledRenderersConfig`) under namespace
+      `owl::renderer::stack`.
+    - `source/owl/{public,private}/renderer/renderer2d/` houses the existing
+      `Renderer2D` and its layer adapter under `owl::renderer::renderer2d`.
+    - `source/owl/{public,private}/renderer/rendererraycast/` houses the new
+      raycaster under `owl::renderer::rendererraycast`.
+    - All call sites (engine, editor, runner, tests) updated to the new
+      qualified names. Backward-compat shims are intentionally **not**
+      provided: every consumer was renamed in this PR so the diff stays
+      explicit.
+    - `RenderLayer` gained a virtual `setViewport(vec2ui)` hook (no-op
+      default) so layers that need pixel-accurate ortho projections (the
+      raycaster) can latch the viewport size each frame.
 - **Editor shortcuts** — modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) now
   fire even when an ImGui text widget would otherwise capture the keyboard,
   matching the convention used by VS Code / Blender / Unity. Modifier-less
@@ -375,7 +569,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - The global **Scene Hierarchy** and **Properties** panels now host SceneFlow content while
       that document is active: the hierarchy lists every scene (orphans drawn red, click-to-select,
       double-click to open), the properties panel shows the selected scene's path, transitions
-      (color-coded: red = death, green = victory, blue = Lua) and an "Open this scene" button.
+      (colour-coded: red = death, green = victory, blue = Lua) and an "Open this scene" button.
       Wired through new `Document::overridesGlobalPanels()` / `renderHierarchyPanel()` /
       `renderPropertiesPanel()` virtuals — generic for future node-graph documents
 - **Node graph framework + Scene Flow view**
@@ -460,7 +654,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       on the right, 3 per column). Button callbacks drive enabled/checked/click state
     - `UiLayer::setTopBarCallback()` reserves space between `ImGui::Begin(OwlDockSpace)` and
       `ImGui::DockSpace()` for the ribbon. The classic `ImGuiWindowFlags_MenuBar` is gone
-    - `Ribbon::setTabHighlighted()` renders the tab title with the theme accent (secondary) color
+    - `Ribbon::setTabHighlighted()` renders the tab title with the theme accent (secondary) colour
       — applied to the **File** tab so it reads as the primary entry point
     - Tab-bar padding (`FramePadding {14, 6}`) gives the titles breathing room; `TabSelected`
       pushed brighter so the active tab stands out clearly against dimmed siblings
@@ -591,7 +785,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       cancellation)
 - **Code quality**
     - Component-scoped `PushID(T::name())` in the templated `drawComponent` helper to prevent ImGui label collisions
-      across components that share field names (e.g., "Color" in multiple renderers)
+      across components that share field names (e.g., "Colour" in multiple renderers)
     - Index-based `PushID` in LuaScript property loop
 
 ### Changed
@@ -637,7 +831,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (belt-and-braces — picks up any DLL surfaced through the test's own link graph that the
   engine's post-build didn't cover)
 - **Use-after-free SIGSEGV when closing a document tab** — closing a `SceneDocument` inline from
-  `onImGuiRender` freed its Vulkan color-attachment while ImGui's draw list still referenced it
+  `onImGuiRender` freed its Vulkan colour-attachment while ImGui's draw list still referenced it
   (the sampler then read freed GPU memory at `UiLayer::end()` submit). `EditorLayer::closeDocument`
   now queues the id in `m_deferredCloseIds` and drains at the start of the next frame, after the
   prior frame's ImGui commands are submitted

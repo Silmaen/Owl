@@ -84,7 +84,7 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	// Runtime state kept in the wrapper (GraphEditor is stateless w.r.t. node IDs).
 	std::vector<bool> m_selected;///< Selection flag per node index.
 	std::vector<GraphEditor::Template> m_templates;///< One template per node — each node uses its own slot definitions.
-	/// Per-template owned color buffers — `GraphEditor::Template` only holds raw pointers, so the
+	/// Per-template owned colour buffers — `GraphEditor::Template` only holds raw pointers, so the
 	/// backing storage must outlive the template list. Reserved-then-filled in `rebuildTemplates`
 	/// so element addresses stay stable for the entire `Show()` call.
 	struct TemplateBuf {
@@ -126,7 +126,7 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	// Per-frame snapshot of the canvas-internal `ImDrawList*` (captured during `CustomDraw`).
 	// `ImDrawList` objects persist for the whole frame; appending commands to it after `Show()`
 	// returns simply queues them at the end of the canvas's render pass — exactly the layer we
-	// need so colored links overlay GraphEditor's grid INSIDE the child clip.
+	// need so coloured links overlay GraphEditor's grid INSIDE the child clip.
 	ImDrawList* mp_canvasDrawList = nullptr;
 
 	[[nodiscard]] auto findNodeIndex(core::UUID iId) const -> std::optional<size_t> {
@@ -168,7 +168,7 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 				buf.outputColors.push_back(toImU32(pin.labelColor));
 
 			GraphEditor::Template tpl{};
-			// `mHeaderColor` doubles as the **link color** in GraphEditor's `DisplayLinks` (read
+			// `mHeaderColor` doubles as the **link colour** in GraphEditor's `DisplayLinks` (read
 			// directly from the template, ignoring per-pin slot colours), so it cannot be made
 			// transparent — that would leave a hardcoded black shadow stroke that the binary
 			// always paints. We keep a sensible dark colour here so the title-bar strip looks
@@ -268,7 +268,7 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	void CustomDraw(ImDrawList* iDrawList, ImRect iRectangle, GraphEditor::NodeIndex iNodeIndex) override {
 		// `iRectangle` is in screen space (post pan/zoom). Render pin labels just inside the rect
 		// so they stay visible even at modest zoom levels — and pick `pin.labelColor` so consumers
-		// can color-code (Death/Victory/Lua) without the canvas knowing those domain concepts.
+		// can colour-code (Death/Victory/Lua) without the canvas knowing those domain concepts.
 		if (iNodeIndex >= m_owner.m_nodes.size())
 			return;
 		// Cache the post-transform rect AND the canvas-internal `ImDrawList*` BEFORE any
@@ -355,7 +355,7 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 					  (m.y - m_canvasOriginScreen.y - m_viewState.mPosition.y) / m_viewState.mFactor};
 	}
 
-	/// @brief Resolve a pin id to (screen position, slot color).
+	/// @brief Resolve a pin id to (screen position, slot colour).
 	///
 	/// Slot positions match `GraphEditor::GetInputSlotPos` / `GetOutputSlotPos` exactly: GraphEditor
 	/// distributes slots over the **full** node rect (the one we passed via `GetNode`, including
@@ -519,7 +519,7 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 		return bestLink;
 	}
 
-	/// @brief Draw a colored Bezier curve per canvas link.
+	/// @brief Draw a coloured Bezier curve per canvas link.
 	///
 	/// Called AFTER `GraphEditor::Show()` returns so we read the up-to-date `m_viewState` AND so
 	/// every visible node's screen rect has been cached by `CustomDraw`. The canvas-internal

@@ -104,19 +104,19 @@ void Viewport::onRender() {
 }
 
 void Viewport::attach() {
-	const renderer::FramebufferSpecification specs{
+	const renderer::gpu::FramebufferSpecification specs{
 			.size = {1280, 720},
 			.attachments =
 					{
-							{.format = renderer::AttachmentSpecification::Format::Surface,
-							 .tiling = renderer::AttachmentSpecification::Tiling::Optimal},
-							{.format = renderer::AttachmentSpecification::Format::RedInteger,
-							 .tiling = renderer::AttachmentSpecification::Tiling::Optimal},
+							{.format = renderer::gpu::AttachmentSpecification::Format::Surface,
+							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
+							{.format = renderer::gpu::AttachmentSpecification::Format::RedInteger,
+							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
 					},
 			.samples = 1,
 			.swapChainTarget = false,
 			.debugName = "editor"};
-	m_framebuffer = renderer::Framebuffer::create(specs);
+	m_framebuffer = renderer::gpu::Framebuffer::create(specs);
 	m_editorCamera = renderer::CameraEditor(30.0f, 1.778f, 0.1f, 1000.0f);
 }
 
@@ -148,15 +148,15 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 
 	// Render
 	m_framebuffer->bind();
-	renderer::RenderCommand::setClearColor({0.1f, 0.1f, 0.1f, 1});
-	renderer::RenderCommand::clear();
+	renderer::gpu::RenderCommand::setClearColor({0.1f, 0.1f, 0.1f, 1});
+	renderer::gpu::RenderCommand::clear();
 
 	// Get Mouse position.
 	auto [mx, my] = ImGui::GetMousePos();
 	mx -= m_lower.x();
 	my -= m_lower.y();
 	const math::vec2 viewportSizeInternal = m_upper - m_lower;
-	if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::OpenGL)
+	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL)
 		my = viewportSizeInternal.y() - my;
 	const int mouseX = static_cast<int>(mx);
 	const int mouseY = static_cast<int>(my);
@@ -319,7 +319,7 @@ void Viewport::renderGizmo() {
 		gui::Guizmo::initialize(m_lower, m_upper - m_lower);
 
 		math::mat4 cameraProjection = m_editorCamera.getProjection();
-		if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan)
+		if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan)
 			cameraProjection(1, 1) *= -1.f;
 		const math::mat4 cameraView = m_editorCamera.getView();
 
