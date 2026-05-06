@@ -1,5 +1,5 @@
 /**
- * @file UISlider.cpp
+ * @file UiSlider.cpp
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -9,11 +9,11 @@
 
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
-#include "scene/component/UISlider.h"
+#include "scene/component/UiSlider.h"
 
 namespace owl::scene::component {
 
-void UISlider::serialize(const core::Serializer& iOut) const {
+void UiSlider::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "value" << YAML::Value << value;
@@ -26,7 +26,7 @@ void UISlider::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
-void UISlider::deserialize(const core::Serializer& iNode) {
+void UiSlider::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["value"])
 		value = iNode.getImpl()->node["value"].as<float>();
 	if (iNode.getImpl()->node["minValue"])

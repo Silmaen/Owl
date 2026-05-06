@@ -18,11 +18,12 @@
 namespace owl::gui {
 
 namespace {
-
-/// Sample string covering lower/upper case, digits, punctuation, and accented Latin-1 codepoints.
-/// Stored as Latin-1 single-byte sequence so each glyph maps 1:1 to a font atlas codepoint
-/// (the MSDF atlas covers 0x20-0xFF). The accented bytes are e9 (small e acute), e0 (small a
-/// grave), fc (small u diaeresis), and c7 (capital C cedilla).
+/**
+ * Sample string covering lower/upper case, digits, punctuation, and accented Latin-1 codepoints.
+ * Stored as Latin-1 single-byte sequence so each glyph maps 1:1 to a font atlas codepoint
+ * (the MSDF atlas covers 0x20-0xFF). The accented bytes are e9 (small e acute), e0 (small a
+ * grave), fc (small u diaeresis), and c7 (capital C cedilla).
+ */
 constexpr const char* kSample = "Aa Bb 1!? \xE9\xE0\xFC\xC7";
 
 constexpr math::vec2ui kPreviewSize{256u, 64u};

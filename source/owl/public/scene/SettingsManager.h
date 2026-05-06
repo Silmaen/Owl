@@ -18,9 +18,9 @@
 #include <vector>
 
 namespace owl::scene {
-
 /**
- * @brief Persistent game settings with defaults + user overrides.
+ * @brief
+ *  Persistent game settings with defaults + user overrides.
  *
  * Two-layer key-value store: game defaults (from game_settings.yml in assets)
  * overlaid with user overrides (settings.yml in user directory). Settings
@@ -37,68 +37,79 @@ public:
 	using Value = std::variant<int64_t, float, std::string, bool>;
 
 	/**
-	 * @brief Set the game name (for user directory path).
+	 * @brief
+	 *  Set the game name (for user directory path).
 	 * @param[in] iGameName The game name.
 	 */
 	static void setGameName(const std::string& iGameName);
 
 	/**
-	 * @brief Get the game's user directory (parent of saves/).
+	 * @brief
+	 *  Get the game's user directory (parent of saves/).
 	 * @return The user directory path.
 	 */
 	[[nodiscard]] static auto getUserDirectory() -> std::filesystem::path;
 
 	/**
-	 * @brief Get the user settings file path.
+	 * @brief
+	 *  Get the user settings file path.
 	 * @return Path to settings.yml in the user directory.
 	 */
 	[[nodiscard]] static auto getSettingsPath() -> std::filesystem::path;
 
 	/**
-	 * @brief Load game defaults from a YAML file (game_settings.yml in assets).
+	 * @brief
+	 *  Load game defaults from a YAML file (game_settings.yml in assets).
 	 * @param[in] iPath Path to the game defaults file.
 	 */
 	static void loadDefaults(const std::filesystem::path& iPath);
 
 	/**
-	 * @brief Load game defaults from a YAML string (for pack-based loading).
+	 * @brief
+	 *  Load game defaults from a YAML string (for pack-based loading).
 	 * @param[in] iContent The YAML content as a string.
 	 */
 	static void loadDefaultsFromString(const std::string& iContent);
 
 	/**
-	 * @brief Load user overrides from settings.yml.
+	 * @brief
+	 *  Load user overrides from settings.yml.
 	 */
 	static void loadUserSettings();
 
 	/**
-	 * @brief Save user overrides to settings.yml.
+	 * @brief
+	 *  Save user overrides to settings.yml.
 	 */
 	static void saveUserSettings();
 
 	/**
-	 * @brief Set a default value for a key.
+	 * @brief
+	 *  Set a default value for a key.
 	 * @param[in] iKey The key.
 	 * @param[in] iValue The default value.
 	 */
 	static void setDefault(const std::string& iKey, Value iValue);
 
 	/**
-	 * @brief Set a user override for a key.
+	 * @brief
+	 *  Set a user override for a key.
 	 * @param[in] iKey The key.
 	 * @param[in] iValue The value.
 	 */
 	static void set(const std::string& iKey, Value iValue);
 
 	/**
-	 * @brief Get a setting (user override > default > nullopt).
+	 * @brief
+	 *  Get a setting (user override > default > nullopt).
 	 * @param[in] iKey The key.
 	 * @return The value, or nullopt if not found.
 	 */
 	[[nodiscard]] static auto get(const std::string& iKey) -> std::optional<Value>;
 
 	/**
-	 * @brief Get a setting with a fallback.
+	 * @brief
+	 *  Get a setting with a fallback.
 	 * @param[in] iKey The key.
 	 * @param[in] iDefault Fallback if key not found.
 	 * @return The value.
@@ -106,7 +117,8 @@ public:
 	[[nodiscard]] static auto get(const std::string& iKey, const Value& iDefault) -> Value;
 
 	/**
-	 * @brief Typed getter convenience.
+	 * @brief
+	 *  Typed getter convenience.
 	 * @tparam T The expected type.
 	 * @param[in] iKey The key.
 	 * @return The value if found and matching type, or nullopt.
@@ -121,7 +133,8 @@ public:
 	}
 
 	/**
-	 * @brief Remove a user override (reverts to default).
+	 * @brief
+	 *  Remove a user override (reverts to default).
 	 * @param[in] iKey The key.
 	 */
 	static void resetToDefault(const std::string& iKey);
@@ -139,7 +152,8 @@ public:
 	[[nodiscard]] static auto keys() -> std::vector<std::string>;
 
 	/**
-	 * @brief Apply built-in settings to engine subsystems (window, sound).
+	 * @brief
+	 *  Apply built-in settings to engine subsystems (window, sound).
 	 *
 	 * Applies resolution, fullscreen, resizable to the window, and
 	 * master volume to the sound listener.

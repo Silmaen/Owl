@@ -14,9 +14,9 @@
 #include <filesystem>
 
 namespace owl::scene {
-
 /**
- * @brief Information about a save file.
+ * @brief
+ *  Information about a save file.
  */
 struct OWL_API SaveInfo {
 	/// Save slot number.
@@ -28,7 +28,8 @@ struct OWL_API SaveInfo {
 };
 
 /**
- * @brief Manages game save/load to the user's save directory.
+ * @brief
+ *  Manages game save/load to the user's save directory.
  *
  * Save files are stored as YAML in platform-specific user directories.
  * Each slot is a separate file `save_<N>.owl_save`.
@@ -38,19 +39,22 @@ public:
 	SaveManager() = delete;
 
 	/**
-	 * @brief Set the game name (used for the save directory).
+	 * @brief
+	 *  Set the game name (used for the save directory).
 	 * @param[in] iGameName The game name.
 	 */
 	static void setGameName(const std::string& iGameName);
 
 	/**
-	 * @brief Get the platform-specific save directory.
+	 * @brief
+	 *  Get the platform-specific save directory.
 	 * @return The save directory path (created if it doesn't exist).
 	 */
 	[[nodiscard]] static auto getSaveDirectory() -> std::filesystem::path;
 
 	/**
-	 * @brief Save the current scene and game state to a slot.
+	 * @brief
+	 *  Save the current scene and game state to a slot.
 	 * @param[in] iSlot Save slot number.
 	 * @param[in] iScene The scene to save.
 	 * @param[in] iScenePath The current scene file path (for restore).
@@ -59,7 +63,8 @@ public:
 	[[nodiscard]] static auto save(uint32_t iSlot, const shared<Scene>& iScene, const std::string& iScenePath) -> bool;
 
 	/**
-	 * @brief Result of a load operation.
+	 * @brief
+	 *  Result of a load operation.
 	 */
 	struct LoadResult {
 		/// Whether the load succeeded.
@@ -69,7 +74,8 @@ public:
 	};
 
 	/**
-	 * @brief Load a save file into a scene.
+	 * @brief
+	 *  Load a save file into a scene.
 	 * @param[in] iSlot Save slot number.
 	 * @param[in] iScene The scene to load into (will be cleared).
 	 * @return Load result with success flag and physics snapshots.
@@ -77,26 +83,30 @@ public:
 	[[nodiscard]] static auto load(uint32_t iSlot, const shared<Scene>& iScene) -> LoadResult;
 
 	/**
-	 * @brief List all available saves.
+	 * @brief
+	 *  List all available saves.
 	 * @return List of save info (slot, timestamp, scene path).
 	 */
 	[[nodiscard]] static auto listSaves() -> std::vector<SaveInfo>;
 
 	/**
-	 * @brief Check if a save exists for a given slot.
+	 * @brief
+	 *  Check if a save exists for a given slot.
 	 * @param[in] iSlot Save slot number.
 	 * @return True if the save file exists.
 	 */
 	[[nodiscard]] static auto hasSave(uint32_t iSlot) -> bool;
 
 	/**
-	 * @brief Delete a save file.
+	 * @brief
+	 *  Delete a save file.
 	 * @param[in] iSlot Save slot number.
 	 */
 	static void deleteSave(uint32_t iSlot);
 
 	/**
-	 * @brief Get the scene path stored in a save file.
+	 * @brief
+	 *  Get the scene path stored in a save file.
 	 * @param[in] iSlot Save slot number.
 	 * @return The scene path, or empty string if not found.
 	 */

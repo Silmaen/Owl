@@ -14,30 +14,36 @@ namespace owl::io::pack {
 
 PackReader::~PackReader() { close(); }
 
-auto PackReader::open(const std::filesystem::path& iPackFile) -> bool {
+auto PackReader::tryOpen(const std::filesystem::path& iPackFile) -> owl::expected<void, PackOpenError> {
 	close();
 
 	m_fileStream.open(iPackFile, std::ios::binary);
-	if (!m_fileStream.is_open())
-		return false;
+	if (!m_fileStream.is_open()) {
+		OWL_CORE_WARN("Pack: cannot open '{}' for reading.", iPackFile.string())
+		return owl::unexpected{PackOpenError::CannotOpenFile};
+	}
 
 	// Read header.
 	m_fileStream.read(reinterpret_cast<char*>(&m_header), sizeof(PackHeader));
 	if (!m_fileStream.good()) {
+		OWL_CORE_ERROR("Pack: short read on '{}' header.", iPackFile.string())
 		close();
-		return false;
+		return owl::unexpected{PackOpenError::ShortHeader};
 	}
 
 	// Validate magic.
 	if (m_header.magic != g_packMagic) {
+		OWL_CORE_ERROR("Pack: '{}' has invalid magic header.", iPackFile.string())
 		close();
-		return false;
+		return owl::unexpected{PackOpenError::InvalidMagic};
 	}
 
 	// Validate version.
 	if (m_header.version != g_packVersion) {
+		OWL_CORE_ERROR("Pack: '{}' has unsupported version {} (current {}).", iPackFile.string(), m_header.version,
+					   g_packVersion)
 		close();
-		return false;
+		return owl::unexpected{PackOpenError::UnsupportedVersion};
 	}
 
 	const auto flags = static_cast<PackFlags>(m_header.flags);
@@ -49,8 +55,9 @@ auto PackReader::open(const std::filesystem::path& iPackFile) -> bool {
 	std::vector<uint8_t> tocData(m_header.tocSize);
 	m_fileStream.read(reinterpret_cast<char*>(tocData.data()), static_cast<std::streamsize>(m_header.tocSize));
 	if (!m_fileStream.good() && !m_fileStream.eof()) {
+		OWL_CORE_ERROR("Pack: TOC read failed on '{}'.", iPackFile.string())
 		close();
-		return false;
+		return owl::unexpected{PackOpenError::TocReadFailed};
 	}
 
 	if (obfuscated)
@@ -59,8 +66,9 @@ auto PackReader::open(const std::filesystem::path& iPackFile) -> bool {
 	if (compressed && m_header.tocOriginalSize > 0) {
 		auto decompressed = decompressBuffer(tocData, m_header.tocOriginalSize);
 		if (decompressed.empty()) {
+			OWL_CORE_ERROR("Pack: TOC decompression failed on '{}'.", iPackFile.string())
 			close();
-			return false;
+			return owl::unexpected{PackOpenError::TocDecompressionFailed};
 		}
 		tocData = std::move(decompressed);
 	} else if (compressed && m_header.tocOriginalSize == 0) {
@@ -69,8 +77,10 @@ auto PackReader::open(const std::filesystem::path& iPackFile) -> bool {
 
 	m_toc = deserializeToc(tocData);
 	if (m_toc.size() != m_header.entryCount) {
+		OWL_CORE_ERROR("Pack: TOC entry count mismatch on '{}' ({} read, {} expected).", iPackFile.string(),
+					   m_toc.size(), m_header.entryCount)
 		close();
-		return false;
+		return owl::unexpected{PackOpenError::TocSizeMismatch};
 	}
 
 	// Build hash index.
@@ -80,8 +90,10 @@ auto PackReader::open(const std::filesystem::path& iPackFile) -> bool {
 		m_hashIndex[m_toc[i].pathHash] = i;
 	}
 
-	return true;
+	return {};
 }
+
+auto PackReader::open(const std::filesystem::path& iPackFile) -> bool { return tryOpen(iPackFile).has_value(); }
 
 void PackReader::close() {
 	if (m_fileStream.is_open())

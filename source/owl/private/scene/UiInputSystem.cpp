@@ -1,5 +1,5 @@
 /**
- * @file UIInputSystem.cpp
+ * @file UiInputSystem.cpp
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -7,28 +7,30 @@
  */
 #include "owlpch.h"
 
-#include "scene/UIInputSystem.h"
+#include "scene/UiInputSystem.h"
 
 #include "scene/Entity.h"
 #include "scene/component/Canvas.h"
 #include "scene/component/Hierarchy.h"
 #include "scene/component/LuaScript.h"
-#include "scene/component/UIButton.h"
-#include "scene/component/UIRect.h"
-#include "scene/component/UISlider.h"
+#include "scene/component/UiButton.h"
+#include "scene/component/UiRect.h"
+#include "scene/component/UiSlider.h"
 #include "script/ScriptInstance.h"
 
 #include <algorithm>
 
 namespace owl::scene {
 
-bool UIInputSystem::s_consuming = false;
-bool UIInputSystem::s_wasPressed = false;
+bool UiInputSystem::s_consuming = false;
+bool UiInputSystem::s_wasPressed = false;
 
 namespace {
-
-/// Check if a screen-space point is inside a UI rect.
-auto hitTestRect(const component::UIRect& iRect, const math::vec2& iParentSize, const math::vec2& iPoint) -> bool {
+/**
+ * @brief
+ *  Check if a screen-space point is inside a UI rect.
+ */
+auto hitTestRect(const component::UiRect& iRect, const math::vec2& iParentSize, const math::vec2& iPoint) -> bool {
 	const math::vec2 center = iRect.computePosition(iParentSize);
 	const float halfW = iRect.size.x() * 0.5f;
 	const float halfH = iRect.size.y() * 0.5f;
@@ -37,7 +39,8 @@ auto hitTestRect(const component::UIRect& iRect, const math::vec2& iParentSize, 
 }
 
 /**
- * @brief Walk up hierarchy from an entity to find the nearest ancestor with a LuaScript component.
+ * @brief
+ *  Walk up hierarchy from an entity to find the nearest ancestor with a LuaScript component.
  * @param[in] iScene The scene containing the entity.
  * @param[in] iEntity The starting entity.
  * @return The nearest ancestor (or self) with a LuaScript, or invalid Entity if none found.
@@ -53,7 +56,8 @@ auto findScriptOwner(const Scene* iScene, Entity iEntity) -> Entity {
 }
 
 /**
- * @brief Find the nearest ancestor with a LuaScript and call a named function.
+ * @brief
+ *  Find the nearest ancestor with a LuaScript and call a named function.
  * @param[in] iScene The scene containing the entity.
  * @param[in] iEntity The entity whose ancestor to search.
  * @param[in] iCallbackName The Lua function name to invoke.
@@ -74,7 +78,8 @@ void invokeLuaCallback(const Scene* iScene, const Entity& iEntity, const std::st
 }
 
 /**
- * @brief Invoke a slider value-changed callback on the nearest ancestor LuaScript.
+ * @brief
+ *  Invoke a slider value-changed callback on the nearest ancestor LuaScript.
  * @param[in] iScene The scene containing the entity.
  * @param[in] iEntity The slider entity whose ancestor to search.
  * @param[in] iCallbackName The Lua function name to invoke.
@@ -96,9 +101,10 @@ void invokeSliderCallback(const Scene* iScene, const Entity& iEntity, const std:
 
 }// namespace
 
-void UIInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,
+void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, const math::vec2& iMousePos,
 						   const bool iMousePressed) {
 	OWL_PROFILE_FUNCTION()
+
 	s_consuming = false;
 
 	if (iScene == nullptr || iScene->status != Scene::Status::Playing)
@@ -126,37 +132,37 @@ void UIInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 		for (const auto& [parentId, childrenIds] = canvasEntity.getComponent<component::Hierarchy>();
 			 const auto childId: childrenIds) {
 			const Entity child = iScene->findEntityByUUID(childId);
-			if (!child || !child.hasComponent<component::UIRect>())
+			if (!child || !child.hasComponent<component::UiRect>())
 				continue;
 			if (!iScene->isEffectivelyVisible(child, false))
 				continue;
 
-			const auto& rect = child.getComponent<component::UIRect>();
+			const auto& rect = child.getComponent<component::UiRect>();
 			const bool hovered = hitTestRect(rect, vpSize, iMousePos);
 
-			// UIButton interaction.
-			if (child.hasComponent<component::UIButton>()) {
-				auto& button = child.getComponent<component::UIButton>();
-				if (button.state == component::UIButton::State::Disabled)
+			// UiButton interaction.
+			if (child.hasComponent<component::UiButton>()) {
+				auto& button = child.getComponent<component::UiButton>();
+				if (button.state == component::UiButton::State::Disabled)
 					continue;
 				if (hovered) {
 					s_consuming = true;
 					if (iMousePressed)
-						button.state = component::UIButton::State::Pressed;
+						button.state = component::UiButton::State::Pressed;
 					else
-						button.state = component::UIButton::State::Hovered;
+						button.state = component::UiButton::State::Hovered;
 					if (clicked) {
 						const auto uuid = static_cast<uint64_t>(child.getUUID());
 						invokeLuaCallback(iScene, child, button.onClickCallback, uuid);
 					}
 				} else {
-					button.state = component::UIButton::State::Normal;
+					button.state = component::UiButton::State::Normal;
 				}
 			}
 
-			// UISlider interaction.
-			if (child.hasComponent<component::UISlider>()) {
-				auto& slider = child.getComponent<component::UISlider>();
+			// UiSlider interaction.
+			if (child.hasComponent<component::UiSlider>()) {
+				auto& slider = child.getComponent<component::UiSlider>();
 				if (hovered && iMousePressed) {
 					s_consuming = true;
 					const math::vec2 center = rect.computePosition(vpSize);
@@ -175,9 +181,9 @@ void UIInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 	}
 }
 
-auto UIInputSystem::isUIConsuming() -> bool { return s_consuming; }
+auto UiInputSystem::isUIConsuming() -> bool { return s_consuming; }
 
-void UIInputSystem::reset() {
+void UiInputSystem::reset() {
 	s_consuming = false;
 	s_wasPressed = false;
 }

@@ -2,7 +2,7 @@
  * @file Parameters.cpp
  * @author Silmaen
  * @date 16/02/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -48,6 +48,7 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 		ImGui::OpenPopup(g_popupName);
 		m_pendingOpen = false;
 	}
+
 	ImGui::SetNextWindowSize({400, 0}, ImGuiCond_FirstUseEver);
 	if (ImGui::BeginPopupModal(g_popupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 		// --- Window Section ---
@@ -74,8 +75,10 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 					if (ImGui::Selectable(std::string(magic_enum::enum_name(type)).c_str(), isSelected))
 						m_localParams.renderer = type;
 					if (isSelected)
+
 						ImGui::SetItemDefaultFocus();
 				}
+
 				ImGui::EndCombo();
 			}
 		}
@@ -90,8 +93,10 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 					if (ImGui::Selectable(std::string(magic_enum::enum_name(type)).c_str(), isSelected))
 						m_localParams.sound = type;
 					if (isSelected)
+
 						ImGui::SetItemDefaultFocus();
 				}
+
 				ImGui::EndCombo();
 			}
 		}
@@ -111,19 +116,23 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 		// --- OK / Apply / Cancel (centred) ---
 		const auto& iconBank = gui::IconBank::instance();
 		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
+
 								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		const float totalWidth = buttonWidth * 3.0f + ImGui::GetStyle().ItemSpacing.x * 2.0f;
+
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
 		if (iconBank.iconButton("save", "OK##params", {buttonWidth, 0})) {
 			const bool needRestart = apply();
 			m_showRestartWarning = needRestart;
 			m_pendingClose = true;
 		}
+
 		ImGui::SameLine();
 		if (iconBank.iconButton("save", "Apply", {buttonWidth, 0})) {
 			if (apply())
 				m_showRestartWarning = true;
 		}
+
 		ImGui::SameLine();
 		if (iconBank.iconButton("close", "Cancel", {buttonWidth, 0})) {
 			ImGui::CloseCurrentPopup();
@@ -131,19 +140,24 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 
 		// --- Restart warning sub-popup ---
 		if (m_showRestartWarning)
+
 			ImGui::OpenPopup(g_restartPopupName);
 		if (ImGui::BeginPopupModal(g_restartPopupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 			ImGui::Text("Renderer or Sound backend has changed.\nPlease restart the application for the changes to take effect.");
+
 			ImGui::Separator();
 			if (iconBank.iconButton("close", "OK##restart")) {
 				m_showRestartWarning = false;
+
 				ImGui::CloseCurrentPopup();
 			}
+
 			ImGui::EndPopup();
 		}
 
 		if (m_pendingClose && !m_showRestartWarning) {
 			m_pendingClose = false;
+
 			ImGui::CloseCurrentPopup();
 		}
 

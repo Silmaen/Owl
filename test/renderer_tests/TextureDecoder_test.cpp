@@ -15,7 +15,6 @@ using namespace owl::renderer;
 using namespace owl::renderer::gpu;
 
 namespace {
-
 auto readFileAsBytes(const std::filesystem::path& iPath) -> std::vector<uint8_t> {
 	std::ifstream in(iPath, std::ios::binary | std::ios::ate);
 	const auto size = in.tellg();

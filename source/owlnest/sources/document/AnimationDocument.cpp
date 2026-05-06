@@ -23,13 +23,13 @@ OWL_DIAG_POP
 namespace owl::nest {
 
 namespace {
-
 constexpr float g_previewSize = 220.f;
 constexpr float g_timelineHeight = 200.f;
 
 }// namespace
 
 AnimationDocument::AnimationDocument() = default;
+
 AnimationDocument::~AnimationDocument() = default;
 
 auto AnimationDocument::title() const -> std::string {

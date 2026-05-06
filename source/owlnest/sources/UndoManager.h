@@ -16,9 +16,9 @@
 #include <vector>
 
 namespace owl::nest {
-
 /**
- * @brief Manages undo/redo stacks for one editor target type.
+ * @brief
+ *  Manages undo/redo stacks for one editor target type.
  * @tparam Target Concrete editor state the stacks operate on (scene, node canvas...).
  *
  * Owns a stack of `UndoCommand<Target>` objects. Supports command merging
@@ -31,14 +31,20 @@ template<typename Target>
 class UndoManager final {
 public:
 	UndoManager(const UndoManager&) = delete;
+
 	UndoManager(UndoManager&&) = delete;
+
 	auto operator=(const UndoManager&) -> UndoManager& = delete;
+
 	auto operator=(UndoManager&&) -> UndoManager& = delete;
+
 	UndoManager() = default;
+
 	~UndoManager() = default;
 
 	/**
-	 * @brief Push a new command onto the undo stack (command already applied).
+	 * @brief
+	 *  Push a new command onto the undo stack (command already applied).
 	 *
 	 * Clears the redo stack. Attempts to merge with the top command if
 	 * merging is enabled and types match within the merge timeout.
@@ -62,18 +68,24 @@ public:
 	}
 
 	/**
-	 * @brief Execute a command (calls redo()) then push it onto the undo stack.
+	 * @brief
+	 *  Execute a command (calls redo()) then push it onto the undo stack.
 	 * @param[in] iCommand The command to execute and push.
 	 * @param[in,out] ioTarget The target to apply the command to.
 	 */
 	void execute(uniq<UndoCommand<Target>> iCommand, Target& ioTarget) {
 		iCommand->redo(ioTarget);
 		m_lastSelectionHint = iCommand->m_selectAfterRedo;
+		/**
+		 * @brief
+		 *  Push.
+		 */
 		push(std::move(iCommand));
 	}
 
 	/**
-	 * @brief Undo the most recent command.
+	 * @brief
+	 *  Undo the most recent command.
 	 * @param[in,out] ioTarget The target to undo in.
 	 */
 	void undo(Target& ioTarget) {
@@ -87,7 +99,8 @@ public:
 	}
 
 	/**
-	 * @brief Redo the most recently undone command.
+	 * @brief
+	 *  Redo the most recently undone command.
 	 * @param[in,out] ioTarget The target to redo in.
 	 */
 	void redo(Target& ioTarget) {
@@ -100,28 +113,48 @@ public:
 		m_undoStack.push_back(std::move(command));
 	}
 
-	/// Check if undo is possible.
+	/**
+	 * @brief
+	 *  Check if undo is possible.
+	 */
 	[[nodiscard]] auto canUndo() const -> bool { return !m_undoStack.empty(); }
-	/// Check if redo is possible.
+
+	/**
+	 * @brief
+	 *  Check if redo is possible.
+	 */
 	[[nodiscard]] auto canRedo() const -> bool { return !m_redoStack.empty(); }
 
-	/// Get description of the next undo action.
+	/**
+	 * @brief
+	 *  Get description of the next undo action.
+	 */
 	[[nodiscard]] auto undoDescription() const -> std::string {
 		if (m_undoStack.empty())
 			return {};
 		return m_undoStack.back()->description();
 	}
-	/// Get description of the next redo action.
+
+	/**
+	 * @brief
+	 *  Get description of the next redo action.
+	 */
 	[[nodiscard]] auto redoDescription() const -> std::string {
 		if (m_redoStack.empty())
 			return {};
 		return m_redoStack.back()->description();
 	}
 
-	/// Get the UUID to select after the last undo/redo (0 = no change).
+	/**
+	 * @brief
+	 *  Get the UUID to select after the last undo/redo (0 = no change).
+	 */
 	[[nodiscard]] auto lastSelectionHint() const -> core::UUID { return m_lastSelectionHint; }
 
-	/// Clear all history.
+	/**
+	 * @brief
+	 *  Clear all history.
+	 */
 	void clear() {
 		m_undoStack.clear();
 		m_redoStack.clear();
@@ -129,15 +162,28 @@ public:
 		m_lastSelectionHint = core::UUID{0};
 	}
 
-	/// Set the maximum undo history depth.
+	/**
+	 * @brief
+	 *  Set the maximum undo history depth.
+	 */
 	void setMaxDepth(const size_t iMaxDepth) { m_maxDepth = iMaxDepth; }
 
-	/// Enable/disable merge coalescing.
+	/**
+	 * @brief
+	 *  Enable/disable merge coalescing.
+	 */
 	void setMergeEnabled(const bool iEnabled) { m_mergeEnabled = iEnabled; }
 
-	/// Mark the current state as saved.
+	/**
+	 * @brief
+	 *  Mark the current state as saved.
+	 */
 	void markSaved() { m_savedIndex = static_cast<int64_t>(m_undoStack.size()); }
-	/// Check if the state has changed since the last save.
+
+	/**
+	 * @brief
+	 *  Check if the state has changed since the last save.
+	 */
 	[[nodiscard]] auto isDirty() const -> bool {
 		return static_cast<int64_t>(m_undoStack.size()) != m_savedIndex;
 	}
@@ -159,7 +205,10 @@ private:
 	core::UUID m_lastSelectionHint{0};
 };
 
-/// @brief Convenience alias for scene-level undo management (default editor case).
+/**
+ * @brief
+ *  Convenience alias for scene-level undo management (default editor case).
+ */
 using SceneUndoManager = UndoManager<scene::Scene>;
 
 }// namespace owl::nest

@@ -11,7 +11,6 @@
 #include <scene/component/Hierarchy.h>
 
 namespace owl::nest::commands {
-
 // --- CreateEntityCommand ---
 
 CreateEntityCommand::CreateEntityCommand(const scene::Entity& iEntity)
@@ -36,7 +35,6 @@ auto CreateEntityCommand::description() const -> std::string {
 }
 
 // --- DeleteEntityCommand ---
-
 DeleteEntityCommand::DeleteEntityCommand(const scene::Entity& iEntity)
 	: m_snapshot{EntitySnapshot::capture(iEntity)}, m_name{iEntity.getName()} {
 	m_selectAfterUndo = m_snapshot.uuid;
@@ -78,7 +76,6 @@ auto DeleteEntityCommand::description() const -> std::string {
 }
 
 // --- DeleteSubtreeCommand ---
-
 DeleteSubtreeCommand::DeleteSubtreeCommand(const scene::Entity& iEntity, const scene::Scene& iScene)
 	: m_snapshot{SubtreeSnapshot::capture(iEntity, iScene)}, m_name{iEntity.getName()} {
 	m_selectAfterUndo = iEntity.getUUID();
@@ -109,7 +106,6 @@ auto DeleteSubtreeCommand::description() const -> std::string {
 }
 
 // --- DuplicateEntityCommand ---
-
 DuplicateEntityCommand::DuplicateEntityCommand(const scene::Entity& iOriginal, const scene::Entity& iDuplicate)
 	: m_duplicateSnapshot{EntitySnapshot::capture(iDuplicate)}, m_name{iOriginal.getName()} {
 	m_selectAfterRedo = m_duplicateSnapshot.uuid;
@@ -129,7 +125,6 @@ auto DuplicateEntityCommand::description() const -> std::string {
 }
 
 // --- DuplicateSubtreeCommand ---
-
 DuplicateSubtreeCommand::DuplicateSubtreeCommand(const scene::Entity& iOriginal,
 												  const scene::Entity& iDuplicateRoot,
 												  const scene::Scene& iScene)

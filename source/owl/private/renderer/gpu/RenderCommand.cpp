@@ -2,7 +2,7 @@
  * @file RenderCommand.cpp
  * @author Silmaen
  * @date 09/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"

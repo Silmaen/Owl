@@ -12,9 +12,9 @@
 #include <deque>
 
 namespace owl::core::task {
-
 /**
- * @brief Private implementation of the Scheduler, hiding Taskflow internals.
+ * @brief
+ *  Private implementation of the Scheduler, hiding Taskflow internals.
  */
 struct SchedulerImpl {
 	/// The Taskflow executor (thread pool) — declared first so it is destroyed last.
@@ -31,7 +31,8 @@ struct SchedulerImpl {
 	std::vector<shared<Timer>> timers;
 
 	/**
-	 * @brief Internal frame processing: poll running tasks, clean finished, launch queued.
+	 * @brief
+	 *  Internal frame processing: poll running tasks, clean finished, launch queued.
 	 * @param[in] iTreatQueue Whether to dequeue and launch new tasks.
 	 */
 	void frameInternal(bool iTreatQueue = true);

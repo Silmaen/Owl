@@ -2,7 +2,7 @@
  * @file UniformBuffer.h
  * @author Silmaen
  * @date 02/01/2023
- * Copyright © 2023 All rights reserved.
+ * Copyright (c) 2023 All rights reserved.
  * All modification must get authorization from the author.
  */
 #pragma once
@@ -11,34 +11,44 @@
 
 namespace owl::renderer::gpu::opengl {
 /**
- * @brief Specialized class for managing OpenGL uniform buffer.
+ * @brief
+ *  Specialized class for managing OpenGL uniform buffer.
  */
 class UniformBuffer final : public renderer::gpu::UniformBuffer {
 public:
 	UniformBuffer() = delete;
+
 	UniformBuffer(const UniformBuffer&) = default;
+
 	UniformBuffer(UniformBuffer&&) = default;
+
 	auto operator=(const UniformBuffer&) -> UniformBuffer& = default;
+
 	auto operator=(UniformBuffer&&) -> UniformBuffer& = default;
 
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 * @param[in] iSize Buffer's size.
 	 * @param[in] iBinding Buffer's binding.
 	 */
 	UniformBuffer(uint32_t iSize, uint32_t iBinding);
+
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~UniformBuffer() override;
 
 	/**
-	 * @brief bind this uniform buffer.
+	 * @brief
+	 *  bind this uniform buffer.
 	 */
 	void bind() override {}
 
 	/**
-	 * @brief Push Data to GPU.
+	 * @brief
+	 *  Push Data to GPU.
 	 * @param[in] iData The data.
 	 * @param[in] iSize The data size.
 	 * @param[in] iOffset The offset to start.

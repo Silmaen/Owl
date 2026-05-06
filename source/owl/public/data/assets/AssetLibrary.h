@@ -2,7 +2,7 @@
  * @file AssetLibrary.h
  * @author Silmaen
  * @date 1/9/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,7 +13,8 @@
 #include "core/Application.h"
 
 /**
- * @brief Concept tha check existence of a conversion function from string to specification.
+ * @brief
+ *  Concept tha check existence of a conversion function from string to specification.
  */
 template<typename T>
 concept hasStringSpec = requires {
@@ -21,57 +22,67 @@ concept hasStringSpec = requires {
 };
 
 /**
- * @brief Namespace for asset management.
+ * @brief
+ *  Namespace for asset management.
  */
 namespace owl::data::assets {
-
 /**
- * @brief Class managing a library of assets.
+ * @brief
+ *  Class managing a library of assets.
  * @tparam DataType The underlying data type.
  */
 template<assetDataType DataType>
 class AssetLibrary final {
 public:
 	using AssetType = Asset<DataType>;
+
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	AssetLibrary() = default;
 
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~AssetLibrary() = default;
 
 	/**
-	 * @brief Default copy constructor.
+	 * @brief
+	 *  Default copy constructor.
 	 */
 	AssetLibrary(const AssetLibrary&) = default;
 
 	/**
-	 * @brief Default move constructor.
+	 * @brief
+	 *  Default move constructor.
 	 */
 	AssetLibrary(AssetLibrary&&) = default;
 
 	/**
-	 * @brief Default copy affectation operator.
+	 * @brief
+	 *  Default copy affectation operator.
 	 */
 	auto operator=(const AssetLibrary&) -> AssetLibrary& = default;
 
 	/**
-	 * @brief Default move affectation operator.
+	 * @brief
+	 *  Default move affectation operator.
 	 */
 	auto operator=(AssetLibrary&&) -> AssetLibrary& = default;
 
 	/**
-	 * @brief Add the asset to the library and name it.
+	 * @brief
+	 *  Add the asset to the library and name it.
 	 * @param[in] iName Name of the asset.
 	 * @param[in] iAsset The asset to add.
 	 */
 	void add(const std::string& iName, shared<DataType>& iAsset) { m_assets.emplace(iName, AssetType{iAsset}); }
 
 	/**
-	 * @brief Load an asset from a file base on name.
+	 * @brief
+	 *  Load an asset from a file base on name.
 	 * @param[in] iName Name of the asset.
 	 * @return The asset.
 	 */
@@ -101,7 +112,8 @@ public:
 	}
 
 	/**
-	 * @brief Load an asset from a file and name.
+	 * @brief
+	 *  Load an asset from a file and name.
 	 * @param[in] iName Name of the asset.
 	 * @param[in] iFile File path to the asset.
 	 * @return The asset.
@@ -128,7 +140,8 @@ public:
 	}
 
 	/**
-	 * @brief Load an asset based on its internal specifications structure.
+	 * @brief
+	 *  Load an asset based on its internal specifications structure.
 	 * @param[in] iName The name of the asset.
 	 * @param[in] iSpec The specifications of the asset.
 	 * @return The asset.
@@ -149,7 +162,8 @@ public:
 	}
 
 	/**
-	 * @brief Access to the asset of the given name.
+	 * @brief
+	 *  Access to the asset of the given name.
 	 * @param[in] iName Name of the asset.
 	 * @return Asset's pointer or nullptr if not exists.
 	 */
@@ -162,14 +176,16 @@ public:
 	}
 
 	/**
-	 * @brief Verify if an asset exists.
+	 * @brief
+	 *  Verify if an asset exists.
 	 * @param[in] iName Name of the asset.
 	 * @return True if the asset exists.
 	 */
 	[[nodiscard]] auto exists(const std::string& iName) const -> bool { return m_assets.contains(iName); }
 
 	/**
-	 * @brief Get a lis of asset file found in the asset folders
+	 * @brief
+	 *  Get a lis of asset file found in the asset folders
 	 * @return The list of asset founds.
 	 */
 	[[nodiscard]] auto list() const -> std::vector<std::string> {
@@ -197,7 +213,8 @@ public:
 	}
 
 	/**
-	 * @brief Find the file path of the given Asset name.
+	 * @brief
+	 *  Find the file path of the given Asset name.
 	 * @param iName Name of the asset.
 	 * @return Path to the file or nullopt if not found.
 	 */

@@ -2,7 +2,7 @@
  * @file Asset.h
  * @author Silmaen
  * @date 1/9/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -15,9 +15,9 @@
  * @brief Namespace for data management.
  */
 namespace owl::data::assets {
-
 /**
- * @brief Concept to ensure DataType meets specific requirements.
+ * @brief
+ *  Concept to ensure DataType meets specific requirements.
  *
  * This concept checks that the DataType has:
  * - A static function `create` that takes a `std::filesystem::path`
@@ -43,50 +43,66 @@ concept assetDataType = requires {
 };
 
 /**
- * @brief Class for managing the assets.
+ * @brief
+ *  Class for managing the assets.
  * @tparam DataType the underlying data structure.
  */
 template<assetDataType DataType>
 class Asset final {
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	Asset() = delete;
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~Asset() = default;
+
 	/**
-	 * @brief Default copy constructor.
+	 * @brief
+	 *  Default copy constructor.
 	 */
 	Asset(const Asset&) = default;
+
 	/**
-	 * @brief Default move constructor.
+	 * @brief
+	 *  Default move constructor.
 	 */
 	Asset(Asset&&) = default;
+
 	/**
-	 * @brief Default copy affectation operator.
+	 * @brief
+	 *  Default copy affectation operator.
 	 */
 	auto operator=(const Asset&) -> Asset& = default;
+
 	/**
-	 * @brief Default move affectation operator.
+	 * @brief
+	 *  Default move affectation operator.
 	 */
 	auto operator=(Asset&&) -> Asset& = default;
+
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 * @param[in] iData The internal data.
 	 */
 	explicit Asset(const shared<DataType>& iData) : m_asset{iData} {}
 
 	/**
-	 * @brief Access to the data.
+	 * @brief
+	 *  Access to the data.
 	 * @return The data;
 	 */
 	[[nodiscard]] auto get() const -> const shared<DataType>& { return m_asset; }
 
 	/**
-	 * @brief Get the list of supported file extensions for this asset type.
+	 * @brief
+	 *  Get the list of supported file extensions for this asset type.
 	 * @return List of extensions.
 	 */
 	static auto extensions() -> std::vector<std::string> { return DataType::extension(); }

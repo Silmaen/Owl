@@ -2,7 +2,7 @@
  * @file CameraEditor.h
  * @author Silmaen
  * @date 30/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -15,19 +15,30 @@
 
 namespace owl::renderer {
 /**
- * @brief Class use to manage camera in the editor.
+ * @brief
+ *  Class use to manage camera in the editor.
  */
 class OWL_API CameraEditor final : public Camera {
 public:
 	CameraEditor() = default;
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
 	~CameraEditor() override;
+
 	CameraEditor(const CameraEditor&) = default;
+
 	CameraEditor(CameraEditor&&) = default;
+
 	auto operator=(const CameraEditor&) -> CameraEditor& = default;
+
 	auto operator=(CameraEditor&&) -> CameraEditor& = default;
 
 	/**
-	 * @brief Constructor
+	 * @brief
+	 *  Constructor
 	 * @param[in] iFov Field of view.
 	 * @param[in] iAspectRatio Aspect ratio.
 	 * @param[in] iNearClip Near clip distance.
@@ -36,135 +47,162 @@ public:
 	CameraEditor(float iFov, float iAspectRatio, float iNearClip, float iFarClip);
 
 	/**
-	 * @brief Update the camera (Need input setup).
+	 * @brief
+	 *  Update the camera (Need input setup).
 	 * @param[in] iTimeStep The timestamp.
 	 */
 	void onUpdate(const core::Timestep& iTimeStep);
 
 	/**
-	 * @brief Treat an event.
+	 * @brief
+	 *  Treat an event.
 	 * @param[in,out] ioEvent Teh event to treat.
 	 */
 	void onEvent(event::Event& ioEvent);
 
 	/**
-	 * @brief Get the camera distance to the focal point.
+	 * @brief
+	 *  Get the camera distance to the focal point.
 	 * @return Camera distance to the focal point.
 	 */
 	[[nodiscard]] auto getDistance() const -> float { return m_distance; }
 
 	/**
-	 * @brief Set the camera distance to the focal point.
+	 * @brief
+	 *  Set the camera distance to the focal point.
 	 * @param[in] iDistance The new distance to the focal point.
 	 */
 	void setDistance(const float iDistance) { m_distance = iDistance; }
 
 	/**
-	 * @brief Set the camera viewport size.
+	 * @brief
+	 *  Set the camera viewport size.
 	 * @param[in] iSize New size.
 	 */
 	void setViewportSize(const math::vec2ui& iSize) {
 		m_viewportSize = iSize;
+		/**
+		 * @brief
+		 *  Update projection.
+		 */
 		updateProjection();
 	}
 
 	/**
-	 * @brief Get the camera up vector.
+	 * @brief
+	 *  Get the camera up vector.
 	 * @return Camera up vector.
 	 */
 	[[nodiscard]] auto getUpDirection() const -> math::vec3;
 
 	/**
-	 * @brief Get the camera right vector.
+	 * @brief
+	 *  Get the camera right vector.
 	 * @return Camera right vector.
 	 */
 	[[nodiscard]] auto getRightDirection() const -> math::vec3;
 
 	/**
-	 * @brief Get the camera forward vector.
+	 * @brief
+	 *  Get the camera forward vector.
 	 * @return Camera forward vector.
 	 */
 	[[nodiscard]] auto getForwardDirection() const -> math::vec3;
+
 	/**
-	 * @brief Get the camera position.
+	 * @brief
+	 *  Get the camera position.
 	 * @return Camera position.
 	 */
 	[[nodiscard]] auto getPosition() const -> const math::vec3& { return m_position; }
 
 	/**
-	 * @brief Get the camera orientation quaternion.
+	 * @brief
+	 *  Get the camera orientation quaternion.
 	 * @return Camera orientation.
 	 */
 	[[nodiscard]] auto getOrientation() const -> math::quat;
 
 	/**
-	 * @brief Get the camera pitch.
+	 * @brief
+	 *  Get the camera pitch.
 	 * @return Camera pitch.
 	 */
 	[[nodiscard]] auto getPitch() const -> float { return m_pitch; }
 
 	/**
-	 * @brief Get the camera yaw.
+	 * @brief
+	 *  Get the camera yaw.
 	 * @return Camera yaw.
 	 */
 	[[nodiscard]] auto getYaw() const -> float { return m_yaw; }
 
 private:
 	/**
-	 * @brief Update the projection matrix.
+	 * @brief
+	 *  Update the projection matrix.
 	 */
 	void updateProjection();
 
 	/**
-	 * @brief Update the view matrix.
+	 * @brief
+	 *  Update the view matrix.
 	 */
 	void updateView();
 
 	/**
-	 * @brief Event when mouse is scrolled.
+	 * @brief
+	 *  Event when mouse is scrolled.
 	 * @param[in] iEvent Mouse scroll event.
 	 * @return If treated.
 	 */
 	auto onMouseScroll(const event::MouseScrolledEvent& iEvent) -> bool;
 
 	/**
-	 * @brief Mouse panoramic move.
+	 * @brief
+	 *  Mouse panoramic move.
 	 * @param[in] iDelta The X Y deltas.
 	 */
 	void mousePan(const math::vec2& iDelta);
 
 	/**
-	 * @brief Mouse rotation.
+	 * @brief
+	 *  Mouse rotation.
 	 * @param[in] iDelta The X Y deltas.
 	 */
 	void mouseRotate(const math::vec2& iDelta);
 
 	/**
-	 * @brief Mouse zoom.
+	 * @brief
+	 *  Mouse zoom.
 	 * @param[in] iDelta The delta.
 	 */
 	void mouseZoom(float iDelta);
 
 	/**
-	 * @brief Calculate the camera position.
+	 * @brief
+	 *  Calculate the camera position.
 	 * @return Camera position.
 	 */
 	[[nodiscard]] auto calculatePosition() const -> math::vec3;
 
 	/**
-	 * @brief Get the pan speeds.
+	 * @brief
+	 *  Get the pan speeds.
 	 * @return Pan speeds.
 	 */
 	[[nodiscard]] auto panSpeed() const -> std::pair<float, float>;
 
 	/**
-	 * @brief Get the rotation speed.
+	 * @brief
+	 *  Get the rotation speed.
 	 * @return The rotation speed.
 	 */
 	[[nodiscard]] auto rotationSpeed() const -> float;
 
 	/**
-	 * @brief Get the zoom speed.
+	 * @brief
+	 *  Get the zoom speed.
 	 * @return The zoom speed.
 	 */
 	[[nodiscard]] auto zoomSpeed() const -> float;

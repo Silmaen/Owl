@@ -14,7 +14,6 @@
 namespace owl::nest::panel {
 
 namespace {
-
 auto getLevelColor(const core::Log::Level iLevel) -> ImVec4 {
 	switch (iLevel) {
 		case core::Log::Level::Trace:
@@ -59,7 +58,10 @@ constexpr ImVec4 g_cyanColor{0.3f, 0.9f, 1.0f, 1.0f};
 constexpr ImVec4 g_timestampColor{0.5f, 0.5f, 0.5f, 1.0f};
 constexpr float g_fontScale = 0.85f;
 
-/// Render text with numbers highlighted in cyan, rest in the given base colour.
+/**
+ * @brief
+ *  Render text with numbers highlighted in cyan, rest in the given base colour.
+ */
 void renderColoredText(const std::string_view iText, const ImVec4& iBaseColor) {
 	size_t pos = 0;
 	while (pos < iText.size()) {
@@ -125,42 +127,72 @@ void LogPanel::onImGuiRender() {
 
 	// Toolbar: Clear, Auto-scroll, level filters, logger filters, search
 	if (gui::IconBank::instance().iconButton("delete", "Clear"))
+
 		core::Log::getLogBuffer().clear();
+
 	ImGui::SameLine();
+
 	ImGui::Checkbox("Auto-scroll", &m_autoScroll);
+
 	ImGui::SameLine();
+
 	ImGui::Text("|");
+
 	ImGui::SameLine();
+
 	ImGui::Checkbox("Trace", &m_showTrace);
+
 	ImGui::SameLine();
+
 	ImGui::Checkbox("Debug", &m_showDebug);
+
 	ImGui::SameLine();
+
 	ImGui::Checkbox("Info", &m_showInfo);
+
 	ImGui::SameLine();
+
 	ImGui::Checkbox("Warn", &m_showWarning);
+
 	ImGui::SameLine();
+
 	ImGui::Checkbox("Error", &m_showError);
+
 	ImGui::SameLine();
+
 	ImGui::Checkbox("Critical", &m_showCritical);
+
 	ImGui::SameLine();
+
 	ImGui::Text("|");
+
 	ImGui::SameLine();
+
 	ImGui::Checkbox("OWL", &m_showCore);
+
 	ImGui::SameLine();
+
 	ImGui::Checkbox("APP", &m_showApp);
+
 	ImGui::SameLine();
+
 	ImGui::Text("|");
+
 	ImGui::SameLine();
+
 	ImGui::SetNextItemWidth(150.0f);
+
 	ImGui::InputText("##Search", m_searchBuffer.data(), m_searchBuffer.size());
 
 	ImGui::Separator();
 
 	// Log content with smaller font
 	ImGui::SetWindowFontScale(g_fontScale);
+
 	ImGui::BeginChild("LogScrollRegion", ImVec2(0, 0), ImGuiChildFlags_None, ImGuiWindowFlags_HorizontalScrollbar);
 
 	const auto entries = core::Log::getLogBuffer().getEntries();
+
 	const std::string_view searchFilter(m_searchBuffer.data());
 
 	for (const auto& entry : entries) {
@@ -201,19 +233,23 @@ void LogPanel::onImGuiRender() {
 		// Text search filter
 		if (!searchFilter.empty() && entry.message.find(searchFilter) == std::string::npos)
 			continue;
-
 		const ImVec4 levelColor = getLevelColor(entry.level);
-
 		// Timestamp in grey
 		const auto timestamp = formatTimestamp(entry.timestamp);
+
 		ImGui::PushStyleColor(ImGuiCol_Text, g_timestampColor);
+
 		ImGui::TextUnformatted(timestamp.c_str());
+
 		ImGui::PopStyleColor();
 
 		// Level label + logger name in level colour
 		ImGui::SameLine(0.0f, 0.0f);
+
 		ImGui::PushStyleColor(ImGuiCol_Text, levelColor);
+
 		ImGui::TextUnformatted(std::format(" {} {}: ", getLevelLabel(entry.level), entry.loggerName).c_str());
+
 		ImGui::PopStyleColor();
 
 		// Message with numbers in cyan
@@ -221,10 +257,13 @@ void LogPanel::onImGuiRender() {
 	}
 
 	if (m_autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+
 		ImGui::SetScrollHereY(1.0f);
 
 	ImGui::EndChild();
+
 	ImGui::SetWindowFontScale(1.0f);
+
 	ImGui::End();
 }
 

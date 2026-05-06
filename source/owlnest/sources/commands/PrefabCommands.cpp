@@ -9,7 +9,6 @@
 #include "PrefabCommands.h"
 
 namespace owl::nest::commands {
-
 // --- InstantiatePrefabCommand ---
 
 InstantiatePrefabCommand::InstantiatePrefabCommand(const scene::Entity& iInstanceRoot, const scene::Scene& iScene,
@@ -34,9 +33,7 @@ auto InstantiatePrefabCommand::description() const -> std::string {
 }
 
 // --- ApplyPrefabCommand ---
-
 namespace {
-
 void destroyAndRestoreSubtree(scene::Scene& ioScene, const SubtreeSnapshot& iSnapshot) {
 	// Destroy existing entities matching the snapshot UUIDs.
 	for (const auto& entitySnap: iSnapshot.entities) {

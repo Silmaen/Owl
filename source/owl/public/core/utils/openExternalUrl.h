@@ -12,9 +12,9 @@
 #include <string_view>
 
 namespace owl::core::utils {
-
 /**
- * @brief Open an URL in the user's default external handler (typically a web browser).
+ * @brief
+ *  Open an URL in the user's default external handler (typically a web browser).
  *
  * Supported schemes: `http://`, `https://`, `mailto:`. Any other scheme is rejected
  * and the call becomes a no-op (logged at warn level). On Linux the URL is dispatched

@@ -2,7 +2,7 @@
  * @file Timestep.h
  * @author Silmaen
  * @date 10/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -14,9 +14,11 @@
 #include <vector>
 
 namespace owl::core {
+
 constexpr float g_Millis{1000.f};
 /**
- * @brief Time Steps.
+ * @brief
+ *  Time Steps.
  */
 class OWL_API Timestep {
 public:
@@ -28,15 +30,22 @@ public:
 	using duration = clock::duration;
 
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	Timestep() : m_lastCall{clock::now()} {
 		m_statFps.resize(maxIndex, 0.0);
+
+		/**
+		 * @brief
+		 *  Update state.
+		 */
 		update();
 	}
 
 	/**
-	 * @brief Time step update.
+	 * @brief
+	 *  Time step update.
 	 */
 	void update() {
 		const time_point tp = clock::now();
@@ -48,7 +57,8 @@ public:
 	}
 
 	/**
-	 * @brief Force the step with a given duration
+	 * @brief
+	 *  Force the step with a given duration
 	 * @param iDelta The duration.
 	 */
 	void forceUpdate(const duration iDelta) {
@@ -60,7 +70,8 @@ public:
 	}
 
 	/**
-	 * @brief Get the seconds elapsed since last update.
+	 * @brief
+	 *  Get the seconds elapsed since last update.
 	 * @return Seconds elapsed.
 	 */
 	[[nodiscard]] auto getSeconds() const -> float {
@@ -68,7 +79,8 @@ public:
 	}
 
 	/**
-	 * @brief Get the milliseconds elapsed since last update.
+	 * @brief
+	 *  Get the milliseconds elapsed since last update.
 	 * @return Milliseconds elapsed.
 	 */
 	[[nodiscard]] auto getMilliseconds() const -> float {
@@ -76,25 +88,29 @@ public:
 	}
 
 	/**
-	 * @brief Get the mean number of update call in one second.
+	 * @brief
+	 *  Get the mean number of update call in one second.
 	 * @return The Frame per second number.
 	 */
 	[[nodiscard]] auto getFps() const -> float { return g_Millis / getMilliseconds(); }
 
 	/**
-	 * @brief Get the mean number of update call in one second.
+	 * @brief
+	 *  Get the mean number of update call in one second.
 	 * @return The Frame per second number.
 	 */
 	[[nodiscard]] auto getStabilizedFps() const -> float;
 
 	/**
-	 * @brief Get the frame number.
+	 * @brief
+	 *  Get the frame number.
 	 * @return The Frame number.
 	 */
 	[[nodiscard]] auto getFrameNumber() const -> uint64_t { return m_frameId; }
 
 	/**
-	 * @brief Get the current time point.
+	 * @brief
+	 *  Get the current time point.
 	 * @return The current time point.
 	 */
 	[[nodiscard]] auto getTimePoint() const -> const time_point& { return m_lastCall; }

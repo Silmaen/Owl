@@ -2,7 +2,7 @@
  * @file SoundSystem.h
  * @author Silmaen
  * @date 11/5/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,45 +13,59 @@
 #include <data/assets/AssetLibrary.h>
 
 /**
- * @brief Namespace for sound management.
+ * @brief
+ *  Namespace for sound management.
  */
 namespace owl::sound {
-
 /**
- * @brief Class for sound management.
+ * @brief
+ *  Class for sound management.
  */
 class OWL_API SoundSystem {
 public:
 	using SoundLibrary = data::assets::AssetLibrary<SoundData>;
+
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	SoundSystem() = default;
+
 	SoundSystem(const SoundSystem&) = delete;
+
 	SoundSystem(SoundSystem&&) = delete;
+
 	auto operator=(const SoundSystem&) -> SoundSystem& = delete;
+
 	auto operator=(SoundSystem&&) -> SoundSystem& = delete;
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~SoundSystem() = default;
+
 	/**
-		 * @brief Initialize the renderer.
+	 * @brief
+	 *  Initialize the renderer.
 		 */
 	static void init();
 
 	/**
-	 * @brief Stops the renderer.
+	 * @brief
+	 *  Stops the renderer.
 	 */
 	static void shutdown();
 
 	/**
-	 * @brief Reset the renderer.
+	 * @brief
+	 *  Reset the renderer.
 	 */
 	static void reset();
 
 	/**
-	 * @brief The state of the renderer.
+	 * @brief
+	 *  The state of the renderer.
 	 */
 	enum struct State : uint8_t {
 		Created,///< Renderer just created.
@@ -60,9 +74,16 @@ public:
 		Error,///< Render has an error.
 	};
 
-	static auto getState() -> State { return m_internalState; }
 	/**
-	 * @brief Access to the sound Library.
+	 * @brief
+	 *  Get the state.
+	 * @return The state.
+	 */
+	static auto getState() -> State { return m_internalState; }
+
+	/**
+	 * @brief
+	 *  Access to the sound Library.
 	 * @return The sound library.
 	 */
 	static auto getSoundLibrary() -> SoundLibrary& { return *m_soundLibrary; }

@@ -2,7 +2,7 @@
  * @file Camera.h
  * @author Silmaen
  * @date 23/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,44 +13,58 @@
 
 namespace owl::renderer {
 /**
- * @brief Base class for camera.
+ * @brief
+ *  Base class for camera.
  */
 class OWL_API Camera {
 public:
 	Camera(const Camera&) = default;
+
 	Camera(Camera&&) = default;
+
 	auto operator=(const Camera&) -> Camera& = default;
+
 	auto operator=(Camera&&) -> Camera& = default;
+
 	Camera() = default;
+
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	virtual ~Camera();
 
 	/**
-	 * @brief Construct the camera with a projection.
+	 * @brief
+	 *  Construct the camera with a projection.
 	 * @param[in] iProjection projection matrix.
 	 */
 	explicit Camera(const math::mat4& iProjection) : m_projection{iProjection} {}
 
 	/**
-	 * @brief Get the projection matrix of the camera.
+	 * @brief
+	 *  Get the projection matrix of the camera.
 	 * @return The camera's projection matrix.
 	 */
 	[[nodiscard]] auto getProjection() const -> const math::mat4& { return m_projection; }
+
 	/**
-	 * @brief Get the camera view projection matrix.
+	 * @brief
+	 *  Get the camera view projection matrix.
 	 * @return Camera view projection matrix.
 	 */
 	[[nodiscard]] auto getView() const -> const math::mat4& { return m_view; }
+
 	/**
-	 * @brief Get the camera view projection matrix.
+	 * @brief
+	 *  Get the camera view projection matrix.
 	 * @return Camera view projection matrix.
 	 */
 	[[nodiscard]] auto getViewProjection() const -> const math::mat4& { return m_viewProjection; }
 
 	/**
-	 * @brief Update the view matrix with a transformation.
+	 * @brief
+	 *  Update the view matrix with a transformation.
 	 * @param iTransform The transformation.
 	 */
 	void setTransform(const math::mat4& iTransform) {
@@ -60,7 +74,8 @@ public:
 
 protected:
 	/**
-	 * @brief Update the view-projection matrix.
+	 * @brief
+	 *  Update the view-projection matrix.
 	 */
 	void updateViewProjection();
 	/// Camera's projection.

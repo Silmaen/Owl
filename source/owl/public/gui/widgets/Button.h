@@ -2,7 +2,7 @@
  * @file Button.h
  * @author Silmaen
  * @date 10/26/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,38 +12,49 @@
 #include <functional>
 
 namespace owl::gui::widgets {
-
 /**
-	 * @brief Data associated with Button.
+ * @brief
+ *  Data associated with Button.
 	 */
 struct ButtonData : WidgetData {
 	std::string icon;
 	std::string replacementText;
 	std::function<bool()> isSelected{[] -> bool { return false; }};
+	/**
+	 * @brief
+	 *  Void.
+	 */
 	std::function<void()> onClick{[] -> void {}};
 	math::vec2 size{0, 0};
 	std::string tooltip;
 };
 
 /**
- * @brief Class describing a button gui widget.
+ * @brief
+ *  Class describing a button gui widget.
  */
 class OWL_API Button final: public Widget<ButtonData> {
 public:
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~Button() override;
 
 	Button() = default;
+
 	Button(const Button&) = default;
+
 	Button(Button&&) = default;
+
 	auto operator=(const Button&) -> Button& = default;
+
 	auto operator=(Button&&) -> Button& = default;
 
 private:
 	/**
-	 * @brief Render the button.
+	 * @brief
+	 *  Render the button.
 	 */
 	void onRenderBase() const override;
 };

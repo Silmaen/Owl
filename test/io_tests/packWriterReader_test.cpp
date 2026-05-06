@@ -283,3 +283,94 @@ TEST_F(PackWriterReaderTest, binary_not_readable) {
 
 	EXPECT_EQ(rawContent.find(secret), std::string::npos);
 }
+
+// --- tryOpen / PackOpenError -------------------------------------------------
+
+TEST_F(PackWriterReaderTest, tryOpen_succeeds_on_valid_pack) {
+	const auto packPath = m_tempDir / "test_valid.owlpack";
+
+	PackWriter writer;
+	const std::vector<uint8_t> data = {1, 2, 3};
+	writer.addData(data, "ok.dat", AssetType::Other);
+	ASSERT_TRUE(writer.write(packPath));
+
+	PackReader reader;
+	const auto result = reader.tryOpen(packPath);
+	EXPECT_TRUE(result.has_value());
+	EXPECT_TRUE(reader.isOpen());
+}
+
+TEST_F(PackWriterReaderTest, tryOpen_cannot_open_file) {
+	PackReader reader;
+	const auto result = reader.tryOpen(m_tempDir / "nonexistent.owlpack");
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error(), PackOpenError::CannotOpenFile);
+	EXPECT_FALSE(reader.isOpen());
+}
+
+TEST_F(PackWriterReaderTest, tryOpen_short_header) {
+	const auto badFile = m_tempDir / "short.owlpack";
+	{
+		std::ofstream out(badFile, std::ios::binary);
+		// Write fewer bytes than a PackHeader.
+		out.write("AB", 2);
+	}
+
+	PackReader reader;
+	const auto result = reader.tryOpen(badFile);
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error(), PackOpenError::ShortHeader);
+}
+
+TEST_F(PackWriterReaderTest, tryOpen_invalid_magic) {
+	const auto badFile = m_tempDir / "wrongmagic.owlpack";
+	{
+		// Write a full-sized PackHeader but with garbage magic.
+		PackHeader header{};
+		header.magic = std::array<char, 4>{'X', 'X', 'X', 'X'};
+		header.version = g_packVersion;
+		std::ofstream out(badFile, std::ios::binary);
+		out.write(reinterpret_cast<const char*>(&header), sizeof(PackHeader));
+	}
+
+	PackReader reader;
+	const auto result = reader.tryOpen(badFile);
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error(), PackOpenError::InvalidMagic);
+}
+
+TEST_F(PackWriterReaderTest, tryOpen_unsupported_version) {
+	const auto badFile = m_tempDir / "wrongversion.owlpack";
+	{
+		PackHeader header{};
+		// Correct magic, future version.
+		header.version = static_cast<uint16_t>(g_packVersion + 99);
+		std::ofstream out(badFile, std::ios::binary);
+		out.write(reinterpret_cast<const char*>(&header), sizeof(PackHeader));
+	}
+
+	PackReader reader;
+	const auto result = reader.tryOpen(badFile);
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error(), PackOpenError::UnsupportedVersion);
+}
+
+TEST_F(PackWriterReaderTest, tryOpen_toc_size_mismatch) {
+	// Forge a pack with a header that claims more entries than the TOC actually contains.
+	const auto badFile = m_tempDir / "tocmismatch.owlpack";
+	{
+		PackHeader header{};
+		header.entryCount = 10;// claim 10 entries but write none
+		header.tocOffset = sizeof(PackHeader);
+		header.tocSize = 0;// empty TOC payload
+		header.tocOriginalSize = 0;
+		header.flags = static_cast<uint16_t>(PackFlags::None);
+		std::ofstream out(badFile, std::ios::binary);
+		out.write(reinterpret_cast<const char*>(&header), sizeof(PackHeader));
+	}
+
+	PackReader reader;
+	const auto result = reader.tryOpen(badFile);
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error(), PackOpenError::TocSizeMismatch);
+}

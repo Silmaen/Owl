@@ -1,5 +1,5 @@
 /**
- * @file UIProgressBar.cpp
+ * @file UiProgressBar.cpp
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -9,11 +9,11 @@
 
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
-#include "scene/component/UIProgressBar.h"
+#include "scene/component/UiProgressBar.h"
 
 namespace owl::scene::component {
 
-void UIProgressBar::serialize(const core::Serializer& iOut) const {
+void UiProgressBar::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "value" << YAML::Value << value;
@@ -22,7 +22,7 @@ void UIProgressBar::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
-void UIProgressBar::deserialize(const core::Serializer& iNode) {
+void UiProgressBar::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["value"])
 		value = iNode.getImpl()->node["value"].as<float>();
 	if (iNode.getImpl()->node["backgroundColor"])

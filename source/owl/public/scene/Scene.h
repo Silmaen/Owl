@@ -2,7 +2,7 @@
  * @file Scene.h
  * @author Silmaen
  * @date 22/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -17,46 +17,59 @@
 
 #include <entt/entt.hpp>
 /**
- * @brief Namespace for the scene elements
+ * @brief
+ *  Namespace for the scene elements
  */
 namespace owl::scene {
+
 class Entity;
 class ScriptableEntity;
 
 /**
- * @brief Class describing a scene.
+ * @brief
+ *  Class describing a scene.
  */
 class OWL_API Scene final {
 public:
 	Scene(const Scene&) = delete;
+
 	Scene(Scene&&) = delete;
+
 	auto operator=(const Scene&) -> Scene& = delete;
+
 	auto operator=(Scene&&) -> Scene& = delete;
+
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	Scene();
+
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~Scene();
 
 	/**
-	 * @brief Create a copy of the scene.
+	 * @brief
+	 *  Create a copy of the scene.
 	 * @param[in] iOther The scene to copy.
 	 * @return Pointer to the new scene.
 	 */
 	static auto copy(const shared<Scene>& iOther) -> shared<Scene>;
 
 	/**
-	 * @brief Create entity and add it to registry.
+	 * @brief
+	 *  Create entity and add it to registry.
 	 * @param[in] iName Entity's name.
 	 * @return The Entity.
 	 */
 	auto createEntity(const std::string& iName = std::string()) -> Entity;
 
 	/**
-	 * @brief Create entity with UUID and add it to registry.
+	 * @brief
+	 *  Create entity with UUID and add it to registry.
 	 * @param[in] iName Entity's name.
 	 * @param[in] iUuid The Entity's UUID.
 	 * @return The Entity.
@@ -64,23 +77,27 @@ public:
 	auto createEntityWithUUID(core::UUID iUuid, const std::string& iName = std::string()) -> Entity;
 
 	/**
-	 * @brief Destroy n entity.
+	 * @brief
+	 *  Destroy n entity.
 	 * @param[in,out] ioEntity Entity to destroy.
 	 */
 	void destroyEntity(Entity& ioEntity);
 
 	/**
-	 * @brief Beginning the scene as runtime (enabling physics).
+	 * @brief
+	 *  Beginning the scene as runtime (enabling physics).
 	 */
 	void onStartRuntime();
 
 	/**
-	 * @brief End scene runtime mode.
+	 * @brief
+	 *  End scene runtime mode.
 	 */
 	void onEndRuntime();
 
 	/**
-	 * @brief Update actions for the runtime.
+	 * @brief
+	 *  Update actions for the runtime.
 	 *
 	 * Advances physics, scripts, triggers, and animations. When `iRender` is true
 	 * (the default) also draws the scene with the primary camera. Set it to
@@ -92,83 +109,96 @@ public:
 	void onUpdateRuntime(const core::Timestep& iTimeStep, bool iRender = true);
 
 	/**
-	 * @brief Render the runtime scene without simulation (for pause mode).
+	 * @brief
+	 *  Render the runtime scene without simulation (for pause mode).
 	 */
 	void onRenderRuntime();
 
 	/**
-	 * @brief Update actions in the editor, external camera, no gameplay.
+	 * @brief
+	 *  Update actions in the editor, external camera, no gameplay.
 	 * @param[in] iTimeStep The time step.
 	 * @param[in] iCamera The editor camera.
 	 */
 	void onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Camera& iCamera);
 
 	/**
-	 * @brief Action when viewport resized.
+	 * @brief
+	 *  Action when viewport resized.
 	 * @param[in] iSize New viewport's size.
 	 */
 	void onViewportResize(const math::vec2ui& iSize);
 
 	/**
-	 * @brief Read the current viewport size in pixels.
+	 * @brief
+	 *  Read the current viewport size in pixels.
 	 * @return The viewport size last set on this scene (defaults to `{0, 0}`).
 	 */
 	[[nodiscard]] auto getViewportSize() const -> const math::vec2ui& { return m_viewportSize; }
 
 	/**
-	 * @brief Duplicate an entity.
+	 * @brief
+	 *  Duplicate an entity.
 	 * @param[in] iEntity Entity to duplicate.
 	 * @return The created entity.
 	 */
 	auto duplicateEntity(const Entity& iEntity) -> Entity;
 
 	/**
-	 * @brief Access to the primary Camera.
+	 * @brief
+	 *  Access to the primary Camera.
 	 * @return The primary camera.
 	 */
 	auto getPrimaryCamera() -> Entity;
 
 	/**
-	 * @brief Access to the primary player
+	 * @brief
+	 *  Access to the primary player
 	 * @return The primary player.
 	 */
 	auto getPrimaryPlayer() -> Entity;
 
 	/**
-	 * @brief Get the list of all entities.
+	 * @brief
+	 *  Get the list of all entities.
 	 * @return List of all entities.
 	 */
 	[[nodiscard]] auto getAllEntities() const -> std::vector<Entity>;
 
 	/**
-	 * @brief Get root entities only (those with no parent).
+	 * @brief
+	 *  Get root entities only (those with no parent).
 	 * @return List of root entities.
 	 */
 	[[nodiscard]] auto getRootEntities() const -> std::vector<Entity>;
 
 	/**
-	 * @brief Get the children of an entity.
+	 * @brief
+	 *  Get the children of an entity.
 	 * @param[in] iEntity The parent entity.
 	 * @return List of child entities.
 	 */
 	[[nodiscard]] auto getChildren(const Entity& iEntity) const -> std::vector<Entity>;
 
 	/**
-	 * @brief Find an entity by its UUID.
+	 * @brief
+	 *  Find an entity by its UUID.
 	 * @param[in] iUuid The UUID to search for.
 	 * @return The entity, or an invalid entity if not found.
 	 */
 	[[nodiscard]] auto findEntityByUUID(core::UUID iUuid) const -> Entity;
 
 	/**
-	 * @brief Compute the world-space transform for an entity (walks parent chain).
+	 * @brief
+	 *  Compute the world-space transform for an entity (walks parent chain).
 	 * @param[in] iEntity The entity.
 	 * @return The world-space transform.
 	 */
 	[[nodiscard]] auto getWorldTransform(const Entity& iEntity) const -> math::Transform;
 
 	/**
-	 * @brief Check if an entity is effectively visible (walks parent chain).
+	 * @brief
+	 *  Check if an entity is effectively visible (walks parent chain).
 	 * @param[in] iEntity The entity.
 	 * @param[in] iEditorMode True if checking editor visibility, false for game visibility.
 	 * @return True if the entity and all its ancestors are visible.
@@ -176,33 +206,38 @@ public:
 	[[nodiscard]] auto isEffectivelyVisible(const Entity& iEntity, bool iEditorMode) const -> bool;
 
 	/**
-	 * @brief Set the parent of an entity. Handles reparenting and local transform recomputation.
+	 * @brief
+	 *  Set the parent of an entity. Handles reparenting and local transform recomputation.
 	 * @param[in] iChild The entity to reparent.
 	 * @param[in] iNewParent The new parent entity.
 	 */
 	void setParent(const Entity& iChild, const Entity& iNewParent) const;
 
 	/**
-	 * @brief Remove an entity from its parent (make it a root entity).
+	 * @brief
+	 *  Remove an entity from its parent (make it a root entity).
 	 * @param[in] iChild The entity to unparent.
 	 */
 	void unparent(const Entity& iChild) const;
 
 	/**
-	 * @brief Destroy an entity and all its children recursively.
+	 * @brief
+	 *  Destroy an entity and all its children recursively.
 	 * @param[in,out] ioEntity Entity to destroy with children.
 	 */
 	void destroyEntityWithChildren(Entity& ioEntity);
 
 	/**
-	 * @brief Duplicate an entity and all its descendants recursively.
+	 * @brief
+	 *  Duplicate an entity and all its descendants recursively.
 	 * @param[in] iEntity Root entity of the subtree to duplicate.
 	 * @return The duplicated root entity.
 	 */
 	auto duplicateSubtree(const Entity& iEntity) -> Entity;
 
 	/**
-	 * @brief Rebuild children lists from parent references.
+	 * @brief
+	 *  Rebuild children lists from parent references.
 	 *
 	 * Called after deserialization to reconstruct childrenIds from parentId relationships.
 	 */
@@ -210,9 +245,9 @@ public:
 
 	/// Entities registry.
 	entt::registry registry;
-
 	/**
-	 * @brief List the statuses
+	 * @brief
+	 *  List the statuses
 	 */
 	enum struct Status : uint8_t {
 		Editing,///< Editing.
@@ -222,9 +257,9 @@ public:
 	};
 	/// The scene status.
 	Status status = Status::Editing;
-
 	/**
-	 * @brief Describes a pending teleport request (set by Teleport triggers).
+	 * @brief
+	 *  Describes a pending teleport request (set by Teleport triggers).
 	 */
 	struct TeleportRequest {
 		/// Whether a teleport is pending.
@@ -240,9 +275,9 @@ public:
 	};
 	/// Pending teleport request (used for cross-level teleport).
 	TeleportRequest teleportRequest;
-
 	/**
-	 * @brief Describes a pending save/load request (set by Lua scripts).
+	 * @brief
+	 *  Describes a pending save/load request (set by Lua scripts).
 	 */
 	struct SaveLoadRequest {
 		/// Whether a save or load is pending.
@@ -254,24 +289,42 @@ public:
 	};
 	/// Pending save/load request.
 	SaveLoadRequest saveLoadRequest;
-
 	/// Set to true when the game requests to quit (Lua scene.quit()).
 	bool quitRequested = false;
 
 	/**
-	 * @brief Count the entities in the scene.
+	 * @brief
+	 *  Count the entities in the scene.
 	 * @return The count of Entity in the scene.
 	 */
 	[[nodiscard]] auto getEntityCount() const -> uint32_t;
 
-	/// @brief Access the game state.
+	/**
+	 * @brief
+	 *  Access the game state.
+	 * @return The game state.
+	 */
 	[[nodiscard]] auto getGameState() -> GameState& { return m_gameState; }
-	/// @brief Access the game state (const).
+
+	/**
+	 * @brief
+	 *  Access the game state (const).
+	 * @return The game state.
+	 */
 	[[nodiscard]] auto getGameState() const -> const GameState& { return m_gameState; }
 
-	/// @brief Access the scene's enabled-renderers config (mutable).
+	/**
+	 * @brief
+	 *  Access the scene's enabled-renderers config (mutable).
+	 * @return The enabled-renderers configuration.
+	 */
 	[[nodiscard]] auto getEnabledRenderers() -> renderer::EnabledRenderersConfig& { return m_enabledRenderers; }
-	/// @brief Access the scene's enabled-renderers config (const).
+
+	/**
+	 * @brief
+	 *  Access the scene's enabled-renderers config (const).
+	 * @return The enabled-renderers configuration.
+	 */
 	[[nodiscard]] auto getEnabledRenderers() const -> const renderer::EnabledRenderersConfig& {
 		return m_enabledRenderers;
 	}
@@ -282,7 +335,8 @@ private:
 	/// Scene-level enable/override of the project renderer stack (empty → all active with defaults).
 	renderer::EnabledRenderersConfig m_enabledRenderers;
 	/**
-	 * @brief Action when component is added to an entity.
+	 * @brief
+	 *  Action when component is added to an entity.
 	 * @tparam T Type of the added component.
 	 * @param[in] iEntity Entity receiving new component.
 	 * @param[in,out] ioComponent The new component.
@@ -290,53 +344,89 @@ private:
 	template<typename T>
 	void onComponentAdded(const Entity& iEntity, T& ioComponent);
 
-	/// Draw the elements.
+	/**
+	 * @brief
+	 *  Draw the elements.
+	 */
 	void render();
-	/// Resolve `Tilemap.tileset` from `Tilemap.tilesetPath` for every tilemap in the scene
-	/// that hasn't been resolved yet. Idempotent. Called eagerly from `onStartRuntime` so
-	/// that physics initialisation can read the tileset's collidable flags, and lazily by
-	/// the renderer for the editor preview path.
+
+	/**
+	 * @brief
+	 *  Resolve `Tilemap.tileset` from `Tilemap.tilesetPath` for every tilemap in the scene.
+	 *
+	 * Resolves any tilemap whose tileset has not been resolved yet. Idempotent. Called
+	 * eagerly from `onStartRuntime` so that physics initialisation can read the tileset's
+	 * collidable flags, and lazily by the renderer for the editor preview path.
+	 */
 	void resolveAllTilemapTilesets();
-	/// Draw screen-space UI overlays (Canvas entities) within the current render batch.
-	/// @param[in] iEffectiveViewProjection The view-projection matrix the active
-	/// layer has bound to `Renderer2D` (world camera VP for legacy 2D layers,
-	/// pixel-space ortho VP for raycast / screen-overlay layers). Used to map
-	/// pixel anchors into the same coordinate frame the layer is currently
-	/// drawing in, so HUDs follow the layer's space rather than the raw world
-	/// camera (which would rotate the HUD with the player in the raycast scene).
+
+	/**
+	 * @brief
+	 *  Draw screen-space UI overlays (Canvas entities) within the current render batch.
+	 * @param[in] iEffectiveViewProjection The view-projection matrix the active layer has bound
+	 * to `Renderer2D` (world camera VP for legacy 2D layers, pixel-space ortho VP for raycast /
+	 * screen-overlay layers). Used to map pixel anchors into the same coordinate frame the layer
+	 * is currently drawing in, so HUDs follow the layer's space rather than the raw world camera
+	 * (which would rotate the HUD with the player in the raycast scene).
+	 */
 	void renderUI(const math::mat4& iEffectiveViewProjection);
-	/// Orchestrate per-layer rendering when the engine has an active `RenderStack`,
-	/// or fall back to a single legacy pass when the stack is empty. Centralises the
-	/// `Renderer2D::resetStats / beginScene / endScene` book-keeping.
+
+	/**
+	 * @brief
+	 *  Orchestrate per-layer rendering using the engine's active `RenderStack`.
+	 *
+	 * Falls back to a single legacy pass when the stack is empty. Centralises the
+	 * `Renderer2D::resetStats / beginScene / endScene` book-keeping.
+	 * @param[in] iCamera The camera used for the rendering passes.
+	 */
 	void renderWithStack(const renderer::Camera& iCamera);
-	/// Whether the current draw pass should include this entity, based on its
-	/// optional `RendererTag` and the layer being processed.
+
+	/**
+	 * @brief
+	 *  Whether the current draw pass should include this entity.
+	 *
+	 * Decision is based on the entity's optional `RendererTag` and the layer being processed.
+	 * @param[in] iEntity The entity being evaluated.
+	 * @return True if the entity should be drawn in the current layer.
+	 */
 	[[nodiscard]] auto layerAccepts(const Entity& iEntity) const -> bool;
-	/// Whether the named layer has at least one visible renderable entity routed
-	/// to it. Used by `renderWithStack` to skip layers with nothing to draw —
-	/// avoids paying for an empty `beginScene/endScene` pair (which on Vulkan
-	/// translates into an empty render pass and causes visible flicker on the
-	/// neighbouring layers).
-	/// @param[in] iLayerName Name of the layer to test.
-	/// @param[in] iIsFirst Whether the layer is the first one in the stack —
-	/// untagged renderable entities default to it.
-	/// @return True if at least one visible entity is routed to this layer.
+
+	/**
+	 * @brief
+	 *  Whether the named layer has at least one visible renderable entity routed to it.
+	 *
+	 * Used by `renderWithStack` to skip layers with nothing to draw — avoids paying for an empty
+	 * `beginScene/endScene` pair (which on Vulkan translates into an empty render pass and causes
+	 * visible flicker on the neighbouring layers).
+	 * @param[in] iLayerName Name of the layer to test.
+	 * @param[in] iIsFirst Whether the layer is the first one in the stack — untagged renderable
+	 * entities default to it.
+	 * @return True if at least one visible entity is routed to this layer.
+	 */
 	[[nodiscard]] auto layerHasContent(const std::string& iLayerName, bool iIsFirst) const -> bool;
+
 	/// The viewport's size.
 	math::vec2ui m_viewportSize = {0, 0};
 	/// Inverse of camera view rotation matrix (for skybox rendering).
 	math::mat4 m_inverseViewRotation = math::identity<float, 4>();
-	/// Name of the `RenderLayer` currently being filled (empty during the legacy
-	/// single-pass path). Set by `renderWithStack` before each `render()` /
-	/// `renderUI()` call so per-layer entity filtering can run.
+	/**
+	 * @brief
+	 *  Name of the `RenderLayer` currently being filled.
+	 *
+	 * Empty during the legacy single-pass path. Set by `renderWithStack` before each `render()` /
+	 * `renderUI()` call so per-layer entity filtering can run.
+	 */
 	std::string m_currentLayerName;
-	/// Whether the layer being processed is the first one in the stack — entities
-	/// without a `RendererTag` are routed there by default.
+	/// Whether the layer being processed is the first one in the stack (untagged entities default to it).
 	bool m_currentLayerIsFirst = true;
-	/// Active layer driving the current `render()` pass (may be null on the legacy
-	/// single-pass path). Used by `render()` to dispatch type-specific entity
-	/// rendering (e.g. send tilemap walls to `RendererRaycast` instead of the
-	/// per-cell `Renderer2D` quad loop).
+	/**
+	 * @brief
+	 *  Active layer driving the current `render()` pass.
+	 *
+	 * May be null on the legacy single-pass path. Used by `render()` to dispatch type-specific
+	 * entity rendering (e.g. send tilemap walls to `RendererRaycast` instead of the per-cell
+	 * `Renderer2D` quad loop).
+	 */
 	const renderer::RenderLayer* mp_currentLayer = nullptr;
 
 	friend class Entity;

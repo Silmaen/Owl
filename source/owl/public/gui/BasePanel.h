@@ -2,7 +2,7 @@
  * @file BasePanel.h
  * @author Silmaen
  * @date 10/16/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,56 +13,77 @@
 #include "math/vectors.h"
 
 namespace owl::gui {
-
 /**
- * @brief Class describing a basic gui panel.
+ * @brief
+ *  Class describing a basic gui panel.
  */
 class OWL_API BasePanel {
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	explicit BasePanel(std::string&& iName);
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	virtual ~BasePanel();
+
 	/**
-	 * @brief Default copy constructor.
+	 * @brief
+	 *  Default copy constructor.
 	 */
 	BasePanel(const BasePanel&) = default;
+
 	/**
-	 * @brief Default move constructor.
+	 * @brief
+	 *  Default move constructor.
 	 */
 	BasePanel(BasePanel&&) = default;
+
 	/**
-	 * @brief Default copy affectation operator.
+	 * @brief
+	 *  Default copy affectation operator.
 	 */
 	auto operator=(const BasePanel&) -> BasePanel& = default;
+
 	/**
-	 * @brief Default move affectation operator.
+	 * @brief
+	 *  Default move affectation operator.
 	 */
 	auto operator=(BasePanel&&) -> BasePanel& = default;
+
 	/**
-	 * @brief Initialization when attached.
+	 * @brief
+	 *  Initialization when attached.
 	 */
 	virtual void attach() {}
+
 	/**
-	 * @brief Cleaning after detached.
+	 * @brief
+	 *  Cleaning after detached.
 	 */
 	virtual void detach() {}
+
 	/**
-	 * @brief Update panel Status.
+	 * @brief
+	 *  Update panel Status.
 	 * @param iTimeStep The Time delta of the frame.
 	 */
 	virtual void onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {}
+
 	/**
-	 * @brief Action on event.
+	 * @brief
+	 *  Action on event.
 	 * @param[in,out] ioEvent The Event to react.
 	 */
 	virtual void onEvent([[maybe_unused]] event::Event& ioEvent) {}
+
 	/**
-	 * @brief Update internal variables and do the rendering.
+	 * @brief
+	 *  Update internal variables and do the rendering.
 	 *
 	 * Virtual so specialised panels (e.g. a per-document viewport with its own
 	 * close button and unsaved-document flag) can fully take over the window
@@ -71,46 +92,57 @@ public:
 	virtual void onRender();
 
 	/**
-	 * @brief Do the rendering.
+	 * @brief
+	 *  Do the rendering.
 	 */
 	virtual void onRenderInternal() = 0;
 
 	/**
-	 * @brief Optional header area drawn after `ImGui::Begin` and before the size of the
+	 * @brief
+	 *  Optional header area drawn after `ImGui::Begin` and before the size of the
 	 * content region is captured. Useful for tab bars or toolbars that should eat a
 	 * portion of the panel height. Default implementation draws nothing.
 	 */
 	virtual void onHeaderRender() {}
 
 	/**
-	 * @brief get the panel size.
+	 * @brief
+	 *  get the panel size.
 	 */
 	[[nodiscard]] auto getSize() const -> const math::vec2ui& { return m_size; }
 
 	/**
-	 * @brief Get the lower bound of the panel.
+	 * @brief
+	 *  Get the lower bound of the panel.
 	 */
 	[[nodiscard]] auto getLowerBound() const -> const math::vec2& { return m_lower; }
+
 	/**
-	 * @brief Get the upper bound of the panel.
+	 * @brief
+	 *  Get the upper bound of the panel.
 	 */
 	[[nodiscard]] auto getUpperBound() const -> const math::vec2& { return m_upper; }
 
 	/**
-	 * @brief If the panel is hovered.
+	 * @brief
+	 *  If the panel is hovered.
 	 */
 	[[nodiscard]] auto isHovered() const -> bool { return m_hovered; }
+
 	/**
-	 * @brief If the panel is focused.
+	 * @brief
+	 *  If the panel is focused.
 	 */
 	[[nodiscard]] auto isFocused() const -> bool { return m_focused; }
 
 protected:
+	/// ImGui window title and identifier.
 	std::string m_name;
 	/// Panel size.
 	math::vec2ui m_size = {0, 0};
-	/// Panel bounds.
+	/// Lower-left panel corner in screen pixels.
 	math::vec2 m_lower = {0.0f, 0.0f};
+	/// Upper-right panel corner in screen pixels.
 	math::vec2 m_upper = {0.0f, 0.0f};
 	/// Focused state.
 	bool m_focused = false;

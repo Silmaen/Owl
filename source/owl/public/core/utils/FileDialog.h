@@ -2,7 +2,7 @@
  * @file FileDialog.h
  * @author Silmaen
  * @date 27/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,31 +11,35 @@
 #include <filesystem>
 
 /**
- * @brief Namespace for utility functions
+ * @brief
+ *  Namespace for utility functions
  */
 namespace owl::core::utils {
-
 /**
- * @brief class For displaying a file dialog.
+ * @brief
+ *  class For displaying a file dialog.
  */
 class OWL_API FileDialog {
 public:
 	/**
-	 * @brief Open a file dialog to search for an existing file.
+	 * @brief
+	 *  Open a file dialog to search for an existing file.
 	 * @param[in] iFilter Filter to apply during the search.
 	 * @return A valid file path or null if cancelled.
 	 */
 	static auto openFile(const std::string& iFilter) -> std::filesystem::path;
 
 	/**
-	 * @brief Open a file dialog to define a file to create.
+	 * @brief
+	 *  Open a file dialog to define a file to create.
 	 * @param[in] iFilter Filter to apply during the search.
 	 * @return A valid file path or null if cancelled.
 	 */
 	static auto saveFile(const std::string& iFilter) -> std::filesystem::path;
 
 	/**
-	 * @brief Open a dialog to select a folder.
+	 * @brief
+	 *  Open a dialog to select a folder.
 	 * @return A valid directory path or empty if cancelled.
 	 */
 	static auto pickFolder() -> std::filesystem::path;

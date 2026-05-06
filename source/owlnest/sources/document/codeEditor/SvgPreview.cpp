@@ -21,6 +21,7 @@ OWL_DIAG_POP
 namespace owl::nest::codeEditor {
 
 SvgPreview::SvgPreview() = default;
+
 SvgPreview::~SvgPreview() = default;
 
 void SvgPreview::update(const core::Timestep& iTimeStep, const std::string& iText, const math::vec2ui iTargetSize) {

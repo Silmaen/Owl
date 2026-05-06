@@ -2,7 +2,7 @@
  * @file Buffer.h
  * @author Silmaen
  * @date 07/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,62 +13,76 @@
 
 namespace owl::renderer::gpu::vulkan {
 /**
- * @brief Specialized class for managing vulkan vertex buffer.
+ * @brief
+ *  Specialized class for managing vulkan vertex buffer.
  */
 class VertexBuffer final : public renderer::gpu::VertexBuffer {
 public:
 	VertexBuffer(const VertexBuffer&) = delete;
+
 	VertexBuffer(VertexBuffer&&) = delete;
+
 	auto operator=(const VertexBuffer&) -> VertexBuffer& = delete;
+
 	auto operator=(VertexBuffer&&) -> VertexBuffer& = delete;
+
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 * @param[in] iSize The buffer size.
 	 */
 	explicit VertexBuffer(uint32_t iSize);
 
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 * @param[in] iVertices The vertices.
 	 * @param[in] iSize Number of data.
 	 */
 	VertexBuffer(const float* iVertices, uint32_t iSize);
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~VertexBuffer() override;
 
 	/**
-	 * @brief Release the memory buffer
+	 * @brief
+	 *  Release the memory buffer
 	 */
 	void release();
 
 	/**
-	 * @brief Activate the buffer in the GPU.
+	 * @brief
+	 *  Activate the buffer in the GPU.
 	 */
 	void bind() const override;
 
 	/**
-	 * @brief Deactivate the buffer in the GPU.
+	 * @brief
+	 *  Deactivate the buffer in the GPU.
 	 */
 	void unbind() const override;
 
 	/**
-	 * @brief Defines the data of the vertex buffer.
+	 * @brief
+	 *  Defines the data of the vertex buffer.
 	 * @param[in] iData The raw data.
 	 * @param[in] iSize Number of data.
 	 */
 	void setData(const void* iData, uint32_t iSize) override;
 
 	/**
-	 * @brief Get the binding description.
+	 * @brief
+	 *  Get the binding description.
 	 * @return The bining description.
 	 */
 	[[nodiscard]] auto getBindingDescription() const -> VkVertexInputBindingDescription;
 
 	/**
-	 * @brief Get The attribute desciption.
+	 * @brief
+	 *  Get The attribute desciption.
 	 * @return The attribute description.
 	 */
 	[[nodiscard]] auto getAttributeDescriptions() const -> std::vector<VkVertexInputAttributeDescription>;
@@ -83,43 +97,54 @@ private:
 };
 
 /**
- * @brief Specialized class for managing vulkan index buffer.
+ * @brief
+ *  Specialized class for managing vulkan index buffer.
  */
 class IndexBuffer final : public renderer::gpu::IndexBuffer {
 public:
 	IndexBuffer(const IndexBuffer&) = delete;
+
 	IndexBuffer(IndexBuffer&&) = delete;
+
 	auto operator=(const IndexBuffer&) -> IndexBuffer& = delete;
+
 	auto operator=(IndexBuffer&&) -> IndexBuffer& = delete;
+
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 * @param[in] iIndices Array of indices.
 	 * @param[in] iSize Number of indices in the array.
 	 */
 	IndexBuffer(const uint32_t* iIndices, uint32_t iSize);
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~IndexBuffer() override;
 
 	/**
-	 * @brief Release the memory buffer
+	 * @brief
+	 *  Release the memory buffer
 	 */
 	void release();
 
 	/**
-	 * @brief Activate the buffer in the GPU.
+	 * @brief
+	 *  Activate the buffer in the GPU.
 	 */
 	void bind() const override;
 
 	/**
-	 * @brief Deactivate the buffer in the GPU.
+	 * @brief
+	 *  Deactivate the buffer in the GPU.
 	 */
 	void unbind() const override;
 
 	/**
-	 * @brief Get the number of element in the buffer.
+	 * @brief
+	 *  Get the number of element in the buffer.
 	 * @return Number of element in the buffer.
 	 */
 	[[nodiscard]] auto getCount() const -> uint32_t override { return m_count; }

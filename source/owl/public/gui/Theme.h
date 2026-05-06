@@ -10,9 +10,9 @@
 #include "math/vectors.h"
 
 namespace owl::gui {
-
 /**
- * @brief Available built-in theme presets.
+ * @brief
+ *  Available built-in theme presets.
  */
 enum class ThemePreset : uint8_t {
 	Custom,/// Custom theme loaded from file.
@@ -24,7 +24,8 @@ enum class ThemePreset : uint8_t {
 };
 
 /**
- * @brief Definition of the GUI theme.
+ * @brief
+ *  Definition of the GUI theme.
  */
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 struct OWL_API Theme {
@@ -95,27 +96,32 @@ struct OWL_API Theme {
 	float tabBorder{1.f};
 
 	float controlsRounding{3.f};
+
 	/**
-	 * @brief Load from a yaml config file.
+	 * @brief
+	 *  Load from a yaml config file.
 	 * @param[in] iFile The file to load.
 	 */
 	void loadFromFile(const std::filesystem::path& iFile);
 
 	/**
-	 * @brief Save To a yaml file.
+	 * @brief
+	 *  Save To a yaml file.
 	 * @param[in] iFile The file to save.
 	 */
 	void saveToFile(const std::filesystem::path& iFile) const;
 
 	/**
-	 * @brief Create a theme from a built-in preset.
+	 * @brief
+	 *  Create a theme from a built-in preset.
 	 * @param[in] iPreset The preset to use.
 	 * @return The generated theme.
 	 */
 	static auto fromPreset(ThemePreset iPreset) -> Theme;
 
 	/**
-	 * @brief Get the list of available preset names.
+	 * @brief
+	 *  Get the list of available preset names.
 	 * @return Vector of preset name strings.
 	 */
 	static auto getPresetNames() -> std::vector<std::pair<ThemePreset, std::string>>;

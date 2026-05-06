@@ -2,7 +2,7 @@
  * @file RenderStack.h
  * @author Silmaen
  * @date 30/04/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -15,7 +15,8 @@
 namespace owl::renderer {
 
 /**
- * @brief Project-level definition of a single layer slot.
+ * @brief
+ *  Project-level definition of a single layer slot.
  *
  * Stored in `owl_project.yml` under `RendererStack:`. Combined with the scene's
  * `EnabledRenderers` overrides at scene activation time.
@@ -36,7 +37,8 @@ struct OWL_API RendererStackEntry {
 // NOLINTEND(bugprone-exception-escape)
 
 /**
- * @brief Project-level renderer stack definition (ordered list of entries).
+ * @brief
+ *  Project-level renderer stack definition (ordered list of entries).
  *
  * The order in `entries` is the back-to-front render order. Empty stack means
  * "use the implicit `[Renderer2D(default)]` fallback".
@@ -46,32 +48,37 @@ struct OWL_API RendererStackConfig {
 	std::vector<RendererStackEntry> entries;
 
 	/**
-	 * @brief Whether the config is empty (caller should fall back to default).
+	 * @brief
+	 *  Whether the config is empty (caller should fall back to default).
 	 * @return True if no entry is defined.
 	 */
 	[[nodiscard]] auto isEmpty() const -> bool { return entries.empty(); }
 
 	/**
-	 * @brief Find an entry by its instance name.
+	 * @brief
+	 *  Find an entry by its instance name.
 	 * @param[in] iName The instance name to find.
 	 * @return Pointer to the entry, or nullptr if not found.
 	 */
 	[[nodiscard]] auto find(const std::string& iName) const -> const RendererStackEntry*;
 
 	/**
-	 * @brief Build a default config containing a single `Renderer2D` named `"default"`.
+	 * @brief
+	 *  Build a default config containing a single `Renderer2D` named `"default"`.
 	 * @return The fallback config.
 	 */
 	[[nodiscard]] static auto makeDefault() -> RendererStackConfig;
 
 	/**
-	 * @brief Serialize the config to a YAML node.
+	 * @brief
+	 *  Serialize the config to a YAML node.
 	 * @return The YAML node (a sequence of maps).
 	 */
 	[[nodiscard]] auto toYaml() const -> YAML::Node;
 
 	/**
-	 * @brief Parse the config from a YAML node.
+	 * @brief
+	 *  Parse the config from a YAML node.
 	 *
 	 * Accepts a sequence node where each item has `Type` (required), `Name`
 	 * (required, unique), and optional `DefaultConfig`. Invalid items are
@@ -83,7 +90,8 @@ struct OWL_API RendererStackConfig {
 };
 
 /**
- * @brief Scene-level enable/override list for the renderer stack.
+ * @brief
+ *  Scene-level enable/override list for the renderer stack.
  *
  * Stored in `.owl` files under `EnabledRenderers:`. An empty list means "all
  * renderers from the project stack are active with their default config, in
@@ -113,26 +121,30 @@ struct OWL_API EnabledRenderersConfig {
 	std::vector<Entry> entries;
 
 	/**
-	 * @brief Whether the config is empty (caller should activate every project renderer).
+	 * @brief
+	 *  Whether the config is empty (caller should activate every project renderer).
 	 * @return True if no entry is defined.
 	 */
 	[[nodiscard]] auto isEmpty() const -> bool { return entries.empty(); }
 
 	/**
-	 * @brief Find an entry by its instance name.
+	 * @brief
+	 *  Find an entry by its instance name.
 	 * @param[in] iName The instance name.
 	 * @return Pointer to the entry, or nullptr if absent.
 	 */
 	[[nodiscard]] auto find(const std::string& iName) const -> const Entry*;
 
 	/**
-	 * @brief Serialize the config to a YAML node.
+	 * @brief
+	 *  Serialize the config to a YAML node.
 	 * @return The YAML node (a sequence of maps).
 	 */
 	[[nodiscard]] auto toYaml() const -> YAML::Node;
 
 	/**
-	 * @brief Parse the config from a YAML node.
+	 * @brief
+	 *  Parse the config from a YAML node.
 	 * @param[in] iNode The YAML sequence node.
 	 * @return The parsed config.
 	 */
@@ -140,7 +152,8 @@ struct OWL_API EnabledRenderersConfig {
 };
 
 /**
- * @brief Ordered, runtime-instantiated stack of `RenderLayer` instances.
+ * @brief
+ *  Ordered, runtime-instantiated stack of `RenderLayer` instances.
  *
  * Built from a `RendererStackConfig` (project) filtered/configured by an
  * `EnabledRenderersConfig` (scene). Holds the active layers in render order.
@@ -148,22 +161,28 @@ struct OWL_API EnabledRenderersConfig {
 class OWL_API RenderStack {
 public:
 	RenderStack(const RenderStack&) = delete;
+
 	RenderStack(RenderStack&&) = default;
+
 	auto operator=(const RenderStack&) -> RenderStack& = delete;
+
 	auto operator=(RenderStack&&) -> RenderStack& = default;
 
 	/**
-	 * @brief Default constructor (empty stack).
+	 * @brief
+	 *  Default constructor (empty stack).
 	 */
 	RenderStack() = default;
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~RenderStack() = default;
 
 	/**
-	 * @brief Build a stack from the project + scene configuration.
+	 * @brief
+	 *  Build a stack from the project + scene configuration.
 	 *
 	 * Two-pass emission. Pass 1 walks the scene listing in scene order, looks
 	 * each entry up in the project, and emits the matching layer (honouring
@@ -184,44 +203,51 @@ public:
 											  const EnabledRenderersConfig& iScene) -> RenderStack;
 
 	/**
-	 * @brief Get the ordered list of layers.
+	 * @brief
+	 *  Get the ordered list of layers.
 	 * @return The active layers (in render order).
 	 */
 	[[nodiscard]] auto getLayers() const -> const std::vector<shared<RenderLayer>>& { return m_layers; }
 
 	/**
-	 * @brief Find a layer by its instance name.
+	 * @brief
+	 *  Find a layer by its instance name.
 	 * @param[in] iName The instance name.
 	 * @return The layer, or nullptr if absent.
 	 */
 	[[nodiscard]] auto findByName(const std::string& iName) const -> shared<RenderLayer>;
 
 	/**
-	 * @brief Get the first layer in the stack (used as fallback for untagged entities).
+	 * @brief
+	 *  Get the first layer in the stack (used as fallback for untagged entities).
 	 * @return The first layer, or nullptr if the stack is empty.
 	 */
 	[[nodiscard]] auto getDefaultLayer() const -> shared<RenderLayer>;
 
 	/**
-	 * @brief Whether the stack has no layers.
+	 * @brief
+	 *  Whether the stack has no layers.
 	 * @return True if empty.
 	 */
 	[[nodiscard]] auto isEmpty() const -> bool { return m_layers.empty(); }
 
 	/**
-	 * @brief Open a frame on every active layer (in order).
+	 * @brief
+	 *  Open a frame on every active layer (in order).
 	 * @param[in] iCamera The active camera.
 	 */
 	void beginFrame(const Camera& iCamera) const;
 
 	/**
-	 * @brief Render the scene through every active layer (in order).
+	 * @brief
+	 *  Render the scene through every active layer (in order).
 	 * @param[in,out] ioScene The scene to render.
 	 */
 	void renderScene(scene::Scene& ioScene) const;
 
 	/**
-	 * @brief Close the frame on every active layer (in reverse order).
+	 * @brief
+	 *  Close the frame on every active layer (in reverse order).
 	 */
 	void endFrame();
 

@@ -2,7 +2,7 @@
  * @file Manager.cpp
  * @author Silmaen
  * @date 04/06/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -23,10 +23,10 @@
 
 namespace owl::io::serial {
 
-
 namespace {
 /**
- * @brief List The serial Port Available
+ * @brief
+ *  List The serial Port Available
  * @param ioListToUpdate The device's list to update.
  *
  * @note https://stackoverflow.com/questions/2674048/what-is-proper-way-to-detect-all-available-serial-ports-on-windows

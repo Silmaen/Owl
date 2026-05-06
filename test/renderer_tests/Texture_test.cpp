@@ -34,6 +34,33 @@ TEST(TextureSpecifications, PixelSize) {
 	EXPECT_EQ(spec.getPixelSize(), 16);
 }
 
+// Round-trip Specification::toString/fromString — covers the parsing branches.
+TEST(TextureSpecifications, FromStringRoundTrip) {
+	Texture::Specification spec{.size = {640, 480}, .format = ImageFormat::Rgba8, .generateMips = false};
+	const std::string serialized = spec.toString();
+	Texture::Specification parsed;
+	parsed.fromString(serialized);
+	EXPECT_EQ(parsed.size.x(), 640u);
+	EXPECT_EQ(parsed.size.y(), 480u);
+	EXPECT_EQ(parsed.format, ImageFormat::Rgba8);
+	EXPECT_FALSE(parsed.generateMips);
+
+	// Unknown enum name → falls back to Rgb8.
+	parsed.fromString("32:32:NoSuchFormat:true");
+	EXPECT_EQ(parsed.format, ImageFormat::Rgb8);
+	EXPECT_TRUE(parsed.generateMips);
+}
+
+// Texture2D::createFromSerialized with no API initialised still handles the
+// short / unknown-prefix cases and returns nullptr.
+TEST(Texture, CreateFromSerializedShortAndUnknown) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	EXPECT_EQ(Texture2D::createFromSerialized(""), nullptr);
+	EXPECT_EQ(Texture2D::createFromSerialized("ab"), nullptr);
+	EXPECT_EQ(Texture2D::createFromSerialized("xxx:foo"), nullptr);
+	owl::core::Log::invalidate();
+}
+
 TEST(Texture, CreateFromString) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	{

@@ -2,7 +2,7 @@
  * @file Buffer.cpp
  * @author Silmaen
  * @date 08/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -50,7 +50,6 @@ void VertexBuffer::setData(const void* iData, const uint32_t iSize) {
 	glBindBuffer(GL_ARRAY_BUFFER, m_rendererId);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, iSize, iData);
 }
-
 
 IndexBuffer::IndexBuffer(const uint32_t* iIndices, const uint32_t iCount) : m_count(iCount) {
 	OWL_PROFILE_FUNCTION()

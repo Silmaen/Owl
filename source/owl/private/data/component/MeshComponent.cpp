@@ -2,7 +2,7 @@
  * @file MeshComponent.cpp
  * @author Silmaen
  * @date 20/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -17,6 +17,7 @@ MeshVertexCoordinate<IsConst>::MeshVertexCoordinate(Coordinate, CursorType& iCur
 													const bool iReset)
 	: MeshComponentBase<IsConst, geometry::MeshElementType::Vertex>(iCursor) {
 	if (iReset)
+
 		reset(iIndex);
 }
 
@@ -28,7 +29,6 @@ void MeshVertexCoordinate<IsConst>::reset(size_t iStart) {
 		m_pointIte = const_cast<geometry::StaticMesh*>(this->m_cursor->getMesh())->getVertexIterator(iStart);
 	}
 }
-
 // Explicit template instantiation
 template class MeshVertexCoordinate<true>;
 template class MeshVertexCoordinate<false>;

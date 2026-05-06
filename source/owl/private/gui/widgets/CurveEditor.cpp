@@ -14,7 +14,6 @@
 namespace owl::gui::widgets {
 
 namespace {
-
 class CurveDelegate final : public ImCurveEdit::Delegate {
 public:
 	explicit CurveDelegate(math::Curve& iCurve) {
@@ -25,16 +24,25 @@ public:
 	}
 
 	[[nodiscard]] auto buffer() const -> const std::vector<ImVec2>& { return m_buffer; }
+
 	[[nodiscard]] auto dirty() const -> bool { return m_dirty; }
+
 	void setCurveType(const ImCurveEdit::CurveType iType) { m_type = iType; }
 
 	auto GetCurveCount() -> size_t override { return 1; }
+
 	[[nodiscard]] auto GetCurveType(size_t /*iCurveIndex*/) const -> ImCurveEdit::CurveType override { return m_type; }
+
 	auto GetMin() -> ImVec2& override { return m_min; }
+
 	auto GetMax() -> ImVec2& override { return m_max; }
+
 	auto GetPointCount(size_t /*iCurveIndex*/) -> size_t override { return m_buffer.size(); }
+
 	auto GetCurveColor(size_t /*iCurveIndex*/) -> uint32_t override { return IM_COL32(255, 199, 38, 255); }
+
 	auto GetPoints(size_t /*iCurveIndex*/) -> ImVec2* override { return m_buffer.data(); }
+
 	auto EditPoint(size_t /*iCurveIndex*/, const int iPointIndex, const ImVec2 iValue) -> int override {
 		if (iPointIndex < 0 || static_cast<size_t>(iPointIndex) >= m_buffer.size())
 			return -1;
@@ -42,18 +50,22 @@ public:
 		m_dirty = true;
 		return iPointIndex;
 	}
+
 	void AddPoint(size_t /*iCurveIndex*/, const ImVec2 iValue) override {
 		m_buffer.push_back(iValue);
 		m_dirty = true;
 	}
 
 private:
-	/// @brief Compute a viewing window that contains every keyframe with a small margin.
-	///
-	/// Standard X span (`[0, 1]`) is always included so a normalized-progress curve still
-	/// shows the full range when keys are clustered. Y span auto-fits the actual values
-	/// (with 20% margin or 0.5 absolute, whichever is larger) and always includes `0`,
-	/// so non-zero curves don't push the baseline off-screen.
+	/**
+	 * @brief
+	 *  Compute a viewing window that contains every keyframe with a small margin.
+	 *
+	 * Standard X span (`[0, 1]`) is always included so a normalized-progress curve still
+	 * shows the full range when keys are clustered. Y span auto-fits the actual values
+	 * (with 20% margin or 0.5 absolute, whichever is larger) and always includes `0`,
+	 * so non-zero curves don't push the baseline off-screen.
+	 */
 	void fitRangeToBuffer() {
 		if (m_buffer.empty()) {
 			m_min = {0.f, -1.f};

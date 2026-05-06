@@ -2,7 +2,7 @@
  * @file BackgroundRenderer.h
  * @author Silmaen
  * @date 02/15/26
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,9 +12,9 @@
 #include "math/matrices.h"
 
 namespace owl::renderer {
-
 /**
- * @brief Static renderer for drawing fullscreen background / skybox.
+ * @brief
+ *  Static renderer for drawing fullscreen background / skybox.
  *
  * Background rendering is deferred: drawBackground() stores pending data,
  * and the actual GPU drawing happens during Renderer2D::flush() to share
@@ -23,28 +23,36 @@ namespace owl::renderer {
 class OWL_API BackgroundRenderer {
 public:
 	BackgroundRenderer() = default;
+
 	BackgroundRenderer(const BackgroundRenderer&) = delete;
+
 	BackgroundRenderer(BackgroundRenderer&&) = delete;
+
 	auto operator=(const BackgroundRenderer&) -> BackgroundRenderer& = delete;
+
 	auto operator=(BackgroundRenderer&&) -> BackgroundRenderer& = delete;
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~BackgroundRenderer() = default;
 
 	/**
-	 * @brief Initialize the background renderer.
+	 * @brief
+	 *  Initialize the background renderer.
 	 */
 	static void init();
 
 	/**
-	 * @brief Terminate the background renderer.
+	 * @brief
+	 *  Terminate the background renderer.
 	 */
 	static void shutdown();
 
 	/**
-	 * @brief Data needed to draw the background.
+	 * @brief
+	 *  Data needed to draw the background.
 	 */
 	struct BackgroundData {
 		/// 0=SolidColor, 1=Gradient, 2=Texture, 3=Skybox.
@@ -60,25 +68,29 @@ public:
 	};
 
 	/**
-	 * @brief Store background data for deferred rendering.
+	 * @brief
+	 *  Store background data for deferred rendering.
 	 * @param[in] iData The background data.
 	 */
 	static void drawBackground(const BackgroundData& iData);
 
 	/**
-	 * @brief Check if there is pending background data to draw.
+	 * @brief
+	 *  Check if there is pending background data to draw.
 	 * @return True if drawBackground() was called this frame.
 	 */
 	static auto hasPending() -> bool;
 
 	/**
-	 * @brief Get the pending background texture (for registering in Renderer2D's texture slots).
+	 * @brief
+	 *  Get the pending background texture (for registering in Renderer2D's texture slots).
 	 * @return The texture, or nullptr if not applicable.
 	 */
 	static auto getPendingTexture() -> shared<gpu::Texture2D>;
 
 	/**
-	 * @brief Flush pending background draw commands within an active batch.
+	 * @brief
+	 *  Flush pending background draw commands within an active batch.
 	 * @param[in] iTexIndex The texture slot index assigned by Renderer2D.
 	 *
 	 * Must be called between beginBatch/endBatch (inside Renderer2D::flush).

@@ -2,7 +2,7 @@
  * @file Event.h
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,12 +11,13 @@
 #include "core/Core.h"
 
 /**
- * @brief Namespace for Events
+ * @brief
+ *  Namespace for Events
  */
 namespace owl::event {
-
 /**
- * @brief Type of events.
+ * @brief
+ *  Type of events.
  */
 enum struct Type : uint8_t {
 	None = 0,/// No type.
@@ -44,7 +45,8 @@ enum struct Type : uint8_t {
 };
 
 /**
- * @brief Event categories.
+ * @brief
+ *  Event categories.
  */
 enum Category : uint8_t {
 	None = 0,/// No category.
@@ -56,47 +58,58 @@ enum Category : uint8_t {
 };
 
 /**
- * @brief Abstract Class Event.
+ * @brief
+ *  Abstract Class Event.
  */
 class OWL_API Event {
 public:
 	Event(const Event&) = default;
+
 	Event(Event&&) = default;
+
 	auto operator=(const Event&) -> Event& = default;
+
 	auto operator=(Event&&) -> Event& = default;
+
 	Event() = default;
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	virtual ~Event();
 
 	/**
-	 * @brief Get the Event type.
+	 * @brief
+	 *  Get the Event type.
 	 * @return Event Type.
 	 */
 	[[nodiscard]] virtual auto getType() const -> Type = 0;
 
 	/**
-	 * @brief Get the category flags for the Event.
+	 * @brief
+	 *  Get the category flags for the Event.
 	 * @return All the Event category flags.
 	 */
 	[[nodiscard]] virtual auto getCategoryFlags() const -> uint8_t = 0;
 
 	/**
-	 * @brief Get the Event Name.
+	 * @brief
+	 *  Get the Event Name.
 	 * @return Event names.
 	 */
 	[[nodiscard]] virtual auto getName() const -> std::string = 0;
 
 	/**
-	 * @brief Get the Event Name;
+	 * @brief
+	 *  Get the Event Name;
 	 * @return Event names.
 	 */
 	[[nodiscard]] virtual auto toString() const -> std::string = 0;
 
 	/**
-	 * @brief Check if the event belongs to category.
+	 * @brief
+	 *  Check if the event belongs to category.
 	 * @param[in] iCategory Category to check.
 	 * @return True if belongs to category.
 	 */
@@ -107,20 +120,22 @@ public:
 	/// If event already handled.
 	bool handled = false;
 };
-
 /**
- * @brief Event Dispatcher class.
+ * @brief
+ *  Event Dispatcher class.
  */
 class EventDispatcher {
 public:
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 * @param[in,out] ioDispatchEvent Event to dispatch.
 	 */
 	explicit EventDispatcher(Event& ioDispatchEvent) : m_event(ioDispatchEvent) {}
 
 	/**
-	 * @brief Dispatching function.
+	 * @brief
+	 *  Dispatching function.
 	 * @tparam T EventType.
 	 * @tparam F Function type (will be deduced by the compiler).
 	 * @param[in] iFunc The Function.

@@ -2,7 +2,7 @@
  * @file ProjectSettings.cpp
  * @author Silmaen
  * @date 09/03/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -17,8 +17,11 @@ namespace owl::nest::panel {
 namespace {
 constexpr auto g_popupName = "Project Settings";
 
-/// @brief Render the renderer-stack editor: ordered list of layers with
-/// Type / Name editing and reorder/remove buttons. Mutates `ioStack` in place.
+/**
+ * @brief
+ *  Render the renderer-stack editor: ordered list of layers with
+ * Type / Name editing and reorder/remove buttons. Mutates `ioStack` in place.
+ */
 auto drawRendererStackEditor(renderer::RendererStackConfig& ioStack) -> void {
 	const auto availableTypes = renderer::RenderLayerFactory::registeredTypes();
 	auto& entries = ioStack.entries;

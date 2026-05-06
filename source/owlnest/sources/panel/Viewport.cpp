@@ -2,7 +2,7 @@
  * @file Viewport.cpp
  * @author Silmaen
  * @date 10/16/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -26,12 +26,13 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 #include <imgui_internal.h>
 OWL_DIAG_POP
 
-
 namespace owl::nest::panel {
 
 namespace {
-
-/// @brief Build the ImGui window title: display text + stable `##{uuid}` id.
+/**
+ * @brief
+ *  Build the ImGui window title: display text + stable `##{uuid}` id.
+ */
 auto makeWindowTitle(const SceneDocument& iDoc) -> std::string {
 	const auto base = iDoc.title();
 	return std::format("{}##scene_{:x}", base.empty() ? std::string{"Untitled"} : base,
@@ -170,10 +171,10 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 			break;
 		}
 		case SceneDocument::State::Play: {
-			// UIRect uses Y=0 at bottom; ImGui mouse Y=0 at top → always flip.
+			// UiRect uses Y=0 at bottom; ImGui mouse Y=0 at top → always flip.
 			const math::vec2 vpMouse = {mx, viewportSizeInternal.y() - my};
 			const bool mousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
-			scene::UIInputSystem::update(activeScene.get(), m_framebuffer->getSpecification().size, vpMouse,
+			scene::UiInputSystem::update(activeScene.get(), m_framebuffer->getSpecification().size, vpMouse,
 										 mousePressed);
 			activeScene->onUpdateRuntime(iTimeStep);
 			// Handle quit request from Lua (scene.quit()) → request stop.
@@ -311,9 +312,10 @@ void Viewport::renderOverlay() const {
 	renderer::Renderer2D::endScene();
 }
 
-
 void Viewport::setGuizmoType(const gui::Guizmo::Type& iType) { m_gizmoType = iType; }
+
 auto Viewport::getGuizmoType() const -> gui::Guizmo::Type { return m_gizmoType; }
+
 auto Viewport::getGuizmoTypeI() const -> uint16_t { return static_cast<uint16_t>(m_gizmoType); }
 
 void Viewport::renderGizmo() {

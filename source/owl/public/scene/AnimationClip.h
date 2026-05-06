@@ -15,9 +15,9 @@
 #include <string>
 
 namespace owl::scene {
-
 /**
- * @brief Reusable spritesheet animation asset (`.owlanim`).
+ * @brief
+ *  Reusable spritesheet animation asset (`.owlanim`).
  *
  * An `AnimationClip` carries the data needed to play a frame-by-frame animation off a regular
  * spritesheet grid: the source texture, grid dimensions, frame range, per-frame duration,
@@ -50,14 +50,23 @@ namespace owl::scene {
 class OWL_API AnimationClip final {
 public:
 	AnimationClip() = default;
-	~AnimationClip() = default;
-	AnimationClip(const AnimationClip&) = default;
-	AnimationClip(AnimationClip&&) = default;
-	auto operator=(const AnimationClip&) -> AnimationClip& = default;
-	auto operator=(AnimationClip&&) -> AnimationClip& = default;
 
-	/// @brief File extension used by `.owlanim` assets (with the leading dot).
-	static auto fileExtension() -> const char* { return ".owlanim"; }
+	~AnimationClip() = default;
+
+	AnimationClip(const AnimationClip&) = default;
+
+	AnimationClip(AnimationClip&&) noexcept = default;
+
+	auto operator=(const AnimationClip&) -> AnimationClip& = default;
+
+	auto operator=(AnimationClip&&) noexcept -> AnimationClip& = default;
+
+	/**
+	 * @brief
+	 *  File extension used by `.owlanim` assets (with the leading dot).
+	 * @return The extension literal (`".owlanim"`).
+	 */
+	static auto fileExtension() noexcept -> const char* { return ".owlanim"; }
 
 	/// Spritesheet texture (may be null while the asset is being authored).
 	shared<renderer::gpu::Texture2D> texture;
@@ -77,21 +86,24 @@ public:
 	math::Curve speedCurve;
 
 	/**
-	 * @brief Serialize the clip to a YAML string.
+	 * @brief
+	 *  Serialize the clip to a YAML string.
 	 * @param[in] iName Optional display name written under the `AnimationClip:` key.
 	 * @return The YAML document as a string.
 	 */
 	[[nodiscard]] auto serializeToString(std::string_view iName = "") const -> std::string;
 
 	/**
-	 * @brief Populate the clip from a YAML string (clip is reset on success).
+	 * @brief
+	 *  Populate the clip from a YAML string (clip is reset on success).
 	 * @param[in] iYaml The YAML document.
 	 * @return True on success, false on malformed input (clip left unchanged).
 	 */
 	[[nodiscard]] auto deserializeFromString(std::string_view iYaml) -> bool;
 
 	/**
-	 * @brief Save the clip to a file on disk.
+	 * @brief
+	 *  Save the clip to a file on disk.
 	 * @param[in] iPath Destination file (any extension is allowed; `.owlanim` is conventional).
 	 * @param[in] iName Optional display name.
 	 * @return True on success.
@@ -99,7 +111,8 @@ public:
 	[[nodiscard]] auto saveToFile(const std::filesystem::path& iPath, std::string_view iName = "") const -> bool;
 
 	/**
-	 * @brief Load the clip from a file on disk.
+	 * @brief
+	 *  Load the clip from a file on disk.
 	 * @param[in] iPath Source file.
 	 * @return True on success.
 	 */

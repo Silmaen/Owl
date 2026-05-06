@@ -2,7 +2,7 @@
  * @file MouseCode.h
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -15,9 +15,11 @@ using MouseCode = uint8_t;
 }// namespace owl::input
 
 /**
- * @brief Namespace for mouse codes.
+ * @brief
+ *  Namespace for mouse codes.
  */
 namespace owl::input::mouse {
+
 enum : MouseCode {
 	// From glfw3.h
 	Button0 = 0,

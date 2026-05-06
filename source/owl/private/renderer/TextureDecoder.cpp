@@ -14,7 +14,6 @@
 namespace owl::renderer {
 
 namespace {
-
 auto makeDecodedImage(stbi_uc* iData, int iWidth, int iHeight, int iChannels) -> DecodedImage {
 	DecodedImage out;
 	if (iData == nullptr) {

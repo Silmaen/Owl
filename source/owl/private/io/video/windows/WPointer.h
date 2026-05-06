@@ -8,69 +8,88 @@
 #pragma once
 
 /**
- * @brief Windows-specific functions.
+ * @brief
+ *  Windows-specific functions.
  */
 namespace owl::io::video::windows {
 /**
- * @brief Class for managing a windows pointer.
+ * @brief
+ *  Class for managing a windows pointer.
  *
  * Simple class to handle windows object pointers like a unique_ptr
+ * @tparam Ptr Wrapped Windows pointer type.
  */
 template<class Ptr>
 class WPointer final {
 public:
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 */
 	WPointer() = default;
 
 	/**
-	 * @brief Constructor with a copy.
+	 * @brief
+	 *  Constructor with a copy.
 	 * @param[in] iOther Raw pointer to affect.
 	 * @param[in] iOwn If the WPoint should take the ownership of the memory.
 	 */
 	explicit WPointer(Ptr* iOther, const bool iOwn = false) : m_owner{iOwn}, mp_object{iOther} {}
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~WPointer() {
 		if (m_owner)
+			/**
+			 * @brief
+			 *  Release.
+			 */
 			release();
 	}
 
 	WPointer(const WPointer&) = default;
+
 	WPointer(WPointer&&) = default;
+
 	auto operator=(const WPointer&) -> WPointer& = default;
+
 	auto operator=(WPointer&&) -> WPointer& = default;
 
 	/**
-	 * @brief Overload of the -> operator for using thi object as if it is the pointer.
+	 * @brief
+	 *  Overload of the -> operator for using thi object as if it is the pointer.
 	 * @return The backend pointer.
 	 */
 	auto operator->() -> Ptr* { return mp_object; }
 
 	// NOLINTBEGIN(google-explicit-constructor,hicpp-explicit-conversions)
 	/**
-	 * @brief Explicit type casting to bool.
+	 * @brief
+	 *  Explicit type casting to bool.
 	 * @return True if pointer is non-void.
 	 */
 	operator bool() const { return mp_object != nullptr; }
 	// NOLINTEND(google-explicit-constructor,hicpp-explicit-conversions)
 
 	/**
-	 * @brief Direct access to the pointer.
+	 * @brief
+	 *  Direct access to the pointer.
 	 * @return The raw pointer.
 	 */
 	auto get() -> Ptr* { return mp_object; }
+
 	/**
-	 * @brief Direct access to the address of the pointer.
+	 * @brief
+	 *  Direct access to the address of the pointer.
 	 * @return The address of pointer.
 	 */
 	auto addr() -> Ptr** { return (&mp_object); }
 
 	/**
-	 * @brief Direct access to the address of the pointer with type change.
+	 * @brief
+	 *  Direct access to the address of the pointer with type change.
 	 * @tparam Alias The new type.
 	 * @return The raw pointer with the requested type.
 	 */
@@ -80,7 +99,8 @@ public:
 	}
 
 	/**
-	 * @brief Direct access to the address of the pointer with type change.
+	 * @brief
+	 *  Direct access to the address of the pointer with type change.
 	 * @tparam Alias The new type.
 	 * @return The address of pointer with the requested type.
 	 */
@@ -90,7 +110,8 @@ public:
 	}
 
 	/**
-	 * @brief Request memory release.
+	 * @brief
+	 *  Request memory release.
 	 */
 	void release() {
 		if (mp_object)
@@ -99,36 +120,50 @@ public:
 	}
 
 	/**
-	 * @brief This object takes the memory ownership
+	 * @brief
+	 *  This object takes the memory ownership
 	 */
 	void takeOwnership() { m_owner = true; }
 
-
 	/**
-	 * @brief This object takes the memory ownership
+	 * @brief
+	 *  This object takes the memory ownership
 	 * @param[in] iOther The other object to take ownership from.
 	 */
 	void takeOwnershipFrom(WPointer& iOther) {
 		mp_object = iOther.mp_object;
 		if (iOther.isMemoryOwned()) {
 			iOther.leaveOwnership();
+			/**
+			 * @brief
+			 *  Take ownership.
+			 */
 			takeOwnership();
 		} else {
+			/**
+			 * @brief
+			 *  Leave ownership.
+			 */
 			leaveOwnership();
 		}
 	}
 
 	/**
-	 * @brief This object leave the memory ownership
+	 * @brief
+	 *  This object leave the memory ownership
 	 */
 	void leaveOwnership() { m_owner = false; }
+
 	/**
-	 * @brief Check if the object has memory ownership.
+	 * @brief
+	 *  Check if the object has memory ownership.
 	 * @return True if this object has memory ownership.
 	 */
 	[[nodiscard]] auto isMemoryOwned() const -> bool { return m_owner; }
+
 	/**
-	 * @brief Defines the ownership of this object on backend object.
+	 * @brief
+	 *  Defines the ownership of this object on backend object.
 	 * @param[in] iOwn If the object should be owned.
 	 */
 	void setOwner(const bool iOwn) { m_owner = iOwn; }

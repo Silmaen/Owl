@@ -2,7 +2,7 @@
  * @file DrawData.h
  * @author Silmaen
  * @date 07/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #pragma once
@@ -13,22 +13,30 @@
 
 namespace owl::renderer::gpu::vulkan {
 /**
- * @brief Class representing what is required for a draw.
+ * @brief
+ *  Class representing what is required for a draw.
  */
 class OWL_API DrawData final : public owl::renderer::gpu::DrawData {
 public:
 	DrawData(const DrawData&) = default;
+
 	DrawData(DrawData&&) = default;
+
 	auto operator=(const DrawData&) -> DrawData& = default;
+
 	auto operator=(DrawData&&) -> DrawData& = default;
+
 	DrawData() = default;
+
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~DrawData() override;
 
 	/**
-	 * @brief Initialize the draw data.
+	 * @brief
+	 *  Initialize the draw data.
 	 * @param[in] iLayout Layout of the vertex attributes.
 	 * @param[in] iRenderer Name of the shader's related renderer.
 	 * @param[in] iIndices List of vertex indices.
@@ -38,35 +46,45 @@ public:
 			  const std::string& iShaderName) override;
 
 	/**
-	 * @brief Bind this draw data.
+	 * @brief
+	 *  Bind this draw data.
 	 */
 	void bind() const override;
 
 	/**
-	 * @brief Unbind the draw data.
+	 * @brief
+	 *  Unbind the draw data.
 	 */
 	void unbind() const override;
 
 	/**
-	 * @brief Push Vertices data  to the draw buffer.
+	 * @brief
+	 *  Push Vertices data  to the draw buffer.
 	 * @param[in] iData The raw vertices data
 	 * @param[in] iSize The size of the raw data.
 	 */
 	void setVertexData(const void* iData, uint32_t iSize) override;
 
 	/**
-	 * @brief Get the number of vertex to draw.
+	 * @brief
+	 *  Get the number of vertex to draw.
 	 * @return Number of vertex to draw
 	 */
 	[[nodiscard]] auto getIndexCount() const -> uint32_t override;
 
 	/**
-	 * @brief Define the shader for this object.
+	 * @brief
+	 *  Define the shader for this object.
 	 * @param[in] iShaderName The shader name.
 	 * @param[in] iRenderer Name of the shader's related renderer.
 	 */
 	void setShader(const std::string& iShaderName, const std::string& iRenderer) override;
 
+	/**
+	 * @brief
+	 *  Get the name.
+	 * @return The name.
+	 */
 	[[nodiscard]] auto getName() const -> std::string { return std::format("{}_{}", m_renderer, m_shaderName); }
 
 private:

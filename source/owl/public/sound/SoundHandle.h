@@ -12,14 +12,14 @@
 #include "math/vectors.h"
 
 namespace owl::sound {
-
 /// Opaque handle to an active sound source.
 using SoundHandle = uint64_t;
 /// Invalid handle sentinel.
 constexpr SoundHandle invalidSoundHandle = 0;
 
 /**
- * @brief Parameters for playing a sound.
+ * @brief
+ *  Parameters for playing a sound.
  */
 struct OWL_API PlayParams {
 	/// Gain [0..∞), default 1.0.

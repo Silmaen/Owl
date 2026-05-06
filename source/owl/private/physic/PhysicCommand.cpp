@@ -2,7 +2,7 @@
  * @file PhysicCommand.cpp
  * @author Silmaen
  * @date 12/27/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -15,20 +15,46 @@
 
 namespace owl::physic {
 
+namespace {
+
+/**
+ * @brief
+ *  Emit a uniform "called before init" warning for a Physic API call.
+ * @param[in] iFunc Calling function name (used as the log subject).
+ */
+inline void logNotInitialized(const char* iFunc) {
+	OWL_CORE_WARN("Physic: {} called before initialisation; ignoring.", iFunc)
+}
+
+/**
+ * @brief
+ *  Emit a uniform "null entity" warning for a Physic API call.
+ * @param[in] iFunc Calling function name (used as the log subject).
+ */
+inline void logNullEntity(const char* iFunc) {
+	OWL_CORE_WARN("Physic: {} called with null entity; ignoring.", iFunc)
+}
+
+}// namespace
+
 class PhysicCommand::Impl {
 public:
 	Impl() = default;
+
 	~Impl() = default;
+
 	Impl(const Impl&) = delete;
+
 	auto operator=(const Impl&) -> Impl& = delete;
+
 	Impl(Impl&&) = delete;
+
 	auto operator=(Impl&&) -> Impl& = delete;
 
 	b2WorldId worldId{0, 0};
 	uint64_t nextId = 1;
 	std::unordered_map<uint64_t, b2BodyId> bodies;
 };
-
 shared<PhysicCommand::Impl> PhysicCommand::m_impl = nullptr;
 scene::Scene* PhysicCommand::m_scene = nullptr;
 
@@ -36,7 +62,7 @@ PhysicCommand::PhysicCommand() = default;
 
 void PhysicCommand::init(scene::Scene* iScene) {
 	if (iScene == nullptr) {
-		OWL_CORE_WARN("PhysicCommand::init(): Scene is null")
+		OWL_CORE_ERROR("Physic: init() called with null scene; physics not initialised.")
 		return;
 	}
 	if (isInitialized())
@@ -46,6 +72,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 	b2WorldDef def = b2DefaultWorldDef();
 	def.gravity = {.x = 0.0f, .y = -9.81f};
 	m_impl->worldId = b2CreateWorld(&def);
+
 	OWL_INFO("PhysicCommand::init(), world created ({} {})", m_impl->worldId.index1, m_impl->worldId.generation)
 
 	// Add entities...
@@ -115,7 +142,6 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		const b2BodyId tileBody = b2CreateBody(m_impl->worldId, &bodyDef);
 		m_impl->bodies[m_impl->nextId] = tileBody;
 		m_impl->nextId++;
-
 		const float cellSize = tilemap.cellSize;
 		const float originX = -static_cast<float>(tilemap.width - 1) * 0.5f * cellSize;
 		const float originY = static_cast<float>(tilemap.height - 1) * 0.5f * cellSize;
@@ -136,6 +162,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 					const float cx = (originX + static_cast<float>(x) * cellSize) * worldTransform.scale().x();
 					const float cy = (originY - static_cast<float>(y) * cellSize) * worldTransform.scale().y();
 					const b2Polygon cellBox = b2MakeOffsetBox(halfX, halfY, b2Vec2{.x = cx, .y = cy}, b2MakeRot(0.f));
+
 					b2CreatePolygonShape(tileBody, &shapeDef, &cellBox);
 				}
 			}
@@ -155,7 +182,7 @@ auto PhysicCommand::isInitialized() -> bool { return m_scene != nullptr; }
 
 void PhysicCommand::frame(const core::Timestep& iTimestep) {
 	if (!isInitialized()) {
-		OWL_CORE_WARN("PhysicCommand::frame(), Physic engine not initialized")
+		logNotInitialized("frame");
 		return;
 	}
 	// Update the physical world
@@ -193,12 +220,12 @@ void PhysicCommand::frame(const core::Timestep& iTimestep) {
 
 void PhysicCommand::impulse(const scene::Entity& iEntity, const math::vec2f& iImpulse) {
 	if (!isInitialized()) {
-		OWL_CORE_WARN("PhysicCommand::impulse(), Physic engine not initialized.")
+		logNotInitialized("impulse");
 		return;
 	}
 	if (!iEntity) {
 		// Void entity !!
-		OWL_CORE_WARN("PhysicCommand::impulse(), entity is null.")
+		logNullEntity("impulse");
 		return;
 	}
 	if (!iEntity.hasComponent<scene::component::PhysicBody>())
@@ -211,12 +238,12 @@ void PhysicCommand::impulse(const scene::Entity& iEntity, const math::vec2f& iIm
 
 auto PhysicCommand::getVelocity(const scene::Entity& iEntity) -> math::vec2f {
 	if (!isInitialized()) {
-		OWL_CORE_WARN("PhysicCommand::getVelocity(), Physic Engine not initialized.")
+		logNotInitialized("getVelocity");
 		return {0.0f, 0.0f};
 	}
 	if (!iEntity) {
 		// Void entity !!
-		OWL_CORE_WARN("PhysicCommand::getVelocity(), entity is null.")
+		logNullEntity("getVelocity");
 		return {0.0f, 0.0f};
 	}
 	if (!iEntity.hasComponent<scene::component::PhysicBody>())
@@ -230,11 +257,11 @@ auto PhysicCommand::getVelocity(const scene::Entity& iEntity) -> math::vec2f {
 
 void PhysicCommand::setTransform(const scene::Entity& iEntity, const math::vec2f& iPosition, const float iRotation) {
 	if (!isInitialized()) {
-		OWL_CORE_WARN("PhysicCommand::setTransform(), Physic engine not initialized.")
+		logNotInitialized("setTransform");
 		return;
 	}
 	if (!iEntity) {
-		OWL_CORE_WARN("PhysicCommand::setTransform(), entity is null.")
+		logNullEntity("setTransform");
 		return;
 	}
 	if (!iEntity.hasComponent<scene::component::PhysicBody>())
@@ -245,11 +272,11 @@ void PhysicCommand::setTransform(const scene::Entity& iEntity, const math::vec2f
 
 void PhysicCommand::setVelocity(const scene::Entity& iEntity, const math::vec2f& iVelocity) {
 	if (!isInitialized()) {
-		OWL_CORE_WARN("PhysicCommand::setVelocity(), Physic engine not initialized.")
+		logNotInitialized("setVelocity");
 		return;
 	}
 	if (!iEntity) {
-		OWL_CORE_WARN("PhysicCommand::setVelocity(), entity is null.")
+		logNullEntity("setVelocity");
 		return;
 	}
 	if (!iEntity.hasComponent<scene::component::PhysicBody>())
@@ -262,11 +289,11 @@ void PhysicCommand::setVelocity(const scene::Entity& iEntity, const math::vec2f&
 
 void PhysicCommand::setGravityScale(const scene::Entity& iEntity, const float iScale) {
 	if (!isInitialized()) {
-		OWL_CORE_WARN("PhysicCommand::setGravityScale(), Physic engine not initialized.")
+		logNotInitialized("setGravityScale");
 		return;
 	}
 	if (!iEntity) {
-		OWL_CORE_WARN("PhysicCommand::setGravityScale(), entity is null.")
+		logNullEntity("setGravityScale");
 		return;
 	}
 	if (!iEntity.hasComponent<scene::component::PhysicBody>())

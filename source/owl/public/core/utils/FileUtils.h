@@ -10,9 +10,9 @@
 #include <filesystem>
 
 namespace owl::core::utils {
-
 /**
- * @brief Reads a text file and return its content as a string.
+ * @brief
+ *  Reads a text file and return its content as a string.
  * @param[in] iFile The file to read.
  * @return The content of the file.
  */

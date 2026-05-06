@@ -2,7 +2,7 @@
  * @file utils.h
  * @author Silmaen
  * @date 06/02/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,6 +11,13 @@
 #include <vulkan/vulkan.h>
 
 namespace owl::renderer::gpu::vulkan::internal {
+
+/**
+ * @brief
+ *  Convert a `VkResult` into its identifier as a string (for logs and assertions).
+ * @param[in] iResult The Vulkan result code.
+ * @return The matching `VK_*` identifier, or `"VK_RESULT_unknown"` for unknown codes.
+ */
 static constexpr auto resultString(const VkResult iResult) -> std::string_view {
 	switch (iResult) {
 		case VK_SUCCESS:
@@ -119,32 +126,123 @@ static constexpr auto resultString(const VkResult iResult) -> std::string_view {
 	return "VK_RESULT_unknown";
 }
 
+/**
+ * @brief
+ *  Translate an engine attachment format to its Vulkan counterpart.
+ * @param[in] iFormat The image/buffer format.
+ * @return The Vulkan format.
+ */
 auto attachmentFormatToVulkan(const AttachmentSpecification::Format& iFormat) -> VkFormat;
 
+/**
+ * @brief
+ *  Get the Vulkan image-aspect flags suited to the given attachment format.
+ * @param[in] iFormat The image/buffer format.
+ * @return The aspect flags (color/depth/stencil).
+ */
 auto attachmentFormatToAspect(const AttachmentSpecification::Format& iFormat) -> VkImageAspectFlags;
 
+/**
+ * @brief
+ *  Get the per-pixel byte size of the given attachment format.
+ * @param[in] iFormat The image/buffer format.
+ * @return Size in bytes.
+ */
 auto attachmentFormatToSize(const AttachmentSpecification::Format& iFormat) -> uint32_t;
 
+/**
+ * @brief
+ *  Translate an engine attachment tiling mode to the Vulkan counterpart.
+ * @param[in] iTiling The engine tiling enum.
+ * @return The Vulkan tiling mode.
+ */
 auto attachmentTilingToVulkan(const AttachmentSpecification::Tiling& iTiling) -> VkImageTiling;
 
+/**
+ * @brief
+ *  Copy `iSize` bytes between two device buffers using a transient command buffer.
+ * @param[in] iSrcBuffer Source buffer.
+ * @param[in] iDstBuffer Destination buffer.
+ * @param[in] iSize Number of bytes to copy.
+ */
 void copyBuffer(const VkBuffer& iSrcBuffer, const VkBuffer& iDstBuffer, VkDeviceSize iSize);
 
+/**
+ * @brief
+ *  Allocate a Vulkan buffer with the requested usage and memory properties.
+ * @param[in] iSize Buffer size in bytes.
+ * @param[in] iUsage Buffer usage flags.
+ * @param[in] iProperties Required memory property flags (host-visible, device-local, ...).
+ * @param[out] iBuffer Out: created buffer handle.
+ * @param[out] iBufferMemory Out: bound memory allocation handle.
+ */
 void createBuffer(VkDeviceSize iSize, VkBufferUsageFlags iUsage, VkMemoryPropertyFlags iProperties, VkBuffer& iBuffer,
 				  VkDeviceMemory& iBufferMemory);
 
+/**
+ * @brief
+ *  Free buffer.
+ * @param[in] iDevice The Vulkan device handle.
+ * @param[in] iBuffer The buffer.
+ * @param[in] iBufferMemory The buffer memory handle.
+ */
 void freeBuffer(const VkDevice& iDevice, const VkBuffer& iBuffer, const VkDeviceMemory& iBufferMemory);
 
+/**
+ * @brief
+ *  Transition image layout.
+ * @param[in] iImage The image handle.
+ * @param[in] iOldLayout Previous image layout.
+ * @param[in] iNewLayout New image layout to transition to.
+ */
 void transitionImageLayout(const VkImage& iImage, VkImageLayout iOldLayout, VkImageLayout iNewLayout);
+
+/**
+ * @brief
+ *  Transition image layout.
+ * @param[in] iCmd The command buffer.
+ * @param[in] iImage The image handle.
+ * @param[in] iOldLayout Previous image layout.
+ * @param[in] iNewLayout New image layout to transition to.
+ */
 void transitionImageLayout(const VkCommandBuffer& iCmd, const VkImage& iImage, VkImageLayout iOldLayout,
 						   VkImageLayout iNewLayout);
 
+/**
+ * @brief
+ *  Copy buffer to image.
+ * @param[in] iBuffer The buffer.
+ * @param[in] iImage The image handle.
+ * @param[in] iSize Target size.
+ * @param[in] iOffset Offset in elements/bytes.
+ */
 void copyBufferToImage(const VkBuffer& iBuffer, const VkImage& iImage, const math::vec2ui& iSize,
 					   const math::vec2i& iOffset = {0, 0});
 
+/**
+ * @brief
+ *  Copy image to buffer.
+ * @param[in] iImage The image handle.
+ * @param[in] iBuffer The buffer.
+ * @param[in] iSize Target size.
+ * @param[in] iOffset Offset in elements/bytes.
+ */
 void copyImageToBuffer(const VkImage& iImage, const VkBuffer& iBuffer, const math::vec2ui& iSize,
 					   const math::vec2i& iOffset = {0, 0});
 
+/**
+ * @brief
+ *  Convert a 2D unsigned size into a Vulkan `VkExtent2D`.
+ * @param[in] iSize Width / height in pixels.
+ * @return The matching `VkExtent2D`.
+ */
 static constexpr auto toExtent(const math::vec2ui& iSize) -> VkExtent2D { return {iSize.x(), iSize.y()}; }
 
+/**
+ * @brief
+ *  Convert a Vulkan `VkExtent2D` to a 2D unsigned size.
+ * @param[in] iSize The Vulkan extent.
+ * @return Width / height as `math::vec2ui`.
+ */
 static constexpr auto toSize(const VkExtent2D& iSize) -> math::vec2ui { return {iSize.width, iSize.height}; }
 }// namespace owl::renderer::gpu::vulkan::internal

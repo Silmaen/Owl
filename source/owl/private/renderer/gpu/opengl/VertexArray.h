@@ -2,7 +2,7 @@
  * @file VertexArray.h
  * @author Silmaen
  * @date 08/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,14 +12,23 @@
 
 namespace owl::renderer::gpu::opengl {
 /**
- * @brief Class for OpenGL vertex array.
+ * @brief
+ *  Class for OpenGL vertex array.
  */
 class VertexArray {
 public:
+	/**
+	 * @brief
+	 *  Default constructor.
+	 */
 	VertexArray();
+
 	VertexArray(const VertexArray&) = default;
+
 	VertexArray(VertexArray&&) = default;
+
 	auto operator=(const VertexArray&) -> VertexArray& = default;
+
 	auto operator=(VertexArray&&) -> VertexArray& = default;
 
 	using VertexBuf = shared<VertexBuffer>;
@@ -27,39 +36,47 @@ public:
 	using IndexBuf = shared<IndexBuffer>;
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~VertexArray();
 
 	/**
-	 * @brief Activate the buffer in the GPU.
+	 * @brief
+	 *  Activate the buffer in the GPU.
 	 */
 	void bind() const;
+
 	/**
-	 * @brief Deactivate the buffer in the GPU.
+	 * @brief
+	 *  Deactivate the buffer in the GPU.
 	 */
 	static void unbind();
 
 	/**
-	 * @brief Append a vertex buffer to the list.
+	 * @brief
+	 *  Append a vertex buffer to the list.
 	 * @param[in] iVertexBuffer Vertex buffer to add.
 	 */
 	void addVertexBuffer(const VertexBuf& iVertexBuffer);
 
 	/**
-	 * @brief Define the Index buffer.
+	 * @brief
+	 *  Define the Index buffer.
 	 * @param[in] iIndexBuffer New Index Buffer.
 	 */
 	void setIndexBuffer(const IndexBuf& iIndexBuffer);
 
 	/**
-	 * @brief Access to vertex buffers.
+	 * @brief
+	 *  Access to vertex buffers.
 	 * @return Vertex buffers.
 	 */
 	[[nodiscard]] auto getVertexBuffers() const -> const VertexBuffers& { return m_vertexBuffers; }
 
 	/**
-	 * @brief Access to index buffer.
+	 * @brief
+	 *  Access to index buffer.
 	 * @return Index buffer.
 	 */
 	[[nodiscard]] auto getIndexBuffer() const -> const IndexBuf& { return m_indexBuffer; }

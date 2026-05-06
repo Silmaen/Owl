@@ -2,7 +2,7 @@
  * @file FontLibrary.cpp
  * @author Silmaen
  * @date 10/21/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -15,7 +15,6 @@
 namespace owl::data::fonts {
 
 namespace {
-
 auto getFontPath() -> std::list<std::filesystem::path> {
 	if (!core::Application::instanced())
 		return {};

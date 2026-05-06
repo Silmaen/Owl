@@ -2,7 +2,7 @@
  * @file Window.cpp
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,12 +13,14 @@
 #include "debug/Profiler.h"
 
 namespace owl::window::null {
+
 namespace {
 uint8_t s_winCount = 0;
 }// namespace
 
 Window::Window(const Properties& iProps) {
 	OWL_PROFILE_FUNCTION()
+
 	init(iProps);
 }
 
@@ -30,6 +32,7 @@ Window::~Window() {
 
 void Window::init(const Properties& iProps) {
 	OWL_PROFILE_FUNCTION()
+
 	m_windowData.title = iProps.title;
 	m_windowData.size = {iProps.width, iProps.height};
 
@@ -40,14 +43,15 @@ void Window::init(const Properties& iProps) {
 
 void Window::shutdown() {
 	OWL_PROFILE_FUNCTION()
+
 	--s_winCount;
 }
-
 
 void Window::onUpdate() { OWL_PROFILE_FUNCTION() }
 
 void Window::setVSync(bool iEnabled) {
 	OWL_PROFILE_FUNCTION()
+
 	m_windowData.vSync = iEnabled;
 }
 

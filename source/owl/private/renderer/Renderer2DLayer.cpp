@@ -2,7 +2,7 @@
  * @file Renderer2DLayer.cpp
  * @author Silmaen
  * @date 30/04/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -18,7 +18,6 @@
 namespace owl::renderer {
 
 namespace {
-
 auto parseSpace(const std::string& iValue) -> Renderer2DLayer::Space {
 	std::string lower = iValue;
 	std::ranges::transform(lower, lower.begin(),

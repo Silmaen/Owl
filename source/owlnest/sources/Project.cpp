@@ -2,7 +2,7 @@
  * @file Project.cpp
  * @author Silmaen
  * @date 09/03/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 

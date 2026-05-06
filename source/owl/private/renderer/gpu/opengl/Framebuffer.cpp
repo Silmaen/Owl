@@ -2,7 +2,7 @@
  * @file Framebuffer.cpp
  * @author Silmaen
  * @date 21/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -16,7 +16,6 @@
 namespace owl::renderer::gpu::opengl {
 
 namespace {
-
 constexpr uint32_t g_maxFramebufferSize = 8192;
 
 }// namespace
@@ -107,6 +106,7 @@ Framebuffer::Framebuffer(FramebufferSpecification iSpec) : m_specs{std::move(iSp
 		else
 			m_depthAttachmentSpecification = spec;
 	}
+
 	invalidate();
 }
 
@@ -117,7 +117,6 @@ Framebuffer::~Framebuffer() {
 }
 
 void Framebuffer::invalidate() {
-
 	if (m_rendererId > 0) {
 		glDeleteFramebuffers(1, &m_rendererId);
 		glDeleteTextures(static_cast<GLsizei>(m_colorAttachments.size()), m_colorAttachments.data());

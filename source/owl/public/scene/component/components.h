@@ -2,7 +2,7 @@
  * @file components.h
  * @author Silmaen
  * @date 10/24/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -30,19 +30,19 @@
 #include "Tilemap.h"
 #include "Transform.h"
 #include "Trigger.h"
-#include "UIButton.h"
-#include "UIImage.h"
-#include "UIPanel.h"
-#include "UIProgressBar.h"
-#include "UIRect.h"
-#include "UISlider.h"
-#include "UIText.h"
+#include "UiButton.h"
+#include "UiImage.h"
+#include "UiPanel.h"
+#include "UiProgressBar.h"
+#include "UiRect.h"
+#include "UiSlider.h"
+#include "UiText.h"
 #include "Visibility.h"
 
 namespace owl::scene::component {
-
 /**
- * @brief Concept that type is a component.
+ * @brief
+ *  Concept that type is a component.
  */
 template<typename Component>
 concept isComponent = std::is_same_v<Component, AnimatedSpriteRenderer> ||
@@ -57,13 +57,14 @@ concept isComponent = std::is_same_v<Component, AnimatedSpriteRenderer> ||
 					  std::is_same_v<Component, Tag> || std::is_same_v<Component, Text> ||
 					  std::is_same_v<Component, Tilemap> || std::is_same_v<Component, Transform> ||
 					  std::is_same_v<Component, Trigger> ||
-					  std::is_same_v<Component, UIButton> || std::is_same_v<Component, UIImage> ||
-					  std::is_same_v<Component, UIPanel> || std::is_same_v<Component, UIProgressBar> ||
-					  std::is_same_v<Component, UIRect> || std::is_same_v<Component, UISlider> ||
-					  std::is_same_v<Component, UIText> || std::is_same_v<Component, Visibility>;
+					  std::is_same_v<Component, UiButton> || std::is_same_v<Component, UiImage> ||
+					  std::is_same_v<Component, UiPanel> || std::is_same_v<Component, UiProgressBar> ||
+					  std::is_same_v<Component, UiRect> || std::is_same_v<Component, UiSlider> ||
+					  std::is_same_v<Component, UiText> || std::is_same_v<Component, Visibility>;
 
 /**
- * @brief Concept that type has a name() method.
+ * @brief
+ *  Concept that type has a name() method.
  */
 template<typename Component>
 concept isNamedComponent = isComponent<Component> && requires {
@@ -71,7 +72,8 @@ concept isNamedComponent = isComponent<Component> && requires {
 };
 
 /**
- * @brief Concept that type is serializable.
+ * @brief
+ *  Concept that type is serializable.
  */
 template<typename Component>
 concept isSerializableComponent =
@@ -81,7 +83,8 @@ concept isSerializableComponent =
 		};
 
 /**
- * @brief Concept that type is deserializable.
+ * @brief
+ *  Concept that type is deserializable.
  */
 template<typename Component>
 concept isDeserializableComponent =
@@ -91,32 +94,35 @@ concept isDeserializableComponent =
 		};
 
 /**
- * @brief List of copiable components.
+ * @brief
+ *  List of copiable components.
  * @note All except ID and Tag.
  */
 using CopiableComponents =
 		std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap,
 				   PhysicBody, Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy, SoundSource,
-				   SoundListener, LuaScript, PrefabLink, RendererTag, UIButton, UIImage, UIPanel, UIProgressBar, UIRect,
-				   UISlider, UIText>;
+				   SoundListener, LuaScript, PrefabLink, RendererTag, UiButton, UiImage, UiPanel, UiProgressBar, UiRect,
+				   UiSlider, UiText>;
 
 /**
- * @brief List all serializable components.
+ * @brief
+ *  List all serializable components.
  * @note All except ID which is serialized directly in the entity.
  */
 using SerializableComponents =
 		std::tuple<Tag, Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap,
 				   PhysicBody, Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy, SoundSource,
-				   SoundListener, LuaScript, PrefabLink, RendererTag, UIButton, UIImage, UIPanel, UIProgressBar, UIRect,
-				   UISlider, UIText>;
+				   SoundListener, LuaScript, PrefabLink, RendererTag, UiButton, UiImage, UiPanel, UiProgressBar, UiRect,
+				   UiSlider, UiText>;
 
 /**
- * @brief List all optional components.
+ * @brief
+ *  List all optional components.
  * @note All except ID, Tag & Transform that are mandatory.
  */
 using OptionalComponents =
 		std::tuple<Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap, PhysicBody,
 				   Player, Trigger, EntityLink, BackgroundTexture, SoundSource, SoundListener, LuaScript, PrefabLink,
-				   RendererTag, UIButton, UIImage, UIPanel, UIProgressBar, UIRect, UISlider, UIText>;
+				   RendererTag, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
 
 }// namespace owl::scene::component

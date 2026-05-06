@@ -11,9 +11,9 @@
 struct lua_State;
 
 namespace owl::script {
-
 /**
- * @brief Register all engine API bindings into a Lua state.
+ * @brief
+ *  Register all engine API bindings into a Lua state.
  *
  * Creates the following Lua tables: entity, transform, physics, input, sound, scene, time, log.
  *

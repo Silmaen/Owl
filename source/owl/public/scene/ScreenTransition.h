@@ -15,9 +15,9 @@
 #include <string>
 
 namespace owl::scene {
-
 /**
- * @brief Screen-space transition effects (fade + wipes) and orchestrated
+ * @brief
+ *  Screen-space transition effects (fade + wipes) and orchestrated
  * scene-to-scene handoffs.
  *
  * Acts as both:
@@ -46,7 +46,8 @@ public:
 	ScreenTransition() = delete;
 
 	/**
-	 * @brief Transition kind shared between the primitive overlay and the
+	 * @brief
+	 *  Transition kind shared between the primitive overlay and the
 	 * scene-load orchestrator's out / in animations.
 	 *
 	 * `Fade*` cross-fade the configured colour with the underlying scene.
@@ -65,7 +66,8 @@ public:
 	};
 
 	/**
-	 * @brief Phase of the scene-load orchestrator.
+	 * @brief
+	 *  Phase of the scene-load orchestrator.
 	 *
 	 * `Idle` — no request active; nothing to render.
 	 * `OutAnim` — playing the configured out animation; original scene
@@ -82,7 +84,8 @@ public:
 	};
 
 	/**
-	 * @brief Request describing a chained out-anim → load → in-anim flow.
+	 * @brief
+	 *  Request describing a chained out-anim → load → in-anim flow.
 	 */
 	struct SceneLoadRequest {
 		/// Target scene path (engine-resolved through asset directories).
@@ -104,7 +107,8 @@ public:
 	};
 
 	/**
-	 * @brief Start a primitive overlay with an explicit colour (no scene load).
+	 * @brief
+	 *  Start a primitive overlay with an explicit colour (no scene load).
 	 * @param[in] iType The overlay kind.
 	 * @param[in] iDuration Duration in seconds (clamped above 1ms so renders
 	 * never divide by zero).
@@ -114,14 +118,16 @@ public:
 	static void play(Type iType, float iDuration, const math::vec4& iColor);
 
 	/**
-	 * @brief Start a primitive overlay with the default opaque-black colour.
+	 * @brief
+	 *  Start a primitive overlay with the default opaque-black colour.
 	 * @param[in] iType Overlay kind.
 	 * @param[in] iDuration Duration in seconds.
 	 */
 	static void start(Type iType, float iDuration);
 
 	/**
-	 * @brief Start a chained out-anim → load → in-anim flow.
+	 * @brief
+	 *  Start a chained out-anim → load → in-anim flow.
 	 *
 	 * Phase becomes `OutAnim` immediately; once the out-anim completes the
 	 * orchestrator transitions to `Loading`, at which point
@@ -133,24 +139,33 @@ public:
 	static void requestSceneLoad(const SceneLoadRequest& iRequest);
 
 	/**
-	 * @brief Advance the active overlay / orchestrator (call once per frame).
+	 * @brief
+	 *  Advance the active overlay / orchestrator (call once per frame).
 	 * @param[in] iDeltaTime Frame delta time in seconds.
 	 */
 	static void update(float iDeltaTime);
 
 	/**
-	 * @brief Render whatever the current state needs (overlay, loading
+	 * @brief
+	 *  Render whatever the current state needs (overlay, loading
 	 * screen, …). Safe to call when idle (no draw issued).
 	 * @param[in] iViewportWidth Viewport width in pixels.
 	 * @param[in] iViewportHeight Viewport height in pixels.
 	 */
 	static void render(float iViewportWidth, float iViewportHeight);
 
-	/// @brief Whether any overlay or orchestrator phase is rendering this frame.
+	/**
+	 * @brief
+	 *  Check if a transition is currently active.
+	 * @return True when a transition is in progress.
+	 */
 	[[nodiscard]] static auto isActive() -> bool;
 
-	/// @brief Animation progress in `[0, 1]` for the *current* phase only;
-	/// returns `1` while idle.
+	/**
+	 * @brief
+	 *  Get the current transition progress (0..1).
+	 * @return Progress in `[0, 1]`; 0 when no transition is active.
+	 */
 	[[nodiscard]] static auto getProgress() -> float;
 
 	/// @brief Active overlay kind — only meaningful while `OutAnim` /
@@ -165,7 +180,8 @@ public:
 	[[nodiscard]] static auto getPhase() -> Phase;
 
 	/**
-	 * @brief Pop the pending scene-load path the host is expected to swap to.
+	 * @brief
+	 *  Pop the pending scene-load path the host is expected to swap to.
 	 *
 	 * Returns the configured path exactly once after the out-anim completes.
 	 * Subsequent calls during the same orchestrator run return `nullopt`.

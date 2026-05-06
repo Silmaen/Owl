@@ -2,7 +2,7 @@
  * @file Renderer2D.cpp
  * @author Silmaen
  * @date 18/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -31,7 +31,8 @@ uint32_t g_MaxTextureSlots = 0;
 }// namespace
 
 /**
- * @brief Structure holding quad vertex information.
+ * @brief
+ *  Structure holding quad vertex information.
  */
 struct QuadVertex {
 	math::vec3 position;
@@ -43,7 +44,8 @@ struct QuadVertex {
 };
 
 /**
- * @brief Structure holding circle vertex information.
+ * @brief
+ *  Structure holding circle vertex information.
  */
 struct CircleVertex {
 	math::vec3 worldPosition;
@@ -55,7 +57,8 @@ struct CircleVertex {
 };
 
 /**
- * @brief Structure holding line vertex information.
+ * @brief
+ *  Structure holding line vertex information.
  */
 struct LineVertex {
 	math::vec3 position;
@@ -64,7 +67,8 @@ struct LineVertex {
 };
 
 /**
- * @brief Structure holding text vertex information.
+ * @brief
+ *  Structure holding text vertex information.
  */
 struct TextVertex {
 	math::vec3 position;
@@ -76,7 +80,8 @@ struct TextVertex {
 };
 
 /**
- * @brief Base structure for rendering an object type
+ * @brief
+ *  Base structure for rendering an object type
  */
 template<typename VertexType>
 struct VertexData {
@@ -94,7 +99,8 @@ void resetDrawData(VertexData<VertexType>& iData) {
 }// namespace
 
 /**
- * @brief Structure holding static internal g_data
+ * @brief
+ *  Structure holding static internal g_data
  */
 struct InternalData {
 	/// Camera Data
@@ -120,22 +126,22 @@ struct InternalData {
 	// Textures Data
 	/// One white texture for colouring
 	shared<gpu::Texture2D> whiteTexture;
-
 	shared<gpu::UniformBuffer> cameraUniformBuffer;
 	/// Array of textures
 	std::vector<shared<gpu::Texture2D>> textureSlots;
 	/// next texture index
 	uint32_t textureSlotIndex = 1;// 0 = white texture
 };
-
 }// namespace utils
-
 namespace {
 shared<utils::InternalData> g_Data;
 
-/// Convert a UTF-8 byte sequence into Latin-1 (ISO 8859-1) so it can be indexed into the
-/// MSDF atlas, which carries glyphs for codepoints 0x20-0xFF. Codepoints beyond U+00FF are
-/// replaced with `?`. ASCII bytes pass through unchanged.
+/**
+ * @brief
+ *  Convert a UTF-8 byte sequence into Latin-1 (ISO 8859-1) so it can be indexed into the
+ * MSDF atlas, which carries glyphs for codepoints 0x20-0xFF. Codepoints beyond U+00FF are
+ * replaced with `?`. ASCII bytes pass through unchanged.
+ */
 auto utf8ToLatin1(const std::string& iText) -> std::string {
 	std::string out;
 	out.reserve(iText.size());
@@ -186,11 +192,9 @@ void Renderer2D::init() {
 			quadIndices[i + 0] = offset + 0;
 			quadIndices[i + 1] = offset + 1;
 			quadIndices[i + 2] = offset + 2;
-
 			quadIndices[i + 3] = offset + 2;
 			quadIndices[i + 4] = offset + 3;
 			quadIndices[i + 5] = offset + 0;
-
 			offset += 4;
 		}
 	}
@@ -238,12 +242,10 @@ void Renderer2D::init() {
 					{"i_EntityID", gpu::ShaderDataType::Int},
 			},
 			"renderer2D", quadIndices, "text");
-
 	g_Data->whiteTexture =
 			gpu::Texture2D::create(gpu::Texture2D::Specification{.size = {1, 1}, .format = gpu::ImageFormat::Rgba8});
 	uint32_t whiteTextureData = 0xffffffff;
 	g_Data->whiteTexture->setData(&whiteTextureData, sizeof(uint32_t));
-
 
 	// Set all texture slots to 0
 	utils::g_MaxTextureSlots = gpu::RenderCommand::getMaxTextureSlots();
@@ -423,6 +425,7 @@ void Renderer2D::drawCircle(const CircleData& iCircleData) {
 
 void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 	OWL_PROFILE_FUNCTION()
+
 	if (g_Data->quad.indexCount >= utils::g_maxIndices)
 		nextBatch();
 	float textureIndex = 0.0f;
@@ -464,7 +467,6 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	// MSDF atlas indexes by Latin-1 codepoint; convert UTF-8 source text once up front so the
 	// per-glyph loop can keep iterating bytes.
 	const std::string text = utf8ToLatin1(iStringData.text);
-
 	// Manage texture
 	const shared<gpu::Texture2D> fontAtlas = iStringData.font->getAtlasTexture();
 	float textureIndex = 0.0f;
@@ -476,6 +478,7 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	}
 	if (textureIndex == 0.0f) {
 		if (g_Data->textureSlotIndex >= utils::g_MaxTextureSlots)
+
 			nextBatch();
 		textureIndex = static_cast<float>(g_Data->textureSlotIndex);
 		g_Data->textureSlots[g_Data->textureSlotIndex] = fontAtlas;

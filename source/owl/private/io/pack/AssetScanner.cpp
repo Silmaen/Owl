@@ -22,7 +22,6 @@ OWL_DIAG_POP
 namespace owl::io::pack {
 
 namespace {
-
 auto makeRelativePath(const std::filesystem::path& iAbsolute) -> std::string {
 	if (!core::Application::instanced())
 		return iAbsolute.filename().string();
@@ -38,7 +37,10 @@ auto hasAsset(const std::vector<AssetReference>& iAssets, const std::string& iPa
 	return std::ranges::any_of(iAssets, [&iPackPath](const auto& ref) -> auto { return ref.packPath == iPackPath; });
 }
 
-/// Add a warning for an unresolvable reference. Skips if warnings are not being collected.
+/**
+ * @brief
+ *  Add a warning for an unresolvable reference. Skips if warnings are not being collected.
+ */
 void pushWarning(std::vector<std::string>* ioWarnings, const std::string& iKind, const std::string& iName,
 				 const std::string& iSource) {
 	if (ioWarnings != nullptr && !iName.empty())
@@ -168,9 +170,11 @@ auto AssetScanner::resolveScene(const std::string& iLevelName) -> std::optional<
 	return std::nullopt;
 }
 
-/// Scan a Lua script file for scene references and recursively add referenced scenes.
-/// Matches both direct calls (scene.load_scene("x.owl")) and string literals that look like
-/// scene paths (e.g., assigned to a variable for deferred loading).
+/**
+ * Scan a Lua script file for scene references and recursively add referenced scenes.
+ * Matches both direct calls (scene.load_scene("x.owl")) and string literals that look like
+ * scene paths (e.g., assigned to a variable for deferred loading).
+ */
 void AssetScanner::scanLuaScriptForScenes(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-recursion)
 										  std::set<std::string>& ioVisitedScenes,
 										  std::vector<AssetReference>& ioAssets,
@@ -272,7 +276,7 @@ void AssetScanner::scanEntity(const YAML::Node& iEntity, const std::string& iSce
 		addTextureField(anim);
 	if (auto bg = iEntity["BackgroundTexture"]; bg)
 		addTextureField(bg);
-	if (auto img = iEntity["UIImage"]; img)
+	if (auto img = iEntity["UiImage"]; img)
 		addTextureField(img);
 	if (auto text = iEntity["TextRenderer"]; text)
 		if (auto font = text["font"]; font) {

@@ -2,7 +2,7 @@
  * @file Triangle.cpp
  * @author Silmaen
  * @date 18/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -14,9 +14,11 @@ namespace owl::data::geometry::primitive {
 Triangle::Triangle() = default;
 
 [[nodiscard]] auto Triangle::getVertex(const uint8_t iIndex) -> MeshVertex* { return m_vertices.at(iIndex); }
+
 [[nodiscard]] auto Triangle::getVertex(const uint8_t iIndex) const -> const MeshVertex* {
 	return m_vertices.at(iIndex);
 }
+
 void Triangle::setVertex(const uint8_t iIndex, MeshVertex* iVertex) { m_vertices.at(iIndex) = iVertex; }
 
 auto Triangle::getNormal() const -> math::vec3 {

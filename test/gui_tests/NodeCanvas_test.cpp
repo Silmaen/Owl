@@ -13,7 +13,6 @@ using namespace owl;
 using namespace owl::gui::widgets;
 
 namespace {
-
 auto makeNode(const std::string& iTitle, math::vec2f iPos,
 			  std::vector<std::string> iInputLabels = {},
 			  std::vector<std::string> iOutputLabels = {}) -> Node {

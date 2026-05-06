@@ -2,7 +2,7 @@
  * @file Framebuffer.cpp
  * @author Silmaen
  * @date 07/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -79,6 +79,7 @@ void Framebuffer::bind() {
 	}
 	vkh.bindFramebuffer(this);
 }
+
 void Framebuffer::nextSubpass() {
 	auto& vkh = internal::VulkanHandler::get();
 	++m_currentSubPass;
@@ -228,10 +229,12 @@ auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const
 		return 0;
 	}
 	int32_t pixel = 0;
+
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 	memcpy(&pixel, data, internal::attachmentFormatToSize(format));
 	OWL_DIAG_POP
+
 	vkDestroyBuffer(vkc.getLogicalDevice(), stagingBuffer, nullptr);
 	vkFreeMemory(vkc.getLogicalDevice(), stagingBufferMemory, nullptr);
 	return pixel;
@@ -327,14 +330,18 @@ void Framebuffer::createImages() {
 						   internal::resultString(result))
 			return;
 		}
+
 		vkGetSwapchainImagesKHR(vkc.getLogicalDevice(), m_swapChain, &m_swapChainImageCount, nullptr);
 		m_images.resize(m_specs.attachments.size() - 1 + m_swapChainImageCount);
 		std::vector<VkImage> temp(m_swapChainImageCount);
+
 		vkGetSwapchainImagesKHR(vkc.getLogicalDevice(), m_swapChain, &m_swapChainImageCount, temp.data());
 		for (uint32_t ii = 0; ii < m_swapChainImageCount; ++ii) {
 			m_images[ii].image = temp[ii];
+
 			internal::transitionImageLayout(temp[ii], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 		}
+
 		OWL_CORE_INFO("Vulkan Framebuffer ({}): Created {} images for swapchain", m_specs.debugName,
 					  m_swapChainImageCount)
 	} else
@@ -366,6 +373,7 @@ void Framebuffer::createImages() {
 			return;
 		}
 		VkMemoryRequirements memRequirements;
+
 		vkGetImageMemoryRequirements(vkc.getLogicalDevice(), m_images[i].image, &memRequirements);
 		const VkMemoryAllocateInfo allocInfo{
 				.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -374,6 +382,7 @@ void Framebuffer::createImages() {
 				.memoryTypeIndex =
 						vkc.findMemoryTypeIndex(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)};
 		if (const VkResult result =
+
 					vkAllocateMemory(vkc.getLogicalDevice(), &allocInfo, nullptr, &m_images[i].imageMemory);
 			result != VK_SUCCESS) {
 			OWL_CORE_ERROR("Vulkan Framebuffer ({}): failed to allocate image memory ({}).", m_specs.debugName,
@@ -381,12 +390,14 @@ void Framebuffer::createImages() {
 			return;
 		}
 		if (const VkResult result =
+
 					vkBindImageMemory(vkc.getLogicalDevice(), m_images[i].image, m_images[i].imageMemory, 0);
 			result != VK_SUCCESS) {
 			OWL_CORE_ERROR("Vulkan Framebuffer ({}): failed to bind image memory ({}).", m_specs.debugName,
 						   internal::resultString(result))
 			return;
 		}
+
 		internal::transitionImageLayout(m_images[i].image, VK_IMAGE_LAYOUT_UNDEFINED,
 										isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 													   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -454,7 +465,6 @@ void Framebuffer::createRenderPass() {
 	std::vector<VkAttachmentReference> attRefs;
 	uniq<VkAttachmentReference> depthRefs = nullptr;
 	std::vector<VkAttachmentDescription> attDesc;
-
 	uint32_t i = 0;
 	for (const auto& [format, tiling]: m_specs.attachments) {
 		if (format == AttachmentSpecification::Format::Depth24Stencil8) {

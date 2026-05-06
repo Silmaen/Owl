@@ -2,7 +2,7 @@
  * @file ID.h
  * @author Silmaen
  * @date 14/01/2023
- * Copyright © 2023 All rights reserved.
+ * Copyright (c) 2023 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,12 +11,13 @@
 #include "core/UUID.h"
 
 /**
- * @brief namespace for the scene components.
+ * @brief
+ *  namespace for the scene components.
  */
 namespace owl::scene::component {
-
 /**
- * @brief Class for the entity's ID.
+ * @brief
+ *  Class for the entity's ID.
  */
 struct OWL_API ID {
 	/// The ID.

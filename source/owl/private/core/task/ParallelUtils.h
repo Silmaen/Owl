@@ -10,9 +10,9 @@
 #include "core/external/taskflow.h"
 
 namespace owl::core::task {
-
 /**
- * @brief Execute a function in parallel over a container range.
+ * @brief
+ *  Execute a function in parallel over a container range.
  * @tparam Iterator Iterator type.
  * @tparam Callable Callable type.
  * @param[in,out] ioExecutor The Taskflow executor to use.
@@ -28,7 +28,8 @@ void parallelForEach(tf::Executor& ioExecutor, Iterator iBegin, Iterator iEnd, C
 }
 
 /**
- * @brief Execute a function in parallel over an index range.
+ * @brief
+ *  Execute a function in parallel over an index range.
  * @tparam IndexType Index type (must be integral).
  * @tparam Callable Callable type.
  * @param[in,out] ioExecutor The Taskflow executor to use.

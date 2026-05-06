@@ -2,7 +2,7 @@
  * @file Texture.cpp
  * @author Silmaen
  * @date 07/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -17,7 +17,6 @@
 namespace owl::renderer::gpu::vulkan {
 
 namespace {
-
 void createImage(const uint32_t iIndex, const math::vec2ui& iDimensions) {
 	auto& data = internal::Descriptors::get().getTextureData(iIndex);
 	data.createImage(iDimensions);
@@ -35,6 +34,7 @@ Texture2D::Texture2D(std::filesystem::path iPath) : renderer::gpu::Texture2D{std
 	}
 	m_specification.format = decoded.format;
 	m_specification.size = decoded.size;
+
 	setData(const_cast<uint8_t*>(decoded.pixels.data()), static_cast<uint32_t>(decoded.pixels.size()));
 }
 

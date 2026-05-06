@@ -2,7 +2,7 @@
  * @file ExtraDataTable.cpp
  * @author Silmaen
  * @date 22/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -11,6 +11,7 @@
 namespace owl::data::extradata {
 
 ExtraDataTable::ExtraDataTable() = default;
+
 ExtraDataTable::~ExtraDataTable() = default;
 
 void ExtraDataTable::clear() {
@@ -66,7 +67,6 @@ auto ExtraDataTable::deleteExtraData(core::FactoryPid iPid) -> bool {
 			m_extraDataList.end());
 	return true;
 }
-
 
 auto ExtraDataTable::getExtraData(const core::FactoryPid iPid) const -> const ExtraDataContainer* {
 	for (const auto& container: m_extraDataList) {

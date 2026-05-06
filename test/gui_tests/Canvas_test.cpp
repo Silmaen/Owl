@@ -13,7 +13,7 @@
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/Canvas.h>
-#include <scene/component/UIRect.h>
+#include <scene/component/UiRect.h>
 #include <scene/component/components.h>
 
 using namespace owl;
@@ -31,13 +31,13 @@ TEST(Canvas, createAndDefaults) {
 	core::Log::invalidate();
 }
 
-TEST(UIRect, createAndDefaults) {
+TEST(UiRect, createAndDefaults) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<Scene>();
 	auto entity = scn->createEntity("UIElement");
-	auto& rect = entity.addComponent<component::UIRect>();
+	auto& rect = entity.addComponent<component::UiRect>();
 
-	EXPECT_EQ(rect.anchor, component::UIRect::Anchor::Center);
+	EXPECT_EQ(rect.anchor, component::UiRect::Anchor::Center);
 	EXPECT_NEAR(rect.pivot.x(), 0.5f, 0.01f);
 	EXPECT_NEAR(rect.pivot.y(), 0.5f, 0.01f);
 	EXPECT_NEAR(rect.size.x(), 100.f, 0.01f);
@@ -48,9 +48,9 @@ TEST(UIRect, createAndDefaults) {
 	core::Log::invalidate();
 }
 
-TEST(UIRect, computePositionCenter) {
-	component::UIRect rect;
-	rect.anchor = component::UIRect::Anchor::Center;
+TEST(UiRect, computePositionCenter) {
+	component::UiRect rect;
+	rect.anchor = component::UiRect::Anchor::Center;
 	rect.size = {200.f, 100.f};
 	rect.pivot = {0.5f, 0.5f};
 	rect.anchorOffset = {0.f, 0.f};
@@ -63,9 +63,9 @@ TEST(UIRect, computePositionCenter) {
 	EXPECT_NEAR(pos.y(), 300.f, 0.01f);
 }
 
-TEST(UIRect, computePositionTopLeft) {
-	component::UIRect rect;
-	rect.anchor = component::UIRect::Anchor::TopLeft;
+TEST(UiRect, computePositionTopLeft) {
+	component::UiRect rect;
+	rect.anchor = component::UiRect::Anchor::TopLeft;
 	rect.size = {200.f, 100.f};
 	rect.pivot = {0.f, 1.f};// top-left pivot
 	rect.anchorOffset = {10.f, -10.f};
@@ -80,9 +80,9 @@ TEST(UIRect, computePositionTopLeft) {
 	EXPECT_NEAR(pos.y(), 540.f, 0.01f);
 }
 
-TEST(UIRect, computePositionBottomRight) {
-	component::UIRect rect;
-	rect.anchor = component::UIRect::Anchor::BottomRight;
+TEST(UiRect, computePositionBottomRight) {
+	component::UiRect rect;
+	rect.anchor = component::UiRect::Anchor::BottomRight;
 	rect.size = {150.f, 50.f};
 	rect.pivot = {1.f, 0.f};// bottom-right pivot
 	rect.anchorOffset = {-20.f, 20.f};
@@ -111,8 +111,8 @@ TEST(Canvas, serializeDeserializeViaScene) {
 		canvas.sortOrder = 5;
 
 		auto childEntity = scn->createEntity("UIChild");
-		auto& rect = childEntity.addComponent<component::UIRect>();
-		rect.anchor = component::UIRect::Anchor::TopCenter;
+		auto& rect = childEntity.addComponent<component::UiRect>();
+		rect.anchor = component::UiRect::Anchor::TopCenter;
 		rect.size = {300.f, 80.f};
 		rect.anchorOffset = {0.f, -50.f};
 		scn->setParent(childEntity, canvasEntity);
@@ -133,9 +133,9 @@ TEST(Canvas, serializeDeserializeViaScene) {
 				EXPECT_EQ(canvas.sortOrder, 5);
 				foundCanvas = true;
 			}
-			if (entity.hasComponent<component::UIRect>()) {
-				const auto& rect = entity.getComponent<component::UIRect>();
-				EXPECT_EQ(rect.anchor, component::UIRect::Anchor::TopCenter);
+			if (entity.hasComponent<component::UiRect>()) {
+				const auto& rect = entity.getComponent<component::UiRect>();
+				EXPECT_EQ(rect.anchor, component::UiRect::Anchor::TopCenter);
 				EXPECT_NEAR(rect.size.x(), 300.f, 0.01f);
 				EXPECT_NEAR(rect.size.y(), 80.f, 0.01f);
 				EXPECT_NEAR(rect.anchorOffset.y(), -50.f, 0.01f);

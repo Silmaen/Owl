@@ -167,6 +167,29 @@ tiles:
 	EXPECT_EQ(ts.tiles[1].name, "ok");
 }
 
+TEST_F(TilesetFixture, SaveToUnopenablePathFails) {
+	Tileset ts;
+	ts.resize(2, 2);
+	const auto bogus = std::filesystem::temp_directory_path() / "no_such_owl_subdir/x.owltileset";
+	std::filesystem::remove_all(std::filesystem::temp_directory_path() / "no_such_owl_subdir");
+	EXPECT_FALSE(ts.saveToFile(bogus, "x"));
+}
+
+TEST_F(TilesetFixture, LoadFromMissingFileFails) {
+	Tileset ts;
+	EXPECT_FALSE(ts.loadFromFile(std::filesystem::temp_directory_path() / "owl_no_tileset_xyz.owltileset"));
+}
+
+TEST_F(TilesetFixture, GetTileMetaOutOfRangeReturnsDefault) {
+	Tileset ts;
+	ts.resize(2, 2);
+	ts.tiles[0] = {.collidable = true, .name = "wall"};
+	const auto& meta = ts.getTileMeta(99);
+	// Out-of-range returns the static default — neither collidable nor named.
+	EXPECT_FALSE(meta.collidable);
+	EXPECT_TRUE(meta.name.empty());
+}
+
 TEST_F(TilesetFixture, FileRoundTrip) {
 	Tileset ts;
 	ts.resize(3, 3);

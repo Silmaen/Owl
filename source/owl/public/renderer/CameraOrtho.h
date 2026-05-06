@@ -2,7 +2,7 @@
  * @file CameraOrtho.h
  * @author Silmaen
  * @date 10/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,17 +13,28 @@
 
 namespace owl::renderer {
 /**
- * @brief Orthographic camera.
+ * @brief
+ *  Orthographic camera.
  */
 class OWL_API CameraOrtho final : public Camera {
 public:
 	CameraOrtho(const CameraOrtho&) = default;
+
 	CameraOrtho(CameraOrtho&&) = default;
+
 	auto operator=(const CameraOrtho&) -> CameraOrtho& = default;
+
 	auto operator=(CameraOrtho&&) -> CameraOrtho& = default;
-	~CameraOrtho() override;
+
 	/**
-	 * @brief Create the camera giving coordinates of corners.
+	 * @brief
+	 *  Destructor.
+	 */
+	~CameraOrtho() override;
+
+	/**
+	 * @brief
+	 *  Create the camera giving coordinates of corners.
 	 * @param[in] iLeft Left of the screen's coordinate.
 	 * @param[in] iRight Right of the screen's coordinate.
 	 * @param[in] iBottom Bottom of the screen's coordinate.
@@ -32,7 +43,8 @@ public:
 	CameraOrtho(float iLeft, float iRight, float iBottom, float iTop);
 
 	/**
-	 * @brief Set projection giving the camera coordinates of corners.
+	 * @brief
+	 *  Set projection giving the camera coordinates of corners.
 	 * @param[in] iLeft Left of the screen's coordinate.
 	 * @param[in] iRight Right of the screen's coordinate.
 	 * @param[in] iBottom Bottom of the screen's coordinate.
@@ -43,38 +55,51 @@ public:
 	void setProjection(float iLeft, float iRight, float iBottom, float iTop, float iNear = -1.0f, float iFar = 1.0f);
 
 	/**
-	 * @brief Access to camera's position.
+	 * @brief
+	 *  Access to camera's position.
 	 * @return Camera's position.
 	 */
 	[[nodiscard]] auto getPosition() const -> const math::vec3& { return m_position; }
 
 	/**
-	 * @brief Define camera's position.
+	 * @brief
+	 *  Define camera's position.
 	 * @param[in] iPosition New camera position.
 	 */
 	void setPosition(const math::vec3& iPosition) {
 		m_position = iPosition;
+		/**
+		 * @brief
+		 *  Recalculate view matrix.
+		 */
 		recalculateViewMatrix();
 	}
 
 	/**
-	 * @brief Access to camera's rotation.
+	 * @brief
+	 *  Access to camera's rotation.
 	 * @return Camera's rotation.
 	 */
 	[[nodiscard]] auto getRotation() const -> float { return m_rotation; }
 
 	/**
-	 * @brief Defines camera's rotation.
+	 * @brief
+	 *  Defines camera's rotation.
 	 * @param[in] iRotation New camera rotation.
 	 */
 	void setRotation(const float iRotation) {
 		m_rotation = iRotation;
+		/**
+		 * @brief
+		 *  Recalculate view matrix.
+		 */
 		recalculateViewMatrix();
 	}
 
 private:
 	/**
-	 * @brief Recompute the matrices.
+	 * @brief
+	 *  Recompute the matrices.
 	 */
 	void recalculateViewMatrix();
 

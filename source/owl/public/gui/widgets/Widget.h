@@ -2,7 +2,7 @@
  * @file Widget.h
  * @author Silmaen
  * @date 10/26/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,12 +11,13 @@
 #include <string>
 
 /**
- * @brief Namespace for the gui widgets.
+ * @brief
+ *  Namespace for the gui widgets.
  */
 namespace owl::gui::widgets {
-
 /**
- * @brief Base widget's data information.
+ * @brief
+ *  Base widget's data information.
  */
 struct WidgetData {
 	std::string id;
@@ -28,36 +29,46 @@ template<typename DataType>
 concept derivedFromWidgetData = std::derived_from<DataType, WidgetData>;
 
 /**
- * @brief base widget's class.
+ * @brief
+ *  base widget's class.
  * @tparam DataType Type of data describing the widget.
  */
 template<derivedFromWidgetData DataType = WidgetData>
 class OWL_API Widget {
 public:
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 */
 	Widget() = default;
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	virtual ~Widget() = default;
 
 	Widget(const Widget&) = default;
+
 	Widget(Widget&&) = default;
+
 	auto operator=(const Widget&) -> Widget& = default;
+
 	auto operator=(Widget&&) -> Widget& = default;
 
 	/**
-	 * @brief Initialize the data.
+	 * @brief
+	 *  Initialize the data.
 	 * @param iData Data to apply to the widget.
 	 */
 	void init(DataType&& iData) {
 		m_data = std::move(iData);
 		m_initialized = true;
 	}
+
 	/**
-	 * @brief Render the widget.
+	 * @brief
+	 *  Render the widget.
 	 */
 	void onRender() const {
 		if (!m_initialized) {
@@ -65,6 +76,10 @@ public:
 			return;
 		}
 		if (m_data.visible)
+			/**
+			 * @brief
+			 *  Handle the render base event.
+			 */
 			onRenderBase();
 	}
 
@@ -73,8 +88,11 @@ protected:
 	bool m_initialized = false;
 	/// Internal data.
 	DataType m_data;
-
 private:
+	/**
+	 * @brief
+	 *  Handle the render base event.
+	 */
 	virtual void onRenderBase() const = 0;
 };
 

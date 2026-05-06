@@ -56,6 +56,7 @@ auto SaveManager::getSlotPath(const uint32_t iSlot) -> std::filesystem::path {
 
 auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const std::string& iScenePath) -> bool {
 	OWL_PROFILE_FUNCTION()
+
 	try {
 		const SceneSerializer serializer(iScene);
 		const std::string sceneYaml = serializer.serializeToString();
@@ -124,6 +125,7 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 
 auto SaveManager::load(const uint32_t iSlot, const shared<Scene>& iScene) -> LoadResult {
 	OWL_PROFILE_FUNCTION()
+
 	LoadResult result;
 	try {
 		const auto path = getSlotPath(iSlot);

@@ -2,7 +2,7 @@
  * @file MeshLoader.cpp
  * @author Silmaen
  * @date 26/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -127,6 +127,7 @@ auto MeshLoader::loadObj([[maybe_unused]] const std::filesystem::path& iFilePath
 		}
 		++triIndex;
 	}
+
 	OWL_CORE_INFO("MeshLoader::loadObj: Loaded mesh {} with {} vertices and {} triangles.", iFilePath.string(),
 				  mesh->getVertexCount(), mesh->getTriangleCount())
 	OWL_CORE_INFO("MeshLoader::loadObj: Mesh has {} UV coordinates and {} normals.",
@@ -152,7 +153,6 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 	std::vector<std::array<vec3, 3>> normals;
 	bool hasUv = false;
 	bool hasNormals = false;
-
 	// Reserve space based on total counts across all meshes
 	size_t totalVertices = 0;
 	size_t totalFaces = 0;
@@ -164,23 +164,19 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 	mesh->reserveTriangles(totalFaces);
 	uvCoords.reserve(totalFaces);
 	normals.reserve(totalFaces);
-
 	for (size_t meshIdx = 0; meshIdx < scene->meshes.count; ++meshIdx) {
 		const ufbx_mesh* fbxMesh = scene->meshes.data[meshIdx];
-
 		// Add vertices
 		const size_t vertexOffset = mesh->getVertexCount();
 		for (size_t i = 0; i < fbxMesh->num_vertices; ++i) {
 			const ufbx_vec3& pos = fbxMesh->vertices.data[i];
 			mesh->addVertex(vec3(static_cast<float>(pos.x), static_cast<float>(pos.y), static_cast<float>(pos.z)));
 		}
-
 		// Check for UVs and normals
 		const bool meshHasUv = fbxMesh->uv_sets.count > 0;
 		const bool meshHasNormals = fbxMesh->vertex_normal.exists && !fbxMesh->generated_normals;
 		hasUv = hasUv || meshHasUv;
 		hasNormals = hasNormals || meshHasNormals;
-
 		// Process faces
 		for (size_t faceIdx = 0; faceIdx < fbxMesh->num_faces; ++faceIdx) {
 			const auto& [index_begin, num_indices] = fbxMesh->faces.data[faceIdx];
@@ -194,11 +190,9 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 			std::array<uint32_t, 3> vertexIndices{};
 			std::array<vec2, 3> faceUv{};
 			std::array<vec3, 3> faceNormals{};
-
 			for (size_t cornerIdx = 0; cornerIdx < 3; ++cornerIdx) {
 				const size_t index = index_begin + cornerIdx;
 				vertexIndices[cornerIdx] = static_cast<uint32_t>(vertexOffset + fbxMesh->vertex_indices.data[index]);
-
 				// UVs
 				if (meshHasUv) {
 					const ufbx_vertex_vec2& uvSet = fbxMesh->uv_sets.data[0].vertex_uv;
@@ -208,7 +202,6 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 				} else {
 					faceUv[cornerIdx] = vec2(0.0f, 0.0f);
 				}
-
 				// Normals
 				if (meshHasNormals) {
 					const size_t normalIndex = fbxMesh->vertex_normal.indices.data[index];
@@ -219,12 +212,10 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 					faceNormals[cornerIdx] = vec3(0.0f, 0.0f, 0.0f);
 				}
 			}
-
 			if (hasUv)
 				uvCoords.push_back(faceUv);
 			if (hasNormals)
 				normals.push_back(faceNormals);
-
 			mesh->addTriangle(vertexIndices);
 		}
 	}
@@ -235,7 +226,6 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 		mesh->addTriangleExtraData<TriangleUVCoordinate>();
 	if (hasNormals)
 		mesh->addTriangleExtraData<TriangleNormals>();
-
 	// Fill UVs and normals
 	size_t triIndex = 0;
 	for (auto& [uv, m_normals]: MeshTriangleRange(*mesh, component::WriteUvCoords, component::WriteTriangleNormals)) {
@@ -258,14 +248,11 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 				  !hasUv || mesh->isExtraDataDefinedOnAllTriangles<TriangleUVCoordinate>() ? "complete" : "incomplete",
 				  !hasNormals || mesh->isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
 	OWL_CORE_INFO("MeshLoader::loadFbx: All other mesh data are ignored.")
-
-
 	return mesh;
 }
 
 auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePath) -> shared<StaticMesh> {
 	shared<StaticMesh> mesh = mkShared<StaticMesh>();
-
 	using size_type = std::vector<tinygltf::Accessor>::size_type;
 	tinygltf::Model gltfModel;
 	tinygltf::TinyGLTF gltfLoader;
@@ -308,7 +295,6 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 		uvCoords.reserve(totalIndices / 3);
 		normals.reserve(totalIndices / 3);
 	}
-
 	for (const tinygltf::Mesh& gltfMesh = gltfModel.meshes.at(0); const auto& primitive: gltfMesh.primitives) {
 		// Positions
 		const auto posIt = primitive.attributes.find("POSITION");
@@ -342,7 +328,6 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 			uvs = reinterpret_cast<const float*>(&uvBuffer.data.at(uvBufferView.byteOffset + uvAccessor.byteOffset));
 			uvCount = uvAccessor.count;
 		}
-
 		// Normals
 		const auto normalIt = primitive.attributes.find("NORMAL");
 		const float* normalData = nullptr;
@@ -359,7 +344,6 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 					&normalBuffer.data.at(normalBufferView.byteOffset + normalAccessor.byteOffset));
 			normalCount = normalAccessor.count;
 		}
-
 		// Indices
 		if (primitive.indices < 0) {
 			OWL_CORE_WARN("MeshLoader::loadGltf: No indices found, skipping primitive")
@@ -385,6 +369,7 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 						idx = static_cast<const uint8_t*>(indicesPtr)[i + j];
 						break;
 					default:
+
 						OWL_CORE_ERROR("MeshLoader::loadGltf: Unsupported index component type")
 						break;
 				}
@@ -420,7 +405,6 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 		mesh->addTriangleExtraData<TriangleUVCoordinate>();
 	if (hasNormals)
 		mesh->addTriangleExtraData<TriangleNormals>();
-
 	// Fill UVs and normals
 	size_t triIndex = 0;
 	for (auto& [uv, m_normals]: MeshTriangleRange(*mesh, component::WriteUvCoords, component::WriteTriangleNormals)) {
@@ -443,7 +427,6 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 				  !hasUv || mesh->isExtraDataDefinedOnAllTriangles<TriangleUVCoordinate>() ? "complete" : "incomplete",
 				  !hasNormals || mesh->isExtraDataDefinedOnAllTriangles<TriangleNormals>() ? "complete" : "incomplete")
 	OWL_CORE_INFO("MeshLoader::loadGltf: All other mesh data are ignored.")
-
 	return mesh;
 }
 

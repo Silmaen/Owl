@@ -2,7 +2,7 @@
  * @file ExtraDataBase.h
  * @author Silmaen
  * @date 18/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,18 +12,22 @@
 #include "core/IFactory.h"
 
 /**
- * @brief Namespace for extra data management.
+ * @brief
+ *  Namespace for extra data management.
  */
 namespace owl::data::extradata {
 /**
- * @brief Base class for all extra data.
+ * @brief
+ *  Base class for all extra data.
  */
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
 class OWL_API ExtraDataBase : public core::FactoryProduct {
 public:
 	/**
-	 * @brief Clone the extra data.
+	 * @brief
+	 *  Clone the extra data.
 	 * @return A unique pointer to the cloned extra data.
 	 */
 	[[nodiscard]] virtual auto clone() const -> std::unique_ptr<ExtraDataBase> = 0;
@@ -39,10 +43,12 @@ OWL_DIAG_POP
 template<typename ExtraData, typename DataType>
 class OWL_API MeshExtraData : public ExtraDataBase {
 	friend ExtraData;
+
 	MeshExtraData() = default;
 
 public:
 	using Type = DataType;
+
 	/**
 	 * @brief
 	 *  Return the product identifier of the extra data.
@@ -53,7 +59,8 @@ public:
 	[[nodiscard]] auto getPid() const -> core::FactoryPid override { return core::getFactoryPid<ExtraData>(); }
 
 	/**
-	 * @brief Clone the extra data.
+	 * @brief
+	 *  Clone the extra data.
 	 * @return A unique pointer to the cloned extra data.
 	 */
 	[[nodiscard]] auto clone() const -> std::unique_ptr<ExtraDataBase> override {
@@ -61,7 +68,8 @@ public:
 	}
 
 	/**
-	 * @brief Get the underlying value.
+	 * @brief
+	 *  Get the underlying value.
 	 * @return The stored value.
 	 */
 	[[nodiscard]] virtual auto getValue() const -> const Type& = 0;

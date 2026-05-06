@@ -12,30 +12,57 @@
 #include "../UndoCommand.h"
 
 namespace owl::nest::commands {
-
 /**
- * @brief Command for instantiating a prefab into the scene.
+ * @brief
+ *  Command for instantiating a prefab into the scene.
  *
  * Redo restores the instantiated subtree; undo destroys it.
  */
 class InstantiatePrefabCommand final : public SceneUndoCommand {
 public:
 	InstantiatePrefabCommand(const InstantiatePrefabCommand&) = delete;
+
 	InstantiatePrefabCommand(InstantiatePrefabCommand&&) = default;
+
 	auto operator=(const InstantiatePrefabCommand&) -> InstantiatePrefabCommand& = delete;
+
 	auto operator=(InstantiatePrefabCommand&&) -> InstantiatePrefabCommand& = default;
+
 	/**
-	 * @brief Construct after a prefab has been instantiated.
+	 * @brief
+	 *  Construct after a prefab has been instantiated.
 	 * @param[in] iInstanceRoot The root entity of the instantiated subtree.
 	 * @param[in] iScene The scene (for capturing the subtree snapshot).
 	 * @param[in] iPrefabName Human-readable prefab name.
 	 */
 	InstantiatePrefabCommand(const scene::Entity& iInstanceRoot, const scene::Scene& iScene,
 							 std::string iPrefabName);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
 	~InstantiatePrefabCommand() override;
 
+	/**
+	 * @brief
+	 *  Undo.
+	 * @param[in,out] ioScene The target scene the action is applied to.
+	 */
 	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Redo.
+	 * @param[in,out] ioScene The target scene the action is applied to.
+	 */
 	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
 	[[nodiscard]] auto description() const -> std::string override;
 
 private:
@@ -44,29 +71,56 @@ private:
 	/// Prefab display name.
 	std::string m_prefabName;
 };
-
 /**
- * @brief Command for applying prefab updates or reverting an instance.
+ * @brief
+ *  Command for applying prefab updates or reverting an instance.
  *
  * Captures the full instance subtree before and after the operation.
  */
 class ApplyPrefabCommand final : public SceneUndoCommand {
 public:
 	ApplyPrefabCommand(const ApplyPrefabCommand&) = delete;
+
 	ApplyPrefabCommand(ApplyPrefabCommand&&) = default;
+
 	auto operator=(const ApplyPrefabCommand&) -> ApplyPrefabCommand& = delete;
+
 	auto operator=(ApplyPrefabCommand&&) -> ApplyPrefabCommand& = default;
+
 	/**
-	 * @brief Construct with before/after subtree snapshots.
+	 * @brief
+	 *  Construct with before/after subtree snapshots.
 	 * @param[in] iBefore Subtree state before the operation.
 	 * @param[in] iAfter Subtree state after the operation.
 	 * @param[in] iDescription Human-readable description.
 	 */
 	ApplyPrefabCommand(SubtreeSnapshot iBefore, SubtreeSnapshot iAfter, std::string iDescription);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
 	~ApplyPrefabCommand() override;
 
+	/**
+	 * @brief
+	 *  Undo.
+	 * @param[in,out] ioScene The target scene the action is applied to.
+	 */
 	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Redo.
+	 * @param[in,out] ioScene The target scene the action is applied to.
+	 */
 	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
 	[[nodiscard]] auto description() const -> std::string override;
 
 private:

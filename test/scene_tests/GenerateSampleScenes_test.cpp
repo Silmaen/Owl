@@ -15,10 +15,10 @@
 #include <scene/component/Canvas.h>
 #include <scene/component/CircleRenderer.h>
 #include <scene/component/SpriteRenderer.h>
-#include <scene/component/UIButton.h>
-#include <scene/component/UIProgressBar.h>
-#include <scene/component/UIRect.h>
-#include <scene/component/UIText.h>
+#include <scene/component/UiButton.h>
+#include <scene/component/UiProgressBar.h>
+#include <scene/component/UiRect.h>
+#include <scene/component/UiText.h>
 #include <scene/component/components.h>
 
 using namespace owl;
@@ -70,12 +70,12 @@ TEST(GenerateSampleScenes, mainMenu) {
 
 	// Title
 	auto titleEntity = scn->createEntity("TitleText");
-	auto& titleRect = titleEntity.addComponent<component::UIRect>();
-	titleRect.anchor = component::UIRect::Anchor::TopCenter;
+	auto& titleRect = titleEntity.addComponent<component::UiRect>();
+	titleRect.anchor = component::UiRect::Anchor::TopCenter;
 	titleRect.pivot = {0.5f, 1.f};
 	titleRect.size = {600.f, 80.f};
 	titleRect.anchorOffset = {0.f, -80.f};
-	auto& titleText = titleEntity.addComponent<component::UIText>();
+	auto& titleText = titleEntity.addComponent<component::UiText>();
 	titleText.text = "Owl Feature Demo";
 	titleText.color = {1.f, 0.85f, 0.2f, 1.f};
 	titleText.fontSize = 42.f;
@@ -83,16 +83,16 @@ TEST(GenerateSampleScenes, mainMenu) {
 
 	// Play button background
 	auto playEntity = scn->createEntity("PlayButton");
-	auto& playRect = playEntity.addComponent<component::UIRect>();
-	playRect.anchor = component::UIRect::Anchor::Center;
+	auto& playRect = playEntity.addComponent<component::UiRect>();
+	playRect.anchor = component::UiRect::Anchor::Center;
 	playRect.size = {200.f, 50.f};
 	playRect.anchorOffset = {0.f, 0.f};
-	auto& playBtn = playEntity.addComponent<component::UIButton>();
+	auto& playBtn = playEntity.addComponent<component::UiButton>();
 	playBtn.normalColor = {0.15f, 0.35f, 0.65f, 1.f};
 	playBtn.hoverColor = {0.25f, 0.45f, 0.75f, 1.f};
 	playBtn.pressedColor = {0.1f, 0.25f, 0.5f, 1.f};
 	playBtn.onClickCallback = "on_play_clicked";
-	auto& playText = playEntity.addComponent<component::UIText>();
+	auto& playText = playEntity.addComponent<component::UiText>();
 	playText.text = "Play";
 	playText.color = {1.f, 1.f, 1.f, 1.f};
 	playText.fontSize = 26.f;
@@ -100,12 +100,12 @@ TEST(GenerateSampleScenes, mainMenu) {
 
 	// Version label
 	auto versionEntity = scn->createEntity("VersionLabel");
-	auto& verRect = versionEntity.addComponent<component::UIRect>();
-	verRect.anchor = component::UIRect::Anchor::BottomRight;
+	auto& verRect = versionEntity.addComponent<component::UiRect>();
+	verRect.anchor = component::UiRect::Anchor::BottomRight;
 	verRect.pivot = {1.f, 0.f};
 	verRect.size = {180.f, 25.f};
 	verRect.anchorOffset = {-15.f, 15.f};
-	auto& verText = versionEntity.addComponent<component::UIText>();
+	auto& verText = versionEntity.addComponent<component::UiText>();
 	verText.text = "testing-version";
 	verText.color = {0.5f, 0.5f, 0.5f, 0.7f};
 	verText.fontSize = 12.f;
@@ -212,12 +212,12 @@ TEST(GenerateSampleScenes, gameplay) {
 
 	// Score text (top-left)
 	auto scoreEntity = scn->createEntity("ScoreText");
-	auto& scoreRect = scoreEntity.addComponent<component::UIRect>();
-	scoreRect.anchor = component::UIRect::Anchor::TopLeft;
+	auto& scoreRect = scoreEntity.addComponent<component::UiRect>();
+	scoreRect.anchor = component::UiRect::Anchor::TopLeft;
 	scoreRect.pivot = {0.f, 1.f};
 	scoreRect.size = {200.f, 35.f};
 	scoreRect.anchorOffset = {15.f, -10.f};
-	auto& scoreText = scoreEntity.addComponent<component::UIText>();
+	auto& scoreText = scoreEntity.addComponent<component::UiText>();
 	scoreText.text = "Score: 0";
 	scoreText.color = {1.f, 1.f, 0.3f, 1.f};
 	scoreText.fontSize = 22.f;
@@ -225,12 +225,12 @@ TEST(GenerateSampleScenes, gameplay) {
 
 	// Health bar (top-right)
 	auto healthEntity = scn->createEntity("HealthBar");
-	auto& healthRect = healthEntity.addComponent<component::UIRect>();
-	healthRect.anchor = component::UIRect::Anchor::TopRight;
+	auto& healthRect = healthEntity.addComponent<component::UiRect>();
+	healthRect.anchor = component::UiRect::Anchor::TopRight;
 	healthRect.pivot = {1.f, 1.f};
 	healthRect.size = {180.f, 20.f};
 	healthRect.anchorOffset = {-15.f, -12.f};
-	auto& healthBar = healthEntity.addComponent<component::UIProgressBar>();
+	auto& healthBar = healthEntity.addComponent<component::UiProgressBar>();
 	healthBar.value = 1.f;
 	healthBar.backgroundColor = {0.4f, 0.1f, 0.1f, 0.8f};
 	healthBar.fillColor = {0.2f, 0.85f, 0.2f, 1.f};
@@ -238,12 +238,12 @@ TEST(GenerateSampleScenes, gameplay) {
 
 	// Instructions (top-centre)
 	auto instrEntity = scn->createEntity("Instructions");
-	auto& instrRect = instrEntity.addComponent<component::UIRect>();
-	instrRect.anchor = component::UIRect::Anchor::TopCenter;
+	auto& instrRect = instrEntity.addComponent<component::UiRect>();
+	instrRect.anchor = component::UiRect::Anchor::TopCenter;
 	instrRect.pivot = {0.5f, 1.f};
 	instrRect.size = {400.f, 30.f};
 	instrRect.anchorOffset = {0.f, -10.f};
-	auto& instrText = instrEntity.addComponent<component::UIText>();
+	auto& instrText = instrEntity.addComponent<component::UiText>();
 	instrText.text = "WASD to move - Collect all coins!";
 	instrText.color = {1.f, 1.f, 1.f, 0.6f};
 	instrText.fontSize = 14.f;

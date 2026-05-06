@@ -2,7 +2,7 @@
  * @file Guizmo.cpp
  * @author Silmaen
  * @date 1/29/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -23,7 +23,9 @@ void Guizmo::initialize(const math::vec2& iPosition, const math::vec2& iSize) {
 }
 
 auto Guizmo::isUsing() -> bool { return ImGuizmo::IsUsing(); }
+
 auto Guizmo::isOver() -> bool { return ImGuizmo::IsOver(); }
+
 auto Guizmo::isRotate(const Type& iType) -> bool { return static_cast<uint16_t>(iType) == ImGuizmo::OPERATION::ROTATE; }
 
 void Guizmo::manipulate(const math::mat4& iCameraView, const math::mat4& iCameraProjection, const Type& iType,

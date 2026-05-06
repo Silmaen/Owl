@@ -118,7 +118,7 @@ it directly.
 - [x] Hierarchy (parent-child), Visibility, Tag, ID
 - [x] LuaScript (with properties)
 - [x] SoundListener, BackgroundTexture
-- [x] UIRect, UIText, UIButton, UISlider, UIProgressBar, UIImage, UIPanel
+- [x] UiRect, UiText, UiButton, UiSlider, UiProgressBar, UiImage, UiPanel
 
 ### Lua API Coverage
 - [x] `transform` (get/set position, rotation, scale)
@@ -140,7 +140,7 @@ it directly.
       with fade effects
 - [x] Victory / defeat flow with Victory and Death trigger zones (lava death, water
       damage tick, spike damage tick)
-- [x] Health system with HUD (UIProgressBar + ScoreText)
+- [x] Health system with HUD (UiProgressBar + ScoreText)
 - [x] Save system (quick-save F5, slot 1, list / delete saves from menu)
 - [x] Continue from menu — restores `continue_scene` + position + health from gamestate
       after an ESC pause, so the user resumes exactly where they left off
@@ -162,7 +162,7 @@ it directly.
 - [x] AnimatedSpriteRenderer — 8 collectible coins on the platformer use the
       `animated_coin.png` 6×3 spritesheet (18 frames at 0.08 s, loop)
 - [x] Sound effects (jump, coin pickup, victory, menu start)
-- [x] UIImage (owl logo), UIPanel, UIButton, UISlider, UIProgressBar, UIText —
+- [x] UiImage (owl logo), UiPanel, UiButton, UiSlider, UiProgressBar, UiText —
       all 8 widget types in use across menu / settings / HUD
 - [x] BackgroundTexture (sky gradient on world map, dark gradient inside the house)
 - [x] Mouse input tracking — mouse coordinates displayed on the main menu

@@ -24,9 +24,12 @@
 #include "sound/SoundSystem.h"
 
 namespace owl::script {
-namespace {
 
-/// Helper: find entity by UUID in the active scene (reads first Lua argument).
+namespace {
+/**
+ * @brief
+ *  Helper: find entity by UUID in the active scene (reads first Lua argument).
+ */
 auto findEntity(lua_State* iState) -> std::optional<scene::Entity> {
 	const auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene == nullptr)
@@ -59,7 +62,6 @@ auto parseTransitionType(const std::string_view iName) -> scene::ScreenTransitio
 // ============================================================
 // transform table
 // ============================================================
-
 auto luaTransformGetPosition(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Transform>()) {
 		const auto& t = entity->getComponent<scene::component::Transform>().transform;
@@ -135,7 +137,6 @@ auto luaTransformSetScale(lua_State* iState) -> int {
 // ============================================================
 // physics table
 // ============================================================
-
 auto luaPhysicsImpulse(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState)) {
 		const auto fx = static_cast<float>(luaL_checknumber(iState, 2));
@@ -187,7 +188,6 @@ auto luaPhysicsSetGravityScale(lua_State* iState) -> int {
 // ============================================================
 // input table
 // ============================================================
-
 auto luaInputIsKeyPressed(lua_State* iState) -> int {
 	const auto keyCode = static_cast<input::KeyCode>(luaL_checkinteger(iState, 1));
 	lua_pushboolean(iState, input::Input::isKeyPressed(keyCode) ? 1 : 0);
@@ -213,7 +213,6 @@ auto luaInputGetMouseY(lua_State* iState) -> int {
 // ============================================================
 // sound table
 // ============================================================
-
 auto luaSoundPlay(lua_State* iState) -> int {
 	const char* assetPath = luaL_checkstring(iState, 1);
 	if (sound::SoundSystem::getState() != sound::SoundSystem::State::Running) {
@@ -260,7 +259,6 @@ auto luaSoundSetVolume(lua_State* iState) -> int {
 // ============================================================
 // scene table
 // ============================================================
-
 auto luaSceneFindEntity(lua_State* iState) -> int {
 	auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene == nullptr) {
@@ -368,7 +366,6 @@ auto luaSceneQuit([[maybe_unused]] lua_State* iState) -> int {
 // ============================================================
 // time table (delta stored per-frame by ScriptEngine)
 // ============================================================
-
 auto luaTimeDelta(lua_State* iState) -> int {
 	// Delta time is stored in registry key "owl_dt".
 	lua_getfield(iState, LUA_REGISTRYINDEX, "owl_dt");
@@ -382,7 +379,6 @@ auto luaTimeDelta(lua_State* iState) -> int {
 // ============================================================
 // log table
 // ============================================================
-
 auto luaLogTrace(lua_State* iState) -> int {
 	OWL_TRACE("{}", luaL_checkstring(iState, 1))
 	return 0;
@@ -406,7 +402,6 @@ auto luaLogError(lua_State* iState) -> int {
 // ============================================================
 // entity table
 // ============================================================
-
 auto luaEntityHasComponent(lua_State* iState) -> int {
 	const auto entity = findEntity(iState);
 	if (!entity) {
@@ -429,20 +424,20 @@ auto luaEntityHasComponent(lua_State* iState) -> int {
 		has = entity->hasComponent<scene::component::SoundSource>();
 	else if (compName == "Canvas")
 		has = entity->hasComponent<scene::component::Canvas>();
-	else if (compName == "UIRect")
-		has = entity->hasComponent<scene::component::UIRect>();
-	else if (compName == "UIText")
-		has = entity->hasComponent<scene::component::UIText>();
-	else if (compName == "UIImage")
-		has = entity->hasComponent<scene::component::UIImage>();
-	else if (compName == "UIPanel")
-		has = entity->hasComponent<scene::component::UIPanel>();
-	else if (compName == "UIButton")
-		has = entity->hasComponent<scene::component::UIButton>();
-	else if (compName == "UISlider")
-		has = entity->hasComponent<scene::component::UISlider>();
-	else if (compName == "UIProgressBar")
-		has = entity->hasComponent<scene::component::UIProgressBar>();
+	else if (compName == "UiRect")
+		has = entity->hasComponent<scene::component::UiRect>();
+	else if (compName == "UiText")
+		has = entity->hasComponent<scene::component::UiText>();
+	else if (compName == "UiImage")
+		has = entity->hasComponent<scene::component::UiImage>();
+	else if (compName == "UiPanel")
+		has = entity->hasComponent<scene::component::UiPanel>();
+	else if (compName == "UiButton")
+		has = entity->hasComponent<scene::component::UiButton>();
+	else if (compName == "UiSlider")
+		has = entity->hasComponent<scene::component::UiSlider>();
+	else if (compName == "UiProgressBar")
+		has = entity->hasComponent<scene::component::UiProgressBar>();
 	lua_pushboolean(iState, has ? 1 : 0);
 	return 1;
 }
@@ -459,16 +454,15 @@ auto luaEntityGetName(lua_State* iState) -> int {
 // ============================================================
 // ui table
 // ============================================================
-
 auto luaUiSetText(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UIText>())
-		entity->getComponent<scene::component::UIText>().text = luaL_checkstring(iState, 2);
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiText>())
+		entity->getComponent<scene::component::UiText>().text = luaL_checkstring(iState, 2);
 	return 0;
 }
 
 auto luaUiGetText(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UIText>()) {
-		lua_pushstring(iState, entity->getComponent<scene::component::UIText>().text.c_str());
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiText>()) {
+		lua_pushstring(iState, entity->getComponent<scene::component::UiText>().text.c_str());
 		return 1;
 	}
 	lua_pushstring(iState, "");
@@ -482,14 +476,14 @@ auto luaUiSetVisible(lua_State* iState) -> int {
 }
 
 auto luaUiSetProgress(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UIProgressBar>())
-		entity->getComponent<scene::component::UIProgressBar>().value = static_cast<float>(luaL_checknumber(iState, 2));
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiProgressBar>())
+		entity->getComponent<scene::component::UiProgressBar>().value = static_cast<float>(luaL_checknumber(iState, 2));
 	return 0;
 }
 
 auto luaUiGetSliderValue(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UISlider>()) {
-		lua_pushnumber(iState, static_cast<lua_Number>(entity->getComponent<scene::component::UISlider>().value));
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiSlider>()) {
+		lua_pushnumber(iState, static_cast<lua_Number>(entity->getComponent<scene::component::UiSlider>().value));
 		return 1;
 	}
 	lua_pushnumber(iState, 0);
@@ -497,16 +491,16 @@ auto luaUiGetSliderValue(lua_State* iState) -> int {
 }
 
 auto luaUiSetSliderValue(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UISlider>())
-		entity->getComponent<scene::component::UISlider>().value = static_cast<float>(luaL_checknumber(iState, 2));
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiSlider>())
+		entity->getComponent<scene::component::UiSlider>().value = static_cast<float>(luaL_checknumber(iState, 2));
 	return 0;
 }
 
 auto luaUiSetButtonEnabled(lua_State* iState) -> int {
-	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UIButton>()) {
-		auto& button = entity->getComponent<scene::component::UIButton>();
-		button.state = lua_toboolean(iState, 2) != 0 ? scene::component::UIButton::State::Normal
-													 : scene::component::UIButton::State::Disabled;
+	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiButton>()) {
+		auto& button = entity->getComponent<scene::component::UiButton>();
+		button.state = lua_toboolean(iState, 2) != 0 ? scene::component::UiButton::State::Normal
+													 : scene::component::UiButton::State::Disabled;
 	}
 	return 0;
 }
@@ -554,7 +548,6 @@ auto luaUiTransitionPlay(lua_State* iState) -> int {
 // ============================================================
 // gamestate table
 // ============================================================
-
 auto luaGamestateSet(lua_State* iState) -> int {
 	auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene == nullptr)
@@ -621,7 +614,6 @@ auto luaGamestateClear([[maybe_unused]] lua_State* iState) -> int { // NOLINT(re
 // ============================================================
 // save table
 // ============================================================
-
 auto luaSaveSaveGame(lua_State* iState) -> int {
 	auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene == nullptr)
@@ -673,7 +665,10 @@ auto luaSaveListSaves(lua_State* iState) -> int {
 	return 1;
 }
 
-/// Helper: register a table of C functions.
+/**
+ * @brief
+ *  Helper: register a table of C functions.
+ */
 void registerTable(lua_State* iState, const char* iTableName, const luaL_Reg* iFunctions) {
 	lua_newtable(iState);
 	luaL_setfuncs(iState, iFunctions, 0);
@@ -684,6 +679,7 @@ void registerTable(lua_State* iState, const char* iTableName, const luaL_Reg* iF
 
 void registerBindings(lua_State* iState) {
 	OWL_PROFILE_FUNCTION()
+
 	// clang-format off
 	static const luaL_Reg transformFuncs[] = {
 		{"get_position", luaTransformGetPosition},
@@ -759,13 +755,21 @@ void registerBindings(lua_State* iState) {
 	// clang-format on
 
 	registerTable(iState, "transform", transformFuncs);
+
 	registerTable(iState, "physics", physicsFuncs);
+
 	registerTable(iState, "input", inputFuncs);
+
 	registerTable(iState, "sound", soundFuncs);
+
 	registerTable(iState, "scene", sceneFuncs);
+
 	registerTable(iState, "time", timeFuncs);
+
 	registerTable(iState, "log", logFuncs);
+
 	registerTable(iState, "entity", entityFuncs);
+
 	registerTable(iState, "ui", uiFuncs);
 
 	// clang-format off
@@ -790,12 +794,16 @@ void registerBindings(lua_State* iState) {
 		{"set", [](lua_State* s) -> int {
 			const char* key = luaL_checkstring(s, 1);
 			if (lua_isboolean(s, 2) != 0)
+
 				scene::SettingsManager::set(key, lua_toboolean(s, 2) != 0);
 			else if (lua_isinteger(s, 2) != 0)
+
 				scene::SettingsManager::set(key, static_cast<int64_t>(lua_tointeger(s, 2)));
 			else if (lua_isnumber(s, 2) != 0)
+
 				scene::SettingsManager::set(key, static_cast<float>(lua_tonumber(s, 2)));
 			else if (lua_isstring(s, 2) != 0)
+
 				scene::SettingsManager::set(key, std::string(lua_tostring(s, 2)));
 			return 0;
 		}},
@@ -804,11 +812,14 @@ void registerBindings(lua_State* iState) {
 			const auto val = scene::SettingsManager::get(key);
 			if (!val.has_value()) {
 				if (lua_gettop(s) >= 2)
+
 					lua_pushvalue(s, 2);
 				else
+
 					lua_pushnil(s);
 				return 1;
 			}
+
 			std::visit([s]<typename T0>(const T0& v) -> void {
 				using T = std::decay_t<T0>;
 				if constexpr (std::is_same_v<T, int64_t>)
@@ -861,10 +872,14 @@ void registerBindings(lua_State* iState) {
 		}},
 		{nullptr, nullptr}
 	};
+
 	// clang-format on
 	registerTable(iState, "gamestate", gamestateFuncs);
+
 	registerTable(iState, "save", saveFuncs);
+
 	registerTable(iState, "settings", settingsFuncs);
+
 	registerTable(iState, "trigger", triggerFuncs);
 }
 

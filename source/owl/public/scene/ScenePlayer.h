@@ -2,7 +2,7 @@
  * @file ScenePlayer.h
  * @author Silmaen
  * @date 12/30/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,39 +12,51 @@
 #include "core/Core.h"
 
 namespace owl::scene {
-
 /**
- * @brief Class describing a playre in the scene.
+ * @brief
+ *  Class describing a playre in the scene.
  */
 class OWL_API ScenePlayer final {
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	ScenePlayer();
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~ScenePlayer() = default;
+
 	/**
-	 * @brief Default copy constructor.
+	 * @brief
+	 *  Default copy constructor.
 	 */
 	ScenePlayer(const ScenePlayer&) = default;
+
 	/**
-	 * @brief Default move constructor.
+	 * @brief
+	 *  Default move constructor.
 	 */
 	ScenePlayer(ScenePlayer&&) = default;
+
 	/**
-	 * @brief Default copy affectation operator.
+	 * @brief
+	 *  Default copy affectation operator.
 	 */
 	auto operator=(const ScenePlayer&) -> ScenePlayer& = default;
+
 	/**
-	 * @brief Default move affectation operator.
+	 * @brief
+	 *  Default move affectation operator.
 	 */
 	auto operator=(ScenePlayer&&) -> ScenePlayer& = default;
 
 	/**
-	 * @brief Look the inputs for actions.
+	 * @brief
+	 *  Look the inputs for actions.
 	 */
 	void parseInputs(const Entity& iPlayer) const;
 

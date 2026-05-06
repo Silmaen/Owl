@@ -1,5 +1,5 @@
 /**
- * @file UIPanel.h
+ * @file UiPanel.h
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -12,14 +12,14 @@
 #include "math/vectors.h"
 
 namespace owl::scene::component {
-
 /**
- * @brief UI panel widget component.
+ * @brief
+ *  UI panel widget component.
  *
  * Renders a coloured rectangle background. Can optionally lay out children
  * vertically or horizontally.
  */
-struct OWL_API UIPanel {
+struct OWL_API UiPanel {
 	/// Background colour.
 	math::vec4 backgroundColor{0.2f, 0.2f, 0.2f, 0.8f};
 	/// Border colour.
@@ -39,14 +39,32 @@ struct OWL_API UIPanel {
 	/// Padding inside the panel in pixels.
 	float padding = 0.f;
 
-	/// @brief Get the class title.
-	static auto name() -> const char* { return "UI Panel"; }
-	/// @brief Get the YAML key.
-	static auto key() -> const char* { return "UIPanel"; }
+	/**
+	 * @brief
+	 *  Get the class title.
+	 * @return The display name of the component.
+	 */
+	static auto name() noexcept -> const char* { return "UI Panel"; }
 
-	/// @brief Write this component to a YAML context.
+	/**
+	 * @brief
+	 *  Get the YAML key.
+	 * @return The YAML serialization key.
+	 */
+	static auto key() noexcept -> const char* { return "UiPanel"; }
+
+	/**
+	 * @brief
+	 *  Write this component to a YAML context.
+	 * @param[in] iOut The serializer used as output.
+	 */
 	void serialize(const core::Serializer& iOut) const;
-	/// @brief Read this component from YAML node.
+
+	/**
+	 * @brief
+	 *  Read this component from YAML node.
+	 * @param[in] iNode The serializer wrapping the source YAML node.
+	 */
 	void deserialize(const core::Serializer& iNode);
 };
 

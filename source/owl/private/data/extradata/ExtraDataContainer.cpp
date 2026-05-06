@@ -2,7 +2,7 @@
  * @file ExtraDataContainer.cpp
  * @author Silmaen
  * @date 20/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -14,6 +14,7 @@ namespace owl::data::extradata {
 ExtraDataContainer::~ExtraDataContainer() { m_extraDataList.clear(); }
 
 ExtraDataContainer::ExtraDataContainer(const ExtraDataContainer& iOther) { *this = iOther.clone(); }
+
 ExtraDataContainer::ExtraDataContainer(ExtraDataContainer&& iOther) noexcept
 	: m_edPid(iOther.m_edPid), m_extraDataList(std::move(iOther.m_extraDataList)) {}
 

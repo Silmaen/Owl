@@ -2,7 +2,7 @@
  * @file MeshLoader.h
  * @author Silmaen
  * @date 26/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,28 +12,35 @@
 #include "data/geometry/StaticMesh.h"
 
 namespace owl::data {
-
 /**
- * @brief Class MeshLoader.
+ * @brief
+ *  Class MeshLoader.
  */
 class OWL_API MeshLoader {
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	MeshLoader() = delete;
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~MeshLoader() = delete;
 
 	MeshLoader(const MeshLoader&) = delete;
+
 	MeshLoader(MeshLoader&&) = delete;
+
 	auto operator=(const MeshLoader&) -> MeshLoader& = delete;
+
 	auto operator=(MeshLoader&&) -> MeshLoader& = delete;
 
 	/**
-	 * @brief Get the supported file extensions.
+	 * @brief
+	 *  Get the supported file extensions.
 	 * @return The supported file extensions.
 	 */
 	[[nodiscard]] static auto getSupportedExtensions() -> std::vector<std::string> {
@@ -41,7 +48,8 @@ public:
 	}
 
 	/**
-	 * @brief Load a static mesh from a file.
+	 * @brief
+	 *  Load a static mesh from a file.
 	 * @param[in] iFilePath Path to the mesh file.
 	 * @return The loaded static mesh or nullptr if loading failed.
 	 */
@@ -66,19 +74,24 @@ public:
 
 private:
 	/**
-	 * @brief Load a static mesh from an OBJ file.
+	 * @brief
+	 *  Load a static mesh from an OBJ file.
 	 * @param[in] iFilePath Path to the OBJ file.
 	 * @return The loaded static mesh.
 	 */
 	static auto loadObj(const std::filesystem::path& iFilePath) -> shared<geometry::StaticMesh>;
+
 	/**
-	 * @brief Load a static mesh from an FBX file.
+	 * @brief
+	 *  Load a static mesh from an FBX file.
 	 * @param[in] iFilePath Path to the FBX file.
 	 * @return The loaded static mesh.
 	 */
 	static auto loadFbx(const std::filesystem::path& iFilePath) -> shared<geometry::StaticMesh>;
+
 	/**
-	 * @brief Load a static mesh from a GLTF/GLB file.
+	 * @brief
+	 *  Load a static mesh from a GLTF/GLB file.
 	 * @param[in] iFilePath Path to the GLTF/GLB file.
 	 * @return The loaded static mesh.
 	 */

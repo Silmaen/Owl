@@ -2,7 +2,7 @@
  * @file ExtraDataRegister.cpp
  * @author Silmaen
  * @date 19/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -21,13 +21,13 @@ namespace owl::data::extradata {
 //---------------------------------------------------------------------------------------------------------------------
 
 static_assert(sizeof(TriangleUVCoordinate) <= 48);
+
 static_assert(sizeof(TriangleNormals) <= 48);
+
 static_assert(sizeof(VertexNormal) <= 24);
 
 using ExtraDataRegistrationScopeVector = std::vector<ExtraDataRegisterScope>;
-
 namespace {
-
 auto factoryExtraDataRegistration() -> ExtraDataRegistrationScopeVector {
 	ExtraDataRegistrationScopeVector extraDataRegistrationScopes;
 

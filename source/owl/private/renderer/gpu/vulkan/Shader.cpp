@@ -2,7 +2,7 @@
  * @file Shader.cpp
  * @author Silmaen
  * @date 07/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -17,6 +17,7 @@
 namespace owl::renderer::gpu::vulkan {
 
 namespace utils {
+
 namespace {
 // NOLINTBEGIN(clang-analyzer-optin.core.EnumCastOutOfRange)
 [[maybe_unused]] auto shaderStageToVkStageBit(const ShaderType& iStage) -> VkShaderStageFlagBits {
@@ -35,7 +36,6 @@ namespace {
 	return static_cast<VkShaderStageFlagBits>(0);
 }
 // NOLINTEND(clang-analyzer-optin.core.EnumCastOutOfRange)
-
 
 auto createShaderModule(const VkDevice& iLogicalDevice, const std::vector<uint32_t>& iCode) -> VkShaderModule {
 	VkShaderModuleCreateInfo createInfo{};
@@ -71,6 +71,7 @@ Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, con
 Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 			   const std::vector<std::filesystem::path>& iSources)
 	: renderer::gpu::Shader{iShaderName, iRenderer} {
+
 	OWL_PROFILE_FUNCTION()
 
 	if (iSources.size() == 1 && iSources[0].extension() == ".slang") {
@@ -102,8 +103,8 @@ void Shader::setMat4(const std::string&, const math::mat4&) {}
 
 void Shader::createShader(const std::string& iSlangSource) {
 	OWL_SCOPE_UNTRACK
-
 	OWL_PROFILE_FUNCTION()
+
 	const auto start = std::chrono::steady_clock::now();
 
 	renderer::utils::createCacheDirectoryIfNeeded(getRenderer(), "vulkan");
@@ -134,6 +135,7 @@ void Shader::compileOrGetVulkanBinaries(const std::string& iSlangSource) {
 	if (allCached) {
 		for (const auto stage: {ShaderType::Vertex, ShaderType::Fragment}) {
 			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "vulkan", stage);
+
 			OWL_CORE_INFO("Using cached Vulkan Shader {}-{}", getName(), magic_enum::enum_name(stage))
 			shaderData[stage] = renderer::utils::readCachedShader(cachedPath);
 		}
@@ -147,6 +149,7 @@ void Shader::compileOrGetVulkanBinaries(const std::string& iSlangSource) {
 		shaderData = std::move(compiled.spirvData);
 		for (auto&& [stage, data]: shaderData) {
 			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "vulkan", stage);
+
 			OWL_CORE_TRACE("Write compiled shader file, size {}", data.size())
 			if (!renderer::utils::writeCachedShader(cachedPath, data))
 				OWL_CORE_WARN("Failed to write the compiled shader.")
@@ -154,6 +157,7 @@ void Shader::compileOrGetVulkanBinaries(const std::string& iSlangSource) {
 		}
 	}
 	for (auto&& [stage, data]: shaderData)
+
 		renderer::utils::shaderReflect(getName(), getRenderer(), "vulkan", stage, data);
 }
 

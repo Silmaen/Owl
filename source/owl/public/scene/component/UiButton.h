@@ -1,5 +1,5 @@
 /**
- * @file UIButton.h
+ * @file UiButton.h
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -12,13 +12,13 @@
 #include "math/vectors.h"
 
 namespace owl::scene::component {
-
 /**
- * @brief UI button widget component.
+ * @brief
+ *  UI button widget component.
  *
  * Interactive button with visual states and Lua callback support.
  */
-struct OWL_API UIButton {
+struct OWL_API UiButton {
 	/// Button visual state (runtime only, not serialized).
 	enum struct State : uint8_t { Normal, Hovered, Pressed, Disabled };
 	/// Current runtime state.
@@ -34,8 +34,12 @@ struct OWL_API UIButton {
 	/// Name of the Lua callback function (called on click).
 	std::string onClickCallback;
 
-	/// @brief Get the current colour based on state.
-	[[nodiscard]] auto getCurrentColor() const -> math::vec4 {
+	/**
+	 * @brief
+	 *  Get the current colour based on state.
+	 * @return The colour matching the current `state`.
+	 */
+	[[nodiscard]] auto getCurrentColor() const noexcept -> math::vec4 {
 		switch (state) {
 			case State::Normal:
 				return normalColor;
@@ -49,14 +53,32 @@ struct OWL_API UIButton {
 		return normalColor;
 	}
 
-	/// @brief Get the class title.
-	static auto name() -> const char* { return "UI Button"; }
-	/// @brief Get the YAML key.
-	static auto key() -> const char* { return "UIButton"; }
+	/**
+	 * @brief
+	 *  Get the class title.
+	 * @return The display name of the component.
+	 */
+	static auto name() noexcept -> const char* { return "UI Button"; }
 
-	/// @brief Write this component to a YAML context.
+	/**
+	 * @brief
+	 *  Get the YAML key.
+	 * @return The YAML serialization key.
+	 */
+	static auto key() noexcept -> const char* { return "UiButton"; }
+
+	/**
+	 * @brief
+	 *  Write this component to a YAML context.
+	 * @param[in] iOut The serializer used as output.
+	 */
 	void serialize(const core::Serializer& iOut) const;
-	/// @brief Read this component from YAML node.
+
+	/**
+	 * @brief
+	 *  Read this component from YAML node.
+	 * @param[in] iNode The serializer wrapping the source YAML node.
+	 */
 	void deserialize(const core::Serializer& iNode);
 };
 

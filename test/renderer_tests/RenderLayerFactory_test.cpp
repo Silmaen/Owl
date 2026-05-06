@@ -2,7 +2,7 @@
  * @file RenderLayerFactory_test.cpp
  * @author Silmaen
  * @date 30/04/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,7 +11,6 @@
 #include <renderer/RenderLayerFactory.h>
 
 namespace {
-
 class FakeLayer final : public owl::renderer::RenderLayer {
 public:
 	explicit FakeLayer(std::string iName) : m_name{std::move(iName)} {}

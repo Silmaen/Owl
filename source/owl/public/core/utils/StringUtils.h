@@ -2,7 +2,7 @@
  * @file StringUtils.h
  * @author Silmaen
  * @date 29/04/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,9 +12,9 @@
 #include <string>
 
 namespace owl::core::utils {
-
 /**
- * @brief Convert a size_t to a human-readable string.
+ * @brief
+ *  Convert a size_t to a human-readable string.
  * @param iSize The size in octets.
  * @return The human-readable string.
  */

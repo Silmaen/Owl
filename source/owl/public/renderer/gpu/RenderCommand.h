@@ -2,7 +2,7 @@
  * @file RenderCommand.h
  * @author Silmaen
  * @date 09/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,23 +13,30 @@
 
 namespace owl::renderer::gpu {
 /**
- * @brief Class gathering all render commands.
+ * @brief
+ *  Class gathering all render commands.
  */
 class OWL_API RenderCommand final {
 public:
 	RenderCommand() = default;
+
 	RenderCommand(const RenderCommand&) = delete;
+
 	RenderCommand(RenderCommand&&) = delete;
+
 	auto operator=(const RenderCommand&) -> RenderCommand& = delete;
+
 	auto operator=(RenderCommand&&) -> RenderCommand& = delete;
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~RenderCommand() = default;
 
 	/**
-	 * @brief Initialize the renderer.
+	 * @brief
+	 *  Initialize the renderer.
 	 */
 	static void init() {
 		if (m_renderAPI)
@@ -37,18 +44,21 @@ public:
 	}
 
 	/**
-	 * @brief Reset RenderAPI.
+	 * @brief
+	 *  Reset RenderAPI.
 	 */
 	static void invalidate() { m_renderAPI.reset(); }
 
 	/**
-	 * @brief Get the state of the API.
+	 * @brief
+	 *  Get the state of the API.
 	 * @return API state.
 	 */
 	static auto getState() -> RenderAPI::State;
 
 	/**
-	 * @brief Define the view port for this API.
+	 * @brief
+	 *  Define the view port for this API.
 	 * @param[in] iX Starting X coordinate.
 	 * @param[in] iY Starting Y coordinate.
 	 * @param[in] iWidth Viewport's width.
@@ -59,26 +69,31 @@ public:
 	}
 
 	/**
-	 * @brief Binding to the definition of background colour.
+	 * @brief
+	 *  Binding to the definition of background colour.
 	 * @param[in] iColor The new background colour.
 	 */
 	static void setClearColor(const math::vec4& iColor) { m_renderAPI->setClearColor(iColor); }
 
 	/**
-	 * @brief Binding to clear screen.
+	 * @brief
+	 *  Binding to clear screen.
 	 */
 	static void clear() { m_renderAPI->clear(); }
 
 	/**
-	 * @brief Binding the draw of vertex array.
+	 * @brief
+	 *  Binding the draw of vertex array.
 	 * @param[in] iData Draw data to render.
 	 * @param[in] iIndexCount Number of vertex to draw (=0 all).
 	 */
 	static void drawData(const shared<DrawData>& iData, const uint32_t iIndexCount = 0) {
 		m_renderAPI->drawData(iData, iIndexCount);
 	}
+
 	/**
-		 * @brief Binding the draw of vertex array as lines.
+	 * @brief
+	 *  Binding the draw of vertex array as lines.
 		 * @param[in] iData Draw data to render.
 		 * @param[in] iIndexCount Number of vertex to draw (=0 all).
 		 */
@@ -87,13 +102,15 @@ public:
 	}
 
 	/**
-	 * @brief Create or replace the API base on it type.
+	 * @brief
+	 *  Create or replace the API base on it type.
 	 * @param[in] iType The type of the new render API.
 	 */
 	static void create(const RenderAPI::Type& iType);
 
 	/**
-	 * @brief Get the actual API type.
+	 * @brief
+	 *  Get the actual API type.
 	 * @return API Type.
 	 */
 	static auto getApi() -> RenderAPI::Type {
@@ -103,7 +120,8 @@ public:
 	}
 
 	/**
-	 * @brief Get the maximum number of texture slots.
+	 * @brief
+	 *  Get the maximum number of texture slots.
 	 * @return Number of texture slots.
 	 */
 	static auto getMaxTextureSlots() -> uint32_t {
@@ -113,7 +131,8 @@ public:
 	}
 
 	/**
-	 * @brief Reset value for the frame to render.
+	 * @brief
+	 *  Reset value for the frame to render.
 	 */
 	static void beginFrame() {
 		if (m_renderAPI)
@@ -121,7 +140,8 @@ public:
 	}
 
 	/**
-	 * @brief Reset value for the batch to render.
+	 * @brief
+	 *  Reset value for the batch to render.
 	 */
 	static void beginBatch() {
 		if (m_renderAPI)
@@ -129,7 +149,8 @@ public:
 	}
 
 	/**
-	 * @brief Reset value for the teture load.
+	 * @brief
+	 *  Reset value for the teture load.
 	 */
 	static void beginTextureLoad() {
 		if (m_renderAPI)
@@ -137,7 +158,8 @@ public:
 	}
 
 	/**
-	 * @brief Ends draw call for the current batch.
+	 * @brief
+	 *  Ends draw call for the current batch.
 	 */
 	static void endBatch() {
 		if (m_renderAPI)
@@ -145,7 +167,8 @@ public:
 	}
 
 	/**
-	 * @brief Change to the next subpass.
+	 * @brief
+	 *  Change to the next subpass.
 	 */
 	static void nextSubpass() {
 		if (m_renderAPI)
@@ -153,7 +176,8 @@ public:
 	}
 
 	/**
-	 * @brief Ends draw call for the current frame.
+	 * @brief
+	 *  Ends draw call for the current frame.
 	 */
 	static void endFrame() {
 		if (m_renderAPI)
@@ -161,7 +185,8 @@ public:
 	}
 
 	/**
-	 * @brief Ends texture load.
+	 * @brief
+	 *  Ends texture load.
 	 */
 	static void endTextureLoad() {
 		if (m_renderAPI)
@@ -169,7 +194,8 @@ public:
 	}
 
 	/**
-	 * @brief Enable or disable depth buffer writing.
+	 * @brief
+	 *  Enable or disable depth buffer writing.
 	 * @param[in] iEnabled True to enable depth writing, false to disable.
 	 */
 	static void setDepthMask(const bool iEnabled) {
@@ -178,7 +204,8 @@ public:
 	}
 
 	/**
-	 * @brief Enable or disable depth testing.
+	 * @brief
+	 *  Enable or disable depth testing.
 	 * @param[in] iEnabled True to enable depth testing, false to disable.
 	 */
 	static void setDepthTest(const bool iEnabled) {
@@ -187,7 +214,8 @@ public:
 	}
 
 	/**
-	 * @brief Check if the API type require initializations.
+	 * @brief
+	 *  Check if the API type require initializations.
 	 * @return True if initialization required.
 	 */
 	static auto requireInit() -> bool {

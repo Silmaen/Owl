@@ -2,7 +2,7 @@
  * @file EditorLayer.cpp
  * @author Silmaen
  * @date 21/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -34,8 +34,8 @@
 
 
 namespace owl::nest {
-namespace {
 
+namespace {
 void buildIconBank() {
 	auto& iconBank = gui::IconBank::instance();
 
@@ -180,6 +180,7 @@ void buildIconBank() {
 	};
 	iconBank.build(icons, 64, themeColors);
 }
+
 void loadTriggerTextures() {
 	// Trigger icons are also used for Renderer2D viewport drawing (not just ImGui),
 	// so they need to remain in the texture library as individual textures.
@@ -192,12 +193,14 @@ void loadTriggerTextures() {
 	textureLibrary.load("icons/triggers/interaction");
 	textureLibrary.load("icons/triggers/lua_callback");
 }
+
 void loadSounds() {
 	auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
 	soundLibrary.load("clic.wav");
 }
 
 }// namespace
+
 EditorLayer::EditorLayer() : Layer("EditorLayer"), m_cameraController{1280.0f / 720.0f} {}
 
 auto EditorLayer::activeSceneDocument() const -> SceneDocument* {
@@ -309,7 +312,7 @@ void EditorLayer::syncActiveDocumentPanels() {
 	} else {
 		renderer::Renderer::setRenderStack(renderer::RenderStack{});
 	}
-	updateWindowTitle();
+	refreshWindowTitle();
 	refreshRibbonForActiveDoc();
 }
 
@@ -431,7 +434,6 @@ void EditorLayer::onAttach() {
 
 	if (const auto f = core::Application::get().getWorkingDirectory() / "OwlNest_settings.yml"; exists(f))
 		m_settings.loadFromFile(f);
-
 	// Apply theme from saved settings
 	if (m_settings.themePreset != "Custom") {
 		for (const auto& [preset, name]: gui::Theme::getPresetNames()) {
@@ -447,7 +449,9 @@ void EditorLayer::onAttach() {
 	m_sceneHierarchy.setUndoManager(&initialDoc.undoManager());
 
 	buildIconBank();
+
 	loadTriggerTextures();
+
 	loadSounds();
 
 	// Register all editor actions with default keybindings
@@ -507,8 +511,10 @@ void EditorLayer::onAttach() {
 		{input::key::F5, Modifiers::None},
 		[this] () -> void {
 			if (getState() == State::Edit)
+
 				onScenePlay();
 			else if (getState() == State::Pause)
+
 				onSceneResume();
 		});
 	m_actionRegistry.registerAction("scene.pause", "Pause",
@@ -530,6 +536,7 @@ void EditorLayer::onAttach() {
 			if (auto ent = getSelectedEntity(); ent) {
 				doc->undoManager().push(mkUniq<commands::DeleteEntityCommand>(ent));
 				doc->getActiveScene()->destroyEntity(ent);
+
 				setSelectedEntity({});
 			}
 		});
@@ -553,6 +560,7 @@ void EditorLayer::onAttach() {
 			for (size_t i = 0; i < docs.size(); ++i) {
 				if (docs[i].get() == current) {
 					m_documents.setActive(docs[(i + 1) % docs.size()].get());
+
 					syncActiveDocumentPanels();
 					return;
 				}
@@ -567,6 +575,7 @@ void EditorLayer::onAttach() {
 			for (size_t i = 0; i < docs.size(); ++i) {
 				if (docs[i].get() == current) {
 					m_documents.setActive(docs[(i + docs.size() - 1) % docs.size()].get());
+
 					syncActiveDocumentPanels();
 					return;
 				}
@@ -584,6 +593,7 @@ void EditorLayer::onAttach() {
 	if (auto ui = core::Application::get().getImGuiLayer(); ui != nullptr)
 		ui->setTopBarCallback([this] () -> void {
 			m_ribbon.onRender();
+
 			renderRecentProjectsPopup();
 		});
 
@@ -594,6 +604,7 @@ void EditorLayer::onAttach() {
 			[this](const std::filesystem::path& iPath) -> void { openNodeGraphFile(iPath); });
 	m_contentBrowser.setAnimationOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openAnimationFile(iPath); });
+
 	newScene();
 }
 
@@ -606,7 +617,6 @@ void EditorLayer::onDetach() {
 
 	m_contentBrowser.detach();
 	OWL_TRACE("EditorLayer: deleted editor FrameBuffer.")
-
 	if (auto ui = core::Application::get().getImGuiLayer(); ui != nullptr)
 		ui->setTopBarCallback({});
 	m_ribbon.clear();
@@ -758,9 +768,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		}
 	}
 	if (m_documents.getActive() != activeBefore)
+
 		syncActiveDocumentPanels();
 	for (const auto id: toClose)
+
 		requestCloseDocument(id);
+
 	renderCloseDocumentModal();
 	//=============================================================
 	m_sceneHierarchy.onImGuiRender();
@@ -776,7 +789,9 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_projectSettings.onImGuiRender();
 	if (m_projectSettings.hasResult()) {
 		m_project = m_projectSettings.consumeResult();
+
 		saveProject();
+
 		// Rebuild the render stack from the (possibly edited) project config so renderer-stack
 		// edits take effect without reopening the project.
 		syncActiveDocumentPanels();
@@ -791,8 +806,11 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
 	m_helpPanel.onImGuiRender(iTimeStep);
 	m_asyncProgress.onImGuiRender();
+
 	renderWelcomeScreen();
+
 	renderPackWizardModal();
+
 	renderPackValidationModal();
 }
 
@@ -906,7 +924,6 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 void EditorLayer::buildRibbon() {
 	using Button = gui::widgets::Ribbon::Button;
 	using Size = gui::widgets::Ribbon::ButtonSize;
-
 	const auto shortcut = [this](const char* iActionId) -> std::string {
 		return m_actionRegistry.getShortcutString(iActionId);
 	};
@@ -914,9 +931,7 @@ void EditorLayer::buildRibbon() {
 		const auto sc = shortcut(iActionId);
 		return sc.empty() ? std::string{iBase} : std::format("{} ({})", iBase, sc);
 	};
-
 	m_ribbon.clear();
-
 	// =============================== File tab ===============================
 	const auto fileTab = m_ribbon.addTab("File");
 	m_ribbon.setTabHighlighted(fileTab, true);
@@ -977,7 +992,6 @@ void EditorLayer::buildRibbon() {
 											  .tooltip = "Quit Owl Nest",
 											  .onClick = [] () -> void { core::Application::get().close(); },
 											  .size = Size::Large});
-
 	// =============================== Edit tab ===============================
 	const auto editTab = m_ribbon.addTab("Edit");
 	const auto gHistory = m_ribbon.addGroup(editTab, "History");
@@ -1011,16 +1025,19 @@ void EditorLayer::buildRibbon() {
 												  .isEnabled = [this] () -> bool { return m_project.isLoaded(); },
 												  .onClick = [this] () -> void { m_projectSettings.open(m_project); },
 												  .size = Size::Small});
-
 	// =============================== Contextual tab =========================
 	if (const auto* active = m_documents.getActive(); active != nullptr) {
 		if (active->type() == DocumentType::Code)
+
 			buildCodeTab();
 		else if (active->type() == DocumentType::NodeGraph)
+
 			buildNodeGraphTab();
 		else if (active->type() == DocumentType::Animation)
+
 			buildAnimationTab();
 		else
+
 			buildSceneTab();
 		m_lastRibbonDocType = active->type();
 	} else {
@@ -1072,18 +1089,20 @@ void EditorLayer::buildSceneTab() {
 												.isEnabled = [this] () -> bool { return activeSceneDocument() != nullptr; },
 												.onClick = [this] () -> void { requestCloseActiveDocument(); },
 												.size = Size::Large});
-
 	const auto gPlay = m_ribbon.addGroup(sceneTab, "Playback");
 	m_ribbon.addButton(sceneTab, gPlay, Button{.iconName = "PlayButton", .label = "Play",
 											   .tooltip = tipWithShortcut("Play / Resume", "scene.play"),
 											   .isEnabled = [this] () -> bool {
 												   return activeSceneDocument() != nullptr &&
+
 														  getState() != State::Play;
 											   },
 											   .onClick = [this] () -> void {
 												   if (getState() == State::Edit)
+
 													   onScenePlay();
 												   else if (getState() == State::Pause)
+
 													   onSceneResume();
 											   },
 											   .size = Size::Large});
@@ -1120,10 +1139,13 @@ void EditorLayer::buildSceneTab() {
 					  .size = Size::Large};
 	};
 	m_ribbon.addButton(sceneTab, gGizmo,
+
 					   gizmoButton(gui::Guizmo::Type::Translation, "ctrl_translation", "Translate", "guizmo.translate"));
 	m_ribbon.addButton(sceneTab, gGizmo,
+
 					   gizmoButton(gui::Guizmo::Type::Rotation, "ctrl_rotation", "Rotate", "guizmo.rotate"));
 	m_ribbon.addButton(sceneTab, gGizmo,
+
 					   gizmoButton(gui::Guizmo::Type::Scale, "ctrl_scale", "Scale", "guizmo.scale"));
 
 	const auto gSceneSettings = m_ribbon.addGroup(sceneTab, "Settings");
@@ -1237,7 +1259,6 @@ void EditorLayer::buildAnimationTab() {
 			return static_cast<AnimationDocument*>(d);
 		return nullptr;
 	};
-
 	const auto animTab = m_ribbon.addTab("Animation");
 	const auto gPlay = m_ribbon.addGroup(animTab, "Playback");
 	m_ribbon.addButton(animTab, gPlay,
@@ -1273,7 +1294,6 @@ void EditorLayer::buildAnimationTab() {
 									  a->stop();
 							  },
 							  .size = Size::Small});
-
 	const auto gFrame = m_ribbon.addGroup(animTab, "Frame");
 	m_ribbon.addButton(animTab, gFrame,
 					   Button{.iconName = "back", .label = "Previous",
@@ -1293,7 +1313,6 @@ void EditorLayer::buildAnimationTab() {
 									  a->stepNext();
 							  },
 							  .size = Size::Small});
-
 	const auto gFile = m_ribbon.addGroup(animTab, "File");
 	m_ribbon.addButton(animTab, gFile,
 					   Button{.iconName = "save", .label = "Save",
@@ -1600,7 +1619,7 @@ void EditorLayer::saveSceneAs(const std::filesystem::path& iScenePath) {
 				OWL_CORE_INFO("Scene saved to {}", path.string())
 			},
 			[state]() -> void { state->completed.store(true); }));
-	updateWindowTitle();
+	refreshWindowTitle();
 }
 
 void EditorLayer::saveCurrentScene() {
@@ -1733,7 +1752,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	core::Application::get().addAssetDirectory(
 			{std::format("Project: {}", m_project.name), m_project.projectDirectory});
 	m_contentBrowser.attach();
-	updateWindowTitle();
+	refreshWindowTitle();
 
 	// Add to recent projects list.
 	m_settings.pushRecentProject(iDir);
@@ -1787,7 +1806,7 @@ void EditorLayer::closeProject() {
 	core::Application::get().removeAssetDirectory(m_project.projectDirectory);
 	m_contentBrowser.attach();
 	m_project = {};
-	updateWindowTitle();
+	refreshWindowTitle();
 }
 
 void EditorLayer::importScene() {
@@ -1808,7 +1827,7 @@ void EditorLayer::importScene() {
 	OWL_CORE_INFO("Imported scene '{}' into project", filepath.filename().string())
 }
 
-void EditorLayer::updateWindowTitle() {
+void EditorLayer::refreshWindowTitle() {
 	auto& app = core::Application::get();
 	const auto* doc = activeSceneDocument();
 	const auto* const dirty = (doc != nullptr && doc->isDirty()) ? " *" : "";
@@ -1920,7 +1939,6 @@ void EditorLayer::packScene() {
 }
 
 namespace {
-
 void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem::path& iDestDir) {
 	std::error_code ec;
 	for (const auto& entry: std::filesystem::directory_iterator(iSrcDir, ec)) {
@@ -1941,7 +1959,10 @@ void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem:
 	}
 }
 
-/// Sanitize a string for use as a filename (replace unsafe characters with _).
+/**
+ * @brief
+ *  Sanitize a string for use as a filename (replace unsafe characters with _).
+ */
 auto sanitizeFilename(const std::string& iName) -> std::string {
 	std::string result;
 	result.reserve(iName.size());
@@ -1956,7 +1977,11 @@ auto sanitizeFilename(const std::string& iName) -> std::string {
 }
 
 #ifdef OWL_PLATFORM_LINUX
-/// Write a Linux launcher shell script that sets LD_LIBRARY_PATH.
+
+/**
+ * @brief
+ *  Write a Linux launcher shell script that sets LD_LIBRARY_PATH.
+ */
 void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string& iExeName) {
 	std::ofstream script(iGameDir / "launch.sh");
 	script << "#!/bin/sh\n";
@@ -1973,7 +1998,10 @@ void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string
 }
 #endif
 
-/// Write a game_info.yml metadata file.
+/**
+ * @brief
+ *  Write a game_info.yml metadata file.
+ */
 void writeMetadata(const std::filesystem::path& iGameDir, const std::string& iGameName, const std::string& iVersion,
 				   const std::string& iAuthor, const std::string& iDescription) {
 	const auto now = std::chrono::system_clock::now();
@@ -2002,7 +2030,11 @@ void writeMetadata(const std::filesystem::path& iGameDir, const std::string& iGa
 }
 
 #ifdef OWL_PLATFORM_WINDOWS
-/// Create a .zip archive from a directory using PowerShell.
+
+/**
+ * @brief
+ *  Create a .zip archive from a directory using PowerShell.
+ */
 auto createZipArchive(const std::filesystem::path& iSourceDir, const std::filesystem::path& iOutputZip) -> bool {
 	const auto cmd = std::format(
 			"powershell -NoProfile -Command \"Compress-Archive -Path '{}\\*' -DestinationPath '{}' -Force\"",
@@ -2185,11 +2217,9 @@ void EditorLayer::startPackGame() {
 	const auto destDir = m_pendingPackDestDir;
 	m_pendingPackDestDir.clear();
 	m_pendingPackWarnings.clear();
-
 	// Reuse the pre-scanned assets from the validation pass (avoids a double scan).
 	auto preScanned = m_pendingPackAssets;
 	m_pendingPackAssets.reset();
-
 	// Snapshot project data (copy by value for thread safety).
 	const auto gameName = sanitizeFilename(m_project.name);
 	const auto projectDir = m_project.projectDirectory;
@@ -2202,7 +2232,6 @@ void EditorLayer::startPackGame() {
 	const auto windowCfg = m_project.window;
 	const auto rendererStackCfg = m_project.rendererStack;
 	const auto runnerSrcDir = core::Application::get().getWorkingDirectory();
-
 	const auto gameDir = destDir / gameName;
 	if (std::error_code ec; !std::filesystem::create_directories(gameDir, ec) && ec) {
 		OWL_CORE_ERROR("Pack: cannot create output directory '{}': {}", gameDir.string(), ec.message())
@@ -2219,7 +2248,6 @@ void EditorLayer::startPackGame() {
 	// Create shared progress state and open the modal.
 	auto state = mkShared<AsyncProgressState>();
 	m_asyncProgress.open("Packing Game...", state, true);
-
 	// Push async task to the scheduler.
 	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			// --- Worker function (runs on thread pool) ---
@@ -2246,13 +2274,11 @@ void EditorLayer::startPackGame() {
 					return;
 				state->progress.store(0.15f);
 				state->setMessage("Building pack (" + std::to_string(assets.size()) + " assets)...");
-
 				// Phase 2: Build and write pack file (20% – 80%).
 				io::pack::PackWriter writer;
 				for (const auto& ref: assets) writer.addFile(ref.diskPath, ref.packPath, ref.assetType);
 				if (const auto gsPath = projectDir / "game_settings.yml"; exists(gsPath))
 					writer.addFile(gsPath, "game_settings.yml", io::pack::AssetType::Other);
-
 				const auto packFilename = gameName + ".owlpack";
 				const auto packPath = gameDir / packFilename;
 				const bool writeOk = writer.write(
@@ -2270,7 +2296,6 @@ void EditorLayer::startPackGame() {
 					return;
 				}
 				state->progress.store(0.82f);
-
 				// Phase 3: Generate config files (80% – 90%).
 				state->setMessage("Writing configuration...");
 				{
@@ -2284,6 +2309,7 @@ void EditorLayer::startPackGame() {
 							break;
 						}
 					}
+
 					std::ofstream configOut(gameDir / "runner.yml");
 					configOut << "RunnerConfig:\n";
 					configOut << "  FirstScene: " << resolvedFirstScene << "\n";
@@ -2328,8 +2354,10 @@ void EditorLayer::startPackGame() {
 					const auto iconSrc = projectDir / projectIcon;
 					if (exists(iconSrc)) {
 						const auto iconDst = gameDir / projectIcon;
+
 						std::filesystem::create_directories(iconDst.parent_path());
 						std::error_code ec;
+
 						std::filesystem::copy(iconSrc, iconDst,
 											  std::filesystem::copy_options::overwrite_existing, ec);
 					}
@@ -2357,6 +2385,7 @@ void EditorLayer::startPackGame() {
 				const auto destExe = gameDir / exeFilename;
 				{
 					std::error_code ec;
+
 					std::filesystem::copy_file(runnerExe, destExe,
 											   std::filesystem::copy_options::overwrite_existing, ec);
 					if (ec) {
@@ -2367,12 +2396,14 @@ void EditorLayer::startPackGame() {
 #ifdef OWL_PLATFORM_LINUX
 				{
 					std::error_code ec;
+
 					std::filesystem::permissions(destExe,
 												 std::filesystem::perms::owner_exec |
 														 std::filesystem::perms::group_exec |
 														 std::filesystem::perms::others_exec,
 												 std::filesystem::perm_options::add, ec);
 					if (ec)
+
 						OWL_CORE_WARN("Failed to set exec permissions on {}: {}", destExe.string(),
 									  ec.message())
 				}
@@ -2385,6 +2416,7 @@ void EditorLayer::startPackGame() {
 #ifdef OWL_PLATFORM_WINDOWS
 				{
 					const auto zipPath = gameDir.parent_path() / (gameName + ".zip");
+
 					createZipArchive(gameDir, zipPath);
 				}
 #endif
@@ -2403,6 +2435,7 @@ void EditorLayer::startPackGame() {
 											  "Duration: {:.1f}s",
 											  assets.size(), mib, gameDir.string(),
 											  static_cast<double>(durationMs) / 1000.0));
+
 				OWL_CORE_INFO("Game exported: {} ({} assets, {:.2f} MiB) -> {} in {:.1f}s",
 							  projectName, assets.size(), mib, gameDir.string(),
 							  static_cast<double>(durationMs) / 1000.0)
@@ -2441,10 +2474,10 @@ void EditorLayer::onContextualHelp() {
 		{"BackgroundTexture", "renderer"}, {"Text", "renderer"},
 		{"Player", "scene"},         {"PrefabLink", "scene"},
 		{"EntityLink", "scene"},     {"Canvas", "editor"},
-		{"UIRect", "editor"},        {"UIText", "editor"},
-		{"UIImage", "editor"},       {"UIButton", "editor"},
-		{"UIPanel", "editor"},       {"UIProgressBar", "editor"},
-		{"UISlider", "editor"},
+		{"UiRect", "editor"},        {"UiText", "editor"},
+		{"UiImage", "editor"},       {"UiButton", "editor"},
+		{"UiPanel", "editor"},       {"UiProgressBar", "editor"},
+		{"UiSlider", "editor"},
 	};
 	const auto& hovered = panel::SceneHierarchy::lastHoveredComponentName();
 	if (const auto it = kComponentToPage.find(hovered); it != kComponentToPage.end()) {

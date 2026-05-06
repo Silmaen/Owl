@@ -2,7 +2,7 @@
  * @file SceneTrigger.cpp
  * @author Silmaen
  * @date 12/30/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -17,8 +17,10 @@
 namespace owl::scene {
 
 namespace {
-
-/// Dispatch a named Lua callback on an entity's script instance if present.
+/**
+ * @brief
+ *  Dispatch a named Lua callback on an entity's script instance if present.
+ */
 void dispatchLuaCallback(const Entity& iEntity, const std::string& iFuncName, const uint64_t iArg) {
 	if (!iEntity.hasComponent<component::LuaScript>())
 		return;
@@ -27,7 +29,10 @@ void dispatchLuaCallback(const Entity& iEntity, const std::string& iFuncName, co
 	static_cast<void>(iArg);
 }
 
-/// Dispatch a named Lua callback with no argument.
+/**
+ * @brief
+ *  Dispatch a named Lua callback with no argument.
+ */
 void dispatchLuaCallbackNoArg(const Entity& iEntity, const std::string& iFuncName) {
 	if (!iEntity.hasComponent<component::LuaScript>())
 		return;
@@ -76,6 +81,7 @@ void SceneTrigger::onTriggered(const Entity& ioPlayer, const Entity& iTriggerEnt
 				const bool keyDown = input::Input::isKeyPressed(input::key::E);
 				if (keyDown && !m_interactKeyWasDown) {
 					const auto& func = callbackName.empty() ? std::string("on_interact") : callbackName;
+
 					dispatchLuaCallbackNoArg(iTriggerEntity, func);
 				}
 				m_interactKeyWasDown = keyDown;
@@ -84,6 +90,7 @@ void SceneTrigger::onTriggered(const Entity& ioPlayer, const Entity& iTriggerEnt
 		case TriggerType::LuaCallback:
 			{
 				const auto& func = callbackName.empty() ? std::string("on_triggered") : callbackName;
+
 				dispatchLuaCallback(iTriggerEntity, func, ioPlayer.getUUID());
 			}
 			break;
@@ -106,10 +113,12 @@ void SceneTrigger::onTriggered(const Entity& ioPlayer, const Entity& iTriggerEnt
 							const float sinD = std::sin(delta);
 							const math::vec2f rotatedVelocity = {playerVelocity.x() * cosD - playerVelocity.y() * sinD,
 																 playerVelocity.x() * sinD + playerVelocity.y() * cosD};
+
 							// Teleport player: keep player's own rotation, only move position.
 							physic::PhysicCommand::setTransform(
 									ioPlayer, {targetTransform.translation().x(), targetTransform.translation().y()},
 									playerRotation);
+
 							physic::PhysicCommand::setVelocity(ioPlayer, rotatedVelocity);
 							// Also update the transform component so rendering is in sync.
 							auto& playerTransform = ioPlayer.getComponent<component::Transform>().transform;

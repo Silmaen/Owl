@@ -2,7 +2,7 @@
  * @file MeshCursorBase.cpp
  * @author Silmaen
  * @date 20/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -21,6 +21,7 @@ MeshCursorBase<true, MeshElementType::Vertex>::MeshCursorBase(const MeshType& iM
 MeshCursorBase<true, MeshElementType::Triangle>::MeshCursorBase(const MeshType& iMesh, const size_t iIndex)
 	: BaseCursor(iMesh, iIndex) {
 	m_meshSize = iMesh.getTriangleCount();
+
 	reset(iIndex);
 }
 

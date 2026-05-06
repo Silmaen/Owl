@@ -20,7 +20,6 @@ using namespace owl;
 using namespace owl::script;
 
 namespace {
-
 auto writeTempScript(const std::filesystem::path& iDir, const std::string& iFilename, const std::string& iContent)
 		-> std::filesystem::path {
 	std::filesystem::create_directories(iDir);

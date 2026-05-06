@@ -16,9 +16,9 @@
 #include <vector>
 
 namespace owl::gui::widgets {
-
 /**
- * @brief One row of a `sequencer()` widget — a labelled frame range.
+ * @brief
+ *  One row of a `sequencer()` widget — a labelled frame range.
  */
 struct SequencerEntry {
 	/// Row label displayed in the legend column.
@@ -32,7 +32,8 @@ struct SequencerEntry {
 };
 
 /**
- * @brief Options controlling a `sequencer()` instance.
+ * @brief
+ *  Options controlling a `sequencer()` instance.
  */
 struct SequencerOptions {
 	/// Lowest frame number the timeline displays.
@@ -46,7 +47,8 @@ struct SequencerOptions {
 };
 
 /**
- * @brief Owl wrapper around the ImSequencer widget from the ImGuizmo bundle.
+ * @brief
+ *  Owl wrapper around the ImSequencer widget from the ImGuizmo bundle.
  *
  * Renders a horizontal multi-track timeline with a legend column on the left and a frame
  * ruler on top. Each `SequencerEntry` becomes a coloured bar with draggable start/end

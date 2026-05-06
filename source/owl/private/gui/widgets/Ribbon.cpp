@@ -21,7 +21,6 @@ OWL_DIAG_POP
 namespace owl::gui::widgets {
 
 namespace {
-
 constexpr float sk_largeIconSize = 32.0f;
 constexpr float sk_largeWidthMin = 56.0f;
 constexpr float sk_largeInnerPadX = 6.0f;
@@ -35,7 +34,10 @@ constexpr float sk_groupLabelGap = 2.0f;
 constexpr float sk_groupFooterPadding = 4.0f;
 constexpr size_t sk_maxSmallStack = 3;// exactly three small buttons = one large button's content
 
-/// @brief Draw a hovered/active/checked background rect on the last ImGui item.
+/**
+ * @brief
+ *  Draw a hovered/active/checked background rect on the last ImGui item.
+ */
 void drawButtonBackground(const Ribbon::Button& iButton) {
 	const bool hovered = ImGui::IsItemHovered();
 	const bool active = ImGui::IsItemActive();
@@ -67,7 +69,10 @@ void maybeShowTooltip(const std::string& iTooltip) {
 		ImGui::SetTooltip("%s", iTooltip.c_str());
 }
 
-/// @brief Render a large button (icon on top, label beneath) and return true when clicked.
+/**
+ * @brief
+ *  Render a large button (icon on top, label beneath) and return true when clicked.
+ */
 auto renderLargeButton(const Ribbon::Button& iButton) -> bool {
 	const auto labelSize = ImGui::CalcTextSize(iButton.label.c_str());
 	const float width = std::max(sk_largeWidthMin, labelSize.x + sk_largeInnerPadX * 2.f);
@@ -95,7 +100,10 @@ auto renderLargeButton(const Ribbon::Button& iButton) -> bool {
 	return clicked;
 }
 
-/// @brief Render a small button (icon on the left, label on the right). Returns true on click.
+/**
+ * @brief
+ *  Render a small button (icon on the left, label on the right). Returns true on click.
+ */
 auto renderSmallButton(const Ribbon::Button& iButton, const float iColumnWidth, const float iHeight) -> bool {
 	const bool enabled = iButton.isEnabled ? iButton.isEnabled() : true;
 	if (!enabled)
@@ -122,7 +130,10 @@ auto renderSmallButton(const Ribbon::Button& iButton, const float iColumnWidth, 
 	return clicked;
 }
 
-/// @brief Width of a small-button column (icon + widest label + padding).
+/**
+ * @brief
+ *  Width of a small-button column (icon + widest label + padding).
+ */
 auto measureSmallColumnWidth(const std::vector<const Ribbon::Button*>& iStack) -> float {
 	float maxLabel = 0.f;
 	for (const auto* btn: iStack) {
@@ -133,7 +144,10 @@ auto measureSmallColumnWidth(const std::vector<const Ribbon::Button*>& iStack) -
 												sk_smallLabelPadX);
 }
 
-/// @brief Render one group of buttons side by side.
+/**
+ * @brief
+ *  Render one group of buttons side by side.
+ */
 void renderGroup(const Ribbon::Group& iGroup) {
 	// Remember the starting position so we can place the group label below the content.
 	const auto groupOrigin = ImGui::GetCursorScreenPos();
@@ -187,7 +201,10 @@ void renderGroup(const Ribbon::Group& iGroup) {
 										ImGui::GetColorU32(ImGuiCol_TextDisabled), iGroup.label.c_str());
 }
 
-/// @brief Render every group of the active tab side-by-side with vertical separators.
+/**
+ * @brief
+ *  Render every group of the active tab side-by-side with vertical separators.
+ */
 void renderTabContent(const Ribbon::Tab& iTab) {
 	const float totalHeight =
 			sk_groupContentHeight + sk_groupLabelGap + ImGui::GetFontSize() + sk_groupFooterPadding;

@@ -16,9 +16,9 @@
 #include <string>
 
 namespace owl::debug {
-
 /**
- * @brief A single log entry captured from the engine.
+ * @brief
+ *  A single log entry captured from the engine.
  */
 struct OWL_API LogEntry {
 	/// The severity level of the log.
@@ -32,7 +32,8 @@ struct OWL_API LogEntry {
 };
 
 /**
- * @brief Thread-safe circular buffer storing recent log entries.
+ * @brief
+ *  Thread-safe circular buffer storing recent log entries.
  */
 class OWL_API LogBuffer {
 public:
@@ -40,24 +41,29 @@ public:
 	static constexpr size_t maxEntries = 1000;
 
 	/**
-	 * @brief Push a new log entry into the buffer.
+	 * @brief
+	 *  Push a new log entry into the buffer.
 	 * @param[in] iEntry The entry to store.
 	 */
 	void push(LogEntry iEntry);
 
 	/**
-	 * @brief Get a thread-safe copy of all stored entries.
+	 * @brief
+	 *  Get a thread-safe copy of all stored entries.
 	 * @return A deque of log entries.
 	 */
 	auto getEntries() const -> std::deque<LogEntry>;
 
 	/**
-	 * @brief Clear all stored entries.
+	 * @brief
+	 *  Clear all stored entries.
 	 */
 	void clear();
 
 private:
+	/// Guards `m_entries` against concurrent log writes from worker threads.
 	mutable std::mutex m_mutex;
+	/// Bounded ring buffer of recent log entries (oldest evicted on capacity overflow).
 	std::deque<LogEntry> m_entries;
 };
 

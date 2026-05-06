@@ -2,7 +2,7 @@
  * @file openal.h
  * @author Silmaen
  * @date 1/10/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 

@@ -2,20 +2,21 @@
  * @file simpleFunctions.h
  * @author Silmaen
  * @date 05/08/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
 #pragma once
 
 /**
- * @brief Namespace for mathematical functions.
+ * @brief
+ *  Namespace for mathematical functions.
  */
 namespace owl::math {
-
 // NOLINTBEGIN(readability-avoid-nested-conditional-operator)
 /**
- * @brief Simple clamp function with no checks.
+ * @brief
+ *  Simple clamp function with no checks.
  * @tparam Data Data's type to clamp (must be order-able).
  * @param[in] iValue Input value.
  * @param[in] iMinValue min value.
@@ -28,7 +29,8 @@ constexpr auto clamp(const Data& iValue, const Data& iMinValue, const Data& iMax
 }
 
 /**
- * @brief Clamp function with mix/max ordering.
+ * @brief
+ *  Clamp function with mix/max ordering.
  * @tparam Data Data's type to clamp (must be order-able).
  * @param[in] iValue Input value.
  * @param[in] iMinValue min value.
@@ -43,7 +45,8 @@ constexpr auto clampSafe(const Data& iValue, Data iMinValue, Data iMaxValue) -> 
 }
 
 /**
- * @brief Heaviside function.
+ * @brief
+ *  Heaviside function.
  * @tparam Data Data's type.
  * @param[in] iValue Value to check.
  * @return 1 if input positive, else return 0.
@@ -54,7 +57,8 @@ constexpr auto heaviside(const Data& iValue) -> Data {
 }
 
 /**
- * @brief Sign function.
+ * @brief
+ *  Sign function.
  * @tparam Data Data's type.
  * @param[in] iValue Value to check.
  * @return 0 if input is 0 1 if input positive, else return -1.

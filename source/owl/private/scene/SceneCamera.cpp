@@ -2,7 +2,7 @@
  * @file SceneCamera.cpp
  * @author Silmaen
  * @date 23/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -12,7 +12,6 @@
 #include "renderer/gpu/RenderCommand.h"
 
 namespace owl::scene {
-
 
 SceneCamera::SceneCamera() { recalculateProjection(); }
 
@@ -37,7 +36,6 @@ void SceneCamera::setViewportSize(const math::vec2ui& iSize) {
 	m_aspectRatio = iSize.ratio();
 	recalculateProjection();
 }
-
 
 void SceneCamera::recalculateProjection() {
 	if (m_projectionType == ProjectionType::Perspective) {

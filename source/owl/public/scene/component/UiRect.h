@@ -1,5 +1,5 @@
 /**
- * @file UIRect.h
+ * @file UiRect.h
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -12,14 +12,14 @@
 #include "math/vectors.h"
 
 namespace owl::scene::component {
-
 /**
- * @brief UI rectangle component — defines layout for UI entities.
+ * @brief
+ *  UI rectangle component — defines layout for UI entities.
  *
  * Provides anchoring, pivot, size and offset for screen-space positioning
  * within a Canvas hierarchy. Used instead of Transform for UI layout.
  */
-struct OWL_API UIRect {
+struct OWL_API UiRect {
 	/// Anchor presets for positioning within the parent.
 	enum struct Anchor : uint8_t {
 		TopLeft,///< Top-left of parent.
@@ -42,30 +42,36 @@ struct OWL_API UIRect {
 	math::vec2 anchorOffset = {0.f, 0.f};
 
 	/**
-	 * @brief Get the class title.
+	 * @brief
+	 *  Get the class title.
 	 * @return The class title.
 	 */
 	static auto name() -> const char* { return "UI Rect"; }
-	/**
-	 * @brief Get the YAML key for this component.
-	 * @return The YAML key.
-	 */
-	static auto key() -> const char* { return "UIRect"; }
 
 	/**
-	 * @brief Write this component to a YAML context.
+	 * @brief
+	 *  Get the YAML key for this component.
+	 * @return The YAML key.
+	 */
+	static auto key() -> const char* { return "UiRect"; }
+
+	/**
+	 * @brief
+	 *  Write this component to a YAML context.
 	 * @param[in] iOut The YAML context.
 	 */
 	void serialize(const core::Serializer& iOut) const;
 
 	/**
-	 * @brief Read this component from YAML node.
+	 * @brief
+	 *  Read this component from YAML node.
 	 * @param[in] iNode The YAML node to read.
 	 */
 	void deserialize(const core::Serializer& iNode);
 
 	/**
-	 * @brief Compute the screen-space position of this UI rect within a parent of given size.
+	 * @brief
+	 *  Compute the screen-space position of this UI rect within a parent of given size.
 	 * @param[in] iParentSize The parent's size in pixels.
 	 * @return The top-left corner position in pixels (relative to parent top-left).
 	 */

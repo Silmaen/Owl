@@ -2,7 +2,7 @@
  * @file UniformBuffer.h
  * @author Silmaen
  * @date 07/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #pragma once
@@ -11,18 +11,24 @@
 
 namespace owl::renderer::gpu::vulkan {
 /**
- * @brief Specialized class for managing vulkan uniform buffer.
+ * @brief
+ *  Specialized class for managing vulkan uniform buffer.
  */
 class UniformBuffer final : public renderer::gpu::UniformBuffer {
 public:
 	UniformBuffer() = delete;
+
 	UniformBuffer(const UniformBuffer&) = default;
+
 	UniformBuffer(UniformBuffer&&) = default;
+
 	auto operator=(const UniformBuffer&) -> UniformBuffer& = default;
+
 	auto operator=(UniformBuffer&&) -> UniformBuffer& = default;
 
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 * @param[in] iSize Buffer's size.
 	 * @param[in] iBinding Buffer's binding.
 	 * @param[in] iRenderer Name of the shader's related renderer.
@@ -30,17 +36,20 @@ public:
 	UniformBuffer(uint32_t iSize, uint32_t iBinding, const std::string& iRenderer);
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~UniformBuffer() override;
 
 	/**
-	 * @brief bind this uniform buffer.
+	 * @brief
+	 *  bind this uniform buffer.
 	 */
 	void bind() override {}
 
 	/**
-	 * @brief Push Data to GPU.
+	 * @brief
+	 *  Push Data to GPU.
 	 * @param[in] iData The data.
 	 * @param[in] iSize The data size.
 	 * @param[in] iOffset The offset to start.

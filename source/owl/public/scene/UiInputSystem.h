@@ -1,5 +1,5 @@
 /**
- * @file UIInputSystem.h
+ * @file UiInputSystem.h
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -11,19 +11,20 @@
 #include "Scene.h"
 
 namespace owl::scene {
-
 /**
- * @brief Manages UI input: hit-testing, hover/focus tracking, click routing.
+ * @brief
+ *  Manages UI input: hit-testing, hover/focus tracking, click routing.
  *
  * Called once per frame during runtime. Updates button states, handles clicks,
  * and invokes Lua callbacks. UI elements consume mouse events before the scene.
  */
-class OWL_API UIInputSystem final {
+class OWL_API UiInputSystem final {
 public:
-	UIInputSystem() = delete;
+	UiInputSystem() = delete;
 
 	/**
-	 * @brief Process UI input for the current frame.
+	 * @brief
+	 *  Process UI input for the current frame.
 	 * @param[in] iScene The active scene.
 	 * @param[in] iViewportSize The viewport dimensions.
 	 * @param[in] iMousePos Mouse position in viewport coordinates.
@@ -33,13 +34,15 @@ public:
 					   bool iMousePressed);
 
 	/**
-	 * @brief Check if the UI is currently consuming the mouse (hover over interactive element).
+	 * @brief
+	 *  Check if the UI is currently consuming the mouse (hover over interactive element).
 	 * @return True if a UI element is hovered or focused.
 	 */
 	[[nodiscard]] static auto isUIConsuming() -> bool;
 
 	/**
-	 * @brief Reset the input system state.
+	 * @brief
+	 *  Reset the input system state.
 	 */
 	static void reset();
 

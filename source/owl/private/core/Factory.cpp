@@ -2,7 +2,7 @@
  * @file Factory.cpp
  * @author Silmaen
  * @date 19/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -37,7 +37,6 @@ Factory::~Factory() = default;
 //----------------------------------------------------------------------------------------------------------------------
 void Factory::registerObject(const std::type_index iType, const std::string& iDataKey,
 							 const ProductAllocator& iDataAllocator) {
-
 	// Check if the key is not present
 	if (const auto itMap = m_products.find(iDataKey); itMap == m_products.end()) {
 		// Get the next free PID
@@ -70,7 +69,6 @@ auto Factory::isRegistered(const FactoryPid iPid) const -> bool { return m_pids.
 
 //----------------------------------------------------------------------------------------------------------------------
 auto Factory::getKey(const FactoryPid iPid, std::string& oDataKey) const -> bool {
-
 	// Check if the PID is present in the map
 	if (const auto itMap = m_pids.find(iPid); itMap != m_pids.end()) {
 		oDataKey = itMap->second;
@@ -100,7 +98,6 @@ auto Factory::createProducts(const std::string& iDataKey, const uint32_t iNumber
 
 //----------------------------------------------------------------------------------------------------------------------
 auto Factory::getPid(const std::type_index iType) -> FactoryPid {
-
 	if (const auto itMap = m_types.find(iType); itMap != m_types.end()) {
 		return itMap->second;
 	}
@@ -109,7 +106,6 @@ auto Factory::getPid(const std::type_index iType) -> FactoryPid {
 
 //----------------------------------------------------------------------------------------------------------------------
 auto Factory::getPid(const std::string& iDataKey) -> FactoryPid {
-
 	if (const auto itMap = m_products.find(iDataKey); itMap != m_products.end()) {
 		return itMap->second.first;
 	}

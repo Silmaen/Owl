@@ -2,7 +2,7 @@
  * @file VulkanCore.cpp
  * @author Silmaen
  * @date 11/02/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -18,7 +18,6 @@
 namespace owl::renderer::gpu::vulkan::internal {
 
 namespace {
-
 constexpr VkApplicationInfo g_appInfo = {.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 										 .pNext = nullptr,
 										 .pApplicationName = "Owl",
@@ -62,14 +61,11 @@ VkDebugUtilsMessengerCreateInfoEXT g_DebugUtilsMessagerCi{
 					   VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
 		.pfnUserCallback = debugUtilsMessageCallback,
 		.pUserData = nullptr};
-
 PFN_vkCreateDebugUtilsMessengerEXT g_VkCreateDebugUtilsMessengerExt;
 PFN_vkDestroyDebugUtilsMessengerEXT g_VkDestroyDebugUtilsMessengerExt;
-
 }// namespace
 
 // ============= VulkanCore =====================
-
 VulkanCore::VulkanCore() = default;
 
 VulkanCore::~VulkanCore() = default;
@@ -320,6 +316,7 @@ void VulkanCore::createLogicalDevice() {
 	if (const VkResult result = vkCreateDevice(m_physicalDevice, &deviceCi, nullptr, &m_logicalDevice);
 		result != VK_SUCCESS) {
 		m_state = State::Error;
+
 		OWL_CORE_ERROR("Vulkan: Error while creating the logical device ({})", resultString(result))
 	}
 }
@@ -332,6 +329,7 @@ void VulkanCore::setupDebugging() {
 	g_VkDestroyDebugUtilsMessengerExt = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
 			vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT"));
 	OWL_DIAG_POP
+
 	if (const VkResult result =
 				g_VkCreateDebugUtilsMessengerExt(m_instance, &g_DebugUtilsMessagerCi, nullptr, &m_debugUtilsMessenger);
 		result != VK_SUCCESS) {
@@ -485,7 +483,6 @@ void VulkanCore::endSingleTimeCommands(VkCommandBuffer iCommandBuffer) const {
 	vkFreeCommandBuffers(core.getLogicalDevice(), m_commandPool, 1, &iCommandBuffer);
 }
 
-
 [[nodiscard]] auto VulkanCore::createCommandBuffer() const -> VkCommandBuffer {
 	VkCommandBuffer cmd = nullptr;
 	const VkCommandBufferAllocateInfo allocInfo{.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -513,7 +510,6 @@ void VulkanCore::createCommandPool() {
 }
 
 // ============= VulkanCore =====================
-
 // ============= InstanceInformations =====================
 InstanceInformations::InstanceInformations() {
 	vkEnumerateInstanceVersion(&version);

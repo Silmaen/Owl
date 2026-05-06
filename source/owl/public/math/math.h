@@ -2,7 +2,7 @@
  * @file math.h
  * @author Silmaen
  * @date 10/23/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 

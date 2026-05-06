@@ -12,24 +12,33 @@
 #include "../EditorSettings.h"
 
 namespace owl::nest::panel {
-
 /**
- * @brief Dockable settings window with theme selection and keybinding editor.
+ * @brief
+ *  Dockable settings window with theme selection and keybinding editor.
  */
 class SettingsPanel final {
 public:
 	SettingsPanel() = default;
+
 	~SettingsPanel() = default;
+
 	SettingsPanel(const SettingsPanel&) = default;
+
 	SettingsPanel(SettingsPanel&&) = default;
+
 	auto operator=(const SettingsPanel&) -> SettingsPanel& = default;
+
 	auto operator=(SettingsPanel&&) -> SettingsPanel& = default;
 
-	/// Show the settings window.
+	/**
+	 * @brief
+	 *  Show the settings window.
+	 */
 	void open() { m_visible = true; }
 
 	/**
-	 * @brief Render the settings window. Call every frame.
+	 * @brief
+	 *  Render the settings window. Call every frame.
 	 * @param[in,out] ioSettings Editor settings to read/modify.
 	 * @param[in,out] ioRegistry Action registry for keybinding display/editing.
 	 */
@@ -38,7 +47,6 @@ public:
 private:
 	/// Whether the window is visible.
 	bool m_visible = false;
-
 	/// Whether we are currently capturing a key for rebinding.
 	bool m_capturing = false;
 	/// The action ID being rebound.
@@ -46,12 +54,38 @@ private:
 	/// Conflict warning message (empty = no conflict).
 	std::string m_conflictMessage;
 
+	/**
+	 * @brief
+	 *  Render general section.
+	 * @param[in,out] ioSettings Editor settings being modified.
+	 */
 	static void renderGeneralSection(EditorSettings& ioSettings);
+
+	/**
+	 * @brief
+	 *  Render theme section.
+	 * @param[in,out] ioSettings Editor settings being modified.
+	 */
 	static void renderThemeSection(EditorSettings& ioSettings);
+
+	/**
+	 * @brief
+	 *  Render keybindings section.
+	 * @param[in,out] ioSettings Editor settings being modified.
+	 * @param[in,out] ioRegistry Action registry whose bindings are edited.
+	 */
 	void renderKeybindingsSection(EditorSettings& ioSettings, ActionRegistry& ioRegistry);
-	/// Handle key capture logic for a single action row.
+
+	/**
+	 * @brief
+	 *  Handle key capture logic for a single action row.
+	 */
 	void handleKeyCapture(ActionEntry& ioAction, ActionRegistry& ioRegistry);
-	/// Convert an ImGui key enum to a GLFW key code.
+
+	/**
+	 * @brief
+	 *  Convert an ImGui key enum to a GLFW key code.
+	 */
 	static auto ImGuiKeyToGlfwKey(ImGuiKey iKey) -> int;
 };
 

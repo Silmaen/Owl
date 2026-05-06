@@ -14,7 +14,6 @@
 namespace owl::math {
 
 namespace {
-
 auto smoothstep(const float iT) -> float {
 	const float t = std::clamp(iT, 0.f, 1.f);
 	return t * t * (3.f - 2.f * t);
@@ -28,6 +27,7 @@ void Curve::addKey(const Keyframe iKey) {
 	const auto it =
 			std::ranges::find_if(m_keys, [&](const Keyframe& iEx) -> bool { return iEx.time == iKey.time; });
 	OWL_DIAG_POP
+
 	if (it != m_keys.end()) {
 		it->value = iKey.value;
 		return;

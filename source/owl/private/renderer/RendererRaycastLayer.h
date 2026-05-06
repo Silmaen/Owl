@@ -2,7 +2,7 @@
  * @file RendererRaycastLayer.h
  * @author Silmaen
  * @date 04/05/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,9 +13,9 @@
 #include "renderer/RendererRaycast.h"
 
 namespace owl::renderer {
-
 /**
- * @brief `RenderLayer` adapter for the `RendererRaycast` static facade.
+ * @brief
+ *  `RenderLayer` adapter for the `RendererRaycast` static facade.
  *
  * Registered with the `RenderLayerFactory` under the type key `"RendererRaycast"`
  * during `Renderer::initShaders`. Stores the per-instance configuration (FOV,
@@ -30,38 +30,93 @@ namespace owl::renderer {
 class OWL_API RendererRaycastLayer final : public RenderLayer {
 public:
 	RendererRaycastLayer(const RendererRaycastLayer&) = delete;
+
 	RendererRaycastLayer(RendererRaycastLayer&&) = delete;
+
 	auto operator=(const RendererRaycastLayer&) -> RendererRaycastLayer& = delete;
+
 	auto operator=(RendererRaycastLayer&&) -> RendererRaycastLayer& = delete;
 
-	/// Factory key used by `RenderLayerFactory::registerType`.
+	/**
+	 * @brief
+	 *  Factory key used by `RenderLayerFactory::registerType`.
+	 */
 	static constexpr auto typeKey() -> const char* { return "RendererRaycast"; }
 
 	/**
-	 * @brief Register this layer type with the factory (idempotent).
+	 * @brief
+	 *  Register this layer type with the factory (idempotent).
 	 */
 	static void registerWithFactory();
 
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 * @param[in] iName The runtime instance name (e.g. `"world"`).
 	 */
 	explicit RendererRaycastLayer(std::string iName);
 
 	~RendererRaycastLayer() override = default;
 
+	/**
+	 * @brief
+	 *  Get the name.
+	 * @return The name.
+	 */
 	[[nodiscard]] auto getName() const -> const std::string& override { return m_name; }
+
+	/**
+	 * @brief
+	 *  Get the type key.
+	 * @return The type key.
+	 */
 	[[nodiscard]] auto getTypeKey() const -> const char* override { return typeKey(); }
 
+	/**
+	 * @brief
+	 *  Handle the begin frame event.
+	 * @param[in] iCamera The camera providing the view/projection used for rendering.
+	 */
 	void onBeginFrame(const Camera& iCamera) override;
+
+	/**
+	 * @brief
+	 *  Handle the render event.
+	 * @param[in,out] ioScene The scene being rendered (entities are queried in-place).
+	 */
 	void onRender(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Handle the end frame event.
+	 */
 	void onEndFrame() override;
+
+	/**
+	 * @brief
+	 *  Apply config.
+	 * @param[in] iConfig YAML node describing the layer configuration.
+	 */
 	void applyConfig(const YAML::Node& iConfig) override;
+
+	/**
+	 * @brief
+	 *  Set the viewport.
+	 * @param[in] iViewport Viewport size in pixels.
+	 */
 	void setViewport(const math::vec2ui& iViewport) override;
+
+	/**
+	 * @brief
+	 *  Get the effective view projection.
+	 * @param[in] iCamera The camera providing the view/projection used for rendering.
+	 * @return The effective view-projection matrix used by this layer.
+	 */
 	[[nodiscard]] auto getEffectiveViewProjection(const Camera& iCamera) const -> math::mat4 override;
 
 	/**
-	 * @brief Read-only access to the layer's current configuration.
+	 * @brief
+	 *  Read-only access to the layer's current configuration.
 	 *
 	 * Used by `Scene::render` to drive the active `RendererRaycast::beginScene`
 	 * that the dispatch falls into when the layer is active.
@@ -70,7 +125,8 @@ public:
 	[[nodiscard]] auto getConfig() const -> const RaycastConfig& { return m_config; }
 
 	/**
-	 * @brief Read-only access to the viewport size last set on this layer.
+	 * @brief
+	 *  Read-only access to the viewport size last set on this layer.
 	 * @return The viewport size in pixels.
 	 */
 	[[nodiscard]] auto getViewport() const -> const math::vec2ui& { return m_viewport; }

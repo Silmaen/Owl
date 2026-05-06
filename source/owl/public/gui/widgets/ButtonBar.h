@@ -2,7 +2,7 @@
  * @file ButtonBar.h
  * @author Silmaen
  * @date 10/26/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,9 +11,9 @@
 #include "Button.h"
 
 namespace owl::gui::widgets {
-
 /**
- * @brief Data used for defining a button bar.
+ * @brief
+ *  Data used for defining a button bar.
  */
 struct ButtonBarData : WidgetData {
 	/// If Imgui décoration should be drawn.
@@ -24,35 +24,44 @@ struct ButtonBarData : WidgetData {
 	bool isHorizontal = true;
 };
 /**
- * @brief Class describing a button bar gui widget.
+ * @brief
+ *  Class describing a button bar gui widget.
  */
 class OWL_API ButtonBar final : public Widget<ButtonBarData> {
 public:
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~ButtonBar() override;
 
 	ButtonBar() = default;
+
 	ButtonBar(const ButtonBar&) = default;
+
 	ButtonBar(ButtonBar&&) = default;
+
 	auto operator=(const ButtonBar&) -> ButtonBar& = default;
+
 	auto operator=(ButtonBar&&) -> ButtonBar& = default;
 
 	/**
-	 * @brief Add a button to render.
+	 * @brief
+	 *  Add a button to render.
 	 * @param iButton The button's data to add.
 	 */
 	void addButton(ButtonData&& iButton);
 
 	/**
-	 * @brief Delete all buttons.
+	 * @brief
+	 *  Delete all buttons.
 	 */
 	void clearButtons();
 
 private:
 	/**
-	 * @brief Render the ButtonBar.
+	 * @brief
+	 *  Render the ButtonBar.
 	 */
 	void onRenderBase() const override;
 	/// List of buttons.

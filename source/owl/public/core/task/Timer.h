@@ -2,7 +2,7 @@
  * @file Timer.h
  * @author Silmaen
  * @date 01/12/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -16,7 +16,8 @@ class Scheduler;
 using clock = std::chrono::steady_clock;
 
 /**
- * @brief Parameter of the timer.
+ * @brief
+ *  Parameter of the timer.
  */
 struct TimerParam {
 	/// Function to exec.
@@ -30,63 +31,84 @@ struct TimerParam {
 };
 
 /**
- * @brief Class defining a regularly called task.
+ * @brief
+ *  Class defining a regularly called task.
  */
 class OWL_API Timer final {
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 * @param[in] iParam Timer parameter.
 	 */
 	explicit Timer(TimerParam iParam);
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~Timer();
+
 	/**
-	 * @brief Default copy constructor.
+	 * @brief
+	 *  Default copy constructor.
 	 */
 	Timer(const Timer&) = default;
+
 	/**
-	 * @brief Default move constructor.
+	 * @brief
+	 *  Default move constructor.
 	 */
 	Timer(Timer&&) = default;
+
 	/**
-	 * @brief Default copy affectation operator.
+	 * @brief
+	 *  Default copy affectation operator.
 	 */
 	auto operator=(const Timer&) -> Timer& = default;
+
 	/**
-	 * @brief Default move affectation operator.
+	 * @brief
+	 *  Default move affectation operator.
 	 */
 	auto operator=(Timer&&) noexcept -> Timer& = default;
 
 	/**
-	 * @brief Frame call.
+	 * @brief
+	 *  Frame call.
 	 * @param[in] iTimestep The Timer.
 	 * @param[in] iScheduler Pointer to the current task scheduler.
 	 */
 	void frame(const Timestep& iTimestep, Scheduler* iScheduler = nullptr);
 
 	/**
-	 * @brief Pause this timer.
+	 * @brief
+	 *  Pause this timer.
 	 */
 	void pause();
+
 	/**
-	 * @brief Resume this timer.
+	 * @brief
+	 *  Resume this timer.
 	 */
 	void resume();
+
 	/**
-	 * @brief Set the pause state of the timer.
+	 * @brief
+	 *  Set the pause state of the timer.
 	 * @param iPaused The state to set.
 	 */
 	void setPaused(bool iPaused);
+
 	/**
-	 * @brief Toggle the pause state.
+	 * @brief
+	 *  Toggle the pause state.
 	 */
 	void togglePaused();
 
 	/**
-	 * @brief The Timer state.
+	 * @brief
+	 *  The Timer state.
 	 */
 	enum struct State : uint8_t {
 		Started,///< Timer started.
@@ -96,7 +118,8 @@ public:
 	};
 
 	/**
-	 * @brief Get the state of the timer.
+	 * @brief
+	 *  Get the state of the timer.
 	 * @return The timer's state.
 	 */
 	[[nodiscard]] auto getState() const -> const State& { return m_state; }
@@ -110,6 +133,7 @@ private:
 	size_t m_counter = 0;
 	/// Time point of the last call.
 	Timestep::time_point m_lastCall;
+
 	void execute(Scheduler* iScheduler, const Timestep::time_point& iCurrentTime);
 };
 

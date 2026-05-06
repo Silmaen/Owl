@@ -2,7 +2,7 @@
  * @file RenderStack.cpp
  * @author Silmaen
  * @date 30/04/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -18,12 +18,12 @@
 namespace owl::renderer {
 
 namespace {
-
 constexpr auto g_DefaultLayerName = "default";
 constexpr auto g_DefaultLayerType = "Renderer2D";
 
 /**
- * @brief Merge `iOverride` keys onto `ioBase`, override wins on conflicts.
+ * @brief
+ *  Merge `iOverride` keys onto `ioBase`, override wins on conflicts.
  *
  * Iterative implementation (worklist of `(base, override)` pairs) to keep
  * `misc-no-recursion` clean. yaml-cpp `Node` is a reference-counted handle,
@@ -53,7 +53,6 @@ void mergeYaml(YAML::Node& ioBase, const YAML::Node& iOverride) {
 }// namespace
 
 // ---------------------------------------------------------------- RendererStackConfig
-
 auto RendererStackConfig::find(const std::string& iName) const -> const RendererStackEntry* {
 	const auto it = std::ranges::find_if(entries, [&](const auto& e) -> bool { return e.name == iName; });
 	if (it == entries.end())
@@ -111,7 +110,6 @@ auto RendererStackConfig::fromYaml(const YAML::Node& iNode) -> RendererStackConf
 }
 
 // ---------------------------------------------------------------- EnabledRenderersConfig
-
 auto EnabledRenderersConfig::find(const std::string& iName) const -> const Entry* {
 	const auto it = std::ranges::find_if(entries, [&](const auto& e) -> bool { return e.name == iName; });
 	if (it == entries.end())
@@ -154,7 +152,6 @@ auto EnabledRenderersConfig::fromYaml(const YAML::Node& iNode) -> EnabledRendere
 }
 
 // ---------------------------------------------------------------- RenderStack
-
 auto RenderStack::buildFromConfig(const RendererStackConfig& iProject,
 								  const EnabledRenderersConfig& iScene) -> RenderStack {
 	RenderStack stack;

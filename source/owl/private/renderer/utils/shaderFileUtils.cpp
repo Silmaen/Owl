@@ -2,7 +2,7 @@
  * @file shaderFileUtils.cpp
  * @author Silmaen
  * @date 06/02/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,6 +11,7 @@
 #include "core/Application.h"
 #include "core/external/slang.h"
 #include "shaderFileUtils.h"
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wswitch-enum")
 OWL_DIAG_DISABLE_CLANG("-Wdouble-promotion")
@@ -72,7 +73,6 @@ auto getCacheExtension(const gpu::ShaderType& iStage) -> std::string {
 	return ext;
 }
 
-
 auto readCachedShader(const std::filesystem::path& iFile) -> std::vector<uint32_t> {
 	OWL_PROFILE_FUNCTION()
 
@@ -89,6 +89,7 @@ auto readCachedShader(const std::filesystem::path& iFile) -> std::vector<uint32_
 
 auto writeCachedShader(const std::filesystem::path& iFile, const std::vector<uint32_t>& iData) -> bool {
 	OWL_PROFILE_FUNCTION()
+
 	std::ofstream out(iFile, std::ios::out | std::ios::binary);
 	if (!exists(iFile.parent_path()))
 		OWL_CORE_WARN("Cache directory {} does not exists, creating.", iFile.parent_path().string())
@@ -196,18 +197,15 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 	targetDesc.format = SLANG_SPIRV;
 	targetDesc.profile = globalSession->findProfile(iForVulkan ? "spirv_1_6" : "glsl_450");
 	targetDesc.flags = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
-
 	const char* backendDefine = iForVulkan ? "BACKEND_VULKAN" : "BACKEND_OPENGL";
 	slang::PreprocessorMacroDesc macroDesc{};
 	macroDesc.name = backendDefine;
 	macroDesc.value = "1";
-
 	slang::SessionDesc sessionDesc{};
 	sessionDesc.targets = &targetDesc;
 	sessionDesc.targetCount = 1;
 	sessionDesc.preprocessorMacros = &macroDesc;
 	sessionDesc.preprocessorMacroCount = 1;
-
 	Slang::ComPtr<slang::ISession> session;
 	if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) {
 		OWL_CORE_ERROR("Slang: Failed to create session for module '{}'.", iModuleName)
@@ -219,6 +217,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 													   diagnosticBlob.writeRef());
 	if (module == nullptr) {
 		if (diagnosticBlob != nullptr)
+
 			OWL_CORE_ERROR("Slang: Module load failed for '{}': {}", iModuleName,
 						   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 		return result;
@@ -228,6 +227,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 									diagnosticBlob->getBufferSize());
 		// Filter out harmless warning 41012 (capabilities auto-upgrade)
 		if (diag.find("warning 41012") == std::string_view::npos)
+
 			OWL_CORE_WARN("Slang: Warnings for '{}': {}", iModuleName, diag)
 	}
 
@@ -256,6 +256,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 		Slang::ComPtr<slang::IComponentType> linkedProgram;
 		if (SLANG_FAILED(composedProgram->link(linkedProgram.writeRef(), diagnosticBlob.writeRef()))) {
 			if (diagnosticBlob != nullptr)
+
 				OWL_CORE_ERROR("Slang: Linking failed for '{}': {}", name,
 							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 			return result;
@@ -264,6 +265,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 		Slang::ComPtr<slang::IBlob> spirvBlob;
 		if (SLANG_FAILED(linkedProgram->getEntryPointCode(0, 0, spirvBlob.writeRef(), diagnosticBlob.writeRef()))) {
 			if (diagnosticBlob != nullptr)
+
 				OWL_CORE_ERROR("Slang: Code generation failed for '{}': {}", name,
 							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 			return result;

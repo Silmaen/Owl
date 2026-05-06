@@ -2,7 +2,7 @@
  * @file MeshComponent.h
  * @author Silmaen
  * @date 20/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,7 +12,8 @@
 #include "data/geometry/primitive/MeshVertex.h"
 
 /**
- * @brief Namespace for data components used in ranges.
+ * @brief
+ *  Namespace for data components used in ranges.
  */
 namespace owl::data::component {
 
@@ -72,7 +73,6 @@ protected:
 	/// Cursor used to iterate.
 	CursorType* m_cursor = nullptr;
 };
-
 /**
  * @brief
  *  Read iterate component for point's coordinates.
@@ -117,8 +117,10 @@ public:
 	 *  Deleted move operator.
 	 */
 	auto operator=(MeshVertexCoordinate&&) noexcept -> MeshVertexCoordinate& = delete;
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~MeshVertexCoordinate() = default;
 
@@ -155,7 +157,6 @@ protected:
 	/// Iterator on point.
 	PointIterator m_pointIte;
 };
-
 /**
  * @brief
  *  Read/Write iterate component for point's coordinates.
@@ -166,9 +167,9 @@ protected:
  */
 class OWL_API EditMeshVertexCoordinate : public MeshVertexCoordinate<false> {
 	using CursorType = geometry::MeshCursorBase<false, geometry::MeshElementType::Vertex>;
-
 public:
 	using MeshVertexCoordinate<false>::MeshVertexCoordinate;
+
 	/**
 	 * @brief
 	 *  Default constructor.

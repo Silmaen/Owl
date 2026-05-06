@@ -2,7 +2,7 @@
  * @file CircleRenderer.cpp
  * @author Silmaen
  * @date 1/29/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -11,7 +11,6 @@
 #include "scene/component/CircleRenderer.h"
 
 namespace owl::scene::component {
-
 
 void CircleRenderer::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
@@ -23,7 +22,8 @@ void CircleRenderer::serialize(const core::Serializer& iOut) const {
 }
 
 /**
-	 * @brief Read this component from YAML node.
+ * @brief
+ *  Read this component from YAML node.
 	 * @param iNode The YAML node to read.
 	 */
 void CircleRenderer::deserialize(const core::Serializer& iNode) {

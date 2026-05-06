@@ -2,7 +2,7 @@
  * @file owl.h
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -61,7 +61,7 @@
 #include "scene/SceneCamera.h"
 #include "scene/SceneSerializer.h"
 #include "scene/ScreenTransition.h"
-#include "scene/UIInputSystem.h"
+#include "scene/UiInputSystem.h"
 #include "scene/component/components.h"
 //--------------------------
 

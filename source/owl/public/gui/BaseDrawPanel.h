@@ -2,7 +2,7 @@
  * @file BaseDrawPanel.h
  * @author Silmaen
  * @date 23/06/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,55 +12,71 @@
 #include "renderer/gpu/Framebuffer.h"
 
 namespace owl::gui {
-
 /**
- * @brief Class describing a basic panel with a draw frame buffer.
+ * @brief
+ *  Class describing a basic panel with a draw frame buffer.
  */
 class OWL_API BaseDrawPanel {
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	explicit BaseDrawPanel(std::string&& iName);
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	virtual ~BaseDrawPanel();
+
 	/**
-	 * @brief Default copy constructor.
+	 * @brief
+	 *  Default copy constructor.
 	 */
 	BaseDrawPanel(const BaseDrawPanel&) = default;
+
 	/**
-	 * @brief Default move constructor.
+	 * @brief
+	 *  Default move constructor.
 	 */
 	BaseDrawPanel(BaseDrawPanel&&) = default;
+
 	/**
-	 * @brief Default copy affectation operator.
+	 * @brief
+	 *  Default copy affectation operator.
 	 */
 	auto operator=(const BaseDrawPanel&) -> BaseDrawPanel& = default;
+
 	/**
-	 * @brief Default move affectation operator.
+	 * @brief
+	 *  Default move affectation operator.
 	 */
 	auto operator=(BaseDrawPanel&&) -> BaseDrawPanel& = default;
+
 	/**
-	 * @brief Update panel Status.
+	 * @brief
+	 *  Update panel Status.
 	 * @param iTimeStep The Time delta of the frame.
 	 */
 	virtual void onUpdate(const core::Timestep& iTimeStep);
 
 	/**
-	 * @brief Do the rendering.
+	 * @brief
+	 *  Do the rendering.
 	 */
 	virtual void onRender();
 
 	/**
-	 * @brief Get the panel's name.
+	 * @brief
+	 *  Get the panel's name.
 	 * @return The panel's name.
 	 */
 	[[nodiscard]] auto getName() const -> const std::string& { return m_panelName; }
 
 	/**
-	 * @brief Get the viewport's size.
+	 * @brief
+	 *  Get the viewport's size.
 	 * @return The viewport's size.
 	 */
 	[[nodiscard]] auto getSize() const -> const math::vec2ui& { return m_viewportSize; }
@@ -74,8 +90,9 @@ protected:
 	math::vec2ui m_viewportSize = {0, 0};
 	/// The camera.
 	shared<renderer::CameraOrtho> m_camera;
-	/// View port bounds.
+	/// Lower-left viewport corner in screen pixels.
 	math::vec2 m_viewportLower = {0.0f, 0.0f};
+	/// Upper-right viewport corner in screen pixels.
 	math::vec2 m_viewportUpper = {0.0f, 0.0f};
 	/// Focused state.
 	bool m_viewportFocused = false;

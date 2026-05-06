@@ -14,9 +14,9 @@
 #include <string>
 
 namespace owl::nest {
-
 /**
- * @brief Marker base class for every target type an UndoCommand can act on.
+ * @brief
+ *  Marker base class for every target type an UndoCommand can act on.
  *
  * Concrete editor targets such as `scene::Scene` and `gui::widgets::NodeCanvas`
  * are used as the `Target` template parameter of `UndoCommand`. `IUndoTarget`
@@ -26,15 +26,21 @@ namespace owl::nest {
  */
 struct IUndoTarget {
 	IUndoTarget() = default;
+
 	IUndoTarget(const IUndoTarget&) = default;
+
 	IUndoTarget(IUndoTarget&&) = default;
+
 	auto operator=(const IUndoTarget&) -> IUndoTarget& = default;
+
 	auto operator=(IUndoTarget&&) -> IUndoTarget& = default;
+
 	virtual ~IUndoTarget() = default;
 };
 
 /**
- * @brief Abstract base class for undoable editor commands.
+ * @brief
+ *  Abstract base class for undoable editor commands.
  * @tparam Target Concrete editor state the command mutates (e.g. `scene::Scene`
  *         for scene edits, `gui::widgets::NodeCanvas` for node-graph edits).
  *
@@ -47,27 +53,47 @@ template<typename Target>
 class UndoCommand {
 public:
 	UndoCommand(const UndoCommand&) = delete;
+
 	UndoCommand(UndoCommand&&) = default;
+
 	auto operator=(const UndoCommand&) -> UndoCommand& = delete;
+
 	auto operator=(UndoCommand&&) -> UndoCommand& = default;
+
 	UndoCommand() = default;
+
 	virtual ~UndoCommand() = default;
 
-	/// Execute the undo action, restoring previous state.
+	/**
+	 * @brief
+	 *  Execute the undo action, restoring previous state.
+	 */
 	virtual void undo(Target& ioTarget) = 0;
-	/// Execute the redo action, reapplying the change.
+
+	/**
+	 * @brief
+	 *  Execute the redo action, reapplying the change.
+	 */
 	virtual void redo(Target& ioTarget) = 0;
-	/// Human-readable description for menu/tooltip display.
+
+	/**
+	 * @brief
+	 *  Human-readable description for menu/tooltip display.
+	 */
 	[[nodiscard]] virtual auto description() const -> std::string = 0;
 
 	/**
-	 * @brief Try to merge with a subsequent command of the same type.
+	 * @brief
+	 *  Try to merge with a subsequent command of the same type.
 	 * @param[in] iOther The newer command to absorb.
 	 * @return True if the merge succeeded (the other command is then discarded).
 	 */
 	[[nodiscard]] virtual auto mergeWith([[maybe_unused]] const UndoCommand& iOther) -> bool { return false; }
 
-	/// Unique command type ID for merge checking (0 = no merging).
+	/**
+	 * @brief
+	 *  Unique command type ID for merge checking (0 = no merging).
+	 */
 	[[nodiscard]] virtual auto typeId() const -> size_t { return 0; }
 
 	/// Timestamp of command creation (for merge timeout).
@@ -79,7 +105,10 @@ public:
 	core::UUID m_selectAfterRedo{0};
 };
 
-/// @brief Convenience alias for scene-level undo commands (the vast majority of editor actions).
+/**
+ * @brief
+ *  Convenience alias for scene-level undo commands (the vast majority of editor actions).
+ */
 using SceneUndoCommand = UndoCommand<scene::Scene>;
 
 }// namespace owl::nest

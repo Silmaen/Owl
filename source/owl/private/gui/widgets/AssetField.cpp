@@ -17,7 +17,6 @@
 namespace owl::gui::widgets {
 
 namespace {
-
 constexpr const char* kPayload = "CONTENT_BROWSER_ITEM";
 
 auto extLower(const std::filesystem::path& iPath) -> std::string {

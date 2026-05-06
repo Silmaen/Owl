@@ -2,7 +2,7 @@
  * @file SoundData.cpp
  * @author Silmaen
  * @date 11/5/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -97,6 +97,7 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 	// load sound
 	SF_INFO sfInfo;
 	auto* const file =
+
 			sf_open(reinterpret_cast<const char*>(m_specification.file.u8string().c_str()), SFM_READ, &sfInfo);
 	if (file == nullptr) {
 		OWL_CORE_WARN("SoundData: Failed to open file '{}'", m_specification.file.string())
@@ -125,7 +126,6 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 		}
 
 		SF_CHUNK_INFO inf = {"fmt ", 4, 0, nullptr};
-
 		/* If there's an issue getting the chunk or block alignment, load as
 		 * 16-bit and have libsndfile do the conversion.
 		 */
@@ -162,7 +162,6 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 		splblockalign = 1;
 		byteblockalign = sfInfo.channels * 4;
 	}
-
 	// Determine OpenAL Format
 	ALenum format = AL_NONE;
 	if (sfInfo.channels == 1) {
@@ -198,7 +197,6 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 				format = AL_FORMAT_BFORMAT3D_FLOAT32;
 		}
 	}
-
 	if (format == AL_NONE) {
 		OWL_CORE_WARN("SoundData: Unsupported OpenAL format.")
 		sf_close(file);
@@ -212,8 +210,8 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 
 	/* Decode the whole audio file to a buffer. */
 	std::vector<char> buffer(static_cast<size_t>(sfInfo.frames / splblockalign * byteblockalign));
-
 	sf_count_t numFrames = 0;
+
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG19("-Wunsafe-buffer-usage")
 	if (sampleFormat == SoundDataType::Int16)
@@ -227,8 +225,10 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 			numFrames = numFrames / byteblockalign * splblockalign;
 	}
 	OWL_DIAG_POP
+
 	if (numFrames < 1) {
 		sf_close(file);
+
 		OWL_CORE_WARN("SoundData: Failed to read samples.")
 		return;
 	}
@@ -241,9 +241,12 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 	 * close the file.
 	 */
 	m_buffer = 0;
+
 	alGenBuffers(1, &m_buffer);
 	if (splblockalign > 1)
+
 		alBufferi(m_buffer, AL_UNPACK_BLOCK_ALIGNMENT_SOFT, splblockalign);
+
 	alBufferData(m_buffer, format, buffer.data(), numBytes, sfInfo.samplerate);
 
 	sf_close(file);

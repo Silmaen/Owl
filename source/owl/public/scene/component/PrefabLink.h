@@ -14,9 +14,9 @@
 #include <vector>
 
 namespace owl::scene::component {
-
 /**
- * @brief Component linking an entity subtree to a source prefab file.
+ * @brief
+ *  Component linking an entity subtree to a source prefab file.
  *
  * Placed on the root entity of a prefab instance. Tracks the source `.owlprefab`
  * asset path, the version last synced, and a UUID mapping from instance UUIDs to
@@ -43,24 +43,29 @@ struct OWL_API PrefabLink {
 	std::vector<std::string> overriddenComponents;
 
 	/**
-	 * @brief Get the display name for this component.
+	 * @brief
+	 *  Get the display name for this component.
 	 * @return The display name.
 	 */
 	static auto name() -> const char* { return "Prefab Link"; }
+
 	/**
-	 * @brief Get the YAML key for this component.
+	 * @brief
+	 *  Get the YAML key for this component.
 	 * @return The YAML key.
 	 */
 	static auto key() -> const char* { return "PrefabLink"; }
 
 	/**
-	 * @brief Write this component to a YAML context.
+	 * @brief
+	 *  Write this component to a YAML context.
 	 * @param[in] iOut The YAML context.
 	 */
 	void serialize(const core::Serializer& iOut) const;
 
 	/**
-	 * @brief Read this component from YAML node.
+	 * @brief
+	 *  Read this component from YAML node.
 	 * @param[in] iNode The YAML node to read.
 	 */
 	void deserialize(const core::Serializer& iNode);

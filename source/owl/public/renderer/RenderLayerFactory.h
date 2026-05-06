@@ -2,7 +2,7 @@
  * @file RenderLayerFactory.h
  * @author Silmaen
  * @date 30/04/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -15,9 +15,9 @@
 #include <vector>
 
 namespace owl::renderer {
-
 /**
- * @brief Global registry of `RenderLayer` factory functions keyed by type string.
+ * @brief
+ *  Global registry of `RenderLayer` factory functions keyed by type string.
  *
  * The engine registers built-in layer types (`Renderer2D`, `RendererRaycast`,
  * future `Voxel`, ...) at renderer init. Mods or tests may register additional types.
@@ -31,7 +31,8 @@ public:
 	using CreateFn = std::function<shared<RenderLayer>(const std::string& iName)>;
 
 	/**
-	 * @brief Register a layer type with a factory function.
+	 * @brief
+	 *  Register a layer type with a factory function.
 	 *
 	 * If `iTypeKey` is already registered, the existing entry is replaced and a
 	 * warning is logged.
@@ -41,21 +42,24 @@ public:
 	static void registerType(const std::string& iTypeKey, CreateFn iFactory);
 
 	/**
-	 * @brief Unregister a layer type.
+	 * @brief
+	 *  Unregister a layer type.
 	 * @param[in] iTypeKey The type key to remove.
 	 * @return True if a type was removed, false if the key was not registered.
 	 */
 	static auto unregisterType(const std::string& iTypeKey) -> bool;
 
 	/**
-	 * @brief Check whether a type is registered.
+	 * @brief
+	 *  Check whether a type is registered.
 	 * @param[in] iTypeKey The type key to look up.
 	 * @return True if registered.
 	 */
 	[[nodiscard]] static auto hasType(const std::string& iTypeKey) -> bool;
 
 	/**
-	 * @brief Create a layer instance.
+	 * @brief
+	 *  Create a layer instance.
 	 * @param[in] iTypeKey The type key (must be registered).
 	 * @param[in] iName The runtime instance name.
 	 * @return The new layer, or nullptr if `iTypeKey` is not registered.
@@ -63,13 +67,15 @@ public:
 	[[nodiscard]] static auto create(const std::string& iTypeKey, const std::string& iName) -> shared<RenderLayer>;
 
 	/**
-	 * @brief List all registered type keys.
+	 * @brief
+	 *  List all registered type keys.
 	 * @return Sorted list of registered type keys.
 	 */
 	[[nodiscard]] static auto registeredTypes() -> std::vector<std::string>;
 
 	/**
-	 * @brief Remove every registered type (testing helper).
+	 * @brief
+	 *  Remove every registered type (testing helper).
 	 */
 	static void clear();
 };

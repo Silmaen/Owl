@@ -9,7 +9,6 @@
 #include "Document.h"
 
 namespace owl::nest {
-
 // Out-of-line anchor for the Document vtable (avoids -Wweak-vtables).
 // Empty on purpose: the default destructor lives here, not inline in the header.
 // NOLINTNEXTLINE(modernize-use-equals-default)

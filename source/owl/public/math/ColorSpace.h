@@ -2,7 +2,7 @@
  * @file ColorSpace.h
  * @author Silmaen
  * @date 15/02/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,7 +11,6 @@
 #include "math/vectors.h"
 
 namespace owl::math {
-
 /**
  * \brief Convert sRGB colour to linear colour.
  * \param[in] iColor Input sRGB colour.

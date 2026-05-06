@@ -2,7 +2,7 @@
  * @file Parameters.h
  * @author Silmaen
  * @date 16/02/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,50 +12,65 @@
 
 namespace owl::nest::panel {
 /**
- * @brief Class Parameters
+ * @brief
+ *  Class Parameters
  */
 class Parameters final {
 public:
 	/**
-	 * @brief Default copy constructor
+	 * @brief
+	 *  Default copy constructor
 	 */
 	Parameters(const Parameters&) = default;
+
 	/**
-	 * @brief Default move constructor
+	 * @brief
+	 *  Default move constructor
 	 */
 	Parameters(Parameters&&) = default;
+
 	/**
-	 * @brief Default copy assignation
+	 * @brief
+	 *  Default copy assignation
 	 * @return this
 	 */
 	auto operator=(const Parameters&) -> Parameters& = default;
+
 	/**
-	 * @brief Default move assignation
+	 * @brief
+	 *  Default move assignation
 	 * @return this
 	 */
 	auto operator=(Parameters&&) -> Parameters& = default;
+
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	Parameters() = default;
+
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~Parameters() = default;
 
 	/**
-	 * @brief Open the modal dialog, taking a snapshot of current parameters.
+	 * @brief
+	 *  Open the modal dialog, taking a snapshot of current parameters.
 	 */
 	void open();
 
 	/**
-	 * @brief Action on Gui Render
+	 * @brief
+	 *  Action on Gui Render
 	 */
 	void onImGuiRender();
 
 private:
 	/**
-	 * @brief Apply the local parameters to the application and save to file.
+	 * @brief
+	 *  Apply the local parameters to the application and save to file.
 	 * @return True if changes require a restart.
 	 */
 	auto apply() -> bool;

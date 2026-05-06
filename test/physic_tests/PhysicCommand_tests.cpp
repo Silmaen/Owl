@@ -162,3 +162,166 @@ TEST(PhysicCommand, GravityScaleNoOpEdgeCases) {
 	PhysicCommand::setGravityScale(staticBody, 0.f);
 	Log::invalidate();
 }
+
+// All "command" entry points must safely no-op before init / on null entity /
+// on entity without a PhysicBody. Covers the symmetrical guards in
+// setVelocity / setTransform.
+TEST(PhysicCommand, SetVelocityAndTransformGuards) {
+	Log::init(Log::Level::Off);
+	Scene scene;
+	auto noBody = scene.createEntity("nobody");
+	auto staticBody = scene.createEntity("static");
+	{
+		auto& [body] = staticBody.addComponent<component::PhysicBody>();
+		body.type = SceneBody::BodyType::Static;
+	}
+
+	// Uninitialized: ignored, no crash.
+	PhysicCommand::setVelocity(noBody, {1.f, 1.f});
+	PhysicCommand::setTransform(noBody, {0.f, 0.f}, 0.f);
+
+	PhysicCommand::init(&scene);
+	// Null entity.
+	PhysicCommand::setVelocity({}, {1.f, 1.f});
+	PhysicCommand::setTransform({}, {0.f, 0.f}, 0.f);
+	// Entity without PhysicBody.
+	PhysicCommand::setVelocity(noBody, {1.f, 1.f});
+	PhysicCommand::setTransform(noBody, {0.f, 0.f}, 0.f);
+	// setVelocity on Static body: no-op (only Dynamic/Kinematic move).
+	PhysicCommand::setVelocity(staticBody, {1.f, 1.f});
+	EXPECT_EQ(PhysicCommand::getVelocity(staticBody), owl::math::vec2f(0, 0));
+	// setTransform on Static body still teleports the body (no type filter).
+	PhysicCommand::setTransform(staticBody, {5.f, 6.f}, 0.f);
+	Log::invalidate();
+}
+
+TEST(PhysicCommand, SetVelocityOnDynamicBodyApplied) {
+	Log::init(Log::Level::Off);
+	Scene scene;
+	auto b1 = scene.createEntity("body1");
+	{
+		auto& [body] = b1.addComponent<component::PhysicBody>();
+		body.type = SceneBody::BodyType::Dynamic;
+	}
+	PhysicCommand::init(&scene);
+	PhysicCommand::setVelocity(b1, {3.f, -2.f});
+	const auto vel = PhysicCommand::getVelocity(b1);
+	EXPECT_NEAR(vel.x(), 3.f, 0.001f);
+	EXPECT_NEAR(vel.y(), -2.f, 0.001f);
+	Log::invalidate();
+}
+
+// getSnapshot/applySnapshot must round-trip linear/angular velocity for dynamic
+// bodies, and silently produce a zero-snapshot for static / missing / null cases.
+TEST(PhysicCommand, SnapshotRoundTrip) {
+	Log::init(Log::Level::Off);
+	Scene scene;
+	auto noBody = scene.createEntity("nobody");
+	auto staticBody = scene.createEntity("static");
+	{
+		auto& [body] = staticBody.addComponent<component::PhysicBody>();
+		body.type = SceneBody::BodyType::Static;
+	}
+	auto dyn = scene.createEntity("dyn");
+	{
+		auto& [body] = dyn.addComponent<component::PhysicBody>();
+		body.type = SceneBody::BodyType::Dynamic;
+	}
+
+	// Before init: snapshot is empty.
+	auto snap0 = PhysicCommand::getSnapshot(dyn);
+	EXPECT_EQ(snap0.linearVelocity, owl::math::vec2f(0, 0));
+	EXPECT_FLOAT_EQ(snap0.angularVelocity, 0.f);
+	EXPECT_FALSE(snap0.awake);
+
+	PhysicCommand::init(&scene);
+
+	// Static body: zero snapshot, applySnapshot is no-op.
+	auto snapStatic = PhysicCommand::getSnapshot(staticBody);
+	EXPECT_EQ(snapStatic.linearVelocity, owl::math::vec2f(0, 0));
+	PhysicCommand::applySnapshot(staticBody, snapStatic);
+
+	// No-body / null entity: zero snapshot.
+	auto snapNoBody = PhysicCommand::getSnapshot(noBody);
+	EXPECT_EQ(snapNoBody.linearVelocity, owl::math::vec2f(0, 0));
+	PhysicCommand::applySnapshot(noBody, snapNoBody);
+	auto snapNull = PhysicCommand::getSnapshot({});
+	EXPECT_EQ(snapNull.linearVelocity, owl::math::vec2f(0, 0));
+	PhysicCommand::applySnapshot({}, snapNull);
+
+	// Dynamic body: round-trip a velocity.
+	PhysicCommand::setVelocity(dyn, {4.f, 5.f});
+	auto snap = PhysicCommand::getSnapshot(dyn);
+	EXPECT_NEAR(snap.linearVelocity.x(), 4.f, 0.001f);
+	EXPECT_NEAR(snap.linearVelocity.y(), 5.f, 0.001f);
+
+	PhysicCommand::setVelocity(dyn, {0.f, 0.f});
+	PhysicCommand::applySnapshot(dyn, snap);
+	const auto vel = PhysicCommand::getVelocity(dyn);
+	EXPECT_NEAR(vel.x(), 4.f, 0.001f);
+	EXPECT_NEAR(vel.y(), 5.f, 0.001f);
+	Log::invalidate();
+}
+
+// getVelocity guards: uninitialized + null entity + no body + static body all
+// return zero without crashing.
+TEST(PhysicCommand, GetVelocityGuards) {
+	Log::init(Log::Level::Off);
+	Scene scene;
+	auto noBody = scene.createEntity("nobody");
+	// Uninitialized.
+	EXPECT_EQ(PhysicCommand::getVelocity(noBody), owl::math::vec2f(0, 0));
+
+	PhysicCommand::init(&scene);
+	// Null entity.
+	EXPECT_EQ(PhysicCommand::getVelocity({}), owl::math::vec2f(0, 0));
+	// Entity without PhysicBody.
+	EXPECT_EQ(PhysicCommand::getVelocity(noBody), owl::math::vec2f(0, 0));
+	Log::invalidate();
+}
+
+// frame() must update child entity transforms relative to a moving parent
+// — this exercises the hierarchy branch that converts world-space Box2D
+// positions back into local space.
+TEST(PhysicCommand, FrameUpdatesChildBodiesInLocalSpace) {
+	Log::init(Log::Level::Off);
+	Scene scene;
+	auto parent = scene.createEntity("parent");
+	auto child = scene.createEntity("child");
+	scene.setParent(child, parent);
+	{
+		auto& [body] = parent.addComponent<component::PhysicBody>();
+		body.type = SceneBody::BodyType::Static;
+		auto& [t] = parent.getComponent<component::Transform>();
+		t.translation().x() = 10.f;
+	}
+	{
+		auto& [body] = child.addComponent<component::PhysicBody>();
+		body.type = SceneBody::BodyType::Dynamic;
+	}
+
+	PhysicCommand::init(&scene);
+	Timestep ts;
+	ts.forceUpdate(std::chrono::milliseconds(100));
+	PhysicCommand::frame(ts);
+
+	// Child is parented to parent at (10,0). Its world-pos is around (10, gravity*dt^2/2)
+	// but the LOCAL translation must reflect "world − parent" so the local x stays near 0.
+	const auto& [childTransform] = child.getComponent<component::Transform>();
+	EXPECT_NEAR(childTransform.translation().x(), 0.f, 0.5f);
+
+	PhysicCommand::destroy();
+	Log::invalidate();
+}
+
+// `frame()` before init must warn and return without crashing.
+TEST(PhysicCommand, FrameBeforeInitIsNoOp) {
+	Log::init(Log::Level::Off);
+	Scene scene;
+	scene.createEntity("e1");
+	Timestep ts;
+	ts.forceUpdate(std::chrono::milliseconds(16));
+	PhysicCommand::frame(ts);// must not crash, must not init.
+	EXPECT_FALSE(PhysicCommand::isInitialized());
+	Log::invalidate();
+}

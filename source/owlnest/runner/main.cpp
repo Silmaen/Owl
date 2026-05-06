@@ -2,7 +2,7 @@
 * @file main.cpp
  * @author Silmaen
  * @date 24/11/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include <owl.h>
@@ -21,7 +21,6 @@ OWL_DIAG_POP
 namespace owl {
 
 namespace {
-
 /// Early configuration read from runner.yml before Application creation.
 struct EarlyConfig {
 	/// Pack file path.
@@ -36,7 +35,10 @@ struct EarlyConfig {
 	uint32_t height{720};
 };
 
-/// Read runner.yml for fields needed before Application creation.
+/**
+ * @brief
+ *  Read runner.yml for fields needed before Application creation.
+ */
 auto readEarlyConfig(const std::filesystem::path& iWorkDir) -> EarlyConfig {
 	EarlyConfig cfg;
 	const auto config = iWorkDir / "runner.yml";

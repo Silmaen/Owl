@@ -51,7 +51,6 @@ auto SettingsManager::getUserDirectory() -> std::filesystem::path {
 auto SettingsManager::getSettingsPath() -> std::filesystem::path { return getUserDirectory() / "settings.yml"; }
 
 namespace {
-
 void serializeValue(YAML::Emitter& iOut, const std::string& iKey, const SettingsManager::Value& iValue) {
 	iOut << YAML::BeginMap;
 	iOut << YAML::Key << "key" << YAML::Value << iKey;

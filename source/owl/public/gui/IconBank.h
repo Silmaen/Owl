@@ -2,7 +2,7 @@
  * @file IconBank.h
  * @author Silmaen
  * @date 10/03/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -15,7 +15,6 @@
 #include <unordered_map>
 
 namespace owl::gui {
-
 /// Theme colours used for dynamic SVG icon rendering.
 struct OWL_API IconThemeColors {
 	/// Primary icon colour (replaces white `#ffffff` in SVGs).
@@ -26,7 +25,8 @@ struct OWL_API IconThemeColors {
 };
 
 /**
- * @brief A texture atlas that packs multiple icons into a single GPU texture.
+ * @brief
+ *  A texture atlas that packs multiple icons into a single GPU texture.
  *
  * Icons are loaded from SVG or image files, optionally with theme colour substitution,
  * and packed into a grid atlas. Each icon can be looked up by name to get the atlas texture ID
@@ -45,12 +45,14 @@ public:
 	};
 
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	IconBank() = default;
 
 	/**
-	 * @brief Build the atlas from a list of named icon file paths.
+	 * @brief
+	 *  Build the atlas from a list of named icon file paths.
 	 *
 	 * SVG files are rasterized via lunasvg with theme colour substitution.
 	 * PNG/JPG files are loaded via stb_image (fallback).
@@ -63,7 +65,8 @@ public:
 			   const IconThemeColors& iColors = {});
 
 	/**
-	 * @brief Rebuild the atlas with new theme colours.
+	 * @brief
+	 *  Rebuild the atlas with new theme colours.
 	 *
 	 * Re-renders all SVG icons using the stored icon list and new colours.
 	 * @param[in] iColors The new theme colours.
@@ -71,38 +74,44 @@ public:
 	void rebuild(const IconThemeColors& iColors);
 
 	/**
-	 * @brief Look up an icon by name.
+	 * @brief
+	 *  Look up an icon by name.
 	 * @param[in] iName The icon name.
 	 * @return The icon info, or nullopt if not found.
 	 */
 	[[nodiscard]] auto getIcon(const std::string& iName) const -> std::optional<IconInfo>;
 
 	/**
-	 * @brief Check if an icon exists in the bank.
+	 * @brief
+	 *  Check if an icon exists in the bank.
 	 * @param[in] iName The icon name.
 	 * @return True if the icon is in the bank.
 	 */
 	[[nodiscard]] auto hasIcon(const std::string& iName) const -> bool;
 
 	/**
-	 * @brief Get the atlas texture.
+	 * @brief
+	 *  Get the atlas texture.
 	 * @return The atlas texture.
 	 */
 	[[nodiscard]] auto getAtlasTexture() const -> const shared<renderer::gpu::Texture2D>& { return m_atlas; }
 
 	/**
-	 * @brief Release the atlas texture and clear all entries.
+	 * @brief
+	 *  Release the atlas texture and clear all entries.
 	 */
 	void clear();
 
 	/**
-	 * @brief Access the global icon bank instance.
+	 * @brief
+	 *  Access the global icon bank instance.
 	 * @return Reference to the global IconBank.
 	 */
 	static auto instance() -> IconBank&;
 
 	/**
-	 * @brief Render an ImGui menu item with an icon prefix.
+	 * @brief
+	 *  Render an ImGui menu item with an icon prefix.
 	 * @param[in] iIconName Name of the icon in the bank.
 	 * @param[in] iLabel Menu item label.
 	 * @param[in] iShortcut Optional keyboard shortcut text.
@@ -113,7 +122,8 @@ public:
 				  bool iEnabled = true) const -> bool;
 
 	/**
-	 * @brief Render an ImGui button with an icon prefix before the label.
+	 * @brief
+	 *  Render an ImGui button with an icon prefix before the label.
 	 *
 	 * Falls back to a regular button (no icon) when the icon is missing. The icon
 	 * scales with the current font size.

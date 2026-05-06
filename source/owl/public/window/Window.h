@@ -2,7 +2,7 @@
  * @file Window.h
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -17,12 +17,13 @@
 #include <functional>
 
 /**
- * @brief Base namespace for window management
+ * @brief
+ *  Base namespace for window management
  */
 namespace owl::window {
-
 /**
- * @brief Types of input Manager.
+ * @brief
+ *  Types of input Manager.
  */
 enum struct Type : uint8_t {
 	Null,/// Windows null
@@ -30,7 +31,8 @@ enum struct Type : uint8_t {
 };
 
 /**
- * @brief Structure holding base windows properties.
+ * @brief
+ *  Structure holding base windows properties.
  */
 struct Properties {
 	/// Type of Window manager.
@@ -46,7 +48,8 @@ struct Properties {
 };
 
 /**
- * @brief Abstract Window class.
+ * @brief
+ *  Abstract Window class.
  */
 class OWL_API Window {
 public:
@@ -54,121 +57,144 @@ public:
 	using EventCallback = std::function<void(event::Event&)>;
 
 	Window() = default;
+
 	Window(const Window&) = delete;
+
 	Window(Window&&) = delete;
+
 	auto operator=(const Window&) -> Window& = delete;
+
 	auto operator=(Window&&) -> Window& = delete;
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	virtual ~Window();
 
 	/**
-	 * @brief Function called at Update Time.
+	 * @brief
+	 *  Function called at Update Time.
 	 */
 	virtual void onUpdate() = 0;
 
 	/**
-	 * @brief Get Size attribute of width.
+	 * @brief
+	 *  Get Size attribute of width.
 	 * @return The window's width.
 	 */
 	[[nodiscard]] virtual auto getWidth() const -> uint32_t = 0;
 
 	/**
-	 * @brief Get Size attribute of height.
+	 * @brief
+	 *  Get Size attribute of height.
 	 * @return The window's height.
 	 */
 	[[nodiscard]] virtual auto getHeight() const -> uint32_t = 0;
 
 	/**
-	 * @brief Access to texture's size.
+	 * @brief
+	 *  Access to texture's size.
 	 * @return Texture's size.
 	 */
 	[[nodiscard]] virtual auto getSize() const -> const math::vec2ui& = 0;
 
 	/**
-	 * @brief Get the type of window manager.
+	 * @brief
+	 *  Get the type of window manager.
 	 * @return The window manager's type.
 	 */
 	[[nodiscard]] virtual auto getType() const -> Type = 0;
 
 	/**
-	 * @brief Define the Event Callback function.
+	 * @brief
+	 *  Define the Event Callback function.
 	 * @param[in] iCallback The new callback function.
 	 */
 	virtual void setEventCallback(const EventCallback& iCallback) = 0;
 
 	/**
-	 * @brief St the VSync.
+	 * @brief
+	 *  St the VSync.
 	 * @param[in] iEnabled Should VSync enabled.
 	 */
 	virtual void setVSync(bool iEnabled) = 0;
 
 	/**
-	 * @brief Check for VSync.
+	 * @brief
+	 *  Check for VSync.
 	 * @return True if VSync enabled.
 	 */
 	[[nodiscard]] virtual auto isVSync() const -> bool = 0;
 
 	/**
-	 * @brief Access to the Native Window.
+	 * @brief
+	 *  Access to the Native Window.
 	 * @return Native window's raw pointer.
 	 */
 	[[nodiscard]] virtual auto getNativeWindow() const -> void* = 0;
 
 	/**
-	 * @brief Helper for Window creation.
+	 * @brief
+	 *  Helper for Window creation.
 	 * @param[in] iProps The window properties.
 	 * @return Pointer to the window.
 	 */
 	static auto create(const Properties& iProps = Properties()) -> uniq<Window>;
 
 	/**
-	 * @brief Access to the graph context.
+	 * @brief
+	 *  Access to the graph context.
 	 * @return Graph context.
 	 */
 	[[nodiscard]] auto getGraphContext() const -> renderer::gpu::GraphContext* { return m_context.get(); }
 
 	/**
-	 * @brief Set the window title.
+	 * @brief
+	 *  Set the window title.
 	 * @param[in] iTitle The new title.
 	 */
 	virtual void setTitle(const std::string& iTitle) = 0;
 
 	/**
-	 * @brief Set fullscreen mode.
+	 * @brief
+	 *  Set fullscreen mode.
 	 * @param[in] iFullscreen True for fullscreen, false for windowed.
 	 */
 	virtual void setFullscreen(bool iFullscreen) = 0;
 
 	/**
-	 * @brief Check if the window is in fullscreen mode.
+	 * @brief
+	 *  Check if the window is in fullscreen mode.
 	 * @return True if fullscreen.
 	 */
 	[[nodiscard]] virtual auto isFullscreen() const -> bool = 0;
 
 	/**
-	 * @brief Set whether the window is resizable.
+	 * @brief
+	 *  Set whether the window is resizable.
 	 * @param[in] iResizable True to allow resizing.
 	 */
 	virtual void setResizable(bool iResizable) = 0;
 
 	/**
-	 * @brief Set the window size.
+	 * @brief
+	 *  Set the window size.
 	 * @param[in] iWidth New width in pixels.
 	 * @param[in] iHeight New height in pixels.
 	 */
 	virtual void setSize(uint32_t iWidth, uint32_t iHeight) = 0;
 
 	/**
-	 * @brief Set the window icon from an image file.
+	 * @brief
+	 *  Set the window icon from an image file.
 	 * @param[in] iIconPath Path to the icon image (PNG recommended).
 	 */
 	virtual void setIcon(const std::filesystem::path& iIconPath) = 0;
 
 	/**
-	 * @brief Terminate the window.
+	 * @brief
+	 *  Terminate the window.
 	 */
 	virtual void shutdown() = 0;
 

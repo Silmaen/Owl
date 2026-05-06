@@ -12,32 +12,38 @@
 #include "scene/SceneSound.h"
 
 namespace owl::scene::component {
-
 /**
- * @brief Sound source component.
+ * @brief
+ *  Sound source component.
  */
 struct OWL_API SoundSource {
 	/// The sound data.
 	SceneSound sound;
+
 	/**
-	 * @brief Get the class title.
+	 * @brief
+	 *  Get the class title.
 	 * @return The class title.
 	 */
 	static auto name() -> const char* { return "Sound Source"; }
+
 	/**
-	 * @brief Get the YAML key for this component.
+	 * @brief
+	 *  Get the YAML key for this component.
 	 * @return The YAML key.
 	 */
 	static auto key() -> const char* { return "SoundSource"; }
 
 	/**
-	 * @brief Write this component to a YAML context.
+	 * @brief
+	 *  Write this component to a YAML context.
 	 * @param iOut The YAML context.
 	 */
 	void serialize(const core::Serializer& iOut) const;
 
 	/**
-	 * @brief Read this component from YAML node.
+	 * @brief
+	 *  Read this component from YAML node.
 	 * @param iNode The YAML node to read.
 	 */
 	void deserialize(const core::Serializer& iNode);

@@ -23,8 +23,10 @@
 namespace owl::core::utils {
 
 namespace {
-
-/// @brief Reject anything that does not look like a safe http(s) or mailto URL.
+/**
+ * @brief
+ *  Reject anything that does not look like a safe http(s) or mailto URL.
+ */
 [[nodiscard]] auto isAllowedScheme(std::string_view iUrl) -> bool {
 	return iUrl.starts_with("http://") || iUrl.starts_with("https://") || iUrl.starts_with("mailto:");
 }

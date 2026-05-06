@@ -1,5 +1,5 @@
 /**
- * @file UIRect.cpp
+ * @file UiRect.cpp
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -8,13 +8,13 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
-#include "scene/component/UIRect.h"
+#include "scene/component/UiRect.h"
 
 #include <magic_enum/magic_enum.hpp>
 
 namespace owl::scene::component {
 
-void UIRect::serialize(const core::Serializer& iOut) const {
+void UiRect::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "anchor" << YAML::Value << std::string(magic_enum::enum_name(anchor));
@@ -27,7 +27,7 @@ void UIRect::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
-void UIRect::deserialize(const core::Serializer& iNode) {
+void UiRect::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["anchor"])
 		anchor = magic_enum::enum_cast<Anchor>(iNode.getImpl()->node["anchor"].as<std::string>())
 						 .value_or(Anchor::Center);
@@ -45,7 +45,7 @@ void UIRect::deserialize(const core::Serializer& iNode) {
 		anchorOffset.y() = iNode.getImpl()->node["offsetY"].as<float>();
 }
 
-auto UIRect::computePosition(const math::vec2& iParentSize) const -> math::vec2 {
+auto UiRect::computePosition(const math::vec2& iParentSize) const -> math::vec2 {
 	math::vec2 anchorPos;
 	switch (anchor) {
 		case Anchor::TopLeft:

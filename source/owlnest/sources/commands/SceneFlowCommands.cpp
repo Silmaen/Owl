@@ -12,7 +12,6 @@
 #include "../document/SceneDocument.h"
 
 namespace owl::nest::commands {
-
 // --- SceneFlowCompositeCommand ---------------------------------------------
 
 SceneFlowCompositeCommand::SceneFlowCompositeCommand(uniq<SceneUndoCommand> iSceneCmd,
@@ -51,7 +50,6 @@ void SceneFlowCompositeCommand::redo(gui::widgets::NodeCanvas& ioCanvas) {
 }
 
 // --- AddPinAndLinkCommand --------------------------------------------------
-
 AddPinAndLinkCommand::AddPinAndLinkCommand(core::UUID iSourceNodeId, gui::widgets::NodePin iPin,
 										   core::UUID iDestInputPinId)
 	: m_sourceNodeId{iSourceNodeId}, m_pin{std::move(iPin)}, m_destInputPinId{iDestInputPinId} {}
@@ -68,7 +66,6 @@ void AddPinAndLinkCommand::redo(gui::widgets::NodeCanvas& ioTarget) {
 }
 
 // --- RemovePinAndLinkCommand -----------------------------------------------
-
 RemovePinAndLinkCommand::RemovePinAndLinkCommand(core::UUID iSourceNodeId, gui::widgets::NodePin iPin,
 												 gui::widgets::Link iLink)
 	: m_sourceNodeId{iSourceNodeId}, m_pin{std::move(iPin)}, m_link{iLink} {}

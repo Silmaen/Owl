@@ -2,7 +2,7 @@
  * @file trigonometry.cpp
  * @author Silmaen
  * @date 02/01/2023
- * Copyright © 2023 All rights reserved.
+ * Copyright (c) 2023 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"

@@ -2,7 +2,7 @@
  * @file CameraEditor.cpp
  * @author Silmaen
  * @date 30/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -123,6 +123,7 @@ auto CameraEditor::panSpeed() const -> std::pair<float, float> {
 
 	return {xFactor, yFactor};
 }
+
 // NOLINTBEGIN(readability-convert-member-functions-to-static)
 auto CameraEditor::rotationSpeed() const -> float { return 0.8f; }
 // NOLINTEND(readability-convert-member-functions-to-static)

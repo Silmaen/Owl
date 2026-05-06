@@ -17,9 +17,9 @@
 #include <vector>
 
 namespace owl::gui {
-
 /**
- * @brief Per-font cache of rendered "sample-string" preview thumbnails.
+ * @brief
+ *  Per-font cache of rendered "sample-string" preview thumbnails.
  *
  * Each entry is a small offscreen `Framebuffer` containing the sample text rendered
  * once with the target font (via `renderer::Renderer2D::drawString`). Entries persist
@@ -32,15 +32,23 @@ namespace owl::gui {
 class OWL_API FontPreviewCache final {
 public:
 	FontPreviewCache(const FontPreviewCache&) = delete;
+
 	FontPreviewCache(FontPreviewCache&&) = delete;
+
 	auto operator=(const FontPreviewCache&) -> FontPreviewCache& = delete;
+
 	auto operator=(FontPreviewCache&&) -> FontPreviewCache& = delete;
 
-	/// @return The process-wide cache instance.
+	/**
+	 * @brief
+	 *  Get the process-wide cache instance.
+	 * @return The singleton cache.
+	 */
 	[[nodiscard]] static auto get() -> FontPreviewCache&;
 
 	/**
-	 * @brief Look up (or queue) the preview framebuffer for the given font.
+	 * @brief
+	 *  Look up (or queue) the preview framebuffer for the given font.
 	 * @param[in] iFont Source font.
 	 * @return Framebuffer ready to be sampled when the entry has been rendered, or
 	 *         `nullptr` on first request (the entry is queued and rendered by the next
@@ -49,24 +57,45 @@ public:
 	auto request(const shared<data::fonts::Font>& iFont) -> shared<renderer::gpu::Framebuffer>;
 
 	/**
-	 * @brief Render every queued entry now. Must run between scene passes (no active
+	 * @brief
+	 *  Render every queued entry now. Must run between scene passes (no active
 	 *        Renderer2D scene, no foreign framebuffer bound).
 	 */
 	void pumpPending();
 
-	/// @brief Drop every cached entry, releasing the underlying framebuffers.
+	/**
+	 * @brief
+	 *  Drop every cached entry, releasing the underlying framebuffers.
+	 */
 	void clear();
 
 private:
+	/**
+	 * @brief
+	 *  Private constructor — go through `get()` for the singleton.
+	 */
 	FontPreviewCache() = default;
+
+	/**
+	 * @brief
+	 *  Private destructor — singleton lifetime is process-wide.
+	 */
 	~FontPreviewCache() = default;
 
+	/**
+	 * @brief
+	 *  One cached preview entry: framebuffer + readiness flag.
+	 */
 	struct Entry {
-		shared<renderer::gpu::Framebuffer> fb;///< Lazily allocated framebuffer.
-		bool ready{false};///< False until `pumpPending` rendered the entry once.
+		/// Lazily allocated framebuffer.
+		shared<renderer::gpu::Framebuffer> fb;
+		/// False until `pumpPending` rendered the entry once.
+		bool ready{false};
 	};
 
+	/// Map keyed by font name → cached preview entry.
 	std::unordered_map<std::string, Entry> m_cache;
+	/// Fonts queued by `request()` that still need to be drawn by `pumpPending()`.
 	std::vector<shared<data::fonts::Font>> m_pending;
 };
 

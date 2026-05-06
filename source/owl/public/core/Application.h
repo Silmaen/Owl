@@ -2,7 +2,7 @@
  * @file Application.h
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -23,17 +23,17 @@
 #include <filesystem>
 #include <list>
 
+// Forward declaration of the program entry point (definition in EntryPoint.h).
 auto main(int iArgc, char* iArgv[]) -> int;
 
 namespace owl::core {
-
-
 /// Default Windows width.
 constexpr uint32_t g_DefaultWindowsWidth{1600};
 /// Default Windows height.
 constexpr uint32_t g_DefaultWindowsHeight{960};
 /**
- * @brief Parameters to give to the application.
+ * @brief
+ *  Parameters to give to the application.
  */
 // NOLINTBEGIN(readability-redundant-member-init)
 struct OWL_API AppParams {
@@ -69,12 +69,14 @@ struct OWL_API AppParams {
 	std::string gameName{};
 
 	/**
-	 * @brief Access to the given command line argument.
+	 * @brief
+	 *  Access to the given command line argument.
 	 * @param[in] iIndex Index of the argument.
 	 * @return The argument.
 	 */
 	auto operator[](const int iIndex) const -> const char* {
 		OWL_CORE_ASSERT(iIndex < argCount, "Bad command line index.")
+
 		OWL_DIAG_PUSH
 		OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 		return args[iIndex];
@@ -82,13 +84,15 @@ struct OWL_API AppParams {
 	}
 
 	/**
-	 * @brief Load from a yaml config file.
+	 * @brief
+	 *  Load from a yaml config file.
 	 * @param[in] iFile The file to load.
 	 */
 	void loadFromFile(const std::filesystem::path& iFile);
 
 	/**
-	 * @brief Save To a yaml file.
+	 * @brief
+	 *  Save To a yaml file.
 	 * @param[in] iFile The file to save.
 	 */
 	void saveToFile(const std::filesystem::path& iFile) const;
@@ -96,7 +100,8 @@ struct OWL_API AppParams {
 // NOLINTEND(readability-redundant-member-init)
 
 /**
- * @brief Root class defining the application to run.
+ * @brief
+ *  Root class defining the application to run.
  */
 class OWL_API Application {
 public:
@@ -111,88 +116,103 @@ public:
 	auto operator=(Application&&) -> Application& = delete;
 
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 * @param[in] iAppParams Application parameters.
 	 */
 	explicit Application(AppParams iAppParams);
 
 	/**
-	 * @brief Access to Application instance.
+	 * @brief
+	 *  Access to Application instance.
 	 * @return Single instance of application.
 	 */
 	static auto get() -> Application& { return *s_instance; }
 
 	/**
-	 * @brief Only check for app existence.
+	 * @brief
+	 *  Only check for app existence.
 	 * @return True if application is instanced.
 	 */
 	static auto instanced() -> bool { return s_instance != nullptr; }
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	virtual ~Application();
 
 	/**
-	 * @brief Event Callback function.
+	 * @brief
+	 *  Event Callback function.
 	 * @param[in,out] ioEvent Event received.
 	 */
 	void onEvent(event::Event& ioEvent);
 
 	/**
-	 * @brief Adding a layer on top of the layers.
+	 * @brief
+	 *  Adding a layer on top of the layers.
 	 * @param[in] iLayer The new layer to add.
 	 */
 	void pushLayer(shared<layer::Layer>&& iLayer);
 
 	/**
-	* @brief Adding an overlay on top of everything.
+	 * @brief
+	 *  Adding an overlay on top of everything.
 	* @param[in] iOverlay The new overlay.
 	*/
 	void pushOverlay(shared<layer::Layer>&& iOverlay);
 
 	/**
-	 * @brief Access to the window.
+	 * @brief
+	 *  Access to the window.
 	 * @return The Window.
 	 */
 	[[nodiscard]] auto getWindow() const -> const window::Window& { return *mp_appWindow.get(); }
 
 	/**
-	 * @brief Mutable access to the window (for runtime property changes).
+	 * @brief
+	 *  Mutable access to the window (for runtime property changes).
 	 * @return The Window.
 	 */
 	[[nodiscard]] auto getWindow() -> window::Window& { return *mp_appWindow.get(); }
 
 	/**
-	 * @brief Access to the Gui layer.
+	 * @brief
+	 *  Access to the Gui layer.
 	 * @return The gui layer.
 	 */
 	auto getImGuiLayer() -> shared<gui::UiLayer> { return mp_imGuiLayer; }
 
 	/**
-	 * @brief Set the window title.
+	 * @brief
+	 *  Set the window title.
 	 * @param[in] iTitle The new title.
 	 */
 	void setWindowTitle(const std::string& iTitle);
 
 	/**
-	 * @brief Request the application to terminate.
+	 * @brief
+	 *  Request the application to terminate.
 	 */
 	void close();
 
 	/**
-	 * @brief Request the application to terminate.
+	 * @brief
+	 *  Request the application to terminate.
 	 */
 	static void invalidate();
 
 	/**
-	 * @brief Get the working directory.
+	 * @brief
+	 *  Get the working directory.
 	 * @return The current working directory.
 	 */
 	[[nodiscard]] auto getWorkingDirectory() const -> const std::filesystem::path& { return m_workingDirectory; }
 
 	/**
-	 * @brief Structure holding asset directory information
+	 * @brief
+	 *  Structure holding asset directory information
 	 */
 	struct AssetDirectory {
 		/// Asset directory name.
@@ -202,47 +222,55 @@ public:
 	};
 
 	/**
-	 * @brief Get the working directory.
+	 * @brief
+	 *  Get the working directory.
 	 * @return The current working directory.
 	 */
 	[[nodiscard]] auto getAssetDirectories() const -> const std::list<AssetDirectory>& { return m_assetDirectories; }
 
 	/**
-	 * @brief Add an asset directory (inserted at front, highest priority).
+	 * @brief
+	 *  Add an asset directory (inserted at front, highest priority).
 	 * @param[in] iDir The asset directory to add.
 	 */
 	void addAssetDirectory(const AssetDirectory& iDir);
 
 	/**
-	 * @brief Remove an asset directory by path.
+	 * @brief
+	 *  Remove an asset directory by path.
 	 * @param[in] iPath The path of the asset directory to remove.
 	 */
 	void removeAssetDirectory(const std::filesystem::path& iPath);
 
 	/**
-		 * @brief Enable the docking environment.
+	 * @brief
+	 *  Enable the docking environment.
 		 */
 	void enableDocking() const;
 
 	/**
-	 * @brief Disable the docking environment.
+	 * @brief
+	 *  Disable the docking environment.
 	 */
 	void disableDocking() const;
 
 	/**
-	 * @brief Access to init parameters.
+	 * @brief
+	 *  Access to init parameters.
 	 * @return Init parameters.
 	 */
 	[[nodiscard]] auto getInitParams() -> AppParams& { return m_initParams; }
 
 	/**
-	 * @brief Access to init parameters.
+	 * @brief
+	 *  Access to init parameters.
 	 * @return Init parameters.
 	 */
 	[[nodiscard]] auto getInitParams() const -> const AppParams& { return m_initParams; }
 
 	/**
-	 * @brief State of the application.
+	 * @brief
+	 *  State of the application.
 	 */
 	enum struct State : uint8_t {
 		Created,/// Application just created.
@@ -252,102 +280,117 @@ public:
 	};
 
 	/**
-	 * @brief Get the application's state.
+	 * @brief
+	 *  Get the application's state.
 	 * @return The current application's state.
 	 */
 	[[nodiscard]] auto getState() const -> const State& { return m_state; }
 
-
 	/**
-	 * @brief Get the application's time stepper.
+	 * @brief
+	 *  Get the application's time stepper.
 	 * @return The application's time stepper.
 	 */
 	[[nodiscard]] auto getTimeStep() const -> const Timestep& { return m_stepper; }
 
 	/**
-	 * @brief Access to the font library.
+	 * @brief
+	 *  Access to the font library.
 	 * @return The Font Library.
 	 */
 	[[nodiscard]] auto getFontLibrary() -> data::fonts::FontLibrary& { return m_fontLibrary; }
 
 	/**
-	 * @brief Access to the font library.
+	 * @brief
+	 *  Access to the font library.
 	 * @return The Font Library.
 	 */
 	[[nodiscard]] auto getFontLibrary() const -> const data::fonts::FontLibrary& { return m_fontLibrary; }
 
 	/**
-	 * @brief Access to the task scheduler.
+	 * @brief
+	 *  Access to the task scheduler.
 	 * @return The task scheduler.
 	 */
 	[[nodiscard]] auto getTaskScheduler() -> task::Scheduler& { return m_scheduler; }
 
 	/**
-	 * @brief Access to the task scheduler.
+	 * @brief
+	 *  Access to the task scheduler.
 	 * @return The task scheduler.
 	 */
 	[[nodiscard]] auto getTaskScheduler() const -> const task::Scheduler& { return m_scheduler; }
 
 	/**
-	 * @brief Open an asset pack file for runtime loading.
+	 * @brief
+	 *  Open an asset pack file for runtime loading.
 	 * @param[in] iPackFile Path to the pack file.
 	 * @return True if the pack was opened successfully.
 	 */
 	auto openPack(const std::filesystem::path& iPackFile) -> bool;
 
 	/**
-	 * @brief Close the current asset pack.
+	 * @brief
+	 *  Close the current asset pack.
 	 */
 	void closePack();
 
 	/**
-	 * @brief Check if an asset pack is currently open.
+	 * @brief
+	 *  Check if an asset pack is currently open.
 	 * @return True if a pack is open.
 	 */
 	[[nodiscard]] auto hasOpenPack() const -> bool;
 
 	/**
-	 * @brief Read an asset from the open pack.
+	 * @brief
+	 *  Read an asset from the open pack.
 	 * @param[in] iPath The asset path inside the pack.
 	 * @return The raw asset data, or nullopt if not found.
 	 */
 	[[nodiscard]] auto loadFromPack(const std::string& iPath) const -> std::optional<std::vector<uint8_t>>;
 
 	/**
-	 * @brief Check if the open pack contains an asset.
+	 * @brief
+	 *  Check if the open pack contains an asset.
 	 * @param[in] iPath The asset path inside the pack.
 	 * @return True if the asset exists in the pack.
 	 */
 	[[nodiscard]] auto packContains(const std::string& iPath) const -> bool;
 
 	/**
-	 * @brief Access the pack reader.
+	 * @brief
+	 *  Access the pack reader.
 	 * @return The pack reader (may not be open).
 	 */
 	[[nodiscard]] auto getPackReader() const -> const io::pack::PackReader& { return m_packReader; }
 
 private:
 	/**
-	 * @brief Helper function used to search for assets location.
+	 * @brief
+	 *  Helper function used to search for assets location.
 	 * @param[in] iPattern The pattern to search for.
 	 * @return Optional path for the asse if found.
 	 */
 	[[nodiscard]] auto searchAssets(const std::string& iPattern) const -> std::optional<std::filesystem::path>;
 
 	/**
-	 * @brief Runs the application.
+	 * @brief
+	 *  Runs the application.
 	 */
 	void run();
 
 	/**
-	* @brief Action on window close.
-	* @param[in,out] ioEvent The close event.
-	* @return True if succeeded.
-	*/
-	auto onWindowClosed(event::WindowCloseEvent& ioEvent) -> bool;
+	 * @brief
+	 *  Action on window close.
+	 * @param[in] iEvent The close event.
+	 * @return True if succeeded.
+	 */
+	auto onWindowClosed(const event::WindowCloseEvent& iEvent) -> bool;
 
 	/**
-	* @brief Action on window resize.
+	 * @brief
+	 *  Action on window resize.
 	* @param[in,out] iEvent the resize event.
 	* @return True if succeeded.
 	*/
@@ -379,13 +422,13 @@ private:
 	task::Scheduler m_scheduler;
 	/// The asset pack reader.
 	io::pack::PackReader m_packReader;
-
 	/// Mark the main entrypoint function as friend.
 	friend auto ::main(int iArgc, char** iArgv) -> int;
 };
 
 /**
- * @brief Create an application (Must be defined in the client).
+ * @brief
+ *  Create an application (Must be defined in the client).
  * @param[in] iArgc Number of arguments.
  * @param[in] iArgv List of argument.
  * @return The application.

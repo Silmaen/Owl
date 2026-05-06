@@ -2,7 +2,7 @@
  * @file MeshCursor.h
  * @author Silmaen
  * @date 20/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -17,10 +17,10 @@ template<bool IsConst, MeshElementType ElementType, typename... Components>
 class MeshRangeIterator;
 
 /**
- * @brief Namespace for implementation details.
+ * @brief
+ *  Namespace for implementation details.
  */
 namespace details {
-
 /**
  * @brief
  *  Helper structure to check if the component is writable or not
@@ -55,6 +55,13 @@ struct OWL_API MeshCursorInitializer {
 	using MeshType = MeshCursorBase<IsConst, ElementType>::MeshType;
 
 	MeshCursorInitializer() = default;
+
+	/**
+	 * @brief
+	 *  Constructor — prepares each component on the mesh before iteration.
+	 * @param[in] iMesh The mesh on which to operate.
+	 * @param[in] iComponents Tuple of components to be prepared on the mesh.
+	 */
 	MeshCursorInitializer(MeshType& iMesh, const std::tuple<Components...>& iComponents) {
 		prepareComponents(iMesh, std::get<Components>(iComponents)...);
 	}
@@ -147,7 +154,6 @@ struct OWL_API MeshCursorInitializer {
 };
 
 }// namespace details
-
 /**
  * @brief
  *  Cursor for mesh ranges.
@@ -162,9 +168,9 @@ class OWL_API MeshCursor : details::MeshCursorInitializer<IsConst, ElementType, 
 	using InitializerType = details::MeshCursorInitializer<IsConst, ElementType, Components...>;
 	using CursorType = MeshCursorBase<IsConst, ElementType>;
 	using MeshType = MeshCursorBase<IsConst, ElementType>::MeshType;
-
 public:
 	using ComponentsT = std::tuple<typename std::remove_cvref_t<Components>::ComponentType...>;
+
 	/**
 	 * @brief
 	 *  Constructor.
@@ -180,6 +186,7 @@ public:
 	 * @param[in] iPointIndex 	Starting index of the cursor.
 	 * @param[in] iComponents 	Cloud's components on which to iterate.
 	*/
+
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
 	MeshCursor(MeshType& iMesh, size_t iPointIndex, const std::tuple<Components...>& iComponents)
@@ -188,6 +195,7 @@ public:
 				  typename Components::ComponentType(std::get<Components>(iComponents), *this)...)) {
 		init();
 	}
+
 	/**
 	 * @brief
 	 *  Copy constructor.
@@ -201,6 +209,7 @@ public:
 		init();
 	}
 	OWL_DIAG_POP
+
 	/**
 	 * @brief
 	 *  Move constructor.
@@ -331,7 +340,6 @@ private:
 /// @cond
 
 namespace std {// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
-
 template<typename... Components>
 struct tuple_size<owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex, Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};

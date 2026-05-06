@@ -2,7 +2,7 @@
  * @file Log.cpp
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -10,6 +10,7 @@
 
 #include "core/external/spdlog.h"
 #include "debug/LogSink.h"
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
 OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
@@ -18,11 +19,9 @@ OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
 #include <spdlog/sinks/stdout_color_sinks.h>
 OWL_DIAG_POP
 
-
 namespace owl::core {
 
 namespace {
-
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization)
 debug::LogBuffer g_logBuffer;
 
@@ -68,7 +67,8 @@ auto toLevel(const spdlog::level::level_enum iLevel) -> Log::Level {
 }
 
 /**
- * @brief spdlog sink that pushes entries into a LogBuffer for UI display.
+ * @brief
+ *  spdlog sink that pushes entries into a LogBuffer for UI display.
  */
 class EditorLogSink final : public spdlog::sinks::base_sink<std::mutex> {
 public:
@@ -83,16 +83,15 @@ protected:
 		entry.timestamp = iMsg.time;
 		m_buffer.push(std::move(entry));
 	}
+
 	void flush_() override {}
 
 private:
 	debug::LogBuffer& m_buffer;
 };
-
 std::shared_ptr<spdlog::logger> g_CoreLogger;
 std::shared_ptr<spdlog::logger> g_ClientLogger;
 }// namespace
-
 Log::Level Log::s_verbosity = Level::Trace;
 uint64_t Log::s_frameCounter = 0;
 uint64_t Log::s_frequency = g_DefaultFrequency;
@@ -149,8 +148,17 @@ auto Log::initiated() -> bool { return g_CoreLogger != nullptr; }
 
 void Log::newFrame() { ++s_frameCounter; }
 
-void Log::logCore(const Level& iLevel, const std::string_view& iMsg) { g_CoreLogger->log(fromLevel(iLevel), iMsg); }
-void Log::logClient(const Level& iLevel, const std::string_view& iMsg) { g_ClientLogger->log(fromLevel(iLevel), iMsg); }
+void Log::logCore(const Level& iLevel, const std::string_view& iMsg) {
+	if (g_CoreLogger == nullptr)
+		return;
+	g_CoreLogger->log(fromLevel(iLevel), iMsg);
+}
+
+void Log::logClient(const Level& iLevel, const std::string_view& iMsg) {
+	if (g_ClientLogger == nullptr)
+		return;
+	g_ClientLogger->log(fromLevel(iLevel), iMsg);
+}
 
 auto Log::getLogBuffer() -> debug::LogBuffer& { return g_logBuffer; }
 

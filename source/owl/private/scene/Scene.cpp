@@ -2,7 +2,7 @@
  * @file Scene.cpp
  * @author Silmaen
  * @date 22/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -29,8 +29,8 @@
 #include "sound/SoundSystem.h"
 
 namespace owl::scene {
-namespace {
 
+namespace {
 template<component::isComponent Component>
 void copyComponent(entt::registry& oDst, const entt::registry& iSrc,
 				   const std::unordered_map<core::UUID, entt::entity>& iEnttMap) {
@@ -72,7 +72,10 @@ auto getColliderBox(const Entity& iEntity, const math::Transform& iWorldTransfor
 	return {center - halfDiag, center + halfDiag};
 }
 
-/// Compute the natural aspect ratio of a text string for a given font.
+/**
+ * @brief
+ *  Compute the natural aspect ratio of a text string for a given font.
+ */
 auto computeTextAspect(const shared<data::fonts::Font>& iFont, const std::string& iText, const float iKerning,
 					   const float iLineSpacing) -> float {
 	if (!iFont || iText.empty())
@@ -104,12 +107,16 @@ auto computeTextAspect(const shared<data::fonts::Font>& iFont, const std::string
 	return diag.y() > 0.f ? diag.x() / diag.y() : 1.f;
 }
 
-/// Render a single UI child entity's visual components.
+/**
+ * @brief
+ *  Render a single UI child entity's visual components.
+ */
 void renderUIChild(const Entity& iChild, const math::Transform& iTransform, const float iPxScaleY) {
 	const int entId = static_cast<int>(static_cast<entt::entity>(iChild));
 	// Sprite.
 	if (iChild.hasComponent<component::SpriteRenderer>()) {
 		const auto& [color, texture, tilingFactor] = iChild.getComponent<component::SpriteRenderer>();
+
 		renderer::Renderer2D::drawQuad({.transform = iTransform,
 										.color = color,
 										.texture = texture,
@@ -119,6 +126,7 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 	// Text (world-space component on a UI entity).
 	if (iChild.hasComponent<component::Text>()) {
 		const auto& [text, font, color, kerning, lineSpacing] = iChild.getComponent<component::Text>();
+
 		renderer::Renderer2D::drawString({.transform = iTransform,
 										  .text = text,
 										  .font = font,
@@ -130,22 +138,25 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 	// Circle.
 	if (iChild.hasComponent<component::CircleRenderer>()) {
 		const auto& [color, thickness, fade] = iChild.getComponent<component::CircleRenderer>();
+
 		renderer::Renderer2D::drawCircle(
 				{.transform = iTransform, .color = color, .thickness = thickness, .fade = fade, .entityId = entId});
 	}
-	// UIPanel.
-	if (iChild.hasComponent<component::UIPanel>()) {
-		const auto& panel = iChild.getComponent<component::UIPanel>();
+	// UiPanel.
+	if (iChild.hasComponent<component::UiPanel>()) {
+		const auto& panel = iChild.getComponent<component::UiPanel>();
+
 		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = panel.backgroundColor, .entityId = entId});
 	}
-	// UIImage.
-	if (iChild.hasComponent<component::UIImage>()) {
-		const auto& [texture, tint] = iChild.getComponent<component::UIImage>();
+	// UiImage.
+	if (iChild.hasComponent<component::UiImage>()) {
+		const auto& [texture, tint] = iChild.getComponent<component::UiImage>();
+
 		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = tint, .texture = texture, .entityId = entId});
 	}
-	// UIText.
-	if (iChild.hasComponent<component::UIText>()) {
-		const auto& uiText = iChild.getComponent<component::UIText>();
+	// UiText.
+	if (iChild.hasComponent<component::UiText>()) {
+		const auto& uiText = iChild.getComponent<component::UiText>();
 		shared<data::fonts::Font> font = uiText.font;
 		if (!font && core::Application::instanced())
 			font = core::Application::get().getFontLibrary().getDefaultFont();
@@ -154,6 +165,7 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 		textTransform.translation() = iTransform.translation();
 		const float baseScale = uiText.fontSize * iPxScaleY;
 		textTransform.scale() = {baseScale * textAspect, baseScale, 1.f};
+
 		renderer::Renderer2D::drawString({.transform = textTransform,
 										  .text = uiText.text,
 										  .font = font,
@@ -162,44 +174,53 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 										  .lineSpacing = uiText.lineSpacing,
 										  .entityId = entId});
 	}
-	// UIButton.
-	if (iChild.hasComponent<component::UIButton>()) {
-		const auto& button = iChild.getComponent<component::UIButton>();
+	// UiButton.
+	if (iChild.hasComponent<component::UiButton>()) {
+		const auto& button = iChild.getComponent<component::UiButton>();
+
 		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = button.getCurrentColor(), .entityId = entId});
 	}
-	// UIProgressBar.
-	if (iChild.hasComponent<component::UIProgressBar>()) {
-		const auto& [value, backgroundColor, fillColor] = iChild.getComponent<component::UIProgressBar>();
+	// UiProgressBar.
+	if (iChild.hasComponent<component::UiProgressBar>()) {
+		const auto& [value, backgroundColor, fillColor] = iChild.getComponent<component::UiProgressBar>();
 		const float worldWidth = iTransform.scale().x();
+
 		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = backgroundColor, .entityId = entId});
 		if (const float fillFraction = std::clamp(value, 0.f, 1.f); fillFraction > 0.f) {
 			math::Transform fillTransform = iTransform;
 			fillTransform.scale().x() *= fillFraction;
 			fillTransform.translation().x() -= worldWidth * (1.f - fillFraction) * 0.5f;
+
 			renderer::Renderer2D::drawQuad({.transform = fillTransform, .color = fillColor, .entityId = entId});
 		}
 	}
-	// UISlider.
-	if (iChild.hasComponent<component::UISlider>()) {
-		const auto& slider = iChild.getComponent<component::UISlider>();
+	// UiSlider.
+	if (iChild.hasComponent<component::UiSlider>()) {
+		const auto& slider = iChild.getComponent<component::UiSlider>();
 		const float worldWidth = iTransform.scale().x();
 		const float worldHeight = iTransform.scale().y();
+
 		renderer::Renderer2D::drawQuad({.transform = iTransform, .color = slider.trackColor, .entityId = entId});
 		const float norm = slider.getNormalized();
 		if (norm > 0.f) {
 			math::Transform fillTransform = iTransform;
 			fillTransform.scale().x() *= norm;
 			fillTransform.translation().x() -= worldWidth * (1.f - norm) * 0.5f;
+
 			renderer::Renderer2D::drawQuad({.transform = fillTransform, .color = slider.fillColor, .entityId = entId});
 		}
 		math::Transform handleTransform = iTransform;
 		handleTransform.scale() = {worldHeight, worldHeight, 1.f};
 		handleTransform.translation().x() = iTransform.translation().x() - worldWidth * 0.5f + norm * worldWidth;
+
 		renderer::Renderer2D::drawQuad({.transform = handleTransform, .color = slider.handleColor, .entityId = entId});
 	}
 }
 
-/// Advance one animated sprite by `iTimeStep`, applying `speedCurve` if set.
+/**
+ * @brief
+ *  Advance one animated sprite by `iTimeStep`, applying `speedCurve` if set.
+ */
 void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core::Timestep& iTimeStep) {
 	if (!ioAnim.m_playing || ioAnim.columns == 0 || ioAnim.rows == 0 || ioAnim.frameDuration <= 0.0f)
 		return;
@@ -304,10 +325,13 @@ void Scene::destroyEntity(Entity& ioEntity) {
 
 void Scene::onStartRuntime() {
 	OWL_PROFILE_FUNCTION()
+
 	status = Status::Playing;
+
 	// Tilemap tilesets are normally resolved on first render; we need them
 	// before physics init so collidable cells generate static fixtures.
 	resolveAllTilemapTilesets();
+
 	physic::PhysicCommand::init(this);
 
 	// Initialize sound listener from primary SoundListener entity
@@ -316,16 +340,19 @@ void Scene::onStartRuntime() {
 			listener.primary) {
 			const Entity ent{entity, this};
 			const auto wt = getWorldTransform(ent);
+
 			sound::SoundCommand::setListenerPosition(
 					{wt.translation().x(), wt.translation().y(), wt.translation().z()});
 			// Derive forward/up from rotation (Z-axis rotation for 2D)
 			const float rotZ = wt.rotation().z();
+
 			sound::SoundCommand::setListenerOrientation({std::sin(rotZ), std::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
 			break;
 		}
 	}
 	// Start sounds with playOnStart
 	if (sound::SoundSystem::getState() == sound::SoundSystem::State::Running ||
+
 		sound::SoundSystem::getState() == sound::SoundSystem::State::Error) {
 		auto& soundLibrary = sound::SoundSystem::getSoundLibrary();
 		for (const auto view = registry.view<component::Transform, component::SoundSource>(); const auto entity: view) {
@@ -409,7 +436,6 @@ void Scene::onStartRuntime() {
 		anim.m_elapsedTime = 0.0f;
 		anim.m_playing = true;
 	}
-
 	// Start timer triggers and reset overlap state.
 	for (const auto view = registry.view<component::Trigger>(); const auto ent: view) {
 		auto& trigger = view.get<component::Trigger>(ent).trigger;
@@ -440,6 +466,7 @@ void Scene::onEndRuntime() {
 
 void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender) {
 	OWL_PROFILE_FUNCTION()
+
 	// find camera
 	renderer::Camera* mainCamera = nullptr;
 	math::mat4 cameraTransform;
@@ -463,13 +490,17 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 			textTransform.translation().z() = 0;
 			textTransform.scale().x() = 3.f;
 			mainCamera->setTransform(cameraTransform);
+
 			renderer::Renderer2D::resetStats();
+
 			renderer::Renderer2D::beginScene(*mainCamera);
+
 			renderer::Renderer2D::drawString({.transform = textTransform,
 											  .text = "Victory!",
 											  .font = font,
 											  .color = {1, 1, 1, 1},
 											  .entityId = 0});
+
 			renderer::Renderer2D::endScene();
 		}
 		return;
@@ -481,13 +512,17 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 			textTransform.translation().z() = 0;
 			textTransform.scale().x() = 3.f;
 			mainCamera->setTransform(cameraTransform);
+
 			renderer::Renderer2D::resetStats();
+
 			renderer::Renderer2D::beginScene(*mainCamera);
+
 			renderer::Renderer2D::drawString({.transform = textTransform,
 											  .text = "You loose!",
 											  .font = font,
 											  .color = {1, 1, 1, 1},
 											  .entityId = 0});
+
 			renderer::Renderer2D::endScene();
 		}
 		return;
@@ -508,7 +543,6 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 			luaScript.instance && luaScript.instance->isValid())
 			luaScript.instance->onUpdate(iTimeStep.getSeconds());
 	}
-
 	// Inputs
 	if (const Entity player = getPrimaryPlayer()) {
 		auto& [primary, iplayer] = player.getComponent<component::Player>();
@@ -549,16 +583,17 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 			transform.transform.translation() = linkedWorld.translation();
 		}
 	}
-
 	// Sound: update listener and spatial source positions
 	for (const auto view = registry.view<component::Transform, component::SoundListener>(); const auto entity: view) {
 		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
 			listener.primary) {
 			const Entity ent{entity, this};
 			const auto wt = getWorldTransform(ent);
+
 			sound::SoundCommand::setListenerPosition(
 					{wt.translation().x(), wt.translation().y(), wt.translation().z()});
 			const float rotZ = wt.rotation().z();
+
 			sound::SoundCommand::setListenerOrientation({std::sin(rotZ), std::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
 			break;
 		}
@@ -569,6 +604,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 			continue;
 		const Entity ent{entity, this};
 		const auto wt = getWorldTransform(ent);
+
 		sound::SoundCommand::setPosition(soundComp.runtimeHandle,
 										 {wt.translation().x(), wt.translation().y(), wt.translation().z()});
 	}
@@ -582,7 +618,6 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		for (const auto view = registry.view<component::Trigger>(); const auto ent: view) {
 			const Entity entity{ent, this};
 			auto& trigger = entity.getComponent<component::Trigger>().trigger;
-
 			if (!isEffectivelyVisible(entity, /*iEditorMode=*/false)) {
 				// Hidden trigger: cancel any in-progress timer and clear overlap state.
 				if (trigger.type == SceneTrigger::TriggerType::Timer)
@@ -592,13 +627,11 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 				trigger.setOverlapping(false);
 				continue;
 			}
-
 			// Timer triggers: update independently of overlap.
 			if (trigger.type == SceneTrigger::TriggerType::Timer) {
 				trigger.updateTimer(iTimeStep.getSeconds(), entity);
 				continue;
 			}
-
 			// Overlap-based triggers.
 			if (!player)
 				continue;
@@ -613,9 +646,9 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 			trigger.setOverlapping(overlapping);
 		}
 	}
-
 	// Update animated sprites
 	for (const auto view = registry.view<component::AnimatedSpriteRenderer>(); const auto entity: view)
+
 		updateAnimatedSprite(view.get<component::AnimatedSpriteRenderer>(entity), iTimeStep);
 
 	// Render 2D
@@ -632,18 +665,25 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		mainCamera->setTransform(cameraTransform);
 		// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
 		math::mat4 viewRotation = mainCamera->getView();
+
 		viewRotation(0, 3) = 0.0f;
+
 		viewRotation(1, 3) = 0.0f;
+
 		viewRotation(2, 3) = 0.0f;
 		m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
+
 		renderWithStack(*mainCamera);
+
 		ScreenTransition::update(iTimeStep.getSeconds());
+
 		ScreenTransition::render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
 	}
 }
 
 void Scene::onRenderRuntime() {
 	OWL_PROFILE_FUNCTION()
+
 	// find camera
 	renderer::Camera* mainCamera = nullptr;
 	math::mat4 cameraTransform;
@@ -732,6 +772,7 @@ auto Scene::layerAccepts(const Entity& iEntity) const -> bool {
 
 auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) const -> bool {
 	OWL_PROFILE_FUNCTION()
+
 	auto* self = const_cast<Scene*>(this);
 	const auto matches = [&](const entt::entity e) -> bool {
 		const Entity ent{e, self};
@@ -770,6 +811,7 @@ auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) 
 
 void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
+
 	const auto& stack = renderer::Renderer::getRenderStack();
 	// Editor mode: ignore the renderer stack entirely and fall back to a single 2D
 	// pass. Editing a tilemap from inside a first-person raycast view is unusable
@@ -829,6 +871,7 @@ void Scene::render() {
 			if (const auto bgEntity = bgView.front(); isEffectivelyVisible(Entity{bgEntity, this}, editorMode)) {
 				const auto& [mode, type, color, topColor, texture] = bgView.get<component::BackgroundTexture>(bgEntity);
 				const int i_mode = mode == component::BackgroundTexture::Mode::Skybox ? 3 : static_cast<int>(type);
+
 				renderer::BackgroundRenderer::drawBackground({.mode = i_mode,
 															  .color = color,
 															  .topColor = topColor,
@@ -884,6 +927,7 @@ void Scene::render() {
 					constexpr float kSeamOverlap = 1.005f;
 					cellTransform.scale().x() *= cellSize * kSeamOverlap;
 					cellTransform.scale().y() *= cellSize * kSeamOverlap;
+
 					renderer::Renderer2D::drawQuad(
 							{.transform = cellTransform,
 							 .color = math::vec4{1.f, 1.f, 1.f, 1.f},
@@ -905,6 +949,7 @@ void Scene::render() {
 			continue;
 		auto [transform, sprite] = group.get<component::Transform, component::SpriteRenderer>(entity);
 		const math::Transform worldTransform = getWorldTransform(ent);
+
 		renderer::Renderer2D::drawQuad({.transform = worldTransform,
 										.color = sprite.color,
 										.texture = sprite.texture,
@@ -930,6 +975,7 @@ void Scene::render() {
 		const float uMax = static_cast<float>(col + 1) / static_cast<float>(safeCols);
 		const float vMax = 1.0f - static_cast<float>(row) / static_cast<float>(safeRows);
 		const float vMin = 1.0f - static_cast<float>(row + 1) / static_cast<float>(safeRows);
+
 		renderer::Renderer2D::drawQuad({.transform = worldTransform,
 										.color = anim.color,
 										.texture = anim.texture,
@@ -946,6 +992,7 @@ void Scene::render() {
 			continue;
 		auto [transform, circle] = view.get<component::Transform, component::CircleRenderer>(entity);
 		const math::Transform worldTransform = getWorldTransform(ent);
+
 		renderer::Renderer2D::drawCircle({.transform = worldTransform,
 										  .color = circle.color,
 										  .thickness = circle.thickness,
@@ -961,6 +1008,7 @@ void Scene::render() {
 			continue;
 		auto [transform, text] = view.get<component::Transform, component::Text>(entity);
 		const math::Transform worldTransform = getWorldTransform(ent);
+
 		renderer::Renderer2D::drawString({.transform = worldTransform,
 										  .text = text.text,
 										  .font = text.font,
@@ -997,6 +1045,7 @@ void Scene::resolveAllTilemapTilesets() {
 
 void Scene::renderUI(const math::mat4& iEffectiveViewProjection) {
 	OWL_PROFILE_FUNCTION()
+
 	if (m_viewportSize.x() == 0 || m_viewportSize.y() == 0)
 		return;
 
@@ -1056,16 +1105,16 @@ void Scene::renderUI(const math::mat4& iEffectiveViewProjection) {
 		const Entity canvasEntity{canvasEnt, this};
 		const math::vec2 canvasSize = {vpWidth, vpHeight};
 
-		// Render children of the Canvas that have UIRect + visual components.
+		// Render children of the Canvas that have UiRect + visual components.
 		for (const auto& [parentId, childrenIds] = canvasEntity.getComponent<component::Hierarchy>();
 			 const auto childId: childrenIds) {
 			const Entity child = findEntityByUUID(childId);
-			if (!child || !child.hasComponent<component::UIRect>())
+			if (!child || !child.hasComponent<component::UiRect>())
 				continue;
 			if (!isEffectivelyVisible(child, editorMode))
 				continue;
 
-			const auto& rect = child.getComponent<component::UIRect>();
+			const auto& rect = child.getComponent<component::UiRect>();
 			const math::vec2 posPx = rect.computePosition(canvasSize);
 			const math::vec2 posWorld = pixelToWorld(posPx.x(), posPx.y());
 
@@ -1440,32 +1489,32 @@ OWL_API void Scene::onComponentAdded<component::Canvas>([[maybe_unused]] const E
 														[[maybe_unused]] component::Canvas& ioComponent) {}
 
 template<>
-OWL_API void Scene::onComponentAdded<component::UIRect>([[maybe_unused]] const Entity& iEntity,
-														[[maybe_unused]] component::UIRect& ioComponent) {}
+OWL_API void Scene::onComponentAdded<component::UiRect>([[maybe_unused]] const Entity& iEntity,
+														[[maybe_unused]] component::UiRect& ioComponent) {}
 
 template<>
-OWL_API void Scene::onComponentAdded<component::UIText>([[maybe_unused]] const Entity& iEntity,
-														[[maybe_unused]] component::UIText& ioComponent) {}
+OWL_API void Scene::onComponentAdded<component::UiText>([[maybe_unused]] const Entity& iEntity,
+														[[maybe_unused]] component::UiText& ioComponent) {}
 
 template<>
-OWL_API void Scene::onComponentAdded<component::UIImage>([[maybe_unused]] const Entity& iEntity,
-														 [[maybe_unused]] component::UIImage& ioComponent) {}
+OWL_API void Scene::onComponentAdded<component::UiImage>([[maybe_unused]] const Entity& iEntity,
+														 [[maybe_unused]] component::UiImage& ioComponent) {}
 
 template<>
-OWL_API void Scene::onComponentAdded<component::UIPanel>([[maybe_unused]] const Entity& iEntity,
-														 [[maybe_unused]] component::UIPanel& ioComponent) {}
+OWL_API void Scene::onComponentAdded<component::UiPanel>([[maybe_unused]] const Entity& iEntity,
+														 [[maybe_unused]] component::UiPanel& ioComponent) {}
 
 template<>
-OWL_API void Scene::onComponentAdded<component::UIButton>([[maybe_unused]] const Entity& iEntity,
-														  [[maybe_unused]] component::UIButton& ioComponent) {}
+OWL_API void Scene::onComponentAdded<component::UiButton>([[maybe_unused]] const Entity& iEntity,
+														  [[maybe_unused]] component::UiButton& ioComponent) {}
 
 template<>
-OWL_API void Scene::onComponentAdded<component::UISlider>([[maybe_unused]] const Entity& iEntity,
-														  [[maybe_unused]] component::UISlider& ioComponent) {}
+OWL_API void Scene::onComponentAdded<component::UiSlider>([[maybe_unused]] const Entity& iEntity,
+														  [[maybe_unused]] component::UiSlider& ioComponent) {}
 
 template<>
-OWL_API void Scene::onComponentAdded<component::UIProgressBar>([[maybe_unused]] const Entity& iEntity,
-															   [[maybe_unused]] component::UIProgressBar& ioComponent) {
+OWL_API void Scene::onComponentAdded<component::UiProgressBar>([[maybe_unused]] const Entity& iEntity,
+															   [[maybe_unused]] component::UiProgressBar& ioComponent) {
 }
 
 template<>

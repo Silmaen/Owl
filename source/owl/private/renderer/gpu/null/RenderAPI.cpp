@@ -2,7 +2,7 @@
  * @file RenderAPI.cpp
  * @author Silmaen
  * @date 30/07/2023
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"

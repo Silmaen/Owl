@@ -2,7 +2,7 @@
  * @file Renderer.cpp
  * @author Silmaen
  * @date 08/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -25,6 +25,7 @@ RenderStack Renderer::m_renderStack;
 
 void Renderer::init() {
 	OWL_PROFILE_FUNCTION()
+
 	initContext();
 	if (m_internalState == State::Error)
 		return;
@@ -33,6 +34,7 @@ void Renderer::init() {
 
 void Renderer::initContext() {
 	OWL_PROFILE_FUNCTION()
+
 	m_internalState = State::Created;
 
 	if (m_sceneData == nullptr)

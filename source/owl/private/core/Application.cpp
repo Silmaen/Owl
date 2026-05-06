@@ -2,7 +2,7 @@
  * @file Application.cpp
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -24,11 +24,11 @@ OWL_DIAG_POP
 
 namespace owl::core {
 
-
 Application* Application::s_instance = nullptr;
 
 Application::Application(AppParams iAppParams)// NOLINT(readability-function-cognitive-complexity)
 	: m_initParams{std::move(iAppParams)} {
+
 	OWL_PROFILE_FUNCTION()
 
 	OWL_CORE_ASSERT(!s_instance, "Application already exists!")
@@ -39,6 +39,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		// Set up a working directory
 		// Assuming present of a folder 'res' containing the data
 		m_workingDirectory = absolute(std::filesystem::current_path());
+
 		OWL_CORE_INFO("Working directory: {}", m_workingDirectory.string())
 
 		// load config file if any
@@ -54,6 +55,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		if (m_initParams.useDebugging) {
 			appendEnv("VK_ADD_LAYER_PATH", m_workingDirectory.string());
 #ifdef OWL_VULKAN_LAYER_PATH
+
 			appendEnv("VK_ADD_LAYER_PATH", OWL_VULKAN_LAYER_PATH);
 #endif
 		}
@@ -90,7 +92,9 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 				auto data = m_packReader.readEntry(entryPath);
 				if (!data)
 					continue;
+
 				std::filesystem::create_directories(destFile.parent_path());
+
 				std::ofstream out(destFile, std::ios::binary);
 				if (out.good())
 					out.write(reinterpret_cast<const char*>(data->data()), static_cast<std::streamsize>(data->size()));
@@ -130,6 +134,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 	// Create the renderer
 	{
+
 		renderer::gpu::RenderCommand::create(m_initParams.renderer);
 		// check renderer creation
 		if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Created) {
@@ -153,7 +158,9 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 				.width = m_initParams.width,
 				.height = m_initParams.height,
 		});
+
 		input::Input::init();
+
 		OWL_CORE_INFO("Window Created.")
 	}
 
@@ -168,6 +175,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		}
 		// wait for all asynchron tasks
 		m_scheduler.waitEmptyQueue();
+
 		OWL_CORE_TRACE("Renderer context initiated.")
 	}
 
@@ -177,12 +185,14 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	// create the GUI layer
 	if (m_initParams.hasGui) {
 		mp_imGuiLayer = mkShared<gui::UiLayer>();
+
 		pushOverlay(mp_imGuiLayer);
 
 		// applying the theme.
 		if (const auto defaultTheme = m_workingDirectory / "theme.yml"; exists(defaultTheme)) {
 			gui::Theme theme;
 			theme.loadFromFile(defaultTheme);
+
 			gui::UiLayer::setTheme(theme);
 		}
 		// wait for all asynchron tasks
@@ -196,6 +206,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	{
 		const auto requestedSound =
 				m_initParams.isDummy ? sound::SoundAPI::Type::Null : m_initParams.sound;
+
 		sound::SoundCommand::create(requestedSound);
 		bool soundReady = sound::SoundCommand::getState() == sound::SoundAPI::State::Created;
 		if (soundReady) {
@@ -205,7 +216,9 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		if (!soundReady && requestedSound != sound::SoundAPI::Type::Null) {
 			OWL_CORE_WARN("Sound backend unavailable -- falling back to Null sound (audio disabled).")
 			sound::SoundSystem::shutdown();
+
 			sound::SoundCommand::create(sound::SoundAPI::Type::Null);
+
 			sound::SoundSystem::init();
 			soundReady = sound::SoundCommand::getState() == sound::SoundAPI::State::Ready;
 		}
@@ -216,6 +229,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		}
 		// wait for all asynchron tasks
 		m_scheduler.waitEmptyQueue();
+
 		OWL_CORE_INFO("Sound system initiated.")
 	}
 
@@ -249,6 +263,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 			}
 		});
 		m_scheduler.waitEmptyQueue();
+
 		OWL_CORE_INFO("Renderer initiated.")
 	}
 
@@ -281,6 +296,7 @@ Application::~Application() {
 			mp_appWindow->getGraphContext()->waitIdle();
 		// 1. Release layers first — they may own GPU resources (e.g. ImGui Vulkan backend).
 		m_layerStack.clear();
+
 		input::Input::invalidate();
 		// 2. Release Renderer2D / BackgroundRenderer resources (only if shaders were initialized).
 		if (renderer::Renderer::getState() == renderer::Renderer::State::Running) {
@@ -288,11 +304,13 @@ Application::~Application() {
 		} else {
 			renderer::Renderer::reset();
 		}
+
 		// 3. Destroy the RenderAPI: VulkanHandler::release() tears down pipelines, swapchain,
 		//    descriptors, device, and surface (using the window's GraphContext) and then the
 		//    Vulkan instance. This must happen BEFORE the window/GLFW teardown, otherwise the
 		//    Vulkan surface outlives its backing native window and crashes on destruction.
 		renderer::gpu::RenderCommand::invalidate();
+
 		OWL_CORE_TRACE("Renderer shut down and invalidated.")
 		// 4. Finally tear down the window (destroys GLFW window / terminates GLFW).
 		if (mp_appWindow) {
@@ -303,7 +321,9 @@ Application::~Application() {
 	}
 	if (sound::SoundCommand::getState() != sound::SoundAPI::State::Error) {
 		sound::SoundSystem::shutdown();
+
 		sound::SoundCommand::invalidate();
+
 		OWL_CORE_TRACE("Sound system shut down and invalidated.")
 	}
 	invalidate();
@@ -333,7 +353,6 @@ void Application::run() {
 	while (m_state == State::Running) {
 		OWL_PROFILE_SCOPE("RunLoop")
 		OWL_CORE_FRAME_ADVANCE
-
 		m_stepper.update();
 
 		// Graphics part.
@@ -344,8 +363,8 @@ void Application::run() {
 				continue;
 			}
 			{
-				OWL_PROFILE_SCOPE("LayerStack onUpdate")
 
+				OWL_PROFILE_SCOPE("LayerStack onUpdate")
 				for (const auto& layer: m_layerStack) layer->onUpdate(m_stepper);
 			}
 			if (mp_imGuiLayer) {
@@ -354,11 +373,13 @@ void Application::run() {
 				for (const auto& layer: m_layerStack) layer->onImGuiRender(m_stepper);
 				mp_imGuiLayer->end();
 			}
+
 			renderer::gpu::RenderCommand::endFrame();
 		}
 
 		// sound part
 		{
+
 			sound::SoundCommand::frame(m_stepper);
 			if (sound::SoundCommand::getState() != sound::SoundAPI::State::Ready) {
 				m_state = State::Error;
@@ -367,9 +388,7 @@ void Application::run() {
 		}
 
 		mp_appWindow->onUpdate();
-
 		m_scheduler.frame(m_stepper);
-
 #if OWL_TRACKER_VERBOSITY >= 3
 		{
 			if (const auto& memState = debug::TrackerAPI::checkState();
@@ -381,6 +400,7 @@ void Application::run() {
 				OWL_CORE_TRACE(" LEAK Amount: {} in {} Unallocated chunks",
 							   owl::core::utils::sizeToString(memState.allocatedMemory), memState.allocs.size())
 				for (const auto& chunk: memState.allocs) { OWL_CORE_TRACE(" ** {}", chunk.toStr()) }
+
 				OWL_CORE_TRACE("----------------------------------")
 				OWL_CORE_TRACE("")
 			}
@@ -411,7 +431,7 @@ void Application::onEvent(event::Event& ioEvent) {
 	}
 }
 
-auto Application::onWindowClosed(event::WindowCloseEvent&) -> bool {
+auto Application::onWindowClosed(const event::WindowCloseEvent&) -> bool {
 	OWL_PROFILE_FUNCTION()
 
 	close();
@@ -432,6 +452,7 @@ auto Application::onWindowResized(const event::WindowResizeEvent& iEvent) -> boo
 
 void Application::pushLayer(shared<layer::Layer>&& iLayer) {
 	OWL_PROFILE_FUNCTION()
+
 	if (renderer::gpu::RenderCommand::getState() == renderer::gpu::RenderAPI::State::Error)
 		return;
 	m_layerStack.pushLayer(std::move(iLayer));
@@ -439,6 +460,7 @@ void Application::pushLayer(shared<layer::Layer>&& iLayer) {
 
 void Application::pushOverlay(shared<layer::Layer>&& iOverlay) {
 	OWL_PROFILE_FUNCTION()
+
 	if (renderer::gpu::RenderCommand::getState() == renderer::gpu::RenderAPI::State::Error)
 		return;
 	m_layerStack.pushOverlay(std::move(iOverlay));
@@ -506,7 +528,6 @@ void AppParams::saveToFile(const std::filesystem::path& iFile) const {
 	fileOut << out.c_str();
 	fileOut.close();
 }
-
 
 auto Application::openPack(const std::filesystem::path& iPackFile) -> bool {
 	closePack();

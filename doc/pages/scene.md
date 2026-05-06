@@ -335,16 +335,16 @@ children (direct or nested) of an entity with a `Canvas` component.
 |-------|------|----------|-------------------------------|
 | —     | —    | `Canvas` | Marks the entity as a UI root |
 
-#### UIRect
+#### UiRect
 
 | Field    | Type   | YAML Key | Description                                    |
 |----------|--------|----------|------------------------------------------------|
-| `anchor` | `vec4` | `UIRect` | Normalized anchor rectangle (min x/y, max x/y) |
+| `anchor` | `vec4` | `UiRect` | Normalized anchor rectangle (min x/y, max x/y) |
 | `pivot`  | `vec2` | —        | Normalized pivot point                         |
 | `size`   | `vec2` | —        | Size in pixels                                 |
 | `offset` | `vec2` | —        | Offset from anchored position                  |
 
-#### UIText
+#### UiText
 
 | Field       | Type     | Description       |
 |-------------|----------|-------------------|
@@ -353,20 +353,20 @@ children (direct or nested) of an entity with a `Canvas` component.
 | `fontSize`  | `float`  | Size in pixels    |
 | `color`     | `vec4`   | Text colour (RGBA) |
 
-#### UIImage
+#### UiImage
 
 | Field        | Type     | Description           |
 |--------------|----------|-----------------------|
 | `imageAsset` | `string` | Texture file path     |
 | `tint`       | `vec4`   | Tint colour multiplier |
 
-#### UIPanel
+#### UiPanel
 
 | Field   | Type   | Description      |
 |---------|--------|------------------|
 | `color` | `vec4` | Background colour |
 
-#### UIButton
+#### UiButton
 
 | Field         | Type     | Description              |
 |---------------|----------|--------------------------|
@@ -376,7 +376,7 @@ children (direct or nested) of an entity with a `Canvas` component.
 | `pressColor`  | `vec4`   | Colour when pressed       |
 | `action`      | `string` | Lua callback on click    |
 
-#### UISlider
+#### UiSlider
 
 | Field      | Type    | Description   |
 |------------|---------|---------------|
@@ -384,7 +384,7 @@ children (direct or nested) of an entity with a `Canvas` component.
 | `minValue` | `float` | Minimum value |
 | `maxValue` | `float` | Maximum value |
 
-#### UIProgressBar
+#### UiProgressBar
 
 | Field             | Type    | Description         |
 |-------------------|---------|---------------------|

@@ -2,7 +2,7 @@
  * @file RendererRaycast.h
  * @author Silmaen
  * @date 04/05/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,15 +12,18 @@
 #include "renderer/Camera.h"
 
 namespace owl::scene::component {
+
 struct Tilemap;
 }// namespace owl::scene::component
 
 namespace owl::math {
+
 class Transform;
 }// namespace owl::math
 
 /**
- * @brief Wolfenstein-style raycaster family.
+ * @brief
+ *  Wolfenstein-style raycaster family.
  *
  * Hosts `RendererRaycast` (static facade running per-column DDA across a
  * `scene::component::Tilemap` to produce a pseudo-3D first-person view)
@@ -31,9 +34,9 @@ class Transform;
  * inner loop into a dedicated full-screen Slang shader.
  */
 namespace owl::renderer {
-
 /**
- * @brief Configuration for one raycaster pass.
+ * @brief
+ *  Configuration for one raycaster pass.
  *
  * Holds the parameters that change between scene-activations: field of view,
  * clipping range, sky / floor colours. The raycaster operates on a 2D top-down
@@ -54,7 +57,8 @@ struct OWL_API RaycastConfig {
 };
 
 /**
- * @brief Static facade for a CPU-DDA, GPU-textured raycasting renderer.
+ * @brief
+ *  Static facade for a CPU-DDA, GPU-textured raycasting renderer.
  *
  * Mirrors the `Renderer2D` shape: a single static class with `init`/`shutdown`
  * book-keeping plus `beginScene` / `draw...` / `endScene` per frame. Internally
@@ -69,14 +73,20 @@ struct OWL_API RaycastConfig {
 class OWL_API RendererRaycast {
 public:
 	RendererRaycast() = default;
+
 	RendererRaycast(const RendererRaycast&) = delete;
+
 	RendererRaycast(RendererRaycast&&) = delete;
+
 	auto operator=(const RendererRaycast&) -> RendererRaycast& = delete;
+
 	auto operator=(RendererRaycast&&) -> RendererRaycast& = delete;
+
 	~RendererRaycast() = default;
 
 	/**
-	 * @brief Initialise the raycaster facade.
+	 * @brief
+	 *  Initialise the raycaster facade.
 	 *
 	 * Currently a no-op since draws are routed through `Renderer2D`. Kept for
 	 * symmetry with future GPU-shader-based implementations and to give us a
@@ -85,12 +95,14 @@ public:
 	static void init();
 
 	/**
-	 * @brief Tear down the raycaster facade.
+	 * @brief
+	 *  Tear down the raycaster facade.
 	 */
 	static void shutdown();
 
 	/**
-	 * @brief Open a raycast scene.
+	 * @brief
+	 *  Open a raycast scene.
 	 *
 	 * Records the camera pose and the configuration that will be used by every
 	 * subsequent `draw*` call until `endScene`. The active framebuffer / viewport
@@ -103,7 +115,8 @@ public:
 	static void beginScene(const Camera& iCamera, const math::vec2ui& iViewport, const RaycastConfig& iConfig);
 
 	/**
-	 * @brief Render the walls of a tilemap as DDA stripes plus the sky / floor backdrop.
+	 * @brief
+	 *  Render the walls of a tilemap as DDA stripes plus the sky / floor backdrop.
 	 *
 	 * Iterates the tilemap's first non-empty layer, treating any cell with a
 	 * non-empty tile index as a wall whose texture is sampled from the bound
@@ -117,14 +130,16 @@ public:
 								 const math::Transform& iTilemapWorldTransform, int iEntityId);
 
 	/**
-	 * @brief Close a raycast scene.
+	 * @brief
+	 *  Close a raycast scene.
 	 *
 	 * Flushes the pending stripe quads. Pairs with `beginScene`.
 	 */
 	static void endScene();
 
 	/**
-	 * @brief Per-frame statistics.
+	 * @brief
+	 *  Per-frame statistics.
 	 */
 	struct OWL_API Statistics {
 		/// Number of tilemap calls in the last frame.
@@ -138,12 +153,14 @@ public:
 	};
 
 	/**
-	 * @brief Reset the per-frame statistics.
+	 * @brief
+	 *  Reset the per-frame statistics.
 	 */
 	static void resetStats();
 
 	/**
-	 * @brief Read the current statistics (intended to be called once per frame after `endScene`).
+	 * @brief
+	 *  Read the current statistics (intended to be called once per frame after `endScene`).
 	 * @return The statistics snapshot.
 	 */
 	[[nodiscard]] static auto getStats() -> Statistics;

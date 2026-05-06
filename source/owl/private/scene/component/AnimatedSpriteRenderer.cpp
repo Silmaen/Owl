@@ -2,7 +2,7 @@
  * @file AnimatedSpriteRenderer.cpp
  * @author Silmaen
  * @date 09/04/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -16,7 +16,6 @@
 namespace owl::scene::component {
 
 namespace {
-
 void emitSpeedCurve(YAML::Emitter& ioEmitter, const math::Curve& iCurve) {
 	if (iCurve.empty())
 		return;

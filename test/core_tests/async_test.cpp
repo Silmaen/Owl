@@ -48,7 +48,6 @@ TEST(core_task, SchedulerBasic) {
 }
 
 TEST(core_task, SchedulerTasks) {
-
 	uint8_t counter = 0;
 	{
 		Scheduler scheduler;

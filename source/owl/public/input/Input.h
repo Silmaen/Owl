@@ -2,7 +2,7 @@
  * @file Input.h
  * @author Silmaen
  * @date 06/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -15,88 +15,105 @@
 
 namespace owl::input {
 /**
- * @brief Base class for input management.
+ * @brief
+ *  Base class for input management.
  */
 class OWL_API Input {
 public:
 	Input(const Input&) = delete;
+
 	Input(Input&&) = delete;
+
 	auto operator=(const Input&) -> Input& = delete;
+
 	auto operator=(Input&&) -> Input& = delete;
 
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	Input() = default;
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	virtual ~Input();
 
 	/**
-	 * @brief Initialize the input;
+	 * @brief
+	 *  Initialize the input;
 	 * @param[in] iType the type of input
 	 */
 	static void init(const window::Type& iType = window::Type::Glfw);
 
 	/**
-	 * @brief Destroy the inout instance.
+	 * @brief
+	 *  Destroy the inout instance.
 	 */
 	static void invalidate();
 
 	/**
-	 * @brief Keyboard pressed check.
+	 * @brief
+	 *  Keyboard pressed check.
 	 * @param[in] iKeycode The Key to check.
 	 * @return True if pressed.
 	 */
 	static auto isKeyPressed(KeyCode iKeycode) -> bool;
 
 	/**
-	 * @brief Mouse button pressed check.
+	 * @brief
+	 *  Mouse button pressed check.
 	 * @param[in] iMouseCode Mouse button to check.
 	 * @return True if pressed.
 	 */
 	static auto isMouseButtonPressed(MouseCode iMouseCode) -> bool;
 
 	/**
-	 * @brief Get mouse X position.
+	 * @brief
+	 *  Get mouse X position.
 	 * @return Mouse X Position.
 	 */
 	static auto getMouseX() -> float;
 
 	/**
-	 * @brief Get mouse Y position.
+	 * @brief
+	 *  Get mouse Y position.
 	 * @return Mouse Y Position.
 	 */
 	static auto getMouseY() -> float;
 
 	/**
-	 * @brief Get mouse position.
+	 * @brief
+	 *  Get mouse position.
 	 * @return Mouse Position.
 	 */
 	static auto getMousePos() -> math::vec2;
 
 	/**
-	 * @brief Simulate key toggle.
+	 * @brief
+	 *  Simulate key toggle.
 	 * @param[in] iKeycode the key to press/release.
 	 */
 	static void injectKey(KeyCode iKeycode);
 
 	/**
-	 * @brief Simulate mouse key toggle.
+	 * @brief
+	 *  Simulate mouse key toggle.
 	 * @param[in] iMouseCode the key to press/release.
 	 */
 	static void injectMouseButton(MouseCode iMouseCode);
 
 	/**
-	 * @brief Simulate mouse movement.
+	 * @brief
+	 *  Simulate mouse movement.
 	 * @param[in] iMousePos The new mouse pos.
 	 */
 	static void injectMousePos(const math::vec2& iMousePos);
 
 	/**
-	 * @brief Clear the previously defined injections.
+	 * @brief
+	 *  Clear the previously defined injections.
 	 */
 	static void resetInjection();
 
@@ -107,41 +124,52 @@ private:
 	static uniq<Input> m_instance;
 
 	/**
-	 * @brief Keyboard pressed check, private implementation.
+	 * @brief
+	 *  Keyboard pressed check, private implementation.
 	 * @param[in] iKeycode The Key to check.
 	 * @return True if pressed.
 	 */
 	virtual auto isKeyPressed_impl(KeyCode iKeycode) -> bool = 0;
+
 	/**
-	 * @brief Mouse button pressed check, private implementation.
+	 * @brief
+	 *  Mouse button pressed check, private implementation.
 	 * @param[in] iMouseCode Mouse button to check.
 	 * @return True if pressed.
 	 */
 	virtual auto isMouseButtonPressed_impl(MouseCode iMouseCode) -> bool = 0;
+
 	/**
-	 * @brief Get mouse position, private implementation.
+	 * @brief
+	 *  Get mouse position, private implementation.
 	 * @return Mouse Position.
 	 */
 	virtual auto getMousePos_impl() -> math::vec2 = 0;
+
 	/**
-	 * @brief Simulate key toggle, private implementation.
+	 * @brief
+	 *  Simulate key toggle, private implementation.
 	 * @param[in] iKeycode the key to press/release.
 	 */
 	virtual void injectKey_impl(KeyCode iKeycode) = 0;
 
 	/**
-	 * @brief Simulate mouse key toggle, private implementation.
+	 * @brief
+	 *  Simulate mouse key toggle, private implementation.
 	 * @param[in] iMouseCode the key to press/release.
 	 */
 	virtual void injectMouseButton_impl(MouseCode iMouseCode) = 0;
+
 	/**
-	 * @brief Simulate mouse movement, private implementation.
+	 * @brief
+	 *  Simulate mouse movement, private implementation.
 	 * @param[in] iMousePos The new mouse pos.
 	 */
 	virtual void injectMousePos_impl(const math::vec2& iMousePos) = 0;
 
 	/**
-	 * @brief Clear the previously defined injections.
+	 * @brief
+	 *  Clear the previously defined injections.
 	 */
 	virtual void resetInjection_impl() = 0;
 };

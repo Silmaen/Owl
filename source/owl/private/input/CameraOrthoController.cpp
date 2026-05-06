@@ -2,7 +2,7 @@
  * @file CameraOrthoController.cpp
  * @author Silmaen
  * @date 17/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -13,7 +13,6 @@
 namespace owl::input {
 
 namespace {
-
 constexpr float g_HalfTurn{180.f};
 constexpr float g_FullTurn{360.f};
 constexpr float g_ZoomScroll{0.25f};
@@ -22,11 +21,13 @@ constexpr float g_ZoomScroll{0.25f};
 
 CameraOrthoController::CameraOrthoController(const float iAspectRatio, const bool iRotation)
 	: m_aspectRatio{iAspectRatio},
+
 	  m_camera(-m_aspectRatio * m_zoomLevel, m_aspectRatio * m_zoomLevel, -m_zoomLevel, m_zoomLevel),
 	  m_rotation{iRotation} {}
 
 void CameraOrthoController::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
+
 	const auto delta = iTimeStep.getSeconds();
 	const auto angle = static_cast<double>(math::radians(m_cameraRotation));
 	if (Input::isKeyPressed(key::A)) {

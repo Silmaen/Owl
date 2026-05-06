@@ -13,7 +13,6 @@
 namespace owl::nest {
 
 namespace {
-
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 auto buildKeyNameMap() -> const std::unordered_map<input::KeyCode, std::string>& {
 	static const std::unordered_map<input::KeyCode, std::string> map = {
@@ -105,7 +104,10 @@ auto buildNameKeyMap() -> const std::unordered_map<std::string, input::KeyCode>&
 }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
-/// Count the number of modifier bits set.
+/**
+ * @brief
+ *  Count the number of modifier bits set.
+ */
 auto modifierCount(const Modifiers iMod) -> int {
 	int count = 0;
 	if (hasFlag(iMod, Modifiers::Ctrl))
@@ -117,7 +119,10 @@ auto modifierCount(const Modifiers iMod) -> int {
 	return count;
 }
 
-/// Check if a key code is a modifier key (should be ignored during capture).
+/**
+ * @brief
+ *  Check if a key code is a modifier key (should be ignored during capture).
+ */
 auto isModifierKey(const input::KeyCode iKey) -> bool {
 	return iKey == input::key::LeftControl || iKey == input::key::RightControl ||
 		   iKey == input::key::LeftShift || iKey == input::key::RightShift ||

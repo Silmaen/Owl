@@ -2,7 +2,7 @@
  * @file VulkanHandler.cpp
  * @author Silmaen
  * @date 30/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -171,6 +171,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 														.pushConstantRangeCount = 0,
 														.pPushConstantRanges = nullptr};
 	if (const VkResult result =
+
 				vkCreatePipelineLayout(core.getLogicalDevice(), &pipelineLayoutInfo, nullptr, &pData.layout);
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan: Shader: failed to create pipeline layout {} ({})", iPipeLineName, resultString(result))
@@ -309,6 +310,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 
 	const auto id = m_pipeLines.empty() ? 0 : static_cast<int32_t>(m_pipeLines.rbegin()->first) + 1;
 	m_pipeLines.emplace(id, pData);
+
 	OWL_CORE_TRACE("Vulkan pipeline: {} Loaded.", iPipeLineName)
 	return id;
 }

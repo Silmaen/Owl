@@ -2,7 +2,7 @@
  * @file GraphContext.cpp
  * @author Silmaen
  * @date 07/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -27,7 +27,6 @@ void GraphContext::init() {
 	m_version = gladLoadGL(reinterpret_cast<GLADloadfunc>(glfwGetProcAddress));
 #endif
 	OWL_CORE_ASSERT(m_version, "Failed to initialize GLAD for OpenGL")
-
 	OWL_CORE_INFO("OpenGL GraphContext Initiated.")
 	OWL_CORE_INFO("Device Info:")
 	OWL_CORE_INFO("  Vendor: {}", reinterpret_cast<const char*>(glGetString(GL_VENDOR)))

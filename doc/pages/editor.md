@@ -323,7 +323,7 @@ that do not match the field's `AssetKind` are silently rejected.
 | `SpriteRenderer.texture`                                    | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`, `.hdr` |
 | `AnimatedSpriteRenderer.texture`                            | same as Texture                   |
 | `BackgroundTexture.texture` (Background-Texture and Skybox) | same as Texture                   |
-| `UIImage.texture`                                           | same as Texture                   |
+| `UiImage.texture`                                           | same as Texture                   |
 | `Text.font`                                                 | `.ttf`, `.otf`                    |
 | `SoundSource.soundAsset`                                    | `.wav`, `.mp3`, `.ogg`, `.flac`   |
 | `LuaScript.scriptPath`                                      | `.lua`                            |
@@ -706,7 +706,7 @@ The Edit menu labels dynamically show the description of the next undo/redo acti
 (e.g., "Undo Delete 'Player'").
 
 **Window title.** The editor window title reflects the active project name and current
-scene, updated by `updateWindowTitle()`. An asterisk (`*`) suffix indicates unsaved
+scene, refreshed by `refreshWindowTitle()`. An asterisk (`*`) suffix indicates unsaved
 changes (based on the undo history dirty state).
 
 ## Prefab Workflow

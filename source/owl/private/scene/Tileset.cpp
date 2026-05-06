@@ -16,7 +16,6 @@
 namespace owl::scene {
 
 namespace {
-
 constexpr auto g_FullAtlasUv = std::array<math::vec2, 4>{math::vec2{0.f, 0.f}, math::vec2{1.f, 0.f},
 														 math::vec2{1.f, 1.f}, math::vec2{0.f, 1.f}};
 

@@ -14,7 +14,6 @@ using namespace owl;
 using namespace owl::gui::widgets;
 
 namespace {
-
 auto makeNode(const std::string& iTitle, math::vec2f iPos,
 			  std::vector<std::string> iInputLabels = {},
 			  std::vector<std::string> iOutputLabels = {}) -> Node {
@@ -159,4 +158,32 @@ TEST(NodeCanvasSerializer, EmptySubsetReturnsEmptyString) {
 	NodeCanvas src;
 	src.addNode(makeNode("A", {0.0f, 0.0f}));
 	EXPECT_TRUE(NodeCanvasSerializer::serializeSubset(src, {}).empty());
+}
+
+TEST(NodeCanvasSerializer, DeserializeFromNonMapYamlReturnsFalse) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	NodeCanvas dst;
+	// Top-level scalar — not a map.
+	EXPECT_FALSE(NodeCanvasSerializer::deserializeFromString(dst, "just a scalar"));
+	owl::core::Log::invalidate();
+}
+
+TEST(NodeCanvasSerializer, DeserializeFromMissingFileReturnsFalse) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	NodeCanvas dst;
+	const auto missing = std::filesystem::temp_directory_path() / "owl_node_canvas_missing.owlflow";
+	std::filesystem::remove(missing);
+	EXPECT_FALSE(NodeCanvasSerializer::deserializeFromFile(dst, missing));
+	owl::core::Log::invalidate();
+}
+
+TEST(NodeCanvasSerializer, SerializeToFileFailsOnInvalidPath) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	NodeCanvas src;
+	src.addNode(makeNode("A", {0.0f, 0.0f}));
+	// Path under a directory that doesn't exist — std::ofstream silently fails to open.
+	const auto badPath = std::filesystem::temp_directory_path() / "owl_no_such_dir_xyz" / "file.owlflow";
+	std::filesystem::remove_all(badPath.parent_path());
+	EXPECT_FALSE(NodeCanvasSerializer::serializeToFile(src, badPath, "x"));
+	owl::core::Log::invalidate();
 }

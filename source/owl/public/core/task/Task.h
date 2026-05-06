@@ -2,7 +2,7 @@
  * @file Task.h
  * @author Silmaen
  * @date 01/12/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -17,41 +17,57 @@ class Scheduler;
 struct SchedulerImpl;
 
 /**
- * @brief Class defining a simple task for multithreading.
+ * @brief
+ *  Class defining a simple task for multithreading.
  */
 class OWL_API Task final {
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
+	 * @param[in] iExec The action to execute on the worker thread.
+	 * @param[in] iEnds Callback executed on the main thread once the worker finishes (default: no-op).
 	 */
 	explicit Task(const std::function<void()>& iExec, const std::function<void()>& iEnds = []() -> void {});
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~Task();
+
 	/**
-	 * @brief Default move constructor.
+	 * @brief
+	 *  Default move constructor.
 	 */
 	Task(Task&&) noexcept;
+
 	Task(const Task&) = delete;
+
 	auto operator=(const Task&) -> Task& = delete;
+
 	auto operator=(Task&&) -> Task& = delete;
 
-	/// @brief The task State.
+	/**
+	 * @brief
+	 *  The task state.
+	 */
 	enum struct State : uint8_t {
-		Waiting,
-		Running,
-		Terminated,
+		Waiting,///< Task created, not yet running.
+		Running,///< Task is running on the worker thread.
+		Terminated,///< Task has finished (and termination callback has run).
 	};
 
 	/**
-	 * @brief Access to the task's state.
+	 * @brief
+	 *  Access to the task's state.
 	 * @return The task's state.
 	 */
-	[[nodiscard]] auto getState() const -> const State& { return m_state; }
+	[[nodiscard]] auto getState() const noexcept -> const State& { return m_state; }
 
 	/**
-	 * @brief Check if process is still running. If terminated, execute it corresponding termination program.
+	 * @brief
+	 *  Check if process is still running. If terminated, execute its corresponding termination program.
 	 */
 	void poll();
 

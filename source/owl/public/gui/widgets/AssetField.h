@@ -15,9 +15,9 @@
 #include <imgui.h>
 
 namespace owl::gui::widgets {
-
 /**
- * @brief Categories of assets a content-browser drop can carry.
+ * @brief
+ *  Categories of assets a content-browser drop can carry.
  *
  * The same `CONTENT_BROWSER_ITEM` ImGui payload (a relative path, NUL-terminated) is
  * emitted for every asset; the receiver picks an `AssetKind` to filter by extension
@@ -36,7 +36,8 @@ enum struct AssetKind : uint8_t {
 };
 
 /**
- * @brief Test whether a path's extension matches the given asset kind.
+ * @brief
+ *  Test whether a path's extension matches the given asset kind.
  * @param[in] iPath Path to inspect (the extension is read).
  * @param[in] iKind Asset kind to validate against.
  * @return True when the extension is in the canonical list for `iKind`. Comparison is
@@ -45,7 +46,8 @@ enum struct AssetKind : uint8_t {
 OWL_API auto isPathOfKind(const std::filesystem::path& iPath, AssetKind iKind) -> bool;
 
 /**
- * @brief Wrap `BeginDragDropTarget`/`AcceptDragDropPayload`/`EndDragDropTarget` for
+ * @brief
+ *  Wrap `BeginDragDropTarget`/`AcceptDragDropPayload`/`EndDragDropTarget` for
  *        a content-browser asset drop, filtered by kind.
  * @param[in] iKind Accepted asset category.
  * @param[out] oRelativePath Set to the dropped relative path (relative to the content
@@ -58,7 +60,8 @@ OWL_API auto isPathOfKind(const std::filesystem::path& iPath, AssetKind iKind) -
 OWL_API auto assetDropTarget(AssetKind iKind, std::filesystem::path& oRelativePath) -> bool;
 
 /**
- * @brief Inspector row for a `Texture2D` field.
+ * @brief
+ *  Inspector row for a `Texture2D` field.
  *
  * Renders a thumbnail (or labelled square button when the texture is null) of the given
  * size, attaches a context popup for "Remove texture", and accepts `CONTENT_BROWSER_ITEM`

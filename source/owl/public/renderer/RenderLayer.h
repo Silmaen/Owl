@@ -2,7 +2,7 @@
  * @file RenderLayer.h
  * @author Silmaen
  * @date 30/04/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -19,11 +19,13 @@ OWL_DIAG_POP
 #include <string>
 
 namespace owl::scene {
+
 class Scene;
 }// namespace owl::scene
 
 /**
- * @brief Render-stack orchestration types.
+ * @brief
+ *  Render-stack orchestration types.
  *
  * Defines the abstract `RenderLayer` interface (one rendering pass), the
  * `RenderLayerFactory` (string-keyed registry of layer constructors), the
@@ -34,9 +36,9 @@ class Scene;
  * `owl::renderer::draw::*` sub-namespaces.
  */
 namespace owl::renderer {
-
 /**
- * @brief Abstract interface for a single renderer in a composable render stack.
+ * @brief
+ *  Abstract interface for a single renderer in a composable render stack.
  *
  * A `RenderLayer` represents one rendering pass in the project-level renderer stack
  * (e.g. `Renderer2D` for HUD, raycasting world, voxel terrain). Layers are ordered
@@ -50,22 +52,28 @@ namespace owl::renderer {
 class OWL_API RenderLayer {
 public:
 	RenderLayer(const RenderLayer&) = delete;
+
 	RenderLayer(RenderLayer&&) = delete;
+
 	auto operator=(const RenderLayer&) -> RenderLayer& = delete;
+
 	auto operator=(RenderLayer&&) -> RenderLayer& = delete;
 
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	RenderLayer() = default;
 
 	/**
-	 * @brief Virtual destructor (out-of-line to anchor the vtable).
+	 * @brief
+	 *  Virtual destructor (out-of-line to anchor the vtable).
 	 */
 	virtual ~RenderLayer();
 
 	/**
-	 * @brief Get the runtime instance name (e.g. `"world"`, `"hud"`).
+	 * @brief
+	 *  Get the runtime instance name (e.g. `"world"`, `"hud"`).
 	 *
 	 * The name is the identifier scenes use in `EnabledRenderers` and entities use
 	 * in `RendererTag`. It is unique within a stack.
@@ -74,7 +82,8 @@ public:
 	[[nodiscard]] virtual auto getName() const -> const std::string& = 0;
 
 	/**
-	 * @brief Get the static type key (e.g. `"Renderer2D"`).
+	 * @brief
+	 *  Get the static type key (e.g. `"Renderer2D"`).
 	 *
 	 * The type key is the factory registration key shared by every instance of this
 	 * concrete layer class.
@@ -83,13 +92,15 @@ public:
 	[[nodiscard]] virtual auto getTypeKey() const -> const char* = 0;
 
 	/**
-	 * @brief Open a frame for this layer.
+	 * @brief
+	 *  Open a frame for this layer.
 	 * @param[in] iCamera The active camera for this layer.
 	 */
 	virtual void onBeginFrame(const Camera& iCamera) = 0;
 
 	/**
-	 * @brief Render the contents of the scene that belong to this layer.
+	 * @brief
+	 *  Render the contents of the scene that belong to this layer.
 	 *
 	 * Implementations iterate over entities tagged for this layer (or untagged
 	 * entities if this is the first layer in the stack) and emit draw calls.
@@ -98,12 +109,14 @@ public:
 	virtual void onRender(scene::Scene& ioScene) = 0;
 
 	/**
-	 * @brief Close the frame for this layer (flush, present).
+	 * @brief
+	 *  Close the frame for this layer (flush, present).
 	 */
 	virtual void onEndFrame() = 0;
 
 	/**
-	 * @brief Apply a configuration block (project default + scene override merged).
+	 * @brief
+	 *  Apply a configuration block (project default + scene override merged).
 	 *
 	 * Called once per scene activation, before the first `onBeginFrame`. The YAML node
 	 * is the merged result of the project's `DefaultConfig` and the scene's
@@ -114,7 +127,8 @@ public:
 	virtual void applyConfig(const YAML::Node& iConfig) = 0;
 
 	/**
-	 * @brief Inform the layer of the active viewport size (in pixels).
+	 * @brief
+	 *  Inform the layer of the active viewport size (in pixels).
 	 *
 	 * Called by `Scene::renderWithStack` right before each `onBeginFrame`, with
 	 * the current scene viewport. Layers that don't care about pixel-space
@@ -127,7 +141,8 @@ public:
 	virtual void setViewport([[maybe_unused]] const math::vec2ui& iViewport) {}
 
 	/**
-	 * @brief View-projection matrix the layer binds during its `onBeginFrame`.
+	 * @brief
+	 *  View-projection matrix the layer binds during its `onBeginFrame`.
 	 *
 	 * Used by `Scene::renderUI` to convert pixel coordinates into the same
 	 * coordinate frame the layer's `Renderer2D` is currently submitting to,
