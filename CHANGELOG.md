@@ -125,6 +125,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Packaged games shipped without the engine assets they actually needed** —
+  three independent issues compounded so a `.owlpack` produced by the editor
+  never carried (and never extracted) the engine fonts, icons, and shader
+  sources the runner expects on disk.
+    - `AssetScanner::collectEngineAssets` only added `OpenSans-Regular.ttf` and
+      the shader directory. Roboto / JetBrainsMono (loaded by
+      `UiLayer::resolveAssetFile` from `engine_assets/fonts/`) and the engine
+      logo (`logo_owl.png`, the runner's window-icon fallback) were silently
+      omitted, so the runner logged
+      `"could not load Roboto-Regular.ttf from engine_assets/fonts/roboto/"`
+      and fell back to ImGui's bundled font. The scanner now collects every
+      `.ttf`/`.otf` under `fonts/` and every image under `logo/` & `icons/`.
+    - `Application::Application` extracted only entries whose path started
+      with `shaders/` or `fonts/`, dropping every other engine entry on the
+      floor even when it *was* in the pack. The whitelist is gone — every pack
+      entry is now mirrored into `assets/` so the on-disk lookup paths
+      (`AssetLibrary::find`, `TextureLibrary::find`, the slang compiler) keep
+      working. A size-equality check skips re-extraction on subsequent
+      launches.
+    - The post-init cleanup loop deleted every non-`.spv` file from `assets/`
+      after shader compilation, wiping the freshly-extracted Roboto, OpenSans,
+      window icon, and shader sources. The cleanup is removed: extracted
+      assets persist for the lifetime of the install.
+- New `PackReader::entrySize()` reports the original (uncompressed) entry
+  size, which the extractor uses to detect already-extracted files.
 - **Asymmetric `CameraOrtho` projections were broken on Vulkan** — the
   Vulkan Y-flip in `CameraOrtho::setProjection` only multiplied the matrix's
   `(1, 1)` (Y scale) by `-1`. That trick is sufficient for symmetric ortho

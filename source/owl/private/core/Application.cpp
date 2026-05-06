@@ -60,7 +60,9 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 		Log::setFrameFrequency(m_initParams.frameLogFrequency);
 	}
-	// Open asset pack if specified — extract engine assets before directory search.
+	// Open asset pack if specified — extract engine assets to `assets/` so the on-disk
+	// asset lookup paths (UiLayer::resolveAssetFile, AssetLibrary::find, the slang
+	// compiler in Shader::create) keep working in a packaged game.
 	if (!m_initParams.packFile.empty()) {
 		auto packPath = std::filesystem::path(m_initParams.packFile);
 		if (packPath.is_relative())
@@ -68,18 +70,26 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		if (openPack(packPath)) {
 			const auto assetsDir = m_workingDirectory / "assets";
 			for (const auto& entryPath: m_packReader.listEntries()) {
-				if (!entryPath.starts_with("shaders/") && !entryPath.starts_with("fonts/"))
-					continue;
-				// Skip extraction if a valid .spv cache already exists for this shader.
+				// Skip extraction of shader sources when a valid .spv cache already exists —
+				// the renderer reads from the cache and never touches the .slang file.
 				if (entryPath.ends_with(".slang")) {
 					const auto spvPath = assetsDir / (entryPath + ".spv");
 					if (exists(spvPath))
 						continue;
 				}
+				const auto destFile = assetsDir / entryPath;
+				// Skip re-extraction when the file is already present with the expected size.
+				// The pack content is immutable for a given pack, so an exact size match means
+				// the on-disk copy is up-to-date.
+				if (exists(destFile)) {
+					const auto entrySize = m_packReader.entrySize(entryPath);
+					std::error_code ec;
+					if (entrySize.has_value() && std::filesystem::file_size(destFile, ec) == *entrySize && !ec)
+						continue;
+				}
 				auto data = m_packReader.readEntry(entryPath);
 				if (!data)
 					continue;
-				const auto destFile = assetsDir / entryPath;
 				std::filesystem::create_directories(destFile.parent_path());
 				std::ofstream out(destFile, std::ios::binary);
 				if (out.good())
@@ -159,36 +169,6 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		// wait for all asynchron tasks
 		m_scheduler.waitEmptyQueue();
 		OWL_CORE_TRACE("Renderer context initiated.")
-	}
-
-	// Clean up extracted pack assets after init — keep only .spv compilation cache.
-	if (hasOpenPack()) {
-		const auto assetsDir = m_workingDirectory / "assets";
-		if (exists(assetsDir)) {
-			// Delete all non-.spv files that were extracted from the pack.
-			for (const auto& entry: std::filesystem::recursive_directory_iterator(assetsDir)) {
-				if (!entry.is_regular_file())
-					continue;
-				if (entry.path().extension() == ".spv")
-					continue;
-				std::filesystem::remove(entry.path());
-			}
-			// Remove empty directories (bottom-up by collecting then sorting by depth).
-			std::vector<std::filesystem::path> dirs;
-			for (const auto& entry: std::filesystem::recursive_directory_iterator(assetsDir)) {
-				if (entry.is_directory())
-					dirs.push_back(entry.path());
-			}
-			std::sort(dirs.begin(), dirs.end(),
-					  [](const auto& iA, const auto& iB) -> auto { return iA.string().size() > iB.string().size(); });
-			for (const auto& dir: dirs) {
-				if (std::filesystem::is_empty(dir))
-					std::filesystem::remove(dir);
-			}
-			// Remove the assets directory itself if empty.
-			if (std::filesystem::is_empty(assetsDir))
-				std::filesystem::remove(assetsDir);
-		}
 	}
 
 	// set up the callbacks

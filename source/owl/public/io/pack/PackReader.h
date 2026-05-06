@@ -69,6 +69,13 @@ public:
 	[[nodiscard]] auto listEntries(AssetType iType) const -> std::vector<std::string>;
 
 	/**
+	 * @brief Get the original (uncompressed) size of an entry.
+	 * @param[in] iPath The asset path.
+	 * @return The original size in bytes, or nullopt if the entry is not found.
+	 */
+	[[nodiscard]] auto entrySize(const std::string& iPath) const -> std::optional<uint64_t>;
+
+	/**
 	 * @brief Check if a pack file is currently open.
 	 * @return True if open.
 	 */

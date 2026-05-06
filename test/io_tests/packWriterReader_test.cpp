@@ -230,6 +230,26 @@ TEST_F(PackWriterReaderTest, read_nonexistent_entry) {
 	EXPECT_FALSE(result.has_value());
 }
 
+TEST_F(PackWriterReaderTest, entry_size_reports_uncompressed) {
+	const auto packPath = m_tempDir / "test_size.owlpack";
+
+	// 8 KiB of repeated bytes — easy to compress, so dataSize != originalSize on disk.
+	const std::vector<uint8_t> payload(8192, '\xCD');
+
+	PackWriter writer;
+	writer.addData(payload, "blob.bin", AssetType::Other);
+	ASSERT_TRUE(writer.write(packPath, PackFlags::Default));
+
+	PackReader reader;
+	ASSERT_TRUE(reader.open(packPath));
+
+	const auto size = reader.entrySize("blob.bin");
+	ASSERT_TRUE(size.has_value());
+	EXPECT_EQ(*size, payload.size());
+
+	EXPECT_FALSE(reader.entrySize("missing.bin").has_value());
+}
+
 TEST_F(PackWriterReaderTest, writer_clear) {
 	PackWriter writer;
 	writer.addData({1, 2, 3}, "test.dat", AssetType::Other);
