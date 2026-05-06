@@ -10,7 +10,7 @@ properties = {
     { name = "speed", type = "float", default = 5.0 },
 }
 
-local pending_scene = nil
+local transitioning = false  -- gate input while the engine is in scene-load orchestration
 local escape_was_down = false
 local teleporter_id = 0
 local teleporter_visible = false
@@ -66,11 +66,8 @@ function on_create()
 end
 
 function on_update(dt)
-    if pending_scene then
-        if not ui.is_transition_active() then
-            scene.load_scene(pending_scene)
-            pending_scene = nil
-        end
+    -- Gate input while the engine drives a scene-to-scene transition.
+    if transitioning or ui.is_transition_active() then
         return
     end
 
@@ -119,8 +116,8 @@ function on_update(dt)
         gamestate.set("continue_z", pz)
         gamestate.set("has_continue", true)
         log.info("ESC: pausing — saved world position for Continue.")
-        pending_scene = "scenes/main_menu.owl"
-        ui.transition_fade_out(0.3)
+        transitioning = true
+        scene.transition_to("scenes/main_menu.owl", "fade_out", 0.3)
     end
     escape_was_down = escape_down
 end

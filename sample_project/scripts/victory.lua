@@ -1,8 +1,5 @@
 -- Victory screen controller
--- Demonstrates: gamestate read, ui.set_text, scene.load_scene,
---               ui.transition_fade_in/out
-
-local pending_scene = nil
+-- Demonstrates: gamestate read, ui.set_text, scene.transition_to.
 
 function on_create()
     log.info("Victory! Game completed.")
@@ -18,16 +15,6 @@ function on_create()
     gamestate.remove("score")
 end
 
-function on_update(dt)
-    if pending_scene then
-        if not ui.is_transition_active() then
-            scene.load_scene(pending_scene)
-            pending_scene = nil
-        end
-    end
-end
-
 function on_menu_clicked()
-    pending_scene = "scenes/main_menu.owl"
-    ui.transition_fade_out(0.3)
+    scene.transition_to("scenes/main_menu.owl", "fade_out", 0.3)
 end

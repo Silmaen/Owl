@@ -181,6 +181,39 @@ TEST(RenderStack, buildAppliesSceneOverrides) {
 	owl::core::Log::invalidate();
 }
 
+TEST(RenderStack, sceneOverrideAppliedWhenProjectHasNoDefault) {
+	// Regression: when a project layer has no `DefaultConfig`, the merged YAML
+	// passed to `applyConfig` would arrive as an Undefined node and silently
+	// drop every scene-level override. yaml-cpp's auto-vivify on
+	// `node[key] = ...` updates the local node pointer but does not propagate
+	// back through the caller's reference, so passing an Undefined `merged`
+	// to `mergeYaml` lost the override. `buildFromConfig` now pre-vivifies
+	// `merged` to an empty Map.
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	RenderLayerFactory::clear();
+	registerTrackingFactory();
+
+	RendererStackConfig project;
+	// Note: NO defaultConfig on `world`.
+	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = YAML::Node{}});
+
+	EnabledRenderersConfig scene;
+	YAML::Node overrides;
+	overrides["Space"] = std::string{"Screen"};
+	scene.entries.push_back({.name = "world", .enabled = true, .overrides = overrides});
+
+	const auto stack = RenderStack::buildFromConfig(project, scene);
+	ASSERT_EQ(stack.getLayers().size(), 1u);
+	const auto worldLayer = std::dynamic_pointer_cast<TrackingLayer>(stack.getLayers()[0]);
+	ASSERT_NE(worldLayer, nullptr);
+	ASSERT_TRUE(worldLayer->lastConfig);
+	ASSERT_TRUE(worldLayer->lastConfig.IsMap());
+	EXPECT_EQ(worldLayer->lastConfig["Space"].as<std::string>(), "Screen");
+
+	RenderLayerFactory::clear();
+	owl::core::Log::invalidate();
+}
+
 TEST(RenderStack, frameCallbackOrder) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	RenderLayerFactory::clear();

@@ -163,6 +163,7 @@ void SceneDocument::handleTeleportRequest(const math::vec2ui& iViewportSize) {
 	m_teleportTargetName = request.targetName;
 
 	m_activeScene = newScene;
+	m_sceneSwapped = true;
 }
 
 void SceneDocument::handleSaveLoadRequest(const math::vec2ui& iViewportSize) {
@@ -180,6 +181,7 @@ void SceneDocument::handleSaveLoadRequest(const math::vec2ui& iViewportSize) {
 			for (const auto& [uuid, snap]: loadResult.physicsSnapshots)
 				if (auto entity = m_activeScene->findEntityByUUID(core::UUID{uuid}); entity)
 					physic::PhysicCommand::applySnapshot(entity, snap);
+			m_sceneSwapped = true;
 		}
 	} else {
 		std::ignore = scene::SaveManager::save(slr.slot, m_activeScene, m_scenePath.string());

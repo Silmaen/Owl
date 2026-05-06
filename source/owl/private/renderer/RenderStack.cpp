@@ -184,8 +184,16 @@ auto RenderStack::buildFromConfig(const RendererStackConfig& iProject,
 			return;
 		}
 		// Build merged config: clone project default, overlay scene overrides.
-		YAML::Node merged =
-				iProjectEntry.defaultConfig ? YAML::Clone(iProjectEntry.defaultConfig) : YAML::Node{};
+		// `merged` MUST be initialised as an explicit Map even when the project
+		// has no `DefaultConfig` — yaml-cpp's auto-vivify on `node[key] = ...`
+		// updates the *local* node pointer but does not propagate back through
+		// the caller's reference, so passing a default-constructed
+		// (Undefined) `YAML::Node{}` to `mergeYaml` silently drops every
+		// override. Cloning a Map (or starting as a Map) gives `mergeYaml` a
+		// real underlying memory block to mutate.
+		YAML::Node merged = iProjectEntry.defaultConfig && iProjectEntry.defaultConfig.IsMap()
+									? YAML::Clone(iProjectEntry.defaultConfig)
+									: YAML::Node{YAML::NodeType::Map};
 		if (iSceneEntry != nullptr && iSceneEntry->overrides)
 			mergeYaml(merged, iSceneEntry->overrides);
 		layer->applyConfig(merged);

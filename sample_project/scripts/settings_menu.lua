@@ -1,13 +1,12 @@
 -- Settings menu controller.
 -- Demonstrates: settings.get/set/save/load/apply/reset/reset_all,
 --               ui.set_text, ui.set_slider_value, ui.get_slider_value,
---               ui.transition_fade_in/out, scene.load_scene
+--               scene.transition_to (engine-driven scene-load orchestration).
 
 local vol_label_id = 0
 local speed_label_id = 0
 local vol_slider_id = 0
 local speed_slider_id = 0
-local pending_scene = nil
 
 function on_create()
     log.info("Settings menu loaded")
@@ -47,12 +46,8 @@ function update_labels()
 end
 
 function on_update(dt)
-    if pending_scene then
-        if not ui.is_transition_active() then
-            scene.load_scene(pending_scene)
-            pending_scene = nil
-        end
-    end
+    -- Scene-to-scene handoffs are driven by `scene.transition_to`; nothing to
+    -- pump per-frame here.
 end
 
 function on_destroy()
@@ -107,6 +102,5 @@ end
 function go_back()
     settings.save()
     log.info("Settings saved")
-    pending_scene = "scenes/main_menu.owl"
-    ui.transition_fade_out(0.3)
+    scene.transition_to("scenes/main_menu.owl", "fade_out", 0.3)
 end

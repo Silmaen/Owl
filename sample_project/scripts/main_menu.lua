@@ -1,11 +1,10 @@
 -- Main Menu controller
--- Demonstrates: UI button callbacks, scene.load_scene, gamestate, save system,
+-- Demonstrates: UI button callbacks, scene.transition_to, gamestate, save system,
 --               settings, log, entity visibility, UIImage, UIPanel,
 --               save.load_game, save.list_saves, save.delete_save,
 --               ui.transition_fade_in/out, ui.set_button_enabled, ui.set_visible,
 --               input.get_mouse_x, input.get_mouse_y, ui.get_text
 
-local pending_scene = nil
 local pending_load_save = false
 local save_info_id = 0
 local delete_save_id = 0
@@ -84,16 +83,14 @@ function refresh_save_info()
 end
 
 function on_update(dt)
-    -- Handle pending transitions
-    if pending_scene or pending_load_save then
+    -- Save-load goes through the engine-side `save` table which still uses the
+    -- deferred-load pattern (no per-scene transition for it yet) — keep the
+    -- "wait for fade then fire" handler. Plain scene loads use
+    -- `scene.transition_to`, fully orchestrated engine-side.
+    if pending_load_save then
         if not ui.is_transition_active() then
-            if pending_load_save then
-                save.load_game(1)
-                pending_load_save = false
-            elseif pending_scene then
-                scene.load_scene(pending_scene)
-                pending_scene = nil
-            end
+            save.load_game(1)
+            pending_load_save = false
         end
         return
     end
@@ -118,14 +115,12 @@ function on_play_clicked()
         -- Position is restored by the destination scene's player script
         -- (world_player.lua / platformer_player.lua read continue_x/y/z).
         gamestate.set("has_continue", false)
-        pending_scene = target
-        ui.transition_fade_out(0.3)
+        scene.transition_to(target, "fade_out", 0.3)
     else
         log.info("Start clicked — fresh run, loading world map.")
         sound.play("sounds/start.wav")
         gamestate.clear()
-        pending_scene = "scenes/world_map.owl"
-        ui.transition_fade_out(0.3)
+        scene.transition_to("scenes/world_map.owl", "fade_out", 0.3)
     end
 end
 
@@ -138,8 +133,7 @@ end
 
 function on_settings_clicked()
     log.info("Settings button clicked!")
-    pending_scene = "scenes/settings_menu.owl"
-    ui.transition_fade_out(0.3)
+    scene.transition_to("scenes/settings_menu.owl", "fade_out", 0.3)
 end
 
 function on_delete_save_clicked()

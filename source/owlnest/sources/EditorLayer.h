@@ -24,6 +24,7 @@
 #include "panel/Parameters.h"
 #include "panel/ProjectSettings.h"
 #include "panel/SceneHierarchy.h"
+#include "panel/SceneSettings.h"
 #include "panel/SettingsPanel.h"
 #include "panel/TilePalette.h"
 
@@ -253,6 +254,7 @@ private:
 	panel::ContentBrowser m_contentBrowser;
 	panel::Parameters m_parameters;
 	panel::ProjectSettings m_projectSettings;
+	panel::SceneSettings m_sceneSettings;
 	panel::LogPanel m_logPanel;
 	panel::SettingsPanel m_settingsPanel;
 	panel::AsyncProgressModal m_asyncProgress;

@@ -30,6 +30,7 @@
 
 #include <chrono>
 #include <cstdlib>
+#include <sstream>
 
 
 namespace owl::nest {
@@ -282,11 +283,16 @@ void EditorLayer::syncActiveDocumentPanels() {
 		static const shared<scene::Scene> s_empty;
 		m_sceneHierarchy.setContext(s_empty);
 		m_sceneHierarchy.setUndoManager(nullptr);
+		m_sceneSettings.setScene(s_empty);
+		m_sceneSettings.setUndoManager(nullptr);
 	} else {
 		m_sceneHierarchy.setContext(doc->getActiveScene());
 		m_sceneHierarchy.setUndoManager(&doc->undoManager());
+		m_sceneSettings.setScene(doc->getActiveScene());
+		m_sceneSettings.setUndoManager(&doc->undoManager());
 		// The per-document viewport owns its own undo pointer already (set in SceneDocument::onAttach).
 	}
+	m_sceneSettings.setProject(m_project);
 	// Whichever document is active drives the override on the global panels — when it overrides,
 	// SceneHierarchy delegates its `Scene Hierarchy` / `Properties` content to the document.
 	m_sceneHierarchy.setActiveDocument(m_documents.getActive());
@@ -670,6 +676,14 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 
 	// Drive the active document's scene update (which renders into its own framebuffer).
 	activeDoc->onUpdate(iTimeStep);
+
+	// If the document swapped scenes mid-frame (Lua teleport / save-load), the
+	// `RenderStack` for the *new* scene needs to be rebuilt — its
+	// `EnabledRenderers` may differ from the previous scene's, and without
+	// this rebuild the per-scene overrides silently leak across the swap
+	// (raycast scenes inheriting the world-map's stack, etc.).
+	if (activeDoc->consumeSceneSwapped())
+		syncActiveDocumentPanels();
 }
 
 void EditorLayer::onEvent(event::Event& ioEvent) {
@@ -765,6 +779,12 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		saveProject();
 		// Rebuild the render stack from the (possibly edited) project config so renderer-stack
 		// edits take effect without reopening the project.
+		syncActiveDocumentPanels();
+	}
+	m_sceneSettings.onImGuiRender();
+	if (m_sceneSettings.consumeDirtyFlag()) {
+		// Per-scene `EnabledRenderers` change → rebuild the active stack so the
+		// edit takes effect immediately (auto-skip / order honoured live).
 		syncActiveDocumentPanels();
 	}
 	m_logPanel.onImGuiRender();
@@ -1105,6 +1125,13 @@ void EditorLayer::buildSceneTab() {
 					   gizmoButton(gui::Guizmo::Type::Rotation, "ctrl_rotation", "Rotate", "guizmo.rotate"));
 	m_ribbon.addButton(sceneTab, gGizmo,
 					   gizmoButton(gui::Guizmo::Type::Scale, "ctrl_scale", "Scale", "guizmo.scale"));
+
+	const auto gSceneSettings = m_ribbon.addGroup(sceneTab, "Settings");
+	m_ribbon.addButton(sceneTab, gSceneSettings, Button{.iconName = "settings", .label = "Scene",
+														.tooltip = "Open per-scene settings (renderer overrides, …)",
+														.isEnabled = [this] () -> bool { return activeSceneDocument() != nullptr; },
+														.onClick = [this] () -> void { m_sceneSettings.open(); },
+														.size = Size::Small});
 
 	const auto gScenePack = m_ribbon.addGroup(sceneTab, "Package");
 	m_ribbon.addButton(sceneTab, gScenePack, Button{.iconName = "pack", .label = "Pack Scene",
@@ -2173,6 +2200,7 @@ void EditorLayer::startPackGame() {
 	const auto projectDesc = m_project.description;
 	const auto projectIcon = m_project.icon;
 	const auto windowCfg = m_project.window;
+	const auto rendererStackCfg = m_project.rendererStack;
 	const auto runnerSrcDir = core::Application::get().getWorkingDirectory();
 
 	const auto gameDir = destDir / gameName;
@@ -2196,7 +2224,7 @@ void EditorLayer::startPackGame() {
 	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			// --- Worker function (runs on thread pool) ---
 			[state, gameName, gameDir, projectDir, firstScene, projectName, projectVersion, projectAuthor, projectDesc,
-			 projectIcon, windowCfg, runnerSrcDir, preScanned, compress = m_packCompress,
+			 projectIcon, windowCfg, rendererStackCfg, runnerSrcDir, preScanned, compress = m_packCompress,
 			 obfuscate = m_packObfuscate]() -> void {
 				const auto startTime = std::chrono::steady_clock::now();
 				const auto packFlags =
@@ -2271,6 +2299,26 @@ void EditorLayer::startPackGame() {
 					configOut << "  WindowHeight: " << windowCfg.height << "\n";
 					configOut << "  Fullscreen: " << (windowCfg.fullscreen ? "true" : "false") << "\n";
 					configOut << "  Resizable: " << (windowCfg.resizable ? "true" : "false") << "\n";
+					// Forward the project's renderer stack to the runner. Without
+					// it, packaged games fall back to a single implicit
+					// `Renderer2D` and per-scene `EnabledRenderers` overrides
+					// silently stop applying — same machinery the editor uses.
+					if (!rendererStackCfg.isEmpty()) {
+						YAML::Emitter rsEmit;
+						rsEmit << YAML::BeginMap;
+						rsEmit << YAML::Key << "RendererStack" << YAML::Value << rendererStackCfg.toYaml();
+						rsEmit << YAML::EndMap;
+						// `RendererStack` lives under `RunnerConfig:` — indent each line by
+						// two extra spaces and skip the artefact braces from the temporary
+						// outer map (Emitter doesn't expose "free-standing key" mode).
+						std::istringstream rsIn{rsEmit.c_str()};
+						std::string line;
+						while (std::getline(rsIn, line)) {
+							if (line.empty() || line.front() == '{' || line.front() == '}')
+								continue;
+							configOut << "  " << line << "\n";
+						}
+					}
 				}
 				if (state->cancelRequested.load())
 					return;

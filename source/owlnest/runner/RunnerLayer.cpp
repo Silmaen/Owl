@@ -12,6 +12,7 @@
 #include <input/MouseCode.h>
 #include <physic/PhysicCommand.h>
 #include <scene/SaveManager.h>
+#include <scene/ScreenTransition.h>
 #include <scene/SettingsManager.h>
 #include <scene/UIInputSystem.h>
 #include <scene/component/components.h>
@@ -48,6 +49,7 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 	const auto& app = core::Application::get();
 	firstScene.clear();
 	packFile.clear();
+	rendererStack = renderer::RendererStackConfig{};
 	if (const auto appConfig = data["RunnerConfig"]; appConfig) {
 		get(appConfig, "PackFile", packFile);
 		get(appConfig, "GameName", gameName);
@@ -72,6 +74,10 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 		// If not found on disk (e.g. pack-only), keep the raw name for pack lookup.
 		if (firstScene.empty())
 			firstScene = sceneName;
+		// Mirror the project's `RendererStack:` block — runner consumes this on
+		// startup to install the same render stack the editor uses.
+		if (const auto stack = appConfig["RendererStack"]; stack)
+			rendererStack = renderer::RendererStackConfig::fromYaml(stack);
 	}
 }
 
@@ -87,6 +93,22 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 			break;
 		}
 	}
+	if (!packFile.empty())
+		out << YAML::Key << "PackFile" << YAML::Value << packFile;
+	if (!gameName.empty())
+		out << YAML::Key << "GameName" << YAML::Value << gameName;
+	if (!version.empty())
+		out << YAML::Key << "Version" << YAML::Value << version;
+	if (!author.empty())
+		out << YAML::Key << "Author" << YAML::Value << author;
+	if (!icon.empty())
+		out << YAML::Key << "Icon" << YAML::Value << icon;
+	out << YAML::Key << "WindowWidth" << YAML::Value << windowWidth;
+	out << YAML::Key << "WindowHeight" << YAML::Value << windowHeight;
+	out << YAML::Key << "Fullscreen" << YAML::Value << fullscreen;
+	out << YAML::Key << "Resizable" << YAML::Value << resizable;
+	if (!rendererStack.isEmpty())
+		out << YAML::Key << "RendererStack" << YAML::Value << rendererStack.toYaml();
 	out << YAML::EndMap;
 	out << YAML::EndMap;
 	std::ofstream fileOut(iPath);
@@ -156,6 +178,7 @@ void RunnerLayer::onAttach() {
 	m_viewportSize = window.getSize();
 	m_activeScene = mkShared<scene::Scene>();
 
+	bool loaded = false;
 	// Try loading first scene from pack, then from filesystem.
 	if (app.hasOpenPack()) {
 		// Resolve first scene name for pack lookup.
@@ -173,21 +196,40 @@ void RunnerLayer::onAttach() {
 			if (const scene::SceneSerializer sc(m_activeScene); !sc.deserializeFromBuffer(*data, sceneName)) {
 				OWL_CORE_ERROR("Failed to load first scene from pack")
 				app.close();
+				return;
 			}
+			loaded = true;
+		}
+	}
+
+	// Fallback: load from filesystem if pack didn't have the scene.
+	if (!loaded) {
+		if (!std::filesystem::exists(m_config.firstScene)) {
+			OWL_CORE_ERROR("Runner first scene {} not found", m_config.firstScene)
+			app.close();
+			return;
+		}
+		if (const scene::SceneSerializer sc(m_activeScene); !sc.deserialize(m_config.firstScene)) {
+			OWL_CORE_ERROR("Failed to load first scene")
+			app.close();
 			return;
 		}
 	}
 
-	// Fallback: load from filesystem.
-	if (!std::filesystem::exists(m_config.firstScene)) {
-		OWL_CORE_ERROR("Runner first scene {} not found", m_config.firstScene)
-		app.close();
+	// Install the project's renderer stack filtered by the freshly-loaded
+	// scene's `EnabledRenderers`. Without this, packaged games would fall
+	// back to a single implicit `Renderer2D` and any scene relying on a
+	// custom stack (raycaster, screen-overlay UI, …) would render wrong.
+	installRenderStack();
+}
+
+void RunnerLayer::installRenderStack() {
+	if (!m_activeScene)
 		return;
-	}
-	if (const scene::SceneSerializer sc(m_activeScene); !sc.deserialize(m_config.firstScene)) {
-		OWL_CORE_ERROR("Failed to load first scene")
-		app.close();
-	}
+	const auto& stackCfg = m_config.rendererStack.isEmpty() ? renderer::RendererStackConfig::makeDefault()
+															: m_config.rendererStack;
+	auto stack = renderer::RenderStack::buildFromConfig(stackCfg, m_activeScene->getEnabledRenderers());
+	renderer::Renderer::setRenderStack(std::move(stack));
 }
 
 void RunnerLayer::onDetach() {
@@ -247,6 +289,12 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 				// While an async transition is loading, skip input + runtime updates.
 				// The old scene has already ended; just render the last frame and wait.
 				if (m_transition) {
+					// The old scene's `onUpdateRuntime` no longer ticks — pump the
+					// transition orchestrator manually so the loading screen
+					// animates while the worker thread reads the new scene file.
+					scene::ScreenTransition::update(iTimeStep.getSeconds());
+					scene::ScreenTransition::render(static_cast<float>(m_viewportSize.x()),
+													static_cast<float>(m_viewportSize.y()));
 					handleTeleportRequest();
 				} else {
 					// UIRect uses Y=0 at bottom; window mouse Y=0 at top → flip Y.
@@ -261,6 +309,16 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 						m_activeScene->onEndRuntime();
 						core::Application::get().close();
 						return;
+					}
+					// Pump scene-load orchestrator: when `ScreenTransition` reports a
+					// pending path (out-anim done), inject it as a teleport request
+					// so the existing async loader picks it up.
+					if (auto pending = scene::ScreenTransition::pendingLoadPath(); pending) {
+						m_activeScene->teleportRequest.pending = true;
+						m_activeScene->teleportRequest.levelName = *pending;
+						m_activeScene->teleportRequest.targetName.clear();
+						m_activeScene->teleportRequest.initialVelocity = {0.f, 0.f};
+						m_activeScene->teleportRequest.rotationDelta = 0.f;
 					}
 					handleTeleportRequest();
 					if (m_activeScene && m_activeScene->saveLoadRequest.pending) {
@@ -393,6 +451,12 @@ void RunnerLayer::finishTransition() {
 	m_teleportTargetName = transition->targetName;
 
 	m_activeScene = newScene;
+
+	// Rebuild the renderer stack against the new scene's `EnabledRenderers` —
+	// without this the runner inherits the previous scene's stack and any
+	// per-scene override (raycaster enabled on raycast_demo, world disabled,
+	// …) silently stops applying.
+	installRenderStack();
 
 	// Diagnostic: how many textures still need to finish decoding after the swap?
 	// With async texture loading, the placeholder is on screen immediately and real pixels arrive

@@ -6,6 +6,8 @@ EnabledRenderers:
     Enabled: true
   - Name: ui
     Enabled: true
+    Overrides:
+      Space: Screen
 Entities:
   - Entity: 2100000000000000001
     Tag:

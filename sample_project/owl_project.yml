@@ -22,5 +22,3 @@ OwlProject:
         FloorColor: [0.20, 0.16, 0.12, 1.0]
     - Type: Renderer2D
       Name: ui
-      DefaultConfig:
-        Space: Screen

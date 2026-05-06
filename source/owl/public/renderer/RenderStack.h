@@ -93,6 +93,11 @@ struct OWL_API RendererStackConfig {
  * (with its project-default config).
  */
 struct OWL_API EnabledRenderersConfig {
+	// NOLINTBEGIN(bugprone-exception-escape)
+	// `YAML::Node::operator=` may throw `InvalidNode`; the implicit copy/move-assignment
+	// of this struct inherits that, but in practice the entries we copy/move are always
+	// well-formed and the throw never happens. Suppress here rather than at every call
+	// site (vector reallocation, `std::swap` in the editor's settings panel, …).
 	/// Per-renderer-instance enable + override.
 	struct Entry {
 		/// Instance name from the project stack.
@@ -102,6 +107,7 @@ struct OWL_API EnabledRenderersConfig {
 		/// Override config for this scene (merged on top of project DefaultConfig).
 		YAML::Node overrides;
 	};
+	// NOLINTEND(bugprone-exception-escape)
 
 	/// Ordered entries (preserved in the order written by the user).
 	std::vector<Entry> entries;

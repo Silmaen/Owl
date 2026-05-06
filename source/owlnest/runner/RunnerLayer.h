@@ -35,6 +35,13 @@ struct RunnerConfig {
 	bool fullscreen{false};
 	/// Whether the window is resizable.
 	bool resizable{true};
+	/// Renderer-stack definition forwarded from the project's `RendererStack:`
+	/// block. The runner consumes this on startup (and after every cross-level
+	/// teleport) to call `Renderer::setRenderStack` — without it, packaged
+	/// games fall back to a single implicit `Renderer2D` and any scene that
+	/// relies on a custom stack (raycaster, future voxel, screen-overlay UI)
+	/// renders incorrectly.
+	renderer::RendererStackConfig rendererStack;
 
 	/// Load configuration from a YAML file.
 	void loadYaml(const std::filesystem::path& iPath);
@@ -93,6 +100,11 @@ private:
 	void handleTeleportRequest();
 	/// Finish a pending async transition: deserialize on main thread and swap scene.
 	void finishTransition();
+	/// Build the engine's `RenderStack` from `m_config.rendererStack` filtered
+	/// by the active scene's `EnabledRenderers`, and install it via
+	/// `Renderer::setRenderStack`. Called at startup and after every scene
+	/// swap so per-scene overrides apply post-teleport.
+	void installRenderStack();
 
 	shared<scene::Scene> m_activeScene;
 	math::vec2ui m_viewportSize = {0, 0};

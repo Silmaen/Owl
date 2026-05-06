@@ -2,15 +2,6 @@
 -- explored and returns to the world map. When all houses are explored, the
 -- world map's teleporter becomes visible (handled by world_player.lua).
 
-local pending_scene = nil
-
-function on_update(dt)
-    if pending_scene and not ui.is_transition_active() then
-        scene.load_scene(pending_scene)
-        pending_scene = nil
-    end
-end
-
 -- Bound by Trigger.Type=LuaCallback with CallbackName=on_level_complete.
 function on_level_complete(player_id)
     local door = gamestate.get("active_door", 1)
@@ -23,6 +14,5 @@ function on_level_complete(player_id)
     gamestate.set("houses_visited", visited)
     log.info("Level complete! Houses visited: " .. visited)
     sound.play("sounds/victory.wav")
-    pending_scene = "scenes/world_map.owl"
-    ui.transition_fade_out(0.4)
+    scene.transition_to("scenes/world_map.owl", "fade_out", 0.4)
 end

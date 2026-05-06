@@ -1,10 +1,63 @@
 Scene: untitled
+EnabledRenderers:
+  - Name: raycast_world
+    Enabled: false
 Entities:
-  - Entity: 300000000000000007
+  - Entity: 300000000000000001
     Tag:
-      tag: MenuButton
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 10
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    Visibility:
+      gameVisible: true
+  - Entity: 300000000000000002
+    Tag:
+      tag: Background
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [20, 15, 1]
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.149019614, 0.0392156877, 0.0392156877, 1]
+      topColor: [0.800000012, 0.899999976, 1, 1]
+    Visibility:
+      gameVisible: true
+  - Entity: 300000000000000003
+    Tag:
+      tag: GameOverCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    LuaScript:
+      scriptPath: scripts/game_over.lua
     RendererTag:
       Name: ui
+  - Entity: 300000000000000004
+    Tag:
+      tag: GameOverTitle
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -13,32 +66,54 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 300000000000000003
-    UIButton:
-      normalColor: [0.300000012, 0.300000012, 0.300000012, 1]
-      hoverColor: [0.400000006, 0.400000006, 0.400000006, 1]
-      pressedColor: [0.200000003, 0.200000003, 0.200000003, 1]
-      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
-      onClickCallback: on_menu_clicked
+    RendererTag:
+      Name: ui
+    UIRect:
+      anchor: TopCenter
+      pivotX: 0.5
+      pivotY: 1
+      sizeX: 500
+      sizeY: 80
+      offsetX: 0
+      offsetY: -80
+    UIText:
+      text: Game Over
+      color: [1, 0.200000003, 0.200000003, 1]
+      fontSize: 48
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 300000000000000005
+    Tag:
+      tag: ScoreLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 300000000000000003
+    RendererTag:
+      Name: ui
     UIRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
-      sizeX: 160
+      sizeX: 300
       sizeY: 40
-      offsetX: 100
-      offsetY: -40
+      offsetX: 0
+      offsetY: 30
     UIText:
-      text: Main Menu
+      text: "Score: 0"
       color: [1, 1, 1, 1]
-      fontSize: 20
+      fontSize: 24
       alignment: Left
       kerning: 0
       lineSpacing: 0
   - Entity: 300000000000000006
     Tag:
       tag: RetryButton
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -47,6 +122,8 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 300000000000000003
+    RendererTag:
+      Name: ui
     UIButton:
       normalColor: [0.600000024, 0.300000012, 0.100000001, 1]
       hoverColor: [0.75, 0.400000006, 0.200000003, 1]
@@ -68,11 +145,9 @@ Entities:
       alignment: Left
       kerning: 0
       lineSpacing: 0
-  - Entity: 300000000000000005
+  - Entity: 300000000000000007
     Tag:
-      tag: ScoreLabel
-    RendererTag:
-      Name: ui
+      tag: MenuButton
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -81,98 +156,26 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 300000000000000003
+    RendererTag:
+      Name: ui
+    UIButton:
+      normalColor: [0.300000012, 0.300000012, 0.300000012, 1]
+      hoverColor: [0.400000006, 0.400000006, 0.400000006, 1]
+      pressedColor: [0.200000003, 0.200000003, 0.200000003, 1]
+      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
+      onClickCallback: on_menu_clicked
     UIRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
-      sizeX: 300
+      sizeX: 160
       sizeY: 40
-      offsetX: 0
-      offsetY: 30
+      offsetX: 100
+      offsetY: -40
     UIText:
-      text: "Score: 0"
+      text: Main Menu
       color: [1, 1, 1, 1]
-      fontSize: 24
+      fontSize: 20
       alignment: Left
       kerning: 0
       lineSpacing: 0
-  - Entity: 300000000000000004
-    Tag:
-      tag: GameOverTitle
-    RendererTag:
-      Name: ui
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 300000000000000003
-    UIRect:
-      anchor: TopCenter
-      pivotX: 0.5
-      pivotY: 1
-      sizeX: 500
-      sizeY: 80
-      offsetX: 0
-      offsetY: -80
-    UIText:
-      text: Game Over
-      color: [1, 0.200000003, 0.200000003, 1]
-      fontSize: 48
-      alignment: Left
-      kerning: 0
-      lineSpacing: 0
-  - Entity: 300000000000000003
-    Tag:
-      tag: GameOverCanvas
-    RendererTag:
-      Name: ui
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Canvas:
-      space: ScreenOverlay
-      sortOrder: 0
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      {}
-    LuaScript:
-      scriptPath: scripts/game_over.lua
-  - Entity: 300000000000000002
-    Tag:
-      tag: Background
-    Transform:
-      translation: [0, 0, -1]
-      rotation: [0, 0, 0]
-      scale: [20, 15, 1]
-    BackgroundTexture:
-      mode: 0
-      type: 0
-      color: [0.149019614, 0.0392156877, 0.0392156877, 1]
-      topColor: [0.800000012, 0.899999976, 1, 1]
-    Visibility:
-      gameVisible: true
-  - Entity: 300000000000000001
-    Tag:
-      tag: MainCamera
-    Transform:
-      translation: [0, 0, 5]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Camera:
-      camera:
-        projectionType: Orthographic
-        perspectiveFOV: 0.785398185
-        perspectiveNear: 0.00999999978
-        perspectiveFar: 1000
-        orthographicSize: 10
-        orthographicNear: -1
-        orthographicFar: 10
-      primary: true
-      fixedAspectRatio: false
-    Visibility:
-      gameVisible: true

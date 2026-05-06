@@ -33,6 +33,24 @@ move the needle forward.
     - Keep `doc/pages/*.md` in sync with behaviour — update pages in the same PR as the feature
     - Prefer mermaid diagrams over ASCII art or external images for architecture/flow/sequence
     - Update `CHANGELOG.md` (Unreleased section) and this roadmap as features land
+- ![Planned][planned] Editor coverage for every authored object
+    - Any new object the engine lets the user author (component, asset, sub-object inside
+      a component) ships with full editor support in Owl Nest **in the same PR** as the
+      engine-side feature. "Editor support" means, at minimum:
+        - **Selection** — clickable in the viewport / hierarchy / asset browser
+          (whichever is the natural surface for the object), with visible highlight
+        - **Inspection** — read every property in the inspector panel
+        - **Editing** — modify every property from the inspector, undo/redo via
+          `ModifyEntityCommand` (or the asset-equivalent)
+        - **Bulk operations** — when the object is part of a collection (tilemap cells,
+          animation keyframes, node-graph nodes, …), at least *select-many* +
+          *move-group* / *delete-group*; resizing a parent must preserve / shift
+          contents instead of clipping
+        - **Discoverability** — context-menu / drag-drop / keyboard shortcut where
+          comparable objects already have one
+    - "Working in YAML or via Lua only" is **not** acceptable for any object the user is
+      expected to author by hand; treat that gap as a regression of the same severity
+      as a missing test or missing public API doc
 - ![Planned][planned] Profiling tools
     - In-editor frame profiler (CPU/GPU timeline)
     - Memory usage breakdown by asset type
@@ -41,6 +59,25 @@ move the needle forward.
     - Spatial partitioning (quadtree/octree) for culling
     - Batched draw calls, texture atlasing
     - Multithreaded render preparation
+- ![Planned][planned] Per-pass uniform buffers in Vulkan
+    - `Renderer2D::beginScene` writes the camera VP to a single per-frame
+      uniform buffer that the GPU descriptor set still references for all
+      passes in the same frame. When two layers in the same frame use
+      *different* VPs (e.g. world layer with the scene camera + screen-space
+      `Renderer2DLayer` with a pixel-ortho), the second `beginScene`'s host
+      memcpy can race the first pass's GPU read on Vulkan, producing visible
+      flicker on the world layer.
+    - Workaround in v0.2.0: keep both passes in the same coordinate frame by
+      default (project's `ui` layer is `Space: World`), and have only scenes
+      with a rotated player camera (raycast) opt into `Space: Screen` via a
+      scene-level `Overrides` block. Race still exists in those scenes but
+      is masked when both VPs project the active camera near the same
+      orientation.
+    - Proper fix: rotate through a pool of uniform buffers (one per
+      `beginScene` call), bind the descriptor set with a dynamic offset, and
+      reset the rotation at frame end. Or move the camera VP to push
+      constants. Either approach makes the per-pass VP per-draw-call and
+      eliminates the host/GPU race.
 
 ## v0.5.0 -- Expected 2027-06-01
 
@@ -304,22 +341,6 @@ custom file picker, and add core gameplay primitives (inventory, enemies).
         - Collectible objects
         - Key-locked switches
     - ![Planned][planned] Enemies
-- Known bug fixes (deferred from v0.2.0 — all closed during v0.2.0)
-    - ![Done][done] Editor keyboard shortcuts unreliable — *fixed in v0.2.0*
-        - Modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) now bypass
-          `ImGui::GetIO().WantCaptureKeyboard`, matching the convention used by
-          VS Code / Blender / Unity. Modifier-less shortcuts still yield to
-          focused text widgets. When a shortcut would have matched but is
-          suppressed by capture, `ActionRegistry::dispatch` logs a TRACE entry.
-    - ![Done][done] World-map top-down player drifts vertically — *fixed in v0.2.0*
-        - New `physics.set_gravity_scale(entity, scale)` Lua API exposes
-          `b2Body_SetGravityScale`. `world_player.lua` now sets scale = 0 in
-          `on_create` instead of the per-frame `+9.81 * dt` cancellation hack.
-    - ![Done][done] Hidden triggers fired regardless of visibility — *fixed in v0.2.0*
-        - `Scene::onUpdateRuntime` now skips trigger entities whose
-          `Visibility.gameVisible` is false (or whose ancestor is hidden);
-          any in-progress timer is stopped and prior overlap state is cleared
-          with a synthetic `onTriggerExit`.
 
 ## v0.2.1 -- Expected 2026-10-01
 
@@ -400,23 +421,18 @@ the tilemap system, and scene-to-scene transition effects.
           two-layer stack `[Renderer2D(world), Renderer2D(ui)]` and tags all
           UI entities across every scene with `RendererTag: { Name: ui }` to
           dissociate scene rendering from HUD/menu rendering end-to-end.
-    - ![Planned][planned] Per-scene settings panel in Owl Nest
-        - Owl Nest has a project-level settings modal and a per-entity
-          inspector, but no UI to edit a scene's *global* settings — the
-          `EnabledRenderers` block, the per-layer `Overrides` map, and any
-          future scene-wide metadata are only reachable by hand-editing
-          the `.owl` file.
-        - Add a "Scene Settings" panel reachable from the editor menu (or a
-          tool-window button) that exposes, for the active scene: the
-          renderer-layer list (drag-to-reorder, enable/disable toggle,
-          per-layer override editor), plus a slot for any future global
-          knob (default camera, ambient colour, etc.).
-        - Engine semantics already in place: scene-level `EnabledRenderers`
-          is now both an enable filter *and* an order override (listed
-          layers in scene order, unlisted layers append in project order),
-          and `Scene::renderWithStack` auto-skips layers with no entity
-          routed to them — so the panel only needs to surface the
-          configuration, no further engine work required.
+    - ![Done][done] Per-scene settings panel in Owl Nest
+        - Dockable `Scene Settings` window (Edit > Settings > Scene) editing
+          the active scene's `EnabledRenderers` block: per-layer enable
+          toggle, up / down ordering, `Detach` to revert to project default,
+          and an `Overrides` collapsible with typed widgets per layer type
+          (`Space` combo for `Renderer2D`; `Fov` / `MaxDistance` / `NumRays`
+          drags + `CeilingColor` / `FloorColor` pickers for `RendererRaycast`).
+        - Edits route through `commands::ModifyEnabledRenderersCommand` —
+          undoable, with the standard 1 s merge-coalescing window for rapid
+          drags.
+        - Live preview: every commit triggers `syncActiveDocumentPanels` so
+          the active `RenderStack` rebuilds without reopening the scene.
     - ![Done][done] Tilemap system for 2D
         - `scene::Tileset` asset (`.owltileset`): texture atlas + tile size +
           `columns × rows` grid + per-tile metadata (collidable flag, name).
@@ -491,9 +507,38 @@ the tilemap system, and scene-to-scene transition effects.
         - Distance-based shading (fog/darkness)
         - Optional point lights with falloff
 - Gameplay
-    - ![Planned][planned] Scene transition effects
-        - Configurable fade, wipe, or custom shader transitions between scenes
-        - Lua API to trigger transitions with parameters (duration, type)
+    - ![Done][done] Scene transition effects
+        - `scene::ScreenTransition::Type` extended from `Fade*` only to
+          `Fade{In,Out}` + `Wipe{Left,Right,Up,Down}`; `play(type, duration,
+          colour)` accepts a custom tint (legacy `start(type, duration)` keeps
+          the opaque-black default for back-compat).
+        - Lua API: new `ui.transition_play(type_string, duration, [r, g, b, a])`
+          dispatcher (accepts `"fade"`, `"fade_in"`, `"fade_out"`,
+          `"wipe_left"`, `"wipe_right"`, `"wipe_up"`, `"wipe_down"`).
+          `ui.transition_fade_in(d)` / `ui.transition_fade_out(d)` remain as
+          back-compat shorthands.
+        - Sample project: `sample_project/scripts/raycast_house_door.lua` now
+          uses `wipe_left` so the world→raycast handoff shows off a non-fade
+          variant.
+        - Tests: `ScreenTransition_test` covers default state, custom-colour
+          play, progress advancement, completion, all wipe variants, reset,
+          and the `< 1 ms` duration clamp.
+- Known bug fixes (deferred from v0.2.0 — all closed during v0.2.0)
+    - ![Done][done] Editor keyboard shortcuts unreliable — *fixed in v0.2.0*
+        - Modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) now bypass
+          `ImGui::GetIO().WantCaptureKeyboard`, matching the convention used by
+          VS Code / Blender / Unity. Modifier-less shortcuts still yield to
+          focused text widgets. When a shortcut would have matched but is
+          suppressed by capture, `ActionRegistry::dispatch` logs a TRACE entry.
+    - ![Done][done] World-map top-down player drifts vertically — *fixed in v0.2.0*
+        - New `physics.set_gravity_scale(entity, scale)` Lua API exposes
+          `b2Body_SetGravityScale`. `world_player.lua` now sets scale = 0 in
+          `on_create` instead of the per-frame `+9.81 * dt` cancellation hack.
+    - ![Done][done] Hidden triggers fired regardless of visibility — *fixed in v0.2.0*
+        - `Scene::onUpdateRuntime` now skips trigger entities whose
+          `Visibility.gameVisible` is false (or whose ancestor is hidden);
+          any in-progress timer is stopped and prior overlap state is cleared
+          with a synthetic `onTriggerExit`.
 
 ## v0.1.1 -- 2026-04-30
 
