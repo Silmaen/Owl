@@ -69,7 +69,7 @@ public:
 	 * @brief Retrieve a frame.
 	 * @param[in,out] ioFrame The frame to update.
 	 */
-	void fillFrame(shared<renderer::Texture>& ioFrame) override;
+	void fillFrame(shared<renderer::gpu::Texture>& ioFrame) override;
 
 	/**
 	 * @brief Check if this device is valid.

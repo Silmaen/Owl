@@ -12,12 +12,12 @@
 #include "external/imgui_text_edit.h"
 #include "external/lunasvg_wrapper.h"
 
+#include <renderer/gpu/Texture.h>
 #include <core/Application.h>
 #include <core/Log.h>
 #include <core/Macros.h>
 #include <core/utils/openExternalUrl.h>
 #include <gui/UiLayer.h>
-#include <renderer/Texture.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -450,7 +450,7 @@ void MarkdownPreview::renderInlineImage(const std::string& iSrc, const std::stri
 		if (iLinkOpen && ImGui::IsItemClicked())
 			handleLinkClick(iLinkHref);
 	} else {
-		// Fallback: small button labeled with alt text.
+		// Fallback: small button labelled with alt text.
 		const std::string label = iAlt.empty() ? iSrc : iAlt;
 		const float buttonW = ImGui::CalcTextSize(label.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		if (!ioFirstOnLine && ImGui::GetContentRegionAvail().x >= buttonW + spaceW)
@@ -543,10 +543,10 @@ auto MarkdownPreview::resolveImage(const std::string& iSrc) -> const ImageEntry&
 							pixels[idx + 3] = a;
 						}
 					}
-					const renderer::Texture::Specification specs{.size = {pixW, pixH},
-																 .format = renderer::ImageFormat::Rgba8,
+					const renderer::gpu::Texture::Specification specs{.size = {pixW, pixH},
+																 .format = renderer::gpu::ImageFormat::Rgba8,
 																 .generateMips = false};
-					entry.texture = renderer::Texture2D::create(specs);
+					entry.texture = renderer::gpu::Texture2D::create(specs);
 					entry.size = {pixW, pixH};
 					entry.texture->setData(pixels.data(), static_cast<uint32_t>(pixels.size()));
 				} else {
@@ -560,7 +560,7 @@ auto MarkdownPreview::resolveImage(const std::string& iSrc) -> const ImageEntry&
 		// Raster (PNG/JPG): use the engine's "pat:" serialized form so `createFromSerialized`
 		// dispatches to `Texture2D::create(path)` (stb_image under the hood). A bare path with no
 		// prefix is silently rejected by the loader.
-		entry.texture = renderer::Texture2D::createFromSerialized("pat:" + full.string());
+		entry.texture = renderer::gpu::Texture2D::createFromSerialized("pat:" + full.string());
 		if (entry.texture) {
 			entry.size = entry.texture->getSize();
 			// Owl's `TextureDecoder` calls `stbi_set_flip_vertically_on_load_thread(1)` so the data

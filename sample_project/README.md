@@ -19,12 +19,20 @@ The sample game has been rebuilt around the new tilemap system:
    around a grass plain bordered by mountains. Hazards: lava patches and
    the water moat south of the house cause **instant death**.
    Cross the bridge to reach the central house and press **E** in front of
-   its door to enter.
+   its door to enter the platformer. **A second house** sits to the east
+   (a wider 7×4 building, reached by following the stone path east from the
+   first house) — press **E** in front of its door to enter the first-person
+   Wolfenstein-style demo level.
 3. **Inside the House** (`platformer_house.owl`) — side-scroller platformer.
    A/D to run, W / Space / Up to jump. Hazards: lava pits at floor level
    (instant death), spike traps (lose ~1/3 of your health bar each contact).
    Reach the gold checkered **victory zone** at the top-right to clear the
    level.
+4. **Raycast Demo** (`raycast_demo.owl`) — first-person view of a 16×16
+   Wolfenstein-inspired tilemap. **W/A/S/D** strafe, **Q/E** turn,
+   **ESC** returns to the world map. The same `Tilemap` component drives
+   both the 2D world view and this raycast view — only the active
+   `RenderLayer` changes.
 4. Clearing the level closes the house door (the door entity reports as
    already explored on subsequent visits) and bumps `houses_visited` in
    gamestate. When `houses_visited == houses_total`, a **purple teleporter**
@@ -52,6 +60,7 @@ The sample game has been rebuilt around the new tilemap system:
 |---------------------------|-----------|-------|-------------------------------|
 | `world_topdown.owltileset` | 4×4 / 64px | 16    | mountain, tree, fence, sign, house wall/roof (collidable); water + lava (visual; hazard via separate trigger entities) |
 | `world_platform.owltileset`| 4×2 / 64px | 8     | floor, platform, brick (collidable); lava + spikes (visual; hazard triggers overlay) |
+| `raycast_walls.owltileset` | 4×4 / 64px | 8     | gray brick, blue stone, wood, red banded wall variants — all collidable, sampled by `RendererRaycast` for wall stripes |
 
 ## Gameplay Features
 
@@ -97,6 +106,8 @@ it directly.
 | `settings_menu.lua`          | `settings.get/set/save/load/apply/reset_all`, slider handling, fade transitions                                                                                                   |
 | `victory.lua`                | `gamestate.get`, fade transitions                                                                                                                                                  |
 | `game_over.lua`              | Retry → world map, Menu → main menu, gamestate clear                                                                                                                              |
+| `raycast_house_door.lua`     | `Trigger.Type=Interaction`, saves world-return position, loads `raycast_demo.owl`                                                                                                  |
+| `raycast_player.lua`         | First-person controls (Q/E rotate yaw, WASD strafe relative to facing), gravity scale 0, ESC returns to world with pose persisted via `raycast_return_*` gamestate keys           |
 
 ## Engine Features Covered
 
@@ -135,9 +146,16 @@ it directly.
       after an ESC pause, so the user resumes exactly where they left off
 - [x] Settings persistence (game defaults + user overrides + reset to defaults)
 - [x] Trigger zones (Death, LuaCallback, Interaction, Teleport)
-- [x] Tilemap system — world map (32×24, top-down) and platformer (60×16, side-view)
-      both use `Tilemap` components + per-tile collidable flags from
-      `world_topdown.owltileset` / `world_platform.owltileset`
+- [x] Tilemap system — world map (32×24, top-down), platformer (60×16, side-view)
+      and raycast demo (16×16, first-person via `RendererRaycast`) all use the
+      same `Tilemap` component; per-renderer dispatch comes from the active
+      `RenderLayer` type. Per-tile collidable flags from the matching
+      `.owltileset` drive both the visual rendering and the static colliders.
+- [x] Renderer stack — three project layers `[Renderer2D(world),
+      RendererRaycast(raycast_world), Renderer2D(ui)]`. Most scenes use the
+      2D world; the raycast demo flips `world` off and `raycast_world` on
+      via `EnabledRenderers`. The HUD canvas in every scene carries
+      `RendererTag: { Name: ui }` so it lands on the dedicated 2D pass.
 - [x] Static + Kinematic platforms — `PhysicBody Static` for jumpable ledges,
       `PhysicBody Kinematic` driven by `physics.set_velocity` for moving platforms
       that push the player

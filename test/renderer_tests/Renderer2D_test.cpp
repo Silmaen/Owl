@@ -1,10 +1,12 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
 #include <renderer/Renderer.h>
+#include <core/Application.h>
 #include <renderer/Renderer2D.h>
 
+using namespace owl::renderer;
+using namespace owl::renderer::gpu;
 using namespace owl::renderer;
 using namespace owl::core;
 using namespace owl::math;

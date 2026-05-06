@@ -86,7 +86,11 @@ struct OWL_API RendererStackConfig {
  * @brief Scene-level enable/override list for the renderer stack.
  *
  * Stored in `.owl` files under `EnabledRenderers:`. An empty list means "all
- * renderers from the project stack are active with their default config".
+ * renderers from the project stack are active with their default config, in
+ * project order". When non-empty, the listing also acts as an *ordering
+ * override*: layers appear in the order written by the user, and any project
+ * layer the scene does not mention is appended afterwards in project order
+ * (with its project-default config).
  */
 struct OWL_API EnabledRenderersConfig {
 	/// Per-renderer-instance enable + override.
@@ -155,12 +159,19 @@ public:
 	/**
 	 * @brief Build a stack from the project + scene configuration.
 	 *
-	 * Iterates `iProject.entries` in order; for each, instantiates the layer via
-	 * `RenderLayerFactory`. If `iScene` overrides exist, the entry's enable flag
-	 * and override map are honored. Unknown type keys produce an error and skip
-	 * the entry.
+	 * Two-pass emission. Pass 1 walks the scene listing in scene order, looks
+	 * each entry up in the project, and emits the matching layer (honouring
+	 * the scene's `enabled` flag and `Overrides` block). Pass 2 then walks the
+	 * project entries and emits any layer the scene did not mention, using
+	 * the project default config. The net effect: the scene fully controls
+	 * the order of layers it lists; layers it omits append at the end in
+	 * project order. An empty scene listing falls back to project order
+	 * verbatim.
+	 *
+	 * Unknown type keys log an error and skip the entry; scene entries that
+	 * reference an unknown layer name log a warning and are dropped.
 	 * @param[in] iProject The project's stack config (must not be empty).
-	 * @param[in] iScene The scene's enable/overrides config (may be empty).
+	 * @param[in] iScene The scene's enable/overrides/order config (may be empty).
 	 * @return The built stack.
 	 */
 	[[nodiscard]] static auto buildFromConfig(const RendererStackConfig& iProject,

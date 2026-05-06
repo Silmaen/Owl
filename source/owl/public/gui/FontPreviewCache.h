@@ -10,7 +10,7 @@
 
 #include "core/Core.h"
 #include "data/fonts/Font.h"
-#include "renderer/Framebuffer.h"
+#include "renderer/gpu/Framebuffer.h"
 
 #include <string>
 #include <unordered_map>
@@ -46,7 +46,7 @@ public:
 	 *         `nullptr` on first request (the entry is queued and rendered by the next
 	 *         `pumpPending()`). A `nullptr` font also returns `nullptr`.
 	 */
-	auto request(const shared<data::fonts::Font>& iFont) -> shared<renderer::Framebuffer>;
+	auto request(const shared<data::fonts::Font>& iFont) -> shared<renderer::gpu::Framebuffer>;
 
 	/**
 	 * @brief Render every queued entry now. Must run between scene passes (no active
@@ -62,7 +62,7 @@ private:
 	~FontPreviewCache() = default;
 
 	struct Entry {
-		shared<renderer::Framebuffer> fb;///< Lazily allocated framebuffer.
+		shared<renderer::gpu::Framebuffer> fb;///< Lazily allocated framebuffer.
 		bool ready{false};///< False until `pumpPending` rendered the entry once.
 	};
 

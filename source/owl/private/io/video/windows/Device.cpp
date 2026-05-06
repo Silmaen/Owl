@@ -331,7 +331,7 @@ void Device::close() {
 
 auto Device::isOpened() const -> bool { return m_size.surface() > 1; }
 
-void Device::fillFrame(shared<renderer::Texture>& iFrame) {
+void Device::fillFrame(shared<renderer::gpu::Texture>& iFrame) {
 	if (!isOpened())
 		return;
 	// Resizing the frame.
@@ -340,7 +340,7 @@ void Device::fillFrame(shared<renderer::Texture>& iFrame) {
 	if (!iFrame || iFrame->getSize() != m_size) {
 		if (iFrame)
 			iFrame.reset();
-		iFrame = renderer::Texture2D::create({m_size, renderer::ImageFormat::Rgb8});
+		iFrame = renderer::gpu::Texture2D::create({m_size, renderer::gpu::ImageFormat::Rgb8});
 	}
 	// For now only fill with black
 	WPointer<IMFSample> sample;

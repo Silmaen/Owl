@@ -1,8 +1,8 @@
 
 #include "testHelper.h"
 
-#include <renderer/Texture.h>
-#include <renderer/null/Texture.h>
+#include <renderer/gpu/Texture.h>
+#include <renderer/gpu/null/Texture.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
@@ -53,7 +53,7 @@ TEST(SceneSerializer, SaveLoadFULL) {
 	ent2.addOrReplaceComponent<component::EntityLink>();
 	ent2.addOrReplaceComponent<component::Trigger>();
 	spr.texture =
-			owl::mkShared<owl::renderer::null::Texture2D>(owl::renderer::Texture2D::Specification{.size = {1, 1}});
+			owl::mkShared<owl::renderer::gpu::null::Texture2D>(owl::renderer::gpu::Texture2D::Specification{.size = {1, 1}});
 	spr.tilingFactor = {12.3f, 12.3f};
 
 	const SceneSerializer saver(sc);

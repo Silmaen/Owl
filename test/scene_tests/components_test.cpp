@@ -47,7 +47,7 @@ TEST(SceneComponent, TextSerializeDeserializeRoundTrip) {
 																		   .width = 0,
 																		   .height = 0,
 																		   .argCount = 0,
-																		   .renderer = owl::renderer::RenderAPI::Type::Null,
+																		   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
 																		   .hasGui = false,
 																		   .useDebugging = false,
 																		   .isDummy = true});
@@ -96,7 +96,7 @@ TEST(SceneComponent, TextSerializeWithFont) {
 																		   .width = 0,
 																		   .height = 0,
 																		   .argCount = 0,
-																		   .renderer = owl::renderer::RenderAPI::Type::Null,
+																		   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
 																		   .hasGui = false,
 																		   .useDebugging = false,
 																		   .isDummy = true});
@@ -147,7 +147,7 @@ TEST(SceneComponent, TextEmptyString) {
 																		   .width = 0,
 																		   .height = 0,
 																		   .argCount = 0,
-																		   .renderer = owl::renderer::RenderAPI::Type::Null,
+																		   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
 																		   .hasGui = false,
 																		   .useDebugging = false,
 																		   .isDummy = true});
@@ -191,7 +191,7 @@ auto makeAppForAnimRoundTrip(const char* iName) -> owl::shared<owl::core::Applic
 																	   .width = 0,
 																	   .height = 0,
 																	   .argCount = 0,
-																	   .renderer = owl::renderer::RenderAPI::Type::Null,
+																	   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
 																	   .hasGui = false,
 																	   .useDebugging = false,
 																	   .isDummy = true});

@@ -18,7 +18,7 @@
 namespace owl::gui::widgets {
 
 /**
- * @brief One row of a `sequencer()` widget — a labeled frame range.
+ * @brief One row of a `sequencer()` widget — a labelled frame range.
  */
 struct SequencerEntry {
 	/// Row label displayed in the legend column.

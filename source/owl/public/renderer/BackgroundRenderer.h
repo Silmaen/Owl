@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "Texture.h"
+#include "gpu/Texture.h"
 #include "math/matrices.h"
 
 namespace owl::renderer {
@@ -49,14 +49,14 @@ public:
 	struct BackgroundData {
 		/// 0=SolidColor, 1=Gradient, 2=Texture, 3=Skybox.
 		int mode = 0;
-		/// Main color / bottom color for gradient.
+		/// Main colour / bottom colour for gradient.
 		math::vec4 color{0.2f, 0.3f, 0.8f, 1.0f};
-		/// Top color for gradient.
+		/// Top colour for gradient.
 		math::vec4 topColor{0.8f, 0.9f, 1.0f, 1.0f};
 		/// Inverse of the camera view rotation matrix (for skybox).
 		math::mat4 inverseViewRotation = math::identity<float, 4>();
 		/// Texture (background or equirectangular for skybox).
-		shared<Texture2D> texture = nullptr;
+		shared<gpu::Texture2D> texture = nullptr;
 	};
 
 	/**
@@ -75,7 +75,7 @@ public:
 	 * @brief Get the pending background texture (for registering in Renderer2D's texture slots).
 	 * @return The texture, or nullptr if not applicable.
 	 */
-	static auto getPendingTexture() -> shared<Texture2D>;
+	static auto getPendingTexture() -> shared<gpu::Texture2D>;
 
 	/**
 	 * @brief Flush pending background draw commands within an active batch.

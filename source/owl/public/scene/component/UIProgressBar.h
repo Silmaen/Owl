@@ -21,9 +21,9 @@ namespace owl::scene::component {
 struct OWL_API UIProgressBar {
 	/// Current progress value (0..1).
 	float value = 0.5f;
-	/// Background color.
+	/// Background colour.
 	math::vec4 backgroundColor{0.2f, 0.2f, 0.2f, 1.f};
-	/// Fill color.
+	/// Fill colour.
 	math::vec4 fillColor{0.3f, 0.7f, 0.3f, 1.f};
 
 	/// @brief Get the class title.

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "core/Serializer.h"
-#include "renderer/Texture.h"
+#include "renderer/gpu/Texture.h"
 
 namespace owl::scene::component {
 
@@ -26,12 +26,12 @@ struct OWL_API BackgroundTexture {
 	Mode mode = Mode::Background;
 	/// Background type.
 	Type type = Type::SolidColor;
-	/// Main color / bottom color for gradient.
+	/// Main colour / bottom colour for gradient.
 	math::vec4 color{0.2f, 0.3f, 0.8f, 1.0f};
-	/// Top color for gradient.
+	/// Top colour for gradient.
 	math::vec4 topColor{0.8f, 0.9f, 1.0f, 1.0f};
 	/// Texture (background or equirectangular for skybox).
-	shared<renderer::Texture2D> texture = nullptr;
+	shared<renderer::gpu::Texture2D> texture = nullptr;
 
 	/**
 	 * @brief Get the class title.

@@ -315,7 +315,7 @@ auto makeDarkBlueTheme() -> Theme {
 }
 
 auto makeNordTheme() -> Theme {
-	// Nord color palette: polar night, snow storm, frost, aurora
+	// Nord colour palette: polar night, snow storm, frost, aurora
 	Theme t;
 	t.text = {0.847f, 0.871f, 0.914f, 1.0f};// Nord4 snow
 	t.windowBackground = {0.180f, 0.204f, 0.251f, 1.0f};// Nord0

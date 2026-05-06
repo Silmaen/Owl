@@ -58,7 +58,7 @@ TEST(UIRect, computePositionCenter) {
 	const math::vec2 parentSize = {800.f, 600.f};
 	const auto pos = rect.computePosition(parentSize);
 
-	// Center of parent = (400, 300). Pivot at center → pos = center.
+	// Centre of parent = (400, 300). Pivot at centre → pos = centre.
 	EXPECT_NEAR(pos.x(), 400.f, 0.01f);
 	EXPECT_NEAR(pos.y(), 300.f, 0.01f);
 }

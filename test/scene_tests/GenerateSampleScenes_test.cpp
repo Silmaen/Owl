@@ -236,7 +236,7 @@ TEST(GenerateSampleScenes, gameplay) {
 	healthBar.fillColor = {0.2f, 0.85f, 0.2f, 1.f};
 	scn->setParent(healthEntity, hudCanvas);
 
-	// Instructions (top-center)
+	// Instructions (top-centre)
 	auto instrEntity = scn->createEntity("Instructions");
 	auto& instrRect = instrEntity.addComponent<component::UIRect>();
 	instrRect.anchor = component::UIRect::Anchor::TopCenter;

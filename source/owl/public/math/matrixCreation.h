@@ -205,7 +205,7 @@ constexpr auto scale(const Matrix<BaseType, 4, 4>& iMatrix, const Vector<BaseTyp
  * @brief Create a sheared matrix.
  * @tparam BaseType The internal data type.
  * @param iMatrix The matrix to transform.
- * @param iPoint The center of the shearing.
+ * @param iPoint The centre of the shearing.
  * @param iLambdaX Amount of shear in X.
  * @param iLambdaY Amount of shear in Y.
  * @param iLambdaZ Amount of shear in Z.

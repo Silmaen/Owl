@@ -86,7 +86,7 @@ Handle large game worlds efficiently.
     - ![Planned][planned] Gamepad improvements
         - Controller remapping UI
         - Haptic feedback / vibration API
-        - Analog stick dead zone and curve configuration
+        - Analogue stick dead zone and curve configuration
 
 ## v0.4.0 -- Expected 2027-04-01
 
@@ -124,15 +124,15 @@ polished audio/narrative experiences, and networked multiplayer.
         - Navigation mesh generation from scene geometry
         - A* pathfinding on NavMesh
         - Dynamic obstacle avoidance
-    - ![Planned][planned] Behavior trees
-        - Visual behavior tree editor in Owl Nest (node graph)
+    - ![Planned][planned] Behaviour trees
+        - Visual behaviour tree editor in Owl Nest (node graph)
         - Standard nodes: sequence, selector, parallel, decorator, condition, action
         - Lua-scriptable leaf nodes for custom actions/conditions
-        - Saveable `.owlbt` behavior tree assets
-    - ![Planned][planned] Steering behaviors
+        - Saveable `.owlbt` behaviour tree assets
+    - ![Planned][planned] Steering behaviours
         - Seek, flee, arrive, wander, pursue, evade
         - Flocking (separation, alignment, cohesion)
-        - Composable via behavior tree or Lua
+        - Composable via behaviour tree or Lua
 - Physics
     - ![Planned][planned] Physics queries
         - Raycast, box cast, circle/sphere cast with filtering
@@ -187,12 +187,12 @@ scene authoring, and cross-platform packaging from any host.
         - Animation state machine component
     - ![Planned][planned] Particle system
         - GPU-accelerated particle emitters
-        - Configurable: lifetime, velocity, color over time, size, gravity
+        - Configurable: lifetime, velocity, colour over time, size, gravity
         - Emitter shapes: point, sphere, cone, box
         - Editor: visual particle preview and property curves
     - ![Planned][planned] Post-processing pipeline
         - Configurable post-process stack per camera
-        - Effects: bloom, vignette, color grading (LUT), chromatic aberration, film grain
+        - Effects: bloom, vignette, colour grading (LUT), chromatic aberration, film grain
         - Motion blur, depth of field
     - ![Planned][planned] Weather and environment effects
         - Rain, snow, fog, day-night cycle
@@ -281,6 +281,24 @@ custom file picker, and add core gameplay primitives (inventory, enemies).
           for previewing what the runtime camera will see without entering Play.
           Toggleable from the camera entity's context menu or a viewport overlay
           dropdown. Reverts to the editor camera on demand.
+    - ![Planned][planned] In-viewport camera visualisation & manipulation
+        - Today the editor draws no marker for `component::Camera` entities — a
+          raycast scene's player camera is invisible in the top-down 2D preview,
+          so the level designer cannot see where it sits or which way it points.
+        - Add a small in-viewport gizmo for every camera entity:
+            - Position dot + forward arrow (length scaled with FOV / ortho size)
+              for any camera, in any rendering mode.
+            - For `RendererRaycast` cameras, also draw the FOV cone (left / right
+              edge rays at the configured `Fov`) so the visible slice is obvious.
+            - Highlight the *primary* camera distinctly so it's clear which one
+              the runtime will use.
+            - Selectable like any other entity (clicking the dot focuses the
+              entity in the hierarchy).
+        - Manipulation handles: drag the dot to move, drag the arrow tip to
+          rotate (Z-axis only for 2D / raycast cameras). Both flow through
+          `ModifyEntityCommand` so they're undoable.
+        - Toggleable from a viewport overlay (`Show > Cameras`) so it doesn't
+          clutter scenes with many cameras.
 - Gameplay
     - ![Planned][planned] Inventory system
         - Collectible objects
@@ -382,6 +400,23 @@ the tilemap system, and scene-to-scene transition effects.
           two-layer stack `[Renderer2D(world), Renderer2D(ui)]` and tags all
           UI entities across every scene with `RendererTag: { Name: ui }` to
           dissociate scene rendering from HUD/menu rendering end-to-end.
+    - ![Planned][planned] Per-scene settings panel in Owl Nest
+        - Owl Nest has a project-level settings modal and a per-entity
+          inspector, but no UI to edit a scene's *global* settings — the
+          `EnabledRenderers` block, the per-layer `Overrides` map, and any
+          future scene-wide metadata are only reachable by hand-editing
+          the `.owl` file.
+        - Add a "Scene Settings" panel reachable from the editor menu (or a
+          tool-window button) that exposes, for the active scene: the
+          renderer-layer list (drag-to-reorder, enable/disable toggle,
+          per-layer override editor), plus a slot for any future global
+          knob (default camera, ambient colour, etc.).
+        - Engine semantics already in place: scene-level `EnabledRenderers`
+          is now both an enable filter *and* an order override (listed
+          layers in scene order, unlisted layers append in project order),
+          and `Scene::renderWithStack` auto-skips layers with no entity
+          routed to them — so the panel only needs to surface the
+          configuration, no further engine work required.
     - ![Done][done] Tilemap system for 2D
         - `scene::Tileset` asset (`.owltileset`): texture atlas + tile size +
           `columns × rows` grid + per-tile metadata (collidable flag, name).
@@ -399,13 +434,48 @@ the tilemap system, and scene-to-scene transition effects.
           mode (left-click paints, right-click erases) with `ModifyEntityCommand`
           undo per click. Fill / flood / rect tools deferred to a follow-up.
 - Raycasting Renderer
-    - ![Planned][planned] Raycasting core
-        - DDA raycasting algorithm rendering a 2D grid map as pseudo-3D
-        - Textured walls with perspective-correct mapping
-        - Configurable field of view and resolution
+    - ![Done][done] Raycasting core
+        - `RendererRaycast` static facade and `RendererRaycastLayer`
+          (`RenderLayer` adapter, factory key `"RendererRaycast"`).
+        - CPU per-column DDA driving textured wall stripes through the
+          existing `Renderer2D` quad batch — no new Slang shader required for
+          v0.2.0 (deferred to a future PR).
+        - Wall walls reuse the existing `scene::component::Tilemap` and
+          `scene::Tileset` — `Scene::render` dispatches each tilemap to
+          either the 2D path or the raycast path based on the active layer's
+          type key.
+        - Configurable FOV / max distance / sky / floor colours via the
+          project's `DefaultConfig` (or per-scene `Overrides`); ray count
+          defaults to the viewport width.
+        - `renderer/{stack,renderer2d,rendererraycast}/` sub-folders +
+          matching sub-namespaces opened up the renderer module for the
+          future voxel layer.
+        - Sample project ships `scenes/raycast_demo.owl` — full **Wolfenstein 3D
+          E1L1** layout (64×64) imported from a reference raycaster, walls
+          textured from the original Wolfenstein art (greystone / bluestone /
+          wood / doorpattern, 4×4 atlas at 128 px/tile, NEAREST-filtered).
+        - Reachable from `world_map.owl`'s second house structure (cols
+          22-28, rows 11-14, distinct shape from the existing house, accessed
+          via the extended stone path).
+        - Texture filtering: new `renderer::FilterMode` enum, `Tileset` can
+          declare `filterMode: Nearest` in YAML so the wall atlas stays
+          pixel-crisp at any distance (no LINEAR/mipmap blur on far walls).
+    - ![Planned][planned] Tilemap editor as dedicated asset (`.owltilemap`)
+        - Extract `Tilemap` data out of the `Scene` into a standalone
+          `.owltilemap` asset, mirroring how `Tileset` / `AnimationClip` /
+          `Prefab` are authored.
+        - Dedicated tilemap document in Owl Nest (top-down grid editor with
+          dedicated zoom / pan / brush / fill / rect tools, no scene clutter).
+        - The `Tilemap` component on a scene entity becomes a path reference
+          (`tilemapPath`) — multiple scenes can share the same level data.
+        - In-scene tilemap editing disabled (read-only inspector showing the
+          referenced asset path + "Open in Tilemap Editor" button).
+        - Migration path for the existing inline tilemaps in `world_map.owl`
+          / `platformer_house.owl` / `raycast_demo.owl`.
     - ![Planned][planned] Floors and ceilings
-        - Textured floor/ceiling casting
-        - Skybox or solid color above horizon
+        - Textured floor/ceiling casting (currently solid colours via the
+          backdrop)
+        - Skybox or solid colour above horizon
     - ![Planned][planned] Sprites (billboards)
         - Entities rendered as camera-facing sprites in the raycast view
         - Distance-based sorting and scaling
@@ -668,10 +738,10 @@ asynchronous with progress feedback.
         - Tooltips on SoundSource fields (Asset, Category, Volume, Pitch, Loop, Spatial, Max Distance, Rolloff)
         - Tooltips on SoundListener (Primary)
         - Tooltips on Canvas (Space, Sort Order), UIRect (Anchor, Pivot, Size, Offset)
-        - Tooltips on UIButton colors + On Click callback, UISlider value/min/max + On Value Changed
+        - Tooltips on UIButton colours + On Click callback, UISlider value/min/max + On Value Changed
     - ![Done][done] Unique ImGui IDs audit
         - Component-scoped `PushID(T::name())` in `drawComponent<T>` — prevents label collisions
-          between components that share field names (e.g. "Color" in SpriteRenderer and CircleRenderer)
+          between components that share field names (e.g. "Colour" in SpriteRenderer and CircleRenderer)
         - Index-based `PushID` in LuaScript property loop — prevents collision if two properties share a name
         - Entity list in SceneHierarchy already uses UUID-based PushID (verified safe)
         - ContentBrowser and SettingsPanel already use unique per-item IDs (verified safe)
@@ -681,7 +751,7 @@ asynchronous with progress feedback.
           and a central type glyph sharing the `base_file_ext_icon` template
         - Existing icons (`png`, `jpg`, `svg`, `glsl`, `owl`, `yml`, `ttf`, `lua`, `json`) now
           carry a central type glyph
-        - Secondary accent color is a fixed amber/gold (`#ffc726`) matching the Owl Nest brand
+        - Secondary accent colour is a fixed amber/gold (`#ffc726`) matching the Owl Nest brand
         - `IconBank::iconButton(name, label, size)` helper renders an icon-prefixed button, reused
           across Welcome, Packaging Wizard, validation modal, AsyncProgressModal, Content Browser
           dialogs, Log panel, Settings/Parameters/Project Settings
@@ -694,7 +764,7 @@ asynchronous with progress feedback.
         - File / Edit / Scene|Text tabs built from the existing `ActionRegistry` (shortcuts
           preserved and shown in tooltips); the contextual last tab switches Scene ↔ Text based
           on the active document type
-        - `Ribbon::setTabHighlighted` renders the File tab title in the theme accent color; tab
+        - `Ribbon::setTabHighlighted` renders the File tab title in the theme accent colour; tab
           bar padding and a brighter `TabSelected` make the active tab clearly identifiable
         - Theme presets: `windowRounding` / `tabRounding` / `controlsRounding` reduced to 2–3 px
           for a crisper look across Dark / Light / DarkBlue / Nord / Solarized
@@ -752,10 +822,10 @@ application (Linux / Windows).
         - Screen-space orthographic rendering via existing Renderer2D pipeline
         - Sort order for layering multiple canvases
     - ![Done][done] Base widgets
-        - UIText (font, size, color, alignment), UIImage (sprite, tint)
+        - UIText (font, size, colour, alignment), UIImage (sprite, tint)
         - UIButton (normal/hover/pressed/disabled states, Lua callback)
         - UIPanel (background, border, vertical/horizontal layout)
-        - UISlider (draggable, min/max, callback), UIProgressBar (value, colors)
+        - UISlider (draggable, min/max, callback), UIProgressBar (value, colours)
     - ![Done][done] UI input handling
         - UIInputSystem: hit-test, hover/pressed state tracking
         - UI consumes mouse events before scene, Lua callback on button click
@@ -880,8 +950,8 @@ application (Linux / Windows).
         - Visibility toggle buttons per entity (editor + game)
     - ![Done][done] Icon system with runtime SVG rendering
         - SVG sources organized by usage (toolbar, browser, components, actions, etc.)
-        - Runtime rasterization via lunasvg with dynamic theme color substitution
-        - White → theme text color, fuchsia → theme accent color
+        - Runtime rasterization via lunasvg with dynamic theme colour substitution
+        - White → theme text colour, fuchsia → theme accent colour
         - Atlas with mipmaps, rebuild on theme change
     - ![Done][done] View of level links
     - ![Done][done] Separate editor/game display

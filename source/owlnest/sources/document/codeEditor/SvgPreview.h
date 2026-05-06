@@ -8,10 +8,10 @@
 
 #pragma once
 
+#include <renderer/gpu/Texture.h>
 #include <core/Core.h>
 #include <core/Timestep.h>
 #include <math/vectors.h>
-#include <renderer/Texture.h>
 
 #include <string>
 
@@ -77,7 +77,7 @@ private:
 	/// Last rasterized texture size.
 	math::vec2ui m_textureSize{0, 0};
 	/// GPU texture holding the rasterized image.
-	shared<renderer::Texture2D> m_texture;
+	shared<renderer::gpu::Texture2D> m_texture;
 	/// Seconds remaining before the next rasterization.
 	float m_debounceLeft = 0.0f;
 	/// True while waiting for the debounce window to expire.

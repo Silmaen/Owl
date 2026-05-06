@@ -76,7 +76,7 @@ auto UIRect::computePosition(const math::vec2& iParentSize) const -> math::vec2 
 			anchorPos = {iParentSize.x(), 0.f};
 			break;
 	}
-	// Apply offset and pivot: position is the center of the rect for Renderer2D.
+	// Apply offset and pivot: position is the centre of the rect for Renderer2D.
 	const float posX = anchorPos.x() + anchorOffset.x() + size.x() * (0.5f - pivot.x());
 	const float posY = anchorPos.y() + anchorOffset.y() + size.y() * (0.5f - pivot.y());
 	return {posX, posY};

@@ -110,6 +110,12 @@ public:
 	void onViewportResize(const math::vec2ui& iSize);
 
 	/**
+	 * @brief Read the current viewport size in pixels.
+	 * @return The viewport size last set on this scene (defaults to `{0, 0}`).
+	 */
+	[[nodiscard]] auto getViewportSize() const -> const math::vec2ui& { return m_viewportSize; }
+
+	/**
 	 * @brief Duplicate an entity.
 	 * @param[in] iEntity Entity to duplicate.
 	 * @return The created entity.
@@ -292,8 +298,13 @@ private:
 	/// the renderer for the editor preview path.
 	void resolveAllTilemapTilesets();
 	/// Draw screen-space UI overlays (Canvas entities) within the current render batch.
-	/// @param[in] iCamera The active camera (for pixel-to-world conversion).
-	void renderUI(const renderer::Camera& iCamera);
+	/// @param[in] iEffectiveViewProjection The view-projection matrix the active
+	/// layer has bound to `Renderer2D` (world camera VP for legacy 2D layers,
+	/// pixel-space ortho VP for raycast / screen-overlay layers). Used to map
+	/// pixel anchors into the same coordinate frame the layer is currently
+	/// drawing in, so HUDs follow the layer's space rather than the raw world
+	/// camera (which would rotate the HUD with the player in the raycast scene).
+	void renderUI(const math::mat4& iEffectiveViewProjection);
 	/// Orchestrate per-layer rendering when the engine has an active `RenderStack`,
 	/// or fall back to a single legacy pass when the stack is empty. Centralises the
 	/// `Renderer2D::resetStats / beginScene / endScene` book-keeping.
@@ -301,6 +312,16 @@ private:
 	/// Whether the current draw pass should include this entity, based on its
 	/// optional `RendererTag` and the layer being processed.
 	[[nodiscard]] auto layerAccepts(const Entity& iEntity) const -> bool;
+	/// Whether the named layer has at least one visible renderable entity routed
+	/// to it. Used by `renderWithStack` to skip layers with nothing to draw —
+	/// avoids paying for an empty `beginScene/endScene` pair (which on Vulkan
+	/// translates into an empty render pass and causes visible flicker on the
+	/// neighbouring layers).
+	/// @param[in] iLayerName Name of the layer to test.
+	/// @param[in] iIsFirst Whether the layer is the first one in the stack —
+	/// untagged renderable entities default to it.
+	/// @return True if at least one visible entity is routed to this layer.
+	[[nodiscard]] auto layerHasContent(const std::string& iLayerName, bool iIsFirst) const -> bool;
 	/// The viewport's size.
 	math::vec2ui m_viewportSize = {0, 0};
 	/// Inverse of camera view rotation matrix (for skybox rendering).
@@ -312,6 +333,11 @@ private:
 	/// Whether the layer being processed is the first one in the stack — entities
 	/// without a `RendererTag` are routed there by default.
 	bool m_currentLayerIsFirst = true;
+	/// Active layer driving the current `render()` pass (may be null on the legacy
+	/// single-pass path). Used by `render()` to dispatch type-specific entity
+	/// rendering (e.g. send tilemap walls to `RendererRaycast` instead of the
+	/// per-cell `Renderer2D` quad loop).
+	const renderer::RenderLayer* mp_currentLayer = nullptr;
 
 	friend class Entity;
 	friend class ScriptableEntity;

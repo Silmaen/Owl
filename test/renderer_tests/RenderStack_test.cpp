@@ -228,3 +228,66 @@ TEST(RenderStack, findByName) {
 	RenderLayerFactory::clear();
 	owl::core::Log::invalidate();
 }
+
+TEST(RenderStack, sceneOverridesLayerOrder) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	RenderLayerFactory::clear();
+	registerTrackingFactory();
+
+	RendererStackConfig project;
+	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = YAML::Node{}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "fx", .defaultConfig = YAML::Node{}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "ui", .defaultConfig = YAML::Node{}});
+
+	// Scene reorders to ui, world (fx is not mentioned and must append at the end).
+	EnabledRenderersConfig scene;
+	scene.entries.push_back({.name = "ui", .enabled = true, .overrides = YAML::Node{}});
+	scene.entries.push_back({.name = "world", .enabled = true, .overrides = YAML::Node{}});
+
+	const auto stack = RenderStack::buildFromConfig(project, scene);
+	ASSERT_EQ(stack.getLayers().size(), 3u);
+	EXPECT_EQ(stack.getLayers()[0]->getName(), "ui");
+	EXPECT_EQ(stack.getLayers()[1]->getName(), "world");
+	EXPECT_EQ(stack.getLayers()[2]->getName(), "fx");
+
+	RenderLayerFactory::clear();
+	owl::core::Log::invalidate();
+}
+
+TEST(RenderStack, sceneSilenceKeepsProjectOrder) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	RenderLayerFactory::clear();
+	registerTrackingFactory();
+
+	RendererStackConfig project;
+	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = YAML::Node{}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "ui", .defaultConfig = YAML::Node{}});
+
+	const auto stack = RenderStack::buildFromConfig(project, EnabledRenderersConfig{});
+	ASSERT_EQ(stack.getLayers().size(), 2u);
+	EXPECT_EQ(stack.getLayers()[0]->getName(), "world");
+	EXPECT_EQ(stack.getLayers()[1]->getName(), "ui");
+
+	RenderLayerFactory::clear();
+	owl::core::Log::invalidate();
+}
+
+TEST(RenderStack, sceneIgnoresUnknownLayerName) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	RenderLayerFactory::clear();
+	registerTrackingFactory();
+
+	RendererStackConfig project;
+	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = YAML::Node{}});
+
+	EnabledRenderersConfig scene;
+	scene.entries.push_back({.name = "ghost", .enabled = true, .overrides = YAML::Node{}});
+	scene.entries.push_back({.name = "world", .enabled = true, .overrides = YAML::Node{}});
+
+	const auto stack = RenderStack::buildFromConfig(project, scene);
+	ASSERT_EQ(stack.getLayers().size(), 1u);
+	EXPECT_EQ(stack.getLayers()[0]->getName(), "world");
+
+	RenderLayerFactory::clear();
+	owl::core::Log::invalidate();
+}

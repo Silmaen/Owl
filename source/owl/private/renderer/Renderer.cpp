@@ -7,10 +7,13 @@
  */
 #include "owlpch.h"
 
-#include "renderer/BackgroundRenderer.h"
 #include "renderer/Renderer.h"
+
+#include "renderer/BackgroundRenderer.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
+#include "renderer/RendererRaycast.h"
+#include "renderer/RendererRaycastLayer.h"
 
 namespace owl::renderer {
 
@@ -39,8 +42,8 @@ void Renderer::initContext() {
 	if (m_textureLibrary == nullptr)
 		m_textureLibrary = mkShared<TextureLibrary>();
 
-	RenderCommand::init();
-	if (RenderCommand::getState() != RenderAPI::State::Ready) {
+	gpu::RenderCommand::init();
+	if (gpu::RenderCommand::getState() != gpu::RenderAPI::State::Ready) {
 		m_internalState = State::Error;
 		return;
 	}
@@ -57,14 +60,18 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 		iProgress(4, 5, "background");
 	BackgroundRenderer::init();
 
+	RendererRaycast::init();
+
 	// Register built-in render layer types with the factory. Adding more layer types
-	// (raycasting, voxel, ...) is just another registerWithFactory() call here.
+	// (voxel, ...) is just another registerWithFactory() call here.
 	Renderer2DLayer::registerWithFactory();
+	RendererRaycastLayer::registerWithFactory();
 
 	m_internalState = State::Running;
 }
 
 void Renderer::shutdown() {
+	RendererRaycast::shutdown();
 	BackgroundRenderer::shutdown();
 	Renderer2D::shutdown();
 	reset();
@@ -88,7 +95,7 @@ void Renderer::beginScene(const Camera& iCamera) { m_sceneData->viewProjectionMa
 void Renderer::endScene() {}
 
 void Renderer::onWindowResized(const uint32_t iWidth, const uint32_t iHeight) {
-	RenderCommand::setViewport(0, 0, iWidth, iHeight);
+	gpu::RenderCommand::setViewport(0, 0, iWidth, iHeight);
 }
 
 auto Renderer::getShaderLibrary() -> ShaderLibrary& {

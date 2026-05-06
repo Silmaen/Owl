@@ -21,7 +21,7 @@ namespace owl::gui::widgets {
  *
  * The format is domain-agnostic — it stores nodes (with their `customData`
  * blob treated as opaque text) and links. The Scene Flow view, animation
- * graphs, behavior trees and dialogue trees all share the same format, each
+ * graphs, behaviour trees and dialogue trees all share the same format, each
  * putting its own schema into `customData`.
  *
  * Top-level YAML structure:

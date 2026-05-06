@@ -9,7 +9,7 @@
 
 #include "scene/SceneCamera.h"
 
-#include "renderer/RenderCommand.h"
+#include "renderer/gpu/RenderCommand.h"
 
 namespace owl::scene {
 
@@ -49,7 +49,7 @@ void SceneCamera::recalculateProjection() {
 		const float orthoTop = m_orthographicSize * 0.5f;
 		m_projection = math::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, m_orthographicNear, m_orthographicFar);
 	}
-	if (renderer::RenderCommand::getApi() == renderer::RenderAPI::Type::Vulkan) {
+	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
 		auto biasMatrix = math::identity<float, 4>();
 		biasMatrix(2, 2) = 0.5f;
 		biasMatrix(2, 3) = 0.5f;

@@ -42,30 +42,30 @@ void createCacheDirectoryIfNeeded(const std::string& iRenderer, const std::strin
 }
 
 auto getShaderCachedPath(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
-						 const ShaderType& iType) -> std::filesystem::path {
+						 const gpu::ShaderType& iType) -> std::filesystem::path {
 	return getCacheDirectory(iRenderer, iRendererApi) / (iShaderName + getCacheExtension(iType));
 }
 
 auto getShaderPath(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
-				   const ShaderType& iType) -> std::filesystem::path {
+				   const gpu::ShaderType& iType) -> std::filesystem::path {
 	return Renderer::getTextureLibrary()
 			.find(std::format("shaders/{}/{}/{}{}", iRenderer, iRendererApi, iShaderName, getExtension(iType)))
 			.value_or(std::filesystem::path{});
 }
 
 auto getRelativeShaderPath(const std::string& iShaderName, const std::string& iRenderer,
-						   const std::string& iRendererApi, const ShaderType& iType) -> std::filesystem::path {
+						   const std::string& iRendererApi, const gpu::ShaderType& iType) -> std::filesystem::path {
 	return std::filesystem::path("shaders") / iRenderer / iRendererApi / (iShaderName + getExtension(iType));
 }
 
-auto getExtension(const ShaderType& iStage) -> std::string {
+auto getExtension(const gpu::ShaderType& iStage) -> std::string {
 	auto ext = std::format(".{}", magic_enum::enum_name(iStage).substr(0, 4));
 	std::ranges::transform(ext.begin(), ext.end(), ext.begin(),
 						   [](const unsigned char iChar) -> int { return std::tolower(iChar); });
 	return ext;
 }
 
-auto getCacheExtension(const ShaderType& iStage) -> std::string {
+auto getCacheExtension(const gpu::ShaderType& iStage) -> std::string {
 	auto ext = std::format(".{}.spv", magic_enum::enum_name(iStage).substr(0, 4));
 	std::ranges::transform(ext.begin(), ext.end(), ext.begin(),
 						   [](const unsigned char iChar) -> int { return std::tolower(iChar); });
@@ -104,9 +104,9 @@ auto writeCachedShader(const std::filesystem::path& iFile, const std::vector<uin
 }
 
 auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
-				   const ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData {
+				   const gpu::ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData {
 	ShaderReflectionData result;
-	OWL_CORE_TRACE("Shader reflect - {0} : <assets>/{1}", magic_enum::enum_name(iStage),
+	OWL_CORE_TRACE("gpu::Shader reflect - {0} : <assets>/{1}", magic_enum::enum_name(iStage),
 				   renderer::utils::getRelativeShaderPath(iShaderName, iRenderer, iRendererApi, iStage).string())
 	if (iShaderData.empty())
 		return result;
@@ -233,10 +233,10 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 
 	struct EntryPointInfo {
 		const char* name;
-		ShaderType type;
+		gpu::ShaderType type;
 	};
-	constexpr EntryPointInfo entryPoints[] = {{"vertexMain", ShaderType::Vertex},
-											  {"fragmentMain", ShaderType::Fragment}};
+	constexpr EntryPointInfo entryPoints[] = {{"vertexMain", gpu::ShaderType::Vertex},
+											  {"fragmentMain", gpu::ShaderType::Fragment}};
 
 	for (const auto& [name, type]: entryPoints) {
 		Slang::ComPtr<slang::IEntryPoint> entryPoint;

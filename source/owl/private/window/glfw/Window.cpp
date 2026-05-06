@@ -16,8 +16,8 @@
 #include "event/AppEvent.h"
 #include "event/KeyEvent.h"
 #include "event/MouseEvent.h"
-#include "renderer/RenderAPI.h"
-#include "renderer/RenderCommand.h"
+#include "renderer/gpu/RenderAPI.h"
+#include "renderer/gpu/RenderCommand.h"
 
 namespace owl::window::glfw {
 
@@ -68,18 +68,18 @@ void Window::init(const Properties& iProps) {
 	// window creation.
 	{
 		OWL_PROFILE_SCOPE("glfwCreateWindow")
-		const auto api = renderer::RenderCommand::getApi();
-		if (api == renderer::RenderAPI::Type::Vulkan) {
+		const auto api = renderer::gpu::RenderCommand::getApi();
+		if (api == renderer::gpu::RenderAPI::Type::Vulkan) {
 			if (glfwVulkanSupported() == GLFW_FALSE) {
 				OWL_CORE_CRITICAL("No Vulkan support for glfw.")
 				return;
 			}
 		}
 #if defined(OWL_DEBUG)
-		if (api == renderer::RenderAPI::Type::OpenGL)
+		if (api == renderer::gpu::RenderAPI::Type::OpenGL)
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
-		if (api == renderer::RenderAPI::Type::Vulkan)
+		if (api == renderer::gpu::RenderAPI::Type::Vulkan)
 			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		{
 			mp_glfwWindow = glfwCreateWindow(static_cast<int>(iProps.width), static_cast<int>(iProps.height),
@@ -104,7 +104,7 @@ void Window::init(const Properties& iProps) {
 	}
 	// Graph context
 	{
-		m_context = renderer::GraphContext::create(mp_glfwWindow);
+		m_context = renderer::gpu::GraphContext::create(mp_glfwWindow);
 		m_context->init();
 
 		glfwSetWindowUserPointer(mp_glfwWindow, &m_windowData);
@@ -279,7 +279,7 @@ void Window::onUpdate() {
 void Window::setVSync(const bool iEnabled) {
 	OWL_PROFILE_FUNCTION()
 
-	if (const auto api = renderer::RenderCommand::getApi(); api == renderer::RenderAPI::Type::OpenGL) {
+	if (const auto api = renderer::gpu::RenderCommand::getApi(); api == renderer::gpu::RenderAPI::Type::OpenGL) {
 		if (iEnabled)
 			glfwSwapInterval(1);
 		else

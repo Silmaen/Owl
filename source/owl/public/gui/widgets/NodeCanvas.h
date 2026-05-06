@@ -39,7 +39,7 @@ struct NodePin {
 	std::string label;///< Short text rendered inside the node, near the connector circle.
 	std::string typeTag;///< Opaque type tag owned by the client.
 	PinKind kind{PinKind::Input};///< Input or output side.
-	math::vec4 labelColor{1.0f, 1.0f, 1.0f, 1.0f};///< RGBA color used to render `label` (default white).
+	math::vec4 labelColor{1.0f, 1.0f, 1.0f, 1.0f};///< RGBA colour used to render `label` (default white).
 };
 
 /**
@@ -56,7 +56,7 @@ struct Node {
 	std::vector<NodePin> inputs;///< Input pins (left side).
 	std::vector<NodePin> outputs;///< Output pins (right side).
 	std::string customData;///< Opaque YAML blob owned by the caller.
-	math::vec4 titleColor{1.0f, 1.0f, 1.0f, 1.0f};///< Overlay color for the title text (e.g. red for orphans).
+	math::vec4 titleColor{1.0f, 1.0f, 1.0f, 1.0f};///< Overlay colour for the title text (e.g. red for orphans).
 };
 
 /// @brief An edge between two pins.

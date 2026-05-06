@@ -9,7 +9,7 @@
 #pragma once
 
 #include "math/Curve.h"
-#include "renderer/Texture.h"
+#include "renderer/gpu/Texture.h"
 
 #include <filesystem>
 #include <string>
@@ -22,7 +22,7 @@ namespace owl::scene {
  * An `AnimationClip` carries the data needed to play a frame-by-frame animation off a regular
  * spritesheet grid: the source texture, grid dimensions, frame range, per-frame duration,
  * looping mode and an optional speed-remap curve. It mirrors the playback parameters of
- * `scene::component::AnimatedSpriteRenderer` minus the per-instance tint color, which stays
+ * `scene::component::AnimatedSpriteRenderer` minus the per-instance tint colour, which stays
  * on the consuming component (the clip is a shared asset; the tint is an instance property).
  *
  * The asset is YAML-serialized with the extension `.owlanim`. The on-disk schema is:
@@ -60,7 +60,7 @@ public:
 	static auto fileExtension() -> const char* { return ".owlanim"; }
 
 	/// Spritesheet texture (may be null while the asset is being authored).
-	shared<renderer::Texture2D> texture;
+	shared<renderer::gpu::Texture2D> texture;
 	/// Number of columns in the spritesheet grid (>= 1).
 	uint32_t columns = 1;
 	/// Number of rows in the spritesheet grid (>= 1).

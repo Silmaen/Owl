@@ -1,11 +1,11 @@
 
 #include "testHelper.h"
 
+#include <renderer/Renderer.h>
 #include <core/Application.h>
 #include <core/utils/FileUtils.h>
 #include <event/KeyEvent.h>
 #include <fstream>
-#include <renderer/Renderer.h>
 
 using namespace owl::core;
 
@@ -13,7 +13,7 @@ TEST(Core, ApplicationDummy) {
 	Log::init(Log::Level::Off);
 	AppParams params;
 	params.isDummy = true;
-	params.renderer = owl::renderer::RenderAPI::Type::Null;
+	params.renderer = owl::renderer::gpu::RenderAPI::Type::Null;
 	params.hasGui = false;
 	params.useDebugging = true;
 	auto app = owl::mkShared<Application>(params);
@@ -33,7 +33,7 @@ TEST(Core, ApplicationBasic) {
 						   .width = 0,
 						   .height = 0,
 						   .argCount = 0,
-						   .renderer = owl::renderer::RenderAPI::Type::Null,
+						   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
 						   .hasGui = false,
 						   .useDebugging = false,
 						   .isDummy = true};
@@ -60,7 +60,7 @@ TEST(Core, ApplicationBasic) {
 TEST(Core, App) {
 	Log::init(Log::Level::Off);
 	const AppParams params{.name = "super boby",
-						   .renderer = owl::renderer::RenderAPI::Type::Null,
+						   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
 						   .hasGui = false,
 						   .isDummy = true};
 	auto app = owl::mkShared<Application>(params);
@@ -78,7 +78,7 @@ TEST(Core, AppParamsSerialize) {
 	AppParams paramsIni;
 	paramsIni.width = 785;
 	paramsIni.height = 7415;
-	paramsIni.renderer = owl::renderer::RenderAPI::Type::OpenGL;
+	paramsIni.renderer = owl::renderer::gpu::RenderAPI::Type::OpenGL;
 	auto tmpFile = std::filesystem::temp_directory_path() / "param.yml";
 	paramsIni.saveToFile(tmpFile);
 

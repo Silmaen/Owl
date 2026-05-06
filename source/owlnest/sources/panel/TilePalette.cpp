@@ -18,7 +18,7 @@ namespace owl::nest::panel {
 namespace {
 
 /// Render a single tile button at the given size, returning true on click.
-auto tileButton(const char* iId, const shared<renderer::Texture2D>& iTex, const std::array<math::vec2, 4>& iUvs,
+auto tileButton(const char* iId, const shared<renderer::gpu::Texture2D>& iTex, const std::array<math::vec2, 4>& iUvs,
 				const ImVec2 iSize, const bool iSelected) -> bool {
 	if (iSelected) {
 		ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(255, 195, 38, 255));

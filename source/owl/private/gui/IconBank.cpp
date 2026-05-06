@@ -62,9 +62,9 @@ auto readFileAsString(const std::filesystem::path& iPath) -> std::string {
 }
 
 /**
- * @brief Convert a math::vec4 color (0-1 floats) to a hex string like "#rrggbb".
- * @param[in] iColor The color.
- * @return The hex color string.
+ * @brief Convert a math::vec4 colour (0-1 floats) to a hex string like "#rrggbb".
+ * @param[in] iColor The colour.
+ * @return The hex colour string.
  */
 auto colorToHex(const math::vec4& iColor) -> std::string {
 	const auto r = static_cast<uint8_t>(std::clamp(iColor.x(), 0.f, 1.f) * 255.f);
@@ -74,9 +74,9 @@ auto colorToHex(const math::vec4& iColor) -> std::string {
 }
 
 /**
- * @brief Case-insensitive replace all occurrences of a hex color in a string.
+ * @brief Case-insensitive replace all occurrences of a hex colour in a string.
  * @param[in,out] ioStr The string to modify.
- * @param[in] iFrom The color to find (lowercase, e.g., "#ffffff").
+ * @param[in] iFrom The colour to find (lowercase, e.g., "#ffffff").
  * @param[in] iTo The replacement string.
  */
 void replaceColorInPlace(std::string& ioStr, const std::string& iFrom, const std::string& iTo) {
@@ -104,10 +104,10 @@ void replaceColorInPlace(std::string& ioStr, const std::string& iFrom, const std
 }
 
 /**
- * @brief Load an SVG file, apply theme color substitution, rasterize to RGBA pixels.
+ * @brief Load an SVG file, apply theme colour substitution, rasterize to RGBA pixels.
  * @param[in] iPath The SVG file path.
  * @param[in] iTargetSize Target pixel size (square).
- * @param[in] iColors Theme colors for substitution.
+ * @param[in] iColors Theme colours for substitution.
  * @return Owned pixel buffer (RGBA straight alpha, 4 bytes per pixel), or empty vector on failure.
  */
 auto loadSvgFile(const std::filesystem::path& iPath, const uint32_t iTargetSize,
@@ -115,7 +115,7 @@ auto loadSvgFile(const std::filesystem::path& iPath, const uint32_t iTargetSize,
 	auto svgContent = readFileAsString(iPath);
 	if (svgContent.empty())
 		return {};
-	// Apply theme color substitution in memory (never modifies the file).
+	// Apply theme colour substitution in memory (never modifies the file).
 	replaceColorInPlace(svgContent, "#ffffff", colorToHex(iColors.primary));
 	replaceColorInPlace(svgContent, "#ff00ff", colorToHex(iColors.secondary));
 	// Rasterize via lunasvg.
@@ -251,7 +251,7 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 		const bool isSvg = filePath.extension() == ".svg";
 
 		if (isSvg) {
-			// Load SVG: rasterize at exact cell size with theme colors.
+			// Load SVG: rasterize at exact cell size with theme colours.
 			pixels = loadSvgFile(filePath, iCellSize, iColors);
 		} else {
 			// Load raster image (PNG/JPG) via stb_image.
@@ -301,11 +301,11 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 	}
 
 	// Create atlas texture
-	renderer::Texture::Specification spec;
+	renderer::gpu::Texture::Specification spec;
 	spec.size = atlasSize;
-	spec.format = renderer::ImageFormat::Rgba8;
+	spec.format = renderer::gpu::ImageFormat::Rgba8;
 	spec.generateMips = true;
-	m_atlas = renderer::Texture2D::create(spec);
+	m_atlas = renderer::gpu::Texture2D::create(spec);
 	if (m_atlas != nullptr) {
 		m_atlas->setData(atlasData.data(), static_cast<uint32_t>(atlasData.size()));
 	}

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "math/vectors.h"
-#include "renderer/Texture.h"
+#include "renderer/gpu/Texture.h"
 
 #include <array>
 #include <filesystem>
@@ -71,7 +71,7 @@ public:
 	static auto fileExtension() -> const char* { return ".owltileset"; }
 
 	/// Atlas texture (may be null while authoring).
-	shared<renderer::Texture2D> texture;
+	shared<renderer::gpu::Texture2D> texture;
 	/// Tile width in atlas pixels (>= 1).
 	uint32_t tileWidth = 32;
 	/// Tile height in atlas pixels (>= 1).
@@ -80,6 +80,10 @@ public:
 	uint32_t columns = 1;
 	/// Number of rows in the atlas (>= 1).
 	uint32_t rows = 1;
+	/// Sampler filter applied to the atlas texture after load. `Nearest` for
+	/// pixel-art / raycaster atlases (no filtering, no mipmaps); `Linear`
+	/// (the default) for everything else.
+	renderer::gpu::FilterMode filterMode = renderer::gpu::FilterMode::Linear;
 	/// Per-tile metadata, row-major. Resized to `columns * rows` on load and on `resize()`.
 	std::vector<TileMeta> tiles;
 

@@ -16,7 +16,7 @@ namespace owl::scene::component {
  * @brief Struct for component drawing a circle.
  */
 struct OWL_API CircleRenderer {
-	/// The circle color.
+	/// The circle colour.
 	math::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 	/// The circle thickness.
 	float thickness = 1.0f;

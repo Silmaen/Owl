@@ -19,8 +19,8 @@ namespace owl::renderer {
 /**
  * @brief Global registry of `RenderLayer` factory functions keyed by type string.
  *
- * The engine registers built-in layer types (`Renderer2D`, future `Raycasting`,
- * `Voxel`, ...) at renderer init. Mods or tests may register additional types.
+ * The engine registers built-in layer types (`Renderer2D`, `RendererRaycast`,
+ * future `Voxel`, ...) at renderer init. Mods or tests may register additional types.
  *
  * Used by `RenderStack::buildFromConfig` to instantiate concrete layers from a
  * project's `RendererStack` YAML.

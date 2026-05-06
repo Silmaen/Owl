@@ -12,6 +12,7 @@
 #include <fstream>
 
 using namespace owl::renderer;
+using namespace owl::renderer::gpu;
 
 namespace {
 

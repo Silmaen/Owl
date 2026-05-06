@@ -25,7 +25,7 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 
 ### Destruction
 
-| Method                                     | Behavior                                                     |
+| Method                                     | Behaviour                                                     |
 |--------------------------------------------|--------------------------------------------------------------|
 | `Scene::destroyEntity(entity)`             | Children reparented to grandparent; world position preserved |
 | `Scene::destroyEntityWithChildren(entity)` | Cascade delete of entire subtree                             |
@@ -52,7 +52,7 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 
 ### Duplication
 
-| Method                     | Behavior                                                 |
+| Method                     | Behaviour                                                 |
 |----------------------------|----------------------------------------------------------|
 | `duplicateEntity(entity)`  | Create root copy with new UUID, no children              |
 | `duplicateSubtree(entity)` | Recursive duplicate with new UUIDs and correct hierarchy |
@@ -144,7 +144,7 @@ on demand via `Scene::getWorldTransform(entity)`.
 
 | Field          | Type         | Default        | Description        |
 |----------------|--------------|----------------|--------------------|
-| `color`        | `math::vec4` | `{1, 1, 1, 1}` | Tint color         |
+| `color`        | `math::vec4` | `{1, 1, 1, 1}` | Tint colour         |
 | `texture`      | `Texture2D`  | `nullptr`      | Sprite texture     |
 | `tilingFactor` | `float`      | `1.0`          | Texture repetition |
 
@@ -154,7 +154,7 @@ YAML key: `SpriteRenderer`
 
 | Field           | Type          | Default | Description                                              |
 |-----------------|---------------|---------|----------------------------------------------------------|
-| `color`         | `vec4`        | white   | Tint color                                               |
+| `color`         | `vec4`        | white   | Tint colour                                               |
 | `texture`       | `Texture2D`   | null    | Spritesheet                                              |
 | `columns`       | `uint32_t`    | `1`     | Grid columns                                             |
 | `rows`          | `uint32_t`    | `1`     | Grid rows                                                |
@@ -174,7 +174,7 @@ normalized position inside `[firstFrame, lastFrame]`. See
 
 | Field       | Type         | Default        | Description          |
 |-------------|--------------|----------------|----------------------|
-| `color`     | `math::vec4` | `{1, 1, 1, 1}` | Circle color         |
+| `color`     | `math::vec4` | `{1, 1, 1, 1}` | Circle colour         |
 | `thickness` | `float`      | `1.0`          | Ring thickness (0–1) |
 | `fade`      | `float`      | `0.005`        | Edge fade amount     |
 
@@ -186,7 +186,7 @@ YAML key: `CircleRenderer`
 |---------------|----------|----------------|----------------------|
 | `text`        | `string` | `""`           | Text content         |
 | `font`        | `Font`   | default font   | MSDF font            |
-| `color`       | `vec4`   | `{1, 1, 1, 1}` | Text color           |
+| `color`       | `vec4`   | `{1, 1, 1, 1}` | Text colour           |
 | `kerning`     | `float`  | `0.0`          | Extra letter spacing |
 | `lineSpacing` | `float`  | `0.0`          | Extra line spacing   |
 
@@ -228,8 +228,8 @@ authoring.
 |------------|-------------|----------------------|-------------------------------------|
 | `mode`     | `Mode`      | `Background`         | `Background` or `Skybox`            |
 | `type`     | `Type`      | `SolidColor`         | `SolidColor`, `Gradient`, `Texture` |
-| `color`    | `vec4`      | `{0.2, 0.3, 0.8, 1}` | Main / bottom color                 |
-| `topColor` | `vec4`      | `{0.8, 0.9, 1, 1}`   | Top color (gradient)                |
+| `color`    | `vec4`      | `{0.2, 0.3, 0.8, 1}` | Main / bottom colour                 |
+| `topColor` | `vec4`      | `{0.8, 0.9, 1, 1}`   | Top colour (gradient)                |
 | `texture`  | `Texture2D` | `nullptr`            | Background or equirectangular       |
 
 YAML key: `BackgroundTexture`. Only the first entity with this component is rendered.
@@ -351,29 +351,29 @@ children (direct or nested) of an entity with a `Canvas` component.
 | `text`      | `string` | Display text      |
 | `fontAsset` | `string` | Font file path    |
 | `fontSize`  | `float`  | Size in pixels    |
-| `color`     | `vec4`   | Text color (RGBA) |
+| `color`     | `vec4`   | Text colour (RGBA) |
 
 #### UIImage
 
 | Field        | Type     | Description           |
 |--------------|----------|-----------------------|
 | `imageAsset` | `string` | Texture file path     |
-| `tint`       | `vec4`   | Tint color multiplier |
+| `tint`       | `vec4`   | Tint colour multiplier |
 
 #### UIPanel
 
 | Field   | Type   | Description      |
 |---------|--------|------------------|
-| `color` | `vec4` | Background color |
+| `color` | `vec4` | Background colour |
 
 #### UIButton
 
 | Field         | Type     | Description              |
 |---------------|----------|--------------------------|
 | `label`       | `string` | Button text              |
-| `normalColor` | `vec4`   | Default background color |
-| `hoverColor`  | `vec4`   | Color when hovered       |
-| `pressColor`  | `vec4`   | Color when pressed       |
+| `normalColor` | `vec4`   | Default background colour |
+| `hoverColor`  | `vec4`   | Colour when hovered       |
+| `pressColor`  | `vec4`   | Colour when pressed       |
 | `action`      | `string` | Lua callback on click    |
 
 #### UISlider
@@ -389,8 +389,8 @@ children (direct or nested) of an entity with a `Canvas` component.
 | Field             | Type    | Description         |
 |-------------------|---------|---------------------|
 | `value`           | `float` | Current value (0–1) |
-| `backgroundColor` | `vec4`  | Track color         |
-| `fillColor`       | `vec4`  | Fill bar color      |
+| `backgroundColor` | `vec4`  | Track colour         |
+| `fillColor`       | `vec4`  | Fill bar colour      |
 
 ### Prefab Components
 
@@ -430,7 +430,7 @@ If any ancestor is hidden, the entity is effectively hidden.
 
 ### Hierarchy Operations
 
-| Operation                | Behavior                                                                        |
+| Operation                | Behaviour                                                                        |
 |--------------------------|---------------------------------------------------------------------------------|
 | **Set parent**           | Circular reference check, local transform recomputed to preserve world position |
 | **Unparent**             | Entity becomes root, world transform stored as new local                        |
@@ -502,10 +502,10 @@ the engine auto-appends `.owl` and searches asset directories including a `scene
 `Scene::render()` iterates component groups in this order:
 
 1. **BackgroundTexture** — first entity only
-2. **SpriteRenderer** — `drawQuad()` with texture/color/tiling
+2. **SpriteRenderer** — `drawQuad()` with texture/colour/tiling
 3. **AnimatedSpriteRenderer** — `drawQuad()` with computed UV coordinates
 4. **CircleRenderer** — `drawCircle()` with thickness/fade
-5. **Text** — `drawString()` with font/color/kerning
+5. **Text** — `drawString()` with font/colour/kerning
 
 Each entity is checked for visibility via `isEffectivelyVisible()` and rendered
 using its world transform from `getWorldTransform()`.

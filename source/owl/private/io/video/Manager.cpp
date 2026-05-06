@@ -60,7 +60,7 @@ void Manager::close() const {
 	getCurrentDevice()->close();
 }
 
-void Manager::fillFrame(shared<renderer::Texture>& iFrame) const {
+void Manager::fillFrame(shared<renderer::gpu::Texture>& iFrame) const {
 	if (!isOpened())
 		return;
 	getCurrentDevice()->fillFrame(iFrame);

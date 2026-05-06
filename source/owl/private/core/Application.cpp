@@ -10,11 +10,11 @@
 
 #include "core/Application.h"
 
+#include "renderer/Renderer.h"
 #include "core/Environment.h"
 #include "core/utils/StringUtils.h"
 #include "external/yaml.h"
 #include "input/Input.h"
-#include "renderer/Renderer.h"
 #include "sound/SoundSystem.h"
 
 OWL_DIAG_PUSH
@@ -120,9 +120,9 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 	// Create the renderer
 	{
-		renderer::RenderCommand::create(m_initParams.renderer);
+		renderer::gpu::RenderCommand::create(m_initParams.renderer);
 		// check renderer creation
-		if (renderer::RenderCommand::getState() != renderer::RenderAPI::State::Created) {
+		if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Created) {
 			OWL_CORE_ERROR("ERROR while Creating Renderer")
 			m_state = State::Error;
 			return;
@@ -151,7 +151,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	{
 		renderer::Renderer::initContext();
 		// check renderer initialization
-		if (renderer::RenderCommand::getState() != renderer::RenderAPI::State::Ready) {
+		if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Ready) {
 			OWL_CORE_ERROR("ERROR while Initializing Renderer")
 			m_state = State::Error;
 			return;
@@ -246,8 +246,8 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 			OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
 			// Render a loading frame if ImGui is available.
 			if (mp_imGuiLayer && mp_appWindow && !m_minimized) {
-				renderer::RenderCommand::beginFrame();
-				if (renderer::RenderCommand::getState() == renderer::RenderAPI::State::Ready) {
+				renderer::gpu::RenderCommand::beginFrame();
+				if (renderer::gpu::RenderCommand::getState() == renderer::gpu::RenderAPI::State::Ready) {
 					mp_imGuiLayer->begin();
 					const auto* viewport = ImGui::GetMainViewport();
 					ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
@@ -264,7 +264,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 					ImGui::End();
 					mp_imGuiLayer->end();
 				}
-				renderer::RenderCommand::endFrame();
+				renderer::gpu::RenderCommand::endFrame();
 				mp_appWindow->onUpdate();
 			}
 		});
@@ -295,7 +295,7 @@ Application::~Application() {
 	OWL_PROFILE_FUNCTION()
 
 	m_fontLibrary.destroy();
-	if (renderer::RenderCommand::getState() != renderer::RenderAPI::State::Error) {
+	if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Error) {
 		// Ensure the GPU is idle before tearing anything down.
 		if (mp_appWindow && mp_appWindow->getGraphContext() != nullptr)
 			mp_appWindow->getGraphContext()->waitIdle();
@@ -312,7 +312,7 @@ Application::~Application() {
 		//    descriptors, device, and surface (using the window's GraphContext) and then the
 		//    Vulkan instance. This must happen BEFORE the window/GLFW teardown, otherwise the
 		//    Vulkan surface outlives its backing native window and crashes on destruction.
-		renderer::RenderCommand::invalidate();
+		renderer::gpu::RenderCommand::invalidate();
 		OWL_CORE_TRACE("Renderer shut down and invalidated.")
 		// 4. Finally tear down the window (destroys GLFW window / terminates GLFW).
 		if (mp_appWindow) {
@@ -358,8 +358,8 @@ void Application::run() {
 
 		// Graphics part.
 		if (!m_minimized) {
-			renderer::RenderCommand::beginFrame();
-			if (renderer::RenderCommand::getState() != renderer::RenderAPI::State::Ready) {
+			renderer::gpu::RenderCommand::beginFrame();
+			if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Ready) {
 				m_state = State::Error;
 				continue;
 			}
@@ -374,7 +374,7 @@ void Application::run() {
 				for (const auto& layer: m_layerStack) layer->onImGuiRender(m_stepper);
 				mp_imGuiLayer->end();
 			}
-			renderer::RenderCommand::endFrame();
+			renderer::gpu::RenderCommand::endFrame();
 		}
 
 		// sound part
@@ -452,14 +452,14 @@ auto Application::onWindowResized(const event::WindowResizeEvent& iEvent) -> boo
 
 void Application::pushLayer(shared<layer::Layer>&& iLayer) {
 	OWL_PROFILE_FUNCTION()
-	if (renderer::RenderCommand::getState() == renderer::RenderAPI::State::Error)
+	if (renderer::gpu::RenderCommand::getState() == renderer::gpu::RenderAPI::State::Error)
 		return;
 	m_layerStack.pushLayer(std::move(iLayer));
 }
 
 void Application::pushOverlay(shared<layer::Layer>&& iOverlay) {
 	OWL_PROFILE_FUNCTION()
-	if (renderer::RenderCommand::getState() == renderer::RenderAPI::State::Error)
+	if (renderer::gpu::RenderCommand::getState() == renderer::gpu::RenderAPI::State::Error)
 		return;
 	m_layerStack.pushOverlay(std::move(iOverlay));
 }
@@ -488,9 +488,9 @@ void AppParams::loadFromFile(const std::filesystem::path& iFile) {
 		std::string rendererStr;
 		get(appConfig, "renderer", rendererStr);
 		if (rendererStr == "null") {
-			renderer = renderer::RenderAPI::Type::Null;
+			renderer = renderer::gpu::RenderAPI::Type::Null;
 		} else {
-			if (const auto dRenderer = magic_enum::enum_cast<renderer::RenderAPI::Type>(rendererStr);
+			if (const auto dRenderer = magic_enum::enum_cast<renderer::gpu::RenderAPI::Type>(rendererStr);
 				dRenderer.has_value())
 				renderer = dRenderer.value();
 		}

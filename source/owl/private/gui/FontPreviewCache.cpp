@@ -9,10 +9,10 @@
 
 #include "gui/FontPreviewCache.h"
 
+#include "renderer/gpu/RenderCommand.h"
 #include "math/matrices.h"
 #include "math/vectors.h"
 #include "renderer/CameraOrtho.h"
-#include "renderer/RenderCommand.h"
 #include "renderer/Renderer2D.h"
 
 namespace owl::gui {
@@ -27,21 +27,21 @@ constexpr const char* kSample = "Aa Bb 1!? \xE9\xE0\xFC\xC7";
 
 constexpr math::vec2ui kPreviewSize{256u, 64u};
 
-auto makePreviewFramebuffer() -> shared<renderer::Framebuffer> {
-	const renderer::FramebufferSpecification specs{
+auto makePreviewFramebuffer() -> shared<renderer::gpu::Framebuffer> {
+	const renderer::gpu::FramebufferSpecification specs{
 			.size = kPreviewSize,
-			.attachments = {{.format = renderer::AttachmentSpecification::Format::Surface,
-							 .tiling = renderer::AttachmentSpecification::Tiling::Optimal}},
+			.attachments = {{.format = renderer::gpu::AttachmentSpecification::Format::Surface,
+							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal}},
 			.samples = 1,
 			.swapChainTarget = false,
 			.debugName = "fontPreview"};
-	return renderer::Framebuffer::create(specs);
+	return renderer::gpu::Framebuffer::create(specs);
 }
 
-void renderPreviewInto(renderer::Framebuffer& ioFramebuffer, const shared<data::fonts::Font>& iFont) {
+void renderPreviewInto(renderer::gpu::Framebuffer& ioFramebuffer, const shared<data::fonts::Font>& iFont) {
 	ioFramebuffer.bind();
-	renderer::RenderCommand::setClearColor({0.f, 0.f, 0.f, 0.f});
-	renderer::RenderCommand::clear();
+	renderer::gpu::RenderCommand::setClearColor({0.f, 0.f, 0.f, 0.f});
+	renderer::gpu::RenderCommand::clear();
 	// Camera maps [-1,1] to the full framebuffer; drawString fits text into a unit quad,
 	// so a transform with x-scale matching the aspect ratio fills horizontally with margin.
 	const renderer::CameraOrtho camera{-1.f, 1.f, -1.f, 1.f};
@@ -68,7 +68,7 @@ auto FontPreviewCache::get() -> FontPreviewCache& {
 	return s_instance;
 }
 
-auto FontPreviewCache::request(const shared<data::fonts::Font>& iFont) -> shared<renderer::Framebuffer> {
+auto FontPreviewCache::request(const shared<data::fonts::Font>& iFont) -> shared<renderer::gpu::Framebuffer> {
 	if (iFont == nullptr)
 		return nullptr;
 	const std::string& key = iFont->getName();

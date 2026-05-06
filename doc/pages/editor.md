@@ -49,10 +49,10 @@ major zones:
 
 - **Left column** -- Scene Hierarchy (top) and Properties (bottom), stacked
   vertically
-- **Center** -- Viewport, the main rendering area with an overlaid toolbar
+- **Centre** -- Viewport, the main rendering area with an overlaid toolbar
   and optional Stats window
 - **Bottom strip** -- Content Browser and Log as tabbed panels spanning the
-  center and right regions
+  centre and right regions
 - **Right / floating** -- Additional panels (Settings, Parameters, Project
   Settings) appear as dockable windows or modal dialogs
 
@@ -70,7 +70,7 @@ sizes:
 - **Small** — 16 px icon with the label to the right; three small buttons stack
   vertically to fit in the space of one large button + caption.
 
-The **File** tab is highlighted (title rendered in the theme accent color via
+The **File** tab is highlighted (title rendered in the theme accent colour via
 `Ribbon::setTabHighlighted`) so it reads as the primary entry point. The
 contextual last tab switches between **Scene** and **Text** based on the active
 document type.
@@ -210,11 +210,11 @@ planned as a follow-up — see [Node Graph](node_graph.md) for details.
 ### Viewport
 
 The viewport is the main rendering surface. It draws the active scene into an
-off-screen `Framebuffer` with two color attachments:
+off-screen `Framebuffer` with two colour attachments:
 
 | Attachment | Format          | Purpose                     |
 |------------|-----------------|-----------------------------|
-| 0          | Surface (RGBA8) | Visible color output        |
+| 0          | Surface (RGBA8) | Visible colour output        |
 | 1          | RedInteger      | Entity ID for mouse picking |
 
 **Editor camera.** In Edit mode the viewport uses a `CameraEditor` (orbit
@@ -284,10 +284,10 @@ The Properties panel shows all components attached to the currently selected ent
 Each component has a collapsible header with a dedicated editor widget:
 
 - **Transform** -- Position, rotation, and scale drag-float fields (local space)
-- **Sprite Renderer** -- Color picker, texture picker (drag from Content Browser)
+- **Sprite Renderer** -- Colour picker, texture picker (drag from Content Browser)
 - **Animated Sprite** -- Sprite sheet configuration with frame timing
-- **Circle Renderer** -- Color, thickness, and fade controls
-- **Text Renderer** -- Text content, font selection, color, line spacing
+- **Circle Renderer** -- Colour, thickness, and fade controls
+- **Text Renderer** -- Text content, font selection, colour, line spacing
 - **Camera** -- Projection type dropdown, field-of-view / ortho size sliders
 - **Rigidbody 2D** -- Body type dropdown (static / dynamic / kinematic)
 - **Box Collider 2D** -- Size, offset, density, friction, restitution
@@ -444,7 +444,7 @@ label (e.g. `WAV`, `CPP`) and a central type glyph:
 | Fallback  | plain text                           | Text lines               |
 
 Folders use a distinct folder icon. The secondary accent (amber `#ffc726`) highlights
-glyph details; the primary color follows the active ImGui theme text color.
+glyph details; the primary colour follows the active ImGui theme text colour.
 
 **Interactions:**
 
@@ -504,7 +504,7 @@ It contains three sections:
 
 **Theme selection.** A dropdown listing built-in theme presets (e.g. "Dark"). Changing
 the theme calls `UiLayer::setTheme()` and triggers `IconBank::rebuild()` to re-rasterize
-all SVG icons with the new theme colors. The primary color follows the theme text color;
+all SVG icons with the new theme colours. The primary colour follows the theme text colour;
 the secondary accent is a fixed amber/gold (`#ffc726`) matching the Owl Nest brand.
 
 **Icon buttons.** Dialog and panel buttons use `IconBank::iconButton(name, label, size)`
@@ -713,7 +713,7 @@ All prefab operations are fully undoable.
 
 ## Toolbar
 
-The toolbar is rendered as a frameless overlay window centered at the top of the viewport.
+The toolbar is rendered as a frameless overlay window centred at the top of the viewport.
 Its contents change depending on the editor state.
 
 ### Playback Controls

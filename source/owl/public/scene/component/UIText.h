@@ -23,7 +23,7 @@ struct OWL_API UIText {
 	std::string text;
 	/// The font (nullptr = default font).
 	shared<data::fonts::Font> font = nullptr;
-	/// Text color.
+	/// Text colour.
 	math::vec4 color{1.0f, 1.0f, 1.0f, 1.0f};
 	/// Font size in pixels.
 	float fontSize = 16.f;

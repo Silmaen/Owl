@@ -163,25 +163,58 @@ auto RenderStack::buildFromConfig(const RendererStackConfig& iProject,
 	if (iProject.isEmpty()) {
 		OWL_CORE_WARN("RenderStack: empty project config — falling back to default Renderer2D.")
 	}
-	for (const auto& projectEntry: effective.entries) {
-		// Apply scene-level enable/override.
-		const auto* sceneEntry = iScene.find(projectEntry.name);
-		const bool enabled = (sceneEntry == nullptr) || sceneEntry->enabled;
+
+	const auto findProject = [&](const std::string& iName) -> const RendererStackEntry* {
+		const auto it = std::ranges::find_if(effective.entries,
+											 [&](const auto& iE) -> bool { return iE.name == iName; });
+		return it == effective.entries.end() ? nullptr : &*it;
+	};
+
+	std::unordered_set<std::string> emitted;
+	const auto emit = [&](const RendererStackEntry& iProjectEntry,
+						  const EnabledRenderersConfig::Entry* iSceneEntry) -> void {
+		emitted.insert(iProjectEntry.name);
+		const bool enabled = (iSceneEntry == nullptr) || iSceneEntry->enabled;
 		if (!enabled)
-			continue;
-		auto layer = RenderLayerFactory::create(projectEntry.typeKey, projectEntry.name);
+			return;
+		auto layer = RenderLayerFactory::create(iProjectEntry.typeKey, iProjectEntry.name);
 		if (layer == nullptr) {
-			OWL_CORE_ERROR("RenderStack: failed to create layer '{}' (type '{}'), skipped.", projectEntry.name,
-						   projectEntry.typeKey)
-			continue;
+			OWL_CORE_ERROR("RenderStack: failed to create layer '{}' (type '{}'), skipped.", iProjectEntry.name,
+						   iProjectEntry.typeKey)
+			return;
 		}
 		// Build merged config: clone project default, overlay scene overrides.
-		YAML::Node merged = projectEntry.defaultConfig ? YAML::Clone(projectEntry.defaultConfig) : YAML::Node{};
-		if (sceneEntry != nullptr && sceneEntry->overrides)
-			mergeYaml(merged, sceneEntry->overrides);
+		YAML::Node merged =
+				iProjectEntry.defaultConfig ? YAML::Clone(iProjectEntry.defaultConfig) : YAML::Node{};
+		if (iSceneEntry != nullptr && iSceneEntry->overrides)
+			mergeYaml(merged, iSceneEntry->overrides);
 		layer->applyConfig(merged);
 		stack.m_layers.push_back(std::move(layer));
+	};
+
+	// Pass 1 — scene-listed layers in scene order. The scene authors the order
+	// here; unlisted layers fall through to pass 2 in project order. A scene
+	// that does not declare `EnabledRenderers` skips this pass entirely and
+	// inherits the project's order verbatim (the legacy default).
+	for (const auto& sceneEntry: iScene.entries) {
+		if (emitted.contains(sceneEntry.name))
+			continue;// duplicate name in scene listing — first wins.
+		const auto* projectEntry = findProject(sceneEntry.name);
+		if (projectEntry == nullptr) {
+			OWL_CORE_WARN("RenderStack: scene references unknown layer '{}' — skipped.", sceneEntry.name)
+			continue;
+		}
+		emit(*projectEntry, &sceneEntry);
 	}
+
+	// Pass 2 — any project layer the scene did not mention, in project order,
+	// enabled by default (scene silence == "use the project default").
+	for (const auto& projectEntry: effective.entries) {
+		if (emitted.contains(projectEntry.name))
+			continue;
+		emit(projectEntry, nullptr);
+	}
+
 	return stack;
 }
 

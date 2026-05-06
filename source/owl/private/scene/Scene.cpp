@@ -9,10 +9,12 @@
 
 #include "scene/Scene.h"
 
+#include "renderer/Renderer.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
-#include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
+#include "renderer/RendererRaycast.h"
+#include "renderer/RendererRaycastLayer.h"
 #include "scene/Entity.h"
 #include "scene/Tileset.h"
 
@@ -728,33 +730,91 @@ auto Scene::layerAccepts(const Entity& iEntity) const -> bool {
 	return iEntity.getComponent<component::RendererTag>().rendererName == m_currentLayerName;
 }
 
+auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) const -> bool {
+	OWL_PROFILE_FUNCTION()
+	auto* self = const_cast<Scene*>(this);
+	const auto matches = [&](const entt::entity e) -> bool {
+		const Entity ent{e, self};
+		if (!isEffectivelyVisible(ent, /*iEditorMode=*/false))
+			return false;
+		if (!ent.hasComponent<component::RendererTag>())
+			return iIsFirst;
+		return ent.getComponent<component::RendererTag>().rendererName == iLayerName;
+	};
+	for (const auto e: registry.view<component::Tilemap>())
+		if (matches(e))
+			return true;
+	for (const auto e: registry.view<component::SpriteRenderer>())
+		if (matches(e))
+			return true;
+	for (const auto e: registry.view<component::AnimatedSpriteRenderer>())
+		if (matches(e))
+			return true;
+	for (const auto e: registry.view<component::CircleRenderer>())
+		if (matches(e))
+			return true;
+	for (const auto e: registry.view<component::Text>())
+		if (matches(e))
+			return true;
+	for (const auto e: registry.view<component::Canvas>())
+		if (matches(e))
+			return true;
+	// Backgrounds always sit behind every layer — they only contribute to the first one.
+	if (iIsFirst) {
+		for (const auto e: registry.view<component::BackgroundTexture>())
+			if (matches(e))
+				return true;
+	}
+	return false;
+}
+
 void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 	const auto& stack = renderer::Renderer::getRenderStack();
-	if (stack.isEmpty()) {
-		// Legacy single-pass: nothing tagged, one Renderer2D batch.
+	// Editor mode: ignore the renderer stack entirely and fall back to a single 2D
+	// pass. Editing a tilemap from inside a first-person raycast view is unusable
+	// (the level designer needs the top-down grid), so the editor always sees the
+	// 2D rendering of every entity regardless of `RendererTag` / `EnabledRenderers`.
+	// The multi-layer pipeline kicks back in as soon as the scene enters Play mode.
+	const bool editorMode = (status == Status::Editing);
+	if (editorMode || stack.isEmpty()) {
 		renderer::Renderer2D::resetStats();
 		renderer::Renderer2D::beginScene(iCamera);
 		m_currentLayerName.clear();
 		m_currentLayerIsFirst = true;
+		mp_currentLayer = nullptr;
 		render();
-		renderUI(iCamera);
+		renderUI(iCamera.getViewProjection());
 		renderer::Renderer2D::endScene();
 		return;
 	}
 	renderer::Renderer2D::resetStats();
 	bool first = true;
 	for (const auto& layer: stack.getLayers()) {
+		const bool isFirst = first;
+		first = false;
+		// Skip layers with no entity routed to them — running an empty
+		// `beginScene/endScene` pair otherwise costs a Vulkan render-pass per
+		// layer and causes the neighbouring layers to flicker (the empty pass
+		// clears state mid-frame). Untagged renderables default to the first
+		// layer, so if it has zero matching entities the entire layer is dead.
+		if (!layerHasContent(layer->getName(), isFirst))
+			continue;
+		layer->setViewport(m_viewportSize);
 		layer->onBeginFrame(iCamera);
 		m_currentLayerName = layer->getName();
-		m_currentLayerIsFirst = first;
+		m_currentLayerIsFirst = isFirst;
+		mp_currentLayer = layer.get();
 		render();
-		renderUI(iCamera);
+		// Hand the layer's effective VP (world camera for sprite layers, pixel
+		// ortho for raycast / screen-overlay layers) to `renderUI` so the HUD
+		// stays aligned with whatever frame the layer is currently drawing in.
+		renderUI(layer->getEffectiveViewProjection(iCamera));
 		layer->onEndFrame();
-		first = false;
 	}
 	m_currentLayerName.clear();
 	m_currentLayerIsFirst = true;
+	mp_currentLayer = nullptr;
 }
 
 void Scene::render() {
@@ -792,8 +852,16 @@ void Scene::render() {
 		if (!tilemap.tileset || !tilemap.tileset->texture)
 			continue;
 		const math::Transform worldTransform = getWorldTransform(ent);
-		const float cellSize = tilemap.cellSize;
 		const int entityId = static_cast<int>(entity);
+		// When the active layer is a raycaster, route the tilemap to the DDA pipeline
+		// instead of emitting per-cell 2D quads. The 2D path keeps running for any
+		// layer whose type isn't "RendererRaycast" (legacy and HUD tilemaps included).
+		if (mp_currentLayer != nullptr &&
+			std::string_view{mp_currentLayer->getTypeKey()} == "RendererRaycast") {
+			renderer::RendererRaycast::drawTilemapWalls(tilemap, worldTransform, entityId);
+			continue;
+		}
+		const float cellSize = tilemap.cellSize;
 		const float originX = -static_cast<float>(tilemap.width - 1) * 0.5f * cellSize;
 		const float originY = static_cast<float>(tilemap.height - 1) * 0.5f * cellSize;
 		for (const auto& layer: tilemap.layers) {
@@ -927,7 +995,7 @@ void Scene::resolveAllTilemapTilesets() {
 	}
 }
 
-void Scene::renderUI(const renderer::Camera& iCamera) {
+void Scene::renderUI(const math::mat4& iEffectiveViewProjection) {
 	OWL_PROFILE_FUNCTION()
 	if (m_viewportSize.x() == 0 || m_viewportSize.y() == 0)
 		return;
@@ -954,12 +1022,23 @@ void Scene::renderUI(const renderer::Camera& iCamera) {
 		return;
 	std::ranges::sort(canvases, [](const auto& iA, const auto& iB) -> auto { return iA.sortOrder < iB.sortOrder; });
 
-	// Convert pixel coordinates to world coordinates using the inverse VP matrix.
-	// Determine world-space viewport bounds using min/max to handle Y-flip (Vulkan vs OpenGL).
-	const math::mat4 invVP = math::inverse(iCamera.getViewProjection());
+	// Convert pixel coordinates into the same frame the active layer's
+	// `Renderer2D` is bound to. The layer reports it via
+	// `RenderLayer::getEffectiveViewProjection` (world VP for sprite layers,
+	// pixel-space ortho VP for raycast / screen-overlay layers). Project the
+	// two opposite NDC corners back into world space and take min/max — this
+	// is robust to the Vulkan-style Y-flip in our projections (where the
+	// "bottom-left" NDC corner actually unprojects to the world *top-left*),
+	// because picking the min Y / max Y of both corners always gives the
+	// AABB regardless of which way the projection flipped.
+	//
+	// HUDs that should follow the camera's screen frame (rather than world
+	// axes) belong on a `Renderer2DLayer` configured with `Space: Screen`,
+	// which binds a pixel-space ortho instead of the rotated scene camera —
+	// see the sample project's `ui` layer.
+	const math::mat4 invVP = math::inverse(iEffectiveViewProjection);
 	const math::vec4 cornerA4 = invVP * math::vec4{-1.f, -1.f, 0.f, 1.f};
 	const math::vec4 cornerB4 = invVP * math::vec4{1.f, 1.f, 0.f, 1.f};
-	// Perspective divide (for robustness, though w should be 1 for ortho).
 	const math::vec2 cornerA = {cornerA4.x() / cornerA4.w(), cornerA4.y() / cornerA4.w()};
 	const math::vec2 cornerB = {cornerB4.x() / cornerB4.w(), cornerB4.y() / cornerB4.w()};
 	const math::vec2 worldMin = {std::min(cornerA.x(), cornerB.x()), std::min(cornerA.y(), cornerB.y())};

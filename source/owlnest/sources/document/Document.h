@@ -20,7 +20,7 @@ class EditorLayer;
 enum struct DocumentType : uint8_t {
 	Scene,///< A `.owl` scene edited in the Viewport.
 	Code, ///< A text/source file edited with syntax highlighting.
-	NodeGraph,///< A `.owlflow` node-graph document (Scene Flow, future animation graphs, behavior trees...).
+	NodeGraph,///< A `.owlflow` node-graph document (Scene Flow, future animation graphs, behaviour trees...).
 	Animation,///< A `.owlanim` reusable spritesheet animation clip.
 };
 

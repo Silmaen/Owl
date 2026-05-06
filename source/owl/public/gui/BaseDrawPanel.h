@@ -9,7 +9,7 @@
 #pragma once
 #include "core/Timestep.h"
 #include "renderer/CameraOrtho.h"
-#include "renderer/Framebuffer.h"
+#include "renderer/gpu/Framebuffer.h"
 
 namespace owl::gui {
 
@@ -69,7 +69,7 @@ protected:
 	/// The unique panel name.
 	std::string m_panelName;
 	/// The frame buffer for this panel.
-	shared<renderer::Framebuffer> mp_framebuffer;
+	shared<renderer::gpu::Framebuffer> mp_framebuffer;
 	/// Size of the viewport.
 	math::vec2ui m_viewportSize = {0, 0};
 	/// The camera.

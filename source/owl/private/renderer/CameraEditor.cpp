@@ -10,8 +10,8 @@
 #include "renderer/CameraEditor.h"
 
 #include "input/Input.h"
-#include "renderer/RenderAPI.h"
-#include "renderer/RenderCommand.h"
+#include "renderer/gpu/RenderAPI.h"
+#include "renderer/gpu/RenderCommand.h"
 
 namespace owl::renderer {
 
@@ -65,7 +65,7 @@ auto CameraEditor::getOrientation() const -> math::quat { return {1.0, -m_pitch,
 void CameraEditor::updateProjection() {
 	m_aspectRatio = m_viewportSize.ratio();
 	m_projection = math::perspective(math::radians(m_fov), m_aspectRatio, m_nearClip, m_farClip);
-	if (RenderCommand::getApi() == RenderAPI::Type::Vulkan) {
+	if (gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::Vulkan) {
 		auto biasMatrix = math::identity<float, 4>();
 		biasMatrix(2, 2) = 0.5f;
 		biasMatrix(2, 3) = 0.5f;

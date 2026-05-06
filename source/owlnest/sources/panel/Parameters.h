@@ -63,7 +63,7 @@ private:
 	/// Local working copy of the parameters.
 	core::AppParams m_localParams;
 	/// Renderer value at the time the dialog was opened.
-	renderer::RenderAPI::Type m_originalRenderer{};
+	renderer::gpu::RenderAPI::Type m_originalRenderer{};
 	/// Sound value at the time the dialog was opened.
 	sound::SoundAPI::Type m_originalSound{};
 	/// Whether the restart warning should be displayed.

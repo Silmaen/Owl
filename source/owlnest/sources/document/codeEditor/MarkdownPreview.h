@@ -10,9 +10,9 @@
 
 #include "MarkdownDocument.h"
 
+#include <renderer/gpu/Texture.h>
 #include <core/Timestep.h>
 #include <math/vectors.h>
-#include <renderer/Texture.h>
 
 #include <filesystem>
 #include <functional>
@@ -121,7 +121,7 @@ private:
 
 	/// @brief Cached image texture for one image source (path or URL).
 	struct ImageEntry {
-		shared<renderer::Texture2D> texture;///< Loaded texture (null if load failed or remote).
+		shared<renderer::gpu::Texture2D> texture;///< Loaded texture (null if load failed or remote).
 		math::vec2ui size;                  ///< Pixel size of the loaded image.
 		bool isRemote = false;              ///< True if the source is an HTTP(S) URL.
 		bool failed = false;                ///< True if the most recent load attempt failed.

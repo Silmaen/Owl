@@ -9,10 +9,10 @@
 #pragma once
 
 #include "core/Core.h"
-#include "renderer/Texture.h"
+#include "renderer/gpu/Texture.h"
 
-#include <imgui.h>
 #include <filesystem>
+#include <imgui.h>
 
 namespace owl::gui::widgets {
 
@@ -70,7 +70,7 @@ OWL_API auto assetDropTarget(AssetKind iKind, std::filesystem::path& oRelativePa
  * @param[in] iSize Desired square size in pixels.
  * @return True when the underlying texture pointer changed this frame.
  */
-OWL_API auto textureField(const char* iLabel, shared<renderer::Texture2D>& ioTexture,
+OWL_API auto textureField(const char* iLabel, shared<renderer::gpu::Texture2D>& ioTexture,
 						  ImVec2 iSize = {100.f, 100.f}) -> bool;
 
 }// namespace owl::gui::widgets

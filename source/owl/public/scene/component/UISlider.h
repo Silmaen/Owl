@@ -25,11 +25,11 @@ struct OWL_API UISlider {
 	float minValue = 0.f;
 	/// Maximum value.
 	float maxValue = 1.f;
-	/// Track color.
+	/// Track colour.
 	math::vec4 trackColor{0.2f, 0.2f, 0.2f, 1.f};
-	/// Fill color.
+	/// Fill colour.
 	math::vec4 fillColor{0.4f, 0.6f, 1.f, 1.f};
-	/// Handle color.
+	/// Handle colour.
 	math::vec4 handleColor{1.f, 1.f, 1.f, 1.f};
 	/// Lua callback name (called when value changes).
 	std::string onValueChangedCallback;

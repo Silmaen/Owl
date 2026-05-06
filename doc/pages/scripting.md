@@ -320,7 +320,7 @@ Control trigger entities from Lua.
 Triggers are entities with a `Trigger` component. They detect overlap with the player
 and fire events. The engine provides 7 trigger types:
 
-| Type            | Behavior                                                        |
+| Type            | Behaviour                                                        |
 |-----------------|-----------------------------------------------------------------|
 | **Victory**     | Sets scene status to Victory (game won)                         |
 | **Death**       | Sets scene status to Death (game over)                          |
@@ -411,7 +411,7 @@ starting points for common game screens:
 | `pause_menu.owl` | Semi-transparent panel, Resume and Quit buttons |
 | `game_over.owl`  | Game Over text, Retry and Main Menu buttons     |
 
-Copy a template into your project's assets and customize the text, colors, and
+Copy a template into your project's assets and customize the text, colours, and
 Lua callbacks to match your game.
 
 ## Scene Lifecycle Integration

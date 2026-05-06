@@ -82,7 +82,7 @@ auto AnimationClip::deserializeFromString(const std::string_view iYaml) -> bool 
 		return false;
 	AnimationClip parsed;
 	if (root["texture"])
-		parsed.texture = renderer::Texture2D::createFromSerializedForDeserialize(root["texture"].as<std::string>());
+		parsed.texture = renderer::gpu::Texture2D::createFromSerializedForDeserialize(root["texture"].as<std::string>());
 	if (root["columns"])
 		parsed.columns = std::max(1u, root["columns"].as<uint32_t>());
 	if (root["rows"])

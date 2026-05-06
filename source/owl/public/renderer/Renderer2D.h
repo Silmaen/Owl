@@ -8,15 +8,34 @@
 
 #pragma once
 
-#include "Camera.h"
-#include "CameraEditor.h"
-#include "CameraOrtho.h"
-#include "Texture.h"
 #include "data/fonts/Font.h"
 #include "math/Transform.h"
+#include "renderer/Camera.h"
+#include "renderer/CameraEditor.h"
+#include "renderer/CameraOrtho.h"
+#include "renderer/gpu/Texture.h"
 #include "scene/component/SpriteRenderer.h"
 
 
+/**
+ * @brief Concrete draw-type renderers organized by family.
+ *
+ * Each sub-namespace holds the static facade and the matching `RenderLayer`
+ * adapter for one rendering family (2D batch, raycaster, future voxel, …).
+ * Splitting by family keeps backend-agnostic GPU primitives (`Buffer`,
+ * `Shader`, `Texture` in `owl::renderer::gpu`) separate from the
+ * higher-level draw orchestration.
+ */
+namespace owl::renderer::draw {}
+
+/**
+ * @brief 2D batch renderer family.
+ *
+ * Hosts `Renderer2D` (static facade for batched quads / circles / lines /
+ * text) and its `RenderLayer` adapter `Renderer2DLayer`, plus the data
+ * structs (`Quad2DData`, `CircleData`, `LineData`, `RectData`,
+ * `PolyLineData`, `StringData`) consumed by the draw API.
+ */
 namespace owl::renderer {
 
 /**
@@ -25,15 +44,15 @@ namespace owl::renderer {
 struct OWL_API Quad2DData {
 	/// Transformation of the square.
 	math::Transform transform;
-	/// Color to apply to the quad.
+	/// Colour to apply to the quad.
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
-	/// Eventually the texture of the quad (plain color if nullptr).
-	shared<Texture> texture = nullptr;
+	/// Eventually the texture of the quad (plain colour if nullptr).
+	shared<gpu::Texture> texture = nullptr;
 	/// Tiling factor of the texture (X and Y).
 	math::vec2 tilingFactor{1.f, 1.f};
 	/// Per-vertex texture coordinates. Defaults to full UV (0,0 to 1,1).
-	std::array<math::vec2, 4> textureCoords = {math::vec2{0.0f, 0.0f}, math::vec2{1.0f, 0.0f},
-											   math::vec2{1.0f, 1.0f}, math::vec2{0.0f, 1.0f}};
+	std::array<math::vec2, 4> textureCoords = {math::vec2{0.0f, 0.0f}, math::vec2{1.0f, 0.0f}, math::vec2{1.0f, 1.0f},
+											   math::vec2{0.0f, 1.0f}};
 	/// unique ID for the entity.
 	int entityId = -1;
 };
@@ -44,7 +63,7 @@ struct OWL_API Quad2DData {
 struct OWL_API CircleData {
 	/// Transformation of the circle.
 	math::Transform transform;
-	/// Color to apply to the circle.
+	/// Colour to apply to the circle.
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// Thickness of the line.
 	float thickness = 1.0f;
@@ -62,7 +81,7 @@ struct OWL_API LineData {
 	math::vec3 point1;
 	/// Ending point.
 	math::vec3 point2;
-	/// Color to apply to the line.
+	/// Colour to apply to the line.
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// unique ID for the entity.
 	int entityId = -1;
@@ -74,7 +93,7 @@ struct OWL_API LineData {
 struct OWL_API RectData {
 	/// Transformation of the rectangle.
 	math::Transform transform;
-	/// Color to apply to the rect.
+	/// Colour to apply to the rect.
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// unique ID for the entity.
 	int entityId = -1;
@@ -90,7 +109,7 @@ struct OWL_API PolyLineData {
 	std::vector<math::vec3> points;
 	/// If the ending point connected to starting point.
 	bool closed = false;
-	/// Color to apply to the rect.
+	/// Colour to apply to the rect.
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// unique ID for the entity.
 	int entityId = -1;
@@ -106,7 +125,7 @@ struct OWL_API StringData {
 	std::string text;
 	/// font to use (or default one)
 	shared<data::fonts::Font> font = nullptr;
-	/// Color to render.
+	/// Colour to render.
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// The kerning.
 	float kerning = 0.f;

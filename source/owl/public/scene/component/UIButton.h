@@ -23,18 +23,18 @@ struct OWL_API UIButton {
 	enum struct State : uint8_t { Normal, Hovered, Pressed, Disabled };
 	/// Current runtime state.
 	State state = State::Normal;
-	/// Color in normal state.
+	/// Colour in normal state.
 	math::vec4 normalColor{0.3f, 0.3f, 0.3f, 1.f};
-	/// Color when hovered.
+	/// Colour when hovered.
 	math::vec4 hoverColor{0.4f, 0.4f, 0.4f, 1.f};
-	/// Color when pressed.
+	/// Colour when pressed.
 	math::vec4 pressedColor{0.2f, 0.2f, 0.2f, 1.f};
-	/// Color when disabled.
+	/// Colour when disabled.
 	math::vec4 disabledColor{0.15f, 0.15f, 0.15f, 0.5f};
 	/// Name of the Lua callback function (called on click).
 	std::string onClickCallback;
 
-	/// @brief Get the current color based on state.
+	/// @brief Get the current colour based on state.
 	[[nodiscard]] auto getCurrentColor() const -> math::vec4 {
 		switch (state) {
 			case State::Normal:

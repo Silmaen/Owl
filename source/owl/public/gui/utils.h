@@ -9,8 +9,8 @@
 #pragma once
 
 #include "core/Core.h"
-#include "renderer/Framebuffer.h"
-#include "renderer/Texture.h"
+#include "renderer/gpu/Framebuffer.h"
+#include "renderer/gpu/Texture.h"
 #include <imgui.h>
 
 namespace owl::gui {
@@ -20,7 +20,7 @@ namespace owl::gui {
  * @param iTexture The texture to convert.
  * @return The Texture id for ImGui.
  */
-inline auto imTexture(const shared<renderer::Texture>& iTexture) -> std::optional<ImTextureID> {
+inline auto imTexture(const shared<renderer::gpu::Texture>& iTexture) -> std::optional<ImTextureID> {
 	if (iTexture == nullptr)
 		return std::nullopt;
 	auto texture = static_cast<ImTextureID>(iTexture->getRendererId());
@@ -35,7 +35,7 @@ inline auto imTexture(const shared<renderer::Texture>& iTexture) -> std::optiona
  * @param iIndex The attachment index.
  * @return The Texture id for ImGui.
  */
-inline auto imTexture(const shared<renderer::Framebuffer>& iFrameBuffer, const uint32_t iIndex)
+inline auto imTexture(const shared<renderer::gpu::Framebuffer>& iFrameBuffer, const uint32_t iIndex)
 		-> std::optional<ImTextureID> {
 	if (iFrameBuffer == nullptr)
 		return std::nullopt;

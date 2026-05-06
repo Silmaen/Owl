@@ -225,7 +225,7 @@ private:
 	/// Set by the ribbon's "Recent" button; drives `renderRecentProjectsPopup`.
 	bool m_openRecentProjectsPopup = false;
 	/// Documents that must actually be closed at the start of the next frame.  Deferring the
-	/// destruction avoids a use-after-free on the Viewport's Vulkan color-attachment: during the
+	/// destruction avoids a use-after-free on the Viewport's Vulkan colour-attachment: during the
 	/// current frame, ImGui's draw list still references the texture and only samples it at the
 	/// `UiLayer::end()` flush.
 	std::vector<core::UUID> m_deferredCloseIds;

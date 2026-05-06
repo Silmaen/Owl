@@ -7,11 +7,12 @@
  */
 #include "testHelper.h"
 
+#include "renderer/gpu/RenderCommand.h"
+#include "renderer/gpu/Texture.h"
 #include "core/task/Scheduler.h"
-#include "renderer/RenderCommand.h"
-#include "renderer/Texture.h"
 
 using namespace owl::renderer;
+using namespace owl::renderer::gpu;
 
 namespace {
 

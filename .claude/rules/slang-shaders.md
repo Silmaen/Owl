@@ -50,10 +50,10 @@ Always use `NonUniformResourceIndex()` for dynamic texture array access (require
 float4 texColor = u_Textures[NonUniformResourceIndex(texIndex)].Sample(u_Sampler, uv);
 ```
 
-## Color Space
+## Colour Space
 
 - Framebuffers use `VK_FORMAT_R8G8B8A8_UNORM` (not SRGB)
-- **No sRGB conversion in shaders** — colors are linear throughout
+- **No sRGB conversion in shaders** — colours are linear throughout
 - No `pow(color, 2.2)` or `pow(color, 1/2.2)` gamma correction
 
 ## Compilation Pipeline

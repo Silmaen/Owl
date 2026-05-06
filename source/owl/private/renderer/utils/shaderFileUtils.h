@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "renderer/Shader.h"
+#include "renderer/gpu/Shader.h"
 
 /**
  * @brief Namespace gathering utility functions used across different renderers.
@@ -20,17 +20,17 @@ auto getCacheDirectory(const std::string& iRenderer, const std::string& iRendere
 void createCacheDirectoryIfNeeded(const std::string& iRenderer, const std::string& iRendererApi);
 
 auto getShaderCachedPath(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
-						 const ShaderType& iType) -> std::filesystem::path;
+						 const gpu::ShaderType& iType) -> std::filesystem::path;
 
 auto getShaderPath(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
-				   const ShaderType& iType) -> std::filesystem::path;
+				   const gpu::ShaderType& iType) -> std::filesystem::path;
 
 auto getRelativeShaderPath(const std::string& iShaderName, const std::string& iRenderer,
-						   const std::string& iRendererApi, const ShaderType& iType) -> std::filesystem::path;
+						   const std::string& iRendererApi, const gpu::ShaderType& iType) -> std::filesystem::path;
 
-auto getExtension(const ShaderType& iStage) -> std::string;
+auto getExtension(const gpu::ShaderType& iStage) -> std::string;
 
-auto getCacheExtension(const ShaderType& iStage) -> std::string;
+auto getCacheExtension(const gpu::ShaderType& iStage) -> std::string;
 
 auto readCachedShader(const std::filesystem::path& iFile) -> std::vector<uint32_t>;
 
@@ -53,7 +53,7 @@ struct ShaderReflectionData {
 };
 
 OWL_API auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
-						   ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData;
+						   gpu::ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData;
 
 OWL_API auto computeShaderHash(const std::string& iSource) -> std::string;
 
@@ -62,7 +62,7 @@ auto isShaderCacheValid(const std::filesystem::path& iCachedPath, const std::str
 void writeShaderHash(const std::filesystem::path& iCachedPath, const std::string& iSource);
 
 struct SlangCompilationResult {
-	std::unordered_map<ShaderType, std::vector<uint32_t>> spirvData;
+	std::unordered_map<gpu::ShaderType, std::vector<uint32_t>> spirvData;
 	bool success = false;
 };
 

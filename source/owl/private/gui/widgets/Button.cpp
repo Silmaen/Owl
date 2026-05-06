@@ -7,11 +7,11 @@
  */
 #include "owlpch.h"
 
+#include "renderer/Renderer.h"
+#include "renderer/gpu/Texture.h"
 #include "gui/IconBank.h"
 #include "gui/utils.h"
 #include "gui/widgets/Button.h"
-#include "renderer/Renderer.h"
-#include "renderer/Texture.h"
 
 
 namespace owl::gui::widgets {

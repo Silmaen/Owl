@@ -11,7 +11,7 @@
 #include "core/Core.h"
 #include "event/Event.h"
 #include "math/vectors.h"
-#include "renderer/GraphContext.h"
+#include "renderer/gpu/GraphContext.h"
 
 #include <filesystem>
 #include <functional>
@@ -128,7 +128,7 @@ public:
 	 * @brief Access to the graph context.
 	 * @return Graph context.
 	 */
-	[[nodiscard]] auto getGraphContext() const -> renderer::GraphContext* { return m_context.get(); }
+	[[nodiscard]] auto getGraphContext() const -> renderer::gpu::GraphContext* { return m_context.get(); }
 
 	/**
 	 * @brief Set the window title.
@@ -174,7 +174,7 @@ public:
 
 protected:
 	/// Pointer to the Graphic Context.
-	uniq<renderer::GraphContext> m_context;
+	uniq<renderer::gpu::GraphContext> m_context;
 };
 
 }// namespace owl::window

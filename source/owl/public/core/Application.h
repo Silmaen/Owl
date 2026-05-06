@@ -15,7 +15,7 @@
 #include "gui/UiLayer.h"
 #include "io/pack/PackReader.h"
 #include "layer/LayerStack.h"
-#include "renderer/RenderAPI.h"
+#include "renderer/gpu/RenderAPI.h"
 #include "sound/SoundAPI.h"
 #include "task/Scheduler.h"
 #include "window/Window.h"
@@ -54,7 +54,7 @@ struct OWL_API AppParams {
 	/// Number of command line arguments.
 	int argCount{0};
 	/// Renderer's type.
-	renderer::RenderAPI::Type renderer{renderer::RenderAPI::Type::Vulkan};
+	renderer::gpu::RenderAPI::Type renderer{renderer::gpu::RenderAPI::Type::Vulkan};
 	/// sound system's type.
 	sound::SoundAPI::Type sound{sound::SoundAPI::Type::OpenAl};
 	/// If the application should use ImGui overlay.

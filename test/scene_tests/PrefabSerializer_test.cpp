@@ -271,7 +271,7 @@ TEST(PrefabSerializer, ApplyToInstanceRefreshesNonOverridden) {
 	// 3. Modify the instance's SpriteRenderer (simulate user change).
 	instance.getComponent<component::SpriteRenderer>().color = {0.f, 1.f, 0.f, 1.f};
 
-	// 4. Now update the prefab source: change transform and SpriteRenderer color.
+	// 4. Now update the prefab source: change transform and SpriteRenderer colour.
 	root.getComponent<component::Transform>().transform.translation() = {99.f, 0.f, 0.f};
 	root.getComponent<component::SpriteRenderer>().color = {0.f, 0.f, 1.f, 1.f};
 	PrefabSerializer::serialize(root, *srcScene, prefabFile, "ApplyPrefab");
@@ -320,7 +320,7 @@ TEST(PrefabSerializer, ApplyToInstancePreservesOverrides) {
 	const auto canonicalUuid = link.uuidMapping[0].canonicalUuid;
 	link.overriddenComponents.push_back(std::format("{}:SpriteRenderer", canonicalUuid));
 
-	// 4. Update the prefab (change both transform and sprite color).
+	// 4. Update the prefab (change both transform and sprite colour).
 	root.getComponent<component::Transform>().transform.translation() = {50.f, 0.f, 0.f};
 	root.getComponent<component::SpriteRenderer>().color = {0.f, 0.f, 1.f, 1.f};
 	PrefabSerializer::serialize(root, *srcScene, prefabFile, "OverridePrefab");
@@ -334,7 +334,7 @@ TEST(PrefabSerializer, ApplyToInstancePreservesOverrides) {
 
 	// Transform should be updated from prefab (not overridden).
 	EXPECT_NEAR(updated.getComponent<component::Transform>().transform.translation().x(), 50.f, 0.01f);
-	// SpriteRenderer should be preserved (overridden) — green color.
+	// SpriteRenderer should be preserved (overridden) — green colour.
 	EXPECT_NEAR(updated.getComponent<component::SpriteRenderer>().color.y(), 1.f, 0.01f);
 	EXPECT_NEAR(updated.getComponent<component::SpriteRenderer>().color.z(), 0.f, 0.01f);
 
@@ -406,7 +406,7 @@ TEST(PrefabSerializer, ApplyToInstanceMissingFile) {
 TEST(PrefabSerializer, RevertInstanceClearsOverrides) {
 	core::Log::init(core::Log::Level::Off);
 
-	// 1. Create and save prefab with a specific color.
+	// 1. Create and save prefab with a specific colour.
 	auto srcScene = mkShared<Scene>();
 	auto root = srcScene->createEntity("RevertRoot");
 	root.getComponent<component::Transform>().transform.translation() = {5.f, 5.f, 0.f};
