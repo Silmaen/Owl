@@ -317,7 +317,7 @@ void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 	if (!core::Application::instanced())
 		return;
 	for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
-		// Collect all shader files.
+		// Collect all shader files (slang sources + any pre-compiled .spv).
 		if (const auto shadersDir = assetsPath / "shaders"; exists(shadersDir)) {
 			for (const auto& item: std::filesystem::recursive_directory_iterator(shadersDir)) {
 				if (!item.is_regular_file())
@@ -327,16 +327,35 @@ void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 				}
 			}
 		}
-		// Collect the default font (OpenSans-Regular).
+		// Collect every font file shipped with the engine — the runner needs Roboto and
+		// JetBrainsMono for ImGui (UiLayer::resolveAssetFile reads them from disk), and
+		// FontLibrary may load any .ttf at runtime through `getFont(name)`.
 		if (const auto fontsDir = assetsPath / "fonts"; exists(fontsDir)) {
 			for (const auto& item: std::filesystem::recursive_directory_iterator(fontsDir)) {
-				if (!item.is_regular_file() || item.path().extension() != ".ttf")
+				if (!item.is_regular_file())
 					continue;
-				if (item.path().stem() == "OpenSans-Regular") {
-					if (const auto rel = relative(item.path(), assetsPath).string(); !hasAsset(ioAssets, rel)) {
-						ioAssets.push_back(
-								{.packPath = rel, .diskPath = item.path(), .assetType = AssetType::Font});
-					}
+				const auto ext = item.path().extension().string();
+				if (ext != ".ttf" && ext != ".otf")
+					continue;
+				if (const auto rel = relative(item.path(), assetsPath).string(); !hasAsset(ioAssets, rel)) {
+					ioAssets.push_back({.packPath = rel, .diskPath = item.path(), .assetType = AssetType::Font});
+				}
+			}
+		}
+		// Collect engine logos / default icons — the runner's window icon falls back to
+		// `icons/logo_owl_icon.png` when the project does not provide its own.
+		for (const auto* dirName: {"logo", "icons"}) {
+			const auto dir = assetsPath / dirName;
+			if (!exists(dir))
+				continue;
+			for (const auto& item: std::filesystem::recursive_directory_iterator(dir)) {
+				if (!item.is_regular_file())
+					continue;
+				const auto ext = item.path().extension().string();
+				if (ext != ".png" && ext != ".jpg" && ext != ".jpeg")
+					continue;
+				if (const auto rel = relative(item.path(), assetsPath).string(); !hasAsset(ioAssets, rel)) {
+					ioAssets.push_back({.packPath = rel, .diskPath = item.path(), .assetType = AssetType::Texture});
 				}
 			}
 		}

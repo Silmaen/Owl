@@ -142,6 +142,13 @@ auto PackReader::listEntries(const AssetType iType) const -> std::vector<std::st
 	return paths;
 }
 
+auto PackReader::entrySize(const std::string& iPath) const -> std::optional<uint64_t> {
+	const auto* entry = findEntry(iPath);
+	if (entry == nullptr)
+		return std::nullopt;
+	return entry->originalSize;
+}
+
 auto PackReader::findEntry(const std::string& iPath) const -> const TocEntry* {
 	const auto hash = hashPath(iPath);
 	const auto it = m_hashIndex.find(hash);
