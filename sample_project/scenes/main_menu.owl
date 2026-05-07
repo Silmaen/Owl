@@ -3,8 +3,6 @@ Entities:
   - Entity: 16128583253515789582
     Tag:
       tag: VersionLabel
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -13,6 +11,8 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
     UIRect:
       anchor: BottomRight
       pivotX: 1
@@ -31,8 +31,6 @@ Entities:
   - Entity: 6578682931661001362
     Tag:
       tag: PlayButton
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -41,6 +39,8 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
     UIButton:
       normalColor: [0.150000006, 0.349999994, 0.649999976, 1]
       hoverColor: [0.25, 0.449999988, 0.75, 1]
@@ -65,8 +65,6 @@ Entities:
   - Entity: 700000000000000003
     Tag:
       tag: ContinueButton
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -75,6 +73,8 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
     UIButton:
       normalColor: [0.100000001, 0.449999988, 0.300000012, 1]
       hoverColor: [0.150000006, 0.550000012, 0.400000006, 1]
@@ -99,8 +99,6 @@ Entities:
   - Entity: 4492837156209384711
     Tag:
       tag: SettingsButton
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -109,6 +107,8 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
     UIButton:
       normalColor: [0.300000012, 0.300000012, 0.300000012, 1]
       hoverColor: [0.400000006, 0.400000006, 0.400000006, 1]
@@ -133,8 +133,6 @@ Entities:
   - Entity: 5503948271630582844
     Tag:
       tag: QuitButton
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -143,6 +141,8 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
     UIButton:
       normalColor: [0.400000006, 0.150000006, 0.150000006, 1]
       hoverColor: [0.550000012, 0.200000003, 0.200000003, 1]
@@ -167,8 +167,6 @@ Entities:
   - Entity: 700000000000000001
     Tag:
       tag: LogoImage
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -177,6 +175,11 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
+    UIImage:
+      tint: [1, 1, 1, 1]
+      texture: nam:textures/logo_owl.png
     UIRect:
       anchor: TopCenter
       pivotX: 0.5
@@ -185,14 +188,9 @@ Entities:
       sizeY: 120
       offsetX: 0
       offsetY: -20
-    UIImage:
-      tint: [1, 1, 1, 1]
-      texture: "nam:textures/logo_owl.png"
   - Entity: 15166799538320535829
     Tag:
       tag: TitleText
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -201,6 +199,8 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
     UIRect:
       anchor: TopCenter
       pivotX: 0.5
@@ -219,8 +219,6 @@ Entities:
   - Entity: 15166799538320535830
     Tag:
       tag: SubtitleText
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -229,6 +227,8 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
     UIRect:
       anchor: TopCenter
       pivotX: 0.5
@@ -238,8 +238,8 @@ Entities:
       offsetX: 0
       offsetY: -210
     UIText:
-      text: "Démo des fonctionnalités v0.1.1 - caractères éàüÇ"
-      color: [0.85, 0.85, 0.85, 0.85]
+      text: Démo des fonctionnalités v0.1.1 - caractères éàüÇ
+      color: [0.850000024, 0.850000024, 0.850000024, 0.850000024]
       fontSize: 16
       alignment: Center
       kerning: 0
@@ -247,8 +247,6 @@ Entities:
   - Entity: 700000000000000002
     Tag:
       tag: ButtonPanel
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -257,6 +255,15 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
+    UIPanel:
+      backgroundColor: [0.100000001, 0.100000001, 0.150000006, 0.600000024]
+      borderColor: [0.400000006, 0.400000006, 0.5, 0.400000006]
+      borderWidth: 1
+      layout: None
+      spacing: 0
+      padding: 0
     UIRect:
       anchor: Center
       pivotX: 0.5
@@ -265,18 +272,9 @@ Entities:
       sizeY: 230
       offsetX: 0
       offsetY: -30
-    UIPanel:
-      backgroundColor: [0.100000001, 0.100000001, 0.150000006, 0.600000024]
-      borderColor: [0.400000006, 0.400000006, 0.5, 0.400000006]
-      borderWidth: 1
-      layout: None
-      spacing: 0
-      padding: 0
   - Entity: 700000000000000010
     Tag:
       tag: SaveInfoText
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -285,6 +283,8 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
     UIRect:
       anchor: BottomLeft
       pivotX: 0
@@ -303,8 +303,6 @@ Entities:
   - Entity: 700000000000000011
     Tag:
       tag: DeleteSaveButton
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -313,6 +311,8 @@ Entities:
       gameVisible: false
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
     UIButton:
       normalColor: [0.5, 0.150000006, 0.150000006, 0.800000012]
       hoverColor: [0.699999988, 0.200000003, 0.200000003, 1]
@@ -337,8 +337,6 @@ Entities:
   - Entity: 700000000000000012
     Tag:
       tag: MousePosLabel
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, -0, 0]
@@ -347,6 +345,8 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 827593881302582438
+    RendererTag:
+      Name: ui
     UIRect:
       anchor: TopLeft
       pivotX: 0
@@ -365,8 +365,6 @@ Entities:
   - Entity: 827593881302582438
     Tag:
       tag: MenuCanvas
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -380,6 +378,8 @@ Entities:
       {}
     LuaScript:
       scriptPath: scripts/main_menu.lua
+    RendererTag:
+      Name: ui
   - Entity: 3410311073425440625
     Tag:
       tag: DecoCircle2

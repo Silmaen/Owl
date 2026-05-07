@@ -3,17 +3,9 @@
 -- and the gamestate flag `houses_visited` is bumped (handled by level_complete).
 
 local door_index = 1  -- this is house #1 in the sample (only one for now)
-local pending_scene = nil
 
 function on_create()
     log.trace("HouseDoor #" .. door_index .. " ready")
-end
-
-function on_update(dt)
-    if pending_scene and not ui.is_transition_active() then
-        scene.load_scene(pending_scene)
-        pending_scene = nil
-    end
 end
 
 -- Bound by Trigger.Type=Interaction with CallbackName=on_door_interact.
@@ -33,6 +25,5 @@ function on_door_interact(player_id)
     end
     gamestate.set("active_door", door_index)
     log.info("Entering house — loading platformer scene")
-    pending_scene = "scenes/platformer_house.owl"
-    ui.transition_fade_out(0.3)
+    scene.transition_to("scenes/platformer_house.owl", "fade_out", 0.3)
 end

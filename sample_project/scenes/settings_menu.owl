@@ -1,235 +1,11 @@
 Scene: untitled
+EnabledRenderers:
+  - Name: raycast_world
+    Enabled: false
 Entities:
-  - Entity: 7823456789012345678
-    Tag:
-      tag: MainCamera
-    Transform:
-      translation: [0, 0, 5]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Camera:
-      camera:
-        projectionType: Orthographic
-        perspectiveFOV: 0.785398185
-        perspectiveNear: 0.00999999978
-        perspectiveFar: 1000
-        orthographicSize: 10
-        orthographicNear: -1
-        orthographicFar: 10
-      primary: true
-      fixedAspectRatio: false
-    Visibility:
-      gameVisible: true
-  - Entity: 8901234567890123456
-    Tag:
-      tag: Background
-    Transform:
-      translation: [0, 0, -1]
-      rotation: [0, 0, 0]
-      scale: [20, 15, 1]
-    SpriteRenderer:
-      color: [0.0599999987, 0.0599999987, 0.140000001, 1]
-    Visibility:
-      gameVisible: true
-  - Entity: 1234567890123456789
-    Tag:
-      tag: SettingsCanvas
-    RendererTag:
-      Name: ui
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Canvas:
-      space: ScreenOverlay
-      sortOrder: 0
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      {}
-    LuaScript:
-      scriptPath: scripts/settings_menu.lua
-  - Entity: 2345678901234567890
-    Tag:
-      tag: TitleText
-    RendererTag:
-      Name: ui
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 1234567890123456789
-    UIRect:
-      anchor: TopCenter
-      pivotX: 0.5
-      pivotY: 1
-      sizeX: 400
-      sizeY: 60
-      offsetX: 0
-      offsetY: -40
-    UIText:
-      text: Settings
-      color: [1, 0.850000024, 0.200000003, 1]
-      fontSize: 36
-      alignment: Left
-      kerning: 0
-      lineSpacing: 0
-  - Entity: 3456789012345678901
-    Tag:
-      tag: MasterVolLabel
-    RendererTag:
-      Name: ui
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 1234567890123456789
-    UIRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 300
-      sizeY: 30
-      offsetX: 0
-      offsetY: 100
-    UIText:
-      text: "Master Volume: 100%"
-      color: [0.899999976, 0.899999976, 0.899999976, 1]
-      fontSize: 18
-      alignment: Left
-      kerning: 0
-      lineSpacing: 0
-  - Entity: 4567890123456789012
-    Tag:
-      tag: MasterVolSlider
-    RendererTag:
-      Name: ui
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 1234567890123456789
-    UIRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 300
-      sizeY: 20
-      offsetX: 0
-      offsetY: 70
-    UISlider:
-      value: 1
-      minValue: 0
-      maxValue: 1
-      backgroundColor: [0.200000003, 0.200000003, 0.200000003, 1]
-      fillColor: [0.300000012, 0.600000024, 0.899999976, 1]
-      handleColor: [1, 1, 1, 1]
-      onValueChangedCallback: on_master_vol_changed
-  - Entity: 5678901234567890123
-    Tag:
-      tag: PlayerSpeedLabel
-    RendererTag:
-      Name: ui
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 1234567890123456789
-    UIRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 300
-      sizeY: 30
-      offsetX: 0
-      offsetY: 30
-    UIText:
-      text: "Player Speed: 8.0"
-      color: [0.899999976, 0.899999976, 0.899999976, 1]
-      fontSize: 18
-      alignment: Left
-      kerning: 0
-      lineSpacing: 0
-  - Entity: 6789012345678901234
-    Tag:
-      tag: PlayerSpeedSlider
-    RendererTag:
-      Name: ui
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 1234567890123456789
-    UIRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 300
-      sizeY: 20
-      offsetX: 0
-      offsetY: 0
-    UISlider:
-      value: 0.5
-      minValue: 0
-      maxValue: 1
-      backgroundColor: [0.200000003, 0.200000003, 0.200000003, 1]
-      fillColor: [0.200000003, 0.800000012, 0.300000012, 1]
-      handleColor: [1, 1, 1, 1]
-      onValueChangedCallback: on_speed_changed
-  - Entity: 800000000000000001
-    Tag:
-      tag: ResetButton
-    RendererTag:
-      Name: ui
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 1234567890123456789
-    UIButton:
-      normalColor: [0.449999988, 0.349999994, 0.100000001, 1]
-      hoverColor: [0.600000024, 0.449999988, 0.150000006, 1]
-      pressedColor: [0.349999994, 0.25, 0.0500000007, 1]
-      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
-      onClickCallback: on_reset_clicked
-    UIRect:
-      anchor: Center
-      pivotX: 0.5
-      pivotY: 0.5
-      sizeX: 200
-      sizeY: 40
-      offsetX: 0
-      offsetY: -60
-    UIText:
-      text: Reset Defaults
-      color: [1, 1, 1, 1]
-      fontSize: 18
-      alignment: Left
-      kerning: 0
-      lineSpacing: 0
   - Entity: 9012345678901234567
     Tag:
       tag: BackButton
-    RendererTag:
-      Name: ui
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -238,6 +14,8 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 1234567890123456789
+    RendererTag:
+      Name: ui
     UIButton:
       normalColor: [0.400000006, 0.200000003, 0.200000003, 1]
       hoverColor: [0.550000012, 0.300000012, 0.300000012, 1]
@@ -259,3 +37,228 @@ Entities:
       alignment: Left
       kerning: 0
       lineSpacing: 0
+  - Entity: 800000000000000001
+    Tag:
+      tag: ResetButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1234567890123456789
+    RendererTag:
+      Name: ui
+    UIButton:
+      normalColor: [0.449999988, 0.349999994, 0.100000001, 1]
+      hoverColor: [0.600000024, 0.449999988, 0.150000006, 1]
+      pressedColor: [0.349999994, 0.25, 0.0500000007, 1]
+      disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
+      onClickCallback: on_reset_clicked
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 200
+      sizeY: 40
+      offsetX: 0
+      offsetY: -60
+    UIText:
+      text: Reset Defaults
+      color: [1, 1, 1, 1]
+      fontSize: 18
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 6789012345678901234
+    Tag:
+      tag: PlayerSpeedSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1234567890123456789
+    RendererTag:
+      Name: ui
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 300
+      sizeY: 20
+      offsetX: 0
+      offsetY: 0
+    UISlider:
+      value: 0.5
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.200000003, 0.200000003, 0.200000003, 1]
+      fillColor: [0.200000003, 0.800000012, 0.300000012, 1]
+      handleColor: [1, 1, 1, 1]
+      onValueChangedCallback: on_speed_changed
+  - Entity: 5678901234567890123
+    Tag:
+      tag: PlayerSpeedLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1234567890123456789
+    RendererTag:
+      Name: ui
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 300
+      sizeY: 30
+      offsetX: 0
+      offsetY: 30
+    UIText:
+      text: "Player Speed: 8.0"
+      color: [0.899999976, 0.899999976, 0.899999976, 1]
+      fontSize: 18
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 4567890123456789012
+    Tag:
+      tag: MasterVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1234567890123456789
+    RendererTag:
+      Name: ui
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 300
+      sizeY: 20
+      offsetX: 0
+      offsetY: 70
+    UISlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.200000003, 0.200000003, 0.200000003, 1]
+      fillColor: [0.300000012, 0.600000024, 0.899999976, 1]
+      handleColor: [1, 1, 1, 1]
+      onValueChangedCallback: on_master_vol_changed
+  - Entity: 3456789012345678901
+    Tag:
+      tag: MasterVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1234567890123456789
+    RendererTag:
+      Name: ui
+    UIRect:
+      anchor: Center
+      pivotX: 0.5
+      pivotY: 0.5
+      sizeX: 300
+      sizeY: 30
+      offsetX: 0
+      offsetY: 100
+    UIText:
+      text: "Master Volume: 100%"
+      color: [0.899999976, 0.899999976, 0.899999976, 1]
+      fontSize: 18
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 2345678901234567890
+    Tag:
+      tag: TitleText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 1234567890123456789
+    RendererTag:
+      Name: ui
+    UIRect:
+      anchor: TopCenter
+      pivotX: 0.5
+      pivotY: 1
+      sizeX: 400
+      sizeY: 60
+      offsetX: 0
+      offsetY: -40
+    UIText:
+      text: Settings
+      color: [1, 0.850000024, 0.200000003, 1]
+      fontSize: 36
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 1234567890123456789
+    Tag:
+      tag: SettingsCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    LuaScript:
+      scriptPath: scripts/settings_menu.lua
+    RendererTag:
+      Name: ui
+  - Entity: 8901234567890123456
+    Tag:
+      tag: Background
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [20, 15, 1]
+    SpriteRenderer:
+      color: [0.0599999987, 0.0599999987, 0.140000001, 1]
+    Visibility:
+      gameVisible: true
+  - Entity: 7823456789012345678
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 10
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    Visibility:
+      gameVisible: true

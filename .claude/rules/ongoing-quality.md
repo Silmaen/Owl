@@ -53,6 +53,31 @@ Mirrors the *Ongoing across all releases* section of `doc/pages/roadmap.md`; kee
 - Update `CHANGELOG.md` (Unreleased section) and `doc/pages/roadmap.md` as features land —
   roadmap items flip Planned → In Progress → Done in the PR that performs the work
 
+## Editor Coverage for Authored Objects
+
+Any new object the engine lets the user **author** (component, asset, sub-object inside a
+component such as a tilemap cell or animation keyframe) ships with full editor support in
+Owl Nest **in the same PR** as the engine-side feature. "Editor support" is not optional —
+authoring through YAML or Lua only is treated as a regression of the same severity as a
+missing test or missing public-API doc.
+
+Minimum bar for every authored object:
+
+- **Selection** — clickable in the natural surface (viewport / hierarchy / asset browser
+  / tile grid / keyframe row) with visible highlight
+- **Inspection** — every property of the object readable in the inspector panel
+- **Editing** — every property modifiable from the inspector, undoable through the
+  existing `UndoCommand` pipeline (`ModifyEntityCommand` for components,
+  asset-equivalent for assets)
+- **Bulk operations** — when the object lives in a collection: at least *select-many* +
+  *move-group* + *delete-group*; resizing a parent (e.g. tilemap grid resize) preserves
+  / shifts contents instead of clipping
+- **Discoverability** — context-menu, drag-drop, or keyboard shortcut consistent with
+  comparable objects that already have one
+
+Pre-merge check: pick a fresh user, ask them to author the new object end-to-end with
+no docs and no shell access. If they can't, the PR isn't done.
+
 ## When Implementing a New Feature
 
 Checklist to run through before considering a feature complete:
@@ -66,3 +91,6 @@ Checklist to run through before considering a feature complete:
 7. `doc/pages/roadmap.md` entry flipped to `![Done][done]` if the feature was on the roadmap
 8. No new clang-tidy warnings introduced
 9. Performance of hot paths verified unchanged (or improved)
+10. **Editor support shipped** — selection, inspection, editing, bulk ops, discoverability
+    (see *Editor Coverage for Authored Objects* above) — for any object the user is
+    expected to author

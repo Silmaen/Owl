@@ -75,6 +75,6 @@ function on_update(dt)
         gamestate.set("raycast_return_x", px)
         gamestate.set("raycast_return_y", py)
         gamestate.set("raycast_return_z", rz)
-        scene.load_scene("scenes/world_map.owl")
+        scene.transition_to("scenes/world_map.owl", "wipe_right", 0.3)
     end
 end

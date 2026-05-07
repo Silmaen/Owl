@@ -543,6 +543,36 @@ Changes are applied on confirmation and saved to `owl_project.yml`. The window s
 are also written to `runner.yml` during game export (`Project > Pack Game`) and applied
 by the Runner at startup.
 
+### Scene Settings
+
+The Scene Settings panel is a dockable window opened via the ribbon
+(**Edit > Settings > Scene**). It edits the active scene's *global* settings —
+the `EnabledRenderers` block in the `.owl` file — without requiring the user
+to hand-edit YAML.
+
+The panel mirrors `renderer::EnabledRenderersConfig`:
+
+| Control                                  | Effect                                                                                         |
+|------------------------------------------|------------------------------------------------------------------------------------------------|
+| Layer row (per scene-listed entry)       | Drag-handle text identifying the layer + bracketed type (`[Renderer2D]`, `[RendererRaycast]`). |
+| `Enabled` checkbox                       | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.  |
+| Up / Down arrows                         | Reorder the scene listing. Listed layers run in this order; unlisted layers append in project order. |
+| `Detach` button                          | Remove the scene-level entry — the layer reverts to the project's default config.             |
+| `Overrides` collapsible                  | Per-layer-type override editor for known keys (see below).                                    |
+| Add layer slot (`+` next to a name)      | Add a project layer absent from the scene listing — equivalent to declaring a new override.   |
+
+The `Overrides` collapsible exposes typed widgets per layer type:
+
+- **`Renderer2D`** — `Space` combo (`World` for sprite layers, `Screen` for
+  HUD / pixel-overlay layers immune to camera rotation).
+- **`RendererRaycast`** — `Fov`, `MaxDistance`, `NumRays` numeric drags;
+  `CeilingColor` / `FloorColor` colour pickers.
+
+Every change pushes a `ModifyEnabledRenderersCommand` onto the active scene's
+undo manager and rebuilds the live `RenderStack` so the visual effect is
+immediate. Successive edits within 1 s coalesce into a single undo step
+(matches the inspector's slider-coalescing behaviour).
+
 ## Editor State Machine
 
 The editor maintains a `State` enum (`Edit`, `Play`, `Pause`) that governs which

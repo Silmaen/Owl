@@ -232,7 +232,39 @@ Supported component names for `has_component`: `"Transform"`, `"PhysicBody"`,
 | `ui.set_button_enabled(entity_id, bool)` | Enable/disable a UIButton            |
 | `ui.transition_fade_in(duration)`        | Start fade-in transition (seconds)   |
 | `ui.transition_fade_out(duration)`       | Start fade-out transition (seconds)  |
+| `ui.transition_play(type, duration, …)`  | Start a transition with custom kind / colour |
 | `ui.is_transition_active()`              | Check if a transition is in progress |
+
+#### Transition kinds
+
+`ui.transition_play(type, duration, [r, g, b, a])` accepts:
+
+| `type`         | Effect                                                              |
+|----------------|---------------------------------------------------------------------|
+| `"fade"`       | Cross-fade *to* the configured colour (alias of `"fade_in"`).       |
+| `"fade_in"`    | Cross-fade from opaque colour to transparent.                       |
+| `"fade_out"`   | Cross-fade from transparent to opaque colour.                       |
+| `"wipe_left"`  | Coloured bar slides off-screen towards the left.                    |
+| `"wipe_right"` | Bar slides off-screen towards the right.                            |
+| `"wipe_up"`    | Bar slides off-screen towards the top.                              |
+| `"wipe_down"`  | Bar slides off-screen towards the bottom.                           |
+
+The colour arguments are optional — passing only `type` and `duration`
+defaults to opaque black, matching the legacy fade calls. With three colour
+arguments, alpha defaults to `1`.
+
+```lua
+-- Cinematic exit before loading the raycast level: 0.3 s wipe-left in black.
+pending_scene = "scenes/raycast_demo.owl"
+ui.transition_play("wipe_left", 0.3)
+
+-- 0.5 s magenta fade-out for a dramatic boss reveal.
+ui.transition_play("fade_out", 0.5, 0.8, 0.1, 0.6, 1.0)
+```
+
+`ui.transition_fade_in(d)` and `ui.transition_fade_out(d)` remain available
+as zero-allocation shorthands for scripts written before the wipe variants
+existed.
 
 ### `gamestate`
 

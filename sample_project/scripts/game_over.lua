@@ -1,8 +1,5 @@
 -- Game Over screen controller
--- Demonstrates: gamestate read/clear, scene.load_scene, ui.set_text,
---               ui.transition_fade_in/out
-
-local pending_scene = nil
+-- Demonstrates: gamestate read/clear, scene.transition_to, ui.set_text.
 
 function on_create()
     log.info("Game Over!")
@@ -16,24 +13,13 @@ function on_create()
     end
 end
 
-function on_update(dt)
-    if pending_scene then
-        if not ui.is_transition_active() then
-            scene.load_scene(pending_scene)
-            pending_scene = nil
-        end
-    end
-end
-
 function on_retry_clicked()
     -- Clear state and restart from the world map.
     gamestate.clear()
-    pending_scene = "scenes/world_map.owl"
-    ui.transition_fade_out(0.3)
+    scene.transition_to("scenes/world_map.owl", "fade_out", 0.3)
 end
 
 function on_menu_clicked()
     gamestate.clear()
-    pending_scene = "scenes/main_menu.owl"
-    ui.transition_fade_out(0.3)
+    scene.transition_to("scenes/main_menu.owl", "fade_out", 0.3)
 end

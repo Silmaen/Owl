@@ -37,6 +37,25 @@ auto findEntity(lua_State* iState) -> std::optional<scene::Entity> {
 	return std::nullopt;
 }
 
+/// Helper: map a transition-type string passed from Lua to the engine enum.
+/// Centralised so `ui.transition_play` and `scene.transition_to` parse the
+/// same vocabulary (`"fade"`, `"fade_in"`, `"fade_out"`, `"wipe_*"`).
+auto parseTransitionType(const std::string_view iName) -> scene::ScreenTransition::Type {
+	if (iName == "fade_in" || iName == "fade")
+		return scene::ScreenTransition::Type::FadeIn;
+	if (iName == "fade_out")
+		return scene::ScreenTransition::Type::FadeOut;
+	if (iName == "wipe_left")
+		return scene::ScreenTransition::Type::WipeLeft;
+	if (iName == "wipe_right")
+		return scene::ScreenTransition::Type::WipeRight;
+	if (iName == "wipe_up")
+		return scene::ScreenTransition::Type::WipeUp;
+	if (iName == "wipe_down")
+		return scene::ScreenTransition::Type::WipeDown;
+	return scene::ScreenTransition::Type::None;
+}
+
 // ============================================================
 // transform table
 // ============================================================
@@ -295,6 +314,50 @@ auto luaSceneLoadScene(lua_State* iState) -> int {
 	return 0;
 }
 
+auto luaSceneTransitionTo(lua_State* iState) -> int {
+	const char* path = luaL_checkstring(iState, 1);
+	scene::ScreenTransition::SceneLoadRequest req;
+	req.scenePath = path;
+	const int top = lua_gettop(iState);
+	std::string typeName{"fade"};
+	if (top >= 2) {
+		// Argument 2 may be either a type-name string or the duration when the
+		// caller skips the type. Support both for ergonomic Lua.
+		if (lua_isstring(iState, 2) != 0)
+			typeName = lua_tostring(iState, 2);
+		else if (lua_isnumber(iState, 2) != 0)
+			req.outDuration = req.inDuration = static_cast<float>(lua_tonumber(iState, 2));
+	}
+	if (top >= 3 && lua_isnumber(iState, 3) != 0) {
+		req.outDuration = req.inDuration = static_cast<float>(lua_tonumber(iState, 3));
+	}
+	req.outType = parseTransitionType(typeName);
+	if (req.outType == scene::ScreenTransition::Type::None)
+		req.outType = scene::ScreenTransition::Type::FadeOut;
+	// In-anim mirrors the out-anim by default — fades pair with their reverse,
+	// wipes pair with the matching direction (slides off, slides on).
+	switch (req.outType) {
+		case scene::ScreenTransition::Type::FadeOut:
+			req.inType = scene::ScreenTransition::Type::FadeIn;
+			break;
+		case scene::ScreenTransition::Type::FadeIn:
+			req.inType = scene::ScreenTransition::Type::FadeOut;
+			break;
+		case scene::ScreenTransition::Type::WipeLeft:
+		case scene::ScreenTransition::Type::WipeRight:
+		case scene::ScreenTransition::Type::WipeUp:
+		case scene::ScreenTransition::Type::WipeDown:
+			// Same direction on both ends — bar slides off, slides back on.
+			req.inType = req.outType;
+			break;
+		case scene::ScreenTransition::Type::None:
+			req.inType = scene::ScreenTransition::Type::FadeIn;
+			break;
+	}
+	scene::ScreenTransition::requestSceneLoad(req);
+	return 0;
+}
+
 auto luaSceneQuit([[maybe_unused]] lua_State* iState) -> int {
 	auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene != nullptr)
@@ -463,6 +526,29 @@ auto luaUiTransitionFadeOut(lua_State* iState) -> int {
 auto luaUiIsTransitionActive(lua_State* iState) -> int {
 	lua_pushboolean(iState, scene::ScreenTransition::isActive() ? 1 : 0);
 	return 1;
+}
+
+auto luaUiTransitionPlay(lua_State* iState) -> int {
+	const std::string_view typeName = luaL_checkstring(iState, 1);
+	const auto duration = static_cast<float>(luaL_checknumber(iState, 2));
+	math::vec4 color{0.f, 0.f, 0.f, 1.f};
+	const int top = lua_gettop(iState);
+	if (top >= 6) {
+		color = math::vec4{
+				static_cast<float>(luaL_checknumber(iState, 3)), static_cast<float>(luaL_checknumber(iState, 4)),
+				static_cast<float>(luaL_checknumber(iState, 5)), static_cast<float>(luaL_checknumber(iState, 6))};
+	} else if (top >= 5) {
+		color = math::vec4{
+				static_cast<float>(luaL_checknumber(iState, 3)), static_cast<float>(luaL_checknumber(iState, 4)),
+				static_cast<float>(luaL_checknumber(iState, 5)), 1.f};
+	}
+	const auto type = parseTransitionType(typeName);
+	if (type == scene::ScreenTransition::Type::None) {
+		OWL_CORE_WARN("Lua ui.transition_play: unknown transition type '{}'.", typeName)
+		return 0;
+	}
+	scene::ScreenTransition::play(type, duration, color);
+	return 0;
 }
 
 // ============================================================
@@ -636,6 +722,7 @@ void registerBindings(lua_State* iState) {
 		{"create_entity", luaSceneCreateEntity},
 		{"destroy_entity", luaSceneDestroyEntity},
 		{"load_scene", luaSceneLoadScene},
+		{"transition_to", luaSceneTransitionTo},
 		{"quit", luaSceneQuit},
 		{nullptr, nullptr}
 	};
@@ -665,6 +752,7 @@ void registerBindings(lua_State* iState) {
 		{"set_button_enabled", luaUiSetButtonEnabled},
 		{"transition_fade_in", luaUiTransitionFadeIn},
 		{"transition_fade_out", luaUiTransitionFadeOut},
+		{"transition_play", luaUiTransitionPlay},
 		{"is_transition_active", luaUiIsTransitionActive},
 		{nullptr, nullptr}
 	};

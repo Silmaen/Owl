@@ -179,6 +179,18 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 			// Handle quit request from Lua (scene.quit()) → request stop.
 			if (activeScene->quitRequested)
 				mp_document->requestStop();
+			// `scene.transition_to(...)` from Lua schedules a load through the
+			// engine-side `ScreenTransition` orchestrator; once the out-anim
+			// completes, the path lands here as a teleport request, the
+			// existing handler does the swap, and the Loading-phase screen
+			// stays up until `minHoldDuration` elapses.
+			if (auto pending = scene::ScreenTransition::pendingLoadPath(); pending) {
+				activeScene->teleportRequest.pending = true;
+				activeScene->teleportRequest.levelName = *pending;
+				activeScene->teleportRequest.targetName.clear();
+				activeScene->teleportRequest.initialVelocity = {0.f, 0.f};
+				activeScene->teleportRequest.rotationDelta = 0.f;
+			}
 			mp_document->handleTeleportRequest(getSize());
 			mp_document->handleSaveLoadRequest(getSize());
 			break;

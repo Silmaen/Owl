@@ -234,7 +234,7 @@ TEST_F(PackWriterReaderTest, entry_size_reports_uncompressed) {
 	const auto packPath = m_tempDir / "test_size.owlpack";
 
 	// 8 KiB of repeated bytes — easy to compress, so dataSize != originalSize on disk.
-	const std::vector<uint8_t> payload(8192, '\xCD');
+	const std::vector<uint8_t> payload(8192, static_cast<uint8_t>(0xCD));
 
 	PackWriter writer;
 	writer.addData(payload, "blob.bin", AssetType::Other);

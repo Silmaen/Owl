@@ -90,6 +90,17 @@ public:
 	/// @brief Apply a pending teleport velocity on the player spawned in the new scene.
 	void applyPendingTeleportVelocity();
 
+	/// @brief Whether the active scene has been replaced (teleport / save-load) since
+	/// the last `consumeSceneSwapped`. Used by `EditorLayer` to rebuild the
+	/// renderer stack from the new scene's `EnabledRenderers` config — without
+	/// this poll, an in-Play scene swap inherits the previous scene's stack
+	/// and per-scene overrides silently stop applying.
+	[[nodiscard]] auto consumeSceneSwapped() -> bool {
+		const bool wasSwapped = m_sceneSwapped;
+		m_sceneSwapped = false;
+		return wasSwapped;
+	}
+
 	/// @brief Access this document's viewport panel (renders into its own framebuffer + ImGui tab).
 	[[nodiscard]] auto getViewport() -> panel::Viewport& { return m_viewport; }
 	[[nodiscard]] auto getViewport() const -> const panel::Viewport& { return m_viewport; }
@@ -106,6 +117,10 @@ private:
 	bool m_pendingTeleportVelocity = false;
 	math::vec2f m_teleportVelocity = {0.f, 0.f};
 	std::string m_teleportTargetName;
+	/// Set whenever the active scene is replaced by a teleport / save-load.
+	/// Cleared by `consumeSceneSwapped`; lets the editor rebuild renderer
+	/// state on the new scene without having to inspect every swap site.
+	bool m_sceneSwapped = false;
 
 	SceneUndoManager m_undoManager;
 	EditorLayer* mp_editor = nullptr;

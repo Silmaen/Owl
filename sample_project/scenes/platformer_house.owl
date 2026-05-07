@@ -1,242 +1,446 @@
 Scene: untitled
+EnabledRenderers:
+  - Name: raycast_world
+    Enabled: false
 Entities:
-  - Entity: 3000000000000000063
+  - Entity: 3000000000000000001
     Tag:
-      tag: HudHint
-    RendererTag:
-      Name: ui
+      tag: MainCamera
     Transform:
-      translation: [0, 0, 0]
+      translation: [4.5, -14.3999996, 5]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 6
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
     Visibility:
       gameVisible: true
-    Hierarchy:
-      parentId: 3000000000000000060
-    UIRect:
-      anchor: TopLeft
-      pivotX: 0
-      pivotY: 1
-      sizeX: 460
-      sizeY: 20
-      offsetX: 20
-      offsetY: -20
-    UIText:
-      text: A/D = move (only on ground), W/Space = jump, ESC = pause
-      color: [1, 1, 1, 0.850000024]
-      fontSize: 14
-      alignment: Left
-      kerning: 0
-      lineSpacing: 0
-  - Entity: 3000000000000000062
+    SoundListener:
+      primary: true
+  - Entity: 3000000000000000002
     Tag:
-      tag: ScoreText
-    RendererTag:
-      Name: ui
+      tag: SkyBackground
     Transform:
-      translation: [0, 0, 0]
+      translation: [30, -8, -5]
+      rotation: [0, 0, 0]
+      scale: [80, 30, 1]
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.100000001, 0.0799999982, 0.119999997, 1]
+      topColor: [0.150000006, 0.100000001, 0.180000007, 1]
+    Visibility:
+      gameVisible: true
+  - Entity: 3000000000000000010
+    Tag:
+      tag: PlatformerTilemap
+    Transform:
+      translation: [30, -8, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
+    Tilemap:
+      tilesetPath: tilesets/world_platform.owltileset
+      width: 60
+      height: 16
+      cellSize: 1
+      layers:
+        - name: world
+          tiles: 2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,0,0,0,0,0,0,0,0,0,0,6,6,6,6,6,0,0,0,0,0,0,0,0,0,0,0,0,0,6,6,6,6,6,0,0,0,0,0,0,0,0,0,0,0,0,0,6,6,6,6,0,0,0,0,0,0,0,0,0,0
     Visibility:
       gameVisible: true
-    Hierarchy:
-      parentId: 3000000000000000060
-    UIRect:
-      anchor: TopRight
-      pivotX: 1
-      pivotY: 1
-      sizeX: 200
-      sizeY: 26
-      offsetX: -20
-      offsetY: -50
-    UIText:
-      text: "Score: 0"
-      color: [1, 0.949999988, 0.550000012, 1]
-      fontSize: 18
-      alignment: Right
-      kerning: 0
-      lineSpacing: 0
-  - Entity: 3000000000000000061
+  - Entity: 3000000000000000020
     Tag:
-      tag: HealthBar
-    RendererTag:
-      Name: ui
+      tag: Player
     Transform:
-      translation: [0, 0, 0]
+      translation: [4.5, -14.3999996, 0.5]
       rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3000000000000000060
-    UIProgressBar:
-      value: 1
-      backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
-      fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
-    UIRect:
-      anchor: TopRight
-      pivotX: 1
-      pivotY: 1
-      sizeX: 200
-      sizeY: 22
-      offsetX: -20
-      offsetY: -20
-  - Entity: 3000000000000000060
-    Tag:
-      tag: HUDCanvas
-    RendererTag:
-      Name: ui
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Canvas:
-      space: ScreenOverlay
-      sortOrder: 0
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      {}
-    LuaScript:
-      scriptPath: scripts/hud.lua
-  - Entity: 3000000000000000050
-    Tag:
-      tag: VictoryZone
-    Transform:
-      translation: [57, -8.76983643, 0.400000006]
-      rotation: [0, 0, 0]
-      scale: [2, 2, 1]
+      scale: [1.20000005, 1.20000005, 1]
     SpriteRenderer:
-      color: [1, 0.850000024, 0.200000003, 1]
+      color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: nam:textures/portal.png
-    Trigger:
-      Type: LuaCallback
-      CallbackName: on_level_complete
+      texture: nam:textures/player.png
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.899999976, 0.899999976, 1]
+      density: 1
+      restitution: 0
+      friction: 0.800000012
+    Player:
+      primary: true
+      linearImpulse: 0
+      jumpImpulse: 0
+      canJump: true
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/level_complete.lua
-  - Entity: 300000000000000408
+      scriptPath: scripts/platformer_player.lua
+      properties:
+        - name: speed
+          type: float
+          value: 5.5
+  - Entity: 300000000000000031
     Tag:
-      tag: Coin8
+      tag: Lava1
     Transform:
-      translation: [54.8457909, -9.27446842, -6.10351562e-05]
+      translation: [12.5943098, -15.5993776, 0.300061047]
       rotation: [0, 0, 0]
-      scale: [0.699999988, 0.699999988, 1]
-    AnimatedSpriteRenderer:
+      scale: [5, 0.699999988, 1]
+    SpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/animated_coin.png
-      columns: 6
-      rows: 3
-      firstFrame: 0
-      lastFrame: 17
-      frameDuration: 0.0799999982
-      loop: true
+      tilingFactor: [5, 1]
+      texture: nam:textures/lava_tile.png
     Trigger:
-      Type: LuaCallback
-      CallbackName: on_coin_collected
+      Type: Death
+      LevelName: scenes/game_over.owl
     Visibility:
       gameVisible: true
-    LuaScript:
-      scriptPath: scripts/coin.lua
-  - Entity: 300000000000000407
+  - Entity: 300000000000000032
     Tag:
-      tag: Coin7
+      tag: Lava2
     Transform:
-      translation: [51.5, -13.5, 0]
+      translation: [30.473629, -15.6233025, 0.300000012]
       rotation: [0, 0, 0]
-      scale: [0.699999988, 0.699999988, 1]
-    AnimatedSpriteRenderer:
+      scale: [5, 0.699999988, 0.800000012]
+    SpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/animated_coin.png
-      columns: 6
-      rows: 3
-      firstFrame: 0
-      lastFrame: 17
-      frameDuration: 0.0799999982
-      loop: true
+      tilingFactor: [5, 1]
+      texture: nam:textures/lava_tile.png
     Trigger:
-      Type: LuaCallback
-      CallbackName: on_coin_collected
+      Type: Death
+      LevelName: scenes/game_over.owl
     Visibility:
       gameVisible: true
-    LuaScript:
-      scriptPath: scripts/coin.lua
-  - Entity: 300000000000000406
+  - Entity: 300000000000000033
     Tag:
-      tag: Coin6
+      tag: Lava3
     Transform:
-      translation: [35.5, -13.5, 0]
+      translation: [47.9249878, -15.5745239, 0.300000012]
       rotation: [0, 0, 0]
-      scale: [0.699999988, 0.699999988, 1]
-    AnimatedSpriteRenderer:
+      scale: [4, 0.699999988, 1]
+    SpriteRenderer:
       color: [1, 1, 1, 1]
-      texture: nam:textures/animated_coin.png
-      columns: 6
-      rows: 3
-      firstFrame: 0
-      lastFrame: 17
-      frameDuration: 0.0799999982
-      loop: true
+      tilingFactor: [4, 1]
+      texture: nam:textures/lava_tile.png
     Trigger:
-      Type: LuaCallback
-      CallbackName: on_coin_collected
+      Type: Death
+      LevelName: scenes/game_over.owl
     Visibility:
       gameVisible: true
-    LuaScript:
-      scriptPath: scripts/coin.lua
-  - Entity: 300000000000000405
+  - Entity: 300000000000000101
     Tag:
-      tag: Coin5
+      tag: Platform1
     Transform:
-      translation: [31.9314194, -10.4487114, 0]
+      translation: [12.5, -13.5, 0]
       rotation: [0, 0, 0]
-      scale: [0.699999988, 0.699999988, 1]
-    AnimatedSpriteRenderer:
-      color: [1, 1, 1, 1]
-      texture: nam:textures/animated_coin.png
-      columns: 6
-      rows: 3
-      firstFrame: 0
-      lastFrame: 17
-      frameDuration: 0.0799999982
-      loop: true
-    Trigger:
-      Type: LuaCallback
-      CallbackName: on_coin_collected
+      scale: [3, 0.699999988, 1]
+    SpriteRenderer:
+      color: [0.850000024, 0.649999976, 0.400000006, 1]
+      tilingFactor: [3, 1]
+      texture: nam:textures/platform.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0.699999988
     Visibility:
       gameVisible: true
-    LuaScript:
-      scriptPath: scripts/coin.lua
-  - Entity: 300000000000000404
+  - Entity: 300000000000000102
     Tag:
-      tag: Coin4
+      tag: Platform2
     Transform:
-      translation: [26.7443371, -12.4846535, 0]
+      translation: [21.5, -12.5, 0]
       rotation: [0, 0, 0]
-      scale: [0.699999988, 0.699999988, 1]
-    AnimatedSpriteRenderer:
-      color: [1, 1, 1, 1]
-      texture: nam:textures/animated_coin.png
-      columns: 6
-      rows: 3
-      firstFrame: 0
-      lastFrame: 17
-      frameDuration: 0.0799999982
-      loop: true
-    Trigger:
-      Type: LuaCallback
-      CallbackName: on_coin_collected
+      scale: [3, 0.699999988, 1]
+    SpriteRenderer:
+      color: [0.850000024, 0.649999976, 0.400000006, 1]
+      tilingFactor: [3, 1]
+      texture: nam:textures/platform.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0.699999988
+    Visibility:
+      gameVisible: true
+  - Entity: 300000000000000103
+    Tag:
+      tag: Platform3
+    Transform:
+      translation: [27.5, -13.5, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 0.699999988, 1]
+    SpriteRenderer:
+      color: [0.850000024, 0.649999976, 0.400000006, 1]
+      tilingFactor: [3, 1]
+      texture: nam:textures/platform.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0.699999988
+    Visibility:
+      gameVisible: true
+  - Entity: 300000000000000104
+    Tag:
+      tag: Platform4
+    Transform:
+      translation: [31.5, -11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 0.699999988, 1]
+    SpriteRenderer:
+      color: [0.850000024, 0.649999976, 0.400000006, 1]
+      tilingFactor: [3, 1]
+      texture: nam:textures/platform.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0.699999988
+    Visibility:
+      gameVisible: true
+  - Entity: 300000000000000105
+    Tag:
+      tag: Platform5
+    Transform:
+      translation: [35.5, -12.5, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 0.699999988, 1]
+    SpriteRenderer:
+      color: [0.850000024, 0.649999976, 0.400000006, 1]
+      tilingFactor: [3, 1]
+      texture: nam:textures/platform.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0.699999988
+    Visibility:
+      gameVisible: true
+  - Entity: 300000000000000106
+    Tag:
+      tag: Platform6
+    Transform:
+      translation: [46.5, -13.5, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 0.699999988, 1]
+    SpriteRenderer:
+      color: [0.850000024, 0.649999976, 0.400000006, 1]
+      tilingFactor: [3, 1]
+      texture: nam:textures/platform.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0.699999988
+    Visibility:
+      gameVisible: true
+  - Entity: 300000000000000107
+    Tag:
+      tag: Platform7
+    Transform:
+      translation: [51.5, -12.5, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 0.699999988, 1]
+    SpriteRenderer:
+      color: [0.850000024, 0.649999976, 0.400000006, 1]
+      tilingFactor: [3, 1]
+      texture: nam:textures/platform.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0.699999988
+    Visibility:
+      gameVisible: true
+  - Entity: 300000000000000108
+    Tag:
+      tag: Platform8
+    Transform:
+      translation: [56, -10.0592957, 0]
+      rotation: [0, 0, 0]
+      scale: [4, 0.699999988, 1]
+    SpriteRenderer:
+      color: [0.850000024, 0.649999976, 0.400000006, 1]
+      tilingFactor: [4, 1]
+      texture: nam:textures/platform.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0.699999988
+    Visibility:
+      gameVisible: true
+  - Entity: 300000000000000201
+    Tag:
+      tag: MovingPlatformH1
+    Transform:
+      translation: [16.5, -10.5, 0]
+      rotation: [0, 0, 0]
+      scale: [2, 0.699999988, 1]
+    SpriteRenderer:
+      color: [0.449999988, 0.850000024, 0.949999988, 1]
+      tilingFactor: [2, 1]
+      texture: nam:textures/platform.png
+    PhysicBody:
+      type: Kinematic
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0.899999976
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/coin.lua
-  - Entity: 300000000000000403
+      scriptPath: scripts/moving_platform_h.lua
+      properties:
+        - name: speed
+          type: float
+          value: 1.79999995
+        - name: distance
+          type: float
+          value: 4
+  - Entity: 300000000000000202
     Tag:
-      tag: Coin3
+      tag: MovingPlatformV1
     Transform:
-      translation: [16.7170391, -9.44870949, 0]
+      translation: [38.5, -11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [2, 0.699999988, 1]
+    SpriteRenderer:
+      color: [0.449999988, 0.850000024, 0.949999988, 1]
+      tilingFactor: [2, 1]
+      texture: nam:textures/platform.png
+    PhysicBody:
+      type: Kinematic
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0.899999976
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/moving_platform_v.lua
+      properties:
+        - name: speed
+          type: float
+          value: 1.5
+        - name: distance
+          type: float
+          value: 3
+  - Entity: 300000000000000203
+    Tag:
+      tag: MovingPlatformH2
+    Transform:
+      translation: [41.5, -9.5, 0]
+      rotation: [0, 0, 0]
+      scale: [2, 0.699999988, 1]
+    SpriteRenderer:
+      color: [0.449999988, 0.850000024, 0.949999988, 1]
+      tilingFactor: [2, 1]
+      texture: nam:textures/platform.png
+    PhysicBody:
+      type: Kinematic
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 0
+      restitution: 0
+      friction: 0.899999976
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/moving_platform_h.lua
+      properties:
+        - name: speed
+          type: float
+          value: 1.60000002
+        - name: distance
+          type: float
+          value: 4
+  - Entity: 300000000000000301
+    Tag:
+      tag: Spike1
+    Transform:
+      translation: [7.5, -14.5, 0.400000006]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/hazard.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_spike_hit
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/spike_damage.lua
+  - Entity: 300000000000000302
+    Tag:
+      tag: Spike2
+    Transform:
+      translation: [24.5, -14.5, 0.400000006]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/hazard.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_spike_hit
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/spike_damage.lua
+  - Entity: 300000000000000303
+    Tag:
+      tag: Spike3
+    Transform:
+      translation: [44.5, -14.5, 0.400000006]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/hazard.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_spike_hit
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/spike_damage.lua
+  - Entity: 300000000000000401
+    Tag:
+      tag: Coin1
+    Transform:
+      translation: [5.47137785, -14.5359545, 0]
       rotation: [0, 0, 0]
       scale: [0.699999988, 0.699999988, 1]
     AnimatedSpriteRenderer:
@@ -278,11 +482,11 @@ Entities:
       gameVisible: true
     LuaScript:
       scriptPath: scripts/coin.lua
-  - Entity: 300000000000000401
+  - Entity: 300000000000000403
     Tag:
-      tag: Coin1
+      tag: Coin3
     Transform:
-      translation: [5.47137785, -14.5359545, 0]
+      translation: [16.7170391, -9.44870949, 0]
       rotation: [0, 0, 0]
       scale: [0.699999988, 0.699999988, 1]
     AnimatedSpriteRenderer:
@@ -301,436 +505,235 @@ Entities:
       gameVisible: true
     LuaScript:
       scriptPath: scripts/coin.lua
-  - Entity: 300000000000000303
+  - Entity: 300000000000000404
     Tag:
-      tag: Spike3
+      tag: Coin4
     Transform:
-      translation: [44.5, -14.5, 0.400000006]
+      translation: [26.7443371, -12.4846535, 0]
       rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
+      scale: [0.699999988, 0.699999988, 1]
+    AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/hazard.png
+      texture: nam:textures/animated_coin.png
+      columns: 6
+      rows: 3
+      firstFrame: 0
+      lastFrame: 17
+      frameDuration: 0.0799999982
+      loop: true
     Trigger:
       Type: LuaCallback
-      CallbackName: on_spike_hit
+      CallbackName: on_coin_collected
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/spike_damage.lua
-  - Entity: 300000000000000302
+      scriptPath: scripts/coin.lua
+  - Entity: 300000000000000405
     Tag:
-      tag: Spike2
+      tag: Coin5
     Transform:
-      translation: [24.5, -14.5, 0.400000006]
+      translation: [31.9314194, -10.4487114, 0]
       rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
+      scale: [0.699999988, 0.699999988, 1]
+    AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/hazard.png
+      texture: nam:textures/animated_coin.png
+      columns: 6
+      rows: 3
+      firstFrame: 0
+      lastFrame: 17
+      frameDuration: 0.0799999982
+      loop: true
     Trigger:
       Type: LuaCallback
-      CallbackName: on_spike_hit
+      CallbackName: on_coin_collected
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/spike_damage.lua
-  - Entity: 300000000000000301
+      scriptPath: scripts/coin.lua
+  - Entity: 300000000000000406
     Tag:
-      tag: Spike1
+      tag: Coin6
     Transform:
-      translation: [7.5, -14.5, 0.400000006]
+      translation: [35.5, -13.5, 0]
       rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
+      scale: [0.699999988, 0.699999988, 1]
+    AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/hazard.png
+      texture: nam:textures/animated_coin.png
+      columns: 6
+      rows: 3
+      firstFrame: 0
+      lastFrame: 17
+      frameDuration: 0.0799999982
+      loop: true
     Trigger:
       Type: LuaCallback
-      CallbackName: on_spike_hit
+      CallbackName: on_coin_collected
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/spike_damage.lua
-  - Entity: 300000000000000203
+      scriptPath: scripts/coin.lua
+  - Entity: 300000000000000407
     Tag:
-      tag: MovingPlatformH2
+      tag: Coin7
     Transform:
-      translation: [41.5, -9.5, 0]
+      translation: [51.5, -13.5, 0]
       rotation: [0, 0, 0]
-      scale: [2, 0.699999988, 1]
-    SpriteRenderer:
-      color: [0.449999988, 0.850000024, 0.949999988, 1]
-      tilingFactor: [2, 1]
-      texture: nam:textures/platform.png
-    PhysicBody:
-      type: Kinematic
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 0
-      restitution: 0
-      friction: 0.899999976
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/moving_platform_h.lua
-      properties:
-        - name: speed
-          type: float
-          value: 1.60000002
-        - name: distance
-          type: float
-          value: 4
-  - Entity: 300000000000000202
-    Tag:
-      tag: MovingPlatformV1
-    Transform:
-      translation: [38.5, -11.5, 0]
-      rotation: [0, 0, 0]
-      scale: [2, 0.699999988, 1]
-    SpriteRenderer:
-      color: [0.449999988, 0.850000024, 0.949999988, 1]
-      tilingFactor: [2, 1]
-      texture: nam:textures/platform.png
-    PhysicBody:
-      type: Kinematic
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 0
-      restitution: 0
-      friction: 0.899999976
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/moving_platform_v.lua
-      properties:
-        - name: speed
-          type: float
-          value: 1.5
-        - name: distance
-          type: float
-          value: 3
-  - Entity: 300000000000000201
-    Tag:
-      tag: MovingPlatformH1
-    Transform:
-      translation: [16.5, -10.5, 0]
-      rotation: [0, 0, 0]
-      scale: [2, 0.699999988, 1]
-    SpriteRenderer:
-      color: [0.449999988, 0.850000024, 0.949999988, 1]
-      tilingFactor: [2, 1]
-      texture: nam:textures/platform.png
-    PhysicBody:
-      type: Kinematic
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 0
-      restitution: 0
-      friction: 0.899999976
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/moving_platform_h.lua
-      properties:
-        - name: speed
-          type: float
-          value: 1.79999995
-        - name: distance
-          type: float
-          value: 4
-  - Entity: 300000000000000108
-    Tag:
-      tag: Platform8
-    Transform:
-      translation: [56, -10.0592957, 0]
-      rotation: [0, 0, 0]
-      scale: [4, 0.699999988, 1]
-    SpriteRenderer:
-      color: [0.850000024, 0.649999976, 0.400000006, 1]
-      tilingFactor: [4, 1]
-      texture: nam:textures/platform.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 0
-      restitution: 0
-      friction: 0.699999988
-    Visibility:
-      gameVisible: true
-  - Entity: 300000000000000107
-    Tag:
-      tag: Platform7
-    Transform:
-      translation: [51.5, -12.5, 0]
-      rotation: [0, 0, 0]
-      scale: [3, 0.699999988, 1]
-    SpriteRenderer:
-      color: [0.850000024, 0.649999976, 0.400000006, 1]
-      tilingFactor: [3, 1]
-      texture: nam:textures/platform.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 0
-      restitution: 0
-      friction: 0.699999988
-    Visibility:
-      gameVisible: true
-  - Entity: 300000000000000106
-    Tag:
-      tag: Platform6
-    Transform:
-      translation: [46.5, -13.5, 0]
-      rotation: [0, 0, 0]
-      scale: [3, 0.699999988, 1]
-    SpriteRenderer:
-      color: [0.850000024, 0.649999976, 0.400000006, 1]
-      tilingFactor: [3, 1]
-      texture: nam:textures/platform.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 0
-      restitution: 0
-      friction: 0.699999988
-    Visibility:
-      gameVisible: true
-  - Entity: 300000000000000105
-    Tag:
-      tag: Platform5
-    Transform:
-      translation: [35.5, -12.5, 0]
-      rotation: [0, 0, 0]
-      scale: [3, 0.699999988, 1]
-    SpriteRenderer:
-      color: [0.850000024, 0.649999976, 0.400000006, 1]
-      tilingFactor: [3, 1]
-      texture: nam:textures/platform.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 0
-      restitution: 0
-      friction: 0.699999988
-    Visibility:
-      gameVisible: true
-  - Entity: 300000000000000104
-    Tag:
-      tag: Platform4
-    Transform:
-      translation: [31.5, -11.5, 0]
-      rotation: [0, 0, 0]
-      scale: [3, 0.699999988, 1]
-    SpriteRenderer:
-      color: [0.850000024, 0.649999976, 0.400000006, 1]
-      tilingFactor: [3, 1]
-      texture: nam:textures/platform.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 0
-      restitution: 0
-      friction: 0.699999988
-    Visibility:
-      gameVisible: true
-  - Entity: 300000000000000103
-    Tag:
-      tag: Platform3
-    Transform:
-      translation: [27.5, -13.5, 0]
-      rotation: [0, 0, 0]
-      scale: [3, 0.699999988, 1]
-    SpriteRenderer:
-      color: [0.850000024, 0.649999976, 0.400000006, 1]
-      tilingFactor: [3, 1]
-      texture: nam:textures/platform.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 0
-      restitution: 0
-      friction: 0.699999988
-    Visibility:
-      gameVisible: true
-  - Entity: 300000000000000102
-    Tag:
-      tag: Platform2
-    Transform:
-      translation: [21.5, -12.5, 0]
-      rotation: [0, 0, 0]
-      scale: [3, 0.699999988, 1]
-    SpriteRenderer:
-      color: [0.850000024, 0.649999976, 0.400000006, 1]
-      tilingFactor: [3, 1]
-      texture: nam:textures/platform.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 0
-      restitution: 0
-      friction: 0.699999988
-    Visibility:
-      gameVisible: true
-  - Entity: 300000000000000101
-    Tag:
-      tag: Platform1
-    Transform:
-      translation: [12.5, -13.5, 0]
-      rotation: [0, 0, 0]
-      scale: [3, 0.699999988, 1]
-    SpriteRenderer:
-      color: [0.850000024, 0.649999976, 0.400000006, 1]
-      tilingFactor: [3, 1]
-      texture: nam:textures/platform.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 0
-      restitution: 0
-      friction: 0.699999988
-    Visibility:
-      gameVisible: true
-  - Entity: 300000000000000033
-    Tag:
-      tag: Lava3
-    Transform:
-      translation: [47.9249878, -15.5745239, 0.300000012]
-      rotation: [0, 0, 0]
-      scale: [4, 0.699999988, 1]
-    SpriteRenderer:
+      scale: [0.699999988, 0.699999988, 1]
+    AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      tilingFactor: [4, 1]
-      texture: nam:textures/lava_tile.png
+      texture: nam:textures/animated_coin.png
+      columns: 6
+      rows: 3
+      firstFrame: 0
+      lastFrame: 17
+      frameDuration: 0.0799999982
+      loop: true
     Trigger:
-      Type: Death
-      LevelName: scenes/game_over.owl
+      Type: LuaCallback
+      CallbackName: on_coin_collected
     Visibility:
       gameVisible: true
-  - Entity: 300000000000000032
+    LuaScript:
+      scriptPath: scripts/coin.lua
+  - Entity: 300000000000000408
     Tag:
-      tag: Lava2
+      tag: Coin8
     Transform:
-      translation: [30.473629, -15.6233025, 0.300000012]
+      translation: [54.8457909, -9.27446842, -6.10351562e-05]
       rotation: [0, 0, 0]
-      scale: [5, 0.699999988, 0.800000012]
-    SpriteRenderer:
+      scale: [0.699999988, 0.699999988, 1]
+    AnimatedSpriteRenderer:
       color: [1, 1, 1, 1]
-      tilingFactor: [5, 1]
-      texture: nam:textures/lava_tile.png
+      texture: nam:textures/animated_coin.png
+      columns: 6
+      rows: 3
+      firstFrame: 0
+      lastFrame: 17
+      frameDuration: 0.0799999982
+      loop: true
     Trigger:
-      Type: Death
-      LevelName: scenes/game_over.owl
+      Type: LuaCallback
+      CallbackName: on_coin_collected
     Visibility:
       gameVisible: true
-  - Entity: 300000000000000031
+    LuaScript:
+      scriptPath: scripts/coin.lua
+  - Entity: 3000000000000000050
     Tag:
-      tag: Lava1
+      tag: VictoryZone
     Transform:
-      translation: [12.5943098, -15.5993776, 0.300061047]
+      translation: [57, -8.76983643, 0.400000006]
       rotation: [0, 0, 0]
-      scale: [5, 0.699999988, 1]
+      scale: [2, 2, 1]
     SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: [5, 1]
-      texture: nam:textures/lava_tile.png
-    Trigger:
-      Type: Death
-      LevelName: scenes/game_over.owl
-    Visibility:
-      gameVisible: true
-  - Entity: 3000000000000000020
-    Tag:
-      tag: Player
-    Transform:
-      translation: [4.5, -14.3999996, 0.5]
-      rotation: [0, 0, 0]
-      scale: [1.20000005, 1.20000005, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
+      color: [1, 0.850000024, 0.200000003, 1]
       tilingFactor: 1
-      texture: nam:textures/player.png
-    PhysicBody:
-      type: Dynamic
-      fixedRotation: true
-      colliderSize: [0.899999976, 0.899999976, 1]
-      density: 1
-      restitution: 0
-      friction: 0.800000012
-    Player:
-      primary: true
-      linearImpulse: 0
-      jumpImpulse: 0
-      canJump: true
+      texture: nam:textures/portal.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_level_complete
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: scripts/platformer_player.lua
-      properties:
-        - name: speed
-          type: float
-          value: 5.5
-  - Entity: 3000000000000000010
+      scriptPath: scripts/level_complete.lua
+  - Entity: 3000000000000000060
     Tag:
-      tag: PlatformerTilemap
+      tag: HUDCanvas
     Transform:
-      translation: [30, -8, 0]
+      translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Tilemap:
-      tilesetPath: tilesets/world_platform.owltileset
-      width: 60
-      height: 16
-      cellSize: 1
-      layers:
-        - name: world
-          tiles: 2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,2,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,2,0,0,0,0,0,0,0,0,0,0,6,6,6,6,6,0,0,0,0,0,0,0,0,0,0,0,0,0,6,6,6,6,6,0,0,0,0,0,0,0,0,0,0,0,0,0,6,6,6,6,0,0,0,0,0,0,0,0,0,0
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
     Visibility:
       gameVisible: true
-  - Entity: 3000000000000000002
+    Hierarchy:
+      {}
+    LuaScript:
+      scriptPath: scripts/hud.lua
+    RendererTag:
+      Name: ui
+  - Entity: 3000000000000000061
     Tag:
-      tag: SkyBackground
+      tag: HealthBar
     Transform:
-      translation: [30, -8, -5]
-      rotation: [0, 0, 0]
-      scale: [80, 30, 1]
-    BackgroundTexture:
-      mode: 0
-      type: 0
-      color: [0.100000001, 0.0799999982, 0.119999997, 1]
-      topColor: [0.150000006, 0.100000001, 0.180000007, 1]
-    Visibility:
-      gameVisible: true
-  - Entity: 3000000000000000001
-    Tag:
-      tag: MainCamera
-    Transform:
-      translation: [4.5, -14.3999996, 5]
+      translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Camera:
-      camera:
-        projectionType: Orthographic
-        perspectiveFOV: 0.785398185
-        perspectiveNear: 0.00999999978
-        perspectiveFar: 1000
-        orthographicSize: 6
-        orthographicNear: -1
-        orthographicFar: 10
-      primary: true
-      fixedAspectRatio: false
     Visibility:
       gameVisible: true
-    SoundListener:
-      primary: true
+    Hierarchy:
+      parentId: 3000000000000000060
+    RendererTag:
+      Name: ui
+    UIProgressBar:
+      value: 1
+      backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
+      fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
+    UIRect:
+      anchor: TopRight
+      pivotX: 1
+      pivotY: 1
+      sizeX: 200
+      sizeY: 22
+      offsetX: -20
+      offsetY: -20
+  - Entity: 3000000000000000062
+    Tag:
+      tag: ScoreText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3000000000000000060
+    RendererTag:
+      Name: ui
+    UIRect:
+      anchor: TopRight
+      pivotX: 1
+      pivotY: 1
+      sizeX: 200
+      sizeY: 26
+      offsetX: -20
+      offsetY: -50
+    UIText:
+      text: "Score: 0"
+      color: [1, 0.949999988, 0.550000012, 1]
+      fontSize: 18
+      alignment: Right
+      kerning: 0
+      lineSpacing: 0
+  - Entity: 3000000000000000063
+    Tag:
+      tag: HudHint
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3000000000000000060
+    RendererTag:
+      Name: ui
+    UIRect:
+      anchor: TopLeft
+      pivotX: 0
+      pivotY: 1
+      sizeX: 460
+      sizeY: 20
+      offsetX: 20
+      offsetY: -20
+    UIText:
+      text: A/D = move (only on ground), W/Space = jump, ESC = pause
+      color: [1, 1, 1, 0.850000024]
+      fontSize: 14
+      alignment: Left
+      kerning: 0
+      lineSpacing: 0

@@ -23,7 +23,7 @@ local k_apex_threshold = 0.5    -- vy below this from rising = transition to fal
 local k_land_threshold = 0.5    -- vy above -this from falling = landed (grounded)
 
 -- State ------------------------------------------------------------------------
-local pending_scene = nil
+local transitioning = false  -- gate input while the engine is in scene-load orchestration
 local escape_was_down = false
 local jump_was_down = false
 local health = 1.0
@@ -89,11 +89,10 @@ local function update_jump_state(dt, vy)
 end
 
 function on_update(dt)
-    if pending_scene then
-        if not ui.is_transition_active() then
-            scene.load_scene(pending_scene)
-            pending_scene = nil
-        end
+    -- Engine drives scene-to-scene handoffs through `scene.transition_to`. We
+    -- still gate input here so the player can't move during the out-anim /
+    -- loading screen.
+    if transitioning or ui.is_transition_active() then
         return
     end
 
@@ -137,8 +136,8 @@ function on_update(dt)
 
     if health <= 0 then
         log.info("Health depleted in platformer level.")
-        pending_scene = "scenes/game_over.owl"
-        ui.transition_fade_out(0.3)
+        transitioning = true
+        scene.transition_to("scenes/game_over.owl", "fade_out", 0.3)
         return
     end
 
@@ -152,8 +151,8 @@ function on_update(dt)
         gamestate.set("continue_z", pz)
         gamestate.set("has_continue", true)
         log.info("ESC: pausing platformer — saved position for Continue.")
-        pending_scene = "scenes/main_menu.owl"
-        ui.transition_fade_out(0.3)
+        transitioning = true
+        scene.transition_to("scenes/main_menu.owl", "fade_out", 0.3)
     end
     escape_was_down = escape_down
 end

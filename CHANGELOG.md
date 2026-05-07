@@ -9,6 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Per-scene settings panel in Owl Nest** — dockable
+  `panel::SceneSettings` window (Edit > Settings > Scene) editing the active
+  scene's `EnabledRenderers` block: per-layer enable toggle, up / down
+  ordering, `Detach` to revert to project default, and an `Overrides`
+  collapsible with typed widgets per layer type (`Space` combo for
+  `Renderer2D`; `Fov` / `MaxDistance` / `NumRays` drags + `CeilingColor` /
+  `FloorColor` pickers for `RendererRaycast`). Edits route through the new
+  `commands::ModifyEnabledRenderersCommand` (undoable, with the standard
+  1 s merge-coalescing window for rapid drags) and trigger
+  `EditorLayer::syncActiveDocumentPanels` so the live `RenderStack` rebuilds
+  immediately. Removes the only remaining "you have to hand-edit YAML"
+  authoring step in the renderer-stack feature.
+- **Scene transition effects (Lua-triggerable)** — extended
+  `scene::ScreenTransition` from `Fade*` only to `Fade{In,Out}` +
+  `Wipe{Left,Right,Up,Down}` with a configurable tint colour. New
+  `play(type, duration, colour)` API; legacy `start(type, duration)` keeps
+  the opaque-black default. New unified Lua dispatcher
+  `ui.transition_play(type_string, duration, [r, g, b, a])` accepts
+  `"fade"`, `"fade_in"`, `"fade_out"`, `"wipe_left"`, `"wipe_right"`,
+  `"wipe_up"`, `"wipe_down"`. The legacy `ui.transition_fade_in` /
+  `ui.transition_fade_out` shorthands remain. `sample_project/scripts/raycast_house_door.lua`
+  switched to `wipe_left` so the world→raycast handoff demoes the new
+  variants. Tests in `test/scene_tests/ScreenTransition_test.cpp` cover
+  default state, custom-colour play, progress, completion, every wipe
+  variant, reset and the < 1 ms duration clamp.
 - **Raycasting renderer (core)** — first non-2D renderer in the stack, a
   Wolfenstein-style DDA raycaster.
     - New static facade `renderer::rendererraycast::RendererRaycast`
