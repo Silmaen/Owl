@@ -16,7 +16,6 @@
 #include <vector>
 
 namespace owl::io::pack {
-
 /// Magic bytes identifying an Owl pack file.
 constexpr std::array<char, 4> g_packMagic = {'O', 'W', 'L', 'P'};
 
@@ -56,7 +55,6 @@ enum struct AssetType : uint8_t {
 	Other = 5,
 	Script = 6,
 };
-
 /// Pack file header (40 bytes, fixed size).
 struct PackHeader {
 	std::array<char, 4> magic = g_packMagic;
@@ -68,6 +66,7 @@ struct PackHeader {
 	uint64_t tocSize = 0;
 	uint64_t tocOriginalSize = 0;
 };
+
 static_assert(sizeof(PackHeader) == 40, "PackHeader must be 40 bytes");
 
 /// Table of contents entry.
@@ -81,28 +80,32 @@ struct TocEntry {
 };
 
 /**
- * @brief Compute FNV-1a 64-bit hash of a path string.
+ * @brief
+ *  Compute FNV-1a 64-bit hash of a path string.
  * @param[in] iPath The path to hash.
  * @return The hash value.
  */
 OWL_API auto hashPath(const std::string& iPath) -> uint64_t;
 
 /**
- * @brief Obfuscate or deobfuscate a buffer in-place (XOR, symmetric).
+ * @brief
+ *  Obfuscate or deobfuscate a buffer in-place (XOR, symmetric).
  * @param[in,out] ioBuffer The buffer to transform.
  * @param[in] iEntryIndex Entry index used as part of the rolling key.
  */
 OWL_API void obfuscateBuffer(std::vector<uint8_t>& ioBuffer, uint32_t iEntryIndex);
 
 /**
- * @brief Compress a buffer using zstd.
+ * @brief
+ *  Compress a buffer using zstd.
  * @param[in] iData The raw data to compress.
  * @return The compressed data, or empty on failure.
  */
 OWL_API auto compressBuffer(const std::vector<uint8_t>& iData) -> std::vector<uint8_t>;
 
 /**
- * @brief Decompress a zstd-compressed buffer.
+ * @brief
+ *  Decompress a zstd-compressed buffer.
  * @param[in] iCompressed The compressed data.
  * @param[in] iOriginalSize The expected original size.
  * @return The decompressed data, or empty on failure.
@@ -110,14 +113,16 @@ OWL_API auto compressBuffer(const std::vector<uint8_t>& iData) -> std::vector<ui
 OWL_API auto decompressBuffer(const std::vector<uint8_t>& iCompressed, uint64_t iOriginalSize) -> std::vector<uint8_t>;
 
 /**
- * @brief Serialize TOC entries to binary.
+ * @brief
+ *  Serialize TOC entries to binary.
  * @param[in] iEntries The entries to serialize.
  * @return The serialized binary data.
  */
 OWL_API auto serializeToc(const std::vector<TocEntry>& iEntries) -> std::vector<uint8_t>;
 
 /**
- * @brief Deserialize TOC entries from binary.
+ * @brief
+ *  Deserialize TOC entries from binary.
  * @param[in] iData The binary data.
  * @return The deserialized entries, or empty on failure.
  */

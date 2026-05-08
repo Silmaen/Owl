@@ -2,7 +2,7 @@
  * @file Shader.cpp
  * @author Silmaen
  * @date 07/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -16,6 +16,7 @@
 namespace owl::renderer::gpu::opengl {
 
 namespace utils {
+
 namespace {
 auto shaderStageToGlShader(const ShaderType& iStage) -> uint32_t {
 	switch (iStage) {
@@ -44,12 +45,14 @@ Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, con
 
 	  Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& iSlangSource)
 	: renderer::gpu::Shader{iShaderName, iRenderer} {
+
 	compile(iSlangSource);
 }
 
 Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 			   const std::vector<std::filesystem::path>& iSources)
 	: renderer::gpu::Shader{iShaderName, iRenderer} {
+
 	OWL_PROFILE_FUNCTION()
 
 	if (iSources.size() == 1 && iSources[0].extension() == ".slang") {
@@ -100,6 +103,7 @@ void Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) {
 	if (allCached) {
 		for (const auto stage: {ShaderType::Vertex, ShaderType::Fragment}) {
 			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
+
 			OWL_CORE_INFO("Using cached OpenGL Shader {}-{}", getName(), magic_enum::enum_name(stage))
 			shaderData[stage] = renderer::utils::readCachedShader(cachedPath);
 		}
@@ -114,11 +118,13 @@ void Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) {
 		for (auto&& [stage, data]: shaderData) {
 			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
 			if (!renderer::utils::writeCachedShader(cachedPath, data))
+
 				OWL_CORE_WARN("Failed to write the compiled shader.")
 			renderer::utils::writeShaderHash(cachedPath, iSlangSource);
 		}
 	}
 	for (auto&& [stage, data]: shaderData)
+
 		renderer::utils::shaderReflect(getName(), getRenderer(), "opengl", stage, data);
 }
 

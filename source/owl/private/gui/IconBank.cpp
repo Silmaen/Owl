@@ -20,8 +20,10 @@
 namespace owl::gui {
 
 namespace {
-
-/// @brief RAII wrapper for stbi-allocated pixel data.
+/**
+ * @brief
+ *  RAII wrapper for stbi-allocated pixel data.
+ */
 struct StbImageDeleter {
 	void operator()(uint8_t* iPtr) const {
 		if (iPtr != nullptr)
@@ -31,7 +33,8 @@ struct StbImageDeleter {
 using StbImagePtr = std::unique_ptr<uint8_t[], StbImageDeleter>;
 
 /**
- * @brief Load an image file via stb_image and return owned pixel data.
+ * @brief
+ *  Load an image file via stb_image and return owned pixel data.
  * @param[in] iPath The file path.
  * @param[out] oSize The loaded image dimensions (width, height).
  * @return Owned pixel buffer (RGBA, 4 bytes per pixel), or empty vector on failure.
@@ -50,7 +53,8 @@ auto loadImageFile(const std::filesystem::path& iPath, math::vec2ui& oSize) -> s
 }
 
 /**
- * @brief Read a file as a string.
+ * @brief
+ *  Read a file as a string.
  * @param[in] iPath The file path.
  * @return The file content, or empty string on failure.
  */
@@ -62,7 +66,8 @@ auto readFileAsString(const std::filesystem::path& iPath) -> std::string {
 }
 
 /**
- * @brief Convert a math::vec4 colour (0-1 floats) to a hex string like "#rrggbb".
+ * @brief
+ *  Convert a math::vec4 colour (0-1 floats) to a hex string like "#rrggbb".
  * @param[in] iColor The colour.
  * @return The hex colour string.
  */
@@ -74,7 +79,8 @@ auto colorToHex(const math::vec4& iColor) -> std::string {
 }
 
 /**
- * @brief Case-insensitive replace all occurrences of a hex colour in a string.
+ * @brief
+ *  Case-insensitive replace all occurrences of a hex colour in a string.
  * @param[in,out] ioStr The string to modify.
  * @param[in] iFrom The colour to find (lowercase, e.g., "#ffffff").
  * @param[in] iTo The replacement string.
@@ -104,7 +110,8 @@ void replaceColorInPlace(std::string& ioStr, const std::string& iFrom, const std
 }
 
 /**
- * @brief Load an SVG file, apply theme colour substitution, rasterize to RGBA pixels.
+ * @brief
+ *  Load an SVG file, apply theme colour substitution, rasterize to RGBA pixels.
  * @param[in] iPath The SVG file path.
  * @param[in] iTargetSize Target pixel size (square).
  * @param[in] iColors Theme colours for substitution.
@@ -154,7 +161,8 @@ auto loadSvgFile(const std::filesystem::path& iPath, const uint32_t iTargetSize,
 }
 
 /**
- * @brief Simple box-filter downscale of an RGBA image.
+ * @brief
+ *  Simple box-filter downscale of an RGBA image.
  */
 void boxFilterDownscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize, std::span<uint8_t> oDst,
 						const math::vec2ui iDstSize) {
@@ -185,7 +193,8 @@ void boxFilterDownscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSi
 }
 
 /**
- * @brief Bilinear upscale of an RGBA image.
+ * @brief
+ *  Bilinear upscale of an RGBA image.
  */
 void bilinearUpscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize, std::span<uint8_t> oDst,
 					 const math::vec2ui iDstSize) {
@@ -224,20 +233,16 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 	// Store for rebuild.
 	m_iconList = iIcons;
 	m_cellSize = iCellSize;
-
 	if (iIcons.empty())
 		return;
-
 	// Determine grid dimensions
 	const auto iconCount = static_cast<uint32_t>(iIcons.size());
 	const auto cols = static_cast<uint32_t>(std::ceil(std::sqrt(static_cast<double>(iconCount))));
 	const uint32_t rows = (iconCount + cols - 1) / cols;
 	const math::vec2ui cellSize{iCellSize, iCellSize};
 	const math::vec2ui atlasSize{cols * iCellSize, rows * iCellSize};
-
 	// Allocate atlas buffer (RGBA, zero-initialized for transparency)
 	std::vector<uint8_t> atlasData(static_cast<size_t>(atlasSize.x()) * atlasSize.y() * 4, 0);
-
 	// Load and pack each icon
 	uint32_t index = 0;
 	for (const auto& [name, filePath]: iIcons) {
@@ -249,7 +254,6 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 
 		std::vector<uint8_t> pixels;
 		const bool isSvg = filePath.extension() == ".svg";
-
 		if (isSvg) {
 			// Load SVG: rasterize at exact cell size with theme colours.
 			pixels = loadSvgFile(filePath, iCellSize, iColors);
@@ -283,6 +287,7 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 			const auto dstOffset = (static_cast<size_t>(atlasY) * atlasSize.x() + cellOrigin.x()) * 4;
 			const auto srcOffset = static_cast<size_t>(y) * cellSize.x() * 4;
 			const auto rowBytes = static_cast<size_t>(cellSize.x()) * 4;
+
 			std::copy_n(pixels.cbegin() + static_cast<ptrdiff_t>(srcOffset), rowBytes,
 						atlasData.begin() + static_cast<ptrdiff_t>(dstOffset));
 		}
@@ -293,13 +298,10 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 							   static_cast<float>(cellOrigin.y()) / atlasF.y()};
 		const math::vec2 uvMax{static_cast<float>(cellOrigin.x() + cellSize.x()) / atlasF.x(),
 							   static_cast<float>(cellOrigin.y() + cellSize.y()) / atlasF.y()};
-
 		// Store UVs — Y-flip for engine convention (top-down image data, bottom-up OpenGL)
 		m_uvMap[name] = {{uvMin.x(), uvMax.y()}, {uvMax.x(), uvMin.y()}};
-
 		++index;
 	}
-
 	// Create atlas texture
 	renderer::gpu::Texture::Specification spec;
 	spec.size = atlasSize;

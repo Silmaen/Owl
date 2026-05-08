@@ -115,7 +115,7 @@ project default config. `Overrides` is deep-merged on top of `DefaultConfig`
     Components:
       RendererTag:
         Name: hud
-      UIText:
+      UiText:
         ...
 ```
 

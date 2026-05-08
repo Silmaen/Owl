@@ -1,5 +1,5 @@
 /**
- * @file UIText.h
+ * @file UiText.h
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -12,13 +12,13 @@
 #include "data/fonts/Font.h"
 
 namespace owl::scene::component {
-
 /**
- * @brief UI text widget component.
+ * @brief
+ *  UI text widget component.
  *
  * Renders text in screen space within a Canvas hierarchy.
  */
-struct OWL_API UIText {
+struct OWL_API UiText {
 	/// The text content.
 	std::string text;
 	/// The font (nullptr = default font).
@@ -36,14 +36,32 @@ struct OWL_API UIText {
 	/// Line spacing adjustment.
 	float lineSpacing = 0.f;
 
-	/// @brief Get the class title.
-	static auto name() -> const char* { return "UI Text"; }
-	/// @brief Get the YAML key.
-	static auto key() -> const char* { return "UIText"; }
+	/**
+	 * @brief
+	 *  Get the class title.
+	 * @return The display name of the component.
+	 */
+	static auto name() noexcept -> const char* { return "UI Text"; }
 
-	/// @brief Write this component to a YAML context.
+	/**
+	 * @brief
+	 *  Get the YAML key.
+	 * @return The YAML serialization key.
+	 */
+	static auto key() noexcept -> const char* { return "UiText"; }
+
+	/**
+	 * @brief
+	 *  Write this component to a YAML context.
+	 * @param[in] iOut The serializer used as output.
+	 */
 	void serialize(const core::Serializer& iOut) const;
-	/// @brief Read this component from YAML node.
+
+	/**
+	 * @brief
+	 *  Read this component from YAML node.
+	 * @param[in] iNode The serializer wrapping the source YAML node.
+	 */
 	void deserialize(const core::Serializer& iNode);
 };
 

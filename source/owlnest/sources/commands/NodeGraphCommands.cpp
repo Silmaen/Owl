@@ -11,7 +11,6 @@
 #include <typeinfo>
 
 namespace owl::nest::commands {
-
 // --- AddNodeCommand --------------------------------------------------------
 
 AddNodeCommand::AddNodeCommand(gui::widgets::Node iNode) : m_node{std::move(iNode)} {
@@ -20,10 +19,10 @@ AddNodeCommand::AddNodeCommand(gui::widgets::Node iNode) : m_node{std::move(iNod
 }
 
 void AddNodeCommand::undo(NodeCanvas& ioTarget) { ioTarget.removeNode(m_node.id); }
+
 void AddNodeCommand::redo(NodeCanvas& ioTarget) { ioTarget.addNode(m_node); }
 
 // --- RemoveNodeCommand -----------------------------------------------------
-
 RemoveNodeCommand::RemoveNodeCommand(gui::widgets::Node iNode, std::vector<gui::widgets::Link> iAttachedLinks)
 	: m_node{std::move(iNode)}, m_attachedLinks{std::move(iAttachedLinks)} {
 	m_selectAfterUndo = m_node.id;
@@ -39,7 +38,6 @@ void RemoveNodeCommand::undo(NodeCanvas& ioTarget) {
 void RemoveNodeCommand::redo(NodeCanvas& ioTarget) { ioTarget.removeNode(m_node.id); }
 
 // --- MoveNodeCommand -------------------------------------------------------
-
 MoveNodeCommand::MoveNodeCommand(core::UUID iNodeId, math::vec2f iBeforePosition, math::vec2f iAfterPosition)
 	: m_nodeId{iNodeId}, m_before{iBeforePosition}, m_after{iAfterPosition} {}
 
@@ -69,7 +67,6 @@ auto MoveNodeCommand::typeId() const -> size_t {
 }
 
 // --- AddLinkCommand --------------------------------------------------------
-
 AddLinkCommand::AddLinkCommand(core::UUID iFromPin, core::UUID iToPin) : m_fromPin{iFromPin}, m_toPin{iToPin} {}
 
 void AddLinkCommand::undo(NodeCanvas& ioTarget) {
@@ -80,7 +77,6 @@ void AddLinkCommand::undo(NodeCanvas& ioTarget) {
 void AddLinkCommand::redo(NodeCanvas& ioTarget) { m_linkId = ioTarget.addLink(m_fromPin, m_toPin); }
 
 // --- RemoveLinkCommand -----------------------------------------------------
-
 RemoveLinkCommand::RemoveLinkCommand(gui::widgets::Link iLink) : m_link{iLink} {}
 
 void RemoveLinkCommand::undo(NodeCanvas& ioTarget) {
@@ -92,19 +88,19 @@ void RemoveLinkCommand::undo(NodeCanvas& ioTarget) {
 void RemoveLinkCommand::redo(NodeCanvas& ioTarget) { ioTarget.removeLink(m_link.id); }
 
 // --- AddOutputPinCommand ---------------------------------------------------
-
 AddOutputPinCommand::AddOutputPinCommand(core::UUID iNodeId, gui::widgets::NodePin iPin)
 	: m_nodeId{iNodeId}, m_pin{std::move(iPin)} {}
 
 void AddOutputPinCommand::undo(NodeCanvas& ioTarget) { ioTarget.removeOutputPin(m_nodeId, m_pin.id); }
+
 void AddOutputPinCommand::redo(NodeCanvas& ioTarget) { ioTarget.addOutputPin(m_nodeId, m_pin); }
 
 // --- RemoveOutputPinCommand ------------------------------------------------
-
 RemoveOutputPinCommand::RemoveOutputPinCommand(core::UUID iNodeId, gui::widgets::NodePin iPin)
 	: m_nodeId{iNodeId}, m_pin{std::move(iPin)} {}
 
 void RemoveOutputPinCommand::undo(NodeCanvas& ioTarget) { ioTarget.addOutputPin(m_nodeId, m_pin); }
+
 void RemoveOutputPinCommand::redo(NodeCanvas& ioTarget) { ioTarget.removeOutputPin(m_nodeId, m_pin.id); }
 
 }// namespace owl::nest::commands

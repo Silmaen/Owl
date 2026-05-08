@@ -17,12 +17,13 @@ OWL_DIAG_PUSH
 // md4c uses C-style enums; we cover only the constructs we model and rely on the default
 // branch for ignored/extension types (LaTeX math, wikilinks, underline, raw HTML, …).
 OWL_DIAG_DISABLE_CLANG("-Wswitch-enum")
-
 namespace owl::nest::codeEditor {
 
 namespace {
-
-/// @brief Convert md4c alignment enum to our `TableAlign` enum.
+/**
+ * @brief
+ *  Convert md4c alignment enum to our `TableAlign` enum.
+ */
 [[nodiscard]] auto mapAlign(const MD_ALIGN iAlign) -> TableAlign {
 	switch (iAlign) {
 		case MD_ALIGN_LEFT:
@@ -36,7 +37,10 @@ namespace {
 	}
 }
 
-/// @brief Internal builder state. `Parser` walks md4c SAX callbacks and assembles `MdBlock`s.
+/**
+ * @brief
+ *  Internal builder state. `Parser` walks md4c SAX callbacks and assembles `MdBlock`s.
+ */
 class Parser {
 public:
 	[[nodiscard]] auto run(const std::string_view iSource) -> std::vector<MdBlock> {
@@ -65,25 +69,31 @@ private:
 	static auto enterBlock(MD_BLOCKTYPE iType, void* iDetail, void* ioUserData) -> int {
 		return static_cast<Parser*>(ioUserData)->onEnterBlock(iType, iDetail);
 	}
+
 	static auto leaveBlock(MD_BLOCKTYPE iType, void* iDetail, void* ioUserData) -> int {
 		return static_cast<Parser*>(ioUserData)->onLeaveBlock(iType, iDetail);
 	}
+
 	static auto enterSpan(MD_SPANTYPE iType, void* iDetail, void* ioUserData) -> int {
 		return static_cast<Parser*>(ioUserData)->onEnterSpan(iType, iDetail);
 	}
+
 	static auto leaveSpan(MD_SPANTYPE iType, void* iDetail, void* ioUserData) -> int {
 		return static_cast<Parser*>(ioUserData)->onLeaveSpan(iType, iDetail);
 	}
+
 	static auto text(MD_TEXTTYPE iType, const MD_CHAR* iText, MD_SIZE iSize, void* ioUserData) -> int {
 		return static_cast<Parser*>(ioUserData)->onText(iType, iText, iSize);
 	}
 
 	// ---- accumulator helpers ------------------------------------------------
-
-	/// @brief Lazy-create an implicit `MdParagraph` in the current container if no inline target is
-	/// active. md4c skips `MD_BLOCK_P` inside `MD_BLOCK_LI` for *tight* lists (the most common
-	/// CommonMark case — `- a\n- b\n- c\n`); without this fallback the text events fired directly
-	/// inside the LI would have nowhere to land and the items would be silently empty.
+	/**
+	 * @brief
+	 *  Lazy-create an implicit `MdParagraph` in the current container if no inline target is
+	 * active. md4c skips `MD_BLOCK_P` inside `MD_BLOCK_LI` for *tight* lists (the most common
+	 * CommonMark case — `- a\n- b\n- c\n`); without this fallback the text events fired directly
+	 * inside the LI would have nowhere to land and the items would be silently empty.
+	 */
 	void ensureInlineAccum() {
 		if (m_inlineAccum != nullptr || m_blockStack.empty())
 			return;
@@ -381,7 +391,6 @@ private:
 	int m_currentRowIndex = -1;
 	int m_currentColIndex = 0;
 };
-
 }// namespace
 
 auto MarkdownDocument::parse(const std::string_view iSource) -> bool {
@@ -400,5 +409,4 @@ auto MarkdownDocument::takeBlocks() -> std::vector<MdBlock> {
 }
 
 }// namespace owl::nest::codeEditor
-
 OWL_DIAG_POP

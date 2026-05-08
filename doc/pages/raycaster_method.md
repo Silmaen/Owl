@@ -293,12 +293,12 @@ perpendicular distance). The implementation differences from a pixel-perfect
 
 ## File map
 
-| File                                                                    | Role                                          |
-|-------------------------------------------------------------------------|-----------------------------------------------|
-| `source/owl/public/renderer/rendererraycast/RendererRaycast.h`          | Public static-facade API                      |
-| `source/owl/private/renderer/rendererraycast/RendererRaycast.cpp`       | Implementation: pose extraction, DDA, stripes |
-| `source/owl/private/renderer/rendererraycast/RendererRaycastLayer.h/cpp` | `RenderLayer` adapter + YAML config parsing   |
-| `source/owl/private/scene/Scene.cpp` (`Scene::render` tilemap loop)     | Dispatch by active-layer type key             |
-| `test/renderer_tests/RendererRaycast_test.cpp`                          | 7 unit tests                                  |
-| `sample_project/scenes/raycast_demo.owl`                                | Wolfenstein-inspired demo scene               |
-| `sample_project/scripts/raycast_player.lua`                             | Player input matching the pose convention     |
+| File                                                                | Role                                          |
+|---------------------------------------------------------------------|-----------------------------------------------|
+| `source/owl/public/renderer/RendererRaycast.h`                      | Public static-facade API                      |
+| `source/owl/private/renderer/RendererRaycast.cpp`                   | Implementation: pose extraction, DDA, stripes |
+| `source/owl/private/renderer/RendererRaycastLayer.h/cpp`            | `RenderLayer` adapter + YAML config parsing   |
+| `source/owl/private/scene/Scene.cpp` (`Scene::render` tilemap loop) | Dispatch by active-layer type key             |
+| `test/renderer_tests/RendererRaycast_test.cpp`                      | 7 unit tests                                  |
+| `sample_project/scenes/raycast_demo.owl`                            | Wolfenstein-inspired demo scene               |
+| `sample_project/scripts/raycast_player.lua`                         | Player input matching the pose convention     |

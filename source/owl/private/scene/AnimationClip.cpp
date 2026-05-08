@@ -18,7 +18,6 @@
 namespace owl::scene {
 
 namespace {
-
 void emitSpeedCurve(YAML::Emitter& ioEmitter, const math::Curve& iCurve) {
 	if (iCurve.empty())
 		return;

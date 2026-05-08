@@ -2,7 +2,7 @@
  * @file Window.cpp
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -43,8 +43,8 @@ Window::~Window() {
 
 void Window::init(const Properties& iProps) {
 	OWL_PROFILE_FUNCTION()
-	OWL_SCOPE_UNTRACK
 
+	OWL_SCOPE_UNTRACK
 	// Initializations
 	{
 		m_windowData.title = iProps.title;
@@ -67,6 +67,7 @@ void Window::init(const Properties& iProps) {
 	}
 	// window creation.
 	{
+
 		OWL_PROFILE_SCOPE("glfwCreateWindow")
 		const auto api = renderer::gpu::RenderCommand::getApi();
 		if (api == renderer::gpu::RenderAPI::Type::Vulkan) {
@@ -77,9 +78,11 @@ void Window::init(const Properties& iProps) {
 		}
 #if defined(OWL_DEBUG)
 		if (api == renderer::gpu::RenderAPI::Type::OpenGL)
+
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
 		if (api == renderer::gpu::RenderAPI::Type::Vulkan)
+
 			glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		{
 			mp_glfwWindow = glfwCreateWindow(static_cast<int>(iProps.width), static_cast<int>(iProps.height),
@@ -96,6 +99,7 @@ void Window::init(const Properties& iProps) {
 			icon.pixels = stbi_load(iProps.iconPath.c_str(), &icon.width, &icon.height, &channels, 4);
 			if (icon.pixels != nullptr) {
 				glfwSetWindowIcon(mp_glfwWindow, 1, &icon);
+
 				stbi_image_free(icon.pixels);
 			} else {
 				OWL_CORE_WARN("Failed to load window icon: {}", iProps.iconPath)
@@ -108,10 +112,12 @@ void Window::init(const Properties& iProps) {
 		m_context->init();
 
 		glfwSetWindowUserPointer(mp_glfwWindow, &m_windowData);
+
 		setVSync(true);
 	}
 	// Set GLFW callbacks
 	{
+
 		glfwSetWindowSizeCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iWidth, const int iHeight) -> void {
 			auto* const data = static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow));
 			data->size.x() = static_cast<uint32_t>(iWidth);
@@ -125,6 +131,7 @@ void Window::init(const Properties& iProps) {
 			event::WindowCloseEvent event;
 			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 		});
+
 		glfwSetKeyCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iKey, [[maybe_unused]] int iScancode,
 											 const int iAction, [[maybe_unused]] int iMods) -> void {
 			const auto cKey = static_cast<input::KeyCode>(iKey);
@@ -267,7 +274,6 @@ void Window::shutdown() {
 		glfwTerminate();
 	}
 }
-
 
 void Window::onUpdate() {
 	OWL_PROFILE_FUNCTION()

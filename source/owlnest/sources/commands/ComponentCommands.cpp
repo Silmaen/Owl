@@ -11,8 +11,10 @@
 namespace owl::nest::commands {
 
 namespace {
-
-/// Restore an entity from a snapshot by destroying the existing one and recreating.
+/**
+ * @brief
+ *  Restore an entity from a snapshot by destroying the existing one and recreating.
+ */
 void restoreEntity(scene::Scene& ioScene, const EntitySnapshot& iSnapshot) {
 	if (auto existing = ioScene.findEntityByUUID(iSnapshot.uuid); existing)
 		ioScene.destroyEntity(existing);
@@ -22,7 +24,6 @@ void restoreEntity(scene::Scene& ioScene, const EntitySnapshot& iSnapshot) {
 }// namespace
 
 // --- AddComponentCommand ---
-
 AddComponentCommand::AddComponentCommand(EntitySnapshot iBefore, EntitySnapshot iAfter, std::string iComponentName)
 	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)}, m_componentName{std::move(iComponentName)} {
 	m_selectAfterUndo = m_after.uuid;
@@ -43,7 +44,6 @@ auto AddComponentCommand::description() const -> std::string {
 }
 
 // --- RemoveComponentCommand ---
-
 RemoveComponentCommand::RemoveComponentCommand(EntitySnapshot iBefore, EntitySnapshot iAfter,
 											   std::string iComponentName)
 	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)}, m_componentName{std::move(iComponentName)} {
@@ -62,7 +62,6 @@ auto RemoveComponentCommand::description() const -> std::string {
 }
 
 // --- ModifyEntityCommand ---
-
 ModifyEntityCommand::ModifyEntityCommand(core::UUID iEntityUuid, EntitySnapshot iBefore, std::string iDescription)
 	: m_entityUuid{iEntityUuid}, m_before{std::move(iBefore)}, m_description{std::move(iDescription)} {
 	m_selectAfterUndo = m_entityUuid;

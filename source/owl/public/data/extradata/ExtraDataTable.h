@@ -2,7 +2,7 @@
  * @file ExtraDataTable.h
  * @author Silmaen
  * @date 22/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,7 +12,6 @@
 #include "data/extradata/ExtraDataContainer.h"
 
 namespace owl::data::extradata {
-
 /**
  * @brief
  *  This class implements a table of extra data.
@@ -24,14 +23,19 @@ public:
 	 *  Default constructor
 	 */
 	ExtraDataTable();
+
 	/**
 	 * @brief
 	 *  Default destructor
 	 */
 	~ExtraDataTable();
+
 	ExtraDataTable(const ExtraDataTable&) = default;
+
 	ExtraDataTable(ExtraDataTable&&) noexcept = default;
+
 	auto operator=(const ExtraDataTable&) -> ExtraDataTable& = default;
+
 	auto operator=(ExtraDataTable&&) noexcept -> ExtraDataTable& = default;
 
 	/**
@@ -84,6 +88,7 @@ public:
 	auto deleteExtraData() -> bool {
 		return deleteExtraData(core::getFactoryPid<ExtraDataType>());
 	}
+
 	/**
 	 * @brief
 	 *  Check if extra data of given type is defined.
@@ -91,6 +96,7 @@ public:
 	 * @return True if extra data is defined, false otherwise.
 	 */
 	[[nodiscard]] auto isExtraDataDefined(core::FactoryPid iPid) const -> bool;
+
 	/**
 	 * @brief
 	 *  Add extra data to the container.
@@ -102,6 +108,7 @@ public:
 	 * @return True if extra data has been added, false if extra data of the same type is already defined.
 	 */
 	auto addExtraData(core::FactoryPid iPid) -> bool;
+
 	/**
 	 * @brief
 	 *  Delete extra data of given type.
@@ -117,6 +124,7 @@ public:
 	 * @return The extra data container.
 	 */
 	[[nodiscard]] auto getExtraData(core::FactoryPid iPid) const -> const ExtraDataContainer*;
+
 	/**
 	 * @brief
 	 *  Remove element at given index from all extra data containers.

@@ -17,9 +17,11 @@
 namespace owl::nest::codeEditor {
 
 namespace {
-
-/// @brief Tokenize an identifier (letters / digits / `_` / `-`) starting at `iStart`.
-/// Returns `iStart` when the current character is not a valid identifier head.
+/**
+ * @brief
+ *  Tokenize an identifier (letters / digits / `_` / `-`) starting at `iStart`.
+ * Returns `iStart` when the current character is not a valid identifier head.
+ */
 auto defaultIdentifierTokenizer(TextEditor::Iterator iStart, TextEditor::Iterator iEnd) -> TextEditor::Iterator {
 	if (iStart == iEnd)
 		return iStart;
@@ -36,7 +38,10 @@ auto defaultIdentifierTokenizer(TextEditor::Iterator iStart, TextEditor::Iterato
 	return it;
 }
 
-/// @brief Tokenize an integer or floating-point number at `iStart`.
+/**
+ * @brief
+ *  Tokenize an integer or floating-point number at `iStart`.
+ */
 auto defaultNumberTokenizer(TextEditor::Iterator iStart, TextEditor::Iterator iEnd) -> TextEditor::Iterator {
 	if (iStart == iEnd)
 		return iStart;

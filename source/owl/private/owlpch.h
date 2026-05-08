@@ -2,7 +2,7 @@
  * @file owlpch.h
  * @author Silmaen
  * @date 06/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,7 +12,6 @@
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
-
 #if !defined(__clang__) or __clang_major__ > 15
 #include <ranges>
 #endif
@@ -48,5 +47,4 @@ OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
 // third party
 #include <entt/entt.hpp>
 #include <magic_enum/magic_enum.hpp>
-
 OWL_DIAG_POP

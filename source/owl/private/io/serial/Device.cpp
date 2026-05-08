@@ -2,7 +2,7 @@
  * @file Device.cpp
  * @author Silmaen
  * @date 05/06/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"

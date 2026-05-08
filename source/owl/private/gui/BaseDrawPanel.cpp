@@ -2,7 +2,7 @@
  * @file BaseDrawPanel.cpp
  * @author Silmaen
  * @date 23/06/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -44,7 +44,6 @@ void BaseDrawPanel::onRender() {
 					 vec(mp_framebuffer->getUpperData()));
 	} else
 		OWL_WARN("No frameBuffer to render...")
-
 	ImGui::End();
 	ImGui::PopStyleVar();
 }

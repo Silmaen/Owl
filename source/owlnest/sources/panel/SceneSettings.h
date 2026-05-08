@@ -16,7 +16,8 @@
 namespace owl::nest::panel {
 
 /**
- * @brief Dockable panel for editing the active scene's global settings.
+ * @brief
+ *  Dockable panel for editing the active scene's global settings.
  *
  * Surfaces the per-scene `EnabledRenderers` block (renderer-stack ordering,
  * enable / disable per layer, per-layer-type override editor) without
@@ -46,12 +47,14 @@ public:
 	~SceneSettings() = default;
 
 	/**
-	 * @brief Make the window visible. Toggleable from the editor menu.
+	 * @brief
+	 *  Make the window visible. Toggleable from the editor menu.
 	 */
 	void open() { m_visible = true; }
 
 	/**
-	 * @brief Set the project's renderer-stack config (the catalogue of layer
+	 * @brief
+	 *  Set the project's renderer-stack config (the catalogue of layer
 	 * names and types the panel offers).
 	 * @param[in] iProject The active project (read-only — only the
 	 * `rendererStack` field is consumed).
@@ -59,26 +62,30 @@ public:
 	void setProject(const Project& iProject) { mp_project = &iProject; }
 
 	/**
-	 * @brief Set the active scene this panel edits.
+	 * @brief
+	 *  Set the active scene this panel edits.
 	 * @param[in] iScene The active scene (may be null when no document is
 	 * open — the panel will render an empty placeholder in that case).
 	 */
 	void setScene(const shared<scene::Scene>& iScene) { m_scene = iScene; }
 
 	/**
-	 * @brief Set the undo manager to push commands onto.
+	 * @brief
+	 *  Set the undo manager to push commands onto.
 	 * @param[in] iUndoManager Owning manager pointer (may be null when no
 	 * document is active).
 	 */
 	void setUndoManager(SceneUndoManager* iUndoManager) { mp_undoManager = iUndoManager; }
 
 	/**
-	 * @brief Render the panel. Call once per frame.
+	 * @brief
+	 *  Render the panel. Call once per frame.
 	 */
 	void onImGuiRender();
 
 	/**
-	 * @brief Whether the user changed the config since the last call to
+	 * @brief
+	 *  Whether the user changed the config since the last call to
 	 * `consumeDirtyFlag`. Used by the editor to decide when to rebuild the
 	 * active `RenderStack` from the scene + project config.
 	 * @return True if a config change occurred since the last consume.

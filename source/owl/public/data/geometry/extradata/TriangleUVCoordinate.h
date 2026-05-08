@@ -2,7 +2,7 @@
  * @file TriangleUVCoordinate.h
  * @author Silmaen
  * @date 19/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -14,66 +14,78 @@
 namespace owl::data::geometry::extradata {
 /**
  * @brief
- *  Extra data to store UV coordinates for a triangle.
+ *  Extra data storing UV coordinates for each vertex of a triangle.
  */
 class OWL_API TriangleUVCoordinate
 	: public data::extradata::MeshExtraData<TriangleUVCoordinate, std::array<math::vec2, 3>> {
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	TriangleUVCoordinate();
 
 	/**
-	 * @brief Copy constructor.
+	 * @brief
+	 *  Copy constructor.
+	 * @param[in] iDataToCopy Source data to copy.
 	 */
 	TriangleUVCoordinate(const TriangleUVCoordinate& iDataToCopy) = default;
 
 	/**
-	 * @brief Move constructor.
+	 * @brief
+	 *  Move constructor.
 	 */
-	TriangleUVCoordinate(TriangleUVCoordinate&&) = default;
+	TriangleUVCoordinate(TriangleUVCoordinate&&) noexcept = default;
 
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~TriangleUVCoordinate() override;
 
 	/**
-	 * @brief Assignment operator.
+	 * @brief
+	 *  Copy assignment operator.
+	 * @param[in] iDataToCopy Source data to copy.
+	 * @return A reference to this object.
 	 */
 	auto operator=(const TriangleUVCoordinate& iDataToCopy) -> TriangleUVCoordinate& = default;
 
 	/**
-	 * @brief Move assignment operator.
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
 	 */
-	auto operator=(TriangleUVCoordinate&&) -> TriangleUVCoordinate& = default;
+	auto operator=(TriangleUVCoordinate&&) noexcept -> TriangleUVCoordinate& = default;
 
 	/**
-	 * @brief Get the UV coordinate of the given vertex.
-	 * @param iVertId The vertex ID (0, 1 or 2).
+	 * @brief
+	 *  Get the UV coordinate of the given vertex.
+	 * @param[in] iVertId The vertex ID (0, 1 or 2).
 	 * @return The UV coordinate of the given vertex.
 	 */
 	[[nodiscard]] auto getUvCoord(size_t iVertId) const -> const math::vec2&;
 
 	/**
-	 * @brief Set the UV coordinate of the given vertex.
-	 * @param iVertId The vertex ID (0, 1 or 2).
-	 * @param iUvCoord The UV coordinate to set.
+	 * @brief
+	 *  Set the UV coordinate of the given vertex.
+	 * @param[in] iVertId The vertex ID (0, 1 or 2).
+	 * @param[in] iUvCoord The UV coordinate to set.
 	 */
 	void setUvCoord(size_t iVertId, const math::vec2& iUvCoord);
 
 	/**
 	 * @brief
-	 *  Return the string identifier of the extra data
-	 * @note
-	 *  This Key should be unique
-	 * @return Key of the extra data
+	 *  Return the string identifier of the extra data.
+	 * @note This key should be unique.
+	 * @return Key of the extra data.
 	 */
 	static auto getStaticType() -> std::string;
 
 	/**
-	 * @brief Get the underlying value.
+	 * @brief
+	 *  Get the underlying value.
 	 * @return The stored value.
 	 */
 	[[nodiscard]] auto getValue() const -> const Type& override { return m_uvCoords; }
@@ -87,10 +99,9 @@ private:
 
 // Define components for triangle UV coordinates
 namespace owl::data::component {
-
-/// @brief Read iterate component for triangle UV coordinates.
+/// Read-iterate component for triangle UV coordinates.
 const inline ReadMeshTriangleExtraData<geometry::extradata::TriangleUVCoordinate> UvCoords;
-/// @brief Write iterate component for triangle UV coordinates.
+/// Write-iterate component for triangle UV coordinates.
 const inline WriteMeshTriangleExtraData<geometry::extradata::TriangleUVCoordinate> WriteUvCoords;
 
 }// namespace owl::data::component

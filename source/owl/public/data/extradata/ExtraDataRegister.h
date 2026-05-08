@@ -2,7 +2,7 @@
  * @file ExtraDataRegister.h
  * @author Silmaen
  * @date 19/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,7 +12,6 @@
 #include "data/extradata/ExtraDataRegisterScope.h"
 
 namespace owl::data::extradata {
-
 /**
  * @brief
  *  Return PID of the extra data type.

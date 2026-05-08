@@ -39,7 +39,6 @@ using owl::nest::codeEditor::MdParagraph;
 using owl::nest::codeEditor::MdTable;
 
 namespace {
-
 template<typename T>
 [[nodiscard]] auto firstAs(const std::vector<MdBlock>& iBlocks) -> const T* {
 	for (const auto& b: iBlocks)

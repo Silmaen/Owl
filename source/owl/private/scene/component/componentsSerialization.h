@@ -2,7 +2,7 @@
  * @file componentsSerialization.h
  * @author Silmaen
  * @date 1/29/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,9 +13,9 @@
 #include "scene/component/components.h"
 
 namespace owl::scene::component {
-
 /**
- * @brief Serialize a single component.
+ * @brief
+ *  Serialize a single component.
  * @tparam Component The Serializable component type.
  * @param iEntity The Entity to serialize.
  * @param iOut The YAML context.
@@ -28,7 +28,8 @@ void serializeComponent(const Entity& iEntity, const core::Serializer& iOut) {
 }
 
 /**
- * @brief Serialize a list of component.
+ * @brief
+ *  Serialize a list of component.
  * @tparam Components The Serializable component types (deduced from the last parameter).
  * @param iEntity The Entity to serialize.
  * @param iOut The YAML context.
@@ -39,7 +40,8 @@ void serializeComponents(const Entity& iEntity, const core::Serializer& iOut, co
 }
 
 /**
- * @brief Deserialize a single component.
+ * @brief
+ *  Deserialize a single component.
  * @tparam Component The Serializable component type.
  * @param iEntity The Entity to deserialize.
  * @param iNode The YAML context.
@@ -55,7 +57,8 @@ void deserializeComponent(Entity& iEntity, const core::Serializer& iNode) {
 }
 
 /**
- * @brief Deserialize a list of components.
+ * @brief
+ *  Deserialize a list of components.
  * @tparam Components The Serializable component types (deduced from the last parameter).
  * @param iEntity The Entity to deserialize.
  * @param iNode The YAML context.

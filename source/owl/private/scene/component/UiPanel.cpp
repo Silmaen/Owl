@@ -1,5 +1,5 @@
 /**
- * @file UIPanel.cpp
+ * @file UiPanel.cpp
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -9,13 +9,13 @@
 
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
-#include "scene/component/UIPanel.h"
+#include "scene/component/UiPanel.h"
 
 #include <magic_enum/magic_enum.hpp>
 
 namespace owl::scene::component {
 
-void UIPanel::serialize(const core::Serializer& iOut) const {
+void UiPanel::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "backgroundColor" << YAML::Value << backgroundColor;
@@ -27,7 +27,7 @@ void UIPanel::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
-void UIPanel::deserialize(const core::Serializer& iNode) {
+void UiPanel::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["backgroundColor"])
 		backgroundColor = iNode.getImpl()->node["backgroundColor"].as<math::vec4>();
 	if (iNode.getImpl()->node["borderColor"])

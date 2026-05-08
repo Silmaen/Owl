@@ -13,33 +13,33 @@
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/Canvas.h>
-#include <scene/component/UIImage.h>
-#include <scene/component/UIPanel.h>
-#include <scene/component/UIRect.h>
-#include <scene/component/UIText.h>
+#include <scene/component/UiImage.h>
+#include <scene/component/UiPanel.h>
+#include <scene/component/UiRect.h>
+#include <scene/component/UiText.h>
 
 using namespace owl;
 using namespace owl::scene;
 
-TEST(UIText, createAndDefaults) {
+TEST(UiText, createAndDefaults) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<Scene>();
 	auto entity = scn->createEntity("TextWidget");
-	auto& text = entity.addComponent<component::UIText>();
+	auto& text = entity.addComponent<component::UiText>();
 
 	EXPECT_TRUE(text.text.empty());
 	EXPECT_NEAR(text.fontSize, 16.f, 0.01f);
-	EXPECT_EQ(text.alignment, component::UIText::Alignment::Left);
+	EXPECT_EQ(text.alignment, component::UiText::Alignment::Left);
 	EXPECT_NEAR(text.color.x(), 1.f, 0.01f);
 
 	core::Log::invalidate();
 }
 
-TEST(UIImage, createAndDefaults) {
+TEST(UiImage, createAndDefaults) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<Scene>();
 	auto entity = scn->createEntity("ImageWidget");
-	auto& img = entity.addComponent<component::UIImage>();
+	auto& img = entity.addComponent<component::UiImage>();
 
 	EXPECT_EQ(img.texture, nullptr);
 	EXPECT_NEAR(img.tint.x(), 1.f, 0.01f);
@@ -48,14 +48,14 @@ TEST(UIImage, createAndDefaults) {
 	core::Log::invalidate();
 }
 
-TEST(UIPanel, createAndDefaults) {
+TEST(UiPanel, createAndDefaults) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<Scene>();
 	auto entity = scn->createEntity("PanelWidget");
-	auto& panel = entity.addComponent<component::UIPanel>();
+	auto& panel = entity.addComponent<component::UiPanel>();
 
 	EXPECT_NEAR(panel.backgroundColor.w(), 0.8f, 0.01f);
-	EXPECT_EQ(panel.layout, component::UIPanel::Layout::None);
+	EXPECT_EQ(panel.layout, component::UiPanel::Layout::None);
 	EXPECT_NEAR(panel.borderWidth, 0.f, 0.01f);
 	EXPECT_NEAR(panel.spacing, 0.f, 0.01f);
 	EXPECT_NEAR(panel.padding, 0.f, 0.01f);
@@ -76,23 +76,23 @@ TEST(UIWidgets, serializeDeserializeViaScene) {
 		canvas.addComponent<component::Canvas>();
 
 		auto textEnt = scn->createEntity("Text");
-		textEnt.addComponent<component::UIRect>();
-		auto& text = textEnt.addComponent<component::UIText>();
+		textEnt.addComponent<component::UiRect>();
+		auto& text = textEnt.addComponent<component::UiText>();
 		text.text = "Hello UI";
 		text.fontSize = 24.f;
-		text.alignment = component::UIText::Alignment::Center;
+		text.alignment = component::UiText::Alignment::Center;
 		scn->setParent(textEnt, canvas);
 
 		auto imgEnt = scn->createEntity("Image");
-		imgEnt.addComponent<component::UIRect>();
-		auto& img = imgEnt.addComponent<component::UIImage>();
+		imgEnt.addComponent<component::UiRect>();
+		auto& img = imgEnt.addComponent<component::UiImage>();
 		img.tint = {1.f, 0.5f, 0.f, 1.f};
 		scn->setParent(imgEnt, canvas);
 
 		auto panelEnt = scn->createEntity("Panel");
-		panelEnt.addComponent<component::UIRect>();
-		auto& panel = panelEnt.addComponent<component::UIPanel>();
-		panel.layout = component::UIPanel::Layout::Vertical;
+		panelEnt.addComponent<component::UiRect>();
+		auto& panel = panelEnt.addComponent<component::UiPanel>();
+		panel.layout = component::UiPanel::Layout::Vertical;
 		panel.spacing = 10.f;
 		panel.padding = 5.f;
 		scn->setParent(panelEnt, canvas);
@@ -109,21 +109,21 @@ TEST(UIWidgets, serializeDeserializeViaScene) {
 		bool foundImage = false;
 		bool foundPanel = false;
 		for (const auto& entity: scn->getAllEntities()) {
-			if (entity.hasComponent<component::UIText>()) {
-				const auto& text = entity.getComponent<component::UIText>();
+			if (entity.hasComponent<component::UiText>()) {
+				const auto& text = entity.getComponent<component::UiText>();
 				EXPECT_EQ(text.text, "Hello UI");
 				EXPECT_NEAR(text.fontSize, 24.f, 0.01f);
-				EXPECT_EQ(text.alignment, component::UIText::Alignment::Center);
+				EXPECT_EQ(text.alignment, component::UiText::Alignment::Center);
 				foundText = true;
 			}
-			if (entity.hasComponent<component::UIImage>()) {
-				const auto& img = entity.getComponent<component::UIImage>();
+			if (entity.hasComponent<component::UiImage>()) {
+				const auto& img = entity.getComponent<component::UiImage>();
 				EXPECT_NEAR(img.tint.y(), 0.5f, 0.01f);
 				foundImage = true;
 			}
-			if (entity.hasComponent<component::UIPanel>()) {
-				const auto& panel = entity.getComponent<component::UIPanel>();
-				EXPECT_EQ(panel.layout, component::UIPanel::Layout::Vertical);
+			if (entity.hasComponent<component::UiPanel>()) {
+				const auto& panel = entity.getComponent<component::UiPanel>();
+				EXPECT_EQ(panel.layout, component::UiPanel::Layout::Vertical);
 				EXPECT_NEAR(panel.spacing, 10.f, 0.01f);
 				EXPECT_NEAR(panel.padding, 5.f, 0.01f);
 				foundPanel = true;

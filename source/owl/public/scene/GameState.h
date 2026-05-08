@@ -18,9 +18,9 @@
 #include <vector>
 
 namespace owl::scene {
-
 /**
- * @brief Global key-value store for game progression data.
+ * @brief
+ *  Global key-value store for game progression data.
  *
  * Stores int, float, string, and bool values by key. Accessible from Lua via
  * the `gamestate` table. Serialized with save files.
@@ -31,28 +31,36 @@ public:
 	using Value = std::variant<int64_t, float, std::string, bool>;
 
 	GameState() = default;
+
 	~GameState() = default;
+
 	GameState(const GameState&) = default;
-	GameState(GameState&&) = default;
+
+	GameState(GameState&&) noexcept = default;
+
 	auto operator=(const GameState&) -> GameState& = default;
-	auto operator=(GameState&&) -> GameState& = default;
+
+	auto operator=(GameState&&) noexcept -> GameState& = default;
 
 	/**
-	 * @brief Set a value for a key.
+	 * @brief
+	 *  Set a value for a key.
 	 * @param[in] iKey The key.
 	 * @param[in] iValue The value.
 	 */
 	void set(const std::string& iKey, Value iValue);
 
 	/**
-	 * @brief Get a value by key.
+	 * @brief
+	 *  Get a value by key.
 	 * @param[in] iKey The key.
 	 * @return The value, or std::nullopt if not found.
 	 */
 	[[nodiscard]] auto get(const std::string& iKey) const -> std::optional<Value>;
 
 	/**
-	 * @brief Get a value by key with a default fallback.
+	 * @brief
+	 *  Get a value by key with a default fallback.
 	 * @param[in] iKey The key.
 	 * @param[in] iDefault Default value if key is missing.
 	 * @return The value, or the default.
@@ -60,31 +68,49 @@ public:
 	[[nodiscard]] auto get(const std::string& iKey, const Value& iDefault) const -> Value;
 
 	/**
-	 * @brief Remove a key.
+	 * @brief
+	 *  Remove a key.
 	 * @param[in] iKey The key to remove.
 	 */
 	void remove(const std::string& iKey);
 
-	/// @brief Remove all entries.
+	/**
+	 * @brief
+	 *  Remove all entries.
+	 */
 	void clear();
 
-	/// @brief Get all keys.
+	/**
+	 * @brief
+	 *  Get all keys present in the store.
+	 * @return The list of keys (unspecified order).
+	 */
 	[[nodiscard]] auto keys() const -> std::vector<std::string>;
 
-	/// @brief Check if the store is empty.
-	[[nodiscard]] auto empty() const -> bool;
-
-	/// @brief Get the number of entries.
-	[[nodiscard]] auto size() const -> size_t;
+	/**
+	 * @brief
+	 *  Check whether the store is empty.
+	 * @return True when no entries are present.
+	 */
+	[[nodiscard]] auto empty() const noexcept -> bool;
 
 	/**
-	 * @brief Serialize the game state to YAML.
+	 * @brief
+	 *  Get the number of entries currently stored.
+	 * @return The entry count.
+	 */
+	[[nodiscard]] auto size() const noexcept -> size_t;
+
+	/**
+	 * @brief
+	 *  Serialize the game state to YAML.
 	 * @param[in] iOut The serializer context.
 	 */
 	void serialize(const core::Serializer& iOut) const;
 
 	/**
-	 * @brief Deserialize the game state from YAML.
+	 * @brief
+	 *  Deserialize the game state from YAML.
 	 * @param[in] iNode The serializer context.
 	 */
 	void deserialize(const core::Serializer& iNode);

@@ -24,13 +24,13 @@
 #include <scene/component/SoundSource.h>
 #include <scene/component/Text.h>
 #include <scene/component/Trigger.h>
-#include <scene/component/UIButton.h>
-#include <scene/component/UIImage.h>
-#include <scene/component/UIPanel.h>
-#include <scene/component/UIProgressBar.h>
-#include <scene/component/UIRect.h>
-#include <scene/component/UISlider.h>
-#include <scene/component/UIText.h>
+#include <scene/component/UiButton.h>
+#include <scene/component/UiImage.h>
+#include <scene/component/UiPanel.h>
+#include <scene/component/UiProgressBar.h>
+#include <scene/component/UiRect.h>
+#include <scene/component/UiSlider.h>
+#include <scene/component/UiText.h>
 
 using namespace owl;
 using namespace owl::scene;
@@ -282,157 +282,157 @@ TEST(EntityComponentCoverage, Canvas) {
 }
 
 // ---------------------------------------------------------------------------
-// UIRect
+// UiRect
 // ---------------------------------------------------------------------------
 
-TEST(EntityComponentCoverage, UIRect) {
+TEST(EntityComponentCoverage, UiRect) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
 	auto ent = sc.createEntity("UIRectEnt");
 
-	EXPECT_FALSE(ent.hasComponent<component::UIRect>());
-	auto& rect = ent.addComponent<component::UIRect>();
-	rect.anchor = component::UIRect::Anchor::TopLeft;
+	EXPECT_FALSE(ent.hasComponent<component::UiRect>());
+	auto& rect = ent.addComponent<component::UiRect>();
+	rect.anchor = component::UiRect::Anchor::TopLeft;
 	rect.size = {200.f, 50.f};
 	rect.anchorOffset = {10.f, 20.f};
-	EXPECT_TRUE(ent.hasComponent<component::UIRect>());
-	EXPECT_EQ(ent.getComponent<component::UIRect>().anchor, component::UIRect::Anchor::TopLeft);
-	EXPECT_NEAR(ent.getComponent<component::UIRect>().size.x(), 200.f, 0.01f);
-	ent.removeComponent<component::UIRect>();
-	EXPECT_FALSE(ent.hasComponent<component::UIRect>());
+	EXPECT_TRUE(ent.hasComponent<component::UiRect>());
+	EXPECT_EQ(ent.getComponent<component::UiRect>().anchor, component::UiRect::Anchor::TopLeft);
+	EXPECT_NEAR(ent.getComponent<component::UiRect>().size.x(), 200.f, 0.01f);
+	ent.removeComponent<component::UiRect>();
+	EXPECT_FALSE(ent.hasComponent<component::UiRect>());
 
 	core::Log::invalidate();
 }
 
 // ---------------------------------------------------------------------------
-// UIText
+// UiText
 // ---------------------------------------------------------------------------
 
-TEST(EntityComponentCoverage, UIText) {
+TEST(EntityComponentCoverage, UiText) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
 	auto ent = sc.createEntity("UITextEnt");
 
-	EXPECT_FALSE(ent.hasComponent<component::UIText>());
-	auto& ut = ent.addComponent<component::UIText>();
+	EXPECT_FALSE(ent.hasComponent<component::UiText>());
+	auto& ut = ent.addComponent<component::UiText>();
 	ut.text = "UI Label";
 	ut.fontSize = 24.f;
-	ut.alignment = component::UIText::Alignment::Center;
-	EXPECT_TRUE(ent.hasComponent<component::UIText>());
-	EXPECT_EQ(ent.getComponent<component::UIText>().text, "UI Label");
-	EXPECT_NEAR(ent.getComponent<component::UIText>().fontSize, 24.f, 0.01f);
-	ent.removeComponent<component::UIText>();
-	EXPECT_FALSE(ent.hasComponent<component::UIText>());
+	ut.alignment = component::UiText::Alignment::Center;
+	EXPECT_TRUE(ent.hasComponent<component::UiText>());
+	EXPECT_EQ(ent.getComponent<component::UiText>().text, "UI Label");
+	EXPECT_NEAR(ent.getComponent<component::UiText>().fontSize, 24.f, 0.01f);
+	ent.removeComponent<component::UiText>();
+	EXPECT_FALSE(ent.hasComponent<component::UiText>());
 
 	core::Log::invalidate();
 }
 
 // ---------------------------------------------------------------------------
-// UIImage
+// UiImage
 // ---------------------------------------------------------------------------
 
-TEST(EntityComponentCoverage, UIImage) {
+TEST(EntityComponentCoverage, UiImage) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
 	auto ent = sc.createEntity("UIImageEnt");
 
-	EXPECT_FALSE(ent.hasComponent<component::UIImage>());
-	auto& img = ent.addComponent<component::UIImage>();
+	EXPECT_FALSE(ent.hasComponent<component::UiImage>());
+	auto& img = ent.addComponent<component::UiImage>();
 	img.tint = {0.5f, 0.5f, 0.5f, 1.0f};
-	EXPECT_TRUE(ent.hasComponent<component::UIImage>());
-	EXPECT_NEAR(ent.getComponent<component::UIImage>().tint.x(), 0.5f, 0.01f);
-	ent.removeComponent<component::UIImage>();
-	EXPECT_FALSE(ent.hasComponent<component::UIImage>());
+	EXPECT_TRUE(ent.hasComponent<component::UiImage>());
+	EXPECT_NEAR(ent.getComponent<component::UiImage>().tint.x(), 0.5f, 0.01f);
+	ent.removeComponent<component::UiImage>();
+	EXPECT_FALSE(ent.hasComponent<component::UiImage>());
 
 	core::Log::invalidate();
 }
 
 // ---------------------------------------------------------------------------
-// UIPanel
+// UiPanel
 // ---------------------------------------------------------------------------
 
-TEST(EntityComponentCoverage, UIPanel) {
+TEST(EntityComponentCoverage, UiPanel) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
 	auto ent = sc.createEntity("UIPanelEnt");
 
-	EXPECT_FALSE(ent.hasComponent<component::UIPanel>());
-	auto& panel = ent.addComponent<component::UIPanel>();
-	panel.layout = component::UIPanel::Layout::Vertical;
+	EXPECT_FALSE(ent.hasComponent<component::UiPanel>());
+	auto& panel = ent.addComponent<component::UiPanel>();
+	panel.layout = component::UiPanel::Layout::Vertical;
 	panel.spacing = 5.f;
 	panel.padding = 10.f;
 	panel.borderWidth = 2.f;
-	EXPECT_TRUE(ent.hasComponent<component::UIPanel>());
-	EXPECT_EQ(ent.getComponent<component::UIPanel>().layout, component::UIPanel::Layout::Vertical);
-	EXPECT_NEAR(ent.getComponent<component::UIPanel>().spacing, 5.f, 0.01f);
-	ent.removeComponent<component::UIPanel>();
-	EXPECT_FALSE(ent.hasComponent<component::UIPanel>());
+	EXPECT_TRUE(ent.hasComponent<component::UiPanel>());
+	EXPECT_EQ(ent.getComponent<component::UiPanel>().layout, component::UiPanel::Layout::Vertical);
+	EXPECT_NEAR(ent.getComponent<component::UiPanel>().spacing, 5.f, 0.01f);
+	ent.removeComponent<component::UiPanel>();
+	EXPECT_FALSE(ent.hasComponent<component::UiPanel>());
 
 	core::Log::invalidate();
 }
 
 // ---------------------------------------------------------------------------
-// UIButton
+// UiButton
 // ---------------------------------------------------------------------------
 
-TEST(EntityComponentCoverage, UIButton) {
+TEST(EntityComponentCoverage, UiButton) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
 	auto ent = sc.createEntity("UIButtonEnt");
 
-	EXPECT_FALSE(ent.hasComponent<component::UIButton>());
-	auto& btn = ent.addComponent<component::UIButton>();
+	EXPECT_FALSE(ent.hasComponent<component::UiButton>());
+	auto& btn = ent.addComponent<component::UiButton>();
 	btn.onClickCallback = "on_click_handler";
 	btn.normalColor = {0.3f, 0.3f, 0.3f, 1.f};
-	EXPECT_TRUE(ent.hasComponent<component::UIButton>());
-	EXPECT_EQ(ent.getComponent<component::UIButton>().onClickCallback, "on_click_handler");
-	ent.removeComponent<component::UIButton>();
-	EXPECT_FALSE(ent.hasComponent<component::UIButton>());
+	EXPECT_TRUE(ent.hasComponent<component::UiButton>());
+	EXPECT_EQ(ent.getComponent<component::UiButton>().onClickCallback, "on_click_handler");
+	ent.removeComponent<component::UiButton>();
+	EXPECT_FALSE(ent.hasComponent<component::UiButton>());
 
 	core::Log::invalidate();
 }
 
 // ---------------------------------------------------------------------------
-// UISlider
+// UiSlider
 // ---------------------------------------------------------------------------
 
-TEST(EntityComponentCoverage, UISlider) {
+TEST(EntityComponentCoverage, UiSlider) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
 	auto ent = sc.createEntity("UISliderEnt");
 
-	EXPECT_FALSE(ent.hasComponent<component::UISlider>());
-	auto& slider = ent.addComponent<component::UISlider>();
+	EXPECT_FALSE(ent.hasComponent<component::UiSlider>());
+	auto& slider = ent.addComponent<component::UiSlider>();
 	slider.value = 0.5f;
 	slider.minValue = 0.f;
 	slider.maxValue = 100.f;
 	slider.onValueChangedCallback = "on_slider_change";
-	EXPECT_TRUE(ent.hasComponent<component::UISlider>());
-	EXPECT_NEAR(ent.getComponent<component::UISlider>().value, 0.5f, 0.01f);
-	EXPECT_NEAR(ent.getComponent<component::UISlider>().maxValue, 100.f, 0.01f);
-	ent.removeComponent<component::UISlider>();
-	EXPECT_FALSE(ent.hasComponent<component::UISlider>());
+	EXPECT_TRUE(ent.hasComponent<component::UiSlider>());
+	EXPECT_NEAR(ent.getComponent<component::UiSlider>().value, 0.5f, 0.01f);
+	EXPECT_NEAR(ent.getComponent<component::UiSlider>().maxValue, 100.f, 0.01f);
+	ent.removeComponent<component::UiSlider>();
+	EXPECT_FALSE(ent.hasComponent<component::UiSlider>());
 
 	core::Log::invalidate();
 }
 
 // ---------------------------------------------------------------------------
-// UIProgressBar
+// UiProgressBar
 // ---------------------------------------------------------------------------
 
-TEST(EntityComponentCoverage, UIProgressBar) {
+TEST(EntityComponentCoverage, UiProgressBar) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
 	auto ent = sc.createEntity("UIProgressEnt");
 
-	EXPECT_FALSE(ent.hasComponent<component::UIProgressBar>());
-	auto& bar = ent.addComponent<component::UIProgressBar>();
+	EXPECT_FALSE(ent.hasComponent<component::UiProgressBar>());
+	auto& bar = ent.addComponent<component::UiProgressBar>();
 	bar.value = 0.75f;
 	bar.fillColor = {0.f, 1.f, 0.f, 1.f};
-	EXPECT_TRUE(ent.hasComponent<component::UIProgressBar>());
-	EXPECT_NEAR(ent.getComponent<component::UIProgressBar>().value, 0.75f, 0.01f);
-	ent.removeComponent<component::UIProgressBar>();
-	EXPECT_FALSE(ent.hasComponent<component::UIProgressBar>());
+	EXPECT_TRUE(ent.hasComponent<component::UiProgressBar>());
+	EXPECT_NEAR(ent.getComponent<component::UiProgressBar>().value, 0.75f, 0.01f);
+	ent.removeComponent<component::UiProgressBar>();
+	EXPECT_FALSE(ent.hasComponent<component::UiProgressBar>());
 
 	core::Log::invalidate();
 }
@@ -477,9 +477,9 @@ TEST(EntityComponentCoverage, addOrReplaceVariousComponents) {
 	ent.addOrReplaceComponent<component::CircleRenderer>().color = {0.f, 1.f, 0.f, 1.f};
 	EXPECT_NEAR(ent.getComponent<component::CircleRenderer>().color.y(), 1.f, 0.01f);
 
-	ent.addComponent<component::UIProgressBar>().value = 0.1f;
-	ent.addOrReplaceComponent<component::UIProgressBar>().value = 0.9f;
-	EXPECT_NEAR(ent.getComponent<component::UIProgressBar>().value, 0.9f, 0.01f);
+	ent.addComponent<component::UiProgressBar>().value = 0.1f;
+	ent.addOrReplaceComponent<component::UiProgressBar>().value = 0.9f;
+	EXPECT_NEAR(ent.getComponent<component::UiProgressBar>().value, 0.9f, 0.01f);
 
 	ent.addComponent<component::SoundListener>().primary = true;
 	ent.addOrReplaceComponent<component::SoundListener>().primary = false;

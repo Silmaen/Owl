@@ -2,7 +2,7 @@
  * @file MeshVertex.cpp
  * @author Silmaen
  * @date 18/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 

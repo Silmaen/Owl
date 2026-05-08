@@ -2,7 +2,7 @@
  * @file Factory.h
  * @author Silmaen
  * @date 19/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,7 +11,6 @@
 #include "core/IFactory.h"
 
 namespace owl::core {
-
 /**
  * @brief
  *  Implementation of a factory class.
@@ -19,8 +18,11 @@ namespace owl::core {
 class OWL_API Factory : public IFactory {
 public:
 	Factory(const Factory&) = delete;
+
 	Factory(Factory&&) = delete;
+
 	auto operator=(const Factory&) -> Factory& = delete;
+
 	auto operator=(Factory&&) -> Factory = delete;
 
 	/**
@@ -44,6 +46,7 @@ public:
 	 */
 	void registerObject(std::type_index iType, const std::string& iDataKey,
 						const ProductAllocator& iDataAllocator) override;
+
 	/**
 	 * @brief
 	 *  Remove a product from the factory.

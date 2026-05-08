@@ -2,7 +2,7 @@
  * @file input.cpp
  * @author Silmaen
  * @date 02/08/2023
- * Copyright © 2023 All rights reserved.
+ * Copyright (c) 2023 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -18,7 +18,6 @@ window::Type Input::m_type = window::Type::Glfw;
 uniq<Input> Input::m_instance = nullptr;
 
 Input::~Input() = default;
-
 
 void Input::init(const window::Type& iType) {
 	if (m_instance)

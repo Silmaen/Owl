@@ -19,7 +19,6 @@ using namespace owl;
 using namespace owl::scene;
 
 namespace {
-
 /// Use a temp directory as save location for tests.
 struct TestSaveGuard {
 	TestSaveGuard() {

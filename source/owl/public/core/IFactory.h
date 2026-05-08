@@ -2,7 +2,7 @@
  * @file IFactory.h
  * @author Silmaen
  * @date 18/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -38,10 +38,15 @@ public:
 	 *  Destructor
 	 */
 	virtual ~IFactory();
+
 	IFactory(const IFactory&) = delete;
+
 	IFactory(IFactory&&) = delete;
+
 	auto operator=(const IFactory&) -> IFactory& = delete;
+
 	auto operator=(IFactory&&) -> IFactory& = delete;
+
 	/**
 	 * @brief
 	 *  Allocate the unique instance of the class if needed and return it
@@ -109,6 +114,7 @@ public:
 	 * @return The pid corresponding to the product.
 	 */
 	virtual auto getPid(std::type_index iType) -> FactoryPid = 0;
+
 	/**
 	 * @brief
 	 *  From a data key of a product, find the corresponding PID. The product must be registered before.
@@ -122,6 +128,7 @@ public:
  * @brief
  *  Base class for all products created by the factory.
  */
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
 class OWL_API FactoryProduct {
@@ -205,6 +212,7 @@ struct OWL_API ProductAllocator {
 	SingleAllocator singleAllocator;
 	/// Function pointer of multiple allocator
 	MultipleAllocator multipleAllocator;
+
 	/**
 	 * @brief
 	 *  Constructor
@@ -215,12 +223,26 @@ struct OWL_API ProductAllocator {
 };
 
 //NOLINTBEGIN(cppcoreguidelines-owning-memory)
+/**
+ * @brief
+ *  Default single-product allocator used by the factory: heap-allocates one `T`.
+ * @tparam T The product type to allocate.
+ * @return The freshly allocated product (caller takes ownership).
+ */
 template<typename T>
 auto factorySingleProductAllocator() -> FactoryProduct* {
 	return new T();
 }
 //NOLINTEND(cppcoreguidelines-owning-memory)
 
+/**
+ * @brief
+ *  Default multiple-product allocator used by the factory: heap-allocates `iNumber` instances of `T`.
+ * @tparam T The product type to allocate.
+ * @param[in] iNumber Number of products to allocate.
+ * @param[out] iTable Output table populated with `iNumber` freshly-allocated products.
+ * @return True when the table has the expected size after allocation.
+ */
 template<typename T>
 auto factoryMultipleProductAllocator(const unsigned int iNumber, std::vector<FactoryProduct*>& iTable) -> bool {
 	iTable.resize(iNumber);
@@ -231,6 +253,12 @@ auto factoryMultipleProductAllocator(const unsigned int iNumber, std::vector<Fac
 	return iTable.size() == iNumber;
 }
 
+/**
+ * @brief
+ *  Register product type `T` in the global factory and return its PID.
+ * @tparam T The product type (must expose `getStaticType()`).
+ * @return The newly registered factory PID.
+ */
 template<typename T>
 auto factoryRegisterType() -> FactoryPid {
 	const std::string type = T::getStaticType();

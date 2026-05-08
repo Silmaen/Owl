@@ -1,5 +1,5 @@
 /**
- * @file UIButton.cpp
+ * @file UiButton.cpp
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -9,11 +9,11 @@
 
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
-#include "scene/component/UIButton.h"
+#include "scene/component/UiButton.h"
 
 namespace owl::scene::component {
 
-void UIButton::serialize(const core::Serializer& iOut) const {
+void UiButton::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "normalColor" << YAML::Value << normalColor;
@@ -24,7 +24,7 @@ void UIButton::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
-void UIButton::deserialize(const core::Serializer& iNode) {
+void UiButton::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["normalColor"])
 		normalColor = iNode.getImpl()->node["normalColor"].as<math::vec4>();
 	if (iNode.getImpl()->node["hoverColor"])

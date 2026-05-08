@@ -2,7 +2,7 @@
  * @file Buffer.h
  * @author Silmaen
  * @date 08/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,7 +12,8 @@
 
 namespace owl::renderer::gpu {
 /**
- * @brief Type of data.
+ * @brief
+ *  Type of data.
  */
 enum struct ShaderDataType : uint8_t {
 	None = 0,
@@ -29,6 +30,12 @@ enum struct ShaderDataType : uint8_t {
 	Bool
 };
 
+/**
+ * @brief
+ *  Get the byte size of a shader data type.
+ * @param[in] iType The element type.
+ * @return Size in bytes.
+ */
 static auto shaderDataTypeSize(const ShaderDataType iType) -> uint32_t {
 	switch (iType) {
 		case ShaderDataType::Float:
@@ -61,7 +68,8 @@ static auto shaderDataTypeSize(const ShaderDataType iType) -> uint32_t {
 }
 
 /**
- * @brief Class for buffer element.
+ * @brief
+ *  Class for buffer element.
  */
 struct OWL_API BufferElement {
 	/// Element Name.
@@ -76,7 +84,8 @@ struct OWL_API BufferElement {
 	bool normalized = false;
 
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 * @param[in] iName Element Name.
 	 * @param[in] iType Data's type.
 	 * @param[in] iNormalized If data's normalized.
@@ -85,7 +94,8 @@ struct OWL_API BufferElement {
 		: name(std::move(iName)), type(iType), size(shaderDataTypeSize(iType)), normalized(iNormalized) {}
 
 	/**
-	 * @brief Get component's count.
+	 * @brief
+	 *  Get component's count.
 	 * @return Component's count.
 	 */
 	[[nodiscard]] auto getComponentCount() const -> uint32_t {
@@ -121,7 +131,8 @@ struct OWL_API BufferElement {
 };
 
 /**
- * @brief Class Describing the buffer layout.
+ * @brief
+ *  Class Describing the buffer layout.
  */
 class OWL_API BufferLayout {
 public:
@@ -130,29 +141,60 @@ public:
 	using const_iterator = element_type::const_iterator;
 
 	BufferLayout() = default;
+
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 * @param[in] iElements Elements in the layout.
 	 */
 	BufferLayout(const std::initializer_list<BufferElement>& iElements) : m_elements(iElements) {
+		/**
+		 * @brief
+		 *  Calculate offsets and stride.
+		 */
 		calculateOffsetsAndStride();
 	}
 
 	/**
-	 * @brief Get buffer stride.
+	 * @brief
+	 *  Get buffer stride.
 	 * @return The buffer stride.
 	 */
 	[[nodiscard]] auto getStride() const -> uint32_t { return m_stride; }
 
 	/**
-	 * @brief Get the buffer Elements.
+	 * @brief
+	 *  Get the buffer Elements.
 	 * @return Buffer elements.
 	 */
 	[[nodiscard]] auto getElements() const -> const std::vector<BufferElement>& { return m_elements; }
 
+	/**
+	 * @brief
+	 *  Iterator to the first component.
+	 * @return Iterator pointing to the beginning.
+	 */
 	[[nodiscard]] auto begin() -> iterator { return m_elements.begin(); }
+
+	/**
+	 * @brief
+	 *  Iterator past the last component.
+	 * @return Iterator pointing to the end.
+	 */
 	[[nodiscard]] auto end() -> iterator { return m_elements.end(); }
+
+	/**
+	 * @brief
+	 *  Iterator to the first component.
+	 * @return Iterator pointing to the beginning.
+	 */
 	[[nodiscard]] auto begin() const -> const_iterator { return m_elements.begin(); }
+
+	/**
+	 * @brief
+	 *  Iterator past the last component.
+	 * @return Iterator pointing to the end.
+	 */
 	[[nodiscard]] auto end() const -> const_iterator { return m_elements.end(); }
 
 private:
@@ -160,8 +202,10 @@ private:
 	element_type m_elements;
 	/// Stride of the data.
 	uint32_t m_stride = 0;
+
 	/**
-	 * @brief Automate computation of the offsets and stride.
+	 * @brief
+	 *  Automate computation of the offsets and stride.
 	 */
 	void calculateOffsetsAndStride() {
 		uint32_t offset = 0;
@@ -175,45 +219,57 @@ private:
 };
 
 /**
- * @brief Abstract class for managing vertex buffer.
+ * @brief
+ *  Abstract class for managing vertex buffer.
  */
 class OWL_API VertexBuffer {
 public:
 	VertexBuffer(const VertexBuffer&) = default;
+
 	VertexBuffer(VertexBuffer&&) = default;
+
 	auto operator=(const VertexBuffer&) -> VertexBuffer& = default;
+
 	auto operator=(VertexBuffer&&) -> VertexBuffer& = default;
+
 	VertexBuffer() = default;// ---UNCOVER---
+
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	virtual ~VertexBuffer();
 
 	/**
-	 * @brief Activate the buffer in the GPU.
+	 * @brief
+	 *  Activate the buffer in the GPU.
 	 */
 	virtual void bind() const = 0;
 
 	/**
-	 * @brief Deactivate the buffer in the GPU.
+	 * @brief
+	 *  Deactivate the buffer in the GPU.
 	 */
 	virtual void unbind() const = 0;
 
 	/**
-	 * @brief Defines the data of the vertex buffer.
+	 * @brief
+	 *  Defines the data of the vertex buffer.
 	 * @param[in] iData The raw data.
 	 * @param[in] iSize Number of data.
 	 */
 	virtual void setData(const void* iData, uint32_t iSize) = 0;
 
 	/**
-	 * @brief Get the buffer data layout.
+	 * @brief
+	 *  Get the buffer data layout.
 	 * @return Data layout.
 	 */
 	[[nodiscard]] auto getLayout() const -> const BufferLayout& { return m_layout; }
 
 	/**
-	 * @brief Define the data layout.
+	 * @brief
+	 *  Define the data layout.
 	 * @param[in] iLayout New data layout.
 	 */
 	void setLayout(const BufferLayout& iLayout) { m_layout = iLayout; }
@@ -222,36 +278,47 @@ private:
 	/// Data layout description.
 	BufferLayout m_layout;
 };
-
 /**
- * @brief Abstract class for managing index buffer.
+ * @brief
+ *  Abstract class for managing index buffer.
  */
 class OWL_API IndexBuffer {
 public:
 	IndexBuffer(const IndexBuffer&) = default;
+
 	IndexBuffer(IndexBuffer&&) = default;
+
 	auto operator=(const IndexBuffer&) -> IndexBuffer& = default;
+
 	auto operator=(IndexBuffer&&) -> IndexBuffer& = default;
+
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	IndexBuffer() = default;// ---UNCOVER---
+
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	virtual ~IndexBuffer();
+
 	/**
-	 * @brief Activate the buffer in the GPU.
+	 * @brief
+	 *  Activate the buffer in the GPU.
 	 */
 	virtual void bind() const = 0;
 
 	/**
-	 * @brief Deactivate the buffer in the GPU.
+	 * @brief
+	 *  Deactivate the buffer in the GPU.
 	 */
 	virtual void unbind() const = 0;
 
 	/**
-	 * @brief Get the number of element in the buffer.
+	 * @brief
+	 *  Get the number of element in the buffer.
 	 * @return Number of element in the buffer.
 	 */
 	[[nodiscard]] virtual auto getCount() const -> uint32_t = 0;

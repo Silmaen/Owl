@@ -2,7 +2,7 @@
  * @file RunnerLayer.cpp
  * @author Silmaen
  * @date 21/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -14,7 +14,7 @@
 #include <scene/SaveManager.h>
 #include <scene/ScreenTransition.h>
 #include <scene/SettingsManager.h>
-#include <scene/UIInputSystem.h>
+#include <scene/UiInputSystem.h>
 #include <scene/component/components.h>
 
 OWL_DIAG_PUSH
@@ -25,8 +25,8 @@ OWL_DIAG_POP
 
 
 namespace owl::nest::runner {
-namespace {
 
+namespace {
 template<class T>
 void get(const YAML::Node& iNode, const std::string& iKey, T& oValue) {
 	if (const auto val = iNode[iKey]; val)
@@ -136,17 +136,25 @@ void RunnerLayer::onAttach() {
 	// Initialize settings system.
 	if (!m_config.gameName.empty()) {
 		scene::SettingsManager::setGameName(m_config.gameName);
+
 		scene::SaveManager::setGameName(m_config.gameName);
 	}
+
 	// Populate defaults from runner config.
 	scene::SettingsManager::setDefault(scene::SettingsManager::KeyResolutionWidth,
 									   static_cast<int64_t>(m_config.windowWidth));
+
 	scene::SettingsManager::setDefault(scene::SettingsManager::KeyResolutionHeight,
 									   static_cast<int64_t>(m_config.windowHeight));
+
 	scene::SettingsManager::setDefault(scene::SettingsManager::KeyFullscreen, m_config.fullscreen);
+
 	scene::SettingsManager::setDefault(scene::SettingsManager::KeyResizable, m_config.resizable);
+
 	scene::SettingsManager::setDefault(scene::SettingsManager::KeyVolumeMaster, 1.0f);
+
 	scene::SettingsManager::setDefault(scene::SettingsManager::KeyVolumeMusic, 1.0f);
+
 	scene::SettingsManager::setDefault(scene::SettingsManager::KeyVolumeSfx, 1.0f);
 	// Load game defaults from assets (game_settings.yml).
 	{
@@ -162,10 +170,12 @@ void RunnerLayer::onAttach() {
 		if (!loaded && app.hasOpenPack()) {
 			if (auto data = app.loadFromPack("game_settings.yml"); data) {
 				const std::string content(data->begin(), data->end());
+
 				scene::SettingsManager::loadDefaultsFromString(content);
 			}
 		}
 	}
+
 	// Load user overrides.
 	scene::SettingsManager::loadUserSettings();
 
@@ -173,6 +183,7 @@ void RunnerLayer::onAttach() {
 	auto& window = app.getWindow();
 	if (!m_config.gameName.empty())
 		window.setTitle(m_config.gameName);
+
 	scene::SettingsManager::applyBuiltins();
 
 	m_viewportSize = window.getSize();
@@ -243,11 +254,14 @@ void RunnerLayer::onDetach() {
 
 void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
+
 	// resize
 	if (m_activeScene != nullptr) {
 		{
+
 			OWL_PROFILE_SCOPE("Render Preparation")
 			renderer::gpu::RenderCommand::setClearColor({0.1f, 0.1f, 0.1f, 1});
+
 			renderer::gpu::RenderCommand::clear();
 			m_activeScene->onViewportResize(m_viewportSize);
 			if (m_activeScene->status == scene::Scene::Status::Editing) {
@@ -270,10 +284,12 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 								const math::vec2f finalVelocity = {
 										m_teleportVelocity.x() * cosR - m_teleportVelocity.y() * sinR,
 										m_teleportVelocity.x() * sinR + m_teleportVelocity.y() * cosR};
+
 								physic::PhysicCommand::setTransform(player,
 																	{targetTransform.translation().x(),
 																	 targetTransform.translation().y()},
 																	targetRotation);
+
 								physic::PhysicCommand::setVelocity(player, finalVelocity);
 								auto& playerTransform =
 										player.getComponent<scene::component::Transform>().transform;
@@ -297,16 +313,17 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 													static_cast<float>(m_viewportSize.y()));
 					handleTeleportRequest();
 				} else {
-					// UIRect uses Y=0 at bottom; window mouse Y=0 at top → flip Y.
+					// UiRect uses Y=0 at bottom; window mouse Y=0 at top → flip Y.
 					const math::vec2 mousePos = {
 							input::Input::getMousePos().x(),
 							static_cast<float>(m_viewportSize.y()) - input::Input::getMousePos().y()};
-					scene::UIInputSystem::update(m_activeScene.get(), m_viewportSize, mousePos,
+					scene::UiInputSystem::update(m_activeScene.get(), m_viewportSize, mousePos,
 												 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft));
 					m_activeScene->onUpdateRuntime(iTimeStep);
 					// Handle quit request from Lua (scene.quit()).
 					if (m_activeScene->quitRequested) {
 						m_activeScene->onEndRuntime();
+
 						core::Application::get().close();
 						return;
 					}
@@ -334,6 +351,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 								m_activeScene->onStartRuntime();
 								for (const auto& [uuid, snap]: loadResult.physicsSnapshots)
 									if (auto entity = m_activeScene->findEntityByUUID(core::UUID{uuid}); entity)
+
 										physic::PhysicCommand::applySnapshot(entity, snap);
 							}
 						} else {
@@ -474,8 +492,8 @@ void RunnerLayer::finishTransition() {
 				[&](const auto&, const scene::component::AnimatedSpriteRenderer& iAr) -> void { countOne(iAr.texture); });
 		m_activeScene->registry.view<scene::component::BackgroundTexture>().each(
 				[&](const auto&, const scene::component::BackgroundTexture& iBt) -> void { countOne(iBt.texture); });
-		m_activeScene->registry.view<scene::component::UIImage>().each(
-				[&](const auto&, const scene::component::UIImage& iUi) -> void { countOne(iUi.texture); });
+		m_activeScene->registry.view<scene::component::UiImage>().each(
+				[&](const auto&, const scene::component::UiImage& iUi) -> void { countOne(iUi.texture); });
 		OWL_CORE_TRACE("Teleport finished: {} texture(s) still decoding on workers", pending)
 	}
 }
@@ -490,6 +508,7 @@ void RunnerLayer::onEvent(event::Event& ioEvent) {
 
 void RunnerLayer::onImGuiRender(const core::Timestep&) {
 	OWL_PROFILE_FUNCTION()
+
 	//=============================================================
 	m_viewportSize = core::Application::get().getWindow().getSize();
 	//=============================================================

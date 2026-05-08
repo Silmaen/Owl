@@ -2,7 +2,7 @@
  * @file ExtraDataRegisterScope.h
  * @author Silmaen
  * @date 19/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,7 +12,6 @@
 #include <functional>
 
 namespace owl::data::extradata {
-
 /**
  * @brief
  *  Scope class for extra data registration.
@@ -30,21 +29,25 @@ public:
 	 *  Constructor by move.
 	 */
 	ExtraDataRegisterScope(ExtraDataRegisterScope&&) noexcept = default;
+
 	/**
 	 * @brief
 	 *  Constructor by copy deleted.
 	 */
 	ExtraDataRegisterScope(const ExtraDataRegisterScope&) = delete;
+
 	/**
 	 * @brief
 	 *  Assignment by move.
 	 */
 	auto operator=(ExtraDataRegisterScope&&) noexcept -> ExtraDataRegisterScope& = default;
+
 	/**
 	 * @brief
 	 *  Assignment by copy deleted.
 	 */
 	auto operator=(const ExtraDataRegisterScope&) -> ExtraDataRegisterScope& = delete;
+
 	/**
 	 * @brief
 	 *  Check if the registration function did succeed.
@@ -65,6 +68,10 @@ public:
 	 */
 	~ExtraDataRegisterScope() {
 		if (m_unregisterFct)
+			/**
+			 * @brief
+			 *  M unregister fct.
+			 */
 			m_unregisterFct();
 	}
 

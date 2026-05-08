@@ -18,7 +18,6 @@
 namespace owl::gui::widgets {
 
 namespace {
-
 constexpr int g_currentVersion = 1;
 
 void emitPin(YAML::Emitter& ioOut, const NodePin& iPin) {
@@ -125,8 +124,10 @@ auto NodeCanvasSerializer::deserializeFromString(NodeCanvas& ioCanvas, std::stri
 		OWL_CORE_ERROR("NodeCanvasSerializer: YAML parse error: {}", ex.what())
 		return false;
 	}
-	if (!root || !root.IsMap())
+	if (!root || !root.IsMap()) {
+		OWL_CORE_ERROR("NodeCanvasSerializer: top-level YAML is not a map.")
 		return false;
+	}
 	if (const auto version = root["Version"]; version && version.as<int>() > g_currentVersion) {
 		OWL_CORE_WARN("NodeCanvasSerializer: document version {} is newer than supported {}", version.as<int>(),
 					  g_currentVersion)
@@ -154,16 +155,20 @@ auto NodeCanvasSerializer::deserializeFromString(NodeCanvas& ioCanvas, std::stri
 auto NodeCanvasSerializer::serializeToFile(const NodeCanvas& iCanvas, const std::filesystem::path& iPath,
 										   std::string_view iName) -> bool {
 	std::ofstream out(iPath);
-	if (!out)
+	if (!out) {
+		OWL_CORE_ERROR("NodeCanvasSerializer: cannot open '{}' for writing.", iPath.string())
 		return false;
+	}
 	out << serializeToString(iCanvas, iName);
 	return out.good();
 }
 
 auto NodeCanvasSerializer::deserializeFromFile(NodeCanvas& ioCanvas, const std::filesystem::path& iPath) -> bool {
 	const std::ifstream in(iPath);
-	if (!in)
+	if (!in) {
+		OWL_CORE_WARN("NodeCanvasSerializer: cannot open '{}' for reading.", iPath.string())
 		return false;
+	}
 	std::stringstream ss;
 	ss << in.rdbuf();
 	return deserializeFromString(ioCanvas, ss.str());

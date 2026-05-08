@@ -2,7 +2,7 @@
  * @file Tracker.cpp
  * @author Silmaen
  * @date 17/08/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -22,17 +22,22 @@
 
 #define OWL_DEALLOC_EXCEPT noexcept
 namespace {
-
 bool g_AntiLoop = false;
 
 class TrackerState {
 public:
-	/// Destructor.
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
 	~TrackerState() = default;
 
 	TrackerState(const TrackerState&) = delete;
+
 	TrackerState(TrackerState&&) = delete;
+
 	auto operator=(const TrackerState&) -> TrackerState& = delete;
+
 	auto operator=(TrackerState&&) -> TrackerState& = delete;
 
 	static auto get() -> TrackerState& {
@@ -41,10 +46,12 @@ public:
 	}
 
 	void pushTrack(const bool iState) { m_doTrack.push(iState); }
+
 	void popTrack() {
 		if (m_doTrack.size() > 1)
 			m_doTrack.pop();
 	}
+
 	[[nodiscard]] auto canTrack() const -> bool {
 		if (m_doTrack.empty())
 			return true;
@@ -54,12 +61,13 @@ public:
 private:
 	/// states of tracking
 	std::stack<bool> m_doTrack;
+
 	TrackerState() { m_doTrack.push(true); }
 };
 
 }// namespace
-
 #if !defined(__cpp_sized_deallocation) || __cpp_sized_deallocation == 0
+
 void operator delete(void* iMemory, size_t iSize) OWL_DEALLOC_EXCEPT;
 #endif
 
@@ -84,8 +92,6 @@ void operator delete(void* iMemory) OWL_DEALLOC_EXCEPT {
 namespace owl::debug {
 
 namespace {
-
-
 class StateManager {
 public:
 	static void allocate() {
@@ -93,27 +99,32 @@ public:
 		s_currentAllocationState = mkShared<AllocationState>();
 		s_lastAllocationState = mkShared<AllocationState>();
 	}
+
 	static void pushMemory(void* iLocation, const size_t iSize) {
 		if (!s_globalAllocationState)
 			allocate();
 		s_currentAllocationState->pushMemory(iLocation, iSize);
 		s_globalAllocationState->pushMemory(iLocation, iSize);
 	}
+
 	static void freeMemory(void* iLocation, const size_t iSize) {
 		s_currentAllocationState->freeMemory(iLocation, iSize);
 		s_globalAllocationState->freeMemory(iLocation, iSize);
 	}
+
 	static void swapCurrent() {
 		if (!s_lastAllocationState)
 			allocate();
 		s_lastAllocationState->resetState();
 		std::swap(s_currentAllocationState, s_lastAllocationState);
 	}
+
 	[[nodiscard]] static auto getLastAllocationState() -> const AllocationState& {
 		if (!s_lastAllocationState)
 			allocate();
 		return *s_lastAllocationState;
 	}
+
 	[[nodiscard]] static auto getGlobalAllocationState() -> const AllocationState& {
 		if (!s_globalAllocationState)
 			allocate();
@@ -132,13 +143,16 @@ shared<AllocationState> StateManager::s_globalAllocationState;
 shared<AllocationState> StateManager::s_currentAllocationState;
 shared<AllocationState> StateManager::s_lastAllocationState;
 }// namespace
-
 #ifdef OWL_STACKTRACE
 struct TraceInternal {
 	/// Stack trace of the allocation.
 	cpptrace::stacktrace fullTrace;
-	/// @brief Look in the stack for the caller information.
-	/// @return The Calling frame.
+
+	/**
+	 * @brief
+	 *  Look in the stack for the caller information.
+	 * @return The Calling frame.
+	 */
 	[[nodiscard]] auto getCallerInfo() const -> const cpptrace::stacktrace_frame& {
 		for (const auto& frame: fullTrace) {
 			if ((!frame.filename.ends_with(".cpp") && !frame.filename.ends_with(".h")) ||
@@ -153,7 +167,6 @@ struct TraceInternal {
 #endif
 
 // =========================== TrackerAPI =================================
-
 void TrackerAPI::allocate(void* iMemoryPtr, const size_t iSize) {
 	if (g_AntiLoop)
 		return;
@@ -186,13 +199,13 @@ auto TrackerAPI::checkState() -> const AllocationState& {
 auto TrackerAPI::globals() -> const AllocationState& { return StateManager::getGlobalAllocationState(); }
 
 // =========================== Allocation Info =================================
-
 AllocationInfo::AllocationInfo(void* iLocation, const size_t iSize) : location{iLocation}, size{iSize} {
 #ifdef OWL_STACKTRACE
 	traceInternal = mkShared<TraceInternal>();
 	traceInternal->fullTrace = cpptrace::generate_trace();
 #endif
 }
+
 auto AllocationInfo::getLibName() const -> std::string {// NOLINT(readability-convert-member-functions-to-static)
 #ifdef OWL_STACKTRACE
 	if (traceInternal && !traceInternal->fullTrace.empty()) {
@@ -244,7 +257,6 @@ auto AllocationInfo::toStr([[maybe_unused]] const bool iTracePrint, [[maybe_unus
 }
 
 // =========================== Allocation state =================================
-
 AllocationState::~AllocationState() { g_AntiLoop = true; }
 
 void AllocationState::pushMemory(void* iLocation, size_t iSize) {
@@ -283,22 +295,24 @@ void AllocationState::resetState() {
 }
 
 // =========================== scopes ==============================
-
 ScopeUntrack::ScopeUntrack() {
 	g_AntiLoop = true;
 	TrackerState::get().pushTrack(false);
 	g_AntiLoop = false;
 }
+
 ScopeUntrack::~ScopeUntrack() {
 	g_AntiLoop = true;
 	TrackerState::get().popTrack();
 	g_AntiLoop = false;
 }
+
 ScopeTrack::ScopeTrack() {
 	g_AntiLoop = true;
 	TrackerState::get().pushTrack(true);
 	g_AntiLoop = false;
 }
+
 ScopeTrack::~ScopeTrack() {
 	g_AntiLoop = true;
 	TrackerState::get().popTrack();

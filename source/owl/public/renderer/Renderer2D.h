@@ -2,7 +2,7 @@
  * @file Renderer2D.h
  * @author Silmaen
  * @date 18/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -18,7 +18,8 @@
 
 
 /**
- * @brief Concrete draw-type renderers organized by family.
+ * @brief
+ *  Concrete draw-type renderers organized by family.
  *
  * Each sub-namespace holds the static facade and the matching `RenderLayer`
  * adapter for one rendering family (2D batch, raycaster, future voxel, …).
@@ -29,7 +30,8 @@
 namespace owl::renderer::draw {}
 
 /**
- * @brief 2D batch renderer family.
+ * @brief
+ *  2D batch renderer family.
  *
  * Hosts `Renderer2D` (static facade for batched quads / circles / lines /
  * text) and its `RenderLayer` adapter `Renderer2DLayer`, plus the data
@@ -37,9 +39,9 @@ namespace owl::renderer::draw {}
  * `PolyLineData`, `StringData`) consumed by the draw API.
  */
 namespace owl::renderer {
-
 /**
- * @brief Data for drawing a quad.
+ * @brief
+ *  Data for drawing a quad.
  */
 struct OWL_API Quad2DData {
 	/// Transformation of the square.
@@ -58,7 +60,8 @@ struct OWL_API Quad2DData {
 };
 
 /**
- * @brief Data for drawing a circle.
+ * @brief
+ *  Data for drawing a circle.
  */
 struct OWL_API CircleData {
 	/// Transformation of the circle.
@@ -74,7 +77,8 @@ struct OWL_API CircleData {
 };
 
 /**
- * @brief Data for drawing a line.
+ * @brief
+ *  Data for drawing a line.
  */
 struct OWL_API LineData {
 	/// Starting point.
@@ -88,7 +92,8 @@ struct OWL_API LineData {
 };
 
 /**
- * @brief Data for drawing a rectangle.
+ * @brief
+ *  Data for drawing a rectangle.
  */
 struct OWL_API RectData {
 	/// Transformation of the rectangle.
@@ -100,7 +105,8 @@ struct OWL_API RectData {
 };
 
 /**
- * @brief Data for drawing a polyline.
+ * @brief
+ *  Data for drawing a polyline.
  */
 struct OWL_API PolyLineData {
 	/// Transformation of the rectangle.
@@ -116,7 +122,8 @@ struct OWL_API PolyLineData {
 };
 
 /**
- * @brief Data for drawing a string.
+ * @brief
+ *  Data for drawing a string.
  */
 struct OWL_API StringData {
 	/// Transformation of the render.
@@ -136,86 +143,104 @@ struct OWL_API StringData {
 };
 
 /**
- * @brief Class Renderer2D.
+ * @brief
+ *  Class Renderer2D.
  */
 class OWL_API Renderer2D {
 public:
 	Renderer2D() = default;
+
 	Renderer2D(const Renderer2D&) = delete;
+
 	Renderer2D(Renderer2D&&) = delete;
+
 	auto operator=(const Renderer2D&) -> Renderer2D& = delete;
+
 	auto operator=(Renderer2D&&) -> Renderer2D& = delete;
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~Renderer2D() = default;
 
 	/**
-	 * @brief Initialize the renderer.
+	 * @brief
+	 *  Initialize the renderer.
 	 */
 	static void init();
 
 	/**
-	 * @brief Terminate the renderer.
+	 * @brief
+	 *  Terminate the renderer.
 	 */
 	static void shutdown();
 
 	/**
-	 * @brief Begins a scene.
+	 * @brief
+	 *  Begins a scene.
 	 * @param[in] iCamera The camera.
 	 */
 	static void beginScene(const Camera& iCamera);
 
 	/**
-	 * @brief Ends a scene.
+	 * @brief
+	 *  Ends a scene.
 	 */
 	static void endScene();
 
 	/**
-	 * @brief Flush the vertex buffer.
+	 * @brief
+	 *  Flush the vertex buffer.
 	 */
 	static void flush();
 
 	// Primitives
 	/**
-	 * @brief Draw a line on the screen.
+	 * @brief
+	 *  Draw a line on the screen.
 	 * @param[in] iLineData The data to draw the line.
 	 */
 	static void drawLine(const LineData& iLineData);
 
 	/**
-	 * @brief Draw a rectangle.
+	 * @brief
+	 *  Draw a rectangle.
 	 * @param[in] iRectData The data to draw the rectangle.
 	 */
 	static void drawRect(const RectData& iRectData);
 
 	/**
-	 * @brief Draw a polyline on the screen.
+	 * @brief
+	 *  Draw a polyline on the screen.
 	 * @param[in] iLineData The data to draw the polyline
 	 */
 	static void drawPolyLine(const PolyLineData& iLineData);
 
 	/**
-	 * @brief Draws a circle on the screen.
+	 * @brief
+	 *  Draws a circle on the screen.
 	 * @param[in] iCircleData Circle's properties.
 	 */
 	static void drawCircle(const CircleData& iCircleData);
 
 	/**
-	 * @brief Draws a Quad on the screen.
+	 * @brief
+	 *  Draws a Quad on the screen.
 	 * @param[in] iQuadData Quad's properties.
 	 */
 	static void drawQuad(const Quad2DData& iQuadData);
 
 	/**
-	 * @brief Draws a Quad on the screen.
+	 * @brief
+	 *  Draws a Quad on the screen.
 	 * @param[in] iStringData String's properties.
 	 */
 	static void drawString(const StringData& iStringData);
 
 	/**
-	 * @brief Statistics.
+	 * @brief
+	 *  Statistics.
 	 */
 	struct OWL_API Statistics {
 		/// Amount of draw calls.
@@ -224,31 +249,37 @@ public:
 		uint32_t quadCount = 0;
 		/// Amount of lines drawn.
 		uint32_t lineCount = 0;
+
 		/// Compute the amount of vertices.
 		[[nodiscard]] auto getTotalVertexCount() const -> uint32_t { return quadCount * 4 + lineCount * 2; }
+
 		/// Compute the amount of indices.
 		[[nodiscard]] auto getTotalIndexCount() const -> uint32_t { return quadCount * 6 + lineCount * 2; }
 	};
 
 	/**
-	 * @brief Reset the statistics data.
+	 * @brief
+	 *  Reset the statistics data.
 	 */
 	static void resetStats();
 
 	/**
-	 * @brief Access to stats.
+	 * @brief
+	 *  Access to stats.
 	 * @return The Stats.
 	 */
 	static auto getStats() -> Statistics;
 
 	/**
-	 * @brief Start the next batch.
+	 * @brief
+	 *  Start the next batch.
 	 */
 	static void nextBatch();
 
 private:
 	/**
-	 * @brief Combine flush and reset.
+	 * @brief
+	 *  Combine flush and reset.
 	 */
 	static void startBatch();
 };

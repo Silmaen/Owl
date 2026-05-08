@@ -2,7 +2,7 @@
  * @file FileDialog.cpp
  * @author Silmaen
  * @date 27/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -14,6 +14,7 @@
 #include <nfd.hpp>
 
 namespace owl::core::utils {
+
 namespace {
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
@@ -48,6 +49,7 @@ auto parseFilter(const std::string& iFilter) -> std::vector<nfdu8filteritem_t> {
 			continue;
 		if (items[0].empty() || items[1].empty())
 			continue;
+
 		OWL_DIAG_PUSH
 		OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 		auto* const s0 = new nfdu8char_t[items[0].size() + 1];// NOLINT(cppcoreguidelines-owning-memory)
@@ -57,6 +59,7 @@ auto parseFilter(const std::string& iFilter) -> std::vector<nfdu8filteritem_t> {
 		memcpy(s1, items[1].data(), items[1].size());
 		s1[items[1].size()] = '\0';
 		OWL_DIAG_POP
+
 		filters.push_back(nfdu8filteritem_t{s0, s1});
 	}
 	return filters;

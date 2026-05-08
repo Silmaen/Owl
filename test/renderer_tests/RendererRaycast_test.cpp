@@ -2,7 +2,7 @@
  * @file RendererRaycast_test.cpp
  * @author Silmaen
  * @date 04/05/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -30,7 +30,6 @@ using owl::scene::component::Tilemap;
 using owl::scene::component::TilemapLayer;
 
 namespace {
-
 /// Build a simple `Tilemap` filled with a single-row corridor of walls along
 /// the +X axis at cellY = 5, 16 cells wide × 16 cells tall, cellSize = 1.
 auto makeCorridorTilemap() -> Tilemap {

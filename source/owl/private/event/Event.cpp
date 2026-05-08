@@ -2,7 +2,7 @@
  * @file Event.cpp
  * @author Silmaen
  * @date 16/02/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -19,23 +19,35 @@ namespace owl::event {
 Event::~Event() = default;
 
 auto WindowResizeEvent::getCategoryFlags() const -> uint8_t { return Application; }
+
 auto WindowCloseEvent::getCategoryFlags() const -> uint8_t { return Application; }
+
 auto AppTickEvent::getCategoryFlags() const -> uint8_t { return Application; }
+
 auto AppUpdateEvent::getCategoryFlags() const -> uint8_t { return Application; }
+
 auto AppRenderEvent::getCategoryFlags() const -> uint8_t { return Application; }
+
 auto FileDropEvent::getCategoryFlags() const -> uint8_t { return Application; }
 
 auto KeyEvent::getCategoryFlags() const -> uint8_t { return Input | Keyboard; }
+
 auto KeyPressedEvent::getName() const -> std::string { return std::format("KeyPressedEvent"); }
+
 auto KeyReleasedEvent::getName() const -> std::string { return std::format("KeyReleasedEvent"); }
+
 auto KeyTypedEvent::getName() const -> std::string { return std::format("KeyTypedEvent"); }
 
 auto MouseMovedEvent::getCategoryFlags() const -> uint8_t { return Input | Mouse; }
+
 auto MouseScrolledEvent::getCategoryFlags() const -> uint8_t { return Input | Mouse; }
+
 auto MouseButtonEvent::getCategoryFlags() const -> uint8_t {
 	return static_cast<uint8_t>(Input | Mouse) | static_cast<uint8_t>(MouseButton);
 }
+
 auto MouseButtonPressedEvent::getName() const -> std::string { return std::format("MouseButtonPressedEvent"); }
+
 auto MouseButtonReleasedEvent::getName() const -> std::string { return std::format("MouseButtonReleasedEvent"); }
 
 }// namespace owl::event

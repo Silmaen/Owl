@@ -2,7 +2,7 @@
  * @file Trigger.cpp
  * @author Silmaen
  * @date 1/28/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -38,7 +38,8 @@ void Trigger::serialize(const core::Serializer& iOut) const {
 }
 
 /**
- * @brief Read this component from YAML node.
+ * @brief
+ *  Read this component from YAML node.
  * @param iNode The YAML node to read.
  */
 void Trigger::deserialize(const core::Serializer& iNode) {

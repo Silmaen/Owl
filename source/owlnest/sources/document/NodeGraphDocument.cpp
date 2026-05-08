@@ -21,6 +21,7 @@ OWL_DIAG_POP
 namespace owl::nest {
 
 NodeGraphDocument::NodeGraphDocument() = default;
+
 NodeGraphDocument::~NodeGraphDocument() = default;
 
 auto NodeGraphDocument::title() const -> std::string {

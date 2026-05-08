@@ -2,7 +2,7 @@
  * @file Device.h
  * @author Silmaen
  * @date 03/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,66 +13,80 @@
 #include <linux/videodev2.h>
 
 /**
- * @brief Linux video devices.
+ * @brief
+ *  Linux video devices.
  */
 namespace owl::io::video::linux64 {
-
 /**
- * @brief Search for devices and them to the given list.
+ * @brief
+ *  Search for devices and them to the given list.
  * @param[in] ioList The device list to update.
  */
 void updateList(std::vector<shared<Device>>& ioList);
 
 /**
- * @brief Class Device.
+ * @brief
+ *  Class Device.
  */
 class Device final : public video::Device {
 public:
 	/**
-	 * @brief Constructor using only a file.
+	 * @brief
+	 *  Constructor using only a file.
 	 * @param[in] iFile The file to read.
 	 */
 	explicit Device(std::string iFile);
+
 	Device(Device&&) = delete;
+
 	Device(const Device&) = delete;
+
 	auto operator=(Device&&) -> Device& = delete;
+
 	auto operator=(const Device&) -> Device& = delete;
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~Device() override;
 
 	/**
-	 * @brief Open this device.
+	 * @brief
+	 *  Open this device.
 	 */
 	void open() override;
 
 	/**
-	 * @brief Close this device.
+	 * @brief
+	 *  Close this device.
 	 */
 	void close() override;
 
 	/**
-	 * @brief Check if the device is open.
+	 * @brief
+	 *  Check if the device is open.
 	 * @return True if open.
 	 */
 	[[nodiscard]] auto isOpened() const -> bool override;
 
 	/**
-	 * @brief Get the file.
+	 * @brief
+	 *  Get the file.
 	 * @return File name.
 	 */
 	[[nodiscard]] auto getFile() const -> const std::string& { return m_file; }
 
 	/**
-	 * @brief Retrieve a frame.
+	 * @brief
+	 *  Retrieve a frame.
 	 * @param[in,out] ioFrame The frame to update.
 	 */
 	void fillFrame(shared<renderer::gpu::Texture>& ioFrame) override;
 
 	/**
-	 * @brief Check if this device is valid.
+	 * @brief
+	 *  Check if this device is valid.
 	 * @return True if this device is valid.
 	 */
 	[[nodiscard]] auto isValid() const -> bool override;
@@ -89,12 +103,17 @@ private:
 	/// if the streaming is started.
 	bool m_streaming = false;
 
+	/**
+	 * @brief
+	 *  Print supported format.
+	 */
 	void printSupportedFormat() const;
 
 	/**
-	 * \brief fist suitable pixel format.
-	 * \param iFd File descriptor, use fileHandler if -1. File must already be opened.
-	 * \return The first pixel format supported by both device and present code.
+	 * @brief
+	 *  First suitable pixel format.
+	 * @param[in] iFd File descriptor; uses `fileHandler` when set to -1. File must already be opened.
+	 * @return The first pixel format supported by both device and present code.
 	 */
 	[[nodiscard]] auto getFirstSupportedPixelFormat(int32_t iFd = -1) const -> PixelFormat;
 };

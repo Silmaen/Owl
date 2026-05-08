@@ -2,7 +2,7 @@
  * @file RendererRaycast.cpp
  * @author Silmaen
  * @date 04/05/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -21,7 +21,6 @@
 namespace owl::renderer {
 
 namespace {
-
 /// Per-pass state shared between `beginScene`, the `drawTilemap*` calls, and `endScene`.
 struct State {
 	/// Camera world position (XY plane).
@@ -36,9 +35,11 @@ struct State {
 	RaycastConfig config;
 	/// Whether `beginScene` has been called without a matching `endScene`.
 	bool sceneOpen = false;
-	/// Whether the sky / floor backdrop has already been emitted for this scene.
-	/// Drawn lazily on the first `drawTilemapWalls` so passes that route no
-	/// tilemap stay genuinely no-op (no overdraw on top of a 2D layer underneath).
+	/**
+	 * Whether the sky / floor backdrop has already been emitted for this scene.
+	 * Drawn lazily on the first `drawTilemapWalls` so passes that route no
+	 * tilemap stay genuinely no-op (no overdraw on top of a 2D layer underneath).
+	 */
 	bool backdropEmitted = false;
 	/// Cumulative statistics for the current frame (cleared by `resetStats`).
 	RendererRaycast::Statistics stats;
@@ -56,7 +57,8 @@ constexpr float g_MinPerpDist = 1e-4f;
 constexpr float g_DirEpsilonSq = 1e-8f;
 
 /**
- * @brief Resolve the "active" tilemap layer index for raycasting.
+ * @brief
+ *  Resolve the "active" tilemap layer index for raycasting.
  *
  * The raycaster treats walls as 2D occupancy: a non-empty cell is a wall, regardless of which
  * `TilemapLayer` it lives on. v0.2.0 picks the first visible layer with any tile data; future
@@ -89,6 +91,7 @@ void RendererRaycast::shutdown() { g_state.reset(); }
 
 void RendererRaycast::beginScene(const Camera& iCamera, const math::vec2ui& iViewport, const RaycastConfig& iConfig) {
 	OWL_PROFILE_FUNCTION()
+
 	if (!g_state) {
 		OWL_CORE_ERROR("RendererRaycast::beginScene called before init.")
 		return;
@@ -139,7 +142,6 @@ void RendererRaycast::beginScene(const Camera& iCamera, const math::vec2ui& iVie
 }
 
 namespace {
-
 auto computeHorizonY() -> float {
 	if (!g_state)
 		return 0.f;
@@ -173,6 +175,7 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 									   [[maybe_unused]] const math::Transform& iTilemapWorldTransform,
 									   const int iEntityId) {
 	OWL_PROFILE_FUNCTION()
+
 	if (!g_state || !g_state->sceneOpen) {
 		OWL_CORE_WARN("RendererRaycast::drawTilemapWalls called outside beginScene/endScene.")
 		return;
@@ -214,6 +217,7 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 	s_warnedNoLayer = false;
 
 	g_state->stats.drawCalls++;
+
 	emitBackdropIfNeeded();
 
 	const float cellSize = (iTilemap.cellSize > 0.f) ? iTilemap.cellSize : 1.f;
@@ -225,7 +229,6 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 	// (W-1)/2 — that bug shifted the camera by half a cell in v0.2.0's first cut).
 	const float halfW = static_cast<float>(iTilemap.width) * 0.5f;
 	const float halfH = static_cast<float>(iTilemap.height) * 0.5f;
-
 	// Convert camera world pos → cell coords. Y is flipped because cell-Y grows downward
 	// while world-Y grows upward.
 	const math::vec2 camCellPos{
@@ -235,11 +238,9 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 	// Likewise, the ray direction's Y component is negated when expressed in cell space.
 	const math::vec2 camCellDir{g_state->cameraDir2D.x(), -g_state->cameraDir2D.y()};
 	const math::vec2 camCellPlane{g_state->cameraPlane2D.x(), -g_state->cameraPlane2D.y()};
-
 	const uint32_t numRays = (g_state->config.numRays > 0) ? g_state->config.numRays : g_state->viewport.x();
 	if (numRays == 0)
 		return;
-
 	const math::vec2 vp = {static_cast<float>(g_state->viewport.x()), static_cast<float>(g_state->viewport.y())};
 	// Stripe screen width — exactly viewport width / numRays, with no overlap. The
 	// previous 1.5% overlap was meant to hide seams but introduced sub-pixel double-
@@ -248,7 +249,6 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 	// `numRays = viewportWidth` (the default) each stripe is exactly 1 pixel wide
 	// and adjacent stripes tile seamlessly under the standard rule.
 	const float stripePxWidth = vp.x() / static_cast<float>(numRays);
-
 	const float maxDistCells = std::max(1.f, g_state->config.maxDistance);
 	// DDA needs an integer cell budget large enough to reach maxDistance even on near-axis rays.
 	const int maxSteps = static_cast<int>(std::ceil(maxDistCells * 2.f));
@@ -256,19 +256,15 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 	// horizon and an integer line height, every stripe's pixel coverage is
 	// deterministic and stable across frames.
 	const float horizonY = computeHorizonY();
-
 	const auto& tileset = *iTilemap.tileset;
 	const auto& atlasTex = tileset.texture;
-
 	for (uint32_t col = 0; col < numRays; ++col) {
 		const float cameraX = 2.f * (static_cast<float>(col) + 0.5f) / static_cast<float>(numRays) - 1.f;
 		const math::vec2 rayDir{camCellDir.x() + camCellPlane.x() * cameraX,
 								camCellDir.y() + camCellPlane.y() * cameraX};
-
 		// Length of ray needed to cross one full cell on each axis.
 		const float deltaX = (std::abs(rayDir.x()) < 1e-6f) ? 1e30f : std::abs(1.f / rayDir.x());
 		const float deltaY = (std::abs(rayDir.y()) < 1e-6f) ? 1e30f : std::abs(1.f / rayDir.y());
-
 		int mapX = static_cast<int>(std::floor(camCellPos.x()));
 		int mapY = static_cast<int>(std::floor(camCellPos.y()));
 		const int stepX = (rayDir.x() < 0.f) ? -1 : 1;
@@ -277,11 +273,9 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 											 : (static_cast<float>(mapX + 1) - camCellPos.x()) * deltaX;
 		float sideDistY = (rayDir.y() < 0.f) ? (camCellPos.y() - static_cast<float>(mapY)) * deltaY
 											 : (static_cast<float>(mapY + 1) - camCellPos.y()) * deltaY;
-
 		bool hit = false;
 		int side = 0;// 0: X-side, 1: Y-side
 		int32_t hitTile = scene::component::g_EmptyTileIndex;
-
 		for (int step = 0; step < maxSteps; ++step) {
 			if (sideDistX < sideDistY) {
 				sideDistX += deltaX;
@@ -303,18 +297,15 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 				break;
 			}
 		}
-
 		g_state->stats.stripeCount++;
 		if (!hit) {
 			g_state->stats.missCount++;
 			continue;
 		}
 		g_state->stats.hitCount++;
-
 		// Perpendicular distance (avoid fish-eye): subtract last delta on the axis we just stepped.
 		const float perpDistCells = (side == 0) ? (sideDistX - deltaX) : (sideDistY - deltaY);
 		const float perpDistSafe = std::max(perpDistCells, g_MinPerpDist);
-
 		// Snap line height to an even integer. Combined with the integer horizon
 		// it guarantees the stripe top / bottom land on integer pixel boundaries
 		// every frame, no matter how the camera's float-precision distance shifts —
@@ -323,7 +314,6 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 		const float lineHeightExact = vp.y() / perpDistSafe;
 		const float lineHeight = std::floor(lineHeightExact * 0.5f) * 2.f;
 		const float screenCenterY = horizonY;
-
 		// gpu::Texture U coordinate within the wall: where on the wall did we hit?
 		float wallX = (side == 0) ? (camCellPos.y() + perpDistSafe * rayDir.y())
 								  : (camCellPos.x() + perpDistSafe * rayDir.x());
@@ -334,7 +324,6 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 			wallX = 1.f - wallX;
 		if (side == 1 && rayDir.y() < 0.f)
 			wallX = 1.f - wallX;
-
 		const auto tileUv = tileset.getTileUv(static_cast<uint32_t>(hitTile));
 		// `getTileUv` returns BL, BR, TR, TL.
 		const float uvLeft = tileUv[0].x();
@@ -342,7 +331,6 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 		const float uvBottom = tileUv[0].y();
 		const float uvTop = tileUv[3].y();
 		const float uHit = uvLeft + wallX * (uvRight - uvLeft);
-
 		// Stripe quad (1 column wide, lineHeight pixels tall, centred on the horizon).
 		// stripeX placed at the integer pixel-centre of the column we're filling so
 		// that adjacent stripes tile against integer pixel boundaries.
@@ -350,12 +338,10 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 		math::Transform stripeTr;
 		stripeTr.translation() = math::vec3{stripeX, screenCenterY, 0.f};
 		stripeTr.scale() = math::vec3{stripePxWidth, lineHeight, 1.f};
-
 		math::vec4 tint{1.f, 1.f, 1.f, 1.f};
 		if (side == 1) {
 			tint = math::vec4{g_YSideDarken, g_YSideDarken, g_YSideDarken, 1.f};
 		}
-
 		// One U value across the stripe (a single atlas column), tile spans full V.
 		const std::array<math::vec2, 4> stripeUv{
 				math::vec2{uHit, uvBottom},

@@ -2,7 +2,7 @@
  * @file trigonometry.h
  * @author Silmaen
  * @date 02/01/2023
- * Copyright © 2023 All rights reserved.
+ * Copyright (c) 2023 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -16,7 +16,8 @@ namespace owl::math {
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wimplicit-float-conversion")
 /**
- * @brief Convert degrees to radians.
+ * @brief
+ *  Convert degrees to radians.
  * @tparam BaseType The internal Data type.
  * @param iInput Angle in degree.
  * @return Angle in radians.
@@ -26,10 +27,12 @@ constexpr auto radians(const BaseType& iInput) -> BaseType {
 	return iInput * BaseType{0.01745329251994329576923690768489};
 }
 /**
- * @brief Convert degrees to radians.
+ * @brief
+ *  Convert degrees to radians.
  * @tparam BaseType The internal Data type.
  * @param iInput Angle in degree.
  * @return Angle in radians.
+ * @tparam Dim Number of dimensions.
  */
 template<typename BaseType, size_t Dim>
 constexpr auto radians(const Vector<BaseType, Dim>& iInput) -> Vector<BaseType, Dim> {
@@ -37,7 +40,8 @@ constexpr auto radians(const Vector<BaseType, Dim>& iInput) -> Vector<BaseType, 
 }
 
 /**
- * @brief Convert radians to degrees.
+ * @brief
+ *  Convert radians to degrees.
  * @tparam BaseType The internal Data type.
  * @param iInput Angle in radians.
  * @return Angle in degrees.
@@ -47,10 +51,12 @@ constexpr auto degrees(const BaseType& iInput) -> BaseType {
 	return iInput / BaseType{0.01745329251994329576923690768489};
 }
 /**
- * @brief Convert radians to degrees.
+ * @brief
+ *  Convert radians to degrees.
  * @tparam BaseType The internal Data type.
  * @param iInput Angle in radians.
  * @return Angle in degrees.
+ * @tparam Dim Number of dimensions.
  */
 template<typename BaseType, size_t Dim>
 constexpr auto degrees(const Vector<BaseType, Dim>& iInput) -> Vector<BaseType, Dim> {
@@ -59,7 +65,8 @@ constexpr auto degrees(const Vector<BaseType, Dim>& iInput) -> Vector<BaseType, 
 OWL_DIAG_POP
 
 /**
- * @brief Arc tangent 2, safe atan(y/(x + |x,y|)).
+ * @brief
+ *  Arc tangent 2, safe atan(y/(x + |x,y|)).
  * @param[in] iY Numerator.
  * @param[in] iX Denominator.
  * @return Arc tangent with the right quadrant.

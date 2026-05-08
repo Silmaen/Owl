@@ -2,7 +2,7 @@
  * @file Buffer.cpp
  * @author Silmaen
  * @date 07/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -15,7 +15,6 @@
 namespace owl::renderer::gpu::vulkan {
 
 namespace {
-
 auto shaderDataTypeToVulkanFormat(const ShaderDataType& iType) -> VkFormat {
 	switch (iType) {
 		case ShaderDataType::None:
@@ -96,10 +95,12 @@ void VertexBuffer::setData(const void* iData, const uint32_t iSize) {
 
 		void* dataInternal = nullptr;
 		vkMapMemory(vkc.getLogicalDevice(), stagingBufferMemory, 0, iSize, 0, &dataInternal);
+
 		OWL_DIAG_PUSH
 		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 		memcpy(dataInternal, iData, iSize);
 		OWL_DIAG_POP
+
 		vkUnmapMemory(vkc.getLogicalDevice(), stagingBufferMemory);
 
 		internal::copyBuffer(stagingBuffer, m_vertexBuffer, iSize);
@@ -131,7 +132,6 @@ auto VertexBuffer::getAttributeDescriptions() const -> std::vector<VkVertexInput
 }
 
 void VertexBuffer::createBuffer(const float* iData, const uint32_t iSize) {
-
 	if (internal::VulkanHandler::get().getState() != internal::VulkanHandler::State::Running) {
 		OWL_CORE_WARN("Vulkan vertex buffer: Trying to set vertex buffer data after VulkanHandler release...")
 		return;
@@ -141,7 +141,6 @@ void VertexBuffer::createBuffer(const float* iData, const uint32_t iSize) {
 						   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexBuffer, m_vertexBufferMemory);
 	setData(iData, iSize);
 }
-
 
 IndexBuffer::IndexBuffer(const uint32_t* iIndices, const uint32_t iSize) : m_count(iSize) {
 	if (internal::VulkanHandler::get().getState() != internal::VulkanHandler::State::Running) {
@@ -162,10 +161,12 @@ IndexBuffer::IndexBuffer(const uint32_t* iIndices, const uint32_t iSize) : m_cou
 		const auto& vkc = internal::VulkanCore::get();
 
 		vkMapMemory(vkc.getLogicalDevice(), stagingBufferMemory, 0, bufferSize, 0, &dataInternal);
+
 		OWL_DIAG_PUSH
 		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 		memcpy(dataInternal, iIndices, bufferSize);
 		OWL_DIAG_POP
+
 		vkUnmapMemory(vkc.getLogicalDevice(), stagingBufferMemory);
 		internal::copyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
 		vkDestroyBuffer(vkc.getLogicalDevice(), stagingBuffer, nullptr);

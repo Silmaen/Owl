@@ -2,7 +2,7 @@
  * @file StaticMesh.h
  * @author Silmaen
  * @date 18/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -15,12 +15,13 @@
 #include "data/geometry/primitive/Triangle.h"
 
 /**
- * @brief Namespace for geometry objects management.
+ * @brief
+ *  Namespace for geometry objects management.
  */
 namespace owl::data::geometry {
-
 /**
- * @brief Class representing a static mesh.
+ * @brief
+ *  Class representing a static mesh.
  */
 class OWL_API StaticMesh {
 public:
@@ -28,32 +29,40 @@ public:
 	using ConstVertexIterator = std::vector<geometry::primitive::MeshVertex>::const_iterator;
 	using TriangleIterator = MeshRangeIterator<false, MeshElementType::Triangle>;
 	using ConstTriangleIterator = MeshRangeIterator<true, MeshElementType::Triangle>;
+
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	StaticMesh();
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~StaticMesh();
 
 	/**
-	 * @brief Default copy constructor.
+	 * @brief
+	 *  Default copy constructor.
 	 */
 	StaticMesh(const StaticMesh&);
 
 	/**
-	 * @brief Default move constructor.
+	 * @brief
+	 *  Default move constructor.
 	 */
 	StaticMesh(StaticMesh&&) noexcept;
 
 	/**
-	 * @brief Default copy affectation operator.
+	 * @brief
+	 *  Default copy affectation operator.
 	 */
 	auto operator=(const StaticMesh&) -> StaticMesh&;
 
 	/**
-	 * @brief Default move affectation operator.
+	 * @brief
+	 *  Default move affectation operator.
 	 */
 	auto operator=(StaticMesh&&) noexcept -> StaticMesh&;
 
@@ -62,54 +71,62 @@ public:
 	 * @return The number of vertices.
 	 */
 	[[nodiscard]] auto getVertexCount() const -> size_t;
+
 	/**
 	 * Get the number of triangles.
 	 * @return The number of triangles.
 	 */
 	[[nodiscard]] auto getTriangleCount() const -> size_t;
+
 	/**
-	 * @brief Get the vertices.
+	 * @brief
+	 *  Get the vertices.
 	 * @return The vertices.
 	 */
 	[[nodiscard]] auto getVertices() const -> const std::vector<primitive::MeshVertex>&;
+
 	/**
-	 * @brief Get the vertices.
+	 * @brief
+	 *  Get the vertices.
 	 * @return The vertices.
 	 */
 	auto getVertices() -> std::vector<primitive::MeshVertex>&;
+
 	/**
-	 * @brief Get the vertex iterator at the given index.
+	 * @brief
+	 *  Get the vertex iterator at the given index.
 	 * @param iIndex The index of the vertex.
 	 * @return The vertex iterator.
 	 */
 	[[nodiscard]] auto getVertexIterator(size_t iIndex) -> VertexIterator;
 
 	/**
-	 * @brief Get the vertex iterator at the given index.
+	 * @brief
+	 *  Get the vertex iterator at the given index.
 	 * @param iIndex The index of the vertex.
 	 * @return The vertex iterator.
 	 */
 	[[nodiscard]] auto getVertexIterator(size_t iIndex) const -> ConstVertexIterator;
 
 	/**
-	 * @brief Get the triangles.
+	 * @brief
+	 *  Get the triangles.
 	 * @return The triangles.
 	 */
 	[[nodiscard]] auto getTriangles() const -> const std::vector<primitive::Triangle>&;
+
 	/**
-	 * @brief Get the triangles.
+	 * @brief
+	 *  Get the triangles.
 	 * @return The triangles.
 	 */
 	auto getTriangles() -> std::vector<primitive::Triangle>&;
 
-	/**
-	 * @brief Check if the mesh is empty.
-	 * @return True if the mesh is empty, false otherwise.
-	 */
 	[[nodiscard]] auto isEmpty() const -> bool { return getTriangleCount() == 0 && getVertexCount() == 0; }
 
 	/**
-	 * @brief Reserve capacity for vertices.
+	 * @brief
+	 *  Reserve capacity for vertices.
 	 * @param iCount The number of vertices to reserve space for.
 	 */
 	void reserveVertices(const size_t iCount) {
@@ -118,7 +135,8 @@ public:
 	}
 
 	/**
-	 * @brief Reserve capacity for triangles.
+	 * @brief
+	 *  Reserve capacity for triangles.
 	 * @param iCount The number of triangles to reserve space for.
 	 */
 	void reserveTriangles(const size_t iCount) {
@@ -127,23 +145,28 @@ public:
 	}
 
 	/**
-	 * @brief Add a vertex to the mesh.
+	 * @brief
+	 *  Add a vertex to the mesh.
 	 * @param iVertex The vertex to add.
 	 */
 	void addVertex(const primitive::MeshVertex& iVertex) {
 		m_vertices.push_back(iVertex);
 		m_verticesExtraDataContainer.resize(m_vertices.size());
 	}
+
 	/**
-	 * @brief Add a vertex to the mesh.
+	 * @brief
+	 *  Add a vertex to the mesh.
 	 * @param iVertex The vertex to add.
 	 */
 	void addVertex(primitive::MeshVertex&& iVertex) {
 		m_vertices.push_back(std::move(iVertex));
 		m_verticesExtraDataContainer.resize(m_vertices.size());
 	}
+
 	/**
-	 * @brief Add a vertex to the mesh.
+	 * @brief
+	 *  Add a vertex to the mesh.
 	 * @param iPosition The position of the vertex to add.
 	 */
 	void addVertex(const math::vec3& iPosition) {
@@ -152,26 +175,31 @@ public:
 	}
 
 	/**
-	 * @brief Add a triangle to the mesh.
+	 * @brief
+	 *  Add a triangle to the mesh.
 	 * @param iTriangle The triangle to add.
 	 */
 	void addTriangle(const primitive::Triangle& iTriangle) {
 		m_triangles.push_back(iTriangle);
 		m_trianglesExtraDataContainer.resize(m_triangles.size());
 	}
+
 	/**
-	 * @brief Add a triangle to the mesh.
+	 * @brief
+	 *  Add a triangle to the mesh.
 	 * @param iVertexIndices The indices of the triangle's vertices.
 	 */
 	void addTriangle(const std::array<uint32_t, 3>& iVertexIndices);
 
 	/**
-	 * @brief Clear the mesh.
+	 * @brief
+	 *  Clear the mesh.
 	 */
 	void clear();
 
 	/**
-	 * @brief Clone the mesh.
+	 * @brief
+	 *  Clone the mesh.
 	 */
 	[[nodiscard]] auto clone() const -> StaticMesh;
 

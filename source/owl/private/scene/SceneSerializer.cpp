@@ -2,7 +2,7 @@
  * @file SceneSerializer.cpp
  * @author Silmaen
  * @date 27/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -16,10 +16,10 @@
 #include "scene/component/componentsSerialization.h"
 
 namespace owl::scene {
+
 SceneSerializer::SceneSerializer(const shared<Scene>& iScene) : mp_scene(iScene) {}
 
 namespace {
-
 void serializeEntity(const core::Serializer& iOut, const Entity& iEntity) {
 	iOut.getImpl()->emitter << YAML::BeginMap;// Entity
 	iOut.getImpl()->emitter << YAML::Key << "Entity" << YAML::Value << iEntity.getUUID();

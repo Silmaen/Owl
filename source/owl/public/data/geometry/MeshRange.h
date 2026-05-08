@@ -2,7 +2,7 @@
  * @file MeshRange.h
  * @author Silmaen
  * @date 20/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -16,7 +16,10 @@ namespace owl::data::geometry {
 constexpr size_t INVALID_INDEX = std::numeric_limits<size_t>::max();
 
 /**
- * @brief Class to store the start and end index of the mesh range.
+ * @brief
+ *  Class to store the start and end index of the mesh range.
+ * @tparam IsConst True for a const cursor/iterator, false for a mutable one.
+ * @tparam Components Mesh component types to iterate.
  */
 template<bool IsConst, MeshElementType ElementType, typename... Components>
 class OWL_API MeshRange {
@@ -24,6 +27,7 @@ public:
 	using MeshType = std::conditional_t<IsConst, const StaticMesh, StaticMesh>;
 	using iterator = MeshRangeIterator<IsConst, ElementType, Components...>;
 	using const_iterator = MeshRangeIterator<true, ElementType, Components...>;
+
 	static_assert(
 			!IsConst ||
 					std::conjunction_v<std::negation<
@@ -131,6 +135,11 @@ private:
 	 * @return The object's size.
 	 */
 	[[nodiscard]]
+	/**
+	 * @brief
+	 *  Get the object size.
+	 * @return The object size.
+	 */
 	constexpr auto getObjectSize() const -> size_t {
 		OWL_CORE_ASSERT(m_mesh, "No Mesh given")
 		return ElementType == MeshElementType::Vertex ? m_mesh->getVertexCount() : m_mesh->getTriangleCount();
@@ -146,25 +155,27 @@ private:
 };
 
 // Specializations for vertex and triangle ranges.
-
 /**
- * @brief Class to store the start and end index of the vertex mesh range.
+ * @brief
+ *  Class to store the start and end index of the vertex mesh range.
+ * @tparam IsConst True for a const cursor/iterator, false for a mutable one.
+ * @tparam Components Mesh component types to iterate.
  */
 template<bool IsConst, typename... Components>
 class OWL_API MeshVertexRange : public MeshRange<IsConst, MeshElementType::Vertex, Components...> {
 	using MeshRange<IsConst, MeshElementType::Vertex, Components...>::MeshRange;
 };
-
 /**
- * @brief Class to store the start and end index of the triangle mesh range.
+ * @brief
+ *  Class to store the start and end index of the triangle mesh range.
+ * @tparam IsConst True for a const cursor/iterator, false for a mutable one.
+ * @tparam Components Mesh component types to iterate.
  */
 template<bool IsConst, typename... Components>
 class OWL_API MeshTriangleRange : public MeshRange<IsConst, MeshElementType::Triangle, Components...> {
 	using MeshRange<IsConst, MeshElementType::Triangle, Components...>::MeshRange;
 };
-
 // Helper to determine if a component requires write access.
-
 template<typename... Components>
 MeshVertexRange(StaticMesh&, Components&&...) -> MeshVertexRange<false, std::remove_cvref_t<Components>...>;
 

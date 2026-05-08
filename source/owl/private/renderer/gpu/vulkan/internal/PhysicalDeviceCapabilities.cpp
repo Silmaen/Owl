@@ -2,7 +2,7 @@
  * @file PhysicalDeviceCapabilities.cpp
  * @author Silmaen
  * @date 11/02/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -181,16 +181,18 @@ auto vkDeviceTypeToString(const VkPhysicalDeviceType& iType) -> std::string {
 	return "Unknown";
 }
 }// namespace
-auto PhysicalDeviceCapabilities::getSimpleName() const -> std::string {
 
+auto PhysicalDeviceCapabilities::getSimpleName() const -> std::string {
 	return std::format("{} ({})", properties.deviceName, vkDeviceTypeToString(properties.deviceType));
 }
+
 auto PhysicalDeviceCapabilities::getDetailedName() const -> std::string {
 	std::string result;
 	std::format_to(std::back_inserter(result), "{}\n", getSimpleName());
 	std::format_to(std::back_inserter(result), "  - Score: {}", getScore());
 	return result;
 }
+
 auto PhysicalDeviceCapabilities::getCapabilityString() const -> std::string {
 	std::string result;
 	std::format_to(std::back_inserter(result), "Device Capabilities:\n");
@@ -204,6 +206,7 @@ auto PhysicalDeviceCapabilities::getCapabilityString() const -> std::string {
 	OWL_DIAG_DISABLE_CLANG("-Wunsafe-buffer-usage")
 	size_t total = 0;
 	for (uint32_t i = 0; i < memoryProperties.memoryHeapCount; ++i) { total += memoryProperties.memoryHeaps[i].size; }
+
 	OWL_DIAG_PUSH
 	return total;
 }

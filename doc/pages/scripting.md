@@ -102,7 +102,7 @@ function on_destroy()
     log.info("Entity destroyed")
 end
 
--- Called when a collision is detected (future feature)
+-- Called when a physics collision is detected with another entity
 function on_collision(other_entity_id)
     log.info("Collided with " .. other_entity_id)
 end
@@ -223,13 +223,13 @@ Supported component names for `has_component`: `"Transform"`, `"PhysicBody"`,
 
 | Function                                 | Description                          |
 |------------------------------------------|--------------------------------------|
-| `ui.set_text(entity_id, text)`           | Set UIText content                   |
-| `ui.get_text(entity_id)`                 | Get UIText content                   |
+| `ui.set_text(entity_id, text)`           | Set UiText content                   |
+| `ui.get_text(entity_id)`                 | Get UiText content                   |
 | `ui.set_visible(entity_id, bool)`        | Set entity game visibility           |
-| `ui.set_progress(entity_id, value)`      | Set UIProgressBar value (0..1)       |
-| `ui.get_slider_value(entity_id)`         | Get UISlider value                   |
-| `ui.set_slider_value(entity_id, value)`  | Set UISlider value                   |
-| `ui.set_button_enabled(entity_id, bool)` | Enable/disable a UIButton            |
+| `ui.set_progress(entity_id, value)`      | Set UiProgressBar value (0..1)       |
+| `ui.get_slider_value(entity_id)`         | Get UiSlider value                   |
+| `ui.set_slider_value(entity_id, value)`  | Set UiSlider value                   |
+| `ui.set_button_enabled(entity_id, bool)` | Enable/disable a UiButton            |
 | `ui.transition_fade_in(duration)`        | Start fade-in transition (seconds)   |
 | `ui.transition_fade_out(duration)`       | Start fade-out transition (seconds)  |
 | `ui.transition_play(type, duration, …)`  | Start a transition with custom kind / colour |

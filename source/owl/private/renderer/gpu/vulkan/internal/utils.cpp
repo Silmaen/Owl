@@ -2,7 +2,7 @@
  * @file utils.cpp
  * @author Silmaen
  * @date 19/03/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -64,7 +64,6 @@ auto attachmentTilingToVulkan(const AttachmentSpecification::Tiling& iTiling) ->
 	}
 	return VK_IMAGE_TILING_OPTIMAL;
 }
-
 
 void copyBuffer(const VkBuffer& iSrcBuffer, const VkBuffer& iDstBuffer, const VkDeviceSize iSize) {
 	const auto& core = VulkanCore::get();

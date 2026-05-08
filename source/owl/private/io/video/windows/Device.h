@@ -2,7 +2,7 @@
  * @file Device.h
  * @author Silmaen
  * @date 03/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -16,59 +16,73 @@
 #include <mfreadwrite.h>
 
 /**
- * @brief Windows video devices.
+ * @brief
+ *  Windows video devices.
  */
 namespace owl::io::video::windows {
-
 /**
- * @brief Search for devices and them to the given list.
+ * @brief
+ *  Search for devices and them to the given list.
  * @param[in,out] ioList The device list to update.
  */
 void updateList(std::vector<shared<Device>>& ioList);
 
 /**
- * @brief Class Device.
+ * @brief
+ *  Class Device.
  */
 class Device final : public video::Device {
 public:
 	/**
-	 * @brief Default Constructor.
+	 * @brief
+	 *  Default Constructor.
 	 * @param[in] iMfa Poiter to windows device.
 	 */
 	explicit Device(WPointer<IMFActivate>& iMfa);
+
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~Device() override;
+
 	Device(const Device&) = delete;
+
 	Device(Device&&) = delete;
+
 	auto operator=(const Device&) -> Device& = delete;
+
 	auto operator=(Device&&) -> Device& = delete;
 
 	/**
-	 * @brief Open this device.
+	 * @brief
+	 *  Open this device.
 	 */
 	void open() override;
 
 	/**
-	 * @brief Close this device.
+	 * @brief
+	 *  Close this device.
 	 */
 	void close() override;
 
 	/**
-	 * @brief Check if the device is open.
+	 * @brief
+	 *  Check if the device is open.
 	 * @return True if open.
 	 */
 	[[nodiscard]] auto isOpened() const -> bool override;
 
 	/**
-	 * @brief Retrieve a frame.
+	 * @brief
+	 *  Retrieve a frame.
 	 * @param[in] iFrame The frame to update.
 	 */
 	void fillFrame(shared<renderer::gpu::Texture>& iFrame) override;
 
 	/**
-	 * @brief Check the validity of the device.
+	 * @brief
+	 *  Check the validity of the device.
 	 * @return True if valid.
 	 */
 	[[nodiscard]] auto isValid() const -> bool override;

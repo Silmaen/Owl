@@ -2,7 +2,7 @@
  * @file MeshCursorBase.h
  * @author Silmaen
  * @date 20/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -14,7 +14,8 @@ namespace owl::data::geometry {
 class StaticMesh;
 
 /**
- * @brief Type of static mesh element.
+ * @brief
+ *  Type of static mesh element.
  */
 enum struct MeshElementType : uint8_t {
 	Vertex,///< Vertex element
@@ -30,6 +31,10 @@ enum struct MeshElementType : uint8_t {
 template<bool IsConst, MeshElementType ElementType>
 class OWL_API MeshCursorBase;
 
+/**
+ * @brief
+ *  Specialization of MeshCursorBase for const vertex elements.
+ */
 template<>
 class OWL_API MeshCursorBase<true, MeshElementType::Vertex> {
 public:
@@ -38,9 +43,16 @@ public:
 	using ExtraDataIterator = ::owl::data::extradata::ExtraDataContainer::ConstExtraDataIterator;
 	using ConstExtraDataIterator = ::owl::data::extradata::ExtraDataContainer::ConstExtraDataIterator;
 
+	/**
+	 * @brief
+	 *  Constructor.
+	 * @param[in] iMesh The mesh on which to operate.
+	 * @param[in] iIndex 0-based index of the element.
+	 */
 	MeshCursorBase(const MeshType& iMesh, size_t iIndex);
 
 	~MeshCursorBase() = default;
+
 	/**
 	 * @brief
 	 *  Get the current index of the cursor.
@@ -63,6 +75,7 @@ public:
 	 */
 	[[nodiscard]] auto getExtraDataContainer(const core::FactoryPid& iPid) const
 			-> const extradata::ExtraDataContainer*;
+
 	/**
 	 * @brief
 	 *  Check if the cursor is equal to another.
@@ -138,7 +151,6 @@ protected:
 	 */
 	void gotoEnd() { m_index = m_meshSize; }
 
-
 	/**
 	 * @brief
 	 *  Reset the cursor to an index.
@@ -191,6 +203,7 @@ class OWL_API MeshCursorBase<false, MeshElementType::Vertex> : public MeshCursor
 public:
 	using MeshType = StaticMesh;
 	using BaseCursor = MeshCursorBase<true, MeshElementType::Vertex>;
+
 	MeshCursorBase(const MeshType& iMesh, const size_t iIndex) : BaseCursor(iMesh, iIndex) {}
 
 	/**
@@ -215,7 +228,14 @@ public:
 	using MeshType = const StaticMesh;
 	using BaseCursor = MeshCursorBase<true, MeshElementType::Vertex>;
 
+	/**
+	 * @brief
+	 *  Constructor.
+	 * @param[in] iMesh The mesh on which to operate.
+	 * @param[in] iIndex 0-based index of the element.
+	 */
 	MeshCursorBase(const MeshType& iMesh, size_t iIndex);
+
 	/**
 	 * @brief
 	 *  Get the extra data iterator at the given index.
@@ -237,7 +257,9 @@ class OWL_API MeshCursorBase<false, MeshElementType::Triangle>
 public:
 	using MeshType = StaticMesh;
 	using BaseCursor = MeshCursorBase<true, MeshElementType::Triangle>;
+
 	MeshCursorBase(const MeshType& iMesh, const size_t iIndex) : BaseCursor(iMesh, iIndex) {}
+
 	/**
 	 * @brief
 	 *  Get the extra data iterator at the given index.

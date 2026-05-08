@@ -2,7 +2,7 @@
  * @file EntryPoint.h
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #pragma once
@@ -13,7 +13,8 @@
 #include "utils/StringUtils.h"
 
 /**
- * @brief Main entry point for the program.
+ * @brief
+ *  Main entry point for the program.
  * @param[in] iArgc Number of argument.
  * @param[in] iArgv List of arguments.
  * @return Execution code.

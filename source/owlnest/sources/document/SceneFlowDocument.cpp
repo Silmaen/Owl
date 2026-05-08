@@ -40,7 +40,6 @@ OWL_DIAG_POP
 namespace owl::nest {
 
 namespace {
-
 // Inter-cell padding only — actual node sizes drive the column/row dimensions. Generous
 // horizontal spacing gives the curved links room to bend around without clipping the next column.
 constexpr float g_hSpacing = 140.0f;
@@ -50,7 +49,10 @@ constexpr float g_vSpacing = 70.0f;
 constexpr math::vec4 g_normalTitleColor{1.0f, 1.0f, 1.0f, 1.0f};
 constexpr math::vec4 g_orphanTitleColor{1.0f, 0.35f, 0.35f, 1.0f};
 
-/// @brief Kind of scene transition for label / styling purposes.
+/**
+ * @brief
+ *  Kind of scene transition for label / styling purposes.
+ */
 enum struct TransitionKind : uint8_t {
 	Teleport,///< `Trigger { Type: Teleport }` — explicit player teleport.
 	Death,///< `Trigger { Type: Death }` — death zone reloading the player into another scene.
@@ -58,7 +60,10 @@ enum struct TransitionKind : uint8_t {
 	Lua,///< Heuristically detected `scene.load_scene("...")` call inside an attached Lua script.
 };
 
-/// @brief One transition found in a scene (Trigger of type Teleport/Death/Victory, or Lua call).
+/**
+ * @brief
+ *  One transition found in a scene (Trigger of type Teleport/Death/Victory, or Lua call).
+ */
 struct Transition {
 	std::string sourceName;///< Source entity name (Tag) or stripped script filename for Lua.
 	std::string levelName;///< Destination scene reference as written in the YAML / script.
@@ -67,23 +72,41 @@ struct Transition {
 	TransitionKind kind{TransitionKind::Teleport};
 };
 
-/// @brief Pin label for the ghost "+ Add teleport" affordance shown on every scene node.
+/**
+ * @brief
+ *  Pin label for the ghost "+ Add teleport" affordance shown on every scene node.
+ */
 constexpr const char* g_ghostPinLabel = "+ Add teleport";
-/// @brief Pin typeTag identifying the ghost pin (used by the validator).
+/**
+ * @brief
+ *  Pin typeTag identifying the ghost pin (used by the validator).
+ */
 constexpr const char* g_ghostPinTypeTag = "scene_new_teleport";
-/// @brief Pin typeTag for entry pins (input on every scene node).
+/**
+ * @brief
+ *  Pin typeTag for entry pins (input on every scene node).
+ */
 constexpr const char* g_entryPinTypeTag = "scene_entry";
-/// @brief Pin typeTag for ordinary Teleport output pins.
+/**
+ * @brief
+ *  Pin typeTag for ordinary Teleport output pins.
+ */
 constexpr const char* g_teleportPinTypeTag = "scene_exit";
 
-/// @brief Summary of one `.owl` scene file.
+/**
+ * @brief
+ *  Summary of one `.owl` scene file.
+ */
 struct SceneSummary {
 	std::filesystem::path absolutePath;
 	std::string relativePath;///< Forward-slash relative path (canonical key + node title input).
 	std::vector<Transition> transitions;
 };
 
-/// @brief Walk the project directory and collect every `.owl` scene file.
+/**
+ * @brief
+ *  Walk the project directory and collect every `.owl` scene file.
+ */
 auto listAllScenes(const std::filesystem::path& iProjectDir) -> std::vector<std::filesystem::path> {
 	std::vector<std::filesystem::path> out;
 	if (iProjectDir.empty() || !std::filesystem::exists(iProjectDir))
@@ -96,7 +119,10 @@ auto listAllScenes(const std::filesystem::path& iProjectDir) -> std::vector<std:
 	return out;
 }
 
-/// @brief Resolve a scriptPath (may be relative to a project asset dir or absolute) to disk.
+/**
+ * @brief
+ *  Resolve a scriptPath (may be relative to a project asset dir or absolute) to disk.
+ */
 auto resolveScriptPath(const std::filesystem::path& iProjectDir, const std::string& iScriptPath)
 		-> std::filesystem::path {
 	std::filesystem::path raw{iScriptPath};
@@ -109,15 +135,18 @@ auto resolveScriptPath(const std::filesystem::path& iProjectDir, const std::stri
 	return {};
 }
 
-/// @brief Best-effort regex scan of a `.lua` file for scene transitions.
-///
-/// Two patterns are matched:
-///  1. Direct literal — `scene.load_scene("scenes/X.owl")`.
-///  2. Indirect via variable — when a file uses `scene.load_scene` anywhere AND contains a
-///     `*.owl` string literal (typical pattern: `pending_scene = "scenes/X.owl"` followed by
-///     `scene.load_scene(pending_scene)` in `on_update`). The literal is treated as a possible
-///     destination. False positives in comments / non-transition code are rare and harmless on
-///     the Scene Flow visualization.
+/**
+ * @brief
+ *  Best-effort regex scan of a `.lua` file for scene transitions.
+ *
+ * Two patterns are matched:
+ *  1. Direct literal — `scene.load_scene("scenes/X.owl")`.
+ *  2. Indirect via variable — when a file uses `scene.load_scene` anywhere AND contains a
+ *     `*.owl` string literal (typical pattern: `pending_scene = "scenes/X.owl"` followed by
+ *     `scene.load_scene(pending_scene)` in `on_update`). The literal is treated as a possible
+ *     destination. False positives in comments / non-transition code are rare and harmless on
+ *     the Scene Flow visualization.
+ */
 auto scanLuaForLoadScene(const std::filesystem::path& iLuaPath) -> std::vector<std::string> {
 	std::vector<std::string> destinations;
 	const std::ifstream in(iLuaPath);
@@ -141,11 +170,15 @@ auto scanLuaForLoadScene(const std::filesystem::path& iLuaPath) -> std::vector<s
 	}
 	// De-duplicate while preserving the first appearance order so determinism is unchanged.
 	std::unordered_set<std::string> seen;
+
 	std::erase_if(destinations, [&](const std::string& iEntry) -> bool { return !seen.insert(iEntry).second; });
 	return destinations;
 }
 
-/// @brief Parse a scene YAML and return both Teleport triggers and any Lua-driven destinations.
+/**
+ * @brief
+ *  Parse a scene YAML and return both Teleport triggers and any Lua-driven destinations.
+ */
 auto extractTransitions(const std::filesystem::path& iScenePath, const std::filesystem::path& iProjectDir)
 		-> std::vector<Transition> {
 	std::vector<Transition> out;
@@ -221,7 +254,10 @@ auto extractTransitions(const std::filesystem::path& iScenePath, const std::file
 	return out;
 }
 
-/// @brief Trim the `.owl` extension from a relative path for display use.
+/**
+ * @brief
+ *  Trim the `.owl` extension from a relative path for display use.
+ */
 auto stripOwlExtension(std::string_view iPath) -> std::string {
 	std::string out{iPath};
 	if (out.ends_with(".owl"))
@@ -229,8 +265,11 @@ auto stripOwlExtension(std::string_view iPath) -> std::string {
 	return out;
 }
 
-/// @brief Normalise a user-typed `LevelName` to the canonical relative path used as scene key.
-/// Accepts `foo`, `foo.owl`, `scenes/foo`, `scenes/foo.owl` — picks whichever matches a known scene.
+/**
+ * @brief
+ *  Normalise a user-typed `LevelName` to the canonical relative path used as scene key.
+ * Accepts `foo`, `foo.owl`, `scenes/foo`, `scenes/foo.owl` — picks whichever matches a known scene.
+ */
 auto resolveLevelName(std::string_view iLevelName, const std::unordered_map<std::string, size_t>& iKnownScenes)
 		-> std::string {
 	if (iLevelName.empty())
@@ -258,10 +297,13 @@ auto resolveLevelName(std::string_view iLevelName, const std::unordered_map<std:
 	return {};
 }
 
-/// @brief Compact pin label. Destination is implicit from the link, so just show the source
-///        identifier; Death and Victory rely on the label colour for the kind hint, while Lua
-///        keeps a visible `λ` prefix because it is the only kind that maps to a script-driven
-///        transition (worth flagging at a glance even when colours are off).
+/**
+ * @brief
+ *  Compact pin label. Destination is implicit from the link, so just show the source
+ *        identifier; Death and Victory rely on the label colour for the kind hint, while Lua
+ *        keeps a visible `λ` prefix because it is the only kind that maps to a script-driven
+ *        transition (worth flagging at a glance even when colours are off).
+ */
 auto pinLabel(const Transition& iTr) -> std::string {
 	const auto& src = iTr.sourceName;
 	switch (iTr.kind) {
@@ -280,7 +322,10 @@ auto pinLabel(const Transition& iTr) -> std::string {
 	return src;
 }
 
-/// @brief Pin typeTag for a given transition kind — drives styling on the Properties panel.
+/**
+ * @brief
+ *  Pin typeTag for a given transition kind — drives styling on the Properties panel.
+ */
 auto pinTypeTag(TransitionKind iKind) -> std::string_view {
 	switch (iKind) {
 		case TransitionKind::Lua:
@@ -295,7 +340,10 @@ auto pinTypeTag(TransitionKind iKind) -> std::string_view {
 	return "scene_exit";
 }
 
-/// @brief Per-kind label colour used by `NodeCanvas::CustomDraw` for the in-node text.
+/**
+ * @brief
+ *  Per-kind label colour used by `NodeCanvas::CustomDraw` for the in-node text.
+ */
 auto pinLabelColor(TransitionKind iKind) -> math::vec4 {
 	switch (iKind) {
 		case TransitionKind::Lua:
@@ -310,7 +358,10 @@ auto pinLabelColor(TransitionKind iKind) -> math::vec4 {
 	return {1.0f, 1.0f, 1.0f, 1.0f};
 }
 
-/// @brief Result of the layered Sugiyama-ish layout computation.
+/**
+ * @brief
+ *  Result of the layered Sugiyama-ish layout computation.
+ */
 struct LayeringResult {
 	std::vector<size_t> layer;///< layer[i] = column index of summaries[i]
 	std::vector<std::vector<size_t>> nodesPerLayer;///< sorted (stable) lists of node indices per column
@@ -318,8 +369,11 @@ struct LayeringResult {
 	size_t layerCount{0};///< total column count (orphan layer + 1)
 };
 
-/// @brief Compute per-node column index via BFS from the first scene + DFS back-edge detection +
-///        monotone promotion, then group nodes per column with a deterministic alphabetic sort.
+/**
+ * @brief
+ *  Compute per-node column index via BFS from the first scene + DFS back-edge detection +
+ *        monotone promotion, then group nodes per column with a deterministic alphabetic sort.
+ */
 [[nodiscard]] auto computeLayering(const std::vector<SceneSummary>& iSummaries,
 								   const std::vector<std::vector<size_t>>& iAdjacency,
 								   const std::string& iFirstResolved,
@@ -327,7 +381,6 @@ struct LayeringResult {
 	constexpr size_t kInvalidLayer = std::numeric_limits<size_t>::max();
 	LayeringResult result;
 	result.layer.assign(iSummaries.size(), kInvalidLayer);
-
 	if (!iFirstResolved.empty()) {
 		std::queue<size_t> bfs;
 		const auto rootIdx = iIndexByRel.at(iFirstResolved);
@@ -344,7 +397,6 @@ struct LayeringResult {
 			}
 		}
 	}
-
 	size_t maxLayer = 0;
 	for (const auto l: result.layer)
 		if (l != kInvalidLayer)
@@ -353,7 +405,6 @@ struct LayeringResult {
 	for (auto& l: result.layer)
 		if (l == kInvalidLayer)
 			l = initialOrphanLayer;
-
 	// DFS back-edge detection — start from the first scene so loops back to it are correctly
 	// classified as back edges (and don't push it rightward in the promotion step).
 	std::vector<uint8_t> dfsState(iSummaries.size(), 0);
@@ -382,9 +433,11 @@ struct LayeringResult {
 		}
 	};
 	if (!iFirstResolved.empty() && dfsState[iIndexByRel.at(iFirstResolved)] == 0)
+
 		runDfs(iIndexByRel.at(iFirstResolved));
 	for (size_t i = 0; i < iSummaries.size(); ++i)
 		if (dfsState[i] == 0)
+
 			runDfs(i);
 
 	// Monotone promotion — every forward edge ends at a strictly greater layer than its source.
@@ -402,7 +455,6 @@ struct LayeringResult {
 			}
 		}
 	}
-
 	// Re-derive orphan column AFTER promotion so it always sits beyond the reachable graph.
 	maxLayer = 0;
 	for (size_t i = 0; i < iSummaries.size(); ++i)
@@ -412,7 +464,6 @@ struct LayeringResult {
 	for (auto& l: result.layer)
 		if (l == initialOrphanLayer)
 			l = result.orphanLayer;
-
 	result.layerCount = result.orphanLayer + 1;
 	result.nodesPerLayer.resize(result.layerCount);
 	for (size_t i = 0; i < iSummaries.size(); ++i)
@@ -425,7 +476,10 @@ struct LayeringResult {
 	return result;
 }
 
-/// @brief Apply alternating forward/backward barycentre sweeps to reduce edge crossings.
+/**
+ * @brief
+ *  Apply alternating forward/backward barycentre sweeps to reduce edge crossings.
+ */
 void applyBarycentreOrdering(const std::vector<SceneSummary>& iSummaries, const std::vector<size_t>& iLayer,
 							 size_t iLayerCount, const std::vector<std::vector<size_t>>& iAdjacency,
 							 std::vector<std::vector<size_t>>& ioNodesPerLayer) {
@@ -472,11 +526,16 @@ void applyBarycentreOrdering(const std::vector<SceneSummary>& iSummaries, const 
 	}
 }
 
-/// @brief Write a minimal but well-formed empty scene YAML to disk.
+/**
+ * @brief
+ *  Write a minimal but well-formed empty scene YAML to disk.
+ */
 auto writeEmptyScene(const std::filesystem::path& iAbsolutePath) -> bool {
 	std::ofstream out(iAbsolutePath);
-	if (!out)
+	if (!out) {
+		OWL_CORE_ERROR("SceneFlow: cannot open '{}' for writing.", iAbsolutePath.string())
 		return false;
+	}
 	const auto stem = iAbsolutePath.stem().string();
 	// The serializer accepts an empty Entities list; the scene's name is taken from the file name
 	// when loaded.
@@ -488,6 +547,7 @@ auto writeEmptyScene(const std::filesystem::path& iAbsolutePath) -> bool {
 }// namespace
 
 SceneFlowDocument::SceneFlowDocument() = default;
+
 SceneFlowDocument::~SceneFlowDocument() = default;
 
 void SceneFlowDocument::onCanvasReady() {
@@ -665,15 +725,12 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 	m_projectDirectory = iProject.projectDirectory;
 	m_projectName = iProject.name;
 	m_projectFirstScene = iProject.firstScene;
-
 	const auto scenePaths = listAllScenes(iProject.projectDirectory);
 	if (scenePaths.empty())
 		return;
-
 	std::vector<SceneSummary> summaries;
 	summaries.reserve(scenePaths.size());
 	std::unordered_map<std::string, size_t> indexByRel;
-
 	for (const auto& abs: scenePaths) {
 		SceneSummary summary;
 		summary.absolutePath = abs;
@@ -683,28 +740,24 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 		indexByRel.emplace(summary.relativePath, summaries.size());
 		summaries.push_back(std::move(summary));
 	}
-
 	std::vector<core::UUID> nodeIdsByIndex(summaries.size());
 	std::vector<core::UUID> entryPinByIndex(summaries.size());
 	std::vector<std::vector<core::UUID>> outputPinsByIndex(summaries.size());
 	std::vector<core::UUID> ghostPinByIndex(summaries.size());
 	std::vector<gui::widgets::Node> stagedNodes(summaries.size());
 	std::vector<math::vec2f> nodeSizes(summaries.size());
-
 	// First pass: build every Node fully (title + pins + customData) and measure its actual size.
 	for (size_t i = 0; i < summaries.size(); ++i) {
 		const auto& summary = summaries[i];
 		auto& node = stagedNodes[i];
 		node.title = stripOwlExtension(summary.relativePath);
 		node.customData = std::format("scenePath: {}\n", summary.relativePath);
-
 		gui::widgets::NodePin entryPin;
 		entryPin.label = "entry";
 		entryPin.typeTag = "scene_entry";
 		entryPin.kind = gui::widgets::PinKind::Input;
 		entryPinByIndex[i] = entryPin.id;
 		node.inputs.push_back(std::move(entryPin));
-
 		outputPinsByIndex[i].reserve(summary.transitions.size());
 		for (const auto& tr: summary.transitions) {
 			gui::widgets::NodePin outPin;
@@ -715,7 +768,6 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 			outputPinsByIndex[i].push_back(outPin.id);
 			node.outputs.push_back(std::move(outPin));
 		}
-
 		// Ghost "+ Add teleport" pin — drag-from-here to create a new Trigger entity. Always last,
 		// so existing teleports stay visually grouped and the drag affordance lives at the bottom.
 		gui::widgets::NodePin ghost;
@@ -725,10 +777,8 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 		ghost.labelColor = {0.6f, 0.6f, 0.6f, 1.0f};
 		ghostPinByIndex[i] = ghost.id;
 		node.outputs.push_back(std::move(ghost));
-
 		nodeSizes[i] = gui::widgets::NodeCanvas::measureNode(node);
 	}
-
 	// --- Layered layout (BFS from `firstScene`) -----------------------------
 	// Build a directed adjacency list so we can compute reachability layers and assign each scene
 	// a column index based on its BFS depth. Cycles (e.g. main_menu ↔ settings_menu ↔ main_menu)
@@ -742,13 +792,13 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 				adjacency[i].push_back(indexByRel[resolved]);
 		}
 	}
-
 	const auto firstResolved = resolveLevelName(iProject.firstScene, indexByRel);
 	auto layering = computeLayering(summaries, adjacency, firstResolved, indexByRel);
 	const auto& layer = layering.layer;
 	const size_t layerCount = layering.layerCount;
 	const size_t orphanLayer = layering.orphanLayer;
 	auto& nodesPerLayer = layering.nodesPerLayer;
+
 	applyBarycentreOrdering(summaries, layer, layerCount, adjacency, nodesPerLayer);
 
 	// Compute per-layer max width and per-row max height — consistent placement regardless of how
@@ -764,7 +814,6 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 	std::vector<float> layerX(layerCount + 1, 0.0f);
 	for (size_t l = 0; l < layerCount; ++l)
 		layerX[l + 1] = layerX[l] + layerMaxWidth[l] + g_hSpacing;
-
 	for (size_t l = 0; l < layerCount; ++l) {
 		const auto& bucket = nodesPerLayer[l];
 		const float pitch = globalRowHeight + g_vSpacing;
@@ -782,13 +831,11 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 			nodeIdsByIndex[idx] = m_canvas.addNode(std::move(stagedNodes[idx]));
 		}
 	}
-
 	// Map each node to its ghost pin so the create flow can ignore drag-from-existing-pin events.
 	for (size_t i = 0; i < summaries.size(); ++i) {
 		if (static_cast<uint64_t>(ghostPinByIndex[i]) != 0)
 			m_nodeToGhostPin[nodeIdsByIndex[i]] = ghostPinByIndex[i];
 	}
-
 	// Resolve link targets — every transition (Trigger or Lua) follows the same name resolution.
 	for (size_t i = 0; i < summaries.size(); ++i) {
 		const auto& summary = summaries[i];
@@ -816,14 +863,12 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 			}
 		}
 	}
-
 	// Reachable / orphan info already produced by the layout BFS above — anything in `orphanLayer`
 	// was unreachable from `firstScene`. Reuse it instead of running a second BFS.
 	for (size_t i = 0; i < summaries.size(); ++i) {
 		if (auto* node = m_canvas.findNode(nodeIdsByIndex[i]))
 			node->titleColor = layer[i] == orphanLayer ? g_orphanTitleColor : g_normalTitleColor;
 	}
-
 	m_savedSnapshot = gui::widgets::NodeCanvasSerializer::serializeToString(m_canvas);
 	// Auto-fit on every project rescan so the user always sees the full graph centred when the
 	// Scene Flow tab opens (or after any add/delete/rename of a scene). GraphEditor consumes the

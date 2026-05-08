@@ -17,7 +17,6 @@ using namespace owl;
 using namespace owl::scene;
 
 namespace {
-
 struct SettingsGuard {
 	SettingsGuard() {
 		SettingsManager::clear();

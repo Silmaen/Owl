@@ -2,7 +2,7 @@
  * @file AppEvent.h
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -15,36 +15,42 @@
 
 namespace owl::event {
 /**
-	 * @brief Window Resize Event.
+ * @brief
+ *  Window Resize Event.
 	 */
 class OWL_API WindowResizeEvent final : public Event {
 public:
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 * @param[in] iSize Window's size.
 	 */
 	explicit WindowResizeEvent(const math::vec2ui& iSize) : m_size{iSize} {}
 
 	/**
-	 * @brief Get window's width.
+	 * @brief
+	 *  Get window's width.
 	 * @return The window's width.
 	 */
 	[[nodiscard]] auto getWidth() const -> uint32_t { return m_size.x(); }
 
 	/**
-	 * @brief Get window's height.
+	 * @brief
+	 *  Get window's height.
 	 * @return The window's height.
 	 */
 	[[nodiscard]] auto getHeight() const -> uint32_t { return m_size.y(); }
 
 	/**
-	 * @brief Get window's size.
+	 * @brief
+	 *  Get window's size.
 	 * @return The window's size.
 	 */
 	[[nodiscard]] auto getSize() const -> const math::vec2ui& { return m_size; }
 
 	/**
-	 * @brief Get the event as string.
+	 * @brief
+	 *  Get the event as string.
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override {
@@ -52,25 +58,29 @@ public:
 	}
 
 	/**
-	 * @brief Get the event's name.
+	 * @brief
+	 *  Get the event's name.
 	 * @return Event's name.
 	 */
 	[[nodiscard]] auto getName() const -> std::string override { return std::format("WindowResizeEvent"); }
 
 	/**
-	 * @brief Get the event's static type.
+	 * @brief
+	 *  Get the event's static type.
 	 * @return Event's static type.
 	 */
 	[[nodiscard]] static auto getStaticType() -> Type { return Type::WindowResize; }
 
 	/**
-	 * @brief Get the event's type.
+	 * @brief
+	 *  Get the event's type.
 	 * @return Event's type.
 	 */
 	[[nodiscard]] auto getType() const -> Type override { return getStaticType(); }
 
 	/**
-	 * @brief Get the event's category flags.
+	 * @brief
+	 *  Get the event's category flags.
 	 * @return Event's category flags.
 	 */
 	[[nodiscard]] auto getCategoryFlags() const -> uint8_t override;
@@ -79,189 +89,220 @@ private:
 	/// New size.
 	math::vec2ui m_size;
 };
-
 /**
- * @brief Window close Event
+ * @brief
+ *  Window close Event
  */
 class OWL_API WindowCloseEvent final : public Event {
 public:
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 */
 	WindowCloseEvent() = default;
 
 	/**
-	 * @brief Get the event as string.
+	 * @brief
+	 *  Get the event as string.
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override { return std::format("WindowCloseEvent"); }
 
 	/**
-	 * @brief Get the event's name.
+	 * @brief
+	 *  Get the event's name.
 	 * @return Event's name.
 	 */
 	[[nodiscard]] auto getName() const -> std::string override { return std::format("WindowCloseEvent"); }
 
 	/**
-	 * @brief Get the event's static type.
+	 * @brief
+	 *  Get the event's static type.
 	 * @return Event's static type.
 	 */
 	[[nodiscard]] static auto getStaticType() -> Type { return Type::WindowClose; }
 
 	/**
-	 * @brief Get the event's type.
+	 * @brief
+	 *  Get the event's type.
 	 * @return Event's type.
 	 */
 	[[nodiscard]] auto getType() const -> Type override { return getStaticType(); }
 
 	/**
-		 * @brief Get the event's category flags.
+	 * @brief
+	 *  Get the event's category flags.
 		 * @return Event's category flags.
 		 */
 	[[nodiscard]] auto getCategoryFlags() const -> uint8_t override;
 };
 
 /**
- * @brief Application Tick Event
+ * @brief
+ *  Application Tick Event
  */
 class OWL_API AppTickEvent final : public Event {
 public:
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 */
 	AppTickEvent() = default;
 
 	/**
-	 * @brief Get the event as string.
+	 * @brief
+	 *  Get the event as string.
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override { return std::format("AppTickEvent"); }
 
 	/**
-	 * @brief Get the event's name.
+	 * @brief
+	 *  Get the event's name.
 	 * @return Event's name.
 	 */
 	[[nodiscard]] auto getName() const -> std::string override { return std::format("AppTickEvent"); }
 
 	/**
-	 * @brief Get the event's static type.
+	 * @brief
+	 *  Get the event's static type.
 	 * @return Event's static type.
 	 */
 	[[nodiscard]] static auto getStaticType() -> Type { return Type::AppTick; }
 
 	/**
-	 * @brief Get the event's type.
+	 * @brief
+	 *  Get the event's type.
 	 * @return Event's type.
 	 */
 	[[nodiscard]] auto getType() const -> Type override { return getStaticType(); }
 
 	/**
-	 * @brief Get the event's category flags.
+	 * @brief
+	 *  Get the event's category flags.
 	 * @return Event's category flags.
 	 */
 	[[nodiscard]] auto getCategoryFlags() const -> uint8_t override;
 };
 
 /**
- * @brief Application Update Event
+ * @brief
+ *  Application Update Event
  */
 class OWL_API AppUpdateEvent final : public Event {
 public:
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 */
 	AppUpdateEvent() = default;
 
 	/**
-	 * @brief Get the event as string.
+	 * @brief
+	 *  Get the event as string.
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override { return std::format("AppUpdateEvent"); }
 
 	/**
-	 * @brief Get the event's name.
+	 * @brief
+	 *  Get the event's name.
 	 * @return Event's name.
 	 */
 	[[nodiscard]] auto getName() const -> std::string override { return std::format("AppUpdateEvent"); }
 
 	/**
-	 * @brief Get the event's static type.
+	 * @brief
+	 *  Get the event's static type.
 	 * @return Event's static type.
 	 */
 	[[nodiscard]] static auto getStaticType() -> Type { return Type::AppUpdate; }
 
 	/**
-	 * @brief Get the event's type.
+	 * @brief
+	 *  Get the event's type.
 	 * @return Event's type.
 	 */
 	[[nodiscard]] auto getType() const -> Type override { return getStaticType(); }
 
 	/**
-	 * @brief Get the event's category flags.
+	 * @brief
+	 *  Get the event's category flags.
 	 * @return Event's category flags.
 	 */
 	[[nodiscard]] auto getCategoryFlags() const -> uint8_t override;
 };
 
 /**
- * @brief Application Rendering Event
+ * @brief
+ *  Application Rendering Event
  */
 class OWL_API AppRenderEvent final : public Event {
 public:
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 */
 	AppRenderEvent() = default;
 
 	/**
-	 * @brief Get the event as string.
+	 * @brief
+	 *  Get the event as string.
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override { return std::format("AppRenderEvent"); }
 
 	/**
-	 * @brief Get the event's name.
+	 * @brief
+	 *  Get the event's name.
 	 * @return Event's name.
 	 */
 	[[nodiscard]] auto getName() const -> std::string override { return std::format("AppRenderEvent"); }
 
 	/**
-	 * @brief Get the event's static type.
+	 * @brief
+	 *  Get the event's static type.
 	 * @return Event's static type.
 	 */
 	[[nodiscard]] static auto getStaticType() -> Type { return Type::AppRender; }
 
 	/**
-	 * @brief Get the event's type.
+	 * @brief
+	 *  Get the event's type.
 	 * @return Event's type.
 	 */
 	[[nodiscard]] auto getType() const -> Type override { return getStaticType(); }
 
 	/**
-	 * @brief Get the event's category flags.
+	 * @brief
+	 *  Get the event's category flags.
 	 * @return Event's category flags.
 	 */
 	[[nodiscard]] auto getCategoryFlags() const -> uint8_t override;
 };
 /**
- * @brief File Drop Event — emitted when files are dragged from the OS onto the window.
+ * @brief
+ *  File Drop Event — emitted when files are dragged from the OS onto the window.
  */
 class OWL_API FileDropEvent final : public Event {
 public:
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 * @param[in] iPaths The dropped file paths.
 	 */
 	explicit FileDropEvent(std::vector<std::filesystem::path> iPaths) : m_paths{std::move(iPaths)} {}
 
 	/**
-	 * @brief Get the dropped file paths.
+	 * @brief
+	 *  Get the dropped file paths.
 	 * @return The dropped paths.
 	 */
 	[[nodiscard]] auto getPaths() const -> const std::vector<std::filesystem::path>& { return m_paths; }
 
 	/**
-	 * @brief Get the event as string.
+	 * @brief
+	 *  Get the event as string.
 	 * @return String of the event.
 	 */
 	[[nodiscard]] auto toString() const -> std::string override {
@@ -269,25 +310,29 @@ public:
 	}
 
 	/**
-	 * @brief Get the event's name.
+	 * @brief
+	 *  Get the event's name.
 	 * @return Event's name.
 	 */
 	[[nodiscard]] auto getName() const -> std::string override { return std::format("FileDropEvent"); }
 
 	/**
-	 * @brief Get the event's static type.
+	 * @brief
+	 *  Get the event's static type.
 	 * @return Event's static type.
 	 */
 	[[nodiscard]] static auto getStaticType() -> Type { return Type::FileDrop; }
 
 	/**
-	 * @brief Get the event's type.
+	 * @brief
+	 *  Get the event's type.
 	 * @return Event's type.
 	 */
 	[[nodiscard]] auto getType() const -> Type override { return getStaticType(); }
 
 	/**
-	 * @brief Get the event's category flags.
+	 * @brief
+	 *  Get the event's category flags.
 	 * @return Event's category flags.
 	 */
 	[[nodiscard]] auto getCategoryFlags() const -> uint8_t override;

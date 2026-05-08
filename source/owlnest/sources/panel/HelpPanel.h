@@ -17,9 +17,9 @@
 #include <vector>
 
 namespace owl::nest::panel {
-
 /**
- * @brief Dockable in-editor help browser.
+ * @brief
+ *  Dockable in-editor help browser.
  *
  * Reads the bundled help index produced by `cmake/HelpAssets.cmake` (one
  * `engine_assets/help/index.yml` describing every page) and renders the
@@ -33,20 +33,37 @@ namespace owl::nest::panel {
  */
 class HelpPanel final {
 public:
+	/**
+	 * @brief
+	 *  Default constructor.
+	 */
 	HelpPanel();
+
 	~HelpPanel() = default;
+
 	HelpPanel(const HelpPanel&) = delete;
+
 	HelpPanel(HelpPanel&&) = delete;
+
 	auto operator=(const HelpPanel&) -> HelpPanel& = delete;
+
 	auto operator=(HelpPanel&&) -> HelpPanel& = delete;
 
-	/// @brief Show the panel; the current page (or the default landing page) is kept.
+	/**
+	 * @brief
+	 *  Show the panel; the current page (or the default landing page) is kept.
+	 */
 	void open();
-	/// @brief Show the panel and navigate to the given page id.
+
+	/**
+	 * @brief
+	 *  Show the panel and navigate to the given page id.
+	 */
 	void open(const std::string& iPageId);
 
 	/**
-	 * @brief Render the panel. Call every frame.
+	 * @brief
+	 *  Render the panel. Call every frame.
 	 * @param[in] iTimeStep Frame timestep (used by the embedded Markdown renderer).
 	 */
 	void onImGuiRender(const core::Timestep& iTimeStep);
@@ -59,15 +76,34 @@ private:
 		std::string path;     ///< File name relative to engine_assets/help/.
 	};
 
-	/// Locate engine_assets/help/ relative to the runtime CWD. Empty on failure.
+	/**
+	 * @brief
+	 *  Locate engine_assets/help/ relative to the runtime CWD. Empty on failure.
+	 */
 	[[nodiscard]] static auto resolveHelpRoot() -> std::filesystem::path;
-	/// Load (or reload) the index file.
+
+	/**
+	 * @brief
+	 *  Load (or reload) the index file.
+	 */
 	void loadIndex();
-	/// Load a page by id; navigates to the default landing page if `iId` is unknown.
+
+	/**
+	 * @brief
+	 *  Load a page by id; navigates to the default landing page if `iId` is unknown.
+	 */
 	void loadPage(const std::string& iId);
-	/// React to a Markdown link click coming from `MarkdownPreview`.
+
+	/**
+	 * @brief
+	 *  React to a Markdown link click coming from `MarkdownPreview`.
+	 */
 	void onLinkClicked(const std::string& iHref);
-	/// Push the current page onto the back-stack and switch to a new page.
+
+	/**
+	 * @brief
+	 *  Push the current page onto the back-stack and switch to a new page.
+	 */
 	void navigateTo(const std::string& iId);
 
 	bool m_visible = false;
@@ -79,8 +115,10 @@ private:
 	std::vector<std::string> m_forwardStack;
 	std::string m_search;
 	codeEditor::MarkdownPreview m_renderer;
-	/// Horizontal split ratio between the page tree (left) and content (right). Clamped
-	/// at render time to keep both sides at least `kMinSideW` pixels wide.
+	/**
+	 * Horizontal split ratio between the page tree (left) and content (right). Clamped
+	 * at render time to keep both sides at least `kMinSideW` pixels wide.
+	 */
 	float m_splitRatio = 0.30f;
 };
 

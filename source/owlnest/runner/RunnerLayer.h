@@ -2,7 +2,7 @@
  * @file RunnerLayer.h
  * @author Silmaen
  * @date 21/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,7 +12,6 @@
 #include <owl.h>
 
 namespace owl::nest::runner {
-
 /// Configuration loaded from runner.yml.
 struct RunnerConfig {
 	/// Relative path to the first scene.
@@ -43,40 +42,100 @@ struct RunnerConfig {
 	/// renders incorrectly.
 	renderer::RendererStackConfig rendererStack;
 
-	/// Load configuration from a YAML file.
+	/**
+	 * @brief
+	 *  Load configuration from a YAML file.
+	 */
 	void loadYaml(const std::filesystem::path& iPath);
-	/// Save configuration to a YAML file.
+
+	/**
+	 * @brief
+	 *  Save configuration to a YAML file.
+	 */
 	void saveYaml(const std::filesystem::path& iPath) const;
 };
 
 /**
- * @brief Class RunnerLayer
+ * @brief
+ *  Class RunnerLayer
  */
 class RunnerLayer final : public core::layer::Layer {
 public:
 	RunnerLayer(const RunnerLayer&) = delete;
+
 	RunnerLayer(RunnerLayer&&) = delete;
+
 	auto operator=(const RunnerLayer&) -> RunnerLayer& = delete;
+
 	auto operator=(RunnerLayer&&) -> RunnerLayer& = delete;
+
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	RunnerLayer();
+
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~RunnerLayer() override = default;
 
+	/**
+	 * @brief
+	 *  Handle the attach event.
+	 */
 	void onAttach() override;
+
+	/**
+	 * @brief
+	 *  Handle the detach event.
+	 */
 	void onDetach() override;
+
+	/**
+	 * @brief
+	 *  Handle the update event.
+	 * @param[in] iTimeStep Frame time delta.
+	 */
 	void onUpdate(const core::Timestep& iTimeStep) override;
+
+	/**
+	 * @brief
+	 *  Handle the event event.
+	 * @param[in,out] ioEvent The incoming event.
+	 */
 	void onEvent(event::Event& ioEvent) override;
+
+	/**
+	 * @brief
+	 *  Handle the im gui render event.
+	 * @param[in] iTimeStep Frame time delta.
+	 */
 	void onImGuiRender(const core::Timestep& iTimeStep) override;
 
+	/**
+	 * @brief
+	 *  Get the active scene.
+	 * @return The active scene.
+	 */
 	[[nodiscard]] auto getActiveScene() const -> const shared<scene::Scene>& { return m_activeScene; }
 
 private:
+	/**
+	 * @brief
+	 *  Handle the key pressed event.
+	 * @param[in,out] ioEvent The incoming event.
+	 * @return True when the event was consumed.
+	 */
 	static auto onKeyPressed(const event::KeyPressedEvent& ioEvent) -> bool;
+
+	/**
+	 * @brief
+	 *  Handle the mouse button pressed event.
+	 * @param[in,out] ioEvent The incoming event.
+	 * @return True when the event was consumed.
+	 */
 	static auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
 
 	/// State of an in-flight cross-level teleport loaded asynchronously.
@@ -97,8 +156,16 @@ private:
 		std::atomic<bool> failed{false};
 	};
 
+	/**
+	 * @brief
+	 *  Handle teleport request.
+	 */
 	void handleTeleportRequest();
-	/// Finish a pending async transition: deserialize on main thread and swap scene.
+
+	/**
+	 * @brief
+	 *  Finish a pending async transition: deserialize on main thread and swap scene.
+	 */
 	void finishTransition();
 	/// Build the engine's `RenderStack` from `m_config.rendererStack` filtered
 	/// by the active scene's `EnabledRenderers`, and install it via

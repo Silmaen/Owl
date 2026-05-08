@@ -2,7 +2,7 @@
  * @file GraphContext.cpp
  * @author Silmaen
  * @date 07/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -34,7 +34,6 @@ auto GraphContext::getVersion() const -> Version {
 auto GraphContext::createSurface(const VkInstance& iInstance) -> VkResult {
 	return glfwCreateWindowSurface(iInstance, mp_wnd, nullptr, &m_surface);
 }
-
 
 void GraphContext::destroySurface(const VkInstance& iInstance) {
 	vkDestroySurfaceKHR(iInstance, m_surface, nullptr);

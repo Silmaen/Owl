@@ -2,7 +2,7 @@
  * @file SceneHierarchy.cpp
  * @author Silmaen
  * @date 26/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -28,20 +28,28 @@ using namespace owl::scene::component;
 namespace owl::nest::panel {
 
 namespace {
-
-/// @brief Component name written by `drawComponent` while its header is hovered.
-///
-/// Read by `EditorLayer::onContextualHelp` so pressing F1 over a specific
-/// component header opens the documentation page that covers it. Empty when
-/// no component is being hovered.
+/**
+ * @brief
+ *  Component name written by `drawComponent` while its header is hovered.
+ *
+ * Read by `EditorLayer::onContextualHelp` so pressing F1 over a specific
+ * component header opens the documentation page that covers it. Empty when
+ * no component is being hovered.
+ */
 std::string g_lastHoveredComponentName;
 
-/// Check if an entity is the root of a prefab instance.
+/**
+ * @brief
+ *  Check if an entity is the root of a prefab instance.
+ */
 auto isPrefabRoot(const scene::Entity& iEntity) -> bool {
 	return iEntity && iEntity.hasComponent<PrefabLink>();
 }
 
-/// Walk the parent chain to find the prefab root (entity with PrefabLink), or return invalid entity.
+/**
+ * @brief
+ *  Walk the parent chain to find the prefab root (entity with PrefabLink), or return invalid entity.
+ */
 auto findPrefabRoot(const scene::Entity& iEntity, const scene::Scene& iScene) -> scene::Entity {
 	auto current = iEntity;
 	while (current) {
@@ -55,8 +63,10 @@ auto findPrefabRoot(const scene::Entity& iEntity, const scene::Scene& iScene) ->
 	return {};
 }
 
-
-/// Map component display name to icon bank name.
+/**
+ * @brief
+ *  Map component display name to icon bank name.
+ */
 auto componentIconName(const char* iCompName) -> const char* {
 	static const std::unordered_map<std::string_view, const char*> map = {
 			{"Transform", "comp_transform"},
@@ -111,7 +121,6 @@ void SceneHierarchy::onImGuiRender() {
 auto SceneHierarchy::lastHoveredComponentName() -> const std::string& { return g_lastHoveredComponentName; }
 
 // Function displaying the Hierarchy panel.
-
 void SceneHierarchy::renderHierarchy() {
 	ImGui::Begin("Scene Hierarchy");
 
@@ -161,10 +170,10 @@ void SceneHierarchy::renderRootEntities() {
 	const auto& stack = renderer::Renderer::getRenderStack();
 	const auto& layers = stack.getLayers();
 	const auto roots = m_context->getRootEntities();
-
 	// 0 or 1 layer → flat list (legacy behaviour, no extra nesting).
 	if (layers.size() < 2) {
 		for (auto entity: roots)
+
 			drawEntityNode(entity);
 		return;
 	}
@@ -191,11 +200,11 @@ void SceneHierarchy::renderRootEntities() {
 		else
 			unrouted.push_back(entity);
 	}
-
 	for (const auto& layer: layers) {
 		const auto& name = layer->getName();
 		const auto count = bucketed.contains(name) ? bucketed.at(name).size() : 0u;
 		const std::string label = std::format("{}  ({})###layer_{}", name, count, name);
+
 		ImGui::PushID(name.c_str());
 		const bool open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
 		// Drop target: route the dropped entity to this layer (unparent if needed, then set
@@ -219,32 +228,42 @@ void SceneHierarchy::renderRootEntities() {
 					}
 				}
 			}
+
 			ImGui::EndDragDropTarget();
 		}
 		if (open) {
 			if (const auto it = bucketed.find(name); it != bucketed.end()) {
 				for (auto entity: it->second)
+
 					drawEntityNode(entity);
 			}
+
 			ImGui::TreePop();
 		}
+
 		ImGui::PopID();
 	}
 
 	if (!unrouted.empty()) {
 		ImGui::PushID("__unrouted__");
+
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.55f, 0.20f, 1.0f));
 		const std::string label = std::format("(unrouted)  ({})###layer_unrouted", unrouted.size());
 		const bool open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+
 		ImGui::PopStyleColor();
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+
 			ImGui::SetTooltip("These root entities have a RendererTag whose name does not match\n"
 							  "any active layer — they will be skipped at render time.");
 		if (open) {
 			for (auto entity: unrouted)
+
 				drawEntityNode(entity);
+
 			ImGui::TreePop();
 		}
+
 		ImGui::PopID();
 	}
 }
@@ -254,29 +273,32 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 	const auto& tag = iEntity.getComponent<Tag>().tag;
 	const auto& [parentId, childrenIds] = iEntity.getComponent<Hierarchy>();
 	const bool hasChildren = !childrenIds.empty();
-
 	ImGuiTreeNodeFlags flag = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow;
 	if (!hasChildren)
 		flag |= ImGuiTreeNodeFlags_Leaf;
 	if (iEntity == m_selection)
 		flag |= ImGuiTreeNodeFlags_Selected;
-
 	// Tint prefab instance entities with a distinct colour.
 	const bool isPartOfPrefab = static_cast<bool>(findPrefabRoot(iEntity, *m_context));
 	if (isPartOfPrefab)
+
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.4f, 0.7f, 1.0f, 1.0f});
 
 	ImGui::PushID(static_cast<int>(static_cast<uint32_t>(iEntity)));
 	const bool open = ImGui::TreeNodeEx(tag.c_str(), flag);
 	const bool treeNodeClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen();
+
 	// Bind context menu to the tree node item (must be right after TreeNodeEx).
 	ImGui::OpenPopupOnItemClick("EntityContext", ImGuiPopupFlags_MouseButtonRight);
 
 	// Drag source for reparenting.
 	if (ImGui::BeginDragDropSource()) {
 		const uint64_t uuid = iEntity.getUUID();
+
 		ImGui::SetDragDropPayload("HIERARCHY_ENTITY", &uuid, sizeof(uuid));
+
 		ImGui::Text("%s", tag.c_str());
+
 		ImGui::EndDragDropSource();
 	}
 
@@ -290,6 +312,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 				m_context->setParent(child, iEntity);
 			}
 		}
+
 		ImGui::EndDragDropTarget();
 	}
 
@@ -297,7 +320,6 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 	{
 		auto& [gameVisible, editorVisible] = iEntity.getComponent<Visibility>();
 		const auto& iconBank = gui::IconBank::instance();
-
 		const float btnSize = ImGui::GetTextLineHeight();
 		const float spacing = ImGui::GetStyle().ItemSpacing.x;
 
@@ -307,8 +329,11 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		// Transparent button background
 		constexpr math::vec4 transparent{0.f, 0.f, 0.f, 0.f};
 		constexpr math::vec4 subtleHighlight{1.f, 1.f, 1.f, 0.15f};
+
 		ImGui::PushStyleColor(ImGuiCol_Button, gui::vec(transparent));
+
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, gui::vec(subtleHighlight));
+
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, gui::vec(math::vec2{0.f, 0.f}));
 
 		constexpr math::vec4 fullTint{1.0f, 1.0f, 1.0f, 1.0f};
@@ -321,6 +346,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		const auto edTint = editorVisible ? fullTint : dimTint;
 		if (const auto iconInfo = iconBank.getIcon(edIconName)) {
 			if (ImGui::ImageButton("##edVis", static_cast<ImTextureID>(iconInfo->textureId), gui::vec(btnSizeVec),
+
 								   gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1), gui::vec(transparent),
 								   gui::vec(edTint)))
 				editorVisible = !editorVisible;
@@ -329,7 +355,9 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 				editorVisible = !editorVisible;
 		}
 		if (ImGui::IsItemHovered())
+
 			ImGui::SetTooltip("Editor Visibility");
+
 		ImGui::PopID();
 
 		ImGui::SameLine();
@@ -340,6 +368,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		const auto gameTint = gameVisible ? fullTint : dimTint;
 		if (const auto iconInfo = iconBank.getIcon(gameIconName)) {
 			if (ImGui::ImageButton("##gameVis", static_cast<ImTextureID>(iconInfo->textureId), gui::vec(btnSizeVec),
+
 								   gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1), gui::vec(transparent),
 								   gui::vec(gameTint)))
 				gameVisible = !gameVisible;
@@ -348,10 +377,13 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 				gameVisible = !gameVisible;
 		}
 		if (ImGui::IsItemHovered())
+
 			ImGui::SetTooltip("Game Visibility");
+
 		ImGui::PopID();
 
 		ImGui::PopStyleVar();
+
 		ImGui::PopStyleColor(2);
 	}
 
@@ -361,12 +393,16 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		// Recursively draw children.
 		for (const auto childId: childrenIds) {
 			if (const auto child = m_context->findEntityByUUID(childId); child)
+
 				drawEntityNode(child);
 		}
+
 		ImGui::TreePop();
 	}
+
 	ImGui::PopID();
 	if (isPartOfPrefab)
+
 		ImGui::PopStyleColor();
 
 	if (treeNodeClicked)
@@ -390,6 +426,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		if (mp_undoManager != nullptr)
 			mp_undoManager->push(mkUniq<commands::CreateEntityCommand>(child));
 	}
+
 	ImGui::Separator();
 	// --- Duplicate ---
 	if (ib.menuItem("duplicate", "Duplicate Entity")) {
@@ -404,6 +441,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 				mp_undoManager->push(mkUniq<commands::DuplicateSubtreeCommand>(iEntity, dup, *m_context));
 		}
 	}
+
 	// --- Prefab ---
 	ImGui::Separator();
 	if (isPrefabRoot(iEntity)) {
@@ -424,6 +462,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 				if (root && mp_undoManager != nullptr) {
 					auto after = SubtreeSnapshot::capture(root, *m_context);
 					mp_undoManager->push(mkUniq<commands::ApplyPrefabCommand>(
+
 							std::move(before), std::move(after), "Update from Prefab"));
 				}
 			}
@@ -435,19 +474,24 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 				if (root && mp_undoManager != nullptr) {
 					auto after = SubtreeSnapshot::capture(root, *m_context);
 					mp_undoManager->push(mkUniq<commands::ApplyPrefabCommand>(
+
 							std::move(before), std::move(after), "Revert to Prefab"));
 				}
 			}
 		}
+
 		ImGui::Separator();
 		if (ib.menuItem("prefab_icon", "Unlink Prefab"))
 			iEntity.removeComponent<PrefabLink>();
+
 		ImGui::Separator();
 	}
 	if (ib.menuItem("prefab_icon", "Create Prefab...")) {
 		if (const auto filepath =
+
 					core::utils::FileDialog::saveFile("Owl Prefab (*.owlprefab)|owlprefab\n");
 			!filepath.empty())
+
 			scene::PrefabSerializer::serialize(iEntity, *m_context, filepath, iEntity.getName());
 	}
 	// --- Hierarchy ---
@@ -458,6 +502,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 			m_context->unparent(iEntity);
 		}
 	}
+
 	ImGui::Separator();
 	// --- Delete ---
 	if (ib.menuItem("delete_entity", iHasChildren ? "Delete Entity Only" : "Delete Entity")) {
@@ -478,11 +523,11 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 			m_context->destroyEntityWithChildren(entity);
 		}
 	}
+
 	ImGui::EndPopup();
 }
 
 // Function displaying the Entity Property panel.
-
 void SceneHierarchy::renderProperties() {
 	ImGui::Begin("Properties");
 	if (mp_activeDocument != nullptr && mp_activeDocument->overridesGlobalPanels())
@@ -493,7 +538,6 @@ void SceneHierarchy::renderProperties() {
 }
 
 namespace {
-
 template<isNamedComponent Comp>
 void addComponentPop(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 	if (!ioEntity.hasComponent<Comp>()) {
@@ -599,7 +643,6 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 	}
 }
 
-
 template<isNamedComponent... Component>
 void addComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const std::tuple<Component...>&) {
 	(..., addComponentPop<Component>(ioEntity, iUndoManager));
@@ -611,7 +654,6 @@ void drawComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoMan
 }
 
 }// namespace
-
 
 void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 	if (iEntity.hasComponent<Tag>()) {

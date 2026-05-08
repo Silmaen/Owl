@@ -34,9 +34,19 @@ $extrastylesheet
 </script>
 <script type="module">
     import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-    document.addEventListener('DOMContentLoaded', function() {
-        // Doxygen renders ```mermaid fences as <div class="fragment"> blocks.
-        // Detect them by content and convert to <pre class="mermaid"> for rendering.
+
+    // Resolve the active doxygen-awesome theme: explicit class wins over OS preference.
+    function resolveMermaidTheme() {
+        var html = document.documentElement;
+        if (html.classList.contains('dark-mode')) return 'dark';
+        if (html.classList.contains('light-mode')) return 'default';
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark' : 'default';
+    }
+
+    // Convert all ```mermaid fences (rendered as `.fragment` by doxygen) to <pre class="mermaid">,
+    // then run mermaid.run() with the right theme.
+    function convertAndRender() {
         var keywords = /^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|journey|gitGraph|mindmap|timeline|block)/;
         document.querySelectorAll('.fragment').forEach(function(el) {
             var text = el.textContent.trim();
@@ -47,8 +57,24 @@ $extrastylesheet
                 el.parentNode.replaceChild(pre, el);
             }
         });
-        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+        mermaid.initialize({ startOnLoad: false, theme: resolveMermaidTheme() });
+        mermaid.run({ querySelector: 'pre.mermaid' });
+    }
+
+    document.addEventListener('DOMContentLoaded', convertAndRender);
+
+    // Re-render diagrams when the user toggles the dark-mode button so they
+    // stay in sync with the surrounding page (the toggle flips a class on <html>).
+    var darkObserver = new MutationObserver(function() {
+        // Reset already-rendered nodes back to text so mermaid will re-process them.
+        document.querySelectorAll('pre.mermaid[data-processed="true"]').forEach(function(el) {
+            el.removeAttribute('data-processed');
+            el.innerHTML = el.getAttribute('data-source') || el.textContent;
+        });
+        mermaid.initialize({ startOnLoad: false, theme: resolveMermaidTheme() });
+        mermaid.run({ querySelector: 'pre.mermaid' });
     });
+    darkObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 </script>
 </head>
 <body>

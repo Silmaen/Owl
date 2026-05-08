@@ -94,3 +94,67 @@ TEST_F(ScreenTransitionTest, durationClampedAboveZero) {
 	ScreenTransition::update(0.005f);
 	EXPECT_FALSE(ScreenTransition::isActive());
 }
+
+TEST_F(ScreenTransitionTest, playWithTypeNoneStaysIdle) {
+	// `play(None, ...)` should not flip the phase to OutAnim when starting
+	// from Idle — there is nothing to render.
+	ScreenTransition::play(ScreenTransition::Type::None, 0.5f, {0.f, 0.f, 0.f, 1.f});
+	EXPECT_FALSE(ScreenTransition::isActive());
+}
+
+TEST_F(ScreenTransitionTest, sceneLoadFlowOutLoadingIn) {
+	// requestSceneLoad → OutAnim, finishes → Loading, host calls
+	// pendingLoadPath → Loading runs minHoldDuration → InAnim → Idle.
+	ScreenTransition::SceneLoadRequest req;
+	req.scenePath = "level/foo.scene";
+	req.outType = ScreenTransition::Type::FadeOut;
+	req.inType = ScreenTransition::Type::FadeIn;
+	req.outDuration = 0.1f;
+	req.inDuration = 0.1f;
+	req.minHoldDuration = 0.05f;
+	req.color = {0.1f, 0.2f, 0.3f, 1.f};
+	ScreenTransition::requestSceneLoad(req);
+	EXPECT_EQ(ScreenTransition::getPhase(), ScreenTransition::Phase::OutAnim);
+
+	// Finish out-anim.
+	ScreenTransition::update(0.2f);
+	EXPECT_EQ(ScreenTransition::getPhase(), ScreenTransition::Phase::Loading);
+
+	// First call returns the path; subsequent calls return nullopt.
+	const auto path = ScreenTransition::pendingLoadPath();
+	ASSERT_TRUE(path.has_value());
+	EXPECT_EQ(path.value(), "level/foo.scene");
+	EXPECT_FALSE(ScreenTransition::pendingLoadPath().has_value());
+
+	// Hold long enough to flip to InAnim.
+	ScreenTransition::update(0.1f);
+	EXPECT_EQ(ScreenTransition::getPhase(), ScreenTransition::Phase::InAnim);
+	EXPECT_EQ(ScreenTransition::getType(), ScreenTransition::Type::FadeIn);
+
+	// Finish in-anim → Idle.
+	ScreenTransition::update(0.2f);
+	EXPECT_EQ(ScreenTransition::getPhase(), ScreenTransition::Phase::Idle);
+	EXPECT_FLOAT_EQ(ScreenTransition::getProgress(), 1.f);
+}
+
+TEST_F(ScreenTransitionTest, loadingProgressReflectsHold) {
+	ScreenTransition::SceneLoadRequest req;
+	req.scenePath = "x";
+	req.outDuration = 0.01f;
+	req.inDuration = 0.01f;
+	req.minHoldDuration = 1.f;
+	ScreenTransition::requestSceneLoad(req);
+	ScreenTransition::update(0.05f);// finish out
+	ASSERT_EQ(ScreenTransition::getPhase(), ScreenTransition::Phase::Loading);
+	// 0.5s held / 1s minimum → 0.5 progress
+	ScreenTransition::update(0.5f);
+	EXPECT_NEAR(ScreenTransition::getProgress(), 0.5f, 0.05f);
+}
+
+TEST_F(ScreenTransitionTest, pendingLoadPathNoneOutsideLoading) {
+	// Idle — no pending path.
+	EXPECT_FALSE(ScreenTransition::pendingLoadPath().has_value());
+	// Active OutAnim without scene-load request — no pending path either.
+	ScreenTransition::play(ScreenTransition::Type::FadeOut, 0.5f, {});
+	EXPECT_FALSE(ScreenTransition::pendingLoadPath().has_value());
+}

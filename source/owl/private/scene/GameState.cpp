@@ -39,9 +39,9 @@ auto GameState::keys() const -> std::vector<std::string> {
 	return result;
 }
 
-auto GameState::empty() const -> bool { return m_data.empty(); }
+auto GameState::empty() const noexcept -> bool { return m_data.empty(); }
 
-auto GameState::size() const -> size_t { return m_data.size(); }
+auto GameState::size() const noexcept -> size_t { return m_data.size(); }
 
 void GameState::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "GameState" << YAML::Value << YAML::BeginSeq;

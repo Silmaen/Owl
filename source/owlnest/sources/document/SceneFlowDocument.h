@@ -17,7 +17,8 @@ namespace owl::nest {
 struct Project;
 
 /**
- * @brief Read-only (for now) node-graph view of the project's scenes and their teleport links.
+ * @brief
+ *  Read-only (for now) node-graph view of the project's scenes and their teleport links.
  *
  * The first consumer of the `NodeCanvas` framework. Specialises `NodeGraphDocument` by:
  * - scanning the project directory for every `.owl` scene,
@@ -39,56 +40,149 @@ struct Project;
 class SceneFlowDocument final : public NodeGraphDocument {
 public:
 	SceneFlowDocument(const SceneFlowDocument&) = delete;
+
 	SceneFlowDocument(SceneFlowDocument&&) = delete;
+
 	auto operator=(const SceneFlowDocument&) -> SceneFlowDocument& = delete;
+
 	auto operator=(SceneFlowDocument&&) -> SceneFlowDocument& = delete;
 
+	/**
+	 * @brief
+	 *  Default constructor.
+	 */
 	SceneFlowDocument();
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
 	~SceneFlowDocument() override;
 
+	/**
+	 * @brief
+	 *  Tab title displayed in the document tab bar.
+	 * @return The display title.
+	 */
 	[[nodiscard]] auto title() const -> std::string override { return "Scene Flow"; }
 
-	/// @brief Rescan the active project and rebuild the canvas from scratch.
+	/**
+	 * @brief
+	 *  Rescan the active project and rebuild the canvas from scratch.
+	 */
 	void refreshFromProject(const Project& iProject);
 
-	/// @brief Re-render with the right-click popup + modals on top of the base canvas.
+	/**
+	 * @brief
+	 *  Re-render with the right-click popup + modals on top of the base canvas.
+	 */
 	void onImGuiRender() override;
 
+	/**
+	 * @brief
+	 *  Whether this document overrides the global Scene Hierarchy / Properties panels.
+	 * @return Always true: Scene Flow renders its own scene-list and properties views.
+	 */
 	[[nodiscard]] auto overridesGlobalPanels() const -> bool override { return true; }
+
+	/**
+	 * @brief
+	 *  Render hierarchy panel.
+	 */
 	void renderHierarchyPanel() override;
+
+	/**
+	 * @brief
+	 *  Render properties panel.
+	 */
 	void renderPropertiesPanel() override;
 
 protected:
+	/**
+	 * @brief
+	 *  Handle the canvas ready event.
+	 */
 	void onCanvasReady() override;
 
 private:
-	/// @brief Write a minimal valid `.owl` YAML file to `iAbsolutePath` and rescan if it succeeded.
+	/**
+	 * @brief
+	 *  Write a minimal valid `.owl` YAML file to `iAbsolutePath` and rescan if it succeeded.
+	 */
 	auto createSceneFile(const std::filesystem::path& iAbsolutePath) -> bool;
-	/// @brief Delete the scene file at `iAbsolutePath` from disk and rescan.
+
+	/**
+	 * @brief
+	 *  Delete the scene file at `iAbsolutePath` from disk and rescan.
+	 */
 	void deleteSceneFile(const std::filesystem::path& iAbsolutePath);
-	/// @brief Resolve a node id to its absolute scene path through `customData`.
+
+	/**
+	 * @brief
+	 *  Resolve a node id to its absolute scene path through `customData`.
+	 */
 	[[nodiscard]] auto absolutePathFor(core::UUID iNodeId) const -> std::filesystem::path;
-	/// @brief Resolve a node id to its project-relative scene path (e.g. `scenes/level1.owl`).
+
+	/**
+	 * @brief
+	 *  Resolve a node id to its project-relative scene path (e.g. `scenes/level1.owl`).
+	 */
 	[[nodiscard]] auto relativePathFor(core::UUID iNodeId) const -> std::string;
-	/// @brief Render the right-click popup if pending, plus any modal dialogs.
+
+	/**
+	 * @brief
+	 *  Render the right-click popup if pending, plus any modal dialogs.
+	 */
 	void renderPopups();
-	/// @brief Render the right-click context menu (over a node OR over empty canvas space).
+
+	/**
+	 * @brief
+	 *  Render the right-click context menu (over a node OR over empty canvas space).
+	 */
 	void renderContextMenu();
-	/// @brief Render the "Add new scene…" modal triggered from the context menu.
+
+	/**
+	 * @brief
+	 *  Render the "Add new scene…" modal triggered from the context menu.
+	 */
 	void renderAddSceneModal();
-	/// @brief Render the "Delete scene?" confirmation modal.
+
+	/**
+	 * @brief
+	 *  Render the "Delete scene?" confirmation modal.
+	 */
 	void renderDeleteSceneModal();
-	/// @brief Validate a drag from `iFromPin` to `iToPin`. Only ghost-pin → entry-pin is accepted today.
+
+	/**
+	 * @brief
+	 *  Validate a drag from `iFromPin` to `iToPin`. Only ghost-pin → entry-pin is accepted today.
+	 */
 	[[nodiscard]] auto validateLinkDraft(core::UUID iFromPin, core::UUID iToPin) const -> bool;
-	/// @brief Handle a successful link draft: cancel the auto-link, create a Trigger entity and a
-	///        real output pin, push a composite undo step.
+
+	/**
+	 * @brief
+	 *  Handle a successful link draft: cancel the auto-link, create a Trigger entity and a
+	 *        real output pin, push a composite undo step.
+	 */
 	void onLinkDrafted(core::UUID iLinkId, core::UUID iFromPin, core::UUID iToPin);
-	/// @brief Handle a link erase: restore the link, push a composite that destroys the matching
-	///        Trigger entity, removes the pin, and removes the link.
+
+	/**
+	 * @brief
+	 *  Handle a link erase: restore the link, push a composite that destroys the matching
+	 *        Trigger entity, removes the pin, and removes the link.
+	 */
 	void onLinkErased(core::UUID iLinkId);
-	/// @brief Open the targetName modal for the given Teleport output pin.
+
+	/**
+	 * @brief
+	 *  Open the targetName modal for the given Teleport output pin.
+	 */
 	void openTargetNameModal(core::UUID iPinId);
-	/// @brief Render the targetName modal if pending.
+
+	/**
+	 * @brief
+	 *  Render the targetName modal if pending.
+	 */
 	void renderTargetNameModal();
 
 	/// Absolute project root — stored so double-click / context actions can resolve relative paths.
@@ -113,7 +207,10 @@ private:
 	/// Path of the scene pending deletion confirmation; empty = no modal.
 	std::filesystem::path m_pendingDeletePath;
 
-	/// @brief Per-link bookkeeping for Teleport links — used to find the live Trigger entity on delete.
+	/**
+	 * @brief
+	 *  Per-link bookkeeping for Teleport links — used to find the live Trigger entity on delete.
+	 */
 	struct LinkOrigin {
 		std::filesystem::path scenePath;///< Source scene on disk.
 		core::UUID triggerEntityUuid{0};///< Trigger entity in the source scene.

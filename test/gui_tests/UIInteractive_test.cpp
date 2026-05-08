@@ -12,54 +12,54 @@
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
-#include <scene/UIInputSystem.h>
+#include <scene/UiInputSystem.h>
 #include <scene/component/Canvas.h>
-#include <scene/component/UIButton.h>
-#include <scene/component/UIProgressBar.h>
-#include <scene/component/UIRect.h>
-#include <scene/component/UISlider.h>
+#include <scene/component/UiButton.h>
+#include <scene/component/UiProgressBar.h>
+#include <scene/component/UiRect.h>
+#include <scene/component/UiSlider.h>
 
 using namespace owl;
 using namespace owl::scene;
 
-TEST(UIButton, createAndDefaults) {
+TEST(UiButton, createAndDefaults) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<Scene>();
 	auto entity = scn->createEntity("Button");
-	auto& button = entity.addComponent<component::UIButton>();
+	auto& button = entity.addComponent<component::UiButton>();
 
-	EXPECT_EQ(button.state, component::UIButton::State::Normal);
+	EXPECT_EQ(button.state, component::UiButton::State::Normal);
 	EXPECT_TRUE(button.onClickCallback.empty());
 	EXPECT_NEAR(button.normalColor.x(), 0.3f, 0.01f);
 
 	core::Log::invalidate();
 }
 
-TEST(UIButton, getCurrentColor) {
-	component::UIButton button;
+TEST(UiButton, getCurrentColor) {
+	component::UiButton button;
 	button.normalColor = {1, 0, 0, 1};
 	button.hoverColor = {0, 1, 0, 1};
 	button.pressedColor = {0, 0, 1, 1};
 	button.disabledColor = {0.5f, 0.5f, 0.5f, 0.5f};
 
-	button.state = component::UIButton::State::Normal;
+	button.state = component::UiButton::State::Normal;
 	EXPECT_NEAR(button.getCurrentColor().x(), 1.f, 0.01f);
 
-	button.state = component::UIButton::State::Hovered;
+	button.state = component::UiButton::State::Hovered;
 	EXPECT_NEAR(button.getCurrentColor().y(), 1.f, 0.01f);
 
-	button.state = component::UIButton::State::Pressed;
+	button.state = component::UiButton::State::Pressed;
 	EXPECT_NEAR(button.getCurrentColor().z(), 1.f, 0.01f);
 
-	button.state = component::UIButton::State::Disabled;
+	button.state = component::UiButton::State::Disabled;
 	EXPECT_NEAR(button.getCurrentColor().w(), 0.5f, 0.01f);
 }
 
-TEST(UISlider, createAndDefaults) {
+TEST(UiSlider, createAndDefaults) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<Scene>();
 	auto entity = scn->createEntity("Slider");
-	auto& slider = entity.addComponent<component::UISlider>();
+	auto& slider = entity.addComponent<component::UiSlider>();
 
 	EXPECT_NEAR(slider.value, 0.f, 0.01f);
 	EXPECT_NEAR(slider.minValue, 0.f, 0.01f);
@@ -68,8 +68,8 @@ TEST(UISlider, createAndDefaults) {
 	core::Log::invalidate();
 }
 
-TEST(UISlider, getNormalized) {
-	component::UISlider slider;
+TEST(UiSlider, getNormalized) {
+	component::UiSlider slider;
 	slider.minValue = 10.f;
 	slider.maxValue = 20.f;
 	slider.value = 15.f;
@@ -82,20 +82,20 @@ TEST(UISlider, getNormalized) {
 	EXPECT_NEAR(slider.getNormalized(), 1.f, 0.01f);
 }
 
-TEST(UIProgressBar, createAndDefaults) {
+TEST(UiProgressBar, createAndDefaults) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<Scene>();
 	auto entity = scn->createEntity("Progress");
-	auto& bar = entity.addComponent<component::UIProgressBar>();
+	auto& bar = entity.addComponent<component::UiProgressBar>();
 
 	EXPECT_NEAR(bar.value, 0.5f, 0.01f);
 
 	core::Log::invalidate();
 }
 
-TEST(UIInputSystem, resetAndConsuming) {
-	UIInputSystem::reset();
-	EXPECT_FALSE(UIInputSystem::isUIConsuming());
+TEST(UiInputSystem, resetAndConsuming) {
+	UiInputSystem::reset();
+	EXPECT_FALSE(UiInputSystem::isUIConsuming());
 }
 
 TEST(UIInteractive, serializeDeserializeViaScene) {
@@ -111,23 +111,23 @@ TEST(UIInteractive, serializeDeserializeViaScene) {
 		canvas.addComponent<component::Canvas>();
 
 		auto btnEnt = scn->createEntity("Btn");
-		btnEnt.addComponent<component::UIRect>();
-		auto& btn = btnEnt.addComponent<component::UIButton>();
+		btnEnt.addComponent<component::UiRect>();
+		auto& btn = btnEnt.addComponent<component::UiButton>();
 		btn.onClickCallback = "on_start_clicked";
 		btn.hoverColor = {0.8f, 0.8f, 0.8f, 1.f};
 		scn->setParent(btnEnt, canvas);
 
 		auto sliderEnt = scn->createEntity("Slider");
-		sliderEnt.addComponent<component::UIRect>();
-		auto& slider = sliderEnt.addComponent<component::UISlider>();
+		sliderEnt.addComponent<component::UiRect>();
+		auto& slider = sliderEnt.addComponent<component::UiSlider>();
 		slider.value = 0.75f;
 		slider.minValue = 0.f;
 		slider.maxValue = 100.f;
 		scn->setParent(sliderEnt, canvas);
 
 		auto barEnt = scn->createEntity("Bar");
-		barEnt.addComponent<component::UIRect>();
-		auto& bar = barEnt.addComponent<component::UIProgressBar>();
+		barEnt.addComponent<component::UiRect>();
+		auto& bar = barEnt.addComponent<component::UiProgressBar>();
 		bar.value = 0.3f;
 		scn->setParent(barEnt, canvas);
 
@@ -143,21 +143,21 @@ TEST(UIInteractive, serializeDeserializeViaScene) {
 		bool foundSlider = false;
 		bool foundBar = false;
 		for (const auto& entity: scn->getAllEntities()) {
-			if (entity.hasComponent<component::UIButton>()) {
-				const auto& btn = entity.getComponent<component::UIButton>();
+			if (entity.hasComponent<component::UiButton>()) {
+				const auto& btn = entity.getComponent<component::UiButton>();
 				EXPECT_EQ(btn.onClickCallback, "on_start_clicked");
 				EXPECT_NEAR(btn.hoverColor.x(), 0.8f, 0.01f);
-				EXPECT_EQ(btn.state, component::UIButton::State::Normal);
+				EXPECT_EQ(btn.state, component::UiButton::State::Normal);
 				foundButton = true;
 			}
-			if (entity.hasComponent<component::UISlider>()) {
-				const auto& slider = entity.getComponent<component::UISlider>();
+			if (entity.hasComponent<component::UiSlider>()) {
+				const auto& slider = entity.getComponent<component::UiSlider>();
 				EXPECT_NEAR(slider.value, 0.75f, 0.01f);
 				EXPECT_NEAR(slider.maxValue, 100.f, 0.01f);
 				foundSlider = true;
 			}
-			if (entity.hasComponent<component::UIProgressBar>()) {
-				const auto& bar = entity.getComponent<component::UIProgressBar>();
+			if (entity.hasComponent<component::UiProgressBar>()) {
+				const auto& bar = entity.getComponent<component::UiProgressBar>();
 				EXPECT_NEAR(bar.value, 0.3f, 0.01f);
 				foundBar = true;
 			}

@@ -2,7 +2,7 @@
  * @file StaticMesh.cpp
  * @author Silmaen
  * @date 18/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,6 +13,7 @@
 namespace owl::data::geometry {
 
 StaticMesh::StaticMesh() = default;
+
 StaticMesh::~StaticMesh() = default;
 
 StaticMesh::StaticMesh(const StaticMesh& iOther) { *this = iOther.clone(); }
@@ -25,14 +26,18 @@ auto StaticMesh::operator=(const StaticMesh& iOther) -> StaticMesh& {
 	*this = iOther.clone();
 	return *this;
 }
-
 auto StaticMesh::operator=(StaticMesh&&) noexcept -> StaticMesh& = default;
 
 [[nodiscard]] auto StaticMesh::getVertexCount() const -> size_t { return m_vertices.size(); }
+
 [[nodiscard]] auto StaticMesh::getTriangleCount() const -> size_t { return m_triangles.size(); }
+
 [[nodiscard]] auto StaticMesh::getVertices() const -> const std::vector<primitive::MeshVertex>& { return m_vertices; }
+
 [[nodiscard]] auto StaticMesh::getVertices() -> std::vector<primitive::MeshVertex>& { return m_vertices; }
+
 [[nodiscard]] auto StaticMesh::getTriangles() const -> const std::vector<primitive::Triangle>& { return m_triangles; }
+
 [[nodiscard]] auto StaticMesh::getTriangles() -> std::vector<primitive::Triangle>& { return m_triangles; }
 
 [[nodiscard]] auto StaticMesh::getVertexIterator(const size_t iIndex) -> std::vector<primitive::MeshVertex>::iterator {
@@ -91,16 +96,15 @@ auto StaticMesh::deleteVertexExtraData(const core::FactoryPid iExtraDataId) -> b
 auto StaticMesh::isExtraDataDefinedOnAllVertices(const core::FactoryPid iExtraDataId) const -> bool {
 	return m_verticesExtraDataContainer.isExtraDataDefined(iExtraDataId);
 }
+
 auto StaticMesh::getVertexExtraData(const core::FactoryPid iExtraDataId) const -> const extradata::ExtraDataContainer* {
 	return m_verticesExtraDataContainer.getExtraData(iExtraDataId);
 }
-
 
 auto StaticMesh::addTriangleExtraData(const core::FactoryPid iExtraDataId) -> bool {
 	m_trianglesExtraDataContainer.addExtraData(iExtraDataId);
 	return m_trianglesExtraDataContainer.isExtraDataDefined(iExtraDataId);
 }
-
 
 auto StaticMesh::deleteTriangleExtraData(const core::FactoryPid iExtraDataId) -> bool {
 	return m_trianglesExtraDataContainer.deleteExtraData(iExtraDataId);

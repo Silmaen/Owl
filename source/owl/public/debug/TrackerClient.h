@@ -2,7 +2,7 @@
  * @file TrackerClient.h
  * @author Silmaen
  * @date 07/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  *
  * This file should be included only once in the client side.
@@ -18,11 +18,13 @@
 #define OWL_DEALLOC_EXCEPT noexcept
 
 #if !defined(__cpp_sized_deallocation) || __cpp_sized_deallocation == 0
+
 void operator delete(void* memory, size_t size) OWL_DEALLOC_EXCEPT;
 #endif
 
 /**
- * @brief Overload of the standard memory allocator.
+ * @brief
+ *  Overload of the standard memory allocator.
  * @param[in] size Size to allocate.
  * @return Pointer to allocated memory.
  */
@@ -33,7 +35,8 @@ auto operator new(size_t size) -> void* {
 }
 
 /**
- * @brief Overload of standard memory deallocation.
+ * @brief
+ *  Overload of standard memory deallocation.
  * @param[in] memory Memory to free.
  * @param[in] size Amount to free.
  */
@@ -43,7 +46,8 @@ void operator delete(void* memory, [[maybe_unused]] size_t size) OWL_DEALLOC_EXC
 }
 
 /**
- * @brief Overload of standard memory deallocation.
+ * @brief
+ *  Overload of standard memory deallocation.
  * @param[in] memory Memory to free.
  */
 void operator delete(void* memory) OWL_DEALLOC_EXCEPT {

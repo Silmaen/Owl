@@ -17,7 +17,6 @@
 using namespace owl::io::pack;
 
 namespace {
-
 auto getTempDir() -> std::filesystem::path {
 	auto dir = std::filesystem::temp_directory_path() / "owl_asset_scanner_tests";
 	std::filesystem::create_directories(dir);
@@ -52,6 +51,119 @@ protected:
 	std::filesystem::path m_tempDir;
 };
 OWL_DIAG_POP
+
+// Edge-case scanScene tests — exercise the private resolveX helpers indirectly
+// through the public scanning entry points. These cover early-return /
+// "no Application instance" branches.
+
+TEST_F(AssetScannerTest, ScanSceneWithUnresolvableTextureLogsWarning) {
+	const auto scenePath = m_tempDir / "broken.owl";
+	writeFile(scenePath, "Scene: broken\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    SpriteRenderer:\n"
+						 "      texture: \"pat:/no/such/file.png\"\n");
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(scenePath, &warnings);
+	// Scene itself is added; missing texture surfaces as a warning.
+	EXPECT_GE(assets.size(), 1u);
+	EXPECT_FALSE(warnings.empty());
+}
+
+TEST_F(AssetScannerTest, ScanSceneWithEmptyTextureFieldDoesNotAddAsset) {
+	const auto scenePath = m_tempDir / "emptytex.owl";
+	writeFile(scenePath, "Scene: emptytex\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    SpriteRenderer:\n"
+						 "      texture: \"emp:\"\n");
+	const auto assets = AssetScanner::scanScene(scenePath);
+	// "emp:" is reserved (no texture asset), so the only asset is the scene file.
+	EXPECT_EQ(assets.size(), 1u);
+}
+
+TEST_F(AssetScannerTest, ScanSceneWithSizePrefixedTextureIgnored) {
+	const auto scenePath = m_tempDir / "siztex.owl";
+	writeFile(scenePath, "Scene: siztex\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    SpriteRenderer:\n"
+						 "      texture: \"siz:128\"\n");
+	const auto assets = AssetScanner::scanScene(scenePath);
+	EXPECT_EQ(assets.size(), 1u);
+}
+
+TEST_F(AssetScannerTest, ScanSceneWithUnknownTexturePrefixIgnored) {
+	const auto scenePath = m_tempDir / "unktex.owl";
+	writeFile(scenePath, "Scene: unktex\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    SpriteRenderer:\n"
+						 "      texture: \"xxx:foo\"\n");
+	const auto assets = AssetScanner::scanScene(scenePath);
+	EXPECT_EQ(assets.size(), 1u);
+}
+
+TEST_F(AssetScannerTest, ScanSceneWithFontMissingLogsWarning) {
+	const auto scenePath = m_tempDir / "missingfont.owl";
+	writeFile(scenePath, "Scene: missingfont\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    TextRenderer:\n"
+						 "      font: \"NoSuchFont\"\n");
+	std::vector<std::string> warnings;
+	(void) AssetScanner::scanScene(scenePath, &warnings);
+	EXPECT_FALSE(warnings.empty());
+}
+
+TEST_F(AssetScannerTest, ScanSceneWithMissingSoundAssetLogsWarning) {
+	const auto scenePath = m_tempDir / "missingsound.owl";
+	writeFile(scenePath, "Scene: missingsound\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    SoundSource:\n"
+						 "      soundAsset: \"missing.wav\"\n");
+	std::vector<std::string> warnings;
+	(void) AssetScanner::scanScene(scenePath, &warnings);
+	EXPECT_FALSE(warnings.empty());
+}
+
+TEST_F(AssetScannerTest, ScanSceneWithSoundAbsolutePathResolved) {
+	const auto sndPath = m_tempDir / "snd.wav";
+	writeDummyBinary(sndPath);
+	const auto scenePath = m_tempDir / "withsound.owl";
+	writeFile(scenePath, "Scene: withsound\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    SoundSource:\n"
+						 "      soundAsset: \"" +
+								 sndPath.generic_string() + "\"\n");
+	const auto assets = AssetScanner::scanScene(scenePath);
+	bool found = false;
+	for (const auto& ref: assets)
+		if (ref.assetType == AssetType::Sound && ref.diskPath == sndPath)
+			found = true;
+	EXPECT_TRUE(found);
+}
+
+TEST_F(AssetScannerTest, ScanSceneWithMalformedYamlSilent) {
+	const auto scenePath = m_tempDir / "garbage.owl";
+	writeFile(scenePath, "Scene: garbage\nEntities: [\n");
+	const auto assets = AssetScanner::scanScene(scenePath);
+	// Malformed YAML → only the scene file itself is added.
+	EXPECT_EQ(assets.size(), 1u);
+}
+
+TEST_F(AssetScannerTest, ScanProjectMissingFirstSceneReturnsEmpty) {
+	const auto assets = AssetScanner::scanProject(m_tempDir, "nope.owl");
+	EXPECT_TRUE(assets.empty());
+}
+
+TEST_F(AssetScannerTest, ScanProjectScansEntryScene) {
+	const auto firstScene = m_tempDir / "first.owl";
+	writeFile(firstScene, "Scene: first\nEntities: []\n");
+	const auto assets = AssetScanner::scanProject(m_tempDir, "first.owl");
+	// Entry scene must be in the asset list.
+	bool foundFirst = false;
+	for (const auto& ref: assets) {
+		if (ref.assetType == AssetType::Scene && ref.diskPath == firstScene)
+			foundFirst = true;
+	}
+	EXPECT_TRUE(foundFirst);
+}
 
 TEST_F(AssetScannerTest, ScanEmptyScene) {
 	const auto scenePath = m_tempDir / "empty.owl";
@@ -122,7 +234,7 @@ TEST_F(AssetScannerTest, ScanSceneWithUIImage) {
 	const auto scenePath = m_tempDir / "test.owl";
 	writeFile(scenePath, "Scene: test\nEntities:\n"
 						 "  - Entity: 1\n"
-						 "    UIImage:\n"
+						 "    UiImage:\n"
 						 "      tint: [1, 1, 1, 1]\n"
 						 "      texture: \"pat:" +
 								 texPath.generic_string() + "\"\n");

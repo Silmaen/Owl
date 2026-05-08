@@ -2,7 +2,7 @@
  * @file UiLayer.cpp
  * @author Silmaen
  * @date 05/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -28,14 +28,19 @@ OWL_DIAG_POP
 namespace owl::gui {
 
 namespace {
-/// Requested UI font size, applied on the next `UiLayer::onAttach`.  Stored as a module-local so it
-/// can be set from `main` before the engine pushes the `UiLayer` overlay.
+/**
+ * Requested UI font size, applied on the next `UiLayer::onAttach`.  Stored as a module-local so it
+ * can be set from `main` before the engine pushes the `UiLayer` overlay.
+ */
 float g_uiFontSize = 20.f;
 /// Requested code-editor font size, applied on the next `UiLayer::onAttach`.
 float g_codeFontSize = 13.f;
 
-/// Search for `iRelative` (e.g. `"fonts/roboto/Roboto-Regular.ttf"`) across the engine asset
-/// directories.  Returns the first match, or an empty path when none exists.
+/**
+ * @brief
+ *  Search for `iRelative` (e.g. `"fonts/roboto/Roboto-Regular.ttf"`) across the engine asset
+ * directories.  Returns the first match, or an empty path when none exists.
+ */
 auto resolveAssetFile(const std::filesystem::path& iRelative) -> std::filesystem::path {
 	if (!core::Application::instanced())
 		return {};
@@ -60,6 +65,7 @@ void UiLayer::setCodeFontSize(const float iSize) {
 auto UiLayer::codeFontSize() -> float { return g_codeFontSize; }
 
 UiLayer::UiLayer() : Layer("ImGuiLayer") {}
+
 UiLayer::~UiLayer() = default;
 
 void UiLayer::onAttach() {
@@ -142,6 +148,7 @@ void UiLayer::onAttach() {
 
 void UiLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
+
 	// Free font-preview framebuffers before tearing down the renderer.
 	FontPreviewCache::get().clear();
 	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL)
@@ -195,6 +202,7 @@ void UiLayer::begin() const {
 
 void UiLayer::end() const {
 	OWL_PROFILE_FUNCTION()
+
 	if (m_dockingEnable) {
 		ImGui::End();
 	}
@@ -230,17 +238,14 @@ void UiLayer::end() const {
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
-
 // NOLINTBEGIN(readability-convert-member-functions-to-static)
 void UiLayer::setTheme(const Theme& iTheme) {
-
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 
 	auto& colors = ImGui::GetStyle().Colors;
 	// ======================
 	// Colours
-
 	// Text 1 2
 	colors[ImGuiCol_Text] = vec(iTheme.text);
 	// colours[ImGuiCol_TextDisabled] = vec(iTheme.textDisabled);
@@ -318,23 +323,18 @@ void UiLayer::setTheme(const Theme& iTheme) {
 	// colours[ImGuiCol_NavWindowingDimBg] = vec.(iTheme.Text);
 	// Modal window 56
 	// colours[ImGuiCol_ModalWindowDimBg] = vec.(iTheme.Text);
-
 	//========================================================
 	// Style
 	auto& style = ImGui::GetStyle();
-
 	// rounding
 	style.WindowRounding = iTheme.windowRounding;
 	style.FrameRounding = iTheme.frameRounding;
 	style.FrameBorderSize = iTheme.frameBorderSize;
-
 	style.TabRounding = iTheme.tabRounding;
 	style.TabBarOverlineSize = iTheme.tabOverline;
 	style.TabBorderSize = iTheme.tabBorder;
-
 	style.GrabRounding = iTheme.controlsRounding;
 	style.ScrollbarRounding = iTheme.controlsRounding;
-
 	style.IndentSpacing = iTheme.indentSpacing;
 	style.WindowMenuButtonPosition = ImGuiDir_Right;
 	style.ColorButtonPosition = ImGuiDir_Left;

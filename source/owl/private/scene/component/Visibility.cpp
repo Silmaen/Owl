@@ -2,7 +2,7 @@
  * @file Visibility.cpp
  * @author Silmaen
  * @date 02/16/26
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"

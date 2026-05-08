@@ -14,21 +14,27 @@
 #include <functional>
 
 namespace owl::io::pack {
-
 /**
- * @brief Creates Owl pack files from assets.
+ * @brief
+ *  Creates Owl pack files from assets.
  */
 class OWL_API PackWriter final {
 public:
 	PackWriter() = default;
+
 	~PackWriter() = default;
+
 	PackWriter(const PackWriter&) = delete;
+
 	PackWriter(PackWriter&&) = default;
+
 	auto operator=(const PackWriter&) -> PackWriter& = delete;
+
 	auto operator=(PackWriter&&) -> PackWriter& = default;
 
 	/**
-	 * @brief Add a file from disk to the pack.
+	 * @brief
+	 *  Add a file from disk to the pack.
 	 * @param[in] iSourceFile Path to the source file.
 	 * @param[in] iPackPath Relative path inside the pack.
 	 * @param[in] iType The asset type.
@@ -36,7 +42,8 @@ public:
 	void addFile(const std::filesystem::path& iSourceFile, const std::string& iPackPath, AssetType iType);
 
 	/**
-	 * @brief Add raw data to the pack.
+	 * @brief
+	 *  Add raw data to the pack.
 	 * @param[in] iData The raw data bytes.
 	 * @param[in] iPackPath Relative path inside the pack.
 	 * @param[in] iType The asset type.
@@ -49,7 +56,8 @@ public:
 	using CancelCheck = std::function<bool()>;
 
 	/**
-	 * @brief Write the pack file to disk.
+	 * @brief
+	 *  Write the pack file to disk.
 	 * @param[in] iOutputFile The output file path.
 	 * @param[in] iFlags Pack flags (compression, obfuscation).
 	 * @param[in] iProgress Optional progress callback invoked per entry.
@@ -62,22 +70,31 @@ public:
 							 const CancelCheck& iCancelCheck = {}) const -> bool;
 
 	/**
-	 * @brief Get the number of pending entries.
+	 * @brief
+	 *  Get the number of pending entries.
 	 * @return Entry count.
 	 */
 	[[nodiscard]] auto entryCount() const -> size_t { return m_entries.size(); }
 
 	/**
-	 * @brief Clear all pending entries.
+	 * @brief
+	 *  Clear all pending entries.
 	 */
 	void clear() { m_entries.clear(); }
 
 private:
+	/**
+	 * @brief Entry to pack.
+	 */
 	struct PendingEntry {
+		/// Path in the pack.
 		std::string packPath;
+		/// Raw data to write for this entry.
 		std::vector<uint8_t> rawData;
+		/// Type of asset.
 		AssetType assetType;
 	};
+	/// The entries.
 	std::vector<PendingEntry> m_entries;
 };
 

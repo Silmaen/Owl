@@ -2,7 +2,7 @@
  * @file RenderAPI.cpp
  * @author Silmaen
  * @date 07/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -23,6 +23,7 @@ RenderAPI::~RenderAPI() {
 
 void RenderAPI::init() {
 	OWL_PROFILE_FUNCTION()
+
 	const auto& app = core::Application::get();
 	const bool extraDebugging = app.getInitParams().useDebugging;
 

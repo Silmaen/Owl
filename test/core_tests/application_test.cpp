@@ -93,6 +93,44 @@ TEST(Core, AppParamsSerialize) {
 	remove(tmpFile);
 }
 
+TEST(Core, ApplicationPackInteraction) {
+	Log::init(Log::Level::Off);
+	const AppParams params{.name = "packtest",
+						   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+						   .hasGui = false,
+						   .isDummy = true};
+	auto app = owl::mkShared<Application>(params);
+	// No pack initially.
+	EXPECT_FALSE(app->hasOpenPack());
+	EXPECT_FALSE(app->loadFromPack("any.bin").has_value());
+	EXPECT_FALSE(app->packContains("any.bin"));
+	// Opening a missing pack file fails gracefully.
+	EXPECT_FALSE(app->openPack("/no/such/file.pack"));
+	// closePack when no pack open is a no-op.
+	app->closePack();
+	Application::invalidate();
+	app.reset();
+	Log::invalidate();
+}
+
+TEST(Core, ApplicationAssetDirectoryAddRemove) {
+	Log::init(Log::Level::Off);
+	const AppParams params{.name = "assetdir",
+						   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+						   .hasGui = false,
+						   .isDummy = true};
+	auto app = owl::mkShared<Application>(params);
+	const auto initialCount = app->getAssetDirectories().size();
+	const auto temp = std::filesystem::temp_directory_path();
+	app->addAssetDirectory({.title = "extra", .assetsPath = temp});
+	EXPECT_EQ(app->getAssetDirectories().size(), initialCount + 1);
+	app->removeAssetDirectory(temp);
+	EXPECT_EQ(app->getAssetDirectories().size(), initialCount);
+	Application::invalidate();
+	app.reset();
+	Log::invalidate();
+}
+
 TEST(Core, fileToString) {
 	Log::init(Log::Level::Off);
 	const std::string superStr = "yoho\nI'm fine!\n";

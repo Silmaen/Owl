@@ -2,7 +2,7 @@
  * @file matrixCreation.h
  * @author Silmaen
  * @date 30/06/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,9 +12,9 @@
 #include "quaternion.h"
 
 namespace owl::math {
-
 /**
- * @brief Generate Identity matrix.
+ * @brief
+ *  Generate Identity matrix.
  * @tparam BaseType The internal Data type.
  * @tparam Dim The size of the matrix.
  * @return Identity Matrix.
@@ -27,7 +27,8 @@ constexpr auto identity() -> Matrix<BaseType, Dim, Dim> {
 }
 
 /**
- * @brief Construct a 3x3 matrix based on the given quaternion.
+ * @brief
+ *  Construct a 3x3 matrix based on the given quaternion.
  * @tparam BaseType The internal data type.
  * @param iQuaternion The quaternion.
  * @return The 3x3 matrix.
@@ -59,7 +60,8 @@ constexpr auto toMat3(const Quaternion<BaseType>& iQuaternion) -> Matrix<BaseTyp
 }
 
 /**
- * @brief Construct a 4x4 transformation matrix based on the given quaternion.
+ * @brief
+ *  Construct a 4x4 transformation matrix based on the given quaternion.
  * @tparam BaseType The internal data type.
  * @param iQuaternion The quaternion.
  * @return The 4x4 matrix.
@@ -82,7 +84,8 @@ constexpr auto toMat4(const Quaternion<BaseType>& iQuaternion) -> Matrix<BaseTyp
 }
 
 /**
- * @brief Generate a perspective projection matrix.
+ * @brief
+ *  Generate a perspective projection matrix.
  * @tparam BaseType The internal Data type.
  * @param iFovy The Y field of view.
  * @param iAspect The aspect ratio.
@@ -106,7 +109,8 @@ constexpr auto perspective(BaseType iFovy, BaseType iAspect, BaseType iZNear, Ba
 }
 
 /**
- * @brief Construct an orthogonal projection matrix.
+ * @brief
+ *  Construct an orthogonal projection matrix.
  * @tparam BaseType The internal data type.
  * @param iLeft The left limit.
  * @param iRight The right limit.
@@ -132,7 +136,8 @@ constexpr auto ortho(const BaseType iLeft, const BaseType iRight, const BaseType
 }
 
 /**
- * @brief Create a translated matrix.
+ * @brief
+ *  Create a translated matrix.
  * @tparam BaseType The internal data type.
  * @param iMatrix Matrix to transform.
  * @param iVector Translation vector.
@@ -148,7 +153,8 @@ constexpr auto translate(const Matrix<BaseType, 4, 4>& iMatrix, const Vector<Bas
 }
 
 /**
- * @brief Create a rotated matrix matrix.
+ * @brief
+ *  Create a rotated matrix matrix.
  * @tparam BaseType The internal data type.
  * @param iMatrix The matrix to rotate.
  * @param iAngle The rotation angle in radians.
@@ -184,7 +190,8 @@ constexpr auto rotate(const Matrix<BaseType, 4, 4>& iMatrix, const BaseType iAng
 }
 
 /**
- * @brief Create a scale matrix.
+ * @brief
+ *  Create a scale matrix.
  * @tparam BaseType The internal data type.
  * @param iMatrix The matrix to transform.
  * @param iScale The scale vector.
@@ -202,7 +209,8 @@ constexpr auto scale(const Matrix<BaseType, 4, 4>& iMatrix, const Vector<BaseTyp
 }
 
 /**
- * @brief Create a sheared matrix.
+ * @brief
+ *  Create a sheared matrix.
  * @tparam BaseType The internal data type.
  * @param iMatrix The matrix to transform.
  * @param iPoint The centre of the shearing.
@@ -215,7 +223,6 @@ template<typename BaseType>
 constexpr auto shear(const Matrix<BaseType, 4, 4>& iMatrix, const Vector<BaseType, 3>& iPoint,
 					 const Vector<BaseType, 2>& iLambdaX, const Vector<BaseType, 2>& iLambdaY,
 					 const Vector<BaseType, 2>& iLambdaZ) -> Matrix<BaseType, 4, 4> {
-
 	Vector<BaseType, 3> pointLambda{(iLambdaX[0] + iLambdaX[1]), (iLambdaY[0] + iLambdaY[1]),
 									(iLambdaZ[0] + iLambdaZ[1])};
 
@@ -249,7 +256,8 @@ constexpr auto shear(const Matrix<BaseType, 4, 4>& iMatrix, const Vector<BaseTyp
 }
 
 /**
- * @brief Inverse a matrix.
+ * @brief
+ *  Inverse a matrix.
  * @tparam BaseType The internal data type.
  * @tparam Dim The matrix dimension.
  * @param iMatrix The matrix to inverse.
@@ -271,7 +279,8 @@ constexpr auto inverse(const Matrix<BaseType, Dim, Dim>& iMatrix) -> Matrix<Base
 }
 
 /**
- * @brief Inverse a matrix.
+ * @brief
+ *  Inverse a matrix.
  * @tparam BaseType The internal data type.
  * @tparam Dim The matrix dimension.
  * @param iMatrix The matrix to inverse.
@@ -282,7 +291,15 @@ constexpr auto inverse(const Matrix<BaseType, Dim, Dim>& iMatrix) -> Matrix<Base
 	requires(Dim == 3)
 {
 	BaseType determinant = iMatrix(0, 0) * (iMatrix(1, 1) * iMatrix(2, 2) - iMatrix(1, 2) * iMatrix(2, 1)) -
+						   /**
+						    * @brief
+						    *  I matrix.
+						    */
 						   iMatrix(0, 1) * (iMatrix(1, 0) * iMatrix(2, 2) - iMatrix(1, 2) * iMatrix(2, 0)) +
+						   /**
+						    * @brief
+						    *  I matrix.
+						    */
 						   iMatrix(0, 2) * (iMatrix(1, 0) * iMatrix(2, 1) - iMatrix(1, 1) * iMatrix(2, 0));
 	BaseType oneOverDeterminant = BaseType{1} / determinant;
 	Matrix<BaseType, Dim, Dim> inverse;
@@ -300,7 +317,8 @@ constexpr auto inverse(const Matrix<BaseType, Dim, Dim>& iMatrix) -> Matrix<Base
 }
 
 /**
- * @brief Inverse a matrix.
+ * @brief
+ *  Inverse a matrix.
  * @tparam BaseType The internal data type.
  * @tparam Dim The matrix dimension.
  * @param iMatrix The matrix to inverse.
@@ -362,6 +380,10 @@ constexpr auto inverse(const Matrix<BaseType, Dim, Dim>& iMatrix) -> Matrix<Base
 
 	Vector<BaseType, Dim> row0 = inverse.row(0);
 	BaseType determinant =
+			/**
+			 * @brief
+			 *  I matrix.
+			 */
 			iMatrix(0, 0) * row0[0] + iMatrix(1, 0) * row0[1] + iMatrix(2, 0) * row0[2] + iMatrix(3, 0) * row0[3];
 	BaseType oneOverDeterminant = BaseType{1} / determinant;
 	inverse *= oneOverDeterminant;

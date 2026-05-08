@@ -14,34 +14,45 @@
 #include <string>
 
 namespace owl::scene {
-
 /**
- * @brief Class describing a sound source in the scene.
+ * @brief
+ *  Class describing a sound source in the scene.
  */
 class OWL_API SceneSound final {
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	SceneSound();
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~SceneSound() = default;
+
 	/**
-	 * @brief Default copy constructor.
+	 * @brief
+	 *  Default copy constructor.
 	 */
 	SceneSound(const SceneSound&) = default;
+
 	/**
-	 * @brief Default move constructor.
+	 * @brief
+	 *  Default move constructor.
 	 */
 	SceneSound(SceneSound&&) = default;
+
 	/**
-	 * @brief Default copy affectation operator.
+	 * @brief
+	 *  Default copy affectation operator.
 	 */
 	auto operator=(const SceneSound&) -> SceneSound& = default;
+
 	/**
-	 * @brief Default move affectation operator.
+	 * @brief
+	 *  Default move affectation operator.
 	 */
 	auto operator=(SceneSound&&) -> SceneSound& = default;
 

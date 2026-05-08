@@ -2,7 +2,7 @@
  * @file Transform.cpp
  * @author Silmaen
  * @date 1/29/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"

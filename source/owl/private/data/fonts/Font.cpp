@@ -2,7 +2,7 @@
  * @file Font.cpp
  * @author Silmaen
  * @date 10/17/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -23,6 +23,7 @@ struct MsdfData {
 
 namespace {
 template<typename T, typename S, int N, msdf_atlas::GeneratorFunction<S, N> GenFunc>
+
 auto createAndCacheAtlas([[maybe_unused]] const std::string& iFontName, [[maybe_unused]] float iFontSize,
 						 const std::vector<msdf_atlas::GlyphGeometry>& iGlyphs,
 						 [[maybe_unused]] const msdf_atlas::FontGeometry& iFontGeometry, math::vec2i iSize)
@@ -48,7 +49,6 @@ auto createAndCacheAtlas([[maybe_unused]] const std::string& iFontName, [[maybe_
 
 Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_default{iIsDefault} {
 	OWL_SCOPE_UNTRACK
-
 	if (!exists(iPath)) {
 		OWL_CORE_ERROR("Font: Font file {} does not exists.", iPath.string())
 		return;
@@ -77,6 +77,7 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	constexpr double fontScale = 1.0;
 	m_data->fontGeometry = msdf_atlas::FontGeometry(&m_data->glyphs);
 	int glyphsLoaded = m_data->fontGeometry.loadCharset(font, fontScale, charset);
+
 	OWL_CORE_INFO("Font {}: Loaded {} glyphs from font (out of {})", iPath.filename().stem().string(), glyphsLoaded,
 				  charset.size())
 	double emSize = 40.0;
@@ -124,16 +125,21 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	if (msdfgen::loadGlyph(shape, font, 'C'))
 	{
 		shape.normalize();
+
 		//                      max. angle
 		msdfgen::edgeColoringSimple(shape, 3.0);
 		//           image width, height
 		msdfgen::Bitmap<float, 3> msdf(32, 32);
+
 		//                     range, scale, translation
 		msdfgen::generateMSDF(msdf, shape, 4.0, 1.0, msdfgen::Vector2(4.0, 4.0));
+
 		msdfgen::savePng(msdf, "output.png");
 	}
 #endif
+
 	destroyFont(font);
+
 	deinitializeFreetype(ft);
 	m_name = iPath.stem().string();
 }

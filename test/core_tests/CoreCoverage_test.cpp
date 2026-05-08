@@ -22,7 +22,6 @@ using namespace owl;
 // ============================================================================
 
 namespace {
-
 /// Minimal concrete FactoryProduct for testing.
 class TestProduct final : public core::FactoryProduct {
 public:
@@ -219,14 +218,12 @@ TEST(CoreCoverage, LogMacrosAllLevels) {
 	OWL_CORE_WARN("warn message {}", 3)
 	OWL_CORE_ERROR("error message {}", 4)
 	OWL_CORE_CRITICAL("critical message {}", 5)
-
 	// Exercise every client macro.
 	OWL_TRACE("client trace {}", 10)
 	OWL_INFO("client info {}", 20)
 	OWL_WARN("client warn {}", 30)
 	OWL_ERROR("client error {}", 40)
 	OWL_CRITICAL("client critical {}", 50)
-
 	core::Log::invalidate();
 }
 
@@ -236,7 +233,6 @@ TEST(CoreCoverage, LogFrameTraceAndAdvance) {
 	// Frame 0: counter=0 mod 2 == 0 => frameLog() is true.
 	EXPECT_TRUE(core::Log::frameLog());
 	OWL_CORE_FRAME_TRACE("frame 0 trace")
-
 	// Advance to frame 1: counter=1 mod 2 != 0.
 	OWL_CORE_FRAME_ADVANCE
 	EXPECT_FALSE(core::Log::frameLog());
@@ -264,7 +260,6 @@ TEST(CoreCoverage, LogVerbosityLevel) {
 	OWL_CORE_INFO("filtered info")
 	OWL_CORE_WARN("visible warn")
 	OWL_CORE_ERROR("visible error")
-
 	core::Log::invalidate();
 	EXPECT_FALSE(core::Log::initiated());
 }
@@ -285,7 +280,6 @@ TEST(CoreCoverage, LogBufferCapture) {
 	buffer.clear();
 
 	OWL_CORE_INFO("buffer test message")
-
 	// Give spdlog a moment to flush through sinks.
 	const auto entries = buffer.getEntries();
 	// The buffer should have captured at least one entry.

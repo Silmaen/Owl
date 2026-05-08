@@ -11,9 +11,9 @@
 #include "core/Serializer.h"
 
 namespace owl::scene::component {
-
 /**
- * @brief Canvas component — marks an entity as a UI root.
+ * @brief
+ *  Canvas component — marks an entity as a UI root.
  *
  * Child entities of a Canvas are rendered in screen space using an orthographic
  * projection. The Canvas defines coordinate space and draw order.
@@ -29,24 +29,29 @@ struct OWL_API Canvas {
 	int32_t sortOrder = 0;
 
 	/**
-	 * @brief Get the class title.
+	 * @brief
+	 *  Get the class title.
 	 * @return The class title.
 	 */
 	static auto name() -> const char* { return "Canvas"; }
+
 	/**
-	 * @brief Get the YAML key for this component.
+	 * @brief
+	 *  Get the YAML key for this component.
 	 * @return The YAML key.
 	 */
 	static auto key() -> const char* { return "Canvas"; }
 
 	/**
-	 * @brief Write this component to a YAML context.
+	 * @brief
+	 *  Write this component to a YAML context.
 	 * @param[in] iOut The YAML context.
 	 */
 	void serialize(const core::Serializer& iOut) const;
 
 	/**
-	 * @brief Read this component from YAML node.
+	 * @brief
+	 *  Read this component from YAML node.
 	 * @param[in] iNode The YAML node to read.
 	 */
 	void deserialize(const core::Serializer& iNode);

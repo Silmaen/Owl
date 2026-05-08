@@ -2,7 +2,7 @@
  * @file RenderLayerFactory.cpp
  * @author Silmaen
  * @date 30/04/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -13,8 +13,8 @@
 #include <unordered_map>
 
 namespace owl::renderer {
-namespace {
 
+namespace {
 auto registry() -> std::unordered_map<std::string, RenderLayerFactory::CreateFn>& {
 	static std::unordered_map<std::string, RenderLayerFactory::CreateFn> s_registry;
 	return s_registry;

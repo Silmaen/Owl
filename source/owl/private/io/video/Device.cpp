@@ -2,7 +2,7 @@
  * @file Device.cpp
  * @author Silmaen
  * @date 03/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -15,7 +15,6 @@
 namespace owl::io::video {
 
 namespace {
-
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 // NOLINTBEGIN(*-magic-numbers)
@@ -108,7 +107,6 @@ void convertMJpegToRgb24(const uint8_t* iJpegBuffer, const int32_t iJpegSize, co
 }
 // NOLINTEND(*-magic-numbers)
 OWL_DIAG_POP
-
 }// namespace
 
 Device::Device(std::string iName) : m_name(std::move(iName)) {}
@@ -122,6 +120,7 @@ auto Device::getRgbBuffer(const uint8_t* iInputBuffer, const int32_t iBufferSize
 		convertNv12ToRgb24(iInputBuffer, m_size, output.data());
 	} else if (m_pixFormat == PixelFormat::Rgb24) {
 		output.resize(3ull * m_size.surface());
+
 		OWL_DIAG_PUSH
 		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 		memcpy(output.data(), iInputBuffer, output.size());

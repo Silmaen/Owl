@@ -2,7 +2,7 @@
  * @file MeshRangeIterator.h
  * @author Silmaen
  * @date 20/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -48,6 +48,7 @@ public:
 
 	using reference = std::conditional_t<IsOnlyCoordinateComponent<Components...>, math::vec3,
 										 std::conditional_t<IsConst, const value_type, value_type>&>;
+
 	/**
 	 * @brief
 	 *  Empty constructor.
@@ -72,6 +73,7 @@ public:
 	 * @param[in] iMesh 		The mesh on which to iterate.
 	 * @param[in] iPointIndex 	Starting index of the iterator.
 	 * @param[in] iComponents 	Mesh's components on which to iterate.
+	 * @tparam Components2 Forwarded mesh component types.
 	 */
 	template<typename... Components2>
 	MeshRangeIterator(MeshType& iMesh, size_t iPointIndex, Components2&&... iComponents)
@@ -79,7 +81,8 @@ public:
 		  m_cursor(iMesh, iPointIndex, *m_components) {}
 
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~MeshRangeIterator() = default;
 

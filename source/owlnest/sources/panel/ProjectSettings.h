@@ -2,7 +2,7 @@
  * @file ProjectSettings.h
  * @author Silmaen
  * @date 09/03/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,45 +13,55 @@
 #include "../Project.h"
 
 namespace owl::nest::panel {
-
 /**
- * @brief Panel for editing project settings.
+ * @brief
+ *  Panel for editing project settings.
  */
 class ProjectSettings final {
 public:
 	ProjectSettings(const ProjectSettings&) = default;
+
 	ProjectSettings(ProjectSettings&&) = default;
+
 	auto operator=(const ProjectSettings&) -> ProjectSettings& = default;
+
 	auto operator=(ProjectSettings&&) -> ProjectSettings& = default;
+
 	ProjectSettings() = default;
+
 	~ProjectSettings() = default;
 
 	/**
-	 * @brief Open the modal dialog for editing the given project.
+	 * @brief
+	 *  Open the modal dialog for editing the given project.
 	 * @param[in] iProject The project to edit.
 	 */
 	void open(const Project& iProject);
 
 	/**
-	 * @brief Render the modal dialog.
+	 * @brief
+	 *  Render the modal dialog.
 	 */
 	void onImGuiRender();
 
 	/**
-	 * @brief Check whether the project was modified and accepted.
+	 * @brief
+	 *  Check whether the project was modified and accepted.
 	 * @return True if changes were applied.
 	 */
 	[[nodiscard]] auto hasResult() const -> bool { return m_hasResult; }
 
 	/**
-	 * @brief Consume the result.
+	 * @brief
+	 *  Consume the result.
 	 * @return The edited project.
 	 */
 	auto consumeResult() -> Project;
 
 private:
 	/**
-	 * @brief Scan the project directory for .owl scene files.
+	 * @brief
+	 *  Scan the project directory for .owl scene files.
 	 */
 	void scanScenes();
 

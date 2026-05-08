@@ -2,7 +2,7 @@
  * @file linAlgebra.h
  * @author Silmaen
  * @date 24/06/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,9 +11,9 @@
 #include "matrixCreation.h"
 
 namespace owl::math {
-
 /**
- * @brief Get the epsilon value for given data type.
+ * @brief
+ *  Get the epsilon value for given data type.
  * @tparam BaseType The internal type of data.
  * @return Value of epsilon.
  */
@@ -23,7 +23,8 @@ constexpr auto epsilon() -> BaseType {
 }
 
 /**
- * @brief Compare two values within precision
+ * @brief
+ *  Compare two values within precision
  * @tparam BaseType The internal type of data.
  * @param iA First value.
  * @param iB Second value.
@@ -36,7 +37,8 @@ constexpr auto epsilonEqual(const BaseType& iA, const BaseType& iB, const BaseTy
 }
 
 /**
- * @brief Compare two values within precision
+ * @brief
+ *  Compare two values within precision
  * @tparam BaseType The internal type of data.
  * @param iA First value.
  * @param iB Second value.
@@ -49,7 +51,8 @@ constexpr auto epsilonNotEqual(const BaseType& iA, const BaseType& iB, const Bas
 }
 
 /**
- * @brief Matrix-Vector product.
+ * @brief
+ *  Matrix-Vector product.
  * @tparam BaseType The internal Data type.
  * @tparam NCol The number of columns in the matrix.
  * @tparam NRow The number of rows in the matrix.
@@ -67,7 +70,8 @@ constexpr auto operator*(const Matrix<BaseType, NRow, NCol>& iMatrix, const Vect
 	return result;
 }
 /**
- * @brief Vector-Matrix product.
+ * @brief
+ *  Vector-Matrix product.
  * @tparam BaseType The internal Data type.
  * @tparam NCol The number of columns in the matrix.
  * @tparam NRow The number of rows in the matrix.

@@ -2,7 +2,7 @@
  * @file Descriptors.cpp
  * @author Silmaen
  * @date 13/03/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -14,7 +14,6 @@
 #include "utils.h"
 
 namespace owl::renderer::gpu::vulkan::internal {
-
 
 void TextureData::freeTexture() {
 	const auto& core = VulkanCore::get();
@@ -140,6 +139,7 @@ void TextureData::createSampler() {
 		OWL_CORE_ERROR("Vulkan Texture: Error creating texture sampler ({}).", internal::resultString(result))
 	}
 }
+
 void TextureData::createImage(const math::vec2ui& iDimensions) {
 	freeTexture();
 	const auto& vkc = VulkanCore::get();
@@ -196,7 +196,6 @@ void Descriptors::release() {
 	m_textures.clear();
 	if (!m_uniformBuffers.empty()) {
 		for (size_t i = 0; i < g_maxFrameInFlight; ++i) {
-
 			vkUnmapMemory(core.getLogicalDevice(), m_uniformBuffersMemory[i]);
 			vkDestroyBuffer(core.getLogicalDevice(), m_uniformBuffers[i], nullptr);
 			vkFreeMemory(core.getLogicalDevice(), m_uniformBuffersMemory[i], nullptr);
@@ -373,6 +372,7 @@ void Descriptors::registerUniform(const uint32_t iSize) {
 
 void Descriptors::setUniformData(const void* iData, const size_t iSize) const {
 	const auto& vkh = VulkanHandler::get();
+
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 	memcpy(m_uniformBuffersMapped[vkh.getCurrentFrameIndex()], iData, iSize);
@@ -476,6 +476,7 @@ void Descriptors::TextureList::unregisterTexture(uint32_t iIndex) {
 	iter->second->freeTexture();
 	textures.erase(iter);
 }
+
 auto Descriptors::TextureList::getTextureData(uint32_t iIndex) -> tex {
 	const auto iter = std::find_if(textures.begin(), textures.end(),
 								   [&iIndex](const auto& iElem) -> bool { return iElem.first == iIndex; });

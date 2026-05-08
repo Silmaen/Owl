@@ -23,7 +23,6 @@
 namespace fs = std::filesystem;
 
 namespace {
-
 [[nodiscard]] auto helpRoot() -> fs::path { return owl::test::getRootPath() / "engine_assets" / "help"; }
 
 [[nodiscard]] auto readBundledFile(const fs::path& iPath) -> std::string {

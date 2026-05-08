@@ -2,7 +2,7 @@
 * @file Profiler.h
 * @author Silmaen
 * @date 17/08/2022
-* Copyright © 2022 All rights reserved.
+* Copyright (c) 2022 All rights reserved.
 * All modification must get authorization from the author.
 */
 #pragma once
@@ -12,12 +12,12 @@
 #include <thread>
 
 namespace owl::debug {
-
 /// The type for microseconds.
 using FloatingPointMicroseconds = std::chrono::duration<double, std::micro>;
 
 /**
- * @brief Data for profiling result.
+ * @brief
+ *  Data for profiling result.
  */
 struct ProfileResult {
 	std::string name;///< Result's name.
@@ -27,7 +27,8 @@ struct ProfileResult {
 };
 
 /**
- * @brief Profile Session Data.
+ * @brief
+ *  Profile Session Data.
  */
 struct ProfileSession {
 	explicit ProfileSession(std::string iName) : name{std::move(iName)} {}
@@ -35,35 +36,43 @@ struct ProfileSession {
 };
 
 /**
- * @brief class for accessing to the internal profiler.
+ * @brief
+ *  class for accessing to the internal profiler.
  */
 class OWL_API Profiler {
 public:
 	Profiler(const Profiler&) = delete;
+
 	Profiler(Profiler&&) = delete;
+
 	auto operator=(const Profiler&) -> Profiler& = delete;
+
 	auto operator=(Profiler&&) -> Profiler& = delete;
 
 	/**
-	 * @brief Begins a new profiling session.
+	 * @brief
+	 *  Begins a new profiling session.
 	 * @param[in] iName Session's name.
 	 * @param[in] iFilepath Session File path to store information.
 	 */
 	void beginSession(const std::string& iName, const std::string& iFilepath = "results.json");
 
 	/**
-	 * @brief Terminate profile session.
+	 * @brief
+	 *  Terminate profile session.
 	 */
 	void endSession();
 
 	/**
-	 * @brief Write profiling result into json file.
+	 * @brief
+	 *  Write profiling result into json file.
 	 * @param[in] iResult The Result to write.
 	 */
 	void writeProfile(const ProfileResult& iResult);
 
 	/**
-	 * @brief Singleton accessor.
+	 * @brief
+	 *  Singleton accessor.
 	 * @return This instance.
 	 */
 	static auto get() -> Profiler& {
@@ -73,27 +82,32 @@ public:
 
 private:
 	/**
-	 * @brief Private Constructor.
+	 * @brief
+	 *  Private Constructor.
 	 */
 	Profiler();
 
 	/**
-	 * @brief Private destructor.
+	 * @brief
+	 *  Private destructor.
 	 */
 	~Profiler();
 
 	/**
-	 * @brief write json header.
+	 * @brief
+	 *  write json header.
 	 */
 	void writeHeader();
 
 	/**
-	 * @brief write json footer.
+	 * @brief
+	 *  write json footer.
 	 */
 	void writeFooter();
 
 	/**
-	 * @brief Terminate the session.
+	 * @brief
+	 *  Terminate the session.
 	 *
 	 * @note: you must already own lock on m_Mutex before calling InternalEndSession().
 	 */
@@ -107,27 +121,35 @@ private:
 };
 
 /**
- * @brief Timer used for profiling.
+ * @brief
+ *  Timer used for profiling.
  */
 class OWL_API ProfileTimer {
 public:
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 * @param[in] iName Scope's name.
 	 */
 	explicit ProfileTimer(const char* iName);
 
 	ProfileTimer(const ProfileTimer&) = delete;
+
 	ProfileTimer(ProfileTimer&&) = delete;
+
 	auto operator=(const ProfileTimer&) -> ProfileTimer& = delete;
+
 	auto operator=(ProfileTimer&&) -> ProfileTimer& = delete;
+
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~ProfileTimer();
 
 	/**
-	 * @brief Stop the timer.
+	 * @brief
+	 *  Stop the timer.
 	 */
 	void stop();
 
@@ -139,29 +161,30 @@ private:
 	/// Timer state, true if not running.
 	bool m_stopped{false};
 };
-
 /**
- * @brief Namespace for profiling utility functions.
+ * @brief
+ *  Namespace for profiling utility functions.
  */
 namespace utils {
-
 /**
- * @brief Simple char array.
+ * @brief
+ *  Simple char array.
  * @tparam N Size of the array.
  */
 template<size_t N>
 struct ChangeResult {
 	char data[N];
 };
-
 /**
- * @brief Simple String cleaner.
+ * @brief
+ *  Simple String cleaner.
  * @tparam N Size of the string.
  * @tparam K Size of pattern to remove.
  * @param[in] iExpr The string.
  * @param[in] iRemove Pattern to remove.
  * @return The corrected string.
  */
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 template<size_t N, size_t K>
@@ -186,7 +209,6 @@ OWL_DIAG_POP
 }// namespace utils
 
 }// namespace owl::debug
-
 #ifndef OWL_PROFILE
 #define OWL_PROFILE 0
 #else

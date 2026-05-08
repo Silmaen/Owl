@@ -27,6 +27,7 @@ OWL_DIAG_POP
 namespace owl::nest {
 
 CodeEditorDocument::CodeEditorDocument() = default;
+
 CodeEditorDocument::~CodeEditorDocument() = default;
 
 auto CodeEditorDocument::title() const -> std::string {

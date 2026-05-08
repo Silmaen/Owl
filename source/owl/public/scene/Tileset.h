@@ -16,9 +16,9 @@
 #include <string>
 
 namespace owl::scene {
-
 /**
- * @brief Per-tile metadata stored alongside a `Tileset`.
+ * @brief
+ *  Per-tile metadata stored alongside a `Tileset`.
  *
  * One entry per tile slot in the atlas (row-major from top-left). Holds
  * authoring-time annotations that drive runtime behaviour: collision flag for
@@ -33,7 +33,8 @@ struct OWL_API TileMeta {
 };
 
 /**
- * @brief Reusable tile atlas asset (`.owltileset`).
+ * @brief
+ *  Reusable tile atlas asset (`.owltileset`).
  *
  * A `Tileset` pairs an atlas texture with a fixed-size grid (`tileWidth × tileHeight`
  * cells, `columns × rows` slots) and one `TileMeta` per slot. Tilemaps reference
@@ -61,14 +62,23 @@ struct OWL_API TileMeta {
 class OWL_API Tileset final {
 public:
 	Tileset() = default;
+
 	~Tileset() = default;
+
 	Tileset(const Tileset&) = default;
+
 	Tileset(Tileset&&) = default;
+
 	auto operator=(const Tileset&) -> Tileset& = default;
+
 	auto operator=(Tileset&&) -> Tileset& = default;
 
-	/// @brief File extension used by `.owltileset` assets (with leading dot).
-	static auto fileExtension() -> const char* { return ".owltileset"; }
+	/**
+	 * @brief
+	 *  File extension used by `.owltileset` assets (with leading dot).
+	 * @return The extension literal (`".owltileset"`).
+	 */
+	static auto fileExtension() noexcept -> const char* { return ".owltileset"; }
 
 	/// Atlas texture (may be null while authoring).
 	shared<renderer::gpu::Texture2D> texture;
@@ -80,21 +90,27 @@ public:
 	uint32_t columns = 1;
 	/// Number of rows in the atlas (>= 1).
 	uint32_t rows = 1;
-	/// Sampler filter applied to the atlas texture after load. `Nearest` for
-	/// pixel-art / raycaster atlases (no filtering, no mipmaps); `Linear`
-	/// (the default) for everything else.
+	/**
+	 * @brief
+	 *  Sampler filter applied to the atlas texture after load.
+	 *
+	 * `Nearest` for pixel-art / raycaster atlases (no filtering, no mipmaps); `Linear`
+	 * (the default) for everything else.
+	 */
 	renderer::gpu::FilterMode filterMode = renderer::gpu::FilterMode::Linear;
 	/// Per-tile metadata, row-major. Resized to `columns * rows` on load and on `resize()`.
 	std::vector<TileMeta> tiles;
 
 	/**
-	 * @brief Total number of tile slots (`columns * rows`).
+	 * @brief
+	 *  Total number of tile slots (`columns * rows`).
 	 * @return The slot count.
 	 */
-	[[nodiscard]] auto tileCount() const -> uint32_t { return columns * rows; }
+	[[nodiscard]] auto tileCount() const noexcept -> uint32_t { return columns * rows; }
 
 	/**
-	 * @brief Resize the atlas grid and reset per-tile metadata to defaults.
+	 * @brief
+	 *  Resize the atlas grid and reset per-tile metadata to defaults.
 	 *
 	 * Any previously stored metadata is discarded — caller is expected to
 	 * re-author after a resize.
@@ -104,7 +120,8 @@ public:
 	void resize(uint32_t iColumns, uint32_t iRows);
 
 	/**
-	 * @brief Compute the four UV corners for a given tile index.
+	 * @brief
+	 *  Compute the four UV corners for a given tile index.
 	 *
 	 * UVs map the tile to the atlas using `tileWidth × tileHeight` slots. The
 	 * returned order matches `Quad2DData::textureCoords`: bottom-left, bottom-right,
@@ -115,35 +132,40 @@ public:
 	[[nodiscard]] auto getTileUv(uint32_t iIndex) const -> std::array<math::vec2, 4>;
 
 	/**
-	 * @brief Look up the metadata for a tile, returning a default for out-of-range indices.
+	 * @brief
+	 *  Look up the metadata for a tile, returning a default for out-of-range indices.
 	 * @param[in] iIndex 0-based tile index.
 	 * @return The tile metadata.
 	 */
 	[[nodiscard]] auto getTileMeta(uint32_t iIndex) const -> const TileMeta&;
 
 	/**
-	 * @brief Whether the tile at the given index is flagged collidable.
+	 * @brief
+	 *  Whether the tile at the given index is flagged collidable.
 	 * @param[in] iIndex 0-based tile index.
 	 * @return True if the slot exists and is collidable.
 	 */
 	[[nodiscard]] auto isCollidable(uint32_t iIndex) const -> bool;
 
 	/**
-	 * @brief Serialize the tileset to a YAML string.
+	 * @brief
+	 *  Serialize the tileset to a YAML string.
 	 * @param[in] iName Optional display name written under the `Tileset:` key.
 	 * @return The YAML document as a string.
 	 */
 	[[nodiscard]] auto serializeToString(std::string_view iName = "") const -> std::string;
 
 	/**
-	 * @brief Populate the tileset from a YAML string (tileset is reset on success).
+	 * @brief
+	 *  Populate the tileset from a YAML string (tileset is reset on success).
 	 * @param[in] iYaml The YAML document.
 	 * @return True on success, false on malformed input (tileset left unchanged).
 	 */
 	[[nodiscard]] auto deserializeFromString(std::string_view iYaml) -> bool;
 
 	/**
-	 * @brief Save the tileset to disk.
+	 * @brief
+	 *  Save the tileset to disk.
 	 * @param[in] iPath Destination file (`.owltileset` is conventional).
 	 * @param[in] iName Optional display name; defaults to the file stem.
 	 * @return True on success.
@@ -151,7 +173,8 @@ public:
 	[[nodiscard]] auto saveToFile(const std::filesystem::path& iPath, std::string_view iName = "") const -> bool;
 
 	/**
-	 * @brief Load the tileset from disk.
+	 * @brief
+	 *  Load the tileset from disk.
 	 * @param[in] iPath Source file.
 	 * @return True on success.
 	 */

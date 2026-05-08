@@ -2,7 +2,7 @@
  * @file Serializer.h
  * @author Silmaen
  * @date 1/29/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -15,21 +15,26 @@ namespace owl::core {
 struct SerializerImpl;
 
 /**
- * @brief Frontend class for serializing anything.
+ * @brief
+ *  Frontend class for serializing anything.
  */
 class Serializer {
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	Serializer();
+
 	/**
-	 * @brief Get access to the backend implementation.
+	 * @brief
+	 *  Get access to the backend implementation.
 	 * @return The backend implementation.
 	 */
 	[[nodiscard]] auto getImpl() const -> const shared<SerializerImpl>&;
 
 private:
+	/// Pimpl backend (yaml-cpp emitter / node, hidden from public API).
 	shared<SerializerImpl> mp_impl;
 };
 

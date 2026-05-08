@@ -14,9 +14,9 @@
 #include <imgui.h>
 
 namespace owl::gui::widgets {
-
 /**
- * @brief Inspector widget that displays and edits a `math::Curve` via ImCurveEdit.
+ * @brief
+ *  Inspector widget that displays and edits a `math::Curve` via ImCurveEdit.
  *
  * Renders a 2D editing canvas (drag points, double-click to add, right-click to remove)
  * followed by a one-line interpolation-mode combo (Constant / Linear / Smooth).

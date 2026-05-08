@@ -1,6 +1,6 @@
 -- Main Menu controller
 -- Demonstrates: UI button callbacks, scene.transition_to, gamestate, save system,
---               settings, log, entity visibility, UIImage, UIPanel,
+--               settings, log, entity visibility, UiImage, UiPanel,
 --               save.load_game, save.list_saves, save.delete_save,
 --               ui.transition_fade_in/out, ui.set_button_enabled, ui.set_visible,
 --               input.get_mouse_x, input.get_mouse_y, ui.get_text

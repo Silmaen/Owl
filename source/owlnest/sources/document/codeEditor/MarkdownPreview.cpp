@@ -34,7 +34,6 @@ OWL_DIAG_POP
 namespace owl::nest::codeEditor {
 
 namespace {
-
 constexpr float kHeading1Scale = 1.60f;
 constexpr float kHeading2Scale = 1.30f;
 constexpr float kHeading3Scale = 1.15f;
@@ -92,7 +91,10 @@ constexpr float kImageHorizontalPadding = 16.0f;
 	return n;
 }
 
-/// @brief Walk a parsed Markdown tree and collect the count of CodeBlock leaves.
+/**
+ * @brief
+ *  Walk a parsed Markdown tree and collect the count of CodeBlock leaves.
+ */
 // NOLINTBEGIN(misc-no-recursion) — block tree is recursive by nature (lists/quotes nest).
 void collectCodeBlocks(const std::vector<MdBlock>& iBlocks, size_t& ioCount) {
 	for (const auto& block: iBlocks) {
@@ -113,6 +115,7 @@ void collectCodeBlocks(const std::vector<MdBlock>& iBlocks, size_t& ioCount) {
 }// namespace
 
 MarkdownPreview::MarkdownPreview() = default;
+
 MarkdownPreview::~MarkdownPreview() = default;
 
 void MarkdownPreview::rebuildCaches() {
@@ -231,13 +234,15 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 	bool linkOpen = false;
 	std::string linkHref;
 	bool firstOnLine = true;
-
 	const auto pushStyle = [&]() -> void {
 		if (strongDepth > 0)
+
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{1.0f, 1.0f, 1.0f, 1.0f});
 		else if (emDepth > 0)
+
 			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
 		else if (linkOpen)
+
 			// Hard-coded high-contrast link colour. We deliberately do NOT reuse `ImGuiCol_ButtonHovered`
 			// here — Owl's theme (`{0.275, 0.275, 0.275}`) is barely distinguishable from the
 			// `{0.10, 0.105, 0.11}` panel background, so link text rendered with that colour effectively
@@ -246,6 +251,7 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 	};
 	const auto popStyle = [&]() -> void {
 		if (strongDepth > 0 || emDepth > 0 || linkOpen)
+
 			ImGui::PopStyleColor();
 	};
 
@@ -264,25 +270,34 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 			const float panelRight = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
 			const float remaining = panelRight - (prevRight + spaceW);
 			if (remaining >= wordSize.x)
+
 				ImGui::SameLine(0.0f, spaceW);
 			// else: fall through with no SameLine — ImGui's automatic layout drops the new item to
 			// the next line at the current indent edge (so wraps stay aligned with the original
 			// block's left margin).
 		}
+
 		pushStyle();
 		if (iIsCode) {
 			// Inline code: render inside a slightly tinted background.
 			const auto bg = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
+
 			ImGui::PushStyleColor(ImGuiCol_Button, bg);
+
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, bg);
+
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bg);
+
 			ImGui::SmallButton(std::string{iWord}.c_str());
+
 			ImGui::PopStyleColor(3);
 		} else {
 			ImGui::TextUnformatted(iWord.data(), iWord.data() + iWord.size());
 		}
+
 		popStyle();
 		if (linkOpen && ImGui::IsItemClicked())
+
 			handleLinkClick(linkHref);
 		firstOnLine = false;
 	};
@@ -296,6 +311,7 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 				break;
 			size_t end = 0;
 			while (end < iText.size() && std::isspace(static_cast<unsigned char>(iText[end])) == 0) ++end;
+
 			emitWord(iText.substr(0, end), false);
 			iText.remove_prefix(end);
 		}
@@ -304,9 +320,11 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 	for (const auto& span: iSpans) {
 		switch (span.kind) {
 			case InlineKind::Text:
+
 				emitTextRun(span.text);
 				break;
 			case InlineKind::Code:
+
 				emitWord(span.text, true);
 				break;
 			case InlineKind::StrongStart:
@@ -339,9 +357,11 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 				linkHref.clear();
 				break;
 			case InlineKind::ImageInline:
+
 				renderInlineImage(span.text, span.alt, firstOnLine, linkOpen, linkHref);
 				break;
 			case InlineKind::LineBreak:
+
 				// Force a hard break: an empty Text() call advances the cursor to the next line at
 				// the current indent edge. Subsequent emits start fresh.
 				ImGui::TextUnformatted("");

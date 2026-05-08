@@ -24,9 +24,9 @@ class TextEditor;
 struct ImVec2;
 
 namespace owl::nest::codeEditor {
-
 /**
- * @brief Live Markdown renderer used by the code-editor preview pane and the help panel.
+ * @brief
+ *  Live Markdown renderer used by the code-editor preview pane and the help panel.
  *
  * Parsing is delegated to `MarkdownDocument` (md4c-backed CommonMark + GFM tables /
  * strikethrough / autolinks). Rendering walks the parsed block list and emits ImGui
@@ -52,30 +52,49 @@ namespace owl::nest::codeEditor {
  */
 class MarkdownPreview final {
 public:
-	/// @brief Callback invoked when the user clicks a Markdown link.
+	/**
+	 * @brief
+	 *  Callback invoked when the user clicks a Markdown link.
+	 */
 	using LinkCallback = std::function<void(const std::string& iHref)>;
 
+	/**
+	 * @brief
+	 *  Default constructor.
+	 */
 	MarkdownPreview();
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
 	~MarkdownPreview();
+
 	MarkdownPreview(const MarkdownPreview&) = delete;
+
 	MarkdownPreview(MarkdownPreview&&) = delete;
+
 	auto operator=(const MarkdownPreview&) -> MarkdownPreview& = delete;
+
 	auto operator=(MarkdownPreview&&) -> MarkdownPreview& = delete;
 
 	/**
-	 * @brief Register a callback invoked when a Markdown link is clicked.
+	 * @brief
+	 *  Register a callback invoked when a Markdown link is clicked.
 	 * @param[in] iCallback The link callback (href is the raw string between the parentheses).
 	 */
 	void setLinkCallback(LinkCallback iCallback) { m_linkCallback = std::move(iCallback); }
 
 	/**
-	 * @brief Set the directory used to resolve relative image paths.
+	 * @brief
+	 *  Set the directory used to resolve relative image paths.
 	 * @param[in] iDir Absolute base directory; pass an empty path to disable image loading.
 	 */
 	void setBaseDirectory(std::filesystem::path iDir) { m_baseDir = std::move(iDir); }
 
 	/**
-	 * @brief Feed a new text frame. Inline by design — no md4c work happens here, so callers that
+	 * @brief
+	 *  Feed a new text frame. Inline by design — no md4c work happens here, so callers that
 	 *        only need debounce bookkeeping (headless tests) do not pull the parser into their
 	 *        link graph. The actual parse happens lazily in `render()` on the first frame after
 	 *        the debounce expires.
@@ -100,26 +119,43 @@ public:
 	}
 
 	/**
-	 * @brief Render the most recent stable text inside the current ImGui child / window.
+	 * @brief
+	 *  Render the most recent stable text inside the current ImGui child / window.
 	 *        Triggers a (re)parse if `update()` flagged the buffer as needing a rebuild.
 	 * @param[in] iSize Target area; ignored if zero.
 	 */
 	void render(const ImVec2& iSize);
 
-	/// @brief Currently rendered text (after debounce). Test hook.
+	/**
+	 * @brief
+	 *  Currently rendered text (after debounce). Test hook.
+	 */
 	[[nodiscard]] auto renderedText() const -> const std::string& { return m_renderedText; }
-	/// @brief True while a pending change is waiting for the debounce window to expire.
+
+	/**
+	 * @brief
+	 *  True while a pending change is waiting for the debounce window to expire.
+	 */
 	[[nodiscard]] auto isDebouncing() const -> bool { return m_dirty; }
-	/// @brief Read-only access to the parsed block list (test hook).
+
+	/**
+	 * @brief
+	 *  Read-only access to the parsed block list (test hook).
+	 */
 	[[nodiscard]] auto blocks() const -> const std::vector<MdBlock>& { return m_document.blocks(); }
 
 private:
-	/// @brief Cached read-only `TextEditor` for one code block (built once per parse).
+	/**
+	 * @brief
+	 *  Cached read-only `TextEditor` for one code block (built once per parse).
+	 */
 	struct CodeEditorEntry {
 		uniq<TextEditor> editor;///< Heap-allocated to keep the header light.
 	};
-
-	/// @brief Cached image texture for one image source (path or URL).
+	/**
+	 * @brief
+	 *  Cached image texture for one image source (path or URL).
+	 */
 	struct ImageEntry {
 		shared<renderer::gpu::Texture2D> texture;///< Loaded texture (null if load failed or remote).
 		math::vec2ui size;                  ///< Pixel size of the loaded image.
@@ -130,35 +166,74 @@ private:
 		                                    ///< the renderer must flip the V axis at display time.
 	};
 
-	/// @brief Re-parse the Markdown buffer and rebuild per-block render caches.
+	/**
+	 * @brief
+	 *  Re-parse the Markdown buffer and rebuild per-block render caches.
+	 */
 	void rebuildCaches();
-	/// @brief Render one block, recursing into containers as needed.
-	/// @param[in] iBlock Block to render.
-	/// @param[in,out] ioCodeIndex Walking index into `m_codeEditors` (one entry per code block).
-	/// @param[in] iCompact When `true`, suppress trailing inter-paragraph spacing — used while
-	///                     emitting list items so consecutive bullets stay tight.
+
+	/**
+	 * @brief
+	 *  Render one block, recursing into containers as needed.
+	 * @param[in] iBlock Block to render.
+	 * @param[in,out] ioCodeIndex Walking index into `m_codeEditors` (one entry per code block).
+	 * @param[in] iCompact When `true`, suppress trailing inter-paragraph spacing — used while
+	 *                     emitting list items so consecutive bullets stay tight.
+	 */
 	void renderBlock(const MdBlock& iBlock, size_t& ioCodeIndex, bool iCompact);
-	/// @brief Render one inline-span sequence with emphasis / code / link handling.
+
+	/**
+	 * @brief
+	 *  Render one inline-span sequence with emphasis / code / link handling.
+	 */
 	void renderInlineSpans(const std::vector<MdInline>& iSpans);
-	/// @brief Render a code block via the cached read-only `TextEditor`.
+
+	/**
+	 * @brief
+	 *  Render a code block via the cached read-only `TextEditor`.
+	 */
 	void renderCodeBlock(const MdCodeBlock& iCb, size_t& ioCodeIndex);
-	/// @brief Render a table with `BeginTable` / `TableNextColumn`.
+
+	/**
+	 * @brief
+	 *  Render a table with `BeginTable` / `TableNextColumn`.
+	 */
 	void renderTable(const MdTable& iTable);
-	/// @brief Render a list (UL / OL).
+
+	/**
+	 * @brief
+	 *  Render a list (UL / OL).
+	 */
 	void renderList(const MdList& iList, size_t& ioCodeIndex);
-	/// @brief Render a block image (paragraph reduced to a single image span).
+
+	/**
+	 * @brief
+	 *  Render a block image (paragraph reduced to a single image span).
+	 */
 	void renderImage(const std::string& iSrc, const std::string& iAlt);
-	/// @brief Render an inline image span (e.g. README badges) at body line height.
-	/// @param[in] iSrc Image href (path or URL).
-	/// @param[in] iAlt Alt text (used as fallback button label).
-	/// @param[in,out] ioFirstOnLine `false` when a previous span already emitted on the line.
-	/// @param[in] iLinkOpen `true` when wrapped inside a `[…](href)` span.
-	/// @param[in] iLinkHref href to forward on click when `iLinkOpen` is `true`.
+
+	/**
+	 * @brief
+	 *  Render an inline image span (e.g. README badges) at body line height.
+	 * @param[in] iSrc Image href (path or URL).
+	 * @param[in] iAlt Alt text (used as fallback button label).
+	 * @param[in,out] ioFirstOnLine `false` when a previous span already emitted on the line.
+	 * @param[in] iLinkOpen `true` when wrapped inside a `[…](href)` span.
+	 * @param[in] iLinkHref href to forward on click when `iLinkOpen` is `true`.
+	 */
 	void renderInlineImage(const std::string& iSrc, const std::string& iAlt, bool& ioFirstOnLine,
 						   bool iLinkOpen, const std::string& iLinkHref);
-	/// @brief Resolve an image href into a cached `ImageEntry`. Loads on first use.
+
+	/**
+	 * @brief
+	 *  Resolve an image href into a cached `ImageEntry`. Loads on first use.
+	 */
 	auto resolveImage(const std::string& iSrc) -> const ImageEntry&;
-	/// @brief Click test for a link / image — invokes callback or `openExternalUrl`.
+
+	/**
+	 * @brief
+	 *  Click test for a link / image — invokes callback or `openExternalUrl`.
+	 */
 	void handleLinkClick(const std::string& iHref) const;
 
 	/// Last input text seen by `update`.

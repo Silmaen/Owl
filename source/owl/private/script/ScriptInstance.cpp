@@ -15,9 +15,9 @@
 #include "script/LuaEngine.h"
 
 namespace owl::script {
-
 /**
- * @brief Private implementation of ScriptInstance.
+ * @brief
+ *  Private implementation of ScriptInstance.
  *
  * Each instance owns its own LuaEngine (isolated state) so that
  * global variables in one script don't pollute another entity's state.
@@ -41,6 +41,7 @@ auto ScriptInstance::operator=(ScriptInstance&& iOther) noexcept -> ScriptInstan
 
 auto ScriptInstance::create(const std::string& iScriptPath, const uint64_t iEntityId) const -> bool {
 	OWL_PROFILE_FUNCTION()
+
 	if (!mp_impl->engine.isValid())
 		return false;
 	// Register bindings in this instance's state.
@@ -59,6 +60,7 @@ auto ScriptInstance::create(const std::string& iScriptPath, const uint64_t iEnti
 auto ScriptInstance::createFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName,
 									  const uint64_t iEntityId) const -> bool {
 	OWL_PROFILE_FUNCTION()
+
 	if (!mp_impl->engine.isValid())
 		return false;
 	registerBindings(mp_impl->engine.getState());
@@ -108,7 +110,6 @@ auto ScriptInstance::callFunction(const std::string& iName) const -> bool {
 }
 
 // ---- Property access ----
-
 void ScriptInstance::setProperty(const std::string& iName, const float iValue) const {
 	if (!isValid())
 		return;

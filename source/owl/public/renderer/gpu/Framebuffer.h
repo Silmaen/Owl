@@ -2,7 +2,7 @@
  * @file Framebuffer.h
  * @author Silmaen
  * @date 21/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,7 +13,8 @@
 
 namespace owl::renderer::gpu {
 /**
- * @brief Specification for the attachment Framebuffer.
+ * @brief
+ *  Specification for the attachment Framebuffer.
  */
 struct AttachmentSpecification {
 	/// Format for the texture frame buffer.
@@ -45,7 +46,8 @@ struct AttachmentSpecification {
 };
 
 /**
- * @brief Framebuffer specification.
+ * @brief
+ *  Framebuffer specification.
  */
 struct FramebufferSpecification {
 	/// width.
@@ -61,40 +63,50 @@ struct FramebufferSpecification {
 };
 
 /**
- * @brief General class for manipulating frame buffer.
+ * @brief
+ *  General class for manipulating frame buffer.
  */
 class OWL_API Framebuffer {
 public:
 	Framebuffer() = default;
+
 	Framebuffer(const Framebuffer&) = default;
+
 	Framebuffer(Framebuffer&&) = default;
+
 	auto operator=(const Framebuffer&) -> Framebuffer& = default;
+
 	auto operator=(Framebuffer&&) -> Framebuffer& = default;
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	virtual ~Framebuffer();
 
 	/**
-	 * @brief Activate the shader on the GPU.
+	 * @brief
+	 *  Activate the shader on the GPU.
 	 */
 	virtual void bind() = 0;
 
 	/**
-	 * @brief Deactivate the shader on the GPU.
+	 * @brief
+	 *  Deactivate the shader on the GPU.
 	 */
 	virtual void unbind() = 0;
 
 	/**
-	 * @brief Change the size of the frame buffer.
+	 * @brief
+	 *  Change the size of the frame buffer.
 	 * @param[in] iWidth New width.
 	 * @param[in] iHeight New height.
 	 */
 	virtual void resize(uint32_t iWidth, uint32_t iHeight) { resize({iWidth, iHeight}); }
 
 	/**
-	 * @brief Change the size of the frame buffer.
+	 * @brief
+	 *  Change the size of the frame buffer.
 	 * @param[in] iSize New size.
 	 */
 	virtual void resize(math::vec2ui iSize) = 0;
@@ -109,50 +121,60 @@ public:
 	virtual auto readPixel(uint32_t iAttachmentIndex, int iX, int iY) -> int = 0;
 
 	/**
-	 * @brief Reset an attachment with the given value.
+	 * @brief
+	 *  Reset an attachment with the given value.
 	 * @param[in] iAttachmentIndex Index of the attachment.
 	 * @param[in] iValue The new value to affect.
 	 */
 	virtual void clearAttachment(uint32_t iAttachmentIndex, int iValue) = 0;
 
 	/**
-	 * @brief Clear Attachment.
+	 * @brief
+	 *  Clear Attachment.
 	 * @param[in] iAttachmentIndex Attachment's index.
 	 * @param[in] iColorValue Clearing colour value.
 	 */
 	virtual void clearAttachment([[maybe_unused]] uint32_t iAttachmentIndex, [[maybe_unused]] math::vec4 iColorValue) {}
+
 	/**
-	 * @brief Get renderer id.
+	 * @brief
+	 *  Get renderer id.
 	 * @param[in] iIndex The colour Index.
 	 * @return The renderer ID.
 	 */
 	[[nodiscard]] virtual auto getColorAttachmentRendererId(uint32_t iIndex) const -> uint64_t = 0;
 
 	/**
-	 * @brief Returns true if the first byte is the lowest corner.
+	 * @brief
+	 *  Returns true if the first byte is the lowest corner.
 	 * @return True if the data starts by the bottom.
 	 */
 	[[nodiscard]] virtual auto isUpsideDown() const -> bool { return false; }
 
 	/**
-	 * @brief Get the lower point of the data.
+	 * @brief
+	 *  Get the lower point of the data.
 	 * @return The lower point of the data.
 	 */
 	[[nodiscard]] virtual auto getLowerData() const -> math::vec2 { return {0, 0}; }
+
 	/**
-	 * @brief Get the upper point of the data.
+	 * @brief
+	 *  Get the upper point of the data.
 	 * @return The upper point of the data.
 	 */
 	[[nodiscard]] virtual auto getUpperData() const -> math::vec2 { return {1, 1}; }
 
 	/**
-	 * @brief Get the specs.
+	 * @brief
+	 *  Get the specs.
 	 * @return The specs.
 	 */
 	[[nodiscard]] virtual auto getSpecification() const -> const FramebufferSpecification& = 0;
 
 	/**
-	 * @brief Create the frame buffer.
+	 * @brief
+	 *  Create the frame buffer.
 	 * @param[in] iSpec Specifications.
 	 * @return The Frame buffer.
 	 */

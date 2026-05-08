@@ -40,7 +40,6 @@ TEST(MeshRange, VertexIteration) {
 
 	// Modify all vertex coordinates
 	for (auto& coord: MeshVertexRange(mesh, EditCoordinates)) {
-
 		coord.setValue(coord.value() + vec3(0.0f, 0.0f, 1.0f));
 	}
 	for (auto coord: MeshVertexRange(mesh, Coordinates)) {

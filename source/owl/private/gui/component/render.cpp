@@ -2,7 +2,7 @@
  * @file render.cpp
  * @author Silmaen
  * @date 12/30/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -28,7 +28,10 @@ using namespace owl::scene::component;
 namespace owl::gui::component {
 
 namespace {
-/// Attach a tooltip to the last rendered item (shown after a short hover delay).
+/**
+ * @brief
+ *  Attach a tooltip to the last rendered item (shown after a short hover delay).
+ */
 void fieldTooltip(const char* iText) {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 		ImGui::SetTooltip("%s", iText);
@@ -307,7 +310,6 @@ void renderProps(Trigger& ioComponent) {
 		}
 		return "";
 	};
-
 	// the type.
 	const std::string currentName{magic_enum::enum_name(ioComponent.trigger.type)};
 	if (ImGui::BeginCombo("Type", currentName.c_str())) {
@@ -318,47 +320,67 @@ void renderProps(Trigger& ioComponent) {
 			if (ImGui::Selectable(sName.c_str(), currentName == sName))
 				ioComponent.trigger.type = type;
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+
 				ImGui::SetTooltip("%s", triggerDescription(type));
 		}
+
 		ImGui::EndCombo();
 	}
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+
 		ImGui::SetTooltip("%s", triggerDescription(ioComponent.trigger.type));
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Victory ||
 		ioComponent.trigger.type == SceneTrigger::TriggerType::Death) {
 		ImGui::InputText("Scene", &ioComponent.trigger.levelName);
+
 		fieldTooltip("Path to the scene to load (e.g. scenes/victory.owl). Leave empty to use the built-in screen.");
 		if (ioComponent.trigger.levelName.empty())
+
 			ImGui::TextDisabled("Empty = built-in screen");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Teleport) {
 		ImGui::InputText("Level Name", &ioComponent.trigger.levelName);
+
 		fieldTooltip("Destination scene path (e.g. scenes/level2.owl).");
+
 		ImGui::InputText("Target Name", &ioComponent.trigger.targetName);
+
 		fieldTooltip("Name of the entity (Target trigger) that marks where the player appears in the new scene.");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Timer) {
 		ImGui::DragFloat("Duration (s)", &ioComponent.trigger.timerDuration, 0.1f, 0.01f, 3600.0f);
+
 		fieldTooltip("Time in seconds before the callback fires.");
+
 		ImGui::Checkbox("Repeating", &ioComponent.trigger.timerRepeating);
+
 		fieldTooltip("If checked, the timer restarts after each fire. Otherwise it fires once.");
+
 		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+
 		fieldTooltip("Lua function name to call. Defaults to on_timer if empty.");
 		if (ioComponent.trigger.callbackName.empty())
+
 			ImGui::TextDisabled("Default: on_timer");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Interaction) {
 		ImGui::DragFloat("Interaction Range", &ioComponent.trigger.interactionRange, 0.05f, 0.1f, 20.0f);
+
 		fieldTooltip("Distance within which the player can press E to interact.");
+
 		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+
 		fieldTooltip("Lua function name to call. Defaults to on_interact if empty.");
 		if (ioComponent.trigger.callbackName.empty())
+
 			ImGui::TextDisabled("Default: on_interact");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::LuaCallback) {
 		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+
 		fieldTooltip("Lua function name to call when the player overlaps. Defaults to on_triggered if empty.");
 		if (ioComponent.trigger.callbackName.empty())
+
 			ImGui::TextDisabled("Default: on_triggered");
 	}
 	// Info: all overlap triggers also fire on_trigger_enter / on_trigger_exit.
@@ -531,13 +553,13 @@ void renderProps(Canvas& ioComponent) {
 	fieldTooltip("Higher sort order renders on top. Used to layer multiple canvases.");
 }
 
-void renderProps(UIRect& ioComponent) {
+void renderProps(UiRect& ioComponent) {
 	const std::string currentAnchor{magic_enum::enum_name(ioComponent.anchor)};
 	if (ImGui::BeginCombo("Anchor", currentAnchor.c_str())) {
-		for (const auto& anchorName: magic_enum::enum_names<UIRect::Anchor>()) {
+		for (const auto& anchorName: magic_enum::enum_names<UiRect::Anchor>()) {
 			const std::string sName{anchorName};
 			if (ImGui::Selectable(sName.c_str(), currentAnchor == sName))
-				ioComponent.anchor = magic_enum::enum_cast<UIRect::Anchor>(sName).value_or(UIRect::Anchor::Center);
+				ioComponent.anchor = magic_enum::enum_cast<UiRect::Anchor>(sName).value_or(UiRect::Anchor::Center);
 		}
 		ImGui::EndCombo();
 	}
@@ -562,17 +584,17 @@ void renderProps(UIRect& ioComponent) {
 	fieldTooltip("Pixel offset from the anchor point. Positive X goes right, positive Y goes down.");
 }
 
-void renderProps(UIText& ioComponent) {
+void renderProps(UiText& ioComponent) {
 	ImGui::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
 	ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	ImGui::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
 	const std::string currentAlign{magic_enum::enum_name(ioComponent.alignment)};
 	if (ImGui::BeginCombo("Alignment", currentAlign.c_str())) {
-		for (const auto& alignName: magic_enum::enum_names<UIText::Alignment>()) {
+		for (const auto& alignName: magic_enum::enum_names<UiText::Alignment>()) {
 			const std::string sName{alignName};
 			if (ImGui::Selectable(sName.c_str(), currentAlign == sName))
 				ioComponent.alignment =
-						magic_enum::enum_cast<UIText::Alignment>(sName).value_or(UIText::Alignment::Left);
+						magic_enum::enum_cast<UiText::Alignment>(sName).value_or(UiText::Alignment::Left);
 		}
 		ImGui::EndCombo();
 	}
@@ -580,32 +602,32 @@ void renderProps(UIText& ioComponent) {
 	ImGui::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.1f);
 }
 
-void renderProps(UIImage& ioComponent) {
+void renderProps(UiImage& ioComponent) {
 	widgets::textureField("Texture", ioComponent.texture);
 	ImGui::ColorEdit4("Tint", reinterpret_cast<float*>(&ioComponent.tint));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 }
 
-void renderProps(UIPanel& ioComponent) {
+void renderProps(UiPanel& ioComponent) {
 	ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	ImGui::ColorEdit4("Border Color", reinterpret_cast<float*>(&ioComponent.borderColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	ImGui::DragFloat("Border Width", &ioComponent.borderWidth, 0.5f, 0.0f, 20.0f);
 	const std::string currentLayout{magic_enum::enum_name(ioComponent.layout)};
 	if (ImGui::BeginCombo("Layout", currentLayout.c_str())) {
-		for (const auto& layoutName: magic_enum::enum_names<UIPanel::Layout>()) {
+		for (const auto& layoutName: magic_enum::enum_names<UiPanel::Layout>()) {
 			const std::string sName{layoutName};
 			if (ImGui::Selectable(sName.c_str(), currentLayout == sName))
 				ioComponent.layout =
-						magic_enum::enum_cast<UIPanel::Layout>(sName).value_or(UIPanel::Layout::None);
+						magic_enum::enum_cast<UiPanel::Layout>(sName).value_or(UiPanel::Layout::None);
 		}
 		ImGui::EndCombo();
 	}
-	if (ioComponent.layout != UIPanel::Layout::None) {
+	if (ioComponent.layout != UiPanel::Layout::None) {
 		ImGui::DragFloat("Spacing", &ioComponent.spacing, 0.5f, 0.0f, 100.0f);
 		ImGui::DragFloat("Padding", &ioComponent.padding, 0.5f, 0.0f, 100.0f);
 	}
 }
 
-void renderProps(UIButton& ioComponent) {
+void renderProps(UiButton& ioComponent) {
 	ImGui::ColorEdit4("Normal Color", reinterpret_cast<float*>(&ioComponent.normalColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	fieldTooltip("Button background color in the default (not hovered, not pressed) state.");
 	ImGui::ColorEdit4("Hover Color", reinterpret_cast<float*>(&ioComponent.hoverColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -618,7 +640,7 @@ void renderProps(UIButton& ioComponent) {
 	fieldTooltip("Lua function name to call when the button is clicked (e.g. on_play_clicked).");
 }
 
-void renderProps(UISlider& ioComponent) {
+void renderProps(UiSlider& ioComponent) {
 	ImGui::DragFloat("Value", &ioComponent.value, 0.01f, ioComponent.minValue, ioComponent.maxValue);
 	fieldTooltip("Current slider value, clamped between Min and Max.");
 	ImGui::DragFloat("Min", &ioComponent.minValue, 0.1f);
@@ -632,7 +654,7 @@ void renderProps(UISlider& ioComponent) {
 	fieldTooltip("Lua function called when the value changes. Receives the new value in _slider_value.");
 }
 
-void renderProps(UIProgressBar& ioComponent) {
+void renderProps(UiProgressBar& ioComponent) {
 	ImGui::DragFloat("Value", &ioComponent.value, 0.01f, 0.0f, 1.0f);
 	ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	ImGui::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)

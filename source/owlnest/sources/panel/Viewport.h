@@ -2,7 +2,7 @@
  * @file Viewport.h
  * @author Silmaen
  * @date 10/16/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -13,17 +13,20 @@
 #include "../UndoManager.h"
 
 namespace owl::nest {
+
 class EditorLayer;
 class SceneDocument;
 }// namespace owl::nest
 
 namespace owl::nest::panel {
+
 class TilePalette;
 }// namespace owl::nest::panel
 
 namespace owl::nest::panel {
 /**
- * @brief A viewport panel owned by a single `SceneDocument`.
+ * @brief
+ *  A viewport panel owned by a single `SceneDocument`.
  *
  * Each open scene gets its own `Viewport` with a unique ImGui window id
  * (`##<uuid>` suffix). ImGui's docking system groups viewports that share a
@@ -34,45 +37,123 @@ namespace owl::nest::panel {
 class Viewport final : public gui::BasePanel {
 public:
 	Viewport(const Viewport&) = delete;
+
 	Viewport(Viewport&&) = delete;
+
 	auto operator=(const Viewport&) -> Viewport& = delete;
+
 	auto operator=(Viewport&&) -> Viewport& = delete;
 
+	/**
+	 * @brief
+	 *  Default constructor.
+	 */
 	Viewport();
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
 	~Viewport() override;
 
+	/**
+	 * @brief
+	 *  Attach.
+	 */
 	void attach() override;
+
+	/**
+	 * @brief
+	 *  Detach.
+	 */
 	void detach() override;
+
+	/**
+	 * @brief
+	 *  Handle the update event.
+	 * @param[in] iTimeStep Frame time delta.
+	 */
 	void onUpdate(const core::Timestep& iTimeStep) override;
+
+	/**
+	 * @brief
+	 *  Handle the event event.
+	 * @param[in,out] ioEvent The incoming event.
+	 */
 	void onEvent(event::Event& ioEvent) override;
+
+	/**
+	 * @brief
+	 *  Handle the render internal event.
+	 */
 	void onRenderInternal() override;
 
-	/// @brief Full window setup with close button + unsaved-document flag.
+	/**
+	 * @brief
+	 *  Full window setup with close button + unsaved-document flag.
+	 */
 	void onRender() override;
 
-	/// @brief Defines the camera.
+	/**
+	 * @brief
+	 *  Defines the camera.
+	 */
 	void setCamera(const shared<renderer::Camera>& iCamera) { m_camera = iCamera; }
 
-	/// @brief Define the parent editor layer.
+	/**
+	 * @brief
+	 *  Define the parent editor layer.
+	 */
 	void attachParent(EditorLayer* iParent) { m_parent = iParent; }
 
-	/// @brief Bind the scene document this viewport renders. Updates the window id.
+	/**
+	 * @brief
+	 *  Bind the scene document this viewport renders. Updates the window id.
+	 */
 	void setDocument(SceneDocument* iDocument);
-	/// @brief Access the owning scene document (may be null during construction).
+
+	/**
+	 * @brief
+	 *  Access the owning scene document (may be null during construction).
+	 */
 	[[nodiscard]] auto getDocument() const -> SceneDocument* { return mp_document; }
 
-	/// @brief Get the hovered entity.
+	/**
+	 * @brief
+	 *  Get the hovered entity.
+	 */
 	[[nodiscard]] auto getHoveredEntity() const -> scene::Entity { return m_hoveredEntity; }
 
+	/**
+	 * @brief
+	 *  Set the guizmo type.
+	 * @param[in] iType The element type.
+	 */
 	void setGuizmoType(const gui::Guizmo::Type& iType);
+
+	/**
+	 * @brief
+	 *  Get the guizmo type.
+	 * @return The guizmo type.
+	 */
 	[[nodiscard]] auto getGuizmoType() const -> gui::Guizmo::Type;
+
+	/**
+	 * @brief
+	 *  Get the guizmo type i.
+	 * @return The guizmo type i.
+	 */
 	[[nodiscard]] auto getGuizmoTypeI() const -> uint16_t;
 
-	/// Set the undo manager for recording gizmo transform edits.
+	/**
+	 * @brief
+	 *  Set the undo manager for recording gizmo transform edits.
+	 */
 	void setUndoManager(SceneUndoManager* iUndoManager) { mp_undoManager = iUndoManager; }
 
 	/**
-	 * @brief Process a tilemap paint click on the currently selected entity.
+	 * @brief
+	 *  Process a tilemap paint click on the currently selected entity.
 	 *
 	 * Call once per frame, after `onUpdate`, with the active TilePalette and the
 	 * currently-selected entity. When the entity has a `Tilemap`, the palette has
@@ -88,14 +169,37 @@ public:
 	 */
 	void processTilemapPaint(const TilePalette& iPalette, scene::Entity& ioSelected);
 
-	/// @brief True while the user hasn't clicked the tab's close X this frame.
+	/**
+	 * @brief
+	 *  True while the user hasn't clicked the tab's close X this frame.
+	 */
 	[[nodiscard]] auto isOpen() const -> bool { return m_pOpen; }
-	/// @brief Reset the open flag (used by `EditorLayer` after a close is handled or cancelled).
+
+	/**
+	 * @brief
+	 *  Reset the open flag (used by `EditorLayer` after a close is handled or cancelled).
+	 */
 	void setOpen(const bool iOpen) { m_pOpen = iOpen; }
 
 private:
+	/**
+	 * @brief
+	 *  Render gizmo.
+	 */
 	void renderGizmo();
+
+	/**
+	 * @brief
+	 *  Render overlay.
+	 */
 	void renderOverlay() const;
+
+	/**
+	 * @brief
+	 *  Handle the mouse button pressed event.
+	 * @param[in,out] ioEvent The incoming event.
+	 * @return True when the event was consumed.
+	 */
 	auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
 	/// The camera.
 	shared<renderer::Camera> m_camera;

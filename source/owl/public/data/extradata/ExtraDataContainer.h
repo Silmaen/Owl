@@ -2,7 +2,7 @@
  * @file ExtraDataContainer.h
  * @author Silmaen
  * @date 20/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,7 +12,6 @@
 #include <vector>
 
 namespace owl::data::extradata {
-
 /**
  * @brief
  *  This class implements a container for extra data.
@@ -25,10 +24,37 @@ public:
 	using ConstExtraDataIterator = ExtraDataList::const_iterator;
 
 	ExtraDataContainer() = delete;
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
 	~ExtraDataContainer();
+
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	ExtraDataContainer(const ExtraDataContainer&);
+
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	ExtraDataContainer(ExtraDataContainer&&) noexcept;
+
+	/**
+	 * @brief
+	 *  Copy assignment.
+	 * @return A reference to this container.
+	 */
 	auto operator=(const ExtraDataContainer&) -> ExtraDataContainer&;
+
+	/**
+	 * @brief
+	 *  Move assignment.
+	 * @return A reference to this container.
+	 */
 	auto operator=(ExtraDataContainer&&) noexcept -> ExtraDataContainer&;
 
 	/**
@@ -70,19 +96,22 @@ public:
 	void removeExtraData(size_t iIndex);
 
 	/**
-	 * @brief Get the Product ID of the extra data.
+	 * @brief
+	 *  Get the Product ID of the extra data.
 	 * @return The Product ID of the extra data.
 	 */
 	[[nodiscard]] auto getEdPid() const -> core::FactoryPid { return m_edPid; }
 
 	/**
-	 * @brief Resize the extra data container.
+	 * @brief
+	 *  Resize the extra data container.
 	 * @param iNewSize The new size of the extra data container.
 	 */
 	void resize(size_t iNewSize);
 
 	/**
-	 * @brief Reserve capacity in the extra data container.
+	 * @brief
+	 *  Reserve capacity in the extra data container.
 	 * @param iCapacity The capacity to reserve.
 	 */
 	void reserve(const size_t iCapacity) { m_extraDataList.reserve(iCapacity); }
@@ -90,14 +119,17 @@ public:
 private:
 	/// Product ID of the extra data.
 	core::FactoryPid m_edPid{core::INVALID_FACTORY_PID};
+
 	/**
 	 * @brief
 	 *  Clone the current extra data container.
 	 * @return A copy of the current extra data container.
 	 */
 	[[nodiscard]] auto clone() const -> ExtraDataContainer;
+
 	/**
-	 * @brief Initialize or reinitialize the extra data container.
+	 * @brief
+	 *  Initialize or reinitialize the extra data container.
 	 */
 	void init();
 	/// List of extra data.

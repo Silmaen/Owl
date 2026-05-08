@@ -14,13 +14,18 @@
 #include <set>
 
 namespace YAML {
+
 class Node;
 }// namespace YAML
 
-namespace owl::io::pack {
-
 /**
- * @brief Describes an asset reference found in a scene.
+ * @brief
+ *  Packing namespace.
+ */
+namespace owl::io::pack {
+/**
+ * @brief
+ *  Describes an asset reference that is found in a scene.
  */
 struct AssetReference {
 	/// Relative path for the pack entry.
@@ -32,12 +37,14 @@ struct AssetReference {
 };
 
 /**
- * @brief Scans scene files to discover all referenced assets.
+ * @brief
+ *  Scans scene files to discover all referenced assets.
  */
 class OWL_API AssetScanner final {
 public:
 	/**
-	 * @brief Scan a single scene file and return all referenced assets.
+	 * @brief
+	 *  Scan a single scene file and return all referenced assets.
 	 * @param[in] iSceneFile Absolute path to the scene file.
 	 * @param[out] oWarnings Optional output filled with messages for unresolvable references.
 	 * @return All discovered asset references (including the scene itself).
@@ -46,7 +53,8 @@ public:
 										std::vector<std::string>* oWarnings = nullptr) -> std::vector<AssetReference>;
 
 	/**
-	 * @brief Scan all scenes reachable from a project's first scene.
+	 * @brief
+	 *  Scan all scenes reachable from a project's first scene.
 	 * @param[in] iProjectDir The project root directory.
 	 * @param[in] iFirstScene Relative path to the first scene.
 	 * @param[out] oWarnings Optional output filled with messages for unresolvable references.
@@ -57,7 +65,8 @@ public:
 
 private:
 	/**
-	 * @brief Recursively scan a scene and all scenes it links to via teleports.
+	 * @brief
+	 *  Recursively scan a scene and all scenes it links to via teleports.
 	 * @param[in] iSceneFile Scene file to scan.
 	 * @param[in,out] ioVisitedScenes Set of already-visited scene paths (avoids cycles).
 	 * @param[in,out] ioAssets Accumulated deduplicated assets.
@@ -68,14 +77,22 @@ private:
 								   std::vector<AssetReference>& ioAssets,
 								   std::vector<std::string>* ioWarnings);
 
-	/// Scan a single entity node for referenced assets.
+	/**
+	 * @brief
+	 * Scan a single entity node for referenced assets.
+	 * @param[in] iEntity The YAML node representing the entity.
+	 * @param[in] iSceneName The name of the scene containing this entity (for warning messages).
+	 * @param[in,out] ioVisitedScenes Set of already-visited scene paths (for nested scene references).
+	 * @param[in,out] ioAssets Accumulated deduplicated assets.
+	 * @param[in,out] ioWarnings Optional pointer to collect unresolved-reference warnings.
+	 */
 	static void scanEntity(const YAML::Node& iEntity, const std::string& iSceneName,
 						   std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
 						   std::vector<std::string>* ioWarnings);
 
-
 	/**
-	 * @brief Scan a Lua script for scene.load_scene() calls and add referenced scenes.
+	 * @brief
+	 *  Scan a Lua script for scene.load_scene() calls and add referenced scenes.
 	 * @param[in] iScriptPath Absolute path to the Lua script file.
 	 * @param[in,out] ioVisitedScenes Set of already-visited scene paths.
 	 * @param[in,out] ioAssets Accumulated assets.
@@ -87,7 +104,8 @@ private:
 									   std::vector<std::string>* ioWarnings);
 
 	/**
-	 * @brief Scan a Lua script for sound.play() calls and add referenced sound assets.
+	 * @brief
+	 *  Scan a Lua script for sound.play() calls and add referenced sound assets.
 	 * @param[in] iScriptPath Absolute path to the Lua script file.
 	 * @param[in,out] ioAssets Accumulated assets.
 	 * @param[in,out] ioWarnings Optional pointer to collect unresolved-reference warnings.
@@ -97,41 +115,47 @@ private:
 									   std::vector<std::string>* ioWarnings);
 
 	/**
-	 * @brief Collect engine assets required at runtime (shaders, default font).
+	 * @brief
+	 *  Collect engine assets required at runtime (shaders, default font).
 	 * @param[in,out] ioAssets The asset list to append to.
 	 */
 	static void collectEngineAssets(std::vector<AssetReference>& ioAssets);
 
 	/**
-	 * @brief Resolve a texture serialized string to a disk path.
+	 * @brief
+	 *  Resolve a texture serialized string to a disk path.
 	 * @param[in] iSerialized The serialized texture string (nam:, pat:, etc.).
 	 * @return The resolved reference, or nullopt.
 	 */
 	[[nodiscard]] static auto resolveTexture(const std::string& iSerialized) -> std::optional<AssetReference>;
 
 	/**
-	 * @brief Resolve a font name to a disk path.
+	 * @brief
+	 *  Resolve a font name to a disk path.
 	 * @param[in] iFontName The font name.
 	 * @return The resolved reference, or nullopt.
 	 */
 	[[nodiscard]] static auto resolveFont(const std::string& iFontName) -> std::optional<AssetReference>;
 
 	/**
-	 * @brief Resolve a sound asset name to a disk path.
+	 * @brief
+	 *  Resolve a sound asset name to a disk path.
 	 * @param[in] iSoundAsset The sound asset relative path.
 	 * @return The resolved reference, or nullopt.
 	 */
 	[[nodiscard]] static auto resolveSound(const std::string& iSoundAsset) -> std::optional<AssetReference>;
 
 	/**
-	 * @brief Resolve a script path to a disk path.
+	 * @brief
+	 *  Resolve a script path to a disk path.
 	 * @param[in] iScriptPath The script relative path from LuaScript component.
 	 * @return The resolved reference, or nullopt.
 	 */
 	[[nodiscard]] static auto resolveScript(const std::string& iScriptPath) -> std::optional<AssetReference>;
 
 	/**
-	 * @brief Resolve a teleport level name to a scene file path.
+	 * @brief
+	 *  Resolve a teleport level name to a scene file path.
 	 * @param[in] iLevelName The level name from the Trigger component.
 	 * @return The resolved scene file path, or nullopt.
 	 */

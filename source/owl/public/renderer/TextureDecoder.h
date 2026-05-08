@@ -18,9 +18,9 @@
 #include <vector>
 
 namespace owl::renderer {
-
 /**
- * @brief Result of decoding an image buffer or file on the CPU.
+ * @brief
+ *  Result of decoding an image buffer or file on the CPU.
  *
  * The decoder runs without any GPU context, so a `DecodedImage` is safe to
  * produce from a worker thread and hand back to the main thread for upload.
@@ -37,7 +37,8 @@ struct OWL_API DecodedImage {
 };
 
 /**
- * @brief Read only the header of an in-memory image buffer to extract its dimensions.
+ * @brief
+ *  Read only the header of an in-memory image buffer to extract its dimensions.
  * @param[in] iBytes Raw image bytes (PNG, JPG, ...).
  * @return Size in pixels, or `std::nullopt` if the header cannot be parsed.
  *
@@ -47,7 +48,8 @@ struct OWL_API DecodedImage {
 OWL_API auto peekImageSize(std::span<const uint8_t> iBytes) -> std::optional<math::vec2ui>;
 
 /**
- * @brief Decode an image from an in-memory byte buffer.
+ * @brief
+ *  Decode an image from an in-memory byte buffer.
  * @param[in] iBytes Raw image bytes (PNG, JPG, ...).
  * @param[in] iDesiredChannels 0 = native channel count; 3 forces Rgb8; 4 forces Rgba8 (padding alpha when needed).
  * @return Decoded image; `valid == false` on failure.
@@ -58,7 +60,8 @@ OWL_API auto peekImageSize(std::span<const uint8_t> iBytes) -> std::optional<mat
 OWL_API auto decodeImageBytes(std::span<const uint8_t> iBytes, int iDesiredChannels = 0) -> DecodedImage;
 
 /**
- * @brief Decode an image from a file on disk.
+ * @brief
+ *  Decode an image from a file on disk.
  * @param[in] iPath Path to the image file.
  * @param[in] iDesiredChannels 0 = native channel count; 3 forces Rgb8; 4 forces Rgba8.
  * @return Decoded image; `valid == false` on failure (missing file, bad format, unsupported channel count).

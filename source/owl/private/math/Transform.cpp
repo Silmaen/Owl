@@ -2,7 +2,7 @@
  * @file Transform.cpp
  * @author Silmaen
  * @date 30/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -12,7 +12,6 @@
 namespace owl::math {
 
 namespace {
-
 constexpr float g_zero = 0.f;
 constexpr float g_one = 1.f;
 constexpr float g_epsi = epsilon<float>();
@@ -21,6 +20,7 @@ constexpr float g_epsi = epsilon<float>();
 
 Transform::Transform(const vec3& iTranslation, const vec3& iRotation, const vec3& iScale)
 	: m_translation{iTranslation}, m_rotation{iRotation}, m_scale{iScale} {}
+
 Transform::Transform(const vec3& iTranslation, const vec3& iRotation)
 	: m_translation{iTranslation}, m_rotation{iRotation} {}
 

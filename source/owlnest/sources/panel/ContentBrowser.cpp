@@ -2,7 +2,7 @@
  * @file ContentBrowser.cpp
  * @author Silmaen
  * @date 10/01/2023
- * Copyright © 2023 All rights reserved.
+ * Copyright (c) 2023 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -18,7 +18,6 @@
 namespace owl::nest::panel {
 
 namespace {
-
 auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<gui::IconBank::IconInfo> {
 	const auto& iconBank = gui::IconBank::instance();
 	if (is_directory(iPath))
@@ -184,11 +183,11 @@ void ContentBrowser::renderContent() {
 	constexpr float padding = 25.0f;
 	constexpr float thumbnailSize = 80.0f;
 	constexpr float cellSize = thumbnailSize + padding;
-
 	// setup array of icons
 	const float panelWidth = ImGui::GetContentRegionAvail().x;
 	int columnCount = static_cast<int>(panelWidth / cellSize);
 	columnCount = std::max(columnCount, 1);
+
 	ImGui::Columns(columnCount, nullptr, false);
 
 	bool openContextMenu = false;
@@ -198,7 +197,9 @@ void ContentBrowser::renderContent() {
 		const auto& path = directoryEntry.path();
 		auto relativePath = relative(path, m_currentRootPath);
 		const std::string filenameString = relativePath.filename().string();
+
 		ImGui::PushID(filenameString.c_str());
+
 		ImGui::PushStyleColor(ImGuiCol_Button, gui::vec(math::vec4{0.f, 0.f, 0.f, 0.f}));
 		const auto iconInfo = getFileIcon(path);
 		constexpr auto thumbSizeVec = gui::vec(math::vec2{thumbnailSize, thumbnailSize});
@@ -216,11 +217,11 @@ void ContentBrowser::renderContent() {
 			m_renaming = false;
 			openContextMenu = true;
 		}
-
 		// Drag source (existing)
 		if (ImGui::BeginDragDropSource()) {
 			ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", relativePath.string().c_str(),
 									  relativePath.string().size() + 1);
+
 			ImGui::EndDragDropSource();
 		}
 
@@ -233,6 +234,7 @@ void ContentBrowser::renderContent() {
 					moveItem(sourcePath, path);
 				}
 			}
+
 			ImGui::EndDragDropTarget();
 		}
 
@@ -252,14 +254,19 @@ void ContentBrowser::renderContent() {
 						".lua", ".py",  ".c",    ".cpp", ".cc",  ".cxx", ".h", ".hpp",
 						".hxx", ".yml", ".yaml", ".json", ".md", ".markdown", ".svg", ".xml"};
 				if (std::ranges::find(codeExts, ext) != codeExts.end())
+
 					m_codeOpenCallback(path);
 			}
 		}
 		if (iconInfo.has_value())
+
 			ImGui::TextWrapped("%s", filenameString.c_str());
+
 		ImGui::NextColumn();
+
 		ImGui::PopID();
 	}
+
 	ImGui::Columns(1);
 
 	// Right-click on empty space
@@ -268,9 +275,9 @@ void ContentBrowser::renderContent() {
 		m_renaming = false;
 		openContextMenu = true;
 	}
-
 	// Open the popup at window level (outside any PushID scope)
 	if (openContextMenu)
+
 		ImGui::OpenPopup("ContentBrowserContextMenu");
 
 	// Drop target for the content area background (move items to current dir)
@@ -282,6 +289,7 @@ void ContentBrowser::renderContent() {
 				moveItem(sourcePath, m_currentPath);
 			}
 		}
+
 		ImGui::EndDragDropTarget();
 	}
 }
@@ -289,14 +297,13 @@ void ContentBrowser::renderContent() {
 void ContentBrowser::renderContextMenu() {
 	if (!ImGui::BeginPopup("ContentBrowserContextMenu"))
 		return;
-
 	const auto& iconBank = gui::IconBank::instance();
-
 	if (m_selectedPath.empty()) {
 		// Background context menu
 		if (iconBank.menuItem("new_folder", "Create Folder")) {
 			createFolder();
 		}
+
 		ImGui::Separator();
 		if (iconBank.menuItem("import_file", "Import File...")) {
 			importFiles();
@@ -310,6 +317,7 @@ void ContentBrowser::renderContextMenu() {
 		const std::string itemName = m_selectedPath.filename().string();
 
 		ImGui::TextDisabled("%s", itemName.c_str());
+
 		ImGui::Separator();
 
 		// Open scene file
@@ -317,6 +325,7 @@ void ContentBrowser::renderContextMenu() {
 			if (iconBank.menuItem("open", "Open Scene")) {
 				m_sceneOpenCallback(m_selectedPath);
 			}
+
 			ImGui::Separator();
 		}
 
@@ -324,7 +333,6 @@ void ContentBrowser::renderContextMenu() {
 			m_renaming = true;
 			m_renameBuffer = itemName;
 		}
-
 		if (iconBank.menuItem("delete", isDir ? "Delete Folder" : "Delete")) {
 			m_pendingDelete = true;
 		}
@@ -334,6 +342,7 @@ void ContentBrowser::renderContextMenu() {
 		if (iconBank.menuItem("new_folder", "Create Folder")) {
 			createFolder();
 		}
+
 		ImGui::Separator();
 		if (iconBank.menuItem("import_file", "Import File...")) {
 			importFiles();
@@ -353,30 +362,38 @@ void ContentBrowser::renderContextMenu() {
 	if (ImGui::BeginPopupModal("RenameItem", &m_renaming, ImGuiWindowFlags_AlwaysAutoResize)) {
 		ImGui::Text("Rename: %s", m_selectedPath.filename().string().c_str());
 		const bool submitted =
+
 				ImGui::InputText("##rename", &m_renameBuffer, ImGuiInputTextFlags_EnterReturnsTrue);
+
 		ImGui::SameLine();
 		const auto& buttonBank = gui::IconBank::instance();
 		const bool okClicked = buttonBank.iconButton("rename", "OK");
+
 		ImGui::SameLine();
 		if (buttonBank.iconButton("close", "Cancel")) {
 			m_renaming = false;
 			m_selectedPath.clear();
+
 			ImGui::CloseCurrentPopup();
 		}
 		if (submitted || okClicked) {
 			if (!m_renameBuffer.empty()) {
 				const auto newPath = m_selectedPath.parent_path() / m_renameBuffer;
 				std::error_code ec;
+
 				std::filesystem::rename(m_selectedPath, newPath, ec);
 				if (ec)
+
 					OWL_CORE_ERROR("Failed to rename '{}': {}", m_selectedPath.filename().string(), ec.message())
 				else
 					m_rescanRequested = true;
 			}
 			m_renaming = false;
 			m_selectedPath.clear();
+
 			ImGui::CloseCurrentPopup();
 		}
+
 		ImGui::EndPopup();
 	}
 
@@ -388,22 +405,30 @@ void ContentBrowser::renderContextMenu() {
 	if (ImGui::BeginPopupModal("ConfirmDelete", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 		ImGui::Text("Delete '%s'?", m_selectedPath.filename().string().c_str());
 		if (is_directory(m_selectedPath))
+
 			ImGui::TextColored({1.0f, 0.6f, 0.2f, 1.0f}, "This will delete all contents of the folder.");
+
 		ImGui::Separator();
 		const auto& buttonBank = gui::IconBank::instance();
 		const float buttonWidth = ImGui::CalcTextSize("Cancel").x + ImGui::GetFontSize() +
+
 								  ImGui::GetStyle().ItemInnerSpacing.x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		const float totalWidth = buttonWidth * 2.0f + ImGui::GetStyle().ItemSpacing.x;
+
 		ImGui::SetCursorPosX((ImGui::GetWindowSize().x - totalWidth) * 0.5f);
 		if (buttonBank.iconButton("delete", "Delete", {buttonWidth, 0})) {
 			deleteSelected();
+
 			ImGui::CloseCurrentPopup();
 		}
+
 		ImGui::SameLine();
 		if (buttonBank.iconButton("close", "Cancel", {buttonWidth, 0})) {
 			m_selectedPath.clear();
+
 			ImGui::CloseCurrentPopup();
 		}
+
 		ImGui::EndPopup();
 	}
 }

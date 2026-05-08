@@ -12,7 +12,6 @@
 #include <scene/component/Transform.h>
 
 namespace owl::nest::commands {
-
 // --- ReparentCommand ---
 
 ReparentCommand::ReparentCommand(const scene::Entity& iChild, const core::UUID iNewParentUuid)
@@ -54,7 +53,6 @@ auto ReparentCommand::description() const -> std::string {
 }
 
 // --- UnparentCommand ---
-
 UnparentCommand::UnparentCommand(const scene::Entity& iChild)
 	: m_childUuid{iChild.getUUID()},
 	  m_oldParentUuid{iChild.getComponent<scene::component::Hierarchy>().parentId},

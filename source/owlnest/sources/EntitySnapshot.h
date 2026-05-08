@@ -11,9 +11,9 @@
 #include <owl.h>
 
 namespace owl::nest {
-
 /**
- * @brief Captures the complete state of a single entity (UUID, name, all components)
+ * @brief
+ *  Captures the complete state of a single entity (UUID, name, all components)
  *        as a YAML string. Used by undo commands to snapshot/restore entities.
  */
 struct EntitySnapshot {
@@ -23,14 +23,16 @@ struct EntitySnapshot {
 	std::string yamlData;
 
 	/**
-	 * @brief Capture all data from an entity.
+	 * @brief
+	 *  Capture all data from an entity.
 	 * @param[in] iEntity The entity to snapshot.
 	 * @return The snapshot.
 	 */
 	[[nodiscard]] static auto capture(const scene::Entity& iEntity) -> EntitySnapshot;
 
 	/**
-	 * @brief Restore an entity into a scene from this snapshot.
+	 * @brief
+	 *  Restore an entity into a scene from this snapshot.
 	 * @param[in,out] ioScene The scene to create the entity in.
 	 * @return The restored entity.
 	 */
@@ -38,7 +40,8 @@ struct EntitySnapshot {
 };
 
 /**
- * @brief Captures a subtree of entities (parent + all descendants).
+ * @brief
+ *  Captures a subtree of entities (parent + all descendants).
  */
 struct SubtreeSnapshot {
 	/// Snapshots in BFS order (root first).
@@ -47,7 +50,8 @@ struct SubtreeSnapshot {
 	std::vector<core::UUID> parentUuids;
 
 	/**
-	 * @brief Capture a subtree rooted at the given entity.
+	 * @brief
+	 *  Capture a subtree rooted at the given entity.
 	 * @param[in] iRootEntity The root entity.
 	 * @param[in] iScene The scene.
 	 * @return The subtree snapshot.
@@ -55,7 +59,8 @@ struct SubtreeSnapshot {
 	[[nodiscard]] static auto capture(const scene::Entity& iRootEntity, const scene::Scene& iScene) -> SubtreeSnapshot;
 
 	/**
-	 * @brief Restore the entire subtree into a scene.
+	 * @brief
+	 *  Restore the entire subtree into a scene.
 	 * @param[in,out] ioScene The scene to create entities in.
 	 * @return The restored root entity.
 	 */

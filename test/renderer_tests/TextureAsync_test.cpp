@@ -15,7 +15,6 @@ using namespace owl::renderer;
 using namespace owl::renderer::gpu;
 
 namespace {
-
 auto getFixturePathStr() -> std::string {
 	return (owl::test::getRootPath() / "engine_assets" / "textures" / "mario.png").string();
 }
@@ -94,4 +93,10 @@ TEST_F(TextureAsyncFixture, SyncCreateFromSerializedStaysSynchronous) {
 	const auto tex = Texture2D::createFromSerialized("pat:" + getFixturePathStr());
 	ASSERT_NE(tex, nullptr);
 	EXPECT_EQ(tex->getLoadState(), LoadState::Ready);
+}
+
+TEST_F(TextureAsyncFixture, CreateFromMissingFileReturnsNull) {
+	// Direct `create(path)` on a non-existent file: the backend reports failed load and we get a null texture.
+	const auto tex = Texture2D::create(std::filesystem::path{"/no/such/path/missing_texture_xyz.png"});
+	EXPECT_EQ(tex, nullptr);
 }

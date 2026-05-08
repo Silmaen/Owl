@@ -2,7 +2,7 @@
  * @file KeyCodes.h
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,16 +11,19 @@
 #include <cstdint>
 
 /**
- * @brief Namespace for Input management.
+ * @brief
+ *  Namespace for Input management.
  */
 namespace owl::input {
 /// Wrap Key code size.
 using KeyCode = uint16_t;
 
 /**
- * @brief Namespace for key codes.
+ * @brief
+ *  Namespace for key codes.
  */
 namespace key {
+
 enum : KeyCode {
 	// From glfw3.h
 	Space = 32,

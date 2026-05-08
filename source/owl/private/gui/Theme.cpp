@@ -170,7 +170,6 @@ void Theme::saveToFile(const std::filesystem::path& iFile) const {
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 namespace {
-
 auto makeDarkTheme() -> Theme {
 	// Default dark theme — the current one.
 	return {};
@@ -455,8 +454,8 @@ auto makeSolarizedTheme() -> Theme {
 }
 
 }// namespace
-// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
+// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 auto Theme::fromPreset(const ThemePreset iPreset) -> Theme {
 	switch (iPreset) {
 		case ThemePreset::Dark:

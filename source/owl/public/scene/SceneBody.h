@@ -2,7 +2,7 @@
  * @file SceneBody.h
  * @author Silmaen
  * @date 12/30/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,34 +12,45 @@
 #include "math/vectors.h"
 
 namespace owl::scene {
-
 /**
- * @brief Class describing a physical body in the scene.
+ * @brief
+ *  Class describing a physical body in the scene.
  */
 class OWL_API SceneBody final{
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	SceneBody();
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	~SceneBody() = default;
+
 	/**
-	 * @brief Default copy constructor.
+	 * @brief
+	 *  Default copy constructor.
 	 */
 	SceneBody(const SceneBody&) = default;
+
 	/**
-	 * @brief Default move constructor.
+	 * @brief
+	 *  Default move constructor.
 	 */
 	SceneBody(SceneBody&&) = default;
+
 	/**
-	 * @brief Default copy affectation operator.
+	 * @brief
+	 *  Default copy affectation operator.
 	 */
 	auto operator=(const SceneBody&) -> SceneBody& = default;
+
 	/**
-	 * @brief Default move affectation operator.
+	 * @brief
+	 *  Default move affectation operator.
 	 */
 	auto operator=(SceneBody&&) -> SceneBody& = default;
 

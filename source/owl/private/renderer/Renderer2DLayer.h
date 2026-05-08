@@ -2,7 +2,7 @@
  * @file Renderer2DLayer.h
  * @author Silmaen
  * @date 30/04/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -12,9 +12,9 @@
 #include "renderer/RenderLayer.h"
 
 namespace owl::renderer {
-
 /**
- * @brief `RenderLayer` adapter wrapping the existing `Renderer2D` static API.
+ * @brief
+ *  `RenderLayer` adapter wrapping the existing `Renderer2D` static API.
  *
  * Registered with the `RenderLayerFactory` under the type key `"Renderer2D"`
  * during `Renderer::initShaders`. Holds the instance name plus a `Space`
@@ -45,7 +45,8 @@ namespace owl::renderer {
 class OWL_API Renderer2DLayer final : public RenderLayer {
 public:
 	/**
-	 * @brief Coordinate space the layer binds for `Renderer2D`.
+	 * @brief
+	 *  Coordinate space the layer binds for `Renderer2D`.
 	 */
 	enum struct Space : uint8_t {
 		/// Layer binds the active scene camera (sprites/tilemaps follow the world).
@@ -55,44 +56,102 @@ public:
 	};
 
 	Renderer2DLayer(const Renderer2DLayer&) = delete;
+
 	Renderer2DLayer(Renderer2DLayer&&) = delete;
+
 	auto operator=(const Renderer2DLayer&) -> Renderer2DLayer& = delete;
+
 	auto operator=(Renderer2DLayer&&) -> Renderer2DLayer& = delete;
 
-	/// Factory key used by `RenderLayerFactory::registerType`.
+	/**
+	 * @brief
+	 *  Factory key used by `RenderLayerFactory::registerType`.
+	 */
 	static constexpr auto typeKey() -> const char* { return "Renderer2D"; }
 
 	/**
-	 * @brief Register this layer type with the factory (idempotent).
+	 * @brief
+	 *  Register this layer type with the factory (idempotent).
 	 */
 	static void registerWithFactory();
 
 	/**
-	 * @brief Constructor.
+	 * @brief
+	 *  Constructor.
 	 * @param[in] iName The runtime instance name.
 	 */
 	explicit Renderer2DLayer(std::string iName);
 
 	~Renderer2DLayer() override = default;
 
+	/**
+	 * @brief
+	 *  Get the name.
+	 * @return The name.
+	 */
 	[[nodiscard]] auto getName() const -> const std::string& override { return m_name; }
+
+	/**
+	 * @brief
+	 *  Get the type key.
+	 * @return The type key.
+	 */
 	[[nodiscard]] auto getTypeKey() const -> const char* override { return typeKey(); }
 
+	/**
+	 * @brief
+	 *  Handle the begin frame event.
+	 * @param[in] iCamera The camera providing the view/projection used for rendering.
+	 */
 	void onBeginFrame(const Camera& iCamera) override;
+
+	/**
+	 * @brief
+	 *  Handle the render event.
+	 * @param[in,out] ioScene The scene being rendered (entities are queried in-place).
+	 */
 	void onRender(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Handle the end frame event.
+	 */
 	void onEndFrame() override;
+
+	/**
+	 * @brief
+	 *  Apply config.
+	 * @param[in] iConfig YAML node describing the layer configuration.
+	 */
 	void applyConfig(const YAML::Node& iConfig) override;
+
+	/**
+	 * @brief
+	 *  Set the viewport.
+	 * @param[in] iViewport Viewport size in pixels.
+	 */
 	void setViewport(const math::vec2ui& iViewport) override;
+
+	/**
+	 * @brief
+	 *  Get the effective view projection.
+	 * @param[in] iCamera The camera providing the view/projection used for rendering.
+	 * @return The effective view-projection matrix used by this layer.
+	 */
 	[[nodiscard]] auto getEffectiveViewProjection(const Camera& iCamera) const -> math::mat4 override;
 
 	/**
-	 * @brief The coordinate space the layer is currently bound to.
+	 * @brief
+	 *  The coordinate space the layer is currently bound to.
 	 * @return The configured `Space` (`World` or `Screen`).
 	 */
 	[[nodiscard]] auto getSpace() const -> Space { return m_space; }
 
 private:
-	/// Build the pixel-space ortho matching the current viewport.
+	/**
+	 * @brief
+	 *  Build the pixel-space ortho matching the current viewport.
+	 */
 	[[nodiscard]] auto buildPixelOrtho() const -> CameraOrtho;
 
 	/// Runtime instance name (e.g. "default", "hud", "ui").

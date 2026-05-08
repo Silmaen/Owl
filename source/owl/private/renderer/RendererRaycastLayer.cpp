@@ -2,7 +2,7 @@
  * @file RendererRaycastLayer.cpp
  * @author Silmaen
  * @date 04/05/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -28,6 +28,7 @@ RendererRaycastLayer::RendererRaycastLayer(std::string iName) : m_name{std::move
 
 void RendererRaycastLayer::onBeginFrame(const Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
+
 	// Pixel-space ortho camera so the per-stripe quads emitted by `RendererRaycast`
 	// land at exact pixel coordinates. (Origin at bottom-left, X right, Y up.)
 	const auto vw = static_cast<float>(m_viewport.x());
@@ -54,6 +55,7 @@ void RendererRaycastLayer::onRender([[maybe_unused]] scene::Scene& ioScene) {
 
 void RendererRaycastLayer::onEndFrame() {
 	OWL_PROFILE_FUNCTION()
+
 	RendererRaycast::endScene();
 	Renderer2D::endScene();
 	gpu::RenderCommand::setDepthTest(true);

@@ -2,7 +2,7 @@
  * @file Device.cpp
  * @author Silmaen
  * @date 03/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -19,7 +19,6 @@
 namespace owl::io::video::windows {
 
 namespace {
-
 constexpr uint64_t g_mask32 = 0xffffffff;
 
 struct ComControl {
@@ -53,7 +52,6 @@ struct ComControl {
 private:
 	uint64_t refCount = 0;
 };
-
 ComControl cc;
 
 auto getPixelFormatString(const GUID& videoFormat) -> std::string {
@@ -155,7 +153,6 @@ auto getPixelFormatString(const GUID& videoFormat) -> std::string {
 	if (videoFormat == MFVideoFormat_HEVC)
 		return "HEVC";
 	// Ajoutez d'autres formats vidéo au besoin
-
 	// Format inconnu
 	return "Unknown";
 }

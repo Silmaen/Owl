@@ -2,7 +2,7 @@
  * @file ContentBrowser.h
  * @author Silmaen
  * @date 10/01/2023
- * Copyright © 2023 All rights reserved.
+ * Copyright (c) 2023 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,48 +11,60 @@
 #include <owl.h>
 
 namespace owl::nest::panel {
-
 /**
- * @brief Class ContentBrowser
+ * @brief
+ *  Class ContentBrowser
  */
 class ContentBrowser {
 public:
 	ContentBrowser(const ContentBrowser&) = delete;
+
 	ContentBrowser(ContentBrowser&&) = delete;
+
 	auto operator=(const ContentBrowser&) -> ContentBrowser& = delete;
+
 	auto operator=(ContentBrowser&&) -> ContentBrowser& = delete;
+
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	ContentBrowser();
+
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~ContentBrowser() = default;
 
 	/**
-	 * @brief The render command
+	 * @brief
+	 *  The render command
 	 */
 	void onImGuiRender();
 
 	/**
-	 * @brief Detach the content browser from the editor.
+	 * @brief
+	 *  Detach the content browser from the editor.
 	 */
 	void detach();
 
 	/**
-	 * @brief Attach the content browser to the editor.
+	 * @brief
+	 *  Attach the content browser to the editor.
 	 */
 	void attach();
 
 	/**
-	 * @brief Handle files dropped from the OS.
+	 * @brief
+	 *  Handle files dropped from the OS.
 	 * @param[in] iPaths The dropped file paths.
 	 */
 	void handleFileDrop(const std::vector<std::filesystem::path>& iPaths);
 
 	/**
-	 * @brief Set a callback invoked when a scene file is double-clicked.
+	 * @brief
+	 *  Set a callback invoked when a scene file is double-clicked.
 	 * @param[in] iCallback Function taking the scene file path.
 	 */
 	void setSceneOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
@@ -60,7 +72,8 @@ public:
 	}
 
 	/**
-	 * @brief Set a callback invoked when a code / text file is double-clicked
+	 * @brief
+	 *  Set a callback invoked when a code / text file is double-clicked
 	 * (`.lua`, `.py`, `.cpp`, `.yml`, `.json`, `.md`, `.svg`, etc.).
 	 * @param[in] iCallback Function taking the file path.
 	 */
@@ -69,7 +82,8 @@ public:
 	}
 
 	/**
-	 * @brief Set a callback invoked when a node-graph file (`.owlflow`) is double-clicked.
+	 * @brief
+	 *  Set a callback invoked when a node-graph file (`.owlflow`) is double-clicked.
 	 * @param[in] iCallback Function taking the node-graph file path.
 	 */
 	void setNodeGraphOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
@@ -77,7 +91,8 @@ public:
 	}
 
 	/**
-	 * @brief Set a callback invoked when an animation clip (`.owlanim`) is double-clicked.
+	 * @brief
+	 *  Set a callback invoked when an animation clip (`.owlanim`) is double-clicked.
 	 * @param[in] iCallback Function taking the animation clip file path.
 	 */
 	void setAnimationOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
@@ -87,17 +102,16 @@ public:
 private:
 	/// The actual folder
 	std::filesystem::path m_currentPath;
+	/// Project root folder — back-navigation cannot go above this path.
 	std::filesystem::path m_currentRootPath;
-
 	/// Currently selected/right-clicked item (empty = background)
 	std::filesystem::path m_selectedPath;
-
 	/// Rename state
 	bool m_renaming = false;
+	/// Edit buffer for the inline rename input.
 	std::string m_renameBuffer;
 	/// Delete confirmation state
 	bool m_pendingDelete = false;
-
 	/// Cached directory entries (populated asynchronously to avoid per-frame filesystem scans).
 	std::vector<std::filesystem::directory_entry> m_cachedEntries;
 	/// The path that produced the current cached entries.
@@ -111,27 +125,57 @@ private:
 	/// Request a rescan of the current directory on the next frame.
 	bool m_rescanRequested = false;
 
-	/// Kick off an asynchronous scan of the given path.
+	/**
+	 * @brief
+	 *  Kick off an asynchronous scan of the given path.
+	 */
 	void requestScan(const std::filesystem::path& iPath);
 
-	/// Render the navigation/top toolbar.
+	/**
+	 * @brief
+	 *  Render the navigation/top toolbar.
+	 */
 	void renderTopBand();
-	/// Render the file/folder grid content.
+
+	/**
+	 * @brief
+	 *  Render the file/folder grid content.
+	 */
 	void renderContent();
-	/// Render the right-click context menu popup.
+
+	/**
+	 * @brief
+	 *  Render the right-click context menu popup.
+	 */
 	void renderContextMenu();
 
-	/// Delete the currently selected file or folder.
+	/**
+	 * @brief
+	 *  Delete the currently selected file or folder.
+	 */
 	void deleteSelected();
-	/// Create a new folder in the current directory.
+
+	/**
+	 * @brief
+	 *  Create a new folder in the current directory.
+	 */
 	void createFolder();
-	/// Open a file dialog and import a file into the current directory.
+
+	/**
+	 * @brief
+	 *  Open a file dialog and import a file into the current directory.
+	 */
 	void importFiles();
-	/// Open a folder dialog and import a folder into the current directory.
+
+	/**
+	 * @brief
+	 *  Open a folder dialog and import a folder into the current directory.
+	 */
 	void importFolder();
 
 	/**
-	 * @brief Move or copy a file/folder to a destination directory.
+	 * @brief
+	 *  Move or copy a file/folder to a destination directory.
 	 * @param[in] iSource Source path.
 	 * @param[in] iDestDir Destination directory.
 	 */

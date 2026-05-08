@@ -1,5 +1,5 @@
 /**
- * @file UIText.cpp
+ * @file UiText.cpp
  * @author Silmaen
  * @date 10/04/2026
  * Copyright (c) 2026 All rights reserved.
@@ -10,13 +10,13 @@
 #include "core/Application.h"
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
-#include "scene/component/UIText.h"
+#include "scene/component/UiText.h"
 
 #include <magic_enum/magic_enum.hpp>
 
 namespace owl::scene::component {
 
-void UIText::serialize(const core::Serializer& iOut) const {
+void UiText::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "text" << YAML::Value << text;
@@ -31,7 +31,7 @@ void UIText::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
-void UIText::deserialize(const core::Serializer& iNode) {
+void UiText::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["text"])
 		text = iNode.getImpl()->node["text"].as<std::string>();
 	if (iNode.getImpl()->node["color"])

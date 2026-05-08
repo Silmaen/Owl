@@ -19,8 +19,10 @@ OWL_DIAG_POP
 namespace owl::gui::widgets {
 
 namespace {
-
-/// Pack a `[0, 1]` RGBA colour into the IM_COL32 representation expected by ImSequencer.
+/**
+ * @brief
+ *  Pack a `[0, 1]` RGBA colour into the IM_COL32 representation expected by ImSequencer.
+ */
 auto packColor(const math::vec4& iColor) -> uint32_t {
 	const auto clamp01 = [](const float iV) -> float { return std::clamp(iV, 0.f, 1.f); };
 	return IM_COL32(static_cast<int>(clamp01(iColor.x()) * 255.f), static_cast<int>(clamp01(iColor.y()) * 255.f),
@@ -28,7 +30,8 @@ auto packColor(const math::vec4& iColor) -> uint32_t {
 }
 
 /**
- * @brief Adapter exposing a `std::vector<SequencerEntry>` as an `ImSequencer::SequenceInterface`.
+ * @brief
+ *  Adapter exposing a `std::vector<SequencerEntry>` as an `ImSequencer::SequenceInterface`.
  *
  * ImSequencer hands back `int*` to start/end/colour so it can mutate them in place; we mirror
  * the entry data into stable side-by-side `int` vectors before each `Sequencer()` call and
@@ -37,9 +40,13 @@ auto packColor(const math::vec4& iColor) -> uint32_t {
 class EntriesAdapter final : public ImSequencer::SequenceInterface {
 public:
 	EntriesAdapter(const EntriesAdapter&) = delete;
+
 	EntriesAdapter(EntriesAdapter&&) = delete;
+
 	auto operator=(const EntriesAdapter&) -> EntriesAdapter& = delete;
+
 	auto operator=(EntriesAdapter&&) -> EntriesAdapter& = delete;
+
 	~EntriesAdapter() override = default;
 
 	EntriesAdapter(std::vector<SequencerEntry>& ioEntries, const SequencerOptions& iOpts)
@@ -69,7 +76,9 @@ public:
 	}
 
 	[[nodiscard]] auto GetFrameMin() const -> int override { return m_opts.frameMin; }
+
 	[[nodiscard]] auto GetFrameMax() const -> int override { return m_opts.frameMax; }
+
 	[[nodiscard]] auto GetItemCount() const -> int override { return static_cast<int>(m_entries->size()); }
 
 	[[nodiscard]] auto GetItemLabel(const int iIndex) const -> const char* override {
@@ -101,7 +110,6 @@ private:
 	std::vector<unsigned int> m_colorBuf;
 	bool m_dirty{false};
 };
-
 }// namespace
 
 auto sequencer(const char* iLabel, std::vector<SequencerEntry>& ioEntries, int32_t& ioCurrentFrame,

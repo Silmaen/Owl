@@ -575,7 +575,7 @@ asynchronous with progress feedback.
         - Worker thread decodes, termination callback uploads real pixels and flips
           `LoadState` to `Ready` (or `Failed`, leaving the placeholder visible)
         - `createFromSerializedForDeserialize` wrapper lets `SpriteRenderer`,
-          `AnimatedSpriteRenderer`, `BackgroundTexture`, `UIImage` stay a single-line call
+          `AnimatedSpriteRenderer`, `BackgroundTexture`, `UiImage` stay a single-line call
           that goes async under an `Application`, synchronous for `PackWriter` / tests
         - Runner diagnostic trace after each teleport lists the count of still-pending textures
     - ![Done][done] Async scene transitions in runner
@@ -718,7 +718,7 @@ asynchronous with progress feedback.
               Prefab / Any)
             - `gui::widgets::textureField()` consolidates the previously inlined
               thumbnail/popup/remove pattern into one helper used by every texture-aware
-              component (Sprite / AnimatedSprite / BackgroundTexture / UIImage)
+              component (Sprite / AnimatedSprite / BackgroundTexture / UiImage)
             - Drop targets wired on Text font, SoundSource asset and LuaScript path on top
               of their existing widgets
         - ![Done][done] Curve editor for animated properties
@@ -782,8 +782,8 @@ asynchronous with progress feedback.
         - Tooltips on Camera fields (Primary, Projection type, FOV, Near/Far, Ortho Size, Fixed Aspect)
         - Tooltips on SoundSource fields (Asset, Category, Volume, Pitch, Loop, Spatial, Max Distance, Rolloff)
         - Tooltips on SoundListener (Primary)
-        - Tooltips on Canvas (Space, Sort Order), UIRect (Anchor, Pivot, Size, Offset)
-        - Tooltips on UIButton colours + On Click callback, UISlider value/min/max + On Value Changed
+        - Tooltips on Canvas (Space, Sort Order), UiRect (Anchor, Pivot, Size, Offset)
+        - Tooltips on UiButton colours + On Click callback, UiSlider value/min/max + On Value Changed
     - ![Done][done] Unique ImGui IDs audit
         - Component-scoped `PushID(T::name())` in `drawComponent<T>` — prevents label collisions
           between components that share field names (e.g. "Colour" in SpriteRenderer and CircleRenderer)
@@ -863,22 +863,22 @@ application (Linux / Windows).
         - Same lifecycle as editor (on_create, on_update, etc.)
 - In-Game UI
     - ![Done][done] Canvas UI system
-        - `Canvas` component marks UI root, `UIRect` for screen-space layout (anchor, pivot, size, offset)
+        - `Canvas` component marks UI root, `UiRect` for screen-space layout (anchor, pivot, size, offset)
         - Screen-space orthographic rendering via existing Renderer2D pipeline
         - Sort order for layering multiple canvases
     - ![Done][done] Base widgets
-        - UIText (font, size, colour, alignment), UIImage (sprite, tint)
-        - UIButton (normal/hover/pressed/disabled states, Lua callback)
-        - UIPanel (background, border, vertical/horizontal layout)
-        - UISlider (draggable, min/max, callback), UIProgressBar (value, colours)
+        - UiText (font, size, colour, alignment), UiImage (sprite, tint)
+        - UiButton (normal/hover/pressed/disabled states, Lua callback)
+        - UiPanel (background, border, vertical/horizontal layout)
+        - UiSlider (draggable, min/max, callback), UiProgressBar (value, colours)
     - ![Done][done] UI input handling
-        - UIInputSystem: hit-test, hover/pressed state tracking
+        - UiInputSystem: hit-test, hover/pressed state tracking
         - UI consumes mouse events before scene, Lua callback on button click
         - Lua `ui` table: set_text, set_visible, set_progress, slider get/set, button enable/disable
     - ![Done][done] UI editor in Owl Nest
-        - Canvas and UIRect visible in editor viewport with cyan outlines
+        - Canvas and UiRect visible in editor viewport with cyan outlines
         - All widget properties editable in inspector
-        - Component icons for Canvas, UIRect, UIText, UIImage, UIPanel, UIButton, UISlider, UIProgressBar
+        - Component icons for Canvas, UiRect, UiText, UiImage, UiPanel, UiButton, UiSlider, UiProgressBar
     - ![Done][done] Standard game screens
         - Template scenes: Main Menu, Pause Menu, Game Over (`engine_assets/templates/`)
         - Screen transitions: FadeIn/FadeOut via `ScreenTransition` + Lua `ui.transition_fade_in/out`

@@ -2,7 +2,7 @@
  * @file Texture.cpp
  * @author Silmaen
  * @date 12/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -29,6 +29,7 @@ auto glDataFormat(const ImageFormat& iFormat) -> GLenum {
 	}
 	return GL_NONE;
 }
+
 auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
 	switch (iFormat) {
 		case ImageFormat::Rgba8:
@@ -44,8 +45,10 @@ auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
 	}
 	return GL_NONE;
 }
+
 /**
- * @brief Apply min/mag/wrap filter parameters honouring the spec's `filterMode`.
+ * @brief
+ *  Apply min/mag/wrap filter parameters honouring the spec's `filterMode`.
  *
  * `Nearest` snaps both min and mag to `GL_NEAREST` so the texture stays
  * pixel-crisp at any distance — required for the raycaster wall stripes
@@ -68,6 +71,7 @@ void applySamplerFilter(const GLuint iTexture, const FilterMode iMode) {
 }// namespace
 
 Texture2D::Texture2D(std::filesystem::path iPath) : renderer::gpu::Texture2D{std::move(iPath)} {
+
 	OWL_PROFILE_FUNCTION()
 
 	const auto decoded = decodeImageFile(m_path);
@@ -78,6 +82,7 @@ Texture2D::Texture2D(std::filesystem::path iPath) : renderer::gpu::Texture2D{std
 	m_specification.size = decoded.size;
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_textureId);
+
 	glTextureStorage2D(m_textureId, 1, glInternalDataFormat(m_specification.format),
 					   static_cast<GLsizei>(m_specification.size.x()), static_cast<GLsizei>(m_specification.size.y()));
 
@@ -87,9 +92,11 @@ Texture2D::Texture2D(std::filesystem::path iPath) : renderer::gpu::Texture2D{std
 }
 
 Texture2D::Texture2D(const Specification& iSpecs) : renderer::gpu::Texture2D{iSpecs} {
+
 	OWL_PROFILE_FUNCTION()
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_textureId);
+
 	glTextureStorage2D(m_textureId, 1, glInternalDataFormat(m_specification.format),
 					   static_cast<GLsizei>(m_specification.size.x()), static_cast<GLsizei>(m_specification.size.y()));
 
@@ -110,6 +117,7 @@ void Texture2D::bind(const uint32_t iSlot) const {
 
 void Texture2D::setFilterMode(const FilterMode iMode) {
 	OWL_PROFILE_FUNCTION()
+
 	m_specification.filterMode = iMode;
 	if (m_textureId != 0)
 		applySamplerFilter(m_textureId, iMode);

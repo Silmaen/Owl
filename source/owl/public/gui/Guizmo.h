@@ -2,7 +2,7 @@
  * @file Guizmo.h
  * @author Silmaen
  * @date 1/29/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,14 +11,15 @@
 #include "core/Core.h"
 
 namespace owl::gui {
-
 /**
- * @brief Base class for manipulation of guizmos.
+ * @brief
+ *  Base class for manipulation of guizmos.
  */
 class OWL_API Guizmo {
 public:
 	/**
-	 * @brief Types of guizmo.
+	 * @brief
+	 *  Types of guizmo.
 	 */
 	enum struct Type : uint16_t {
 		None = 0,///< Nothing displayed.
@@ -29,30 +30,38 @@ public:
 	};
 
 	/**
-	 * @brief Initialize the guizmo drawing.
+	 * @brief
+	 *  Initialize the guizmo drawing.
 	 * @param iPosition Position in the scene.
 	 * @param iSize Size of the guizmo.
 	 */
 	static void initialize(const math::vec2& iPosition, const math::vec2& iSize);
+
 	/**
-	 * @brief Check if the guizmo is currently be used.
+	 * @brief
+	 *  Check if the guizmo is currently be used.
 	 * @return True if the user is manipulating the guizmo.
 	 */
 	static auto isUsing() -> bool;
+
 	/**
-	 * @brief Check if the user is hovering the guizmo.
+	 * @brief
+	 *  Check if the user is hovering the guizmo.
 	 * @return True if the user is hovering the guizmo.
 	 */
 	static auto isOver() -> bool;
+
 	/**
-	 * @brief Check if the actual guizmo has rotation action.
+	 * @brief
+	 *  Check if the actual guizmo has rotation action.
 	 * @param iType The current type of guizmo used.
 	 * @return True if rotation is active in the guizmo.
 	 */
 	static auto isRotate(const Type& iType) -> bool;
 
 	/**
-	 * @brief Do the manipulation.
+	 * @brief
+	 *  Do the manipulation.
 	 * @param iCameraView The camera view matrix.
 	 * @param iCameraProjection Thre camera projection matrix.
 	 * @param iType The type of guizmo.

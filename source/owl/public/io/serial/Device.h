@@ -2,7 +2,7 @@
  * @file Device.h
  * @author Silmaen
  * @date 05/06/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -16,45 +16,52 @@
 
 
 /**
- * @brief Base namespace for serial IO operations.
+ * @brief
+ *  Base namespace for serial IO operations.
  */
 namespace owl::io::serial {
-
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization)
 static const std::string g_deviceFriendlyName{"unknown"};
 
 /**
- * @brief Description of a device.
+ * @brief
+ *  Description of a device.
  */
 class OWL_API Device final {
 public:
 	/**
-	 * @brief Default Constructor.
+	 * @brief
+	 *  Default Constructor.
 	 */
 	Device();
 
 	/**
-	 * @brief Copy Constructor.
+	 * @brief
+	 *  Copy Constructor.
 	 */
 	Device(const Device&) = default;
 
 	/**
-	 * @brief Move Constructor.
+	 * @brief
+	 *  Move Constructor.
 	 */
 	Device(Device&&) = default;
 
 	/**
-	 * @brief Copy assignation.
+	 * @brief
+	 *  Copy assignation.
 	 */
 	auto operator=(const Device&) -> Device& = default;
 
 	/**
-	 * @brief Move assignation.
+	 * @brief
+	 *  Move assignation.
 	 */
 	auto operator=(Device&&) -> Device& = default;
 
 	/**
-	 * @brief Element Constructor.
+	 * @brief
+	 *  Element Constructor.
 	 * @param[in] iPort The serial port id.
 	 * @param[in] iName The serial name.
 	 * @param[in] iBusInfo The serial bus informations.
@@ -62,12 +69,14 @@ public:
 	Device(std::string iPort, std::string iName, std::string iBusInfo);
 
 	/**
-	 * @brief Destructor.
+	 * @brief
+	 *  Destructor.
 	 */
 	~Device();
 
 	/**
-	 * @brief Access to a friendly name for the device
+	 * @brief
+	 *  Access to a friendly name for the device
 	 * @return Friendly name of the device.
 	 */
 	[[nodiscard]] auto getFriendlyName() const -> const std::string& {
@@ -75,8 +84,10 @@ public:
 			return g_deviceFriendlyName;
 		return m_name;
 	}
+
 	/**
-	 * @brief Hashing function.
+	 * @brief
+	 *  Hashing function.
 	 * @return Device's hash.
 	 */
 	[[nodiscard]] auto hash() const -> size_t {
@@ -84,37 +95,43 @@ public:
 	}
 
 	/**
-	 * @brief Access to the port.
+	 * @brief
+	 *  Access to the port.
 	 * @return Const reference to the port.
 	 */
 	[[nodiscard]] auto port() const -> const std::string& { return m_port; }
 
 	/**
-	 * @brief Access to the port.
+	 * @brief
+	 *  Access to the port.
 	 * @return Reference to the port.
 	 */
 	auto port() -> std::string& { return m_port; }
 
 	/**
-	 * @brief Access to the name.
+	 * @brief
+	 *  Access to the name.
 	 * @return Const reference to the name.
 	 */
 	[[nodiscard]] auto name() const -> const std::string& { return m_name; }
 
 	/**
-	 * @brief Access to the name.
+	 * @brief
+	 *  Access to the name.
 	 * @return Reference to the name.
 	 */
 	auto name() -> std::string& { return m_name; }
 
 	/**
-	 * @brief Access to the busInfo.
+	 * @brief
+	 *  Access to the busInfo.
 	 * @return Const reference to the busInfo.
 	 */
 	[[nodiscard]] auto busInfo() const -> const std::string& { return m_busInfo; }
 
 	/**
-	 * @brief Access to the busInfo.
+	 * @brief
+	 *  Access to the busInfo.
 	 * @return Reference to the busInfo.
 	 */
 	auto busInfo() -> std::string& { return m_busInfo; }

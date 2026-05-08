@@ -28,7 +28,6 @@ OWL_DIAG_POP
 namespace owl::nest::panel {
 
 namespace {
-
 constexpr const char* kDefaultPageId = "README";
 constexpr const char* kIndexFileName = "index.yml";
 
@@ -174,6 +173,7 @@ void HelpPanel::onImGuiRender(const core::Timestep& iTimeStep) {
 	if (!m_visible)
 		return;
 	if (m_pages.empty())
+
 		loadIndex();
 
 	// Always feed the renderer so the debounce timer ticks even when inactive.
@@ -194,13 +194,17 @@ void HelpPanel::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_splitRatio = std::clamp(m_splitRatio, minRatio, maxRatio);
 	const float leftW = std::max(kMinSideW, avail.x * m_splitRatio);
 	const float rightW = std::max(kMinSideW, avail.x - leftW - kSplitterW);
+
 	ImGui::BeginChild("##help_tree", ImVec2{leftW, avail.y}, ImGuiChildFlags_Borders);
 	{
+
 		ImGui::SetNextItemWidth(-FLT_MIN);
 		char buf[128];
+
 		std::snprintf(buf, sizeof(buf), "%s", m_search.c_str());
 		if (ImGui::InputTextWithHint("##help_search", "Filter…", buf, sizeof(buf)))
 			m_search = buf;
+
 		ImGui::Separator();
 
 		const auto needle = toLower(m_search);
@@ -211,6 +215,7 @@ void HelpPanel::onImGuiRender(const core::Timestep& iTimeStep) {
 				continue;
 			if (page.category != currentCategory) {
 				if (!currentCategory.empty() && categoryOpen)
+
 					ImGui::TreePop();
 				currentCategory = page.category;
 				categoryOpen = ImGui::TreeNodeEx(currentCategory.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
@@ -219,12 +224,16 @@ void HelpPanel::onImGuiRender(const core::Timestep& iTimeStep) {
 				continue;
 			const bool selected = page.id == m_currentPageId;
 			if (ImGui::Selectable(page.title.c_str(), selected))
+
 				navigateTo(page.id);
 		}
 		if (categoryOpen)
+
 			ImGui::TreePop();
 	}
+
 	ImGui::EndChild();
+
 	ImGui::SameLine(0.0f, 0.0f);
 
 	// ---- Draggable splitter --------------------------------------------
@@ -235,7 +244,9 @@ void HelpPanel::onImGuiRender(const core::Timestep& iTimeStep) {
 			m_splitRatio = std::clamp(m_splitRatio + dx / avail.x, minRatio, maxRatio);
 	}
 	if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+
 		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+
 	ImGui::SameLine(0.0f, 0.0f);
 
 	// ---- Right side: navigation bar + Markdown content -----------------
@@ -243,35 +254,47 @@ void HelpPanel::onImGuiRender(const core::Timestep& iTimeStep) {
 	{
 		const bool canBack = !m_backStack.empty();
 		const bool canForward = !m_forwardStack.empty();
+
 		ImGui::BeginDisabled(!canBack);
 		if (ImGui::Button("<##help_back") && canBack) {
 			if (!m_currentPageId.empty())
 				m_forwardStack.push_back(m_currentPageId);
 			const auto prev = m_backStack.back();
 			m_backStack.pop_back();
+
 			loadPage(prev);
 		}
+
 		ImGui::EndDisabled();
+
 		ImGui::SameLine();
+
 		ImGui::BeginDisabled(!canForward);
 		if (ImGui::Button(">##help_forward") && canForward) {
 			if (!m_currentPageId.empty())
 				m_backStack.push_back(m_currentPageId);
 			const auto next = m_forwardStack.back();
 			m_forwardStack.pop_back();
+
 			loadPage(next);
 		}
+
 		ImGui::EndDisabled();
+
 		ImGui::SameLine();
 		if (m_currentPageId.empty())
+
 			ImGui::TextDisabled("No page");
 		else
+
 			ImGui::TextDisabled("%s", m_currentPageId.c_str());
+
 		ImGui::Separator();
 
 		const auto contentAvail = ImGui::GetContentRegionAvail();
 		m_renderer.render(contentAvail);
 	}
+
 	ImGui::EndChild();
 
 	ImGui::End();

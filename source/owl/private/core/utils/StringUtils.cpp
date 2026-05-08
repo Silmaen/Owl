@@ -2,7 +2,7 @@
  * @file StringUtils.cpp
  * @author Silmaen
  * @date 29/04/25
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 

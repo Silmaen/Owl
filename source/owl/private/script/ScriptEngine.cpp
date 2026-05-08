@@ -15,9 +15,9 @@
 #include "script/LuaEngine.h"
 
 namespace owl::script {
-
 /**
- * @brief Private implementation of ScriptEngine.
+ * @brief
+ *  Private implementation of ScriptEngine.
  */
 class ScriptEngine::Impl {
 public:
@@ -31,6 +31,7 @@ uniq<ScriptEngine::Impl> ScriptEngine::s_impl;
 
 void ScriptEngine::init(scene::Scene* iScene) {
 	OWL_PROFILE_FUNCTION()
+
 	s_impl = mkUniq<Impl>();
 	s_impl->activeScene = iScene;
 	if (!s_impl->engine.isValid()) {
@@ -44,6 +45,7 @@ void ScriptEngine::init(scene::Scene* iScene) {
 
 void ScriptEngine::shutdown() {
 	OWL_PROFILE_FUNCTION()
+
 	s_impl.reset();
 	OWL_CORE_TRACE("ScriptEngine: Shut down.")
 }

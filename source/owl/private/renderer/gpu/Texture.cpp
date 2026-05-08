@@ -2,7 +2,7 @@
  * @file Texture.cpp
  * @author Silmaen
  * @date 12/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -20,7 +20,6 @@
 #include <fstream>
 
 namespace owl::renderer::gpu {
-
 
 Texture::Texture(std::filesystem::path iPath) : m_path{std::move(iPath)} {}
 
@@ -42,6 +41,7 @@ Texture::Texture(const Specification& iSpecs) : m_specification{iSpecs} {}
 auto Texture::Specification::toString() const -> std::string {
 	return std::format("{}:{}:{}:{}", size.x(), size.y(), magic_enum::enum_name(format), generateMips);
 }
+
 void Texture::Specification::fromString(const std::string& iString) {
 	std::stringstream ss(iString);
 	std::string token;
@@ -80,25 +80,28 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 	switch (api) {
 		case RenderAPI::Type::Null:
 			{
-				if (auto texture = mkShared<null::Texture2D>(iFile); texture->isLoaded())// No data
+				if (auto texture = mkShared<null::Texture2D>(iFile); texture->isLoaded())
 					return texture;
+				OWL_CORE_WARN("Texture: failed to load '{}' (Null backend).", iFile.string())
 				return nullptr;
 			}
 		case RenderAPI::Type::OpenGL:
 			{
-				if (auto texture = mkShared<opengl::Texture2D>(iFile); texture->isLoaded())// No data
+				if (auto texture = mkShared<opengl::Texture2D>(iFile); texture->isLoaded())
 					return texture;
+				OWL_CORE_WARN("Texture: failed to load '{}' (OpenGL backend).", iFile.string())
 				return nullptr;
 			}
 		case RenderAPI::Type::Vulkan:
 			{
-				if (auto texture = mkShared<vulkan::Texture2D>(iFile); texture->isLoaded())// No data
+				if (auto texture = mkShared<vulkan::Texture2D>(iFile); texture->isLoaded())
 					return texture;
+				OWL_CORE_WARN("Texture: failed to load '{}' (Vulkan backend).", iFile.string())
 				return nullptr;
 			}
 	}
 
-	OWL_CORE_ERROR("Unknown RendererAPI ({})", static_cast<int>(api))
+	OWL_CORE_ERROR("Texture: unknown render API ({}).", static_cast<int>(api))
 	return nullptr;
 }
 
@@ -114,13 +117,15 @@ auto Texture2D::create(const Specification& iSpecs) -> shared<Texture2D> {
 			return mkShared<vulkan::Texture2D>(iSpecs);
 	}
 
-	OWL_CORE_ERROR("Unknown RendererAPI ({})", static_cast<int>(api))
+	OWL_CORE_ERROR("Texture: unknown render API ({}).", static_cast<int>(api))
 	return nullptr;
 }
 
 namespace {
-
-/// @brief Read a file on disk into a byte buffer; returns empty on failure.
+/**
+ * @brief
+ *  Read a file on disk into a byte buffer; returns empty on failure.
+ */
 auto readFileBytes(const std::filesystem::path& iPath) -> std::vector<uint8_t> {
 	std::ifstream in(iPath, std::ios::binary | std::ios::ate);
 	if (!in) {
@@ -136,14 +141,20 @@ auto readFileBytes(const std::filesystem::path& iPath) -> std::vector<uint8_t> {
 	return bytes;
 }
 
-/// @brief Source bytes resolved from a `nam:`/`pat:` serialized reference.
+/**
+ * @brief
+ *  Source bytes resolved from a `nam:`/`pat:` serialized reference.
+ */
 struct ResolvedSource {
 	std::vector<uint8_t> bytes;///< File contents (already in memory).
 	std::filesystem::path path;///< Resolved disk path, empty when the bytes came from a pack.
 	std::string name;///< Value of the `nam:` prefix, empty for `pat:`.
 };
 
-/// @brief Resolve a `nam:`/`pat:` reference to its bytes (pack → asset dirs → filesystem).
+/**
+ * @brief
+ *  Resolve a `nam:`/`pat:` reference to its bytes (pack → asset dirs → filesystem).
+ */
 auto resolveTextureSource(std::string_view iKey, const std::string& iValue) -> ResolvedSource {
 	ResolvedSource out;
 	if (iKey == "nam:") {

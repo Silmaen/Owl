@@ -18,9 +18,9 @@
 struct ImVec2;
 
 namespace owl::nest::codeEditor {
-
 /**
- * @brief Live SVG renderer for the code editor preview pane.
+ * @brief
+ *  Live SVG renderer for the code editor preview pane.
  *
  * Parses the input SVG via lunasvg, rasterizes to a `Texture2D` and exposes
  * the texture for `ImGui::Image`. The rasterization is debounced (~250 ms)
@@ -33,17 +33,29 @@ namespace owl::nest::codeEditor {
  */
 class SvgPreview final {
 public:
-	/// @brief Default constructor.
+	/**
+	 * @brief
+	 *  Default constructor.
+	 */
 	SvgPreview();
-	/// @brief Destructor.
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
 	~SvgPreview();
+
 	SvgPreview(const SvgPreview&) = delete;
+
 	SvgPreview(SvgPreview&&) = delete;
+
 	auto operator=(const SvgPreview&) -> SvgPreview& = delete;
+
 	auto operator=(SvgPreview&&) -> SvgPreview& = delete;
 
 	/**
-	 * @brief Feed a new text frame. Re-rasterization is debounced.
+	 * @brief
+	 *  Feed a new text frame. Re-rasterization is debounced.
 	 * @param[in] iTimeStep The current frame timestep.
 	 * @param[in] iText The SVG/XML source.
 	 * @param[in] iTargetSize Desired raster size in pixels (square is enforced via the smaller side).
@@ -51,12 +63,16 @@ public:
 	void update(const core::Timestep& iTimeStep, const std::string& iText, math::vec2ui iTargetSize);
 
 	/**
-	 * @brief Render the latest rasterized SVG inside the current ImGui window/child.
+	 * @brief
+	 *  Render the latest rasterized SVG inside the current ImGui window/child.
 	 * @param[in] iSize Target display size.
 	 */
 	void render(const ImVec2& iSize) const;
 
-	/// @brief True if the latest non-empty parse succeeded.
+	/**
+	 * @brief
+	 *  True if the latest non-empty parse succeeded.
+	 */
 	[[nodiscard]] auto isParseOk() const -> bool { return m_lastParseOk; }
 
 private:
@@ -65,7 +81,10 @@ private:
 	/// Debounce window (seconds).
 	static constexpr float kDebounceSeconds = 0.25f;
 
-	/// Re-rasterize from `m_pendingText` into `m_texture`. Updates `m_lastParseOk`.
+	/**
+	 * @brief
+	 *  Re-rasterize from `m_pendingText` into `m_texture`. Updates `m_lastParseOk`.
+	 */
 	void rasterize();
 
 	/// Last input text seen by `update`.

@@ -2,7 +2,7 @@
  * @file SoundAPI.cpp
  * @author Silmaen
  * @date 11/5/24
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -14,11 +14,12 @@
 
 namespace owl::sound::openal {
 
-
 namespace internal {
+
 struct OpenAlAPI {
 	ALCdevice* device = nullptr;
 	ALCcontext* context = nullptr;
+
 	void reset() {
 		device = nullptr;
 		context = nullptr;

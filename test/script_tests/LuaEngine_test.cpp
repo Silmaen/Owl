@@ -16,7 +16,6 @@
 using namespace owl::script;
 
 namespace {
-
 /// Helper to write a temporary Lua file for testing.
 auto writeTempScript(const std::filesystem::path& iDir, const std::string& iFilename, const std::string& iContent)
 		-> std::filesystem::path {

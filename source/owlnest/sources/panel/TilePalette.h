@@ -2,7 +2,7 @@
  * @file TilePalette.h
  * @author Silmaen
  * @date 02/05/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,9 +11,9 @@
 #include <owl.h>
 
 namespace owl::nest::panel {
-
 /**
- * @brief Tile selection panel for tilemap authoring.
+ * @brief
+ *  Tile selection panel for tilemap authoring.
  *
  * Renders the tileset atlas of the currently selected `Tilemap` entity as a clickable
  * grid: clicking a slot selects that tile index for painting; pressing the eraser
@@ -27,37 +27,47 @@ namespace owl::nest::panel {
 class TilePalette final {
 public:
 	TilePalette() = default;
+
 	~TilePalette() = default;
+
 	TilePalette(const TilePalette&) = delete;
+
 	TilePalette(TilePalette&&) = delete;
+
 	auto operator=(const TilePalette&) -> TilePalette& = delete;
+
 	auto operator=(TilePalette&&) -> TilePalette& = delete;
 
 	/**
-	 * @brief Set the currently inspected entity (read-only; null when no Tilemap).
+	 * @brief
+	 *  Set the currently inspected entity (read-only; null when no Tilemap).
 	 * @param[in] iEntity The current scene-hierarchy selection.
 	 */
 	void setSelectedEntity(const scene::Entity& iEntity) { m_selection = iEntity; }
 
 	/**
-	 * @brief Render the panel.
+	 * @brief
+	 *  Render the panel.
 	 */
 	void onImGuiRender();
 
 	/**
-	 * @brief Currently selected tile index, or `-1` when the eraser is active.
+	 * @brief
+	 *  Currently selected tile index, or `-1` when the eraser is active.
 	 * @return The brush tile index.
 	 */
 	[[nodiscard]] auto getSelectedTile() const -> int32_t { return m_selectedTile; }
 
 	/**
-	 * @brief Currently active painting layer (0-based index into the tilemap's layers).
+	 * @brief
+	 *  Currently active painting layer (0-based index into the tilemap's layers).
 	 * @return The layer index.
 	 */
 	[[nodiscard]] auto getSelectedLayer() const -> uint32_t { return m_selectedLayer; }
 
 	/**
-	 * @brief Whether a paint-capable tilemap selection is active.
+	 * @brief
+	 *  Whether a paint-capable tilemap selection is active.
 	 *
 	 * True when the selection has a `Tilemap` component, with a resolved `tileset`,
 	 * a valid layer index, and a brush tile (paint or erase).

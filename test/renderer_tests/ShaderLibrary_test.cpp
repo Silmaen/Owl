@@ -1,8 +1,8 @@
 
 #include "testHelper.h"
 
-#include <renderer/gpu/RenderCommand.h>
 #include <renderer/Renderer.h>
+#include <renderer/gpu/RenderCommand.h>
 
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;
@@ -44,5 +44,34 @@ TEST(Shader, basis) {
 	EXPECT_STREQ(shader2->getName().c_str(), "super");
 	EXPECT_STREQ(shader2->getRenderer().c_str(), "renderer");
 	RenderCommand::invalidate();
+	owl::core::Log::invalidate();
+}
+
+TEST(Shader, decomposeAndComposeName) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	// Plain name: no renderer.
+	const auto a = Shader::decomposeName("texture");
+	EXPECT_EQ(a.name, "texture");
+	EXPECT_TRUE(a.renderer.empty());
+	// renderer#name form.
+	const auto b = Shader::decomposeName("vulkan#texture");
+	EXPECT_EQ(b.renderer, "vulkan");
+	EXPECT_EQ(b.name, "texture");
+	// Trailing # — invalid, both fields cleared.
+	const auto c = Shader::decomposeName("vulkan#");
+	EXPECT_TRUE(c.name.empty());
+	EXPECT_TRUE(c.renderer.empty());
+	// Round-trip through composeName.
+	EXPECT_EQ(Shader::composeName({.name = "x", .renderer = "y"}), "y#x");
+	EXPECT_EQ(Shader::composeName({.name = "x", .renderer = ""}), "x");
+	owl::core::Log::invalidate();
+}
+
+TEST(Shader, createBeforeRendererInitDoesNotCrash) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	// Renderer not initialised → `requireInit()` returns false, the function
+	// must skip the texture-library lookup and bail out gracefully.
+	const auto sh = Shader::create(Shader::Specification{{.name = "noInit", .renderer = ""}});
+	(void) sh;// behaviour is null-API-dependent — exercise the early-bypass path.
 	owl::core::Log::invalidate();
 }

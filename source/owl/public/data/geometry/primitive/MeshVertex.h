@@ -2,7 +2,7 @@
  * @file MeshVertex.h
  * @author Silmaen
  * @date 18/10/2025
- * Copyright © 2025 All rights reserved.
+ * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -11,45 +11,58 @@
 #include "core/Core.h"
 
 namespace owl::data::geometry::primitive {
-
 /**
- * @brief Class MeshVertex.
+ * @brief
+ *  Class MeshVertex.
  */
 class OWL_API MeshVertex {
 public:
 	/**
-	 * @brief Default constructor.
+	 * @brief
+	 *  Default constructor.
 	 */
 	MeshVertex();
+
 	/**
-	 * @brief Default destructor.
+	 * @brief
+	 *  Default destructor.
 	 */
 	virtual ~MeshVertex();
+
 	/**
-	 * @brief Default copy constructor.
+	 * @brief
+	 *  Default copy constructor.
 	 */
 	MeshVertex(const MeshVertex&) = default;
+
 	/**
-	 * @brief Default move constructor.
+	 * @brief
+	 *  Default move constructor.
 	 */
 	MeshVertex(MeshVertex&&) = default;
+
 	/**
-	 * @brief Default copy affectation operator.
+	 * @brief
+	 *  Default copy affectation operator.
 	 */
 	auto operator=(const MeshVertex&) -> MeshVertex& = default;
+
 	/**
-	 * @brief Default move affectation operator.
+	 * @brief
+	 *  Default move affectation operator.
 	 */
 	auto operator=(MeshVertex&&) -> MeshVertex& = default;
 
 	/**
-	 * @brief Constructor with position.
+	 * @brief
+	 *  Constructor with position.
 	 * @param iPosition The position of the vertex.
 	 */
 	explicit MeshVertex(const math::vec3& iPosition) : m_position(iPosition) {}
 
 	/**
-	 * @brief Assignment operator with position.
+	 * @brief
+	 *  Assignment operator with position.
 	 * @param iPosition The position to assign.
 	 * @return The current vertex.
 	 */
@@ -59,11 +72,13 @@ public:
 	}
 
 	/**
-	 * @brief Compare operator.
+	 * @brief
+	 *  Compare operator.
 	 * @param[in] iOther Other vertex to compare.
 	 * @return True if the vertices are equal.
 	 */
 	constexpr auto operator==(const MeshVertex& iOther) const -> bool { return m_position == iOther.m_position; }
+
 	/**
 	 * @brief
 	 *  Gets the vertex index.
@@ -78,15 +93,16 @@ public:
 	 */
 	constexpr void setIndex(const uint32_t iIndex) { m_index = iIndex; }
 
-
 	/**
-	 * @brief Get the position of the vertex.
+	 * @brief
+	 *  Get the position of the vertex.
 	 * @return The position of the vertex.
 	 */
 	[[nodiscard]] constexpr auto getPosition() const -> const math::vec3& { return m_position; }
 
 	/**
-	 * @brief Get the position of the vertex.
+	 * @brief
+	 *  Get the position of the vertex.
 	 * @return The position of the vertex.
 	 */
 	[[nodiscard]] constexpr auto getPosition() -> math::vec3& { return m_position; }
@@ -98,7 +114,8 @@ public:
 	explicit operator const math::vec3&() const { return m_position; }
 
 	/**
-	 * @brief Set the position of the vertex.
+	 * @brief
+	 *  Set the position of the vertex.
 	 * @param iPosition The position of the vertex.
 	 */
 	void setPosition(const math::vec3& iPosition) { m_position = iPosition; }

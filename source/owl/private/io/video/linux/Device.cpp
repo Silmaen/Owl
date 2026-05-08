@@ -2,7 +2,7 @@
  * @file Device.cpp
  * @author Silmaen
  * @date 03/01/2024
- * Copyright © 2024 All rights reserved.
+ * Copyright (c) 2024 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -24,7 +24,6 @@
 namespace owl::io::video::linux64 {
 
 namespace {
-
 auto getPixelFormatString(const uint32_t iPixelFormat) -> std::string {
 	switch (iPixelFormat) {
 		case V4L2_PIX_FMT_RGB24:
@@ -121,7 +120,6 @@ auto getV4L2PixelFormat(const Device::PixelFormat& iPixelFormat) -> uint32_t {
 }
 
 }// namespace
-
 
 void updateList(std::vector<shared<video::Device>>& ioList) {
 	// check if all listed devices still exists
@@ -224,6 +222,7 @@ void Device::open() {
 			close();
 			return;
 		}
+
 		OWL_CORE_INFO("({}) Using size is {} x {}", m_file, fmt.fmt.pix.width, fmt.fmt.pix.height)
 		OWL_CORE_INFO("({}) Using pixel format: {}", m_file, getPixelFormatString(fmt.fmt.pix.pixelformat))
 		m_pixFormat = getDevicePixelFormat(fmt.fmt.pix.pixelformat);
@@ -247,6 +246,7 @@ void Device::open() {
 		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 		memset(&m_bufferInfo, 0, sizeof(m_bufferInfo));
 		OWL_DIAG_POP
+
 		m_bufferInfo.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		m_bufferInfo.memory = V4L2_MEMORY_MMAP;
 		m_bufferInfo.index = 0;
@@ -258,6 +258,7 @@ void Device::open() {
 			close();
 			return;
 		}
+
 		OWL_CORE_INFO("({}) Buffer info, length {} , offset {}.", m_file, m_bufferInfo.length, m_bufferInfo.m.offset)
 		mp_buffer = mmap(nullptr, m_bufferInfo.length, PROT_READ | PROT_WRITE, MAP_SHARED, m_fileHandler,
 						 m_bufferInfo.m.offset);

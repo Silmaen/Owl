@@ -23,7 +23,6 @@ OWL_DIAG_POP
 namespace owl::gui::widgets {
 
 namespace {
-
 // Floor for an empty node — keeps the title bar legible even on very short titles.
 constexpr auto g_minNodeSize = ImVec2{160.0f, 40.0f};
 // Padding around the title text + every pin label, in pixels. Generous enough that the slot
@@ -53,7 +52,10 @@ auto toImU32(const math::vec4& iColor) -> ImU32 {
 					static_cast<uint8_t>(iColor.z() * 255.0f), static_cast<uint8_t>(iColor.w() * 255.0f));
 }
 
-/// @brief Compute a node's bounding box from its title and pin labels using the live ImGui font.
+/**
+ * @brief
+ *  Compute a node's bounding box from its title and pin labels using the live ImGui font.
+ */
 auto computeNodeSize(const Node& iNode) -> ImVec2 {
 	float maxWidth = ImGui::CalcTextSize(iNode.title.c_str()).x;
 	for (const auto& pin: iNode.inputs)
@@ -71,22 +73,30 @@ auto computeNodeSize(const Node& iNode) -> ImVec2 {
 }// namespace
 
 auto shouldDrawPinLabels(const float iZoomFactor) -> bool { return iZoomFactor > g_pinLabelLodZoom; }
+
 auto shouldDrawNodeTitles(const float iZoomFactor) -> bool { return iZoomFactor > g_titleLodZoom; }
 
 struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	explicit Impl(NodeCanvas& ioOwner) : m_owner{ioOwner} {}
+
 	Impl(const Impl&) = delete;
+
 	Impl(Impl&&) = delete;
+
 	auto operator=(const Impl&) -> Impl& = delete;
+
 	auto operator=(Impl&&) -> Impl& = delete;
+
 	~Impl() override;
 
 	// Runtime state kept in the wrapper (GraphEditor is stateless w.r.t. node IDs).
 	std::vector<bool> m_selected;///< Selection flag per node index.
 	std::vector<GraphEditor::Template> m_templates;///< One template per node — each node uses its own slot definitions.
-	/// Per-template owned colour buffers — `GraphEditor::Template` only holds raw pointers, so the
-	/// backing storage must outlive the template list. Reserved-then-filled in `rebuildTemplates`
-	/// so element addresses stay stable for the entire `Show()` call.
+	/**
+	 * Per-template owned colour buffers — `GraphEditor::Template` only holds raw pointers, so the
+	 * backing storage must outlive the template list. Reserved-then-filled in `rebuildTemplates`
+	 * so element addresses stay stable for the entire `Show()` call.
+	 */
 	struct TemplateBuf {
 		std::vector<ImU32> inputColors;
 		std::vector<ImU32> outputColors;
@@ -97,11 +107,9 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	bool m_enabled = true;
 	/// Single-shot fit-to-content request; consumed by the next `onRender`.
 	GraphEditor::FitOnScreen m_pendingFit = GraphEditor::Fit_None;
-
 	// Double-click tracking.
 	core::UUID m_lastClickedNodeId{0};
 	std::chrono::steady_clock::time_point m_lastClickTime;
-
 	// Callbacks.
 	std::function<bool(core::UUID, core::UUID)> m_linkValidator{[](auto, auto) -> bool { return true; }};
 	std::function<void(core::UUID, core::UUID, core::UUID)> m_onLinkCreated;
@@ -110,19 +118,16 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	std::function<void(core::UUID)> m_onNodeSelected;
 	std::function<void(core::UUID)> m_onNodeDoubleClicked;
 	std::function<void(std::optional<core::UUID>)> m_onContextMenu;
-
 	// Top-left screen position of the GraphEditor canvas, captured each frame just before
 	// `Show()` runs. Used by RightClick to do a fallback hit-test on the node bodies — GraphEditor
 	// only sets `nodeOver` when a slot circle is hovered.
 	ImVec2 m_canvasOriginScreen{0.0f, 0.0f};
-
 	// Per-frame cache of node body rectangles in **screen space** — populated as `CustomDraw`
 	// fires for each visible node. This is the only reliable way to get the exact slot positions
 	// GraphEditor uses for its own rendering (its internal coord transform involves zoom-scaled
 	// pan that we can't easily replicate from `m_viewState.mPosition` alone). Cleared at the
 	// start of each frame.
 	std::unordered_map<core::UUID, ImRect> m_nodeScreenRects;
-
 	// Per-frame snapshot of the canvas-internal `ImDrawList*` (captured during `CustomDraw`).
 	// `ImDrawList` objects persist for the whole frame; appending commands to it after `Show()`
 	// returns simply queues them at the end of the canvas's render pass — exactly the layer we
@@ -191,7 +196,6 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	}
 
 	// --- GraphEditor::Delegate implementation --------------------------------
-
 	auto AllowedLink(GraphEditor::NodeIndex iFrom, GraphEditor::NodeIndex iTo) -> bool override {
 		// GraphEditor's AllowedLink is a coarse node-to-node check (no pin granularity here).
 		// Accept everything here; fine-grained validation (pin types) happens in AddLink using the
@@ -346,24 +350,30 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 		}
 	}
 
-	/// @brief Translate the current ImGui mouse position into canvas-space coordinates so we can
-	///        hit-test against our stored node rects (the canvas pans + zooms, the node positions
-	///        are in canvas space).
+	/**
+	 * @brief
+	 *  Translate the current ImGui mouse position into canvas-space coordinates so we can
+	 *        hit-test against our stored node rects (the canvas pans + zooms, the node positions
+	 *        are in canvas space).
+	 */
 	[[nodiscard]] auto mouseInCanvasSpace() const -> ImVec2 {
 		const auto m = ImGui::GetMousePos();
 		return ImVec2{(m.x - m_canvasOriginScreen.x - m_viewState.mPosition.x) / m_viewState.mFactor,
 					  (m.y - m_canvasOriginScreen.y - m_viewState.mPosition.y) / m_viewState.mFactor};
 	}
 
-	/// @brief Resolve a pin id to (screen position, slot colour).
-	///
-	/// Slot positions match `GraphEditor::GetInputSlotPos` / `GetOutputSlotPos` exactly: GraphEditor
-	/// distributes slots over the **full** node rect (the one we passed via `GetNode`, including
-	/// the title bar) with `slot_y = mRect.Min.y + mRect.GetHeight() * (slotIdx + 1) / (count + 1)`.
-	/// `iRectangle` cached during `CustomDraw` is the **body** rect (header stripped), so we
-	/// reconstruct the full node top from `iRectangle.Max.y - computeNodeSize(node).y * zoom`
-	/// (the rect's bottom IS the node's bottom; the canvas-space full height is known up front).
-	/// For nodes culled off-screen we extrapolate from any cached visible node.
+	/**
+	 * @brief
+	 *  Resolve a pin id to (screen position, slot colour).
+	 *
+	 * Slot positions match `GraphEditor::GetInputSlotPos` / `GetOutputSlotPos` exactly: GraphEditor
+	 * distributes slots over the **full** node rect (the one we passed via `GetNode`, including
+	 * the title bar) with `slot_y = mRect.Min.y + mRect.GetHeight() * (slotIdx + 1) / (count + 1)`.
+	 * `iRectangle` cached during `CustomDraw` is the **body** rect (header stripped), so we
+	 * reconstruct the full node top from `iRectangle.Max.y - computeNodeSize(node).y * zoom`
+	 * (the rect's bottom IS the node's bottom; the canvas-space full height is known up front).
+	 * For nodes culled off-screen we extrapolate from any cached visible node.
+	 */
 	[[nodiscard]] auto pinScreenInfo(core::UUID iPinId) const -> std::optional<std::pair<ImVec2, ImU32>> {
 		const float zoom = m_viewState.mFactor;
 		std::optional<std::pair<core::UUID, ImRect>> reference;
@@ -420,9 +430,12 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 		return std::nullopt;
 	}
 
-	/// @brief Hit-test every pin against the current ImGui mouse position. Uses the cached screen
-	///        rects from `CustomDraw` and the GraphEditor `(i+1)/(N+1)` slot distribution so the
-	///        hit zones line up with the actual visible slot circles.
+	/**
+	 * @brief
+	 *  Hit-test every pin against the current ImGui mouse position. Uses the cached screen
+	 *        rects from `CustomDraw` and the GraphEditor `(i+1)/(N+1)` slot distribution so the
+	 *        hit zones line up with the actual visible slot circles.
+	 */
 	[[nodiscard]] auto findHoveredPin() const -> core::UUID {
 		const ImVec2 mouse = ImGui::GetMousePos();
 		const float zoom = m_viewState.mFactor;
@@ -465,9 +478,12 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 		return bestPin;
 	}
 
-	/// @brief Hit-test every link's Bezier curve against the current mouse position. Returns the
-	///        link id closest to the cursor within `mLineThickness * 2` pixels, else 0.
-	/// @note Sampled approximation — N segments per curve, distance to each segment.
+	/**
+	 * @brief
+	 *  Hit-test every link's Bezier curve against the current mouse position. Returns the
+	 *        link id closest to the cursor within `mLineThickness * 2` pixels, else 0.
+	 * @note Sampled approximation — N segments per curve, distance to each segment.
+	 */
 	[[nodiscard]] auto findHoveredLink() const -> core::UUID {
 		const ImVec2 mouse = ImGui::GetMousePos();
 		const float zoom = m_viewState.mFactor;
@@ -519,25 +535,26 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 		return bestLink;
 	}
 
-	/// @brief Draw a coloured Bezier curve per canvas link.
-	///
-	/// Called AFTER `GraphEditor::Show()` returns so we read the up-to-date `m_viewState` AND so
-	/// every visible node's screen rect has been cached by `CustomDraw`. The canvas-internal
-	/// `ImDrawList*` (also captured during `CustomDraw`) is reused to keep our curves on the
-	/// same layer as the grid + nodes — drawing on the foreground or window draw list would
-	/// either bleed onto other windows or stay clipped behind GraphEditor's child.
+	/**
+	 * @brief
+	 *  Draw a coloured Bezier curve per canvas link.
+	 *
+	 * Called AFTER `GraphEditor::Show()` returns so we read the up-to-date `m_viewState` AND so
+	 * every visible node's screen rect has been cached by `CustomDraw`. The canvas-internal
+	 * `ImDrawList*` (also captured during `CustomDraw`) is reused to keep our curves on the
+	 * same layer as the grid + nodes — drawing on the foreground or window draw list would
+	 * either bleed onto other windows or stay clipped behind GraphEditor's child.
+	 */
 	void renderColouredLinks() {
 		if (m_owner.m_links.empty() || mp_canvasDrawList == nullptr)
 			return;
 		auto* drawList = mp_canvasDrawList;
 		const float zoom = m_viewState.mFactor;
 		const float baseThickness = m_options.mLineThickness * zoom;
-
 		// A link is highlighted when the mouse hovers (a) one of its endpoints, OR (b) the curve
 		// itself. Curve hit-test runs only when no pin is hovered to avoid double-highlighting.
 		const auto hoveredPin = findHoveredPin();
 		const auto hoveredLink = (static_cast<uint64_t>(hoveredPin) == 0) ? findHoveredLink() : core::UUID{0};
-
 		// Cubic Bezier point evaluator — used for both rendering and collision detection.
 		const auto bezierAt = [](const ImVec2& iP0, const ImVec2& iP1, const ImVec2& iP2,
 								 const ImVec2& iP3, float iT) -> ImVec2 {
@@ -549,7 +566,6 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 			return {b0 * iP0.x + b1 * iP1.x + b2 * iP2.x + b3 * iP3.x,
 					b0 * iP0.y + b1 * iP1.y + b2 * iP2.y + b3 * iP3.y};
 		};
-
 		for (const auto& link: m_owner.m_links) {
 			const auto from = pinScreenInfo(link.fromPin);
 			const auto to = pinScreenInfo(link.toPin);
@@ -571,7 +587,6 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 			const float ctrl = std::max(std::abs(dx) * 0.6f, 90.0f * zoom);
 			ImVec2 p1{p0.x + ctrl, p0.y};
 			ImVec2 p2{p3.x - ctrl, p3.y};
-
 			// Collision avoidance — sample the curve and, if it pierces an intermediate node rect,
 			// deflect the control points vertically AWAY from that node's centre. One iteration
 			// is enough for the typical case (graph layouts have light clutter); we cap at 3 to
@@ -606,7 +621,6 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 				p1.y += maxDeflect;
 				p2.y += maxDeflect;
 			}
-
 			ImU32 color = srcColor;
 			float thickness = baseThickness;
 			if (isHighlighted) {
@@ -616,13 +630,13 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 			}
 			drawList->AddBezierCubic(p0, p1, p2, p3, color, thickness);
 		}
-
 		// Delete-key handling — GraphEditor doesn't see our links (`GetLinkCount`==0), so its
 		// own delete shortcut never fires. Hook it ourselves: hovered link + Delete key → fire
 		// the user-installed `m_onLinkDeleted` callback after stripping the link from the model.
 		if (static_cast<uint64_t>(hoveredLink) != 0 && ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
 			m_owner.removeLink(hoveredLink);
 			if (m_onLinkDeleted)
+
 				m_onLinkDeleted(hoveredLink);
 		}
 	}
@@ -655,15 +669,18 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	// GraphEditor::Delegate declares these with `const` on the return type. Both Clang and GCC
 	// warn (`-Wignored-qualifiers`, promoted by `-Werror`) about the useless qualifier; we cannot
 	// change the base signature so we locally silence the warning for the whole override block.
+
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG("-Wignored-qualifiers")
 	OWL_DIAG_DISABLE_GCC("-Wignored-qualifiers")
 	auto GetTemplateCount() -> const size_t override { return m_templates.size(); }
+
 	auto GetTemplate(GraphEditor::TemplateIndex iIndex) -> const GraphEditor::Template override {
 		return m_templates[iIndex];
 	}
 
 	auto GetNodeCount() -> const size_t override { return m_owner.m_nodes.size(); }
+
 	auto GetNode(GraphEditor::NodeIndex iIndex) -> const GraphEditor::Node override {
 		const auto& node = m_owner.m_nodes[iIndex];
 		const auto topLeft = toImVec2(node.position);
@@ -685,6 +702,7 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	// of which we want. We render every link ourselves in `renderColouredLinks`. The links still
 	// live in `m_owner.m_links`; only GraphEditor's view of them is suppressed.
 	auto GetLinkCount() -> const size_t override { return 0; }
+
 	auto GetLink(GraphEditor::LinkIndex iIndex) -> const GraphEditor::Link override {
 		const auto& link = m_owner.m_links[iIndex];
 		GraphEditor::Link out{};
@@ -719,6 +737,7 @@ NodeCanvas::NodeCanvas() : mp_impl{mkUniq<Impl>(*this)} {
 	// graphs unreadable at a glance.
 	mp_impl->m_options.mDrawIONameOnHover = false;
 }
+
 NodeCanvas::~NodeCanvas() = default;
 
 auto NodeCanvas::measureNode(const Node& iNode) -> math::vec2f {
@@ -875,17 +894,23 @@ auto NodeCanvas::selection() const -> std::vector<core::UUID> {
 void NodeCanvas::setLinkValidator(std::function<bool(core::UUID, core::UUID)> iValidator) {
 	mp_impl->m_linkValidator = std::move(iValidator);
 }
+
 void NodeCanvas::setOnLinkCreated(std::function<void(core::UUID, core::UUID, core::UUID)> iCb) {
 	mp_impl->m_onLinkCreated = std::move(iCb);
 }
+
 void NodeCanvas::setOnLinkDeleted(std::function<void(core::UUID)> iCb) { mp_impl->m_onLinkDeleted = std::move(iCb); }
+
 void NodeCanvas::setOnNodeMoved(std::function<void(core::UUID, math::vec2f)> iCb) {
 	mp_impl->m_onNodeMoved = std::move(iCb);
 }
+
 void NodeCanvas::setOnNodeSelected(std::function<void(core::UUID)> iCb) { mp_impl->m_onNodeSelected = std::move(iCb); }
+
 void NodeCanvas::setOnNodeDoubleClicked(std::function<void(core::UUID)> iCb) {
 	mp_impl->m_onNodeDoubleClicked = std::move(iCb);
 }
+
 void NodeCanvas::setOnContextMenu(std::function<void(std::optional<core::UUID>)> iCb) {
 	mp_impl->m_onContextMenu = std::move(iCb);
 }

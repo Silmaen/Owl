@@ -2,7 +2,7 @@
  * @file Tilemap.cpp
  * @author Silmaen
  * @date 02/05/2026
- * Copyright © 2026 All rights reserved.
+ * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  */
 #include "owlpch.h"
@@ -17,12 +17,12 @@
 namespace owl::scene::component {
 
 namespace {
-
 /// Render-empty marker. Mirrors `g_EmptyTileIndex` but in scope of this TU for terseness.
 constexpr int32_t k_Empty = g_EmptyTileIndex;
 
 /**
- * @brief Resize a row-major flat layer buffer in place, copying preserved cells.
+ * @brief
+ *  Resize a row-major flat layer buffer in place, copying preserved cells.
  */
 void resizeLayerStorage(std::vector<int32_t>& ioTiles, uint32_t iOldWidth, uint32_t iOldHeight, uint32_t iNewWidth,
 						uint32_t iNewHeight) {
@@ -41,7 +41,8 @@ void resizeLayerStorage(std::vector<int32_t>& ioTiles, uint32_t iOldWidth, uint3
 }
 
 /**
- * @brief Encode a flat tile buffer as a comma-separated decimal string.
+ * @brief
+ *  Encode a flat tile buffer as a comma-separated decimal string.
  */
 auto encodeTiles(const std::vector<int32_t>& iTiles) -> std::string {
 	std::string out;
@@ -55,7 +56,8 @@ auto encodeTiles(const std::vector<int32_t>& iTiles) -> std::string {
 }
 
 /**
- * @brief Decode a comma-separated tile string into a flat buffer of size `iExpected`.
+ * @brief
+ *  Decode a comma-separated tile string into a flat buffer of size `iExpected`.
  *
  * Missing or malformed entries become `g_EmptyTileIndex`. Surplus entries are
  * truncated to keep the layer aligned to the grid.

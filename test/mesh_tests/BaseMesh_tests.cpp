@@ -117,7 +117,6 @@ TEST(BasicStaticMesh, ExtraData) {
 }
 
 TEST(BasicStaticMesh, MultipleExtraData) {
-
 	Log::init(Log::Level::Off);
 
 	StaticMesh mesh;
@@ -140,7 +139,6 @@ TEST(BasicStaticMesh, MultipleExtraData) {
 
 
 TEST(BasicStaticMesh, MultipleExtraDataCopy) {
-
 	Log::init(Log::Level::Off);
 
 	StaticMesh mesh;

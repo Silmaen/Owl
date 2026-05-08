@@ -1,6 +1,210 @@
 /* Custom styles for Owl Engine documentation */
 
-/* ── Status badges (dark-mode aware) ── */
+/* ═══════════════════════════════════════════════════════════════════════
+ * Override Doxygen's hardcoded white/black colors so they respect the
+ * doxygen-awesome theme variables (light/dark switch).
+ *
+ * Doxygen 1.15 emits raw `background-color: white;` / `color: black;` rules
+ * in `doxygen.css` for several elements (body, blockquote, .fragment,
+ * .directory rows, .doxtable, .fieldtable, .classindex, span.lineno, etc.).
+ * Those rules win in dark mode and produce light-on-light or dark-on-dark
+ * text. This block re-binds them to theme variables.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+body {
+	background-color: var(--page-background-color);
+	color: var(--page-foreground-color);
+}
+
+/* Code fragments / inline `tt` spans */
+div.fragment,
+pre.fragment {
+	background-color: var(--fragment-background) !important;
+	color: var(--fragment-foreground) !important;
+}
+
+span.tt {
+	background-color: var(--code-background) !important;
+	color: var(--code-foreground) !important;
+}
+
+/* Blockquotes */
+blockquote {
+	background-color: var(--blockquote-background) !important;
+	color: var(--blockquote-foreground, var(--page-foreground-color)) !important;
+	border-left-color: var(--blockquote-borderColor, var(--separator-color)) !important;
+}
+
+/* Class index */
+.classindex dl.even {
+	background-color: var(--page-background-color) !important;
+}
+.classindex dl.odd {
+	background-color: var(--odd-color, var(--code-background)) !important;
+}
+.alphachar a {
+	color: var(--primary-color) !important;
+}
+
+/* Directory listings */
+.directory tr.even {
+	background-color: var(--page-background-color) !important;
+}
+.directory tr.odd {
+	background-color: var(--odd-color, var(--code-background)) !important;
+}
+
+/* Tables (.doxtable / .fieldtable / .dirtab) */
+table.doxtable th,
+th.dirtab {
+	background-color: var(--tablehead-background) !important;
+	color: var(--tablehead-foreground) !important;
+}
+table.doxtable td,
+table.doxtable th,
+.dirtab,
+table.fieldtable {
+	border-color: var(--separator-color) !important;
+}
+.fieldtable th {
+	background-color: var(--tablehead-background) !important;
+	color: var(--tablehead-foreground) !important;
+}
+.fieldtable td.fieldtype,
+.fieldtable td.fieldname,
+.fieldtable td.fieldinit,
+.fieldtable td.fielddoc {
+	border-color: var(--separator-color) !important;
+}
+
+/* Code line numbers (`span.lineno`) */
+span.lineno {
+	background-color: var(--code-background) !important;
+	color: var(--page-secondary-foreground-color) !important;
+	border-right-color: var(--separator-color) !important;
+}
+span.lineno a,
+span.lineno a:visited {
+	background-color: var(--code-background) !important;
+	color: var(--primary-color) !important;
+}
+span.lineno a:hover {
+	background-color: var(--code-background) !important;
+	color: var(--primary-dark-color) !important;
+}
+
+/* Member labels (the small "static", "inline", "constexpr" tags) */
+span.mlabel {
+	background-color: var(--primary-color) !important;
+	color: var(--menu-focus-foreground, white) !important;
+	border-color: var(--primary-dark-color) !important;
+	text-shadow: none !important;
+}
+
+/* Icon-style letter glyphs in alphabetical indexes */
+.icon,
+.iconLA {
+	background-color: var(--primary-color) !important;
+	color: var(--menu-focus-foreground, white) !important;
+}
+
+/* `groupHeader` had hardcoded `box-shadow: 13px 0 white` lines that produce
+   a visible bright halo in dark mode. Rebind to the page background. */
+div.groupHeader,
+hr {
+	box-shadow:
+		13px 0 var(--page-background-color),
+		-13px 0 var(--page-background-color),
+		13px 1px var(--separator-color),
+		-13px 1px var(--separator-color) !important;
+	color: var(--page-foreground-color) !important;
+}
+
+/* address tag (used in footers) */
+address {
+	color: var(--page-secondary-foreground-color) !important;
+}
+
+/* XML / VHDL syntax-highlight spans had `color: black` / `color: #000000`
+   which becomes invisible in dark mode. */
+span.xmlcdata,
+span.vhdlchar {
+	color: var(--page-foreground-color) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Dark-mode-only adjustments — additional overrides that need a darker
+ * variant than the generic CSS variable fallback.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+html.dark-mode {
+	/* Doxygen-awesome doesn't define `--blockquote-foreground` or
+	   `--blockquote-borderColor` — provide sensible defaults so blockquotes
+	   read on the dark background. */
+	--blockquote-foreground: var(--page-foreground-color);
+	--blockquote-borderColor: var(--separator-color);
+	--odd-color: rgba(255, 255, 255, 0.04);
+}
+
+@media (prefers-color-scheme: dark) {
+	html:not(.light-mode) {
+		--blockquote-foreground: var(--page-foreground-color);
+		--blockquote-borderColor: var(--separator-color);
+		--odd-color: rgba(255, 255, 255, 0.04);
+	}
+}
+
+html:not(.dark-mode) {
+	/* Keep the original soft alternation in light mode. */
+	--odd-color: #f8f9fc;
+}
+
+/* Folder / document icons in the directory listing — the doxygen.css default
+   uses fixed light-blue tints which clash with the dark backdrop. Re-tint
+   them in dark mode using the primary palette. */
+html.dark-mode .folder-icon,
+html.dark-mode .folder-icon::before {
+	background-color: var(--primary-dark-color) !important;
+	border-color: var(--primary-color) !important;
+}
+html.dark-mode .folder-icon::after {
+	background-color: var(--primary-color) !important;
+	border-color: var(--primary-color) !important;
+}
+html.dark-mode .doc-icon {
+	background-color: var(--primary-dark-color) !important;
+}
+html.dark-mode .doc-icon::before {
+	background-color: var(--primary-light-color) !important;
+}
+html.dark-mode .doc-icon::after {
+	border-color: var(--primary-dark-color) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+	html:not(.light-mode) .folder-icon,
+	html:not(.light-mode) .folder-icon::before {
+		background-color: var(--primary-dark-color) !important;
+		border-color: var(--primary-color) !important;
+	}
+	html:not(.light-mode) .folder-icon::after {
+		background-color: var(--primary-color) !important;
+		border-color: var(--primary-color) !important;
+	}
+	html:not(.light-mode) .doc-icon {
+		background-color: var(--primary-dark-color) !important;
+	}
+	html:not(.light-mode) .doc-icon::before {
+		background-color: var(--primary-light-color) !important;
+	}
+	html:not(.light-mode) .doc-icon::after {
+		border-color: var(--primary-dark-color) !important;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Status badges (Done / In Progress / Planned) — readable in both modes.
+ * ═══════════════════════════════════════════════════════════════════════ */
 
 .badge-done,
 .badge-progress,
@@ -60,21 +264,19 @@ html.dark-mode .badge-planned {
 	}
 }
 
-/* ── Shields.io badge alignment (README / external badges) ── */
+/* ═══════════════════════════════════════════════════════════════════════
+ * Shields.io badges + general layout polish.
+ * ═══════════════════════════════════════════════════════════════════════ */
 
 .contents img[src*="shields.io"] {
 	vertical-align: middle;
 	margin-right: 0.25em;
 }
 
-/* ── Tighter spacing for badge lists ── */
-
 .contents ul li {
 	margin-top: 0.15em;
 	margin-bottom: 0.15em;
 }
-
-/* ── Modern typography and spacing ── */
 
 .contents h1, .contents h2, .contents h3 {
 	letter-spacing: -0.01em;
@@ -86,34 +288,184 @@ html.dark-mode .badge-planned {
 	border-bottom: 1px solid var(--separator-color);
 }
 
-/* ── Directory tables: alternating rows in dark mode ── */
-
-html.dark-mode table.directory tr.even {
-	background-color: rgba(255, 255, 255, .04);
-}
-
-html.dark-mode table.directory tr.odd {
-	background-color: transparent;
-}
-
-@media (prefers-color-scheme: dark) {
-	html:not(.light-mode) table.directory tr.even {
-		background-color: rgba(255, 255, 255, .04);
-	}
-	html:not(.light-mode) table.directory tr.odd {
-		background-color: transparent;
-	}
-}
-
-/* ── Smoother transitions ── */
-
 #side-nav, #nav-tree, #top, .contents, #MSearchBox {
 	transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-/* ── Refined code blocks ── */
-
 div.fragment {
 	border: 1px solid var(--separator-color);
 	border-radius: var(--border-radius-large);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Member declaration tables (`.memberdecls`, `.memitem*`, `.mdescLeft/Right`,
+ * `.memTemplParams`, `td.ititle`) — Doxygen hardcodes the F9FAFC backdrop
+ * and D5DDEC borders, which produce a near-white panel on a dark page.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+.memItemLeft,
+.memItemRight,
+.memTemplParams {
+	background-color: var(--memdef-template-background) !important;
+}
+
+.mdescLeft,
+.mdescRight {
+	color: var(--page-secondary-foreground-color) !important;
+}
+
+.mdescLeft,
+.mdescRight,
+.memTemplParams,
+.memItemLeft,
+.memItemRight,
+td.ititle,
+tr.heading        + tr[class^='memitem'] td.memItemLeft,
+tr.heading        + tr[class^='memitem'] td.memItemRight,
+tr.heading        + tr[class^='memitem'] td.memTemplParams,
+tr.heading        + tr td.ititle,
+tr.groupHeader    + tr[class^='memitem'] td.memItemLeft,
+tr.groupHeader    + tr[class^='memitem'] td.memItemRight,
+tr.groupHeader    + tr[class^='memitem'] td.memTemplParams,
+tr.groupHeader    + tr td.ititle,
+tr.inherit_header + tr[class^='memitem'] td.memItemLeft,
+tr.inherit_header + tr[class^='memitem'] td.memItemRight,
+tr.inherit_header + tr[class^='memitem'] td.memTemplParams,
+table.memberdecls tr:last-child td.memItemLeft,
+table.memberdecls tr:last-child td.memItemRight {
+	border-color: var(--separator-color) !important;
+}
+
+.memTemplParams {
+	color: var(--primary-color) !important;
+}
+
+/* `.memname` (function signatures) and the `h2.memtitle` headings are themed
+   by doxygen-awesome but the explicit border on `.fragment` inside `.memdoc`
+   may inherit the wrong color in dark mode — make sure it uses the separator. */
+div.memdoc div.fragment,
+div.memdoc pre.fragment {
+	border-color: var(--separator-color) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Sidebar navtree + right-hand page TOC (`#nav-tree`, `#page-nav`,
+ * `.ui-resizable-e`, `nav-sync-icon`). `navtree.css` hardcodes light
+ * backgrounds (#F9FAFC, #DCE2EF) and borders (#C4CFE5) that ignore the
+ * dark theme entirely.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+#nav-tree {
+	background-color: var(--side-nav-background) !important;
+	border-right-color: var(--separator-color) !important;
+}
+
+#nav-tree .selected {
+	background-color: var(--primary-light-color) !important;
+}
+html.dark-mode #nav-tree .selected {
+	background-color: var(--primary-dark-color) !important;
+}
+@media (prefers-color-scheme: dark) {
+	html:not(.light-mode) #nav-tree .selected {
+		background-color: var(--primary-dark-color) !important;
+	}
+}
+
+#nav-tree .selected a {
+	color: var(--menu-focus-foreground, var(--page-foreground-color)) !important;
+}
+
+/* Right-hand page outline TOC */
+#page-nav {
+	background: var(--side-nav-background) !important;
+	border-left-color: var(--separator-color) !important;
+}
+
+ul.page-outline li.vis {
+	background-color: var(--side-nav-foreground-hover, rgba(0, 0, 0, 0.05)) !important;
+}
+html.dark-mode ul.page-outline li.vis {
+	background-color: rgba(255, 255, 255, 0.06) !important;
+}
+@media (prefers-color-scheme: dark) {
+	html:not(.light-mode) ul.page-outline li.vis {
+		background-color: rgba(255, 255, 255, 0.06) !important;
+	}
+}
+
+/* Resize handles on the side & page navs */
+.ui-resizable-e,
+#page-nav-resize-handle {
+	background-color: var(--separator-color) !important;
+}
+.ui-resizable-e:after,
+#page-nav-resize-handle:after {
+	border-left-color: var(--page-secondary-foreground-color) !important;
+	border-right-color: var(--page-secondary-foreground-color) !important;
+}
+
+/* Nav-tree sync button */
+div.nav-sync-icon {
+	background-color: var(--side-nav-background) !important;
+	border-color: var(--separator-color) !important;
+}
+div.nav-sync-icon:hover {
+	background-color: var(--menu-focus-background, var(--primary-light-color)) !important;
+}
+div.nav-sync-icon.active:after {
+	background-color: var(--side-nav-background) !important;
+	border-top-color: var(--separator-color) !important;
+}
+span.sync-icon-left,
+span.sync-icon-right {
+	border-color: var(--page-secondary-foreground-color) !important;
+}
+div.nav-sync-icon:hover span.sync-icon-left,
+div.nav-sync-icon:hover span.sync-icon-right {
+	border-color: var(--primary-color) !important;
+}
+
+#nav-path ul {
+	border-top-color: var(--separator-color) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Light-mode default for `--memdef-template-background`. Doxygen-awesome
+ * defines this in dark mode but not in light, so we set the light-mode
+ * fallback ourselves so the override above always resolves to a sensible
+ * value.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+html:not(.dark-mode) {
+	--memdef-template-background: #f9fafc;
+}
+
+@media (prefers-color-scheme: dark) {
+	html:not(.light-mode) {
+		--memdef-template-background: var(--code-background);
+	}
+}
+html.dark-mode {
+	--memdef-template-background: var(--code-background);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * Mermaid diagrams — give them a transparent background so the diagram
+ * inherits the page color in both light and dark mode. The actual theme
+ * (light / dark) is selected dynamically in `header.html` based on the
+ * page state, so we just need to ensure the surrounding chrome isn't
+ * fighting the diagram.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+pre.mermaid {
+	background-color: transparent !important;
+	border: 0 !important;
+	text-align: center;
+	padding: 0.5em 0;
+}
+
+pre.mermaid svg {
+	max-width: 100%;
+	height: auto;
 }

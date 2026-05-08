@@ -2,7 +2,7 @@
  * @file Core.h
  * @author Silmaen
  * @date 04/12/2022
- * Copyright © 2022 All rights reserved.
+ * Copyright (c) 2022 All rights reserved.
  * All modification must get authorization from the author.
  */
 
@@ -47,35 +47,41 @@
 #include <string>
 
 /**
- * @brief Base Namespace for the project.
+ * @brief
+ *  Base Namespace for the project.
  */
 namespace owl {
 /**
- * @brief Gets the version as code with first 2 bytes major, then minor, then patch, then 00.
+ * @brief
+ *  Gets the version as code with first 2 bytes major, then minor, then patch, then 00.
  * @return version code.
  */
 OWL_API auto getVersionCode() -> uint32_t;
 
 /**
- * @brief Gets the major version number.
+ * @brief
+ *  Gets the major version number.
  * @return Major version code.
  */
 OWL_API auto getVersionMajor() -> uint8_t;
 
 /**
- * @brief Gets the minor version number.
+ * @brief
+ *  Gets the minor version number.
  * @return Minor version code.
  */
 OWL_API auto getVersionMinor() -> uint8_t;
 
 /**
- * @brief Gets the patch version number.
+ * @brief
+ *  Gets the patch version number.
  * @return Patch version code.
  */
 OWL_API auto getVersionPatch() -> uint8_t;
 
 /**
- * @brief Gets the engine version as a string x.y.z.
+ * @brief
+ *  Gets the engine version as a string x.y.z.
  * @return The current engin version.
  */
 OWL_API auto getVersionString() -> std::string;
@@ -85,7 +91,8 @@ template<typename T>
 using uniq = std::unique_ptr<T>;
 
 /**
- * @brief Wrap to unique pointer creator.
+ * @brief
+ *  Wrap to unique pointer creator.
  * @tparam T Type of data.
  * @tparam Args Args type to pass to the constructor.
  * @param[in] iArgs Args to pass to the constructor.
@@ -99,9 +106,9 @@ constexpr auto mkUniq(Args&&... iArgs) -> uniq<T> {
 /// Wrap to shared pointer.
 template<typename T>
 using shared = std::shared_ptr<T>;
-
 /**
- * @brief Wrap to shared pointer creator.
+ * @brief
+ *  Wrap to shared pointer creator.
  * @tparam T Type of data.
  * @tparam Args Args type to pass to the constructor.
  * @param[in] iArgs Args to pass to the constructor.

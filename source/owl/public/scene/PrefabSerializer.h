@@ -13,9 +13,9 @@
 #include <optional>
 
 namespace owl::scene {
-
 /**
- * @brief Serializer for prefab files (.owlprefab).
+ * @brief
+ *  Serializer for prefab files (.owlprefab).
  *
  * A prefab is a reusable entity subtree template. The serializer saves/loads
  * entity subtrees and handles UUID remapping during instantiation.
@@ -25,7 +25,8 @@ public:
 	PrefabSerializer() = delete;
 
 	/**
-	 * @brief Serialize an entity subtree to a .owlprefab file.
+	 * @brief
+	 *  Serialize an entity subtree to a .owlprefab file.
 	 * @param[in] iRootEntity The root entity of the subtree.
 	 * @param[in] iScene The scene containing the entity.
 	 * @param[in] iFilepath Path to write the .owlprefab file.
@@ -35,7 +36,8 @@ public:
 						  const std::filesystem::path& iFilepath, const std::string& iPrefabName);
 
 	/**
-	 * @brief Serialize an entity subtree to a YAML string.
+	 * @brief
+	 *  Serialize an entity subtree to a YAML string.
 	 * @param[in] iRootEntity The root entity of the subtree.
 	 * @param[in] iScene The scene containing the entity.
 	 * @param[in] iPrefabName Human-readable name for the prefab.
@@ -45,7 +47,8 @@ public:
 												const std::string& iPrefabName) -> std::string;
 
 	/**
-	 * @brief Instantiate a prefab from file into a scene.
+	 * @brief
+	 *  Instantiate a prefab from file into a scene.
 	 *
 	 * Creates new entities with new UUIDs and adds a PrefabLink component
 	 * to the root entity with the UUID mapping and asset path.
@@ -68,14 +71,16 @@ public:
 	};
 
 	/**
-	 * @brief Read prefab metadata without fully instantiating.
+	 * @brief
+	 *  Read prefab metadata without fully instantiating.
 	 * @param[in] iFilepath Path to the .owlprefab file.
 	 * @return The metadata, or nullopt on failure.
 	 */
 	[[nodiscard]] static auto readInfo(const std::filesystem::path& iFilepath) -> std::optional<PrefabInfo>;
 
 	/**
-	 * @brief Apply prefab updates to an existing instance.
+	 * @brief
+	 *  Apply prefab updates to an existing instance.
 	 *
 	 * Non-overridden components are refreshed from the prefab file.
 	 * Overridden components (listed in PrefabLink::overriddenComponents) are preserved.
@@ -88,7 +93,8 @@ public:
 											  Scene& ioScene) -> bool;
 
 	/**
-	 * @brief Revert all overrides on an instance, making it match the prefab exactly.
+	 * @brief
+	 *  Revert all overrides on an instance, making it match the prefab exactly.
 	 * @param[in] iFilepath Path to the .owlprefab file.
 	 * @param[in,out] ioInstanceRoot Root entity of the prefab instance.
 	 * @param[in,out] ioScene The scene.
