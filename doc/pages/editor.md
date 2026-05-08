@@ -85,7 +85,7 @@ document type.
 | Edit  | Settings | Engine / Editor / Project (small)                                 |
 | Scene | File     | New / Open (large), Save / Save As / Import (small), Close (large)|
 | Scene | Playback | Play / Stop (large), Pause / Step (small)                         |
-| Scene | Gizmo    | Translate / Rotate / Scale (large, toggle)                        |
+| Scene | Gizmo    | Translate / Rotate / Scale (large, toggle), Snap + Step (small)   |
 | Scene | Package  | Pack Scene (large)                                                |
 | Text  | File     | Save / Close (large)                                              |
 
@@ -233,6 +233,34 @@ shortcuts (Q/W/E/R/T):
 | Rotation    | E   | Rotate the entity around axes       |
 | Scale       | R   | Scale the entity along axes         |
 | All         | T   | Combined translate + rotate + scale |
+
+**Snap to grid.** The **Snap** toggle in the Gizmo ribbon group enables a
+grid-aligned mode for translation gizmos. When enabled, dragging a translation
+handle clamps the result to multiples of the configured snap step. Holding
+`Ctrl` during a drag also forces snap on the same step (works whether the
+toggle is on or off, matching the legacy behaviour).
+
+The **Step** small button next to Snap opens a preset dropdown with
+context-aware values:
+
+- when a `Tilemap` exists in the active scene and *Auto step from tilemap* is
+  on, the choices are `1/4 cell`, `1/2 cell`, `1 cell`, `2 cells`, `5 cells`,
+  `10 cells` — they update `snapMultiplier`;
+- otherwise the choices are raw world units `0.25`, `0.5`, `1`, `5`, `10` —
+  they update `snapStep`.
+
+The snap step is resolved every frame:
+
+- when **Auto step from tilemap** is on (default) and the active scene has at
+  least one `Tilemap` component, the step is `cellSize × snapMultiplier` and
+  the entity's final position on drag-end is realigned to the nearest
+  cell-center grid point (with a half-cell offset for even-sized tilemaps),
+  so newly placed entities visually align with cell centers;
+- otherwise the manual `snapStep` value (in world units) is used.
+
+All four knobs (`snapEnabled`, `snapStep`, `snapMultiplier`,
+`snapAutoFromTilemap`) live under `Editor Settings > General > Gizmo Snap`.
+Rotation snap remains fixed at 45° and Scale snap at 0.5.
 
 **Entity picking.** Clicking in the viewport reads the RedInteger attachment at the
 mouse position. If the value is a valid entity ID (not -1), the corresponding entity

@@ -476,18 +476,28 @@ the tilemap system, and scene-to-scene transition effects.
         - Texture filtering: new `renderer::FilterMode` enum, `Tileset` can
           declare `filterMode: Nearest` in YAML so the wall atlas stays
           pixel-crisp at any distance (no LINEAR/mipmap blur on far walls).
-    - ![Planned][planned] Tilemap editor as dedicated asset (`.owltilemap`)
-        - Extract `Tilemap` data out of the `Scene` into a standalone
-          `.owltilemap` asset, mirroring how `Tileset` / `AnimationClip` /
-          `Prefab` are authored.
-        - Dedicated tilemap document in Owl Nest (top-down grid editor with
-          dedicated zoom / pan / brush / fill / rect tools, no scene clutter).
-        - The `Tilemap` component on a scene entity becomes a path reference
-          (`tilemapPath`) — multiple scenes can share the same level data.
-        - In-scene tilemap editing disabled (read-only inspector showing the
-          referenced asset path + "Open in Tilemap Editor" button).
-        - Migration path for the existing inline tilemaps in `world_map.owl`
-          / `platformer_house.owl` / `raycast_demo.owl`.
+    - ![Done][done] Tilemap editor as dedicated asset (`.owltilemap`)
+        - `scene::TilemapAsset` class with full YAML round-trip
+          (`serializeToString` / `deserializeFromString` / `saveToFile` /
+          `loadFromFile`), `addLayer` / `resize` / `getTile` / `setTile` API,
+          13 unit tests covering round-trips, malformed input, short /
+          oversized tile buffers, and file I/O.
+        - `scene::component::Tilemap` is a path-reference component
+          (`tilemapPath` + runtime `asset` shared pointer); render paths
+          (2D + raycast) and physics read from the resolved asset.
+          `Scene::resolveAllTilemapAssets` performs a two-phase load.
+        - `nest::TilemapDocument` (5th `DocumentType`) — three-pane editor
+          (Properties / Canvas / Palette). Zoom + pan, paint / erase strokes,
+          full layer manager, undo via per-stroke `ModifyTilemapAssetCommand`.
+          Fill / flood / rect tools deferred — open as follow-up. The
+          in-scene paint mode is removed; the inspector shows a read-only
+          summary with a drop slot for `.owltilemap` references.
+        - `world_map.owl`, `platformer_house.owl` and `raycast_demo.owl`
+          migrated via `tools/migrate_inline_tilemaps.py`; their inline
+          data lives in `sample_project/tilemaps/*.owltilemap`. The legacy
+          inline reader on `scene::component::Tilemap` is kept as a
+          defensive fallback for unmigrated projects and will be removed in
+          a future release.
     - ![Planned][planned] Floors and ceilings
         - Textured floor/ceiling casting (currently solid colours via the
           backdrop)

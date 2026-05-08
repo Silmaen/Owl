@@ -28,6 +28,8 @@ constexpr float sk_largeInnerPadY = 4.0f;
 constexpr float sk_smallIconSize = 16.0f;
 constexpr float sk_smallLabelPadX = 6.0f;
 constexpr float sk_smallWidthMin = 80.0f;
+constexpr float sk_caretSize = 8.0f;
+constexpr float sk_caretPadX = 4.0f;
 constexpr float sk_groupInnerPadX = 6.0f;
 constexpr float sk_groupContentHeight = 72.0f;
 constexpr float sk_groupLabelGap = 2.0f;
@@ -61,6 +63,19 @@ void drawButtonIcon(const std::string& iIconName, const ImVec2& iCenter, const f
 										 vec(info->uv1));
 }
 
+/**
+ * @brief
+ *  Draw a small downward triangle hint for buttons that open a popup.
+ */
+void drawCaret(const ImVec2& iCenter, const float iSize) {
+	const ImU32 col = ImGui::GetColorU32(ImGuiCol_Text);
+	const float h = iSize * 0.5f;
+	const ImVec2 a{iCenter.x - h, iCenter.y - h * 0.6f};
+	const ImVec2 b{iCenter.x + h, iCenter.y - h * 0.6f};
+	const ImVec2 c{iCenter.x, iCenter.y + h * 0.6f};
+	ImGui::GetWindowDrawList()->AddTriangleFilled(a, b, c, col);
+}
+
 void maybeShowTooltip(const std::string& iTooltip) {
 	if (iTooltip.empty())
 		return;
@@ -76,6 +91,7 @@ auto renderLargeButton(const Ribbon::Button& iButton) -> bool {
 	const auto labelSize = ImGui::CalcTextSize(iButton.label.c_str());
 	const float width = std::max(sk_largeWidthMin, labelSize.x + sk_largeInnerPadX * 2.f);
 	const bool enabled = iButton.isEnabled ? iButton.isEnabled() : true;
+	const bool hasPopup = static_cast<bool>(iButton.popupContents);
 
 	if (!enabled)
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().DisabledAlpha);
@@ -90,13 +106,22 @@ auto renderLargeButton(const Ribbon::Button& iButton) -> bool {
 				   sk_largeIconSize);
 	const ImVec2 textPos{rectMin.x + (width - labelSize.x) * 0.5f, rectMax.y - labelSize.y - sk_largeInnerPadY};
 	ImGui::GetWindowDrawList()->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), iButton.label.c_str());
+	if (hasPopup)
+		drawCaret({rectMax.x - sk_caretSize - sk_caretPadX, rectMax.y - sk_caretSize - sk_largeInnerPadY},
+				  sk_caretSize);
 	if (enabled)
 		maybeShowTooltip(iButton.tooltip);
+	if (clicked && hasPopup)
+		ImGui::OpenPopup("##rb_popup");
+	if (hasPopup && ImGui::BeginPopup("##rb_popup")) {
+		iButton.popupContents();
+		ImGui::EndPopup();
+	}
 	ImGui::PopID();
 
 	if (!enabled)
 		ImGui::PopStyleVar();
-	return clicked;
+	return clicked && !hasPopup;
 }
 
 /**
@@ -105,6 +130,7 @@ auto renderLargeButton(const Ribbon::Button& iButton) -> bool {
  */
 auto renderSmallButton(const Ribbon::Button& iButton, const float iColumnWidth, const float iHeight) -> bool {
 	const bool enabled = iButton.isEnabled ? iButton.isEnabled() : true;
+	const bool hasPopup = static_cast<bool>(iButton.popupContents);
 	if (!enabled)
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().DisabledAlpha);
 
@@ -118,13 +144,21 @@ auto renderSmallButton(const Ribbon::Button& iButton, const float iColumnWidth, 
 	const auto labelSize = ImGui::CalcTextSize(iButton.label.c_str());
 	const ImVec2 textPos{rectMin.x + sk_smallLabelPadX + sk_smallIconSize + sk_smallLabelPadX, cy - labelSize.y * 0.5f};
 	ImGui::GetWindowDrawList()->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), iButton.label.c_str());
+	if (hasPopup)
+		drawCaret({rectMax.x - sk_caretSize * 0.5f - sk_caretPadX, cy}, sk_caretSize);
 	if (enabled)
 		maybeShowTooltip(iButton.tooltip);
+	if (clicked && hasPopup)
+		ImGui::OpenPopup("##rb_popup");
+	if (hasPopup && ImGui::BeginPopup("##rb_popup")) {
+		iButton.popupContents();
+		ImGui::EndPopup();
+	}
 	ImGui::PopID();
 
 	if (!enabled)
 		ImGui::PopStyleVar();
-	return clicked;
+	return clicked && !hasPopup;
 }
 
 /**
@@ -133,12 +167,16 @@ auto renderSmallButton(const Ribbon::Button& iButton, const float iColumnWidth, 
  */
 auto measureSmallColumnWidth(const std::vector<const Ribbon::Button*>& iStack) -> float {
 	float maxLabel = 0.f;
+	bool anyHasPopup = false;
 	for (const auto* btn: iStack) {
 		const auto sz = ImGui::CalcTextSize(btn->label.c_str());
 		maxLabel = std::max(maxLabel, sz.x);
+		if (btn->popupContents)
+			anyHasPopup = true;
 	}
-	return std::max(sk_smallWidthMin,
-					sk_smallLabelPadX + sk_smallIconSize + sk_smallLabelPadX + maxLabel + sk_smallLabelPadX);
+	const float caretWidth = anyHasPopup ? (sk_caretSize + sk_caretPadX * 2.f) : 0.f;
+	return std::max(sk_smallWidthMin, sk_smallLabelPadX + sk_smallIconSize + sk_smallLabelPadX + maxLabel +
+											  sk_smallLabelPadX + caretWidth);
 }
 
 /**

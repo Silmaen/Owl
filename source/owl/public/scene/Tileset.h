@@ -30,6 +30,16 @@ struct OWL_API TileMeta {
 	bool collidable = false;
 	/// Optional human-readable name (shown in the tile palette tooltip).
 	std::string name;
+	/**
+	 * @brief
+	 *  Whether `chromaKeyColor` is treated as fully transparent when this tile is rendered.
+	 *
+	 * Stored on the tileset; the renderer-side application is wired up in a later patch — for
+	 * the v0.2.x cycle the field is captured at authoring time only.
+	 */
+	bool chromaKeyEnabled = false;
+	/// RGB chroma key — pixels matching this colour become alpha 0 when `chromaKeyEnabled` is true.
+	math::vec3 chromaKeyColor{1.f, 0.f, 1.f};
 };
 
 /**
@@ -113,11 +123,47 @@ public:
 	 *  Resize the atlas grid and reset per-tile metadata to defaults.
 	 *
 	 * Any previously stored metadata is discarded — caller is expected to
-	 * re-author after a resize.
+	 * re-author after a resize. For non-destructive growth use the
+	 * `addRow` / `addColumn` helpers instead.
 	 * @param[in] iColumns New column count (>= 1).
 	 * @param[in] iRows New row count (>= 1).
 	 */
 	void resize(uint32_t iColumns, uint32_t iRows);
+
+	/**
+	 * @brief
+	 *  Append a new row of empty tile slots at the bottom of the atlas, preserving existing metadata.
+	 */
+	void addRow();
+
+	/**
+	 * @brief
+	 *  Remove the last row of tile slots (no-op when only one row remains).
+	 */
+	void removeRow();
+
+	/**
+	 * @brief
+	 *  Append a new column of empty tile slots at the right of the atlas, preserving existing metadata.
+	 */
+	void addColumn();
+
+	/**
+	 * @brief
+	 *  Remove the last column of tile slots (no-op when only one column remains).
+	 */
+	void removeColumn();
+
+	/**
+	 * @brief
+	 *  Swap two tile slots' metadata in the grid (visual reordering of tile metadata).
+	 *
+	 * Out-of-range indices are silently ignored. The texture pixels are not modified — only
+	 * the per-tile metadata (collidable / name / chroma key) is exchanged.
+	 * @param[in] iLhs Index of the first slot.
+	 * @param[in] iRhs Index of the second slot.
+	 */
+	void swapTiles(uint32_t iLhs, uint32_t iRhs);
 
 	/**
 	 * @brief

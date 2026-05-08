@@ -34,7 +34,7 @@ AnimationDocument::~AnimationDocument() = default;
 
 auto AnimationDocument::title() const -> std::string {
 	if (!m_path.empty())
-		return m_path.filename().string();
+		return m_path.stem().string();
 	return "Untitled";
 }
 
@@ -68,7 +68,12 @@ void AnimationDocument::onImGuiRender() {
 		const auto* centralNode = ImGui::DockBuilderGetCentralNode(dockspaceId))
 		ImGui::SetNextWindowDockID(centralNode->ID, ImGuiCond_FirstUseEver);
 
+	const bool wantFocus = consumeFocusRequest();
+	if (wantFocus)
+		ImGui::SetNextWindowFocus();
 	const bool open = ImGui::Begin(winTitle.c_str(), &m_pOpen, flags);
+	if (wantFocus)
+		ImGui::SetWindowFocus();
 	if (open) {
 		// Clamp the playhead inside the configured range whenever the user changes
 		// firstFrame / lastFrame — keeps the preview consistent without a stale frame.

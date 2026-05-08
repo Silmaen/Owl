@@ -9,7 +9,6 @@
 #include "Viewport.h"
 
 #include "EditorLayer.h"
-#include "TilePalette.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
 
@@ -18,6 +17,7 @@
 
 #include <owl.h>
 #include <scene/SceneSerializer.h>
+#include <scene/TilemapAsset.h>
 #include <scene/component/Tilemap.h>
 
 OWL_DIAG_PUSH
@@ -32,11 +32,99 @@ namespace {
 /**
  * @brief
  *  Build the ImGui window title: display text + stable `##{uuid}` id.
+ *
+ * The display text is delegated to the document manager so identical-named tabs (e.g. a
+ * `world_map.owl` scene next to a `world_map.owltilemap`) automatically get a type prefix.
  */
-auto makeWindowTitle(const SceneDocument& iDoc) -> std::string {
-	const auto base = iDoc.title();
+auto makeWindowTitle(const SceneDocument& iDoc, const EditorLayer* iParent) -> std::string {
+	std::string base;
+	if (iParent != nullptr)
+		base = iParent->getDocumentManager().displayTitleFor(&iDoc);
+	if (base.empty())
+		base = iDoc.title();
 	return std::format("{}##scene_{:x}", base.empty() ? std::string{"Untitled"} : base,
 					   static_cast<uint64_t>(iDoc.id()));
+}
+
+/**
+ * @brief
+ *  Snapshot of the relevant fields of the first `Tilemap` component in a scene.
+ *
+ * Used to drive both the snap step (cellSize × multiplier) and the cell-center
+ * realignment applied at the end of a translation drag.
+ */
+struct TilemapSnapInfo {
+	math::vec3 worldTranslation{0.f, 0.f, 0.f};///< World-space translation of the tilemap entity.
+	float cellSize = 1.f;///< Cell size in world units.
+	uint32_t width = 1;///< Grid width in cells.
+	uint32_t height = 1;///< Grid height in cells.
+};
+
+/**
+ * @brief
+ *  Find the first `Tilemap` component in the scene and capture its grid info.
+ * @param[in] iScene Scene to scan (may be null).
+ * @return A populated `TilemapSnapInfo` if a tilemap is found, `std::nullopt` otherwise.
+ */
+auto findFirstTilemapInfo(const scene::Scene* iScene) -> std::optional<TilemapSnapInfo> {
+	if (iScene == nullptr)
+		return std::nullopt;
+	const auto view = iScene->registry.view<scene::component::Tilemap>();
+	for (const auto entity: view) {
+		const auto& tilemap = view.get<scene::component::Tilemap>(entity);
+		if (!tilemap.asset)
+			continue;
+		const scene::Entity sceneEntity{entity, const_cast<scene::Scene*>(iScene)};
+		TilemapSnapInfo info;
+		info.worldTranslation = iScene->getWorldTransform(sceneEntity).translation();
+		info.cellSize = std::max(0.0001f, tilemap.asset->cellSize);
+		info.width = std::max(1u, tilemap.asset->width);
+		info.height = std::max(1u, tilemap.asset->height);
+		return info;
+	}
+	return std::nullopt;
+}
+
+/**
+ * @brief
+ *  Resolve the snap step to use for a translation gizmo.
+ * @param[in] iSettings Editor settings carrying snap preferences.
+ * @param[in] iTilemap Optional tilemap info (when auto-from-tilemap resolves).
+ * @return World-unit step (clamped to a positive value).
+ */
+auto resolveTranslationSnapStep(const EditorSettings& iSettings, const std::optional<TilemapSnapInfo>& iTilemap)
+		-> float {
+	if (iSettings.snapAutoFromTilemap && iTilemap.has_value())
+		return std::max(0.0001f, iTilemap->cellSize * iSettings.snapMultiplier);
+	return std::max(0.0001f, iSettings.snapStep);
+}
+
+/**
+ * @brief
+ *  Snap a world-space translation to the nearest tilemap cell-center grid.
+ *
+ * The cell-center grid lies at `tilemap.worldTranslation + (k - (width - 1) / 2) * cellSize`
+ * along each axis. `k` is integer when the size is odd (centers fall on integer
+ * multiples of `cellSize`) and half-integer when even (centers fall on the
+ * half-cell offset). This function preserves the input's z component.
+ * @param[in] iWorldTranslation The current world translation to snap.
+ * @param[in] iTilemap The tilemap info providing the grid.
+ * @param[in] iStep The snap step (must already include the snap multiplier).
+ * @return The translation snapped to the nearest cell-center-aligned grid point.
+ */
+auto snapToTilemapCellCenter(const math::vec3& iWorldTranslation, const TilemapSnapInfo& iTilemap, const float iStep)
+		-> math::vec3 {
+	const float offsetX = (iTilemap.width % 2 == 0) ? iTilemap.cellSize * 0.5f : 0.f;
+	const float offsetY = (iTilemap.height % 2 == 0) ? iTilemap.cellSize * 0.5f : 0.f;
+	const float relX = iWorldTranslation.x() - iTilemap.worldTranslation.x() - offsetX;
+	const float relY = iWorldTranslation.y() - iTilemap.worldTranslation.y() - offsetY;
+	const float kX = std::round(relX / iStep);
+	const float kY = std::round(relY / iStep);
+	return math::vec3{
+			iTilemap.worldTranslation.x() + offsetX + kX * iStep,
+			iTilemap.worldTranslation.y() + offsetY + kY * iStep,
+			iWorldTranslation.z(),
+	};
 }
 
 }// namespace
@@ -49,7 +137,7 @@ void Viewport::setDocument(SceneDocument* iDocument) {
 	mp_document = iDocument;
 	if (iDocument != nullptr) {
 		// Stable ImGui id (after ##) so ImGui preserves dock state across renames.
-		m_name = makeWindowTitle(*iDocument);
+		m_name = makeWindowTitle(*iDocument, m_parent);
 	} else {
 		m_name = "SceneView";
 	}
@@ -63,7 +151,7 @@ void Viewport::onRender() {
 
 	// Refresh display title each frame so filename / play badge changes show up on the tab;
 	// the stable `##<uuid>` suffix keeps the ImGui window id unchanged.
-	m_name = makeWindowTitle(*mp_document);
+	m_name = makeWindowTitle(*mp_document, m_parent);
 
 	ImGuiWindowFlags flags =
 			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse;
@@ -341,10 +429,16 @@ void Viewport::renderGizmo() {
 		auto& tc = selectedEntity.getComponent<scene::component::Transform>();
 		math::mat4 transform = activeScene->getWorldTransform(selectedEntity)();
 
-		const bool snap = input::Input::isKeyPressed(input::key::LeftControl);
+		const bool ctrlHeld = input::Input::isKeyPressed(input::key::LeftControl);
+		const bool snapEnabledInSettings = m_parent != nullptr && m_parent->getSettings().snapEnabled;
+		const bool snap = ctrlHeld || snapEnabledInSettings;
+		const auto tilemapInfo = findFirstTilemapInfo(activeScene.get());
 		float snapValue = 0.5f;
-		if (gui::Guizmo::isRotate(m_gizmoType))
+		if (gui::Guizmo::isRotate(m_gizmoType)) {
 			snapValue = 45.0f;
+		} else if (m_parent != nullptr) {
+			snapValue = resolveTranslationSnapStep(m_parent->getSettings(), tilemapInfo);
+		}
 
 		gui::Guizmo::manipulate(cameraView, cameraProjection, m_gizmoType, transform, snap ? snapValue : 0.f);
 
@@ -367,6 +461,31 @@ void Viewport::renderGizmo() {
 			tc.transform.translation() = newLocal.translation();
 			tc.transform.rotation() += deltaRotation;
 			tc.transform.scale() = newLocal.scale();
+		}
+
+		// Drag-end correction: when snapping a translation against a tilemap, finalise the
+		// world position to the nearest cell-center grid point so entities visually align
+		// with the cells (ImGuizmo only snaps the cumulative drag delta, not the absolute
+		// world position).
+		if (!isUsing && m_gizmoWasUsing && snap && (m_gizmoType == gui::Guizmo::Type::Translation) &&
+			tilemapInfo.has_value() && m_parent != nullptr && m_parent->getSettings().snapAutoFromTilemap) {
+			const math::Transform worldT = activeScene->getWorldTransform(selectedEntity);
+			const float effectiveStep =
+					std::max(0.0001f, tilemapInfo->cellSize * m_parent->getSettings().snapMultiplier);
+			const math::vec3 snappedWorld = snapToTilemapCellCenter(worldT.translation(), *tilemapInfo, effectiveStep);
+			if (snappedWorld != worldT.translation()) {
+				const math::Transform targetWorld{snappedWorld, worldT.rotation(), worldT.scale()};
+				math::mat4 newLocalMat = targetWorld();
+				const auto& hierarchy = selectedEntity.getComponent<scene::component::Hierarchy>();
+				if (hierarchy.parentId != core::UUID{0}) {
+					if (const auto parent = activeScene->findEntityByUUID(hierarchy.parentId); parent) {
+						const math::mat4 parentWorldInv = math::inverse(activeScene->getWorldTransform(parent)());
+						newLocalMat = parentWorldInv * targetWorld();
+					}
+				}
+				const math::Transform newLocal{newLocalMat};
+				tc.transform.translation() = newLocal.translation();
+			}
 		}
 
 		if (!isUsing && m_gizmoWasUsing && mp_undoManager != nullptr && !m_gizmoBeforeYaml.empty()) {
@@ -402,72 +521,6 @@ auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEven
 				m_parent->setSelectedEntity(getHoveredEntity());
 	}
 	return false;
-}
-
-void Viewport::processTilemapPaint(const TilePalette& iPalette, scene::Entity& ioSelected) {
-	if (mp_document == nullptr || mp_document->state() != SceneDocument::State::Edit)
-		return;
-	if (!iPalette.isPaintActive() || !ioSelected || !ioSelected.hasComponent<scene::component::Tilemap>())
-		return;
-	if (!isHovered() || gui::Guizmo::isOver())
-		return;
-	const bool leftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
-	const bool rightDown = ImGui::IsMouseDown(ImGuiMouseButton_Right);
-	if (!leftDown && !rightDown)
-		return;
-
-	auto& tilemap = ioSelected.getComponent<scene::component::Tilemap>();
-	const auto& activeScene = mp_document->getActiveScene();
-	if (!activeScene)
-		return;
-
-	// Mouse → NDC (Y-up). The viewport is a sub-rectangle of the host window.
-	const auto [mx, my] = ImGui::GetMousePos();
-	const math::vec2 vpSize = m_upper - m_lower;
-	if (vpSize.x() <= 0.f || vpSize.y() <= 0.f)
-		return;
-	const float ndcX = ((mx - m_lower.x()) / vpSize.x()) * 2.f - 1.f;
-	const float ndcY = -(((my - m_lower.y()) / vpSize.y()) * 2.f - 1.f);
-
-	// Unproject: world = inv(view * projection) * vec4(ndc, 0, 1).
-	const math::mat4 invVp = math::inverse(m_editorCamera.getViewProjection());
-	const math::vec4 worldH = invVp * math::vec4{ndcX, ndcY, 0.f, 1.f};
-	const float worldX = worldH.x() / worldH.w();
-	const float worldY = worldH.y() / worldH.w();
-
-	// Convert to tilemap-local cell coords. We rely on the entity's translation +
-	// the centred-grid origin used by Scene::render so the math matches the visual.
-	const math::Transform worldXf = activeScene->getWorldTransform(ioSelected);
-	const float cellSize = std::max(0.0001f, tilemap.cellSize);
-	const float originX = -static_cast<float>(tilemap.width - 1) * 0.5f * cellSize;
-	const float originY = static_cast<float>(tilemap.height - 1) * 0.5f * cellSize;
-	const float relX = worldX - worldXf.translation().x() - originX;
-	const float relY = worldXf.translation().y() + originY - worldY;
-	const int cellX = static_cast<int>(std::floor((relX / cellSize) + 0.5f));
-	const int cellY = static_cast<int>(std::floor((relY / cellSize) + 0.5f));
-	if (cellX < 0 || cellY < 0 || cellX >= static_cast<int>(tilemap.width) || cellY >= static_cast<int>(tilemap.height))
-		return;
-
-	const uint32_t layerIdx = iPalette.getSelectedLayer();
-	if (layerIdx >= tilemap.layers.size())
-		return;
-	const int32_t brush = rightDown ? scene::component::g_EmptyTileIndex : iPalette.getSelectedTile();
-	const int32_t current = tilemap.getTile(layerIdx, static_cast<uint32_t>(cellX), static_cast<uint32_t>(cellY));
-	if (current == brush)
-		return;
-
-	// Capture pre-edit snapshot for the undo stack (one command per cell change is OK
-	// thanks to UndoManager's merge coalescing on rapid identical-target edits).
-	std::string before;
-	if (mp_undoManager != nullptr)
-		before = scene::SceneSerializer::serializeEntityToString(ioSelected);
-	tilemap.setTile(layerIdx, static_cast<uint32_t>(cellX), static_cast<uint32_t>(cellY), brush);
-	if (mp_undoManager != nullptr) {
-		auto cmd = mkUniq<commands::ModifyEntityCommand>(ioSelected.getUUID(),
-														 EntitySnapshot{ioSelected.getUUID(), before}, "Paint tile");
-		cmd->captureAfter(ioSelected);
-		mp_undoManager->push(std::move(cmd));
-	}
 }
 
 }// namespace owl::nest::panel

@@ -16,6 +16,8 @@
 #include "gui/widgets/CurveEditor.h"
 
 #include "renderer/Renderer.h"
+#include "scene/TilemapAsset.h"
+#include "scene/Tileset.h"
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
 
@@ -728,85 +730,54 @@ void renderProps(RendererTag& ioComponent) {
 }
 
 void renderProps(Tilemap& ioComponent) {
-	// --- Tileset asset slot ----------------------------------------------------------------
+	// --- Tilemap asset slot (path drop target) --------------------------------------------
 	const std::string label =
-			ioComponent.tilesetPath.empty() ? "<drop a .owltileset>" : ioComponent.tilesetPath.generic_string();
-	ImGui::Text("Tileset");
+			ioComponent.tilemapPath.empty() ? "<drop a .owltilemap>" : ioComponent.tilemapPath.generic_string();
+	ImGui::TextUnformatted("Tilemap");
 	ImGui::SameLine();
 	if (ImGui::Button(label.c_str(), ImVec2(-1.f, 0.f))) {
-		// Click clears the tileset reference.
-		ioComponent.tilesetPath.clear();
-		ioComponent.tileset.reset();
+		// Click clears the path; in-memory asset (if any) is also dropped so a fresh resolve
+		// happens on the next scene reload.
+		ioComponent.tilemapPath.clear();
+		ioComponent.asset.reset();
 	}
-	fieldTooltip("Drop a .owltileset asset here, or click to clear.");
-	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Tileset, dropped)) {
-		ioComponent.tilesetPath = dropped;
-		ioComponent.tileset.reset();// force lazy reload at next render
+	fieldTooltip("Drop a .owltilemap asset here, or click to clear. Tilemap data is authored in the dedicated Tilemap "
+				 "Editor (double-click the asset in the Content Browser).");
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Tilemap, dropped)) {
+		ioComponent.tilemapPath = dropped;
+		ioComponent.asset.reset();// force lazy reload at next scene resolve
 	}
 
-	// --- Grid dimensions -------------------------------------------------------------------
-	int width = static_cast<int>(ioComponent.width);
-	int height = static_cast<int>(ioComponent.height);
-	if (ImGui::DragInt("Width", &width, 1.f, 1, 1024)) {
-		ioComponent.resize(static_cast<uint32_t>(std::max(1, width)), ioComponent.height);
-	}
-	fieldTooltip("Number of cells horizontally. Existing tiles are preserved on resize.");
-	if (ImGui::DragInt("Height", &height, 1.f, 1, 1024)) {
-		ioComponent.resize(ioComponent.width, static_cast<uint32_t>(std::max(1, height)));
-	}
-	fieldTooltip("Number of cells vertically. Existing tiles are preserved on resize.");
-	ImGui::DragFloat("Cell Size", &ioComponent.cellSize, 0.05f, 0.01f, 100.f, "%.3f");
-	fieldTooltip("World-space size of one cell. The grid is centred on the entity origin.");
-
-	// --- Layers ----------------------------------------------------------------------------
-	ImGui::Separator();
-	ImGui::Text("Layers (%zu)", ioComponent.layers.size());
-	ImGui::SameLine();
-	if (ImGui::SmallButton("+ Add layer")) {
-		ioComponent.addLayer(std::format("layer{}", ioComponent.layers.size()));
-	}
-	int eraseIndex = -1;
-	int moveUpIndex = -1;
-	int moveDownIndex = -1;
-	for (size_t i = 0; i < ioComponent.layers.size(); ++i) {
-		auto& layer = ioComponent.layers[i];
-		ImGui::PushID(static_cast<int>(i));
+	// --- Read-only summary ----------------------------------------------------------------
+	if (ioComponent.asset) {
+		const auto& asset = *ioComponent.asset;
 		ImGui::Separator();
-		ImGui::InputText("Name", &layer.name);
-		ImGui::Checkbox("Visible", &layer.visible);
-		float parallax[2] = {layer.parallax.x(), layer.parallax.y()};
-		if (ImGui::DragFloat2("Parallax", parallax, 0.01f, 0.f, 4.f, "%.2f")) {
-			layer.parallax = math::vec2{parallax[0], parallax[1]};
+		ImGui::Text("Size: %u × %u cells", asset.width, asset.height);
+		ImGui::Text("Cell size: %.3f", static_cast<double>(asset.cellSize));
+		const auto tilesetLabel =
+				asset.tilesetPath.empty() ? std::string{"<unset>"} : asset.tilesetPath.generic_string();
+		ImGui::Text("Tileset: %s", tilesetLabel.c_str());
+		ImGui::Text("Layers: %zu", asset.layers.size());
+		for (size_t i = 0; i < asset.layers.size(); ++i) {
+			const auto& layer = asset.layers[i];
+			size_t occupied = 0;
+			for (const auto t: layer.tiles)
+				if (t >= 0)
+					++occupied;
+			ImGui::BulletText("[%zu] %s (%s, %zu / %u tiles, parallax %.2f, %.2f)", i,
+							  layer.name.empty() ? "<unnamed>" : layer.name.c_str(),
+							  layer.visible ? "visible" : "hidden", occupied, asset.width * asset.height,
+							  static_cast<double>(layer.parallax.x()), static_cast<double>(layer.parallax.y()));
 		}
-		fieldTooltip("Per-axis camera-position multiplier. (1, 1) = move with world; (0, 0) = camera-locked.");
-		// Tile count occupied (helpful summary).
-		size_t occupied = 0;
-		for (const auto t: layer.tiles)
-			if (t >= 0)
-				++occupied;
-		ImGui::Text("Tiles: %zu / %u", occupied, ioComponent.width * ioComponent.height);
-		// Reorder + delete row.
-		if (ImGui::SmallButton("up") && i > 0)
-			moveUpIndex = static_cast<int>(i);
-		ImGui::SameLine();
-		if (ImGui::SmallButton("down") && i + 1 < ioComponent.layers.size())
-			moveDownIndex = static_cast<int>(i);
-		ImGui::SameLine();
-		if (ImGui::SmallButton("delete"))
-			eraseIndex = static_cast<int>(i);
-		ImGui::PopID();
-	}
-	if (eraseIndex >= 0) {
-		const auto idx = static_cast<size_t>(eraseIndex);
-		ioComponent.layers.erase(ioComponent.layers.begin() + static_cast<ptrdiff_t>(idx));
-	}
-	if (moveUpIndex > 0) {
-		const auto idx = static_cast<size_t>(moveUpIndex);
-		std::swap(ioComponent.layers[idx], ioComponent.layers[idx - 1]);
-	}
-	if (moveDownIndex >= 0) {
-		const auto idx = static_cast<size_t>(moveDownIndex);
-		std::swap(ioComponent.layers[idx], ioComponent.layers[idx + 1]);
+		if (ioComponent.tilemapPath.empty()) {
+			ImGui::Spacing();
+			ImGui::TextColored({1.f, 0.7f, 0.4f, 1.f},
+							   "Inline tilemap (no path) — open in the editor and Save As to persist.");
+		}
+	} else if (!ioComponent.tilemapPath.empty()) {
+		ImGui::TextDisabled("(asset will be loaded on the next scene resolve)");
+	} else {
+		ImGui::TextDisabled("(no tilemap assigned)");
 	}
 }
 

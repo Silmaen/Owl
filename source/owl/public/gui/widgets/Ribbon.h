@@ -19,7 +19,7 @@ namespace owl::gui::widgets {
  * @brief
  *  Microsoft Office-style ribbon widget.
  *
- * The ribbon is organised as **tabs → groups → buttons**. Two button sizes are
+ * The ribbon is organized as **tabs → groups → buttons**. Two button sizes are
  * supported:
  *
  * - **Large**: a 32 px icon with the label below it (primary actions).
@@ -51,16 +51,28 @@ public:
 		std::string iconName;
 		/// Short text displayed below (large) or to the right (small) of the icon.
 		std::string label;
-		/// Tooltip shown on hover. Typically includes the keyboard shortcut.
+		/// Tooltip shown on hover. Typically, includes the keyboard shortcut.
 		std::string tooltip;
 		/// Returns true when the button should accept clicks.
 		std::function<bool()> isEnabled{[]() -> bool { return true; }};
 		/// Returns true when the button is in a toggled-on state (highlighted).
 		std::function<bool()> isChecked{[]() -> bool { return false; }};
-		/// Invoked on click (only when enabled).
+		/// Invoked on click (only when enabled). Ignored when `popupContents` is set — clicking opens the popup instead.
 		std::function<void()> onClick{[]() -> void {}};
 		/// Button size (large icon-over-label or small icon-then-label).
 		ButtonSize size = ButtonSize::Small;
+		/**
+		 * @brief
+		 *  Optional popup contents — when set, clicking the button opens a popup whose body is filled by this callback.
+		 *
+		 * The button automatically renders a small caret indicator on the right (small) or bottom (large) to hint at
+		 * the dropdown affordance. Mutually exclusive with `onClick`: when `popupContents` is set, `onClick` is not
+		 * invoked on press.
+		 */
+		// The explicit `{}` keeps clang `-Wmissing-designated-field-initializers` happy on the
+		// many existing `Button{...}` designated-init call sites that legitimately omit this
+		// trailing field — the redundant-member-init tidy hit is intentional here.
+		std::function<void()> popupContents{};// NOLINT(readability-redundant-member-init)
 	};
 
 	/**

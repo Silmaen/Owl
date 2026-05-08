@@ -13,6 +13,7 @@
 #include "math/trigonometry.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer2D.h"
+#include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 #include "scene/component/Tilemap.h"
 
@@ -65,7 +66,7 @@ constexpr float g_DirEpsilonSq = 1e-8f;
  * revisions can walk every layer to support thin walls / variable heights.
  * @return Layer index, or `iTilemap.layers.size()` if no suitable layer was found.
  */
-auto pickActiveLayerIndex(const scene::component::Tilemap& iTilemap) -> size_t {
+auto pickActiveLayerIndex(const scene::TilemapAsset& iTilemap) -> size_t {
 	for (size_t i = 0; i < iTilemap.layers.size(); ++i) {
 		const auto& layer = iTilemap.layers[i];
 		if (!layer.visible)
@@ -171,7 +172,7 @@ void emitBackdropIfNeeded() {
 
 }// namespace
 
-void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap,
+void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 									   [[maybe_unused]] const math::Transform& iTilemapWorldTransform,
 									   const int iEntityId) {
 	OWL_PROFILE_FUNCTION()

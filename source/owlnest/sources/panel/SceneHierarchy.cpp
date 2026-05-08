@@ -8,6 +8,7 @@
 
 #include "SceneHierarchy.h"
 
+#include "../EditorLayer.h"
 #include "../UndoManager.h"
 #include "../commands/ComponentCommands.h"
 #include "../commands/EntityCommands.h"
@@ -107,7 +108,12 @@ auto SceneHierarchy::lastHoveredComponentName() -> const std::string& { return g
 
 // Function displaying the Hierarchy panel.
 void SceneHierarchy::renderHierarchy() {
-	ImGui::Begin("Scene Hierarchy");
+	// Stable ImGui ID (`###Hierarchy`) so the dock layout survives the title rename when
+	// the active document changes. The visible title is taken from the active document.
+	const std::string title =
+			(mp_activeDocument != nullptr ? mp_activeDocument->hierarchyPanelTitle() : std::string{"Scene Hierarchy"}) +
+			std::string{"###Hierarchy"};
+	ImGui::Begin(title.c_str());
 
 	if (mp_activeDocument != nullptr && mp_activeDocument->overridesGlobalPanels()) {
 		mp_activeDocument->renderHierarchyPanel();
@@ -387,6 +393,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 		m_selection = iEntity;
 }
 
+// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const bool iHasChildren,
 										   const core::UUID iParentId) {
 	if (!ImGui::BeginPopup("EntityContext"))
@@ -472,6 +479,31 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 
 			scene::PrefabSerializer::serialize(iEntity, *m_context, filepath, iEntity.getName());
 	}
+	// --- Tilemap quick action: open the referenced asset in the tilemap editor.
+	if (iEntity.hasComponent<scene::component::Tilemap>() && mp_parentEditor != nullptr) {
+		const auto& tilemap = iEntity.getComponent<scene::component::Tilemap>();
+		if (!tilemap.tilemapPath.empty()) {
+			ImGui::Separator();
+			if (ib.menuItem("owltilemap_icon", "Open in Tilemap Editor")) {
+				const auto& app = core::Application::get();
+				std::filesystem::path resolved;
+				for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
+					if (const auto candidate = assetsPath / tilemap.tilemapPath; exists(candidate)) {
+						resolved = candidate;
+						break;
+					}
+				}
+				if (!resolved.empty())
+					// Defer to next frame: opening here would mutate `m_documents` mid-render and
+					// corrupt the SceneHierarchy iteration that's currently inside this popup.
+					mp_parentEditor->requestDeferredOpen(resolved);
+				else
+					OWL_CORE_WARN("Could not resolve tilemap path '{}' against any asset directory.",
+								  tilemap.tilemapPath.string())
+			}
+		}
+	}
+
 	// --- Hierarchy ---
 	if (iParentId != core::UUID{0}) {
 		if (ib.menuItem("unparent", "Unparent")) {
@@ -507,7 +539,12 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 
 // Function displaying the Entity Property panel.
 void SceneHierarchy::renderProperties() {
-	ImGui::Begin("Properties");
+	// Stable ImGui ID (`###Properties`) so the dock layout survives the title rename when
+	// the active document changes.
+	const std::string title =
+			(mp_activeDocument != nullptr ? mp_activeDocument->propertiesPanelTitle() : std::string{"Properties"}) +
+			std::string{"###Properties"};
+	ImGui::Begin(title.c_str());
 	if (mp_activeDocument != nullptr && mp_activeDocument->overridesGlobalPanels())
 		mp_activeDocument->renderPropertiesPanel();
 	else if (m_selection)

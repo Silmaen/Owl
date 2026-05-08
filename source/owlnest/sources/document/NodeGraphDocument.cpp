@@ -26,7 +26,7 @@ NodeGraphDocument::~NodeGraphDocument() = default;
 
 auto NodeGraphDocument::title() const -> std::string {
 	if (!m_path.empty())
-		return m_path.filename().string();
+		return m_path.stem().string();
 	return "Untitled";
 }
 
@@ -61,7 +61,12 @@ void NodeGraphDocument::onImGuiRender() {
 		const auto* centralNode = ImGui::DockBuilderGetCentralNode(dockspaceId))
 		ImGui::SetNextWindowDockID(centralNode->ID, ImGuiCond_FirstUseEver);
 
+	const bool wantFocus = consumeFocusRequest();
+	if (wantFocus)
+		ImGui::SetNextWindowFocus();
 	const bool open = ImGui::Begin(winTitle.c_str(), &m_pOpen, flags);
+	if (wantFocus)
+		ImGui::SetWindowFocus();
 	if (open) {
 		const bool windowFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 		if (windowFocused && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false)) {

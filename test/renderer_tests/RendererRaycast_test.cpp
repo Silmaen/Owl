@@ -13,6 +13,7 @@
 #include <renderer/CameraOrtho.h>
 #include <renderer/RendererRaycast.h>
 #include <renderer/RenderLayerFactory.h>
+#include <scene/TilemapAsset.h>
 #include <scene/Tileset.h>
 #include <scene/component/Tilemap.h>
 
@@ -25,15 +26,15 @@ using owl::renderer::RaycastConfig;
 using owl::renderer::RendererRaycast;
 using owl::renderer::RendererRaycastLayer;
 using owl::renderer::RenderLayerFactory;
+using owl::scene::TilemapAsset;
 using owl::scene::Tileset;
-using owl::scene::component::Tilemap;
 using owl::scene::component::TilemapLayer;
 
 namespace {
-/// Build a simple `Tilemap` filled with a single-row corridor of walls along
+/// Build a simple `TilemapAsset` filled with a single-row corridor of walls along
 /// the +X axis at cellY = 5, 16 cells wide × 16 cells tall, cellSize = 1.
-auto makeCorridorTilemap() -> Tilemap {
-	Tilemap tm;
+auto makeCorridorTilemap() -> TilemapAsset {
+	TilemapAsset tm;
 	tm.width = 16;
 	tm.height = 16;
 	tm.cellSize = 1.f;
@@ -142,7 +143,7 @@ TEST(RendererRaycast, drawWithEmptyTilemapDoesNothing) {
 	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
-	const Tilemap empty;
+	const TilemapAsset empty;
 	RendererRaycast::drawTilemapWalls(empty, math::Transform{}, /*entityId=*/-1);
 	RendererRaycast::endScene();
 	const auto stats = RendererRaycast::getStats();
@@ -156,7 +157,7 @@ TEST(RendererRaycast, missAllRaysWhenSurroundedByEmptyCells) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
 	// 4×4 fully empty tilemap, camera at origin pointing +Y. Every ray should miss.
-	Tilemap tm;
+	TilemapAsset tm;
 	tm.width = 4;
 	tm.height = 4;
 	tm.cellSize = 1.f;
@@ -194,7 +195,7 @@ TEST(RendererRaycast, hitsWallRowFromBelow) {
 	// at world origin → world Y of that row is `(15/2 - 5) * 1 = 2.5`. Looking +Y,
 	// every ray within FOV that hits y=2.5 should register a hit.
 	const CameraOrtho cam(0, 800, 0, 600);// rotation=0 → forward = +Y in our convention
-	const Tilemap tm = makeCorridorTilemap();
+	const TilemapAsset tm = makeCorridorTilemap();
 
 	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 64};
 	RendererRaycast::resetStats();
@@ -215,7 +216,7 @@ TEST(RendererRaycast, hitsWallRowFromBelow) {
 TEST(RendererRaycast, statsResetClearsAllCounters) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const Tilemap tm = makeCorridorTilemap();
+	const TilemapAsset tm = makeCorridorTilemap();
 	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 32};
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 0);

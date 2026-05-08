@@ -29,6 +29,56 @@ void Tileset::resize(const uint32_t iColumns, const uint32_t iRows) {
 	tiles.assign(static_cast<size_t>(columns) * rows, TileMeta{});
 }
 
+void Tileset::addRow() {
+	rows++;
+	tiles.resize(static_cast<size_t>(columns) * rows);
+}
+
+void Tileset::removeRow() {
+	if (rows <= 1)
+		return;
+	rows--;
+	tiles.resize(static_cast<size_t>(columns) * rows);
+}
+
+void Tileset::addColumn() {
+	const uint32_t newCols = columns + 1;
+	std::vector<TileMeta> next(static_cast<size_t>(newCols) * rows);
+	for (uint32_t r = 0; r < rows; ++r) {
+		for (uint32_t c = 0; c < columns; ++c) {
+			const size_t src = static_cast<size_t>(r) * columns + c;
+			if (src < tiles.size())
+				next[static_cast<size_t>(r) * newCols + c] = std::move(tiles[src]);
+		}
+	}
+	columns = newCols;
+	tiles = std::move(next);
+}
+
+void Tileset::removeColumn() {
+	if (columns <= 1)
+		return;
+	const uint32_t newCols = columns - 1;
+	std::vector<TileMeta> next(static_cast<size_t>(newCols) * rows);
+	for (uint32_t r = 0; r < rows; ++r) {
+		for (uint32_t c = 0; c < newCols; ++c) {
+			const size_t src = static_cast<size_t>(r) * columns + c;
+			if (src < tiles.size())
+				next[static_cast<size_t>(r) * newCols + c] = std::move(tiles[src]);
+		}
+	}
+	columns = newCols;
+	tiles = std::move(next);
+}
+
+void Tileset::swapTiles(const uint32_t iLhs, const uint32_t iRhs) {
+	if (iLhs == iRhs)
+		return;
+	if (iLhs >= tiles.size() || iRhs >= tiles.size())
+		return;
+	std::swap(tiles[iLhs], tiles[iRhs]);
+}
+
 auto Tileset::getTileUv(const uint32_t iIndex) const -> std::array<math::vec2, 4> {
 	const uint32_t total = tileCount();
 	if (total == 0 || iIndex >= total)
@@ -83,7 +133,7 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 		emitter << YAML::Key << "tiles" << YAML::Value << YAML::BeginSeq;
 		for (uint32_t i = 0; i < total && i < tiles.size(); ++i) {
 			const auto& meta = tiles[i];
-			if (!meta.collidable && meta.name.empty())
+			if (!meta.collidable && meta.name.empty() && !meta.chromaKeyEnabled)
 				continue;
 			emitter << YAML::BeginMap;
 			emitter << YAML::Key << "index" << YAML::Value << i;
@@ -91,6 +141,11 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 				emitter << YAML::Key << "collidable" << YAML::Value << true;
 			if (!meta.name.empty())
 				emitter << YAML::Key << "name" << YAML::Value << meta.name;
+			if (meta.chromaKeyEnabled) {
+				emitter << YAML::Key << "chromaKey" << YAML::Value << YAML::Flow << YAML::BeginSeq
+						<< meta.chromaKeyColor.x() << meta.chromaKeyColor.y() << meta.chromaKeyColor.z()
+						<< YAML::EndSeq;
+			}
 			emitter << YAML::EndMap;
 		}
 		emitter << YAML::EndSeq;
@@ -144,6 +199,10 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 				meta.collidable = entry["collidable"].as<bool>();
 			if (entry["name"])
 				meta.name = entry["name"].as<std::string>();
+			if (const auto chroma = entry["chromaKey"]; chroma && chroma.IsSequence() && chroma.size() >= 3) {
+				meta.chromaKeyEnabled = true;
+				meta.chromaKeyColor = math::vec3{chroma[0].as<float>(), chroma[1].as<float>(), chroma[2].as<float>()};
+			}
 			parsed.tiles[idx] = std::move(meta);
 		}
 	}

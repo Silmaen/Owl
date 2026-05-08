@@ -19,11 +19,6 @@ class SceneDocument;
 }// namespace owl::nest
 
 namespace owl::nest::panel {
-
-class TilePalette;
-}// namespace owl::nest::panel
-
-namespace owl::nest::panel {
 /**
  * @brief
  *  A viewport panel owned by a single `SceneDocument`.
@@ -152,24 +147,6 @@ public:
 	 *  Set the undo manager for recording gizmo transform edits.
 	 */
 	void setUndoManager(SceneUndoManager* iUndoManager) { mp_undoManager = iUndoManager; }
-
-	/**
-	 * @brief
-	 *  Process a tilemap paint click on the currently selected entity.
-	 *
-	 * Call once per frame, after `onUpdate`, with the active TilePalette and the
-	 * currently-selected entity. When the entity has a `Tilemap`, the palette has
-	 * a brush, the viewport is hovered and the user clicks (or holds) left/right
-	 * mouse, the matching cell on the active layer is painted (or erased on right
-	 * click). Each completed click pushes one `PaintTilesCommand` on the undo
-	 * stack so the change is reversible.
-	 *
-	 * No-op when the document is not in Edit state, when the palette has nothing
-	 * paintable, or when the click misses the grid bounds.
-	 * @param[in] iPalette The tile palette panel (provides the brush + active layer).
-	 * @param[in,out] ioSelected The currently-selected entity (must remain valid).
-	 */
-	void processTilemapPaint(const TilePalette& iPalette, scene::Entity& ioSelected);
 
 	/**
 	 * @brief

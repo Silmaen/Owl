@@ -32,6 +32,7 @@ enum struct AssetKind : uint8_t {
 	Scene,///< Scene file (`.owl`).
 	Prefab,///< Prefab file (`.owlprefab`).
 	Tileset,///< Tileset asset (`.owltileset`).
+	Tilemap,///< Tilemap asset (`.owltilemap`).
 	Any,///< Accepts any extension.
 };
 

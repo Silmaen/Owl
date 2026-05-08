@@ -36,6 +36,8 @@ auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<gui::IconB
 		return iconBank.getIcon("owlanim_icon");
 	if (iPath.extension() == ".owltileset")
 		return iconBank.getIcon("owltileset_icon");
+	if (iPath.extension() == ".owltilemap")
+		return iconBank.getIcon("owltilemap_icon");
 	if (iPath.extension() == ".png")
 		return iconBank.getIcon("png_icon");
 	if (iPath.extension() == ".svg")
@@ -247,6 +249,10 @@ void ContentBrowser::renderContent() {
 				m_nodeGraphOpenCallback(path);
 			} else if (path.extension() == ".owlanim" && m_animationOpenCallback) {
 				m_animationOpenCallback(path);
+			} else if (path.extension() == ".owltilemap" && m_tilemapOpenCallback) {
+				m_tilemapOpenCallback(path);
+			} else if (path.extension() == ".owltileset" && m_tilesetOpenCallback) {
+				m_tilesetOpenCallback(path);
 			} else if (m_codeOpenCallback) {
 				const auto ext = path.extension().string();
 				static const std::vector<std::string> codeExts = {".lua", ".py",       ".c",   ".cpp", ".cc",   ".cxx",

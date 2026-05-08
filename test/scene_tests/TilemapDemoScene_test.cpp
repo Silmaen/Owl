@@ -13,6 +13,7 @@
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
+#include <scene/TilemapAsset.h>
 #include <scene/Tileset.h>
 #include <scene/component/components.h>
 
@@ -45,31 +46,33 @@ TEST(TilemapDemoScene, loadsAndExposesExpectedShape) {
 	ASSERT_TRUE(static_cast<bool>(tilemapEntity));
 
 	const auto& tm = tilemapEntity.getComponent<component::Tilemap>();
-	EXPECT_EQ(tm.width, 16u);
-	EXPECT_EQ(tm.height, 10u);
-	EXPECT_FLOAT_EQ(tm.cellSize, 1.f);
-	ASSERT_EQ(tm.layers.size(), 2u);
+	ASSERT_TRUE(tm.asset);
+	const auto& asset = *tm.asset;
+	EXPECT_EQ(asset.width, 16u);
+	EXPECT_EQ(asset.height, 10u);
+	EXPECT_FLOAT_EQ(asset.cellSize, 1.f);
+	ASSERT_EQ(asset.layers.size(), 2u);
 
-	EXPECT_EQ(tm.layers[0].name, "background");
-	EXPECT_FLOAT_EQ(tm.layers[0].parallax.x(), 0.5f);
-	EXPECT_FLOAT_EQ(tm.layers[0].parallax.y(), 0.5f);
-	EXPECT_EQ(tm.layers[0].tiles.size(), 160u);
+	EXPECT_EQ(asset.layers[0].name, "background");
+	EXPECT_FLOAT_EQ(asset.layers[0].parallax.x(), 0.5f);
+	EXPECT_FLOAT_EQ(asset.layers[0].parallax.y(), 0.5f);
+	EXPECT_EQ(asset.layers[0].tiles.size(), 160u);
 
-	EXPECT_EQ(tm.layers[1].name, "world");
-	EXPECT_FLOAT_EQ(tm.layers[1].parallax.x(), 1.f);
-	EXPECT_EQ(tm.layers[1].tiles.size(), 160u);
+	EXPECT_EQ(asset.layers[1].name, "world");
+	EXPECT_FLOAT_EQ(asset.layers[1].parallax.x(), 1.f);
+	EXPECT_EQ(asset.layers[1].tiles.size(), 160u);
 
 	// Spot-check a few authored cells:
 	// world (5, 5) is a ladder (tile 4)
-	EXPECT_EQ(tm.getTile(1, 5, 5), 4);
+	EXPECT_EQ(asset.getTile(1, 5, 5), 4);
 	// world (8, 8) is grass (tile 0)
-	EXPECT_EQ(tm.getTile(1, 8, 8), 0);
+	EXPECT_EQ(asset.getTile(1, 8, 8), 0);
 	// world (9, 8) is a spike (tile 6)
-	EXPECT_EQ(tm.getTile(1, 9, 8), 6);
+	EXPECT_EQ(asset.getTile(1, 9, 8), 6);
 	// world (12, 9) is water (tile 5)
-	EXPECT_EQ(tm.getTile(1, 12, 9), 5);
+	EXPECT_EQ(asset.getTile(1, 12, 9), 5);
 	// world (0, 0) is empty
-	EXPECT_EQ(tm.getTile(1, 0, 0), component::g_EmptyTileIndex);
+	EXPECT_EQ(asset.getTile(1, 0, 0), component::g_EmptyTileIndex);
 
 	// The companion tileset asset deserialises and reports the expected collidable tiles.
 	Tileset tileset;

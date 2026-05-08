@@ -17,7 +17,7 @@
 
 namespace owl::scene {
 
-class Tileset;
+class TilemapAsset;
 }// namespace owl::scene
 
 namespace owl::scene::component {
@@ -26,17 +26,20 @@ constexpr int32_t g_EmptyTileIndex = -1;
 
 /**
  * @brief
- *  One layer of a `Tilemap`.
+ *  One layer of a `TilemapAsset`.
  *
- * Holds its own `width × height` grid of tile indices into the parent tilemap's
- * tileset. Layers stack back-to-front in the order they are stored on the
- * component (index 0 renders first, last index renders on top). Each layer
+ * Holds its own `width × height` grid of tile indices into the asset's
+ * shared tileset. Layers stack back-to-front in the order they are stored on
+ * the asset (index 0 renders first, last index renders on top). Each layer
  * has an independent visibility flag and parallax factor used at render time.
  *
  * The parallax factor is a per-axis multiplier applied to the camera position
  * when the layer is drawn: `(1, 1)` is the default (moves with the world),
  * `(0.5, 0.5)` scrolls slower than the world (typical background), `(0, 0)`
  * is camera-locked (sky / fullscreen overlay).
+ *
+ * Lives inside `scene::component::*` to keep the type in the existing
+ * include path; the actual data container is `scene::TilemapAsset`.
  */
 struct OWL_API TilemapLayer {
 	/// Designer-friendly layer name (e.g. "background", "ground", "props").
@@ -51,96 +54,45 @@ struct OWL_API TilemapLayer {
 
 /**
  * @brief
- *  Grid of tiles using a shared `Tileset` asset.
+ *  Reference to a `TilemapAsset` (`.owltilemap`) attached to an entity.
  *
- * Replaces a fan of individual sprite entities with a single ECS component holding
- * a `width × height` grid (in cells) and one or more `TilemapLayer` entries.
- * Tiles are referenced by their 0-based row-major index into the tileset; cells
- * containing `g_EmptyTileIndex` are skipped during draw and physics generation.
+ * Since v0.2.0 the grid data (width / height / layers / tileset) lives in a
+ * standalone `scene::TilemapAsset` so the same level can be reused across
+ * scenes and authored in a dedicated tilemap document. This component is the
+ * scene-side handle: a relative path on disk plus the runtime-resolved
+ * asset shared pointer. The path is what gets serialized; the asset is
+ * resolved on scene load (mirrors the texture-loading pattern used by
+ * `SpriteRenderer`).
  *
- * The tileset is referenced by relative path on disk and resolved at load time
- * into the runtime `tileset` shared pointer (mirrors the texture-loading
- * pattern used by `SpriteRenderer`).
+ * When the path is empty but `asset` is non-null (e.g. an in-memory tilemap
+ * built programmatically by tests, or a legacy inline tilemap that has not
+ * yet been saved through the editor), the asset's data is serialized inline
+ * under the `inline:` key for back-compat. The supported path is the
+ * preferred form for new scenes.
  *
- * On-disk layout (excerpt):
+ * On-disk form (preferred):
  * ```yaml
  * Tilemap:
- *   tilesetPath: assets/tilesets/dungeon.owltileset
- *   width: 32
- *   height: 16
- *   cellSize: 1.0
- *   layers:
- *     - name: ground
- *       visible: true
- *       parallax: [1.0, 1.0]
- *       tiles: "0,0,1,1,...,-1,-1"   # comma-separated row-major
- *     - name: props
- *       ...
+ *   tilemapPath: assets/tilemaps/dungeon_l1.owltilemap
  * ```.
  *
- * Tile data is emitted as a comma-separated string of integers to keep YAML
- * compact (a 64×64 grid is 4096 entries — far too noisy as a YAML sequence).
+ * On-disk form (legacy / in-memory fallback):
+ * ```yaml
+ * Tilemap:
+ *   inline:
+ *     tilesetPath: assets/tilesets/dungeon.owltileset
+ *     width: 32
+ *     height: 16
+ *     cellSize: 1.0
+ *     layers:
+ *       - { name: ground, tiles: "0,0,1,1,..." }
+ * ```.
  */
 struct OWL_API Tilemap {
-	/// Relative path (from the project root) to the `.owltileset` asset.
-	std::filesystem::path tilesetPath;
-	/// Resolved tileset (runtime only, not serialized).
-	shared<scene::Tileset> tileset;
-	/// Grid width in cells (>= 1).
-	uint32_t width = 16;
-	/// Grid height in cells (>= 1).
-	uint32_t height = 16;
-	/// World-space size of one cell (uniform; tile aspect is handled by the renderer).
-	float cellSize = 1.f;
-	/// Ordered list of layers (back-to-front).
-	std::vector<TilemapLayer> layers;
-
-	/**
-	 * @brief
-	 *  Resize all existing layers to a new grid shape, padding with empty.
-	 *
-	 * Existing tile data is preserved for cells that fit in the new bounds; new
-	 * cells are filled with `g_EmptyTileIndex`. Width / height are clamped to
-	 * at least 1.
-	 * @param[in] iWidth New grid width (>= 1).
-	 * @param[in] iHeight New grid height (>= 1).
-	 */
-	void resize(uint32_t iWidth, uint32_t iHeight);
-
-	/**
-	 * @brief
-	 *  Append a new empty layer with the given name.
-	 *
-	 * The new layer is created `width × height` cells, all empty, visible, and
-	 * with `(1, 1)` parallax. Returns a reference to the new layer.
-	 * @param[in] iName The layer name.
-	 * @return The newly created layer.
-	 */
-	auto addLayer(const std::string& iName) -> TilemapLayer&;
-
-	/**
-	 * @brief
-	 *  Get a tile index from a layer (no bounds check on layer index).
-	 * @param[in] iLayer The 0-based layer index.
-	 * @param[in] iX Cell x (0-based, left to right).
-	 * @param[in] iY Cell y (0-based, top to bottom).
-	 * @return The tile index, or `g_EmptyTileIndex` for out-of-grid cells.
-	 */
-	[[nodiscard]] auto getTile(uint32_t iLayer, uint32_t iX, uint32_t iY) const -> int32_t;
-
-	/**
-	 * @brief
-	 *  Set a tile in a layer, growing the layer's storage if needed.
-	 *
-	 * Out-of-grid cells are silently ignored. Out-of-range layer indices throw
-	 * `std::out_of_range` via vector access — callers must verify the layer
-	 * exists before calling.
-	 * @param[in] iLayer The 0-based layer index.
-	 * @param[in] iX Cell x.
-	 * @param[in] iY Cell y.
-	 * @param[in] iValue Tile index, or `g_EmptyTileIndex` to clear.
-	 */
-	void setTile(uint32_t iLayer, uint32_t iX, uint32_t iY, int32_t iValue);
+	/// Relative path (from the project root) to the `.owltilemap` asset.
+	std::filesystem::path tilemapPath;
+	/// Resolved asset (runtime only — built from the path or from inline data on load).
+	shared<scene::TilemapAsset> asset;
 
 	/**
 	 * @brief
@@ -166,6 +118,12 @@ struct OWL_API Tilemap {
 	/**
 	 * @brief
 	 *  Read this component from a YAML node.
+	 *
+	 * Accepts both the preferred `tilemapPath`-only form and the legacy inline
+	 * form (either flat or nested under `inline:`). Inline data is moved into
+	 * a fresh in-memory `TilemapAsset`; the path is left empty and the asset
+	 * is considered "unsaved" until the user gives it a path through the
+	 * tilemap editor.
 	 * @param[in] iNode The YAML node to read.
 	 */
 	void deserialize(const core::Serializer& iNode);

@@ -25,6 +25,8 @@ enum struct DocumentType : uint8_t {
 	Code,///< A text/source file edited with syntax highlighting.
 	NodeGraph,///< A `.owlflow` node-graph document (Scene Flow, future animation graphs, behaviour trees...).
 	Animation,///< A `.owlanim` reusable spritesheet animation clip.
+	Tilemap,///< A `.owltilemap` reusable tilemap level (grid + layers + tileset reference).
+	Tileset,///< A `.owltileset` atlas asset (texture + grid + per-tile metadata).
 };
 
 /**
@@ -159,6 +161,37 @@ public:
 
 	/**
 	 * @brief
+	 *  Whether the document's typed undo stack has at least one undoable command.
+	 * @return False unless overridden — base documents have no document-level undo.
+	 */
+	[[nodiscard]] virtual auto canUndo() const -> bool { return false; }
+
+	/**
+	 * @brief
+	 *  Whether the document's typed undo stack has at least one redoable command.
+	 * @return False unless overridden.
+	 */
+	[[nodiscard]] virtual auto canRedo() const -> bool { return false; }
+
+	/**
+	 * @brief
+	 *  Apply the document's typed undo command (no-op when `canUndo()` returns false).
+	 *
+	 * The default implementation is empty — concrete documents (`SceneDocument`,
+	 * `TilemapDocument`, `TilesetDocument`, …) override this to dispatch to their typed
+	 * `UndoManager`.  The editor-wide Edit ribbon's Undo/Redo buttons and the `edit.undo` /
+	 * `edit.redo` keyboard shortcuts call this method on the active document.
+	 */
+	virtual void performUndo() {}
+
+	/**
+	 * @brief
+	 *  Apply the document's typed redo command (no-op when `canRedo()` returns false).
+	 */
+	virtual void performRedo() {}
+
+	/**
+	 * @brief
 	 *  Custom content for the global "Scene Hierarchy" panel (called between `ImGui::Begin`/`End`).
 	 */
 	virtual void renderHierarchyPanel() {}
@@ -169,9 +202,51 @@ public:
 	 */
 	virtual void renderPropertiesPanel() {}
 
+	/**
+	 * @brief
+	 *  Title displayed in the title bar of the global "Scene Hierarchy" panel while this
+	 *  document is active. The panel's ImGui ID stays stable (kept under `###Hierarchy`) so
+	 *  the dock layout is preserved across the rename.
+	 * @return The display title (e.g. "Scene Hierarchy", "Tilemap", "Tileset"). The
+	 *         default implementation returns the scene-only label.
+	 */
+	[[nodiscard]] virtual auto hierarchyPanelTitle() const -> std::string { return "Scene Hierarchy"; }
+
+	/**
+	 * @brief
+	 *  Title displayed in the title bar of the global "Properties" panel while this document
+	 *  is active. Same stable-ID trick (`###Properties`) as `hierarchyPanelTitle`.
+	 * @return The display title.
+	 */
+	[[nodiscard]] virtual auto propertiesPanelTitle() const -> std::string { return "Properties"; }
+
+	/**
+	 * @brief
+	 *  Mark the document as needing keyboard / tab focus on its next ImGui render.
+	 *
+	 * Concrete documents call `ImGui::SetNextWindowFocus()` before their `ImGui::Begin` when
+	 * `consumeFocusRequest()` returns true. The flag defaults to true on construction so a
+	 * freshly-opened document automatically becomes the visible tab in its dock.
+	 */
+	void requestFocus() { m_focusRequested = true; }
+
+	/**
+	 * @brief
+	 *  Read-and-clear the focus request flag. Called by concrete documents inside
+	 *  `onImGuiRender` immediately before the document's main `ImGui::Begin`.
+	 * @return True when the document should focus its window this frame.
+	 */
+	[[nodiscard]] auto consumeFocusRequest() -> bool {
+		const bool req = m_focusRequested;
+		m_focusRequested = false;
+		return req;
+	}
+
 private:
 	/// Stable identifier used by the UI (tab id, ImGui window suffix).
 	core::UUID m_id;
+	/// True when the next render should pull keyboard / tab focus to this document's window.
+	bool m_focusRequested = true;
 };
 
 }// namespace owl::nest

@@ -127,6 +127,33 @@ public:
 	 */
 	[[nodiscard]] auto undoManager() const -> const SceneUndoManager& override { return m_undoManager; }
 
+	/**
+	 * @brief
+	 *  Whether the scene's undo manager has an undoable command and the document is editable.
+	 * @return True when undo can be performed.
+	 */
+	[[nodiscard]] auto canUndo() const -> bool override;
+
+	/**
+	 * @brief
+	 *  Whether the scene's undo manager has a redoable command and the document is editable.
+	 * @return True when redo can be performed.
+	 */
+	[[nodiscard]] auto canRedo() const -> bool override;
+
+	/**
+	 * @brief
+	 *  Dispatch undo against the active scene; the editor-wide Undo button & Ctrl+Z shortcut
+	 *  call this through `Document::performUndo`.
+	 */
+	void performUndo() override;
+
+	/**
+	 * @brief
+	 *  Dispatch redo against the active scene.
+	 */
+	void performRedo() override;
+
 	// --- Scene-specific API --------------------------------------------------
 	/**
 	 * @brief
