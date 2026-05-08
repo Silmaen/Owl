@@ -111,8 +111,11 @@ public:
 	bool timerRepeating = false;
 	/// Interaction range multiplier (Interaction type).
 	float interactionRange = 1.5f;
-	/// Name of the Lua function to call (Timer, Interaction, LuaCallback types).
-	/// If empty, defaults to: on_timer, on_interact, on_triggered respectively.
+	/**
+	 * @brief
+	 *  Name of the Lua function to call (Timer, Interaction, LuaCallback types).
+	 *  If empty, defaults to: on_timer, on_interact, on_triggered respectively.
+	 */
 	std::string callbackName;
 
 	/**
@@ -122,22 +125,42 @@ public:
 	 */
 	[[nodiscard]] auto isTriggered() const -> bool { return m_triggered; }
 
-	/// Check if the player was overlapping last frame.
+	/**
+	 * @brief
+	 *  Check if the player was overlapping last frame.
+	 * @return True when overlapping is present.
+	 */
 	[[nodiscard]] auto wasOverlapping() const -> bool { return m_playerOverlapping; }
 
-	/// Set overlap state for the current frame.
+	/**
+	 * @brief
+	 *  Set overlap state for the current frame.
+	 */
 	void setOverlapping(const bool iOverlapping) { m_playerOverlapping = iOverlapping; }
 
-	/// Start/restart the timer.
+	/**
+	 * @brief
+	 *  Start/restart the timer.
+	 */
 	void startTimer();
 
-	/// Stop the timer.
+	/**
+	 * @brief
+	 *  Stop the timer.
+	 */
 	void stopTimer();
 
-	/// Reset the timer elapsed time.
+	/**
+	 * @brief
+	 *  Reset the timer elapsed time.
+	 */
 	void resetTimer();
 
-	/// Check if the timer is running.
+	/**
+	 * @brief
+	 *  Check if the timer is running.
+	 * @return True when the object is timer running.
+	 */
 	[[nodiscard]] auto isTimerRunning() const -> bool { return m_timerRunning; }
 
 private:

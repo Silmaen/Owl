@@ -108,6 +108,7 @@ private:
 	/**
 	 * @brief
 	 *  Write a minimal valid `.owl` YAML file to `iAbsolutePath` and rescan if it succeeded.
+	 * @return True on success, false otherwise.
 	 */
 	auto createSceneFile(const std::filesystem::path& iAbsolutePath) -> bool;
 
@@ -120,12 +121,14 @@ private:
 	/**
 	 * @brief
 	 *  Resolve a node id to its absolute scene path through `customData`.
+	 * @return The std filesystem path.
 	 */
 	[[nodiscard]] auto absolutePathFor(core::UUID iNodeId) const -> std::filesystem::path;
 
 	/**
 	 * @brief
 	 *  Resolve a node id to its project-relative scene path (e.g. `scenes/level1.owl`).
+	 * @return The std string.
 	 */
 	[[nodiscard]] auto relativePathFor(core::UUID iNodeId) const -> std::string;
 
@@ -156,6 +159,7 @@ private:
 	/**
 	 * @brief
 	 *  Validate a drag from `iFromPin` to `iToPin`. Only ghost-pin → entry-pin is accepted today.
+	 * @return True on success, false otherwise.
 	 */
 	[[nodiscard]] auto validateLinkDraft(core::UUID iFromPin, core::UUID iToPin) const -> bool;
 

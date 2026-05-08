@@ -52,7 +52,7 @@ public:
 	 *  Add component to this entity.
 	 * @tparam T Type of the component.
 	 * @tparam Args Type of the component's constructor arguments.
-	 * @param[in] iArgs Arguments for the component's constructor
+	 * @param[in] iArgs Arguments for the component's constructor.
 	 * @return The entity's new component.
 	 */
 	template<typename T, typename... Args>
@@ -68,7 +68,7 @@ public:
 	 *  Add or replace component to this entity.
 	 * @tparam T Type of the component.
 	 * @tparam Args Type of the component's constructor arguments.
-	 * @param[in] iArgs Arguments for the component's constructor
+	 * @param[in] iArgs Arguments for the component's constructor.
 	 * @return The entity's new or updated component.
 	 */
 	template<typename T, typename... Args>
@@ -155,7 +155,7 @@ public:
 	/**
 	 * @brief
 	 *  Comparison operator.
-	 * @param[in] iOther Other entity to compare
+	 * @param[in] iOther Other entity to compare.
 	 * @return true if entities are the same.
 	 */
 	auto operator==(const Entity& iOther) const -> bool {
@@ -165,7 +165,7 @@ public:
 	/**
 	 * @brief
 	 *  Comparison operator.
-	 * @param[in] iOther Other entity to compare
+	 * @param[in] iOther Other entity to compare.
 	 * @return true if entities are not the same.
 	 */
 	auto operator!=(const Entity& iOther) const -> bool { return !(*this == iOther); }

@@ -14,7 +14,7 @@ namespace owl::gui {
  * @brief
  *  Available built-in theme presets.
  */
-enum class ThemePreset : uint8_t {
+enum struct ThemePreset : uint8_t {
 	Custom,/// Custom theme loaded from file.
 	Dark,/// Default dark theme.
 	Light,/// Light theme.

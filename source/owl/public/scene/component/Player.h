@@ -14,7 +14,7 @@
 namespace owl::scene::component {
 /**
  * @brief
- *  component for player informations.
+ *  component for player information.
  */
 struct OWL_API Player {
 	/// If player is the primary one.
@@ -31,7 +31,7 @@ struct OWL_API Player {
 
 	/**
 	 * @brief
-	 *  Get the YAML key for this component
+	 *  Get the YAML key for this component.
 	 * @return The YAML key.
 	 */
 	static auto key() -> const char* { return "Player"; }

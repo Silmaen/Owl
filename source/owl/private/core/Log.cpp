@@ -89,8 +89,8 @@ protected:
 private:
 	debug::LogBuffer& m_buffer;
 };
-std::shared_ptr<spdlog::logger> g_CoreLogger;
-std::shared_ptr<spdlog::logger> g_ClientLogger;
+shared<spdlog::logger> g_CoreLogger;
+shared<spdlog::logger> g_ClientLogger;
 }// namespace
 Log::Level Log::s_verbosity = Level::Trace;
 uint64_t Log::s_frameCounter = 0;
@@ -103,22 +103,22 @@ void Log::init(const Level& iLevel, const uint64_t iFrequency) {
 		return;
 	}
 	std::vector<spdlog::sink_ptr> logSinks;
-	logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+	logSinks.emplace_back(mkShared<spdlog::sinks::stdout_color_sink_mt>());
 #ifdef WIN32
-	logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(L"Owl.log", true));
+	logSinks.emplace_back(mkShared<spdlog::sinks::basic_file_sink_mt>(L"Owl.log", true));
 #else
-	logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("Owl.log", true));
+	logSinks.emplace_back(mkShared<spdlog::sinks::basic_file_sink_mt>("Owl.log", true));
 #endif
 
-	logSinks.emplace_back(std::make_shared<EditorLogSink>(g_logBuffer));
+	logSinks.emplace_back(mkShared<EditorLogSink>(g_logBuffer));
 
 	logSinks[0]->set_pattern("%^[%T] %n: %v%$");
 	logSinks[1]->set_pattern("[%T] [%l] %n: %v");
 
-	g_CoreLogger = std::make_shared<spdlog::logger>("OWL", begin(logSinks), end(logSinks));
+	g_CoreLogger = mkShared<spdlog::logger>("OWL", begin(logSinks), end(logSinks));
 	register_logger(g_CoreLogger);
 
-	g_ClientLogger = std::make_shared<spdlog::logger>("APP", begin(logSinks), end(logSinks));
+	g_ClientLogger = mkShared<spdlog::logger>("APP", begin(logSinks), end(logSinks));
 	register_logger(g_ClientLogger);
 	setVerbosityLevel(iLevel);
 	s_frameCounter = 0;

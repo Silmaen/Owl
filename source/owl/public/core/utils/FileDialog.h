@@ -12,7 +12,7 @@
 
 /**
  * @brief
- *  Namespace for utility functions
+ *  Namespace for utility functions.
  */
 namespace owl::core::utils {
 /**

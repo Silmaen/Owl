@@ -53,7 +53,7 @@ struct OWL_API TileMeta {
  * tiles:                                  # optional, only entries that differ from default
  *   - { index: 5, collidable: true, name: "wall" }
  *   - { index: 12, collidable: true }
- * ```
+ * ```.
  *
  * Default `TileMeta` (every flag false, empty name) is implied for any slot
  * not listed under `tiles:` so authoring stays sparse — only special tiles

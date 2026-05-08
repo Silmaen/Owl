@@ -63,7 +63,7 @@ public:
 	 * @brief
 	 *  Do the manipulation.
 	 * @param iCameraView The camera view matrix.
-	 * @param iCameraProjection Thre camera projection matrix.
+	 * @param iCameraProjection The camera projection matrix.
 	 * @param iType The type of guizmo.
 	 * @param ioTransform The object transformation.
 	 * @param iSnap The value of the snap.

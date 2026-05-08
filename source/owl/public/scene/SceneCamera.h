@@ -159,7 +159,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the perspective vertical field of vew.
+	 *  Get the perspective vertical field of view.
 	 * @return The perspective vertical field of view.
 	 */
 	[[nodiscard]] auto getPerspectiveVerticalFov() const -> float { return m_perspectiveFov; }

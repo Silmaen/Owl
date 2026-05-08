@@ -9,7 +9,8 @@
 #pragma once
 /**
  * @namespace owl::io
- * @brief Base namespace for IO operations.
+ * @brief
+ *  Base namespace for IO operations.
  */
 #include "core/Core.h"
 #include <string>
@@ -64,7 +65,7 @@ public:
 	 *  Element Constructor.
 	 * @param[in] iPort The serial port id.
 	 * @param[in] iName The serial name.
-	 * @param[in] iBusInfo The serial bus informations.
+	 * @param[in] iBusInfo The serial bus information.
 	 */
 	Device(std::string iPort, std::string iName, std::string iBusInfo);
 
@@ -76,7 +77,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Access to a friendly name for the device
+	 *  Access to a friendly name for the device.
 	 * @return Friendly name of the device.
 	 */
 	[[nodiscard]] auto getFriendlyName() const -> const std::string& {
@@ -139,9 +140,9 @@ public:
 private:
 	/// The port of the device.
 	std::string m_port;
-	/// Devine Name
+	/// Device Name
 	std::string m_name;
-	/// Devine Name
+	/// Device Name
 	std::string m_busInfo;
 };
 

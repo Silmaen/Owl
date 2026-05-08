@@ -148,6 +148,7 @@ public:
 	/**
 	 * @brief
 	 *  Typed undo manager for `AnimationClip` operations.
+	 * @return The AnimationUndoManager.
 	 */
 	[[nodiscard]] auto animationUndoManager() -> AnimationUndoManager& { return m_undoManager; }
 
@@ -161,6 +162,7 @@ public:
 	/**
 	 * @brief
 	 *  Direct access to the edited clip.
+	 * @return The scene AnimationClip.
 	 */
 	[[nodiscard]] auto clip() -> scene::AnimationClip& { return m_clip; }
 
@@ -174,12 +176,14 @@ public:
 	/**
 	 * @brief
 	 *  Load a clip from disk. Returns false on I/O or parse error.
+	 * @return True on success, false otherwise.
 	 */
 	auto loadFromFile(const std::filesystem::path& iPath) -> bool;
 
 	/**
 	 * @brief
 	 *  True while the user hasn't clicked the tab's close X.
+	 * @return True when the object is open.
 	 */
 	[[nodiscard]] auto isOpen() const -> bool { return m_pOpen; }
 
@@ -222,12 +226,14 @@ public:
 	/**
 	 * @brief
 	 *  True when the preview is currently advancing frames.
+	 * @return True when the object is playing.
 	 */
 	[[nodiscard]] auto isPlaying() const -> bool { return m_playing; }
 
 	/**
 	 * @brief
 	 *  Currently displayed frame index.
+	 * @return The uint32_t.
 	 */
 	[[nodiscard]] auto currentFrame() const -> uint32_t { return m_currentFrame; }
 
@@ -265,6 +271,7 @@ private:
 	/**
 	 * @brief
 	 *  Compute UV coordinates for the current frame (row-major, V-flipped to match Renderer2D).
+	 * @return The std pair.
 	 */
 	[[nodiscard]] auto currentFrameUv() const -> std::pair<math::vec2, math::vec2>;
 

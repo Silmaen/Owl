@@ -133,7 +133,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Comparison operator
+	 *  Comparison operator.
 	 * @param iOther Other vector to compare.
 	 * @return true if identical vectors.
 	 */
@@ -141,7 +141,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Comparison operator
+	 *  Comparison operator.
 	 * @param iOther Other vector to compare.
 	 * @return false if identical vectors.
 	 */
@@ -168,112 +168,176 @@ public:
 	 *  Access the X component.
 	 * @return Reference to the X component.
 	 */
-	constexpr auto x() noexcept -> BaseType& requires(Dim >= 1) { return m_data[0]; }
+	constexpr auto x() noexcept -> BaseType&
+		requires(Dim >= 1)
+	{
+		return m_data[0];
+	}
 
 	/**
 	 * @brief
 	 *  Access the Y component.
 	 * @return Reference to the Y component.
 	 */
-	constexpr auto y() noexcept -> BaseType& requires(Dim >= 2) { return m_data[1]; }
+	constexpr auto y() noexcept -> BaseType&
+		requires(Dim >= 2)
+	{
+		return m_data[1];
+	}
 
 	/**
 	 * @brief
 	 *  Access the Z component.
 	 * @return Reference to the Z component.
 	 */
-	constexpr auto z() noexcept -> BaseType& requires(Dim >= 3) { return m_data[2]; }
+	constexpr auto z() noexcept -> BaseType&
+		requires(Dim >= 3)
+	{
+		return m_data[2];
+	}
 
 	/**
 	 * @brief
 	 *  Access the W component.
 	 * @return Reference to the W component.
 	 */
-	constexpr auto w() noexcept -> BaseType& requires(Dim >= 4) { return m_data[3]; }
+	constexpr auto w() noexcept -> BaseType&
+		requires(Dim >= 4)
+	{
+		return m_data[3];
+	}
 
 	/**
 	 * @brief
 	 *  Access the R (red) component (alias of X).
 	 * @return Reference to the R component.
 	 */
-	constexpr auto r() noexcept -> BaseType& requires(Dim == 4) { return x(); }
+	constexpr auto r() noexcept -> BaseType&
+		requires(Dim == 4)
+	{
+		return x();
+	}
 
 	/**
 	 * @brief
 	 *  Access the G (green) component (alias of Y).
 	 * @return Reference to the G component.
 	 */
-	constexpr auto g() noexcept -> BaseType& requires(Dim == 4) { return y(); }
+	constexpr auto g() noexcept -> BaseType&
+		requires(Dim == 4)
+	{
+		return y();
+	}
 
 	/**
 	 * @brief
 	 *  Access the B (blue) component (alias of Z).
 	 * @return Reference to the B component.
 	 */
-	constexpr auto b() noexcept -> BaseType& requires(Dim == 4) { return z(); }
+	constexpr auto b() noexcept -> BaseType&
+		requires(Dim == 4)
+	{
+		return z();
+	}
 
 	/**
 	 * @brief
 	 *  Access the A (alpha) component (alias of W).
 	 * @return Reference to the A component.
 	 */
-	constexpr auto a() noexcept -> BaseType& requires(Dim == 4) { return w(); }
+	constexpr auto a() noexcept -> BaseType&
+		requires(Dim == 4)
+	{
+		return w();
+	}
 
 	/**
 	 * @brief
 	 *  Access the X component.
 	 * @return Reference to the X component.
 	 */
-	[[nodiscard]] constexpr auto x() const noexcept -> const BaseType& requires(Dim >= 1) { return m_data[0]; }
+	[[nodiscard]] constexpr auto x() const noexcept -> const BaseType&
+		requires(Dim >= 1)
+	{
+		return m_data[0];
+	}
 
 	/**
 	 * @brief
 	 *  Access the Y component.
 	 * @return Reference to the Y component.
 	 */
-	[[nodiscard]] constexpr auto y() const noexcept -> const BaseType& requires(Dim >= 2) { return m_data[1]; }
+	[[nodiscard]] constexpr auto y() const noexcept -> const BaseType&
+		requires(Dim >= 2)
+	{
+		return m_data[1];
+	}
 
 	/**
 	 * @brief
 	 *  Access the Z component.
 	 * @return Reference to the Z component.
 	 */
-	[[nodiscard]] constexpr auto z() const noexcept -> const BaseType& requires(Dim >= 3) { return m_data[2]; }
+	[[nodiscard]] constexpr auto z() const noexcept -> const BaseType&
+		requires(Dim >= 3)
+	{
+		return m_data[2];
+	}
 
 	/**
 	 * @brief
 	 *  Access the W component.
 	 * @return Reference to the W component.
 	 */
-	[[nodiscard]] constexpr auto w() const noexcept -> const BaseType& requires(Dim >= 4) { return m_data[3]; }
+	[[nodiscard]] constexpr auto w() const noexcept -> const BaseType&
+		requires(Dim >= 4)
+	{
+		return m_data[3];
+	}
 
 	/**
 	 * @brief
 	 *  Access the R (red) component (alias of X).
 	 * @return Reference to the R component.
 	 */
-	[[nodiscard]] constexpr auto r() const noexcept -> const BaseType& requires(Dim == 4) { return x(); }
+	[[nodiscard]] constexpr auto r() const noexcept -> const BaseType&
+		requires(Dim == 4)
+	{
+		return x();
+	}
 
 	/**
 	 * @brief
 	 *  Access the G (green) component (alias of Y).
 	 * @return Reference to the G component.
 	 */
-	[[nodiscard]] constexpr auto g() const noexcept -> const BaseType& requires(Dim == 4) { return y(); }
+	[[nodiscard]] constexpr auto g() const noexcept -> const BaseType&
+		requires(Dim == 4)
+	{
+		return y();
+	}
 
 	/**
 	 * @brief
 	 *  Access the B (blue) component (alias of Z).
 	 * @return Reference to the B component.
 	 */
-	[[nodiscard]] constexpr auto b() const noexcept -> const BaseType& requires(Dim == 4) { return z(); }
+	[[nodiscard]] constexpr auto b() const noexcept -> const BaseType&
+		requires(Dim == 4)
+	{
+		return z();
+	}
 
 	/**
 	 * @brief
 	 *  Access the A (alpha) component (alias of W).
 	 * @return Reference to the A component.
 	 */
-	[[nodiscard]] constexpr auto a() const noexcept -> const BaseType& requires(Dim == 4) { return w(); }
+	[[nodiscard]] constexpr auto a() const noexcept -> const BaseType&
+		requires(Dim == 4)
+	{
+		return w();
+	}
 
 	// iterator
 	/**
@@ -281,9 +345,7 @@ public:
 	 *  Iterator to the first component.
 	 * @return Iterator pointing to the beginning.
 	 */
-	constexpr auto begin() noexcept -> std::array<BaseType, Dim>::iterator {
-		return m_data.begin();
-	}
+	constexpr auto begin() noexcept -> std::array<BaseType, Dim>::iterator { return m_data.begin(); }
 
 	/**
 	 * @brief
@@ -393,7 +455,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Multiplication with a scalar
+	 *  Multiplication with a scalar.
 	 * @param iScalar The scalar to multiply.
 	 * @param iVector Vector to multiply.
 	 * @return Vector result.
@@ -525,7 +587,9 @@ public:
 	 * @param iOther Other vector to multiply.
 	 * @return This actualized vector.
 	 */
-	constexpr auto operator^=(const Vector& iOther) noexcept -> Vector& requires(Dim == 3) {
+	constexpr auto operator^=(const Vector& iOther) noexcept -> Vector&
+		requires(Dim == 3)
+	{
 		BaseType x = (m_data[1] * iOther[2]) - (m_data[2] * iOther[1]);
 		BaseType y = (m_data[2] * iOther[0]) - (m_data[0] * iOther[2]);
 		m_data[2] = m_data[0] * iOther[1] - m_data[1] * iOther[0];

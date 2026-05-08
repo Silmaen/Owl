@@ -15,7 +15,7 @@ UniformBuffer::UniformBuffer(uint32_t, uint32_t) {}
 
 UniformBuffer::~UniformBuffer() = default;
 
-void UniformBuffer::setData(const void *, uint32_t, uint32_t) {}
+void UniformBuffer::setData(const void*, uint32_t, uint32_t) {}
 
 
 }// namespace owl::renderer::gpu::null

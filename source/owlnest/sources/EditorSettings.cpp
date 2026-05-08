@@ -54,8 +54,7 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 		}
 		if (const auto recents = config["recentProjects"]; recents && recents.IsSequence()) {
 			recentProjects.clear();
-			for (const auto& entry: recents)
-				recentProjects.push_back(entry.as<std::string>());
+			for (const auto& entry: recents) recentProjects.push_back(entry.as<std::string>());
 		}
 	}
 }
@@ -70,14 +69,12 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "uiFontSize" << YAML::Value << uiFontSize;
 	if (!keybindingOverrides.empty()) {
 		out << YAML::Key << "keybindings" << YAML::Value << YAML::BeginMap;
-		for (const auto& [id, shortcut]: keybindingOverrides)
-			out << YAML::Key << id << YAML::Value << shortcut;
+		for (const auto& [id, shortcut]: keybindingOverrides) out << YAML::Key << id << YAML::Value << shortcut;
 		out << YAML::EndMap;
 	}
 	if (!recentProjects.empty()) {
 		out << YAML::Key << "recentProjects" << YAML::Value << YAML::BeginSeq;
-		for (const auto& path: recentProjects)
-			out << path;
+		for (const auto& path: recentProjects) out << path;
 		out << YAML::EndSeq;
 	}
 	out << YAML::EndMap;

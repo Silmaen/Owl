@@ -186,7 +186,7 @@ auto extractTransitions(const std::filesystem::path& iScenePath, const std::file
 	try {
 		root = YAML::LoadFile(iScenePath.string());
 	} catch (const YAML::Exception& ex) {
-		OWL_CORE_WARN("SceneFlow: failed to parse '{}': {}", iScenePath.string(), ex.what())
+		OWL_CORE_WARN("SceneFlow: failed to parse '{}': {}.", iScenePath.string(), ex.what())
 		return out;
 	}
 	const auto entities = root["Entities"];
@@ -466,8 +466,7 @@ struct LayeringResult {
 			l = result.orphanLayer;
 	result.layerCount = result.orphanLayer + 1;
 	result.nodesPerLayer.resize(result.layerCount);
-	for (size_t i = 0; i < iSummaries.size(); ++i)
-		result.nodesPerLayer[result.layer[i]].push_back(i);
+	for (size_t i = 0; i < iSummaries.size(); ++i) result.nodesPerLayer[result.layer[i]].push_back(i);
 	for (auto& bucket: result.nodesPerLayer) {
 		std::ranges::sort(bucket, [&](size_t a, size_t b) -> bool {
 			return iSummaries[a].relativePath < iSummaries[b].relativePath;
@@ -485,8 +484,7 @@ void applyBarycentreOrdering(const std::vector<SceneSummary>& iSummaries, const 
 							 std::vector<std::vector<size_t>>& ioNodesPerLayer) {
 	std::vector<std::vector<size_t>> predecessors(iSummaries.size());
 	for (size_t src = 0; src < iSummaries.size(); ++src)
-		for (const auto dst: iAdjacency[src])
-			predecessors[dst].push_back(src);
+		for (const auto dst: iAdjacency[src]) predecessors[dst].push_back(src);
 
 	const auto rowOf = [&](size_t iNodeIndex, const std::vector<size_t>& iLayerOrder) -> float {
 		for (size_t r = 0; r < iLayerOrder.size(); ++r)
@@ -504,24 +502,19 @@ void applyBarycentreOrdering(const std::vector<SceneSummary>& iSummaries, const 
 				++count;
 			}
 		}
-		return count == 0 ? rowOf(iNodeIndex, ioNodesPerLayer[iLayer[iNodeIndex]])
-						  : sum / static_cast<float>(count);
+		return count == 0 ? rowOf(iNodeIndex, ioNodesPerLayer[iLayer[iNodeIndex]]) : sum / static_cast<float>(count);
 	};
 	constexpr int kBarycenterSweeps = 3;
 	for (int sweep = 0; sweep < kBarycenterSweeps; ++sweep) {
 		for (size_t l = 1; l < iLayerCount; ++l) {
 			std::vector<float> bary(iSummaries.size(), 0.0f);
-			for (const auto idx: ioNodesPerLayer[l])
-				bary[idx] = barycentre(idx, predecessors[idx], l - 1);
-			std::ranges::stable_sort(ioNodesPerLayer[l],
-									 [&](size_t a, size_t b) -> bool { return bary[a] < bary[b]; });
+			for (const auto idx: ioNodesPerLayer[l]) bary[idx] = barycentre(idx, predecessors[idx], l - 1);
+			std::ranges::stable_sort(ioNodesPerLayer[l], [&](size_t a, size_t b) -> bool { return bary[a] < bary[b]; });
 		}
 		for (size_t l = iLayerCount - 1; l-- > 0;) {
 			std::vector<float> bary(iSummaries.size(), 0.0f);
-			for (const auto idx: ioNodesPerLayer[l])
-				bary[idx] = barycentre(idx, iAdjacency[idx], l + 1);
-			std::ranges::stable_sort(ioNodesPerLayer[l],
-									 [&](size_t a, size_t b) -> bool { return bary[a] < bary[b]; });
+			for (const auto idx: ioNodesPerLayer[l]) bary[idx] = barycentre(idx, iAdjacency[idx], l + 1);
+			std::ranges::stable_sort(ioNodesPerLayer[l], [&](size_t a, size_t b) -> bool { return bary[a] < bary[b]; });
 		}
 	}
 }
@@ -662,8 +655,8 @@ void SceneFlowDocument::onLinkDrafted(core::UUID iLinkId, core::UUID iFromPin, c
 	m_pinToOrigin[realPinId] = origin;
 
 	// Push (not execute) — the canvas + scene state already reflects the post-redo state.
-	m_undoManager.push(mkUniq<commands::SceneFlowCompositeCommand>(
-			std::move(sceneCmd), std::move(canvasCmd), srcAbs, mp_editorLayer, "Add Teleport Link"));
+	m_undoManager.push(mkUniq<commands::SceneFlowCompositeCommand>(std::move(sceneCmd), std::move(canvasCmd), srcAbs,
+																   mp_editorLayer, "Add Teleport Link"));
 }
 
 void SceneFlowDocument::onLinkErased(core::UUID iLinkId) {
@@ -812,8 +805,7 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 		}
 	}
 	std::vector<float> layerX(layerCount + 1, 0.0f);
-	for (size_t l = 0; l < layerCount; ++l)
-		layerX[l + 1] = layerX[l] + layerMaxWidth[l] + g_hSpacing;
+	for (size_t l = 0; l < layerCount; ++l) layerX[l + 1] = layerX[l] + layerMaxWidth[l] + g_hSpacing;
 	for (size_t l = 0; l < layerCount; ++l) {
 		const auto& bucket = nodesPerLayer[l];
 		const float pitch = globalRowHeight + g_vSpacing;
@@ -886,24 +878,24 @@ auto SceneFlowDocument::absolutePathFor(core::UUID iNodeId) const -> std::filesy
 			return {};
 		return m_projectDirectory / data["scenePath"].as<std::string>();
 	} catch (const YAML::Exception&) {
-		OWL_CORE_TRACE("SceneFlow: ignored malformed customData on node {}", static_cast<uint64_t>(iNodeId))
+		OWL_CORE_TRACE("SceneFlow: ignored malformed customData on node {}.", static_cast<uint64_t>(iNodeId))
 		return {};
 	}
 }
 
 auto SceneFlowDocument::createSceneFile(const std::filesystem::path& iAbsolutePath) -> bool {
 	if (std::filesystem::exists(iAbsolutePath)) {
-		OWL_CORE_WARN("SceneFlow: scene already exists at '{}'", iAbsolutePath.string())
+		OWL_CORE_WARN("SceneFlow: scene already exists at '{}'.", iAbsolutePath.string())
 		return false;
 	}
 	std::error_code ec;
 	std::filesystem::create_directories(iAbsolutePath.parent_path(), ec);
 	if (ec) {
-		OWL_CORE_ERROR("SceneFlow: failed to create directories for '{}': {}", iAbsolutePath.string(), ec.message())
+		OWL_CORE_ERROR("SceneFlow: failed to create directories for '{}': {}.", iAbsolutePath.string(), ec.message())
 		return false;
 	}
 	if (!writeEmptyScene(iAbsolutePath)) {
-		OWL_CORE_ERROR("SceneFlow: failed to write empty scene at '{}'", iAbsolutePath.string())
+		OWL_CORE_ERROR("SceneFlow: failed to write empty scene at '{}'.", iAbsolutePath.string())
 		return false;
 	}
 	if (mp_editorLayer != nullptr)
@@ -915,7 +907,7 @@ void SceneFlowDocument::deleteSceneFile(const std::filesystem::path& iAbsolutePa
 	std::error_code ec;
 	std::filesystem::remove(iAbsolutePath, ec);
 	if (ec) {
-		OWL_CORE_ERROR("SceneFlow: failed to delete '{}': {}", iAbsolutePath.string(), ec.message())
+		OWL_CORE_ERROR("SceneFlow: failed to delete '{}': {}.", iAbsolutePath.string(), ec.message())
 		return;
 	}
 	if (mp_editorLayer != nullptr)
@@ -941,8 +933,8 @@ void SceneFlowDocument::renderHierarchyPanel() {
 		ImGui::PushID(static_cast<int>(static_cast<uint64_t>(node.id) & 0x7fffffffu));
 		const bool selected = node.id == m_selectedNodeId;
 		const bool isOrphan = node.titleColor.x() > 0.99f && node.titleColor.y() < 0.5f;
-		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen |
-								   ImGuiTreeNodeFlags_SpanAvailWidth;
+		ImGuiTreeNodeFlags flags =
+				ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
 		if (selected)
 			flags |= ImGuiTreeNodeFlags_Selected;
 		if (isOrphan)
@@ -955,8 +947,7 @@ void SceneFlowDocument::renderHierarchyPanel() {
 			std::array<core::UUID, 1> sel{node.id};
 			m_canvas.setSelection(sel);
 		}
-		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) &&
-			mp_editorLayer != nullptr) {
+		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && mp_editorLayer != nullptr) {
 			if (const auto path = absolutePathFor(node.id); !path.empty() && std::filesystem::exists(path))
 				mp_editorLayer->openScene(path);
 		}
@@ -967,8 +958,7 @@ void SceneFlowDocument::renderHierarchyPanel() {
 void SceneFlowDocument::renderPropertiesPanel() {
 	if (static_cast<uint64_t>(m_selectedNodeId) == 0) {
 		ImGui::TextDisabled("No scene selected.");
-		ImGui::TextWrapped(
-				"Click a scene node in the canvas (or in the Scene Hierarchy panel) to inspect it here.");
+		ImGui::TextWrapped("Click a scene node in the canvas (or in the Scene Hierarchy panel) to inspect it here.");
 		return;
 	}
 	const auto* node = m_canvas.findNode(m_selectedNodeId);
@@ -1046,9 +1036,8 @@ void SceneFlowDocument::renderContextMenu() {
 	// Teleport-pin sub-menu — list every Teleport output pin so the user can edit its
 	// `targetName` from the canvas without opening the source scene's hierarchy.
 	if (node != nullptr) {
-		const bool anyTeleport = std::ranges::any_of(node->outputs, [](const auto& iPin) -> bool {
-			return iPin.typeTag == g_teleportPinTypeTag;
-		});
+		const bool anyTeleport = std::ranges::any_of(
+				node->outputs, [](const auto& iPin) -> bool { return iPin.typeTag == g_teleportPinTypeTag; });
 		if (anyTeleport && ImGui::BeginMenu("Edit teleport target")) {
 			for (const auto& pin: node->outputs) {
 				if (pin.typeTag == g_teleportPinTypeTag && ImGui::MenuItem(pin.label.c_str()))
@@ -1083,9 +1072,8 @@ void SceneFlowDocument::renderAddSceneModal() {
 		if (!name.ends_with(".owl"))
 			name += ".owl";
 		// Default to a `scenes/` subfolder if the name does not already include a slash.
-		const std::filesystem::path rel = name.find('/') == std::string::npos
-												  ? std::filesystem::path{"scenes"} / name
-												  : std::filesystem::path{name};
+		const std::filesystem::path rel = name.find('/') == std::string::npos ? std::filesystem::path{"scenes"} / name
+																			  : std::filesystem::path{name};
 		const auto target = m_projectDirectory / rel;
 		if (createSceneFile(target)) {
 			if (mp_editorLayer != nullptr)
@@ -1171,7 +1159,8 @@ void SceneFlowDocument::renderTargetNameModal() {
 
 	ImGui::OpenPopup("Edit teleport target");
 	if (ImGui::BeginPopupModal("Edit teleport target", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-		ImGui::TextWrapped("Target entity name (Tag) in the destination scene. Leave empty to use the default spawn point.");
+		ImGui::TextWrapped(
+				"Target entity name (Tag) in the destination scene. Leave empty to use the default spawn point.");
 		ImGui::SetNextItemWidth(280.0f);
 		ImGui::InputText("##target", m_targetNameBuf, sizeof(m_targetNameBuf));
 		ImGui::Separator();

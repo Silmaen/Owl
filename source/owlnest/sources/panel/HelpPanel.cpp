@@ -81,7 +81,7 @@ void HelpPanel::loadIndex() {
 	m_pages.clear();
 	m_helpRoot = resolveHelpRoot();
 	if (m_helpRoot.empty()) {
-		OWL_CORE_WARN("HelpPanel: could not locate engine_assets/help/index.yml")
+		OWL_CORE_WARN("HelpPanel: could not locate engine_assets/help/index.yml.")
 		return;
 	}
 	// The renderer needs the help root to resolve relative image paths (`![](images/foo.svg)`).
@@ -91,12 +91,12 @@ void HelpPanel::loadIndex() {
 	try {
 		root = YAML::LoadFile(indexFile.string());
 	} catch (const std::exception& ex) {
-		OWL_CORE_ERROR("HelpPanel: failed to parse '{}' ({})", indexFile.string(), ex.what())
+		OWL_CORE_ERROR("HelpPanel: failed to parse '{}' ({}).", indexFile.string(), ex.what())
 		return;
 	}
 	const auto pagesNode = root["Help"]["Pages"];
 	if (!pagesNode || !pagesNode.IsSequence()) {
-		OWL_CORE_WARN("HelpPanel: '{}' has no Help/Pages sequence", indexFile.string())
+		OWL_CORE_WARN("HelpPanel: '{}' has no Help/Pages sequence.", indexFile.string())
 		return;
 	}
 	m_pages.reserve(pagesNode.size());

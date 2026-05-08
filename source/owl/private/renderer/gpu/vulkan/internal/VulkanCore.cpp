@@ -74,7 +74,7 @@ void VulkanCore::init(const VulkanConfiguration& iConfiguration) {
 	m_config = iConfiguration;
 	m_instanceInfo = mkUniq<InstanceInformations>();
 	if (!m_instanceInfo->hasMinimalVersion(1, 3)) {
-		OWL_CORE_ERROR("Vulkan: cannot initialize du to insufficient instance version. Require 1.3")
+		OWL_CORE_ERROR("Vulkan: cannot initialize du to insufficient instance version. Require 1.3.")
 		m_state = State::Error;
 		return;
 	}
@@ -88,7 +88,7 @@ void VulkanCore::init(const VulkanConfiguration& iConfiguration) {
 	}
 	auto* const gc = dynamic_cast<GraphContext*>(core::Application::get().getWindow().getGraphContext());
 	if (const VkResult result = gc->createSurface(m_instance); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to create window surface ({})", resultString(result))
+		OWL_CORE_ERROR("Vulkan: failed to create window surface ({}).", resultString(result))
 		m_state = State::Error;
 		return;
 	}
@@ -317,11 +317,12 @@ void VulkanCore::createLogicalDevice() {
 		result != VK_SUCCESS) {
 		m_state = State::Error;
 
-		OWL_CORE_ERROR("Vulkan: Error while creating the logical device ({})", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Error while creating the logical device ({}).", resultString(result))
 	}
 }
 
 void VulkanCore::setupDebugging() {
+
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG17("-Wcast-function-type-strict")
 	g_VkCreateDebugUtilsMessengerExt = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
@@ -333,7 +334,7 @@ void VulkanCore::setupDebugging() {
 	if (const VkResult result =
 				g_VkCreateDebugUtilsMessengerExt(m_instance, &g_DebugUtilsMessagerCi, nullptr, &m_debugUtilsMessenger);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: Error while setup debugging ({})", resultString(result))
+		OWL_CORE_ERROR("Vulkan: Error while setup debugging ({}).", resultString(result))
 		m_state = State::Error;
 	}
 }
@@ -525,7 +526,7 @@ InstanceInformations::InstanceInformations() {
 			for (const auto& [layerName, specVersion, implementationVersion, description]: layers) {
 				supportedLayers.emplace_back(layerName);
 #ifdef OWL_RENDERER_VERBOSE_CAPABILITIES
-				OWL_CORE_TRACE("Vulkan: Instance layer: {} version {} // {}", layerName, specVersion, description)
+				OWL_CORE_TRACE("Vulkan: Instance layer: {} version {} // {}.", layerName, specVersion, description)
 #endif
 			}
 		} else {
@@ -544,7 +545,7 @@ InstanceInformations::InstanceInformations() {
 				for (const auto& [extensionName, specVersion]: extensions) {
 					supportedExtensions.emplace_back(extensionName);
 #ifdef OWL_RENDERER_VERBOSE_CAPABILITIES
-					OWL_CORE_TRACE("Vulkan: Supported instance extension: {} version: {}", extensionName, specVersion)
+					OWL_CORE_TRACE("Vulkan: Supported instance extension: {} version: {}.", extensionName, specVersion)
 #endif
 				}
 			} else {

@@ -212,7 +212,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Structure holding asset directory information
+	 *  Structure holding asset directory information.
 	 */
 	struct AssetDirectory {
 		/// Asset directory name.

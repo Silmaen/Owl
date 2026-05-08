@@ -19,8 +19,11 @@ namespace owl::gui {
 struct OWL_API IconThemeColors {
 	/// Primary icon colour (replaces white `#ffffff` in SVGs).
 	math::vec4 primary{1, 1, 1, 1};
-	/// Secondary/accent icon colour (replaces fuchsia `#ff00ff` in SVGs).
-	/// Defaults to the Owl Nest amber/gold accent used for inner highlights.
+	/**
+	 * @brief
+	 *  Secondary/accent icon colour (replaces fuchsia `#ff00ff` in SVGs).
+	 *  Defaults to the Owl Nest amber/gold accent used for inner highlights.
+	 */
 	math::vec4 secondary{1.0f, 0.78f, 0.15f, 1.0f};
 };
 

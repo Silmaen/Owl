@@ -51,6 +51,7 @@ public:
 	/**
 	 * @brief
 	 *  Check if the registration function did succeed.
+	 * @return True when the object is registered.
 	 */
 	[[nodiscard]] auto isRegistered() const -> bool { return m_isRegistered; }
 

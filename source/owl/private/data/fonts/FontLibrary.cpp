@@ -94,7 +94,7 @@ auto FontLibrary::getFont(const std::string& iName) -> const shared<Font>& {
 		loadFont(iName);
 		it = m_fonts.find(iName);
 		if (it == m_fonts.end() || it->second == nullptr) {
-			OWL_CORE_ERROR("Font '{}' not found", iName)
+			OWL_CORE_ERROR("Font '{}' not found.", iName)
 			if (it != m_fonts.end())
 				m_fonts.erase(it);
 			return m_fonts.at("null");

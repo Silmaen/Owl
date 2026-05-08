@@ -34,7 +34,7 @@ void deserializeEntity(const shared<Scene>& ioScene, const core::Serializer& iNo
 		name = tagComponent["tag"].as<std::string>();
 
 	const core::Serializer sNode;
-	OWL_CORE_TRACE("Deserialized entity with ID = {0}, name = {1}", uuid, name)
+	OWL_CORE_TRACE("Deserialized entity with ID = {0}, name = {1}.", uuid, name)
 	Entity entity = ioScene->createEntityWithUUID(core::UUID{uuid}, name);
 	if (sNode.getImpl()->node.reset(iNode.getImpl()->node["Transform"]); sNode.getImpl()->node) {
 		// Entities always have transforms
@@ -90,7 +90,7 @@ auto SceneSerializer::deserialize(const std::filesystem::path& iFilepath) const 
 			return false;
 		}
 		auto sceneName = sData.getImpl()->node["Scene"].as<std::string>();
-		OWL_CORE_TRACE("Deserializing scene '{0}'", sceneName)
+		OWL_CORE_TRACE("Deserializing scene '{0}'.", sceneName)
 		if (const auto enabled = sData.getImpl()->node["EnabledRenderers"]; enabled)
 			mp_scene->getEnabledRenderers() = renderer::EnabledRenderersConfig::fromYaml(enabled);
 		if (auto entities = sData.getImpl()->node["Entities"]; entities) {
@@ -102,14 +102,14 @@ auto SceneSerializer::deserialize(const std::filesystem::path& iFilepath) const 
 		}
 		mp_scene->rebuildHierarchyChildren();
 	} catch (...) {
-		OWL_CORE_ERROR("Unable to load scene from file {}", iFilepath.string())
+		OWL_CORE_ERROR("Unable to load scene from file {}.", iFilepath.string())
 		return false;
 	}
 	return true;
 }
 
-auto SceneSerializer::deserializeFromBuffer(const std::vector<uint8_t>& iData,
-										   const std::string& iSourceName) const -> bool {
+auto SceneSerializer::deserializeFromBuffer(const std::vector<uint8_t>& iData, const std::string& iSourceName) const
+		-> bool {
 	try {
 		const std::string yamlStr(iData.begin(), iData.end());
 		const core::Serializer sData;
@@ -120,7 +120,7 @@ auto SceneSerializer::deserializeFromBuffer(const std::vector<uint8_t>& iData,
 			return false;
 		}
 		auto sceneName = sData.getImpl()->node["Scene"].as<std::string>();
-		OWL_CORE_TRACE("Deserializing scene '{0}' from buffer", sceneName)
+		OWL_CORE_TRACE("Deserializing scene '{0}' from buffer.", sceneName)
 		if (const auto enabled = sData.getImpl()->node["EnabledRenderers"]; enabled)
 			mp_scene->getEnabledRenderers() = renderer::EnabledRenderersConfig::fromYaml(enabled);
 		if (auto entities = sData.getImpl()->node["Entities"]; entities) {
@@ -132,7 +132,7 @@ auto SceneSerializer::deserializeFromBuffer(const std::vector<uint8_t>& iData,
 		}
 		mp_scene->rebuildHierarchyChildren();
 	} catch (...) {
-		OWL_CORE_ERROR("Unable to load scene from buffer {}", iSourceName)
+		OWL_CORE_ERROR("Unable to load scene from buffer {}.", iSourceName)
 		return false;
 	}
 	return true;
@@ -144,15 +144,14 @@ auto SceneSerializer::serializeEntityToString(const Entity& iEntity) -> std::str
 	return sOut.getImpl()->emitter.c_str();
 }
 
-auto SceneSerializer::deserializeEntityFromString(const shared<Scene>& ioScene,
-												  const std::string& iYamlData) -> bool {
+auto SceneSerializer::deserializeEntityFromString(const shared<Scene>& ioScene, const std::string& iYamlData) -> bool {
 	try {
 		const core::Serializer sEntity;
 		sEntity.getImpl()->node.reset(YAML::Load(iYamlData));
 		deserializeEntity(ioScene, sEntity);
 		ioScene->rebuildHierarchyChildren();
 	} catch (...) {
-		OWL_CORE_ERROR("Unable to deserialize entity from string")
+		OWL_CORE_ERROR("Unable to deserialize entity from string.")
 		return false;
 	}
 	return true;

@@ -78,7 +78,7 @@ auto LuaEngine::loadScript(const std::filesystem::path& iPath) const -> bool {
 		return false;
 	}
 	if (const int result = luaL_dofile(mp_state, iPath.string().c_str()); result != LUA_OK) {
-		OWL_CORE_ERROR("LuaEngine: Error loading '{}': {}", iPath.string(), lua_tostring(mp_state, -1))
+		OWL_CORE_ERROR("LuaEngine: Error loading '{}': {}.", iPath.string(), lua_tostring(mp_state, -1))
 		lua_pop(mp_state, 1);
 		return false;
 	}
@@ -94,13 +94,13 @@ auto LuaEngine::loadBuffer(const std::vector<uint8_t>& iData, const std::string&
 	}
 	const auto* data = reinterpret_cast<const char*>(iData.data());
 	if (const int result = luaL_loadbuffer(mp_state, data, iData.size(), iName.c_str()); result != LUA_OK) {
-		OWL_CORE_ERROR("LuaEngine: Error loading buffer '{}': {}", iName, lua_tostring(mp_state, -1))
+		OWL_CORE_ERROR("LuaEngine: Error loading buffer '{}': {}.", iName, lua_tostring(mp_state, -1))
 		lua_pop(mp_state, 1);
 		return false;
 	}
 	// Execute the loaded chunk.
 	if (const int result = lua_pcall(mp_state, 0, LUA_MULTRET, 0); result != LUA_OK) {
-		OWL_CORE_ERROR("LuaEngine: Error executing buffer '{}': {}", iName, lua_tostring(mp_state, -1))
+		OWL_CORE_ERROR("LuaEngine: Error executing buffer '{}': {}.", iName, lua_tostring(mp_state, -1))
 		lua_pop(mp_state, 1);
 		return false;
 	}
@@ -127,7 +127,7 @@ auto LuaEngine::callFunction(const std::string& iName) const -> bool {
 		return false;
 	}
 	if (const int result = lua_pcall(mp_state, 0, 0, 0); result != LUA_OK) {
-		OWL_CORE_ERROR("LuaEngine: Error calling '{}': {}", iName, lua_tostring(mp_state, -1))
+		OWL_CORE_ERROR("LuaEngine: Error calling '{}': {}.", iName, lua_tostring(mp_state, -1))
 		lua_pop(mp_state, 1);
 		return false;
 	}
@@ -146,7 +146,7 @@ auto LuaEngine::callFunction(const std::string& iName, const float iArg) const -
 	}
 	lua_pushnumber(mp_state, static_cast<lua_Number>(iArg));
 	if (const int result = lua_pcall(mp_state, 1, 0, 0); result != LUA_OK) {
-		OWL_CORE_ERROR("LuaEngine: Error calling '{}': {}", iName, lua_tostring(mp_state, -1))
+		OWL_CORE_ERROR("LuaEngine: Error calling '{}': {}.", iName, lua_tostring(mp_state, -1))
 		lua_pop(mp_state, 1);
 		return false;
 	}
@@ -165,7 +165,7 @@ auto LuaEngine::callFunction(const std::string& iName, const uint64_t iArg) cons
 	}
 	lua_pushinteger(mp_state, static_cast<lua_Integer>(iArg));
 	if (const int result = lua_pcall(mp_state, 1, 0, 0); result != LUA_OK) {
-		OWL_CORE_ERROR("LuaEngine: Error calling '{}': {}", iName, lua_tostring(mp_state, -1))
+		OWL_CORE_ERROR("LuaEngine: Error calling '{}': {}.", iName, lua_tostring(mp_state, -1))
 		lua_pop(mp_state, 1);
 		return false;
 	}

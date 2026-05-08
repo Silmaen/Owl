@@ -16,6 +16,7 @@
 namespace owl::core::utils {
 
 namespace {
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 auto split(const std::string_view iString, const char iDelimiter = '\n') -> std::vector<std::string_view> {
@@ -81,7 +82,7 @@ auto FileDialog::openFile(const std::string& iFilter) -> std::filesystem::path {
 		resultPath = std::filesystem::path{outPath};
 		NFD_FreePath(outPath);
 	} else {
-		OWL_CORE_ERROR("while opening file: {}", NFD::GetError())
+		OWL_CORE_ERROR("while opening file: {}.", NFD::GetError())
 		OWL_CORE_ASSERT(false, "Error Opening file")
 	}
 	for (const auto& [name, spec]: ff) {
@@ -106,7 +107,7 @@ auto FileDialog::saveFile([[maybe_unused]] const std::string& iFilter) -> std::f
 	} else if (result == NFD_OKAY) {
 		resultPath = std::filesystem::path{outPath};
 	} else {
-		OWL_CORE_ERROR("while opening file: {}", NFD::GetError())
+		OWL_CORE_ERROR("while opening file: {}.", NFD::GetError())
 		OWL_CORE_ASSERT(false, "Error Opening file")
 	}
 	for (const auto& [name, spec]: ff) {
@@ -128,7 +129,7 @@ auto FileDialog::pickFolder() -> std::filesystem::path {
 		resultPath = std::filesystem::path{outPath};
 		NFD_FreePath(outPath);
 	} else {
-		OWL_CORE_ERROR("while picking folder: {}", NFD::GetError())
+		OWL_CORE_ERROR("while picking folder: {}.", NFD::GetError())
 		OWL_CORE_ASSERT(false, "Error picking folder")
 	}
 	NFD::Quit();

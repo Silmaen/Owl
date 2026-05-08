@@ -87,8 +87,8 @@ OWL_API auto getVersionPatch() -> uint8_t;
 OWL_API auto getVersionString() -> std::string;
 
 /// Wrap to unique pointer.
-template<typename T>
-using uniq = std::unique_ptr<T>;
+template<typename T, typename D = std::default_delete<T>>
+using uniq = std::unique_ptr<T, D>;
 
 /**
  * @brief

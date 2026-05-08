@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "renderer/gpu/GraphContext.h"
 #include "core/external/glfw3.h"
+#include "renderer/gpu/GraphContext.h"
 
 namespace owl::renderer::gpu::opengl {
 /**

@@ -81,7 +81,7 @@ void Shader::compile(const std::string& iSlangSource) {
 	const auto timer = std::chrono::steady_clock::now() - start;
 	double duration =
 			static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(timer).count()) / 1000.0;
-	OWL_CORE_INFO("Compilation of shader {} in {} ms", getName(), duration)
+	OWL_CORE_INFO("Compilation of shader {} in {} ms.", getName(), duration)
 }
 
 void Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) {
@@ -104,7 +104,7 @@ void Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) {
 		for (const auto stage: {ShaderType::Vertex, ShaderType::Fragment}) {
 			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
 
-			OWL_CORE_INFO("Using cached OpenGL Shader {}-{}", getName(), magic_enum::enum_name(stage))
+			OWL_CORE_INFO("Using cached OpenGL Shader {}-{}.", getName(), magic_enum::enum_name(stage))
 			shaderData[stage] = renderer::utils::readCachedShader(cachedPath);
 		}
 	} else {
@@ -145,13 +145,13 @@ void Shader::createProgram() {
 	GLint isLinked = 0;
 	glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
 	if (isLinked == GL_FALSE) {
-		OWL_CORE_ERROR("Shader linking failed ({})", getName())
+		OWL_CORE_ERROR("Shader linking failed ({}).", getName())
 		GLint maxLength = 0;
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &maxLength);
 		if (maxLength > 0) {
 			std::vector<GLchar> infoLog(static_cast<size_t>(maxLength));
 			glGetProgramInfoLog(program, maxLength, &maxLength, infoLog.data());
-			OWL_CORE_ERROR("     Details: {}", infoLog.data())
+			OWL_CORE_ERROR("     Details: {}.", infoLog.data())
 		}
 		glDeleteProgram(program);
 		for (const auto id: shaderIDs) glDeleteShader(id);

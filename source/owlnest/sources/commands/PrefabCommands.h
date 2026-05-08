@@ -35,8 +35,7 @@ public:
 	 * @param[in] iScene The scene (for capturing the subtree snapshot).
 	 * @param[in] iPrefabName Human-readable prefab name.
 	 */
-	InstantiatePrefabCommand(const scene::Entity& iInstanceRoot, const scene::Scene& iScene,
-							 std::string iPrefabName);
+	InstantiatePrefabCommand(const scene::Entity& iInstanceRoot, const scene::Scene& iScene, std::string iPrefabName);
 
 	/**
 	 * @brief

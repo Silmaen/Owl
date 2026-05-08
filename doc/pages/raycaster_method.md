@@ -11,12 +11,12 @@ can be reasoned about, debugged, and replaced piece by piece.
 
 ```mermaid
 flowchart LR
-    cam["Camera Entity<br/>(Transform)"] -->|"inverseView<br/>= world transform"| pose["beginScene:<br/>extract pos2D, dir2D, plane2D"]
-    layer["RendererRaycastLayer.applyConfig"] -->|"FOV, MaxDist,<br/>NumRays, colors"| pose
+    cam["Camera Entity<br/>(Transform)"] -->|" inverseView<br/>= world transform "| pose["beginScene:<br/>extract pos2D, dir2D, plane2D"]
+    layer["RendererRaycastLayer.applyConfig"] -->|" FOV, MaxDist,<br/>NumRays, colors "| pose
     pose --> backdrop["emit sky / floor<br/>(2× full-width quads,<br/>lazy on first wall draw)"]
     tilemap["Tilemap entity<br/>(grid + tileset)"] --> dda["per-column DDA<br/>(numRays = vpW)"]
     pose --> dda
-    dda -->|"hit cell + wallX"| stripe["emit textured stripe quad<br/>via Renderer2D::drawQuad"]
+    dda -->|" hit cell + wallX "| stripe["emit textured stripe quad<br/>via Renderer2D::drawQuad"]
     backdrop --> r2d["Renderer2D batch<br/>(ortho cam: (0,0)→(vpW,vpH))"]
     stripe --> r2d
     r2d --> fb["Framebuffer"]
@@ -38,14 +38,14 @@ Everything happens on the **CPU**. Each draw is emitted through the existing
         - `cameraDir2D = inverseView * (0,1,0,0).xy` (normalised)
         - `cameraPlane2D = inverseView * (1,0,0,0).xy * tan(fov/2) * aspect`
 3. `Scene::render()` iterates entities. For each `Tilemap` accepted by the
-    current layer, the dispatcher in `Scene::render` notices the active
-    layer's type key is `"RendererRaycast"` and calls
-    `RendererRaycast::drawTilemapWalls(tilemap, worldTransform, entityId)`
-    instead of the normal per-cell quad loop.
+   current layer, the dispatcher in `Scene::render` notices the active
+   layer's type key is `"RendererRaycast"` and calls
+   `RendererRaycast::drawTilemapWalls(tilemap, worldTransform, entityId)`
+   instead of the normal per-cell quad loop.
 4. `RendererRaycast::drawTilemapWalls` runs the per-column DDA (see below).
 5. `Scene::renderUI(camera)` runs after `render()` — UI canvases tagged
-    with the raycast layer's name would render here. The sample's HUD is
-    tagged `"ui"` and falls into the next 2D layer instead.
+   with the raycast layer's name would render here. The sample's HUD is
+   tagged `"ui"` and falls into the next 2D layer instead.
 6. `RendererRaycastLayer::onEndFrame()`:
     - `RendererRaycast::endScene()` (clears the lazy-backdrop flag, no GPU
       work).
@@ -57,12 +57,12 @@ Everything happens on the **CPU**. Each draw is emitted through the existing
 Convention chosen so that an entity with `rotation: [0, 0, 0]` produces a
 sensible 2D pose:
 
-| Quantity      | Source                                          | Notes                                                |
-|---------------|-------------------------------------------------|------------------------------------------------------|
-| `cameraPos2D` | `inverseView * (0, 0, 0, 1)` → take `.xy`       | World position of the camera entity                  |
-| `cameraDir2D` | `inverseView * (0, 1, 0, 0)` → `.xy`, normalise | Local +Y mapped to world XY = forward                |
-| right         | `inverseView * (1, 0, 0, 0)` → `.xy`, normalise | World-frame right axis                               |
-| `cameraPlane2D` | `right * tan(fov/2)`                          | Encodes FOV. Aspect is **not** folded in — see "Ray formula" |
+| Quantity        | Source                                          | Notes                                                        |
+|-----------------|-------------------------------------------------|--------------------------------------------------------------|
+| `cameraPos2D`   | `inverseView * (0, 0, 0, 1)` → take `.xy`       | World position of the camera entity                          |
+| `cameraDir2D`   | `inverseView * (0, 1, 0, 0)` → `.xy`, normalise | Local +Y mapped to world XY = forward                        |
+| right           | `inverseView * (1, 0, 0, 0)` → `.xy`, normalise | World-frame right axis                                       |
+| `cameraPlane2D` | `right * tan(fov/2)`                            | Encodes FOV. Aspect is **not** folded in — see "Ray formula" |
 
 `inverseView` is the entity's world transform mat4 (because Owl's `Camera`
 class stores `m_view = inverse(transform)`). Local +Y is used (rather than
@@ -70,8 +70,9 @@ local –Z which 3D engines usually pick) because Owl's 2D ortho cameras have
 no meaningful –Z axis in the XY plane.
 
 For an entity with rotation = (0, 0, θ) in **radians**:
+
 - forward = (-sin θ, cos θ)  — θ = 0 ⇒ +Y, θ = π/2 ⇒ -X (CCW turn).
-- right   = ( cos θ, sin θ)
+- right = ( cos θ, sin θ)
 
 The Lua script `raycast_player.lua` in the sample mirrors this exact
 formula.
@@ -101,11 +102,11 @@ and we follow it.
 
 The Tilemap is centred at world origin (matching the existing 2D path):
 
-| Cell index   | World-space centre X                        |
-|--------------|---------------------------------------------|
-| col 0        | `-(W − 1) / 2 · cellSize`                   |
-| col c        | `-(W − 1) / 2 · cellSize + c · cellSize`    |
-| col W − 1    | `+(W − 1) / 2 · cellSize`                   |
+| Cell index | World-space centre X                     |
+|------------|------------------------------------------|
+| col 0      | `-(W − 1) / 2 · cellSize`                |
+| col c      | `-(W − 1) / 2 · cellSize + c · cellSize` |
+| col W − 1  | `+(W − 1) / 2 · cellSize`                |
 
 Cell `c` occupies world X **range** `[(c − W/2) · cellSize, (c + 1 − W/2) ·
 cellSize)` — i.e. the cell's center is offset by `cellSize/2` from each of
@@ -253,23 +254,23 @@ perpendicular distance). The implementation differences from a pixel-perfect
 1992 Wolfenstein 3D port:
 
 1. **Drawing path** — Wolfenstein 3D wrote pixels directly to a 320×200 VGA
-    buffer. We instead emit **one textured quad per stripe** via the
-    existing `Renderer2D` batch, and the GPU rasterises them on the
-    framebuffer. Functionally equivalent for stationary frames; for a
-    1920-wide viewport this means up to 1920 quads per frame (the 2D
-    batcher caps at 20 000, so we stay within budget).
+   buffer. We instead emit **one textured quad per stripe** via the
+   existing `Renderer2D` batch, and the GPU rasterises them on the
+   framebuffer. Functionally equivalent for stationary frames; for a
+   1920-wide viewport this means up to 1920 quads per frame (the 2D
+   batcher caps at 20 000, so we stay within budget).
 2. **No floor / ceiling casting** — we paint solid colours rather than
-    sampling a floor / ceiling texture per pixel. Roadmap item *Floors and
-    ceilings* (planned for v0.2.0 follow-up) lifts this.
+   sampling a floor / ceiling texture per pixel. Roadmap item *Floors and
+   ceilings* (planned for v0.2.0 follow-up) lifts this.
 3. **No sprites / billboards** — entities are not visible from the raycast
-    view yet. Roadmap item *Sprites (billboards)*.
+   view yet. Roadmap item *Sprites (billboards)*.
 4. **No doors, thin walls, transparent walls** — every non-empty cell is a
-    full opaque cube. Roadmap item *Map features*.
+   full opaque cube. Roadmap item *Map features*.
 5. **CPU-side DDA** — Wolfenstein 3D ran on a 386, but a modern GPU could
-    do the entire frame in a single fragment shader. The CPU path is kept
-    for v0.2.0 because it's testable, debuggable, and re-uses the existing
-    Slang quad shader. A future PR can swap the inner loop for a dedicated
-    shader without touching the public API.
+   do the entire frame in a single fragment shader. The CPU path is kept
+   for v0.2.0 because it's testable, debuggable, and reuses the existing
+   Slang quad shader. A future PR can swap the inner loop for a dedicated
+   shader without touching the public API.
 
 ## Known limitations of the current code
 

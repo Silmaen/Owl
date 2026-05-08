@@ -31,7 +31,6 @@ float ScreenTransition::s_loadingHeld = 0.f;
 
 namespace {
 
-/// Whether the transition kind is one of the wipe variants.
 auto isWipe(const ScreenTransition::Type iType) -> bool {
 	switch (iType) {
 		case ScreenTransition::Type::WipeLeft:
@@ -47,10 +46,8 @@ auto isWipe(const ScreenTransition::Type iType) -> bool {
 	return false;
 }
 
-/// Render the configured overlay (single fullscreen quad for fades, sliding
-/// bar for wipes). Caller is responsible for `beginScene` / `endScene`.
-void renderOverlay(const ScreenTransition::Type iType, const float iProgress, const math::vec4& iColor,
-				   const float iVw, const float iVh) {
+void renderOverlay(const ScreenTransition::Type iType, const float iProgress, const math::vec4& iColor, const float iVw,
+				   const float iVh) {
 	if (isWipe(iType)) {
 		math::Transform bar;
 		bar.scale() = {iVw, iVh, 1.f};
@@ -100,17 +97,11 @@ void renderOverlay(const ScreenTransition::Type iType, const float iProgress, co
 	renderer::Renderer2D::drawQuad({.transform = fullscreen, .color = tint});
 }
 
-/// Pick a contrasting tint (pure colour or near-white) so the spinner stays
-/// readable against the configured cover colour.
 auto contrastColor(const math::vec4& iCover) -> math::vec4 {
 	const float luma = 0.299f * iCover.r() + 0.587f * iCover.g() + 0.114f * iCover.b();
 	return luma < 0.5f ? math::vec4{0.95f, 0.95f, 0.95f, 1.f} : math::vec4{0.05f, 0.05f, 0.05f, 1.f};
 }
 
-/// Render the loading screen — solid cover + 8-dot rotating spinner +
-/// "Loading" label below it. Uses pixel-space ortho coordinates already set
-/// up by the caller. `iElapsed` is the time spent in the `Loading` phase
-/// (drives the spinner rotation).
 void renderLoadingScreen(const math::vec4& iColor, const float iElapsed, const float iVw, const float iVh) {
 	// Solid cover so the underlying scene (which may already be the freshly
 	// loaded one once the host has handled the swap) is hidden.
@@ -162,11 +153,8 @@ void renderLoadingScreen(const math::vec4& iColor, const float iElapsed, const f
 	const float textHeight = std::min(iVw, iVh) * 0.04f;
 	textTr.translation() = {cx, cy - radius * 2.5f - textHeight * 0.5f, 0.91f};
 	textTr.scale() = {textHeight, textHeight, 1.f};
-	renderer::Renderer2D::drawString({.transform = textTr,
-									  .text = "Loading",
-									  .font = font,
-									  .color = fg,
-									  .entityId = -1});
+	renderer::Renderer2D::drawString(
+			{.transform = textTr, .text = "Loading", .font = font, .color = fg, .entityId = -1});
 }
 
 }// namespace
@@ -199,48 +187,51 @@ void ScreenTransition::update(const float iDeltaTime) {
 	switch (s_phase) {
 		case Phase::Idle:
 			return;
-		case Phase::OutAnim: {
-			if (s_type == Type::None) {
-				// Direct `play(None, …)` was used — nothing to animate, drop straight to Idle.
-				s_phase = Phase::Idle;
+		case Phase::OutAnim:
+			{
+				if (s_type == Type::None) {
+					// Direct `play(None, …)` was used — nothing to animate, drop straight to Idle.
+					s_phase = Phase::Idle;
+					return;
+				}
+				s_elapsed += iDeltaTime;
+				if (s_elapsed >= s_duration) {
+					if (s_request.has_value()) {
+						s_phase = Phase::Loading;
+						s_loadingHeld = 0.f;
+					} else {
+						// Primitive overlay: no orchestrator follow-up.
+						s_type = Type::None;
+						s_phase = Phase::Idle;
+					}
+				}
 				return;
 			}
-			s_elapsed += iDeltaTime;
-			if (s_elapsed >= s_duration) {
-				if (s_request.has_value()) {
-					s_phase = Phase::Loading;
-					s_loadingHeld = 0.f;
-				} else {
-					// Primitive overlay: no orchestrator follow-up.
-					s_type = Type::None;
-					s_phase = Phase::Idle;
+		case Phase::Loading:
+			{
+				s_loadingHeld += iDeltaTime;
+				if (!s_request.has_value())
+					return;// awaiting host call — keep showing the loading screen.
+				if (s_loadDispatched && s_loadingHeld >= s_request->minHoldDuration) {
+					s_phase = Phase::InAnim;
+					s_type = s_request->inType;
+					s_duration = std::max(s_request->inDuration, 0.001f);
+					s_elapsed = 0.f;
 				}
+				return;
 			}
-			return;
-		}
-		case Phase::Loading: {
-			s_loadingHeld += iDeltaTime;
-			if (!s_request.has_value())
-				return;// awaiting host call — keep showing the loading screen.
-			if (s_loadDispatched && s_loadingHeld >= s_request->minHoldDuration) {
-				s_phase = Phase::InAnim;
-				s_type = s_request->inType;
-				s_duration = std::max(s_request->inDuration, 0.001f);
-				s_elapsed = 0.f;
+		case Phase::InAnim:
+			{
+				s_elapsed += iDeltaTime;
+				if (s_elapsed >= s_duration) {
+					s_phase = Phase::Idle;
+					s_type = Type::None;
+					s_request.reset();
+					s_loadDispatched = false;
+					s_loadingHeld = 0.f;
+				}
+				return;
 			}
-			return;
-		}
-		case Phase::InAnim: {
-			s_elapsed += iDeltaTime;
-			if (s_elapsed >= s_duration) {
-				s_phase = Phase::Idle;
-				s_type = Type::None;
-				s_request.reset();
-				s_loadDispatched = false;
-				s_loadingHeld = 0.f;
-			}
-			return;
-		}
 	}
 }
 
@@ -255,11 +246,12 @@ void ScreenTransition::render(const float iViewportWidth, const float iViewportH
 		case Phase::Idle:
 			break;
 		case Phase::OutAnim:
-		case Phase::InAnim: {
-			const float progress = std::clamp(s_elapsed / s_duration, 0.f, 1.f);
-			renderOverlay(s_type, progress, s_color, iViewportWidth, iViewportHeight);
-			break;
-		}
+		case Phase::InAnim:
+			{
+				const float progress = std::clamp(s_elapsed / s_duration, 0.f, 1.f);
+				renderOverlay(s_type, progress, s_color, iViewportWidth, iViewportHeight);
+				break;
+			}
 		case Phase::Loading:
 			renderLoadingScreen(s_color, s_loadingHeld, iViewportWidth, iViewportHeight);
 			break;

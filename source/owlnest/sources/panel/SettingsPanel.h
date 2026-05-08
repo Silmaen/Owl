@@ -85,6 +85,7 @@ private:
 	/**
 	 * @brief
 	 *  Convert an ImGui key enum to a GLFW key code.
+	 * @return The int.
 	 */
 	static auto ImGuiKeyToGlfwKey(ImGuiKey iKey) -> int;
 };

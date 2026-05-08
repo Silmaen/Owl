@@ -12,6 +12,7 @@ python = "^3.12"
 depmanager = "^0.5.5"
 black = "^26.1.0"
 gcovr = "^8.6"
+codespell = "^2.3.0"
 
 [tool.poetry.group.dev.dependencies]
 rich = "^14.3.2"

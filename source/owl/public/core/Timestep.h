@@ -26,7 +26,7 @@ public:
 	using clock = std::chrono::steady_clock;
 	/// The type of time point.
 	using time_point = clock::time_point;
-	/// The tipe of duration.
+	/// The type of duration.
 	using duration = clock::duration;
 
 	/**
@@ -58,7 +58,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Force the step with a given duration
+	 *  Force the step with a given duration.
 	 * @param iDelta The duration.
 	 */
 	void forceUpdate(const duration iDelta) {

@@ -40,9 +40,6 @@ auto findEntity(lua_State* iState) -> std::optional<scene::Entity> {
 	return std::nullopt;
 }
 
-/// Helper: map a transition-type string passed from Lua to the engine enum.
-/// Centralised so `ui.transition_play` and `scene.transition_to` parse the
-/// same vocabulary (`"fade"`, `"fade_in"`, `"fade_out"`, `"wipe_*"`).
 auto parseTransitionType(const std::string_view iName) -> scene::ScreenTransition::Type {
 	if (iName == "fade_in" || iName == "fade")
 		return scene::ScreenTransition::Type::FadeIn;
@@ -532,9 +529,9 @@ auto luaUiTransitionPlay(lua_State* iState) -> int {
 				static_cast<float>(luaL_checknumber(iState, 3)), static_cast<float>(luaL_checknumber(iState, 4)),
 				static_cast<float>(luaL_checknumber(iState, 5)), static_cast<float>(luaL_checknumber(iState, 6))};
 	} else if (top >= 5) {
-		color = math::vec4{
-				static_cast<float>(luaL_checknumber(iState, 3)), static_cast<float>(luaL_checknumber(iState, 4)),
-				static_cast<float>(luaL_checknumber(iState, 5)), 1.f};
+		color = math::vec4{static_cast<float>(luaL_checknumber(iState, 3)),
+						   static_cast<float>(luaL_checknumber(iState, 4)),
+						   static_cast<float>(luaL_checknumber(iState, 5)), 1.f};
 	}
 	const auto type = parseTransitionType(typeName);
 	if (type == scene::ScreenTransition::Type::None) {
@@ -604,7 +601,7 @@ auto luaGamestateRemove(lua_State* iState) -> int {
 	return 0;
 }
 
-auto luaGamestateClear([[maybe_unused]] lua_State* iState) -> int { // NOLINT(readability-non-const-parameter)
+auto luaGamestateClear([[maybe_unused]] lua_State* iState) -> int {// NOLINT(readability-non-const-parameter)
 	auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene != nullptr)
 		activeScene->getGameState().clear();

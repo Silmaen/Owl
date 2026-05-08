@@ -16,15 +16,15 @@ namespace owl::gui {
 
 void Theme::loadFromFile(const std::filesystem::path& iFile) {
 	if (!exists(iFile)) {
-		OWL_CORE_ERROR("Theme::loadFromFile: path {} does not exist", iFile.string())
+		OWL_CORE_ERROR("Theme::loadFromFile: path {} does not exist.", iFile.string())
 		return;
 	}
 	if (!is_regular_file(iFile)) {
-		OWL_CORE_ERROR("Theme::loadFromFile: path {} is not a file", iFile.string())
+		OWL_CORE_ERROR("Theme::loadFromFile: path {} is not a file.", iFile.string())
 		return;
 	}
 	if (iFile.extension() != ".yml") {
-		OWL_CORE_ERROR("Theme::loadFromFile: File {} has not the right format", iFile.string())
+		OWL_CORE_ERROR("Theme::loadFromFile: File {} has not the right format.", iFile.string())
 		return;
 	}
 	const YAML::Node data = YAML::LoadFile(iFile.string());

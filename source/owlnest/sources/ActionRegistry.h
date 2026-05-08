@@ -36,10 +36,9 @@ constexpr auto operator&(const Modifiers iLhs, const Modifiers iRhs) -> Modifier
 /**
  * @brief
  *  Check if a modifier flag is set.
+ * @return True when flag is present.
  */
-constexpr auto hasFlag(const Modifiers iValue, const Modifiers iFlag) -> bool {
-	return (iValue & iFlag) == iFlag;
-}
+constexpr auto hasFlag(const Modifiers iValue, const Modifiers iFlag) -> bool { return (iValue & iFlag) == iFlag; }
 
 /// A keyboard shortcut: a key code plus modifier flags.
 struct Shortcut {
@@ -58,36 +57,42 @@ struct Shortcut {
 	/**
 	 * @brief
 	 *  Return true if this shortcut is unbound.
+	 * @return True when the object is empty.
 	 */
 	[[nodiscard]] auto isEmpty() const -> bool { return key == 0; }
 
 	/**
 	 * @brief
 	 *  Generate display string like "Ctrl+Shift+S".
+	 * @return The to string representation.
 	 */
 	[[nodiscard]] auto toString() const -> std::string;
 
 	/**
 	 * @brief
 	 *  Parse a display string back into a Shortcut.
+	 * @return The string parsed from the input.
 	 */
 	static auto fromString(const std::string& iStr) -> Shortcut;
 
 	/**
 	 * @brief
 	 *  Check if the currently pressed modifier keys match this shortcut exactly.
+	 * @return True on success, false otherwise.
 	 */
 	[[nodiscard]] auto modifiersMatch() const -> bool;
 
 	/**
 	 * @brief
 	 *  Get a human-readable name for a key code.
+	 * @return The std string.
 	 */
 	static auto keyName(input::KeyCode iKey) -> std::string;
 
 	/**
 	 * @brief
 	 *  Parse a key name back to a key code. Returns 0 if unknown.
+	 * @return The input KeyCode.
 	 */
 	static auto keyFromName(const std::string& iName) -> input::KeyCode;
 };
@@ -141,12 +146,14 @@ public:
 	/**
 	 * @brief
 	 *  Get all registered actions (for the settings UI).
+	 * @return The actions.
 	 */
 	[[nodiscard]] auto getActions() const -> const std::vector<ActionEntry>& { return m_actions; }
 
 	/**
 	 * @brief
 	 *  Get all registered actions (mutable, for rebinding).
+	 * @return The actions.
 	 */
 	[[nodiscard]] auto getActions() -> std::vector<ActionEntry>& { return m_actions; }
 
@@ -171,8 +178,7 @@ public:
 	 * @param[in] iExcludeId Action ID to exclude from the check.
 	 * @return The conflicting action's display name, or empty if none.
 	 */
-	[[nodiscard]] auto findConflict(const Shortcut& iShortcut, const std::string& iExcludeId) const
-			-> std::string;
+	[[nodiscard]] auto findConflict(const Shortcut& iShortcut, const std::string& iExcludeId) const -> std::string;
 
 	/**
 	 * @brief

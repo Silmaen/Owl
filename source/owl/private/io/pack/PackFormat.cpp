@@ -29,7 +29,7 @@ constexpr uint8_t g_obfuscationSeed = 0xA7;
 
 auto hashPath(const std::string& iPath) -> uint64_t {
 	uint64_t hash = g_fnvBasis;
-	for (const auto ch : iPath) {
+	for (const auto ch: iPath) {
 		hash ^= static_cast<uint64_t>(static_cast<uint8_t>(ch));
 		hash *= g_fnvPrime;
 	}
@@ -67,27 +67,27 @@ auto decompressBuffer(const std::vector<uint8_t>& iCompressed, const uint64_t iO
 
 auto serializeToc(const std::vector<TocEntry>& iEntries) -> std::vector<uint8_t> {
 	std::vector<uint8_t> data;
-	for (const auto& entry : iEntries) {
+	for (const auto& [pathHash, path, dataOffset, dataSize, originalSize, assetType]: iEntries) {
 		// pathHash (8 bytes)
-		data.insert(data.end(), reinterpret_cast<const uint8_t*>(&entry.pathHash),
-					reinterpret_cast<const uint8_t*>(&entry.pathHash) + sizeof(entry.pathHash));
+		data.insert(data.end(), reinterpret_cast<const uint8_t*>(&pathHash),
+					reinterpret_cast<const uint8_t*>(&pathHash) + sizeof(pathHash));
 		// pathLength (2 bytes)
-		const auto pathLen = static_cast<uint16_t>(entry.path.size());
+		const auto pathLen = static_cast<uint16_t>(path.size());
 		data.insert(data.end(), reinterpret_cast<const uint8_t*>(&pathLen),
 					reinterpret_cast<const uint8_t*>(&pathLen) + sizeof(pathLen));
 		// path (variable)
-		data.insert(data.end(), entry.path.begin(), entry.path.end());
+		data.insert(data.end(), path.begin(), path.end());
 		// dataOffset (8 bytes)
-		data.insert(data.end(), reinterpret_cast<const uint8_t*>(&entry.dataOffset),
-					reinterpret_cast<const uint8_t*>(&entry.dataOffset) + sizeof(entry.dataOffset));
+		data.insert(data.end(), reinterpret_cast<const uint8_t*>(&dataOffset),
+					reinterpret_cast<const uint8_t*>(&dataOffset) + sizeof(dataOffset));
 		// dataSize (8 bytes)
-		data.insert(data.end(), reinterpret_cast<const uint8_t*>(&entry.dataSize),
-					reinterpret_cast<const uint8_t*>(&entry.dataSize) + sizeof(entry.dataSize));
+		data.insert(data.end(), reinterpret_cast<const uint8_t*>(&dataSize),
+					reinterpret_cast<const uint8_t*>(&dataSize) + sizeof(dataSize));
 		// originalSize (8 bytes)
-		data.insert(data.end(), reinterpret_cast<const uint8_t*>(&entry.originalSize),
-					reinterpret_cast<const uint8_t*>(&entry.originalSize) + sizeof(entry.originalSize));
+		data.insert(data.end(), reinterpret_cast<const uint8_t*>(&originalSize),
+					reinterpret_cast<const uint8_t*>(&originalSize) + sizeof(originalSize));
 		// assetType (1 byte)
-		data.push_back(static_cast<uint8_t>(entry.assetType));
+		data.push_back(static_cast<uint8_t>(assetType));
 	}
 	return data;
 }

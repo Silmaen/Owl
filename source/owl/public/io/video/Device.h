@@ -88,14 +88,14 @@ public:
 
 	/**
 	 * @brief
-	 *  list of PixelFormat
+	 *  list of PixelFormat.
 	 */
 	enum struct PixelFormat : uint8_t {
 		Rgb24,///< R8G8B8 format
 		Nv12,///< NV12 pixel format.
 		YuYv,///< YUYV pixel format.
 		MJpeg,///< MJPG pixel format.
-		Unknwon,///< unknown or unsupported pixel format.
+		Unknown,///< unknown or unsupported pixel format.
 	};
 
 	/**
@@ -119,7 +119,7 @@ protected:
 	/// Name of the device.
 	std::string m_name;
 	/// The pixel format.
-	PixelFormat m_pixFormat = PixelFormat::Unknwon;
+	PixelFormat m_pixFormat = PixelFormat::Unknown;
 	/// The size of the frame.
 	math::vec2ui m_size;
 
@@ -127,7 +127,7 @@ protected:
 	 * @brief
 	 *  Convert a raw buffer of pixel to RGB24 format.
 	 * @param[in] iInputBuffer The input buffer.
-	 * @param[in] iBufferSize The size of the buffer
+	 * @param[in] iBufferSize The size of the buffer.
 	 * @return A converted RGB24 buffer.
 	 */
 	[[nodiscard]] auto getRgbBuffer(const uint8_t* iInputBuffer, int32_t iBufferSize) const -> std::vector<uint8_t>;

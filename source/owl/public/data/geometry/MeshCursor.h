@@ -23,7 +23,7 @@ class MeshRangeIterator;
 namespace details {
 /**
  * @brief
- *  Helper structure to check if the component is writable or not
+ *  Helper structure to check if the component is writable or not.
  * @tparam T The component type.
  * @tparam ElementType The type of element.
  */
@@ -34,7 +34,7 @@ struct IsWriteExtraData
 
 /**
  * @brief
- *  Helper structure to check if the component is writable or not
+ *  Helper structure to check if the component is writable or not.
  * @tparam T The component type.
  * @tparam ElementType The type of element.
  */
@@ -168,6 +168,7 @@ class OWL_API MeshCursor : details::MeshCursorInitializer<IsConst, ElementType, 
 	using InitializerType = details::MeshCursorInitializer<IsConst, ElementType, Components...>;
 	using CursorType = MeshCursorBase<IsConst, ElementType>;
 	using MeshType = MeshCursorBase<IsConst, ElementType>::MeshType;
+
 public:
 	using ComponentsT = std::tuple<typename std::remove_cvref_t<Components>::ComponentType...>;
 
@@ -322,7 +323,7 @@ private:
 	/**
 	 * @brief
 	 *  Get a specific component from the tuple.
-	 * @tparam T Component type to find
+	 * @tparam T Component type to find.
 	 * @return A reference on the component.
 	 */
 	template<typename T>
@@ -341,20 +342,28 @@ private:
 
 namespace std {// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
 template<typename... Components>
-struct tuple_size<owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex, Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_size<
+		owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex,
+										Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 template<typename... Components>
-struct tuple_size<owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex, Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_size<
+		owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex,
+										Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 
 template<typename... Components>
-struct tuple_size<owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Triangle, Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_size<
+		owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Triangle,
+										Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 template<typename... Components>
-struct tuple_size<owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Triangle, Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_size<
+		owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Triangle,
+										Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 template<std::size_t N, typename... Components>

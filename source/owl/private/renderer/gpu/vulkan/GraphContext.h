@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "renderer/gpu/GraphContext.h"
 #include "core/external/glfw3.h"
+#include "renderer/gpu/GraphContext.h"
 
 namespace owl::renderer::gpu::vulkan {
 /**
@@ -61,7 +61,7 @@ public:
 	/**
 	 * @brief
 	 *  Create the Window surface.
-	 * @param[in] iInstance The Vulkan instance
+	 * @param[in] iInstance The Vulkan instance.
 	 * @return The operation result.
 	 */
 	auto createSurface(const VkInstance& iInstance) -> VkResult;
@@ -69,7 +69,7 @@ public:
 	/**
 	 * @brief
 	 *  Destroy the Window surface.
-	 * @param[in] iInstance The Vulkan instance
+	 * @param[in] iInstance The Vulkan instance.
 	 */
 	void destroySurface(const VkInstance& iInstance);
 
@@ -89,7 +89,7 @@ public:
 private:
 	/// The window.
 	GLFWwindow* mp_wnd = nullptr;
-	/// the presenttin surface.
+	/// the presenting surface.
 	VkSurfaceKHR m_surface = nullptr;
 };
 }// namespace owl::renderer::gpu::vulkan

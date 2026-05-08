@@ -119,7 +119,8 @@ public:
 	 */
 	auto operator++() -> MeshRangeIterator& {
 		m_cursor.moveNext();
-		std::apply([](auto&... iComp) -> auto { (iComp.moveNext(), ...); }, m_cursor.m_components.value());// NOLINT(bugprone-unchecked-optional-access)
+		std::apply([](auto&... iComp) -> auto { (iComp.moveNext(), ...); },
+				   m_cursor.m_components.value());// NOLINT(bugprone-unchecked-optional-access)
 		return *this;
 	}
 
@@ -142,7 +143,7 @@ public:
 	 * @brief
 	 *  Check if the iterator is equal to another.
 	 * @param[in] iOther A mesh iterator on the same mesh.
-	 * @retval True if the iterators are equal
+	 * @retval True if the iterators are equal.
 	 * @retval False otherwise.
 	 */
 	auto operator==(const MeshRangeIterator& iOther) const -> bool { return m_cursor == iOther.m_cursor; }
@@ -160,7 +161,7 @@ public:
 	 * @brief
 	 *   Less than operator.
 	 * @param[in] iOther A mesh iterator on the same mesh.
-	 * @retval True if the current iterator is lower than the other iterator,
+	 * @retval True if the current iterator is lower than the other iterator,.
 	 * @retval False otherwise.
 	 */
 	auto operator<(const MeshRangeIterator& iOther) const -> bool { return m_cursor < iOther.m_cursor; }

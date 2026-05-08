@@ -12,12 +12,12 @@
 #include "external/imgui_text_edit.h"
 #include "external/lunasvg_wrapper.h"
 
-#include <renderer/gpu/Texture.h>
 #include <core/Application.h>
 #include <core/Log.h>
 #include <core/Macros.h>
 #include <core/utils/openExternalUrl.h>
 #include <gui/UiLayer.h>
+#include <renderer/gpu/Texture.h>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -564,8 +564,8 @@ auto MarkdownPreview::resolveImage(const std::string& iSrc) -> const ImageEntry&
 						}
 					}
 					const renderer::gpu::Texture::Specification specs{.size = {pixW, pixH},
-																 .format = renderer::gpu::ImageFormat::Rgba8,
-																 .generateMips = false};
+																	  .format = renderer::gpu::ImageFormat::Rgba8,
+																	  .generateMips = false};
 					entry.texture = renderer::gpu::Texture2D::create(specs);
 					entry.size = {pixW, pixH};
 					entry.texture->setData(pixels.data(), static_cast<uint32_t>(pixels.size()));

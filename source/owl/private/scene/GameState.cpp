@@ -34,8 +34,7 @@ void GameState::clear() { m_data.clear(); }
 auto GameState::keys() const -> std::vector<std::string> {
 	std::vector<std::string> result;
 	result.reserve(m_data.size());
-	for (const auto& [key, val]: m_data)
-		result.push_back(key);
+	for (const auto& key: m_data | std::views::keys) result.push_back(key);
 	return result;
 }
 

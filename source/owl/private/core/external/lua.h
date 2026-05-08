@@ -12,8 +12,8 @@
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wold-style-cast")
 extern "C" {
+#include <lauxlib.h>
 #include <lua.h>
 #include <lualib.h>
-#include <lauxlib.h>
 }
 OWL_DIAG_POP

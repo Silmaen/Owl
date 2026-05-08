@@ -91,7 +91,7 @@ private:
 };
 /**
  * @brief
- *  Window close Event
+ *  Window close Event.
  */
 class OWL_API WindowCloseEvent final : public Event {
 public:
@@ -139,7 +139,7 @@ public:
 
 /**
  * @brief
- *  Application Tick Event
+ *  Application Tick Event.
  */
 class OWL_API AppTickEvent final : public Event {
 public:
@@ -187,7 +187,7 @@ public:
 
 /**
  * @brief
- *  Application Update Event
+ *  Application Update Event.
  */
 class OWL_API AppUpdateEvent final : public Event {
 public:
@@ -235,7 +235,7 @@ public:
 
 /**
  * @brief
- *  Application Rendering Event
+ *  Application Rendering Event.
  */
 class OWL_API AppRenderEvent final : public Event {
 public:

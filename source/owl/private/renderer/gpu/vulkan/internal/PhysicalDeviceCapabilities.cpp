@@ -202,6 +202,7 @@ auto PhysicalDeviceCapabilities::getCapabilityString() const -> std::string {
 }
 
 [[nodiscard]] auto PhysicalDeviceCapabilities::getTotalMemory() const -> size_t {
+
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG("-Wunsafe-buffer-usage")
 	size_t total = 0;

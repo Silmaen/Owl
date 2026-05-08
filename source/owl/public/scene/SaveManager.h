@@ -116,7 +116,11 @@ private:
 	/// The game name.
 	static std::string s_gameName;
 
-	/// Get the file path for a slot.
+	/**
+	 * @brief
+	 *  Get the file path for a slot.
+	 * @return The slot path.
+	 */
 	[[nodiscard]] static auto getSlotPath(uint32_t iSlot) -> std::filesystem::path;
 };
 

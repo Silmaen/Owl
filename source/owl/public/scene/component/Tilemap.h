@@ -76,7 +76,7 @@ struct OWL_API TilemapLayer {
  *       tiles: "0,0,1,1,...,-1,-1"   # comma-separated row-major
  *     - name: props
  *       ...
- * ```
+ * ```.
  *
  * Tile data is emitted as a comma-separated string of integers to keep YAML
  * compact (a 64×64 grid is 4096 entries — far too noisy as a YAML sequence).

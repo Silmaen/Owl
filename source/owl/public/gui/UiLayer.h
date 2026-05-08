@@ -17,12 +17,12 @@ struct ImFont;
 
 /**
  * @brief
- *  Namespace for gui
+ *  Namespace for gui.
  */
 namespace owl::gui {
 /**
  * @brief
- *  Class ImGuiLayer
+ *  Class ImGuiLayer.
  */
 class OWL_API UiLayer final : public core::layer::Layer {
 public:

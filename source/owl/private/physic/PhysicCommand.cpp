@@ -31,9 +31,7 @@ inline void logNotInitialized(const char* iFunc) {
  *  Emit a uniform "null entity" warning for a Physic API call.
  * @param[in] iFunc Calling function name (used as the log subject).
  */
-inline void logNullEntity(const char* iFunc) {
-	OWL_CORE_WARN("Physic: {} called with null entity; ignoring.", iFunc)
-}
+inline void logNullEntity(const char* iFunc) { OWL_CORE_WARN("Physic: {} called with null entity; ignoring.", iFunc) }
 
 }// namespace
 
@@ -73,7 +71,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 	def.gravity = {.x = 0.0f, .y = -9.81f};
 	m_impl->worldId = b2CreateWorld(&def);
 
-	OWL_INFO("PhysicCommand::init(), world created ({} {})", m_impl->worldId.index1, m_impl->worldId.generation)
+	OWL_INFO("PhysicCommand::init(), world created ({} {}).", m_impl->worldId.index1, m_impl->worldId.generation)
 
 	// Add entities...
 	for (const auto& view = m_scene->registry.view<scene::component::PhysicBody, scene::component::Transform>();
@@ -99,7 +97,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
 
 		const b2BodyId body = b2CreateBody(m_impl->worldId, &bodyDef);
-		OWL_INFO("PhysicCommand::init(), body created ({} {} {})", body.index1, body.world0, body.generation)
+		OWL_INFO("PhysicCommand::init(), body created ({} {} {}).", body.index1, body.world0, body.generation)
 		sbody.bodyId = m_impl->nextId;
 		m_impl->bodies[m_impl->nextId] = body;
 		m_impl->nextId++;
@@ -200,7 +198,8 @@ void PhysicCommand::frame(const core::Timestep& iTimestep) {
 		if (hierarchy.parentId != core::UUID{0}) {
 			if (const scene::Entity parent = m_scene->findEntityByUUID(hierarchy.parentId); parent) {
 				const math::mat4 parentWorldInv = math::inverse(m_scene->getWorldTransform(parent)());
-				const math::vec4 localPos = parentWorldInv * math::vec4{x, y, transform.transform.translation().z(), 1.0f};
+				const math::vec4 localPos =
+						parentWorldInv * math::vec4{x, y, transform.transform.translation().z(), 1.0f};
 				transform.transform.translation().x() = localPos.x();
 				transform.transform.translation().y() = localPos.y();
 				const float parentWorldRotZ = m_scene->getWorldTransform(parent).rotation().z();

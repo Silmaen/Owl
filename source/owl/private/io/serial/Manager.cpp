@@ -26,7 +26,7 @@ namespace owl::io::serial {
 namespace {
 /**
  * @brief
- *  List The serial Port Available
+ *  List The serial Port Available.
  * @param ioListToUpdate The device's list to update.
  *
  * @note https://stackoverflow.com/questions/2674048/what-is-proper-way-to-detect-all-available-serial-ports-on-windows
@@ -43,7 +43,7 @@ void enumerateSerialDevices(Manager::DeviceList& ioListToUpdate) {
 			0) {//QueryDosDevice returns zero if it didn't find an object
 			const std::string name{"usbserial"};
 			const std::string path{lpTargetPath};
-			OWL_CORE_TRACE("Serial Found: ({}) [{}] ", comName.c_str(), path.c_str())
+			OWL_CORE_TRACE("Serial Found: ({}) [{}]. ", comName.c_str(), path.c_str())
 			ioListToUpdate.emplace_back("COM" + std::to_string(i), name, path);
 		}
 		if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {}
@@ -53,9 +53,9 @@ void enumerateSerialDevices(Manager::DeviceList& ioListToUpdate) {
 		for (const auto& devLink: std::filesystem::directory_iterator(base)) {
 			if (is_symlink(devLink.symlink_status())) {
 				std::string port = std::filesystem::canonical(base / read_symlink(devLink)).string();
-				// todo: get device informations
+				// todo: get device information
 				std::string name = "usbserial";
-				OWL_CORE_TRACE("Serial Found: ({}) [{}] ", port.c_str(), name.c_str())
+				OWL_CORE_TRACE("Serial Found: ({}) [{}]. ", port.c_str(), name.c_str())
 				ioListToUpdate.emplace_back(std::move(port), std::move(name), "");
 			}
 		}

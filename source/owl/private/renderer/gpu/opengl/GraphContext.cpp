@@ -34,7 +34,7 @@ void GraphContext::init() {
 	OWL_CORE_INFO("  Version: {}", reinterpret_cast<const char*>(glGetString(GL_VERSION)))
 	int32_t textureUnits = 0;
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &textureUnits);
-	OWL_CORE_INFO(" Max texture slot per Shader: {}", textureUnits)
+	OWL_CORE_INFO(" Max texture slot per Shader: {}.", textureUnits)
 }
 
 void GraphContext::swapBuffers() {

@@ -86,8 +86,7 @@ auto decodeTiles(const std::string& iEncoded, size_t iExpected) -> std::vector<i
 void Tilemap::resize(const uint32_t iWidth, const uint32_t iHeight) {
 	const uint32_t newWidth = std::max(1u, iWidth);
 	const uint32_t newHeight = std::max(1u, iHeight);
-	for (auto& layer: layers)
-		resizeLayerStorage(layer.tiles, width, height, newWidth, newHeight);
+	for (auto& layer: layers) resizeLayerStorage(layer.tiles, width, height, newWidth, newHeight);
 	width = newWidth;
 	height = newHeight;
 }

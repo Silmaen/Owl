@@ -15,11 +15,9 @@ namespace owl::nest::commands {
 // --- ReparentCommand ---
 
 ReparentCommand::ReparentCommand(const scene::Entity& iChild, const core::UUID iNewParentUuid)
-	: m_childUuid{iChild.getUUID()},
-	  m_oldParentUuid{iChild.getComponent<scene::component::Hierarchy>().parentId},
+	: m_childUuid{iChild.getUUID()}, m_oldParentUuid{iChild.getComponent<scene::component::Hierarchy>().parentId},
 	  m_newParentUuid{iNewParentUuid},
-	  m_oldLocalTransform{iChild.getComponent<scene::component::Transform>().transform},
-	  m_name{iChild.getName()} {
+	  m_oldLocalTransform{iChild.getComponent<scene::component::Transform>().transform}, m_name{iChild.getName()} {
 	m_selectAfterUndo = m_childUuid;
 	m_selectAfterRedo = m_childUuid;
 }
@@ -48,16 +46,12 @@ void ReparentCommand::redo(scene::Scene& ioScene) {
 		ioScene.setParent(child, newParent);
 }
 
-auto ReparentCommand::description() const -> std::string {
-	return std::format("Reparent '{}'", m_name);
-}
+auto ReparentCommand::description() const -> std::string { return std::format("Reparent '{}'", m_name); }
 
 // --- UnparentCommand ---
 UnparentCommand::UnparentCommand(const scene::Entity& iChild)
-	: m_childUuid{iChild.getUUID()},
-	  m_oldParentUuid{iChild.getComponent<scene::component::Hierarchy>().parentId},
-	  m_oldLocalTransform{iChild.getComponent<scene::component::Transform>().transform},
-	  m_name{iChild.getName()} {
+	: m_childUuid{iChild.getUUID()}, m_oldParentUuid{iChild.getComponent<scene::component::Hierarchy>().parentId},
+	  m_oldLocalTransform{iChild.getComponent<scene::component::Transform>().transform}, m_name{iChild.getName()} {
 	m_selectAfterUndo = m_childUuid;
 	m_selectAfterRedo = m_childUuid;
 }
@@ -79,8 +73,6 @@ void UnparentCommand::redo(scene::Scene& ioScene) {
 		ioScene.unparent(child);
 }
 
-auto UnparentCommand::description() const -> std::string {
-	return std::format("Unparent '{}'", m_name);
-}
+auto UnparentCommand::description() const -> std::string { return std::format("Unparent '{}'", m_name); }
 
 }// namespace owl::nest::commands

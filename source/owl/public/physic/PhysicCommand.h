@@ -45,7 +45,7 @@ public:
 	/**
 	 * @brief
 	 *  Initialize the physical world based on the given scene.
-	 * @param iScene The Scene onto apply physics
+	 * @param iScene The Scene onto apply physics.
 	 */
 	static void init(scene::Scene* iScene);
 

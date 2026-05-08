@@ -79,6 +79,7 @@ public:
 	/**
 	 * @brief
 	 *  Human-readable description for menu/tooltip display.
+	 * @return The std string = 0.
 	 */
 	[[nodiscard]] virtual auto description() const -> std::string = 0;
 
@@ -93,6 +94,7 @@ public:
 	/**
 	 * @brief
 	 *  Unique command type ID for merge checking (0 = no merging).
+	 * @return The size_t.
 	 */
 	[[nodiscard]] virtual auto typeId() const -> size_t { return 0; }
 

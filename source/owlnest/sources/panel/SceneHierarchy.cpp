@@ -42,9 +42,7 @@ std::string g_lastHoveredComponentName;
  * @brief
  *  Check if an entity is the root of a prefab instance.
  */
-auto isPrefabRoot(const scene::Entity& iEntity) -> bool {
-	return iEntity && iEntity.hasComponent<PrefabLink>();
-}
+auto isPrefabRoot(const scene::Entity& iEntity) -> bool { return iEntity && iEntity.hasComponent<PrefabLink>(); }
 
 /**
  * @brief
@@ -69,32 +67,19 @@ auto findPrefabRoot(const scene::Entity& iEntity, const scene::Scene& iScene) ->
  */
 auto componentIconName(const char* iCompName) -> const char* {
 	static const std::unordered_map<std::string_view, const char*> map = {
-			{"Transform", "comp_transform"},
-			{"Camera", "comp_camera"},
-			{"Sprite Renderer", "comp_sprite"},
-			{"Animated Sprite", "comp_animated_sprite"},
-			{"Circle Renderer", "comp_circle"},
-			{"Text Renderer", "comp_text"},
-			{"Physical body", "comp_physics"},
-			{"Native Script", "comp_script"},
-			{"Trigger", "comp_trigger"},
-			{"Player", "comp_player"},
-			{"Entity Link", "comp_link"},
-			{"Background Texture", "comp_background"},
-			{"Visibility", "comp_visibility"},
-			{"Sound Source", "comp_sound"},
-			{"Sound Listener", "comp_sound"},
-			{"Lua Script", "comp_lua_script"},
-			{"Canvas", "comp_canvas"},
-			{"UI Rect", "comp_ui_rect"},
-			{"UI Text", "comp_ui_text"},
-			{"UI Image", "comp_ui_image"},
-			{"UI Panel", "comp_ui_panel"},
-			{"UI Button", "comp_ui_button"},
-			{"UI Slider", "comp_ui_slider"},
-			{"UI Progress Bar", "comp_ui_progress"},
-			{"Prefab Link", "prefab_icon"},
-			{"Tilemap", "owltileset_icon"},
+			{"Transform", "comp_transform"},    {"Camera", "comp_camera"},
+			{"Sprite Renderer", "comp_sprite"}, {"Animated Sprite", "comp_animated_sprite"},
+			{"Circle Renderer", "comp_circle"}, {"Text Renderer", "comp_text"},
+			{"Physical body", "comp_physics"},  {"Native Script", "comp_script"},
+			{"Trigger", "comp_trigger"},        {"Player", "comp_player"},
+			{"Entity Link", "comp_link"},       {"Background Texture", "comp_background"},
+			{"Visibility", "comp_visibility"},  {"Sound Source", "comp_sound"},
+			{"Sound Listener", "comp_sound"},   {"Lua Script", "comp_lua_script"},
+			{"Canvas", "comp_canvas"},          {"UI Rect", "comp_ui_rect"},
+			{"UI Text", "comp_ui_text"},        {"UI Image", "comp_ui_image"},
+			{"UI Panel", "comp_ui_panel"},      {"UI Button", "comp_ui_button"},
+			{"UI Slider", "comp_ui_slider"},    {"UI Progress Bar", "comp_ui_progress"},
+			{"Prefab Link", "prefab_icon"},     {"Tilemap", "owltileset_icon"},
 	};
 	if (const auto it = map.find(iCompName); it != map.end())
 		return it->second;
@@ -172,9 +157,7 @@ void SceneHierarchy::renderRootEntities() {
 	const auto roots = m_context->getRootEntities();
 	// 0 or 1 layer → flat list (legacy behaviour, no extra nesting).
 	if (layers.size() < 2) {
-		for (auto entity: roots)
-
-			drawEntityNode(entity);
+		for (auto entity: roots) drawEntityNode(entity);
 		return;
 	}
 
@@ -192,9 +175,8 @@ void SceneHierarchy::renderRootEntities() {
 		} else {
 			effective = firstLayerName;
 		}
-		const bool known = std::ranges::any_of(layers, [&](const auto& l) -> bool {
-			return l->getName() == effective;
-		});
+		const bool known =
+				std::ranges::any_of(layers, [&](const auto& l) -> bool { return l->getName() == effective; });
 		if (known)
 			bucketed[effective].push_back(entity);
 		else
@@ -221,8 +203,8 @@ void SceneHierarchy::renderRootEntities() {
 															  : e.addComponent<RendererTag>();
 					tag.rendererName = name;
 					if (mp_undoManager != nullptr) {
-						auto cmd = mkUniq<commands::ModifyEntityCommand>(
-								e.getUUID(), std::move(before), std::format("Route to layer '{}'", name));
+						auto cmd = mkUniq<commands::ModifyEntityCommand>(e.getUUID(), std::move(before),
+																		 std::format("Route to layer '{}'", name));
 						cmd->captureAfter(e);
 						mp_undoManager->push(std::move(cmd));
 					}
@@ -233,9 +215,7 @@ void SceneHierarchy::renderRootEntities() {
 		}
 		if (open) {
 			if (const auto it = bucketed.find(name); it != bucketed.end()) {
-				for (auto entity: it->second)
-
-					drawEntityNode(entity);
+				for (auto entity: it->second) drawEntityNode(entity);
 			}
 
 			ImGui::TreePop();
@@ -257,9 +237,7 @@ void SceneHierarchy::renderRootEntities() {
 			ImGui::SetTooltip("These root entities have a RendererTag whose name does not match\n"
 							  "any active layer — they will be skipped at render time.");
 		if (open) {
-			for (auto entity: unrouted)
-
-				drawEntityNode(entity);
+			for (auto entity: unrouted) drawEntityNode(entity);
 
 			ImGui::TreePop();
 		}
@@ -410,7 +388,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 }
 
 void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const bool iHasChildren,
-											const core::UUID iParentId) {
+										   const core::UUID iParentId) {
 	if (!ImGui::BeginPopup("EntityContext"))
 		return;
 	const auto& ib = gui::IconBank::instance();
@@ -620,10 +598,9 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 			if (iUndoManager != nullptr) {
 				const auto afterYaml = scene::SceneSerializer::serializeEntityToString(ioEntity);
 				if (beforeYaml != afterYaml) {
-					auto cmd = mkUniq<commands::ModifyEntityCommand>(
-							ioEntity.getUUID(),
-							EntitySnapshot{ioEntity.getUUID(), beforeYaml},
-							std::format("Modify {}", T::name()));
+					auto cmd = mkUniq<commands::ModifyEntityCommand>(ioEntity.getUUID(),
+																	 EntitySnapshot{ioEntity.getUUID(), beforeYaml},
+																	 std::format("Modify {}", T::name()));
 					cmd->captureAfter(ioEntity);
 					iUndoManager->push(std::move(cmd));
 				}
@@ -635,8 +612,8 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 			ioEntity.removeComponent<T>();
 			if (iUndoManager != nullptr) {
 				auto after = EntitySnapshot::capture(ioEntity);
-				iUndoManager->push(mkUniq<commands::RemoveComponentCommand>(std::move(before), std::move(after),
-																			T::name()));
+				iUndoManager->push(
+						mkUniq<commands::RemoveComponentCommand>(std::move(before), std::move(after), T::name()));
 			}
 		}
 		ImGui::PopID();
@@ -664,15 +641,14 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 			// Capture after state (tag already changed in-place by InputText).
 			auto cmd = mkUniq<commands::ModifyEntityCommand>(
 					iEntity.getUUID(),
-					EntitySnapshot{iEntity.getUUID(),
-								   scene::SceneSerializer::serializeEntityToString(iEntity)},
+					EntitySnapshot{iEntity.getUUID(), scene::SceneSerializer::serializeEntityToString(iEntity)},
 					"Rename Entity");
 			// The "before" snapshot has the old tag — reconstruct it.
 			auto& tagRef = iEntity.getComponent<Tag>().tag;
 			const auto currentTag = tagRef;
 			tagRef = beforeTag;
-			cmd = mkUniq<commands::ModifyEntityCommand>(
-					iEntity.getUUID(), EntitySnapshot::capture(iEntity), "Rename Entity");
+			cmd = mkUniq<commands::ModifyEntityCommand>(iEntity.getUUID(), EntitySnapshot::capture(iEntity),
+														"Rename Entity");
 			tagRef = currentTag;
 			cmd->captureAfter(iEntity);
 			mp_undoManager->push(std::move(cmd));

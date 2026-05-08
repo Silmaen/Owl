@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "renderer/gpu/GraphContext.h"
 #include "core/external/glfw3.h"
+#include "renderer/gpu/GraphContext.h"
 
 namespace owl::renderer::gpu::null {
 /**
@@ -56,6 +56,6 @@ public:
 	 *  Get version number of the backend API.
 	 * @return The version number.
 	 */
-	[[nodiscard]] auto getVersion() const -> Version override { return {.major=0, .minor=0}; }
+	[[nodiscard]] auto getVersion() const -> Version override { return {.major = 0, .minor = 0}; }
 };
 }// namespace owl::renderer::gpu::null

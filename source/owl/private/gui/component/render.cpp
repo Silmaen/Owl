@@ -435,8 +435,8 @@ void renderProps(SoundSource& ioComponent) {
 	static sound::SoundHandle s_previewHandle = sound::invalidSoundHandle;
 	const bool playing =
 			s_previewHandle != sound::invalidSoundHandle && sound::SoundCommand::isPlaying(s_previewHandle);
-	const bool canPlay = !ioComponent.sound.soundAsset.empty() &&
-						 sound::SoundCommand::getState() == sound::SoundAPI::State::Ready;
+	const bool canPlay =
+			!ioComponent.sound.soundAsset.empty() && sound::SoundCommand::getState() == sound::SoundAPI::State::Ready;
 	ImGui::BeginDisabled(!canPlay);
 	if (ImGui::Button(playing ? "Stop##soundPreview" : "Play##soundPreview")) {
 		if (playing) {
@@ -444,9 +444,8 @@ void renderProps(SoundSource& ioComponent) {
 			s_previewHandle = sound::invalidSoundHandle;
 		} else {
 			auto& library = sound::SoundSystem::getSoundLibrary();
-			const auto data = library.exists(ioComponent.sound.soundAsset)
-									  ? library.get(ioComponent.sound.soundAsset)
-									  : library.load(ioComponent.sound.soundAsset);
+			const auto data = library.exists(ioComponent.sound.soundAsset) ? library.get(ioComponent.sound.soundAsset)
+																		   : library.load(ioComponent.sound.soundAsset);
 			if (data) {
 				sound::PlayParams params;
 				params.volume = ioComponent.sound.volume;
@@ -508,30 +507,34 @@ void renderProps(LuaScript& ioComponent) {
 			// Index-based PushID prevents collisions if two properties share a name.
 			ImGui::PushID(static_cast<int>(idx));
 			switch (prop.type) {
-				case script::ScriptPropertyType::Float: {
-					auto val = std::get<float>(prop.value);
-					if (ImGui::DragFloat(prop.name.c_str(), &val, 0.1f))
-						prop.value = val;
-					break;
-				}
-				case script::ScriptPropertyType::Int: {
-					auto val = static_cast<int>(std::get<int64_t>(prop.value));
-					if (ImGui::DragInt(prop.name.c_str(), &val))
-						prop.value = static_cast<int64_t>(val);
-					break;
-				}
-				case script::ScriptPropertyType::String: {
-					auto val = std::get<std::string>(prop.value);
-					if (ImGui::InputText(prop.name.c_str(), &val))
-						prop.value = val;
-					break;
-				}
-				case script::ScriptPropertyType::Bool: {
-					auto val = std::get<bool>(prop.value);
-					if (ImGui::Checkbox(prop.name.c_str(), &val))
-						prop.value = val;
-					break;
-				}
+				case script::ScriptPropertyType::Float:
+					{
+						auto val = std::get<float>(prop.value);
+						if (ImGui::DragFloat(prop.name.c_str(), &val, 0.1f))
+							prop.value = val;
+						break;
+					}
+				case script::ScriptPropertyType::Int:
+					{
+						auto val = static_cast<int>(std::get<int64_t>(prop.value));
+						if (ImGui::DragInt(prop.name.c_str(), &val))
+							prop.value = static_cast<int64_t>(val);
+						break;
+					}
+				case script::ScriptPropertyType::String:
+					{
+						auto val = std::get<std::string>(prop.value);
+						if (ImGui::InputText(prop.name.c_str(), &val))
+							prop.value = val;
+						break;
+					}
+				case script::ScriptPropertyType::Bool:
+					{
+						auto val = std::get<bool>(prop.value);
+						if (ImGui::Checkbox(prop.name.c_str(), &val))
+							prop.value = val;
+						break;
+					}
 			}
 			ImGui::PopID();
 		}
@@ -586,7 +589,8 @@ void renderProps(UiRect& ioComponent) {
 
 void renderProps(UiText& ioComponent) {
 	ImGui::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
-	ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Color", reinterpret_cast<float*>(
+									   &ioComponent.color));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	ImGui::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
 	const std::string currentAlign{magic_enum::enum_name(ioComponent.alignment)};
 	if (ImGui::BeginCombo("Alignment", currentAlign.c_str())) {
@@ -604,20 +608,24 @@ void renderProps(UiText& ioComponent) {
 
 void renderProps(UiImage& ioComponent) {
 	widgets::textureField("Texture", ioComponent.texture);
-	ImGui::ColorEdit4("Tint", reinterpret_cast<float*>(&ioComponent.tint));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4(
+			"Tint", reinterpret_cast<float*>(&ioComponent.tint));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 }
 
 void renderProps(UiPanel& ioComponent) {
-	ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-	ImGui::ColorEdit4("Border Color", reinterpret_cast<float*>(&ioComponent.borderColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Background",
+					  reinterpret_cast<float*>(
+							  &ioComponent.backgroundColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4(
+			"Border Color",
+			reinterpret_cast<float*>(&ioComponent.borderColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	ImGui::DragFloat("Border Width", &ioComponent.borderWidth, 0.5f, 0.0f, 20.0f);
 	const std::string currentLayout{magic_enum::enum_name(ioComponent.layout)};
 	if (ImGui::BeginCombo("Layout", currentLayout.c_str())) {
 		for (const auto& layoutName: magic_enum::enum_names<UiPanel::Layout>()) {
 			const std::string sName{layoutName};
 			if (ImGui::Selectable(sName.c_str(), currentLayout == sName))
-				ioComponent.layout =
-						magic_enum::enum_cast<UiPanel::Layout>(sName).value_or(UiPanel::Layout::None);
+				ioComponent.layout = magic_enum::enum_cast<UiPanel::Layout>(sName).value_or(UiPanel::Layout::None);
 		}
 		ImGui::EndCombo();
 	}
@@ -628,13 +636,21 @@ void renderProps(UiPanel& ioComponent) {
 }
 
 void renderProps(UiButton& ioComponent) {
-	ImGui::ColorEdit4("Normal Color", reinterpret_cast<float*>(&ioComponent.normalColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4(
+			"Normal Color",
+			reinterpret_cast<float*>(&ioComponent.normalColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	fieldTooltip("Button background color in the default (not hovered, not pressed) state.");
-	ImGui::ColorEdit4("Hover Color", reinterpret_cast<float*>(&ioComponent.hoverColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4(
+			"Hover Color",
+			reinterpret_cast<float*>(&ioComponent.hoverColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	fieldTooltip("Button background color when the mouse is hovering over it.");
-	ImGui::ColorEdit4("Pressed Color", reinterpret_cast<float*>(&ioComponent.pressedColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4(
+			"Pressed Color",
+			reinterpret_cast<float*>(&ioComponent.pressedColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	fieldTooltip("Button background color while the mouse button is held down.");
-	ImGui::ColorEdit4("Disabled Color", reinterpret_cast<float*>(&ioComponent.disabledColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4(
+			"Disabled Color",
+			reinterpret_cast<float*>(&ioComponent.disabledColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	fieldTooltip("Button background color when disabled (cannot be clicked).");
 	ImGui::InputText("On Click Callback", &ioComponent.onClickCallback);
 	fieldTooltip("Lua function name to call when the button is clicked (e.g. on_play_clicked).");
@@ -647,17 +663,27 @@ void renderProps(UiSlider& ioComponent) {
 	fieldTooltip("Minimum allowed value.");
 	ImGui::DragFloat("Max", &ioComponent.maxValue, 0.1f);
 	fieldTooltip("Maximum allowed value.");
-	ImGui::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-	ImGui::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-	ImGui::ColorEdit4("Handle Color", reinterpret_cast<float*>(&ioComponent.handleColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4(
+			"Track Color",
+			reinterpret_cast<float*>(&ioComponent.trackColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4(
+			"Fill Color",
+			reinterpret_cast<float*>(&ioComponent.fillColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4(
+			"Handle Color",
+			reinterpret_cast<float*>(&ioComponent.handleColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 	ImGui::InputText("On Value Changed", &ioComponent.onValueChangedCallback);
 	fieldTooltip("Lua function called when the value changes. Receives the new value in _slider_value.");
 }
 
 void renderProps(UiProgressBar& ioComponent) {
 	ImGui::DragFloat("Value", &ioComponent.value, 0.01f, 0.0f, 1.0f);
-	ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-	ImGui::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Background",
+					  reinterpret_cast<float*>(
+							  &ioComponent.backgroundColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4(
+			"Fill Color",
+			reinterpret_cast<float*>(&ioComponent.fillColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 }
 
 void renderProps(PrefabLink& ioComponent) {
@@ -671,7 +697,8 @@ void renderProps(PrefabLink& ioComponent) {
 void renderProps(RendererTag& ioComponent) {
 	const auto& stack = renderer::Renderer::getRenderStack();
 	const auto& layers = stack.getLayers();
-	const char* preview = ioComponent.rendererName.empty() ? "(default — first layer)" : ioComponent.rendererName.c_str();
+	const char* preview =
+			ioComponent.rendererName.empty() ? "(default — first layer)" : ioComponent.rendererName.c_str();
 	if (ImGui::BeginCombo("Layer", preview)) {
 		const bool defaultSelected = ioComponent.rendererName.empty();
 		if (ImGui::Selectable("(default — first layer)", defaultSelected))
@@ -692,9 +719,8 @@ void renderProps(RendererTag& ioComponent) {
 				 "Empty falls back to the first layer.");
 	// Surface a one-shot warning if the chosen name doesn't match any active layer.
 	if (!ioComponent.rendererName.empty()) {
-		const bool known = std::ranges::any_of(layers, [&](const auto& l) -> bool {
-			return l->getName() == ioComponent.rendererName;
-		});
+		const bool known = std::ranges::any_of(
+				layers, [&](const auto& l) -> bool { return l->getName() == ioComponent.rendererName; });
 		if (!known) {
 			ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.10f, 1.0f), "Unknown layer — entity will be skipped.");
 		}

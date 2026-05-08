@@ -18,8 +18,36 @@ paths:
 poetry run python ci_action.py <Action> <preset> [-v] [-q] [-- --extra=args]
 ```
 
-Available actions: Build, Test, Coverage, Clean, Documentation, Package, Help, DefineTeamCityVariables, PublishDoc,
-PublishPackage.
+Available actions: Build, Test, Coverage, Clean, Documentation, CodeStyle, Package, Help, DefineTeamCityVariables,
+PublishDoc, PublishPackage.
+
+`CodeStyle` is the project's read-only style/doc gate. It **only inspects** —
+it never rewrites sources. Sub-checks (all on by default):
+
+1. **clang-format** dry-run on every C++ source.
+2. **typos** via `codespell` (allowlist in `ci/codespell-ignore-words.txt`
+   for legitimate identifiers like `nam:` / `siz:` prefixes).
+3. **comment-quality** — `///` is reserved for single-line member/enum-value
+   comments; consecutive `///` lines must use `/** */`. Each Doxygen
+   description paragraph must end with `.`, `?`, or `!`.
+4. **private-member-docs** — `m_*` / `mp_*` / `s_*` / `g_*` fields need a
+   `///` line above or `///<` inline.
+5. **cpp-style** — banned `std::shared_ptr` / `std::make_shared` /
+   `std::unique_ptr` / `std::make_unique` / `std::weak_ptr` (project aliases:
+   `shared` / `mkShared` / `uniq` / `mkUniq` / `weak`); banned class suffixes
+   `*Service` / `*Helper` / `*Util`; `UI*` identifier prefix (must be `Ui*`);
+   `enum class` (must be `enum struct`); blank-line rules around
+   `OWL_PROFILE_FUNCTION()` and `OWL_DIAG_PUSH/POP`; log-message format
+   (`Subsystem: capitalized message ending with .`).
+6. **structural** — file headers (`@file` + `Copyright (c) YYYY`), `OWL_API`
+   warnings for free functions declared in `source/owl/{public,private}`.
+
+Doxygen is **deliberately not** run here — the project already exposes a
+separate `Documentation` action that builds doxygen with `WARN_AS_ERROR=YES`.
+
+Each sub-check can be disabled with `-- --no-<name>=true`:
+`--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
+`--no-cpp-style`, `--no-structural`.
 
 ## Adding a New CI Action
 

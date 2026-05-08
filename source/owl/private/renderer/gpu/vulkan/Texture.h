@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "renderer/gpu/Texture.h"
 #include "internal/Descriptors.h"
+#include "renderer/gpu/Texture.h"
 
 namespace owl::renderer::gpu::vulkan {
 /**

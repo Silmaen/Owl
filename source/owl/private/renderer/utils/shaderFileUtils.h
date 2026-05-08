@@ -23,8 +23,7 @@ namespace owl::renderer::utils {
  * @param[in] iRendererApi Specific backend API qualifier (e.g. "1.4", "4.5").
  * @return Absolute path under the working directory.
  */
-OWL_API auto getCacheDirectory(const std::string& iRenderer, const std::string& iRendererApi)
-		-> std::filesystem::path;
+OWL_API auto getCacheDirectory(const std::string& iRenderer, const std::string& iRendererApi) -> std::filesystem::path;
 
 /**
  * @brief
@@ -121,8 +120,9 @@ struct ShaderReflectionData {
 	std::vector<SampledImage> sampledImages;
 };
 
-OWL_API auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
-						   gpu::ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData;
+OWL_API auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer,
+						   const std::string& iRendererApi, gpu::ShaderType iStage,
+						   const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData;
 
 OWL_API auto computeShaderHash(const std::string& iSource) -> std::string;
 

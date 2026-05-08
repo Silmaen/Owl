@@ -199,8 +199,8 @@ public:
 	 * @param[in] iScene The scene's enable/overrides/order config (may be empty).
 	 * @return The built stack.
 	 */
-	[[nodiscard]] static auto buildFromConfig(const RendererStackConfig& iProject,
-											  const EnabledRenderersConfig& iScene) -> RenderStack;
+	[[nodiscard]] static auto buildFromConfig(const RendererStackConfig& iProject, const EnabledRenderersConfig& iScene)
+			-> RenderStack;
 
 	/**
 	 * @brief

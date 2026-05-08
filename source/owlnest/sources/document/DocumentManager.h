@@ -36,12 +36,14 @@ public:
 	/**
 	 * @brief
 	 *  Add a document to the manager. Takes ownership. Returns a stable pointer.
+	 * @return Pointer to the add, or `nullptr` when not available.
 	 */
 	auto add(uniq<Document> iDocument) -> Document*;
 
 	/**
 	 * @brief
 	 *  Remove the document with the given id. Returns true if it was removed.
+	 * @return True on success, false otherwise.
 	 */
 	auto remove(core::UUID iId) -> bool;
 
@@ -66,30 +68,35 @@ public:
 	/**
 	 * @brief
 	 *  The currently active document, or nullptr if none.
+	 * @return Pointer to the active, or `nullptr` when not available.
 	 */
 	[[nodiscard]] auto getActive() const -> Document* { return mp_active; }
 
 	/**
 	 * @brief
 	 *  Lookup by id. Returns nullptr if not found.
+	 * @return The matching find, or empty when nothing was found.
 	 */
 	[[nodiscard]] auto find(core::UUID iId) const -> Document*;
 
 	/**
 	 * @brief
 	 *  Access the full list of open documents.
+	 * @return The const std vector>.
 	 */
 	[[nodiscard]] auto list() const -> const std::vector<uniq<Document>>& { return m_documents; }
 
 	/**
 	 * @brief
 	 *  Number of open documents.
+	 * @return The size_t.
 	 */
 	[[nodiscard]] auto size() const -> size_t { return m_documents.size(); }
 
 	/**
 	 * @brief
 	 *  True when no document is open.
+	 * @return True on success, false otherwise.
 	 */
 	[[nodiscard]] auto empty() const -> bool { return m_documents.empty(); }
 

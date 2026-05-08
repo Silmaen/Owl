@@ -15,6 +15,7 @@ namespace owl::math {
  * \brief Convert sRGB colour to linear colour.
  * \param[in] iColor Input sRGB colour.
  * \return Linear colour.
+ * @return The vec4.
  */
 constexpr auto sRgbToLinear(const vec4& iColor) -> vec4 {
 	constexpr auto toLinear = [](const float iSrgb) -> float {
@@ -27,6 +28,7 @@ constexpr auto sRgbToLinear(const vec4& iColor) -> vec4 {
  * \brief Convert linear colour to sRgB colour.
  * \param[in] iColor Input linear colour.
  * \return sRGB colr.
+ * @return The vec4.
  */
 constexpr auto linearTosRgb(const vec4& iColor) -> vec4 {
 	constexpr auto toSrgb = [](const float iRgb) -> float {

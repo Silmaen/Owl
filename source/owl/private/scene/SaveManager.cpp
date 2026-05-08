@@ -66,7 +66,8 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 		const auto timeT = std::chrono::system_clock::to_time_t(now);
 		std::string timestamp(30, '\0');
 		// NOLINTNEXTLINE(concurrency-mt-unsafe)
-		if (const auto len = std::strftime(timestamp.data(), timestamp.size(), "%Y-%m-%dT%H:%M:%S", std::localtime(&timeT)))
+		if (const auto len =
+					std::strftime(timestamp.data(), timestamp.size(), "%Y-%m-%dT%H:%M:%S", std::localtime(&timeT)))
 			timestamp.resize(len);
 
 		// Build save file using a single Serializer.
@@ -110,15 +111,15 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 
 		std::ofstream file(getSlotPath(iSlot));
 		if (!file.is_open()) {
-			OWL_CORE_ERROR("SaveManager: Cannot write to slot {}", iSlot)
+			OWL_CORE_ERROR("SaveManager: Cannot write to slot {}.", iSlot)
 			return false;
 		}
 		file << sOut.getImpl()->emitter.c_str();
 		file.close();
-		OWL_CORE_INFO("SaveManager: Saved to slot {} at {}", iSlot, timestamp)
+		OWL_CORE_INFO("SaveManager: Saved to slot {} at {}.", iSlot, timestamp)
 		return true;
 	} catch (const std::exception& e) {
-		OWL_CORE_ERROR("SaveManager: Save failed: {}", e.what())
+		OWL_CORE_ERROR("SaveManager: Save failed: {}.", e.what())
 		return false;
 	}
 }
@@ -130,7 +131,7 @@ auto SaveManager::load(const uint32_t iSlot, const shared<Scene>& iScene) -> Loa
 	try {
 		const auto path = getSlotPath(iSlot);
 		if (!exists(path)) {
-			OWL_CORE_ERROR("SaveManager: No save file for slot {}", iSlot)
+			OWL_CORE_ERROR("SaveManager: No save file for slot {}.", iSlot)
 			return result;
 		}
 		const YAML::Node root = YAML::LoadFile(path.string());
@@ -175,11 +176,11 @@ auto SaveManager::load(const uint32_t iSlot, const shared<Scene>& iScene) -> Loa
 		// Mark as loaded from save in GameState.
 		iScene->getGameState().set("loaded_from_save", true);
 
-		OWL_CORE_INFO("SaveManager: Loaded slot {} ({} physics snapshots)", iSlot, result.physicsSnapshots.size())
+		OWL_CORE_INFO("SaveManager: Loaded slot {} ({} physics snapshots).", iSlot, result.physicsSnapshots.size())
 		result.success = true;
 		return result;
 	} catch (const std::exception& e) {
-		OWL_CORE_ERROR("SaveManager: Load failed: {}", e.what())
+		OWL_CORE_ERROR("SaveManager: Load failed: {}.", e.what())
 		return result;
 	}
 }
@@ -207,7 +208,7 @@ auto SaveManager::listSaves() -> std::vector<SaveInfo> {
 				saves.push_back(info);
 			}
 		} catch (const std::exception& e) {
-			OWL_CORE_WARN("SaveManager: Skipping corrupt save '{}': {}", entry.path().string(), e.what())
+			OWL_CORE_WARN("SaveManager: Skipping corrupt save '{}': {}.", entry.path().string(), e.what())
 		}
 	}
 	std::ranges::sort(saves, [](const auto& iA, const auto& iB) -> auto { return iA.slot < iB.slot; });
@@ -230,9 +231,7 @@ auto SaveManager::getScenePath(const uint32_t iSlot) -> std::string {
 		const YAML::Node root = YAML::LoadFile(path.string());
 		if (const auto header = root["OwlSave"]; header && header["scenePath"])
 			return header["scenePath"].as<std::string>();
-	} catch (const std::exception& e) {
-		OWL_CORE_WARN("SaveManager: Cannot read save slot {}: {}", iSlot, e.what())
-	}
+	} catch (const std::exception& e) { OWL_CORE_WARN("SaveManager: Cannot read save slot {}: {}.", iSlot, e.what()) }
 	return {};
 }
 

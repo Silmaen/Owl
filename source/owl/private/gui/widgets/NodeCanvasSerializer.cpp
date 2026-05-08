@@ -37,12 +37,10 @@ void emitNode(YAML::Emitter& ioOut, const Node& iNode) {
 	ioOut << YAML::Key << "titleColor" << YAML::Value << YAML::Flow << YAML::BeginSeq << iNode.titleColor.x()
 		  << iNode.titleColor.y() << iNode.titleColor.z() << iNode.titleColor.w() << YAML::EndSeq;
 	ioOut << YAML::Key << "inputs" << YAML::Value << YAML::BeginSeq;
-	for (const auto& pin: iNode.inputs)
-		emitPin(ioOut, pin);
+	for (const auto& pin: iNode.inputs) emitPin(ioOut, pin);
 	ioOut << YAML::EndSeq;
 	ioOut << YAML::Key << "outputs" << YAML::Value << YAML::BeginSeq;
-	for (const auto& pin: iNode.outputs)
-		emitPin(ioOut, pin);
+	for (const auto& pin: iNode.outputs) emitPin(ioOut, pin);
 	ioOut << YAML::EndSeq;
 	if (!iNode.customData.empty())
 		ioOut << YAML::Key << "customData" << YAML::Value << YAML::Literal << iNode.customData;
@@ -98,12 +96,10 @@ void emitCanvas(YAML::Emitter& ioOut, const NodeCanvas& iCanvas, std::string_vie
 	ioOut << YAML::Key << "NodeGraph" << YAML::Value << std::string{iName};
 	ioOut << YAML::Key << "Version" << YAML::Value << g_currentVersion;
 	ioOut << YAML::Key << "Nodes" << YAML::Value << YAML::BeginSeq;
-	for (const auto& node: iCanvas.nodes())
-		emitNode(ioOut, node);
+	for (const auto& node: iCanvas.nodes()) emitNode(ioOut, node);
 	ioOut << YAML::EndSeq;
 	ioOut << YAML::Key << "Links" << YAML::Value << YAML::BeginSeq;
-	for (const auto& link: iCanvas.links())
-		emitLink(ioOut, link);
+	for (const auto& link: iCanvas.links()) emitLink(ioOut, link);
 	ioOut << YAML::EndSeq;
 	ioOut << YAML::EndMap;
 }
@@ -121,7 +117,7 @@ auto NodeCanvasSerializer::deserializeFromString(NodeCanvas& ioCanvas, std::stri
 	try {
 		root = YAML::Load(std::string{iYaml});
 	} catch (const YAML::Exception& ex) {
-		OWL_CORE_ERROR("NodeCanvasSerializer: YAML parse error: {}", ex.what())
+		OWL_CORE_ERROR("NodeCanvasSerializer: YAML parse error: {}.", ex.what())
 		return false;
 	}
 	if (!root || !root.IsMap()) {
@@ -129,7 +125,7 @@ auto NodeCanvasSerializer::deserializeFromString(NodeCanvas& ioCanvas, std::stri
 		return false;
 	}
 	if (const auto version = root["Version"]; version && version.as<int>() > g_currentVersion) {
-		OWL_CORE_WARN("NodeCanvasSerializer: document version {} is newer than supported {}", version.as<int>(),
+		OWL_CORE_WARN("NodeCanvasSerializer: document version {} is newer than supported {}.", version.as<int>(),
 					  g_currentVersion)
 	}
 
@@ -183,18 +179,15 @@ auto NodeCanvasSerializer::serializeSubset(const NodeCanvas& iCanvas, std::span<
 	// only store the nodes/links we need — and it keeps the YAML format identical to a full save.
 	NodeCanvas subset;
 	std::unordered_map<uint64_t, bool> idSet;
-	for (const auto id: iNodeIds)
-		idSet.emplace(static_cast<uint64_t>(id), true);
+	for (const auto id: iNodeIds) idSet.emplace(static_cast<uint64_t>(id), true);
 	std::unordered_map<uint64_t, bool> pinsInSubset;
 
 	for (const auto& node: iCanvas.nodes()) {
 		if (!idSet.contains(static_cast<uint64_t>(node.id)))
 			continue;
 		subset.addNode(node);
-		for (const auto& pin: node.inputs)
-			pinsInSubset.emplace(static_cast<uint64_t>(pin.id), true);
-		for (const auto& pin: node.outputs)
-			pinsInSubset.emplace(static_cast<uint64_t>(pin.id), true);
+		for (const auto& pin: node.inputs) pinsInSubset.emplace(static_cast<uint64_t>(pin.id), true);
+		for (const auto& pin: node.outputs) pinsInSubset.emplace(static_cast<uint64_t>(pin.id), true);
 	}
 	for (const auto& link: iCanvas.links()) {
 		if (pinsInSubset.contains(static_cast<uint64_t>(link.fromPin)) &&
@@ -209,9 +202,7 @@ auto NodeCanvasSerializer::pasteSubset(NodeCanvas& ioCanvas, std::string_view iY
 	YAML::Node root;
 	try {
 		root = YAML::Load(std::string{iYaml});
-	} catch (const YAML::Exception&) {
-		return {};
-	}
+	} catch (const YAML::Exception&) { return {}; }
 	if (!root || !root.IsMap())
 		return {};
 

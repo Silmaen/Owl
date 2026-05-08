@@ -28,7 +28,7 @@ class OWL_API IFactory {
 protected:
 	/**
 	 * @brief
-	 *  Default constructor
+	 *  Default constructor.
 	 */
 	IFactory();
 
@@ -49,25 +49,26 @@ public:
 
 	/**
 	 * @brief
-	 *  Allocate the unique instance of the class if needed and return it
+	 *  Allocate the unique instance of the class if needed and return it.
+	 * @return The instance.
 	 */
 	static auto getInstance() -> IFactory&;
 
 	/**
 	 * @brief
-	 *  Register a new product into the factory
-	 * @param[in] iType          Type index of the product
-	 * @param[in] iDataKey      Key identifier of the product
-	 * @param[in] iDataAllocator Allocator functions for the product
+	 *  Register a new product into the factory.
+	 * @param[in] iType          Type index of the product.
+	 * @param[in] iDataKey      Key identifier of the product.
+	 * @param[in] iDataAllocator Allocator functions for the product.
 	 */
 	virtual void registerObject(std::type_index iType, const std::string& iDataKey,
 								const ProductAllocator& iDataAllocator) = 0;
 
 	/**
 	 * @brief
-	 *  Check if the product key is present in the factory
+	 *  Check if the product key is present in the factory.
 	 * @param[in] iDataKey Key to check
-	 * @return Return true if the key is registered in the factory, false otherwise
+	 * @return Return true if the key is registered in the factory, false otherwise.
 	 */
 	[[nodiscard]] virtual auto isRegistered(const std::string& iDataKey) const -> bool = 0;
 
@@ -81,28 +82,28 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the key string from the PID
-	 * @param[in]  iPid        Product identifier
-	 * @param[out] oDataKey    Key identifier of the product
+	 *  Get the key string from the PID.
+	 * @param[in]  iPid        Product identifier.
+	 * @param[out] oDataKey    Key identifier of the product.
 	 * @return Return true if there are no error , false if the Product was not found.
 	 */
 	virtual auto getKey(FactoryPid iPid, std::string& oDataKey) const -> bool = 0;
 
 	/**
 	 * @brief
-	 *  Create a new instance of a class contained into the factory
-	 * @param[in] iDataKey Key identifier of the product
-	 * @return The product created through the allocator
+	 *  Create a new instance of a class contained into the factory.
+	 * @param[in] iDataKey Key identifier of the product.
+	 * @return The product created through the allocator.
 	 */
 	[[nodiscard]] virtual auto createProduct(const std::string& iDataKey) const -> FactoryProduct* = 0;
 
 	/**
 	 * @brief
-	 *  Create n instances of a class contained into the factory
-	 * @param[in]  iDataKey Key identifier of the product
-	 * @param[in]  iNumber Number of elements to instantiate
+	 *  Create n instances of a class contained into the factory.
+	 * @param[in]  iDataKey Key identifier of the product.
+	 * @param[in]  iNumber Number of elements to instantiate.
 	 * @param[out] oElements Products created by the function.
-	 * @return  This function returns true if success or false if error
+	 * @return  This function returns true if success or false if error.
 	 */
 	virtual auto createProducts(const std::string& iDataKey, unsigned int iNumber,
 								std::vector<FactoryProduct*>& oElements) const -> bool = 0;
@@ -118,7 +119,7 @@ public:
 	/**
 	 * @brief
 	 *  From a data key of a product, find the corresponding PID. The product must be registered before.
-	 * @param[in]  iDataKey Key identifier of the product
+	 * @param[in]  iDataKey Key identifier of the product.
 	 * @return The pid corresponding to the product.
 	 */
 	virtual auto getPid(const std::string& iDataKey) -> FactoryPid = 0;
@@ -135,39 +136,40 @@ class OWL_API FactoryProduct {
 public:
 	/**
 	 * @brief
-	 *  Default constructor
+	 *  Default constructor.
 	 */
 	FactoryProduct() = default;
 	/**
 	 * @brief
-	 * Default Destructor
+	 * Default Destructor.
 	 */
 	virtual ~FactoryProduct() = default;
 	/**
 	 * @brief
-	 * Default copy constructor
+	 * Default copy constructor.
 	 */
 	FactoryProduct(const FactoryProduct&) = default;
 	/**
 	 * @brief
-	 * Default move constructor
+	 * Default move constructor.
 	 */
 	FactoryProduct(FactoryProduct&&) = default;
 	/**
 	 * @brief
-	 * Default copy operator
+	 * Default copy operator.
 	 */
 	auto operator=(const FactoryProduct&) -> FactoryProduct& = default;
 	/**
 	 * @brief
-	 * Default move operator
+	 * Default move operator.
 	 */
 	auto operator=(FactoryProduct&&) -> FactoryProduct& = default;
 	/**
 	 * @brief
-	 *  Return the product identifier
+	 *  Return the product identifier.
 	 * @note
-	 *  This id is unique
+	 *  This id is unique.
+	 * @return The pid.
 	 */
 	[[nodiscard]] virtual auto getPid() const -> FactoryPid = 0;
 };
@@ -216,8 +218,8 @@ struct OWL_API ProductAllocator {
 	/**
 	 * @brief
 	 *  Constructor
-	 * @param iSingleAlloc Function to call for a single allocation
-	 * @param iMultipleAlloc Function to call for multiple allocations
+	 * @param iSingleAlloc Function to call for a single allocation.
+	 * @param iMultipleAlloc Function to call for multiple allocations.
 	 */
 	explicit ProductAllocator(SingleAllocator iSingleAlloc = nullptr, MultipleAllocator iMultipleAlloc = nullptr);
 };

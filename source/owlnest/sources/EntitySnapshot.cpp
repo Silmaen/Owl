@@ -49,8 +49,7 @@ auto SubtreeSnapshot::capture(const scene::Entity& iRootEntity, const scene::Sce
 			parentUuid = current.getComponent<scene::component::Hierarchy>().parentId;
 		snapshot.parentUuids.push_back(parentUuid);
 
-		for (const auto& child: iScene.getChildren(current))
-			queue.push(child);
+		for (const auto& child: iScene.getChildren(current)) queue.push(child);
 	}
 	return snapshot;
 }
@@ -60,8 +59,7 @@ auto SubtreeSnapshot::restore(scene::Scene& ioScene) const -> scene::Entity {
 		return {};
 
 	// Restore all entities.
-	for (const auto& entitySnap: entities)
-		entitySnap.restore(ioScene);
+	for (const auto& entitySnap: entities) entitySnap.restore(ioScene);
 
 	// Rebuild parent-child relationships for non-root entities.
 	for (size_t i = 1; i < entities.size(); ++i) {

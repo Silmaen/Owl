@@ -37,7 +37,8 @@ void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
 	if (ImGui::SliderInt("##codeEditorFontSize", &ioSettings.codeEditorFontSize, 8, 32, "%d px"))
 		ioSettings.codeEditorFontSize = std::clamp(ioSettings.codeEditorFontSize, 8, 48);
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-		ImGui::SetTooltip("Pixel size used inside the code/text editor tabs. Takes effect on the next startup. Default is 13.");
+		ImGui::SetTooltip(
+				"Pixel size used inside the code/text editor tabs. Takes effect on the next startup. Default is 13.");
 
 	ImGui::Spacing();
 	ImGui::TextUnformatted("UI font size");

@@ -35,11 +35,11 @@ void SoundAPI::init() {
 	OWL_PROFILE_FUNCTION()
 
 	if (g_Device.device != nullptr) {
-		OWL_CORE_WARN("SoundAPI(OpenAL): Device already initialized")
+		OWL_CORE_WARN("SoundAPI(OpenAL): Device already initialized.")
 	} else {
 		g_Device.device = alcOpenDevice(nullptr);
 		if (g_Device.device == nullptr) {
-			OWL_CORE_ERROR("SoundAPI(OpenAL): Device could not be opened")
+			OWL_CORE_ERROR("SoundAPI(OpenAL): Device could not be opened.")
 			setState(State::Error);
 			return;
 		}
@@ -47,16 +47,16 @@ void SoundAPI::init() {
 
 	// Context
 	if (g_Device.context != nullptr) {
-		OWL_CORE_WARN("SoundAPI(OpenAL): Context already initialized")
+		OWL_CORE_WARN("SoundAPI(OpenAL): Context already initialized.")
 	} else {
 		g_Device.context = alcCreateContext(g_Device.device, nullptr);
 		if (g_Device.context == nullptr) {
-			OWL_CORE_ERROR("SoundAPI(OpenAL): Context could not be created")
+			OWL_CORE_ERROR("SoundAPI(OpenAL): Context could not be created.")
 			setState(State::Error);
 			return;
 		}
 		if (alcMakeContextCurrent(g_Device.context) == 0) {
-			OWL_CORE_ERROR("SoundAPI(OpenAL): Failed to make context current")
+			OWL_CORE_ERROR("SoundAPI(OpenAL): Failed to make context current.")
 			setState(State::Error);
 			return;
 		}
@@ -103,7 +103,7 @@ auto SoundAPI::play(const shared<SoundData>& iData, const PlayParams& iParams) -
 	OWL_PROFILE_FUNCTION()
 
 	if (iData == nullptr) {
-		OWL_CORE_WARN("SoundAPI(OpenAL)::play: SoundData is null")
+		OWL_CORE_WARN("SoundAPI(OpenAL)::play: SoundData is null.")
 		return invalidSoundHandle;
 	}
 	const auto bufferId = static_cast<uint32_t>(iData->getSystemId());

@@ -41,10 +41,10 @@ namespace owl::scene {
  *   keys:
  *     - [0.0, 1.0]
  *     - [1.0, 1.0]
- * ```
+ * ```.
  *
  * Wire-compatible with the existing component serialization for the shared keys, so the
- * fields can later be re-used to introduce a `clipPath` reference on the component without
+ * fields can later be reused to introduce a `clipPath` reference on the component without
  * a YAML migration.
  */
 class OWL_API AnimationClip final {

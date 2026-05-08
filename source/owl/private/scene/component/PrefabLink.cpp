@@ -29,8 +29,7 @@ void PrefabLink::serialize(const core::Serializer& iOut) const {
 	}
 	if (!overriddenComponents.empty()) {
 		iOut.getImpl()->emitter << YAML::Key << "overrides" << YAML::Value << YAML::BeginSeq;
-		for (const auto& overrideKey: overriddenComponents)
-			iOut.getImpl()->emitter << overrideKey;
+		for (const auto& overrideKey: overriddenComponents) iOut.getImpl()->emitter << overrideKey;
 		iOut.getImpl()->emitter << YAML::EndSeq;
 	}
 	iOut.getImpl()->emitter << YAML::EndMap;// PrefabLink
@@ -52,8 +51,7 @@ void PrefabLink::deserialize(const core::Serializer& iNode) {
 	}
 	if (auto overridesNode = iNode.getImpl()->node["overrides"]; overridesNode) {
 		overriddenComponents.clear();
-		for (const auto& entry: overridesNode)
-			overriddenComponents.push_back(entry.as<std::string>());
+		for (const auto& entry: overridesNode) overriddenComponents.push_back(entry.as<std::string>());
 	}
 }
 

@@ -85,13 +85,24 @@ public:
 	 */
 	[[nodiscard]] auto typeId() const -> size_t override;
 
-	/// Read-only access to the "before" snapshot (used by tests).
+	/**
+	 * @brief
+	 *  Read-only access to the "before" snapshot (used by tests).
+	 * @return The const std string.
+	 */
 	[[nodiscard]] auto beforeYaml() const -> const std::string& { return m_beforeYaml; }
-	/// Read-only access to the "after" snapshot (used by tests).
+	/**
+	 * @brief
+	 *  Read-only access to the "after" snapshot (used by tests).
+	 * @return The const std string.
+	 */
 	[[nodiscard]] auto afterYaml() const -> const std::string& { return m_afterYaml; }
 
 private:
-	/// Apply a YAML snapshot onto the scene's `EnabledRenderersConfig`.
+	/**
+	 * @brief
+	 *  Apply a YAML snapshot onto the scene's `EnabledRenderersConfig`.
+	 */
 	static void apply(scene::Scene& ioScene, const std::string& iYaml);
 
 	/// YAML snapshot of `EnabledRenderersConfig` before the edit.

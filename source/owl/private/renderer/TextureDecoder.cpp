@@ -20,7 +20,7 @@ auto makeDecodedImage(stbi_uc* iData, int iWidth, int iHeight, int iChannels) ->
 		return out;
 	}
 	if (iChannels != 3 && iChannels != 4) {
-		OWL_CORE_ERROR("TextureDecoder: unsupported channel count {} (expected 3 or 4)", iChannels)
+		OWL_CORE_ERROR("TextureDecoder: unsupported channel count {} (expected 3 or 4).", iChannels)
 		stbi_image_free(iData);
 		return out;
 	}
@@ -74,7 +74,7 @@ auto decodeImageFile(const std::filesystem::path& iPath, int iDesiredChannels) -
 	int channels = 0;
 	stbi_uc* data = stbi_load(iPath.string().c_str(), &width, &height, &channels, iDesiredChannels);
 	if (data == nullptr) {
-		OWL_CORE_WARN("TextureDecoder: failed to load image {}", iPath.string())
+		OWL_CORE_WARN("TextureDecoder: failed to load image {}.", iPath.string())
 		return {};
 	}
 	const int effectiveChannels = iDesiredChannels == 0 ? channels : iDesiredChannels;

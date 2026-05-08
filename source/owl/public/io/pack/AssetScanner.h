@@ -72,10 +72,8 @@ private:
 	 * @param[in,out] ioAssets Accumulated deduplicated assets.
 	 * @param[in,out] ioWarnings Optional pointer to collect unresolved-reference warnings.
 	 */
-	static void scanSceneRecursive(const std::filesystem::path& iSceneFile,
-								   std::set<std::string>& ioVisitedScenes,
-								   std::vector<AssetReference>& ioAssets,
-								   std::vector<std::string>* ioWarnings);
+	static void scanSceneRecursive(const std::filesystem::path& iSceneFile, std::set<std::string>& ioVisitedScenes,
+								   std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
 
 	/**
 	 * @brief
@@ -98,10 +96,8 @@ private:
 	 * @param[in,out] ioAssets Accumulated assets.
 	 * @param[in,out] ioWarnings Optional pointer to collect unresolved-reference warnings.
 	 */
-	static void scanLuaScriptForScenes(const std::filesystem::path& iScriptPath,
-									   std::set<std::string>& ioVisitedScenes,
-									   std::vector<AssetReference>& ioAssets,
-									   std::vector<std::string>* ioWarnings);
+	static void scanLuaScriptForScenes(const std::filesystem::path& iScriptPath, std::set<std::string>& ioVisitedScenes,
+									   std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
 
 	/**
 	 * @brief
@@ -110,8 +106,7 @@ private:
 	 * @param[in,out] ioAssets Accumulated assets.
 	 * @param[in,out] ioWarnings Optional pointer to collect unresolved-reference warnings.
 	 */
-	static void scanLuaScriptForSounds(const std::filesystem::path& iScriptPath,
-									   std::vector<AssetReference>& ioAssets,
+	static void scanLuaScriptForSounds(const std::filesystem::path& iScriptPath, std::vector<AssetReference>& ioAssets,
 									   std::vector<std::string>* ioWarnings);
 
 	/**

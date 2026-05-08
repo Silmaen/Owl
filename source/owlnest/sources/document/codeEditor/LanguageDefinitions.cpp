@@ -87,8 +87,8 @@ auto yamlLanguage() -> const TextEditor::Language* {
 	lang.getIdentifier = defaultIdentifierTokenizer;
 	lang.getNumber = defaultNumberTokenizer;
 	lang.isPunctuation = defaultIsPunctuation;
-	static constexpr std::array keywords = {"true", "false", "null", "yes", "no", "on", "off", "~",
-											"True", "False", "Null", "TRUE", "FALSE", "NULL"};
+	static constexpr std::array keywords = {"true", "false", "null",  "yes",  "no",   "on",    "off",
+											"~",    "True",  "False", "Null", "TRUE", "FALSE", "NULL"};
 	for (const auto* k: keywords) lang.keywords.insert(k);
 	inited = true;
 	return &lang;
@@ -127,25 +127,21 @@ auto bashLanguage() -> const TextEditor::Language* {
 	lang.getNumber = defaultNumberTokenizer;
 	lang.isPunctuation = defaultIsPunctuation;
 	// Reserved words (POSIX + bash extensions). Highlighted as `keyword`.
-	static constexpr std::array keywords = {"if",       "then",     "else",   "elif",   "fi",       "case",
-											"esac",     "for",      "select", "while",  "until",    "do",
-											"done",     "in",       "function", "time",  "return",  "break",
-											"continue", "exit",     "trap",   "set",    "unset",    "shift",
-											"export",   "readonly", "declare", "local", "typeset",  "let",
-											"eval",     "exec",     "source", "alias",  "unalias",  "true",
-											"false"};
+	static constexpr std::array keywords = {
+			"if",    "then", "else",   "elif",  "fi",       "case",     "esac",    "for",   "select",   "while",
+			"until", "do",   "done",   "in",    "function", "time",     "return",  "break", "continue", "exit",
+			"trap",  "set",  "unset",  "shift", "export",   "readonly", "declare", "local", "typeset",  "let",
+			"eval",  "exec", "source", "alias", "unalias",  "true",     "false"};
 	for (const auto* k: keywords) lang.keywords.insert(k);
 	// Common shell built-ins / coreutils — surfaced as `identifier` highlights.
-	static constexpr std::array idents = {"echo",    "printf", "read",  "test",     "cd",     "pwd",   "ls",
-										  "mkdir",   "rmdir",  "rm",    "cp",       "mv",     "ln",    "touch",
-										  "cat",     "head",   "tail",  "grep",     "egrep",  "fgrep", "sed",
-										  "awk",     "find",   "xargs", "sort",     "uniq",   "wc",    "tr",
-										  "cut",     "paste",  "tee",   "diff",     "patch",  "tar",   "gzip",
-										  "gunzip",  "zip",    "unzip", "curl",     "wget",   "ssh",   "scp",
-										  "git",     "make",   "cmake", "ctest",    "ninja",  "ctest", "ctest",
-										  "poetry",  "python", "pip",   "npm",      "node",   "yarn",  "docker",
-										  "kubectl", "sudo",   "su",    "env",      "getopts","kill",  "ps",
-										  "top",     "htop",   "df",    "du",       "free",   "uname", "whoami"};
+	static constexpr std::array idents = {
+			"echo",    "printf", "read",  "test",  "cd",    "pwd",    "ls",      "mkdir", "rmdir", "rm",
+			"cp",      "mv",     "ln",    "touch", "cat",   "head",   "tail",    "grep",  "egrep", "fgrep",
+			"sed",     "awk",    "find",  "xargs", "sort",  "uniq",   "wc",      "tr",    "cut",   "paste",
+			"tee",     "diff",   "patch", "tar",   "gzip",  "gunzip", "zip",     "unzip", "curl",  "wget",
+			"ssh",     "scp",    "git",   "make",  "cmake", "ctest",  "ninja",   "ctest", "ctest", "poetry",
+			"python",  "pip",    "npm",   "node",  "yarn",  "docker", "kubectl", "sudo",  "su",    "env",
+			"getopts", "kill",   "ps",    "top",   "htop",  "df",     "du",      "free",  "uname", "whoami"};
 	for (const auto* i: idents) lang.identifiers.insert(i);
 	inited = true;
 	return &lang;

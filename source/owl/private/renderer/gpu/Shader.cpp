@@ -30,7 +30,7 @@ auto Shader::create(const Specification& iShaderName) -> shared<Shader> {
 	if (RenderCommand::requireInit()) {
 		const auto result = Renderer::getTextureLibrary().find(std::format("{}.slang", shaderDir.string()));
 		if (!result.has_value()) {
-			OWL_CORE_ERROR("Shader::Create: Failed to load shader {}, unable to find assets",
+			OWL_CORE_ERROR("Shader::Create: Failed to load shader {}, unable to find assets.",
 						   iShaderName.shaderName.name)
 			return nullptr;
 		}
@@ -58,7 +58,7 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 				sources.push_back(f);
 			}
 			if (sources.empty()) {
-				OWL_CORE_WARN("Not able to find Shader {} in directory {}", shad, iFile.string())
+				OWL_CORE_WARN("Not able to find Shader {} in directory {}.", shad, iFile.string())
 				return nullptr;
 			}
 		} else {
@@ -70,7 +70,7 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 				}
 			}
 			if (sources.empty()) {
-				OWL_CORE_WARN("Not able to find Shader {} for {}", shad, iFile.string())
+				OWL_CORE_WARN("Not able to find Shader {} for {}.", shad, iFile.string())
 				return nullptr;
 			}
 		}
@@ -106,7 +106,7 @@ auto Shader::decomposeName(const std::string& iFullName) -> ShaderName {
 		result.renderer = iFullName.substr(0, pos);
 		result.name = iFullName.substr(pos + 1);
 		if (result.name.empty()) {
-			OWL_CORE_ERROR("Shader::decomposeName: Failed to decompose shader name {}", iFullName)
+			OWL_CORE_ERROR("Shader::decomposeName: Failed to decompose shader name {}.", iFullName)
 			result.renderer = "";
 		}
 	}

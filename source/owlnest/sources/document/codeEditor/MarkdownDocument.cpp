@@ -13,9 +13,9 @@
 #include <core/Log.h>
 #include <core/Macros.h>
 
-OWL_DIAG_PUSH
 // md4c uses C-style enums; we cover only the constructs we model and rely on the default
 // branch for ignored/extension types (LaTeX math, wikilinks, underline, raw HTML, …).
+OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wswitch-enum")
 namespace owl::nest::codeEditor {
 
@@ -59,7 +59,7 @@ public:
 		parser.text = &Parser::text;
 		const int rc = md_parse(iSource.data(), static_cast<MD_SIZE>(iSource.size()), &parser, this);
 		if (rc != 0) {
-			OWL_CORE_WARN("MarkdownDocument: md_parse aborted with code {}", rc)
+			OWL_CORE_WARN("MarkdownDocument: md_parse aborted with code {}.", rc)
 		}
 		return std::move(m_root);
 	}
@@ -135,96 +135,107 @@ private:
 		switch (iType) {
 			case MD_BLOCK_DOC:
 				return 0;
-			case MD_BLOCK_H: {
-				const auto* d = static_cast<const MD_BLOCK_H_DETAIL*>(iDetail);
-				m_blockStack.back()->push_back(MdBlock{.data = MdHeading{.level = static_cast<uint8_t>(d->level), .spans = {}}});
-				m_inlineAccum = &std::get<MdHeading>(m_blockStack.back()->back().data).spans;
-				return 0;
-			}
+			case MD_BLOCK_H:
+				{
+					const auto* d = static_cast<const MD_BLOCK_H_DETAIL*>(iDetail);
+					m_blockStack.back()->push_back(
+							MdBlock{.data = MdHeading{.level = static_cast<uint8_t>(d->level), .spans = {}}});
+					m_inlineAccum = &std::get<MdHeading>(m_blockStack.back()->back().data).spans;
+					return 0;
+				}
 			case MD_BLOCK_P:
 				m_blockStack.back()->push_back(MdBlock{.data = MdParagraph{.spans = {}}});
 				m_inlineAccum = &std::get<MdParagraph>(m_blockStack.back()->back().data).spans;
 				return 0;
-			case MD_BLOCK_CODE: {
-				const auto* d = static_cast<const MD_BLOCK_CODE_DETAIL*>(iDetail);
-				MdCodeBlock cb{};
-				if (d != nullptr && d->lang.text != nullptr && d->lang.size > 0)
-					cb.lang.assign(d->lang.text, d->lang.size);
-				m_blockStack.back()->push_back(MdBlock{.data = std::move(cb)});
-				m_codeAccum = &std::get<MdCodeBlock>(m_blockStack.back()->back().data).text;
-				return 0;
-			}
+			case MD_BLOCK_CODE:
+				{
+					const auto* d = static_cast<const MD_BLOCK_CODE_DETAIL*>(iDetail);
+					MdCodeBlock cb{};
+					if (d != nullptr && d->lang.text != nullptr && d->lang.size > 0)
+						cb.lang.assign(d->lang.text, d->lang.size);
+					m_blockStack.back()->push_back(MdBlock{.data = std::move(cb)});
+					m_codeAccum = &std::get<MdCodeBlock>(m_blockStack.back()->back().data).text;
+					return 0;
+				}
 			case MD_BLOCK_HR:
 				m_blockStack.back()->push_back(MdBlock{.data = MdHRule{}});
 				return 0;
-			case MD_BLOCK_QUOTE: {
-				m_blockStack.back()->push_back(MdBlock{.data = MdBlockQuote{.body = {}}});
-				m_blockStack.push_back(&std::get<MdBlockQuote>(m_blockStack.back()->back().data).body);
-				return 0;
-			}
-			case MD_BLOCK_UL:
-			case MD_BLOCK_OL: {
-				const bool ordered = iType == MD_BLOCK_OL;
-				m_blockStack.back()->push_back(MdBlock{.data = MdList{.ordered = ordered, .items = {}}});
-				// Note: the list is "open" but we do not push it onto the block stack — list items
-				// are picked up by `MD_BLOCK_LI` via `lastList()`, which inspects the current
-				// container's last block.
-				return 0;
-			}
-			case MD_BLOCK_LI: {
-				// Find the enclosing list (most recent MdList in current container).
-				auto* list = lastList();
-				if (list == nullptr)
+			case MD_BLOCK_QUOTE:
+				{
+					m_blockStack.back()->push_back(MdBlock{.data = MdBlockQuote{.body = {}}});
+					m_blockStack.push_back(&std::get<MdBlockQuote>(m_blockStack.back()->back().data).body);
 					return 0;
-				list->items.emplace_back();
-				m_blockStack.push_back(&list->items.back());
-				// Reset the inline accumulator: a previous LI may have left it pointing at its own
-				// implicit paragraph (tight-list path). The next text event must lazy-create a fresh
-				// paragraph in *this* item.
-				m_inlineAccum = nullptr;
-				return 0;
-			}
-			case MD_BLOCK_TABLE: {
-				const auto* d = static_cast<const MD_BLOCK_TABLE_DETAIL*>(iDetail);
-				MdTable t{};
-				if (d != nullptr)
-					t.cols = d->col_count;
-				t.align.resize(t.cols, TableAlign::Default);
-				m_blockStack.back()->push_back(MdBlock{.data = std::move(t)});
-				m_currentTable = &std::get<MdTable>(m_blockStack.back()->back().data);
-				return 0;
-			}
+				}
+			case MD_BLOCK_UL:
+			case MD_BLOCK_OL:
+				{
+					const bool ordered = iType == MD_BLOCK_OL;
+					m_blockStack.back()->push_back(MdBlock{.data = MdList{.ordered = ordered, .items = {}}});
+					// Note: the list is "open" but we do not push it onto the block stack — list items
+					// are picked up by `MD_BLOCK_LI` via `lastList()`, which inspects the current
+					// container's last block.
+					return 0;
+				}
+			case MD_BLOCK_LI:
+				{
+					// Find the enclosing list (most recent MdList in current container).
+					auto* list = lastList();
+					if (list == nullptr)
+						return 0;
+					list->items.emplace_back();
+					m_blockStack.push_back(&list->items.back());
+					// Reset the inline accumulator: a previous LI may have left it pointing at its own
+					// implicit paragraph (tight-list path). The next text event must lazy-create a fresh
+					// paragraph in *this* item.
+					m_inlineAccum = nullptr;
+					return 0;
+				}
+			case MD_BLOCK_TABLE:
+				{
+					const auto* d = static_cast<const MD_BLOCK_TABLE_DETAIL*>(iDetail);
+					MdTable t{};
+					if (d != nullptr)
+						t.cols = d->col_count;
+					t.align.resize(t.cols, TableAlign::Default);
+					m_blockStack.back()->push_back(MdBlock{.data = std::move(t)});
+					m_currentTable = &std::get<MdTable>(m_blockStack.back()->back().data);
+					return 0;
+				}
 			case MD_BLOCK_THEAD:
 				m_inTableHead = true;
 				return 0;
 			case MD_BLOCK_TBODY:
 				m_inTableHead = false;
 				return 0;
-			case MD_BLOCK_TR: {
-				if (m_currentTable == nullptr)
+			case MD_BLOCK_TR:
+				{
+					if (m_currentTable == nullptr)
+						return 0;
+					auto& dst = m_inTableHead ? m_currentTable->headRows : m_currentTable->bodyRows;
+					dst.emplace_back();
+					dst.back().resize(m_currentTable->cols);
+					m_currentRowIndex = static_cast<int>(dst.size()) - 1;
+					m_currentColIndex = 0;
 					return 0;
-				auto& dst = m_inTableHead ? m_currentTable->headRows : m_currentTable->bodyRows;
-				dst.emplace_back();
-				dst.back().resize(m_currentTable->cols);
-				m_currentRowIndex = static_cast<int>(dst.size()) - 1;
-				m_currentColIndex = 0;
-				return 0;
-			}
+				}
 			case MD_BLOCK_TH:
-			case MD_BLOCK_TD: {
-				if (m_currentTable == nullptr)
+			case MD_BLOCK_TD:
+				{
+					if (m_currentTable == nullptr)
+						return 0;
+					const auto* d = static_cast<const MD_BLOCK_TD_DETAIL*>(iDetail);
+					if (d != nullptr && m_inTableHead &&
+						static_cast<size_t>(m_currentColIndex) < m_currentTable->align.size())
+						m_currentTable->align[static_cast<size_t>(m_currentColIndex)] = mapAlign(d->align);
+					auto& dst = m_inTableHead ? m_currentTable->headRows : m_currentTable->bodyRows;
+					if (m_currentRowIndex < 0 || static_cast<size_t>(m_currentRowIndex) >= dst.size())
+						return 0;
+					if (static_cast<size_t>(m_currentColIndex) >= m_currentTable->cols)
+						return 0;
+					m_inlineAccum =
+							&dst[static_cast<size_t>(m_currentRowIndex)][static_cast<size_t>(m_currentColIndex)];
 					return 0;
-				const auto* d = static_cast<const MD_BLOCK_TD_DETAIL*>(iDetail);
-				if (d != nullptr && m_inTableHead && static_cast<size_t>(m_currentColIndex) < m_currentTable->align.size())
-					m_currentTable->align[static_cast<size_t>(m_currentColIndex)] = mapAlign(d->align);
-				auto& dst = m_inTableHead ? m_currentTable->headRows : m_currentTable->bodyRows;
-				if (m_currentRowIndex < 0 || static_cast<size_t>(m_currentRowIndex) >= dst.size())
-					return 0;
-				if (static_cast<size_t>(m_currentColIndex) >= m_currentTable->cols)
-					return 0;
-				m_inlineAccum = &dst[static_cast<size_t>(m_currentRowIndex)][static_cast<size_t>(m_currentColIndex)];
-				return 0;
-			}
+				}
 			default:
 				return 0;
 		}
@@ -279,20 +290,24 @@ private:
 			case MD_SPAN_DEL:
 				m_inlineAccum->push_back(MdInline{.kind = InlineKind::StrikeStart, .text = {}, .alt = {}});
 				return 0;
-			case MD_SPAN_A: {
-				const auto* d = static_cast<const MD_SPAN_A_DETAIL*>(iDetail);
-				m_linkHref.assign(d != nullptr && d->href.text != nullptr ? std::string{d->href.text, d->href.size} : std::string{});
-				m_linkText.clear();
-				m_inLink = true;
-				return 0;
-			}
-			case MD_SPAN_IMG: {
-				const auto* d = static_cast<const MD_SPAN_IMG_DETAIL*>(iDetail);
-				m_imageSrc.assign(d != nullptr && d->src.text != nullptr ? std::string{d->src.text, d->src.size} : std::string{});
-				m_imageAlt.clear();
-				m_inImage = true;
-				return 0;
-			}
+			case MD_SPAN_A:
+				{
+					const auto* d = static_cast<const MD_SPAN_A_DETAIL*>(iDetail);
+					m_linkHref.assign(d != nullptr && d->href.text != nullptr ? std::string{d->href.text, d->href.size}
+																			  : std::string{});
+					m_linkText.clear();
+					m_inLink = true;
+					return 0;
+				}
+			case MD_SPAN_IMG:
+				{
+					const auto* d = static_cast<const MD_SPAN_IMG_DETAIL*>(iDetail);
+					m_imageSrc.assign(d != nullptr && d->src.text != nullptr ? std::string{d->src.text, d->src.size}
+																			 : std::string{});
+					m_imageAlt.clear();
+					m_inImage = true;
+					return 0;
+				}
 			case MD_SPAN_CODE:
 				// Inline code span — text inside is collected as Code via onText.
 				m_inlineCode = true;

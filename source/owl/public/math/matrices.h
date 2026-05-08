@@ -70,7 +70,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Comparison operator
+	 *  Comparison operator.
 	 * @param iOther Other vector to compare.
 	 * @return true if identical vectors.
 	 */
@@ -78,7 +78,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Comparison operator
+	 *  Comparison operator.
 	 * @param iOther Other vector to compare.
 	 * @return false if identical vectors.
 	 */
@@ -223,7 +223,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Multiplication with a scalar
+	 *  Multiplication with a scalar.
 	 * @param iScalar The scalar to multiply.
 	 * @param iVector Vector to multiply.
 	 * @return Vector result.
@@ -263,7 +263,9 @@ public:
 	 * @param iOther The other matrix.
 	 * @return This updated matrix.
 	 */
-	constexpr auto operator*=(const Matrix& iOther) noexcept -> Matrix& requires(NRow == NCol) {
+	constexpr auto operator*=(const Matrix& iOther) noexcept -> Matrix&
+		requires(NRow == NCol)
+	{
 		for (std::size_t row = 0; row < NRow; ++row) {
 			std::array<BaseType, NCol> rowVal{};
 			for (std::size_t col = 0; col < NCol; ++col) {
@@ -277,7 +279,7 @@ public:
 	 * @brief
 	 *  Matrix-Matrix product.
 	 * @tparam NCol2 Number of column in the second matrix.
-	 * @param iOther The second matrix
+	 * @param iOther The second matrix.
 	 * @return The product.
 	 */
 	template<std::size_t NCol2>

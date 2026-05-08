@@ -28,13 +28,11 @@ auto Scheduler::pushTask(Task&& iTask) -> size_t {
 }
 
 void Scheduler::frame(const Timestep& iTimestep) {
-	// process asynchron tasks.
+	// process asynchronous tasks.
 	mp_impl->frameInternal();
 
 	// Process timers
-	for (const auto& timer: mp_impl->timers) {
-		timer->frame(iTimestep, this);
-	}
+	for (const auto& timer: mp_impl->timers) { timer->frame(iTimestep, this); }
 	std::erase_if(mp_impl->timers,
 				  [](const shared<Timer>& iTimer) -> bool { return iTimer->getState() == Timer::State::Expired; });
 }
@@ -82,9 +80,7 @@ void Scheduler::clearTimers() { mp_impl->timers.clear(); }
 
 void SchedulerImpl::frameInternal(const bool iTreatQueue) {
 	// Poll all running tasks.
-	for (const auto& task: runningTasks) {
-		task->poll();
-	}
+	for (const auto& task: runningTasks) { task->poll(); }
 
 	// Check finished tasks.
 	std::erase_if(runningTasks,

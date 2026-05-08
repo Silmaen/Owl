@@ -30,9 +30,7 @@ void CreateEntityCommand::undo(scene::Scene& ioScene) {
 
 void CreateEntityCommand::redo(scene::Scene& ioScene) { m_snapshot.restore(ioScene); }
 
-auto CreateEntityCommand::description() const -> std::string {
-	return std::format("Create '{}'", m_name);
-}
+auto CreateEntityCommand::description() const -> std::string { return std::format("Create '{}'", m_name); }
 
 // --- DeleteEntityCommand ---
 DeleteEntityCommand::DeleteEntityCommand(const scene::Entity& iEntity)
@@ -71,9 +69,7 @@ void DeleteEntityCommand::redo(scene::Scene& ioScene) {
 	}
 }
 
-auto DeleteEntityCommand::description() const -> std::string {
-	return std::format("Delete '{}'", m_name);
-}
+auto DeleteEntityCommand::description() const -> std::string { return std::format("Delete '{}'", m_name); }
 
 // --- DeleteSubtreeCommand ---
 DeleteSubtreeCommand::DeleteSubtreeCommand(const scene::Entity& iEntity, const scene::Scene& iScene)
@@ -120,14 +116,11 @@ void DuplicateEntityCommand::undo(scene::Scene& ioScene) {
 
 void DuplicateEntityCommand::redo(scene::Scene& ioScene) { m_duplicateSnapshot.restore(ioScene); }
 
-auto DuplicateEntityCommand::description() const -> std::string {
-	return std::format("Duplicate '{}'", m_name);
-}
+auto DuplicateEntityCommand::description() const -> std::string { return std::format("Duplicate '{}'", m_name); }
 
 // --- DuplicateSubtreeCommand ---
-DuplicateSubtreeCommand::DuplicateSubtreeCommand(const scene::Entity& iOriginal,
-												  const scene::Entity& iDuplicateRoot,
-												  const scene::Scene& iScene)
+DuplicateSubtreeCommand::DuplicateSubtreeCommand(const scene::Entity& iOriginal, const scene::Entity& iDuplicateRoot,
+												 const scene::Scene& iScene)
 	: m_duplicateSnapshot{SubtreeSnapshot::capture(iDuplicateRoot, iScene)}, m_name{iOriginal.getName()} {
 	m_selectAfterRedo = iDuplicateRoot.getUUID();
 }

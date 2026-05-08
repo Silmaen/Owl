@@ -31,8 +31,7 @@ RemoveNodeCommand::RemoveNodeCommand(gui::widgets::Node iNode, std::vector<gui::
 
 void RemoveNodeCommand::undo(NodeCanvas& ioTarget) {
 	ioTarget.addNode(m_node);
-	for (const auto& link: m_attachedLinks)
-		ioTarget.addLink(link.fromPin, link.toPin);
+	for (const auto& link: m_attachedLinks) ioTarget.addLink(link.fromPin, link.toPin);
 }
 
 void RemoveNodeCommand::redo(NodeCanvas& ioTarget) { ioTarget.removeNode(m_node.id); }

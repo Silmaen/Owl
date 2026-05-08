@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include <renderer/gpu/Texture.h>
 #include <core/Core.h>
 #include <core/Timestep.h>
 #include <math/vectors.h>
+#include <renderer/gpu/Texture.h>
 
 #include <string>
 
@@ -72,6 +72,7 @@ public:
 	/**
 	 * @brief
 	 *  True if the latest non-empty parse succeeded.
+	 * @return True when the object is parse ok.
 	 */
 	[[nodiscard]] auto isParseOk() const -> bool { return m_lastParseOk; }
 

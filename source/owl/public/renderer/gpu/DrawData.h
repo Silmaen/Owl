@@ -58,7 +58,7 @@ public:
 	/**
 	 * @brief
 	 *  Push Vertices data  to the draw buffer.
-	 * @param[in] iData The raw vertices data
+	 * @param[in] iData The raw vertices data.
 	 * @param[in] iSize The size of the raw data.
 	 */
 	virtual void setVertexData(const void* iData, uint32_t iSize) = 0;
@@ -66,7 +66,7 @@ public:
 	/**
 	 * @brief
 	 *  Get the number of vertex to draw.
-	 * @return Number of vertex to draw
+	 * @return Number of vertex to draw.
 	 */
 	[[nodiscard]] virtual auto getIndexCount() const -> uint32_t = 0;
 

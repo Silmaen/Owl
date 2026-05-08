@@ -213,7 +213,7 @@ public:
 	/**
 	 * @brief
 	 *  Draw a polyline on the screen.
-	 * @param[in] iLineData The data to draw the polyline
+	 * @param[in] iLineData The data to draw the polyline.
 	 */
 	static void drawPolyLine(const PolyLineData& iLineData);
 
@@ -250,10 +250,18 @@ public:
 		/// Amount of lines drawn.
 		uint32_t lineCount = 0;
 
-		/// Compute the amount of vertices.
+		/**
+		 * @brief
+		 *  Compute the amount of vertices.
+		 * @return The total vertex count.
+		 */
 		[[nodiscard]] auto getTotalVertexCount() const -> uint32_t { return quadCount * 4 + lineCount * 2; }
 
-		/// Compute the amount of indices.
+		/**
+		 * @brief
+		 *  Compute the amount of indices.
+		 * @return The total index count.
+		 */
 		[[nodiscard]] auto getTotalIndexCount() const -> uint32_t { return quadCount * 6 + lineCount * 2; }
 	};
 

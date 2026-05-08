@@ -115,12 +115,14 @@ public:
 	/**
 	 * @brief
 	 *  Access the owning scene document (may be null during construction).
+	 * @return Pointer to the document, or `nullptr` when not available.
 	 */
 	[[nodiscard]] auto getDocument() const -> SceneDocument* { return mp_document; }
 
 	/**
 	 * @brief
 	 *  Get the hovered entity.
+	 * @return The hovered entity.
 	 */
 	[[nodiscard]] auto getHoveredEntity() const -> scene::Entity { return m_hoveredEntity; }
 
@@ -172,6 +174,7 @@ public:
 	/**
 	 * @brief
 	 *  True while the user hasn't clicked the tab's close X this frame.
+	 * @return True when the object is open.
 	 */
 	[[nodiscard]] auto isOpen() const -> bool { return m_pOpen; }
 

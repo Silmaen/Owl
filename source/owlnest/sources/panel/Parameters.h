@@ -13,32 +13,32 @@
 namespace owl::nest::panel {
 /**
  * @brief
- *  Class Parameters
+ *  Class Parameters.
  */
 class Parameters final {
 public:
 	/**
 	 * @brief
-	 *  Default copy constructor
+	 *  Default copy constructor.
 	 */
 	Parameters(const Parameters&) = default;
 
 	/**
 	 * @brief
-	 *  Default move constructor
+	 *  Default move constructor.
 	 */
 	Parameters(Parameters&&) = default;
 
 	/**
 	 * @brief
-	 *  Default copy assignation
+	 *  Default copy assignation.
 	 * @return this
 	 */
 	auto operator=(const Parameters&) -> Parameters& = default;
 
 	/**
 	 * @brief
-	 *  Default move assignation
+	 *  Default move assignation.
 	 * @return this
 	 */
 	auto operator=(Parameters&&) -> Parameters& = default;
@@ -63,7 +63,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Action on Gui Render
+	 *  Action on Gui Render.
 	 */
 	void onImGuiRender();
 

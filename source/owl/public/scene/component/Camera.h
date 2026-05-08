@@ -33,7 +33,7 @@ struct OWL_API Camera {
 
 	/**
 	 * @brief
-	 *  Get the serializer key for this component
+	 *  Get the serializer key for this component.
 	 * @return The serializer key.
 	 */
 	static auto key() -> const char* { return "Camera"; }

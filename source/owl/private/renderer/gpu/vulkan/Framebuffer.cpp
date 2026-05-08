@@ -342,7 +342,7 @@ void Framebuffer::createImages() {
 			internal::transitionImageLayout(temp[ii], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 		}
 
-		OWL_CORE_INFO("Vulkan Framebuffer ({}): Created {} images for swapchain", m_specs.debugName,
+		OWL_CORE_INFO("Vulkan Framebuffer ({}): Created {} images for swapchain.", m_specs.debugName,
 					  m_swapChainImageCount)
 	} else
 		m_images.resize(m_specs.attachments.size());
@@ -540,7 +540,7 @@ void Framebuffer::createRenderPass() {
 												.pDependencies = dependencies.data()};
 	if (const VkResult result = vkCreateRenderPass(vkc.getLogicalDevice(), &renderPassInfo, nullptr, &m_renderPass);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan framebuffer ({}): failed to create render pass ({})", m_specs.debugName,
+		OWL_CORE_ERROR("Vulkan framebuffer ({}): failed to create render pass ({}).", m_specs.debugName,
 					   internal::resultString(result))
 	}
 }
@@ -677,7 +677,7 @@ void Framebuffer::createDescriptorSets() {
 													.pSetLayouts = &img.descriptorSetLayout};
 		if (const auto result = vkAllocateDescriptorSets(core.getLogicalDevice(), &allocInfo, &img.descriptorSet);
 			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Texture Descriptor: failed to allocate descriptor sets ({})",
+			OWL_CORE_ERROR("Vulkan Texture Descriptor: failed to allocate descriptor sets ({}).",
 						   internal::resultString(result))
 		}
 		const VkDescriptorImageInfo info{.sampler = img.imageSampler,

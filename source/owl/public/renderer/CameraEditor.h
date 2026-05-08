@@ -56,7 +56,7 @@ public:
 	/**
 	 * @brief
 	 *  Treat an event.
-	 * @param[in,out] ioEvent Teh event to treat.
+	 * @param[in,out] ioEvent The event to treat.
 	 */
 	void onEvent(event::Event& ioEvent);
 

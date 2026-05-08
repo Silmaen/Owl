@@ -22,7 +22,7 @@ class EditorLayer;
  */
 enum struct DocumentType : uint8_t {
 	Scene,///< A `.owl` scene edited in the Viewport.
-	Code, ///< A text/source file edited with syntax highlighting.
+	Code,///< A text/source file edited with syntax highlighting.
 	NodeGraph,///< A `.owlflow` node-graph document (Scene Flow, future animation graphs, behaviour trees...).
 	Animation,///< A `.owlanim` reusable spritesheet animation clip.
 };
@@ -31,7 +31,7 @@ enum struct DocumentType : uint8_t {
  * @brief
  *  Abstract base class for an editable document (scene, script, graph...).
  *
- * Each `Document` owns the state bound to one editable artifact: its file path,
+ * Each `Document` owns the state bound to one editable artefact: its file path,
  * its dirty flag, its undo/redo stack, and any per-document panels
  * (e.g. a `Viewport` for a scene). The editor holds a `DocumentManager` that
  * lists the open documents and tracks which one is currently active. Global
@@ -58,30 +58,35 @@ public:
 	/**
 	 * @brief
 	 *  Unique id for this document (stable across its lifetime).
+	 * @return The core UUID.
 	 */
 	[[nodiscard]] auto id() const -> core::UUID { return m_id; }
 
 	/**
 	 * @brief
 	 *  Document kind (scene, lua script...).
+	 * @return The DocumentType = 0.
 	 */
 	[[nodiscard]] virtual auto type() const -> DocumentType = 0;
 
 	/**
 	 * @brief
 	 *  Displayed title on the tab (without dirty marker).
+	 * @return The std string = 0.
 	 */
 	[[nodiscard]] virtual auto title() const -> std::string = 0;
 
 	/**
 	 * @brief
 	 *  On-disk path, empty if untitled/never saved.
+	 * @return The std filesystem path = 0.
 	 */
 	[[nodiscard]] virtual auto filePath() const -> std::filesystem::path = 0;
 
 	/**
 	 * @brief
 	 *  True when the document has unsaved changes.
+	 * @return The bool = 0.
 	 */
 	[[nodiscard]] virtual auto isDirty() const -> bool = 0;
 
@@ -118,18 +123,21 @@ public:
 	/**
 	 * @brief
 	 *  Save to the current file path. Returns false on failure or if no path is set.
+	 * @return The bool = 0.
 	 */
 	virtual auto save() -> bool = 0;
 
 	/**
 	 * @brief
 	 *  Save to an explicit path. Returns false on failure.
+	 * @return The bool = 0.
 	 */
 	virtual auto saveAs(const std::filesystem::path& iPath) -> bool = 0;
 
 	/**
 	 * @brief
 	 *  Access to the document's undo/redo stack.
+	 * @return The SceneUndoManager = 0.
 	 */
 	[[nodiscard]] virtual auto undoManager() -> SceneUndoManager& = 0;
 

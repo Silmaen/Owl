@@ -71,8 +71,8 @@ public:
 	 * @param[in] iYamlData The YAML string (as produced by serializeEntityToString).
 	 * @return True if successful.
 	 */
-	[[nodiscard]] static auto deserializeEntityFromString(const shared<Scene>& ioScene,
-														  const std::string& iYamlData) -> bool;
+	[[nodiscard]] static auto deserializeEntityFromString(const shared<Scene>& ioScene, const std::string& iYamlData)
+			-> bool;
 
 private:
 	/// Parent Scene.

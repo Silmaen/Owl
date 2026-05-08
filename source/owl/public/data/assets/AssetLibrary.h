@@ -14,7 +14,7 @@
 
 /**
  * @brief
- *  Concept tha check existence of a conversion function from string to specification.
+ *  Concept that check existence of a conversion function from string to specification.
  */
 template<typename T>
 concept hasStringSpec = requires {
@@ -169,7 +169,7 @@ public:
 	 */
 	auto get(const std::string& iName) -> shared<DataType> {
 		if (!exists(iName)) {
-			OWL_CORE_ERROR("Asset {} not found in library", iName)
+			OWL_CORE_ERROR("Asset {} not found in library.", iName)
 			return nullptr;
 		}
 		return m_assets.at(iName).get();
@@ -185,7 +185,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Get a lis of asset file found in the asset folders
+	 *  Get a lis of asset file found in the asset folders.
 	 * @return The list of asset founds.
 	 */
 	[[nodiscard]] auto list() const -> std::vector<std::string> {
