@@ -31,7 +31,7 @@ public:
 	 *  Constructor with Translation rotation & scale.
 	 * @param iTranslation The translation.
 	 * @param iRotation The rotation.
-	 * @param iScale Teh scale.
+	 * @param iScale The scale.
 	 */
 	Transform(const vec3& iTranslation, const vec3& iRotation, const vec3& iScale);
 
@@ -87,7 +87,7 @@ public:
 	/**
 	 * @brief
 	 *  Convert to transformation matrix.
-	 * @return Trhe transformation matrix.
+	 * @return The transformation matrix.
 	 */
 	auto operator()() const -> mat4;
 	// NOLINTEND(hicpp-explicit-conversions)

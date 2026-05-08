@@ -9,8 +9,8 @@
 
 #include "DrawData.h"
 
-#include "renderer/Renderer.h"
 #include "internal/VulkanHandler.h"
+#include "renderer/Renderer.h"
 
 namespace owl::renderer::gpu::vulkan {
 

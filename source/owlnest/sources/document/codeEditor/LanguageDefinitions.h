@@ -34,12 +34,14 @@ enum struct Language : uint8_t {
 /**
  * @brief
  *  Best-effort language detection from a filesystem extension (e.g. `.lua`, `.py`).
+ * @return The Language.
  */
 [[nodiscard]] auto detectLanguage(const std::filesystem::path& iPath) -> Language;
 
 /**
  * @brief
  *  User-facing name (shown on the editor status line).
+ * @return Pointer to the language name, or `nullptr` when not available.
  */
 [[nodiscard]] auto languageName(Language iLanguage) -> const char*;
 

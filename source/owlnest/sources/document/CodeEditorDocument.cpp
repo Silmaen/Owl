@@ -146,8 +146,8 @@ void CodeEditorDocument::onImGuiRender() {
 		int line = 0;
 		int column = 0;
 		mp_editor->GetMainCursor(line, column);
-		ImGui::TextDisabled("%s | Line %d, Col %d | %s", codeEditor::languageName(m_language), line + 1,
-							column + 1, mp_editor->IsOverwriteEnabled() ? "OVR" : "INS");
+		ImGui::TextDisabled("%s | Line %d, Col %d | %s", codeEditor::languageName(m_language), line + 1, column + 1,
+							mp_editor->IsOverwriteEnabled() ? "OVR" : "INS");
 	}
 	ImGui::End();
 	if (codeFont != nullptr)
@@ -165,7 +165,7 @@ auto CodeEditorDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 		return false;
 	std::ofstream fileOut(iPath, std::ios::binary);
 	if (!fileOut.is_open()) {
-		OWL_CORE_ERROR("CodeEditor: failed to write '{}'", iPath.string())
+		OWL_CORE_ERROR("CodeEditor: failed to write '{}'.", iPath.string())
 		return false;
 	}
 	const auto txt = mp_editor->GetText();
@@ -185,7 +185,7 @@ auto CodeEditorDocument::loadFromFile(const std::filesystem::path& iPath) -> boo
 		return false;
 	std::ifstream fileIn(iPath, std::ios::binary);
 	if (!fileIn.is_open()) {
-		OWL_CORE_ERROR("CodeEditor: failed to open '{}'", iPath.string())
+		OWL_CORE_ERROR("CodeEditor: failed to open '{}'.", iPath.string())
 		return false;
 	}
 	std::stringstream buffer;

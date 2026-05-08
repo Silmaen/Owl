@@ -57,7 +57,7 @@ OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 void Texture2D::setData(void* iData, const uint32_t iSize) {
 	const auto& vkc = internal::VulkanCore::get();
 	if (const uint32_t expected = m_specification.getPixelSize() * m_specification.size.surface(); iSize != expected) {
-		OWL_CORE_ERROR("Vulkan Texture {}: Image size missmatch: expect {}, got {}", m_path.string(), expected, iSize)
+		OWL_CORE_ERROR("Vulkan Texture {}: Image size mismatch: expect {}, got {}.", m_path.string(), expected, iSize)
 		return;
 	}
 	VkBuffer stagingBuffer = nullptr;
@@ -73,7 +73,7 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 		// input data already in the right format, just copy
 		memcpy(dataPixel, iData, imageSize);
 	} else if (m_specification.format == ImageFormat::Rgb8) {
-		// need to insert alpha chanel.
+		// need to insert alpha channel.
 		const auto* dataChar = static_cast<uint8_t*>(iData);
 		auto* dataPixelChar = static_cast<uint8_t*>(dataPixel);
 		for (uint32_t i = 0, j = 0; j < iSize; i += 4, j += 3) {

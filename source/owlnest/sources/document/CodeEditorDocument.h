@@ -147,18 +147,21 @@ public:
 	/**
 	 * @brief
 	 *  Load the file at `iPath` into the editor. Returns false on I/O error.
+	 * @return True on success, false otherwise.
 	 */
 	auto loadFromFile(const std::filesystem::path& iPath) -> bool;
 
 	/**
 	 * @brief
 	 *  Detected or explicitly-set language of this document.
+	 * @return The codeEditor Language.
 	 */
 	[[nodiscard]] auto language() const -> codeEditor::Language { return m_language; }
 
 	/**
 	 * @brief
 	 *  True while the user hasn't clicked the tab's close X.
+	 * @return True when the object is open.
 	 */
 	[[nodiscard]] auto isOpen() const -> bool { return m_pOpen; }
 
@@ -171,6 +174,7 @@ public:
 	/**
 	 * @brief
 	 *  True if a live preview pane is currently shown next to the editor.
+	 * @return True when the object is preview visible.
 	 */
 	[[nodiscard]] auto isPreviewVisible() const -> bool { return m_previewVisible; }
 
@@ -183,6 +187,7 @@ public:
 	/**
 	 * @brief
 	 *  True if the active language has a live preview implementation.
+	 * @return True when show preview is allowed.
 	 */
 	[[nodiscard]] auto canShowPreview() const -> bool {
 		return m_language == codeEditor::Language::Markdown || m_language == codeEditor::Language::Xml;

@@ -80,7 +80,7 @@ public:
 	 * @brief
 	 *  Check if the cursor is equal to another.
 	 * @param[in] iOther A cursor on the same cloud.
-	 * @retval True if the cursors are equal
+	 * @retval True if the cursors are equal.
 	 * @retval False otherwise.
 	 */
 	auto operator==(const MeshCursorBase& iOther) const -> bool {
@@ -252,8 +252,8 @@ public:
  *  Specialization of MeshCursorBase for non-const triangle elements.
  */
 template<>
-class OWL_API MeshCursorBase<false, MeshElementType::Triangle>
-	: public MeshCursorBase<true, MeshElementType::Triangle> {
+class OWL_API
+		MeshCursorBase<false, MeshElementType::Triangle> : public MeshCursorBase<true, MeshElementType::Triangle> {
 public:
 	using MeshType = StaticMesh;
 	using BaseCursor = MeshCursorBase<true, MeshElementType::Triangle>;

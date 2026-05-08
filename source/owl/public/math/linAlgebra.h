@@ -24,7 +24,7 @@ constexpr auto epsilon() -> BaseType {
 
 /**
  * @brief
- *  Compare two values within precision
+ *  Compare two values within precision.
  * @tparam BaseType The internal type of data.
  * @param iA First value.
  * @param iB Second value.
@@ -38,7 +38,7 @@ constexpr auto epsilonEqual(const BaseType& iA, const BaseType& iB, const BaseTy
 
 /**
  * @brief
- *  Compare two values within precision
+ *  Compare two values within precision.
  * @tparam BaseType The internal type of data.
  * @param iA First value.
  * @param iB Second value.
@@ -57,7 +57,7 @@ constexpr auto epsilonNotEqual(const BaseType& iA, const BaseType& iB, const Bas
  * @tparam NCol The number of columns in the matrix.
  * @tparam NRow The number of rows in the matrix.
  * @param iMatrix The Matrix to multiply.
- * @param iVector The vector to multiply
+ * @param iVector The vector to multiply.
  * @return The resulting vector.
  */
 template<typename BaseType, std::size_t NRow, std::size_t NCol>
@@ -76,7 +76,7 @@ constexpr auto operator*(const Matrix<BaseType, NRow, NCol>& iMatrix, const Vect
  * @tparam NCol The number of columns in the matrix.
  * @tparam NRow The number of rows in the matrix.
  * @param iMatrix The Matrix to multiply.
- * @param iVector The vector to multiply
+ * @param iVector The vector to multiply.
  * @return The resulting vector.
  */
 template<typename BaseType, std::size_t NRow, std::size_t NCol>

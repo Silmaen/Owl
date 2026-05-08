@@ -16,11 +16,10 @@ namespace owl::nest::commands {
 
 SceneFlowCompositeCommand::SceneFlowCompositeCommand(uniq<SceneUndoCommand> iSceneCmd,
 													 uniq<NodeGraphUndoCommand> iCanvasCmd,
-													 std::filesystem::path iSourceScenePath,
-													 EditorLayer* iEditor, std::string iDescription)
+													 std::filesystem::path iSourceScenePath, EditorLayer* iEditor,
+													 std::string iDescription)
 	: m_sceneCmd{std::move(iSceneCmd)}, m_canvasCmd{std::move(iCanvasCmd)},
-	  m_sourceScenePath{std::move(iSourceScenePath)}, mp_editor{iEditor},
-	  m_description{std::move(iDescription)} {}
+	  m_sourceScenePath{std::move(iSourceScenePath)}, mp_editor{iEditor}, m_description{std::move(iDescription)} {}
 
 SceneFlowCompositeCommand::~SceneFlowCompositeCommand() = default;
 

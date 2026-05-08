@@ -20,32 +20,32 @@ class Document;
 namespace owl::nest::panel {
 /**
  * @brief
- *  Class SceneHierarchy
+ *  Class SceneHierarchy.
  */
 class SceneHierarchy final {
 public:
 	/**
 	 * @brief
-	 *  Default copy constructor
+	 *  Default copy constructor.
 	 */
 	SceneHierarchy(const SceneHierarchy&) = default;
 
 	/**
 	 * @brief
-	 *  Default move constructor
+	 *  Default move constructor.
 	 */
 	SceneHierarchy(SceneHierarchy&&) = default;
 
 	/**
 	 * @brief
-	 *  Default copy assignation
+	 *  Default copy assignation.
 	 * @return this
 	 */
 	auto operator=(const SceneHierarchy&) -> SceneHierarchy& = default;
 
 	/**
 	 * @brief
-	 *  Default move assignation
+	 *  Default move assignation.
 	 * @return this
 	 */
 	auto operator=(SceneHierarchy&&) -> SceneHierarchy& = default;
@@ -71,20 +71,20 @@ public:
 
 	/**
 	 * @brief
-	 *  Define the Scene context
+	 *  Define the Scene context.
 	 * @param[in] iContext The Scene
 	 */
 	void setContext(const shared<scene::Scene>& iContext);
 
 	/**
 	 * @brief
-	 *  Action on Gui Render
+	 *  Action on Gui Render.
 	 */
 	void onImGuiRender();
 
 	/**
 	 * @brief
-	 *  Access to the selected entity
+	 *  Access to the selected entity.
 	 * @return The selected entity
 	 */
 	[[nodiscard]] auto getSelectedEntity() const -> scene::Entity { return m_selection; }
@@ -116,6 +116,7 @@ public:
 	 *
 	 * Cleared on every frame at the start of `onImGuiRender`. Used by `EditorLayer::onContextualHelp`
 	 * (F1) to pick the help page that documents the component currently under the mouse.
+	 * @return The const std string.
 	 */
 	[[nodiscard]] static auto lastHoveredComponentName() -> const std::string&;
 
@@ -148,14 +149,14 @@ private:
 
 	/**
 	 * @brief
-	 *  Draw one entity node
-	 * @param[in] iEntity The node to draw
+	 *  Draw one entity node.
+	 * @param[in] iEntity The node to draw.
 	 */
 	void drawEntityNode(const scene::Entity& iEntity);
 
 	/**
 	 * @brief
-	 *  Draw the properties of a component
+	 *  Draw the properties of a component.
 	 * @param[in,out] iEntity The entity
 	 */
 	void drawComponents(const scene::Entity& iEntity);

@@ -10,12 +10,12 @@
 
 #include "gui/UiLayer.h"
 
-#include "renderer/gpu/RenderCommand.h"
 #include "core/Application.h"
 #include "core/external/glfw3.h"
 #include "core/external/imgui.h"
 #include "gui/FontPreviewCache.h"
 #include "gui/utils.h"
+#include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/vulkan/internal/VulkanHandler.h"
 
 #include <input/Input.h>
@@ -54,13 +54,9 @@ auto resolveAssetFile(const std::filesystem::path& iRelative) -> std::filesystem
 }
 }// namespace
 
-void UiLayer::setUiFontSize(const float iSize) {
-	g_uiFontSize = std::clamp(iSize, 12.f, 32.f);
-}
+void UiLayer::setUiFontSize(const float iSize) { g_uiFontSize = std::clamp(iSize, 12.f, 32.f); }
 
-void UiLayer::setCodeFontSize(const float iSize) {
-	g_codeFontSize = std::clamp(iSize, 8.f, 48.f);
-}
+void UiLayer::setCodeFontSize(const float iSize) { g_codeFontSize = std::clamp(iSize, 8.f, 48.f); }
 
 auto UiLayer::codeFontSize() -> float { return g_codeFontSize; }
 
@@ -106,7 +102,7 @@ void UiLayer::onAttach() {
 		if (const auto p = resolveAssetFile("fonts/roboto/Roboto-Regular.ttf"); !p.empty())
 			robotoFont = io.Fonts->AddFontFromFileTTF(p.string().c_str(), uiSize, &fontConfig);
 		if (robotoFont == nullptr) {
-			OWL_CORE_ERROR("UiLayer: could not load Roboto-Regular.ttf from engine_assets/fonts/roboto/")
+			OWL_CORE_ERROR("UiLayer: could not load Roboto-Regular.ttf from engine_assets/fonts/roboto/.")
 			robotoFont = io.Fonts->AddFontDefault();
 		}
 		if (const auto p = resolveAssetFile("fonts/roboto/Roboto-Bold.ttf"); !p.empty())
@@ -119,8 +115,7 @@ void UiLayer::onAttach() {
 		if (const auto p = resolveAssetFile("fonts/jetbrainsmono/JetBrainsMono-Regular.ttf"); !p.empty())
 			mp_codeFont = io.Fonts->AddFontFromFileTTF(p.string().c_str(), g_codeFontSize, &fontConfig);
 		else
-			OWL_CORE_ERROR(
-					"UiLayer: could not load JetBrainsMono-Regular.ttf — code editor will fall back to UI font")
+			OWL_CORE_ERROR("UiLayer: could not load JetBrainsMono-Regular.ttf — code editor will fall back to UI font.")
 	} else {
 		robotoFont = io.Fonts->AddFontDefault();
 	}
@@ -368,7 +363,7 @@ void UiLayer::initializeDocking() const {
 		windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 	}
 	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle
-	// the pass-thru hole, so we ask Begin() to not render a background.
+	// the pass-through hole, so we ask Begin() to not render a background.
 	if constexpr ((dockSpaceFlags & ImGuiDockNodeFlags_PassthruCentralNode) != 0)
 		windowFlags |= ImGuiWindowFlags_NoBackground;
 	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).

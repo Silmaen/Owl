@@ -38,8 +38,10 @@ struct OWL_API PrefabLink {
 	/// Mapping from instance entity UUIDs to canonical prefab UUIDs.
 	std::vector<UuidMapEntry> uuidMapping;
 
-	/// Per-component override keys. Format: "canonicalUUID:ComponentKey".
-	/// Components in this list are preserved during prefab update propagation.
+	/**
+	 * Per-component override keys. Format: "canonicalUUID:ComponentKey".
+	 * Components in this list are preserved during prefab update propagation.
+	 */
 	std::vector<std::string> overriddenComponents;
 
 	/**

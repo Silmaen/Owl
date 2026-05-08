@@ -144,12 +144,14 @@ public:
 	/**
 	 * @brief
 	 *  Get the active scene (the one currently edited or running).
+	 * @return The active scene.
 	 */
 	[[nodiscard]] auto getActiveScene() const -> const shared<scene::Scene>& { return m_activeScene; }
 
 	/**
 	 * @brief
 	 *  Get the editor-side scene (design snapshot, untouched by Play mode).
+	 * @return The editor scene.
 	 */
 	[[nodiscard]] auto getEditorScene() const -> const shared<scene::Scene>& { return m_editorScene; }
 
@@ -213,6 +215,7 @@ public:
 	/**
 	 * @brief
 	 *  True when Lua asked the engine to stop playing (consumed by EditorLayer on next update).
+	 * @return True when the object is stop requested.
 	 */
 	[[nodiscard]] auto isStopRequested() const -> bool { return m_stopRequested; }
 
@@ -247,6 +250,7 @@ public:
 	 * renderer stack from the new scene's `EnabledRenderers` config — without
 	 * this poll, an in-Play scene swap inherits the previous scene's stack
 	 * and per-scene overrides silently stop applying.
+	 * @return True on success, false otherwise.
 	 */
 	[[nodiscard]] auto consumeSceneSwapped() -> bool {
 		const bool wasSwapped = m_sceneSwapped;
@@ -254,7 +258,11 @@ public:
 		return wasSwapped;
 	}
 
-	/// @brief Access this document's viewport panel (renders into its own framebuffer + ImGui tab).
+	/**
+	 * @brief
+	 *  Access this document's viewport panel (renders into its own framebuffer + ImGui tab).
+	 * @return The viewport panel (mutable).
+	 */
 	[[nodiscard]] auto getViewport() -> panel::Viewport& { return m_viewport; }
 
 	/**
@@ -285,9 +293,11 @@ private:
 	math::vec2f m_teleportVelocity = {0.f, 0.f};
 	/// Optional target-entity name to spawn the player at after teleport.
 	std::string m_teleportTargetName;
-	/// Set whenever the active scene is replaced by a teleport / save-load.
-	/// Cleared by `consumeSceneSwapped`; lets the editor rebuild renderer
-	/// state on the new scene without having to inspect every swap site.
+	/**
+	 * Set whenever the active scene is replaced by a teleport / save-load.
+	 * Cleared by `consumeSceneSwapped`; lets the editor rebuild renderer
+	 * state on the new scene without having to inspect every swap site.
+	 */
 	bool m_sceneSwapped = false;
 
 	/// Per-document undo/redo manager for scene edits.

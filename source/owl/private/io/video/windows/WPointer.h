@@ -16,7 +16,7 @@ namespace owl::io::video::windows {
  * @brief
  *  Class for managing a windows pointer.
  *
- * Simple class to handle windows object pointers like a unique_ptr
+ * Simple class to handle windows object pointers like a unique_ptr.
  * @tparam Ptr Wrapped Windows pointer type.
  */
 template<class Ptr>
@@ -59,7 +59,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Overload of the -> operator for using thi object as if it is the pointer.
+	 *  Overload of the -> operator for using this object as if it is the pointer.
 	 * @return The backend pointer.
 	 */
 	auto operator->() -> Ptr* { return mp_object; }
@@ -121,13 +121,13 @@ public:
 
 	/**
 	 * @brief
-	 *  This object takes the memory ownership
+	 *  This object takes the memory ownership.
 	 */
 	void takeOwnership() { m_owner = true; }
 
 	/**
 	 * @brief
-	 *  This object takes the memory ownership
+	 *  This object takes the memory ownership.
 	 * @param[in] iOther The other object to take ownership from.
 	 */
 	void takeOwnershipFrom(WPointer& iOther) {
@@ -150,7 +150,7 @@ public:
 
 	/**
 	 * @brief
-	 *  This object leave the memory ownership
+	 *  This object leave the memory ownership.
 	 */
 	void leaveOwnership() { m_owner = false; }
 
@@ -169,10 +169,10 @@ public:
 	void setOwner(const bool iOwn) { m_owner = iOwn; }
 
 private:
-	/// Ownership of this objet on the memory behind the pointer.
+	/// Ownership of this object on the memory behind the pointer.
 	bool m_owner = true;
 	/// Pointer to the object.
 	Ptr* mp_object = nullptr;
 };
 
-}// namespace owl::input::video::windows
+}// namespace owl::io::video::windows

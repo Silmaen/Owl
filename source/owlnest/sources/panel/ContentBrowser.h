@@ -13,7 +13,7 @@
 namespace owl::nest::panel {
 /**
  * @brief
- *  Class ContentBrowser
+ *  Class ContentBrowser.
  */
 class ContentBrowser {
 public:
@@ -39,7 +39,7 @@ public:
 
 	/**
 	 * @brief
-	 *  The render command
+	 *  The render command.
 	 */
 	void onImGuiRender();
 

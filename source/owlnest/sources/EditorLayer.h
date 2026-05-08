@@ -31,7 +31,7 @@
 namespace owl::nest {
 /**
  * @brief
- *  Class EditorLayer
+ *  Class EditorLayer.
  */
 class EditorLayer final : public core::layer::Layer {
 public:
@@ -91,6 +91,7 @@ public:
 	/**
 	 * @brief
 	 *  Read access to the loaded project (used by side panels / Scene Flow document).
+	 * @return The project.
 	 */
 	[[nodiscard]] auto getProject() const -> const Project& { return m_project; }
 
@@ -269,6 +270,7 @@ public:
 	/**
 	 * @brief
 	 *  Active scene from the currently active document (empty shared if none).
+	 * @return The active scene.
 	 */
 	[[nodiscard]] auto getActiveScene() const -> const shared<scene::Scene>&;
 
@@ -289,6 +291,7 @@ public:
 	/**
 	 * @brief
 	 *  Consume a pending step-frame request from the active document.
+	 * @return True on success, false otherwise.
 	 */
 	auto consumeStepRequest() -> bool;
 
@@ -313,18 +316,21 @@ public:
 	/**
 	 * @brief
 	 *  Access the active document's undo manager, or nullptr if no doc is open.
+	 * @return Pointer to the active undo manager, or `nullptr` when not available.
 	 */
 	[[nodiscard]] auto activeUndoManager() -> SceneUndoManager*;
 
 	/**
 	 * @brief
 	 *  Access the document manager (used by the Viewport tab bar).
+	 * @return The document manager.
 	 */
 	[[nodiscard]] auto getDocumentManager() -> DocumentManager& { return m_documents; }
 
 	/**
 	 * @brief
 	 *  Access the editor settings (font size, theme, etc.).
+	 * @return The settings.
 	 */
 	[[nodiscard]] auto getSettings() const -> const EditorSettings& { return m_settings; }
 
@@ -442,24 +448,28 @@ private:
 	/**
 	 * @brief
 	 *  Access (or create) the single SceneDocument during Phase 1.
+	 * @return The SceneDocument.
 	 */
 	auto ensureActiveSceneDocument() -> SceneDocument&;
 
 	/**
 	 * @brief
 	 *  Get the active SceneDocument, or nullptr if the active doc is not a scene.
+	 * @return Pointer to the active scene document, or `nullptr` when not available.
 	 */
 	[[nodiscard]] auto activeSceneDocument() const -> SceneDocument*;
 
 	/**
 	 * @brief
 	 *  Shortcut to the active document's Viewport, or nullptr.
+	 * @return Pointer to the active viewport, or `nullptr` when not available.
 	 */
 	[[nodiscard]] auto activeViewport() const -> panel::Viewport*;
 
 	/**
 	 * @brief
 	 *  Active viewport size, or a sensible default (1280x720) when no viewport exists yet.
+	 * @return The math vec2ui.
 	 */
 	[[nodiscard]] auto activeViewportSize() const -> math::vec2ui;
 
@@ -579,6 +589,7 @@ private:
 	/**
 	 * @brief
 	 *  Find an open SceneDocument whose on-disk path matches `iPath`.
+	 * @return The matching scene document by path, or empty when nothing was found.
 	 */
 	[[nodiscard]] auto findSceneDocumentByPath(const std::filesystem::path& iPath) const -> SceneDocument*;
 
@@ -591,6 +602,7 @@ private:
 	/**
 	 * @brief
 	 *  Get the document currently in Play or Pause mode (at most one).
+	 * @return The matching playing scene document, or empty when nothing was found.
 	 */
 	[[nodiscard]] auto findPlayingSceneDocument() const -> SceneDocument*;
 
@@ -614,6 +626,7 @@ private:
 	panel::HelpPanel m_helpPanel;
 	/// Tile palette panel for editing tilemap layers.
 	panel::TilePalette m_tilePalette;
+
 public:
 	/**
 	 * @brief

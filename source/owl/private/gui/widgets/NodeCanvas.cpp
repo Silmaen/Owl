@@ -58,15 +58,12 @@ auto toImU32(const math::vec4& iColor) -> ImU32 {
  */
 auto computeNodeSize(const Node& iNode) -> ImVec2 {
 	float maxWidth = ImGui::CalcTextSize(iNode.title.c_str()).x;
-	for (const auto& pin: iNode.inputs)
-		maxWidth = std::max(maxWidth, ImGui::CalcTextSize(pin.label.c_str()).x);
-	for (const auto& pin: iNode.outputs)
-		maxWidth = std::max(maxWidth, ImGui::CalcTextSize(pin.label.c_str()).x);
+	for (const auto& pin: iNode.inputs) maxWidth = std::max(maxWidth, ImGui::CalcTextSize(pin.label.c_str()).x);
+	for (const auto& pin: iNode.outputs) maxWidth = std::max(maxWidth, ImGui::CalcTextSize(pin.label.c_str()).x);
 	const auto rows = std::max(iNode.inputs.size(), iNode.outputs.size());
 	const ImVec2 size{
 			std::max(g_minNodeSize.x, maxWidth + 2.0f * g_horizontalPadding),
-			std::max(g_minNodeSize.y,
-					 g_titleBarHeight + static_cast<float>(rows) * g_pinRowHeight + g_bottomPadding)};
+			std::max(g_minNodeSize.y, g_titleBarHeight + static_cast<float>(rows) * g_pinRowHeight + g_bottomPadding)};
 	return size;
 }
 
@@ -167,10 +164,8 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 			auto& buf = m_templateBufs.emplace_back();
 			buf.inputColors.reserve(node.inputs.size());
 			buf.outputColors.reserve(node.outputs.size());
-			for (const auto& pin: node.inputs)
-				buf.inputColors.push_back(toImU32(pin.labelColor));
-			for (const auto& pin: node.outputs)
-				buf.outputColors.push_back(toImU32(pin.labelColor));
+			for (const auto& pin: node.inputs) buf.inputColors.push_back(toImU32(pin.labelColor));
+			for (const auto& pin: node.outputs) buf.outputColors.push_back(toImU32(pin.labelColor));
 
 			GraphEditor::Template tpl{};
 			// `mHeaderColor` doubles as the **link colour** in GraphEditor's `DisplayLinks` (read
@@ -307,8 +302,8 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 			const float maxTopY = iRectangle.Min.y - titleSize.y;
 			const float titlePosY = std::min(idealTopY, maxTopY);
 			const float titlePosX = (iRectangle.Min.x + iRectangle.Max.x) * 0.5f - titleSize.x * 0.5f;
-			iDrawList->AddText(font, titleFontSize, ImVec2{titlePosX, titlePosY},
-							   toImU32(node.titleColor), node.title.c_str());
+			iDrawList->AddText(font, titleFontSize, ImVec2{titlePosX, titlePosY}, toImU32(node.titleColor),
+							   node.title.c_str());
 		}
 
 		// Level-of-detail: when zoomed out far enough that the pin labels would be illegible
@@ -355,6 +350,7 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	 *  Translate the current ImGui mouse position into canvas-space coordinates so we can
 	 *        hit-test against our stored node rects (the canvas pans + zooms, the node positions
 	 *        are in canvas space).
+	 * @return The ImVec2.
 	 */
 	[[nodiscard]] auto mouseInCanvasSpace() const -> ImVec2 {
 		const auto m = ImGui::GetMousePos();
@@ -373,6 +369,7 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	 * reconstruct the full node top from `iRectangle.Max.y - computeNodeSize(node).y * zoom`
 	 * (the rect's bottom IS the node's bottom; the canvas-space full height is known up front).
 	 * For nodes culled off-screen we extrapolate from any cached visible node.
+	 * @return The matching pin screen info, or empty when nothing was found.
 	 */
 	[[nodiscard]] auto pinScreenInfo(core::UUID iPinId) const -> std::optional<std::pair<ImVec2, ImU32>> {
 		const float zoom = m_viewState.mFactor;
@@ -435,6 +432,7 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	 *  Hit-test every pin against the current ImGui mouse position. Uses the cached screen
 	 *        rects from `CustomDraw` and the GraphEditor `(i+1)/(N+1)` slot distribution so the
 	 *        hit zones line up with the actual visible slot circles.
+	 * @return The matching hovered pin, or empty when nothing was found.
 	 */
 	[[nodiscard]] auto findHoveredPin() const -> core::UUID {
 		const ImVec2 mouse = ImGui::GetMousePos();
@@ -483,6 +481,7 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 	 *  Hit-test every link's Bezier curve against the current mouse position. Returns the
 	 *        link id closest to the cursor within `mLineThickness * 2` pixels, else 0.
 	 * @note Sampled approximation — N segments per curve, distance to each segment.
+	 * @return The matching hovered link, or empty when nothing was found.
 	 */
 	[[nodiscard]] auto findHoveredLink() const -> core::UUID {
 		const ImVec2 mouse = ImGui::GetMousePos();
@@ -556,8 +555,8 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 		const auto hoveredPin = findHoveredPin();
 		const auto hoveredLink = (static_cast<uint64_t>(hoveredPin) == 0) ? findHoveredLink() : core::UUID{0};
 		// Cubic Bezier point evaluator — used for both rendering and collision detection.
-		const auto bezierAt = [](const ImVec2& iP0, const ImVec2& iP1, const ImVec2& iP2,
-								 const ImVec2& iP3, float iT) -> ImVec2 {
+		const auto bezierAt = [](const ImVec2& iP0, const ImVec2& iP1, const ImVec2& iP2, const ImVec2& iP3,
+								 float iT) -> ImVec2 {
 			const float u = 1.0f - iT;
 			const float b0 = u * u * u;
 			const float b1 = 3.0f * u * u * iT;
@@ -761,10 +760,8 @@ void NodeCanvas::removeNode(core::UUID iId) {
 	const auto& node = m_nodes[*idx];
 	std::vector<core::UUID> pinIds;
 	pinIds.reserve(node.inputs.size() + node.outputs.size());
-	for (const auto& pin: node.inputs)
-		pinIds.push_back(pin.id);
-	for (const auto& pin: node.outputs)
-		pinIds.push_back(pin.id);
+	for (const auto& pin: node.inputs) pinIds.push_back(pin.id);
+	for (const auto& pin: node.outputs) pinIds.push_back(pin.id);
 	std::erase_if(m_links, [&](const Link& iLink) -> bool {
 		return std::ranges::find(pinIds, iLink.fromPin) != pinIds.end() ||
 			   std::ranges::find(pinIds, iLink.toPin) != pinIds.end();
@@ -805,9 +802,8 @@ void NodeCanvas::removeOutputPin(core::UUID iNodeId, core::UUID iPinId) {
 		return;
 	auto& outputs = m_nodes[*idx].outputs;
 	std::erase_if(outputs, [iPinId](const NodePin& iPin) -> bool { return iPin.id == iPinId; });
-	std::erase_if(m_links, [iPinId](const Link& iLink) -> bool {
-		return iLink.fromPin == iPinId || iLink.toPin == iPinId;
-	});
+	std::erase_if(m_links,
+				  [iPinId](const Link& iLink) -> bool { return iLink.fromPin == iPinId || iLink.toPin == iPinId; });
 	mp_impl->rebuildTemplates();
 }
 
@@ -817,9 +813,8 @@ void NodeCanvas::removeInputPin(core::UUID iNodeId, core::UUID iPinId) {
 		return;
 	auto& inputs = m_nodes[*idx].inputs;
 	std::erase_if(inputs, [iPinId](const NodePin& iPin) -> bool { return iPin.id == iPinId; });
-	std::erase_if(m_links, [iPinId](const Link& iLink) -> bool {
-		return iLink.fromPin == iPinId || iLink.toPin == iPinId;
-	});
+	std::erase_if(m_links,
+				  [iPinId](const Link& iLink) -> bool { return iLink.fromPin == iPinId || iLink.toPin == iPinId; });
 	mp_impl->rebuildTemplates();
 }
 

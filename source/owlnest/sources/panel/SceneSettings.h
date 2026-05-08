@@ -97,13 +97,24 @@ public:
 	}
 
 private:
-	/// Render the renderer-stack section. Returns true if the config changed.
+	/**
+	 * @brief
+	 *  Render the renderer-stack section.
+	 * @return true if the config changed.
+	 */
 	auto renderRendererStackSection() -> bool;
-	/// Render the per-layer override widgets dispatching on layer type.
-	/// Returns true if any field changed.
+	/**
+	 * @brief
+	 *  Render the per-layer override widgets dispatching on layer type.
+	 * @return true if any field changed.
+	 */
 	static auto renderLayerOverridesEditor(const std::string& iTypeKey, YAML::Node& ioOverrides) -> bool;
-	/// Render the "Add layer slot" ghost rows for project layers absent
-	/// from the scene listing. Returns true if a layer was added.
+	/**
+	 * @brief
+	 *  Render the "Add layer slot" ghost rows for project layers absent
+	 *  from the scene listing. Returns true if a layer was added.
+	 * @return True on success, false otherwise.
+	 */
 	auto renderAddLayerSection() -> bool;
 
 	/// Active project (non-owning).

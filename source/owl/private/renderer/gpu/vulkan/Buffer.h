@@ -49,7 +49,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Release the memory buffer
+	 *  Release the memory buffer.
 	 */
 	void release();
 
@@ -82,7 +82,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Get The attribute desciption.
+	 *  Get The attribute description.
 	 * @return The attribute description.
 	 */
 	[[nodiscard]] auto getAttributeDescriptions() const -> std::vector<VkVertexInputAttributeDescription>;
@@ -126,7 +126,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Release the memory buffer
+	 *  Release the memory buffer.
 	 */
 	void release();
 

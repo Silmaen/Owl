@@ -9,9 +9,9 @@
 
 #include "scene/Scene.h"
 
-#include "renderer/Renderer.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/CameraOrtho.h"
+#include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
@@ -224,15 +224,12 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core::Timestep& iTimeStep) {
 	if (!ioAnim.m_playing || ioAnim.columns == 0 || ioAnim.rows == 0 || ioAnim.frameDuration <= 0.0f)
 		return;
-	const uint32_t totalFrames =
-			ioAnim.lastFrame >= ioAnim.firstFrame ? ioAnim.lastFrame - ioAnim.firstFrame + 1 : 1;
+	const uint32_t totalFrames = ioAnim.lastFrame >= ioAnim.firstFrame ? ioAnim.lastFrame - ioAnim.firstFrame + 1 : 1;
 	float deltaSeconds = iTimeStep.getSeconds();
 	if (!ioAnim.speedCurve.empty()) {
-		const float progress =
-				totalFrames > 1
-						? static_cast<float>(ioAnim.m_currentFrame - ioAnim.firstFrame) /
-								  static_cast<float>(totalFrames - 1)
-						: 0.f;
+		const float progress = totalFrames > 1 ? static_cast<float>(ioAnim.m_currentFrame - ioAnim.firstFrame) /
+														 static_cast<float>(totalFrames - 1)
+											   : 0.f;
 		deltaSeconds *= ioAnim.speedCurve.evaluate(progress);
 	}
 	ioAnim.m_elapsedTime += deltaSeconds;
@@ -405,7 +402,7 @@ void Scene::onStartRuntime() {
 		if (!loaded)
 			loaded = luaScript.instance->create(luaScript.scriptPath, uuid);
 		if (!loaded)
-			OWL_CORE_ERROR("onStartRuntime: FAILED to load script '{}'", luaScript.scriptPath)
+			OWL_CORE_ERROR("onStartRuntime: FAILED to load script '{}'.", luaScript.scriptPath)
 		if (loaded) {
 			for (const auto& [name, type, value]: luaScript.properties) {
 				switch (type) {
@@ -899,8 +896,7 @@ void Scene::render() {
 		// When the active layer is a raycaster, route the tilemap to the DDA pipeline
 		// instead of emitting per-cell 2D quads. The 2D path keeps running for any
 		// layer whose type isn't "RendererRaycast" (legacy and HUD tilemaps included).
-		if (mp_currentLayer != nullptr &&
-			std::string_view{mp_currentLayer->getTypeKey()} == "RendererRaycast") {
+		if (mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererRaycast") {
 			renderer::RendererRaycast::drawTilemapWalls(tilemap, worldTransform, entityId);
 			continue;
 		}
@@ -1227,7 +1223,7 @@ auto Scene::getWorldTransform(const Entity& iEntity) const -> math::Transform {
 		++depth;
 	}
 	if (depth >= maxDepth)
-		OWL_CORE_WARN("getWorldTransform: depth limit reached, possible circular hierarchy")
+		OWL_CORE_WARN("getWorldTransform: depth limit reached, possible circular hierarchy.")
 	return math::Transform{worldMat};
 }
 
@@ -1259,7 +1255,7 @@ void Scene::setParent(const Entity& iChild, const Entity& iNewParent) const {
 	if (!iChild || !iNewParent)
 		return;
 	if (iChild == iNewParent) {
-		OWL_CORE_WARN("setParent: cannot parent entity to itself")
+		OWL_CORE_WARN("setParent: cannot parent entity to itself.")
 		return;
 	}
 	// Check for circular reference: walk iNewParent's ancestor chain.
@@ -1268,7 +1264,7 @@ void Scene::setParent(const Entity& iChild, const Entity& iNewParent) const {
 	uint32_t depth = 0;
 	while (ancestorId != core::UUID{0} && depth < 64) {
 		if (ancestorId == childUuid) {
-			OWL_CORE_WARN("setParent: circular hierarchy detected, refusing reparent")
+			OWL_CORE_WARN("setParent: circular hierarchy detected, refusing reparent.")
 			return;
 		}
 		const Entity ancestor = findEntityByUUID(ancestorId);
@@ -1382,7 +1378,7 @@ void Scene::rebuildHierarchyChildren() {
 				parent.getComponent<component::Hierarchy>().childrenIds.push_back(view.get<component::ID>(entity).id);
 			} else {
 				// Parent not found (corrupted data), orphan this entity.
-				OWL_CORE_WARN("rebuildHierarchyChildren: parent {} not found, orphaning entity",
+				OWL_CORE_WARN("rebuildHierarchyChildren: parent {} not found, orphaning entity.",
 							  static_cast<uint64_t>(parentId))
 				parentId = core::UUID{0};
 			}

@@ -40,7 +40,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Handler for vulkan objects
+	 *  Handler for vulkan objects.
 	 * @return Vulcan handler
 	 */
 	static auto get() -> VulkanHandler& {
@@ -96,7 +96,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Define a new state for the vulkan handler
+	 *  Define a new state for the vulkan handler.
 	 * @param[in] iState The new state.
 	 */
 	void setState(const State& iState) { m_state = iState; }
@@ -163,7 +163,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Informations about pipelines.
+	 *  Information about pipelines.
 	 */
 	struct PipeLineData {
 		VkPipeline pipeLine = nullptr;

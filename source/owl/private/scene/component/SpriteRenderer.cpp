@@ -21,9 +21,8 @@ void SpriteRenderer::serialize(const core::Serializer& iOut) const {
 		if (std::abs(tilingFactor.x() - tilingFactor.y()) < 1e-6f)
 			iOut.getImpl()->emitter << YAML::Key << "tilingFactor" << YAML::Value << tilingFactor.x();
 		else {
-			iOut.getImpl()->emitter << YAML::Key << "tilingFactor" << YAML::Value
-									<< YAML::Flow << YAML::BeginSeq << tilingFactor.x() << tilingFactor.y()
-									<< YAML::EndSeq;
+			iOut.getImpl()->emitter << YAML::Key << "tilingFactor" << YAML::Value << YAML::Flow << YAML::BeginSeq
+									<< tilingFactor.x() << tilingFactor.y() << YAML::EndSeq;
 		}
 		iOut.getImpl()->emitter << YAML::Key << "texture" << YAML::Value << texture->getSerializeString();
 	}

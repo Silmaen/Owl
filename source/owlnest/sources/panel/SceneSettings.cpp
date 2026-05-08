@@ -21,8 +21,6 @@ namespace {
 
 constexpr auto g_windowName = "Scene Settings";
 
-/// Serialise the scene's `EnabledRenderersConfig` to a YAML string. An empty
-/// config yields an empty string so undo / merge comparisons stay trivial.
 auto serializeConfig(const renderer::EnabledRenderersConfig& iConfig) -> std::string {
 	if (iConfig.isEmpty())
 		return {};
@@ -31,7 +29,6 @@ auto serializeConfig(const renderer::EnabledRenderersConfig& iConfig) -> std::st
 	return ss.str();
 }
 
-/// Index of the entry with the given name, or `entries.size()` when absent.
 auto indexOfEntry(const renderer::EnabledRenderersConfig& iConfig, const std::string& iName) -> size_t {
 	for (size_t i = 0; i < iConfig.entries.size(); ++i)
 		if (iConfig.entries[i].name == iName)
@@ -39,8 +36,6 @@ auto indexOfEntry(const renderer::EnabledRenderersConfig& iConfig, const std::st
 	return iConfig.entries.size();
 }
 
-/// Read a `vec4` colour out of a YAML override, or return the supplied default
-/// when the key is absent or malformed.
 auto readColor(const YAML::Node& iNode, const char* iKey, const math::vec4& iDefault) -> math::vec4 {
 	if (!iNode || !iNode.IsMap())
 		return iDefault;
@@ -49,12 +44,9 @@ auto readColor(const YAML::Node& iNode, const char* iKey, const math::vec4& iDef
 		return iDefault;
 	try {
 		return {v[0].as<float>(), v[1].as<float>(), v[2].as<float>(), v[3].as<float>()};
-	} catch (const YAML::Exception&) {
-		return iDefault;
-	}
+	} catch (const YAML::Exception&) { return iDefault; }
 }
 
-/// Write a `vec4` colour into a YAML override.
 void writeColor(YAML::Node& ioNode, const char* iKey, const math::vec4& iValue) {
 	YAML::Node seq{YAML::NodeType::Sequence};
 	seq.push_back(iValue.r());

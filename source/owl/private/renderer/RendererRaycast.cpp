@@ -351,10 +351,10 @@ void RendererRaycast::drawTilemapWalls(const scene::component::Tilemap& iTilemap
 		};
 
 		Renderer2D::drawQuad({.transform = stripeTr,
-										  .color = tint,
-										  .texture = atlasTex,
-										  .textureCoords = stripeUv,
-										  .entityId = iEntityId});
+							  .color = tint,
+							  .texture = atlasTex,
+							  .textureCoords = stripeUv,
+							  .entityId = iEntityId});
 	}
 }
 

@@ -35,8 +35,8 @@ void UiPanel::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["borderWidth"])
 		borderWidth = iNode.getImpl()->node["borderWidth"].as<float>();
 	if (iNode.getImpl()->node["layout"])
-		layout = magic_enum::enum_cast<Layout>(iNode.getImpl()->node["layout"].as<std::string>())
-						 .value_or(Layout::None);
+		layout =
+				magic_enum::enum_cast<Layout>(iNode.getImpl()->node["layout"].as<std::string>()).value_or(Layout::None);
 	if (iNode.getImpl()->node["spacing"])
 		spacing = iNode.getImpl()->node["spacing"].as<float>();
 	if (iNode.getImpl()->node["padding"])

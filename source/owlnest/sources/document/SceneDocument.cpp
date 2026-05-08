@@ -44,17 +44,11 @@ void SceneDocument::onDetach() {
 	mp_editor = nullptr;
 }
 
-void SceneDocument::onUpdate(const core::Timestep& iTimeStep) {
-	m_viewport.onUpdate(iTimeStep);
-}
+void SceneDocument::onUpdate(const core::Timestep& iTimeStep) { m_viewport.onUpdate(iTimeStep); }
 
-void SceneDocument::onEvent(event::Event& ioEvent) {
-	m_viewport.onEvent(ioEvent);
-}
+void SceneDocument::onEvent(event::Event& ioEvent) { m_viewport.onEvent(ioEvent); }
 
-void SceneDocument::onImGuiRender() {
-	m_viewport.onRender();
-}
+void SceneDocument::onImGuiRender() { m_viewport.onRender(); }
 
 auto SceneDocument::save() -> bool {
 	// Actual async file write happens from EditorLayer; saving without a path falls back to Save As.
@@ -143,7 +137,7 @@ void SceneDocument::handleTeleportRequest(const math::vec2ui& iViewportSize) {
 		}
 	}
 	if (levelPath.empty()) {
-		OWL_CORE_ERROR("Teleport: level '{}' not found", resolvedName)
+		OWL_CORE_ERROR("Teleport: level '{}' not found.", resolvedName)
 		return;
 	}
 
@@ -152,7 +146,7 @@ void SceneDocument::handleTeleportRequest(const math::vec2ui& iViewportSize) {
 
 	const auto newScene = mkShared<scene::Scene>();
 	if (const scene::SceneSerializer sc(newScene); !sc.deserialize(levelPath)) {
-		OWL_CORE_ERROR("Teleport: failed to load level '{}'", request.levelName)
+		OWL_CORE_ERROR("Teleport: failed to load level '{}'.", request.levelName)
 		return;
 	}
 	newScene->getGameState() = previousGameState;

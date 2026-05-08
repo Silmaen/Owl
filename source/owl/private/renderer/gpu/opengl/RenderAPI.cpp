@@ -18,19 +18,19 @@ namespace {
 									  [[maybe_unused]] int iLength, const char* iMessage, const void* iUserParam) {
 	switch (iSeverity) {
 		case GL_DEBUG_SEVERITY_HIGH:
-			OWL_CORE_CRITICAL("OpenGL: {}({})-{} : {} / {}", iSource, iType, iId, iMessage, iUserParam)
+			OWL_CORE_CRITICAL("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
 			return;
 		case GL_DEBUG_SEVERITY_MEDIUM:
-			OWL_CORE_ERROR("OpenGL: {}({})-{} : {} / {}", iSource, iType, iId, iMessage, iUserParam)
+			OWL_CORE_ERROR("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
 			return;
 		case GL_DEBUG_SEVERITY_LOW:
-			OWL_CORE_WARN("OpenGL: {}({})-{} : {} / {}", iSource, iType, iId, iMessage, iUserParam)
+			OWL_CORE_WARN("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
 			return;
 		case GL_DEBUG_SEVERITY_NOTIFICATION:
-			OWL_CORE_INFO("OpenGL: {}({})-{} : {} / {}", iSource, iType, iId, iMessage, iUserParam)
+			OWL_CORE_INFO("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
 			return;
 		default:
-			OWL_CORE_TRACE("OpenGL: {}({})-{} : {} / {}", iSource, iType, iId, iMessage, iUserParam)
+			OWL_CORE_TRACE("OpenGL: {}({})-{} : {} / {}.", iSource, iType, iId, iMessage, iUserParam)
 	}
 
 	OWL_CORE_ASSERT(false, "Unknown severity level!")
@@ -43,8 +43,8 @@ void RenderAPI::init() {
 	auto [major, minor] = core::Application::get().getWindow().getGraphContext()->getVersion();
 	if (const bool goodVersion = major > 4 || (major == 4 && minor >= 5); !goodVersion) {
 		setState(State::Error);
-		OWL_CORE_ERROR("Owl Engine OpenGL Renderer requires at least OpenGL version 4.5 but version {}.{} found", major,
-					   minor)
+		OWL_CORE_ERROR("Owl Engine OpenGL Renderer requires at least OpenGL version 4.5 but version {}.{} found.",
+					   major, minor)
 	}
 
 	if (getState() != State::Created)

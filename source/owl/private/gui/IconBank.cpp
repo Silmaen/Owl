@@ -30,7 +30,7 @@ struct StbImageDeleter {
 			stbi_image_free(iPtr);
 	}
 };
-using StbImagePtr = std::unique_ptr<uint8_t[], StbImageDeleter>;
+using StbImagePtr = uniq<uint8_t[], StbImageDeleter>;
 
 /**
  * @brief
@@ -117,8 +117,8 @@ void replaceColorInPlace(std::string& ioStr, const std::string& iFrom, const std
  * @param[in] iColors Theme colours for substitution.
  * @return Owned pixel buffer (RGBA straight alpha, 4 bytes per pixel), or empty vector on failure.
  */
-auto loadSvgFile(const std::filesystem::path& iPath, const uint32_t iTargetSize,
-				 const IconThemeColors& iColors) -> std::vector<uint8_t> {
+auto loadSvgFile(const std::filesystem::path& iPath, const uint32_t iTargetSize, const IconThemeColors& iColors)
+		-> std::vector<uint8_t> {
 	auto svgContent = readFileAsString(iPath);
 	if (svgContent.empty())
 		return {};
@@ -169,8 +169,7 @@ void boxFilterDownscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSi
 	for (uint32_t dy = 0; dy < iDstSize.y(); ++dy) {
 		for (uint32_t dx = 0; dx < iDstSize.x(); ++dx) {
 			const math::vec2ui srcMin{dx * iSrcSize.x() / iDstSize.x(), dy * iSrcSize.y() / iDstSize.y()};
-			const math::vec2ui srcMax{(dx + 1) * iSrcSize.x() / iDstSize.x(),
-									  (dy + 1) * iSrcSize.y() / iDstSize.y()};
+			const math::vec2ui srcMax{(dx + 1) * iSrcSize.x() / iDstSize.x(), (dy + 1) * iSrcSize.y() / iDstSize.y()};
 			math::vec4ui accum{0, 0, 0, 0};
 			uint32_t count = 0;
 			for (uint32_t sy = srcMin.y(); sy < srcMax.y(); ++sy) {
@@ -216,8 +215,7 @@ void bilinearUpscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize,
 				const auto v10 = static_cast<float>(iSrc[(y0 * iSrcSize.x() + x1) * 4 + c]);
 				const auto v01 = static_cast<float>(iSrc[(y1 * iSrcSize.x() + x0) * 4 + c]);
 				const auto v11 = static_cast<float>(iSrc[(y1 * iSrcSize.x() + x1) * 4 + c]);
-				const float val =
-						v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) + v01 * (1 - fx) * fy + v11 * fx * fy;
+				const float val = v00 * (1 - fx) * (1 - fy) + v10 * fx * (1 - fy) + v01 * (1 - fx) * fy + v11 * fx * fy;
 				oDst[dstIdx + c] = static_cast<uint8_t>(std::clamp(val, 0.f, 255.f));
 			}
 		}
@@ -226,8 +224,8 @@ void bilinearUpscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize,
 
 }// namespace
 
-void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::path>>& iIcons,
-					 const uint32_t iCellSize, const IconThemeColors& iColors) {
+void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::path>>& iIcons, const uint32_t iCellSize,
+					 const IconThemeColors& iColors) {
 	clear();
 
 	// Store for rebuild.
@@ -247,7 +245,7 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 	uint32_t index = 0;
 	for (const auto& [name, filePath]: iIcons) {
 		if (!std::filesystem::exists(filePath)) {
-			OWL_CORE_WARN("IconBank: icon file not found: {}", filePath.string())
+			OWL_CORE_WARN("IconBank: icon file not found: {}.", filePath.string())
 			++index;
 			continue;
 		}
@@ -274,7 +272,7 @@ void IconBank::build(const std::vector<std::pair<std::string, std::filesystem::p
 		}
 
 		if (pixels.empty()) {
-			OWL_CORE_WARN("IconBank: failed to load icon: {}", filePath.string())
+			OWL_CORE_WARN("IconBank: failed to load icon: {}.", filePath.string())
 			++index;
 			continue;
 		}

@@ -9,9 +9,9 @@
 
 #include "VulkanHandler.h"
 
-#include "renderer/gpu/GraphContext.h"
 #include "Descriptors.h"
 #include "core/Application.h"
+#include "renderer/gpu/GraphContext.h"
 #include "utils.h"
 
 namespace owl::renderer::gpu::vulkan::internal {
@@ -76,7 +76,7 @@ void VulkanHandler::release() {
 namespace {
 void func(const VkResult iResult) {
 	if (iResult != VK_SUCCESS)
-		OWL_CORE_ERROR("Vulkan Imgui: Error detected: {}", resultString(iResult))
+		OWL_CORE_ERROR("Vulkan Imgui: Error detected: {}.", resultString(iResult))
 }
 }// namespace
 
@@ -174,7 +174,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 
 				vkCreatePipelineLayout(core.getLogicalDevice(), &pipelineLayoutInfo, nullptr, &pData.layout);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: Shader: failed to create pipeline layout {} ({})", iPipeLineName, resultString(result))
+		OWL_CORE_ERROR("Vulkan: Shader: failed to create pipeline layout {} ({}).", iPipeLineName, resultString(result))
 		m_state = State::ErrorCreatingPipelineLayout;
 		return -1;
 	}
@@ -299,11 +299,11 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 													.basePipelineHandle = VK_NULL_HANDLE,
 													.basePipelineIndex = 0};
 
-	OWL_CORE_TRACE("Vulkan pipeline: vkCreateGraphicsPipelines")
+	OWL_CORE_TRACE("Vulkan pipeline: vkCreateGraphicsPipelines.")
 	if (const VkResult result = vkCreateGraphicsPipelines(core.getLogicalDevice(), VK_NULL_HANDLE, 1, &pipelineInfo,
 														  nullptr, &pData.pipeLine);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to create graphics pipeline for {} ({})", iPipeLineName, resultString(result))
+		OWL_CORE_ERROR("Vulkan: failed to create graphics pipeline for {} ({}).", iPipeLineName, resultString(result))
 		m_state = State::ErrorCreatingPipeline;
 		return -1;
 	}
@@ -542,7 +542,7 @@ void VulkanHandler::bindPipeline(const int32_t iId) {
 	if (m_state != State::Running)
 		return;
 	if (!m_pipeLines.contains(iId)) {
-		OWL_CORE_WARN("Vulkan: cannot bind pipeline with id {}", iId)
+		OWL_CORE_WARN("Vulkan: cannot bind pipeline with id {}.", iId)
 		return;
 	}
 	auto& vkd = Descriptors::get();

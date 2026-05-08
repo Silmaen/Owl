@@ -9,11 +9,11 @@
 
 #include "gui/FontPreviewCache.h"
 
-#include "renderer/gpu/RenderCommand.h"
 #include "math/matrices.h"
 #include "math/vectors.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer2D.h"
+#include "renderer/gpu/RenderCommand.h"
 
 namespace owl::gui {
 
@@ -48,11 +48,10 @@ void renderPreviewInto(renderer::gpu::Framebuffer& ioFramebuffer, const shared<d
 	const renderer::CameraOrtho camera{-1.f, 1.f, -1.f, 1.f};
 	renderer::Renderer2D::beginScene(camera);
 	renderer::StringData drawData;
-	const auto aspect =
-			static_cast<float>(kPreviewSize.x()) / static_cast<float>(std::max(kPreviewSize.y(), 1u));
+	const auto aspect = static_cast<float>(kPreviewSize.x()) / static_cast<float>(std::max(kPreviewSize.y(), 1u));
 	// Text fits into a unit-square quad locally; scale it so it spans most of the framebuffer.
 	const math::Transform xform{math::vec3{0.f, 0.f, 0.f}, math::vec3{0.f, 0.f, 0.f},
-								 math::vec3{0.9f * aspect, 0.9f, 1.f}};
+								math::vec3{0.9f * aspect, 0.9f, 1.f}};
 	drawData.transform = xform;
 	drawData.text = kSample;
 	drawData.font = iFont;

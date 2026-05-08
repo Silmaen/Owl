@@ -26,8 +26,7 @@ void emitSpeedCurve(YAML::Emitter& ioEmitter, const math::Curve& iCurve) {
 	ioEmitter << YAML::Key << "interpolation" << YAML::Value
 			  << std::string{magic_enum::enum_name(iCurve.getInterpolation())};
 	ioEmitter << YAML::Key << "keys" << YAML::Value << YAML::BeginSeq;
-	for (const auto& k: iCurve.keys())
-		ioEmitter << YAML::Flow << YAML::BeginSeq << k.time << k.value << YAML::EndSeq;
+	for (const auto& k: iCurve.keys()) ioEmitter << YAML::Flow << YAML::BeginSeq << k.time << k.value << YAML::EndSeq;
 	ioEmitter << YAML::EndSeq;
 	ioEmitter << YAML::EndMap;
 }
@@ -74,14 +73,15 @@ auto AnimationClip::deserializeFromString(const std::string_view iYaml) -> bool 
 	try {
 		root = YAML::Load(std::string{iYaml});
 	} catch (const YAML::Exception& e) {
-		OWL_CORE_ERROR("AnimationClip: failed to parse YAML — {}", e.what())
+		OWL_CORE_ERROR("AnimationClip: failed to parse YAML — {}.", e.what())
 		return false;
 	}
 	if (!root || !root.IsMap() || !root["AnimationClip"])
 		return false;
 	AnimationClip parsed;
 	if (root["texture"])
-		parsed.texture = renderer::gpu::Texture2D::createFromSerializedForDeserialize(root["texture"].as<std::string>());
+		parsed.texture =
+				renderer::gpu::Texture2D::createFromSerializedForDeserialize(root["texture"].as<std::string>());
 	if (root["columns"])
 		parsed.columns = std::max(1u, root["columns"].as<uint32_t>());
 	if (root["rows"])
@@ -102,7 +102,7 @@ auto AnimationClip::deserializeFromString(const std::string_view iYaml) -> bool 
 auto AnimationClip::saveToFile(const std::filesystem::path& iPath, const std::string_view iName) const -> bool {
 	std::ofstream out(iPath, std::ios::binary);
 	if (!out.is_open()) {
-		OWL_CORE_ERROR("AnimationClip: failed to open '{}' for writing", iPath.string())
+		OWL_CORE_ERROR("AnimationClip: failed to open '{}' for writing.", iPath.string())
 		return false;
 	}
 	const auto displayName = iName.empty() ? iPath.stem().string() : std::string{iName};
@@ -113,7 +113,7 @@ auto AnimationClip::saveToFile(const std::filesystem::path& iPath, const std::st
 auto AnimationClip::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	std::ifstream in(iPath, std::ios::binary);
 	if (!in.is_open()) {
-		OWL_CORE_ERROR("AnimationClip: failed to open '{}' for reading", iPath.string())
+		OWL_CORE_ERROR("AnimationClip: failed to open '{}' for reading.", iPath.string())
 		return false;
 	}
 	std::stringstream buffer;

@@ -72,6 +72,7 @@ public:
 	 * @brief
 	 *  Add a timer Task.
 	 * @param iTimerParam The timer task.
+	 * @return The weak.
 	 */
 	auto pushTimer(const TimerParam& iTimerParam) -> weak<Timer>;
 

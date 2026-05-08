@@ -39,11 +39,11 @@ auto MeshLoader::loadObj([[maybe_unused]] const std::filesystem::path& iFilePath
 	std::string err;
 
 	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, iFilePath.string().c_str())) {
-		OWL_CORE_ERROR("MeshLoader::loadObj: Failed to load {}: {}", iFilePath.string(), err)
+		OWL_CORE_ERROR("MeshLoader::loadObj: Failed to load {}: {}.", iFilePath.string(), err)
 		return mesh;
 	}
 	if (!warn.empty()) {
-		OWL_CORE_WARN("MeshLoader::loadObj: {}", warn)
+		OWL_CORE_WARN("MeshLoader::loadObj: {}.", warn)
 	}
 	// Reserve space for vertices
 	mesh->reserveVertices(attrib.vertices.size() / 3);
@@ -145,7 +145,7 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 	ufbx_error error;
 	ufbx_scene* scene = ufbx_load_file(iFilePath.string().c_str(), &opts, &error);
 	if (scene == nullptr) {
-		OWL_CORE_ERROR("MeshLoader::loadFbx: Failed to load {}: {}", iFilePath.string(), error.description.data)
+		OWL_CORE_ERROR("MeshLoader::loadFbx: Failed to load {}: {}.", iFilePath.string(), error.description.data)
 		return mesh;
 	}
 
@@ -265,14 +265,14 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 	else
 		loaded = gltfLoader.LoadASCIIFromFile(&gltfModel, &err, &warn, iFilePath.string());
 	if (!loaded) {
-		OWL_CORE_ERROR("MeshLoader::loadGltf: Failed to load {}: {}", iFilePath.string(), err)
+		OWL_CORE_ERROR("MeshLoader::loadGltf: Failed to load {}: {}.", iFilePath.string(), err)
 		return mesh;
 	}
 	if (!warn.empty()) {
-		OWL_CORE_WARN("MeshLoader::loadGltf: {}", warn)
+		OWL_CORE_WARN("MeshLoader::loadGltf: {}.", warn)
 	}
 	if (gltfModel.meshes.empty()) {
-		OWL_CORE_ERROR("MeshLoader::loadGltf: No mesh found in {}", iFilePath.string())
+		OWL_CORE_ERROR("MeshLoader::loadGltf: No mesh found in {}.", iFilePath.string())
 		return mesh;
 	}
 	std::vector<std::array<vec2, 3>> uvCoords;
@@ -299,7 +299,7 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 		// Positions
 		const auto posIt = primitive.attributes.find("POSITION");
 		if (posIt == primitive.attributes.end()) {
-			OWL_CORE_ERROR("MeshLoader::loadGltf: No POSITION attribute in mesh")
+			OWL_CORE_ERROR("MeshLoader::loadGltf: No POSITION attribute in mesh.")
 			continue;
 		}
 		const auto posAccessorIdx = static_cast<size_type>(posIt->second);
@@ -346,7 +346,7 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 		}
 		// Indices
 		if (primitive.indices < 0) {
-			OWL_CORE_WARN("MeshLoader::loadGltf: No indices found, skipping primitive")
+			OWL_CORE_WARN("MeshLoader::loadGltf: No indices found, skipping primitive.")
 			continue;
 		}
 		const tinygltf::Accessor& idxAccessor = gltfModel.accessors.at(static_cast<size_type>(primitive.indices));
@@ -370,7 +370,7 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 						break;
 					default:
 
-						OWL_CORE_ERROR("MeshLoader::loadGltf: Unsupported index component type")
+						OWL_CORE_ERROR("MeshLoader::loadGltf: Unsupported index component type.")
 						break;
 				}
 				vertexIndices.at(j) = idx;

@@ -26,12 +26,12 @@ struct ComControl {
 		if (refCount == 0) {
 			HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 			if (FAILED(hr)) {
-				OWL_CORE_ERROR("Unable to Initialize COM")
+				OWL_CORE_ERROR("Unable to Initialize COM.")
 				return false;
 			}
 			hr = MFStartup(MF_VERSION, MFSTARTUP_NOSOCKET);
 			if (FAILED(hr)) {
-				OWL_CORE_ERROR("Unable to Initialize Media Foundation")
+				OWL_CORE_ERROR("Unable to Initialize Media Foundation.")
 				return false;
 			}
 		}
@@ -168,7 +168,7 @@ auto getDevicePixelFormat(const GUID& videoFormat) -> Device::PixelFormat {
 		return Device::PixelFormat::YuYv;
 
 	// Format inconnu
-	return Device::PixelFormat::Unknwon;
+	return Device::PixelFormat::Unknown;
 }
 
 }// namespace
@@ -227,7 +227,7 @@ void updateList(std::vector<shared<video::Device>>& ioList) {
 				return testDev->getBusInfo() == static_pointer_cast<Device>(dev)->getBusInfo();
 			}) != ioList.end())
 			continue;
-		OWL_CORE_TRACE("Found: {} ({}) [{}] ", devCounter, testDev->getName(), testDev->getBusInfo())
+		OWL_CORE_TRACE("Found: {} ({}) [{}]. ", devCounter, testDev->getName(), testDev->getBusInfo())
 		ioList.push_back(testDev);
 		++devCounter;
 	}
@@ -263,7 +263,7 @@ Device::~Device() {
 }
 
 void Device::open() {
-	OWL_CORE_INFO("Opening device {}", m_name)
+	OWL_CORE_INFO("Opening device {}.", m_name)
 	// Media source activation!
 	HRESULT hr = m_devActive->ActivateObject(IID_PPV_ARGS(m_mediaSource.addr()));
 	if (FAILED(hr)) {
@@ -367,7 +367,7 @@ void Device::fillFrame(shared<renderer::gpu::Texture>& iFrame) {
 	buffer->Lock(&byteBuffer, nullptr, &bCurLen);
 	std::vector<byte> convertedBuffer = getRgbBuffer(byteBuffer, static_cast<int32_t>(bCurLen));
 	if (m_size.surface() * 3ull != convertedBuffer.size()) {
-		OWL_CORE_WARN("Frame size missmatch {} buffer: {}.", m_size.surface() * 3ull, convertedBuffer.size())
+		OWL_CORE_WARN("Frame size mismatch {} buffer: {}.", m_size.surface() * 3ull, convertedBuffer.size())
 		buffer->Unlock();
 		return;
 	}

@@ -40,7 +40,7 @@ public:
 	/**
 	 * @brief
 	 *  Constructor. Build a basic range.
-	 * @tparam Components2 Component type, same as Components
+	 * @tparam Components2 Component type, same as Components.
 	 * @param[in] iMesh 		The mesh on which to iterate.
 	 * @param[in] iComponents 	Cloud's components on which to iterate.
 	 */

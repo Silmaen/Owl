@@ -56,14 +56,14 @@ private:
 public:
 	/**
 	 * @brief
-	 *  Copy Constructor
+	 *  Copy Constructor.
 	 * @param e The error.
 	 */
 	constexpr explicit unexpected(const E& e) : m_error(e) {}
 
 	/**
 	 * @brief
-	 *  Move Constructor
+	 *  Move Constructor.
 	 * @param e The error.
 	 */
 	constexpr explicit unexpected(E&& e) : m_error(std::move(e)) {}

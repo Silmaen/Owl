@@ -81,9 +81,7 @@ auto drawRendererStackEditor(renderer::RendererStackConfig& ioStack) -> void {
 		// Generate a default unique name layer_N.
 		int idx = 0;
 		std::string candidate;
-		do {
-			candidate = std::format("layer_{}", idx++);
-		} while (ioStack.find(candidate) != nullptr);
+		do { candidate = std::format("layer_{}", idx++); } while (ioStack.find(candidate) != nullptr);
 		entry.name = candidate;
 		entries.push_back(std::move(entry));
 	}

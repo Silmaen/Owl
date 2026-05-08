@@ -100,11 +100,11 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 
 			sf_open(reinterpret_cast<const char*>(m_specification.file.u8string().c_str()), SFM_READ, &sfInfo);
 	if (file == nullptr) {
-		OWL_CORE_WARN("SoundData: Failed to open file '{}'", m_specification.file.string())
+		OWL_CORE_WARN("SoundData: Failed to open file '{}'.", m_specification.file.string())
 		return;
 	}
 	if (sfInfo.frames < 1) {
-		OWL_CORE_WARN("SoundData: File '{}' is empty", m_specification.file.string())
+		OWL_CORE_WARN("SoundData: File '{}' is empty.", m_specification.file.string())
 		sf_close(file);
 		return;
 	}
@@ -119,7 +119,7 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 	ALint splblockalign = 0;
 	if (sampleFormat == SoundDataType::Ima4 || sampleFormat == SoundDataType::MsAdpcm) {
 		if (sfInfo.channels > 2) {
-			OWL_CORE_WARN("SoundData: unable to load {} format only supports 2 chanel max...",
+			OWL_CORE_WARN("SoundData: unable to load {} format only supports 2 channel max...",
 						  magic_enum::enum_name(sampleFormat))
 			sf_close(file);
 			return;

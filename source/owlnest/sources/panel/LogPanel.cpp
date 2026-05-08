@@ -89,7 +89,8 @@ void renderColoredText(const std::string_view iText, const ImVec4& iBaseColor) {
 			// Don't rewind, minus was already rendered; just note it.
 		}
 		// Hex prefix.
-		if (numEnd + 1 < iText.size() && iText[numEnd] == '0' && (iText[numEnd + 1] == 'x' || iText[numEnd + 1] == 'X')) {
+		if (numEnd + 1 < iText.size() && iText[numEnd] == '0' &&
+			(iText[numEnd + 1] == 'x' || iText[numEnd + 1] == 'X')) {
 			numEnd += 2;
 			while (numEnd < iText.size() &&
 				   ((iText[numEnd] >= '0' && iText[numEnd] <= '9') || (iText[numEnd] >= 'a' && iText[numEnd] <= 'f') ||
@@ -195,9 +196,9 @@ void LogPanel::onImGuiRender() {
 
 	const std::string_view searchFilter(m_searchBuffer.data());
 
-	for (const auto& entry : entries) {
+	for (const auto& [level, loggerName, message, timestamp]: entries) {
 		// Level filter
-		switch (entry.level) {
+		switch (level) {
 			case core::Log::Level::Trace:
 				if (!m_showTrace)
 					continue;
@@ -226,20 +227,20 @@ void LogPanel::onImGuiRender() {
 				continue;
 		}
 		// Logger filter
-		if (entry.loggerName == "OWL" && !m_showCore)
+		if (loggerName == "OWL" && !m_showCore)
 			continue;
-		if (entry.loggerName == "APP" && !m_showApp)
+		if (loggerName == "APP" && !m_showApp)
 			continue;
 		// Text search filter
-		if (!searchFilter.empty() && entry.message.find(searchFilter) == std::string::npos)
+		if (!searchFilter.empty() && message.find(searchFilter) == std::string::npos)
 			continue;
-		const ImVec4 levelColor = getLevelColor(entry.level);
+		const ImVec4 levelColor = getLevelColor(level);
 		// Timestamp in grey
-		const auto timestamp = formatTimestamp(entry.timestamp);
+		const auto f_timestamp = formatTimestamp(timestamp);
 
 		ImGui::PushStyleColor(ImGuiCol_Text, g_timestampColor);
 
-		ImGui::TextUnformatted(timestamp.c_str());
+		ImGui::TextUnformatted(f_timestamp.c_str());
 
 		ImGui::PopStyleColor();
 
@@ -248,12 +249,12 @@ void LogPanel::onImGuiRender() {
 
 		ImGui::PushStyleColor(ImGuiCol_Text, levelColor);
 
-		ImGui::TextUnformatted(std::format(" {} {}: ", getLevelLabel(entry.level), entry.loggerName).c_str());
+		ImGui::TextUnformatted(std::format(" {} {}: ", getLevelLabel(level), loggerName).c_str());
 
 		ImGui::PopStyleColor();
 
 		// Message with numbers in cyan
-		renderColoredText(entry.message, levelColor);
+		renderColoredText(message, levelColor);
 	}
 
 	if (m_autoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY())

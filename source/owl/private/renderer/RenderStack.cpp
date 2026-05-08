@@ -152,18 +152,19 @@ auto EnabledRenderersConfig::fromYaml(const YAML::Node& iNode) -> EnabledRendere
 }
 
 // ---------------------------------------------------------------- RenderStack
-auto RenderStack::buildFromConfig(const RendererStackConfig& iProject,
-								  const EnabledRenderersConfig& iScene) -> RenderStack {
+auto RenderStack::buildFromConfig(const RendererStackConfig& iProject, const EnabledRenderersConfig& iScene)
+		-> RenderStack {
 	RenderStack stack;
-	const RendererStackConfig fallback = iProject.isEmpty() ? RendererStackConfig::makeDefault() : RendererStackConfig{};
+	const RendererStackConfig fallback =
+			iProject.isEmpty() ? RendererStackConfig::makeDefault() : RendererStackConfig{};
 	const RendererStackConfig& effective = iProject.isEmpty() ? fallback : iProject;
 	if (iProject.isEmpty()) {
 		OWL_CORE_WARN("RenderStack: empty project config — falling back to default Renderer2D.")
 	}
 
 	const auto findProject = [&](const std::string& iName) -> const RendererStackEntry* {
-		const auto it = std::ranges::find_if(effective.entries,
-											 [&](const auto& iE) -> bool { return iE.name == iName; });
+		const auto it =
+				std::ranges::find_if(effective.entries, [&](const auto& iE) -> bool { return iE.name == iName; });
 		return it == effective.entries.end() ? nullptr : &*it;
 	};
 
@@ -224,8 +225,8 @@ auto RenderStack::buildFromConfig(const RendererStackConfig& iProject,
 }
 
 auto RenderStack::findByName(const std::string& iName) const -> shared<RenderLayer> {
-	const auto it = std::ranges::find_if(m_layers,
-										 [&](const auto& layer) -> bool { return layer->getName() == iName; });
+	const auto it =
+			std::ranges::find_if(m_layers, [&](const auto& layer) -> bool { return layer->getName() == iName; });
 	if (it == m_layers.end())
 		return nullptr;
 	return *it;
@@ -238,18 +239,15 @@ auto RenderStack::getDefaultLayer() const -> shared<RenderLayer> {
 }
 
 void RenderStack::beginFrame(const Camera& iCamera) const {
-	for (const auto& layer: m_layers)
-		layer->onBeginFrame(iCamera);
+	for (const auto& layer: m_layers) layer->onBeginFrame(iCamera);
 }
 
 void RenderStack::renderScene(scene::Scene& ioScene) const {
-	for (const auto& layer: m_layers)
-		layer->onRender(ioScene);
+	for (const auto& layer: m_layers) layer->onRender(ioScene);
 }
 
 void RenderStack::endFrame() {
-	for (const auto& layer: std::ranges::reverse_view(m_layers))
-		layer->onEndFrame();
+	for (const auto& layer: std::ranges::reverse_view(m_layers)) layer->onEndFrame();
 }
 
 }// namespace owl::renderer

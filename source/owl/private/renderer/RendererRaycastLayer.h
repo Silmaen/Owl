@@ -40,6 +40,7 @@ public:
 	/**
 	 * @brief
 	 *  Factory key used by `RenderLayerFactory::registerType`.
+	 * @return Pointer to the type key, or `nullptr` when not available.
 	 */
 	static constexpr auto typeKey() -> const char* { return "RendererRaycast"; }
 

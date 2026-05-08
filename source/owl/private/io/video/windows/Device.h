@@ -36,7 +36,7 @@ public:
 	/**
 	 * @brief
 	 *  Default Constructor.
-	 * @param[in] iMfa Poiter to windows device.
+	 * @param[in] iMfa Pointer to Windows device.
 	 */
 	explicit Device(WPointer<IMFActivate>& iMfa);
 

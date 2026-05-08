@@ -20,13 +20,13 @@ class OWL_API ExtraDataTable {
 public:
 	/**
 	 * @brief
-	 *  Default constructor
+	 *  Default constructor.
 	 */
 	ExtraDataTable();
 
 	/**
 	 * @brief
-	 *  Default destructor
+	 *  Default destructor.
 	 */
 	~ExtraDataTable();
 

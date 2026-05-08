@@ -46,9 +46,8 @@ void drawButtonBackground(const Ribbon::Button& iButton) {
 		return;
 	// Both the active-press state and the checked (toggled-on) state use `ButtonActive` — the
 	// distinction is conveyed by the hover animation, not a third colour.
-	const ImU32 col = hovered && !active
-							  ? ImGui::GetColorU32(ImGuiCol_ButtonHovered)
-							  : ImGui::GetColorU32(ImGuiCol_ButtonActive);
+	const ImU32 col =
+			hovered && !active ? ImGui::GetColorU32(ImGuiCol_ButtonHovered) : ImGui::GetColorU32(ImGuiCol_ButtonActive);
 	ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), col, 3.f);
 }
 
@@ -58,8 +57,8 @@ void drawButtonIcon(const std::string& iIconName, const ImVec2& iCenter, const f
 		return;
 	const ImVec2 iconMin{iCenter.x - iSize * 0.5f, iCenter.y - iSize * 0.5f};
 	const ImVec2 iconMax{iCenter.x + iSize * 0.5f, iCenter.y + iSize * 0.5f};
-	ImGui::GetWindowDrawList()->AddImage(static_cast<ImTextureID>(info->textureId), iconMin, iconMax,
-										 vec(info->uv0), vec(info->uv1));
+	ImGui::GetWindowDrawList()->AddImage(static_cast<ImTextureID>(info->textureId), iconMin, iconMax, vec(info->uv0),
+										 vec(info->uv1));
 }
 
 void maybeShowTooltip(const std::string& iTooltip) {
@@ -82,12 +81,12 @@ auto renderLargeButton(const Ribbon::Button& iButton) -> bool {
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().DisabledAlpha);
 
 	ImGui::PushID(&iButton);
-	const bool clicked =
-			ImGui::InvisibleButton("##large", ImVec2{width, sk_groupContentHeight}) && enabled;
+	const bool clicked = ImGui::InvisibleButton("##large", ImVec2{width, sk_groupContentHeight}) && enabled;
 	const auto rectMin = ImGui::GetItemRectMin();
 	const auto rectMax = ImGui::GetItemRectMax();
 	drawButtonBackground(iButton);
-	drawButtonIcon(iButton.iconName, {rectMin.x + width * 0.5f, rectMin.y + sk_largeInnerPadY + sk_largeIconSize * 0.5f},
+	drawButtonIcon(iButton.iconName,
+				   {rectMin.x + width * 0.5f, rectMin.y + sk_largeInnerPadY + sk_largeIconSize * 0.5f},
 				   sk_largeIconSize);
 	const ImVec2 textPos{rectMin.x + (width - labelSize.x) * 0.5f, rectMax.y - labelSize.y - sk_largeInnerPadY};
 	ImGui::GetWindowDrawList()->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), iButton.label.c_str());
@@ -110,16 +109,14 @@ auto renderSmallButton(const Ribbon::Button& iButton, const float iColumnWidth, 
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().DisabledAlpha);
 
 	ImGui::PushID(&iButton);
-	const bool clicked =
-			ImGui::InvisibleButton("##small", ImVec2{iColumnWidth, iHeight}) && enabled;
+	const bool clicked = ImGui::InvisibleButton("##small", ImVec2{iColumnWidth, iHeight}) && enabled;
 	const auto rectMin = ImGui::GetItemRectMin();
 	const auto rectMax = ImGui::GetItemRectMax();
 	drawButtonBackground(iButton);
 	const float cy = (rectMin.y + rectMax.y) * 0.5f;
 	drawButtonIcon(iButton.iconName, {rectMin.x + sk_smallLabelPadX + sk_smallIconSize * 0.5f, cy}, sk_smallIconSize);
 	const auto labelSize = ImGui::CalcTextSize(iButton.label.c_str());
-	const ImVec2 textPos{rectMin.x + sk_smallLabelPadX + sk_smallIconSize + sk_smallLabelPadX,
-						 cy - labelSize.y * 0.5f};
+	const ImVec2 textPos{rectMin.x + sk_smallLabelPadX + sk_smallIconSize + sk_smallLabelPadX, cy - labelSize.y * 0.5f};
 	ImGui::GetWindowDrawList()->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), iButton.label.c_str());
 	if (enabled)
 		maybeShowTooltip(iButton.tooltip);
@@ -140,8 +137,8 @@ auto measureSmallColumnWidth(const std::vector<const Ribbon::Button*>& iStack) -
 		const auto sz = ImGui::CalcTextSize(btn->label.c_str());
 		maxLabel = std::max(maxLabel, sz.x);
 	}
-	return std::max(sk_smallWidthMin, sk_smallLabelPadX + sk_smallIconSize + sk_smallLabelPadX + maxLabel +
-												sk_smallLabelPadX);
+	return std::max(sk_smallWidthMin,
+					sk_smallLabelPadX + sk_smallIconSize + sk_smallLabelPadX + maxLabel + sk_smallLabelPadX);
 }
 
 /**
@@ -197,8 +194,9 @@ void renderGroup(const Ribbon::Group& iGroup) {
 	// Label under the content, centred.
 	const auto labelSize = ImGui::CalcTextSize(iGroup.label.c_str());
 	const float offset = std::max(0.f, (groupWidth - labelSize.x) * 0.5f);
-	ImGui::GetWindowDrawList()->AddText({groupOrigin.x + offset, groupOrigin.y + sk_groupContentHeight + sk_groupLabelGap},
-										ImGui::GetColorU32(ImGuiCol_TextDisabled), iGroup.label.c_str());
+	ImGui::GetWindowDrawList()->AddText(
+			{groupOrigin.x + offset, groupOrigin.y + sk_groupContentHeight + sk_groupLabelGap},
+			ImGui::GetColorU32(ImGuiCol_TextDisabled), iGroup.label.c_str());
 }
 
 /**
@@ -206,8 +204,7 @@ void renderGroup(const Ribbon::Group& iGroup) {
  *  Render every group of the active tab side-by-side with vertical separators.
  */
 void renderTabContent(const Ribbon::Tab& iTab) {
-	const float totalHeight =
-			sk_groupContentHeight + sk_groupLabelGap + ImGui::GetFontSize() + sk_groupFooterPadding;
+	const float totalHeight = sk_groupContentHeight + sk_groupLabelGap + ImGui::GetFontSize() + sk_groupFooterPadding;
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{sk_groupInnerPadX, 2.f});
 
 	const auto startCursor = ImGui::GetCursorScreenPos();

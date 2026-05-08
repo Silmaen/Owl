@@ -16,7 +16,7 @@
 namespace owl::input {
 /**
  * @brief
- *  Class For controlling otho camera.
+ *  Class For controlling ortho camera.
  */
 class OWL_API CameraOrthoController final {
 public:
@@ -80,7 +80,7 @@ public:
 	/**
 	 * @brief
 	 *  Access to the zoom level.
-	 * @return Teh Zoom level.
+	 * @return The Zoom level.
 	 */
 	[[nodiscard]] auto getZoomLevel() const -> float { return m_zoomLevel; }
 

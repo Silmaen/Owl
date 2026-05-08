@@ -66,6 +66,7 @@ public:
 	/**
 	 * @brief
 	 *  Factory key used by `RenderLayerFactory::registerType`.
+	 * @return Pointer to the type key, or `nullptr` when not available.
 	 */
 	static constexpr auto typeKey() -> const char* { return "Renderer2D"; }
 
@@ -151,6 +152,7 @@ private:
 	/**
 	 * @brief
 	 *  Build the pixel-space ortho matching the current viewport.
+	 * @return The CameraOrtho.
 	 */
 	[[nodiscard]] auto buildPixelOrtho() const -> CameraOrtho;
 

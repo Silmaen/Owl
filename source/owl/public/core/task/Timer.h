@@ -24,7 +24,7 @@ struct TimerParam {
 	std::function<void()> exec;
 	/// Duration Between execution.
 	Timestep::duration frequency;
-	/// Should function be run in asynchron mode.
+	/// Should function be run in asynchronous mode.
 	bool async = false;
 	/// Number of repeat before end (0: means infinite).
 	size_t iteration = 0;

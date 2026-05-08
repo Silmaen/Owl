@@ -32,8 +32,8 @@ public:
 	 * @param[in] iFilepath Path to write the .owlprefab file.
 	 * @param[in] iPrefabName Human-readable name for the prefab.
 	 */
-	static void serialize(const Entity& iRootEntity, const Scene& iScene,
-						  const std::filesystem::path& iFilepath, const std::string& iPrefabName);
+	static void serialize(const Entity& iRootEntity, const Scene& iScene, const std::filesystem::path& iFilepath,
+						  const std::string& iPrefabName);
 
 	/**
 	 * @brief

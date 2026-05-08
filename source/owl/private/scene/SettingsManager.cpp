@@ -104,7 +104,7 @@ void SettingsManager::loadDefaults(const std::filesystem::path& iPath) {
 		const auto data = YAML::LoadFile(iPath.string());
 		if (const auto entries = data["GameSettings"]; entries)
 			s_defaults = deserializeEntries(entries);
-	} catch (...) { OWL_CORE_WARN("Failed to load game settings from {}", iPath.string()) }
+	} catch (...) { OWL_CORE_WARN("Failed to load game settings from {}.", iPath.string()) }
 }
 
 void SettingsManager::loadDefaultsFromString(const std::string& iContent) {
@@ -112,7 +112,7 @@ void SettingsManager::loadDefaultsFromString(const std::string& iContent) {
 		const auto data = YAML::Load(iContent);
 		if (const auto entries = data["GameSettings"]; entries)
 			s_defaults = deserializeEntries(entries);
-	} catch (...) { OWL_CORE_WARN("Failed to parse game settings from string") }
+	} catch (...) { OWL_CORE_WARN("Failed to parse game settings from string.") }
 }
 
 void SettingsManager::loadUserSettings() {
@@ -123,7 +123,7 @@ void SettingsManager::loadUserSettings() {
 		const auto data = YAML::LoadFile(path.string());
 		if (const auto entries = data["UserSettings"]; entries)
 			s_overrides = deserializeEntries(entries);
-	} catch (...) { OWL_CORE_WARN("Failed to load user settings from {}", path.string()) }
+	} catch (...) { OWL_CORE_WARN("Failed to load user settings from {}.", path.string()) }
 }
 
 void SettingsManager::saveUserSettings() {

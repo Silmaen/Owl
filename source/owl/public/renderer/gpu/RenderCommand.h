@@ -228,4 +228,4 @@ private:
 	/// Pointer to the render API
 	static uniq<RenderAPI> m_renderAPI;
 };
-}// namespace owl::renderer
+}// namespace owl::renderer::gpu

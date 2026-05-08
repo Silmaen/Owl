@@ -71,7 +71,7 @@ void TextureData::createDescriptorSet() {
 												.pSetLayouts = &textureDescriptorSetLayout};
 	if (const auto result = vkAllocateDescriptorSets(core.getLogicalDevice(), &allocInfo, &textureDescriptorSet);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Texture Descriptor: failed to allocate descriptor sets ({})", resultString(result))
+		OWL_CORE_ERROR("Vulkan Texture Descriptor: failed to allocate descriptor sets ({}).", resultString(result))
 	}
 	const VkDescriptorImageInfo info{.sampler = textureSampler,
 									 .imageView = textureImageView,
@@ -188,7 +188,7 @@ void Descriptors::release() {
 	m_textureBind.shrink_to_fit();
 	if (!m_textures.empty()) {
 		for (auto& [id, tex]: m_textures) {
-			OWL_CORE_TRACE("Vulkan Descriptors: releasing texture id {}", id)
+			OWL_CORE_TRACE("Vulkan Descriptors: releasing texture id {}.", id)
 			tex->freeTexture();
 			tex.reset();
 		}
@@ -246,7 +246,7 @@ void Descriptors::createDescriptors() {
 											  .pPoolSizes = poolSizes.data()};
 	if (const VkResult result = vkCreateDescriptorPool(core.getLogicalDevice(), &poolInfo, nullptr, &m_descriptorPool);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({})", resultString(result))
+		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({}).", resultString(result))
 	}
 
 	// Descriptor sets layout
@@ -283,7 +283,7 @@ void Descriptors::createDescriptors() {
 	m_descriptorSets.resize(g_maxFrameInFlight);
 	if (const auto result = vkAllocateDescriptorSets(core.getLogicalDevice(), &allocInfo, m_descriptorSets.data());
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Descriptor: failed to allocate descriptor sets ({})", resultString(result))
+		OWL_CORE_ERROR("Vulkan Descriptor: failed to allocate descriptor sets ({}).", resultString(result))
 	}
 }
 
@@ -432,7 +432,7 @@ void Descriptors::createImguiDescriptorPool() {
 	if (const VkResult result =
 				vkCreateDescriptorPool(core.getLogicalDevice(), &poolInfo, nullptr, &m_imguiDescriptorPool);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({})", resultString(result))
+		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({}).", resultString(result))
 	}
 }
 
@@ -453,7 +453,7 @@ void Descriptors::createSingleImageDescriptorPool() {
 	if (const VkResult result =
 				vkCreateDescriptorPool(core.getLogicalDevice(), &poolInfo, nullptr, &m_singleImageDescriptorPool);
 		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({})", resultString(result))
+		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({}).", resultString(result))
 	}
 }
 

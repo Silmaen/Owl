@@ -15,6 +15,7 @@
 namespace owl::io::video {
 
 namespace {
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 // NOLINTBEGIN(*-magic-numbers)
@@ -85,7 +86,7 @@ void convertMJpegToRgb24(const uint8_t* iJpegBuffer, const int32_t iJpegSize, co
 		return;
 	}
 	if (iSize != math::vec2ui{static_cast<uint32_t>(width), static_cast<uint32_t>(height)}) {
-		OWL_CORE_WARN("Jpeg decoding: size missmatch ({} {}) expecting {} {}.", width, height, iSize.x(), iSize.y())
+		OWL_CORE_WARN("Jpeg decoding: size mismatch ({} {}) expecting {} {}.", width, height, iSize.x(), iSize.y())
 		stbi_image_free(buffer);
 		return;
 	}
@@ -98,15 +99,16 @@ void convertMJpegToRgb24(const uint8_t* iJpegBuffer, const int32_t iJpegSize, co
 	for (int i = 0; i < height; ++i) {
 		for (int j = 0; j < width; ++j) {
 			const int sourceIndex = (i * width + j) * 3;
-			const int destinationIndex = ((i + 1) * width - j - 1) * 3;// Inversion horizontale
+			const int destinationIndex = ((i + 1) * width - j - 1) * 3;// Horizontal inversion
 			memcpy(oRgb24Buffer + destinationIndex, buffer + sourceIndex, 3);
 		}
 	}
 	//std::memcpy(rgb24Buffer, buffer, frameSize.surface() * 3);
 	stbi_image_free(buffer);
 }
-// NOLINTEND(*-magic-numbers)
 OWL_DIAG_POP
+// NOLINTEND(*-magic-numbers)
+
 }// namespace
 
 Device::Device(std::string iName) : m_name(std::move(iName)) {}
@@ -144,7 +146,7 @@ auto Device::isPixelFormatSupported(const PixelFormat& iPixFormat) -> bool {
 		case PixelFormat::Nv12:
 		case PixelFormat::MJpeg:
 			return true;
-		case PixelFormat::Unknwon:
+		case PixelFormat::Unknown:
 			return false;
 	}
 	return false;

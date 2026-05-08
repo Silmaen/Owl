@@ -183,7 +183,7 @@ void Framebuffer::invalidate() {
 	const bool completeFramebuffer = glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
 	OWL_CORE_ASSERT(completeFramebuffer, "Framebuffer is incomplete!")
 	if (!completeFramebuffer) {
-		OWL_CORE_WARN("Incomplete Framebuffer")
+		OWL_CORE_WARN("Incomplete Framebuffer.")
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -198,7 +198,7 @@ void Framebuffer::unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
 void Framebuffer::resize(const math::vec2ui iSize) {
 	if (iSize.x() == 0 || iSize.y() == 0 || iSize.x() > g_maxFramebufferSize || iSize.y() > g_maxFramebufferSize) {
-		OWL_CORE_WARN("Attempt to resize frame buffer to {} {}", iSize.x(), iSize.y())
+		OWL_CORE_WARN("Attempt to resize frame buffer to {} {}.", iSize.x(), iSize.y())
 		return;
 	}
 	m_specs.size = iSize;

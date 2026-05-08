@@ -261,8 +261,7 @@ auto EditorLayer::findSceneDocumentByPath(const std::filesystem::path& iPath) co
 	for (const auto& docPtr: m_documents.list()) {
 		if (docPtr && docPtr->type() == DocumentType::Scene) {
 			auto* scene = static_cast<SceneDocument*>(docPtr.get());
-			if (!scene->filePath().empty() &&
-				std::filesystem::weakly_canonical(scene->filePath()) == canonical)
+			if (!scene->filePath().empty() && std::filesystem::weakly_canonical(scene->filePath()) == canonical)
 				return scene;
 		}
 	}
@@ -304,9 +303,8 @@ void EditorLayer::syncActiveDocumentPanels() {
 	// implicit `[Renderer2D(default)]`. Done on every active-document change so scenes that
 	// override layer config see it applied immediately when focused.
 	if (doc != nullptr && doc->getActiveScene()) {
-		const auto& stackCfg = m_project.rendererStack.isEmpty()
-									   ? renderer::RendererStackConfig::makeDefault()
-									   : m_project.rendererStack;
+		const auto& stackCfg = m_project.rendererStack.isEmpty() ? renderer::RendererStackConfig::makeDefault()
+																 : m_project.rendererStack;
 		auto stack = renderer::RenderStack::buildFromConfig(stackCfg, doc->getActiveScene()->getEnabledRenderers());
 		renderer::Renderer::setRenderStack(std::move(stack));
 	} else {
@@ -318,9 +316,9 @@ void EditorLayer::syncActiveDocumentPanels() {
 
 void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativePath) {
 	const auto ext = iRelativePath.extension().string();
-	static const std::vector<std::string> codeExts = {
-			".lua", ".py",   ".c",    ".cpp",  ".cc",        ".cxx", ".h",  ".hpp",
-			".hxx", ".yml",  ".yaml", ".json", ".md",        ".markdown", ".svg", ".xml"};
+	static const std::vector<std::string> codeExts = {".lua", ".py",       ".c",   ".cpp", ".cc",   ".cxx",
+													  ".h",   ".hpp",      ".hxx", ".yml", ".yaml", ".json",
+													  ".md",  ".markdown", ".svg", ".xml"};
 
 	const auto relString = iRelativePath.generic_string();
 	if (ext == ".owlprefab") {
@@ -339,9 +337,9 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
 			openCodeFile(full.value());
 		else
-			OWL_CORE_WARN("Could not resolve dropped file: {}", relString)
+			OWL_CORE_WARN("Could not resolve dropped file: {}.", relString)
 	} else {
-		OWL_CORE_WARN("Could not load {}: unsupported file type", relString)
+		OWL_CORE_WARN("Could not load {}: unsupported file type.", relString)
 	}
 }
 
@@ -591,7 +589,7 @@ void EditorLayer::onAttach() {
 
 	buildRibbon();
 	if (auto ui = core::Application::get().getImGuiLayer(); ui != nullptr)
-		ui->setTopBarCallback([this] () -> void {
+		ui->setTopBarCallback([this]() -> void {
 			m_ribbon.onRender();
 
 			renderRecentProjectsPopup();
@@ -668,8 +666,7 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	// After a cross-level teleport, the new scene is in Editing state.
 	// Start its runtime and apply the pending velocity.
 	const auto& activeScene = activeDoc->getActiveScene();
-	if ((activeDoc->state() == SceneDocument::State::Play ||
-		 activeDoc->state() == SceneDocument::State::Pause) &&
+	if ((activeDoc->state() == SceneDocument::State::Play || activeDoc->state() == SceneDocument::State::Pause) &&
 		activeScene && activeScene->status == scene::Scene::Status::Editing) {
 		activeScene->onStartRuntime();
 		activeDoc->applyPendingTeleportVelocity();
@@ -678,8 +675,7 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	// Handle deferred quit request from Lua (scene.quit()).
 	if (activeDoc->isStopRequested()) {
 		activeDoc->clearStopRequest();
-		if (activeDoc->state() == SceneDocument::State::Play ||
-			activeDoc->state() == SceneDocument::State::Pause)
+		if (activeDoc->state() == SceneDocument::State::Play || activeDoc->state() == SceneDocument::State::Pause)
 			onSceneStop();
 		return;
 	}
@@ -721,8 +717,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	if (!m_deferredCloseIds.empty()) {
 		auto ids = std::move(m_deferredCloseIds);
 		m_deferredCloseIds.clear();
-		for (const auto id: ids)
-			closeDocument(id);
+		for (const auto id: ids) closeDocument(id);
 	}
 
 	// The ribbon is drawn from the UiLayer top-bar callback registered in onAttach.
@@ -770,9 +765,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	if (m_documents.getActive() != activeBefore)
 
 		syncActiveDocumentPanels();
-	for (const auto id: toClose)
-
-		requestCloseDocument(id);
+	for (const auto id: toClose) requestCloseDocument(id);
 
 	renderCloseDocumentModal();
 	//=============================================================
@@ -936,95 +929,127 @@ void EditorLayer::buildRibbon() {
 	const auto fileTab = m_ribbon.addTab("File");
 	m_ribbon.setTabHighlighted(fileTab, true);
 	const auto gProject = m_ribbon.addGroup(fileTab, "Project");
-	m_ribbon.addButton(fileTab, gProject, Button{.iconName = "new_folder", .label = "New",
-												 .tooltip = "Create a new project",
-												 .onClick = [this] () -> void { newProject(); },
-												 .size = Size::Large});
-	m_ribbon.addButton(fileTab, gProject, Button{.iconName = "open", .label = "Open",
-												 .tooltip = "Open an existing project",
-												 .onClick = [this] () -> void { openProject(); },
-												 .size = Size::Large});
-	m_ribbon.addButton(fileTab, gProject, Button{.iconName = "save", .label = "Save",
-												 .tooltip = "Save the current project",
-												 .isEnabled = [this] () -> bool { return m_project.isLoaded(); },
-												 .onClick = [this] () -> void { saveProject(); },
-												 .size = Size::Small});
-	m_ribbon.addButton(fileTab, gProject, Button{.iconName = "save", .label = "Save As",
-												 .tooltip = "Duplicate the current project to a new folder",
-												 .isEnabled = [this] () -> bool { return m_project.isLoaded(); },
-												 .onClick = [this] () -> void { saveProjectAs(); },
-												 .size = Size::Small});
-	m_ribbon.addButton(fileTab, gProject, Button{.iconName = "close", .label = "Close",
-												 .tooltip = "Close the current project",
-												 .isEnabled = [this] () -> bool { return m_project.isLoaded(); },
-												 .onClick = [this] () -> void { closeProject(); },
-												 .size = Size::Small});
+	m_ribbon.addButton(fileTab, gProject,
+					   Button{.iconName = "new_folder",
+							  .label = "New",
+							  .tooltip = "Create a new project",
+							  .onClick = [this]() -> void { newProject(); },
+							  .size = Size::Large});
+	m_ribbon.addButton(fileTab, gProject,
+					   Button{.iconName = "open",
+							  .label = "Open",
+							  .tooltip = "Open an existing project",
+							  .onClick = [this]() -> void { openProject(); },
+							  .size = Size::Large});
+	m_ribbon.addButton(fileTab, gProject,
+					   Button{.iconName = "save",
+							  .label = "Save",
+							  .tooltip = "Save the current project",
+							  .isEnabled = [this]() -> bool { return m_project.isLoaded(); },
+							  .onClick = [this]() -> void { saveProject(); },
+							  .size = Size::Small});
+	m_ribbon.addButton(fileTab, gProject,
+					   Button{.iconName = "save",
+							  .label = "Save As",
+							  .tooltip = "Duplicate the current project to a new folder",
+							  .isEnabled = [this]() -> bool { return m_project.isLoaded(); },
+							  .onClick = [this]() -> void { saveProjectAs(); },
+							  .size = Size::Small});
+	m_ribbon.addButton(fileTab, gProject,
+					   Button{.iconName = "close",
+							  .label = "Close",
+							  .tooltip = "Close the current project",
+							  .isEnabled = [this]() -> bool { return m_project.isLoaded(); },
+							  .onClick = [this]() -> void { closeProject(); },
+							  .size = Size::Small});
 	const auto gRecent = m_ribbon.addGroup(fileTab, "Recent");
-	m_ribbon.addButton(fileTab, gRecent, Button{.iconName = "open", .label = "Recent",
-												.tooltip = "Open a recently-used project",
-												.isEnabled = [this] () -> bool { return !m_settings.recentProjects.empty(); },
-												.onClick = [this] () -> void { m_openRecentProjectsPopup = true; },
-												.size = Size::Large});
+	m_ribbon.addButton(fileTab, gRecent,
+					   Button{.iconName = "open",
+							  .label = "Recent",
+							  .tooltip = "Open a recently-used project",
+							  .isEnabled = [this]() -> bool { return !m_settings.recentProjects.empty(); },
+							  .onClick = [this]() -> void { m_openRecentProjectsPopup = true; },
+							  .size = Size::Large});
 	const auto gPack = m_ribbon.addGroup(fileTab, "Package");
-	m_ribbon.addButton(fileTab, gPack, Button{.iconName = "pack", .label = "Pack Game",
-											  .tooltip = "Package the current project as a standalone game",
-											  .isEnabled = [this] () -> bool { return m_project.isLoaded(); },
-											  .onClick = [this] () -> void { packGame(); },
-											  .size = Size::Large});
+	m_ribbon.addButton(fileTab, gPack,
+					   Button{.iconName = "pack",
+							  .label = "Pack Game",
+							  .tooltip = "Package the current project as a standalone game",
+							  .isEnabled = [this]() -> bool { return m_project.isLoaded(); },
+							  .onClick = [this]() -> void { packGame(); },
+							  .size = Size::Large});
 	const auto gViews = m_ribbon.addGroup(fileTab, "Views");
-	m_ribbon.addButton(fileTab, gViews, Button{.iconName = "open", .label = "Scene Flow",
-											   .tooltip = "Show the project scenes as a graph (teleport links)",
-											   .isEnabled = [this] () -> bool { return m_project.isLoaded(); },
-											   .onClick = [this] () -> void { openSceneFlowView(); },
-											   .size = Size::Large});
+	m_ribbon.addButton(fileTab, gViews,
+					   Button{.iconName = "open",
+							  .label = "Scene Flow",
+							  .tooltip = "Show the project scenes as a graph (teleport links)",
+							  .isEnabled = [this]() -> bool { return m_project.isLoaded(); },
+							  .onClick = [this]() -> void { openSceneFlowView(); },
+							  .size = Size::Large});
 	const auto gAssets = m_ribbon.addGroup(fileTab, "Assets");
-	m_ribbon.addButton(fileTab, gAssets, Button{.iconName = "new_scene", .label = "New Animation",
-												.tooltip = "Create a new spritesheet animation clip (.owlanim)",
-												.onClick = [this] () -> void { newAnimationClip(); },
-												.size = Size::Large});
+	m_ribbon.addButton(fileTab, gAssets,
+					   Button{.iconName = "new_scene",
+							  .label = "New Animation",
+							  .tooltip = "Create a new spritesheet animation clip (.owlanim)",
+							  .onClick = [this]() -> void { newAnimationClip(); },
+							  .size = Size::Large});
 	const auto gHelp = m_ribbon.addGroup(fileTab, "Help");
-	m_ribbon.addButton(fileTab, gHelp, Button{.iconName = "info", .label = "Help",
-											  .tooltip = tipWithShortcut("Open the editor help", "help.context"),
-											  .onClick = [this] () -> void { m_helpPanel.open(); },
-											  .size = Size::Large});
+	m_ribbon.addButton(fileTab, gHelp,
+					   Button{.iconName = "info",
+							  .label = "Help",
+							  .tooltip = tipWithShortcut("Open the editor help", "help.context"),
+							  .onClick = [this]() -> void { m_helpPanel.open(); },
+							  .size = Size::Large});
 	const auto gExit = m_ribbon.addGroup(fileTab, "Session");
-	m_ribbon.addButton(fileTab, gExit, Button{.iconName = "exit", .label = "Exit",
-											  .tooltip = "Quit Owl Nest",
-											  .onClick = [] () -> void { core::Application::get().close(); },
-											  .size = Size::Large});
+	m_ribbon.addButton(fileTab, gExit,
+					   Button{.iconName = "exit",
+							  .label = "Exit",
+							  .tooltip = "Quit Owl Nest",
+							  .onClick = []() -> void { core::Application::get().close(); },
+							  .size = Size::Large});
 	// =============================== Edit tab ===============================
 	const auto editTab = m_ribbon.addTab("Edit");
 	const auto gHistory = m_ribbon.addGroup(editTab, "History");
-	m_ribbon.addButton(editTab, gHistory, Button{.iconName = "undo", .label = "Undo",
-												 .tooltip = tipWithShortcut("Undo", "edit.undo"),
-												 .isEnabled = [this] () -> bool {
-													 const auto* u = activeUndoManager();
-													 return u != nullptr && u->canUndo() && getState() == State::Edit;
-												 },
-												 .onClick = [this] () -> void { performUndo(); },
-												 .size = Size::Large});
-	m_ribbon.addButton(editTab, gHistory, Button{.iconName = "redo", .label = "Redo",
-												 .tooltip = tipWithShortcut("Redo", "edit.redo"),
-												 .isEnabled = [this] () -> bool {
-													 const auto* u = activeUndoManager();
-													 return u != nullptr && u->canRedo() && getState() == State::Edit;
-												 },
-												 .onClick = [this] () -> void { performRedo(); },
-												 .size = Size::Large});
+	m_ribbon.addButton(editTab, gHistory,
+					   Button{.iconName = "undo",
+							  .label = "Undo",
+							  .tooltip = tipWithShortcut("Undo", "edit.undo"),
+							  .isEnabled = [this]() -> bool {
+								  const auto* u = activeUndoManager();
+								  return u != nullptr && u->canUndo() && getState() == State::Edit;
+							  },
+							  .onClick = [this]() -> void { performUndo(); },
+							  .size = Size::Large});
+	m_ribbon.addButton(editTab, gHistory,
+					   Button{.iconName = "redo",
+							  .label = "Redo",
+							  .tooltip = tipWithShortcut("Redo", "edit.redo"),
+							  .isEnabled = [this]() -> bool {
+								  const auto* u = activeUndoManager();
+								  return u != nullptr && u->canRedo() && getState() == State::Edit;
+							  },
+							  .onClick = [this]() -> void { performRedo(); },
+							  .size = Size::Large});
 	const auto gSettings = m_ribbon.addGroup(editTab, "Settings");
-	m_ribbon.addButton(editTab, gSettings, Button{.iconName = "settings", .label = "Engine",
-												  .tooltip = "Open engine settings",
-												  .onClick = [this] () -> void { m_parameters.open(); },
-												  .size = Size::Small});
-	m_ribbon.addButton(editTab, gSettings, Button{.iconName = "settings", .label = "Editor",
-												  .tooltip = "Open editor settings",
-												  .onClick = [this] () -> void { m_settingsPanel.open(); },
-												  .size = Size::Small});
-	m_ribbon.addButton(editTab, gSettings, Button{.iconName = "settings", .label = "Project",
-												  .tooltip = "Open project settings",
-												  .isEnabled = [this] () -> bool { return m_project.isLoaded(); },
-												  .onClick = [this] () -> void { m_projectSettings.open(m_project); },
-												  .size = Size::Small});
+	m_ribbon.addButton(editTab, gSettings,
+					   Button{.iconName = "settings",
+							  .label = "Engine",
+							  .tooltip = "Open engine settings",
+							  .onClick = [this]() -> void { m_parameters.open(); },
+							  .size = Size::Small});
+	m_ribbon.addButton(editTab, gSettings,
+					   Button{.iconName = "settings",
+							  .label = "Editor",
+							  .tooltip = "Open editor settings",
+							  .onClick = [this]() -> void { m_settingsPanel.open(); },
+							  .size = Size::Small});
+	m_ribbon.addButton(editTab, gSettings,
+					   Button{.iconName = "settings",
+							  .label = "Project",
+							  .tooltip = "Open project settings",
+							  .isEnabled = [this]() -> bool { return m_project.isLoaded(); },
+							  .onClick = [this]() -> void { m_projectSettings.open(m_project); },
+							  .size = Size::Small});
 	// =============================== Contextual tab =========================
 	if (const auto* active = m_documents.getActive(); active != nullptr) {
 		if (active->type() == DocumentType::Code)
@@ -1056,91 +1081,114 @@ void EditorLayer::buildSceneTab() {
 	};
 	const auto sceneTab = m_ribbon.addTab("Scene");
 	const auto gScene = m_ribbon.addGroup(sceneTab, "File");
-	m_ribbon.addButton(sceneTab, gScene, Button{.iconName = "new_scene", .label = "New",
-												.tooltip = tipWithShortcut("New Scene", "scene.new"),
-												.isEnabled = [this] () -> bool { return m_project.isLoaded(); },
-												.onClick = [this] () -> void { newScene(); },
-												.size = Size::Large});
-	m_ribbon.addButton(sceneTab, gScene, Button{.iconName = "open", .label = "Open",
-												.tooltip = tipWithShortcut("Open Scene", "scene.open"),
-												.isEnabled = [this] () -> bool { return m_project.isLoaded(); },
-												.onClick = [this] () -> void { openScene(); },
-												.size = Size::Large});
-	m_ribbon.addButton(sceneTab, gScene, Button{.iconName = "save", .label = "Save",
-												.tooltip = tipWithShortcut("Save Scene", "scene.save"),
-												.isEnabled = [this] () -> bool {
-													const auto* d = activeSceneDocument();
-													return d != nullptr && !d->filePath().empty();
-												},
-												.onClick = [this] () -> void { saveCurrentScene(); },
-												.size = Size::Small});
-	m_ribbon.addButton(sceneTab, gScene, Button{.iconName = "save", .label = "Save As",
-												.tooltip = tipWithShortcut("Save Scene As…", "scene.saveAs"),
-												.isEnabled = [this] () -> bool { return activeSceneDocument() != nullptr; },
-												.onClick = [this] () -> void { saveSceneAs(); },
-												.size = Size::Small});
-	m_ribbon.addButton(sceneTab, gScene, Button{.iconName = "import_file", .label = "Import",
-												.tooltip = "Import an existing scene file into this project",
-												.isEnabled = [this] () -> bool { return m_project.isLoaded(); },
-												.onClick = [this] () -> void { importScene(); },
-												.size = Size::Small});
-	m_ribbon.addButton(sceneTab, gScene, Button{.iconName = "close", .label = "Close",
-												.tooltip = tipWithShortcut("Close Scene", "doc.close"),
-												.isEnabled = [this] () -> bool { return activeSceneDocument() != nullptr; },
-												.onClick = [this] () -> void { requestCloseActiveDocument(); },
-												.size = Size::Large});
+	m_ribbon.addButton(sceneTab, gScene,
+					   Button{.iconName = "new_scene",
+							  .label = "New",
+							  .tooltip = tipWithShortcut("New Scene", "scene.new"),
+							  .isEnabled = [this]() -> bool { return m_project.isLoaded(); },
+							  .onClick = [this]() -> void { newScene(); },
+							  .size = Size::Large});
+	m_ribbon.addButton(sceneTab, gScene,
+					   Button{.iconName = "open",
+							  .label = "Open",
+							  .tooltip = tipWithShortcut("Open Scene", "scene.open"),
+							  .isEnabled = [this]() -> bool { return m_project.isLoaded(); },
+							  .onClick = [this]() -> void { openScene(); },
+							  .size = Size::Large});
+	m_ribbon.addButton(sceneTab, gScene,
+					   Button{.iconName = "save",
+							  .label = "Save",
+							  .tooltip = tipWithShortcut("Save Scene", "scene.save"),
+							  .isEnabled = [this]() -> bool {
+								  const auto* d = activeSceneDocument();
+								  return d != nullptr && !d->filePath().empty();
+							  },
+							  .onClick = [this]() -> void { saveCurrentScene(); },
+							  .size = Size::Small});
+	m_ribbon.addButton(sceneTab, gScene,
+					   Button{.iconName = "save",
+							  .label = "Save As",
+							  .tooltip = tipWithShortcut("Save Scene As…", "scene.saveAs"),
+							  .isEnabled = [this]() -> bool { return activeSceneDocument() != nullptr; },
+							  .onClick = [this]() -> void { saveSceneAs(); },
+							  .size = Size::Small});
+	m_ribbon.addButton(sceneTab, gScene,
+					   Button{.iconName = "import_file",
+							  .label = "Import",
+							  .tooltip = "Import an existing scene file into this project",
+							  .isEnabled = [this]() -> bool { return m_project.isLoaded(); },
+							  .onClick = [this]() -> void { importScene(); },
+							  .size = Size::Small});
+	m_ribbon.addButton(sceneTab, gScene,
+					   Button{.iconName = "close",
+							  .label = "Close",
+							  .tooltip = tipWithShortcut("Close Scene", "doc.close"),
+							  .isEnabled = [this]() -> bool { return activeSceneDocument() != nullptr; },
+							  .onClick = [this]() -> void { requestCloseActiveDocument(); },
+							  .size = Size::Large});
 	const auto gPlay = m_ribbon.addGroup(sceneTab, "Playback");
-	m_ribbon.addButton(sceneTab, gPlay, Button{.iconName = "PlayButton", .label = "Play",
-											   .tooltip = tipWithShortcut("Play / Resume", "scene.play"),
-											   .isEnabled = [this] () -> bool {
-												   return activeSceneDocument() != nullptr &&
+	m_ribbon.addButton(sceneTab, gPlay,
+					   Button{.iconName = "PlayButton",
+							  .label = "Play",
+							  .tooltip = tipWithShortcut("Play / Resume", "scene.play"),
+							  .isEnabled = [this]() -> bool {
+								  return activeSceneDocument() != nullptr &&
 
-														  getState() != State::Play;
-											   },
-											   .onClick = [this] () -> void {
-												   if (getState() == State::Edit)
+										 getState() != State::Play;
+							  },
+							  .onClick = [this]() -> void {
+								  if (getState() == State::Edit)
 
-													   onScenePlay();
-												   else if (getState() == State::Pause)
+									  onScenePlay();
+								  else if (getState() == State::Pause)
 
-													   onSceneResume();
-											   },
-											   .size = Size::Large});
-	m_ribbon.addButton(sceneTab, gPlay, Button{.iconName = "StopButton", .label = "Stop",
-											   .tooltip = tipWithShortcut("Stop", "scene.stop"),
-											   .isEnabled = [this] () -> bool { return getState() != State::Edit; },
-											   .onClick = [this] () -> void { onSceneStop(); },
-											   .size = Size::Large});
-	m_ribbon.addButton(sceneTab, gPlay, Button{.iconName = "PauseButton", .label = "Pause",
-											   .tooltip = tipWithShortcut("Pause", "scene.pause"),
-											   .isEnabled = [this] () -> bool { return getState() == State::Play; },
-											   .onClick = [this] () -> void { onScenePause(); },
-											   .size = Size::Small});
-	m_ribbon.addButton(sceneTab, gPlay, Button{.iconName = "StepButton", .label = "Step",
-											   .tooltip = tipWithShortcut("Step Frame", "scene.step"),
-											   .isEnabled = [this] () -> bool { return getState() == State::Pause; },
-											   .onClick = [this] () -> void { onSceneStep(); },
-											   .size = Size::Small});
+									  onSceneResume();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(sceneTab, gPlay,
+					   Button{.iconName = "StopButton",
+							  .label = "Stop",
+							  .tooltip = tipWithShortcut("Stop", "scene.stop"),
+							  .isEnabled = [this]() -> bool { return getState() != State::Edit; },
+							  .onClick = [this]() -> void { onSceneStop(); },
+							  .size = Size::Large});
+	m_ribbon.addButton(sceneTab, gPlay,
+					   Button{.iconName = "PauseButton",
+							  .label = "Pause",
+							  .tooltip = tipWithShortcut("Pause", "scene.pause"),
+							  .isEnabled = [this]() -> bool { return getState() == State::Play; },
+							  .onClick = [this]() -> void { onScenePause(); },
+							  .size = Size::Small});
+	m_ribbon.addButton(sceneTab, gPlay,
+					   Button{.iconName = "StepButton",
+							  .label = "Step",
+							  .tooltip = tipWithShortcut("Step Frame", "scene.step"),
+							  .isEnabled = [this]() -> bool { return getState() == State::Pause; },
+							  .onClick = [this]() -> void { onSceneStep(); },
+							  .size = Size::Small});
 
 	const auto gGizmo = m_ribbon.addGroup(sceneTab, "Gizmo");
 	const auto gizmoButton = [this](gui::Guizmo::Type iType, const char* iIcon, const char* iLabel,
 									const char* iShortcutAction) -> Button {
-		return Button{.iconName = iIcon, .label = iLabel,
-					  .tooltip = std::format("{} ({})", iLabel, m_actionRegistry.getShortcutString(iShortcutAction)),
-					  .isEnabled = [this] () -> bool { return activeViewport() != nullptr && getState() == State::Edit; },
-					  .isChecked = [this, iType] () -> bool {
-						  auto* vp = activeViewport();
-						  return vp != nullptr && vp->getGuizmoType() == iType;
-					  },
-					  .onClick = [this, iType] () -> void {
-						  if (auto* vp = activeViewport(); vp != nullptr)
-							  vp->setGuizmoType(vp->getGuizmoType() == iType ? gui::Guizmo::Type::None : iType);
-					  },
-					  .size = Size::Large};
+		return Button{
+				.iconName = iIcon,
+				.label = iLabel,
+				.tooltip = std::format("{} ({})", iLabel, m_actionRegistry.getShortcutString(iShortcutAction)),
+				.isEnabled = [this]() -> bool { return activeViewport() != nullptr && getState() == State::Edit; },
+				.isChecked = [this, iType]() -> bool {
+					auto* vp = activeViewport();
+					return vp != nullptr && vp->getGuizmoType() == iType;
+				},
+				.onClick = [this, iType]() -> void {
+					if (auto* vp = activeViewport(); vp != nullptr)
+						vp->setGuizmoType(vp->getGuizmoType() == iType ? gui::Guizmo::Type::None : iType);
+				},
+				.size = Size::Large};
 	};
-	m_ribbon.addButton(sceneTab, gGizmo,
+	m_ribbon.addButton(
+			sceneTab, gGizmo,
 
-					   gizmoButton(gui::Guizmo::Type::Translation, "ctrl_translation", "Translate", "guizmo.translate"));
+			gizmoButton(gui::Guizmo::Type::Translation, "ctrl_translation", "Translate", "guizmo.translate"));
 	m_ribbon.addButton(sceneTab, gGizmo,
 
 					   gizmoButton(gui::Guizmo::Type::Rotation, "ctrl_rotation", "Rotate", "guizmo.rotate"));
@@ -1149,21 +1197,25 @@ void EditorLayer::buildSceneTab() {
 					   gizmoButton(gui::Guizmo::Type::Scale, "ctrl_scale", "Scale", "guizmo.scale"));
 
 	const auto gSceneSettings = m_ribbon.addGroup(sceneTab, "Settings");
-	m_ribbon.addButton(sceneTab, gSceneSettings, Button{.iconName = "settings", .label = "Scene",
-														.tooltip = "Open per-scene settings (renderer overrides, …)",
-														.isEnabled = [this] () -> bool { return activeSceneDocument() != nullptr; },
-														.onClick = [this] () -> void { m_sceneSettings.open(); },
-														.size = Size::Small});
+	m_ribbon.addButton(sceneTab, gSceneSettings,
+					   Button{.iconName = "settings",
+							  .label = "Scene",
+							  .tooltip = "Open per-scene settings (renderer overrides, …)",
+							  .isEnabled = [this]() -> bool { return activeSceneDocument() != nullptr; },
+							  .onClick = [this]() -> void { m_sceneSettings.open(); },
+							  .size = Size::Small});
 
 	const auto gScenePack = m_ribbon.addGroup(sceneTab, "Package");
-	m_ribbon.addButton(sceneTab, gScenePack, Button{.iconName = "pack", .label = "Pack Scene",
-													.tooltip = "Package this scene as a standalone .owlpack",
-													.isEnabled = [this] () -> bool {
-														const auto* d = activeSceneDocument();
-														return d != nullptr && !d->filePath().empty();
-													},
-													.onClick = [this] () -> void { packScene(); },
-													.size = Size::Large});
+	m_ribbon.addButton(sceneTab, gScenePack,
+					   Button{.iconName = "pack",
+							  .label = "Pack Scene",
+							  .tooltip = "Package this scene as a standalone .owlpack",
+							  .isEnabled = [this]() -> bool {
+								  const auto* d = activeSceneDocument();
+								  return d != nullptr && !d->filePath().empty();
+							  },
+							  .onClick = [this]() -> void { packScene(); },
+							  .size = Size::Large});
 }
 
 void EditorLayer::buildCodeTab() {
@@ -1175,37 +1227,40 @@ void EditorLayer::buildCodeTab() {
 	};
 	const auto codeTab = m_ribbon.addTab("Text");
 	const auto gFile = m_ribbon.addGroup(codeTab, "File");
-	m_ribbon.addButton(codeTab, gFile, Button{.iconName = "save", .label = "Save",
-											  .tooltip = tipWithShortcut("Save", "scene.save"),
-											  .isEnabled = [this] () -> bool {
-												  const auto* d = m_documents.getActive();
-												  return d != nullptr && d->type() == DocumentType::Code &&
-														 !d->filePath().empty();
-											  },
-											  .onClick = [this] () -> void {
-												  if (auto* d = m_documents.getActive();
-													  d != nullptr && d->type() == DocumentType::Code)
-													  std::ignore = d->save();
-											  },
-											  .size = Size::Large});
-	m_ribbon.addButton(codeTab, gFile, Button{.iconName = "close", .label = "Close",
-											  .tooltip = tipWithShortcut("Close Document", "doc.close"),
-											  .isEnabled = [this] () -> bool {
-												  const auto* d = m_documents.getActive();
-												  return d != nullptr && d->type() == DocumentType::Code;
-											  },
-											  .onClick = [this] () -> void { requestCloseActiveDocument(); },
-											  .size = Size::Large});
+	m_ribbon.addButton(codeTab, gFile,
+					   Button{.iconName = "save",
+							  .label = "Save",
+							  .tooltip = tipWithShortcut("Save", "scene.save"),
+							  .isEnabled = [this]() -> bool {
+								  const auto* d = m_documents.getActive();
+								  return d != nullptr && d->type() == DocumentType::Code && !d->filePath().empty();
+							  },
+							  .onClick = [this]() -> void {
+								  if (auto* d = m_documents.getActive();
+									  d != nullptr && d->type() == DocumentType::Code)
+									  std::ignore = d->save();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(codeTab, gFile,
+					   Button{.iconName = "close",
+							  .label = "Close",
+							  .tooltip = tipWithShortcut("Close Document", "doc.close"),
+							  .isEnabled = [this]() -> bool {
+								  const auto* d = m_documents.getActive();
+								  return d != nullptr && d->type() == DocumentType::Code;
+							  },
+							  .onClick = [this]() -> void { requestCloseActiveDocument(); },
+							  .size = Size::Large});
 	const auto gPreview = m_ribbon.addGroup(codeTab, "Preview");
 	m_ribbon.addButton(codeTab, gPreview,
 					   Button{.iconName = "preview",
 							  .label = "Preview",
 							  .tooltip = "Toggle the live preview pane (Markdown / SVG)",
-							  .isEnabled = [this] () -> bool {
+							  .isEnabled = [this]() -> bool {
 								  auto* d = dynamic_cast<CodeEditorDocument*>(m_documents.getActive());
 								  return d != nullptr && d->canShowPreview();
 							  },
-							  .onClick = [this] () -> void {
+							  .onClick = [this]() -> void {
 								  if (auto* d = dynamic_cast<CodeEditorDocument*>(m_documents.getActive()))
 									  d->togglePreview();
 							  },
@@ -1222,27 +1277,28 @@ void EditorLayer::buildNodeGraphTab() {
 	const auto graphTab = m_ribbon.addTab("Graph");
 	const auto gFile = m_ribbon.addGroup(graphTab, "File");
 	m_ribbon.addButton(graphTab, gFile,
-					   Button{.iconName = "save", .label = "Save",
+					   Button{.iconName = "save",
+							  .label = "Save",
 							  .tooltip = tipWithShortcut("Save", "scene.save"),
-							  .isEnabled = [this] () -> bool {
+							  .isEnabled = [this]() -> bool {
 								  const auto* d = m_documents.getActive();
-								  return d != nullptr && d->type() == DocumentType::NodeGraph &&
-										 !d->filePath().empty();
+								  return d != nullptr && d->type() == DocumentType::NodeGraph && !d->filePath().empty();
 							  },
-							  .onClick = [this] () -> void {
+							  .onClick = [this]() -> void {
 								  if (auto* d = m_documents.getActive();
 									  d != nullptr && d->type() == DocumentType::NodeGraph)
 									  std::ignore = d->save();
 							  },
 							  .size = Size::Large});
 	m_ribbon.addButton(graphTab, gFile,
-					   Button{.iconName = "close", .label = "Close",
+					   Button{.iconName = "close",
+							  .label = "Close",
 							  .tooltip = tipWithShortcut("Close Document", "doc.close"),
-							  .isEnabled = [this] () -> bool {
+							  .isEnabled = [this]() -> bool {
 								  const auto* d = m_documents.getActive();
 								  return d != nullptr && d->type() == DocumentType::NodeGraph;
 							  },
-							  .onClick = [this] () -> void { requestCloseActiveDocument(); },
+							  .onClick = [this]() -> void { requestCloseActiveDocument(); },
 							  .size = Size::Large});
 }
 
@@ -1253,7 +1309,7 @@ void EditorLayer::buildAnimationTab() {
 		const auto sc = m_actionRegistry.getShortcutString(iActionId);
 		return sc.empty() ? std::string{iBase} : std::format("{} ({})", iBase, sc);
 	};
-	const auto activeAnim = [this] () -> AnimationDocument* {
+	const auto activeAnim = [this]() -> AnimationDocument* {
 		auto* d = m_documents.getActive();
 		if (d != nullptr && d->type() == DocumentType::Animation)
 			return static_cast<AnimationDocument*>(d);
@@ -1262,97 +1318,103 @@ void EditorLayer::buildAnimationTab() {
 	const auto animTab = m_ribbon.addTab("Animation");
 	const auto gPlay = m_ribbon.addGroup(animTab, "Playback");
 	m_ribbon.addButton(animTab, gPlay,
-					   Button{.iconName = "PlayButton", .label = "Play",
+					   Button{.iconName = "PlayButton",
+							  .label = "Play",
 							  .tooltip = "Resume preview playback",
-							  .isEnabled = [activeAnim] () -> bool {
+							  .isEnabled = [activeAnim]() -> bool {
 								  auto* a = activeAnim();
 								  return a != nullptr && !a->isPlaying();
 							  },
-							  .onClick = [activeAnim] () -> void {
+							  .onClick = [activeAnim]() -> void {
 								  if (auto* a = activeAnim())
 									  a->play();
 							  },
 							  .size = Size::Large});
 	m_ribbon.addButton(animTab, gPlay,
-					   Button{.iconName = "PauseButton", .label = "Pause",
+					   Button{.iconName = "PauseButton",
+							  .label = "Pause",
 							  .tooltip = "Pause preview playback",
-							  .isEnabled = [activeAnim] () -> bool {
+							  .isEnabled = [activeAnim]() -> bool {
 								  auto* a = activeAnim();
 								  return a != nullptr && a->isPlaying();
 							  },
-							  .onClick = [activeAnim] () -> void {
+							  .onClick = [activeAnim]() -> void {
 								  if (auto* a = activeAnim())
 									  a->pause();
 							  },
 							  .size = Size::Small});
 	m_ribbon.addButton(animTab, gPlay,
-					   Button{.iconName = "StopButton", .label = "Stop",
+					   Button{.iconName = "StopButton",
+							  .label = "Stop",
 							  .tooltip = "Stop and rewind to first frame",
-							  .isEnabled = [activeAnim] () -> bool { return activeAnim() != nullptr; },
-							  .onClick = [activeAnim] () -> void {
+							  .isEnabled = [activeAnim]() -> bool { return activeAnim() != nullptr; },
+							  .onClick = [activeAnim]() -> void {
 								  if (auto* a = activeAnim())
 									  a->stop();
 							  },
 							  .size = Size::Small});
 	const auto gFrame = m_ribbon.addGroup(animTab, "Frame");
 	m_ribbon.addButton(animTab, gFrame,
-					   Button{.iconName = "back", .label = "Previous",
+					   Button{.iconName = "back",
+							  .label = "Previous",
 							  .tooltip = "Step back one frame",
-							  .isEnabled = [activeAnim] () -> bool { return activeAnim() != nullptr; },
-							  .onClick = [activeAnim] () -> void {
+							  .isEnabled = [activeAnim]() -> bool { return activeAnim() != nullptr; },
+							  .onClick = [activeAnim]() -> void {
 								  if (auto* a = activeAnim())
 									  a->stepPrevious();
 							  },
 							  .size = Size::Small});
 	m_ribbon.addButton(animTab, gFrame,
-					   Button{.iconName = "StepButton", .label = "Next",
+					   Button{.iconName = "StepButton",
+							  .label = "Next",
 							  .tooltip = "Step forward one frame",
-							  .isEnabled = [activeAnim] () -> bool { return activeAnim() != nullptr; },
-							  .onClick = [activeAnim] () -> void {
+							  .isEnabled = [activeAnim]() -> bool { return activeAnim() != nullptr; },
+							  .onClick = [activeAnim]() -> void {
 								  if (auto* a = activeAnim())
 									  a->stepNext();
 							  },
 							  .size = Size::Small});
 	const auto gFile = m_ribbon.addGroup(animTab, "File");
 	m_ribbon.addButton(animTab, gFile,
-					   Button{.iconName = "save", .label = "Save",
+					   Button{.iconName = "save",
+							  .label = "Save",
 							  .tooltip = tipWithShortcut("Save", "scene.save"),
-							  .isEnabled = [this] () -> bool {
+							  .isEnabled = [this]() -> bool {
 								  const auto* d = m_documents.getActive();
-								  return d != nullptr && d->type() == DocumentType::Animation &&
-										 !d->filePath().empty();
+								  return d != nullptr && d->type() == DocumentType::Animation && !d->filePath().empty();
 							  },
-							  .onClick = [this] () -> void {
+							  .onClick = [this]() -> void {
 								  if (auto* d = m_documents.getActive();
 									  d != nullptr && d->type() == DocumentType::Animation)
 									  std::ignore = d->save();
 							  },
 							  .size = Size::Large});
+	m_ribbon.addButton(
+			animTab, gFile,
+			Button{.iconName = "save",
+				   .label = "Save As",
+				   .tooltip = "Save the clip to a new file",
+				   .isEnabled = [this]() -> bool {
+					   const auto* d = m_documents.getActive();
+					   return d != nullptr && d->type() == DocumentType::Animation;
+				   },
+				   .onClick = [this]() -> void {
+					   if (const auto path = core::utils::FileDialog::saveFile("Owl Animation (*.owlanim)|owlanim\n");
+						   !path.empty()) {
+						   if (auto* d = m_documents.getActive(); d != nullptr && d->type() == DocumentType::Animation)
+							   std::ignore = d->saveAs(path);
+					   }
+				   },
+				   .size = Size::Small});
 	m_ribbon.addButton(animTab, gFile,
-					   Button{.iconName = "save", .label = "Save As",
-							  .tooltip = "Save the clip to a new file",
-							  .isEnabled = [this] () -> bool {
-								  const auto* d = m_documents.getActive();
-								  return d != nullptr && d->type() == DocumentType::Animation;
-							  },
-							  .onClick = [this] () -> void {
-								  if (const auto path = core::utils::FileDialog::saveFile(
-											  "Owl Animation (*.owlanim)|owlanim\n");
-									  !path.empty()) {
-									  if (auto* d = m_documents.getActive();
-										  d != nullptr && d->type() == DocumentType::Animation)
-										  std::ignore = d->saveAs(path);
-								  }
-							  },
-							  .size = Size::Small});
-	m_ribbon.addButton(animTab, gFile,
-					   Button{.iconName = "close", .label = "Close",
+					   Button{.iconName = "close",
+							  .label = "Close",
 							  .tooltip = tipWithShortcut("Close Document", "doc.close"),
-							  .isEnabled = [this] () -> bool {
+							  .isEnabled = [this]() -> bool {
 								  const auto* d = m_documents.getActive();
 								  return d != nullptr && d->type() == DocumentType::Animation;
 							  },
-							  .onClick = [this] () -> void { requestCloseActiveDocument(); },
+							  .onClick = [this]() -> void { requestCloseActiveDocument(); },
 							  .size = Size::Large});
 }
 
@@ -1368,8 +1430,7 @@ void EditorLayer::refreshRibbonForActiveDoc() {
 void EditorLayer::newScene() {
 	// Reuse an already-empty untitled tab when possible; otherwise create a new one.
 	SceneDocument* target = nullptr;
-	if (auto* current = activeSceneDocument();
-		current != nullptr && current->filePath().empty() && !current->isDirty())
+	if (auto* current = activeSceneDocument(); current != nullptr && current->filePath().empty() && !current->isDirty())
 		target = current;
 	if (target == nullptr) {
 		auto doc = mkUniq<SceneDocument>();
@@ -1388,7 +1449,7 @@ void EditorLayer::openScene() {
 
 void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 	if (iScenePath.extension().string() != ".owl") {
-		OWL_CORE_WARN("Cannot Open file {}: not a scene", iScenePath.string())
+		OWL_CORE_WARN("Cannot Open file {}: not a scene.", iScenePath.string())
 		return;
 	}
 
@@ -1468,7 +1529,7 @@ void EditorLayer::openCodeFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<CodeEditorDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open code file: {}", iPath.string())
+		OWL_CORE_WARN("Failed to open code file: {}.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -1480,7 +1541,7 @@ void EditorLayer::openCodeFile(const std::filesystem::path& iPath) {
 void EditorLayer::openSceneFlowView() {
 	if (!m_project.isLoaded())
 		return;
-	// Re-use an already-open Scene Flow document if present.
+	// Reuse an already-open Scene Flow document if present.
 	for (const auto& docPtr: m_documents.list()) {
 		if (auto* graph = dynamic_cast<SceneFlowDocument*>(docPtr.get())) {
 			graph->refreshFromProject(m_project);
@@ -1511,7 +1572,7 @@ void EditorLayer::openNodeGraphFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<NodeGraphDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open node-graph file: {}", iPath.string())
+		OWL_CORE_WARN("Failed to open node-graph file: {}.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -1533,7 +1594,7 @@ void EditorLayer::openAnimationFile(const std::filesystem::path& iPath) {
 	auto doc = mkUniq<AnimationDocument>();
 	doc->onAttach(this);
 	if (!doc->loadFromFile(iPath)) {
-		OWL_CORE_WARN("Failed to open animation file: {}", iPath.string())
+		OWL_CORE_WARN("Failed to open animation file: {}.", iPath.string())
 		doc->onDetach();
 		return;
 	}
@@ -1563,7 +1624,7 @@ auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePat
 	// for every Trigger create/delete.
 	std::ifstream file(iScenePath, std::ios::binary | std::ios::ate);
 	if (!file.is_open()) {
-		OWL_CORE_WARN("loadOrOpenSceneDocument: cannot open '{}'", iScenePath.string())
+		OWL_CORE_WARN("loadOrOpenSceneDocument: cannot open '{}'.", iScenePath.string())
 		return nullptr;
 	}
 	const auto size = static_cast<size_t>(file.tellg());
@@ -1573,7 +1634,7 @@ auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePat
 	const auto newScene = mkShared<scene::Scene>();
 	const scene::SceneSerializer serializer(newScene);
 	if (!serializer.deserializeFromBuffer(bytes, iScenePath.string())) {
-		OWL_CORE_WARN("loadOrOpenSceneDocument: failed to deserialize '{}'", iScenePath.string())
+		OWL_CORE_WARN("loadOrOpenSceneDocument: failed to deserialize '{}'.", iScenePath.string())
 		return nullptr;
 	}
 	auto doc = mkUniq<SceneDocument>();
@@ -1616,7 +1677,7 @@ void EditorLayer::saveSceneAs(const std::filesystem::path& iScenePath) {
 				fileOut.close();
 				state->progress.store(1.0f);
 				state->setMessage("Done!");
-				OWL_CORE_INFO("Scene saved to {}", path.string())
+				OWL_CORE_INFO("Scene saved to {}.", path.string())
 			},
 			[state]() -> void { state->completed.store(true); }));
 	refreshWindowTitle();
@@ -1644,9 +1705,9 @@ void EditorLayer::saveActiveDocument() {
 		if (codeDoc->filePath().empty())
 			return;
 		if (codeDoc->save())
-			OWL_INFO("Code editor: saved '{}'", codeDoc->filePath().string())
+			OWL_INFO("Code editor: saved '{}'.", codeDoc->filePath().string())
 		else
-			OWL_ERROR("Code editor: FAILED to save '{}'", codeDoc->filePath().string())
+			OWL_ERROR("Code editor: FAILED to save '{}'.", codeDoc->filePath().string())
 		return;
 	}
 	if (const auto* sceneDoc = dynamic_cast<SceneDocument*>(active); sceneDoc != nullptr) {
@@ -1741,7 +1802,7 @@ void EditorLayer::openProject() {
 void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	const auto configFile = iDir / "owl_project.yml";
 	if (!exists(configFile)) {
-		OWL_CORE_WARN("No owl_project.yml found in {}", iDir.string())
+		OWL_CORE_WARN("No owl_project.yml found in {}.", iDir.string())
 		m_settings.removeRecentProject(iDir);
 		return;
 	}
@@ -1779,7 +1840,7 @@ void EditorLayer::saveProjectAs() {
 	if (dest.empty())
 		return;
 	if (std::filesystem::weakly_canonical(dest) == std::filesystem::weakly_canonical(m_project.projectDirectory)) {
-		OWL_CORE_WARN("Save Project As: destination is the current project directory — ignored")
+		OWL_CORE_WARN("Save Project As: destination is the current project directory — ignored.")
 		return;
 	}
 	std::error_code ec;
@@ -1793,7 +1854,7 @@ void EditorLayer::saveProjectAs() {
 						  std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing,
 						  ec);
 	if (ec) {
-		OWL_CORE_ERROR("Save Project As: copy failed — {}", ec.message())
+		OWL_CORE_ERROR("Save Project As: copy failed — {}.", ec.message())
 		return;
 	}
 	closeProject();
@@ -1820,11 +1881,11 @@ void EditorLayer::importScene() {
 		create_directories(scenesDir);
 	const auto dest = scenesDir / filepath.filename();
 	if (exists(dest)) {
-		OWL_CORE_WARN("Scene '{}' already exists in project", filepath.filename().string())
+		OWL_CORE_WARN("Scene '{}' already exists in project.", filepath.filename().string())
 		return;
 	}
 	std::filesystem::copy_file(filepath, dest);
-	OWL_CORE_INFO("Imported scene '{}' into project", filepath.filename().string())
+	OWL_CORE_INFO("Imported scene '{}' into project.", filepath.filename().string())
 }
 
 void EditorLayer::refreshWindowTitle() {
@@ -1915,8 +1976,8 @@ void EditorLayer::packScene() {
 				const bool writeOk = writer.write(
 						outputPath, io::pack::PackFlags::Default,
 						[&state](const uint32_t iCurrent, const uint32_t iTotal) -> void {
-							state->progress.store(0.2f + 0.75f * static_cast<float>(iCurrent) /
-																   static_cast<float>(iTotal));
+							state->progress.store(0.2f +
+												  0.75f * static_cast<float>(iCurrent) / static_cast<float>(iTotal));
 						},
 						[&state]() -> bool { return state->cancelRequested.load(); });
 				if (!writeOk) {
@@ -1932,8 +1993,8 @@ void EditorLayer::packScene() {
 				const auto mib = static_cast<double>(packBytes) / (1024.0 * 1024.0);
 				state->setMessage(std::format("Packed {} assets ({:.2f} MiB)\nOutput: {}", assets.size(), mib,
 											  outputPath.string()));
-				OWL_CORE_INFO("Scene packed: {} ({} assets, {:.2f} MiB) -> {}", sceneFilename, assets.size(),
-							  mib, outputPath.string())
+				OWL_CORE_INFO("Scene packed: {} ({} assets, {:.2f} MiB) -> {}.", sceneFilename, assets.size(), mib,
+							  outputPath.string())
 			},
 			[state]() -> void { state->completed.store(true); }));
 }
@@ -1953,7 +2014,7 @@ void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem:
 				std::error_code copyEc;
 				std::filesystem::copy(entry.path(), dest, std::filesystem::copy_options::copy_symlinks, copyEc);
 				if (copyEc)
-					OWL_CORE_WARN("Failed to copy {}: {}", entry.path().string(), copyEc.message())
+					OWL_CORE_WARN("Failed to copy {}: {}.", entry.path().string(), copyEc.message())
 			}
 		}
 	}
@@ -2157,8 +2218,7 @@ void EditorLayer::launchPackValidation() {
 					}
 				}
 				if (!hasRunner)
-					warningsOut->emplace_back(
-							"OwlRunner executable not found — packed game will not be playable.");
+					warningsOut->emplace_back("OwlRunner executable not found — packed game will not be playable.");
 				if (assetsOut->empty())
 					warningsOut->emplace_back("No assets to pack — check firstScene and its references.");
 				state->progress.store(1.0f);
@@ -2187,12 +2247,11 @@ void EditorLayer::renderPackValidationModal() {
 
 	if (ImGui::BeginPopupModal("Packaging Validation", nullptr,
 							   ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
-		ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f), "%zu issue(s) found before packaging:",
-						   m_pendingPackWarnings.size());
+		ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f),
+						   "%zu issue(s) found before packaging:", m_pendingPackWarnings.size());
 		ImGui::Separator();
 		ImGui::BeginChild("##packWarnings", ImVec2(0, 200), ImGuiChildFlags_Borders);
-		for (const auto& warning: m_pendingPackWarnings)
-			ImGui::BulletText("%s", warning.c_str());
+		for (const auto& warning: m_pendingPackWarnings) ImGui::BulletText("%s", warning.c_str());
 		ImGui::EndChild();
 		ImGui::TextDisabled("The game may be missing assets or not playable. Proceed anyway?");
 		ImGui::Spacing();
@@ -2234,7 +2293,7 @@ void EditorLayer::startPackGame() {
 	const auto runnerSrcDir = core::Application::get().getWorkingDirectory();
 	const auto gameDir = destDir / gameName;
 	if (std::error_code ec; !std::filesystem::create_directories(gameDir, ec) && ec) {
-		OWL_CORE_ERROR("Pack: cannot create output directory '{}': {}", gameDir.string(), ec.message())
+		OWL_CORE_ERROR("Pack: cannot create output directory '{}': {}.", gameDir.string(), ec.message())
 		// Open an error modal so the user sees the failure instead of a silent abort.
 		auto errState = mkShared<AsyncProgressState>();
 		errState->setError(std::format("Cannot create output directory '{}': {}.\n"
@@ -2255,9 +2314,8 @@ void EditorLayer::startPackGame() {
 			 projectIcon, windowCfg, rendererStackCfg, runnerSrcDir, preScanned, compress = m_packCompress,
 			 obfuscate = m_packObfuscate]() -> void {
 				const auto startTime = std::chrono::steady_clock::now();
-				const auto packFlags =
-						(compress ? io::pack::PackFlags::Compressed : io::pack::PackFlags::None) |
-						(obfuscate ? io::pack::PackFlags::Obfuscated : io::pack::PackFlags::None);
+				const auto packFlags = (compress ? io::pack::PackFlags::Compressed : io::pack::PackFlags::None) |
+									   (obfuscate ? io::pack::PackFlags::Obfuscated : io::pack::PackFlags::None);
 				// Phase 1: Use pre-scanned assets (from validation) or re-scan if missing.
 				std::vector<io::pack::AssetReference> assets;
 				if (preScanned && !preScanned->empty()) {
@@ -2284,8 +2342,8 @@ void EditorLayer::startPackGame() {
 				const bool writeOk = writer.write(
 						packPath, packFlags,
 						[&state](const uint32_t iCurrent, const uint32_t iTotal) -> void {
-							state->progress.store(0.2f + 0.6f * static_cast<float>(iCurrent) /
-																  static_cast<float>(iTotal));
+							state->progress.store(0.2f +
+												  0.6f * static_cast<float>(iCurrent) / static_cast<float>(iTotal));
 						},
 						[&state]() -> bool { return state->cancelRequested.load(); });
 				if (!writeOk) {
@@ -2303,8 +2361,7 @@ void EditorLayer::startPackGame() {
 					if (std::filesystem::path(resolvedFirstScene).extension() != ".owl")
 						resolvedFirstScene += ".owl";
 					for (const auto& ref: assets) {
-						if (ref.assetType == io::pack::AssetType::Scene &&
-							ref.packPath.ends_with(resolvedFirstScene)) {
+						if (ref.assetType == io::pack::AssetType::Scene && ref.packPath.ends_with(resolvedFirstScene)) {
 							resolvedFirstScene = ref.packPath;
 							break;
 						}
@@ -2358,8 +2415,7 @@ void EditorLayer::startPackGame() {
 						std::filesystem::create_directories(iconDst.parent_path());
 						std::error_code ec;
 
-						std::filesystem::copy(iconSrc, iconDst,
-											  std::filesystem::copy_options::overwrite_existing, ec);
+						std::filesystem::copy(iconSrc, iconDst, std::filesystem::copy_options::overwrite_existing, ec);
 					}
 				}
 				state->progress.store(0.88f);
@@ -2386,8 +2442,8 @@ void EditorLayer::startPackGame() {
 				{
 					std::error_code ec;
 
-					std::filesystem::copy_file(runnerExe, destExe,
-											   std::filesystem::copy_options::overwrite_existing, ec);
+					std::filesystem::copy_file(runnerExe, destExe, std::filesystem::copy_options::overwrite_existing,
+											   ec);
 					if (ec) {
 						state->setError(std::format("Failed to copy runner: {}", ec.message()));
 						return;
@@ -2404,8 +2460,7 @@ void EditorLayer::startPackGame() {
 												 std::filesystem::perm_options::add, ec);
 					if (ec)
 
-						OWL_CORE_WARN("Failed to set exec permissions on {}: {}", destExe.string(),
-									  ec.message())
+						OWL_CORE_WARN("Failed to set exec permissions on {}: {}.", destExe.string(), ec.message())
 				}
 #endif
 				copySharedLibs(runnerSrcDir, gameDir);
@@ -2424,8 +2479,8 @@ void EditorLayer::startPackGame() {
 
 				// Compute post-pack report: duration, pack size, output path.
 				const auto endTime = std::chrono::steady_clock::now();
-				const auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-												endTime - startTime).count();
+				const auto durationMs =
+						std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
 				const auto packFile = gameDir / (gameName + ".owlpack");
 				std::error_code sizeEc;
 				const auto packBytes = exists(packFile) ? std::filesystem::file_size(packFile, sizeEc) : 0;
@@ -2436,9 +2491,8 @@ void EditorLayer::startPackGame() {
 											  assets.size(), mib, gameDir.string(),
 											  static_cast<double>(durationMs) / 1000.0));
 
-				OWL_CORE_INFO("Game exported: {} ({} assets, {:.2f} MiB) -> {} in {:.1f}s",
-							  projectName, assets.size(), mib, gameDir.string(),
-							  static_cast<double>(durationMs) / 1000.0)
+				OWL_CORE_INFO("Game exported: {} ({} assets, {:.2f} MiB) -> {} in {:.1f}s.", projectName, assets.size(),
+							  mib, gameDir.string(), static_cast<double>(durationMs) / 1000.0)
 			},
 			// --- Termination callback (runs on main thread) ---
 			[state]() -> void { state->completed.store(true); }));
@@ -2451,7 +2505,7 @@ void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, co
 	const auto& activeScene = doc->getActiveScene();
 	auto root = scene::PrefabSerializer::instantiate(iPrefabPath, activeScene, iAssetRelativePath);
 	if (!root) {
-		OWL_WARN("Failed to instantiate prefab: {}", iPrefabPath.string())
+		OWL_WARN("Failed to instantiate prefab: {}.", iPrefabPath.string())
 		return;
 	}
 	const auto info = scene::PrefabSerializer::readInfo(iPrefabPath);
@@ -2464,20 +2518,33 @@ void EditorLayer::onContextualHelp() {
 	// Mapping from component type name (component::T::name()) to the help page id that best
 	// documents that area. Unmapped or no-hover → editor overview.
 	static const std::unordered_map<std::string, std::string> kComponentToPage = {
-		{"Transform", "scene"},      {"Hierarchy", "scene"},
-		{"Visibility", "scene"},     {"Tag", "scene"},
-		{"PhysicBody", "physics"},   {"Trigger", "scene"},
-		{"LuaScript", "scripting"},  {"NativeScript", "scripting"},
-		{"Camera", "scene"},         {"SoundSource", "sound"},
-		{"SoundListener", "sound"},  {"SpriteRenderer", "renderer"},
-		{"AnimatedSpriteRenderer", "renderer"}, {"CircleRenderer", "renderer"},
-		{"BackgroundTexture", "renderer"}, {"Text", "renderer"},
-		{"Player", "scene"},         {"PrefabLink", "scene"},
-		{"EntityLink", "scene"},     {"Canvas", "editor"},
-		{"UiRect", "editor"},        {"UiText", "editor"},
-		{"UiImage", "editor"},       {"UiButton", "editor"},
-		{"UiPanel", "editor"},       {"UiProgressBar", "editor"},
-		{"UiSlider", "editor"},
+			{"Transform", "scene"},
+			{"Hierarchy", "scene"},
+			{"Visibility", "scene"},
+			{"Tag", "scene"},
+			{"PhysicBody", "physics"},
+			{"Trigger", "scene"},
+			{"LuaScript", "scripting"},
+			{"NativeScript", "scripting"},
+			{"Camera", "scene"},
+			{"SoundSource", "sound"},
+			{"SoundListener", "sound"},
+			{"SpriteRenderer", "renderer"},
+			{"AnimatedSpriteRenderer", "renderer"},
+			{"CircleRenderer", "renderer"},
+			{"BackgroundTexture", "renderer"},
+			{"Text", "renderer"},
+			{"Player", "scene"},
+			{"PrefabLink", "scene"},
+			{"EntityLink", "scene"},
+			{"Canvas", "editor"},
+			{"UiRect", "editor"},
+			{"UiText", "editor"},
+			{"UiImage", "editor"},
+			{"UiButton", "editor"},
+			{"UiPanel", "editor"},
+			{"UiProgressBar", "editor"},
+			{"UiSlider", "editor"},
 	};
 	const auto& hovered = panel::SceneHierarchy::lastHoveredComponentName();
 	if (const auto it = kComponentToPage.find(hovered); it != kComponentToPage.end()) {

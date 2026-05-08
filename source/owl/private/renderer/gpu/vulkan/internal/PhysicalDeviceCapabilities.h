@@ -81,7 +81,7 @@ public:
 	 * @brief
 	 *  Check if some layers are available on this device.
 	 * @param[in] iLayers The layer's names to test.
-	 * @return True if all available
+	 * @return True if all available.
 	 */
 	[[nodiscard]] auto hasLayers(const std::vector<std::string>& iLayers) const -> bool;
 
@@ -89,7 +89,7 @@ public:
 	 * @brief
 	 *  Check if some extensions are available on this device.
 	 * @param[in] iExtensions The extension's names to test.
-	 * @return True if all available
+	 * @return True if all available.
 	 */
 	[[nodiscard]] auto hasExtensions(const std::vector<std::string>& iExtensions) const -> bool;
 

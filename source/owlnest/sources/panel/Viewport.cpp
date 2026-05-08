@@ -65,8 +65,8 @@ void Viewport::onRender() {
 	// the stable `##<uuid>` suffix keeps the ImGui window id unchanged.
 	m_name = makeWindowTitle(*mp_document);
 
-	ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
-							 ImGuiWindowFlags_NoCollapse;
+	ImGuiWindowFlags flags =
+			ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoCollapse;
 	if (mp_document->isDirty())
 		flags |= ImGuiWindowFlags_UnsavedDocument;
 
@@ -166,53 +166,55 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	m_framebuffer->clearAttachment(1, -1);
 
 	switch (mp_document->state()) {
-		case SceneDocument::State::Edit: {
-			activeScene->onUpdateEditor(iTimeStep, m_editorCamera);
-			break;
-		}
-		case SceneDocument::State::Play: {
-			// UiRect uses Y=0 at bottom; ImGui mouse Y=0 at top → always flip.
-			const math::vec2 vpMouse = {mx, viewportSizeInternal.y() - my};
-			const bool mousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
-			scene::UiInputSystem::update(activeScene.get(), m_framebuffer->getSpecification().size, vpMouse,
-										 mousePressed);
-			activeScene->onUpdateRuntime(iTimeStep);
-			// Handle quit request from Lua (scene.quit()) → request stop.
-			if (activeScene->quitRequested)
-				mp_document->requestStop();
-			// `scene.transition_to(...)` from Lua schedules a load through the
-			// engine-side `ScreenTransition` orchestrator; once the out-anim
-			// completes, the path lands here as a teleport request, the
-			// existing handler does the swap, and the Loading-phase screen
-			// stays up until `minHoldDuration` elapses.
-			if (auto pending = scene::ScreenTransition::pendingLoadPath(); pending) {
-				activeScene->teleportRequest.pending = true;
-				activeScene->teleportRequest.levelName = *pending;
-				activeScene->teleportRequest.targetName.clear();
-				activeScene->teleportRequest.initialVelocity = {0.f, 0.f};
-				activeScene->teleportRequest.rotationDelta = 0.f;
+		case SceneDocument::State::Edit:
+			{
+				activeScene->onUpdateEditor(iTimeStep, m_editorCamera);
+				break;
 			}
-			mp_document->handleTeleportRequest(getSize());
-			mp_document->handleSaveLoadRequest(getSize());
-			break;
-		}
-		case SceneDocument::State::Pause: {
-			if (mp_document->consumeStepRequest()) {
+		case SceneDocument::State::Play:
+			{
+				// UiRect uses Y=0 at bottom; ImGui mouse Y=0 at top → always flip.
+				const math::vec2 vpMouse = {mx, viewportSizeInternal.y() - my};
+				const bool mousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+				scene::UiInputSystem::update(activeScene.get(), m_framebuffer->getSpecification().size, vpMouse,
+											 mousePressed);
 				activeScene->onUpdateRuntime(iTimeStep);
+				// Handle quit request from Lua (scene.quit()) → request stop.
+				if (activeScene->quitRequested)
+					mp_document->requestStop();
+				// `scene.transition_to(...)` from Lua schedules a load through the
+				// engine-side `ScreenTransition` orchestrator; once the out-anim
+				// completes, the path lands here as a teleport request, the
+				// existing handler does the swap, and the Loading-phase screen
+				// stays up until `minHoldDuration` elapses.
+				if (auto pending = scene::ScreenTransition::pendingLoadPath(); pending) {
+					activeScene->teleportRequest.pending = true;
+					activeScene->teleportRequest.levelName = *pending;
+					activeScene->teleportRequest.targetName.clear();
+					activeScene->teleportRequest.initialVelocity = {0.f, 0.f};
+					activeScene->teleportRequest.rotationDelta = 0.f;
+				}
 				mp_document->handleTeleportRequest(getSize());
-			} else {
-				activeScene->onRenderRuntime();
+				mp_document->handleSaveLoadRequest(getSize());
+				break;
 			}
-			break;
-		}
+		case SceneDocument::State::Pause:
+			{
+				if (mp_document->consumeStepRequest()) {
+					activeScene->onUpdateRuntime(iTimeStep);
+					mp_document->handleTeleportRequest(getSize());
+				} else {
+					activeScene->onRenderRuntime();
+				}
+				break;
+			}
 	}
 
 	if (mouseX >= 0 && mouseY >= 0 && mouseX < static_cast<int>(viewportSizeInternal.x()) &&
 		mouseY < static_cast<int>(viewportSizeInternal.y())) {
 		const int pixelData = m_framebuffer->readPixel(1, mouseX, mouseY);
-		m_hoveredEntity =
-				pixelData == -1 ? scene::Entity()
-								: scene::Entity(static_cast<entt::entity>(pixelData), activeScene.get());
+		m_hoveredEntity = pixelData == -1 ? scene::Entity()
+										  : scene::Entity(static_cast<entt::entity>(pixelData), activeScene.get());
 	}
 	renderOverlay();
 
@@ -257,17 +259,16 @@ void Viewport::renderOverlay() const {
 
 	if (mp_document->state() == SceneDocument::State::Edit) {
 		// Draw selected entity outline
-		if (const scene::Entity selectedEntity = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{}) {
+		if (const scene::Entity selectedEntity =
+					m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{}) {
 			const math::Transform worldTransform = activeScene->getWorldTransform(selectedEntity);
 			renderer::Renderer2D::drawRect({.transform = worldTransform, .color = math::vec4(0.95f, 0.55f, 0.f, 1)});
-			renderer::Renderer2D::drawQuad(
-					{.transform = worldTransform, .color = math::vec4{0.95f, 0.55f, 0.f, 0.2f}});
+			renderer::Renderer2D::drawQuad({.transform = worldTransform, .color = math::vec4{0.95f, 0.55f, 0.f, 0.2f}});
 		}
 
 		// Draw trigger type icons
 		auto& textureLibrary = renderer::Renderer::getTextureLibrary();
-		for (const auto view =
-					 activeScene->registry.view<scene::component::Trigger, scene::component::Transform>();
+		for (const auto view = activeScene->registry.view<scene::component::Trigger, scene::component::Transform>();
 			 const auto entity: view) {
 			auto [trigger, tc] = view.get<scene::component::Trigger, scene::component::Transform>(entity);
 			std::string iconName;
@@ -444,17 +445,14 @@ void Viewport::processTilemapPaint(const TilePalette& iPalette, scene::Entity& i
 	const float relY = worldXf.translation().y() + originY - worldY;
 	const int cellX = static_cast<int>(std::floor((relX / cellSize) + 0.5f));
 	const int cellY = static_cast<int>(std::floor((relY / cellSize) + 0.5f));
-	if (cellX < 0 || cellY < 0 || cellX >= static_cast<int>(tilemap.width) ||
-		cellY >= static_cast<int>(tilemap.height))
+	if (cellX < 0 || cellY < 0 || cellX >= static_cast<int>(tilemap.width) || cellY >= static_cast<int>(tilemap.height))
 		return;
 
 	const uint32_t layerIdx = iPalette.getSelectedLayer();
 	if (layerIdx >= tilemap.layers.size())
 		return;
-	const int32_t brush =
-			rightDown ? scene::component::g_EmptyTileIndex : iPalette.getSelectedTile();
-	const int32_t current =
-			tilemap.getTile(layerIdx, static_cast<uint32_t>(cellX), static_cast<uint32_t>(cellY));
+	const int32_t brush = rightDown ? scene::component::g_EmptyTileIndex : iPalette.getSelectedTile();
+	const int32_t current = tilemap.getTile(layerIdx, static_cast<uint32_t>(cellX), static_cast<uint32_t>(cellY));
 	if (current == brush)
 		return;
 
@@ -465,10 +463,8 @@ void Viewport::processTilemapPaint(const TilePalette& iPalette, scene::Entity& i
 		before = scene::SceneSerializer::serializeEntityToString(ioSelected);
 	tilemap.setTile(layerIdx, static_cast<uint32_t>(cellX), static_cast<uint32_t>(cellY), brush);
 	if (mp_undoManager != nullptr) {
-		auto cmd = mkUniq<commands::ModifyEntityCommand>(
-				ioSelected.getUUID(),
-				EntitySnapshot{ioSelected.getUUID(), before},
-				"Paint tile");
+		auto cmd = mkUniq<commands::ModifyEntityCommand>(ioSelected.getUUID(),
+														 EntitySnapshot{ioSelected.getUUID(), before}, "Paint tile");
 		cmd->captureAfter(ioSelected);
 		mp_undoManager->push(std::move(cmd));
 	}

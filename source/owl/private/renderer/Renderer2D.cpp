@@ -81,7 +81,7 @@ struct TextVertex {
 
 /**
  * @brief
- *  Base structure for rendering an object type
+ *  Base structure for rendering an object type.
  */
 template<typename VertexType>
 struct VertexData {
@@ -100,7 +100,7 @@ void resetDrawData(VertexData<VertexType>& iData) {
 
 /**
  * @brief
- *  Structure holding static internal g_data
+ *  Structure holding static internal g_data.
  */
 struct InternalData {
 	/// Camera Data
@@ -383,7 +383,7 @@ void Renderer2D::drawRect(const RectData& iRectData) {
 
 void Renderer2D::drawPolyLine(const PolyLineData& iLineData) {
 	if (iLineData.points.size() < 2) {
-		OWL_CORE_WARN("Too few points in the multiline with ID {}", iLineData.entityId)
+		OWL_CORE_WARN("Too few points in the multiline with ID {}.", iLineData.entityId)
 		return;
 	}
 	const math::mat4 trans = iLineData.transform();
@@ -460,7 +460,7 @@ void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 
 void Renderer2D::drawString(const StringData& iStringData) {
 	if (iStringData.font == nullptr) {
-		OWL_CORE_ERROR("Renderer2D::drawString: Font not set")
+		OWL_CORE_ERROR("Renderer2D::drawString: Font not set.")
 		return;
 	}
 

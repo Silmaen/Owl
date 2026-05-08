@@ -70,15 +70,16 @@ public:
 
 private:
 	struct PageEntry {
-		std::string id;       ///< Basename without extension, used as canonical id.
-		std::string title;    ///< First H1 line of the page (Doxygen anchor stripped).
-		std::string category; ///< "guides" or "reference".
-		std::string path;     ///< File name relative to engine_assets/help/.
+		std::string id;///< Basename without extension, used as canonical id.
+		std::string title;///< First H1 line of the page (Doxygen anchor stripped).
+		std::string category;///< "guides" or "reference".
+		std::string path;///< File name relative to engine_assets/help/.
 	};
 
 	/**
 	 * @brief
 	 *  Locate engine_assets/help/ relative to the runtime CWD. Empty on failure.
+	 * @return The std filesystem path.
 	 */
 	[[nodiscard]] static auto resolveHelpRoot() -> std::filesystem::path;
 

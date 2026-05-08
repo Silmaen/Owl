@@ -96,7 +96,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Defines the possible extensions type for this dta
+	 *  Defines the possible extensions type for this dta.
 	 * @return List of supported extensions.
 	 */
 	static auto extension() -> std::vector<std::string> { return {".wav", ".ogg", ".flac", ".mp3"}; }

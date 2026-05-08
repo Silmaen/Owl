@@ -104,7 +104,7 @@ auto getDevicePixelFormat(const uint32_t iPixelFormat) -> Device::PixelFormat {
 		return Device::PixelFormat::YuYv;
 	if (iPixelFormat == V4L2_PIX_FMT_MJPEG)
 		return Device::PixelFormat::MJpeg;
-	return Device::PixelFormat::Unknwon;
+	return Device::PixelFormat::Unknown;
 }
 
 auto getV4L2PixelFormat(const Device::PixelFormat& iPixelFormat) -> uint32_t {
@@ -141,7 +141,7 @@ void updateList(std::vector<shared<video::Device>>& ioList) {
 				return testDev->getBusInfo() == static_pointer_cast<Device>(dev)->getBusInfo();
 			}) != ioList.end())
 			continue;
-		OWL_CORE_TRACE("Found: {} ({}) [{}] ", devCounter, testDev->getName(), testDev->getBusInfo())
+		OWL_CORE_TRACE("Found: {} ({}) [{}].", devCounter, testDev->getName(), testDev->getBusInfo())
 		ioList.push_back(testDev);
 		++devCounter;
 	}
@@ -153,7 +153,7 @@ Device::Device(std::string iFile) : video::Device{""}, m_file{std::move(iFile)} 
 
 	const int fd = ::open(m_file.c_str(), O_RDONLY | O_CLOEXEC);
 	if (fd == 0) {
-		OWL_CORE_WARN("Unable to open device file {}", m_file)
+		OWL_CORE_WARN("Unable to open device file {}.", m_file)
 		return;
 	}
 	v4l2_capability capability{};
@@ -173,7 +173,7 @@ Device::Device(std::string iFile) : video::Device{""}, m_file{std::move(iFile)} 
 			if (mdi.bus_info[0] != 0)
 				m_busInfo = mdi.bus_info;
 			else
-				m_busInfo = std::format("platform: {}", mdi.driver);
+				m_busInfo = std::format("platform: {}.", mdi.driver);
 			if (mdi.model[0] != 0)
 				m_name = mdi.model;
 			else
@@ -186,7 +186,7 @@ Device::Device(std::string iFile) : video::Device{""}, m_file{std::move(iFile)} 
 Device::~Device() { close(); }
 
 void Device::open() {
-	OWL_CORE_INFO("Opening device ({}): {}", m_file, m_name)
+	OWL_CORE_INFO("Opening device ({}): {}.", m_file, m_name)
 	close();
 	m_fileHandler = ::open(m_file.c_str(), O_RDWR | O_CLOEXEC);
 	if (m_fileHandler <= 0) {
@@ -204,27 +204,27 @@ void Device::open() {
 		}
 		if (!isPixelFormatSupported(getDevicePixelFormat(fmt.fmt.pix.pixelformat))) {
 			OWL_CORE_WARN("({}) Native pixel format unsupported!", m_file, getPixelFormatString(V4L2_PIX_FMT_NV12))
-			OWL_CORE_WARN("({}) fourcc: {}", m_file, unFourCC(fmt.fmt.pix.pixelformat))
+			OWL_CORE_WARN("({}) fourcc: {}.", m_file, unFourCC(fmt.fmt.pix.pixelformat))
 			fmt.fmt.pix.pixelformat = getV4L2PixelFormat(getFirstSupportedPixelFormat());
 			if (ioctl(m_fileHandler, VIDIOC_S_FMT, &fmt) < 0) {
-				OWL_CORE_WARN("({}) Unable to set format of device", m_file)
+				OWL_CORE_WARN("({}) Unable to set format of device.", m_file)
 				close();
 				return;
 			}
 			if (!isPixelFormatSupported(getDevicePixelFormat(fmt.fmt.pix.pixelformat))) {
-				OWL_CORE_WARN("({}) Unable to set device to a suitable format", m_file)
+				OWL_CORE_WARN("({}) Unable to set device to a suitable format.", m_file)
 				close();
 				return;
 			}
 		}
 		if (ioctl(m_fileHandler, VIDIOC_S_FMT, &fmt) < 0) {
-			OWL_CORE_WARN("({}) Unable to set format of device", m_file)
+			OWL_CORE_WARN("({}) Unable to set format of device.", m_file)
 			close();
 			return;
 		}
 
-		OWL_CORE_INFO("({}) Using size is {} x {}", m_file, fmt.fmt.pix.width, fmt.fmt.pix.height)
-		OWL_CORE_INFO("({}) Using pixel format: {}", m_file, getPixelFormatString(fmt.fmt.pix.pixelformat))
+		OWL_CORE_INFO("({}) Using size is {} x {}.", m_file, fmt.fmt.pix.width, fmt.fmt.pix.height)
+		OWL_CORE_INFO("({}) Using pixel format: {}.", m_file, getPixelFormatString(fmt.fmt.pix.pixelformat))
 		m_pixFormat = getDevicePixelFormat(fmt.fmt.pix.pixelformat);
 		m_size = {fmt.fmt.pix.width, fmt.fmt.pix.height};
 	}
@@ -242,6 +242,7 @@ void Device::open() {
 	}
 	// define the bufferInfo
 	{
+
 		OWL_DIAG_PUSH
 		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 		memset(&m_bufferInfo, 0, sizeof(m_bufferInfo));
@@ -322,7 +323,7 @@ void Device::fillFrame(shared<renderer::gpu::Texture>& ioFrame) {
 	// frames are written after dequeue the buffer
 	if (!convertedBuffer.empty()) {
 		if (static_cast<size_t>(m_size.surface()) * 3ull != convertedBuffer.size()) {
-			OWL_CORE_WARN("Device ({}) buffer size missmatch: {}, expecting {}.", m_file, m_bufferInfo.bytesused,
+			OWL_CORE_WARN("Device ({}) buffer size mismatch: {}, expecting {}.", m_file, m_bufferInfo.bytesused,
 						  m_size.surface() * 3)
 		} else {
 			ioFrame->setData(convertedBuffer.data(), static_cast<uint32_t>(convertedBuffer.size()));
@@ -372,9 +373,9 @@ auto Device::isValid() const -> bool {
 			return false;// no read capability.
 		}
 	}
-	// check have supported pixelformat.
+	// check have supported pixel format.
 	{
-		if (getFirstSupportedPixelFormat(fd) == PixelFormat::Unknwon) {
+		if (getFirstSupportedPixelFormat(fd) == PixelFormat::Unknown) {
 			OWL_CORE_TRACE("Device {} ({}) Does not have a supported pixel format.", m_name, m_file)
 			::close(fd);
 			printSupportedFormat();
@@ -398,7 +399,7 @@ void Device::printSupportedFormat() const {
 
 	// Boucle pour interroger chaque format de pixel
 	while (ioctl(fd, VIDIOC_ENUM_FMT, &formatDescription) == 0) {
-		OWL_CORE_INFO("({}) index {} format {}", m_file, formatDescription.index,
+		OWL_CORE_INFO("({}) index {} format {}.", m_file, formatDescription.index,
 					  getPixelFormatString(formatDescription.pixelformat))
 		// Incrémentation pour passer au format de pixel suivant
 		++formatDescription.index;
@@ -410,7 +411,7 @@ auto Device::getFirstSupportedPixelFormat(int32_t iFd) const -> PixelFormat {
 	if (iFd == -1)
 		iFd = m_fileHandler;
 	if (iFd == -1)
-		return PixelFormat::Unknwon;
+		return PixelFormat::Unknown;
 	v4l2_fmtdesc formatDescription{};
 	formatDescription.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	while (ioctl(iFd, VIDIOC_ENUM_FMT, &formatDescription) == 0) {
@@ -418,7 +419,7 @@ auto Device::getFirstSupportedPixelFormat(int32_t iFd) const -> PixelFormat {
 			return pix;
 		++formatDescription.index;
 	}
-	return PixelFormat::Unknwon;
+	return PixelFormat::Unknown;
 }
 
 }// namespace owl::io::video::linux64

@@ -116,18 +116,21 @@ public:
 	/**
 	 * @brief
 	 *  Check if undo is possible.
+	 * @return True when undo is allowed.
 	 */
 	[[nodiscard]] auto canUndo() const -> bool { return !m_undoStack.empty(); }
 
 	/**
 	 * @brief
 	 *  Check if redo is possible.
+	 * @return True when redo is allowed.
 	 */
 	[[nodiscard]] auto canRedo() const -> bool { return !m_redoStack.empty(); }
 
 	/**
 	 * @brief
 	 *  Get description of the next undo action.
+	 * @return The std string.
 	 */
 	[[nodiscard]] auto undoDescription() const -> std::string {
 		if (m_undoStack.empty())
@@ -138,6 +141,7 @@ public:
 	/**
 	 * @brief
 	 *  Get description of the next redo action.
+	 * @return The std string.
 	 */
 	[[nodiscard]] auto redoDescription() const -> std::string {
 		if (m_redoStack.empty())
@@ -148,6 +152,7 @@ public:
 	/**
 	 * @brief
 	 *  Get the UUID to select after the last undo/redo (0 = no change).
+	 * @return The core UUID.
 	 */
 	[[nodiscard]] auto lastSelectionHint() const -> core::UUID { return m_lastSelectionHint; }
 
@@ -183,10 +188,9 @@ public:
 	/**
 	 * @brief
 	 *  Check if the state has changed since the last save.
+	 * @return True when the object is dirty.
 	 */
-	[[nodiscard]] auto isDirty() const -> bool {
-		return static_cast<int64_t>(m_undoStack.size()) != m_savedIndex;
-	}
+	[[nodiscard]] auto isDirty() const -> bool { return static_cast<int64_t>(m_undoStack.size()) != m_savedIndex; }
 
 private:
 	/// Undo stack (most recent at back).

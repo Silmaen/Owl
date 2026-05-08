@@ -39,9 +39,7 @@ void AddComponentCommand::undo(scene::Scene& ioScene) {
 
 void AddComponentCommand::redo(scene::Scene& ioScene) { restoreEntity(ioScene, m_after); }
 
-auto AddComponentCommand::description() const -> std::string {
-	return std::format("Add {}", m_componentName);
-}
+auto AddComponentCommand::description() const -> std::string { return std::format("Add {}", m_componentName); }
 
 // --- RemoveComponentCommand ---
 RemoveComponentCommand::RemoveComponentCommand(EntitySnapshot iBefore, EntitySnapshot iAfter,
@@ -57,9 +55,7 @@ void RemoveComponentCommand::undo(scene::Scene& ioScene) { restoreEntity(ioScene
 
 void RemoveComponentCommand::redo(scene::Scene& ioScene) { restoreEntity(ioScene, m_after); }
 
-auto RemoveComponentCommand::description() const -> std::string {
-	return std::format("Remove {}", m_componentName);
-}
+auto RemoveComponentCommand::description() const -> std::string { return std::format("Remove {}", m_componentName); }
 
 // --- ModifyEntityCommand ---
 ModifyEntityCommand::ModifyEntityCommand(core::UUID iEntityUuid, EntitySnapshot iBefore, std::string iDescription)
@@ -70,9 +66,7 @@ ModifyEntityCommand::ModifyEntityCommand(core::UUID iEntityUuid, EntitySnapshot 
 
 ModifyEntityCommand::~ModifyEntityCommand() = default;
 
-void ModifyEntityCommand::captureAfter(const scene::Entity& iEntity) {
-	m_after = EntitySnapshot::capture(iEntity);
-}
+void ModifyEntityCommand::captureAfter(const scene::Entity& iEntity) { m_after = EntitySnapshot::capture(iEntity); }
 
 void ModifyEntityCommand::undo(scene::Scene& ioScene) { restoreEntity(ioScene, m_before); }
 

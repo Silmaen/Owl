@@ -16,7 +16,7 @@ namespace owl::scene {
  * @brief
  *  Class describing a physical body in the scene.
  */
-class OWL_API SceneBody final{
+class OWL_API SceneBody final {
 public:
 	/**
 	 * @brief
@@ -75,7 +75,6 @@ public:
 	float restitution{0};
 	/// The friction coefficient for contact.
 	float friction{0.5f};
-
 };
 
 }// namespace owl::scene

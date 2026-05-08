@@ -245,13 +245,13 @@ constexpr auto shear(const Matrix<BaseType, 4, 4>& iMatrix, const Vector<BaseTyp
 
 	Matrix<BaseType, 4, 4> result{};
 	result.setColumn(0, iMatrix.column(0) * shear(0, 0) + iMatrix.column(1) * shear(1, 0) +
-						 iMatrix.column(2) * shear(2, 0) + iMatrix.column(3) * shear(3, 0));
+								iMatrix.column(2) * shear(2, 0) + iMatrix.column(3) * shear(3, 0));
 	result.setColumn(1, iMatrix.column(0) * shear(0, 1) + iMatrix.column(1) * shear(1, 1) +
-						 iMatrix.column(2) * shear(2, 1) + iMatrix.column(3) * shear(3, 1));
+								iMatrix.column(2) * shear(2, 1) + iMatrix.column(3) * shear(3, 1));
 	result.setColumn(2, iMatrix.column(0) * shear(0, 2) + iMatrix.column(1) * shear(1, 2) +
-						 iMatrix.column(2) * shear(2, 2) + iMatrix.column(3) * shear(3, 2));
+								iMatrix.column(2) * shear(2, 2) + iMatrix.column(3) * shear(3, 2));
 	result.setColumn(3, iMatrix.column(0) * shear(0, 3) + iMatrix.column(1) * shear(1, 3) +
-						 iMatrix.column(2) * shear(2, 3) + iMatrix.column(3) * shear(3, 3));
+								iMatrix.column(2) * shear(2, 3) + iMatrix.column(3) * shear(3, 3));
 	return result;
 }
 

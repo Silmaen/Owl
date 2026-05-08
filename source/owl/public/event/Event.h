@@ -12,7 +12,7 @@
 
 /**
  * @brief
- *  Namespace for Events
+ *  Namespace for Events.
  */
 namespace owl::event {
 /**

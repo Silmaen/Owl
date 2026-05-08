@@ -54,6 +54,5 @@ public:
 	 * @param[in] iOffset The offset to start.
 	 */
 	void setData(const void* iData, uint32_t iSize, uint32_t iOffset) override;
-
 };
 }// namespace owl::renderer::gpu::null

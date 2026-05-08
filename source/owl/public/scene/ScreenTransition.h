@@ -98,9 +98,11 @@ public:
 		Type inType = Type::FadeIn;
 		/// In-anim duration in seconds.
 		float inDuration = 0.3f;
-		/// Minimum time the loading screen stays visible (seconds). Sync
-		/// loads typically complete in one frame; this floor ensures the
-		/// spinner is actually seen by the player.
+		/**
+		 * Minimum time the loading screen stays visible (seconds). Sync
+		 * loads typically complete in one frame; this floor ensures the
+		 * spinner is actually seen by the player.
+		 */
 		float minHoldDuration = 0.4f;
 		/// Cover colour for the out-anim, loading screen, and in-anim.
 		math::vec4 color{0.f, 0.f, 0.f, 1.f};
@@ -168,15 +170,27 @@ public:
 	 */
 	[[nodiscard]] static auto getProgress() -> float;
 
-	/// @brief Active overlay kind — only meaningful while `OutAnim` /
-	/// `InAnim` (and for legacy primitive overlays). `Idle` and `Loading`
-	/// both report `Type::None`.
+	/**
+	 * @brief
+	 *  Active overlay kind — only meaningful while `OutAnim` /
+	 * `InAnim` (and for legacy primitive overlays). `Idle` and `Loading`
+	 *  both report `Type::None`.
+	 * @return The active transition type.
+	 */
 	[[nodiscard]] static auto getType() -> Type;
 
-	/// @brief Configured cover colour (undefined while `Idle`).
+	/**
+	 * @brief
+	 *  Configured cover colour (undefined while `Idle`).
+	 * @return The configured cover colour.
+	 */
 	[[nodiscard]] static auto getColor() -> const math::vec4&;
 
-	/// @brief Current orchestrator phase.
+	/**
+	 * @brief
+	 *  Current orchestrator phase.
+	 * @return The current phase.
+	 */
 	[[nodiscard]] static auto getPhase() -> Phase;
 
 	/**
@@ -189,7 +203,10 @@ public:
 	 */
 	[[nodiscard]] static auto pendingLoadPath() -> std::optional<std::string>;
 
-	/// @brief Drop any in-flight overlay or orchestrator state.
+	/**
+	 * @brief
+	 *  Drop any in-flight overlay or orchestrator state.
+	 */
 	static void reset();
 
 private:

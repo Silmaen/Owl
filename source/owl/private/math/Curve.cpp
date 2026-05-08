@@ -22,10 +22,10 @@ auto smoothstep(const float iT) -> float {
 }// namespace
 
 void Curve::addKey(const Keyframe iKey) {
+
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG("-Wfloat-equal")
-	const auto it =
-			std::ranges::find_if(m_keys, [&](const Keyframe& iEx) -> bool { return iEx.time == iKey.time; });
+	const auto it = std::ranges::find_if(m_keys, [&](const Keyframe& iEx) -> bool { return iEx.time == iKey.time; });
 	OWL_DIAG_POP
 
 	if (it != m_keys.end()) {

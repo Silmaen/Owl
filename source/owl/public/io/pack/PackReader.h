@@ -49,11 +49,11 @@ public:
 
 	PackReader(const PackReader&) = delete;
 
-	PackReader(PackReader&&)  noexcept = default;
+	PackReader(PackReader&&) noexcept = default;
 
 	auto operator=(const PackReader&) -> PackReader& = delete;
 
-	auto operator=(PackReader&&)  noexcept -> PackReader& = default;
+	auto operator=(PackReader&&) noexcept -> PackReader& = default;
 
 	/**
 	 * @brief

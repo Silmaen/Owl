@@ -19,18 +19,18 @@ namespace owl::nest::codeEditor {
  *  Inline span kind emitted by the Markdown parser.
  */
 enum struct InlineKind : uint8_t {
-	Text,         ///< Plain text run.
-	Code,         ///< Backtick-quoted inline code.
-	StrongStart,  ///< `**bold**` opening marker.
-	StrongEnd,    ///< `**bold**` closing marker.
+	Text,///< Plain text run.
+	Code,///< Backtick-quoted inline code.
+	StrongStart,///< `**bold**` opening marker.
+	StrongEnd,///< `**bold**` closing marker.
 	EmphasisStart,///< `*italic*` opening marker.
-	EmphasisEnd,  ///< `*italic*` closing marker.
-	StrikeStart,  ///< `~~strike~~` opening marker.
-	StrikeEnd,    ///< `~~strike~~` closing marker.
-	LinkStart,    ///< `[text](href)` opening marker. `text` payload carries the href.
-	LinkEnd,      ///< Closing marker for a link span.
-	ImageInline,  ///< `![alt](src)` inside a paragraph. `text`=src, `alt`=alt text.
-	LineBreak,    ///< Hard line break.
+	EmphasisEnd,///< `*italic*` closing marker.
+	StrikeStart,///< `~~strike~~` opening marker.
+	StrikeEnd,///< `~~strike~~` closing marker.
+	LinkStart,///< `[text](href)` opening marker. `text` payload carries the href.
+	LinkEnd,///< Closing marker for a link span.
+	ImageInline,///< `![alt](src)` inside a paragraph. `text`=src, `alt`=alt text.
+	LineBreak,///< Hard line break.
 };
 
 /**
@@ -39,8 +39,8 @@ enum struct InlineKind : uint8_t {
  */
 struct MdInline {
 	InlineKind kind = InlineKind::Text;///< Span kind discriminator.
-	std::string text;                  ///< Text run, code body, link href, or image src.
-	std::string alt;                   ///< Image alt text (only for `ImageInline`).
+	std::string text;///< Text run, code body, link href, or image src.
+	std::string alt;///< Image alt text (only for `ImageInline`).
 };
 
 /**
@@ -49,9 +49,9 @@ struct MdInline {
  */
 enum struct TableAlign : uint8_t {
 	Default,///< No explicit alignment marker — left in practice.
-	Left,   ///< `|:---|`
-	Center, ///< `|:---:|`
-	Right,  ///< `|---:|`
+	Left,///< `|:---|`
+	Center,///< `|:---:|`
+	Right,///< `|---:|`
 };
 
 // --- Leaf (non-recursive) block types ---------------------------------------
@@ -61,7 +61,7 @@ enum struct TableAlign : uint8_t {
  *  ATX or Setext heading (level 1-6) with inline spans.
  */
 struct MdHeading {
-	uint8_t level = 1;          ///< Heading level (1 = `#`, …, 6 = `######`).
+	uint8_t level = 1;///< Heading level (1 = `#`, …, 6 = `######`).
 	std::vector<MdInline> spans;///< Inline content of the heading line.
 };
 
@@ -102,8 +102,8 @@ struct MdHRule {};
  *  GFM-style table (head row + N body rows). Cells are inline-span sequences.
  */
 struct MdTable {
-	uint32_t cols = 0;                                       ///< Number of columns.
-	std::vector<TableAlign> align;                           ///< Alignment per column (size = `cols`).
+	uint32_t cols = 0;///< Number of columns.
+	std::vector<TableAlign> align;///< Alignment per column (size = `cols`).
 	std::vector<std::vector<std::vector<MdInline>>> headRows;///< `[row][col][span]`, typically 1 row.
 	std::vector<std::vector<std::vector<MdInline>>> bodyRows;///< `[row][col][span]`.
 };
@@ -117,8 +117,8 @@ struct MdBlock;// forward; defined below once all alternatives are complete.
  *  Ordered or unordered list. Each item is itself a list of blocks.
  */
 struct MdList {
-	bool ordered = false;                    ///< `true` for `1. … 2. …`, `false` for `- … - …`.
-	std::vector<std::vector<MdBlock>> items; ///< One vector of blocks per list item.
+	bool ordered = false;///< `true` for `1. … 2. …`, `false` for `- … - …`.
+	std::vector<std::vector<MdBlock>> items;///< One vector of blocks per list item.
 };
 
 /**
@@ -178,12 +178,14 @@ public:
 	/**
 	 * @brief
 	 *  Top-level blocks (read-only view).
+	 * @return The const std vector.
 	 */
 	[[nodiscard]] auto blocks() const -> const std::vector<MdBlock>& { return m_blocks; }
 
 	/**
 	 * @brief
 	 *  Take ownership of the parsed blocks (clears the document).
+	 * @return The std vector.
 	 */
 	[[nodiscard]] auto takeBlocks() -> std::vector<MdBlock>;
 

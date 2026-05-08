@@ -108,30 +108,35 @@ public:
 	/**
 	 * @brief
 	 *  get the panel size.
+	 * @return The size.
 	 */
 	[[nodiscard]] auto getSize() const -> const math::vec2ui& { return m_size; }
 
 	/**
 	 * @brief
 	 *  Get the lower bound of the panel.
+	 * @return The lower bound.
 	 */
 	[[nodiscard]] auto getLowerBound() const -> const math::vec2& { return m_lower; }
 
 	/**
 	 * @brief
 	 *  Get the upper bound of the panel.
+	 * @return The upper bound.
 	 */
 	[[nodiscard]] auto getUpperBound() const -> const math::vec2& { return m_upper; }
 
 	/**
 	 * @brief
 	 *  If the panel is hovered.
+	 * @return True when the object is hovered.
 	 */
 	[[nodiscard]] auto isHovered() const -> bool { return m_hovered; }
 
 	/**
 	 * @brief
 	 *  If the panel is focused.
+	 * @return True when the object is focused.
 	 */
 	[[nodiscard]] auto isFocused() const -> bool { return m_focused; }
 

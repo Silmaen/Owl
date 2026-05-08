@@ -200,6 +200,7 @@ public:
 	/**
 	 * @brief
 	 *  Clone the mesh.
+	 * @return The StaticMesh.
 	 */
 	[[nodiscard]] auto clone() const -> StaticMesh;
 
@@ -275,7 +276,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Create a range on particular extradata attached to triangles
+	 *  Create a range on particular extradata attached to triangles.
 	 *
 	 * The range is a view on the extra data, but it has the ownership on the view.
 	 * @note
@@ -303,7 +304,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Create a range on particular extradata attached to vertices
+	 *  Create a range on particular extradata attached to vertices.
 	 *
 	 * The range is a view on the extra data, but it has the ownership on the view.
 	 * @note
@@ -359,7 +360,7 @@ private:
 
 	/**
 	 * @brief
-	 *  Add an extra data to each triangle of the polyhedron/
+	 *  Add an extra data to each triangle of the polyhedron/.
 	 * @param[in]  iExtraDataId       Product ID of extra data to attach.
 	 * @return	True All extra data have been attached to triangles, false otherwise.
 	 */

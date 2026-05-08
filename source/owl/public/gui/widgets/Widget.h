@@ -72,7 +72,7 @@ public:
 	 */
 	void onRender() const {
 		if (!m_initialized) {
-			OWL_CORE_WARN("Trying to render uninitialized widget {}", m_data.id)
+			OWL_CORE_WARN("Trying to render uninitialized widget {}.", m_data.id)
 			return;
 		}
 		if (m_data.visible)
@@ -88,6 +88,7 @@ protected:
 	bool m_initialized = false;
 	/// Internal data.
 	DataType m_data;
+
 private:
 	/**
 	 * @brief

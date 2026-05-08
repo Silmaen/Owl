@@ -105,8 +105,7 @@ public:
 	 * @param[in] iName Chunk name for error messages.
 	 * @return True on success.
 	 */
-	[[nodiscard]] static auto loadScriptFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName)
-			-> bool;
+	[[nodiscard]] static auto loadScriptFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName) -> bool;
 
 	/**
 	 * @brief

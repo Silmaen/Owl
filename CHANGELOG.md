@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`CodeStyle` CI action** — single read-only command
+  (`poetry run python ci_action.py CodeStyle <preset>`) bundling six
+  inspections that no other tool covers in one place:
+    - **clang-format** dry-run on every C++ source.
+    - **typos** via `codespell` (with project-local
+      `ci/codespell-ignore-words.txt` for legitimate identifiers like
+      `nam:` / `siz:` texture prefixes).
+    - **comment-quality** — `///` discipline (multi-line `///` blocks must
+      use `/** */`); function declarations must use `/** */` (never a single
+      `///` line above); non-`void` functions documented with `/** */` must
+      carry a `@return` tag; Doxygen description paragraphs must end with
+      `.`, `?` or `!`. TU-local helpers (`static` free functions in `.cpp`,
+      anonymous namespaces) are skipped.
+    - **private-member-docs** — every `m_*` / `mp_*` / `s_*` / `g_*` field
+      needs a `///` line above or `///<` inline.
+    - **cpp-style** — banned `std::shared_ptr` / `std::make_shared` /
+      `std::unique_ptr` / `std::make_unique` / `std::weak_ptr` (use the
+      project aliases `shared` / `mkShared` / `uniq` / `mkUniq` / `weak`),
+      banned class suffixes `*Service` / `*Helper` / `*Util`, `UI*` vs
+      `Ui*`, `enum class` vs `enum struct`, blank-line rules around
+      `OWL_PROFILE_FUNCTION()` / `OWL_DIAG_PUSH/POP`, log-message
+      formatting (`Subsystem: capitalized message ending with .`).
+    - **structural** — file headers (`@file` + `Copyright (c) YYYY`),
+      `OWL_API` warning on free functions in `source/owl/{public,private}`.
+
+  Doxygen is **not** invoked here (run via the existing `Documentation`
+  action). The CodeStyle action only inspects sources — it never rewrites
+  them. Each sub-check can be disabled with `-- --no-format=true` /
+  `--no-typos=true` / `--no-comment-quality=true` / `--no-doc-audit=true`
+  / `--no-cpp-style=true` / `--no-structural=true`.
 - **Per-scene settings panel in Owl Nest** — dockable
   `panel::SceneSettings` window (Edit > Settings > Scene) editing the active
   scene's `EnabledRenderers` block: per-layer enable toggle, up / down
@@ -210,19 +240,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   player camera (the raycaster's player faces +X via a -π/2 Z rotation)
   produced a HUD whose origin tracked the world's bottom-left, not the
   screen's. The fix:
-  - New `Renderer2DLayer` config `Space: Screen` (vs default `World`) — when
-    set, the layer binds a pixel-space ortho instead of the scene camera so
-    HUD overlays draw in screen pixels regardless of the player camera's
-    rotation. The sample project's `ui` layer opts in.
-  - New `RenderLayer::getEffectiveViewProjection(camera)` virtual — each
-    layer reports the VP it just bound to `Renderer2D` (world VP for sprite
-    layers, pixel-ortho VP for raycast / screen-overlay layers).
-  - `Scene::renderUI` now takes that VP, derives camera-aligned right / up
-    axes (no more world-axis-aligned bbox), and inherits the layer's screen
-    rotation onto each UI quad's transform. `UIText` / `UIProgressBar` /
-    `UISlider` now shift their fill / handle along the layer's local +X axis
-    rather than world +X so the bar grows along the HUD instead of sliding
-    diagonally.
+    - New `Renderer2DLayer` config `Space: Screen` (vs default `World`) — when
+      set, the layer binds a pixel-space ortho instead of the scene camera so
+      HUD overlays draw in screen pixels regardless of the player camera's
+      rotation. The sample project's `ui` layer opts in.
+    - New `RenderLayer::getEffectiveViewProjection(camera)` virtual — each
+      layer reports the VP it just bound to `Renderer2D` (world VP for sprite
+      layers, pixel-ortho VP for raycast / screen-overlay layers).
+    - `Scene::renderUI` now takes that VP, derives camera-aligned right / up
+      axes (no more world-axis-aligned bbox), and inherits the layer's screen
+      rotation onto each UI quad's transform. `UIText` / `UIProgressBar` /
+      `UISlider` now shift their fill / handle along the layer's local +X axis
+      rather than world +X so the bar grows along the HUD instead of sliding
+      diagonally.
 
 - **Empty render-stack layers caused multi-scene flicker** — `Scene::renderWithStack`
   invoked every layer in the active stack regardless of whether any entity was
@@ -284,9 +314,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   configured `Fov` is now the actual horizontal FOV at any aspect ratio.
 - **mingw-gcc 15 link**: pass `-Wa,-mbig-obj` globally on Windows GCC builds so
   template-heavy translation units (notably `Scene.cpp` after the renderer-stack
-  + tilemap additions) no longer overflow the 16-bit PE/COFF section table —
-  silenced the cascade of "relocation truncated to fit" + "undefined reference
-  to `std::move_iterator<...>`" link errors.
+    + tilemap additions) no longer overflow the 16-bit PE/COFF section table —
+      silenced the cascade of "relocation truncated to fit" + "undefined reference
+      to `std::move_iterator<...>`" link errors.
 - **`HelpIndex.BadgesAreFetchedAndCachedLocally`** now skips cleanly when the
   configure-time badge fetch produced no cached SVGs (e.g. the build agent has
   no outbound HTTPS — the typical ARM64 / sandboxed CI runner). The rewriting
@@ -424,8 +454,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - New scripts: `world_player.lua`, `platformer_player.lua`,
       `house_door.lua`, `teleporter.lua`, `spike_damage.lua`,
       `level_complete.lua`. Reworked `main_menu.lua` (dynamic button label
-      + clear continue snapshot on fresh start) and `game_over.lua`
-      (retry now returns to the world map).
+        + clear continue snapshot on fresh start) and `game_over.lua`
+          (retry now returns to the world map).
 
 ### Changed
 
@@ -548,7 +578,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Drag-drop from Content Browser to inspector fields via shared
       `gui::widgets::assetDropTarget` helper (`source/owl/public/gui/widgets/AssetField.h`).
       Per-extension validation through a new `AssetKind` enum (Texture, Font, Sound,
-      LuaScript, AnyScript, Scene, Prefab, Any). Re-uses the existing `CONTENT_BROWSER_ITEM`
+      LuaScript, AnyScript, Scene, Prefab, Any). Reuses the existing `CONTENT_BROWSER_ITEM`
       ImGui payload — no new wire format. Drops accepted on Sprite/AnimatedSprite/
       BackgroundTexture/UIImage textures, Text font, SoundSource asset, LuaScript path.
     - `gui::widgets::textureField()` consolidates the previously inlined texture-picker

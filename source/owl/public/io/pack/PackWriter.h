@@ -64,10 +64,9 @@ public:
 	 * @param[in] iCancelCheck Optional cancel check invoked per entry.
 	 * @return True on success, false on error or cancellation.
 	 */
-	[[nodiscard]] auto write(const std::filesystem::path& iOutputFile,
-							 PackFlags iFlags = PackFlags::Default,
-							 const ProgressCallback& iProgress = {},
-							 const CancelCheck& iCancelCheck = {}) const -> bool;
+	[[nodiscard]] auto write(const std::filesystem::path& iOutputFile, PackFlags iFlags = PackFlags::Default,
+							 const ProgressCallback& iProgress = {}, const CancelCheck& iCancelCheck = {}) const
+			-> bool;
 
 	/**
 	 * @brief
@@ -84,7 +83,8 @@ public:
 
 private:
 	/**
-	 * @brief Entry to pack.
+	 * @brief
+	 *  Entry to pack.
 	 */
 	struct PendingEntry {
 		/// Path in the pack.

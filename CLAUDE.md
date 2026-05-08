@@ -43,7 +43,19 @@ poetry run python ci_action.py Test <preset>
 poetry run python ci_action.py Coverage <preset>
 poetry run python ci_action.py Clean <preset>
 poetry run python ci_action.py Documentation <preset>
+poetry run python ci_action.py CodeStyle <preset>
 ```
+
+`CodeStyle` is a **read-only** gate that bundles six sub-checks: clang-format
+dry-run, codespell typo scan, comment-quality (`///` discipline + sentence
+punctuation), private-member doc audit (catches missing `///` on `m_*`
+fields), cpp-style audit (banned `std::shared_ptr` / `*Service` / `UI*` /
+`enum class`; `OWL_PROFILE_FUNCTION()` blank-line rule; `OWL_DIAG_PUSH/POP`
+spacing; log-message formatting), and a structural audit (file headers,
+`OWL_API` on free functions). Doxygen is **not** invoked here — it lives in
+the `Documentation` action. Skip individual stages with `-- --no-format=true`
+/ `--no-typos=true` / `--no-comment-quality=true` / `--no-doc-audit=true` /
+`--no-cpp-style=true` / `--no-structural=true`.
 
 ## Python Environment
 
@@ -87,7 +99,7 @@ poetry run python ci_action.py Documentation <preset>
 ### CI system (`ci/`)
 
 - Python-based CI orchestration, entry point: `ci_action.py`
-- Actions in `ci/actions/`: Build, Test, Coverage, Documentation, Package, Clean, Help, DefineTeamCityVariables,
+- Actions in `ci/actions/`: Build, Test, Coverage, Documentation, CodeStyle, Package, Clean, Help, DefineTeamCityVariables,
   PublishDoc, PublishPackage
 - All actions extend `ci.actions.base.action.BaseAction`
 - Utilities in `ci/utils/`: preset parsing, cmake discovery, command execution, logging, publishing, python helpers, TeamCity integration

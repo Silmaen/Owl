@@ -25,7 +25,7 @@ namespace {
 uint8_t g_GlfwWindowCount = 0;
 
 void glfwErrorCallback(int iError, const char* iDescription) {
-	OWL_CORE_ERROR("GLFW Error ({}): {}", iError, iDescription)
+	OWL_CORE_ERROR("GLFW Error ({}): {}.", iError, iDescription)
 }
 }// namespace
 
@@ -50,7 +50,7 @@ void Window::init(const Properties& iProps) {
 		m_windowData.title = iProps.title;
 		m_windowData.size = {iProps.width, iProps.height};
 
-		OWL_CORE_INFO("Creating window {} ({}, {})", iProps.title, iProps.width, iProps.height)
+		OWL_CORE_INFO("Creating window {} ({}, {}).", iProps.title, iProps.width, iProps.height)
 
 		if (g_GlfwWindowCount == 0) {
 			OWL_PROFILE_SCOPE("glfwInit")
@@ -102,7 +102,7 @@ void Window::init(const Properties& iProps) {
 
 				stbi_image_free(icon.pixels);
 			} else {
-				OWL_CORE_WARN("Failed to load window icon: {}", iProps.iconPath)
+				OWL_CORE_WARN("Failed to load window icon: {}.", iProps.iconPath)
 			}
 		}
 	}
@@ -132,62 +132,67 @@ void Window::init(const Properties& iProps) {
 			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 		});
 
-		glfwSetKeyCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iKey, [[maybe_unused]] int iScancode,
-											 const int iAction, [[maybe_unused]] int iMods) -> void {
-			const auto cKey = static_cast<input::KeyCode>(iKey);
-			switch (iAction) {
-				case GLFW_PRESS:
-					{
-						event::KeyPressedEvent event(cKey, 0u);
-						static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
-						break;
+		glfwSetKeyCallback(
+				mp_glfwWindow,
+				[](GLFWwindow* iWindow, const int iKey, [[maybe_unused]] int iScancode, const int iAction,
+				   [[maybe_unused]] int iMods) -> void {
+					const auto cKey = static_cast<input::KeyCode>(iKey);
+					switch (iAction) {
+						case GLFW_PRESS:
+							{
+								event::KeyPressedEvent event(cKey, 0u);
+								static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
+								break;
+							}
+						case GLFW_RELEASE:
+							{
+								event::KeyReleasedEvent event(cKey);
+								static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
+								break;
+							}
+						case GLFW_REPEAT:
+							{
+								event::KeyPressedEvent event(cKey, 1u);
+								static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
+								break;
+							}
+						default:
+							break;
 					}
-				case GLFW_RELEASE:
-					{
-						event::KeyReleasedEvent event(cKey);
-						static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
-						break;
-					}
-				case GLFW_REPEAT:
-					{
-						event::KeyPressedEvent event(cKey, 1u);
-						static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
-						break;
-					}
-				default:
-					break;
-			}
-		});
+				});
 
 		glfwSetCharCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const unsigned int iKeycode) -> void {
 			event::KeyTypedEvent event(static_cast<input::KeyCode>(iKeycode));
 			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 		});
 
-		glfwSetMouseButtonCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iButton, const int iAction,
-													 [[maybe_unused]] const int iMods) -> void {
-			switch (iAction) {
-				case GLFW_PRESS:
-					{
-						event::MouseButtonPressedEvent event(static_cast<input::MouseCode>(iButton));
-						static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
-						break;
+		glfwSetMouseButtonCallback(
+				mp_glfwWindow,
+				[](GLFWwindow* iWindow, const int iButton, const int iAction,
+				   [[maybe_unused]] const int iMods) -> void {
+					switch (iAction) {
+						case GLFW_PRESS:
+							{
+								event::MouseButtonPressedEvent event(static_cast<input::MouseCode>(iButton));
+								static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
+								break;
+							}
+						case GLFW_RELEASE:
+							{
+								event::MouseButtonReleasedEvent event(static_cast<input::MouseCode>(iButton));
+								static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
+								break;
+							}
+						default:
+							break;
 					}
-				case GLFW_RELEASE:
-					{
-						event::MouseButtonReleasedEvent event(static_cast<input::MouseCode>(iButton));
-						static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
-						break;
-					}
-				default:
-					break;
-			}
-		});
+				});
 
-		glfwSetScrollCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const double iXOffset, const double iYOffset) -> void {
-			event::MouseScrolledEvent event(static_cast<float>(iXOffset), static_cast<float>(iYOffset));
-			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
-		});
+		glfwSetScrollCallback(
+				mp_glfwWindow, [](GLFWwindow* iWindow, const double iXOffset, const double iYOffset) -> void {
+					event::MouseScrolledEvent event(static_cast<float>(iXOffset), static_cast<float>(iYOffset));
+					static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
+				});
 
 		glfwSetCursorPosCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const double iX, const double iY) -> void {
 			event::MouseMovedEvent event(static_cast<float>(iX), static_cast<float>(iY));
@@ -197,8 +202,7 @@ void Window::init(const Properties& iProps) {
 		glfwSetDropCallback(mp_glfwWindow, [](GLFWwindow* iWindow, const int iCount, const char** iPaths) -> void {
 			std::vector<std::filesystem::path> paths;
 			paths.reserve(static_cast<size_t>(iCount));
-			for (int i = 0; i < iCount; ++i)
-				paths.emplace_back(iPaths[i]);
+			for (int i = 0; i < iCount; ++i) paths.emplace_back(iPaths[i]);
 			event::FileDropEvent event(std::move(paths));
 			static_cast<WindowData*>(glfwGetWindowUserPointer(iWindow))->eventCallback(event);
 		});
@@ -221,8 +225,7 @@ void Window::setFullscreen(const bool iFullscreen) {
 		const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 		glfwSetWindowMonitor(mp_glfwWindow, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
 	} else {
-		glfwSetWindowMonitor(mp_glfwWindow, nullptr, 100, 100,
-							 static_cast<int>(m_windowData.windowedSize.x()),
+		glfwSetWindowMonitor(mp_glfwWindow, nullptr, 100, 100, static_cast<int>(m_windowData.windowedSize.x()),
 							 static_cast<int>(m_windowData.windowedSize.y()), 0);
 	}
 }
@@ -246,7 +249,7 @@ void Window::setIcon(const std::filesystem::path& iIconPath) {
 	if (glfwGetPlatform() == GLFW_PLATFORM_WAYLAND)
 		return;// Wayland compositor picks the icon from a .desktop file, not the app.
 	if (!exists(iIconPath)) {
-		OWL_CORE_WARN("Window icon not found: {}", iIconPath.string())
+		OWL_CORE_WARN("Window icon not found: {}.", iIconPath.string())
 		return;
 	}
 	GLFWimage icon;
@@ -256,7 +259,7 @@ void Window::setIcon(const std::filesystem::path& iIconPath) {
 		glfwSetWindowIcon(mp_glfwWindow, 1, &icon);
 		stbi_image_free(icon.pixels);
 	} else {
-		OWL_CORE_WARN("Failed to load window icon: {}", iIconPath.string())
+		OWL_CORE_WARN("Failed to load window icon: {}.", iIconPath.string())
 	}
 }
 

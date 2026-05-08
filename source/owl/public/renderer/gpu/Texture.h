@@ -235,6 +235,7 @@ protected:
 	std::filesystem::path m_path;
 	/// Current async-load state (only written from the main thread).
 	LoadState m_loadState{LoadState::Ready};
+
 private:
 	/// The texture's name.
 	std::string m_name;
@@ -243,7 +244,7 @@ private:
 };
 /**
  * @brief
- *  Class texture 2D
+ *  Class texture 2D.
  */
 
 OWL_DIAG_PUSH

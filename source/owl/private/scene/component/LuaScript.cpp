@@ -32,8 +32,7 @@ void LuaScript::serialize(const core::Serializer& iOut) const {
 					break;
 				case script::ScriptPropertyType::String:
 					iOut.getImpl()->emitter << YAML::Key << "type" << YAML::Value << "string";
-					iOut.getImpl()->emitter << YAML::Key << "value" << YAML::Value
-											<< std::get<std::string>(prop.value);
+					iOut.getImpl()->emitter << YAML::Key << "value" << YAML::Value << std::get<std::string>(prop.value);
 					break;
 				case script::ScriptPropertyType::Bool:
 					iOut.getImpl()->emitter << YAML::Key << "type" << YAML::Value << "bool";

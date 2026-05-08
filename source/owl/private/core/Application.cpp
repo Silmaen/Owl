@@ -10,11 +10,11 @@
 
 #include "core/Application.h"
 
-#include "renderer/Renderer.h"
 #include "core/Environment.h"
 #include "core/utils/StringUtils.h"
 #include "external/yaml.h"
 #include "input/Input.h"
+#include "renderer/Renderer.h"
 #include "sound/SoundSystem.h"
 
 OWL_DIAG_PUSH
@@ -40,7 +40,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		// Assuming present of a folder 'res' containing the data
 		m_workingDirectory = absolute(std::filesystem::current_path());
 
-		OWL_CORE_INFO("Working directory: {}", m_workingDirectory.string())
+		OWL_CORE_INFO("Working directory: {}.", m_workingDirectory.string())
 
 		// load config file if any
 		if (!m_initParams.isDummy) {
@@ -100,7 +100,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 					out.write(reinterpret_cast<const char*>(data->data()), static_cast<std::streamsize>(data->size()));
 			}
 		} else {
-			OWL_CORE_ERROR("Failed to open asset pack: {}", packPath.string())
+			OWL_CORE_ERROR("Failed to open asset pack: {}.", packPath.string())
 		}
 	}
 	// Looking for asset Directories
@@ -111,14 +111,14 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		if (const auto engineAsset = searchAssets("engine_assets"); engineAsset.has_value()) {
 			m_assetDirectories.push_front({"Engine assets", engineAsset.value()});
 		} else if (!hasPack) {
-			OWL_CORE_ERROR("Unable to find engine assets")
+			OWL_CORE_ERROR("Unable to find engine assets.")
 		}
 #endif
 		// second working dir asset directory
 		if (exists(m_workingDirectory / "assets")) {
 			m_assetDirectories.push_front({"working dir assets", m_workingDirectory / "assets"});
 		} else if (!hasPack) {
-			OWL_CORE_WARN("Unable to find working dir assets")
+			OWL_CORE_WARN("Unable to find working dir assets.")
 		}
 #ifdef OWL_DEVELOPMENT
 		// third app asset if any.
@@ -126,7 +126,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 			if (const auto engineAsset = searchAssets(m_initParams.assetsPattern); engineAsset.has_value()) {
 				m_assetDirectories.push_front({"App assets", engineAsset.value()});
 			} else if (!hasPack) {
-				OWL_CORE_ERROR("Unable to find app assets")
+				OWL_CORE_ERROR("Unable to find app assets.")
 			}
 		}
 #endif
@@ -138,11 +138,11 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		renderer::gpu::RenderCommand::create(m_initParams.renderer);
 		// check renderer creation
 		if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Created) {
-			OWL_CORE_ERROR("ERROR while Creating Renderer")
+			OWL_CORE_ERROR("ERROR while Creating Renderer.")
 			m_state = State::Error;
 			return;
 		}
-		// wait for all asynchron tasks
+		// wait for all asynchronous tasks
 		m_scheduler.waitEmptyQueue();
 	}
 
@@ -169,11 +169,11 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		renderer::Renderer::initContext();
 		// check renderer initialization
 		if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Ready) {
-			OWL_CORE_ERROR("ERROR while Initializing Renderer")
+			OWL_CORE_ERROR("ERROR while Initializing Renderer.")
 			m_state = State::Error;
 			return;
 		}
-		// wait for all asynchron tasks
+		// wait for all asynchronous tasks
 		m_scheduler.waitEmptyQueue();
 
 		OWL_CORE_TRACE("Renderer context initiated.")
@@ -195,7 +195,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 			gui::UiLayer::setTheme(theme);
 		}
-		// wait for all asynchron tasks
+		// wait for all asynchronous tasks
 		m_scheduler.waitEmptyQueue();
 
 		OWL_CORE_TRACE("GUI Layer created.")
@@ -204,8 +204,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	// Create the sound system, with fallback to Null if the requested backend is unavailable
 	// (typical in headless / container environments without an audio device).
 	{
-		const auto requestedSound =
-				m_initParams.isDummy ? sound::SoundAPI::Type::Null : m_initParams.sound;
+		const auto requestedSound = m_initParams.isDummy ? sound::SoundAPI::Type::Null : m_initParams.sound;
 
 		sound::SoundCommand::create(requestedSound);
 		bool soundReady = sound::SoundCommand::getState() == sound::SoundAPI::State::Created;
@@ -223,11 +222,11 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 			soundReady = sound::SoundCommand::getState() == sound::SoundAPI::State::Ready;
 		}
 		if (!soundReady) {
-			OWL_CORE_ERROR("ERROR while Initializing Sound system")
+			OWL_CORE_ERROR("ERROR while Initializing Sound system.")
 			m_state = State::Error;
 			return;
 		}
-		// wait for all asynchron tasks
+		// wait for all asynchronous tasks
 		m_scheduler.waitEmptyQueue();
 
 		OWL_CORE_INFO("Sound system initiated.")
@@ -247,9 +246,8 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 					ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
 					ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_Always);
 					if (ImGui::Begin("##Loading", nullptr,
-									 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-											 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-											 ImGuiWindowFlags_AlwaysAutoResize)) {
+									 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+											 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize)) {
 						ImGui::Text("Loading engine...");
 						const auto progress = static_cast<float>(iCurrent) / static_cast<float>(iTotal);
 						ImGui::ProgressBar(progress, ImVec2(-1, 0));
@@ -270,7 +268,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	// update the state here. (required for font initialization)
 	m_state = State::Running;
 	m_fontLibrary.init();
-	// wait for all asynchron tasks
+	// wait for all asynchronous tasks
 	m_scheduler.waitEmptyQueue();
 
 	OWL_CORE_TRACE("Application creation done.")
@@ -394,10 +392,10 @@ void Application::run() {
 			if (const auto& memState = debug::TrackerAPI::checkState();
 				memState.allocationCalls > memState.deallocationCalls && frameCount > 0) {
 				OWL_CORE_TRACE("----------------------------------")
-				OWL_CORE_TRACE("Frame Leak Detected")
+				OWL_CORE_TRACE("Frame Leak Detected.")
 				OWL_CORE_TRACE("-----------------------------------")
 				OWL_CORE_TRACE("")
-				OWL_CORE_TRACE(" LEAK Amount: {} in {} Unallocated chunks",
+				OWL_CORE_TRACE(" LEAK Amount: {} in {} Unallocated chunks.",
 							   owl::core::utils::sizeToString(memState.allocatedMemory), memState.allocs.size())
 				for (const auto& chunk: memState.allocs) { OWL_CORE_TRACE(" ** {}", chunk.toStr()) }
 
@@ -532,11 +530,10 @@ void AppParams::saveToFile(const std::filesystem::path& iFile) const {
 auto Application::openPack(const std::filesystem::path& iPackFile) -> bool {
 	closePack();
 	if (!m_packReader.open(iPackFile)) {
-		OWL_CORE_ERROR("Failed to open asset pack: {}", iPackFile.string())
+		OWL_CORE_ERROR("Failed to open asset pack: {}.", iPackFile.string())
 		return false;
 	}
-	OWL_CORE_INFO("Opened asset pack: {} ({} entries)", iPackFile.string(),
-				  m_packReader.getHeader().entryCount)
+	OWL_CORE_INFO("Opened asset pack: {} ({} entries).", iPackFile.string(), m_packReader.getHeader().entryCount)
 	return true;
 }
 

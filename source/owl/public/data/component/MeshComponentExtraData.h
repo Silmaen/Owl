@@ -32,7 +32,7 @@ class MeshExtraDataWriterPid;
  * @brief
  *  Reader for static mesh extra data.
  * @tparam TExtraData Type of the extra data to read.
- * @tparam ElementType The type of element
+ * @tparam ElementType The type of element.
  */
 template<typename TExtraData, geometry::MeshElementType ElementType>
 struct OWL_API ReadMeshExtraData {
@@ -77,7 +77,7 @@ struct OWL_API ReadMeshTriangleExtraData : public ReadMeshExtraData<TExtraData, 
  * @brief
  *  Read/Write structure for an extra data.
  * @tparam TExtraData Type of extra data to write.
- * @tparam ElementType The type of element
+ * @tparam ElementType The type of element.
  */
 template<typename TExtraData, geometry::MeshElementType ElementType>
 struct OWL_API WriteMeshExtraData : public ReadMeshExtraData<TExtraData, ElementType> {
@@ -108,7 +108,7 @@ struct OWL_API WriteMeshTriangleExtraData : public WriteMeshExtraData<TExtraData
  * @brief
  *  Read structure for an extra data from a PID.
  * @tparam ExtraDataConversionType Type of extra data to write.
- * @tparam ElementType The type of element
+ * @tparam ElementType The type of element.
  */
 template<typename ExtraDataConversionType, geometry::MeshElementType ElementType>
 struct OWL_API ReadMeshExtraDataPid : public ReadMeshExtraData<ExtraDataConversionType, ElementType> {
@@ -119,7 +119,7 @@ struct OWL_API ReadMeshExtraDataPid : public ReadMeshExtraData<ExtraDataConversi
  * @brief
  *  Read/Write structure for an extra data from a PID.
  * @tparam ExtraDataConversionType Type of extra data to write.
- * @tparam ElementType The type of element
+ * @tparam ElementType The type of element.
  */
 template<typename ExtraDataConversionType, geometry::MeshElementType ElementType>
 struct OWL_API WriteMeshExtraDataPid : public ReadMeshExtraDataPid<ExtraDataConversionType, ElementType> {
@@ -130,11 +130,12 @@ struct OWL_API WriteMeshExtraDataPid : public ReadMeshExtraDataPid<ExtraDataConv
  * @brief
  *   Read iterate component for an extra data.
  * @tparam TExtraData Extra data type to iterate.
- * @tparam ElementType The type of element
+ * @tparam ElementType The type of element.
  */
 template<typename TExtraData, geometry::MeshElementType ElementType>
 class OWL_API MeshExtraDataReader : public MeshComponentBase<true, ElementType> {
 	using CursorType = MeshComponentBase<true, ElementType>::CursorType;
+
 public:
 	/**
 	 * @brief
@@ -202,6 +203,7 @@ public:
 	 *  Check if the extra data is defined for the current element.
 	 * @retval True if the extra data is defined.
 	 * @retval False otherwise.
+	 * @return True when value is present.
 	 */
 	[[nodiscard]] auto hasValue() const -> bool {
 		if (m_extraDataContainer == nullptr)
@@ -217,7 +219,8 @@ public:
 	 */
 	[[nodiscard]] auto value() const -> shared<TExtraData> {
 		OWL_CORE_ASSERT(this->hasValue(), "MeshExtraDataReader::value")
-		return m_extraDataContainer==nullptr ? nullptr : m_extraDataContainer->getExtraDataAs<TExtraData>(m_currentIndex);
+		return m_extraDataContainer == nullptr ? nullptr
+											   : m_extraDataContainer->getExtraDataAs<TExtraData>(m_currentIndex);
 	}
 
 	/**
@@ -227,7 +230,8 @@ public:
 	 */
 	[[nodiscard]] auto value() -> shared<TExtraData> {
 		OWL_CORE_ASSERT(this->hasValue(), "MeshExtraDataReader::value")
-		return m_extraDataContainer==nullptr ? nullptr : m_extraDataContainer->getExtraDataAs<TExtraData>(m_currentIndex);
+		return m_extraDataContainer == nullptr ? nullptr
+											   : m_extraDataContainer->getExtraDataAs<TExtraData>(m_currentIndex);
 	}
 
 protected:
@@ -349,11 +353,12 @@ class OWL_API MeshTriangleExtraDataWriter : public MeshExtraDataWriter<TExtraDat
  * @brief
  *   Read iterate component for an extra data from a PID.
  * @tparam ExtraDataConversionType Type used to interpret fetched extra data.
- * @tparam ElementType The type of element
+ * @tparam ElementType The type of element.
  */
 template<typename ExtraDataConversionType, geometry::MeshElementType ElementType>
 class OWL_API MeshExtraDataReaderPid : public MeshComponentBase<true, ElementType> {
 	using CursorType = MeshComponentBase<true, ElementType>::CursorType;
+
 public:
 	/**
 	 * @brief
@@ -412,6 +417,7 @@ public:
 	 *  Check if the extra data is defined for the current element.
 	 * @retval True if the extra data is defined.
 	 * @retval False otherwise.
+	 * @return True when value is present.
 	 */
 	[[nodiscard]] auto hasValue() const -> bool { return m_extraDataIte.isValid(); }
 
@@ -470,7 +476,7 @@ class OWL_API MeshTriangleExtraDataReaderPid
  *  The extra data is created if it is not defined in cloud or unshared if already defined.
  *  So the component can be thread safe if the range is created before the multithreaded call.
  * @tparam ExtraDataConversionType Type used to interpret fetched extra data.
- * @tparam ElementType The type of element
+ * @tparam ElementType The type of element.
  */
 template<typename ExtraDataConversionType, geometry::MeshElementType ElementType>
 class OWL_API MeshExtraDataWriterPid : public MeshExtraDataReaderPid<ExtraDataConversionType, ElementType> {

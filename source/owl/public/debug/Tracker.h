@@ -30,7 +30,8 @@
 
 /**
  * @namespace owl
- * @brief Base namespace for the project.
+ * @brief
+ *  Base namespace for the project.
  */
 
 /**
@@ -92,7 +93,7 @@ struct OWL_API AllocationInfo {
 #endif
 	/**
 	 * @brief
-	 *  Express this allocation line as a string
+	 *  Express this allocation line as a string.
 	 * @param[in] iTracePrint If the simplified trace should be print.
 	 * @param[in] iFullTrace If we print the full stack trace instead of simplified one.
 	 * @return String of the allocation.
@@ -141,7 +142,7 @@ struct OWL_API AllocationState {
 	/**
 	 * @brief
 	 *  Add a chunk of memory to the database.
-	 * @param[in] iLocation Pointer to the allocated memory
+	 * @param[in] iLocation Pointer to the allocated memory.
 	 * @param[in] iSize Amount of allocated memory.
 	 */
 	void pushMemory(void* iLocation, size_t iSize);
@@ -199,10 +200,16 @@ public:
  */
 class OWL_API ScopeUntrack {
 public:
-	/// Constructor.
+	/**
+	 * @brief
+	 *  Constructor.
+	 */
 	ScopeUntrack();
 
-	/// Destructor.
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
 	~ScopeUntrack();
 
 	ScopeUntrack(const ScopeUntrack&) = delete;
@@ -219,10 +226,16 @@ public:
 */
 class OWL_API ScopeTrack {
 public:
-	/// Constructor.
+	/**
+	 * @brief
+	 *  Constructor.
+	 */
 	ScopeTrack();
 
-	/// Destructor.
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
 	~ScopeTrack();
 
 	ScopeTrack(const ScopeTrack&) = delete;

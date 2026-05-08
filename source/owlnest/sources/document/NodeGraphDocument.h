@@ -135,6 +135,7 @@ public:
 	/**
 	 * @brief
 	 *  Empty scene undo manager — node-graph edits use `nodeGraphUndoManager()`.
+	 * @return The SceneUndoManager override.
 	 */
 	[[nodiscard]] auto undoManager() -> SceneUndoManager& override { return m_emptySceneUndo; }
 
@@ -149,6 +150,7 @@ public:
 	/**
 	 * @brief
 	 *  Typed undo manager for `gui::widgets::NodeCanvas` operations.
+	 * @return The NodeGraphUndoManager.
 	 */
 	[[nodiscard]] auto nodeGraphUndoManager() -> NodeGraphUndoManager& { return m_undoManager; }
 
@@ -162,6 +164,7 @@ public:
 	/**
 	 * @brief
 	 *  The canvas owned by this document. Subclasses fill it on attach.
+	 * @return The gui widgets NodeCanvas.
 	 */
 	[[nodiscard]] auto canvas() -> gui::widgets::NodeCanvas& { return m_canvas; }
 
@@ -175,12 +178,14 @@ public:
 	/**
 	 * @brief
 	 *  Load a node graph from disk. Returns false on I/O or parse error.
+	 * @return True on success, false otherwise.
 	 */
 	auto loadFromFile(const std::filesystem::path& iPath) -> bool;
 
 	/**
 	 * @brief
 	 *  True while the user hasn't clicked the tab's close X.
+	 * @return True when the object is open.
 	 */
 	[[nodiscard]] auto isOpen() const -> bool { return m_pOpen; }
 

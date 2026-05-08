@@ -41,7 +41,7 @@ namespace owl::gui::widgets {
  *       scenePath: scenes/level1.owl
  * Links:
  *   - {id: 10, from: 2, to: 11}
- * ```
+ * ```.
  */
 class OWL_API NodeCanvasSerializer final {
 public:

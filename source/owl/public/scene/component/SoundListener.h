@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "core/Serializer.h"
 #include "core/Core.h"
+#include "core/Serializer.h"
 
 namespace owl::scene::component {
 /**

@@ -113,7 +113,9 @@ auto AssetScanner::resolveSound(const std::string& iSoundAsset) -> std::optional
 		return std::nullopt;
 	// Absolute path: resolve directly.
 	if (const std::filesystem::path absPath(iSoundAsset); absPath.is_absolute() && exists(absPath))
-		return AssetReference{.packPath = makeRelativePath(absPath), .diskPath = absPath, .assetType = AssetType::Sound};
+		return AssetReference{.packPath = makeRelativePath(absPath),
+							  .diskPath = absPath,
+							  .assetType = AssetType::Sound};
 	if (!core::Application::instanced())
 		return std::nullopt;
 	for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
@@ -132,7 +134,9 @@ auto AssetScanner::resolveScript(const std::string& iScriptPath) -> std::optiona
 		return std::nullopt;
 	// If the path is absolute and exists, use it directly.
 	if (const std::filesystem::path absPath(iScriptPath); absPath.is_absolute() && exists(absPath))
-		return AssetReference{.packPath = makeRelativePath(absPath), .diskPath = absPath, .assetType = AssetType::Script};
+		return AssetReference{.packPath = makeRelativePath(absPath),
+							  .diskPath = absPath,
+							  .assetType = AssetType::Script};
 	if (!core::Application::instanced())
 		return std::nullopt;
 	for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
@@ -176,8 +180,7 @@ auto AssetScanner::resolveScene(const std::string& iLevelName) -> std::optional<
  * scene paths (e.g., assigned to a variable for deferred loading).
  */
 void AssetScanner::scanLuaScriptForScenes(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-recursion)
-										  std::set<std::string>& ioVisitedScenes,
-										  std::vector<AssetReference>& ioAssets,
+										  std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
 										  std::vector<std::string>* ioWarnings) {
 	if (!exists(iScriptPath))
 		return;
@@ -192,14 +195,13 @@ void AssetScanner::scanLuaScriptForScenes(const std::filesystem::path& iScriptPa
 		if (auto scenePath = resolveScene(sceneName); scenePath)
 			scanSceneRecursive(*scenePath, ioVisitedScenes, ioAssets, ioWarnings);
 		else if (ioWarnings != nullptr)
-			ioWarnings->push_back(std::format("Scene '{}' referenced by {} not found", sceneName,
-											  iScriptPath.filename().string()));
+			ioWarnings->push_back(
+					std::format("Scene '{}' referenced by {} not found", sceneName, iScriptPath.filename().string()));
 	}
 }
 
 void AssetScanner::scanLuaScriptForSounds(const std::filesystem::path& iScriptPath,
-										  std::vector<AssetReference>& ioAssets,
-										  std::vector<std::string>* ioWarnings) {
+										  std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
 	if (!exists(iScriptPath))
 		return;
 	std::ifstream scriptFile(iScriptPath);
@@ -213,15 +215,14 @@ void AssetScanner::scanLuaScriptForSounds(const std::filesystem::path& iScriptPa
 			if (!hasAsset(ioAssets, ref->packPath))
 				ioAssets.push_back(*ref);
 		} else if (ioWarnings != nullptr) {
-			ioWarnings->push_back(std::format("Sound '{}' referenced by {} not found", soundName,
-											  iScriptPath.filename().string()));
+			ioWarnings->push_back(
+					std::format("Sound '{}' referenced by {} not found", soundName, iScriptPath.filename().string()));
 		}
 	}
 }
 
 void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,// NOLINT(misc-no-recursion)
-									  std::set<std::string>& ioVisitedScenes,
-									  std::vector<AssetReference>& ioAssets,
+									  std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
 									  std::vector<std::string>* ioWarnings) {
 	const auto sceneStr = iSceneFile.string();
 	if (ioVisitedScenes.contains(sceneStr))
@@ -240,9 +241,7 @@ void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,//
 	YAML::Node data;
 	try {
 		data = YAML::LoadFile(sceneStr);
-	} catch (...) {
-		return;
-	}
+	} catch (...) { return; }
 
 	if (!data["Scene"])
 		return;
@@ -252,8 +251,7 @@ void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,//
 		return;
 
 	const auto sceneName = iSceneFile.filename().string();
-	for (auto entity: entities)
-		scanEntity(entity, sceneName, ioVisitedScenes, ioAssets, ioWarnings);
+	for (auto entity: entities) scanEntity(entity, sceneName, ioVisitedScenes, ioAssets, ioWarnings);
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
@@ -366,8 +364,8 @@ void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 	}
 }
 
-auto AssetScanner::scanScene(const std::filesystem::path& iSceneFile,
-							 std::vector<std::string>* oWarnings) -> std::vector<AssetReference> {
+auto AssetScanner::scanScene(const std::filesystem::path& iSceneFile, std::vector<std::string>* oWarnings)
+		-> std::vector<AssetReference> {
 	std::set<std::string> visited;
 	std::vector<AssetReference> assets;
 	scanSceneRecursive(iSceneFile, visited, assets, oWarnings);

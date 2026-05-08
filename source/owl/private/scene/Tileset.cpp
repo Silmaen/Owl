@@ -76,8 +76,7 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 
 	// Sparse: emit only the entries that differ from the default.
 	const uint32_t total = tileCount();
-	const auto count =
-			static_cast<std::vector<TileMeta>::difference_type>(std::min<size_t>(tiles.size(), total));
+	const auto count = static_cast<std::vector<TileMeta>::difference_type>(std::min<size_t>(tiles.size(), total));
 	const bool anySpecial = std::any_of(tiles.begin(), tiles.begin() + count,
 										[](const TileMeta& m) -> bool { return m.collidable || !m.name.empty(); });
 	if (anySpecial) {
@@ -106,7 +105,7 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 	try {
 		root = YAML::Load(std::string{iYaml});
 	} catch (const YAML::Exception& e) {
-		OWL_CORE_ERROR("Tileset: failed to parse YAML — {}", e.what())
+		OWL_CORE_ERROR("Tileset: failed to parse YAML — {}.", e.what())
 		return false;
 	}
 	if (!root || !root.IsMap() || !root["Tileset"])
@@ -119,7 +118,8 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 			parsed.filterMode = renderer::gpu::FilterMode::Linear;
 	}
 	if (root["texture"]) {
-		parsed.texture = renderer::gpu::Texture2D::createFromSerializedForDeserialize(root["texture"].as<std::string>());
+		parsed.texture =
+				renderer::gpu::Texture2D::createFromSerializedForDeserialize(root["texture"].as<std::string>());
 		if (parsed.texture)
 			parsed.texture->setFilterMode(parsed.filterMode);
 	}
@@ -154,7 +154,7 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 auto Tileset::saveToFile(const std::filesystem::path& iPath, const std::string_view iName) const -> bool {
 	std::ofstream out(iPath, std::ios::binary);
 	if (!out.is_open()) {
-		OWL_CORE_ERROR("Tileset: failed to open '{}' for writing", iPath.string())
+		OWL_CORE_ERROR("Tileset: failed to open '{}' for writing.", iPath.string())
 		return false;
 	}
 	const auto displayName = iName.empty() ? iPath.stem().string() : std::string{iName};
@@ -165,7 +165,7 @@ auto Tileset::saveToFile(const std::filesystem::path& iPath, const std::string_v
 auto Tileset::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	std::ifstream in(iPath, std::ios::binary);
 	if (!in.is_open()) {
-		OWL_CORE_ERROR("Tileset: failed to open '{}' for reading", iPath.string())
+		OWL_CORE_ERROR("Tileset: failed to open '{}' for reading.", iPath.string())
 		return false;
 	}
 	std::stringstream buffer;

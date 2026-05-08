@@ -48,8 +48,7 @@ auto RenderLayerFactory::registeredTypes() -> std::vector<std::string> {
 	const auto& reg = registry();
 	std::vector<std::string> keys;
 	keys.reserve(reg.size());
-	for (const auto& key: reg | std::views::keys)
-		keys.push_back(key);
+	for (const auto& key: reg | std::views::keys) keys.push_back(key);
 	std::ranges::sort(keys);
 	return keys;
 }

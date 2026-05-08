@@ -133,8 +133,8 @@ public:
 
 	/**
 	 * @brief
-	 *  Compute the stages informations.
-	 * @return Stage informations.
+	 *  Compute the stages' information.
+	 * @return Stage information.
 	 */
 	auto getStagesInfo() -> std::vector<VkPipelineShaderStageCreateInfo>;
 

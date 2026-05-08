@@ -107,7 +107,7 @@ auto AnimationDocument::save() -> bool {
 auto AnimationDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	const auto displayName = iPath.stem().string();
 	if (!m_clip.saveToFile(iPath, displayName)) {
-		OWL_CORE_ERROR("AnimationDocument: failed to write '{}'", iPath.string())
+		OWL_CORE_ERROR("AnimationDocument: failed to write '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;
@@ -117,7 +117,7 @@ auto AnimationDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 
 auto AnimationDocument::loadFromFile(const std::filesystem::path& iPath) -> bool {
 	if (!m_clip.loadFromFile(iPath)) {
-		OWL_CORE_ERROR("AnimationDocument: failed to load '{}'", iPath.string())
+		OWL_CORE_ERROR("AnimationDocument: failed to load '{}'.", iPath.string())
 		return false;
 	}
 	m_path = iPath;
@@ -175,8 +175,7 @@ void AnimationDocument::renderProperties() {
 		m_clip.firstFrame = static_cast<uint32_t>(std::clamp(first, 0, maxFrame));
 	int last = static_cast<int>(m_clip.lastFrame);
 	if (ImGui::DragInt("Last Frame", &last, 1, static_cast<int>(m_clip.firstFrame), maxFrame))
-		m_clip.lastFrame =
-				static_cast<uint32_t>(std::clamp(last, static_cast<int>(m_clip.firstFrame), maxFrame));
+		m_clip.lastFrame = static_cast<uint32_t>(std::clamp(last, static_cast<int>(m_clip.firstFrame), maxFrame));
 	ImGui::DragFloat("Frame Duration", &m_clip.frameDuration, 0.01f, 0.001f, 10.f, "%.3f s");
 	ImGui::Checkbox("Loop", &m_clip.loop);
 
@@ -207,9 +206,9 @@ void AnimationDocument::renderPreview() {
 		drawList->AddRectFilled(cursor, ImVec2{cursor.x + previewSize.x, cursor.y + previewSize.y}, col, 4.f);
 		const auto* msg = "Drop a spritesheet";
 		const auto txtSize = ImGui::CalcTextSize(msg);
-		drawList->AddText(ImVec2{cursor.x + (previewSize.x - txtSize.x) * 0.5f,
-								 cursor.y + (previewSize.y - txtSize.y) * 0.5f},
-						  ImGui::GetColorU32(ImGuiCol_TextDisabled), msg);
+		drawList->AddText(
+				ImVec2{cursor.x + (previewSize.x - txtSize.x) * 0.5f, cursor.y + (previewSize.y - txtSize.y) * 0.5f},
+				ImGui::GetColorU32(ImGuiCol_TextDisabled), msg);
 		ImGui::Dummy(previewSize);
 	}
 
@@ -247,9 +246,8 @@ void AnimationDocument::renderTimeline() {
 	});
 
 	auto currentFrame = static_cast<int32_t>(m_currentFrame);
-	const bool changed =
-			gui::widgets::sequencer("##animTimeline", entries, currentFrame, m_seqFirstVisibleFrame, opts,
-									{0.f, g_timelineHeight});
+	const bool changed = gui::widgets::sequencer("##animTimeline", entries, currentFrame, m_seqFirstVisibleFrame, opts,
+												 {0.f, g_timelineHeight});
 
 	// Clamp + write back to the clip when the user dragged the bar handles.
 	const auto first = std::clamp(entries[0].startFrame, opts.frameMin, opts.frameMax);
@@ -278,9 +276,8 @@ void AnimationDocument::advancePlayback(const float iSeconds) {
 		return;
 	if (m_clip.frameDuration <= 0.f)
 		return;
-	const uint32_t totalFrames = (m_clip.lastFrame >= m_clip.firstFrame)
-										 ? (m_clip.lastFrame - m_clip.firstFrame + 1u)
-										 : 0u;
+	const uint32_t totalFrames =
+			(m_clip.lastFrame >= m_clip.firstFrame) ? (m_clip.lastFrame - m_clip.firstFrame + 1u) : 0u;
 	if (totalFrames <= 1u)
 		return;
 

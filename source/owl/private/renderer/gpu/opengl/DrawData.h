@@ -7,10 +7,10 @@
  */
 #pragma once
 
-#include "renderer/gpu/DrawData.h"
 #include "Buffer.h"
 #include "Shader.h"
 #include "VertexArray.h"
+#include "renderer/gpu/DrawData.h"
 
 namespace owl::renderer::gpu::opengl {
 /**
@@ -61,7 +61,7 @@ public:
 	/**
 	 * @brief
 	 *  Push Vertices data  to the draw buffer.
-	 * @param[in] iData The raw vertices data
+	 * @param[in] iData The raw vertices data.
 	 * @param[in] iSize The size of the raw data.
 	 */
 	void setVertexData(const void* iData, uint32_t iSize) override;
@@ -69,7 +69,7 @@ public:
 	/**
 	 * @brief
 	 *  Get the number of vertex to draw.
-	 * @return Number of vertex to draw
+	 * @return Number of vertex to draw.
 	 */
 	[[nodiscard]] auto getIndexCount() const -> uint32_t override;
 

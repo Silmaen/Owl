@@ -48,7 +48,7 @@ constexpr inline EditCoordinate EditCoordinates;
  * @brief
  *  Base component used by the cloud range.
  * @tparam IsConst True if the cursor must be const, false otherwise.
- * @tparam ElementType The type of element
+ * @tparam ElementType The type of element.
  */
 template<bool IsConst, geometry::MeshElementType ElementType>
 class OWL_API MeshComponentBase {
@@ -167,6 +167,7 @@ protected:
  */
 class OWL_API EditMeshVertexCoordinate : public MeshVertexCoordinate<false> {
 	using CursorType = geometry::MeshCursorBase<false, geometry::MeshElementType::Vertex>;
+
 public:
 	using MeshVertexCoordinate<false>::MeshVertexCoordinate;
 

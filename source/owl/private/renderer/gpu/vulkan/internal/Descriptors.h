@@ -83,7 +83,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Create the descriptor sets
+	 *  Create the descriptor sets.
 	 */
 	void createDescriptors();
 
@@ -103,7 +103,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Register new texture data in the
+	 *  Register new texture data in the.
 	 * @return Id of the created texture.
 	 */
 	auto registerNewTexture() -> uint32_t;

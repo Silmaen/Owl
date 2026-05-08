@@ -39,8 +39,7 @@ void parallelForEach(tf::Executor& ioExecutor, Iterator iBegin, Iterator iEnd, C
  * @param[in] iFunc Function to apply to each index.
  */
 template<typename IndexType, typename Callable>
-void parallelForIndex(tf::Executor& ioExecutor, IndexType iBegin, IndexType iEnd, IndexType iStep,
-					  Callable&& iFunc) {
+void parallelForIndex(tf::Executor& ioExecutor, IndexType iBegin, IndexType iEnd, IndexType iStep, Callable&& iFunc) {
 	tf::Taskflow taskflow;
 	taskflow.for_each_index(iBegin, iEnd, iStep, std::forward<Callable>(iFunc));
 	ioExecutor.run(taskflow).wait();

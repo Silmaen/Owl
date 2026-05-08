@@ -12,7 +12,8 @@
 
 /**
  * @namespace owl::data
- * @brief Namespace for data management.
+ * @brief
+ *  Namespace for data management.
  */
 namespace owl::data::assets {
 /**

@@ -56,8 +56,7 @@ public:
 	 * @param[in] iDescription Human-readable description for the undo menu.
 	 */
 	SceneFlowCompositeCommand(uniq<SceneUndoCommand> iSceneCmd, uniq<NodeGraphUndoCommand> iCanvasCmd,
-							  std::filesystem::path iSourceScenePath, EditorLayer* iEditor,
-							  std::string iDescription);
+							  std::filesystem::path iSourceScenePath, EditorLayer* iEditor, std::string iDescription);
 
 	/**
 	 * @brief

@@ -109,7 +109,7 @@ public:
 
 	/**
 	 * @brief
-	 * To convert to math::vec3
+	 * To convert to math::vec3.
 	 */
 	explicit operator const math::vec3&() const { return m_position; }
 

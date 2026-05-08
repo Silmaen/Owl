@@ -39,7 +39,7 @@ protected:
 
 /**
  * @brief
- *  Event of key presse
+ *  Event of key pressed.
  */
 class OWL_API KeyPressedEvent final : public KeyEvent {
 public:
@@ -54,7 +54,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Check if the key is repeated
+	 *  Check if the key is repeated.
 	 * @return True if repeated
 	 */
 	[[nodiscard]] auto getRepeatCount() const -> uint16_t { return m_repeatCount; }
@@ -95,7 +95,7 @@ private:
 };
 /**
  * @brief
- *  Event of key released
+ *  Event of key released.
  */
 class OWL_API KeyReleasedEvent final : public KeyEvent {
 public:
@@ -139,7 +139,7 @@ public:
 
 /**
  * @brief
- *  Event of key typed
+ *  Event of key typed.
  */
 class OWL_API KeyTypedEvent final : public KeyEvent {
 public:

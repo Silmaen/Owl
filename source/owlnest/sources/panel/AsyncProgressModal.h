@@ -40,6 +40,7 @@ struct AsyncProgressState {
 	/**
 	 * @brief
 	 *  Get the current status message (thread-safe).
+	 * @return The message.
 	 */
 	[[nodiscard]] auto getMessage() const -> std::string {
 		const std::lock_guard<std::mutex> lock(m_mutex);
@@ -61,6 +62,7 @@ struct AsyncProgressState {
 	/**
 	 * @brief
 	 *  Get the error message (thread-safe).
+	 * @return The error.
 	 */
 	[[nodiscard]] auto getError() const -> std::string {
 		const std::lock_guard<std::mutex> lock(m_mutex);
@@ -112,12 +114,14 @@ public:
 	/**
 	 * @brief
 	 *  Check if the modal is currently active.
+	 * @return True when the object is active.
 	 */
 	[[nodiscard]] auto isActive() const -> bool { return m_active; }
 
 	/**
 	 * @brief
 	 *  Check if the operation has finished (success or error).
+	 * @return True when the object is finished.
 	 */
 	[[nodiscard]] auto isFinished() const -> bool;
 

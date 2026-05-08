@@ -7,8 +7,8 @@
  */
 #include "owlpch.h"
 
-#include "renderer/Renderer.h"
 #include "DrawData.h"
+#include "renderer/Renderer.h"
 
 namespace owl::renderer::gpu::opengl {
 

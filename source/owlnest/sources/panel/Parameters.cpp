@@ -143,7 +143,8 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 
 			ImGui::OpenPopup(g_restartPopupName);
 		if (ImGui::BeginPopupModal(g_restartPopupName, nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-			ImGui::Text("Renderer or Sound backend has changed.\nPlease restart the application for the changes to take effect.");
+			ImGui::Text("Renderer or Sound backend has changed.\nPlease restart the application for the changes to "
+						"take effect.");
 
 			ImGui::Separator();
 			if (iconBank.iconButton("close", "OK##restart")) {

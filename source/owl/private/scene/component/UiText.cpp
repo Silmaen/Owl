@@ -22,8 +22,7 @@ void UiText::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "text" << YAML::Value << text;
 	iOut.getImpl()->emitter << YAML::Key << "color" << YAML::Value << color;
 	iOut.getImpl()->emitter << YAML::Key << "fontSize" << YAML::Value << fontSize;
-	iOut.getImpl()->emitter << YAML::Key << "alignment" << YAML::Value
-							<< std::string(magic_enum::enum_name(alignment));
+	iOut.getImpl()->emitter << YAML::Key << "alignment" << YAML::Value << std::string(magic_enum::enum_name(alignment));
 	iOut.getImpl()->emitter << YAML::Key << "kerning" << YAML::Value << kerning;
 	iOut.getImpl()->emitter << YAML::Key << "lineSpacing" << YAML::Value << lineSpacing;
 	if (font && !font->isDefault())

@@ -104,8 +104,7 @@ void ContentBrowser::requestScan(const std::filesystem::path& iPath) {
 				if (!exists(iPath) || !is_directory(iPath))
 					return;
 				std::error_code ec;
-				for (const auto& entry: std::filesystem::directory_iterator(iPath, ec))
-					buffer->push_back(entry);
+				for (const auto& entry: std::filesystem::directory_iterator(iPath, ec)) buffer->push_back(entry);
 				std::ranges::sort(*buffer, [](const auto& iA, const auto& iB) -> auto {
 					if (iA.is_directory() != iB.is_directory())
 						return iA.is_directory();
@@ -155,8 +154,8 @@ void ContentBrowser::renderTopBand() {
 			constexpr float btnSize = 20.0f;
 			ImGui::PushStyleColor(ImGuiCol_Button, gui::vec(math::vec4{0.f, 0.f, 0.f, 0.f}));
 			clicked = ImGui::ImageButton("##back", static_cast<ImTextureID>(iconInfo->textureId),
-									   gui::vec(math::vec2{btnSize, btnSize}), gui::vec(iconInfo->uv0),
-									   gui::vec(iconInfo->uv1));
+										 gui::vec(math::vec2{btnSize, btnSize}), gui::vec(iconInfo->uv0),
+										 gui::vec(iconInfo->uv1));
 			ImGui::PopStyleColor();
 		} else {
 			clicked = ImGui::Button("Back");
@@ -205,8 +204,8 @@ void ContentBrowser::renderContent() {
 		constexpr auto thumbSizeVec = gui::vec(math::vec2{thumbnailSize, thumbnailSize});
 		if (iconInfo.has_value()) {
 			ImGui::ImageButton(std::format("content_btn_{}", item).c_str(),
-							   static_cast<ImTextureID>(iconInfo->textureId), thumbSizeVec,
-							   gui::vec(iconInfo->uv0), gui::vec(iconInfo->uv1));
+							   static_cast<ImTextureID>(iconInfo->textureId), thumbSizeVec, gui::vec(iconInfo->uv0),
+							   gui::vec(iconInfo->uv1));
 		} else {
 			ImGui::Button(filenameString.c_str(), thumbSizeVec);
 		}
@@ -250,9 +249,9 @@ void ContentBrowser::renderContent() {
 				m_animationOpenCallback(path);
 			} else if (m_codeOpenCallback) {
 				const auto ext = path.extension().string();
-				static const std::vector<std::string> codeExts = {
-						".lua", ".py",  ".c",    ".cpp", ".cc",  ".cxx", ".h", ".hpp",
-						".hxx", ".yml", ".yaml", ".json", ".md", ".markdown", ".svg", ".xml"};
+				static const std::vector<std::string> codeExts = {".lua", ".py",       ".c",   ".cpp", ".cc",   ".cxx",
+																  ".h",   ".hpp",      ".hxx", ".yml", ".yaml", ".json",
+																  ".md",  ".markdown", ".svg", ".xml"};
 				if (std::ranges::find(codeExts, ext) != codeExts.end())
 
 					m_codeOpenCallback(path);
@@ -384,7 +383,7 @@ void ContentBrowser::renderContextMenu() {
 				std::filesystem::rename(m_selectedPath, newPath, ec);
 				if (ec)
 
-					OWL_CORE_ERROR("Failed to rename '{}': {}", m_selectedPath.filename().string(), ec.message())
+					OWL_CORE_ERROR("Failed to rename '{}': {}.", m_selectedPath.filename().string(), ec.message())
 				else
 					m_rescanRequested = true;
 			}
@@ -445,7 +444,7 @@ void ContentBrowser::deleteSelected() {
 	}
 
 	if (ec)
-		OWL_CORE_ERROR("Failed to delete '{}': {}", m_selectedPath.filename().string(), ec.message())
+		OWL_CORE_ERROR("Failed to delete '{}': {}.", m_selectedPath.filename().string(), ec.message())
 
 	m_selectedPath.clear();
 	m_rescanRequested = true;
@@ -463,7 +462,7 @@ void ContentBrowser::createFolder() {
 	std::error_code ec;
 	std::filesystem::create_directory(folderPath, ec);
 	if (ec)
-		OWL_CORE_ERROR("Failed to create folder: {}", ec.message())
+		OWL_CORE_ERROR("Failed to create folder: {}.", ec.message())
 	else
 		m_rescanRequested = true;
 }
@@ -477,7 +476,7 @@ void ContentBrowser::importFiles() {
 	std::error_code ec;
 	std::filesystem::copy(file, destPath, std::filesystem::copy_options::overwrite_existing, ec);
 	if (ec)
-		OWL_CORE_ERROR("Failed to import '{}': {}", file.filename().string(), ec.message())
+		OWL_CORE_ERROR("Failed to import '{}': {}.", file.filename().string(), ec.message())
 	else
 		m_rescanRequested = true;
 }
@@ -491,7 +490,7 @@ void ContentBrowser::importFolder() {
 	std::error_code ec;
 	std::filesystem::copy(folder, destPath, std::filesystem::copy_options::recursive, ec);
 	if (ec)
-		OWL_CORE_ERROR("Failed to import folder '{}': {}", folder.filename().string(), ec.message())
+		OWL_CORE_ERROR("Failed to import folder '{}': {}.", folder.filename().string(), ec.message())
 	else
 		m_rescanRequested = true;
 }
@@ -509,7 +508,7 @@ void ContentBrowser::handleFileDrop(const std::vector<std::filesystem::path>& iP
 			std::filesystem::copy(sourcePath, destPath, std::filesystem::copy_options::overwrite_existing, ec);
 		}
 		if (ec)
-			OWL_CORE_ERROR("Failed to import dropped file '{}': {}", sourcePath.filename().string(), ec.message())
+			OWL_CORE_ERROR("Failed to import dropped file '{}': {}.", sourcePath.filename().string(), ec.message())
 		else
 			m_rescanRequested = true;
 	}
@@ -524,14 +523,14 @@ void ContentBrowser::moveItem(const std::filesystem::path& iSource, const std::f
 	std::filesystem::rename(iSource, destPath, ec);
 	if (ec) {
 		// rename fails across filesystems, fall back to copy + delete
-		std::filesystem::copy(iSource, destPath,
-							  std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing,
-							  ec);
+		std::filesystem::copy(
+				iSource, destPath,
+				std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing, ec);
 		if (!ec) {
 			std::filesystem::remove_all(iSource, ec);
 		}
 		if (ec)
-			OWL_CORE_ERROR("Failed to move '{}': {}", iSource.filename().string(), ec.message())
+			OWL_CORE_ERROR("Failed to move '{}': {}.", iSource.filename().string(), ec.message())
 	}
 	if (!ec)
 		m_rescanRequested = true;

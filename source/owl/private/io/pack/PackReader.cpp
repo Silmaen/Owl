@@ -86,9 +86,7 @@ auto PackReader::tryOpen(const std::filesystem::path& iPackFile) -> owl::expecte
 	// Build hash index.
 	m_hashIndex.clear();
 	m_hashIndex.reserve(m_toc.size());
-	for (size_t i = 0; i < m_toc.size(); ++i) {
-		m_hashIndex[m_toc[i].pathHash] = i;
-	}
+	for (size_t i = 0; i < m_toc.size(); ++i) { m_hashIndex[m_toc[i].pathHash] = i; }
 
 	return {};
 }
@@ -139,15 +137,13 @@ auto PackReader::readEntry(const std::string& iPath) const -> std::optional<std:
 auto PackReader::listEntries() const -> std::vector<std::string> {
 	std::vector<std::string> paths;
 	paths.reserve(m_toc.size());
-	for (const auto& entry : m_toc) {
-		paths.push_back(entry.path);
-	}
+	for (const auto& entry: m_toc) { paths.push_back(entry.path); }
 	return paths;
 }
 
 auto PackReader::listEntries(const AssetType iType) const -> std::vector<std::string> {
 	std::vector<std::string> paths;
-	for (const auto& entry : m_toc) {
+	for (const auto& entry: m_toc) {
 		if (entry.assetType == iType)
 			paths.push_back(entry.path);
 	}

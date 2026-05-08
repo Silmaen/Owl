@@ -43,7 +43,7 @@ public:
 	/**
 	 * @brief
 	 *  Initialize the input;
-	 * @param[in] iType the type of input
+	 * @param[in] iType the type of input.
 	 */
 	static void init(const window::Type& iType = window::Type::Glfw);
 

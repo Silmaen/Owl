@@ -18,8 +18,7 @@ class CurveDelegate final : public ImCurveEdit::Delegate {
 public:
 	explicit CurveDelegate(math::Curve& iCurve) {
 		m_buffer.reserve(iCurve.keyCount());
-		for (const auto& key: iCurve.keys())
-			m_buffer.emplace_back(key.time, key.value);
+		for (const auto& key: iCurve.keys()) m_buffer.emplace_back(key.time, key.value);
 		fitRangeToBuffer();
 	}
 
@@ -125,8 +124,7 @@ auto curveEditor(const char* iLabel, math::Curve& ioCurve, const ImVec2 iSize) -
 	ImCurveEdit::Edit(delegate, iSize, ImGui::GetID("##canvas"));
 	if (delegate.dirty()) {
 		ioCurve.clear();
-		for (const auto& point: delegate.buffer())
-			ioCurve.addKey({point.x, point.y});
+		for (const auto& point: delegate.buffer()) ioCurve.addKey({point.x, point.y});
 		changed = true;
 	}
 	constexpr std::array<const char*, 3> modeNames{"Constant", "Linear", "Smooth"};

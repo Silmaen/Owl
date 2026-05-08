@@ -18,7 +18,7 @@
 #include <entt/entt.hpp>
 /**
  * @brief
- *  Namespace for the scene elements
+ *  Namespace for the scene elements.
  */
 namespace owl::scene {
 
@@ -153,7 +153,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Access to the primary player
+	 *  Access to the primary player.
 	 * @return The primary player.
 	 */
 	auto getPrimaryPlayer() -> Entity;
@@ -247,7 +247,7 @@ public:
 	entt::registry registry;
 	/**
 	 * @brief
-	 *  List the statuses
+	 *  List the statuses.
 	 */
 	enum struct Status : uint8_t {
 		Editing,///< Editing.

@@ -139,16 +139,31 @@ public:
 	 */
 	static void resetToDefault(const std::string& iKey);
 
-	/// Reset all user overrides to defaults.
+	/**
+	 * @brief
+	 *  Reset all user overrides to defaults.
+	 */
 	static void resetAllToDefaults();
 
-	/// Check if a user override exists for a key.
+	/**
+	 * @brief
+	 *  Check if a user override exists for a key.
+	 * @return True when override is present.
+	 */
 	[[nodiscard]] static auto hasOverride(const std::string& iKey) -> bool;
 
-	/// Check if a key exists (in overrides or defaults).
+	/**
+	 * @brief
+	 *  Check if a key exists (in overrides or defaults).
+	 * @return True when has is present.
+	 */
 	[[nodiscard]] static auto has(const std::string& iKey) -> bool;
 
-	/// Get all keys (union of defaults and overrides).
+	/**
+	 * @brief
+	 *  Get all keys (union of defaults and overrides).
+	 * @return The std vector.
+	 */
 	[[nodiscard]] static auto keys() -> std::vector<std::string>;
 
 	/**
@@ -160,7 +175,10 @@ public:
 	 */
 	static void applyBuiltins();
 
-	/// Clear all data (defaults + overrides). Used for testing.
+	/**
+	 * @brief
+	 *  Clear all data (defaults + overrides). Used for testing.
+	 */
 	static void clear();
 
 	/// Built-in setting key constants.

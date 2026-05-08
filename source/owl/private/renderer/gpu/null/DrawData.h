@@ -59,7 +59,7 @@ public:
 	/**
 	 * @brief
 	 *  Push Vertices data  to the draw buffer.
-	 * @param[in] iData The raw vertices data
+	 * @param[in] iData The raw vertices data.
 	 * @param[in] iSize The size of the raw data.
 	 */
 	void setVertexData([[maybe_unused]] const void* iData, [[maybe_unused]] uint32_t iSize) override {}
@@ -67,7 +67,7 @@ public:
 	/**
 	 * @brief
 	 *  Get the number of vertex to draw.
-	 * @return Number of vertex to draw
+	 * @return Number of vertex to draw.
 	 */
 	[[nodiscard]] auto getIndexCount() const -> uint32_t override { return 0; }
 

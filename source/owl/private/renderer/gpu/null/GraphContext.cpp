@@ -11,7 +11,7 @@
 
 namespace owl::renderer::gpu::null {
 
-GraphContext::GraphContext(GLFWwindow *) {}
+GraphContext::GraphContext(GLFWwindow*) {}
 
 void GraphContext::init() {}
 

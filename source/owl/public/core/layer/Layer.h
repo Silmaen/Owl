@@ -15,7 +15,7 @@
 
 /**
  * @brief
- *  Namespace for the layer definition
+ *  Namespace for the layer definition.
  */
 namespace owl::core::layer {
 /**

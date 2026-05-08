@@ -40,10 +40,12 @@ constexpr auto operator&(const PackFlags iLhs, const PackFlags iRhs) -> PackFlag
 	return static_cast<PackFlags>(static_cast<uint16_t>(iLhs) & static_cast<uint16_t>(iRhs));
 }
 
-/// Check if a flag is set.
-constexpr auto hasFlag(const PackFlags iFlags, const PackFlags iFlag) -> bool {
-	return (iFlags & iFlag) == iFlag;
-}
+/**
+ * @brief
+ *  Check if a flag is set.
+ * @return True when flag is present.
+ */
+constexpr auto hasFlag(const PackFlags iFlags, const PackFlags iFlag) -> bool { return (iFlags & iFlag) == iFlag; }
 
 /// Type of asset stored in the pack.
 enum struct AssetType : uint8_t {

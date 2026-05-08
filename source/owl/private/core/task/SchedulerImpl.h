@@ -17,7 +17,10 @@ namespace owl::core::task {
  *  Private implementation of the Scheduler, hiding Taskflow internals.
  */
 struct SchedulerImpl {
-	/// The Taskflow executor (thread pool) — declared first so it is destroyed last.
+	/**
+	 * @brief
+	 *  The Taskflow executor (thread pool) — declared first so it is destroyed last.
+	 */
 	tf::Executor executor{std::thread::hardware_concurrency()};
 	/// Tasks waiting to be submitted.
 	std::deque<shared<Task>> tasksQueue;

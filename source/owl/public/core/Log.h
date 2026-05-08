@@ -14,7 +14,7 @@
 namespace owl::debug {
 
 class LogBuffer;
-} // namespace owl::debug
+}// namespace owl::debug
 
 /**
  * @brief
@@ -51,7 +51,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Defines the Verbosity level
+	 *  Defines the Verbosity level.
 	 * @param[in] iLevel Verbosity level.
 	 */
 	static void setVerbosityLevel(const Level& iLevel);

@@ -32,8 +32,9 @@ void SoundSource::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["soundAsset"])
 		sound.soundAsset = iNode.getImpl()->node["soundAsset"].as<std::string>();
 	if (iNode.getImpl()->node["category"])
-		sound.category = magic_enum::enum_cast<SceneSound::Category>(iNode.getImpl()->node["category"].as<std::string>())
-								 .value_or(SceneSound::Category::SFX);
+		sound.category =
+				magic_enum::enum_cast<SceneSound::Category>(iNode.getImpl()->node["category"].as<std::string>())
+						.value_or(SceneSound::Category::SFX);
 	if (iNode.getImpl()->node["volume"])
 		sound.volume = iNode.getImpl()->node["volume"].as<float>();
 	if (iNode.getImpl()->node["pitch"])

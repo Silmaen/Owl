@@ -60,7 +60,7 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	}
 	msdfgen::FontHandle* font = loadFont(ft, iPath.string().c_str());
 	if (font == nullptr) {
-		OWL_CORE_ERROR("Font: Failed to load font: {}", iPath.string())
+		OWL_CORE_ERROR("Font: Failed to load font: {}.", iPath.string())
 		return;
 	}
 	struct CharsetRange {
@@ -78,7 +78,7 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	m_data->fontGeometry = msdf_atlas::FontGeometry(&m_data->glyphs);
 	int glyphsLoaded = m_data->fontGeometry.loadCharset(font, fontScale, charset);
 
-	OWL_CORE_INFO("Font {}: Loaded {} glyphs from font (out of {})", iPath.filename().stem().string(), glyphsLoaded,
+	OWL_CORE_INFO("Font {}: Loaded {} glyphs from font (out of {}).", iPath.filename().stem().string(), glyphsLoaded,
 				  charset.size())
 	double emSize = 40.0;
 	msdf_atlas::TightAtlasPacker atlasPacker;
@@ -104,7 +104,8 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 		msdf_atlas::Workload(
 				[&glyphs = m_data->glyphs, &coloringSeed](const int i, [[maybe_unused]] int iThreadNo) -> bool {
 					const uint64_t glyphSeed =
-							(lcgMultiplier * (coloringSeed ^ static_cast<uint64_t>(i)) + lcgIncrement) * static_cast<uint64_t>(coloringSeed != 0);
+							(lcgMultiplier * (coloringSeed ^ static_cast<uint64_t>(i)) + lcgIncrement) *
+							static_cast<uint64_t>(coloringSeed != 0);
 					glyphs[static_cast<size_t>(i)].edgeColoring(msdfgen::edgeColoringInkTrap, DEFAULT_ANGLE_THRESHOLD,
 																glyphSeed);
 					return true;
@@ -160,8 +161,8 @@ auto Font::getGlyphBox(const char& iChar) const -> GlyphMetrics {
 	}
 	// Cast through unsigned char first so Latin-1 codepoints (0x80-0xFF, e.g. accented chars)
 	// don't get sign-extended into a garbage 32-bit value.
-	const auto* glyph = m_data->fontGeometry.getGlyph(
-			static_cast<msdfgen::unicode_t>(static_cast<unsigned char>(iChar)));
+	const auto* glyph =
+			m_data->fontGeometry.getGlyph(static_cast<msdfgen::unicode_t>(static_cast<unsigned char>(iChar)));
 	if (glyph == nullptr)
 		glyph = m_data->fontGeometry.getGlyph('?');
 	if (glyph == nullptr)

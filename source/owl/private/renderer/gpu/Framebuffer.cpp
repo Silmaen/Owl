@@ -7,11 +7,11 @@
  */
 #include "owlpch.h"
 
+#include "null/Framebuffer.h"
+#include "opengl/Framebuffer.h"
 #include "renderer/Renderer.h"
 #include "renderer/gpu/Framebuffer.h"
 #include "renderer/gpu/RenderAPI.h"
-#include "null/Framebuffer.h"
-#include "opengl/Framebuffer.h"
 #include "vulkan/Framebuffer.h"
 
 namespace owl::renderer::gpu {
@@ -26,7 +26,7 @@ auto Framebuffer::create(const FramebufferSpecification& iSpec) -> shared<Frameb
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::Framebuffer>(iSpec);
 	}
-	OWL_CORE_ERROR("Unknown RendererAPI ({})", static_cast<int>(api))
+	OWL_CORE_ERROR("Unknown RendererAPI ({}).", static_cast<int>(api))
 	return nullptr;
 }
 

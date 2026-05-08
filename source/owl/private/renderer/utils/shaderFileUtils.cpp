@@ -100,25 +100,25 @@ auto writeCachedShader(const std::filesystem::path& iFile, const std::vector<uin
 		out.close();
 		return true;
 	}
-	OWL_CORE_WARN("Cannot open file {} for writting.", iFile.string())
+	OWL_CORE_WARN("Cannot open file {} for writing.", iFile.string())
 	return false;
 }
 
 auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer, const std::string& iRendererApi,
 				   const gpu::ShaderType iStage, const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData {
 	ShaderReflectionData result;
-	OWL_CORE_TRACE("gpu::Shader reflect - {0} : <assets>/{1}", magic_enum::enum_name(iStage),
+	OWL_CORE_TRACE("gpu::Shader reflect - {0} : <assets>/{1}.", magic_enum::enum_name(iStage),
 				   renderer::utils::getRelativeShaderPath(iShaderName, iRenderer, iRendererApi, iStage).string())
 	if (iShaderData.empty())
 		return result;
 	const spirv_cross::Compiler compiler(iShaderData);
 	const spirv_cross::ShaderResources resources = compiler.get_shader_resources();
-	OWL_CORE_TRACE("    {} sampled images", resources.sampled_images.size())
+	OWL_CORE_TRACE("    {} sampled images.", resources.sampled_images.size())
 	for (const auto& resource: resources.uniform_buffers) {
 		const auto& bufferType = compiler.get_type(resource.base_type_id);
 		const auto binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 		const auto size = compiler.get_declared_struct_size(bufferType);
-		OWL_CORE_TRACE("  Uniform buffer: {} Size={} Binding={} Members={}", resource.name, size, binding,
+		OWL_CORE_TRACE("  Uniform buffer: {} Size={} Binding={} Members={}.", resource.name, size, binding,
 					   bufferType.member_types.size())
 		result.uniformBuffers.push_back({.name = resource.name,
 										 .binding = binding,
@@ -129,9 +129,8 @@ auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer,
 		const auto binding = compiler.get_decoration(resource.id, spv::DecorationBinding);
 		const auto& type = compiler.get_type(resource.type_id);
 		const uint32_t descriptorCount = type.array.empty() ? 1 : type.array[0];
-		OWL_CORE_TRACE("  Sampled image: {} Binding={} Count={}", resource.name, binding, descriptorCount)
-		result.sampledImages.push_back(
-				{.name = resource.name, .binding = binding, .descriptorCount = descriptorCount});
+		OWL_CORE_TRACE("  Sampled image: {} Binding={} Count={}.", resource.name, binding, descriptorCount)
+		result.sampledImages.push_back({.name = resource.name, .binding = binding, .descriptorCount = descriptorCount});
 	}
 	return result;
 }
@@ -218,7 +217,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 	if (module == nullptr) {
 		if (diagnosticBlob != nullptr)
 
-			OWL_CORE_ERROR("Slang: Module load failed for '{}': {}", iModuleName,
+			OWL_CORE_ERROR("Slang: Module load failed for '{}': {}.", iModuleName,
 						   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 		return result;
 	}
@@ -228,7 +227,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 		// Filter out harmless warning 41012 (capabilities auto-upgrade)
 		if (diag.find("warning 41012") == std::string_view::npos)
 
-			OWL_CORE_WARN("Slang: Warnings for '{}': {}", iModuleName, diag)
+			OWL_CORE_WARN("Slang: Warnings for '{}': {}.", iModuleName, diag)
 	}
 
 	struct EntryPointInfo {
@@ -247,8 +246,8 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 
 		slang::IComponentType* const components[] = {module, entryPoint};
 		Slang::ComPtr<slang::IComponentType> composedProgram;
-		if (SLANG_FAILED(
-					session->createCompositeComponentType(components, 2, composedProgram.writeRef(), diagnosticBlob.writeRef()))) {
+		if (SLANG_FAILED(session->createCompositeComponentType(components, 2, composedProgram.writeRef(),
+															   diagnosticBlob.writeRef()))) {
 			OWL_CORE_ERROR("Slang: Failed to compose program for entry point '{}' in module '{}'.", name, iModuleName)
 			return result;
 		}
@@ -257,7 +256,7 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 		if (SLANG_FAILED(composedProgram->link(linkedProgram.writeRef(), diagnosticBlob.writeRef()))) {
 			if (diagnosticBlob != nullptr)
 
-				OWL_CORE_ERROR("Slang: Linking failed for '{}': {}", name,
+				OWL_CORE_ERROR("Slang: Linking failed for '{}': {}.", name,
 							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 			return result;
 		}
@@ -266,14 +265,14 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 		if (SLANG_FAILED(linkedProgram->getEntryPointCode(0, 0, spirvBlob.writeRef(), diagnosticBlob.writeRef()))) {
 			if (diagnosticBlob != nullptr)
 
-				OWL_CORE_ERROR("Slang: Code generation failed for '{}': {}", name,
+				OWL_CORE_ERROR("Slang: Code generation failed for '{}': {}.", name,
 							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
 			return result;
 		}
 
 		result.spirvData[type] = extractSpirv(spirvBlob);
-		OWL_CORE_TRACE("Slang: Compiled entry point '{}' ({}) -> {} SPIR-V words.", name,
-					   magic_enum::enum_name(type), result.spirvData[type].size())
+		OWL_CORE_TRACE("Slang: Compiled entry point '{}' ({}) -> {} SPIR-V words.", name, magic_enum::enum_name(type),
+					   result.spirvData[type].size())
 	}
 
 	result.success = true;

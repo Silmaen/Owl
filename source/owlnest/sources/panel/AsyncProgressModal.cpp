@@ -38,8 +38,7 @@ void AsyncProgressModal::onImGuiRender() {
 	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 	ImGui::SetNextWindowSize(ImVec2(400, 0), ImGuiCond_Always);
 
-	if (ImGui::BeginPopupModal(m_title.c_str(), nullptr,
-							   ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+	if (ImGui::BeginPopupModal(m_title.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
 		const float progress = m_state->progress.load();
 		const auto message = m_state->getMessage();
 

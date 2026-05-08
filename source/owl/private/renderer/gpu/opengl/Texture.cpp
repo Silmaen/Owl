@@ -127,7 +127,7 @@ void Texture2D::setData(void* iData, [[maybe_unused]] const uint32_t iSize) {
 	OWL_PROFILE_FUNCTION()
 
 	OWL_CORE_ASSERT(iSize == m_specification.size.surface() * m_specification.getPixelSize(),
-					"Data size missmatch texture size!")
+					"Data size mismatch texture size!")
 	glTextureSubImage2D(m_textureId, 0, 0, 0, static_cast<GLsizei>(m_specification.size.x()),
 						static_cast<GLsizei>(m_specification.size.y()), glDataFormat(m_specification.format),
 						GL_UNSIGNED_BYTE, iData);

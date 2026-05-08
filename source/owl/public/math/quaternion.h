@@ -74,7 +74,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Constructor with a euler angle vector
+	 *  Constructor with a euler angle vector.
 	 * @param iVector The euler angles.
 	 */
 	constexpr explicit Quaternion(const Vector<BaseType, 3>& iVector) {
@@ -90,7 +90,7 @@ public:
 	// comparisons
 	/**
 	 * @brief
-	 *  Comparison operator
+	 *  Comparison operator.
 	 * @param iOther Other Quaternion to compare.
 	 * @return true if identical Quaternions.
 	 */
@@ -98,7 +98,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Comparison operator
+	 *  Comparison operator.
 	 * @param iOther Other Quaternion to compare.
 	 * @return false if identical Quaternions.
 	 */
@@ -259,7 +259,7 @@ public:
 	 * @return This actualized Quaternion.
 	 */
 	constexpr auto operator-() const -> Quaternion
-		/**
+			/**
 		 * @brief
 		 *  Requires.
 		 */
@@ -295,7 +295,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Multiplication with a scalar
+	 *  Multiplication with a scalar.
 	 * @param iScalar The scalar to multiply.
 	 * @param iQuaternion Quaternion to multiply.
 	 * @return Quaternion result.
@@ -459,14 +459,14 @@ private:
 /**
  * @brief
  *  Use a Quaternion to transform a vector.
- * @tparam BaseType The internal data type
+ * @tparam BaseType The internal data type.
  * @param iQuaternion The Quaternion defining the transformation.
  * @param iVector The Vector to transform.
  * @return The transformed vector.
  */
 template<typename BaseType>
-constexpr auto rotate(const Quaternion<BaseType>& iQuaternion,
-					  const Vector<BaseType, 3>& iVector) -> Vector<BaseType, 3> {
+constexpr auto rotate(const Quaternion<BaseType>& iQuaternion, const Vector<BaseType, 3>& iVector)
+		-> Vector<BaseType, 3> {
 	const Vector<BaseType, 3> qv{iQuaternion.x(), iQuaternion.y(), iQuaternion.z()};
 	const Vector<BaseType, 3> uv(qv ^ iVector);
 	const Vector<BaseType, 3> uuv(qv ^ uv);

@@ -33,7 +33,7 @@ struct OWL_API SpriteRenderer {
 
 	/**
 	 * @brief
-	 *  Get the YAML key for this component
+	 *  Get the YAML key for this component.
 	 * @return The YAML key.
 	 */
 	static auto key() -> const char* { return "SpriteRenderer"; }

@@ -10,9 +10,9 @@
 
 #include "MarkdownDocument.h"
 
-#include <renderer/gpu/Texture.h>
 #include <core/Timestep.h>
 #include <math/vectors.h>
+#include <renderer/gpu/Texture.h>
 
 #include <filesystem>
 #include <functional>
@@ -129,18 +129,21 @@ public:
 	/**
 	 * @brief
 	 *  Currently rendered text (after debounce). Test hook.
+	 * @return The const std string.
 	 */
 	[[nodiscard]] auto renderedText() const -> const std::string& { return m_renderedText; }
 
 	/**
 	 * @brief
 	 *  True while a pending change is waiting for the debounce window to expire.
+	 * @return True when the object is debouncing.
 	 */
 	[[nodiscard]] auto isDebouncing() const -> bool { return m_dirty; }
 
 	/**
 	 * @brief
 	 *  Read-only access to the parsed block list (test hook).
+	 * @return The const std vector.
 	 */
 	[[nodiscard]] auto blocks() const -> const std::vector<MdBlock>& { return m_document.blocks(); }
 
@@ -158,12 +161,12 @@ private:
 	 */
 	struct ImageEntry {
 		shared<renderer::gpu::Texture2D> texture;///< Loaded texture (null if load failed or remote).
-		math::vec2ui size;                  ///< Pixel size of the loaded image.
-		bool isRemote = false;              ///< True if the source is an HTTP(S) URL.
-		bool failed = false;                ///< True if the most recent load attempt failed.
-		bool flippedY = false;              ///< True when the texture was loaded with stb_image
-		                                    ///< (`stbi_set_flip_vertically_on_load = 1` in Owl), so
-		                                    ///< the renderer must flip the V axis at display time.
+		math::vec2ui size;///< Pixel size of the loaded image.
+		bool isRemote = false;///< True if the source is an HTTP(S) URL.
+		bool failed = false;///< True if the most recent load attempt failed.
+		bool flippedY = false;///< True when the texture was loaded with stb_image
+		///< (`stbi_set_flip_vertically_on_load = 1` in Owl), so
+		///< the renderer must flip the V axis at display time.
 	};
 
 	/**
@@ -221,12 +224,13 @@ private:
 	 * @param[in] iLinkOpen `true` when wrapped inside a `[…](href)` span.
 	 * @param[in] iLinkHref href to forward on click when `iLinkOpen` is `true`.
 	 */
-	void renderInlineImage(const std::string& iSrc, const std::string& iAlt, bool& ioFirstOnLine,
-						   bool iLinkOpen, const std::string& iLinkHref);
+	void renderInlineImage(const std::string& iSrc, const std::string& iAlt, bool& ioFirstOnLine, bool iLinkOpen,
+						   const std::string& iLinkHref);
 
 	/**
 	 * @brief
 	 *  Resolve an image href into a cached `ImageEntry`. Loads on first use.
+	 * @return The const ImageEntry.
 	 */
 	auto resolveImage(const std::string& iSrc) -> const ImageEntry&;
 

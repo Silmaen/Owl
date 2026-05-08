@@ -69,8 +69,8 @@ public:
 
 		/**
 		 * @brief
-		 *  Check version order
-		 * @param[in] iOther Version to compare
+		 *  Check version order.
+		 * @param[in] iOther Version to compare.
 		 * @return True if this is equal.
 		 */
 		[[nodiscard]] auto operator==(const Version& iOther) const -> bool {
@@ -79,8 +79,8 @@ public:
 
 		/**
 		 * @brief
-		 *  Check version order
-		 * @param[in] iOther Version to compare
+		 *  Check version order.
+		 * @param[in] iOther Version to compare.
 		 * @return True if this is lower.
 		 */
 		[[nodiscard]] auto operator<(const Version& iOther) const -> bool {
@@ -89,8 +89,8 @@ public:
 
 		/**
 		 * @brief
-		 *  Check version order
-		 * @param[in] iOther Version to compare
+		 *  Check version order.
+		 * @param[in] iOther Version to compare.
 		 * @return True if this is lower.
 		 */
 		[[nodiscard]] auto operator<=(const Version& iOther) const -> bool {

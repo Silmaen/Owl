@@ -30,7 +30,7 @@ public:
 	 *  Clone the extra data.
 	 * @return A unique pointer to the cloned extra data.
 	 */
-	[[nodiscard]] virtual auto clone() const -> std::unique_ptr<ExtraDataBase> = 0;
+	[[nodiscard]] virtual auto clone() const -> uniq<ExtraDataBase> = 0;
 };
 OWL_DIAG_POP
 
@@ -63,8 +63,8 @@ public:
 	 *  Clone the extra data.
 	 * @return A unique pointer to the cloned extra data.
 	 */
-	[[nodiscard]] auto clone() const -> std::unique_ptr<ExtraDataBase> override {
-		return std::make_unique<ExtraData>(static_cast<const ExtraData&>(*this));
+	[[nodiscard]] auto clone() const -> uniq<ExtraDataBase> override {
+		return mkUniq<ExtraData>(static_cast<const ExtraData&>(*this));
 	}
 
 	/**

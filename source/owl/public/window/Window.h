@@ -18,7 +18,7 @@
 
 /**
  * @brief
- *  Base namespace for window management
+ *  Base namespace for window management.
  */
 namespace owl::window {
 /**

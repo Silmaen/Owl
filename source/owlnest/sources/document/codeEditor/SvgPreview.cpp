@@ -91,8 +91,8 @@ void SvgPreview::rasterize() {
 	const math::vec2ui newSize{side, side};
 	if (!m_texture || m_textureSize != newSize) {
 		const renderer::gpu::Texture::Specification specs{.size = newSize,
-													 .format = renderer::gpu::ImageFormat::Rgba8,
-													 .generateMips = false};
+														  .format = renderer::gpu::ImageFormat::Rgba8,
+														  .generateMips = false};
 		m_texture = renderer::gpu::Texture2D::create(specs);
 		m_textureSize = newSize;
 	}

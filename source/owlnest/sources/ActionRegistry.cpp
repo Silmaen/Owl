@@ -97,8 +97,7 @@ auto buildKeyNameMap() -> const std::unordered_map<input::KeyCode, std::string>&
 auto buildNameKeyMap() -> const std::unordered_map<std::string, input::KeyCode>& {
 	static std::unordered_map<std::string, input::KeyCode> map;
 	if (map.empty()) {
-		for (const auto& [code, name]: buildKeyNameMap())
-			map[name] = code;
+		for (const auto& [code, name]: buildKeyNameMap()) map[name] = code;
 	}
 	return map;
 }
@@ -124,9 +123,8 @@ auto modifierCount(const Modifiers iMod) -> int {
  *  Check if a key code is a modifier key (should be ignored during capture).
  */
 auto isModifierKey(const input::KeyCode iKey) -> bool {
-	return iKey == input::key::LeftControl || iKey == input::key::RightControl ||
-		   iKey == input::key::LeftShift || iKey == input::key::RightShift ||
-		   iKey == input::key::LeftAlt || iKey == input::key::RightAlt ||
+	return iKey == input::key::LeftControl || iKey == input::key::RightControl || iKey == input::key::LeftShift ||
+		   iKey == input::key::RightShift || iKey == input::key::LeftAlt || iKey == input::key::RightAlt ||
 		   iKey == input::key::LeftSuper || iKey == input::key::RightSuper;
 }
 
@@ -185,15 +183,15 @@ auto Shortcut::fromString(const std::string& iStr) -> Shortcut {
 }
 
 auto Shortcut::modifiersMatch() const -> bool {
-	const bool ctrlPressed = input::Input::isKeyPressed(input::key::LeftControl) ||
-							 input::Input::isKeyPressed(input::key::RightControl);
-	const bool shiftPressed = input::Input::isKeyPressed(input::key::LeftShift) ||
-							  input::Input::isKeyPressed(input::key::RightShift);
+	const bool ctrlPressed =
+			input::Input::isKeyPressed(input::key::LeftControl) || input::Input::isKeyPressed(input::key::RightControl);
+	const bool shiftPressed =
+			input::Input::isKeyPressed(input::key::LeftShift) || input::Input::isKeyPressed(input::key::RightShift);
 	const bool altPressed =
 			input::Input::isKeyPressed(input::key::LeftAlt) || input::Input::isKeyPressed(input::key::RightAlt);
 
-	return ctrlPressed == hasFlag(modifiers, Modifiers::Ctrl) &&
-		   shiftPressed == hasFlag(modifiers, Modifiers::Shift) && altPressed == hasFlag(modifiers, Modifiers::Alt);
+	return ctrlPressed == hasFlag(modifiers, Modifiers::Ctrl) && shiftPressed == hasFlag(modifiers, Modifiers::Shift) &&
+		   altPressed == hasFlag(modifiers, Modifiers::Alt);
 }
 
 void ActionRegistry::registerAction(std::string iId, std::string iDisplayName, Shortcut iDefaultShortcut,
@@ -263,8 +261,7 @@ void ActionRegistry::rebind(const std::string& iId, const Shortcut iNewShortcut)
 }
 
 void ActionRegistry::resetToDefaults() {
-	for (auto& action: m_actions)
-		action.currentShortcut = action.defaultShortcut;
+	for (auto& action: m_actions) action.currentShortcut = action.defaultShortcut;
 }
 
 auto ActionRegistry::findConflict(const Shortcut& iShortcut, const std::string& iExcludeId) const -> std::string {
