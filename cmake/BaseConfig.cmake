@@ -2,6 +2,8 @@
 #
 # load custom Environment variables
 include(Environment)
+# Wire ccache/sccache as compiler launcher when available
+include(CompilerCache)
 # Setup Poetry, and sync python dependencies
 include(Poetry)
 # Initialize Dependency Manager

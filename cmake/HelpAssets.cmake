@@ -96,16 +96,16 @@ function(owl_bundle_help_assets)
     file(MAKE_DIRECTORY "${BADGE_CACHE_DIR}")
 
     # ---- Source files ----
-    file(GLOB OWL_HELP_PAGES "${CMAKE_SOURCE_DIR}/doc/pages/*.md")
+    file(GLOB OWL_HELP_PAGES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/doc/pages/*.md")
     set(OWL_HELP_ROOT_FILES
             "${CMAKE_SOURCE_DIR}/README.md"
             "${CMAKE_SOURCE_DIR}/CHANGELOG.md"
             "${CMAKE_SOURCE_DIR}/CONTRIBUTING.md"
     )
-    file(GLOB OWL_HELP_IMAGES "${CMAKE_SOURCE_DIR}/doc/images/*")
+    file(GLOB OWL_HELP_IMAGES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/doc/images/*")
     # Project-relative images referenced from the README (logo, etc.) — copy them into
     # `images/` alongside `doc/images/` so the rewritten markdown can find them.
-    file(GLOB OWL_HELP_LOGO_IMAGES "${CMAKE_SOURCE_DIR}/engine_assets/logo/*")
+    file(GLOB OWL_HELP_LOGO_IMAGES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/engine_assets/logo/*")
 
     # ---- Copy + scrub markdown ----
     foreach (HELP_FILE IN LISTS OWL_HELP_PAGES OWL_HELP_ROOT_FILES)
