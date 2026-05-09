@@ -13,8 +13,12 @@
 #include <core/Log.h>
 
 #ifdef OWL_PLATFORM_WINDOWS
-#include <shellapi.h>
+// clang-format off
+// windows.h must precede shellapi.h: the latter relies on EXTERN_C / HINSTANCE / STDAPICALLTYPE
+// macros that windows.h pulls in transitively. MinGW + Clang fail to parse shellapi.h otherwise.
 #include <windows.h>
+#include <shellapi.h>
+// clang-format on
 #else
 #include <sys/wait.h>
 #include <unistd.h>
