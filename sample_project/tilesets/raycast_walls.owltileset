@@ -7,16 +7,43 @@ columns: 4
 rows: 4
 filterMode: Nearest
 tiles:
-  - { index: 0,  collidable: true, name: "doorpattern" }
-  - { index: 1,  collidable: true, name: "greystone" }
-  - { index: 2,  collidable: true, name: "bluestone" }
-  - { index: 3,  collidable: true, name: "wood" }
-  - { index: 4,  name: "barrel" }
-  - { index: 5,  collidable: true, name: "brickpattern" }
-  - { index: 6,  collidable: true, name: "colorstone" }
-  - { index: 7,  name: "eagle" }
-  - { index: 8,  name: "greenlight" }
-  - { index: 9,  collidable: true, name: "mossy" }
-  - { index: 10, name: "pillar" }
-  - { index: 11, collidable: true, name: "purplestone" }
-  - { index: 12, collidable: true, name: "redbrick" }
+  - index: 0
+    collidable: true
+    name: doorpattern
+  - index: 1
+    collidable: true
+    name: greystone
+  - index: 2
+    collidable: true
+    name: bluestone
+  - index: 3
+    collidable: true
+    name: wood
+  - index: 4
+    collidable: true
+    name: barrel
+    chromaKey: [0, 0, 0]
+  - index: 5
+    collidable: true
+    name: brickpattern
+  - index: 6
+    collidable: true
+    name: colorstone
+  - index: 7
+    name: eagle
+  - index: 8
+    name: greenlight
+    chromaKey: [0, 0, 0]
+  - index: 9
+    collidable: true
+    name: mossy
+  - index: 10
+    collidable: true
+    name: pillar
+    chromaKey: [0, 0, 0]
+  - index: 11
+    collidable: true
+    name: purplestone
+  - index: 12
+    collidable: true
+    name: redbrick

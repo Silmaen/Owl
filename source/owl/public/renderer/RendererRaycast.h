@@ -11,10 +11,10 @@
 #include "math/vectors.h"
 #include "renderer/Camera.h"
 
-namespace owl::scene::component {
+namespace owl::scene {
 
-struct Tilemap;
-}// namespace owl::scene::component
+class TilemapAsset;
+}// namespace owl::scene
 
 namespace owl::math {
 
@@ -26,7 +26,7 @@ class Transform;
  *  Wolfenstein-style raycaster family.
  *
  * Hosts `RendererRaycast` (static facade running per-column DDA across a
- * `scene::component::Tilemap` to produce a pseudo-3D first-person view)
+ * `scene::TilemapAsset` to produce a pseudo-3D first-person view)
  * and its `RenderLayer` adapter `RendererRaycastLayer`. Configuration is
  * driven by `RaycastConfig` (FOV, max distance, sky / floor colours, ray
  * count). The implementation in v0.2.0 emits textured wall stripes via the
@@ -40,7 +40,7 @@ namespace owl::renderer {
  *
  * Holds the parameters that change between scene-activations: field of view,
  * clipping range, sky / floor colours. The raycaster operates on a 2D top-down
- * grid (a `scene::component::Tilemap`) and synthesises a pseudo-3D first-person
+ * grid (a `scene::TilemapAsset`) and synthesises a pseudo-3D first-person
  * view by per-column DDA.
  */
 struct OWL_API RaycastConfig {
@@ -121,13 +121,15 @@ public:
 	 * Iterates the tilemap's first non-empty layer, treating any cell with a
 	 * non-empty tile index as a wall whose texture is sampled from the bound
 	 * tileset atlas.
-	 * @param[in] iTilemap The tilemap to render. Must have a resolved `tileset`.
-	 * @param[in] iTilemapWorldTransform The tilemap's world transform (translation, rotation, scale).
-	 *            The caster works in tilemap-local space: camera is transformed accordingly.
+	 * @param[in] iTilemap The tilemap asset (grid + tileset) to render. Must have a resolved
+	 *            `tileset`.
+	 * @param[in] iTilemapWorldTransform The tilemap entity's world transform (translation,
+	 *            rotation, scale). The caster works in tilemap-local space: camera is
+	 *            transformed accordingly.
 	 * @param[in] iEntityId The entity id (written into the picking attachment).
 	 */
-	static void drawTilemapWalls(const scene::component::Tilemap& iTilemap,
-								 const math::Transform& iTilemapWorldTransform, int iEntityId);
+	static void drawTilemapWalls(const scene::TilemapAsset& iTilemap, const math::Transform& iTilemapWorldTransform,
+								 int iEntityId);
 
 	/**
 	 * @brief

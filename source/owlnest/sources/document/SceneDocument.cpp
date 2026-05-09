@@ -8,6 +8,7 @@
 
 #include "SceneDocument.h"
 
+#include <imgui.h>
 #include <physic/PhysicCommand.h>
 #include <scene/component/components.h>
 #include <sound/SoundCommand.h>
@@ -19,7 +20,7 @@ SceneDocument::SceneDocument() = default;
 
 auto SceneDocument::title() const -> std::string {
 	if (!m_scenePath.empty())
-		return m_scenePath.filename().string();
+		return m_scenePath.stem().string();
 	return "Untitled";
 }
 
@@ -48,7 +49,11 @@ void SceneDocument::onUpdate(const core::Timestep& iTimeStep) { m_viewport.onUpd
 
 void SceneDocument::onEvent(event::Event& ioEvent) { m_viewport.onEvent(ioEvent); }
 
-void SceneDocument::onImGuiRender() { m_viewport.onRender(); }
+void SceneDocument::onImGuiRender() {
+	if (consumeFocusRequest())
+		ImGui::SetNextWindowFocus();
+	m_viewport.onRender();
+}
 
 auto SceneDocument::save() -> bool {
 	// Actual async file write happens from EditorLayer; saving without a path falls back to Save As.
@@ -208,6 +213,26 @@ void SceneDocument::applyPendingTeleportVelocity() {
 			break;
 		}
 	}
+}
+
+auto SceneDocument::canUndo() const -> bool {
+	return state() == State::Edit && m_activeScene && m_undoManager.canUndo();
+}
+
+auto SceneDocument::canRedo() const -> bool {
+	return state() == State::Edit && m_activeScene && m_undoManager.canRedo();
+}
+
+void SceneDocument::performUndo() {
+	if (!canUndo())
+		return;
+	m_undoManager.undo(*m_activeScene);
+}
+
+void SceneDocument::performRedo() {
+	if (!canRedo())
+		return;
+	m_undoManager.redo(*m_activeScene);
 }
 
 }// namespace owl::nest

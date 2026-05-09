@@ -47,6 +47,35 @@ void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
 		ioSettings.uiFontSize = std::clamp(ioSettings.uiFontSize, 14, 24);
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 		ImGui::SetTooltip("Pixel size of the main UI font. Takes effect on the next startup.");
+
+	ImGui::Spacing();
+	ImGui::SeparatorText("Gizmo Snap");
+	ImGui::Checkbox("Enable snap to grid", &ioSettings.snapEnabled);
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+		ImGui::SetTooltip(
+				"Snap translation gizmos to a regular grid in Edit mode. Holding Ctrl during a drag also forces snap.");
+
+	ImGui::Checkbox("Auto step from tilemap cell", &ioSettings.snapAutoFromTilemap);
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+		ImGui::SetTooltip("When enabled and a Tilemap exists in the scene, the snap step is taken from the tilemap's "
+						  "cellSize × multiplier, with a half-cell offset so entities align with cell centers. Falls "
+						  "back to the manual step otherwise.");
+
+	ImGui::TextUnformatted("Snap step (world units)");
+	ImGui::SameLine();
+	if (ImGui::DragFloat("##snapStep", &ioSettings.snapStep, 0.05f, 0.01f, 100.f, "%.3f"))
+		ioSettings.snapStep = std::max(0.0001f, ioSettings.snapStep);
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+		ImGui::SetTooltip(
+				"Manual snap step used when 'Auto step from tilemap' is off, or when the active scene has no Tilemap.");
+
+	ImGui::TextUnformatted("Tilemap step multiplier (× cell size)");
+	ImGui::SameLine();
+	if (ImGui::DragFloat("##snapMultiplier", &ioSettings.snapMultiplier, 0.05f, 0.0001f, 100.f, "%.3f"))
+		ioSettings.snapMultiplier = std::max(0.0001f, ioSettings.snapMultiplier);
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+		ImGui::SetTooltip("Multiplier applied to the tilemap's cellSize when 'Auto step from tilemap' is on (e.g. 0.5 "
+						  "= half-cell snap).");
 }
 
 void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {

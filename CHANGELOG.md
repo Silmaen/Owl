@@ -9,6 +9,151 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Tilemap & Tileset editor UX iteration #2.**
+    - **Open-in-editor buttons.** TilemapDocument hierarchy panel now hosts
+      an "Open in Tileset Editor" icon-button next to the tileset slot.
+      SceneHierarchy entity context menu gains "Open in Tilemap Editor"
+      for any entity carrying a `Tilemap` component with a non-empty path.
+      Resolves the relative asset path against the project's asset
+      directories before delegating to `EditorLayer::openTilemapFile` /
+      `openTilesetFile`.
+    - **Cross-document live refresh.** When a `TilemapDocument` saves to
+      disk, every open `SceneDocument` whose `Tilemap` components reference
+      the same path drops its cached `asset` so the next frame's
+      `Scene::resolveAllTilemapAssets` reloads from disk. When a
+      `TilesetDocument` saves, every open `TilemapDocument` and
+      `SceneDocument` referencing that tileset path drops the cached
+      `tileset` and reloads. Path comparison is canonicalised so symlinks
+      and `./..` segments don't cause false negatives.
+    - **Per-document ribbon tabs.** New contextual `Tilemap` and `Tileset`
+      ribbon tabs replace the stale Scene tab when a document of that
+      type is active — Save / Save As / Close in the File group, Undo /
+      Redo in the Edit group. Wiring matches the existing
+      `buildAnimationTab` / `buildCodeTab` pattern.
+    - **Tilemap canvas: cell selection.** Clicking any cell on the canvas
+      (including empty cells) selects it; the persistent highlight remains
+      until another cell is picked. The Properties panel now shows the
+      cell's coordinates, current tile type, and `Passable` flag derived
+      from the tileset's `collidable` metadata. Tile-type metadata edits
+      are deferred to the dedicated tileset editor (open via the new
+      button next to the tileset slot).
+    - **Tile palette: full-tile wrapping.** Atlas grid wraps using the
+      true button stride (`button width + frame padding + item spacing`)
+      so the right column never displays a clipped fragment. Help texts
+      under the brush summary are now smaller (0.85x font scale) and
+      word-wrapped; tooltips on the layer-manager icon buttons run through
+      a wrapped `BeginTooltip` for the same look.
+    - **Layer manager polish.** Each layer row now uses a radio button to
+      pick the active painting layer, an inline `InputText` for renaming,
+      and icon-only buttons for show/hide / move-up / move-down / delete.
+      The reserved width for the buttons is computed from the icon stride
+      so the last button no longer falls off the right edge of the panel
+      regardless of width.
+    - **Tileset editor fixes.** Atlas preview UVs flipped (`{0,1}, {1,0}`)
+      to match `widgets::textureField`'s convention so the texture is no
+      longer upside-down on Vulkan. Texture drop slot now properly pushes
+      a `ModifyTilesetCommand` into the undo stack on drop. Grid edits
+      replaced by non-destructive `+/-` buttons backed by new
+      `Tileset::addRow` / `removeRow` / `addColumn` / `removeColumn` /
+      `swapTiles` methods (existing per-tile metadata is preserved across
+      grow / shrink). Per-tile **chroma key** authored on the tileset:
+      new `TileMeta::chromaKeyEnabled` + `chromaKeyColor`, persisted
+      under the `chromaKey: [r,g,b]` YAML key, edited via a checkbox +
+      colour picker in the Properties panel. Renderer-side application of
+      the chroma key is intentionally deferred to a follow-up; the field
+      is captured at authoring time only.
+    - **Hierarchy panel cleanup.** Removed the redundant `file: …` line
+      in both Tilemap and Tileset hierarchy overrides — the file name is
+      already shown on the document tab.
+- **Tilemap & Tileset editor UX iteration.**
+    - `TilemapDocument` now overrides the global Scene Hierarchy & Properties
+      panels (`overridesGlobalPanels()`): the hierarchy panel hosts the
+      tilemap's general properties (tileset slot, grid size, layer manager,
+      save / undo / redo) and the properties panel hosts the per-tile
+      metadata editor (collidable flag, designer name) for the inspected
+      tile. The document tab itself is dedicated to the canvas — no more
+      cramped left side panel.
+    - **Two-brush tile palette.** `TilePalette` carries an independent
+      primary brush (left mouse on the canvas) and secondary brush (right
+      mouse), each one of `pick` (no selection — clicking on the canvas
+      samples the cell under the cursor and assigns it to that brush),
+      `eraser` (writes empty), or a tile index. Click on a palette tile
+      with the left button to set the primary, right button for the
+      secondary; re-clicking the same selection toggles back to pick mode.
+      Primary highlight is the editor accent (orange), secondary is blue,
+      both = magenta when the same tile is in both brushes.
+    - **Eraser icon** (`icons/actions/eraser.svg`) and **layer reorder
+      icons** (`move_up.svg`, `move_down.svg`); layer manager rows now
+      use icon buttons for visibility / move / delete and an inline
+      `InputText` for renaming. The active painting layer is selected
+      via a radio button on each row.
+    - **`TilesetDocument` (6th `DocumentType`)** — dedicated `.owltileset`
+      editor. Texture drop slot + grid configuration (columns, rows, tile
+      pixel size) + filter mode combo (Linear / Nearest) in the hierarchy
+      panel; per-tile collidable + name editor in the properties panel;
+      atlas preview canvas (zoomable / pannable) in the document tab with
+      click-to-select per slot, hover preview, collidable cells tinted
+      red. Save / undo / redo via `TilesetUndoManager` +
+      `ModifyTilesetCommand`. New "New Tileset" small button in the File
+      ribbon, double-click `.owltileset` from the Content Browser opens
+      the document.
+- **Tilemap is now a standalone `.owltilemap` asset, edited in a dedicated document.**
+    - `scene::TilemapAsset` — standalone YAML asset (mirrors `scene::Tileset`)
+      holding `width × height × cellSize` + `tilesetPath` + ordered list of
+      `TilemapLayer`s. Round-trip API (`serializeToString` /
+      `deserializeFromString` / `saveToFile` / `loadFromFile`), `addLayer`,
+      `resize`, `getTile`, `setTile`. 13 unit tests in
+      `test/scene_tests/TilemapAsset_test.cpp` cover round-trips, malformed
+      YAML, short / oversized tile buffers, file I/O.
+    - `scene::component::Tilemap` is now a *reference*: it carries
+      `tilemapPath` + a runtime `asset` shared pointer. Render paths
+      (2D in `Scene::render`, raycast in `RendererRaycast::drawTilemapWalls`)
+      and physics (`PhysicCommand`) all read from the resolved asset.
+      `Scene::resolveAllTilemapAssets` performs a two-phase load (asset →
+      tileset). The deserializer keeps a defensive reader for the legacy
+      inline form so existing scenes still parse.
+    - `nest::TilemapDocument` (5th `DocumentType`) opens `.owltilemap`
+      files in a dedicated tab with three sub-panels: properties (tileset
+      slot, grid size, cell size, layer manager — add / delete / reorder /
+      visibility / parallax), zoom-and-pan canvas (left-click paints,
+      right-click erases, scroll zooms, middle-drag pans), and the existing
+      `TilePalette`. Each stroke pushes one `ModifyTilemapAssetCommand`
+      (full-asset YAML before/after) on the document's
+      `TilemapUndoManager`. Save / dirty marker integrated.
+    - The Tilemap component inspector becomes a read-only summary plus a
+      drop slot for `.owltilemap`; in-scene paint mode and grid resize
+      removed (the `Viewport::processTilemapPaint` path is gone).
+    - `gui::widgets::AssetKind::Tilemap` added; `assetDropTarget` filters
+      `.owltilemap` payloads. Content Browser gets a dedicated icon and
+      double-click handler. File ribbon gains a small "New Tilemap"
+      button next to "New Animation".
+    - Sample project: `world_map.owl`, `platformer_house.owl` and
+      `raycast_demo.owl` migrated to path-based form via the one-shot
+      `tools/migrate_inline_tilemaps.py` script; their inline data now
+      lives in `sample_project/tilemaps/*.owltilemap`.
+    - `TilePalette` is fully decoupled from the scene hierarchy — it now
+      takes a `TilemapAsset*` directly and is hosted by `TilemapDocument`
+      instead of the editor layer.
+- **Snap-to-grid for translation gizmos** — new `Snap` toggle plus a `Step`
+  preset dropdown in the Scene ribbon's Gizmo group, and an
+  `Editor Settings > General > Gizmo Snap` section. Four new fields on
+  `EditorSettings`: `snapEnabled`, `snapStep` (world units), `snapMultiplier`
+  (× cell size), `snapAutoFromTilemap`. When auto-from-tilemap is on (default)
+  and the active scene contains a `Tilemap` component, the snap step is
+  `cellSize × multiplier`, and on drag-end the entity is finalised to the
+  nearest cell-center grid point (with a half-cell offset for even-sized
+  tilemaps) so entities visually align with cell centers; otherwise the manual
+  step is used. The `Step` preset dropdown contextually shows fractions /
+  multiples of the cell size (1/4, 1/2, 1, 2, 5, 10) when a tilemap exists, or
+  raw world-unit values (0.25, 0.5, 1, 5, 10) otherwise. Holding `Ctrl` during
+  a drag still forces snap regardless of the toggle (legacy behaviour
+  preserved). Rotation snap stays at 45° and scale snap at 0.5.
+- **Ribbon dropdown buttons** — `gui::widgets::Ribbon::Button` gained an
+  optional `popupContents` callback. When set, clicking the button opens a
+  popup whose body is filled by the callback (instead of firing `onClick`),
+  and a small downward caret indicator is rendered to hint at the dropdown.
+  Used for the new Snap step preset picker; reusable for any future ribbon
+  drop-list (e.g. recent files, theme picker).
 - **ccache compiler launcher** — new `cmake/CompilerCache.cmake` module
   detects `ccache` (or `sccache`) on the host and wires it as
   `CMAKE_C(XX)_COMPILER_LAUNCHER`. Controlled by the `OWL_USE_CCACHE`

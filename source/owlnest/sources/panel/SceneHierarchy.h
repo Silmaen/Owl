@@ -15,7 +15,8 @@
 namespace owl::nest {
 
 class Document;
-}
+class EditorLayer;
+}// namespace owl::nest
 
 namespace owl::nest::panel {
 /**
@@ -112,6 +113,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Bind the parent editor layer (used for actions that span documents — e.g. opening
+	 *  a `.owltilemap` referenced by a `Tilemap` component in a tab).
+	 * @param[in] iParent The editor layer (may be null in tests).
+	 */
+	void setParentEditor(EditorLayer* iParent) { mp_parentEditor = iParent; }
+
+	/**
+	 * @brief
 	 *  Name of the component header most recently hovered while the inspector was rendered.
 	 *
 	 * Cleared on every frame at the start of `onImGuiRender`. Used by `EditorLayer::onContextualHelp`
@@ -168,5 +177,7 @@ private:
 	SceneUndoManager* mp_undoManager = nullptr;
 	/// Active document — when it `overridesGlobalPanels()` the panel delegates its content to it.
 	Document* mp_activeDocument = nullptr;
+	/// Owning editor layer — used for cross-document actions (e.g. opening a referenced asset).
+	EditorLayer* mp_parentEditor = nullptr;
 };
 }// namespace owl::nest::panel

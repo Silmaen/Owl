@@ -100,6 +100,21 @@ public:
 	 */
 	[[nodiscard]] auto empty() const -> bool { return m_documents.empty(); }
 
+	/**
+	 * @brief
+	 *  Resolve the title to display on a document's tab, prefixed with the document type
+	 *  when more than one open document shares the same `Document::title()`.
+	 *
+	 * Examples:
+	 * - Two scenes named `world_map` and a `.owltilemap` named `world_map` → tabs become
+	 *   `Scene: world_map`, `Tilemap: world_map`.
+	 * - Single open document named `intro` → tab stays as `intro`.
+	 *
+	 * @param[in] iDoc The document whose tab title is being computed (must belong to this manager).
+	 * @return The display title to feed into ImGui's `Begin(title##stable_id)`.
+	 */
+	[[nodiscard]] auto displayTitleFor(const Document* iDoc) const -> std::string;
+
 private:
 	/// All open documents, owned by this manager.
 	std::vector<uniq<Document>> m_documents;

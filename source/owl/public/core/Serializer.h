@@ -18,7 +18,7 @@ struct SerializerImpl;
  * @brief
  *  Frontend class for serializing anything.
  */
-class Serializer {
+class OWL_API Serializer {
 public:
 	/**
 	 * @brief

@@ -9,6 +9,7 @@
 
 #include "physic/PhysicCommand.h"
 #include "scene/Entity.h"
+#include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 #include "scene/component/components.h"
 #include <box2d/box2d.h>
@@ -117,11 +118,12 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		 const auto e: view) {
 		const scene::Entity entity{e, m_scene};
 		const auto& tilemap = entity.getComponent<scene::component::Tilemap>();
-		if (!tilemap.tileset || tilemap.layers.empty())
+		if (!tilemap.asset || !tilemap.asset->tileset || tilemap.asset->layers.empty())
 			continue;
+		const auto& assetData = *tilemap.asset;
 		// Skip if every tile in the tileset is non-collidable — common for purely cosmetic
 		// tilemaps (backgrounds). Avoids creating an empty body for nothing.
-		const auto* tilesetPtr = tilemap.tileset.get();
+		const auto* tilesetPtr = assetData.tileset.get();
 		bool anyCollidable = false;
 		for (uint32_t i = 0; i < tilesetPtr->tileCount(); ++i) {
 			if (tilesetPtr->isCollidable(i)) {
@@ -140,18 +142,18 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		const b2BodyId tileBody = b2CreateBody(m_impl->worldId, &bodyDef);
 		m_impl->bodies[m_impl->nextId] = tileBody;
 		m_impl->nextId++;
-		const float cellSize = tilemap.cellSize;
-		const float originX = -static_cast<float>(tilemap.width - 1) * 0.5f * cellSize;
-		const float originY = static_cast<float>(tilemap.height - 1) * 0.5f * cellSize;
+		const float cellSize = assetData.cellSize;
+		const float originX = -static_cast<float>(assetData.width - 1) * 0.5f * cellSize;
+		const float originY = static_cast<float>(assetData.height - 1) * 0.5f * cellSize;
 		const float halfX = cellSize * worldTransform.scale().x() * 0.5f;
 		const float halfY = cellSize * worldTransform.scale().y() * 0.5f;
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 		shapeDef.density = 0.f;// static
 		shapeDef.material.friction = 0.5f;
-		for (const auto& layer: tilemap.layers) {
-			for (uint32_t y = 0; y < tilemap.height; ++y) {
-				for (uint32_t x = 0; x < tilemap.width; ++x) {
-					const size_t flat = static_cast<size_t>(y) * tilemap.width + x;
+		for (const auto& layer: assetData.layers) {
+			for (uint32_t y = 0; y < assetData.height; ++y) {
+				for (uint32_t x = 0; x < assetData.width; ++x) {
+					const size_t flat = static_cast<size_t>(y) * assetData.width + x;
 					if (flat >= layer.tiles.size())
 						continue;
 					const int32_t tileIdx = layer.tiles[flat];

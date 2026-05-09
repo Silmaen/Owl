@@ -1,249 +1,390 @@
 Scene: untitled
 EnabledRenderers:
-  - Name: raycast_world
-    Enabled: false
+- Name: raycast_world
+  Enabled: false
 Entities:
-  - Entity: 2000000000000000031
-    Tag:
-      tag: RaycastHouseDoor
-    Transform:
-      translation: [22.5, -13.5, 0.600000024]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Trigger:
-      Type: Interaction
-      InteractionRange: 1.5
-      CallbackName: on_raycast_door_interact
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/raycast_house_door.lua
-  - Entity: 2000000000000000050
-    Tag:
-      tag: Teleporter
-    Transform:
-      translation: [4.5, -3.5, 0.600000024]
-      rotation: [0, 0, 0]
-      scale: [1.20000005, 1.20000005, 1]
-    CircleRenderer:
-      color: [0.850000024, 0.300000012, 0.949999988, 1]
-      thickness: 1
-      fade: 0.0500000007
-    Trigger:
-      Type: Interaction
-      InteractionRange: 1.20000005
-      CallbackName: on_teleporter_enter
-    Visibility:
-      gameVisible: false
-    LuaScript:
-      scriptPath: scripts/teleporter.lua
-  - Entity: 2000000000000000062
-    Tag:
-      tag: HudHint
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 2000000000000000060
-    RendererTag:
-      Name: ui
-    UIRect:
-      anchor: TopLeft
-      pivotX: 0
-      pivotY: 1
-      sizeX: 360
-      sizeY: 20
-      offsetX: 20
-      offsetY: -20
-    UIText:
-      text: WASD = move, E = interact, ESC = pause
-      color: [1, 1, 1, 0.850000024]
-      fontSize: 14
-      alignment: Left
-      kerning: 0
-      lineSpacing: 0
-  - Entity: 2000000000000000061
-    Tag:
-      tag: HealthBar
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 2000000000000000060
-    RendererTag:
-      Name: ui
-    UIProgressBar:
-      value: 1
-      backgroundColor: [0.400000006, 0.100000001, 0.100000001, 0.800000012]
-      fillColor: [0.200000003, 0.850000024, 0.200000003, 1]
-    UIRect:
-      anchor: TopRight
-      pivotX: 1
-      pivotY: 1
-      sizeX: 200
-      sizeY: 22
-      offsetX: -20
-      offsetY: -20
-  - Entity: 2000000000000000060
-    Tag:
-      tag: HUDCanvas
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Canvas:
-      space: ScreenOverlay
-      sortOrder: 0
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      {}
-    LuaScript:
-      scriptPath: scripts/hud.lua
-    RendererTag:
-      Name: ui
-  - Entity: 2000000000000000042
-    Tag:
-      tag: LavaHazard
-    Transform:
-      translation: [6.5, -5.5, 0.400000006]
-      rotation: [0, 0, 0]
-      scale: [2, 1, 1]
-    Trigger:
-      Type: Death
-      LevelName: scenes/game_over.owl
-    Visibility:
-      gameVisible: true
-  - Entity: 2000000000000000041
-    Tag:
-      tag: WaterHazardEast
-    Transform:
-      translation: [19.5, -19.5, 0.400000006]
-      rotation: [0, 0, 0]
-      scale: [4, 2, 1]
-    Trigger:
-      Type: LuaCallback
-      CallbackName: on_lava_tick
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/lava_damage.lua
-  - Entity: 2000000000000000040
-    Tag:
-      tag: WaterHazardWest
-    Transform:
-      translation: [14.5, -19.5, 0.400000006]
-      rotation: [0, 0, 0]
-      scale: [2, 2, 1]
-    Trigger:
-      Type: LuaCallback
-      CallbackName: on_lava_tick
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/lava_damage.lua
-  - Entity: 2000000000000000030
-    Tag:
-      tag: HouseDoor
-    Transform:
-      translation: [16.5, -13.5, 0.600000024]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Trigger:
-      Type: Interaction
-      InteractionRange: 1.5
-      CallbackName: on_door_interact
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/house_door.lua
-  - Entity: 2000000000000000020
-    Tag:
-      tag: Player
-    Transform:
-      translation: [16.5, -16.5, 0.5]
-      rotation: [0, 0, 0]
-      scale: [0.899999976, 0.899999976, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: nam:textures/player.png
-    PhysicBody:
-      type: Dynamic
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.200000003
-    Player:
-      primary: true
-      linearImpulse: 0
-      jumpImpulse: 0
-      canJump: false
-    Visibility:
-      gameVisible: true
-    LuaScript:
-      scriptPath: scripts/world_player.lua
-      properties:
-        - name: speed
-          type: float
-          value: 5
-  - Entity: 2000000000000000010
-    Tag:
-      tag: WorldTilemap
-    Transform:
-      translation: [16, -12, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Tilemap:
-      tilesetPath: tilesets/world_topdown.owltileset
-      width: 32
-      height: 24
-      cellSize: 1
-      layers:
-        - name: world
-          tiles: 2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,0,0,0,9,0,0,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,0,0,0,0,2,2,2,2,0,0,0,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,7,7,0,0,0,2,2,2,2,0,0,0,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,7,7,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,7,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,9,9,9,0,0,0,9,9,0,0,0,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,5,5,5,5,5,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,5,5,5,5,5,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,4,4,4,4,4,0,0,0,5,5,5,5,5,5,5,0,2,2,2,2,0,0,0,0,0,0,13,0,0,0,0,0,4,4,4,4,4,0,0,0,4,4,4,4,4,4,4,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,4,4,6,4,4,0,0,1,6,0,0,0,0,0,4,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,4,4,4,4,4,4,4,0,2,2,2,2,0,0,0,0,9,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,15,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,3,3,3,11,3,3,3,3,3,0,0,0,0,0,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,3,3,3,11,3,3,3,3,3,0,0,0,0,0,0,0,0,2,2,2,2,0,0,0,9,0,0,0,0,0,0,0,3,3,3,11,3,3,3,14,14,14,14,14,14,9,0,0,0,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2
-    Visibility:
-      gameVisible: true
-  - Entity: 2000000000000000002
-    Tag:
-      tag: SkyBackground
-    Transform:
-      translation: [16, -12, -5]
-      rotation: [0, 0, 0]
-      scale: [50, 50, 1]
-    BackgroundTexture:
-      mode: 0
-      type: 1
-      color: [0.180000007, 0.300000012, 0.550000012, 1]
-      topColor: [0.5, 0.699999988, 0.949999988, 1]
-    Visibility:
-      gameVisible: true
-  - Entity: 2000000000000000001
-    Tag:
-      tag: MainCamera
-    Transform:
-      translation: [16.5, -16.5, 5]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Camera:
-      camera:
-        projectionType: Orthographic
-        perspectiveFOV: 0.785398185
-        perspectiveNear: 0.00999999978
-        perspectiveFar: 1000
-        orthographicSize: 8
-        orthographicNear: -1
-        orthographicFar: 10
-      primary: true
-      fixedAspectRatio: false
-    Visibility:
-      gameVisible: true
-    SoundListener:
-      primary: true
+- Entity: 2000000000000000031
+  Tag:
+    tag: RaycastHouseDoor
+  Transform:
+    translation:
+    - 22.5
+    - -13.5
+    - 0.600000024
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Trigger:
+    Type: Interaction
+    InteractionRange: 1.5
+    CallbackName: on_raycast_door_interact
+  Visibility:
+    gameVisible: true
+  LuaScript:
+    scriptPath: scripts/raycast_house_door.lua
+- Entity: 2000000000000000050
+  Tag:
+    tag: Teleporter
+  Transform:
+    translation:
+    - 4.5
+    - -3.5
+    - 0.600000024
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1.20000005
+    - 1.20000005
+    - 1
+  CircleRenderer:
+    color:
+    - 0.850000024
+    - 0.300000012
+    - 0.949999988
+    - 1
+    thickness: 1
+    fade: 0.0500000007
+  Trigger:
+    Type: Interaction
+    InteractionRange: 1.20000005
+    CallbackName: on_teleporter_enter
+  Visibility:
+    gameVisible: false
+  LuaScript:
+    scriptPath: scripts/teleporter.lua
+- Entity: 2000000000000000062
+  Tag:
+    tag: HudHint
+  Transform:
+    translation:
+    - 0
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 2000000000000000060
+  RendererTag:
+    Name: ui
+  UIRect:
+    anchor: TopLeft
+    pivotX: 0
+    pivotY: 1
+    sizeX: 360
+    sizeY: 20
+    offsetX: 20
+    offsetY: -20
+  UIText:
+    text: WASD = move, E = interact, ESC = pause
+    color:
+    - 1
+    - 1
+    - 1
+    - 0.850000024
+    fontSize: 14
+    alignment: Left
+    kerning: 0
+    lineSpacing: 0
+- Entity: 2000000000000000061
+  Tag:
+    tag: HealthBar
+  Transform:
+    translation:
+    - 0
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 2000000000000000060
+  RendererTag:
+    Name: ui
+  UIProgressBar:
+    value: 1
+    backgroundColor:
+    - 0.400000006
+    - 0.100000001
+    - 0.100000001
+    - 0.800000012
+    fillColor:
+    - 0.200000003
+    - 0.850000024
+    - 0.200000003
+    - 1
+  UIRect:
+    anchor: TopRight
+    pivotX: 1
+    pivotY: 1
+    sizeX: 200
+    sizeY: 22
+    offsetX: -20
+    offsetY: -20
+- Entity: 2000000000000000060
+  Tag:
+    tag: HUDCanvas
+  Transform:
+    translation:
+    - 0
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Canvas:
+    space: ScreenOverlay
+    sortOrder: 0
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+  LuaScript:
+    scriptPath: scripts/hud.lua
+  RendererTag:
+    Name: ui
+- Entity: 2000000000000000042
+  Tag:
+    tag: LavaHazard
+  Transform:
+    translation:
+    - 6.5
+    - -5.5
+    - 0.400000006
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 2
+    - 1
+    - 1
+  Trigger:
+    Type: Death
+    LevelName: scenes/game_over.owl
+  Visibility:
+    gameVisible: true
+- Entity: 2000000000000000041
+  Tag:
+    tag: WaterHazardEast
+  Transform:
+    translation:
+    - 19.5
+    - -19.5
+    - 0.400000006
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 4
+    - 2
+    - 1
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_lava_tick
+  Visibility:
+    gameVisible: true
+  LuaScript:
+    scriptPath: scripts/lava_damage.lua
+- Entity: 2000000000000000040
+  Tag:
+    tag: WaterHazardWest
+  Transform:
+    translation:
+    - 14.5
+    - -19.5
+    - 0.400000006
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 2
+    - 2
+    - 1
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_lava_tick
+  Visibility:
+    gameVisible: true
+  LuaScript:
+    scriptPath: scripts/lava_damage.lua
+- Entity: 2000000000000000030
+  Tag:
+    tag: HouseDoor
+  Transform:
+    translation:
+    - 16.5
+    - -13.5
+    - 0.600000024
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Trigger:
+    Type: Interaction
+    InteractionRange: 1.5
+    CallbackName: on_door_interact
+  Visibility:
+    gameVisible: true
+  LuaScript:
+    scriptPath: scripts/house_door.lua
+- Entity: 2000000000000000020
+  Tag:
+    tag: Player
+  Transform:
+    translation:
+    - 16.5
+    - -16.5
+    - 0.5
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.899999976
+    - 0.899999976
+    - 1
+  SpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    tilingFactor: 1
+    texture: nam:textures/player.png
+  PhysicBody:
+    type: Dynamic
+    fixedRotation: true
+    colliderSize:
+    - 1
+    - 1
+    - 1
+    density: 1
+    restitution: 0
+    friction: 0.200000003
+  Player:
+    primary: true
+    linearImpulse: 0
+    jumpImpulse: 0
+    canJump: false
+  Visibility:
+    gameVisible: true
+  LuaScript:
+    scriptPath: scripts/world_player.lua
+    properties:
+    - name: speed
+      type: float
+      value: 5
+- Entity: 2000000000000000010
+  Tag:
+    tag: WorldTilemap
+  Transform:
+    translation:
+    - 16
+    - -12
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Tilemap:
+    tilemapPath: tilemaps/world_map.owltilemap
+  Visibility:
+    gameVisible: true
+- Entity: 2000000000000000002
+  Tag:
+    tag: SkyBackground
+  Transform:
+    translation:
+    - 16
+    - -12
+    - -5
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 50
+    - 50
+    - 1
+  BackgroundTexture:
+    mode: 0
+    type: 1
+    color:
+    - 0.180000007
+    - 0.300000012
+    - 0.550000012
+    - 1
+    topColor:
+    - 0.5
+    - 0.699999988
+    - 0.949999988
+    - 1
+  Visibility:
+    gameVisible: true
+- Entity: 2000000000000000001
+  Tag:
+    tag: MainCamera
+  Transform:
+    translation:
+    - 16.5
+    - -16.5
+    - 5
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Camera:
+    camera:
+      projectionType: Orthographic
+      perspectiveFOV: 0.785398185
+      perspectiveNear: 0.00999999978
+      perspectiveFar: 1000
+      orthographicSize: 8
+      orthographicNear: -1
+      orthographicFar: 10
+    primary: true
+    fixedAspectRatio: false
+  Visibility:
+    gameVisible: true
+  SoundListener:
+    primary: true

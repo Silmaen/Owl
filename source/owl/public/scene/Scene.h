@@ -352,13 +352,18 @@ private:
 
 	/**
 	 * @brief
-	 *  Resolve `Tilemap.tileset` from `Tilemap.tilesetPath` for every tilemap in the scene.
+	 *  Resolve every tilemap component's `.owltilemap` asset and its associated `.owltileset`.
 	 *
-	 * Resolves any tilemap whose tileset has not been resolved yet. Idempotent. Called
-	 * eagerly from `onStartRuntime` so that physics initialisation can read the tileset's
-	 * collidable flags, and lazily by the renderer for the editor preview path.
+	 * Two-phase pass over every `Tilemap` component in the scene:
+	 *   1. If the component has a non-empty `tilemapPath` and a null `asset`, load the
+	 *      `.owltilemap` from disk into a fresh `TilemapAsset`.
+	 *   2. If the resolved asset has a non-empty `tilesetPath` and a null `tileset`, load the
+	 *      `.owltileset` from disk.
+	 *
+	 * Idempotent. Called eagerly from `onStartRuntime` so that physics initialisation can read
+	 * the tileset's collidable flags, and lazily by the renderer for the editor preview path.
 	 */
-	void resolveAllTilemapTilesets();
+	void resolveAllTilemapAssets();
 
 	/**
 	 * @brief

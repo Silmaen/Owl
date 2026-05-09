@@ -67,4 +67,38 @@ auto DocumentManager::find(const core::UUID iId) const -> Document* {
 	return (it == m_documents.end()) ? nullptr : it->get();
 }
 
+namespace {
+auto typeShortName(const DocumentType iType) -> const char* {
+	switch (iType) {
+		case DocumentType::Scene:
+			return "Scene";
+		case DocumentType::Code:
+			return "Code";
+		case DocumentType::NodeGraph:
+			return "Graph";
+		case DocumentType::Animation:
+			return "Animation";
+		case DocumentType::Tilemap:
+			return "Tilemap";
+		case DocumentType::Tileset:
+			return "Tileset";
+	}
+	return "Doc";
+}
+}// namespace
+
+auto DocumentManager::displayTitleFor(const Document* iDoc) const -> std::string {
+	if (iDoc == nullptr)
+		return {};
+	auto base = iDoc->title();
+	int matches = 0;
+	for (const auto& d: m_documents) {
+		if (d && d->title() == base)
+			++matches;
+	}
+	if (matches <= 1)
+		return base;
+	return std::format("{}: {}", typeShortName(iDoc->type()), base);
+}
+
 }// namespace owl::nest

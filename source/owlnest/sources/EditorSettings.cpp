@@ -47,6 +47,14 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			codeEditorFontSize = std::clamp(config["codeEditorFontSize"].as<int>(), 8, 48);
 		if (config["uiFontSize"])
 			uiFontSize = std::clamp(config["uiFontSize"].as<int>(), 14, 24);
+		if (config["snapEnabled"])
+			snapEnabled = config["snapEnabled"].as<bool>();
+		if (config["snapStep"])
+			snapStep = std::max(0.0001f, config["snapStep"].as<float>());
+		if (config["snapMultiplier"])
+			snapMultiplier = std::max(0.0001f, config["snapMultiplier"].as<float>());
+		if (config["snapAutoFromTilemap"])
+			snapAutoFromTilemap = config["snapAutoFromTilemap"].as<bool>();
 		if (const auto bindings = config["keybindings"]; bindings && bindings.IsMap()) {
 			keybindingOverrides.clear();
 			for (const auto& pair: bindings)
@@ -67,6 +75,10 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "themePreset" << YAML::Value << themePreset;
 	out << YAML::Key << "codeEditorFontSize" << YAML::Value << codeEditorFontSize;
 	out << YAML::Key << "uiFontSize" << YAML::Value << uiFontSize;
+	out << YAML::Key << "snapEnabled" << YAML::Value << snapEnabled;
+	out << YAML::Key << "snapStep" << YAML::Value << snapStep;
+	out << YAML::Key << "snapMultiplier" << YAML::Value << snapMultiplier;
+	out << YAML::Key << "snapAutoFromTilemap" << YAML::Value << snapAutoFromTilemap;
 	if (!keybindingOverrides.empty()) {
 		out << YAML::Key << "keybindings" << YAML::Value << YAML::BeginMap;
 		for (const auto& [id, shortcut]: keybindingOverrides) out << YAML::Key << id << YAML::Value << shortcut;

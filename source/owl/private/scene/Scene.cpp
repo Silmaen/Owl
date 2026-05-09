@@ -16,6 +16,7 @@
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "scene/Entity.h"
+#include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 
 #include "core/Application.h"
@@ -327,7 +328,7 @@ void Scene::onStartRuntime() {
 
 	// Tilemap tilesets are normally resolved on first render; we need them
 	// before physics init so collidable cells generate static fixtures.
-	resolveAllTilemapTilesets();
+	resolveAllTilemapAssets();
 
 	physic::PhysicCommand::init(this);
 
@@ -881,7 +882,7 @@ void Scene::render() {
 	// Draw tilemaps first so they sit behind every sprite / circle / text in the scene.
 	// Renderer2D batches do not depth-sort within a frame; the painter's order wins,
 	// hence tilemaps are drawn before the foreground entities.
-	resolveAllTilemapTilesets();
+	resolveAllTilemapAssets();
 	for (const auto view = registry.view<component::Transform, component::Tilemap>(); auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
@@ -889,26 +890,27 @@ void Scene::render() {
 		if (!layerAccepts(ent))
 			continue;
 		auto& tilemap = view.get<component::Tilemap>(entity);
-		if (!tilemap.tileset || !tilemap.tileset->texture)
+		if (!tilemap.asset || !tilemap.asset->tileset || !tilemap.asset->tileset->texture)
 			continue;
+		const auto& assetData = *tilemap.asset;
 		const math::Transform worldTransform = getWorldTransform(ent);
 		const int entityId = static_cast<int>(entity);
 		// When the active layer is a raycaster, route the tilemap to the DDA pipeline
 		// instead of emitting per-cell 2D quads. The 2D path keeps running for any
 		// layer whose type isn't "RendererRaycast" (legacy and HUD tilemaps included).
 		if (mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererRaycast") {
-			renderer::RendererRaycast::drawTilemapWalls(tilemap, worldTransform, entityId);
+			renderer::RendererRaycast::drawTilemapWalls(assetData, worldTransform, entityId);
 			continue;
 		}
-		const float cellSize = tilemap.cellSize;
-		const float originX = -static_cast<float>(tilemap.width - 1) * 0.5f * cellSize;
-		const float originY = static_cast<float>(tilemap.height - 1) * 0.5f * cellSize;
-		for (const auto& layer: tilemap.layers) {
+		const float cellSize = assetData.cellSize;
+		const float originX = -static_cast<float>(assetData.width - 1) * 0.5f * cellSize;
+		const float originY = static_cast<float>(assetData.height - 1) * 0.5f * cellSize;
+		for (const auto& layer: assetData.layers) {
 			if (!layer.visible)
 				continue;
-			for (uint32_t y = 0; y < tilemap.height; ++y) {
-				for (uint32_t x = 0; x < tilemap.width; ++x) {
-					const size_t flat = static_cast<size_t>(y) * tilemap.width + x;
+			for (uint32_t y = 0; y < assetData.height; ++y) {
+				for (uint32_t x = 0; x < assetData.width; ++x) {
+					const size_t flat = static_cast<size_t>(y) * assetData.width + x;
 					if (flat >= layer.tiles.size())
 						continue;
 					const int32_t tileIdx = layer.tiles[flat];
@@ -927,8 +929,8 @@ void Scene::render() {
 					renderer::Renderer2D::drawQuad(
 							{.transform = cellTransform,
 							 .color = math::vec4{1.f, 1.f, 1.f, 1.f},
-							 .texture = tilemap.tileset->texture,
-							 .textureCoords = tilemap.tileset->getTileUv(static_cast<uint32_t>(tileIdx)),
+							 .texture = assetData.tileset->texture,
+							 .textureCoords = assetData.tileset->getTileUv(static_cast<uint32_t>(tileIdx)),
 							 .entityId = entityId});
 				}
 			}
@@ -1015,27 +1017,49 @@ void Scene::render() {
 	}
 }
 
-void Scene::resolveAllTilemapTilesets() {
+void Scene::resolveAllTilemapAssets() {
 	if (!core::Application::instanced())
 		return;
 	const auto& app = core::Application::get();
-	for (const auto view = registry.view<component::Tilemap>(); auto entity: view) {
-		auto& tilemap = view.get<component::Tilemap>(entity);
-		if (tilemap.tileset || tilemap.tilesetPath.empty())
-			continue;
-		auto resolved = mkShared<Tileset>();
-		bool loaded = false;
-		for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
-			if (const auto fullPath = assetsPath / tilemap.tilesetPath; exists(fullPath)) {
-				loaded = resolved->loadFromFile(fullPath);
-				if (loaded)
-					break;
+	const auto& assetDirs = app.getAssetDirectories();
+
+	const auto loadFromAssetDirs = [&](const std::filesystem::path& iRelative, const auto& iLoader) -> bool {
+		for (const auto& [title, assetsPath]: assetDirs) {
+			if (const auto fullPath = assetsPath / iRelative; exists(fullPath)) {
+				if (iLoader(fullPath))
+					return true;
 			}
 		}
-		if (!loaded && exists(tilemap.tilesetPath))
-			loaded = resolved->loadFromFile(tilemap.tilesetPath);
+		return exists(iRelative) && iLoader(iRelative);
+	};
+
+	// Phase 1 — resolve the `.owltilemap` asset from `tilemapPath` (skip components that
+	// already carry an in-memory asset, e.g. legacy inline tilemaps).
+	for (const auto view = registry.view<component::Tilemap>(); auto entity: view) {
+		auto& tilemap = view.get<component::Tilemap>(entity);
+		if (tilemap.asset || tilemap.tilemapPath.empty())
+			continue;
+		auto resolved = mkShared<TilemapAsset>();
+		const bool loaded = loadFromAssetDirs(tilemap.tilemapPath, [&](const std::filesystem::path& iPath) -> bool {
+			return resolved->loadFromFile(iPath);
+		});
 		if (loaded)
-			tilemap.tileset = std::move(resolved);
+			tilemap.asset = std::move(resolved);
+	}
+
+	// Phase 2 — resolve the asset's `.owltileset` (only for assets that don't already carry
+	// a tileset).
+	for (const auto view = registry.view<component::Tilemap>(); auto entity: view) {
+		auto& tilemap = view.get<component::Tilemap>(entity);
+		if (!tilemap.asset || tilemap.asset->tileset || tilemap.asset->tilesetPath.empty())
+			continue;
+		auto resolved = mkShared<Tileset>();
+		const bool loaded =
+				loadFromAssetDirs(tilemap.asset->tilesetPath, [&](const std::filesystem::path& iPath) -> bool {
+					return resolved->loadFromFile(iPath);
+				});
+		if (loaded)
+			tilemap.asset->tileset = std::move(resolved);
 	}
 }
 

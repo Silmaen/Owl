@@ -8,41 +8,25 @@
 #include "owlpch.h"
 
 #include "core/SerializerImpl.h"
-#include "scene/Tileset.h"
+#include "scene/TilemapAsset.h"
 #include "scene/component/Tilemap.h"
 
 #include <charconv>
-#include <sstream>
 
 namespace owl::scene::component {
 
 namespace {
-/// Render-empty marker. Mirrors `g_EmptyTileIndex` but in scope of this TU for terseness.
 constexpr int32_t k_Empty = g_EmptyTileIndex;
 
 /**
  * @brief
- *  Resize a row-major flat layer buffer in place, copying preserved cells.
- */
-void resizeLayerStorage(std::vector<int32_t>& ioTiles, uint32_t iOldWidth, uint32_t iOldHeight, uint32_t iNewWidth,
-						uint32_t iNewHeight) {
-	std::vector<int32_t> next(static_cast<size_t>(iNewWidth) * iNewHeight, k_Empty);
-	const uint32_t copyW = std::min(iOldWidth, iNewWidth);
-	const uint32_t copyH = std::min(iOldHeight, iNewHeight);
-	for (uint32_t y = 0; y < copyH; ++y) {
-		for (uint32_t x = 0; x < copyW; ++x) {
-			const size_t srcIdx = static_cast<size_t>(y) * iOldWidth + x;
-			const size_t dstIdx = static_cast<size_t>(y) * iNewWidth + x;
-			if (srcIdx < ioTiles.size())
-				next[dstIdx] = ioTiles[srcIdx];
-		}
-	}
-	ioTiles = std::move(next);
-}
-
-/**
- * @brief
  *  Encode a flat tile buffer as a comma-separated decimal string.
+ *
+ * Inline tilemaps are still serialised in this format so legacy scenes can be
+ * round-tripped while we transition to `.owltilemap` assets. Once every
+ * sample scene has been migrated this fallback writer can be deleted.
+ * @param[in] iTiles The buffer to encode.
+ * @return The encoded string.
  */
 auto encodeTiles(const std::vector<int32_t>& iTiles) -> std::string {
 	std::string out;
@@ -58,11 +42,11 @@ auto encodeTiles(const std::vector<int32_t>& iTiles) -> std::string {
 /**
  * @brief
  *  Decode a comma-separated tile string into a flat buffer of size `iExpected`.
- *
- * Missing or malformed entries become `g_EmptyTileIndex`. Surplus entries are
- * truncated to keep the layer aligned to the grid.
+ * @param[in] iEncoded The encoded buffer.
+ * @param[in] iExpected The expected output size.
+ * @return The decoded buffer (padded with `g_EmptyTileIndex` when the input is short).
  */
-auto decodeTiles(const std::string& iEncoded, size_t iExpected) -> std::vector<int32_t> {
+auto decodeTiles(const std::string& iEncoded, const size_t iExpected) -> std::vector<int32_t> {
 	std::vector<int32_t> out(iExpected, k_Empty);
 	if (iEncoded.empty())
 		return out;
@@ -81,97 +65,105 @@ auto decodeTiles(const std::string& iEncoded, size_t iExpected) -> std::vector<i
 	return out;
 }
 
-}// namespace
-
-void Tilemap::resize(const uint32_t iWidth, const uint32_t iHeight) {
-	const uint32_t newWidth = std::max(1u, iWidth);
-	const uint32_t newHeight = std::max(1u, iHeight);
-	for (auto& layer: layers) resizeLayerStorage(layer.tiles, width, height, newWidth, newHeight);
-	width = newWidth;
-	height = newHeight;
-}
-
-auto Tilemap::addLayer(const std::string& iName) -> TilemapLayer& {
-	auto& layer = layers.emplace_back();
-	layer.name = iName;
-	layer.visible = true;
-	layer.parallax = math::vec2{1.f, 1.f};
-	layer.tiles.assign(static_cast<size_t>(width) * height, k_Empty);
-	return layer;
-}
-
-auto Tilemap::getTile(const uint32_t iLayer, const uint32_t iX, const uint32_t iY) const -> int32_t {
-	if (iLayer >= layers.size() || iX >= width || iY >= height)
-		return k_Empty;
-	const size_t idx = static_cast<size_t>(iY) * width + iX;
-	if (idx >= layers[iLayer].tiles.size())
-		return k_Empty;
-	return layers[iLayer].tiles[idx];
-}
-
-void Tilemap::setTile(const uint32_t iLayer, const uint32_t iX, const uint32_t iY, const int32_t iValue) {
-	if (iX >= width || iY >= height)
-		return;
-	auto& tiles = layers.at(iLayer).tiles;
-	const size_t idx = static_cast<size_t>(iY) * width + iX;
-	if (idx >= tiles.size())
-		tiles.resize(static_cast<size_t>(width) * height, k_Empty);
-	tiles[idx] = iValue;
-}
-
-void Tilemap::serialize(const core::Serializer& iOut) const {
-	iOut.getImpl()->emitter << YAML::Key << key();
-	iOut.getImpl()->emitter << YAML::BeginMap;// Tilemap
-	if (!tilesetPath.empty())
-		iOut.getImpl()->emitter << YAML::Key << "tilesetPath" << YAML::Value << tilesetPath.generic_string();
-	iOut.getImpl()->emitter << YAML::Key << "width" << YAML::Value << width;
-	iOut.getImpl()->emitter << YAML::Key << "height" << YAML::Value << height;
-	iOut.getImpl()->emitter << YAML::Key << "cellSize" << YAML::Value << cellSize;
-	iOut.getImpl()->emitter << YAML::Key << "layers" << YAML::Value << YAML::BeginSeq;
-	for (const auto& layer: layers) {
-		iOut.getImpl()->emitter << YAML::BeginMap;
-		iOut.getImpl()->emitter << YAML::Key << "name" << YAML::Value << layer.name;
+/**
+ * @brief
+ *  Emit the inline data of a `TilemapAsset` under the `inline:` YAML key.
+ *
+ * Used both for the legacy flat form (kept temporarily for back-compat in
+ * scenes that have not yet been migrated to a `.owltilemap` reference) and
+ * for in-memory assets that have no path on disk yet.
+ * @param[in] iEmitter The destination emitter (positioned inside a map).
+ * @param[in] iAsset The asset whose inline data should be written.
+ */
+void emitInline(YAML::Emitter& iEmitter, const scene::TilemapAsset& iAsset) {
+	if (!iAsset.tilesetPath.empty())
+		iEmitter << YAML::Key << "tilesetPath" << YAML::Value << iAsset.tilesetPath.generic_string();
+	iEmitter << YAML::Key << "width" << YAML::Value << iAsset.width;
+	iEmitter << YAML::Key << "height" << YAML::Value << iAsset.height;
+	iEmitter << YAML::Key << "cellSize" << YAML::Value << iAsset.cellSize;
+	iEmitter << YAML::Key << "layers" << YAML::Value << YAML::BeginSeq;
+	for (const auto& layer: iAsset.layers) {
+		iEmitter << YAML::BeginMap;
+		iEmitter << YAML::Key << "name" << YAML::Value << layer.name;
 		if (!layer.visible)
-			iOut.getImpl()->emitter << YAML::Key << "visible" << YAML::Value << layer.visible;
+			iEmitter << YAML::Key << "visible" << YAML::Value << layer.visible;
 		if (layer.parallax.x() != 1.f || layer.parallax.y() != 1.f) {
-			iOut.getImpl()->emitter << YAML::Key << "parallax" << YAML::Value << YAML::Flow << YAML::BeginSeq
-									<< layer.parallax.x() << layer.parallax.y() << YAML::EndSeq;
+			iEmitter << YAML::Key << "parallax" << YAML::Value << YAML::Flow << YAML::BeginSeq << layer.parallax.x()
+					 << layer.parallax.y() << YAML::EndSeq;
 		}
-		iOut.getImpl()->emitter << YAML::Key << "tiles" << YAML::Value << encodeTiles(layer.tiles);
-		iOut.getImpl()->emitter << YAML::EndMap;
+		iEmitter << YAML::Key << "tiles" << YAML::Value << encodeTiles(layer.tiles);
+		iEmitter << YAML::EndMap;
 	}
-	iOut.getImpl()->emitter << YAML::EndSeq;
-	iOut.getImpl()->emitter << YAML::EndMap;// Tilemap
+	iEmitter << YAML::EndSeq;
 }
 
-void Tilemap::deserialize(const core::Serializer& iNode) {
-	const auto& root = iNode.getImpl()->node;
-	if (root["tilesetPath"])
-		tilesetPath = root["tilesetPath"].as<std::string>();
-	if (root["width"])
-		width = std::max(1u, root["width"].as<uint32_t>());
-	if (root["height"])
-		height = std::max(1u, root["height"].as<uint32_t>());
-	if (root["cellSize"])
-		cellSize = root["cellSize"].as<float>();
-	layers.clear();
-	if (const auto layerNodes = root["layers"]; layerNodes && layerNodes.IsSequence()) {
-		const size_t expected = static_cast<size_t>(width) * height;
+/**
+ * @brief
+ *  Read the inline data block (flat or nested under `inline:`) into a fresh asset.
+ * @param[in] iNode The YAML node containing inline tilemap data.
+ * @return The populated asset (always non-null).
+ */
+auto readInline(const YAML::Node& iNode) -> shared<scene::TilemapAsset> {
+	auto asset = mkShared<scene::TilemapAsset>();
+	if (iNode["tilesetPath"])
+		asset->tilesetPath = iNode["tilesetPath"].as<std::string>();
+	if (iNode["width"])
+		asset->width = std::max(1u, iNode["width"].as<uint32_t>());
+	if (iNode["height"])
+		asset->height = std::max(1u, iNode["height"].as<uint32_t>());
+	if (iNode["cellSize"])
+		asset->cellSize = iNode["cellSize"].as<float>();
+	if (const auto layerNodes = iNode["layers"]; layerNodes && layerNodes.IsSequence()) {
+		const size_t expected = static_cast<size_t>(asset->width) * asset->height;
 		for (const auto& layerNode: layerNodes) {
 			TilemapLayer layer;
 			if (layerNode["name"])
 				layer.name = layerNode["name"].as<std::string>();
 			if (layerNode["visible"])
 				layer.visible = layerNode["visible"].as<bool>();
-			if (const auto px = layerNode["parallax"]; px && px.IsSequence() && px.size() >= 2) {
+			if (const auto px = layerNode["parallax"]; px && px.IsSequence() && px.size() >= 2)
 				layer.parallax = math::vec2{px[0].as<float>(), px[1].as<float>()};
-			}
 			if (layerNode["tiles"])
 				layer.tiles = decodeTiles(layerNode["tiles"].as<std::string>(), expected);
 			else
 				layer.tiles.assign(expected, k_Empty);
-			layers.push_back(std::move(layer));
+			asset->layers.push_back(std::move(layer));
 		}
+	}
+	return asset;
+}
+
+}// namespace
+
+void Tilemap::serialize(const core::Serializer& iOut) const {
+	auto& emitter = iOut.getImpl()->emitter;
+	emitter << YAML::Key << key();
+	emitter << YAML::BeginMap;
+	if (!tilemapPath.empty()) {
+		emitter << YAML::Key << "tilemapPath" << YAML::Value << tilemapPath.generic_string();
+	} else if (asset) {
+		emitter << YAML::Key << "inline" << YAML::Value << YAML::BeginMap;
+		emitInline(emitter, *asset);
+		emitter << YAML::EndMap;
+	}
+	emitter << YAML::EndMap;
+}
+
+void Tilemap::deserialize(const core::Serializer& iNode) {
+	const auto& root = iNode.getImpl()->node;
+	tilemapPath.clear();
+	asset.reset();
+	if (root["tilemapPath"]) {
+		tilemapPath = root["tilemapPath"].as<std::string>();
+		// `asset` is left null on purpose: scene loading resolves it via `Scene::loadAssetReferences`.
+		return;
+	}
+	// Inline form — either the preferred nested map under `inline:` or the legacy flat layout
+	// produced by `TilemapAsset::deserialize` before the component refactor.
+	if (const auto inlineNode = root["inline"]; inlineNode && inlineNode.IsMap()) {
+		asset = readInline(inlineNode);
+	} else if (root["width"] || root["layers"]) {
+		asset = readInline(root);
 	}
 }
 

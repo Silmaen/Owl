@@ -8,81 +8,130 @@
 
 #include "TilePalette.h"
 
+#include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <imgui.h>
+#include <scene/TilemapAsset.h>
 #include <scene/Tileset.h>
-#include <scene/component/Tilemap.h>
 
 namespace owl::nest::panel {
 
 namespace {
+constexpr ImU32 k_PrimaryHighlight = IM_COL32(255, 195, 38, 255);// editor accent
+constexpr ImU32 k_SecondaryHighlight = IM_COL32(120, 180, 255, 255);// blue, distinct from primary
+constexpr ImU32 k_BothHighlight = IM_COL32(220, 90, 220, 255);// magenta, used when both brushes share a tile
+
 /**
  * @brief
- *  Render a single tile button at the given size, returning true on click.
+ *  Resolve the highlight colour for a tile cell given the current primary / secondary brushes.
+ * @param[in] iTile The 0-based tile index being rendered.
+ * @param[in] iPrimary The primary brush value.
+ * @param[in] iSecondary The secondary brush value.
+ * @return The 32-bit ABGR highlight, or 0 when no highlight applies.
+ */
+auto highlightFor(const int32_t iTile, const int32_t iPrimary, const int32_t iSecondary) -> ImU32 {
+	const bool primary = (iPrimary == iTile);
+	const bool secondary = (iSecondary == iTile);
+	if (primary && secondary)
+		return k_BothHighlight;
+	if (primary)
+		return k_PrimaryHighlight;
+	if (secondary)
+		return k_SecondaryHighlight;
+	return 0;
+}
+
+/**
+ * @brief
+ *  Render a single tile button. Returns a pair of booleans (left-clicked, right-clicked).
+ * @param[in] iId The button id (scoped by the caller's PushID).
+ * @param[in] iTex The tileset atlas texture.
+ * @param[in] iUvs The four-corner UVs to display for this tile slot.
+ * @param[in] iSize The button size in pixels.
+ * @param[in] iHighlight A non-zero highlight colour to draw a 2-pixel border around the cell.
+ * @return `{leftClicked, rightClicked}`.
  */
 auto tileButton(const char* iId, const shared<renderer::gpu::Texture2D>& iTex, const std::array<math::vec2, 4>& iUvs,
-				const ImVec2 iSize, const bool iSelected) -> bool {
-	if (iSelected) {
-		ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(255, 195, 38, 255));
+				const ImVec2 iSize, const ImU32 iHighlight) -> std::pair<bool, bool> {
+	if (iHighlight != 0) {
+		ImGui::PushStyleColor(ImGuiCol_Border, iHighlight);
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
 	}
 	const ImVec2 uv0 = gui::vec(iUvs[3]);// top-left
 	const ImVec2 uv1 = gui::vec(iUvs[1]);// bottom-right
-	bool clicked = false;
+	bool leftClicked = false;
+	bool rightClicked = false;
 	if (iTex && iTex->isLoaded()) {
-		clicked = ImGui::ImageButton(iId, static_cast<ImTextureID>(iTex->getRendererId()), iSize, uv0, uv1);
+		ImGui::ImageButton(iId, static_cast<ImTextureID>(iTex->getRendererId()), iSize, uv0, uv1);
 	} else {
-		clicked = ImGui::Button(iId, iSize);
+		ImGui::Button(iId, iSize);
 	}
-	if (iSelected) {
+	if (ImGui::IsItemHovered()) {
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			leftClicked = true;
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+			rightClicked = true;
+	}
+	if (iHighlight != 0) {
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor();
 	}
-	return clicked;
+	return {leftClicked, rightClicked};
+}
+
+/**
+ * @brief
+ *  Toggle a brush against a target value: re-clicking the same value reverts to pick mode.
+ * @param[in,out] ioBrush The brush to mutate.
+ * @param[in] iTarget The value the user clicked.
+ */
+void toggleBrush(int32_t& ioBrush, const int32_t iTarget) {
+	ioBrush = (ioBrush == iTarget) ? g_TileBrushPick : iTarget;
+}
+
+/**
+ * @brief
+ *  Human-readable label for a brush value.
+ * @param[in] iBrush The brush.
+ * @return Static string usable in tooltips / status lines.
+ */
+auto brushLabel(const int32_t iBrush) -> const char* {
+	if (iBrush == g_TileBrushPick)
+		return "Pick";
+	if (iBrush == g_TileBrushEraser)
+		return "Eraser";
+	return "Tile";
 }
 
 }// namespace
 
-auto TilePalette::isPaintActive() const -> bool {
-	if (!m_selection)
-		return false;
-	if (!m_selection.hasComponent<scene::component::Tilemap>())
-		return false;
-	const auto& tilemap = m_selection.getComponent<scene::component::Tilemap>();
-	if (!tilemap.tileset || !tilemap.tileset->texture)
-		return false;
-	if (m_selectedLayer >= tilemap.layers.size())
-		return false;
-	return true;// `-1` (eraser) is also a valid brush
-}
-
-void TilePalette::onImGuiRender() {
+void TilePalette::onImGuiRender(scene::TilemapAsset* iTarget) {
 	ImGui::Begin("Tile Palette");
-	if (!m_selection || !m_selection.hasComponent<scene::component::Tilemap>()) {
-		ImGui::TextDisabled("Select an entity with a Tilemap component to paint.");
+	if (iTarget == nullptr) {
+		ImGui::TextDisabled("Open a .owltilemap document to start painting.");
 		ImGui::End();
 		return;
 	}
-	auto& tilemap = m_selection.getComponent<scene::component::Tilemap>();
-	if (!tilemap.tileset) {
-		ImGui::TextDisabled("Drop a .owltileset on the Tilemap inspector to populate.");
+	auto& asset = *iTarget;
+	if (!asset.tileset) {
+		ImGui::TextDisabled("Drop a .owltileset on the asset's Tileset slot to populate.");
 		ImGui::End();
 		return;
 	}
 
 	// --- Active layer dropdown -------------------------------------------------------------
-	if (tilemap.layers.empty()) {
-		ImGui::TextDisabled("Add at least one layer to start painting.");
+	if (asset.layers.empty()) {
+		ImGui::TextDisabled("Add at least one layer in the Scene Hierarchy panel.");
 		ImGui::End();
 		return;
 	}
-	if (m_selectedLayer >= tilemap.layers.size())
+	if (m_selectedLayer >= asset.layers.size())
 		m_selectedLayer = 0;
-	const auto& currentLayerName = tilemap.layers[m_selectedLayer].name;
+	const auto& currentLayerName = asset.layers[m_selectedLayer].name;
 	if (ImGui::BeginCombo("Layer", currentLayerName.c_str())) {
-		for (size_t i = 0; i < tilemap.layers.size(); ++i) {
+		for (size_t i = 0; i < asset.layers.size(); ++i) {
 			const bool selected = i == m_selectedLayer;
-			const auto label = tilemap.layers[i].name.empty() ? std::format("layer{}", i) : tilemap.layers[i].name;
+			const auto label = asset.layers[i].name.empty() ? std::format("layer{}", i) : asset.layers[i].name;
 			if (ImGui::Selectable(label.c_str(), selected))
 				m_selectedLayer = static_cast<uint32_t>(i);
 			if (selected)
@@ -91,31 +140,72 @@ void TilePalette::onImGuiRender() {
 		ImGui::EndCombo();
 	}
 
-	// --- Eraser button --------------------------------------------------------------------
-	const bool eraserSelected = m_selectedTile < 0;
-	if (eraserSelected) {
-		ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(255, 195, 38, 200));
+	// --- Brush summary ---------------------------------------------------------------------
+	ImGui::Separator();
+	const auto* primaryName = brushLabel(m_primaryBrush);
+	const auto* secondaryName = brushLabel(m_secondaryBrush);
+	ImGui::TextColored({1.f, 0.76f, 0.15f, 1.f}, "L: %s", primaryName);
+	if (m_primaryBrush >= 0)
+		ImGui::SameLine(), ImGui::TextDisabled("#%d", m_primaryBrush);
+	ImGui::TextColored({0.47f, 0.71f, 1.f, 1.f}, "R: %s", secondaryName);
+	if (m_secondaryBrush >= 0)
+		ImGui::SameLine(), ImGui::TextDisabled("#%d", m_secondaryBrush);
+	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+	ImGui::SetWindowFontScale(0.85f);
+	ImGui::TextWrapped("Click on the atlas to assign — left mouse for L, right for R. Re-click to clear.");
+	ImGui::SetWindowFontScale(1.0f);
+	ImGui::PopStyleColor();
+
+	// --- Eraser button ---------------------------------------------------------------------
+	auto& iconBank = gui::IconBank::instance();
+	const auto eraserIcon = iconBank.getIcon("eraser");
+	const ImU32 eraserHighlight = highlightFor(g_TileBrushEraser, m_primaryBrush, m_secondaryBrush);
+	if (eraserHighlight != 0) {
+		ImGui::PushStyleColor(ImGuiCol_Border, eraserHighlight);
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
 	}
-	if (ImGui::Button("Eraser", ImVec2(120.f, 0.f)))
-		m_selectedTile = -1;
-	if (eraserSelected)
+	if (eraserIcon.has_value()) {
+		ImGui::ImageButton("##eraser", static_cast<ImTextureID>(eraserIcon->textureId), ImVec2{32.f, 32.f},
+						   gui::vec(eraserIcon->uv0), gui::vec(eraserIcon->uv1));
+	} else {
+		ImGui::Button("Erase##eraser", ImVec2{80.f, 32.f});
+	}
+	if (ImGui::IsItemHovered()) {
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			toggleBrush(m_primaryBrush, g_TileBrushEraser);
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+			toggleBrush(m_secondaryBrush, g_TileBrushEraser);
+		ImGui::SetTooltip("Eraser. Left-click to set as primary brush, right-click for secondary.");
+	}
+	if (eraserHighlight != 0) {
+		ImGui::PopStyleVar();
 		ImGui::PopStyleColor();
-	ImGui::SameLine();
-	ImGui::TextDisabled("(left-click to paint, right-click also erases)");
+	}
 
 	// --- Tile grid ------------------------------------------------------------------------
 	ImGui::Separator();
-	const auto& tileset = *tilemap.tileset;
+	const auto& tileset = *asset.tileset;
 	constexpr float kTileButtonSize = 32.f;
 	const float avail = ImGui::GetContentRegionAvail().x;
-	const auto perRow = static_cast<uint32_t>(std::max(1.f, std::floor(avail / (kTileButtonSize + 8.f))));
-	uint32_t shown = 0;
+	// Stride = button content width + frame padding on both sides + item spacing. Floor to
+	// the integer count that fits — no fractional last tile.
+	const float framePadX = ImGui::GetStyle().FramePadding.x * 2.f;
+	const float itemSpacingX = ImGui::GetStyle().ItemSpacing.x;
+	const float stride = kTileButtonSize + framePadX + itemSpacingX;
+	const auto perRow = std::max(1u, static_cast<uint32_t>(avail / stride));
 	for (uint32_t i = 0; i < tileset.tileCount(); ++i) {
 		ImGui::PushID(static_cast<int>(i));
 		const auto uvs = tileset.getTileUv(i);
-		const bool selected = (m_selectedTile == static_cast<int32_t>(i));
-		if (tileButton("##tile", tileset.texture, uvs, ImVec2(kTileButtonSize, kTileButtonSize), selected))
-			m_selectedTile = static_cast<int32_t>(i);
+		const auto tileIdx = static_cast<int32_t>(i);
+		const auto highlight = highlightFor(tileIdx, m_primaryBrush, m_secondaryBrush);
+		const auto [left, right] =
+				tileButton("##tile", tileset.texture, uvs, ImVec2(kTileButtonSize, kTileButtonSize), highlight);
+		if (left) {
+			toggleBrush(m_primaryBrush, tileIdx);
+			m_inspectedTile = tileIdx;
+		}
+		if (right)
+			toggleBrush(m_secondaryBrush, tileIdx);
 		if (ImGui::IsItemHovered()) {
 			const auto& meta = tileset.getTileMeta(i);
 			if (!meta.name.empty())
@@ -124,8 +214,9 @@ void TilePalette::onImGuiRender() {
 				ImGui::SetTooltip("#%u%s", i, meta.collidable ? " (solid)" : "");
 		}
 		ImGui::PopID();
-		++shown;
-		if (shown % perRow != 0)
+		// Wrap to the next row only when the next tile would *not* fit. Always start a new
+		// line on a perRow boundary so the last column never displays a clipped fragment.
+		if ((i + 1) % perRow != 0 && (i + 1) < tileset.tileCount())
 			ImGui::SameLine();
 	}
 

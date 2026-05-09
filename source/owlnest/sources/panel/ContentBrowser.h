@@ -99,6 +99,24 @@ public:
 		m_animationOpenCallback = std::move(iCallback);
 	}
 
+	/**
+	 * @brief
+	 *  Set a callback invoked when a tilemap asset (`.owltilemap`) is double-clicked.
+	 * @param[in] iCallback Function taking the tilemap asset file path.
+	 */
+	void setTilemapOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_tilemapOpenCallback = std::move(iCallback);
+	}
+
+	/**
+	 * @brief
+	 *  Set a callback invoked when a tileset asset (`.owltileset`) is double-clicked.
+	 * @param[in] iCallback Function taking the tileset asset file path.
+	 */
+	void setTilesetOpenCallback(std::function<void(const std::filesystem::path&)> iCallback) {
+		m_tilesetOpenCallback = std::move(iCallback);
+	}
+
 private:
 	/// The actual folder
 	std::filesystem::path m_currentPath;
@@ -186,6 +204,8 @@ private:
 	std::function<void(const std::filesystem::path&)> m_codeOpenCallback;
 	std::function<void(const std::filesystem::path&)> m_nodeGraphOpenCallback;
 	std::function<void(const std::filesystem::path&)> m_animationOpenCallback;
+	std::function<void(const std::filesystem::path&)> m_tilemapOpenCallback;
+	std::function<void(const std::filesystem::path&)> m_tilesetOpenCallback;
 };
 
 }// namespace owl::nest::panel

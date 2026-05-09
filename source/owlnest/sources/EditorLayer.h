@@ -26,7 +26,6 @@
 #include "panel/SceneHierarchy.h"
 #include "panel/SceneSettings.h"
 #include "panel/SettingsPanel.h"
-#include "panel/TilePalette.h"
 
 namespace owl::nest {
 /**
@@ -150,6 +149,68 @@ public:
 	 *  Create a new untitled `AnimationDocument`.
 	 */
 	void newAnimationClip();
+
+	/**
+	 * @brief
+	 *  Open a `.owltilemap` asset as a new `TilemapDocument` (or switch to one already open).
+	 * @param[in] iPath Absolute path to the `.owltilemap` file.
+	 */
+	void openTilemapFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  Create a new untitled `TilemapDocument`.
+	 */
+	void newTilemapAsset();
+
+	/**
+	 * @brief
+	 *  Open a `.owltileset` asset as a new `TilesetDocument` (or switch to one already open).
+	 * @param[in] iPath Absolute path to the `.owltileset` file.
+	 */
+	void openTilesetFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  Create a new untitled `TilesetDocument`.
+	 */
+	void newTilesetAsset();
+
+	/**
+	 * @brief
+	 *  Queue an asset path for deferred opening (drained at the start of the next frame).
+	 *
+	 * Safe to call from in-render contexts (popups, context menus, drag-drop). The dispatch
+	 * by extension (`.owl` / `.owltilemap` / `.owltileset` / …) happens when the queue is
+	 * drained, mirroring `handleContentBrowserDrop`.
+	 * @param[in] iAbsolutePath The absolute path of the asset to open.
+	 */
+	void requestDeferredOpen(const std::filesystem::path& iAbsolutePath) {
+		if (!iAbsolutePath.empty())
+			m_deferredOpenPaths.push_back(iAbsolutePath);
+	}
+
+	/**
+	 * @brief
+	 *  Notify the editor that a tilemap asset has just been saved to disk.
+	 *
+	 * Iterates every open `SceneDocument` and clears the cached `Tilemap.asset` of any
+	 * entity whose `tilemapPath` resolves to `iAbsolutePath`, forcing a re-resolve from
+	 * disk on the next frame so live scenes pick up the change.
+	 * @param[in] iAbsolutePath The absolute path of the saved `.owltilemap` asset.
+	 */
+	void onTilemapSaved(const std::filesystem::path& iAbsolutePath);
+
+	/**
+	 * @brief
+	 *  Notify the editor that a tileset asset has just been saved to disk.
+	 *
+	 * Walks every open `SceneDocument` and `TilemapDocument` and clears every cached
+	 * `tileset` whose path matches `iAbsolutePath`, forcing a re-resolve from disk on
+	 * the next frame so live tilemaps and scenes pick up the change.
+	 * @param[in] iAbsolutePath The absolute path of the saved `.owltileset` asset.
+	 */
+	void onTilesetSaved(const std::filesystem::path& iAbsolutePath);
 
 	/**
 	 * @brief
@@ -329,6 +390,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Const access to the document manager (used by panels that only read tab metadata).
+	 * @return The document manager.
+	 */
+	[[nodiscard]] auto getDocumentManager() const -> const DocumentManager& { return m_documents; }
+
+	/**
+	 * @brief
 	 *  Access the editor settings (font size, theme, etc.).
 	 * @return The settings.
 	 */
@@ -399,6 +467,18 @@ private:
 
 	/**
 	 * @brief
+	 *  Contextual tab for tilemap documents (Save / Save As / Close + undo helpers).
+	 */
+	void buildTilemapTab();
+
+	/**
+	 * @brief
+	 *  Contextual tab for tileset documents (Save / Save As / Close + grid helpers).
+	 */
+	void buildTilesetTab();
+
+	/**
+	 * @brief
 	 *  Rebuild the ribbon when the active document type changes.
 	 */
 	void refreshRibbonForActiveDoc();
@@ -432,6 +512,16 @@ private:
 	 *  Render the recent-projects popup (triggered from the ribbon File > Recent button).
 	 */
 	void renderRecentProjectsPopup();
+
+	/**
+	 * @brief
+	 *  Render the snap-step preset popup (triggered from the ribbon Scene > Gizmo > Step button).
+	 *
+	 * Shows fraction / multiple presets when a `Tilemap` exists in the active scene, or raw
+	 * world-unit presets otherwise. Selecting an entry updates `m_settings.snapMultiplier`
+	 * (tilemap path) or `m_settings.snapStep` (raw path).
+	 */
+	void renderSnapStepPopup();
 
 	/**
 	 * @brief
@@ -575,6 +665,17 @@ private:
 	 * `UiLayer::end()` flush.
 	 */
 	std::vector<core::UUID> m_deferredCloseIds;
+	/**
+	 * @brief
+	 *  Asset paths queued for opening at the start of the next frame (deferred from
+	 *  in-render callbacks like SceneHierarchy context menus and document drag-drop).
+	 *
+	 * Calling `openTilemapFile` / `openTilesetFile` / `openScene` directly inside the
+	 * SceneHierarchy popup mutates the document stack and panel state mid-render, which
+	 * corrupts the iteration that opened the popup. We push the path here and drain the
+	 * queue at the start of `onImGuiRender` before any panel is rendered.
+	 */
+	std::vector<std::filesystem::path> m_deferredOpenPaths;
 	/// The currently loaded project (or empty when no project is open).
 	Project m_project;
 	/// Persistent editor preferences (window layout, recent projects, etc.).
@@ -624,8 +725,6 @@ private:
 	panel::AsyncProgressModal m_asyncProgress;
 	/// In-editor help / documentation panel.
 	panel::HelpPanel m_helpPanel;
-	/// Tile palette panel for editing tilemap layers.
-	panel::TilePalette m_tilePalette;
 
 public:
 	/**

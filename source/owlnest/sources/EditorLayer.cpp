@@ -14,6 +14,8 @@
 #include "document/CodeEditorDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/SceneFlowDocument.h"
+#include "document/TilemapDocument.h"
+#include "document/TilesetDocument.h"
 
 #include <gui/FontPreviewCache.h>
 #include <gui/IconBank.h>
@@ -60,6 +62,10 @@ void buildIconBank() {
 		{"ctrl_rotation",     resolve("icons/toolbar/ctrl_rotation")},
 		{"ctrl_scale",        resolve("icons/toolbar/ctrl_scale")},
 		{"ctrl_translation",  resolve("icons/toolbar/ctrl_translation")},
+		{"snap_grid",         resolve("icons/toolbar/snap_grid")},
+		{"eraser",            resolve("icons/actions/eraser")},
+		{"move_up",           resolve("icons/actions/move_up")},
+		{"move_down",         resolve("icons/actions/move_down")},
 		{"PlayButton",        resolve("icons/toolbar/play")},
 		{"PauseButton",       resolve("icons/toolbar/pause")},
 		{"StopButton",        resolve("icons/toolbar/stop")},
@@ -92,6 +98,7 @@ void buildIconBank() {
 		{"prefab_icon",       resolve("icons/browser/prefab")},
 		{"owlanim_icon",      resolve("icons/browser/owlanim")},
 		{"owltileset_icon",   resolve("icons/browser/owltileset")},
+		{"owltilemap_icon",   resolve("icons/browser/owltilemap")},
 		{"wav_icon",          resolve("icons/browser/wav")},
 		{"mp3_icon",          resolve("icons/browser/mp3")},
 		{"ogg_icon",          resolve("icons/browser/ogg")},
@@ -298,6 +305,7 @@ void EditorLayer::syncActiveDocumentPanels() {
 	// Whichever document is active drives the override on the global panels — when it overrides,
 	// SceneHierarchy delegates its `Scene Hierarchy` / `Properties` content to the document.
 	m_sceneHierarchy.setActiveDocument(m_documents.getActive());
+	m_sceneHierarchy.setParentEditor(this);
 	// Build the renderer stack for the active scene from the project's `RendererStack` and the
 	// scene's `EnabledRenderers` overrides. Empty config → engine falls back to a single
 	// implicit `[Renderer2D(default)]`. Done on every active-document change so scenes that
@@ -333,6 +341,12 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 	} else if (ext == ".owlanim") {
 		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
 			openAnimationFile(full.value());
+	} else if (ext == ".owltilemap") {
+		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
+			openTilemapFile(full.value());
+	} else if (ext == ".owltileset") {
+		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
+			openTilesetFile(full.value());
 	} else if (std::ranges::find(codeExts, ext) != codeExts.end()) {
 		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
 			openCodeFile(full.value());
@@ -393,6 +407,47 @@ void EditorLayer::renderRecentProjectsPopup() {
 			}
 		}
 		ImGui::EndPopup();
+	}
+}
+
+void EditorLayer::renderSnapStepPopup() {
+	const auto* doc = activeSceneDocument();
+	const auto& scene = doc != nullptr ? doc->getActiveScene() : shared<scene::Scene>{};
+	const bool hasTilemap = scene && scene->registry.view<scene::component::Tilemap>().begin() !=
+											 scene->registry.view<scene::component::Tilemap>().end();
+
+	if (hasTilemap && m_settings.snapAutoFromTilemap) {
+		ImGui::TextDisabled("Snap step (× cell size)");
+		ImGui::Separator();
+		struct Preset {
+			const char* label;
+			float value;
+		};
+		constexpr std::array presets{Preset{"1/4 cell", 0.25f}, Preset{"1/2 cell", 0.5f}, Preset{"1 cell", 1.f},
+									 Preset{"2 cells", 2.f},    Preset{"5 cells", 5.f},   Preset{"10 cells", 10.f}};
+		for (const auto& p: presets) {
+			const bool selected = std::abs(m_settings.snapMultiplier - p.value) < 0.0001f;
+			if (ImGui::MenuItem(p.label, nullptr, selected)) {
+				m_settings.snapMultiplier = p.value;
+				ImGui::CloseCurrentPopup();
+			}
+		}
+	} else {
+		ImGui::TextDisabled("Snap step (world units)");
+		ImGui::Separator();
+		struct Preset {
+			const char* label;
+			float value;
+		};
+		constexpr std::array presets{Preset{"0.25", 0.25f}, Preset{"0.5", 0.5f}, Preset{"1", 1.f}, Preset{"5", 5.f},
+									 Preset{"10", 10.f}};
+		for (const auto& p: presets) {
+			const bool selected = std::abs(m_settings.snapStep - p.value) < 0.0001f;
+			if (ImGui::MenuItem(p.label, nullptr, selected)) {
+				m_settings.snapStep = p.value;
+				ImGui::CloseCurrentPopup();
+			}
+		}
 	}
 }
 
@@ -602,6 +657,10 @@ void EditorLayer::onAttach() {
 			[this](const std::filesystem::path& iPath) -> void { openNodeGraphFile(iPath); });
 	m_contentBrowser.setAnimationOpenCallback(
 			[this](const std::filesystem::path& iPath) -> void { openAnimationFile(iPath); });
+	m_contentBrowser.setTilemapOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openTilemapFile(iPath); });
+	m_contentBrowser.setTilesetOpenCallback(
+			[this](const std::filesystem::path& iPath) -> void { openTilesetFile(iPath); });
 
 	newScene();
 }
@@ -720,6 +779,32 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		for (const auto id: ids) closeDocument(id);
 	}
 
+	// Drain deferred open requests queued from in-render callbacks (SceneHierarchy context menus,
+	// document drag-drop). Routing matches `handleContentBrowserDrop` — by extension.
+	if (!m_deferredOpenPaths.empty()) {
+		auto paths = std::move(m_deferredOpenPaths);
+		m_deferredOpenPaths.clear();
+		for (const auto& path: paths) {
+			if (!exists(path))
+				continue;
+			const auto ext = path.extension().string();
+			if (ext == ".owl")
+				openScene(path);
+			else if (ext == ".owltilemap")
+				openTilemapFile(path);
+			else if (ext == ".owltileset")
+				openTilesetFile(path);
+			else if (ext == ".owlanim")
+				openAnimationFile(path);
+			else if (ext == ".owlflow")
+				openNodeGraphFile(path);
+			else if (ext == ".owlprefab")
+				instantiatePrefab(path, path.filename().string());
+			else
+				openCodeFile(path);
+		}
+	}
+
 	// The ribbon is drawn from the UiLayer top-bar callback registered in onAttach.
 	// ==================================================================
 	renderStats(iTimeStep);
@@ -760,6 +845,24 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 				toClose.push_back(graph->id());
 				graph->setOpen(true);
 			}
+		} else if (doc->type() == DocumentType::Animation) {
+			auto* anim = static_cast<AnimationDocument*>(doc);
+			if (!anim->isOpen()) {
+				toClose.push_back(anim->id());
+				anim->setOpen(true);
+			}
+		} else if (doc->type() == DocumentType::Tilemap) {
+			auto* tilemap = static_cast<TilemapDocument*>(doc);
+			if (!tilemap->isOpen()) {
+				toClose.push_back(tilemap->id());
+				tilemap->setOpen(true);
+			}
+		} else if (doc->type() == DocumentType::Tileset) {
+			auto* tileset = static_cast<TilesetDocument*>(doc);
+			if (!tileset->isOpen()) {
+				toClose.push_back(tileset->id());
+				tileset->setOpen(true);
+			}
 		}
 	}
 	if (m_documents.getActive() != activeBefore)
@@ -770,13 +873,6 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	renderCloseDocumentModal();
 	//=============================================================
 	m_sceneHierarchy.onImGuiRender();
-	m_tilePalette.setSelectedEntity(m_sceneHierarchy.getSelectedEntity());
-	m_tilePalette.onImGuiRender();
-	// Forward paint-mode clicks to the active scene's viewport (no-op when nothing paintable).
-	if (auto selected = m_sceneHierarchy.getSelectedEntity(); selected) {
-		if (auto* activeDoc = dynamic_cast<SceneDocument*>(m_documents.getActive()))
-			activeDoc->getViewport().processTilemapPaint(m_tilePalette, selected);
-	}
 	m_contentBrowser.onImGuiRender();
 	m_parameters.onImGuiRender();
 	m_projectSettings.onImGuiRender();
@@ -992,7 +1088,19 @@ void EditorLayer::buildRibbon() {
 							  .label = "New Animation",
 							  .tooltip = "Create a new spritesheet animation clip (.owlanim)",
 							  .onClick = [this]() -> void { newAnimationClip(); },
-							  .size = Size::Large});
+							  .size = Size::Small});
+	m_ribbon.addButton(fileTab, gAssets,
+					   Button{.iconName = "new_scene",
+							  .label = "New Tilemap",
+							  .tooltip = "Create a new tilemap level asset (.owltilemap)",
+							  .onClick = [this]() -> void { newTilemapAsset(); },
+							  .size = Size::Small});
+	m_ribbon.addButton(fileTab, gAssets,
+					   Button{.iconName = "new_scene",
+							  .label = "New Tileset",
+							  .tooltip = "Create a new tileset atlas asset (.owltileset)",
+							  .onClick = [this]() -> void { newTilesetAsset(); },
+							  .size = Size::Small});
 	const auto gHelp = m_ribbon.addGroup(fileTab, "Help");
 	m_ribbon.addButton(fileTab, gHelp,
 					   Button{.iconName = "info",
@@ -1015,8 +1123,8 @@ void EditorLayer::buildRibbon() {
 							  .label = "Undo",
 							  .tooltip = tipWithShortcut("Undo", "edit.undo"),
 							  .isEnabled = [this]() -> bool {
-								  const auto* u = activeUndoManager();
-								  return u != nullptr && u->canUndo() && getState() == State::Edit;
+								  const auto* d = m_documents.getActive();
+								  return d != nullptr && d->canUndo();
 							  },
 							  .onClick = [this]() -> void { performUndo(); },
 							  .size = Size::Large});
@@ -1025,8 +1133,8 @@ void EditorLayer::buildRibbon() {
 							  .label = "Redo",
 							  .tooltip = tipWithShortcut("Redo", "edit.redo"),
 							  .isEnabled = [this]() -> bool {
-								  const auto* u = activeUndoManager();
-								  return u != nullptr && u->canRedo() && getState() == State::Edit;
+								  const auto* d = m_documents.getActive();
+								  return d != nullptr && d->canRedo();
 							  },
 							  .onClick = [this]() -> void { performRedo(); },
 							  .size = Size::Large});
@@ -1061,6 +1169,12 @@ void EditorLayer::buildRibbon() {
 		else if (active->type() == DocumentType::Animation)
 
 			buildAnimationTab();
+		else if (active->type() == DocumentType::Tilemap)
+
+			buildTilemapTab();
+		else if (active->type() == DocumentType::Tileset)
+
+			buildTilesetTab();
 		else
 
 			buildSceneTab();
@@ -1195,6 +1309,24 @@ void EditorLayer::buildSceneTab() {
 	m_ribbon.addButton(sceneTab, gGizmo,
 
 					   gizmoButton(gui::Guizmo::Type::Scale, "ctrl_scale", "Scale", "guizmo.scale"));
+	m_ribbon.addButton(
+			sceneTab, gGizmo,
+			Button{.iconName = "snap_grid",
+				   .label = "Snap",
+				   .tooltip =
+						   "Toggle snap-to-grid for translation gizmos. Holding Ctrl during a drag also forces snap.",
+				   .isEnabled = [this]() -> bool { return getState() == State::Edit; },
+				   .isChecked = [this]() -> bool { return m_settings.snapEnabled; },
+				   .onClick = [this]() -> void { m_settings.snapEnabled = !m_settings.snapEnabled; },
+				   .size = Size::Small});
+	m_ribbon.addButton(sceneTab, gGizmo,
+					   Button{.iconName = "snap_grid",
+							  .label = "Step",
+							  .tooltip = "Pick a snap step preset. With a tilemap in the scene the presets are "
+										 "fractions / multiples of the cell size, otherwise raw world units.",
+							  .isEnabled = [this]() -> bool { return getState() == State::Edit; },
+							  .size = Size::Small,
+							  .popupContents = [this]() -> void { renderSnapStepPopup(); }});
 
 	const auto gSceneSettings = m_ribbon.addGroup(sceneTab, "Settings");
 	m_ribbon.addButton(sceneTab, gSceneSettings,
@@ -1418,6 +1550,104 @@ void EditorLayer::buildAnimationTab() {
 							  .size = Size::Large});
 }
 
+void EditorLayer::buildTilemapTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto activeTilemap = [this]() -> TilemapDocument* {
+		auto* d = m_documents.getActive();
+		if (d != nullptr && d->type() == DocumentType::Tilemap)
+			return static_cast<TilemapDocument*>(d);
+		return nullptr;
+	};
+	const auto tab = m_ribbon.addTab("Tilemap");
+	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "save",
+							  .label = "Save",
+							  .tooltip = "Save the .owltilemap (Ctrl+S)",
+							  .isEnabled = [activeTilemap]() -> bool {
+								  auto* a = activeTilemap();
+								  return a != nullptr && !a->filePath().empty();
+							  },
+							  .onClick = [activeTilemap]() -> void {
+								  if (auto* a = activeTilemap())
+									  std::ignore = a->save();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "save",
+							  .label = "Save As",
+							  .tooltip = "Save the tilemap to a new file",
+							  .isEnabled = [activeTilemap]() -> bool { return activeTilemap() != nullptr; },
+							  .onClick = [activeTilemap]() -> void {
+								  if (auto* a = activeTilemap()) {
+									  if (const auto path = core::utils::FileDialog::saveFile(
+												  "Owl Tilemap (*.owltilemap)|owltilemap\n");
+										  !path.empty())
+										  std::ignore = a->saveAs(path);
+								  }
+							  },
+							  .size = Size::Small});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "close",
+							  .label = "Close",
+							  .tooltip = "Close the active document",
+							  .isEnabled = [activeTilemap]() -> bool { return activeTilemap() != nullptr; },
+							  .onClick = [this]() -> void { requestCloseActiveDocument(); },
+							  .size = Size::Small});
+	// Undo / Redo intentionally omitted — the global Edit ribbon dispatches through
+	// `Document::performUndo` / `performRedo` which TilemapDocument overrides.
+}
+
+void EditorLayer::buildTilesetTab() {
+	using Button = gui::widgets::Ribbon::Button;
+	using Size = gui::widgets::Ribbon::ButtonSize;
+	const auto activeTileset = [this]() -> TilesetDocument* {
+		auto* d = m_documents.getActive();
+		if (d != nullptr && d->type() == DocumentType::Tileset)
+			return static_cast<TilesetDocument*>(d);
+		return nullptr;
+	};
+	const auto tab = m_ribbon.addTab("Tileset");
+	const auto gFile = m_ribbon.addGroup(tab, "File");
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "save",
+							  .label = "Save",
+							  .tooltip = "Save the .owltileset (Ctrl+S)",
+							  .isEnabled = [activeTileset]() -> bool {
+								  auto* a = activeTileset();
+								  return a != nullptr && !a->filePath().empty();
+							  },
+							  .onClick = [activeTileset]() -> void {
+								  if (auto* a = activeTileset())
+									  std::ignore = a->save();
+							  },
+							  .size = Size::Large});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "save",
+							  .label = "Save As",
+							  .tooltip = "Save the tileset to a new file",
+							  .isEnabled = [activeTileset]() -> bool { return activeTileset() != nullptr; },
+							  .onClick = [activeTileset]() -> void {
+								  if (auto* a = activeTileset()) {
+									  if (const auto path = core::utils::FileDialog::saveFile(
+												  "Owl Tileset (*.owltileset)|owltileset\n");
+										  !path.empty())
+										  std::ignore = a->saveAs(path);
+								  }
+							  },
+							  .size = Size::Small});
+	m_ribbon.addButton(tab, gFile,
+					   Button{.iconName = "close",
+							  .label = "Close",
+							  .tooltip = "Close the active document",
+							  .isEnabled = [activeTileset]() -> bool { return activeTileset() != nullptr; },
+							  .onClick = [this]() -> void { requestCloseActiveDocument(); },
+							  .size = Size::Small});
+	// Undo / Redo intentionally omitted — the global Edit ribbon dispatches through
+	// `Document::performUndo` / `performRedo` which TilesetDocument overrides.
+}
+
 void EditorLayer::refreshRibbonForActiveDoc() {
 	const auto* active = m_documents.getActive();
 	const auto currentType =
@@ -1456,6 +1686,7 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 	// If this scene is already open in a tab, just make it active.
 	if (auto* existing = findSceneDocumentByPath(iScenePath); existing != nullptr) {
 		m_documents.setActive(existing);
+		existing->requestFocus();
 		syncActiveDocumentPanels();
 		return;
 	}
@@ -1522,6 +1753,7 @@ void EditorLayer::openCodeFile(const std::filesystem::path& iPath) {
 	for (const auto& docPtr: m_documents.list()) {
 		if (docPtr && docPtr->type() == DocumentType::Code && docPtr->filePath() == iPath) {
 			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
 			syncActiveDocumentPanels();
 			return;
 		}
@@ -1546,6 +1778,7 @@ void EditorLayer::openSceneFlowView() {
 		if (auto* graph = dynamic_cast<SceneFlowDocument*>(docPtr.get())) {
 			graph->refreshFromProject(m_project);
 			m_documents.setActive(graph);
+			graph->requestFocus();
 			syncActiveDocumentPanels();
 			return;
 		}
@@ -1565,6 +1798,7 @@ void EditorLayer::openNodeGraphFile(const std::filesystem::path& iPath) {
 	for (const auto& docPtr: m_documents.list()) {
 		if (docPtr && docPtr->type() == DocumentType::NodeGraph && docPtr->filePath() == iPath) {
 			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
 			syncActiveDocumentPanels();
 			return;
 		}
@@ -1587,6 +1821,7 @@ void EditorLayer::openAnimationFile(const std::filesystem::path& iPath) {
 	for (const auto& docPtr: m_documents.list()) {
 		if (docPtr && docPtr->type() == DocumentType::Animation && docPtr->filePath() == iPath) {
 			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
 			syncActiveDocumentPanels();
 			return;
 		}
@@ -1609,6 +1844,148 @@ void EditorLayer::newAnimationClip() {
 	auto* raw = m_documents.add(std::move(doc));
 	m_documents.setActive(raw);
 	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openTilemapFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Tilemap && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<TilemapDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open tilemap file: {}.", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::newTilemapAsset() {
+	auto doc = mkUniq<TilemapDocument>();
+	doc->onAttach(this);
+	// Provide a sensible starting grid so the canvas is non-empty out of the box.
+	doc->asset().width = 16;
+	doc->asset().height = 16;
+	doc->asset().cellSize = 1.f;
+	doc->asset().addLayer("layer0");
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::openTilesetFile(const std::filesystem::path& iPath) {
+	if (iPath.empty() || !exists(iPath))
+		return;
+	for (const auto& docPtr: m_documents.list()) {
+		if (docPtr && docPtr->type() == DocumentType::Tileset && docPtr->filePath() == iPath) {
+			m_documents.setActive(docPtr.get());
+			docPtr->requestFocus();
+			syncActiveDocumentPanels();
+			return;
+		}
+	}
+	auto doc = mkUniq<TilesetDocument>();
+	doc->onAttach(this);
+	if (!doc->loadFromFile(iPath)) {
+		OWL_CORE_WARN("Failed to open tileset file: {}.", iPath.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+void EditorLayer::newTilesetAsset() {
+	auto doc = mkUniq<TilesetDocument>();
+	doc->onAttach(this);
+	doc->tileset().resize(4, 4);
+	doc->tileset().tileWidth = 32;
+	doc->tileset().tileHeight = 32;
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+namespace {
+/**
+ * @brief
+ *  Resolve a relative asset path against every project asset directory and return the first
+ *  existing absolute path (canonicalised), or an empty path when none matched.
+ * @param[in] iRelative The relative path stored on an asset.
+ * @return The resolved absolute path, or empty.
+ */
+auto resolveAssetAbsolutePath(const std::filesystem::path& iRelative) -> std::filesystem::path {
+	if (iRelative.empty())
+		return {};
+	if (!core::Application::instanced())
+		return {};
+	for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+		if (auto candidate = assetsPath / iRelative; exists(candidate))
+			return weakly_canonical(candidate);
+	}
+	if (exists(iRelative))
+		return weakly_canonical(iRelative);
+	return {};
+}
+}// namespace
+
+void EditorLayer::onTilemapSaved(const std::filesystem::path& iAbsolutePath) {
+	const auto target = weakly_canonical(iAbsolutePath);
+	for (const auto& docPtr: m_documents.list()) {
+		if (!docPtr)
+			continue;
+		// Live scenes: clear the asset on entities pointing at this path so the next frame's
+		// `resolveAllTilemapAssets` reloads from disk.
+		if (docPtr->type() == DocumentType::Scene) {
+			auto* sceneDoc = static_cast<SceneDocument*>(docPtr.get());
+			const auto& scene = sceneDoc->getActiveScene();
+			if (!scene)
+				continue;
+			for (const auto view = scene->registry.view<scene::component::Tilemap>(); auto entity: view) {
+				auto& tilemap = view.get<scene::component::Tilemap>(entity);
+				const auto resolved = resolveAssetAbsolutePath(tilemap.tilemapPath);
+				if (!resolved.empty() && resolved == target)
+					tilemap.asset.reset();
+			}
+		}
+	}
+}
+
+void EditorLayer::onTilesetSaved(const std::filesystem::path& iAbsolutePath) {
+	const auto target = weakly_canonical(iAbsolutePath);
+	for (const auto& docPtr: m_documents.list()) {
+		if (!docPtr)
+			continue;
+		if (docPtr->type() == DocumentType::Tilemap) {
+			auto* tmDoc = static_cast<TilemapDocument*>(docPtr.get());
+			if (tmDoc->asset().tileset && !tmDoc->asset().tilesetPath.empty()) {
+				if (resolveAssetAbsolutePath(tmDoc->asset().tilesetPath) == target)
+					tmDoc->asset().tileset.reset();
+			}
+		} else if (docPtr->type() == DocumentType::Scene) {
+			auto* sceneDoc = static_cast<SceneDocument*>(docPtr.get());
+			const auto& scene = sceneDoc->getActiveScene();
+			if (!scene)
+				continue;
+			for (const auto view = scene->registry.view<scene::component::Tilemap>(); auto entity: view) {
+				auto& tilemap = view.get<scene::component::Tilemap>(entity);
+				if (!tilemap.asset)
+					continue;
+				if (resolveAssetAbsolutePath(tilemap.asset->tilesetPath) == target)
+					tilemap.asset->tileset.reset();
+			}
+		}
+	}
 }
 
 auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePath) -> SceneDocument* {
@@ -1910,26 +2287,33 @@ void EditorLayer::onDuplicateEntity() {
 }
 
 void EditorLayer::performUndo() {
-	auto* doc = activeSceneDocument();
-	if (doc == nullptr || doc->state() != SceneDocument::State::Edit || !doc->getActiveScene())
+	auto* doc = m_documents.getActive();
+	if (doc == nullptr)
 		return;
-	auto& undo = doc->undoManager();
-	undo.undo(*doc->getActiveScene());
-	if (const auto hint = undo.lastSelectionHint(); hint != core::UUID{0}) {
-		if (auto entity = doc->getActiveScene()->findEntityByUUID(hint); entity)
-			setSelectedEntity(entity);
+	doc->performUndo();
+	// Scene-level undo also propagates a selection hint into the global selection.
+	if (doc->type() == DocumentType::Scene) {
+		auto* sceneDoc = static_cast<SceneDocument*>(doc);
+		const auto& undo = sceneDoc->undoManager();
+		if (const auto hint = undo.lastSelectionHint(); hint != core::UUID{0}) {
+			if (auto entity = sceneDoc->getActiveScene()->findEntityByUUID(hint); entity)
+				setSelectedEntity(entity);
+		}
 	}
 }
 
 void EditorLayer::performRedo() {
-	auto* doc = activeSceneDocument();
-	if (doc == nullptr || doc->state() != SceneDocument::State::Edit || !doc->getActiveScene())
+	auto* doc = m_documents.getActive();
+	if (doc == nullptr)
 		return;
-	auto& undo = doc->undoManager();
-	undo.redo(*doc->getActiveScene());
-	if (const auto hint = undo.lastSelectionHint(); hint != core::UUID{0}) {
-		if (auto entity = doc->getActiveScene()->findEntityByUUID(hint); entity)
-			setSelectedEntity(entity);
+	doc->performRedo();
+	if (doc->type() == DocumentType::Scene) {
+		auto* sceneDoc = static_cast<SceneDocument*>(doc);
+		const auto& undo = sceneDoc->undoManager();
+		if (const auto hint = undo.lastSelectionHint(); hint != core::UUID{0}) {
+			if (auto entity = sceneDoc->getActiveScene()->findEntityByUUID(hint); entity)
+				setSelectedEntity(entity);
+		}
 	}
 }
 

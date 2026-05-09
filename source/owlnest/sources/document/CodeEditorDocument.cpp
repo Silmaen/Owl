@@ -32,7 +32,7 @@ CodeEditorDocument::~CodeEditorDocument() = default;
 
 auto CodeEditorDocument::title() const -> std::string {
 	if (!m_path.empty())
-		return m_path.filename().string();
+		return m_path.stem().string();
 	return "Untitled";
 }
 
@@ -96,7 +96,12 @@ void CodeEditorDocument::onImGuiRender() {
 	if (codeFont != nullptr)
 		ImGui::PushFont(codeFont);
 
+	const bool wantFocus = consumeFocusRequest();
+	if (wantFocus)
+		ImGui::SetNextWindowFocus();
 	const bool open = ImGui::Begin(winTitle.c_str(), &m_pOpen, flags);
+	if (wantFocus)
+		ImGui::SetWindowFocus();
 	if (open) {
 		// The code font is rasterised at the user-configured size during `UiLayer::onAttach`, so
 		// no per-window scaling is needed.  A size change in the settings takes effect on restart.
