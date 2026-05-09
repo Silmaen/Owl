@@ -19,6 +19,7 @@ option(${PROJECT_PREFIX}_TESTING "Enable the unit tests" ON)
 option(${PROJECT_PREFIX}_ENABLE_COVERAGE "Run code coverage during test run" OFF)
 option(${PROJECT_PREFIX}_ENABLE_STACKTRACE "Use stacktrace within the memory tracker (slow down the code)" OFF)
 option(${PROJECT_PREFIX}_ENABLE_PROFILING "Output profiling information during execution" OFF)
+option(${PROJECT_PREFIX}_USE_CCACHE "Use ccache (or sccache) as a compiler launcher when available" ON)
 
 #
 # ---=== Base Configs ===---

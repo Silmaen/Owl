@@ -3,10 +3,10 @@
 #
 
 # List or source files
-file(GLOB_RECURSE SRCS
+file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
         *.cpp
 )
-file(GLOB_RECURSE HDRS_PRIVATE
+file(GLOB_RECURSE HDRS_PRIVATE CONFIGURE_DEPENDS
         private/*.h
 )
 add_library(${ENGINE_NAME}Private INTERFACE)
@@ -28,7 +28,7 @@ if (NOT ${PROJECT_PREFIX}_ENABLE_CLANG_TIDY)
 endif ()
 
 # public headers (those in the package)
-file(GLOB_RECURSE HDRS_PUBLIC
+file(GLOB_RECURSE HDRS_PUBLIC CONFIGURE_DEPENDS
         public/*.h
 
 )

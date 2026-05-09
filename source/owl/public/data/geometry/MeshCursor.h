@@ -340,34 +340,27 @@ private:
 // Don't add this part to the documentation
 /// @cond
 
-namespace std {// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+namespace std {
+//NOLINTBEGIN(cert-dcl58-cpp,bugprone-std-namespace-modification)
 template<typename... Components>
-struct tuple_size<
-		owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex,
-										Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_size<owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex, Components...>>
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 template<typename... Components>
-struct tuple_size<
-		owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex,
-										Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_size<owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex, Components...>>
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 
 template<typename... Components>
-struct tuple_size<
-		owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Triangle,
-										Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_size<owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Triangle, Components...>>
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 template<typename... Components>
-struct tuple_size<
-		owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Triangle,
-										Components...>>// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_size<owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Triangle, Components...>>
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
 
 template<std::size_t N, typename... Components>
-struct tuple_element<// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_element<
 		N, owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex, Components...>> {
 	using type = std::tuple_element_t<
 			N, typename owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex,
@@ -375,14 +368,14 @@ struct tuple_element<// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modificatio
 };
 
 template<std::size_t N, typename... Components>
-struct tuple_element<// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_element<
 		N, owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex, Components...>> {
 	using type = std::tuple_element_t<
 			N, typename owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex,
 														Components...>::ComponentsT>;
 };
 template<std::size_t N, typename... Components>
-struct tuple_element<// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_element<
 		N, owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Triangle, Components...>> {
 	using type = std::tuple_element_t<
 			N, typename owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex,
@@ -390,11 +383,12 @@ struct tuple_element<// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modificatio
 };
 
 template<std::size_t N, typename... Components>
-struct tuple_element<// NOLINT(cert-dcl58-cpp,bugprone-std-namespace-modification)
+struct tuple_element<
 		N, owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Triangle, Components...>> {
 	using type = std::tuple_element_t<
 			N, typename owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex,
 														Components...>::ComponentsT>;
+	//NOLINTEND(cert-dcl58-cpp,bugprone-std-namespace-modification)
 };
 /// @endcond
 

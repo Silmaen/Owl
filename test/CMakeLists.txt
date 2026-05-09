@@ -1,5 +1,5 @@
 
-file(GLOB children RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
+file(GLOB children CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
 
 add_custom_target(All_Tests)
 # googletest
@@ -11,7 +11,7 @@ foreach (child ${children})
     endif ()
     if (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${child})
         file(GLOB_RECURSE
-                SRCS
+                SRCS CONFIGURE_DEPENDS
                 ${CMAKE_CURRENT_SOURCE_DIR}/${child}/*.cpp
         )
         if ("${SRCS} " STREQUAL " ")

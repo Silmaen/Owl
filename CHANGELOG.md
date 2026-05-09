@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **ccache compiler launcher** — new `cmake/CompilerCache.cmake` module
+  detects `ccache` (or `sccache`) on the host and wires it as
+  `CMAKE_C(XX)_COMPILER_LAUNCHER`. Controlled by the `OWL_USE_CCACHE`
+  option (ON by default); silently no-ops when no binary is found so
+  dev machines without ccache keep working unchanged. The CI Docker
+  containers receive `CCACHE_DIR=/tmp/cache_dir/ccache` (persisted via
+  the existing `cache_dir` agent volume mount), `CCACHE_COMPRESS=1`,
+  `CCACHE_MAXSIZE=20G`, `CCACHE_BASEDIR=/home/user`. First build
+  populates the cache; subsequent rebuilds short-circuit unchanged
+  translation units even when the build directory is wiped.
+
+### Changed
+
+- **`file(GLOB ...)` calls** in `source/owl`, `source/owlnest`, `test`,
+  and `cmake/HelpAssets.cmake` now pass `CONFIGURE_DEPENDS` so adding
+  or removing source / header / help-page files triggers a CMake
+  re-configure on the next build instead of silently going unnoticed
+  until the next manual configure.
+
 - **`CodeStyle` CI action** — single read-only command
   (`poetry run python ci_action.py CodeStyle <preset>`) bundling six
   inspections that no other tool covers in one place:

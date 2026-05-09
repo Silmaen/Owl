@@ -3,10 +3,10 @@
 set(OWL_PROJECT ${CMAKE_PROJECT_NAME}Nest)
 
 # ----==== app Runner ====----
-file(GLOB_RECURSE SRCS_RUNNER
+file(GLOB_RECURSE SRCS_RUNNER CONFIGURE_DEPENDS
         runner/*.cpp
 )
-file(GLOB_RECURSE HDRS_RUNNER
+file(GLOB_RECURSE HDRS_RUNNER CONFIGURE_DEPENDS
         runner/*.h
 )
 set(RUNNER_NAME ${CMAKE_PROJECT_NAME}Runner)
@@ -24,10 +24,10 @@ owl_target_link_libraries(${RUNNER_NAME} PRIVATE yaml-cpp REQUIRED ${THIRD_PARTY
 #
 #  Main Executable
 #
-file(GLOB_RECURSE SRCS
+file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
         sources/*.cpp
 )
-file(GLOB_RECURSE HDRS
+file(GLOB_RECURSE HDRS CONFIGURE_DEPENDS
         sources/*.h
 )
 add_executable(${OWL_PROJECT}
