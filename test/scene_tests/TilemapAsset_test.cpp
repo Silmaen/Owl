@@ -21,9 +21,7 @@ protected:
 };
 }// namespace
 
-TEST_F(TilemapAssetFixture, FileExtensionIsOwltilemap) {
-	EXPECT_STREQ(TilemapAsset::fileExtension(), ".owltilemap");
-}
+TEST_F(TilemapAssetFixture, FileExtensionIsOwltilemap) { EXPECT_STREQ(TilemapAsset::fileExtension(), ".owltilemap"); }
 
 TEST_F(TilemapAssetFixture, AddLayerInitializesGrid) {
 	TilemapAsset asset;
@@ -35,8 +33,7 @@ TEST_F(TilemapAssetFixture, AddLayerInitializesGrid) {
 	EXPECT_FLOAT_EQ(layer.parallax.x(), 1.f);
 	EXPECT_FLOAT_EQ(layer.parallax.y(), 1.f);
 	EXPECT_EQ(layer.tiles.size(), 12u);
-	for (const auto t: layer.tiles)
-		EXPECT_EQ(t, scene::component::g_EmptyTileIndex);
+	for (const auto t: layer.tiles) EXPECT_EQ(t, scene::component::g_EmptyTileIndex);
 }
 
 TEST_F(TilemapAssetFixture, ResizeClampsToOne) {
@@ -55,8 +52,7 @@ TEST_F(TilemapAssetFixture, ResizePreservesExistingCells) {
 	asset.height = 2;
 	auto& layer = asset.addLayer("a");
 	// Encode a recognisable pattern: row-major 0..5
-	for (uint32_t i = 0; i < layer.tiles.size(); ++i)
-		layer.tiles[i] = static_cast<int32_t>(i);
+	for (uint32_t i = 0; i < layer.tiles.size(); ++i) layer.tiles[i] = static_cast<int32_t>(i);
 	// Grow to 4x3 — original cells must stay at their (x,y) positions, new ones empty.
 	asset.resize(4, 3);
 	EXPECT_EQ(asset.width, 4u);
@@ -229,7 +225,11 @@ TEST_F(TilemapAssetFixture, LoadsMigratedSampleTilemaps) {
 	if (!std::filesystem::exists(tilemapsDir))
 		GTEST_SKIP() << "sample_project tilemaps directory not present";
 
-	struct Sample { const char* file; uint32_t width; uint32_t height; };
+	struct Sample {
+		const char* file;
+		uint32_t width;
+		uint32_t height;
+	};
 	const std::array samples{
 			Sample{"world_map.owltilemap", 32u, 24u},
 			Sample{"platformer_house.owltilemap", 0u, 0u},
@@ -243,9 +243,11 @@ TEST_F(TilemapAssetFixture, LoadsMigratedSampleTilemaps) {
 		ASSERT_TRUE(asset.loadFromFile(path)) << s.file;
 		ASSERT_FALSE(asset.layers.empty()) << s.file;
 		EXPECT_EQ(asset.layers[0].tiles.size(), static_cast<size_t>(asset.width) * asset.height) << s.file;
-		if (s.width != 0u)
+		if (s.width != 0u) {
 			EXPECT_EQ(asset.width, s.width) << s.file;
-		if (s.height != 0u)
+		}
+		if (s.height != 0u) {
 			EXPECT_EQ(asset.height, s.height) << s.file;
+		}
 	}
 }
