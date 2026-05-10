@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **In-viewport camera markers.** Every `component::Camera` entity now draws
+  a small camera icon, a forward arrow and a FOV cone in the editor viewport
+  (Edit mode only). The marker uses the entity's world transform — local +Y
+  is the camera forward, matching `RendererRaycast::beginScene`'s convention
+  — so a raycast scene's player camera, previously invisible in the
+  top-down preview, now shows where it sits and which way it faces. The
+  primary camera is highlighted in gold (slightly larger), secondary
+  cameras in cyan. The cone uses the perspective FOV when available and a
+  fixed 75° hint for orthographic cameras (the actual raycast FOV lives on
+  the layer config, not on the camera entity). Selectable via the existing
+  picking pipeline (the icon writes the entity id into the framebuffer
+  attachment), manipulable through the standard Translate / Rotate gizmo.
+  Toggleable via:
+    - **Ribbon `Scene > Show > Cameras`** — small toggle button alongside
+      the existing Gizmo group.
+    - **Floating viewport overlay** — a compact toolbar in the top-left of
+      every viewport, sharing the same toggle plus icon-only Translate /
+      Rotate / Scale gizmo selectors so the user doesn't have to leave the
+      viewport to switch tools. Persisted in `EditorSettings.showCameraGizmos`
+      (default `true`).
 - **Tilemap & Tileset editor UX iteration #2.**
     - **Open-in-editor buttons.** TilemapDocument hierarchy panel now hosts
       an "Open in Tileset Editor" icon-button next to the tileset slot.

@@ -15,6 +15,7 @@
 #include "../UndoManager.h"
 #include "../commands/ComponentCommands.h"
 
+#include <gui/IconBank.h>
 #include <owl.h>
 #include <scene/SceneSerializer.h>
 #include <scene/TilemapAsset.h>
@@ -325,6 +326,7 @@ void Viewport::onRenderInternal() {
 		}
 	}
 	renderGizmo();
+	renderOverlayToolbar();
 }
 
 void Viewport::renderOverlay() const {
@@ -396,9 +398,153 @@ void Viewport::renderOverlay() const {
 				}
 			}
 		}
+
+		// Draw camera markers — small camera icon, forward arrow and FOV cone for every
+		// `component::Camera` in the scene. Helps level designers see where each camera
+		// (notably the raycast scene's player camera, invisible in the top-down view)
+		// sits and which direction it faces. Toggled via `EditorSettings::showCameraGizmos`.
+		if (m_parent != nullptr && m_parent->getSettings().showCameraGizmos) {
+			const auto cameraIcon = textureLibrary.get("icons/triggers/camera");
+			for (const auto camView =
+						 activeScene->registry.view<scene::component::Camera, scene::component::Transform>();
+				 const auto entity: camView) {
+				const auto& camComp = camView.get<scene::component::Camera>(entity);
+				const scene::Entity ent{entity, activeScene.get()};
+				const math::Transform worldT = activeScene->getWorldTransform(ent);
+				const math::mat4 worldMat = worldT();
+				// Local +Y is the camera forward (matches `RendererRaycast::beginScene`).
+				const math::vec4 worldFwd4 = worldMat * math::vec4{0.f, 1.f, 0.f, 0.f};
+				math::vec2 fwd2{worldFwd4.x(), worldFwd4.y()};
+				if (fwd2.normSq() < 1e-8f)
+					fwd2 = math::vec2{0.f, 1.f};
+				fwd2.normalize();
+				const math::vec3 origin{worldT.translation().x(), worldT.translation().y(),
+										worldT.translation().z() + 0.02f};
+
+				const bool isPrimary = camComp.primary;
+				const math::vec4 mainColor =
+						isPrimary ? math::vec4{1.f, 0.78f, 0.16f, 0.95f} : math::vec4{0.55f, 0.85f, 0.95f, 0.75f};
+
+				if (cameraIcon != nullptr) {
+					math::Transform iconTransform;
+					iconTransform.translation() = origin;
+					iconTransform.rotation() = worldT.rotation();
+					const float iconScale = isPrimary ? 0.55f : 0.45f;
+					iconTransform.scale() = {iconScale, iconScale, 1.f};
+					renderer::Renderer2D::drawQuad({.transform = iconTransform,
+													.color = mainColor,
+													.texture = cameraIcon,
+													.entityId = static_cast<int>(entity)});
+				}
+
+				// Forward arrow.
+				constexpr float arrowLen = 1.0f;
+				const math::vec3 tip{origin.x() + fwd2.x() * arrowLen, origin.y() + fwd2.y() * arrowLen, origin.z()};
+				renderer::Renderer2D::drawLine(
+						{.point1 = origin, .point2 = tip, .color = mainColor, .entityId = static_cast<int>(entity)});
+
+				// FOV cone — vertical FOV for perspective cameras, fixed 75° hint for ortho ones
+				// (the actual FOV of a raycast scene lives on the layer config, which doesn't
+				// belong to the camera entity; the hint conveys "this is a viewing cone" without
+				// pretending to be exact).
+				float fovRad = math::radians(75.f);
+				if (camComp.camera.getProjectionType() == scene::SceneCamera::ProjectionType::Perspective)
+					fovRad = camComp.camera.getPerspectiveVerticalFov();
+				constexpr float coneLen = 2.0f;
+				const float cosH = std::cos(fovRad * 0.5f);
+				const float sinH = std::sin(fovRad * 0.5f);
+				const math::vec2 leftDir{fwd2.x() * cosH - fwd2.y() * sinH, fwd2.x() * sinH + fwd2.y() * cosH};
+				const math::vec2 rightDir{fwd2.x() * cosH + fwd2.y() * sinH, -fwd2.x() * sinH + fwd2.y() * cosH};
+				const math::vec4 coneColor{mainColor.x(), mainColor.y(), mainColor.z(), 0.45f};
+				renderer::Renderer2D::drawLine(
+						{.point1 = origin,
+						 .point2 = {origin.x() + leftDir.x() * coneLen, origin.y() + leftDir.y() * coneLen, origin.z()},
+						 .color = coneColor,
+						 .entityId = static_cast<int>(entity)});
+				renderer::Renderer2D::drawLine({.point1 = origin,
+												.point2 = {origin.x() + rightDir.x() * coneLen,
+														   origin.y() + rightDir.y() * coneLen, origin.z()},
+												.color = coneColor,
+												.entityId = static_cast<int>(entity)});
+			}
+		}
 	}
 
 	renderer::Renderer2D::endScene();
+}
+
+namespace {
+/**
+ * @brief
+ *  Render a small icon-only toggle button with active highlight + tooltip.
+ *
+ * Wraps `IconBank::iconButton` so the floating overlay can render compact
+ * toggles consistent with the ribbon entries that drive the same actions.
+ * @param[in] iIconName The icon bank entry to draw.
+ * @param[in] iTooltip The hover tooltip.
+ * @param[in] iIsActive Whether to highlight the button (selected state).
+ * @return True if the button was clicked this frame.
+ */
+auto overlayToggle(const char* iIconName, const char* iTooltip, const bool iIsActive) -> bool {
+	// `iconButton` forwards an empty label to `ImGui::Button`, so multiple icon-only
+	// buttons in the same window would share the same ImGui id. Scope them by the
+	// icon name (which is unique per toggle in this overlay) to avoid the conflict.
+	ImGui::PushID(iIconName);
+	if (iIsActive)
+		ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+	const bool clicked = owl::gui::IconBank::instance().iconButton(iIconName, "", math::vec2{20.f, 20.f});
+	if (iIsActive)
+		ImGui::PopStyleColor();
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("%s", iTooltip);
+	ImGui::PopID();
+	return clicked;
+}
+
+}// namespace
+
+void Viewport::renderOverlayToolbar() {
+	if (mp_document == nullptr || m_parent == nullptr)
+		return;
+	if (mp_document->state() != SceneDocument::State::Edit)
+		return;
+
+	const ImVec2 overlayPos{m_lower.x() + 8.f, m_lower.y() + 8.f};
+	ImGui::SetNextWindowPos(overlayPos, ImGuiCond_Always);
+	ImGui::SetNextWindowBgAlpha(0.55f);
+	constexpr ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+									   ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+									   ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoFocusOnAppearing |
+									   ImGuiWindowFlags_NoNav | ImGuiWindowFlags_AlwaysAutoResize |
+									   ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking;
+	const std::string overlayId = std::format("##viewport_overlay_{:x}", static_cast<uint64_t>(mp_document->id()));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{4.f, 4.f});
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{2.f, 2.f});
+	if (ImGui::Begin(overlayId.c_str(), nullptr, flags)) {
+		// Show toggles (currently: Cameras).
+		auto& settings = m_parent->getSettings();
+		if (overlayToggle("comp_camera", "Show camera markers", settings.showCameraGizmos))
+			settings.showCameraGizmos = !settings.showCameraGizmos;
+
+		ImGui::SameLine();
+		ImGui::TextDisabled("|");
+		ImGui::SameLine();
+
+		// Gizmo selector (Translate / Rotate / Scale).
+		const auto setOrToggle = [this](const gui::Guizmo::Type iType) -> void {
+			setGuizmoType(getGuizmoType() == iType ? gui::Guizmo::Type::None : iType);
+		};
+		if (overlayToggle("ctrl_translation", "Translate gizmo", m_gizmoType == gui::Guizmo::Type::Translation))
+			setOrToggle(gui::Guizmo::Type::Translation);
+		ImGui::SameLine();
+		if (overlayToggle("ctrl_rotation", "Rotate gizmo", m_gizmoType == gui::Guizmo::Type::Rotation))
+			setOrToggle(gui::Guizmo::Type::Rotation);
+		ImGui::SameLine();
+		if (overlayToggle("ctrl_scale", "Scale gizmo", m_gizmoType == gui::Guizmo::Type::Scale))
+			setOrToggle(gui::Guizmo::Type::Scale);
+	}
+	ImGui::End();
+	ImGui::PopStyleVar(2);
 }
 
 void Viewport::setGuizmoType(const gui::Guizmo::Type& iType) { m_gizmoType = iType; }
