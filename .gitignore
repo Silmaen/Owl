@@ -41,6 +41,7 @@ output*
 # Cache
 *.spv
 cache
+__pycache__
 
 # cmake presets
 /CMakeUserPresets.json

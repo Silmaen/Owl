@@ -9,6 +9,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Sprites (billboards) in the raycast renderer.** Entities carrying
+  `SpriteRenderer` or `AnimatedSpriteRenderer` are now rendered as
+  camera-facing billboards when they sit on a `RendererRaycast` layer —
+  the same components stay 2D-rendered everywhere else, no new component
+  needed. The `Transform.translation` X/Y is the world position,
+  `translation.z` shifts the sprite up/down on screen (lamps, ceiling
+  decals, floor decals), and `scale.xy` is the world width × height
+  (scale `{1,1}` matches a 1-cell wall at the same depth). Architecture:
+    - `RendererRaycast` gains a per-column z-buffer latched by
+      `drawTilemapWalls` (one entry per cast ray), so sprites are
+      occluded column-by-column by walls — no GPU depth test needed.
+    - New `RendererRaycast::drawSprites(span<RaycastSpriteData>)` batch:
+      camera-space projection, cull behind / beyond `maxDistance`,
+      back-to-front sort, then per-column emission of 1-pixel-wide
+      strips against the wall z-buffer. Sprite-on-sprite occlusion
+      falls out of the painter's order naturally.
+    - `Scene::render` collects sprite + animated-sprite components and
+      dispatches them through the new batch when the active layer is
+      raycast; `Circle` / `Text` components are silently dropped on
+      raycast layers (HUDs belong on a separate `Renderer2D` layer).
+    - `BackgroundTexture` is skipped on raycast layers — the layer's
+      own sky / floor backdrop covers the same frame.
+    - `RaycastConfig`-aware: sprites past `maxDistance` are culled.
+  Stats expose `spriteCount` (visible sprites), `spriteStripeCount`
+  (stripes emitted) and `spriteOccludedCount` (stripes rejected by
+  walls). Demo: `raycast_demo.owl` ships a barrel sprite (static) and
+  an animated coin (using the existing `animated_coin.png` spritesheet)
+  placed in front of the player spawn — both authored with regular
+  `SpriteRenderer` / `AnimatedSpriteRenderer` components, just tagged
+  `raycast_world` via `RendererTag`.
 - **In-viewport camera markers.** Every `component::Camera` entity now draws
   a small camera icon, a forward arrow and a FOV cone in the editor viewport
   (Edit mode only). The marker uses the entity's world transform — local +Y

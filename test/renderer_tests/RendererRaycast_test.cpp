@@ -8,11 +8,11 @@
 
 #include "testHelper.h"
 
-#include <renderer/Renderer.h>
 #include <core/Application.h>
 #include <renderer/CameraOrtho.h>
-#include <renderer/RendererRaycast.h>
 #include <renderer/RenderLayerFactory.h>
+#include <renderer/Renderer.h>
+#include <renderer/RendererRaycast.h>
 #include <scene/TilemapAsset.h>
 #include <scene/Tileset.h>
 #include <scene/component/Tilemap.h>
@@ -21,14 +21,23 @@
 
 using namespace owl;
 using owl::renderer::CameraOrtho;
-using owl::renderer::Renderer;
 using owl::renderer::RaycastConfig;
+using owl::renderer::RaycastSpriteData;
+using owl::renderer::Renderer;
 using owl::renderer::RendererRaycast;
 using owl::renderer::RendererRaycastLayer;
 using owl::renderer::RenderLayerFactory;
 using owl::scene::TilemapAsset;
 using owl::scene::Tileset;
 using owl::scene::component::TilemapLayer;
+
+namespace {
+auto makeSpriteTexture() -> shared<owl::renderer::gpu::Texture2D> {
+	return owl::renderer::gpu::Texture2D::create(
+			owl::renderer::gpu::Texture::Specification{.size = {16, 16},
+													   .format = owl::renderer::gpu::ImageFormat::Rgba8});
+}
+}// namespace
 
 namespace {
 /// Build a simple `TilemapAsset` filled with a single-row corridor of walls along
@@ -56,8 +65,7 @@ auto makeCorridorTilemap() -> TilemapAsset {
 	layer.tiles.assign(tm.width * tm.height, owl::scene::component::g_EmptyTileIndex);
 	// Fill the row at y=5 with wall tiles (tile index 1) — that's the one row that
 	// will produce hits when the camera looks along +Y from below.
-	for (uint32_t x = 0; x < tm.width; ++x)
-		layer.tiles[5u * tm.width + x] = 1;
+	for (uint32_t x = 0; x < tm.width; ++x) layer.tiles[5u * tm.width + x] = 1;
 	tm.layers.push_back(std::move(layer));
 	return tm;
 }
@@ -213,6 +221,122 @@ TEST(RendererRaycast, hitsWallRowFromBelow) {
 	teardownRendererStack();
 }
 
+TEST(RendererRaycast, drawSpritesEmptySpanIsNoOp) {
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RendererRaycast::drawSprites({});
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.spriteCount, 0u);
+	EXPECT_EQ(stats.spriteStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawSpritesCullsBehindCamera) {
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);// rotation=0 → forward = +Y
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RaycastSpriteData behind{};
+	behind.worldPosition = {0.f, -2.f};// camera at origin facing +Y → -2 is behind
+	behind.worldSize = {1.f, 1.f};
+	behind.texture = makeSpriteTexture();
+	std::array sprites{behind};
+	RendererRaycast::drawSprites(std::span<const RaycastSpriteData>(sprites.data(), sprites.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.spriteCount, 0u);
+	EXPECT_EQ(stats.spriteStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawSpritesEmitsStripesWhenInFront) {
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RaycastSpriteData front{};
+	front.worldPosition = {0.f, 3.f};// 3 cells ahead, no walls anywhere
+	front.worldSize = {1.f, 1.f};
+	front.texture = makeSpriteTexture();
+	std::array sprites{front};
+	RendererRaycast::drawSprites(std::span<const RaycastSpriteData>(sprites.data(), sprites.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.spriteCount, 1u);
+	EXPECT_GT(stats.spriteStripeCount, 0u);
+	EXPECT_EQ(stats.spriteOccludedCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawSpritesOccludedByWall) {
+	bootRendererStack();
+	// Wall row at cellY=5 (worldY=2.5). Place a sprite *behind* the wall
+	// (at worldY=4) so all stripes that would land in its column should be
+	// occluded — `spriteCount` stays 0 because every column was rejected.
+	const CameraOrtho cam(0, 800, 0, 600);
+	const TilemapAsset tm = makeCorridorTilemap();
+	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 1);
+	RaycastSpriteData behindWall{};
+	behindWall.worldPosition = {0.f, 4.f};
+	behindWall.worldSize = {1.f, 1.f};
+	behindWall.texture = makeSpriteTexture();
+	std::array sprites{behindWall};
+	RendererRaycast::drawSprites(std::span<const RaycastSpriteData>(sprites.data(), sprites.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.spriteCount, 0u);
+	EXPECT_EQ(stats.spriteStripeCount, 0u);
+	EXPECT_GT(stats.spriteOccludedCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawSpritesBeyondMaxDistanceIsCulled) {
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 5.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RaycastSpriteData far{};
+	far.worldPosition = {0.f, 10.f};// 10 > maxDistance 5
+	far.worldSize = {1.f, 1.f};
+	far.texture = makeSpriteTexture();
+	std::array sprites{far};
+	RendererRaycast::drawSprites(std::span<const RaycastSpriteData>(sprites.data(), sprites.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.spriteCount, 0u);
+	EXPECT_EQ(stats.spriteStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawSpritesWithoutTextureIsSkipped) {
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RaycastSpriteData noTex{};
+	noTex.worldPosition = {0.f, 3.f};
+	noTex.worldSize = {1.f, 1.f};
+	noTex.texture = nullptr;
+	std::array sprites{noTex};
+	RendererRaycast::drawSprites(std::span<const RaycastSpriteData>(sprites.data(), sprites.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.spriteCount, 0u);
+	EXPECT_EQ(stats.spriteStripeCount, 0u);
+	teardownRendererStack();
+}
+
 TEST(RendererRaycast, statsResetClearsAllCounters) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
@@ -228,5 +352,8 @@ TEST(RendererRaycast, statsResetClearsAllCounters) {
 	EXPECT_EQ(stats.stripeCount, 0u);
 	EXPECT_EQ(stats.hitCount, 0u);
 	EXPECT_EQ(stats.missCount, 0u);
+	EXPECT_EQ(stats.spriteCount, 0u);
+	EXPECT_EQ(stats.spriteStripeCount, 0u);
+	EXPECT_EQ(stats.spriteOccludedCount, 0u);
 	teardownRendererStack();
 }

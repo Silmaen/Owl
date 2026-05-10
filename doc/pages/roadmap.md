@@ -495,26 +495,49 @@ the tilemap system, and scene-to-scene transition effects.
         - Textured floor/ceiling casting (currently solid colours via the
           backdrop)
         - Skybox or solid colour above horizon
-    - ![Planned][planned] Sprites (billboards)
-        - Entities rendered as camera-facing sprites in the raycast view, reusing
-          existing `SpriteRenderer` / `AnimatedSpriteRenderer` components — no
-          new component, the same entity is visible top-down in the editor and
-          first-person in Play
-        - Per-column z-buffer in `RendererRaycast` (filled by `drawTilemapWalls`,
-          read by a new `drawSprites` batch) so sprites can be correctly
-          occluded by walls
-        - Distance-based back-to-front sorting and scaling
+    - ![Done][done] Sprites (billboards)
+        - Entities carrying `SpriteRenderer` / `AnimatedSpriteRenderer` are
+          rendered as camera-facing billboards on `RendererRaycast` layers
+          without any new component — the same components stay 2D-rendered
+          on `Renderer2D` layers, so a single entity is authored top-down in
+          the editor and shown first-person at runtime.
+        - `RendererRaycast` gained a per-column z-buffer latched by
+          `drawTilemapWalls`; the new `drawSprites(span<RaycastSpriteData>)`
+          batch projects each sprite to camera space, culls behind /
+          beyond `maxDistance`, back-to-front-sorts the survivors and emits
+          1-pixel-wide strips that the per-column z-test rejects when a
+          wall sits in front. Sprite-on-sprite occlusion falls out of
+          painter's order.
+        - `Transform.translation.z` is the world Z-offset (lamps, ceiling
+          decals); `Transform.scale.xy` is the world size in cells. A
+          sprite of size `{1,1}` reaches the same screen height as a
+          1-cell wall at the same depth. Stats: `spriteCount`,
+          `spriteStripeCount`, `spriteOccludedCount`.
+        - Demo: `raycast_demo.owl` ships a barrel + animated-coin sprite
+          near the player spawn, both authored with the regular
+          `SpriteRenderer` / `AnimatedSpriteRenderer` components and
+          tagged on the `raycast_world` layer via `RendererTag`.
+        - 6 new headless tests in `RendererRaycast_test.cpp` cover empty
+          span, camera cull, in-front emission, wall occlusion,
+          max-distance cull and texture-less skip.
     - ![Planned][planned] Map features
         - Variable wall heights — `TileMeta.wallHeight: float = 1.0`
         - Transparent walls + chroma key — `TileMeta.transparent: bool` plus
           activation of the already-stored `TileMeta.chromaKey*` fields; DDA
           gains multi-hit support per column to render back-to-front through
           transparent pixels
-        - Thin walls — `TileMeta.thinWall: bool` + `TileMeta.thinAxis: V/H`
-          for mid-cell hit detection
-        - Doors — dedicated `component::RaycastDoor` entity (state machine +
-          animation + Lua API), not a tile flag, so each door instance is
-          addressable from scripts and triggers
+        - Doors and pushwalls — dedicated entity components
+          (`component::RaycastDoor` + `component::RaycastPushWall`), not tile
+          flags, so each instance is addressable from scripts and triggers.
+          Shared infrastructure: AABB ray intersection in the DDA so doors
+          and pushwalls can sit at sub-cell positions during animation,
+          per-instance kinematic Box2D body (static at rest → kinematic
+          during slide → static at end-state), state machine advanced in
+          `Scene::onUpdateRuntime`, hybrid activation
+          (built-in `interactionKey` + `interactionRange` defaults for
+          out-of-the-box use, plus Lua API for custom logic). Pushwalls
+          slide a configurable distance once and stay; doors open / hold /
+          close on a cycle.
     - ![In Progress][progress] Raycasting map editor in Owl Nest
         - ![Done][done] 2D grid editor for wall placement and texture assignment
           (`TilemapDocument` ships in v0.2.0)

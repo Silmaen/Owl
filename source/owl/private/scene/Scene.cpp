@@ -249,6 +249,44 @@ void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core:
 		ioAnim.m_playing = false;
 }
 
+// Emit one Renderer2D quad per non-empty tile of every visible layer of `iAsset`. Lifted out
+// of `Scene::renderTilemaps` to keep that function below the cognitive-complexity threshold.
+void drawTilemapQuads(const TilemapAsset& iAsset, const math::Transform& iWorldTransform, const int iEntityId) {
+	const float cellSize = iAsset.cellSize;
+	const float originX = -static_cast<float>(iAsset.width - 1) * 0.5f * cellSize;
+	const float originY = static_cast<float>(iAsset.height - 1) * 0.5f * cellSize;
+	for (const auto& layer: iAsset.layers) {
+		if (!layer.visible)
+			continue;
+		for (uint32_t y = 0; y < iAsset.height; ++y) {
+			for (uint32_t x = 0; x < iAsset.width; ++x) {
+				const size_t flat = static_cast<size_t>(y) * iAsset.width + x;
+				if (flat >= layer.tiles.size())
+					continue;
+				const int32_t tileIdx = layer.tiles[flat];
+				if (tileIdx < 0)
+					continue;
+				math::Transform cellTransform = iWorldTransform;
+				cellTransform.translation().x() += (originX + static_cast<float>(x) * cellSize);
+				cellTransform.translation().y() += (originY - static_cast<float>(y) * cellSize);
+				// Slight overscale (0.5%) so adjacent tiles overlap at rasterisation
+				// boundaries — without it, sub-pixel motion of the camera causes the
+				// shared edge between two tiles to flicker.
+				constexpr float kSeamOverlap = 1.005f;
+				cellTransform.scale().x() *= cellSize * kSeamOverlap;
+				cellTransform.scale().y() *= cellSize * kSeamOverlap;
+
+				renderer::Renderer2D::drawQuad(
+						{.transform = cellTransform,
+						 .color = math::vec4{1.f, 1.f, 1.f, 1.f},
+						 .texture = iAsset.tileset->texture,
+						 .textureCoords = iAsset.tileset->getTileUv(static_cast<uint32_t>(tileIdx)),
+						 .entityId = iEntityId});
+			}
+		}
+	}
+}
+
 }// namespace
 
 Scene::Scene() = default;
@@ -861,10 +899,14 @@ void Scene::render() {
 	OWL_PROFILE_FUNCTION()
 
 	const bool editorMode = status == Status::Editing;
+	const bool raycastLayer =
+			mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererRaycast";
 
 	// Draw background (only the first entity with this component, and only on the first layer
 	// when running through the stack — backgrounds always sit behind every layer).
-	if (m_currentLayerIsFirst) {
+	// Skipped for raycast layers because the layer renders its own sky / floor backdrop;
+	// drawing both produces a visible flicker as one overdraws the other depending on order.
+	if (m_currentLayerIsFirst && !raycastLayer) {
 		if (const auto bgView = registry.view<component::BackgroundTexture>(); !bgView.empty()) {
 			if (const auto bgEntity = bgView.front(); isEffectivelyVisible(Entity{bgEntity, this}, editorMode)) {
 				const auto& [mode, type, color, topColor, texture] = bgView.get<component::BackgroundTexture>(bgEntity);
@@ -883,58 +925,15 @@ void Scene::render() {
 	// Renderer2D batches do not depth-sort within a frame; the painter's order wins,
 	// hence tilemaps are drawn before the foreground entities.
 	resolveAllTilemapAssets();
-	for (const auto view = registry.view<component::Transform, component::Tilemap>(); auto entity: view) {
-		const Entity ent{entity, this};
-		if (!isEffectivelyVisible(ent, editorMode))
-			continue;
-		if (!layerAccepts(ent))
-			continue;
-		auto& tilemap = view.get<component::Tilemap>(entity);
-		if (!tilemap.asset || !tilemap.asset->tileset || !tilemap.asset->tileset->texture)
-			continue;
-		const auto& assetData = *tilemap.asset;
-		const math::Transform worldTransform = getWorldTransform(ent);
-		const int entityId = static_cast<int>(entity);
-		// When the active layer is a raycaster, route the tilemap to the DDA pipeline
-		// instead of emitting per-cell 2D quads. The 2D path keeps running for any
-		// layer whose type isn't "RendererRaycast" (legacy and HUD tilemaps included).
-		if (mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererRaycast") {
-			renderer::RendererRaycast::drawTilemapWalls(assetData, worldTransform, entityId);
-			continue;
-		}
-		const float cellSize = assetData.cellSize;
-		const float originX = -static_cast<float>(assetData.width - 1) * 0.5f * cellSize;
-		const float originY = static_cast<float>(assetData.height - 1) * 0.5f * cellSize;
-		for (const auto& layer: assetData.layers) {
-			if (!layer.visible)
-				continue;
-			for (uint32_t y = 0; y < assetData.height; ++y) {
-				for (uint32_t x = 0; x < assetData.width; ++x) {
-					const size_t flat = static_cast<size_t>(y) * assetData.width + x;
-					if (flat >= layer.tiles.size())
-						continue;
-					const int32_t tileIdx = layer.tiles[flat];
-					if (tileIdx < 0)
-						continue;
-					math::Transform cellTransform = worldTransform;
-					cellTransform.translation().x() += (originX + static_cast<float>(x) * cellSize);
-					cellTransform.translation().y() += (originY - static_cast<float>(y) * cellSize);
-					// Slight overscale (0.5%) so adjacent tiles overlap at rasterisation
-					// boundaries — without it, sub-pixel motion of the camera causes the
-					// shared edge between two tiles to flicker.
-					constexpr float kSeamOverlap = 1.005f;
-					cellTransform.scale().x() *= cellSize * kSeamOverlap;
-					cellTransform.scale().y() *= cellSize * kSeamOverlap;
+	renderTilemaps(editorMode, raycastLayer);
 
-					renderer::Renderer2D::drawQuad(
-							{.transform = cellTransform,
-							 .color = math::vec4{1.f, 1.f, 1.f, 1.f},
-							 .texture = assetData.tileset->texture,
-							 .textureCoords = assetData.tileset->getTileUv(static_cast<uint32_t>(tileIdx)),
-							 .entityId = entityId});
-				}
-			}
-		}
+	// Raycast layer: route Sprite / AnimatedSprite entities through `RendererRaycast::drawSprites`
+	// (camera-space projection + back-to-front sort + per-column wall occlusion). The 2D Circle
+	// and Text components don't have a meaningful first-person interpretation, so they're
+	// silently dropped here — author such overlays on a separate `Renderer2D` HUD layer.
+	if (raycastLayer) {
+		renderRaycastSprites(editorMode);
+		return;
 	}
 
 	// Draw sprites
@@ -1015,6 +1014,85 @@ void Scene::render() {
 										  .lineSpacing = text.lineSpacing,
 										  .entityId = static_cast<int>(entity)});
 	}
+}
+
+void Scene::renderTilemaps(const bool iEditorMode, const bool iRaycastLayer) {
+	OWL_PROFILE_FUNCTION()
+
+	for (const auto view = registry.view<component::Transform, component::Tilemap>(); auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, iEditorMode))
+			continue;
+		if (!layerAccepts(ent))
+			continue;
+		auto& tilemap = view.get<component::Tilemap>(entity);
+		if (!tilemap.asset || !tilemap.asset->tileset || !tilemap.asset->tileset->texture)
+			continue;
+		const auto& assetData = *tilemap.asset;
+		const math::Transform worldTransform = getWorldTransform(ent);
+		const int entityId = static_cast<int>(entity);
+		// When the active layer is a raycaster, route the tilemap to the DDA pipeline
+		// instead of emitting per-cell 2D quads. The 2D path keeps running for any
+		// layer whose type isn't "RendererRaycast" (legacy and HUD tilemaps included).
+		if (iRaycastLayer) {
+			renderer::RendererRaycast::drawTilemapWalls(assetData, worldTransform, entityId);
+			continue;
+		}
+		drawTilemapQuads(assetData, worldTransform, entityId);
+	}
+}
+
+void Scene::renderRaycastSprites(const bool iEditorMode) {
+	OWL_PROFILE_FUNCTION()
+
+	std::vector<renderer::RaycastSpriteData> raycastSprites;
+	for (const auto view = registry.view<component::Transform, component::SpriteRenderer>(); const auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, iEditorMode))
+			continue;
+		if (!layerAccepts(ent))
+			continue;
+		const auto& sprite = view.get<component::SpriteRenderer>(entity);
+		if (!sprite.texture)
+			continue;
+		const math::Transform worldTransform = getWorldTransform(ent);
+		raycastSprites.push_back({.worldPosition = {worldTransform.translation().x(), worldTransform.translation().y()},
+								  .worldZOffset = worldTransform.translation().z(),
+								  .worldSize = {worldTransform.scale().x(), worldTransform.scale().y()},
+								  .tint = sprite.color,
+								  .texture = sprite.texture,
+								  .entityId = static_cast<int>(entity)});
+	}
+	for (const auto view = registry.view<component::Transform, component::AnimatedSpriteRenderer>();
+		 const auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, iEditorMode))
+			continue;
+		if (!layerAccepts(ent))
+			continue;
+		const auto& anim = view.get<component::AnimatedSpriteRenderer>(entity);
+		if (!anim.texture)
+			continue;
+		const math::Transform worldTransform = getWorldTransform(ent);
+		const uint32_t safeCols = std::max(anim.columns, 1u);
+		const uint32_t safeRows = std::max(anim.rows, 1u);
+		const uint32_t frame = std::clamp(anim.m_currentFrame, anim.firstFrame, anim.lastFrame);
+		const uint32_t cellCol = frame % safeCols;
+		const uint32_t cellRow = frame / safeCols;
+		const float uMin = static_cast<float>(cellCol) / static_cast<float>(safeCols);
+		const float uMax = static_cast<float>(cellCol + 1) / static_cast<float>(safeCols);
+		const float vMax = 1.0f - static_cast<float>(cellRow) / static_cast<float>(safeRows);
+		const float vMin = 1.0f - static_cast<float>(cellRow + 1) / static_cast<float>(safeRows);
+		raycastSprites.push_back({.worldPosition = {worldTransform.translation().x(), worldTransform.translation().y()},
+								  .worldZOffset = worldTransform.translation().z(),
+								  .worldSize = {worldTransform.scale().x(), worldTransform.scale().y()},
+								  .tint = anim.color,
+								  .texture = anim.texture,
+								  .textureCoords = {math::vec2{uMin, vMin}, math::vec2{uMax, vMin},
+													math::vec2{uMax, vMax}, math::vec2{uMin, vMax}},
+								  .entityId = static_cast<int>(entity)});
+	}
+	renderer::RendererRaycast::drawSprites(raycastSprites);
 }
 
 void Scene::resolveAllTilemapAssets() {

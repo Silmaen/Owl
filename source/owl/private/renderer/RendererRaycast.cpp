@@ -17,7 +17,9 @@
 #include "scene/Tileset.h"
 #include "scene/component/Tilemap.h"
 
+#include <algorithm>
 #include <cmath>
+#include <limits>
 
 namespace owl::renderer {
 
@@ -42,6 +44,13 @@ struct State {
 	 * tilemap stay genuinely no-op (no overdraw on top of a 2D layer underneath).
 	 */
 	bool backdropEmitted = false;
+	/**
+	 * Per-column wall depth (in cell units), latched by `drawTilemapWalls` and
+	 * read by `drawSprites` so billboards can be occluded by walls. Sized to
+	 * the active `numRays` at `beginScene`; entries default to `+inf` (no
+	 * wall hit on that column).
+	 */
+	std::vector<float> zBufferPerColumn;
 	/// Cumulative statistics for the current frame (cleared by `resetStats`).
 	RendererRaycast::Statistics stats;
 };
@@ -140,6 +149,8 @@ void RendererRaycast::beginScene(const Camera& iCamera, const math::vec2ui& iVie
 
 	g_state->sceneOpen = true;
 	g_state->backdropEmitted = false;
+	const uint32_t numRaysActive = (iConfig.numRays > 0) ? iConfig.numRays : g_state->viewport.x();
+	g_state->zBufferPerColumn.assign(numRaysActive, std::numeric_limits<float>::infinity());
 }
 
 namespace {
@@ -307,6 +318,10 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 		// Perpendicular distance (avoid fish-eye): subtract last delta on the axis we just stepped.
 		const float perpDistCells = (side == 0) ? (sideDistX - deltaX) : (sideDistY - deltaY);
 		const float perpDistSafe = std::max(perpDistCells, g_MinPerpDist);
+		// Latch the wall depth for this column so `drawSprites` can occlude billboards
+		// that sit behind a wall.
+		if (col < g_state->zBufferPerColumn.size())
+			g_state->zBufferPerColumn[col] = perpDistSafe;
 		// Snap line height to an even integer. Combined with the integer horizon
 		// it guarantees the stripe top / bottom land on integer pixel boundaries
 		// every frame, no matter how the camera's float-precision distance shifts —
@@ -356,6 +371,127 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 							  .texture = atlasTex,
 							  .textureCoords = stripeUv,
 							  .entityId = iEntityId});
+	}
+}
+
+void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
+	OWL_PROFILE_FUNCTION()
+
+	if (!g_state || !g_state->sceneOpen) {
+		OWL_CORE_WARN("RendererRaycast::drawSprites called outside beginScene/endScene.")
+		return;
+	}
+	if (iSprites.empty())
+		return;
+	// Sprites alone don't trigger the wall path, but we still want a backdrop behind
+	// them when the scene has no tilemap (otherwise sprites float on whatever the
+	// previous layer left in the framebuffer).
+	emitBackdropIfNeeded();
+
+	// Camera-space basis: invert `[plane | dir]` so we can express any world point
+	// as `(transformX, transformY)` in camera coordinates — `transformY` is the
+	// forward distance (used for depth-sort + occlusion + perspective scale),
+	// `transformX` is the lateral offset that drives the screen-X projection.
+	const math::vec2& dir = g_state->cameraDir2D;
+	const math::vec2& plane = g_state->cameraPlane2D;
+	const float det = plane.x() * dir.y() - dir.x() * plane.y();
+	if (std::abs(det) < 1e-8f)
+		return;
+	const float invDet = 1.f / det;
+
+	struct Projected {
+		size_t spriteIdx;///< Index into the input span.
+		float transformX;///< Lateral camera-space offset.
+		float transformY;///< Forward camera-space distance (always > 0 after culling).
+	};
+	std::vector<Projected> visible;
+	visible.reserve(iSprites.size());
+
+	const float maxDistance = std::max(1.f, g_state->config.maxDistance);
+	for (size_t i = 0; i < iSprites.size(); ++i) {
+		const auto& sprite = iSprites[i];
+		if (!sprite.texture)
+			continue;
+		const float dx = sprite.worldPosition.x() - g_state->cameraPos2D.x();
+		const float dy = sprite.worldPosition.y() - g_state->cameraPos2D.y();
+		const float transformX = invDet * (dir.y() * dx - dir.x() * dy);
+		const float transformY = invDet * (-plane.y() * dx + plane.x() * dy);
+		if (transformY <= g_MinPerpDist)
+			continue;
+		if (transformY > maxDistance)
+			continue;
+		visible.push_back({i, transformX, transformY});
+	}
+	if (visible.empty())
+		return;
+
+	// Painter's order: farther sprites first so closer sprites overdraw them.
+	std::ranges::sort(visible, [](const Projected& iLhs, const Projected& iRhs) -> bool {
+		return iLhs.transformY > iRhs.transformY;
+	});
+
+	const math::vec2 vp{static_cast<float>(g_state->viewport.x()), static_cast<float>(g_state->viewport.y())};
+	const uint32_t numRays = (g_state->config.numRays > 0) ? g_state->config.numRays : g_state->viewport.x();
+	if (numRays == 0)
+		return;
+	const float stripePxWidth = vp.x() / static_cast<float>(numRays);
+	const float horizonY = computeHorizonY();
+	const auto& zBuffer = g_state->zBufferPerColumn;
+
+	for (const auto& projected: visible) {
+		const auto& sprite = iSprites[projected.spriteIdx];
+		const float invTy = 1.f / projected.transformY;
+		const float spriteH = std::max(0.f, sprite.worldSize.y()) * vp.y() * invTy;
+		const float spriteW = std::max(0.f, sprite.worldSize.x()) * vp.y() * invTy;
+		if (spriteH < 1.f || spriteW < 1.f)
+			continue;
+		const float screenCenterX = vp.x() * 0.5f * (1.f + projected.transformX * invTy);
+		const float screenCenterY = horizonY + sprite.worldZOffset * vp.y() * invTy;
+		const float screenLeft = screenCenterX - spriteW * 0.5f;
+		const float screenRight = screenCenterX + spriteW * 0.5f;
+		const int colStart = std::max(0, static_cast<int>(std::floor(screenLeft / stripePxWidth)));
+		const int colEnd =
+				std::min(static_cast<int>(numRays), static_cast<int>(std::ceil(screenRight / stripePxWidth)));
+		if (colStart >= colEnd)
+			continue;
+		const auto& tc = sprite.textureCoords;
+		const float uvLeft = tc[0].x();
+		const float uvRight = tc[1].x();
+		const float uvBottom = tc[0].y();
+		const float uvTop = tc[3].y();
+		bool spriteEmittedAny = false;
+		for (int col = colStart; col < colEnd; ++col) {
+			const float wallDepth = (static_cast<size_t>(col) < zBuffer.size())
+											? zBuffer[static_cast<size_t>(col)]
+											: std::numeric_limits<float>::infinity();
+			if (projected.transformY >= wallDepth) {
+				g_state->stats.spriteOccludedCount++;
+				continue;
+			}
+			const float colCenterX = (static_cast<float>(col) + 0.5f) * stripePxWidth;
+			const float localX = colCenterX - screenLeft;
+			const float u = std::clamp(localX / spriteW, 0.f, 1.f);
+			const float uHit = uvLeft + u * (uvRight - uvLeft);
+
+			math::Transform stripeTr;
+			stripeTr.translation() = math::vec3{colCenterX, screenCenterY, 0.f};
+			stripeTr.scale() = math::vec3{stripePxWidth, spriteH, 1.f};
+			const std::array<math::vec2, 4> stripeUv{
+					math::vec2{uHit, uvBottom},
+					math::vec2{uHit, uvBottom},
+					math::vec2{uHit, uvTop},
+					math::vec2{uHit, uvTop},
+			};
+			Renderer2D::drawQuad({.transform = stripeTr,
+								  .color = sprite.tint,
+								  .texture = sprite.texture,
+								  .textureCoords = stripeUv,
+								  .entityId = sprite.entityId});
+			g_state->stats.spriteStripeCount++;
+			spriteEmittedAny = true;
+		}
+		if (spriteEmittedAny)
+			g_state->stats.spriteCount++;
 	}
 }
 
