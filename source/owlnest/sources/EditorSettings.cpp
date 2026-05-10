@@ -55,6 +55,8 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			snapMultiplier = std::max(0.0001f, config["snapMultiplier"].as<float>());
 		if (config["snapAutoFromTilemap"])
 			snapAutoFromTilemap = config["snapAutoFromTilemap"].as<bool>();
+		if (config["showCameraGizmos"])
+			showCameraGizmos = config["showCameraGizmos"].as<bool>();
 		if (const auto bindings = config["keybindings"]; bindings && bindings.IsMap()) {
 			keybindingOverrides.clear();
 			for (const auto& pair: bindings)
@@ -79,6 +81,7 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "snapStep" << YAML::Value << snapStep;
 	out << YAML::Key << "snapMultiplier" << YAML::Value << snapMultiplier;
 	out << YAML::Key << "snapAutoFromTilemap" << YAML::Value << snapAutoFromTilemap;
+	out << YAML::Key << "showCameraGizmos" << YAML::Value << showCameraGizmos;
 	if (!keybindingOverrides.empty()) {
 		out << YAML::Key << "keybindings" << YAML::Value << YAML::BeginMap;
 		for (const auto& [id, shortcut]: keybindingOverrides) out << YAML::Key << id << YAML::Value << shortcut;

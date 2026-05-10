@@ -312,30 +312,23 @@ custom file picker, and add core gameplay primitives (inventory, enemies).
           the user). Re-tune sensitivity per axis, add deadzones, support
           Maya/Blender-style middle-click navigation as an option, surface the
           settings under `Settings > Editor > Camera`.
+        - **Standard navigation presets** — quick buttons (ribbon `View` group +
+          viewport overlay) for: **Reset View** (snap back to the default editor
+          pose); axis-aligned ortho views **XY** (top-down), **XZ** (front),
+          **YZ** (side); **Frame Selection** (zoom to fit the selected entity);
+          **Frame Scene** (zoom to fit the whole scene's bounds).
+        - **Go to camera viewpoint** — snap the editor camera onto any
+          selected `component::Camera` entity's pose (translation + rotation)
+          for a quick preview. Disabled for cameras whose `RendererTag`
+          targets a `RendererRaycast` layer (the editor renders those scenes
+          flat — see "Look through scene camera" below for the proper
+          first-person preview path).
     - ![Planned][planned] "Look through scene camera" mode
         - Let the user temporarily drive the editor viewport from any
           `component::Camera` entity in the scene (primary or otherwise),
           for previewing what the runtime camera will see without entering Play.
           Toggleable from the camera entity's context menu or a viewport overlay
           dropdown. Reverts to the editor camera on demand.
-    - ![Planned][planned] In-viewport camera visualisation & manipulation
-        - Today the editor draws no marker for `component::Camera` entities — a
-          raycast scene's player camera is invisible in the top-down 2D preview,
-          so the level designer cannot see where it sits or which way it points.
-        - Add a small in-viewport gizmo for every camera entity:
-            - Position dot + forward arrow (length scaled with FOV / ortho size)
-              for any camera, in any rendering mode.
-            - For `RendererRaycast` cameras, also draw the FOV cone (left / right
-              edge rays at the configured `Fov`) so the visible slice is obvious.
-            - Highlight the *primary* camera distinctly so it's clear which one
-              the runtime will use.
-            - Selectable like any other entity (clicking the dot focuses the
-              entity in the hierarchy).
-        - Manipulation handles: drag the dot to move, drag the arrow tip to
-          rotate (Z-axis only for 2D / raycast cameras). Both flow through
-          `ModifyEntityCommand` so they're undoable.
-        - Toggleable from a viewport overlay (`Show > Cameras`) so it doesn't
-          clutter scenes with many cameras.
 - Gameplay
     - ![Planned][planned] Inventory system
         - Collectible objects
@@ -503,16 +496,41 @@ the tilemap system, and scene-to-scene transition effects.
           backdrop)
         - Skybox or solid colour above horizon
     - ![Planned][planned] Sprites (billboards)
-        - Entities rendered as camera-facing sprites in the raycast view
-        - Distance-based sorting and scaling
+        - Entities rendered as camera-facing sprites in the raycast view, reusing
+          existing `SpriteRenderer` / `AnimatedSpriteRenderer` components — no
+          new component, the same entity is visible top-down in the editor and
+          first-person in Play
+        - Per-column z-buffer in `RendererRaycast` (filled by `drawTilemapWalls`,
+          read by a new `drawSprites` batch) so sprites can be correctly
+          occluded by walls
+        - Distance-based back-to-front sorting and scaling
     - ![Planned][planned] Map features
-        - Doors (opening/closing with animation)
-        - Thin walls and transparent walls
-        - Variable wall heights
-    - ![Planned][planned] Raycasting map editor in Owl Nest
-        - 2D grid editor for wall placement and texture assignment
-        - Top-down preview alongside first-person preview
-        - Entity placement on the grid
+        - Variable wall heights — `TileMeta.wallHeight: float = 1.0`
+        - Transparent walls + chroma key — `TileMeta.transparent: bool` plus
+          activation of the already-stored `TileMeta.chromaKey*` fields; DDA
+          gains multi-hit support per column to render back-to-front through
+          transparent pixels
+        - Thin walls — `TileMeta.thinWall: bool` + `TileMeta.thinAxis: V/H`
+          for mid-cell hit detection
+        - Doors — dedicated `component::RaycastDoor` entity (state machine +
+          animation + Lua API), not a tile flag, so each door instance is
+          addressable from scripts and triggers
+    - ![In Progress][progress] Raycasting map editor in Owl Nest
+        - ![Done][done] 2D grid editor for wall placement and texture assignment
+          (`TilemapDocument` ships in v0.2.0)
+        - ![Done][done] Entity placement on the grid via the existing scene
+          editor (entities, triggers, lights, … are already authorable on top
+          of any tilemap)
+        - ![Done][done] Top-down preview alongside first-person preview — the
+          editor viewport is the top-down view; Play mode is the first-person
+          view
+        - ![Planned][planned] In-viewport camera marker — a small dot + forward
+          arrow + FOV cone for every `component::Camera` entity, drawn in the
+          top-down editor view so the level designer can see where the player
+          will spawn and which direction it faces. Selectable, manipulable via
+          the standard gizmo. Toggleable from a viewport overlay button and
+          from the ribbon's `Show` group. (Promoted from v0.2.2 to close this
+          item.)
     - ![Planned][planned] Lighting for raycasting
         - Distance-based shading (fog/darkness)
         - Optional point lights with falloff

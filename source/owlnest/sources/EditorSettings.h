@@ -40,6 +40,8 @@ struct EditorSettings {
 	float snapMultiplier = 1.0f;
 	/// When true, the snap step is taken from the first `Tilemap` component's `cellSize` in the active scene; falls back to `snapStep` when no tilemap is present.
 	bool snapAutoFromTilemap = true;
+	/// Whether the in-viewport camera markers (icon + forward arrow + FOV cone) are drawn in Edit mode.
+	bool showCameraGizmos = true;
 	/// Custom keybinding overrides (action ID -> shortcut string). Only non-default bindings.
 	std::unordered_map<std::string, std::string> keybindingOverrides;
 	/// Recently opened project directories (most recent first).

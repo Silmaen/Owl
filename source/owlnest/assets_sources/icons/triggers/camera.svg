@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Camera body, centred. SVG +Y is down, but Renderer2D draws the texture with +V up, so the trapezoid "lens" at the top of this SVG ends up pointing in world +Y (the local-forward of every component::Camera entity). -->
+  <rect x="136" y="180" width="240" height="240" rx="32" stroke="white" stroke-width="32" fill="none"/>
+  <polygon points="180,90 332,90 366,180 146,180" stroke="white" stroke-width="32" fill="none" stroke-linejoin="round"/>
+  <ellipse cx="256" cy="300" rx="60" ry="60" fill="none" stroke="white" stroke-width="32"/>
+</svg>

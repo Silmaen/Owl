@@ -176,6 +176,16 @@ private:
 
 	/**
 	 * @brief
+	 *  Render the floating in-viewport toolbar (Show toggles + gizmo selector).
+	 *
+	 * Mirrors the ribbon's `Show` and `Gizmo` groups so the user gets quick access
+	 * without leaving the viewport. Drawn over the framebuffer image, after the
+	 * gizmo so it never gets covered.
+	 */
+	void renderOverlayToolbar();
+
+	/**
+	 * @brief
 	 *  Handle the mouse button pressed event.
 	 * @param[in,out] ioEvent The incoming event.
 	 * @return True when the event was consumed.

@@ -404,6 +404,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Mutable access to the editor settings (for toggles wired from non-EditorLayer panels).
+	 * @return The settings.
+	 */
+	[[nodiscard]] auto getSettings() -> EditorSettings& { return m_settings; }
+
+	/**
+	 * @brief
 	 *  Route a Content Browser file drop to `openScene` / `openCodeFile` / prefab instantiation.
 	 */
 	void handleContentBrowserDrop(const std::filesystem::path& iRelativePath);

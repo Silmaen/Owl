@@ -199,6 +199,7 @@ void loadTriggerTextures() {
 	textureLibrary.load("icons/triggers/timer");
 	textureLibrary.load("icons/triggers/interaction");
 	textureLibrary.load("icons/triggers/lua_callback");
+	textureLibrary.load("icons/triggers/camera");
 }
 
 void loadSounds() {
@@ -1327,6 +1328,17 @@ void EditorLayer::buildSceneTab() {
 							  .isEnabled = [this]() -> bool { return getState() == State::Edit; },
 							  .size = Size::Small,
 							  .popupContents = [this]() -> void { renderSnapStepPopup(); }});
+
+	const auto gShow = m_ribbon.addGroup(sceneTab, "Show");
+	m_ribbon.addButton(
+			sceneTab, gShow,
+			Button{.iconName = "comp_camera",
+				   .label = "Cameras",
+				   .tooltip = "Toggle in-viewport camera markers (icon + forward arrow + FOV cone)",
+				   .isEnabled = [this]() -> bool { return getState() == State::Edit; },
+				   .isChecked = [this]() -> bool { return m_settings.showCameraGizmos; },
+				   .onClick = [this]() -> void { m_settings.showCameraGizmos = !m_settings.showCameraGizmos; },
+				   .size = Size::Small});
 
 	const auto gSceneSettings = m_ribbon.addGroup(sceneTab, "Settings");
 	m_ribbon.addButton(sceneTab, gSceneSettings,
