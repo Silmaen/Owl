@@ -9,6 +9,7 @@
 
 #include "Theme.h"
 #include "core/layer/Layer.h"
+#include "renderer/gpu/Texture.h"
 
 #include <functional>
 #include <string>
@@ -83,6 +84,22 @@ public:
 	 * @param[in] iBlock If layer block event or let them pass to next layer.
 	 */
 	void blockEvents(const bool iBlock) { m_blockEvent = iBlock; }
+
+	/**
+	 * @brief
+	 *  Schedule a texture (or any GPU resource wrapped in a `shared`) to be
+	 *  released only **after** the current ImGui frame has been submitted.
+	 *
+	 * On Vulkan, ``ImTextureID`` is a raw ``VkDescriptorSet`` pointer captured
+	 * into ImGui's draw data. If the underlying texture is destroyed between
+	 * the widget call (e.g. ``ImGui::Image``) and ``ImGui_ImplVulkan_RenderDrawData``,
+	 * the driver dereferences a stale descriptor and crashes. Call this
+	 * whenever you swap a texture mid-frame (drag-drop handlers, asset
+	 * reloads): the shared pointer is kept alive until ``end()`` finishes,
+	 * then dropped.
+	 * @param[in] iTexture The texture handle to keep alive across the frame.
+	 */
+	static void deferTextureRelease(shared<renderer::gpu::Texture> iTexture);
 
 	/**
 	 * @brief

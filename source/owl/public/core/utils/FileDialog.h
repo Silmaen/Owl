@@ -32,10 +32,15 @@ public:
 	/**
 	 * @brief
 	 *  Open a file dialog to define a file to create.
+	 *
+	 * Passing ``iDefaultName`` suggests a filename in the dialog's text
+	 * field; without it some Linux portal backends degrade into a
+	 * folder-only picker.
 	 * @param[in] iFilter Filter to apply during the search.
+	 * @param[in] iDefaultName Optional default filename pre-filled in the dialog.
 	 * @return A valid file path or null if cancelled.
 	 */
-	static auto saveFile(const std::string& iFilter) -> std::filesystem::path;
+	static auto saveFile(const std::string& iFilter, const std::string& iDefaultName = {}) -> std::filesystem::path;
 
 	/**
 	 * @brief

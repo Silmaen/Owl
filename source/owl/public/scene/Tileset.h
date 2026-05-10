@@ -32,14 +32,28 @@ struct OWL_API TileMeta {
 	std::string name;
 	/**
 	 * @brief
-	 *  Whether `chromaKeyColor` is treated as fully transparent when this tile is rendered.
+	 *  Vertical scale of the wall in cell units when rendered by `RendererRaycast`.
 	 *
-	 * Stored on the tileset; the renderer-side application is wired up in a later patch — for
-	 * the v0.2.x cycle the field is captured at authoring time only.
+	 * `1.0` is the default Wolfenstein-style ceiling-to-floor wall. Values above 1
+	 * extend the wall **upward** (taller pillars, towers); values below 1 keep the
+	 * wall on the floor but shorten its height (low half-walls). Walls are always
+	 * bottom-anchored at floor level so a tall wall pokes into the sky and a
+	 * short wall doesn't lift off the ground. Ignored by the legacy 2D path.
 	 */
-	bool chromaKeyEnabled = false;
-	/// RGB chroma key — pixels matching this colour become alpha 0 when `chromaKeyEnabled` is true.
-	math::vec3 chromaKeyColor{1.f, 0.f, 1.f};
+	float wallHeight = 1.f;
+	/**
+	 * @brief
+	 *  Whether the tile is rendered with alpha blending and lets rays continue past it.
+	 *
+	 * When true the raycast DDA does not stop at this tile — it records the hit
+	 * and keeps stepping up to a per-frame budget so further walls (transparent
+	 * or opaque) can be drawn behind. The collected hits are rendered
+	 * back-to-front so the alpha-blended texture composites correctly. The
+	 * project's transparency strategy is "alpha channel only": author the tile
+	 * with a proper RGBA texture (PNG with alpha) — chroma keying is
+	 * intentionally not supported.
+	 */
+	bool transparent = false;
 };
 
 /**

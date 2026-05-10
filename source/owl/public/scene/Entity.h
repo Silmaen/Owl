@@ -119,10 +119,19 @@ public:
 
 	/**
 	 * @brief
-	 *  Get entity as boolean.
-	 * @return True if handle exists.
+	 *  True when the handle is non-null **and** still alive in its scene's registry.
+	 *
+	 * Cached entity handles can outlive the entity itself (Lua scripts, event
+	 * deferrals, ``EntityLink`` targets…); the registry-validity check here
+	 * prevents callers from dereferencing a stale handle, which previously
+	 * crashed deep inside EnTT's component storage on shutdown / scene swap.
+	 * @return True if the entity is currently usable.
 	 */
-	explicit operator bool() const { return m_entityHandle != entt::null; }
+	explicit operator bool() const {
+		if (m_entityHandle == entt::null || mp_scene == nullptr)
+			return false;
+		return mp_scene->registry.valid(m_entityHandle);
+	}
 
 	/**
 	 * @brief

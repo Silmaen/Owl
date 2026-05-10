@@ -68,7 +68,7 @@ Entities:
       parentId: 200000000000000003
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: TopCenter
       pivotX: 0.5
       pivotY: 1
@@ -76,7 +76,7 @@ Entities:
       sizeY: 80
       offsetX: 0
       offsetY: -80
-    UIText:
+    UiText:
       text: Victory!
       color: [0.200000003, 1, 0.200000003, 1]
       fontSize: 48
@@ -96,7 +96,7 @@ Entities:
       parentId: 200000000000000003
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -104,7 +104,7 @@ Entities:
       sizeY: 40
       offsetX: 0
       offsetY: 30
-    UIText:
+    UiText:
       text: "Final Score: 0"
       color: [1, 1, 1, 1]
       fontSize: 24
@@ -124,13 +124,13 @@ Entities:
       parentId: 200000000000000003
     RendererTag:
       Name: ui
-    UIButton:
+    UiButton:
       normalColor: [0.150000006, 0.349999994, 0.649999976, 1]
       hoverColor: [0.25, 0.449999988, 0.75, 1]
       pressedColor: [0.100000001, 0.25, 0.5, 1]
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_menu_clicked
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -138,7 +138,7 @@ Entities:
       sizeY: 40
       offsetX: 0
       offsetY: -40
-    UIText:
+    UiText:
       text: Main Menu
       color: [1, 1, 1, 1]
       fontSize: 20

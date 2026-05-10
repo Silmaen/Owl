@@ -1130,7 +1130,7 @@ Entities:
     parentId: 3000000000000000060
   RendererTag:
     Name: ui
-  UIProgressBar:
+  UiProgressBar:
     value: 1
     backgroundColor:
     - 0.400000006
@@ -1142,7 +1142,7 @@ Entities:
     - 0.850000024
     - 0.200000003
     - 1
-  UIRect:
+  UiRect:
     anchor: TopRight
     pivotX: 1
     pivotY: 1
@@ -1172,7 +1172,7 @@ Entities:
     parentId: 3000000000000000060
   RendererTag:
     Name: ui
-  UIRect:
+  UiRect:
     anchor: TopRight
     pivotX: 1
     pivotY: 1
@@ -1180,7 +1180,7 @@ Entities:
     sizeY: 26
     offsetX: -20
     offsetY: -50
-  UIText:
+  UiText:
     text: 'Score: 0'
     color:
     - 1
@@ -1213,7 +1213,7 @@ Entities:
     parentId: 3000000000000000060
   RendererTag:
     Name: ui
-  UIRect:
+  UiRect:
     anchor: TopLeft
     pivotX: 0
     pivotY: 1
@@ -1221,7 +1221,7 @@ Entities:
     sizeY: 20
     offsetX: 20
     offsetY: -20
-  UIText:
+  UiText:
     text: A/D = move (only on ground), W/Space = jump, ESC = pause
     color:
     - 1

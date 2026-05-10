@@ -13,7 +13,7 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: BottomRight
       pivotX: 1
       pivotY: 0
@@ -21,7 +21,7 @@ Entities:
       sizeY: 25
       offsetX: -15
       offsetY: 15
-    UIText:
+    UiText:
       text: v0.1.1
       color: [0.5, 0.5, 0.5, 0.699999988]
       fontSize: 12
@@ -41,13 +41,13 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIButton:
+    UiButton:
       normalColor: [0.150000006, 0.349999994, 0.649999976, 1]
       hoverColor: [0.25, 0.449999988, 0.75, 1]
       pressedColor: [0.100000001, 0.25, 0.5, 1]
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_play_clicked
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -55,7 +55,7 @@ Entities:
       sizeY: 50
       offsetX: 0
       offsetY: 0
-    UIText:
+    UiText:
       text: Play
       color: [1, 1, 1, 1]
       fontSize: 26
@@ -75,13 +75,13 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIButton:
+    UiButton:
       normalColor: [0.100000001, 0.449999988, 0.300000012, 1]
       hoverColor: [0.150000006, 0.550000012, 0.400000006, 1]
       pressedColor: [0.0500000007, 0.349999994, 0.200000003, 1]
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_continue_clicked
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -89,7 +89,7 @@ Entities:
       sizeY: 40
       offsetX: 0
       offsetY: -50
-    UIText:
+    UiText:
       text: Continue
       color: [1, 1, 1, 1]
       fontSize: 20
@@ -109,13 +109,13 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIButton:
+    UiButton:
       normalColor: [0.300000012, 0.300000012, 0.300000012, 1]
       hoverColor: [0.400000006, 0.400000006, 0.400000006, 1]
       pressedColor: [0.200000003, 0.200000003, 0.200000003, 1]
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_settings_clicked
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -123,7 +123,7 @@ Entities:
       sizeY: 40
       offsetX: 0
       offsetY: -100
-    UIText:
+    UiText:
       text: Settings
       color: [1, 1, 1, 1]
       fontSize: 20
@@ -143,13 +143,13 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIButton:
+    UiButton:
       normalColor: [0.400000006, 0.150000006, 0.150000006, 1]
       hoverColor: [0.550000012, 0.200000003, 0.200000003, 1]
       pressedColor: [0.300000012, 0.100000001, 0.100000001, 1]
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_quit_clicked
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -157,7 +157,7 @@ Entities:
       sizeY: 40
       offsetX: 0
       offsetY: -150
-    UIText:
+    UiText:
       text: Quit
       color: [1, 1, 1, 1]
       fontSize: 20
@@ -177,10 +177,10 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIImage:
+    UiImage:
       tint: [1, 1, 1, 1]
       texture: nam:textures/logo_owl.png
-    UIRect:
+    UiRect:
       anchor: TopCenter
       pivotX: 0.5
       pivotY: 1
@@ -201,7 +201,7 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: TopCenter
       pivotX: 0.5
       pivotY: 1
@@ -209,7 +209,7 @@ Entities:
       sizeY: 80
       offsetX: 0
       offsetY: -150
-    UIText:
+    UiText:
       text: Owl Feature Demo
       color: [1, 0.850000024, 0.200000003, 1]
       fontSize: 42
@@ -229,7 +229,7 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: TopCenter
       pivotX: 0.5
       pivotY: 1
@@ -237,7 +237,7 @@ Entities:
       sizeY: 28
       offsetX: 0
       offsetY: -210
-    UIText:
+    UiText:
       text: Démo des fonctionnalités v0.1.1 - caractères éàüÇ
       color: [0.850000024, 0.850000024, 0.850000024, 0.850000024]
       fontSize: 16
@@ -257,14 +257,14 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIPanel:
+    UiPanel:
       backgroundColor: [0.100000001, 0.100000001, 0.150000006, 0.600000024]
       borderColor: [0.400000006, 0.400000006, 0.5, 0.400000006]
       borderWidth: 1
       layout: None
       spacing: 0
       padding: 0
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -285,7 +285,7 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: BottomLeft
       pivotX: 0
       pivotY: 0
@@ -293,7 +293,7 @@ Entities:
       sizeY: 25
       offsetX: 15
       offsetY: 15
-    UIText:
+    UiText:
       text: ""
       color: [0.600000024, 0.600000024, 0.699999988, 0.800000012]
       fontSize: 11
@@ -313,13 +313,13 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIButton:
+    UiButton:
       normalColor: [0.5, 0.150000006, 0.150000006, 0.800000012]
       hoverColor: [0.699999988, 0.200000003, 0.200000003, 1]
       pressedColor: [0.400000006, 0.100000001, 0.100000001, 1]
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_delete_save_clicked
-    UIRect:
+    UiRect:
       anchor: BottomLeft
       pivotX: 0
       pivotY: 0
@@ -327,7 +327,7 @@ Entities:
       sizeY: 25
       offsetX: 15
       offsetY: 42
-    UIText:
+    UiText:
       text: Delete Save
       color: [1, 1, 1, 0.899999976]
       fontSize: 11
@@ -347,7 +347,7 @@ Entities:
       parentId: 827593881302582438
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: TopLeft
       pivotX: 0
       pivotY: 1
@@ -355,7 +355,7 @@ Entities:
       sizeY: 20
       offsetX: 10
       offsetY: -10
-    UIText:
+    UiText:
       text: ""
       color: [0.400000006, 0.400000006, 0.5, 0.5]
       fontSize: 10

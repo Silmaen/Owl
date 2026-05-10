@@ -221,6 +221,113 @@ TEST(RendererRaycast, hitsWallRowFromBelow) {
 	teardownRendererStack();
 }
 
+TEST(RendererRaycast, transparentTilesDoNotStopTheRay) {
+	bootRendererStack();
+	// Build a corridor where the wall row at y=5 has tile #1 (opaque) and a transparent
+	// pre-wall at y=3 (tile #2 with `transparent = true`). A ray pointing straight at
+	// both should register both hits — `hitCount` for one ray is 2 instead of 1.
+	const CameraOrtho cam(0, 800, 0, 600);// rotation=0 → forward = +Y
+	auto tileset = mkShared<Tileset>();
+	tileset->columns = 4;
+	tileset->rows = 4;
+	tileset->tileWidth = 16;
+	tileset->tileHeight = 16;
+	tileset->tiles.resize(tileset->tileCount());
+	tileset->tiles[1].collidable = true;
+	tileset->tiles[2].transparent = true;
+	tileset->texture = renderer::gpu::Texture2D::create(
+			renderer::gpu::Texture::Specification{.size = {64, 64}, .format = renderer::gpu::ImageFormat::Rgba8});
+
+	TilemapAsset tm;
+	tm.width = 16;
+	tm.height = 16;
+	tm.cellSize = 1.f;
+	tm.tileset = tileset;
+	TilemapLayer layer;
+	layer.name = "walls";
+	layer.tiles.assign(tm.width * tm.height, owl::scene::component::g_EmptyTileIndex);
+	// Cell row Y in a 16x16 tilemap centred at origin maps to world Y = 7.5 - row,
+	// so smaller cell-row Y = farther in world space when the camera looks +Y from
+	// the origin. The transparent screen has to be the *nearer* cell so the DDA
+	// has a chance to walk past it and reach the opaque wall behind.
+	for (uint32_t x = 0; x < tm.width; ++x) {
+		layer.tiles[5u * tm.width + x] = 2;// transparent screen (closer, world Y = 2.5)
+		layer.tiles[3u * tm.width + x] = 1;// opaque wall behind it (farther, world Y = 4.5)
+	}
+	tm.layers.push_back(std::move(layer));
+
+	// Single ray straight ahead so we can count hits exactly.
+	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 1};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 1);
+	RendererRaycast::endScene();
+
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.stripeCount, 1u);
+	// Two stripes drawn for that single ray (transparent + opaque).
+	EXPECT_EQ(stats.hitCount, 2u);
+	EXPECT_EQ(stats.missCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, transparentBudgetCapsTheStack) {
+	bootRendererStack();
+	// 16 transparent tiles in a row, no opaque behind. The DDA should bail at the
+	// `kMaxTransparentHits` budget (8) so a pathological scene doesn't blow up.
+	const CameraOrtho cam(0, 800, 0, 600);
+	auto tileset = mkShared<Tileset>();
+	tileset->columns = 4;
+	tileset->rows = 4;
+	tileset->tileWidth = 16;
+	tileset->tileHeight = 16;
+	tileset->tiles.resize(tileset->tileCount());
+	tileset->tiles[1].transparent = true;
+	tileset->texture = renderer::gpu::Texture2D::create(
+			renderer::gpu::Texture::Specification{.size = {64, 64}, .format = renderer::gpu::ImageFormat::Rgba8});
+
+	TilemapAsset tm;
+	tm.width = 16;
+	tm.height = 16;
+	tm.cellSize = 1.f;
+	tm.tileset = tileset;
+	TilemapLayer layer;
+	layer.name = "walls";
+	layer.tiles.assign(tm.width * tm.height, owl::scene::component::g_EmptyTileIndex);
+	// 12 transparent rows in front of the camera at y=2..14.
+	for (uint32_t y = 2; y < 14; ++y)
+		for (uint32_t x = 0; x < tm.width; ++x) layer.tiles[y * tm.width + x] = 1;
+	tm.layers.push_back(std::move(layer));
+
+	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 32.f, .numRays = 1};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 1);
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.stripeCount, 1u);
+	// Cap at kMaxTransparentHits = 8 — never more.
+	EXPECT_LE(stats.hitCount, 8u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, opaqueWallStopsRayLikeBeforePR3) {
+	bootRendererStack();
+	// Sanity check: with no transparent tiles the new multi-hit path collapses to
+	// the legacy single-hit behaviour (one stripe per ray that hit).
+	const CameraOrtho cam(0, 800, 0, 600);
+	const TilemapAsset tm = makeCorridorTilemap();// row 5 fully opaque
+	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 1);
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.stripeCount, 64u);
+	EXPECT_EQ(stats.hitCount, 64u);// exactly one per ray
+	teardownRendererStack();
+}
+
 TEST(RendererRaycast, drawSpritesEmptySpanIsNoOp) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);

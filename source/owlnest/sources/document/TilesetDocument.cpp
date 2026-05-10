@@ -290,19 +290,27 @@ void TilesetDocument::renderPropertiesPanel() {
 
 	ImGui::Spacing();
 	ImGui::Separator();
-	ImGui::TextDisabled("Transparency");
-	bool chromaKey = meta.chromaKeyEnabled;
-	if (ImGui::Checkbox("Chroma key", &chromaKey))
-		meta.chromaKeyEnabled = chromaKey;
+	ImGui::TextDisabled("Raycast");
+	float wallHeight = meta.wallHeight;
+	if (ImGui::DragFloat("Wall height", &wallHeight, 0.05f, 0.f, 8.f, "%.2f"))
+		meta.wallHeight = std::clamp(wallHeight, 0.f, 8.f);
 	if (ImGui::IsItemHovered())
-		ImGui::SetTooltip("Treat the colour below as fully transparent when the tile is rendered.");
-	if (meta.chromaKeyEnabled) {
-		float color[3] = {meta.chromaKeyColor.x(), meta.chromaKeyColor.y(), meta.chromaKeyColor.z()};
-		if (ImGui::ColorEdit3("Color", color, ImGuiColorEditFlags_NoInputs))
-			meta.chromaKeyColor = math::vec3{color[0], color[1], color[2]};
-	}
-	helpText("Per-tile chroma key authored on the .owltileset. Engine-side application is wired in a later patch — for "
-			 "now the field is captured and persisted only.");
+		ImGui::SetTooltip("Vertical scale of the wall in cell units when rendered by the raycast renderer. "
+						  "1.0 is a standard ceiling-to-floor wall; larger values poke into the sky (towers), "
+						  "smaller values keep the wall planted on the floor (low half-walls). Bottom-anchored. "
+						  "Ignored by the legacy 2D rendering path.");
+
+	bool transparent = meta.transparent;
+	if (ImGui::Checkbox("Transparent (raycast)", &transparent))
+		meta.transparent = transparent;
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("When enabled, the raycast DDA does not stop at this tile — it records the hit and keeps "
+						  "stepping (up to 8 transparent layers per ray). The collected hits are drawn back-to-front "
+						  "so alpha-blended textures composite correctly. Combine with a PNG alpha channel or chroma "
+						  "key for see-through pixels.");
+
+	helpText("Transparency is alpha-channel only — author the tile texture with proper PNG alpha (RGBA) and toggle "
+			 "the Transparent flag above. Chroma keying is intentionally not supported.");
 }
 
 void TilesetDocument::renderCanvas() {

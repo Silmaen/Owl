@@ -1059,6 +1059,23 @@ void EditorLayer::buildRibbon() {
 							  .isEnabled = [this]() -> bool { return m_project.isLoaded(); },
 							  .onClick = [this]() -> void { closeProject(); },
 							  .size = Size::Small});
+	const auto gObject = m_ribbon.addGroup(fileTab, "Object");
+	m_ribbon.addButton(fileTab, gObject,
+					   Button{.iconName = "add_entity",
+							  .label = "New",
+							  .tooltip = "Create a new untitled document — pick the kind in the popup.",
+							  .isEnabled = [this]() -> bool { return m_project.isLoaded(); },
+							  .size = Size::Large,
+							  .popupContents = [this]() -> void {
+								  if (gui::IconBank::instance().menuItem("comp_canvas", "New Scene"))
+									  newScene();
+								  if (gui::IconBank::instance().menuItem("comp_animated_sprite", "New Animation"))
+									  newAnimationClip();
+								  if (gui::IconBank::instance().menuItem("owltilemap_icon", "New Tilemap"))
+									  newTilemapAsset();
+								  if (gui::IconBank::instance().menuItem("owltileset_icon", "New Tileset"))
+									  newTilesetAsset();
+							  }});
 	const auto gRecent = m_ribbon.addGroup(fileTab, "Recent");
 	m_ribbon.addButton(fileTab, gRecent,
 					   Button{.iconName = "open",
@@ -1533,23 +1550,27 @@ void EditorLayer::buildAnimationTab() {
 									  std::ignore = d->save();
 							  },
 							  .size = Size::Large});
-	m_ribbon.addButton(
-			animTab, gFile,
-			Button{.iconName = "save",
-				   .label = "Save As",
-				   .tooltip = "Save the clip to a new file",
-				   .isEnabled = [this]() -> bool {
-					   const auto* d = m_documents.getActive();
-					   return d != nullptr && d->type() == DocumentType::Animation;
-				   },
-				   .onClick = [this]() -> void {
-					   if (const auto path = core::utils::FileDialog::saveFile("Owl Animation (*.owlanim)|owlanim\n");
-						   !path.empty()) {
-						   if (auto* d = m_documents.getActive(); d != nullptr && d->type() == DocumentType::Animation)
-							   std::ignore = d->saveAs(path);
-					   }
-				   },
-				   .size = Size::Small});
+	m_ribbon.addButton(animTab, gFile,
+					   Button{.iconName = "save",
+							  .label = "Save As",
+							  .tooltip = "Save the clip to a new file",
+							  .isEnabled = [this]() -> bool {
+								  const auto* d = m_documents.getActive();
+								  return d != nullptr && d->type() == DocumentType::Animation;
+							  },
+							  .onClick = [this]() -> void {
+								  auto* d = m_documents.getActive();
+								  if (d == nullptr || d->type() != DocumentType::Animation)
+									  return;
+								  const std::string defaultName = d->filePath().empty()
+																		  ? std::string{"Untitled.owlanim"}
+																		  : d->filePath().filename().string();
+								  if (const auto path = core::utils::FileDialog::saveFile(
+											  "Owl Animation (*.owlanim)|owlanim\n", defaultName);
+									  !path.empty())
+									  std::ignore = d->saveAs(path);
+							  },
+							  .size = Size::Small});
 	m_ribbon.addButton(animTab, gFile,
 					   Button{.iconName = "close",
 							  .label = "Close",
@@ -1593,8 +1614,11 @@ void EditorLayer::buildTilemapTab() {
 							  .isEnabled = [activeTilemap]() -> bool { return activeTilemap() != nullptr; },
 							  .onClick = [activeTilemap]() -> void {
 								  if (auto* a = activeTilemap()) {
+									  const std::string defaultName = a->filePath().empty()
+																			  ? std::string{"Untitled.owltilemap"}
+																			  : a->filePath().filename().string();
 									  if (const auto path = core::utils::FileDialog::saveFile(
-												  "Owl Tilemap (*.owltilemap)|owltilemap\n");
+												  "Owl Tilemap (*.owltilemap)|owltilemap\n", defaultName);
 										  !path.empty())
 										  std::ignore = a->saveAs(path);
 								  }
@@ -1642,8 +1666,11 @@ void EditorLayer::buildTilesetTab() {
 							  .isEnabled = [activeTileset]() -> bool { return activeTileset() != nullptr; },
 							  .onClick = [activeTileset]() -> void {
 								  if (auto* a = activeTileset()) {
+									  const std::string defaultName = a->filePath().empty()
+																			  ? std::string{"Untitled.owltileset"}
+																			  : a->filePath().filename().string();
 									  if (const auto path = core::utils::FileDialog::saveFile(
-												  "Owl Tileset (*.owltileset)|owltileset\n");
+												  "Owl Tileset (*.owltileset)|owltileset\n", defaultName);
 										  !path.empty())
 										  std::ignore = a->saveAs(path);
 								  }
@@ -2036,7 +2063,11 @@ auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePat
 }
 
 void EditorLayer::saveSceneAs() {
-	if (const auto filepath = core::utils::FileDialog::saveFile("Owl Scene (*.owl)|owl\n"); !filepath.empty())
+	const auto* doc = activeSceneDocument();
+	const std::string defaultName = (doc != nullptr && !doc->filePath().empty()) ? doc->filePath().filename().string()
+																				 : std::string{"Untitled.owl"};
+	if (const auto filepath = core::utils::FileDialog::saveFile("Owl Scene (*.owl)|owl\n", defaultName);
+		!filepath.empty())
 		saveSceneAs(filepath);
 }
 
@@ -2338,7 +2369,8 @@ void EditorLayer::packScene() {
 	if (doc == nullptr || doc->filePath().empty() || m_asyncProgress.isActive())
 		return;
 
-	const auto destPath = core::utils::FileDialog::saveFile("Owl Scene Pack (*.owlpack)|owlpack\n");
+	const std::string defaultPackName = doc->filePath().stem().string() + ".owlpack";
+	const auto destPath = core::utils::FileDialog::saveFile("Owl Scene Pack (*.owlpack)|owlpack\n", defaultPackName);
 	if (destPath.empty())
 		return;
 

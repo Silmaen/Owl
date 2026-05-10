@@ -35,6 +35,12 @@ namespace {
 float g_uiFontSize = 20.f;
 /// Requested code-editor font size, applied on the next `UiLayer::onAttach`.
 float g_codeFontSize = 13.f;
+/**
+ * Strong references kept alive for the current frame so the underlying GPU
+ * descriptors stay valid until `ImGui_ImplVulkan_RenderDrawData` has consumed
+ * the captured `ImTextureID`s. Drained at the very end of `UiLayer::end()`.
+ */
+std::vector<shared<renderer::gpu::Texture>> g_deferredTextureReleases;
 
 /**
  * @brief
@@ -167,6 +173,11 @@ void UiLayer::onEvent(event::Event& ioEvent) {
 	}
 }
 
+void UiLayer::deferTextureRelease(shared<renderer::gpu::Texture> iTexture) {
+	if (iTexture)
+		g_deferredTextureReleases.push_back(std::move(iTexture));
+}
+
 void UiLayer::begin() const {
 	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL)
 		ImGui_ImplOpenGL3_NewFrame();
@@ -218,9 +229,20 @@ void UiLayer::end() const {
 		const auto& vkh = renderer::gpu::vulkan::internal::VulkanHandler::get();
 		renderer::gpu::RenderCommand::beginBatch();
 		renderer::gpu::RenderCommand::nextSubpass();
-		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkh.getCurrentCommandBuffer());
+		// Skip the ImGui submission if the Vulkan framebuffer wasn't successfully
+		// (re)acquired this frame — `getCurrentCommandBuffer` would dereference a
+		// null pointer, which crashes during async asset reloads that happen
+		// mid-frame (e.g. drag-dropping a tileset into the tilemap editor).
+		if (VkCommandBuffer cmd = vkh.getCurrentCommandBuffer(); cmd != VK_NULL_HANDLE)
+			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+		else
+			OWL_CORE_WARN("UiLayer: skipped ImGui submission — Vulkan command buffer not ready.")
 		renderer::gpu::RenderCommand::endBatch();
 	}
+	// Drop any texture that was swapped out mid-frame: its descriptor has now
+	// been consumed by `RenderDrawData`, so the underlying GPU resource can
+	// safely be released.
+	g_deferredTextureReleases.clear();
 
 	if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
 		GLFWwindow* backupCurrentContext = glfwGetCurrentContext();

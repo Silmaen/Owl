@@ -11,6 +11,7 @@
 #include "EditorLayer.h"
 
 #include <gui/IconBank.h>
+#include <gui/UiLayer.h>
 #include <gui/utils.h>
 #include <gui/widgets/AssetField.h>
 #include <imgui_stdlib.h>
@@ -256,6 +257,12 @@ void TilemapDocument::renderHierarchyPanel() {
 	const std::string tsButtonId = std::format("{}##tilesetSlot", tsLabel);
 	if (ImGui::Button(tsButtonId.c_str(), ImVec2(-1.f, 0.f))) {
 		pushTilemapEdit(m_asset, m_undoManager, "Clear tileset", [this]() -> void {
+			// Defer the GPU release: the tileset's texture may already be in
+			// ImGui's draw data this frame (atlas preview, palette button…),
+			// freeing it now invalidates a descriptor that is still about to
+			// be submitted by `ImGui_ImplVulkan_RenderDrawData`.
+			if (m_asset.tileset)
+				gui::UiLayer::deferTextureRelease(m_asset.tileset->texture);
 			m_asset.tilesetPath.clear();
 			m_asset.tileset.reset();
 		});
@@ -267,6 +274,8 @@ void TilemapDocument::renderHierarchyPanel() {
 			const std::filesystem::path candidate{std::string(data, length)};
 			if (gui::widgets::isPathOfKind(candidate, gui::widgets::AssetKind::Tileset)) {
 				pushTilemapEdit(m_asset, m_undoManager, "Set tileset", [this, &candidate]() -> void {
+					if (m_asset.tileset)
+						gui::UiLayer::deferTextureRelease(m_asset.tileset->texture);
 					m_asset.tilesetPath = candidate;
 					m_asset.tileset.reset();
 					resolveTileset();
@@ -572,12 +581,16 @@ void TilemapDocument::drawCanvasTiles(ImDrawList* iDrawList, const ImVec2& iGrid
 									 iGridTopLeft.y + static_cast<float>(y) * iCellPx};
 				const ImVec2 cellMax{cellMin.x + iCellPx, cellMin.y + iCellPx};
 				if (tex != nullptr) {
-					// Tileset UVs follow Renderer2D's V-up convention; ImGui samples V-down,
-					// so we feed the screen TL→TR→BR→BL corners with the BL→BR→TR→TL UVs.
+					// Tileset UVs follow Renderer2D's V-up convention (BL/BR/TR/TL) but
+					// ImGui screen coords are V-down (TL is at the top). Pair each screen
+					// corner with the *same* corner of the tile: screen TL ↔ tile TL
+					// (= uvs[3]), screen TR ↔ tile TR (= uvs[2]), etc. The texture sits
+					// bottom-up in GPU memory (stb flip on load), so sampling at the
+					// tile's TL UV correctly reads the top of the original image.
 					iDrawList->AddImageQuad(static_cast<ImTextureID>(tex->getRendererId()),
 											ImVec2{cellMin.x, cellMin.y}, ImVec2{cellMax.x, cellMin.y},
 											ImVec2{cellMax.x, cellMax.y}, ImVec2{cellMin.x, cellMax.y},
-											gui::vec(uvs[0]), gui::vec(uvs[1]), gui::vec(uvs[2]), gui::vec(uvs[3]));
+											gui::vec(uvs[3]), gui::vec(uvs[2]), gui::vec(uvs[1]), gui::vec(uvs[0]));
 				} else {
 					iDrawList->AddRectFilled(cellMin, cellMax, IM_COL32(150, 150, 200, 255));
 				}

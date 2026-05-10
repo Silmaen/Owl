@@ -9,6 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Variable wall heights and transparent walls in the raycast renderer.**
+  Two new fields on `TileMeta` (per-tile, in the `.owltileset` asset) drive
+  Wolf3D-style map effects:
+    - `wallHeight: float = 1.0` — vertical scale of the wall in cell units.
+      Walls are bottom-anchored at floor level so a tall wall pokes into the
+      sky (towers, pillars) and a low one stays on the floor (half-walls).
+      Range clamped to `[0, 8]`. Ignored by the legacy 2D rendering path.
+    - `transparent: bool = false` — when set, the raycast DDA does not stop
+      at this tile. It records the hit and keeps stepping (capped at 8
+      transparent layers per ray) so further walls render behind the
+      transparent one. The collected hits are drawn back-to-front per
+      column so alpha-blended textures composite correctly. The closest
+      *opaque* hit is what's latched into the per-column z-buffer used by
+      the sprite occluder, so sprites remain visible through transparent
+      walls (with a known v0.2.0 limitation: a sprite that sits behind a
+      transparent wall still draws on top of it because sprites and walls
+      aren't merged per column yet).
+  YAML round-trip emits both fields sparsely (only when they differ from
+  the default). Editor: the `TilesetDocument` properties panel gains a
+  **Raycast** section with a `Wall height` drag and a `Transparent`
+  toggle, with tooltips. Transparency is **alpha-channel only** — author
+  tiles with a proper PNG alpha channel; the previously-captured
+  `TileMeta::chromaKey*` fields are removed (legacy `chromaKey: [r,g,b]`
+  YAML entries are silently dropped on load). Tests: 3 new headless
+  raycast tests (multi-hit on transparent rows, budget cap, opaque-only
+  behaviour matches pre-PR3) plus 3 new tileset round-trip tests
+  (per-tile fields, clamp on deserialize, legacy chromaKey drop).
+- **Per-sprite raycast size and Z-offset overrides.** New fields on
+  `SpriteRenderer` and `AnimatedSpriteRenderer`:
+    - `raycastSize: vec2 = {0, 0}` — when both components are `> 0`,
+      this is the world size used as the billboard width × height in
+      raycast view, decoupled from `Transform.scale.xy` (which keeps
+      driving the 2D editor preview). Default `(0, 0)` keeps the PR2
+      behaviour of inheriting from `Transform.scale`.
+    - `raycastZOffset: float = 0` — added on top of
+      `Transform.translation.z` when computing the on-screen vertical
+      centre. Positive raises the sprite (lamps, ceiling decals),
+      negative lowers it (floor stains). `0` (default) preserves the
+      PR2 behaviour exactly so existing scenes stay byte-identical.
+  Fields are emitted sparsely in YAML (only when they differ from the
+  default) and surface in the inspector under a new collapsible
+  `Raycast (billboard)` section on both components, with tooltips.
 - **Sprites (billboards) in the raycast renderer.** Entities carrying
   `SpriteRenderer` or `AnimatedSpriteRenderer` are now rendered as
   camera-facing billboards when they sit on a `RendererRaycast` layer —
@@ -106,12 +148,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       replaced by non-destructive `+/-` buttons backed by new
       `Tileset::addRow` / `removeRow` / `addColumn` / `removeColumn` /
       `swapTiles` methods (existing per-tile metadata is preserved across
-      grow / shrink). Per-tile **chroma key** authored on the tileset:
-      new `TileMeta::chromaKeyEnabled` + `chromaKeyColor`, persisted
-      under the `chromaKey: [r,g,b]` YAML key, edited via a checkbox +
-      colour picker in the Properties panel. Renderer-side application of
-      the chroma key is intentionally deferred to a follow-up; the field
-      is captured at authoring time only.
+      grow / shrink).
     - **Hierarchy panel cleanup.** Removed the redundant `file: …` line
       in both Tilemap and Tileset hierarchy overrides — the file name is
       already shown on the document tab.

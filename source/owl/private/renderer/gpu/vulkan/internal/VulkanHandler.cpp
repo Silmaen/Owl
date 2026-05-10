@@ -153,7 +153,10 @@ auto VulkanHandler::getPipeline(const int32_t iId) const -> VulkanHandler::PipeL
 }
 
 auto VulkanHandler::getCurrentCommandBuffer() const -> VkCommandBuffer {
-	return *m_currentFramebuffer->getCurrentCommandbuffer();
+	if (m_currentFramebuffer == nullptr)
+		return VK_NULL_HANDLE;
+	const auto* cmd = m_currentFramebuffer->getCurrentCommandbuffer();
+	return cmd != nullptr ? *cmd : VK_NULL_HANDLE;
 }
 
 auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
