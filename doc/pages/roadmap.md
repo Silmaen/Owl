@@ -520,12 +520,22 @@ the tilemap system, and scene-to-scene transition effects.
         - 6 new headless tests in `RendererRaycast_test.cpp` cover empty
           span, camera cull, in-front emission, wall occlusion,
           max-distance cull and texture-less skip.
-    - ![Planned][planned] Map features
-        - Variable wall heights — `TileMeta.wallHeight: float = 1.0`
-        - Transparent walls + chroma key — `TileMeta.transparent: bool` plus
-          activation of the already-stored `TileMeta.chromaKey*` fields; DDA
-          gains multi-hit support per column to render back-to-front through
-          transparent pixels
+    - ![In Progress][progress] Map features
+        - ![Done][done] Variable wall heights — `TileMeta.wallHeight: float
+          = 1.0` (clamped to `[0, 8]`). Walls are bottom-anchored at floor
+          level. Editor: Raycast section in the `TilesetDocument`
+          properties panel with a wall-height drag + tooltip. YAML
+          round-trip is sparse (only emitted when ≠ 1.0).
+        - ![Done][done] Transparent walls — `TileMeta.transparent: bool`.
+          DDA continues past transparent tiles, collects up to 8 hits per
+          ray, renders back-to-front so alpha-blended textures composite
+          correctly. The closest opaque hit drives the sprite-occlusion
+          z-buffer, so sprites stay visible through transparent walls.
+          Transparency is **alpha-channel only** — the project
+          intentionally does not support chroma keying; author tiles with
+          a proper PNG alpha channel. Known v0.2.0 limitation: a sprite
+          sitting behind a transparent wall draws on top of it (sprites
+          and walls aren't merged per column yet).
         - Doors and pushwalls — dedicated entity components
           (`component::RaycastDoor` + `component::RaycastPushWall`), not tile
           flags, so each instance is addressable from scripts and triggers.

@@ -173,6 +173,18 @@ void renderProps(SpriteRenderer& ioComponent) {
 	} else {
 		ImGui::DragFloat2("Tiling Factor", &ioComponent.tilingFactor.x(), 0.1f, 0.0f, 100.0f);
 	}
+	if (ImGui::CollapsingHeader("Raycast (billboard)")) {
+		fieldTooltip("Optional overrides used only when the entity is rendered through a "
+					 "RendererRaycast layer. Leave at defaults to inherit from Transform.");
+		ImGui::DragFloat2("Size", &ioComponent.raycastSize.x(), 0.05f, 0.0f, 16.0f, "%.2f");
+		fieldTooltip("World size of the billboard in cells (X = width, Y = height). When either component is 0 "
+					 "(default), the renderer falls back to Transform.scale.xy. Use this to keep the editor scale "
+					 "small and the first-person size large (or vice-versa).");
+		ImGui::DragFloat("Z Offset", &ioComponent.raycastZOffset, 0.025f, -4.0f, 4.0f, "%.3f");
+		fieldTooltip("Vertical offset added to Transform.translation.z when the sprite is drawn in raycast view. "
+					 "Positive values raise the sprite (lamps, ceiling decals); negative values lower it (floor "
+					 "stains, half-buried props).");
+	}
 }
 
 void renderProps(AnimatedSpriteRenderer& ioComponent) {
@@ -200,6 +212,16 @@ void renderProps(AnimatedSpriteRenderer& ioComponent) {
 		fieldTooltip("Optional speed remap. Empty = constant playback speed; non-empty multiplies dt by "
 					 "curve.evaluate(progress).");
 		widgets::curveEditor("##speedCurve", ioComponent.speedCurve);
+	}
+	if (ImGui::CollapsingHeader("Raycast (billboard)")) {
+		fieldTooltip("Optional overrides used only when the entity is rendered through a "
+					 "RendererRaycast layer. Leave at defaults to inherit from Transform.");
+		ImGui::DragFloat2("Size", &ioComponent.raycastSize.x(), 0.05f, 0.0f, 16.0f, "%.2f");
+		fieldTooltip("World size of the billboard in cells (X = width, Y = height). When either component is 0 "
+					 "(default), the renderer falls back to Transform.scale.xy.");
+		ImGui::DragFloat("Z Offset", &ioComponent.raycastZOffset, 0.025f, -4.0f, 4.0f, "%.3f");
+		fieldTooltip("Vertical offset added to Transform.translation.z when drawn in raycast view. Positive raises, "
+					 "negative lowers.");
 	}
 }
 

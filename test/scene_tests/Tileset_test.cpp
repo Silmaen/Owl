@@ -145,6 +145,63 @@ TEST_F(TilesetFixture, RoundTripWithCustomMetadata) {
 	EXPECT_TRUE(restored.tiles[7].name.empty());
 }
 
+TEST_F(TilesetFixture, RoundTripWallHeightAndTransparent) {
+	Tileset ts;
+	ts.resize(2, 2);
+	ts.tileWidth = 8;
+	ts.tileHeight = 8;
+	ts.tiles[0].wallHeight = 2.5f;
+	ts.tiles[1].transparent = true;
+	ts.tiles[1].wallHeight = 0.5f;
+
+	const auto yaml = ts.serializeToString("variants");
+	EXPECT_NE(yaml.find("wallHeight"), std::string::npos);
+	EXPECT_NE(yaml.find("transparent"), std::string::npos);
+
+	Tileset restored;
+	ASSERT_TRUE(restored.deserializeFromString(yaml));
+	ASSERT_EQ(restored.tiles.size(), 4u);
+	EXPECT_FLOAT_EQ(restored.tiles[0].wallHeight, 2.5f);
+	EXPECT_FALSE(restored.tiles[0].transparent);
+	EXPECT_TRUE(restored.tiles[1].transparent);
+	EXPECT_FLOAT_EQ(restored.tiles[1].wallHeight, 0.5f);
+	// Untouched: default 1.f wallHeight, no transparent flag.
+	EXPECT_FLOAT_EQ(restored.tiles[3].wallHeight, 1.f);
+	EXPECT_FALSE(restored.tiles[3].transparent);
+}
+
+TEST_F(TilesetFixture, LegacyChromaKeyIsSilentlyDropped) {
+	// Existing .owltileset files in the wild may still carry `chromaKey: [r, g, b]`.
+	// Loading them must not fail; the field is dropped on the next save.
+	const std::string yaml = R"(Tileset: legacy
+Version: 1
+columns: 1
+rows: 1
+tiles:
+  - { index: 0, collidable: true, chromaKey: [0, 0, 0] }
+)";
+	Tileset ts;
+	ASSERT_TRUE(ts.deserializeFromString(yaml));
+	ASSERT_EQ(ts.tiles.size(), 1u);
+	EXPECT_TRUE(ts.tiles[0].collidable);
+	const auto reEmitted = ts.serializeToString("legacy");
+	EXPECT_EQ(reEmitted.find("chromaKey"), std::string::npos);
+}
+
+TEST_F(TilesetFixture, WallHeightClampsOnDeserialize) {
+	const std::string yaml = R"(Tileset: clamp
+Version: 1
+columns: 1
+rows: 1
+tiles:
+  - { index: 0, wallHeight: 99.0 }
+)";
+	Tileset ts;
+	ASSERT_TRUE(ts.deserializeFromString(yaml));
+	EXPECT_LE(ts.tiles[0].wallHeight, 8.f);
+	EXPECT_GE(ts.tiles[0].wallHeight, 0.f);
+}
+
 TEST_F(TilesetFixture, DeserializeRejectsMalformed) {
 	Tileset ts;
 	EXPECT_FALSE(ts.deserializeFromString(""));

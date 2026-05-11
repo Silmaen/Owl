@@ -16,13 +16,13 @@ Entities:
       parentId: 1234567890123456789
     RendererTag:
       Name: ui
-    UIButton:
+    UiButton:
       normalColor: [0.400000006, 0.200000003, 0.200000003, 1]
       hoverColor: [0.550000012, 0.300000012, 0.300000012, 1]
       pressedColor: [0.300000012, 0.150000006, 0.150000006, 1]
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: go_back
-    UIRect:
+    UiRect:
       anchor: BottomCenter
       pivotX: 0.5
       pivotY: 0
@@ -30,7 +30,7 @@ Entities:
       sizeY: 40
       offsetX: 0
       offsetY: 40
-    UIText:
+    UiText:
       text: Back
       color: [1, 1, 1, 1]
       fontSize: 20
@@ -50,13 +50,13 @@ Entities:
       parentId: 1234567890123456789
     RendererTag:
       Name: ui
-    UIButton:
+    UiButton:
       normalColor: [0.449999988, 0.349999994, 0.100000001, 1]
       hoverColor: [0.600000024, 0.449999988, 0.150000006, 1]
       pressedColor: [0.349999994, 0.25, 0.0500000007, 1]
       disabledColor: [0.150000006, 0.150000006, 0.150000006, 0.5]
       onClickCallback: on_reset_clicked
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -64,7 +64,7 @@ Entities:
       sizeY: 40
       offsetX: 0
       offsetY: -60
-    UIText:
+    UiText:
       text: Reset Defaults
       color: [1, 1, 1, 1]
       fontSize: 18
@@ -84,7 +84,7 @@ Entities:
       parentId: 1234567890123456789
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -92,7 +92,7 @@ Entities:
       sizeY: 20
       offsetX: 0
       offsetY: 0
-    UISlider:
+    UiSlider:
       value: 0.5
       minValue: 0
       maxValue: 1
@@ -113,7 +113,7 @@ Entities:
       parentId: 1234567890123456789
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -121,7 +121,7 @@ Entities:
       sizeY: 30
       offsetX: 0
       offsetY: 30
-    UIText:
+    UiText:
       text: "Player Speed: 8.0"
       color: [0.899999976, 0.899999976, 0.899999976, 1]
       fontSize: 18
@@ -141,7 +141,7 @@ Entities:
       parentId: 1234567890123456789
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -149,7 +149,7 @@ Entities:
       sizeY: 20
       offsetX: 0
       offsetY: 70
-    UISlider:
+    UiSlider:
       value: 1
       minValue: 0
       maxValue: 1
@@ -170,7 +170,7 @@ Entities:
       parentId: 1234567890123456789
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -178,7 +178,7 @@ Entities:
       sizeY: 30
       offsetX: 0
       offsetY: 100
-    UIText:
+    UiText:
       text: "Master Volume: 100%"
       color: [0.899999976, 0.899999976, 0.899999976, 1]
       fontSize: 18
@@ -198,7 +198,7 @@ Entities:
       parentId: 1234567890123456789
     RendererTag:
       Name: ui
-    UIRect:
+    UiRect:
       anchor: TopCenter
       pivotX: 0.5
       pivotY: 1
@@ -206,7 +206,7 @@ Entities:
       sizeY: 60
       offsetX: 0
       offsetY: -40
-    UIText:
+    UiText:
       text: Settings
       color: [1, 0.850000024, 0.200000003, 1]
       fontSize: 36

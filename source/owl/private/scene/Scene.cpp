@@ -116,12 +116,12 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 	const int entId = static_cast<int>(static_cast<entt::entity>(iChild));
 	// Sprite.
 	if (iChild.hasComponent<component::SpriteRenderer>()) {
-		const auto& [color, texture, tilingFactor] = iChild.getComponent<component::SpriteRenderer>();
+		const auto& sprite = iChild.getComponent<component::SpriteRenderer>();
 
 		renderer::Renderer2D::drawQuad({.transform = iTransform,
-										.color = color,
-										.texture = texture,
-										.tilingFactor = tilingFactor,
+										.color = sprite.color,
+										.texture = sprite.texture,
+										.tilingFactor = sprite.tilingFactor,
 										.entityId = entId});
 	}
 	// Text (world-space component on a UI entity).
@@ -1045,6 +1045,17 @@ void Scene::renderTilemaps(const bool iEditorMode, const bool iRaycastLayer) {
 void Scene::renderRaycastSprites(const bool iEditorMode) {
 	OWL_PROFILE_FUNCTION()
 
+	// Resolve the per-sprite raycast size: optional override (`raycastSize` field on
+	// the component) wins over `Transform.scale.xy` so a designer can keep a
+	// consistent top-down editor scale and still adjust how big the billboard
+	// appears in first-person. Z offset is the sum of `Transform.translation.z`
+	// and the optional `raycastZOffset` so existing scenes stay byte-identical
+	// when the new field is left at 0.
+	const auto resolveSize = [](const math::vec2& iOverride, const math::vec3& iScale) -> math::vec2 {
+		if (iOverride.x() > 0.f && iOverride.y() > 0.f)
+			return iOverride;
+		return {iScale.x(), iScale.y()};
+	};
 	std::vector<renderer::RaycastSpriteData> raycastSprites;
 	for (const auto view = registry.view<component::Transform, component::SpriteRenderer>(); const auto entity: view) {
 		const Entity ent{entity, this};
@@ -1057,8 +1068,8 @@ void Scene::renderRaycastSprites(const bool iEditorMode) {
 			continue;
 		const math::Transform worldTransform = getWorldTransform(ent);
 		raycastSprites.push_back({.worldPosition = {worldTransform.translation().x(), worldTransform.translation().y()},
-								  .worldZOffset = worldTransform.translation().z(),
-								  .worldSize = {worldTransform.scale().x(), worldTransform.scale().y()},
+								  .worldZOffset = worldTransform.translation().z() + sprite.raycastZOffset,
+								  .worldSize = resolveSize(sprite.raycastSize, worldTransform.scale()),
 								  .tint = sprite.color,
 								  .texture = sprite.texture,
 								  .entityId = static_cast<int>(entity)});
@@ -1084,8 +1095,8 @@ void Scene::renderRaycastSprites(const bool iEditorMode) {
 		const float vMax = 1.0f - static_cast<float>(cellRow) / static_cast<float>(safeRows);
 		const float vMin = 1.0f - static_cast<float>(cellRow + 1) / static_cast<float>(safeRows);
 		raycastSprites.push_back({.worldPosition = {worldTransform.translation().x(), worldTransform.translation().y()},
-								  .worldZOffset = worldTransform.translation().z(),
-								  .worldSize = {worldTransform.scale().x(), worldTransform.scale().y()},
+								  .worldZOffset = worldTransform.translation().z() + anim.raycastZOffset,
+								  .worldSize = resolveSize(anim.raycastSize, worldTransform.scale()),
 								  .tint = anim.color,
 								  .texture = anim.texture,
 								  .textureCoords = {math::vec2{uMin, vMin}, math::vec2{uMax, vMin},
@@ -1226,6 +1237,11 @@ void Scene::renderUI(const math::mat4& iEffectiveViewProjection) {
 }
 
 void Scene::onViewportResize(const math::vec2ui& iSize) {
+	// Skip zero-area sizes: viewport panels report (0, 0) for a frame or two
+	// between creation and the first layout pass, and `SceneCamera::setViewportSize`
+	// asserts on null size (division by zero in the aspect ratio).
+	if (iSize.surface() == 0)
+		return;
 	m_viewportSize = iSize;
 	// Resize our non-FixedAspectRatio cameras
 	for (const auto view = registry.view<component::Camera>(); const auto entity: view) {

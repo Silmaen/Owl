@@ -93,15 +93,17 @@ auto FileDialog::openFile(const std::string& iFilter) -> std::filesystem::path {
 	return resultPath;
 }
 
-auto FileDialog::saveFile([[maybe_unused]] const std::string& iFilter) -> std::filesystem::path {
+auto FileDialog::saveFile([[maybe_unused]] const std::string& iFilter, const std::string& iDefaultName)
+		-> std::filesystem::path {
 	NFD::Init();
 	nfdu8char_t* outPath = nullptr;
 	std::filesystem::path resultPath;
 	const std::string& filters{iFilter};
 	const auto ff = parseFilter(filters);
-	if (const auto result =
-				NFD_SaveDialogU8(&outPath, ff.data(), static_cast<nfdfiltersize_t>(ff.size()),
-								 Application::get().getAssetDirectories().front().assetsPath.string().c_str(), nullptr);
+	const std::string defaultDir = Application::get().getAssetDirectories().front().assetsPath.string();
+	const char* defaultName = iDefaultName.empty() ? nullptr : iDefaultName.c_str();
+	if (const auto result = NFD_SaveDialogU8(&outPath, ff.data(), static_cast<nfdfiltersize_t>(ff.size()),
+											 defaultDir.c_str(), defaultName);
 		result == NFD_CANCEL) {
 		resultPath = std::filesystem::path{};
 	} else if (result == NFD_OKAY) {

@@ -23,6 +23,28 @@ struct OWL_API SpriteRenderer {
 	shared<renderer::gpu::Texture2D> texture = nullptr;
 	/// Texture tiling factor (X and Y).
 	math::vec2 tilingFactor{1.0f, 1.0f};
+	/**
+	 * @brief
+	 *  Optional raycast-only world size override (in cells, X = width, Y = height).
+	 *
+	 * Only consulted when the sprite is rendered through `RendererRaycast` as a
+	 * billboard. When either component is `<= 0` (the default `{0, 0}`), the
+	 * billboard falls back to `Transform.scale.xy`. Setting this lets a level
+	 * designer keep an entity at its 2D editor scale (top-down preview) while
+	 * adjusting how big it appears in first-person.
+	 */
+	math::vec2 raycastSize{0.0f, 0.0f};
+	/**
+	 * @brief
+	 *  Additional world Z-offset applied to the billboard in raycast view (cells).
+	 *
+	 * Added on top of `Transform.translation.z` when the raycast renderer
+	 * computes the on-screen vertical centre. Positive values raise the
+	 * sprite (lamps, ceiling decals); negative values lower it (floor
+	 * stains, half-buried props). `0` is "use the entity's `translation.z`"
+	 * as before — backward-compatible with scenes authored against PR2.
+	 */
+	float raycastZOffset = 0.0f;
 
 	/**
 	 * @brief

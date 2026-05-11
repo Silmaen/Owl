@@ -127,13 +127,14 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 	// Sparse: emit only the entries that differ from the default.
 	const uint32_t total = tileCount();
 	const auto count = static_cast<std::vector<TileMeta>::difference_type>(std::min<size_t>(tiles.size(), total));
-	const bool anySpecial = std::any_of(tiles.begin(), tiles.begin() + count,
-										[](const TileMeta& m) -> bool { return m.collidable || !m.name.empty(); });
-	if (anySpecial) {
+	const auto isSpecial = [](const TileMeta& m) -> bool {
+		return m.collidable || !m.name.empty() || m.transparent || m.wallHeight != 1.f;
+	};
+	if (std::any_of(tiles.begin(), tiles.begin() + count, isSpecial)) {
 		emitter << YAML::Key << "tiles" << YAML::Value << YAML::BeginSeq;
 		for (uint32_t i = 0; i < total && i < tiles.size(); ++i) {
 			const auto& meta = tiles[i];
-			if (!meta.collidable && meta.name.empty() && !meta.chromaKeyEnabled)
+			if (!isSpecial(meta))
 				continue;
 			emitter << YAML::BeginMap;
 			emitter << YAML::Key << "index" << YAML::Value << i;
@@ -141,11 +142,10 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 				emitter << YAML::Key << "collidable" << YAML::Value << true;
 			if (!meta.name.empty())
 				emitter << YAML::Key << "name" << YAML::Value << meta.name;
-			if (meta.chromaKeyEnabled) {
-				emitter << YAML::Key << "chromaKey" << YAML::Value << YAML::Flow << YAML::BeginSeq
-						<< meta.chromaKeyColor.x() << meta.chromaKeyColor.y() << meta.chromaKeyColor.z()
-						<< YAML::EndSeq;
-			}
+			if (meta.wallHeight != 1.f)
+				emitter << YAML::Key << "wallHeight" << YAML::Value << meta.wallHeight;
+			if (meta.transparent)
+				emitter << YAML::Key << "transparent" << YAML::Value << true;
 			emitter << YAML::EndMap;
 		}
 		emitter << YAML::EndSeq;
@@ -199,10 +199,13 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 				meta.collidable = entry["collidable"].as<bool>();
 			if (entry["name"])
 				meta.name = entry["name"].as<std::string>();
-			if (const auto chroma = entry["chromaKey"]; chroma && chroma.IsSequence() && chroma.size() >= 3) {
-				meta.chromaKeyEnabled = true;
-				meta.chromaKeyColor = math::vec3{chroma[0].as<float>(), chroma[1].as<float>(), chroma[2].as<float>()};
-			}
+			if (entry["wallHeight"])
+				meta.wallHeight = std::clamp(entry["wallHeight"].as<float>(), 0.f, 8.f);
+			if (entry["transparent"])
+				meta.transparent = entry["transparent"].as<bool>();
+			// Legacy `chromaKey: [r, g, b]` entries are silently dropped — the project
+			// transitioned to alpha-channel-only transparency in v0.2.0; tilesets get
+			// rewritten without the field on the next save.
 			parsed.tiles[idx] = std::move(meta);
 		}
 	}

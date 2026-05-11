@@ -39,6 +39,25 @@ struct OWL_API AnimatedSpriteRenderer {
 	bool loop = true;
 	/**
 	 * @brief
+	 *  Optional raycast-only world size override (in cells, X = width, Y = height).
+	 *
+	 * Mirrors `SpriteRenderer::raycastSize`: when either component is `<= 0`
+	 * (the default `{0, 0}`), the billboard falls back to
+	 * `Transform.scale.xy`. Lets a designer keep one editor scale and tweak
+	 * the first-person size independently.
+	 */
+	math::vec2 raycastSize{0.0f, 0.0f};
+	/**
+	 * @brief
+	 *  Additional world Z-offset applied to the billboard in raycast view (cells).
+	 *
+	 * Added on top of `Transform.translation.z`. Positive raises the sprite,
+	 * negative lowers it. `0` (default) means "use only `translation.z`",
+	 * preserving the PR2 behaviour.
+	 */
+	float raycastZOffset = 0.0f;
+	/**
+	 * @brief
 	 *  Optional speed-remap curve sampled by playback progress.
 	 *
 	 * Empty curve keeps playback at constant speed (default behaviour). When non-empty,

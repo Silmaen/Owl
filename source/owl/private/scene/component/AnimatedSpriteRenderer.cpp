@@ -63,6 +63,12 @@ void AnimatedSpriteRenderer::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "frameDuration" << YAML::Value << frameDuration;
 	iOut.getImpl()->emitter << YAML::Key << "loop" << YAML::Value << loop;
 	emitSpeedCurve(iOut.getImpl()->emitter, speedCurve);
+	if (raycastSize.x() > 0.f || raycastSize.y() > 0.f) {
+		iOut.getImpl()->emitter << YAML::Key << "raycastSize" << YAML::Value << YAML::Flow << YAML::BeginSeq
+								<< raycastSize.x() << raycastSize.y() << YAML::EndSeq;
+	}
+	if (raycastZOffset != 0.f)
+		iOut.getImpl()->emitter << YAML::Key << "raycastZOffset" << YAML::Value << raycastZOffset;
 	iOut.getImpl()->emitter << YAML::EndMap;// AnimatedSpriteRenderer
 }
 
@@ -85,6 +91,10 @@ void AnimatedSpriteRenderer::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["loop"])
 		loop = iNode.getImpl()->node["loop"].as<bool>();
 	readSpeedCurve(iNode.getImpl()->node["speedCurve"], speedCurve);
+	if (auto rsNode = iNode.getImpl()->node["raycastSize"]; rsNode && rsNode.IsSequence() && rsNode.size() >= 2)
+		raycastSize = {rsNode[0].as<float>(), rsNode[1].as<float>()};
+	if (iNode.getImpl()->node["raycastZOffset"])
+		raycastZOffset = iNode.getImpl()->node["raycastZOffset"].as<float>();
 }
 
 }// namespace owl::scene::component

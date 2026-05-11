@@ -1,0 +1,111 @@
+Tileset: raycast_w3d_walls
+Version: 1
+texture: nam:textures/wolf3d_walls_full.png
+tileWidth: 128
+tileHeight: 128
+columns: 16
+rows: 7
+filterMode: Nearest
+tiles:
+  - index: 0
+    collidable: true
+    name: GreyStone1_a
+  - index: 1
+    collidable: true
+    name: GreyStone1_b
+  - index: 2
+    collidable: true
+    name: GreyStone2_a
+  - index: 3
+    collidable: true
+    name: GreyStone2_b
+  - index: 4
+    collidable: true
+    name: GreyStone1_a_flag
+  - index: 5
+    collidable: true
+    name: GreyStone1_b_flag
+  - index: 6
+    collidable: true
+    name: GreyStone2_a_h
+  - index: 7
+    collidable: true
+    name: GreyStone2_a_h
+  - index: 8
+    collidable: true
+    name: BlueStone1_a_grid
+  - index: 9
+    collidable: true
+    name: BlueStone1_b_grid
+  - index: 10
+    collidable: true
+    name: GreyStone_Eagle_a
+  - index: 11
+    collidable: true
+    name: GreyStone_Eagle_b
+  - index: 12
+    collidable: true
+    name: BlueStone1_a_grid_dead
+  - index: 13
+    collidable: true
+    name: BlueStone1_b_grid_dead
+  - index: 14
+    collidable: true
+    name: BlueStone1_a
+  - index: 15
+    collidable: true
+    name: BlueStone1_b
+  - index: 16
+    collidable: true
+    name: BlueStone2_a
+  - index: 17
+    collidable: true
+    name: BlueStone2_b
+  - index: 18
+    collidable: true
+    name: wood_a_t
+  - index: 19
+    collidable: true
+    name: wood_b_t
+  - index: 20
+    collidable: true
+    name: wood_a_h
+  - index: 21
+    collidable: true
+    name: wood_b_h
+  - index: 22
+    collidable: true
+    name: wood_a
+  - index: 23
+    collidable: true
+    name: wood_b
+  - index: 44
+    collidable: true
+    name: wood_a_c
+  - index: 45
+    collidable: true
+    name: wood_b_c
+  - index: 46
+    collidable: true
+    name: GreyStone1_a_supermossy
+  - index: 47
+    collidable: true
+    name: GreyStone1_b_supermossy
+  - index: 50
+    collidable: true
+    name: GreyStone1_a_mossy
+  - index: 51
+    collidable: true
+    name: GreyStone1_b_mossy
+  - index: 52
+    collidable: true
+    name: GreyStone3_a
+  - index: 53
+    collidable: true
+    name: GreyStone3_b
+  - index: 54
+    collidable: true
+    name: GreyStone3_a_pannel
+  - index: 55
+    collidable: true
+    name: GreyStone3_b_pannel

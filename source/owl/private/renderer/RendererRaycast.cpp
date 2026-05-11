@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <ranges>
 
 namespace owl::renderer {
 
@@ -270,6 +271,23 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 	const float horizonY = computeHorizonY();
 	const auto& tileset = *iTilemap.tileset;
 	const auto& atlasTex = tileset.texture;
+	// Per-column hit recorded by the DDA walk; one ray can collect multiple of these
+	// when it crosses transparent tiles before reaching an opaque one. The vector is
+	// declared outside the column loop so the allocation is reused across columns.
+	struct ColumnHit {
+		int32_t tileIndex;///< Tile index hit (>= 0).
+		float perpDist;///< Perpendicular distance in cell units (already clamped to g_MinPerpDist).
+		float wallX;///< Texture U fraction along the wall face.
+		float wallHeight;///< Vertical scale of the wall (from `TileMeta::wallHeight`).
+		int side;///< 0 = X-edge hit, 1 = Y-edge hit (side darkening cue).
+		bool transparent;///< When true the DDA walked past this hit to keep collecting.
+	};
+	std::vector<ColumnHit> columnHits;
+	// Cap the number of transparent layers a single ray can stack so a corridor of
+	// see-through tiles can't blow up the per-frame stripe budget. 8 is plenty for
+	// realistic raycast scenes (fences, glass, grilles overlapping) while still
+	// bounding the worst case.
+	constexpr size_t kMaxTransparentHits = 8;
 	for (uint32_t col = 0; col < numRays; ++col) {
 		const float cameraX = 2.f * (static_cast<float>(col) + 0.5f) / static_cast<float>(numRays) - 1.f;
 		const math::vec2 rayDir{camCellDir.x() + camCellPlane.x() * cameraX,
@@ -285,9 +303,8 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 											 : (static_cast<float>(mapX + 1) - camCellPos.x()) * deltaX;
 		float sideDistY = (rayDir.y() < 0.f) ? (camCellPos.y() - static_cast<float>(mapY)) * deltaY
 											 : (static_cast<float>(mapY + 1) - camCellPos.y()) * deltaY;
-		bool hit = false;
+		columnHits.clear();
 		int side = 0;// 0: X-side, 1: Y-side
-		int32_t hitTile = scene::component::g_EmptyTileIndex;
 		for (int step = 0; step < maxSteps; ++step) {
 			if (sideDistX < sideDistY) {
 				sideDistX += deltaX;
@@ -303,74 +320,93 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 			// resolves to `g_EmptyTileIndex` (-1) for any out-of-grid coordinate.
 			const int32_t cell = iTilemap.getTile(static_cast<uint32_t>(layerIdx), static_cast<uint32_t>(mapX),
 												  static_cast<uint32_t>(mapY));
-			if (cell >= 0) {
-				hit = true;
-				hitTile = cell;
+			if (cell < 0)
+				continue;
+			const auto& meta = tileset.getTileMeta(static_cast<uint32_t>(cell));
+			const float perpDistCells = (side == 0) ? (sideDistX - deltaX) : (sideDistY - deltaY);
+			const float perpDistSafe = std::max(perpDistCells, g_MinPerpDist);
+			float wallX = (side == 0) ? (camCellPos.y() + perpDistSafe * rayDir.y())
+									  : (camCellPos.x() + perpDistSafe * rayDir.x());
+			wallX -= std::floor(wallX);
+			// Match Wolfenstein convention: walls hit from the +x or -y direction get U flipped
+			// so that adjacent wall faces appear continuous.
+			if (side == 0 && rayDir.x() > 0.f)
+				wallX = 1.f - wallX;
+			if (side == 1 && rayDir.y() < 0.f)
+				wallX = 1.f - wallX;
+			columnHits.push_back({.tileIndex = cell,
+								  .perpDist = perpDistSafe,
+								  .wallX = wallX,
+								  .wallHeight = std::max(0.f, meta.wallHeight),
+								  .side = side,
+								  .transparent = meta.transparent});
+			// Opaque hit terminates the ray. Transparent hits keep the ray going up to
+			// the per-ray budget so the back-to-front render shows farther walls
+			// through the see-through pixels of nearer ones.
+			if (!meta.transparent)
 				break;
-			}
+			if (columnHits.size() >= kMaxTransparentHits)
+				break;
 		}
 		g_state->stats.stripeCount++;
-		if (!hit) {
+		if (columnHits.empty()) {
 			g_state->stats.missCount++;
 			continue;
 		}
-		g_state->stats.hitCount++;
-		// Perpendicular distance (avoid fish-eye): subtract last delta on the axis we just stepped.
-		const float perpDistCells = (side == 0) ? (sideDistX - deltaX) : (sideDistY - deltaY);
-		const float perpDistSafe = std::max(perpDistCells, g_MinPerpDist);
-		// Latch the wall depth for this column so `drawSprites` can occlude billboards
-		// that sit behind a wall.
-		if (col < g_state->zBufferPerColumn.size())
-			g_state->zBufferPerColumn[col] = perpDistSafe;
-		// Snap line height to an even integer. Combined with the integer horizon
-		// it guarantees the stripe top / bottom land on integer pixel boundaries
-		// every frame, no matter how the camera's float-precision distance shifts —
-		// without snapping, sub-pixel oscillations of `vpH / perpDist` make the
-		// stripe edges flicker between two neighbour rows as the player walks.
-		const float lineHeightExact = vp.y() / perpDistSafe;
-		const float lineHeight = std::floor(lineHeightExact * 0.5f) * 2.f;
-		const float screenCenterY = horizonY;
-		// gpu::Texture U coordinate within the wall: where on the wall did we hit?
-		float wallX = (side == 0) ? (camCellPos.y() + perpDistSafe * rayDir.y())
-								  : (camCellPos.x() + perpDistSafe * rayDir.x());
-		wallX -= std::floor(wallX);
-		// Match Wolfenstein convention: walls hit from the +x or -y direction get U flipped
-		// so that adjacent wall faces appear continuous.
-		if (side == 0 && rayDir.x() > 0.f)
-			wallX = 1.f - wallX;
-		if (side == 1 && rayDir.y() < 0.f)
-			wallX = 1.f - wallX;
-		const auto tileUv = tileset.getTileUv(static_cast<uint32_t>(hitTile));
-		// `getTileUv` returns BL, BR, TR, TL.
-		const float uvLeft = tileUv[0].x();
-		const float uvRight = tileUv[1].x();
-		const float uvBottom = tileUv[0].y();
-		const float uvTop = tileUv[3].y();
-		const float uHit = uvLeft + wallX * (uvRight - uvLeft);
-		// Stripe quad (1 column wide, lineHeight pixels tall, centred on the horizon).
-		// stripeX placed at the integer pixel-centre of the column we're filling so
-		// that adjacent stripes tile against integer pixel boundaries.
-		const float stripeX = (static_cast<float>(col) + 0.5f) * stripePxWidth;
-		math::Transform stripeTr;
-		stripeTr.translation() = math::vec3{stripeX, screenCenterY, 0.f};
-		stripeTr.scale() = math::vec3{stripePxWidth, lineHeight, 1.f};
-		math::vec4 tint{1.f, 1.f, 1.f, 1.f};
-		if (side == 1) {
-			tint = math::vec4{g_YSideDarken, g_YSideDarken, g_YSideDarken, 1.f};
-		}
-		// One U value across the stripe (a single atlas column), tile spans full V.
-		const std::array<math::vec2, 4> stripeUv{
-				math::vec2{uHit, uvBottom},
-				math::vec2{uHit, uvBottom},
-				math::vec2{uHit, uvTop},
-				math::vec2{uHit, uvTop},
-		};
 
-		Renderer2D::drawQuad({.transform = stripeTr,
-							  .color = tint,
-							  .texture = atlasTex,
-							  .textureCoords = stripeUv,
-							  .entityId = iEntityId});
+		// Latch the **closest opaque** wall depth for sprite occlusion. Sprites passing
+		// through a column that only has transparent hits are not occluded by the
+		// transparent wall (they will be drawn on top of it though — a v0.2.0 limitation
+		// caused by sprites being drawn after walls instead of merged per-column).
+		float opaqueDepth = std::numeric_limits<float>::infinity();
+		for (const auto& hitEntry: columnHits) {
+			if (!hitEntry.transparent) {
+				opaqueDepth = hitEntry.perpDist;
+				break;
+			}
+		}
+		if (col < g_state->zBufferPerColumn.size())
+			g_state->zBufferPerColumn[col] = opaqueDepth;
+
+		// Render back-to-front so painter's order composites alpha-blended transparent
+		// walls correctly. `columnHits` is in increasing-distance order (DDA marches
+		// outward), so iterate in reverse.
+		const float stripeX = (static_cast<float>(col) + 0.5f) * stripePxWidth;
+		for (const auto& wallHit: std::ranges::reverse_view(columnHits)) {
+			g_state->stats.hitCount++;
+			// Snap *unit* line height to an even integer (existing flicker-free trick),
+			// then scale by the wall's `wallHeight`. Wall is bottom-anchored at floor
+			// level, so a tall wall pokes into the sky and a short one stays planted on
+			// the floor — `screenCenterY` shifts upward by half the *extra* height.
+			const float lineHeightUnit = std::floor((vp.y() / wallHit.perpDist) * 0.5f) * 2.f;
+			const float lineHeight = lineHeightUnit * wallHit.wallHeight;
+			const float screenCenterY = horizonY + lineHeightUnit * (wallHit.wallHeight - 1.f) * 0.5f;
+			const auto tileUv = tileset.getTileUv(static_cast<uint32_t>(wallHit.tileIndex));
+			// `getTileUv` returns BL, BR, TR, TL.
+			const float uvLeft = tileUv[0].x();
+			const float uvRight = tileUv[1].x();
+			const float uvBottom = tileUv[0].y();
+			const float uvTop = tileUv[3].y();
+			const float uHit = uvLeft + wallHit.wallX * (uvRight - uvLeft);
+			math::Transform stripeTr;
+			stripeTr.translation() = math::vec3{stripeX, screenCenterY, 0.f};
+			stripeTr.scale() = math::vec3{stripePxWidth, lineHeight, 1.f};
+			math::vec4 tint{1.f, 1.f, 1.f, 1.f};
+			if (wallHit.side == 1)
+				tint = math::vec4{g_YSideDarken, g_YSideDarken, g_YSideDarken, 1.f};
+			// One U value across the stripe (a single atlas column), tile spans full V.
+			const std::array<math::vec2, 4> stripeUv{
+					math::vec2{uHit, uvBottom},
+					math::vec2{uHit, uvBottom},
+					math::vec2{uHit, uvTop},
+					math::vec2{uHit, uvTop},
+			};
+			Renderer2D::drawQuad({.transform = stripeTr,
+								  .color = tint,
+								  .texture = atlasTex,
+								  .textureCoords = stripeUv,
+								  .entityId = iEntityId});
+		}
 	}
 }
 
@@ -455,10 +491,17 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 		if (colStart >= colEnd)
 			continue;
 		const auto& tc = sprite.textureCoords;
-		const float uvLeft = tc[0].x();
-		const float uvRight = tc[1].x();
-		const float uvBottom = tc[0].y();
-		const float uvTop = tc[3].y();
+		// Inset the sprite-cell UV rectangle by half a texel: the engine samples
+		// every texture with `REPEAT` wrap mode + bilinear filtering, so a UV at
+		// the very edge of a sprite bleeds in the opposite-edge column (single
+		// sprites) or the neighbouring cell of an atlas (animated sprites).
+		const auto texSize = sprite.texture->getSize();
+		const float halfU = texSize.x() > 0 ? 0.5f / static_cast<float>(texSize.x()) : 0.f;
+		const float halfV = texSize.y() > 0 ? 0.5f / static_cast<float>(texSize.y()) : 0.f;
+		const float uvLeft = tc[0].x() + halfU;
+		const float uvRight = tc[1].x() - halfU;
+		const float uvBottom = tc[0].y() + halfV;
+		const float uvTop = tc[3].y() - halfV;
 		bool spriteEmittedAny = false;
 		for (int col = colStart; col < colEnd; ++col) {
 			const float wallDepth = (static_cast<size_t>(col) < zBuffer.size())
