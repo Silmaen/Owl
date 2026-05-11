@@ -9,6 +9,209 @@ EnabledRenderers:
     Overrides:
       Space: Screen
 Entities:
+  - Entity: 15534755144944669786
+    Tag:
+      tag: B3
+    Transform:
+      translation: [27.5, 2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [0.699999988, 0.850000024, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/raycast_refs/barrel.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7570686549718889332
+    RendererTag:
+      Name: raycast_world
+  - Entity: 1568195035738314073
+    Tag:
+      tag: B4
+    Transform:
+      translation: [28.5, 2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [0.699999988, 0.850000024, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/raycast_refs/barrel.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7570686549718889332
+    RendererTag:
+      Name: raycast_world
+  - Entity: 10713659767896345620
+    Tag:
+      tag: B2
+    Transform:
+      translation: [29.5, 1.5, 0]
+      rotation: [0, 0, 0]
+      scale: [0.699999988, 0.850000024, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/raycast_refs/barrel.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7570686549718889332
+    RendererTag:
+      Name: raycast_world
+  - Entity: 7570686549718889332
+    Tag:
+      tag: Barrels
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    RendererTag:
+      Name: raycast_world
+  - Entity: 8650208992513593986
+    Tag:
+      tag: L6
+    Transform:
+      translation: [2.5, -16.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/raycast_refs/greenlight.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 7448479228372063673
+    Tag:
+      tag: L7
+    Transform:
+      translation: [2.5, -8.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/raycast_refs/greenlight.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 7871170412065769316
+    Tag:
+      tag: L3
+    Transform:
+      translation: [6.5, -29.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/raycast_refs/greenlight.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 11725008055632833023
+    Tag:
+      tag: L4
+    Transform:
+      translation: [2.5, -25.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/raycast_refs/greenlight.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 3300351824610864905
+    Tag:
+      tag: L5
+    Transform:
+      translation: [2.5, -20.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/raycast_refs/greenlight.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 6583937215403861796
+    Tag:
+      tag: L2
+    Transform:
+      translation: [2.5, -29.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/raycast_refs/greenlight.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 18248389905682178093
+    Tag:
+      tag: L1
+    Transform:
+      translation: [-1.5, -29.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/raycast_refs/greenlight.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 10638330045607190015
+    Tag:
+      tag: Lights
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+    RendererTag:
+      Name: raycast_world
   - Entity: 2100000000000000001
     Tag:
       tag: MainCamera
@@ -61,6 +264,50 @@ Entities:
       scale: [1, 1, 1]
     Tilemap:
       tilemapPath: tilemaps/raycast_demo.owltilemap
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: raycast_world
+  - Entity: 2100000000000000020
+    Tag:
+      tag: B1
+    Transform:
+      translation: [29.5, 2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [0.699999988, 0.850000024, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/raycast_refs/barrel.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7570686549718889332
+    RendererTag:
+      Name: raycast_world
+  - Entity: 2100000000000000021
+    Tag:
+      tag: Coin
+    Transform:
+      translation: [0, -25.5, 0.150000006]
+      rotation: [0, 0, 0]
+      scale: [0.5, 0.5, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/animated_coin.png
+      columns: 6
+      rows: 3
+      firstFrame: 0
+      lastFrame: 17
+      frameDuration: 0.0799999982
+      loop: true
     Visibility:
       gameVisible: true
     RendererTag:

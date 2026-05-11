@@ -10,6 +10,10 @@
 
 #include "math/vectors.h"
 #include "renderer/Camera.h"
+#include "renderer/gpu/Texture.h"
+
+#include <array>
+#include <span>
 
 namespace owl::scene {
 
@@ -54,6 +58,53 @@ struct OWL_API RaycastConfig {
 	math::vec4 floorColor{0.20f, 0.16f, 0.12f, 1.f};
 	/// Number of casted rays (= rendered vertical stripes). 0 = derive from viewport width.
 	uint32_t numRays = 0;
+};
+
+/**
+ * @brief
+ *  Per-sprite payload consumed by `RendererRaycast::drawSprites`.
+ *
+ * Sprites are billboards: their world XY position is projected through the
+ * camera basis the same way wall stripes are, then stretched / centred on the
+ * screen according to the sprite's world-size and the per-column zBuffer
+ * latched by `drawTilemapWalls`.
+ */
+struct OWL_API RaycastSpriteData {
+	/// World-space XY position of the sprite centre (cells, same units as `Tilemap::cellSize`).
+	math::vec2 worldPosition{0.f, 0.f};
+	/**
+	 * @brief
+	 *  Vertical world offset (in cells) shifting the sprite's screen centre away from the horizon.
+	 *
+	 * `0` keeps the sprite vertically centred on the horizon — i.e. it spans the
+	 * floor-to-ceiling band like a `worldSize.y == 1` wall would. Positive values
+	 * raise the sprite (hanging lamps, ceiling-mounted lights), negative values
+	 * lower it (floor-tile decals).
+	 */
+	float worldZOffset = 0.f;
+	/**
+	 * @brief
+	 *  World-space size (width × height in cells).
+	 *
+	 * A sprite of size `{1, 1}` reaches the same screen height as a 1-cell-tall
+	 * wall at the same depth — so authoring scales line up with the tilemap grid.
+	 */
+	math::vec2 worldSize{1.f, 1.f};
+	/// Colour tint multiplied into the sampled texel.
+	math::vec4 tint{1.f, 1.f, 1.f, 1.f};
+	/// Sprite texture (sprites without a texture are silently skipped).
+	shared<gpu::Texture> texture;
+	/**
+	 * @brief
+	 *  Per-vertex texture coordinates, ordered BL → BR → TR → TL (matches `Quad2DData`).
+	 *
+	 * Defaults to the full atlas. Use sub-rectangles to render frames out of a
+	 * spritesheet (animated sprites).
+	 */
+	std::array<math::vec2, 4> textureCoords{math::vec2{0.f, 0.f}, math::vec2{1.f, 0.f}, math::vec2{1.f, 1.f},
+											math::vec2{0.f, 1.f}};
+	/// Entity id written into the framebuffer picking attachment.
+	int entityId = -1;
 };
 
 /**
@@ -133,6 +184,28 @@ public:
 
 	/**
 	 * @brief
+	 *  Render a batch of billboard sprites in the active raycast scene.
+	 *
+	 * The facade takes ownership of:
+	 *  - **Camera-space projection**: each sprite's world XY is transformed into
+	 *    `(transformX, transformY)` using the camera basis (forward + plane);
+	 *    sprites with `transformY <= 0` (behind the camera) or beyond
+	 *    `RaycastConfig::maxDistance` are culled.
+	 *  - **Back-to-front sort**: visible sprites are drawn farthest first so
+	 *    nearer sprites correctly overdraw farther ones.
+	 *  - **Per-column wall occlusion**: the sprite is split into 1-pixel-wide
+	 *    column strips; for each column the wall depth latched by
+	 *    `drawTilemapWalls` is compared against the sprite depth, hidden columns
+	 *    are skipped.
+	 *
+	 * Must be called between `beginScene` and `endScene`. An empty span is a
+	 * silent no-op.
+	 * @param[in] iSprites Sprite payloads to render.
+	 */
+	static void drawSprites(std::span<const RaycastSpriteData> iSprites);
+
+	/**
+	 * @brief
 	 *  Close a raycast scene.
 	 *
 	 * Flushes the pending stripe quads. Pairs with `beginScene`.
@@ -152,6 +225,12 @@ public:
 		uint32_t hitCount = 0;
 		/// Number of rays that ran the full max-distance budget without hitting anything.
 		uint32_t missCount = 0;
+		/// Number of sprites that survived camera-space culling and contributed at least one stripe.
+		uint32_t spriteCount = 0;
+		/// Number of 1-pixel-wide stripes emitted for sprites this frame.
+		uint32_t spriteStripeCount = 0;
+		/// Number of sprite stripes that were skipped because a wall sat in front of them.
+		uint32_t spriteOccludedCount = 0;
 	};
 
 	/**

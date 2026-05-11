@@ -352,6 +352,22 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw every visible tilemap accepted by the current layer.
+	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 * @param[in] iRaycastLayer True if the current layer is a raycast renderer (routes walls
+	 * through `RendererRaycast::drawTilemapWalls` instead of emitting per-cell 2D quads).
+	 */
+	void renderTilemaps(bool iEditorMode, bool iRaycastLayer);
+
+	/**
+	 * @brief
+	 *  Collect Sprite/AnimatedSprite entities and submit them to the raycast renderer.
+	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 */
+	void renderRaycastSprites(bool iEditorMode);
+
+	/**
+	 * @brief
 	 *  Resolve every tilemap component's `.owltilemap` asset and its associated `.owltileset`.
 	 *
 	 * Two-phase pass over every `Tilemap` component in the scene:
