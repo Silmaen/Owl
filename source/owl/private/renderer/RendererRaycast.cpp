@@ -410,6 +410,416 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 	}
 }
 
+namespace {
+
+/// Slab-method intersection result for a single ray against an AABB.
+struct SlabHit {
+	float perpDist;///< Entry distance along the camera ray (perpendicular-to-plane).
+	int side;///< 0 = X slab entered first, 1 = Y slab entered first.
+	float wallU;///< Texture U fraction along the hit face (already flipped for Wolf3D convention).
+	bool valid;///< False if the ray missed the AABB or the hit is behind the camera.
+};
+
+/// Run the slab method on one AABB for one ray. Used by both `drawDynamicWalls` and `drawDoors`.
+auto castRayAabb(const math::vec2& iRayDir, float iMinX, float iMaxX, float iMinY, float iMaxY) -> SlabHit {
+	// Slab method against the AABB. Both X and Y slabs guard against degenerate rays
+	// (rayDir.x or rayDir.y ≈ 0) with a 1/eps clamp: when the ray is parallel to a
+	// slab and the origin sits outside the slab, both slab intervals collapse to ±inf
+	// in the right order and the overall `tNear > tFar` test still rejects.
+	const float invDx = (std::abs(iRayDir.x()) < 1e-6f) ? std::copysign(1e30f, iRayDir.x() == 0.f ? 1.f : iRayDir.x())
+														: 1.f / iRayDir.x();
+	const float invDy = (std::abs(iRayDir.y()) < 1e-6f) ? std::copysign(1e30f, iRayDir.y() == 0.f ? 1.f : iRayDir.y())
+														: 1.f / iRayDir.y();
+	const float tx1 = (iMinX - g_state->cameraPos2D.x()) * invDx;
+	const float tx2 = (iMaxX - g_state->cameraPos2D.x()) * invDx;
+	const float tEnterX = std::min(tx1, tx2);
+	const float tExitX = std::max(tx1, tx2);
+	const float ty1 = (iMinY - g_state->cameraPos2D.y()) * invDy;
+	const float ty2 = (iMaxY - g_state->cameraPos2D.y()) * invDy;
+	const float tEnterY = std::min(ty1, ty2);
+	const float tExitY = std::max(ty1, ty2);
+	const float tNear = std::max(tEnterX, tEnterY);
+	const float tFar = std::min(tExitX, tExitY);
+	if (tNear > tFar || tFar < 0.f)
+		return {.perpDist = 0.f, .side = 0, .wallU = 0.f, .valid = false};
+	const float perpDist = std::max(tNear, g_MinPerpDist);
+	const int side = (tEnterX > tEnterY) ? 0 : 1;
+	float wallU = 0.f;
+	if (side == 0) {
+		const float hitY = g_state->cameraPos2D.y() + perpDist * iRayDir.y();
+		wallU = (hitY - iMinY) / (iMaxY - iMinY);
+		if (iRayDir.x() > 0.f)
+			wallU = 1.f - wallU;
+	} else {
+		const float hitX = g_state->cameraPos2D.x() + perpDist * iRayDir.x();
+		wallU = (hitX - iMinX) / (iMaxX - iMinX);
+		if (iRayDir.y() < 0.f)
+			wallU = 1.f - wallU;
+	}
+	wallU = std::clamp(wallU, 0.f, 1.f);
+	return {.perpDist = perpDist, .side = side, .wallU = wallU, .valid = true};
+}
+
+/**
+ * @brief
+ *  Emit a single wall stripe for one column and refresh the zBuffer.
+ *
+ * `iUvRect` is the (minU, minV, maxU, maxV) sub-rectangle of `iTexture` the
+ * stripe samples from — that's how a single atlas texture can serve many
+ * tiles. The stripe's local `[0,1]` U,V are remapped into this rectangle
+ * before half-texel inset (which is done in atlas pixel space, so the inset
+ * value is the same whether or not we're sampling a sub-rect).
+ */
+void emitStripe(uint32_t iCol, float iStripeX, float iStripePxWidth, float iHorizonY, const math::vec2& iVp,
+				float iPerpDist, int iSide, float iWallU, float iWallHeight, const shared<gpu::Texture>& iTexture,
+				const math::vec4& iUvRect, const math::vec4& iTint, int iEntityId) {
+	const float lineHeightUnit = std::floor((iVp.y() / iPerpDist) * 0.5f) * 2.f;
+	const float lineHeight = lineHeightUnit * iWallHeight;
+	const float screenCenterY = iHorizonY + lineHeightUnit * (iWallHeight - 1.f) * 0.5f;
+	const auto texSize = iTexture->getSize();
+	const float halfU = texSize.x() > 0 ? 0.5f / static_cast<float>(texSize.x()) : 0.f;
+	const float halfV = texSize.y() > 0 ? 0.5f / static_cast<float>(texSize.y()) : 0.f;
+	// Remap local [0,1] U,V into the sub-rect, then inset half a texel on each
+	// side so bilinear sampling doesn't bleed in the neighbouring tile of the atlas.
+	const float subUMin = iUvRect.x() + halfU;
+	const float subUMax = iUvRect.z() - halfU;
+	const float subVMin = iUvRect.y() + halfV;
+	const float subVMax = iUvRect.w() - halfV;
+	const float clampedLocalU = std::clamp(iWallU, 0.f, 1.f);
+	const float uHit = subUMin + clampedLocalU * (subUMax - subUMin);
+	const float vBottom = subVMin;
+	const float vTop = subVMax;
+	math::Transform stripeTr;
+	stripeTr.translation() = math::vec3{iStripeX, screenCenterY, 0.f};
+	stripeTr.scale() = math::vec3{iStripePxWidth, lineHeight, 1.f};
+	math::vec4 tint = iTint;
+	if (iSide == 1) {
+		tint.x() *= g_YSideDarken;
+		tint.y() *= g_YSideDarken;
+		tint.z() *= g_YSideDarken;
+	}
+	const std::array<math::vec2, 4> stripeUv{
+			math::vec2{uHit, vBottom},
+			math::vec2{uHit, vBottom},
+			math::vec2{uHit, vTop},
+			math::vec2{uHit, vTop},
+	};
+	Renderer2D::drawQuad({.transform = stripeTr,
+						  .color = tint,
+						  .texture = iTexture,
+						  .textureCoords = stripeUv,
+						  .entityId = iEntityId});
+	if (iCol < g_state->zBufferPerColumn.size())
+		g_state->zBufferPerColumn[iCol] = iPerpDist;
+}
+
+}// namespace
+
+void RendererRaycast::drawDynamicWalls(std::span<const RaycastDynamicWallData> iWalls) {
+	OWL_PROFILE_FUNCTION()
+
+	if (!g_state || !g_state->sceneOpen) {
+		OWL_CORE_WARN("RendererRaycast::drawDynamicWalls called outside beginScene/endScene.")
+		return;
+	}
+	if (iWalls.empty())
+		return;
+	// A dynamic wall draws against the same backdrop the static-wall pass uses; if
+	// the caller skipped tilemap drawing (raycast scene with only dynamic walls)
+	// emit the sky / floor here so the wall doesn't sit on stale framebuffer data.
+	emitBackdropIfNeeded();
+
+	const math::vec2 vp{static_cast<float>(g_state->viewport.x()), static_cast<float>(g_state->viewport.y())};
+	const uint32_t numRays = (g_state->config.numRays > 0) ? g_state->config.numRays : g_state->viewport.x();
+	if (numRays == 0)
+		return;
+	const float stripePxWidth = vp.x() / static_cast<float>(numRays);
+	const float horizonY = computeHorizonY();
+	const float maxDistance = std::max(1.f, g_state->config.maxDistance);
+	const math::vec2& dir = g_state->cameraDir2D;
+	const math::vec2& plane = g_state->cameraPlane2D;
+
+	for (const auto& wall: iWalls) {
+		if (!wall.texture)
+			continue;
+		const float halfX = std::max(1e-4f, wall.halfExtent.x());
+		const float halfY = std::max(1e-4f, wall.halfExtent.y());
+		const float minX = wall.worldCenter.x() - halfX;
+		const float maxX = wall.worldCenter.x() + halfX;
+		const float minY = wall.worldCenter.y() - halfY;
+		const float maxY = wall.worldCenter.y() + halfY;
+		const float wallHeightScale = std::max(0.f, wall.wallHeight);
+		bool wallEmittedAny = false;
+		for (uint32_t col = 0; col < numRays; ++col) {
+			const float cameraX = 2.f * (static_cast<float>(col) + 0.5f) / static_cast<float>(numRays) - 1.f;
+			const math::vec2 rayDir{dir.x() + plane.x() * cameraX, dir.y() + plane.y() * cameraX};
+			const auto hit = castRayAabb(rayDir, minX, maxX, minY, maxY);
+			if (!hit.valid)
+				continue;
+			if (hit.perpDist > maxDistance)
+				continue;
+			const float currentZ = (col < g_state->zBufferPerColumn.size()) ? g_state->zBufferPerColumn[col]
+																			: std::numeric_limits<float>::infinity();
+			if (hit.perpDist >= currentZ)
+				continue;
+			const float stripeX = (static_cast<float>(col) + 0.5f) * stripePxWidth;
+			emitStripe(col, stripeX, stripePxWidth, horizonY, vp, hit.perpDist, hit.side, hit.wallU, wallHeightScale,
+					   wall.texture, wall.uvRect, wall.tint, wall.entityId);
+			g_state->stats.dynamicWallStripeCount++;
+			wallEmittedAny = true;
+		}
+		if (wallEmittedAny)
+			g_state->stats.dynamicWallCount++;
+	}
+}
+
+namespace {
+
+/**
+ * @brief
+ *  Geometry of a single door for the renderer — derived once per door per call.
+ *
+ * Holds the cube extents, the plate offset along the slide axis (with the
+ * scaled-by-progress +1-pixel hermetic-closure margin already applied), and
+ * the slide-axis classification used to dispatch the plate / lateral tests.
+ */
+struct DoorGeom {
+	float cellMinX;///< Cube left edge in world cells.
+	float cellMaxX;///< Cube right edge.
+	float cellMinY;///< Cube bottom edge.
+	float cellMaxY;///< Cube top edge.
+	float plateAlongSlide;///< Plate position along the slide axis (signed, cell units).
+	float slideSign;///< +1 (N or E opening) / −1 (S or W opening).
+	bool slideAlongY;///< True for N/S openings (plate normal along X), false for E/W.
+};
+
+/// Cube-AABB intersection result reused inside `drawDoors` — holds entry / exit / exit-axis.
+struct CubeHit {
+	float tNear;///< Entry distance (cells, perp-to-plane).
+	float tFar;///< Exit distance.
+	float invDx;///< Cached `1 / rayDir.x` (clamped on degenerate rays).
+	float invDy;///< Cached `1 / rayDir.y`.
+	int exitAxis;///< 0 if X-slab closes first, 1 if Y-slab closes first.
+	bool valid;///< False when the ray misses the cube or the exit is behind the camera.
+};
+
+auto castCubeAabb(const math::vec2& iRayDir, const DoorGeom& iGeom) -> CubeHit {
+	const float invDx = (std::abs(iRayDir.x()) < 1e-6f) ? std::copysign(1e30f, iRayDir.x() == 0.f ? 1.f : iRayDir.x())
+														: 1.f / iRayDir.x();
+	const float invDy = (std::abs(iRayDir.y()) < 1e-6f) ? std::copysign(1e30f, iRayDir.y() == 0.f ? 1.f : iRayDir.y())
+														: 1.f / iRayDir.y();
+	const float tx1 = (iGeom.cellMinX - g_state->cameraPos2D.x()) * invDx;
+	const float tx2 = (iGeom.cellMaxX - g_state->cameraPos2D.x()) * invDx;
+	const float tExitX = std::max(tx1, tx2);
+	const float ty1 = (iGeom.cellMinY - g_state->cameraPos2D.y()) * invDy;
+	const float ty2 = (iGeom.cellMaxY - g_state->cameraPos2D.y()) * invDy;
+	const float tExitY = std::max(ty1, ty2);
+	const float tNear = std::max(std::min(tx1, tx2), std::min(ty1, ty2));
+	const float tFar = std::min(tExitX, tExitY);
+	const bool valid = (tNear <= tFar) && (tFar >= 0.f);
+	const int exitAxis = (tExitX < tExitY) ? 0 : 1;
+	return {.tNear = tNear, .tFar = tFar, .invDx = invDx, .invDy = invDy, .exitAxis = exitAxis, .valid = valid};
+}
+
+/// Plate intersection result emitted by `tryPlateHit`.
+struct PlateHit {
+	float t;///< Distance along the ray (cells, perp-to-plane).
+	float pixelU;///< 0 at min-axis edge of the plate, 1 at max-axis edge.
+	bool valid;
+};
+
+auto tryPlateHit(const math::vec2& iRayDir, const DoorGeom& iGeom, const CubeHit& iCube, const RaycastDoorData& iDoor)
+		-> PlateHit {
+	if (!iDoor.faceTexture)
+		return {.t = 0.f, .pixelU = 0.f, .valid = false};
+	if (iGeom.slideAlongY) {
+		// N/S opening: plate at x = cx, extends along Y.
+		if (std::abs(iRayDir.x()) <= 1e-6f)
+			return {.t = 0.f, .pixelU = 0.f, .valid = false};
+		const float t = (iDoor.cellCenter.x() - g_state->cameraPos2D.x()) * iCube.invDx;
+		if (t < iCube.tNear || t > iCube.tFar || t <= 0.f)
+			return {.t = 0.f, .pixelU = 0.f, .valid = false};
+		const float hitY = g_state->cameraPos2D.y() + t * iRayDir.y();
+		const float plateCenterY = iDoor.cellCenter.y() + iGeom.plateAlongSlide;
+		const float plateMinY = plateCenterY - 0.5f;
+		const float plateMaxY = plateCenterY + 0.5f;
+		if (hitY < plateMinY || hitY > plateMaxY)
+			return {.t = 0.f, .pixelU = 0.f, .valid = false};
+		return {.t = std::max(t, g_MinPerpDist), .pixelU = std::clamp(hitY - plateMinY, 0.f, 1.f), .valid = true};
+	}
+	// E/W opening: plate at y = cy, extends along X.
+	if (std::abs(iRayDir.y()) <= 1e-6f)
+		return {.t = 0.f, .pixelU = 0.f, .valid = false};
+	const float t = (iDoor.cellCenter.y() - g_state->cameraPos2D.y()) * iCube.invDy;
+	if (t < iCube.tNear || t > iCube.tFar || t <= 0.f)
+		return {.t = 0.f, .pixelU = 0.f, .valid = false};
+	const float hitX = g_state->cameraPos2D.x() + t * iRayDir.x();
+	const float plateCenterX = iDoor.cellCenter.x() + iGeom.plateAlongSlide;
+	const float plateMinX = plateCenterX - 0.5f;
+	const float plateMaxX = plateCenterX + 0.5f;
+	if (hitX < plateMinX || hitX > plateMaxX)
+		return {.t = 0.f, .pixelU = 0.f, .valid = false};
+	return {.t = std::max(t, g_MinPerpDist), .pixelU = std::clamp(hitX - plateMinX, 0.f, 1.f), .valid = true};
+}
+
+/// Lateral intersection result emitted by `tryLateralHit`.
+struct LateralHit {
+	float t;
+	float wallU;
+	int side;
+	bool valid;
+};
+
+auto tryLateralHit(const math::vec2& iRayDir, const DoorGeom& iGeom, const CubeHit& iCube, const RaycastDoorData& iDoor)
+		-> LateralHit {
+	if (!iDoor.lateralTexture || iCube.tFar <= 0.f)
+		return {.t = 0.f, .wallU = 0.f, .side = 0, .valid = false};
+	const bool exitOnSlideAxis = iGeom.slideAlongY ? (iCube.exitAxis == 1) : (iCube.exitAxis == 0);
+	if (!exitOnSlideAxis)
+		return {.t = 0.f, .wallU = 0.f, .side = 0, .valid = false};
+	// Tiny depth bias so the lateral always wins the z-test against the pocket-side
+	// wall (which sits at exactly the same depth in the static tilemap pass).
+	constexpr float kLateralDepthBias = 1e-3f;
+	const float t = std::max(g_MinPerpDist, iCube.tFar - kLateralDepthBias);
+	float wallU = 0.f;
+	int side = 0;
+	if (iGeom.slideAlongY) {
+		const float hitX = g_state->cameraPos2D.x() + iCube.tFar * iRayDir.x();
+		wallU = hitX - iGeom.cellMinX;
+		side = 1;// match standard Y-slab darkening
+		if (iRayDir.y() < 0.f)
+			wallU = 1.f - wallU;
+	} else {
+		const float hitY = g_state->cameraPos2D.y() + iCube.tFar * iRayDir.y();
+		wallU = hitY - iGeom.cellMinY;
+		side = 0;
+		if (iRayDir.x() > 0.f)
+			wallU = 1.f - wallU;
+	}
+	return {.t = t, .wallU = std::clamp(wallU, 0.f, 1.f), .side = side, .valid = true};
+}
+
+/// Common per-column input bundle for the door render loop.
+struct DoorColumnCtx {
+	math::vec2 rayDir;
+	float currentZ;
+	float maxDistance;
+};
+
+/**
+ * @brief
+ *  Pick the closest of {plate, lateral} that beats the static zBuffer and emit a stripe.
+ *
+ * Returns true when a stripe was actually emitted (used to bump the per-door
+ * stripe-emitted flag). Doing the picking + emit in this helper keeps
+ * `drawDoors`'s top-level loop a flat sequence of `if (cube.valid) { … }`,
+ * well under the cognitive-complexity threshold.
+ */
+auto renderDoorColumn(uint32_t iCol, float iStripeX, float iStripePxWidth, float iHorizonY, const math::vec2& iVp,
+					  float iWallHeightScale, const DoorGeom& iGeom, const PlateHit& iPlate, const LateralHit& iLateral,
+					  const DoorColumnCtx& iCtx, const RaycastDoorData& iDoor) -> bool {
+	float bestT = std::numeric_limits<float>::infinity();
+	float bestU = 0.f;
+	int bestSide = 0;
+	const shared<gpu::Texture>* bestTex = nullptr;
+	const math::vec4* bestUvRect = nullptr;
+	if (iPlate.valid && iPlate.t < iCtx.currentZ && iPlate.t <= iCtx.maxDistance) {
+		bestT = iPlate.t;
+		// U=1 must always sit on the opening-direction side of the cell. `pixelU` runs
+		// 0 (south/west) → 1 (north/east); for negative-direction openings (S/W) we
+		// flip so U=1 sits on the opening side regardless of the player's viewpoint.
+		float u = iPlate.pixelU;
+		if (iGeom.slideSign < 0.f)
+			u = 1.f - u;
+		bestU = std::clamp(u, 0.f, 1.f);
+		bestSide = iGeom.slideAlongY ? 0 : 1;
+		bestTex = &iDoor.faceTexture;
+		bestUvRect = &iDoor.faceUvRect;
+	}
+	if (iLateral.valid && iLateral.t < bestT && iLateral.t < iCtx.currentZ && iLateral.t <= iCtx.maxDistance) {
+		bestT = iLateral.t;
+		bestU = iLateral.wallU;
+		bestSide = iLateral.side;
+		bestTex = &iDoor.lateralTexture;
+		bestUvRect = &iDoor.lateralUvRect;
+	}
+	if (bestTex == nullptr || !*bestTex || bestUvRect == nullptr)
+		return false;
+	emitStripe(iCol, iStripeX, iStripePxWidth, iHorizonY, iVp, bestT, bestSide, bestU, iWallHeightScale, *bestTex,
+			   *bestUvRect, iDoor.tint, iDoor.entityId);
+	return true;
+}
+
+auto buildDoorGeom(const RaycastDoorData& iDoor) -> DoorGeom {
+	// Decode opening direction into a slide axis + sign.
+	// 0 = North (+Y), 1 = South (−Y), 2 = East (+X), 3 = West (−X).
+	constexpr float kPlatePixelMargin = 1.f / 64.f;
+	const bool slideAlongY = iDoor.openingDirection <= 1;
+	const float slideSign = (iDoor.openingDirection == 0 || iDoor.openingDirection == 2) ? 1.f : -1.f;
+	// Scale the +1-pixel margin by the open progress so a closed door (offset=0)
+	// stays exactly at the cell centre and closes hermetically.
+	const float plateAlongSlide = slideSign * iDoor.plateOffset * (1.f + kPlatePixelMargin);
+	return {.cellMinX = iDoor.cellCenter.x() - 0.5f,
+			.cellMaxX = iDoor.cellCenter.x() + 0.5f,
+			.cellMinY = iDoor.cellCenter.y() - 0.5f,
+			.cellMaxY = iDoor.cellCenter.y() + 0.5f,
+			.plateAlongSlide = plateAlongSlide,
+			.slideSign = slideSign,
+			.slideAlongY = slideAlongY};
+}
+
+}// namespace
+
+void RendererRaycast::drawDoors(std::span<const RaycastDoorData> iDoors) {
+	OWL_PROFILE_FUNCTION()
+
+	if (!g_state || !g_state->sceneOpen) {
+		OWL_CORE_WARN("RendererRaycast::drawDoors called outside beginScene/endScene.")
+		return;
+	}
+	if (iDoors.empty())
+		return;
+	emitBackdropIfNeeded();
+
+	const math::vec2 vp{static_cast<float>(g_state->viewport.x()), static_cast<float>(g_state->viewport.y())};
+	const uint32_t numRays = (g_state->config.numRays > 0) ? g_state->config.numRays : g_state->viewport.x();
+	if (numRays == 0)
+		return;
+	const float stripePxWidth = vp.x() / static_cast<float>(numRays);
+	const float horizonY = computeHorizonY();
+	const float maxDistance = std::max(1.f, g_state->config.maxDistance);
+	const math::vec2& dir = g_state->cameraDir2D;
+	const math::vec2& plane = g_state->cameraPlane2D;
+
+	for (const auto& door: iDoors) {
+		if (!door.faceTexture && !door.lateralTexture)
+			continue;
+		const DoorGeom geom = buildDoorGeom(door);
+		const float wallHeightScale = std::max(0.f, door.wallHeight);
+		bool doorEmittedAny = false;
+		for (uint32_t col = 0; col < numRays; ++col) {
+			const float cameraX = 2.f * (static_cast<float>(col) + 0.5f) / static_cast<float>(numRays) - 1.f;
+			const math::vec2 rayDir{dir.x() + plane.x() * cameraX, dir.y() + plane.y() * cameraX};
+			const CubeHit cube = castCubeAabb(rayDir, geom);
+			if (!cube.valid)
+				continue;
+			const PlateHit plate = tryPlateHit(rayDir, geom, cube, door);
+			const LateralHit lateral = tryLateralHit(rayDir, geom, cube, door);
+			const float currentZ = (col < g_state->zBufferPerColumn.size()) ? g_state->zBufferPerColumn[col]
+																			: std::numeric_limits<float>::infinity();
+			const DoorColumnCtx ctx{.rayDir = rayDir, .currentZ = currentZ, .maxDistance = maxDistance};
+			const float stripeX = (static_cast<float>(col) + 0.5f) * stripePxWidth;
+			if (renderDoorColumn(col, stripeX, stripePxWidth, horizonY, vp, wallHeightScale, geom, plate, lateral, ctx,
+								 door)) {
+				g_state->stats.doorStripeCount++;
+				doorEmittedAny = true;
+			}
+		}
+		if (doorEmittedAny)
+			g_state->stats.doorCount++;
+	}
+}
+
 void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 	OWL_PROFILE_FUNCTION()
 

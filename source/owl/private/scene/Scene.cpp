@@ -579,6 +579,12 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 			luaScript.instance && luaScript.instance->isValid())
 			luaScript.instance->onUpdate(iTimeStep.getSeconds());
 	}
+
+	// Doors / pushwalls — advance the state machine, then mirror the slide offset
+	// onto the kinematic Box2D body (when present) so the upcoming physics step
+	// reflects the door's actual position for player collision.
+	updateRaycastDynamicWalls(iTimeStep.getSeconds());
+
 	// Inputs
 	if (const Entity player = getPrimaryPlayer()) {
 		auto& [primary, iplayer] = player.getComponent<component::Player>();
@@ -932,6 +938,10 @@ void Scene::render() {
 	// and Text components don't have a meaningful first-person interpretation, so they're
 	// silently dropped here — author such overlays on a separate `Renderer2D` HUD layer.
 	if (raycastLayer) {
+		// Order is important: dynamic walls refine the per-column zBuffer that the
+		// sprite pass reads for occlusion, so they must run *after* the static
+		// tilemap pass (already done above) and *before* sprites.
+		renderRaycastDynamicWalls(editorMode);
 		renderRaycastSprites(editorMode);
 		return;
 	}
@@ -1013,6 +1023,65 @@ void Scene::render() {
 										  .kerning = text.kerning,
 										  .lineSpacing = text.lineSpacing,
 										  .entityId = static_cast<int>(entity)});
+	}
+	// 2D editor preview for raycast pushwalls — render the cell as a full-size
+	// textured quad (the same surface the first-person raycast view shows),
+	// sampled at the pushwall's tile inside its tileset atlas. In a raycast
+	// layer the entity is routed through `drawDynamicWalls` and skips this code
+	// path, so this loop only contributes in editor mode / pure-2D layers.
+	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, editorMode))
+			continue;
+		if (!layerAccepts(ent))
+			continue;
+		const auto& push = view.get<component::RaycastPushWall>(entity);
+		if (!push.tileset || !push.tileset->texture)
+			continue;
+		math::Transform worldTransform = getWorldTransform(ent);
+		worldTransform.scale().x() = 1.f;
+		worldTransform.scale().y() = 1.f;
+		const auto corners = push.tileset->getTileUv(push.tileIndex);
+		renderer::Renderer2D::drawQuad({.transform = worldTransform,
+										.color = math::vec4{1.f, 1.f, 1.f, 1.f},
+										.texture = push.tileset->texture,
+										.textureCoords = corners,
+										.entityId = static_cast<int>(entity)});
+	}
+	// 2D editor preview for raycast doors — render a single thin quad with the
+	// face texture, extended *along* the slide axis (plate normal is
+	// perpendicular to the opening direction). A north/south-opening door draws
+	// a vertical strip, an east/west-opening one a horizontal strip, so a
+	// designer can read the slide direction at a glance from the top-down view.
+	// We deliberately do not draw the lateral texture here — that would just
+	// duplicate the surrounding tilemap walls in editor view and obscure the
+	// door strip.
+	for (const auto view = registry.view<component::Transform, component::RaycastDoor>(); auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, editorMode))
+			continue;
+		if (!layerAccepts(ent))
+			continue;
+		const auto& door = view.get<component::RaycastDoor>(entity);
+		if (!door.tileset || !door.tileset->texture)
+			continue;
+		const auto worldTransform = getWorldTransform(ent);
+		const float cx = worldTransform.translation().x();
+		const float cy = worldTransform.translation().y();
+		const float cz = worldTransform.translation().z();
+		using OD = component::RaycastDoor::OpeningDirection;
+		const bool slideAlongY = (door.openingDirection == OD::North || door.openingDirection == OD::South);
+		constexpr float kPlateSpriteThickness = 0.18f;
+		math::Transform plateTr;
+		plateTr.translation() = math::vec3{cx, cy, cz};
+		plateTr.scale() =
+				math::vec3{slideAlongY ? kPlateSpriteThickness : 1.f, slideAlongY ? 1.f : kPlateSpriteThickness, 1.f};
+		const auto corners = door.tileset->getTileUv(door.faceTileIndex);
+		renderer::Renderer2D::drawQuad({.transform = plateTr,
+										.color = math::vec4{1.f, 1.f, 1.f, 1.f},
+										.texture = door.tileset->texture,
+										.textureCoords = corners,
+										.entityId = static_cast<int>(entity)});
 	}
 }
 
@@ -1106,6 +1175,203 @@ void Scene::renderRaycastSprites(const bool iEditorMode) {
 	renderer::RendererRaycast::drawSprites(raycastSprites);
 }
 
+namespace {
+/// Compute the (minU, minV, maxU, maxV) sub-rectangle of a tile inside its tileset atlas.
+auto tileUvRectFromTileset(const Tileset& iTileset, const uint32_t iTileIndex) -> math::vec4 {
+	const auto corners = iTileset.getTileUv(iTileIndex);
+	// `getTileUv` returns BL, BR, TR, TL — picking BL and TR gives the (minU, minV)
+	// and (maxU, maxV) corners directly.
+	return math::vec4{corners[0].x(), corners[0].y(), corners[2].x(), corners[2].y()};
+}
+}// namespace
+
+void Scene::renderRaycastDynamicWalls(const bool iEditorMode) {
+	OWL_PROFILE_FUNCTION()
+
+	// Pushwalls — uniform-texture cubes, route to drawDynamicWalls.
+	std::vector<renderer::RaycastDynamicWallData> walls;
+	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); const auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, iEditorMode))
+			continue;
+		if (!layerAccepts(ent))
+			continue;
+		const auto& push = view.get<component::RaycastPushWall>(entity);
+		if (!push.tileset || !push.tileset->texture)
+			continue;
+		const math::Transform worldTransform = getWorldTransform(ent);
+		walls.push_back({.worldCenter = {worldTransform.translation().x(), worldTransform.translation().y()},
+						 .halfExtent = {std::max(1e-3f, worldTransform.scale().x() * 0.5f),
+										std::max(1e-3f, worldTransform.scale().y() * 0.5f)},
+						 .texture = push.tileset->texture,
+						 .uvRect = tileUvRectFromTileset(*push.tileset, push.tileIndex),
+						 .tint = math::vec4{1.f, 1.f, 1.f, 1.f},
+						 .wallHeight = 1.f,
+						 .entityId = static_cast<int>(entity)});
+	}
+	renderer::RendererRaycast::drawDynamicWalls(walls);
+
+	// Doors — 2 static laterals + 1 moving plate per door cell, route to drawDoors.
+	std::vector<renderer::RaycastDoorData> doors;
+	for (const auto view = registry.view<component::Transform, component::RaycastDoor>(); const auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, iEditorMode))
+			continue;
+		if (!layerAccepts(ent))
+			continue;
+		const auto& door = view.get<component::RaycastDoor>(entity);
+		if (!door.tileset || !door.tileset->texture)
+			continue;
+		const math::Transform worldTransform = getWorldTransform(ent);
+		doors.push_back({.openingDirection = static_cast<uint8_t>(door.openingDirection),
+						 .cellCenter = {worldTransform.translation().x(), worldTransform.translation().y()},
+						 .plateOffset = door.currentOffset,
+						 .faceTexture = door.tileset->texture,
+						 .faceUvRect = tileUvRectFromTileset(*door.tileset, door.faceTileIndex),
+						 .lateralTexture = door.tileset->texture,
+						 .lateralUvRect = tileUvRectFromTileset(*door.tileset, door.lateralTileIndex),
+						 .tint = math::vec4{1.f, 1.f, 1.f, 1.f},
+						 .wallHeight = 1.f,
+						 .entityId = static_cast<int>(entity)});
+	}
+	renderer::RendererRaycast::drawDoors(doors);
+}
+
+void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
+	OWL_PROFILE_FUNCTION()
+
+	// Find primary player position once (used for built-in proximity activation).
+	math::vec2 playerWorldXY{0.f, 0.f};
+	bool hasPlayer = false;
+	if (const Entity player = getPrimaryPlayer()) {
+		const auto wt = getWorldTransform(player);
+		playerWorldXY = {wt.translation().x(), wt.translation().y()};
+		hasPlayer = true;
+	}
+
+	// Doors — Idle → Opening → Open → Closing → Idle cycle.
+	// The entity's Transform.translation stays fixed at the cell centre; only the
+	// internal `currentOffset` (= plate distance from cell centre along `slideDirection`)
+	// changes. When the door has a `PhysicBody`, its kinematic position is set to the
+	// plate's current world location so the player collides with the moving plate, not
+	// the static cell volume.
+	for (const auto view = registry.view<component::Transform, component::RaycastDoor>(); const auto entity: view) {
+		const Entity ent{entity, this};
+		auto& door = view.get<component::RaycastDoor>(entity);
+		auto& transform = view.get<component::Transform>(entity);
+
+		// Built-in activation (proximity + key edge). `interactionKey == 0` disables.
+		if (door.state == component::RaycastDoor::State::Idle && door.interactionKey != 0 && hasPlayer) {
+			const float dx = playerWorldXY.x() - transform.transform.translation().x();
+			const float dy = playerWorldXY.y() - transform.transform.translation().y();
+			const float distSq = dx * dx + dy * dy;
+			const bool keyHeld = input::Input::isKeyPressed(door.interactionKey);
+			const bool keyEdge = keyHeld && !door.keyHeldLastTick;
+			if (keyEdge && distSq <= door.interactionRange * door.interactionRange)
+				door.state = component::RaycastDoor::State::Opening;
+			door.keyHeldLastTick = keyHeld;
+		} else if (door.interactionKey != 0) {
+			door.keyHeldLastTick = input::Input::isKeyPressed(door.interactionKey);
+		}
+
+		const float prevOffset = door.currentOffset;
+		// `slideDistance` is always exactly 1 cell — that's the door's contract; the
+		// extra 1-pixel margin needed to fully hide the plate behind the pocket-side
+		// wall is added in the renderer, not in the state machine.
+		switch (door.state) {
+			case component::RaycastDoor::State::Idle:
+				break;
+			case component::RaycastDoor::State::Opening:
+				door.currentOffset += std::max(0.f, door.slideSpeed) * iTimeStep;
+				if (door.currentOffset >= 1.f) {
+					door.currentOffset = 1.f;
+					door.state = component::RaycastDoor::State::Open;
+					door.holdTimer = std::max(0.f, door.holdTime);
+				}
+				break;
+			case component::RaycastDoor::State::Open:
+				door.holdTimer -= iTimeStep;
+				if (door.holdTimer <= 0.f)
+					door.state = component::RaycastDoor::State::Closing;
+				break;
+			case component::RaycastDoor::State::Closing:
+				door.currentOffset -= std::max(0.f, door.closeSpeed) * iTimeStep;
+				if (door.currentOffset <= 0.f) {
+					door.currentOffset = 0.f;
+					door.state = component::RaycastDoor::State::Idle;
+				}
+				break;
+		}
+		const float delta = door.currentOffset - prevOffset;
+		if (std::abs(delta) > 1e-6f) {
+			// Synchronise the kinematic body to the plate's world position. The body
+			// represents the moving plate (collider), not the static cell volume.
+			// `PhysicCommand::setTransform` transparently handles both an
+			// explicit `PhysicBody` and the auto-created body for door entities, so
+			// a closed door is never traversable even without the user wiring a
+			// `PhysicBody` component manually.
+			using OD = component::RaycastDoor::OpeningDirection;
+			float dx = 0.f;
+			float dy = 0.f;
+			switch (door.openingDirection) {
+				case OD::East:
+					dx = 1.f;
+					break;
+				case OD::West:
+					dx = -1.f;
+					break;
+				case OD::North:
+					dy = 1.f;
+					break;
+				case OD::South:
+					dy = -1.f;
+					break;
+			}
+			const math::Transform wt = getWorldTransform(ent);
+			const float plateX = wt.translation().x() + dx * door.currentOffset;
+			const float plateY = wt.translation().y() + dy * door.currentOffset;
+			physic::PhysicCommand::setTransform(ent, math::vec2f{plateX, plateY}, wt.rotation().z());
+		}
+	}
+
+	// Pushwalls — Idle → Moving → Final, one-shot.
+	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); const auto entity: view) {
+		const Entity ent{entity, this};
+		auto& push = view.get<component::RaycastPushWall>(entity);
+		auto& transform = view.get<component::Transform>(entity);
+
+		if (push.state == component::RaycastPushWall::State::Idle && push.interactionKey != 0 && hasPlayer) {
+			const float dx = playerWorldXY.x() - transform.transform.translation().x();
+			const float dy = playerWorldXY.y() - transform.transform.translation().y();
+			const float distSq = dx * dx + dy * dy;
+			const bool keyHeld = input::Input::isKeyPressed(push.interactionKey);
+			const bool keyEdge = keyHeld && !push.keyHeldLastTick;
+			if (keyEdge && distSq <= push.interactionRange * push.interactionRange)
+				push.state = component::RaycastPushWall::State::Moving;
+			push.keyHeldLastTick = keyHeld;
+		} else if (push.interactionKey != 0) {
+			push.keyHeldLastTick = input::Input::isKeyPressed(push.interactionKey);
+		}
+
+		const float prevOffset = push.currentOffset;
+		if (push.state == component::RaycastPushWall::State::Moving) {
+			push.currentOffset += std::max(0.f, push.slideSpeed) * iTimeStep;
+			if (push.currentOffset >= push.slideDistance) {
+				push.currentOffset = push.slideDistance;
+				push.state = component::RaycastPushWall::State::Final;
+			}
+		}
+		const float delta = push.currentOffset - prevOffset;
+		if (std::abs(delta) > 1e-6f) {
+			transform.transform.translation().x() += push.slideDirection.x() * delta;
+			transform.transform.translation().y() += push.slideDirection.y() * delta;
+			const math::Transform wt = getWorldTransform(ent);
+			physic::PhysicCommand::setTransform(ent, math::vec2f{wt.translation().x(), wt.translation().y()},
+												wt.rotation().z());
+		}
+	}
+}
+
 void Scene::resolveAllTilemapAssets() {
 	if (!core::Application::instanced())
 		return;
@@ -1136,19 +1402,52 @@ void Scene::resolveAllTilemapAssets() {
 			tilemap.asset = std::move(resolved);
 	}
 
-	// Phase 2 — resolve the asset's `.owltileset` (only for assets that don't already carry
-	// a tileset).
+	// Phase 2 — resolve `.owltileset` references shared between tilemaps,
+	// raycast doors and raycast pushwalls. A per-scene cache keyed by the
+	// path string makes sure each `.owltileset` is loaded once and the same
+	// `shared<Tileset>` is reused everywhere — so a door that picks the same
+	// atlas as the world's tilemap doesn't double the GPU memory footprint.
+	// `TilemapAsset::tilesetPath` is a `std::filesystem::path`; the raycast door /
+	// pushwall components use `std::string`. We normalise to `std::filesystem::path`
+	// here so the lambda accepts both call sites (Windows clang is strict about the
+	// `string → path` direction even though it converts implicitly elsewhere). The
+	// cache key is the canonical `generic_string()` form so two callers spelling the
+	// same path with different separators still share the load.
+	std::unordered_map<std::string, shared<Tileset>> tilesetCache;
+	const auto resolveTileset = [&](const std::filesystem::path& iPath) -> shared<Tileset> {
+		if (iPath.empty())
+			return nullptr;
+		const std::string key = iPath.generic_string();
+		if (const auto cached = tilesetCache.find(key); cached != tilesetCache.end())
+			return cached->second;
+		auto fresh = mkShared<Tileset>();
+		const bool loaded = loadFromAssetDirs(
+				iPath, [&](const std::filesystem::path& iFullPath) -> bool { return fresh->loadFromFile(iFullPath); });
+		if (!loaded)
+			return nullptr;
+		tilesetCache.emplace(key, fresh);
+		return fresh;
+	};
 	for (const auto view = registry.view<component::Tilemap>(); auto entity: view) {
 		auto& tilemap = view.get<component::Tilemap>(entity);
 		if (!tilemap.asset || tilemap.asset->tileset || tilemap.asset->tilesetPath.empty())
 			continue;
-		auto resolved = mkShared<Tileset>();
-		const bool loaded =
-				loadFromAssetDirs(tilemap.asset->tilesetPath, [&](const std::filesystem::path& iPath) -> bool {
-					return resolved->loadFromFile(iPath);
-				});
-		if (loaded)
+		if (auto resolved = resolveTileset(tilemap.asset->tilesetPath); resolved)
 			tilemap.asset->tileset = std::move(resolved);
+	}
+	for (const auto view = registry.view<component::RaycastDoor>(); auto entity: view) {
+		auto& door = view.get<component::RaycastDoor>(entity);
+		if (door.tileset || door.tilesetPath.empty())
+			continue;
+		if (auto resolved = resolveTileset(door.tilesetPath); resolved)
+			door.tileset = std::move(resolved);
+	}
+	for (const auto view = registry.view<component::RaycastPushWall>(); auto entity: view) {
+		auto& push = view.get<component::RaycastPushWall>(entity);
+		if (push.tileset || push.tilesetPath.empty())
+			continue;
+		if (auto resolved = resolveTileset(push.tilesetPath); resolved)
+			push.tileset = std::move(resolved);
 	}
 }
 
@@ -1642,5 +1941,14 @@ OWL_API void Scene::onComponentAdded<component::RendererTag>([[maybe_unused]] co
 template<>
 OWL_API void Scene::onComponentAdded<component::Tilemap>([[maybe_unused]] const Entity& iEntity,
 														 [[maybe_unused]] component::Tilemap& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::RaycastDoor>([[maybe_unused]] const Entity& iEntity,
+															 [[maybe_unused]] component::RaycastDoor& ioComponent) {}
+
+template<>
+OWL_API void
+Scene::onComponentAdded<component::RaycastPushWall>([[maybe_unused]] const Entity& iEntity,
+													[[maybe_unused]] component::RaycastPushWall& ioComponent) {}
 
 }// namespace owl::scene

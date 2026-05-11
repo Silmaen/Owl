@@ -15,6 +15,7 @@
 #include "gui/widgets/AssetField.h"
 #include "gui/widgets/CurveEditor.h"
 
+#include "input/KeyCodes.h"
 #include "renderer/Renderer.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
@@ -102,6 +103,89 @@ void drawVec3Control(const std::string& iLabel, math::vec3& iValues, const float
 	ImGui::Columns(1);
 
 	ImGui::PopID();
+}
+
+/**
+ * @brief
+ *  Tile picker — current-tile thumbnail + popup with the full atlas grid.
+ *
+ * Used by `RaycastDoor` / `RaycastPushWall` inspectors so a designer can pick a
+ * tile visually instead of memorising indices. The popup mirrors the layout
+ * of `TilePalette`: every tile in the atlas as a square button, scoped by
+ * `PushID` so concurrent pickers don't share state. Click highlights the
+ * current selection with the same primary-brush colour as the editor.
+ *
+ * @param[in] iLabel ImGui label printed in front of the thumbnail.
+ * @param[in] iTileset The tileset whose atlas to sample (no-op if null).
+ * @param[in,out] ioTileIndex Current tile index; updated when the user picks one.
+ * @return True when the user picked a different tile this frame.
+ */
+auto tilePickField(const char* iLabel, const shared<scene::Tileset>& iTileset, uint32_t& ioTileIndex) -> bool {
+	ImGui::PushID(iLabel);
+	ImGui::TextUnformatted(iLabel);
+	ImGui::SameLine();
+	bool changed = false;
+	constexpr float kThumbSize = 32.f;
+	const auto popupId = std::format("##picker_{}", iLabel);
+	// Thumbnail button — shows the currently-selected tile or a placeholder.
+	if (iTileset && iTileset->texture && iTileset->texture->isLoaded() && ioTileIndex < iTileset->tileCount()) {
+		const auto uvs = iTileset->getTileUv(ioTileIndex);
+		const ImVec2 uv0 = gui::vec(uvs[3]);// top-left
+		const ImVec2 uv1 = gui::vec(uvs[1]);// bottom-right
+		if (ImGui::ImageButton("##thumb", static_cast<ImTextureID>(iTileset->texture->getRendererId()),
+							   ImVec2(kThumbSize, kThumbSize), uv0, uv1))
+			ImGui::OpenPopup(popupId.c_str());
+	} else {
+		if (ImGui::Button("##thumb", ImVec2(kThumbSize, kThumbSize)))
+			ImGui::OpenPopup(popupId.c_str());
+	}
+	ImGui::SameLine();
+	ImGui::Text("#%u", ioTileIndex);
+	if (ImGui::BeginPopup(popupId.c_str())) {
+		if (!iTileset || !iTileset->texture || !iTileset->texture->isLoaded()) {
+			ImGui::TextDisabled("(no tileset assigned)");
+		} else {
+			constexpr float kPickerThumb = 32.f;
+			constexpr uint32_t kColumns = 8;
+			const auto tileCount = iTileset->tileCount();
+			for (uint32_t i = 0; i < tileCount; ++i) {
+				ImGui::PushID(static_cast<int>(i));
+				const bool highlighted = i == ioTileIndex;
+				if (highlighted) {
+					ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(255, 200, 60, 255));
+					ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 2.f);
+				}
+				const auto uvs = iTileset->getTileUv(i);
+				const ImVec2 uv0 = gui::vec(uvs[3]);
+				const ImVec2 uv1 = gui::vec(uvs[1]);
+				if (ImGui::ImageButton("##tile", static_cast<ImTextureID>(iTileset->texture->getRendererId()),
+									   ImVec2(kPickerThumb, kPickerThumb), uv0, uv1)) {
+					if (i != ioTileIndex) {
+						ioTileIndex = i;
+						changed = true;
+					}
+					ImGui::CloseCurrentPopup();
+				}
+				if (ImGui::IsItemHovered()) {
+					const auto& meta = iTileset->getTileMeta(i);
+					if (meta.name.empty())
+						ImGui::SetTooltip("#%u", i);
+					else
+						ImGui::SetTooltip("#%u %s", i, meta.name.c_str());
+				}
+				if (highlighted) {
+					ImGui::PopStyleVar();
+					ImGui::PopStyleColor();
+				}
+				ImGui::PopID();
+				if ((i + 1) % kColumns != 0 && (i + 1) < tileCount)
+					ImGui::SameLine();
+			}
+		}
+		ImGui::EndPopup();
+	}
+	ImGui::PopID();
+	return changed;
 }
 }// namespace
 
@@ -801,6 +885,172 @@ void renderProps(Tilemap& ioComponent) {
 	} else {
 		ImGui::TextDisabled("(no tilemap assigned)");
 	}
+}
+
+namespace {
+/**
+ * @brief
+ *  Editor combo for picking an interaction key code.
+ *
+ * Backed by the GLFW `input::key::*` constants — the same enum the rest of
+ * the engine consumes. `0` denotes "disabled" so a designer can author a
+ * door that only opens from Lua. The dropdown lists the keys most likely to
+ * be used as an in-world action (alphabetic + Enter/Space + arrows), the
+ * underlying field still accepts any uint16_t for power users editing the
+ * YAML directly.
+ * @param[in] iLabel ImGui label for the combo widget.
+ * @param[in,out] ioKey The current key code; updated in-place when the user picks one.
+ * @return True when the user changed the selection this frame.
+ */
+auto interactionKeyCombo(const char* iLabel, input::KeyCode& ioKey) -> bool {
+	struct Entry {
+		const char* name;
+		input::KeyCode code;
+	};
+	static constexpr std::array entries{
+			Entry{"(disabled)", 0},
+			Entry{"E", input::key::E},
+			Entry{"F", input::key::F},
+			Entry{"Q", input::key::Q},
+			Entry{"R", input::key::R},
+			Entry{"Space", input::key::Space},
+			Entry{"Enter", input::key::Enter},
+	};
+	const char* preview = "(custom)";
+	for (const auto& entry: entries) {
+		if (entry.code == ioKey) {
+			preview = entry.name;
+			break;
+		}
+	}
+	bool changed = false;
+	if (ImGui::BeginCombo(iLabel, preview)) {
+		for (const auto& entry: entries) {
+			const bool selected = entry.code == ioKey;
+			if (ImGui::Selectable(entry.name, selected)) {
+				ioKey = entry.code;
+				changed = true;
+			}
+			if (selected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+	return changed;
+}
+}// namespace
+
+void renderProps(RaycastDoor& ioComponent) {
+	// --- Tileset asset slot ---------------------------------------------------------------
+	const std::string tilesetLabel = ioComponent.tilesetPath.empty() ? "<drop a .owltileset>" : ioComponent.tilesetPath;
+	ImGui::TextUnformatted("Tileset");
+	ImGui::SameLine();
+	if (ImGui::Button(tilesetLabel.c_str(), ImVec2(-1.f, 0.f))) {
+		ioComponent.tilesetPath.clear();
+		ioComponent.tileset.reset();
+	}
+	fieldTooltip("Drop a .owltileset asset here, or click to clear. Point this at the same tileset "
+				 "the world tilemap uses to share the atlas texture — no double-load.");
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Tileset, dropped)) {
+		ioComponent.tilesetPath = dropped.generic_string();
+		ioComponent.tileset.reset();// force lazy reload at next scene resolve
+	}
+	tilePickField("Face Tile", ioComponent.tileset, ioComponent.faceTileIndex);
+	fieldTooltip("Click the thumbnail to pick the plate tile from the tileset atlas. Typical Wolf3D "
+				 "atlas slots: tile 24 (steel door) or 25 (elevator).");
+	tilePickField("Lateral Tile", ioComponent.tileset, ioComponent.lateralTileIndex);
+	fieldTooltip("Click the thumbnail to pick the jamb tile. Sampled on the two cube inside faces "
+				 "perpendicular to the opening direction. Typical Wolf3D atlas slots: tiles 98–105.");
+	using OD = RaycastDoor::OpeningDirection;
+	constexpr std::array kDirLabels{"North", "South", "East", "West"};
+	const auto dirIndex = static_cast<size_t>(ioComponent.openingDirection);
+	if (ImGui::BeginCombo("Opening Direction", kDirLabels[dirIndex])) {
+		for (size_t i = 0; i < kDirLabels.size(); ++i) {
+			const bool selected = i == dirIndex;
+			if (ImGui::Selectable(kDirLabels[i], selected))
+				ioComponent.openingDirection = static_cast<OD>(i);
+			if (selected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+	fieldTooltip("Cardinal direction the plate retracts to when opening. The door always slides "
+				 "exactly one cell (plus a 1-pixel margin so the plate is fully hidden when open).");
+	ImGui::DragFloat("Open Speed", &ioComponent.slideSpeed, 0.1f, 0.0f, 32.0f, "%.2f c/s");
+	fieldTooltip("Animation speed while opening, in cells per second.");
+	ImGui::DragFloat("Hold Time", &ioComponent.holdTime, 0.1f, 0.0f, 60.0f, "%.2f s");
+	fieldTooltip("How long the door stays fully open before automatically closing. 0 = close immediately.");
+	ImGui::DragFloat("Close Speed", &ioComponent.closeSpeed, 0.1f, 0.0f, 32.0f, "%.2f c/s");
+	fieldTooltip("Animation speed while closing, in cells per second.");
+	interactionKeyCombo("Interaction Key", ioComponent.interactionKey);
+	fieldTooltip("Key the player presses to open the door when in range. Pick (disabled) to drive activation "
+				 "exclusively from Lua via door.activate(entity_id).");
+	ImGui::DragFloat("Interaction Range", &ioComponent.interactionRange, 0.05f, 0.0f, 8.0f, "%.2f cells");
+	fieldTooltip("Maximum distance between the player and the door's current centre for the built-in "
+				 "interaction key to fire.");
+	ImGui::Separator();
+	const char* stateName = "idle";
+	switch (ioComponent.state) {
+		case RaycastDoor::State::Idle:
+			stateName = "idle";
+			break;
+		case RaycastDoor::State::Opening:
+			stateName = "opening";
+			break;
+		case RaycastDoor::State::Open:
+			stateName = "open";
+			break;
+		case RaycastDoor::State::Closing:
+			stateName = "closing";
+			break;
+	}
+	ImGui::Text("Runtime: state=%s offset=%.3f hold=%.3f", stateName, static_cast<double>(ioComponent.currentOffset),
+				static_cast<double>(ioComponent.holdTimer));
+}
+
+void renderProps(RaycastPushWall& ioComponent) {
+	const std::string tilesetLabel = ioComponent.tilesetPath.empty() ? "<drop a .owltileset>" : ioComponent.tilesetPath;
+	ImGui::TextUnformatted("Tileset");
+	ImGui::SameLine();
+	if (ImGui::Button(tilesetLabel.c_str(), ImVec2(-1.f, 0.f))) {
+		ioComponent.tilesetPath.clear();
+		ioComponent.tileset.reset();
+	}
+	fieldTooltip("Drop a .owltileset asset here, or click to clear. Point this at the same tileset "
+				 "the world tilemap uses to share the atlas texture — no double-load.");
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Tileset, dropped)) {
+		ioComponent.tilesetPath = dropped.generic_string();
+		ioComponent.tileset.reset();
+	}
+	tilePickField("Tile", ioComponent.tileset, ioComponent.tileIndex);
+	fieldTooltip("Click the thumbnail to pick the block tile from the tileset atlas. Sampled on every "
+				 "face of the moving cube.");
+	ImGui::DragFloat2("Slide Direction", ioComponent.slideDirection.data(), 0.05f, -1.0f, 1.0f, "%.2f");
+	fieldTooltip("Unit-length vector along which the pushwall slides when triggered.");
+	ImGui::DragFloat("Slide Distance", &ioComponent.slideDistance, 0.05f, 0.0f, 16.0f, "%.2f cells");
+	fieldTooltip("Total travel distance, in cells. Pushwalls slide once and stay at Final.");
+	ImGui::DragFloat("Slide Speed", &ioComponent.slideSpeed, 0.1f, 0.0f, 32.0f, "%.2f c/s");
+	fieldTooltip("Animation speed while moving, in cells per second.");
+	interactionKeyCombo("Interaction Key", ioComponent.interactionKey);
+	fieldTooltip("Key the player presses to trigger the pushwall when in range. "
+				 "Pick (disabled) to drive activation exclusively from Lua via pushwall.activate(entity_id).");
+	ImGui::DragFloat("Interaction Range", &ioComponent.interactionRange, 0.05f, 0.0f, 8.0f, "%.2f cells");
+	fieldTooltip("Maximum distance between the player and the pushwall's current centre for the built-in "
+				 "interaction key to fire.");
+	ImGui::Separator();
+	const char* stateName = "idle";
+	switch (ioComponent.state) {
+		case RaycastPushWall::State::Idle:
+			stateName = "idle";
+			break;
+		case RaycastPushWall::State::Moving:
+			stateName = "moving";
+			break;
+		case RaycastPushWall::State::Final:
+			stateName = "final";
+			break;
+	}
+	ImGui::Text("Runtime: state=%s offset=%.3f", stateName, static_cast<double>(ioComponent.currentOffset));
 }
 
 }// namespace owl::gui::component

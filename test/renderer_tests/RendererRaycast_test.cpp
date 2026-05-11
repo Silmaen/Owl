@@ -22,6 +22,7 @@
 using namespace owl;
 using owl::renderer::CameraOrtho;
 using owl::renderer::RaycastConfig;
+using owl::renderer::RaycastDynamicWallData;
 using owl::renderer::RaycastSpriteData;
 using owl::renderer::Renderer;
 using owl::renderer::RendererRaycast;
@@ -462,5 +463,183 @@ TEST(RendererRaycast, statsResetClearsAllCounters) {
 	EXPECT_EQ(stats.spriteCount, 0u);
 	EXPECT_EQ(stats.spriteStripeCount, 0u);
 	EXPECT_EQ(stats.spriteOccludedCount, 0u);
+	EXPECT_EQ(stats.dynamicWallCount, 0u);
+	EXPECT_EQ(stats.dynamicWallStripeCount, 0u);
+	EXPECT_EQ(stats.doorCount, 0u);
+	EXPECT_EQ(stats.doorStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawDynamicWallsEmptySpanIsNoOp) {
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RendererRaycast::drawDynamicWalls(std::span<const RaycastDynamicWallData>{});
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.dynamicWallCount, 0u);
+	EXPECT_EQ(stats.dynamicWallStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawDynamicWallsEmitsStripesWhenInFront) {
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RaycastDynamicWallData door{};
+	door.worldCenter = {0.f, 3.f};// 3 cells ahead, 1-cell box, clear FOV
+	door.halfExtent = {0.5f, 0.5f};
+	door.texture = makeSpriteTexture();
+	std::array walls{door};
+	RendererRaycast::drawDynamicWalls(std::span<const RaycastDynamicWallData>(walls.data(), walls.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.dynamicWallCount, 1u);
+	EXPECT_GT(stats.dynamicWallStripeCount, 0u);
+}
+
+TEST(RendererRaycast, drawDynamicWallsOccludedByCloserStaticWall) {
+	// Static corridor wall at cellY=5 (worldY=~2.5) blocks every ray; the door
+	// sitting at worldY=4 is fully behind and should produce no stripes.
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const TilemapAsset tm = makeCorridorTilemap();
+	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 1);
+	RaycastDynamicWallData door{};
+	door.worldCenter = {0.f, 4.f};
+	door.halfExtent = {0.5f, 0.5f};
+	door.texture = makeSpriteTexture();
+	std::array walls{door};
+	RendererRaycast::drawDynamicWalls(std::span<const RaycastDynamicWallData>(walls.data(), walls.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.dynamicWallCount, 0u);
+	EXPECT_EQ(stats.dynamicWallStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawDynamicWallsBeyondMaxDistanceIsCulled) {
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 4.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RaycastDynamicWallData door{};
+	door.worldCenter = {0.f, 10.f};// 10 > maxDistance 4
+	door.halfExtent = {0.5f, 0.5f};
+	door.texture = makeSpriteTexture();
+	std::array walls{door};
+	RendererRaycast::drawDynamicWalls(std::span<const RaycastDynamicWallData>(walls.data(), walls.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.dynamicWallCount, 0u);
+	EXPECT_EQ(stats.dynamicWallStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawDynamicWallsWithoutTextureIsSkipped) {
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RaycastDynamicWallData door{};
+	door.worldCenter = {0.f, 3.f};
+	door.halfExtent = {0.5f, 0.5f};
+	door.texture = nullptr;
+	std::array walls{door};
+	RendererRaycast::drawDynamicWalls(std::span<const RaycastDynamicWallData>(walls.data(), walls.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.dynamicWallCount, 0u);
+	EXPECT_EQ(stats.dynamicWallStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawDoorsEmptySpanIsNoOp) {
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RendererRaycast::drawDoors(std::span<const owl::renderer::RaycastDoorData>{});
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.doorCount, 0u);
+	EXPECT_EQ(stats.doorStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawDoorsClosedShowsLateralsAndPlate) {
+	// Closed door (plateOffset = 0) at 3 cells ahead: the plate sits at the cell
+	// centre so a ray cast head-on through the cell should hit it. Plus the two
+	// laterals are always there, hit by rays at the cell edges.
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 128};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	owl::renderer::RaycastDoorData door{};
+	door.cellCenter = {0.f, 3.f};
+	door.openingDirection = 2;// East
+	door.plateOffset = 0.f;// closed
+	door.faceTexture = makeSpriteTexture();
+	door.lateralTexture = makeSpriteTexture();
+	std::array doors{door};
+	RendererRaycast::drawDoors(std::span<const owl::renderer::RaycastDoorData>(doors.data(), doors.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.doorCount, 1u);
+	EXPECT_GT(stats.doorStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawDoorsOpenStillRendersLaterals) {
+	// Open door (plateOffset = cellSize): the plate is hidden inside the pocket,
+	// but the two static laterals are still drawn — so the door must still
+	// contribute at least some stripes (just not the plate stripes).
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 128};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	owl::renderer::RaycastDoorData door{};
+	door.cellCenter = {0.f, 3.f};
+	door.openingDirection = 2;// East
+	door.plateOffset = 1.f;// fully open — plate hidden in pocket
+	door.faceTexture = makeSpriteTexture();
+	door.lateralTexture = makeSpriteTexture();
+	std::array doors{door};
+	RendererRaycast::drawDoors(std::span<const owl::renderer::RaycastDoorData>(doors.data(), doors.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.doorCount, 1u);
+	EXPECT_GT(stats.doorStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, drawDoorsWithoutTextureIsSkipped) {
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	owl::renderer::RaycastDoorData door{};
+	door.cellCenter = {0.f, 3.f};
+	door.faceTexture = nullptr;
+	door.lateralTexture = nullptr;
+	std::array doors{door};
+	RendererRaycast::drawDoors(std::span<const owl::renderer::RaycastDoorData>(doors.data(), doors.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.doorCount, 0u);
+	EXPECT_EQ(stats.doorStripeCount, 0u);
 	teardownRendererStack();
 }

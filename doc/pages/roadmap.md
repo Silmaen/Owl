@@ -263,6 +263,31 @@ scene authoring, and cross-platform packaging from any host.
         - Choose target: Linux x64, Windows x64 (independently of host)
         - Automatic runner binary selection for target platform
         - Platform-specific post-processing (launcher script for Linux, .zip for Windows)
+- Tileset Editor
+    - ![Planned][planned] Compose atlas by inserting / removing source images
+        - Today `TilesetDocument` only edits per-tile metadata (name, collidable,
+          wallHeight, transparent). The atlas itself is authored offline — drop
+          a PNG, edit metadata. There's no way to **build** or **mutate** an
+          atlas from inside the editor.
+        - Add tile-slot mutation in the document: drop an image onto an empty
+          (or existing) slot to insert/replace it; right-click a slot to clear
+          it. The underlying atlas PNG is rebuilt on disk (or kept in memory
+          until the asset is saved).
+        - Bulk insert: select multiple PNGs from the Content Browser and drop
+          them onto the tileset grid — fill consecutive empty slots, growing
+          the grid if needed (configurable: extend columns vs add rows).
+        - "Remove" doesn't delete the slot index (would shift every downstream
+          tilemap's tile indices); it just clears the pixels to fully
+          transparent and clears the meta, so existing tilemaps that referenced
+          that index render an empty cell instead of mis-pointing at the next
+          tile.
+        - Asset-pipeline hook: when the atlas changes the tilemap previews,
+          door/pushwall thumbnails, and any open `TilemapDocument` reload
+          automatically (the tileset is shared via the per-scene cache added
+          in v0.2.0, so a single invalidation propagates).
+        - Undo/redo: every insert / replace / remove pushes a single
+          `ModifyTilesetCommand` (mirrors `ModifyEntityCommand` semantics)
+          with the standard 1 s merge-coalescing for rapid drag chains.
 - In-Editor Documentation
     - ![Planned][planned] Mermaid diagram rendering in the help panel
         - Today the md4c-based renderer treats ` ```mermaid ` fences as plain code blocks; the
@@ -289,7 +314,7 @@ scene authoring, and cross-platform packaging from any host.
         - Side-by-side preview of the source `.md` next to the rendered output (debug aid for
           contributors editing pages)
 
-## v0.2.2 -- Expected 2026-12-01
+## v0.2.3 -- Expected 2027-01-01
 
 **Goal:** Round out the 2D experience with dynamic lighting, ship the long-awaited
 custom file picker, and add core gameplay primitives (inventory, enemies).
@@ -329,11 +354,75 @@ custom file picker, and add core gameplay primitives (inventory, enemies).
           for previewing what the runtime camera will see without entering Play.
           Toggleable from the camera entity's context menu or a viewport overlay
           dropdown. Reverts to the editor camera on demand.
+- UI / HUD Editor
+    - ![Planned][planned] Dedicated HUD layer, decoupled from the world renderer
+        - Today the sample project ships a two-layer stack `[Renderer2D(world),
+          Renderer2D(ui)]` and entities are tagged `ui` by hand — fine, but
+          authoring the HUD still happens in the same top-down viewport as the
+          world, with no preview of how it will look stretched over a raycast
+          scene
+        - Promote UI authoring to a **dedicated HUD layer** in the renderer
+          stack that always renders on top, in pixel-space, regardless of what
+          the layers underneath draw (raycast, voxel, 2D world, …)
+        - **HUD Editor mode** in Owl Nest: a viewport variant that shows the
+          HUD over a configurable backdrop (solid colour, a snapshot of the
+          target gameplay scene, or live preview) and snaps to screen-space
+          coordinates by default. Drag-drop sprites / text / panels onto the
+          HUD; the existing `Ui*` components are reused
+        - The HUD becomes a scene-level asset (`.owlhud` or a dedicated
+          renderer-stack entry) referenced by gameplay scenes instead of being
+          embedded as one renderer in each scene's stack — so the same HUD can
+          ride on top of a raycast scene, a voxel scene, or a 2D scene without
+          duplication
 - Gameplay
     - ![Planned][planned] Inventory system
         - Collectible objects
         - Key-locked switches
     - ![Planned][planned] Enemies
+
+## v0.2.2 -- Expected 2026-12-01
+
+**Goal:** Add a third non-2D rendering mode — an isometric pseudo-3D renderer in the
+**Transport Tycoon Deluxe** tradition — riding on the renderer stack architecture
+established in v0.2.0 and slotted between the existing 2D/raycast/voxel options.
+
+- Isometric Renderer
+    - ![Planned][planned] `RendererIsometric` layer (Transport Tycoon-style)
+        - Add `RendererIsometricLayer` (factory key `"RendererIsometric"`) so
+          scenes can mix the isometric mode with the existing 2D / raycast /
+          voxel stack just by listing it in `owl_project.yml` and tagging
+          entities with the matching `RendererTag`.
+        - **Pseudo-3D presentation** in the Transport Tycoon Deluxe style: a
+          fixed 2:1 dimetric projection (no free-look camera), pre-rendered
+          sprite tiles drawn back-to-front by world-space Y then Z. World axes
+          map to screen as `screen.x = (worldX − worldY) · (tileW / 2)` and
+          `screen.y = (worldX + worldY) · (tileH / 2) − worldZ · zStep`. Tile
+          sprites are 64×32 px by default (configurable on the layer's
+          `DefaultConfig`).
+        - **Heightmap-aware tilemap**: extend `scene::Tileset` with optional
+          per-tile slope/ramp metadata (flat, N/S/E/W/NE/NW/SE/SW slope) and
+          a `cornerHeights` quad. The renderer composites the corresponding
+          ramp / cliff sprite variant so the world has gentle slopes like
+          TTD without modelling actual 3D meshes.
+        - **Multi-Z stacking**: entities sort first by their projected Y
+          (depth), then by world Z (elevation) so buildings stack cleanly on
+          top of terrain tiles and over each other. The painter's order keeps
+          the Renderer2D batching path; no new GPU pipeline required for the
+          v0.2.2 cut.
+        - **Editor support**: dedicated isometric viewport mode (locked to
+          the dimetric projection, world-axis cursor + tile highlight),
+          `TilemapDocument` gains an isometric preview when the target
+          tileset is flagged `kind: isometric`, and gizmos use the
+          isometric basis so click-drag of an entity feels native instead
+          of zooming around in cartesian XY.
+        - **Demo scene** in `sample_project/scenes/`: a small TTD-style
+          town with a couple of buildings, ramps connecting two height
+          plateaus, and a player entity that walks along the grid using
+          `world_player.lua` (z-aware variant).
+        - **Tests**: layer factory registration, scene round-trip with
+          `EnabledRenderers: [{ Name: iso, Type: RendererIsometric }]`,
+          the projection helpers (`worldToScreen` / `screenToWorld`),
+          and the depth-sort comparator.
 
 ## v0.2.1 -- Expected 2026-10-01
 
@@ -536,19 +625,45 @@ the tilemap system, and scene-to-scene transition effects.
           a proper PNG alpha channel. Known v0.2.0 limitation: a sprite
           sitting behind a transparent wall draws on top of it (sprites
           and walls aren't merged per column yet).
-        - Doors and pushwalls — dedicated entity components
-          (`component::RaycastDoor` + `component::RaycastPushWall`), not tile
-          flags, so each instance is addressable from scripts and triggers.
-          Shared infrastructure: AABB ray intersection in the DDA so doors
-          and pushwalls can sit at sub-cell positions during animation,
-          per-instance kinematic Box2D body (static at rest → kinematic
-          during slide → static at end-state), state machine advanced in
-          `Scene::onUpdateRuntime`, hybrid activation
-          (built-in `interactionKey` + `interactionRange` defaults for
-          out-of-the-box use, plus Lua API for custom logic). Pushwalls
-          slide a configurable distance once and stay; doors open / hold /
-          close on a cycle.
-    - ![In Progress][progress] Raycasting map editor in Owl Nest
+        - ![Done][done] Doors and pushwalls — dedicated entity components
+          (`component::RaycastDoor` + `component::RaycastPushWall`), not
+          tile flags, so each instance is addressable from scripts.
+          Pushwalls are full-cell cubes routed through
+          `RendererRaycast::drawDynamicWalls`. Doors are 1×1 cells with
+          zero-thickness laterals (cube inside faces perpendicular to
+          the opening direction) and a zero-thickness sliding plate
+          (normal perpendicular to the opening direction) routed
+          through `RendererRaycast::drawDoors`. `OpeningDirection` is
+          a cardinal enum (N / S / E / W); the door always slides
+          exactly one cell with a +1-pixel hermetic-closure margin
+          that scales with the open progress. Both components reference
+          textures via `tilesetPath` + tile indices — a per-scene
+          tileset cache reuses the world tilemap's
+          `shared<Tileset>` instance so the atlas texture isn't
+          double-loaded. Box2D collision is handled automatically:
+          `PhysicCommand::init` auto-creates a kinematic body matching
+          the moving surface (thin box for the door's plate, full
+          cube for pushwalls), so a closed door is never traversable
+          out of the box. Activation is hybrid: built-in
+          `interactionKey` (default `E`) + `interactionRange`
+          (default 1.5 cells) for out-of-the-box use, set
+          `interactionKey = 0` to disable the built-in path and drive
+          activation from Lua via `door.activate / door.close /
+          door.is_open / door.get_state` and `pushwall.activate /
+          pushwall.has_moved / pushwall.get_state`. State machines:
+          doors cycle Idle → Opening → Open (held for `holdTime`) →
+          Closing → Idle; pushwalls go Idle → Moving → Final once.
+          Editor: visual tile picker in the inspector (click a
+          thumbnail to open a grid popup of the tileset's tiles);
+          green outline around every pushwall in the 2D viewport;
+          yellow destination line + endpoint circle for the selected
+          door / pushwall; thin plate strip in the door's 2D preview
+          oriented along the slide axis. `Add Component ▸ Raycast
+          Door / Raycast PushWall` is gated by layer type (only shown
+          for entities on a `RendererRaycast` layer; the same gating
+          hides `Ui*` entries unless the entity sits on a
+          `Renderer2D`). **Thin walls** were dropped from scope.
+    - ![Done][done] Raycasting map editor in Owl Nest
         - ![Done][done] 2D grid editor for wall placement and texture assignment
           (`TilemapDocument` ships in v0.2.0)
         - ![Done][done] Entity placement on the grid via the existing scene
@@ -557,13 +672,11 @@ the tilemap system, and scene-to-scene transition effects.
         - ![Done][done] Top-down preview alongside first-person preview — the
           editor viewport is the top-down view; Play mode is the first-person
           view
-        - ![Planned][planned] In-viewport camera marker — a small dot + forward
+        - ![Done][done] In-viewport camera marker — a small dot + forward
           arrow + FOV cone for every `component::Camera` entity, drawn in the
           top-down editor view so the level designer can see where the player
-          will spawn and which direction it faces. Selectable, manipulable via
-          the standard gizmo. Toggleable from a viewport overlay button and
-          from the ribbon's `Show` group. (Promoted from v0.2.2 to close this
-          item.)
+          will spawn and which direction it faces. Toggleable from a viewport
+          overlay button and from the ribbon's `Show` group.
     - ![Planned][planned] Lighting for raycasting
         - Distance-based shading (fog/darkness)
         - Optional point lights with falloff
@@ -584,6 +697,62 @@ the tilemap system, and scene-to-scene transition effects.
         - Tests: `ScreenTransition_test` covers default state, custom-colour
           play, progress advancement, completion, all wipe variants, reset,
           and the `< 1 ms` duration clamp.
+- Editor Performance
+    - ![Planned][planned] Faster scene loading
+        - Profile the current synchronous path (`SceneSerializer::deserialize`,
+          `Scene::resolveAllTilemapAssets`, `Scene::resolveAllPrefabs`,
+          `Application::loadFromPack`) on a 2000-entity demo scene to identify
+          the top bottlenecks before optimising blind
+        - Lazy texture / tileset / prefab resolution: defer asset I/O off the
+          critical path so the editor opens the scene as soon as the YAML is
+          parsed, then streams resources in
+        - Cache the parsed `YAML::Node` across rapid re-opens (Ctrl+Z on
+          "Close Scene", undo of "New Scene")
+        - Target: opening `sample_project/scenes/raycast_demo.owl` in under
+          half its current time on the reference dev preset
+    - ![Planned][planned] Async scene loading
+        - Route `SceneSerializer::deserialize` + asset resolution through the
+          existing Taskflow `Scheduler` so the editor UI remains responsive
+          (toolbar, ribbon, profiler dock stay interactive) while a scene
+          loads — like the already-async pack-write / save flows
+        - Visual feedback in the viewport while loading: a non-modal spinner /
+          progress bar overlay, cancel button, and clear "loading <name>"
+          status line. Loaded entities materialise as their resolution
+          completes so the designer sees the scene populate rather than a
+          hard switch
+        - Cancelling mid-load discards the partial scene and reverts to the
+          previously-active document
+- In-Game Performance
+    - ![Planned][planned] Entity / system update budget
+        - Profile `Scene::onUpdateRuntime` (native scripts → Lua → dynamic
+          walls → player input → physics → links → sound → triggers) on a
+          worst-case scene (hundreds of entities, dozens of Lua scripts,
+          dozens of triggers) and tighten the slowest loops
+        - Skip dormant entities in the hot loops: entities with
+          `Visibility.gameVisible = false` (or whose ancestor is hidden)
+          should bypass script/physics ticks instead of being filtered
+          per-loop (already done for triggers — generalise to scripts and
+          to `EntityLink` resolution)
+        - Per-frame allocation audit: the trigger / animated-sprite / door
+          loops still build `std::vector` scratch buffers each tick — promote
+          them to scene-owned, frame-reset pools (mirrors the per-column
+          `zBufferPerColumn` pattern in `RendererRaycast`)
+        - Target: the reference demo runs at the configured frame target on
+          a 50-entity / 5-Lua-script scene without ever stepping into the
+          orange / red TRACE band
+    - ![Planned][planned] Entity-management hot paths
+        - Cache the primary-player lookup result on Scene (invalidated on
+          entity destroy / `Player` add/remove) instead of re-scanning the
+          full registry every tick from
+          `Scene::updateRaycastDynamicWalls` + `Scene::onUpdateRuntime`
+          + trigger overlap check + sound listener pose
+        - `findEntityByUUID` builds the hash map lazily — keep it warm and
+          invalidate only on entity create/destroy (the editor's hierarchy
+          drag-drop, Ctrl+D duplicate, and Lua `scene.find_entity` all
+          hammer it during a single tick)
+        - Pre-resolve `EntityLink.linkedEntity` once per scene start
+          instead of every tick when the cached handle is stale (the
+          per-tick name lookup re-walks `view<Tag>` linearly)
 - Known bug fixes (deferred from v0.2.0 — all closed during v0.2.0)
     - ![Done][done] Editor keyboard shortcuts unreliable — *fixed in v0.2.0*
         - Modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) now bypass

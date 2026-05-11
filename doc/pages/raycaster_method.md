@@ -272,6 +272,257 @@ perpendicular distance). The implementation differences from a pixel-perfect
    Slang quad shader. A future PR can swap the inner loop for a dedicated
    shader without touching the public API.
 
+## Dynamic walls (doors + pushwalls)
+
+Doors and pushwalls share an activation pattern (proximity-and-key with a
+Lua override) and a state-machine spine, but their geometry is different
+enough that they ship as separate renderer payloads:
+
+- **`RaycastPushWall`** is a **full-cell cube** that slides one shot and
+  stays. A single tileset+index pair covers every face; the entity's
+  `Transform` translates with the wall (its world position is the cube
+  centre). State machine: Idle → Moving → Final.
+
+  Pushwalls route through
+  `RendererRaycast::drawDynamicWalls(std::span<const RaycastDynamicWallData>)`.
+
+- **`RaycastDoor`** is a **1×1 cell** whose internal **plate** slides
+  exactly one cell (plus 1 pixel for hermetic closure) along one of the
+  four cardinal directions (`OpeningDirection::{North, South, East,
+  West}`). Visually the cell decomposes into:
+    - Two **laterals**, applied as **zero-thickness textures** on the
+      cube's two inside faces *perpendicular to the opening direction*
+      (the cell's N and S inside faces for N/S openings, E and W for
+      E/W). They never move; they're what the player sees through the
+      open doorway.
+    - One **plate**, also zero-thickness. The plate's surface normal is
+      **perpendicular to the opening direction** (a N-opening door has
+      plate surfaces facing east and west), so the player approaches the
+      door head-on along the axis perpendicular to the opening direction.
+      The plate extends along the slide axis, slides exactly one cell
+      into the pocket when open, and is hidden behind the pocket-side
+      wall at the fully-open pose.
+
+  `faceTexture`'s U=1 always sits on the **opening-direction side** of
+  the cell — the renderer flips U appropriately so both sides of the
+  plate (east-side view and west-side view of a N-opening door, for
+  example) display the texture with that orientation. State machine:
+  Idle → Opening → Open (`holdTime` seconds) → Closing → Idle.
+
+  Doors route through
+  `RendererRaycast::drawDoors(std::span<const RaycastDoorData>)`. The
+  entity's `Transform.translation` stays put at the cell centre — only
+  the internal plate offset animates. The entity's `Transform.scale` is
+  ignored; the cell is always one tile.
+
+Both passes run after `drawTilemapWalls` and before `drawSprites`:
+
+```text
+beginScene → drawTilemapWalls → drawDynamicWalls → drawDoors → drawSprites → endScene
+```
+
+### Texture sourcing — shared tilesets
+
+Both door and pushwall components reference textures through a
+**tileset + tile index** pair (`tilesetPath` + `tileIndex` /
+`faceTileIndex` / `lateralTileIndex`) rather than carrying their own
+PNG. At scene resolve a per-scene cache keyed by the tileset path
+deduplicates loads, so a door whose `tilesetPath` matches the world
+tilemap's tileset path shares the *same* `shared<Tileset>` (and its
+atlas texture) — no double-load on the GPU. The renderer payloads
+(`RaycastDoorData`, `RaycastDynamicWallData`) carry the atlas texture
+plus a `uvRect` (minU, minV, maxU, maxV) that the stripe emitter
+remaps the local `[0,1]` U/V into.
+
+### Slab-method intersection
+
+`castRayAabb` is shared between both paths. Per screen column:
+
+1. Build the world-space ray `cameraPos + t · (cameraDir + cameraPlane · cameraX)`.
+2. Run the slab method against the cube AABB:
+   `tx1 = (minX − origin.x) / dir.x` etc., then
+   `tNear = max(tEnterX, tEnterY)`, `tFar = min(tExitX, tExitY)`.
+3. Reject the column if `tNear > tFar` or `tFar < 0` (miss) or `tNear`
+   exceeds `RaycastConfig::maxDistance`.
+4. Skip columns where the static-tilemap zBuffer already holds a closer
+   wall (`perpDist >= zBuffer[col]`), so a static wall in front of an
+   open door still wins.
+
+For pushwalls one cube hit closes the work for that column.
+
+For doors:
+
+5. **Plate test** — solve for the t where the ray crosses the plate's
+   plane (`x = cx` for N/S openings, `y = cy` for E/W openings) and
+   check that the hit point is within the plate's extent along the
+   slide axis. The plate's `plateOffset` is multiplied by
+   `(1 + 1/64)` so the closed pose (`offset = 0`) sits *exactly* at
+   the cell centre — without the scaled margin a 1-pixel gap leaked
+   on the side opposite to the opening direction.
+6. **Lateral test** — when the cube's exit face is on the slide axis
+   (N/S face for Y-slide, E/W face for X-slide), the lateral is at
+   `tFar`. A small depth bias (1 mm in cell units) is subtracted so
+   the lateral always wins the z-test against the pocket-side wall
+   sitting at the exact same depth in the static tilemap pass.
+7. The closest of `{plate, lateral}` that beats the zBuffer wins for
+   that column; both register their `perpDist` in the zBuffer so
+   sprites afterwards occlude correctly.
+
+### U convention on the plate
+
+The U=1-on-opening-direction rule is implemented without the standard
+slab view-direction flip — we compute U directly from the hit point and
+flip only based on the opening sign:
+
+```text
+u = (slideAlongY ? (hitY − minY) : (hitX − minX))
+if (slideSign < 0)   // South or West opening
+    u = 1 − u
+```
+
+That gives U=1 at the maximum-axis side (N/E) for positive openings and
+U=1 at the minimum-axis side (S/W) for negative openings, regardless of
+which side the player views the plate from. Both passes (and the static
+tilemap pass) inset by half a texel to avoid bilinear-filter wrap with
+the engine's default `REPEAT` wrap mode.
+
+Because `cameraDir` is unit length and `cameraPlane` is perpendicular to
+it, `tNear` is already a perpendicular-to-camera-plane distance — no
+extra projection required.
+
+### Physics — hermetic when closed
+
+`PhysicCommand::init` auto-creates a **kinematic Box2D body** for any
+`RaycastDoor` / `RaycastPushWall` entity that doesn't already carry an
+explicit `PhysicBody` component. The body's collider matches the
+moving surface:
+
+- Door: thin box, `0.1` cell thick perpendicular to the slide axis,
+  `1.0` cell along the slide axis — exactly the plate footprint.
+- Pushwall: full `1×1×1` cube — matches the rendered surface.
+
+`Scene::updateRaycastDynamicWalls` mirrors the plate position onto the
+body each tick via `PhysicCommand::setTransform`, so:
+
+- **Closed door = not traversable.** The plate is at the cell centre,
+  the kinematic body is at the cell centre, the player collides with
+  it.
+- **Mid-slide door** = body tracks the plate, so the player gets
+  pushed if a closing door catches them.
+- **Open door** = body sits inside the pocket (where the plate is
+  hidden), the cell is clear, the player walks through.
+
+### State machine and activation
+
+| Door state | Pushwall state | Tick behaviour                                                                       |
+|------------|----------------|--------------------------------------------------------------------------------------|
+| Idle       | Idle           | Wait for activation (built-in key or Lua call).                                      |
+| Opening    | Moving         | `currentOffset += slideSpeed · dt`; transition when `currentOffset ≥ slideDistance`. |
+| Open       | —              | `holdTimer -= dt`; transition to Closing when `holdTimer ≤ 0`.                       |
+| Closing    | —              | `currentOffset -= closeSpeed · dt`; back to Idle when `currentOffset ≤ 0`.           |
+| —          | Final          | Stay forever.                                                                        |
+
+Each tick `Scene::updateRaycastDynamicWalls` advances the state machine,
+shifts the entity's local `Transform.translation` along `slideDirection` by
+the offset delta, and — if the entity carries a `PhysicBody` — mirrors the
+new world position onto the Box2D body via
+`PhysicCommand::setTransform`. Kinematic bodies respect `setTransform`, so
+the player collider sees the door's actual current position.
+
+Built-in activation runs *before* the physics step:
+- Detect player presence via `Scene::getPrimaryPlayer()`.
+- If `interactionKey != 0` and the player centre is within
+  `interactionRange` cells of the entity centre, and `interactionKey`
+  transitioned from released to held this tick, kick the state machine
+  out of Idle.
+- Setting `interactionKey = 0` disables the built-in path entirely; Lua
+  scripts drive activation through the `door` and `pushwall` API tables.
+
+### Lua API
+
+```lua
+-- door (open / hold / close cycle)
+door.activate(entity_id)    -- Idle  → Opening
+door.close(entity_id)       -- Opening / Open → Closing (and clears holdTimer)
+door.is_open(entity_id)     -> boolean (true when state == "open")
+door.get_state(entity_id)   -> "idle" | "opening" | "open" | "closing"
+
+-- pushwall (one-shot slide)
+pushwall.activate(entity_id)  -- Idle → Moving
+pushwall.has_moved(entity_id) -> boolean (true when state == "final")
+pushwall.get_state(entity_id) -> "idle" | "moving" | "final"
+```
+
+All bindings are sandbox-safe: they take a UUID (the same value Trigger
+bindings use) and silently no-op on missing entities or missing
+components.
+
+### Authoring a door in Owl Nest
+
+A Wolf3D-style door occupies one full cell — the engine draws the
+laterals (cell-side jambs) and the moving plate for you.
+
+1. **Empty the underlying tile.** Pick the cell where the door should sit
+   and clear the tilemap entry in the `TilemapDocument` — the door
+   entity replaces the static wall.
+2. **Create the entity.** In the scene hierarchy, `Add Entity ▸ Empty`
+   and place its `Transform.translation` at the cell's world centre.
+   `Transform.scale` is ignored — the cell is always 1×1.
+3. **Add the component.** `Add Component ▸ Raycast Door`. The menu only
+   surfaces this entry when the entity's renderer layer (resolved via
+   `RendererTag`) is a `RendererRaycast` layer.
+4. **Pick the tileset and the tiles.** In the inspector:
+    - **Tileset**: drag-drop the `.owltileset` asset that backs the
+      world tilemap (or any other tileset). The engine reuses the
+      same `shared<Tileset>` if the world tilemap loaded that path,
+      so no double-load on the GPU.
+    - **Face Tile**: click the thumbnail and pick the door face from
+      the tile grid (Wolf3D atlas: tile 24 = steel door,
+      tile 25 = elevator).
+    - **Lateral Tile**: pick the jamb / track (Wolf3D atlas: tiles
+      98–105 — pick the variant whose colour matches the surrounding
+      walls).
+    - **Opening Direction**: combo with North / South / East / West.
+      The door slides exactly one cell along this direction.
+5. **Test.** Switch to Play mode, approach the door, press `E`. The
+   plate slides into the pocket, holds open for `holdTime`, then
+   slides back. The kinematic body is auto-created — the closed door
+   physically blocks the player without any additional setup.
+
+In the editor 2D view, the door is rendered as a thin strip with the
+face tile, oriented along the slide axis (a vertical strip opens
+horizontally, a horizontal strip opens vertically). When the door is
+selected, a yellow destination line with a circle endpoint shows
+where the plate will end up when fully open.
+
+### Authoring a pushwall
+
+Pushwalls are full-block secret passages — one texture covers every
+face.
+
+1. Choose a wall cell in the tilemap. Clear the static tile (or leave
+   it; the pushwall will render on top while it sits at rest).
+2. `Add Entity ▸ Empty` at the cell centre, leave `Transform.scale` at
+   `(1, 1, 1)`.
+3. `Add Component ▸ Raycast PushWall` (menu-gated to raycast layers).
+4. In the inspector, drag the tileset asset and pick a tile index
+   from the grid popup. Set `Slide Direction` along the axis the
+   wall should retreat when triggered (often into the room behind
+   it) and `Slide Distance` for how many cells it slides.
+5. In Play mode, walk up to the pushwall and press `E` — it slides
+   once and stays there, opening a passage. The kinematic body is
+   auto-created.
+
+In the editor 2D view, every pushwall is drawn with a **green outline**
+so they're easy to spot among the static walls. The selected pushwall
+additionally shows a yellow destination line + endpoint circle pointing
+at its final position.
+
+To drive either object from a Lua script instead of the built-in key,
+set the component's `Interaction Key` to `(disabled)` and call
+`door.activate(entity_id)` or `pushwall.activate(entity_id)` from your
+script.
+
 ## Known limitations of the current code
 
 - **Tilemap world transform is ignored** — the cast assumes the tilemap is
@@ -294,12 +545,18 @@ perpendicular distance). The implementation differences from a pixel-perfect
 
 ## File map
 
-| File                                                                | Role                                          |
-|---------------------------------------------------------------------|-----------------------------------------------|
-| `source/owl/public/renderer/RendererRaycast.h`                      | Public static-facade API                      |
-| `source/owl/private/renderer/RendererRaycast.cpp`                   | Implementation: pose extraction, DDA, stripes |
-| `source/owl/private/renderer/RendererRaycastLayer.h/cpp`            | `RenderLayer` adapter + YAML config parsing   |
-| `source/owl/private/scene/Scene.cpp` (`Scene::render` tilemap loop) | Dispatch by active-layer type key             |
-| `test/renderer_tests/RendererRaycast_test.cpp`                      | 7 unit tests                                  |
-| `sample_project/scenes/raycast_demo.owl`                            | Wolfenstein-inspired demo scene               |
-| `sample_project/scripts/raycast_player.lua`                         | Player input matching the pose convention     |
+| File                                                                | Role                                                  |
+|---------------------------------------------------------------------|-------------------------------------------------------|
+| `source/owl/public/renderer/RendererRaycast.h`                      | Public static-facade API + payload structs            |
+| `source/owl/private/renderer/RendererRaycast.cpp`                   | Implementation: pose, DDA, stripes, dynamic-wall AABB |
+| `source/owl/private/renderer/RendererRaycastLayer.h/cpp`            | `RenderLayer` adapter + YAML config parsing           |
+| `source/owl/public/scene/component/RaycastDoor.h`                   | Door component (open / hold / close cycle)            |
+| `source/owl/public/scene/component/RaycastPushWall.h`               | Pushwall component (one-shot slide)                   |
+| `source/owl/private/scene/component/RaycastDoor.cpp`                | Door YAML serialize / deserialize                     |
+| `source/owl/private/scene/component/RaycastPushWall.cpp`            | Pushwall YAML serialize / deserialize                 |
+| `source/owl/private/scene/Scene.cpp` (`Scene::render` tilemap loop) | Dispatch by active-layer type key + dynamic-wall tick |
+| `source/owl/private/script/LuaBindings.cpp` (`door` + `pushwall`)   | Lua API tables                                        |
+| `test/renderer_tests/RendererRaycast_test.cpp`                      | Renderer-level unit tests                             |
+| `test/scene_tests/RaycastDynamicWalls_test.cpp`                     | Door / pushwall state-machine + serializer tests      |
+| `sample_project/scenes/raycast_demo.owl`                            | Wolfenstein-inspired demo scene                       |
+| `sample_project/scripts/raycast_player.lua`                         | Player input matching the pose convention             |

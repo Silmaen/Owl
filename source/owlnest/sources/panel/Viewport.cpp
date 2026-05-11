@@ -19,6 +19,8 @@
 #include <owl.h>
 #include <scene/SceneSerializer.h>
 #include <scene/TilemapAsset.h>
+#include <scene/component/RaycastDoor.h>
+#include <scene/component/RaycastPushWall.h>
 #include <scene/component/Tilemap.h>
 
 OWL_DIAG_PUSH
@@ -467,6 +469,84 @@ void Viewport::renderOverlay() const {
 												.color = coneColor,
 												.entityId = static_cast<int>(entity)});
 			}
+		}
+
+		// Pushwall / door editor gizmos — only rendered in Edit state above so they
+		// never leak into Play. Pushwalls get a green outline around every block;
+		// the selected pushwall (or door) additionally gets a destination guide line
+		// with a circle at its open-position endpoint.
+		const scene::Entity selectedForGizmo = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
+		constexpr math::vec4 kPushwallOutline{0.25f, 0.85f, 0.35f, 1.f};
+		constexpr math::vec4 kDestinationLine{0.95f, 0.85f, 0.25f, 1.f};
+		// 1. Green outline around every pushwall.
+		for (const auto view =
+					 activeScene->registry.view<scene::component::RaycastPushWall, scene::component::Transform>();
+			 const auto entity: view) {
+			const scene::Entity ent{entity, activeScene.get()};
+			math::Transform worldTransform = activeScene->getWorldTransform(ent);
+			// Pushwalls are 1×1 cells regardless of any non-unit scale the designer
+			// may have set on the entity — match the runtime renderer's footprint.
+			worldTransform.scale().x() = 1.f;
+			worldTransform.scale().y() = 1.f;
+			renderer::Renderer2D::drawRect(
+					{.transform = worldTransform, .color = kPushwallOutline, .entityId = static_cast<int>(entity)});
+		}
+		// 2. Destination guide for the selected pushwall.
+		if (selectedForGizmo && selectedForGizmo.hasComponent<scene::component::RaycastPushWall>()) {
+			const auto& push = selectedForGizmo.getComponent<scene::component::RaycastPushWall>();
+			const math::Transform wt = activeScene->getWorldTransform(selectedForGizmo);
+			const math::vec3 origin{wt.translation().x(), wt.translation().y(), wt.translation().z() + 0.03f};
+			const math::vec3 dest{origin.x() + push.slideDirection.x() * push.slideDistance,
+								  origin.y() + push.slideDirection.y() * push.slideDistance, origin.z()};
+			renderer::Renderer2D::drawLine({.point1 = origin,
+											.point2 = dest,
+											.color = kDestinationLine,
+											.entityId = static_cast<int>(static_cast<uint32_t>(selectedForGizmo))});
+			math::Transform circleTr;
+			circleTr.translation() = dest;
+			circleTr.scale() = math::vec3{0.2f, 0.2f, 1.f};
+			renderer::Renderer2D::drawCircle({.transform = circleTr,
+											  .color = kDestinationLine,
+											  .thickness = 0.5f,
+											  .fade = 0.01f,
+											  .entityId = static_cast<int>(static_cast<uint32_t>(selectedForGizmo))});
+		}
+		// 3. Destination guide for the selected door (no full-cell outline — the
+		// existing thin face-tile sprite already indicates the door's footprint).
+		if (selectedForGizmo && selectedForGizmo.hasComponent<scene::component::RaycastDoor>()) {
+			const auto& door = selectedForGizmo.getComponent<scene::component::RaycastDoor>();
+			using OD = scene::component::RaycastDoor::OpeningDirection;
+			float dx = 0.f;
+			float dy = 0.f;
+			switch (door.openingDirection) {
+				case OD::East:
+					dx = 1.f;
+					break;
+				case OD::West:
+					dx = -1.f;
+					break;
+				case OD::North:
+					dy = 1.f;
+					break;
+				case OD::South:
+					dy = -1.f;
+					break;
+			}
+			const math::Transform wt = activeScene->getWorldTransform(selectedForGizmo);
+			const math::vec3 origin{wt.translation().x(), wt.translation().y(), wt.translation().z() + 0.03f};
+			const math::vec3 dest{origin.x() + dx, origin.y() + dy, origin.z()};
+			renderer::Renderer2D::drawLine({.point1 = origin,
+											.point2 = dest,
+											.color = kDestinationLine,
+											.entityId = static_cast<int>(static_cast<uint32_t>(selectedForGizmo))});
+			math::Transform circleTr;
+			circleTr.translation() = dest;
+			circleTr.scale() = math::vec3{0.2f, 0.2f, 1.f};
+			renderer::Renderer2D::drawCircle({.transform = circleTr,
+											  .color = kDestinationLine,
+											  .thickness = 0.5f,
+											  .fade = 0.01f,
+											  .entityId = static_cast<int>(static_cast<uint32_t>(selectedForGizmo))});
 		}
 	}
 
