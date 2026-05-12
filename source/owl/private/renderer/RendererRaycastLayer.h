@@ -11,6 +11,7 @@
 #include "renderer/CameraOrtho.h"
 #include "renderer/RenderLayer.h"
 #include "renderer/RendererRaycast.h"
+#include "scene/Tileset.h"
 
 namespace owl::renderer {
 /**
@@ -139,6 +140,18 @@ private:
 	RaycastConfig m_config;
 	/// Viewport in pixels (latched by `setViewport`).
 	math::vec2ui m_viewport{1280, 720};
+	/// Resolved floor tileset — lazily loaded from `m_config.floorTilesetPath` on first `onBeginFrame`.
+	shared<scene::Tileset> m_floorTileset;
+	/// Resolved ceiling tileset.
+	shared<scene::Tileset> m_ceilingTileset;
+	/**
+	 * @brief
+	 *  Lazily load `m_floorTileset` / `m_ceilingTileset` and populate the runtime
+	 *  texture / UV-rect fields on `m_config` so the renderer can sample them.
+	 *  Safe to call every frame — only does work when the path is non-empty and
+	 *  the cached tileset is still null.
+	 */
+	void resolveBackdropTilesets();
 };
 
 }// namespace owl::renderer

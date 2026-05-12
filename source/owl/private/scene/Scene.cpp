@@ -355,6 +355,10 @@ void Scene::destroyEntity(Entity& ioEntity) {
 			std::erase(uuids, ioEntity.getUUID());
 		}
 	}
+	// If we're destroying the cached primary player, drop the cache so the next
+	// `getPrimaryPlayer()` re-scans. Cheaper than emitting an EnTT signal here.
+	if (m_primaryPlayerCache == ioEntity.m_entityHandle)
+		m_primaryPlayerCache = entt::null;
 	registry.destroy(ioEntity.m_entityHandle);
 	ioEntity.m_entityHandle = entt::null;
 }
@@ -367,6 +371,10 @@ void Scene::onStartRuntime() {
 	// Tilemap tilesets are normally resolved on first render; we need them
 	// before physics init so collidable cells generate static fixtures.
 	resolveAllTilemapAssets();
+
+	// Warm the EntityLink cache so the per-frame link loop never hits its
+	// O(N²) tag-rescan path on the first tick of play.
+	resolveAllEntityLinks();
 
 	physic::PhysicCommand::init(this);
 
@@ -563,8 +571,12 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		}
 		return;
 	}
-	// update native scripts
+	// update native scripts — skip dormant (hidden in game) entities so their
+	// `onUpdate` doesn't burn time on objects the player can't see; `onCreate`
+	// is still deferred to the first visible tick.
 	registry.view<component::NativeScript>().each([iTimeStep, this](auto ioEntity, auto& ioNsc) -> auto {
+		if (!isEffectivelyVisible(Entity{ioEntity, this}, /*iEditorMode=*/false))
+			return;
 		if (!ioNsc.instance) {
 			ioNsc.instance = ioNsc.instantiateScript();
 			ioNsc.instance->entity = Entity{ioEntity, this};
@@ -573,8 +585,11 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		ioNsc.instance->onUpdate(iTimeStep);
 	});
 
-	// update Lua scripts
+	// update Lua scripts — same dormant-entity skip; the instance survives,
+	// only its `on_update` tick is suspended while the host is hidden.
 	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
+		if (!isEffectivelyVisible(Entity{entity, this}, /*iEditorMode=*/false))
+			continue;
 		if (auto& luaScript = view.get<component::LuaScript>(entity);
 			luaScript.instance && luaScript.instance->isValid())
 			luaScript.instance->onUpdate(iTimeStep.getSeconds());
@@ -594,37 +609,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	// Physics
 	physic::PhysicCommand::frame(iTimeStep);
 
-	// links
-	for (const auto view = registry.view<component::Transform, component::EntityLink>(); const auto entity: view) {
-		auto [transform, link] = view.get<component::Transform, component::EntityLink>(entity);
-		if (!link.linkedEntity || link.linkedEntity.getComponent<component::Tag>().tag != link.linkedEntityName) {
-			for (const auto view2 = registry.view<component::Tag>(); const auto entity2: view2) {
-				if (view2.get<component::Tag>(entity2).tag == link.linkedEntityName) {
-					link.linkedEntity = {entity2, this};
-					break;
-				}
-			}
-		}
-		// Copy world position from linked entity, converting to local space.
-		const Entity thisEntity{entity, this};
-		const math::Transform linkedWorld = getWorldTransform(link.linkedEntity);
-		if (const auto& [parentId, childrenIds] = thisEntity.getComponent<component::Hierarchy>();
-			parentId != core::UUID{0}) {
-			if (const Entity parent = findEntityByUUID(parentId); parent) {
-				const math::mat4 parentWorldInv = math::inverse(getWorldTransform(parent)());
-				const math::vec4 localPos =
-						parentWorldInv * math::vec4{linkedWorld.translation().x(), linkedWorld.translation().y(),
-													linkedWorld.translation().z(), 1.0f};
-				transform.transform.translation().x() = localPos.x();
-				transform.transform.translation().y() = localPos.y();
-				transform.transform.translation().z() = localPos.z();
-			} else {
-				transform.transform.translation() = linkedWorld.translation();
-			}
-		} else {
-			transform.transform.translation() = linkedWorld.translation();
-		}
-	}
+	updateEntityLinks();
 	// Sound: update listener and spatial source positions
 	for (const auto view = registry.view<component::Transform, component::SoundListener>(); const auto entity: view) {
 		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
@@ -1451,6 +1436,71 @@ void Scene::resolveAllTilemapAssets() {
 	}
 }
 
+void Scene::resolveAllEntityLinks() {
+	OWL_PROFILE_FUNCTION()
+
+	// Build a temp tag → entity map once (O(N)), then resolve every
+	// EntityLink in a single O(N) pass. Without this warm-up the runtime
+	// loop falls into the O(N²) "scan all Tag components for the matching
+	// name" path on the first tick of every scene start.
+	std::unordered_map<std::string, entt::entity> tagIndex;
+	for (const auto view = registry.view<component::Tag>(); const auto entity: view)
+		tagIndex.emplace(view.get<component::Tag>(entity).tag, entity);
+	for (const auto view = registry.view<component::EntityLink>(); const auto entity: view) {
+		auto& link = view.get<component::EntityLink>(entity);
+		if (link.linkedEntityName.empty()) {
+			link.linkedEntity = {};
+			continue;
+		}
+		if (const auto it = tagIndex.find(link.linkedEntityName); it != tagIndex.end())
+			link.linkedEntity = Entity{it->second, this};
+		else
+			link.linkedEntity = {};
+	}
+}
+
+void Scene::updateEntityLinks() {
+	OWL_PROFILE_FUNCTION()
+
+	const auto rescanTag = [this](component::EntityLink& ioLink) -> void {
+		for (const auto view = registry.view<component::Tag>(); const auto entity: view) {
+			if (view.get<component::Tag>(entity).tag == ioLink.linkedEntityName) {
+				ioLink.linkedEntity = {entity, this};
+				return;
+			}
+		}
+	};
+	const auto applyLocalFromWorld = [this](component::Transform& ioTransform, const Entity& iHost,
+											const math::Transform& iLinkedWorld) -> void {
+		const auto& [parentId, childrenIds] = iHost.getComponent<component::Hierarchy>();
+		if (parentId == core::UUID{0}) {
+			ioTransform.transform.translation() = iLinkedWorld.translation();
+			return;
+		}
+		const Entity parent = findEntityByUUID(parentId);
+		if (!parent) {
+			ioTransform.transform.translation() = iLinkedWorld.translation();
+			return;
+		}
+		const math::mat4 parentWorldInv = math::inverse(getWorldTransform(parent)());
+		const math::vec4 localPos =
+				parentWorldInv * math::vec4{iLinkedWorld.translation().x(), iLinkedWorld.translation().y(),
+											iLinkedWorld.translation().z(), 1.0f};
+		ioTransform.transform.translation().x() = localPos.x();
+		ioTransform.transform.translation().y() = localPos.y();
+		ioTransform.transform.translation().z() = localPos.z();
+	};
+	for (const auto view = registry.view<component::Transform, component::EntityLink>(); const auto entity: view) {
+		const Entity host{entity, this};
+		if (!isEffectivelyVisible(host, /*iEditorMode=*/false))
+			continue;
+		auto [transform, link] = view.get<component::Transform, component::EntityLink>(entity);
+		if (!link.linkedEntity || link.linkedEntity.getComponent<component::Tag>().tag != link.linkedEntityName)
+			rescanTag(link);
+		applyLocalFromWorld(transform, host, getWorldTransform(link.linkedEntity));
+	}
+}
+
 void Scene::renderUI(const math::mat4& iEffectiveViewProjection) {
 	OWL_PROFILE_FUNCTION()
 
@@ -1577,9 +1627,20 @@ auto Scene::getPrimaryCamera() -> Entity {
 }
 
 auto Scene::getPrimaryPlayer() -> Entity {
+	// Hot path: the cache survives across frames; the scan only fires once
+	// per invalidation (entity destroy / Player component add or remove).
+	if (m_primaryPlayerCache != entt::null && registry.valid(m_primaryPlayerCache)) {
+		if (const auto* player = registry.try_get<component::Player>(m_primaryPlayerCache);
+			player != nullptr && player->primary)
+			return Entity{m_primaryPlayerCache, this};
+		// Cached entity is no longer a primary player — fall through to rescan.
+		m_primaryPlayerCache = entt::null;
+	}
 	for (const auto view = registry.view<component::Player>(); const auto entity: view) {
-		if (view.get<component::Player>(entity).primary)
+		if (view.get<component::Player>(entity).primary) {
+			m_primaryPlayerCache = entity;
 			return Entity{entity, this};
+		}
 	}
 	return {};
 }
@@ -1861,7 +1922,12 @@ OWL_API void Scene::onComponentAdded<component::PhysicBody>([[maybe_unused]] con
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Player>([[maybe_unused]] const Entity& iEntity,
-														[[maybe_unused]] component::Player& ioComponent) {}
+														[[maybe_unused]] component::Player& ioComponent) {
+	// New Player component → drop the cache so `getPrimaryPlayer()` picks up
+	// the newly-tagged primary on the next call (covers both the "no player
+	// yet" case and the "designer toggled `primary` on a new entity" case).
+	invalidatePrimaryPlayerCache();
+}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Trigger>([[maybe_unused]] const Entity& iEntity,

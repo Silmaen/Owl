@@ -38,6 +38,29 @@ auto makeSpriteTexture() -> shared<owl::renderer::gpu::Texture2D> {
 			owl::renderer::gpu::Texture::Specification{.size = {16, 16},
 													   .format = owl::renderer::gpu::ImageFormat::Rgba8});
 }
+
+/**
+ * @brief
+ *  Test-only `RaycastConfig` builder.
+ *
+ * Wraps value-init + per-field assignment so the call sites stay one-line
+ * without designated-init lists — clang's `-Wmissing-designated-field-initializers`
+ * fires on every omitted field in a partial designated init, even when the
+ * struct field has a default member initializer. Tests only care about
+ * `fovDegrees` / `maxDistance` / `numRays`; every other field keeps its
+ * struct default.
+ * @param[in] iFov Horizontal FOV in degrees.
+ * @param[in] iMaxDist Max DDA distance in cells.
+ * @param[in] iNumRays Number of rays (= screen columns).
+ * @return The populated config.
+ */
+auto makeTestConfig(const float iFov, const float iMaxDist, const uint32_t iNumRays) -> RaycastConfig {
+	RaycastConfig cfg;
+	cfg.fovDegrees = iFov;
+	cfg.maxDistance = iMaxDist;
+	cfg.numRays = iNumRays;
+	return cfg;
+}
 }// namespace
 
 namespace {
@@ -149,7 +172,7 @@ TEST(RendererRaycast, setViewportLatchesNonZeroSize) {
 TEST(RendererRaycast, drawWithEmptyTilemapDoesNothing) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	const TilemapAsset empty;
@@ -184,7 +207,7 @@ TEST(RendererRaycast, missAllRaysWhenSurroundedByEmptyCells) {
 	layer.tiles.assign(tm.width * tm.height, owl::scene::component::g_EmptyTileIndex);
 	tm.layers.push_back(std::move(layer));
 
-	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 8.f, .numRays = 32};
+	const RaycastConfig config = makeTestConfig(60.f, 8.f, 32);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 1);
@@ -206,7 +229,7 @@ TEST(RendererRaycast, hitsWallRowFromBelow) {
 	const CameraOrtho cam(0, 800, 0, 600);// rotation=0 → forward = +Y in our convention
 	const TilemapAsset tm = makeCorridorTilemap();
 
-	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(60.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 7);
@@ -258,7 +281,7 @@ TEST(RendererRaycast, transparentTilesDoNotStopTheRay) {
 	tm.layers.push_back(std::move(layer));
 
 	// Single ray straight ahead so we can count hits exactly.
-	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 1};
+	const RaycastConfig config = makeTestConfig(60.f, 16.f, 1);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 1);
@@ -300,7 +323,7 @@ TEST(RendererRaycast, transparentBudgetCapsTheStack) {
 		for (uint32_t x = 0; x < tm.width; ++x) layer.tiles[y * tm.width + x] = 1;
 	tm.layers.push_back(std::move(layer));
 
-	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 32.f, .numRays = 1};
+	const RaycastConfig config = makeTestConfig(60.f, 32.f, 1);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 1);
@@ -318,7 +341,7 @@ TEST(RendererRaycast, opaqueWallStopsRayLikeBeforePR3) {
 	// the legacy single-hit behaviour (one stripe per ray that hit).
 	const CameraOrtho cam(0, 800, 0, 600);
 	const TilemapAsset tm = makeCorridorTilemap();// row 5 fully opaque
-	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(60.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 1);
@@ -332,7 +355,7 @@ TEST(RendererRaycast, opaqueWallStopsRayLikeBeforePR3) {
 TEST(RendererRaycast, drawSpritesEmptySpanIsNoOp) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawSprites({});
@@ -346,7 +369,7 @@ TEST(RendererRaycast, drawSpritesEmptySpanIsNoOp) {
 TEST(RendererRaycast, drawSpritesCullsBehindCamera) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);// rotation=0 → forward = +Y
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RaycastSpriteData behind{};
@@ -365,7 +388,7 @@ TEST(RendererRaycast, drawSpritesCullsBehindCamera) {
 TEST(RendererRaycast, drawSpritesEmitsStripesWhenInFront) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RaycastSpriteData front{};
@@ -389,7 +412,7 @@ TEST(RendererRaycast, drawSpritesOccludedByWall) {
 	// occluded — `spriteCount` stays 0 because every column was rejected.
 	const CameraOrtho cam(0, 800, 0, 600);
 	const TilemapAsset tm = makeCorridorTilemap();
-	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(60.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 1);
@@ -410,7 +433,7 @@ TEST(RendererRaycast, drawSpritesOccludedByWall) {
 TEST(RendererRaycast, drawSpritesBeyondMaxDistanceIsCulled) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 5.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 5.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RaycastSpriteData far{};
@@ -429,7 +452,7 @@ TEST(RendererRaycast, drawSpritesBeyondMaxDistanceIsCulled) {
 TEST(RendererRaycast, drawSpritesWithoutTextureIsSkipped) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RaycastSpriteData noTex{};
@@ -449,7 +472,7 @@ TEST(RendererRaycast, statsResetClearsAllCounters) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
 	const TilemapAsset tm = makeCorridorTilemap();
-	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 32};
+	const RaycastConfig config = makeTestConfig(60.f, 16.f, 32);
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 0);
 	RendererRaycast::endScene();
@@ -473,7 +496,7 @@ TEST(RendererRaycast, statsResetClearsAllCounters) {
 TEST(RendererRaycast, drawDynamicWallsEmptySpanIsNoOp) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawDynamicWalls(std::span<const RaycastDynamicWallData>{});
@@ -487,7 +510,7 @@ TEST(RendererRaycast, drawDynamicWallsEmptySpanIsNoOp) {
 TEST(RendererRaycast, drawDynamicWallsEmitsStripesWhenInFront) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RaycastDynamicWallData door{};
@@ -508,7 +531,7 @@ TEST(RendererRaycast, drawDynamicWallsOccludedByCloserStaticWall) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
 	const TilemapAsset tm = makeCorridorTilemap();
-	const RaycastConfig config{.fovDegrees = 60.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(60.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 1);
@@ -528,7 +551,7 @@ TEST(RendererRaycast, drawDynamicWallsOccludedByCloserStaticWall) {
 TEST(RendererRaycast, drawDynamicWallsBeyondMaxDistanceIsCulled) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 4.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 4.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RaycastDynamicWallData door{};
@@ -547,7 +570,7 @@ TEST(RendererRaycast, drawDynamicWallsBeyondMaxDistanceIsCulled) {
 TEST(RendererRaycast, drawDynamicWallsWithoutTextureIsSkipped) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RaycastDynamicWallData door{};
@@ -566,7 +589,7 @@ TEST(RendererRaycast, drawDynamicWallsWithoutTextureIsSkipped) {
 TEST(RendererRaycast, drawDoorsEmptySpanIsNoOp) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	RendererRaycast::drawDoors(std::span<const owl::renderer::RaycastDoorData>{});
@@ -583,7 +606,7 @@ TEST(RendererRaycast, drawDoorsClosedShowsLateralsAndPlate) {
 	// laterals are always there, hit by rays at the cell edges.
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 128};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 128);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	owl::renderer::RaycastDoorData door{};
@@ -607,7 +630,7 @@ TEST(RendererRaycast, drawDoorsOpenStillRendersLaterals) {
 	// contribute at least some stripes (just not the plate stripes).
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 128};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 128);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	owl::renderer::RaycastDoorData door{};
@@ -628,7 +651,7 @@ TEST(RendererRaycast, drawDoorsOpenStillRendersLaterals) {
 TEST(RendererRaycast, drawDoorsWithoutTextureIsSkipped) {
 	bootRendererStack();
 	const CameraOrtho cam(0, 800, 0, 600);
-	const RaycastConfig config{.fovDegrees = 75.f, .maxDistance = 16.f, .numRays = 64};
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	owl::renderer::RaycastDoorData door{};
@@ -641,5 +664,90 @@ TEST(RendererRaycast, drawDoorsWithoutTextureIsSkipped) {
 	const auto stats = RendererRaycast::getStats();
 	EXPECT_EQ(stats.doorCount, 0u);
 	EXPECT_EQ(stats.doorStripeCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, fogDisabledByDefault) {
+	// Default config has fogEnd == fogStart == 0 — no fog should be applied.
+	// We exercise the path with a wall pass and just verify the renderer
+	// doesn't crash and still emits stripes.
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const TilemapAsset tm = makeCorridorTilemap();
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 0);
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_GT(stats.hitCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, fogConfiguredAppliesWithoutCrash) {
+	// Configure a fog range that covers the corridor wall depth; the test only
+	// verifies the renderer survives the fog math (the actual tint blend is
+	// emitted to Renderer2D and isn't directly observable in the stats).
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const TilemapAsset tm = makeCorridorTilemap();
+	RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
+	config.fogColor = {0.f, 0.f, 0.f, 1.f};
+	config.fogStart = 1.f;
+	config.fogEnd = 8.f;
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	RendererRaycast::drawTilemapWalls(tm, math::Transform{}, 0);
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_GT(stats.hitCount, 0u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, backdropTextureEmitsScanlines) {
+	// When the config carries floor / ceiling textures the renderer should
+	// emit one quad per screen row instead of two solid full-screen quads.
+	// `backdropScanlineCount` counts both halves combined.
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	auto cfg = makeTestConfig(75.f, 16.f, 64);
+	cfg.floorTexture = makeSpriteTexture();
+	cfg.ceilingTexture = makeSpriteTexture();
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, cfg);
+	// Drawing an empty tilemap still triggers the backdrop emit on first use;
+	// route that explicitly via a sprite pass since the empty tilemap fast-path
+	// returns before the backdrop is needed.
+	owl::renderer::RaycastSpriteData sprite{};
+	sprite.worldPosition = {0.f, 3.f};
+	sprite.worldSize = {1.f, 1.f};
+	sprite.texture = makeSpriteTexture();
+	std::array sprites{sprite};
+	RendererRaycast::drawSprites(std::span<const owl::renderer::RaycastSpriteData>(sprites.data(), sprites.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_GT(stats.backdropScanlineCount, 0u);
+	// Roughly one scanline per row across both halves (600 = floor + ceiling).
+	EXPECT_LE(stats.backdropScanlineCount, 600u);
+	teardownRendererStack();
+}
+
+TEST(RendererRaycast, backdropFallsBackToSolidWhenNoTexture) {
+	// With no textures the backdrop is the original 2-quad solid fill — the
+	// scanline counter stays at zero.
+	bootRendererStack();
+	const CameraOrtho cam(0, 800, 0, 600);
+	const RaycastConfig config = makeTestConfig(75.f, 16.f, 64);
+	RendererRaycast::resetStats();
+	RendererRaycast::beginScene(cam, {800, 600}, config);
+	owl::renderer::RaycastSpriteData sprite{};
+	sprite.worldPosition = {0.f, 3.f};
+	sprite.worldSize = {1.f, 1.f};
+	sprite.texture = makeSpriteTexture();
+	std::array sprites{sprite};
+	RendererRaycast::drawSprites(std::span<const owl::renderer::RaycastSpriteData>(sprites.data(), sprites.size()));
+	RendererRaycast::endScene();
+	const auto stats = RendererRaycast::getStats();
+	EXPECT_EQ(stats.backdropScanlineCount, 0u);
 	teardownRendererStack();
 }

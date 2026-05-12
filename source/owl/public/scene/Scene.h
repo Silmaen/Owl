@@ -171,9 +171,37 @@ public:
 	/**
 	 * @brief
 	 *  Access to the primary player.
+	 *
+	 * Result is cached in `m_primaryPlayerCache` and reused across calls — the
+	 * full registry scan only runs after the cache has been invalidated
+	 * (entity destroyed, `Player` component added/removed, scene cleared).
+	 * Avoids the per-frame O(N) scan from the trigger / input / sound /
+	 * dynamic-wall loops that all hit this accessor multiple times per tick.
 	 * @return The primary player.
 	 */
 	auto getPrimaryPlayer() -> Entity;
+
+	/**
+	 * @brief
+	 *  Pre-populate every `EntityLink.linkedEntity` from its `linkedEntityName`.
+	 *
+	 * Called at `onStartRuntime` so the per-frame link-update loop starts with
+	 * a warm cache and never falls into the O(N²) "scan all Tag components for
+	 * the matching name" path on the first tick. Tag renames still trigger a
+	 * one-tick rescan from the runtime loop's mismatch check.
+	 */
+	void resolveAllEntityLinks();
+
+	/**
+	 * @brief
+	 *  Drop the cached primary-player handle so the next `getPrimaryPlayer()`
+	 *  call re-scans the registry.
+	 *
+	 * Called automatically by entity destruction and by `Player`-component
+	 * mutations. External callers that mutate `Player.primary` without going
+	 * through the standard component API should call this manually.
+	 */
+	void invalidatePrimaryPlayerCache() { m_primaryPlayerCache = entt::null; }
 
 	/**
 	 * @brief
@@ -351,6 +379,8 @@ private:
 	GameState m_gameState;
 	/// Scene-level enable/override of the project renderer stack (empty → all active with defaults).
 	renderer::EnabledRenderersConfig m_enabledRenderers;
+	/// Cached primary-player entity handle. `entt::null` means "not resolved yet".
+	mutable entt::entity m_primaryPlayerCache = entt::null;
 	/**
 	 * @brief
 	 *  Action when component is added to an entity.
@@ -410,6 +440,18 @@ private:
 	 * the tileset's collidable flags, and lazily by the renderer for the editor preview path.
 	 */
 	void resolveAllTilemapAssets();
+
+	/**
+	 * @brief
+	 *  Refresh every visible `EntityLink` host's transform from its target.
+	 *
+	 * Called from `onUpdateRuntime` after physics. Hidden hosts are skipped
+	 * (matching the dormant pattern used by triggers and scripts), and a
+	 * stale `linkedEntity` triggers a one-shot tag rescan to recover from
+	 * tag renames; the warm cache from `resolveAllEntityLinks` keeps the
+	 * common case at O(1).
+	 */
+	void updateEntityLinks();
 
 	/**
 	 * @brief

@@ -580,10 +580,26 @@ the tilemap system, and scene-to-scene transition effects.
           inline reader on `scene::component::Tilemap` is kept as a
           defensive fallback for unmigrated projects and will be removed in
           a future release.
-    - ![Planned][planned] Floors and ceilings
-        - Textured floor/ceiling casting (currently solid colours via the
-          backdrop)
-        - Skybox or solid colour above horizon
+    - ![Done][done] Floors and ceilings
+        - Per-screen-row textured backdrop in `emitTexturedBackdrop`: each
+          row projects its pixel back to the floor (or ceiling) plane using
+          the camera-plane basis, then emits a 1-pixel-tall quad whose UVs
+          interpolate linearly between the left / right ends of the visible
+          cone. Combined with the texture's REPEAT wrap, this paints the
+          entire backdrop in one quad per scanline (≈ `viewport.y` quads /
+          frame for both halves).
+        - `RaycastConfig` carries `floorTilesetPath` + `floorTileIndex` and
+          the matching ceiling pair; `RendererRaycastLayer` resolves them
+          on first `onBeginFrame` via the asset library and populates the
+          runtime `floorTexture` / `ceilingTexture` + UV-rect fields. Same
+          tileset reference convention as doors / pushwalls — pointing the
+          floor at the world tilemap's atlas reuses the shared
+          `shared<Tileset>` instance.
+        - Falls back to the existing solid-colour quads
+          (`ceilingColor` / `floorColor`) when the corresponding texture
+          is absent — backward compatible with every existing demo scene.
+        - Stats: `backdropScanlineCount` reports the per-frame backdrop
+          quad budget.
     - ![Done][done] Sprites (billboards)
         - Entities carrying `SpriteRenderer` / `AnimatedSpriteRenderer` are
           rendered as camera-facing billboards on `RendererRaycast` layers
@@ -609,7 +625,7 @@ the tilemap system, and scene-to-scene transition effects.
         - 6 new headless tests in `RendererRaycast_test.cpp` cover empty
           span, camera cull, in-front emission, wall occlusion,
           max-distance cull and texture-less skip.
-    - ![In Progress][progress] Map features
+    - ![Done][done] Map features
         - ![Done][done] Variable wall heights — `TileMeta.wallHeight: float
           = 1.0` (clamped to `[0, 8]`). Walls are bottom-anchored at floor
           level. Editor: Raycast section in the `TilesetDocument`
@@ -677,9 +693,16 @@ the tilemap system, and scene-to-scene transition effects.
           top-down editor view so the level designer can see where the player
           will spawn and which direction it faces. Toggleable from a viewport
           overlay button and from the ribbon's `Show` group.
-    - ![Planned][planned] Lighting for raycasting
-        - Distance-based shading (fog/darkness)
-        - Optional point lights with falloff
+    - ![In Progress][progress] Lighting for raycasting
+        - ![Done][done] Distance fog — `RaycastConfig::fogColor` + `fogStart` +
+          `fogEnd`. Every wall / dynamic-wall / door / sprite stripe and every
+          backdrop scanline is lerped toward `fogColor` between the two
+          distances. Disabled when `fogEnd <= fogStart` (default), so existing
+          scenes keep their natural tint. Same `applyFog` helper drives all
+          paths so a wall and the floor pixels right below it converge to the
+          identical tint at `fogEnd` — no visible seam.
+        - ![Planned][planned] Optional point lights with falloff (deferred to
+          a follow-up; the fog system already covers global atmosphere).
 - Gameplay
     - ![Done][done] Scene transition effects
         - `scene::ScreenTransition::Type` extended from `Fade*` only to
@@ -723,16 +746,16 @@ the tilemap system, and scene-to-scene transition effects.
         - Cancelling mid-load discards the partial scene and reverts to the
           previously-active document
 - In-Game Performance
-    - ![Planned][planned] Entity / system update budget
+    - ![In Progress][progress] Entity / system update budget
         - Profile `Scene::onUpdateRuntime` (native scripts → Lua → dynamic
           walls → player input → physics → links → sound → triggers) on a
           worst-case scene (hundreds of entities, dozens of Lua scripts,
           dozens of triggers) and tighten the slowest loops
-        - Skip dormant entities in the hot loops: entities with
-          `Visibility.gameVisible = false` (or whose ancestor is hidden)
-          should bypass script/physics ticks instead of being filtered
-          per-loop (already done for triggers — generalise to scripts and
-          to `EntityLink` resolution)
+        - ![Done][done] Skip dormant entities in the hot loops: entities
+          with `Visibility.gameVisible = false` (or whose ancestor is
+          hidden) bypass script/physics ticks instead of being filtered
+          per-loop — generalised the trigger pattern to native scripts,
+          Lua scripts, and `EntityLink` resolution
         - Per-frame allocation audit: the trigger / animated-sprite / door
           loops still build `std::vector` scratch buffers each tick — promote
           them to scene-owned, frame-reset pools (mirrors the per-column
@@ -740,19 +763,20 @@ the tilemap system, and scene-to-scene transition effects.
         - Target: the reference demo runs at the configured frame target on
           a 50-entity / 5-Lua-script scene without ever stepping into the
           orange / red TRACE band
-    - ![Planned][planned] Entity-management hot paths
-        - Cache the primary-player lookup result on Scene (invalidated on
-          entity destroy / `Player` add/remove) instead of re-scanning the
-          full registry every tick from
+    - ![In Progress][progress] Entity-management hot paths
+        - ![Done][done] Cache the primary-player lookup result on Scene
+          (invalidated on entity destroy / `Player` add/remove) instead of
+          re-scanning the full registry every tick from
           `Scene::updateRaycastDynamicWalls` + `Scene::onUpdateRuntime`
           + trigger overlap check + sound listener pose
         - `findEntityByUUID` builds the hash map lazily — keep it warm and
           invalidate only on entity create/destroy (the editor's hierarchy
           drag-drop, Ctrl+D duplicate, and Lua `scene.find_entity` all
           hammer it during a single tick)
-        - Pre-resolve `EntityLink.linkedEntity` once per scene start
-          instead of every tick when the cached handle is stale (the
-          per-tick name lookup re-walks `view<Tag>` linearly)
+        - ![Done][done] Pre-resolve `EntityLink.linkedEntity` once per
+          scene start (`Scene::resolveAllEntityLinks`, called from
+          `onStartRuntime`) so the per-frame loop never falls into the
+          O(N²) `view<Tag>` rescan path on the first tick
 - Known bug fixes (deferred from v0.2.0 — all closed during v0.2.0)
     - ![Done][done] Editor keyboard shortcuts unreliable — *fixed in v0.2.0*
         - Modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) now bypass
