@@ -21,6 +21,9 @@
 #include <gui/utils.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
+#include <renderer/RenderLayer.h>
+#include <renderer/RenderStack.h>
+#include <renderer/Renderer.h>
 #include <scene/PrefabSerializer.h>
 #include <scene/SceneSerializer.h>
 
@@ -553,8 +556,74 @@ void SceneHierarchy::renderProperties() {
 }
 
 namespace {
+// Compile-time category traits — `Raycast*` components only make sense on a
+// `RendererRaycast` layer, `Ui*` components only on a `Renderer2D` layer.
+// Anything else (Transform, Camera, SpriteRenderer, …) is layer-agnostic.
+template<typename>
+constexpr bool isRaycastOnlyComponent = false;
+template<>
+constexpr bool isRaycastOnlyComponent<scene::component::RaycastDoor> = true;
+template<>
+constexpr bool isRaycastOnlyComponent<scene::component::RaycastPushWall> = true;
+
+template<typename>
+constexpr bool isUiOnlyComponent = false;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiButton> = true;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiImage> = true;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiPanel> = true;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiProgressBar> = true;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiRect> = true;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiSlider> = true;
+template<>
+constexpr bool isUiOnlyComponent<scene::component::UiText> = true;
+
+/**
+ * @brief
+ *  Resolve the renderer-layer type key the entity belongs to.
+ *
+ * Reads the entity's `RendererTag` (or falls back to the stack's default layer
+ * for untagged entities) and looks the layer up in the global renderer stack.
+ * Returns an empty string when the stack hasn't been built yet — in that case
+ * the inspector falls back to "show every optional component", which keeps
+ * the editor usable while the project's renderer config is loading.
+ * @param[in] iEntity The entity to classify.
+ * @return The layer type key (`"RendererRaycast"`, `"Renderer2D"`, …) or empty.
+ */
+auto layerTypeKeyForEntity(const scene::Entity& iEntity) -> std::string {
+	const auto& stack = renderer::Renderer::getRenderStack();
+	if (stack.isEmpty())
+		return {};
+	shared<renderer::RenderLayer> layer;
+	if (iEntity.hasComponent<scene::component::RendererTag>()) {
+		const auto& tag = iEntity.getComponent<scene::component::RendererTag>();
+		if (!tag.rendererName.empty())
+			layer = stack.findByName(tag.rendererName);
+	}
+	if (!layer)
+		layer = stack.getDefaultLayer();
+	return layer ? std::string{layer->getTypeKey()} : std::string{};
+}
+
 template<isNamedComponent Comp>
-void addComponentPop(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
+void addComponentPop(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const std::string& iLayerTypeKey) {
+	// Filter out components whose category is incompatible with the entity's
+	// renderer layer. When the layer type is unknown (empty stack / no
+	// RendererTag) we leave the menu untouched so authoring never gets blocked
+	// by a half-configured project.
+	if constexpr (isRaycastOnlyComponent<Comp>) {
+		if (!iLayerTypeKey.empty() && iLayerTypeKey != "RendererRaycast")
+			return;
+	}
+	if constexpr (isUiOnlyComponent<Comp>) {
+		if (!iLayerTypeKey.empty() && iLayerTypeKey != "Renderer2D")
+			return;
+	}
 	if (!ioEntity.hasComponent<Comp>()) {
 		const auto* iconId = componentIconName(Comp::name());
 		bool clicked = false;
@@ -658,8 +727,9 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 }
 
 template<isNamedComponent... Component>
-void addComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const std::tuple<Component...>&) {
-	(..., addComponentPop<Component>(ioEntity, iUndoManager));
+void addComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const std::string& iLayerTypeKey,
+							const std::tuple<Component...>&) {
+	(..., addComponentPop<Component>(ioEntity, iUndoManager, iLayerTypeKey));
 }
 
 template<isNamedComponent... Component>
@@ -719,7 +789,8 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 			ImGui::OpenPopup("AddComponent");
 	}
 	if (ImGui::BeginPopup("AddComponent")) {
-		addComponentsFromTuple(m_selection, mp_undoManager, OptionalComponents{});
+		const std::string layerTypeKey = layerTypeKeyForEntity(m_selection);
+		addComponentsFromTuple(m_selection, mp_undoManager, layerTypeKey, OptionalComponents{});
 		ImGui::EndPopup();
 	}
 	ImGui::PopItemWidth();

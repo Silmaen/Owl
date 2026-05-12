@@ -9,6 +9,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Doors and pushwalls — animated raycast walls.** Two new components and a
+  dedicated renderer pass close out the Wolf3D-style feature set for v0.2.0.
+    - `scene::component::RaycastDoor` — Wolf3D-style sliding door
+      occupying a **1×1 cell**. Both the laterals (cube inside faces
+      perpendicular to the opening direction) and the moving plate are
+      rendered with **zero thickness** — they're just textures on the
+      cube's inside faces. The plate's surface normal is perpendicular
+      to the opening direction (a N-opening door has plate surfaces
+      facing east and west), so the player approaches the door head-on
+      along the axis perpendicular to the opening direction. The plate
+      slides exactly one cell (plus 1 pixel scaled with the open
+      progress for hermetic closure) into the pocket when open, at
+      which point only the laterals remain visible.
+      `OpeningDirection` is an enum (`North` / `South` / `East` /
+      `West`). State machine: Idle → Opening → Open (`holdTime` s) →
+      Closing → Idle. Open and close speeds are independent.
+      `Transform.translation` stays put at the cell centre; only the
+      internal plate offset animates. `faceTexture`'s U=1 always lands
+      on the opening-direction side, regardless of which side the
+      player views the door from.
+    - `scene::component::RaycastPushWall` — **full-cell cube** that
+      slides one shot (Idle → Moving → Final). A single tile covers
+      every face; the entity's `Transform` translates with the wall.
+    - **Texture sourcing via shared tileset.** Both components
+      reference textures through `tilesetPath` (string, drag-drop in
+      the inspector) + tile indices (`faceTileIndex` /
+      `lateralTileIndex` for doors, `tileIndex` for pushwalls). A
+      per-scene cache in `Scene::resolveAllTilemapAssets` deduplicates
+      `.owltileset` loads — a door whose tileset path matches the
+      world tilemap's tileset reuses the same `shared<Tileset>` (and
+      its atlas texture), no double-load. Inspector ships a **visual
+      tile picker**: click the thumbnail to open a grid popup of the
+      tileset's tiles with the current selection highlighted.
+      Pre-extracted Wolf3D tiles (24/25 = door faces, 98–105 = jambs)
+      are dropped under `sample_project/textures/wolf3d_doors/` for
+      reference but the API is tileset-driven.
+    - **Hermetic closure.** The +1-pixel slide margin is scaled by the
+      open progress (`offset * (1 + 1/64)`) so a closed door sits
+      exactly at the cell centre — without the scaling the plate
+      leaked a 1-pixel gap on the side opposite to the opening
+      direction.
+    - **Auto-kinematic body — closed doors are not traversable.**
+      `PhysicCommand::init` auto-creates a kinematic Box2D body for
+      any door / pushwall entity that doesn't already carry a
+      `PhysicBody`. The body's collider matches the moving surface
+      (thin plate for doors, full cube for pushwalls) and tracks the
+      plate position each tick via `PhysicCommand::setTransform`. No
+      manual physics wiring required.
+    - **Built-in activation: proximity + key.** When the primary player
+      is within `interactionRange` cells of the entity and
+      `interactionKey` was pressed this tick, the state machine kicks
+      out of Idle. Setting `interactionKey = 0` disables the engine
+      path entirely; Lua drives activation through the `door` and
+      `pushwall` tables (`activate / close / is_open / get_state` and
+      `activate / has_moved / get_state` respectively).
+    - **Renderer API.** Two new entry points:
+      `RendererRaycast::drawDynamicWalls(span<RaycastDynamicWallData>)`
+      (pushwall cubes) and
+      `RendererRaycast::drawDoors(span<RaycastDoorData>)`. Per screen
+      column, slab-method ray/AABB intersection writes the closest
+      hit to the same per-column zBuffer the static-tilemap pass
+      populated, so sprites drawn afterwards occlude correctly. The
+      lateral is biased a hair closer to the camera so it always wins
+      against the pocket-side wall sitting at the same depth.
+      Stripes carry a `uvRect` (atlas sub-rectangle) so the renderer
+      reads the right tile from the shared atlas.
+    - **Editor 2D view.** Doors draw as a thin plate strip oriented
+      along the slide axis (vertical for N/S, horizontal for E/W) so
+      the designer reads the opening direction at a glance. Pushwalls
+      get a **green outline** highlighting every block in the
+      viewport. Selecting a door or pushwall adds a yellow
+      destination line with a circle endpoint pointing at the
+      open-pose position.
+    - **Menu gating.** The hierarchy's "Add Component" popup hides
+      `Raycast*` entries unless the entity's renderer layer (resolved
+      via `RendererTag`) is a `RendererRaycast`. The same gating
+      hides `Ui*` entries unless the layer is a `Renderer2D`.
+    - **Tests:** 8 scene-level tests (state-machine progressions, YAML
+      round-trip per component, full Scene serializer round-trip) + 5
+      raycast renderer tests (`drawDynamicWalls` empty / in-front /
+      occluded by static wall / culled past maxDistance / missing
+      texture skipped) + 4 `drawDoors` tests (empty / closed shows
+      laterals + plate / open shows only laterals / no texture
+      skipped) + 4 Lua binding tests.
 - **Variable wall heights and transparent walls in the raycast renderer.**
   Two new fields on `TileMeta` (per-tile, in the `.owltileset` asset) drive
   Wolf3D-style map effects:

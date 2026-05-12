@@ -20,50 +20,240 @@ EnabledRenderers:
     Overrides:
       Space: Screen
 Entities:
-  - Entity: 7103139458259188987
+  - Entity: 1109273511855769907
     Tag:
-      tag: Miscs
+      tag: Door_N_14
     Transform:
-      translation: [0, 0, 0]
+      translation: [-7.5, -15.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 102
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 9617544720156475500
+    Tag:
+      tag: Door_N_15
+    Transform:
+      translation: [-20.5, -19.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 102
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 7707047990288234945
+    Tag:
+      tag: Secret2
+    Transform:
+      translation: [-21.5, 18.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9339588492333270992
+    RaycastPushWall:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      tileIndex: 6
+      slideDirection: [0, 1]
+      slideDistance: 2
+      slideSpeed: 1
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 4693536621908687394
+    Tag:
+      tag: Secret3
+    Transform:
+      translation: [-13.5, -17.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9339588492333270992
+    RaycastPushWall:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      tileIndex: 0
+      slideDirection: [0, -1]
+      slideDistance: 2
+      slideSpeed: 1
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 4816982720607291966
+    Tag:
+      tag: Secret4
+    Transform:
+      translation: [-14.5, -18.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9339588492333270992
+    RaycastPushWall:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      tileIndex: 0
+      slideDirection: [-1, 0]
+      slideDistance: 2
+      slideSpeed: 1
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 2463698951735042764
+    Tag:
+      tag: Secret5
+    Transform:
+      translation: [-18.5, -21.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9339588492333270992
+    RaycastPushWall:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      tileIndex: 0
+      slideDirection: [0, -1]
+      slideDistance: 2
+      slideSpeed: 1
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 12761360492524549743
+    Tag:
+      tag: Door_N_3
+    Transform:
+      translation: [0.5, -20.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 18163827506903232268
+    Tag:
+      tag: Door_N_4
+    Transform:
+      translation: [4.5, -20.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 4705395812698532816
+    Tag:
+      tag: Door_W_1
+    Transform:
+      translation: [2.5, -18.5, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Visibility:
       gameVisible: true
     Hierarchy:
-      {}
-  - Entity: 13926010408478971264
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: West
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 6366540168095739967
     Tag:
-      tag: Trees
+      tag: Door_N_2
     Transform:
-      translation: [0, 0, 0]
+      translation: [4.5, -25.5, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Visibility:
       gameVisible: true
     Hierarchy:
-      {}
-  - Entity: 9489512124427895568
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 3104584812369362581
     Tag:
-      tag: tables
+      tag: Door_N_1
     Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
+      translation: [0.5, -25.5, 0]
+      rotation: [0, -0, 0]
       scale: [1, 1, 1]
     Visibility:
       gameVisible: true
     Hierarchy:
-      {}
-  - Entity: 17275551581943742648
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 13130281520105570456
     Tag:
-      tag: table1
+      tag: Tree_2_1
     Transform:
-      translation: [5.5, 22.5, 0]
+      translation: [-20.5, 17.5, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table_chairs.png
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -74,20 +264,20 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 9489512124427895568
+      parentId: 13926010408478971264
     RendererTag:
       Name: raycast_world
-  - Entity: 1003800073988262850
+  - Entity: 1615855692226356762
     Tag:
-      tag: pit
+      tag: Tree_2_2
     Transform:
-      translation: [27.5, -6.5, 0]
+      translation: [-22.5, 17.5, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/pit.png
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -98,20 +288,20 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7103139458259188987
+      parentId: 13926010408478971264
     RendererTag:
       Name: raycast_world
-  - Entity: 13606334486936031317
+  - Entity: 3717562522954446113
     Tag:
-      tag: pit_full
+      tag: LL_1
     Transform:
-      translation: [24.5, -6.5, 0]
+      translation: [-24.5, 12.5, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/pit_water.png
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -122,14 +312,86 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7103139458259188987
+      parentId: 10638330045607190015
     RendererTag:
       Name: raycast_world
-  - Entity: 8958173406567325626
+  - Entity: 2999541852273091899
+    Tag:
+      tag: LL_2
+    Transform:
+      translation: [-18.5, 16.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_pilar.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+    RendererTag:
+      Name: raycast_world
+  - Entity: 10667408735679796230
+    Tag:
+      tag: LL_3
+    Transform:
+      translation: [-24.5, 16.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_pilar.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+    RendererTag:
+      Name: raycast_world
+  - Entity: 15076341999712865815
+    Tag:
+      tag: LL_4
+    Transform:
+      translation: [-18.5, 12.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_pilar.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+    RendererTag:
+      Name: raycast_world
+  - Entity: 14352867532100197726
     Tag:
       tag: table2
     Transform:
-      translation: [-0.5, 22.5, 0]
+      translation: [-22.5, 14.5, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
@@ -149,40 +411,544 @@ Entities:
       parentId: 9489512124427895568
     RendererTag:
       Name: raycast_world
-  - Entity: 2100000000000000060
+  - Entity: 5703885926717172694
     Tag:
-      tag: HUDCanvas
+      tag: flag
+    Transform:
+      translation: [-25.5, 14.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/flag.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7103139458259188987
+    RendererTag:
+      Name: raycast_world
+  - Entity: 13198282807404178006
+    Tag:
+      tag: L12
+    Transform:
+      translation: [-6.5, 20.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 10077246775617947355
+    Tag:
+      tag: L13
+    Transform:
+      translation: [-12.5, 20.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 10556412148911099773
+    Tag:
+      tag: L14
+    Transform:
+      translation: [-12.5, 14.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 7584174730375495585
+    Tag:
+      tag: pot1
+    Transform:
+      translation: [-2.5, 23.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/blue_pot.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7103139458259188987
+    RendererTag:
+      Name: raycast_world
+  - Entity: 9590767344909177579
+    Tag:
+      tag: pot2
+    Transform:
+      translation: [7.5, 23.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/blue_pot.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7103139458259188987
+    RendererTag:
+      Name: raycast_world
+  - Entity: 10076760751593725757
+    Tag:
+      tag: L__4
+    Transform:
+      translation: [2.5, 20.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling_candle.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 15512632895051033731
+    Tag:
+      tag: L9
+    Transform:
+      translation: [2.5, 5.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 4501687471864431966
+    Tag:
+      tag: L10
+    Transform:
+      translation: [2.5, 9.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 14002182771463197956
+    Tag:
+      tag: L11
+    Transform:
+      translation: [2.5, 14.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 12208344180293546568
+    Tag:
+      tag: armor
+    Transform:
+      translation: [5.5, 9.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/armor.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7103139458259188987
+    RendererTag:
+      Name: raycast_world
+  - Entity: 3351309919143932530
+    Tag:
+      tag: Sausages
+    Transform:
+      translation: [26.5, -10.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/sausages.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7103139458259188987
+  - Entity: 161424663807070942
+    Tag:
+      tag: tree6
+    Transform:
+      translation: [0.5, 2.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 13926010408478971264
+    RendererTag:
+      Name: raycast_world
+  - Entity: 11536520207495055002
+    Tag:
+      tag: tree5
+    Transform:
+      translation: [4.5, 2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 13926010408478971264
+    RendererTag:
+      Name: raycast_world
+  - Entity: 12685325901356906213
+    Tag:
+      tag: L8
+    Transform:
+      translation: [2.5, -12.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 3973117033922211742
+    Tag:
+      tag: Doors
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Canvas:
-      space: ScreenOverlay
-      sortOrder: 0
     Visibility:
       gameVisible: true
     Hierarchy:
       {}
-    RendererTag:
-      Name: ui
-  - Entity: 2100000000000000061
+  - Entity: 14349284351598000989
     Tag:
-      tag: HUDHint
+      tag: L__2
     Transform:
-      translation: [0, 0, 0]
+      translation: [2.5, -1.5, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 2100000000000000060
-    RendererTag:
-      Name: ui
-  - Entity: 2100000000000000020
+      parentId: 10638330045607190015
+  - Entity: 14810404726591993268
     Tag:
-      tag: B1
+      tag: L__3
     Transform:
-      translation: [29.5, 2.5, 0]
+      translation: [7.5, -1.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling_candle.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 2456421408860607571
+    Tag:
+      tag: tree4
+    Transform:
+      translation: [9.5, -4.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 13926010408478971264
+    RendererTag:
+      Name: raycast_world
+  - Entity: 14298140760574678539
+    Tag:
+      tag: tree2
+    Transform:
+      translation: [-4.5, 1.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 13926010408478971264
+    RendererTag:
+      Name: raycast_world
+  - Entity: 2699419699569763160
+    Tag:
+      tag: tree3
+    Transform:
+      translation: [-4.5, -4.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 13926010408478971264
+    RendererTag:
+      Name: raycast_world
+  - Entity: 11357799401762042179
+    Tag:
+      tag: table4
+    Transform:
+      translation: [24.5, -3.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9489512124427895568
+    RendererTag:
+      Name: raycast_world
+  - Entity: 4193235048544751701
+    Tag:
+      tag: Puddle
+    Transform:
+      translation: [26.5, 2.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/puddle.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7103139458259188987
+  - Entity: 880776251672220823
+    Tag:
+      tag: Basket
+    Transform:
+      translation: [27.5, -13.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/basket.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7103139458259188987
+  - Entity: 5214242960048568462
+    Tag:
+      tag: L7
+    Transform:
+      translation: [2.5, -8.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 10672876466255339759
+    Tag:
+      tag: tree1
+    Transform:
+      translation: [9.5, 1.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 13926010408478971264
+    RendererTag:
+      Name: raycast_world
+  - Entity: 339970269755540079
+    Tag:
+      tag: table3
+    Transform:
+      translation: [2.5, 22.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table_chairs.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9489512124427895568
+    RendererTag:
+      Name: raycast_world
+  - Entity: 8154100762700618122
+    Tag:
+      tag: table5
+    Transform:
+      translation: [27.5, -3.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9489512124427895568
+    RendererTag:
+      Name: raycast_world
+  - Entity: 15534755144944669786
+    Tag:
+      tag: B3
+    Transform:
+      translation: [27.5, 2.5, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
@@ -202,17 +968,183 @@ Entities:
       parentId: 7570686549718889332
     RendererTag:
       Name: raycast_world
-  - Entity: 2100000000000000010
+  - Entity: 1568195035738314073
     Tag:
-      tag: RaycastWalls
+      tag: B4
+    Transform:
+      translation: [28.5, 2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7570686549718889332
+    RendererTag:
+      Name: raycast_world
+  - Entity: 10713659767896345620
+    Tag:
+      tag: B2
+    Transform:
+      translation: [29.5, 1.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7570686549718889332
+    RendererTag:
+      Name: raycast_world
+  - Entity: 7570686549718889332
+    Tag:
+      tag: Barrels
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
-    Tilemap:
-      tilemapPath: tilemaps/raycast_demo.owltilemap
     Visibility:
       gameVisible: true
+    Hierarchy:
+      {}
+    RendererTag:
+      Name: raycast_world
+  - Entity: 8650208992513593986
+    Tag:
+      tag: L6
+    Transform:
+      translation: [2.5, -16.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 7448479228372063673
+    Tag:
+      tag: L__1
+    Transform:
+      translation: [-2.5, -1.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling_candle.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 7871170412065769316
+    Tag:
+      tag: L3
+    Transform:
+      translation: [6.5, -29.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 11725008055632833023
+    Tag:
+      tag: L4
+    Transform:
+      translation: [2.5, -25.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 3300351824610864905
+    Tag:
+      tag: L5
+    Transform:
+      translation: [2.5, -20.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 6583937215403861796
+    Tag:
+      tag: L2
+    Transform:
+      translation: [2.5, -29.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 18248389905682178093
+    Tag:
+      tag: L1
+    Transform:
+      translation: [-1.5, -29.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 10638330045607190015
+    Tag:
+      tag: Lights
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
     RendererTag:
       Name: raycast_world
   - Entity: 2100000000000000001
@@ -258,9 +1190,46 @@ Entities:
         - name: turn_speed
           type: float
           value: 1.79999995
-  - Entity: 10638330045607190015
+  - Entity: 2100000000000000010
     Tag:
-      tag: Lights
+      tag: RaycastWalls
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Tilemap:
+      tilemapPath: tilemaps/raycast_demo.owltilemap
+    Visibility:
+      gameVisible: true
+    RendererTag:
+      Name: raycast_world
+  - Entity: 2100000000000000020
+    Tag:
+      tag: B1
+    Transform:
+      translation: [29.5, 2.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7570686549718889332
+    RendererTag:
+      Name: raycast_world
+  - Entity: 2100000000000000061
+    Tag:
+      tag: HUDHint
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -268,210 +1237,36 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      {}
+      parentId: 2100000000000000060
     RendererTag:
-      Name: raycast_world
-  - Entity: 18248389905682178093
+      Name: ui
+  - Entity: 2100000000000000060
     Tag:
-      tag: L1
-    Transform:
-      translation: [-1.5, -29.5, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 10638330045607190015
-  - Entity: 6583937215403861796
-    Tag:
-      tag: L2
-    Transform:
-      translation: [2.5, -29.5, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 10638330045607190015
-  - Entity: 3300351824610864905
-    Tag:
-      tag: L5
-    Transform:
-      translation: [2.5, -20.5, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 10638330045607190015
-  - Entity: 11725008055632833023
-    Tag:
-      tag: L4
-    Transform:
-      translation: [2.5, -25.5, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 10638330045607190015
-  - Entity: 7871170412065769316
-    Tag:
-      tag: L3
-    Transform:
-      translation: [6.5, -29.5, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 10638330045607190015
-  - Entity: 7448479228372063673
-    Tag:
-      tag: L__1
-    Transform:
-      translation: [-2.5, -1.5, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling_candle.png
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 10638330045607190015
-  - Entity: 8650208992513593986
-    Tag:
-      tag: L6
-    Transform:
-      translation: [2.5, -16.5, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 10638330045607190015
-  - Entity: 7570686549718889332
-    Tag:
-      tag: Barrels
+      tag: HUDCanvas
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
     Visibility:
       gameVisible: true
     Hierarchy:
       {}
     RendererTag:
-      Name: raycast_world
-  - Entity: 10713659767896345620
+      Name: ui
+  - Entity: 8958173406567325626
     Tag:
-      tag: B2
+      tag: table2
     Transform:
-      translation: [29.5, 1.5, 0]
+      translation: [-0.5, 22.5, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.5
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7570686549718889332
-    RendererTag:
-      Name: raycast_world
-  - Entity: 1568195035738314073
-    Tag:
-      tag: B4
-    Transform:
-      translation: [28.5, 2.5, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.5
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7570686549718889332
-    RendererTag:
-      Name: raycast_world
-  - Entity: 15534755144944669786
-    Tag:
-      tag: B3
-    Transform:
-      translation: [27.5, 2.5, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.5
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7570686549718889332
-    RendererTag:
-      Name: raycast_world
-  - Entity: 8154100762700618122
-    Tag:
-      tag: table5
-    Transform:
-      translation: [27.5, -3.5, 0]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table.png
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -485,11 +1280,59 @@ Entities:
       parentId: 9489512124427895568
     RendererTag:
       Name: raycast_world
-  - Entity: 339970269755540079
+  - Entity: 13606334486936031317
     Tag:
-      tag: table3
+      tag: pit_full
     Transform:
-      translation: [2.5, 22.5, 0]
+      translation: [24.5, -6.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/pit_water.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7103139458259188987
+    RendererTag:
+      Name: raycast_world
+  - Entity: 1003800073988262850
+    Tag:
+      tag: pit
+    Transform:
+      translation: [27.5, -6.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/pit.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7103139458259188987
+    RendererTag:
+      Name: raycast_world
+  - Entity: 17275551581943742648
+    Tag:
+      tag: table1
+    Transform:
+      translation: [5.5, 22.5, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
@@ -509,11 +1352,44 @@ Entities:
       parentId: 9489512124427895568
     RendererTag:
       Name: raycast_world
-  - Entity: 10672876466255339759
+  - Entity: 9489512124427895568
     Tag:
-      tag: tree1
+      tag: Tables
     Transform:
-      translation: [9.5, 1.5, 0]
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+  - Entity: 13926010408478971264
+    Tag:
+      tag: Trees
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+  - Entity: 7103139458259188987
+    Tag:
+      tag: Miscs
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+  - Entity: 4357767739718798466
+    Tag:
+      tag: tree10
+    Transform:
+      translation: [-24.5, 1.5, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
@@ -533,11 +1409,83 @@ Entities:
       parentId: 13926010408478971264
     RendererTag:
       Name: raycast_world
-  - Entity: 5214242960048568462
+  - Entity: 18217531576498107994
     Tag:
-      tag: L7
+      tag: tree9
     Transform:
-      translation: [2.5, -8.5, 0]
+      translation: [-18.5, -4.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 13926010408478971264
+    RendererTag:
+      Name: raycast_world
+  - Entity: 16436906791678961735
+    Tag:
+      tag: tree8
+    Transform:
+      translation: [-24.5, -4.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 13926010408478971264
+    RendererTag:
+      Name: raycast_world
+  - Entity: 1085641160577720777
+    Tag:
+      tag: tree7
+    Transform:
+      translation: [-18.5, 1.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 13926010408478971264
+    RendererTag:
+      Name: raycast_world
+  - Entity: 11332277613343281279
+    Tag:
+      tag: L17
+    Transform:
+      translation: [-19.5, -3.5, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
@@ -548,159 +1496,642 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 10638330045607190015
-  - Entity: 880776251672220823
+  - Entity: 13600248057625773866
     Tag:
-      tag: Basket
+      tag: L16
     Transform:
-      translation: [26.5, -10.5, 0]
+      translation: [-23.5, -3.5, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/basket.png
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7103139458259188987
-  - Entity: 4193235048544751701
+      parentId: 10638330045607190015
+  - Entity: 13769489005121019321
     Tag:
-      tag: Puddle
+      tag: L15
     Transform:
-      translation: [26.5, 2.5, 0]
+      translation: [-19.5, 0.5, 0]
       rotation: [0, -0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/puddle.png
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7103139458259188987
-  - Entity: 11357799401762042179
+      parentId: 10638330045607190015
+  - Entity: 6992925051227484541
     Tag:
-      tag: table4
+      tag: L14
     Transform:
-      translation: [24.5, -3.5, 0]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.5
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 9489512124427895568
-    RendererTag:
-      Name: raycast_world
-  - Entity: 2699419699569763160
-    Tag:
-      tag: tree3
-    Transform:
-      translation: [-4.5, -4.5, 0]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.5
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 13926010408478971264
-    RendererTag:
-      Name: raycast_world
-  - Entity: 14298140760574678539
-    Tag:
-      tag: tree2
-    Transform:
-      translation: [-4.5, 1.5, 0]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.5
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 13926010408478971264
-    RendererTag:
-      Name: raycast_world
-  - Entity: 2456421408860607571
-    Tag:
-      tag: tree4
-    Transform:
-      translation: [9.5, -4.5, 0]
-      rotation: [0, -0, 0]
-      scale: [1, 1, 1]
-    SpriteRenderer:
-      color: [1, 1, 1, 1]
-      tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
-    PhysicBody:
-      type: Static
-      fixedRotation: true
-      colliderSize: [1, 1, 1]
-      density: 1
-      restitution: 0
-      friction: 0.5
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 13926010408478971264
-    RendererTag:
-      Name: raycast_world
-  - Entity: 14810404726591993268
-    Tag:
-      tag: L__3
-    Transform:
-      translation: [7.5, -1.5, 0]
+      translation: [-23.5, 0.5, 0]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling_candle.png
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
       parentId: 10638330045607190015
-  - Entity: 14349284351598000989
+  - Entity: 16591457154769591942
     Tag:
-      tag: L__2
+      tag: L19
     Transform:
-      translation: [2.5, -1.5, 0]
-      rotation: [0, 0, 0]
+      translation: [-21.5, 8.5, 0]
+      rotation: [0, -0, 0]
       scale: [1, 1, 1]
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling_candle.png
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
       parentId: 10638330045607190015
+  - Entity: 282765520093261733
+    Tag:
+      tag: L25
+    Transform:
+      translation: [-29.5, -12.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 3076490161748360826
+    Tag:
+      tag: L18
+    Transform:
+      translation: [-21.5, 5.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 16403133044842316897
+    Tag:
+      tag: L24
+    Transform:
+      translation: [-29.5, -5.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 8774771653062084688
+    Tag:
+      tag: L23
+    Transform:
+      translation: [-29.5, 10.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 10286766516491778034
+    Tag:
+      tag: L22
+    Transform:
+      translation: [-29.5, 3.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 4318809323118943487
+    Tag:
+      tag: L21
+    Transform:
+      translation: [-29.5, 6.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 16771517873031031004
+    Tag:
+      tag: L20
+    Transform:
+      translation: [-25.5, 5.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 8892864715420281323
+    Tag:
+      tag: B5
+    Transform:
+      translation: [-28.5, 11.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7570686549718889332
+    RendererTag:
+      Name: raycast_world
+  - Entity: 5847943291126347710
+    Tag:
+      tag: L29
+    Transform:
+      translation: [-17.5, -15.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 2040792712630989511
+    Tag:
+      tag: B6
+    Transform:
+      translation: [-24.5, -9.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/green_barrel.png
+    PhysicBody:
+      type: Static
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.5
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7570686549718889332
+    RendererTag:
+      Name: raycast_world
+  - Entity: 6271663405314741298
+    Tag:
+      tag: L28
+    Transform:
+      translation: [-25.5, -15.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 17967318655472178219
+    Tag:
+      tag: L27
+    Transform:
+      translation: [-21.5, -10.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 4108556761038822059
+    Tag:
+      tag: L26
+    Transform:
+      translation: [-25.5, -10.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 10638330045607190015
+  - Entity: 5773698084679061435
+    Tag:
+      tag: Door_N_10
+    Transform:
+      translation: [-16.5, 14.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 7914424718491497247
+    Tag:
+      tag: Door_N_8
+    Transform:
+      translation: [8.5, 20.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 8709991871152238740
+    Tag:
+      tag: Door_N_7
+    Transform:
+      translation: [21.5, -1.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 16731096240640822849
+    Tag:
+      tag: Door_N_6
+    Transform:
+      translation: [11.5, -1.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 4875570522218979313
+    Tag:
+      tag: Door_N_5
+    Transform:
+      translation: [18.5, -12.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 5786374676567017740
+    Tag:
+      tag: Door_N_9
+    Transform:
+      translation: [-3.5, 20.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 4785646929351818825
+    Tag:
+      tag: Door_N_11
+    Transform:
+      translation: [-27.5, 5.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 4159833242736249918
+    Tag:
+      tag: Door_N_12
+    Transform:
+      translation: [-26.5, -1.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 3074479235521369551
+    Tag:
+      tag: Door_N_13
+    Transform:
+      translation: [-14.5, -15.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: North
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 15080631519745923441
+    Tag:
+      tag: Door_W_2
+    Transform:
+      translation: [2.5, -6.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: West
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 16505307289450441072
+    Tag:
+      tag: Door_W_3
+    Transform:
+      translation: [2.5, 3.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: West
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 10571168313358168120
+    Tag:
+      tag: Door_W_7
+    Transform:
+      translation: [-21.5, 3.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: West
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 15760338944063512795
+    Tag:
+      tag: Door_W_4
+    Transform:
+      translation: [2.5, 16.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: West
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 7574941272774416685
+    Tag:
+      tag: Door_W_6
+    Transform:
+      translation: [-29.5, 8.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: West
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 5264955648884749830
+    Tag:
+      tag: Door_W_5
+    Transform:
+      translation: [-21.5, 10.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: West
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 14351862571808334051
+    Tag:
+      tag: Door_W_8
+    Transform:
+      translation: [-21.5, -6.5, 0]
+      rotation: [0, -0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 3973117033922211742
+    RaycastDoor:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      faceTileIndex: 98
+      lateralTileIndex: 100
+      openingDirection: West
+      slideSpeed: 2
+      holdTime: 5
+      closeSpeed: 2
+      interactionKey: 69
+      interactionRange: 1.5
+  - Entity: 9339588492333270992
+    Tag:
+      tag: Secrets
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      {}
+  - Entity: 16530266759637445267
+    Tag:
+      tag: Secret1
+    Transform:
+      translation: [-1.5, 9.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 9339588492333270992
+    RaycastPushWall:
+      tilesetPath: tilesets/raycast_w3d_walls.owltileset
+      tileIndex: 18
+      slideDirection: [-1, 0]
+      slideDistance: 2
+      slideSpeed: 1
+      interactionKey: 69
+      interactionRange: 1.5

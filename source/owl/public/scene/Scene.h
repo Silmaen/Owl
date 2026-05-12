@@ -110,6 +110,23 @@ public:
 
 	/**
 	 * @brief
+	 *  Advance `RaycastDoor` / `RaycastPushWall` state machines for one tick.
+	 *
+	 * Handles the engine-built-in activation path (player proximity + key edge),
+	 * advances the open/close (or one-shot slide) animation, updates each
+	 * entity's local transform along `slideDirection`, and mirrors that to the
+	 * kinematic Box2D body when the entity carries a `PhysicBody`. Lua scripts
+	 * that bypass the built-in path (by setting `interactionKey` to `0`) drive
+	 * the same state machine through `door.activate` / `pushwall.activate`.
+	 *
+	 * Called automatically by `onUpdateRuntime`; exposed publicly so tests and
+	 * tool code can drive the state machine deterministically.
+	 * @param[in] iTimeStep The elapsed time in seconds for this tick.
+	 */
+	void updateRaycastDynamicWalls(float iTimeStep);
+
+	/**
+	 * @brief
 	 *  Render the runtime scene without simulation (for pause mode).
 	 */
 	void onRenderRuntime();
@@ -365,6 +382,19 @@ private:
 	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
 	 */
 	void renderRaycastSprites(bool iEditorMode);
+
+	/**
+	 * @brief
+	 *  Collect `RaycastDoor` and `RaycastPushWall` entities accepted by the current
+	 *  raycast layer and submit them to `RendererRaycast::drawDynamicWalls`.
+	 *
+	 * Runs between `renderTilemaps` (which fills the per-column wall zBuffer with
+	 * the static tilemap depths) and `renderRaycastSprites` (which uses that
+	 * zBuffer for billboard occlusion), so a closed door correctly hides what
+	 * lies behind it from both walls and sprites.
+	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 */
+	void renderRaycastDynamicWalls(bool iEditorMode);
 
 	/**
 	 * @brief

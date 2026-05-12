@@ -21,6 +21,8 @@
 #include "PhysicBody.h"
 #include "Player.h"
 #include "PrefabLink.h"
+#include "RaycastDoor.h"
+#include "RaycastPushWall.h"
 #include "RendererTag.h"
 #include "SoundListener.h"
 #include "SoundSource.h"
@@ -52,6 +54,7 @@ concept isComponent =
 		std::is_same_v<Component, Hierarchy> || std::is_same_v<Component, ID> || std::is_same_v<Component, LuaScript> ||
 		std::is_same_v<Component, NativeScript> || std::is_same_v<Component, PhysicBody> ||
 		std::is_same_v<Component, Player> || std::is_same_v<Component, PrefabLink> ||
+		std::is_same_v<Component, RaycastDoor> || std::is_same_v<Component, RaycastPushWall> ||
 		std::is_same_v<Component, RendererTag> || std::is_same_v<Component, SoundListener> ||
 		std::is_same_v<Component, SoundSource> || std::is_same_v<Component, SpriteRenderer> ||
 		std::is_same_v<Component, Tag> || std::is_same_v<Component, Text> || std::is_same_v<Component, Tilemap> ||
@@ -97,10 +100,11 @@ concept isDeserializableComponent =
  *  List of copiable components.
  * @note All except ID and Tag.
  */
-using CopiableComponents = std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer,
-									  Text, Tilemap, PhysicBody, Player, Trigger, EntityLink, BackgroundTexture,
-									  Visibility, Hierarchy, SoundSource, SoundListener, LuaScript, PrefabLink,
-									  RendererTag, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
+using CopiableComponents =
+		std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap,
+				   PhysicBody, Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy, SoundSource,
+				   SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, UiButton, UiImage,
+				   UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
 
 /**
  * @brief
@@ -110,17 +114,17 @@ using CopiableComponents = std::tuple<Transform, Camera, Canvas, SpriteRenderer,
 using SerializableComponents =
 		std::tuple<Tag, Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text,
 				   Tilemap, PhysicBody, Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy,
-				   SoundSource, SoundListener, LuaScript, PrefabLink, RendererTag, UiButton, UiImage, UiPanel,
-				   UiProgressBar, UiRect, UiSlider, UiText>;
+				   SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag,
+				   UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
 
 /**
  * @brief
  *  List all optional components.
  * @note All except ID, Tag & Transform that are mandatory.
  */
-using OptionalComponents =
-		std::tuple<Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap, PhysicBody,
-				   Player, Trigger, EntityLink, BackgroundTexture, SoundSource, SoundListener, LuaScript, PrefabLink,
-				   RendererTag, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
+using OptionalComponents = std::tuple<Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text,
+									  Tilemap, PhysicBody, Player, Trigger, EntityLink, BackgroundTexture, SoundSource,
+									  SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag,
+									  UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
 
 }// namespace owl::scene::component

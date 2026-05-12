@@ -672,6 +672,149 @@ void registerTable(lua_State* iState, const char* iTableName, const luaL_Reg* iF
 	lua_setglobal(iState, iTableName);
 }
 
+// --- door / pushwall bindings -------------------------------------------------
+// Pulled out of `registerBindings` as named `lua_CFunction`s so the binding
+// table is just a list of pointers (keeps `registerBindings`'s cognitive
+// complexity under the clang-tidy threshold).
+
+auto luaDoorActivate(lua_State* iState) -> int {
+	const auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene == nullptr)
+		return 0;
+	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	if (!entity || !entity.hasComponent<scene::component::RaycastDoor>())
+		return 0;
+	auto& door = entity.getComponent<scene::component::RaycastDoor>();
+	if (door.state == scene::component::RaycastDoor::State::Idle)
+		door.state = scene::component::RaycastDoor::State::Opening;
+	return 0;
+}
+
+auto luaDoorClose(lua_State* iState) -> int {
+	const auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene == nullptr)
+		return 0;
+	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	if (!entity || !entity.hasComponent<scene::component::RaycastDoor>())
+		return 0;
+	auto& door = entity.getComponent<scene::component::RaycastDoor>();
+	if (door.state == scene::component::RaycastDoor::State::Open ||
+		door.state == scene::component::RaycastDoor::State::Opening) {
+		door.state = scene::component::RaycastDoor::State::Closing;
+		door.holdTimer = 0.f;
+	}
+	return 0;
+}
+
+auto luaDoorIsOpen(lua_State* iState) -> int {
+	const auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene == nullptr) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	if (!entity || !entity.hasComponent<scene::component::RaycastDoor>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	const auto& door = entity.getComponent<scene::component::RaycastDoor>();
+	lua_pushboolean(iState, door.state == scene::component::RaycastDoor::State::Open ? 1 : 0);
+	return 1;
+}
+
+auto luaDoorGetState(lua_State* iState) -> int {
+	const auto* activeScene = ScriptEngine::getActiveScene();
+	const char* defaultState = "idle";
+	if (activeScene == nullptr) {
+		lua_pushstring(iState, defaultState);
+		return 1;
+	}
+	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	if (!entity || !entity.hasComponent<scene::component::RaycastDoor>()) {
+		lua_pushstring(iState, defaultState);
+		return 1;
+	}
+	const auto& door = entity.getComponent<scene::component::RaycastDoor>();
+	switch (door.state) {
+		case scene::component::RaycastDoor::State::Idle:
+			lua_pushstring(iState, "idle");
+			break;
+		case scene::component::RaycastDoor::State::Opening:
+			lua_pushstring(iState, "opening");
+			break;
+		case scene::component::RaycastDoor::State::Open:
+			lua_pushstring(iState, "open");
+			break;
+		case scene::component::RaycastDoor::State::Closing:
+			lua_pushstring(iState, "closing");
+			break;
+	}
+	return 1;
+}
+
+auto luaPushwallActivate(lua_State* iState) -> int {
+	const auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene == nullptr)
+		return 0;
+	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	if (!entity || !entity.hasComponent<scene::component::RaycastPushWall>())
+		return 0;
+	auto& push = entity.getComponent<scene::component::RaycastPushWall>();
+	if (push.state == scene::component::RaycastPushWall::State::Idle)
+		push.state = scene::component::RaycastPushWall::State::Moving;
+	return 0;
+}
+
+auto luaPushwallHasMoved(lua_State* iState) -> int {
+	const auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene == nullptr) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	if (!entity || !entity.hasComponent<scene::component::RaycastPushWall>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	const auto& push = entity.getComponent<scene::component::RaycastPushWall>();
+	lua_pushboolean(iState, push.state == scene::component::RaycastPushWall::State::Final ? 1 : 0);
+	return 1;
+}
+
+auto luaPushwallGetState(lua_State* iState) -> int {
+	const auto* activeScene = ScriptEngine::getActiveScene();
+	const char* defaultState = "idle";
+	if (activeScene == nullptr) {
+		lua_pushstring(iState, defaultState);
+		return 1;
+	}
+	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+	if (!entity || !entity.hasComponent<scene::component::RaycastPushWall>()) {
+		lua_pushstring(iState, defaultState);
+		return 1;
+	}
+	const auto& push = entity.getComponent<scene::component::RaycastPushWall>();
+	switch (push.state) {
+		case scene::component::RaycastPushWall::State::Idle:
+			lua_pushstring(iState, "idle");
+			break;
+		case scene::component::RaycastPushWall::State::Moving:
+			lua_pushstring(iState, "moving");
+			break;
+		case scene::component::RaycastPushWall::State::Final:
+			lua_pushstring(iState, "final");
+			break;
+	}
+	return 1;
+}
+
 }// namespace
 
 void registerBindings(lua_State* iState) {
@@ -870,6 +1013,20 @@ void registerBindings(lua_State* iState) {
 		{nullptr, nullptr}
 	};
 
+	// clang-format off
+	static const luaL_Reg doorFuncs[] = {
+		{"activate", luaDoorActivate},
+		{"close", luaDoorClose},
+		{"is_open", luaDoorIsOpen},
+		{"get_state", luaDoorGetState},
+		{nullptr, nullptr}
+	};
+	static const luaL_Reg pushwallFuncs[] = {
+		{"activate", luaPushwallActivate},
+		{"has_moved", luaPushwallHasMoved},
+		{"get_state", luaPushwallGetState},
+		{nullptr, nullptr}
+	};
 	// clang-format on
 	registerTable(iState, "gamestate", gamestateFuncs);
 
@@ -878,6 +1035,10 @@ void registerBindings(lua_State* iState) {
 	registerTable(iState, "settings", settingsFuncs);
 
 	registerTable(iState, "trigger", triggerFuncs);
+
+	registerTable(iState, "door", doorFuncs);
+
+	registerTable(iState, "pushwall", pushwallFuncs);
 }
 
 }// namespace owl::script

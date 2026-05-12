@@ -78,6 +78,21 @@ OWL_API void renderProps(scene::component::Player& ioComponent);
  * @param ioComponent The component to edit.
  */
 OWL_API void renderProps(scene::component::Trigger& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::RaycastDoor& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing the component.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::RaycastPushWall& ioComponent);
+
 /**
  * @brief
  *  Render a Gui for editing the component.
@@ -205,12 +220,13 @@ using DrawableComponents =
 		std::tuple<scene::component::Transform, scene::component::Camera, scene::component::SpriteRenderer,
 				   scene::component::AnimatedSpriteRenderer, scene::component::CircleRenderer, scene::component::Text,
 				   scene::component::Tilemap, scene::component::PhysicBody, scene::component::Player,
-				   scene::component::Trigger, scene::component::EntityLink, scene::component::BackgroundTexture,
-				   scene::component::Visibility, scene::component::SoundSource, scene::component::SoundListener,
-				   scene::component::LuaScript, scene::component::PrefabLink, scene::component::RendererTag,
-				   scene::component::Canvas, scene::component::UiRect, scene::component::UiText,
-				   scene::component::UiImage, scene::component::UiPanel, scene::component::UiButton,
-				   scene::component::UiSlider, scene::component::UiProgressBar>;
+				   scene::component::Trigger, scene::component::RaycastDoor, scene::component::RaycastPushWall,
+				   scene::component::EntityLink, scene::component::BackgroundTexture, scene::component::Visibility,
+				   scene::component::SoundSource, scene::component::SoundListener, scene::component::LuaScript,
+				   scene::component::PrefabLink, scene::component::RendererTag, scene::component::Canvas,
+				   scene::component::UiRect, scene::component::UiText, scene::component::UiImage,
+				   scene::component::UiPanel, scene::component::UiButton, scene::component::UiSlider,
+				   scene::component::UiProgressBar>;
 
 
 }// namespace owl::gui::component

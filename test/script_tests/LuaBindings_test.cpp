@@ -665,3 +665,114 @@ TEST(LuaBindings, saveQueriesAndDeferredRequests) {
 	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
+
+TEST(LuaBindings, doorActivateTransitionsIdleToOpening) {
+	core::Log::init(core::Log::Level::Off);
+	const auto scn = mkShared<scene::Scene>();
+	auto entity = scn->createEntity("Door");
+	entity.addComponent<scene::component::RaycastDoor>();
+	const auto uuid = static_cast<uint64_t>(entity.getUUID());
+	const auto signedUuid = static_cast<int64_t>(uuid);
+
+	ScriptEngine::init(scn.get());
+	const std::string script = std::format("state = \"\"\n"
+										   "function on_create()\n"
+										   "  door.activate({})\n"
+										   "  state = door.get_state({})\n"
+										   "end\n",
+										   signedUuid, signedUuid);
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	ASSERT_TRUE(inst.createFromBuffer(data, "door_test", uuid));
+	inst.onCreate();
+	EXPECT_EQ(entity.getComponent<scene::component::RaycastDoor>().state,
+			  scene::component::RaycastDoor::State::Opening);
+	const auto reported = inst.getPropertyString("state");
+	ASSERT_TRUE(reported.has_value());
+	EXPECT_EQ(reported.value(), "opening");
+	ScriptEngine::shutdown();
+	core::Log::invalidate();
+}
+
+TEST(LuaBindings, doorIsOpenAndCloseSwitchesState) {
+	core::Log::init(core::Log::Level::Off);
+	const auto scn = mkShared<scene::Scene>();
+	auto entity = scn->createEntity("Door");
+	auto& door = entity.addComponent<scene::component::RaycastDoor>();
+	door.state = scene::component::RaycastDoor::State::Open;
+	door.holdTimer = 10.f;
+	door.currentOffset = 1.f;
+	const auto uuid = static_cast<uint64_t>(entity.getUUID());
+	const auto signedUuid = static_cast<int64_t>(uuid);
+
+	ScriptEngine::init(scn.get());
+	const std::string script = std::format("opened = false\n"
+										   "function on_create()\n"
+										   "  opened = door.is_open({})\n"
+										   "  door.close({})\n"
+										   "end\n",
+										   signedUuid, signedUuid);
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	ASSERT_TRUE(inst.createFromBuffer(data, "door_close_test", uuid));
+	inst.onCreate();
+	EXPECT_TRUE(inst.getPropertyBool("opened").value_or(false));
+	EXPECT_EQ(entity.getComponent<scene::component::RaycastDoor>().state,
+			  scene::component::RaycastDoor::State::Closing);
+	EXPECT_FLOAT_EQ(entity.getComponent<scene::component::RaycastDoor>().holdTimer, 0.f);
+	ScriptEngine::shutdown();
+	core::Log::invalidate();
+}
+
+TEST(LuaBindings, pushwallActivateAndHasMoved) {
+	core::Log::init(core::Log::Level::Off);
+	const auto scn = mkShared<scene::Scene>();
+	auto entity = scn->createEntity("Push");
+	entity.addComponent<scene::component::RaycastPushWall>();
+	const auto uuid = static_cast<uint64_t>(entity.getUUID());
+	const auto signedUuid = static_cast<int64_t>(uuid);
+
+	ScriptEngine::init(scn.get());
+	const std::string script = std::format("before = false\n"
+										   "state = \"\"\n"
+										   "function on_create()\n"
+										   "  before = pushwall.has_moved({})\n"
+										   "  pushwall.activate({})\n"
+										   "  state = pushwall.get_state({})\n"
+										   "end\n",
+										   signedUuid, signedUuid, signedUuid);
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	ASSERT_TRUE(inst.createFromBuffer(data, "push_test", uuid));
+	inst.onCreate();
+	EXPECT_FALSE(inst.getPropertyBool("before").value_or(true));
+	EXPECT_EQ(entity.getComponent<scene::component::RaycastPushWall>().state,
+			  scene::component::RaycastPushWall::State::Moving);
+	EXPECT_EQ(inst.getPropertyString("state").value_or(""), "moving");
+	ScriptEngine::shutdown();
+	core::Log::invalidate();
+}
+
+TEST(LuaBindings, doorPushwallApisHandleMissingEntity) {
+	// Calling activate/close/get_state/is_open/has_moved with an unknown UUID must
+	// not crash or mutate state — Lua errors silently fall back to default returns.
+	core::Log::init(core::Log::Level::Off);
+	const auto scn = mkShared<scene::Scene>();
+	ScriptEngine::init(scn.get());
+	const std::string script = "door.activate(0)\n"
+							   "door.close(0)\n"
+							   "open = door.is_open(0)\n"
+							   "door_state = door.get_state(0)\n"
+							   "pushwall.activate(0)\n"
+							   "moved = pushwall.has_moved(0)\n"
+							   "push_state = pushwall.get_state(0)\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	ASSERT_TRUE(inst.createFromBuffer(data, "missing_test", 1));
+	EXPECT_EQ(inst.getPropertyBool("open").value_or(true), false);
+	EXPECT_EQ(inst.getPropertyBool("moved").value_or(true), false);
+	EXPECT_EQ(inst.getPropertyString("door_state").value_or(""), "idle");
+	EXPECT_EQ(inst.getPropertyString("push_state").value_or(""), "idle");
+	ScriptEngine::shutdown();
+	core::Log::invalidate();
+}

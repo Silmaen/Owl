@@ -168,6 +168,66 @@ void PhysicCommand::init(scene::Scene* iScene) {
 			}
 		}
 	}
+
+	// Generate kinematic bodies for raycast doors and pushwalls that don't carry an
+	// explicit `PhysicBody`. The body's collider matches the moving surface so the
+	// player physically collides with it (a closed door must not be traversable). The
+	// state machine in `Scene::updateRaycastDynamicWalls` later moves the body via
+	// `setTransform` each tick to track the plate / block position.
+	for (const auto view = m_scene->registry.view<scene::component::RaycastDoor, scene::component::Transform>();
+		 const auto e: view) {
+		const scene::Entity entity{e, m_scene};
+		if (entity.hasComponent<scene::component::PhysicBody>())
+			continue;// designer-managed body, leave it alone
+		auto& door = view.get<scene::component::RaycastDoor>(e);
+		const math::Transform worldTransform = m_scene->getWorldTransform(entity);
+		b2BodyDef bodyDef = b2DefaultBodyDef();
+		bodyDef.type = b2_kinematicBody;
+		bodyDef.fixedRotation = true;
+		bodyDef.position.x = worldTransform.translation().x();
+		bodyDef.position.y = worldTransform.translation().y();
+		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
+		const b2BodyId body = b2CreateBody(m_impl->worldId, &bodyDef);
+		// Plate footprint: thin along the perpendicular-to-slide axis, full cell on
+		// the slide axis (matches the rendered surface).
+		using OD = scene::component::RaycastDoor::OpeningDirection;
+		const bool slideAlongY = (door.openingDirection == OD::North || door.openingDirection == OD::South);
+		constexpr float kPlateHalfThickness = 0.05f;// matches the renderer's lateral bias
+		const float halfX = slideAlongY ? kPlateHalfThickness : 0.5f;
+		const float halfY = slideAlongY ? 0.5f : kPlateHalfThickness;
+		const b2Polygon plateBox = b2MakeBox(halfX, halfY);
+		b2ShapeDef shapeDef = b2DefaultShapeDef();
+		shapeDef.density = 0.f;
+		shapeDef.material.friction = 0.5f;
+		b2CreatePolygonShape(body, &shapeDef, &plateBox);
+		door.bodyId = m_impl->nextId;
+		m_impl->bodies[m_impl->nextId] = body;
+		m_impl->nextId++;
+	}
+	for (const auto view = m_scene->registry.view<scene::component::RaycastPushWall, scene::component::Transform>();
+		 const auto e: view) {
+		const scene::Entity entity{e, m_scene};
+		if (entity.hasComponent<scene::component::PhysicBody>())
+			continue;
+		auto& push = view.get<scene::component::RaycastPushWall>(e);
+		const math::Transform worldTransform = m_scene->getWorldTransform(entity);
+		b2BodyDef bodyDef = b2DefaultBodyDef();
+		bodyDef.type = b2_kinematicBody;
+		bodyDef.fixedRotation = true;
+		bodyDef.position.x = worldTransform.translation().x();
+		bodyDef.position.y = worldTransform.translation().y();
+		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
+		const b2BodyId body = b2CreateBody(m_impl->worldId, &bodyDef);
+		// Pushwall footprint: full 1×1 block — same as the rendered cube.
+		const b2Polygon block = b2MakeBox(0.5f, 0.5f);
+		b2ShapeDef shapeDef = b2DefaultShapeDef();
+		shapeDef.density = 0.f;
+		shapeDef.material.friction = 0.5f;
+		b2CreatePolygonShape(body, &shapeDef, &block);
+		push.bodyId = m_impl->nextId;
+		m_impl->bodies[m_impl->nextId] = body;
+		m_impl->nextId++;
+	}
 }
 
 void PhysicCommand::destroy() {
@@ -265,10 +325,22 @@ void PhysicCommand::setTransform(const scene::Entity& iEntity, const math::vec2f
 		logNullEntity("setTransform");
 		return;
 	}
-	if (!iEntity.hasComponent<scene::component::PhysicBody>())
+	// Explicit `PhysicBody` takes priority — that's the designer-authored body.
+	if (iEntity.hasComponent<scene::component::PhysicBody>()) {
+		auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
+		b2Body_SetTransform(m_impl->bodies[body.bodyId], {iPosition.x(), iPosition.y()}, b2MakeRot(iRotation));
 		return;
-	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
-	b2Body_SetTransform(m_impl->bodies[body.bodyId], {iPosition.x(), iPosition.y()}, b2MakeRot(iRotation));
+	}
+	// Otherwise fall back to the auto-created kinematic body for raycast doors / pushwalls.
+	uint64_t bodyId = 0;
+	if (iEntity.hasComponent<scene::component::RaycastDoor>())
+		bodyId = iEntity.getComponent<scene::component::RaycastDoor>().bodyId;
+	else if (iEntity.hasComponent<scene::component::RaycastPushWall>())
+		bodyId = iEntity.getComponent<scene::component::RaycastPushWall>().bodyId;
+	if (bodyId == 0)
+		return;
+	if (const auto it = m_impl->bodies.find(bodyId); it != m_impl->bodies.end())
+		b2Body_SetTransform(it->second, {iPosition.x(), iPosition.y()}, b2MakeRot(iRotation));
 }
 
 void PhysicCommand::setVelocity(const scene::Entity& iEntity, const math::vec2f& iVelocity) {
