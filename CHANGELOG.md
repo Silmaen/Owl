@@ -9,6 +9,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Raycast lighting + textured floors and ceilings.** Two long-standing
+  v0.2.0 raycast follow-ups land together — they share the same per-row
+  pipeline and the same fog mixer, so shipping them in one PR keeps the
+  visual result coherent (a wall stripe and the floor pixel right below it
+  converge to the same colour at `fogEnd`).
+    - **Distance fog.** `RaycastConfig` gains `fogColor` + `fogStart` +
+      `fogEnd`. Wall, dynamic-wall, door and sprite stripes are lerped
+      toward `fogColor` as their perpendicular distance crosses the
+      `fogStart`..`fogEnd` range. Disabled by default
+      (`fogEnd <= fogStart`) so existing scenes keep their natural tint.
+      A single `applyFog` helper is shared across every emitter so seams
+      between the wall and the floor underneath are invisible. YAML key:
+      `Fog{Color,Start,End}` under a layer's `DefaultConfig` /
+      `Overrides`.
+    - **Textured floors + ceilings.** `RaycastConfig` gains
+      `floorTilesetPath` + `floorTileIndex` and the matching ceiling
+      pair. Per screen row above / below the horizon the renderer
+      projects the pixel back to the floor (or ceiling) plane using the
+      camera-plane basis, then emits a 1-pixel-tall quad whose UVs
+      interpolate linearly between the visible cone's left and right
+      endpoints. The texture's REPEAT wrap handles tiling. Falls back to
+      the existing solid `floorColor` / `ceilingColor` quads when no
+      tileset is set. `RendererRaycastLayer` resolves the tilesets on
+      first `onBeginFrame` via the asset library (same path/index
+      convention as `RaycastDoor` / `RaycastPushWall`, pointing at the
+      world tilemap's atlas reuses the shared `Tileset` instance).
+      YAML keys: `FloorTileset` / `FloorTileIndex` /
+      `CeilingTileset` / `CeilingTileIndex`.
+    - Stats: new `backdropScanlineCount` counter reports the per-frame
+      backdrop quad budget so the profiler can spot the (cheap) per-row
+      emission cost.
+    - Tests: 4 new headless renderer tests cover fog default vs.
+      configured passes and the textured / solid backdrop branches.
+- **In-game performance — three hot-path wins on `Scene::onUpdateRuntime`.**
+    - `Scene::getPrimaryPlayer` caches the resolved entity handle and
+      invalidates it on entity destroy, on `Player` add and on `Player`
+      removal — the four per-tick lookups
+      (`updateRaycastDynamicWalls`, input dispatch, trigger overlap,
+      sound listener pose) now share a single `try_get` instead of
+      re-scanning `view<component::Player>` four times every frame.
+    - `Scene::resolveAllEntityLinks` runs once from `onStartRuntime` and
+      pre-populates every `EntityLink.linkedEntity` from its
+      `linkedEntityName`, so the per-frame link loop never falls into
+      its O(N²) `view<Tag>` rescan path on the first tick. Tag renames
+      keep their one-tick rescan via the existing mismatch check.
+    - Native scripts, Lua scripts and `EntityLink` updates now skip
+      entities for which `isEffectivelyVisible(..., /*editorMode=*/false)`
+      is false — a hidden host suspends its `on_update` / link
+      tracking until it becomes visible again, matching the dormant
+      pattern already used by triggers and renderers.
+    - 4 new `SceneRuntime` tests cover primary-player cache
+      invalidation on destroy + flag clear, EntityLink pre-resolution
+      on start, and the dormant-EntityLink skip.
 - **Doors and pushwalls — animated raycast walls.** Two new components and a
   dedicated renderer pass close out the Wolf3D-style feature set for v0.2.0.
     - `scene::component::RaycastDoor` — Wolf3D-style sliding door

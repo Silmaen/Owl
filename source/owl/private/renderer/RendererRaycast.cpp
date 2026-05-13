@@ -161,24 +161,152 @@ auto computeHorizonY() -> float {
 	return std::floor(static_cast<float>(g_state->viewport.y()) * 0.5f);
 }
 
+/**
+ * @brief
+ *  Return the fog interpolation factor `t ∈ [0,1]` for a perpendicular distance.
+ *
+ * `t = 0` means "natural tint" (close), `t = 1` means "full fog tint" (far). When
+ * `fogEnd <= fogStart` the function returns 0 — fog is disabled. The factor is
+ * meant to be fed to `lerp(natural, fogColor, t)` by the stripe emitter.
+ * @param[in] iPerpDist Perpendicular-to-camera-plane distance in cells.
+ * @return The interpolation factor.
+ */
+auto computeFogFactor(const float iPerpDist) -> float {
+	if (!g_state)
+		return 0.f;
+	const float fogStart = g_state->config.fogStart;
+	const float fogEnd = g_state->config.fogEnd;
+	if (fogEnd <= fogStart)
+		return 0.f;
+	return std::clamp((iPerpDist - fogStart) / (fogEnd - fogStart), 0.f, 1.f);
+}
+
+/// Lerp `iColor` toward `g_state->config.fogColor` by `iFogFactor`.
+auto applyFog(const math::vec4& iColor, const float iFogFactor) -> math::vec4 {
+	if (iFogFactor <= 0.f || !g_state)
+		return iColor;
+	const auto& fog = g_state->config.fogColor;
+	const float k = iFogFactor;
+	const float inv = 1.f - k;
+	return math::vec4{iColor.x() * inv + fog.x() * k, iColor.y() * inv + fog.y() * k, iColor.z() * inv + fog.z() * k,
+					  iColor.w()};
+}
+
+/**
+ * @brief
+ *  Emit one floor + one ceiling stripe per screen row to texture the backdrop.
+ *
+ * Per row Y below the horizon the renderer projects the screen pixel back into
+ * world space at the floor plane (z = 0) using the camera-plane basis. World
+ * position varies linearly between the leftmost (`cameraX = −1`) and rightmost
+ * (`cameraX = +1`) rays at the same row — so a single quad spanning the row
+ * width with linearly-interpolated UVs (and the texture's `REPEAT` wrap) covers
+ * every pixel without per-pixel math. Same logic mirrored for the ceiling.
+ *
+ * Falls back to a single full-height solid quad per half when the corresponding
+ * texture is null. Distance fog is applied per row.
+ */
+void emitTexturedBackdrop() {
+	const math::vec2 vp{static_cast<float>(g_state->viewport.x()), static_cast<float>(g_state->viewport.y())};
+	const float horizonY = computeHorizonY();
+	const float halfH = std::max(1.f, horizonY);// pixel "height" of the camera above the floor
+	const auto& cfg = g_state->config;
+	const math::vec2& camPos = g_state->cameraPos2D;
+	const math::vec2& camDir = g_state->cameraDir2D;
+	const math::vec2& camPlane = g_state->cameraPlane2D;
+
+	// --- Floor scanlines ------------------------------------------------------
+	if (cfg.floorTexture && cfg.floorTexture->isLoaded()) {
+		for (int row = 0; row < static_cast<int>(horizonY); ++row) {
+			const float p = horizonY - static_cast<float>(row) - 0.5f;// pixels below horizon (centre of the row)
+			if (p <= 0.f)
+				continue;
+			const float floorDist = halfH / p;
+			if (floorDist > cfg.maxDistance && cfg.maxDistance > 0.f)
+				continue;
+			// World floor position at the two ends of the visible cone.
+			const math::vec2 worldL{camPos.x() + floorDist * (camDir.x() - camPlane.x()),
+									camPos.y() + floorDist * (camDir.y() - camPlane.y())};
+			const math::vec2 worldR{camPos.x() + floorDist * (camDir.x() + camPlane.x()),
+									camPos.y() + floorDist * (camDir.y() + camPlane.y())};
+			// Remap each world endpoint into the floor tile's atlas sub-rect.
+			const auto& uv = cfg.floorUvRect;
+			const float uMin = uv.x();
+			const float vMin = uv.y();
+			const float uMax = uv.z();
+			const float vMax = uv.w();
+			const auto worldToUv = [&](const math::vec2& iWorld) -> math::vec2 {
+				const float uFrac = iWorld.x() - std::floor(iWorld.x());
+				const float vFrac = iWorld.y() - std::floor(iWorld.y());
+				return {uMin + uFrac * (uMax - uMin), vMin + vFrac * (vMax - vMin)};
+			};
+			const math::vec2 uvL = worldToUv(worldL);
+			const math::vec2 uvR = worldToUv(worldR);
+			math::Transform tr;
+			tr.translation() = math::vec3{vp.x() * 0.5f, static_cast<float>(row) + 0.5f, 0.f};
+			tr.scale() = math::vec3{vp.x(), 1.f, 1.f};
+			const float fogFactor = computeFogFactor(floorDist);
+			const math::vec4 tint = applyFog(math::vec4{1.f, 1.f, 1.f, 1.f}, fogFactor);
+			// Per-vertex UV order = BL, BR, TR, TL (matches `Quad2DData`).
+			const std::array<math::vec2, 4> rowUv{uvL, uvR, uvR, uvL};
+			Renderer2D::drawQuad({.transform = tr, .color = tint, .texture = cfg.floorTexture, .textureCoords = rowUv});
+			g_state->stats.backdropScanlineCount++;
+		}
+	} else {
+		math::Transform floorTransform;
+		floorTransform.translation() = math::vec3{vp.x() * 0.5f, horizonY * 0.5f, 0.f};
+		floorTransform.scale() = math::vec3{vp.x(), horizonY, 1.f};
+		Renderer2D::drawQuad({.transform = floorTransform, .color = cfg.floorColor});
+	}
+
+	// --- Ceiling scanlines ----------------------------------------------------
+	if (cfg.ceilingTexture && cfg.ceilingTexture->isLoaded()) {
+		for (int row = static_cast<int>(horizonY); row < static_cast<int>(vp.y()); ++row) {
+			const float p = static_cast<float>(row) - horizonY + 0.5f;// pixels above horizon
+			if (p <= 0.f)
+				continue;
+			const float ceilDist = halfH / p;
+			if (ceilDist > cfg.maxDistance && cfg.maxDistance > 0.f)
+				continue;
+			const math::vec2 worldL{camPos.x() + ceilDist * (camDir.x() - camPlane.x()),
+									camPos.y() + ceilDist * (camDir.y() - camPlane.y())};
+			const math::vec2 worldR{camPos.x() + ceilDist * (camDir.x() + camPlane.x()),
+									camPos.y() + ceilDist * (camDir.y() + camPlane.y())};
+			const auto& uv = cfg.ceilingUvRect;
+			const float uMin = uv.x();
+			const float vMin = uv.y();
+			const float uMax = uv.z();
+			const float vMax = uv.w();
+			const auto worldToUv = [&](const math::vec2& iWorld) -> math::vec2 {
+				const float uFrac = iWorld.x() - std::floor(iWorld.x());
+				const float vFrac = iWorld.y() - std::floor(iWorld.y());
+				return {uMin + uFrac * (uMax - uMin), vMin + vFrac * (vMax - vMin)};
+			};
+			const math::vec2 uvL = worldToUv(worldL);
+			const math::vec2 uvR = worldToUv(worldR);
+			math::Transform tr;
+			tr.translation() = math::vec3{vp.x() * 0.5f, static_cast<float>(row) + 0.5f, 0.f};
+			tr.scale() = math::vec3{vp.x(), 1.f, 1.f};
+			const float fogFactor = computeFogFactor(ceilDist);
+			const math::vec4 tint = applyFog(math::vec4{1.f, 1.f, 1.f, 1.f}, fogFactor);
+			const std::array<math::vec2, 4> rowUv{uvL, uvR, uvR, uvL};
+			Renderer2D::drawQuad(
+					{.transform = tr, .color = tint, .texture = cfg.ceilingTexture, .textureCoords = rowUv});
+			g_state->stats.backdropScanlineCount++;
+		}
+	} else {
+		math::Transform skyTransform;
+		const float skyHeight = vp.y() - horizonY;
+		skyTransform.translation() = math::vec3{vp.x() * 0.5f, horizonY + skyHeight * 0.5f, 0.f};
+		skyTransform.scale() = math::vec3{vp.x(), skyHeight, 1.f};
+		Renderer2D::drawQuad({.transform = skyTransform, .color = cfg.ceilingColor});
+	}
+}
+
 void emitBackdropIfNeeded() {
 	if (!g_state || g_state->backdropEmitted)
 		return;
-	const math::vec2 vp = {static_cast<float>(g_state->viewport.x()), static_cast<float>(g_state->viewport.y())};
-	const float horizonY = computeHorizonY();
-	const float skyHeight = vp.y() - horizonY;
-	const float floorHeight = horizonY;
-
-	math::Transform skyTransform;
-	skyTransform.translation() = math::vec3{vp.x() * 0.5f, horizonY + skyHeight * 0.5f, 0.f};
-	skyTransform.scale() = math::vec3{vp.x(), skyHeight, 1.f};
-	Renderer2D::drawQuad({.transform = skyTransform, .color = g_state->config.ceilingColor});
-
-	math::Transform floorTransform;
-	floorTransform.translation() = math::vec3{vp.x() * 0.5f, floorHeight * 0.5f, 0.f};
-	floorTransform.scale() = math::vec3{vp.x(), floorHeight, 1.f};
-	Renderer2D::drawQuad({.transform = floorTransform, .color = g_state->config.floorColor});
-
+	emitTexturedBackdrop();
 	g_state->backdropEmitted = true;
 }
 
@@ -498,6 +626,10 @@ void emitStripe(uint32_t iCol, float iStripeX, float iStripePxWidth, float iHori
 		tint.y() *= g_YSideDarken;
 		tint.z() *= g_YSideDarken;
 	}
+	// Distance fog — same applyFog helper the textured backdrop uses, so a
+	// wall stripe and the floor pixels right below it converge to the same
+	// `fogColor` at `fogEnd`.
+	tint = applyFog(tint, computeFogFactor(iPerpDist));
 	const std::array<math::vec2, 4> stripeUv{
 			math::vec2{uHit, vBottom},
 			math::vec2{uHit, vBottom},
@@ -935,8 +1067,10 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 					math::vec2{uHit, uvTop},
 					math::vec2{uHit, uvTop},
 			};
+			// Sprites take the same fog tint as the walls / backdrop at their depth.
+			const math::vec4 spriteTint = applyFog(sprite.tint, computeFogFactor(projected.transformY));
 			Renderer2D::drawQuad({.transform = stripeTr,
-								  .color = sprite.tint,
+								  .color = spriteTint,
 								  .texture = sprite.texture,
 								  .textureCoords = stripeUv,
 								  .entityId = sprite.entityId});

@@ -180,6 +180,45 @@ TEST_F(SceneRuntimeTest, EntityLinkFollowsTarget) {
 	scn.onEndRuntime();
 }
 
+// `resolveAllEntityLinks` is called from `onStartRuntime` so the per-frame
+// link loop never falls into its O(N²) tag-rescan path on the first tick.
+// After `onStartRuntime` and before any `onUpdateRuntime`, every EntityLink
+// with a known name must already point at the right entity.
+TEST_F(SceneRuntimeTest, EntityLinkPreResolvedOnStart) {
+	scene::Scene scn;
+	auto target = scn.createEntity("target");
+	auto follower = scn.createEntity("follower");
+	auto& link = follower.addComponent<scene::component::EntityLink>();
+	link.linkedEntityName = "target";
+	EXPECT_FALSE(link.linkedEntity);
+	scn.onStartRuntime();
+	EXPECT_TRUE(link.linkedEntity);
+	EXPECT_EQ(link.linkedEntity, target);
+	scn.onEndRuntime();
+}
+
+// A hidden follower must freeze in place rather than track its target — the
+// dormant-entity skip in `onUpdateRuntime`'s link loop short-circuits hidden
+// hosts.
+TEST_F(SceneRuntimeTest, HiddenEntityLinkSkipsTracking) {
+	scene::Scene scn;
+	auto target = scn.createEntity("target");
+	target.getComponent<scene::component::Transform>().transform.translation() = {5.f, 6.f, 0.f};
+
+	auto follower = scn.createEntity("follower");
+	follower.getComponent<scene::component::Transform>().transform.translation() = {0.f, 0.f, 0.f};
+	auto& link = follower.addComponent<scene::component::EntityLink>();
+	link.linkedEntityName = "target";
+	follower.getComponent<scene::component::Visibility>().gameVisible = false;
+
+	scn.onStartRuntime();
+	scn.onUpdateRuntime(makeStep(16), false);
+	const auto& ft = follower.getComponent<scene::component::Transform>().transform;
+	EXPECT_NEAR(ft.translation().x(), 0.f, 0.01f);
+	EXPECT_NEAR(ft.translation().y(), 0.f, 0.01f);
+	scn.onEndRuntime();
+}
+
 // onViewportResize updates non-fixedAspectRatio cameras. Fixed-aspect cameras
 // must NOT have their viewport changed.
 TEST_F(SceneRuntimeTest, OnViewportResizeUpdatesNonFixedCameras) {
@@ -303,6 +342,42 @@ TEST_F(SceneRuntimeTest, PrimaryCameraAndPlayerLookup) {
 	p.primary = true;
 	EXPECT_EQ(scn.getPrimaryCamera(), cam);
 	EXPECT_EQ(scn.getPrimaryPlayer(), player);
+}
+
+// `getPrimaryPlayer` caches its result; destroying the cached entity must
+// invalidate the cache so the next call falls back to the remaining primary
+// player. Without this, the second lookup would return a dangling handle.
+TEST_F(SceneRuntimeTest, PrimaryPlayerCacheSurvivesDestroy) {
+	scene::Scene scn;
+	auto first = scn.createEntity("p1");
+	first.addComponent<scene::component::Player>().primary = true;
+	EXPECT_EQ(scn.getPrimaryPlayer(), first);// warms the cache
+
+	auto second = scn.createEntity("p2");
+	second.addComponent<scene::component::Player>().primary = true;
+
+	scn.destroyEntity(first);
+	const auto found = scn.getPrimaryPlayer();
+	EXPECT_TRUE(found);
+	EXPECT_EQ(found, second);
+}
+
+// Toggling the cached entity's `primary` flag off must also fall through to
+// the next available primary player on the next lookup. EnTT views iterate
+// in unspecified order, so we read whichever entity the first lookup picks
+// then clear its flag and verify the other one is returned.
+TEST_F(SceneRuntimeTest, PrimaryPlayerCacheRevalidatesWhenFlagCleared) {
+	scene::Scene scn;
+	auto a = scn.createEntity("pa");
+	a.addComponent<scene::component::Player>().primary = true;
+	auto b = scn.createEntity("pb");
+	b.addComponent<scene::component::Player>().primary = true;
+	const auto cached = scn.getPrimaryPlayer();
+	ASSERT_TRUE(cached);
+	ASSERT_TRUE(cached == a || cached == b);
+	cached.getComponent<scene::component::Player>().primary = false;
+	const auto other = (cached == a) ? b : a;
+	EXPECT_EQ(scn.getPrimaryPlayer(), other);
 }
 
 // getEntityCount currently uses registry.storage<Entity>() which is never populated

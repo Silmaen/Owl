@@ -52,12 +52,50 @@ struct OWL_API RaycastConfig {
 	float fovDegrees = 75.f;
 	/// Maximum DDA step distance, in cells. Walls past this distance are not drawn.
 	float maxDistance = 64.f;
-	/// Solid colour drawn above the wall horizon (sky / ceiling).
+	/// Solid colour drawn above the wall horizon (sky / ceiling). Used as fallback when no `ceilingTexture` is set.
 	math::vec4 ceilingColor{0.18f, 0.20f, 0.30f, 1.f};
-	/// Solid colour drawn below the wall horizon (floor).
+	/// Solid colour drawn below the wall horizon (floor). Used as fallback when no `floorTexture` is set.
 	math::vec4 floorColor{0.20f, 0.16f, 0.12f, 1.f};
 	/// Number of casted rays (= rendered vertical stripes). 0 = derive from viewport width.
 	uint32_t numRays = 0;
+	/**
+	 * @brief
+	 *  Distance fog tint. Wall / sprite / floor / ceiling stripes are lerped toward
+	 *  this colour as their perpendicular distance crosses `fogStart`..`fogEnd`.
+	 *
+	 * Set `fogEnd <= fogStart` (the default) to disable fog entirely — stripes keep
+	 * their natural tint. A black `fogColor` plus a finite range gives classical
+	 * Wolf3D distance darkening; pointing it at the ceiling colour fakes a cheap
+	 * "sky-bleed" haze.
+	 */
+	math::vec4 fogColor{0.f, 0.f, 0.f, 1.f};
+	/// Distance (cells) at which fog starts mixing in. Stripes closer than this keep their natural tint.
+	float fogStart = 0.f;
+	/// Distance (cells) at which fog reaches full strength. Stripes farther than this match `fogColor` exactly.
+	float fogEnd = 0.f;
+	/**
+	 * @brief
+	 *  Path to a `.owltileset` providing the floor texture. Empty = use `floorColor` solid fill.
+	 *
+	 * The renderer samples this atlas at `floorTileIndex` for the floor scanlines.
+	 * Same per-scene cache as `RaycastDoor` / `RaycastPushWall`, so pointing this at
+	 * the world tilemap's tileset reuses the existing atlas with no double-load.
+	 */
+	std::string floorTilesetPath;
+	/// Tile index sampled from `floorTilesetPath` for the floor.
+	uint32_t floorTileIndex = 0;
+	/// Same role as `floorTilesetPath` for the ceiling. Empty = use `ceilingColor` solid fill.
+	std::string ceilingTilesetPath;
+	/// Tile index sampled from `ceilingTilesetPath` for the ceiling.
+	uint32_t ceilingTileIndex = 0;
+	/// Runtime — resolved by `RendererRaycastLayer` from `floorTilesetPath`. Read by `drawBackdrop`.
+	shared<gpu::Texture> floorTexture;
+	/// Runtime — atlas sub-rectangle for the floor tile (BL.x, BL.y, TR.x, TR.y).
+	math::vec4 floorUvRect{0.f, 0.f, 1.f, 1.f};
+	/// Runtime — resolved ceiling texture.
+	shared<gpu::Texture> ceilingTexture;
+	/// Runtime — ceiling tile sub-rectangle.
+	math::vec4 ceilingUvRect{0.f, 0.f, 1.f, 1.f};
 };
 
 /**
@@ -382,6 +420,8 @@ public:
 		uint32_t doorCount = 0;
 		/// Number of 1-pixel-wide stripes emitted for doors this frame.
 		uint32_t doorStripeCount = 0;
+		/// Number of horizontal scanlines emitted for textured floor / ceiling this frame.
+		uint32_t backdropScanlineCount = 0;
 	};
 
 	/**

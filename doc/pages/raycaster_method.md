@@ -239,12 +239,54 @@ familiar with Wolfenstein 3D.
 
 ### Sky / floor backdrop
 
-Two solid-colour quads spanning each half of the viewport (`(vpW, vpH/2)`,
-centred at vpH × {0.25, 0.75}) are drawn **before** the wall stripes. They
-are emitted **lazily** — only on the first wall draw of the scene — so a
-raycast layer that ends up not routing any tilemap (e.g. enabled in the
-project but skipped by `EnabledRenderers` or `RendererTag` in a particular
-scene) stays a genuine no-op and doesn't paint over the layer underneath.
+Lazily emitted on the first wall / sprite draw of the scene so a raycast
+layer that ends up routing no content stays a genuine no-op. Two paths:
+
+- **Solid colour (default)** — one full-height quad per half of the
+  viewport, tinted with `RaycastConfig::ceilingColor` /
+  `floorColor`. Same shape as the v0.2.0 first cut.
+- **Textured per-scanline** — when `RaycastConfig::floorTexture` /
+  `ceilingTexture` are populated (via the layer's `FloorTileset` /
+  `FloorTileIndex` / `CeilingTileset` / `CeilingTileIndex` YAML keys),
+  the renderer emits one 1-pixel-tall quad per screen row. For row `Y`
+  below the horizon:
+
+  ```text
+  p          = horizonY − Y − 0.5            # pixels below the horizon
+  floorDist  = horizonY / p                  # perpendicular world distance
+  worldL     = camPos + floorDist · (camDir − camPlane)
+  worldR     = camPos + floorDist · (camDir + camPlane)
+  ```
+
+  `worldL` and `worldR` are the floor positions the leftmost (`cameraX = −1`)
+  and rightmost (`cameraX = +1`) rays would hit on this row. The quad's
+  UVs interpolate linearly between them; the texture's `REPEAT` wrap
+  takes care of tiling. Ceiling rows mirror the formula with
+  `p = Y − horizonY + 0.5`.
+
+  Stats: `backdropScanlineCount` reports the per-frame quad budget — at
+  720p that's ~720 quads for both halves combined, easily within the 2D
+  batch's 20k budget.
+
+### Distance fog
+
+`RaycastConfig` carries `fogColor` + `fogStart` + `fogEnd`. The renderer
+lerps every emitted stripe (walls, dynamic walls, doors, sprites, and
+both backdrop halves) toward `fogColor` as its perpendicular distance
+crosses the `fogStart`..`fogEnd` range:
+
+```text
+t        = clamp((perpDist − fogStart) / (fogEnd − fogStart), 0, 1)
+finalRgb = lerp(naturalRgb, fogColor.rgb, t)
+```
+
+Set `fogEnd ≤ fogStart` (the default) to disable fog entirely — scenes
+authored before v0.2.0's lighting PR keep their natural tint. A black
+`fogColor` plus a finite range gives classical Wolf3D distance
+darkening; pointing it at the ceiling colour fakes a cheap sky-bleed
+haze. The single `applyFog` helper is shared across every stripe
+emitter so a wall pixel and the floor pixel directly below it converge
+to the same colour at `fogEnd` — no visible seam.
 
 ## Why this is a v1, not the canonical Wolfenstein 3D
 
