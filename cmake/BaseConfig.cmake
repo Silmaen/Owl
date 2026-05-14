@@ -206,6 +206,10 @@ endif ()
 #
 # Debugging options
 #
+if (${PROJECT_PREFIX}_ENABLE_MEMORY_TRACKER OR ${PROJECT_PREFIX}_ENABLE_STACKTRACE)
+    # Stacktrace lives on top of the tracker — turning it on implies the tracker.
+    target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_MEMORY_TRACKER)
+endif ()
 if (${PROJECT_PREFIX}_ENABLE_STACKTRACE)
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_STACKTRACE)
 endif ()

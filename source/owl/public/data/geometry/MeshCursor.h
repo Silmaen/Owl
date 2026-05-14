@@ -100,7 +100,7 @@ struct OWL_API MeshCursorInitializer {
 	 * @return True if the extra data is defined on all elements, false otherwise.
 	 */
 	template<typename DataType>
-	static auto isExtraDataDefined(MeshType& iMesh) -> bool {
+	[[nodiscard]] static auto isExtraDataDefined(const MeshType& iMesh) -> bool {
 		if constexpr (ElementType == MeshElementType::Vertex) {
 			return iMesh.template isExtraDataDefinedOnAllVertices<DataType>();
 		} else {
@@ -130,7 +130,7 @@ struct OWL_API MeshCursorInitializer {
 	 * @param[in] iPid  The factory PID of the extra data.
 	 * @return True if the extra data is defined on all elements, false otherwise.
 	 */
-	static auto isExtraDataDefined(MeshType& iMesh, const core::FactoryPid iPid) -> bool {
+	[[nodiscard]] static auto isExtraDataDefined(const MeshType& iMesh, const core::FactoryPid iPid) -> bool {
 		if constexpr (ElementType == MeshElementType::Vertex) {
 			return iMesh.isExtraDataDefinedOnAllVertices(iPid);
 		} else {
@@ -327,7 +327,18 @@ private:
 	 * @return A reference on the component.
 	 */
 	template<typename T>
-	auto getComponent() -> T& {
+	[[nodiscard]] auto getComponent() -> T& {
+		return std::get<T>(*m_components);
+	}
+
+	/**
+	 * @brief
+	 *  Const overload — read-only access to a component on a const cursor.
+	 * @tparam T Component type to find.
+	 * @return A const reference on the component.
+	 */
+	template<typename T>
+	[[nodiscard]] auto getComponent() const -> const T& {
 		return std::get<T>(*m_components);
 	}
 

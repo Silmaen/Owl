@@ -166,7 +166,7 @@ public:
 	 *  Access to the primary Camera.
 	 * @return The primary camera.
 	 */
-	auto getPrimaryCamera() -> Entity;
+	[[nodiscard]] auto getPrimaryCamera() const -> Entity;
 
 	/**
 	 * @brief
@@ -179,7 +179,7 @@ public:
 	 * dynamic-wall loops that all hit this accessor multiple times per tick.
 	 * @return The primary player.
 	 */
-	auto getPrimaryPlayer() -> Entity;
+	[[nodiscard]] auto getPrimaryPlayer() const -> Entity;
 
 	/**
 	 * @brief
@@ -381,6 +381,15 @@ private:
 	renderer::EnabledRenderersConfig m_enabledRenderers;
 	/// Cached primary-player entity handle. `entt::null` means "not resolved yet".
 	mutable entt::entity m_primaryPlayerCache = entt::null;
+	/**
+	 * @brief
+	 *  UUID → entt::entity index, kept warm across the scene's lifetime.
+	 *  Populated by `createEntityWithUUID`, cleared by `destroyEntity` /
+	 *  `destroyEntityWithChildren`. `findEntityByUUID` consults this map
+	 *  first (O(1)) and falls back to a registry scan + repair on miss,
+	 *  so even paths that bypass the canonical create remain correct.
+	 */
+	mutable std::unordered_map<core::UUID, entt::entity> m_uuidIndex;
 	/**
 	 * @brief
 	 *  Action when component is added to an entity.

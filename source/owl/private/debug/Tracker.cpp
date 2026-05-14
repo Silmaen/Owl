@@ -20,9 +20,30 @@
 
 // NOLINTBEGIN(misc-no-recursion)
 
+#ifdef OWL_TRACKER_ACTIVE
 #define OWL_DEALLOC_EXCEPT noexcept
+#endif
 namespace {
-bool g_AntiLoop = false;
+thread_local bool g_AntiLoop = false;
+std::mutex g_TrackerMutex;
+
+class AntiLoopScope {
+public:
+	AntiLoopScope() : m_previous{g_AntiLoop} { g_AntiLoop = true; }
+
+	~AntiLoopScope() { g_AntiLoop = m_previous; }
+
+	AntiLoopScope(const AntiLoopScope&) = delete;
+
+	AntiLoopScope(AntiLoopScope&&) = delete;
+
+	auto operator=(const AntiLoopScope&) -> AntiLoopScope& = delete;
+
+	auto operator=(AntiLoopScope&&) -> AntiLoopScope& = delete;
+
+private:
+	bool m_previous;
+};
 
 class TrackerState {
 public:
@@ -66,12 +87,13 @@ private:
 };
 
 }// namespace
-#if !defined(__cpp_sized_deallocation) || __cpp_sized_deallocation == 0
+#if defined(OWL_TRACKER_ACTIVE) && (!defined(__cpp_sized_deallocation) || __cpp_sized_deallocation == 0)
 
 void operator delete(void* iMemory, size_t iSize) OWL_DEALLOC_EXCEPT;
 #endif
 
 // NOLINTBEGIN(*-no-malloc,cppcoreguidelines-owning-memory)
+#ifdef OWL_TRACKER_ACTIVE
 auto operator new(const size_t iSize) -> void* {
 	void* mem = malloc(iSize);
 	owl::debug::TrackerAPI::allocate(mem, iSize);
@@ -87,6 +109,7 @@ void operator delete(void* iMemory) OWL_DEALLOC_EXCEPT {
 	owl::debug::TrackerAPI::deallocate(iMemory);
 	free(iMemory);
 }
+#endif
 // NOLINTEND(*-no-malloc,cppcoreguidelines-owning-memory)
 
 namespace owl::debug {
@@ -101,6 +124,8 @@ public:
 	}
 
 	static void pushMemory(void* iLocation, const size_t iSize) {
+		const AntiLoopScope antiLoop;
+		const std::lock_guard<std::mutex> lock{g_TrackerMutex};
 		if (!s_globalAllocationState)
 			allocate();
 		s_currentAllocationState->pushMemory(iLocation, iSize);
@@ -108,11 +133,17 @@ public:
 	}
 
 	static void freeMemory(void* iLocation, const size_t iSize) {
+		const AntiLoopScope antiLoop;
+		const std::lock_guard<std::mutex> lock{g_TrackerMutex};
+		if (!s_currentAllocationState)
+			return;
 		s_currentAllocationState->freeMemory(iLocation, iSize);
 		s_globalAllocationState->freeMemory(iLocation, iSize);
 	}
 
 	static void swapCurrent() {
+		const AntiLoopScope antiLoop;
+		const std::lock_guard<std::mutex> lock{g_TrackerMutex};
 		if (!s_lastAllocationState)
 			allocate();
 		s_lastAllocationState->resetState();
@@ -120,12 +151,16 @@ public:
 	}
 
 	[[nodiscard]] static auto getLastAllocationState() -> const AllocationState& {
+		const AntiLoopScope antiLoop;
+		const std::lock_guard<std::mutex> lock{g_TrackerMutex};
 		if (!s_lastAllocationState)
 			allocate();
 		return *s_lastAllocationState;
 	}
 
 	[[nodiscard]] static auto getGlobalAllocationState() -> const AllocationState& {
+		const AntiLoopScope antiLoop;
+		const std::lock_guard<std::mutex> lock{g_TrackerMutex};
 		if (!s_globalAllocationState)
 			allocate();
 		return *s_globalAllocationState;
@@ -264,30 +299,27 @@ void AllocationState::pushMemory(void* iLocation, size_t iSize) {
 	allocatedMemory += iSize;
 	memoryPeek = std::max(memoryPeek, allocatedMemory);
 	if (!g_AntiLoop)
-		// Bypass the spdlog-backed `OWL_CORE_*` macros: those allocate, which would re-enter the
-		// tracker and recurse forever. We also avoid `std::println` here because libstdc++ marks
-		// the format helpers as potentially throwing, which would propagate through any caller
-		// that is itself `noexcept` (e.g. an allocator hook). Plain `std::fputs` is non-throwing.
 		std::fputs("Tracker: anti-loop guard tripped during pushMemory\n", stderr);
 	allocs.emplace_back(iLocation, iSize);
+	index.insert_or_assign(iLocation, std::prev(allocs.end()));
 }
 
 void AllocationState::freeMemory(void* iLocation, size_t iSize) {
-	if (const auto chunk = std::ranges::find_if(
-				allocs.begin(), allocs.end(),
-				[&iLocation](const AllocationInfo& iAllocInfo) -> bool { return iAllocInfo.location == iLocation; });
-		chunk != allocs.end()) {
-		if (iSize == 0) {
-			iSize = chunk->size;
-		}
-		allocs.erase(chunk);
-		deallocationCalls++;
-		allocatedMemory -= iSize;
-	}
+	const auto it = index.find(iLocation);
+	if (it == index.end())
+		return;
+	const auto listIt = it->second;
+	if (iSize == 0)
+		iSize = listIt->size;
+	allocs.erase(listIt);
+	index.erase(it);
+	deallocationCalls++;
+	allocatedMemory -= iSize;
 }
 
 void AllocationState::resetState() {
 	allocs.clear();
+	index.clear();
 	allocatedMemory = 0;
 	allocationCalls = 0;
 	deallocationCalls = 0;

@@ -389,14 +389,14 @@ TEST(CoreCoverage, ScopeTrackReenablesTracking) {
 }
 
 TEST(CoreCoverage, TrackerGlobalsNonEmpty) {
-#ifndef OWL_SANITIZER_CUSTOM_ALLOCATOR
+#if defined(OWL_TRACKER_ACTIVE) && !defined(OWL_SANITIZER_CUSTOM_ALLOCATOR)
 	const auto& globals = debug::TrackerAPI::globals();
 	// After many allocations in the process, globals should be non-zero.
 	EXPECT_GT(globals.allocationCalls, 0u);
 	EXPECT_GT(globals.allocatedMemory, 0u);
 	EXPECT_GT(globals.memoryPeek, 0u);
 #else
-	ASSERT_TRUE(true) << "Custom allocator sanitizer active — tracker is not functional";
+	ASSERT_TRUE(true) << "Tracker disabled (release / custom-allocator sanitiser) — globals stay zero.";
 #endif
 }
 

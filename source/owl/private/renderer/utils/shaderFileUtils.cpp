@@ -73,9 +73,20 @@ auto getCacheExtension(const gpu::ShaderType& iStage) -> std::string {
 	return ext;
 }
 
+namespace {
+std::mutex g_inMemoryShaderCacheMutex;
+std::unordered_map<std::string, std::vector<uint32_t>> g_inMemoryShaderCache;
+}// namespace
+
 auto readCachedShader(const std::filesystem::path& iFile) -> std::vector<uint32_t> {
 	OWL_PROFILE_FUNCTION()
 
+	const std::string key = iFile.generic_string();
+	{
+		const std::lock_guard<std::mutex> lock{g_inMemoryShaderCacheMutex};
+		if (const auto it = g_inMemoryShaderCache.find(key); it != g_inMemoryShaderCache.end())
+			return it->second;
+	}
 	std::vector<uint32_t> result;
 	std::ifstream in(iFile, std::ios::in | std::ios::binary);
 	in.seekg(0, std::ios::end);
@@ -84,6 +95,10 @@ auto readCachedShader(const std::filesystem::path& iFile) -> std::vector<uint32_
 	result.resize(static_cast<size_t>(size) / sizeof(uint32_t));
 	in.read(reinterpret_cast<char*>(result.data()), size);
 	in.close();
+	{
+		const std::lock_guard<std::mutex> lock{g_inMemoryShaderCacheMutex};
+		g_inMemoryShaderCache.insert_or_assign(key, result);
+	}
 	return result;
 }
 
@@ -98,6 +113,8 @@ auto writeCachedShader(const std::filesystem::path& iFile, const std::vector<uin
 		out.write(reinterpret_cast<const char*>(iData.data()), static_cast<int64_t>(iData.size() * sizeof(uint32_t)));
 		out.flush();
 		out.close();
+		const std::lock_guard<std::mutex> lock{g_inMemoryShaderCacheMutex};
+		g_inMemoryShaderCache.insert_or_assign(iFile.generic_string(), iData);
 		return true;
 	}
 	OWL_CORE_WARN("Cannot open file {} for writing.", iFile.string())

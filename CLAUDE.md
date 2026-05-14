@@ -435,7 +435,8 @@ Enforced by `.clang-format` (LLVM-based) and `.clang-tidy`. Key conventions:
 | `OWL_BUILD_NEST`                          | ON      | Build Owl Nest editor                          |
 | `OWL_TESTING`                             | ON      | Enable unit tests                              |
 | `OWL_ENABLE_COVERAGE`                     | OFF     | Code coverage (auto-enabled in debug presets)  |
-| `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (performance impact) |
+| `OWL_ENABLE_MEMORY_TRACKER`               | OFF     | Install global `new`/`delete` overrides so `TrackerAPI` records every allocation (always on in Debug; opt-in in Release for leak diagnostics) |
+| `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (implies `OWL_ENABLE_MEMORY_TRACKER`; performance impact) |
 | `OWL_ENABLE_PROFILING`                    | OFF     | Profiling output                               |
 | `OWL_USE_RELEASE_THIRD_PARTY`             | ON      | Use release builds of third-party libraries    |
 | `OWL_DEFINE_VULKAN_LAYERS`                | OFF     | Copy Vulkan layers to binary directory         |

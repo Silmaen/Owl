@@ -98,26 +98,26 @@ public:
 	/**
 	 * @brief
 	 *  Check if the task with given ID is finished.
-	 * @param iTaskId The task's ID.
+	 * @param[in] iTaskId The task's ID.
 	 * @return true if finished.
 	 */
-	auto isTaskFinished(const size_t& iTaskId) -> bool;
+	[[nodiscard]] auto isTaskFinished(size_t iTaskId) const -> bool;
 
 	/**
 	 * @brief
 	 *  Check if the task with given ID is finished.
-	 * @param iTaskId The task's ID.
+	 * @param[in] iTaskId The task's ID.
 	 * @return true if finished.
 	 */
-	auto isTaskRunning(const size_t& iTaskId) -> bool;
+	[[nodiscard]] auto isTaskRunning(size_t iTaskId) const -> bool;
 
 	/**
 	 * @brief
 	 *  Check if the task with given ID is in queue.
-	 * @param iTaskId The task's ID.
+	 * @param[in] iTaskId The task's ID.
 	 * @return true if finished.
 	 */
-	auto isTaskInQueue(const size_t& iTaskId) -> bool;
+	[[nodiscard]] auto isTaskInQueue(size_t iTaskId) const -> bool;
 
 	/**
 	 * @brief
@@ -130,6 +130,19 @@ public:
 	 *  Clear the Timer list.
 	 */
 	void clearTimers();
+
+	/**
+	 * @brief
+	 *  Engine-internal accessor for the Taskflow-backed implementation.
+	 *
+	 * Returns a reference to the private `SchedulerImpl` struct so engine
+	 * code (which includes the private header) can reach the `tf::Executor`
+	 * for `parallelForEach` / `parallelForIndex`. External callers can hold
+	 * the reference but cannot use it without the private header — this is
+	 * intentional: the Taskflow dependency stays PRIVATE.
+	 * @return Reference to the private implementation.
+	 */
+	[[nodiscard]] auto getImpl() const -> SchedulerImpl&;
 
 private:
 	/// Private implementation hiding Taskflow internals.

@@ -182,7 +182,7 @@ public:
 	 *  Access to the Gui layer.
 	 * @return The gui layer.
 	 */
-	auto getImGuiLayer() -> shared<gui::UiLayer> { return mp_imGuiLayer; }
+	[[nodiscard]] auto getImGuiLayer() const -> const shared<gui::UiLayer>& { return mp_imGuiLayer; }
 
 	/**
 	 * @brief

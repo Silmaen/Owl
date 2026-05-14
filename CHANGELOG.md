@@ -42,6 +42,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       emission cost.
     - Tests: 4 new headless renderer tests cover fog default vs.
       configured passes and the textured / solid backdrop branches.
+- **Editor & in-game performance — memory tracker no longer kills the
+  hot path.** The debug memory tracker installed global
+  `operator new` / `operator delete` overrides that recorded every
+  allocation into a `std::list<AllocationInfo>` and ran a *linear*
+  `find_if` on each deallocation — turning every burst of allocations
+  (YAML parse, scene deserialisation, Lua compile) into an O(N²) wall
+  stall. The same data structure was also not thread-safe, racing
+  between the YAML worker thread and the main thread.
+    - The global `new` / `delete` overrides are gated on
+      `OWL_TRACKER_ACTIVE`, which is set automatically in Debug
+      builds and via the new `OWL_ENABLE_MEMORY_TRACKER` CMake option
+      in Release. Default release builds use the standard allocator
+      with zero tracking overhead; flip the option on when you need
+      leak / residual-memory diagnostics on a release binary.
+      `OWL_ENABLE_STACKTRACE` continues to imply the tracker.
+    - `AllocationState` now keeps an
+      `unordered_map<void*, list::iterator>` index so `freeMemory`
+      is O(1) instead of O(N).
+    - Tracker is now thread-safe: `g_AntiLoop` re-entry guard is
+      `thread_local`, and a single `std::mutex` serialises container
+      mutations. The hot path (`pushMemory` / `freeMemory`) still
+      runs in tens of nanoseconds because the critical section only
+      covers one hashmap insert / erase and one list emplace /
+      erase. An `AntiLoopScope` RAII helper prevents the tracker
+      from re-entering itself when the containers themselves
+      allocate (list nodes, hashmap buckets, `resetState`'s mass
+      destruction).
+    - Net impact on the reference editor session: opening the
+      raycast_demo scene (110 entities, 55 KB YAML, dozens of unique
+      textures) goes from ~22 s of frozen UI to ~40 ms. World map and
+      menu loads drop from ~300 ms to single-digit ms. The "Tracker:
+      anti-loop guard tripped" warnings that flooded stderr are gone.
+    - Tests: `Tracker.base`, `Tracker.stacktrace` and
+      `CoreCoverage.TrackerGlobalsNonEmpty` updated to gate the
+      "tracker is recording" assertions on `OWL_TRACKER_ACTIVE` so
+      release / sanitiser builds skip them cleanly.
+- **Editor performance — async scene loading.** Opening a scene no
+  longer blocks the editor UI on the YAML parse.
+    - New `SceneSerializer::parseBuffer` (CPU-only, worker-thread safe)
+      produces a `ParsedScene` that holds the parsed YAML root and the
+      scene name without touching any engine state. `applyParsed`
+      consumes it on the main thread to materialise entities and
+      trigger GPU texture loads. `deserializeFromBuffer` keeps its
+      old signature and now delegates to the two-phase pair.
+    - `EditorLayer::openScene` schedules file I/O + YAML parse on a
+      Taskflow worker, then runs entity creation in the termination
+      callback on the main thread. The progress overlay updates from
+      "Loading scene..." → "Parsing scene..." → "Materialising
+      entities..." so the user sees where time is going.
+    - 2 new `SceneSerializer` tests cover the parse/apply round-trip
+      vs. the legacy `deserializeFromBuffer` and the malformed-input
+      rejection path.
+- **Editor performance — UUID → entity index on Scene.** Replaced the
+  O(N) linear scan in `Scene::findEntityByUUID` with a kept-warm
+  `unordered_map<UUID, entt::entity>` populated by
+  `createEntityWithUUID` and cleared by `destroyEntity` /
+  `destroyEntityWithChildren`. Self-heals on a cache miss by falling
+  back to a registry scan + repopulate so external paths that bypass
+  the canonical create stay correct. Eliminates the O(N²) walk in
+  hierarchy rebuild, prefab instantiation, and any per-tick UUID
+  lookup. Regression test in `SceneRuntime_test`.
+- **Editor performance — in-memory SPIR-V shader cache.** Added a
+  mutex-guarded `unordered_map<string, vector<uint32_t>>` in
+  `shaderFileUtils.cpp` so repeated scene loads in the same session
+  hit memory instead of re-reading every `.spv` blob from disk. The
+  disk cache stays as the persistent backing store and as the
+  first-launch warmup.
+- **Engine — parallel-execution scaffolding.** `Scheduler::getImpl()`
+  exposes the private `SchedulerImpl` for engine internals, and
+  `ParallelUtils.h` gains `parallelForEach(Scheduler&, ...)` /
+  `parallelForIndex(Scheduler&, ...)` overloads so call sites use the
+  engine Scheduler without ever naming `tf::Executor`. The Taskflow
+  dependency stays PRIVATE.
+- **In-game performance — scratch-buffer pooling in raycast render
+  loops.** `Scene::renderRaycastSprites` /
+  `Scene::renderRaycastDynamicWalls` reuse `thread_local`
+  `vector<RaycastSpriteData>` / `vector<RaycastDoorData>` /
+  `vector<RaycastDynamicWallData>` across frames (just `clear()`,
+  never destroy), so the typical 100–1000 sprite scene only pays the
+  growth allocation once per session. Mirrors the existing
+  `zBufferPerColumn` pool inside `RendererRaycast`.
 - **In-game performance — three hot-path wins on `Scene::onUpdateRuntime`.**
     - `Scene::getPrimaryPlayer` caches the resolved entity handle and
       invalidates it on entity destroy, on `Player` add and on `Player`

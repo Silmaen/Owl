@@ -17,6 +17,7 @@ option(${PROJECT_PREFIX}_BUILD_NEST "If wanted to generate Owl Nest" ON)
 
 option(${PROJECT_PREFIX}_TESTING "Enable the unit tests" ON)
 option(${PROJECT_PREFIX}_ENABLE_COVERAGE "Run code coverage during test run" OFF)
+option(${PROJECT_PREFIX}_ENABLE_MEMORY_TRACKER "Install the global new/delete overrides so TrackerAPI records every allocation (always on in Debug; opt-in in Release for leak / residual-memory diagnostics — adds a per-allocation mutex + hashmap write, so expect a small but measurable per-frame cost)" OFF)
 option(${PROJECT_PREFIX}_ENABLE_STACKTRACE "Use stacktrace within the memory tracker (slow down the code)" OFF)
 option(${PROJECT_PREFIX}_ENABLE_PROFILING "Output profiling information during execution" OFF)
 option(${PROJECT_PREFIX}_USE_CCACHE "Use ccache (or sccache) as a compiler launcher when available" ON)

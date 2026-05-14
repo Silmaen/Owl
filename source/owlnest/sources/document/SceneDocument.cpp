@@ -10,9 +10,13 @@
 
 #include <imgui.h>
 #include <physic/PhysicCommand.h>
+#include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
+
+#include <chrono>
+#include <fstream>
 
 namespace owl::nest {
 
@@ -149,9 +153,29 @@ void SceneDocument::handleTeleportRequest(const math::vec2ui& iViewportSize) {
 	const auto previousGameState = m_activeScene->getGameState();
 	m_activeScene->onEndRuntime();
 
+	using clk = std::chrono::steady_clock;
+	const auto t0 = clk::now();
+
+	std::ifstream file(levelPath, std::ios::binary | std::ios::ate);
+	if (!file.is_open()) {
+		OWL_CORE_ERROR("Teleport: failed to open level '{}'.", levelPath.string())
+		return;
+	}
+	const auto size = static_cast<size_t>(file.tellg());
+	file.seekg(0);
+	std::vector<uint8_t> bytes(size);
+	file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size));
+	OWL_CORE_INFO("SceneDocument::handleTeleportRequest: read {} bytes from '{}' {:.1f} ms.", bytes.size(),
+				  levelPath.string(), std::chrono::duration<double, std::milli>{clk::now() - t0}.count())
+
+	const auto parsed = scene::SceneSerializer::parseBuffer(bytes, levelPath.string());
+	if (!parsed.valid) {
+		OWL_CORE_ERROR("Teleport: failed to parse level '{}': {}.", request.levelName, parsed.error)
+		return;
+	}
 	const auto newScene = mkShared<scene::Scene>();
-	if (const scene::SceneSerializer sc(newScene); !sc.deserialize(levelPath)) {
-		OWL_CORE_ERROR("Teleport: failed to load level '{}'.", request.levelName)
+	if (const scene::SceneSerializer sc(newScene); !sc.applyParsed(parsed)) {
+		OWL_CORE_ERROR("Teleport: failed to apply level '{}'.", request.levelName)
 		return;
 	}
 	newScene->getGameState() = previousGameState;

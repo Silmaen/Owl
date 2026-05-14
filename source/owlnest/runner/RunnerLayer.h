@@ -10,6 +10,7 @@
 
 #include <io/pack/PackReader.h>
 #include <owl.h>
+#include <scene/SceneSerializer.h>
 
 namespace owl::nest::runner {
 /// Configuration loaded from runner.yml.
@@ -140,8 +141,10 @@ private:
 
 	/// State of an in-flight cross-level teleport loaded asynchronously.
 	struct PendingTransition {
-		/// Bytes read from file or pack (filled on worker thread).
-		shared<std::vector<uint8_t>> data;
+		/// Parsed YAML root (filled on worker thread). The worker reads the
+		/// scene bytes and runs `SceneSerializer::parseBuffer` so the main
+		/// thread only pays the entity-creation + GPU upload cost.
+		shared<scene::ParsedScene> parsed;
 		/// Resolved source name (for logging).
 		std::string sourceName;
 		/// GameState snapshot to copy into the new scene.
