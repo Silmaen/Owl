@@ -721,30 +721,60 @@ the tilemap system, and scene-to-scene transition effects.
           play, progress advancement, completion, all wipe variants, reset,
           and the `< 1 ms` duration clamp.
 - Editor Performance
-    - ![Planned][planned] Faster scene loading
-        - Profile the current synchronous path (`SceneSerializer::deserialize`,
-          `Scene::resolveAllTilemapAssets`, `Scene::resolveAllPrefabs`,
-          `Application::loadFromPack`) on a 2000-entity demo scene to identify
-          the top bottlenecks before optimising blind
-        - Lazy texture / tileset / prefab resolution: defer asset I/O off the
-          critical path so the editor opens the scene as soon as the YAML is
-          parsed, then streams resources in
-        - Cache the parsed `YAML::Node` across rapid re-opens (Ctrl+Z on
-          "Close Scene", undo of "New Scene")
-        - Target: opening `sample_project/scenes/raycast_demo.owl` in under
-          half its current time on the reference dev preset
-    - ![Planned][planned] Async scene loading
-        - Route `SceneSerializer::deserialize` + asset resolution through the
-          existing Taskflow `Scheduler` so the editor UI remains responsive
-          (toolbar, ribbon, profiler dock stay interactive) while a scene
-          loads — like the already-async pack-write / save flows
-        - Visual feedback in the viewport while loading: a non-modal spinner /
-          progress bar overlay, cancel button, and clear "loading <name>"
-          status line. Loaded entities materialise as their resolution
-          completes so the designer sees the scene populate rather than a
-          hard switch
-        - Cancelling mid-load discards the partial scene and reverts to the
-          previously-active document
+    - ![In Progress][progress] Faster scene loading
+        - ![Done][done] **Memory tracker O(N²) regression fixed.**
+          Global `operator new`/`delete` overrides disabled in
+          release builds; debug builds use an O(1) `unordered_map`
+          index instead of the linear list scan. Effect on the
+          reference editor session: opening the raycast_demo scene
+          (110 entities, 55 KB YAML) drops from ~22 s of frozen UI
+          to ~40 ms. Every burst-allocation workload (YAML parse,
+          Lua compile, scene deserialisation, undo replay) speeds
+          up proportionally.
+        - ![Planned][planned] UUID → `entt::entity` cache on Scene
+          (kept warm, invalidated on create/destroy). Replaces the
+          lazy map in `Scene::findEntityByUUID` so
+          `rebuildHierarchyChildren` + prefab instantiation +
+          `EntityLink` warmup stop scanning the registry linearly.
+          Expected ~5× on deep hierarchies.
+        - ![Planned][planned] In-memory SPIR-V cache. Adds a static
+          `unordered_map<shaderHash, vector<uint32_t>>` in
+          `shaderFileUtils.cpp` so the second scene of a session no
+          longer re-reads each `.spv` blob from disk. Persistent
+          disk cache stays as the on-disk backing store.
+        - ![Planned][planned] Prefab template caching. Cache the
+          parsed canonical YAML map across instantiations of the
+          same `.owlprefab` so the second instance reuses the tree
+          and only remaps UUIDs (currently every instance re-parses
+          the file).
+        - ![Planned][planned] Drop the
+          `SceneSerializer::serializeEntityToString` →
+          `YAML::Load` round-trip used by `PrefabSerializer`
+          (component-merge phase 4) — a direct component-by-component
+          copy is ~100× faster than the YAML detour.
+        - Target: opening `sample_project/scenes/raycast_demo.owl`
+          in under half its current time on the reference dev
+          preset.
+    - ![In Progress][progress] Async scene loading
+        - ![Planned][planned] Route `SceneSerializer::deserialize` +
+          `resolveAllTilemapAssets` + `resolveAllPrefabs` through the
+          Taskflow `Scheduler` so the editor UI (toolbar, ribbon,
+          profiler dock) stays interactive while a scene loads —
+          matching the already-async pack-write / save flows.
+        - ![Planned][planned] Viewport overlay: spinner + scene
+          name + cancel button + "loading X of N entities" status
+          line. Loaded entities materialise as their resolution
+          completes (no hard switch).
+        - ![Planned][planned] Cancellation reverts to the
+          previously-active document and discards partial state.
+        - ![Planned][planned] Parallel tileset / texture / Lua
+          script decode via `parallelForEach` (CPU-bound stb_image
+          decode, yaml-cpp parse, Lua compile). GPU upload stays
+          serial on the main thread, decode does not.
+        - ![Planned][planned] Parallel pack decompression. Wrap
+          `PackReader::readEntry` so multiple entries can be zstd-
+          decompressed concurrently (file seek serialised under a
+          mutex, decompression off-mutex).
 - In-Game Performance
     - ![In Progress][progress] Entity / system update budget
         - Profile `Scene::onUpdateRuntime` (native scripts → Lua → dynamic
@@ -756,10 +786,18 @@ the tilemap system, and scene-to-scene transition effects.
           hidden) bypass script/physics ticks instead of being filtered
           per-loop — generalised the trigger pattern to native scripts,
           Lua scripts, and `EntityLink` resolution
-        - Per-frame allocation audit: the trigger / animated-sprite / door
-          loops still build `std::vector` scratch buffers each tick — promote
-          them to scene-owned, frame-reset pools (mirrors the per-column
-          `zBufferPerColumn` pattern in `RendererRaycast`)
+        - ![Planned][planned] Frame-pool the per-tick scratch
+          buffers: `vector<RaycastSpriteData>` /
+          `vector<RaycastDoorData>` / `vector<RaycastDynamicWallData>`
+          in `Scene::renderRaycast*`, the trigger overlap list, and
+          the animated-sprite frame index list. Scene-owned,
+          `clear()` not destroy, mirrors the per-column
+          `zBufferPerColumn` pattern.
+        - ![Planned][planned] Parallel-update the three independent
+          stages of `onUpdateRuntime`: doors / pushwalls, entity
+          links, and sound source positions all read the registry
+          and write disjoint component sets — they can run as
+          three Taskflow tasks joined before render.
         - Target: the reference demo runs at the configured frame target on
           a 50-entity / 5-Lua-script scene without ever stepping into the
           orange / red TRACE band
@@ -769,14 +807,59 @@ the tilemap system, and scene-to-scene transition effects.
           re-scanning the full registry every tick from
           `Scene::updateRaycastDynamicWalls` + `Scene::onUpdateRuntime`
           + trigger overlap check + sound listener pose
-        - `findEntityByUUID` builds the hash map lazily — keep it warm and
-          invalidate only on entity create/destroy (the editor's hierarchy
-          drag-drop, Ctrl+D duplicate, and Lua `scene.find_entity` all
-          hammer it during a single tick)
+        - ![Planned][planned] Keep the UUID → entity cache warm
+          (see *Faster scene loading*). The same data structure
+          serves the editor's hierarchy drag-drop, `Ctrl+D`
+          duplicate, Lua `scene.find_entity`, and prefab
+          instantiation — invalidating only on create / destroy
+          lets every per-tick lookup stay O(1).
         - ![Done][done] Pre-resolve `EntityLink.linkedEntity` once per
           scene start (`Scene::resolveAllEntityLinks`, called from
           `onStartRuntime`) so the per-frame loop never falls into the
           O(N²) `view<Tag>` rescan path on the first tick
+    - ![Planned][planned] Render-loop hygiene
+        - Cache `getWorldTransform` results in a per-frame flat
+          array (entity → mat4), invalidated when local transform
+          or hierarchy changes. Today the same world matrix is
+          rebuilt up to ~30× per frame (sprites + circles + text +
+          tilemaps + raycast sprites + dynamic walls + doors +
+          physics sync + sound listener / source).
+        - Replace `Scene::layerHasContent`'s 7-pass view scan with
+          a per-layer dirty flag flipped when `RendererTag` or
+          visibility changes. Today every layer pre-scans every
+          renderable component type before deciding whether to
+          render.
+        - Cache `isEffectivelyVisible` results per entity per
+          frame — currently walked twice per render layer (once
+          in the layer-content check, once in the actual draw
+          loop).
+        - Remove the unconditional
+          `resolveAllTilemapAssets()` call from `Scene::render`
+          (line 918): tilesets rarely change at runtime, so
+          re-resolving every frame is pure overhead. Re-resolve
+          only on asset-change signals or explicit `Tilemap`
+          mutation.
+    - ![Planned][planned] GPU offload candidates (longer
+      horizon — see *v0.3.0 → 3D / Compute*)
+        - Tilemap rendering via instanced quads + SSBO instead of
+          one `drawQuad` per cell (5–15× on 64×64 maps).
+        - Hierarchical world-transform pre-pass in a compute
+          shader (5–10× on deep hierarchies, ~30 redundant CPU
+          recomputations per frame today).
+        - Raycast DDA in a compute shader, one thread per column
+          (20–50× theoretical; biggest single CPU→GPU win).
+        - GPU sprite Z-sort via radix shader (3–8× on 100+
+          sprites).
+        - Compute-driven frustum / occlusion culling pre-pass
+          feeding indirect draws.
+    - ![Planned][planned] Binary scene format (longer horizon —
+      see *v0.3.0*)
+        - Replace YAML with a binary format (MessagePack /
+          flatbuffers / custom) for `.owl` scenes, `.owltilemap`,
+          `.owltileset`. yaml-cpp allocates per node — a 1000-
+          entity scene parses ~10× slower than the same data in
+          binary. Keep YAML import / export as a one-shot
+          migration path; runtime + editor load reads binary.
 - Known bug fixes (deferred from v0.2.0 — all closed during v0.2.0)
     - ![Done][done] Editor keyboard shortcuts unreliable — *fixed in v0.2.0*
         - Modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) now bypass

@@ -28,6 +28,10 @@
 #endif
 #endif
 
+#if defined(OWL_DEBUG) || defined(OWL_MEMORY_TRACKER)
+#define OWL_TRACKER_ACTIVE 1
+#endif
+
 /**
  * @namespace owl
  * @brief
@@ -130,8 +134,15 @@ struct OWL_API AllocationState {
 	size_t deallocationCalls{0};
 	/// Max seen amount of memory.
 	std::size_t memoryPeek{0};
-	/// list of allocated chunks of memory.
+	/// list of allocated chunks of memory (kept in insertion order for `back()` / iteration).
 	std::list<AllocationInfo> allocs;
+	/**
+	 * @brief
+	 *  O(1) `location → list iterator` index. Without this, `freeMemory` was an O(N) linear
+	 *  scan of `allocs`, turning bursts of allocations (YAML parse, scene deserialization)
+	 *  into an O(N²) wall stall — the editor blocked for ~20 s on a 100-entity scene.
+	 */
+	std::unordered_map<void*, std::list<AllocationInfo>::iterator> index;
 
 	/**
 	 * @brief

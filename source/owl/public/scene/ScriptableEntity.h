@@ -19,12 +19,16 @@ class OWL_API ScriptableEntity final {
 public:
 	/**
 	 * @brief
-	 *  Wrapper to access to a component.
+	 *  Wrapper to access to a component. `const` because the scriptable
+	 *  entity itself doesn't change — the component access goes through
+	 *  the underlying `Entity` handle which already behaves like a smart
+	 *  pointer (const `Entity` still grants mutable component access,
+	 *  same as `const shared<T>&`).
 	 * @tparam T Type of component.
 	 * @return The component.
 	 */
 	template<typename T>
-	auto getComponent() -> T& {
+	[[nodiscard]] auto getComponent() const -> T& {
 		return entity.getComponent<T>();
 	}
 

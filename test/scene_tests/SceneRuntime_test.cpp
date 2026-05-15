@@ -344,6 +344,20 @@ TEST_F(SceneRuntimeTest, PrimaryCameraAndPlayerLookup) {
 	EXPECT_EQ(scn.getPrimaryPlayer(), player);
 }
 
+// `findEntityByUUID` keeps a UUID → entity index warm across the scene's
+// lifetime; create/destroy must keep it in sync. Look up an entity by
+// UUID, destroy it, then look up another — the second hit must still
+// resolve.
+TEST_F(SceneRuntimeTest, FindEntityByUUIDCacheSurvivesDestroy) {
+	scene::Scene scn;
+	auto a = scn.createEntityWithUUID(core::UUID{42}, "a");
+	auto b = scn.createEntityWithUUID(core::UUID{43}, "b");
+	EXPECT_EQ(scn.findEntityByUUID(core::UUID{42}), a);
+	scn.destroyEntity(a);
+	EXPECT_FALSE(scn.findEntityByUUID(core::UUID{42}));
+	EXPECT_EQ(scn.findEntityByUUID(core::UUID{43}), b);
+}
+
 // `getPrimaryPlayer` caches its result; destroying the cached entity must
 // invalidate the cache so the next call falls back to the remaining primary
 // player. Without this, the second lookup would return a dangling handle.

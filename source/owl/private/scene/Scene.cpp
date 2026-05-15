@@ -329,6 +329,7 @@ auto Scene::createEntityWithUUID(const core::UUID iUuid, const std::string& iNam
 	tag = iName.empty() ? "Entity" : iName;
 	entity.addComponent<component::Visibility>();
 	entity.addComponent<component::Hierarchy>();
+	m_uuidIndex.insert_or_assign(iUuid, entity.m_entityHandle);
 	return entity;
 }
 
@@ -359,6 +360,7 @@ void Scene::destroyEntity(Entity& ioEntity) {
 	// `getPrimaryPlayer()` re-scans. Cheaper than emitting an EnTT signal here.
 	if (m_primaryPlayerCache == ioEntity.m_entityHandle)
 		m_primaryPlayerCache = entt::null;
+	m_uuidIndex.erase(ioEntity.getUUID());
 	registry.destroy(ioEntity.m_entityHandle);
 	ioEntity.m_entityHandle = entt::null;
 }
@@ -368,16 +370,33 @@ void Scene::onStartRuntime() {
 
 	status = Status::Playing;
 
+	// Diagnostic timing: every step logs its wall-clock duration so the
+	// user can spot the 2-minute scene-start regression at a glance —
+	// these are INFO-level (visible by default) and stay in for now.
+	using clk = std::chrono::steady_clock;
+	const auto runtimeStart = clk::now();
+	const auto ms = [](const clk::duration iDur) -> double {
+		return std::chrono::duration<double, std::milli>{iDur}.count();
+	};
+	OWL_CORE_INFO("Scene::onStartRuntime: begin.")
+
 	// Tilemap tilesets are normally resolved on first render; we need them
 	// before physics init so collidable cells generate static fixtures.
+	const auto tilesetStart = clk::now();
 	resolveAllTilemapAssets();
+	OWL_CORE_INFO("Scene::onStartRuntime: tileset resolve {:.1f} ms.", ms(clk::now() - tilesetStart))
 
 	// Warm the EntityLink cache so the per-frame link loop never hits its
 	// O(N²) tag-rescan path on the first tick of play.
+	const auto linksStart = clk::now();
 	resolveAllEntityLinks();
+	OWL_CORE_INFO("Scene::onStartRuntime: entity-link resolve {:.1f} ms.", ms(clk::now() - linksStart))
 
+	const auto physicsStart = clk::now();
 	physic::PhysicCommand::init(this);
+	OWL_CORE_INFO("Scene::onStartRuntime: physics init {:.1f} ms.", ms(clk::now() - physicsStart))
 
+	const auto soundStart = clk::now();
 	// Initialize sound listener from primary SoundListener entity
 	for (const auto view = registry.view<component::Transform, component::SoundListener>(); const auto entity: view) {
 		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
@@ -420,6 +439,10 @@ void Scene::onStartRuntime() {
 		}
 	}
 
+	OWL_CORE_INFO("Scene::onStartRuntime: sound init {:.1f} ms.", ms(clk::now() - soundStart))
+
+	const auto luaStart = clk::now();
+	size_t luaCount = 0;
 	// Initialize Lua scripting
 	script::ScriptEngine::init(this);
 	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
@@ -471,7 +494,10 @@ void Scene::onStartRuntime() {
 		} else {
 			luaScript.instance.reset();
 		}
+		++luaCount;
 	}
+	OWL_CORE_INFO("Scene::onStartRuntime: lua compile + onCreate ({} scripts) {:.1f} ms.", luaCount,
+				  ms(clk::now() - luaStart))
 
 	// Reset animated sprites
 	for (const auto view = registry.view<component::AnimatedSpriteRenderer>(); const auto entity: view) {
@@ -487,6 +513,7 @@ void Scene::onStartRuntime() {
 		if (trigger.type == SceneTrigger::TriggerType::Timer)
 			trigger.startTimer();
 	}
+	OWL_CORE_INFO("Scene::onStartRuntime: total {:.1f} ms.", ms(clk::now() - runtimeStart))
 }
 
 void Scene::onEndRuntime() {
@@ -1110,7 +1137,11 @@ void Scene::renderRaycastSprites(const bool iEditorMode) {
 			return iOverride;
 		return {iScale.x(), iScale.y()};
 	};
-	std::vector<renderer::RaycastSpriteData> raycastSprites;
+	// Static-local pool: keeps the previous frame's capacity so the typical
+	// 100–1000 sprite scene only pays the growth allocation once per session.
+	// `renderRaycastSprites` is only called from the main render thread.
+	thread_local std::vector<renderer::RaycastSpriteData> raycastSprites;
+	raycastSprites.clear();
 	for (const auto view = registry.view<component::Transform, component::SpriteRenderer>(); const auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, iEditorMode))
@@ -1174,7 +1205,10 @@ void Scene::renderRaycastDynamicWalls(const bool iEditorMode) {
 	OWL_PROFILE_FUNCTION()
 
 	// Pushwalls — uniform-texture cubes, route to drawDynamicWalls.
-	std::vector<renderer::RaycastDynamicWallData> walls;
+	// Static-local pool keeps the previous frame's capacity (same rationale
+	// as the sprite buffer above).
+	thread_local std::vector<renderer::RaycastDynamicWallData> walls;
+	walls.clear();
 	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); const auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, iEditorMode))
@@ -1197,7 +1231,8 @@ void Scene::renderRaycastDynamicWalls(const bool iEditorMode) {
 	renderer::RendererRaycast::drawDynamicWalls(walls);
 
 	// Doors — 2 static laterals + 1 moving plate per door cell, route to drawDoors.
-	std::vector<renderer::RaycastDoorData> doors;
+	thread_local std::vector<renderer::RaycastDoorData> doors;
+	doors.clear();
 	for (const auto view = registry.view<component::Transform, component::RaycastDoor>(); const auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, iEditorMode))
@@ -1618,28 +1653,30 @@ auto Scene::duplicateEntity(const Entity& iEntity) -> Entity {
 	return newEntity;
 }
 
-auto Scene::getPrimaryCamera() -> Entity {
+auto Scene::getPrimaryCamera() const -> Entity {
+	auto* self = const_cast<Scene*>(this);// NOLINT(cppcoreguidelines-pro-type-const-cast)
 	for (const auto view = registry.view<component::Camera>(); const auto entity: view) {
 		if (view.get<component::Camera>(entity).primary)
-			return Entity{entity, this};
+			return Entity{entity, self};
 	}
 	return {};
 }
 
-auto Scene::getPrimaryPlayer() -> Entity {
+auto Scene::getPrimaryPlayer() const -> Entity {
+	auto* self = const_cast<Scene*>(this);// NOLINT(cppcoreguidelines-pro-type-const-cast)
 	// Hot path: the cache survives across frames; the scan only fires once
 	// per invalidation (entity destroy / Player component add or remove).
 	if (m_primaryPlayerCache != entt::null && registry.valid(m_primaryPlayerCache)) {
 		if (const auto* player = registry.try_get<component::Player>(m_primaryPlayerCache);
 			player != nullptr && player->primary)
-			return Entity{m_primaryPlayerCache, this};
+			return Entity{m_primaryPlayerCache, self};
 		// Cached entity is no longer a primary player — fall through to rescan.
 		m_primaryPlayerCache = entt::null;
 	}
 	for (const auto view = registry.view<component::Player>(); const auto entity: view) {
 		if (view.get<component::Player>(entity).primary) {
 			m_primaryPlayerCache = entity;
-			return Entity{entity, this};
+			return Entity{entity, self};
 		}
 	}
 	return {};
@@ -1653,9 +1690,22 @@ auto Scene::getEntityCount() const -> uint32_t {
 }
 
 auto Scene::findEntityByUUID(const core::UUID iUuid) const -> Entity {
+	auto* self = const_cast<Scene*>(this);// NOLINT(cppcoreguidelines-pro-type-const-cast)
+	if (const auto it = m_uuidIndex.find(iUuid); it != m_uuidIndex.end()) {
+		// Stale entry possible if the entity was destroyed without going
+		// through `Scene::destroyEntity` (rare — e.g. external registry
+		// manipulation in a test). Validate before returning and self-heal
+		// on miss so the cache converges back to truth.
+		if (registry.valid(it->second) && registry.try_get<component::ID>(it->second) != nullptr &&
+			registry.get<component::ID>(it->second).id == iUuid)
+			return Entity{it->second, self};
+		m_uuidIndex.erase(it);
+	}
 	for (const auto view = registry.view<component::ID>(); const auto entity: view) {
-		if (view.get<component::ID>(entity).id == iUuid)
-			return Entity{entity, const_cast<Scene*>(this)};// NOLINT(cppcoreguidelines-pro-type-const-cast)
+		if (view.get<component::ID>(entity).id == iUuid) {
+			m_uuidIndex.insert_or_assign(iUuid, entity);
+			return Entity{entity, self};
+		}
 	}
 	return {};
 }
@@ -1807,7 +1857,13 @@ void Scene::destroyEntityWithChildren(Entity& ioEntity) {// NOLINT(misc-no-recur
 				queue.push_back(child);
 		}
 	}
-	for (const auto handle: toDestroy) registry.destroy(handle);
+	for (const auto handle: toDestroy) {
+		if (m_primaryPlayerCache == handle)
+			m_primaryPlayerCache = entt::null;
+		if (const auto* idComp = registry.try_get<component::ID>(handle); idComp != nullptr)
+			m_uuidIndex.erase(idComp->id);
+		registry.destroy(handle);
+	}
 	ioEntity.m_entityHandle = entt::null;
 }
 

@@ -100,6 +100,51 @@ TEST(SceneSerializer, VisibilityRoundTrip) {
 	owl::core::Log::invalidate();
 }
 
+// `parseBuffer` is the CPU-only half of the async scene-load skeleton:
+// it walks the YAML on a worker thread without touching scene / GPU
+// state. `applyParsed` then materialises the parsed tree onto a real
+// scene from the main thread. End-to-end behaviour must match the
+// legacy `deserializeFromBuffer`.
+TEST(SceneSerializer, ParseAndApplyMatchesDeserialize) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	const auto source = owl::mkShared<Scene>();
+	source->createEntityWithUUID(101, "alpha");
+	source->createEntityWithUUID(102, "beta");
+	const SceneSerializer saver(source);
+	const auto yaml = saver.serializeToString();
+	const std::vector<uint8_t> bytes{yaml.begin(), yaml.end()};
+
+	const auto parsed = SceneSerializer::parseBuffer(bytes, "<test>");
+	ASSERT_TRUE(parsed.valid);
+	EXPECT_FALSE(parsed.sceneName.empty());
+
+	const auto dst = owl::mkShared<Scene>();
+	const SceneSerializer applier(dst);
+	EXPECT_TRUE(applier.applyParsed(parsed));
+	EXPECT_TRUE(dst->findEntityByUUID(owl::core::UUID{101}));
+	EXPECT_TRUE(dst->findEntityByUUID(owl::core::UUID{102}));
+	owl::core::Log::invalidate();
+}
+
+// A malformed YAML buffer must fail at `parseBuffer` without throwing —
+// the worker thread reports the failure via `ParsedScene::valid = false`
+// and a human-readable `error` field. `applyParsed` on an invalid result
+// returns false without touching the destination scene.
+TEST(SceneSerializer, ParseBufferRejectsMalformed) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	const std::string bad = "not: [valid: yaml: at all";
+	const std::vector<uint8_t> bytes{bad.begin(), bad.end()};
+	const auto parsed = SceneSerializer::parseBuffer(bytes, "<bad>");
+	EXPECT_FALSE(parsed.valid);
+	EXPECT_FALSE(parsed.error.empty());
+
+	const auto dst = owl::mkShared<Scene>();
+	const SceneSerializer applier(dst);
+	EXPECT_FALSE(applier.applyParsed(parsed));
+	EXPECT_EQ(dst->getEntityCount(), 0u);
+	owl::core::Log::invalidate();
+}
+
 TEST(SceneSerializer, badScene) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto fs = std::filesystem::temp_directory_path() / "tempSave.yml";

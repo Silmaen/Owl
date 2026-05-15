@@ -310,10 +310,15 @@ auto Texture2D::createFromSerializedAsync(const std::string& iTextureSerializedN
 }
 
 auto Texture2D::createFromSerializedForDeserialize(const std::string& iTextureSerializedName) -> shared<Texture2D> {
-	if (core::Application::instanced()) {
-		return createFromSerializedAsync(iTextureSerializedName, core::Application::get().getTaskScheduler());
-	}
-	return createFromSerialized(iTextureSerializedName);
+	if (!core::Application::instanced())
+		return createFromSerialized(iTextureSerializedName);
+	auto& library = Renderer::getTextureLibrary();
+	if (library.exists(iTextureSerializedName))
+		return library.get(iTextureSerializedName);
+	auto texture = createFromSerializedAsync(iTextureSerializedName, core::Application::get().getTaskScheduler());
+	if (texture)
+		library.add(iTextureSerializedName, texture);
+	return texture;
 }
 
 Texture::~Texture() = default;

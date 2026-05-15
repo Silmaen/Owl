@@ -14,6 +14,8 @@ namespace owl::core::task {
 
 Scheduler::Scheduler() : mp_impl{mkUniq<SchedulerImpl>()} {}
 
+auto Scheduler::getImpl() const -> SchedulerImpl& { return *mp_impl; }
+
 Scheduler::~Scheduler() {
 	mp_impl->tasksQueue.clear();
 	waitRunning();
@@ -53,18 +55,18 @@ void Scheduler::waitEmptyQueue() {
 	}
 }
 
-auto Scheduler::isTaskFinished(const size_t& iTaskId) -> bool {
+auto Scheduler::isTaskFinished(const size_t iTaskId) const -> bool {
 	return iTaskId < mp_impl->nextTaskId && !(isTaskRunning(iTaskId) || isTaskInQueue(iTaskId));
 }
 
-auto Scheduler::isTaskRunning(const size_t& iTaskId) -> bool {
-	return std::ranges::find_if(mp_impl->runningTasks, [&iTaskId](const shared<Task>& iTask) -> bool {
+auto Scheduler::isTaskRunning(const size_t iTaskId) const -> bool {
+	return std::ranges::find_if(mp_impl->runningTasks, [iTaskId](const shared<Task>& iTask) -> bool {
 			   return iTask->m_taskId == iTaskId;
 		   }) != mp_impl->runningTasks.end();
 }
 
-auto Scheduler::isTaskInQueue(const size_t& iTaskId) -> bool {
-	return std::ranges::find_if(mp_impl->tasksQueue, [&iTaskId](const shared<Task>& iTask) -> bool {
+auto Scheduler::isTaskInQueue(const size_t iTaskId) const -> bool {
+	return std::ranges::find_if(mp_impl->tasksQueue, [iTaskId](const shared<Task>& iTask) -> bool {
 			   return iTask->m_taskId == iTaskId;
 		   }) != mp_impl->tasksQueue.end();
 }

@@ -1733,16 +1733,21 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 	if (getState() != State::Edit)
 		onSceneStop();
 
-	// Read file on background thread, deserialize on main thread in callback.
+	// File read + YAML parse on a worker; entity creation + GPU texture
+	// allocation on the main thread in the termination callback. Splitting
+	// the YAML parse off the main thread is what makes the editor stay
+	// responsive on large scenes — yaml-cpp parsing dominates the
+	// deserialization cost (string allocation per node) and is entirely
+	// CPU-bound.
 	auto state = mkShared<AsyncProgressState>();
 	state->setMessage("Loading scene...");
 	m_asyncProgress.open("Loading Scene...", state, false);
 
-	auto fileData = mkShared<std::vector<uint8_t>>();
+	auto parsed = mkShared<scene::ParsedScene>();
 
 	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
-			[state, scenePath = iScenePath, fileData]() -> void {
-				state->progress.store(0.2f);
+			[state, scenePath = iScenePath, parsed]() -> void {
+				state->progress.store(0.1f);
 				std::ifstream file(scenePath, std::ios::binary | std::ios::ate);
 				if (!file.is_open()) {
 					state->setError("Failed to open scene: " + scenePath.string());
@@ -1750,20 +1755,26 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 				}
 				const auto size = static_cast<size_t>(file.tellg());
 				file.seekg(0);
-				fileData->resize(size);
-				file.read(reinterpret_cast<char*>(fileData->data()), static_cast<std::streamsize>(size));
+				std::vector<uint8_t> bytes(size);
+				file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size));
+				state->progress.store(0.4f);
+				state->setMessage("Parsing scene...");
+				*parsed = scene::SceneSerializer::parseBuffer(bytes, scenePath.string());
+				if (!parsed->valid) {
+					state->setError("Failed to parse scene: " + parsed->error);
+					return;
+				}
 				state->progress.store(0.8f);
-				state->setMessage("Deserializing...");
+				state->setMessage("Materialising entities...");
 			},
-			// Termination: runs on main thread — safe to modify scene.
-			[this, state, scenePath = iScenePath, fileData]() -> void {
+			// Termination: runs on main thread — safe to modify scene & GPU.
+			[this, state, scenePath = iScenePath, parsed]() -> void {
 				if (state->hasError.load()) {
 					state->completed.store(true);
 					return;
 				}
 				const auto newScene = mkShared<scene::Scene>();
-				if (const scene::SceneSerializer serializer(newScene);
-					serializer.deserializeFromBuffer(*fileData, scenePath.string())) {
+				if (const scene::SceneSerializer serializer(newScene); serializer.applyParsed(*parsed)) {
 					// Create a new SceneDocument tab for this scene; if the current active doc is
 					// an empty Untitled scene (no path, no undo history) reuse it instead.
 					SceneDocument* target = nullptr;
@@ -1779,7 +1790,7 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 					m_documents.setActive(target);
 					syncActiveDocumentPanels();
 				} else {
-					state->setError("Failed to deserialize scene.");
+					state->setError("Failed to apply parsed scene.");
 				}
 				state->completed.store(true);
 			}));
