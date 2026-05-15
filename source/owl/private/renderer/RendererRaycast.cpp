@@ -410,7 +410,10 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 		int side;///< 0 = X-edge hit, 1 = Y-edge hit (side darkening cue).
 		bool transparent;///< When true the DDA walked past this hit to keep collecting.
 	};
-	std::vector<ColumnHit> columnHits;
+	// `thread_local` so the per-column hit list reuses the previous frame's
+	// capacity — a 1280-column raycast scene with transparent stacks
+	// otherwise grows / shrinks the vector every frame.
+	thread_local std::vector<ColumnHit> columnHits;
 	// Cap the number of transparent layers a single ray can stack so a corridor of
 	// see-through tiles can't blow up the per-frame stripe budget. 8 is plenty for
 	// realistic raycast scenes (fences, glass, grilles overlapping) while still
@@ -982,7 +985,10 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 		float transformX;///< Lateral camera-space offset.
 		float transformY;///< Forward camera-space distance (always > 0 after culling).
 	};
-	std::vector<Projected> visible;
+	// `thread_local` reuses the per-frame projected-sprites buffer so the
+	// typical 50–500 sprite scene doesn't reallocate every render call.
+	thread_local std::vector<Projected> visible;
+	visible.clear();
 	visible.reserve(iSprites.size());
 
 	const float maxDistance = std::max(1.f, g_state->config.maxDistance);

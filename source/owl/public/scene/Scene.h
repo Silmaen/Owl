@@ -392,6 +392,61 @@ private:
 	mutable std::unordered_map<core::UUID, entt::entity> m_uuidIndex;
 	/**
 	 * @brief
+	 *  Tilemap / RaycastDoor / RaycastPushWall asset cache dirty bit. True on
+	 *  fresh scene + after any component-add or explicit invalidation; cleared
+	 *  at the end of `resolveAllTilemapAssets()` so the function returns
+	 *  instantly on subsequent frames once everything is loaded.
+	 */
+	bool m_tilemapAssetsDirty = true;
+	/**
+	 * @brief
+	 *  Per-update-pass cache for `isEffectivelyVisible`. Key packs the entity
+	 *  id with a "is editor mode" bit; the bool value is the effective
+	 *  visibility (current entity + all ancestors). Only consulted when
+	 *  `m_inUpdatePass` is true — outside an update tick (tests, inspector
+	 *  inspection helpers, …) the cache is bypassed so callers always see
+	 *  fresh `Visibility` state. Cleared at the start of every update tick.
+	 */
+	mutable std::unordered_map<uint64_t, bool> m_visibilityCache;
+	/**
+	 * @brief
+	 *  True while `onUpdateRuntime` / `onUpdateEditor` (and the render passes
+	 *  they spawn) are running — gates `m_visibilityCache` and
+	 *  `m_layerContentCache*` so they only serve callers that can guarantee
+	 *  Visibility / RendererTag flags don't mutate mid-pass.
+	 */
+	mutable bool m_inUpdatePass = false;
+	/**
+	 * @brief
+	 *  Per-pass cache for `layerHasContent(name, iIsFirst=true)`. Populated
+	 *  lazily by the render-stack walk, dropped at the start of every update
+	 *  tick along with `m_visibilityCache`. Avoids the 7-view scan being
+	 *  repeated for every render frame of a stable scene.
+	 */
+	mutable std::unordered_map<std::string, bool> m_layerContentCacheFirst;
+	/// Per-pass cache for `layerHasContent(name, iIsFirst=false)`.
+	mutable std::unordered_map<std::string, bool> m_layerContentCacheNotFirst;
+	/**
+	 * @brief
+	 *  Per-pass cache for `getWorldTransform`. The same entity transform is
+	 *  recomputed up to ~30× per frame across sprites + circles + text +
+	 *  tilemaps + raycast sprites + dynamic walls + doors + physics sync +
+	 *  sound listener / source paths; caching kills the duplicates. Gated
+	 *  by `m_worldTransformCacheActive` (a narrower window than
+	 *  `m_inUpdatePass`) — only valid after the mutating phases (scripts /
+	 *  physics / entity links) have finished, where transforms are stable.
+	 */
+	mutable std::unordered_map<entt::entity, math::Transform> m_worldTransformCache;
+	/**
+	 * @brief
+	 *  True only during the read-only tail of a tick (sound + render), arming
+	 *  `m_worldTransformCache`. Scripts and physics can mutate transforms
+	 *  freely while this is false — the cache would otherwise hand back stale
+	 *  values to the post-mutation reads.
+	 */
+	mutable bool m_worldTransformCacheActive = false;
+	/**
+	 * @brief
 	 *  Action when component is added to an entity.
 	 * @tparam T Type of the added component.
 	 * @param[in] iEntity Entity receiving new component.
@@ -447,8 +502,22 @@ private:
 	 *
 	 * Idempotent. Called eagerly from `onStartRuntime` so that physics initialisation can read
 	 * the tileset's collidable flags, and lazily by the renderer for the editor preview path.
+	 *
+	 * Gated by `m_tilemapAssetsDirty`: the function early-returns when the flag is clean (the
+	 * common case once a scene has been resolved once), avoiding three empty view iterations
+	 * per render frame. The flag is set by `onComponentAdded<Tilemap | RaycastDoor |
+	 * RaycastPushWall>` and by `invalidateTilemapAssets()` (for explicit inspector mutations
+	 * like "edit tilemap path").
 	 */
 	void resolveAllTilemapAssets();
+
+	/**
+	 * @brief
+	 *  Public invalidator: mark the tilemap / tileset asset cache as needing a re-resolve on
+	 *  the next `resolveAllTilemapAssets()` call. Use this from editor code when a tilemap
+	 *  or tileset path is mutated outside the component-add path (e.g. inspector text-edit).
+	 */
+	void invalidateTilemapAssets() { m_tilemapAssetsDirty = true; }
 
 	/**
 	 * @brief
