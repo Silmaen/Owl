@@ -59,5 +59,7 @@ public:
 private:
 	/// The renderer name.
 	std::string m_renderer;
+	/// Shader binding slot this UBO targets.
+	uint32_t m_binding = 0;
 };
 }// namespace owl::renderer::gpu::vulkan

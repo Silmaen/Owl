@@ -163,5 +163,21 @@ public:
 	 * @param[in] iEnabled Enable flag.
 	 */
 	void setDepthTest(bool iEnabled) override;
+
+	/**
+	 * @brief
+	 *  `vkCmdPipelineBarrier` fencing compute-stage SSBO writes for the next
+	 *  draw call (vertex-attribute pulls, vertex/fragment SSBO/UBO reads,
+	 *  indirect commands).
+	 */
+	void storageBufferMemoryBarrier() override;
+
+	/**
+	 * @brief
+	 *  `vkCmdDrawIndexedIndirectCount` consuming the compute-culling
+	 *  draw-command SSBO + counter SSBO (#34).
+	 */
+	void drawIndexedIndirect(const shared<DrawData>& iData, const shared<renderer::gpu::StorageBuffer>& iCommandBuffer,
+							 const shared<renderer::gpu::StorageBuffer>& iCountBuffer, uint32_t iMaxDrawCount) override;
 };
 }// namespace owl::renderer::gpu::vulkan

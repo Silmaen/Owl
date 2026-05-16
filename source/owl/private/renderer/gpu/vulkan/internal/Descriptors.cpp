@@ -194,19 +194,17 @@ void Descriptors::release() {
 		}
 	}
 	m_textures.clear();
-	if (!m_uniformBuffers.empty()) {
+	for (auto& [binding, ubo]: m_uniformBindings) {
 		for (size_t i = 0; i < g_maxFrameInFlight; ++i) {
-			vkUnmapMemory(core.getLogicalDevice(), m_uniformBuffersMemory[i]);
-			vkDestroyBuffer(core.getLogicalDevice(), m_uniformBuffers[i], nullptr);
-			vkFreeMemory(core.getLogicalDevice(), m_uniformBuffersMemory[i], nullptr);
+			if (i < ubo.mapped.size() && ubo.mapped[i] != nullptr)
+				vkUnmapMemory(core.getLogicalDevice(), ubo.memory[i]);
+			if (i < ubo.buffers.size() && ubo.buffers[i] != nullptr)
+				vkDestroyBuffer(core.getLogicalDevice(), ubo.buffers[i], nullptr);
+			if (i < ubo.memory.size() && ubo.memory[i] != nullptr)
+				vkFreeMemory(core.getLogicalDevice(), ubo.memory[i], nullptr);
 		}
-		m_uniformBuffers.clear();
-		m_uniformBuffersMemory.clear();
-		m_uniformBuffersMapped.clear();
-		m_uniformBuffers.shrink_to_fit();
-		m_uniformBuffersMemory.shrink_to_fit();
-		m_uniformBuffersMapped.shrink_to_fit();
 	}
+	m_uniformBindings.clear();
 	if (m_singleImageDescriptorPool != nullptr) {
 		vkDestroyDescriptorPool(core.getLogicalDevice(), m_singleImageDescriptorPool, nullptr);
 		m_singleImageDescriptorPool = nullptr;
@@ -249,7 +247,11 @@ void Descriptors::createDescriptors() {
 		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({}).", resultString(result))
 	}
 
-	// Descriptor sets layout
+	// Descriptor sets layout — binding 0 = vertex-stage camera UBO, binding 1 =
+	// fragment-stage textures (32 combined image samplers), binding 2 = optional
+	// per-draw UBO (vertex + fragment stage; used by `tilemap_instanced` and any
+	// future shader that needs a second uniform block). Binding 2 stays visible
+	// to shaders that don't use it — Vulkan tolerates unused descriptors.
 	constexpr VkDescriptorSetLayoutBinding uboLayoutBinding{.binding = 0,
 															.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 															.descriptorCount = 1,
@@ -261,7 +263,13 @@ void Descriptors::createDescriptors() {
 																.descriptorCount = 32,
 																.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
 																.pImmutableSamplers = nullptr};
-	std::vector bindings = {uboLayoutBinding, samplerLayoutBinding};
+	constexpr VkDescriptorSetLayoutBinding drawUboLayoutBinding{.binding = 2,
+																.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+																.descriptorCount = 1,
+																.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
+																			  VK_SHADER_STAGE_FRAGMENT_BIT,
+																.pImmutableSamplers = nullptr};
+	std::vector bindings = {uboLayoutBinding, samplerLayoutBinding, drawUboLayoutBinding};
 	const VkDescriptorSetLayoutCreateInfo layoutInfo{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 													 .pNext = nullptr,
 													 .flags = {},
@@ -293,9 +301,19 @@ void Descriptors::updateDescriptors() {
 
 void Descriptors::updateDescriptor(const size_t iFrame) {
 	const auto& core = VulkanCore::get();
-	std::vector<VkDescriptorBufferInfo> bufferInfos;
-	if (!m_uniformBuffers.empty()) {
-		bufferInfos.push_back({.buffer = m_uniformBuffers[iFrame], .offset = 0, .range = m_uniformSize});
+	// One `VkDescriptorBufferInfo` + one `VkWriteDescriptorSet` per registered
+	// UBO binding. The static storage keeps the `pBufferInfo` pointers valid
+	// until `vkUpdateDescriptorSets` is called below.
+	std::vector<std::pair<uint32_t, VkDescriptorBufferInfo>> uboInfos;
+	uboInfos.reserve(m_uniformBindings.size());
+	for (const auto& [binding, ubo]: m_uniformBindings) {
+		if (iFrame >= ubo.buffers.size() || ubo.buffers[iFrame] == nullptr)
+			continue;
+		uboInfos.emplace_back(binding, VkDescriptorBufferInfo{
+											   .buffer = ubo.buffers[iFrame],
+											   .offset = 0,
+											   .range = ubo.size,
+									   });
 	}
 	constexpr uint32_t maxSamplerDescriptors = 32;
 	std::vector<VkDescriptorImageInfo> imageInfos;
@@ -323,16 +341,17 @@ void Descriptors::updateDescriptor(const size_t iFrame) {
 		while (imageInfos.size() < maxSamplerDescriptors) { imageInfos.push_back(fallbackImageInfo); }
 	}
 	std::vector<VkWriteDescriptorSet> descriptorWrites;
-	if (!bufferInfos.empty()) {
+	descriptorWrites.reserve(uboInfos.size() + 1);// one per UBO binding + one for the texture array
+	for (const auto& [binding, info]: uboInfos) {
 		descriptorWrites.push_back({.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 									.pNext = nullptr,
 									.dstSet = m_descriptorSets[iFrame],
-									.dstBinding = 0,
+									.dstBinding = binding,
 									.dstArrayElement = 0,
-									.descriptorCount = static_cast<uint32_t>(bufferInfos.size()),
+									.descriptorCount = 1,
 									.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 									.pImageInfo = nullptr,
-									.pBufferInfo = bufferInfos.data(),
+									.pBufferInfo = &info,
 									.pTexelBufferView = nullptr});
 	}
 	if (!imageInfos.empty()) {
@@ -353,29 +372,47 @@ void Descriptors::updateDescriptor(const size_t iFrame) {
 	}
 }
 
-void Descriptors::registerUniform(const uint32_t iSize) {
-	m_uniformBuffers.resize(g_maxFrameInFlight);
-	m_uniformBuffersMemory.resize(g_maxFrameInFlight);
-	m_uniformBuffersMapped.resize(g_maxFrameInFlight);
-	m_uniformSize = iSize;
+void Descriptors::registerUniform(const uint32_t iBinding, const uint32_t iSize) {
 	const auto& core = VulkanCore::get();
+	auto& ubo = m_uniformBindings[iBinding];
+	// Release any previous allocation for this binding so resizing in place
+	// works (callers may re-register with a different size).
+	for (size_t i = 0; i < ubo.buffers.size() && i < g_maxFrameInFlight; ++i) {
+		if (i < ubo.mapped.size() && ubo.mapped[i] != nullptr)
+			vkUnmapMemory(core.getLogicalDevice(), ubo.memory[i]);
+		if (ubo.buffers[i] != nullptr)
+			vkDestroyBuffer(core.getLogicalDevice(), ubo.buffers[i], nullptr);
+		if (i < ubo.memory.size() && ubo.memory[i] != nullptr)
+			vkFreeMemory(core.getLogicalDevice(), ubo.memory[i], nullptr);
+	}
+	ubo.buffers.assign(g_maxFrameInFlight, nullptr);
+	ubo.memory.assign(g_maxFrameInFlight, nullptr);
+	ubo.mapped.assign(g_maxFrameInFlight, nullptr);
+	ubo.size = iSize;
 	for (size_t i = 0; i < g_maxFrameInFlight; i++) {
 		createBuffer(iSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-					 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_uniformBuffers[i],
-					 m_uniformBuffersMemory[i]);
-		if (const auto result = vkMapMemory(core.getLogicalDevice(), m_uniformBuffersMemory[i], 0, iSize, 0,
-											&m_uniformBuffersMapped[i]);
+					 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, ubo.buffers[i],
+					 ubo.memory[i]);
+		if (const auto result = vkMapMemory(core.getLogicalDevice(), ubo.memory[i], 0, iSize, 0, &ubo.mapped[i]);
 			result != VK_SUCCESS)
-			OWL_CORE_ERROR("Vulkan: Failed to create uniform buffer {}.", i)
+			OWL_CORE_ERROR("Vulkan: Failed to map uniform buffer (binding={}, frame={}).", iBinding, i)
 	}
 }
 
-void Descriptors::setUniformData(const void* iData, const size_t iSize) const {
+void Descriptors::setUniformData(const uint32_t iBinding, const void* iData, const size_t iSize) const {
 	const auto& vkh = VulkanHandler::get();
+	const auto it = m_uniformBindings.find(iBinding);
+	if (it == m_uniformBindings.end()) {
+		OWL_CORE_WARN("Vulkan Descriptors: setUniformData on unregistered binding {}.", iBinding)
+		return;
+	}
+	const auto frame = vkh.getCurrentFrameIndex();
+	if (frame >= it->second.mapped.size() || it->second.mapped[frame] == nullptr)
+		return;
 
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
-	memcpy(m_uniformBuffersMapped[vkh.getCurrentFrameIndex()], iData, iSize);
+	memcpy(it->second.mapped[frame], iData, iSize);
 	OWL_DIAG_POP
 }
 

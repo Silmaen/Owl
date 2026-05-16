@@ -14,9 +14,9 @@
 
 namespace owl::renderer::gpu::vulkan {
 
-UniformBuffer::UniformBuffer(const uint32_t iSize, uint32_t, const std::string&) {
+UniformBuffer::UniformBuffer(const uint32_t iSize, const uint32_t iBinding, const std::string&) : m_binding{iBinding} {
 	auto& vkd = internal::Descriptors::get();
-	vkd.registerUniform(iSize);
+	vkd.registerUniform(iBinding, iSize);
 	vkd.updateDescriptors();
 }
 
@@ -24,7 +24,7 @@ UniformBuffer::~UniformBuffer() = default;
 
 void UniformBuffer::setData(const void* iData, const uint32_t iSize, uint32_t) {
 	const auto& vkd = internal::Descriptors::get();
-	vkd.setUniformData(iData, iSize);
+	vkd.setUniformData(m_binding, iData, iSize);
 }
 
 

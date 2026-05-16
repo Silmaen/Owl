@@ -702,26 +702,44 @@ renderer stack architecture established in v0.2.0.
           iterations.
     - ![In Progress][progress] GPU offload — moved into v0.2.0 to get the biggest CPU→GPU wins shipped with the renderer
       stack itself (deferred from "longer horizon" status — user committed to completing v0.2.0 with the GPU push)
-        - ![Planned][planned] Tilemap rendering via instanced quads + SSBO instead of one `drawQuad` per cell. Cleanest
-          self-contained win: rewrite `RenderableTilemap` to push per-cell `{positionXY, uvIndex, tint}` into an SSBO
-          and issue a single `vkCmdDraw(4, cellCount, …)` instanced quad call. Expected 5–15× on 64×64 maps (the editor
-          tilemap currently issues 4096 calls per frame).
-        - ![Planned][planned] GPU sprite Z-sort via radix shader. Replace the per-frame CPU sort in `RendererRaycast`
-          (and
-          `Renderer2D` if it sorts) with a compute-shader radix sort over the sprite SSBO. Expected 3–8× on 100+ sprite
-          scenes.
-        - ![Planned][planned] Hierarchical world-transform pre-pass in a compute shader. Each entity dispatches one
-          thread that reads its local transform + parent index, walks up, and writes the flat `mat4` into a per-frame
-          world-matrix SSBO. Renderer reads SSBO directly. Expected 5–10× on deep hierarchies and removes the ~30
-          redundant CPU rebuilds of the same matrix per frame.
-        - ![Planned][planned] Compute-driven frustum / occlusion culling pre-pass feeding indirect draws. Compute shader
-          tests each entity's AABB against the frustum and writes a packed visible-index buffer; the draw call becomes
-          `vkCmdDrawIndirect`. Foundation for the bigger v0.3.0 3D scenes; gives 2–4× on scenes with lots of off-screen
-          entities even in 2D.
-        - ![Planned][planned] Raycast DDA in a compute shader, one thread per column. Biggest single CPU→GPU win (20–50×
-          theoretical) but also the most invasive — touches the entire raycast renderer architecture, the per-column
-          zBuffer, dynamic walls, sprite occlusion. Plan to land last after the smaller GPU items have shaken out the
-          SSBO / compute-shader plumbing.
+        - ![Done][done] Tilemap rendering via instanced quads + SSBO instead of one `drawQuad` per cell. `RendererTilemap`
+          uploads per-cell `{positionXY, tileIndex, entityId}` into a per-instance VBO and issues a single
+          `vkCmdDrawIndexed(6, cellCount, …)` / `glDrawElementsInstanced(GL_TRIANGLES, 6, …, cellCount)` call backed
+          by `tilemap_instanced.slang`. Foundation for the rest of the GPU items.
+        - ![Done][done] GPU compute pipeline foundation — `gpu::ComputeShader` (Null / OpenGL / Vulkan) +
+          `gpu::StorageBuffer` + `RenderCommand::storageBufferMemoryBarrier()` + Slang `[shader("compute")]` entry
+          points wired into `compileSlangToSpirv`. Scaffold the remaining items below all build on; headless validation
+          via `SlangCompute_test.cpp`.
+        - ![In Progress][progress] GPU sprite Z-sort via compute shader. The `renderer::utils::BitonicSortPass`
+          utility + `bitonic_sort.slang` shader ship — single-workgroup bitonic-merge sort over an SSBO of
+          `(key, value)` pairs, capacity 1024, fixed `[numthreads(1024,1,1)]`. Headless tests on the Null backend
+          pass. Renderer-side adoption (`RendererRaycast::drawSprites` building the SSBO + consuming the sorted
+          indices instead of `std::ranges::sort`) is the remaining work for this item. Bitonic chosen over radix —
+          for sprite counts < 1000 the constant factor of radix is higher than a single shared-memory bitonic
+          dispatch.
+        - ![In Progress][progress] Hierarchical world-transform pre-pass in a compute shader. Each entity dispatches
+          one thread that reads its local transform + parent index, walks up, and writes the flat `mat4` into a
+          per-frame world-matrix SSBO. Renderer reads SSBO directly. Expected 5–10× on deep hierarchies and removes
+          the ~30 redundant CPU rebuilds of the same matrix per frame. The `renderer::utils::WorldTransformPass`
+          utility + `world_transform.slang` shader ship — single-dispatch parent-chain walk, padded to a multiple of
+          64 entries, headless tests on the Null backend pass. Renderer-side adoption (Renderer2D / RendererTilemap /
+          RendererRaycast all reading from `WorldTransformPass::getWorldBuffer()`) is the remaining work for this
+          item.
+        - ![In Progress][progress] Compute-driven frustum / occlusion culling pre-pass feeding indirect draws. The
+          `renderer::utils::FrustumCullingPass` utility + `frustum_culling.slang` shader ship, alongside the new
+          `RenderCommand::drawIndexedIndirect` API (Vulkan `vkCmdDrawIndexedIndirectCount`, OpenGL
+          `glMultiDrawElementsIndirectCount`, Null no-op). `extractFrustumPlanes(viewProj)` Gribb-Hartmann helper for
+          the CPU side. Headless tests on the Null backend pass. Renderer-side adoption (a renderer populating the
+          AABB SSBO from its scene-graph + replacing the per-entity draw loop with one `drawIndexedIndirect`) is the
+          remaining work for this item — likely a candidate for v0.3.0's 3D scenes where the cull pays off.
+        - ![In Progress][progress] Raycast DDA in a compute shader, one thread per column. Biggest single CPU→GPU
+          win (20–50× theoretical) but also the most invasive — touches the entire raycast renderer architecture, the
+          per-column zBuffer, dynamic walls, sprite occlusion. The `renderer::utils::RaycastDDAPass` utility +
+          `raycast_dda.slang` shader ship — faithful Slang port of the CPU DDA inner loop (X/Y-edge stepping,
+          transparent-stack budget of 8, wallX flip convention, perpDist clamping). Outputs `columnHits[col * 8 + k]`
+          + `hitCount[col]` + `zBuffer[col]` SSBOs. Headless tests on the Null backend pass. Renderer-side adoption
+          — `RendererRaycast::drawTilemapWalls` reading from the SSBOs instead of the CPU vector, and the sprite
+          occlusion pass consuming `zBuffer[]` directly — is the remaining work for this item.
 - Known bug fixes (deferred from v0.2.0 — all closed during v0.2.0)
     - ![Done][done] Editor keyboard shortcuts unreliable — *fixed in v0.2.0*
         - Modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) now bypass

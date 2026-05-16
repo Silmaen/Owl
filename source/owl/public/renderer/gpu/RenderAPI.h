@@ -11,6 +11,10 @@
 #include "DrawData.h"
 #include "math/vectors.h"
 
+namespace owl::renderer::gpu {
+class StorageBuffer;
+}// namespace owl::renderer::gpu
+
 /**
  * @brief
  *  Backend abstractions for the renderer module.
@@ -209,6 +213,38 @@ public:
 	 * @param[in] iEnabled True to enable depth testing, false to disable.
 	 */
 	virtual void setDepthTest([[maybe_unused]] bool iEnabled) {}
+
+	/**
+	 * @brief
+	 *  Fence between compute writes to SSBOs and downstream graphics reads
+	 *  (vertex-attribute pulls, vertex/fragment shader SSBO/UBO loads).
+	 *  Must be issued by any caller that runs a `ComputeShader::dispatch()`
+	 *  before consuming the output buffer in the draw pass. No-op on the
+	 *  null backend.
+	 */
+	virtual void storageBufferMemoryBarrier() {}
+
+	/**
+	 * @brief
+	 *  GPU-driven indexed indirect draw. Reads `iMaxDrawCount`
+	 *  `DrawIndexedIndirectCommand` records from `iCommandBuffer`
+	 *  (starting at offset 0) and `uint32_t` drawCount from
+	 *  `iCountBuffer` at offset 0. The actual emitted draw count is
+	 *  clamped to `min(*iCountBuffer, iMaxDrawCount)`. Vulkan: maps to
+	 *  `vkCmdDrawIndexedIndirectCount`. OpenGL: maps to
+	 *  `glMultiDrawElementsIndirectCount`. Null: no-op.
+	 * @param[in] iData Draw data with bound vertex / index buffers.
+	 * @param[in] iCommandBuffer SSBO carrying the indirect commands
+	 *  (also usable as VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT /
+	 *  GL_DRAW_INDIRECT_BUFFER).
+	 * @param[in] iCountBuffer Single-uint SSBO carrying the actual
+	 *  command count.
+	 * @param[in] iMaxDrawCount Upper bound on the emitted draw count.
+	 */
+	virtual void drawIndexedIndirect([[maybe_unused]] const shared<DrawData>& iData,
+									 [[maybe_unused]] const shared<StorageBuffer>& iCommandBuffer,
+									 [[maybe_unused]] const shared<StorageBuffer>& iCountBuffer,
+									 [[maybe_unused]] uint32_t iMaxDrawCount) {}
 
 protected:
 	/**

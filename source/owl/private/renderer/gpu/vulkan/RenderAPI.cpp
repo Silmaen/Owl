@@ -9,6 +9,7 @@
 
 #include "RenderAPI.h"
 
+#include "StorageBuffer.h"
 #include "core/Application.h"
 #include "core/external/glfw3.h"
 #include "internal/Descriptors.h"
@@ -141,6 +142,42 @@ void RenderAPI::setDepthTest(const bool iEnabled) {
 	// Also apply immediately if a command buffer is active.
 	if (const auto& cmd = vkh.getCurrentCommandBuffer(); cmd != nullptr)
 		vkCmdSetDepthTestEnable(cmd, iEnabled ? VK_TRUE : VK_FALSE);
+}
+
+void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData,
+									const shared<renderer::gpu::StorageBuffer>& iCommandBuffer,
+									const shared<renderer::gpu::StorageBuffer>& iCountBuffer,
+									const uint32_t iMaxDrawCount) {
+	if (!iData || !iCommandBuffer || !iCountBuffer || iMaxDrawCount == 0)
+		return;
+	auto* const cmd = internal::VulkanHandler::get().getCurrentCommandBuffer();
+	if (cmd == nullptr)
+		return;
+	iData->bind();
+	const auto* cmdSsbo = dynamic_cast<const StorageBuffer*>(iCommandBuffer.get());
+	const auto* countSsbo = dynamic_cast<const StorageBuffer*>(iCountBuffer.get());
+	if (cmdSsbo == nullptr || countSsbo == nullptr || cmdSsbo->getHandle() == nullptr ||
+		countSsbo->getHandle() == nullptr) {
+		OWL_CORE_WARN("Vulkan: drawIndexedIndirect with non-Vulkan SSBOs.")
+		return;
+	}
+	vkCmdDrawIndexedIndirectCount(cmd, cmdSsbo->getHandle(), 0, countSsbo->getHandle(), 0, iMaxDrawCount,
+								  static_cast<uint32_t>(sizeof(uint32_t) * 5));
+}
+
+void RenderAPI::storageBufferMemoryBarrier() {
+	auto* const cmd = internal::VulkanHandler::get().getCurrentCommandBuffer();
+	if (cmd == nullptr)
+		return;
+	VkMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+	barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+							VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+						 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+								 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
+						 0, 1, &barrier, 0, nullptr, 0, nullptr);
 }
 
 }// namespace owl::renderer::gpu::vulkan

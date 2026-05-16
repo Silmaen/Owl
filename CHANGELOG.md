@@ -9,6 +9,117 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **GPU compute pipeline foundation.** Slang `[shader("compute")]` programs
+  can now be compiled, loaded and dispatched alongside the existing
+  graphics shaders — the scaffold the v0.2.0 GPU items (#32 sprite sort,
+  #33 world-transform pre-pass, #34 compute culling, #35 raycast DDA)
+  all build on.
+    - `gpu::ComputeShader` public abstract — `bindStorageBuffer(slot,
+      ssbo)` + `dispatch(x, y, z)` + `create(name, renderer)` factory.
+      Backends: Null (stub), OpenGL (`glCreateShader(GL_COMPUTE_SHADER)`
+      + `glShaderBinary(GL_SHADER_BINARY_FORMAT_SPIR_V)` +
+      `glSpecializeShader` + `glDispatchCompute`), Vulkan
+      (`VkComputePipeline` + dedicated `VkDescriptorSetLayout` /
+      `VkDescriptorPool` / `VkDescriptorSet`, bindings discovered via
+      spirv-cross reflection of `storage_buffers`, `vkCmdBindPipeline`
+      `VK_PIPELINE_BIND_POINT_COMPUTE` + `vkCmdBindDescriptorSets` +
+      `vkCmdDispatch`).
+    - `RenderCommand::storageBufferMemoryBarrier()` fences compute
+      writes for downstream draws (`glMemoryBarrier(GL_SHADER_STORAGE
+      | GL_VERTEX_ATTRIB_ARRAY | GL_UNIFORM | GL_COMMAND)` on OpenGL,
+      `vkCmdPipelineBarrier(COMPUTE_SHADER → VERTEX_INPUT |
+      VERTEX_SHADER | FRAGMENT_SHADER | DRAW_INDIRECT)` on Vulkan, no-op
+      on Null).
+    - Slang entry-point loop in `compileSlangToSpirv` now probes
+      `vertexMain` / `fragmentMain` / `computeMain` and skips missing
+      ones silently — graphics shaders without `computeMain` and
+      compute-only shaders without `vertexMain` both compile fine.
+      Compilation fails only when zero recognised entry points were
+      declared.
+    - Four headless `SlangCompute` tests cover the path: Vulkan + GL
+      target codegen, SPIR-V `storage_buffers` reflection, missing-entry
+      rejection. No GPU context required — uses Slang's CPU API +
+      spirv-cross.
+- **GPU sprite Z-sort utility (`renderer::utils::BitonicSortPass`, #32).**
+  Single-workgroup bitonic-merge sort over an SSBO of `(key, value)` pairs.
+  Sorts ascending by `key`; painter's-order consumers (back-to-front)
+  negate their distance so the natural sort lays elements out farthest-
+  first. Fixed capacity of 1024 entries (matches the Slang shader's
+  workgroup size); callers pad with `+∞` keys and remember the real
+  count.
+    - `engine_assets/shaders/bitonic_sort/slang/bitonic_sort.slang` —
+      `[shader("compute")] [numthreads(1024,1,1)]` with `groupshared`
+      memory and a standard `(k, j)` comparator pair.
+    - `BitonicSortPass::sort(span<Item>)` uploads padded items,
+      dispatches one workgroup, and emits a storage barrier so the next
+      draw can read `getBuffer()` safely.
+    - 4 `BitonicSortPass_test.cpp` tests on the Null backend.
+    - Note: bitonic chosen over radix for cleanliness — radix is
+      overkill for sprite counts (typically < 1000); single-dispatch
+      shared-memory bitonic is faster and simpler at that scale.
+- **GPU frustum culling + indirect draws (#34).** Compute pre-pass that
+  tests each entity's AABB against 6 frustum planes and atomically
+  appends a `VkDrawIndexedIndirectCommand` /
+  `DrawElementsIndirectCommand` entry to a draw-command SSBO. The
+  graphics pass replaces the per-entity draw loop with a single
+  `RenderCommand::drawIndexedIndirect(data, commandBuffer, countBuffer,
+  maxDrawCount)` call.
+    - `engine_assets/shaders/frustum_culling/slang/frustum_culling.slang`
+      — per-AABB Gribb-Hartmann test, `InterlockedAdd` to pack visible
+      slots, padded AABB tail flagged via `minPos.w = 0`.
+    - `renderer::utils::FrustumCullingPass` — manages the AABB, frustum,
+      counter and command SSBOs; growth-on-demand. Static
+      `extractFrustumPlanes(viewProj)` helper.
+    - `RenderCommand::drawIndexedIndirect` virtual + 3 backends. Vulkan:
+      `vkCmdDrawIndexedIndirectCount`. OpenGL:
+      `glMultiDrawElementsIndirectCount`. Null: no-op.
+    - Vulkan `StorageBuffer` gains `VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT`
+      so the same SSBO can be bound as a draw-command source.
+    - 3 `FrustumCullingPass_test.cpp` tests cover init/shutdown, buffer
+      growth on first dispatch, and plane-extraction signs for the
+      identity matrix.
+- **GPU per-column raycast DDA (#35).** Replaces the per-column CPU walk
+  in `RendererRaycast::drawTilemapWalls` with one thread per screen
+  column on the GPU. Outputs the same per-column hit records the CPU
+  walk used to build (tile index, perp distance, texture-U, wall
+  height, side, transparency) into a `columnHits[col * 8 + k]` SSBO
+  alongside a per-column `hitCount[col]` and a `zBuffer[col]` for
+  sprite occlusion.
+    - `engine_assets/shaders/raycast_dda/slang/raycast_dda.slang` —
+      faithful port of the CPU DDA inner loop (X/Y-edge stepping,
+      transparent-stack budget of 8, perpDist clamping, wallX flip
+      convention to match Wolfenstein U-orientation).
+    - `renderer::utils::RaycastDDAPass` — owns the params/grid/meta
+      input SSBOs and the hitCount/zBuffer/columnHits output SSBOs;
+      `update(grid, w, h, meta)` for scene activation, `dispatch(params)`
+      per frame.
+    - 4 `RaycastDDAPass_test.cpp` tests on the Null backend.
+    - Renderer-side adoption (stripe emission reading from
+      `getColumnHitBuffer()` instead of the `thread_local` CPU vector)
+      is deferred to a follow-on — the CPU stripe-drawing path is
+      tightly intertwined with the zBuffer-aware sprite occlusion code
+      and warrants its own focused PR.
+- **World-transform compute pre-pass (`renderer::utils::WorldTransformPass`).**
+  Hierarchical world matrix calculation moved off the CPU and into a
+  single-dispatch compute shader. Three SSBOs (`locals[]`, `parents[]`,
+  `worlds[]`) — one thread per entity walks the parent chain up to its
+  root and accumulates a world matrix. No per-level barriers (the shader
+  only reads `locals[]`, which is frozen during the dispatch), so
+  hierarchy depth costs O(depth) per thread but a single dispatch
+  suffices.
+    - `engine_assets/shaders/world_transform/slang/world_transform.slang`
+      — Slang `[shader("compute")] [numthreads(64,1,1)]`. Caller pads
+      entries up to a multiple of 64 with identity + `parentIdx = -1`,
+      so the workgroup count is `paddedCount / 64` without a count
+      uniform.
+    - `WorldTransformPass::compute(span<Entry>)` grows the SSBOs (only)
+      on the high-water mark, uploads padded host arrays via
+      `thread_local` scratch reuse, dispatches, and emits
+      `storageBufferMemoryBarrier()` so the next draw can read
+      `getWorldBuffer()` safely.
+    - Four `WorldTransformPass_test.cpp` tests cover lifecycle on the
+      Null backend: init, safe-without-init, entry-count tracking,
+      buffer-grow path.
 - **Render-loop hygiene — four per-pass caches kill the duplicate
   hierarchy / view walks the rendering used to repeat every frame.**
     - `Scene::getWorldTransform` is now backed by an
