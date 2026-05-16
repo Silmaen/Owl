@@ -94,6 +94,17 @@ public:
 
 	/**
 	 * @brief
+	 *  Issue an instanced draw using a `DrawData` initialised via
+	 *  `initInstanced`. Maps to `vkCmdDrawIndexed(..., instanceCount, ...)`
+	 *  on Vulkan and `glDrawElementsInstanced` on OpenGL.
+	 * @param[in] iData Draw data to render.
+	 * @param[in] iIndexCount Number of indices per instance.
+	 * @param[in] iInstanceCount Number of instances to draw.
+	 */
+	virtual void drawDataInstanced(const shared<DrawData>& iData, uint32_t iIndexCount, uint32_t iInstanceCount) = 0;
+
+	/**
+	 * @brief
 	 *  Binding the draw of vertex array as line.
 	 * @param[in] iData Draw data to render.
 	 * @param[in] iIndexCount Number of vertex to draw (=0 all).

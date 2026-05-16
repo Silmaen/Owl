@@ -47,6 +47,23 @@ public:
 
 	/**
 	 * @brief
+	 *  Initialise an instanced draw — creates two `VertexBuffer`s (one per-vertex,
+	 *  one per-instance) and a pipeline with two `VkVertexInputBindingDescription`s
+	 *  (binding 0 per-vertex, binding 1 per-instance).
+	 * @param[in] iVertexLayout Per-vertex layout.
+	 * @param[in] iInstanceLayout Per-instance layout.
+	 * @param[in] iVertexCapacity Number of vertices the per-vertex VBO must hold.
+	 * @param[in] iInstanceCapacity Number of instances the per-instance VBO must hold.
+	 * @param[in] iRenderer Shader renderer name.
+	 * @param[in] iIndices Index list.
+	 * @param[in] iShaderName Shader file name.
+	 */
+	void initInstanced(const BufferLayout& iVertexLayout, const BufferLayout& iInstanceLayout, uint32_t iVertexCapacity,
+					   uint32_t iInstanceCapacity, const std::string& iRenderer, std::vector<uint32_t>& iIndices,
+					   const std::string& iShaderName) override;
+
+	/**
+	 * @brief
 	 *  Bind this draw data.
 	 */
 	void bind() const override;
@@ -64,6 +81,15 @@ public:
 	 * @param[in] iSize The size of the raw data.
 	 */
 	void setVertexData(const void* iData, uint32_t iSize) override;
+
+	/**
+	 * @brief
+	 *  Push per-instance data to the per-instance VBO. No-op for
+	 *  non-instanced draws.
+	 * @param[in] iData Raw per-instance bytes.
+	 * @param[in] iSize Size in bytes.
+	 */
+	void setInstanceData(const void* iData, uint32_t iSize) override;
 
 	/**
 	 * @brief
@@ -94,6 +120,8 @@ private:
 	shared<Shader> mp_shader;
 	/// Pointer to the vertex buffer.
 	shared<VertexBuffer> mp_vertexBuffer;
+	/// Pointer to the per-instance vertex buffer (`initInstanced` path only).
+	shared<VertexBuffer> mp_instanceBuffer;
 	/// Pointer to the index buffer.
 	shared<IndexBuffer> mp_indexBuffer;
 	/// Name of the shader

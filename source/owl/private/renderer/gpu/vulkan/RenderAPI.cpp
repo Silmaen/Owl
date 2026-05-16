@@ -68,6 +68,17 @@ void RenderAPI::drawData(const shared<DrawData>& iData, const uint32_t iIndexCou
 	vkh.drawData(count, isIndexed);
 }
 
+void RenderAPI::drawDataInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
+								  const uint32_t iInstanceCount) {
+	if (iInstanceCount == 0)
+		return;
+	auto& vkh = internal::VulkanHandler::get();
+	iData->bind();
+	const bool isIndexed = iData->getIndexCount() > 0;
+	const uint32_t count = (iIndexCount != 0u) ? iIndexCount : iData->getIndexCount();
+	vkh.drawData(count, isIndexed, iInstanceCount);
+}
+
 void RenderAPI::drawLine(const shared<DrawData>& iData, const uint32_t iIndexCount) {
 	auto& vkh = internal::VulkanHandler::get();
 	iData->bind();
