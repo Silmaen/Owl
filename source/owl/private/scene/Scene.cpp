@@ -538,6 +538,16 @@ void Scene::onEndRuntime() {
 void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender) {
 	OWL_PROFILE_FUNCTION()
 
+	// Per-pass visibility / layer-content caches: arm at the top of the tick,
+	// tear down at the end. They depend on `Visibility` / `RendererTag`,
+	// which scripts rarely mutate mid-tick; safe for the whole pass.
+	// World-transform cache is armed separately (after EntityLinks finish
+	// mutating transforms) — see further below in this function.
+	m_visibilityCache.clear();
+	m_layerContentCacheFirst.clear();
+	m_layerContentCacheNotFirst.clear();
+	m_inUpdatePass = true;
+
 	// find camera
 	renderer::Camera* mainCamera = nullptr;
 	math::mat4 cameraTransform;
@@ -637,6 +647,12 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	physic::PhysicCommand::frame(iTimeStep);
 
 	updateEntityLinks();
+	// World transforms are stable from this point until the end of the tick
+	// (no more entity-link, physics, or script mutations). Arm the world-
+	// transform cache so sound + render's many `getWorldTransform` calls
+	// dedupe against the first one per entity.
+	m_worldTransformCache.clear();
+	m_worldTransformCacheActive = true;
 	// Sound: update listener and spatial source positions
 	for (const auto view = registry.view<component::Transform, component::SoundListener>(); const auto entity: view) {
 		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
@@ -733,6 +749,9 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 
 		ScreenTransition::render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
 	}
+	// Disarm per-pass caches; the next tick repopulates from scratch.
+	m_inUpdatePass = false;
+	m_worldTransformCacheActive = false;
 }
 
 void Scene::onRenderRuntime() {
@@ -807,6 +826,15 @@ void Scene::onRenderRuntime() {
 void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
+	// Per-pass caches: editor mode does not run scripts or physics, so
+	// transforms are stable for the entire pass — arm both caches up front.
+	m_visibilityCache.clear();
+	m_layerContentCacheFirst.clear();
+	m_layerContentCacheNotFirst.clear();
+	m_worldTransformCache.clear();
+	m_inUpdatePass = true;
+	m_worldTransformCacheActive = true;
+
 	// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
 	math::mat4 viewRotation = iCamera.getView();
 	viewRotation(0, 3) = 0.0f;
@@ -814,6 +842,9 @@ void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, con
 	viewRotation(2, 3) = 0.0f;
 	m_inverseViewRotation = inverse(iCamera.getProjection() * viewRotation);
 	renderWithStack(iCamera);
+	// Disarm per-pass caches; the next tick repopulates from scratch.
+	m_inUpdatePass = false;
+	m_worldTransformCacheActive = false;
 }
 
 auto Scene::layerAccepts(const Entity& iEntity) const -> bool {
@@ -827,7 +858,17 @@ auto Scene::layerAccepts(const Entity& iEntity) const -> bool {
 auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) const -> bool {
 	OWL_PROFILE_FUNCTION()
 
-	auto* self = const_cast<Scene*>(this);
+	// In-pass cache: the render stack calls this once per layer per frame,
+	// so a 10-layer scene was paying 10 × (7 view scans) every frame. With
+	// the cache the second-and-subsequent layers (same `iLayerName`)
+	// short-circuit to a hashmap lookup.
+	auto& cache = iIsFirst ? m_layerContentCacheFirst : m_layerContentCacheNotFirst;
+	if (m_inUpdatePass) {
+		if (const auto it = cache.find(iLayerName); it != cache.end())
+			return it->second;
+	}
+
+	auto* self = const_cast<Scene*>(this);// NOLINT(cppcoreguidelines-pro-type-const-cast)
 	const auto matches = [&](const entt::entity e) -> bool {
 		const Entity ent{e, self};
 		if (!isEffectivelyVisible(ent, /*iEditorMode=*/false))
@@ -836,31 +877,37 @@ auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) 
 			return iIsFirst;
 		return ent.getComponent<component::RendererTag>().rendererName == iLayerName;
 	};
-	for (const auto e: registry.view<component::Tilemap>())
-		if (matches(e))
-			return true;
-	for (const auto e: registry.view<component::SpriteRenderer>())
-		if (matches(e))
-			return true;
-	for (const auto e: registry.view<component::AnimatedSpriteRenderer>())
-		if (matches(e))
-			return true;
-	for (const auto e: registry.view<component::CircleRenderer>())
-		if (matches(e))
-			return true;
-	for (const auto e: registry.view<component::Text>())
-		if (matches(e))
-			return true;
-	for (const auto e: registry.view<component::Canvas>())
-		if (matches(e))
-			return true;
-	// Backgrounds always sit behind every layer — they only contribute to the first one.
-	if (iIsFirst) {
-		for (const auto e: registry.view<component::BackgroundTexture>())
+	const auto scan = [&]() -> bool {
+		for (const auto e: registry.view<component::Tilemap>())
 			if (matches(e))
 				return true;
-	}
-	return false;
+		for (const auto e: registry.view<component::SpriteRenderer>())
+			if (matches(e))
+				return true;
+		for (const auto e: registry.view<component::AnimatedSpriteRenderer>())
+			if (matches(e))
+				return true;
+		for (const auto e: registry.view<component::CircleRenderer>())
+			if (matches(e))
+				return true;
+		for (const auto e: registry.view<component::Text>())
+			if (matches(e))
+				return true;
+		for (const auto e: registry.view<component::Canvas>())
+			if (matches(e))
+				return true;
+		// Backgrounds always sit behind every layer — they only contribute to the first one.
+		if (iIsFirst) {
+			for (const auto e: registry.view<component::BackgroundTexture>())
+				if (matches(e))
+					return true;
+		}
+		return false;
+	};
+	const bool result = scan();
+	if (m_inUpdatePass)
+		cache.emplace(iLayerName, result);
+	return result;
 }
 
 void Scene::renderWithStack(const renderer::Camera& iCamera) {
@@ -1393,6 +1440,8 @@ void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
 }
 
 void Scene::resolveAllTilemapAssets() {
+	if (!m_tilemapAssetsDirty)
+		return;
 	if (!core::Application::instanced())
 		return;
 	const auto& app = core::Application::get();
@@ -1469,6 +1518,10 @@ void Scene::resolveAllTilemapAssets() {
 		if (auto resolved = resolveTileset(push.tilesetPath); resolved)
 			push.tileset = std::move(resolved);
 	}
+	// Mark the cache clean so subsequent render frames return instantly until
+	// a new tilemap-related component is added or `invalidateTilemapAssets()`
+	// is called from inspector path-edit code.
+	m_tilemapAssetsDirty = false;
 }
 
 void Scene::resolveAllEntityLinks() {
@@ -1546,12 +1599,15 @@ void Scene::renderUI(const math::mat4& iEffectiveViewProjection) {
 	const auto vpWidth = static_cast<float>(m_viewportSize.x());
 	const auto vpHeight = static_cast<float>(m_viewportSize.y());
 
-	// Collect Canvas entities, sorted by sortOrder.
+	// Collect Canvas entities, sorted by sortOrder. `thread_local` reuse so
+	// the typical UI scene (a handful of canvases) doesn't allocate every
+	// frame — same pattern as the raycast sprite / wall / door pools.
 	struct CanvasEntry {
 		entt::entity entity;
 		int32_t sortOrder;
 	};
-	std::vector<CanvasEntry> canvases;
+	thread_local std::vector<CanvasEntry> canvases;
+	canvases.clear();
 	for (const auto view = registry.view<component::Canvas>(); const auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
@@ -1732,51 +1788,78 @@ auto Scene::getChildren(const Entity& iEntity) const -> std::vector<Entity> {
 }
 
 auto Scene::getWorldTransform(const Entity& iEntity) const -> math::Transform {
+	const auto handle = static_cast<entt::entity>(iEntity);
+	if (m_worldTransformCacheActive) {
+		if (const auto it = m_worldTransformCache.find(handle); it != m_worldTransformCache.end())
+			return it->second;
+	}
 	constexpr uint32_t maxDepth = 64;
 	const auto& localTransform = iEntity.getComponent<component::Transform>().transform;
 	const auto& [parentId, childrenIds] = iEntity.getComponent<component::Hierarchy>();
-	if (parentId == core::UUID{0})
-		return localTransform;
-	// Walk the parent chain, collecting transforms.
-	math::mat4 worldMat = localTransform();
-	core::UUID currentParentId = parentId;
-	uint32_t depth = 0;
-	while (currentParentId != core::UUID{0} && depth < maxDepth) {
-		const Entity parent = findEntityByUUID(currentParentId);
-		if (!parent)
-			break;
-		const auto& parentTransform = parent.getComponent<component::Transform>().transform;
-		worldMat = parentTransform() * worldMat;
-		currentParentId = parent.getComponent<component::Hierarchy>().parentId;
-		++depth;
-	}
-	if (depth >= maxDepth)
-		OWL_CORE_WARN("getWorldTransform: depth limit reached, possible circular hierarchy.")
-	return math::Transform{worldMat};
+	const auto compute = [&]() -> math::Transform {
+		if (parentId == core::UUID{0})
+			return localTransform;
+		// Walk the parent chain, collecting transforms.
+		math::mat4 worldMat = localTransform();
+		core::UUID currentParentId = parentId;
+		uint32_t depth = 0;
+		while (currentParentId != core::UUID{0} && depth < maxDepth) {
+			const Entity parent = findEntityByUUID(currentParentId);
+			if (!parent)
+				break;
+			const auto& parentTransform = parent.getComponent<component::Transform>().transform;
+			worldMat = parentTransform() * worldMat;
+			currentParentId = parent.getComponent<component::Hierarchy>().parentId;
+			++depth;
+		}
+		if (depth >= maxDepth)
+			OWL_CORE_WARN("getWorldTransform: depth limit reached, possible circular hierarchy.")
+		return math::Transform{worldMat};
+	};
+	const math::Transform result = compute();
+	if (m_worldTransformCacheActive)
+		m_worldTransformCache.emplace(handle, result);
+	return result;
 }
 
 auto Scene::isEffectivelyVisible(const Entity& iEntity, const bool iEditorMode) const -> bool {
-	constexpr uint32_t maxDepth = 64;
-	if (const auto* vis = registry.try_get<component::Visibility>(static_cast<entt::entity>(iEntity)); vis != nullptr) {
-		if (const bool visible = iEditorMode ? vis->editorVisible : vis->gameVisible; !visible)
-			return false;
+	// Cache key: 31 bits of entity id + 1 bit for editor-mode. Only consulted
+	// when the scene is inside an update pass (`m_inUpdatePass`), so callers
+	// outside that path (tests, inspector helpers) always read fresh state.
+	const auto handle = static_cast<entt::entity>(iEntity);
+	const uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(handle)) << 1) | (iEditorMode ? 1ULL : 0ULL);
+	if (m_inUpdatePass) {
+		if (const auto it = m_visibilityCache.find(key); it != m_visibilityCache.end())
+			return it->second;
 	}
-	core::UUID currentParentId = iEntity.getComponent<component::Hierarchy>().parentId;
-	uint32_t depth = 0;
-	while (currentParentId != core::UUID{0} && depth < maxDepth) {
-		const Entity parent = findEntityByUUID(currentParentId);
-		if (!parent)
-			break;
-		if (const auto* parentVis = registry.try_get<component::Visibility>(static_cast<entt::entity>(parent));
-			parentVis != nullptr) {
-			if (const bool parentVisible = iEditorMode ? parentVis->editorVisible : parentVis->gameVisible;
-				!parentVisible)
+
+	constexpr uint32_t maxDepth = 64;
+	const auto compute = [&]() -> bool {
+		if (const auto* vis = registry.try_get<component::Visibility>(handle); vis != nullptr) {
+			if (const bool visible = iEditorMode ? vis->editorVisible : vis->gameVisible; !visible)
 				return false;
 		}
-		currentParentId = parent.getComponent<component::Hierarchy>().parentId;
-		++depth;
-	}
-	return true;
+		core::UUID currentParentId = iEntity.getComponent<component::Hierarchy>().parentId;
+		uint32_t depth = 0;
+		while (currentParentId != core::UUID{0} && depth < maxDepth) {
+			const Entity parent = findEntityByUUID(currentParentId);
+			if (!parent)
+				break;
+			if (const auto* parentVis = registry.try_get<component::Visibility>(static_cast<entt::entity>(parent));
+				parentVis != nullptr) {
+				if (const bool parentVisible = iEditorMode ? parentVis->editorVisible : parentVis->gameVisible;
+					!parentVisible)
+					return false;
+			}
+			currentParentId = parent.getComponent<component::Hierarchy>().parentId;
+			++depth;
+		}
+		return true;
+	};
+	const bool result = compute();
+	if (m_inUpdatePass)
+		m_visibilityCache.emplace(key, result);
+	return result;
 }
 
 void Scene::setParent(const Entity& iChild, const Entity& iNewParent) const {
@@ -2062,15 +2145,21 @@ OWL_API void Scene::onComponentAdded<component::RendererTag>([[maybe_unused]] co
 
 template<>
 OWL_API void Scene::onComponentAdded<component::Tilemap>([[maybe_unused]] const Entity& iEntity,
-														 [[maybe_unused]] component::Tilemap& ioComponent) {}
+														 [[maybe_unused]] component::Tilemap& ioComponent) {
+	m_tilemapAssetsDirty = true;
+}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::RaycastDoor>([[maybe_unused]] const Entity& iEntity,
-															 [[maybe_unused]] component::RaycastDoor& ioComponent) {}
+															 [[maybe_unused]] component::RaycastDoor& ioComponent) {
+	m_tilemapAssetsDirty = true;
+}
 
 template<>
 OWL_API void
 Scene::onComponentAdded<component::RaycastPushWall>([[maybe_unused]] const Entity& iEntity,
-													[[maybe_unused]] component::RaycastPushWall& ioComponent) {}
+													[[maybe_unused]] component::RaycastPushWall& ioComponent) {
+	m_tilemapAssetsDirty = true;
+}
 
 }// namespace owl::scene

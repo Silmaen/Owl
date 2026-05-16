@@ -9,6 +9,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Render-loop hygiene — four per-pass caches kill the duplicate
+  hierarchy / view walks the rendering used to repeat every frame.**
+    - `Scene::getWorldTransform` is now backed by an
+      `unordered_map<entt::entity, math::Transform>` cache armed only
+      during the read-only tail of a tick (sound + render). Scripts /
+      physics / `EntityLink` still walk the parent chain (they run
+      before the cache arms); from sound onward the same world matrix
+      is computed once per entity per tick instead of up to ~30× per
+      frame across sprites / circles / text / tilemaps / raycast
+      sprites / dynamic walls / doors / physics sync / sound paths.
+    - `Scene::isEffectivelyVisible` gets a per-pass
+      `unordered_map<uint64_t, bool>` cache (key packs the entity id
+      with the editor-mode bit). Sibling entities sharing the same
+      root chain all hit O(1) after the first walks. Gated by
+      `m_inUpdatePass` so external callers (tests, inspector
+      helpers) always see fresh `Visibility` state.
+    - `Scene::layerHasContent` gains two per-pass hashmaps
+      (one for `iIsFirst=true`, one for `iIsFirst=false`). Each
+      layer's 7-view scan now runs once per render-stack walk;
+      remaining layers hit a hashmap lookup. Gated by
+      `m_inUpdatePass`.
+    - `Scene::resolveAllTilemapAssets` gains a `m_tilemapAssetsDirty`
+      flag, set true in `onComponentAdded<Tilemap | RaycastDoor |
+      RaycastPushWall>` (and via the public `invalidateTilemapAssets()`
+      for inspector path-edit code), cleared at the end of a
+      successful resolve. The function's per-frame call from
+      `Scene::render` is now a single bool check on warm scenes
+      instead of three empty view iterations.
+    - All four caches are flushed at the start of every update tick
+      (`onUpdateRuntime` / `onUpdateEditor`) and disarmed at the end
+      so they never carry state across ticks. Bench: full scene
+      tests still complete in 1.1 s, no behaviour regressions.
+- **Frame-pool render scratch buffers.** Promoted the per-render
+  `std::vector` scratch buffers in `Scene::renderUI`
+  (`vector<CanvasEntry>`) and `RendererRaycast`
+  (`vector<ColumnHit>`, `vector<Projected>`) to `thread_local`
+  reuse, matching the pattern already used by the raycast sprite /
+  door / dynamic-wall pools. Allocation is paid once per session,
+  not once per frame.
 - **Raycast lighting + textured floors and ceilings.** Two long-standing
   v0.2.0 raycast follow-ups land together — they share the same per-row
   pipeline and the same fog mixer, so shipping them in one PR keeps the

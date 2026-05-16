@@ -122,7 +122,10 @@ Serialized directly as the entity key in YAML (`Entity: <uuid>`).
 | `transform` | `math::Transform` | `Transform` | Local position, rotation, and scale |
 
 Stores the **local** transform relative to the parent. World transform is computed
-on demand via `Scene::getWorldTransform(entity)`.
+on demand via `Scene::getWorldTransform(entity)`; within a single update tick the
+result is memoised in a per-pass cache (`m_worldTransformCache`, armed after the
+mutating phases) so the same matrix isn't re-walked for every sprite / circle /
+sound / physics read.
 
 #### Visibility
 
@@ -426,7 +429,11 @@ Root entities (`parentId == 0`) have local = world (no overhead).
 ### Visibility Inheritance
 
 If any ancestor is hidden, the entity is effectively hidden.
-`Scene::isEffectivelyVisible()` walks the parent chain to check.
+`Scene::isEffectivelyVisible()` walks the parent chain to check. During an
+update tick the result is memoised per (entity, mode) in `m_visibilityCache` so
+sibling entities sharing the same root pay the walk only once. Outside the
+tick (tests, inspector inspection) the cache is bypassed, so callers always
+see fresh `Visibility` state.
 
 ### Hierarchy Operations
 
@@ -508,4 +515,28 @@ the engine auto-appends `.owl` and searches asset directories including a `scene
 5. **Text** — `drawString()` with font/colour/kerning
 
 Each entity is checked for visibility via `isEffectivelyVisible()` and rendered
-using its world transform from `getWorldTransform()`.
+using its world transform from `getWorldTransform()`. Both calls hit a per-pass
+cache during the render tick, so duplicated reads across the renderable
+component groups don't repeat the parent-chain walk.
+
+#### Per-pass Caches
+
+`Scene` maintains several per-update-tick caches to avoid recomputing stable
+values across the multiple component-group scans of a render frame:
+
+| Cache                            | Key                            | Gated by                       | Cleared at      |
+|----------------------------------|--------------------------------|--------------------------------|-----------------|
+| `m_visibilityCache`              | `(entity, editorMode)`         | `m_inUpdatePass`               | Start of tick   |
+| `m_layerContentCacheFirst`       | layer name                     | `m_inUpdatePass`               | Start of tick   |
+| `m_layerContentCacheNotFirst`    | layer name                     | `m_inUpdatePass`               | Start of tick   |
+| `m_worldTransformCache`          | entity                         | `m_worldTransformCacheActive`  | After mutators  |
+| `m_tilemapAssetsDirty` flag      | scene-wide                     | (own gate)                     | After resolve   |
+
+The world-transform cache uses a narrower gate (`m_worldTransformCacheActive`)
+because scripts and physics mutate transforms mid-tick — arming the cache only
+after those phases finish keeps it safe.
+
+The dirty flag on `resolveAllTilemapAssets` is set true by
+`onComponentAdded<Tilemap | RaycastDoor | RaycastPushWall>` and by the public
+`Scene::invalidateTilemapAssets()` (which inspector path-edit code can call to
+force a re-resolve).
