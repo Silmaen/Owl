@@ -333,15 +333,17 @@ void VulkanHandler::setClearColor(const math::vec4& iColor) { m_clearColor = iCo
 
 void VulkanHandler::clear() const { m_currentFramebuffer->clearAttachment(0, m_clearColor); }
 
-void VulkanHandler::drawData(const uint32_t iVertexCount, const bool iIndexed) {
+void VulkanHandler::drawData(const uint32_t iVertexCount, const bool iIndexed, const uint32_t iInstanceCount) {
 	if (m_state != State::Running)
+		return;
+	if (iInstanceCount == 0)
 		return;
 	if (!inBatch)
 		beginBatch();
 	if (iIndexed)
-		vkCmdDrawIndexed(getCurrentCommandBuffer(), iVertexCount, 1, 0, 0, 0);
+		vkCmdDrawIndexed(getCurrentCommandBuffer(), iVertexCount, iInstanceCount, 0, 0, 0);
 	else
-		vkCmdDraw(getCurrentCommandBuffer(), iVertexCount, 1, 0, 0);
+		vkCmdDraw(getCurrentCommandBuffer(), iVertexCount, iInstanceCount, 0, 0);
 }
 
 void VulkanHandler::beginFrame() {

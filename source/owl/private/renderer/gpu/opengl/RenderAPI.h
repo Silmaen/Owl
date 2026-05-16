@@ -85,6 +85,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Issue an instanced draw via `glDrawElementsInstanced`.
+	 * @param[in] iData Draw data initialised via `initInstanced`.
+	 * @param[in] iIndexCount Indices per instance.
+	 * @param[in] iInstanceCount Number of instances.
+	 */
+	void drawDataInstanced(const shared<DrawData>& iData, uint32_t iIndexCount, uint32_t iInstanceCount) override;
+
+	/**
+	 * @brief
 	 *  Binding the draw of vertex array as line.
 	 * @param[in] iData Draw data to render.
 	 * @param[in] iIndexCount Number of vertex to draw (=0 all).

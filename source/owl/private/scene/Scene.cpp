@@ -15,6 +15,7 @@
 #include "renderer/Renderer2D.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
+#include "renderer/RendererTilemap.h"
 #include "scene/Entity.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
@@ -249,42 +250,15 @@ void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core:
 		ioAnim.m_playing = false;
 }
 
-// Emit one Renderer2D quad per non-empty tile of every visible layer of `iAsset`. Lifted out
-// of `Scene::renderTilemaps` to keep that function below the cognitive-complexity threshold.
+// Submit one tilemap entity to the GPU-instanced tilemap renderer. The
+// renderer emits one instanced drawcall per visible layer
+// (`vkCmdDrawIndexed(6, cellCount, …)` / `glDrawElementsInstanced(…)`) with
+// the per-instance VBO carrying `{cellWorld.xy, tileIndex, entityId}` per
+// cell; the vertex shader synthesises atlas UVs from the tile index. Lifted
+// out of `Scene::renderTilemaps` to keep that function below the
+// cognitive-complexity threshold.
 void drawTilemapQuads(const TilemapAsset& iAsset, const math::Transform& iWorldTransform, const int iEntityId) {
-	const float cellSize = iAsset.cellSize;
-	const float originX = -static_cast<float>(iAsset.width - 1) * 0.5f * cellSize;
-	const float originY = static_cast<float>(iAsset.height - 1) * 0.5f * cellSize;
-	for (const auto& layer: iAsset.layers) {
-		if (!layer.visible)
-			continue;
-		for (uint32_t y = 0; y < iAsset.height; ++y) {
-			for (uint32_t x = 0; x < iAsset.width; ++x) {
-				const size_t flat = static_cast<size_t>(y) * iAsset.width + x;
-				if (flat >= layer.tiles.size())
-					continue;
-				const int32_t tileIdx = layer.tiles[flat];
-				if (tileIdx < 0)
-					continue;
-				math::Transform cellTransform = iWorldTransform;
-				cellTransform.translation().x() += (originX + static_cast<float>(x) * cellSize);
-				cellTransform.translation().y() += (originY - static_cast<float>(y) * cellSize);
-				// Slight overscale (0.5%) so adjacent tiles overlap at rasterisation
-				// boundaries — without it, sub-pixel motion of the camera causes the
-				// shared edge between two tiles to flicker.
-				constexpr float kSeamOverlap = 1.005f;
-				cellTransform.scale().x() *= cellSize * kSeamOverlap;
-				cellTransform.scale().y() *= cellSize * kSeamOverlap;
-
-				renderer::Renderer2D::drawQuad(
-						{.transform = cellTransform,
-						 .color = math::vec4{1.f, 1.f, 1.f, 1.f},
-						 .texture = iAsset.tileset->texture,
-						 .textureCoords = iAsset.tileset->getTileUv(static_cast<uint32_t>(tileIdx)),
-						 .entityId = iEntityId});
-			}
-		}
-	}
+	renderer::RendererTilemap::drawTilemap(iAsset, iWorldTransform, iEntityId);
 }
 
 }// namespace

@@ -62,6 +62,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Append a per-instance vertex buffer — same as `addVertexBuffer` but
+	 *  every attribute gets `glVertexAttribDivisor(loc, 1)`, advancing the
+	 *  attribute once per instance instead of once per vertex.
+	 * @param[in] iVertexBuffer Per-instance vertex buffer to add.
+	 */
+	void addInstanceBuffer(const VertexBuf& iVertexBuffer);
+
+	/**
+	 * @brief
 	 *  Define the Index buffer.
 	 * @param[in] iIndexBuffer New Index Buffer.
 	 */

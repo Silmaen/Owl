@@ -55,9 +55,18 @@ public:
 
 	/**
 	 * @brief
-	 *  Activate the buffer in the GPU.
+	 *  Activate the buffer in the GPU at binding 0.
 	 */
 	void bind() const override;
+
+	/**
+	 * @brief
+	 *  Activate the buffer at a specific Vulkan binding index. Used by
+	 *  instanced draws where the per-instance buffer sits on binding 1
+	 *  alongside the per-vertex buffer on binding 0.
+	 * @param[in] iBinding Vulkan binding index.
+	 */
+	void bindAtBinding(uint32_t iBinding) const;
 
 	/**
 	 * @brief
@@ -76,16 +85,24 @@ public:
 	/**
 	 * @brief
 	 *  Get the binding description.
+	 * @param[in] iBinding Binding index (defaults to 0 for the per-vertex buffer).
+	 * @param[in] iPerInstance Set `VK_VERTEX_INPUT_RATE_INSTANCE` when true so this
+	 *  buffer advances once per instance instead of once per vertex.
 	 * @return The bining description.
 	 */
-	[[nodiscard]] auto getBindingDescription() const -> VkVertexInputBindingDescription;
+	[[nodiscard]] auto getBindingDescription(uint32_t iBinding = 0, bool iPerInstance = false) const
+			-> VkVertexInputBindingDescription;
 
 	/**
 	 * @brief
 	 *  Get The attribute description.
+	 * @param[in] iBinding Binding index this buffer is bound to.
+	 * @param[in] iStartLocation Shader location of the first attribute in this layout
+	 *  (per-instance attributes follow the per-vertex ones).
 	 * @return The attribute description.
 	 */
-	[[nodiscard]] auto getAttributeDescriptions() const -> std::vector<VkVertexInputAttributeDescription>;
+	[[nodiscard]] auto getAttributeDescriptions(uint32_t iBinding = 0, uint32_t iStartLocation = 0) const
+			-> std::vector<VkVertexInputAttributeDescription>;
 
 private:
 	/// The vulkan vertex buffer.

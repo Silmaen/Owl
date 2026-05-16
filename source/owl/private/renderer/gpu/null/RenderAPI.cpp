@@ -30,6 +30,9 @@ void RenderAPI::clear() {}
 
 void RenderAPI::drawData([[maybe_unused]] const shared<DrawData>& iData, [[maybe_unused]] uint32_t iIndexCount) {}
 
+void RenderAPI::drawDataInstanced([[maybe_unused]] const shared<DrawData>& iData, [[maybe_unused]] uint32_t iIndexCount,
+								  [[maybe_unused]] uint32_t iInstanceCount) {}
+
 void RenderAPI::drawLine([[maybe_unused]] const shared<DrawData>& iData, [[maybe_unused]] uint32_t iIndexCount) {}
 
 }// namespace owl::renderer::gpu::null

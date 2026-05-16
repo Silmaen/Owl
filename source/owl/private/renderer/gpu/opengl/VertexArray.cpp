@@ -65,30 +65,25 @@ void VertexArray::unbind() {
 	glBindVertexArray(0);
 }
 
-void VertexArray::addVertexBuffer(const VertexBuf& iVertexBuffer) {
-	OWL_PROFILE_FUNCTION()
-
-	OWL_CORE_ASSERT(!iVertexBuffer->getLayout().getElements().empty(), "Vertex Buffer has no layout!")
-
-	glBindVertexArray(m_rendererId);
-	iVertexBuffer->bind();
-
+namespace {
+void wireBufferAttributes(uint32_t& ioVertexBufferIndex, const BufferLayout& iLayout, bool iPerInstance) {
 	// NOLINTBEGIN(performance-no-int-to-ptr)
-	const auto& layout = iVertexBuffer->getLayout();
-	for (const auto& element: layout) {
+	for (const auto& element: iLayout) {
 		const auto count = static_cast<int32_t>(element.getComponentCount());
 		const auto type = utils::toGlBaseType(element.type);
-		const auto stride = static_cast<int>(layout.getStride());
+		const auto stride = static_cast<int>(iLayout.getStride());
 		switch (element.type) {
 			case ShaderDataType::Float:
 			case ShaderDataType::Float2:
 			case ShaderDataType::Float3:
 			case ShaderDataType::Float4:
 				{
-					glEnableVertexAttribArray(m_vertexBufferIndex);
-					glVertexAttribPointer(m_vertexBufferIndex, count, type, element.normalized ? GL_TRUE : GL_FALSE,
+					glEnableVertexAttribArray(ioVertexBufferIndex);
+					glVertexAttribPointer(ioVertexBufferIndex, count, type, element.normalized ? GL_TRUE : GL_FALSE,
 										  stride, reinterpret_cast<const void*>(element.offset));
-					m_vertexBufferIndex++;
+					if (iPerInstance)
+						glVertexAttribDivisor(ioVertexBufferIndex, 1);
+					ioVertexBufferIndex++;
 					break;
 				}
 			case ShaderDataType::Int:
@@ -97,23 +92,25 @@ void VertexArray::addVertexBuffer(const VertexBuf& iVertexBuffer) {
 			case ShaderDataType::Int4:
 			case ShaderDataType::Bool:
 				{
-					glEnableVertexAttribArray(m_vertexBufferIndex);
-					glVertexAttribIPointer(m_vertexBufferIndex, count, type, stride,
+					glEnableVertexAttribArray(ioVertexBufferIndex);
+					glVertexAttribIPointer(ioVertexBufferIndex, count, type, stride,
 										   reinterpret_cast<const void*>(element.offset));
-					m_vertexBufferIndex++;
+					if (iPerInstance)
+						glVertexAttribDivisor(ioVertexBufferIndex, 1);
+					ioVertexBufferIndex++;
 					break;
 				}
 			case ShaderDataType::Mat3:
 			case ShaderDataType::Mat4:
 				{
 					for (int32_t i = 0; i < count; i++) {
-						glEnableVertexAttribArray(m_vertexBufferIndex);
+						glEnableVertexAttribArray(ioVertexBufferIndex);
 						glVertexAttribPointer(
-								m_vertexBufferIndex, count, type, element.normalized ? GL_TRUE : GL_FALSE, stride,
+								ioVertexBufferIndex, count, type, element.normalized ? GL_TRUE : GL_FALSE, stride,
 								reinterpret_cast<const void*>(element.offset +
 															  (sizeof(float) * static_cast<uint32_t>(count * i))));
-						glVertexAttribDivisor(m_vertexBufferIndex, 1);
-						m_vertexBufferIndex++;
+						glVertexAttribDivisor(ioVertexBufferIndex, 1);
+						ioVertexBufferIndex++;
 					}
 					break;
 				}
@@ -123,6 +120,28 @@ void VertexArray::addVertexBuffer(const VertexBuf& iVertexBuffer) {
 		}
 	}
 	// NOLINTEND(performance-no-int-to-ptr)
+}
+}// namespace
+
+void VertexArray::addVertexBuffer(const VertexBuf& iVertexBuffer) {
+	OWL_PROFILE_FUNCTION()
+
+	OWL_CORE_ASSERT(!iVertexBuffer->getLayout().getElements().empty(), "Vertex Buffer has no layout!")
+
+	glBindVertexArray(m_rendererId);
+	iVertexBuffer->bind();
+	wireBufferAttributes(m_vertexBufferIndex, iVertexBuffer->getLayout(), /*iPerInstance=*/false);
+	m_vertexBuffers.push_back(iVertexBuffer);
+}
+
+void VertexArray::addInstanceBuffer(const VertexBuf& iVertexBuffer) {
+	OWL_PROFILE_FUNCTION()
+
+	OWL_CORE_ASSERT(!iVertexBuffer->getLayout().getElements().empty(), "Instance Buffer has no layout!")
+
+	glBindVertexArray(m_rendererId);
+	iVertexBuffer->bind();
+	wireBufferAttributes(m_vertexBufferIndex, iVertexBuffer->getLayout(), /*iPerInstance=*/true);
 	m_vertexBuffers.push_back(iVertexBuffer);
 }
 

@@ -66,7 +66,9 @@ void VertexBuffer::release() {
 	m_vertexBufferMemory = nullptr;
 }
 
-void VertexBuffer::bind() const {
+void VertexBuffer::bind() const { bindAtBinding(0); }
+
+void VertexBuffer::bindAtBinding(const uint32_t iBinding) const {
 	const auto& vkh = internal::VulkanHandler::get();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
 		OWL_CORE_WARN("Vulkan vertex buffer: Trying to bind vertex buffer after VulkanHandler release...")
@@ -74,7 +76,7 @@ void VertexBuffer::bind() const {
 	}
 	const VkBuffer vertexBuffers[] = {m_vertexBuffer};
 	constexpr VkDeviceSize offsets[] = {0};
-	vkCmdBindVertexBuffers(vkh.getCurrentCommandBuffer(), 0, 1, vertexBuffers, offsets);
+	vkCmdBindVertexBuffers(vkh.getCurrentCommandBuffer(), iBinding, 1, vertexBuffers, offsets);
 }
 
 void VertexBuffer::unbind() const {}
@@ -110,19 +112,23 @@ void VertexBuffer::setData(const void* iData, const uint32_t iSize) {
 	}
 }
 
-auto VertexBuffer::getBindingDescription() const -> VkVertexInputBindingDescription {
-	return {.binding = 0, .stride = getLayout().getStride(), .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
+auto VertexBuffer::getBindingDescription(const uint32_t iBinding, const bool iPerInstance) const
+		-> VkVertexInputBindingDescription {
+	return {.binding = iBinding,
+			.stride = getLayout().getStride(),
+			.inputRate = iPerInstance ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX};
 }
 
-auto VertexBuffer::getAttributeDescriptions() const -> std::vector<VkVertexInputAttributeDescription> {
+auto VertexBuffer::getAttributeDescriptions(const uint32_t iBinding, const uint32_t iStartLocation) const
+		-> std::vector<VkVertexInputAttributeDescription> {
 	std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
 
 	auto layout = getLayout();
-	uint32_t id = 0;
+	uint32_t id = iStartLocation;
 	for (const auto& element: layout) {
 		attributeDescriptions.emplace_back(VkVertexInputAttributeDescription{
 				.location = id,
-				.binding = 0,
+				.binding = iBinding,
 				.format = shaderDataTypeToVulkanFormat(element.type),
 				.offset = element.offset,
 		});

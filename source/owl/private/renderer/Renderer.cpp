@@ -14,6 +14,7 @@
 #include "renderer/Renderer2DLayer.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
+#include "renderer/RendererTilemap.h"
 
 namespace owl::renderer {
 
@@ -63,6 +64,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 	BackgroundRenderer::init();
 
 	RendererRaycast::init();
+	RendererTilemap::init();
 
 	// Register built-in render layer types with the factory. Adding more layer types
 	// (voxel, ...) is just another registerWithFactory() call here.
@@ -73,6 +75,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 }
 
 void Renderer::shutdown() {
+	RendererTilemap::shutdown();
 	RendererRaycast::shutdown();
 	BackgroundRenderer::shutdown();
 	Renderer2D::shutdown();

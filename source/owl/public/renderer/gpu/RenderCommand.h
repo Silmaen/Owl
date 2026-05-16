@@ -93,6 +93,19 @@ public:
 
 	/**
 	 * @brief
+	 *  Instanced draw — used by `RendererTilemap` and any future renderer
+	 *  that wants `instanceCount > 1`.
+	 * @param[in] iData Draw data initialised via `initInstanced`.
+	 * @param[in] iIndexCount Indices per instance.
+	 * @param[in] iInstanceCount Number of instances to draw.
+	 */
+	static void drawDataInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
+								  const uint32_t iInstanceCount) {
+		m_renderAPI->drawDataInstanced(iData, iIndexCount, iInstanceCount);
+	}
+
+	/**
+	 * @brief
 	 *  Binding the draw of vertex array as lines.
 		 * @param[in] iData Draw data to render.
 		 * @param[in] iIndexCount Number of vertex to draw (=0 all).

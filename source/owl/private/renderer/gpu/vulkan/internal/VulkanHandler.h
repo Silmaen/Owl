@@ -238,7 +238,7 @@ public:
 	 */
 	void swapFrame();
 
-	void drawData(uint32_t iVertexCount, bool iIndexed = true);
+	void drawData(uint32_t iVertexCount, bool iIndexed = true, uint32_t iInstanceCount = 1);
 
 	void setClearColor(const math::vec4& iColor);
 

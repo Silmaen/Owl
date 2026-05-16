@@ -84,6 +84,16 @@ void RenderAPI::drawData(const shared<DrawData>& iData, const uint32_t iIndexCou
 	glDrawElements(GL_TRIANGLES, static_cast<int32_t>(count), GL_UNSIGNED_INT, nullptr);
 }
 
+void RenderAPI::drawDataInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
+								  const uint32_t iInstanceCount) {
+	if (iInstanceCount == 0)
+		return;
+	iData->bind();
+	const uint32_t count = (iIndexCount != 0u) ? iIndexCount : iData->getIndexCount();
+	glDrawElementsInstanced(GL_TRIANGLES, static_cast<int32_t>(count), GL_UNSIGNED_INT, nullptr,
+							static_cast<int32_t>(iInstanceCount));
+}
+
 void RenderAPI::drawLine(const shared<DrawData>& iData, const uint32_t iIndexCount) {
 	iData->bind();
 	const uint32_t count = (iIndexCount != 0u) ? iIndexCount : iData->getIndexCount();

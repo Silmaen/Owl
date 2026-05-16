@@ -11,6 +11,7 @@
 
 #include "core/Application.h"
 #include "renderer/BackgroundRenderer.h"
+#include "renderer/RendererTilemap.h"
 #include "renderer/gpu/DrawData.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/UniformBuffer.h"
@@ -283,6 +284,11 @@ void Renderer2D::beginScene(const Camera& iCamera) {
 	g_Data->cameraBuffer.viewProjection = iCamera.getViewProjection();
 	g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
 	startBatch();
+	// Piggy-back the GPU-instanced tilemap renderer on the same scene
+	// boundary so callers don't have to manage a second begin/end pair.
+	// `RendererTilemap::beginScene` just uploads its camera UBO and resets
+	// stats; the draws are issued in-place from `Scene::drawTilemapQuads`.
+	RendererTilemap::beginScene(iCamera);
 }
 
 void Renderer2D::endScene() {
