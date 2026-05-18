@@ -228,6 +228,32 @@ public:
 
 	/**
 	 * @brief
+	 *  Fence compute SSBO writes for downstream graphics reads. Required
+	 *  after any `ComputeShader::dispatch()` whose output is consumed by
+	 *  the next draw pass.
+	 */
+	static void storageBufferMemoryBarrier() {
+		if (m_renderAPI)
+			m_renderAPI->storageBufferMemoryBarrier();
+	}
+
+	/**
+	 * @brief
+	 *  GPU-driven indexed indirect draw. See
+	 *  `RenderAPI::drawIndexedIndirect`.
+	 * @param[in] iData Draw data with bound vertex / index buffers.
+	 * @param[in] iCommandBuffer SSBO of indirect commands.
+	 * @param[in] iCountBuffer Single-uint SSBO with the command count.
+	 * @param[in] iMaxDrawCount Upper bound on draw count.
+	 */
+	static void drawIndexedIndirect(const shared<DrawData>& iData, const shared<StorageBuffer>& iCommandBuffer,
+									const shared<StorageBuffer>& iCountBuffer, const uint32_t iMaxDrawCount) {
+		if (m_renderAPI)
+			m_renderAPI->drawIndexedIndirect(iData, iCommandBuffer, iCountBuffer, iMaxDrawCount);
+	}
+
+	/**
+	 * @brief
 	 *  Check if the API type require initializations.
 	 * @return True if initialization required.
 	 */

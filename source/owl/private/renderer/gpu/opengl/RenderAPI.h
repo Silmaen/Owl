@@ -120,5 +120,22 @@ public:
 	 * @param[in] iEnabled Enable flag.
 	 */
 	void setDepthTest(bool iEnabled) override;
+
+	/**
+	 * @brief
+	 *  `glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT |
+	 *  GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT)` — flush compute SSBO writes for
+	 *  the next draw pass.
+	 */
+	void storageBufferMemoryBarrier() override;
+
+	/**
+	 * @brief
+	 *  `glMultiDrawElementsIndirectCount` against an SSBO bound to
+	 *  `GL_DRAW_INDIRECT_BUFFER` + a parameter buffer bound to
+	 *  `GL_PARAMETER_BUFFER`. Used by the compute-culling pipeline (#34).
+	 */
+	void drawIndexedIndirect(const shared<DrawData>& iData, const shared<renderer::gpu::StorageBuffer>& iCommandBuffer,
+							 const shared<renderer::gpu::StorageBuffer>& iCountBuffer, uint32_t iMaxDrawCount) override;
 };
 }// namespace owl::renderer::gpu::opengl

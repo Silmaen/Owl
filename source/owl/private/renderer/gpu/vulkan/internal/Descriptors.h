@@ -99,7 +99,15 @@ public:
 	 */
 	void release();
 
-	void registerUniform(uint32_t iSize);
+	/**
+	 * @brief
+	 *  Allocate the per-frame VkBuffers for a uniform-block binding.
+	 *  Idempotent — calling twice with the same binding releases the
+	 *  previous buffers and recreates them at the new size.
+	 * @param[in] iBinding Shader binding slot.
+	 * @param[in] iSize Buffer size in bytes.
+	 */
+	void registerUniform(uint32_t iBinding, uint32_t iSize);
 
 	/**
 	 * @brief
@@ -130,11 +138,12 @@ public:
 
 	/**
 	 * @brief
-	 *  Set the uniform data.
+	 *  Upload data into a specific uniform-block binding.
+	 * @param[in] iBinding Shader binding slot (must have been registered).
 	 * @param[in] iData The data buffer.
-	 * @param[in] iSize Target size.
+	 * @param[in] iSize Byte count.
 	 */
-	void setUniformData(const void* iData, size_t iSize) const;
+	void setUniformData(uint32_t iBinding, const void* iData, size_t iSize) const;
 
 	/**
 	 * @brief
@@ -303,10 +312,22 @@ private:
 	VkDescriptorPool m_singleImageDescriptorPool{nullptr};
 	/// List of descriptors
 	std::vector<VkDescriptorSet> m_descriptorSets;
-	std::vector<VkBuffer> m_uniformBuffers;
-	std::vector<VkDeviceMemory> m_uniformBuffersMemory;
-	std::vector<void*> m_uniformBuffersMapped;
-	uint32_t m_uniformSize = 0;
+	/**
+	 * @brief
+	 *  Per-binding UBO storage. Each binding owns its own per-frame
+	 *  `VkBuffer` + memory + persistent map so a renderer can hold
+	 *  multiple uniform blocks simultaneously (e.g. tilemap_instanced
+	 *  uses binding 0 for the camera UBO and binding 2 for its
+	 *  per-draw config UBO).
+	 */
+	struct UboBinding {
+		std::vector<VkBuffer> buffers;///< Per in-flight frame.
+		std::vector<VkDeviceMemory> memory;///< Backing memory per frame.
+		std::vector<void*> mapped;///< Persistent host map per frame.
+		uint32_t size = 0;///< Buffer size in bytes.
+	};
+	/// All currently registered UBO bindings keyed by binding slot.
+	std::unordered_map<uint32_t, UboBinding> m_uniformBindings;
 	uint32_t m_bindedTexture = 0;
 	std::vector<uint32_t> m_textureBind;
 

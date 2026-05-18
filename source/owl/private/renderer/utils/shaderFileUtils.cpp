@@ -251,14 +251,22 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 		const char* name;
 		gpu::ShaderType type;
 	};
+	// Probe every Slang entry-point name the engine cares about. A shader file
+	// is allowed to declare any combination — vertex+fragment for graphics,
+	// computeMain alone for compute work. Missing entry points are skipped
+	// silently; failure is signalled only when no entry point at all produced
+	// SPIR-V.
 	constexpr EntryPointInfo entryPoints[] = {{"vertexMain", gpu::ShaderType::Vertex},
-											  {"fragmentMain", gpu::ShaderType::Fragment}};
+											  {"fragmentMain", gpu::ShaderType::Fragment},
+											  {"computeMain", gpu::ShaderType::Compute}};
 
 	for (const auto& [name, type]: entryPoints) {
 		Slang::ComPtr<slang::IEntryPoint> entryPoint;
 		if (SLANG_FAILED(module->findEntryPointByName(name, entryPoint.writeRef()))) {
-			OWL_CORE_ERROR("Slang: Entry point '{}' not found in module '{}'.", name, iModuleName)
-			return result;
+			// Optional entry point not declared in this module — skip without
+			// reporting an error (graphics shaders won't have `computeMain`,
+			// compute shaders won't have `vertexMain`).
+			continue;
 		}
 
 		slang::IComponentType* const components[] = {module, entryPoint};
@@ -290,6 +298,11 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 		result.spirvData[type] = extractSpirv(spirvBlob);
 		OWL_CORE_TRACE("Slang: Compiled entry point '{}' ({}) -> {} SPIR-V words.", name, magic_enum::enum_name(type),
 					   result.spirvData[type].size())
+	}
+
+	if (result.spirvData.empty()) {
+		OWL_CORE_ERROR("Slang: Module '{}' has no known entry point.", iModuleName)
+		return result;
 	}
 
 	result.success = true;

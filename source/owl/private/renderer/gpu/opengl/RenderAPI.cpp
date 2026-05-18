@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "RenderAPI.h"
+#include "StorageBuffer.h"
 #include "core/Application.h"
 #include "core/external/opengl46.h"
 
@@ -114,6 +115,33 @@ void RenderAPI::setDepthTest(const bool iEnabled) {
 		glEnable(GL_DEPTH_TEST);
 	else
 		glDisable(GL_DEPTH_TEST);
+}
+
+void RenderAPI::storageBufferMemoryBarrier() {
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_UNIFORM_BARRIER_BIT |
+					GL_COMMAND_BARRIER_BIT);
+}
+
+void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData,
+									const shared<renderer::gpu::StorageBuffer>& iCommandBuffer,
+									const shared<renderer::gpu::StorageBuffer>& iCountBuffer,
+									const uint32_t iMaxDrawCount) {
+	if (!iData || !iCommandBuffer || !iCountBuffer || iMaxDrawCount == 0)
+		return;
+	iData->bind();
+	const auto* cmdSsbo = dynamic_cast<const StorageBuffer*>(iCommandBuffer.get());
+	const auto* countSsbo = dynamic_cast<const StorageBuffer*>(iCountBuffer.get());
+	if (cmdSsbo == nullptr || countSsbo == nullptr || cmdSsbo->getHandle() == 0 || countSsbo->getHandle() == 0) {
+		OWL_CORE_WARN("OpenGL: drawIndexedIndirect with non-OpenGL or empty SSBOs.")
+		return;
+	}
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, cmdSsbo->getHandle());
+	glBindBuffer(GL_PARAMETER_BUFFER, countSsbo->getHandle());
+	glMultiDrawElementsIndirectCount(GL_TRIANGLES, GL_UNSIGNED_INT, /*indirect=*/nullptr,
+									 /*drawcount=*/0, static_cast<GLsizei>(iMaxDrawCount),
+									 /*stride=*/static_cast<GLsizei>(sizeof(uint32_t) * 5));
+	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+	glBindBuffer(GL_PARAMETER_BUFFER, 0);
 }
 
 }// namespace owl::renderer::gpu::opengl
