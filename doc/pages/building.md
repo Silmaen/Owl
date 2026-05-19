@@ -29,7 +29,23 @@ Owl pulls every native dependency through DepManager, which fetches pre-built pa
 remote server during `cmake --preset`. Before the first configure you must:
 
 1. Stand up a [DepManager server](https://github.com/Silmaen/DepManagerServer) (or point Owl at
-   an existing one) and register it via `poetry run depmanager remote add ...`.
+   an existing one) and register it via `poetry run depmanager remote add ...`. The Silmaen-hosted
+   server backing the public CI is reachable at `srvs://package.argawaen.net` (read-only for
+   anonymous users; push requires a maintainer login).
+
+   ```bash
+   # First-time setup on a fresh machine — registers the default remote and verifies the connection.
+   poetry sync --no-root
+   poetry run depmanager remote add -n default -u srvs://package.argawaen.net -d
+   poetry run depmanager remote ls   # expect `[ ONLINE ]` next to the entry
+   ```
+
+   The `-d` flag marks the remote as the default; CMake / `dm_load_environment` will pull from
+   it whenever a package isn't in the local cache. Settings live in `~/.edm/config.yaml`; copying
+   that file across machines is the quickest way to re-provision a workstation. If your remote
+   requires authenticated pulls, add `-l <login> -p <passwd>` to the `remote add` invocation
+   (the password is encrypted at rest).
+
 2. Populate that server with the libraries pinned in `depmanager.yml` (Box2D, EnTT, GLFW,
    ImGui, ImGuizmo, msdfgen, Vulkan SDK, OpenAL, libsndfile, Lua, zstd, Taskflow…).
 
@@ -37,6 +53,21 @@ If you don't have packages built yet, the [OwlDependencies](https://github.com/S
 repository ships ready-to-use build recipes for every dependency Owl depends on; build them locally
 with `poetry run depmanager build <recipe-dir>` and push them to your server. Once the server is
 populated, the next CMake configure auto-downloads everything Owl needs.
+
+### Troubleshooting a fresh checkout
+
+If `cmake --preset …` aborts with `Missing required package …` for every entry in
+`depmanager.yml`, the remote either isn't registered or isn't reachable. Check in this order:
+
+```bash
+poetry run depmanager remote ls     # any `[ ONLINE ]` remote?
+poetry run depmanager pack ls       # any packages cached locally?
+```
+
+If `remote ls` returns nothing or shows `[ OFFLINE ]`, re-run the `remote add` command above. The
+configuration file the warnings reference (`~/.edm/config.yaml`) is created by the first
+`remote add`; deleting it forces a clean re-setup. Once a working remote is registered, re-run
+`cmake --preset <preset>` to retry the fetch.
 
 ## Configure and Build
 

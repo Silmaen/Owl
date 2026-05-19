@@ -5,22 +5,39 @@ Action to build the project using CMake and Ninja for a given preset.
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.preset import get_build_dir
+from ci.utils.remote import configure_remote, parse_remote_args
 from ci.utils.run import run_command, MODE_BY_COLOR, MODE_FOR_NINJA
 
 
 class Build(BaseAction):
-    """
-    Action to build the project using CMake and Ninja for a given preset.
+    """Build the project using CMake and Ninja for a given preset.
+
+    Extra arguments (after ``--``):
+      * ``--remote_url`` / ``--remote_login`` / ``--remote_passwd`` /
+        ``--remote_name`` — optional. When ``remote_url`` is supplied, the
+        DepManager remote is registered (idempotent) before the CMake
+        configure step. This lets a fresh TeamCity agent self-bootstrap in
+        a single Build step without an extra ConfigureRemote stage. See
+        :class:`ConfigureRemote` for the standalone equivalent.
     """
 
     def run(self, preset: PresetConfig, extra_args=None) -> int:
-        """
-        Compile the project for the given preset.
+        """Compile the project for the given preset.
+
         :param preset: The preset to check.
-        :param extra_args: Optional extra arguments (unused).
+        :param extra_args: Optional extra arguments. See class docstring for
+            the remote-related flags consumed before the CMake configure
+            step.
         :return: Exit code indicating success or failure.
         """
         log.info(f"Building project with preset: {preset}")
+        # Optional: register the DepManager remote before configure so the
+        # CMake `dm_load_environment` call can pull missing packages from
+        # the project-supplied URL. No-op when `remote_url` is not set.
+        remote_status = configure_remote(parse_remote_args(self.parse_extra_args(extra_args)))
+        if remote_status != 0:
+            log.error("Build: DepManager remote registration failed; aborting before CMake configure.")
+            return remote_status
         # run cmake configure, capture output in real-time, and print it using logging
         cmd = ["cmake", "--preset", preset.cmake_preset, "-S", str(root)]
         if preset.cmake_generator not in [None, ""]:

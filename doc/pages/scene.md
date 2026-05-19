@@ -519,7 +519,7 @@ using its world transform from `getWorldTransform()`. Both calls hit a per-pass
 cache during the render tick, so duplicated reads across the renderable
 component groups don't repeat the parent-chain walk.
 
-#### Per-pass Caches
+### Per-pass Caches
 
 `Scene` maintains several per-update-tick caches to avoid recomputing stable
 values across the multiple component-group scans of a render frame:

@@ -134,16 +134,27 @@ TEST(core_task, SchedulerConcurrency) {
 	Scheduler scheduler;
 	Timestep const ts;
 	const auto hwThreads = std::thread::hardware_concurrency();
+	if (hwThreads < 6) {
+		GTEST_SKIP() << "Test requires hardware_concurrency() >= 6, got " << hwThreads;
+	}
+	std::atomic_uint32_t started = 0;
 	std::atomic_uint32_t running = 0;
 	std::atomic_uint32_t maxConcurrent = 0;
 	std::atomic_uint32_t completed = 0;
 
-	// Submit hwThreads tasks that all run simultaneously.
+	// Submit hwThreads tasks that all run simultaneously.  A start-barrier lets every worker reach the
+	// measurement window before any of them exits — otherwise on CPU-restricted runners (sanitizer
+	// containers, cgroups) the workers wake up serially and `maxConcurrent` reflects scheduler latency
+	// rather than the pool's true parallelism.
 	for (unsigned i = 0; i < hwThreads; ++i) {
 		scheduler.pushTask(Task(
-				[&] -> void {
+				[&, hwThreads] -> void {
+					++started;
+					const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+					while (started.load() < hwThreads && std::chrono::steady_clock::now() < deadline) {
+						std::this_thread::yield();
+					}
 					++running;
-					// Record peak concurrency.
 					const auto cur = running.load();
 					auto prev = maxConcurrent.load();
 					while (cur > prev && !maxConcurrent.compare_exchange_weak(prev, cur)) {}
@@ -155,9 +166,7 @@ TEST(core_task, SchedulerConcurrency) {
 	scheduler.waitEmptyQueue();
 	EXPECT_EQ(completed, hwThreads);
 	// Should achieve more concurrency than the old hardcoded limit of 5.
-	if (hwThreads > 5) {
-		EXPECT_GT(maxConcurrent, 5u);
-	}
+	EXPECT_GT(maxConcurrent, 5u);
 }
 
 TEST(core_task, SchedulerStress) {

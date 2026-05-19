@@ -120,8 +120,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Four `WorldTransformPass_test.cpp` tests cover lifecycle on the
       Null backend: init, safe-without-init, entry-count tracking,
       buffer-grow path.
-- **Render-loop hygiene — four per-pass caches kill the duplicate
-  hierarchy / view walks the rendering used to repeat every frame.**
+- **Render-loop hygiene — four per-pass caches kill the duplicate hierarchy / view walks the rendering used to repeat every frame.**
     - `Scene::getWorldTransform` is now backed by an
       `unordered_map<entt::entity, math::Transform>` cache armed only
       during the read-only tail of a tick (sound + render). Scripts /
@@ -164,16 +163,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   pipeline and the same fog mixer, so shipping them in one PR keeps the
   visual result coherent (a wall stripe and the floor pixel right below it
   converge to the same colour at `fogEnd`).
-    - **Distance fog.** `RaycastConfig` gains `fogColor` + `fogStart` +
+    - Distance fog. `RaycastConfig` gains `fogColor` + `fogStart` +
       `fogEnd`. Wall, dynamic-wall, door and sprite stripes are lerped
       toward `fogColor` as their perpendicular distance crosses the
       `fogStart`..`fogEnd` range. Disabled by default
       (`fogEnd <= fogStart`) so existing scenes keep their natural tint.
       A single `applyFog` helper is shared across every emitter so seams
       between the wall and the floor underneath are invisible. YAML key:
-      `Fog{Color,Start,End}` under a layer's `DefaultConfig` /
-      `Overrides`.
-    - **Textured floors + ceilings.** `RaycastConfig` gains
+      `FogColor` / `FogStart` / `FogEnd` under a layer's
+      `DefaultConfig` / `Overrides`.
+    - Textured floors + ceilings. `RaycastConfig` gains
       `floorTilesetPath` + `floorTileIndex` and the matching ceiling
       pair. Per screen row above / below the horizon the renderer
       projects the pixel back to the floor (or ceiling) plane using the
@@ -192,8 +191,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       emission cost.
     - Tests: 4 new headless renderer tests cover fog default vs.
       configured passes and the textured / solid backdrop branches.
-- **Editor & in-game performance — memory tracker no longer kills the
-  hot path.** The debug memory tracker installed global
+- **Editor & in-game performance — memory tracker no longer kills the hot path.** The debug memory tracker installed global
   `operator new` / `operator delete` overrides that recorded every
   allocation into a `std::list<AllocationInfo>` and ran a *linear*
   `find_if` on each deallocation — turning every burst of allocations
@@ -265,8 +263,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `parallelForIndex(Scheduler&, ...)` overloads so call sites use the
   engine Scheduler without ever naming `tf::Executor`. The Taskflow
   dependency stays PRIVATE.
-- **In-game performance — scratch-buffer pooling in raycast render
-  loops.** `Scene::renderRaycastSprites` /
+- **In-game performance — scratch-buffer pooling in raycast render loops.** `Scene::renderRaycastSprites` /
   `Scene::renderRaycastDynamicWalls` reuse `thread_local`
   `vector<RaycastSpriteData>` / `vector<RaycastDoorData>` /
   `vector<RaycastDynamicWallData>` across frames (just `clear()`,
@@ -323,8 +320,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       per-scene cache in `Scene::resolveAllTilemapAssets` deduplicates
       `.owltileset` loads — a door whose tileset path matches the
       world tilemap's tileset reuses the same `shared<Tileset>` (and
-      its atlas texture), no double-load. Inspector ships a **visual
-      tile picker**: click the thumbnail to open a grid popup of the
+      its atlas texture), no double-load. Inspector ships a **visual tile picker**: click the thumbnail to open a grid popup of the
       tileset's tiles with the current selection highlighted.
       Pre-extracted Wolf3D tiles (24/25 = door faces, 98–105 = jambs)
       are dropped under `sample_project/textures/wolf3d_doors/` for
@@ -537,8 +533,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       secondary; re-clicking the same selection toggles back to pick mode.
       Primary highlight is the editor accent (orange), secondary is blue,
       both = magenta when the same tile is in both brushes.
-    - **Eraser icon** (`icons/actions/eraser.svg`) and **layer reorder
-      icons** (`move_up.svg`, `move_down.svg`); layer manager rows now
+    - **Eraser icon** (`icons/actions/eraser.svg`) and **layer reorder icons** (`move_up.svg`, `move_down.svg`); layer manager rows now
       use icon buttons for visibility / move / delete and an inline
       `InputText` for renaming. The active painting layer is selected
       via a radio button on each row.
