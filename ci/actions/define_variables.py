@@ -33,9 +33,10 @@ class DefineTeamCityVariables(BaseAction):
         emulated = parsed.get("emulated") == "true"
         if emulated:
             log.info("Emulated agent flag set: forcing coverage / documentation / "
-                     "release_preset off in the exported TeamCity variables.")
+                     "publish_doc / release_preset off in the exported TeamCity variables.")
             preset.run_coverage = False
             preset.run_documentation = False
+            preset.publish_doc = False
             preset.release_preset = None
 
         from ci.utils.teamcity import set_teamcity_parameter
