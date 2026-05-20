@@ -21,14 +21,6 @@ constexpr ImU32 k_PrimaryHighlight = IM_COL32(255, 195, 38, 255);// editor accen
 constexpr ImU32 k_SecondaryHighlight = IM_COL32(120, 180, 255, 255);// blue, distinct from primary
 constexpr ImU32 k_BothHighlight = IM_COL32(220, 90, 220, 255);// magenta, used when both brushes share a tile
 
-/**
- * @brief
- *  Resolve the highlight colour for a tile cell given the current primary / secondary brushes.
- * @param[in] iTile The 0-based tile index being rendered.
- * @param[in] iPrimary The primary brush value.
- * @param[in] iSecondary The secondary brush value.
- * @return The 32-bit ABGR highlight, or 0 when no highlight applies.
- */
 auto highlightFor(const int32_t iTile, const int32_t iPrimary, const int32_t iSecondary) -> ImU32 {
 	const bool primary = (iPrimary == iTile);
 	const bool secondary = (iSecondary == iTile);
@@ -41,16 +33,6 @@ auto highlightFor(const int32_t iTile, const int32_t iPrimary, const int32_t iSe
 	return 0;
 }
 
-/**
- * @brief
- *  Render a single tile button. Returns a pair of booleans (left-clicked, right-clicked).
- * @param[in] iId The button id (scoped by the caller's PushID).
- * @param[in] iTex The tileset atlas texture.
- * @param[in] iUvs The four-corner UVs to display for this tile slot.
- * @param[in] iSize The button size in pixels.
- * @param[in] iHighlight A non-zero highlight colour to draw a 2-pixel border around the cell.
- * @return `{leftClicked, rightClicked}`.
- */
 auto tileButton(const char* iId, const shared<renderer::gpu::Texture2D>& iTex, const std::array<math::vec2, 4>& iUvs,
 				const ImVec2 iSize, const ImU32 iHighlight) -> std::pair<bool, bool> {
 	if (iHighlight != 0) {
@@ -79,22 +61,10 @@ auto tileButton(const char* iId, const shared<renderer::gpu::Texture2D>& iTex, c
 	return {leftClicked, rightClicked};
 }
 
-/**
- * @brief
- *  Toggle a brush against a target value: re-clicking the same value reverts to pick mode.
- * @param[in,out] ioBrush The brush to mutate.
- * @param[in] iTarget The value the user clicked.
- */
 void toggleBrush(int32_t& ioBrush, const int32_t iTarget) {
 	ioBrush = (ioBrush == iTarget) ? g_TileBrushPick : iTarget;
 }
 
-/**
- * @brief
- *  Human-readable label for a brush value.
- * @param[in] iBrush The brush.
- * @return Static string usable in tooltips / status lines.
- */
 auto brushLabel(const int32_t iBrush) -> const char* {
 	if (iBrush == g_TileBrushPick)
 		return "Pick";
@@ -187,8 +157,6 @@ void TilePalette::onImGuiRender(scene::TilemapAsset* iTarget) {
 	const auto& tileset = *asset.tileset;
 	constexpr float kTileButtonSize = 32.f;
 	const float avail = ImGui::GetContentRegionAvail().x;
-	// Stride = button content width + frame padding on both sides + item spacing. Floor to
-	// the integer count that fits — no fractional last tile.
 	const float framePadX = ImGui::GetStyle().FramePadding.x * 2.f;
 	const float itemSpacingX = ImGui::GetStyle().ItemSpacing.x;
 	const float stride = kTileButtonSize + framePadX + itemSpacingX;
@@ -214,8 +182,6 @@ void TilePalette::onImGuiRender(scene::TilemapAsset* iTarget) {
 				ImGui::SetTooltip("#%u%s", i, meta.collidable ? " (solid)" : "");
 		}
 		ImGui::PopID();
-		// Wrap to the next row only when the next tile would *not* fit. Always start a new
-		// line on a perRow boundary so the last column never displays a clipped fragment.
 		if ((i + 1) % perRow != 0 && (i + 1) < tileset.tileCount())
 			ImGui::SameLine();
 	}

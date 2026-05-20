@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Per-renderer Vulkan descriptor blocks (Phase 0 of the renderer modernisation).**
+  Each high-level renderer now owns its own `VkDescriptorSetLayout` + pool +
+  per-frame sets matching exactly the bindings its shaders declare. Removes
+  the global shared layout that previously triggered the NVIDIA
+  `vkCmdBindPipeline` crash on the instanced-tilemap path (pipeline
+  declared bindings the shader didn't sample) and the per-pass UBO race
+  that forced the UI layer into `Space: World`.
+    - New backend-neutral API in `source/owl/public/renderer/gpu/RendererDescriptors.h`:
+      `gpu::RendererDescriptors::declare(name, bindings)` /
+      `release(name)` / `ScopedActive` RAII guard plus the binding-decl
+      types (`BindingDecl`, `BindingType`, `ShaderStage`). Null and OpenGL
+      backends no-op every call (no descriptor-set concept); Vulkan routes
+      to the new `internal::RendererDescriptors` class which owns the
+      layout, pool, per-frame sets, per-binding UBO storage and the
+      per-frame texture-bind list.
+    - `vulkan::UniformBuffer`, `vulkan::Texture2D::bind`,
+      `VulkanHandler::pushPipeline` and `VulkanHandler::bindPipeline` route
+      through the active descriptor block (set via `ScopedActive` on a
+      thread-local), with a clean fallback to the legacy global
+      `Descriptors` so renderers not yet migrated keep working unchanged.
+    - `Renderer2D` (`{0:UBO, 1:texArray[32]}`), `RendererTilemap`
+      (`{0:UBO, 1:texArray[32], 2:UBO}`) and `BackgroundRenderer` (shares
+      `Renderer2D`'s layout) each declare their bindings at `init` and
+      scope `ScopedActive` around `beginScene` / `flush` /
+      `drawTilemap` so pipeline-layout creation and per-draw set selection
+      pick the right block automatically.
+- **`gpu::StorageBuffer::getData()` readback API on Null / OpenGL / Vulkan.**
+  Documented as test-time / diagnostics only — Vulkan implementation
+  submits and waits via `vkDeviceWaitIdle` before mapping (full GPU stall).
+  `BitonicSortPass` tests round-trip upload → dispatch → readback through
+  the Null backend as an end-to-end contract check.
 - **GPU compute pipeline foundation.** Slang `[shader("compute")]` programs
   can now be compiled, loaded and dispatched alongside the existing
   graphics shaders — the scaffold the v0.2.0 GPU items (#32 sprite sort,

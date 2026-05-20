@@ -19,24 +19,12 @@ OWL_DIAG_POP
 namespace owl::gui::widgets {
 
 namespace {
-/**
- * @brief
- *  Pack a `[0, 1]` RGBA colour into the IM_COL32 representation expected by ImSequencer.
- */
 auto packColor(const math::vec4& iColor) -> uint32_t {
 	const auto clamp01 = [](const float iV) -> float { return std::clamp(iV, 0.f, 1.f); };
 	return IM_COL32(static_cast<int>(clamp01(iColor.x()) * 255.f), static_cast<int>(clamp01(iColor.y()) * 255.f),
 					static_cast<int>(clamp01(iColor.z()) * 255.f), static_cast<int>(clamp01(iColor.w()) * 255.f));
 }
 
-/**
- * @brief
- *  Adapter exposing a `std::vector<SequencerEntry>` as an `ImSequencer::SequenceInterface`.
- *
- * ImSequencer hands back `int*` to start/end/colour so it can mutate them in place; we mirror
- * the entry data into stable side-by-side `int` vectors before each `Sequencer()` call and
- * sync changes back into the user's `SequencerEntry` vector when something was modified.
- */
 class EntriesAdapter final : public ImSequencer::SequenceInterface {
 public:
 	EntriesAdapter(const EntriesAdapter&) = delete;

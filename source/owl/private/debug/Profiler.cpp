@@ -20,13 +20,7 @@ Profiler::~Profiler() { endSession(); }
 void Profiler::beginSession(const std::string& iName, const std::string& iFilepath) {
 	const std::lock_guard<std::mutex> lock(m_profilerMutex);
 	if (m_currentSession) {
-		// If there is already a current session, then close it before beginning
-		// new one. Subsequent profiling output meant for the original session
-		// will end up in the newly opened session instead.	That's better than
-		// having badly formatted profiling output.
 
-		// Edge case: BeginSession() might be
-		// before Log::Init()
 		if (core::Log::initiated()) {
 			OWL_CORE_ERROR("Profiler::BeginSession('{}') when session '{}' already open.", iName,
 						   m_currentSession->name)

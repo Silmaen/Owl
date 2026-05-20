@@ -78,11 +78,7 @@ void AddLinkCommand::redo(NodeCanvas& ioTarget) { m_linkId = ioTarget.addLink(m_
 // --- RemoveLinkCommand -----------------------------------------------------
 RemoveLinkCommand::RemoveLinkCommand(gui::widgets::Link iLink) : m_link{iLink} {}
 
-void RemoveLinkCommand::undo(NodeCanvas& ioTarget) {
-	// Re-create the link. `addLink` generates a fresh UUID; we update our snapshot so redo hits
-	// the same link later on.
-	m_link.id = ioTarget.addLink(m_link.fromPin, m_link.toPin);
-}
+void RemoveLinkCommand::undo(NodeCanvas& ioTarget) { m_link.id = ioTarget.addLink(m_link.fromPin, m_link.toPin); }
 
 void RemoveLinkCommand::redo(NodeCanvas& ioTarget) { ioTarget.removeLink(m_link.id); }
 

@@ -36,18 +36,12 @@ constexpr float sk_groupLabelGap = 2.0f;
 constexpr float sk_groupFooterPadding = 4.0f;
 constexpr size_t sk_maxSmallStack = 3;// exactly three small buttons = one large button's content
 
-/**
- * @brief
- *  Draw a hovered/active/checked background rect on the last ImGui item.
- */
 void drawButtonBackground(const Ribbon::Button& iButton) {
 	const bool hovered = ImGui::IsItemHovered();
 	const bool active = ImGui::IsItemActive();
 	const bool checked = iButton.isChecked && iButton.isChecked();
 	if (!hovered && !active && !checked)
 		return;
-	// Both the active-press state and the checked (toggled-on) state use `ButtonActive` — the
-	// distinction is conveyed by the hover animation, not a third colour.
 	const ImU32 col =
 			hovered && !active ? ImGui::GetColorU32(ImGuiCol_ButtonHovered) : ImGui::GetColorU32(ImGuiCol_ButtonActive);
 	ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), col, 3.f);
@@ -63,10 +57,6 @@ void drawButtonIcon(const std::string& iIconName, const ImVec2& iCenter, const f
 										 vec(info->uv1));
 }
 
-/**
- * @brief
- *  Draw a small downward triangle hint for buttons that open a popup.
- */
 void drawCaret(const ImVec2& iCenter, const float iSize) {
 	const ImU32 col = ImGui::GetColorU32(ImGuiCol_Text);
 	const float h = iSize * 0.5f;
@@ -83,10 +73,6 @@ void maybeShowTooltip(const std::string& iTooltip) {
 		ImGui::SetTooltip("%s", iTooltip.c_str());
 }
 
-/**
- * @brief
- *  Render a large button (icon on top, label beneath) and return true when clicked.
- */
 auto renderLargeButton(const Ribbon::Button& iButton) -> bool {
 	const auto labelSize = ImGui::CalcTextSize(iButton.label.c_str());
 	const float width = std::max(sk_largeWidthMin, labelSize.x + sk_largeInnerPadX * 2.f);
@@ -124,10 +110,6 @@ auto renderLargeButton(const Ribbon::Button& iButton) -> bool {
 	return clicked && !hasPopup;
 }
 
-/**
- * @brief
- *  Render a small button (icon on the left, label on the right). Returns true on click.
- */
 auto renderSmallButton(const Ribbon::Button& iButton, const float iColumnWidth, const float iHeight) -> bool {
 	const bool enabled = iButton.isEnabled ? iButton.isEnabled() : true;
 	const bool hasPopup = static_cast<bool>(iButton.popupContents);
@@ -161,10 +143,6 @@ auto renderSmallButton(const Ribbon::Button& iButton, const float iColumnWidth, 
 	return clicked && !hasPopup;
 }
 
-/**
- * @brief
- *  Width of a small-button column (icon + widest label + padding).
- */
 auto measureSmallColumnWidth(const std::vector<const Ribbon::Button*>& iStack) -> float {
 	float maxLabel = 0.f;
 	bool anyHasPopup = false;
@@ -179,17 +157,11 @@ auto measureSmallColumnWidth(const std::vector<const Ribbon::Button*>& iStack) -
 											  sk_smallLabelPadX + caretWidth);
 }
 
-/**
- * @brief
- *  Render one group of buttons side by side.
- */
 void renderGroup(const Ribbon::Group& iGroup) {
 	// Remember the starting position so we can place the group label below the content.
 	const auto groupOrigin = ImGui::GetCursorScreenPos();
 
 	ImGui::BeginGroup();
-	// Walk buttons in order. A "small stack" is a column of up to 3 small buttons;
-	// a large button always begins a new column of its own.
 	std::vector<const Ribbon::Button*> pendingSmalls;
 	const auto flushSmalls = [&pendingSmalls]() -> void {
 		if (pendingSmalls.empty())
@@ -237,10 +209,6 @@ void renderGroup(const Ribbon::Group& iGroup) {
 			ImGui::GetColorU32(ImGuiCol_TextDisabled), iGroup.label.c_str());
 }
 
-/**
- * @brief
- *  Render every group of the active tab side-by-side with vertical separators.
- */
 void renderTabContent(const Ribbon::Tab& iTab) {
 	const float totalHeight = sk_groupContentHeight + sk_groupLabelGap + ImGui::GetFontSize() + sk_groupFooterPadding;
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{sk_groupInnerPadX, 2.f});
@@ -303,8 +271,6 @@ void Ribbon::onRender() {
 	ImGui::BeginChild("##ribbon", ImVec2{0.f, height()}, ImGuiChildFlags_None,
 					  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 
-	// Breathing room inside each tab title + a stronger selected-tab colour so the active one
-	// stands out from the dimmed siblings (the theme's default `TabSelected` is too subtle).
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{14.f, 6.f});
 	const ImVec4 accent = ImGui::GetStyleColorVec4(ImGuiCol_TabSelectedOverline);
 	ImGui::PushStyleColor(ImGuiCol_TabSelected, ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered));

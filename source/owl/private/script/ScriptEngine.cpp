@@ -15,15 +15,11 @@
 #include "script/LuaEngine.h"
 
 namespace owl::script {
-/**
- * @brief
- *  Private implementation of ScriptEngine.
- */
 class ScriptEngine::Impl {
 public:
-	/// The shared Lua engine.
+	// The shared Lua engine.
 	LuaEngine engine;
-	/// The active scene.
+	// The active scene.
 	scene::Scene* activeScene = nullptr;
 };
 

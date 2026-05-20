@@ -21,11 +21,6 @@ void CircleRenderer::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::EndMap;// CircleRenderer
 }
 
-/**
- * @brief
- *  Read this component from YAML node.
-	 * @param iNode The YAML node to read.
-	 */
 void CircleRenderer::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["color"])
 		color = iNode.getImpl()->node["color"].as<math::vec4>();

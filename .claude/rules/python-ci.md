@@ -29,7 +29,13 @@ it never rewrites sources. Sub-checks (all on by default):
    for legitimate identifiers like `nam:` / `siz:` prefixes).
 3. **comment-quality** — `///` is reserved for single-line member/enum-value
    comments; consecutive `///` lines must use `/** */`. Each Doxygen
-   description paragraph must end with `.`, `?`, or `!`.
+   description paragraph must end with `.`, `?`, or `!`. Implementation
+   files (`.cpp` / `.cc` / `.cxx` / `.inl`) carry **only** the file-header
+   Doxygen block — every additional `/** */` block, `///` or `///<` line,
+   and multi-line `/* */` block must move to the matching header (the
+   documentation belongs alongside the declaration, not duplicated).
+   Single-line `//` comments inside function bodies are fine when the WHY
+   is non-obvious.
 4. **private-member-docs** — `m_*` / `mp_*` / `s_*` / `g_*` fields need a
    `///` line above or `///<` inline.
 5. **cpp-style** — banned `std::shared_ptr` / `std::make_shared` /

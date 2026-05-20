@@ -422,6 +422,11 @@ Enforced by `.clang-format` (LLVM-based) and `.clang-tidy`. Key conventions:
 - **Doxygen:** Every public class, method, enum value, and struct field must have a `@brief` or `///` comment. For
   functions, document all parameters (`@param[in]`/`@param[out]`) and return values (`@return`). Private members should
   at minimum have a `///` one-liner.
+- **Doxygen lives in headers only.** `.cpp` / `.cc` / `.cxx` / `.inl` files carry only the file-header `/** @file … */`
+  block at the top. No other Doxygen blocks (`/** */`, `///`, `///<`), no multi-line `/* */` comments — the documentation
+  belongs alongside the declaration in the matching header, not duplicated in the implementation. Inside function bodies,
+  prefer no comment; when one is genuinely needed (non-obvious invariant, subtle workaround, surprising side effect), keep
+  it to a single `//` line. The `comment-quality` CodeStyle sub-check enforces this.
 - **Mermaid diagrams:** Use standard ` ```mermaid ` fenced blocks in documentation `.md` files for architecture
   diagrams, flow charts, and sequence diagrams. These render natively on GitHub and are post-processed by mermaid.js
   in the Doxygen HTML output. Prefer mermaid over ASCII art or external image files for any diagram that can be

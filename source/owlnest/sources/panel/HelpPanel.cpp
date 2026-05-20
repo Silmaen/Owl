@@ -150,8 +150,6 @@ void HelpPanel::navigateTo(const std::string& iId) {
 }
 
 void HelpPanel::onLinkClicked(const std::string& iHref) {
-	// External URLs (http(s)://, mailto:) are handled directly by MarkdownPreview, so we only see
-	// internal page references here.
 	std::string target = iHref;
 	// Strip Doxygen anchor fragment if any.
 	if (const auto hash = target.find('#'); hash != std::string::npos)

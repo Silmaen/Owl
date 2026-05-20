@@ -53,6 +53,18 @@ public:
 
 	/**
 	 * @brief
+	 *  Read bytes back from the SSBO into a host buffer via
+	 *  `glGetBufferSubData`. OpenGL implicitly synchronises with prior
+	 *  compute writes when the caller emitted
+	 *  `RenderCommand::storageBufferMemoryBarrier()` first.
+	 * @param[out] oData Destination host buffer.
+	 * @param[in] iSize Byte count to read.
+	 * @param[in] iOffset Source offset in bytes inside the SSBO.
+	 */
+	void getData(void* oData, uint32_t iSize, uint32_t iOffset) override;
+
+	/**
+	 * @brief
 	 *  Rebind the SSBO to its binding slot.
 	 */
 	void bind() override;

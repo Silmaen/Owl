@@ -36,8 +36,6 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 	// Look for things on the storages
 	{
-		// Set up a working directory
-		// Assuming present of a folder 'res' containing the data
 		m_workingDirectory = absolute(std::filesystem::current_path());
 
 		OWL_CORE_INFO("Working directory: {}.", m_workingDirectory.string())
@@ -62,9 +60,6 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 		Log::setFrameFrequency(m_initParams.frameLogFrequency);
 	}
-	// Open asset pack if specified — extract engine assets to `assets/` so the on-disk
-	// asset lookup paths (UiLayer::resolveAssetFile, AssetLibrary::find, the slang
-	// compiler in Shader::create) keep working in a packaged game.
 	if (!m_initParams.packFile.empty()) {
 		auto packPath = std::filesystem::path(m_initParams.packFile);
 		if (packPath.is_relative())
@@ -72,17 +67,12 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		if (openPack(packPath)) {
 			const auto assetsDir = m_workingDirectory / "assets";
 			for (const auto& entryPath: m_packReader.listEntries()) {
-				// Skip extraction of shader sources when a valid .spv cache already exists —
-				// the renderer reads from the cache and never touches the .slang file.
 				if (entryPath.ends_with(".slang")) {
 					const auto spvPath = assetsDir / (entryPath + ".spv");
 					if (exists(spvPath))
 						continue;
 				}
 				const auto destFile = assetsDir / entryPath;
-				// Skip re-extraction when the file is already present with the expected size.
-				// The pack content is immutable for a given pack, so an exact size match means
-				// the on-disk copy is up-to-date.
 				if (exists(destFile)) {
 					const auto entrySize = m_packReader.entrySize(entryPath);
 					std::error_code ec;
@@ -201,8 +191,6 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		OWL_CORE_TRACE("GUI Layer created.")
 	}
 
-	// Create the sound system, with fallback to Null if the requested backend is unavailable
-	// (typical in headless / container environments without an audio device).
 	{
 		const auto requestedSound = m_initParams.isDummy ? sound::SoundAPI::Type::Null : m_initParams.sound;
 
@@ -303,10 +291,6 @@ Application::~Application() {
 			renderer::Renderer::reset();
 		}
 
-		// 3. Destroy the RenderAPI: VulkanHandler::release() tears down pipelines, swapchain,
-		//    descriptors, device, and surface (using the window's GraphContext) and then the
-		//    Vulkan instance. This must happen BEFORE the window/GLFW teardown, otherwise the
-		//    Vulkan surface outlives its backing native window and crashes on destruction.
 		renderer::gpu::RenderCommand::invalidate();
 
 		OWL_CORE_TRACE("Renderer shut down and invalidated.")

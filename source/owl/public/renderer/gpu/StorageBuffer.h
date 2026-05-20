@@ -48,6 +48,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Read data back from the SSBO into a host buffer. Synchronises with the
+	 *  GPU — callers must have emitted `RenderCommand::storageBufferMemoryBarrier()`
+	 *  before this call to ensure prior compute writes are visible. On Vulkan the
+	 *  current command buffer is submitted and waited on before mapping; on OpenGL
+	 *  the call is implicitly synchronised by the driver. Intended primarily for
+	 *  test-time correctness checks and editor diagnostics — not for per-frame
+	 *  readback in the hot path.
+	 * @param[out] oData Destination host buffer (must be at least `iSize` bytes).
+	 * @param[in] iSize Byte count to read.
+	 * @param[in] iOffset Source offset in bytes inside the SSBO.
+	 */
+	virtual void getData(void* oData, uint32_t iSize, uint32_t iOffset) = 0;
+
+	/**
+	 * @brief
 	 *  Bind the SSBO to the shader binding slot it was created with.
 	 */
 	virtual void bind() = 0;

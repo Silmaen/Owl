@@ -24,7 +24,7 @@ constexpr uint32_t kBindingFrustum = 1;
 constexpr uint32_t kBindingCounter = 2;
 constexpr uint32_t kBindingCommands = 3;
 
-/// Layout of the frustum SSBO: 6 plane equations + a template draw command.
+// Layout of the frustum SSBO: 6 plane equations + a template draw command.
 struct FrustumPayload {
 	math::vec4 planes[6];
 	uint32_t indexCount = 0;
@@ -127,8 +127,6 @@ void FrustumCullingPass::dispatch(std::span<const Aabb> iAabbs, const std::array
 }
 
 auto FrustumCullingPass::extractFrustumPlanes(const math::mat4& iViewProj) -> std::array<math::vec4, 6> {
-	// Gribb–Hartmann extraction. Reading `operator()(row, col)` so the same
-	// math works regardless of the matrix' storage order.
 	const auto m = [&](size_t iRow, size_t iCol) -> float { return iViewProj(iRow, iCol); };
 
 	std::array<math::vec4, 6> planes{};

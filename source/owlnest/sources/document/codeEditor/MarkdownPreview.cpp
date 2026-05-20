@@ -91,11 +91,7 @@ constexpr float kImageHorizontalPadding = 16.0f;
 	return n;
 }
 
-/**
- * @brief
- *  Walk a parsed Markdown tree and collect the count of CodeBlock leaves.
- */
-// NOLINTBEGIN(misc-no-recursion) — block tree is recursive by nature (lists/quotes nest).
+// NOLINTBEGIN(misc-no-recursion)
 void collectCodeBlocks(const std::vector<MdBlock>& iBlocks, size_t& ioCount) {
 	for (const auto& block: iBlocks) {
 		std::visit(
@@ -222,12 +218,6 @@ void MarkdownPreview::renderBlock(const MdBlock& iBlock, size_t& ioCodeIndex, co
 // NOLINTEND(misc-no-recursion)
 
 void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
-	// Word-level wrapping strategy: emit each word as its own ImGui item without `PushTextWrapPos`
-	// (which would otherwise wrap text *inside* a single TextUnformatted at character boundaries
-	// and leave the cursor stuck near the right edge between widgets). Instead we measure each
-	// word and decide per-word whether to glue it to the previous one (`SameLine`) or let ImGui's
-	// natural item layout drop it onto the next line — which automatically picks up the current
-	// `Indent()` level so wraps stay aligned with the original block's left edge.
 	int strongDepth = 0;
 	int emDepth = 0;
 	int strikeDepth = 0;
@@ -243,10 +233,6 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
 		else if (linkOpen)
 
-			// Hard-coded high-contrast link colour. We deliberately do NOT reuse `ImGuiCol_ButtonHovered`
-			// here — Owl's theme (`{0.275, 0.275, 0.275}`) is barely distinguishable from the
-			// `{0.10, 0.105, 0.11}` panel background, so link text rendered with that colour effectively
-			// disappeared on every page.
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.40f, 0.70f, 1.00f, 1.00f});
 	};
 	const auto popStyle = [&]() -> void {
@@ -261,20 +247,12 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 		const float spaceW = ImGui::CalcTextSize(" ").x;
 		const ImVec2 wordSize = ImGui::CalcTextSize(iWord.data(), iWord.data() + iWord.size());
 		if (!firstOnLine) {
-			// Compute the *remaining* width on the **previous** line (where SameLine would land
-			// us). After an item, the cursor is at the start of the *next* line, so checking
-			// `GetContentRegionAvail()` here would give the full line width and the SameLine
-			// branch would always be taken, defeating wrap. Use the previous item's screen-space
-			// right edge instead.
 			const float prevRight = ImGui::GetItemRectMax().x;
 			const float panelRight = ImGui::GetCursorScreenPos().x + ImGui::GetContentRegionAvail().x;
 			const float remaining = panelRight - (prevRight + spaceW);
 			if (remaining >= wordSize.x)
 
 				ImGui::SameLine(0.0f, spaceW);
-			// else: fall through with no SameLine — ImGui's automatic layout drops the new item to
-			// the next line at the current indent edge (so wraps stay aligned with the original
-			// block's left margin).
 		}
 
 		pushStyle();
@@ -362,8 +340,6 @@ void MarkdownPreview::renderInlineSpans(const std::vector<MdInline>& iSpans) {
 				break;
 			case InlineKind::LineBreak:
 
-				// Force a hard break: an empty Text() call advances the cursor to the next line at
-				// the current indent edge. Subsequent emits start fresh.
 				ImGui::TextUnformatted("");
 				firstOnLine = true;
 				break;
@@ -377,9 +353,6 @@ void MarkdownPreview::renderCodeBlock(const MdCodeBlock& iCb, size_t& ioCodeInde
 		return;
 	}
 	auto& entry = m_codeEditors[ioCodeIndex++];
-	// Push the dedicated code-editor font (JetBrains Mono) so the TextEditor widget gets clean
-	// monospace metrics. Without this, the editor inherits the surrounding Roboto and the
-	// gutter/cursor calculations land at the wrong pixel positions.
 	ImFont* codeFont = nullptr;
 	if (core::Application::instanced()) {
 		if (const auto ui = core::Application::get().getImGuiLayer(); ui != nullptr)
@@ -450,10 +423,6 @@ void MarkdownPreview::renderList(const MdList& iList, size_t& ioCodeIndex) {
 
 void MarkdownPreview::renderInlineImage(const std::string& iSrc, const std::string& iAlt, bool& ioFirstOnLine,
 										const bool iLinkOpen, const std::string& iLinkHref) {
-	// Inline image (e.g. shields.io badges that the build step downloaded into
-	// `images/badges/<sha>.svg`). Height is matched to the body line height so the image flows
-	// with the surrounding words; width is scaled to preserve aspect ratio. Falls back to a button
-	// label when the image cannot be resolved (remote URL not cached, or load failure).
 	const auto& entry = resolveImage(iSrc);
 	const float spaceW = ImGui::CalcTextSize(" ").x;
 	if (!entry.failed && entry.texture && !entry.isRemote) {
@@ -537,10 +506,6 @@ auto MarkdownPreview::resolveImage(const std::string& iSrc) -> const ImageEntry&
 		} catch (...) { entry.failed = true; }
 		if (!entry.failed) {
 			if (auto doc = lunasvg::Document::loadFromData(svgText); doc) {
-				// Compute target raster size that preserves the SVG's intrinsic aspect ratio
-				// (a shields.io badge is typically ~140×20 — without this we'd render a 1024×1024
-				// canvas with the badge in the centre and lots of empty space, which then displays
-				// as a tiny square).
 				const float intrW = std::max(1.0f, doc->width());
 				const float intrH = std::max(1.0f, doc->height());
 				const float scale = std::min(static_cast<float>(kImageMaxSide) / std::max(intrW, intrH), 4.0f);
@@ -577,15 +542,9 @@ auto MarkdownPreview::resolveImage(const std::string& iSrc) -> const ImageEntry&
 			}
 		}
 	} else {
-		// Raster (PNG/JPG): use the engine's "pat:" serialized form so `createFromSerialized`
-		// dispatches to `Texture2D::create(path)` (stb_image under the hood). A bare path with no
-		// prefix is silently rejected by the loader.
 		entry.texture = renderer::gpu::Texture2D::createFromSerialized("pat:" + full.string());
 		if (entry.texture) {
 			entry.size = entry.texture->getSize();
-			// Owl's `TextureDecoder` calls `stbi_set_flip_vertically_on_load_thread(1)` so the data
-			// in GPU memory is bottom-up (matches the 3D scene's UV convention). ImGui draws
-			// top-down, so we need to flip V at display time to keep the image right-side up.
 			entry.flippedY = true;
 		} else {
 			entry.failed = true;

@@ -103,10 +103,6 @@ auto buildNameKeyMap() -> const std::unordered_map<std::string, input::KeyCode>&
 }
 // NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
-/**
- * @brief
- *  Count the number of modifier bits set.
- */
 auto modifierCount(const Modifiers iMod) -> int {
 	int count = 0;
 	if (hasFlag(iMod, Modifiers::Ctrl))
@@ -118,10 +114,6 @@ auto modifierCount(const Modifiers iMod) -> int {
 	return count;
 }
 
-/**
- * @brief
- *  Check if a key code is a modifier key (should be ignored during capture).
- */
 auto isModifierKey(const input::KeyCode iKey) -> bool {
 	return iKey == input::key::LeftControl || iKey == input::key::RightControl || iKey == input::key::LeftShift ||
 		   iKey == input::key::RightShift || iKey == input::key::LeftAlt || iKey == input::key::RightAlt ||
@@ -231,10 +223,6 @@ auto ActionRegistry::dispatch(const event::KeyPressedEvent& iEvent) -> bool {
 	}
 	if (bestMatch == nullptr)
 		return false;
-	// Modifier-less shortcuts (e.g. plain "Q" / "S" / function keys without Ctrl) must yield to
-	// any focused ImGui text widget so users can type freely. Modifier shortcuts (Ctrl/Shift/Alt
-	// based) keep working everywhere — that is the de-facto editor convention and matches the
-	// behaviour of VS Code, Blender, Unity, etc.
 	if (bestMatch->currentShortcut.modifiers == Modifiers::None && ImGui::GetIO().WantCaptureKeyboard) {
 		OWL_TRACE("ActionRegistry: shortcut '{}' suppressed by ImGui keyboard capture.", bestMatch->id)
 		return false;

@@ -251,11 +251,6 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 		const char* name;
 		gpu::ShaderType type;
 	};
-	// Probe every Slang entry-point name the engine cares about. A shader file
-	// is allowed to declare any combination — vertex+fragment for graphics,
-	// computeMain alone for compute work. Missing entry points are skipped
-	// silently; failure is signalled only when no entry point at all produced
-	// SPIR-V.
 	constexpr EntryPointInfo entryPoints[] = {{"vertexMain", gpu::ShaderType::Vertex},
 											  {"fragmentMain", gpu::ShaderType::Fragment},
 											  {"computeMain", gpu::ShaderType::Compute}};
@@ -263,9 +258,6 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 	for (const auto& [name, type]: entryPoints) {
 		Slang::ComPtr<slang::IEntryPoint> entryPoint;
 		if (SLANG_FAILED(module->findEntryPointByName(name, entryPoint.writeRef()))) {
-			// Optional entry point not declared in this module — skip without
-			// reporting an error (graphics shaders won't have `computeMain`,
-			// compute shaders won't have `vertexMain`).
 			continue;
 		}
 

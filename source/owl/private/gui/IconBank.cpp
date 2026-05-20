@@ -13,6 +13,7 @@
 
 #include "core/external/lunasvg.h"
 
+#include <cstring>
 #include <fstream>
 #include <span>
 #include <stb_image.h>
@@ -20,10 +21,6 @@
 namespace owl::gui {
 
 namespace {
-/**
- * @brief
- *  RAII wrapper for stbi-allocated pixel data.
- */
 struct StbImageDeleter {
 	void operator()(uint8_t* iPtr) const {
 		if (iPtr != nullptr)
@@ -32,13 +29,6 @@ struct StbImageDeleter {
 };
 using StbImagePtr = uniq<uint8_t[], StbImageDeleter>;
 
-/**
- * @brief
- *  Load an image file via stb_image and return owned pixel data.
- * @param[in] iPath The file path.
- * @param[out] oSize The loaded image dimensions (width, height).
- * @return Owned pixel buffer (RGBA, 4 bytes per pixel), or empty vector on failure.
- */
 auto loadImageFile(const std::filesystem::path& iPath, math::vec2ui& oSize) -> std::vector<uint8_t> {
 	int width = 0;
 	int height = 0;
@@ -52,12 +42,6 @@ auto loadImageFile(const std::filesystem::path& iPath, math::vec2ui& oSize) -> s
 	return {raw.get(), raw.get() + byteCount};
 }
 
-/**
- * @brief
- *  Read a file as a string.
- * @param[in] iPath The file path.
- * @return The file content, or empty string on failure.
- */
 auto readFileAsString(const std::filesystem::path& iPath) -> std::string {
 	std::ifstream file(iPath, std::ios::binary);
 	if (!file.is_open())
@@ -65,12 +49,6 @@ auto readFileAsString(const std::filesystem::path& iPath) -> std::string {
 	return {std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
 }
 
-/**
- * @brief
- *  Convert a math::vec4 colour (0-1 floats) to a hex string like "#rrggbb".
- * @param[in] iColor The colour.
- * @return The hex colour string.
- */
 auto colorToHex(const math::vec4& iColor) -> std::string {
 	const auto r = static_cast<uint8_t>(std::clamp(iColor.x(), 0.f, 1.f) * 255.f);
 	const auto g = static_cast<uint8_t>(std::clamp(iColor.y(), 0.f, 1.f) * 255.f);
@@ -78,13 +56,6 @@ auto colorToHex(const math::vec4& iColor) -> std::string {
 	return std::format("#{:02x}{:02x}{:02x}", r, g, b);
 }
 
-/**
- * @brief
- *  Case-insensitive replace all occurrences of a hex colour in a string.
- * @param[in,out] ioStr The string to modify.
- * @param[in] iFrom The colour to find (lowercase, e.g., "#ffffff").
- * @param[in] iTo The replacement string.
- */
 void replaceColorInPlace(std::string& ioStr, const std::string& iFrom, const std::string& iTo) {
 	if (iFrom == iTo)
 		return;
@@ -109,14 +80,6 @@ void replaceColorInPlace(std::string& ioStr, const std::string& iFrom, const std
 	}
 }
 
-/**
- * @brief
- *  Load an SVG file, apply theme colour substitution, rasterize to RGBA pixels.
- * @param[in] iPath The SVG file path.
- * @param[in] iTargetSize Target pixel size (square).
- * @param[in] iColors Theme colours for substitution.
- * @return Owned pixel buffer (RGBA straight alpha, 4 bytes per pixel), or empty vector on failure.
- */
 auto loadSvgFile(const std::filesystem::path& iPath, const uint32_t iTargetSize, const IconThemeColors& iColors)
 		-> std::vector<uint8_t> {
 	auto svgContent = readFileAsString(iPath);
@@ -132,8 +95,6 @@ auto loadSvgFile(const std::filesystem::path& iPath, const uint32_t iTargetSize,
 	const auto bitmap = doc->renderToBitmap(static_cast<int>(iTargetSize), static_cast<int>(iTargetSize));
 	if (bitmap.isNull())
 		return {};
-	// Convert from ARGB premultiplied (lunasvg) to RGBA straight alpha.
-	// Also flip vertically (lunasvg is top-down, OpenGL atlas expects bottom-up).
 	const auto pixelCount = static_cast<size_t>(iTargetSize) * iTargetSize;
 	std::vector<uint8_t> pixels(pixelCount * 4);
 	const auto* src = bitmap.data();
@@ -160,10 +121,6 @@ auto loadSvgFile(const std::filesystem::path& iPath, const uint32_t iTargetSize,
 	return pixels;
 }
 
-/**
- * @brief
- *  Simple box-filter downscale of an RGBA image.
- */
 void boxFilterDownscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize, std::span<uint8_t> oDst,
 						const math::vec2ui iDstSize) {
 	for (uint32_t dy = 0; dy < iDstSize.y(); ++dy) {
@@ -191,10 +148,6 @@ void boxFilterDownscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSi
 	}
 }
 
-/**
- * @brief
- *  Bilinear upscale of an RGBA image.
- */
 void bilinearUpscale(std::span<const uint8_t> iSrc, const math::vec2ui iSrcSize, std::span<uint8_t> oDst,
 					 const math::vec2ui iDstSize) {
 	const float scaleX = static_cast<float>(iSrcSize.x()) / static_cast<float>(iDstSize.x());
@@ -389,8 +342,11 @@ auto IconBank::iconButton(const std::string& iIconName, const char* iLabel, cons
 	const ImVec2 iconMax{startX + iconSize, centerY + iconSize * 0.5f};
 	drawList->AddImage(static_cast<ImTextureID>(info->textureId), iconMin, iconMax, vec(info->uv0), vec(info->uv1));
 
+	const char* textEnd = std::strstr(iLabel, "##");
+	if (textEnd == nullptr)
+		textEnd = iLabel + std::strlen(iLabel);
 	const ImVec2 textPos{startX + iconSize + spacing, centerY - labelSize.y * 0.5f};
-	drawList->AddText(textPos, ImGui::GetColorU32(ImGuiCol_Text), iLabel);
+	drawList->AddText(nullptr, 0.f, textPos, ImGui::GetColorU32(ImGuiCol_Text), iLabel, textEnd);
 	ImGui::PopID();
 	return clicked;
 }

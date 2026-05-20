@@ -61,10 +61,6 @@ void CodeEditorDocument::onUpdate(const core::Timestep& iTimeStep) {
 	if (m_language == codeEditor::Language::Markdown) {
 		m_mdPreview.update(iTimeStep, mp_editor->GetText());
 	} else if (m_language == codeEditor::Language::Xml) {
-		// Use the latest known preview area; the rasterized side is bounded by the
-		// shorter dimension of the panel (set during onImGuiRender via the size we
-		// pass below). We feed a hint based on a typical pane size — render() reads
-		// the actual ImGui content region.
 		m_svgPreview.update(iTimeStep, mp_editor->GetText(), math::vec2ui{512, 512});
 	}
 }
@@ -87,9 +83,6 @@ void CodeEditorDocument::onImGuiRender() {
 		const auto* centralNode = ImGui::DockBuilderGetCentralNode(dockspaceId))
 		ImGui::SetNextWindowDockID(centralNode->ID, ImGuiCond_FirstUseEver);
 
-	// Push the dedicated code-editor font (Roboto at `UiLayer::codeFontSize()` = 13 px) so the
-	// TextEditor widget gets clean glyph metrics.  Push BEFORE `Begin` so the tab title uses the
-	// same font and the content-region size is computed for the correct glyph size.
 	ImFont* codeFont = nullptr;
 	if (const auto ui = core::Application::get().getImGuiLayer(); ui != nullptr)
 		codeFont = ui->getCodeFont();
@@ -103,10 +96,6 @@ void CodeEditorDocument::onImGuiRender() {
 	if (wantFocus)
 		ImGui::SetWindowFocus();
 	if (open) {
-		// The code font is rasterised at the user-configured size during `UiLayer::onAttach`, so
-		// no per-window scaling is needed.  A size change in the settings takes effect on restart.
-		// Intercept Ctrl+S as "Save" while the editor window has focus (the TextEditor consumes
-		// other shortcuts internally, including Ctrl+Z/Ctrl+Y for text undo/redo).
 		const bool windowFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
 		if (windowFocused && ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S, false)) {
 			if (ImGui::GetIO().KeyShift) {

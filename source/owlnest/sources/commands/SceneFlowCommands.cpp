@@ -24,8 +24,6 @@ SceneFlowCompositeCommand::SceneFlowCompositeCommand(uniq<SceneUndoCommand> iSce
 SceneFlowCompositeCommand::~SceneFlowCompositeCommand() = default;
 
 void SceneFlowCompositeCommand::undo(gui::widgets::NodeCanvas& ioCanvas) {
-	// Canvas first — strip the visual link/pin before the underlying entity disappears, otherwise
-	// the canvas would briefly point at a destroyed pin.
 	if (m_canvasCmd)
 		m_canvasCmd->undo(ioCanvas);
 	if (m_sceneCmd && mp_editor != nullptr) {
@@ -75,9 +73,6 @@ void RemovePinAndLinkCommand::undo(gui::widgets::NodeCanvas& ioTarget) {
 }
 
 void RemovePinAndLinkCommand::redo(gui::widgets::NodeCanvas& ioTarget) {
-	// `removeOutputPin` already strips dangling links, so the link erase is implicit. Keep an
-	// explicit removal up front for the case where the link's `fromPin` is on a different node
-	// (theoretically impossible in Scene Flow today, but cheap insurance).
 	if (static_cast<uint64_t>(m_link.id) != 0)
 		ioTarget.removeLink(m_link.id);
 	ioTarget.removeOutputPin(m_sourceNodeId, m_pin.id);

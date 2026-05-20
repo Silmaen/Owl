@@ -10,25 +10,25 @@ This page describes the high-level architecture of the Owl engine.
 
 The engine library (`source/owl/`) is organized into the following modules:
 
-| Module     | Description                                                       |
-|------------|-------------------------------------------------------------------|
-| `core`     | Application lifecycle, logging, assertions, smart pointers, tasks |
-| `renderer` | Rendering abstraction, buffers, shaders, framebuffers             |
+| Module     | Description                                                        |
+|------------|--------------------------------------------------------------------|
+| `core`     | Application lifecycle, logging, assertions, smart pointers, tasks  |
+| `renderer` | Rendering abstraction, buffers, shaders, framebuffers              |
 | `scene`    | Entity-Component-System (EnTT), scene graph, components, save/load |
-| `script`   | Lua 5.5 embedded scripting (sandboxed `LuaEngine` per entity)     |
-| `physic`   | 2D physics (Box2D integration)                                    |
-| `sound`    | Audio playback and device management                              |
-| `input`    | Keyboard, mouse, and gamepad input abstraction                    |
-| `window`   | Window creation and management                                    |
-| `gui`      | ImGui/ImGuizmo integration for editor UI                          |
-| `data`     | Geometry, mesh loading (OBJ, glTF, FBX), data structures          |
-| `math`     | Math utilities (zeus library)                                     |
-| `debug`    | Profiling, memory tracking, stack traces (cpptrace)               |
-| `event`    | Event system (application, input, window events)                  |
-| `io`       | File I/O, serialization (YAML, XML, asset packing)                |
+| `script`   | Lua 5.5 embedded scripting (sandboxed `LuaEngine` per entity)      |
+| `physic`   | 2D physics (Box2D integration)                                     |
+| `sound`    | Audio playback and device management                               |
+| `input`    | Keyboard, mouse, and gamepad input abstraction                     |
+| `window`   | Window creation and management                                     |
+| `gui`      | ImGui/ImGuizmo integration for editor UI                           |
+| `data`     | Geometry, mesh loading (OBJ, glTF, FBX), data structures           |
+| `math`     | Math utilities (zeus library)                                      |
+| `debug`    | Profiling, memory tracking, stack traces (cpptrace)                |
+| `event`    | Event system (application, input, window events)                   |
+| `io`       | File I/O, serialization (YAML, XML, asset packing)                 |
 
-Public headers live in `source/owl/public/` and implementation files in `source/owl/private/`,
-both mirroring the module structure.
+Public headers live in `source/owl/public/` and implementation files in `source/owl/private/`, both mirroring the module
+structure.
 
 **Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
 [Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·
@@ -72,12 +72,10 @@ The sound module provides audio playback through a backend-agnostic API.
 ![Sound Architecture](../images/sound_architecture.svg)
 
 The system follows the same abstraction pattern as graphics and input:
-`SoundCommand` delegates to a `SoundAPI` implementation (OpenAL or Null),
-selected at application startup.
+`SoundCommand` delegates to a `SoundAPI` implementation (OpenAL or Null), selected at application startup.
 
-At the scene level, **SoundSource** and **SoundListener** ECS components
-drive spatial audio during runtime. The OpenAL backend uses the inverse-distance-clamped
-attenuation model for 3D positional sound.
+At the scene level, **SoundSource** and **SoundListener** ECS components drive spatial audio during runtime. The OpenAL
+backend uses the inverse-distance-clamped attenuation model for 3D positional sound.
 
 See [Sound System](sound.md) for the full user guide covering components, spatial audio, and gameplay triggers.
 
@@ -100,15 +98,15 @@ OwlProject:
   firstScene: "scenes/Example.owl"
 ```
 
-When a project is opened, its directory is added as a high-priority asset directory,
-making its contents visible in the content browser. The editor window title reflects
-the active project name. Scenes can be imported into the project via the **Project >
+When a project is opened, its directory is added as a high-priority asset directory, making its contents visible in the
+content browser. The editor window title reflects the active project name. Scenes can be imported into the project via
+the **Project >
 Import Scene** menu item.
 
 ### Async Packaging Flow
 
-Long-running operations (game packaging, scene packing) are executed asynchronously
-via the engine's task scheduler, with a modal progress overlay in the editor:
+Long-running operations (game packaging, scene packing) are executed asynchronously via the engine's task scheduler,
+with modal progress overlay in the editor:
 
 ```mermaid
 sequenceDiagram
@@ -164,8 +162,8 @@ See [Scene & Components](scene.md) for the full component reference and entity l
 
 ### Transform Inheritance
 
-Each entity's `Transform` component stores a **local** transform (relative to its parent).
-The world-space transform is computed on demand by walking the parent chain:
+Each entity's `Transform` component stores a **local** transform (relative to its parent). The world-space transform is
+computed on demand by walking the parent chain:
 
 ```
 worldTransform = parentWorldTransform * localTransform
@@ -176,13 +174,12 @@ For root entities (`parentId == 0`), local equals world (zero overhead).
 ### Visibility Inheritance
 
 If any ancestor is hidden (editor or game mode), the entity is effectively hidden.
-`Scene::isEffectivelyVisible()` walks the parent chain to check; results are
-memoised per pass in `m_visibilityCache` so sibling entities sharing the same
-root chain only pay the walk once per tick.
+`Scene::isEffectivelyVisible()` walks the parent chain to check; results are memoised per pass in `m_visibilityCache` so
+sibling entities sharing the same root chain only pay the walk once per tick.
 
 ### Hierarchy Operations
 
-| Operation                | Behaviour                                                                        |
+| Operation                | Behaviour                                                                       |
 |--------------------------|---------------------------------------------------------------------------------|
 | **Set parent**           | Circular reference check, local transform recomputed to preserve world position |
 | **Unparent**             | Entity becomes root, world transform stored as new local                        |
@@ -193,29 +190,28 @@ root chain only pay the walk once per tick.
 
 ### Physics and Hierarchy
 
-Physics bodies (Box2D) operate in **world space** independently of the scene hierarchy.
-The hierarchy does **not** create physical constraints between entities.
+Physics bodies (Box2D) operate in **world space** independently of the scene hierarchy. The hierarchy does **not**
+create physical constraints between entities.
 
-| Situation                                | Behaviour                                                                                                                                    |
+| Situation                                | Behaviour                                                                                                                                   |
 |------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
 | Non-physics parent moves → physics child | Child **stays in place** (Box2D controls its world position). Its local transform is recalculated each frame relative to the moving parent. |
 | Physics parent falls → physics child     | Each body moves **independently** according to Box2D simulation. No physical link.                                                          |
-| Physics parent moves → non-physics child | Child **follows** the parent via transform inheritance (normal hierarchy behaviour).                                                         |
+| Physics parent moves → non-physics child | Child **follows** the parent via transform inheritance (normal hierarchy behaviour).                                                        |
 
-To physically attach a child body to a parent body (e.g., an object welded to a platform),
-use Box2D joints (weld, revolute, etc.) — this is separate from the hierarchy system.
+To physically attach a child body to a parent body (e.g., an object welded to a platform), use Box2D joints (weld,
+revolute, etc.) — this is separate from the hierarchy system.
 
 ### Serialization
 
-The `Hierarchy` component serializes the `parentId` (UUID). Children lists are rebuilt
-from parent references after deserialization (`Scene::rebuildHierarchyChildren()`).
-Old scenes without hierarchy data load correctly (all entities default to root).
+The `Hierarchy` component serializes the `parentId` (UUID). Children lists are rebuilt from parent references after
+deserialization (`Scene::rebuildHierarchyChildren()`). Old scenes without hierarchy data load correctly (all entities
+default to root).
 
 ### Editor (Owl Nest)
 
-The Scene Hierarchy panel displays entities as a tree. Drag-and-drop reparents entities.
-Right-click context menu provides: Create Root/Child Entity, Duplicate/Duplicate Subtree,
-Unparent, Delete Entity Only, Delete with Children.
+The Scene Hierarchy panel displays entities as a tree. Drag-and-drop reparents entities. Right-click context menu
+provides: Create Root/Child Entity, Duplicate/Duplicate Subtree, Unparent, Delete Entity Only, Delete with Children.
 
 ## Icon System
 
@@ -239,8 +235,8 @@ SVG sources are organized by usage in `source/owlnest/assets_sources/icons/`:
 
 ### Runtime Rendering and Theming
 
-At startup, `IconBank::build()` loads SVG files via lunasvg, applies colour substitution in
-memory, rasterizes to pixel buffers, and packs into a GPU texture atlas (64px cell, mipmaps).
+At startup, `IconBank::build()` loads SVG files via lunasvg, applies colour substitution in memory, rasterize to pixel
+buffers, and packs into a GPU texture atlas (64px cell, mipmaps).
 
 **Colour convention** (SVG files are never modified on disk):
 
@@ -248,18 +244,18 @@ memory, rasterizes to pixel buffers, and packs into a GPU texture atlas (64px ce
 - Fuchsia (`#ff00ff`) → substituted with theme accent colour
 - All other colours (R/G/B gizmo axes, etc.) → kept as-is
 
-When the theme changes, `IconBank::rebuild()` re-rasterizes all SVGs with the new colours.
+When the theme changes, `IconBank::rebuild()` re-rasterize all SVGs with the new colours.
 
 ### Scene-Rendered Icons (Triggers)
 
-Trigger overlay icons are also rendered in the viewport via `Renderer2D` and require PNG
-textures at 512x512. These are pre-rasterized from the same SVG sources:
+Trigger overlay icons are also rendered in the viewport via `Renderer2D` and require PNG textures at 512x512. These are
+pre-rasterized from the same SVG sources:
 
 ```bash
 poetry run python source/owlnest/assets/icons/generate_icons.py
 ```
 
-This script only rasterizes the `triggers/` category using `cairosvg`.
+This script only rasterize the `triggers/` category using `cairosvg`.
 
 ## Task System
 
@@ -279,8 +275,8 @@ The `SettingsManager` provides a persistent two-layer key-value store for game c
   on Linux, `%APPDATA%/<game>/` on Windows)
 
 Built-in keys (`resolution_width`, `resolution_height`, `fullscreen`, `resizable`,
-`volume_master`, `volume_music`, `volume_sfx`) are auto-applied to the Window and
-SoundCommand via `SettingsManager::applyBuiltins()`. Custom keys (e.g., `player_speed`)
+`volume_master`, `volume_music`, `volume_sfx`) are auto-applied to the Window and SoundCommand via
+`SettingsManager::applyBuiltins()`. Custom keys (e.g., `player_speed`)
 are stored and accessible from Lua but not automatically applied.
 
 See [Lua Scripting > settings](scripting.md) for the Lua API.
@@ -290,18 +286,17 @@ See [Lua Scripting > settings](scripting.md) for the Lua API.
 ![Asset Packing](../images/asset_packing.svg)
 
 Owl Nest can export a standalone game package via **Project > Pack Game**. The `AssetScanner`
-recursively parses scene files starting from the project's first scene, discovers all referenced
-assets (textures, fonts, sounds, scripts, meshes), follows teleport trigger links to other scenes,
-and scans Lua scripts for `scene.load_scene()` calls to discover dynamically referenced scenes.
+recursively parses scene files starting from the project's first scene, discovers all referenced assets (textures,
+fonts, sounds, scripts, meshes), follows teleport trigger links to other scenes, and scans Lua scripts for
+`scene.load_scene()` calls to discover dynamically referenced scenes.
 
-Discovered assets are compressed with **zstd** and written to a `.owlpack` binary archive
-with an XOR-obfuscated table of contents. At runtime, the game runner transparently loads
-assets from the pack file via `PackReader`.
+Discovered assets are compressed with **zstd** and written to a `.owlpack` binary archive with an XOR-obfuscated table
+of contents. At runtime, the game runner transparently loads assets from the pack file via `PackReader`.
 
 ## Dependency Management
 
-Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager) and declared
-in `depmanager.yml` at the project root. During CMake configure, the `cmake/Depmanager.cmake`
+Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager) and declared in `depmanager.yml` at the
+project root. During CMake configure, the `cmake/Depmanager.cmake`
 module automatically downloads missing packages from the configured remote server.
 
 See [Building](building.md) for instructions on configuring and building with dependencies.

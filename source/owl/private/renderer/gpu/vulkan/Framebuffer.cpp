@@ -499,8 +499,6 @@ void Framebuffer::createRenderPass() {
 												  .pDepthStencilAttachment = depthRefs.get(),
 												  .preserveAttachmentCount = 0,
 												  .pPreserveAttachments = nullptr}};
-	//if (isMainTarget()) {
-	// SubPass 1: the GUI
 	subpasses.emplace_back(VkSubpassDescription{.flags = {},
 												.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
 												.inputAttachmentCount = 0,

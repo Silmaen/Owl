@@ -10,6 +10,7 @@
 #include "VulkanHandler.h"
 
 #include "Descriptors.h"
+#include "RendererDescriptors.h"
 #include "core/Application.h"
 #include "renderer/gpu/GraphContext.h"
 #include "utils.h"
@@ -137,8 +138,6 @@ void VulkanHandler::createSwapChain() {
 							 .tiling = AttachmentSpecification::Tiling::Optimal},
 							{.format = AttachmentSpecification::Format::RedInteger,
 							 .tiling = AttachmentSpecification::Tiling::Optimal},
-							//{AttachmentSpecification::Format::Depth24Stencil8,
-							// AttachmentSpecification::Tiling::Optimal}
 					},
 			.samples = 2,
 			.swapChainTarget = true,
@@ -165,12 +164,16 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 	const auto& core = VulkanCore::get();
 	auto& vkd = Descriptors::get();
 	PipeLineData pData;
-	// PipeLine Layout
+	auto* setLayout = vkd.getDescriptorSetLayout();
+	if (auto* const rd = RendererDescriptors::getActive(); rd != nullptr) {
+		if (auto* const rdLayout = rd->getDescriptorSetLayout(); rdLayout != nullptr && *rdLayout != nullptr)
+			setLayout = rdLayout;
+	}
 	const VkPipelineLayoutCreateInfo pipelineLayoutInfo{.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 														.pNext = nullptr,
 														.flags = {},
 														.setLayoutCount = 1,
-														.pSetLayouts = vkd.getDescriptorSetLayout(),
+														.pSetLayouts = setLayout,
 														.pushConstantRangeCount = 0,
 														.pPushConstantRanges = nullptr};
 	if (const VkResult result =
@@ -550,10 +553,16 @@ void VulkanHandler::bindPipeline(const int32_t iId) {
 		OWL_CORE_WARN("Vulkan: cannot bind pipeline with id {}.", iId)
 		return;
 	}
-	auto& vkd = Descriptors::get();
 	vkCmdBindPipeline(getCurrentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeLines[iId].pipeLine);
+	const VkDescriptorSet* set = nullptr;
+	if (auto* const rd = RendererDescriptors::getActive(); rd != nullptr) {
+		set = rd->getDescriptorSet(getCurrentFrameIndex());
+	}
+	if (set == nullptr || *set == nullptr) {
+		set = Descriptors::get().getDescriptorSet(getCurrentFrameIndex());
+	}
 	vkCmdBindDescriptorSets(getCurrentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeLines[iId].layout, 0, 1,
-							vkd.getDescriptorSet(getCurrentFrameIndex()), 0, nullptr);
+							set, 0, nullptr);
 }
 
 void VulkanHandler::setResize() {

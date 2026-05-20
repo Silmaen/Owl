@@ -11,15 +11,11 @@
 
 #include "renderer/gpu/DrawData.h"
 #include "renderer/gpu/RenderCommand.h"
+#include "renderer/gpu/RendererDescriptors.h"
 
 namespace owl::renderer {
 
 namespace {
-/**
- * @brief
- *  Vertex layout for the fullscreen quad.
- * All background data is passed through vertex attributes for Vulkan compatibility.
- */
 struct BackgroundVertex {
 	math::vec3 position;
 	math::vec2 texCoord;
@@ -34,10 +30,6 @@ struct BackgroundVertex {
 	math::vec4 invVR3;// column 3
 };
 
-/**
- * @brief
- *  Internal data for the background renderer.
- */
 struct InternalData {
 	shared<gpu::DrawData> drawData;
 	bool pending = false;
@@ -58,6 +50,8 @@ void BackgroundRenderer::init() {
 	g_data = mkShared<InternalData>();
 
 	std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
+
+	const gpu::RendererDescriptors::ScopedActive scoped{"Renderer2D"};
 
 	g_data->drawData = gpu::DrawData::create();
 	g_data->drawData->init(

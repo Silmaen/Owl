@@ -75,8 +75,6 @@ void AnimationDocument::onImGuiRender() {
 	if (wantFocus)
 		ImGui::SetWindowFocus();
 	if (open) {
-		// Clamp the playhead inside the configured range whenever the user changes
-		// firstFrame / lastFrame — keeps the preview consistent without a stale frame.
 		if (m_currentFrame < m_clip.firstFrame || m_currentFrame > m_clip.lastFrame)
 			m_currentFrame = m_clip.firstFrame;
 

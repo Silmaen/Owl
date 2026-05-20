@@ -66,10 +66,6 @@ auto toLevel(const spdlog::level::level_enum iLevel) -> Log::Level {
 	return Log::Level::Off;
 }
 
-/**
- * @brief
- *  spdlog sink that pushes entries into a LogBuffer for UI display.
- */
 class EditorLogSink final : public spdlog::sinks::base_sink<std::mutex> {
 public:
 	explicit EditorLogSink(debug::LogBuffer& ioBuffer) : m_buffer{ioBuffer} {}

@@ -31,10 +31,6 @@ using namespace owl::scene::component;
 namespace owl::gui::component {
 
 namespace {
-/**
- * @brief
- *  Attach a tooltip to the last rendered item (shown after a short hover delay).
- */
 void fieldTooltip(const char* iText) {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 		ImGui::SetTooltip("%s", iText);
@@ -105,21 +101,6 @@ void drawVec3Control(const std::string& iLabel, math::vec3& iValues, const float
 	ImGui::PopID();
 }
 
-/**
- * @brief
- *  Tile picker — current-tile thumbnail + popup with the full atlas grid.
- *
- * Used by `RaycastDoor` / `RaycastPushWall` inspectors so a designer can pick a
- * tile visually instead of memorising indices. The popup mirrors the layout
- * of `TilePalette`: every tile in the atlas as a square button, scoped by
- * `PushID` so concurrent pickers don't share state. Click highlights the
- * current selection with the same primary-brush colour as the editor.
- *
- * @param[in] iLabel ImGui label printed in front of the thumbnail.
- * @param[in] iTileset The tileset whose atlas to sample (no-op if null).
- * @param[in,out] ioTileIndex Current tile index; updated when the user picks one.
- * @return True when the user picked a different tile this frame.
- */
 auto tilePickField(const char* iLabel, const shared<scene::Tileset>& iTileset, uint32_t& ioTileIndex) -> bool {
 	ImGui::PushID(iLabel);
 	ImGui::TextUnformatted(iLabel);
@@ -842,8 +823,6 @@ void renderProps(Tilemap& ioComponent) {
 	ImGui::TextUnformatted("Tilemap");
 	ImGui::SameLine();
 	if (ImGui::Button(label.c_str(), ImVec2(-1.f, 0.f))) {
-		// Click clears the path; in-memory asset (if any) is also dropped so a fresh resolve
-		// happens on the next scene reload.
 		ioComponent.tilemapPath.clear();
 		ioComponent.asset.reset();
 	}
@@ -888,20 +867,6 @@ void renderProps(Tilemap& ioComponent) {
 }
 
 namespace {
-/**
- * @brief
- *  Editor combo for picking an interaction key code.
- *
- * Backed by the GLFW `input::key::*` constants — the same enum the rest of
- * the engine consumes. `0` denotes "disabled" so a designer can author a
- * door that only opens from Lua. The dropdown lists the keys most likely to
- * be used as an in-world action (alphabetic + Enter/Space + arrows), the
- * underlying field still accepts any uint16_t for power users editing the
- * YAML directly.
- * @param[in] iLabel ImGui label for the combo widget.
- * @param[in,out] ioKey The current key code; updated in-place when the user picks one.
- * @return True when the user changed the selection this frame.
- */
 auto interactionKeyCombo(const char* iLabel, input::KeyCode& ioKey) -> bool {
 	struct Entry {
 		const char* name;

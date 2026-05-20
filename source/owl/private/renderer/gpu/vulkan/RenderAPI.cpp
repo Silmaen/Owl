@@ -13,6 +13,7 @@
 #include "core/Application.h"
 #include "core/external/glfw3.h"
 #include "internal/Descriptors.h"
+#include "internal/RendererDescriptors.h"
 #include "internal/VulkanHandler.h"
 
 namespace owl::renderer::gpu::vulkan {
@@ -123,13 +124,22 @@ void RenderAPI::endFrame() {
 }
 
 void RenderAPI::beginTextureLoad() {
+	if (auto* const rd = internal::RendererDescriptors::getActive(); rd != nullptr) {
+		rd->resetTextureBind();
+		return;
+	}
 	auto& vkd = internal::Descriptors::get();
 	vkd.resetTextureBind();
 }
 
 void RenderAPI::endTextureLoad() {
+	const auto frame = internal::VulkanHandler::get().getCurrentFrameIndex();
+	if (auto* const rd = internal::RendererDescriptors::getActive(); rd != nullptr) {
+		rd->commitTextureBind(frame);
+		return;
+	}
 	auto& vkd = internal::Descriptors::get();
-	vkd.commitTextureBind(internal::VulkanHandler::get().getCurrentFrameIndex());
+	vkd.commitTextureBind(frame);
 }
 
 void RenderAPI::setDepthMask([[maybe_unused]] const bool iEnabled) {

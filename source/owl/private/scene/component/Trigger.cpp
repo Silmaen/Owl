@@ -36,11 +36,6 @@ void Trigger::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
-/**
- * @brief
- *  Read this component from YAML node.
- * @param iNode The YAML node to read.
- */
 void Trigger::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["Type"]) {
 		const auto triggerType =

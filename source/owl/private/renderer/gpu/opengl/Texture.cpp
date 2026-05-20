@@ -46,16 +46,6 @@ auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
 	return GL_NONE;
 }
 
-/**
- * @brief
- *  Apply min/mag/wrap filter parameters honouring the spec's `filterMode`.
- *
- * `Nearest` snaps both min and mag to `GL_NEAREST` so the texture stays
- * pixel-crisp at any distance — required for the raycaster wall stripes
- * (otherwise distant walls turn into blurry filtered mush). `Linear` keeps
- * the existing behaviour (linear minification, nearest magnification — a
- * compromise that matches Owl's typical 2D content).
- */
 void applySamplerFilter(const GLuint iTexture, const FilterMode iMode) {
 	if (iMode == FilterMode::Nearest) {
 		glTextureParameteri(iTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);

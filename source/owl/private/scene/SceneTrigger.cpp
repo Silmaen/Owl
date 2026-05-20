@@ -17,10 +17,6 @@
 namespace owl::scene {
 
 namespace {
-/**
- * @brief
- *  Dispatch a named Lua callback on an entity's script instance if present.
- */
 void dispatchLuaCallback(const Entity& iEntity, const std::string& iFuncName, const uint64_t iArg) {
 	if (!iEntity.hasComponent<component::LuaScript>())
 		return;
@@ -29,10 +25,6 @@ void dispatchLuaCallback(const Entity& iEntity, const std::string& iFuncName, co
 	static_cast<void>(iArg);
 }
 
-/**
- * @brief
- *  Dispatch a named Lua callback with no argument.
- */
 void dispatchLuaCallbackNoArg(const Entity& iEntity, const std::string& iFuncName) {
 	if (!iEntity.hasComponent<component::LuaScript>())
 		return;

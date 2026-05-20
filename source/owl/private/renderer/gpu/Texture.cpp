@@ -122,10 +122,6 @@ auto Texture2D::create(const Specification& iSpecs) -> shared<Texture2D> {
 }
 
 namespace {
-/**
- * @brief
- *  Read a file on disk into a byte buffer; returns empty on failure.
- */
 auto readFileBytes(const std::filesystem::path& iPath) -> std::vector<uint8_t> {
 	std::ifstream in(iPath, std::ios::binary | std::ios::ate);
 	if (!in) {
@@ -141,20 +137,12 @@ auto readFileBytes(const std::filesystem::path& iPath) -> std::vector<uint8_t> {
 	return bytes;
 }
 
-/**
- * @brief
- *  Source bytes resolved from a `nam:`/`pat:` serialized reference.
- */
 struct ResolvedSource {
 	std::vector<uint8_t> bytes;///< File contents (already in memory).
 	std::filesystem::path path;///< Resolved disk path, empty when the bytes came from a pack.
 	std::string name;///< Value of the `nam:` prefix, empty for `pat:`.
 };
 
-/**
- * @brief
- *  Resolve a `nam:`/`pat:` reference to its bytes (pack → asset dirs → filesystem).
- */
 auto resolveTextureSource(std::string_view iKey, const std::string& iValue) -> ResolvedSource {
 	ResolvedSource out;
 	if (iKey == "nam:") {
@@ -257,15 +245,11 @@ auto Texture2D::createFromSerializedAsync(const std::string& iTextureSerializedN
 		return createFromSerialized(iTextureSerializedName);
 	}
 
-	// Peek dimensions cheaply from the header, so the GPU texture can be created at the right size
-	// before the full decode completes.
 	const auto peeked = peekImageSize(source.bytes);
 	if (!peeked) {
 		return createFromSerialized(iTextureSerializedName);
 	}
 
-	// Always create the placeholder in Rgba8 so the later async upload is a simple setData of
-	// matching size (the worker decodes with desired_channels = 4).
 	auto texture = create(Specification{.size = *peeked, .format = ImageFormat::Rgba8, .generateMips = false});
 	if (!texture) {
 		return nullptr;

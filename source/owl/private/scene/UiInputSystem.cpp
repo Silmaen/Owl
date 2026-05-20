@@ -26,10 +26,6 @@ bool UiInputSystem::s_consuming = false;
 bool UiInputSystem::s_wasPressed = false;
 
 namespace {
-/**
- * @brief
- *  Check if a screen-space point is inside a UI rect.
- */
 auto hitTestRect(const component::UiRect& iRect, const math::vec2& iParentSize, const math::vec2& iPoint) -> bool {
 	const math::vec2 center = iRect.computePosition(iParentSize);
 	const float halfW = iRect.size.x() * 0.5f;
@@ -38,13 +34,6 @@ auto hitTestRect(const component::UiRect& iRect, const math::vec2& iParentSize, 
 		   iPoint.y() <= center.y() + halfH;
 }
 
-/**
- * @brief
- *  Walk up hierarchy from an entity to find the nearest ancestor with a LuaScript component.
- * @param[in] iScene The scene containing the entity.
- * @param[in] iEntity The starting entity.
- * @return The nearest ancestor (or self) with a LuaScript, or invalid Entity if none found.
- */
 auto findScriptOwner(const Scene* iScene, Entity iEntity) -> Entity {
 	while (iEntity) {
 		if (iEntity.hasComponent<component::LuaScript>())
@@ -55,14 +44,6 @@ auto findScriptOwner(const Scene* iScene, Entity iEntity) -> Entity {
 	return iEntity;
 }
 
-/**
- * @brief
- *  Find the nearest ancestor with a LuaScript and call a named function.
- * @param[in] iScene The scene containing the entity.
- * @param[in] iEntity The entity whose ancestor to search.
- * @param[in] iCallbackName The Lua function name to invoke.
- * @param[in] iEntityId The clicked entity UUID, passed as _clicked_entity property.
- */
 void invokeLuaCallback(const Scene* iScene, const Entity& iEntity, const std::string& iCallbackName,
 					   const uint64_t iEntityId) {
 	if (iCallbackName.empty())
@@ -77,14 +58,6 @@ void invokeLuaCallback(const Scene* iScene, const Entity& iEntity, const std::st
 	}
 }
 
-/**
- * @brief
- *  Invoke a slider value-changed callback on the nearest ancestor LuaScript.
- * @param[in] iScene The scene containing the entity.
- * @param[in] iEntity The slider entity whose ancestor to search.
- * @param[in] iCallbackName The Lua function name to invoke.
- * @param[in] iValue The new slider value, passed as _slider_value property.
- */
 void invokeSliderCallback(const Scene* iScene, const Entity& iEntity, const std::string& iCallbackName,
 						  const float iValue) {
 	if (iCallbackName.empty())

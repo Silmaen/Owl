@@ -44,10 +44,6 @@ auto debugUtilsMessageCallback(const VkDebugUtilsMessageSeverityFlagBitsEXT iMes
 		OWL_CORE_ERROR("Vulkan fb({} {}): [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
 					   iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
 	}
-	// The return value of this callback controls whether the Vulkan call that caused the validation message will
-	// be aborted or not. We return VK_FALSE as we DON'T want Vulkan calls that cause a validation message to abort
-	// If you instead want to have calls abort, pass in VK_TRUE and the function will
-	// return VK_ERROR_VALIDATION_FAILED_EXT
 	return VK_FALSE;
 }
 
@@ -510,8 +506,6 @@ void VulkanCore::createCommandPool() {
 	}
 }
 
-// ============= VulkanCore =====================
-// ============= InstanceInformations =====================
 InstanceInformations::InstanceInformations() {
 	vkEnumerateInstanceVersion(&version);
 	OWL_CORE_INFO("Vulkan: Found API Version: {}.{}.", VK_API_VERSION_MAJOR(version), VK_API_VERSION_MINOR(version))

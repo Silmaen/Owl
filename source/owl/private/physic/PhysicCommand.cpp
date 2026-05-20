@@ -18,20 +18,10 @@ namespace owl::physic {
 
 namespace {
 
-/**
- * @brief
- *  Emit a uniform "called before init" warning for a Physic API call.
- * @param[in] iFunc Calling function name (used as the log subject).
- */
 inline void logNotInitialized(const char* iFunc) {
 	OWL_CORE_WARN("Physic: {} called before initialisation; ignoring.", iFunc)
 }
 
-/**
- * @brief
- *  Emit a uniform "null entity" warning for a Physic API call.
- * @param[in] iFunc Calling function name (used as the log subject).
- */
 inline void logNullEntity(const char* iFunc) { OWL_CORE_WARN("Physic: {} called with null entity; ignoring.", iFunc) }
 
 }// namespace
@@ -112,8 +102,6 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		b2CreatePolygonShape(body, &shapeDef, &dynamicBox);
 	}
 
-	// Generate static colliders from tilemaps. One static b2Body per tilemap entity,
-	// one polygon shape per collidable cell. The body is destroyed with b2DestroyWorld.
 	for (const auto view = m_scene->registry.view<scene::component::Tilemap, scene::component::Transform>();
 		 const auto e: view) {
 		const scene::Entity entity{e, m_scene};
@@ -121,8 +109,6 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		if (!tilemap.asset || !tilemap.asset->tileset || tilemap.asset->layers.empty())
 			continue;
 		const auto& assetData = *tilemap.asset;
-		// Skip if every tile in the tileset is non-collidable — common for purely cosmetic
-		// tilemaps (backgrounds). Avoids creating an empty body for nothing.
 		const auto* tilesetPtr = assetData.tileset.get();
 		bool anyCollidable = false;
 		for (uint32_t i = 0; i < tilesetPtr->tileCount(); ++i) {
@@ -169,11 +155,6 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		}
 	}
 
-	// Generate kinematic bodies for raycast doors and pushwalls that don't carry an
-	// explicit `PhysicBody`. The body's collider matches the moving surface so the
-	// player physically collides with it (a closed door must not be traversable). The
-	// state machine in `Scene::updateRaycastDynamicWalls` later moves the body via
-	// `setTransform` each tick to track the plate / block position.
 	for (const auto view = m_scene->registry.view<scene::component::RaycastDoor, scene::component::Transform>();
 		 const auto e: view) {
 		const scene::Entity entity{e, m_scene};
@@ -188,8 +169,6 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		bodyDef.position.y = worldTransform.translation().y();
 		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
 		const b2BodyId body = b2CreateBody(m_impl->worldId, &bodyDef);
-		// Plate footprint: thin along the perpendicular-to-slide axis, full cell on
-		// the slide axis (matches the rendered surface).
 		using OD = scene::component::RaycastDoor::OpeningDirection;
 		const bool slideAlongY = (door.openingDirection == OD::North || door.openingDirection == OD::South);
 		constexpr float kPlateHalfThickness = 0.05f;// matches the renderer's lateral bias

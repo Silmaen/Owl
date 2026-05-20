@@ -242,6 +242,29 @@ The Doxygen format used across the codebase:
   ```
 - Copyright header in every file uses `Copyright (c) YYYY All rights reserved.` (the parenthesised `(c)`, never the `©` glyph).
 
+### Comments in `.cpp` files
+
+- **Doxygen lives in headers only** (`.h` — both public and private). Implementation
+  files (`.cpp`) must not carry Doxygen blocks (`/** … */`, `///`, `///<`,
+  `@brief`, `@param`, `@return`, `@tparam`, etc.) for functions, methods,
+  classes or members — the documentation is already in the matching header
+  and duplicating it just causes drift.
+- The file-header block at the top of every `.cpp` (`@file` / `@author` /
+  `@date` / `Copyright …`) is the **only exception** — Doxygen treats that
+  block as file-level documentation, not a duplicate of header content.
+- Inside function bodies, prefer **no comment**. Only write one when the WHY
+  is non-obvious (hidden invariant, subtle workaround, surprising side
+  effect). If you would have written the comment, ask first whether a better
+  identifier or an extracted helper would carry the meaning instead.
+- When a comment is justified inside a function body, keep it to **one
+  single `//` line**. Multi-line `/* … */` blocks, `///` / `/** */`
+  Doxygen blocks, **and runs of two or more consecutive `//` lines** are
+  all forbidden in implementation files — stacking `//` lines is a
+  multi-line comment in disguise. If a single line is not enough to
+  explain the WHY, the code wants refactoring (extract a helper, rename
+  the variable, move the explanation to the header next to the
+  declaration) rather than more prose.
+
 ## Logging
 
 Use engine macros (never `std::cout`, `printf`, `std::cerr`):

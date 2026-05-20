@@ -32,6 +32,12 @@ void StorageBuffer::setData(const void* iData, const uint32_t iSize, const uint3
 	glNamedBufferSubData(m_rendererId, iOffset, iSize, iData);
 }
 
+void StorageBuffer::getData(void* oData, const uint32_t iSize, const uint32_t iOffset) {
+	if (m_rendererId == 0 || oData == nullptr || iSize == 0)
+		return;
+	glGetNamedBufferSubData(m_rendererId, iOffset, iSize, oData);
+}
+
 void StorageBuffer::bind() { glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_binding, m_rendererId); }
 
 }// namespace owl::renderer::gpu::opengl

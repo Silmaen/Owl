@@ -32,9 +32,6 @@ auto ModifyEnabledRenderersCommand::mergeWith(const SceneUndoCommand& iOther) ->
 }
 
 auto ModifyEnabledRenderersCommand::typeId() const -> size_t {
-	// All ModifyEnabledRenderersCommand instances merge with each other regardless
-	// of which layer was edited — there's only one config per scene, so a single
-	// type id is enough.
 	constexpr size_t kTypeHash = 0x4D6F644552656E64ULL;// "ModERend"
 	return kTypeHash;
 }

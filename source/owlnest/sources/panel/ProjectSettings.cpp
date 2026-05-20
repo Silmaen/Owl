@@ -17,11 +17,6 @@ namespace owl::nest::panel {
 namespace {
 constexpr auto g_popupName = "Project Settings";
 
-/**
- * @brief
- *  Render the renderer-stack editor: ordered list of layers with
- * Type / Name editing and reorder/remove buttons. Mutates `ioStack` in place.
- */
 auto drawRendererStackEditor(renderer::RendererStackConfig& ioStack) -> void {
 	const auto availableTypes = renderer::RenderLayerFactory::registeredTypes();
 	auto& entries = ioStack.entries;

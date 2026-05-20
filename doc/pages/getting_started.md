@@ -19,29 +19,29 @@ and accessible from the **Help** ribbon button or by pressing `F1`.
 
 ## Where to Go Next
 
-| Topic                              | Page                          |
-|------------------------------------|-------------------------------|
-| Editor panels, ribbon, shortcuts   | [editor.md](editor.md)        |
-| Scene system and components        | [scene.md](scene.md)          |
-| Lua scripting (gameplay)           | [scripting.md](scripting.md)  |
-| 2D renderer, sprites, fonts        | [renderer.md](renderer.md)    |
-| Physics (Box2D bodies, triggers)   | [physics.md](physics.md)      |
-| Sound (effects, music, listeners)  | [sound.md](sound.md)          |
-| Node graph editor                  | [node_graph.md](node_graph.md) |
-| Building from source               | [building.md](building.md)    |
-| Engine architecture                | [architecture.md](architecture.md) |
-| How to contribute                  | [contributing.md](contributing.md) |
+| Topic                             | Page                               |
+|-----------------------------------|------------------------------------|
+| Editor panels, ribbon, shortcuts  | [editor.md](editor.md)             |
+| Scene system and components       | [scene.md](scene.md)               |
+| Lua scripting (gameplay)          | [scripting.md](scripting.md)       |
+| 2D renderer, sprites, fonts       | [renderer.md](renderer.md)         |
+| Physics (Box2D bodies, triggers)  | [physics.md](physics.md)           |
+| Sound (effects, music, listeners) | [sound.md](sound.md)               |
+| Node graph editor                 | [node_graph.md](node_graph.md)     |
+| Building from source              | [building.md](building.md)         |
+| Engine architecture               | [architecture.md](architecture.md) |
+| How to contribute                 | [contributing.md](contributing.md) |
 
 ## Useful Shortcuts
 
-| Shortcut          | Action                              |
-|-------------------|-------------------------------------|
-| `F1`              | Open contextual help                |
-| `Ctrl+Z` / `Ctrl+Y` | Undo / redo                       |
-| `Ctrl+S`          | Save active document                |
-| `Ctrl+W`          | Close active document               |
-| `Ctrl+Tab`        | Cycle to the next document          |
-| `F5` / `F6` / `F7` | Play / Pause / Stop                |
+| Shortcut            | Action                     |
+|---------------------|----------------------------|
+| `F1`                | Open contextual help       |
+| `Ctrl+Z` / `Ctrl+Y` | Undo / redo                |
+| `Ctrl+S`            | Save active document       |
+| `Ctrl+W`            | Close active document      |
+| `Ctrl+Tab`          | Cycle to the next document |
+| `F5` / `F6` / `F7`  | Play / Pause / Stop        |
 
 ## Sample Project
 

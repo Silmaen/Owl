@@ -75,19 +75,19 @@ The **File** tab is highlighted (title rendered in the theme accent colour via
 contextual last tab switches between **Scene** and **Text** based on the active
 document type.
 
-| Tab   | Group    | Contents                                                          |
-|-------|----------|-------------------------------------------------------------------|
-| File  | Project  | New / Open (large), Save / Save As / Close (small)                |
-| File  | Recent   | Recent (large — opens a popup listing the recent projects)        |
-| File  | Package  | Pack Game (large)                                                 |
-| File  | Session  | Exit (large)                                                      |
-| Edit  | History  | Undo / Redo (large)                                               |
-| Edit  | Settings | Engine / Editor / Project (small)                                 |
-| Scene | File     | New / Open (large), Save / Save As / Import (small), Close (large)|
-| Scene | Playback | Play / Stop (large), Pause / Step (small)                         |
-| Scene | Gizmo    | Translate / Rotate / Scale (large, toggle), Snap + Step (small)   |
-| Scene | Package  | Pack Scene (large)                                                |
-| Text  | File     | Save / Close (large)                                              |
+| Tab   | Group    | Contents                                                           |
+|-------|----------|--------------------------------------------------------------------|
+| File  | Project  | New / Open (large), Save / Save As / Close (small)                 |
+| File  | Recent   | Recent (large — opens a popup listing the recent projects)         |
+| File  | Package  | Pack Game (large)                                                  |
+| File  | Session  | Exit (large)                                                       |
+| Edit  | History  | Undo / Redo (large)                                                |
+| Edit  | Settings | Engine / Editor / Project (small)                                  |
+| Scene | File     | New / Open (large), Save / Save As / Import (small), Close (large) |
+| Scene | Playback | Play / Stop (large), Pause / Step (small)                          |
+| Scene | Gizmo    | Translate / Rotate / Scale (large, toggle), Snap + Step (small)    |
+| Scene | Package  | Pack Scene (large)                                                 |
+| Text  | File     | Save / Close (large)                                               |
 
 Every button is backed by an `ActionRegistry` callback so keyboard shortcuts
 stay in sync. Grayed buttons (`isEnabled` returns false) indicate the action is
@@ -168,12 +168,12 @@ in its own tab. Internally the editor owns a `DocumentManager` that holds
 the open documents and tracks which one is **active**. Global panels
 (Scene Hierarchy, Properties, Viewport) always reflect the active document.
 
-| Kind        | File     | Description                                                      |
-|-------------|----------|------------------------------------------------------------------|
-| Scene       | `.owl`   | Scene graph editor with viewport, per-document undo/redo stack   |
-| Code        | `.lua`, `.py`, `.json`, `.md`, `.svg`... | Syntax-highlighted text editor (ImGuiColorTextEdit) |
-| Node Graph  | `.owlflow` (or derived like **Scene Flow**) | Generic node canvas — see [Node Graph](node_graph.md) |
-| Animation   | `.owlanim`  | Spritesheet animation clip editor (timeline + preview + properties) |
+| Kind        | File                                        | Description                                                         |
+|-------------|---------------------------------------------|---------------------------------------------------------------------|
+| Scene       | `.owl`                                      | Scene graph editor with viewport, per-document undo/redo stack      |
+| Code        | `.lua`, `.py`, `.json`, `.md`, `.svg`...    | Syntax-highlighted text editor (ImGuiColorTextEdit)                 |
+| Node Graph  | `.owlflow` (or derived like **Scene Flow**) | Generic node canvas — see [Node Graph](node_graph.md)               |
+| Animation   | `.owlanim`                                  | Spritesheet animation clip editor (timeline + preview + properties) |
 
 - **Document tabs** — each open scene has its own `Viewport` window (stable
   `##scene_<uuid>` id). ImGui's docking groups viewports in the same dock node
@@ -214,7 +214,7 @@ off-screen `Framebuffer` with two colour attachments:
 
 | Attachment | Format          | Purpose                     |
 |------------|-----------------|-----------------------------|
-| 0          | Surface (RGBA8) | Visible colour output        |
+| 0          | Surface (RGBA8) | Visible colour output       |
 | 1          | RedInteger      | Entity ID for mouse picking |
 
 **Editor camera.** In Edit mode the viewport uses a `CameraEditor` (orbit
@@ -346,15 +346,15 @@ Asset fields in the Properties panel accept drag-drops from the Content Browser 
 shared `gui::widgets::assetDropTarget` helper. The drop is filtered by extension; payloads
 that do not match the field's `AssetKind` are silently rejected.
 
-| Field                                                       | Accepted extensions               |
-|-------------------------------------------------------------|-----------------------------------|
+| Field                                                       | Accepted extensions                             |
+|-------------------------------------------------------------|-------------------------------------------------|
 | `SpriteRenderer.texture`                                    | `.png`, `.jpg`, `.jpeg`, `.bmp`, `.tga`, `.hdr` |
-| `AnimatedSpriteRenderer.texture`                            | same as Texture                   |
-| `BackgroundTexture.texture` (Background-Texture and Skybox) | same as Texture                   |
-| `UiImage.texture`                                           | same as Texture                   |
-| `Text.font`                                                 | `.ttf`, `.otf`                    |
-| `SoundSource.soundAsset`                                    | `.wav`, `.mp3`, `.ogg`, `.flac`   |
-| `LuaScript.scriptPath`                                      | `.lua`                            |
+| `AnimatedSpriteRenderer.texture`                            | same as Texture                                 |
+| `BackgroundTexture.texture` (Background-Texture and Skybox) | same as Texture                                 |
+| `UiImage.texture`                                           | same as Texture                                 |
+| `Text.font`                                                 | `.ttf`, `.otf`                                  |
+| `SoundSource.soundAsset`                                    | `.wav`, `.mp3`, `.ogg`, `.flac`                 |
+| `LuaScript.scriptPath`                                      | `.lua`                                          |
 
 **Texture preview.** Texture fields render a 100x100 thumbnail of the loaded image. While an
 async-loaded texture is still decoding, a `(loading...)` overlay is drawn over the bottom of
@@ -455,21 +455,21 @@ The browser roots at the project's asset directory and prevents navigation above
 icon bank. Each icon shares the same file-frame template, carries an extension ribbon
 label (e.g. `WAV`, `CPP`) and a central type glyph:
 
-| Category  | Extensions                           | Central glyph            |
-|-----------|--------------------------------------|--------------------------|
-| Scene     | `.owl`                               | Isometric scene floor    |
-| Prefab    | `.owlprefab`                         | Puzzle-piece "P" badge   |
-| Animation | `.owlanim`                           | Filmstrip with play head |
-| Image     | `.png`, `.jpg`, `.svg`               | Frame with sun + peaks   |
-| Font      | `.ttf`                               | "Aa" sample              |
-| Config    | `.yml`, `.json`                      | Gear / curly braces      |
-| Shader    | `.glsl`                              | GPU chip with pins       |
-| Script    | `.lua`                               | Crescent moon + star     |
-| Sound     | `.wav`, `.mp3`, `.ogg`, `.flac`      | Speaker with waves       |
-| Mesh      | `.obj`, `.gltf`, `.glb`, `.fbx`      | Isometric cube wireframe |
+| Category  | Extensions                              | Central glyph            |
+|-----------|-----------------------------------------|--------------------------|
+| Scene     | `.owl`                                  | Isometric scene floor    |
+| Prefab    | `.owlprefab`                            | Puzzle-piece "P" badge   |
+| Animation | `.owlanim`                              | Filmstrip with play head |
+| Image     | `.png`, `.jpg`, `.svg`                  | Frame with sun + peaks   |
+| Font      | `.ttf`                                  | "Aa" sample              |
+| Config    | `.yml`, `.json`                         | Gear / curly braces      |
+| Shader    | `.glsl`                                 | GPU chip with pins       |
+| Script    | `.lua`                                  | Crescent moon + star     |
+| Sound     | `.wav`, `.mp3`, `.ogg`, `.flac`         | Speaker with waves       |
+| Mesh      | `.obj`, `.gltf`, `.glb`, `.fbx`         | Isometric cube wireframe |
 | Source    | `.py`, `.cpp`/`.cxx`, `.h`/`.hpp`, `.c` | Language-specific glyph  |
-| Doc       | `.md`                                | Markdown mark + arrow    |
-| Fallback  | plain text                           | Text lines               |
+| Doc       | `.md`                                   | Markdown mark + arrow    |
+| Fallback  | plain text                              | Text lines               |
 
 Folders use a distinct folder icon. The secondary accent (amber `#ffc726`) highlights
 glyph details; the primary colour follows the active ImGui theme text colour.
@@ -580,14 +580,14 @@ to hand-edit YAML.
 
 The panel mirrors `renderer::EnabledRenderersConfig`:
 
-| Control                                  | Effect                                                                                         |
-|------------------------------------------|------------------------------------------------------------------------------------------------|
-| Layer row (per scene-listed entry)       | Drag-handle text identifying the layer + bracketed type (`[Renderer2D]`, `[RendererRaycast]`). |
-| `Enabled` checkbox                       | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.  |
+| Control                                  | Effect                                                                                               |
+|------------------------------------------|------------------------------------------------------------------------------------------------------|
+| Layer row (per scene-listed entry)       | Drag-handle text identifying the layer + bracketed type (`[Renderer2D]`, `[RendererRaycast]`).       |
+| `Enabled` checkbox                       | Toggle the scene-level enable flag. Disabled layers are skipped without affecting the order.         |
 | Up / Down arrows                         | Reorder the scene listing. Listed layers run in this order; unlisted layers append in project order. |
-| `Detach` button                          | Remove the scene-level entry — the layer reverts to the project's default config.             |
-| `Overrides` collapsible                  | Per-layer-type override editor for known keys (see below).                                    |
-| Add layer slot (`+` next to a name)      | Add a project layer absent from the scene listing — equivalent to declaring a new override.   |
+| `Detach` button                          | Remove the scene-level entry — the layer reverts to the project's default config.                    |
+| `Overrides` collapsible                  | Per-layer-type override editor for known keys (see below).                                           |
+| Add layer slot (`+` next to a name)      | Add a project layer absent from the scene listing — equivalent to declaring a new override.          |
 
 The `Overrides` collapsible exposes typed widgets per layer type:
 
@@ -801,11 +801,11 @@ at configure time:
 
 ### Opening Help
 
-| Action                            | How                                              |
-|-----------------------------------|--------------------------------------------------|
-| Default landing page (`Owl` README) | **File → Help** ribbon button                  |
-| Contextual help                   | `F1` (`help.context` action)                     |
-| Getting Started guide             | **Getting Started** button on the Welcome screen |
+| Action                              | How                                              |
+|-------------------------------------|--------------------------------------------------|
+| Default landing page (`Owl` README) | **File → Help** ribbon button                    |
+| Contextual help                     | `F1` (`help.context` action)                     |
+| Getting Started guide               | **Getting Started** button on the Welcome screen |
 
 `F1` reads the component header most recently hovered in the SceneHierarchy
 inspector (`SceneHierarchy::lastHoveredComponentName`) and routes to the page

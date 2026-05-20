@@ -14,6 +14,7 @@
 #include "renderer/RendererTilemap.h"
 #include "renderer/gpu/DrawData.h"
 #include "renderer/gpu/RenderCommand.h"
+#include "renderer/gpu/RendererDescriptors.h"
 #include "renderer/gpu/UniformBuffer.h"
 
 namespace owl::renderer {
@@ -29,12 +30,7 @@ constexpr std::array g_quadVertexPositions = {math::vec4{-0.5f, -0.5f, 0.0f, 1.0
 											  math::vec4{0.5f, 0.5f, 0.0f, 1.0f}, math::vec4{-0.5f, 0.5f, 0.0f, 1.0f}};
 
 uint32_t g_MaxTextureSlots = 0;
-}// namespace
 
-/**
- * @brief
- *  Structure holding quad vertex information.
- */
 struct QuadVertex {
 	math::vec3 position;
 	math::vec4 color;
@@ -44,10 +40,6 @@ struct QuadVertex {
 	int entityId;
 };
 
-/**
- * @brief
- *  Structure holding circle vertex information.
- */
 struct CircleVertex {
 	math::vec3 worldPosition;
 	math::vec3 localPosition;
@@ -57,20 +49,12 @@ struct CircleVertex {
 	int entityId;
 };
 
-/**
- * @brief
- *  Structure holding line vertex information.
- */
 struct LineVertex {
 	math::vec3 position;
 	math::vec4 color;
 	int entityId;
 };
 
-/**
- * @brief
- *  Structure holding text vertex information.
- */
 struct TextVertex {
 	math::vec3 position;
 	math::vec4 color;
@@ -80,69 +64,53 @@ struct TextVertex {
 	int entityId;
 };
 
-/**
- * @brief
- *  Base structure for rendering an object type.
- */
 template<typename VertexType>
 struct VertexData {
 	uint32_t indexCount = 0;
 	std::vector<VertexType> vertexBuf;
 };
 
-namespace {
 template<typename VertexType>
 void resetDrawData(VertexData<VertexType>& iData) {
 	iData.indexCount = 0;
 	iData.vertexBuf.clear();
 	iData.vertexBuf.reserve(g_maxVertices);
 }
-}// namespace
 
-/**
- * @brief
- *  Structure holding static internal g_data.
- */
 struct InternalData {
-	/// Camera Data
+	// Camera Data
 	struct CameraData {
-		/// Camera projection
+		// Camera projection
 		math::mat4 viewProjection;
 	};
 	CameraData cameraBuffer{};
-	/// Quad Data
+	// Quad Data
 	VertexData<QuadVertex> quad;
 	shared<gpu::DrawData> drawQuad;
-	/// Circle Data
+	// Circle Data
 	VertexData<CircleVertex> circle;
 	shared<gpu::DrawData> drawCircle;
-	/// Line Data
+	// Line Data
 	VertexData<LineVertex> line;
 	shared<gpu::DrawData> drawLine;
-	/// text Data
+	// text Data
 	VertexData<TextVertex> text;
 	shared<gpu::DrawData> drawText;
-	/// Statistics
+	// Statistics
 	Renderer2D::Statistics stats;
-	// Textures Data
-	/// One white texture for colouring
 	shared<gpu::Texture2D> whiteTexture;
 	shared<gpu::UniformBuffer> cameraUniformBuffer;
-	/// Array of textures
+	// Array of textures
 	std::vector<shared<gpu::Texture2D>> textureSlots;
-	/// next texture index
+	// next texture index
 	uint32_t textureSlotIndex = 1;// 0 = white texture
 };
+}// namespace
 }// namespace utils
+
 namespace {
 shared<utils::InternalData> g_Data;
 
-/**
- * @brief
- *  Convert a UTF-8 byte sequence into Latin-1 (ISO 8859-1) so it can be indexed into the
- * MSDF atlas, which carries glyphs for codepoints 0x20-0xFF. Codepoints beyond U+00FF are
- * replaced with `?`. ASCII bytes pass through unchanged.
- */
 auto utf8ToLatin1(const std::string& iText) -> std::string {
 	std::string out;
 	out.reserve(iText.size());
@@ -199,6 +167,21 @@ void Renderer2D::init() {
 			offset += 4;
 		}
 	}
+	{
+		const std::array<gpu::BindingDecl, 2> r2dBindings{
+				gpu::BindingDecl{.binding = 0,
+								 .type = gpu::BindingType::UniformBuffer,
+								 .count = 1,
+								 .stages = gpu::ShaderStage::Vertex},
+				gpu::BindingDecl{.binding = 1,
+								 .type = gpu::BindingType::CombinedImageSampler,
+								 .count = 32,
+								 .stages = gpu::ShaderStage::Fragment},
+		};
+		gpu::RendererDescriptors::declare("Renderer2D", r2dBindings);
+	}
+	const gpu::RendererDescriptors::ScopedActive r2dScoped{"Renderer2D"};
+
 	// quads
 	g_Data->drawQuad = gpu::DrawData::create();
 	g_Data->drawQuad->init(
@@ -276,18 +259,19 @@ void Renderer2D::shutdown() {
 	g_Data->drawCircle.reset();
 	g_Data->drawLine.reset();
 	g_Data.reset();
+	gpu::RendererDescriptors::release("Renderer2D");
 }
 
 void Renderer2D::beginScene(const Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
-	g_Data->cameraBuffer.viewProjection = iCamera.getViewProjection();
-	g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
+	{
+		// Camera UBO update routes through `Renderer2D`'s descriptor block.
+		const gpu::RendererDescriptors::ScopedActive scoped{"Renderer2D"};
+		g_Data->cameraBuffer.viewProjection = iCamera.getViewProjection();
+		g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
+	}
 	startBatch();
-	// Piggy-back the GPU-instanced tilemap renderer on the same scene
-	// boundary so callers don't have to manage a second begin/end pair.
-	// `RendererTilemap::beginScene` just uploads its camera UBO and resets
-	// stats; the draws are issued in-place from `Scene::drawTilemapQuads`.
 	RendererTilemap::beginScene(iCamera);
 }
 
@@ -298,10 +282,10 @@ void Renderer2D::endScene() {
 }
 
 void Renderer2D::flush() {
-	// Register background texture in our texture slots (if pending)
+	const gpu::RendererDescriptors::ScopedActive scoped{"Renderer2D"};
 	float bgTexIndex = 0.0f;
 	if (BackgroundRenderer::hasPending()) {
-		if (auto bgTex = BackgroundRenderer::getPendingTexture()) {
+		if (const auto bgTex = BackgroundRenderer::getPendingTexture()) {
 			bgTexIndex = static_cast<float>(g_Data->textureSlotIndex);
 			g_Data->textureSlots[g_Data->textureSlotIndex] = bgTex;
 			g_Data->textureSlotIndex++;
@@ -412,9 +396,6 @@ void Renderer2D::drawPolyLine(const PolyLineData& iLineData) {
 void Renderer2D::drawCircle(const CircleData& iCircleData) {
 	OWL_PROFILE_FUNCTION()
 
-	// TODO(Silmaen): implement for circles
-	// if (g_data->circleIndexCount >= utils::maxIndices)
-	// 	nextBatch();
 
 	for (const auto& vtx: utils::g_quadVertexPositions) {
 		g_Data->circle.vertexBuf.emplace_back(utils::CircleVertex{.worldPosition = iCircleData.transform() * vtx,
@@ -470,8 +451,6 @@ void Renderer2D::drawString(const StringData& iStringData) {
 		return;
 	}
 
-	// MSDF atlas indexes by Latin-1 codepoint; convert UTF-8 source text once up front so the
-	// per-glyph loop can keep iterating bytes.
 	const std::string text = utf8ToLatin1(iStringData.text);
 	// Manage texture
 	const shared<gpu::Texture2D> fontAtlas = iStringData.font->getAtlasTexture();

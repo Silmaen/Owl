@@ -13,17 +13,11 @@
 #include <core/Log.h>
 #include <core/Macros.h>
 
-// md4c uses C-style enums; we cover only the constructs we model and rely on the default
-// branch for ignored/extension types (LaTeX math, wikilinks, underline, raw HTML, …).
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wswitch-enum")
 namespace owl::nest::codeEditor {
 
 namespace {
-/**
- * @brief
- *  Convert md4c alignment enum to our `TableAlign` enum.
- */
 [[nodiscard]] auto mapAlign(const MD_ALIGN iAlign) -> TableAlign {
 	switch (iAlign) {
 		case MD_ALIGN_LEFT:
@@ -37,10 +31,6 @@ namespace {
 	}
 }
 
-/**
- * @brief
- *  Internal builder state. `Parser` walks md4c SAX callbacks and assembles `MdBlock`s.
- */
 class Parser {
 public:
 	[[nodiscard]] auto run(const std::string_view iSource) -> std::vector<MdBlock> {
@@ -86,14 +76,6 @@ private:
 		return static_cast<Parser*>(ioUserData)->onText(iType, iText, iSize);
 	}
 
-	// ---- accumulator helpers ------------------------------------------------
-	/**
-	 * @brief
-	 *  Lazy-create an implicit `MdParagraph` in the current container if no inline target is
-	 * active. md4c skips `MD_BLOCK_P` inside `MD_BLOCK_LI` for *tight* lists (the most common
-	 * CommonMark case — `- a\n- b\n- c\n`); without this fallback the text events fired directly
-	 * inside the LI would have nowhere to land and the items would be silently empty.
-	 */
 	void ensureInlineAccum() {
 		if (m_inlineAccum != nullptr || m_blockStack.empty())
 			return;
@@ -171,9 +153,6 @@ private:
 				{
 					const bool ordered = iType == MD_BLOCK_OL;
 					m_blockStack.back()->push_back(MdBlock{.data = MdList{.ordered = ordered, .items = {}}});
-					// Note: the list is "open" but we do not push it onto the block stack — list items
-					// are picked up by `MD_BLOCK_LI` via `lastList()`, which inspects the current
-					// container's last block.
 					return 0;
 				}
 			case MD_BLOCK_LI:
@@ -184,9 +163,6 @@ private:
 						return 0;
 					list->items.emplace_back();
 					m_blockStack.push_back(&list->items.back());
-					// Reset the inline accumulator: a previous LI may have left it pointing at its own
-					// implicit paragraph (tight-list path). The next text event must lazy-create a fresh
-					// paragraph in *this* item.
 					m_inlineAccum = nullptr;
 					return 0;
 				}
@@ -275,8 +251,6 @@ private:
 
 	// ---- span events --------------------------------------------------------
 	auto onEnterSpan(const MD_SPANTYPE iType, void* iDetail) -> int {
-		// In tight lists md4c skips `MD_BLOCK_P` and emits spans directly inside `MD_BLOCK_LI`.
-		// Lazy-create a paragraph so subsequent text/leave events have a stable destination.
 		ensureInlineAccum();
 		if (m_inlineAccum == nullptr)
 			return 0;
@@ -384,23 +358,23 @@ private:
 
 	// ---- state --------------------------------------------------------------
 	std::vector<MdBlock> m_root;
-	/// Stack of "current container" pointers. Top of stack is where new blocks land.
+	// Stack of "current container" pointers. Top of stack is where new blocks land.
 	std::vector<std::vector<MdBlock>*> m_blockStack;
-	/// Accumulator for inline spans (paragraph/heading/table cell). May be null.
+	// Accumulator for inline spans (paragraph/heading/table cell). May be null.
 	std::vector<MdInline>* m_inlineAccum = nullptr;
-	/// Accumulator for raw code text. May be null.
+	// Accumulator for raw code text. May be null.
 	std::string* m_codeAccum = nullptr;
-	/// True between MD_SPAN_CODE enter/leave (text in this span is emitted as `Code`).
+	// True between MD_SPAN_CODE enter/leave (text in this span is emitted as `Code`).
 	bool m_inlineCode = false;
-	/// True between MD_SPAN_A enter/leave (text in this span is buffered into `m_linkText`).
+	// True between MD_SPAN_A enter/leave (text in this span is buffered into `m_linkText`).
 	bool m_inLink = false;
-	/// True between MD_SPAN_IMG enter/leave (text in this span is buffered into `m_imageAlt`).
+	// True between MD_SPAN_IMG enter/leave (text in this span is buffered into `m_imageAlt`).
 	bool m_inImage = false;
 	std::string m_linkHref;
 	std::string m_linkText;
 	std::string m_imageSrc;
 	std::string m_imageAlt;
-	/// Currently-built table. Null outside a table.
+	// Currently-built table. Null outside a table.
 	MdTable* m_currentTable = nullptr;
 	bool m_inTableHead = false;
 	int m_currentRowIndex = -1;

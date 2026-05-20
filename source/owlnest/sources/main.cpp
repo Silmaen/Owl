@@ -27,8 +27,6 @@ public:
 OWL_DIAG_POP
 
 auto core::createApplication(int iArgc, char** iArgv) -> shared<Application> {
-	// Load the editor settings early — the UI font size must be known before the engine builds the
-	// ImGui font atlas in `UiLayer::onAttach`, which runs during `Application` construction.
 	nest::EditorSettings preSettings;
 	if (const auto settingsFile = std::filesystem::current_path() / "OwlNest_settings.yml"; exists(settingsFile))
 		preSettings.loadFromFile(settingsFile);

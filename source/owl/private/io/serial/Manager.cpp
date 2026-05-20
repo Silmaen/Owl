@@ -24,13 +24,6 @@
 namespace owl::io::serial {
 
 namespace {
-/**
- * @brief
- *  List The serial Port Available.
- * @param ioListToUpdate The device's list to update.
- *
- * @note https://stackoverflow.com/questions/2674048/what-is-proper-way-to-detect-all-available-serial-ports-on-windows
- */
 void enumerateSerialDevices(Manager::DeviceList& ioListToUpdate) {
 #ifdef OWL_PLATFORM_WINDOWS
 	constexpr int maxPort = 32;

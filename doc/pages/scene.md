@@ -25,7 +25,7 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 
 ### Destruction
 
-| Method                                     | Behaviour                                                     |
+| Method                                     | Behaviour                                                    |
 |--------------------------------------------|--------------------------------------------------------------|
 | `Scene::destroyEntity(entity)`             | Children reparented to grandparent; world position preserved |
 | `Scene::destroyEntityWithChildren(entity)` | Cascade delete of entire subtree                             |
@@ -52,7 +52,7 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 
 ### Duplication
 
-| Method                     | Behaviour                                                 |
+| Method                     | Behaviour                                                |
 |----------------------------|----------------------------------------------------------|
 | `duplicateEntity(entity)`  | Create root copy with new UUID, no children              |
 | `duplicateSubtree(entity)` | Recursive duplicate with new UUIDs and correct hierarchy |
@@ -147,7 +147,7 @@ sound / physics read.
 
 | Field          | Type         | Default        | Description        |
 |----------------|--------------|----------------|--------------------|
-| `color`        | `math::vec4` | `{1, 1, 1, 1}` | Tint colour         |
+| `color`        | `math::vec4` | `{1, 1, 1, 1}` | Tint colour        |
 | `texture`      | `Texture2D`  | `nullptr`      | Sprite texture     |
 | `tilingFactor` | `float`      | `1.0`          | Texture repetition |
 
@@ -155,17 +155,17 @@ YAML key: `SpriteRenderer`
 
 #### AnimatedSpriteRenderer
 
-| Field           | Type          | Default | Description                                              |
-|-----------------|---------------|---------|----------------------------------------------------------|
-| `color`         | `vec4`        | white   | Tint colour                                               |
-| `texture`       | `Texture2D`   | null    | Spritesheet                                              |
-| `columns`       | `uint32_t`    | `1`     | Grid columns                                             |
-| `rows`          | `uint32_t`    | `1`     | Grid rows                                                |
-| `firstFrame`    | `uint32_t`    | `0`     | Start frame                                              |
-| `lastFrame`     | `uint32_t`    | `0`     | End frame                                                |
-| `frameDuration` | `float`       | `0.1`   | Seconds per frame                                        |
-| `loop`          | `bool`        | `true`  | Loop animation                                           |
-| `speedCurve`    | `math::Curve` | empty   | Optional speed remap sampled by normalized progress      |
+| Field           | Type          | Default | Description                                         |
+|-----------------|---------------|---------|-----------------------------------------------------|
+| `color`         | `vec4`        | white   | Tint colour                                         |
+| `texture`       | `Texture2D`   | null    | Spritesheet                                         |
+| `columns`       | `uint32_t`    | `1`     | Grid columns                                        |
+| `rows`          | `uint32_t`    | `1`     | Grid rows                                           |
+| `firstFrame`    | `uint32_t`    | `0`     | Start frame                                         |
+| `lastFrame`     | `uint32_t`    | `0`     | End frame                                           |
+| `frameDuration` | `float`       | `0.1`   | Seconds per frame                                   |
+| `loop`          | `bool`        | `true`  | Loop animation                                      |
+| `speedCurve`    | `math::Curve` | empty   | Optional speed remap sampled by normalized progress |
 
 YAML key: `AnimatedSpriteRenderer`. When `speedCurve` is empty (default) the field is
 omitted from serialized scenes — older `.owl` files round-trip byte-identical. When set,
@@ -177,7 +177,7 @@ normalized position inside `[firstFrame, lastFrame]`. See
 
 | Field       | Type         | Default        | Description          |
 |-------------|--------------|----------------|----------------------|
-| `color`     | `math::vec4` | `{1, 1, 1, 1}` | Circle colour         |
+| `color`     | `math::vec4` | `{1, 1, 1, 1}` | Circle colour        |
 | `thickness` | `float`      | `1.0`          | Ring thickness (0–1) |
 | `fade`      | `float`      | `0.005`        | Edge fade amount     |
 
@@ -189,7 +189,7 @@ YAML key: `CircleRenderer`
 |---------------|----------|----------------|----------------------|
 | `text`        | `string` | `""`           | Text content         |
 | `font`        | `Font`   | default font   | MSDF font            |
-| `color`       | `vec4`   | `{1, 1, 1, 1}` | Text colour           |
+| `color`       | `vec4`   | `{1, 1, 1, 1}` | Text colour          |
 | `kerning`     | `float`  | `0.0`          | Extra letter spacing |
 | `lineSpacing` | `float`  | `0.0`          | Extra line spacing   |
 
@@ -207,11 +207,11 @@ YAML key: `TextRenderer`
 
 Each layer carries its own grid + parallax:
 
-| Layer field    | Type             | Default        | Description                                              |
-|----------------|------------------|----------------|----------------------------------------------------------|
-| `name`         | `string`         | `""`           | Designer-friendly layer name                             |
-| `visible`      | `bool`           | `true`         | Whether the layer is rendered                            |
-| `parallax`     | `vec2`           | `{1, 1}`       | Per-axis camera multiplier (1 = world, 0 = camera-locked)|
+| Layer field    | Type                   | Default  | Description                                                                   |
+|----------------|------------------------|----------|-------------------------------------------------------------------------------|
+| `name`         | `string`               | `""`     | Designer-friendly layer name                                                  |
+| `visible`      | `bool`                 | `true`   | Whether the layer is rendered                                                 |
+| `parallax`     | `vec2`                 | `{1, 1}` | Per-axis camera multiplier (1 = world, 0 = camera-locked)                     |
 | `tiles`        | flat `int32` row-major | all `-1` | Per-cell tile index (`-1` = empty), encoded as comma-separated string in YAML |
 
 YAML key: `Tilemap`. The grid is centred on the entity origin (rows extend downward
@@ -231,8 +231,8 @@ authoring.
 |------------|-------------|----------------------|-------------------------------------|
 | `mode`     | `Mode`      | `Background`         | `Background` or `Skybox`            |
 | `type`     | `Type`      | `SolidColor`         | `SolidColor`, `Gradient`, `Texture` |
-| `color`    | `vec4`      | `{0.2, 0.3, 0.8, 1}` | Main / bottom colour                 |
-| `topColor` | `vec4`      | `{0.8, 0.9, 1, 1}`   | Top colour (gradient)                |
+| `color`    | `vec4`      | `{0.2, 0.3, 0.8, 1}` | Main / bottom colour                |
+| `topColor` | `vec4`      | `{0.8, 0.9, 1, 1}`   | Top colour (gradient)               |
 | `texture`  | `Texture2D` | `nullptr`            | Background or equirectangular       |
 
 YAML key: `BackgroundTexture`. Only the first entity with this component is rendered.
@@ -349,35 +349,35 @@ children (direct or nested) of an entity with a `Canvas` component.
 
 #### UiText
 
-| Field       | Type     | Description       |
-|-------------|----------|-------------------|
-| `text`      | `string` | Display text      |
-| `fontAsset` | `string` | Font file path    |
-| `fontSize`  | `float`  | Size in pixels    |
+| Field       | Type     | Description        |
+|-------------|----------|--------------------|
+| `text`      | `string` | Display text       |
+| `fontAsset` | `string` | Font file path     |
+| `fontSize`  | `float`  | Size in pixels     |
 | `color`     | `vec4`   | Text colour (RGBA) |
 
 #### UiImage
 
-| Field        | Type     | Description           |
-|--------------|----------|-----------------------|
-| `imageAsset` | `string` | Texture file path     |
+| Field        | Type     | Description            |
+|--------------|----------|------------------------|
+| `imageAsset` | `string` | Texture file path      |
 | `tint`       | `vec4`   | Tint colour multiplier |
 
 #### UiPanel
 
-| Field   | Type   | Description      |
-|---------|--------|------------------|
+| Field   | Type   | Description       |
+|---------|--------|-------------------|
 | `color` | `vec4` | Background colour |
 
 #### UiButton
 
-| Field         | Type     | Description              |
-|---------------|----------|--------------------------|
-| `label`       | `string` | Button text              |
+| Field         | Type     | Description               |
+|---------------|----------|---------------------------|
+| `label`       | `string` | Button text               |
 | `normalColor` | `vec4`   | Default background colour |
 | `hoverColor`  | `vec4`   | Colour when hovered       |
 | `pressColor`  | `vec4`   | Colour when pressed       |
-| `action`      | `string` | Lua callback on click    |
+| `action`      | `string` | Lua callback on click     |
 
 #### UiSlider
 
@@ -392,8 +392,8 @@ children (direct or nested) of an entity with a `Canvas` component.
 | Field             | Type    | Description         |
 |-------------------|---------|---------------------|
 | `value`           | `float` | Current value (0–1) |
-| `backgroundColor` | `vec4`  | Track colour         |
-| `fillColor`       | `vec4`  | Fill bar colour      |
+| `backgroundColor` | `vec4`  | Track colour        |
+| `fillColor`       | `vec4`  | Fill bar colour     |
 
 ### Prefab Components
 
@@ -437,7 +437,7 @@ see fresh `Visibility` state.
 
 ### Hierarchy Operations
 
-| Operation                | Behaviour                                                                        |
+| Operation                | Behaviour                                                                       |
 |--------------------------|---------------------------------------------------------------------------------|
 | **Set parent**           | Circular reference check, local transform recomputed to preserve world position |
 | **Unparent**             | Entity becomes root, world transform stored as new local                        |
