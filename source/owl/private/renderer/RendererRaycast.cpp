@@ -25,57 +25,37 @@
 namespace owl::renderer {
 
 namespace {
-/// Per-pass state shared between `beginScene`, the `drawTilemap*` calls, and `endScene`.
+// Per-pass state shared between `beginScene`, the `drawTilemap*` calls, and `endScene`.
 struct State {
-	/// Camera world position (XY plane).
+	// Camera world position (XY plane).
 	math::vec2 cameraPos2D{0.f, 0.f};
-	/// Camera forward direction (XY plane, unit length).
+	// Camera forward direction (XY plane, unit length).
 	math::vec2 cameraDir2D{1.f, 0.f};
-	/// Camera right direction times tan(fov/2) — encodes both FOV and aspect.
+	// Camera right direction times tan(fov/2) — encodes both FOV and aspect.
 	math::vec2 cameraPlane2D{0.f, 1.f};
-	/// Render target dimensions in pixels.
+	// Render target dimensions in pixels.
 	math::vec2ui viewport{1, 1};
-	/// Current pass configuration.
+	// Current pass configuration.
 	RaycastConfig config;
-	/// Whether `beginScene` has been called without a matching `endScene`.
+	// Whether `beginScene` has been called without a matching `endScene`.
 	bool sceneOpen = false;
-	/**
-	 * Whether the sky / floor backdrop has already been emitted for this scene.
-	 * Drawn lazily on the first `drawTilemapWalls` so passes that route no
-	 * tilemap stay genuinely no-op (no overdraw on top of a 2D layer underneath).
-	 */
 	bool backdropEmitted = false;
-	/**
-	 * Per-column wall depth (in cell units), latched by `drawTilemapWalls` and
-	 * read by `drawSprites` so billboards can be occluded by walls. Sized to
-	 * the active `numRays` at `beginScene`; entries default to `+inf` (no
-	 * wall hit on that column).
-	 */
 	std::vector<float> zBufferPerColumn;
-	/// Cumulative statistics for the current frame (cleared by `resetStats`).
+	// Cumulative statistics for the current frame (cleared by `resetStats`).
 	RendererRaycast::Statistics stats;
 };
 
 shared<State> g_state;
 
-/// Side darkening factor applied to walls hit on a Y-cell-edge (gives a cheap "lighting" cue).
+// Side darkening factor applied to walls hit on a Y-cell-edge (gives a cheap "lighting" cue).
 constexpr float g_YSideDarken = 0.7f;
 
-/// Numerical floor for perpendicular-distance to avoid division by zero on grazing rays.
+// Numerical floor for perpendicular-distance to avoid division by zero on grazing rays.
 constexpr float g_MinPerpDist = 1e-4f;
 
-/// Squared-length floor used when picking a fallback for degenerate camera vectors.
+// Squared-length floor used when picking a fallback for degenerate camera vectors.
 constexpr float g_DirEpsilonSq = 1e-8f;
 
-/**
- * @brief
- *  Resolve the "active" tilemap layer index for raycasting.
- *
- * The raycaster treats walls as 2D occupancy: a non-empty cell is a wall, regardless of which
- * `TilemapLayer` it lives on. v0.2.0 picks the first visible layer with any tile data; future
- * revisions can walk every layer to support thin walls / variable heights.
- * @return Layer index, or `iTilemap.layers.size()` if no suitable layer was found.
- */
 auto pickActiveLayerIndex(const scene::TilemapAsset& iTilemap) -> size_t {
 	for (size_t i = 0; i < iTilemap.layers.size(); ++i) {
 		const auto& layer = iTilemap.layers[i];
@@ -110,17 +90,6 @@ void RendererRaycast::beginScene(const Camera& iCamera, const math::vec2ui& iVie
 	g_state->viewport = (iViewport.x() == 0 || iViewport.y() == 0) ? math::vec2ui{1, 1} : iViewport;
 	g_state->config = iConfig;
 
-	// 2D pose extracted from the inverse of the view matrix:
-	//   pos    = inverseView * (0,0,0,1)    — world origin of the camera
-	//   fwd    = inverseView * (0,1,0,0)    — *local +Y* mapped to world XY plane
-	//   right  = inverseView * (1,0,0,0)    — local +X mapped to world XY plane
-	//
-	// Convention: a 2D `CameraOrtho` with `rotation = 0` has identity inverseView, so
-	// `fwd = (0, 1)` — the player faces world +Y. Increasing the camera rotation
-	// (degrees, see `CameraOrtho::setRotation`) turns the facing clockwise. The
-	// `-Z` axis of standard 3D Owl conventions is **not** used here because 2D
-	// ortho cameras are azimuthally invariant around -Z and would always extract
-	// `(0, 0)` as their 2D forward.
 	const math::mat4 invView = inverse(iCamera.getView());
 	const math::vec4 worldPos = invView * math::vec4{0.f, 0.f, 0.f, 1.f};
 	const math::vec4 worldFwd = invView * math::vec4{0.f, 1.f, 0.f, 0.f};
@@ -128,8 +97,6 @@ void RendererRaycast::beginScene(const Camera& iCamera, const math::vec2ui& iVie
 
 	g_state->cameraPos2D = math::vec2{worldPos.x(), worldPos.y()};
 
-	// `Vector::normalize()` leaves a near-zero vector unchanged; we still want a
-	// usable fallback in that case, so substitute *before* normalising.
 	math::vec2 dir2D{worldFwd.x(), worldFwd.y()};
 	if (dir2D.normSq() < g_DirEpsilonSq)
 		dir2D = math::vec2{0.f, 1.f};
@@ -140,11 +107,6 @@ void RendererRaycast::beginScene(const Camera& iCamera, const math::vec2ui& iVie
 		right2D = math::vec2{1.f, 0.f};
 	right2D.normalize();
 
-	// Camera plane = right · tan(fov/2). Aspect is intentionally NOT folded into the
-	// plane: the `fovDegrees` config knob is the **horizontal** FOV at the actual
-	// viewport aspect, mirroring the classic Wolfenstein convention (lodev's
-	// raycaster keeps `plane = 0.66` regardless of resolution → ~66° horizontal FOV).
-	// Folding aspect in here would over-stretch the cone on wide displays.
 	const float halfFovTan = std::tan(math::radians(iConfig.fovDegrees) * 0.5f);
 	g_state->cameraPlane2D = right2D * halfFovTan;
 
@@ -161,16 +123,6 @@ auto computeHorizonY() -> float {
 	return std::floor(static_cast<float>(g_state->viewport.y()) * 0.5f);
 }
 
-/**
- * @brief
- *  Return the fog interpolation factor `t ∈ [0,1]` for a perpendicular distance.
- *
- * `t = 0` means "natural tint" (close), `t = 1` means "full fog tint" (far). When
- * `fogEnd <= fogStart` the function returns 0 — fog is disabled. The factor is
- * meant to be fed to `lerp(natural, fogColor, t)` by the stripe emitter.
- * @param[in] iPerpDist Perpendicular-to-camera-plane distance in cells.
- * @return The interpolation factor.
- */
 auto computeFogFactor(const float iPerpDist) -> float {
 	if (!g_state)
 		return 0.f;
@@ -181,7 +133,7 @@ auto computeFogFactor(const float iPerpDist) -> float {
 	return std::clamp((iPerpDist - fogStart) / (fogEnd - fogStart), 0.f, 1.f);
 }
 
-/// Lerp `iColor` toward `g_state->config.fogColor` by `iFogFactor`.
+// Lerp `iColor` toward `g_state->config.fogColor` by `iFogFactor`.
 auto applyFog(const math::vec4& iColor, const float iFogFactor) -> math::vec4 {
 	if (iFogFactor <= 0.f || !g_state)
 		return iColor;
@@ -192,20 +144,6 @@ auto applyFog(const math::vec4& iColor, const float iFogFactor) -> math::vec4 {
 					  iColor.w()};
 }
 
-/**
- * @brief
- *  Emit one floor + one ceiling stripe per screen row to texture the backdrop.
- *
- * Per row Y below the horizon the renderer projects the screen pixel back into
- * world space at the floor plane (z = 0) using the camera-plane basis. World
- * position varies linearly between the leftmost (`cameraX = −1`) and rightmost
- * (`cameraX = +1`) rays at the same row — so a single quad spanning the row
- * width with linearly-interpolated UVs (and the texture's `REPEAT` wrap) covers
- * every pixel without per-pixel math. Same logic mirrored for the ceiling.
- *
- * Falls back to a single full-height solid quad per half when the corresponding
- * texture is null. Distance fog is applied per row.
- */
 void emitTexturedBackdrop() {
 	const math::vec2 vp{static_cast<float>(g_state->viewport.x()), static_cast<float>(g_state->viewport.y())};
 	const float horizonY = computeHorizonY();
@@ -321,8 +259,6 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 		OWL_CORE_WARN("RendererRaycast::drawTilemapWalls called outside beginScene/endScene.")
 		return;
 	}
-	// Log skip reasons once per scene activation (the dispatch is per-frame so we
-	// don't want to spam the log every frame).
 	static bool s_warnedNoTileset = false;
 	static bool s_warnedNoTexture = false;
 	static bool s_warnedNoLayer = false;
@@ -351,8 +287,6 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 		}
 		return;
 	}
-	// Reset diagnostic latches once everything is OK so subsequent reload-and-fail
-	// scenarios still produce a visible warning.
 	s_warnedNoTileset = false;
 	s_warnedNoTexture = false;
 	s_warnedNoLayer = false;
@@ -363,15 +297,8 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 
 	const float cellSize = (iTilemap.cellSize > 0.f) ? iTilemap.cellSize : 1.f;
 	const float invCellSize = 1.f / cellSize;
-	// Tilemap is rendered centred at world origin. The 2D path centres each cell `c` at
-	// world `(c - (W-1)/2) * cellSize`, so cell `c` occupies world X `[(c - W/2) * cellSize,
-	// (c + 1 - W/2) * cellSize)` and similar on Y. DDA wants a coordinate space where cell
-	// `c` occupies cellCoord `[c, c+1)` — so the half-extent of the conversion is W/2 (not
-	// (W-1)/2 — that bug shifted the camera by half a cell in v0.2.0's first cut).
 	const float halfW = static_cast<float>(iTilemap.width) * 0.5f;
 	const float halfH = static_cast<float>(iTilemap.height) * 0.5f;
-	// Convert camera world pos → cell coords. Y is flipped because cell-Y grows downward
-	// while world-Y grows upward.
 	const math::vec2 camCellPos{
 			g_state->cameraPos2D.x() * invCellSize + halfW,
 			halfH - g_state->cameraPos2D.y() * invCellSize,
@@ -383,25 +310,13 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 	if (numRays == 0)
 		return;
 	const math::vec2 vp = {static_cast<float>(g_state->viewport.x()), static_cast<float>(g_state->viewport.y())};
-	// Stripe screen width — exactly viewport width / numRays, with no overlap. The
-	// previous 1.5% overlap was meant to hide seams but introduced sub-pixel double-
-	// coverage at every boundary; under camera motion that flickered visibly because
-	// the GPU's top-left rule alternates which neighbour wins per frame. With
-	// `numRays = viewportWidth` (the default) each stripe is exactly 1 pixel wide
-	// and adjacent stripes tile seamlessly under the standard rule.
 	const float stripePxWidth = vp.x() / static_cast<float>(numRays);
 	const float maxDistCells = std::max(1.f, g_state->config.maxDistance);
 	// DDA needs an integer cell budget large enough to reach maxDistance even on near-axis rays.
 	const int maxSteps = static_cast<int>(std::ceil(maxDistCells * 2.f));
-	// Horizon shared with the backdrop (see `computeHorizonY`). With an integer
-	// horizon and an integer line height, every stripe's pixel coverage is
-	// deterministic and stable across frames.
 	const float horizonY = computeHorizonY();
 	const auto& tileset = *iTilemap.tileset;
 	const auto& atlasTex = tileset.texture;
-	// Per-column hit recorded by the DDA walk; one ray can collect multiple of these
-	// when it crosses transparent tiles before reaching an opaque one. The vector is
-	// declared outside the column loop so the allocation is reused across columns.
 	struct ColumnHit {
 		int32_t tileIndex;///< Tile index hit (>= 0).
 		float perpDist;///< Perpendicular distance in cell units (already clamped to g_MinPerpDist).
@@ -410,14 +325,7 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 		int side;///< 0 = X-edge hit, 1 = Y-edge hit (side darkening cue).
 		bool transparent;///< When true the DDA walked past this hit to keep collecting.
 	};
-	// `thread_local` so the per-column hit list reuses the previous frame's
-	// capacity — a 1280-column raycast scene with transparent stacks
-	// otherwise grows / shrinks the vector every frame.
 	thread_local std::vector<ColumnHit> columnHits;
-	// Cap the number of transparent layers a single ray can stack so a corridor of
-	// see-through tiles can't blow up the per-frame stripe budget. 8 is plenty for
-	// realistic raycast scenes (fences, glass, grilles overlapping) while still
-	// bounding the worst case.
 	constexpr size_t kMaxTransparentHits = 8;
 	for (uint32_t col = 0; col < numRays; ++col) {
 		const float cameraX = 2.f * (static_cast<float>(col) + 0.5f) / static_cast<float>(numRays) - 1.f;
@@ -446,9 +354,6 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 				mapY += stepY;
 				side = 1;
 			}
-			// Bounds-checked cell read. Negative `mapX/mapY` cast to a huge `uint32_t`
-			// which fails the size check in `Tilemap::getTile`, so the cast is safe and
-			// resolves to `g_EmptyTileIndex` (-1) for any out-of-grid coordinate.
 			const int32_t cell = iTilemap.getTile(static_cast<uint32_t>(layerIdx), static_cast<uint32_t>(mapX),
 												  static_cast<uint32_t>(mapY));
 			if (cell < 0)
@@ -459,8 +364,6 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 			float wallX = (side == 0) ? (camCellPos.y() + perpDistSafe * rayDir.y())
 									  : (camCellPos.x() + perpDistSafe * rayDir.x());
 			wallX -= std::floor(wallX);
-			// Match Wolfenstein convention: walls hit from the +x or -y direction get U flipped
-			// so that adjacent wall faces appear continuous.
 			if (side == 0 && rayDir.x() > 0.f)
 				wallX = 1.f - wallX;
 			if (side == 1 && rayDir.y() < 0.f)
@@ -471,9 +374,6 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 								  .wallHeight = std::max(0.f, meta.wallHeight),
 								  .side = side,
 								  .transparent = meta.transparent});
-			// Opaque hit terminates the ray. Transparent hits keep the ray going up to
-			// the per-ray budget so the back-to-front render shows farther walls
-			// through the see-through pixels of nearer ones.
 			if (!meta.transparent)
 				break;
 			if (columnHits.size() >= kMaxTransparentHits)
@@ -485,10 +385,6 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 			continue;
 		}
 
-		// Latch the **closest opaque** wall depth for sprite occlusion. Sprites passing
-		// through a column that only has transparent hits are not occluded by the
-		// transparent wall (they will be drawn on top of it though — a v0.2.0 limitation
-		// caused by sprites being drawn after walls instead of merged per-column).
 		float opaqueDepth = std::numeric_limits<float>::infinity();
 		for (const auto& hitEntry: columnHits) {
 			if (!hitEntry.transparent) {
@@ -499,16 +395,9 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 		if (col < g_state->zBufferPerColumn.size())
 			g_state->zBufferPerColumn[col] = opaqueDepth;
 
-		// Render back-to-front so painter's order composites alpha-blended transparent
-		// walls correctly. `columnHits` is in increasing-distance order (DDA marches
-		// outward), so iterate in reverse.
 		const float stripeX = (static_cast<float>(col) + 0.5f) * stripePxWidth;
 		for (const auto& wallHit: std::ranges::reverse_view(columnHits)) {
 			g_state->stats.hitCount++;
-			// Snap *unit* line height to an even integer (existing flicker-free trick),
-			// then scale by the wall's `wallHeight`. Wall is bottom-anchored at floor
-			// level, so a tall wall pokes into the sky and a short one stays planted on
-			// the floor — `screenCenterY` shifts upward by half the *extra* height.
 			const float lineHeightUnit = std::floor((vp.y() / wallHit.perpDist) * 0.5f) * 2.f;
 			const float lineHeight = lineHeightUnit * wallHit.wallHeight;
 			const float screenCenterY = horizonY + lineHeightUnit * (wallHit.wallHeight - 1.f) * 0.5f;
@@ -543,7 +432,7 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 
 namespace {
 
-/// Slab-method intersection result for a single ray against an AABB.
+// Slab-method intersection result for a single ray against an AABB.
 struct SlabHit {
 	float perpDist;///< Entry distance along the camera ray (perpendicular-to-plane).
 	int side;///< 0 = X slab entered first, 1 = Y slab entered first.
@@ -551,12 +440,8 @@ struct SlabHit {
 	bool valid;///< False if the ray missed the AABB or the hit is behind the camera.
 };
 
-/// Run the slab method on one AABB for one ray. Used by both `drawDynamicWalls` and `drawDoors`.
+// Run the slab method on one AABB for one ray. Used by both `drawDynamicWalls` and `drawDoors`.
 auto castRayAabb(const math::vec2& iRayDir, float iMinX, float iMaxX, float iMinY, float iMaxY) -> SlabHit {
-	// Slab method against the AABB. Both X and Y slabs guard against degenerate rays
-	// (rayDir.x or rayDir.y ≈ 0) with a 1/eps clamp: when the ray is parallel to a
-	// slab and the origin sits outside the slab, both slab intervals collapse to ±inf
-	// in the right order and the overall `tNear > tFar` test still rejects.
 	const float invDx = (std::abs(iRayDir.x()) < 1e-6f) ? std::copysign(1e30f, iRayDir.x() == 0.f ? 1.f : iRayDir.x())
 														: 1.f / iRayDir.x();
 	const float invDy = (std::abs(iRayDir.y()) < 1e-6f) ? std::copysign(1e30f, iRayDir.y() == 0.f ? 1.f : iRayDir.y())
@@ -591,16 +476,6 @@ auto castRayAabb(const math::vec2& iRayDir, float iMinX, float iMaxX, float iMin
 	return {.perpDist = perpDist, .side = side, .wallU = wallU, .valid = true};
 }
 
-/**
- * @brief
- *  Emit a single wall stripe for one column and refresh the zBuffer.
- *
- * `iUvRect` is the (minU, minV, maxU, maxV) sub-rectangle of `iTexture` the
- * stripe samples from — that's how a single atlas texture can serve many
- * tiles. The stripe's local `[0,1]` U,V are remapped into this rectangle
- * before half-texel inset (which is done in atlas pixel space, so the inset
- * value is the same whether or not we're sampling a sub-rect).
- */
 void emitStripe(uint32_t iCol, float iStripeX, float iStripePxWidth, float iHorizonY, const math::vec2& iVp,
 				float iPerpDist, int iSide, float iWallU, float iWallHeight, const shared<gpu::Texture>& iTexture,
 				const math::vec4& iUvRect, const math::vec4& iTint, int iEntityId) {
@@ -610,8 +485,6 @@ void emitStripe(uint32_t iCol, float iStripeX, float iStripePxWidth, float iHori
 	const auto texSize = iTexture->getSize();
 	const float halfU = texSize.x() > 0 ? 0.5f / static_cast<float>(texSize.x()) : 0.f;
 	const float halfV = texSize.y() > 0 ? 0.5f / static_cast<float>(texSize.y()) : 0.f;
-	// Remap local [0,1] U,V into the sub-rect, then inset half a texel on each
-	// side so bilinear sampling doesn't bleed in the neighbouring tile of the atlas.
 	const float subUMin = iUvRect.x() + halfU;
 	const float subUMax = iUvRect.z() - halfU;
 	const float subVMin = iUvRect.y() + halfV;
@@ -629,9 +502,6 @@ void emitStripe(uint32_t iCol, float iStripeX, float iStripePxWidth, float iHori
 		tint.y() *= g_YSideDarken;
 		tint.z() *= g_YSideDarken;
 	}
-	// Distance fog — same applyFog helper the textured backdrop uses, so a
-	// wall stripe and the floor pixels right below it converge to the same
-	// `fogColor` at `fogEnd`.
 	tint = applyFog(tint, computeFogFactor(iPerpDist));
 	const std::array<math::vec2, 4> stripeUv{
 			math::vec2{uHit, vBottom},
@@ -659,9 +529,6 @@ void RendererRaycast::drawDynamicWalls(std::span<const RaycastDynamicWallData> i
 	}
 	if (iWalls.empty())
 		return;
-	// A dynamic wall draws against the same backdrop the static-wall pass uses; if
-	// the caller skipped tilemap drawing (raycast scene with only dynamic walls)
-	// emit the sky / floor here so the wall doesn't sit on stale framebuffer data.
 	emitBackdropIfNeeded();
 
 	const math::vec2 vp{static_cast<float>(g_state->viewport.x()), static_cast<float>(g_state->viewport.y())};
@@ -710,14 +577,6 @@ void RendererRaycast::drawDynamicWalls(std::span<const RaycastDynamicWallData> i
 
 namespace {
 
-/**
- * @brief
- *  Geometry of a single door for the renderer — derived once per door per call.
- *
- * Holds the cube extents, the plate offset along the slide axis (with the
- * scaled-by-progress +1-pixel hermetic-closure margin already applied), and
- * the slide-axis classification used to dispatch the plate / lateral tests.
- */
 struct DoorGeom {
 	float cellMinX;///< Cube left edge in world cells.
 	float cellMaxX;///< Cube right edge.
@@ -728,7 +587,7 @@ struct DoorGeom {
 	bool slideAlongY;///< True for N/S openings (plate normal along X), false for E/W.
 };
 
-/// Cube-AABB intersection result reused inside `drawDoors` — holds entry / exit / exit-axis.
+// Cube-AABB intersection result reused inside `drawDoors` — holds entry / exit / exit-axis.
 struct CubeHit {
 	float tNear;///< Entry distance (cells, perp-to-plane).
 	float tFar;///< Exit distance.
@@ -756,7 +615,7 @@ auto castCubeAabb(const math::vec2& iRayDir, const DoorGeom& iGeom) -> CubeHit {
 	return {.tNear = tNear, .tFar = tFar, .invDx = invDx, .invDy = invDy, .exitAxis = exitAxis, .valid = valid};
 }
 
-/// Plate intersection result emitted by `tryPlateHit`.
+// Plate intersection result emitted by `tryPlateHit`.
 struct PlateHit {
 	float t;///< Distance along the ray (cells, perp-to-plane).
 	float pixelU;///< 0 at min-axis edge of the plate, 1 at max-axis edge.
@@ -797,7 +656,7 @@ auto tryPlateHit(const math::vec2& iRayDir, const DoorGeom& iGeom, const CubeHit
 	return {.t = std::max(t, g_MinPerpDist), .pixelU = std::clamp(hitX - plateMinX, 0.f, 1.f), .valid = true};
 }
 
-/// Lateral intersection result emitted by `tryLateralHit`.
+// Lateral intersection result emitted by `tryLateralHit`.
 struct LateralHit {
 	float t;
 	float wallU;
@@ -812,8 +671,6 @@ auto tryLateralHit(const math::vec2& iRayDir, const DoorGeom& iGeom, const CubeH
 	const bool exitOnSlideAxis = iGeom.slideAlongY ? (iCube.exitAxis == 1) : (iCube.exitAxis == 0);
 	if (!exitOnSlideAxis)
 		return {.t = 0.f, .wallU = 0.f, .side = 0, .valid = false};
-	// Tiny depth bias so the lateral always wins the z-test against the pocket-side
-	// wall (which sits at exactly the same depth in the static tilemap pass).
 	constexpr float kLateralDepthBias = 1e-3f;
 	const float t = std::max(g_MinPerpDist, iCube.tFar - kLateralDepthBias);
 	float wallU = 0.f;
@@ -834,22 +691,13 @@ auto tryLateralHit(const math::vec2& iRayDir, const DoorGeom& iGeom, const CubeH
 	return {.t = t, .wallU = std::clamp(wallU, 0.f, 1.f), .side = side, .valid = true};
 }
 
-/// Common per-column input bundle for the door render loop.
+// Common per-column input bundle for the door render loop.
 struct DoorColumnCtx {
 	math::vec2 rayDir;
 	float currentZ;
 	float maxDistance;
 };
 
-/**
- * @brief
- *  Pick the closest of {plate, lateral} that beats the static zBuffer and emit a stripe.
- *
- * Returns true when a stripe was actually emitted (used to bump the per-door
- * stripe-emitted flag). Doing the picking + emit in this helper keeps
- * `drawDoors`'s top-level loop a flat sequence of `if (cube.valid) { … }`,
- * well under the cognitive-complexity threshold.
- */
 auto renderDoorColumn(uint32_t iCol, float iStripeX, float iStripePxWidth, float iHorizonY, const math::vec2& iVp,
 					  float iWallHeightScale, const DoorGeom& iGeom, const PlateHit& iPlate, const LateralHit& iLateral,
 					  const DoorColumnCtx& iCtx, const RaycastDoorData& iDoor) -> bool {
@@ -860,9 +708,6 @@ auto renderDoorColumn(uint32_t iCol, float iStripeX, float iStripePxWidth, float
 	const math::vec4* bestUvRect = nullptr;
 	if (iPlate.valid && iPlate.t < iCtx.currentZ && iPlate.t <= iCtx.maxDistance) {
 		bestT = iPlate.t;
-		// U=1 must always sit on the opening-direction side of the cell. `pixelU` runs
-		// 0 (south/west) → 1 (north/east); for negative-direction openings (S/W) we
-		// flip so U=1 sits on the opening side regardless of the player's viewpoint.
 		float u = iPlate.pixelU;
 		if (iGeom.slideSign < 0.f)
 			u = 1.f - u;
@@ -886,13 +731,9 @@ auto renderDoorColumn(uint32_t iCol, float iStripeX, float iStripePxWidth, float
 }
 
 auto buildDoorGeom(const RaycastDoorData& iDoor) -> DoorGeom {
-	// Decode opening direction into a slide axis + sign.
-	// 0 = North (+Y), 1 = South (−Y), 2 = East (+X), 3 = West (−X).
 	constexpr float kPlatePixelMargin = 1.f / 64.f;
 	const bool slideAlongY = iDoor.openingDirection <= 1;
 	const float slideSign = (iDoor.openingDirection == 0 || iDoor.openingDirection == 2) ? 1.f : -1.f;
-	// Scale the +1-pixel margin by the open progress so a closed door (offset=0)
-	// stays exactly at the cell centre and closes hermetically.
 	const float plateAlongSlide = slideSign * iDoor.plateOffset * (1.f + kPlatePixelMargin);
 	return {.cellMinX = iDoor.cellCenter.x() - 0.5f,
 			.cellMaxX = iDoor.cellCenter.x() + 0.5f,
@@ -964,15 +805,8 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 	}
 	if (iSprites.empty())
 		return;
-	// Sprites alone don't trigger the wall path, but we still want a backdrop behind
-	// them when the scene has no tilemap (otherwise sprites float on whatever the
-	// previous layer left in the framebuffer).
 	emitBackdropIfNeeded();
 
-	// Camera-space basis: invert `[plane | dir]` so we can express any world point
-	// as `(transformX, transformY)` in camera coordinates — `transformY` is the
-	// forward distance (used for depth-sort + occlusion + perspective scale),
-	// `transformX` is the lateral offset that drives the screen-X projection.
 	const math::vec2& dir = g_state->cameraDir2D;
 	const math::vec2& plane = g_state->cameraPlane2D;
 	const float det = plane.x() * dir.y() - dir.x() * plane.y();
@@ -985,8 +819,6 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 		float transformX;///< Lateral camera-space offset.
 		float transformY;///< Forward camera-space distance (always > 0 after culling).
 	};
-	// `thread_local` reuses the per-frame projected-sprites buffer so the
-	// typical 50–500 sprite scene doesn't reallocate every render call.
 	thread_local std::vector<Projected> visible;
 	visible.clear();
 	visible.reserve(iSprites.size());
@@ -1039,10 +871,6 @@ void RendererRaycast::drawSprites(std::span<const RaycastSpriteData> iSprites) {
 		if (colStart >= colEnd)
 			continue;
 		const auto& tc = sprite.textureCoords;
-		// Inset the sprite-cell UV rectangle by half a texel: the engine samples
-		// every texture with `REPEAT` wrap mode + bilinear filtering, so a UV at
-		// the very edge of a sprite bleeds in the opposite-edge column (single
-		// sprites) or the neighbouring cell of an atlas (animated sprites).
 		const auto texSize = sprite.texture->getSize();
 		const float halfU = texSize.x() > 0 ? 0.5f / static_cast<float>(texSize.x()) : 0.f;
 		const float halfV = texSize.y() > 0 ? 0.5f / static_cast<float>(texSize.y()) : 0.f;

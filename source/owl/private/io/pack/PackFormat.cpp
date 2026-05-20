@@ -19,11 +19,11 @@ OWL_DIAG_POP
 namespace owl::io::pack {
 
 namespace {
-/// FNV-1a constants for 64-bit.
+// FNV-1a constants for 64-bit.
 constexpr uint64_t g_fnvBasis = 14695981039346656037ULL;
 constexpr uint64_t g_fnvPrime = 1099511628211ULL;
 
-/// Obfuscation seed.
+// Obfuscation seed.
 constexpr uint8_t g_obfuscationSeed = 0xA7;
 }// namespace
 

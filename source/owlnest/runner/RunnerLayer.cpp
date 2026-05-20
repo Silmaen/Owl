@@ -77,8 +77,6 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 		// If not found on disk (e.g. pack-only), keep the raw name for pack lookup.
 		if (firstScene.empty())
 			firstScene = sceneName;
-		// Mirror the project's `RendererStack:` block — runner consumes this on
-		// startup to install the same render stack the editor uses.
 		if (const auto stack = appConfig["RendererStack"]; stack)
 			rendererStack = renderer::RendererStackConfig::fromYaml(stack);
 	}
@@ -230,10 +228,6 @@ void RunnerLayer::onAttach() {
 		}
 	}
 
-	// Install the project's renderer stack filtered by the freshly-loaded
-	// scene's `EnabledRenderers`. Without this, packaged games would fall
-	// back to a single implicit `Renderer2D` and any scene relying on a
-	// custom stack (raycaster, screen-overlay UI, …) would render wrong.
 	installRenderStack();
 }
 
@@ -302,12 +296,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 					}
 				}
 			} else {
-				// While an async transition is loading, skip input + runtime updates.
-				// The old scene has already ended; just render the last frame and wait.
 				if (m_transition) {
-					// The old scene's `onUpdateRuntime` no longer ticks — pump the
-					// transition orchestrator manually so the loading screen
-					// animates while the worker thread reads the new scene file.
 					scene::ScreenTransition::update(iTimeStep.getSeconds());
 					scene::ScreenTransition::render(static_cast<float>(m_viewportSize.x()),
 													static_cast<float>(m_viewportSize.y()));
@@ -327,9 +316,6 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 						core::Application::get().close();
 						return;
 					}
-					// Pump scene-load orchestrator: when `ScreenTransition` reports a
-					// pending path (out-anim done), inject it as a teleport request
-					// so the existing async loader picks it up.
 					if (const auto pending = scene::ScreenTransition::pendingLoadPath(); pending) {
 						m_activeScene->teleportRequest.pending = true;
 						m_activeScene->teleportRequest.levelName = *pending;
@@ -486,16 +472,8 @@ void RunnerLayer::finishTransition() {
 
 	m_activeScene = newScene;
 
-	// Rebuild the renderer stack against the new scene's `EnabledRenderers` —
-	// without this the runner inherits the previous scene's stack and any
-	// per-scene override (raycaster enabled on raycast_demo, world disabled,
-	// …) silently stops applying.
 	installRenderStack();
 
-	// Diagnostic: how many textures still need to finish decoding after the swap?
-	// With async texture loading, the placeholder is on screen immediately and real pixels arrive
-	// over the next frames as scheduler tasks complete. A high number on a small scene may indicate
-	// either a slow disk/pack or that async tasks are not draining.
 	{
 		size_t pending = 0;
 		const auto countOne = [&pending](const auto& iTex) -> void {

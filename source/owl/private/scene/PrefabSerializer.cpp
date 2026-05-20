@@ -23,10 +23,6 @@
 namespace owl::scene {
 
 namespace {
-/**
- * @brief
- *  Serialize a single entity to YAML (same format as SceneSerializer).
- */
 void serializeEntity(const core::Serializer& iOut, const Entity& iEntity) {
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "Entity" << YAML::Value << iEntity.getUUID();
@@ -34,10 +30,6 @@ void serializeEntity(const core::Serializer& iOut, const Entity& iEntity) {
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
-/**
- * @brief
- *  Collect entities in BFS order starting from iRoot.
- */
 auto collectSubtreeBFS(const Entity& iRoot, const Scene& iScene) -> std::vector<Entity> {
 	std::vector<Entity> result;
 	std::queue<Entity> queue;
@@ -51,12 +43,8 @@ auto collectSubtreeBFS(const Entity& iRoot, const Scene& iScene) -> std::vector<
 	return result;
 }
 
-/**
- * @brief
- *  Deserialize a single entity into a scene (reused from SceneSerializer pattern).
- */
 void deserializeEntity(const shared<Scene>& ioScene, const core::Serializer& iNode) {
-	auto uuid = iNode.getImpl()->node["Entity"].as<uint64_t>();
+	const auto uuid = iNode.getImpl()->node["Entity"].as<uint64_t>();
 	std::string name;
 	if (auto tagComponent = iNode.getImpl()->node["Tag"]; tagComponent)
 		name = tagComponent["tag"].as<std::string>();
@@ -145,8 +133,6 @@ auto PrefabSerializer::instantiate(const std::filesystem::path& iFilepath, const
 		}
 		const auto orderedEntities = collectSubtreeBFS(tempRoot, *tempScene);
 
-		// Phase 3: Create new entities in the target scene with new UUIDs.
-		// Build canonical->instance UUID mapping.
 		std::unordered_map<uint64_t, uint64_t> uuidRemap;
 		std::vector<component::PrefabLink::UuidMapEntry> uuidMapping;
 		for (const auto& srcEntity: orderedEntities) {
@@ -175,9 +161,6 @@ auto PrefabSerializer::instantiate(const std::filesystem::path& iFilepath, const
 				if (const auto it = uuidRemap.find(static_cast<uint64_t>(srcHier.parentId)); it != uuidRemap.end())
 					dstHier.parentId = core::UUID{it->second};
 			}
-			// childrenIds will be rebuilt.
-			// Copy optional components via serialization round-trip.
-			// Serialize the source entity, then deserialize optional components onto the dest.
 			const auto entityYaml = SceneSerializer::serializeEntityToString(srcEntity);
 			const core::Serializer sEntity;
 			sEntity.getImpl()->node.reset(YAML::Load(entityYaml));
@@ -224,11 +207,8 @@ auto PrefabSerializer::readInfo(const std::filesystem::path& iFilepath) -> std::
 }
 
 namespace {
-/// Load a prefab file into a temporary scene and return it with the version.
 struct LoadedPrefab {
-	/// The temporary scene containing the prefab entities.
 	shared<Scene> scene;
-	/// Prefab version from the file header.
 	uint32_t version = 0;
 };
 
@@ -263,10 +243,6 @@ auto loadPrefabToTempScene(const std::filesystem::path& iFilepath) -> std::optio
 	}
 }
 
-/**
- * @brief
- *  Build a map from canonical UUID to YAML string for each entity in the prefab.
- */
 auto buildCanonicalYamlMap(const Scene& iPrefabScene) -> std::unordered_map<uint64_t, std::string> {
 	std::unordered_map<uint64_t, std::string> result;
 	for (const auto& entity: iPrefabScene.getAllEntities()) {
@@ -277,10 +253,6 @@ auto buildCanonicalYamlMap(const Scene& iPrefabScene) -> std::unordered_map<uint
 	return result;
 }
 
-/**
- * @brief
- *  Check if a specific component key is overridden for a given canonical UUID.
- */
 auto isOverridden(const std::vector<std::string>& iOverrides, uint64_t iCanonicalUuid, const std::string& iComponentKey)
 		-> bool {
 	const auto key = std::format("{}:{}", iCanonicalUuid, iComponentKey);
@@ -299,11 +271,9 @@ auto PrefabSerializer::applyToInstance(const std::filesystem::path& iFilepath, c
 		return false;
 	}
 
-	// Copy PrefabLink by value — the original component will be destroyed during the loop below.
 	// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
 	const auto prefabLink = ioInstanceRoot.getComponent<component::PrefabLink>();
 	const auto canonicalYaml = buildCanonicalYamlMap(*loaded->scene);
-	// For each entity in the UUID mapping, update non-overridden components.
 	for (const auto& [instanceUuid, canonicalUuid]: prefabLink.uuidMapping) {
 		auto instanceEntity = ioScene.findEntityByUUID(core::UUID{instanceUuid});
 		if (!instanceEntity)

@@ -47,10 +47,6 @@ private:
 
 class TrackerState {
 public:
-	/**
-	 * @brief
-	 *  Destructor.
-	 */
 	~TrackerState() = default;
 
 	TrackerState(const TrackerState&) = delete;
@@ -80,7 +76,7 @@ public:
 	}
 
 private:
-	/// states of tracking
+	// states of tracking
 	std::stack<bool> m_doTrack;
 
 	TrackerState() { m_doTrack.push(true); }
@@ -167,11 +163,11 @@ public:
 	}
 
 private:
-	/// Global Memory allocation state's info.
+	// Global Memory allocation state's info.
 	static shared<AllocationState> s_globalAllocationState;
-	/// Current Memory allocation state's info.
+	// Current Memory allocation state's info.
 	static shared<AllocationState> s_currentAllocationState;
-	/// Last Memory allocation state's info.
+	// Last Memory allocation state's info.
 	static shared<AllocationState> s_lastAllocationState;
 };
 shared<AllocationState> StateManager::s_globalAllocationState;
@@ -180,14 +176,9 @@ shared<AllocationState> StateManager::s_lastAllocationState;
 }// namespace
 #ifdef OWL_STACKTRACE
 struct TraceInternal {
-	/// Stack trace of the allocation.
+	// Stack trace of the allocation.
 	cpptrace::stacktrace fullTrace;
 
-	/**
-	 * @brief
-	 *  Look in the stack for the caller information.
-	 * @return The Calling frame.
-	 */
 	[[nodiscard]] auto getCallerInfo() const -> const cpptrace::stacktrace_frame& {
 		for (const auto& frame: fullTrace) {
 			if ((!frame.filename.ends_with(".cpp") && !frame.filename.ends_with(".h")) ||

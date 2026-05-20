@@ -40,19 +40,11 @@ OWL_DIAG_POP
 namespace owl::nest {
 
 namespace {
-// Inter-cell padding only — actual node sizes drive the column/row dimensions. Generous
-// horizontal spacing gives the curved links room to bend around without clipping the next column.
 constexpr float g_hSpacing = 140.0f;
-// Vertical breathing room between rows. Bumped up so curved cross-layer links don't visually fuse
-// with adjacent nodes at typical zoom levels.
 constexpr float g_vSpacing = 70.0f;
 constexpr math::vec4 g_normalTitleColor{1.0f, 1.0f, 1.0f, 1.0f};
 constexpr math::vec4 g_orphanTitleColor{1.0f, 0.35f, 0.35f, 1.0f};
 
-/**
- * @brief
- *  Kind of scene transition for label / styling purposes.
- */
 enum struct TransitionKind : uint8_t {
 	Teleport,///< `Trigger { Type: Teleport }` — explicit player teleport.
 	Death,///< `Trigger { Type: Death }` — death zone reloading the player into another scene.
@@ -60,10 +52,6 @@ enum struct TransitionKind : uint8_t {
 	Lua,///< Heuristically detected `scene.load_scene("...")` call inside an attached Lua script.
 };
 
-/**
- * @brief
- *  One transition found in a scene (Trigger of type Teleport/Death/Victory, or Lua call).
- */
 struct Transition {
 	std::string sourceName;///< Source entity name (Tag) or stripped script filename for Lua.
 	std::string levelName;///< Destination scene reference as written in the YAML / script.
@@ -72,41 +60,17 @@ struct Transition {
 	TransitionKind kind{TransitionKind::Teleport};
 };
 
-/**
- * @brief
- *  Pin label for the ghost "+ Add teleport" affordance shown on every scene node.
- */
 constexpr const char* g_ghostPinLabel = "+ Add teleport";
-/**
- * @brief
- *  Pin typeTag identifying the ghost pin (used by the validator).
- */
 constexpr const char* g_ghostPinTypeTag = "scene_new_teleport";
-/**
- * @brief
- *  Pin typeTag for entry pins (input on every scene node).
- */
 constexpr const char* g_entryPinTypeTag = "scene_entry";
-/**
- * @brief
- *  Pin typeTag for ordinary Teleport output pins.
- */
 constexpr const char* g_teleportPinTypeTag = "scene_exit";
 
-/**
- * @brief
- *  Summary of one `.owl` scene file.
- */
 struct SceneSummary {
 	std::filesystem::path absolutePath;
 	std::string relativePath;///< Forward-slash relative path (canonical key + node title input).
 	std::vector<Transition> transitions;
 };
 
-/**
- * @brief
- *  Walk the project directory and collect every `.owl` scene file.
- */
 auto listAllScenes(const std::filesystem::path& iProjectDir) -> std::vector<std::filesystem::path> {
 	std::vector<std::filesystem::path> out;
 	if (iProjectDir.empty() || !std::filesystem::exists(iProjectDir))
@@ -119,10 +83,6 @@ auto listAllScenes(const std::filesystem::path& iProjectDir) -> std::vector<std:
 	return out;
 }
 
-/**
- * @brief
- *  Resolve a scriptPath (may be relative to a project asset dir or absolute) to disk.
- */
 auto resolveScriptPath(const std::filesystem::path& iProjectDir, const std::string& iScriptPath)
 		-> std::filesystem::path {
 	std::filesystem::path raw{iScriptPath};
@@ -135,18 +95,6 @@ auto resolveScriptPath(const std::filesystem::path& iProjectDir, const std::stri
 	return {};
 }
 
-/**
- * @brief
- *  Best-effort regex scan of a `.lua` file for scene transitions.
- *
- * Two patterns are matched:
- *  1. Direct literal — `scene.load_scene("scenes/X.owl")`.
- *  2. Indirect via variable — when a file uses `scene.load_scene` anywhere AND contains a
- *     `*.owl` string literal (typical pattern: `pending_scene = "scenes/X.owl"` followed by
- *     `scene.load_scene(pending_scene)` in `on_update`). The literal is treated as a possible
- *     destination. False positives in comments / non-transition code are rare and harmless on
- *     the Scene Flow visualization.
- */
 auto scanLuaForLoadScene(const std::filesystem::path& iLuaPath) -> std::vector<std::string> {
 	std::vector<std::string> destinations;
 	const std::ifstream in(iLuaPath);
@@ -175,10 +123,6 @@ auto scanLuaForLoadScene(const std::filesystem::path& iLuaPath) -> std::vector<s
 	return destinations;
 }
 
-/**
- * @brief
- *  Parse a scene YAML and return both Teleport triggers and any Lua-driven destinations.
- */
 auto extractTransitions(const std::filesystem::path& iScenePath, const std::filesystem::path& iProjectDir)
 		-> std::vector<Transition> {
 	std::vector<Transition> out;
@@ -254,10 +198,6 @@ auto extractTransitions(const std::filesystem::path& iScenePath, const std::file
 	return out;
 }
 
-/**
- * @brief
- *  Trim the `.owl` extension from a relative path for display use.
- */
 auto stripOwlExtension(std::string_view iPath) -> std::string {
 	std::string out{iPath};
 	if (out.ends_with(".owl"))
@@ -265,11 +205,6 @@ auto stripOwlExtension(std::string_view iPath) -> std::string {
 	return out;
 }
 
-/**
- * @brief
- *  Normalise a user-typed `LevelName` to the canonical relative path used as scene key.
- * Accepts `foo`, `foo.owl`, `scenes/foo`, `scenes/foo.owl` — picks whichever matches a known scene.
- */
 auto resolveLevelName(std::string_view iLevelName, const std::unordered_map<std::string, size_t>& iKnownScenes)
 		-> std::string {
 	if (iLevelName.empty())
@@ -297,13 +232,6 @@ auto resolveLevelName(std::string_view iLevelName, const std::unordered_map<std:
 	return {};
 }
 
-/**
- * @brief
- *  Compact pin label. Destination is implicit from the link, so just show the source
- *        identifier; Death and Victory rely on the label colour for the kind hint, while Lua
- *        keeps a visible `λ` prefix because it is the only kind that maps to a script-driven
- *        transition (worth flagging at a glance even when colours are off).
- */
 auto pinLabel(const Transition& iTr) -> std::string {
 	const auto& src = iTr.sourceName;
 	switch (iTr.kind) {
@@ -322,10 +250,6 @@ auto pinLabel(const Transition& iTr) -> std::string {
 	return src;
 }
 
-/**
- * @brief
- *  Pin typeTag for a given transition kind — drives styling on the Properties panel.
- */
 auto pinTypeTag(TransitionKind iKind) -> std::string_view {
 	switch (iKind) {
 		case TransitionKind::Lua:
@@ -340,10 +264,6 @@ auto pinTypeTag(TransitionKind iKind) -> std::string_view {
 	return "scene_exit";
 }
 
-/**
- * @brief
- *  Per-kind label colour used by `NodeCanvas::CustomDraw` for the in-node text.
- */
 auto pinLabelColor(TransitionKind iKind) -> math::vec4 {
 	switch (iKind) {
 		case TransitionKind::Lua:
@@ -358,10 +278,6 @@ auto pinLabelColor(TransitionKind iKind) -> math::vec4 {
 	return {1.0f, 1.0f, 1.0f, 1.0f};
 }
 
-/**
- * @brief
- *  Result of the layered Sugiyama-ish layout computation.
- */
 struct LayeringResult {
 	std::vector<size_t> layer;///< layer[i] = column index of summaries[i]
 	std::vector<std::vector<size_t>> nodesPerLayer;///< sorted (stable) lists of node indices per column
@@ -369,11 +285,6 @@ struct LayeringResult {
 	size_t layerCount{0};///< total column count (orphan layer + 1)
 };
 
-/**
- * @brief
- *  Compute per-node column index via BFS from the first scene + DFS back-edge detection +
- *        monotone promotion, then group nodes per column with a deterministic alphabetic sort.
- */
 [[nodiscard]] auto computeLayering(const std::vector<SceneSummary>& iSummaries,
 								   const std::vector<std::vector<size_t>>& iAdjacency,
 								   const std::string& iFirstResolved,
@@ -405,8 +316,6 @@ struct LayeringResult {
 	for (auto& l: result.layer)
 		if (l == kInvalidLayer)
 			l = initialOrphanLayer;
-	// DFS back-edge detection — start from the first scene so loops back to it are correctly
-	// classified as back edges (and don't push it rightward in the promotion step).
 	std::vector<uint8_t> dfsState(iSummaries.size(), 0);
 	std::unordered_set<uint64_t> backEdges;
 	const auto encode = [](size_t iSrc, size_t iDst) -> uint64_t {
@@ -475,10 +384,6 @@ struct LayeringResult {
 	return result;
 }
 
-/**
- * @brief
- *  Apply alternating forward/backward barycentre sweeps to reduce edge crossings.
- */
 void applyBarycentreOrdering(const std::vector<SceneSummary>& iSummaries, const std::vector<size_t>& iLayer,
 							 size_t iLayerCount, const std::vector<std::vector<size_t>>& iAdjacency,
 							 std::vector<std::vector<size_t>>& ioNodesPerLayer) {
@@ -519,10 +424,6 @@ void applyBarycentreOrdering(const std::vector<SceneSummary>& iSummaries, const 
 	}
 }
 
-/**
- * @brief
- *  Write a minimal but well-formed empty scene YAML to disk.
- */
 auto writeEmptyScene(const std::filesystem::path& iAbsolutePath) -> bool {
 	std::ofstream out(iAbsolutePath);
 	if (!out) {
@@ -530,8 +431,6 @@ auto writeEmptyScene(const std::filesystem::path& iAbsolutePath) -> bool {
 		return false;
 	}
 	const auto stem = iAbsolutePath.stem().string();
-	// The serializer accepts an empty Entities list; the scene's name is taken from the file name
-	// when loaded.
 	out << "Scene: " << stem << '\n';
 	out << "Entities: []\n";
 	return out.good();
@@ -568,8 +467,6 @@ auto SceneFlowDocument::validateLinkDraft(core::UUID iFromPin, core::UUID iToPin
 	const auto* toNode = m_canvas.findNodeByPin(iToPin);
 	if (fromNode == nullptr || toNode == nullptr || fromNode == toNode)
 		return false;
-	// Source pin: must be the ghost pin (only it materializes new triggers; existing Teleport pins
-	// are read-only in this iteration — re-route is out of scope).
 	bool sourceIsGhost = false;
 	for (const auto& pin: fromNode->outputs) {
 		if (pin.id == iFromPin) {
@@ -599,8 +496,6 @@ auto SceneFlowDocument::relativePathFor(core::UUID iNodeId) const -> std::string
 }
 
 void SceneFlowDocument::onLinkDrafted(core::UUID iLinkId, core::UUID iFromPin, core::UUID iToPin) {
-	// Cancel the auto-link the canvas just created — the composite undo step will rebuild it from
-	// scratch, with a real (non-ghost) output pin and a fresh link id we can track.
 	m_canvas.removeLink(iLinkId);
 
 	if (mp_editorLayer == nullptr)
@@ -693,13 +588,9 @@ void SceneFlowDocument::onLinkErased(core::UUID iLinkId) {
 		return;
 	const gui::widgets::Link linkSnapshot{.id = iLinkId, .fromPin = origin.outputPinId, .toPin = origin.inputPinId};
 
-	// Capture commands BEFORE mutating — DeleteEntityCommand snapshots in its ctor, so the entity
-	// must still exist; the canvas pin is similarly captured by snapshot.
 	auto sceneCmd = mkUniq<commands::DeleteEntityCommand>(entity);
 	auto canvasCmd = mkUniq<commands::RemovePinAndLinkCommand>(origin.sourceNodeId, pinSnapshot, linkSnapshot);
 
-	// Now apply the post-state: drop the pin (canvas already removed the link automatically) and
-	// destroy the entity.
 	m_canvas.removeOutputPin(origin.sourceNodeId, origin.outputPinId);
 	scene->destroyEntity(entity);
 
@@ -761,8 +652,6 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 			outputPinsByIndex[i].push_back(outPin.id);
 			node.outputs.push_back(std::move(outPin));
 		}
-		// Ghost "+ Add teleport" pin — drag-from-here to create a new Trigger entity. Always last,
-		// so existing teleports stay visually grouped and the drag affordance lives at the bottom.
 		gui::widgets::NodePin ghost;
 		ghost.label = g_ghostPinLabel;
 		ghost.typeTag = g_ghostPinTypeTag;
@@ -772,11 +661,6 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 		node.outputs.push_back(std::move(ghost));
 		nodeSizes[i] = gui::widgets::NodeCanvas::measureNode(node);
 	}
-	// --- Layered layout (BFS from `firstScene`) -----------------------------
-	// Build a directed adjacency list so we can compute reachability layers and assign each scene
-	// a column index based on its BFS depth. Cycles (e.g. main_menu ↔ settings_menu ↔ main_menu)
-	// are handled by `firstSeen`: each node lands in the layer where it is first visited, so back
-	// edges don't push it further right.
 	std::vector<std::vector<size_t>> adjacency(summaries.size());
 	for (size_t i = 0; i < summaries.size(); ++i) {
 		for (const auto& tr: summaries[i].transitions) {
@@ -794,8 +678,6 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 
 	applyBarycentreOrdering(summaries, layer, layerCount, adjacency, nodesPerLayer);
 
-	// Compute per-layer max width and per-row max height — consistent placement regardless of how
-	// many nodes a layer holds.
 	std::vector<float> layerMaxWidth(layerCount, 0.0f);
 	float globalRowHeight = 0.0f;
 	for (size_t l = 0; l < layerCount; ++l) {
@@ -810,11 +692,6 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 		const auto& bucket = nodesPerLayer[l];
 		const float pitch = globalRowHeight + g_vSpacing;
 		const float layerHeight = static_cast<float>(bucket.size()) * pitch;
-		// Vertically centre each column around y=0 so single-node layers stop hugging the top edge
-		// — short and tall layers visually align around the same horizontal mid-line.
-		// Plus alternate columns get nudged by half a row so two adjacent layers never share the
-		// exact same Y for any of their nodes — this keeps cross-layer curves visibly separated
-		// from neighbour nodes instead of fusing with them.
 		const float halfRowStagger = (l % 2 == 0) ? 0.0f : pitch * 0.5f;
 		const float yOffset = -layerHeight * 0.5f + halfRowStagger;
 		for (size_t r = 0; r < bucket.size(); ++r) {
@@ -840,9 +717,6 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 			const auto fromPin = outputPinsByIndex[i][t];
 			const auto toPin = entryPinByIndex[destIndex];
 			const auto linkId = m_canvas.addLink(fromPin, toPin);
-			// Bookkeep only Teleport links — Death/Victory/Lua are read-only in the canvas (no
-			// undo-able edit yet) and we don't want to materialize a Trigger entity on accidental
-			// Delete on those.
 			if (tr.kind == TransitionKind::Teleport && static_cast<uint64_t>(tr.triggerEntityUuid) != 0 &&
 				static_cast<uint64_t>(linkId) != 0) {
 				const LinkOrigin origin{.scenePath = summary.absolutePath,
@@ -855,16 +729,11 @@ void SceneFlowDocument::refreshFromProject(const Project& iProject) {
 			}
 		}
 	}
-	// Reachable / orphan info already produced by the layout BFS above — anything in `orphanLayer`
-	// was unreachable from `firstScene`. Reuse it instead of running a second BFS.
 	for (size_t i = 0; i < summaries.size(); ++i) {
 		if (auto* node = m_canvas.findNode(nodeIdsByIndex[i]))
 			node->titleColor = layer[i] == orphanLayer ? g_orphanTitleColor : g_normalTitleColor;
 	}
 	m_savedSnapshot = gui::widgets::NodeCanvasSerializer::serializeToString(m_canvas);
-	// Auto-fit on every project rescan so the user always sees the full graph centred when the
-	// Scene Flow tab opens (or after any add/delete/rename of a scene). GraphEditor consumes the
-	// request once and resets it to `Fit_None` — subsequent frames keep the user's pan/zoom.
 	m_canvas.requestFitToContent();
 }
 
@@ -1033,8 +902,6 @@ void SceneFlowDocument::renderContextMenu() {
 		if (const auto path = absolutePathFor(m_contextNodeId); !path.empty() && std::filesystem::exists(path))
 			mp_editorLayer->openScene(path);
 	}
-	// Teleport-pin sub-menu — list every Teleport output pin so the user can edit its
-	// `targetName` from the canvas without opening the source scene's hierarchy.
 	if (node != nullptr) {
 		const bool anyTeleport = std::ranges::any_of(
 				node->outputs, [](const auto& iPin) -> bool { return iPin.typeTag == g_teleportPinTypeTag; });
@@ -1165,9 +1032,6 @@ void SceneFlowDocument::renderTargetNameModal() {
 		ImGui::InputText("##target", m_targetNameBuf, sizeof(m_targetNameBuf));
 		ImGui::Separator();
 		if (ImGui::Button("OK", {110.0f, 0.0f})) {
-			// Capture before snapshot, mutate the live trigger, then push a ModifyEntityCommand on
-			// the scene's own undo manager (not the canvas's) — pin labels are derived data and don't
-			// need a canvas-side undo entry.
 			auto before = EntitySnapshot::capture(entity);
 			entity.getComponent<scene::component::Trigger>().trigger.targetName = std::string{m_targetNameBuf};
 			auto cmd = mkUniq<commands::ModifyEntityCommand>(entity.getUUID(), std::move(before),

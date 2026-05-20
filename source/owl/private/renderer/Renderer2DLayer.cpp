@@ -55,10 +55,7 @@ void Renderer2DLayer::onBeginFrame(const Camera& iCamera) {
 	}
 }
 
-void Renderer2DLayer::onRender([[maybe_unused]] scene::Scene& ioScene) {
-	// Per-entity draw calls are still emitted by `Scene::render` against the active layer
-	// name. This hook stays empty until a future refactor migrates the dispatch here.
-}
+void Renderer2DLayer::onRender([[maybe_unused]] scene::Scene& ioScene) {}
 
 void Renderer2DLayer::onEndFrame() { Renderer2D::endScene(); }
 

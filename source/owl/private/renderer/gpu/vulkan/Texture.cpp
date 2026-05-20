@@ -10,6 +10,7 @@
 #include "Texture.h"
 
 #include "internal/Descriptors.h"
+#include "internal/RendererDescriptors.h"
 #include "internal/VulkanHandler.h"
 #include "internal/utils.h"
 #include "renderer/TextureDecoder.h"
@@ -50,7 +51,13 @@ auto Texture2D::operator==(const Texture& iOther) const -> bool {
 	return bob.m_textureId == m_textureId;
 }
 
-void Texture2D::bind(uint32_t) const { internal::Descriptors::get().textureBind(m_textureId); }
+void Texture2D::bind(uint32_t) const {
+	if (auto* const rd = internal::RendererDescriptors::getActive(); rd != nullptr) {
+		rd->textureBind(m_textureId);
+		return;
+	}
+	internal::Descriptors::get().textureBind(m_textureId);
+}
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")

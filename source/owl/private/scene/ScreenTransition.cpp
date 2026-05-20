@@ -103,8 +103,6 @@ auto contrastColor(const math::vec4& iCover) -> math::vec4 {
 }
 
 void renderLoadingScreen(const math::vec4& iColor, const float iElapsed, const float iVw, const float iVh) {
-	// Solid cover so the underlying scene (which may already be the freshly
-	// loaded one once the host has handled the swap) is hidden.
 	math::Transform fullscreen;
 	fullscreen.translation() = {iVw * 0.5f, iVh * 0.5f, 0.9f};
 	fullscreen.scale() = {iVw, iVh, 1.f};
@@ -112,9 +110,6 @@ void renderLoadingScreen(const math::vec4& iColor, const float iElapsed, const f
 
 	const auto fg = contrastColor(iColor);
 
-	// Dotted ring spinner. 8 dots arranged on a circle, each pulsing in and
-	// out of phase as the ring rotates — gives the classic "spinning dots"
-	// look without needing an icon asset.
 	constexpr int kDotCount = 8;
 	const float radius = std::min(iVw, iVh) * 0.05f;
 	const float dotSize = radius * 0.35f;
@@ -126,9 +121,6 @@ void renderLoadingScreen(const math::vec4& iColor, const float iElapsed, const f
 		const float angle = -fraction * 2.f * std::numbers::pi_v<float>;
 		const float dotX = cx + radius * std::cos(angle);
 		const float dotY = cy + radius * std::sin(angle);
-		// Distance (around the ring) between this dot and the spinning head,
-		// modulo the full ring — the head is the brightest dot, dots trailing
-		// it fade back to the rim alpha.
 		const float headOffset = std::fmod(static_cast<float>(i) - headAngle / (2.f * std::numbers::pi_v<float>),
 										   static_cast<float>(kDotCount));
 		const float wrapped = headOffset < 0.f ? headOffset + static_cast<float>(kDotCount) : headOffset;
@@ -141,9 +133,6 @@ void renderLoadingScreen(const math::vec4& iColor, const float iElapsed, const f
 		renderer::Renderer2D::drawQuad({.transform = dotTr, .color = tint});
 	}
 
-	// "Loading" label (uses the engine's default font when an Application is
-	// running; tests / headless contexts skip the text — the spinner alone is
-	// enough to convey progress).
 	if (!core::Application::instanced())
 		return;
 	const auto font = core::Application::get().getFontLibrary().getDefaultFont();

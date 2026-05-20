@@ -103,9 +103,6 @@ ComputeShader::~ComputeShader() {
 
 void ComputeShader::bindStorageBuffer([[maybe_unused]] const uint32_t iBinding,
 									  const shared<renderer::gpu::StorageBuffer>& iBuffer) {
-	// On OpenGL the SSBO is bound to its binding slot via
-	// `glBindBufferBase(GL_SHADER_STORAGE_BUFFER, slot, …)` — delegating to
-	// the buffer's own `bind()` is enough.
 	if (iBuffer)
 		iBuffer->bind();
 }

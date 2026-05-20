@@ -134,12 +134,8 @@ void ContentBrowser::onImGuiRender() {
 		requestScan(m_currentPath);
 	}
 
-	// ----------------------------------------
-	// Top band
 	renderTopBand();
 
-	// ---------------------------------------
-	// Content band
 	renderContent();
 
 	// Context menu (popup)

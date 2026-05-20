@@ -165,10 +165,56 @@ walks in reverse so layers can flush nested resources cleanly.
 The factory pattern keeps the engine extensible: third-party code (mods, tests)
 can register layer types without touching engine sources.
 
+### Per-renderer descriptor blocks (Vulkan)
+
+Each high-level renderer (`Renderer2D`, `RendererTilemap`, future renderers)
+owns its own Vulkan `VkDescriptorSetLayout` + descriptor pool + per-frame
+descriptor sets, matching exactly the bindings its shaders declare. The
+pattern lives behind a backend-neutral API so OpenGL and the headless `Null`
+backend can no-op every call:
+
+```c++
+// In MyRenderer::init(), declare the bindings the shaders use:
+const std::array<gpu::BindingDecl, 2> myBindings{
+    gpu::BindingDecl{.binding = 0, .type = gpu::BindingType::UniformBuffer,
+                     .count = 1, .stages = gpu::ShaderStage::Vertex},
+    gpu::BindingDecl{.binding = 1, .type = gpu::BindingType::CombinedImageSampler,
+                     .count = 32, .stages = gpu::ShaderStage::Fragment},
+};
+gpu::RendererDescriptors::declare("MyRenderer", myBindings);
+
+// Then scope `ScopedActive` around every operation that touches the
+// renderer's GPU state — pipeline creation, UBO upload, texture binding,
+// the draw itself:
+const gpu::RendererDescriptors::ScopedActive scoped{"MyRenderer"};
+// ... drawData->init(), UniformBuffer::create(), texture->bind(),
+// drawDataInstanced(), …
+
+// And in MyRenderer::shutdown():
+gpu::RendererDescriptors::release("MyRenderer");
+```
+
+While a `ScopedActive` is alive on the current thread, `vulkan::UniformBuffer`,
+`vulkan::Texture2D::bind`, `VulkanHandler::pushPipeline` and
+`VulkanHandler::bindPipeline` all route through the matching descriptor
+block. Outside any scope they fall back to the legacy global `Descriptors`
+singleton, which is still used by the `Texture2D` storage table and a
+handful of pre-modernisation call sites — that path will retire as the
+remaining renderers migrate.
+
+This pattern fixes two pre-existing pathologies:
+
+- **NVIDIA `vkCmdBindPipeline` crash on the instanced-tilemap path.** The
+  shared global layout previously declared bindings the calling shader
+  didn't sample, which NVIDIA's strict validation rejects.
+- **Per-pass UBO race.** Two `Renderer2D` layers using different VPs in the
+  same frame used to memcpy into the same `VkBuffer` for binding 0,
+  producing visible flicker. Per-renderer UBOs scope each pass cleanly.
+
 ## Raycaster {#renderer-raycaster}
 
 `RendererRaycast` (in `renderer/rendererraycast/`) is the first non-2D
-renderer to ride on the stack. It synthesises a Wolfenstein-style first-person
+renderer to ride on the stack. It syntheses a Wolfenstein-style first-person
 view from a top-down 2D `scene::component::Tilemap`: each non-empty cell is a
 wall, each empty cell is walkable space.
 
@@ -265,7 +311,7 @@ is selected at startup via `RenderCommand::create(Type)`.
 |-------------------------------|------------------------------------------|
 | `init()`                      | Initialize the graphics backend          |
 | `setViewport(x,y,w,h)`        | Set render viewport                      |
-| `setClearColor(vec4)`         | Set screen clear colour                   |
+| `setClearColor(vec4)`         | Set screen clear colour                  |
 | `clear()`                     | Clear the screen                         |
 | `drawData(data, cnt)`         | Issue a draw call with vertex/index data |
 | `drawLine(data, cnt)`         | Issue a line-mode draw call              |
@@ -294,7 +340,7 @@ See [Architecture](architecture.md) for the backend selection and application st
 
 | Method         | Input Struct   | Description                                |
 |----------------|----------------|--------------------------------------------|
-| `drawQuad`     | `Quad2DData`   | Textured/coloured quad with UV and tiling   |
+| `drawQuad`     | `Quad2DData`   | Textured/coloured quad with UV and tiling  |
 | `drawCircle`   | `CircleData`   | SDF circle with thickness and fade         |
 | `drawLine`     | `LineData`     | Single line segment                        |
 | `drawRect`     | `RectData`     | Wireframe rectangle (4 lines)              |
@@ -303,14 +349,14 @@ See [Architecture](architecture.md) for the backend selection and application st
 
 ### Quad2DData
 
-| Field           | Type                        | Default                     | Description                   |
-|-----------------|-----------------------------|-----------------------------|-------------------------------|
-| `transform`     | `math::Transform`           | —                           | Quad transformation           |
+| Field           | Type                        | Default                     | Description                    |
+|-----------------|-----------------------------|-----------------------------|--------------------------------|
+| `transform`     | `math::Transform`           | —                           | Quad transformation            |
 | `color`         | `math::vec4`                | `{1, 1, 1, 1}`              | Colour tint                    |
 | `texture`       | `shared<Texture>`           | `nullptr`                   | Texture (plain colour if null) |
-| `tilingFactor`  | `float`                     | `1.0`                       | Texture repetition factor     |
-| `textureCoords` | `std::array<math::vec2, 4>` | `{(0,0),(1,0),(1,1),(0,1)}` | Per-vertex UV coordinates     |
-| `entityId`      | `int`                       | `-1`                        | Entity ID for mouse picking   |
+| `tilingFactor`  | `float`                     | `1.0`                       | Texture repetition factor      |
+| `textureCoords` | `std::array<math::vec2, 4>` | `{(0,0),(1,0),(1,1),(0,1)}` | Per-vertex UV coordinates      |
+| `entityId`      | `int`                       | `-1`                        | Entity ID for mouse picking    |
 
 The `textureCoords` field defaults to full-texture UVs. Custom UVs are used by the
 `AnimatedSpriteRenderer` to display individual frames from a spritesheet.
@@ -320,7 +366,7 @@ The `textureCoords` field defaults to full-texture UVs. Custom UVs are used by t
 | Field       | Type              | Default        | Description           |
 |-------------|-------------------|----------------|-----------------------|
 | `transform` | `math::Transform` | —              | Circle transformation |
-| `color`     | `math::vec4`      | `{1, 1, 1, 1}` | Circle colour          |
+| `color`     | `math::vec4`      | `{1, 1, 1, 1}` | Circle colour         |
 | `thickness` | `float`           | `1.0`          | Ring thickness (0–1)  |
 | `fade`      | `float`           | `0.005`        | Edge fade amount      |
 | `entityId`  | `int`             | `-1`           | Entity ID for picking |
@@ -331,7 +377,7 @@ The `textureCoords` field defaults to full-texture UVs. Custom UVs are used by t
 |------------|--------------|----------------|-------------|
 | `point1`   | `math::vec3` | —              | Start point |
 | `point2`   | `math::vec3` | —              | End point   |
-| `color`    | `math::vec4` | `{1, 1, 1, 1}` | Line colour  |
+| `color`    | `math::vec4` | `{1, 1, 1, 1}` | Line colour |
 | `entityId` | `int`        | `-1`           | Entity ID   |
 
 ### StringData
@@ -341,7 +387,7 @@ The `textureCoords` field defaults to full-texture UVs. Custom UVs are used by t
 | `transform`   | `math::Transform` | —              | Text transformation  |
 | `text`        | `std::string`     | —              | Text content         |
 | `font`        | `shared<Font>`    | `nullptr`      | Font (or default)    |
-| `color`       | `math::vec4`      | `{1, 1, 1, 1}` | Text colour           |
+| `color`       | `math::vec4`      | `{1, 1, 1, 1}` | Text colour          |
 | `kerning`     | `float`           | `0.0`          | Extra letter spacing |
 | `lineSpacing` | `float`           | `0.0`          | Extra line spacing   |
 | `entityId`    | `int`             | `-1`           | Entity ID            |
@@ -408,8 +454,8 @@ render pass (critical for Vulkan's `DONT_CARE` loadOp).
 | Field                 | Type                | Default              | Description                              |
 |-----------------------|---------------------|----------------------|------------------------------------------|
 | `mode`                | `int`               | `0`                  | 0=Solid, 1=Gradient, 2=Texture, 3=Skybox |
-| `color`               | `math::vec4`        | `{0.2, 0.3, 0.8, 1}` | Main/bottom colour                        |
-| `topColor`            | `math::vec4`        | `{0.8, 0.9, 1, 1}`   | Top colour (gradient mode)                |
+| `color`               | `math::vec4`        | `{0.2, 0.3, 0.8, 1}` | Main/bottom colour                       |
+| `topColor`            | `math::vec4`        | `{0.8, 0.9, 1, 1}`   | Top colour (gradient mode)               |
 | `inverseViewRotation` | `math::mat4`        | identity             | Inverse view-rotation (skybox)           |
 | `texture`             | `shared<Texture2D>` | `nullptr`            | Background or equirectangular texture    |
 
@@ -513,12 +559,12 @@ A `Framebuffer` represents an off-screen render target with one or more typed at
 
 ### Attachment Formats
 
-| Format            | Description                  | Typical Use        |
-|-------------------|------------------------------|--------------------|
-| `Rgba8`           | 8-bit RGBA colour             | Scene colour output |
-| `RedInteger`      | Single integer per pixel     | Entity ID picking  |
-| `Depth24Stencil8` | 24-bit depth + 8-bit stencil | Depth testing      |
-| `Surface`         | Swap chain surface (Vulkan)  | Final presentation |
+| Format            | Description                  | Typical Use         |
+|-------------------|------------------------------|---------------------|
+| `Rgba8`           | 8-bit RGBA colour            | Scene colour output |
+| `RedInteger`      | Single integer per pixel     | Entity ID picking   |
+| `Depth24Stencil8` | 24-bit depth + 8-bit stencil | Depth testing       |
+| `Surface`         | Swap chain surface (Vulkan)  | Final presentation  |
 
 ### FramebufferSpecification
 
@@ -666,20 +712,20 @@ Frames are numbered in **row-major order** starting from the top-left (frame 0).
 
 ### Properties
 
-| Field            | Type        | Default | Serialized | Description                       |
-|------------------|-------------|---------|------------|-----------------------------------|
-| `color`          | `vec4`      | white   | Yes        | Tint colour                        |
-| `texture`        | `Texture2D` | null    | Yes        | Spritesheet texture               |
-| `columns`        | `uint32_t`  | `1`     | Yes        | Grid columns                      |
-| `rows`           | `uint32_t`  | `1`     | Yes        | Grid rows                         |
-| `firstFrame`     | `uint32_t`  | `0`     | Yes        | Animation start frame (inclusive) |
-| `lastFrame`      | `uint32_t`  | `0`     | Yes        | Animation end frame (inclusive)   |
-| `frameDuration`  | `float`       | `0.1`   | Yes        | Seconds per frame                       |
-| `loop`           | `bool`        | `true`  | Yes        | Whether to loop                         |
+| Field            | Type          | Default | Serialized               | Description                              |
+|------------------|---------------|---------|--------------------------|------------------------------------------|
+| `color`          | `vec4`        | white   | Yes                      | Tint colour                              |
+| `texture`        | `Texture2D`   | null    | Yes                      | Spritesheet texture                      |
+| `columns`        | `uint32_t`    | `1`     | Yes                      | Grid columns                             |
+| `rows`           | `uint32_t`    | `1`     | Yes                      | Grid rows                                |
+| `firstFrame`     | `uint32_t`    | `0`     | Yes                      | Animation start frame (inclusive)        |
+| `lastFrame`      | `uint32_t`    | `0`     | Yes                      | Animation end frame (inclusive)          |
+| `frameDuration`  | `float`       | `0.1`   | Yes                      | Seconds per frame                        |
+| `loop`           | `bool`        | `true`  | Yes                      | Whether to loop                          |
 | `speedCurve`     | `math::Curve` | empty   | Yes (omitted when empty) | Speed multiplier vs. normalized progress |
-| `m_currentFrame` | `uint32_t`    | `0`     | No         | Currently displayed frame               |
-| `m_elapsedTime`  | `float`       | `0.0`   | No         | Time accumulator                        |
-| `m_playing`      | `bool`      | `true`  | No         | Playing state                     |
+| `m_currentFrame` | `uint32_t`    | `0`     | No                       | Currently displayed frame                |
+| `m_elapsedTime`  | `float`       | `0.0`   | No                       | Time accumulator                         |
+| `m_playing`      | `bool`        | `true`  | No                       | Playing state                            |
 
 ### UV Computation
 

@@ -21,24 +21,20 @@ OWL_DIAG_POP
 namespace owl {
 
 namespace {
-/// Early configuration read from runner.yml before Application creation.
+// Early configuration read from runner.yml before Application creation.
 struct EarlyConfig {
-	/// Pack file path.
+	// Pack file path.
 	std::string packFile;
-	/// Game display name for the window title.
+	// Game display name for the window title.
 	std::string gameName{"Owl Runner"};
-	/// Icon file path.
+	// Icon file path.
 	std::string icon{"icons/logo_owl_icon.png"};
-	/// Window width.
+	// Window width.
 	uint32_t width{1280};
-	/// Window height.
+	// Window height.
 	uint32_t height{720};
 };
 
-/**
- * @brief
- *  Read runner.yml for fields needed before Application creation.
- */
 auto readEarlyConfig(const std::filesystem::path& iWorkDir) -> EarlyConfig {
 	EarlyConfig cfg;
 	const auto config = iWorkDir / "runner.yml";
@@ -84,8 +80,6 @@ public:
 OWL_DIAG_POP
 
 auto core::createApplication(int iArgc, char** iArgv) -> shared<Application> {
-	// Set working directory to the executable's directory so packaged games
-	// work regardless of where the user launches from.
 	if (iArgc > 0 && iArgv[0] != nullptr) {
 		if (const auto exeDir = std::filesystem::absolute(std::filesystem::path(iArgv[0])).parent_path();
 			std::filesystem::exists(exeDir)) {

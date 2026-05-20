@@ -32,26 +32,10 @@ using namespace owl::scene::component;
 namespace owl::nest::panel {
 
 namespace {
-/**
- * @brief
- *  Component name written by `drawComponent` while its header is hovered.
- *
- * Read by `EditorLayer::onContextualHelp` so pressing F1 over a specific
- * component header opens the documentation page that covers it. Empty when
- * no component is being hovered.
- */
 std::string g_lastHoveredComponentName;
 
-/**
- * @brief
- *  Check if an entity is the root of a prefab instance.
- */
 auto isPrefabRoot(const scene::Entity& iEntity) -> bool { return iEntity && iEntity.hasComponent<PrefabLink>(); }
 
-/**
- * @brief
- *  Walk the parent chain to find the prefab root (entity with PrefabLink), or return invalid entity.
- */
 auto findPrefabRoot(const scene::Entity& iEntity, const scene::Scene& iScene) -> scene::Entity {
 	auto current = iEntity;
 	while (current) {
@@ -65,10 +49,6 @@ auto findPrefabRoot(const scene::Entity& iEntity, const scene::Scene& iScene) ->
 	return {};
 }
 
-/**
- * @brief
- *  Map component display name to icon bank name.
- */
 auto componentIconName(const char* iCompName) -> const char* {
 	static const std::unordered_map<std::string_view, const char*> map = {
 			{"Transform", "comp_transform"},    {"Camera", "comp_camera"},
@@ -100,8 +80,6 @@ void SceneHierarchy::setContext(const shared<scene::Scene>& iContext) {
 }
 
 void SceneHierarchy::onImGuiRender() {
-	// Reset the hovered-component sink at the start of every frame; `drawComponent`
-	// repopulates it as the user moves the mouse over individual component headers.
 	g_lastHoveredComponentName.clear();
 	renderHierarchy();
 	renderProperties();
@@ -111,8 +89,6 @@ auto SceneHierarchy::lastHoveredComponentName() -> const std::string& { return g
 
 // Function displaying the Hierarchy panel.
 void SceneHierarchy::renderHierarchy() {
-	// Stable ImGui ID (`###Hierarchy`) so the dock layout survives the title rename when
-	// the active document changes. The visible title is taken from the active document.
 	const std::string title =
 			(mp_activeDocument != nullptr ? mp_activeDocument->hierarchyPanelTitle() : std::string{"Scene Hierarchy"}) +
 			std::string{"###Hierarchy"};
@@ -170,9 +146,6 @@ void SceneHierarchy::renderRootEntities() {
 		return;
 	}
 
-	// > 1 layer → bucket roots by their effective layer name. Untagged (or empty
-	// `rendererName`) entities land under the first layer; entities with an unknown
-	// name land in a trailing "(unrouted)" group.
 	const std::string firstLayerName = layers.front()->getName();
 	std::unordered_map<std::string, std::vector<scene::Entity>> bucketed;
 	std::vector<scene::Entity> unrouted;
@@ -198,9 +171,6 @@ void SceneHierarchy::renderRootEntities() {
 
 		ImGui::PushID(name.c_str());
 		const bool open = ImGui::TreeNodeEx(label.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
-		// Drop target: route the dropped entity to this layer (unparent if needed, then set
-		// `RendererTag.rendererName`). Both mutations are captured in a single
-		// `ModifyEntityCommand` so one Ctrl+Z reverts the whole drop.
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
 				const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
@@ -497,8 +467,6 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 					}
 				}
 				if (!resolved.empty())
-					// Defer to next frame: opening here would mutate `m_documents` mid-render and
-					// corrupt the SceneHierarchy iteration that's currently inside this popup.
 					mp_parentEditor->requestDeferredOpen(resolved);
 				else
 					OWL_CORE_WARN("Could not resolve tilemap path '{}' against any asset directory.",
@@ -542,8 +510,6 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 
 // Function displaying the Entity Property panel.
 void SceneHierarchy::renderProperties() {
-	// Stable ImGui ID (`###Properties`) so the dock layout survives the title rename when
-	// the active document changes.
 	const std::string title =
 			(mp_activeDocument != nullptr ? mp_activeDocument->propertiesPanelTitle() : std::string{"Properties"}) +
 			std::string{"###Properties"};
@@ -556,9 +522,6 @@ void SceneHierarchy::renderProperties() {
 }
 
 namespace {
-// Compile-time category traits — `Raycast*` components only make sense on a
-// `RendererRaycast` layer, `Ui*` components only on a `Renderer2D` layer.
-// Anything else (Transform, Camera, SpriteRenderer, …) is layer-agnostic.
 template<typename>
 constexpr bool isRaycastOnlyComponent = false;
 template<>
@@ -583,18 +546,6 @@ constexpr bool isUiOnlyComponent<scene::component::UiSlider> = true;
 template<>
 constexpr bool isUiOnlyComponent<scene::component::UiText> = true;
 
-/**
- * @brief
- *  Resolve the renderer-layer type key the entity belongs to.
- *
- * Reads the entity's `RendererTag` (or falls back to the stack's default layer
- * for untagged entities) and looks the layer up in the global renderer stack.
- * Returns an empty string when the stack hasn't been built yet — in that case
- * the inspector falls back to "show every optional component", which keeps
- * the editor usable while the project's renderer config is loading.
- * @param[in] iEntity The entity to classify.
- * @return The layer type key (`"RendererRaycast"`, `"Renderer2D"`, …) or empty.
- */
 auto layerTypeKeyForEntity(const scene::Entity& iEntity) -> std::string {
 	const auto& stack = renderer::Renderer::getRenderStack();
 	if (stack.isEmpty())
@@ -612,10 +563,6 @@ auto layerTypeKeyForEntity(const scene::Entity& iEntity) -> std::string {
 
 template<isNamedComponent Comp>
 void addComponentPop(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const std::string& iLayerTypeKey) {
-	// Filter out components whose category is incompatible with the entity's
-	// renderer layer. When the layer type is unknown (empty stack / no
-	// RendererTag) we leave the menu untouched so authoring never gets blocked
-	// by a half-configured project.
 	if constexpr (isRaycastOnlyComponent<Comp>) {
 		if (!iLayerTypeKey.empty() && iLayerTypeKey != "RendererRaycast")
 			return;
@@ -650,8 +597,6 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 												 ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
 												 ImGuiTreeNodeFlags_FramePadding;
 	if (ioEntity.hasComponent<T>()) {
-		// Component-scoped ID prevents label collisions across different component types
-		// that share field names (e.g. "Colour" in SpriteRenderer and CircleRenderer).
 		ImGui::PushID(T::name());
 		auto& component = ioEntity.getComponent<T>();
 		const ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
@@ -699,8 +644,6 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 			const auto beforeYaml =
 					iUndoManager != nullptr ? scene::SceneSerializer::serializeEntityToString(ioEntity) : std::string{};
 			gui::component::renderProps(component);
-			// Compare entity state after renderProps — push undo command if changed.
-			// Merge coalescing handles rapid DragFloat changes automatically.
 			if (iUndoManager != nullptr) {
 				const auto afterYaml = scene::SceneSerializer::serializeEntityToString(ioEntity);
 				if (beforeYaml != afterYaml) {

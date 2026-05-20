@@ -28,25 +28,11 @@ OWL_DIAG_POP
 namespace owl::gui {
 
 namespace {
-/**
- * Requested UI font size, applied on the next `UiLayer::onAttach`.  Stored as a module-local so it
- * can be set from `main` before the engine pushes the `UiLayer` overlay.
- */
 float g_uiFontSize = 20.f;
-/// Requested code-editor font size, applied on the next `UiLayer::onAttach`.
+// Requested code-editor font size, applied on the next `UiLayer::onAttach`.
 float g_codeFontSize = 13.f;
-/**
- * Strong references kept alive for the current frame so the underlying GPU
- * descriptors stay valid until `ImGui_ImplVulkan_RenderDrawData` has consumed
- * the captured `ImTextureID`s. Drained at the very end of `UiLayer::end()`.
- */
 std::vector<shared<renderer::gpu::Texture>> g_deferredTextureReleases;
 
-/**
- * @brief
- *  Search for `iRelative` (e.g. `"fonts/roboto/Roboto-Regular.ttf"`) across the engine asset
- * directories.  Returns the first match, or an empty path when none exists.
- */
 auto resolveAssetFile(const std::filesystem::path& iRelative) -> std::filesystem::path {
 	if (!core::Application::instanced())
 		return {};
@@ -97,10 +83,6 @@ void UiLayer::onAttach() {
 	io.ConfigViewportsNoDecoration = true;
 	io.ConfigViewportsNoAutoMerge = false;
 
-	// Better fonts — resolved from `engine_assets/fonts/` at runtime.  When running without an
-	// `Application` (standalone unit tests calling `disableApp()`), asset directories and the Log
-	// singleton are unavailable, so we skip external fonts and let ImGui fall back to its bundled
-	// default font — this keeps `UiLayer` exercisable from tests without a full engine context.
 	const ImFontConfig fontConfig;
 	const float uiSize = g_uiFontSize;
 	ImFont* robotoFont = nullptr;
@@ -115,9 +97,6 @@ void UiLayer::onAttach() {
 			io.Fonts->AddFontFromFileTTF(p.string().c_str(), uiSize, &fontConfig);
 		if (const auto p = resolveAssetFile("fonts/roboto/Roboto-Italic.ttf"); !p.empty())
 			io.Fonts->AddFontFromFileTTF(p.string().c_str(), uiSize, &fontConfig);
-		// Dedicated code-editor font: JetBrains Mono, monospace, rasterised at the user-configured
-		// size (`g_codeFontSize`) so the TextEditor widget gets clean glyph metrics with no runtime
-		// bitmap scaling.
 		if (const auto p = resolveAssetFile("fonts/jetbrainsmono/JetBrainsMono-Regular.ttf"); !p.empty())
 			mp_codeFont = io.Fonts->AddFontFromFileTTF(p.string().c_str(), g_codeFontSize, &fontConfig);
 		else
@@ -229,19 +208,12 @@ void UiLayer::end() const {
 		const auto& vkh = renderer::gpu::vulkan::internal::VulkanHandler::get();
 		renderer::gpu::RenderCommand::beginBatch();
 		renderer::gpu::RenderCommand::nextSubpass();
-		// Skip the ImGui submission if the Vulkan framebuffer wasn't successfully
-		// (re)acquired this frame — `getCurrentCommandBuffer` would dereference a
-		// null pointer, which crashes during async asset reloads that happen
-		// mid-frame (e.g. drag-dropping a tileset into the tilemap editor).
 		if (VkCommandBuffer cmd = vkh.getCurrentCommandBuffer(); cmd != VK_NULL_HANDLE)
 			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 		else
 			OWL_CORE_WARN("UiLayer: skipped ImGui submission — Vulkan command buffer not ready.")
 		renderer::gpu::RenderCommand::endBatch();
 	}
-	// Drop any texture that was swapped out mid-frame: its descriptor has now
-	// been consumed by `RenderDrawData`, so the underlying GPU resource can
-	// safely be released.
 	g_deferredTextureReleases.clear();
 
 	if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
@@ -261,18 +233,11 @@ void UiLayer::setTheme(const Theme& iTheme) {
 	ImGui::StyleColorsDark();
 
 	auto& colors = ImGui::GetStyle().Colors;
-	// ======================
-	// Colours
-	// Text 1 2
 	colors[ImGuiCol_Text] = vec(iTheme.text);
-	// colours[ImGuiCol_TextDisabled] = vec(iTheme.textDisabled);
-	// Window Background 2 3 4 5
 	colors[ImGuiCol_WindowBg] = vec(iTheme.windowBackground);
 	colors[ImGuiCol_ChildBg] = vec(iTheme.childBackground);
 	colors[ImGuiCol_PopupBg] = vec(iTheme.backgroundPopup);
 	colors[ImGuiCol_Border] = vec(iTheme.border);
-	// colours[ImGuiCol_BorderShadow] = vec(iTheme.border);
-	// Frame BG 7 8 9
 	colors[ImGuiCol_FrameBg] = vec(iTheme.frameBackground);
 	colors[ImGuiCol_FrameBgHovered] = vec(iTheme.frameBackgroundHovered);
 	colors[ImGuiCol_FrameBgActive] = vec(iTheme.frameBackgroundActive);
@@ -319,29 +284,9 @@ void UiLayer::setTheme(const Theme& iTheme) {
 	// Docking 40 41
 	colors[ImGuiCol_DockingPreview] = vec(iTheme.dockingPreview);
 	colors[ImGuiCol_DockingEmptyBg] = vec(iTheme.dockingEmptyBackground);
-	// PlotLines 42 43 44 44
-	// colours[ImGuiCol_PlotLines] = vec(iTheme.Text);
-	// colours[ImGuiCol_PlotLinesHovered] = vec(iTheme.Text);
-	// colours[ImGuiCol_PlotHistogram] = vec(iTheme.Text);
-	// colours[ImGuiCol_PlotHistogramHovered] = vec(iTheme.Text);
-	/// Tables 46 47 48 49 50
 	colors[ImGuiCol_TableHeaderBg] = vec(iTheme.groupHeader);
 	// colours[ImGuiCol_TableBorderStrong] = vec.(iTheme.Text);
 	colors[ImGuiCol_TableBorderLight] = vec(iTheme.border);
-	// colours[ImGuiCol_TableRowBg] = vec.(iTheme.Text);
-	// colours[ImGuiCol_TableRowBgAlt] = vec.(iTheme.Text);
-	// Text Selected 51
-	// colours[ImGuiCol_TextSelectedBg] = vec.(iTheme.Text);
-	// Drag n DRop 52
-	// colours[ImGuiCol_DragDropTarget] = vec.(iTheme.Text);
-	// Nav 53 54 55
-	// colours[ImGuiCol_NavHighlight] = vec.(iTheme.Text);
-	// colours[ImGuiCol_NavWindowingHighlight] = vec.(iTheme.Text);
-	// colours[ImGuiCol_NavWindowingDimBg] = vec.(iTheme.Text);
-	// Modal window 56
-	// colours[ImGuiCol_ModalWindowDimBg] = vec.(iTheme.Text);
-	//========================================================
-	// Style
 	auto& style = ImGui::GetStyle();
 	// rounding
 	style.WindowRounding = iTheme.windowRounding;
@@ -355,8 +300,6 @@ void UiLayer::setTheme(const Theme& iTheme) {
 	style.IndentSpacing = iTheme.indentSpacing;
 	style.WindowMenuButtonPosition = ImGuiDir_Right;
 	style.ColorButtonPosition = ImGuiDir_Left;
-	// When viewports are enabled we tweak WindowRounding/WindowBg so platform
-	// windows can look identical to regular ones.
 	if ((ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
 		style.WindowRounding = 0.0f;
 		style.Colors[ImGuiCol_WindowBg].w = 1.0f;
@@ -369,9 +312,6 @@ void UiLayer::initializeDocking() const {
 	static constexpr bool optFullScreenPersistent = true;
 	constexpr bool optFullScreen = optFullScreenPersistent;
 	static constexpr ImGuiDockNodeFlags dockSpaceFlags = ImGuiDockNodeFlags_None;
-	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-	// because it would be confusing to have two docking targets within each others.
-	// No menu bar anymore: the application provides its own top bar via `setTopBarCallback`.
 	ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoDocking;
 	if (optFullScreen) {
 		const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -384,22 +324,13 @@ void UiLayer::initializeDocking() const {
 					   ImGuiWindowFlags_NoMove;
 		windowFlags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 	}
-	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle
-	// the pass-through hole, so we ask Begin() to not render a background.
 	if constexpr ((dockSpaceFlags & ImGuiDockNodeFlags_PassthruCentralNode) != 0)
 		windowFlags |= ImGuiWindowFlags_NoBackground;
-	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-	// all active windows docked into it will lose their parent and become undocked.
-	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-	// any change of dock space/settings would lead to windows being stuck in limbo and never being visible.
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 	ImGui::Begin("OwlDockSpace", &dockSpaceOpen, windowFlags);
 	ImGui::PopStyleVar();
 	if (optFullScreen)
 		ImGui::PopStyleVar(2);
-	// Render the optional top bar (e.g. ribbon) before the DockSpace so it reserves its height
-	// and the DockSpace fills the remaining region.
 	if (m_topBarCallback)
 		m_topBarCallback();
 	// DockSpace

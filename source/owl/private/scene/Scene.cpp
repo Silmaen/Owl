@@ -74,10 +74,6 @@ auto getColliderBox(const Entity& iEntity, const math::Transform& iWorldTransfor
 	return {center - halfDiag, center + halfDiag};
 }
 
-/**
- * @brief
- *  Compute the natural aspect ratio of a text string for a given font.
- */
 auto computeTextAspect(const shared<data::fonts::Font>& iFont, const std::string& iText, const float iKerning,
 					   const float iLineSpacing) -> float {
 	if (!iFont || iText.empty())
@@ -109,10 +105,6 @@ auto computeTextAspect(const shared<data::fonts::Font>& iFont, const std::string
 	return diag.y() > 0.f ? diag.x() / diag.y() : 1.f;
 }
 
-/**
- * @brief
- *  Render a single UI child entity's visual components.
- */
 void renderUIChild(const Entity& iChild, const math::Transform& iTransform, const float iPxScaleY) {
 	const int entId = static_cast<int>(static_cast<entt::entity>(iChild));
 	// Sprite.
@@ -219,10 +211,6 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 	}
 }
 
-/**
- * @brief
- *  Advance one animated sprite by `iTimeStep`, applying `speedCurve` if set.
- */
 void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core::Timestep& iTimeStep) {
 	if (!ioAnim.m_playing || ioAnim.columns == 0 || ioAnim.rows == 0 || ioAnim.frameDuration <= 0.0f)
 		return;
@@ -250,19 +238,7 @@ void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core:
 		ioAnim.m_playing = false;
 }
 
-// Submit one tilemap entity to the GPU-instanced tilemap renderer. The
-// renderer emits one instanced drawcall per visible layer
-// (`vkCmdDrawIndexed(6, cellCount, …)` / `glDrawElementsInstanced(…)`) with
-// the per-instance VBO carrying `{cellWorld.xy, tileIndex, entityId}` per
-// cell; the vertex shader synthesises atlas UVs from the tile index. Lifted
-// out of `Scene::renderTilemaps` to keep that function below the
-// cognitive-complexity threshold.
 void drawTilemapQuads(const TilemapAsset& iAsset, const math::Transform& iWorldTransform, const int iEntityId) {
-	// The instanced `RendererTilemap` path is gated behind a runtime switch while
-	// we investigate the NVIDIA driver crash that hits `vkCmdBindPipeline` for
-	// scenes whose tilemap is rendered from the editor framebuffer. Until
-	// resolved, fall back to the original per-cell Renderer2D path — slower but
-	// correct, and gives the editor a usable tilemap preview again.
 	if (!iAsset.tileset)
 		return;
 	const float cellSize = iAsset.cellSize;
@@ -280,11 +256,8 @@ void drawTilemapQuads(const TilemapAsset& iAsset, const math::Transform& iWorldT
 				if (tileIdx < 0)
 					continue;
 				math::Transform cellTransform = iWorldTransform;
-				cellTransform.translation().x() += (originX + static_cast<float>(x) * cellSize);
-				cellTransform.translation().y() += (originY - static_cast<float>(y) * cellSize);
-				// Slight overscale (0.5%) so adjacent tiles overlap at rasterisation
-				// boundaries — without it, sub-pixel motion of the camera causes the
-				// shared edge between two tiles to flicker.
+				cellTransform.translation().x() += originX + static_cast<float>(x) * cellSize;
+				cellTransform.translation().y() += originY - static_cast<float>(y) * cellSize;
 				constexpr float kSeamOverlap = 1.005f;
 				cellTransform.scale().x() *= cellSize * kSeamOverlap;
 				cellTransform.scale().y() *= cellSize * kSeamOverlap;
@@ -368,8 +341,6 @@ void Scene::destroyEntity(Entity& ioEntity) {
 			std::erase(uuids, ioEntity.getUUID());
 		}
 	}
-	// If we're destroying the cached primary player, drop the cache so the next
-	// `getPrimaryPlayer()` re-scans. Cheaper than emitting an EnTT signal here.
 	if (m_primaryPlayerCache == ioEntity.m_entityHandle)
 		m_primaryPlayerCache = entt::null;
 	m_uuidIndex.erase(ioEntity.getUUID());
@@ -382,9 +353,6 @@ void Scene::onStartRuntime() {
 
 	status = Status::Playing;
 
-	// Diagnostic timing: every step logs its wall-clock duration so the
-	// user can spot the 2-minute scene-start regression at a glance —
-	// these are INFO-level (visible by default) and stay in for now.
 	using clk = std::chrono::steady_clock;
 	const auto runtimeStart = clk::now();
 	const auto ms = [](const clk::duration iDur) -> double {
@@ -392,14 +360,10 @@ void Scene::onStartRuntime() {
 	};
 	OWL_CORE_INFO("Scene::onStartRuntime: begin.")
 
-	// Tilemap tilesets are normally resolved on first render; we need them
-	// before physics init so collidable cells generate static fixtures.
 	const auto tilesetStart = clk::now();
 	resolveAllTilemapAssets();
 	OWL_CORE_INFO("Scene::onStartRuntime: tileset resolve {:.1f} ms.", ms(clk::now() - tilesetStart))
 
-	// Warm the EntityLink cache so the per-frame link loop never hits its
-	// O(N²) tag-rescan path on the first tick of play.
 	const auto linksStart = clk::now();
 	resolveAllEntityLinks();
 	OWL_CORE_INFO("Scene::onStartRuntime: entity-link resolve {:.1f} ms.", ms(clk::now() - linksStart))
@@ -550,11 +514,6 @@ void Scene::onEndRuntime() {
 void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender) {
 	OWL_PROFILE_FUNCTION()
 
-	// Per-pass visibility / layer-content caches: arm at the top of the tick,
-	// tear down at the end. They depend on `Visibility` / `RendererTag`,
-	// which scripts rarely mutate mid-tick; safe for the whole pass.
-	// World-transform cache is armed separately (after EntityLinks finish
-	// mutating transforms) — see further below in this function.
 	m_visibilityCache.clear();
 	m_layerContentCacheFirst.clear();
 	m_layerContentCacheNotFirst.clear();
@@ -620,9 +579,6 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		}
 		return;
 	}
-	// update native scripts — skip dormant (hidden in game) entities so their
-	// `onUpdate` doesn't burn time on objects the player can't see; `onCreate`
-	// is still deferred to the first visible tick.
 	registry.view<component::NativeScript>().each([iTimeStep, this](auto ioEntity, auto& ioNsc) -> auto {
 		if (!isEffectivelyVisible(Entity{ioEntity, this}, /*iEditorMode=*/false))
 			return;
@@ -634,8 +590,6 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		ioNsc.instance->onUpdate(iTimeStep);
 	});
 
-	// update Lua scripts — same dormant-entity skip; the instance survives,
-	// only its `on_update` tick is suspended while the host is hidden.
 	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
 		if (!isEffectivelyVisible(Entity{entity, this}, /*iEditorMode=*/false))
 			continue;
@@ -644,9 +598,6 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 			luaScript.instance->onUpdate(iTimeStep.getSeconds());
 	}
 
-	// Doors / pushwalls — advance the state machine, then mirror the slide offset
-	// onto the kinematic Box2D body (when present) so the upcoming physics step
-	// reflects the door's actual position for player collision.
 	updateRaycastDynamicWalls(iTimeStep.getSeconds());
 
 	// Inputs
@@ -659,10 +610,6 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	physic::PhysicCommand::frame(iTimeStep);
 
 	updateEntityLinks();
-	// World transforms are stable from this point until the end of the tick
-	// (no more entity-link, physics, or script mutations). Arm the world-
-	// transform cache so sound + render's many `getWorldTransform` calls
-	// dedupe against the first one per entity.
 	m_worldTransformCache.clear();
 	m_worldTransformCacheActive = true;
 	// Sound: update listener and spatial source positions
@@ -691,10 +638,6 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 										 {wt.translation().x(), wt.translation().y(), wt.translation().z()});
 	}
 
-	// Triggers: edge detection (enter/exit/stay) + timer updates.
-	// An entity hidden via `Visibility` (or whose ancestor is hidden) is treated as
-	// disabled for gameplay purposes — its triggers do not fire and any prior overlap
-	// state is reset so the next time it becomes visible the player has to re-enter.
 	{
 		auto player = getPrimaryPlayer();
 		for (const auto view = registry.view<component::Trigger>(); const auto ent: view) {
@@ -735,10 +678,6 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 
 	// Render 2D
 	if (iRender && mainCamera != nullptr) {
-		// Re-read the camera transform AFTER scripts have run — Lua follow-cam logic
-		// updates the Camera entity's Transform via transform.set_position(); without
-		// this refresh, the renderer would use the position from the start of the
-		// frame, which causes the camera to appear locked or laggy.
 		if (primaryCameraEntity != entt::null) {
 			const Entity camEntity{primaryCameraEntity, this};
 			camTransform = getWorldTransform(camEntity);
@@ -838,8 +777,6 @@ void Scene::onRenderRuntime() {
 void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
-	// Per-pass caches: editor mode does not run scripts or physics, so
-	// transforms are stable for the entire pass — arm both caches up front.
 	m_visibilityCache.clear();
 	m_layerContentCacheFirst.clear();
 	m_layerContentCacheNotFirst.clear();
@@ -870,10 +807,6 @@ auto Scene::layerAccepts(const Entity& iEntity) const -> bool {
 auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) const -> bool {
 	OWL_PROFILE_FUNCTION()
 
-	// In-pass cache: the render stack calls this once per layer per frame,
-	// so a 10-layer scene was paying 10 × (7 view scans) every frame. With
-	// the cache the second-and-subsequent layers (same `iLayerName`)
-	// short-circuit to a hashmap lookup.
 	auto& cache = iIsFirst ? m_layerContentCacheFirst : m_layerContentCacheNotFirst;
 	if (m_inUpdatePass) {
 		if (const auto it = cache.find(iLayerName); it != cache.end())
@@ -926,13 +859,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
 	const auto& stack = renderer::Renderer::getRenderStack();
-	// Editor mode: ignore the renderer stack entirely and fall back to a single 2D
-	// pass. Editing a tilemap from inside a first-person raycast view is unusable
-	// (the level designer needs the top-down grid), so the editor always sees the
-	// 2D rendering of every entity regardless of `RendererTag` / `EnabledRenderers`.
-	// The multi-layer pipeline kicks back in as soon as the scene enters Play mode.
-	const bool editorMode = (status == Status::Editing);
-	if (editorMode || stack.isEmpty()) {
+	if (const bool editorMode = (status == Status::Editing); editorMode || stack.isEmpty()) {
 		renderer::Renderer2D::resetStats();
 		renderer::Renderer2D::beginScene(iCamera);
 		m_currentLayerName.clear();
@@ -948,11 +875,6 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	for (const auto& layer: stack.getLayers()) {
 		const bool isFirst = first;
 		first = false;
-		// Skip layers with no entity routed to them — running an empty
-		// `beginScene/endScene` pair otherwise costs a Vulkan render-pass per
-		// layer and causes the neighbouring layers to flicker (the empty pass
-		// clears state mid-frame). Untagged renderables default to the first
-		// layer, so if it has zero matching entities the entire layer is dead.
 		if (!layerHasContent(layer->getName(), isFirst))
 			continue;
 		layer->setViewport(m_viewportSize);
@@ -961,9 +883,6 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 		m_currentLayerIsFirst = isFirst;
 		mp_currentLayer = layer.get();
 		render();
-		// Hand the layer's effective VP (world camera for sprite layers, pixel
-		// ortho for raycast / screen-overlay layers) to `renderUI` so the HUD
-		// stays aligned with whatever frame the layer is currently drawing in.
 		renderUI(layer->getEffectiveViewProjection(iCamera));
 		layer->onEndFrame();
 	}
@@ -979,10 +898,6 @@ void Scene::render() {
 	const bool raycastLayer =
 			mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererRaycast";
 
-	// Draw background (only the first entity with this component, and only on the first layer
-	// when running through the stack — backgrounds always sit behind every layer).
-	// Skipped for raycast layers because the layer renders its own sky / floor backdrop;
-	// drawing both produces a visible flicker as one overdraws the other depending on order.
 	if (m_currentLayerIsFirst && !raycastLayer) {
 		if (const auto bgView = registry.view<component::BackgroundTexture>(); !bgView.empty()) {
 			if (const auto bgEntity = bgView.front(); isEffectivelyVisible(Entity{bgEntity, this}, editorMode)) {
@@ -998,20 +913,10 @@ void Scene::render() {
 		}
 	}
 
-	// Draw tilemaps first so they sit behind every sprite / circle / text in the scene.
-	// Renderer2D batches do not depth-sort within a frame; the painter's order wins,
-	// hence tilemaps are drawn before the foreground entities.
 	resolveAllTilemapAssets();
 	renderTilemaps(editorMode, raycastLayer);
 
-	// Raycast layer: route Sprite / AnimatedSprite entities through `RendererRaycast::drawSprites`
-	// (camera-space projection + back-to-front sort + per-column wall occlusion). The 2D Circle
-	// and Text components don't have a meaningful first-person interpretation, so they're
-	// silently dropped here — author such overlays on a separate `Renderer2D` HUD layer.
 	if (raycastLayer) {
-		// Order is important: dynamic walls refine the per-column zBuffer that the
-		// sprite pass reads for occlusion, so they must run *after* the static
-		// tilemap pass (already done above) and *before* sprites.
 		renderRaycastDynamicWalls(editorMode);
 		renderRaycastSprites(editorMode);
 		return;
@@ -1095,11 +1000,6 @@ void Scene::render() {
 										  .lineSpacing = text.lineSpacing,
 										  .entityId = static_cast<int>(entity)});
 	}
-	// 2D editor preview for raycast pushwalls — render the cell as a full-size
-	// textured quad (the same surface the first-person raycast view shows),
-	// sampled at the pushwall's tile inside its tileset atlas. In a raycast
-	// layer the entity is routed through `drawDynamicWalls` and skips this code
-	// path, so this loop only contributes in editor mode / pure-2D layers.
 	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
@@ -1119,14 +1019,6 @@ void Scene::render() {
 										.textureCoords = corners,
 										.entityId = static_cast<int>(entity)});
 	}
-	// 2D editor preview for raycast doors — render a single thin quad with the
-	// face texture, extended *along* the slide axis (plate normal is
-	// perpendicular to the opening direction). A north/south-opening door draws
-	// a vertical strip, an east/west-opening one a horizontal strip, so a
-	// designer can read the slide direction at a glance from the top-down view.
-	// We deliberately do not draw the lateral texture here — that would just
-	// duplicate the surrounding tilemap walls in editor view and obscure the
-	// door strip.
 	for (const auto view = registry.view<component::Transform, component::RaycastDoor>(); auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
@@ -1171,9 +1063,6 @@ void Scene::renderTilemaps(const bool iEditorMode, const bool iRaycastLayer) {
 		const auto& assetData = *tilemap.asset;
 		const math::Transform worldTransform = getWorldTransform(ent);
 		const int entityId = static_cast<int>(entity);
-		// When the active layer is a raycaster, route the tilemap to the DDA pipeline
-		// instead of emitting per-cell 2D quads. The 2D path keeps running for any
-		// layer whose type isn't "RendererRaycast" (legacy and HUD tilemaps included).
 		if (iRaycastLayer) {
 			renderer::RendererRaycast::drawTilemapWalls(assetData, worldTransform, entityId);
 			continue;
@@ -1185,20 +1074,11 @@ void Scene::renderTilemaps(const bool iEditorMode, const bool iRaycastLayer) {
 void Scene::renderRaycastSprites(const bool iEditorMode) {
 	OWL_PROFILE_FUNCTION()
 
-	// Resolve the per-sprite raycast size: optional override (`raycastSize` field on
-	// the component) wins over `Transform.scale.xy` so a designer can keep a
-	// consistent top-down editor scale and still adjust how big the billboard
-	// appears in first-person. Z offset is the sum of `Transform.translation.z`
-	// and the optional `raycastZOffset` so existing scenes stay byte-identical
-	// when the new field is left at 0.
 	const auto resolveSize = [](const math::vec2& iOverride, const math::vec3& iScale) -> math::vec2 {
 		if (iOverride.x() > 0.f && iOverride.y() > 0.f)
 			return iOverride;
 		return {iScale.x(), iScale.y()};
 	};
-	// Static-local pool: keeps the previous frame's capacity so the typical
-	// 100–1000 sprite scene only pays the growth allocation once per session.
-	// `renderRaycastSprites` is only called from the main render thread.
 	thread_local std::vector<renderer::RaycastSpriteData> raycastSprites;
 	raycastSprites.clear();
 	for (const auto view = registry.view<component::Transform, component::SpriteRenderer>(); const auto entity: view) {
@@ -1251,11 +1131,8 @@ void Scene::renderRaycastSprites(const bool iEditorMode) {
 }
 
 namespace {
-/// Compute the (minU, minV, maxU, maxV) sub-rectangle of a tile inside its tileset atlas.
 auto tileUvRectFromTileset(const Tileset& iTileset, const uint32_t iTileIndex) -> math::vec4 {
 	const auto corners = iTileset.getTileUv(iTileIndex);
-	// `getTileUv` returns BL, BR, TR, TL — picking BL and TR gives the (minU, minV)
-	// and (maxU, maxV) corners directly.
 	return math::vec4{corners[0].x(), corners[0].y(), corners[2].x(), corners[2].y()};
 }
 }// namespace
@@ -1263,9 +1140,6 @@ auto tileUvRectFromTileset(const Tileset& iTileset, const uint32_t iTileIndex) -
 void Scene::renderRaycastDynamicWalls(const bool iEditorMode) {
 	OWL_PROFILE_FUNCTION()
 
-	// Pushwalls — uniform-texture cubes, route to drawDynamicWalls.
-	// Static-local pool keeps the previous frame's capacity (same rationale
-	// as the sprite buffer above).
 	thread_local std::vector<renderer::RaycastDynamicWallData> walls;
 	walls.clear();
 	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); const auto entity: view) {
@@ -1328,21 +1202,15 @@ void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
 		hasPlayer = true;
 	}
 
-	// Doors — Idle → Opening → Open → Closing → Idle cycle.
-	// The entity's Transform.translation stays fixed at the cell centre; only the
-	// internal `currentOffset` (= plate distance from cell centre along `slideDirection`)
-	// changes. When the door has a `PhysicBody`, its kinematic position is set to the
-	// plate's current world location so the player collides with the moving plate, not
-	// the static cell volume.
 	for (const auto view = registry.view<component::Transform, component::RaycastDoor>(); const auto entity: view) {
 		const Entity ent{entity, this};
 		auto& door = view.get<component::RaycastDoor>(entity);
-		auto& transform = view.get<component::Transform>(entity);
+		auto& [transform] = view.get<component::Transform>(entity);
 
 		// Built-in activation (proximity + key edge). `interactionKey == 0` disables.
 		if (door.state == component::RaycastDoor::State::Idle && door.interactionKey != 0 && hasPlayer) {
-			const float dx = playerWorldXY.x() - transform.transform.translation().x();
-			const float dy = playerWorldXY.y() - transform.transform.translation().y();
+			const float dx = playerWorldXY.x() - transform.translation().x();
+			const float dy = playerWorldXY.y() - transform.translation().y();
 			const float distSq = dx * dx + dy * dy;
 			const bool keyHeld = input::Input::isKeyPressed(door.interactionKey);
 			const bool keyEdge = keyHeld && !door.keyHeldLastTick;
@@ -1354,9 +1222,6 @@ void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
 		}
 
 		const float prevOffset = door.currentOffset;
-		// `slideDistance` is always exactly 1 cell — that's the door's contract; the
-		// extra 1-pixel margin needed to fully hide the plate behind the pocket-side
-		// wall is added in the renderer, not in the state machine.
 		switch (door.state) {
 			case component::RaycastDoor::State::Idle:
 				break;
@@ -1383,12 +1248,6 @@ void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
 		}
 		const float delta = door.currentOffset - prevOffset;
 		if (std::abs(delta) > 1e-6f) {
-			// Synchronise the kinematic body to the plate's world position. The body
-			// represents the moving plate (collider), not the static cell volume.
-			// `PhysicCommand::setTransform` transparently handles both an
-			// explicit `PhysicBody` and the auto-created body for door entities, so
-			// a closed door is never traversable even without the user wiring a
-			// `PhysicBody` component manually.
 			using OD = component::RaycastDoor::OpeningDirection;
 			float dx = 0.f;
 			float dy = 0.f;
@@ -1417,15 +1276,15 @@ void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
 	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); const auto entity: view) {
 		const Entity ent{entity, this};
 		auto& push = view.get<component::RaycastPushWall>(entity);
-		auto& transform = view.get<component::Transform>(entity);
+		auto& [transform] = view.get<component::Transform>(entity);
 
 		if (push.state == component::RaycastPushWall::State::Idle && push.interactionKey != 0 && hasPlayer) {
-			const float dx = playerWorldXY.x() - transform.transform.translation().x();
-			const float dy = playerWorldXY.y() - transform.transform.translation().y();
+			const float dx = playerWorldXY.x() - transform.translation().x();
+			const float dy = playerWorldXY.y() - transform.translation().y();
 			const float distSq = dx * dx + dy * dy;
 			const bool keyHeld = input::Input::isKeyPressed(push.interactionKey);
-			const bool keyEdge = keyHeld && !push.keyHeldLastTick;
-			if (keyEdge && distSq <= push.interactionRange * push.interactionRange)
+			if (const bool keyEdge = keyHeld && !push.keyHeldLastTick;
+				keyEdge && distSq <= push.interactionRange * push.interactionRange)
 				push.state = component::RaycastPushWall::State::Moving;
 			push.keyHeldLastTick = keyHeld;
 		} else if (push.interactionKey != 0) {
@@ -1440,10 +1299,9 @@ void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
 				push.state = component::RaycastPushWall::State::Final;
 			}
 		}
-		const float delta = push.currentOffset - prevOffset;
-		if (std::abs(delta) > 1e-6f) {
-			transform.transform.translation().x() += push.slideDirection.x() * delta;
-			transform.transform.translation().y() += push.slideDirection.y() * delta;
+		if (const float delta = push.currentOffset - prevOffset; std::abs(delta) > 1e-6f) {
+			transform.translation().x() += push.slideDirection.x() * delta;
+			transform.translation().y() += push.slideDirection.y() * delta;
 			const math::Transform wt = getWorldTransform(ent);
 			physic::PhysicCommand::setTransform(ent, math::vec2f{wt.translation().x(), wt.translation().y()},
 												wt.rotation().z());
@@ -1469,31 +1327,17 @@ void Scene::resolveAllTilemapAssets() {
 		return exists(iRelative) && iLoader(iRelative);
 	};
 
-	// Phase 1 — resolve the `.owltilemap` asset from `tilemapPath` (skip components that
-	// already carry an in-memory asset, e.g. legacy inline tilemaps).
-	for (const auto view = registry.view<component::Tilemap>(); auto entity: view) {
-		auto& tilemap = view.get<component::Tilemap>(entity);
-		if (tilemap.asset || tilemap.tilemapPath.empty())
+	for (const auto view = registry.view<component::Tilemap>(); const auto entity: view) {
+		auto& [tilemapPath, asset] = view.get<component::Tilemap>(entity);
+		if (asset || tilemapPath.empty())
 			continue;
 		auto resolved = mkShared<TilemapAsset>();
-		const bool loaded = loadFromAssetDirs(tilemap.tilemapPath, [&](const std::filesystem::path& iPath) -> bool {
-			return resolved->loadFromFile(iPath);
-		});
+		const bool loaded = loadFromAssetDirs(
+				tilemapPath, [&](const std::filesystem::path& iPath) -> bool { return resolved->loadFromFile(iPath); });
 		if (loaded)
-			tilemap.asset = std::move(resolved);
+			asset = std::move(resolved);
 	}
 
-	// Phase 2 — resolve `.owltileset` references shared between tilemaps,
-	// raycast doors and raycast pushwalls. A per-scene cache keyed by the
-	// path string makes sure each `.owltileset` is loaded once and the same
-	// `shared<Tileset>` is reused everywhere — so a door that picks the same
-	// atlas as the world's tilemap doesn't double the GPU memory footprint.
-	// `TilemapAsset::tilesetPath` is a `std::filesystem::path`; the raycast door /
-	// pushwall components use `std::string`. We normalise to `std::filesystem::path`
-	// here so the lambda accepts both call sites (Windows clang is strict about the
-	// `string → path` direction even though it converts implicitly elsewhere). The
-	// cache key is the canonical `generic_string()` form so two callers spelling the
-	// same path with different separators still share the load.
 	std::unordered_map<std::string, shared<Tileset>> tilesetCache;
 	const auto resolveTileset = [&](const std::filesystem::path& iPath) -> shared<Tileset> {
 		if (iPath.empty())
@@ -1530,19 +1374,13 @@ void Scene::resolveAllTilemapAssets() {
 		if (auto resolved = resolveTileset(push.tilesetPath); resolved)
 			push.tileset = std::move(resolved);
 	}
-	// Mark the cache clean so subsequent render frames return instantly until
-	// a new tilemap-related component is added or `invalidateTilemapAssets()`
-	// is called from inspector path-edit code.
+
 	m_tilemapAssetsDirty = false;
 }
 
 void Scene::resolveAllEntityLinks() {
 	OWL_PROFILE_FUNCTION()
 
-	// Build a temp tag → entity map once (O(N)), then resolve every
-	// EntityLink in a single O(N) pass. Without this warm-up the runtime
-	// loop falls into the O(N²) "scan all Tag components for the matching
-	// name" path on the first tick of every scene start.
 	std::unordered_map<std::string, entt::entity> tagIndex;
 	for (const auto view = registry.view<component::Tag>(); const auto entity: view)
 		tagIndex.emplace(view.get<component::Tag>(entity).tag, entity);
@@ -1611,9 +1449,6 @@ void Scene::renderUI(const math::mat4& iEffectiveViewProjection) {
 	const auto vpWidth = static_cast<float>(m_viewportSize.x());
 	const auto vpHeight = static_cast<float>(m_viewportSize.y());
 
-	// Collect Canvas entities, sorted by sortOrder. `thread_local` reuse so
-	// the typical UI scene (a handful of canvases) doesn't allocate every
-	// frame — same pattern as the raycast sprite / wall / door pools.
 	struct CanvasEntry {
 		entt::entity entity;
 		int32_t sortOrder;
@@ -1632,20 +1467,6 @@ void Scene::renderUI(const math::mat4& iEffectiveViewProjection) {
 		return;
 	std::ranges::sort(canvases, [](const auto& iA, const auto& iB) -> auto { return iA.sortOrder < iB.sortOrder; });
 
-	// Convert pixel coordinates into the same frame the active layer's
-	// `Renderer2D` is bound to. The layer reports it via
-	// `RenderLayer::getEffectiveViewProjection` (world VP for sprite layers,
-	// pixel-space ortho VP for raycast / screen-overlay layers). Project the
-	// two opposite NDC corners back into world space and take min/max — this
-	// is robust to the Vulkan-style Y-flip in our projections (where the
-	// "bottom-left" NDC corner actually unprojects to the world *top-left*),
-	// because picking the min Y / max Y of both corners always gives the
-	// AABB regardless of which way the projection flipped.
-	//
-	// HUDs that should follow the camera's screen frame (rather than world
-	// axes) belong on a `Renderer2DLayer` configured with `Space: Screen`,
-	// which binds a pixel-space ortho instead of the rotated scene camera —
-	// see the sample project's `ui` layer.
 	const math::mat4 invVP = math::inverse(iEffectiveViewProjection);
 	const math::vec4 cornerA4 = invVP * math::vec4{-1.f, -1.f, 0.f, 1.f};
 	const math::vec4 cornerB4 = invVP * math::vec4{1.f, 1.f, 0.f, 1.f};
@@ -1689,9 +1510,7 @@ void Scene::renderUI(const math::mat4& iEffectiveViewProjection) {
 }
 
 void Scene::onViewportResize(const math::vec2ui& iSize) {
-	// Skip zero-area sizes: viewport panels report (0, 0) for a frame or two
-	// between creation and the first layout pass, and `SceneCamera::setViewportSize`
-	// asserts on null size (division by zero in the aspect ratio).
+
 	if (iSize.surface() == 0)
 		return;
 	m_viewportSize = iSize;
@@ -1732,8 +1551,7 @@ auto Scene::getPrimaryCamera() const -> Entity {
 
 auto Scene::getPrimaryPlayer() const -> Entity {
 	auto* self = const_cast<Scene*>(this);// NOLINT(cppcoreguidelines-pro-type-const-cast)
-	// Hot path: the cache survives across frames; the scan only fires once
-	// per invalidation (entity destroy / Player component add or remove).
+
 	if (m_primaryPlayerCache != entt::null && registry.valid(m_primaryPlayerCache)) {
 		if (const auto* player = registry.try_get<component::Player>(m_primaryPlayerCache);
 			player != nullptr && player->primary)
@@ -1760,10 +1578,6 @@ auto Scene::getEntityCount() const -> uint32_t {
 auto Scene::findEntityByUUID(const core::UUID iUuid) const -> Entity {
 	auto* self = const_cast<Scene*>(this);// NOLINT(cppcoreguidelines-pro-type-const-cast)
 	if (const auto it = m_uuidIndex.find(iUuid); it != m_uuidIndex.end()) {
-		// Stale entry possible if the entity was destroyed without going
-		// through `Scene::destroyEntity` (rare — e.g. external registry
-		// manipulation in a test). Validate before returning and self-heal
-		// on miss so the cache converges back to truth.
 		if (registry.valid(it->second) && registry.try_get<component::ID>(it->second) != nullptr &&
 			registry.get<component::ID>(it->second).id == iUuid)
 			return Entity{it->second, self};
@@ -1835,9 +1649,6 @@ auto Scene::getWorldTransform(const Entity& iEntity) const -> math::Transform {
 }
 
 auto Scene::isEffectivelyVisible(const Entity& iEntity, const bool iEditorMode) const -> bool {
-	// Cache key: 31 bits of entity id + 1 bit for editor-mode. Only consulted
-	// when the scene is inside an update pass (`m_inUpdatePass`), so callers
-	// outside that path (tests, inspector helpers) always read fresh state.
 	const auto handle = static_cast<entt::entity>(iEntity);
 	const uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(handle)) << 1) | (iEditorMode ? 1ULL : 0ULL);
 	if (m_inUpdatePass) {
@@ -1970,8 +1781,6 @@ auto Scene::duplicateSubtree(const Entity& iEntity) -> Entity {
 	auto& [parentId, childrenIds] = newRoot.getComponent<component::Hierarchy>();
 	parentId = core::UUID{0};
 	childrenIds.clear();
-	// Iteratively duplicate children (avoid recursion for clang-tidy misc-no-recursion).
-	// Stack of (source entity, destination parent entity) pairs.
 	std::vector<std::pair<Entity, Entity>> stack;
 	for (const auto childId: iEntity.getComponent<component::Hierarchy>().childrenIds) {
 		if (const Entity srcChild = findEntityByUUID(childId); srcChild)
@@ -2074,9 +1883,6 @@ OWL_API void Scene::onComponentAdded<component::PhysicBody>([[maybe_unused]] con
 template<>
 OWL_API void Scene::onComponentAdded<component::Player>([[maybe_unused]] const Entity& iEntity,
 														[[maybe_unused]] component::Player& ioComponent) {
-	// New Player component → drop the cache so `getPrimaryPlayer()` picks up
-	// the newly-tagged primary on the next call (covers both the "no player
-	// yet" case and the "designer toggled `primary` on a new entity" case).
 	invalidatePrimaryPlayerCache();
 }
 

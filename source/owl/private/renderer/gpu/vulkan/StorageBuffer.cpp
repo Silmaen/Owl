@@ -62,10 +62,28 @@ void StorageBuffer::setData(const void* iData, const uint32_t iSize, const uint3
 	vkUnmapMemory(vkc.getLogicalDevice(), m_memory);
 }
 
-void StorageBuffer::bind() {
-	// SSBO binding is descriptor-set driven on Vulkan; the actual VkWriteDescriptorSet
-	// is owned by the pipeline that uses this SSBO. This call is a no-op kept for
-	// API parity with `UniformBuffer::bind`.
+void StorageBuffer::getData(void* oData, const uint32_t iSize, const uint32_t iOffset) {
+	if (m_buffer == nullptr || iSize == 0 || oData == nullptr)
+		return;
+	if (iOffset + iSize > m_size) {
+		OWL_CORE_WARN("Vulkan storage buffer: getData out of range (offset {} + size {} > capacity {}).", iOffset,
+					  iSize, m_size)
+		return;
+	}
+	const auto& vkc = internal::VulkanCore::get();
+	vkDeviceWaitIdle(vkc.getLogicalDevice());
+
+	void* mapped = nullptr;
+	vkMapMemory(vkc.getLogicalDevice(), m_memory, iOffset, iSize, 0, &mapped);
+
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
+	memcpy(oData, mapped, iSize);
+	OWL_DIAG_POP
+
+	vkUnmapMemory(vkc.getLogicalDevice(), m_memory);
 }
+
+void StorageBuffer::bind() {}
 
 }// namespace owl::renderer::gpu::vulkan

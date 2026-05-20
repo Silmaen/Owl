@@ -30,16 +30,6 @@ constexpr float g_minZoom = 4.f;
 constexpr float g_maxZoom = 128.f;
 constexpr float g_zoomWheelStep = 1.15f;
 
-/**
- * @brief
- *  Coarse-grained undo command for `TilemapAsset` edits.
- *
- * Captures the asset YAML before and after a stroke; `undo` / `redo` deserialize
- * the saved state back into the live asset. Granularity is the whole asset, not
- * a single cell — the trade-off is simpler correctness (no command graph for
- * fill / rect / multi-layer ops) at the cost of strokes being heavier than
- * cell-by-cell deltas. Acceptable for the editor cadence (one push per stroke).
- */
 class ModifyTilemapAssetCommand final : public UndoCommand<scene::TilemapAsset> {
 public:
 	ModifyTilemapAssetCommand(std::string iBeforeYaml, std::string iAfterYaml, std::string iDescription)
@@ -47,8 +37,6 @@ public:
 		  m_description{std::move(iDescription)} {}
 
 	void undo(scene::TilemapAsset& ioTarget) override {
-		// Preserve the resolved tileset across deserialise (the YAML only carries the
-		// tilesetPath; reloading it would clear the in-memory texture handle).
 		const auto savedTileset = ioTarget.tileset;
 		std::ignore = ioTarget.deserializeFromString(m_beforeYaml);
 		ioTarget.tileset = savedTileset;
@@ -68,24 +56,8 @@ private:
 	std::string m_description;
 };
 
-/**
- * @brief
- *  Compose a YAML string of the asset suitable for undo capture.
- * @param[in] iAsset The asset to snapshot.
- * @return The YAML document.
- */
 auto snapshotAsset(const scene::TilemapAsset& iAsset) -> std::string { return iAsset.serializeToString("undo"); }
 
-/**
- * @brief
- *  Push an undoable mutation: snapshot the asset before, run the mutator, snapshot after,
- *  and push a `ModifyTilemapAssetCommand` if anything changed.
- * @tparam Fn Mutator callable type — invoked once with the live asset.
- * @param[in,out] ioAsset The asset to mutate.
- * @param[in,out] ioUndo The undo manager that receives the command.
- * @param[in] iDescription Human-readable description for the undo entry.
- * @param[in] iMutator Callable that performs the mutation.
- */
 template<typename Fn>
 void pushTilemapEdit(scene::TilemapAsset& ioAsset, TilemapUndoManager& ioUndo, const std::string& iDescription,
 					 Fn&& iMutator) {
@@ -98,14 +70,6 @@ void pushTilemapEdit(scene::TilemapAsset& ioAsset, TilemapUndoManager& ioUndo, c
 	}
 }
 
-/**
- * @brief
- *  Render a small icon-only button with a tooltip.
- * @param[in] iIcon Icon name registered in the IconBank.
- * @param[in] iTooltip Tooltip text shown on hover.
- * @param[in] iSize Square button size in pixels.
- * @return True when the button was clicked.
- */
 auto iconButton(const char* iIcon, const char* iTooltip, const float iSize = 20.f) -> bool {
 	auto& iconBank = gui::IconBank::instance();
 	const auto info = iconBank.getIcon(iIcon);
@@ -128,11 +92,6 @@ auto iconButton(const char* iIcon, const char* iTooltip, const float iSize = 20.
 	return clicked;
 }
 
-/**
- * @brief
- *  Render a small, word-wrapped help text in the disabled colour.
- * @param[in] iText The help string.
- */
 void helpText(const char* iText) {
 	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
 	ImGui::SetWindowFontScale(0.85f);
@@ -222,16 +181,12 @@ void TilemapDocument::onImGuiRender() {
 		ImGui::SetNextWindowFocus();
 	const bool open = ImGui::Begin(winTitle.c_str(), &m_pOpen, flags);
 	if (wantFocus) {
-		// Re-issue inside Begin to bring docked tabs to the front (`SetNextWindowFocus`
-		// alone is sometimes insufficient for newly-created tabs sharing a dock node).
 		ImGui::SetWindowFocus();
 		if (mp_editorLayer != nullptr)
 			mp_editorLayer->getDocumentManager().setActive(this);
 	}
 	if (open) {
 		const bool windowFocused = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
-		// Pull document-manager focus on tab activation so SceneHierarchy / Properties / ribbon
-		// reflect the document the user just clicked.
 		if (windowFocused && !m_wasFocused && mp_editorLayer != nullptr)
 			mp_editorLayer->getDocumentManager().setActive(this);
 		m_wasFocused = windowFocused;
@@ -257,10 +212,6 @@ void TilemapDocument::renderHierarchyPanel() {
 	const std::string tsButtonId = std::format("{}##tilesetSlot", tsLabel);
 	if (ImGui::Button(tsButtonId.c_str(), ImVec2(-1.f, 0.f))) {
 		pushTilemapEdit(m_asset, m_undoManager, "Clear tileset", [this]() -> void {
-			// Defer the GPU release: the tileset's texture may already be in
-			// ImGui's draw data this frame (atlas preview, palette button…),
-			// freeing it now invalidates a descriptor that is still about to
-			// be submitted by `ImGui_ImplVulkan_RenderDrawData`.
 			if (m_asset.tileset)
 				gui::UiLayer::deferTextureRelease(m_asset.tileset->texture);
 			m_asset.tilesetPath.clear();
@@ -320,9 +271,6 @@ void TilemapDocument::renderHierarchyPanel() {
 		m_asset.resize(static_cast<uint32_t>(std::max(1, width)), static_cast<uint32_t>(std::max(1, height)));
 	}
 	if (widthCommitted || heightCommitted) {
-		// One snapshot per "released drag". Use the resized state directly — the live preview
-		// already mutated `m_asset`, so we capture before / after by re-reading the saved
-		// snapshot and comparing with the post-edit state.
 		const auto after = snapshotAsset(m_asset);
 		if (after != m_savedSnapshot) {
 			auto cmd = mkUniq<ModifyTilemapAssetCommand>(m_savedSnapshot, after, "Resize grid");
@@ -352,8 +300,6 @@ void TilemapDocument::renderHierarchyPanel() {
 		ImGui::PushID(static_cast<int>(i));
 		ImGui::Separator();
 
-		// Buttons row first (right-aligned), input filling the remaining width on the first
-		// line to keep the row on a single visual line regardless of panel width.
 		const float buttonStride = 14.f + ImGui::GetStyle().FramePadding.x * 2.f + ImGui::GetStyle().ItemSpacing.x;
 		const float buttonsReserved = buttonStride * 4.f + ImGui::GetStyle().ItemSpacing.x * 2.f;
 		const bool isActive = (m_palette.getSelectedLayer() == static_cast<uint32_t>(i));
@@ -581,12 +527,6 @@ void TilemapDocument::drawCanvasTiles(ImDrawList* iDrawList, const ImVec2& iGrid
 									 iGridTopLeft.y + static_cast<float>(y) * iCellPx};
 				const ImVec2 cellMax{cellMin.x + iCellPx, cellMin.y + iCellPx};
 				if (tex != nullptr) {
-					// Tileset UVs follow Renderer2D's V-up convention (BL/BR/TR/TL) but
-					// ImGui screen coords are V-down (TL is at the top). Pair each screen
-					// corner with the *same* corner of the tile: screen TL ↔ tile TL
-					// (= uvs[3]), screen TR ↔ tile TR (= uvs[2]), etc. The texture sits
-					// bottom-up in GPU memory (stb flip on load), so sampling at the
-					// tile's TL UV correctly reads the top of the original image.
 					iDrawList->AddImageQuad(static_cast<ImTextureID>(tex->getRendererId()),
 											ImVec2{cellMin.x, cellMin.y}, ImVec2{cellMax.x, cellMin.y},
 											ImVec2{cellMax.x, cellMax.y}, ImVec2{cellMin.x, cellMax.y},
@@ -617,8 +557,6 @@ void TilemapDocument::handleCanvasHoverAndPaint(ImDrawList* iDrawList, const ImV
 	const bool leftDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 	const bool rightDown = ImGui::IsMouseDown(ImGuiMouseButton_Right);
 
-	// Any click selects the cell — empty cells included — so the Properties panel can inspect
-	// coordinates / tile type / passability. Canvas clicks NEVER change the active brush.
 	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
 		m_inspectedCellX = static_cast<int32_t>(cellX);
 		m_inspectedCellY = static_cast<int32_t>(cellY);

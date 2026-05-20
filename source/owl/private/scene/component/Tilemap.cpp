@@ -18,16 +18,6 @@ namespace owl::scene::component {
 namespace {
 constexpr int32_t k_Empty = g_EmptyTileIndex;
 
-/**
- * @brief
- *  Encode a flat tile buffer as a comma-separated decimal string.
- *
- * Inline tilemaps are still serialised in this format so legacy scenes can be
- * round-tripped while we transition to `.owltilemap` assets. Once every
- * sample scene has been migrated this fallback writer can be deleted.
- * @param[in] iTiles The buffer to encode.
- * @return The encoded string.
- */
 auto encodeTiles(const std::vector<int32_t>& iTiles) -> std::string {
 	std::string out;
 	out.reserve(iTiles.size() * 3);
@@ -39,13 +29,6 @@ auto encodeTiles(const std::vector<int32_t>& iTiles) -> std::string {
 	return out;
 }
 
-/**
- * @brief
- *  Decode a comma-separated tile string into a flat buffer of size `iExpected`.
- * @param[in] iEncoded The encoded buffer.
- * @param[in] iExpected The expected output size.
- * @return The decoded buffer (padded with `g_EmptyTileIndex` when the input is short).
- */
 auto decodeTiles(const std::string& iEncoded, const size_t iExpected) -> std::vector<int32_t> {
 	std::vector<int32_t> out(iExpected, k_Empty);
 	if (iEncoded.empty())
@@ -65,16 +48,6 @@ auto decodeTiles(const std::string& iEncoded, const size_t iExpected) -> std::ve
 	return out;
 }
 
-/**
- * @brief
- *  Emit the inline data of a `TilemapAsset` under the `inline:` YAML key.
- *
- * Used both for the legacy flat form (kept temporarily for back-compat in
- * scenes that have not yet been migrated to a `.owltilemap` reference) and
- * for in-memory assets that have no path on disk yet.
- * @param[in] iEmitter The destination emitter (positioned inside a map).
- * @param[in] iAsset The asset whose inline data should be written.
- */
 void emitInline(YAML::Emitter& iEmitter, const scene::TilemapAsset& iAsset) {
 	if (!iAsset.tilesetPath.empty())
 		iEmitter << YAML::Key << "tilesetPath" << YAML::Value << iAsset.tilesetPath.generic_string();
@@ -97,12 +70,6 @@ void emitInline(YAML::Emitter& iEmitter, const scene::TilemapAsset& iAsset) {
 	iEmitter << YAML::EndSeq;
 }
 
-/**
- * @brief
- *  Read the inline data block (flat or nested under `inline:`) into a fresh asset.
- * @param[in] iNode The YAML node containing inline tilemap data.
- * @return The populated asset (always non-null).
- */
 auto readInline(const YAML::Node& iNode) -> shared<scene::TilemapAsset> {
 	auto asset = mkShared<scene::TilemapAsset>();
 	if (iNode["tilesetPath"])
@@ -158,8 +125,6 @@ void Tilemap::deserialize(const core::Serializer& iNode) {
 		// `asset` is left null on purpose: scene loading resolves it via `Scene::loadAssetReferences`.
 		return;
 	}
-	// Inline form — either the preferred nested map under `inline:` or the legacy flat layout
-	// produced by `TilemapAsset::deserialize` before the component refactor.
 	if (const auto inlineNode = root["inline"]; inlineNode && inlineNode.IsMap()) {
 		asset = readInline(inlineNode);
 	} else if (root["width"] || root["layers"]) {

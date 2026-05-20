@@ -12,6 +12,8 @@
 
 #include "renderer/Renderer.h"
 #include "renderer/gpu/DrawData.h"
+#include "renderer/gpu/RenderCommand.h"
+#include "renderer/gpu/RendererDescriptors.h"
 #include "renderer/gpu/UniformBuffer.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
@@ -20,26 +22,12 @@ namespace owl::renderer {
 
 namespace {
 
-/**
- * @brief
- *  Maximum number of instances (cells) we can upload in a single draw.
- *  Sized generously to cover a 128×128 tilemap layer (16 384 cells) so we
- *  almost never spill into multi-draw paths. Per-instance struct is 16 B,
- *  so the buffer is 256 KB — easily within Vulkan / OpenGL VBO limits.
- */
 constexpr uint32_t kMaxInstancesPerDraw = 1u << 14u;
 
-/// Layout of the camera UBO (binding 0). Matches `quad.slang`'s `Camera`.
 struct CameraUbo {
 	math::mat4 viewProjection;
 };
 
-/**
- * @brief
- *  Layout of the per-draw UBO bound at `binding=2` in
- *  `tilemap_instanced.slang`. Must stay layout-compatible with the Slang
- *  struct — std140 packing for `ConstantBuffer`.
- */
 struct DrawUbo {
 	uint32_t atlasColumns = 1;
 	uint32_t atlasRows = 1;
@@ -51,23 +39,12 @@ struct DrawUbo {
 	math::vec2 halfTexel{0.f, 0.f};
 };
 
-/**
- * @brief
- *  Per-instance attribute uploaded into the dynamic instance VBO. Layout
- *  matches `vk::location 1..3` of `vertexMain` in `tilemap_instanced.slang` —
- *  location 1 is float2 `cellWorld`, location 2 is int `tileIndex`, location
- *  3 is int `entityID`.
- */
 struct CellInstance {
 	math::vec2 cellWorld{0.f, 0.f};
 	int32_t tileIndex = -1;
 	int32_t entityId = -1;
 };
 
-/**
- * @brief
- *  Process-lifetime state for the renderer.
- */
 struct InternalState {
 	bool initialized = false;
 	shared<gpu::DrawData> drawData;
@@ -75,8 +52,6 @@ struct InternalState {
 	shared<gpu::UniformBuffer> drawUbo;
 	CameraUbo cameraBuffer;
 	DrawUbo drawBuffer;
-	// Per-frame instance scratch buffer — `thread_local` reuse keeps the
-	// vector's capacity across frames.
 	std::vector<CellInstance> instanceScratch;
 	RendererTilemap::Statistics stats;
 };
@@ -90,8 +65,24 @@ void RendererTilemap::init() {
 		return;
 	g_state = mkShared<InternalState>();
 
-	// Static per-vertex buffer: 4 corners, indexed by attribute `cornerIndex`
-	// (Int). Two triangles via the index buffer below.
+	const std::array<gpu::BindingDecl, 3> tilemapBindings{
+			gpu::BindingDecl{.binding = 0,
+							 .type = gpu::BindingType::UniformBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::Vertex},
+			gpu::BindingDecl{.binding = 1,
+							 .type = gpu::BindingType::CombinedImageSampler,
+							 .count = 32,
+							 .stages = gpu::ShaderStage::Fragment},
+			gpu::BindingDecl{.binding = 2,
+							 .type = gpu::BindingType::UniformBuffer,
+							 .count = 1,
+							 .stages = gpu::ShaderStage::VertexFragment},
+	};
+	gpu::RendererDescriptors::declare("tilemap_instanced", tilemapBindings);
+
+	const gpu::RendererDescriptors::ScopedActive scoped{"tilemap_instanced"};
+
 	const gpu::BufferLayout vertexLayout{
 			{"i_CornerIndex", gpu::ShaderDataType::Int},
 	};
@@ -107,8 +98,7 @@ void RendererTilemap::init() {
 	g_state->drawData->initInstanced(vertexLayout, instanceLayout, /*iVertexCapacity=*/4u, kMaxInstancesPerDraw,
 									 "tilemap_instanced", quadIndices, "tilemap_instanced");
 
-	// Per-vertex data is static — 4 corner indices, uploaded once.
-	const std::array<int32_t, 4> cornerIndices{0, 1, 2, 3};
+	constexpr std::array<int32_t, 4> cornerIndices{0, 1, 2, 3};
 	g_state->drawData->setVertexData(cornerIndices.data(),
 									 static_cast<uint32_t>(cornerIndices.size() * sizeof(int32_t)));
 
@@ -122,12 +112,14 @@ void RendererTilemap::shutdown() {
 	if (!g_state)
 		return;
 	g_state.reset();
+	gpu::RendererDescriptors::release("tilemap_instanced");
 }
 
 void RendererTilemap::beginScene(const Camera& iCamera) {
 	if (!g_state || !g_state->initialized)
 		return;
 	resetStats();
+	const gpu::RendererDescriptors::ScopedActive scoped{"tilemap_instanced"};
 	g_state->cameraBuffer.viewProjection = iCamera.getViewProjection();
 	g_state->cameraUbo->setData(&g_state->cameraBuffer, sizeof(CameraUbo), 0);
 }
@@ -138,18 +130,6 @@ void RendererTilemap::endScene() {
 
 namespace {
 
-/**
- * @brief
- *  Compact non-empty cells of one tilemap layer into the per-instance
- *  scratch buffer.
- * @param[in] iAsset The tilemap asset (provides cellSize and dimensions).
- * @param[in] iLayer The current layer (provides `tiles`).
- * @param[in] iOriginX World-space X of the (0,0) cell centre.
- * @param[in] iOriginY World-space Y of the (0,0) cell centre.
- * @param[in] iEntityId Entity id (propagated to every instance for picking).
- * @param[in,out] ioScratch Pre-allocated scratch buffer; resized to the
- *  exact instance count on return.
- */
 void compactLayer(const scene::TilemapAsset& iAsset, const scene::component::TilemapLayer& iLayer, const float iOriginX,
 				  const float iOriginY, const int iEntityId, std::vector<CellInstance>& ioScratch) {
 	ioScratch.clear();
@@ -187,16 +167,16 @@ void RendererTilemap::drawTilemap(const scene::TilemapAsset& iAsset, const math:
 	if (!tileset.texture)
 		return;
 
+	const gpu::RendererDescriptors::ScopedActive scoped{"tilemap_instanced"};
+
 	const float cellSize = iAsset.cellSize;
 	const float originX = iWorldTransform.translation().x() - static_cast<float>(iAsset.width - 1) * 0.5f * cellSize;
 	const float originY = iWorldTransform.translation().y() + static_cast<float>(iAsset.height - 1) * 0.5f * cellSize;
 
-	// Bind the atlas texture to slot 0 of the shader's `gTextures[32]` array.
+	gpu::RenderCommand::beginTextureLoad();
 	tileset.texture->bind(0);
+	gpu::RenderCommand::endTextureLoad();
 
-	// Half-texel inset matches `Tileset::getTileUv`'s anti-bleed inset so
-	// instanced quads and legacy `drawTilemapQuads` produce identical
-	// sampling.
 	const float atlasW = static_cast<float>(tileset.columns) * static_cast<float>(std::max(1u, tileset.tileWidth));
 	const float atlasH = static_cast<float>(tileset.rows) * static_cast<float>(std::max(1u, tileset.tileHeight));
 	const math::vec2 halfTexel{0.5f / std::max(1.f, atlasW), 0.5f / std::max(1.f, atlasH)};
@@ -231,8 +211,6 @@ void RendererTilemap::drawTilemap(const scene::TilemapAsset& iAsset, const math:
 		++g_state->stats.drawCallCount;
 		g_state->stats.instanceCount += drawn;
 
-		// Nudge the Z slightly so subsequent layers paint on top without
-		// the painter's order flipping under depth-test disabled rendering.
 		layerZ += 1e-4f;
 	}
 }

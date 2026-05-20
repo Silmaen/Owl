@@ -21,15 +21,6 @@ namespace {
 constexpr auto g_DefaultLayerName = "default";
 constexpr auto g_DefaultLayerType = "Renderer2D";
 
-/**
- * @brief
- *  Merge `iOverride` keys onto `ioBase`, override wins on conflicts.
- *
- * Iterative implementation (worklist of `(base, override)` pairs) to keep
- * `misc-no-recursion` clean. yaml-cpp `Node` is a reference-counted handle,
- * so pushing aliases of the sub-nodes onto the worklist edits the same
- * underlying structure as a recursive walk would.
- */
 void mergeYaml(YAML::Node& ioBase, const YAML::Node& iOverride) {
 	std::vector<std::pair<YAML::Node, YAML::Node>> work;
 	work.emplace_back(ioBase, iOverride);
@@ -181,14 +172,6 @@ auto RenderStack::buildFromConfig(const RendererStackConfig& iProject, const Ena
 						   iProjectEntry.typeKey)
 			return;
 		}
-		// Build merged config: clone project default, overlay scene overrides.
-		// `merged` MUST be initialised as an explicit Map even when the project
-		// has no `DefaultConfig` — yaml-cpp's auto-vivify on `node[key] = ...`
-		// updates the *local* node pointer but does not propagate back through
-		// the caller's reference, so passing a default-constructed
-		// (Undefined) `YAML::Node{}` to `mergeYaml` silently drops every
-		// override. Cloning a Map (or starting as a Map) gives `mergeYaml` a
-		// real underlying memory block to mutate.
 		YAML::Node merged = iProjectEntry.defaultConfig && iProjectEntry.defaultConfig.IsMap()
 									? YAML::Clone(iProjectEntry.defaultConfig)
 									: YAML::Node{YAML::NodeType::Map};
@@ -198,10 +181,6 @@ auto RenderStack::buildFromConfig(const RendererStackConfig& iProject, const Ena
 		stack.m_layers.push_back(std::move(layer));
 	};
 
-	// Pass 1 — scene-listed layers in scene order. The scene authors the order
-	// here; unlisted layers fall through to pass 2 in project order. A scene
-	// that does not declare `EnabledRenderers` skips this pass entirely and
-	// inherits the project's order verbatim (the legacy default).
 	for (const auto& sceneEntry: iScene.entries) {
 		if (emitted.contains(sceneEntry.name))
 			continue;// duplicate name in scene listing — first wins.
@@ -213,8 +192,6 @@ auto RenderStack::buildFromConfig(const RendererStackConfig& iProject, const Ena
 		emit(*projectEntry, &sceneEntry);
 	}
 
-	// Pass 2 — any project layer the scene did not mention, in project order,
-	// enabled by default (scene silence == "use the project default").
 	for (const auto& projectEntry: effective.entries) {
 		if (emitted.contains(projectEntry.name))
 			continue;

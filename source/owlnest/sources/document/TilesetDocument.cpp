@@ -30,14 +30,6 @@ constexpr float g_minZoom = 0.25f;
 constexpr float g_maxZoom = 8.f;
 constexpr float g_zoomWheelStep = 1.15f;
 
-/**
- * @brief
- *  Coarse-grained undo command for `Tileset` edits.
- *
- * Captures the tileset YAML before / after the edit; `undo` / `redo`
- * deserialize the saved state. The texture handle is preserved across
- * deserialize so the GPU resource is not released between strokes.
- */
 class ModifyTilesetCommand final : public UndoCommand<scene::Tileset> {
 public:
 	ModifyTilesetCommand(std::string iBeforeYaml, std::string iAfterYaml, std::string iDescription)
@@ -66,21 +58,8 @@ private:
 	std::string m_description;
 };
 
-/**
- * @brief
- *  Compose a YAML string of the tileset suitable for undo capture.
- */
 auto snapshotTileset(const scene::Tileset& iTileset) -> std::string { return iTileset.serializeToString("undo"); }
 
-/**
- * @brief
- *  Push an undoable mutation around a callable.
- * @tparam Fn Mutator callable type.
- * @param[in,out] ioTileset The tileset to mutate.
- * @param[in,out] ioUndo The undo manager that receives the command.
- * @param[in] iDescription Human-readable description for the undo entry.
- * @param[in] iMutator Callable that performs the mutation.
- */
 template<typename Fn>
 void pushTilesetEdit(scene::Tileset& ioTileset, TilesetUndoManager& ioUndo, const std::string& iDescription,
 					 Fn&& iMutator) {
@@ -187,11 +166,6 @@ void TilesetDocument::onImGuiRender() {
 }
 
 namespace {
-/**
- * @brief
- *  Render a small, word-wrapped help text in the disabled colour.
- * @param[in] iText The help string.
- */
 void helpText(const char* iText) {
 	ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
 	ImGui::SetWindowFontScale(0.85f);
@@ -215,8 +189,6 @@ void TilesetDocument::renderHierarchyPanel() {
 		m_undoManager.push(std::move(cmd));
 	}
 
-	// --- Grid configuration ----------------------------------------------------------------
-	// Non-destructive grid edits — preserve existing per-tile metadata.
 	ImGui::Text("Columns: %u", m_tileset.columns);
 	ImGui::SameLine();
 	if (ImGui::SmallButton("+##addCol"))
@@ -374,8 +346,6 @@ void TilesetDocument::renderCanvas() {
 	drawList->AddRectFilled(atlasTopLeft, atlasBottomRight, IM_COL32(40, 40, 50, 255));
 
 	if (m_tileset.texture && m_tileset.texture->isLoaded()) {
-		// Engine textures are stored bottom-up (stb flip-on-load) so ImGui — which expects
-		// top-down UVs — must sample from V=1 at the top. Matches `widgets::textureField`.
 		drawList->AddImage(static_cast<ImTextureID>(m_tileset.texture->getRendererId()), atlasTopLeft, atlasBottomRight,
 						   {0.f, 1.f}, {1.f, 0.f});
 	}
@@ -432,9 +402,6 @@ void TilesetDocument::refreshSavedSnapshot() {
 	m_savedSnapshot = m_tileset.serializeToString(displayName);
 }
 
-void TilesetDocument::resolveTexture() {
-	// Tileset::deserializeFromString already populates `texture` via the engine's texture
-	// library; nothing extra needed here for the moment.
-}
+void TilesetDocument::resolveTexture() {}
 
 }// namespace owl::nest

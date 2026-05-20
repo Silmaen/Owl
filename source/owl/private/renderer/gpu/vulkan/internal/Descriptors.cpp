@@ -247,11 +247,6 @@ void Descriptors::createDescriptors() {
 		OWL_CORE_ERROR("Vulkan Descriptors: failed to create descriptor pool ({}).", resultString(result))
 	}
 
-	// Descriptor sets layout — binding 0 = vertex-stage camera UBO, binding 1 =
-	// fragment-stage textures (32 combined image samplers), binding 2 = optional
-	// per-draw UBO (vertex + fragment stage; used by `tilemap_instanced` and any
-	// future shader that needs a second uniform block). Binding 2 stays visible
-	// to shaders that don't use it — Vulkan tolerates unused descriptors.
 	constexpr VkDescriptorSetLayoutBinding uboLayoutBinding{.binding = 0,
 															.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 															.descriptorCount = 1,
@@ -301,9 +296,6 @@ void Descriptors::updateDescriptors() {
 
 void Descriptors::updateDescriptor(const size_t iFrame) {
 	const auto& core = VulkanCore::get();
-	// One `VkDescriptorBufferInfo` + one `VkWriteDescriptorSet` per registered
-	// UBO binding. The static storage keeps the `pBufferInfo` pointers valid
-	// until `vkUpdateDescriptorSets` is called below.
 	std::vector<std::pair<uint32_t, VkDescriptorBufferInfo>> uboInfos;
 	uboInfos.reserve(m_uniformBindings.size());
 	for (const auto& [binding, ubo]: m_uniformBindings) {
@@ -375,8 +367,6 @@ void Descriptors::updateDescriptor(const size_t iFrame) {
 void Descriptors::registerUniform(const uint32_t iBinding, const uint32_t iSize) {
 	const auto& core = VulkanCore::get();
 	auto& ubo = m_uniformBindings[iBinding];
-	// Release any previous allocation for this binding so resizing in place
-	// works (callers may re-register with a different size).
 	for (size_t i = 0; i < ubo.buffers.size() && i < g_maxFrameInFlight; ++i) {
 		if (i < ubo.mapped.size() && ubo.mapped[i] != nullptr)
 			vkUnmapMemory(core.getLogicalDevice(), ubo.memory[i]);

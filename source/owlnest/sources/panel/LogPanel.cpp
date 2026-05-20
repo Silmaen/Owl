@@ -58,10 +58,6 @@ constexpr ImVec4 g_cyanColor{0.3f, 0.9f, 1.0f, 1.0f};
 constexpr ImVec4 g_timestampColor{0.5f, 0.5f, 0.5f, 1.0f};
 constexpr float g_fontScale = 0.85f;
 
-/**
- * @brief
- *  Render text with numbers highlighted in cyan, rest in the given base colour.
- */
 void renderColoredText(const std::string_view iText, const ImVec4& iBaseColor) {
 	size_t pos = 0;
 	while (pos < iText.size()) {

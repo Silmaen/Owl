@@ -7,7 +7,3 @@
  */
 
 #include "UndoManager.h"
-
-// Intentionally empty: `UndoManager<Target>` is now a header-only template.
-// Kept so the CMake glob picks up any future free helpers sitting next to the
-// manager without having to touch the build files.

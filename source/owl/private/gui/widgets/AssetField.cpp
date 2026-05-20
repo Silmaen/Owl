@@ -107,11 +107,6 @@ auto textureField(const char* iLabel, shared<renderer::gpu::Texture2D>& ioTextur
 	std::filesystem::path dropped;
 	if (assetDropTarget(AssetKind::Texture, dropped)) {
 		if (const auto resolved = renderer::Renderer::getTextureLibrary().find(dropped.string())) {
-			// The current frame may already have captured `ioTexture`'s
-			// `ImTextureID` (= `VkDescriptorSet` on Vulkan) into ImGui's draw
-			// data, so reassigning would free a descriptor that is still
-			// scheduled for submission. Hand the old shared pointer to
-			// `UiLayer` which keeps it alive until end-of-frame, then drops it.
 			UiLayer::deferTextureRelease(ioTexture);
 			ioTexture = renderer::gpu::Texture2D::create(*resolved);
 			changed = true;

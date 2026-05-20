@@ -175,8 +175,6 @@ auto NodeCanvasSerializer::serializeSubset(const NodeCanvas& iCanvas, std::span<
 	if (iNodeIds.empty())
 		return {};
 
-	// Gather the subset into a temporary canvas to reuse the full emitter. The copy is cheap — we
-	// only store the nodes/links we need — and it keeps the YAML format identical to a full save.
 	NodeCanvas subset;
 	std::unordered_map<uint64_t, bool> idSet;
 	for (const auto id: iNodeIds) idSet.emplace(static_cast<uint64_t>(id), true);
@@ -206,8 +204,6 @@ auto NodeCanvasSerializer::pasteSubset(NodeCanvas& ioCanvas, std::string_view iY
 	if (!root || !root.IsMap())
 		return {};
 
-	// Two-pass: first assign fresh UUIDs to every node and every pin (recording the old→new map),
-	// then push nodes and rewrite link endpoints to reference the new pin UUIDs.
 	std::unordered_map<uint64_t, core::UUID> pinIdMap;
 	std::vector<core::UUID> createdNodeIds;
 

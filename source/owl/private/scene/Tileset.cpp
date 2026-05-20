@@ -85,18 +85,12 @@ auto Tileset::getTileUv(const uint32_t iIndex) const -> std::array<math::vec2, 4
 		return g_FullAtlasUv;
 	const uint32_t col = iIndex % columns;
 	const uint32_t row = iIndex / columns;
-	// Half-texel inset: GL_LINEAR min-filter (used when the tilemap is rendered smaller
-	// than the atlas resolution, e.g. zoomed-out world view) samples the average of the
-	// requested texel and its neighbours. Without insetting, neighbour tiles bleed into
-	// each cell along their shared edges, producing the well-known seam flicker.
 	const float atlasW = static_cast<float>(columns) * static_cast<float>(std::max(1u, tileWidth));
 	const float atlasH = static_cast<float>(rows) * static_cast<float>(std::max(1u, tileHeight));
 	const float halfU = 0.5f / atlasW;
 	const float halfV = 0.5f / atlasH;
 	const float u0 = static_cast<float>(col) / static_cast<float>(columns) + halfU;
 	const float u1 = static_cast<float>(col + 1) / static_cast<float>(columns) - halfU;
-	// Atlas rows are stored top-to-bottom but UV space is bottom-up: row 0 sits at the top
-	// of the texture (v in [1 - 1/rows, 1]).
 	const float v0 = 1.f - static_cast<float>(row + 1) / static_cast<float>(rows) + halfV;
 	const float v1 = 1.f - static_cast<float>(row) / static_cast<float>(rows) - halfV;
 	return {math::vec2{u0, v0}, math::vec2{u1, v0}, math::vec2{u1, v1}, math::vec2{u0, v1}};
@@ -203,9 +197,6 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 				meta.wallHeight = std::clamp(entry["wallHeight"].as<float>(), 0.f, 8.f);
 			if (entry["transparent"])
 				meta.transparent = entry["transparent"].as<bool>();
-			// Legacy `chromaKey: [r, g, b]` entries are silently dropped — the project
-			// transitioned to alpha-channel-only transparency in v0.2.0; tilesets get
-			// rewritten without the field on the next save.
 			parsed.tiles[idx] = std::move(meta);
 		}
 	}

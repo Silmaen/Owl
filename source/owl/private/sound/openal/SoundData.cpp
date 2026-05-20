@@ -126,9 +126,6 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 		}
 
 		SF_CHUNK_INFO inf = {"fmt ", 4, 0, nullptr};
-		/* If there's an issue getting the chunk or block alignment, load as
-		 * 16-bit and have libsndfile do the conversion.
-		 */
 		if (const SF_CHUNK_ITERATOR* iter = sf_get_chunk_iterator(file, &inf);
 			iter == nullptr || sf_get_chunk_size(iter, &inf) != SF_ERR_NO_ERROR || inf.datalen < 14)
 			sampleFormat = SoundDataType::Int16;
@@ -138,10 +135,6 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 			if (sf_get_chunk_data(iter, &inf) != SF_ERR_NO_ERROR)
 				sampleFormat = SoundDataType::Int16;
 			else {
-				/* Read the nBlockAlign field, and convert from bytes- to
-				 * samples-per-block (verifying it's valid by converting back
-				 * and comparing to the original value).
-				 */
 				byteblockalign = buffer[12] | buffer[13] << 8;
 				if (sampleFormat == SoundDataType::Ima4) {
 					splblockalign = (byteblockalign / sfInfo.channels - 4) / 4 * 8 + 1;
@@ -237,9 +230,6 @@ SoundData::SoundData(const Specification& iSpecifications) : sound::SoundData{iS
 	OWL_CORE_INFO("SoundData: loading {} ({}, {}Hz).", m_specification.file.string(), alFormatName(format),
 				  sfInfo.samplerate)
 
-	/* Buffer the audio data into a new buffer object, then free the data and
-	 * close the file.
-	 */
 	m_buffer = 0;
 
 	alGenBuffers(1, &m_buffer);

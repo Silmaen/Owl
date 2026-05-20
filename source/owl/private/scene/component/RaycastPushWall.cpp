@@ -44,8 +44,6 @@ void RaycastPushWall::deserialize(const core::Serializer& iNode) {
 		interactionKey = static_cast<input::KeyCode>(node["interactionKey"].as<uint32_t>());
 	if (node["interactionRange"])
 		interactionRange = node["interactionRange"].as<float>();
-	// Runtime state is intentionally not persisted: a saved scene always reloads with
-	// every pushwall back at its idle position.
 	state = State::Idle;
 	currentOffset = 0.0f;
 	keyHeldLastTick = false;

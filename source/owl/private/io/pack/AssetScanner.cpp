@@ -37,10 +37,6 @@ auto hasAsset(const std::vector<AssetReference>& iAssets, const std::string& iPa
 	return std::ranges::any_of(iAssets, [&iPackPath](const auto& ref) -> auto { return ref.packPath == iPackPath; });
 }
 
-/**
- * @brief
- *  Add a warning for an unresolvable reference. Skips if warnings are not being collected.
- */
 void pushWarning(std::vector<std::string>* ioWarnings, const std::string& iKind, const std::string& iName,
 				 const std::string& iSource) {
 	if (ioWarnings != nullptr && !iName.empty())
@@ -174,11 +170,6 @@ auto AssetScanner::resolveScene(const std::string& iLevelName) -> std::optional<
 	return std::nullopt;
 }
 
-/**
- * Scan a Lua script file for scene references and recursively add referenced scenes.
- * Matches both direct calls (scene.load_scene("x.owl")) and string literals that look like
- * scene paths (e.g., assigned to a variable for deferred loading).
- */
 void AssetScanner::scanLuaScriptForScenes(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-recursion)
 										  std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
 										  std::vector<std::string>* ioWarnings) {
@@ -329,9 +320,6 @@ void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 				}
 			}
 		}
-		// Collect every font file shipped with the engine — the runner needs Roboto and
-		// JetBrainsMono for ImGui (UiLayer::resolveAssetFile reads them from disk), and
-		// FontLibrary may load any .ttf at runtime through `getFont(name)`.
 		if (const auto fontsDir = assetsPath / "fonts"; exists(fontsDir)) {
 			for (const auto& item: std::filesystem::recursive_directory_iterator(fontsDir)) {
 				if (!item.is_regular_file())
@@ -344,8 +332,6 @@ void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 				}
 			}
 		}
-		// Collect engine logos / default icons — the runner's window icon falls back to
-		// `icons/logo_owl_icon.png` when the project does not provide its own.
 		for (const auto* dirName: {"logo", "icons"}) {
 			const auto dir = assetsPath / dirName;
 			if (!exists(dir))

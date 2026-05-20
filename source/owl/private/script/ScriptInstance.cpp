@@ -15,19 +15,12 @@
 #include "script/LuaEngine.h"
 
 namespace owl::script {
-/**
- * @brief
- *  Private implementation of ScriptInstance.
- *
- * Each instance owns its own LuaEngine (isolated state) so that
- * global variables in one script don't pollute another entity's state.
- */
 struct ScriptInstance::Impl {
-	/// Per-instance Lua engine (isolated state).
+	// Per-instance Lua engine (isolated state).
 	LuaEngine engine;
-	/// Whether the script has been successfully loaded.
+	// Whether the script has been successfully loaded.
 	bool loaded = false;
-	/// Entity UUID.
+	// Entity UUID.
 	uint64_t entityId = 0;
 };
 

@@ -69,9 +69,6 @@ Transform::Transform(const mat4& iTransform) {
 	m_scale.z() = row[2].norm();
 	row[2].normalize();
 
-	// At this point, the matrix (in rows[]) is orthonormal.
-	// Check for a coordinate system flip.  If the determinant
-	// is -1, then negate the matrix and the scaling factors.
 	if (const vec3 pdum3 = row[1] ^ row[2]; row[0] * pdum3 < 0) {
 		for (size_t i = 0; i < 3; i++) {
 			m_scale[i] *= -g_one;
@@ -95,9 +92,6 @@ auto Transform::operator()() const -> mat4 {
 	return translate(identity<float, 4>(), m_translation) * rotate(identity<float, 4>(), m_rotation[2], {0, 0, 1}) *
 		   rotate(identity<float, 4>(), m_rotation[1], {0, 1, 0}) *
 		   rotate(identity<float, 4>(), m_rotation[0], {1, 0, 0}) * math::scale(identity<float, 4>(), m_scale);
-	// alternative:
-	//return translate(math::identity<float, 4>(), m_translation) * toMat4(math::quat(m_rotation)) *
-	//	   math::scale(math::identity<float, 4>(), m_scale);
 }
 
 

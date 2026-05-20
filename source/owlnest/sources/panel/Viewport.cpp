@@ -32,13 +32,6 @@ OWL_DIAG_POP
 namespace owl::nest::panel {
 
 namespace {
-/**
- * @brief
- *  Build the ImGui window title: display text + stable `##{uuid}` id.
- *
- * The display text is delegated to the document manager so identical-named tabs (e.g. a
- * `world_map.owl` scene next to a `world_map.owltilemap`) automatically get a type prefix.
- */
 auto makeWindowTitle(const SceneDocument& iDoc, const EditorLayer* iParent) -> std::string {
 	std::string base;
 	if (iParent != nullptr)
@@ -49,13 +42,6 @@ auto makeWindowTitle(const SceneDocument& iDoc, const EditorLayer* iParent) -> s
 					   static_cast<uint64_t>(iDoc.id()));
 }
 
-/**
- * @brief
- *  Snapshot of the relevant fields of the first `Tilemap` component in a scene.
- *
- * Used to drive both the snap step (cellSize × multiplier) and the cell-center
- * realignment applied at the end of a translation drag.
- */
 struct TilemapSnapInfo {
 	math::vec3 worldTranslation{0.f, 0.f, 0.f};///< World-space translation of the tilemap entity.
 	float cellSize = 1.f;///< Cell size in world units.
@@ -63,12 +49,6 @@ struct TilemapSnapInfo {
 	uint32_t height = 1;///< Grid height in cells.
 };
 
-/**
- * @brief
- *  Find the first `Tilemap` component in the scene and capture its grid info.
- * @param[in] iScene Scene to scan (may be null).
- * @return A populated `TilemapSnapInfo` if a tilemap is found, `std::nullopt` otherwise.
- */
 auto findFirstTilemapInfo(const scene::Scene* iScene) -> std::optional<TilemapSnapInfo> {
 	if (iScene == nullptr)
 		return std::nullopt;
@@ -88,13 +68,6 @@ auto findFirstTilemapInfo(const scene::Scene* iScene) -> std::optional<TilemapSn
 	return std::nullopt;
 }
 
-/**
- * @brief
- *  Resolve the snap step to use for a translation gizmo.
- * @param[in] iSettings Editor settings carrying snap preferences.
- * @param[in] iTilemap Optional tilemap info (when auto-from-tilemap resolves).
- * @return World-unit step (clamped to a positive value).
- */
 auto resolveTranslationSnapStep(const EditorSettings& iSettings, const std::optional<TilemapSnapInfo>& iTilemap)
 		-> float {
 	if (iSettings.snapAutoFromTilemap && iTilemap.has_value())
@@ -102,19 +75,6 @@ auto resolveTranslationSnapStep(const EditorSettings& iSettings, const std::opti
 	return std::max(0.0001f, iSettings.snapStep);
 }
 
-/**
- * @brief
- *  Snap a world-space translation to the nearest tilemap cell-center grid.
- *
- * The cell-center grid lies at `tilemap.worldTranslation + (k - (width - 1) / 2) * cellSize`
- * along each axis. `k` is integer when the size is odd (centers fall on integer
- * multiples of `cellSize`) and half-integer when even (centers fall on the
- * half-cell offset). This function preserves the input's z component.
- * @param[in] iWorldTranslation The current world translation to snap.
- * @param[in] iTilemap The tilemap info providing the grid.
- * @param[in] iStep The snap step (must already include the snap multiplier).
- * @return The translation snapped to the nearest cell-center-aligned grid point.
- */
 auto snapToTilemapCellCenter(const math::vec3& iWorldTranslation, const TilemapSnapInfo& iTilemap, const float iStep)
 		-> math::vec3 {
 	const float offsetX = (iTilemap.width % 2 == 0) ? iTilemap.cellSize * 0.5f : 0.f;
@@ -152,8 +112,6 @@ void Viewport::onRender() {
 		return;
 	}
 
-	// Refresh display title each frame so filename / play badge changes show up on the tab;
-	// the stable `##<uuid>` suffix keeps the ImGui window id unchanged.
 	m_name = makeWindowTitle(*mp_document, m_parent);
 
 	ImGuiWindowFlags flags =
@@ -161,15 +119,10 @@ void Viewport::onRender() {
 	if (mp_document->isDirty())
 		flags |= ImGuiWindowFlags_UnsavedDocument;
 
-	// First-time docking hint: dock newly-opened viewports into the central node of the main
-	// dockspace instead of letting them float.
 	if (const auto dockspaceId = ImGui::GetID("OwlDockSpace");
 		const auto* centralNode = ImGui::DockBuilderGetCentralNode(dockspaceId))
 		ImGui::SetNextWindowDockID(centralNode->ID, ImGuiCond_FirstUseEver);
 
-	// The tab shows the native ImGui close X.  When the user clicks it `m_pOpen` is set
-	// to false; `EditorLayer` polls this after rendering and routes through the dirty
-	// confirmation modal before actually closing the document.
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
 	const bool visible = ImGui::Begin(m_name.c_str(), &m_pOpen, flags);
 	m_focused = ImGui::IsWindowFocused();
@@ -273,11 +226,6 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				// Handle quit request from Lua (scene.quit()) → request stop.
 				if (activeScene->quitRequested)
 					mp_document->requestStop();
-				// `scene.transition_to(...)` from Lua schedules a load through the
-				// engine-side `ScreenTransition` orchestrator; once the out-anim
-				// completes, the path lands here as a teleport request, the
-				// existing handler does the swap, and the Loading-phase screen
-				// stays up until `minHoldDuration` elapses.
 				if (auto pending = scene::ScreenTransition::pendingLoadPath(); pending) {
 					activeScene->teleportRequest.pending = true;
 					activeScene->teleportRequest.levelName = *pending;
@@ -401,10 +349,6 @@ void Viewport::renderOverlay() const {
 			}
 		}
 
-		// Draw camera markers — small camera icon, forward arrow and FOV cone for every
-		// `component::Camera` in the scene. Helps level designers see where each camera
-		// (notably the raycast scene's player camera, invisible in the top-down view)
-		// sits and which direction it faces. Toggled via `EditorSettings::showCameraGizmos`.
 		if (m_parent != nullptr && m_parent->getSettings().showCameraGizmos) {
 			const auto cameraIcon = textureLibrary.get("icons/triggers/camera");
 			for (const auto camView =
@@ -445,10 +389,6 @@ void Viewport::renderOverlay() const {
 				renderer::Renderer2D::drawLine(
 						{.point1 = origin, .point2 = tip, .color = mainColor, .entityId = static_cast<int>(entity)});
 
-				// FOV cone — vertical FOV for perspective cameras, fixed 75° hint for ortho ones
-				// (the actual FOV of a raycast scene lives on the layer config, which doesn't
-				// belong to the camera entity; the hint conveys "this is a viewing cone" without
-				// pretending to be exact).
 				float fovRad = math::radians(75.f);
 				if (camComp.camera.getProjectionType() == scene::SceneCamera::ProjectionType::Perspective)
 					fovRad = camComp.camera.getPerspectiveVerticalFov();
@@ -471,10 +411,6 @@ void Viewport::renderOverlay() const {
 			}
 		}
 
-		// Pushwall / door editor gizmos — only rendered in Edit state above so they
-		// never leak into Play. Pushwalls get a green outline around every block;
-		// the selected pushwall (or door) additionally gets a destination guide line
-		// with a circle at its open-position endpoint.
 		const scene::Entity selectedForGizmo = m_parent != nullptr ? m_parent->getSelectedEntity() : scene::Entity{};
 		constexpr math::vec4 kPushwallOutline{0.25f, 0.85f, 0.35f, 1.f};
 		constexpr math::vec4 kDestinationLine{0.95f, 0.85f, 0.25f, 1.f};
@@ -484,8 +420,6 @@ void Viewport::renderOverlay() const {
 			 const auto entity: view) {
 			const scene::Entity ent{entity, activeScene.get()};
 			math::Transform worldTransform = activeScene->getWorldTransform(ent);
-			// Pushwalls are 1×1 cells regardless of any non-unit scale the designer
-			// may have set on the entity — match the runtime renderer's footprint.
 			worldTransform.scale().x() = 1.f;
 			worldTransform.scale().y() = 1.f;
 			renderer::Renderer2D::drawRect(
@@ -511,8 +445,6 @@ void Viewport::renderOverlay() const {
 											  .fade = 0.01f,
 											  .entityId = static_cast<int>(static_cast<uint32_t>(selectedForGizmo))});
 		}
-		// 3. Destination guide for the selected door (no full-cell outline — the
-		// existing thin face-tile sprite already indicates the door's footprint).
 		if (selectedForGizmo && selectedForGizmo.hasComponent<scene::component::RaycastDoor>()) {
 			const auto& door = selectedForGizmo.getComponent<scene::component::RaycastDoor>();
 			using OD = scene::component::RaycastDoor::OpeningDirection;
@@ -554,21 +486,7 @@ void Viewport::renderOverlay() const {
 }
 
 namespace {
-/**
- * @brief
- *  Render a small icon-only toggle button with active highlight + tooltip.
- *
- * Wraps `IconBank::iconButton` so the floating overlay can render compact
- * toggles consistent with the ribbon entries that drive the same actions.
- * @param[in] iIconName The icon bank entry to draw.
- * @param[in] iTooltip The hover tooltip.
- * @param[in] iIsActive Whether to highlight the button (selected state).
- * @return True if the button was clicked this frame.
- */
 auto overlayToggle(const char* iIconName, const char* iTooltip, const bool iIsActive) -> bool {
-	// `iconButton` forwards an empty label to `ImGui::Button`, so multiple icon-only
-	// buttons in the same window would share the same ImGui id. Scope them by the
-	// icon name (which is unique per toggle in this overlay) to avoid the conflict.
 	ImGui::PushID(iIconName);
 	if (iIsActive)
 		ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
@@ -689,10 +607,6 @@ void Viewport::renderGizmo() {
 			tc.transform.scale() = newLocal.scale();
 		}
 
-		// Drag-end correction: when snapping a translation against a tilemap, finalise the
-		// world position to the nearest cell-center grid point so entities visually align
-		// with the cells (ImGuizmo only snaps the cumulative drag delta, not the absolute
-		// world position).
 		if (!isUsing && m_gizmoWasUsing && snap && (m_gizmoType == gui::Guizmo::Type::Translation) &&
 			tilemapInfo.has_value() && m_parent != nullptr && m_parent->getSettings().snapAutoFromTilemap) {
 			const math::Transform worldT = activeScene->getWorldTransform(selectedEntity);

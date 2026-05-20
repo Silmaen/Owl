@@ -14,8 +14,6 @@
 
 #ifdef OWL_PLATFORM_WINDOWS
 // clang-format off
-// windows.h must precede shellapi.h: the latter relies on EXTERN_C / HINSTANCE / STDAPICALLTYPE
-// macros that windows.h pulls in transitively. MinGW + Clang fail to parse shellapi.h otherwise.
 #include <windows.h>
 #include <shellapi.h>
 // clang-format on
@@ -27,10 +25,6 @@
 namespace owl::core::utils {
 
 namespace {
-/**
- * @brief
- *  Reject anything that does not look like a safe http(s) or mailto URL.
- */
 [[nodiscard]] auto isAllowedScheme(std::string_view iUrl) -> bool {
 	return iUrl.starts_with("http://") || iUrl.starts_with("https://") || iUrl.starts_with("mailto:");
 }

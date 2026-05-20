@@ -221,19 +221,19 @@ Supported component names for `has_component`: `"Transform"`, `"PhysicBody"`,
 
 ### `ui`
 
-| Function                                 | Description                          |
-|------------------------------------------|--------------------------------------|
-| `ui.set_text(entity_id, text)`           | Set UiText content                   |
-| `ui.get_text(entity_id)`                 | Get UiText content                   |
-| `ui.set_visible(entity_id, bool)`        | Set entity game visibility           |
-| `ui.set_progress(entity_id, value)`      | Set UiProgressBar value (0..1)       |
-| `ui.get_slider_value(entity_id)`         | Get UiSlider value                   |
-| `ui.set_slider_value(entity_id, value)`  | Set UiSlider value                   |
-| `ui.set_button_enabled(entity_id, bool)` | Enable/disable a UiButton            |
-| `ui.transition_fade_in(duration)`        | Start fade-in transition (seconds)   |
-| `ui.transition_fade_out(duration)`       | Start fade-out transition (seconds)  |
+| Function                                 | Description                                  |
+|------------------------------------------|----------------------------------------------|
+| `ui.set_text(entity_id, text)`           | Set UiText content                           |
+| `ui.get_text(entity_id)`                 | Get UiText content                           |
+| `ui.set_visible(entity_id, bool)`        | Set entity game visibility                   |
+| `ui.set_progress(entity_id, value)`      | Set UiProgressBar value (0..1)               |
+| `ui.get_slider_value(entity_id)`         | Get UiSlider value                           |
+| `ui.set_slider_value(entity_id, value)`  | Set UiSlider value                           |
+| `ui.set_button_enabled(entity_id, bool)` | Enable/disable a UiButton                    |
+| `ui.transition_fade_in(duration)`        | Start fade-in transition (seconds)           |
+| `ui.transition_fade_out(duration)`       | Start fade-out transition (seconds)          |
 | `ui.transition_play(type, duration, …)`  | Start a transition with custom kind / colour |
-| `ui.is_transition_active()`              | Check if a transition is in progress |
+| `ui.is_transition_active()`              | Check if a transition is in progress         |
 
 #### Transition kinds
 
@@ -250,7 +250,7 @@ Supported component names for `has_component`: `"Transform"`, `"PhysicBody"`,
 | `"wipe_down"`  | Bar slides off-screen towards the bottom.                           |
 
 The colour arguments are optional — passing only `type` and `duration`
-defaults to opaque black, matching the legacy fade calls. With three colour
+defaults to opaque black, matching the legacy fade calls. With three-colour
 arguments, alpha defaults to `1`.
 
 ```lua
@@ -352,7 +352,7 @@ Control trigger entities from Lua.
 Triggers are entities with a `Trigger` component. They detect overlap with the player
 and fire events. The engine provides 7 trigger types:
 
-| Type            | Behaviour                                                        |
+| Type            | Behaviour                                                       |
 |-----------------|-----------------------------------------------------------------|
 | **Victory**     | Sets scene status to Victory (game won)                         |
 | **Death**       | Sets scene status to Death (game over)                          |

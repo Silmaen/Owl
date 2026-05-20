@@ -159,8 +159,6 @@ auto Font::getGlyphBox(const char& iChar) const -> GlyphMetrics {
 	if (iChar == '\n') {
 		return result;
 	}
-	// Cast through unsigned char first so Latin-1 codepoints (0x80-0xFF, e.g. accented chars)
-	// don't get sign-extended into a garbage 32-bit value.
 	const auto* glyph =
 			m_data->fontGeometry.getGlyph(static_cast<msdfgen::unicode_t>(static_cast<unsigned char>(iChar)));
 	if (glyph == nullptr)

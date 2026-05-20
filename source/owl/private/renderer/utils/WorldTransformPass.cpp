@@ -15,9 +15,9 @@
 namespace owl::renderer::utils {
 
 namespace {
-/// Renderer/shader directory under `engine_assets/shaders/`.
+// Renderer/shader directory under `engine_assets/shaders/`.
 constexpr const char* kRenderer = "world_transform";
-/// Shader name (file `engine_assets/shaders/world_transform/slang/world_transform.slang`).
+// Shader name (file `engine_assets/shaders/world_transform/slang/world_transform.slang`).
 constexpr const char* kShaderName = "world_transform";
 
 constexpr uint32_t kBindingLocals = 0;
@@ -56,9 +56,6 @@ void WorldTransformPass::compute(std::span<const Entry> iEntries) {
 	const uint32_t paddedCount = ((m_entryCount + kWorkgroupSize - 1) / kWorkgroupSize) * kWorkgroupSize;
 
 	if (paddedCount > m_paddedCapacity) {
-		// Grow each SSBO. We do not shrink — the high-water mark for the
-		// session is what matters and the per-frame cost of recreating
-		// SSBOs outweighs the memory saving.
 		const uint32_t localsBytes = paddedCount * static_cast<uint32_t>(sizeof(math::mat4));
 		const uint32_t parentsBytes = paddedCount * static_cast<uint32_t>(sizeof(int32_t));
 		m_localsBuffer = gpu::StorageBuffer::create(localsBytes, kBindingLocals, kRenderer);
@@ -67,8 +64,6 @@ void WorldTransformPass::compute(std::span<const Entry> iEntries) {
 		m_paddedCapacity = paddedCount;
 	}
 
-	// Stage the padded host arrays. `thread_local` reuse avoids per-frame
-	// reallocations once the high-water mark stabilises.
 	thread_local std::vector<math::mat4> localsHost;
 	thread_local std::vector<int32_t> parentsHost;
 	localsHost.resize(paddedCount);

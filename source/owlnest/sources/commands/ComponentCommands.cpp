@@ -11,10 +11,6 @@
 namespace owl::nest::commands {
 
 namespace {
-/**
- * @brief
- *  Restore an entity from a snapshot by destroying the existing one and recreating.
- */
 void restoreEntity(scene::Scene& ioScene, const EntitySnapshot& iSnapshot) {
 	if (auto existing = ioScene.findEntityByUUID(iSnapshot.uuid); existing)
 		ioScene.destroyEntity(existing);

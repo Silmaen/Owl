@@ -29,11 +29,13 @@ public:
 
 	/**
 	 * @brief
-	 *  Stub constructor.
-	 * @param[in] iSize Buffer size (unused).
+	 *  Stub constructor. Allocates a host-side buffer of `iSize` bytes so
+	 *  `setData` + `getData` can round-trip — lets headless tests exercise
+	 *  the SSBO upload/readback contract without a real GPU.
+	 * @param[in] iSize Buffer size in bytes.
 	 * @param[in] iBinding Binding slot (unused).
 	 */
-	StorageBuffer([[maybe_unused]] uint32_t iSize, [[maybe_unused]] uint32_t iBinding) {}
+	StorageBuffer(uint32_t iSize, [[maybe_unused]] uint32_t iBinding);
 
 	/**
 	 * @brief
@@ -43,15 +45,33 @@ public:
 
 	/**
 	 * @brief
-	 *  No-op setData.
+	 *  Copy bytes into the host-side mirror so a later `getData` can read
+	 *  them back. No GPU activity.
+	 * @param[in] iData Source bytes.
+	 * @param[in] iSize Byte count.
+	 * @param[in] iOffset Destination offset.
 	 */
 	void setData(const void* iData, uint32_t iSize, uint32_t iOffset) override;
+
+	/**
+	 * @brief
+	 *  Copy bytes from the host-side mirror into `oData`. Range outside
+	 *  the buffer is left untouched. No GPU activity.
+	 * @param[out] oData Destination host buffer.
+	 * @param[in] iSize Byte count to read.
+	 * @param[in] iOffset Source offset in bytes inside the SSBO.
+	 */
+	void getData(void* oData, uint32_t iSize, uint32_t iOffset) override;
 
 	/**
 	 * @brief
 	 *  No-op bind.
 	 */
 	void bind() override;
+
+private:
+	/// Host-side mirror — tests round-trip through it.
+	std::vector<std::uint8_t> m_data;
 };
 
 }// namespace owl::renderer::gpu::null

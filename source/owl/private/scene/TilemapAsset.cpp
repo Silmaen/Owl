@@ -17,18 +17,8 @@
 namespace owl::scene {
 
 namespace {
-/// Mirrors `scene::component::g_EmptyTileIndex` — kept terse for the encode/decode path.
 constexpr int32_t k_Empty = scene::component::g_EmptyTileIndex;
 
-/**
- * @brief
- *  Resize a row-major flat layer buffer in place, copying preserved cells.
- * @param[in,out] ioTiles The flat tile buffer to resize.
- * @param[in] iOldWidth The grid width before resize.
- * @param[in] iOldHeight The grid height before resize.
- * @param[in] iNewWidth The grid width after resize.
- * @param[in] iNewHeight The grid height after resize.
- */
 void resizeLayerStorage(std::vector<int32_t>& ioTiles, const uint32_t iOldWidth, const uint32_t iOldHeight,
 						const uint32_t iNewWidth, const uint32_t iNewHeight) {
 	std::vector<int32_t> next(static_cast<size_t>(iNewWidth) * iNewHeight, k_Empty);
@@ -45,12 +35,6 @@ void resizeLayerStorage(std::vector<int32_t>& ioTiles, const uint32_t iOldWidth,
 	ioTiles = std::move(next);
 }
 
-/**
- * @brief
- *  Encode a flat tile buffer as a comma-separated decimal string.
- * @param[in] iTiles The tile buffer to encode.
- * @return The encoded string.
- */
 auto encodeTiles(const std::vector<int32_t>& iTiles) -> std::string {
 	std::string out;
 	out.reserve(iTiles.size() * 3);
@@ -62,16 +46,6 @@ auto encodeTiles(const std::vector<int32_t>& iTiles) -> std::string {
 	return out;
 }
 
-/**
- * @brief
- *  Decode a comma-separated tile string into a flat buffer of size `iExpected`.
- *
- * Missing or malformed entries become `g_EmptyTileIndex`. Surplus entries are
- * truncated to keep the layer aligned to the grid.
- * @param[in] iEncoded The encoded string.
- * @param[in] iExpected The expected buffer size.
- * @return The decoded buffer.
- */
 auto decodeTiles(const std::string& iEncoded, const size_t iExpected) -> std::vector<int32_t> {
 	std::vector<int32_t> out(iExpected, k_Empty);
 	if (iEncoded.empty())

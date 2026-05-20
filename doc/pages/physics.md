@@ -197,7 +197,7 @@ Physics bodies operate in **world space** and are independent of the scene
 hierarchy. The table below summarizes the interaction between parent-child
 relationships and physics:
 
-| Parent      | Child       | Behaviour                                                                                                   |
+| Parent      | Child       | Behaviour                                                                                                  |
 |-------------|-------------|------------------------------------------------------------------------------------------------------------|
 | Non-physics | Physics     | Moving the parent does **not** move the physics child -- the child stays in its Box2D position             |
 | Physics     | Physics     | Both bodies move **independently** -- Box2D simulates each body on its own regardless of parent-child link |

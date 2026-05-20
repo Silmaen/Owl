@@ -26,10 +26,6 @@
 namespace owl::script {
 
 namespace {
-/**
- * @brief
- *  Helper: find entity by UUID in the active scene (reads first Lua argument).
- */
 auto findEntity(lua_State* iState) -> std::optional<scene::Entity> {
 	const auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene == nullptr)
@@ -56,9 +52,6 @@ auto parseTransitionType(const std::string_view iName) -> scene::ScreenTransitio
 	return scene::ScreenTransition::Type::None;
 }
 
-// ============================================================
-// transform table
-// ============================================================
 auto luaTransformGetPosition(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::Transform>()) {
 		const auto& t = entity->getComponent<scene::component::Transform>().transform;
@@ -131,9 +124,6 @@ auto luaTransformSetScale(lua_State* iState) -> int {
 	return 0;
 }
 
-// ============================================================
-// physics table
-// ============================================================
 auto luaPhysicsImpulse(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState)) {
 		const auto fx = static_cast<float>(luaL_checknumber(iState, 2));
@@ -182,9 +172,6 @@ auto luaPhysicsSetGravityScale(lua_State* iState) -> int {
 	return 0;
 }
 
-// ============================================================
-// input table
-// ============================================================
 auto luaInputIsKeyPressed(lua_State* iState) -> int {
 	const auto keyCode = static_cast<input::KeyCode>(luaL_checkinteger(iState, 1));
 	lua_pushboolean(iState, input::Input::isKeyPressed(keyCode) ? 1 : 0);
@@ -207,9 +194,6 @@ auto luaInputGetMouseY(lua_State* iState) -> int {
 	return 1;
 }
 
-// ============================================================
-// sound table
-// ============================================================
 auto luaSoundPlay(lua_State* iState) -> int {
 	const char* assetPath = luaL_checkstring(iState, 1);
 	if (sound::SoundSystem::getState() != sound::SoundSystem::State::Running) {
@@ -253,9 +237,6 @@ auto luaSoundSetVolume(lua_State* iState) -> int {
 	return 0;
 }
 
-// ============================================================
-// scene table
-// ============================================================
 auto luaSceneFindEntity(lua_State* iState) -> int {
 	auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene == nullptr) {
@@ -316,8 +297,6 @@ auto luaSceneTransitionTo(lua_State* iState) -> int {
 	const int top = lua_gettop(iState);
 	std::string typeName{"fade"};
 	if (top >= 2) {
-		// Argument 2 may be either a type-name string or the duration when the
-		// caller skips the type. Support both for ergonomic Lua.
 		if (lua_isstring(iState, 2) != 0)
 			typeName = lua_tostring(iState, 2);
 		else if (lua_isnumber(iState, 2) != 0)
@@ -329,8 +308,6 @@ auto luaSceneTransitionTo(lua_State* iState) -> int {
 	req.outType = parseTransitionType(typeName);
 	if (req.outType == scene::ScreenTransition::Type::None)
 		req.outType = scene::ScreenTransition::Type::FadeOut;
-	// In-anim mirrors the out-anim by default — fades pair with their reverse,
-	// wipes pair with the matching direction (slides off, slides on).
 	switch (req.outType) {
 		case scene::ScreenTransition::Type::FadeOut:
 			req.inType = scene::ScreenTransition::Type::FadeIn;
@@ -360,9 +337,6 @@ auto luaSceneQuit([[maybe_unused]] lua_State* iState) -> int {
 	return 0;
 }
 
-// ============================================================
-// time table (delta stored per-frame by ScriptEngine)
-// ============================================================
 auto luaTimeDelta(lua_State* iState) -> int {
 	// Delta time is stored in registry key "owl_dt".
 	lua_getfield(iState, LUA_REGISTRYINDEX, "owl_dt");
@@ -373,9 +347,6 @@ auto luaTimeDelta(lua_State* iState) -> int {
 	return 1;
 }
 
-// ============================================================
-// log table
-// ============================================================
 auto luaLogTrace(lua_State* iState) -> int {
 	OWL_TRACE("{}", luaL_checkstring(iState, 1))
 	return 0;
@@ -396,9 +367,6 @@ auto luaLogError(lua_State* iState) -> int {
 	return 0;
 }
 
-// ============================================================
-// entity table
-// ============================================================
 auto luaEntityHasComponent(lua_State* iState) -> int {
 	const auto entity = findEntity(iState);
 	if (!entity) {
@@ -448,9 +416,6 @@ auto luaEntityGetName(lua_State* iState) -> int {
 	return 1;
 }
 
-// ============================================================
-// ui table
-// ============================================================
 auto luaUiSetText(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState); entity && entity->hasComponent<scene::component::UiText>())
 		entity->getComponent<scene::component::UiText>().text = luaL_checkstring(iState, 2);
@@ -542,9 +507,6 @@ auto luaUiTransitionPlay(lua_State* iState) -> int {
 	return 0;
 }
 
-// ============================================================
-// gamestate table
-// ============================================================
 auto luaGamestateSet(lua_State* iState) -> int {
 	auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene == nullptr)
@@ -608,9 +570,6 @@ auto luaGamestateClear([[maybe_unused]] lua_State* iState) -> int {// NOLINT(rea
 	return 0;
 }
 
-// ============================================================
-// save table
-// ============================================================
 auto luaSaveSaveGame(lua_State* iState) -> int {
 	auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene == nullptr)
@@ -662,20 +621,12 @@ auto luaSaveListSaves(lua_State* iState) -> int {
 	return 1;
 }
 
-/**
- * @brief
- *  Helper: register a table of C functions.
- */
 void registerTable(lua_State* iState, const char* iTableName, const luaL_Reg* iFunctions) {
 	lua_newtable(iState);
 	luaL_setfuncs(iState, iFunctions, 0);
 	lua_setglobal(iState, iTableName);
 }
 
-// --- door / pushwall bindings -------------------------------------------------
-// Pulled out of `registerBindings` as named `lua_CFunction`s so the binding
-// table is just a list of pointers (keeps `registerBindings`'s cognitive
-// complexity under the clang-tidy threshold).
 
 auto luaDoorActivate(lua_State* iState) -> int {
 	const auto* activeScene = ScriptEngine::getActiveScene();
@@ -928,8 +879,6 @@ void registerBindings(lua_State* iState) {
 		{"list_saves", luaSaveListSaves},
 		{nullptr, nullptr}
 	};
-	// clang-format on
-	// clang-format off
 	static const luaL_Reg settingsFuncs[] = {
 		{"set", [](lua_State* s) -> int {
 			const char* key = luaL_checkstring(s, 1);
@@ -980,8 +929,6 @@ void registerBindings(lua_State* iState) {
 		{"apply", [](lua_State*) -> int { scene::SettingsManager::applyBuiltins(); return 0; }},
 		{nullptr, nullptr}
 	};
-	// clang-format on
-	// clang-format off
 	static  constexpr luaL_Reg triggerFuncs[] = {
 		{"start_timer", [](lua_State* s) -> int {
 			const auto* activeScene = ScriptEngine::getActiveScene();
@@ -1012,6 +959,7 @@ void registerBindings(lua_State* iState) {
 		}},
 		{nullptr, nullptr}
 	};
+	// clang-format on
 
 	// clang-format off
 	static const luaL_Reg doorFuncs[] = {

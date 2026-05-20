@@ -203,6 +203,11 @@ def _check_typos() -> int:
 # Match a `/**` block — captures everything up to the closing `*/`.
 _DOXY_BLOCK_RE = re.compile(r"/\*\*(?!/)(?P<body>.*?)\*/", re.DOTALL)
 _TRIPLE_SLASH_LINE_RE = re.compile(r"^\s*///(?!<)(?!\s*$).*$")
+# A plain `/* */` block comment (excludes the Doxygen `/** */` form).
+_PLAIN_BLOCK_RE = re.compile(r"/\*(?!\*).*?\*/", re.DOTALL)
+# A `///` or `///<` Doxygen comment on its own line.
+_TRIPLE_SLASH_ANY_RE = re.compile(r"^\s*///")
+_CPP_EXTENSIONS = {".cpp", ".cc", ".cxx", ".inl"}
 # A description "sentence" lives on a `* word ...` line inside a `/** */`.
 _DOC_PROSE_LINE_RE = re.compile(r"^\s*\*\s*(?P<text>[^@\s].*?)\s*$")
 
@@ -372,6 +377,101 @@ def _check_comment_quality() -> int:
 
         # --- checks 3 & 4: function-declaration comment style + missing @return
         issues += _check_function_doc_style(path, lines, text)
+
+        # --- check 6: implementation files must not carry Doxygen blocks /
+        # `///` lines / multi-line `/* */` comments. Documentation lives in
+        # the matching header; comments inside bodies stay as single-line `//`.
+        issues += _check_cpp_comment_discipline(path, text)
+
+    return issues
+
+
+def _check_cpp_comment_discipline(path: Path, text: str) -> int:
+    """
+    Enforce the rule that .cpp/.cc/.cxx/.inl files contain only:
+
+    - One file-header `/** @file ... */` block at the top.
+    - Single-line `//` comments inside the body.
+
+    Anything else — additional `/** ... */` blocks, `///` or `///<` lines,
+    multi-line `/* ... */` blocks — must move to the matching header (the
+    documentation belongs alongside the declaration, not duplicated in the
+    implementation).
+    """
+    if path.suffix not in _CPP_EXTENSIONS:
+        return 0
+    issues = 0
+    rel = path.relative_to(root)
+
+    # The first `/** ... */` block at the top is the file-header (it carries
+    # `@file`); skip exactly that one and flag any other Doxygen block.
+    header_end_offset = -1
+    first_block = _DOXY_BLOCK_RE.search(text)
+    if first_block is not None and "@file" in first_block.group("body"):
+        header_end_offset = first_block.end()
+
+    for m in _DOXY_BLOCK_RE.finditer(text):
+        if m.end() == header_end_offset:
+            continue
+        line = text.count("\n", 0, m.start()) + 1
+        log.error(
+            f"cpp-doxy-block: {rel}:{line}: `/** */` Doxygen block in "
+            f"implementation file — move the documentation to the matching "
+            f"header"
+        )
+        issues += 1
+
+    header_end_line = text.count("\n", 0, header_end_offset) if header_end_offset >= 0 else -1
+    for i, line in enumerate(text.splitlines()):
+        if i <= header_end_line:
+            continue
+        if _TRIPLE_SLASH_ANY_RE.match(line):
+            log.error(
+                f"cpp-triple-slash: {rel}:{i + 1}: `///` Doxygen comment in "
+                f"implementation file — use single-line `//` only inside `.cpp`"
+            )
+            issues += 1
+
+    for m in _PLAIN_BLOCK_RE.finditer(text):
+        body = m.group()
+        if "\n" not in body:
+            continue
+        line = text.count("\n", 0, m.start()) + 1
+        log.error(
+            f"cpp-multi-comment: {rel}:{line}: multi-line `/* */` comment in "
+            f"implementation file — use single-line `//` only"
+        )
+        issues += 1
+
+    # Runs of two or more consecutive `//` lines are multi-line comments in
+    # disguise. Single `//` lines are fine; anything taller wants a header
+    # doc or a code refactor instead.
+    lines = text.splitlines()
+    run_start = -1
+    for i, ln in enumerate(lines):
+        if i <= header_end_line:
+            continue
+        stripped = ln.lstrip()
+        is_line_comment = stripped.startswith("//") and not stripped.startswith("///")
+        if is_line_comment:
+            if run_start == -1:
+                run_start = i
+        else:
+            if run_start != -1 and i - run_start >= 2:
+                log.error(
+                    f"cpp-line-comment-run: {rel}:{run_start + 1}: "
+                    f"{i - run_start} consecutive `//` lines — collapse to "
+                    f"one line, move to the header, or refactor the code"
+                )
+                issues += 1
+            run_start = -1
+    if run_start != -1 and len(lines) - run_start >= 2:
+        log.error(
+            f"cpp-line-comment-run: {rel}:{run_start + 1}: "
+            f"{len(lines) - run_start} consecutive `//` lines — collapse to "
+            f"one line, move to the header, or refactor the code"
+        )
+        issues += 1
 
     return issues
 

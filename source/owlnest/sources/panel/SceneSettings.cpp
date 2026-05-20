@@ -234,9 +234,6 @@ void SceneSettings::onImGuiRender() {
 		return;
 	}
 
-	// Refresh the snapshot every frame so external mutations (Ctrl+Z, hot-reload,
-	// other panels) don't leave it stale. Within a single frame the snapshot
-	// stays the "before" reference for any widget edit committed below.
 	m_frameSnapshot = serializeConfig(m_scene->getEnabledRenderers());
 
 	switch (m_scene->status) {

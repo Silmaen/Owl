@@ -54,21 +54,6 @@ feature should regress the baseline on these axes; each release is expected to m
     - Spatial partitioning (quadtree/octree) for culling
     - Batched draw calls, texture atlasing
     - Multithreaded render preparation
-- ![Planned][planned] Per-pass uniform buffers in Vulkan
-    - `Renderer2D::beginScene` writes the camera VP to a single per-frame uniform buffer that the GPU descriptor set
-      still references for all passes in the same frame. When two layers in the same frame use
-      *different* VPs (e.g. world layer with the scene camera + screen-space
-      `Renderer2DLayer` with a pixel-ortho), the second `beginScene`'s host memcpy can race the first pass's GPU read on
-      Vulkan, producing visible flicker on the world layer.
-    - Current workaround: keep both passes in the same coordinate frame by default (project's `ui` layer is
-      `Space: World`), and have only scenes with a rotated player camera (raycast) opt into `Space: Screen` via a
-      scene-level `Overrides` block. Race still exists in those scenes but is masked when both VPs project the active
-      camera near the same orientation.
-    - Proper fix: rotate through a pool of uniform buffers (one per
-      `beginScene` call), bind the descriptor set with a dynamic offset, and reset the rotation at frame end. Or move
-      the camera VP to push constants. Either approach makes the per-pass VP per-draw-call and eliminates the host/GPU
-      race.
-
 ## v0.5.0 -- Expected 2027-06-01
 
 **Goal:** Let players extend and modify games built with Owl. Bring Owl games to more platforms. Handle large game
@@ -154,7 +139,7 @@ experiences, and networked multiplayer.
         - Visual behaviour tree editor in Owl Nest (node graph)
         - Standard nodes: sequence, selector, parallel, decorator, condition, action
         - Lua-scriptable leaf nodes for custom actions/conditions
-        - Saveable `.owlbt` behaviour tree assets
+        - Savable `.owlbt` behaviour tree assets
     - ![Planned][planned] Steering behaviours
         - Seek, flee, arrive, wander, pursue, evade
         - Flocking (separation, alignment, cohesion)
@@ -196,7 +181,7 @@ cross-platform packaging from any host.
         - Forward rendering with depth buffer
         - Camera: perspective projection, free-look, orbit controls
     - ![Planned][planned] Lighting system
-        - Directional light (sun), point lights, spot lights
+        - Directional light (sun), point lights, spotlights
         - Shadow mapping (at least for directional light)
         - Ambient light and basic global illumination approximation
     - ![Planned][planned] Material system
@@ -227,9 +212,9 @@ cross-platform packaging from any host.
       `renderer::utils::FrustumCullingPass` utility + `frustum_culling.slang` shader ship, alongside the
       `RenderCommand::drawIndexedIndirect` API (Vulkan `vkCmdDrawIndexedIndirectCount`, OpenGL
       `glMultiDrawElementsIndirectCount`, Null no-op). `extractFrustumPlanes(viewProj)` Gribb-Hartmann helper for
-      the CPU side. Headless tests on the Null backend pass. Renderer-side adoption (populating the AABB SSBO from
-      the scene graph + replacing the per-entity draw loop with one `drawIndexedIndirect`) pays off when 3D scenes
-      land.
+      the CPU side. Headless tests on the Null backend pass. With the SSBO-indexed instanced pipeline landed in
+      v0.2.0, adoption here is a drop-in: populate the AABB SSBO from the scene graph and replace the per-entity
+      draw loop with one `drawIndexedIndirect`. Pays off when 3D meshes start filling scenes.
 - Scene
     - ![Planned][planned] 3D physics
         - 3D rigid body component (replace or extend Box2D with a 3D engine)
@@ -282,12 +267,12 @@ cross-platform packaging from any host.
           `architecture.md`, `editor.md`, `node_graph.md`, `physics.md`,
           `renderer.md`, `scene.md`, `scripting.md`, `sound.md`) only render on GitHub / Doxygen
         - Build-time pre-render of mermaid blocks → SVG (or PNG) files in
-          `engine_assets/help/images/mermaid/`, with the markdown rewriter swapping each fence for an
+          `engine_assets/help/images/mermaid/`, with the Markdown rewriter swapping each fence for an
           `![alt](images/mermaid/<sha>.svg)` reference. No runtime JS/Node dependency —
           pre-rendering can run with a depmanager-shipped tool or a custom subset renderer in C++
         - Update `cmake/HelpAssets.cmake` to invoke the pre-renderer and surface the cache files
         - Tests: assert each bundled `engine_assets/help/*.md` no longer contains ` ```mermaid `
-          after the bundle step and that the rasterised diagram files exist
+          after the bundle step and that the rasterized diagram files exist
     - ![Planned][planned] Help-panel rendering polish (V2)
         - Hanging indent in unordered/ordered lists (current V1 wraps to column 0 — see
           `MarkdownPreview::renderList` comment)
@@ -307,7 +292,7 @@ cross-platform packaging from any host.
           editor load reads binary. Not urgent (tracker O(N²) fix already brought parse to ms scale) but still
           worth ~10× on really large scenes.
     - ![Planned][planned] Parallel pack `readEntry`
-        - Wrap `PackReader::readEntry` so multiple entries can be zstd-decompressed concurrently (file seek serialised
+        - Wrap `PackReader::readEntry` so multiple entries can be zstd-decompressed concurrently (file seek serialized
           under a mutex, decompression off-mutex). Useful for packed games loading dozens of textures in parallel at
           startup. Needs PackReader thread-safety audit + a worker-friendly API.
 
@@ -318,19 +303,19 @@ gameplay primitives (inventory, enemies).
 
 - 2D Lighting
     - ![Planned][planned] 2D lighting system
-        - Point lights, spot lights in 2D scenes
+        - Point lights, spotlights in 2D scenes
         - Normal-mapped sprites for dynamic 2D lighting
         - Shadow casting from 2D occluders
 - Editor Infrastructure
     - ![Planned][planned] Custom ImGui-based file picker
-        - Replace the native file dialog (NFD/GTK) which briefly freezes the UI on Linux when GTK initializes (triggers
+        - Replace the native file dialogue (NFD/GTK) which briefly freezes the UI on Linux when GTK initializes (triggers
           IDE "antiloop" detection)
         - Pure ImGui implementation integrated with the task scheduler for async folder scanning
         - Benefits: consistent look-and-feel, truly non-blocking, theme-aware
         - Replaces the current sync `FileDialog::openFile/saveFile/pickFolder` blocking calls
     - ![Planned][planned] Editor camera controls overhaul
         - Current `CameraEditor` is awkward to manipulate (orbit feels off-axis, pan/zoom thresholds are inconsistent,
-          RMB-drag direction sometimes fights the user). Re-tune sensitivity per axis, add deadzones, support
+          RMB-drag direction sometimes fights the user). Re-tune sensitivity per axis, add dead zones, support
           Maya/Blender-style middle-click navigation as an option, surface the settings under
           `Settings > Editor > Camera`.
         - **Standard navigation presets** — quick buttons (ribbon `View` group + viewport overlay) for: **Reset View**
@@ -432,7 +417,10 @@ gameplay primitives (inventory, enemies).
 ## v0.2.0 -- Expected 2026-08-01
 
 **Goal:** Introduce a composable **renderer stack** so scenes can mix and match rendering modes (e.g. raycasting world +
-2D HUD), then deliver the first non-2D mode (raycasting), the tilemap system, and scene-to-scene transition effects.
+2D HUD), deliver the first non-2D mode (raycasting), the tilemap system, scene-to-scene transition effects, and
+**modernise the renderer foundation** — drop the legacy CPU-vertex-transform batching pattern in favour of a
+GPU-driven path (per-frame SSBOs + instanced rendering + compute pre-passes), so the engine is ready for the 3D
+pipeline landing in v0.3.0.
 
 - Renderer Stack Architecture
     - ![Done][done] Foundation — `RenderLayer` / `RenderStack` / `RenderLayerFactory`, `RendererTag` component, YAML
@@ -499,36 +487,96 @@ gameplay primitives (inventory, enemies).
       `onStartRuntime`.
     - ![Done][done] Render-loop hygiene — `getWorldTransform` / `layerHasContent` / `isEffectivelyVisible`
       per-pass caches (armed only when in update pass); `resolveAllTilemapAssets` dirty-flag gate.
-    - ![In Progress][progress] GPU offload
-        - ![Done][done] Tilemap rendering via instanced quads + SSBO — `RendererTilemap` uploads per-cell
-          `{positionXY, tileIndex, entityId}` into a per-instance VBO and issues a single
-          `vkCmdDrawIndexed(6, cellCount, …)` / `glDrawElementsInstanced(…)` call backed by `tilemap_instanced.slang`.
-        - ![Done][done] GPU compute pipeline foundation — `gpu::ComputeShader` (Null / OpenGL / Vulkan) +
-          `gpu::StorageBuffer` + `RenderCommand::storageBufferMemoryBarrier()` + Slang `[shader("compute")]` entry
-          points wired into `compileSlangToSpirv`. Headless validation via `SlangCompute_test.cpp`.
-        - ![In Progress][progress] GPU sprite Z-sort via compute shader. The `renderer::utils::BitonicSortPass`
-          utility + `bitonic_sort.slang` shader ship — single-workgroup bitonic-merge sort over an SSBO of
-          `(key, value)` pairs, capacity 1024, fixed `[numthreads(1024,1,1)]`. Headless tests on the Null backend
-          pass. Renderer-side adoption (`RendererRaycast::drawSprites` building the SSBO + consuming the sorted
-          indices instead of `std::ranges::sort`) is the remaining work for this item. Bitonic chosen over radix —
-          for sprite counts < 1000 the constant factor of radix is higher than a single shared-memory bitonic
-          dispatch.
-        - ![In Progress][progress] Hierarchical world-transform pre-pass in a compute shader. Each entity dispatches
-          one thread that reads its local transform + parent index, walks up, and writes the flat `mat4` into a
-          per-frame world-matrix SSBO. Renderer reads SSBO directly. Expected 5–10× on deep hierarchies and removes
-          the ~30 redundant CPU rebuilds of the same matrix per frame. The `renderer::utils::WorldTransformPass`
-          utility + `world_transform.slang` shader ship — single-dispatch parent-chain walk, padded to a multiple of
-          64 entries, headless tests on the Null backend pass. Renderer-side adoption (Renderer2D / RendererTilemap /
-          RendererRaycast all reading from `WorldTransformPass::getWorldBuffer()`) is the remaining work for this
-          item.
-        - ![In Progress][progress] Raycast DDA in a compute shader, one thread per column. Biggest single CPU→GPU
-          win (20–50× theoretical) but also the most invasive — touches the entire raycast renderer architecture, the
-          per-column zBuffer, dynamic walls, sprite occlusion. The `renderer::utils::RaycastDDAPass` utility +
-          `raycast_dda.slang` shader ship — faithful Slang port of the CPU DDA inner loop (X/Y-edge stepping,
-          transparent-stack budget of 8, wallX flip convention, perpDist clamping). Outputs `columnHits[col * 8 + k]`
-          + `hitCount[col]` + `zBuffer[col]` SSBOs. Headless tests on the Null backend pass. Renderer-side adoption
-          — `RendererRaycast::drawTilemapWalls` reading from the SSBOs instead of the CPU vector, and the sprite
-          occlusion pass consuming `zBuffer[]` directly — is the remaining work for this item.
+- Renderer Modernisation
+    - **Context.** The original `Renderer2D` follows the Hazel/Sparky pattern (CPU multiplies each vertex by its
+      transform, pushes into a CPU vertex buffer, flushes when the index threshold is hit). The Vulkan backend was
+      bolted on top without rethinking the model — it re-uploads the CPU batch every frame and the descriptor-set
+      management is fragile (NVIDIA `vkCmdBindPipeline` crash on the instanced tilemap path, per-pass UBO host/GPU
+      race). The pattern caps performance around a few thousand quads. Modernisation moves all renderers onto a
+      uniform pipeline: **compute pre-pass populates per-frame SSBOs → graphics pass is instanced + indexes into
+      SSBOs via `gl_InstanceID`, zero CPU vertex transform, zero per-frame readback**. Item pays off immediately
+      (#32/#33/#35 finally deliver their advertised gains) and unblocks the v0.3.0 3D pipeline (mesh / material /
+      lighting / particle systems all drop into the same SSBO + instance infrastructure).
+    - ![Done][done] Tilemap rendering via instanced quads + SSBO — `RendererTilemap` uploads per-cell
+      `{positionXY, tileIndex, entityId}` into a per-instance VBO and issues a single
+      `vkCmdDrawIndexed(6, cellCount, …)` / `glDrawElementsInstanced(…)` call backed by `tilemap_instanced.slang`.
+      Proof-of-concept that the instanced-SSBO pattern works end-to-end.
+    - ![Done][done] GPU compute pipeline foundation — `gpu::ComputeShader` (Null / OpenGL / Vulkan) +
+      `gpu::StorageBuffer` + `RenderCommand::storageBufferMemoryBarrier()` + Slang `[shader("compute")]` entry
+      points wired into `compileSlangToSpirv`. Headless validation via `SlangCompute_test.cpp`.
+    - ![Done][done] Phase 0 — Vulkan descriptor & UBO foundation hardening
+        - Per-renderer descriptor blocks (option β): each high-level renderer owns its own
+          `VkDescriptorSetLayout` + pool + per-frame sets matching the exact bindings its shaders declare.
+          The old singleton `Descriptors` keeps only the global pools (`imgui`, `singleImage`) + the texture
+          storage table; everything else moved to the new `internal::RendererDescriptors` class.
+        - Backend-neutral declaration API in `gpu::RendererDescriptors` — `declare(name, bindings)` /
+          `release(name)` / `ScopedActive` RAII guard. Null and OpenGL backends no-op (no descriptor-set
+          concept). Vulkan routes to the internal per-renderer block.
+        - `gpu::StorageBuffer::getData()` readback on Null / OpenGL / Vulkan (host mirror /
+          `glGetNamedBufferSubData` / `vkDeviceWaitIdle` + map). Documented as test-time / diagnostics only.
+          `BitonicSortPass` test exercises the round-trip end-to-end via the Null backend.
+        - Renderer wiring — `Renderer2D` (`{0:UBO, 1:texArray}`), `RendererTilemap`
+          (`{0:UBO, 1:texArray, 2:UBO}`) and `BackgroundRenderer` (shares `Renderer2D`'s layout) each
+          declare their bindings at init, scope `ScopedActive` around `beginScene` / `flush` / `drawTilemap`
+          so the Vulkan backend's `pushPipeline` and `bindPipeline` pick the right per-renderer layout and
+          descriptor set. `vulkan::UniformBuffer` and `vulkan::Texture2D::bind` route through the same
+          mechanism, with a fallback to the legacy global path for non-Vulkan and uninstrumented callers.
+        - **`RendererTilemap` NVIDIA crash root cause addressed.** The crash was driven by NVIDIA's strict
+          validation rejecting pipelines whose layout declared bindings the shader didn't sample (shared
+          `{0, 1, 2}` global layout vs `Renderer2D`'s `{0, 1}` shader). With per-renderer layouts each
+          pipeline references exactly the bindings it uses. The instanced `RendererTilemap::drawTilemap`
+          path itself is still gated behind `Scene::drawTilemapQuads`'s per-cell `Renderer2D::drawQuad`
+          fallback — re-enabling the instanced path also surfaced an OpenGL-side rendering bug (tilemap
+          doesn't display) that needs its own fix before flipping the switch. Phase 1 picks that up.
+        - **Per-pass UBO race fixed.** The shared per-frame UBO that two `Renderer2D` layers used to
+          memcpy into mid-frame is now scoped to its renderer block; the UI layer no longer needs the
+          `Space: World` workaround that previously masked the flicker.
+    - ![In Progress][progress] Phase 1 — `Renderer2D` instanced rewrite
+        - First sub-task: **fix `RendererTilemap::drawTilemap`'s instanced path** on both backends so
+          `Scene::drawTilemapQuads` can be re-routed away from the per-cell `Renderer2D::drawQuad`
+          fallback. Phase 0 fixed the descriptor-layout side of the NVIDIA crash; what remains is the
+          OpenGL-side rendering bug (tilemap doesn't display) and validating the Vulkan path end-to-end
+          on real hardware once OpenGL is green. This is the test bed that proves the instanced + SSBO
+          pattern works before generalising it to `Renderer2D` itself.
+        - Main rewrite: vertex shader transforms a unit quad using the per-instance world matrix +
+          UV-rect + colour + atlas-index + entityId read from per-frame SSBOs indexed by `gl_InstanceID`.
+          No more CPU `transform * vertexPosition` baked into a `vector<QuadVertex>`.
+        - Batching by texture-slot is preserved (per-batch SSBO + per-batch bind), but the batch size is bounded
+          by SSBO capacity, not by CPU vertex-buffer pressure.
+        - Migration safety: keep the legacy CPU path behind a project-level toggle for one release while
+          benchmarks confirm visual + perf parity, then delete the legacy path in Phase 5.
+        - Expected ≥10× on 5 k-quad scenes (zero per-frame CPU vertex math, single uniform `glDraw*Instanced`).
+    - ![In Progress][progress] Phase 2 — `WorldTransformPass` adoption (#33)
+        - The pre-pass already ships (`renderer::utils::WorldTransformPass` + `world_transform.slang`,
+          single-dispatch parent-chain walk padded to multiples of 64 entries, headless tests pass on the Null
+          backend). Phase 1's instanced path consumes the world-matrix SSBO directly via `gl_InstanceID`, killing
+          the ~30 redundant CPU `getWorldTransform` calls per frame.
+        - Expected 5–10× on deep hierarchies.
+    - ![In Progress][progress] Phase 3 — `RaycastDDAPass` adoption (#35)
+        - The DDA pre-pass already ships (`renderer::utils::RaycastDDAPass` + `raycast_dda.slang`, X/Y-edge
+          stepping, transparent-stack budget of 8, `columnHits[col * 8 + k]` + `hitCount[col]` + `zBuffer[col]`
+          SSBOs, headless tests pass).
+        - New graphics shader for stripe emission: instanced draw, one instance per visible column hit, vertex
+          shader reads `columnHits[]` + tileset UVs, fragment shader samples the atlas. Sprite occlusion pass
+          consumes `zBuffer[]` GPU-side (vertex shader rejects fragments whose perpDist exceeds the column's
+          wall depth).
+        - Biggest single CPU→GPU win (20–50× theoretical on wall rasterisation) — also the most invasive change
+          in this release. Touches the per-column zBuffer, dynamic walls, doors, sprite stripes.
+    - ![In Progress][progress] Phase 4 — `BitonicSortPass` adoption (#32)
+        - The sort pass already ships (`renderer::utils::BitonicSortPass` + `bitonic_sort.slang`, single-workgroup
+          bitonic-merge sort over `(key, value)` pairs, capacity 1024, headless tests pass). After Phase 3 the
+          sprite stripe emission lives on the GPU, so the sort output stays on the GPU and feeds the stripe
+          shader directly — zero CPU readback, drop-in trivial.
+        - Bitonic chosen over radix: for sprite counts < 1000 the constant factor of radix is higher than a
+          single shared-memory bitonic dispatch.
+    - ![In Progress][progress] Phase 5 — Cleanup & benchmarks
+        - Delete the legacy CPU-vertex `Renderer2D::drawQuad` path and the now-unused `Scene::getWorldTransform`
+          fast-cache callers; keep `getWorldTransform` for tests / inspector code (rare, off-hot-path callers).
+        - Ramp up renderer test coverage now that GPU passes have correctness oracles via the new
+          `StorageBuffer` readback (added in Phase 0 for test-time CPU readback only, not part of the hot path).
+        - Update `doc/pages/renderer.md` + `doc/pages/architecture.md` to describe the SSBO-indexed instanced
+          pipeline as the canonical pattern. Surface a perf-bench summary (5 k-quad scene, deep hierarchy scene,
+          raycast scene) before/after.
 - Known bug fixes
     - ![Done][done] Editor keyboard shortcuts — modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) bypass
       `ImGui::GetIO().WantCaptureKeyboard`; modifier-less still yield to focused text widgets.
@@ -573,7 +621,7 @@ different asset types. All long-running operations become asynchronous with prog
       buffers; configurable UI / code font sizes in `EditorSettings`.
     - ![Done][done] Live preview for markup documents — `MarkdownPreview` (CommonMark + GFM via **md4c**) walks
       the parsed blocks to emit ImGui draw calls with cached `TextEditor` for code blocks; external links open via
-      `core::utils::openExternalUrl`. `SvgPreview` rasterizes live SVG via `lunasvg`. Vertical splitter between
+      `core::utils::openExternalUrl`. `SvgPreview` rasterize live SVG via `lunasvg`. Vertical splitter between
       editor and preview, debounced ~250 ms.
 - Node Graph Editor
     - ![Done][done] Node graph framework — reusable `gui::widgets::NodeCanvas` (UUID-based nodes/pins/links, typed
@@ -583,7 +631,7 @@ different asset types. All long-running operations become asynchronous with prog
     - ![Done][done] Scene flow view — scenes as nodes, teleport triggers as output pins, orphan detection (BFS
       from `Project::firstScene`). Double-click navigates to a scene; ghost `+ Add teleport` pin creates a
       `Trigger` entity + canvas link in one undoable step; per-pin `targetName` modal. `SceneFlowCompositeCommand`
-      glues scene + canvas undo halves. Canvas polish: zoom-based text LOD + per-layer vertical centring.
+      glues scene + canvas undo halves. Canvas polish: Zoom-based text LOD + per-layer vertical centring.
 - Asset Editors
     - ![Done][done] Animation editor — `.owlanim` asset (`AnimationClip`: texture, grid, frame range, duration,
       loop, optional speed curve). `AnimationDocument` three-pane (preview / properties / sequencer timeline backed
@@ -614,7 +662,7 @@ different asset types. All long-running operations become asynchronous with prog
 - UX & Quality
     - ![Done][done] In-editor help pages — `cmake/HelpAssets.cmake` bundles `doc/pages/*.md` + `README` /
       `CHANGELOG` / `CONTRIBUTING` into `engine_assets/help/` with an `index.yml`. `panel::HelpPanel` renders via
-      `MarkdownPreview` with search, categorised nav, back/forward history. F1 opens the page documenting the
+      `MarkdownPreview` with search, categorized nav, back/forward history. F1 opens the page documenting the
       most-recently-hovered component header.
     - ![Done][done] Tooltips everywhere with hover delay — reusable `fieldTooltip()` helper (~0.4s `DelayNormal`)
       wired across all trigger types + every authored component field.
@@ -622,7 +670,7 @@ different asset types. All long-running operations become asynchronous with prog
       index-based `PushID` in the LuaScript property loop.
     - ![Done][done] Icon clarity pass — per-extension Content Browser icons (sound / mesh / source / docs) sharing
       `base_file_ext_icon` template with a central glyph + amber/gold accent. `IconBank::iconButton(name, label,
-      size)` helper reused across Welcome, Packaging Wizard, modals, Content Browser dialogs, panels.
+      size)` helper reused across Welcome, Packaging Wizard, modals, Content Browser dialogues, panels.
 - Build & CI
     - ![Done][done] Linux ARM64 CI restored — Poetry venvs colliding across architectures (shared `$HOME`,
       ARM64 loading x86_64 wheels → `cryptography/_rust.abi3.so` crash). New `ci/utils/venv.py` layered check
@@ -725,7 +773,7 @@ Windows).
     - ![Done][done] Public engine headers third-party independent; fmt public dependency removed; more static
       linking of third-party libs.
 - Graphics
-    - ![Done][done] Backgrounds / skyboxes.
+    - ![Done][done] Backgrounds / sky boxes.
     - ![Done][done] Migrate shaders to Slang.
 - Miscellaneous
     - ![Done][done] Pause / unpause game; frame-by-frame stepping when paused.

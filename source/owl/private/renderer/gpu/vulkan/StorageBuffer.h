@@ -57,6 +57,18 @@ public:
 
 	/**
 	 * @brief
+	 *  Read bytes back from the SSBO into a host buffer. Submits the current
+	 *  command buffer and waits on it before mapping — the call is therefore
+	 *  expensive (full GPU stall) and intended for test-time readback and
+	 *  editor diagnostics only, not for the hot path.
+	 * @param[out] oData Destination host buffer.
+	 * @param[in] iSize Byte count to read.
+	 * @param[in] iOffset Source offset in bytes inside the SSBO.
+	 */
+	void getData(void* oData, uint32_t iSize, uint32_t iOffset) override;
+
+	/**
+	 * @brief
 	 *  Bind the SSBO. On Vulkan, descriptor sets are tied to the pipeline —
 	 *  the actual binding happens when the pipeline is bound. This call
 	 *  refreshes the descriptor write to point at the latest buffer state.

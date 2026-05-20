@@ -139,8 +139,6 @@ auto getPixelFormatString(const GUID& videoFormat) -> std::string {
 		return "MPG1";
 	if (videoFormat == MFVideoFormat_MPG2)
 		return "MPG2";
-	//if (videoFormat == MFVideoFormat_MPG3) return "MPG3";
-	//if (videoFormat == MFVideoFormat_MPG4) return "MPG4";
 	if (videoFormat == MFVideoFormat_WMV1)
 		return "WMV1";
 	if (videoFormat == MFVideoFormat_WMV2)
@@ -152,8 +150,6 @@ auto getPixelFormatString(const GUID& videoFormat) -> std::string {
 	//if (videoFormat == MFVideoFormat_FLV1) return "FLV1";
 	if (videoFormat == MFVideoFormat_HEVC)
 		return "HEVC";
-	// Ajoutez d'autres formats vidéo au besoin
-	// Format inconnu
 	return "Unknown";
 }
 

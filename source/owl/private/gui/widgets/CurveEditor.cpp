@@ -56,15 +56,6 @@ public:
 	}
 
 private:
-	/**
-	 * @brief
-	 *  Compute a viewing window that contains every keyframe with a small margin.
-	 *
-	 * Standard X span (`[0, 1]`) is always included so a normalized-progress curve still
-	 * shows the full range when keys are clustered. Y span auto-fits the actual values
-	 * (with 20% margin or 0.5 absolute, whichever is larger) and always includes `0`,
-	 * so non-zero curves don't push the baseline off-screen.
-	 */
 	void fitRangeToBuffer() {
 		if (m_buffer.empty()) {
 			m_min = {0.f, -1.f};

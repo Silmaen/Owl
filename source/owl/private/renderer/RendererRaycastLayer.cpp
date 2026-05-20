@@ -18,12 +18,6 @@
 namespace owl::renderer {
 
 namespace {
-/**
- * @brief
- *  Load a `.owltileset` asset by path, walking the active project's asset
- *  directories. Returns null when the asset can't be located or fails to
- *  parse — the renderer then falls back to the solid colour for that side.
- */
 auto loadTilesetByPath(const std::string& iPath) -> shared<scene::Tileset> {
 	if (iPath.empty() || !core::Application::instanced())
 		return nullptr;
@@ -39,7 +33,7 @@ auto loadTilesetByPath(const std::string& iPath) -> shared<scene::Tileset> {
 	return nullptr;
 }
 
-/// Build the `(BL.x, BL.y, TR.x, TR.y)` atlas UV rect for a tile index.
+// Build the `(BL.x, BL.y, TR.x, TR.y)` atlas UV rect for a tile index.
 auto tileUvRect(const scene::Tileset& iTileset, const uint32_t iTileIndex) -> math::vec4 {
 	const auto corners = iTileset.getTileUv(iTileIndex);
 	return {corners[0].x(), corners[0].y(), corners[2].x(), corners[2].y()};
@@ -59,20 +53,10 @@ RendererRaycastLayer::RendererRaycastLayer(std::string iName) : m_name{std::move
 void RendererRaycastLayer::onBeginFrame(const Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
-	// Pixel-space ortho camera so the per-stripe quads emitted by `RendererRaycast`
-	// land at exact pixel coordinates. (Origin at bottom-left, X right, Y up.)
 	const auto vw = static_cast<float>(m_viewport.x());
 	const auto vh = static_cast<float>(m_viewport.y());
 	const CameraOrtho ortho(0.f, vw, 0.f, vh);
-	// Resolve floor / ceiling tilesets the first time we render (or after a
-	// config change that cleared the cache). Cheap when nothing changed.
 	resolveBackdropTilesets();
-	// Disable depth test for the layer: backdrop and stripe quads all sit at z=0,
-	// so with the default `GL_LESS` the backdrop wins at every pixel and rejects
-	// every wall stripe drawn on top of it. Painter's order is enough for a
-	// screen-space pass — depth test is restored in `onEndFrame` so subsequent
-	// layers (e.g. world-space `Renderer2D` or HUD overlays) keep their normal
-	// depth behaviour.
 	gpu::RenderCommand::setDepthTest(false);
 	Renderer2D::resetStats();
 	Renderer2D::beginScene(ortho);
@@ -87,9 +71,6 @@ void RendererRaycastLayer::resolveBackdropTilesets() {
 	if (!m_ceilingTileset && !m_config.ceilingTilesetPath.empty()) {
 		m_ceilingTileset = loadTilesetByPath(m_config.ceilingTilesetPath);
 	}
-	// Mirror the resolved atlas texture + UV rect onto the runtime config so the
-	// renderer reads them directly. Stay null when the load failed, which is the
-	// signal `emitTexturedBackdrop` watches to fall back to the solid colour.
 	if (m_floorTileset && m_floorTileset->texture) {
 		m_config.floorTexture = m_floorTileset->texture;
 		m_config.floorUvRect = tileUvRect(*m_floorTileset, m_config.floorTileIndex);
@@ -104,11 +85,7 @@ void RendererRaycastLayer::resolveBackdropTilesets() {
 	}
 }
 
-void RendererRaycastLayer::onRender([[maybe_unused]] scene::Scene& ioScene) {
-	// Per-tilemap dispatch is driven by `Scene::render` based on the active layer's
-	// type key — kept centralised there so the existing 2D path and the new raycast
-	// path share the same entity-iteration loop and visibility / picking logic.
-}
+void RendererRaycastLayer::onRender([[maybe_unused]] scene::Scene& ioScene) {}
 
 void RendererRaycastLayer::onEndFrame() {
 	OWL_PROFILE_FUNCTION()
@@ -145,8 +122,6 @@ void RendererRaycastLayer::applyConfig(const YAML::Node& iConfig) {
 		m_config.ceilingTilesetPath = v.as<std::string>(m_config.ceilingTilesetPath);
 	if (const auto v = iConfig["CeilingTileIndex"]; v && v.IsScalar())
 		m_config.ceilingTileIndex = v.as<uint32_t>(m_config.ceilingTileIndex);
-	// Path strings change → drop the cached resolved tilesets so the next
-	// `onBeginFrame` reloads via the asset library.
 	m_floorTileset.reset();
 	m_ceilingTileset.reset();
 	m_config.floorTexture.reset();

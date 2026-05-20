@@ -177,8 +177,6 @@ void buildIconBank() {
 	// Remove entries with empty paths
 	std::erase_if(icons, [](const auto& iEntry) -> auto { return iEntry.second.empty(); });
 
-	// Extract theme colours for icon rendering. Primary follows the text colour; secondary is a fixed
-	// amber/gold matching the Owl Nest brand (used as accent for highlights inside icons).
 	const auto& style = ImGui::GetStyle();
 	const gui::IconThemeColors themeColors{
 			.primary = {style.Colors[ImGuiCol_Text].x, style.Colors[ImGuiCol_Text].y, style.Colors[ImGuiCol_Text].z,
@@ -189,8 +187,6 @@ void buildIconBank() {
 }
 
 void loadTriggerTextures() {
-	// Trigger icons are also used for Renderer2D viewport drawing (not just ImGui),
-	// so they need to remain in the texture library as individual textures.
 	auto& textureLibrary = renderer::Renderer::getTextureLibrary();
 	textureLibrary.load("icons/triggers/victory");
 	textureLibrary.load("icons/triggers/death");
@@ -303,14 +299,8 @@ void EditorLayer::syncActiveDocumentPanels() {
 		// The per-document viewport owns its own undo pointer already (set in SceneDocument::onAttach).
 	}
 	m_sceneSettings.setProject(m_project);
-	// Whichever document is active drives the override on the global panels — when it overrides,
-	// SceneHierarchy delegates its `Scene Hierarchy` / `Properties` content to the document.
 	m_sceneHierarchy.setActiveDocument(m_documents.getActive());
 	m_sceneHierarchy.setParentEditor(this);
-	// Build the renderer stack for the active scene from the project's `RendererStack` and the
-	// scene's `EnabledRenderers` overrides. Empty config → engine falls back to a single
-	// implicit `[Renderer2D(default)]`. Done on every active-document change so scenes that
-	// override layer config see it applied immediately when focused.
 	if (doc != nullptr && doc->getActiveScene()) {
 		const auto& stackCfg = m_project.rendererStack.isEmpty() ? renderer::RendererStackConfig::makeDefault()
 																 : m_project.rendererStack;
@@ -362,10 +352,6 @@ void EditorLayer::closeDocument(const core::UUID iId) {
 	const bool wasActive = (m_documents.getActive() != nullptr && m_documents.getActive()->id() == iId);
 	if (!m_documents.remove(iId))
 		return;
-	// Ensure there is always at least one scene document to edit.  This creates a fresh
-	// SceneDocument and makes it the active one — we must `syncActiveDocumentPanels` AFTER this
-	// so the hierarchy, ribbon, etc. catch up with the new active doc (otherwise they would be
-	// left in the `null active` state from the removal).
 	if (m_documents.empty())
 		ensureActiveSceneDocument();
 	if (wasActive || m_documents.getActive() != nullptr)
@@ -508,136 +494,130 @@ void EditorLayer::onAttach() {
 
 	loadSounds();
 
-	// Register all editor actions with default keybindings
 	// clang-format off
-	m_actionRegistry.registerAction("scene.new", "New Scene",
-		{input::key::N, Modifiers::Ctrl},
-		[this] () -> void { if (getState() == State::Edit) newScene(); });
-	m_actionRegistry.registerAction("scene.open", "Open Scene",
-		{input::key::O, Modifiers::Ctrl},
-		[this] () -> void { if (getState() == State::Edit) openScene(); });
-	m_actionRegistry.registerAction("scene.save", "Save Document",
-		{input::key::S, Modifiers::Ctrl},
-		[this] () -> void { saveActiveDocument(); });
+	m_actionRegistry.registerAction("scene.new", "New Scene", {input::key::N, Modifiers::Ctrl}, [this]() -> void {
+		if (getState() == State::Edit)
+			newScene();
+	});
+	m_actionRegistry.registerAction("scene.open", "Open Scene", {input::key::O, Modifiers::Ctrl}, [this]() -> void {
+		if (getState() == State::Edit)
+			openScene();
+	});
+	m_actionRegistry.registerAction("scene.save", "Save Document", {input::key::S, Modifiers::Ctrl},
+									[this]() -> void { saveActiveDocument(); });
 	m_actionRegistry.registerAction("scene.saveAs", "Save Scene As",
-		{input::key::S, Modifiers::Ctrl | Modifiers::Shift},
-		[this] () -> void { if (getState() == State::Edit) saveSceneAs(); });
-	m_actionRegistry.registerAction("entity.duplicate", "Duplicate Entity",
-		{input::key::D, Modifiers::Ctrl},
-		[this] () -> void { if (getState() == State::Edit) onDuplicateEntity(); });
-	m_actionRegistry.registerAction("guizmo.none", "Guizmo: None",
-		{input::key::Q, Modifiers::None},
-		[this] () -> void {
-			if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
-				(vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
-				vp->setGuizmoType(gui::Guizmo::Type::None);
-		});
-	m_actionRegistry.registerAction("guizmo.translate", "Guizmo: Translate",
-		{input::key::W, Modifiers::None},
-		[this] () -> void {
-			if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
-				(vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
-				vp->setGuizmoType(gui::Guizmo::Type::Translation);
-		});
-	m_actionRegistry.registerAction("guizmo.rotate", "Guizmo: Rotate",
-		{input::key::E, Modifiers::None},
-		[this] () -> void {
-			if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
-				(vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
-				vp->setGuizmoType(gui::Guizmo::Type::Rotation);
-		});
-	m_actionRegistry.registerAction("guizmo.scale", "Guizmo: Scale",
-		{input::key::R, Modifiers::None},
-		[this] () -> void {
-			if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
-				(vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
-				vp->setGuizmoType(gui::Guizmo::Type::Scale);
-		});
-	m_actionRegistry.registerAction("guizmo.all", "Guizmo: All",
-		{input::key::T, Modifiers::None},
-		[this] () -> void {
-			if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
-				(vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
-				vp->setGuizmoType(gui::Guizmo::Type::All);
-		});
+									{input::key::S, Modifiers::Ctrl | Modifiers::Shift}, [this]() -> void {
+										if (getState() == State::Edit)
+											saveSceneAs();
+									});
+	m_actionRegistry.registerAction("entity.duplicate", "Duplicate Entity", {input::key::D, Modifiers::Ctrl},
+									[this]() -> void {
+										if (getState() == State::Edit)
+											onDuplicateEntity();
+									});
+	m_actionRegistry.registerAction("guizmo.none", "Guizmo: None", {input::key::Q, Modifiers::None}, [this]() -> void {
+		if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+										 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
+			vp->setGuizmoType(gui::Guizmo::Type::None);
+	});
+	m_actionRegistry.registerAction(
+			"guizmo.translate", "Guizmo: Translate", {input::key::W, Modifiers::None}, [this]() -> void {
+				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+												 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
+					vp->setGuizmoType(gui::Guizmo::Type::Translation);
+			});
+	m_actionRegistry.registerAction(
+			"guizmo.rotate", "Guizmo: Rotate", {input::key::E, Modifiers::None}, [this]() -> void {
+				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+												 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
+					vp->setGuizmoType(gui::Guizmo::Type::Rotation);
+			});
+	m_actionRegistry.registerAction(
+			"guizmo.scale", "Guizmo: Scale", {input::key::R, Modifiers::None}, [this]() -> void {
+				if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+												 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
+					vp->setGuizmoType(gui::Guizmo::Type::Scale);
+			});
+	m_actionRegistry.registerAction("guizmo.all", "Guizmo: All", {input::key::T, Modifiers::None}, [this]() -> void {
+		if (auto* vp = activeViewport(); vp != nullptr && getState() == State::Edit &&
+										 (vp->isFocused() || vp->isHovered()) && !gui::Guizmo::isUsing())
+			vp->setGuizmoType(gui::Guizmo::Type::All);
+	});
 	// Playback actions
-	m_actionRegistry.registerAction("scene.play", "Play/Resume",
-		{input::key::F5, Modifiers::None},
-		[this] () -> void {
-			if (getState() == State::Edit)
+	m_actionRegistry.registerAction("scene.play", "Play/Resume", {input::key::F5, Modifiers::None}, [this]() -> void {
+		if (getState() == State::Edit)
 
-				onScenePlay();
-			else if (getState() == State::Pause)
+			onScenePlay();
+		else if (getState() == State::Pause)
 
-				onSceneResume();
-		});
-	m_actionRegistry.registerAction("scene.pause", "Pause",
-		{input::key::F6, Modifiers::None},
-		[this] () -> void { if (getState() == State::Play) onScenePause(); });
-	m_actionRegistry.registerAction("scene.stop", "Stop",
-		{input::key::F7, Modifiers::None},
-		[this] () -> void { if (getState() == State::Play || getState() == State::Pause) onSceneStop(); });
-	m_actionRegistry.registerAction("scene.step", "Step Frame",
-		{input::key::F8, Modifiers::None},
-		[this] () -> void { if (getState() == State::Pause) onSceneStep(); });
+			onSceneResume();
+	});
+	m_actionRegistry.registerAction("scene.pause", "Pause", {input::key::F6, Modifiers::None}, [this]() -> void {
+		if (getState() == State::Play)
+			onScenePause();
+	});
+	m_actionRegistry.registerAction("scene.stop", "Stop", {input::key::F7, Modifiers::None}, [this]() -> void {
+		if (getState() == State::Play || getState() == State::Pause)
+			onSceneStop();
+	});
+	m_actionRegistry.registerAction("scene.step", "Step Frame", {input::key::F8, Modifiers::None}, [this]() -> void {
+		if (getState() == State::Pause)
+			onSceneStep();
+	});
 	// Entity actions
-	m_actionRegistry.registerAction("entity.delete", "Delete Entity",
-		{input::key::Delete, Modifiers::None},
-		[this] () -> void {
-			if (getState() != State::Edit) return;
-			auto* doc = activeSceneDocument();
-			if (doc == nullptr) return;
-			if (auto ent = getSelectedEntity(); ent) {
-				doc->undoManager().push(mkUniq<commands::DeleteEntityCommand>(ent));
-				doc->getActiveScene()->destroyEntity(ent);
+	m_actionRegistry.registerAction("entity.delete", "Delete Entity", {input::key::Delete, Modifiers::None},
+									[this]() -> void {
+										if (getState() != State::Edit)
+											return;
+										auto* doc = activeSceneDocument();
+										if (doc == nullptr)
+											return;
+										if (auto ent = getSelectedEntity(); ent) {
+											doc->undoManager().push(mkUniq<commands::DeleteEntityCommand>(ent));
+											doc->getActiveScene()->destroyEntity(ent);
 
-				setSelectedEntity({});
-			}
-		});
+											setSelectedEntity({});
+										}
+									});
 	// Undo/Redo
-	m_actionRegistry.registerAction("edit.undo", "Undo",
-		{input::key::Z, Modifiers::Ctrl},
-		[this] () -> void { performUndo(); });
-	m_actionRegistry.registerAction("edit.redo", "Redo",
-		{input::key::Y, Modifiers::Ctrl},
-		[this] () -> void { performRedo(); });
+	m_actionRegistry.registerAction("edit.undo", "Undo", {input::key::Z, Modifiers::Ctrl},
+									[this]() -> void { performUndo(); });
+	m_actionRegistry.registerAction("edit.redo", "Redo", {input::key::Y, Modifiers::Ctrl},
+									[this]() -> void { performRedo(); });
 	// Document-level shortcuts
-	m_actionRegistry.registerAction("doc.close", "Close Document",
-		{input::key::W, Modifiers::Ctrl},
-		[this] () -> void { requestCloseActiveDocument(); });
-	m_actionRegistry.registerAction("doc.next", "Next Document",
-		{input::key::Tab, Modifiers::Ctrl},
-		[this] () -> void {
-			const auto& docs = m_documents.list();
-			if (docs.size() < 2) return;
-			auto* current = m_documents.getActive();
-			for (size_t i = 0; i < docs.size(); ++i) {
-				if (docs[i].get() == current) {
-					m_documents.setActive(docs[(i + 1) % docs.size()].get());
+	m_actionRegistry.registerAction("doc.close", "Close Document", {input::key::W, Modifiers::Ctrl},
+									[this]() -> void { requestCloseActiveDocument(); });
+	m_actionRegistry.registerAction("doc.next", "Next Document", {input::key::Tab, Modifiers::Ctrl}, [this]() -> void {
+		const auto& docs = m_documents.list();
+		if (docs.size() < 2)
+			return;
+		auto* current = m_documents.getActive();
+		for (size_t i = 0; i < docs.size(); ++i) {
+			if (docs[i].get() == current) {
+				m_documents.setActive(docs[(i + 1) % docs.size()].get());
 
-					syncActiveDocumentPanels();
-					return;
-				}
+				syncActiveDocumentPanels();
+				return;
 			}
-		});
+		}
+	});
 	m_actionRegistry.registerAction("doc.prev", "Previous Document",
-		{input::key::Tab, Modifiers::Ctrl | Modifiers::Shift},
-		[this] () -> void {
-			const auto& docs = m_documents.list();
-			if (docs.size() < 2) return;
-			auto* current = m_documents.getActive();
-			for (size_t i = 0; i < docs.size(); ++i) {
-				if (docs[i].get() == current) {
-					m_documents.setActive(docs[(i + docs.size() - 1) % docs.size()].get());
+									{input::key::Tab, Modifiers::Ctrl | Modifiers::Shift}, [this]() -> void {
+										const auto& docs = m_documents.list();
+										if (docs.size() < 2)
+											return;
+										auto* current = m_documents.getActive();
+										for (size_t i = 0; i < docs.size(); ++i) {
+											if (docs[i].get() == current) {
+												m_documents.setActive(docs[(i + docs.size() - 1) % docs.size()].get());
 
-					syncActiveDocumentPanels();
-					return;
-				}
-			}
-		});
-	m_actionRegistry.registerAction("help.context", "Help",
-		{input::key::F1, Modifiers::None},
-		[this] () -> void { onContextualHelp(); });
+												syncActiveDocumentPanels();
+												return;
+											}
+										}
+									});
+	m_actionRegistry.registerAction("help.context", "Help", {input::key::F1, Modifiers::None},
+									[this]() -> void { onContextualHelp(); });
 	// clang-format on
 
 	// Apply saved keybinding overrides
@@ -686,12 +666,8 @@ void EditorLayer::onDetach() {
 void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
-	// Render any queued font-preview thumbnails before scene/document updates so the next
-	// inspector frame can sample them. Safe here: no Renderer2D scene is active yet.
 	gui::FontPreviewCache::get().pumpPending();
 
-	// Inactive documents in Play mode still advance their simulation without rendering —
-	// lets a scene keep running in the background while the user edits another tab.
 	auto* activeDoc = activeSceneDocument();
 	for (const auto& docPtr: m_documents.list()) {
 		if (!docPtr || docPtr->type() != DocumentType::Scene)
@@ -723,8 +699,6 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 			m_cameraController.onUpdate(iTimeStep);
 	}
 
-	// After a cross-level teleport, the new scene is in Editing state.
-	// Start its runtime and apply the pending velocity.
 	const auto& activeScene = activeDoc->getActiveScene();
 	if ((activeDoc->state() == SceneDocument::State::Play || activeDoc->state() == SceneDocument::State::Pause) &&
 		activeScene && activeScene->status == scene::Scene::Status::Editing) {
@@ -743,11 +717,6 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	// Drive the active document's scene update (which renders into its own framebuffer).
 	activeDoc->onUpdate(iTimeStep);
 
-	// If the document swapped scenes mid-frame (Lua teleport / save-load), the
-	// `RenderStack` for the *new* scene needs to be rebuilt — its
-	// `EnabledRenderers` may differ from the previous scene's, and without
-	// this rebuild the per-scene overrides silently leak across the swap
-	// (raycast scenes inheriting the world-map's stack, etc.).
 	if (activeDoc->consumeSceneSwapped())
 		syncActiveDocumentPanels();
 }
@@ -771,17 +740,12 @@ void EditorLayer::onEvent(event::Event& ioEvent) {
 void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
-	// Drain any deferred close requests from the previous frame.  Closing happens here — after the
-	// prior frame's ImGui render has been submitted — so no live ImGui draw list references the
-	// freed colour-attachment textures.
 	if (!m_deferredCloseIds.empty()) {
 		auto ids = std::move(m_deferredCloseIds);
 		m_deferredCloseIds.clear();
 		for (const auto id: ids) closeDocument(id);
 	}
 
-	// Drain deferred open requests queued from in-render callbacks (SceneHierarchy context menus,
-	// document drag-drop). Routing matches `handleContentBrowserDrop` — by extension.
 	if (!m_deferredOpenPaths.empty()) {
 		auto paths = std::move(m_deferredOpenPaths);
 		m_deferredOpenPaths.clear();
@@ -806,18 +770,8 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		}
 	}
 
-	// The ribbon is drawn from the UiLayer top-bar callback registered in onAttach.
-	// ==================================================================
 	renderStats(iTimeStep);
-	//=============================================================
-	// Each scene document renders its own viewport (ImGui's docking groups them as tabs when
-	// docked into the same node; users can tear one off to see scenes side-by-side). Render
-	// viewports first so tab-focus changes update the active document before the global panels
-	// (hierarchy, content browser) reflect it.
 	const auto* activeBefore = m_documents.getActive();
-	// Snapshot pointers before iterating — a document may spawn a new document during its render
-	// (e.g. a drag-drop on the code editor opens a new tab), which would reallocate the underlying
-	// vector and invalidate range-for iterators.
 	std::vector<Document*> renderList;
 	renderList.reserve(m_documents.list().size());
 	for (const auto& docPtr: m_documents.list()) {
@@ -882,14 +836,10 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 
 		saveProject();
 
-		// Rebuild the render stack from the (possibly edited) project config so renderer-stack
-		// edits take effect without reopening the project.
 		syncActiveDocumentPanels();
 	}
 	m_sceneSettings.onImGuiRender();
 	if (m_sceneSettings.consumeDirtyFlag()) {
-		// Per-scene `EnabledRenderers` change → rebuild the active stack so the
-		// edit takes effect immediately (auto-skip / order honoured live).
 		syncActiveDocumentPanels();
 	}
 	m_logPanel.onImGuiRender();
@@ -1631,8 +1581,6 @@ void EditorLayer::buildTilemapTab() {
 							  .isEnabled = [activeTilemap]() -> bool { return activeTilemap() != nullptr; },
 							  .onClick = [this]() -> void { requestCloseActiveDocument(); },
 							  .size = Size::Small});
-	// Undo / Redo intentionally omitted — the global Edit ribbon dispatches through
-	// `Document::performUndo` / `performRedo` which TilemapDocument overrides.
 }
 
 void EditorLayer::buildTilesetTab() {
@@ -1683,8 +1631,6 @@ void EditorLayer::buildTilesetTab() {
 							  .isEnabled = [activeTileset]() -> bool { return activeTileset() != nullptr; },
 							  .onClick = [this]() -> void { requestCloseActiveDocument(); },
 							  .size = Size::Small});
-	// Undo / Redo intentionally omitted — the global Edit ribbon dispatches through
-	// `Document::performUndo` / `performRedo` which TilesetDocument overrides.
 }
 
 void EditorLayer::refreshRibbonForActiveDoc() {
@@ -1733,12 +1679,6 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 	if (getState() != State::Edit)
 		onSceneStop();
 
-	// File read + YAML parse on a worker; entity creation + GPU texture
-	// allocation on the main thread in the termination callback. Splitting
-	// the YAML parse off the main thread is what makes the editor stay
-	// responsive on large scenes — yaml-cpp parsing dominates the
-	// deserialization cost (string allocation per node) and is entirely
-	// CPU-bound.
 	auto state = mkShared<AsyncProgressState>();
 	state->setMessage("Loading scene...");
 	m_asyncProgress.open("Loading Scene...", state, false);
@@ -1775,8 +1715,6 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 				}
 				const auto newScene = mkShared<scene::Scene>();
 				if (const scene::SceneSerializer serializer(newScene); serializer.applyParsed(*parsed)) {
-					// Create a new SceneDocument tab for this scene; if the current active doc is
-					// an empty Untitled scene (no path, no undo history) reuse it instead.
 					SceneDocument* target = nullptr;
 					if (auto* current = activeSceneDocument();
 						current != nullptr && current->filePath().empty() && !current->isDirty())
@@ -1967,13 +1905,6 @@ void EditorLayer::newTilesetAsset() {
 }
 
 namespace {
-/**
- * @brief
- *  Resolve a relative asset path against every project asset directory and return the first
- *  existing absolute path (canonicalised), or an empty path when none matched.
- * @param[in] iRelative The relative path stored on an asset.
- * @return The resolved absolute path, or empty.
- */
 auto resolveAssetAbsolutePath(const std::filesystem::path& iRelative) -> std::filesystem::path {
 	if (iRelative.empty())
 		return {};
@@ -1994,8 +1925,6 @@ void EditorLayer::onTilemapSaved(const std::filesystem::path& iAbsolutePath) {
 	for (const auto& docPtr: m_documents.list()) {
 		if (!docPtr)
 			continue;
-		// Live scenes: clear the asset on entities pointing at this path so the next frame's
-		// `resolveAllTilemapAssets` reloads from disk.
 		if (docPtr->type() == DocumentType::Scene) {
 			auto* sceneDoc = static_cast<SceneDocument*>(docPtr.get());
 			const auto& scene = sceneDoc->getActiveScene();
@@ -2046,9 +1975,6 @@ auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePat
 	if (!std::filesystem::exists(iScenePath))
 		return nullptr;
 
-	// Synchronous load: small files, single user-initiated action context. Bypasses the async
-	// progress modal so editor-side tooling (Scene Flow link edits) does not flash a UI dialog
-	// for every Trigger create/delete.
 	std::ifstream file(iScenePath, std::ios::binary | std::ios::ate);
 	if (!file.is_open()) {
 		OWL_CORE_WARN("loadOrOpenSceneDocument: cannot open '{}'.", iScenePath.string())
@@ -2068,8 +1994,6 @@ auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePat
 	doc->onAttach(this);
 	auto* target = static_cast<SceneDocument*>(m_documents.add(std::move(doc)));
 	target->applyLoadedScene(newScene, iScenePath, activeViewportSize());
-	// Intentionally do NOT call setActive() — Scene Flow edits should leave the user's focus
-	// on the document they were inspecting.
 	return target;
 }
 
@@ -2459,10 +2383,6 @@ void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem:
 	}
 }
 
-/**
- * @brief
- *  Sanitize a string for use as a filename (replace unsafe characters with _).
- */
 auto sanitizeFilename(const std::string& iName) -> std::string {
 	std::string result;
 	result.reserve(iName.size());
@@ -2478,10 +2398,6 @@ auto sanitizeFilename(const std::string& iName) -> std::string {
 
 #ifdef OWL_PLATFORM_LINUX
 
-/**
- * @brief
- *  Write a Linux launcher shell script that sets LD_LIBRARY_PATH.
- */
 void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string& iExeName) {
 	std::ofstream script(iGameDir / "launch.sh");
 	script << "#!/bin/sh\n";
@@ -2498,10 +2414,6 @@ void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string
 }
 #endif
 
-/**
- * @brief
- *  Write a game_info.yml metadata file.
- */
 void writeMetadata(const std::filesystem::path& iGameDir, const std::string& iGameName, const std::string& iVersion,
 				   const std::string& iAuthor, const std::string& iDescription) {
 	const auto now = std::chrono::system_clock::now();
@@ -2531,10 +2443,6 @@ void writeMetadata(const std::filesystem::path& iGameDir, const std::string& iGa
 
 #ifdef OWL_PLATFORM_WINDOWS
 
-/**
- * @brief
- *  Create a .zip archive from a directory using PowerShell.
- */
 auto createZipArchive(const std::filesystem::path& iSourceDir, const std::filesystem::path& iOutputZip) -> bool {
 	const auto cmd = std::format(
 			"powershell -NoProfile -Command \"Compress-Archive -Path '{}\\*' -DestinationPath '{}' -Force\"",
@@ -2821,18 +2729,11 @@ void EditorLayer::startPackGame() {
 					configOut << "  WindowHeight: " << windowCfg.height << "\n";
 					configOut << "  Fullscreen: " << (windowCfg.fullscreen ? "true" : "false") << "\n";
 					configOut << "  Resizable: " << (windowCfg.resizable ? "true" : "false") << "\n";
-					// Forward the project's renderer stack to the runner. Without
-					// it, packaged games fall back to a single implicit
-					// `Renderer2D` and per-scene `EnabledRenderers` overrides
-					// silently stop applying — same machinery the editor uses.
 					if (!rendererStackCfg.isEmpty()) {
 						YAML::Emitter rsEmit;
 						rsEmit << YAML::BeginMap;
 						rsEmit << YAML::Key << "RendererStack" << YAML::Value << rendererStackCfg.toYaml();
 						rsEmit << YAML::EndMap;
-						// `RendererStack` lives under `RunnerConfig:` — indent each line by
-						// two extra spaces and skip the artefact braces from the temporary
-						// outer map (Emitter doesn't expose "free-standing key" mode).
 						std::istringstream rsIn{rsEmit.c_str()};
 						std::string line;
 						while (std::getline(rsIn, line)) {
@@ -2954,8 +2855,6 @@ void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, co
 }
 
 void EditorLayer::onContextualHelp() {
-	// Mapping from component type name (component::T::name()) to the help page id that best
-	// documents that area. Unmapped or no-hover → editor overview.
 	static const std::unordered_map<std::string, std::string> kComponentToPage = {
 			{"Transform", "scene"},
 			{"Hierarchy", "scene"},

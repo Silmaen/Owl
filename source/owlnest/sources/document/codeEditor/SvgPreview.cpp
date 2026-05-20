@@ -66,10 +66,6 @@ void SvgPreview::rasterize() {
 		m_lastParseOk = false;
 		return;
 	}
-	// lunasvg outputs ARGB premultiplied bytes (memory order: B, G, R, A on
-	// little-endian). Convert to RGBA straight alpha; do NOT flip vertically
-	// (we use the default ImGui::Image uv mapping, matching the convention
-	// used by `Texture2D::createFromSerialized` for PNG/JPG textures).
 	const auto pixelCount = static_cast<size_t>(side) * side;
 	std::vector<uint8_t> pixels(pixelCount * 4);
 	const auto* src = bitmap.data();
