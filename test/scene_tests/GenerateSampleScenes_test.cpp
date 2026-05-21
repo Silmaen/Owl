@@ -148,10 +148,8 @@ TEST(GenerateSampleScenes, gameplay) {
 	player.player.jumpImpulse = 12.f;
 	auto& playerScript = playerEntity.addComponent<component::LuaScript>();
 	playerScript.scriptPath = "scripts/player.lua";
-	playerScript.properties.push_back(
-			{.name = "speed", .type = script::ScriptPropertyType::Float, .value = 8.0f});
-	playerScript.properties.push_back(
-			{.name = "score", .type = script::ScriptPropertyType::Int, .value = int64_t{0}});
+	playerScript.properties.push_back({.name = "speed", .type = script::ScriptPropertyType::Float, .value = 8.0f});
+	playerScript.properties.push_back({.name = "score", .type = script::ScriptPropertyType::Int, .value = int64_t{0}});
 
 	// Player hat (child — tests hierarchy)
 	auto hatEntity = scn->createEntity("PlayerHat");
@@ -185,7 +183,7 @@ TEST(GenerateSampleScenes, gameplay) {
 	for (int i = 0; i < 3; ++i) {
 		auto coin = scn->createEntity(std::format("Coin{}", i + 1));
 		coin.getComponent<component::Transform>().transform.translation() = {coinPositions[i][0], coinPositions[i][1],
-																			  0.f};
+																			 0.f};
 		coin.getComponent<component::Transform>().transform.scale() = {0.7f, 0.7f, 1.f};
 		auto& cr = coin.addComponent<component::CircleRenderer>();
 		cr.color = {1.f, 0.85f, 0.f, 1.f};
@@ -200,10 +198,8 @@ TEST(GenerateSampleScenes, gameplay) {
 	platform.addComponent<component::SpriteRenderer>().color = {0.55f, 0.35f, 0.15f, 1.f};
 	auto& platScript = platform.addComponent<component::LuaScript>();
 	platScript.scriptPath = "scripts/moving_platform.lua";
-	platScript.properties.push_back(
-			{.name = "speed", .type = script::ScriptPropertyType::Float, .value = 2.0f});
-	platScript.properties.push_back(
-			{.name = "distance", .type = script::ScriptPropertyType::Float, .value = 4.0f});
+	platScript.properties.push_back({.name = "speed", .type = script::ScriptPropertyType::Float, .value = 2.0f});
+	platScript.properties.push_back({.name = "distance", .type = script::ScriptPropertyType::Float, .value = 4.0f});
 
 	// HUD Canvas
 	auto hudCanvas = scn->createEntity("HUDCanvas");

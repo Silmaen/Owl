@@ -117,6 +117,19 @@ public:
 
 	/**
 	 * @brief
+	 *  Instanced line draw. Pairs with `drawDataInstanced` but emits
+	 *  `GL_LINES` / `VK_PRIMITIVE_TOPOLOGY_LINE_LIST` primitives instead
+	 *  of triangles. The shader pipeline must have been created with a
+	 *  line topology (the Vulkan backend keys off the shader name
+	 *  `"line"` for that).
+	 * @param[in] iData Draw data to render.
+	 * @param[in] iIndexCount Number of indices per instance (typically 2).
+	 * @param[in] iInstanceCount Number of instances to draw.
+	 */
+	virtual void drawLineInstanced(const shared<DrawData>& iData, uint32_t iIndexCount, uint32_t iInstanceCount) = 0;
+
+	/**
+	 * @brief
 	 *  Get the maximum number of texture slots.
 	 * @return Number of texture slots.
 	 */

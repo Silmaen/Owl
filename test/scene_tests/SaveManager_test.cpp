@@ -22,7 +22,8 @@ namespace {
 /// Use a temp directory as save location for tests.
 struct TestSaveGuard {
 	TestSaveGuard() {
-		SaveManager::setGameName("OwlTestGame_" + std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+		SaveManager::setGameName("OwlTestGame_" +
+								 std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
 	}
 	~TestSaveGuard() {
 		// Cleanup save directory.

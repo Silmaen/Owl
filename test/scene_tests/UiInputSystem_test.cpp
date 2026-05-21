@@ -58,8 +58,7 @@ TEST_F(UiInputSystemTest, NotPlayingDoesNothing) {
 	// status defaults to Editing; UiInputSystem only runs in Playing.
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, false);
 	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming());
-	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state,
-			  scene::component::UiButton::State::Normal);
+	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
 }
 
 TEST_F(UiInputSystemTest, ButtonHoverPressClick) {
@@ -72,19 +71,16 @@ TEST_F(UiInputSystemTest, ButtonHoverPressClick) {
 	// Hover only — no press.
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, false);
 	EXPECT_TRUE(scene::UiInputSystem::isUIConsuming());
-	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state,
-			  scene::component::UiButton::State::Hovered);
+	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Hovered);
 
 	// Press while hovered.
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, true);
-	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state,
-			  scene::component::UiButton::State::Pressed);
+	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Pressed);
 
 	// Move outside while still pressed → Normal (not consuming).
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {500.f, 500.f}, true);
 	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming());
-	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state,
-			  scene::component::UiButton::State::Normal);
+	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
 }
 
 TEST_F(UiInputSystemTest, DisabledButtonIgnoresPointer) {
@@ -97,8 +93,7 @@ TEST_F(UiInputSystemTest, DisabledButtonIgnoresPointer) {
 
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, true);
 	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming());
-	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state,
-			  scene::component::UiButton::State::Disabled);
+	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Disabled);
 }
 
 TEST_F(UiInputSystemTest, SliderUpdatesValueWhenDragged) {
@@ -141,8 +136,7 @@ TEST_F(UiInputSystemTest, HiddenChildIsSkipped) {
 
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, true);
 	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming());
-	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state,
-			  scene::component::UiButton::State::Normal);
+	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
 }
 
 TEST_F(UiInputSystemTest, HiddenCanvasSkipsAllChildren) {
@@ -155,6 +149,5 @@ TEST_F(UiInputSystemTest, HiddenCanvasSkipsAllChildren) {
 
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, true);
 	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming());
-	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state,
-			  scene::component::UiButton::State::Normal);
+	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
 }

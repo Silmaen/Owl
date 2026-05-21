@@ -102,6 +102,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Null-backend stub for instanced line draws.
+	 * @param[in] iData Draw data.
+	 * @param[in] iIndexCount Indices per instance.
+	 * @param[in] iInstanceCount Instance count.
+	 */
+	void drawLineInstanced(const shared<DrawData>& iData, uint32_t iIndexCount, uint32_t iInstanceCount) override;
+
+	/**
+	 * @brief
 	 *  Get the maximum number of texture slots.
 	 * @return Number of texture slots.
 	 */

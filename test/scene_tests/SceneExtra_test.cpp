@@ -10,9 +10,9 @@
 #include "testHelper.h"
 
 #include <input/Input.h>
+#include <renderer/CameraEditor.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
-#include <renderer/CameraEditor.h>
 #include <scene/component/components.h>
 
 using namespace owl::scene;

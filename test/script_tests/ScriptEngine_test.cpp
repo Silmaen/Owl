@@ -122,10 +122,9 @@ TEST(ScriptEngine, extractProperties) {
 TEST(ScriptEngine, extractPropertiesFromBuffer) {
 	core::Log::init(core::Log::Level::Off);
 
-	const std::string script =
-			"properties = {\n"
-			"  { name = 'damage', type = 'float', default = 10.0 },\n"
-			"}\n";
+	const std::string script = "properties = {\n"
+							   "  { name = 'damage', type = 'float', default = 10.0 },\n"
+							   "}\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const auto props = ScriptEngine::extractPropertiesFromBuffer(data, "buf_props");
 	EXPECT_EQ(props.size(), 1);

@@ -558,13 +558,13 @@ TEST(VectorCoverage, DataPointerInt) {
 TEST(VectorCoverage, IteratorsDouble) {
 	const vec3d v(10.0, 20.0, 30.0);
 	double sum = 0.0;
-	for (const auto& val : v) sum += val;
+	for (const auto& val: v) sum += val;
 	EXPECT_DOUBLE_EQ(sum, 60.0);
 }
 
 TEST(VectorCoverage, MutableIteratorsInt) {
 	vec3i v(1, 2, 3);
-	for (auto& val : v) val *= 10;
+	for (auto& val: v) val *= 10;
 	EXPECT_EQ(v.x(), 10);
 	EXPECT_EQ(v.y(), 20);
 	EXPECT_EQ(v.z(), 30);

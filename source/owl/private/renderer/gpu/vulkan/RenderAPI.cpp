@@ -88,6 +88,17 @@ void RenderAPI::drawLine(const shared<DrawData>& iData, const uint32_t iIndexCou
 	vkh.drawData(count, false);
 }
 
+void RenderAPI::drawLineInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
+								  const uint32_t iInstanceCount) {
+	if (iInstanceCount == 0)
+		return;
+	auto& vkh = internal::VulkanHandler::get();
+	iData->bind();
+	const bool isIndexed = iData->getIndexCount() > 0;
+	const uint32_t count = (iIndexCount != 0u) ? iIndexCount : iData->getIndexCount();
+	vkh.drawData(count, isIndexed, iInstanceCount);
+}
+
 void RenderAPI::beginFrame() {
 	auto& vkh = internal::VulkanHandler::get();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
@@ -154,10 +165,8 @@ void RenderAPI::setDepthTest(const bool iEnabled) {
 		vkCmdSetDepthTestEnable(cmd, iEnabled ? VK_TRUE : VK_FALSE);
 }
 
-void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData,
-									const shared<renderer::gpu::StorageBuffer>& iCommandBuffer,
-									const shared<renderer::gpu::StorageBuffer>& iCountBuffer,
-									const uint32_t iMaxDrawCount) {
+void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData, const shared<gpu::StorageBuffer>& iCommandBuffer,
+									const shared<gpu::StorageBuffer>& iCountBuffer, const uint32_t iMaxDrawCount) {
 	if (!iData || !iCommandBuffer || !iCountBuffer || iMaxDrawCount == 0)
 		return;
 	auto* const cmd = internal::VulkanHandler::get().getCurrentCommandBuffer();

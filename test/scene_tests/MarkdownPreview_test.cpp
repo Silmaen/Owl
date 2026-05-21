@@ -95,7 +95,8 @@ TEST(MarkdownDocument, ParsesGfmTable3by2) {
 
 TEST(MarkdownDocument, ParsesFencedCodeBlocksByLanguage) {
 	MarkdownDocument doc;
-	ASSERT_TRUE(doc.parse("```yaml\nkey: value\n```\n\n```lua\nlocal x = 1\n```\n\n```mermaid\nflowchart TD\nA-->B\n```\n"));
+	ASSERT_TRUE(doc.parse(
+			"```yaml\nkey: value\n```\n\n```lua\nlocal x = 1\n```\n\n```mermaid\nflowchart TD\nA-->B\n```\n"));
 	std::vector<const MdCodeBlock*> codeBlocks;
 	for (const auto& b: doc.blocks())
 		if (const auto* cb = std::get_if<MdCodeBlock>(&b.data); cb != nullptr)

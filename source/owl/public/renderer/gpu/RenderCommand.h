@@ -116,6 +116,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Instanced line draw. Pairs with `drawDataInstanced` but emits
+	 *  `GL_LINES` / `VK_PRIMITIVE_TOPOLOGY_LINE_LIST` primitives.
+	 * @param[in] iData Draw data initialised via `init` with the index
+	 *  buffer `{0, 1}` and a shader name that selects a line-topology
+	 *  pipeline (e.g. `"line"`).
+	 * @param[in] iIndexCount Indices per instance (typically 2).
+	 * @param[in] iInstanceCount Number of instances to draw.
+	 */
+	static void drawLineInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
+								  const uint32_t iInstanceCount) {
+		m_renderAPI->drawLineInstanced(iData, iIndexCount, iInstanceCount);
+	}
+
+	/**
+	 * @brief
 	 *  Create or replace the API base on it type.
 	 * @param[in] iType The type of the new render API.
 	 */

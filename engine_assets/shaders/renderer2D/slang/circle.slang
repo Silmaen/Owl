@@ -1,3 +1,10 @@
+// Renderer2D circle — instanced, SSBO-driven. The per-vertex VBO is the
+// same shared 4-corner unit quad as `quad.slang`; per-instance data
+// (transform, colour, thickness, fade, entity id) lives in `gInstances`.
+// The fragment shader signed-distance test runs on local-space coordinates
+// derived directly from `SV_VertexID` — no per-vertex localPosition stream
+// needed.
+
 struct Camera {
 	column_major float4x4 viewProjection;
 };
@@ -5,26 +12,33 @@ struct Camera {
 [[vk::binding(0)]]
 ConstantBuffer<Camera> gCamera;
 
+struct CircleInstance {
+	column_major float4x4 transform;
+	float4 color;
+	float thickness;
+	float fade;
+	int entityId;
+	uint _pad0;
+};
+
+[[vk::binding(2)]]
+StructuredBuffer<CircleInstance> gInstances;
+
 struct VertexInput {
-	[[vk::location(0)]] float3 worldPosition : POSITION0;
-	[[vk::location(1)]] float3 localPosition : POSITION1;
-	[[vk::location(2)]] float4 color         : COLOR;
-	[[vk::location(3)]] float  thickness     : TEXCOORD0;
-	[[vk::location(4)]] float  fade          : TEXCOORD1;
-	[[vk::location(5)]] int    entityID      : TEXCOORD2;
+	[[vk::location(0)]] int cornerIndex : POSITION;
 };
 
 struct FragmentInput {
 	[[vk::location(0)]] float3 localPosition : POSITION1;
-	[[vk::location(1)]] float4 color         : COLOR;
-	[[vk::location(2)]] float  thickness     : TEXCOORD0;
-	[[vk::location(3)]] float  fade          : TEXCOORD1;
+	[[vk::location(1)]] float4 color : COLOR;
+	[[vk::location(2)]] float thickness : TEXCOORD0;
+	[[vk::location(3)]] float fade : TEXCOORD1;
 	[[vk::location(4)]] nointerpolation int entityID : TEXCOORD2;
 };
 
 struct FragmentOutput {
-	float4 color    : SV_Target0;
-	int    entityID : SV_Target1;
+	float4 color : SV_Target0;
+	int entityID : SV_Target1;
 };
 
 struct VertexOutput {
@@ -32,15 +46,24 @@ struct VertexOutput {
 	float4 svPosition : SV_Position;
 };
 
+static const float2 kCorners[4] = {
+	float2(-0.5f, -0.5f),
+	float2( 0.5f, -0.5f),
+	float2( 0.5f,  0.5f),
+	float2(-0.5f,  0.5f),
+};
+
 [shader("vertex")]
-VertexOutput vertexMain(VertexInput input) {
+VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	VertexOutput output;
-	output.frag.localPosition = input.localPosition;
-	output.frag.color         = input.color;
-	output.frag.thickness     = input.thickness;
-	output.frag.fade          = input.fade;
-	output.frag.entityID      = input.entityID;
-	output.svPosition         = mul(gCamera.viewProjection, float4(input.worldPosition, 1.0));
+	CircleInstance inst = gInstances[iid];
+	float4 worldPos = mul(inst.transform, float4(kCorners[input.cornerIndex], 0.0f, 1.0f));
+	output.svPosition = mul(gCamera.viewProjection, worldPos);
+	output.frag.localPosition = float3(kCorners[input.cornerIndex] * 2.0f, 0.0f);
+	output.frag.color = inst.color;
+	output.frag.thickness = inst.thickness;
+	output.frag.fade = inst.fade;
+	output.frag.entityID = inst.entityId;
 	return output;
 }
 
@@ -55,7 +78,7 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	if (circle < 0.001)
 		discard;
 
-	output.color    = input.color;
+	output.color = input.color;
 	output.color.a *= circle;
 	if (output.color.a < 0.001)
 		discard;

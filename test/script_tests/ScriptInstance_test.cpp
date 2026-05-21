@@ -88,11 +88,10 @@ TEST(ScriptInstance, createFromBuffer) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"buf_val = 0\n"
-			"function on_create()\n"
-			"  buf_val = 99\n"
-			"end\n";
+	const std::string script = "buf_val = 0\n"
+							   "function on_create()\n"
+							   "  buf_val = 99\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;
@@ -140,11 +139,10 @@ TEST(ScriptInstance, onCollision) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"collided_with = 0\n"
-			"function on_collision(other_id)\n"
-			"  collided_with = other_id\n"
-			"end\n";
+	const std::string script = "collided_with = 0\n"
+							   "function on_collision(other_id)\n"
+							   "  collided_with = other_id\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;

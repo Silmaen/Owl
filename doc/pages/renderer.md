@@ -199,7 +199,7 @@ While a `ScopedActive` is alive on the current thread, `vulkan::UniformBuffer`,
 `VulkanHandler::bindPipeline` all route through the matching descriptor
 block. Outside any scope they fall back to the legacy global `Descriptors`
 singleton, which is still used by the `Texture2D` storage table and a
-handful of pre-modernisation call sites — that path will retire as the
+handful of pre-modernization call sites — that path will retire as the
 remaining renderers migrate.
 
 This pattern fixes two pre-existing pathologies:
@@ -210,6 +210,12 @@ This pattern fixes two pre-existing pathologies:
 - **Per-pass UBO race.** Two `Renderer2D` layers using different VPs in the
   same frame used to memcpy into the same `VkBuffer` for binding 0,
   producing visible flicker. Per-renderer UBOs scope each pass cleanly.
+
+The same machinery also supports `BindingType::StorageBuffer` slots —
+the instanced `Renderer2D` rewrite (v0.2.0 Phase 1) declares binding 2
+as an SSBO and attaches its `vulkan::StorageBuffer` via
+`bindStorageBuffer` so the per-frame descriptor set picks up the
+correct `VkBuffer` automatically.
 
 ## Raycaster {#renderer-raycaster}
 
@@ -399,47 +405,77 @@ front, mapping accented glyphs (`éàüÇ`…) to their atlas codepoint and subs
 
 ### Batching Internals
 
-The batch renderer collects draw calls into CPU-side vertex buffers and submits them
-to the GPU in a single draw call per primitive type.
+Each draw primitive emits one `XxxInstance` struct into a CPU-side
+`std::vector`. At `flush()` the vector is uploaded to a per-batch
+`StorageBuffer` and the renderer issues a single instanced drawcall —
+`glDrawElementsInstanced` / `vkCmdDrawIndexed` for quads / circles /
+text (shared 4-vertex unit quad VBO + `{0,1,2, 2,3,0}` index buffer)
+and `RenderAPI::drawLineInstanced` for lines (2-vertex unit segment +
+`{0, 1}` index buffer, LINE_LIST topology selected via the `"line"`
+shader name). The vertex shader transforms the unit quad / line by
+`gInstances[gl_InstanceID].transform`; no CPU vertex math.
 
-**Limits:**
+**Instance layouts (std430):**
 
-| Constant            | Value         | Description                            |
-|---------------------|---------------|----------------------------------------|
-| `g_maxQuads`        | 20,000        | Maximum quads per batch                |
-| `g_quadVertexCount` | 4             | Vertices per quad                      |
-| `g_maxVertices`     | 80,000        | Maximum vertices per batch             |
-| `g_maxIndices`      | 120,000       | Maximum indices per batch (6 per quad) |
-| `g_MaxTextureSlots` | GPU-dependent | Queried via `getMaxTextureSlots()`     |
+| Struct           | Size  | Members                                                                                                 |
+|------------------|-------|---------------------------------------------------------------------------------------------------------|
+| `QuadInstance`   | 128 B | `mat4 transform`, `vec4 color`, `vec2 uv[4]`, `uint texIndex`, `int entityId`, `vec2 tilingFactor`      |
+| `CircleInstance` | 96 B  | `mat4 transform`, `vec4 color`, `float thickness`, `float fade`, `int entityId`, `uint _pad`            |
+| `LineInstance`   | 64 B  | `vec3 point1`, `vec3 point2`, `vec4 color`, `int entityId` (with explicit pads to align fields to 16 B) |
+| `TextInstance`   | 128 B | Same as `QuadInstance` minus `tilingFactor`; fragment shader runs the MSDF screenPxRange path           |
 
-**Texture slot management:**
+The 4 explicit per-corner UVs (instead of a `uvRect`) preserve the
+non-rectangular UV trapezoids produced by the raycaster's floor /
+ceiling / wall stripe paths.
 
-- Slot 0 is reserved for a 1×1 white texture (used for untextured quads)
-- Each unique texture gets assigned the next available slot (1, 2, 3, ...)
-- When all slots are used, the batch is automatically flushed and restarted
+**Capacity limits:**
+
+| Constant                    | Value         | Description                                  |
+|-----------------------------|---------------|----------------------------------------------|
+| `g_maxQuadsPerBatch`        | 20,000        | `nextBatch()` rolls over when reached        |
+| `g_maxCirclesPerBatch`      | 20,000        | Same trigger                                 |
+| `g_maxLinesPerBatch`        | 20,000        | Same trigger                                 |
+| `g_maxTextGlyphsPerBatch`   | 20,000        | Counted per glyph, not per `drawString` call |
+| `g_MaxTextureSlots`         | GPU-dependent | Queried via `getMaxTextureSlots()`           |
+
+**Texture slot management** is unchanged from the legacy path: slot 0
+is the 1×1 white texture, slots 1..N hold unique textures; rolling
+over when full triggers `nextBatch()` (flush + restart).
 
 **Flush order** (within a single render pass):
 
 1. Bind all texture slots
 2. Background (via `BackgroundRenderer::flushPending()`)
-3. Quads (`RenderCommand::drawData`)
-4. Circles (`RenderCommand::drawData`)
-5. Lines (`RenderCommand::drawLine`)
-6. Text (`RenderCommand::drawData`)
+3. Quads (`RenderCommand::drawDataInstanced`, 6 indices × N instances)
+4. Circles (`RenderCommand::drawDataInstanced`)
+5. Lines (`RenderCommand::drawLineInstanced`, 2 indices × N instances)
+6. Text (`RenderCommand::drawDataInstanced`)
 
-Each step uploads its vertex buffer to the GPU and issues one draw call.
+**Per-batch descriptor layout** declared in `Renderer2D::init`:
+
+| Binding | Type                   | Stage         |
+|---------|------------------------|---------------|
+| 0       | UBO (`Camera`)         | Vertex        |
+| 1       | `Sampler2D[32]`        | Fragment      |
+| 2       | SSBO (`XxxInstance[]`) | Vertex        |
+
+The SSBO at binding 2 is swapped before each instanced drawcall via
+`gpu::StorageBuffer::bind()` — on OpenGL this calls
+`glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ...)`; on Vulkan it
+calls `internal::RendererDescriptors::bindStorageBuffer` which
+updates the per-frame descriptor set.
 
 ### Statistics
 
 `Renderer2D::Statistics` tracks per-frame performance:
 
-| Field                   | Description                              |
-|-------------------------|------------------------------------------|
-| `drawCalls`             | Number of GPU draw calls issued          |
-| `quadCount`             | Number of quads drawn (includes circles) |
-| `lineCount`             | Number of line segments drawn            |
-| `getTotalVertexCount()` | `quadCount * 4 + lineCount * 2`          |
-| `getTotalIndexCount()`  | `quadCount * 6 + lineCount * 2`          |
+| Field                   | Description                                                            |
+|-------------------------|------------------------------------------------------------------------|
+| `drawCalls`             | Number of GPU drawcalls submitted (one per non-empty batch at `flush`) |
+| `quadCount`             | Quads drawn (includes circles and per-glyph text instances)            |
+| `lineCount`             | Line segments drawn                                                    |
+| `getTotalVertexCount()` | `quadCount * 4 + lineCount * 2`                                        |
+| `getTotalIndexCount()`  | `quadCount * 6 + lineCount * 2`                                        |
 
 Reset with `Renderer2D::resetStats()` at the start of each frame.
 
@@ -754,7 +790,10 @@ This formula is purely UV-based and does not depend on pixel dimensions.
 `UniformBuffer::create(size, binding, renderer)` allocates a GPU-side constant buffer
 at the specified binding point. `setData(ptr, size, offset)` streams data each frame.
 
-Renderer2D uses a single uniform buffer at binding 0 for the camera view-projection matrix.
+Renderer2D uses a single uniform buffer at binding 0 for the camera view-projection
+matrix, and four `StorageBuffer`s at binding 2 (one per batch family — quad / circle /
+line / text). Each `flush()` swaps the right SSBO into binding 2 before issuing its
+instanced drawcall (see [Batching Internals](#renderer2d) above).
 
 ## Code Example
 

@@ -67,9 +67,8 @@ TEST_F(ScreenTransitionTest, becomesInactiveAfterDuration) {
 }
 
 TEST_F(ScreenTransitionTest, eachWipeVariantIsRecorded) {
-	for (const auto type:
-		 {ScreenTransition::Type::WipeLeft, ScreenTransition::Type::WipeRight, ScreenTransition::Type::WipeUp,
-		  ScreenTransition::Type::WipeDown}) {
+	for (const auto type: {ScreenTransition::Type::WipeLeft, ScreenTransition::Type::WipeRight,
+						   ScreenTransition::Type::WipeUp, ScreenTransition::Type::WipeDown}) {
 		ScreenTransition::play(type, 1.f, {0.2f, 0.4f, 0.6f, 1.f});
 		EXPECT_EQ(ScreenTransition::getType(), type);
 		ScreenTransition::reset();

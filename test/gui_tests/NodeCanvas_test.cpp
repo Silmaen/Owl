@@ -13,8 +13,7 @@ using namespace owl;
 using namespace owl::gui::widgets;
 
 namespace {
-auto makeNode(const std::string& iTitle, math::vec2f iPos,
-			  std::vector<std::string> iInputLabels = {},
+auto makeNode(const std::string& iTitle, math::vec2f iPos, std::vector<std::string> iInputLabels = {},
 			  std::vector<std::string> iOutputLabels = {}) -> Node {
 	Node node;
 	node.title = iTitle;
@@ -73,8 +72,7 @@ TEST(NodeCanvas, RemoveNodeDropsAttachedLinks) {
 
 	canvas.removeNode(idA);
 	EXPECT_EQ(canvas.nodes().size(), 1u);
-	EXPECT_EQ(canvas.links().size(), 0u)
-			<< "Links touching a removed node's pins must be dropped along with the node.";
+	EXPECT_EQ(canvas.links().size(), 0u) << "Links touching a removed node's pins must be dropped along with the node.";
 }
 
 TEST(NodeCanvas, ProgrammaticAddLinkBypassesValidator) {

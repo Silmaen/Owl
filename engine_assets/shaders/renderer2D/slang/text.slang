@@ -1,3 +1,9 @@
+// Renderer2D text — instanced, SSBO-driven. Same instance layout as
+// `quad.slang` minus the tiling factor (text never tiles); the fragment
+// shader runs the MSDF screenPxRange path instead of the plain sample.
+// One drawcall per batch via `glDrawElementsInstanced(GL_TRIANGLES, 6,
+// instanceCount)`.
+
 struct Camera {
 	column_major float4x4 viewProjection;
 };
@@ -12,24 +18,32 @@ ConstantBuffer<Camera> gCamera;
 #endif
 Sampler2D gTextures[32];
 
+struct TextInstance {
+	column_major float4x4 transform;
+	float4 color;
+	float2 uv[4];
+	uint texIndex;
+	int entityId;
+	uint2 _pad0;
+};
+
+[[vk::binding(2)]]
+StructuredBuffer<TextInstance> gInstances;
+
 struct VertexInput {
-	[[vk::location(0)]] float3 position : POSITION;
-	[[vk::location(1)]] float4 color    : COLOR;
-	[[vk::location(2)]] float2 texCoord : TEXCOORD0;
-	[[vk::location(3)]] float  texIndex : TEXCOORD1;
-	[[vk::location(4)]] int    entityID : TEXCOORD2;
+	[[vk::location(0)]] int cornerIndex : POSITION;
 };
 
 struct FragmentInput {
-	[[vk::location(0)]] float4 color    : COLOR;
+	[[vk::location(0)]] float4 color : COLOR;
 	[[vk::location(1)]] float2 texCoord : TEXCOORD0;
-	[[vk::location(2)]] nointerpolation float texIndex : TEXCOORD1;
-	[[vk::location(3)]] nointerpolation int   entityID : TEXCOORD2;
+	[[vk::location(2)]] nointerpolation int texIndex : TEXCOORD1;
+	[[vk::location(3)]] nointerpolation int entityID : TEXCOORD2;
 };
 
 struct FragmentOutput {
-	float4 color    : SV_Target0;
-	int    entityID : SV_Target1;
+	float4 color : SV_Target0;
+	int entityID : SV_Target1;
 };
 
 struct VertexOutput {
@@ -37,35 +51,41 @@ struct VertexOutput {
 	float4 svPosition : SV_Position;
 };
 
+static const float2 kCorners[4] = {
+	float2(-0.5f, -0.5f),
+	float2( 0.5f, -0.5f),
+	float2( 0.5f,  0.5f),
+	float2(-0.5f,  0.5f),
+};
+
 float median(float r, float g, float b) {
 	return max(min(r, g), min(max(r, g), b));
 }
 
 [shader("vertex")]
-VertexOutput vertexMain(VertexInput input) {
+VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	VertexOutput output;
-	output.frag.color    = input.color;
-	output.frag.texCoord = input.texCoord;
-	output.frag.texIndex = input.texIndex;
-	output.frag.entityID = input.entityID;
-	output.svPosition    = mul(gCamera.viewProjection, float4(input.position, 1.0));
+	TextInstance inst = gInstances[iid];
+	float4 worldPos = mul(inst.transform, float4(kCorners[input.cornerIndex], 0.0f, 1.0f));
+	output.svPosition = mul(gCamera.viewProjection, worldPos);
+	output.frag.color = inst.color;
+	output.frag.texCoord = inst.uv[input.cornerIndex];
+	output.frag.texIndex = int(inst.texIndex);
+	output.frag.entityID = inst.entityId;
 	return output;
 }
 
 [shader("fragment")]
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
-	int idx = int(input.texIndex);
 	float4 texColor = input.color;
 
-	// MSDF text rendering
-	float3 msd = gTextures[NonUniformResourceIndex(idx)].Sample(input.texCoord).rgb;
+	float3 msd = gTextures[NonUniformResourceIndex(input.texIndex)].Sample(input.texCoord).rgb;
 	float sd = median(msd.r, msd.g, msd.b);
 
-	// Screen-space pixel range for anti-aliasing
 	const float pxRange = 2.0;
 	uint texW, texH;
-	gTextures[NonUniformResourceIndex(idx)].GetDimensions(texW, texH);
+	gTextures[NonUniformResourceIndex(input.texIndex)].GetDimensions(texW, texH);
 	float2 texDimensions = float2(texW, texH);
 	float2 unitRange = float2(pxRange) / texDimensions;
 	float2 screenTexSize = float2(1.0) / fwidth(input.texCoord);

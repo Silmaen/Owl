@@ -21,10 +21,9 @@ TEST(GameStateLua, setAndGetInt) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"function on_create()\n"
-			"  gamestate.set('coins', 42)\n"
-			"end\n";
+	const std::string script = "function on_create()\n"
+							   "  gamestate.set('coins', 42)\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;
@@ -44,10 +43,9 @@ TEST(GameStateLua, setAndGetFloat) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"function on_create()\n"
-			"  gamestate.set('speed', 3.14)\n"
-			"end\n";
+	const std::string script = "function on_create()\n"
+							   "  gamestate.set('speed', 3.14)\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;
@@ -67,10 +65,9 @@ TEST(GameStateLua, setAndGetString) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"function on_create()\n"
-			"  gamestate.set('name', 'hero')\n"
-			"end\n";
+	const std::string script = "function on_create()\n"
+							   "  gamestate.set('name', 'hero')\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;
@@ -90,10 +87,9 @@ TEST(GameStateLua, setAndGetBool) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"function on_create()\n"
-			"  gamestate.set('unlocked', true)\n"
-			"end\n";
+	const std::string script = "function on_create()\n"
+							   "  gamestate.set('unlocked', true)\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;
@@ -113,11 +109,10 @@ TEST(GameStateLua, getWithDefault) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"result = 0\n"
-			"function on_create()\n"
-			"  result = gamestate.get('missing', 99)\n"
-			"end\n";
+	const std::string script = "result = 0\n"
+							   "function on_create()\n"
+							   "  result = gamestate.get('missing', 99)\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;
@@ -138,11 +133,10 @@ TEST(GameStateLua, getReturnsStoredValue) {
 	scn->getGameState().set("level", int64_t{5});
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"result = 0\n"
-			"function on_create()\n"
-			"  result = gamestate.get('level')\n"
-			"end\n";
+	const std::string script = "result = 0\n"
+							   "function on_create()\n"
+							   "  result = gamestate.get('level')\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;
@@ -162,12 +156,11 @@ TEST(GameStateLua, removeAndClear) {
 	auto scn = mkShared<scene::Scene>();
 	ScriptEngine::init(scn.get());
 
-	const std::string script =
-			"function on_create()\n"
-			"  gamestate.set('a', 1)\n"
-			"  gamestate.set('b', 2)\n"
-			"  gamestate.remove('a')\n"
-			"end\n";
+	const std::string script = "function on_create()\n"
+							   "  gamestate.set('a', 1)\n"
+							   "  gamestate.set('b', 2)\n"
+							   "  gamestate.remove('a')\n"
+							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	ScriptInstance inst;

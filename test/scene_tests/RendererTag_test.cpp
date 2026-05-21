@@ -31,18 +31,19 @@ TEST(RendererTagComponent, addAndAccess) {
 
 TEST(RendererTagComponent, serializeRoundTrip) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	auto app = owl::mkShared<owl::core::Application>(owl::core::AppParams{.args = nullptr,
-																		   .frameLogFrequency = 0,
-																		   .name = "rendererTagRoundTrip",
-																		   .assetsPattern = "",
-																		   .icon = "",
-																		   .width = 0,
-																		   .height = 0,
-																		   .argCount = 0,
-																		   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-																		   .hasGui = false,
-																		   .useDebugging = false,
-																		   .isDummy = true});
+	auto app = owl::mkShared<owl::core::Application>(
+			owl::core::AppParams{.args = nullptr,
+								 .frameLogFrequency = 0,
+								 .name = "rendererTagRoundTrip",
+								 .assetsPattern = "",
+								 .icon = "",
+								 .width = 0,
+								 .height = 0,
+								 .argCount = 0,
+								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								 .hasGui = false,
+								 .useDebugging = false,
+								 .isDummy = true});
 
 	const auto sc = owl::mkShared<owl::scene::Scene>();
 	auto entity = sc->createEntityWithUUID(101, "TaggedEntity");
@@ -71,18 +72,19 @@ TEST(RendererTagComponent, serializeRoundTrip) {
 
 TEST(RendererTagComponent, sceneEnabledRenderersRoundTrip) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	auto app = owl::mkShared<owl::core::Application>(owl::core::AppParams{.args = nullptr,
-																		   .frameLogFrequency = 0,
-																		   .name = "enabledRenderersRoundTrip",
-																		   .assetsPattern = "",
-																		   .icon = "",
-																		   .width = 0,
-																		   .height = 0,
-																		   .argCount = 0,
-																		   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-																		   .hasGui = false,
-																		   .useDebugging = false,
-																		   .isDummy = true});
+	auto app = owl::mkShared<owl::core::Application>(
+			owl::core::AppParams{.args = nullptr,
+								 .frameLogFrequency = 0,
+								 .name = "enabledRenderersRoundTrip",
+								 .assetsPattern = "",
+								 .icon = "",
+								 .width = 0,
+								 .height = 0,
+								 .argCount = 0,
+								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								 .hasGui = false,
+								 .useDebugging = false,
+								 .isDummy = true});
 
 	const auto sc = owl::mkShared<owl::scene::Scene>();
 	auto& enabled = sc->getEnabledRenderers();

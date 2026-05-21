@@ -52,8 +52,8 @@ TEST(SceneSerializer, SaveLoadFULL) {
 	ent2.addOrReplaceComponent<component::Text>();
 	ent2.addOrReplaceComponent<component::EntityLink>();
 	ent2.addOrReplaceComponent<component::Trigger>();
-	spr.texture =
-			owl::mkShared<owl::renderer::gpu::null::Texture2D>(owl::renderer::gpu::Texture2D::Specification{.size = {1, 1}});
+	spr.texture = owl::mkShared<owl::renderer::gpu::null::Texture2D>(
+			owl::renderer::gpu::Texture2D::Specification{.size = {1, 1}});
 	spr.tilingFactor = {12.3f, 12.3f};
 
 	const SceneSerializer saver(sc);

@@ -117,8 +117,7 @@ TEST(math, ShearMatrix) {
 	// Identity shear: no change to a point at origin.
 	const auto sh2 = shear(id, vec3{0, 0, 0}, vec2{0, 0}, vec2{0, 0}, vec2{0, 0});
 	for (size_t i = 0; i < 4; ++i)
-		for (size_t j = 0; j < 4; ++j)
-			EXPECT_NEAR(sh2(i, j), i == j ? 1.f : 0.f, 0.0001f);
+		for (size_t j = 0; j < 4; ++j) EXPECT_NEAR(sh2(i, j), i == j ? 1.f : 0.f, 0.0001f);
 }
 
 TEST(math, RotateInverse) {
@@ -127,8 +126,6 @@ TEST(math, RotateInverse) {
 	const auto ri = inverse(r);
 	const auto result = r * ri;
 	for (size_t i = 0; i < 4; ++i) {
-		for (size_t j = 0; j < 4; ++j) {
-			EXPECT_NEAR(result(i, j), i == j ? 1.f : 0.f, 0.001f);
-		}
+		for (size_t j = 0; j < 4; ++j) { EXPECT_NEAR(result(i, j), i == j ? 1.f : 0.f, 0.001f); }
 	}
 }

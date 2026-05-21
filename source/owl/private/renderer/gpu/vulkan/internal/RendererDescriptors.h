@@ -115,6 +115,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Bind an external SSBO to a storage-buffer descriptor slot. Used by
+	 *  `vulkan::StorageBuffer::bind` to attach a per-instance SSBO that lives
+	 *  outside this descriptor block (the SSBO owns its `VkBuffer`; we only
+	 *  retain the handle so `updateDescriptor` can write it into the per-frame
+	 *  descriptor sets). Idempotent — re-binding the same slot replaces the
+	 *  previous handle.
+	 * @param[in] iBinding Shader binding slot (must be declared as
+	 *  `VK_DESCRIPTOR_TYPE_STORAGE_BUFFER` in the layout).
+	 * @param[in] iBuffer Backing `VkBuffer` (non-owning).
+	 * @param[in] iSize Buffer size in bytes (`VK_WHOLE_SIZE` is also accepted).
+	 */
+	void bindStorageBuffer(uint32_t iBinding, VkBuffer iBuffer, VkDeviceSize iSize);
+
+	/**
+	 * @brief
 	 *  Reset the per-frame texture-bind list.
 	 */
 	void resetTextureBind();
@@ -232,6 +247,17 @@ private:
 		uint32_t size = 0;///< Buffer size in bytes.
 	};
 
+	/**
+	 * @brief
+	 *  External SSBO handle attached to a storage-buffer binding. The buffer
+	 *  is owned by `vulkan::StorageBuffer`; we only need the handle to write
+	 *  it into the descriptor set.
+	 */
+	struct StorageBinding {
+		VkBuffer buffer{nullptr};///< Non-owning handle.
+		VkDeviceSize size{0};///< Range to bind (VK_WHOLE_SIZE accepted).
+	};
+
 	/// Renderer namespace key.
 	std::string m_rendererName;
 	/// Cached binding declarations (kept for updateDescriptor).
@@ -248,6 +274,8 @@ private:
 	std::vector<VkDescriptorSet> m_sets;
 	/// Registered UBO bindings keyed by binding slot.
 	std::unordered_map<uint32_t, UboBinding> m_uniformBindings;
+	/// Registered SSBO bindings keyed by binding slot.
+	std::unordered_map<uint32_t, StorageBinding> m_storageBindings;
 	/**
 	 * @brief
 	 *  Per-frame texture-bind list. Stores texture ids that index into the

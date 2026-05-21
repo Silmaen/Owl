@@ -122,6 +122,4 @@ TEST(PackFormat, flags) {
 	EXPECT_TRUE(hasFlag(PackFlags::Compressed | PackFlags::Obfuscated, PackFlags::Compressed));
 }
 
-TEST(PackFormat, header_size) {
-	EXPECT_EQ(sizeof(PackHeader), 40u);
-}
+TEST(PackFormat, header_size) { EXPECT_EQ(sizeof(PackHeader), 40u); }
