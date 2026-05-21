@@ -1,10 +1,10 @@
 
 #include "testHelper.h"
 
-#include <renderer/gpu/RenderCommand.h>
 #include <renderer/gpu/Framebuffer.h>
 #include <renderer/gpu/GraphContext.h>
 #include <renderer/gpu/RenderAPI.h>
+#include <renderer/gpu/RenderCommand.h>
 #include <renderer/gpu/Shader.h>
 #include <renderer/gpu/Texture.h>
 #include <renderer/gpu/UniformBuffer.h>

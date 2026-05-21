@@ -154,8 +154,7 @@ TEST_F(SceneRuntimeTest, PhysicBodyUpdatesTransformOverTime) {
 		body.type = scene::SceneBody::BodyType::Dynamic;
 	}
 	scn.onStartRuntime();
-	for (int i = 0; i < 5; ++i)
-		scn.onUpdateRuntime(makeStep(16), false);
+	for (int i = 0; i < 5; ++i) scn.onUpdateRuntime(makeStep(16), false);
 	const auto& [transform] = ent.getComponent<scene::component::Transform>();
 	EXPECT_LT(transform.translation().y(), 0.f);
 	scn.onEndRuntime();

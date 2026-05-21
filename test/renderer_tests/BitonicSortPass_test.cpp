@@ -79,10 +79,9 @@ TEST(BitonicSortPass, ssboMirrorsUploadedItemsOnNullBackend) {
 	// dispatch → readback) on the headless backend and gives the
 	// real-GPU integration tests a known-good oracle to compare against.
 	std::vector<owl::renderer::utils::BitonicSortPass::Item> roundtrip(items.size());
-	pass.getBuffer()->getData(roundtrip.data(),
-							  static_cast<std::uint32_t>(roundtrip.size() *
-														 sizeof(owl::renderer::utils::BitonicSortPass::Item)),
-							  0);
+	pass.getBuffer()->getData(
+			roundtrip.data(),
+			static_cast<std::uint32_t>(roundtrip.size() * sizeof(owl::renderer::utils::BitonicSortPass::Item)), 0);
 	for (std::size_t i = 0; i < items.size(); ++i) {
 		EXPECT_FLOAT_EQ(roundtrip[i].key, items[i].key);
 		EXPECT_EQ(roundtrip[i].value, items[i].value);

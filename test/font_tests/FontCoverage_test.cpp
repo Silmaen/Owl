@@ -28,17 +28,17 @@ TEST(FontCoverage, nonExistentFontFile) {
 TEST(FontCoverage, glyphBoxNewline) {
 	core::Log::init(core::Log::Level::Off);
 	auto app = mkShared<core::Application>(core::AppParams{.args = nullptr,
-															.frameLogFrequency = 0,
-															.name = "fontTest",
-															.assetsPattern = "",
-															.icon = "",
-															.width = 0,
-															.height = 0,
-															.argCount = 0,
-															.renderer = renderer::gpu::RenderAPI::Type::Null,
-															.hasGui = false,
-															.useDebugging = false,
-															.isDummy = true});
+														   .frameLogFrequency = 0,
+														   .name = "fontTest",
+														   .assetsPattern = "",
+														   .icon = "",
+														   .width = 0,
+														   .height = 0,
+														   .argCount = 0,
+														   .renderer = renderer::gpu::RenderAPI::Type::Null,
+														   .hasGui = false,
+														   .useDebugging = false,
+														   .isDummy = true});
 	auto& fontLibrary = app->getFontLibrary();
 	const auto myFont = fontLibrary.getDefaultFont();
 	ASSERT_NE(myFont, nullptr);
@@ -58,17 +58,17 @@ TEST(FontCoverage, glyphBoxNewline) {
 TEST(FontCoverage, glyphBoxTab) {
 	core::Log::init(core::Log::Level::Off);
 	auto app = mkShared<core::Application>(core::AppParams{.args = nullptr,
-															.frameLogFrequency = 0,
-															.name = "fontTest",
-															.assetsPattern = "",
-															.icon = "",
-															.width = 0,
-															.height = 0,
-															.argCount = 0,
-															.renderer = renderer::gpu::RenderAPI::Type::Null,
-															.hasGui = false,
-															.useDebugging = false,
-															.isDummy = true});
+														   .frameLogFrequency = 0,
+														   .name = "fontTest",
+														   .assetsPattern = "",
+														   .icon = "",
+														   .width = 0,
+														   .height = 0,
+														   .argCount = 0,
+														   .renderer = renderer::gpu::RenderAPI::Type::Null,
+														   .hasGui = false,
+														   .useDebugging = false,
+														   .isDummy = true});
 	auto& fontLibrary = app->getFontLibrary();
 	const auto myFont = fontLibrary.getDefaultFont();
 	ASSERT_NE(myFont, nullptr);
@@ -90,23 +90,23 @@ TEST(FontCoverage, glyphBoxTab) {
 TEST(FontCoverage, glyphBoxStandardChars) {
 	core::Log::init(core::Log::Level::Off);
 	auto app = mkShared<core::Application>(core::AppParams{.args = nullptr,
-															.frameLogFrequency = 0,
-															.name = "fontTest",
-															.assetsPattern = "",
-															.icon = "",
-															.width = 0,
-															.height = 0,
-															.argCount = 0,
-															.renderer = renderer::gpu::RenderAPI::Type::Null,
-															.hasGui = false,
-															.useDebugging = false,
-															.isDummy = true});
+														   .frameLogFrequency = 0,
+														   .name = "fontTest",
+														   .assetsPattern = "",
+														   .icon = "",
+														   .width = 0,
+														   .height = 0,
+														   .argCount = 0,
+														   .renderer = renderer::gpu::RenderAPI::Type::Null,
+														   .hasGui = false,
+														   .useDebugging = false,
+														   .isDummy = true});
 	auto& fontLibrary = app->getFontLibrary();
 	const auto myFont = fontLibrary.getDefaultFont();
 	ASSERT_NE(myFont, nullptr);
 
 	// Test some standard ASCII chars to exercise the main getGlyphBox path.
-	for (const char c : {'A', 'Z', '0', '9', '!', '~'}) {
+	for (const char c: {'A', 'Z', '0', '9', '!', '~'}) {
 		const auto metrics = myFont->getGlyphBox(c);
 		// These chars should have non-trivial quads.
 		EXPECT_GT(metrics.quad.max().x() - metrics.quad.min().x(), 0.0f);
@@ -120,17 +120,17 @@ TEST(FontCoverage, glyphBoxStandardChars) {
 TEST(FontCoverage, getAdvanceMultipleChars) {
 	core::Log::init(core::Log::Level::Off);
 	auto app = mkShared<core::Application>(core::AppParams{.args = nullptr,
-															.frameLogFrequency = 0,
-															.name = "fontTest",
-															.assetsPattern = "",
-															.icon = "",
-															.width = 0,
-															.height = 0,
-															.argCount = 0,
-															.renderer = renderer::gpu::RenderAPI::Type::Null,
-															.hasGui = false,
-															.useDebugging = false,
-															.isDummy = true});
+														   .frameLogFrequency = 0,
+														   .name = "fontTest",
+														   .assetsPattern = "",
+														   .icon = "",
+														   .width = 0,
+														   .height = 0,
+														   .argCount = 0,
+														   .renderer = renderer::gpu::RenderAPI::Type::Null,
+														   .hasGui = false,
+														   .useDebugging = false,
+														   .isDummy = true});
 	auto& fontLibrary = app->getFontLibrary();
 	const auto myFont = fontLibrary.getDefaultFont();
 	ASSERT_NE(myFont, nullptr);

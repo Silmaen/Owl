@@ -62,7 +62,7 @@ TEST(MeshRange, ExtraDataIteration) {
 	mesh.addTriangleExtraData<extradata::TriangleNormals>();
 	mesh.addVertexExtraData<extradata::VertexNormal>();
 
-	for (auto&[uvCoord, normal]: MeshTriangleRange(mesh, WriteUvCoords, WriteTriangleNormals)) {
+	for (auto& [uvCoord, normal]: MeshTriangleRange(mesh, WriteUvCoords, WriteTriangleNormals)) {
 		uvCoord.value()->setUvCoord(0, vec2(0.0f, 0.0f));
 		uvCoord.value()->setUvCoord(1, vec2(1.0f, 0.0f));
 		uvCoord.value()->setUvCoord(2, vec2(0.0f, 1.0f));

@@ -11,13 +11,14 @@ TEST(Renderer, FramebufferBase) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 
-	const auto fbuf = Framebuffer::create(
-			{.size = {12, 12},
-			 .attachments = {{.format=AttachmentSpecification::Format::Surface, .tiling=AttachmentSpecification::Tiling::Optimal},
-							 {.format=AttachmentSpecification::Format::RedInteger, .tiling=AttachmentSpecification::Tiling::Optimal}},
-			 .samples = 1,
-			 .swapChainTarget = false,
-			 .debugName = "boby"});
+	const auto fbuf = Framebuffer::create({.size = {12, 12},
+										   .attachments = {{.format = AttachmentSpecification::Format::Surface,
+															.tiling = AttachmentSpecification::Tiling::Optimal},
+														   {.format = AttachmentSpecification::Format::RedInteger,
+															.tiling = AttachmentSpecification::Tiling::Optimal}},
+										   .samples = 1,
+										   .swapChainTarget = false,
+										   .debugName = "boby"});
 	EXPECT_FALSE(fbuf->isUpsideDown());
 	fbuf->bind();
 	fbuf->unbind();

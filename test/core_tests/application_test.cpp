@@ -1,11 +1,11 @@
 
 #include "testHelper.h"
 
-#include <renderer/Renderer.h>
 #include <core/Application.h>
 #include <core/utils/FileUtils.h>
 #include <event/KeyEvent.h>
 #include <fstream>
+#include <renderer/Renderer.h>
 
 using namespace owl::core;
 

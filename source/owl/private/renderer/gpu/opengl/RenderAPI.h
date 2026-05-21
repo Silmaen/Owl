@@ -102,6 +102,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Instanced line draw via `glDrawElementsInstanced(GL_LINES, …)`.
+	 * @param[in] iData Draw data with index buffer `{0, 1}`.
+	 * @param[in] iIndexCount Indices per instance (2).
+	 * @param[in] iInstanceCount Number of instances.
+	 */
+	void drawLineInstanced(const shared<DrawData>& iData, uint32_t iIndexCount, uint32_t iInstanceCount) override;
+
+	/**
+	 * @brief
 	 *  Get the maximum number of texture slots.
 	 * @return Number of texture slots.
 	 */

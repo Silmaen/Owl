@@ -77,11 +77,11 @@ void RendererDescriptors::init(std::span<const BindingDecl> iBindings) {
 
 	std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
 	layoutBindings.reserve(m_bindings.size());
-	for (const auto& bd: m_bindings) {
-		layoutBindings.push_back({.binding = bd.binding,
-								  .descriptorType = bd.type,
-								  .descriptorCount = bd.count,
-								  .stageFlags = bd.stages,
+	for (const auto& [binding, type, count, stages]: m_bindings) {
+		layoutBindings.push_back({.binding = binding,
+								  .descriptorType = type,
+								  .descriptorCount = count,
+								  .stageFlags = stages,
 								  .pImmutableSamplers = nullptr});
 	}
 	const VkDescriptorSetLayoutCreateInfo layoutInfo{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -112,6 +112,7 @@ void RendererDescriptors::init(std::span<const BindingDecl> iBindings) {
 void RendererDescriptors::release() {
 	if (VulkanHandler::get().getState() != VulkanHandler::State::Running) {
 		m_uniformBindings.clear();
+		m_storageBindings.clear();
 		m_textureBind.clear();
 		m_sets.clear();
 		m_layout = nullptr;
@@ -121,7 +122,7 @@ void RendererDescriptors::release() {
 	const auto& core = VulkanCore::get();
 	auto* const device = core.getLogicalDevice();
 
-	for (auto& [binding, ubo]: m_uniformBindings) {
+	for (auto& ubo: m_uniformBindings | std::views::values) {
 		for (size_t i = 0; i < ubo.buffers.size(); ++i) {
 			if (i < ubo.mapped.size() && ubo.mapped[i] != nullptr) {
 				vkUnmapMemory(device, ubo.memory[i]);
@@ -138,6 +139,7 @@ void RendererDescriptors::release() {
 		}
 	}
 	m_uniformBindings.clear();
+	m_storageBindings.clear();
 	m_textureBind.clear();
 
 	if (!m_sets.empty() && m_pool != nullptr) {
@@ -157,24 +159,23 @@ void RendererDescriptors::release() {
 void RendererDescriptors::registerUniform(const uint32_t iBinding, const uint32_t iSize) {
 	const auto& core = VulkanCore::get();
 	auto* const device = core.getLogicalDevice();
-	auto& ubo = m_uniformBindings[iBinding];
-	for (size_t i = 0; i < ubo.buffers.size() && i < g_maxFrameInFlight; ++i) {
-		if (i < ubo.mapped.size() && ubo.mapped[i] != nullptr)
-			vkUnmapMemory(device, ubo.memory[i]);
-		if (ubo.buffers[i] != nullptr)
-			vkDestroyBuffer(device, ubo.buffers[i], nullptr);
-		if (i < ubo.memory.size() && ubo.memory[i] != nullptr)
-			vkFreeMemory(device, ubo.memory[i], nullptr);
+	auto& [buffers, memory, mapped, size] = m_uniformBindings[iBinding];
+	for (size_t i = 0; i < buffers.size() && i < g_maxFrameInFlight; ++i) {
+		if (i < mapped.size() && mapped[i] != nullptr)
+			vkUnmapMemory(device, memory[i]);
+		if (buffers[i] != nullptr)
+			vkDestroyBuffer(device, buffers[i], nullptr);
+		if (i < memory.size() && memory[i] != nullptr)
+			vkFreeMemory(device, memory[i], nullptr);
 	}
-	ubo.buffers.assign(g_maxFrameInFlight, nullptr);
-	ubo.memory.assign(g_maxFrameInFlight, nullptr);
-	ubo.mapped.assign(g_maxFrameInFlight, nullptr);
-	ubo.size = iSize;
+	buffers.assign(g_maxFrameInFlight, nullptr);
+	memory.assign(g_maxFrameInFlight, nullptr);
+	mapped.assign(g_maxFrameInFlight, nullptr);
+	size = iSize;
 	for (size_t i = 0; i < g_maxFrameInFlight; i++) {
 		createBuffer(iSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-					 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, ubo.buffers[i],
-					 ubo.memory[i]);
-		if (const auto result = vkMapMemory(device, ubo.memory[i], 0, iSize, 0, &ubo.mapped[i]); result != VK_SUCCESS) {
+					 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffers[i], memory[i]);
+		if (const auto result = vkMapMemory(device, memory[i], 0, iSize, 0, &mapped[i]); result != VK_SUCCESS) {
 			OWL_CORE_ERROR("Vulkan RendererDescriptors[{}]: failed to map UBO (binding={}, frame={}).", m_rendererName,
 						   iBinding, i)
 		}
@@ -197,6 +198,15 @@ void RendererDescriptors::setUniformData(const uint32_t iBinding, const void* iD
 	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
 	memcpy(it->second.mapped[frame], iData, iSize);
 	OWL_DIAG_POP
+}
+
+void RendererDescriptors::bindStorageBuffer(const uint32_t iBinding, VkBuffer iBuffer, const VkDeviceSize iSize) {
+	auto& [buffer, size] = m_storageBindings[iBinding];
+	if (buffer == iBuffer && size == iSize)
+		return;
+	buffer = iBuffer;
+	size = iSize;
+	updateDescriptors();
 }
 
 void RendererDescriptors::resetTextureBind() { m_textureBind.clear(); }
@@ -224,6 +234,18 @@ void RendererDescriptors::updateDescriptor(const size_t iFrame) {
 											   .offset = 0,
 											   .range = ubo.size,
 									   });
+	}
+
+	std::vector<std::pair<uint32_t, VkDescriptorBufferInfo>> ssboInfos;
+	ssboInfos.reserve(m_storageBindings.size());
+	for (const auto& [binding, ssbo]: m_storageBindings) {
+		if (ssbo.buffer == nullptr)
+			continue;
+		ssboInfos.emplace_back(binding, VkDescriptorBufferInfo{
+												.buffer = ssbo.buffer,
+												.offset = 0,
+												.range = ssbo.size,
+										});
 	}
 
 	std::vector<VkDescriptorImageInfo> imageInfos;
@@ -258,7 +280,7 @@ void RendererDescriptors::updateDescriptor(const size_t iFrame) {
 	}
 
 	std::vector<VkWriteDescriptorSet> writes;
-	writes.reserve(uboInfos.size() + (imageInfos.empty() ? 0 : 1));
+	writes.reserve(uboInfos.size() + ssboInfos.size() + (imageInfos.empty() ? 0 : 1));
 	for (const auto& [binding, info]: uboInfos) {
 		writes.push_back({.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 						  .pNext = nullptr,
@@ -267,6 +289,18 @@ void RendererDescriptors::updateDescriptor(const size_t iFrame) {
 						  .dstArrayElement = 0,
 						  .descriptorCount = 1,
 						  .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+						  .pImageInfo = nullptr,
+						  .pBufferInfo = &info,
+						  .pTexelBufferView = nullptr});
+	}
+	for (const auto& [binding, info]: ssboInfos) {
+		writes.push_back({.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+						  .pNext = nullptr,
+						  .dstSet = m_sets[iFrame],
+						  .dstBinding = binding,
+						  .dstArrayElement = 0,
+						  .descriptorCount = 1,
+						  .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
 						  .pImageInfo = nullptr,
 						  .pBufferInfo = &info,
 						  .pTexelBufferView = nullptr});

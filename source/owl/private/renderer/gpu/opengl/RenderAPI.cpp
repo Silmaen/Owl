@@ -102,6 +102,17 @@ void RenderAPI::drawLine(const shared<DrawData>& iData, const uint32_t iIndexCou
 	glDrawArrays(GL_LINES, 0, static_cast<int32_t>(count));
 }
 
+void RenderAPI::drawLineInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
+								  const uint32_t iInstanceCount) {
+	if (iInstanceCount == 0)
+		return;
+	iData->bind();
+	const uint32_t count = (iIndexCount != 0u) ? iIndexCount : iData->getIndexCount();
+	glLineWidth(2.0f);
+	glDrawElementsInstanced(GL_LINES, static_cast<int32_t>(count), GL_UNSIGNED_INT, nullptr,
+							static_cast<int32_t>(iInstanceCount));
+}
+
 auto RenderAPI::getMaxTextureSlots() const -> uint32_t {
 	int32_t textureUnits = 0;
 	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &textureUnits);

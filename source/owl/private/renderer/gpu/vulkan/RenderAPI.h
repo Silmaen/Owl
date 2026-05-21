@@ -103,6 +103,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Instanced line draw — uses the `LINE_LIST` pipeline selected by the
+	 *  shader name (the Vulkan backend keys topology off the name `"line"`).
+	 * @param[in] iData Draw data with index buffer `{0, 1}`.
+	 * @param[in] iIndexCount Indices per instance.
+	 * @param[in] iInstanceCount Number of instances.
+	 */
+	void drawLineInstanced(const shared<DrawData>& iData, uint32_t iIndexCount, uint32_t iInstanceCount) override;
+
+	/**
+	 * @brief
 	 *  Get the maximum number of texture slots.
 	 * @return Number of texture slots.
 	 */

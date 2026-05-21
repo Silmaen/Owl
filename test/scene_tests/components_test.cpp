@@ -39,18 +39,19 @@ TEST(SceneComponent, name) {
 
 TEST(SceneComponent, TextSerializeDeserializeRoundTrip) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	auto app = owl::mkShared<owl::core::Application>(owl::core::AppParams{.args = nullptr,
-																		   .frameLogFrequency = 0,
-																		   .name = "textRoundTrip",
-																		   .assetsPattern = "",
-																		   .icon = "",
-																		   .width = 0,
-																		   .height = 0,
-																		   .argCount = 0,
-																		   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-																		   .hasGui = false,
-																		   .useDebugging = false,
-																		   .isDummy = true});
+	auto app = owl::mkShared<owl::core::Application>(
+			owl::core::AppParams{.args = nullptr,
+								 .frameLogFrequency = 0,
+								 .name = "textRoundTrip",
+								 .assetsPattern = "",
+								 .icon = "",
+								 .width = 0,
+								 .height = 0,
+								 .argCount = 0,
+								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								 .hasGui = false,
+								 .useDebugging = false,
+								 .isDummy = true});
 	const auto sc = owl::mkShared<owl::scene::Scene>();
 	auto ent = sc->createEntityWithUUID(100, "TextEntity");
 	auto& text = ent.addOrReplaceComponent<owl::scene::component::Text>();
@@ -88,18 +89,19 @@ TEST(SceneComponent, TextSerializeDeserializeRoundTrip) {
 
 TEST(SceneComponent, TextSerializeWithFont) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	auto app = owl::mkShared<owl::core::Application>(owl::core::AppParams{.args = nullptr,
-																		   .frameLogFrequency = 0,
-																		   .name = "fontTextTest",
-																		   .assetsPattern = "",
-																		   .icon = "",
-																		   .width = 0,
-																		   .height = 0,
-																		   .argCount = 0,
-																		   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-																		   .hasGui = false,
-																		   .useDebugging = false,
-																		   .isDummy = true});
+	auto app = owl::mkShared<owl::core::Application>(
+			owl::core::AppParams{.args = nullptr,
+								 .frameLogFrequency = 0,
+								 .name = "fontTextTest",
+								 .assetsPattern = "",
+								 .icon = "",
+								 .width = 0,
+								 .height = 0,
+								 .argCount = 0,
+								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								 .hasGui = false,
+								 .useDebugging = false,
+								 .isDummy = true});
 
 	auto& fontLibrary = app->getFontLibrary();
 	const auto defaultFont = fontLibrary.getDefaultFont();
@@ -139,18 +141,19 @@ TEST(SceneComponent, TextSerializeWithFont) {
 
 TEST(SceneComponent, TextEmptyString) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	auto app = owl::mkShared<owl::core::Application>(owl::core::AppParams{.args = nullptr,
-																		   .frameLogFrequency = 0,
-																		   .name = "textEmpty",
-																		   .assetsPattern = "",
-																		   .icon = "",
-																		   .width = 0,
-																		   .height = 0,
-																		   .argCount = 0,
-																		   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-																		   .hasGui = false,
-																		   .useDebugging = false,
-																		   .isDummy = true});
+	auto app = owl::mkShared<owl::core::Application>(
+			owl::core::AppParams{.args = nullptr,
+								 .frameLogFrequency = 0,
+								 .name = "textEmpty",
+								 .assetsPattern = "",
+								 .icon = "",
+								 .width = 0,
+								 .height = 0,
+								 .argCount = 0,
+								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								 .hasGui = false,
+								 .useDebugging = false,
+								 .isDummy = true});
 	const auto sc = owl::mkShared<owl::scene::Scene>();
 	auto ent = sc->createEntityWithUUID(102, "EmptyTextEntity");
 	auto& text = ent.addOrReplaceComponent<owl::scene::component::Text>();
@@ -183,18 +186,19 @@ TEST(SceneComponent, TextEmptyString) {
 
 namespace {
 auto makeAppForAnimRoundTrip(const char* iName) -> owl::shared<owl::core::Application> {
-	return owl::mkShared<owl::core::Application>(owl::core::AppParams{.args = nullptr,
-																	   .frameLogFrequency = 0,
-																	   .name = iName,
-																	   .assetsPattern = "",
-																	   .icon = "",
-																	   .width = 0,
-																	   .height = 0,
-																	   .argCount = 0,
-																	   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-																	   .hasGui = false,
-																	   .useDebugging = false,
-																	   .isDummy = true});
+	return owl::mkShared<owl::core::Application>(
+			owl::core::AppParams{.args = nullptr,
+								 .frameLogFrequency = 0,
+								 .name = iName,
+								 .assetsPattern = "",
+								 .icon = "",
+								 .width = 0,
+								 .height = 0,
+								 .argCount = 0,
+								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								 .hasGui = false,
+								 .useDebugging = false,
+								 .isDummy = true});
 }
 }// namespace
 

@@ -35,4 +35,7 @@ void RenderAPI::drawDataInstanced([[maybe_unused]] const shared<DrawData>& iData
 
 void RenderAPI::drawLine([[maybe_unused]] const shared<DrawData>& iData, [[maybe_unused]] uint32_t iIndexCount) {}
 
+void RenderAPI::drawLineInstanced([[maybe_unused]] const shared<DrawData>& iData, [[maybe_unused]] uint32_t iIndexCount,
+								  [[maybe_unused]] uint32_t iInstanceCount) {}
+
 }// namespace owl::renderer::gpu::null

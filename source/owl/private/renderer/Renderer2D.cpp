@@ -15,6 +15,7 @@
 #include "renderer/gpu/DrawData.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
+#include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/UniformBuffer.h"
 
 namespace owl::renderer {
@@ -22,88 +23,84 @@ namespace owl::renderer {
 namespace utils {
 
 namespace {
-constexpr uint32_t g_maxQuads = 20000;
-constexpr size_t g_quadVertexCount = 4;
-constexpr uint32_t g_maxVertices = g_maxQuads * g_quadVertexCount;
-constexpr uint32_t g_maxIndices = g_maxQuads * 6;
+constexpr uint32_t g_maxQuadsPerBatch = 20000;
+constexpr uint32_t g_maxCirclesPerBatch = 20000;
+constexpr uint32_t g_maxLinesPerBatch = 20000;
+constexpr uint32_t g_maxTextGlyphsPerBatch = 20000;
+
 constexpr std::array g_quadVertexPositions = {math::vec4{-0.5f, -0.5f, 0.0f, 1.0f}, math::vec4{0.5f, -0.5f, 0.0f, 1.0f},
 											  math::vec4{0.5f, 0.5f, 0.0f, 1.0f}, math::vec4{-0.5f, 0.5f, 0.0f, 1.0f}};
 
 uint32_t g_MaxTextureSlots = 0;
 
-struct QuadVertex {
-	math::vec3 position;
+struct QuadInstance {
+	math::mat4 transform;
 	math::vec4 color;
-	math::vec2 texCoord;
-	float texIndex;
+	std::array<math::vec2, 4> uv;
+	uint32_t texIndex;
+	int32_t entityId;
 	math::vec2 tilingFactor;
-	int entityId;
 };
+static_assert(sizeof(QuadInstance) == 128, "QuadInstance must match shader std430 layout");
 
-struct CircleVertex {
-	math::vec3 worldPosition;
-	math::vec3 localPosition;
+struct CircleInstance {
+	math::mat4 transform;
 	math::vec4 color;
 	float thickness;
 	float fade;
-	int entityId;
+	int32_t entityId;
+	uint32_t _pad0;
 };
+static_assert(sizeof(CircleInstance) == 96, "CircleInstance must match shader std430 layout");
 
-struct LineVertex {
-	math::vec3 position;
+struct LineInstance {
+	math::vec3 point1;
+	float _pad0;
+	math::vec3 point2;
+	float _pad1;
 	math::vec4 color;
-	int entityId;
+	int32_t entityId;
+	float _pad2[3];
 };
+static_assert(sizeof(LineInstance) == 64, "LineInstance must match shader std430 layout");
 
-struct TextVertex {
-	math::vec3 position;
+struct TextInstance {
+	math::mat4 transform;
 	math::vec4 color;
-	math::vec2 texCoord;
-	float texIndex;
-	// todo bg colour
-	int entityId;
+	std::array<math::vec2, 4> uv;
+	uint32_t texIndex;
+	int32_t entityId;
+	uint32_t _pad0[2];
+};
+static_assert(sizeof(TextInstance) == 128, "TextInstance must match shader std430 layout");
+
+template<typename InstanceT>
+struct BatchData {
+	std::vector<InstanceT> instances;
+	shared<gpu::DrawData> drawData;
+	shared<gpu::StorageBuffer> ssbo;
 };
 
-template<typename VertexType>
-struct VertexData {
-	uint32_t indexCount = 0;
-	std::vector<VertexType> vertexBuf;
-};
-
-template<typename VertexType>
-void resetDrawData(VertexData<VertexType>& iData) {
-	iData.indexCount = 0;
-	iData.vertexBuf.clear();
-	iData.vertexBuf.reserve(g_maxVertices);
+template<typename InstanceT>
+void resetBatch(BatchData<InstanceT>& iData, uint32_t iReserve) {
+	iData.instances.clear();
+	iData.instances.reserve(iReserve);
 }
 
 struct InternalData {
-	// Camera Data
 	struct CameraData {
-		// Camera projection
 		math::mat4 viewProjection;
 	};
 	CameraData cameraBuffer{};
-	// Quad Data
-	VertexData<QuadVertex> quad;
-	shared<gpu::DrawData> drawQuad;
-	// Circle Data
-	VertexData<CircleVertex> circle;
-	shared<gpu::DrawData> drawCircle;
-	// Line Data
-	VertexData<LineVertex> line;
-	shared<gpu::DrawData> drawLine;
-	// text Data
-	VertexData<TextVertex> text;
-	shared<gpu::DrawData> drawText;
-	// Statistics
+	BatchData<QuadInstance> quad;
+	BatchData<CircleInstance> circle;
+	BatchData<LineInstance> line;
+	BatchData<TextInstance> text;
 	Renderer2D::Statistics stats;
 	shared<gpu::Texture2D> whiteTexture;
 	shared<gpu::UniformBuffer> cameraUniformBuffer;
-	// Array of textures
 	std::vector<shared<gpu::Texture2D>> textureSlots;
-	// next texture index
-	uint32_t textureSlotIndex = 1;// 0 = white texture
+	uint32_t textureSlotIndex = 1;
 };
 }// namespace
 }// namespace utils
@@ -131,7 +128,6 @@ auto utf8ToLatin1(const std::string& iText) -> std::string {
 				}
 			}
 		}
-		// Codepoint outside Latin-1 (or malformed sequence): substitute and skip continuation bytes.
 		out.push_back('?');
 		while (i + 1 < iText.size()) {
 			if (const auto next = static_cast<unsigned char>(iText[i + 1]); (next & 0xC0) == 0x80)
@@ -153,22 +149,8 @@ void Renderer2D::init() {
 	}
 	g_Data = mkShared<utils::InternalData>();
 
-	std::vector<uint32_t> quadIndices;
 	{
-		quadIndices.resize(utils::g_maxIndices);
-		uint32_t offset = 0;
-		for (uint32_t i = 0; i < utils::g_maxIndices; i += 6) {
-			quadIndices[i + 0] = offset + 0;
-			quadIndices[i + 1] = offset + 1;
-			quadIndices[i + 2] = offset + 2;
-			quadIndices[i + 3] = offset + 2;
-			quadIndices[i + 4] = offset + 3;
-			quadIndices[i + 5] = offset + 0;
-			offset += 4;
-		}
-	}
-	{
-		const std::array<gpu::BindingDecl, 2> r2dBindings{
+		const std::array<gpu::BindingDecl, 3> r2dBindings{
 				gpu::BindingDecl{.binding = 0,
 								 .type = gpu::BindingType::UniformBuffer,
 								 .count = 1,
@@ -177,66 +159,62 @@ void Renderer2D::init() {
 								 .type = gpu::BindingType::CombinedImageSampler,
 								 .count = 32,
 								 .stages = gpu::ShaderStage::Fragment},
+				gpu::BindingDecl{.binding = 2,
+								 .type = gpu::BindingType::StorageBuffer,
+								 .count = 1,
+								 .stages = gpu::ShaderStage::Vertex},
 		};
 		gpu::RendererDescriptors::declare("Renderer2D", r2dBindings);
 	}
 	const gpu::RendererDescriptors::ScopedActive r2dScoped{"Renderer2D"};
 
-	// quads
-	g_Data->drawQuad = gpu::DrawData::create();
-	g_Data->drawQuad->init(
-			{
-					{"i_Position", gpu::ShaderDataType::Float3},
-					{"i_Color", gpu::ShaderDataType::Float4},
-					{"i_TexCoord", gpu::ShaderDataType::Float2},
-					{"i_TexIndex", gpu::ShaderDataType::Float},
-					{"i_TilingFactor", gpu::ShaderDataType::Float2},
-					{"i_EntityID", gpu::ShaderDataType::Int},
-			},
-			"renderer2D", quadIndices, "quad");
-	// circles
-	g_Data->drawCircle = gpu::DrawData::create();
-	g_Data->drawCircle->init(
-			{
-					{"i_WorldPosition", gpu::ShaderDataType::Float3},
-					{"i_LocalPosition", gpu::ShaderDataType::Float3},
-					{"i_Color", gpu::ShaderDataType::Float4},
-					{"i_Thickness", gpu::ShaderDataType::Float},
-					{"i_Fade", gpu::ShaderDataType::Float},
-					{"i_EntityID", gpu::ShaderDataType::Int},
-			},
-			"renderer2D", quadIndices, "circle");
-	// Lines
-	g_Data->drawLine = gpu::DrawData::create();
-	g_Data->drawLine->init(
-			{
-					{"i_Position", gpu::ShaderDataType::Float3},
-					{"i_Color", gpu::ShaderDataType::Float4},
-					{"i_EntityID", gpu::ShaderDataType::Int},
-			},
-			"renderer2D", quadIndices, "line");
-	// Text
-	g_Data->drawText = gpu::DrawData::create();
-	g_Data->drawText->init(
-			{
-					{"i_Position", gpu::ShaderDataType::Float3},
-					{"i_Color", gpu::ShaderDataType::Float4},
-					{"i_TexCoord", gpu::ShaderDataType::Float2},
-					{"i_TexIndex", gpu::ShaderDataType::Float},
-					{"i_EntityID", gpu::ShaderDataType::Int},
-			},
-			"renderer2D", quadIndices, "text");
+	std::vector<uint32_t> quadIndices = {0, 1, 2, 2, 3, 0};
+	std::vector<uint32_t> lineIndices = {0, 1};
+
+	const auto setupCornerVbo = [&quadIndices](const shared<gpu::DrawData>& iDraw,
+											   const std::string& iShaderName) -> void {
+		iDraw->init({{"i_CornerIndex", gpu::ShaderDataType::Int}}, "renderer2D", quadIndices, iShaderName);
+		constexpr std::array<int32_t, 4> corners{0, 1, 2, 3};
+		iDraw->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(int32_t)));
+	};
+
+	g_Data->quad.drawData = gpu::DrawData::create();
+	setupCornerVbo(g_Data->quad.drawData, "quad");
+
+	g_Data->circle.drawData = gpu::DrawData::create();
+	setupCornerVbo(g_Data->circle.drawData, "circle");
+
+	g_Data->text.drawData = gpu::DrawData::create();
+	setupCornerVbo(g_Data->text.drawData, "text");
+
+	g_Data->line.drawData = gpu::DrawData::create();
+	g_Data->line.drawData->init({{"i_EndpointIndex", gpu::ShaderDataType::Int}}, "renderer2D", lineIndices, "line");
+	{
+		constexpr std::array<int32_t, 2> endpoints{0, 1};
+		g_Data->line.drawData->setVertexData(endpoints.data(),
+											 static_cast<uint32_t>(endpoints.size() * sizeof(int32_t)));
+	}
+
 	g_Data->whiteTexture =
 			gpu::Texture2D::create(gpu::Texture2D::Specification{.size = {1, 1}, .format = gpu::ImageFormat::Rgba8});
 	uint32_t whiteTextureData = 0xffffffff;
 	g_Data->whiteTexture->setData(&whiteTextureData, sizeof(uint32_t));
 
-	// Set all texture slots to 0
 	utils::g_MaxTextureSlots = gpu::RenderCommand::getMaxTextureSlots();
 	g_Data->textureSlots.resize(utils::g_MaxTextureSlots);
 	g_Data->textureSlots[0] = g_Data->whiteTexture;
+
 	g_Data->cameraUniformBuffer = gpu::UniformBuffer::create(sizeof(utils::InternalData::CameraData), 0, "Renderer2D");
 	g_Data->cameraUniformBuffer->bind();
+
+	g_Data->quad.ssbo =
+			gpu::StorageBuffer::create(utils::g_maxQuadsPerBatch * sizeof(utils::QuadInstance), 2, "Renderer2D");
+	g_Data->circle.ssbo =
+			gpu::StorageBuffer::create(utils::g_maxCirclesPerBatch * sizeof(utils::CircleInstance), 2, "Renderer2D");
+	g_Data->line.ssbo =
+			gpu::StorageBuffer::create(utils::g_maxLinesPerBatch * sizeof(utils::LineInstance), 2, "Renderer2D");
+	g_Data->text.ssbo =
+			gpu::StorageBuffer::create(utils::g_maxTextGlyphsPerBatch * sizeof(utils::TextInstance), 2, "Renderer2D");
 }
 
 void Renderer2D::shutdown() {
@@ -247,7 +225,6 @@ void Renderer2D::shutdown() {
 		return;
 	}
 
-	// clearing the internal g_data
 	g_Data->cameraUniformBuffer.reset();
 	g_Data->whiteTexture.reset();
 	for (auto& text: g_Data->textureSlots) {
@@ -255,9 +232,10 @@ void Renderer2D::shutdown() {
 			continue;
 		text.reset();
 	}
-	g_Data->drawQuad.reset();
-	g_Data->drawCircle.reset();
-	g_Data->drawLine.reset();
+	g_Data->quad = utils::BatchData<utils::QuadInstance>{};
+	g_Data->circle = utils::BatchData<utils::CircleInstance>{};
+	g_Data->line = utils::BatchData<utils::LineInstance>{};
+	g_Data->text = utils::BatchData<utils::TextInstance>{};
 	g_Data.reset();
 	gpu::RendererDescriptors::release("Renderer2D");
 }
@@ -266,7 +244,6 @@ void Renderer2D::beginScene(const Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
 	{
-		// Camera UBO update routes through `Renderer2D`'s descriptor block.
 		const gpu::RendererDescriptors::ScopedActive scoped{"Renderer2D"};
 		g_Data->cameraBuffer.viewProjection = iCamera.getViewProjection();
 		g_Data->cameraUniformBuffer->setData(&g_Data->cameraBuffer, sizeof(utils::InternalData::CameraData), 0);
@@ -292,56 +269,53 @@ void Renderer2D::flush() {
 		}
 	}
 
-	// bind textures
 	gpu::RenderCommand::beginBatch();
 	gpu::RenderCommand::beginTextureLoad();
 	for (uint32_t i = 0; i < g_Data->textureSlotIndex; i++) g_Data->textureSlots[i]->bind(i);
 	gpu::RenderCommand::endTextureLoad();
 
-	// Draw background first (within the same render pass)
 	BackgroundRenderer::flushPending(bgTexIndex);
 
-	if (g_Data->quad.indexCount > 0) {
-		g_Data->drawQuad->setVertexData(
-				g_Data->quad.vertexBuf.data(),
-				static_cast<uint32_t>(g_Data->quad.vertexBuf.size() * sizeof(utils::QuadVertex)));
-
-		// draw call
-		gpu::RenderCommand::drawData(g_Data->drawQuad, g_Data->quad.indexCount);
+	if (!g_Data->quad.instances.empty()) {
+		const auto count = static_cast<uint32_t>(g_Data->quad.instances.size());
+		g_Data->quad.ssbo->setData(g_Data->quad.instances.data(),
+								   static_cast<uint32_t>(count * sizeof(utils::QuadInstance)), 0);
+		g_Data->quad.ssbo->bind();
+		gpu::RenderCommand::drawDataInstanced(g_Data->quad.drawData, /*iIndexCount=*/6u, count);
 		g_Data->stats.drawCalls++;
 	}
-	if (g_Data->circle.indexCount > 0) {
-		g_Data->drawCircle->setVertexData(
-				g_Data->circle.vertexBuf.data(),
-				static_cast<uint32_t>(g_Data->circle.vertexBuf.size() * sizeof(utils::CircleVertex)));
-		// draw call
-		gpu::RenderCommand::drawData(g_Data->drawCircle, g_Data->circle.indexCount);
+	if (!g_Data->circle.instances.empty()) {
+		const auto count = static_cast<uint32_t>(g_Data->circle.instances.size());
+		g_Data->circle.ssbo->setData(g_Data->circle.instances.data(),
+									 static_cast<uint32_t>(count * sizeof(utils::CircleInstance)), 0);
+		g_Data->circle.ssbo->bind();
+		gpu::RenderCommand::drawDataInstanced(g_Data->circle.drawData, /*iIndexCount=*/6u, count);
 		g_Data->stats.drawCalls++;
 	}
-	if (g_Data->line.indexCount > 0) {
-		g_Data->drawLine->setVertexData(
-				g_Data->line.vertexBuf.data(),
-				static_cast<uint32_t>(g_Data->line.vertexBuf.size() * sizeof(utils::LineVertex)));
-		// draw call
-		gpu::RenderCommand::drawLine(g_Data->drawLine, g_Data->line.indexCount);
+	if (!g_Data->line.instances.empty()) {
+		const auto count = static_cast<uint32_t>(g_Data->line.instances.size());
+		g_Data->line.ssbo->setData(g_Data->line.instances.data(),
+								   static_cast<uint32_t>(count * sizeof(utils::LineInstance)), 0);
+		g_Data->line.ssbo->bind();
+		gpu::RenderCommand::drawLineInstanced(g_Data->line.drawData, /*iIndexCount=*/2u, count);
 		g_Data->stats.drawCalls++;
 	}
-	if (g_Data->text.indexCount > 0) {
-		g_Data->drawText->setVertexData(
-				g_Data->text.vertexBuf.data(),
-				static_cast<uint32_t>(g_Data->text.vertexBuf.size() * sizeof(utils::TextVertex)));
-		// draw call
-		gpu::RenderCommand::drawData(g_Data->drawText, g_Data->text.indexCount);
+	if (!g_Data->text.instances.empty()) {
+		const auto count = static_cast<uint32_t>(g_Data->text.instances.size());
+		g_Data->text.ssbo->setData(g_Data->text.instances.data(),
+								   static_cast<uint32_t>(count * sizeof(utils::TextInstance)), 0);
+		g_Data->text.ssbo->bind();
+		gpu::RenderCommand::drawDataInstanced(g_Data->text.drawData, /*iIndexCount=*/6u, count);
 		g_Data->stats.drawCalls++;
 	}
 	gpu::RenderCommand::endBatch();
 }
 
 void Renderer2D::startBatch() {
-	utils::resetDrawData(g_Data->quad);
-	utils::resetDrawData(g_Data->circle);
-	utils::resetDrawData(g_Data->line);
-	utils::resetDrawData(g_Data->text);
+	utils::resetBatch(g_Data->quad, utils::g_maxQuadsPerBatch);
+	utils::resetBatch(g_Data->circle, utils::g_maxCirclesPerBatch);
+	utils::resetBatch(g_Data->line, utils::g_maxLinesPerBatch);
+	utils::resetBatch(g_Data->text, utils::g_maxTextGlyphsPerBatch);
 	g_Data->textureSlotIndex = 1;
 }
 
@@ -351,13 +325,16 @@ void Renderer2D::nextBatch() {
 }
 
 void Renderer2D::drawLine(const LineData& iLineData) {
-	g_Data->line.vertexBuf.emplace_back(
-			utils::LineVertex{.position = iLineData.point1, .color = iLineData.color, .entityId = iLineData.entityId});
-	g_Data->line.vertexBuf.emplace_back(
-			utils::LineVertex{.position = iLineData.point2, .color = iLineData.color, .entityId = iLineData.entityId});
-
-	g_Data->line.indexCount += 2;
-	g_Data->stats.drawCalls++;
+	if (g_Data->line.instances.size() >= utils::g_maxLinesPerBatch)
+		nextBatch();
+	g_Data->line.instances.push_back(utils::LineInstance{.point1 = iLineData.point1,
+														 ._pad0 = 0.f,
+														 .point2 = iLineData.point2,
+														 ._pad1 = 0.f,
+														 .color = iLineData.color,
+														 .entityId = iLineData.entityId,
+														 ._pad2 = {0.f, 0.f, 0.f}});
+	g_Data->stats.lineCount++;
 }
 
 void Renderer2D::drawRect(const RectData& iRectData) {
@@ -396,52 +373,45 @@ void Renderer2D::drawPolyLine(const PolyLineData& iLineData) {
 void Renderer2D::drawCircle(const CircleData& iCircleData) {
 	OWL_PROFILE_FUNCTION()
 
-
-	for (const auto& vtx: utils::g_quadVertexPositions) {
-		g_Data->circle.vertexBuf.emplace_back(utils::CircleVertex{.worldPosition = iCircleData.transform() * vtx,
-																  .localPosition = vtx * 2.0f,
-																  .color = iCircleData.color,
-																  .thickness = iCircleData.thickness,
-																  .fade = iCircleData.fade,
-																  .entityId = iCircleData.entityId});
-	}
-
-	g_Data->circle.indexCount += 6;
+	if (g_Data->circle.instances.size() >= utils::g_maxCirclesPerBatch)
+		nextBatch();
+	g_Data->circle.instances.push_back(utils::CircleInstance{.transform = iCircleData.transform(),
+															 .color = iCircleData.color,
+															 .thickness = iCircleData.thickness,
+															 .fade = iCircleData.fade,
+															 .entityId = iCircleData.entityId,
+															 ._pad0 = 0});
 	g_Data->stats.quadCount++;
 }
 
 void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 	OWL_PROFILE_FUNCTION()
 
-	if (g_Data->quad.indexCount >= utils::g_maxIndices)
+	if (g_Data->quad.instances.size() >= utils::g_maxQuadsPerBatch)
 		nextBatch();
-	float textureIndex = 0.0f;
+	uint32_t textureIndex = 0;
 	if (iQuadData.texture != nullptr) {
 		for (uint32_t i = 1; i < g_Data->textureSlotIndex; i++) {
 			if (*g_Data->textureSlots[i] == *iQuadData.texture) {
-				textureIndex = static_cast<float>(i);
+				textureIndex = i;
 				break;
 			}
 		}
-		if (textureIndex == 0.0f) {
+		if (textureIndex == 0) {
 			if (g_Data->textureSlotIndex >= utils::g_MaxTextureSlots)
 				nextBatch();
-			textureIndex = static_cast<float>(g_Data->textureSlotIndex);
+			textureIndex = g_Data->textureSlotIndex;
 			g_Data->textureSlots[g_Data->textureSlotIndex] =
 					std::static_pointer_cast<gpu::Texture2D>(iQuadData.texture);
 			g_Data->textureSlotIndex++;
 		}
 	}
-	for (size_t i = 0; i < utils::g_quadVertexCount; i++) {
-		g_Data->quad.vertexBuf.emplace_back(
-				utils::QuadVertex{.position = iQuadData.transform() * utils::g_quadVertexPositions[i],
-								  .color = iQuadData.color,
-								  .texCoord = iQuadData.textureCoords[i],
-								  .texIndex = textureIndex,
-								  .tilingFactor = iQuadData.tilingFactor,
-								  .entityId = iQuadData.entityId});
-	}
-	g_Data->quad.indexCount += 6;
+	g_Data->quad.instances.push_back(utils::QuadInstance{.transform = iQuadData.transform(),
+														 .color = iQuadData.color,
+														 .uv = iQuadData.textureCoords,
+														 .texIndex = textureIndex,
+														 .entityId = iQuadData.entityId,
+														 .tilingFactor = iQuadData.tilingFactor});
 	g_Data->stats.quadCount++;
 }
 
@@ -452,30 +422,26 @@ void Renderer2D::drawString(const StringData& iStringData) {
 	}
 
 	const std::string text = utf8ToLatin1(iStringData.text);
-	// Manage texture
 	const shared<gpu::Texture2D> fontAtlas = iStringData.font->getAtlasTexture();
-	float textureIndex = 0.0f;
+	uint32_t textureIndex = 0;
 	for (uint32_t i = 1; i < g_Data->textureSlotIndex; i++) {
 		if (*g_Data->textureSlots[i] == *fontAtlas) {
-			textureIndex = static_cast<float>(i);
+			textureIndex = i;
 			break;
 		}
 	}
-	if (textureIndex == 0.0f) {
+	if (textureIndex == 0) {
 		if (g_Data->textureSlotIndex >= utils::g_MaxTextureSlots)
-
 			nextBatch();
-		textureIndex = static_cast<float>(g_Data->textureSlotIndex);
+		textureIndex = g_Data->textureSlotIndex;
 		g_Data->textureSlots[g_Data->textureSlotIndex] = fontAtlas;
 		g_Data->textureSlotIndex++;
 	}
-	// compute extent.
 	math::box2f extents;
 	{
 		math::vec2 cursor{0.f, 0.f};
 		for (size_t i = 0; i < text.size(); i++) {
 			char character = text[i];
-			// Reject control bytes outside the printable Latin-1 range (the MSDF atlas covers 0x20-0xFF).
 			if (const auto code = static_cast<unsigned char>(character);
 				code < 0x20 && character != '\r' && character != '\n')
 				character = '?';
@@ -497,11 +463,11 @@ void Renderer2D::drawString(const StringData& iStringData) {
 			}
 		}
 	}
-	// compute offset and scale to fit the 2D quad -1,1
 	math::vec2 scale = extents.diagonal();
 	scale.x() = 1.f / scale.x();
 	scale.y() = 1.f / scale.y();
 	const math::vec2 offset = -extents.min() - 0.5f * extents.diagonal();
+	const math::mat4 stringMat = iStringData.transform();
 	math::vec2 cursor{0.f, 0.f};
 	for (size_t i = 0; i < text.size(); i++) {
 		char character = text[i];
@@ -518,33 +484,28 @@ void Renderer2D::drawString(const StringData& iStringData) {
 		auto [quad, uv] = iStringData.font->getGlyphBox(character);
 		quad.translate(cursor + offset);
 		quad.scale(scale);
-		// render here
-		const math::vec3 p1 = iStringData.transform() * math::vec4(quad.min().x(), quad.min().y(), 0, 1.f);
-		const math::vec3 p2 = iStringData.transform() * math::vec4(quad.min().x(), quad.max().y(), 0, 1.f);
-		const math::vec3 p3 = iStringData.transform() * math::vec4(quad.max().x(), quad.max().y(), 0, 1.f);
-		const math::vec3 p4 = iStringData.transform() * math::vec4(quad.max().x(), quad.min().y(), 0, 1.f);
-		g_Data->text.vertexBuf.emplace_back(utils::TextVertex{.position = p1,
-															  .color = iStringData.color,
-															  .texCoord = uv.min(),
-															  .texIndex = textureIndex,
-															  .entityId = iStringData.entityId});
-		g_Data->text.vertexBuf.emplace_back(utils::TextVertex{.position = p2,
-															  .color = iStringData.color,
-															  .texCoord = {uv.min().x(), uv.max().y()},
-															  .texIndex = textureIndex,
-															  .entityId = iStringData.entityId});
-		g_Data->text.vertexBuf.emplace_back(utils::TextVertex{.position = p3,
-															  .color = iStringData.color,
-															  .texCoord = uv.max(),
-															  .texIndex = textureIndex,
-															  .entityId = iStringData.entityId});
-		g_Data->text.vertexBuf.emplace_back(utils::TextVertex{.position = p4,
-															  .color = iStringData.color,
-															  .texCoord = {uv.max().x(), uv.min().y()},
-															  .texIndex = textureIndex,
-															  .entityId = iStringData.entityId});
+
+		if (g_Data->text.instances.size() >= utils::g_maxTextGlyphsPerBatch)
+			nextBatch();
+
+		const math::vec2 glyphCenter = (quad.min() + quad.max()) * 0.5f;
+		const math::vec2 glyphSize = quad.max() - quad.min();
+		math::Transform glyphLocal;
+		glyphLocal.translation() = math::vec3{glyphCenter.x(), glyphCenter.y(), 0.f};
+		glyphLocal.scale() = math::vec3{glyphSize.x(), glyphSize.y(), 1.f};
+		const math::mat4 glyphMat = stringMat * glyphLocal();
+
+		const std::array<math::vec2, 4> glyphUv{
+				math::vec2{uv.min().x(), uv.min().y()}, math::vec2{uv.max().x(), uv.min().y()},
+				math::vec2{uv.max().x(), uv.max().y()}, math::vec2{uv.min().x(), uv.max().y()}};
+		g_Data->text.instances.push_back(utils::TextInstance{.transform = glyphMat,
+															 .color = iStringData.color,
+															 .uv = glyphUv,
+															 .texIndex = textureIndex,
+															 .entityId = iStringData.entityId,
+															 ._pad0 = {0u, 0u}});
 		g_Data->stats.quadCount++;
-		g_Data->text.indexCount += 6;
+
 		if (i < text.size() - 1) {
 			char next = text[i + 1];
 			if (const auto nextCode = static_cast<unsigned char>(next); nextCode < 0x20)

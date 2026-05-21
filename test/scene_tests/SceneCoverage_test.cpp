@@ -105,7 +105,7 @@ TEST(SceneCoverage, GetChildrenReturnsCorrectEntities) {
 	// The children should be the ones we parented.
 	bool foundChild1 = false;
 	bool foundChild2 = false;
-	for (const auto& child : children) {
+	for (const auto& child: children) {
 		if (child.getUUID() == child1.getUUID())
 			foundChild1 = true;
 		if (child.getUUID() == child2.getUUID())
@@ -280,12 +280,9 @@ TEST(SceneCoverage, DestroyEntityReparentsMultipleChildrenToGrandparent) {
 	// All three children should now be children of gp.
 	const auto& gpH = gp.getComponent<Hierarchy>();
 	EXPECT_EQ(gpH.childrenIds.size(), 3u);
-	EXPECT_EQ(static_cast<uint64_t>(child1.getComponent<Hierarchy>().parentId),
-			  static_cast<uint64_t>(gp.getUUID()));
-	EXPECT_EQ(static_cast<uint64_t>(child2.getComponent<Hierarchy>().parentId),
-			  static_cast<uint64_t>(gp.getUUID()));
-	EXPECT_EQ(static_cast<uint64_t>(child3.getComponent<Hierarchy>().parentId),
-			  static_cast<uint64_t>(gp.getUUID()));
+	EXPECT_EQ(static_cast<uint64_t>(child1.getComponent<Hierarchy>().parentId), static_cast<uint64_t>(gp.getUUID()));
+	EXPECT_EQ(static_cast<uint64_t>(child2.getComponent<Hierarchy>().parentId), static_cast<uint64_t>(gp.getUUID()));
+	EXPECT_EQ(static_cast<uint64_t>(child3.getComponent<Hierarchy>().parentId), static_cast<uint64_t>(gp.getUUID()));
 }
 
 TEST(SceneCoverage, DestroyEntityLeafNode) {
@@ -688,8 +685,7 @@ TEST(SceneCoverage, SetParentChildIsAlreadyDescendantOfNewParent) {
 	// c is already a descendant of a via b. Try to directly set c's parent to a.
 	sc.setParent(c, a);
 	// This is valid (not circular). c should now be directly under a.
-	EXPECT_EQ(static_cast<uint64_t>(c.getComponent<Hierarchy>().parentId),
-			  static_cast<uint64_t>(a.getUUID()));
+	EXPECT_EQ(static_cast<uint64_t>(c.getComponent<Hierarchy>().parentId), static_cast<uint64_t>(a.getUUID()));
 	// b should have lost c as a child.
 	EXPECT_TRUE(b.getComponent<Hierarchy>().childrenIds.empty());
 	core::Log::invalidate();
@@ -729,8 +725,7 @@ TEST(SceneCoverage, DuplicateEntityAlwaysRoot) {
 	EXPECT_EQ(static_cast<uint64_t>(dupH.parentId), 0u);
 	EXPECT_TRUE(dupH.childrenIds.empty());
 	// Original child still has its parent.
-	EXPECT_EQ(static_cast<uint64_t>(child.getComponent<Hierarchy>().parentId),
-			  static_cast<uint64_t>(parent.getUUID()));
+	EXPECT_EQ(static_cast<uint64_t>(child.getComponent<Hierarchy>().parentId), static_cast<uint64_t>(parent.getUUID()));
 }
 
 // ============================================================================

@@ -10,6 +10,7 @@
 
 #include "StorageBuffer.h"
 
+#include "internal/RendererDescriptors.h"
 #include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
 #include "internal/utils.h"
@@ -84,6 +85,13 @@ void StorageBuffer::getData(void* oData, const uint32_t iSize, const uint32_t iO
 	vkUnmapMemory(vkc.getLogicalDevice(), m_memory);
 }
 
-void StorageBuffer::bind() {}
+void StorageBuffer::bind() {
+	if (m_buffer == nullptr)
+		return;
+	auto* const active = internal::RendererDescriptors::getActive();
+	if (active == nullptr)
+		return;
+	active->bindStorageBuffer(m_binding, m_buffer, static_cast<VkDeviceSize>(m_size));
+}
 
 }// namespace owl::renderer::gpu::vulkan

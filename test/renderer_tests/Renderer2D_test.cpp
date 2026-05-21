@@ -1,8 +1,8 @@
 
 #include "testHelper.h"
 
-#include <renderer/Renderer.h>
 #include <core/Application.h>
+#include <renderer/Renderer.h>
 #include <renderer/Renderer2D.h>
 
 using namespace owl::renderer;
@@ -46,10 +46,11 @@ TEST(Renderer2D, fakeLineScene) {
 	Renderer2D::drawPolyLine(data);
 	Renderer2D::endScene();
 	const auto st = Renderer2D::getStats();
-	EXPECT_EQ(st.drawCalls, 5);
-	EXPECT_EQ(st.quadCount, 0);
-	EXPECT_EQ(st.getTotalIndexCount(), 0);
-	EXPECT_EQ(st.getTotalVertexCount(), 0);
+	EXPECT_EQ(st.drawCalls, 1u);
+	EXPECT_EQ(st.quadCount, 0u);
+	EXPECT_EQ(st.lineCount, 4u);
+	EXPECT_EQ(st.getTotalIndexCount(), 8u);
+	EXPECT_EQ(st.getTotalVertexCount(), 8u);
 
 	Renderer2D::shutdown();
 	Renderer2D::shutdown();
@@ -69,10 +70,11 @@ TEST(Renderer2D, fakeCircleRectScene) {
 	Renderer2D::drawCircle({.transform = Transform{owl::math::identity<float, 4>()}});
 	Renderer2D::endScene();
 	const auto st = Renderer2D::getStats();
-	EXPECT_EQ(st.drawCalls, 6);
-	EXPECT_EQ(st.quadCount, 1);
-	EXPECT_EQ(st.getTotalIndexCount(), 6);
-	EXPECT_EQ(st.getTotalVertexCount(), 4);
+	EXPECT_EQ(st.drawCalls, 2u);
+	EXPECT_EQ(st.quadCount, 1u);
+	EXPECT_EQ(st.lineCount, 4u);
+	EXPECT_EQ(st.getTotalIndexCount(), 14u);
+	EXPECT_EQ(st.getTotalVertexCount(), 12u);
 
 	RenderCommand::invalidate();
 	Log::invalidate();
@@ -106,6 +108,45 @@ TEST(Renderer2D, fakeQuadSpriteScene) {
 	EXPECT_EQ(st.quadCount, 3);
 	EXPECT_EQ(st.getTotalIndexCount(), 18);
 	EXPECT_EQ(st.getTotalVertexCount(), 12);
+
+	RenderCommand::invalidate();
+	Log::invalidate();
+}
+
+TEST(Renderer2D, instancedQuadBatchRollover) {
+	Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	const CameraEditor cam;
+	Renderer2D::resetStats();
+	Renderer2D::beginScene(cam);
+	const Transform tr{{0.f, 0.f, 0.f}, {0, 0, 0}, {1.f, 1.f, 1.f}};
+	constexpr uint32_t kQuadCount = 20'001u;
+	for (uint32_t i = 0; i < kQuadCount; ++i)
+		Renderer2D::drawQuad({.transform = tr, .entityId = static_cast<int>(i)});
+	Renderer2D::endScene();
+	const auto st = Renderer2D::getStats();
+	EXPECT_EQ(st.quadCount, kQuadCount);
+	EXPECT_GE(st.drawCalls, 2u);
+
+	RenderCommand::invalidate();
+	Log::invalidate();
+}
+
+TEST(Renderer2D, instancedLineBatch) {
+	Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	const CameraEditor cam;
+	Renderer2D::resetStats();
+	Renderer2D::beginScene(cam);
+	for (int i = 0; i < 100; ++i)
+		Renderer2D::drawLine({.point1 = {0, 0, 0}, .point2 = {1.f, 1.f, 0.f}, .entityId = i});
+	Renderer2D::endScene();
+	const auto st = Renderer2D::getStats();
+	EXPECT_EQ(st.lineCount, 100u);
+	EXPECT_EQ(st.quadCount, 0u);
+	EXPECT_EQ(st.drawCalls, 1u);
 
 	RenderCommand::invalidate();
 	Log::invalidate();

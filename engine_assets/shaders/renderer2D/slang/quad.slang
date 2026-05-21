@@ -1,3 +1,9 @@
+// Renderer2D quad — instanced, SSBO-driven. One drawcall per batch via
+// `vkCmdDrawIndexed(6, instanceCount, …)` / `glDrawElementsInstanced(…)`.
+// The per-vertex VBO holds a single 4-vertex unit quad reused for every
+// instance; per-quad data (transform, colour, UVs, atlas slot, entity id,
+// tiling factor) lives in `gInstances[gl_InstanceID]`.
+
 struct Camera {
 	column_major float4x4 viewProjection;
 };
@@ -12,26 +18,33 @@ ConstantBuffer<Camera> gCamera;
 #endif
 Sampler2D gTextures[32];
 
+struct QuadInstance {
+	column_major float4x4 transform;
+	float4 color;
+	float2 uv[4];
+	uint texIndex;
+	int entityId;
+	float2 tilingFactor;
+};
+
+[[vk::binding(2)]]
+StructuredBuffer<QuadInstance> gInstances;
+
 struct VertexInput {
-	[[vk::location(0)]] float3 position     : POSITION;
-	[[vk::location(1)]] float4 color        : COLOR;
-	[[vk::location(2)]] float2 texCoord     : TEXCOORD0;
-	[[vk::location(3)]] float  texIndex     : TEXCOORD1;
-	[[vk::location(4)]] float2 tilingFactor : TEXCOORD2;
-	[[vk::location(5)]] int    entityID     : TEXCOORD3;
+	[[vk::location(0)]] int cornerIndex : POSITION;
 };
 
 struct FragmentInput {
-	[[vk::location(0)]] float4 color        : COLOR;
-	[[vk::location(1)]] float2 texCoord     : TEXCOORD0;
+	[[vk::location(0)]] float4 color : COLOR;
+	[[vk::location(1)]] float2 texCoord : TEXCOORD0;
 	[[vk::location(2)]] float2 tilingFactor : TEXCOORD1;
-	[[vk::location(3)]] nointerpolation float texIndex : TEXCOORD2;
-	[[vk::location(4)]] nointerpolation int   entityID : TEXCOORD3;
+	[[vk::location(3)]] nointerpolation int texIndex : TEXCOORD2;
+	[[vk::location(4)]] nointerpolation int entityID : TEXCOORD3;
 };
 
 struct FragmentOutput {
-	float4 color    : SV_Target0;
-	int    entityID : SV_Target1;
+	float4 color : SV_Target0;
+	int entityID : SV_Target1;
 };
 
 struct VertexOutput {
@@ -39,15 +52,26 @@ struct VertexOutput {
 	float4 svPosition : SV_Position;
 };
 
+// Unit-quad corners — BL, BR, TR, TL, matching the index buffer's
+// {0,1,2, 2,3,0} winding used by the CPU side.
+static const float2 kCorners[4] = {
+	float2(-0.5f, -0.5f),
+	float2( 0.5f, -0.5f),
+	float2( 0.5f,  0.5f),
+	float2(-0.5f,  0.5f),
+};
+
 [shader("vertex")]
-VertexOutput vertexMain(VertexInput input) {
+VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	VertexOutput output;
-	output.frag.color       = input.color;
-	output.frag.texCoord    = input.texCoord;
-	output.frag.tilingFactor = input.tilingFactor;
-	output.frag.texIndex    = input.texIndex;
-	output.frag.entityID    = input.entityID;
-	output.svPosition       = mul(gCamera.viewProjection, float4(input.position, 1.0));
+	QuadInstance inst = gInstances[iid];
+	float4 worldPos = mul(inst.transform, float4(kCorners[input.cornerIndex], 0.0f, 1.0f));
+	output.svPosition = mul(gCamera.viewProjection, worldPos);
+	output.frag.color = inst.color;
+	output.frag.texCoord = inst.uv[input.cornerIndex];
+	output.frag.tilingFactor = inst.tilingFactor;
+	output.frag.texIndex = int(inst.texIndex);
+	output.frag.entityID = inst.entityId;
 	return output;
 }
 
@@ -55,12 +79,10 @@ VertexOutput vertexMain(VertexInput input) {
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
 	float4 texColor = input.color;
-	int idx = int(input.texIndex);
-	texColor *= gTextures[NonUniformResourceIndex(idx)].Sample(
-		input.texCoord * input.tilingFactor);
-	if (texColor.a < 0.001)
+	texColor *= gTextures[NonUniformResourceIndex(input.texIndex)].Sample(input.texCoord * input.tilingFactor);
+	if (texColor.a < 0.001f)
 		discard;
-	output.color    = texColor;
+	output.color = texColor;
 	output.entityID = input.entityID;
 	return output;
 }

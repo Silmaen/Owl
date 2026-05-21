@@ -546,11 +546,10 @@ TEST_F(AssetScannerTest, PackWriterCancelCheck) {
 
 	int callCount = 0;
 	const auto packPath = m_tempDir / "test_cancel.owlpack";
-	const bool ok = writer.write(packPath, PackFlags::Default, {},
-								 [&callCount]() -> bool {
-									 ++callCount;
-									 return callCount >= 2;// Cancel after 1st entry
-								 });
+	const bool ok = writer.write(packPath, PackFlags::Default, {}, [&callCount]() -> bool {
+		++callCount;
+		return callCount >= 2;// Cancel after 1st entry
+	});
 	EXPECT_FALSE(ok);// Should fail due to cancellation.
 	EXPECT_EQ(callCount, 2);
 }

@@ -1,9 +1,9 @@
 
 #include "testHelper.h"
 
-#include <renderer/gpu/RenderCommand.h>
-#include <renderer/Renderer.h>
 #include <core/Application.h>
+#include <renderer/Renderer.h>
+#include <renderer/gpu/RenderCommand.h>
 
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;
@@ -24,7 +24,7 @@ TEST(TextureLibrary, creation) {
 		EXPECT_NE(lib.get("CheckerBoard"), nullptr);
 	}
 	{
-		auto bob = Texture2D::create(Texture2D::Specification{.size={1, 1}, .format=ImageFormat::Rgb8});
+		auto bob = Texture2D::create(Texture2D::Specification{.size = {1, 1}, .format = ImageFormat::Rgb8});
 		lib.add("checkerboard", bob);
 		lib.add("superbob", bob);
 		EXPECT_TRUE(lib.exists("superbob"));

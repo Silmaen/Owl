@@ -41,8 +41,8 @@ feature should regress the baseline on these axes; each release is expected to m
         - **Editing** — modify every property from the inspector, undo/redo via
           `ModifyEntityCommand` (or the asset-equivalent)
         - **Bulk operations** — when the object is part of a collection (tilemap cells, animation keyframes, node-graph
-          nodes, …), at least *select-many* +
-          *move-group* / *delete-group*; resizing a parent must preserve / shift contents instead of clipping
+          nodes, …), at least *select-many* + *move-group* / *delete-group*; resizing a parent must preserve / shift
+          contents instead of clipping
         - **Discoverability** — context-menu / drag-drop / keyboard shortcut where comparable objects already have one
     - "Working in YAML or via Lua only" is **not** acceptable for any object the user is expected to author by hand;
       treat that gap as a regression of the same severity as a missing test or missing public API doc
@@ -54,6 +54,7 @@ feature should regress the baseline on these axes; each release is expected to m
     - Spatial partitioning (quadtree/octree) for culling
     - Batched draw calls, texture atlasing
     - Multithreaded render preparation
+
 ## v0.5.0 -- Expected 2027-06-01
 
 **Goal:** Let players extend and modify games built with Owl. Bring Owl games to more platforms. Handle large game
@@ -211,10 +212,10 @@ cross-platform packaging from any host.
     - ![Planned][planned] Compute-driven frustum / occlusion culling pre-pass feeding indirect draws. The
       `renderer::utils::FrustumCullingPass` utility + `frustum_culling.slang` shader ship, alongside the
       `RenderCommand::drawIndexedIndirect` API (Vulkan `vkCmdDrawIndexedIndirectCount`, OpenGL
-      `glMultiDrawElementsIndirectCount`, Null no-op). `extractFrustumPlanes(viewProj)` Gribb-Hartmann helper for
-      the CPU side. Headless tests on the Null backend pass. With the SSBO-indexed instanced pipeline landed in
-      v0.2.0, adoption here is a drop-in: populate the AABB SSBO from the scene graph and replace the per-entity
-      draw loop with one `drawIndexedIndirect`. Pays off when 3D meshes start filling scenes.
+      `glMultiDrawElementsIndirectCount`, Null no-op). `extractFrustumPlanes(viewProj)` Gribb-Hartmann helper for the
+      CPU side. Headless tests on the Null backend pass. With the SSBO-indexed instanced pipeline landed in v0.2.0,
+      adoption here is a drop-in: populate the AABB SSBO from the scene graph and replace the per-entity draw loop with
+      one `drawIndexedIndirect`. Pays off when 3D meshes start filling scenes.
 - Scene
     - ![Planned][planned] 3D physics
         - 3D rigid body component (replace or extend Box2D with a 3D engine)
@@ -268,8 +269,8 @@ cross-platform packaging from any host.
           `renderer.md`, `scene.md`, `scripting.md`, `sound.md`) only render on GitHub / Doxygen
         - Build-time pre-render of mermaid blocks → SVG (or PNG) files in
           `engine_assets/help/images/mermaid/`, with the Markdown rewriter swapping each fence for an
-          `![alt](images/mermaid/<sha>.svg)` reference. No runtime JS/Node dependency —
-          pre-rendering can run with a depmanager-shipped tool or a custom subset renderer in C++
+          `![alt](images/mermaid/<sha>.svg)` reference. No runtime JS/Node dependency — pre-rendering can run with a
+          depmanager-shipped tool or a custom subset renderer in C++
         - Update `cmake/HelpAssets.cmake` to invoke the pre-renderer and surface the cache files
         - Tests: assert each bundled `engine_assets/help/*.md` no longer contains ` ```mermaid `
           after the bundle step and that the rasterized diagram files exist
@@ -289,8 +290,8 @@ cross-platform packaging from any host.
         - Replace YAML with a binary format (MessagePack / flatbuffers / custom) for `.owl` scenes, `.owltilemap`,
           `.owltileset`. yaml-cpp allocates per node — a 1000-entity scene parses
           ~10× slower than the same data in binary. Keep YAML import / export as a one-shot migration path; runtime +
-          editor load reads binary. Not urgent (tracker O(N²) fix already brought parse to ms scale) but still
-          worth ~10× on really large scenes.
+          editor load reads binary. Not urgent (tracker O (N²) fix already brought parse to ms scale) but still worth ~
+          10× on really large scenes.
     - ![Planned][planned] Parallel pack `readEntry`
         - Wrap `PackReader::readEntry` so multiple entries can be zstd-decompressed concurrently (file seek serialized
           under a mutex, decompression off-mutex). Useful for packed games loading dozens of textures in parallel at
@@ -308,8 +309,8 @@ gameplay primitives (inventory, enemies).
         - Shadow casting from 2D occluders
 - Editor Infrastructure
     - ![Planned][planned] Custom ImGui-based file picker
-        - Replace the native file dialogue (NFD/GTK) which briefly freezes the UI on Linux when GTK initializes (triggers
-          IDE "antiloop" detection)
+        - Replace the native file dialogue (NFD/GTK) which briefly freezes the UI on Linux when GTK initializes
+          (triggers IDE "antiloop" detection)
         - Pure ImGui implementation integrated with the task scheduler for async folder scanning
         - Benefits: consistent look-and-feel, truly non-blocking, theme-aware
         - Replaces the current sync `FileDialog::openFile/saveFile/pickFolder` blocking calls
@@ -319,9 +320,9 @@ gameplay primitives (inventory, enemies).
           Maya/Blender-style middle-click navigation as an option, surface the settings under
           `Settings > Editor > Camera`.
         - **Standard navigation presets** — quick buttons (ribbon `View` group + viewport overlay) for: **Reset View**
-          (snap back to the default editor pose); axis-aligned ortho views **XY** (top-down), **XZ** (front),
-          **YZ** (side); **Frame Selection** (zoom to fit the selected entity);
-          **Frame Scene** (zoom to fit the whole scene's bounds).
+          (snap back to the default editor pose); axis-aligned ortho views **XY** (top-down), **XZ** (front), **YZ**
+          (side); **Frame Selection** (zoom to fit the selected entity); **Frame Scene** (zoom to fit the whole scene's
+          bounds).
         - **Go to camera viewpoint** — snap the editor camera onto any selected `component::Camera` entity's pose
           (translation + rotation)
           for a quick preview. Disabled for cameras whose `RendererTag`
@@ -353,8 +354,8 @@ gameplay primitives (inventory, enemies).
 
 ## v0.2.2 -- Expected 2026-12-01
 
-**Goal:** Add a third non-2D rendering mode — an isometric pseudo-3D renderer in the
-**Transport Tycoon Deluxe** tradition — slotted between the existing 2D/raycast/voxel options.
+**Goal:** Add a third non-2D rendering mode — an isometric pseudo-3D renderer in the **Transport Tycoon Deluxe**
+tradition — slotted between the existing 2D/raycast/voxel options.
 
 - Isometric Renderer
     - ![Planned][planned] `RendererIsometric` layer (Transport Tycoon-style)
@@ -418,9 +419,9 @@ gameplay primitives (inventory, enemies).
 
 **Goal:** Introduce a composable **renderer stack** so scenes can mix and match rendering modes (e.g. raycasting world +
 2D HUD), deliver the first non-2D mode (raycasting), the tilemap system, scene-to-scene transition effects, and
-**modernise the renderer foundation** — drop the legacy CPU-vertex-transform batching pattern in favour of a
-GPU-driven path (per-frame SSBOs + instanced rendering + compute pre-passes), so the engine is ready for the 3D
-pipeline landing in v0.3.0.
+**modernize the renderer foundation** — drop the legacy CPU-vertex-transform batching pattern in favour of a GPU-driven
+path (per-frame SSBOs + instanced rendering + compute pre-passes), so the engine is ready for the 3D pipeline landing in
+v0.3.0.
 
 - Renderer Stack Architecture
     - ![Done][done] Foundation — `RenderLayer` / `RenderStack` / `RenderLayerFactory`, `RendererTag` component, YAML
@@ -436,147 +437,120 @@ pipeline landing in v0.3.0.
       with multi-layer support, per-cell quad renderer, static Box2D body per tilemap, inspector + Tile Palette +
       viewport paint mode.
 - Raycasting Renderer
-    - ![Done][done] Raycasting core — `RendererRaycast` facade + `RendererRaycastLayer`, CPU per-column DDA through
-      the `Renderer2D` quad batch, configurable FOV / max distance / sky / floor via `DefaultConfig` or per-scene
+    - ![Done][done] Raycasting core — `RendererRaycast` facade + `RendererRaycastLayer`, CPU per-column DDA through the
+      `Renderer2D` quad batch, configurable FOV / max distance / sky / floor via `DefaultConfig` or per-scene
       `Overrides`. `Tileset` gained a `FilterMode` enum so wall atlases stay pixel-crisp. Sample ships
       `scenes/raycast_demo.owl` (Wolfenstein 3D E1L1 layout, 64×64, original art).
     - ![Done][done] Tilemap editor as dedicated asset (`.owltilemap`) — `TilemapAsset` with full YAML round-trip,
       `TilemapDocument` three-pane editor (Properties / Canvas / Palette) with zoom-pan, paint/erase strokes, layer
       manager, per-stroke undo. Component is now a path-reference (`tilemapPath` + runtime asset).
-    - ![Done][done] Floors and ceilings — per-screen-row textured backdrop via `emitTexturedBackdrop`, 1-pixel-tall
-      quad per scanline with linear UV interpolation and REPEAT wrap. `RaycastConfig` carries floor/ceiling tileset
-      refs; falls back to solid-colour quads when absent.
-    - ![Done][done] Sprites (billboards) — `SpriteRenderer` / `AnimatedSpriteRenderer` rendered as camera-facing
-      strips on raycast layers, occluded by the per-column z-buffer latched by `drawTilemapWalls`. Same components
-      stay 2D-rendered on `Renderer2D` layers — author top-down, view first-person. `Transform.translation.z` is the
-      world Z-offset; `Transform.scale.xy` is the world size in cells.
+    - ![Done][done] Floors and ceilings — per-screen-row textured backdrop via `emitTexturedBackdrop`, 1-pixel-tall quad
+      per scanline with linear UV interpolation and REPEAT wrap. `RaycastConfig` carries floor/ceiling tileset refs;
+      falls back to solid-colour quads when absent.
+    - ![Done][done] Sprites (billboards) — `SpriteRenderer` / `AnimatedSpriteRenderer` rendered as camera-facing strips
+      on raycast layers, occluded by the per-column z-buffer latched by `drawTilemapWalls`. Same components stay
+      2D-rendered on `Renderer2D` layers — author top-down, view first-person. `Transform.translation.z` is the world
+      Z-offset; `Transform.scale.xy` is the world size in cells.
     - ![Done][done] Map features
         - ![Done][done] Variable wall heights — `TileMeta.wallHeight: float` (clamp `[0, 8]`), bottom-anchored.
-        - ![Done][done] Transparent walls — `TileMeta.transparent: bool`. DDA collects up to 8 hits per ray and
-          renders back-to-front for proper alpha blending. Alpha-channel only — no chroma keying.
-          Known limitation: a sprite behind a transparent wall draws on top of it.
-        - ![Done][done] Doors and pushwalls — dedicated `RaycastDoor` / `RaycastPushWall` components (not tile
-          flags, so each is script-addressable). Hybrid activation: built-in `interactionKey` + range, or drive from
-          Lua (`door.activate` / `pushwall.activate` etc.). Box2D collision auto-managed. Editor: visual tile picker,
-          green outline on pushwalls, yellow destination line + endpoint circle on selection, gated `Add Component`
+        - ![Done][done] Transparent walls — `TileMeta.transparent: bool`. DDA collects up to 8 hits per ray and renders
+          back-to-front for proper alpha blending. Alpha-channel only — no chroma keying. Known limitation: a sprite
+          behind a transparent wall draws on top of it.
+        - ![Done][done] Doors and pushwalls — dedicated `RaycastDoor` / `RaycastPushWall` components (not tile flags, so
+          each is script-addressable). Hybrid activation: built-in `interactionKey` + range, or drive from Lua
+          (`door.activate` / `pushwall.activate` etc.). Box2D collision auto-managed. Editor: visual tile picker, green
+          outline on pushwalls, yellow destination line + endpoint circle on selection, gated `Add Component`
           menu. Thin walls were dropped from scope.
-    - ![Done][done] Raycasting map editor in Owl Nest — `TilemapDocument` for the grid; top-down viewport in edit
-      mode, first-person view in Play mode; per-camera viewport marker (dot + arrow + FOV cone), toggleable from
-      ribbon `Show` group.
+    - ![Done][done] Raycasting map editor in Owl Nest — `TilemapDocument` for the grid; top-down viewport in edit mode,
+      first-person view in Play mode; per-camera viewport marker (dot + arrow + FOV cone), toggleable from ribbon `Show`
+      group.
     - ![Done][done] Lighting for raycasting — global distance fog via `RaycastConfig.fogColor` / `fogStart` /
-      `fogEnd`, applied uniformly to walls / dynamic walls / doors / sprites / backdrop. Point lights deferred
-      (need a per-column light-list buffer and deferred accumulation).
+      `fogEnd`, applied uniformly to walls / dynamic walls / doors / sprites / backdrop. Point lights deferred (need a
+      per-column light-list buffer and deferred accumulation).
 - Gameplay
-    - ![Done][done] Scene transition effects — `ScreenTransition::Type` covers `Fade{In,Out}` + `Wipe{Left,Right,Up,Down}`;
+    - ![Done][done] Scene transition effects — `ScreenTransition::Type` covers `Fade{In,Out}` +
+      `Wipe{Left,Right,Up,Down}`;
       `play(type, duration, colour)` accepts a custom tint. Lua: `ui.transition_play(type_string, duration, [rgba])`
       plus back-compat `ui.transition_fade_in/out`.
 - Editor Performance
-    - ![Done][done] Faster scene loading (target exceeded 550×) — Memory tracker O(N²) regression fixed (global
-      `operator new`/`delete` overrides disabled in release; debug uses an O(1) `unordered_map` index), UUID →
-      `entt::entity` cache on `Scene` for O(1) lookups, in-memory SPIR-V cache for shader-warm scene loads. Opening
+    - ![Done][done] Faster scene loading (target exceeded 550×) — Memory tracker O (N²) regression fixed (global
+      `operator new`/`delete` overrides disabled in release; debug uses an O (1) `unordered_map` index), UUID →
+      `entt::entity` cache on `Scene` for O (1) lookups, in-memory SPIR-V cache for shader-warm scene loads. Opening
       `raycast_demo` dropped from ~22 s to ~40 ms.
-    - ![Done][done] Async scene loading — two-phase `SceneSerializer::parseBuffer` / `applyParsed`: YAML on a
-      Taskflow worker, entity creation on the main thread. `Scheduler::getImpl()` + `parallelForEach/Index` overloads
-      let engine call sites use parallel utilities without naming `tf::Executor`.
+    - ![Done][done] Async scene loading — two-phase `SceneSerializer::parseBuffer` / `applyParsed`: YAML on a Taskflow
+      worker, entity creation on the main thread. `Scheduler::getImpl()` + `parallelForEach/Index` overloads let engine
+      call sites use parallel utilities without naming `tf::Executor`.
 - In-Game Performance
-    - ![Done][done] Entity / system update budget — skip hidden entities in script/physics/EntityLink loops;
-      frame-pool every per-render scratch buffer (`RaycastSpriteData` / `RaycastDoorData` / `RaycastDynamicWallData`
+    - ![Done][done] Entity / system update budget — skip hidden entities in script/physics/EntityLink loops; frame-pool
+      every per-render scratch buffer (`RaycastSpriteData` / `RaycastDoorData` / `RaycastDynamicWallData`
       / `CanvasEntry` / `ColumnHit` / `Projected`) via `thread_local` reuse.
     - ![Done][done] Entity-management hot paths — cached primary-player lookup (invalidated on destroy / Player
       add-remove); UUID→entity cache warm across the scene's lifetime; pre-resolved `EntityLink.linkedEntity` on
       `onStartRuntime`.
     - ![Done][done] Render-loop hygiene — `getWorldTransform` / `layerHasContent` / `isEffectivelyVisible`
       per-pass caches (armed only when in update pass); `resolveAllTilemapAssets` dirty-flag gate.
-- Renderer Modernisation
-    - **Context.** The original `Renderer2D` follows the Hazel/Sparky pattern (CPU multiplies each vertex by its
-      transform, pushes into a CPU vertex buffer, flushes when the index threshold is hit). The Vulkan backend was
-      bolted on top without rethinking the model — it re-uploads the CPU batch every frame and the descriptor-set
-      management is fragile (NVIDIA `vkCmdBindPipeline` crash on the instanced tilemap path, per-pass UBO host/GPU
-      race). The pattern caps performance around a few thousand quads. Modernisation moves all renderers onto a
-      uniform pipeline: **compute pre-pass populates per-frame SSBOs → graphics pass is instanced + indexes into
-      SSBOs via `gl_InstanceID`, zero CPU vertex transform, zero per-frame readback**. Item pays off immediately
-      (#32/#33/#35 finally deliver their advertised gains) and unblocks the v0.3.0 3D pipeline (mesh / material /
-      lighting / particle systems all drop into the same SSBO + instance infrastructure).
-    - ![Done][done] Tilemap rendering via instanced quads + SSBO — `RendererTilemap` uploads per-cell
-      `{positionXY, tileIndex, entityId}` into a per-instance VBO and issues a single
-      `vkCmdDrawIndexed(6, cellCount, …)` / `glDrawElementsInstanced(…)` call backed by `tilemap_instanced.slang`.
-      Proof-of-concept that the instanced-SSBO pattern works end-to-end.
+- Renderer Modernization. The pre-modernisation `Renderer2D` followed the Hazel/Sparky CPU-vertex batching pattern,
+  which capped throughput around a few thousand quads and produced fragile Vulkan descriptor-set state (NVIDIA
+  `vkCmdBindPipeline` crash, per-pass UBO race). Modernisation moves every renderer onto a uniform pipeline — compute
+  pre-pass writes SSBOs, graphics pass is instanced and indexes into the SSBOs via `gl_InstanceID`, zero CPU vertex
+  transform — which makes #32/#33/#35 actually pay off and unblocks the v0.3.0 3D pipeline.
+    - ![Done][done] Tilemap rendering via instanced quads + SSBO — single `vkCmdDrawIndexed(6, cellCount, …)` /
+      `glDrawElementsInstanced(…)` call per (tilemap, layer) backed by `tilemap_instanced.slang`. Proof-of-concept of the
+      instanced-SSBO pattern.
     - ![Done][done] GPU compute pipeline foundation — `gpu::ComputeShader` (Null / OpenGL / Vulkan) +
-      `gpu::StorageBuffer` + `RenderCommand::storageBufferMemoryBarrier()` + Slang `[shader("compute")]` entry
-      points wired into `compileSlangToSpirv`. Headless validation via `SlangCompute_test.cpp`.
-    - ![Done][done] Phase 0 — Vulkan descriptor & UBO foundation hardening
-        - Per-renderer descriptor blocks (option β): each high-level renderer owns its own
-          `VkDescriptorSetLayout` + pool + per-frame sets matching the exact bindings its shaders declare.
-          The old singleton `Descriptors` keeps only the global pools (`imgui`, `singleImage`) + the texture
-          storage table; everything else moved to the new `internal::RendererDescriptors` class.
-        - Backend-neutral declaration API in `gpu::RendererDescriptors` — `declare(name, bindings)` /
-          `release(name)` / `ScopedActive` RAII guard. Null and OpenGL backends no-op (no descriptor-set
-          concept). Vulkan routes to the internal per-renderer block.
-        - `gpu::StorageBuffer::getData()` readback on Null / OpenGL / Vulkan (host mirror /
-          `glGetNamedBufferSubData` / `vkDeviceWaitIdle` + map). Documented as test-time / diagnostics only.
-          `BitonicSortPass` test exercises the round-trip end-to-end via the Null backend.
-        - Renderer wiring — `Renderer2D` (`{0:UBO, 1:texArray}`), `RendererTilemap`
-          (`{0:UBO, 1:texArray, 2:UBO}`) and `BackgroundRenderer` (shares `Renderer2D`'s layout) each
-          declare their bindings at init, scope `ScopedActive` around `beginScene` / `flush` / `drawTilemap`
-          so the Vulkan backend's `pushPipeline` and `bindPipeline` pick the right per-renderer layout and
-          descriptor set. `vulkan::UniformBuffer` and `vulkan::Texture2D::bind` route through the same
-          mechanism, with a fallback to the legacy global path for non-Vulkan and uninstrumented callers.
-        - **`RendererTilemap` NVIDIA crash root cause addressed.** The crash was driven by NVIDIA's strict
-          validation rejecting pipelines whose layout declared bindings the shader didn't sample (shared
-          `{0, 1, 2}` global layout vs `Renderer2D`'s `{0, 1}` shader). With per-renderer layouts each
-          pipeline references exactly the bindings it uses. The instanced `RendererTilemap::drawTilemap`
-          path itself is still gated behind `Scene::drawTilemapQuads`'s per-cell `Renderer2D::drawQuad`
-          fallback — re-enabling the instanced path also surfaced an OpenGL-side rendering bug (tilemap
-          doesn't display) that needs its own fix before flipping the switch. Phase 1 picks that up.
-        - **Per-pass UBO race fixed.** The shared per-frame UBO that two `Renderer2D` layers used to
-          memcpy into mid-frame is now scoped to its renderer block; the UI layer no longer needs the
-          `Space: World` workaround that previously masked the flicker.
-    - ![In Progress][progress] Phase 1 — `Renderer2D` instanced rewrite
-        - First sub-task: **fix `RendererTilemap::drawTilemap`'s instanced path** on both backends so
-          `Scene::drawTilemapQuads` can be re-routed away from the per-cell `Renderer2D::drawQuad`
-          fallback. Phase 0 fixed the descriptor-layout side of the NVIDIA crash; what remains is the
-          OpenGL-side rendering bug (tilemap doesn't display) and validating the Vulkan path end-to-end
-          on real hardware once OpenGL is green. This is the test bed that proves the instanced + SSBO
-          pattern works before generalising it to `Renderer2D` itself.
-        - Main rewrite: vertex shader transforms a unit quad using the per-instance world matrix +
-          UV-rect + colour + atlas-index + entityId read from per-frame SSBOs indexed by `gl_InstanceID`.
-          No more CPU `transform * vertexPosition` baked into a `vector<QuadVertex>`.
-        - Batching by texture-slot is preserved (per-batch SSBO + per-batch bind), but the batch size is bounded
-          by SSBO capacity, not by CPU vertex-buffer pressure.
-        - Migration safety: keep the legacy CPU path behind a project-level toggle for one release while
-          benchmarks confirm visual + perf parity, then delete the legacy path in Phase 5.
-        - Expected ≥10× on 5 k-quad scenes (zero per-frame CPU vertex math, single uniform `glDraw*Instanced`).
+      `gpu::StorageBuffer` + `RenderCommand::storageBufferMemoryBarrier()` + Slang `[shader("compute")]` entry points.
+      Headless validation via `SlangCompute_test.cpp`.
+    - ![Done][done] Phase 0 — Vulkan descriptor & UBO foundation hardening. Per-renderer descriptor blocks: each
+      high-level renderer (`Renderer2D`, `RendererTilemap`, `BackgroundRenderer`) owns its own
+      `VkDescriptorSetLayout` + pool + per-frame sets matching the exact bindings its shaders declare, declared via the
+      backend-neutral `gpu::RendererDescriptors::declare/release/ScopedActive` API (no-op on Null / OpenGL). Fixes the
+      NVIDIA `vkCmdBindPipeline` crash (a shared global layout previously declared bindings the calling shader didn't
+      sample) and the per-pass UBO race (each UBO now scoped to its renderer block instead of memcpy'ed into a shared
+      `VkBuffer` mid-frame). Adds `gpu::StorageBuffer::getData()` readback on all backends for test-time correctness
+      checks (full GPU stall on Vulkan; not a hot-path API).
+    - ![Done][done] Phase 1 — `Renderer2D` instanced rewrite. All four batch families (quad / circle / line / text)
+      replaced the CPU-vertex Hazel pattern with one drawcall per batch via
+      `glDrawElementsInstanced` / `vkCmdDrawIndexed` (lines route through a new
+      `RenderAPI::drawLineInstanced` keyed off the `"line"` shader name for `LINE_LIST` topology). Each batch uploads a
+      `vector<XxxInstance>` to a per-batch `StorageBuffer` and the vertex shader transforms a shared unit quad by
+      `gInstances[gl_InstanceID].transform`. SSBO writes route through
+      `internal::RendererDescriptors::bindStorageBuffer` so the Vulkan descriptor set picks them up correctly. Public
+      API (`drawQuad`, `drawString`, `Statistics`, …) preserved; the only semantic shift is that `Statistics.drawCalls`
+      now counts GPU drawcalls submitted (one per non-empty batch type at flush) and `lineCount` is actually incremented
+      per line.
     - ![In Progress][progress] Phase 2 — `WorldTransformPass` adoption (#33)
-        - The pre-pass already ships (`renderer::utils::WorldTransformPass` + `world_transform.slang`,
-          single-dispatch parent-chain walk padded to multiples of 64 entries, headless tests pass on the Null
-          backend). Phase 1's instanced path consumes the world-matrix SSBO directly via `gl_InstanceID`, killing
-          the ~30 redundant CPU `getWorldTransform` calls per frame.
+        - The pre-pass already ships (`renderer::utils::WorldTransformPass` + `world_transform.slang`, single-dispatch
+          parent-chain walk padded to multiples of 64 entries, headless tests pass on the Null backend). Phase 1's
+          instanced path consumes the world-matrix SSBO directly via `gl_InstanceID`, killing the ~30 redundant CPU
+          `getWorldTransform` calls per frame.
         - Expected 5–10× on deep hierarchies.
     - ![In Progress][progress] Phase 3 — `RaycastDDAPass` adoption (#35)
-        - The DDA pre-pass already ships (`renderer::utils::RaycastDDAPass` + `raycast_dda.slang`, X/Y-edge
-          stepping, transparent-stack budget of 8, `columnHits[col * 8 + k]` + `hitCount[col]` + `zBuffer[col]`
+        - The DDA pre-pass already ships (`renderer::utils::RaycastDDAPass` + `raycast_dda.slang`, X/Y-edge stepping,
+          transparent-stack budget of 8, `columnHits[col * 8 + k]` + `hitCount[col]` + `zBuffer[col]`
           SSBOs, headless tests pass).
-        - New graphics shader for stripe emission: instanced draw, one instance per visible column hit, vertex
-          shader reads `columnHits[]` + tileset UVs, fragment shader samples the atlas. Sprite occlusion pass
-          consumes `zBuffer[]` GPU-side (vertex shader rejects fragments whose perpDist exceeds the column's
-          wall depth).
-        - Biggest single CPU→GPU win (20–50× theoretical on wall rasterisation) — also the most invasive change
-          in this release. Touches the per-column zBuffer, dynamic walls, doors, sprite stripes.
+        - New graphics shader for stripe emission: instanced draw, one instance per visible column hit, vertex shader
+          reads `columnHits[]` + tileset UVs, fragment shader samples the atlas. Sprite occlusion pass consumes
+          `zBuffer[]` GPU-side (vertex shader rejects fragments whose perpDist exceeds the column's wall depth).
+        - Biggest single CPU→GPU win (20–50× theoretical on wall rasterization) — also the most invasive change in this
+          release. Touches the per-column zBuffer, dynamic walls, doors, sprite stripes.
     - ![In Progress][progress] Phase 4 — `BitonicSortPass` adoption (#32)
         - The sort pass already ships (`renderer::utils::BitonicSortPass` + `bitonic_sort.slang`, single-workgroup
-          bitonic-merge sort over `(key, value)` pairs, capacity 1024, headless tests pass). After Phase 3 the
-          sprite stripe emission lives on the GPU, so the sort output stays on the GPU and feeds the stripe
-          shader directly — zero CPU readback, drop-in trivial.
-        - Bitonic chosen over radix: for sprite counts < 1000 the constant factor of radix is higher than a
-          single shared-memory bitonic dispatch.
-    - ![In Progress][progress] Phase 5 — Cleanup & benchmarks
-        - Delete the legacy CPU-vertex `Renderer2D::drawQuad` path and the now-unused `Scene::getWorldTransform`
-          fast-cache callers; keep `getWorldTransform` for tests / inspector code (rare, off-hot-path callers).
+          bitonic-merge sort over `(key, value)` pairs, capacity 1024, headless tests pass). After Phase 3 the sprite
+          stripe emission lives on the GPU, so the sort output stays on the GPU and feeds the stripe shader directly —
+          zero CPU readback, drop-in trivial.
+        - Bitonic chosen over radix: for sprite counts < 1000 the constant factor of radix is higher than a single
+          shared-memory bitonic dispatch.
+    - ![In Progress][progress] Phase 5 — Clean-up & benchmarks
+        - Re-route `Scene::drawTilemapQuads` from the per-cell `Renderer2D::drawQuad` fallback to the instanced
+          `RendererTilemap::drawTilemap` now that Phase 1 has proven the SSBO-indexed instanced pipeline at scale across
+          both backends.
+        - Drop the now-unused `Scene::getWorldTransform` fast-cache callers; keep `getWorldTransform`
+          for tests / inspector code (rare, off-hot-path callers).
         - Ramp up renderer test coverage now that GPU passes have correctness oracles via the new
           `StorageBuffer` readback (added in Phase 0 for test-time CPU readback only, not part of the hot path).
-        - Update `doc/pages/renderer.md` + `doc/pages/architecture.md` to describe the SSBO-indexed instanced
-          pipeline as the canonical pattern. Surface a perf-bench summary (5 k-quad scene, deep hierarchy scene,
-          raycast scene) before/after.
+        - Update `doc/pages/renderer.md` + `doc/pages/architecture.md` to describe the SSBO-indexed instanced pipeline
+          as the canonical pattern. Surface a perf-bench summary (5 k-quad scene, deep hierarchy scene, raycast scene)
+          before/after.
 - Known bug fixes
     - ![Done][done] Editor keyboard shortcuts — modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) bypass
       `ImGui::GetIO().WantCaptureKeyboard`; modifier-less still yield to focused text widgets.
@@ -592,73 +566,72 @@ pipeline landing in v0.3.0.
 different asset types. All long-running operations become asynchronous with progress feedback.
 
 - Async Operations & Progress
-    - ![Done][done] Async task integration in Owl Nest — `AsyncProgressModal` + `AsyncProgressState`, layered on
-      the Taskflow-backed `Scheduler` with main-thread termination callbacks.
-    - ![Done][done] Async packaging — asset scanning, compression, pack writing all off-main-thread with progress
-      bar (`PackWriter::ProgressCallback`) and cancel support.
-    - ![Done][done] Async scene save / load — file I/O off main thread; deserialize / serialize on main thread in
-      the termination callback. "Loading…" / "Saving…" overlays during the I/O phase.
+    - ![Done][done] Async task integration in Owl Nest — `AsyncProgressModal` + `AsyncProgressState`, layered on the
+      Taskflow-backed `Scheduler` with main-thread termination callbacks.
+    - ![Done][done] Async packaging — asset scanning, compression, pack writing all off-main-thread with progress bar
+      (`PackWriter::ProgressCallback`) and cancel support.
+    - ![Done][done] Async scene save / load — file I/O off main thread; deserialize / serialize on main thread in the
+      termination callback. "Loading…" / "Saving…" overlays during the I/O phase.
     - ![Done][done] Deferred shader compilation with loading screen — `Renderer::init` split into `initContext()`
-      + `initShaders(callback)` with per-shader progress overlay; cache hit skips compilation.
+        + `initShaders(callback)` with per-shader progress overlay; cache hit skips compilation.
     - ![Done][done] Async texture loading with placeholders — `TextureDecoder` helper, `createFromSerializedAsync`
       returns immediately with a correctly-sized placeholder; worker decodes then uploads on the main thread.
       `createFromSerializedForDeserialize` keeps `SpriteRenderer` / `AnimatedSpriteRenderer` / `BackgroundTexture` /
       `UiImage` call-sites simple.
-    - ![Done][done] Async scene transitions in runner — `RunnerLayer::handleTeleportRequest` reads bytes in
-      background, swaps scene on the main thread; GameState + velocity preserved across the transition.
-    - ![Done][done] Async content browser scanning — directory entries cached and scanned via the task scheduler;
-      rescan triggered on create/import/rename/delete/drop/move.
+    - ![Done][done] Async scene transitions in runner — `RunnerLayer::handleTeleportRequest` reads bytes in background,
+      swaps scene on the main thread; GameState + velocity preserved across the transition.
+    - ![Done][done] Async content browser scanning — directory entries cached and scanned via the task scheduler; rescan
+      triggered on create/import/rename/delete/drop/move.
 - Multi-Document Architecture
     - ![Done][done] Document tab system — `Document` / `DocumentManager` / `SceneDocument` / `DocumentTabBar` with
       per-document undo stack, dirty marker, Play/Pause/Stop state. Tab bar rendered inside the Viewport header;
       `Ctrl+W` close, `Ctrl+Tab` / `Ctrl+Shift+Tab` cycle. Background simulation in non-active Play tabs.
-    - ![Done][done] Per-document viewport (side-by-side via docking) — each `SceneDocument` owns its viewport with
-      its own framebuffer and stable `##scene_<uuid>` window id; ImGui docking groups them as tabs.
+    - ![Done][done] Per-document viewport (side-by-side via docking) — each `SceneDocument` owns its viewport with its
+      own framebuffer and stable `##scene_<uuid>` window id; ImGui docking groups them as tabs.
     - ![Done][done] Detachable panels — ImGui native docking (`DockingEnable` + `ViewportsEnable` in `UiLayer`).
 - Script / Code Editor
     - ![Done][done] Generic code editor document — `CodeEditorDocument` powered by **imgui_color_text_edit**.
-      Highlighting: Lua, C, C++, Python, JSON, Markdown (built-in) + YAML, SVG/XML (custom). JetBrains Mono for
-      buffers; configurable UI / code font sizes in `EditorSettings`.
-    - ![Done][done] Live preview for markup documents — `MarkdownPreview` (CommonMark + GFM via **md4c**) walks
-      the parsed blocks to emit ImGui draw calls with cached `TextEditor` for code blocks; external links open via
-      `core::utils::openExternalUrl`. `SvgPreview` rasterize live SVG via `lunasvg`. Vertical splitter between
-      editor and preview, debounced ~250 ms.
+      Highlighting: Lua, C, C++, Python, JSON, Markdown (built-in) + YAML, SVG/XML (custom). JetBrains Mono for buffers;
+      configurable UI / code font sizes in `EditorSettings`.
+    - ![Done][done] Live preview for markup documents — `MarkdownPreview` (CommonMark + GFM via **md4c**) walks the
+      parsed blocks to emit ImGui draw calls with cached `TextEditor` for code blocks; external links open via
+      `core::utils::openExternalUrl`. `SvgPreview` rasterize live SVG via `lunasvg`. Vertical splitter between editor
+      and preview, debounced ~250 ms.
 - Node Graph Editor
-    - ![Done][done] Node graph framework — reusable `gui::widgets::NodeCanvas` (UUID-based nodes/pins/links, typed
-      pins, link validator, pan/zoom/selection) over `GraphEditor` from the ImGuizmo bundle. Templatized
+    - ![Done][done] Node graph framework — reusable `gui::widgets::NodeCanvas` (UUID-based nodes/pins/links, typed pins,
+      link validator, pan/zoom/selection) over `GraphEditor` from the ImGuizmo bundle. Templatized
       `UndoCommand<Target>` / `UndoManager<Target>` (Scene + NodeGraph aliases), `NodeCanvasSerializer` for
       `.owlflow` round-trip, `NodeGraphDocument` with ribbon "Graph" tab.
-    - ![Done][done] Scene flow view — scenes as nodes, teleport triggers as output pins, orphan detection (BFS
-      from `Project::firstScene`). Double-click navigates to a scene; ghost `+ Add teleport` pin creates a
+    - ![Done][done] Scene flow view — scenes as nodes, teleport triggers as output pins, orphan detection (BFS from
+      `Project::firstScene`). Double-click navigates to a scene; ghost `+ Add teleport` pin creates a
       `Trigger` entity + canvas link in one undoable step; per-pin `targetName` modal. `SceneFlowCompositeCommand`
       glues scene + canvas undo halves. Canvas polish: Zoom-based text LOD + per-layer vertical centring.
 - Asset Editors
-    - ![Done][done] Animation editor — `.owlanim` asset (`AnimationClip`: texture, grid, frame range, duration,
-      loop, optional speed curve). `AnimationDocument` three-pane (preview / properties / sequencer timeline backed
-      by `gui::widgets::sequencer()` over `ImSequencer`). Ribbon contextual `Animation` tab; Content Browser entries
-      + ribbon `New Animation`.
+    - ![Done][done] Animation editor — `.owlanim` asset (`AnimationClip`: texture, grid, frame range, duration, loop,
+      optional speed curve). `AnimationDocument` three-pane (preview / properties / sequencer timeline backed by
+      `gui::widgets::sequencer()` over `ImSequencer`). Ribbon contextual `Animation` tab; Content Browser entries
+        + ribbon `New Animation`.
     - ![Done][done] Enhanced inspector
         - Sound preview button on `SoundSource` (uses current volume + pitch).
-        - Texture thumbnails (100×100 with `(loading…)` / `(failed)` overlay during async decode) + font preview
-          strip via `gui::FontPreviewCache`. Latin-1 / UTF-8 glyphs render correctly everywhere.
+        - Texture thumbnails (100×100 with `(loading…)` / `(failed)` overlay during async decode) + font preview strip
+          via `gui::FontPreviewCache`. Latin-1 / UTF-8 glyphs render correctly everywhere.
         - Drag-drop from Content Browser via `gui::widgets::assetDropTarget(AssetKind, path)`, with per-extension
           validation. `textureField()` consolidates the texture-aware widget shared by Sprite / AnimatedSprite /
           BackgroundTexture / UiImage.
-        - Curve editor — new `math::Curve` (Constant / Linear / Smooth interpolation, flat-hold extrapolation,
-          YAML round-trip omitting empty curves) + `gui::widgets::curveEditor()` over ImCurveEdit. First consumer:
+        - Curve editor — new `math::Curve` (Constant / Linear / Smooth interpolation, flat-hold extrapolation, YAML
+          round-trip omitting empty curves) + `gui::widgets::curveEditor()` over ImCurveEdit. First consumer:
           `AnimatedSpriteRenderer.speedCurve` remaps per-frame `dt`.
 - Packaging
-    - ![Done][done] Packaging wizard in Owl Nest — pre-packaging validation modal (`AssetScanner` warnings,
-      Runner-exec check, empty-assets check), destination + options panel, post-pack report (asset count, size,
-      duration).
+    - ![Done][done] Packaging wizard in Owl Nest — pre-packaging validation modal (`AssetScanner` warnings, Runner-exec
+      check, empty-assets check), destination + options panel, post-pack report (asset count, size, duration).
 - Menu & Project Workflow
-    - ![Done][done] Ribbon-style main menu — `gui::widgets::Ribbon` (tabs → groups → large / small buttons) with
-      File / Edit / Scene|Text tabs built from `ActionRegistry`; contextual last tab switches Scene ↔ Text per
-      active document. Replaces the menu bar + floating Play/Pause + gizmo bar.
-    - ![Done][done] Recent projects — persisted in `EditorSettings::recentProjects` (cap 10); "Recent" popup in
-      File tab; Welcome modal when no project loaded.
-    - ![Done][done] Save Project As — recursive copy via `std::filesystem::copy`, then switch the editor to the
-      new directory.
+    - ![Done][done] Ribbon-style main menu — `gui::widgets::Ribbon` (tabs → groups → large / small buttons) with File /
+      Edit / Scene|Text tabs built from `ActionRegistry`; contextual last tab switches Scene ↔ Text per active document.
+      Replaces the menu bar + floating Play/Pause + gizmo bar.
+    - ![Done][done] Recent projects — persisted in `EditorSettings::recentProjects` (cap 10); "Recent" popup in File
+      tab; Welcome modal when no project loaded.
+    - ![Done][done] Save Project As — recursive copy via `std::filesystem::copy`, then switch the editor to the new
+      directory.
 - UX & Quality
     - ![Done][done] In-editor help pages — `cmake/HelpAssets.cmake` bundles `doc/pages/*.md` + `README` /
       `CHANGELOG` / `CONTRIBUTING` into `engine_assets/help/` with an `index.yml`. `panel::HelpPanel` renders via
@@ -666,19 +639,18 @@ different asset types. All long-running operations become asynchronous with prog
       most-recently-hovered component header.
     - ![Done][done] Tooltips everywhere with hover delay — reusable `fieldTooltip()` helper (~0.4s `DelayNormal`)
       wired across all trigger types + every authored component field.
-    - ![Done][done] Unique ImGui IDs audit — component-scoped `PushID(T::name())` in `drawComponent<T>`;
-      index-based `PushID` in the LuaScript property loop.
+    - ![Done][done] Unique ImGui IDs audit — component-scoped `PushID(T::name())` in `drawComponent<T>`; index-based
+      `PushID` in the LuaScript property loop.
     - ![Done][done] Icon clarity pass — per-extension Content Browser icons (sound / mesh / source / docs) sharing
       `base_file_ext_icon` template with a central glyph + amber/gold accent. `IconBank::iconButton(name, label,
       size)` helper reused across Welcome, Packaging Wizard, modals, Content Browser dialogues, panels.
 - Build & CI
-    - ![Done][done] Linux ARM64 CI restored — Poetry venvs colliding across architectures (shared `$HOME`,
-      ARM64 loading x86_64 wheels → `cryptography/_rust.abi3.so` crash). New `ci/utils/venv.py` layered check
-      (no venv / signature marker / functional import test) drives an inline refresh via
+    - ![Done][done] Linux ARM64 CI restored — Poetry venvs colliding across architectures (shared `$HOME`, ARM64 loading
+      x86_64 wheels → `cryptography/_rust.abi3.so` crash). New `ci/utils/venv.py` layered check (no venv / signature
+      marker / functional import test) drives an inline refresh via
       `OWL_CI_REFRESH_VENV` + `cmake/Poetry.cmake`.
-    - ![Done][done] Windows Debug builds fixed — `CMAKE_MAP_IMPORTED_CONFIG_DEBUG` mapping now applied at
-      top-level directory scope (was being set inside `find_package` after generate time), so link and DLL copy
-      agree in Debug.
+    - ![Done][done] Windows Debug builds fixed — `CMAKE_MAP_IMPORTED_CONFIG_DEBUG` mapping now applied at top-level
+      directory scope (was being set inside `find_package` after generate time), so link and DLL copy agree in Debug.
 
 ## v0.1.0 -- 2026-04-16
 
@@ -697,8 +669,8 @@ Windows).
       `Renderer2D`, sort order for layering.
     - ![Done][done] Base widgets — `UiText` / `UiImage` / `UiButton` / `UiPanel` / `UiSlider` / `UiProgressBar`
       with full state + style coverage and Lua callback hooks.
-    - ![Done][done] UI input handling — `UiInputSystem` (hit-test, hover/pressed tracking, mouse consumed before
-      scene). Lua `ui` table: `set_text`, `set_visible`, `set_progress`, slider/button helpers.
+    - ![Done][done] UI input handling — `UiInputSystem` (hit-test, hover/pressed tracking, mouse consumed before scene).
+      Lua `ui` table: `set_text`, `set_visible`, `set_progress`, slider/button helpers.
     - ![Done][done] UI editor — Canvas/UiRect cyan outlines, full inspector coverage, per-widget icons.
     - ![Done][done] Standard game screens — Main Menu / Pause / Game Over templates in `engine_assets/templates/`
       with `ScreenTransition` + Lua `ui.transition_fade_in/out`.
@@ -710,8 +682,8 @@ Windows).
     - ![Done][done] Full scene state save — scene + GameState + physics snapshots via
       `PhysicCommand::getSnapshot/applySnapshot`; `loaded_from_save` flag in GameState on load.
 - Runner & Distribution
-    - ![Done][done] Extended project configuration — `owl_project.yml` (version, author, description, icon, window
-      size, fullscreen, resizable) + Project Settings panel.
+    - ![Done][done] Extended project configuration — `owl_project.yml` (version, author, description, icon, window size,
+      fullscreen, resizable) + Project Settings panel.
     - ![Done][done] Improved Runner — title / icon / size from `runner.yml`, fullscreen + resizable Window API,
       `packGame()` exports project settings + icon.
     - ![Done][done] Persistent game settings — two-layer (`game_settings.yml` defaults + `settings.yml` overrides);
@@ -719,18 +691,18 @@ Windows).
     - ![Done][done] Improved packaging pipeline — sanitized runner name, `launch.sh` (Linux) / `.zip` (Windows),
       `game_info.yml` metadata.
 - Editor Improvements (Owl Nest)
-    - ![Done][done] Prefab system — `.owlprefab` entity subtrees with UUID remapping; create-from-entity context
-      action; Content Browser drag-drop; `PrefabLink` component with update/revert preserving overrides.
+    - ![Done][done] Prefab system — `.owlprefab` entity subtrees with UUID remapping; create-from-entity context action;
+      Content Browser drag-drop; `PrefabLink` component with update/revert preserving overrides.
     - ![Done][done] Undo / Redo — reversible commands covering entity / component / hierarchy / gizmo; configurable
       depth, Ctrl+Z / Ctrl+Y, merge coalescing, dirty flag in title.
 - Scene & Triggers
-    - ![Done][done] More scene events and triggers — Timer (duration + repeat), Interaction (key + range),
-      LuaCallback. Edge detection (`on_trigger_enter` / `on_trigger_exit`) on all types. Lua
+    - ![Done][done] More scene events and triggers — Timer (duration + repeat), Interaction (key + range), LuaCallback.
+      Edge detection (`on_trigger_enter` / `on_trigger_exit`) on all types. Lua
       `trigger.start_timer` / `stop_timer` / `reset_timer`.
     - ![Done][done] Common properties across scenes — covered by `SettingsManager`'s `game_settings.yml`.
 - Sample Game
-    - ![Done][done] Complete game demonstrator — 6 scenes (main menu, gameplay, level 2, settings, victory, game
-      over) with fade transitions; exercises all 13 Lua API tables, all 8 UI widget types, all 7 trigger types.
+    - ![Done][done] Complete game demonstrator — 6 scenes (main menu, gameplay, level 2, settings, victory, game over)
+      with fade transitions; exercises all 13 Lua API tables, all 8 UI widget types, all 7 trigger types.
 
 ## v0.0.3 -- 2026-04-09
 
@@ -739,20 +711,20 @@ Windows).
       sounds, category system (SFX / Music / Ambient).
     - ![Done][done] Sound management — play / stop / pause / resume / loop / volume / pitch via `SoundHandle`;
       `.wav` / `.ogg` / `.flac` / `.mp3`.
-    - ![Done][done] Sound spatialization — 3D positional audio via OpenAL, `SoundListener` component, configurable
-      max distance + rolloff; spatial positions synced from entity world transforms each frame.
+    - ![Done][done] Sound spatialization — 3D positional audio via OpenAL, `SoundListener` component, configurable max
+      distance + rolloff; spatial positions synced from entity world transforms each frame.
 - Graphics
-    - ![Done][done] Animated sprites — `AnimatedSpriteRenderer` with spritesheet grid, configurable speed / loop /
-      frame range; custom UVs in `Renderer2D`.
+    - ![Done][done] Animated sprites — `AnimatedSpriteRenderer` with spritesheet grid, configurable speed / loop / frame
+      range; custom UVs in `Renderer2D`.
 - Objects
     - ![Done][done] Mesh loading — OBJ, glTF, GLB, FBX (tinygltf, tinyobjloader, ufbx).
 - Miscellaneous
     - ![Done][done] Configurable keymap.
 - Scene
-    - ![Done][done] Scene hierarchy (parent-child entities) — transform + visibility inheritance, reparenting
-      preserves world position, delete orphans-to-grandparent or cascades, duplicate entity or subtree.
-    - ![Done][done] Asset packing — `.owlpack` binary format (zstd compression + XOR-obfuscated TOC); pack-aware
-      loading in runner.
+    - ![Done][done] Scene hierarchy (parent-child entities) — transform + visibility inheritance, reparenting preserves
+      world position, delete orphans-to-grandparent or cascades, duplicate entity or subtree.
+    - ![Done][done] Asset packing — `.owlpack` binary format (zstd compression + XOR-obfuscated TOC); pack-aware loading
+      in runner.
     - ![Done][done] Task system — Taskflow-backed `Scheduler` + parallel utilities.
 - Game Designer (Owl Nest)
     - ![Done][done] Project system — create / open / save / close (`owl_project.yml`); dynamic asset directory
@@ -770,8 +742,8 @@ Windows).
 ## v0.0.2 -- 2026-03-03
 
 - Developers
-    - ![Done][done] Public engine headers third-party independent; fmt public dependency removed; more static
-      linking of third-party libs.
+    - ![Done][done] Public engine headers third-party independent; fmt public dependency removed; more static linking of
+      third-party libs.
 - Graphics
     - ![Done][done] Backgrounds / sky boxes.
     - ![Done][done] Migrate shaders to Slang.

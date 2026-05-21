@@ -112,9 +112,7 @@ TEST(ShaderFileUtils, WriteAndReadCachedShaderRoundTrip) {
 	EXPECT_TRUE(renderer::utils::writeCachedShader(file, data));
 	const auto loaded = renderer::utils::readCachedShader(file);
 	ASSERT_EQ(loaded.size(), data.size());
-	for (size_t i = 0; i < data.size(); ++i) {
-		EXPECT_EQ(loaded[i], data[i]);
-	}
+	for (size_t i = 0; i < data.size(); ++i) { EXPECT_EQ(loaded[i], data[i]); }
 	std::filesystem::remove(file);
 	core::Log::invalidate();
 }

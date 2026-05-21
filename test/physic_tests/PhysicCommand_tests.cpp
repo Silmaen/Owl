@@ -130,8 +130,7 @@ TEST(PhysicCommand, GravityScaleZeroCancelsFalling) {
 	PhysicCommand::setGravityScale(b1, 0.f);
 	Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(500));
-	for (int i = 0; i < 10; ++i)
-		PhysicCommand::frame(ts);
+	for (int i = 0; i < 10; ++i) PhysicCommand::frame(ts);
 	// Vertical velocity must stay at 0 — Box2D world gravity has no effect on this body.
 	EXPECT_NEAR(PhysicCommand::getVelocity(b1).y(), 0.0, 1e-3);
 	Log::invalidate();

@@ -648,6 +648,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **`Renderer2D` rewritten as instanced + SSBO (Phase 1 of the renderer
+  modernisation).** All four batch families (quad, circle, line, text)
+  drop the legacy CPU-vertex Hazel pattern in favour of one drawcall
+  per batch via `glDrawElementsInstanced` / `vkCmdDrawIndexed` (lines:
+  `GL_LINES` + line topology). Each batch uploads a `vector<XxxInstance>`
+  to a per-batch SSBO and the vertex shader transforms a shared unit
+  quad by `gInstances[gl_InstanceID].transform`. No CPU
+  `transform * vertex` per quad, no per-frame VBO upload of the full
+  per-vertex stream. The public API (`drawQuad` / `drawCircle` /
+  `drawLine` / `drawString` / `drawRect` / `drawPolyLine` /
+  `Statistics`) is unchanged.
+    - Instance layouts (std430 — sizes must match the shader): `QuadInstance`
+      `{mat4 transform, vec4 color, vec2 uv[4], uint texIndex, int entityId,
+      vec2 tilingFactor}` (128 B); `CircleInstance` `{mat4, vec4 color,
+      float thickness, float fade, int entityId, uint _pad}` (96 B);
+      `LineInstance` `{vec3 point1, vec3 point2, vec4 color, int entityId}`
+      with explicit pads (64 B); `TextInstance` mirrors `QuadInstance`
+      minus tiling factor (128 B). 4 UVs per instance preserve the
+      non-rect trapezoidal UVs used by `RendererRaycast` floor / ceiling
+      / wall stripe paths.
+    - New shaders: `engine_assets/shaders/renderer2D/slang/{quad,circle,
+      line,text}.slang` consume `[[vk::binding(2)]]
+      StructuredBuffer<XxxInstance>` and a per-vertex `i_CornerIndex`
+      (0..3 for the quad shape, 0..1 for the line endpoints).
+    - New `RenderAPI::drawLineInstanced` (Null no-op, OpenGL
+      `glDrawElementsInstanced(GL_LINES, ...)`, Vulkan
+      `vkCmdDrawIndexed` with the line-topology pipeline that the
+      `"line"` shader name already selects).
+    - `internal::RendererDescriptors` extended with
+      `bindStorageBuffer(binding, vkBuffer, size)` so an external
+      `vulkan::StorageBuffer::bind()` can attach its `VkBuffer` to the
+      per-frame descriptor set. Without it, the binding-2 descriptor
+      slot stayed unwritten and Vulkan rendered nothing.
+    - `Renderer2D::Statistics.drawCalls` now means "GPU draw calls
+      submitted" (one per non-empty batch type at flush) — the legacy
+      counter incremented inside `drawLine` was a leftover that doubled
+      as a misnamed counter for "line emit calls". `lineCount` is now
+      actually incremented per line.
+
 - **`file(GLOB ...)` calls** in `source/owl`, `source/owlnest`, `test`,
   and `cmake/HelpAssets.cmake` now pass `CONFIGURE_DEPENDS` so adding
   or removing source / header / help-page files triggers a CMake
