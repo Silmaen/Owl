@@ -10,7 +10,7 @@ object Project : Project({
 
     vcsRoot(HttpsGithubComSilmaenOwlGitRefsHeadsMain)
 
-    template(CodeSylingCheck)
+    template(CodeStylingCheck)
     template(GlobalBuild)
 
     params {
@@ -25,14 +25,16 @@ object Project : Project({
         """.trimIndent())
         checkbox("publish_package", "true",
                   checked = "true", unchecked = "false")
+        // Only main is fetched directly. PR refs are managed by the
+        // pullRequest build feature on each template (refs/pull/*/head are
+        // pulled automatically when a PR matches the feature's filters).
+        // Push to a feature branch without an open PR = no CI activity.
         param("branch_specification", """
             +:refs/heads/main
-            +:refs/heads/(Feature/*)
-            +:refs/heads/(Experiment/*)
         """.trimIndent())
         param("cmake_options", "-j4")
     }
 
-    subProject(Packaging.Project)
-    subProject(Build.Project)
+    subProject(Build.BuildProject)
+    subProject(Packaging.PackagingProject)
 })
