@@ -4,7 +4,6 @@ import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
 import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
-import jetbrains.buildServer.configs.kotlin.buildFeatures.PullRequests
 import jetbrains.buildServer.configs.kotlin.buildFeatures.investigationsAutoAssigner
 import jetbrains.buildServer.configs.kotlin.buildFeatures.perfmon
 import jetbrains.buildServer.configs.kotlin.buildFeatures.pullRequests
@@ -83,7 +82,10 @@ object CodeStylingCheck : Template({
                     tokenId = "tc_token_id:CID_392f0141078df64b20e1bb01ada5697f:-1:fc63f361-ae0d-4cd9-8feb-dabdd68f74a6"
                 }
                 filterTargetBranch = "+:main"
-                filterAuthorRole = PullRequests.GitHubRoleFilter.MEMBER_OR_COLLABORATOR
+                // No filterAuthorRole: in personal repos the "MEMBER" concept
+                // doesn't apply; we accept PRs from everyone (the App's
+                // installed-on-repo scoping already gates access).
+                ignoreDrafts = false
             }
         }
         xmlReport {
