@@ -2,29 +2,15 @@ package Build
 
 import _Self.buildTypes.CodeStylingCheck
 import _Self.buildTypes.GlobalBuild
-import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
-import jetbrains.buildServer.configs.kotlin.buildFeatures.pullRequests
 import jetbrains.buildServer.configs.kotlin.failureConditions.BuildFailureOnMetric
 import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
 
-// Helper: override the inherited pullRequests feature to run on draft PRs.
-// The template (GlobalBuild) sets ignoreDrafts=true; this helper re-declares
-// the feature with the same id so this buildType overrides and accepts drafts.
-private fun BuildType.runOnDraftPRs() {
-    features {
-        pullRequests {
-            id = "PULL_REQUESTS"
-            vcsRootExtId = "${HttpsGithubComSilmaenOwlGitRefsHeadsMain.id}"
-            provider = github {
-                authType = storedToken {
-                    tokenId = "tc_token_id:CID_392f0141078df64b20e1bb01ada5697f:-1:fc63f361-ae0d-4cd9-8feb-dabdd68f74a6"
-                }
-                filterTargetBranch = "+:main"
-                ignoreDrafts = false
-            }
-        }
-    }
+// Helper: opt-in to running on draft PRs. The DRAFT_PR_GUARD step in
+// GlobalBuild reads this param and aborts the build for non-allowed
+// buildTypes when the PR is in draft state.
+private fun BuildType.allowDraftPR() {
+    params { param("allow_draft_pr", "true") }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -115,7 +101,7 @@ private val linuxX64 = stdPlatform(
     perVariantConfig = mapOf(
         // Linux x64 Clang is part of the draft-friendly fast-feedback subset.
         "Clang" to {
-            runOnDraftPRs()
+            allowDraftPR()
         },
     ),
 )
@@ -145,7 +131,7 @@ private val windowsX64 = stdPlatform(
         // failure conditions on test count and artifact size regression
         // — historical guardrail for that toolchain.
         "Clang" to {
-            runOnDraftPRs()
+            allowDraftPR()
             failureConditions {
                 failOnMetricChange {
                     id = "BUILD_EXT_1"
@@ -227,7 +213,7 @@ private val sanitizerBuilds = sanitizers.map { s ->
             disableSettings("TRIGGER_2")
         }
         if (s.runOnDraft) {
-            runOnDraftPRs()
+            allowDraftPR()
         }
     })
 }

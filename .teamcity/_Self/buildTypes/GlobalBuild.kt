@@ -56,6 +56,12 @@ object GlobalBuild : Template({
         checkbox("run_package", "false", checked = "true", unchecked = "false")
         param("release_preset", "")
         checkbox("publish_doc", "false", checked = "true", unchecked = "false")
+        // Whether this buildType runs on draft PRs. Default = no.
+        // BuildTypes wanting to opt in (Linux x64 Clang, Windows x64 Clang,
+        // SanitizerAddress) override to "true". Used by the DRAFT_PR_GUARD
+        // first step, which queries the GitHub API to determine PR state
+        // (the TC pullRequests plugin doesn't expose isDraft natively).
+        checkbox("allow_draft_pr", "false", checked = "true", unchecked = "false")
     }
 
     vcs {
@@ -63,7 +69,21 @@ object GlobalBuild : Template({
     }
 
     steps {
-        // Native first step — runs on the agent host (no Docker) to populate
+        // Draft PR guard — abort the build early if PR is in draft state and
+        // this buildType is not opted in. Native (no Docker) for fast skip.
+        // No-ops for non-PR builds (main) since pr is empty.
+        script {
+            name = "Draft PR guard"
+            id = "DRAFT_PR_GUARD"
+            scriptContent =
+                "python3 ci_action.py CheckDraft %cmake_preset% -- " +
+                "--pr=%teamcity.pullRequest.number% " +
+                "--repo=Silmaen/Owl " +
+                "--token=%github_access_token% " +
+                "--allow-draft=%allow_draft_pr%"
+        }
+
+        // Native step — runs on the agent host (no Docker) to populate
         // docker_image and other params for the rest of the pipeline.
         script {
             name = "Determine docker"
@@ -182,10 +202,9 @@ object GlobalBuild : Template({
                     tokenId = "tc_token_id:CID_392f0141078df64b20e1bb01ada5697f:-1:fc63f361-ae0d-4cd9-8feb-dabdd68f74a6"
                 }
                 filterTargetBranch = "+:main"
-                // Default: ignore drafts. BuildTypes that should run on draft
-                // PRs (Linux x64 Clang, Windows x64 Clang, SanitizerAddress)
-                // override this with ignoreDrafts = false.
-                ignoreDrafts = true
+                // ignoreDrafts is currently not effective with GitHub App
+                // auth in TC 2026.1 — draft filtering is done in the
+                // DRAFT_PR_GUARD step instead (calls GitHub API directly).
             }
         }
         xmlReport {
