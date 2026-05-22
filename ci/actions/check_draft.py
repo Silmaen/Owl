@@ -29,6 +29,11 @@ class CheckDraft(BaseAction):
 
     On draft PR + not allowed, emits a ``##teamcity[buildStop ...]`` service
     message so the build aborts immediately.
+
+    Failure modes are strict: any inability to reach or authenticate against
+    the GitHub PR API returns a non-zero exit code, failing the build. This
+    is intentional — silently assuming non-draft would let unwanted builds
+    run on draft PRs, defeating the purpose of the guard.
     """
 
     def run(self, preset: PresetConfig, extra_args: Optional[list[str]] = None) -> int:
@@ -46,11 +51,11 @@ class CheckDraft(BaseAction):
         token = parsed.get("token", "").strip()
         repo = parsed.get("repo", "").strip()
         if not token or token.startswith("%"):
-            log.warning("CheckDraft: no GitHub token provided, assuming non-draft.")
-            return 0
+            log.error("CheckDraft: GitHub token not provided or unresolved.")
+            return 1
         if not repo:
-            log.warning("CheckDraft: no repo provided, assuming non-draft.")
-            return 0
+            log.error("CheckDraft: repository not provided.")
+            return 1
 
         url = f"https://api.github.com/repos/{repo}/pulls/{pr}"
         req = urllib.request.Request(url, headers={
@@ -62,14 +67,21 @@ class CheckDraft(BaseAction):
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read())
         except urllib.error.HTTPError as e:
-            log.warning(f"CheckDraft: GitHub API returned HTTP {e.code} — assuming non-draft.")
-            return 0
+            log.error(f"CheckDraft: GitHub API returned HTTP {e.code} for PR #{pr}.")
+            return 1
         except Exception as e:
-            log.warning(f"CheckDraft: failed to query GitHub PR API ({e}) — assuming non-draft.")
-            return 0
+            log.error(f"CheckDraft: failed to query GitHub PR API: {e}")
+            return 1
 
         if data.get("draft", False):
             log.info(f"PR #{pr} is draft, aborting non-essential build.")
+            # Set the build status to SUCCESS before stopping, otherwise
+            # TC marks the interrupted build as Failed by default.
+            print(
+                "##teamcity[buildStatus status='SUCCESS' "
+                "text='Skipped: draft PR, this buildType is not in the "
+                "draft-friendly subset']"
+            )
             print(
                 "##teamcity[buildStop comment="
                 "'Draft PR -- skipping non-essential build' "
