@@ -30,7 +30,7 @@ object Project : Project({
         // pulled automatically when a PR matches the feature's filters).
         // Push to a feature branch without an open PR = no CI activity.
         param("branch_specification", """
-            +:refs/heads/main
+            +:refs/heads/(%owl_git_branch%)
         """.trimIndent())
         param("cmake_options", "-j4")
     }
