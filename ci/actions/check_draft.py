@@ -74,18 +74,17 @@ class CheckDraft(BaseAction):
             return 1
 
         if data.get("draft", False):
-            log.info(f"PR #{pr} is draft, aborting non-essential build.")
-            # Set the build status to SUCCESS before stopping, otherwise
-            # TC marks the interrupted build as Failed by default.
+            log.info(f"PR #{pr} is draft, marking build as skipped.")
+            # We do NOT use ##teamcity[buildStop ...] because that always
+            # marks the build as cancelled — which GitHub renders as red
+            # on the commit status, blocking the PR.
+            # Instead we flip a flag and rely on every subsequent step
+            # being gated by `equals('skip_pipeline', 'false')`, then set
+            # the build status to SUCCESS with a descriptive text.
+            print("##teamcity[setParameter name='skip_pipeline' value='true']")
             print(
                 "##teamcity[buildStatus status='SUCCESS' "
-                "text='Skipped: draft PR, this buildType is not in the "
-                "draft-friendly subset']"
-            )
-            print(
-                "##teamcity[buildStop comment="
-                "'Draft PR -- skipping non-essential build' "
-                "readdToQueue='false']"
+                "text='OK (Skipped: draft PR)']"
             )
         else:
             log.info(f"PR #{pr} is ready for review, continuing.")

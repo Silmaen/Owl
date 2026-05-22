@@ -62,6 +62,12 @@ object GlobalBuild : Template({
         // first step, which queries the GitHub API to determine PR state
         // (the TC pullRequests plugin doesn't expose isDraft natively).
         checkbox("allow_draft_pr", "false", checked = "true", unchecked = "false")
+        // Flag flipped to "true" by the DRAFT_PR_GUARD step when the build
+        // should be skipped (draft PR, this buildType not opted in). Every
+        // other step is gated on this being "false", so they all skip and
+        // the build finishes SUCCESS in a few seconds. Avoids the cancelled
+        // status that buildStop would produce (red on GitHub commits).
+        checkbox("skip_pipeline", "false", checked = "true", unchecked = "false")
     }
 
     vcs {
@@ -88,6 +94,7 @@ object GlobalBuild : Template({
         script {
             name = "Determine docker"
             id = "RUNNER_24"
+            conditions { equals("skip_pipeline", "false") }
             scriptContent =
                 "python3 ci_action.py DefineTeamCityVariables %cmake_preset% %extra_tc_vars%"
         }
@@ -95,42 +102,58 @@ object GlobalBuild : Template({
         script {
             ciAction("ConfigureRemote", "Define_Remote", displayName = "Define Remote",
                 extraArgs = "-- --remote_url=%remote_url% --remote_login=%remote_login% --remote_passwd=%remote_passwd%")
+            conditions { equals("skip_pipeline", "false") }
         }
 
         script {
             ciAction("Clean", "Clean_Output_Folder", displayName = "Clean")
+            conditions { equals("skip_pipeline", "false") }
         }
 
         script {
             ciAction("Clean", "Clean_Release", displayName = "Clean Release",
                 preset = "%release_preset%")
-            conditions { doesNotMatch("release_preset", "^${'$'}") }
+            conditions {
+                equals("skip_pipeline", "false")
+                doesNotMatch("release_preset", "^${'$'}")
+            }
         }
 
         script {
             ciAction("Build", "Build_Release", displayName = "Build")
+            conditions { equals("skip_pipeline", "false") }
         }
 
         script {
             ciAction("Test", "Test_Release", displayName = "Test")
-            conditions { equals("run_tests", "true") }
+            conditions {
+                equals("skip_pipeline", "false")
+                equals("run_tests", "true")
+            }
         }
 
         script {
             ciAction("Coverage", "Code_Coverage", displayName = "Code Coverage")
-            conditions { equals("run_coverage", "true") }
+            conditions {
+                equals("skip_pipeline", "false")
+                equals("run_coverage", "true")
+            }
         }
 
         script {
             ciAction("Build", "Build_Debug", displayName = "Build Release",
                 preset = "%release_preset%")
-            conditions { doesNotMatch("release_preset", "^${'$'}") }
+            conditions {
+                equals("skip_pipeline", "false")
+                doesNotMatch("release_preset", "^${'$'}")
+            }
         }
 
         script {
             ciAction("Test", "Test_Debug", displayName = "Test Release",
                 preset = "%release_preset%")
             conditions {
+                equals("skip_pipeline", "false")
                 doesNotMatch("release_preset", "^${'$'}")
                 equals("run_tests", "true")
             }
@@ -138,18 +161,25 @@ object GlobalBuild : Template({
 
         script {
             ciAction("Documentation", "Documentation")
-            conditions { equals("run_documentation", "true") }
+            conditions {
+                equals("skip_pipeline", "false")
+                equals("run_documentation", "true")
+            }
         }
 
         script {
             ciAction("Package", "Deploy", displayName = "Package")
-            conditions { equals("run_package", "true") }
+            conditions {
+                equals("skip_pipeline", "false")
+                equals("run_package", "true")
+            }
         }
 
         script {
             ciAction("PublishPackage", "Publish", displayName = "Publish Package",
                 extraArgs = "--url=%deploy_url% --login=%deploy_login% --password=%deploy_passwd%")
             conditions {
+                equals("skip_pipeline", "false")
                 equals("run_package", "true")
                 equals("teamcity.build.branch.is_default", "true")
             }
@@ -159,6 +189,7 @@ object GlobalBuild : Template({
             ciAction("PublishDoc", "Publish_Doc", displayName = "Publish Documentation",
                 extraArgs = "--url=%deploy_url% --login=%deploy_login% --password=%deploy_passwd%")
             conditions {
+                equals("skip_pipeline", "false")
                 equals("run_package", "true")
                 equals("teamcity.build.branch.is_default", "true")
                 equals("publish_doc", "true")
