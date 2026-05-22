@@ -75,10 +75,12 @@ class CheckDraft(BaseAction):
 
         source_branch = data.get("head", {}).get("ref", "")
         is_draft = bool(data.get("draft", False))
+        build_num = parsed.get("build-number", "").strip()
 
-        # Enrich the UI: build number with PR + branch name, draft/ready tag.
-        if source_branch:
-            print(f"##teamcity[buildNumber '#{pr} {source_branch}']")
+        # Enrich the UI: build number prefixed with source branch, draft/ready tag.
+        # We keep TC's sequential build counter and add the PR branch alongside.
+        if source_branch and build_num:
+            print(f"##teamcity[buildNumber '#{build_num} {source_branch}']")
         print(f"##teamcity[addBuildTag '{'draft' if is_draft else 'ready'}']")
 
         if is_draft:

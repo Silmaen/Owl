@@ -86,7 +86,8 @@ object GlobalBuild : Template({
                 "--pr=%teamcity.pullRequest.number% " +
                 "--repo=Silmaen/Owl " +
                 "--token=%github_access_token% " +
-                "--allow-draft=%allow_draft_pr%"
+                "--allow-draft=%allow_draft_pr% " +
+                "--build-number=%build.number%"
         }
 
         // Native step — runs on the agent host (no Docker) to populate
