@@ -4,15 +4,21 @@ import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
 import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
+import jetbrains.buildServer.configs.kotlin.buildFeatures.PullRequests
 import jetbrains.buildServer.configs.kotlin.buildFeatures.investigationsAutoAssigner
 import jetbrains.buildServer.configs.kotlin.buildFeatures.perfmon
+import jetbrains.buildServer.configs.kotlin.buildFeatures.pullRequests
 import jetbrains.buildServer.configs.kotlin.buildFeatures.xmlReport
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.triggers.vcs
 
-object CodeSylingCheck : Template({
-    name = "CodeSylingCheck"
+object CodeStylingCheck : Template({
+    // Keep the original (typo'd) ID so existing build history and references
+    // in TeamCity storage stay bound. The Kotlin object name is fixed for
+    // hygiene; the display name was also corrected.
+    id("CodeSylingCheck")
+    name = "Code Styling Check"
     description = "Check the code Style"
 
     params {
@@ -67,6 +73,17 @@ object CodeSylingCheck : Template({
                 authType = storedToken {
                     tokenId = "tc_token_id:CID_392f0141078df64b20e1bb01ada5697f:-1:fc63f361-ae0d-4cd9-8feb-dabdd68f74a6"
                 }
+            }
+        }
+        pullRequests {
+            id = "PULL_REQUESTS"
+            vcsRootExtId = "${HttpsGithubComSilmaenOwlGitRefsHeadsMain.id}"
+            provider = github {
+                authType = storedToken {
+                    tokenId = "tc_token_id:CID_392f0141078df64b20e1bb01ada5697f:-1:fc63f361-ae0d-4cd9-8feb-dabdd68f74a6"
+                }
+                filterTargetBranch = "+:main"
+                filterAuthorRole = PullRequests.GitHubRoleFilter.MEMBER
             }
         }
         xmlReport {
