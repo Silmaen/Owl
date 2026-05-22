@@ -67,8 +67,8 @@ private val linuxX64 = packagePlatform(
     osSlug = "linux",
     platformParam = "Linux",
     archParam = "amd64",
-    // Engine + AppNest both trigger on PRs (ready) and main.
-    engineDisablesTrigger = false,
+    // Engine = main only (long, expensive). AppNest also runs on PRs.
+    engineDisablesTrigger = true,
     appNestDisablesTrigger = false,
 )
 
@@ -78,7 +78,7 @@ private val linuxArm64 = packagePlatform(
     osSlug = "linux",
     // "in" matches Linux/Windows agents — ARM64 builds run via Docker emulation,
     // so any OS host works.
-    platformParam = "in",
+    platformParam = "Linux",
     // Semantic target arch (artifact's, not agent's); RQ_3 (agent arch req) is
     // disabled in the GlobalBuild template, so this value is informational.
     archParam = "arm64",
@@ -95,8 +95,8 @@ private val windowsX64 = packagePlatform(
     osSlug = "windows",
     platformParam = "Windows",
     archParam = "amd64",
-    // Engine + AppNest both trigger on PRs (ready) and main.
-    engineDisablesTrigger = false,
+    // Engine = main only (long, expensive). AppNest also runs on PRs.
+    engineDisablesTrigger = true,
     appNestDisablesTrigger = false,
 )
 

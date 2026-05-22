@@ -73,7 +73,15 @@ class CheckDraft(BaseAction):
             log.error(f"CheckDraft: failed to query GitHub PR API: {e}")
             return 1
 
-        if data.get("draft", False):
+        source_branch = data.get("head", {}).get("ref", "")
+        is_draft = bool(data.get("draft", False))
+
+        # Enrich the UI: build number with PR + branch name, draft/ready tag.
+        if source_branch:
+            print(f"##teamcity[buildNumber '#{pr} {source_branch}']")
+        print(f"##teamcity[addBuildTag '{'draft' if is_draft else 'ready'}']")
+
+        if is_draft:
             log.info(f"PR #{pr} is draft, marking build as skipped.")
             # We do NOT use ##teamcity[buildStop ...] because that always
             # marks the build as cancelled — which GitHub renders as red
