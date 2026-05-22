@@ -31,6 +31,7 @@ object Project : Project({
         // Push to a feature branch without an open PR = no CI activity.
         param("branch_specification", """
             +:refs/heads/(%owl_git_branch%)
+            +:refs/pull/(*)/head
         """.trimIndent())
         param("cmake_options", "-j4")
     }
