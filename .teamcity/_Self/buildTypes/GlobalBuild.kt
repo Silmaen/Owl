@@ -56,10 +56,6 @@ object GlobalBuild : Template({
         checkbox("run_package", "false", checked = "true", unchecked = "false")
         param("release_preset", "")
         checkbox("publish_doc", "false", checked = "true", unchecked = "false")
-        // Whether this buildType runs on draft PRs. Default = no (fast subset
-        // only). BuildTypes wanting to opt in (Linux x64 Clang, Windows x64
-        // Clang, SanitizerAddress) override to "true".
-        checkbox("allow_draft_pr", "false", checked = "true", unchecked = "false")
     }
 
     vcs {
@@ -67,22 +63,6 @@ object GlobalBuild : Template({
     }
 
     steps {
-        // Draft PR guard — abort the build immediately when the PR is in draft
-        // state AND this buildType is not in the draft-friendly subset.
-        // Skipped (= no-op) on main builds, on ready PRs, and on draft-allowed
-        // buildTypes. The buildStop message frees the agent before any heavy
-        // Docker pull / cmake build happens.
-        script {
-            name = "Draft PR guard"
-            id = "DRAFT_PR_GUARD"
-            conditions {
-                equals("teamcity.pullRequest.isDraft", "true")
-                equals("allow_draft_pr", "false")
-            }
-            scriptContent =
-                "echo \"##teamcity[buildStop comment='Draft PR — skipping non-essential build' readdToQueue='false']\""
-        }
-
         // Native first step — runs on the agent host (no Docker) to populate
         // docker_image and other params for the rest of the pipeline.
         script {
@@ -202,10 +182,10 @@ object GlobalBuild : Template({
                     tokenId = "tc_token_id:CID_392f0141078df64b20e1bb01ada5697f:-1:fc63f361-ae0d-4cd9-8feb-dabdd68f74a6"
                 }
                 filterTargetBranch = "+:main"
-                // No filterAuthorRole: in personal repos the "MEMBER" concept
-                // doesn't apply; we accept PRs from everyone (the App's
-                // installed-on-repo scoping already gates access).
-                ignoreDrafts = false
+                // Default: ignore drafts. BuildTypes that should run on draft
+                // PRs (Linux x64 Clang, Windows x64 Clang, SanitizerAddress)
+                // override this with ignoreDrafts = false.
+                ignoreDrafts = true
             }
         }
         xmlReport {

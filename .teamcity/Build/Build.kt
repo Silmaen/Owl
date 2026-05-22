@@ -2,9 +2,30 @@ package Build
 
 import _Self.buildTypes.CodeStylingCheck
 import _Self.buildTypes.GlobalBuild
+import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
+import jetbrains.buildServer.configs.kotlin.buildFeatures.pullRequests
 import jetbrains.buildServer.configs.kotlin.failureConditions.BuildFailureOnMetric
 import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
+
+// Helper: override the inherited pullRequests feature to run on draft PRs.
+// The template (GlobalBuild) sets ignoreDrafts=true; this helper re-declares
+// the feature with the same id so this buildType overrides and accepts drafts.
+private fun BuildType.runOnDraftPRs() {
+    features {
+        pullRequests {
+            id = "PULL_REQUESTS"
+            vcsRootExtId = "${HttpsGithubComSilmaenOwlGitRefsHeadsMain.id}"
+            provider = github {
+                authType = storedToken {
+                    tokenId = "tc_token_id:CID_392f0141078df64b20e1bb01ada5697f:-1:fc63f361-ae0d-4cd9-8feb-dabdd68f74a6"
+                }
+                filterTargetBranch = "+:main"
+                ignoreDrafts = false
+            }
+        }
+    }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Build & Test top-level project
@@ -92,9 +113,9 @@ private val linuxX64 = stdPlatform(
     platformParam = "Linux",
     archParam = "amd64",
     perVariantConfig = mapOf(
-        // Linux x64 Clang is the fast-feedback build that runs on draft PRs.
+        // Linux x64 Clang is part of the draft-friendly fast-feedback subset.
         "Clang" to {
-            params { param("allow_draft_pr", "true") }
+            runOnDraftPRs()
         },
     ),
 )
@@ -117,15 +138,14 @@ private val windowsX64 = stdPlatform(
     osSlug = "windows",
     platformParam = "Windows",
     archParam = "amd64",
-    // Windows triggers both compilers on every branch (unlike Linux which
-    // skips GCC on feature branches).
-    disableFeatureBranchTriggerFor = emptySet(),
+    // Default disableFeatureBranchTriggerFor = setOf("Gcc") — Windows GCC
+    // runs on main only, like Linux GCC.
     perVariantConfig = mapOf(
         // Windows + Clang is in the draft-friendly subset AND has stricter
         // failure conditions on test count and artifact size regression
         // — historical guardrail for that toolchain.
         "Clang" to {
-            params { param("allow_draft_pr", "true") }
+            runOnDraftPRs()
             failureConditions {
                 failOnMetricChange {
                     id = "BUILD_EXT_1"
@@ -174,15 +194,16 @@ private data class Sanitizer(
     val preset: String,
     val platformOverride: String? = null,
     val disableFeatureBranchTrigger: Boolean = false,
-    val allowDraftPr: Boolean = false,
+    val runOnDraft: Boolean = false,
 )
 
 // Display-name casing matches the existing UI convention (inconsistent on
 // purpose — "Address" capitalised, the others lowercase — preserved to keep
 // dashboards looking identical to today).
 private val sanitizers = listOf(
+    // Address sanitizer is in the draft-friendly subset.
     Sanitizer("SanitizerAddress", "Sanitizer Address", "linux-sanitizer-address",
-        allowDraftPr = true),
+        runOnDraft = true),
     Sanitizer("SanitizerThread", "Sanitizer thread", "linux-sanitizer-thread"),
     Sanitizer("SanitizerLeak", "Sanitizer leak", "linux-sanitizer-leak"),
     Sanitizer(
@@ -201,10 +222,12 @@ private val sanitizerBuilds = sanitizers.map { s ->
         params {
             param("cmake_preset", s.preset)
             s.platformOverride?.let { param("platform", it) }
-            if (s.allowDraftPr) param("allow_draft_pr", "true")
         }
         if (s.disableFeatureBranchTrigger) {
             disableSettings("TRIGGER_2")
+        }
+        if (s.runOnDraft) {
+            runOnDraftPRs()
         }
     })
 }

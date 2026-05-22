@@ -67,6 +67,9 @@ private val linuxX64 = packagePlatform(
     osSlug = "linux",
     platformParam = "Linux",
     archParam = "amd64",
+    // Engine + AppNest both trigger on PRs (ready) and main.
+    engineDisablesTrigger = false,
+    appNestDisablesTrigger = false,
 )
 
 private val linuxArm64 = packagePlatform(
@@ -92,6 +95,9 @@ private val windowsX64 = packagePlatform(
     osSlug = "windows",
     platformParam = "Windows",
     archParam = "amd64",
+    // Engine + AppNest both trigger on PRs (ready) and main.
+    engineDisablesTrigger = false,
+    appNestDisablesTrigger = false,
 )
 
 object PackagingProject : Project({
