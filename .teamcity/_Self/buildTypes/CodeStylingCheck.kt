@@ -1,13 +1,11 @@
 package _Self.buildTypes
 
 import _Self.GITHUB_CONNECTION_ID
-import _Self.GITHUB_TOKEN_ID
 import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
 import jetbrains.buildServer.configs.kotlin.buildFeatures.investigationsAutoAssigner
 import jetbrains.buildServer.configs.kotlin.buildFeatures.perfmon
-import jetbrains.buildServer.configs.kotlin.buildFeatures.pullRequests
 import jetbrains.buildServer.configs.kotlin.buildFeatures.xmlReport
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
@@ -73,26 +71,9 @@ object CodeStylingCheck : Template({
         investigationsAutoAssigner {
             id = "InvestigationsAutoAssigner"
         }
-        // GitHub commit-status reporting is delegated to teamcity-github-bridge
-        // (plugin v0.7.0). The bundled commitStatusPublisher was retired here
-        // for the same reason as in GlobalBuild — see that file for details.
-        pullRequests {
-            id = "PULL_REQUESTS"
-            vcsRootExtId = "${HttpsGithubComSilmaenOwlGitRefsHeadsMain.id}"
-            provider = github {
-                authType = storedToken {
-                    tokenId = GITHUB_TOKEN_ID
-                }
-                filterTargetBranch = "+:main"
-                // No filterAuthorRole: in personal repos the "MEMBER" concept
-                // doesn't apply; we accept PRs from everyone (the App's
-                // installed-on-repo scoping already gates access).
-                // ignoreDrafts is silently ignored under GitHub App auth in
-                // TC 2026.1, so it is omitted here — the plugin handles
-                // draft state for opt-in buildTypes, and CodeStyle is opt-out
-                // (teamcity.github.bridge.ignoreDrafts="false") which already runs on drafts.
-            }
-        }
+        // Everything PR-related is delegated to teamcity-github-bridge —
+        // see GlobalBuild.kt for the rationale for retiring both
+        // commitStatusPublisher and the bundled pullRequests feature.
         xmlReport {
             id = "BUILD_EXT_4"
             reportType = XmlReport.XmlReportType.GOOGLE_TEST

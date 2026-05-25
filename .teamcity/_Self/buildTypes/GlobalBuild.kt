@@ -1,13 +1,11 @@
 package _Self.buildTypes
 
 import _Self.GITHUB_CONNECTION_ID
-import _Self.GITHUB_TOKEN_ID
 import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
 import jetbrains.buildServer.configs.kotlin.buildFeatures.investigationsAutoAssigner
 import jetbrains.buildServer.configs.kotlin.buildFeatures.perfmon
-import jetbrains.buildServer.configs.kotlin.buildFeatures.pullRequests
 import jetbrains.buildServer.configs.kotlin.buildFeatures.xmlReport
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
@@ -187,26 +185,15 @@ object GlobalBuild : Template({
         investigationsAutoAssigner {
             id = "InvestigationsAutoAssigner"
         }
-        // GitHub commit-status reporting is delegated to teamcity-github-bridge
-        // since plugin v0.7.0: BuildStatusCheckRunPublisher publishes Check Runs
-        // for every build carrying teamcity.github.bridge.repo + teamcity.github.bridge.connectionId,
-        // covering main + PR opt-in + PR opt-out uniformly. The bundled
-        // commitStatusPublisher was retired here to avoid duplicate rows on the
-        // GitHub PR UI.
-        pullRequests {
-            id = "PULL_REQUESTS"
-            vcsRootExtId = "${HttpsGithubComSilmaenOwlGitRefsHeadsMain.id}"
-            provider = github {
-                authType = storedToken {
-                    tokenId = GITHUB_TOKEN_ID
-                }
-                filterTargetBranch = "+:main"
-                // Draft suppression is handled by teamcity-github-bridge:
-                // when teamcity.github.bridge.ignoreDrafts=true on this build, its
-                // StartBuildPrecondition holds the build for draft PRs
-                // and re-enqueues on ready_for_review.
-            }
-        }
+        // Everything PR-related is delegated to teamcity-github-bridge:
+        //  - bundled commitStatusPublisher retired (v0.7.0 BuildStatusCheckRunPublisher
+        //    publishes richer Check Runs uniformly for main + PR opt-in + PR opt-out).
+        //  - bundled `pullRequests` feature retired because it tries to use the
+        //    VCS root's auth (SSH key here) for the GitHub REST API, which fails
+        //    with "Using SSH key authentication method ... is impossible".
+        //    The plugin queries the GitHub API itself with its own App-issued
+        //    token, and the project-level branchSpec (+:refs/(pull/*)/head)
+        //    already fetches PR refs without that feature.
         xmlReport {
             id = "BUILD_EXT_8"
             reportType = XmlReport.XmlReportType.GOOGLE_TEST
