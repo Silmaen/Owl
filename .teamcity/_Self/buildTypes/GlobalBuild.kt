@@ -1,9 +1,10 @@
 package _Self.buildTypes
 
+import _Self.GITHUB_CONNECTION_ID
+import _Self.GITHUB_TOKEN_ID
 import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
-import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
 import jetbrains.buildServer.configs.kotlin.buildFeatures.investigationsAutoAssigner
 import jetbrains.buildServer.configs.kotlin.buildFeatures.perfmon
 import jetbrains.buildServer.configs.kotlin.buildFeatures.pullRequests
@@ -65,7 +66,7 @@ object GlobalBuild : Template({
         // Plugin docs: /data/sources/Sources/IT/teamcity-github/doc/configuration.md
         param("tcgh.ignoreDrafts", "true")
         param("tcgh.github.repo", "Silmaen/Owl")
-        param("tcgh.github.connectionId", "CID_392f0141078df64b20e1bb01ada5697f")
+        param("tcgh.github.connectionId", GITHUB_CONNECTION_ID)
     }
 
     vcs {
@@ -186,22 +187,18 @@ object GlobalBuild : Template({
         investigationsAutoAssigner {
             id = "InvestigationsAutoAssigner"
         }
-        commitStatusPublisher {
-            id = "BUILD_EXT_7"
-            vcsRootExtId = "${HttpsGithubComSilmaenOwlGitRefsHeadsMain.id}"
-            publisher = github {
-                githubUrl = "https://api.github.com"
-                authType = storedToken {
-                    tokenId = "tc_token_id:CID_392f0141078df64b20e1bb01ada5697f:-1:fc63f361-ae0d-4cd9-8feb-dabdd68f74a6"
-                }
-            }
-        }
+        // GitHub commit-status reporting is delegated to teamcity-github-bridge
+        // since plugin v0.7.0: BuildStatusCheckRunPublisher publishes Check Runs
+        // for every build carrying tcgh.github.repo + tcgh.github.connectionId,
+        // covering main + PR opt-in + PR opt-out uniformly. The bundled
+        // commitStatusPublisher was retired here to avoid duplicate rows on the
+        // GitHub PR UI.
         pullRequests {
             id = "PULL_REQUESTS"
             vcsRootExtId = "${HttpsGithubComSilmaenOwlGitRefsHeadsMain.id}"
             provider = github {
                 authType = storedToken {
-                    tokenId = "tc_token_id:CID_392f0141078df64b20e1bb01ada5697f:-1:fc63f361-ae0d-4cd9-8feb-dabdd68f74a6"
+                    tokenId = GITHUB_TOKEN_ID
                 }
                 filterTargetBranch = "+:main"
                 // Draft suppression is handled by teamcity-github-bridge:

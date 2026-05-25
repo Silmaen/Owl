@@ -1,9 +1,10 @@
 package _Self.buildTypes
 
+import _Self.GITHUB_CONNECTION_ID
+import _Self.GITHUB_TOKEN_ID
 import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
-import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
 import jetbrains.buildServer.configs.kotlin.buildFeatures.investigationsAutoAssigner
 import jetbrains.buildServer.configs.kotlin.buildFeatures.perfmon
 import jetbrains.buildServer.configs.kotlin.buildFeatures.pullRequests
@@ -23,6 +24,14 @@ object CodeStylingCheck : Template({
     params {
         param("docker_parameters", "")
         param("extra_tc_vars", "")
+
+        // teamcity-github-bridge opt-in. ignoreDrafts="false" keeps CodeStyle
+        // running on draft PRs (it's part of the fast-feedback subset), while
+        // the repo + connectionId pair is enough for v0.7.0's
+        // BuildStatusCheckRunPublisher to publish lifecycle Check Runs.
+        param("tcgh.ignoreDrafts", "false")
+        param("tcgh.github.repo", "Silmaen/Owl")
+        param("tcgh.github.connectionId", GITHUB_CONNECTION_ID)
     }
 
     vcs {
@@ -64,28 +73,24 @@ object CodeStylingCheck : Template({
         investigationsAutoAssigner {
             id = "InvestigationsAutoAssigner"
         }
-        commitStatusPublisher {
-            id = "BUILD_EXT_3"
-            vcsRootExtId = "${HttpsGithubComSilmaenOwlGitRefsHeadsMain.id}"
-            publisher = github {
-                githubUrl = "https://api.github.com"
-                authType = storedToken {
-                    tokenId = "tc_token_id:CID_392f0141078df64b20e1bb01ada5697f:-1:fc63f361-ae0d-4cd9-8feb-dabdd68f74a6"
-                }
-            }
-        }
+        // GitHub commit-status reporting is delegated to teamcity-github-bridge
+        // (plugin v0.7.0). The bundled commitStatusPublisher was retired here
+        // for the same reason as in GlobalBuild — see that file for details.
         pullRequests {
             id = "PULL_REQUESTS"
             vcsRootExtId = "${HttpsGithubComSilmaenOwlGitRefsHeadsMain.id}"
             provider = github {
                 authType = storedToken {
-                    tokenId = "tc_token_id:CID_392f0141078df64b20e1bb01ada5697f:-1:fc63f361-ae0d-4cd9-8feb-dabdd68f74a6"
+                    tokenId = GITHUB_TOKEN_ID
                 }
                 filterTargetBranch = "+:main"
                 // No filterAuthorRole: in personal repos the "MEMBER" concept
                 // doesn't apply; we accept PRs from everyone (the App's
                 // installed-on-repo scoping already gates access).
-                ignoreDrafts = false
+                // ignoreDrafts is silently ignored under GitHub App auth in
+                // TC 2026.1, so it is omitted here — the plugin handles
+                // draft state for opt-in buildTypes, and CodeStyle is opt-out
+                // (tcgh.ignoreDrafts="false") which already runs on drafts.
             }
         }
         xmlReport {
