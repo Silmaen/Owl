@@ -29,9 +29,9 @@ object CodeStylingCheck : Template({
         // running on draft PRs (it's part of the fast-feedback subset), while
         // the repo + connectionId pair is enough for v0.7.0's
         // BuildStatusCheckRunPublisher to publish lifecycle Check Runs.
-        param("tcgh.ignoreDrafts", "false")
-        param("tcgh.github.repo", "Silmaen/Owl")
-        param("tcgh.github.connectionId", GITHUB_CONNECTION_ID)
+        param("teamcity.github.bridge.ignoreDrafts", "false")
+        param("teamcity.github.bridge.repo", "Silmaen/Owl")
+        param("teamcity.github.bridge.connectionId", GITHUB_CONNECTION_ID)
     }
 
     vcs {
@@ -90,7 +90,7 @@ object CodeStylingCheck : Template({
                 // ignoreDrafts is silently ignored under GitHub App auth in
                 // TC 2026.1, so it is omitted here — the plugin handles
                 // draft state for opt-in buildTypes, and CodeStyle is opt-out
-                // (tcgh.ignoreDrafts="false") which already runs on drafts.
+                // (teamcity.github.bridge.ignoreDrafts="false") which already runs on drafts.
             }
         }
         xmlReport {

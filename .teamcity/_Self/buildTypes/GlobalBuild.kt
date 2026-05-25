@@ -61,12 +61,12 @@ object GlobalBuild : Template({
         // teamcity-github-bridge plugin parameters. Presence of all three
         // enables the plugin's StartBuildPrecondition (drafts are held) and
         // the ready_for_review retrigger. To OPT OUT a specific buildType
-        // (i.e. keep running it on drafts), override `tcgh.ignoreDrafts` to
+        // (i.e. keep running it on drafts), override `teamcity.github.bridge.ignoreDrafts` to
         // "false" on that buildType. See Build.kt::allowDraftPR().
         // Plugin docs: /data/sources/Sources/IT/teamcity-github/doc/configuration.md
-        param("tcgh.ignoreDrafts", "true")
-        param("tcgh.github.repo", "Silmaen/Owl")
-        param("tcgh.github.connectionId", GITHUB_CONNECTION_ID)
+        param("teamcity.github.bridge.ignoreDrafts", "true")
+        param("teamcity.github.bridge.repo", "Silmaen/Owl")
+        param("teamcity.github.bridge.connectionId", GITHUB_CONNECTION_ID)
     }
 
     vcs {
@@ -189,7 +189,7 @@ object GlobalBuild : Template({
         }
         // GitHub commit-status reporting is delegated to teamcity-github-bridge
         // since plugin v0.7.0: BuildStatusCheckRunPublisher publishes Check Runs
-        // for every build carrying tcgh.github.repo + tcgh.github.connectionId,
+        // for every build carrying teamcity.github.bridge.repo + teamcity.github.bridge.connectionId,
         // covering main + PR opt-in + PR opt-out uniformly. The bundled
         // commitStatusPublisher was retired here to avoid duplicate rows on the
         // GitHub PR UI.
@@ -202,7 +202,7 @@ object GlobalBuild : Template({
                 }
                 filterTargetBranch = "+:main"
                 // Draft suppression is handled by teamcity-github-bridge:
-                // when tcgh.ignoreDrafts=true on this build, its
+                // when teamcity.github.bridge.ignoreDrafts=true on this build, its
                 // StartBuildPrecondition holds the build for draft PRs
                 // and re-enqueues on ready_for_review.
             }
