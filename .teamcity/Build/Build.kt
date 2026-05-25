@@ -6,11 +6,14 @@ import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.failureConditions.BuildFailureOnMetric
 import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
 
-// Helper: opt-in to running on draft PRs. The DRAFT_PR_GUARD step in
-// GlobalBuild reads this param and aborts the build for non-allowed
-// buildTypes when the PR is in draft state.
+// Helper: opt-in to running on draft PRs. Opt-out of the
+// teamcity-github-bridge plugin's draft suppression by setting
+// `tcgh.ignoreDrafts` to "false" — overrides the GlobalBuild template
+// default ("true"). With all three tcgh.* params still set, this build
+// still participates in the ready_for_review retrigger flow; only the
+// per-build pre-start draft check is disabled.
 private fun BuildType.allowDraftPR() {
-    params { param("allow_draft_pr", "true") }
+    params { param("tcgh.ignoreDrafts", "false") }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
