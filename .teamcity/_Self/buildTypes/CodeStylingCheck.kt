@@ -1,6 +1,5 @@
 package _Self.buildTypes
 
-import _Self.GITHUB_CONNECTION_ID
 import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
@@ -23,13 +22,10 @@ object CodeStylingCheck : Template({
         param("docker_parameters", "")
         param("extra_tc_vars", "")
 
-        // teamcity-github-bridge opt-in. ignoreDrafts="false" keeps CodeStyle
-        // running on draft PRs (it's part of the fast-feedback subset), while
-        // the repo + connectionId pair is enough for v0.7.0's
-        // BuildStatusCheckRunPublisher to publish lifecycle Check Runs.
-        param("teamcity.github.bridge.ignoreDrafts", "false")
-        param("teamcity.github.bridge.repo", "Silmaen/Owl")
-        param("teamcity.github.bridge.connectionId", GITHUB_CONNECTION_ID)
+        // teamcity-github-bridge: opt-in is the BRIDGE_GITHUB feature below.
+        // Project-level repo + connectionId live on _Self.Project.
+        // CodeStyle is part of the draft-friendly fast-feedback subset →
+        // triggerOnPrDraft=true so it runs on draft PRs too.
     }
 
     vcs {
@@ -71,9 +67,14 @@ object CodeStylingCheck : Template({
         investigationsAutoAssigner {
             id = "InvestigationsAutoAssigner"
         }
-        // Everything PR-related is delegated to teamcity-github-bridge —
-        // see GlobalBuild.kt for the rationale for retiring both
-        // commitStatusPublisher and the bundled pullRequests feature.
+        // teamcity-github-bridge opt-in. CodeStyle is in the draft-friendly
+        // subset → triggerOnPrDraft=true. See GlobalBuild.kt for the
+        // rationale on retiring commitStatusPublisher + bundled pullRequests.
+        feature {
+            id = "BRIDGE_GITHUB"
+            type = "github-bridge"
+            param("triggerOnPrDraft", "true")
+        }
         xmlReport {
             id = "BUILD_EXT_4"
             reportType = XmlReport.XmlReportType.GOOGLE_TEST

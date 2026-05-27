@@ -2,6 +2,7 @@ package _Self
 
 import _Self.buildTypes.*
 import _Self.vcsRoots.*
+import _Self.GITHUB_CONNECTION_ID
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.Project
 
@@ -34,6 +35,15 @@ object Project : Project({
             +:refs/(pull/*)/head
         """.trimIndent())
         param("cmake_options", "-j4")
+
+        // teamcity-github-bridge project-level config. The plugin's
+        // BridgeFeatureReader reads these via `buildType.project.parameters`
+        // (the InheritableUserParametersHolder inheritance path), so they
+        // belong on the root project rather than on each template.
+        // The other 4 keys (branchTrigger.enabled / branches, prTrigger.enabled / branches)
+        // default to "enabled = true" and "all branches", which is what we want.
+        param("teamcity.github.bridge.repo", "Silmaen/Owl")
+        param("teamcity.github.bridge.connectionId", GITHUB_CONNECTION_ID)
     }
 
     subProject(Build.BuildProject)

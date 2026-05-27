@@ -1,6 +1,5 @@
 package _Self.buildTypes
 
-import _Self.GITHUB_CONNECTION_ID
 import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
@@ -56,15 +55,12 @@ object GlobalBuild : Template({
         param("release_preset", "")
         checkbox("publish_doc", "false", checked = "true", unchecked = "false")
 
-        // teamcity-github-bridge plugin parameters. Presence of all three
-        // enables the plugin's StartBuildPrecondition (drafts are held) and
-        // the ready_for_review retrigger. To OPT OUT a specific buildType
-        // (i.e. keep running it on drafts), override `teamcity.github.bridge.ignoreDrafts` to
-        // "false" on that buildType. See Build.kt::allowDraftPR().
-        // Plugin docs: /data/sources/Sources/IT/teamcity-github/doc/configuration.md
-        param("teamcity.github.bridge.ignoreDrafts", "true")
-        param("teamcity.github.bridge.repo", "Silmaen/Owl")
-        param("teamcity.github.bridge.connectionId", GITHUB_CONNECTION_ID)
+        // teamcity-github-bridge: opt-in is the BRIDGE_GITHUB build feature
+        // below. Project-level repo + connectionId live on _Self.Project.
+        // Default here: triggerOnPrDraft=false → draft PRs do NOT trigger
+        // builds for this template's children. Override per BT via
+        // Build.kt::allowDraftPR() (which disables this feature and re-adds
+        // it with triggerOnPrDraft=true).
     }
 
     vcs {
@@ -185,15 +181,18 @@ object GlobalBuild : Template({
         investigationsAutoAssigner {
             id = "InvestigationsAutoAssigner"
         }
-        // Everything PR-related is delegated to teamcity-github-bridge:
-        //  - bundled commitStatusPublisher retired (v0.7.0 BuildStatusCheckRunPublisher
-        //    publishes richer Check Runs uniformly for main + PR opt-in + PR opt-out).
-        //  - bundled `pullRequests` feature retired because it tries to use the
-        //    VCS root's auth (SSH key here) for the GitHub REST API, which fails
-        //    with "Using SSH key authentication method ... is impossible".
-        //    The plugin queries the GitHub API itself with its own App-issued
-        //    token, and the project-level branchSpec (+:refs/(pull/*)/head)
-        //    already fetches PR refs without that feature.
+        // teamcity-github-bridge opt-in (v1.5.0+): the BT participates as
+        // soon as this feature is attached. Default for this template:
+        // run on non-PR branches + ready PRs, but NOT on draft PRs. The
+        // 4 draft-friendly BTs override this via Build.kt::allowDraftPR().
+        // Everything PR-related (commitStatusPublisher, pullRequests
+        // bundled feature) was retired in earlier passes; the plugin's
+        // Check Runs + PrParameterProvider are the single sources of truth.
+        feature {
+            id = "BRIDGE_GITHUB"
+            type = "github-bridge"
+            param("triggerOnPrDraft", "false")
+        }
         xmlReport {
             id = "BUILD_EXT_8"
             reportType = XmlReport.XmlReportType.GOOGLE_TEST
