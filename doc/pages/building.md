@@ -126,7 +126,11 @@ event, font, gui, input, io, layer, math, mesh, physic, renderer, scene, script,
 
 ## CI System
 
-The Python-based CI system wraps CMake operations. Always invoke through Poetry:
+The Python-based CI system wraps CMake operations. The same Python actions are invoked locally
+and from the TeamCity build steps — see [Continuous Integration](continuous_integration.md) for
+the full TC pipeline, build matrix, and trigger architecture.
+
+Always invoke through Poetry:
 
 ```bash
 poetry run python ci_action.py Build <preset>

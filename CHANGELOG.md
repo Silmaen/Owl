@@ -648,6 +648,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **TeamCity pipeline trigger architecture switched to the plugin-event
+  path.** VCS feature-branch triggers (`TRIGGER_2` on `GlobalBuild`,
+  `TRIGGER_3` on `CodeStylingCheck`) removed; PR refs are now enqueued
+  exclusively by the `teamcity-github-bridge` plugin's
+  `PullRequestEventListener` on `opened` / `synchronize` /
+  `ready_for_review` events. Eliminates the duplicate runs that
+  happened when both VCS and the plugin enqueued on the same PR push.
+  VCS triggers retained for `main` pushes only (`TRIGGER_1`,
+  `TRIGGER_4`). Quality Code Style now caps `maxRunningBuilds = 1`
+  combined with default `reuseBuilds = SUCCESSFUL` so the snapshot-dep
+  fan-out from idle agents serialises into a single execution. Per-BT
+  trigger profile expressed via two extension helpers in
+  `.teamcity/_Self/BridgeHelpers.kt`: `allowDraftPR()` for the
+  draft-friendly fast-feedback subset (Linux x64 Clang, Windows x64
+  Clang, Sanitizer Address, Code Style) and `skipAutoPRs()` for the
+  heavy main-only subset (all GCC variants, Sanitizer UB, Engine
+  packagers, ARM64 AppNest). Dead project params removed
+  (`cmake_target`, `cmake_options`, `publish_package`,
+  `WatchBranchFilter`) along with the unused `GITHUB_TOKEN_ID`
+  constant. New documentation page
+  [Continuous Integration](doc/pages/continuous_integration.md)
+  covers the full TC pipeline, build matrix, trigger flow, and
+  Docker-based local DSL validation workflow.
+
 - **`Renderer2D` rewritten as instanced + SSBO (Phase 1 of the renderer
   modernisation).** All four batch families (quad, circle, line, text)
   drop the legacy CPU-vertex Hazel pattern in favour of one drawcall

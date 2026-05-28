@@ -1,6 +1,7 @@
 package Packaging
 
 import _Self.buildTypes.GlobalBuild
+import _Self.skipAutoPRs
 import jetbrains.buildServer.configs.kotlin.*
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -25,7 +26,7 @@ private fun packageBuildType(
     projectId: String,
     osSlug: String,
     kind: PackageKind,
-    disableFeatureBranchTrigger: Boolean,
+    mainOnlyAutoTrigger: Boolean,
 ) = BuildType({
     id("${projectId}_${kind.idSuffix}")
     name = kind.displayName
@@ -33,8 +34,8 @@ private fun packageBuildType(
     params {
         param("cmake_preset", "package-${kind.presetMiddle}-$osSlug")
     }
-    if (disableFeatureBranchTrigger) {
-        disableSettings("TRIGGER_2")
+    if (mainOnlyAutoTrigger) {
+        skipAutoPRs()
     }
 })
 
@@ -45,14 +46,14 @@ private fun packagePlatform(
     platformParam: String,
     archParam: String,
     extraProjectParams: ParametrizedWithType.() -> Unit = {},
-    engineDisablesTrigger: Boolean = true,
-    appNestDisablesTrigger: Boolean = false,
+    engineMainOnly: Boolean = true,
+    appNestMainOnly: Boolean = false,
 ) = Project({
     id(projectId)
     name = displayName
 
-    buildType(packageBuildType(projectId, osSlug, kinds[0], engineDisablesTrigger))
-    buildType(packageBuildType(projectId, osSlug, kinds[1], appNestDisablesTrigger))
+    buildType(packageBuildType(projectId, osSlug, kinds[0], engineMainOnly))
+    buildType(packageBuildType(projectId, osSlug, kinds[1], appNestMainOnly))
 
     params {
         param("platform", platformParam)
@@ -68,8 +69,8 @@ private val linuxX64 = packagePlatform(
     platformParam = "Linux",
     archParam = "amd64",
     // Engine = main only (long, expensive). AppNest also runs on PRs.
-    engineDisablesTrigger = true,
-    appNestDisablesTrigger = false,
+    engineMainOnly = true,
+    appNestMainOnly = false,
 )
 
 private val linuxArm64 = packagePlatform(
@@ -86,7 +87,7 @@ private val linuxArm64 = packagePlatform(
         param("docker_build_platform", "linux/arm64")
         param("docker_test_platform", "linux/arm64")
     },
-    appNestDisablesTrigger = true,
+    appNestMainOnly = true,
 )
 
 private val windowsX64 = packagePlatform(
@@ -96,8 +97,8 @@ private val windowsX64 = packagePlatform(
     platformParam = "Windows",
     archParam = "amd64",
     // Engine = main only (long, expensive). AppNest also runs on PRs.
-    engineDisablesTrigger = true,
-    appNestDisablesTrigger = false,
+    engineMainOnly = true,
+    appNestMainOnly = false,
 )
 
 object PackagingProject : Project({

@@ -15,26 +15,16 @@ object Project : Project({
     template(GlobalBuild)
 
     params {
-        param("cmake_target", "all")
         param("owl_git_branch", "main")
-        param("WatchBranchFilter", """
-            +:*
-            -:Experiment/*
-            -:refs/heads/Experiment/*
-            -:main
-            -:refs/heads/main
-        """.trimIndent())
-        checkbox("publish_package", "true",
-                  checked = "true", unchecked = "false")
         // Only main is fetched directly. PR refs are managed by the
-        // pullRequest build feature on each template (refs/pull/*/head are
-        // pulled automatically when a PR matches the feature's filters).
+        // teamcity-github-bridge plugin on the templates (refs/pull/*/head
+        // are pulled by TC's VCS root via the spec below; the plugin
+        // reacts to pull_request webhooks to actually enqueue builds).
         // Push to a feature branch without an open PR = no CI activity.
         param("branch_specification", """
             +:refs/heads/(%owl_git_branch%)
             +:refs/(pull/*)/head
         """.trimIndent())
-        param("cmake_options", "-j4")
 
         // teamcity-github-bridge project-level config. The plugin's
         // BridgeFeatureReader reads these via `buildType.project.parameters`

@@ -86,4 +86,6 @@ Use the engine logging macros:
 - Create feature branches from `main`
 - Keep commits focused and well-described
 - Run tests locally before pushing: `ctest --test-dir output/build/<preset> --output-on-failure`
-- CI will run clang-tidy, sanitizers, and the full test suite on pull requests
+- CI will run clang-tidy, sanitizers, and the full test suite on pull requests — see
+  [Continuous Integration](continuous_integration.md) for the build matrix and which
+  configurations run on draft vs. ready PRs vs. `main` only.

@@ -1,27 +1,12 @@
 package Build
 
+import _Self.allowDraftPR
 import _Self.buildTypes.CodeStylingCheck
 import _Self.buildTypes.GlobalBuild
+import _Self.skipAutoPRs
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.failureConditions.BuildFailureOnMetric
 import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
-
-// Helper: mark this BT as draft-friendly (runs on draft PRs as well as
-// ready ones). Disables the BRIDGE_GITHUB feature inherited from the
-// GlobalBuild template (which carries triggerOnPrDraft=false) and
-// re-attaches the same plugin feature with triggerOnPrDraft=true under
-// a distinct id (BRIDGE_GITHUB_DRAFT) so it does not collide with the
-// disabled inherited one.
-private fun BuildType.allowDraftPR() {
-    disableSettings("BRIDGE_GITHUB")
-    features {
-        feature {
-            id = "BRIDGE_GITHUB_DRAFT"
-            type = "github-bridge"
-            param("triggerOnPrDraft", "true")
-        }
-    }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Build & Test top-level project
@@ -52,7 +37,7 @@ private fun stdBuildType(
     projectId: String,
     osSlug: String,
     variant: StdVariant,
-    disableFeatureBranchTrigger: Boolean,
+    mainOnlyAutoTrigger: Boolean,
     extraConfig: BuildType.() -> Unit = {},
 ) = BuildType({
     id("${projectId}_${variant.idSuffix}")
@@ -61,17 +46,18 @@ private fun stdBuildType(
     params {
         param("cmake_preset", "$osSlug-${variant.compilerSlug}-debug")
     }
-    if (disableFeatureBranchTrigger) {
-        disableSettings("TRIGGER_2")
+    if (mainOnlyAutoTrigger) {
+        skipAutoPRs()
     }
     extraConfig()
 })
 
-// `disableFeatureBranchTriggerFor` lists the variant.idSuffix values that
-// should skip TRIGGER_2 (the feature-branch watcher). Default = "Gcc" only,
-// which matches the Linux convention (GCC is too slow to run on every push).
-// Windows historically runs both compilers on every branch, so it overrides
-// to emptySet().
+// `mainOnlyAutoTriggerFor` lists the variant.idSuffix values that
+// should call skipAutoPRs() — i.e. auto-run on main only, never on PR
+// refs. Default = "Gcc" only, which matches the Linux convention
+// (GCC is too slow to run on every push, so we keep it on main only).
+// Windows historically runs both compilers on every branch, so it
+// overrides to emptySet().
 private fun stdPlatform(
     projectId: String,
     displayName: String,
@@ -80,7 +66,7 @@ private fun stdPlatform(
     archParam: String,
     extraProjectParams: ParametrizedWithType.() -> Unit = {},
     perVariantConfig: Map<String, BuildType.() -> Unit> = emptyMap(),
-    disableFeatureBranchTriggerFor: Set<String> = setOf("Gcc"),
+    mainOnlyAutoTriggerFor: Set<String> = setOf("Gcc"),
 ) = Project({
     id(projectId)
     name = displayName
@@ -89,7 +75,7 @@ private fun stdPlatform(
         buildType(
             stdBuildType(
                 projectId, osSlug, variant,
-                disableFeatureBranchTrigger = variant.idSuffix in disableFeatureBranchTriggerFor,
+                mainOnlyAutoTrigger = variant.idSuffix in mainOnlyAutoTriggerFor,
                 extraConfig = perVariantConfig[variant.idSuffix] ?: {},
             )
         )
@@ -134,7 +120,7 @@ private val windowsX64 = stdPlatform(
     osSlug = "windows",
     platformParam = "Windows",
     archParam = "amd64",
-    // Default disableFeatureBranchTriggerFor = setOf("Gcc") — Windows GCC
+    // Default mainOnlyAutoTriggerFor = setOf("Gcc") — Windows GCC
     // runs on main only, like Linux GCC.
     perVariantConfig = mapOf(
         // Windows + Clang is in the draft-friendly subset AND has stricter
@@ -172,6 +158,12 @@ val QualityCodeStyle = BuildType({
     name = "Code Style"
     templates(CodeStylingCheck)
     params { param("cmake_preset", "linux-clang-debug") }
+    // Serialise concurrent runs so the three idle agents do not each pick
+    // up their own copy when several downstream BTs queue at the same time.
+    // Combined with the default reuseBuilds=SUCCESSFUL on the snapshot
+    // dependency, the first finished run is reused by the others instead
+    // of spawning duplicates.
+    maxRunningBuilds = 1
 })
 
 private val qualityClangTidy = BuildType({
@@ -189,7 +181,7 @@ private data class Sanitizer(
     val displayName: String,
     val preset: String,
     val platformOverride: String? = null,
-    val disableFeatureBranchTrigger: Boolean = false,
+    val mainOnlyAutoTrigger: Boolean = false,
     val runOnDraft: Boolean = false,
 )
 
@@ -206,7 +198,7 @@ private val sanitizers = listOf(
         "SanitizerUndefinedBehavior", "Sanitizer undefined behavior",
         "linux-sanitizer-undefined-behavior",
         platformOverride = "Linux",
-        disableFeatureBranchTrigger = true,
+        mainOnlyAutoTrigger = true,
     ),
 )
 
@@ -219,8 +211,8 @@ private val sanitizerBuilds = sanitizers.map { s ->
             param("cmake_preset", s.preset)
             s.platformOverride?.let { param("platform", it) }
         }
-        if (s.disableFeatureBranchTrigger) {
-            disableSettings("TRIGGER_2")
+        if (s.mainOnlyAutoTrigger) {
+            skipAutoPRs()
         }
         if (s.runOnDraft) {
             allowDraftPR()

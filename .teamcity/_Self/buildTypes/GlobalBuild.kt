@@ -165,16 +165,18 @@ object GlobalBuild : Template({
 
     triggers {
         vcs {
-            id = "TRIGGER_2"
-            branchFilter = "%WatchBranchFilter%"
-        }
-        vcs {
             id = "TRIGGER_1"
             branchFilter = """
                 +:main
                 +:refs/heads/main
             """.trimIndent()
         }
+        // TRIGGER_2 (VCS, feature-branch + PR refs) intentionally removed.
+        // PR refs are enqueued by teamcity-github-bridge via the
+        // BRIDGE_GITHUB feature on pull_request.opened / synchronize /
+        // ready_for_review events. The "Plugin-event path" pattern (v1.4.0+)
+        // eliminates the double-trigger we had when both VCS and the plugin
+        // were enqueueing on every PR push.
     }
 
     features {

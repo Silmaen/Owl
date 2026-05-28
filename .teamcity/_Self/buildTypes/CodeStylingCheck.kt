@@ -51,16 +51,16 @@ object CodeStylingCheck : Template({
 
     triggers {
         vcs {
-            id = "TRIGGER_3"
-            branchFilter = "%WatchBranchFilter%"
-        }
-        vcs {
             id = "TRIGGER_4"
             branchFilter = """
                 +:main
                 +:refs/heads/main
             """.trimIndent()
         }
+        // TRIGGER_3 (VCS, feature-branch + PR refs) intentionally removed:
+        // PR refs are enqueued by teamcity-github-bridge directly, and
+        // every downstream BT pulls Code Style via snapshot dependency.
+        // No standalone PR-side VCS trigger needed.
     }
 
     features {

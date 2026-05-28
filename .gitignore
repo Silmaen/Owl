@@ -38,6 +38,9 @@ output*
 .env
 .venv
 
+# Maven build artifacts (e.g. .teamcity/target/ from DSL validation)
+target/
+
 # Cache
 *.spv
 cache
