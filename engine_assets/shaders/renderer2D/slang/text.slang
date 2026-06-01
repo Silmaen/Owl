@@ -2,7 +2,8 @@
 // `quad.slang` minus the tiling factor (text never tiles); the fragment
 // shader runs the MSDF screenPxRange path instead of the plain sample.
 // One drawcall per batch via `glDrawElementsInstanced(GL_TRIANGLES, 6,
-// instanceCount)`.
+// instanceCount)`. World matrix resolution follows the same scene /
+// transient split as `quad.slang`.
 
 struct Camera {
 	column_major float4x4 viewProjection;
@@ -19,16 +20,21 @@ ConstantBuffer<Camera> gCamera;
 Sampler2D gTextures[32];
 
 struct TextInstance {
-	column_major float4x4 transform;
+	int worldIndex;
 	float4 color;
 	float2 uv[4];
 	uint texIndex;
 	int entityId;
-	uint2 _pad0;
 };
 
 [[vk::binding(2)]]
 StructuredBuffer<TextInstance> gInstances;
+
+[[vk::binding(3)]]
+StructuredBuffer<column_major float4x4> gSceneWorlds;
+
+[[vk::binding(4)]]
+StructuredBuffer<column_major float4x4> gTransientWorlds;
 
 struct VertexInput {
 	[[vk::location(0)]] int cornerIndex : POSITION;
@@ -62,11 +68,19 @@ float median(float r, float g, float b) {
 	return max(min(r, g), min(max(r, g), b));
 }
 
+float4x4 resolveWorldMatrix(int worldIndex) {
+	if (worldIndex < 0) {
+		return gTransientWorlds[-(worldIndex + 1)];
+	}
+	return gSceneWorlds[worldIndex];
+}
+
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	VertexOutput output;
 	TextInstance inst = gInstances[iid];
-	float4 worldPos = mul(inst.transform, float4(kCorners[input.cornerIndex], 0.0f, 1.0f));
+	float4x4 world = resolveWorldMatrix(inst.worldIndex);
+	float4 worldPos = mul(world, float4(kCorners[input.cornerIndex], 0.0f, 1.0f));
 	output.svPosition = mul(gCamera.viewProjection, worldPos);
 	output.frag.color = inst.color;
 	output.frag.texCoord = inst.uv[input.cornerIndex];

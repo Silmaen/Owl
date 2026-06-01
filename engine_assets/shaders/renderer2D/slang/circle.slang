@@ -1,9 +1,11 @@
 // Renderer2D circle — instanced, SSBO-driven. The per-vertex VBO is the
 // same shared 4-corner unit quad as `quad.slang`; per-instance data
-// (transform, colour, thickness, fade, entity id) lives in `gInstances`.
-// The fragment shader signed-distance test runs on local-space coordinates
-// derived directly from `SV_VertexID` — no per-vertex localPosition stream
-// needed.
+// (worldIndex, colour, thickness, fade, entity id) lives in `gInstances`.
+// World matrix is fetched from `gSceneWorlds` (worldIndex >= 0) or
+// `gTransientWorlds` (worldIndex < 0). See `quad.slang` for the resolution
+// scheme. The fragment shader signed-distance test runs on local-space
+// coordinates derived directly from `SV_VertexID` — no per-vertex
+// localPosition stream needed.
 
 struct Camera {
 	column_major float4x4 viewProjection;
@@ -13,16 +15,21 @@ struct Camera {
 ConstantBuffer<Camera> gCamera;
 
 struct CircleInstance {
-	column_major float4x4 transform;
+	int worldIndex;
 	float4 color;
 	float thickness;
 	float fade;
 	int entityId;
-	uint _pad0;
 };
 
 [[vk::binding(2)]]
 StructuredBuffer<CircleInstance> gInstances;
+
+[[vk::binding(3)]]
+StructuredBuffer<column_major float4x4> gSceneWorlds;
+
+[[vk::binding(4)]]
+StructuredBuffer<column_major float4x4> gTransientWorlds;
 
 struct VertexInput {
 	[[vk::location(0)]] int cornerIndex : POSITION;
@@ -53,11 +60,19 @@ static const float2 kCorners[4] = {
 	float2(-0.5f,  0.5f),
 };
 
+float4x4 resolveWorldMatrix(int worldIndex) {
+	if (worldIndex < 0) {
+		return gTransientWorlds[-(worldIndex + 1)];
+	}
+	return gSceneWorlds[worldIndex];
+}
+
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	VertexOutput output;
 	CircleInstance inst = gInstances[iid];
-	float4 worldPos = mul(inst.transform, float4(kCorners[input.cornerIndex], 0.0f, 1.0f));
+	float4x4 world = resolveWorldMatrix(inst.worldIndex);
+	float4 worldPos = mul(world, float4(kCorners[input.cornerIndex], 0.0f, 1.0f));
 	output.svPosition = mul(gCamera.viewProjection, worldPos);
 	output.frag.localPosition = float3(kCorners[input.cornerIndex] * 2.0f, 0.0f);
 	output.frag.color = inst.color;

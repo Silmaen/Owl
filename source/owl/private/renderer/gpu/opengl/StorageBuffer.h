@@ -71,6 +71,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Rebind the SSBO to an explicit binding slot via
+	 *  `glBindBufferBase(GL_SHADER_STORAGE_BUFFER, iBinding, ...)`.
+	 * @param[in] iBinding Shader binding slot.
+	 */
+	void bind(uint32_t iBinding) override;
+
+	/**
+	 * @brief
 	 *  Get the underlying GL handle.
 	 * @return GL named buffer id.
 	 */

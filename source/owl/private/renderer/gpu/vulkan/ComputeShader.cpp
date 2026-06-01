@@ -13,6 +13,7 @@
 #include "StorageBuffer.h"
 #include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
+#include "renderer/Renderer.h"
 #include "renderer/utils/shaderFileUtils.h"
 
 OWL_DIAG_PUSH
@@ -26,8 +27,11 @@ namespace owl::renderer::gpu::vulkan {
 
 namespace {
 auto loadSlangSource(const std::string& iShaderName, const std::string& iRenderer) -> std::string {
+	// Slang sources live at `shaders/<renderer>/slang/<name>.slang` (getShaderPath builds the wrong GLSL-style path).
+	const auto relative =
+			std::filesystem::path("shaders") / iRenderer / "slang" / (iShaderName + std::string(".slang"));
 	const auto sourcePath =
-			renderer::utils::getShaderPath(iShaderName, iRenderer, /*iRendererApi=*/"", ShaderType::Compute);
+			Renderer::getTextureLibrary().find(relative.generic_string()).value_or(std::filesystem::path{});
 	if (sourcePath.empty() || !exists(sourcePath)) {
 		OWL_CORE_ERROR("Vulkan compute shader: source not found for '{}' / '{}'.", iRenderer, iShaderName)
 		return {};
@@ -105,12 +109,13 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 		return;
 	}
 
+	// Slang collapses every entry point name to the SPIR-V canonical `main`.
 	const VkPipelineShaderStageCreateInfo stageInfo{.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
 													.pNext = nullptr,
 													.flags = {},
 													.stage = VK_SHADER_STAGE_COMPUTE_BIT,
 													.module = shaderModule,
-													.pName = "computeMain",
+													.pName = "main",
 													.pSpecializationInfo = nullptr};
 	const VkComputePipelineCreateInfo pipelineInfo{.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
 												   .pNext = nullptr,
@@ -226,16 +231,18 @@ void ComputeShader::bindStorageBuffer(const uint32_t iBinding, const shared<rend
 void ComputeShader::dispatch(const uint32_t iGroupsX, const uint32_t iGroupsY, const uint32_t iGroupsZ) {
 	if (!m_ready || iGroupsX == 0 || iGroupsY == 0 || iGroupsZ == 0)
 		return;
-	auto* const cmd = internal::VulkanHandler::get().getCurrentCommandBuffer();
+	// One-shot command buffer: callers may run before any batch is open, and `endSingleTimeCommands`'s queue wait acts as the barrier.
+	const auto& core = internal::VulkanCore::get();
+	auto* const cmd = core.beginSingleTimeCommands();
 	if (cmd == nullptr) {
-		OWL_CORE_WARN("Vulkan compute shader: dispatch called without an active command buffer for '{}'.", m_name)
+		OWL_CORE_WARN("Vulkan compute shader: failed to allocate one-shot command buffer for '{}'.", m_name)
 		return;
 	}
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
-	if (m_descriptorSet != nullptr) {
+	if (m_descriptorSet != nullptr)
 		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, m_layout, 0, 1, &m_descriptorSet, 0, nullptr);
-	}
 	vkCmdDispatch(cmd, iGroupsX, iGroupsY, iGroupsZ);
+	core.endSingleTimeCommands(cmd);
 }
 
 }// namespace owl::renderer::gpu::vulkan

@@ -77,6 +77,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Bind the SSBO at an explicit slot in the currently active descriptor
+	 *  block. Used when the same `VkBuffer` participates in multiple renderers
+	 *  at different slot indices.
+	 * @param[in] iBinding Shader binding slot.
+	 */
+	void bind(uint32_t iBinding) override;
+
+	/**
+	 * @brief
 	 *  Get the underlying VkBuffer handle (used by compute pipeline setup).
 	 * @return The Vulkan buffer handle.
 	 */
