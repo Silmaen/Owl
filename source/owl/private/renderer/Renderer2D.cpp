@@ -27,6 +27,7 @@ constexpr uint32_t g_maxQuadsPerBatch = 20000;
 constexpr uint32_t g_maxCirclesPerBatch = 20000;
 constexpr uint32_t g_maxLinesPerBatch = 20000;
 constexpr uint32_t g_maxTextGlyphsPerBatch = 20000;
+constexpr uint32_t g_maxTransientWorldsPerBatch = 4096;
 
 constexpr std::array g_quadVertexPositions = {math::vec4{-0.5f, -0.5f, 0.0f, 1.0f}, math::vec4{0.5f, -0.5f, 0.0f, 1.0f},
 											  math::vec4{0.5f, 0.5f, 0.0f, 1.0f}, math::vec4{-0.5f, 0.5f, 0.0f, 1.0f}};
@@ -34,24 +35,26 @@ constexpr std::array g_quadVertexPositions = {math::vec4{-0.5f, -0.5f, 0.0f, 1.0
 uint32_t g_MaxTextureSlots = 0;
 
 struct QuadInstance {
-	math::mat4 transform;
+	int32_t worldIndex;
+	uint32_t _pad0[3];
 	math::vec4 color;
 	std::array<math::vec2, 4> uv;
 	uint32_t texIndex;
 	int32_t entityId;
 	math::vec2 tilingFactor;
 };
-static_assert(sizeof(QuadInstance) == 128, "QuadInstance must match shader std430 layout");
+static_assert(sizeof(QuadInstance) == 80, "QuadInstance must match shader std430 layout");
 
 struct CircleInstance {
-	math::mat4 transform;
+	int32_t worldIndex;
+	uint32_t _pad0[3];
 	math::vec4 color;
 	float thickness;
 	float fade;
 	int32_t entityId;
-	uint32_t _pad0;
+	uint32_t _pad1;
 };
-static_assert(sizeof(CircleInstance) == 96, "CircleInstance must match shader std430 layout");
+static_assert(sizeof(CircleInstance) == 48, "CircleInstance must match shader std430 layout");
 
 struct LineInstance {
 	math::vec3 point1;
@@ -65,14 +68,15 @@ struct LineInstance {
 static_assert(sizeof(LineInstance) == 64, "LineInstance must match shader std430 layout");
 
 struct TextInstance {
-	math::mat4 transform;
+	int32_t worldIndex;
+	uint32_t _pad0[3];
 	math::vec4 color;
 	std::array<math::vec2, 4> uv;
 	uint32_t texIndex;
 	int32_t entityId;
-	uint32_t _pad0[2];
+	uint32_t _pad1[2];
 };
-static_assert(sizeof(TextInstance) == 128, "TextInstance must match shader std430 layout");
+static_assert(sizeof(TextInstance) == 80, "TextInstance must match shader std430 layout");
 
 template<typename InstanceT>
 struct BatchData {
@@ -101,12 +105,34 @@ struct InternalData {
 	shared<gpu::UniformBuffer> cameraUniformBuffer;
 	std::vector<shared<gpu::Texture2D>> textureSlots;
 	uint32_t textureSlotIndex = 1;
+	shared<gpu::StorageBuffer> sceneWorlds;
+	shared<gpu::StorageBuffer> sceneWorldsFallback;
+	std::vector<math::mat4> transientWorlds;
+	shared<gpu::StorageBuffer> transientWorldsSsbo;
 };
 }// namespace
 }// namespace utils
 
 namespace {
 shared<utils::InternalData> g_Data;
+
+auto resolveWorldIndex(const int32_t iRequested, const math::Transform& iTransform) -> int32_t {
+	if (iRequested >= 0)
+		return iRequested;
+	if (g_Data->transientWorlds.size() >= utils::g_maxTransientWorldsPerBatch)
+		Renderer2D::nextBatch();
+	const auto slot = static_cast<int32_t>(g_Data->transientWorlds.size());
+	g_Data->transientWorlds.push_back(iTransform());
+	return -(slot + 1);
+}
+
+auto allocateTransientWorld(const math::mat4& iMatrix) -> int32_t {
+	if (g_Data->transientWorlds.size() >= utils::g_maxTransientWorldsPerBatch)
+		Renderer2D::nextBatch();
+	const auto slot = static_cast<int32_t>(g_Data->transientWorlds.size());
+	g_Data->transientWorlds.push_back(iMatrix);
+	return -(slot + 1);
+}
 
 auto utf8ToLatin1(const std::string& iText) -> std::string {
 	std::string out;
@@ -150,7 +176,7 @@ void Renderer2D::init() {
 	g_Data = mkShared<utils::InternalData>();
 
 	{
-		const std::array<gpu::BindingDecl, 3> r2dBindings{
+		const std::array<gpu::BindingDecl, 5> r2dBindings{
 				gpu::BindingDecl{.binding = 0,
 								 .type = gpu::BindingType::UniformBuffer,
 								 .count = 1,
@@ -160,6 +186,14 @@ void Renderer2D::init() {
 								 .count = 32,
 								 .stages = gpu::ShaderStage::Fragment},
 				gpu::BindingDecl{.binding = 2,
+								 .type = gpu::BindingType::StorageBuffer,
+								 .count = 1,
+								 .stages = gpu::ShaderStage::Vertex},
+				gpu::BindingDecl{.binding = 3,
+								 .type = gpu::BindingType::StorageBuffer,
+								 .count = 1,
+								 .stages = gpu::ShaderStage::Vertex},
+				gpu::BindingDecl{.binding = 4,
 								 .type = gpu::BindingType::StorageBuffer,
 								 .count = 1,
 								 .stages = gpu::ShaderStage::Vertex},
@@ -215,6 +249,16 @@ void Renderer2D::init() {
 			gpu::StorageBuffer::create(utils::g_maxLinesPerBatch * sizeof(utils::LineInstance), 2, "Renderer2D");
 	g_Data->text.ssbo =
 			gpu::StorageBuffer::create(utils::g_maxTextGlyphsPerBatch * sizeof(utils::TextInstance), 2, "Renderer2D");
+
+	g_Data->sceneWorldsFallback =
+			gpu::StorageBuffer::create(static_cast<uint32_t>(sizeof(math::mat4)), 3, "Renderer2D");
+	{
+		const math::mat4 identity = math::identity<float, 4>();
+		g_Data->sceneWorldsFallback->setData(&identity, static_cast<uint32_t>(sizeof(math::mat4)), 0);
+	}
+	g_Data->transientWorldsSsbo =
+			gpu::StorageBuffer::create(utils::g_maxTransientWorldsPerBatch * sizeof(math::mat4), 4, "Renderer2D");
+	g_Data->transientWorlds.reserve(utils::g_maxTransientWorldsPerBatch);
 }
 
 void Renderer2D::shutdown() {
@@ -236,6 +280,11 @@ void Renderer2D::shutdown() {
 	g_Data->circle = utils::BatchData<utils::CircleInstance>{};
 	g_Data->line = utils::BatchData<utils::LineInstance>{};
 	g_Data->text = utils::BatchData<utils::TextInstance>{};
+	g_Data->sceneWorlds.reset();
+	g_Data->sceneWorldsFallback.reset();
+	g_Data->transientWorldsSsbo.reset();
+	g_Data->transientWorlds.clear();
+	g_Data->transientWorlds.shrink_to_fit();
 	g_Data.reset();
 	gpu::RendererDescriptors::release("Renderer2D");
 }
@@ -273,6 +322,16 @@ void Renderer2D::flush() {
 	gpu::RenderCommand::beginTextureLoad();
 	for (uint32_t i = 0; i < g_Data->textureSlotIndex; i++) g_Data->textureSlots[i]->bind(i);
 	gpu::RenderCommand::endTextureLoad();
+
+	if (!g_Data->transientWorlds.empty()) {
+		g_Data->transientWorldsSsbo->setData(g_Data->transientWorlds.data(),
+											 static_cast<uint32_t>(g_Data->transientWorlds.size() * sizeof(math::mat4)),
+											 0);
+	}
+	g_Data->transientWorldsSsbo->bind(/*iBinding=*/4u);
+
+	const auto& sceneWorlds = g_Data->sceneWorlds ? g_Data->sceneWorlds : g_Data->sceneWorldsFallback;
+	sceneWorlds->bind(/*iBinding=*/3u);
 
 	BackgroundRenderer::flushPending(bgTexIndex);
 
@@ -317,6 +376,14 @@ void Renderer2D::startBatch() {
 	utils::resetBatch(g_Data->line, utils::g_maxLinesPerBatch);
 	utils::resetBatch(g_Data->text, utils::g_maxTextGlyphsPerBatch);
 	g_Data->textureSlotIndex = 1;
+	g_Data->transientWorlds.clear();
+	g_Data->transientWorlds.reserve(utils::g_maxTransientWorldsPerBatch);
+}
+
+void Renderer2D::setSceneWorldsBuffer(const shared<gpu::StorageBuffer>& iWorldsBuffer) {
+	if (!g_Data)
+		return;
+	g_Data->sceneWorlds = iWorldsBuffer;
 }
 
 void Renderer2D::nextBatch() {
@@ -375,12 +442,14 @@ void Renderer2D::drawCircle(const CircleData& iCircleData) {
 
 	if (g_Data->circle.instances.size() >= utils::g_maxCirclesPerBatch)
 		nextBatch();
-	g_Data->circle.instances.push_back(utils::CircleInstance{.transform = iCircleData.transform(),
+	const int32_t worldIndex = resolveWorldIndex(iCircleData.worldIndex, iCircleData.transform);
+	g_Data->circle.instances.push_back(utils::CircleInstance{.worldIndex = worldIndex,
+															 ._pad0 = {0u, 0u, 0u},
 															 .color = iCircleData.color,
 															 .thickness = iCircleData.thickness,
 															 .fade = iCircleData.fade,
 															 .entityId = iCircleData.entityId,
-															 ._pad0 = 0});
+															 ._pad1 = 0u});
 	g_Data->stats.quadCount++;
 }
 
@@ -406,7 +475,9 @@ void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 			g_Data->textureSlotIndex++;
 		}
 	}
-	g_Data->quad.instances.push_back(utils::QuadInstance{.transform = iQuadData.transform(),
+	const int32_t worldIndex = resolveWorldIndex(iQuadData.worldIndex, iQuadData.transform);
+	g_Data->quad.instances.push_back(utils::QuadInstance{.worldIndex = worldIndex,
+														 ._pad0 = {0u, 0u, 0u},
 														 .color = iQuadData.color,
 														 .uv = iQuadData.textureCoords,
 														 .texIndex = textureIndex,
@@ -498,12 +569,14 @@ void Renderer2D::drawString(const StringData& iStringData) {
 		const std::array<math::vec2, 4> glyphUv{
 				math::vec2{uv.min().x(), uv.min().y()}, math::vec2{uv.max().x(), uv.min().y()},
 				math::vec2{uv.max().x(), uv.max().y()}, math::vec2{uv.min().x(), uv.max().y()}};
-		g_Data->text.instances.push_back(utils::TextInstance{.transform = glyphMat,
+		const int32_t glyphWorldIndex = allocateTransientWorld(glyphMat);
+		g_Data->text.instances.push_back(utils::TextInstance{.worldIndex = glyphWorldIndex,
+															 ._pad0 = {0u, 0u, 0u},
 															 .color = iStringData.color,
 															 .uv = glyphUv,
 															 .texIndex = textureIndex,
 															 .entityId = iStringData.entityId,
-															 ._pad0 = {0u, 0u}});
+															 ._pad1 = {0u, 0u}});
 		g_Data->stats.quadCount++;
 
 		if (i < text.size() - 1) {

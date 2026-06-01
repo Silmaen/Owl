@@ -69,6 +69,19 @@ public:
 
 	/**
 	 * @brief
+	 *  Bind the SSBO to an explicit shader binding slot, overriding the slot
+	 *  recorded at creation. Useful when the same GPU buffer participates in
+	 *  several renderers at different slot indices — typically a compute pass
+	 *  output (e.g. `WorldTransformPass::getWorldBuffer()` at slot 2 of the
+	 *  compute descriptor) consumed by a graphics renderer at a different
+	 *  slot (Renderer2D's `sceneWorlds` at slot 3). Default `bind()` defers
+	 *  to this overload with the creation-time slot.
+	 * @param[in] iBinding Shader binding slot to bind at.
+	 */
+	virtual void bind(uint32_t iBinding) = 0;
+
+	/**
+	 * @brief
 	 *  Create a backend-specific SSBO bound to a binding slot.
 	 * @param[in] iSize Buffer size in bytes.
 	 * @param[in] iBinding Shader binding slot.

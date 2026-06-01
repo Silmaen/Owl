@@ -16,6 +16,10 @@
 #include "renderer/gpu/Texture.h"
 #include "scene/component/SpriteRenderer.h"
 
+namespace owl::renderer::gpu {
+class StorageBuffer;
+}// namespace owl::renderer::gpu
+
 
 /**
  * @brief
@@ -44,8 +48,22 @@ namespace owl::renderer {
  *  Data for drawing a quad.
  */
 struct OWL_API Quad2DData {
-	/// Transformation of the square.
+	/**
+	 * @brief
+	 *  Transformation of the square. Used by the shader when `worldIndex < 0`
+	 *  (transient path); ignored when `worldIndex >= 0` because the shader
+	 *  reads the matrix from `sceneWorlds[worldIndex]` instead.
+	 */
 	math::Transform transform;
+	/**
+	 * @brief
+	 *  Slot index in the scene `worlds[]` SSBO populated by
+	 *  `Scene::prepareWorldTransforms()`. `>= 0` reads `sceneWorlds[worldIndex]`;
+	 *  `< 0` (the default) appends `transform` to the per-batch transient
+	 *  worlds SSBO so non-entity callers (UI, gizmo, debug overlays) keep
+	 *  working unchanged.
+	 */
+	int32_t worldIndex = -1;
 	/// Colour to apply to the quad.
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// Eventually the texture of the quad (plain colour if nullptr).
@@ -64,8 +82,18 @@ struct OWL_API Quad2DData {
  *  Data for drawing a circle.
  */
 struct OWL_API CircleData {
-	/// Transformation of the circle.
+	/**
+	 * @brief
+	 *  Transformation of the circle. Used by the shader when `worldIndex < 0`
+	 *  (transient path).
+	 */
 	math::Transform transform;
+	/**
+	 * @brief
+	 *  Slot index in the scene `worlds[]` SSBO. See `Quad2DData::worldIndex`
+	 *  for semantics.
+	 */
+	int32_t worldIndex = -1;
 	/// Colour to apply to the circle.
 	math::vec4 color = math::vec4{1.f, 1.f, 1.f, 1.f};
 	/// Thickness of the line.
@@ -126,8 +154,18 @@ struct OWL_API PolyLineData {
  *  Data for drawing a string.
  */
 struct OWL_API StringData {
-	/// Transformation of the render.
+	/**
+	 * @brief
+	 *  Transformation of the render. Used by the shader when `worldIndex < 0`
+	 *  (transient path).
+	 */
 	math::Transform transform;
+	/**
+	 * @brief
+	 *  Slot index in the scene `worlds[]` SSBO. See `Quad2DData::worldIndex`
+	 *  for semantics.
+	 */
+	int32_t worldIndex = -1;
 	/// Test to render
 	std::string text;
 	/// font to use (or default one)
@@ -283,6 +321,23 @@ public:
 	 *  Start the next batch.
 	 */
 	static void nextBatch();
+
+	/**
+	 * @brief
+	 *  Install the scene's GPU world-matrix SSBO as the `sceneWorlds[]` binding
+	 *  for the upcoming draws. Pass `nullptr` to revert to the internal
+	 *  identity-only fallback (which keeps the shader bindings filled when
+	 *  there is no active scene).
+	 *
+	 * Scene calls this once at the start of every layer pass with the buffer
+	 * returned by `Scene::getWorldsBuffer()`. Each `drawQuad / drawCircle /
+	 * drawString` callsite that supplies a non-negative `worldIndex` indexes
+	 * into this buffer; negative `worldIndex` falls back to the per-batch
+	 * transient buffer Renderer2D maintains internally.
+	 * @param[in] iWorldsBuffer External world-matrix SSBO, or `nullptr` to
+	 *  reset to the fallback.
+	 */
+	static void setSceneWorldsBuffer(const shared<gpu::StorageBuffer>& iWorldsBuffer);
 
 private:
 	/**

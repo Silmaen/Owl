@@ -518,21 +518,28 @@ v0.3.0.
       API (`drawQuad`, `drawString`, `Statistics`, …) preserved; the only semantic shift is that `Statistics.drawCalls`
       now counts GPU drawcalls submitted (one per non-empty batch type at flush) and `lineCount` is actually incremented
       per line.
-    - ![In Progress][progress] Phase 2 — `WorldTransformPass` adoption (#33)
-        - The pre-pass already ships (`renderer::utils::WorldTransformPass` + `world_transform.slang`, single-dispatch
-          parent-chain walk padded to multiples of 64 entries, headless tests pass on the Null backend). Phase 1's
-          instanced path consumes the world-matrix SSBO directly via `gl_InstanceID`, killing the ~30 redundant CPU
-          `getWorldTransform` calls per frame.
-        - Expected 5–10× on deep hierarchies.
-    - ![In Progress][progress] Phase 3 — `RaycastDDAPass` adoption (#35)
-        - The DDA pre-pass already ships (`renderer::utils::RaycastDDAPass` + `raycast_dda.slang`, X/Y-edge stepping,
-          transparent-stack budget of 8, `columnHits[col * 8 + k]` + `hitCount[col]` + `zBuffer[col]`
-          SSBOs, headless tests pass).
-        - New graphics shader for stripe emission: instanced draw, one instance per visible column hit, vertex shader
-          reads `columnHits[]` + tileset UVs, fragment shader samples the atlas. Sprite occlusion pass consumes
-          `zBuffer[]` GPU-side (vertex shader rejects fragments whose perpDist exceeds the column's wall depth).
-        - Biggest single CPU→GPU win (20–50× theoretical on wall rasterization) — also the most invasive change in this
-          release. Touches the per-column zBuffer, dynamic walls, doors, sprite stripes.
+    - ![Done][done] Phase 2 — `WorldTransformPass` adoption (#33). `Scene::prepareWorldTransforms()` flattens every
+      `Transform` + `Hierarchy` entity in pre-order, dispatches the compute pass once per frame, and exposes the
+      resulting SSBO via `Scene::getWorldsBuffer()`. `Renderer2D`'s quad / circle / text instance structs replaced
+      their per-instance `mat4 transform` with an `int32_t worldIndex`: positive values index `sceneWorlds[]` (bound
+      to `Scene::getWorldsBuffer()`), negative values index a `transientWorlds[]` SSBO Renderer2D owns for non-entity
+      callers (UI, gizmo, debug overlays, text glyphs). Per-instance footprint dropped 128 → 80 bytes (quad / text)
+      and 96 → 48 bytes (circle). New `gpu::StorageBuffer::bind(uint32_t iBinding)` overload lets the same
+      `VkBuffer` participate at different slot indices across renderers. Public-facing `drawQuad / drawCircle /
+      drawString` keep working unchanged for non-entity callers (transient path is the default).
+    - ![Done][done] Phase 3 — `RaycastDDAPass` adoption (#35). `RendererRaycast::drawTilemapWalls` dispatches the
+      per-column DDA on the GPU (`raycast_dda.slang`) once per frame and emits all wall stripes via a new instanced
+      shader `raycast_stripe.slang`: one `drawDataInstanced(6, numRays × kMaxHits)` call replaces the CPU walk and
+      the per-column `drawQuad` fan-out. Per-instance vertex shader unpacks the column / hit-index from
+      `SV_InstanceID`, reads `columnHits[col × kMaxHits + (hitCount − 1 − localK)]` (back-to-front painter's order)
+      and `tileUvRects[tileIndex]` for the atlas slot, computes stripe rectangle + texture U on-GPU, and the
+      fragment shader samples the tileset atlas. Per-tile UV rects + tilemap grid + tile meta upload only on cache
+      miss (typically once per scene). `zBuffer[]` SSBO is read back per frame to drive the legacy CPU
+      sprite/door/pushwall occlusion path (a future PR can move those consumers to GPU-side `zBuffer[]` indexing
+      to drop the readback). New descriptor block `RendererRaycast`: UBO `StripeParams` (slot 0), tileset atlas
+      `Sampler2D` (slot 1), DDA pass output SSBOs at slots 2-3 via `StorageBuffer::bind(uint32_t)`, per-tile UV rects
+      SSBO at slot 4. Null backend keeps the CPU walk fallback so headless tests still emit `Renderer2D::drawQuad`
+      stripes and exercise the visible behaviour.
     - ![In Progress][progress] Phase 4 — `BitonicSortPass` adoption (#32)
         - The sort pass already ships (`renderer::utils::BitonicSortPass` + `bitonic_sort.slang`, single-workgroup
           bitonic-merge sort over `(key, value)` pairs, capacity 1024, headless tests pass). After Phase 3 the sprite

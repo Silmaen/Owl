@@ -44,4 +44,6 @@ void StorageBuffer::getData(void* oData, const uint32_t iSize, const uint32_t iO
 
 void StorageBuffer::bind() {}
 
+void StorageBuffer::bind([[maybe_unused]] const uint32_t iBinding) {}
+
 }// namespace owl::renderer::gpu::null

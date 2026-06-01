@@ -7,8 +7,132 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **`vulkan::ComputeShader::dispatch` records on a one-shot command buffer.**
+  The previous implementation piggy-backed on
+  `VulkanHandler::getCurrentCommandBuffer()`, which is only in recording
+  state between `beginBatch` / `endBatch`. Callers like
+  `Scene::prepareWorldTransforms` dispatch *before* the per-frame batch
+  begins, so `vkCmdDispatch` + the subsequent `vkCmdPipelineBarrier`
+  recorded into a closed command buffer — the driver crashed
+  (SIGSEGV) on the next API call. Dispatch now allocates a one-shot
+  command buffer via `VulkanCore::beginSingleTimeCommands`,
+  records the bind + dispatch, and submits via `endSingleTimeCommands`.
+  The implicit `vkQueueWaitIdle` acts as a heavy barrier, so the
+  graphics passes that later read the output SSBOs see completed
+  writes without a separate `vkCmdPipelineBarrier`.
+  `RenderAPI::storageBufferMemoryBarrier` now no-ops when no batch is
+  active so out-of-batch callers stay safe.
+- **`gpu::ComputeShader` Vulkan / OpenGL entry-point name mismatch.**
+  Both backends specified `pName = "computeMain"` /
+  `glSpecializeShader(..., "computeMain", ...)`, but Slang collapses every
+  entry-point name down to the SPIR-V canonical `main` (matching the
+  graphics path in `vulkan/Shader.cpp`). Vulkan answered with
+  `VK_ERROR_UNKNOWN` (code -13) from `vkCreateComputePipelines`, which
+  cascaded into a SIGSEGV when subsequent code reached for the failed
+  pipeline. Both backends now pass `"main"`.
+- **`gpu::ComputeShader` Slang source lookup.** Both Vulkan and OpenGL
+  backends previously asked `getShaderPath` for a `.comp` extension and
+  an empty API segment, so the lookup never matched the actual Slang
+  source at `shaders/<renderer>/slang/<name>.slang`. The bug was inert
+  while no production code instantiated a compute shader (tests use the
+  Null backend stub and bypass the file lookup); it surfaced as a
+  startup crash the moment Phase 2 / Phase 3 started building real
+  `WorldTransformPass` / `RaycastDDAPass` pipelines. Both backends now
+  fetch the source via `Renderer::getTextureLibrary().find()` with the
+  conventional `shaders/<renderer>/slang/<name>.slang` path.
+- **`world_transform.slang` matrix wrapper.** Wrapping the
+  `column_major float4x4` payload in a `Mat4` struct (`StructuredBuffer<Mat4>`
+  instead of `StructuredBuffer<column_major float4x4>`) makes Slang emit
+  the proper `MatrixStride` / column-major SPIR-V decorations from struct
+  members. The previous direct-template form built a valid SPIR-V that
+  some drivers accepted only on graphics pipelines; the wrapper form
+  follows the same idiom the Renderer2D `QuadInstance` etc. shaders use.
+
 ### Added
 
+- **`RaycastDDAPass` + GPU stripe shader adoption (Phase 3 of the renderer
+  modernisation, #35).** `RendererRaycast::drawTilemapWalls` now runs the
+  per-column DDA on the GPU via the existing
+  `renderer::utils::RaycastDDAPass` and emits every wall stripe in a single
+  instanced drawcall through a new dedicated shader `raycast_stripe.slang`.
+  The CPU per-column walk + per-column `Renderer2D::drawQuad` fan-out is
+  retired on real GPU backends (kept only as a fallback on the Null backend
+  so the headless test suite stays green).
+    - New `engine_assets/shaders/raycast_stripe/slang/raycast_stripe.slang`.
+      Vertex shader unpacks `(col, localK)` from `SV_InstanceID`, looks up
+      the back-to-front hit via `columnHits[col * kMaxHits + (hitCount − 1
+      − localK)]` so painter's order is implicit in the instance order,
+      computes the stripe rectangle from `perpDist` + `wallHeight` + the
+      cached pixel-space viewProjection, fetches the atlas UV column from
+      `tileUvRects[tileIndex]`, and emits a textured stripe. Fragment shader
+      samples the tileset atlas. Slots past `hitCount[col]` (or `col >=
+      numRays`) emit a zero-area off-screen quad.
+    - New `RendererRaycast` descriptor block: UBO `StripeParams` at slot 0
+      (viewProjection + viewport / horizon / stripe width / yDarken + numRays
+      + maxHits + entityId), tileset `Sampler2D` at slot 1, `hitCount[]` SSBO
+      at slot 2 (bound from `RaycastDDAPass::getHitCountBuffer()` via the
+      new `StorageBuffer::bind(uint32_t)` overload), `columnHits[]` SSBO at
+      slot 3 (from `getColumnHitBuffer()`), and a 4 KiB per-tile UV rects
+      SSBO at slot 4.
+    - One `drawDataInstanced(6, numRays × kMaxHits)` per `drawTilemapWalls`
+      call — replaces O(numRays × kMaxHits) `Renderer2D::drawQuad` calls.
+      Renderer2D is flushed once via `nextBatch` before the stripe draw so
+      the backdrop quads land underneath the walls in the painter's order;
+      sprites / doors / pushwalls drawn after the stripes land on top.
+    - Tilemap grid + tile meta + tile UV rects upload is gated by a
+      `(tilemap, tileset, layer)` cache — static scenes pay zero per-frame
+      upload cost.
+    - `zBuffer[]` SSBO is read back into `g_state->zBufferPerColumn` so the
+      existing CPU sprite / door / pushwall occlusion path keeps working
+      unchanged. Stats (`stripeCount`, `missCount`, `hitCount`) are computed
+      from a quick `hitCount[]` readback. A future PR can move those
+      consumers to GPU-side `zBuffer[]` indexing to drop the readback
+      entirely.
+    - New test `SlangCompute.shippedRaycastStripeShaderCompiles` validates
+      the new shader compiles on both Vulkan and OpenGL targets.
+- **`WorldTransformPass` adoption in `Renderer2D` (Phase 2 of the renderer
+  modernisation, #33).** Every per-frame entity world matrix is now produced
+  on the GPU by the existing `renderer::utils::WorldTransformPass` compute
+  shader and consumed directly by the instanced `Renderer2D` draw path —
+  killing the per-instance `mat4 transform` upload that Phase 1 still kept
+  in the CPU instance struct.
+    - `scene::Scene` gains `prepareWorldTransforms()` /
+      `getWorldIndex(entity)` / `getWorldsBuffer()`. The prepare call
+      flattens every entity carrying `Transform` + `Hierarchy` in pre-order
+      (parents before children), populates a topo-sorted entry array for
+      the compute pass, dispatches it, and fills the CPU
+      `m_worldTransformCache` mirror in the same linear walk. Called
+      automatically from `onUpdateRuntime` / `onUpdateEditor` /
+      `onRenderRuntime`, right after the world-transform cache is armed.
+    - `Renderer2D` instance structs drop the per-quad / circle / glyph
+      `column_major mat4 transform` field and replace it with an `int32_t
+      worldIndex`. Non-negative indices read from a new `sceneWorlds[]`
+      SSBO (binding 3) bound to `Scene::getWorldsBuffer()`; negative
+      indices read from `transientWorlds[]` (binding 4), a per-batch
+      scratch SSBO Renderer2D appends to for non-entity callers (UI, gizmo,
+      debug overlays, text glyphs). Per-instance footprint:
+      `QuadInstance` 128 → 80 bytes, `CircleInstance` 96 → 48 bytes,
+      `TextInstance` 128 → 80 bytes. `LineInstance` is unchanged (its data
+      already lives in world space).
+    - Public draw structs (`Quad2DData`, `CircleData`, `StringData`) gain
+      an optional `worldIndex` field defaulting to `-1` (transient path),
+      so existing callers (UI builders, gizmos, viewport overlays) compile
+      and run unchanged. Scene's entity render loops pass the entity's
+      `getWorldIndex()` to route through the scene SSBO.
+    - `Renderer2D::setSceneWorldsBuffer(buffer)` installs the external
+      buffer for the upcoming draws; `nullptr` reverts to a built-in
+      1-element identity fallback so the descriptor block is always
+      complete even with no active scene.
+    - `gpu::StorageBuffer::bind(uint32_t iBinding)` overload lets one
+      `VkBuffer` / GL named buffer be bound at multiple slots across
+      renderers (used to expose `WorldTransformPass`'s output — slot 2 of
+      the compute descriptor — at slot 3 of `Renderer2D`'s descriptor).
+    - 5 new headless tests in `test/scene_tests/WorldTransformPreparation_test.cpp`
+      exercise the topo-sort builder (parent before child), slot stability
+      across re-prepare, empty-scene safety, and CPU world-matrix parity
+      with the legacy parent-chain walk.
 - **Per-renderer Vulkan descriptor blocks (Phase 0 of the renderer modernisation).**
   Each high-level renderer now owns its own `VkDescriptorSetLayout` + pool +
   per-frame sets matching exactly the bindings its shaders declare. Removes

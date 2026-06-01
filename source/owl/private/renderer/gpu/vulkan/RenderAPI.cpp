@@ -185,7 +185,11 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData, const shared<
 }
 
 void RenderAPI::storageBufferMemoryBarrier() {
-	auto* const cmd = internal::VulkanHandler::get().getCurrentCommandBuffer();
+	auto& handler = internal::VulkanHandler::get();
+	// No-op outside an active batch — compute dispatches there run on a one-shot CB whose queue wait is the barrier.
+	if (!handler.inBatch)
+		return;
+	auto* const cmd = handler.getCurrentCommandBuffer();
 	if (cmd == nullptr)
 		return;
 	VkMemoryBarrier barrier{};
