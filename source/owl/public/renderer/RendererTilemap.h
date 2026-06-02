@@ -20,23 +20,27 @@ namespace owl::renderer {
 
 /**
  * @brief
- *  GPU-instanced 2D tilemap renderer. Replaces the per-cell `drawQuad` loop
- *  used by `Scene::drawTilemapQuads`: one `vkCmdDrawIndexed(6, cellCount, …)` /
- *  `glDrawElementsInstanced(GL_TRIANGLES, 6, cellCount, …)` per visible layer.
+ *  GPU-instanced 2D tilemap renderer. Replaces the per-cell `drawQuad` loop the
+ *  scene used to run: every queued tilemap (all entities, all visible layers)
+ *  is drawn in a single `vkCmdDrawIndexed(6, cellCount, …)` /
+ *  `glDrawElementsInstanced(GL_TRIANGLES, 6, cellCount, …)`.
  *
  *  The per-vertex VBO carries a single 4-vertex quad (corner indices 0..3).
- *  The per-instance VBO is rebuilt every frame, one entry per non-empty
- *  cell with `{cellWorldPos.xy, tileIndex, entityId}`. The vertex shader
- *  synthesises the world corner position and the atlas UV from a small
- *  per-draw UBO (atlas columns/rows, cell size, layer Z, tint, texture slot,
- *  half-texel inset) — no CPU-side per-cell UV computation.
+ *  The per-instance VBO is rebuilt every frame, one entry per non-empty cell
+ *  carrying everything that cell needs — `{cellWorldPos.xy, tileIndex,
+ *  entityId, layerZ, cellSize, atlasColumns, atlasRows, halfTexel,
+ *  textureSlot}`. The vertex shader synthesises the world corner position and
+ *  the atlas UV from those attributes (no CPU-side per-cell UV computation, no
+ *  per-draw UBO); distinct tilesets bind to distinct slots of the shader's
+ *  32-texture array.
  *
  * Lifecycle mirrors `Renderer2D`:
  *   - `init()` builds the pipeline / shader / static per-vertex buffer once
  *     at engine startup.
- *   - `beginScene(camera)` uploads the camera UBO.
- *   - `drawTilemap(asset, transform, entityId)` iterates layers and emits one
- *     instanced draw per visible non-empty layer.
+ *   - `beginScene(camera)` uploads the camera UBO and clears the queue.
+ *   - `drawTilemap(asset, transform, entityId)` queues one entity.
+ *   - `flushPending()` emits every queued tilemap in one instanced draw — called
+ *     by `Renderer2D::flush` from inside its render-pass batch.
  *   - `endScene()` is a no-op kept for symmetry.
  *   - `shutdown()` releases the pipeline / buffers.
  *
@@ -60,7 +64,7 @@ public:
 	/**
 	 * @brief
 	 *  One-shot startup: compile the Slang shader, create the static
-	 *  per-vertex VBO (4 corners), allocate the camera + per-draw UBOs.
+	 *  per-vertex VBO (4 corners), allocate the camera UBO.
 	 *  Safe to call multiple times — idempotent.
 	 */
 	static void init();
@@ -82,17 +86,25 @@ public:
 
 	/**
 	 * @brief
-	 *  Flush any deferred state. Currently a no-op (every `drawTilemap`
-	 *  issues its draws inline) but kept for symmetry with `Renderer2D`
-	 *  and to give the implementation room to batch later if needed.
+	 *  Flush any deferred state. A no-op kept for symmetry with
+	 *  `Renderer2D`; the queued tilemaps are emitted by `flushPending`,
+	 *  which `Renderer2D::flush` calls from inside its render-pass batch.
 	 */
 	static void endScene();
 
 	/**
 	 * @brief
-	 *  Submit one tilemap entity for rendering. Iterates every visible
-	 *  layer and emits one instanced drawcall per layer.
-	 * @param[in] iAsset The tilemap asset (must have a resolved tileset).
+	 *  Queue one tilemap entity for rendering this frame.
+	 *
+	 * The draw is **deferred**, not issued immediately: the tilemap uses its
+	 * own pipeline but must composite in painter's order inside the same
+	 * `beginBatch`/`endBatch` render pass as the `Renderer2D` background and
+	 * sprites. `Renderer2D::flush` drains the queue via `flushPending` after
+	 * the background and before the sprite batch. Issuing the draw here (mid
+	 * `Scene::render`, before the batch opens) would record into a command
+	 * buffer with no active render pass — on Vulkan that hangs the GPU.
+	 * @param[in] iAsset The tilemap asset (must have a resolved tileset). The
+	 *  reference must stay valid until `flushPending` runs this frame.
 	 * @param[in] iWorldTransform Entity world transform — translation of the
 	 *  tilemap origin, no per-cell scaling.
 	 * @param[in] iEntityId Entity id written into the picking render target.
@@ -101,13 +113,27 @@ public:
 
 	/**
 	 * @brief
-	 *  Per-frame counters reset by `beginScene` and updated by every
-	 *  `drawTilemap` call. Exposed for profiling overlays.
+	 *  Emit every tilemap queued by `drawTilemap` this frame in a single
+	 *  instanced drawcall. All entities and all their visible layers share one
+	 *  instance buffer — each cell carries its own painter's-order `layerZ`,
+	 *  atlas metadata and texture slot, and distinct tilesets are bound to
+	 *  distinct slots in the shader's texture array (up to 32). Must be called
+	 *  from inside an active `beginBatch`/`endBatch` render pass —
+	 *  `Renderer2D::flush` invokes it between the background and the sprite
+	 *  draws so the tilemap composites in the correct painter's order. Clears
+	 *  the queue.
+	 */
+	static void flushPending();
+
+	/**
+	 * @brief
+	 *  Per-frame counters reset by `beginScene` and updated by `flushPending`.
+	 *  Exposed for profiling overlays.
 	 */
 	struct Statistics {
-		/// Number of instanced drawcalls (one per visible non-empty layer).
+		/// Number of instanced drawcalls (0 if no cells, else 1 — all tilemaps combine into one draw).
 		uint32_t drawCallCount = 0;
-		/// Sum of `cellCount` across every drawcall this frame.
+		/// Total non-empty cells drawn across every queued tilemap this frame.
 		uint32_t instanceCount = 0;
 		/**
 		 * @brief

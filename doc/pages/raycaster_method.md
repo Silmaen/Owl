@@ -263,25 +263,22 @@ natural tint. A black
 cheap sky-bleed haze. The single `applyFog` helper is shared across every stripe emitter so a wall pixel and the floor
 pixel directly below it converge to the same colour at `fogEnd` — no visible seam.
 
-## Why this is a v1, not the canonical Wolfenstein 3D
+## Differences from canonical Wolfenstein 3D
 
 The user-facing API and the algorithm are both "Wolfenstein-style" in the classical sense (per-column DDA, vertical
-textured stripes, no fish-eye via perpendicular distance). The implementation differences from a pixel-perfect 1992
-Wolfenstein 3D port:
+textured stripes, no fish-eye via perpendicular distance). Relative to a pixel-perfect 1992 Wolfenstein 3D port:
 
-1. **Drawing path** — Wolfenstein 3D wrote pixels directly to a 320×200 VGA buffer. We instead emit **one textured quad
-   per stripe** via the existing `Renderer2D` batch, and the GPU rasterizes them on the framebuffer. Functionally
-   equivalent for stationary frames; for a 1920-wide viewport this means up to 1920 quads per frame (the 2D batcher caps
-   at 20 000, so we stay within budget).
-2. **No floor / ceiling casting** — we paint solid colours rather than sampling a floor / ceiling texture per pixel.
-   Roadmap item *Floors and ceilings* (planned for v0.2.0 follow-up) lifts this.
-3. **No sprites / billboards** — entities are not visible from the raycast view yet. Roadmap item *Sprites (
-   billboards)*.
-4. **No doors, thin walls, transparent walls** — every non-empty cell is a full opaque cube. Roadmap item *Map
-   features*.
-5. **CPU-side DDA** — Wolfenstein 3D ran on a 386, but a modern GPU could do the entire frame in a single fragment
-   shader. The CPU path is kept for v0.2.0 because it's testable, debuggable, and reuses the existing Slang quad shader.
-   A future PR can swap the inner loop for a dedicated shader without touching the public API.
+1. **Drawing path** — Wolfenstein 3D wrote pixels directly to a 320×200 VGA buffer. Owl emits textured stripes through
+   the GPU: the per-column DDA runs as a compute pre-pass (`RaycastDDAPass` / `raycast_dda.slang`) and every wall stripe
+   is drawn in a single instanced call (`raycast_stripe.slang`). The Null backend keeps a CPU walk + per-column
+   `Renderer2D::drawQuad` fallback so the headless test suite stays green.
+2. **Floors and ceilings** — shipped: a textured per-scanline backdrop (`emitTexturedBackdrop`), with a solid-colour
+   fallback when no floor / ceiling tileset is configured.
+3. **Sprites / billboards** — shipped: entities render as camera-facing strips, occluded by the per-column wall z-buffer.
+4. **Doors, pushwalls, transparent walls** — shipped (see *Dynamic walls* below and the `TileMeta.transparent` flag).
+   Thin walls were dropped from scope.
+5. **Still deferred** — point lights (only global distance fog ships today), and moving the raycast **sprite** stripes
+   onto the GPU so the `BitonicSortPass` depth sort can feed them without a CPU readback (planned for v0.3.0).
 
 ## Dynamic walls (doors + pushwalls)
 

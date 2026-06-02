@@ -90,6 +90,33 @@ private:
 
 	/**
 	 * @brief
+	 *  Resolve and add a tilemap asset and the chain it references: the
+	 *  `.owltilemap` file, the `.owltileset` it points at, and that tileset's
+	 *  atlas texture.
+	 * @param[in] iTilemapPath The `tilemapPath` from a `Tilemap` component
+	 *  (relative to an asset directory).
+	 * @param[in] iSceneName The scene containing the component (for warnings).
+	 * @param[in,out] ioAssets Accumulated deduplicated assets.
+	 * @param[in,out] ioWarnings Optional pointer to collect unresolved-reference warnings.
+	 */
+	static void scanTilemap(const std::string& iTilemapPath, const std::string& iSceneName,
+							std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
+
+	/**
+	 * @brief
+	 *  Resolve and add a `.owltileset` asset and its atlas texture. Shared by
+	 *  the tilemap chain and the raycast door / pushwall components, which
+	 *  reference a tileset directly.
+	 * @param[in] iTilesetPath The `.owltileset` path (relative to an asset directory).
+	 * @param[in] iSceneName The scene containing the reference (for warnings).
+	 * @param[in,out] ioAssets Accumulated deduplicated assets.
+	 * @param[in,out] ioWarnings Optional pointer to collect unresolved-reference warnings.
+	 */
+	static void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName,
+							std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
+
+	/**
+	 * @brief
 	 *  Scan a Lua script for scene.load_scene() calls and add referenced scenes.
 	 * @param[in] iScriptPath Absolute path to the Lua script file.
 	 * @param[in,out] ioVisitedScenes Set of already-visited scene paths.

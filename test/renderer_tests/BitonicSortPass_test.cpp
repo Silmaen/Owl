@@ -11,6 +11,8 @@
 #include <renderer/gpu/RenderCommand.h>
 #include <renderer/utils/BitonicSortPass.h>
 
+#include <cmath>
+
 TEST(BitonicSortPass, initShutdownOnNullBackend) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	owl::renderer::gpu::RenderCommand::create(owl::renderer::gpu::RenderAPI::Type::Null);
@@ -86,6 +88,43 @@ TEST(BitonicSortPass, ssboMirrorsUploadedItemsOnNullBackend) {
 		EXPECT_FLOAT_EQ(roundtrip[i].key, items[i].key);
 		EXPECT_EQ(roundtrip[i].value, items[i].value);
 	}
+	pass.shutdown();
+	owl::renderer::gpu::RenderCommand::invalidate();
+	owl::core::Log::invalidate();
+}
+
+TEST(BitonicSortPass, tailIsPaddedWithInfiniteKeys) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	owl::renderer::gpu::RenderCommand::create(owl::renderer::gpu::RenderAPI::Type::Null);
+	owl::renderer::utils::BitonicSortPass pass;
+	pass.init();
+	std::vector<owl::renderer::utils::BitonicSortPass::Item> items;
+	for (uint32_t i = 0; i < 5; ++i) items.push_back({.key = static_cast<float>(i), .value = i});
+	pass.sort(items);
+	EXPECT_EQ(pass.getItemCount(), 5u);
+
+	std::vector<owl::renderer::utils::BitonicSortPass::Item> full(
+			owl::renderer::utils::BitonicSortPass::kSortSize);
+	pass.getBuffer()->getData(
+			full.data(),
+			owl::renderer::utils::BitonicSortPass::kSortSize *
+					static_cast<std::uint32_t>(sizeof(owl::renderer::utils::BitonicSortPass::Item)),
+			0);
+	for (std::size_t i = 0; i < items.size(); ++i) EXPECT_FLOAT_EQ(full[i].key, items[i].key);
+	for (std::size_t i = items.size(); i < owl::renderer::utils::BitonicSortPass::kSortSize; ++i)
+		EXPECT_TRUE(std::isinf(full[i].key));
+	pass.shutdown();
+	owl::renderer::gpu::RenderCommand::invalidate();
+	owl::core::Log::invalidate();
+}
+
+TEST(BitonicSortPass, emptyInputKeepsZeroCount) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	owl::renderer::gpu::RenderCommand::create(owl::renderer::gpu::RenderAPI::Type::Null);
+	owl::renderer::utils::BitonicSortPass pass;
+	pass.init();
+	pass.sort({});
+	EXPECT_EQ(pass.getItemCount(), 0u);
 	pass.shutdown();
 	owl::renderer::gpu::RenderCommand::invalidate();
 	owl::core::Log::invalidate();

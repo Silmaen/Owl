@@ -49,6 +49,13 @@ Owl uses a backend abstraction so that different platform APIs can be swapped at
 | `Vulkan` | Vulkan 1.4+ | Modern low-level API; full desktop support    |
 | `Null`   | None        | Headless mode for servers or testing          |
 
+Every renderer follows one **GPU-driven instanced pipeline** (since the
+v0.2.0 renderer modernisation): a compute pre-pass writes an SSBO, the
+graphics pass is instanced and indexes into the SSBO via the instance id, and
+the CPU does zero per-vertex transform. `Renderer2D`, `RendererTilemap`, and
+the raycaster wall stripes all share this shape; the v0.3.0 3D / mesh pipeline
+builds on it rather than reintroducing CPU-vertex batching.
+
 See [Renderer](renderer.md) for the full rendering pipeline, batch system, and camera details.
 
 ### Input Backends
@@ -235,7 +242,7 @@ SVG sources are organized by usage in `source/owlnest/assets_sources/icons/`:
 
 ### Runtime Rendering and Theming
 
-At startup, `IconBank::build()` loads SVG files via lunasvg, applies colour substitution in memory, rasterize to pixel
+At startup, `IconBank::build()` loads SVG files via lunasvg, applies colour substitution in memory, rasterizes to pixel
 buffers, and packs into a GPU texture atlas (64px cell, mipmaps).
 
 **Colour convention** (SVG files are never modified on disk):
@@ -244,7 +251,7 @@ buffers, and packs into a GPU texture atlas (64px cell, mipmaps).
 - Fuchsia (`#ff00ff`) → substituted with theme accent colour
 - All other colours (R/G/B gizmo axes, etc.) → kept as-is
 
-When the theme changes, `IconBank::rebuild()` re-rasterize all SVGs with the new colours.
+When the theme changes, `IconBank::rebuild()` re-rasterizes all SVGs with the new colours.
 
 ### Scene-Rendered Icons (Triggers)
 
@@ -255,7 +262,7 @@ pre-rasterized from the same SVG sources:
 poetry run python source/owlnest/assets/icons/generate_icons.py
 ```
 
-This script only rasterize the `triggers/` category using `cairosvg`.
+This script only rasterizes the `triggers/` category using `cairosvg`.
 
 ## Task System
 

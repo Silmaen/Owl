@@ -216,6 +216,13 @@ cross-platform packaging from any host.
       CPU side. Headless tests on the Null backend pass. With the SSBO-indexed instanced pipeline landed in v0.2.0,
       adoption here is a drop-in: populate the AABB SSBO from the scene graph and replace the per-entity draw loop with
       one `drawIndexedIndirect`. Pays off when 3D meshes start filling scenes.
+    - ![Planned][planned] GPU raycast sprite stripes + `BitonicSortPass` adoption (#32, deferred from v0.2.0). The
+      `BitonicSortPass` utility + `bitonic_sort.slang` shipped and are headless-tested in v0.2.0, but adoption was held
+      back because `RendererRaycast::drawSprites` still emits per-column via `Renderer2D::drawQuad` (only the wall
+      stripes moved to `raycast_stripe.slang` in v0.2.0 Phase 3). The remaining work: move sprite stripe emission to a
+      GPU instanced shader fed by a GPU-side `zBuffer[]` occlusion read (drop the per-frame readback the wall path
+      currently does), then dispatch `BitonicSortPass` on the sprite depths so the back-to-front order stays on the GPU
+      and feeds the stripe shader directly — zero CPU readback. Same applies to the door / pushwall stripe consumers.
 - Scene
     - ![Planned][planned] 3D physics
         - 3D rigid body component (replace or extend Box2D with a 3D engine)
@@ -415,7 +422,7 @@ tradition — slotted between the existing 2D/raycast/voxel options.
         - Prefab structures (trees, buildings) as reusable block templates
         - Chunk inspector for debugging
 
-## v0.2.0 -- Expected 2026-08-01
+## v0.2.0 -- 2026-06-02
 
 **Goal:** Introduce a composable **renderer stack** so scenes can mix and match rendering modes (e.g. raycasting world +
 2D HUD), deliver the first non-2D mode (raycasting), the tilemap system, scene-to-scene transition effects, and
@@ -424,140 +431,69 @@ path (per-frame SSBOs + instanced rendering + compute pre-passes), so the engine
 v0.3.0.
 
 - Renderer Stack Architecture
-    - ![Done][done] Foundation — `RenderLayer` / `RenderStack` / `RenderLayerFactory`, `RendererTag` component, YAML
-      round-trip (`RendererStack:` in project + `EnabledRenderers:` per scene with `Overrides`), backward-compatible
-      defaults.
-    - ![Done][done] Runtime install + per-entity dispatch — `Scene::renderWithStack` orchestrates per-layer passes;
-      `Scene::layerAccepts` routes entities by their `RendererTag`.
-    - ![Done][done] Editor UI — Project Settings modal for stack composition, Scene Hierarchy `RendererTag` dropdown,
-      sample project ships a two-layer `[Renderer2D(world), Renderer2D(ui)]` stack.
-    - ![Done][done] Per-scene settings panel — dockable `Scene Settings` window with per-layer enable / reorder /
-      detach / typed overrides; edits route through `ModifyEnabledRenderersCommand`.
-    - ![Done][done] Tilemap system for 2D — `scene::Tileset` asset (`.owltileset`) + `scene::component::Tilemap`
-      with multi-layer support, per-cell quad renderer, static Box2D body per tilemap, inspector + Tile Palette +
-      viewport paint mode.
+    - ![Done][done] Foundation — `RenderLayer` / `RenderStack` / `RenderLayerFactory` + `RendererTag` component, YAML
+      round-trip (`RendererStack:` / per-scene `EnabledRenderers:` with overrides), backward-compatible defaults.
+    - ![Done][done] Runtime dispatch — `Scene::renderWithStack` runs per-layer passes; `Scene::layerAccepts` routes
+      entities by `RendererTag`.
+    - ![Done][done] Editor UI — Project Settings stack composition, Scene Hierarchy `RendererTag` dropdown, dockable
+      per-scene `Scene Settings` panel (enable / reorder / detach / typed overrides via `ModifyEnabledRenderersCommand`).
+    - ![Done][done] Tilemap system — `scene::Tileset` (`.owltileset`) + `.owltilemap` `TilemapAsset` (multi-layer, YAML
+      round-trip), `TilemapDocument` editor (Properties / Canvas / Palette, paint-erase, layers, per-stroke undo),
+      static Box2D body, viewport paint mode.
 - Raycasting Renderer
-    - ![Done][done] Raycasting core — `RendererRaycast` facade + `RendererRaycastLayer`, CPU per-column DDA through the
-      `Renderer2D` quad batch, configurable FOV / max distance / sky / floor via `DefaultConfig` or per-scene
-      `Overrides`. `Tileset` gained a `FilterMode` enum so wall atlases stay pixel-crisp. Sample ships
-      `scenes/raycast_demo.owl` (Wolfenstein 3D E1L1 layout, 64×64, original art).
-    - ![Done][done] Tilemap editor as dedicated asset (`.owltilemap`) — `TilemapAsset` with full YAML round-trip,
-      `TilemapDocument` three-pane editor (Properties / Canvas / Palette) with zoom-pan, paint/erase strokes, layer
-      manager, per-stroke undo. Component is now a path-reference (`tilemapPath` + runtime asset).
-    - ![Done][done] Floors and ceilings — per-screen-row textured backdrop via `emitTexturedBackdrop`, 1-pixel-tall quad
-      per scanline with linear UV interpolation and REPEAT wrap. `RaycastConfig` carries floor/ceiling tileset refs;
-      falls back to solid-colour quads when absent.
-    - ![Done][done] Sprites (billboards) — `SpriteRenderer` / `AnimatedSpriteRenderer` rendered as camera-facing strips
-      on raycast layers, occluded by the per-column z-buffer latched by `drawTilemapWalls`. Same components stay
-      2D-rendered on `Renderer2D` layers — author top-down, view first-person. `Transform.translation.z` is the world
-      Z-offset; `Transform.scale.xy` is the world size in cells.
-    - ![Done][done] Map features
-        - ![Done][done] Variable wall heights — `TileMeta.wallHeight: float` (clamp `[0, 8]`), bottom-anchored.
-        - ![Done][done] Transparent walls — `TileMeta.transparent: bool`. DDA collects up to 8 hits per ray and renders
-          back-to-front for proper alpha blending. Alpha-channel only — no chroma keying. Known limitation: a sprite
-          behind a transparent wall draws on top of it.
-        - ![Done][done] Doors and pushwalls — dedicated `RaycastDoor` / `RaycastPushWall` components (not tile flags, so
-          each is script-addressable). Hybrid activation: built-in `interactionKey` + range, or drive from Lua
-          (`door.activate` / `pushwall.activate` etc.). Box2D collision auto-managed. Editor: visual tile picker, green
-          outline on pushwalls, yellow destination line + endpoint circle on selection, gated `Add Component`
-          menu. Thin walls were dropped from scope.
-    - ![Done][done] Raycasting map editor in Owl Nest — `TilemapDocument` for the grid; top-down viewport in edit mode,
-      first-person view in Play mode; per-camera viewport marker (dot + arrow + FOV cone), toggleable from ribbon `Show`
-      group.
-    - ![Done][done] Lighting for raycasting — global distance fog via `RaycastConfig.fogColor` / `fogStart` /
-      `fogEnd`, applied uniformly to walls / dynamic walls / doors / sprites / backdrop. Point lights deferred (need a
-      per-column light-list buffer and deferred accumulation).
+    - ![Done][done] Core — `RendererRaycast` + `RendererRaycastLayer`, per-column DDA, configurable FOV / max distance /
+      sky / floor. `Tileset.FilterMode` keeps wall atlases pixel-crisp. Sample `scenes/raycast_demo.owl` (Wolfenstein 3D
+      E1L1, 64×64, original art).
+    - ![Done][done] Floors & ceilings — per-scanline textured backdrop (`emitTexturedBackdrop`); solid-colour fallback.
+    - ![Done][done] Sprites (billboards) — `SpriteRenderer` / `AnimatedSpriteRenderer` as camera-facing strips, z-buffer
+      occluded; the same components stay 2D on `Renderer2D` layers (author top-down, view first-person).
+      `Transform.translation.z` = world Z-offset, `scale.xy` = world size in cells.
+    - ![Done][done] Map features — variable wall heights (`TileMeta.wallHeight`, `[0, 8]`); transparent walls (alpha
+      only, up to 8 back-to-front hits/ray); doors & pushwalls (`RaycastDoor` / `RaycastPushWall` components,
+      built-in `interactionKey` or Lua activation, auto-managed Box2D, editor tile pickers). Thin walls dropped.
+    - ![Done][done] Map editor in Owl Nest — `TilemapDocument` grid; top-down viewport in edit mode, first-person in
+      Play; per-camera viewport marker (dot + arrow + FOV cone), ribbon `Show` toggle.
+    - ![Done][done] Distance fog — `RaycastConfig.fogColor` / `fogStart` / `fogEnd`, uniform across walls / doors /
+      sprites / backdrop. Point lights deferred.
 - Gameplay
     - ![Done][done] Scene transition effects — `ScreenTransition::Type` covers `Fade{In,Out}` +
       `Wipe{Left,Right,Up,Down}`;
       `play(type, duration, colour)` accepts a custom tint. Lua: `ui.transition_play(type_string, duration, [rgba])`
       plus back-compat `ui.transition_fade_in/out`.
-- Editor Performance
-    - ![Done][done] Faster scene loading (target exceeded 550×) — Memory tracker O (N²) regression fixed (global
-      `operator new`/`delete` overrides disabled in release; debug uses an O (1) `unordered_map` index), UUID →
-      `entt::entity` cache on `Scene` for O (1) lookups, in-memory SPIR-V cache for shader-warm scene loads. Opening
-      `raycast_demo` dropped from ~22 s to ~40 ms.
-    - ![Done][done] Async scene loading — two-phase `SceneSerializer::parseBuffer` / `applyParsed`: YAML on a Taskflow
-      worker, entity creation on the main thread. `Scheduler::getImpl()` + `parallelForEach/Index` overloads let engine
-      call sites use parallel utilities without naming `tf::Executor`.
-- In-Game Performance
-    - ![Done][done] Entity / system update budget — skip hidden entities in script/physics/EntityLink loops; frame-pool
-      every per-render scratch buffer (`RaycastSpriteData` / `RaycastDoorData` / `RaycastDynamicWallData`
-      / `CanvasEntry` / `ColumnHit` / `Projected`) via `thread_local` reuse.
-    - ![Done][done] Entity-management hot paths — cached primary-player lookup (invalidated on destroy / Player
-      add-remove); UUID→entity cache warm across the scene's lifetime; pre-resolved `EntityLink.linkedEntity` on
-      `onStartRuntime`.
-    - ![Done][done] Render-loop hygiene — `getWorldTransform` / `layerHasContent` / `isEffectivelyVisible`
-      per-pass caches (armed only when in update pass); `resolveAllTilemapAssets` dirty-flag gate.
-- Renderer Modernization. The pre-modernisation `Renderer2D` followed the Hazel/Sparky CPU-vertex batching pattern,
-  which capped throughput around a few thousand quads and produced fragile Vulkan descriptor-set state (NVIDIA
-  `vkCmdBindPipeline` crash, per-pass UBO race). Modernisation moves every renderer onto a uniform pipeline — compute
-  pre-pass writes SSBOs, graphics pass is instanced and indexes into the SSBOs via `gl_InstanceID`, zero CPU vertex
-  transform — which makes #32/#33/#35 actually pay off and unblocks the v0.3.0 3D pipeline.
-    - ![Done][done] Tilemap rendering via instanced quads + SSBO — single `vkCmdDrawIndexed(6, cellCount, …)` /
-      `glDrawElementsInstanced(…)` call per (tilemap, layer) backed by `tilemap_instanced.slang`. Proof-of-concept of the
-      instanced-SSBO pattern.
-    - ![Done][done] GPU compute pipeline foundation — `gpu::ComputeShader` (Null / OpenGL / Vulkan) +
-      `gpu::StorageBuffer` + `RenderCommand::storageBufferMemoryBarrier()` + Slang `[shader("compute")]` entry points.
-      Headless validation via `SlangCompute_test.cpp`.
-    - ![Done][done] Phase 0 — Vulkan descriptor & UBO foundation hardening. Per-renderer descriptor blocks: each
-      high-level renderer (`Renderer2D`, `RendererTilemap`, `BackgroundRenderer`) owns its own
-      `VkDescriptorSetLayout` + pool + per-frame sets matching the exact bindings its shaders declare, declared via the
-      backend-neutral `gpu::RendererDescriptors::declare/release/ScopedActive` API (no-op on Null / OpenGL). Fixes the
-      NVIDIA `vkCmdBindPipeline` crash (a shared global layout previously declared bindings the calling shader didn't
-      sample) and the per-pass UBO race (each UBO now scoped to its renderer block instead of memcpy'ed into a shared
-      `VkBuffer` mid-frame). Adds `gpu::StorageBuffer::getData()` readback on all backends for test-time correctness
-      checks (full GPU stall on Vulkan; not a hot-path API).
-    - ![Done][done] Phase 1 — `Renderer2D` instanced rewrite. All four batch families (quad / circle / line / text)
-      replaced the CPU-vertex Hazel pattern with one drawcall per batch via
-      `glDrawElementsInstanced` / `vkCmdDrawIndexed` (lines route through a new
-      `RenderAPI::drawLineInstanced` keyed off the `"line"` shader name for `LINE_LIST` topology). Each batch uploads a
-      `vector<XxxInstance>` to a per-batch `StorageBuffer` and the vertex shader transforms a shared unit quad by
-      `gInstances[gl_InstanceID].transform`. SSBO writes route through
-      `internal::RendererDescriptors::bindStorageBuffer` so the Vulkan descriptor set picks them up correctly. Public
-      API (`drawQuad`, `drawString`, `Statistics`, …) preserved; the only semantic shift is that `Statistics.drawCalls`
-      now counts GPU drawcalls submitted (one per non-empty batch type at flush) and `lineCount` is actually incremented
-      per line.
-    - ![Done][done] Phase 2 — `WorldTransformPass` adoption (#33). `Scene::prepareWorldTransforms()` flattens every
-      `Transform` + `Hierarchy` entity in pre-order, dispatches the compute pass once per frame, and exposes the
-      resulting SSBO via `Scene::getWorldsBuffer()`. `Renderer2D`'s quad / circle / text instance structs replaced
-      their per-instance `mat4 transform` with an `int32_t worldIndex`: positive values index `sceneWorlds[]` (bound
-      to `Scene::getWorldsBuffer()`), negative values index a `transientWorlds[]` SSBO Renderer2D owns for non-entity
-      callers (UI, gizmo, debug overlays, text glyphs). Per-instance footprint dropped 128 → 80 bytes (quad / text)
-      and 96 → 48 bytes (circle). New `gpu::StorageBuffer::bind(uint32_t iBinding)` overload lets the same
-      `VkBuffer` participate at different slot indices across renderers. Public-facing `drawQuad / drawCircle /
-      drawString` keep working unchanged for non-entity callers (transient path is the default).
-    - ![Done][done] Phase 3 — `RaycastDDAPass` adoption (#35). `RendererRaycast::drawTilemapWalls` dispatches the
-      per-column DDA on the GPU (`raycast_dda.slang`) once per frame and emits all wall stripes via a new instanced
-      shader `raycast_stripe.slang`: one `drawDataInstanced(6, numRays × kMaxHits)` call replaces the CPU walk and
-      the per-column `drawQuad` fan-out. Per-instance vertex shader unpacks the column / hit-index from
-      `SV_InstanceID`, reads `columnHits[col × kMaxHits + (hitCount − 1 − localK)]` (back-to-front painter's order)
-      and `tileUvRects[tileIndex]` for the atlas slot, computes stripe rectangle + texture U on-GPU, and the
-      fragment shader samples the tileset atlas. Per-tile UV rects + tilemap grid + tile meta upload only on cache
-      miss (typically once per scene). `zBuffer[]` SSBO is read back per frame to drive the legacy CPU
-      sprite/door/pushwall occlusion path (a future PR can move those consumers to GPU-side `zBuffer[]` indexing
-      to drop the readback). New descriptor block `RendererRaycast`: UBO `StripeParams` (slot 0), tileset atlas
-      `Sampler2D` (slot 1), DDA pass output SSBOs at slots 2-3 via `StorageBuffer::bind(uint32_t)`, per-tile UV rects
-      SSBO at slot 4. Null backend keeps the CPU walk fallback so headless tests still emit `Renderer2D::drawQuad`
-      stripes and exercise the visible behaviour.
-    - ![In Progress][progress] Phase 4 — `BitonicSortPass` adoption (#32)
-        - The sort pass already ships (`renderer::utils::BitonicSortPass` + `bitonic_sort.slang`, single-workgroup
-          bitonic-merge sort over `(key, value)` pairs, capacity 1024, headless tests pass). After Phase 3 the sprite
-          stripe emission lives on the GPU, so the sort output stays on the GPU and feeds the stripe shader directly —
-          zero CPU readback, drop-in trivial.
-        - Bitonic chosen over radix: for sprite counts < 1000 the constant factor of radix is higher than a single
-          shared-memory bitonic dispatch.
-    - ![In Progress][progress] Phase 5 — Clean-up & benchmarks
-        - Re-route `Scene::drawTilemapQuads` from the per-cell `Renderer2D::drawQuad` fallback to the instanced
-          `RendererTilemap::drawTilemap` now that Phase 1 has proven the SSBO-indexed instanced pipeline at scale across
-          both backends.
-        - Drop the now-unused `Scene::getWorldTransform` fast-cache callers; keep `getWorldTransform`
-          for tests / inspector code (rare, off-hot-path callers).
-        - Ramp up renderer test coverage now that GPU passes have correctness oracles via the new
-          `StorageBuffer` readback (added in Phase 0 for test-time CPU readback only, not part of the hot path).
-        - Update `doc/pages/renderer.md` + `doc/pages/architecture.md` to describe the SSBO-indexed instanced pipeline
-          as the canonical pattern. Surface a perf-bench summary (5 k-quad scene, deep hierarchy scene, raycast scene)
-          before/after.
+- Performance
+    - ![Done][done] Scene loading ~550× faster — memory-tracker O (N²) fix (release disables the global `new`/`delete`
+      overrides; debug uses an O (1) index), UUID→`entt::entity` cache, in-memory SPIR-V cache. `raycast_demo` opening
+      dropped ~22 s → ~40 ms. Plus async load (YAML on a Taskflow worker, entity creation on the main thread).
+    - ![Done][done] In-game hot paths — skip hidden entities in script / physics / `EntityLink` loops, frame-pooled
+      scratch buffers, cached primary-player + UUID→entity lookups, pre-resolved `EntityLink`, per-pass
+      `getWorldTransform` / visibility caches, `resolveAllTilemapAssets` dirty-flag gate.
+- Renderer Modernization — replace the legacy Hazel CPU-vertex batch (capped ~few-thousand quads, fragile Vulkan
+  descriptor state) with a uniform GPU-driven instanced-SSBO pipeline (compute pre-pass → SSBO → instanced draw, zero
+  CPU vertex transform), unblocking the v0.3.0 3D pipeline.
+    - ![Done][done] GPU compute foundation — `gpu::ComputeShader` + `gpu::StorageBuffer` (+ `getData()` readback) +
+      `storageBufferMemoryBarrier()` + Slang `[shader("compute")]` entry points (headless `SlangCompute_test.cpp`).
+    - ![Done][done] Phase 0 — per-renderer Vulkan descriptor blocks (`gpu::RendererDescriptors`, no-op on Null /
+      OpenGL): fixes the NVIDIA `vkCmdBindPipeline` crash and the per-pass UBO race.
+    - ![Done][done] Phase 1 — `Renderer2D` instanced rewrite (quad / circle / line / text → one drawcall per batch over
+      a shared unit quad + per-instance SSBO). Public API preserved.
+    - ![Done][done] Phase 2 — `WorldTransformPass` (#33): world matrices computed in a compute pre-pass into
+      `sceneWorlds[]`; instances carry an `int32_t worldIndex` instead of a `mat4` (128→80 / 96→48 bytes each).
+    - ![Done][done] Phase 3 — `RaycastDDAPass` (#35): per-column DDA on GPU (`raycast_dda.slang`), wall stripes in one
+      instanced draw (`raycast_stripe.slang`). `zBuffer[]` read back for the CPU sprite / door occlusion path.
+    - ![Done][done] Phase 4 — `BitonicSortPass` utility (#32) shipped + headless-tested. **Adoption deferred to v0.3.0**:
+      raycast sprite stripes are still CPU-emitted, so a GPU sort would need a readback and regress — it lands together
+      with GPU sprite emission, alongside the frustum-culling adoption.
+    - ![Done][done] Phase 5 — clean-up & docs:
+        - Tilemap rendering re-routed to the instanced `RendererTilemap`: deferred into `Renderer2D::flush` (after
+          background, before sprites) and combined into **one drawcall** for the whole scene (per-instance `layerZ` /
+          atlas / `textureSlot`, distinct tilesets across `gTextures[32]`, cap 32). Validated on GPU (Vulkan + OpenGL):
+          single-layer regression, multi-layer stacking, multi-entity / multi-tileset combine.
+        - Dropped the now-dead `getWorldTransform` calls in the 2D quad / circle / sprite loops (covered by
+          `worldIndex`); the cache stays for the raycast DDA / physics / `EntityLink` / text / inspector callers.
+        - Renderer test coverage up (`RendererTilemap_test`, `BitonicSortPass` padding / empty cases). The headless
+          suite is Null-backend, so `StorageBuffer` readback is an API-contract oracle, not a compute-output verifier.
+        - `renderer.md` + `architecture.md` document the instanced pipeline as canonical; perf-bench methodology shipped
+          (real-GPU numbers need a manual run).
 - Known bug fixes
     - ![Done][done] Editor keyboard shortcuts — modifier-based shortcuts (Ctrl+S, Ctrl+Z, …) bypass
       `ImGui::GetIO().WantCaptureKeyboard`; modifier-less still yield to focused text widgets.
