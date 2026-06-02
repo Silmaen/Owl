@@ -1,8 +1,16 @@
 // Renderer2D quad — instanced, SSBO-driven. One drawcall per batch via
 // `vkCmdDrawIndexed(6, instanceCount, …)` / `glDrawElementsInstanced(…)`.
 // The per-vertex VBO holds a single 4-vertex unit quad reused for every
-// instance; per-quad data (transform, colour, UVs, atlas slot, entity id,
+// instance; per-quad data (worldIndex, colour, UVs, atlas slot, entity id,
 // tiling factor) lives in `gInstances[gl_InstanceID]`.
+//
+// World matrix lookup: instances reference a slot in one of two SSBOs
+// instead of carrying a baked mat4. Positive `worldIndex` reads
+// `gSceneWorlds[worldIndex]` (computed by `WorldTransformPass`); negative
+// `worldIndex` reads `gTransientWorlds[-(worldIndex + 1)]` (the per-batch
+// scratch buffer Renderer2D uploads for non-entity callers like UI builders
+// or gizmos). The split lets entity draws skip the per-instance mat4 upload
+// while keeping the transient path drop-in compatible with legacy calls.
 
 struct Camera {
 	column_major float4x4 viewProjection;
@@ -19,7 +27,7 @@ ConstantBuffer<Camera> gCamera;
 Sampler2D gTextures[32];
 
 struct QuadInstance {
-	column_major float4x4 transform;
+	int worldIndex;
 	float4 color;
 	float2 uv[4];
 	uint texIndex;
@@ -29,6 +37,12 @@ struct QuadInstance {
 
 [[vk::binding(2)]]
 StructuredBuffer<QuadInstance> gInstances;
+
+[[vk::binding(3)]]
+StructuredBuffer<column_major float4x4> gSceneWorlds;
+
+[[vk::binding(4)]]
+StructuredBuffer<column_major float4x4> gTransientWorlds;
 
 struct VertexInput {
 	[[vk::location(0)]] int cornerIndex : POSITION;
@@ -61,11 +75,19 @@ static const float2 kCorners[4] = {
 	float2(-0.5f,  0.5f),
 };
 
+float4x4 resolveWorldMatrix(int worldIndex) {
+	if (worldIndex < 0) {
+		return gTransientWorlds[-(worldIndex + 1)];
+	}
+	return gSceneWorlds[worldIndex];
+}
+
 [shader("vertex")]
 VertexOutput vertexMain(VertexInput input, uint iid : SV_InstanceID) {
 	VertexOutput output;
 	QuadInstance inst = gInstances[iid];
-	float4 worldPos = mul(inst.transform, float4(kCorners[input.cornerIndex], 0.0f, 1.0f));
+	float4x4 world = resolveWorldMatrix(inst.worldIndex);
+	float4 worldPos = mul(world, float4(kCorners[input.cornerIndex], 0.0f, 1.0f));
 	output.svPosition = mul(gCamera.viewProjection, worldPos);
 	output.frag.color = inst.color;
 	output.frag.texCoord = inst.uv[input.cornerIndex];

@@ -16,6 +16,8 @@
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
+#include "renderer/gpu/StorageBuffer.h"
+#include "renderer/utils/WorldTransformPass.h"
 #include "scene/Entity.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
@@ -29,6 +31,8 @@
 #include "script/ScriptInstance.h"
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
+
+#include <limits>
 
 namespace owl::scene {
 
@@ -612,6 +616,8 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	updateEntityLinks();
 	m_worldTransformCache.clear();
 	m_worldTransformCacheActive = true;
+	prepareWorldTransforms();
+	renderer::Renderer2D::setSceneWorldsBuffer(getWorldsBuffer());
 	// Sound: update listener and spatial source positions
 	for (const auto view = registry.view<component::Transform, component::SoundListener>(); const auto entity: view) {
 		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
@@ -708,6 +714,11 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 void Scene::onRenderRuntime() {
 	OWL_PROFILE_FUNCTION()
 
+	m_worldTransformCache.clear();
+	m_worldTransformCacheActive = true;
+	prepareWorldTransforms();
+	renderer::Renderer2D::setSceneWorldsBuffer(getWorldsBuffer());
+
 	// find camera
 	renderer::Camera* mainCamera = nullptr;
 	math::mat4 cameraTransform;
@@ -772,6 +783,7 @@ void Scene::onRenderRuntime() {
 		renderWithStack(*mainCamera);
 		ScreenTransition::render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
 	}
+	m_worldTransformCacheActive = false;
 }
 
 void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, const renderer::Camera& iCamera) {
@@ -783,6 +795,8 @@ void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, con
 	m_worldTransformCache.clear();
 	m_inUpdatePass = true;
 	m_worldTransformCacheActive = true;
+	prepareWorldTransforms();
+	renderer::Renderer2D::setSceneWorldsBuffer(getWorldsBuffer());
 
 	// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
 	math::mat4 viewRotation = iCamera.getView();
@@ -934,6 +948,7 @@ void Scene::render() {
 		const math::Transform worldTransform = getWorldTransform(ent);
 
 		renderer::Renderer2D::drawQuad({.transform = worldTransform,
+										.worldIndex = static_cast<int32_t>(getWorldIndex(ent)),
 										.color = sprite.color,
 										.texture = sprite.texture,
 										.tilingFactor = sprite.tilingFactor,
@@ -960,6 +975,7 @@ void Scene::render() {
 		const float vMin = 1.0f - static_cast<float>(row + 1) / static_cast<float>(safeRows);
 
 		renderer::Renderer2D::drawQuad({.transform = worldTransform,
+										.worldIndex = static_cast<int32_t>(getWorldIndex(ent)),
 										.color = anim.color,
 										.texture = anim.texture,
 										.textureCoords = {math::vec2{uMin, vMin}, math::vec2{uMax, vMin},
@@ -977,12 +993,13 @@ void Scene::render() {
 		const math::Transform worldTransform = getWorldTransform(ent);
 
 		renderer::Renderer2D::drawCircle({.transform = worldTransform,
+										  .worldIndex = static_cast<int32_t>(getWorldIndex(ent)),
 										  .color = circle.color,
 										  .thickness = circle.thickness,
 										  .fade = circle.fade,
 										  .entityId = static_cast<int>(entity)});
 	}
-	// Draw text
+	// drawString always uses the transient buffer (per-glyph local matrices), so worldIndex is left default.
 	for (const auto view = registry.view<component::Transform, component::Text>(); auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
@@ -1000,6 +1017,7 @@ void Scene::render() {
 										  .lineSpacing = text.lineSpacing,
 										  .entityId = static_cast<int>(entity)});
 	}
+	// Pushwall plates override the entity's scale to a 1-cell square, so the cached world matrix doesn't match.
 	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
@@ -1019,6 +1037,7 @@ void Scene::render() {
 										.textureCoords = corners,
 										.entityId = static_cast<int>(entity)});
 	}
+	// Door plates use a non-uniform scale baked in CPU-side, so they keep the transient path.
 	for (const auto view = registry.view<component::Transform, component::RaycastDoor>(); auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, editorMode))
@@ -1646,6 +1665,77 @@ auto Scene::getWorldTransform(const Entity& iEntity) const -> math::Transform {
 	if (m_worldTransformCacheActive)
 		m_worldTransformCache.emplace(handle, result);
 	return result;
+}
+
+void Scene::prepareWorldTransforms() const {
+	OWL_PROFILE_FUNCTION()
+
+	if (!mp_worldTransformPass) {
+		mp_worldTransformPass = mkUniq<renderer::utils::WorldTransformPass>();
+		mp_worldTransformPass->init();
+	}
+
+	m_entityToWorldIndex.clear();
+
+	thread_local std::vector<renderer::utils::WorldTransformPass::Entry> entries;
+	thread_local std::vector<math::mat4> cpuWorlds;
+	entries.clear();
+	cpuWorlds.clear();
+
+	// Pre-order traversal stack — children pushed in reverse so siblings are visited left-to-right.
+	thread_local std::vector<entt::entity> stack;
+	stack.clear();
+	for (const auto e: registry.view<component::Transform, component::Hierarchy>()) {
+		if (const auto& [parentId, childrenIds] = registry.get<component::Hierarchy>(e); parentId == core::UUID{0})
+			stack.push_back(e);
+	}
+
+	while (!stack.empty()) {
+		const entt::entity e = stack.back();
+		stack.pop_back();
+
+		const auto& localTransform = registry.get<component::Transform>(e).transform;
+		const auto& hierarchy = registry.get<component::Hierarchy>(e);
+
+		const math::mat4 localMat = localTransform();
+		int32_t parentIdx = -1;
+		math::mat4 worldMat = localMat;
+		if (hierarchy.parentId != core::UUID{0}) {
+			if (const Entity parentEnt = findEntityByUUID(hierarchy.parentId); parentEnt) {
+				const auto parentHandle = static_cast<entt::entity>(parentEnt);
+				if (const auto it = m_entityToWorldIndex.find(parentHandle); it != m_entityToWorldIndex.end()) {
+					parentIdx = static_cast<int32_t>(it->second);
+					worldMat = cpuWorlds[it->second] * localMat;
+				}
+			}
+		}
+
+		const auto slot = static_cast<uint32_t>(entries.size());
+		m_entityToWorldIndex.emplace(e, slot);
+		entries.push_back({.local = localMat, .parentIdx = parentIdx});
+		cpuWorlds.push_back(worldMat);
+		m_worldTransformCache.insert_or_assign(e, math::Transform{worldMat});
+
+		for (const auto& childId: hierarchy.childrenIds | std::views::reverse) {
+			if (const Entity childEnt = findEntityByUUID(childId); childEnt)
+				stack.push_back(static_cast<entt::entity>(childEnt));
+		}
+	}
+
+	mp_worldTransformPass->compute(entries);
+}
+
+auto Scene::getWorldIndex(const Entity& iEntity) const -> uint32_t {
+	const auto handle = static_cast<entt::entity>(iEntity);
+	if (const auto it = m_entityToWorldIndex.find(handle); it != m_entityToWorldIndex.end())
+		return it->second;
+	return std::numeric_limits<uint32_t>::max();
+}
+
+auto Scene::getWorldsBuffer() const -> shared<renderer::gpu::StorageBuffer> {
+	if (!mp_worldTransformPass)
+		return nullptr;
+	return mp_worldTransformPass->getWorldBuffer();
 }
 
 auto Scene::isEffectivelyVisible(const Entity& iEntity, const bool iEditorMode) const -> bool {

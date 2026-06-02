@@ -217,6 +217,76 @@ as an SSBO and attaches its `vulkan::StorageBuffer` via
 `bindStorageBuffer` so the per-frame descriptor set picks up the
 correct `VkBuffer` automatically.
 
+### Raycast wall stripes on the GPU (Phase 3)
+
+`RendererRaycast::drawTilemapWalls` runs the per-column DDA on the GPU and
+emits every wall stripe in a single instanced drawcall:
+
+```mermaid
+flowchart LR
+    Tilemap["Tilemap grid +<br/>tile metadata"] -->|cache miss| DDA["RaycastDDAPass<br/>(raycast_dda.slang)"]
+    Camera["Camera params<br/>(cell-space)"] --> DDA
+    DDA -->|hitCount[]<br/>columnHits[]<br/>zBuffer[]| Stripe["raycast_stripe.slang<br/>(vertex + fragment)"]
+    Tileset["Tileset atlas +<br/>per-tile UV rects"] --> Stripe
+    Stripe -->|drawDataInstanced<br/>numRays × kMaxHits| FB["Framebuffer"]
+```
+
+- The DDA compute pass writes `hitCount[col]` + `columnHits[col × maxHits + k]`
+  + `zBuffer[col]` once per frame (one thread per screen column).
+- The stripe shader fires `numRays × kMaxHits` instances. Each vertex
+  unpacks `(col, localK)` from `SV_InstanceID`, indexes the hit array
+  back-to-front so painter's order is implicit, computes the stripe
+  rectangle from `perpDist` + `wallHeight` + the cached pixel-space
+  viewProjection, fetches `tileUvRects[tileIndex]` for the atlas UV strip,
+  and emits the corner. Slots past `hitCount[col]` emit a zero-area
+  off-screen quad — the rasteriser drops them cheaply.
+- Per-tile UV rects + tilemap grid + tile meta upload only on cache miss
+  (`(tilemap, tileset, layer)` key) — static scenes pay zero per-frame
+  upload cost.
+- `zBuffer[]` is read back into the renderer's CPU mirror so the legacy
+  CPU sprite / door / pushwall occlusion paths keep working. A future PR
+  can move those consumers to GPU-side `zBuffer[]` indexing to drop the
+  readback.
+- The Null backend keeps a CPU walk fallback so headless tests stay green
+  and the visual output is byte-identical.
+
+### Scene world matrices on the GPU (Phase 2)
+
+Phase 2 of the renderer modernisation moved per-entity world matrices
+from per-instance CPU upload to a GPU-resident SSBO populated by the
+compute pre-pass `renderer::utils::WorldTransformPass`. Each instance
+record in the quad / circle / text batches now carries a small
+`int32_t worldIndex` instead of a 64-byte `mat4 transform`:
+
+```mermaid
+flowchart LR
+    Scene["Scene::prepareWorldTransforms"] -->|topo-sorted entries| WT["WorldTransformPass<br/>(compute shader)"]
+    WT -->|worlds[] SSBO| Bind3["Renderer2D binding 3<br/>sceneWorlds"]
+    Renderer2D -->|appended per draw| TW["transientWorlds[]<br/>(per-batch scratch)"]
+    TW --> Bind4["Renderer2D binding 4<br/>transientWorlds"]
+    Bind3 -->|positive worldIndex| VS["Vertex shader<br/>resolveWorldMatrix"]
+    Bind4 -->|negative worldIndex| VS
+    VS --> Draw["Instanced drawcall"]
+```
+
+- Entity draws (sprites, animated sprites, circles, text entities in
+  `Scene::render`) pass `Scene::getWorldIndex(entity)` — a positive slot
+  into the GPU `sceneWorlds[]` SSBO.
+- Non-entity draws (UI canvas widgets, gizmo / debug overlays, the
+  per-glyph layout in `drawString`) leave `worldIndex` at its default `-1`.
+  Renderer2D appends each requested `math::Transform` to a per-batch
+  `transientWorlds[]` SSBO and emits a negative `worldIndex` that
+  points into it.
+- `gpu::StorageBuffer::bind(uint32_t iBinding)` lets the same SSBO be
+  bound at different slot numbers across descriptor blocks
+  (`WorldTransformPass` writes at slot 2 of the compute descriptor;
+  Renderer2D consumes at slot 3 of its own descriptor).
+- Per-instance footprint dropped: `QuadInstance` 128 → 80 bytes,
+  `CircleInstance` 96 → 48 bytes, `TextInstance` 128 → 80 bytes. `Scene`
+  pre-fills `m_worldTransformCache` in the same linear walk so legacy
+  CPU callers of `Scene::getWorldTransform()` keep their O(1) cache hit
+  without a GPU readback.
+
 ## Raycaster {#renderer-raycaster}
 
 `RendererRaycast` (in `renderer/rendererraycast/`) is the first non-2D

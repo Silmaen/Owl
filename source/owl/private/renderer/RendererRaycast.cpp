@@ -13,6 +13,13 @@
 #include "math/trigonometry.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer2D.h"
+#include "renderer/gpu/DrawData.h"
+#include "renderer/gpu/RenderCommand.h"
+#include "renderer/gpu/RendererDescriptors.h"
+#include "renderer/gpu/StorageBuffer.h"
+#include "renderer/gpu/Texture.h"
+#include "renderer/gpu/UniformBuffer.h"
+#include "renderer/utils/RaycastDDAPass.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 #include "scene/component/Tilemap.h"
@@ -25,6 +32,17 @@
 namespace owl::renderer {
 
 namespace {
+// std140 layout — must match `StripeParams` in `raycast_stripe.slang`.
+struct StripeParamsUbo {
+	math::mat4 viewProjection;
+	math::vec4 floats;// (viewportY, horizonY, stripePxWidth, yDarken)
+	uint32_t numRays;
+	uint32_t maxHits;
+	int32_t entityId;
+	uint32_t _pad;
+};
+static_assert(sizeof(StripeParamsUbo) == 96, "StripeParamsUbo must match shader UBO layout");
+
 // Per-pass state shared between `beginScene`, the `drawTilemap*` calls, and `endScene`.
 struct State {
 	// Camera world position (XY plane).
@@ -33,6 +51,8 @@ struct State {
 	math::vec2 cameraDir2D{1.f, 0.f};
 	// Camera right direction times tan(fov/2) — encodes both FOV and aspect.
 	math::vec2 cameraPlane2D{0.f, 1.f};
+	// Pixel-space viewProjection cached for the GPU stripe shader.
+	math::mat4 viewProjection = math::identity<float, 4>();
 	// Render target dimensions in pixels.
 	math::vec2ui viewport{1, 1};
 	// Current pass configuration.
@@ -43,6 +63,21 @@ struct State {
 	std::vector<float> zBufferPerColumn;
 	// Cumulative statistics for the current frame (cleared by `resetStats`).
 	RendererRaycast::Statistics stats;
+	// GPU compute pass running the per-column DDA. SSBOs grow with the largest tilemap / ray count seen.
+	uniq<utils::RaycastDDAPass> ddaPass;
+	// Stripe-rendering pipeline (GPU path) — UBO + tileset UV SSBO + dedicated DrawData.
+	shared<gpu::UniformBuffer> stripeParams;
+	shared<gpu::StorageBuffer> tileUvRectsSsbo;
+	shared<gpu::DrawData> stripeDrawData;
+	std::vector<math::vec4> tileUvRectsCpu;
+	// Tileset last seen by `drawTilemapWalls` — skips the meta upload when stable.
+	const scene::Tileset* cachedTileset = nullptr;
+	// Tilemap data pointer last seen — paired with `cachedTileset` and `cachedLayerIdx`.
+	const scene::TilemapAsset* cachedTilemap = nullptr;
+	// Layer index last uploaded to the DDA pass.
+	size_t cachedLayerIdx = 0;
+	// True once the `RendererRaycast` descriptor block has been declared.
+	bool descriptorBlockReady = false;
 };
 
 shared<State> g_state;
@@ -68,6 +103,199 @@ auto pickActiveLayerIndex(const scene::TilemapAsset& iTilemap) -> size_t {
 	return iTilemap.layers.size();
 }
 
+// Per-call wall-stripe context shared between the GPU and Null-backend CPU paths.
+struct WallStripeContext {
+	const scene::TilemapAsset& tilemap;
+	const scene::Tileset& tileset;
+	const shared<gpu::Texture>& atlas;
+	uint32_t numRays;
+	int maxSteps;
+	int entityId;
+	size_t layerIdx;
+	float stripePxWidth;
+	float horizonY;
+	math::vec2 camCellPos;
+	math::vec2 camCellDir;
+	math::vec2 camCellPlane;
+	math::vec2 viewport;
+};
+
+struct CpuColumnHit {
+	int32_t tileIndex;
+	float perpDist;
+	float wallX;
+	float wallHeight;
+	int side;
+	bool transparent;
+};
+
+// One-column CPU DDA — mirrors the GPU `raycast_dda.slang` algorithm so the Null-backend fallback matches.
+auto cpuWalkColumn(const WallStripeContext& iCtx, const uint32_t iCol, std::vector<CpuColumnHit>& ioHits) -> void {
+	constexpr size_t kMaxTransparentHits = 8;
+	const float cameraX = 2.f * (static_cast<float>(iCol) + 0.5f) / static_cast<float>(iCtx.numRays) - 1.f;
+	const math::vec2 rayDir{iCtx.camCellDir.x() + iCtx.camCellPlane.x() * cameraX,
+							iCtx.camCellDir.y() + iCtx.camCellPlane.y() * cameraX};
+	const float deltaX = (std::abs(rayDir.x()) < 1e-6f) ? 1e30f : std::abs(1.f / rayDir.x());
+	const float deltaY = (std::abs(rayDir.y()) < 1e-6f) ? 1e30f : std::abs(1.f / rayDir.y());
+	int mapX = static_cast<int>(std::floor(iCtx.camCellPos.x()));
+	int mapY = static_cast<int>(std::floor(iCtx.camCellPos.y()));
+	const int stepX = (rayDir.x() < 0.f) ? -1 : 1;
+	const int stepY = (rayDir.y() < 0.f) ? -1 : 1;
+	float sideDistX = (rayDir.x() < 0.f) ? (iCtx.camCellPos.x() - static_cast<float>(mapX)) * deltaX
+										 : (static_cast<float>(mapX + 1) - iCtx.camCellPos.x()) * deltaX;
+	float sideDistY = (rayDir.y() < 0.f) ? (iCtx.camCellPos.y() - static_cast<float>(mapY)) * deltaY
+										 : (static_cast<float>(mapY + 1) - iCtx.camCellPos.y()) * deltaY;
+	ioHits.clear();
+	int side = 0;
+	for (int step = 0; step < iCtx.maxSteps; ++step) {
+		if (sideDistX < sideDistY) {
+			sideDistX += deltaX;
+			mapX += stepX;
+			side = 0;
+		} else {
+			sideDistY += deltaY;
+			mapY += stepY;
+			side = 1;
+		}
+		const auto layerId = static_cast<uint32_t>(iCtx.layerIdx);
+		const auto cellX = static_cast<uint32_t>(mapX);
+		const auto cellY = static_cast<uint32_t>(mapY);
+		const int32_t cell = iCtx.tilemap.getTile(layerId, cellX, cellY);
+		if (cell < 0)
+			continue;
+		const auto& meta = iCtx.tileset.getTileMeta(static_cast<uint32_t>(cell));
+		const float perpDistCells = (side == 0) ? (sideDistX - deltaX) : (sideDistY - deltaY);
+		const float perpDistSafe = std::max(perpDistCells, g_MinPerpDist);
+		float wallX = (side == 0) ? (iCtx.camCellPos.y() + perpDistSafe * rayDir.y())
+								  : (iCtx.camCellPos.x() + perpDistSafe * rayDir.x());
+		wallX -= std::floor(wallX);
+		if (side == 0 && rayDir.x() > 0.f)
+			wallX = 1.f - wallX;
+		if (side == 1 && rayDir.y() < 0.f)
+			wallX = 1.f - wallX;
+		ioHits.push_back({.tileIndex = cell,
+						  .perpDist = perpDistSafe,
+						  .wallX = wallX,
+						  .wallHeight = std::max(0.f, meta.wallHeight),
+						  .side = side,
+						  .transparent = meta.transparent});
+		if (!meta.transparent)
+			break;
+		if (ioHits.size() >= kMaxTransparentHits)
+			break;
+	}
+}
+
+// Emit one column's CPU-walked stripe stack as Renderer2D drawcalls. Updates stats + the renderer zBuffer.
+auto cpuEmitColumn(const WallStripeContext& iCtx, const uint32_t iCol, const std::vector<CpuColumnHit>& iHits) -> void {
+	g_state->stats.stripeCount++;
+	if (iHits.empty()) {
+		g_state->stats.missCount++;
+		return;
+	}
+	float opaqueDepth = std::numeric_limits<float>::infinity();
+	for (const auto& hit: iHits) {
+		if (!hit.transparent) {
+			opaqueDepth = hit.perpDist;
+			break;
+		}
+	}
+	if (iCol < g_state->zBufferPerColumn.size())
+		g_state->zBufferPerColumn[iCol] = opaqueDepth;
+
+	const float stripeX = (static_cast<float>(iCol) + 0.5f) * iCtx.stripePxWidth;
+	for (const auto& wallHit: std::ranges::reverse_view(iHits)) {
+		g_state->stats.hitCount++;
+		const float lineHeightUnit = std::floor((iCtx.viewport.y() / wallHit.perpDist) * 0.5f) * 2.f;
+		const float lineHeight = lineHeightUnit * wallHit.wallHeight;
+		const float screenCenterY = iCtx.horizonY + lineHeightUnit * (wallHit.wallHeight - 1.f) * 0.5f;
+		const auto tileUv = iCtx.tileset.getTileUv(static_cast<uint32_t>(wallHit.tileIndex));
+		const float uvLeft = tileUv[0].x();
+		const float uvRight = tileUv[1].x();
+		const float uvBottom = tileUv[0].y();
+		const float uvTop = tileUv[3].y();
+		const float uHit = uvLeft + wallHit.wallX * (uvRight - uvLeft);
+		math::Transform stripeTr;
+		stripeTr.translation() = math::vec3{stripeX, screenCenterY, 0.f};
+		stripeTr.scale() = math::vec3{iCtx.stripePxWidth, lineHeight, 1.f};
+		const math::vec4 tint = (wallHit.side == 1) ? math::vec4{g_YSideDarken, g_YSideDarken, g_YSideDarken, 1.f}
+													: math::vec4{1.f, 1.f, 1.f, 1.f};
+		const std::array<math::vec2, 4> stripeUv{
+				math::vec2{uHit, uvBottom},
+				math::vec2{uHit, uvBottom},
+				math::vec2{uHit, uvTop},
+				math::vec2{uHit, uvTop},
+		};
+		Renderer2D::drawQuad({.transform = stripeTr,
+							  .color = tint,
+							  .texture = iCtx.atlas,
+							  .textureCoords = stripeUv,
+							  .entityId = iCtx.entityId});
+	}
+}
+
+// CPU-side fallback that drives `Renderer2D::drawQuad` emission for every visible column.
+void emitWallStripesCpu(const WallStripeContext& iCtx) {
+	thread_local std::vector<CpuColumnHit> hits;
+	for (uint32_t col = 0; col < iCtx.numRays; ++col) {
+		cpuWalkColumn(iCtx, col, hits);
+		cpuEmitColumn(iCtx, col, hits);
+	}
+}
+
+// GPU stripe-emission path — consumes `RaycastDDAPass` output via the `raycast_stripe` shader. Returns false on failure.
+auto emitWallStripesGpu(const WallStripeContext& iCtx) -> bool {
+	if (!g_state->stripeDrawData || !g_state->stripeParams || !g_state->tileUvRectsSsbo)
+		return false;
+
+	Renderer2D::nextBatch();
+
+	StripeParamsUbo ubo{};
+	ubo.viewProjection = g_state->viewProjection;
+	ubo.floats = math::vec4{iCtx.viewport.y(), iCtx.horizonY, iCtx.stripePxWidth, g_YSideDarken};
+	ubo.numRays = iCtx.numRays;
+	ubo.maxHits = utils::RaycastDDAPass::kMaxHitsPerColumn;
+	ubo.entityId = iCtx.entityId;
+	ubo._pad = 0u;
+
+	thread_local std::vector<uint32_t> hitCountReadback;
+	hitCountReadback.assign(iCtx.numRays, 0u);
+	if (const auto& hitBuf = g_state->ddaPass->getHitCountBuffer())
+		hitBuf->getData(hitCountReadback.data(), iCtx.numRays * static_cast<uint32_t>(sizeof(uint32_t)), 0);
+	if (const auto& zBuf = g_state->ddaPass->getZBufferBuffer()) {
+		g_state->zBufferPerColumn.resize(iCtx.numRays);
+		zBuf->getData(g_state->zBufferPerColumn.data(), iCtx.numRays * static_cast<uint32_t>(sizeof(float)), 0);
+	}
+	for (uint32_t col = 0; col < iCtx.numRays; ++col) {
+		const uint32_t hits = hitCountReadback[col];
+		g_state->stats.stripeCount++;
+		if (hits == 0)
+			g_state->stats.missCount++;
+		else
+			g_state->stats.hitCount += hits;
+	}
+
+	const gpu::RendererDescriptors::ScopedActive scoped{"RendererRaycast"};
+	g_state->stripeParams->setData(&ubo, static_cast<uint32_t>(sizeof(StripeParamsUbo)), 0);
+	g_state->stripeParams->bind();
+
+	if (const auto& hitBuf = g_state->ddaPass->getHitCountBuffer())
+		hitBuf->bind(/*iBinding=*/2u);
+	if (const auto& colBuf = g_state->ddaPass->getColumnHitBuffer())
+		colBuf->bind(/*iBinding=*/3u);
+	g_state->tileUvRectsSsbo->bind(/*iBinding=*/4u);
+
+	gpu::RenderCommand::beginBatch();
+	gpu::RenderCommand::beginTextureLoad();
+	iCtx.atlas->bind(0);
+	gpu::RenderCommand::endTextureLoad();
+
+	const uint32_t instanceCount = iCtx.numRays * utils::RaycastDDAPass::kMaxHitsPerColumn;
+	gpu::RenderCommand::drawDataInstanced(g_state->stripeDrawData, /*iIndexCount=*/6u, instanceCount);
+	gpu::RenderCommand::endBatch();
+	return true;
+}
+
 }// namespace
 
 void RendererRaycast::init() {
@@ -76,9 +304,71 @@ void RendererRaycast::init() {
 		g_state.reset();
 	}
 	g_state = mkShared<State>();
+	g_state->ddaPass = mkUniq<utils::RaycastDDAPass>();
+	g_state->ddaPass->init();
+
+	{
+		const std::array<gpu::BindingDecl, 5> bindings{
+				gpu::BindingDecl{.binding = 0,
+								 .type = gpu::BindingType::UniformBuffer,
+								 .count = 1,
+								 .stages = gpu::ShaderStage::Vertex},
+				gpu::BindingDecl{.binding = 1,
+								 .type = gpu::BindingType::CombinedImageSampler,
+								 .count = 1,
+								 .stages = gpu::ShaderStage::Fragment},
+				gpu::BindingDecl{.binding = 2,
+								 .type = gpu::BindingType::StorageBuffer,
+								 .count = 1,
+								 .stages = gpu::ShaderStage::Vertex},
+				gpu::BindingDecl{.binding = 3,
+								 .type = gpu::BindingType::StorageBuffer,
+								 .count = 1,
+								 .stages = gpu::ShaderStage::Vertex},
+				gpu::BindingDecl{.binding = 4,
+								 .type = gpu::BindingType::StorageBuffer,
+								 .count = 1,
+								 .stages = gpu::ShaderStage::Vertex},
+		};
+		gpu::RendererDescriptors::declare("RendererRaycast", bindings);
+		g_state->descriptorBlockReady = true;
+	}
+
+	const gpu::RendererDescriptors::ScopedActive scoped{"RendererRaycast"};
+
+	g_state->stripeParams =
+			gpu::UniformBuffer::create(static_cast<uint32_t>(sizeof(StripeParamsUbo)), 0, "RendererRaycast");
+	// Pre-allocated UV table — 4 KiB covers every realistic tileset (columns × rows; typical 8×8 or 16×16).
+	constexpr uint32_t kTileUvCapacity = 4096u;
+	g_state->tileUvRectsSsbo = gpu::StorageBuffer::create(kTileUvCapacity * static_cast<uint32_t>(sizeof(math::vec4)),
+														  4, "RendererRaycast");
+	g_state->tileUvRectsCpu.reserve(kTileUvCapacity);
+
+	g_state->stripeDrawData = gpu::DrawData::create();
+	{
+		std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
+		g_state->stripeDrawData->init({{"i_CornerIndex", gpu::ShaderDataType::Int}}, "raycast_stripe", indices,
+									  "raycast_stripe");
+		constexpr std::array<int32_t, 4> corners{0, 1, 2, 3};
+		g_state->stripeDrawData->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(int32_t)));
+	}
 }
 
-void RendererRaycast::shutdown() { g_state.reset(); }
+void RendererRaycast::shutdown() {
+	if (!g_state)
+		return;
+	if (g_state->ddaPass)
+		g_state->ddaPass->shutdown();
+	g_state->stripeParams.reset();
+	g_state->tileUvRectsSsbo.reset();
+	g_state->stripeDrawData.reset();
+	g_state->tileUvRectsCpu.clear();
+	g_state->tileUvRectsCpu.shrink_to_fit();
+	const bool wasReady = g_state->descriptorBlockReady;
+	g_state.reset();
+	if (wasReady)
+		gpu::RendererDescriptors::release("RendererRaycast");
+}
 
 void RendererRaycast::beginScene(const Camera& iCamera, const math::vec2ui& iViewport, const RaycastConfig& iConfig) {
 	OWL_PROFILE_FUNCTION()
@@ -89,6 +379,10 @@ void RendererRaycast::beginScene(const Camera& iCamera, const math::vec2ui& iVie
 	}
 	g_state->viewport = (iViewport.x() == 0 || iViewport.y() == 0) ? math::vec2ui{1, 1} : iViewport;
 	g_state->config = iConfig;
+	// Stripes are pixel-space, like Renderer2D's raycast layer setup — match its ortho instead of the world VP.
+	const CameraOrtho ortho(0.f, static_cast<float>(g_state->viewport.x()), 0.f,
+							static_cast<float>(g_state->viewport.y()));
+	g_state->viewProjection = ortho.getViewProjection();
 
 	const math::mat4 invView = inverse(iCamera.getView());
 	const math::vec4 worldPos = invView * math::vec4{0.f, 0.f, 0.f, 1.f};
@@ -317,117 +611,72 @@ void RendererRaycast::drawTilemapWalls(const scene::TilemapAsset& iTilemap,
 	const float horizonY = computeHorizonY();
 	const auto& tileset = *iTilemap.tileset;
 	const auto& atlasTex = tileset.texture;
-	struct ColumnHit {
-		int32_t tileIndex;///< Tile index hit (>= 0).
-		float perpDist;///< Perpendicular distance in cell units (already clamped to g_MinPerpDist).
-		float wallX;///< Texture U fraction along the wall face.
-		float wallHeight;///< Vertical scale of the wall (from `TileMeta::wallHeight`).
-		int side;///< 0 = X-edge hit, 1 = Y-edge hit (side darkening cue).
-		bool transparent;///< When true the DDA walked past this hit to keep collecting.
-	};
-	thread_local std::vector<ColumnHit> columnHits;
-	constexpr size_t kMaxTransparentHits = 8;
-	for (uint32_t col = 0; col < numRays; ++col) {
-		const float cameraX = 2.f * (static_cast<float>(col) + 0.5f) / static_cast<float>(numRays) - 1.f;
-		const math::vec2 rayDir{camCellDir.x() + camCellPlane.x() * cameraX,
-								camCellDir.y() + camCellPlane.y() * cameraX};
-		// Length of ray needed to cross one full cell on each axis.
-		const float deltaX = (std::abs(rayDir.x()) < 1e-6f) ? 1e30f : std::abs(1.f / rayDir.x());
-		const float deltaY = (std::abs(rayDir.y()) < 1e-6f) ? 1e30f : std::abs(1.f / rayDir.y());
-		int mapX = static_cast<int>(std::floor(camCellPos.x()));
-		int mapY = static_cast<int>(std::floor(camCellPos.y()));
-		const int stepX = (rayDir.x() < 0.f) ? -1 : 1;
-		const int stepY = (rayDir.y() < 0.f) ? -1 : 1;
-		float sideDistX = (rayDir.x() < 0.f) ? (camCellPos.x() - static_cast<float>(mapX)) * deltaX
-											 : (static_cast<float>(mapX + 1) - camCellPos.x()) * deltaX;
-		float sideDistY = (rayDir.y() < 0.f) ? (camCellPos.y() - static_cast<float>(mapY)) * deltaY
-											 : (static_cast<float>(mapY + 1) - camCellPos.y()) * deltaY;
-		columnHits.clear();
-		int side = 0;// 0: X-side, 1: Y-side
-		for (int step = 0; step < maxSteps; ++step) {
-			if (sideDistX < sideDistY) {
-				sideDistX += deltaX;
-				mapX += stepX;
-				side = 0;
-			} else {
-				sideDistY += deltaY;
-				mapY += stepY;
-				side = 1;
-			}
-			const int32_t cell = iTilemap.getTile(static_cast<uint32_t>(layerIdx), static_cast<uint32_t>(mapX),
-												  static_cast<uint32_t>(mapY));
-			if (cell < 0)
-				continue;
-			const auto& meta = tileset.getTileMeta(static_cast<uint32_t>(cell));
-			const float perpDistCells = (side == 0) ? (sideDistX - deltaX) : (sideDistY - deltaY);
-			const float perpDistSafe = std::max(perpDistCells, g_MinPerpDist);
-			float wallX = (side == 0) ? (camCellPos.y() + perpDistSafe * rayDir.y())
-									  : (camCellPos.x() + perpDistSafe * rayDir.x());
-			wallX -= std::floor(wallX);
-			if (side == 0 && rayDir.x() > 0.f)
-				wallX = 1.f - wallX;
-			if (side == 1 && rayDir.y() < 0.f)
-				wallX = 1.f - wallX;
-			columnHits.push_back({.tileIndex = cell,
-								  .perpDist = perpDistSafe,
-								  .wallX = wallX,
-								  .wallHeight = std::max(0.f, meta.wallHeight),
-								  .side = side,
-								  .transparent = meta.transparent});
-			if (!meta.transparent)
-				break;
-			if (columnHits.size() >= kMaxTransparentHits)
-				break;
+
+	// Cache-miss upload of the tilemap grid + tile metadata + per-tile UV rects (typically once per scene).
+	if (g_state->ddaPass && (&iTilemap != g_state->cachedTilemap || &tileset != g_state->cachedTileset ||
+							 layerIdx != g_state->cachedLayerIdx)) {
+		thread_local std::vector<int32_t> flatGrid;
+		thread_local std::vector<utils::RaycastDDAPass::TileMeta> tileMeta;
+		const uint32_t cellCount = iTilemap.width * iTilemap.height;
+		flatGrid.resize(cellCount);
+		for (uint32_t y = 0; y < iTilemap.height; ++y) {
+			for (uint32_t x = 0; x < iTilemap.width; ++x)
+				flatGrid[y * iTilemap.width + x] = iTilemap.getTile(static_cast<uint32_t>(layerIdx), x, y);
 		}
-		g_state->stats.stripeCount++;
-		if (columnHits.empty()) {
-			g_state->stats.missCount++;
-			continue;
+		const auto& metaTable = tileset.tiles;
+		tileMeta.resize(std::max<size_t>(1u, metaTable.size()));
+		for (size_t i = 0; i < metaTable.size(); ++i) {
+			tileMeta[i].wallHeight = std::max(0.f, metaTable[i].wallHeight);
+			tileMeta[i].transparent = metaTable[i].transparent ? 1u : 0u;
+		}
+		g_state->ddaPass->update(flatGrid, iTilemap.width, iTilemap.height, tileMeta);
+
+		if (g_state->tileUvRectsSsbo) {
+			const uint32_t tileCount = std::max<uint32_t>(1u, tileset.tileCount());
+			g_state->tileUvRectsCpu.resize(tileCount);
+			for (uint32_t i = 0; i < tileCount; ++i) {
+				const auto uv = tileset.getTileUv(i);
+				g_state->tileUvRectsCpu[i] = math::vec4{uv[0].x(), uv[0].y(), uv[1].x(), uv[3].y()};
+			}
+			g_state->tileUvRectsSsbo->setData(g_state->tileUvRectsCpu.data(),
+											  tileCount * static_cast<uint32_t>(sizeof(math::vec4)), 0);
 		}
 
-		float opaqueDepth = std::numeric_limits<float>::infinity();
-		for (const auto& hitEntry: columnHits) {
-			if (!hitEntry.transparent) {
-				opaqueDepth = hitEntry.perpDist;
-				break;
-			}
-		}
-		if (col < g_state->zBufferPerColumn.size())
-			g_state->zBufferPerColumn[col] = opaqueDepth;
-
-		const float stripeX = (static_cast<float>(col) + 0.5f) * stripePxWidth;
-		for (const auto& wallHit: std::ranges::reverse_view(columnHits)) {
-			g_state->stats.hitCount++;
-			const float lineHeightUnit = std::floor((vp.y() / wallHit.perpDist) * 0.5f) * 2.f;
-			const float lineHeight = lineHeightUnit * wallHit.wallHeight;
-			const float screenCenterY = horizonY + lineHeightUnit * (wallHit.wallHeight - 1.f) * 0.5f;
-			const auto tileUv = tileset.getTileUv(static_cast<uint32_t>(wallHit.tileIndex));
-			// `getTileUv` returns BL, BR, TR, TL.
-			const float uvLeft = tileUv[0].x();
-			const float uvRight = tileUv[1].x();
-			const float uvBottom = tileUv[0].y();
-			const float uvTop = tileUv[3].y();
-			const float uHit = uvLeft + wallHit.wallX * (uvRight - uvLeft);
-			math::Transform stripeTr;
-			stripeTr.translation() = math::vec3{stripeX, screenCenterY, 0.f};
-			stripeTr.scale() = math::vec3{stripePxWidth, lineHeight, 1.f};
-			math::vec4 tint{1.f, 1.f, 1.f, 1.f};
-			if (wallHit.side == 1)
-				tint = math::vec4{g_YSideDarken, g_YSideDarken, g_YSideDarken, 1.f};
-			// One U value across the stripe (a single atlas column), tile spans full V.
-			const std::array<math::vec2, 4> stripeUv{
-					math::vec2{uHit, uvBottom},
-					math::vec2{uHit, uvBottom},
-					math::vec2{uHit, uvTop},
-					math::vec2{uHit, uvTop},
-			};
-			Renderer2D::drawQuad({.transform = stripeTr,
-								  .color = tint,
-								  .texture = atlasTex,
-								  .textureCoords = stripeUv,
-								  .entityId = iEntityId});
-		}
+		g_state->cachedTilemap = &iTilemap;
+		g_state->cachedTileset = &tileset;
+		g_state->cachedLayerIdx = layerIdx;
 	}
+
+	// GPU DDA dispatch — fills hitCount/zBuffer/columnHits SSBOs consumed by the stripe shader on real backends.
+	utils::RaycastDDAPass::Params params{};
+	params.camCellPos = camCellPos;
+	params.camCellDir = camCellDir;
+	params.camCellPlane = camCellPlane;
+	params.numRays = numRays;
+	params.maxSteps = static_cast<uint32_t>(maxSteps);
+	params.gridWidth = iTilemap.width;
+	params.gridHeight = iTilemap.height;
+	params.minPerpDist = g_MinPerpDist;
+	g_state->ddaPass->dispatch(params);
+
+	const WallStripeContext ctx{.tilemap = iTilemap,
+								.tileset = tileset,
+								.atlas = atlasTex,
+								.numRays = numRays,
+								.maxSteps = maxSteps,
+								.entityId = iEntityId,
+								.layerIdx = layerIdx,
+								.stripePxWidth = stripePxWidth,
+								.horizonY = horizonY,
+								.camCellPos = camCellPos,
+								.camCellDir = camCellDir,
+								.camCellPlane = camCellPlane,
+								.viewport = vp};
+
+	const bool isNullBackend = (gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::Null);
+	if (!isNullBackend && emitWallStripesGpu(ctx))
+		return;
+	emitWallStripesCpu(ctx);
 }
 
 namespace {

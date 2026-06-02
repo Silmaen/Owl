@@ -16,6 +16,15 @@
 #include "renderer/RenderStack.h"
 
 #include <entt/entt.hpp>
+
+namespace owl::renderer::gpu {
+class StorageBuffer;
+}// namespace owl::renderer::gpu
+
+namespace owl::renderer::utils {
+class WorldTransformPass;
+}// namespace owl::renderer::utils
+
 /**
  * @brief
  *  Namespace for the scene elements.
@@ -243,6 +252,57 @@ public:
 
 	/**
 	 * @brief
+	 *  Rebuild the GPU world-transform SSBO and the entity → slot index map
+	 *  for the current frame.
+	 *
+	 * Walks every entity carrying both `Transform` and `Hierarchy` in pre-order
+	 * (root → leaf) so the resulting topo-sorted entry array satisfies the
+	 * `parentIdx < own index` contract that
+	 * `renderer::utils::WorldTransformPass` requires. The same pass populates
+	 * `m_worldTransformCache` and an internal CPU mirror of the world matrices,
+	 * which lets `getWorldTransform()` and other CPU consumers serve cached
+	 * data without a GPU readback.
+	 *
+	 * Idempotent within a frame — the prepared state is invalidated when
+	 * `m_worldTransformCacheActive` is cleared at the end of a tick. Renderers
+	 * call `getWorldsBuffer()` / `getWorldIndex(entity)` to consume the result.
+	 *
+	 * Lazy-inits the underlying `WorldTransformPass` on the first call. The
+	 * renderer must be initialised (so the compute shader can be compiled)
+	 * before invoking this function.
+	 */
+	void prepareWorldTransforms() const;
+
+	/**
+	 * @brief
+	 *  Look up the slot index of an entity in the GPU `worlds[]` SSBO populated
+	 *  by the most recent `prepareWorldTransforms()` call.
+	 *
+	 * Returns `UINT32_MAX` when the entity is missing from the current frame's
+	 * flattening — typically because it lacks a `Transform`/`Hierarchy`
+	 * component, was created after the prepare call, or because no prepare has
+	 * run yet on this tick. Callers that hit the sentinel must fall back to
+	 * the transient world path on the renderer (a per-frame scratch SSBO).
+	 * @param[in] iEntity The entity to look up.
+	 * @return The slot index, or `UINT32_MAX` if the entity is not in the
+	 * current frame's GPU buffer.
+	 */
+	[[nodiscard]] auto getWorldIndex(const Entity& iEntity) const -> uint32_t;
+
+	/**
+	 * @brief
+	 *  GPU world-matrix SSBO populated by `prepareWorldTransforms()`.
+	 *
+	 * Indexed by the slot returned from `getWorldIndex()`. Renderers bind this
+	 * as the `sceneWorlds[]` storage buffer in their instanced draw shaders.
+	 * Returns `nullptr` until the first `prepareWorldTransforms()` call has
+	 * succeeded.
+	 * @return The world-matrix SSBO, or `nullptr` if no frame has been prepared.
+	 */
+	[[nodiscard]] auto getWorldsBuffer() const -> shared<renderer::gpu::StorageBuffer>;
+
+	/**
+	 * @brief
 	 *  Check if an entity is effectively visible (walks parent chain).
 	 * @param[in] iEntity The entity.
 	 * @param[in] iEditorMode True if checking editor visibility, false for game visibility.
@@ -445,6 +505,22 @@ private:
 	 *  values to the post-mutation reads.
 	 */
 	mutable bool m_worldTransformCacheActive = false;
+	/**
+	 * @brief
+	 *  GPU compute pass that walks the parent chain and writes world matrices
+	 *  into a `worlds[]` SSBO. Held by `uniq` (the engine `std::unique_ptr`
+	 *  alias) so the full type only needs to be known in `Scene.cpp`.
+	 *  Lazily constructed on the first `prepareWorldTransforms()` call,
+	 *  destroyed with the scene.
+	 */
+	mutable uniq<renderer::utils::WorldTransformPass> mp_worldTransformPass;
+	/**
+	 * @brief
+	 *  Per-frame entity → slot index in the GPU `worlds[]` SSBO populated by
+	 *  `prepareWorldTransforms()`. Refilled on every prepare call alongside
+	 *  `m_worldTransformCache`; lookup via `getWorldIndex()`.
+	 */
+	mutable std::unordered_map<entt::entity, uint32_t> m_entityToWorldIndex;
 	/**
 	 * @brief
 	 *  Action when component is added to an entity.

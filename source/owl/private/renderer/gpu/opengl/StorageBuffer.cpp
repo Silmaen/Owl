@@ -40,4 +40,8 @@ void StorageBuffer::getData(void* oData, const uint32_t iSize, const uint32_t iO
 
 void StorageBuffer::bind() { glBindBufferBase(GL_SHADER_STORAGE_BUFFER, m_binding, m_rendererId); }
 
+void StorageBuffer::bind(const uint32_t iBinding) {
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, iBinding, m_rendererId);
+}
+
 }// namespace owl::renderer::gpu::opengl

@@ -69,6 +69,13 @@ public:
 	 */
 	void bind() override;
 
+	/**
+	 * @brief
+	 *  No-op slot-override bind.
+	 * @param[in] iBinding Shader binding slot (ignored on the Null backend).
+	 */
+	void bind(uint32_t iBinding) override;
+
 private:
 	/// Host-side mirror — tests round-trip through it.
 	std::vector<std::uint8_t> m_data;

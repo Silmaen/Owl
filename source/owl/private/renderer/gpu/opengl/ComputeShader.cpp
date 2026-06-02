@@ -11,21 +11,21 @@
 #include "ComputeShader.h"
 
 #include "core/external/opengl46.h"
+#include "renderer/Renderer.h"
 #include "renderer/utils/shaderFileUtils.h"
 
 namespace owl::renderer::gpu::opengl {
 
 namespace {
 auto loadSlangSource(const std::string& iShaderName, const std::string& iRenderer) -> std::string {
+	// Slang sources live at `shaders/<renderer>/slang/<name>.slang` (getShaderPath builds the wrong GLSL-style path).
+	const auto relative =
+			std::filesystem::path("shaders") / iRenderer / "slang" / (iShaderName + std::string(".slang"));
 	const auto sourcePath =
-			renderer::utils::getShaderPath(iShaderName, iRenderer, /*iRendererApi=*/"", ShaderType::Compute);
+			Renderer::getTextureLibrary().find(relative.generic_string()).value_or(std::filesystem::path{});
 	if (sourcePath.empty() || !exists(sourcePath)) {
-		// Fall back to the conventional `<assets>/shaders/<renderer>/slang/<name>.slang` path.
-		const auto fallback = renderer::utils::getShaderPath(iShaderName, iRenderer, "", ShaderType::Vertex);
-		if (fallback.empty()) {
-			OWL_CORE_ERROR("OpenGL compute shader: source not found for '{}' / '{}'.", iRenderer, iShaderName)
-			return {};
-		}
+		OWL_CORE_ERROR("OpenGL compute shader: source not found for '{}' / '{}'.", iRenderer, iShaderName)
+		return {};
 	}
 	std::ifstream in(sourcePath, std::ios::binary);
 	if (!in.is_open()) {
@@ -59,7 +59,8 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 	const GLuint shaderId = glCreateShader(GL_COMPUTE_SHADER);
 	glShaderBinary(1, &shaderId, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(),
 				   static_cast<GLsizei>(spirv.size() * sizeof(uint32_t)));
-	glSpecializeShader(shaderId, "computeMain", 0, nullptr, nullptr);
+	// Slang emits the entry point under the canonical name `main` in SPIR-V.
+	glSpecializeShader(shaderId, "main", 0, nullptr, nullptr);
 	GLint compileStatus = 0;
 	glGetShaderiv(shaderId, GL_COMPILE_STATUS, &compileStatus);
 	if (compileStatus == GL_FALSE) {

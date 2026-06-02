@@ -94,4 +94,13 @@ void StorageBuffer::bind() {
 	active->bindStorageBuffer(m_binding, m_buffer, static_cast<VkDeviceSize>(m_size));
 }
 
+void StorageBuffer::bind(const uint32_t iBinding) {
+	if (m_buffer == nullptr)
+		return;
+	auto* const active = internal::RendererDescriptors::getActive();
+	if (active == nullptr)
+		return;
+	active->bindStorageBuffer(iBinding, m_buffer, static_cast<VkDeviceSize>(m_size));
+}
+
 }// namespace owl::renderer::gpu::vulkan
