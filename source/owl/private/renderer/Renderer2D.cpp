@@ -335,6 +335,8 @@ void Renderer2D::flush() {
 
 	BackgroundRenderer::flushPending(bgTexIndex);
 
+	RendererTilemap::flushPending();
+
 	if (!g_Data->quad.instances.empty()) {
 		const auto count = static_cast<uint32_t>(g_Data->quad.instances.size());
 		g_Data->quad.ssbo->setData(g_Data->quad.instances.data(),

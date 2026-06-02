@@ -12,6 +12,7 @@
 
 #include <fstream>
 #include <regex>
+#include <sstream>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -41,6 +42,35 @@ void pushWarning(std::vector<std::string>* ioWarnings, const std::string& iKind,
 				 const std::string& iSource) {
 	if (ioWarnings != nullptr && !iName.empty())
 		ioWarnings->push_back(std::format("{} '{}' referenced by {} not found", iKind, iName, iSource));
+}
+
+auto resolveDataAsset(const std::string& iRelative) -> std::optional<AssetReference> {
+	if (iRelative.empty())
+		return std::nullopt;
+	if (const std::filesystem::path absPath(iRelative); absPath.is_absolute() && std::filesystem::exists(absPath))
+		return AssetReference{.packPath = makeRelativePath(absPath),
+							  .diskPath = absPath,
+							  .assetType = AssetType::Other};
+	if (!core::Application::instanced())
+		return std::nullopt;
+	for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+		if (auto p = assetsPath / iRelative; std::filesystem::exists(p))
+			return AssetReference{.packPath = iRelative, .diskPath = p, .assetType = AssetType::Other};
+	}
+	return std::nullopt;
+}
+
+auto readYamlScalar(const std::filesystem::path& iFile, const char* iKey) -> std::string {
+	std::ifstream in(iFile, std::ios::binary);
+	if (!in.is_open())
+		return {};
+	std::stringstream buffer;
+	buffer << in.rdbuf();
+	try {
+		if (const YAML::Node root = YAML::Load(buffer.str()); root && root[iKey] && root[iKey].IsScalar())
+			return root[iKey].as<std::string>();
+	} catch (const YAML::Exception&) { return {}; }
+	return {};
 }
 
 }// namespace
@@ -246,9 +276,42 @@ void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,//
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-void AssetScanner::scanEntity(const YAML::Node& iEntity, const std::string& iSceneName,
-							  std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
-							  std::vector<std::string>* ioWarnings) {
+void AssetScanner::scanTilemap(const std::string& iTilemapPath, const std::string& iSceneName,
+							   std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+	const auto tilemapRef = resolveDataAsset(iTilemapPath);
+	if (!tilemapRef) {
+		pushWarning(ioWarnings, "Tilemap", iTilemapPath, iSceneName);
+		return;
+	}
+	if (!hasAsset(ioAssets, tilemapRef->packPath))
+		ioAssets.push_back(*tilemapRef);
+
+	if (const auto tilesetPath = readYamlScalar(tilemapRef->diskPath, "tilesetPath"); !tilesetPath.empty())
+		scanTileset(tilesetPath, iSceneName, ioAssets, ioWarnings);
+}
+
+void AssetScanner::scanTileset(const std::string& iTilesetPath, const std::string& iSceneName,
+							   std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+	const auto tilesetRef = resolveDataAsset(iTilesetPath);
+	if (!tilesetRef) {
+		pushWarning(ioWarnings, "Tileset", iTilesetPath, iSceneName);
+		return;
+	}
+	if (!hasAsset(ioAssets, tilesetRef->packPath))
+		ioAssets.push_back(*tilesetRef);
+
+	if (const auto textureSerialized = readYamlScalar(tilesetRef->diskPath, "texture"); !textureSerialized.empty()) {
+		if (auto textureRef = resolveTexture(textureSerialized)) {
+			if (!hasAsset(ioAssets, textureRef->packPath))
+				ioAssets.push_back(*textureRef);
+		} else
+			pushWarning(ioWarnings, "Texture", textureSerialized, iSceneName);
+	}
+}
+
+void AssetScanner::scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
+							  const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
+							  std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
 	const auto addTextureField = [&](const YAML::Node& iComponent) -> void {
 		if (auto tex = iComponent["texture"]; tex) {
 			const auto val = tex.as<std::string>();
@@ -304,6 +367,13 @@ void AssetScanner::scanEntity(const YAML::Node& iEntity, const std::string& iSce
 					pushWarning(ioWarnings, "Trigger scene", name, iSceneName);
 			}
 		}
+	if (auto tilemap = iEntity["Tilemap"]; tilemap)
+		if (auto path = tilemap["tilemapPath"]; path)
+			scanTilemap(path.as<std::string>(), iSceneName, ioAssets, ioWarnings);
+	for (const char* component: {"RaycastDoor", "RaycastPushWall"})
+		if (auto node = iEntity[component]; node)
+			if (auto path = node["tilesetPath"]; path)
+				scanTileset(path.as<std::string>(), iSceneName, ioAssets, ioWarnings);
 }
 
 void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {

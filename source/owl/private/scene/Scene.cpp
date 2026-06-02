@@ -242,40 +242,6 @@ void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core:
 		ioAnim.m_playing = false;
 }
 
-void drawTilemapQuads(const TilemapAsset& iAsset, const math::Transform& iWorldTransform, const int iEntityId) {
-	if (!iAsset.tileset)
-		return;
-	const float cellSize = iAsset.cellSize;
-	const float originX = -static_cast<float>(iAsset.width - 1) * 0.5f * cellSize;
-	const float originY = static_cast<float>(iAsset.height - 1) * 0.5f * cellSize;
-	for (const auto& layer: iAsset.layers) {
-		if (!layer.visible)
-			continue;
-		for (uint32_t y = 0; y < iAsset.height; ++y) {
-			for (uint32_t x = 0; x < iAsset.width; ++x) {
-				const size_t flat = static_cast<size_t>(y) * iAsset.width + x;
-				if (flat >= layer.tiles.size())
-					continue;
-				const int32_t tileIdx = layer.tiles[flat];
-				if (tileIdx < 0)
-					continue;
-				math::Transform cellTransform = iWorldTransform;
-				cellTransform.translation().x() += originX + static_cast<float>(x) * cellSize;
-				cellTransform.translation().y() += originY - static_cast<float>(y) * cellSize;
-				constexpr float kSeamOverlap = 1.005f;
-				cellTransform.scale().x() *= cellSize * kSeamOverlap;
-				cellTransform.scale().y() *= cellSize * kSeamOverlap;
-				renderer::Renderer2D::drawQuad(
-						{.transform = cellTransform,
-						 .color = math::vec4{1.f, 1.f, 1.f, 1.f},
-						 .texture = iAsset.tileset->texture,
-						 .textureCoords = iAsset.tileset->getTileUv(static_cast<uint32_t>(tileIdx)),
-						 .entityId = iEntityId});
-			}
-		}
-	}
-}
-
 }// namespace
 
 Scene::Scene() = default;
@@ -945,10 +911,10 @@ void Scene::render() {
 		if (!layerAccepts(ent))
 			continue;
 		auto [transform, sprite] = group.get<component::Transform, component::SpriteRenderer>(entity);
-		const math::Transform worldTransform = getWorldTransform(ent);
+		const auto worldIndex = static_cast<int32_t>(getWorldIndex(ent));
 
-		renderer::Renderer2D::drawQuad({.transform = worldTransform,
-										.worldIndex = static_cast<int32_t>(getWorldIndex(ent)),
+		renderer::Renderer2D::drawQuad({.transform = worldIndex < 0 ? getWorldTransform(ent) : math::Transform{},
+										.worldIndex = worldIndex,
 										.color = sprite.color,
 										.texture = sprite.texture,
 										.tilingFactor = sprite.tilingFactor,
@@ -963,7 +929,7 @@ void Scene::render() {
 		if (!layerAccepts(ent))
 			continue;
 		auto [transform, anim] = view.get<component::Transform, component::AnimatedSpriteRenderer>(entity);
-		const math::Transform worldTransform = getWorldTransform(ent);
+		const auto worldIndex = static_cast<int32_t>(getWorldIndex(ent));
 		const uint32_t safeCols = std::max(anim.columns, 1u);
 		const uint32_t safeRows = std::max(anim.rows, 1u);
 		const uint32_t frame = std::clamp(anim.m_currentFrame, anim.firstFrame, anim.lastFrame);
@@ -974,8 +940,8 @@ void Scene::render() {
 		const float vMax = 1.0f - static_cast<float>(row) / static_cast<float>(safeRows);
 		const float vMin = 1.0f - static_cast<float>(row + 1) / static_cast<float>(safeRows);
 
-		renderer::Renderer2D::drawQuad({.transform = worldTransform,
-										.worldIndex = static_cast<int32_t>(getWorldIndex(ent)),
+		renderer::Renderer2D::drawQuad({.transform = worldIndex < 0 ? getWorldTransform(ent) : math::Transform{},
+										.worldIndex = worldIndex,
 										.color = anim.color,
 										.texture = anim.texture,
 										.textureCoords = {math::vec2{uMin, vMin}, math::vec2{uMax, vMin},
@@ -990,10 +956,10 @@ void Scene::render() {
 		if (!layerAccepts(ent))
 			continue;
 		auto [transform, circle] = view.get<component::Transform, component::CircleRenderer>(entity);
-		const math::Transform worldTransform = getWorldTransform(ent);
+		const auto worldIndex = static_cast<int32_t>(getWorldIndex(ent));
 
-		renderer::Renderer2D::drawCircle({.transform = worldTransform,
-										  .worldIndex = static_cast<int32_t>(getWorldIndex(ent)),
+		renderer::Renderer2D::drawCircle({.transform = worldIndex < 0 ? getWorldTransform(ent) : math::Transform{},
+										  .worldIndex = worldIndex,
 										  .color = circle.color,
 										  .thickness = circle.thickness,
 										  .fade = circle.fade,
@@ -1086,7 +1052,7 @@ void Scene::renderTilemaps(const bool iEditorMode, const bool iRaycastLayer) {
 			renderer::RendererRaycast::drawTilemapWalls(assetData, worldTransform, entityId);
 			continue;
 		}
-		drawTilemapQuads(assetData, worldTransform, entityId);
+		renderer::RendererTilemap::drawTilemap(assetData, worldTransform, entityId);
 	}
 }
 
@@ -1336,14 +1302,22 @@ void Scene::resolveAllTilemapAssets() {
 	const auto& app = core::Application::get();
 	const auto& assetDirs = app.getAssetDirectories();
 
-	const auto loadFromAssetDirs = [&](const std::filesystem::path& iRelative, const auto& iLoader) -> bool {
-		for (const auto& [title, assetsPath]: assetDirs) {
-			if (const auto fullPath = assetsPath / iRelative; exists(fullPath)) {
-				if (iLoader(fullPath))
+	// Try the open pack first (packaged games have no loose files on disk), then the asset directories.
+	const auto loadAsset = [&](const std::filesystem::path& iRelative, const auto& iFromBytes,
+							   const auto& iFromFile) -> bool {
+		if (const std::string rel = iRelative.generic_string(); app.hasOpenPack() && app.packContains(rel)) {
+			if (const auto data = app.loadFromPack(rel)) {
+				if (const std::string text(data->begin(), data->end()); iFromBytes(text))
 					return true;
 			}
 		}
-		return exists(iRelative) && iLoader(iRelative);
+		for (const auto& [title, assetsPath]: assetDirs) {
+			if (const auto fullPath = assetsPath / iRelative; exists(fullPath)) {
+				if (iFromFile(fullPath))
+					return true;
+			}
+		}
+		return exists(iRelative) && iFromFile(iRelative);
 	};
 
 	for (const auto view = registry.view<component::Tilemap>(); const auto entity: view) {
@@ -1351,8 +1325,10 @@ void Scene::resolveAllTilemapAssets() {
 		if (asset || tilemapPath.empty())
 			continue;
 		auto resolved = mkShared<TilemapAsset>();
-		const bool loaded = loadFromAssetDirs(
-				tilemapPath, [&](const std::filesystem::path& iPath) -> bool { return resolved->loadFromFile(iPath); });
+		const bool loaded = loadAsset(
+				tilemapPath,
+				[&](const std::string_view iYaml) -> bool { return resolved->deserializeFromString(iYaml); },
+				[&](const std::filesystem::path& iPath) -> bool { return resolved->loadFromFile(iPath); });
 		if (loaded)
 			asset = std::move(resolved);
 	}
@@ -1365,8 +1341,9 @@ void Scene::resolveAllTilemapAssets() {
 		if (const auto cached = tilesetCache.find(key); cached != tilesetCache.end())
 			return cached->second;
 		auto fresh = mkShared<Tileset>();
-		const bool loaded = loadFromAssetDirs(
-				iPath, [&](const std::filesystem::path& iFullPath) -> bool { return fresh->loadFromFile(iFullPath); });
+		const bool loaded = loadAsset(
+				iPath, [&](const std::string_view iYaml) -> bool { return fresh->deserializeFromString(iYaml); },
+				[&](const std::filesystem::path& iFullPath) -> bool { return fresh->loadFromFile(iFullPath); });
 		if (!loaded)
 			return nullptr;
 		tilesetCache.emplace(key, fresh);

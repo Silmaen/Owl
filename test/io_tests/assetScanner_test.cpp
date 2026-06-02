@@ -515,6 +515,74 @@ TEST_F(AssetScannerTest, ScanSceneEmptyTriggerLevelName) {
 	EXPECT_EQ(sceneCount, 1);
 }
 
+TEST_F(AssetScannerTest, ScanSceneWithTilemapChainPacksTilesetAndTexture) {
+	// Tilemap component → .owltilemap → .owltileset → atlas texture must all be packed.
+	const auto texPath = m_tempDir / "textures" / "atlas.png";
+	writeDummyBinary(texPath);
+	const auto tilesetPath = m_tempDir / "world.owltileset";
+	writeFile(tilesetPath, "Tileset: world\ntexture: \"pat:" + texPath.generic_string() + "\"\ncolumns: 4\nrows: 4\n");
+	const auto tilemapPath = m_tempDir / "world.owltilemap";
+	writeFile(tilemapPath, "Tilemap: world\ntilesetPath: " + tilesetPath.generic_string() + "\nwidth: 4\nheight: 4\n");
+	const auto scenePath = m_tempDir / "test.owl";
+	writeFile(scenePath, "Scene: test\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    Tilemap:\n"
+						 "      tilemapPath: " +
+								 tilemapPath.generic_string() + "\n");
+
+	const auto assets = AssetScanner::scanScene(scenePath);
+	bool foundTilemap = false;
+	bool foundTileset = false;
+	bool foundTexture = false;
+	for (const auto& ref: assets) {
+		if (ref.diskPath == tilemapPath)
+			foundTilemap = true;
+		if (ref.diskPath == tilesetPath)
+			foundTileset = true;
+		if (ref.assetType == AssetType::Texture && ref.diskPath == texPath)
+			foundTexture = true;
+	}
+	EXPECT_TRUE(foundTilemap);
+	EXPECT_TRUE(foundTileset);
+	EXPECT_TRUE(foundTexture);
+}
+
+TEST_F(AssetScannerTest, ScanSceneWithMissingTilemapLogsWarning) {
+	const auto scenePath = m_tempDir / "test.owl";
+	writeFile(scenePath, "Scene: test\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    Tilemap:\n"
+						 "      tilemapPath: /no/such/world.owltilemap\n");
+	std::vector<std::string> warnings;
+	(void) AssetScanner::scanScene(scenePath, &warnings);
+	EXPECT_FALSE(warnings.empty());
+}
+
+TEST_F(AssetScannerTest, ScanSceneWithRaycastDoorPacksTilesetAndTexture) {
+	const auto texPath = m_tempDir / "textures" / "walls.png";
+	writeDummyBinary(texPath);
+	const auto tilesetPath = m_tempDir / "walls.owltileset";
+	writeFile(tilesetPath, "Tileset: walls\ntexture: \"pat:" + texPath.generic_string() + "\"\ncolumns: 8\nrows: 8\n");
+	const auto scenePath = m_tempDir / "test.owl";
+	writeFile(scenePath, "Scene: test\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    RaycastDoor:\n"
+						 "      tilesetPath: " +
+								 tilesetPath.generic_string() + "\n      faceTileIndex: 0\n");
+
+	const auto assets = AssetScanner::scanScene(scenePath);
+	bool foundTileset = false;
+	bool foundTexture = false;
+	for (const auto& ref: assets) {
+		if (ref.diskPath == tilesetPath)
+			foundTileset = true;
+		if (ref.assetType == AssetType::Texture && ref.diskPath == texPath)
+			foundTexture = true;
+	}
+	EXPECT_TRUE(foundTileset);
+	EXPECT_TRUE(foundTexture);
+}
+
 TEST_F(AssetScannerTest, PackWriterProgressCallback) {
 	// Verify PackWriter invokes the progress callback per entry.
 	owl::io::pack::PackWriter writer;

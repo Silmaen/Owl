@@ -111,21 +111,21 @@ Code Style) and every BT in `Packaging/`.
 Pipeline (each step is a `ci_action.py` sub-action invoked through Docker
 except the first, which sets `docker_image` from the preset metadata):
 
-| Step                          | Condition                                  |
-|-------------------------------|--------------------------------------------|
-| Determine docker (native)     | always                                     |
-| Define Remote                 | always — configures DepManager remote      |
-| Clean output                  | always                                     |
-| Clean release                 | `release_preset` non-empty                 |
-| Build                         | always                                     |
-| Test                          | `run_tests == true`                        |
-| Code Coverage                 | `run_coverage == true`                     |
-| Build Release                 | `release_preset` non-empty                 |
-| Test Release                  | `release_preset` non-empty + `run_tests`   |
-| Documentation                 | `run_documentation == true`                |
-| Package                       | `run_package == true`                      |
-| Publish Package               | `run_package` + on default branch          |
-| Publish Documentation         | `run_package` + default branch + `publish_doc` |
+| Step                      | Condition                                      |
+|---------------------------|------------------------------------------------|
+| Determine docker (native) | always                                         |
+| Define Remote             | always — configures DepManager remote          |
+| Clean output              | always                                         |
+| Clean release             | `release_preset` non-empty                     |
+| Build                     | always                                         |
+| Test                      | `run_tests == true`                            |
+| Code Coverage             | `run_coverage == true`                         |
+| Build Release             | `release_preset` non-empty                     |
+| Test Release              | `release_preset` non-empty + `run_tests`       |
+| Documentation             | `run_documentation == true`                    |
+| Package                   | `run_package == true`                          |
+| Publish Package           | `run_package` + on default branch              |
+| Publish Documentation     | `run_package` + default branch + `publish_doc` |
 
 Each Dockerised step uses the image set by step 1 (`%docker_image%`, derived
 from the CMake preset's `vendor.silmaen` block).
@@ -151,34 +151,34 @@ participates in the github-bridge feature with `triggerOnPrDraft = true`.
 
 ## Build matrix
 
-| BT                                | Template          | Preset                                | Trigger profile        |
-|-----------------------------------|-------------------|---------------------------------------|------------------------|
-| Build/LinuxX64/Clang              | GlobalBuild       | `linux-clang-debug`                   | draft + ready          |
-| Build/LinuxX64/GCC                | GlobalBuild       | `linux-gcc-debug`                     | main only              |
-| Build/LinuxArm64/Clang            | GlobalBuild       | `linux-clang-debug` (ARM64 emulation) | ready (no draft)       |
-| Build/LinuxArm64/GCC              | GlobalBuild       | `linux-gcc-debug` (ARM64 emulation)   | main only              |
-| Build/WindowsX64/Clang            | GlobalBuild       | `windows-clang-debug`                 | draft + ready          |
-| Build/WindowsX64/GCC              | GlobalBuild       | `windows-gcc-debug`                   | main only              |
-| Build/Quality/Code Style          | CodeStylingCheck  | `linux-clang-debug`                   | draft + ready          |
-| Build/Quality/Clang-Tidy          | GlobalBuild       | `linux-clang-tidy`                    | ready (no draft)       |
-| Build/Quality/Sanitizer Address   | GlobalBuild       | `linux-sanitizer-address`             | draft + ready          |
-| Build/Quality/Sanitizer thread    | GlobalBuild       | `linux-sanitizer-thread`              | ready (no draft)       |
-| Build/Quality/Sanitizer leak      | GlobalBuild       | `linux-sanitizer-leak`                | ready (no draft)       |
-| Build/Quality/Sanitizer UB        | GlobalBuild       | `linux-sanitizer-undefined-behavior`  | main only              |
-| Packaging/LinuxX64/Engine         | GlobalBuild       | `package-engine-linux`                | main only              |
-| Packaging/LinuxX64/AppNest        | GlobalBuild       | `package-app-nest-linux`              | ready (no draft)       |
-| Packaging/LinuxArm64/Engine       | GlobalBuild       | `package-engine-linux` (arm64)        | ready (no draft)       |
-| Packaging/LinuxArm64/AppNest      | GlobalBuild       | `package-app-nest-linux` (arm64)      | main only              |
-| Packaging/WindowsX64/Engine       | GlobalBuild       | `package-engine-windows`              | main only              |
-| Packaging/WindowsX64/AppNest      | GlobalBuild       | `package-app-nest-windows`            | ready (no draft)       |
+| BT                              | Template         | Preset                                | Trigger profile  |
+|---------------------------------|------------------|---------------------------------------|------------------|
+| Build/LinuxX64/Clang            | GlobalBuild      | `linux-clang-debug`                   | draft + ready    |
+| Build/LinuxX64/GCC              | GlobalBuild      | `linux-gcc-debug`                     | main only        |
+| Build/LinuxArm64/Clang          | GlobalBuild      | `linux-clang-debug` (ARM64 emulation) | ready (no draft) |
+| Build/LinuxArm64/GCC            | GlobalBuild      | `linux-gcc-debug` (ARM64 emulation)   | main only        |
+| Build/WindowsX64/Clang          | GlobalBuild      | `windows-clang-debug`                 | draft + ready    |
+| Build/WindowsX64/GCC            | GlobalBuild      | `windows-gcc-debug`                   | main only        |
+| Build/Quality/Code Style        | CodeStylingCheck | `linux-clang-debug`                   | draft + ready    |
+| Build/Quality/Clang-Tidy        | GlobalBuild      | `linux-clang-tidy`                    | ready (no draft) |
+| Build/Quality/Sanitizer Address | GlobalBuild      | `linux-sanitizer-address`             | draft + ready    |
+| Build/Quality/Sanitizer thread  | GlobalBuild      | `linux-sanitizer-thread`              | ready (no draft) |
+| Build/Quality/Sanitizer leak    | GlobalBuild      | `linux-sanitizer-leak`                | ready (no draft) |
+| Build/Quality/Sanitizer UB      | GlobalBuild      | `linux-sanitizer-undefined-behavior`  | main only        |
+| Packaging/LinuxX64/Engine       | GlobalBuild      | `package-engine-linux`                | main only        |
+| Packaging/LinuxX64/AppNest      | GlobalBuild      | `package-app-nest-linux`              | ready (no draft) |
+| Packaging/LinuxArm64/Engine     | GlobalBuild      | `package-engine-linux` (arm64)        | ready (no draft) |
+| Packaging/LinuxArm64/AppNest    | GlobalBuild      | `package-app-nest-linux` (arm64)      | main only        |
+| Packaging/WindowsX64/Engine     | GlobalBuild      | `package-engine-windows`              | main only        |
+| Packaging/WindowsX64/AppNest    | GlobalBuild      | `package-app-nest-windows`            | ready (no draft) |
 
 **Trigger profiles** above map to:
 
-| Profile        | Helper            | Auto on `main` push | Auto on ready PR | Auto on draft PR |
-|----------------|-------------------|---------------------|------------------|------------------|
-| draft + ready  | `allowDraftPR()`  | ✅                  | ✅               | ✅               |
-| ready (no draft) | _(default)_     | ✅                  | ✅               | ❌ (Skipped CR)  |
-| main only      | `skipAutoPRs()`   | ✅                  | ❌ (Skipped CR)  | ❌ (Skipped CR)  |
+| Profile          | Helper           | Auto on `main` push | Auto on ready PR | Auto on draft PR |
+|------------------|------------------|---------------------|------------------|------------------|
+| draft + ready    | `allowDraftPR()` | ✅                   | ✅                | ✅                |
+| ready (no draft) | _(default)_      | ✅                   | ✅                | ❌ (Skipped CR)   |
+| main only        | `skipAutoPRs()`  | ✅                   | ❌ (Skipped CR)   | ❌ (Skipped CR)   |
 
 Manual triggers from the TeamCity UI **always** run regardless of profile —
 the gate short-circuits to `ALLOW` for any operator-initiated build.
@@ -233,10 +233,10 @@ inherited `BRIDGE_GITHUB` feature per BT. Both work by disabling the
 inherited feature (`disableSettings("BRIDGE_GITHUB")`) and re-attaching a
 fresh feature under a distinct id.
 
-| Helper            | Re-attached id              | Effect                                                                                                |
-|-------------------|-----------------------------|-------------------------------------------------------------------------------------------------------|
-| `allowDraftPR()`  | `BRIDGE_GITHUB_DRAFT`       | Sets `triggerOnPrDraft = true` — BT runs on draft PRs (fast-feedback subset)                          |
-| `skipAutoPRs()`   | `BRIDGE_GITHUB_MAIN_ONLY`   | Sets `prTriggerBranchesOverride = -:*` — BT auto-runs on `main` only, PR events post a "Skipped" CR   |
+| Helper           | Re-attached id            | Effect                                                                                              |
+|------------------|---------------------------|-----------------------------------------------------------------------------------------------------|
+| `allowDraftPR()` | `BRIDGE_GITHUB_DRAFT`     | Sets `triggerOnPrDraft = true` — BT runs on draft PRs (fast-feedback subset)                        |
+| `skipAutoPRs()`  | `BRIDGE_GITHUB_MAIN_ONLY` | Sets `prTriggerBranchesOverride = -:*` — BT auto-runs on `main` only, PR events post a "Skipped" CR |
 
 The helpers are **mutually exclusive** on the same BT —
 `BridgeFeatureReader` only honours the first `github-bridge` feature it
@@ -274,18 +274,18 @@ What it provides, in roles relevant to Owl:
 | Role                 | Mechanism                                                                                  |
 |----------------------|--------------------------------------------------------------------------------------------|
 | Draft PR suppression | `DraftAwareBuildFilter` (StartBuildPrecondition) — holds builds with a visible wait reason |
-| Draft cancellation   | `DraftBuildQueueCleaner` — removes inappropriate queued builds                              |
-| Auto-trigger on PR   | `PullRequestEventListener` reacts to `opened`/`synchronize`/`ready_for_review`              |
-| Check Run publishing | `BuildStatusCheckRunPublisher` — rich GitHub Check Runs at every lifecycle transition       |
-| Visual pill tagging  | `PrPromotionTagger` + `SimplePageExtension` — `draft` / `ready` pills in TC UI              |
-| Webhook endpoint     | `/app/teamcity-github-bridge/webhook` with HMAC-SHA256 verification                         |
+| Draft cancellation   | `DraftBuildQueueCleaner` — removes inappropriate queued builds                             |
+| Auto-trigger on PR   | `PullRequestEventListener` reacts to `opened`/`synchronize`/`ready_for_review`             |
+| Check Run publishing | `BuildStatusCheckRunPublisher` — rich GitHub Check Runs at every lifecycle transition      |
+| Visual pill tagging  | `PrPromotionTagger` + `SimplePageExtension` — `draft` / `ready` pills in TC UI             |
+| Webhook endpoint     | `/app/teamcity-github-bridge/webhook` with HMAC-SHA256 verification                        |
 
 Project-level params consumed by the plugin (set in `Project.kt`):
 
-| Parameter                                  | Value                | Purpose                                          |
-|--------------------------------------------|----------------------|--------------------------------------------------|
-| `teamcity.github.bridge.repo`              | `Silmaen/Owl`        | Webhook → BT routing (case-insensitive match)    |
-| `teamcity.github.bridge.connectionId`      | (CID constant)       | Used by the plugin to mint installation tokens   |
+| Parameter                             | Value          | Purpose                                        |
+|---------------------------------------|----------------|------------------------------------------------|
+| `teamcity.github.bridge.repo`         | `Silmaen/Owl`  | Webhook → BT routing (case-insensitive match)  |
+| `teamcity.github.bridge.connectionId` | (CID constant) | Used by the plugin to mint installation tokens |
 
 The four optional trigger toggles
 (`branchTrigger.enabled` / `branches`, `prTrigger.enabled` / `branches`)
@@ -296,12 +296,12 @@ per-BT overrides described above carry the constraints.
 
 Set on the root project (`Project.kt`) and inherited by every BT:
 
-| Parameter                              | Type     | Default       | Purpose                                       |
-|----------------------------------------|----------|---------------|-----------------------------------------------|
-| `owl_git_branch`                       | param    | `main`        | Default branch name used in branch_specification + VCS root |
-| `branch_specification`                 | param    | (multi-line)  | Refs TC pulls (main + open PR heads only)     |
-| `teamcity.github.bridge.repo`          | param    | `Silmaen/Owl` | Plugin: webhook → BT routing                  |
-| `teamcity.github.bridge.connectionId`  | param    | CID constant  | Plugin: GitHub App installation token mint    |
+| Parameter                             | Type  | Default       | Purpose                                                     |
+|---------------------------------------|-------|---------------|-------------------------------------------------------------|
+| `owl_git_branch`                      | param | `main`        | Default branch name used in branch_specification + VCS root |
+| `branch_specification`                | param | (multi-line)  | Refs TC pulls (main + open PR heads only)                   |
+| `teamcity.github.bridge.repo`         | param | `Silmaen/Owl` | Plugin: webhook → BT routing                                |
+| `teamcity.github.bridge.connectionId` | param | CID constant  | Plugin: GitHub App installation token mint                  |
 
 Template-level parameters live on `GlobalBuild` and `CodeStylingCheck`:
 preset name (`cmake_preset`), checkboxes (`run_tests`, `run_coverage`,

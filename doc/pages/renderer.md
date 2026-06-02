@@ -283,14 +283,71 @@ flowchart LR
   Renderer2D consumes at slot 3 of its own descriptor).
 - Per-instance footprint dropped: `QuadInstance` 128 → 80 bytes,
   `CircleInstance` 96 → 48 bytes, `TextInstance` 128 → 80 bytes. `Scene`
-  pre-fills `m_worldTransformCache` in the same linear walk so legacy
-  CPU callers of `Scene::getWorldTransform()` keep their O(1) cache hit
+  pre-fills `m_worldTransformCache` in the same linear walk so the CPU
+  consumers that genuinely need a world matrix (raycast DDA, physics sync,
+  `EntityLink`, the editor inspector / gizmo) keep their O(1) cache hit
   without a GPU readback.
+
+### Canonical instanced pipeline & clean-up (Phase 5)
+
+The SSBO-indexed instanced pattern proven by Phases 1–3 is the **canonical
+draw path** for every renderer going forward — a compute pre-pass writes an
+SSBO, the graphics pass is instanced and indexes into the SSBO via the
+instance id, and the CPU performs zero per-vertex transform. New renderers
+(the v0.3.0 mesh / 3D pipeline, the deferred GPU sprite stripes) build on
+this same shape rather than the retired Hazel-style CPU-vertex batch.
+
+Clean-ups in Phase 5:
+
+- **Tilemap rendering routes through the instanced `RendererTilemap`.**
+  `Scene::renderTilemaps` queues each non-raycast 2D tilemap via
+  `RendererTilemap::drawTilemap`; the draw is **deferred**, not immediate.
+  `Renderer2D::flush` drains the queue with `RendererTilemap::flushPending`
+  from inside its own `beginBatch`/`endBatch` render pass — after the
+  background, before the sprites — so the tilemap composites in the same
+  painter's order as the retired per-cell `Renderer2D::drawQuad` path.
+  Issuing the draw immediately (mid-`Scene::render`, before the batch opens)
+  recorded a `vkCmdDrawIndexed` with no active render pass and hung the GPU;
+  deferring into the active batch fixes it. The whole scene's tilemaps — every
+  entity, every layer — combine into **one instanced drawcall**
+  (`tilemap_instanced.slang`): `layerZ`, `cellSize`, the atlas grid, the
+  half-texel inset and a `textureSlot` are all per-instance attributes, and
+  distinct tilesets bind to distinct slots of the shader's `gTextures[32]`
+  array. There is no per-draw UBO: that was the thing that could not be pooled
+  (one descriptor set per frame per block, undefined to update between
+  recorded draws), so folding every per-draw datum into the instance stream —
+  the same pattern `Renderer2D` uses for its 32-texture batch — sidesteps the
+  descriptor race entirely. Cap: 32 distinct tilesets per batch.
+- **No redundant `getWorldTransform` on the 2D entity draws.** The quad /
+  circle / animated-sprite loops in `Scene::render` pass
+  `Scene::getWorldIndex(entity)`; when that slot is valid (the normal case
+  after `prepareWorldTransforms`) the vertex shader reads `sceneWorlds[]` and
+  the CPU `math::Transform` is never used, so it is no longer computed.
+  `getWorldTransform()` is only evaluated on the transient fallback path
+  (sentinel index) and for the consumers listed above.
+
+### Measuring the instanced pipeline
+
+The modernisation targets throughput, so validate changes against the three
+reference scenes rather than micro-benchmarks:
+
+- a **5 000-quad** flat scene (Renderer2D instanced batch),
+- a **deep-hierarchy** scene (exercises `WorldTransformPass` topo-sort + the
+  `sceneWorlds[]` SSBO), and
+- the **`raycast_demo`** scene (DDA compute pre-pass + wall stripe shader).
+
+Capture frame time with the in-editor profiler (`Window > Profiler`) or an
+`OWL_PROFILE_SCOPE` around the render pass, on a real GL / Vulkan backend —
+the Null backend executes no GPU work and is only an API-contract oracle (see
+*Testing*). Compare a release build before/after the change on the same GPU;
+record the GPU model alongside the numbers, since the instanced path is
+bandwidth- rather than CPU-bound. There is no automated perf gate in CI —
+the headless suite asserts correctness (stats, SSBO round-trip), not timing.
 
 ## Raycaster {#renderer-raycaster}
 
 `RendererRaycast` (in `renderer/rendererraycast/`) is the first non-2D
-renderer to ride on the stack. It syntheses a Wolfenstein-style first-person
+renderer to ride on the stack. It synthesises a Wolfenstein-style first-person
 view from a top-down 2D `scene::component::Tilemap`: each non-empty cell is a
 wall, each empty cell is walkable space.
 
