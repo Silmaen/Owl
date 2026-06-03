@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Voxel data model** — new `owl::data::voxel` module (foundation for the v0.2.1 voxel engine): `BlockRegistry`
+  (block-type table with per-face texture indices, render kind, collision flag, YAML round-trip), `Chunk`
+  (16³ cubic block grid with dirty tracking and run-length encode/decode), and `VoxelWorld` (sparse chunk
+  map with world-coordinate block access and floored negative-coordinate chunk resolution). New headless
+  `voxel_tests` category (26 tests).
+
 ## [0.2.0] - 2026-06-02
 
 ### Added

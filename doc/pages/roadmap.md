@@ -397,10 +397,10 @@ tradition — slotted between the existing 2D/raycast/voxel options.
 **Goal:** Add the second non-2D rendering mode — a voxel engine for block-based worlds (Minecraft-style).
 
 - Voxel Engine
-    - ![Planned][planned] Voxel world core
-        - Chunk-based world (e.g. 16x16x256 chunks)
-        - Block type registry with textures per face
-        - Chunk loading/unloading around camera
+    - ![In Progress][progress] Voxel world core
+        - Chunk-based world (cubic 16³ chunks, sparse `VoxelWorld` map) — ![Done][done] data model
+        - Block type registry with textures per face — ![Done][done] `BlockRegistry`
+        - Chunk loading/unloading around camera — ![Planned][planned] (streaming, lands with terrain generation)
     - ![Planned][planned] Chunk meshing
         - Greedy meshing or similar algorithm for efficient geometry
         - Only exposed faces rendered (hidden face culling)
