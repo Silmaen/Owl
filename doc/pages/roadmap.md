@@ -401,10 +401,10 @@ tradition — slotted between the existing 2D/raycast/voxel options.
         - Chunk-based world (cubic 16³ chunks, sparse `VoxelWorld` map) — ![Done][done] data model
         - Block type registry with textures per face — ![Done][done] `BlockRegistry`
         - Chunk loading/unloading around camera — ![Planned][planned] (streaming, lands with terrain generation)
-    - ![Planned][planned] Chunk meshing
-        - Greedy meshing or similar algorithm for efficient geometry
-        - Only exposed faces rendered (hidden face culling)
-        - Frustum culling per chunk
+    - ![In Progress][progress] Chunk meshing
+        - Greedy meshing or similar algorithm for efficient geometry — ![Done][done] `ChunkMesher` (greedy, per-axis)
+        - Only exposed faces rendered (hidden face culling) — ![Done][done] visible-face-only, cross-chunk via provider
+        - Frustum culling per chunk — ![Planned][planned] (renderer-side, lands with `RendererVoxel`)
     - ![Planned][planned] Terrain generation
         - Procedural terrain via noise functions (Perlin/Simplex)
         - Configurable biomes, terrain height, cave generation

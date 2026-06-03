@@ -128,9 +128,36 @@ World block coordinates map to chunk coordinates with **floored** division so ne
 Use `data::voxel::worldToChunk` / `data::voxel::worldToLocal` for the conversions, and `VoxelWorld::forEachChunk` /
 `chunkCoordinates` to enumerate resident chunks.
 
+## Chunk Meshing
+
+`ChunkMesher` turns a `Chunk` into a `ChunkMesh` — an indexed list of `VoxelVertex` (position, normal, tile-space
+UV, atlas texture index) in chunk-local block space. It is **CPU-only**: uploading to a GPU buffer and placing the
+chunk in the world (a model transform) are the renderer's job.
+
+```c++
+const data::voxel::ChunkMesh mesh = data::voxel::ChunkMesher::mesh(chunk, registry, neighborProvider);
+```
+
+Two techniques keep the geometry small:
+
+- **Hidden-face culling** — a face is emitted only when it is *visible*: the neighbour across it is non-opaque
+  **and** a different block. Interior faces, shared faces between identical blocks, and faces hidden by an opaque
+  neighbour are skipped. Faces on the chunk border are culled against the adjacent chunk through the
+  `NeighborProvider` callback (the isolated overload treats everything outside the chunk as air).
+- **Greedy meshing** — coplanar visible faces of the same block type merge into the largest possible rectangle, so
+  a solid 16³ chunk collapses to **6 quads** (one per outer face) instead of thousands. Merged quads carry tiled
+  UVs (`(0,0)`..`(w,h)`) so the per-face texture repeats across the rectangle.
+
+```mermaid
+flowchart LR
+    Chunk -->|per axis × direction| Mask[visibility mask slice]
+    Mask -->|merge rectangles| Quads[greedy quads]
+    Quads --> Mesh[ChunkMesh<br/>vertices + indices]
+```
+
 ## What's Next
 
-The data model above is the foundation. Subsequent v0.2.1 work builds on it: a CPU chunk mesher (greedy meshing with
-hidden-face culling), the first 3D forward renderer (`RendererVoxel`), procedural terrain generation with chunk
-streaming, block interaction (raycast pick, place/destroy, Lua API), rendering polish (ambient occlusion, lighting,
+The data model and mesher above are the foundation. Subsequent v0.2.1 work builds on them: the first 3D forward
+renderer (`RendererVoxel`) that uploads and draws the mesh, procedural terrain generation with chunk streaming,
+block interaction (raycast pick, place/destroy, Lua API), rendering polish (ambient occlusion, lighting,
 transparent/water passes), and the in-editor voxel authoring tools.

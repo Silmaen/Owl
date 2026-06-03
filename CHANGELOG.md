@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (16³ cubic block grid with dirty tracking and run-length encode/decode), and `VoxelWorld` (sparse chunk
   map with world-coordinate block access and floored negative-coordinate chunk resolution). New headless
   `voxel_tests` category (26 tests).
+- **Voxel chunk meshing** — `data::voxel::ChunkMesher` builds a `ChunkMesh` (indexed `VoxelVertex` list) from a
+  `Chunk` by **greedy meshing with hidden-face culling**: a face is emitted only when visible (neighbour
+  non-opaque and a different block), coplanar same-block faces merge into the largest rectangle, each quad carries
+  the per-face atlas texture index and tiled UVs, and cross-chunk neighbour culling goes through a provider
+  callback. CPU-only (no GPU upload). 10 headless tests cover greedy merge, culling, winding, per-face textures,
+  transparency and boundary culling.
 
 ### Changed
 
