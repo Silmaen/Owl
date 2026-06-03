@@ -9,7 +9,7 @@
 
 #include "renderer/Renderer2D.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/RendererTilemap.h"
 #include "renderer/gpu/DrawData.h"

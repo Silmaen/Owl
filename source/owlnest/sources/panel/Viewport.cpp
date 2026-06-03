@@ -127,7 +127,7 @@ void Viewport::onRender() {
 	const bool visible = ImGui::Begin(m_name.c_str(), &m_pOpen, flags);
 	m_focused = ImGui::IsWindowFocused();
 	m_hovered = ImGui::IsWindowHovered();
-	core::Application::get().getImGuiLayer()->blockEvents(!m_focused && !m_hovered);
+	app::Application::get().getImGuiLayer()->blockEvents(!m_focused && !m_hovered);
 
 	// Focus transition → this viewport's document becomes the active document.
 	if (m_focused && !m_wasFocused && m_parent != nullptr)

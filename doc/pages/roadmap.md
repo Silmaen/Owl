@@ -538,7 +538,7 @@ different asset types. All long-running operations become asynchronous with prog
       configurable UI / code font sizes in `EditorSettings`.
     - ![Done][done] Live preview for markup documents — `MarkdownPreview` (CommonMark + GFM via **md4c**) walks the
       parsed blocks to emit ImGui draw calls with cached `TextEditor` for code blocks; external links open via
-      `core::utils::openExternalUrl`. `SvgPreview` rasterize live SVG via `lunasvg`. Vertical splitter between editor
+      `platform::openExternalUrl`. `SvgPreview` rasterize live SVG via `lunasvg`. Vertical splitter between editor
       and preview, debounced ~250 ms.
 - Node Graph Editor
     - ![Done][done] Node graph framework — reusable `gui::widgets::NodeCanvas` (UUID-based nodes/pins/links, typed pins,

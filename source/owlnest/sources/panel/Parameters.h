@@ -76,7 +76,7 @@ private:
 	auto apply() -> bool;
 
 	/// Local working copy of the parameters.
-	core::AppParams m_localParams;
+	app::AppParams m_localParams;
 	/// Renderer value at the time the dialog was opened.
 	renderer::gpu::RenderAPI::Type m_originalRenderer{};
 	/// Sound value at the time the dialog was opened.

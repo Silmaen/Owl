@@ -8,7 +8,7 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <core/Log.h>
 #include <core/SerializerImpl.h>
 #include <scene/Entity.h>
@@ -26,27 +26,27 @@ class TilemapComponentFixture : public testing::Test {
 protected:
 	static void SetUpTestSuite() {
 		core::Log::init(core::Log::Level::Off);
-		s_app = mkShared<core::Application>(core::AppParams{.args = nullptr,
-															.frameLogFrequency = 0,
-															.name = "tilemapComponent",
-															.assetsPattern = "",
-															.icon = "",
-															.width = 0,
-															.height = 0,
-															.argCount = 0,
-															.renderer = renderer::gpu::RenderAPI::Type::Null,
-															.hasGui = false,
-															.useDebugging = false,
-															.isDummy = true});
+		s_app = mkShared<app::Application>(app::AppParams{.args = nullptr,
+														  .frameLogFrequency = 0,
+														  .name = "tilemapComponent",
+														  .assetsPattern = "",
+														  .icon = "",
+														  .width = 0,
+														  .height = 0,
+														  .argCount = 0,
+														  .renderer = renderer::gpu::RenderAPI::Type::Null,
+														  .hasGui = false,
+														  .useDebugging = false,
+														  .isDummy = true});
 	}
 
 	static void TearDownTestSuite() {
-		core::Application::invalidate();
+		app::Application::invalidate();
 		s_app.reset();
 		core::Log::invalidate();
 	}
 
-	inline static shared<core::Application> s_app;
+	inline static shared<app::Application> s_app;
 };
 
 }// namespace

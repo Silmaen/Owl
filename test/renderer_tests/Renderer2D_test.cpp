@@ -1,7 +1,7 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <renderer/Renderer.h>
 #include <renderer/Renderer2D.h>
 
@@ -9,6 +9,7 @@ using namespace owl::renderer;
 using namespace owl::renderer::gpu;
 using namespace owl::renderer;
 using namespace owl::core;
+using namespace owl::app;
 using namespace owl::math;
 
 TEST(Renderer2D, fakeEmptyScene) {
@@ -122,8 +123,7 @@ TEST(Renderer2D, instancedQuadBatchRollover) {
 	Renderer2D::beginScene(cam);
 	const Transform tr{{0.f, 0.f, 0.f}, {0, 0, 0}, {1.f, 1.f, 1.f}};
 	constexpr uint32_t kQuadCount = 20'001u;
-	for (uint32_t i = 0; i < kQuadCount; ++i)
-		Renderer2D::drawQuad({.transform = tr, .entityId = static_cast<int>(i)});
+	for (uint32_t i = 0; i < kQuadCount; ++i) Renderer2D::drawQuad({.transform = tr, .entityId = static_cast<int>(i)});
 	Renderer2D::endScene();
 	const auto st = Renderer2D::getStats();
 	EXPECT_EQ(st.quadCount, kQuadCount);
@@ -140,8 +140,7 @@ TEST(Renderer2D, instancedLineBatch) {
 	const CameraEditor cam;
 	Renderer2D::resetStats();
 	Renderer2D::beginScene(cam);
-	for (int i = 0; i < 100; ++i)
-		Renderer2D::drawLine({.point1 = {0, 0, 0}, .point2 = {1.f, 1.f, 0.f}, .entityId = i});
+	for (int i = 0; i < 100; ++i) Renderer2D::drawLine({.point1 = {0, 0, 0}, .point2 = {1.f, 1.f, 0.f}, .entityId = i});
 	Renderer2D::endScene();
 	const auto st = Renderer2D::getStats();
 	EXPECT_EQ(st.lineCount, 100u);

@@ -1,0 +1,53 @@
+/**
+ * @file FileDialog.h
+ * @author Silmaen
+ * @date 27/12/2022
+ * Copyright (c) 2022 All rights reserved.
+ * All modification must get authorization from the author.
+ */
+
+#pragma once
+
+#include <filesystem>
+
+/**
+ * @brief
+ *  Namespace for utility functions.
+ */
+namespace owl::platform {
+/**
+ * @brief
+ *  class For displaying a file dialog.
+ */
+class OWL_API FileDialog {
+public:
+	/**
+	 * @brief
+	 *  Open a file dialog to search for an existing file.
+	 * @param[in] iFilter Filter to apply during the search.
+	 * @return A valid file path or null if cancelled.
+	 */
+	static auto openFile(const std::string& iFilter) -> std::filesystem::path;
+
+	/**
+	 * @brief
+	 *  Open a file dialog to define a file to create.
+	 *
+	 * Passing ``iDefaultName`` suggests a filename in the dialog's text
+	 * field; without it some Linux portal backends degrade into a
+	 * folder-only picker.
+	 * @param[in] iFilter Filter to apply during the search.
+	 * @param[in] iDefaultName Optional default filename pre-filled in the dialog.
+	 * @return A valid file path or null if cancelled.
+	 */
+	static auto saveFile(const std::string& iFilter, const std::string& iDefaultName = {}) -> std::filesystem::path;
+
+	/**
+	 * @brief
+	 *  Open a dialog to select a folder.
+	 * @return A valid directory path or empty if cancelled.
+	 */
+	static auto pickFolder() -> std::filesystem::path;
+};
+
+}// namespace owl::platform

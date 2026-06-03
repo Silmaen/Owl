@@ -11,7 +11,7 @@
 
 #include "Descriptors.h"
 #include "RendererDescriptors.h"
-#include "core/Application.h"
+#include "app/Application.h"
 #include "renderer/gpu/GraphContext.h"
 #include "utils.h"
 

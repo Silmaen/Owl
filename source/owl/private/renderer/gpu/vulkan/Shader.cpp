@@ -8,10 +8,10 @@
 #include "owlpch.h"
 
 #include "Shader.h"
-#include "core/Application.h"
-#include "core/utils/FileUtils.h"
+#include "app/Application.h"
 #include "internal/VulkanHandler.h"
 #include "internal/utils.h"
+#include "platform/FileUtils.h"
 #include "renderer/utils/shaderFileUtils.h"
 
 namespace owl::renderer::gpu::vulkan {
@@ -76,7 +76,7 @@ Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 	OWL_PROFILE_FUNCTION()
 
 	if (iSources.size() == 1 && iSources[0].extension() == ".slang") {
-		createShader(core::utils::fileToString(iSources[0]));
+		createShader(platform::fileToString(iSources[0]));
 	} else {
 		OWL_CORE_ERROR("Vulkan Shader: Expected a single .slang file, got {} files.", iSources.size())
 	}

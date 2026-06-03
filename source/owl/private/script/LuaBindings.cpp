@@ -12,7 +12,7 @@
 
 #include "core/external/lua.h"
 #include "input/Input.h"
-#include "physic/PhysicCommand.h"
+#include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/SaveManager.h"
 #include "scene/Scene.h"
@@ -128,14 +128,14 @@ auto luaPhysicsImpulse(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState)) {
 		const auto fx = static_cast<float>(luaL_checknumber(iState, 2));
 		const auto fy = static_cast<float>(luaL_checknumber(iState, 3));
-		physic::PhysicCommand::impulse(*entity, {fx, fy});
+		physics::PhysicCommand::impulse(*entity, {fx, fy});
 	}
 	return 0;
 }
 
 auto luaPhysicsGetVelocity(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState)) {
-		const auto vel = physic::PhysicCommand::getVelocity(*entity);
+		const auto vel = physics::PhysicCommand::getVelocity(*entity);
 		lua_pushnumber(iState, static_cast<lua_Number>(vel.x()));
 		lua_pushnumber(iState, static_cast<lua_Number>(vel.y()));
 		return 2;
@@ -149,7 +149,7 @@ auto luaPhysicsSetVelocity(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState)) {
 		const auto vx = static_cast<float>(luaL_checknumber(iState, 2));
 		const auto vy = static_cast<float>(luaL_checknumber(iState, 3));
-		physic::PhysicCommand::setVelocity(*entity, {vx, vy});
+		physics::PhysicCommand::setVelocity(*entity, {vx, vy});
 	}
 	return 0;
 }
@@ -159,7 +159,7 @@ auto luaPhysicsSetTransform(lua_State* iState) -> int {
 		const auto px = static_cast<float>(luaL_checknumber(iState, 2));
 		const auto py = static_cast<float>(luaL_checknumber(iState, 3));
 		const auto rot = static_cast<float>(luaL_checknumber(iState, 4));
-		physic::PhysicCommand::setTransform(*entity, {px, py}, rot);
+		physics::PhysicCommand::setTransform(*entity, {px, py}, rot);
 	}
 	return 0;
 }
@@ -167,7 +167,7 @@ auto luaPhysicsSetTransform(lua_State* iState) -> int {
 auto luaPhysicsSetGravityScale(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState)) {
 		const auto scale = static_cast<float>(luaL_checknumber(iState, 2));
-		physic::PhysicCommand::setGravityScale(*entity, scale);
+		physics::PhysicCommand::setGravityScale(*entity, scale);
 	}
 	return 0;
 }

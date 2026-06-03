@@ -8,9 +8,9 @@
 #include "owlpch.h"
 
 #include "Shader.h"
-#include "core/Application.h"
+#include "app/Application.h"
 #include "core/external/opengl46.h"
-#include "core/utils/FileUtils.h"
+#include "platform/FileUtils.h"
 #include "renderer/utils/shaderFileUtils.h"
 
 namespace owl::renderer::gpu::opengl {
@@ -56,7 +56,7 @@ Shader::Shader(const std::string& iShaderName, const std::string& iRenderer,
 	OWL_PROFILE_FUNCTION()
 
 	if (iSources.size() == 1 && iSources[0].extension() == ".slang") {
-		compile(core::utils::fileToString(iSources[0]));
+		compile(platform::fileToString(iSources[0]));
 	} else {
 		OWL_CORE_ERROR("OpenGL Shader: Expected a single .slang file, got {} files.", iSources.size())
 	}

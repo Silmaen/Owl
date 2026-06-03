@@ -8,7 +8,7 @@
 
 #include "HelpPanel.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <core/Log.h>
 #include <core/Macros.h>
 
@@ -68,9 +68,9 @@ void HelpPanel::open(const std::string& iPageId) {
 }
 
 auto HelpPanel::resolveHelpRoot() -> std::filesystem::path {
-	if (!core::Application::instanced())
+	if (!app::Application::instanced())
 		return {};
-	for (const auto& dir: core::Application::get().getAssetDirectories()) {
+	for (const auto& dir: app::Application::get().getAssetDirectories()) {
 		if (auto candidate = dir.assetsPath / "help"; exists(candidate / kIndexFileName))
 			return candidate;
 	}

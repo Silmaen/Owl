@@ -8,7 +8,7 @@
 
 #include "owlpch.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "gui/FontPreviewCache.h"
 #include "gui/component/render.h"
 #include "gui/utils.h"
@@ -298,8 +298,8 @@ void renderProps(CircleRenderer& ioComponent) {
 
 void renderProps(Text& ioComponent) {
 	ImGui::InputTextMultiline("Text String", &ioComponent.text, {0, 70});
-	if (core::Application::instanced()) {
-		auto& fontLib = core::Application::get().getFontLibrary();
+	if (app::Application::instanced()) {
+		auto& fontLib = app::Application::get().getFontLibrary();
 		const std::string display = ioComponent.font->isDefault() ? "(default)" : ioComponent.font->getName();
 		if (ImGui::BeginCombo("Font", display.c_str())) {
 			for (const auto& font: data::fonts::FontLibrary::getFoundFontNames()) {

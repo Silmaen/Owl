@@ -9,7 +9,7 @@
 
 #include "scene/ScreenTransition.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "data/fonts/FontLibrary.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer2D.h"
@@ -133,9 +133,9 @@ void renderLoadingScreen(const math::vec4& iColor, const float iElapsed, const f
 		renderer::Renderer2D::drawQuad({.transform = dotTr, .color = tint});
 	}
 
-	if (!core::Application::instanced())
+	if (!app::Application::instanced())
 		return;
-	const auto font = core::Application::get().getFontLibrary().getDefaultFont();
+	const auto font = app::Application::get().getFontLibrary().getDefaultFont();
 	if (!font)
 		return;
 	math::Transform textTr;

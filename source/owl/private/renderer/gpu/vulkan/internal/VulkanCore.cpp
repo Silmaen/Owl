@@ -11,7 +11,7 @@
 #include "VulkanCore.h"
 
 #include "VulkanHandler.h"
-#include "core/Application.h"
+#include "app/Application.h"
 #include "renderer/gpu/vulkan/GraphContext.h"
 #include "utils.h"
 
@@ -30,7 +30,7 @@ auto debugUtilsMessageCallback(const VkDebugUtilsMessageSeverityFlagBitsEXT iMes
 							   VkDebugUtilsMessageTypeFlagsEXT,
 							   const VkDebugUtilsMessengerCallbackDataEXT* iPCallbackData, void*) -> VkBool32 {
 	auto bufferName = VulkanHandler::get().getCurrentFrameBufferName();
-	auto frameId = core::Application::get().getTimeStep().getFrameNumber();
+	auto frameId = app::Application::get().getTimeStep().getFrameNumber();
 	if ((iMessageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) != 0) {
 		OWL_CORE_TRACE("Vulkan fb({} {}): [{}][{}]: {}", frameId, bufferName, iPCallbackData->messageIdNumber,
 					   iPCallbackData->pMessageIdName, iPCallbackData->pMessage)
@@ -82,7 +82,7 @@ void VulkanCore::init(const VulkanConfiguration& iConfiguration) {
 		if (m_state == State::Error)
 			return;
 	}
-	auto* const gc = dynamic_cast<GraphContext*>(core::Application::get().getWindow().getGraphContext());
+	auto* const gc = dynamic_cast<GraphContext*>(app::Application::get().getWindow().getGraphContext());
 	if (const VkResult result = gc->createSurface(m_instance); result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan: failed to create window surface ({}).", resultString(result))
 		m_state = State::Error;
@@ -110,7 +110,7 @@ void VulkanCore::release() {
 		OWL_CORE_TRACE("Vulkan: logicalDevice destroyed.")
 	}
 	{
-		auto* const gc = dynamic_cast<GraphContext*>(core::Application::get().getWindow().getGraphContext());
+		auto* const gc = dynamic_cast<GraphContext*>(app::Application::get().getWindow().getGraphContext());
 		gc->destroySurface(m_instance);
 		OWL_CORE_TRACE("Vulkan: Surface destroyed.")
 	}
@@ -345,7 +345,7 @@ auto VulkanCore::getCurrentExtent() const -> VkExtent2D {
 	if (m_phyProps->surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 		extent = m_phyProps->surfaceCapabilities.currentExtent;
 	} else {
-		auto sizes = core::Application::get().getWindow().getSize();
+		auto sizes = app::Application::get().getWindow().getSize();
 		extent.width = std::clamp(sizes.x(), m_phyProps->surfaceCapabilities.minImageExtent.width,
 								  m_phyProps->surfaceCapabilities.maxImageExtent.width);
 		extent.height = std::clamp(sizes.y(), m_phyProps->surfaceCapabilities.minImageExtent.height,
@@ -359,7 +359,7 @@ auto VulkanCore::getCurrentSize() const -> math::vec2ui {
 	if (m_phyProps->surfaceCapabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
 		extent = toSize(m_phyProps->surfaceCapabilities.currentExtent);
 	} else {
-		auto sizes = core::Application::get().getWindow().getSize();
+		auto sizes = app::Application::get().getWindow().getSize();
 		extent.x() = std::clamp(sizes.x(), m_phyProps->surfaceCapabilities.minImageExtent.width,
 								m_phyProps->surfaceCapabilities.maxImageExtent.width);
 		extent.y() = std::clamp(sizes.y(), m_phyProps->surfaceCapabilities.minImageExtent.height,

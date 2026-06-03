@@ -10,7 +10,7 @@
 
 #include "data/assets/Asset.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 
 /**
  * @brief
@@ -194,9 +194,9 @@ public:
 		std::vector<std::string> result;
 		std::vector<std::string> ext = AssetType::extensions();
 		// get a list of directory to search.
-		std::list<core::Application::AssetDirectory> assetDirectories;
-		if (core::Application::instanced()) {
-			assetDirectories = core::Application::get().getAssetDirectories();
+		std::list<app::Application::AssetDirectory> assetDirectories;
+		if (app::Application::instanced()) {
+			assetDirectories = app::Application::get().getAssetDirectories();
 		} else {
 			assetDirectories.push_back({"cwd", std::filesystem::current_path()});
 		}
@@ -223,9 +223,9 @@ public:
 			return std::nullopt;
 		const std::vector<std::string> ext = AssetType::extensions();
 		// get a list of directory to search.
-		std::list<core::Application::AssetDirectory> assetDirectories;
-		if (core::Application::instanced()) {
-			assetDirectories = core::Application::get().getAssetDirectories();
+		std::list<app::Application::AssetDirectory> assetDirectories;
+		if (app::Application::instanced()) {
+			assetDirectories = app::Application::get().getAssetDirectories();
 		} else {
 			assetDirectories.push_back({"cwd", std::filesystem::current_path()});
 		}

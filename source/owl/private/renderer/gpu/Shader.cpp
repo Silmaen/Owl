@@ -7,7 +7,7 @@
  */
 #include "owlpch.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "null/Shader.h"
 #include "opengl/Shader.h"
 #include "renderer/Renderer.h"

@@ -33,7 +33,7 @@ public:
 					std::conjunction_v<std::negation<
 							std::disjunction<details::IsWriteExtraData<std::decay_t<Components>, ElementType>,
 											 details::IsWriteExtraDataPid<std::decay_t<Components>, ElementType>,
-											 std::is_same<std::decay_t<Components>, component::EditCoordinate>>>...>,
+											 std::is_same<std::decay_t<Components>, meshrange::EditCoordinate>>>...>,
 			"You are trying to construct a MeshRange with WriteMeshExtraData or EditCoordinate but a const StaticMesh  "
 			"which can't be mutated");
 

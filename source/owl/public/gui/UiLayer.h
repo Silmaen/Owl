@@ -8,7 +8,7 @@
 #pragma once
 
 #include "Theme.h"
-#include "core/layer/Layer.h"
+#include "app/layer/Layer.h"
 #include "renderer/gpu/Texture.h"
 
 #include <functional>
@@ -25,7 +25,7 @@ namespace owl::gui {
  * @brief
  *  Class ImGuiLayer.
  */
-class OWL_API UiLayer final : public core::layer::Layer {
+class OWL_API UiLayer final : public app::layer::Layer {
 public:
 	UiLayer(const UiLayer&) = delete;
 

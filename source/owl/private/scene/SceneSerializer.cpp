@@ -9,7 +9,7 @@
 
 #include "scene/SceneSerializer.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "core/Serializer.h"
 #include "core/SerializerImpl.h"
 #include "scene/Entity.h"

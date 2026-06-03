@@ -10,7 +10,7 @@
 #include "scene/SaveManager.h"
 
 #include "core/SerializerImpl.h"
-#include "physic/PhysicCommand.h"
+#include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/SceneSerializer.h"
 #include "scene/component/PhysicBody.h"
@@ -86,7 +86,7 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 		sOut.getImpl()->emitter << YAML::Key << "SceneData" << YAML::Value << YAML::Load(sceneYaml);
 
 		// Physics snapshots (velocities for dynamic bodies).
-		if (physic::PhysicCommand::isInitialized()) {
+		if (physics::PhysicCommand::isInitialized()) {
 			sOut.getImpl()->emitter << YAML::Key << "PhysicsSnapshots" << YAML::Value << YAML::BeginSeq;
 			for (const auto& entity: iScene->getAllEntities()) {
 				if (!entity.hasComponent<component::PhysicBody>())
@@ -94,7 +94,7 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 				const auto& [body] = entity.getComponent<component::PhysicBody>();
 				if (body.type == SceneBody::BodyType::Static)
 					continue;
-				const auto snap = physic::PhysicCommand::getSnapshot(entity);
+				const auto snap = physics::PhysicCommand::getSnapshot(entity);
 				sOut.getImpl()->emitter << YAML::BeginMap;
 				sOut.getImpl()->emitter << YAML::Key << "uuid" << YAML::Value
 										<< static_cast<uint64_t>(entity.getUUID());
@@ -160,7 +160,7 @@ auto SaveManager::load(const uint32_t iSlot, const shared<Scene>& iScene) -> Loa
 				if (!entry["uuid"])
 					continue;
 				const auto uuid = entry["uuid"].as<uint64_t>();
-				physic::PhysicCommand::PhysicsSnapshot snap;
+				physics::PhysicCommand::PhysicsSnapshot snap;
 				if (entry["vx"])
 					snap.linearVelocity.x() = entry["vx"].as<float>();
 				if (entry["vy"])

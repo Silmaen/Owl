@@ -9,7 +9,7 @@
 
 #include "RenderAPI.h"
 #include "StorageBuffer.h"
-#include "core/Application.h"
+#include "app/Application.h"
 #include "core/external/opengl46.h"
 
 namespace owl::renderer::gpu::opengl {
@@ -41,7 +41,7 @@ namespace {
 void RenderAPI::init() {
 	OWL_PROFILE_FUNCTION()
 
-	auto [major, minor] = core::Application::get().getWindow().getGraphContext()->getVersion();
+	auto [major, minor] = app::Application::get().getWindow().getGraphContext()->getVersion();
 	if (const bool goodVersion = major > 4 || (major == 4 && minor >= 5); !goodVersion) {
 		setState(State::Error);
 		OWL_CORE_ERROR("Owl Engine OpenGL Renderer requires at least OpenGL version 4.5 but version {}.{} found.",

@@ -8,12 +8,12 @@
 
 #include "testHelper.h"
 
-#include <core/layer/Layer.h>
+#include <app/layer/Layer.h>
 #include <event/AppEvent.h>
 
 using namespace owl::core;
 using namespace owl::event;
-using namespace owl::core::layer;
+using namespace owl::app::layer;
 
 TEST(Layer, base) {
 	Layer layer("test");

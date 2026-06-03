@@ -1,13 +1,14 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <renderer/Renderer.h>
 #include <renderer/gpu/RenderCommand.h>
 
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;
 using namespace owl::core;
+using namespace owl::app;
 
 TEST(TextureLibrary, creation) {
 	Log::init(Log::Level::Off);

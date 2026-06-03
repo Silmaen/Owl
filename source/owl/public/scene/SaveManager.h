@@ -9,7 +9,7 @@
 #pragma once
 
 #include "Scene.h"
-#include "physic/PhysicCommand.h"
+#include "physics/PhysicCommand.h"
 
 #include <filesystem>
 
@@ -70,7 +70,7 @@ public:
 		/// Whether the load succeeded.
 		bool success = false;
 		/// Physics snapshots to apply after onStartRuntime (keyed by entity UUID).
-		std::unordered_map<uint64_t, physic::PhysicCommand::PhysicsSnapshot> physicsSnapshots;
+		std::unordered_map<uint64_t, physics::PhysicCommand::PhysicsSnapshot> physicsSnapshots;
 	};
 
 	/**

@@ -9,7 +9,7 @@
 
 #include "data/fonts/Font.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 
 #undef INFINITE
 #include <msdf-atlas-gen/msdf-atlas-gen.h>

@@ -8,7 +8,7 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <core/Log.h>
 #include <renderer/utils/shaderFileUtils.h>
 
@@ -20,19 +20,19 @@ using owl::renderer::gpu::ShaderType;
 
 namespace {
 
-auto makeDummyApp(const char* iName) -> shared<core::Application> {
-	return mkShared<core::Application>(core::AppParams{.args = nullptr,
-													   .frameLogFrequency = 0,
-													   .name = iName,
-													   .assetsPattern = "",
-													   .icon = "",
-													   .width = 0,
-													   .height = 0,
-													   .argCount = 0,
-													   .renderer = renderer::gpu::RenderAPI::Type::Null,
-													   .hasGui = false,
-													   .useDebugging = false,
-													   .isDummy = true});
+auto makeDummyApp(const char* iName) -> shared<app::Application> {
+	return mkShared<app::Application>(app::AppParams{.args = nullptr,
+													 .frameLogFrequency = 0,
+													 .name = iName,
+													 .assetsPattern = "",
+													 .icon = "",
+													 .width = 0,
+													 .height = 0,
+													 .argCount = 0,
+													 .renderer = renderer::gpu::RenderAPI::Type::Null,
+													 .hasGui = false,
+													 .useDebugging = false,
+													 .isDummy = true});
 }
 
 }// namespace
@@ -65,7 +65,7 @@ TEST(ShaderFileUtils, CacheDirectoryIsCreatedAndReused) {
 	renderer::utils::createCacheDirectoryIfNeeded("test_renderer", "v1");
 	EXPECT_TRUE(exists(dir));
 	std::filesystem::remove_all(dir);
-	core::Application::invalidate();
+	app::Application::invalidate();
 	app.reset();
 	core::Log::invalidate();
 }
@@ -79,7 +79,7 @@ TEST(ShaderFileUtils, CacheDirectoryWithEmptyApiDoesNotAppendApiSegment) {
 	EXPECT_TRUE(dirA.string().ends_with("vulkan"));
 	EXPECT_EQ(dirA.filename(), "vulkan");
 	EXPECT_TRUE(dirB.filename() == "shader");
-	core::Application::invalidate();
+	app::Application::invalidate();
 	app.reset();
 	core::Log::invalidate();
 }
@@ -89,7 +89,7 @@ TEST(ShaderFileUtils, ShaderCachedPathUsesShaderName) {
 	auto app = makeDummyApp("shaderCachedPath");
 	const auto path = renderer::utils::getShaderCachedPath("foo", "vulkan", "1.4", ShaderType::Vertex);
 	EXPECT_EQ(path.filename(), "foo.vert.spv");
-	core::Application::invalidate();
+	app::Application::invalidate();
 	app.reset();
 	core::Log::invalidate();
 }

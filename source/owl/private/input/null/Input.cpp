@@ -7,7 +7,7 @@
  */
 #include "owlpch.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "input/null/Input.h"
 
 namespace owl::input::null {

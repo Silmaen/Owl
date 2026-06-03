@@ -14,7 +14,7 @@
 
   <!-- ===== Top Layer: Application ===== -->
   <rect x="200" y="50" width="400" height="44" rx="8" ry="8" fill="#1f6feb" stroke="#8b949e" stroke-width="1.5"/>
-  <text x="400" y="77" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold">core::Application</text>
+  <text x="400" y="77" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold">app::Application</text>
 
   <!-- Arrows from Application to backend modules -->
   <line x1="290" y1="94" x2="90"  y2="140" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrowhead)"/>
@@ -103,7 +103,7 @@
 
   <!-- physic -->
   <rect x="124" y="345" width="96" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>
-  <text x="172" y="370" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">physic</text>
+  <text x="172" y="370" text-anchor="middle" fill="#e6edf3" font-family="system-ui, -apple-system, sans-serif" font-size="14">physics</text>
 
   <!-- data -->
   <rect x="232" y="345" width="96" height="40" rx="8" ry="8" fill="#2d333b" stroke="#8b949e" stroke-width="1.5"/>

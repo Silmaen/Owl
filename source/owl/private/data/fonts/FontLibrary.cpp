@@ -9,17 +9,17 @@
 
 #include "data/fonts/FontLibrary.h"
 
-#include "core/Application.h"
-#include "io/pack/PackReader.h"
+#include "app/Application.h"
+#include "data/assets/pack/PackReader.h"
 
 namespace owl::data::fonts {
 
 namespace {
 auto getFontPath() -> std::list<std::filesystem::path> {
-	if (!core::Application::instanced())
+	if (!app::Application::instanced())
 		return {};
-	const auto& app = core::Application::get();
-	if (app.getState() != core::Application::State::Running)
+	const auto& app = app::Application::get();
+	if (app.getState() != app::Application::State::Running)
 		return {};
 	std::list<std::filesystem::path> paths;
 	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
@@ -52,11 +52,11 @@ FontLibrary::~FontLibrary() = default;
 
 void FontLibrary::loadFont(const std::string& iName) {
 	// Try loading from pack first.
-	if (core::Application::instanced() && core::Application::get().hasOpenPack()) {
-		const auto& reader = core::Application::get().getPackReader();
-		for (const auto& entry: reader.listEntries(io::pack::AssetType::Font)) {
+	if (app::Application::instanced() && app::Application::get().hasOpenPack()) {
+		const auto& reader = app::Application::get().getPackReader();
+		for (const auto& entry: reader.listEntries(data::assets::pack::AssetType::Font)) {
 			if (std::filesystem::path(entry).stem() == iName) {
-				auto data = core::Application::get().loadFromPack(entry);
+				auto data = app::Application::get().loadFromPack(entry);
 				if (data) {
 					const auto tempDir = std::filesystem::temp_directory_path() / "owl_pack_cache";
 					std::filesystem::create_directories(tempDir);

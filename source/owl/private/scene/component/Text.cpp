@@ -31,8 +31,8 @@ void Text::deserialize(const core::Serializer& iNode) {
 	kerning = iNode.getImpl()->node["kerning"].as<float>();
 	lineSpacing = iNode.getImpl()->node["lineSpacing"].as<float>();
 	text = iNode.getImpl()->node["text"].as<std::string>();
-	if (core::Application::instanced()) {
-		auto& lib = core::Application::get().getFontLibrary();
+	if (app::Application::instanced()) {
+		auto& lib = app::Application::get().getFontLibrary();
 		if (iNode.getImpl()->node["font"]) {
 			font = lib.getFont(iNode.getImpl()->node["font"].as<std::string>());
 		} else {

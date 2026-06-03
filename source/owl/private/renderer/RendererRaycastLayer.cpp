@@ -9,7 +9,7 @@
 
 #include "renderer/RendererRaycastLayer.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "math/YamlSerializers.h"
 #include "renderer/RenderLayerFactory.h"
 #include "renderer/Renderer2D.h"
@@ -19,9 +19,9 @@ namespace owl::renderer {
 
 namespace {
 auto loadTilesetByPath(const std::string& iPath) -> shared<scene::Tileset> {
-	if (iPath.empty() || !core::Application::instanced())
+	if (iPath.empty() || !app::Application::instanced())
 		return nullptr;
-	const auto& assetDirs = core::Application::get().getAssetDirectories();
+	const auto& assetDirs = app::Application::get().getAssetDirectories();
 	auto tileset = mkShared<scene::Tileset>();
 	for (const auto& [title, assetsPath]: assetDirs) {
 		if (const auto full = assetsPath / iPath; exists(full) && tileset->loadFromFile(full))

@@ -139,16 +139,16 @@ entity does not have a `PhysicBody` component. `impulse`, `getVelocity`, and
 ### Example: applying an impulse from a NativeScript
 
 ```c++
-#include <physic/PhysicCommand.h>
+#include <physics/PhysicCommand.h>
 
 void MyScript::onUpdate(const owl::core::Timestep& iTimeStep) {
     if (owl::input::Input::isKeyPressed(owl::input::key::Right)) {
-        owl::physic::PhysicCommand::impulse(entity, {0.5f, 0.0f});
+        owl::physics::PhysicCommand::impulse(entity, {0.5f, 0.0f});
     }
     if (owl::input::Input::isKeyPressed(owl::input::key::Up)) {
-        const auto vel = owl::physic::PhysicCommand::getVelocity(entity);
+        const auto vel = owl::physics::PhysicCommand::getVelocity(entity);
         if (std::abs(vel.y()) < 0.001f) {
-            owl::physic::PhysicCommand::impulse(entity, {0.0f, 1.0f});
+            owl::physics::PhysicCommand::impulse(entity, {0.0f, 1.0f});
         }
     }
 }

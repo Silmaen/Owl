@@ -9,11 +9,11 @@
 #include "ContentBrowser.h"
 
 #include <algorithm>
-#include <core/utils/FileDialog.h>
 #include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
+#include <platform/FileDialog.h>
 
 namespace owl::nest::panel {
 
@@ -84,7 +84,7 @@ ContentBrowser::ContentBrowser() = default;
 void ContentBrowser::detach() {}
 
 void ContentBrowser::attach() {
-	m_currentRootPath = core::Application::get().getAssetDirectories().front().assetsPath;
+	m_currentRootPath = app::Application::get().getAssetDirectories().front().assetsPath;
 	m_currentPath = m_currentRootPath;
 	m_cachedEntries.clear();
 	m_cachedPath.clear();
@@ -101,7 +101,7 @@ void ContentBrowser::requestScan(const std::filesystem::path& iPath) {
 
 	auto buffer = m_pendingEntries;
 	auto* flag = &m_scanInProgress;
-	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
+	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			[buffer, iPath]() -> void {
 				if (!exists(iPath) || !is_directory(iPath))
 					return;
@@ -163,7 +163,7 @@ void ContentBrowser::renderTopBand() {
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Back");
 	}
-	for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 		ImGui::SameLine();
 		if (assetsPath == m_currentRootPath) {
 			ImGui::Text("%s", title.c_str());
@@ -470,7 +470,7 @@ void ContentBrowser::createFolder() {
 }
 
 void ContentBrowser::importFiles() {
-	const auto file = core::utils::FileDialog::openFile("");
+	const auto file = platform::FileDialog::openFile("");
 	if (file.empty())
 		return;
 
@@ -484,7 +484,7 @@ void ContentBrowser::importFiles() {
 }
 
 void ContentBrowser::importFolder() {
-	const auto folder = core::utils::FileDialog::pickFolder();
+	const auto folder = platform::FileDialog::pickFolder();
 	if (folder.empty())
 		return;
 

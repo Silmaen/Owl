@@ -183,12 +183,12 @@ Null input backend, allowing tests to simulate user input without a real window.
 
 ## CameraOrthoController
 
-`owl::input::CameraOrthoController` wraps a `CameraOrtho` with keyboard and
+`owl::renderer::CameraOrthoController` wraps a `CameraOrtho` with keyboard and
 mouse controls suitable for 2D scene editing or gameplay:
 
 ```c++
 // Create with aspect ratio; enable rotation with second parameter
-input::CameraOrthoController controller(16.0f / 9.0f, true);
+renderer::CameraOrthoController controller(16.0f / 9.0f, true);
 
 // Each frame:
 controller.onUpdate(timeStep);

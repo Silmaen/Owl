@@ -8,13 +8,13 @@
 
 #include "testHelper.h"
 
-#include <io/pack/AssetScanner.h>
-#include <io/pack/PackWriter.h>
+#include <data/assets/pack/AssetScanner.h>
+#include <data/assets/pack/PackWriter.h>
 
 #include <fstream>
 #include <gtest/gtest.h>
 
-using namespace owl::io::pack;
+using namespace owl::data::assets::pack;
 
 namespace {
 auto getTempDir() -> std::filesystem::path {
@@ -585,7 +585,7 @@ TEST_F(AssetScannerTest, ScanSceneWithRaycastDoorPacksTilesetAndTexture) {
 
 TEST_F(AssetScannerTest, PackWriterProgressCallback) {
 	// Verify PackWriter invokes the progress callback per entry.
-	owl::io::pack::PackWriter writer;
+	owl::data::assets::pack::PackWriter writer;
 	const std::vector<uint8_t> data = {1, 2, 3, 4};
 	writer.addData(data, "a.bin", AssetType::Other);
 	writer.addData(data, "b.bin", AssetType::Other);
@@ -606,7 +606,7 @@ TEST_F(AssetScannerTest, PackWriterProgressCallback) {
 
 TEST_F(AssetScannerTest, PackWriterCancelCheck) {
 	// Verify PackWriter respects the cancel check.
-	owl::io::pack::PackWriter writer;
+	owl::data::assets::pack::PackWriter writer;
 	const std::vector<uint8_t> data = {1, 2, 3, 4};
 	writer.addData(data, "a.bin", AssetType::Other);
 	writer.addData(data, "b.bin", AssetType::Other);

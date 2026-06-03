@@ -10,25 +10,30 @@ This page describes the high-level architecture of the Owl engine.
 
 The engine library (`source/owl/`) is organized into the following modules:
 
-| Module     | Description                                                        |
-|------------|--------------------------------------------------------------------|
-| `core`     | Application lifecycle, logging, assertions, smart pointers, tasks  |
-| `renderer` | Rendering abstraction, buffers, shaders, framebuffers              |
-| `scene`    | Entity-Component-System (EnTT), scene graph, components, save/load |
-| `script`   | Lua 5.5 embedded scripting (sandboxed `LuaEngine` per entity)      |
-| `physic`   | 2D physics (Box2D integration)                                     |
-| `sound`    | Audio playback and device management                               |
-| `input`    | Keyboard, mouse, and gamepad input abstraction                     |
-| `window`   | Window creation and management                                     |
-| `gui`      | ImGui/ImGuizmo integration for editor UI                           |
-| `data`     | Geometry, mesh loading (OBJ, glTF, FBX), data structures           |
-| `math`     | Math utilities (zeus library)                                      |
-| `debug`    | Profiling, memory tracking, stack traces (cpptrace)                |
-| `event`    | Event system (application, input, window events)                   |
-| `io`       | File I/O, serialization (YAML, XML, asset packing)                 |
+| Module     | Description                                                                  |
+|------------|------------------------------------------------------------------------------|
+| `app`      | Application lifecycle: `Application`, `EntryPoint`, the layer stack           |
+| `core`     | Foundation primitives: logging, assertions, smart pointers, `UUID`, tasks    |
+| `platform` | OS / native-platform services: file dialogs, `fileToString`, open-URL         |
+| `renderer` | Rendering abstraction, buffers, shaders, framebuffers, camera controllers    |
+| `scene`    | Entity-Component-System (EnTT), scene graph, components, save/load            |
+| `script`   | Lua 5.5 embedded scripting (sandboxed `LuaEngine` per entity)                |
+| `physics`  | 2D physics (Box2D integration)                                               |
+| `sound`    | Audio playback and device management                                         |
+| `input`    | Keyboard, mouse, and gamepad input abstraction                               |
+| `window`   | Window creation and management                                               |
+| `gui`      | ImGui/ImGuizmo integration for editor UI                                     |
+| `data`     | Data structures + their loaders: geometry/mesh, fonts, assets (+ `pack`), `voxel` |
+| `math`     | Math utilities (zeus library)                                                |
+| `debug`    | Profiling, memory tracking, stack traces (cpptrace)                          |
+| `event`    | Event system (application, input, window events)                             |
+| `io`       | External device / peripheral channels: serial, video                         |
 
 Public headers live in `source/owl/public/` and implementation files in `source/owl/private/`, both mirroring the module
-structure.
+structure. **The folder path maps 1:1 to the namespace** (`data/geometry/` is `owl::data::geometry`). The rules for
+*which* module a new file belongs to — and the key distinctions (a loader lives with its data type in `data`, not `io`;
+camera controllers are `renderer`, not `input`; lifecycle is `app`, primitives are `core`) — are documented in
+`.claude/rules/module-layout.md`.
 
 **Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
 [Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·

@@ -1,16 +1,16 @@
 #include "testHelper.h"
 
-#include <data/component/MeshComponentExtraData.h>
 #include <data/geometry/MeshRange.h>
 #include <data/geometry/StaticMesh.h>
 #include <data/geometry/extradata/TriangleNormals.h>
 #include <data/geometry/extradata/TriangleUVCoordinate.h>
 #include <data/geometry/extradata/VertexNormal.h>
+#include <data/meshrange/MeshComponentExtraData.h>
 
 using namespace owl::core;
 using namespace owl::math;
 using namespace owl::data::geometry;
-using namespace owl::data::component;
+using namespace owl::data::meshrange;
 
 namespace {
 auto createTestMesh() -> StaticMesh {

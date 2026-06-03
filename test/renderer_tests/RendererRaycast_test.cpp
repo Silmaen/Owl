@@ -8,7 +8,7 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <renderer/CameraOrtho.h>
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/Renderer.h>
