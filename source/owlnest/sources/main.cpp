@@ -9,24 +9,24 @@
 
 #include "EditorLayer.h"
 #include "EditorSettings.h"
-#include <core/EntryPoint.h>
+#include <app/EntryPoint.h>
 #include <gui/UiLayer.h>
 
 namespace owl {
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
-class OwlNest final : public core::Application {
+class OwlNest final : public app::Application {
 public:
 	OwlNest() = delete;
-	explicit OwlNest(const core::AppParams& iParam) : Application(iParam) {
+	explicit OwlNest(const app::AppParams& iParam) : Application(iParam) {
 		if (getState() == State::Running)
 			pushLayer(mkShared<nest::EditorLayer>());
 	}
 };
 OWL_DIAG_POP
 
-auto core::createApplication(int iArgc, char** iArgv) -> shared<Application> {
+auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 	nest::EditorSettings preSettings;
 	if (const auto settingsFile = std::filesystem::current_path() / "OwlNest_settings.yml"; exists(settingsFile))
 		preSettings.loadFromFile(settingsFile);

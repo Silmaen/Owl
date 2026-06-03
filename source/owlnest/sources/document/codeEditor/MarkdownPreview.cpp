@@ -12,11 +12,11 @@
 #include "external/imgui_text_edit.h"
 #include "external/lunasvg_wrapper.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <core/Log.h>
 #include <core/Macros.h>
-#include <core/utils/openExternalUrl.h>
 #include <gui/UiLayer.h>
+#include <platform/openExternalUrl.h>
 #include <renderer/gpu/Texture.h>
 
 OWL_DIAG_PUSH
@@ -354,8 +354,8 @@ void MarkdownPreview::renderCodeBlock(const MdCodeBlock& iCb, size_t& ioCodeInde
 	}
 	auto& entry = m_codeEditors[ioCodeIndex++];
 	ImFont* codeFont = nullptr;
-	if (core::Application::instanced()) {
-		if (const auto ui = core::Application::get().getImGuiLayer(); ui != nullptr)
+	if (app::Application::instanced()) {
+		if (const auto ui = app::Application::get().getImGuiLayer(); ui != nullptr)
 			codeFont = ui->getCodeFont();
 	}
 	if (codeFont != nullptr)
@@ -558,7 +558,7 @@ void MarkdownPreview::handleLinkClick(const std::string& iHref) const {
 	if (iHref.empty())
 		return;
 	if (isExternalUrl(iHref)) {
-		core::utils::openExternalUrl(iHref);
+		platform::openExternalUrl(iHref);
 		return;
 	}
 	if (m_linkCallback)

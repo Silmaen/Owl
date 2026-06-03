@@ -8,7 +8,7 @@
 #include "owlpch.h"
 
 #include "gui/BasePanel.h"
-#include <core/Application.h>
+#include <app/Application.h>
 #include <imgui.h>
 
 namespace owl::gui {
@@ -22,7 +22,7 @@ void BasePanel::onRender() {
 	ImGui::Begin(m_name.c_str());
 	m_focused = ImGui::IsWindowFocused();
 	m_hovered = ImGui::IsWindowHovered();
-	core::Application::get().getImGuiLayer()->blockEvents(!m_focused && !m_hovered);
+	app::Application::get().getImGuiLayer()->blockEvents(!m_focused && !m_hovered);
 
 	// Optional header (e.g. tab bar). Drawn before bounds capture so it eats its own height.
 	onHeaderRender();

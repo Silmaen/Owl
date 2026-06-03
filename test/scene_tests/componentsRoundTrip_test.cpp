@@ -8,7 +8,7 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <core/Log.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
@@ -19,19 +19,19 @@ using namespace owl;
 
 namespace {
 
-auto makeApp(const char* iName) -> shared<core::Application> {
-	return mkShared<core::Application>(core::AppParams{.args = nullptr,
-													   .frameLogFrequency = 0,
-													   .name = iName,
-													   .assetsPattern = "",
-													   .icon = "",
-													   .width = 0,
-													   .height = 0,
-													   .argCount = 0,
-													   .renderer = renderer::gpu::RenderAPI::Type::Null,
-													   .hasGui = false,
-													   .useDebugging = false,
-													   .isDummy = true});
+auto makeApp(const char* iName) -> shared<app::Application> {
+	return mkShared<app::Application>(app::AppParams{.args = nullptr,
+													 .frameLogFrequency = 0,
+													 .name = iName,
+													 .assetsPattern = "",
+													 .icon = "",
+													 .width = 0,
+													 .height = 0,
+													 .argCount = 0,
+													 .renderer = renderer::gpu::RenderAPI::Type::Null,
+													 .hasGui = false,
+													 .useDebugging = false,
+													 .isDummy = true});
 }
 
 template<typename Mutate, typename Verify>
@@ -52,7 +52,7 @@ void roundTrip(const char* iCaseName, Mutate&& iMutate, Verify&& iVerify) {
 	ASSERT_EQ(entities.size(), 1u);
 	iVerify(entities[0]);
 	std::filesystem::remove(fs);
-	core::Application::invalidate();
+	app::Application::invalidate();
 	app.reset();
 	core::Log::invalidate();
 }

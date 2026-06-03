@@ -75,8 +75,9 @@ the `Documentation` action. Skip individual stages with `-- --no-format=true`
 
 ### Engine library (`source/owl/`)
 
-- `public/` — Public API headers organized by module: `core/`, `data/`, `debug/`, `event/`, `gui/`, `input/`, `io/`,
-  `math/`, `physic/`, `renderer/`, `scene/`, `script/`, `sound/`, `window/`
+- `public/` — Public API headers organized by module: `app/` (Application, EntryPoint, layer stack), `core/`, `data/`
+  (incl. `data/voxel/`, `data/meshrange/`), `debug/`, `event/`, `gui/`, `input/`, `io/`, `math/`, `physics/`,
+  `renderer/`, `scene/`, `script/`, `sound/`, `window/`
 - `private/` — Implementation files mirroring the public structure
 - Builds as `OwlEngine` (shared by default, controlled by `OWL_BUILD_SHARED`)
 

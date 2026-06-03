@@ -10,7 +10,7 @@
 
 #include "PhysicalDeviceCapabilities.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "core/utils/StringUtils.h"
 #include "renderer/gpu//vulkan/GraphContext.h"
 #include "utils.h"
@@ -46,7 +46,7 @@ PhysicalDeviceCapabilities::PhysicalDeviceCapabilities(const VkPhysicalDevice& i
 	if (hasExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME)) {
 		updateSurfaceInformation();
 		uint32_t index = 0;
-		const auto* gc = dynamic_cast<GraphContext*>(core::Application::get().getWindow().getGraphContext());
+		const auto* gc = dynamic_cast<GraphContext*>(app::Application::get().getWindow().getGraphContext());
 		for (const auto& qFam: queueFamilies) {
 			if ((qFam.queueFlags & VK_QUEUE_GRAPHICS_BIT) != 0u) {
 				graphicQueueIndex = index;
@@ -147,7 +147,7 @@ auto enumerateDevices(const VkInstance& iInstance) -> std::vector<PhysicalDevice
 }
 
 void PhysicalDeviceCapabilities::updateSurfaceInformation() {
-	const auto* gc = dynamic_cast<GraphContext*>(core::Application::get().getWindow().getGraphContext());
+	const auto* gc = dynamic_cast<GraphContext*>(app::Application::get().getWindow().getGraphContext());
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, gc->getSurface(), &surfaceCapabilities);
 	uint32_t formatCount = 0;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(device, gc->getSurface(), &formatCount, nullptr);

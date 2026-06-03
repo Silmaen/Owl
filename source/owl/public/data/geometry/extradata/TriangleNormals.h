@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "data/component/MeshComponentExtraData.h"
 #include "data/extradata/ExtraDataBase.h"
+#include "data/meshrange/MeshComponentExtraData.h"
 
 namespace owl::data::geometry::extradata {
 /**
@@ -97,10 +97,10 @@ private:
 }// namespace owl::data::geometry::extradata
 
 // Define components for triangle Normals
-namespace owl::data::component {
+namespace owl::data::meshrange {
 /// Read-iterate component for triangle normals.
 const inline ReadMeshTriangleExtraData<geometry::extradata::TriangleNormals> TriangleNormals;
 /// Write-iterate component for triangle normals.
 const inline WriteMeshTriangleExtraData<geometry::extradata::TriangleNormals> WriteTriangleNormals;
 
-}// namespace owl::data::component
+}// namespace owl::data::meshrange

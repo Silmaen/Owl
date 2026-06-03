@@ -8,7 +8,7 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <renderer/RenderStack.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
@@ -31,19 +31,19 @@ TEST(RendererTagComponent, addAndAccess) {
 
 TEST(RendererTagComponent, serializeRoundTrip) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	auto app = owl::mkShared<owl::core::Application>(
-			owl::core::AppParams{.args = nullptr,
-								 .frameLogFrequency = 0,
-								 .name = "rendererTagRoundTrip",
-								 .assetsPattern = "",
-								 .icon = "",
-								 .width = 0,
-								 .height = 0,
-								 .argCount = 0,
-								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-								 .hasGui = false,
-								 .useDebugging = false,
-								 .isDummy = true});
+	auto app = owl::mkShared<owl::app::Application>(
+			owl::app::AppParams{.args = nullptr,
+								.frameLogFrequency = 0,
+								.name = "rendererTagRoundTrip",
+								.assetsPattern = "",
+								.icon = "",
+								.width = 0,
+								.height = 0,
+								.argCount = 0,
+								.renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								.hasGui = false,
+								.useDebugging = false,
+								.isDummy = true});
 
 	const auto sc = owl::mkShared<owl::scene::Scene>();
 	auto entity = sc->createEntityWithUUID(101, "TaggedEntity");
@@ -65,26 +65,26 @@ TEST(RendererTagComponent, serializeRoundTrip) {
 	EXPECT_EQ(entities[0].getComponent<owl::scene::component::RendererTag>().rendererName, "world");
 
 	std::filesystem::remove(fs);
-	owl::core::Application::invalidate();
+	owl::app::Application::invalidate();
 	app.reset();
 	owl::core::Log::invalidate();
 }
 
 TEST(RendererTagComponent, sceneEnabledRenderersRoundTrip) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	auto app = owl::mkShared<owl::core::Application>(
-			owl::core::AppParams{.args = nullptr,
-								 .frameLogFrequency = 0,
-								 .name = "enabledRenderersRoundTrip",
-								 .assetsPattern = "",
-								 .icon = "",
-								 .width = 0,
-								 .height = 0,
-								 .argCount = 0,
-								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-								 .hasGui = false,
-								 .useDebugging = false,
-								 .isDummy = true});
+	auto app = owl::mkShared<owl::app::Application>(
+			owl::app::AppParams{.args = nullptr,
+								.frameLogFrequency = 0,
+								.name = "enabledRenderersRoundTrip",
+								.assetsPattern = "",
+								.icon = "",
+								.width = 0,
+								.height = 0,
+								.argCount = 0,
+								.renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								.hasGui = false,
+								.useDebugging = false,
+								.isDummy = true});
 
 	const auto sc = owl::mkShared<owl::scene::Scene>();
 	auto& enabled = sc->getEnabledRenderers();
@@ -110,7 +110,7 @@ TEST(RendererTagComponent, sceneEnabledRenderersRoundTrip) {
 	EXPECT_EQ(cfg.entries[1].overrides["Hidden"].as<bool>(), false);
 
 	std::filesystem::remove(fs);
-	owl::core::Application::invalidate();
+	owl::app::Application::invalidate();
 	app.reset();
 	owl::core::Log::invalidate();
 }

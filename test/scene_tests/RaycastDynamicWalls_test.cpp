@@ -11,7 +11,7 @@
 #include <core/Log.h>
 #include <core/SerializerImpl.h>
 #include <core/Timestep.h>
-#include <physic/PhysicCommand.h>
+#include <physics/PhysicCommand.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
@@ -27,8 +27,8 @@ class RaycastDynamicWallsTest : public ::testing::Test {
 protected:
 	void SetUp() override { core::Log::init(core::Log::Level::Off); }
 	void TearDown() override {
-		if (physic::PhysicCommand::isInitialized())
-			physic::PhysicCommand::destroy();
+		if (physics::PhysicCommand::isInitialized())
+			physics::PhysicCommand::destroy();
 		core::Log::invalidate();
 	}
 };

@@ -9,7 +9,7 @@
 
 #include "scene/SettingsManager.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "sound/SoundCommand.h"
 
 OWL_DIAG_PUSH
@@ -175,9 +175,9 @@ auto SettingsManager::keys() -> std::vector<std::string> {
 }
 
 void SettingsManager::applyBuiltins() {
-	if (!core::Application::instanced())
+	if (!app::Application::instanced())
 		return;
-	auto& window = core::Application::get().getWindow();
+	auto& window = app::Application::get().getWindow();
 
 	// Window settings.
 	const auto width = getAs<int64_t>(KeyResolutionWidth);

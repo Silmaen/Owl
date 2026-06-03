@@ -8,7 +8,7 @@
 
 #include "owlpch.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "core/external/slang.h"
 #include "shaderFileUtils.h"
 
@@ -25,7 +25,7 @@ OWL_DIAG_POP
 namespace owl::renderer::utils {
 
 auto getCacheDirectory(const std::string& iRenderer, const std::string& iRendererApi) -> std::filesystem::path {
-	auto output = core::Application::get().getWorkingDirectory() / "cache" / "shader";
+	auto output = app::Application::get().getWorkingDirectory() / "cache" / "shader";
 	if (!iRenderer.empty())
 		output /= iRenderer;
 	if (!iRendererApi.empty())

@@ -22,9 +22,9 @@
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "input/Input.h"
-#include "physic/PhysicCommand.h"
+#include "physics/PhysicCommand.h"
 #include "scene/ScreenTransition.h"
 #include "scene/component/components.h"
 #include "script/ScriptEngine.h"
@@ -156,8 +156,8 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 	if (iChild.hasComponent<component::UiText>()) {
 		const auto& uiText = iChild.getComponent<component::UiText>();
 		shared<data::fonts::Font> font = uiText.font;
-		if (!font && core::Application::instanced())
-			font = core::Application::get().getFontLibrary().getDefaultFont();
+		if (!font && app::Application::instanced())
+			font = app::Application::get().getFontLibrary().getDefaultFont();
 		const float textAspect = computeTextAspect(font, uiText.text, uiText.kerning, uiText.lineSpacing);
 		math::Transform textTransform;
 		textTransform.translation() = iTransform.translation();
@@ -339,7 +339,7 @@ void Scene::onStartRuntime() {
 	OWL_CORE_INFO("Scene::onStartRuntime: entity-link resolve {:.1f} ms.", ms(clk::now() - linksStart))
 
 	const auto physicsStart = clk::now();
-	physic::PhysicCommand::init(this);
+	physics::PhysicCommand::init(this);
 	OWL_CORE_INFO("Scene::onStartRuntime: physics init {:.1f} ms.", ms(clk::now() - physicsStart))
 
 	const auto soundStart = clk::now();
@@ -398,8 +398,8 @@ void Scene::onStartRuntime() {
 		luaScript.instance = mkUniq<script::ScriptInstance>();
 		const auto uuid = static_cast<uint64_t>(registry.get<component::ID>(entity).id);
 		bool loaded = false;
-		if (core::Application::instanced()) {
-			auto& app = core::Application::get();
+		if (app::Application::instanced()) {
+			auto& app = app::Application::get();
 			// Try pack first.
 			if (app.packContains(luaScript.scriptPath))
 				if (const auto data = app.loadFromPack(luaScript.scriptPath))
@@ -477,7 +477,7 @@ void Scene::onEndRuntime() {
 	}
 	script::ScriptEngine::shutdown();
 
-	physic::PhysicCommand::destroy();
+	physics::PhysicCommand::destroy();
 	status = Status::Editing;
 }
 
@@ -507,7 +507,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	}
 	if (status == Status::Victory) {
 		if (iRender && mainCamera != nullptr) {
-			const auto font = core::Application::get().getFontLibrary().getDefaultFont();
+			const auto font = app::Application::get().getFontLibrary().getDefaultFont();
 			math::Transform textTransform = camTransform;
 			textTransform.translation().z() = 0;
 			textTransform.scale().x() = 3.f;
@@ -529,7 +529,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	}
 	if (status == Status::Death) {
 		if (iRender && mainCamera != nullptr) {
-			const auto font = core::Application::get().getFontLibrary().getDefaultFont();
+			const auto font = app::Application::get().getFontLibrary().getDefaultFont();
 			math::Transform textTransform = camTransform;
 			textTransform.translation().z() = 0;
 			textTransform.scale().x() = 3.f;
@@ -577,7 +577,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	}
 
 	// Physics
-	physic::PhysicCommand::frame(iTimeStep);
+	physics::PhysicCommand::frame(iTimeStep);
 
 	updateEntityLinks();
 	m_worldTransformCache.clear();
@@ -702,7 +702,7 @@ void Scene::onRenderRuntime() {
 
 	if (status == Status::Victory) {
 		if (mainCamera != nullptr) {
-			const auto font = core::Application::get().getFontLibrary().getDefaultFont();
+			const auto font = app::Application::get().getFontLibrary().getDefaultFont();
 			math::Transform textTransform = camTransform;
 			textTransform.translation().z() = 0;
 			textTransform.scale().x() = 3.f;
@@ -720,7 +720,7 @@ void Scene::onRenderRuntime() {
 	}
 	if (status == Status::Death) {
 		if (mainCamera != nullptr) {
-			const auto font = core::Application::get().getFontLibrary().getDefaultFont();
+			const auto font = app::Application::get().getFontLibrary().getDefaultFont();
 			math::Transform textTransform = camTransform;
 			textTransform.translation().z() = 0;
 			textTransform.scale().x() = 3.f;
@@ -1253,7 +1253,7 @@ void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
 			const math::Transform wt = getWorldTransform(ent);
 			const float plateX = wt.translation().x() + dx * door.currentOffset;
 			const float plateY = wt.translation().y() + dy * door.currentOffset;
-			physic::PhysicCommand::setTransform(ent, math::vec2f{plateX, plateY}, wt.rotation().z());
+			physics::PhysicCommand::setTransform(ent, math::vec2f{plateX, plateY}, wt.rotation().z());
 		}
 	}
 
@@ -1288,8 +1288,8 @@ void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
 			transform.translation().x() += push.slideDirection.x() * delta;
 			transform.translation().y() += push.slideDirection.y() * delta;
 			const math::Transform wt = getWorldTransform(ent);
-			physic::PhysicCommand::setTransform(ent, math::vec2f{wt.translation().x(), wt.translation().y()},
-												wt.rotation().z());
+			physics::PhysicCommand::setTransform(ent, math::vec2f{wt.translation().x(), wt.translation().y()},
+												 wt.rotation().z());
 		}
 	}
 }
@@ -1297,9 +1297,9 @@ void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
 void Scene::resolveAllTilemapAssets() {
 	if (!m_tilemapAssetsDirty)
 		return;
-	if (!core::Application::instanced())
+	if (!app::Application::instanced())
 		return;
-	const auto& app = core::Application::get();
+	const auto& app = app::Application::get();
 	const auto& assetDirs = app.getAssetDirectories();
 
 	// Try the open pack first (packaged games have no loose files on disk), then the asset directories.
@@ -1937,8 +1937,8 @@ template<>
 OWL_API void Scene::onComponentAdded<component::Text>([[maybe_unused]] const Entity& iEntity,
 													  [[maybe_unused]] component::Text& ioComponent) {
 	if (ioComponent.font == nullptr) {
-		if (core::Application::instanced()) {
-			ioComponent.font = core::Application::get().getFontLibrary().getDefaultFont();
+		if (app::Application::instanced()) {
+			ioComponent.font = app::Application::get().getFontLibrary().getDefaultFont();
 		}
 	}
 }

@@ -8,9 +8,9 @@
 
 #include "testHelper.h"
 
-#include <core/layer/LayerStack.h>
+#include <app/layer/LayerStack.h>
 
-using namespace owl::core::layer;
+using namespace owl::app::layer;
 
 TEST(LayerStack, base) {
 	{

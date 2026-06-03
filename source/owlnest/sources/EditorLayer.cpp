@@ -17,12 +17,12 @@
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
 
+#include <data/assets/pack/AssetScanner.h>
+#include <data/assets/pack/PackWriter.h>
 #include <gui/FontPreviewCache.h>
 #include <gui/IconBank.h>
 #include <gui/utils.h>
-#include <io/pack/AssetScanner.h>
-#include <io/pack/PackWriter.h>
-#include <physic/PhysicCommand.h>
+#include <physics/PhysicCommand.h>
 #include <scene/PrefabSerializer.h>
 #include <scene/component/components.h>
 #include <sound/SoundCommand.h>
@@ -42,7 +42,7 @@ void buildIconBank() {
 	auto& iconBank = gui::IconBank::instance();
 
 	// Resolve icon file paths: try SVG in assets_sources first, then PNG in assets.
-	const auto& assetDirs = core::Application::get().getAssetDirectories();
+	const auto& assetDirs = app::Application::get().getAssetDirectories();
 	const auto resolve = [&](const std::string& iName) -> std::filesystem::path {
 		for (const auto& dir: assetDirs) {
 			// SVG sources in assets_sources/ (parallel to the assets/ directory).
@@ -470,9 +470,9 @@ void EditorLayer::renderCloseDocumentModal() {
 void EditorLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
-	core::Application::get().enableDocking();
+	app::Application::get().enableDocking();
 
-	if (const auto f = core::Application::get().getWorkingDirectory() / "OwlNest_settings.yml"; exists(f))
+	if (const auto f = app::Application::get().getWorkingDirectory() / "OwlNest_settings.yml"; exists(f))
 		m_settings.loadFromFile(f);
 	// Apply theme from saved settings
 	if (m_settings.themePreset != "Custom") {
@@ -624,7 +624,7 @@ void EditorLayer::onAttach() {
 	m_actionRegistry.loadOverrides(m_settings.keybindingOverrides);
 
 	buildRibbon();
-	if (auto ui = core::Application::get().getImGuiLayer(); ui != nullptr)
+	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr)
 		ui->setTopBarCallback([this]() -> void {
 			m_ribbon.onRender();
 
@@ -651,11 +651,11 @@ void EditorLayer::onDetach() {
 
 	// Sync keybinding overrides before saving
 	m_settings.keybindingOverrides = m_actionRegistry.getOverrides();
-	m_settings.saveToFile(core::Application::get().getWorkingDirectory() / "OwlNest_settings.yml");
+	m_settings.saveToFile(app::Application::get().getWorkingDirectory() / "OwlNest_settings.yml");
 
 	m_contentBrowser.detach();
 	OWL_TRACE("EditorLayer: deleted editor FrameBuffer.")
-	if (auto ui = core::Application::get().getImGuiLayer(); ui != nullptr)
+	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr)
 		ui->setTopBarCallback({});
 	m_ribbon.clear();
 
@@ -1081,7 +1081,7 @@ void EditorLayer::buildRibbon() {
 					   Button{.iconName = "exit",
 							  .label = "Exit",
 							  .tooltip = "Quit Owl Nest",
-							  .onClick = []() -> void { core::Application::get().close(); },
+							  .onClick = []() -> void { app::Application::get().close(); },
 							  .size = Size::Large});
 	// =============================== Edit tab ===============================
 	const auto editTab = m_ribbon.addTab("Edit");
@@ -1515,7 +1515,7 @@ void EditorLayer::buildAnimationTab() {
 								  const std::string defaultName = d->filePath().empty()
 																		  ? std::string{"Untitled.owlanim"}
 																		  : d->filePath().filename().string();
-								  if (const auto path = core::utils::FileDialog::saveFile(
+								  if (const auto path = platform::FileDialog::saveFile(
 											  "Owl Animation (*.owlanim)|owlanim\n", defaultName);
 									  !path.empty())
 									  std::ignore = d->saveAs(path);
@@ -1567,7 +1567,7 @@ void EditorLayer::buildTilemapTab() {
 									  const std::string defaultName = a->filePath().empty()
 																			  ? std::string{"Untitled.owltilemap"}
 																			  : a->filePath().filename().string();
-									  if (const auto path = core::utils::FileDialog::saveFile(
+									  if (const auto path = platform::FileDialog::saveFile(
 												  "Owl Tilemap (*.owltilemap)|owltilemap\n", defaultName);
 										  !path.empty())
 										  std::ignore = a->saveAs(path);
@@ -1617,7 +1617,7 @@ void EditorLayer::buildTilesetTab() {
 									  const std::string defaultName = a->filePath().empty()
 																			  ? std::string{"Untitled.owltileset"}
 																			  : a->filePath().filename().string();
-									  if (const auto path = core::utils::FileDialog::saveFile(
+									  if (const auto path = platform::FileDialog::saveFile(
 												  "Owl Tileset (*.owltileset)|owltileset\n", defaultName);
 										  !path.empty())
 										  std::ignore = a->saveAs(path);
@@ -1658,7 +1658,7 @@ void EditorLayer::newScene() {
 }
 
 void EditorLayer::openScene() {
-	if (const auto filepath = core::utils::FileDialog::openFile("Owl Scene (*.owl)|owl\n"); !filepath.empty())
+	if (const auto filepath = platform::FileDialog::openFile("Owl Scene (*.owl)|owl\n"); !filepath.empty())
 		openScene(filepath);
 }
 
@@ -1685,7 +1685,7 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 
 	auto parsed = mkShared<scene::ParsedScene>();
 
-	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
+	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			[state, scenePath = iScenePath, parsed]() -> void {
 				state->progress.store(0.1f);
 				std::ifstream file(scenePath, std::ios::binary | std::ios::ate);
@@ -1908,9 +1908,9 @@ namespace {
 auto resolveAssetAbsolutePath(const std::filesystem::path& iRelative) -> std::filesystem::path {
 	if (iRelative.empty())
 		return {};
-	if (!core::Application::instanced())
+	if (!app::Application::instanced())
 		return {};
-	for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 		if (auto candidate = assetsPath / iRelative; exists(candidate))
 			return weakly_canonical(candidate);
 	}
@@ -2001,8 +2001,7 @@ void EditorLayer::saveSceneAs() {
 	const auto* doc = activeSceneDocument();
 	const std::string defaultName = (doc != nullptr && !doc->filePath().empty()) ? doc->filePath().filename().string()
 																				 : std::string{"Untitled.owl"};
-	if (const auto filepath = core::utils::FileDialog::saveFile("Owl Scene (*.owl)|owl\n", defaultName);
-		!filepath.empty())
+	if (const auto filepath = platform::FileDialog::saveFile("Owl Scene (*.owl)|owl\n", defaultName); !filepath.empty())
 		saveSceneAs(filepath);
 }
 
@@ -2021,7 +2020,7 @@ void EditorLayer::saveSceneAs(const std::filesystem::path& iScenePath) {
 	state->progress.store(0.5f);
 	m_asyncProgress.open("Saving...", state, false);
 
-	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
+	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			[state, yamlData, path = iScenePath]() -> void {
 				std::ofstream fileOut(path);
 				if (!fileOut.is_open()) {
@@ -2125,7 +2124,7 @@ void EditorLayer::handleTeleportRequest() {
 }
 
 void EditorLayer::newProject() {
-	const auto dir = core::utils::FileDialog::pickFolder();
+	const auto dir = platform::FileDialog::pickFolder();
 	if (dir.empty())
 		return;
 	if (!exists(dir))
@@ -2149,7 +2148,7 @@ void EditorLayer::handleSaveLoadRequest() {
 }
 
 void EditorLayer::openProject() {
-	const auto dir = core::utils::FileDialog::pickFolder();
+	const auto dir = platform::FileDialog::pickFolder();
 	if (!dir.empty())
 		openProject(dir);
 }
@@ -2165,8 +2164,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 		closeProject();
 
 	m_project.loadFromFile(configFile);
-	core::Application::get().addAssetDirectory(
-			{std::format("Project: {}", m_project.name), m_project.projectDirectory});
+	app::Application::get().addAssetDirectory({std::format("Project: {}", m_project.name), m_project.projectDirectory});
 	m_contentBrowser.attach();
 	refreshWindowTitle();
 
@@ -2191,7 +2189,7 @@ void EditorLayer::saveProject() {
 void EditorLayer::saveProjectAs() {
 	if (!m_project.isLoaded())
 		return;
-	const auto dest = core::utils::FileDialog::pickFolder();
+	const auto dest = platform::FileDialog::pickFolder();
 	if (dest.empty())
 		return;
 	if (std::filesystem::weakly_canonical(dest) == std::filesystem::weakly_canonical(m_project.projectDirectory)) {
@@ -2219,7 +2217,7 @@ void EditorLayer::saveProjectAs() {
 void EditorLayer::closeProject() {
 	if (!m_project.isLoaded())
 		return;
-	core::Application::get().removeAssetDirectory(m_project.projectDirectory);
+	app::Application::get().removeAssetDirectory(m_project.projectDirectory);
 	m_contentBrowser.attach();
 	m_project = {};
 	refreshWindowTitle();
@@ -2228,7 +2226,7 @@ void EditorLayer::closeProject() {
 void EditorLayer::importScene() {
 	if (!m_project.isLoaded())
 		return;
-	const auto filepath = core::utils::FileDialog::openFile("Owl Scene (*.owl)|owl\n");
+	const auto filepath = platform::FileDialog::openFile("Owl Scene (*.owl)|owl\n");
 	if (filepath.empty())
 		return;
 	const auto scenesDir = m_project.projectDirectory / "scenes";
@@ -2244,7 +2242,7 @@ void EditorLayer::importScene() {
 }
 
 void EditorLayer::refreshWindowTitle() {
-	auto& app = core::Application::get();
+	auto& app = app::Application::get();
 	const auto* doc = activeSceneDocument();
 	const auto* const dirty = (doc != nullptr && doc->isDirty()) ? " *" : "";
 	if (m_project.isLoaded())
@@ -2305,7 +2303,7 @@ void EditorLayer::packScene() {
 		return;
 
 	const std::string defaultPackName = doc->filePath().stem().string() + ".owlpack";
-	const auto destPath = core::utils::FileDialog::saveFile("Owl Scene Pack (*.owlpack)|owlpack\n", defaultPackName);
+	const auto destPath = platform::FileDialog::saveFile("Owl Scene Pack (*.owlpack)|owlpack\n", defaultPackName);
 	if (destPath.empty())
 		return;
 
@@ -2320,10 +2318,10 @@ void EditorLayer::packScene() {
 	auto state = mkShared<AsyncProgressState>();
 	m_asyncProgress.open("Packing Scene...", state, true);
 
-	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
+	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			[state, scenePath, sceneFilename, outputPath]() -> void {
 				state->setMessage("Scanning assets...");
-				const auto assets = io::pack::AssetScanner::scanScene(scenePath);
+				const auto assets = data::assets::pack::AssetScanner::scanScene(scenePath);
 				if (assets.empty()) {
 					state->setError("No assets found to pack for scene " + sceneFilename);
 					return;
@@ -2333,11 +2331,11 @@ void EditorLayer::packScene() {
 				state->progress.store(0.2f);
 				state->setMessage("Writing pack (" + std::to_string(assets.size()) + " assets)...");
 
-				io::pack::PackWriter writer;
+				data::assets::pack::PackWriter writer;
 				for (const auto& ref: assets) writer.addFile(ref.diskPath, ref.packPath, ref.assetType);
 
 				const bool writeOk = writer.write(
-						outputPath, io::pack::PackFlags::Default,
+						outputPath, data::assets::pack::PackFlags::Default,
 						[&state](const uint32_t iCurrent, const uint32_t iTotal) -> void {
 							state->progress.store(0.2f +
 												  0.75f * static_cast<float>(iCurrent) / static_cast<float>(iTotal));
@@ -2499,7 +2497,7 @@ void EditorLayer::renderPackWizardModal() {
 			m_pendingPackDestDir = std::filesystem::path(destStr);
 		ImGui::SameLine();
 		if (gui::IconBank::instance().iconButton("open", "Browse...##packDest")) {
-			const auto picked = core::utils::FileDialog::pickFolder();
+			const auto picked = platform::FileDialog::pickFolder();
 			if (!picked.empty())
 				m_pendingPackDestDir = picked;
 		}
@@ -2550,12 +2548,12 @@ void EditorLayer::launchPackValidation() {
 	const auto projectDir = m_project.projectDirectory;
 	const auto firstScene = m_project.firstScene;
 	auto warningsOut = mkShared<std::vector<std::string>>();
-	auto assetsOut = mkShared<std::vector<io::pack::AssetReference>>();
-	const auto runnerSrcDir = core::Application::get().getWorkingDirectory();
+	auto assetsOut = mkShared<std::vector<data::assets::pack::AssetReference>>();
+	const auto runnerSrcDir = app::Application::get().getWorkingDirectory();
 
-	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
+	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			[state, projectDir, firstScene, warningsOut, assetsOut, runnerSrcDir]() -> void {
-				*assetsOut = io::pack::AssetScanner::scanProject(projectDir, firstScene, warningsOut.get());
+				*assetsOut = data::assets::pack::AssetScanner::scanProject(projectDir, firstScene, warningsOut.get());
 				state->progress.store(0.8f);
 				bool hasRunner = false;
 				for (const auto& candidate: {"OwlRunner", "OwlRunner.exe"}) {
@@ -2637,7 +2635,7 @@ void EditorLayer::startPackGame() {
 	const auto projectIcon = m_project.icon;
 	const auto windowCfg = m_project.window;
 	const auto rendererStackCfg = m_project.rendererStack;
-	const auto runnerSrcDir = core::Application::get().getWorkingDirectory();
+	const auto runnerSrcDir = app::Application::get().getWorkingDirectory();
 	const auto gameDir = destDir / gameName;
 	if (std::error_code ec; !std::filesystem::create_directories(gameDir, ec) && ec) {
 		OWL_CORE_ERROR("Pack: cannot create output directory '{}': {}.", gameDir.string(), ec.message())
@@ -2655,21 +2653,22 @@ void EditorLayer::startPackGame() {
 	auto state = mkShared<AsyncProgressState>();
 	m_asyncProgress.open("Packing Game...", state, true);
 	// Push async task to the scheduler.
-	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
+	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			// --- Worker function (runs on thread pool) ---
 			[state, gameName, gameDir, projectDir, firstScene, projectName, projectVersion, projectAuthor, projectDesc,
 			 projectIcon, windowCfg, rendererStackCfg, runnerSrcDir, preScanned, compress = m_packCompress,
 			 obfuscate = m_packObfuscate]() -> void {
 				const auto startTime = std::chrono::steady_clock::now();
-				const auto packFlags = (compress ? io::pack::PackFlags::Compressed : io::pack::PackFlags::None) |
-									   (obfuscate ? io::pack::PackFlags::Obfuscated : io::pack::PackFlags::None);
+				const auto packFlags =
+						(compress ? data::assets::pack::PackFlags::Compressed : data::assets::pack::PackFlags::None) |
+						(obfuscate ? data::assets::pack::PackFlags::Obfuscated : data::assets::pack::PackFlags::None);
 				// Phase 1: Use pre-scanned assets (from validation) or re-scan if missing.
-				std::vector<io::pack::AssetReference> assets;
+				std::vector<data::assets::pack::AssetReference> assets;
 				if (preScanned && !preScanned->empty()) {
 					assets = *preScanned;
 				} else {
 					state->setMessage("Scanning assets...");
-					assets = io::pack::AssetScanner::scanProject(projectDir, firstScene);
+					assets = data::assets::pack::AssetScanner::scanProject(projectDir, firstScene);
 				}
 				if (assets.empty()) {
 					state->setError("No assets found to pack.");
@@ -2680,10 +2679,10 @@ void EditorLayer::startPackGame() {
 				state->progress.store(0.15f);
 				state->setMessage("Building pack (" + std::to_string(assets.size()) + " assets)...");
 				// Phase 2: Build and write pack file (20% – 80%).
-				io::pack::PackWriter writer;
+				data::assets::pack::PackWriter writer;
 				for (const auto& ref: assets) writer.addFile(ref.diskPath, ref.packPath, ref.assetType);
 				if (const auto gsPath = projectDir / "game_settings.yml"; exists(gsPath))
-					writer.addFile(gsPath, "game_settings.yml", io::pack::AssetType::Other);
+					writer.addFile(gsPath, "game_settings.yml", data::assets::pack::AssetType::Other);
 				const auto packFilename = gameName + ".owlpack";
 				const auto packPath = gameDir / packFilename;
 				const bool writeOk = writer.write(
@@ -2708,7 +2707,8 @@ void EditorLayer::startPackGame() {
 					if (std::filesystem::path(resolvedFirstScene).extension() != ".owl")
 						resolvedFirstScene += ".owl";
 					for (const auto& ref: assets) {
-						if (ref.assetType == io::pack::AssetType::Scene && ref.packPath.ends_with(resolvedFirstScene)) {
+						if (ref.assetType == data::assets::pack::AssetType::Scene &&
+							ref.packPath.ends_with(resolvedFirstScene)) {
 							resolvedFirstScene = ref.packPath;
 							break;
 						}

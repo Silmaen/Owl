@@ -8,7 +8,7 @@
 #include <owl.h>
 
 #include "RunnerLayer.h"
-#include <core/EntryPoint.h>
+#include <app/EntryPoint.h>
 
 #include <cstdio>
 
@@ -69,17 +69,17 @@ auto readEarlyConfig(const std::filesystem::path& iWorkDir) -> EarlyConfig {
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
-class OwlNest final : public core::Application {
+class OwlNest final : public app::Application {
 public:
 	OwlNest() = delete;
-	explicit OwlNest(const core::AppParams& iParam) : Application(iParam) {
+	explicit OwlNest(const app::AppParams& iParam) : Application(iParam) {
 		if (getState() == State::Running)
 			pushLayer(mkShared<nest::runner::RunnerLayer>());
 	}
 };
 OWL_DIAG_POP
 
-auto core::createApplication(int iArgc, char** iArgv) -> shared<Application> {
+auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 	if (iArgc > 0 && iArgv[0] != nullptr) {
 		if (const auto exeDir = std::filesystem::absolute(std::filesystem::path(iArgv[0])).parent_path();
 			std::filesystem::exists(exeDir)) {

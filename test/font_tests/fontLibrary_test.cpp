@@ -1,12 +1,13 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <data/fonts/FontLibrary.h>
 
 using namespace owl::data::fonts;
 using namespace owl;
 using namespace owl::core;
+using namespace owl::app;
 
 TEST(FontLibrary, basic) {
 	FontLibrary fontLibrary;

@@ -8,10 +8,10 @@
 
 #include "testHelper.h"
 
-#include <io/pack/PackReader.h>
-#include <io/pack/PackWriter.h>
+#include <data/assets/pack/PackReader.h>
+#include <data/assets/pack/PackWriter.h>
 
-using namespace owl::io::pack;
+using namespace owl::data::assets::pack;
 
 namespace {
 auto getTempDir() -> std::filesystem::path {

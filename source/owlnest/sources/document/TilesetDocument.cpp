@@ -306,9 +306,9 @@ void TilesetDocument::renderCanvas() {
 			const auto* data = static_cast<const char*>(payload->Data);
 			const auto length = ::strnlen(data, static_cast<size_t>(payload->DataSize));
 			const std::filesystem::path candidate{std::string(data, length)};
-			if (mp_editorLayer != nullptr && core::Application::instanced()) {
+			if (mp_editorLayer != nullptr && app::Application::instanced()) {
 				std::filesystem::path resolved;
-				for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+				for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 					if (const auto p = assetsPath / candidate; exists(p)) {
 						resolved = p;
 						break;

@@ -19,7 +19,7 @@ constexpr auto g_restartPopupName = "Restart Required";
 }// namespace
 
 void Parameters::open() {
-	const auto& params = core::Application::get().getInitParams();
+	const auto& params = app::Application::get().getInitParams();
 	m_localParams = params;
 	m_originalRenderer = params.renderer;
 	m_originalSound = params.sound;
@@ -28,7 +28,7 @@ void Parameters::open() {
 }
 
 auto Parameters::apply() -> bool {
-	auto& params = core::Application::get().getInitParams();
+	auto& params = app::Application::get().getInitParams();
 	params.width = m_localParams.width;
 	params.height = m_localParams.height;
 	params.renderer = m_localParams.renderer;
@@ -36,7 +36,7 @@ auto Parameters::apply() -> bool {
 	params.useDebugging = m_localParams.useDebugging;
 	params.frameLogFrequency = m_localParams.frameLogFrequency;
 
-	const auto configPath = core::Application::get().getWorkingDirectory() / "config.yml";
+	const auto configPath = app::Application::get().getWorkingDirectory() / "config.yml";
 	params.saveToFile(configPath);
 	core::Log::setFrameFrequency(params.frameLogFrequency);
 

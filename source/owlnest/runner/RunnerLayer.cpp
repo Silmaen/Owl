@@ -10,7 +10,7 @@
 
 #include <input/Input.h>
 #include <input/MouseCode.h>
-#include <physic/PhysicCommand.h>
+#include <physics/PhysicCommand.h>
 #include <scene/SaveManager.h>
 #include <scene/SceneSerializer.h>
 #include <scene/ScreenTransition.h>
@@ -49,7 +49,7 @@ auto isSubdir(const std::filesystem::path& iFile, const std::filesystem::path& i
 
 void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 	YAML::Node data = YAML::LoadFile(iPath.string());
-	const auto& app = core::Application::get();
+	const auto& app = app::Application::get();
 	firstScene.clear();
 	packFile.clear();
 	rendererStack = renderer::RendererStackConfig{};
@@ -87,7 +87,7 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 	out << YAML::BeginMap;
 	out << YAML::Key << "RunnerConfig" << YAML::Value << YAML::BeginMap;
 
-	const auto& app = core::Application::get();
+	const auto& app = app::Application::get();
 	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
 		if (const auto dir = isSubdir(firstScene, assetsPath); dir.has_value()) {
 			out << YAML::Key << "FirstScene" << YAML::Value << dir.value().string();
@@ -123,7 +123,7 @@ void RunnerLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
 	// Load the config file
-	auto& app = core::Application::get();
+	auto& app = app::Application::get();
 	{
 		const auto config = app.getWorkingDirectory() / "runner.yml";
 		if (!exists(config)) {
@@ -281,11 +281,11 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 										m_teleportVelocity.x() * cosR - m_teleportVelocity.y() * sinR,
 										m_teleportVelocity.x() * sinR + m_teleportVelocity.y() * cosR};
 
-								physic::PhysicCommand::setTransform(
+								physics::PhysicCommand::setTransform(
 										player, {targetTransform.translation().x(), targetTransform.translation().y()},
 										targetRotation);
 
-								physic::PhysicCommand::setVelocity(player, finalVelocity);
+								physics::PhysicCommand::setVelocity(player, finalVelocity);
 								auto& playerTransform = player.getComponent<scene::component::Transform>().transform;
 								playerTransform.translation().x() = targetTransform.translation().x();
 								playerTransform.translation().y() = targetTransform.translation().y();
@@ -313,7 +313,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 					if (m_activeScene->quitRequested) {
 						m_activeScene->onEndRuntime();
 
-						core::Application::get().close();
+						app::Application::get().close();
 						return;
 					}
 					if (const auto pending = scene::ScreenTransition::pendingLoadPath(); pending) {
@@ -337,7 +337,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 								for (const auto& [uuid, snap]: loadResult.physicsSnapshots)
 									if (auto entity = m_activeScene->findEntityByUUID(core::UUID{uuid}); entity)
 
-										physic::PhysicCommand::applySnapshot(entity, snap);
+										physics::PhysicCommand::applySnapshot(entity, snap);
 							}
 						} else {
 							std::ignore = scene::SaveManager::save(slr.slot, m_activeScene, "");
@@ -348,7 +348,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 		}
 	} else {
 		// check for finish.
-		core::Application::get().close();
+		app::Application::get().close();
 	}
 }
 
@@ -371,7 +371,7 @@ void RunnerLayer::handleTeleportRequest() {
 	if (std::filesystem::path(resolvedName).extension() != ".owl")
 		resolvedName += ".owl";
 
-	const auto& app = core::Application::get();
+	const auto& app = app::Application::get();
 
 	// Build the transition state now, capturing the current GameState and velocity.
 	auto transition = mkShared<PendingTransition>();
@@ -390,7 +390,7 @@ void RunnerLayer::handleTeleportRequest() {
 
 	m_transition = transition;
 
-	core::Application::get().getTaskScheduler().pushTask(core::task::Task(
+	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			// Worker: read scene bytes + parse YAML off-main-thread.
 			[transition, hasPack, searchRoots, resolvedName, &app]() -> void {
 				using clk = std::chrono::steady_clock;
@@ -506,7 +506,7 @@ void RunnerLayer::onImGuiRender(const core::Timestep&) {
 	OWL_PROFILE_FUNCTION()
 
 	//=============================================================
-	m_viewportSize = core::Application::get().getWindow().getSize();
+	m_viewportSize = app::Application::get().getWindow().getSize();
 	//=============================================================
 }
 

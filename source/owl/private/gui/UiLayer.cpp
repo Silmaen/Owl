@@ -10,7 +10,7 @@
 
 #include "gui/UiLayer.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "core/external/glfw3.h"
 #include "core/external/imgui.h"
 #include "gui/FontPreviewCache.h"
@@ -34,9 +34,9 @@ float g_codeFontSize = 13.f;
 std::vector<shared<renderer::gpu::Texture>> g_deferredTextureReleases;
 
 auto resolveAssetFile(const std::filesystem::path& iRelative) -> std::filesystem::path {
-	if (!core::Application::instanced())
+	if (!app::Application::instanced())
 		return {};
-	const auto& app = core::Application::get();
+	const auto& app = app::Application::get();
 	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
 		const auto full = assetsPath / iRelative;
 		if (exists(full))
@@ -64,10 +64,10 @@ void UiLayer::onAttach() {
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
 	if (m_withApp) {
-		const auto& params = core::Application::get().getInitParams();
+		const auto& params = app::Application::get().getInitParams();
 		if (params.argCount > 0 && params.args != nullptr) {
 			const auto stem = std::filesystem::path(params[0]).stem().string();
-			m_iniFilePath = (core::Application::get().getWorkingDirectory() / (stem + "_imgui.ini")).string();
+			m_iniFilePath = (app::Application::get().getWorkingDirectory() / (stem + "_imgui.ini")).string();
 			io.IniFilename = m_iniFilePath.c_str();
 		}
 	}
@@ -108,8 +108,8 @@ void UiLayer::onAttach() {
 
 	setTheme();
 
-	if (m_withApp && core::Application::get().getWindow().getType() == window::Type::Glfw) {
-		auto* window = static_cast<GLFWwindow*>(core::Application::get().getWindow().getNativeWindow());
+	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Glfw) {
+		auto* window = static_cast<GLFWwindow*>(app::Application::get().getWindow().getNativeWindow());
 		if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL) {
 			ImGui_ImplGlfw_InitForOpenGL(window, true);
 		} else if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
@@ -138,7 +138,7 @@ void UiLayer::onDetach() {
 		vkDeviceWaitIdle(vkc.getLogicalDevice());
 		ImGui_ImplVulkan_Shutdown();
 	}
-	if (m_withApp && core::Application::get().getWindow().getType() == window::Type::Glfw) {
+	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Glfw) {
 		ImGui_ImplGlfw_Shutdown();
 	}
 	ImGui::DestroyContext();
@@ -170,7 +170,7 @@ void UiLayer::begin() const {
 		int height = 0;
 		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 	}
-	if (m_withApp && core::Application::get().getWindow().getType() == window::Type::Glfw) {
+	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Glfw) {
 		ImGui_ImplGlfw_NewFrame();
 	} else {
 		ImGuiIO& io = ImGui::GetIO();
@@ -193,7 +193,7 @@ void UiLayer::end() const {
 	}
 	ImGuiIO& io = ImGui::GetIO();
 	if (m_withApp) {
-		const core::Application& app = core::Application::get();
+		const app::Application& app = app::Application::get();
 		io.DisplaySize = vec(app.getWindow().getSize());
 	}
 	ImGui::EndFrame();

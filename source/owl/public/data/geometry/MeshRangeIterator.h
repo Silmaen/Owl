@@ -23,7 +23,7 @@ class StaticMesh;
 template<typename... Components>
 constexpr static bool IsOnlyCoordinateComponent =
 		sizeof...(Components) == 1 &&
-		std::is_same_v<std::tuple_element_t<0, std::tuple<Components...>>, component::Coordinate>;
+		std::is_same_v<std::tuple_element_t<0, std::tuple<Components...>>, meshrange::Coordinate>;
 
 /**
  * @brief

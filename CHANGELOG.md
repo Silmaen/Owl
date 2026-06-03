@@ -15,6 +15,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   map with world-coordinate block access and floored negative-coordinate chunk resolution). New headless
   `voxel_tests` category (26 tests).
 
+### Changed
+
+- **Module taxonomy reorganization** (breaking — public namespaces changed, downstream consumers such as OwlDrone
+  must update includes/namespaces):
+    - Split application lifecycle out of `core` into a new `app` module: `owl::app::Application`, `app::AppParams`,
+      `app::EntryPoint`, `app::layer::Layer`, `app::layer::LayerStack` (headers under `app/`).
+    - Introduced a new `platform` module (`owl::platform`) for OS / native-platform services: moved
+      `FileDialog`, `fileToString` (`FileUtils`) and `openExternalUrl` there (out of `core::utils`).
+    - Moved asset packing (`PackReader` / `PackWriter` / `PackFormat` / `AssetScanner`) from `io::pack` to
+      `owl::data::assets::pack` — it operates on assets, not raw device I/O. `io` is now device-only
+      (`serial`, `video`).
+    - Moved `CameraOrthoController` from `input` to `owl::renderer` (next to the cameras).
+    - Renamed the `physic` module to `physics` (`owl::physics`); the `PhysicCommand` class name is unchanged.
+    - Renamed the mesh-iteration namespace `data::component` to `owl::data::meshrange` to disambiguate it from the
+      ECS `scene::component`.
+    - Documented the module-placement rules in `.claude/rules/module-layout.md` and `doc/pages/architecture.md`.
+
 ## [0.2.0] - 2026-06-02
 
 ### Added

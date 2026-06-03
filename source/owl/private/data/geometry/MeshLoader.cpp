@@ -115,7 +115,7 @@ auto MeshLoader::loadObj([[maybe_unused]] const std::filesystem::path& iFilePath
 		mesh->addTriangleExtraData<TriangleNormals>();
 	// Fill UVs and normals
 	size_t triIndex = 0;
-	for (auto& [uv, m_normals]: MeshTriangleRange(*mesh, component::WriteUvCoords, component::WriteTriangleNormals)) {
+	for (auto& [uv, m_normals]: MeshTriangleRange(*mesh, meshrange::WriteUvCoords, meshrange::WriteTriangleNormals)) {
 		if (uv.hasValue()) {
 			uv.value()->setUvCoord(0, uvCoords[triIndex][0]);
 			uv.value()->setUvCoord(1, uvCoords[triIndex][1]);
@@ -228,7 +228,7 @@ auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath
 		mesh->addTriangleExtraData<TriangleNormals>();
 	// Fill UVs and normals
 	size_t triIndex = 0;
-	for (auto& [uv, m_normals]: MeshTriangleRange(*mesh, component::WriteUvCoords, component::WriteTriangleNormals)) {
+	for (auto& [uv, m_normals]: MeshTriangleRange(*mesh, meshrange::WriteUvCoords, meshrange::WriteTriangleNormals)) {
 		if (uv.hasValue()) {
 			uv.value()->setUvCoord(0, uvCoords[triIndex][0]);
 			uv.value()->setUvCoord(1, uvCoords[triIndex][1]);
@@ -407,7 +407,7 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 		mesh->addTriangleExtraData<TriangleNormals>();
 	// Fill UVs and normals
 	size_t triIndex = 0;
-	for (auto& [uv, m_normals]: MeshTriangleRange(*mesh, component::WriteUvCoords, component::WriteTriangleNormals)) {
+	for (auto& [uv, m_normals]: MeshTriangleRange(*mesh, meshrange::WriteUvCoords, meshrange::WriteTriangleNormals)) {
 		if (uv.hasValue()) {
 			uv.value()->setUvCoord(0, uvCoords[triIndex][0]);
 			uv.value()->setUvCoord(1, uvCoords[triIndex][1]);

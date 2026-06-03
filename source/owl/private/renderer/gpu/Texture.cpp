@@ -9,7 +9,7 @@
 
 #include "renderer/gpu/Texture.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "core/task/Scheduler.h"
 #include "null/Texture.h"
 #include "opengl/Texture.h"
@@ -147,15 +147,15 @@ auto resolveTextureSource(std::string_view iKey, const std::string& iValue) -> R
 	ResolvedSource out;
 	if (iKey == "nam:") {
 		out.name = iValue;
-		if (core::Application::instanced() && core::Application::get().hasOpenPack()) {
-			if (auto data = core::Application::get().loadFromPack(iValue); data) {
+		if (app::Application::instanced() && app::Application::get().hasOpenPack()) {
+			if (auto data = app::Application::get().loadFromPack(iValue); data) {
 				out.bytes = std::move(*data);
 				return out;
 			}
 		}
-		if (core::Application::instanced()) {
+		if (app::Application::instanced()) {
 			const std::filesystem::path name(iValue);
-			for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+			for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 				if (const std::filesystem::path filePath = assetsPath / name; std::filesystem::exists(filePath)) {
 					out.path = filePath;
 					out.bytes = readFileBytes(filePath);
@@ -184,8 +184,8 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 		return create(Specification{.size = {0, 0}, .format = ImageFormat::Rgb8});
 	if (key == "nam:") {
 		// Check pack first.
-		if (core::Application::instanced() && core::Application::get().hasOpenPack()) {
-			if (auto data = core::Application::get().loadFromPack(val); data) {
+		if (app::Application::instanced() && app::Application::get().hasOpenPack()) {
+			if (auto data = app::Application::get().loadFromPack(val); data) {
 				const auto tempDir = std::filesystem::temp_directory_path() / "owl_pack_cache";
 				std::filesystem::create_directories(tempDir);
 				const auto tempFile = tempDir / std::filesystem::path(val).filename();
@@ -201,9 +201,9 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 			}
 		}
 		// Resolve the asset name through registered asset directories.
-		if (core::Application::instanced()) {
+		if (app::Application::instanced()) {
 			const std::filesystem::path name(val);
-			for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+			for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 				if (const std::filesystem::path filePath = assetsPath / name; std::filesystem::exists(filePath)) {
 					auto texture = create(filePath);
 					if (texture != nullptr)
@@ -294,12 +294,12 @@ auto Texture2D::createFromSerializedAsync(const std::string& iTextureSerializedN
 }
 
 auto Texture2D::createFromSerializedForDeserialize(const std::string& iTextureSerializedName) -> shared<Texture2D> {
-	if (!core::Application::instanced())
+	if (!app::Application::instanced())
 		return createFromSerialized(iTextureSerializedName);
 	auto& library = Renderer::getTextureLibrary();
 	if (library.exists(iTextureSerializedName))
 		return library.get(iTextureSerializedName);
-	auto texture = createFromSerializedAsync(iTextureSerializedName, core::Application::get().getTaskScheduler());
+	auto texture = createFromSerializedAsync(iTextureSerializedName, app::Application::get().getTaskScheduler());
 	if (texture)
 		library.add(iTextureSerializedName, texture);
 	return texture;

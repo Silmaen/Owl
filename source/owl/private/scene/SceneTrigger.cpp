@@ -10,7 +10,7 @@
 #include "scene/SceneTrigger.h"
 
 #include "input/Input.h"
-#include "physic/PhysicCommand.h"
+#include "physics/PhysicCommand.h"
 #include "scene/Entity.h"
 #include "scene/component/components.h"
 
@@ -90,7 +90,7 @@ void SceneTrigger::onTriggered(const Entity& ioPlayer, const Entity& iTriggerEnt
 			{
 				const auto triggerRotation =
 						iTriggerEntity.getComponent<component::Transform>().transform.rotation().z();
-				const auto playerVelocity = physic::PhysicCommand::getVelocity(ioPlayer);
+				const auto playerVelocity = physics::PhysicCommand::getVelocity(ioPlayer);
 				const auto playerRotation = ioPlayer.getComponent<component::Transform>().transform.rotation().z();
 				if (levelName.empty()) {
 					// Same-level teleport: find target entity by name.
@@ -107,11 +107,11 @@ void SceneTrigger::onTriggered(const Entity& ioPlayer, const Entity& iTriggerEnt
 																 playerVelocity.x() * sinD + playerVelocity.y() * cosD};
 
 							// Teleport player: keep player's own rotation, only move position.
-							physic::PhysicCommand::setTransform(
+							physics::PhysicCommand::setTransform(
 									ioPlayer, {targetTransform.translation().x(), targetTransform.translation().y()},
 									playerRotation);
 
-							physic::PhysicCommand::setVelocity(ioPlayer, rotatedVelocity);
+							physics::PhysicCommand::setVelocity(ioPlayer, rotatedVelocity);
 							// Also update the transform component so rendering is in sync.
 							auto& playerTransform = ioPlayer.getComponent<component::Transform>().transform;
 							playerTransform.translation().x() = targetTransform.translation().x();

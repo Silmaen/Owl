@@ -7,7 +7,7 @@
  */
 #include "owlpch.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "debug/Profiler.h"
 #include "gui/BaseDrawPanel.h"
 #include "gui/utils.h"
@@ -34,8 +34,8 @@ void BaseDrawPanel::onRender() {
 
 	m_viewportFocused = ImGui::IsWindowFocused();
 	m_viewportHovered = ImGui::IsWindowHovered();
-	if (core::Application::instanced())
-		core::Application::get().getImGuiLayer()->blockEvents(!m_viewportFocused && !m_viewportHovered);
+	if (app::Application::instanced())
+		app::Application::get().getImGuiLayer()->blockEvents(!m_viewportFocused && !m_viewportHovered);
 
 	const ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 	m_viewportSize = {static_cast<uint32_t>(viewportPanelSize.x), static_cast<uint32_t>(viewportPanelSize.y)};

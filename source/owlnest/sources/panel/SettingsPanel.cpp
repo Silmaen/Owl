@@ -103,7 +103,7 @@ void SettingsPanel::renderThemeSection(EditorSettings& ioSettings) {
 			const bool selected = ioSettings.themePreset == "Custom";
 			if (ImGui::Selectable("Custom (theme.yml)", selected)) {
 				ioSettings.themePreset = "Custom";
-				if (const auto themePath = core::Application::get().getWorkingDirectory() / "theme.yml";
+				if (const auto themePath = app::Application::get().getWorkingDirectory() / "theme.yml";
 					exists(themePath)) {
 					gui::Theme theme;
 					theme.loadFromFile(themePath);

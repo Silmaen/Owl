@@ -8,9 +8,9 @@
 
 #include "testHelper.h"
 
-#include <io/pack/PackFormat.h>
+#include <data/assets/pack/PackFormat.h>
 
-using namespace owl::io::pack;
+using namespace owl::data::assets::pack;
 
 TEST(PackFormat, hashPath_deterministic) {
 	const auto hash1 = hashPath("textures/mario.png");

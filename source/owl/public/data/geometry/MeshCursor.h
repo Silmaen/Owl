@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "data/component/MeshComponentExtraData.h"
 #include "data/geometry/MeshCursorBase.h"
+#include "data/meshrange/MeshComponentExtraData.h"
 
 namespace owl::data::geometry {
 
@@ -30,7 +30,7 @@ namespace details {
 template<typename T, MeshElementType ElementType>
 struct IsWriteExtraData
 	: std::integral_constant<bool,
-							 std::is_base_of_v<component::WriteMeshExtraData<typename T::DataType, ElementType>, T>> {};
+							 std::is_base_of_v<meshrange::WriteMeshExtraData<typename T::DataType, ElementType>, T>> {};
 
 /**
  * @brief
@@ -41,7 +41,7 @@ struct IsWriteExtraData
 template<typename T, MeshElementType ElementType>
 struct IsWriteExtraDataPid
 	: std::integral_constant<
-			  bool, std::is_base_of_v<component::WriteMeshExtraDataPid<typename T::DataType, ElementType>, T>> {};
+			  bool, std::is_base_of_v<meshrange::WriteMeshExtraDataPid<typename T::DataType, ElementType>, T>> {};
 
 /**
  * @brief

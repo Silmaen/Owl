@@ -7,7 +7,7 @@
  */
 #include "owlpch.h"
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "core/SerializerImpl.h"
 #include "math/YamlSerializers.h"
 #include "scene/component/UiText.h"
@@ -44,8 +44,8 @@ void UiText::deserialize(const core::Serializer& iNode) {
 		kerning = iNode.getImpl()->node["kerning"].as<float>();
 	if (iNode.getImpl()->node["lineSpacing"])
 		lineSpacing = iNode.getImpl()->node["lineSpacing"].as<float>();
-	if (core::Application::instanced()) {
-		auto& lib = core::Application::get().getFontLibrary();
+	if (app::Application::instanced()) {
+		auto& lib = app::Application::get().getFontLibrary();
 		if (iNode.getImpl()->node["font"])
 			font = lib.getFont(iNode.getImpl()->node["font"].as<std::string>());
 		else

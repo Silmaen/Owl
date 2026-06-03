@@ -8,7 +8,7 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <data/fonts/Font.h>
 #include <data/fonts/FontLibrary.h>
 
@@ -27,18 +27,18 @@ TEST(FontCoverage, nonExistentFontFile) {
 
 TEST(FontCoverage, glyphBoxNewline) {
 	core::Log::init(core::Log::Level::Off);
-	auto app = mkShared<core::Application>(core::AppParams{.args = nullptr,
-														   .frameLogFrequency = 0,
-														   .name = "fontTest",
-														   .assetsPattern = "",
-														   .icon = "",
-														   .width = 0,
-														   .height = 0,
-														   .argCount = 0,
-														   .renderer = renderer::gpu::RenderAPI::Type::Null,
-														   .hasGui = false,
-														   .useDebugging = false,
-														   .isDummy = true});
+	auto app = mkShared<app::Application>(app::AppParams{.args = nullptr,
+														 .frameLogFrequency = 0,
+														 .name = "fontTest",
+														 .assetsPattern = "",
+														 .icon = "",
+														 .width = 0,
+														 .height = 0,
+														 .argCount = 0,
+														 .renderer = renderer::gpu::RenderAPI::Type::Null,
+														 .hasGui = false,
+														 .useDebugging = false,
+														 .isDummy = true});
 	auto& fontLibrary = app->getFontLibrary();
 	const auto myFont = fontLibrary.getDefaultFont();
 	ASSERT_NE(myFont, nullptr);
@@ -50,25 +50,25 @@ TEST(FontCoverage, glyphBoxNewline) {
 	EXPECT_NEAR(quad.max().x(), 0.0f, 0.001f);
 	EXPECT_NEAR(quad.max().y(), 0.0f, 0.001f);
 
-	core::Application::invalidate();
+	app::Application::invalidate();
 	app.reset();
 	core::Log::invalidate();
 }
 
 TEST(FontCoverage, glyphBoxTab) {
 	core::Log::init(core::Log::Level::Off);
-	auto app = mkShared<core::Application>(core::AppParams{.args = nullptr,
-														   .frameLogFrequency = 0,
-														   .name = "fontTest",
-														   .assetsPattern = "",
-														   .icon = "",
-														   .width = 0,
-														   .height = 0,
-														   .argCount = 0,
-														   .renderer = renderer::gpu::RenderAPI::Type::Null,
-														   .hasGui = false,
-														   .useDebugging = false,
-														   .isDummy = true});
+	auto app = mkShared<app::Application>(app::AppParams{.args = nullptr,
+														 .frameLogFrequency = 0,
+														 .name = "fontTest",
+														 .assetsPattern = "",
+														 .icon = "",
+														 .width = 0,
+														 .height = 0,
+														 .argCount = 0,
+														 .renderer = renderer::gpu::RenderAPI::Type::Null,
+														 .hasGui = false,
+														 .useDebugging = false,
+														 .isDummy = true});
 	auto& fontLibrary = app->getFontLibrary();
 	const auto myFont = fontLibrary.getDefaultFont();
 	ASSERT_NE(myFont, nullptr);
@@ -82,25 +82,25 @@ TEST(FontCoverage, glyphBoxTab) {
 	EXPECT_NEAR(tabMetrics.quad.max().x(), spaceMetrics.quad.max().x(), 0.001f);
 	EXPECT_NEAR(tabMetrics.quad.max().y(), spaceMetrics.quad.max().y(), 0.001f);
 
-	core::Application::invalidate();
+	app::Application::invalidate();
 	app.reset();
 	core::Log::invalidate();
 }
 
 TEST(FontCoverage, glyphBoxStandardChars) {
 	core::Log::init(core::Log::Level::Off);
-	auto app = mkShared<core::Application>(core::AppParams{.args = nullptr,
-														   .frameLogFrequency = 0,
-														   .name = "fontTest",
-														   .assetsPattern = "",
-														   .icon = "",
-														   .width = 0,
-														   .height = 0,
-														   .argCount = 0,
-														   .renderer = renderer::gpu::RenderAPI::Type::Null,
-														   .hasGui = false,
-														   .useDebugging = false,
-														   .isDummy = true});
+	auto app = mkShared<app::Application>(app::AppParams{.args = nullptr,
+														 .frameLogFrequency = 0,
+														 .name = "fontTest",
+														 .assetsPattern = "",
+														 .icon = "",
+														 .width = 0,
+														 .height = 0,
+														 .argCount = 0,
+														 .renderer = renderer::gpu::RenderAPI::Type::Null,
+														 .hasGui = false,
+														 .useDebugging = false,
+														 .isDummy = true});
 	auto& fontLibrary = app->getFontLibrary();
 	const auto myFont = fontLibrary.getDefaultFont();
 	ASSERT_NE(myFont, nullptr);
@@ -112,25 +112,25 @@ TEST(FontCoverage, glyphBoxStandardChars) {
 		EXPECT_GT(metrics.quad.max().x() - metrics.quad.min().x(), 0.0f);
 	}
 
-	core::Application::invalidate();
+	app::Application::invalidate();
 	app.reset();
 	core::Log::invalidate();
 }
 
 TEST(FontCoverage, getAdvanceMultipleChars) {
 	core::Log::init(core::Log::Level::Off);
-	auto app = mkShared<core::Application>(core::AppParams{.args = nullptr,
-														   .frameLogFrequency = 0,
-														   .name = "fontTest",
-														   .assetsPattern = "",
-														   .icon = "",
-														   .width = 0,
-														   .height = 0,
-														   .argCount = 0,
-														   .renderer = renderer::gpu::RenderAPI::Type::Null,
-														   .hasGui = false,
-														   .useDebugging = false,
-														   .isDummy = true});
+	auto app = mkShared<app::Application>(app::AppParams{.args = nullptr,
+														 .frameLogFrequency = 0,
+														 .name = "fontTest",
+														 .assetsPattern = "",
+														 .icon = "",
+														 .width = 0,
+														 .height = 0,
+														 .argCount = 0,
+														 .renderer = renderer::gpu::RenderAPI::Type::Null,
+														 .hasGui = false,
+														 .useDebugging = false,
+														 .isDummy = true});
 	auto& fontLibrary = app->getFontLibrary();
 	const auto myFont = fontLibrary.getDefaultFont();
 	ASSERT_NE(myFont, nullptr);
@@ -140,7 +140,7 @@ TEST(FontCoverage, getAdvanceMultipleChars) {
 	EXPECT_GT(myFont->getAdvance('l', 'o'), 0.0f);
 	EXPECT_GT(myFont->getAdvance(' ', 'W'), 0.0f);
 
-	core::Application::invalidate();
+	app::Application::invalidate();
 	app.reset();
 	core::Log::invalidate();
 }

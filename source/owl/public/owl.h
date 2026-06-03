@@ -18,13 +18,13 @@
 // -------------------------
 
 // ------- core ------------
-#include "core/Application.h"
+#include "app/Application.h"
+#include "app/layer/Layer.h"
 #include "core/Log.h"
 #include "core/Timestep.h"
-#include "core/layer/Layer.h"
-#include "core/utils/FileDialog.h"
-#include "core/utils/FileUtils.h"
 #include "core/utils/StringUtils.h"
+#include "platform/FileDialog.h"
+#include "platform/FileUtils.h"
 // -------------------------
 
 // ------ Debugging --------
@@ -34,10 +34,10 @@
 
 #include "event/KeyEvent.h"
 #include "event/MouseEvent.h"
-#include "input/CameraOrthoController.h"
 #include "input/Input.h"
 #include "io/video/Manager.h"
 #include "math/math.h"
+#include "renderer/CameraOrthoController.h"
 #include "window/Window.h"
 
 // -------- gui ------------

@@ -9,7 +9,7 @@
 #include "testHelper.h"
 
 #include <core/Log.h>
-#include <physic/PhysicCommand.h>
+#include <physics/PhysicCommand.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneTrigger.h>
@@ -23,8 +23,8 @@ class SceneTriggerTest : public ::testing::Test {
 protected:
 	void SetUp() override { core::Log::init(core::Log::Level::Off); }
 	void TearDown() override {
-		if (physic::PhysicCommand::isInitialized())
-			physic::PhysicCommand::destroy();
+		if (physics::PhysicCommand::isInitialized())
+			physics::PhysicCommand::destroy();
 		core::Log::invalidate();
 	}
 };
@@ -151,8 +151,8 @@ TEST_F(SceneTriggerTest, TeleportSameLevelMovesPlayerToTarget) {
 	auto& [targetTransform] = targetEnt.getComponent<scene::component::Transform>();
 	targetTransform.translation() = {25.f, 50.f, 0.f};
 
-	physic::PhysicCommand::init(&scn);
-	physic::PhysicCommand::setVelocity(player, {3.f, 0.f});
+	physics::PhysicCommand::init(&scn);
+	physics::PhysicCommand::setVelocity(player, {3.f, 0.f});
 
 	scene::SceneTrigger trigger;
 	trigger.type = scene::SceneTrigger::TriggerType::Teleport;
@@ -174,8 +174,8 @@ TEST_F(SceneTriggerTest, TeleportCrossLevelSetsRequest) {
 	}
 	auto triggerEnt = scn.createEntity("TeleportTrigger");
 
-	physic::PhysicCommand::init(&scn);
-	physic::PhysicCommand::setVelocity(player, {2.f, 1.f});
+	physics::PhysicCommand::init(&scn);
+	physics::PhysicCommand::setVelocity(player, {2.f, 1.f});
 
 	scene::SceneTrigger trigger;
 	trigger.type = scene::SceneTrigger::TriggerType::Teleport;

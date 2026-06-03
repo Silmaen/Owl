@@ -11,7 +11,7 @@
 #include "Framebuffer.h"
 
 #include "GraphContext.h"
-#include "core/Application.h"
+#include "app/Application.h"
 #include "internal/Descriptors.h"
 #include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
@@ -300,7 +300,7 @@ void Framebuffer::createImages() {
 	const auto& vkc = internal::VulkanCore::get();
 	m_swapChainImageCount = 0;
 	if (isMainTarget()) {
-		auto* const gc = dynamic_cast<GraphContext*>(core::Application::get().getWindow().getGraphContext());
+		auto* const gc = dynamic_cast<GraphContext*>(app::Application::get().getWindow().getGraphContext());
 		m_swapChainImageCount = vkc.getImagecount();
 		const auto queueFamilyIndices = vkc.getQueueIndices();
 		const bool shares = queueFamilyIndices.size() > 1;

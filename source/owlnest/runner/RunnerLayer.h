@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <io/pack/PackReader.h>
+#include <data/assets/pack/PackReader.h>
 #include <owl.h>
 #include <scene/SceneSerializer.h>
 
@@ -60,7 +60,7 @@ struct RunnerConfig {
  * @brief
  *  Class RunnerLayer
  */
-class RunnerLayer final : public core::layer::Layer {
+class RunnerLayer final : public app::layer::Layer {
 public:
 	RunnerLayer(const RunnerLayer&) = delete;
 

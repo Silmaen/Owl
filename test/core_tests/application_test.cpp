@@ -1,13 +1,14 @@
 
 #include "testHelper.h"
 
-#include <core/Application.h>
-#include <core/utils/FileUtils.h>
+#include <app/Application.h>
 #include <event/KeyEvent.h>
 #include <fstream>
+#include <platform/FileUtils.h>
 #include <renderer/Renderer.h>
 
 using namespace owl::core;
+using namespace owl::app;
 
 TEST(Core, ApplicationDummy) {
 	Log::init(Log::Level::Off);
@@ -140,9 +141,9 @@ TEST(Core, fileToString) {
 		out << superStr;
 		out.close();
 	}
-	std::string read = utils::fileToString(tmpFile);
+	std::string read = owl::platform::fileToString(tmpFile);
 	EXPECT_STREQ(superStr.c_str(), read.c_str());
-	read = utils::fileToString("");
+	read = owl::platform::fileToString("");
 	EXPECT_STREQ("", read.c_str());
 	remove(tmpFile);
 	Log::invalidate();

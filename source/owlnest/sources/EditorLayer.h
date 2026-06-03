@@ -8,8 +8,8 @@
 
 #pragma once
 
+#include <data/assets/pack/AssetScanner.h>
 #include <gui/widgets/Ribbon.h>
-#include <io/pack/AssetScanner.h>
 #include <owl.h>
 
 #include "ActionRegistry.h"
@@ -32,7 +32,7 @@ namespace owl::nest {
  * @brief
  *  Class EditorLayer.
  */
-class EditorLayer final : public core::layer::Layer {
+class EditorLayer final : public app::layer::Layer {
 public:
 	EditorLayer(const EditorLayer&) = delete;
 
@@ -642,7 +642,7 @@ private:
 	 */
 	std::optional<DocumentType> m_lastRibbonDocType;
 	/// 2D camera controller wired to the active viewport for pan/zoom.
-	input::CameraOrthoController m_cameraController;
+	renderer::CameraOrthoController m_cameraController;
 	/// Whether the welcome screen should be shown (hidden when user closes it).
 	bool m_showWelcomeScreen = true;
 	/// Pending pack destination directory (validated, awaiting user confirmation).
@@ -650,7 +650,7 @@ private:
 	/// Warnings collected during pre-packaging validation (empty when no issues).
 	std::vector<std::string> m_pendingPackWarnings;
 	/// Pre-scanned assets shared between validation and pack tasks (avoids double scan).
-	shared<std::vector<io::pack::AssetReference>> m_pendingPackAssets;
+	shared<std::vector<data::assets::pack::AssetReference>> m_pendingPackAssets;
 	/// True when the validation modal should be shown on the next frame.
 	bool m_showPackValidation = false;
 	/// True when the packaging wizard modal is visible.

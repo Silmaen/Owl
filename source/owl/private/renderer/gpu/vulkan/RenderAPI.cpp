@@ -10,7 +10,7 @@
 #include "RenderAPI.h"
 
 #include "StorageBuffer.h"
-#include "core/Application.h"
+#include "app/Application.h"
 #include "core/external/glfw3.h"
 #include "internal/Descriptors.h"
 #include "internal/RendererDescriptors.h"
@@ -26,7 +26,7 @@ RenderAPI::~RenderAPI() {
 void RenderAPI::init() {
 	OWL_PROFILE_FUNCTION()
 
-	const auto& app = core::Application::get();
+	const auto& app = app::Application::get();
 	const bool extraDebugging = app.getInitParams().useDebugging;
 
 	if (getState() != State::Created)

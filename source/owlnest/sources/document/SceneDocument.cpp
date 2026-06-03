@@ -9,7 +9,7 @@
 #include "SceneDocument.h"
 
 #include <imgui.h>
-#include <physic/PhysicCommand.h>
+#include <physics/PhysicCommand.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 #include <sound/SoundCommand.h>
@@ -133,7 +133,7 @@ void SceneDocument::handleTeleportRequest(const math::vec2ui& iViewportSize) {
 	if (std::filesystem::path(resolvedName).extension() != ".owl")
 		resolvedName += ".owl";
 
-	const auto& app = core::Application::get();
+	const auto& app = app::Application::get();
 	std::filesystem::path levelPath;
 	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
 		if (exists(assetsPath / resolvedName)) {
@@ -203,7 +203,7 @@ void SceneDocument::handleSaveLoadRequest(const math::vec2ui& iViewportSize) {
 			m_activeScene->onStartRuntime();
 			for (const auto& [uuid, snap]: loadResult.physicsSnapshots)
 				if (auto entity = m_activeScene->findEntityByUUID(core::UUID{uuid}); entity)
-					physic::PhysicCommand::applySnapshot(entity, snap);
+					physics::PhysicCommand::applySnapshot(entity, snap);
 			m_sceneSwapped = true;
 		}
 	} else {
@@ -227,9 +227,9 @@ void SceneDocument::applyPendingTeleportVelocity() {
 			const float sinR = std::sin(targetRotation);
 			const math::vec2f finalVelocity = {m_teleportVelocity.x() * cosR - m_teleportVelocity.y() * sinR,
 											   m_teleportVelocity.x() * sinR + m_teleportVelocity.y() * cosR};
-			physic::PhysicCommand::setTransform(
+			physics::PhysicCommand::setTransform(
 					player, {targetTransform.translation().x(), targetTransform.translation().y()}, targetRotation);
-			physic::PhysicCommand::setVelocity(player, finalVelocity);
+			physics::PhysicCommand::setVelocity(player, finalVelocity);
 			auto& playerTransform = player.getComponent<scene::component::Transform>().transform;
 			playerTransform.translation().x() = targetTransform.translation().x();
 			playerTransform.translation().y() = targetTransform.translation().y();

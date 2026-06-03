@@ -241,8 +241,8 @@ void TilemapDocument::renderHierarchyPanel() {
 	if (!m_asset.tilesetPath.empty() && mp_editorLayer != nullptr) {
 		if (iconButton("owltileset_icon", "Open the referenced .owltileset in its own editor")) {
 			std::filesystem::path resolved;
-			if (core::Application::instanced()) {
-				for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+			if (app::Application::instanced()) {
+				for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 					if (const auto candidate = assetsPath / m_asset.tilesetPath; exists(candidate)) {
 						resolved = candidate;
 						break;
@@ -475,9 +475,9 @@ void TilemapDocument::handleCanvasDrop() {
 		const auto* data = static_cast<const char*>(payload->Data);
 		const auto length = ::strnlen(data, static_cast<size_t>(payload->DataSize));
 		const std::filesystem::path candidate{std::string(data, length)};
-		if (mp_editorLayer != nullptr && core::Application::instanced()) {
+		if (mp_editorLayer != nullptr && app::Application::instanced()) {
 			std::filesystem::path resolved;
-			for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+			for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 				if (const auto p = assetsPath / candidate; exists(p)) {
 					resolved = p;
 					break;
@@ -594,8 +594,8 @@ void TilemapDocument::refreshSavedSnapshot() {
 }
 
 void TilemapDocument::resolveTileset() {
-	if (!m_asset.tileset && !m_asset.tilesetPath.empty() && core::Application::instanced()) {
-		const auto& app = core::Application::get();
+	if (!m_asset.tileset && !m_asset.tilesetPath.empty() && app::Application::instanced()) {
+		const auto& app = app::Application::get();
 		auto resolved = mkShared<scene::Tileset>();
 		bool loaded = false;
 		for (const auto& [title, assetsPath]: app.getAssetDirectories()) {

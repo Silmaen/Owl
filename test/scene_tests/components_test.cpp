@@ -1,6 +1,6 @@
 #include "testHelper.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
@@ -39,19 +39,19 @@ TEST(SceneComponent, name) {
 
 TEST(SceneComponent, TextSerializeDeserializeRoundTrip) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	auto app = owl::mkShared<owl::core::Application>(
-			owl::core::AppParams{.args = nullptr,
-								 .frameLogFrequency = 0,
-								 .name = "textRoundTrip",
-								 .assetsPattern = "",
-								 .icon = "",
-								 .width = 0,
-								 .height = 0,
-								 .argCount = 0,
-								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-								 .hasGui = false,
-								 .useDebugging = false,
-								 .isDummy = true});
+	auto app = owl::mkShared<owl::app::Application>(
+			owl::app::AppParams{.args = nullptr,
+								.frameLogFrequency = 0,
+								.name = "textRoundTrip",
+								.assetsPattern = "",
+								.icon = "",
+								.width = 0,
+								.height = 0,
+								.argCount = 0,
+								.renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								.hasGui = false,
+								.useDebugging = false,
+								.isDummy = true});
 	const auto sc = owl::mkShared<owl::scene::Scene>();
 	auto ent = sc->createEntityWithUUID(100, "TextEntity");
 	auto& text = ent.addOrReplaceComponent<owl::scene::component::Text>();
@@ -82,26 +82,26 @@ TEST(SceneComponent, TextSerializeDeserializeRoundTrip) {
 	EXPECT_NEAR(text2.lineSpacing, 2.0f, 0.01f);
 
 	remove(fs);
-	owl::core::Application::invalidate();
+	owl::app::Application::invalidate();
 	app.reset();
 	owl::core::Log::invalidate();
 }
 
 TEST(SceneComponent, TextSerializeWithFont) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	auto app = owl::mkShared<owl::core::Application>(
-			owl::core::AppParams{.args = nullptr,
-								 .frameLogFrequency = 0,
-								 .name = "fontTextTest",
-								 .assetsPattern = "",
-								 .icon = "",
-								 .width = 0,
-								 .height = 0,
-								 .argCount = 0,
-								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-								 .hasGui = false,
-								 .useDebugging = false,
-								 .isDummy = true});
+	auto app = owl::mkShared<owl::app::Application>(
+			owl::app::AppParams{.args = nullptr,
+								.frameLogFrequency = 0,
+								.name = "fontTextTest",
+								.assetsPattern = "",
+								.icon = "",
+								.width = 0,
+								.height = 0,
+								.argCount = 0,
+								.renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								.hasGui = false,
+								.useDebugging = false,
+								.isDummy = true});
 
 	auto& fontLibrary = app->getFontLibrary();
 	const auto defaultFont = fontLibrary.getDefaultFont();
@@ -134,26 +134,26 @@ TEST(SceneComponent, TextSerializeWithFont) {
 	EXPECT_TRUE(text2.font->isDefault());
 
 	remove(fs);
-	owl::core::Application::invalidate();
+	owl::app::Application::invalidate();
 	app.reset();
 	owl::core::Log::invalidate();
 }
 
 TEST(SceneComponent, TextEmptyString) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	auto app = owl::mkShared<owl::core::Application>(
-			owl::core::AppParams{.args = nullptr,
-								 .frameLogFrequency = 0,
-								 .name = "textEmpty",
-								 .assetsPattern = "",
-								 .icon = "",
-								 .width = 0,
-								 .height = 0,
-								 .argCount = 0,
-								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-								 .hasGui = false,
-								 .useDebugging = false,
-								 .isDummy = true});
+	auto app = owl::mkShared<owl::app::Application>(
+			owl::app::AppParams{.args = nullptr,
+								.frameLogFrequency = 0,
+								.name = "textEmpty",
+								.assetsPattern = "",
+								.icon = "",
+								.width = 0,
+								.height = 0,
+								.argCount = 0,
+								.renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								.hasGui = false,
+								.useDebugging = false,
+								.isDummy = true});
 	const auto sc = owl::mkShared<owl::scene::Scene>();
 	auto ent = sc->createEntityWithUUID(102, "EmptyTextEntity");
 	auto& text = ent.addOrReplaceComponent<owl::scene::component::Text>();
@@ -179,26 +179,26 @@ TEST(SceneComponent, TextEmptyString) {
 	EXPECT_NEAR(text2.lineSpacing, 0.0f, 0.001f);
 
 	remove(fs);
-	owl::core::Application::invalidate();
+	owl::app::Application::invalidate();
 	app.reset();
 	owl::core::Log::invalidate();
 }
 
 namespace {
-auto makeAppForAnimRoundTrip(const char* iName) -> owl::shared<owl::core::Application> {
-	return owl::mkShared<owl::core::Application>(
-			owl::core::AppParams{.args = nullptr,
-								 .frameLogFrequency = 0,
-								 .name = iName,
-								 .assetsPattern = "",
-								 .icon = "",
-								 .width = 0,
-								 .height = 0,
-								 .argCount = 0,
-								 .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
-								 .hasGui = false,
-								 .useDebugging = false,
-								 .isDummy = true});
+auto makeAppForAnimRoundTrip(const char* iName) -> owl::shared<owl::app::Application> {
+	return owl::mkShared<owl::app::Application>(
+			owl::app::AppParams{.args = nullptr,
+								.frameLogFrequency = 0,
+								.name = iName,
+								.assetsPattern = "",
+								.icon = "",
+								.width = 0,
+								.height = 0,
+								.argCount = 0,
+								.renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+								.hasGui = false,
+								.useDebugging = false,
+								.isDummy = true});
 }
 }// namespace
 
@@ -241,7 +241,7 @@ TEST(SceneComponent, AnimatedSpriteRendererSerializesSpeedCurve) {
 	EXPECT_EQ(anim2.speedCurve.getInterpolation(), owl::math::CurveInterpolation::Smooth);
 
 	remove(fs);
-	owl::core::Application::invalidate();
+	owl::app::Application::invalidate();
 	app.reset();
 	owl::core::Log::invalidate();
 }
@@ -274,7 +274,7 @@ TEST(SceneComponent, AnimatedSpriteRendererDefaultEmptyCurveOmitsKey) {
 			<< "Default empty speedCurve must not emit YAML to keep existing scenes byte-identical";
 
 	remove(fs);
-	owl::core::Application::invalidate();
+	owl::app::Application::invalidate();
 	app.reset();
 	owl::core::Log::invalidate();
 }

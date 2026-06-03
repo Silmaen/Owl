@@ -154,7 +154,7 @@ toggles the preview off when more horizontal room is needed.
   widgets with full syntax highlighting (Lua, C, C++, Python, YAML, JSON,
   Markdown, XML, **Bash**), local images via `lunasvg` (SVG) or `stb_image`
   (raster), and external `https://` links / images that open in the user's
-  default browser via `core::utils::openExternalUrl`.
+  default browser via `platform::openExternalUrl`.
 - SVG is rasterised by `lunasvg` into a `Texture2D` capped at 2048 px per side;
   parse failures render a "Failed to parse SVG" message in place of the image.
 - Both renderers are debounced (~250 ms) so editing doesn't re-rasterise on
@@ -823,7 +823,7 @@ panel opens on the editor overview.
 - **Back / Forward** — navigation history; clicking an internal link
   (`[scripting](scripting.md)`) pushes the current page onto the back stack.
 - External `http(s)://` and `mailto:` links open in the user's default browser
-  via `core::utils::openExternalUrl` (Linux: `xdg-open`; Windows:
+  via `platform::openExternalUrl` (Linux: `xdg-open`; Windows:
   `ShellExecuteW`). Other schemes are rejected and logged at warn level.
 - HTTPS images referenced from the markdown (e.g. shields.io badges in the
   README) are downloaded once at configure time by `cmake/HelpAssets.cmake`,

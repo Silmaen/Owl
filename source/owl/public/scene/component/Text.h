@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "core/Application.h"
+#include "app/Application.h"
 #include "core/Core.h"
 #include "core/Serializer.h"
 #include "data/fonts/Font.h"

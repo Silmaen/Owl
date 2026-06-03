@@ -12,7 +12,7 @@
 #include "EditorSettings.h"
 #include "external/imgui_text_edit.h"
 
-#include <core/Application.h>
+#include <app/Application.h>
 #include <gui/UiLayer.h>
 
 #include <fstream>
@@ -84,7 +84,7 @@ void CodeEditorDocument::onImGuiRender() {
 		ImGui::SetNextWindowDockID(centralNode->ID, ImGuiCond_FirstUseEver);
 
 	ImFont* codeFont = nullptr;
-	if (const auto ui = core::Application::get().getImGuiLayer(); ui != nullptr)
+	if (const auto ui = app::Application::get().getImGuiLayer(); ui != nullptr)
 		codeFont = ui->getCodeFont();
 	if (codeFont != nullptr)
 		ImGui::PushFont(codeFont);

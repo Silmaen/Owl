@@ -16,11 +16,11 @@
 #include "../commands/PrefabCommands.h"
 #include "../document/Document.h"
 
-#include <core/utils/FileDialog.h>
 #include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
+#include <platform/FileDialog.h>
 #include <renderer/RenderLayer.h>
 #include <renderer/RenderStack.h>
 #include <renderer/Renderer.h>
@@ -406,7 +406,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		const auto& link = iEntity.getComponent<PrefabLink>();
 		// Resolve the full path from asset directories.
 		std::filesystem::path prefabFullPath;
-		for (const auto& [title, assetsPath]: core::Application::get().getAssetDirectories()) {
+		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 			if (const auto p = assetsPath / link.prefabAssetPath; exists(p)) {
 				prefabFullPath = p;
 				break;
@@ -447,7 +447,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 	if (ib.menuItem("prefab_icon", "Create Prefab...")) {
 		if (const auto filepath =
 
-					core::utils::FileDialog::saveFile("Owl Prefab (*.owlprefab)|owlprefab\n");
+					platform::FileDialog::saveFile("Owl Prefab (*.owlprefab)|owlprefab\n");
 			!filepath.empty())
 
 			scene::PrefabSerializer::serialize(iEntity, *m_context, filepath, iEntity.getName());
@@ -458,7 +458,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		if (!tilemap.tilemapPath.empty()) {
 			ImGui::Separator();
 			if (ib.menuItem("owltilemap_icon", "Open in Tilemap Editor")) {
-				const auto& app = core::Application::get();
+				const auto& app = app::Application::get();
 				std::filesystem::path resolved;
 				for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
 					if (const auto candidate = assetsPath / tilemap.tilemapPath; exists(candidate)) {
