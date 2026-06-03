@@ -1,7 +1,7 @@
 OwlProject:
   name: OwlFeatureDemo
   firstScene: scenes/main_menu.owl
-  version: 0.2.0
+  version: 0.2.1
   author: Silmaen
   description: ho ho ho
   icon: logo/logo_owl.png

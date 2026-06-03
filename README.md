@@ -1,6 +1,6 @@
 # Owl
 
-![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.1-blue)
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-blue?logo=cplusplus)
 ![CMake 3.24+](https://img.shields.io/badge/CMake-3.24%2B-blue?logo=cmake)
 ![GitHub License](https://img.shields.io/github/license/Silmaen/Owl)

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Owl (v0.2.0) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
+Owl (v0.2.1) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
 (GLFW, Null), and sound backends (OpenAL, Null). It uses an Entity-Component-System architecture (EnTT) with
 **hierarchical parent-child entities** and includes a scene editor (Owl Nest). Supported platforms: Linux (x64/arm64)
 and Windows (x64, MinGW).
@@ -279,8 +279,8 @@ OwlEngine can be built as a depmanager package for use by external projects (e.g
 # Build the OwlEngine package locally
 poetry run depmanager build .
 
-# The package will be available as owl_engine:0.2.0 in the local depmanager cache
-poetry run depmanager pack ls -p owl_engine:0.2.0
+# The package will be available as owl_engine:0.2.1 in the local depmanager cache
+poetry run depmanager pack ls -p owl_engine:0.2.1
 ```
 
 **Recipe details** (`owl_engine.py`):
@@ -294,7 +294,7 @@ poetry run depmanager pack ls -p owl_engine:0.2.0
 ```yaml
 packages:
   owl_engine:
-    version: 0.2.0
+    version: 0.2.1
     kind: "shared"
 ```
 
@@ -434,22 +434,22 @@ Enforced by `.clang-format` (LLVM-based) and `.clang-tidy`. Key conventions:
 
 ## CMake Options
 
-| Option                                    | Default | Description                                    |
-|-------------------------------------------|---------|------------------------------------------------|
-| `OWL_BUILD_SHARED`                        | ON      | Build engine as shared library                 |
-| `OWL_BUILD_NEST`                          | ON      | Build Owl Nest editor                          |
-| `OWL_TESTING`                             | ON      | Enable unit tests                              |
-| `OWL_ENABLE_COVERAGE`                     | OFF     | Code coverage (auto-enabled in debug presets)  |
+| Option                                    | Default | Description                                                                                                                                   |
+|-------------------------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `OWL_BUILD_SHARED`                        | ON      | Build engine as shared library                                                                                                                |
+| `OWL_BUILD_NEST`                          | ON      | Build Owl Nest editor                                                                                                                         |
+| `OWL_TESTING`                             | ON      | Enable unit tests                                                                                                                             |
+| `OWL_ENABLE_COVERAGE`                     | OFF     | Code coverage (auto-enabled in debug presets)                                                                                                 |
 | `OWL_ENABLE_MEMORY_TRACKER`               | OFF     | Install global `new`/`delete` overrides so `TrackerAPI` records every allocation (always on in Debug; opt-in in Release for leak diagnostics) |
-| `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (implies `OWL_ENABLE_MEMORY_TRACKER`; performance impact) |
-| `OWL_ENABLE_PROFILING`                    | OFF     | Profiling output                               |
-| `OWL_USE_RELEASE_THIRD_PARTY`             | ON      | Use release builds of third-party libraries    |
-| `OWL_DEFINE_VULKAN_LAYERS`                | OFF     | Copy Vulkan layers to binary directory         |
-| `OWL_ENABLE_CLANG_TIDY`                   | OFF     | Enable clang-tidy static analysis              |
-| `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF     | AddressSanitizer (CI presets)                  |
-| `OWL_ENABLE_THREAD_SANITIZER`             | OFF     | ThreadSanitizer (CI presets)                   |
-| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF     | UBSanitizer (CI presets)                       |
-| `OWL_ENABLE_LEAK_SANITIZER`               | OFF     | LeakSanitizer (CI presets)                     |
-| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only, CI presets)       |
-| `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation        |
-| `OWL_PACKAGING`                           | OFF     | Enable packaging mode                          |
+| `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (implies `OWL_ENABLE_MEMORY_TRACKER`; performance impact)                                                           |
+| `OWL_ENABLE_PROFILING`                    | OFF     | Profiling output                                                                                                                              |
+| `OWL_USE_RELEASE_THIRD_PARTY`             | ON      | Use release builds of third-party libraries                                                                                                   |
+| `OWL_DEFINE_VULKAN_LAYERS`                | OFF     | Copy Vulkan layers to binary directory                                                                                                        |
+| `OWL_ENABLE_CLANG_TIDY`                   | OFF     | Enable clang-tidy static analysis                                                                                                             |
+| `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF     | AddressSanitizer (CI presets)                                                                                                                 |
+| `OWL_ENABLE_THREAD_SANITIZER`             | OFF     | ThreadSanitizer (CI presets)                                                                                                                  |
+| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF     | UBSanitizer (CI presets)                                                                                                                      |
+| `OWL_ENABLE_LEAK_SANITIZER`               | OFF     | LeakSanitizer (CI presets)                                                                                                                    |
+| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only, CI presets)                                                                                                      |
+| `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation                                                                                                       |
+| `OWL_PACKAGING`                           | OFF     | Enable packaging mode                                                                                                                         |
