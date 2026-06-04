@@ -413,10 +413,12 @@ tradition — slotted between the existing 2D/raycast/voxel options.
         - Block placement and destruction
         - Block picking (raycast from camera to find targeted block)
         - Block metadata (orientation, state)
-    - ![Planned][planned] Voxel rendering
-        - Ambient occlusion per vertex for block edges
-        - Basic directional lighting
-        - Water/transparent block rendering with proper sorting
+    - ![In Progress][progress] Voxel rendering
+        - Generic `Renderer3D` forward foundation (depth, perspective, textured, directional light, `mesh3d` shader)
+          — ![Done][done] (reusable base; on-screen voxel integration via `RendererVoxel` next)
+        - Ambient occlusion per vertex for block edges — ![Planned][planned]
+        - Basic directional lighting — ![Done][done] (in `mesh3d`)
+        - Water/transparent block rendering with proper sorting — ![Planned][planned]
     - ![Planned][planned] Voxel editor in Owl Nest
         - Brush tools for painting blocks
         - Prefab structures (trees, buildings) as reusable block templates
