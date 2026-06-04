@@ -415,9 +415,13 @@ tradition — slotted between the existing 2D/raycast/voxel options.
         - Block metadata (orientation, state)
     - ![In Progress][progress] Voxel rendering
         - Generic `Renderer3D` forward foundation (depth, perspective, textured, directional light, `mesh3d` shader)
-          — ![Done][done] (reusable base; on-screen voxel integration via `RendererVoxel` next)
+          — ![Done][done] (reusable base)
+        - `RendererVoxel` stack layer + `VoxelWorld` scene component (per-entity chunk mesh cache, per-block textures,
+          frac-tiled `voxel` shader, Play-mode dispatch) — ![Done][done] (wired; GPU draw gated off until depth PR)
+        - **Depth-aware renderer** (depth-attachment + depth-configured 3D pipelines, without breaking the depth-less
+          2D pipelines) — ![Planned][planned] **next PR; prerequisite for correct voxel occlusion**
         - Ambient occlusion per vertex for block edges — ![Planned][planned]
-        - Basic directional lighting — ![Done][done] (in `mesh3d`)
+        - Basic directional lighting — ![Done][done] (in `mesh3d` / `voxel`)
         - Water/transparent block rendering with proper sorting — ![Planned][planned]
     - ![Planned][planned] Voxel editor in Owl Nest
         - Brush tools for painting blocks

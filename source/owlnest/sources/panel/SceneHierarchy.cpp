@@ -51,19 +51,20 @@ auto findPrefabRoot(const scene::Entity& iEntity, const scene::Scene& iScene) ->
 
 auto componentIconName(const char* iCompName) -> const char* {
 	static const std::unordered_map<std::string_view, const char*> map = {
-			{"Transform", "comp_transform"},    {"Camera", "comp_camera"},
-			{"Sprite Renderer", "comp_sprite"}, {"Animated Sprite", "comp_animated_sprite"},
-			{"Circle Renderer", "comp_circle"}, {"Text Renderer", "comp_text"},
-			{"Physical body", "comp_physics"},  {"Native Script", "comp_script"},
-			{"Trigger", "comp_trigger"},        {"Player", "comp_player"},
-			{"Entity Link", "comp_link"},       {"Background Texture", "comp_background"},
-			{"Visibility", "comp_visibility"},  {"Sound Source", "comp_sound"},
-			{"Sound Listener", "comp_sound"},   {"Lua Script", "comp_lua_script"},
-			{"Canvas", "comp_canvas"},          {"UI Rect", "comp_ui_rect"},
-			{"UI Text", "comp_ui_text"},        {"UI Image", "comp_ui_image"},
-			{"UI Panel", "comp_ui_panel"},      {"UI Button", "comp_ui_button"},
-			{"UI Slider", "comp_ui_slider"},    {"UI Progress Bar", "comp_ui_progress"},
-			{"Prefab Link", "prefab_icon"},     {"Tilemap", "owltileset_icon"},
+			{"Transform", "comp_transform"},     {"Camera", "comp_camera"},
+			{"Sprite Renderer", "comp_sprite"},  {"Animated Sprite", "comp_animated_sprite"},
+			{"Circle Renderer", "comp_circle"},  {"Text Renderer", "comp_text"},
+			{"Physical body", "comp_physics"},   {"Native Script", "comp_script"},
+			{"Trigger", "comp_trigger"},         {"Player", "comp_player"},
+			{"Entity Link", "comp_link"},        {"Background Texture", "comp_background"},
+			{"Visibility", "comp_visibility"},   {"Sound Source", "comp_sound"},
+			{"Sound Listener", "comp_sound"},    {"Lua Script", "comp_lua_script"},
+			{"Canvas", "comp_canvas"},           {"UI Rect", "comp_ui_rect"},
+			{"UI Text", "comp_ui_text"},         {"UI Image", "comp_ui_image"},
+			{"UI Panel", "comp_ui_panel"},       {"UI Button", "comp_ui_button"},
+			{"UI Slider", "comp_ui_slider"},     {"UI Progress Bar", "comp_ui_progress"},
+			{"Prefab Link", "prefab_icon"},      {"Tilemap", "owltileset_icon"},
+			{"Voxel World", "comp_voxel_world"},
 	};
 	if (const auto it = map.find(iCompName); it != map.end())
 		return it->second;

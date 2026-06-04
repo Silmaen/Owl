@@ -40,6 +40,7 @@
 #include "UiSlider.h"
 #include "UiText.h"
 #include "Visibility.h"
+#include "VoxelWorld.h"
 
 namespace owl::scene::component {
 /**
@@ -62,7 +63,7 @@ concept isComponent =
 		std::is_same_v<Component, UiButton> || std::is_same_v<Component, UiImage> ||
 		std::is_same_v<Component, UiPanel> || std::is_same_v<Component, UiProgressBar> ||
 		std::is_same_v<Component, UiRect> || std::is_same_v<Component, UiSlider> || std::is_same_v<Component, UiText> ||
-		std::is_same_v<Component, Visibility>;
+		std::is_same_v<Component, Visibility> || std::is_same_v<Component, VoxelWorld>;
 
 /**
  * @brief
@@ -103,8 +104,8 @@ concept isDeserializableComponent =
 using CopiableComponents =
 		std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap,
 				   PhysicBody, Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy, SoundSource,
-				   SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, UiButton, UiImage,
-				   UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
+				   SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag, VoxelWorld,
+				   UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
 
 /**
  * @brief
@@ -115,7 +116,7 @@ using SerializableComponents =
 		std::tuple<Tag, Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text,
 				   Tilemap, PhysicBody, Player, Trigger, EntityLink, BackgroundTexture, Visibility, Hierarchy,
 				   SoundSource, SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag,
-				   UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
+				   VoxelWorld, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
 
 /**
  * @brief
@@ -125,6 +126,6 @@ using SerializableComponents =
 using OptionalComponents = std::tuple<Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text,
 									  Tilemap, PhysicBody, Player, Trigger, EntityLink, BackgroundTexture, SoundSource,
 									  SoundListener, LuaScript, PrefabLink, RaycastDoor, RaycastPushWall, RendererTag,
-									  UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
+									  VoxelWorld, UiButton, UiImage, UiPanel, UiProgressBar, UiRect, UiSlider, UiText>;
 
 }// namespace owl::scene::component

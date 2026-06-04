@@ -16,6 +16,7 @@
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
+#include "renderer/RendererVoxel.h"
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/utils/WorldTransformPass.h"
 #include "scene/Entity.h"
@@ -821,6 +822,9 @@ auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) 
 		for (const auto e: registry.view<component::Canvas>())
 			if (matches(e))
 				return true;
+		for (const auto e: registry.view<component::VoxelWorld>())
+			if (matches(e))
+				return true;
 		// Backgrounds always sit behind every layer — they only contribute to the first one.
 		if (iIsFirst) {
 			for (const auto e: registry.view<component::BackgroundTexture>())
@@ -877,8 +881,10 @@ void Scene::render() {
 	const bool editorMode = status == Status::Editing;
 	const bool raycastLayer =
 			mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererRaycast";
+	const bool voxelLayer =
+			mp_currentLayer != nullptr && std::string_view{mp_currentLayer->getTypeKey()} == "RendererVoxel";
 
-	if (m_currentLayerIsFirst && !raycastLayer) {
+	if (m_currentLayerIsFirst && !raycastLayer && !voxelLayer) {
 		if (const auto bgView = registry.view<component::BackgroundTexture>(); !bgView.empty()) {
 			if (const auto bgEntity = bgView.front(); isEffectivelyVisible(Entity{bgEntity, this}, editorMode)) {
 				const auto& [mode, type, color, topColor, texture] = bgView.get<component::BackgroundTexture>(bgEntity);
@@ -891,6 +897,11 @@ void Scene::render() {
 															  .texture = texture});
 			}
 		}
+	}
+
+	if (voxelLayer) {
+		renderVoxelWorlds(editorMode);
+		return;
 	}
 
 	resolveAllTilemapAssets();
@@ -1053,6 +1064,21 @@ void Scene::renderTilemaps(const bool iEditorMode, const bool iRaycastLayer) {
 			continue;
 		}
 		renderer::RendererTilemap::drawTilemap(assetData, worldTransform, entityId);
+	}
+}
+
+void Scene::renderVoxelWorlds(const bool iEditorMode) {
+	OWL_PROFILE_FUNCTION()
+
+	for (const auto view = registry.view<component::Transform, component::VoxelWorld>(); const auto entity: view) {
+		const Entity ent{entity, this};
+		if (!isEffectivelyVisible(ent, iEditorMode))
+			continue;
+		if (!layerAccepts(ent))
+			continue;
+		auto& voxelWorld = view.get<component::VoxelWorld>(entity);
+		const math::Transform worldTransform = getWorldTransform(ent);
+		renderer::RendererVoxel::drawVoxelWorld(voxelWorld, worldTransform, static_cast<int>(entity));
 	}
 }
 
@@ -2046,5 +2072,9 @@ Scene::onComponentAdded<component::RaycastPushWall>([[maybe_unused]] const Entit
 													[[maybe_unused]] component::RaycastPushWall& ioComponent) {
 	m_tilemapAssetsDirty = true;
 }
+
+template<>
+OWL_API void Scene::onComponentAdded<component::VoxelWorld>([[maybe_unused]] const Entity& iEntity,
+															[[maybe_unused]] component::VoxelWorld& ioComponent) {}
 
 }// namespace owl::scene

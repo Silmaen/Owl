@@ -16,6 +16,8 @@
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
+#include "renderer/RendererVoxel.h"
+#include "renderer/RendererVoxelLayer.h"
 
 namespace owl::renderer {
 
@@ -67,14 +69,17 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 	RendererRaycast::init();
 	RendererTilemap::init();
 	Renderer3D::init();
+	RendererVoxel::init();
 
 	Renderer2DLayer::registerWithFactory();
 	RendererRaycastLayer::registerWithFactory();
+	RendererVoxelLayer::registerWithFactory();
 
 	m_internalState = State::Running;
 }
 
 void Renderer::shutdown() {
+	RendererVoxel::shutdown();
 	Renderer3D::shutdown();
 	RendererTilemap::shutdown();
 	RendererRaycast::shutdown();

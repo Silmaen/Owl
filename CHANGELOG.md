@@ -26,6 +26,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `createMesh` and draw with a model matrix via `drawMesh` (immediate mode). Reusable by `RendererVoxel` and future
   static-mesh renderers. Headless tests cover `Mesh3DVertex` packing, `mesh3d` compilation (Vulkan + OpenGL) and
   descriptor reflection; on-screen integration lands with `RendererVoxel`.
+- **`VoxelWorld` scene component** — `scene::component::VoxelWorld`, the authored object placing a voxel world on an
+  entity: holds the `BlockRegistry`, the `data::voxel::VoxelWorld` chunks, per-block texture paths, and directional
+  light settings, serialized inline in the scene (registry as a nested YAML doc, chunks run-length encoded).
+  Registered across the component tuples and `onComponentAdded`, with an inspector panel (lighting + palette/chunk
+  summary) and Add-Component menu entry. Round-trip covered by `componentsRoundTrip` tests.
+- **`RendererVoxel` render layer** — draws `VoxelWorld` entities in 3D on top of `Renderer3D`: greedy-meshes each
+  chunk, caches the GPU mesh per entity (rebuilt only when a chunk is dirty), resolves per-block textures (Nearest)
+  and draws them with the frac-tiled `voxel` shader (so greedy-merged faces tile rather than stretch with the
+  clamp-only sampler). Registered as the `"RendererVoxel"` stack layer; `Scene::render` routes `VoxelWorld` entities
+  to it only when the active layer is voxel-capable (like the raycast path). Editor: component icon. Sample project:
+  a `voxel_demo.owl` scene (perspective camera + a two-layer stone/grass platform) reachable from a **voxel house**
+  built in the world-map tilemap (roof/wall/door tiles + a path, the door tile being an interaction-trigger
+  teleporter, same style as the other houses). The world-map tilemap was enlarged (32×24 → 48×24) to leave room for
+  a future village of scene-demo houses. Headless tests cover the `voxel` shader compilation and layer registration. **The actual
+  voxel GPU draw is gated off for now**: the 3D draw path is not yet integrated with the Vulkan frame (render pass /
+  descriptors / fences / depth) and hangs the GPU, so voxel scenes load but draw nothing until the depth-aware
+  renderer PR wires the 3D path in properly and re-enables it.
 
 ### Changed
 

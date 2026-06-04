@@ -155,11 +155,25 @@ flowchart LR
     Quads --> Mesh[ChunkMesh<br/>vertices + indices]
 ```
 
+## Rendering and the Scene Component
+
+A voxel world reaches the screen through two pieces:
+
+- **`scene::component::VoxelWorld`** — the authored object placed on an entity: it holds the `BlockRegistry`, the
+  `VoxelWorld` chunks, the per-block texture paths, and the directional-light settings, all serialized inline in the
+  `.owl` scene (block list + run-length-encoded chunks). It is fully inspectable/editable in Owl Nest.
+- **`RendererVoxel`** — a render-stack layer (factory key `"RendererVoxel"`) built on [Renderer3D](renderer.md). It
+  greedy-meshes each chunk, caches the GPU mesh per entity (rebuilt only when the chunk is dirty), resolves the
+  per-block textures (Nearest filtering), and draws them with the frac-tiled `voxel` shader so greedy-merged faces
+  tile rather than stretch. The entity must carry a `RendererTag` routing it to the voxel layer; `Scene::render`
+  only draws voxel worlds when the active layer is voxel-capable (mirroring the raycast path).
+
+The sample project ships a `voxel_demo.owl` scene (a stone/grass platform under a perspective camera), reachable
+from a **Voxel House** on the world map. Voxels currently render in **Play mode** — the editor viewport still uses
+the 2D top-down pass, so a dedicated 3D editor viewport is a later effort.
+
 ## What's Next
 
-The data model and mesher above are the foundation. The generic forward 3D renderer
-([Renderer3D](renderer.md) — depth-tested, textured, directional light) that uploads and draws meshes already
-landed and is what `RendererVoxel` will build on. Subsequent v0.2.1 work: the `RendererVoxel` layer that feeds the
-`ChunkMesh` to `Renderer3D` and wires it into the scene stack, procedural terrain generation with chunk streaming,
-block interaction (raycast pick, place/destroy, Lua API), rendering polish (ambient occlusion, transparent/water
-passes), and the in-editor voxel authoring tools.
+Procedural terrain generation with chunk streaming, block interaction (raycast pick, place/destroy, Lua API),
+rendering polish (ambient occlusion, transparent/water passes), and the in-editor voxel authoring tools (brush,
+palette, chunk inspector).

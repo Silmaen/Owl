@@ -568,6 +568,14 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw every visible `VoxelWorld` entity accepted by the current voxel layer
+	 *  through `RendererVoxel`.
+	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
+	 */
+	void renderVoxelWorlds(bool iEditorMode);
+
+	/**
+	 * @brief
 	 *  Resolve every tilemap component's `.owltilemap` asset and its associated `.owltileset`.
 	 *
 	 * Two-phase pass over every `Tilemap` component in the scene:
