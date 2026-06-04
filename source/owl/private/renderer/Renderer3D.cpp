@@ -87,31 +87,26 @@ void Renderer3D::shutdown() {
 void Renderer3D::beginScene(const Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
+	// No depth test: the engine is not depth-aware yet; correct occlusion lands with the depth-aware-renderer PR.
 	g_Data->scene.viewProjection = iCamera.getViewProjection();
-	gpu::RenderCommand::setDepthTest(true);
-	gpu::RenderCommand::setDepthMask(true);
 }
 
-void Renderer3D::endScene() {
-	OWL_PROFILE_FUNCTION()
-
-	gpu::RenderCommand::setDepthMask(false);
-	gpu::RenderCommand::setDepthTest(false);
-}
+void Renderer3D::endScene() {}
 
 void Renderer3D::setLighting(const math::vec3& iSunDirection, const math::vec3& iAmbient) {
 	g_Data->scene.sunDirection = math::vec4{iSunDirection.x(), iSunDirection.y(), iSunDirection.z(), 0.f};
 	g_Data->scene.ambient = math::vec4{iAmbient.x(), iAmbient.y(), iAmbient.z(), 1.f};
 }
 
-auto Renderer3D::createMesh(std::span<const Mesh3DVertex> iVertices, std::span<const uint32_t> iIndices) -> MeshHandle {
+auto Renderer3D::createMesh(std::span<const Mesh3DVertex> iVertices, std::span<const uint32_t> iIndices,
+							const std::string& iShaderName) -> MeshHandle {
 	auto draw = gpu::DrawData::create();
 	std::vector<uint32_t> indices{iIndices.begin(), iIndices.end()};
 	draw->init({{"i_Position", gpu::ShaderDataType::Float3},
 				{"i_Normal", gpu::ShaderDataType::Float3},
 				{"i_Uv", gpu::ShaderDataType::Float2},
 				{"i_TexIndex", gpu::ShaderDataType::Int}},
-			   k_ShaderFolder, indices, "mesh3d");
+			   k_ShaderFolder, indices, iShaderName);
 	draw->setVertexData(iVertices.data(), static_cast<uint32_t>(iVertices.size() * sizeof(Mesh3DVertex)));
 	return draw;
 }

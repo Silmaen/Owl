@@ -1,0 +1,64 @@
+Scene: VoxelDemo
+EnabledRenderers:
+  - Name: world
+    Enabled: false
+  - Name: voxel_world
+    Enabled: true
+  - Name: ui
+    Enabled: false
+Entities:
+  - Entity: 3300000000000000001
+    Tag:
+      tag: VoxelCamera
+    Transform:
+      translation: [8, 14, 26]
+      rotation: [-0.45, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+  - Entity: 3300000000000000002
+    Tag:
+      tag: VoxelTerrain
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    RendererTag:
+      Name: voxel_world
+    VoxelWorld:
+      SunDirection: [-0.4, -1, -0.6]
+      Ambient: [0.4, 0.4, 0.45]
+      BlockTextures:
+        - textures/platform.png
+        - textures/world_platform.png
+      Blocks:
+        - id: 1
+          name: stone
+          render: Opaque
+          solid: true
+          faces: [0, 0, 0, 0, 0, 0]
+        - id: 2
+          name: grass
+          render: Opaque
+          solid: true
+          faces: [1, 1, 1, 1, 1, 1]
+      Chunks:
+        - Coord: [0, 0, 0]
+          Data: 256x1 256x2 3584x0

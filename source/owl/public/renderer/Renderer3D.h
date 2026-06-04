@@ -95,10 +95,11 @@ public:
 	 * geometry changes. An empty index span yields a handle that draws nothing.
 	 * @param[in] iVertices The mesh vertices.
 	 * @param[in] iIndices Triangle indices into `iVertices`.
+	 * @param[in] iShaderName Shader used to draw the mesh (defaults to `mesh3d`; e.g. `voxel` for frac-tiled faces).
 	 * @return A handle usable with `drawMesh`.
 	 */
-	[[nodiscard]] static auto createMesh(std::span<const Mesh3DVertex> iVertices, std::span<const uint32_t> iIndices)
-			-> MeshHandle;
+	[[nodiscard]] static auto createMesh(std::span<const Mesh3DVertex> iVertices, std::span<const uint32_t> iIndices,
+										 const std::string& iShaderName = "mesh3d") -> MeshHandle;
 
 	/**
 	 * @brief

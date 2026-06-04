@@ -414,3 +414,35 @@ TEST(UiRect, ComputePositionWithPivotAndOffset) {
 	EXPECT_NEAR(p.x(), 23.f, 0.001f);
 	EXPECT_NEAR(p.y(), 83.f, 0.001f);
 }
+
+TEST(ComponentRoundTrip, VoxelWorld) {
+	roundTrip(
+			"VoxelWorld",
+			[](scene::Entity& iEnt) {
+				auto& vw = iEnt.addComponent<scene::component::VoxelWorld>();
+				data::voxel::BlockType stone;
+				stone.name = "stone";
+				stone.renderKind = data::voxel::BlockRenderKind::Opaque;
+				stone.solid = true;
+				stone.setAllFaces(1);
+				const data::voxel::BlockId stoneId = vw.registry.registerBlock(stone);
+				vw.world.setBlock(math::vec3i{1, 2, 3}, stoneId);
+				vw.world.setBlock(math::vec3i{-1, 0, 0}, stoneId);
+				vw.blockTextures = {"textures/air.png", "textures/stone.png"};
+				vw.sunDirection = math::vec3{0.1f, -0.9f, 0.2f};
+				vw.ambient = math::vec3{0.2f, 0.3f, 0.4f};
+			},
+			[](const scene::Entity& iEnt) {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::VoxelWorld>());
+				const auto& vw = iEnt.getComponent<scene::component::VoxelWorld>();
+				ASSERT_EQ(vw.registry.count(), 2u);// air + stone
+				EXPECT_EQ(vw.registry.get(1).name, "stone");
+				EXPECT_EQ(vw.world.getBlock(math::vec3i{1, 2, 3}), 1u);
+				EXPECT_EQ(vw.world.getBlock(math::vec3i{-1, 0, 0}), 1u);
+				EXPECT_EQ(vw.world.getBlock(math::vec3i{5, 5, 5}), data::voxel::g_AirBlock);
+				ASSERT_EQ(vw.blockTextures.size(), 2u);
+				EXPECT_EQ(vw.blockTextures[1].generic_string(), "textures/stone.png");
+				EXPECT_FLOAT_EQ(vw.sunDirection.y(), -0.9f);
+				EXPECT_FLOAT_EQ(vw.ambient.z(), 0.4f);
+			});
+}

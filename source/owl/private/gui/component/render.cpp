@@ -1018,4 +1018,14 @@ void renderProps(RaycastPushWall& ioComponent) {
 	ImGui::Text("Runtime: state=%s offset=%.3f", stateName, static_cast<double>(ioComponent.currentOffset));
 }
 
+void renderProps(VoxelWorld& ioComponent) {
+	const size_t blockCount = ioComponent.registry.count() > 0 ? ioComponent.registry.count() - 1 : 0;
+	ImGui::Text("Blocks: %zu", blockCount);
+	ImGui::Text("Chunks: %zu", ioComponent.world.chunkCount());
+	ImGui::Text("Block textures: %zu", ioComponent.blockTextures.size());
+	ImGui::Separator();
+	drawVec3Control("Sun Direction", ioComponent.sunDirection);
+	ImGui::ColorEdit3("Ambient", ioComponent.ambient.data());
+}
+
 }// namespace owl::gui::component
