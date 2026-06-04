@@ -157,7 +157,9 @@ flowchart LR
 
 ## What's Next
 
-The data model and mesher above are the foundation. Subsequent v0.2.1 work builds on them: the first 3D forward
-renderer (`RendererVoxel`) that uploads and draws the mesh, procedural terrain generation with chunk streaming,
-block interaction (raycast pick, place/destroy, Lua API), rendering polish (ambient occlusion, lighting,
-transparent/water passes), and the in-editor voxel authoring tools.
+The data model and mesher above are the foundation. The generic forward 3D renderer
+([Renderer3D](renderer.md) — depth-tested, textured, directional light) that uploads and draws meshes already
+landed and is what `RendererVoxel` will build on. Subsequent v0.2.1 work: the `RendererVoxel` layer that feeds the
+`ChunkMesh` to `Renderer3D` and wires it into the scene stack, procedural terrain generation with chunk streaming,
+block interaction (raycast pick, place/destroy, Lua API), rendering polish (ambient occlusion, transparent/water
+passes), and the in-editor voxel authoring tools.

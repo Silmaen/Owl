@@ -427,6 +427,32 @@ Convention:
 The accompanying `scripts/raycast_player.lua` in the sample project
 implements WASD strafing + Q/E turning following this convention.
 
+## 3D Forward Renderer {#renderer3d}
+
+`Renderer3D` is the engine's first true 3D draw path — a generic, depth-tested, textured forward renderer with a
+single directional light. It is the reusable base for `RendererVoxel` (and future static-mesh renderers); unlike
+`Renderer2D` (a unit quad + per-instance SSBO) it draws **real per-vertex geometry**.
+
+- **Vertex** (`renderer::Mesh3DVertex`, 36 bytes, tightly packed): object-space `position`, `normal`, `uv`, and a
+  `textureIndex` selecting a slot in the bound texture array.
+- **Shader** (`engine_assets/shaders/renderer3D/slang/mesh3d.slang`): vertex transforms position by a per-draw model
+  matrix then the per-frame view-projection (both `column_major`, supplied through one scene UBO at binding 0);
+  fragment samples `gTextures[texIndex]` (binding 1) and applies `ambient + max(dot(N, -sunDir), 0)`. Outputs colour
+  + entity id to match the scene framebuffer.
+- **API**: `init` / `shutdown`, `beginScene(camera)` (enables depth test/write), `endScene()` (restores 2D depth
+  state), `setLighting(sunDir, ambient)`, `createMesh(vertices, indices) -> MeshHandle` (one-time GPU upload), and
+  `drawMesh(handle, model, textures)` (immediate-mode draw; textures bind to slots `1..N`, slot `0` is white).
+
+```c++
+const auto mesh = renderer::Renderer3D::createMesh(vertices, indices);// once, on geometry change
+renderer::Renderer3D::beginScene(camera);
+renderer::Renderer3D::drawMesh(mesh, modelMatrix, {atlasTexture});
+renderer::Renderer3D::endScene();
+```
+
+It owns its own per-renderer descriptor block (`RendererDescriptors`, no-op on Null / OpenGL) like the other
+renderers, so Vulkan per-draw descriptor selection routes correctly.
+
 ## Backend Abstraction
 
 The `RenderAPI` class defines a platform-independent interface. A concrete implementation

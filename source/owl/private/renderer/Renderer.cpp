@@ -12,6 +12,7 @@
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
+#include "renderer/Renderer3D.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
@@ -65,6 +66,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 
 	RendererRaycast::init();
 	RendererTilemap::init();
+	Renderer3D::init();
 
 	Renderer2DLayer::registerWithFactory();
 	RendererRaycastLayer::registerWithFactory();
@@ -73,6 +75,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 }
 
 void Renderer::shutdown() {
+	Renderer3D::shutdown();
 	RendererTilemap::shutdown();
 	RendererRaycast::shutdown();
 	BackgroundRenderer::shutdown();

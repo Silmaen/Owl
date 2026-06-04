@@ -20,6 +20,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the per-face atlas texture index and tiled UVs, and cross-chunk neighbour culling goes through a provider
   callback. CPU-only (no GPU upload). 10 headless tests cover greedy merge, culling, winding, per-face textures,
   transparency and boundary culling.
+- **3D forward rendering foundation** — `renderer::Renderer3D`, the engine's first true 3D draw path: a generic,
+  depth-tested, textured forward renderer with a single directional light, driven by the new `mesh3d` Slang shader
+  (per-frame camera + per-draw model UBO, 32-slot texture array, color + entity-id outputs). Meshes upload once via
+  `createMesh` and draw with a model matrix via `drawMesh` (immediate mode). Reusable by `RendererVoxel` and future
+  static-mesh renderers. Headless tests cover `Mesh3DVertex` packing, `mesh3d` compilation (Vulkan + OpenGL) and
+  descriptor reflection; on-screen integration lands with `RendererVoxel`.
 
 ### Changed
 
