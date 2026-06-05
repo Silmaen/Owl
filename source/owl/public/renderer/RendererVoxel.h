@@ -67,8 +67,20 @@ public:
 
 	/**
 	 * @brief
-	 *  Draw one voxel world entity, (re)building dirty chunk meshes on the fly.
+	 *  Build and cache the GPU meshes and textures for a voxel world.
+	 *
+	 *  Must be called **outside** any render pass (e.g. from `Scene::onStartRuntime`): it creates GPU buffers,
+	 *  pipelines and textures, which submit single-time command buffers and therefore must not run while a frame's
+	 *  command buffer is being recorded. `drawVoxelWorld` then only binds and draws these cached resources.
 	 * @param[in,out] ioComponent The voxel world component (chunks are marked clean as they are meshed).
+	 * @param[in] iEntityId The entity id (keys the per-entity mesh cache).
+	 */
+	static void prepareWorld(scene::component::VoxelWorld& ioComponent, int iEntityId);
+
+	/**
+	 * @brief
+	 *  Draw one voxel world entity from its cached meshes (built by `prepareWorld`).
+	 * @param[in,out] ioComponent The voxel world component.
 	 * @param[in] iWorldTransform The entity world transform.
 	 * @param[in] iEntityId The entity id (keys the per-entity mesh cache).
 	 */

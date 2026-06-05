@@ -38,7 +38,7 @@ struct InternalData {
 shared<InternalData> g_Data;
 }// namespace
 
-static_assert(sizeof(Mesh3DVertex) == 36, "Mesh3DVertex must stay tightly packed for direct VBO upload.");
+static_assert(sizeof(Mesh3DVertex) == 52, "Mesh3DVertex must stay tightly packed for direct VBO upload.");
 
 void Renderer3D::init() {
 	OWL_PROFILE_FUNCTION()
@@ -87,7 +87,8 @@ void Renderer3D::shutdown() {
 void Renderer3D::beginScene(const Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
-	// No depth test: the engine is not depth-aware yet; correct occlusion lands with the depth-aware-renderer PR.
+	// Open the batch up-front (like Renderer2D::flush) so drawMesh's binds aren't wiped by the lazy beginBatch().
+	gpu::RenderCommand::beginBatch();
 	g_Data->scene.viewProjection = iCamera.getViewProjection();
 }
 
@@ -102,10 +103,12 @@ auto Renderer3D::createMesh(std::span<const Mesh3DVertex> iVertices, std::span<c
 							const std::string& iShaderName) -> MeshHandle {
 	auto draw = gpu::DrawData::create();
 	std::vector<uint32_t> indices{iIndices.begin(), iIndices.end()};
+	const gpu::RendererDescriptors::ScopedActive scoped{k_RendererKey};
 	draw->init({{"i_Position", gpu::ShaderDataType::Float3},
 				{"i_Normal", gpu::ShaderDataType::Float3},
 				{"i_Uv", gpu::ShaderDataType::Float2},
-				{"i_TexIndex", gpu::ShaderDataType::Int}},
+				{"i_TexIndex", gpu::ShaderDataType::Int},
+				{"i_TileRect", gpu::ShaderDataType::Float4}},
 			   k_ShaderFolder, indices, iShaderName);
 	draw->setVertexData(iVertices.data(), static_cast<uint32_t>(iVertices.size() * sizeof(Mesh3DVertex)));
 	return draw;
@@ -134,7 +137,9 @@ void Renderer3D::drawMesh(const MeshHandle& iMesh, const math::mat4& iModel,
 	gpu::RenderCommand::endTextureLoad();
 
 	iMesh->bind();
+	gpu::RenderCommand::setDepthTest(true);
 	gpu::RenderCommand::drawData(iMesh, iMesh->getIndexCount());
+	gpu::RenderCommand::setDepthTest(false);
 }
 
 }// namespace owl::renderer

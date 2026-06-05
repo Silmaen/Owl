@@ -12,9 +12,9 @@
 #include "core/Serializer.h"
 #include "data/voxel/VoxelWorld.h"
 #include "math/vectors.h"
+#include "scene/Tileset.h"
 
 #include <filesystem>
-#include <vector>
 
 namespace owl::scene::component {
 
@@ -23,20 +23,23 @@ namespace owl::scene::component {
  *  A block-based voxel world attached to an entity, drawn by `RendererVoxel`.
  *
  * Holds the authored voxel data — a `BlockRegistry` (the block palette) and a
- * `data::voxel::VoxelWorld` (the chunks) — plus the per-block texture paths and
- * the directional-light settings the voxel renderer needs. The entity must
- * carry a `RendererTag` routing it to a `RendererVoxel` layer for the world to
- * appear. The data is serialized inline in the scene (registry as a nested YAML
- * string, chunks run-length encoded); a standalone `.owlvoxel` asset format is a
- * later refinement.
+ * `data::voxel::VoxelWorld` (the chunks) — plus the tileset atlas the block faces
+ * index into and the directional-light settings the voxel renderer needs. A
+ * block's per-face `faceTexture` is a tile index into `tilesetPath`'s atlas grid;
+ * the renderer maps it to the tile's UV sub-rect. The entity must carry a
+ * `RendererTag` routing it to a `RendererVoxel` layer for the world to appear. The
+ * data is serialized inline in the scene (registry as a nested YAML string, chunks
+ * run-length encoded); a standalone `.owlvoxel` asset format is a later refinement.
  */
 struct OWL_API VoxelWorld {
-	/// Block palette resolving ids to render kind, collision and per-face texture slot.
+	/// Block palette resolving ids to render kind, collision and per-face atlas tile index.
 	data::voxel::BlockRegistry registry;
 	/// The voxel data (sparse chunk map).
 	data::voxel::VoxelWorld world;
-	/// Texture file paths indexed by block texture slot (slot `i` is sampled by faces whose `faceTexture == i`).
-	std::vector<std::filesystem::path> blockTextures;
+	/// Path to the `.owltileset` atlas whose tiles the block faces index into.
+	std::filesystem::path tilesetPath;
+	/// Runtime-resolved tileset atlas (loaded from `tilesetPath` during scene resolve; not serialized).
+	shared<Tileset> tileset;
 	/// World-space direction the sun light travels.
 	math::vec3 sunDirection{-0.4f, -1.f, -0.6f};
 	/// Ambient light colour added before the directional term.

@@ -122,6 +122,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the per-attachment render-pass clear values.
+	 * @return Clear values indexed by attachment (depth slot set to 1.0; color slots are zeroed and ignored by their
+	 *  `DONT_CARE` load op).
+	 */
+	[[nodiscard]] auto getClearValues() const -> const std::vector<VkClearValue>& { return m_clearValues; }
+
+	/**
+	 * @brief
 	 *  Get the image count.
 	 * @return The image count.
 	 */
@@ -280,6 +288,8 @@ private:
 	FramebufferSpecification m_specs;
 	/// Vulkan render pass owned by this framebuffer.
 	VkRenderPass m_renderPass{};
+	/// Per-attachment render-pass clear values (depth = 1.0, color slots zeroed). Sized to the attachment count.
+	std::vector<VkClearValue> m_clearValues;
 	/// In-flight frame index (0 .. `MAX_FRAMES_IN_FLIGHT - 1`).
 	uint32_t m_currentFrame = 0;
 	/// Acquired swapchain image index for this frame.

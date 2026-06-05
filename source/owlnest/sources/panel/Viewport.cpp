@@ -157,6 +157,8 @@ void Viewport::attach() {
 							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
 							{.format = renderer::gpu::AttachmentSpecification::Format::RedInteger,
 							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
+							{.format = renderer::gpu::AttachmentSpecification::Format::Depth24Stencil8,
+							 .tiling = renderer::gpu::AttachmentSpecification::Tiling::Optimal},
 					},
 			.samples = 1,
 			.swapChainTarget = false,
@@ -208,6 +210,9 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 
 	// Clear our entity ID attachment to -1
 	m_framebuffer->clearAttachment(1, -1);
+
+	// Build voxel GPU resources while the depth FB is bound and no pass records (correct RP, no in-pass upload).
+	activeScene->prepareVoxelRenderData();
 
 	switch (mp_document->state()) {
 		case SceneDocument::State::Edit:

@@ -11,7 +11,7 @@ project(Owl VERSION 0.2.1 LANGUAGES C CXX)
 #
 option(${PROJECT_PREFIX}_BUILD_SHARED "If the Library must be build as shared library" ON)
 option(${PROJECT_PREFIX}_USE_RELEASE_THIRD_PARTY "Use release version of third party libraries" ON)
-option(${PROJECT_PREFIX}_DEFINE_VULKAN_LAYERS "Copy vulkan layers in the binary directory" OFF)
+option(${PROJECT_PREFIX}_ENABLE_VULKAN_LAYERS "Copy vulkan layers in the binary directory" OFF)
 
 option(${PROJECT_PREFIX}_BUILD_NEST "If wanted to generate Owl Nest" ON)
 

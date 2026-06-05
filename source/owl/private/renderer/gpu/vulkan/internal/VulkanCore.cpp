@@ -237,8 +237,12 @@ void VulkanCore::createLogicalDevice() {
 	if (m_hasValidation)
 		layerNames.emplace_back("VK_LAYER_KHRONOS_validation");
 	const std::vector extensionNames = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+	VkPhysicalDeviceVulkan11Features features11{};
+	features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+	features11.shaderDrawParameters = VK_TRUE;
 	VkPhysicalDeviceVulkan13Features features13{};
 	features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+	features13.pNext = &features11;
 	features13.shaderDemoteToHelperInvocation = VK_TRUE;
 	VkPhysicalDeviceVulkan12Features features12{};
 	features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
@@ -403,6 +407,8 @@ auto VulkanCore::getCurrentTransform() const -> VkSurfaceTransformFlagBitsKHR {
 }
 
 auto VulkanCore::getQueueIndices() const -> std::vector<uint32_t> {
+	if (m_phyProps->graphicQueueIndex == m_phyProps->presentQueueIndex)
+		return {m_phyProps->graphicQueueIndex};
 	return {m_phyProps->graphicQueueIndex, m_phyProps->presentQueueIndex};
 }
 

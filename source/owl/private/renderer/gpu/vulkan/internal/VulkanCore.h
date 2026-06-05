@@ -250,8 +250,8 @@ public:
 
 	/**
 	 * @brief
-	 *  Get The queue indices.
-	 * @return The queue indices.
+	 *  Get the distinct queue family indices used by the device.
+	 * @return The unique queue family indices (one entry when graphics and present share a family).
 	 */
 	[[nodiscard]] auto getQueueIndices() const -> std::vector<uint32_t>;
 

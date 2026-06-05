@@ -428,7 +428,7 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 				const data::voxel::BlockId stoneId = vw.registry.registerBlock(stone);
 				vw.world.setBlock(math::vec3i{1, 2, 3}, stoneId);
 				vw.world.setBlock(math::vec3i{-1, 0, 0}, stoneId);
-				vw.blockTextures = {"textures/air.png", "textures/stone.png"};
+				vw.tilesetPath = "tilesets/world_platform.owltileset";
 				vw.sunDirection = math::vec3{0.1f, -0.9f, 0.2f};
 				vw.ambient = math::vec3{0.2f, 0.3f, 0.4f};
 			},
@@ -440,8 +440,7 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 				EXPECT_EQ(vw.world.getBlock(math::vec3i{1, 2, 3}), 1u);
 				EXPECT_EQ(vw.world.getBlock(math::vec3i{-1, 0, 0}), 1u);
 				EXPECT_EQ(vw.world.getBlock(math::vec3i{5, 5, 5}), data::voxel::g_AirBlock);
-				ASSERT_EQ(vw.blockTextures.size(), 2u);
-				EXPECT_EQ(vw.blockTextures[1].generic_string(), "textures/stone.png");
+				EXPECT_EQ(vw.tilesetPath.generic_string(), "tilesets/world_platform.owltileset");
 				EXPECT_FLOAT_EQ(vw.sunDirection.y(), -0.9f);
 				EXPECT_FLOAT_EQ(vw.ambient.z(), 0.4f);
 			});

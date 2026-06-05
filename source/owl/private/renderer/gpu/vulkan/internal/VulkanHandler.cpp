@@ -138,6 +138,9 @@ void VulkanHandler::createSwapChain() {
 							 .tiling = AttachmentSpecification::Tiling::Optimal},
 							{.format = AttachmentSpecification::Format::RedInteger,
 							 .tiling = AttachmentSpecification::Tiling::Optimal},
+							// Matches the editor FB depth so 2D + voxel pipelines are RP-compatible (fixes 02684).
+							{.format = AttachmentSpecification::Format::Depth24Stencil8,
+							 .tiling = AttachmentSpecification::Tiling::Optimal},
 					},
 			.samples = 2,
 			.swapChainTarget = true,
@@ -265,7 +268,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 			.pNext = nullptr,
 			.flags = {},
 			.depthTestEnable = VK_TRUE,
-			.depthWriteEnable = VK_FALSE,
+			.depthWriteEnable = VK_TRUE,
 			.depthCompareOp = VK_COMPARE_OP_LESS,
 			.depthBoundsTestEnable = VK_FALSE,
 			.stencilTestEnable = VK_FALSE,
@@ -413,6 +416,9 @@ void VulkanHandler::nextSubpass(bool internal) {
 }
 
 void VulkanHandler::beginBatch() {
+	// Idempotent: re-opening a recording batch would reset the in-flight fence with no submit and deadlock the next wait.
+	if (inBatch)
+		return;
 	if (!inFrame)
 		beginFrame();
 	inBatch = true;
@@ -438,14 +444,15 @@ void VulkanHandler::beginBatch() {
 		return;
 	}
 
+	const auto& clearValues = m_currentFramebuffer->getClearValues();
 	const VkRenderPassBeginInfo renderPassInfo{
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.pNext = nullptr,
 			.renderPass = m_currentFramebuffer->getRenderPass(),
 			.framebuffer = m_currentFramebuffer->getCurrentFramebuffer(),
 			.renderArea = {.offset = {0, 0}, .extent = toExtent(m_currentFramebuffer->getSpecification().size)},
-			.clearValueCount = 0,
-			.pClearValues = nullptr};
+			.clearValueCount = static_cast<uint32_t>(clearValues.size()),
+			.pClearValues = clearValues.empty() ? nullptr : clearValues.data()};
 	vkCmdBeginRenderPass(getCurrentCommandBuffer(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	m_currentFramebuffer->resetSubPass();
 	const VkViewport viewport{.x = 0.0f,

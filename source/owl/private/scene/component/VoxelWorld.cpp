@@ -46,11 +46,8 @@ void VoxelWorld::serialize(const core::Serializer& iOut) const {
 			<< sunDirection.y() << sunDirection.z() << YAML::EndSeq;
 	emitter << YAML::Key << "Ambient" << YAML::Value << YAML::Flow << YAML::BeginSeq << ambient.x() << ambient.y()
 			<< ambient.z() << YAML::EndSeq;
-	if (!blockTextures.empty()) {
-		emitter << YAML::Key << "BlockTextures" << YAML::Value << YAML::BeginSeq;
-		for (const auto& path: blockTextures) emitter << path.generic_string();
-		emitter << YAML::EndSeq;
-	}
+	if (!tilesetPath.empty())
+		emitter << YAML::Key << "Tileset" << YAML::Value << tilesetPath.generic_string();
 	emitter << YAML::Key << "Blocks" << YAML::Value << YAML::BeginSeq;
 	for (size_t id = 1; id < registry.count(); ++id) {
 		const auto& block = registry.get(static_cast<data::voxel::BlockId>(id));
@@ -86,10 +83,10 @@ void VoxelWorld::deserialize(const core::Serializer& iNode) {
 		sunDirection = math::vec3{sun[0].as<float>(), sun[1].as<float>(), sun[2].as<float>()};
 	if (const auto amb = node["Ambient"]; amb && amb.IsSequence() && amb.size() >= 3)
 		ambient = math::vec3{amb[0].as<float>(), amb[1].as<float>(), amb[2].as<float>()};
-	blockTextures.clear();
-	if (const auto textures = node["BlockTextures"]; textures && textures.IsSequence()) {
-		for (const auto& path: textures) blockTextures.emplace_back(path.as<std::string>());
-	}
+	tilesetPath.clear();
+	tileset.reset();
+	if (const auto ts = node["Tileset"]; ts)
+		tilesetPath = ts.as<std::string>();
 	registry = data::voxel::BlockRegistry{};
 	if (const auto blocks = node["Blocks"]; blocks && blocks.IsSequence()) {
 		for (const auto& blockNode: blocks) {

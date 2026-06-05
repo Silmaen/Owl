@@ -130,6 +130,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Clear any storage-buffer binding that references `iBuffer` across every
+	 *  registered renderer block. Call this when the backing `VkBuffer` is
+	 *  destroyed so stale handles are never written into a descriptor set.
+	 * @param[in] iBuffer The `VkBuffer` being destroyed.
+	 */
+	static void unbindStorageBuffer(VkBuffer iBuffer);
+
+	/**
+	 * @brief
 	 *  Reset the per-frame texture-bind list.
 	 */
 	void resetTextureBind();

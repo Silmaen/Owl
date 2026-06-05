@@ -29,6 +29,15 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 0
+    LuaScript:
+      scriptPath: scripts/voxel_fly_camera.lua
+      properties:
+        - name: move_speed
+          type: float
+          value: 8
+        - name: look_speed
+          type: float
+          value: 1.5
   - Entity: 3300000000000000002
     Tag:
       tag: VoxelTerrain
@@ -45,20 +54,18 @@ Entities:
     VoxelWorld:
       SunDirection: [-0.4, -1, -0.6]
       Ambient: [0.4, 0.4, 0.45]
-      BlockTextures:
-        - textures/platform.png
-        - textures/world_platform.png
+      Tileset: tilesets/world_platform.owltileset
       Blocks:
         - id: 1
           name: stone
           render: Opaque
           solid: true
-          faces: [0, 0, 0, 0, 0, 0]
+          faces: [2, 2, 2, 2, 2, 2]
         - id: 2
           name: grass
           render: Opaque
           solid: true
-          faces: [1, 1, 1, 1, 1, 1]
+          faces: [1, 1, 1, 0, 1, 1]
       Chunks:
         - Coord: [0, 0, 0]
           Data: 256x1 256x2 3584x0

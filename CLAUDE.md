@@ -445,7 +445,7 @@ Enforced by `.clang-format` (LLVM-based) and `.clang-tidy`. Key conventions:
 | `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (implies `OWL_ENABLE_MEMORY_TRACKER`; performance impact)                                                           |
 | `OWL_ENABLE_PROFILING`                    | OFF     | Profiling output                                                                                                                              |
 | `OWL_USE_RELEASE_THIRD_PARTY`             | ON      | Use release builds of third-party libraries                                                                                                   |
-| `OWL_DEFINE_VULKAN_LAYERS`                | OFF     | Copy Vulkan layers to binary directory                                                                                                        |
+| `OWL_ENABLE_VULKAN_LAYERS`                | OFF     | Copy Vulkan layers to binary directory                                                                                                        |
 | `OWL_ENABLE_CLANG_TIDY`                   | OFF     | Enable clang-tidy static analysis                                                                                                             |
 | `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF     | AddressSanitizer (CI presets)                                                                                                                 |
 | `OWL_ENABLE_THREAD_SANITIZER`             | OFF     | ThreadSanitizer (CI presets)                                                                                                                  |
