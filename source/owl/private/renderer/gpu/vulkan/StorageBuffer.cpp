@@ -34,8 +34,10 @@ StorageBuffer::StorageBuffer(const uint32_t iSize, const uint32_t iBinding) : m_
 StorageBuffer::~StorageBuffer() {
 	if (internal::VulkanHandler::get().getState() == internal::VulkanHandler::State::Running) {
 		const auto& vkc = internal::VulkanCore::get();
-		if (m_buffer != nullptr)
+		if (m_buffer != nullptr) {
+			internal::RendererDescriptors::unbindStorageBuffer(m_buffer);
 			vkDestroyBuffer(vkc.getLogicalDevice(), m_buffer, nullptr);
+		}
 		if (m_memory != nullptr)
 			vkFreeMemory(vkc.getLogicalDevice(), m_memory, nullptr);
 	}

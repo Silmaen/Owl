@@ -72,8 +72,10 @@ void Framebuffer::bind() {
 	resetBatch();
 	//vkWaitForFences(core.getLogicalDevice(), 1, getCurrentFence(), VK_TRUE, UINT64_MAX);
 	if (!isMainTarget()) {
-		for (auto& img: m_images) {
-			internal::transitionImageLayout(img.image, VK_IMAGE_LAYOUT_UNDEFINED,
+		for (uint32_t i = 0; i < m_images.size(); ++i) {
+			if (m_specs.attachments[imgIdxToAtt(i)].format == AttachmentSpecification::Format::Depth24Stencil8)
+				continue;
+			internal::transitionImageLayout(m_images[i].image, VK_IMAGE_LAYOUT_UNDEFINED,
 											VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 		}
 	}
@@ -94,8 +96,10 @@ void Framebuffer::nextSubpass() {
 void Framebuffer::unbind() {
 	auto& vkh = internal::VulkanHandler::get();
 	if (!isMainTarget()) {
-		for (auto& img: m_images) {
-			internal::transitionImageLayout(img.image, VK_IMAGE_LAYOUT_UNDEFINED,
+		for (uint32_t i = 0; i < m_images.size(); ++i) {
+			if (m_specs.attachments[imgIdxToAtt(i)].format == AttachmentSpecification::Format::Depth24Stencil8)
+				continue;
+			internal::transitionImageLayout(m_images[i].image, VK_IMAGE_LAYOUT_UNDEFINED,
 											VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		}
 	}
@@ -349,6 +353,11 @@ void Framebuffer::createImages() {
 	// Create remaining Memory images
 	for (uint32_t i = m_swapChainImageCount; i < m_images.size(); ++i) {
 		const uint32_t attIndex = imgIdxToAtt(i);
+		const bool isDepth = m_specs.attachments[attIndex].format == AttachmentSpecification::Format::Depth24Stencil8;
+		const VkImageUsageFlags usage = isDepth ? VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
+												: VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+														  VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+														  VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 		const VkImageCreateInfo imageInfo{
 				.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 				.pNext = nullptr,
@@ -360,8 +369,7 @@ void Framebuffer::createImages() {
 				.arrayLayers = 1,
 				.samples = VK_SAMPLE_COUNT_1_BIT,
 				.tiling = internal::attachmentTilingToVulkan(m_specs.attachments[attIndex].tiling),
-				.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-						 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+				.usage = usage,
 				.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
 				.queueFamilyIndexCount = 1,
 				.pQueueFamilyIndices = nullptr,
@@ -398,6 +406,8 @@ void Framebuffer::createImages() {
 			return;
 		}
 
+		if (isDepth)
+			continue;
 		internal::transitionImageLayout(m_images[i].image, VK_IMAGE_LAYOUT_UNDEFINED,
 										isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 													   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -466,24 +476,35 @@ void Framebuffer::createRenderPass() {
 	uniq<VkAttachmentReference> depthRefs = nullptr;
 	std::vector<VkAttachmentDescription> attDesc;
 	uint32_t i = 0;
+	m_clearValues.assign(m_specs.attachments.size(), VkClearValue{});
 	for (const auto& [format, tiling]: m_specs.attachments) {
 		if (format == AttachmentSpecification::Format::Depth24Stencil8) {
 			depthRefs = mkUniq<VkAttachmentReference>(
 					VkAttachmentReference{.attachment = i, .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
+			m_clearValues[i].depthStencil = {.depth = 1.0f, .stencil = 0};
+			attDesc.push_back({.flags = {},
+							   .format = internal::attachmentFormatToVulkan(format),
+							   .samples = VK_SAMPLE_COUNT_1_BIT,
+							   .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+							   .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+							   .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+							   .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+							   .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+							   .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL});
 		} else {
 			attRefs.push_back({.attachment = i, .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
+			attDesc.push_back({.flags = {},
+							   .format = internal::attachmentFormatToVulkan(format),
+							   .samples = VK_SAMPLE_COUNT_1_BIT,
+							   .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+							   .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+							   .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+							   .stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE,
+							   .initialLayout = isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+															   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+							   .finalLayout = isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+															 : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
 		}
-		attDesc.push_back({.flags = {},
-						   .format = internal::attachmentFormatToVulkan(format),
-						   .samples = VK_SAMPLE_COUNT_1_BIT,
-						   .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-						   .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-						   .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-						   .stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE,
-						   .initialLayout = isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-														   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-						   .finalLayout = isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-														 : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL});
 		++i;
 	}
 	constexpr VkAttachmentReference simpleAttachmentReference{.attachment = 0,
@@ -510,13 +531,14 @@ void Framebuffer::createRenderPass() {
 												.preserveAttachmentCount = 0,
 												.pPreserveAttachments = nullptr});
 	//}
-	std::vector dependencies = {VkSubpassDependency{.srcSubpass = VK_SUBPASS_EXTERNAL,
-													.dstSubpass = 0,
-													.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-													.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-													.srcAccessMask = 0,
-													.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-													.dependencyFlags = {}}};
+	std::vector dependencies = {VkSubpassDependency{
+			.srcSubpass = VK_SUBPASS_EXTERNAL,
+			.dstSubpass = 0,
+			.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+			.srcAccessMask = 0,
+			.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+			.dependencyFlags = {}}};
 	//if (isMainTarget()) {
 	dependencies.emplace_back(VkSubpassDependency{.srcSubpass = 0,
 												  .dstSubpass = 1,
@@ -657,7 +679,10 @@ void Framebuffer::createDescriptorSets() {
 													   .flags = {},
 													   .bindingCount = 1,
 													   .pBindings = &samplerLayoutBinding};
-	for (auto& img: m_images) {
+	for (uint32_t imgIdx = 0; imgIdx < m_images.size(); ++imgIdx) {
+		if (m_specs.attachments[imgIdxToAtt(imgIdx)].format == AttachmentSpecification::Format::Depth24Stencil8)
+			continue;
+		auto& img = m_images[imgIdx];
 		if (const VkResult result = vkCreateSampler(core.getLogicalDevice(), &samplerInfo, nullptr, &img.imageSampler);
 			result != VK_SUCCESS) {
 			OWL_CORE_ERROR("Vulkan Texture: Error creating texture sampler ({}).", internal::resultString(result))

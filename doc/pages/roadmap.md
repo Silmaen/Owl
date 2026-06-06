@@ -413,16 +413,34 @@ tradition — slotted between the existing 2D/raycast/voxel options.
         - Block placement and destruction
         - Block picking (raycast from camera to find targeted block)
         - Block metadata (orientation, state)
-    - ![In Progress][progress] Voxel rendering
+    - ![Done][done] Voxel rendering (Vulkan)
         - Generic `Renderer3D` forward foundation (depth, perspective, textured, directional light, `mesh3d` shader)
           — ![Done][done] (reusable base)
-        - `RendererVoxel` stack layer + `VoxelWorld` scene component (per-entity chunk mesh cache, per-block textures,
-          frac-tiled `voxel` shader, Play-mode dispatch) — ![Done][done] (wired; GPU draw gated off until depth PR)
-        - **Depth-aware renderer** (depth-attachment + depth-configured 3D pipelines, without breaking the depth-less
-          2D pipelines) — ![Planned][planned] **next PR; prerequisite for correct voxel occlusion**
-        - Ambient occlusion per vertex for block edges — ![Planned][planned]
+        - `RendererVoxel` stack layer + `VoxelWorld` scene component (per-entity chunk mesh cache, Play-mode dispatch)
+          — ![Done][done]
+        - **Depth-aware renderer** (symmetric `Depth24Stencil8` attachment on the editor viewport *and* swapchain
+          framebuffers + depth clear + per-batch dynamic depth test/write; 2D depth-off, 3D depth-on) — ![Done][done]
+          (fixed the batch-fence deadlock and the `renderPass-02684` incompatibility flood along the way)
+        - **Tileset-atlas texturing**: `VoxelWorld` references a `.owltileset`; per-face indices are atlas tile indices
+          mapped to UV sub-rects, with shader-side `frac()` tiling so greedy-merged quads tile rather than stretch
+          — ![Done][done]
+        - **Editor viewport rendering**: voxel worlds render and are navigable (orbit/pan/zoom) while editing, not only
+          in Play — ![Done][done]
+        - **Play-mode camera**: `voxel_fly_camera.lua` (WASD / Space-Shift / arrows) so the world is explorable in Play
+          — ![Done][done] (movement feel still rough — see follow-ups)
         - Basic directional lighting — ![Done][done] (in `mesh3d` / `voxel`)
+        - Ambient occlusion per vertex for block edges — ![Planned][planned]
         - Water/transparent block rendering with proper sorting — ![Planned][planned]
+    - ![Planned][planned] Voxel rendering follow-ups (deferred from the voxel PR)
+        - Repair the **OpenGL** backend for the depth/voxel path (the depth attachment + 3D draw path was validated on
+          Vulkan only; OpenGL regressed and needs fixing)
+        - **Richer block textures** for the demo world (distinct grass / earth / rock / … tiles) instead of the
+          placeholder platform atlas
+        - **Improve camera movement** — likely a reusable C++ 3D camera controller / movable camera object shared by the
+          editor viewport and Play, replacing the ad-hoc Lua fly script
+        - **Investigate the remaining Vulkan validation messages**: the single-shared-descriptor-set
+          `UPDATE_AFTER_BIND` cascade (needs per-batch/ring descriptor sets, not the `UPDATE_AFTER_BIND` flag) and the
+          5-object `vkDestroyDevice` teardown leak (`whiteTexture` + a descriptor-set layout)
     - ![Planned][planned] Voxel editor in Owl Nest
         - Brush tools for painting blocks
         - Prefab structures (trees, buildings) as reusable block templates

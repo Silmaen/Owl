@@ -193,8 +193,8 @@ public:
 	// Command buffer data
 	bool inBatch = false;
 	bool inFrame = false;
-	/// Desired depth test state for the next batch.
-	bool depthTestEnabled = true;
+	/// Desired depth test state for the next batch (off by default; Renderer3D enables it around 3D mesh draws).
+	bool depthTestEnabled = false;
 	bool firstBatch = true;
 
 	void popPipeline(int32_t iId);

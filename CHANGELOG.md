@@ -27,22 +27,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   static-mesh renderers. Headless tests cover `Mesh3DVertex` packing, `mesh3d` compilation (Vulkan + OpenGL) and
   descriptor reflection; on-screen integration lands with `RendererVoxel`.
 - **`VoxelWorld` scene component** — `scene::component::VoxelWorld`, the authored object placing a voxel world on an
-  entity: holds the `BlockRegistry`, the `data::voxel::VoxelWorld` chunks, per-block texture paths, and directional
-  light settings, serialized inline in the scene (registry as a nested YAML doc, chunks run-length encoded).
-  Registered across the component tuples and `onComponentAdded`, with an inspector panel (lighting + palette/chunk
-  summary) and Add-Component menu entry. Round-trip covered by `componentsRoundTrip` tests.
+  entity: holds the `BlockRegistry`, the `data::voxel::VoxelWorld` chunks, a tileset-atlas reference (`tilesetPath`,
+  resolved to a shared `scene::Tileset` during scene resolve alongside tilemaps/doors), and directional light
+  settings, serialized inline in the scene (registry as a nested YAML doc, chunks run-length encoded). A block's
+  per-face index is a tile index into that atlas. Registered across the component tuples and `onComponentAdded`,
+  with an inspector panel (lighting + palette/chunk summary + a `.owltileset` drag-drop slot) and Add-Component menu
+  entry. Round-trip covered by `componentsRoundTrip` tests.
 - **`RendererVoxel` render layer** — draws `VoxelWorld` entities in 3D on top of `Renderer3D`: greedy-meshes each
-  chunk, caches the GPU mesh per entity (rebuilt only when a chunk is dirty), resolves per-block textures (Nearest)
-  and draws them with the frac-tiled `voxel` shader (so greedy-merged faces tile rather than stretch with the
-  clamp-only sampler). Registered as the `"RendererVoxel"` stack layer; `Scene::render` routes `VoxelWorld` entities
+  chunk, caches the GPU mesh per entity (rebuilt only when a chunk is dirty), binds the world's tileset atlas once
+  (Nearest), bakes each face's tile UV sub-rect into the vertex, and draws with the `voxel` shader, which frac-tiles
+  the tile across greedy-merged quads (`tileRect.xy + frac(uv)*tileRect.zw`) so faces tile rather than stretch with
+  the clamp-only sampler. Registered as the `"RendererVoxel"` stack layer; `Scene::render` routes `VoxelWorld` entities
   to it only when the active layer is voxel-capable (like the raycast path). Editor: component icon. Sample project:
   a `voxel_demo.owl` scene (perspective camera + a two-layer stone/grass platform) reachable from a **voxel house**
   built in the world-map tilemap (roof/wall/door tiles + a path, the door tile being an interaction-trigger
   teleporter, same style as the other houses). The world-map tilemap was enlarged (32×24 → 48×24) to leave room for
-  a future village of scene-demo houses. Headless tests cover the `voxel` shader compilation and layer registration. **The actual
-  voxel GPU draw is gated off for now**: the 3D draw path is not yet integrated with the Vulkan frame (render pass /
-  descriptors / fences / depth) and hangs the GPU, so voxel scenes load but draw nothing until the depth-aware
-  renderer PR wires the 3D path in properly and re-enables it.
+  a future village of scene-demo houses. Headless tests cover the `voxel` shader compilation and layer registration.
+- **Depth-aware rendering** — the editor viewport framebuffer now carries a `Depth24Stencil8` attachment, so 3D
+  geometry occludes correctly. `Renderer3D` enables depth test + write only around each mesh draw (2D layers stay
+  painter-ordered with depth off), and the Vulkan backend clears depth via the render pass (`loadOp=CLEAR`,
+  depth-only subpass dependency, clear-value array sized to the attachment count). This unblocks and **enables the
+  `RendererVoxel` GPU draw** — voxel scenes now render on screen. OpenGL gains depth automatically from the new
+  attachment; both backends start with depth test disabled and let `Renderer3D` scope it. The swapchain framebuffer
+  carries a matching depth attachment so every scene pipeline (2D + voxel) is render-pass compatible with both the
+  swapchain and the editor viewport target.
+- **Voxel worlds render in the editor viewport** — `Scene::renderWithStack` now runs a `RendererVoxel` layer pass
+  (with the viewport's 3D `CameraEditor`) after the flat 2D editor composite, so voxel worlds are visible and
+  navigable (orbit / pan / zoom) while editing, not only in Play. 2D scene rendering in the editor is unchanged.
+- **Voxel demo free-fly camera** — `scripts/voxel_fly_camera.lua` on the demo's perspective camera (WASD move,
+  Space / E up, Shift / Q down, arrow keys look) so the voxel world can be explored in Play.
 
 ### Changed
 
@@ -60,6 +73,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Renamed the mesh-iteration namespace `data::component` to `owl::data::meshrange` to disambiguate it from the
       ECS `scene::component`.
     - Documented the module-placement rules in `.claude/rules/module-layout.md` and `doc/pages/architecture.md`.
+
+### Fixed
+
+- **Vulkan validation hardening** (surfaced by running Owl Nest with the validation layers enabled):
+    - `VulkanCore::getQueueIndices()` now returns *distinct* queue families, so the swapchain is created with
+      `EXCLUSIVE` sharing instead of `CONCURRENT` with duplicate indices when graphics and present share a family
+      (`VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428`).
+    - Enabled the `shaderDrawParameters` device feature (Vulkan 1.1) required by the Slang-compiled vertex shaders'
+      `DrawParameters` capability (`VUID-VkShaderModuleCreateInfo-pCode-08740`, previously logged for every shader
+      module).
+    - `StorageBuffer` now clears its binding across all renderer descriptor blocks before its `VkBuffer` is
+      destroyed, so a freed handle is never written into a descriptor set on the next scene
+      (`VUID-VkDescriptorBufferInfo-buffer-parameter`).
+- **Vulkan batch-fence deadlock** — `VulkanHandler::beginBatch()` is now idempotent (`if (inBatch) return;`). A
+  renderer that opens a render batch (`Renderer3D::beginScene`) and never closes it left the in-flight fence reset
+  but unsignalled; the next `beginBatch()` in the same frame (e.g. `Renderer2D::flush` for a screen transition)
+  hung forever in `vkWaitForFences`. This was the freeze when entering a voxel scene.
+- **Vulkan render-pass incompatibility flood** (`VUID-vkCmdDrawIndexed-renderPass-02684` + the
+  `UPDATE_AFTER_BIND` invalid-command-buffer cascade it triggered, every editor frame) — the 2D pipelines are
+  created against the swapchain framebuffer's render pass, which lacked the depth attachment the editor viewport
+  target gained. Giving the swapchain framebuffer a matching `Depth24Stencil8` attachment makes all scene
+  framebuffers share one attachment layout, so the 2D and voxel pipelines are render-pass compatible with every
+  target. ImGui (its own depth-free subpass) and depth-test-off 2D draws are unaffected.
 
 ## [0.2.0] - 2026-06-02
 

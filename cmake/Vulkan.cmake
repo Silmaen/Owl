@@ -14,7 +14,7 @@ function(owl_target_link_vulkan target_name)
     target_link_libraries(${target_name} PRIVATE Vulkan::LayerSettings)
     target_link_libraries(${target_name} PRIVATE Vulkan::UtilityHeaders)
     # Vulkan layers
-    if (${PROJECT_PREFIX}_DEFINE_VULKAN_LAYERS)
+    if (${PROJECT_PREFIX}_ENABLE_VULKAN_LAYERS)
         if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
             set(${PROJECT_PREFIX}_VULKAN_LAYER_PATH ${VULKAN_DIR}/bin CACHE PATH "Vulkan layer path")
             set(${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH ${VULKAN_DIR}/bin CACHE PATH "Vulkan layer path")

@@ -460,6 +460,8 @@ void Scene::onStartRuntime() {
 		if (trigger.type == SceneTrigger::TriggerType::Timer)
 			trigger.startTimer();
 	}
+	// Drop cached voxel meshes from a previous run; prepareVoxelRenderData() rebuilds them against the depth target.
+	renderer::RendererVoxel::clearCache();
 	OWL_CORE_INFO("Scene::onStartRuntime: total {:.1f} ms.", ms(clk::now() - runtimeStart))
 }
 
@@ -852,6 +854,23 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 		render();
 		renderUI(iCamera.getViewProjection());
 		renderer::Renderer2D::endScene();
+		// The editor composite above is 2D-only; render 3D voxel layers as a separate pass so they show while editing.
+		if (editorMode) {
+			for (const auto& layer: stack.getLayers()) {
+				if (std::string_view{layer->getTypeKey()} != "RendererVoxel" ||
+					!layerHasContent(layer->getName(), false))
+					continue;
+				layer->setViewport(m_viewportSize);
+				layer->onBeginFrame(iCamera);
+				m_currentLayerName = layer->getName();
+				m_currentLayerIsFirst = false;
+				mp_currentLayer = layer.get();
+				renderVoxelWorlds(true);
+				layer->onEndFrame();
+			}
+			m_currentLayerName.clear();
+			mp_currentLayer = nullptr;
+		}
 		return;
 	}
 	renderer::Renderer2D::resetStats();
@@ -1064,6 +1083,16 @@ void Scene::renderTilemaps(const bool iEditorMode, const bool iRaycastLayer) {
 			continue;
 		}
 		renderer::RendererTilemap::drawTilemap(assetData, worldTransform, entityId);
+	}
+}
+
+void Scene::prepareVoxelRenderData() {
+	OWL_PROFILE_FUNCTION()
+
+	// Ensure tileset atlases are resolved before meshing (gated/cheap); the editor viewport drives this pre-Play.
+	resolveAllTilemapAssets();
+	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view) {
+		renderer::RendererVoxel::prepareWorld(view.get<component::VoxelWorld>(entity), static_cast<int>(entity));
 	}
 }
 
@@ -1395,6 +1424,13 @@ void Scene::resolveAllTilemapAssets() {
 			continue;
 		if (auto resolved = resolveTileset(push.tilesetPath); resolved)
 			push.tileset = std::move(resolved);
+	}
+	for (const auto view = registry.view<component::VoxelWorld>(); auto entity: view) {
+		auto& voxel = view.get<component::VoxelWorld>(entity);
+		if (voxel.tileset || voxel.tilesetPath.empty())
+			continue;
+		if (auto resolved = resolveTileset(voxel.tilesetPath); resolved)
+			voxel.tileset = std::move(resolved);
 	}
 
 	m_tilemapAssetsDirty = false;

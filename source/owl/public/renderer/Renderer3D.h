@@ -22,9 +22,10 @@ namespace owl::renderer {
  *  One vertex of a generic 3D mesh uploaded to `Renderer3D`.
  *
  * The layout mirrors the `mesh3d.slang` vertex input: object-space position,
- * normal (for the directional-light term), texture coordinate, and the index of
- * the texture slot to sample from the bound array. The struct is tightly packed
- * (36 bytes) so it can be uploaded straight into a vertex buffer.
+ * normal (for the directional-light term), texture coordinate, the index of the
+ * texture slot to sample from the bound array, and an atlas sub-rect used by
+ * frac-tiling shaders. The struct is tightly packed (52 bytes) so it can be
+ * uploaded straight into a vertex buffer.
  */
 struct Mesh3DVertex {
 	/// Object-space position.
@@ -35,6 +36,8 @@ struct Mesh3DVertex {
 	math::vec2 uv;
 	/// Index into the bound texture array (`0` is the default white texture).
 	uint32_t textureIndex = 0;
+	/// Atlas sub-rect `(uMin, vMin, uSize, vSize)` for frac-tiling shaders (`voxel`); `{0,0,1,1}` = full texture, ignored by `mesh3d`.
+	math::vec4 tileRect{0.f, 0.f, 1.f, 1.f};
 };
 
 /**

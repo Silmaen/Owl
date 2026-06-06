@@ -209,6 +209,19 @@ void RendererDescriptors::bindStorageBuffer(const uint32_t iBinding, VkBuffer iB
 	updateDescriptors();
 }
 
+void RendererDescriptors::unbindStorageBuffer(VkBuffer iBuffer) {
+	if (iBuffer == nullptr)
+		return;
+	for (auto* const desc: getRegistry() | std::views::values) {
+		for (auto& ssbo: desc->m_storageBindings | std::views::values) {
+			if (ssbo.buffer == iBuffer) {
+				ssbo.buffer = nullptr;
+				ssbo.size = 0;
+			}
+		}
+	}
+}
+
 void RendererDescriptors::resetTextureBind() { m_textureBind.clear(); }
 
 void RendererDescriptors::textureBind(const uint32_t iIndex) { m_textureBind.emplace_back(iIndex); }

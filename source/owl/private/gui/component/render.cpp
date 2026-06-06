@@ -1022,7 +1022,20 @@ void renderProps(VoxelWorld& ioComponent) {
 	const size_t blockCount = ioComponent.registry.count() > 0 ? ioComponent.registry.count() - 1 : 0;
 	ImGui::Text("Blocks: %zu", blockCount);
 	ImGui::Text("Chunks: %zu", ioComponent.world.chunkCount());
-	ImGui::Text("Block textures: %zu", ioComponent.blockTextures.size());
+	const std::string tilesetLabel =
+			ioComponent.tilesetPath.empty() ? "<drop a .owltileset>" : ioComponent.tilesetPath.generic_string();
+	ImGui::TextUnformatted("Tileset");
+	ImGui::SameLine();
+	if (ImGui::Button(tilesetLabel.c_str(), ImVec2(-1.f, 0.f))) {
+		ioComponent.tilesetPath.clear();
+		ioComponent.tileset.reset();
+	}
+	fieldTooltip("Drop a .owltileset asset here, or click to clear. Block face indices are tile indices into "
+				 "this atlas; the renderer maps each face to its tile's UV sub-rect.");
+	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Tileset, dropped)) {
+		ioComponent.tilesetPath = dropped.generic_string();
+		ioComponent.tileset.reset();// force lazy reload at next scene resolve
+	}
 	ImGui::Separator();
 	drawVec3Control("Sun Direction", ioComponent.sunDirection);
 	ImGui::ColorEdit3("Ambient", ioComponent.ambient.data());

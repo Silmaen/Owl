@@ -61,7 +61,8 @@ void RenderAPI::init() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glEnable(GL_DEPTH_TEST);
+	// Depth test stays off by default (2D is painter-ordered); Renderer3D enables it around 3D mesh draws.
+	glDisable(GL_DEPTH_TEST);
 	glEnable(GL_LINE_SMOOTH);
 
 	// renderer is now ready
