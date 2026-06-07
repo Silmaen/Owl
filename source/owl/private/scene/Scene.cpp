@@ -10,6 +10,7 @@
 #include "scene/Scene.h"
 
 #include "renderer/BackgroundRenderer.h"
+#include "renderer/Camera3DController.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
@@ -569,6 +570,18 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		if (auto& luaScript = view.get<component::LuaScript>(entity);
 			luaScript.instance && luaScript.instance->isValid())
 			luaScript.instance->onUpdate(iTimeStep.getSeconds());
+	}
+
+	for (const auto view = registry.view<component::Transform, component::FlyCamera>(); const auto entity: view) {
+		auto [transform, fly] = view.get<component::Transform, component::FlyCamera>(entity);
+		renderer::Camera3DController controller;
+		controller.setMoveSpeed(fly.moveSpeed);
+		controller.setLookSpeed(fly.lookSpeed);
+		controller.setPosition(transform.transform.translation());
+		controller.setEulerRotation(transform.transform.rotation());
+		controller.onUpdate(iTimeStep);
+		transform.transform.translation() = controller.getPosition();
+		transform.transform.rotation() = controller.getEulerRotation();
 	}
 
 	updateRaycastDynamicWalls(iTimeStep.getSeconds());
@@ -2112,5 +2125,9 @@ Scene::onComponentAdded<component::RaycastPushWall>([[maybe_unused]] const Entit
 template<>
 OWL_API void Scene::onComponentAdded<component::VoxelWorld>([[maybe_unused]] const Entity& iEntity,
 															[[maybe_unused]] component::VoxelWorld& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::FlyCamera>([[maybe_unused]] const Entity& iEntity,
+														   [[maybe_unused]] component::FlyCamera& ioComponent) {}
 
 }// namespace owl::scene

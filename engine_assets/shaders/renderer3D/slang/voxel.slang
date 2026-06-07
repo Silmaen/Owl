@@ -66,7 +66,12 @@ VertexOutput vertexMain(VertexInput input) {
 FragmentOutput fragmentMain(FragmentInput input) {
 	FragmentOutput output;
 	float2 atlasUv = input.tileRect.xy + frac(input.uv) * input.tileRect.zw;
-	float4 texColor = gTextures[NonUniformResourceIndex(input.texIndex)].Sample(atlasUv);
+	// frac() makes the auto-derivative spike at every block boundary, so anisotropic/linear sampling would smear
+	// across the tile edge (a seam line). Feed the continuous uv's gradient to SampleGrad so the footprint stays
+	// inside the tile.
+	float2 uvDdx = ddx(input.uv) * input.tileRect.zw;
+	float2 uvDdy = ddy(input.uv) * input.tileRect.zw;
+	float4 texColor = gTextures[NonUniformResourceIndex(input.texIndex)].SampleGrad(atlasUv, uvDdx, uvDdy);
 	if (texColor.a < 0.001f)
 		discard;
 	float ndl = max(dot(normalize(input.normal), normalize(-gScene.sunDirection.xyz)), 0.0f);

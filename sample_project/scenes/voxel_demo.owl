@@ -29,15 +29,9 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 0
-    LuaScript:
-      scriptPath: scripts/voxel_fly_camera.lua
-      properties:
-        - name: move_speed
-          type: float
-          value: 8
-        - name: look_speed
-          type: float
-          value: 1.5
+    FlyCamera:
+      MoveSpeed: 8
+      LookSpeed: 1.5
   - Entity: 3300000000000000002
     Tag:
       tag: VoxelTerrain
@@ -54,18 +48,48 @@ Entities:
     VoxelWorld:
       SunDirection: [-0.4, -1, -0.6]
       Ambient: [0.4, 0.4, 0.45]
-      Tileset: tilesets/world_platform.owltileset
+      Tileset: tilesets/voxel_blocks.owltileset
       Blocks:
         - id: 1
           name: stone
           render: Opaque
           solid: true
-          faces: [2, 2, 2, 2, 2, 2]
+          faces: [3, 3, 3, 3, 3, 3]
         - id: 2
           name: grass
           render: Opaque
           solid: true
-          faces: [1, 1, 1, 0, 1, 1]
+          faces: [1, 1, 2, 0, 1, 1]
+        - id: 3
+          name: dirt
+          render: Opaque
+          solid: true
+          faces: [2, 2, 2, 2, 2, 2]
+        - id: 4
+          name: sand
+          render: Opaque
+          solid: true
+          faces: [5, 5, 5, 5, 5, 5]
+        - id: 5
+          name: cobblestone
+          render: Opaque
+          solid: true
+          faces: [4, 4, 4, 4, 4, 4]
+        - id: 6
+          name: wood
+          render: Opaque
+          solid: true
+          faces: [7, 7, 6, 6, 7, 7]
+        - id: 7
+          name: planks
+          render: Opaque
+          solid: true
+          faces: [8, 8, 8, 8, 8, 8]
+        - id: 8
+          name: leaves
+          render: Opaque
+          solid: false
+          faces: [9, 9, 9, 9, 9, 9]
       Chunks:
         - Coord: [0, 0, 0]
-          Data: 256x1 256x2 3584x0
+          Data: 256x1 256x3 5x4 11x2 5x4 11x2 5x4 11x2 5x4 11x2 5x4 187x2 153x0 1x6 255x0 1x6 222x0 3x8 12x0 5x8 11x0 2x8 1x6 2x8 11x0 5x8 12x0 3x8 189x0 3x8 12x0 5x8 11x0 5x8 11x0 5x8 12x0 3x8 2373x0

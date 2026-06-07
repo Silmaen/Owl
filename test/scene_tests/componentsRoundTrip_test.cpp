@@ -445,3 +445,19 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 				EXPECT_FLOAT_EQ(vw.ambient.z(), 0.4f);
 			});
 }
+
+TEST(ComponentRoundTrip, FlyCamera) {
+	roundTrip(
+			"FlyCamera",
+			[](scene::Entity& iEnt) {
+				auto& fly = iEnt.addComponent<scene::component::FlyCamera>();
+				fly.moveSpeed = 12.5f;
+				fly.lookSpeed = 2.25f;
+			},
+			[](const scene::Entity& iEnt) {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::FlyCamera>());
+				const auto& fly = iEnt.getComponent<scene::component::FlyCamera>();
+				EXPECT_FLOAT_EQ(fly.moveSpeed, 12.5f);
+				EXPECT_FLOAT_EQ(fly.lookSpeed, 2.25f);
+			});
+}

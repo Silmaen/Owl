@@ -35,6 +35,17 @@ void GraphContext::init() {
 	int32_t textureUnits = 0;
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS, &textureUnits);
 	OWL_CORE_INFO(" Max texture slot per Shader: {}.", textureUnits)
+	int32_t combinedTextureUnits = 0;
+	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &combinedTextureUnits);
+	int32_t vertexSsbo = 0;
+	int32_t fragmentSsbo = 0;
+	int32_t combinedSsbo = 0;
+	glGetIntegerv(GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS, &vertexSsbo);
+	glGetIntegerv(GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS, &fragmentSsbo);
+	glGetIntegerv(GL_MAX_COMBINED_SHADER_STORAGE_BLOCKS, &combinedSsbo);
+	OWL_CORE_INFO("  Combined texture image units: {}.", combinedTextureUnits)
+	OWL_CORE_INFO("  Shader storage blocks: vertex={}, fragment={}, combined={}.", vertexSsbo, fragmentSsbo,
+				  combinedSsbo)
 }
 
 void GraphContext::swapBuffers() {

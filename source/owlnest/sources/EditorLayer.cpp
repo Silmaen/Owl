@@ -172,6 +172,7 @@ void buildIconBank() {
 		{"comp_ui_slider",    resolve("icons/components/ui_slider")},
 		{"comp_ui_progress",  resolve("icons/components/ui_progress")},
 		{"comp_voxel_world",  resolve("icons/components/voxel_world")},
+		{"comp_fly_camera",   resolve("icons/components/fly_camera")},
 	};
 	// clang-format on
 

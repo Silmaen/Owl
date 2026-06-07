@@ -103,10 +103,13 @@ void clearRect(std::vector<BlockId>& ioMask, const int32_t iU, const int32_t iV,
 }
 
 void emitQuad(ChunkMesh& ioMesh, const std::array<math::vec3, 4>& iPos, const math::vec3& iNormal, const float iW,
-			  const float iH, const uint32_t iTexture, const bool iFlip) {
+			  const float iH, const uint32_t iTexture, const bool iFlip, const bool iSwapUv) {
 	const auto base = static_cast<uint32_t>(ioMesh.vertices.size());
-	const std::array<math::vec2, 4> uv{math::vec2{0.f, 0.f}, math::vec2{iW, 0.f}, math::vec2{iW, iH},
-									   math::vec2{0.f, iH}};
+	// X-axis faces map U->world-Y, V->world-Z, rotating the texture 90 deg; swap UV there to keep its vertical up.
+	const std::array<math::vec2, 4> uv = iSwapUv ? std::array<math::vec2, 4>{math::vec2{0.f, 0.f}, math::vec2{0.f, iW},
+																			 math::vec2{iH, iW}, math::vec2{iH, 0.f}}
+												 : std::array<math::vec2, 4>{math::vec2{0.f, 0.f}, math::vec2{iW, 0.f},
+																			 math::vec2{iW, iH}, math::vec2{0.f, iH}};
 	for (size_t i = 0; i < 4; ++i)
 		ioMesh.vertices.push_back(
 				VoxelVertex{.position = iPos[i], .normal = iNormal, .uv = uv[i], .textureIndex = iTexture});
@@ -134,7 +137,8 @@ void emitSliceQuads(std::vector<BlockId>& ioMask, ChunkMesh& ioMesh, const int32
 					buildPos(iAxis, iU, iV, iPlane, static_cast<float>(i + width), static_cast<float>(j + height)),
 					buildPos(iAxis, iU, iV, iPlane, static_cast<float>(i), static_cast<float>(j + height))};
 			const auto texture = static_cast<uint32_t>(iRegistry.get(block).faceTexture(iFace));
-			emitQuad(ioMesh, pos, iNormal, static_cast<float>(width), static_cast<float>(height), texture, iFlip);
+			emitQuad(ioMesh, pos, iNormal, static_cast<float>(width), static_cast<float>(height), texture, iFlip,
+					 iAxis == 0);
 			i += width;
 		}
 	}

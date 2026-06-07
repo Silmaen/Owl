@@ -432,12 +432,22 @@ tradition — slotted between the existing 2D/raycast/voxel options.
         - Ambient occlusion per vertex for block edges — ![Planned][planned]
         - Water/transparent block rendering with proper sorting — ![Planned][planned]
     - ![Planned][planned] Voxel rendering follow-ups (deferred from the voxel PR)
-        - Repair the **OpenGL** backend for the depth/voxel path (the depth attachment + 3D draw path was validated on
-          Vulkan only; OpenGL regressed and needs fixing)
-        - **Richer block textures** for the demo world (distinct grass / earth / rock / … tiles) instead of the
-          placeholder platform atlas
-        - **Improve camera movement** — likely a reusable C++ 3D camera controller / movable camera object shared by the
-          editor viewport and Play, replacing the ad-hoc Lua fly script
+        - ![Done][done] Repair the **OpenGL** backend. Investigation found the depth/voxel path itself already worked on
+          OpenGL; the real regression (a prior gap from never exercising OpenGL) was that **all `Renderer2D` content was
+          invisible** because `gpu::opengl::UniformBuffer::bind()` was a no-op and the 2D / tilemap / 3D renderers share
+          the same global GL uniform binding 0, so the 2D shader read a stale/zero `viewProjection`. Fixed by making
+          `bind()` re-bind and re-asserting each renderer's UBO before its draws (OpenGL-only; Vulkan unaffected).
+        - ![Done][done] **Richer block textures** — dedicated `voxel_blocks` tileset (16 distinct block faces: grass
+          top/side, dirt, stone, cobblestone, sand, log top/side, planks, leaves, snow, gravel, brick, water, ice,
+          glass) anticipating future block types, replacing the borrowed platform atlas. The 2D platformer and
+          top-down world-map atlases were revised too (procedural generators in `generate_atlases.py`); raycast
+          textures left untouched.
+        - ![Done][done] **Improve camera movement** — reusable `renderer::Camera3DController` (free-fly /
+          first-person: position + yaw + pitch + tunable speeds, keyboard-driven, headless-tested) now backs the
+          Play-mode camera via the authored `scene::component::FlyCamera`, replacing the ad-hoc `voxel_fly_camera.lua`
+          (movement now tracks the camera's true facing — the Lua script had the yaw sign inverted). The controller is
+          built renderer-agnostic so the **editor viewport** can adopt it; that adoption rides with the v0.2.3 *Editor
+          camera controls overhaul*.
         - **Investigate the remaining Vulkan validation messages**: the single-shared-descriptor-set
           `UPDATE_AFTER_BIND` cascade (needs per-batch/ring descriptor sets, not the `UPDATE_AFTER_BIND` flag) and the
           5-object `vkDestroyDevice` teardown leak (`whiteTexture` + a descriptor-set layout)

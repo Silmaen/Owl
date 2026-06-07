@@ -44,7 +44,7 @@ auto packKey(const math::vec3i& iCoord) -> uint64_t {
 	return enc(iCoord.x()) | (enc(iCoord.y()) << 21) | (enc(iCoord.z()) << 42);
 }
 
-// Full atlas cell rect (uMin, vMin, uSize, vSize), no half-texel inset; the voxel shader frac-tiles it with Nearest.
+// Atlas cell rect inset by half a texel each side so the shader's frac(uv) tiling never bleeds the neighbour cell.
 auto tileRectFor(const scene::Tileset& iTileset, const uint16_t iTileIndex) -> math::vec4 {
 	const uint32_t cols = std::max(1u, iTileset.columns);
 	const uint32_t rows = std::max(1u, iTileset.rows);
@@ -52,9 +52,11 @@ auto tileRectFor(const scene::Tileset& iTileset, const uint16_t iTileIndex) -> m
 		return math::vec4{0.f, 0.f, 1.f, 1.f};
 	const uint32_t col = iTileIndex % cols;
 	const uint32_t row = iTileIndex / cols;
-	return math::vec4{static_cast<float>(col) / static_cast<float>(cols),
-					  1.f - static_cast<float>(row + 1) / static_cast<float>(rows), 1.f / static_cast<float>(cols),
-					  1.f / static_cast<float>(rows)};
+	const float halfU = 0.5f / (static_cast<float>(cols) * static_cast<float>(std::max(1u, iTileset.tileWidth)));
+	const float halfV = 0.5f / (static_cast<float>(rows) * static_cast<float>(std::max(1u, iTileset.tileHeight)));
+	return math::vec4{static_cast<float>(col) / static_cast<float>(cols) + halfU,
+					  1.f - static_cast<float>(row + 1) / static_cast<float>(rows) + halfV,
+					  1.f / static_cast<float>(cols) - 2.f * halfU, 1.f / static_cast<float>(rows) - 2.f * halfV};
 }
 
 auto buildChunkMesh(const data::voxel::Chunk& iChunk, const data::voxel::BlockRegistry& iRegistry,

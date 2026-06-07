@@ -1,0 +1,24 @@
+Tileset: voxel_blocks
+Version: 1
+texture: nam:textures/voxel_blocks.png
+tileWidth: 64
+tileHeight: 64
+columns: 4
+rows: 4
+tiles:
+  - { index: 0, name: "grass_top" }
+  - { index: 1, name: "grass_side" }
+  - { index: 2, name: "dirt" }
+  - { index: 3, name: "stone" }
+  - { index: 4, name: "cobblestone" }
+  - { index: 5, name: "sand" }
+  - { index: 6, name: "log_top" }
+  - { index: 7, name: "log_side" }
+  - { index: 8, name: "planks" }
+  - { index: 9, name: "leaves" }
+  - { index: 10, name: "snow" }
+  - { index: 11, name: "gravel" }
+  - { index: 12, name: "brick" }
+  - { index: 13, name: "water" }
+  - { index: 14, name: "ice" }
+  - { index: 15, name: "glass" }

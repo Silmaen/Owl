@@ -168,9 +168,17 @@ A voxel world reaches the screen through two pieces:
   tile rather than stretch. The entity must carry a `RendererTag` routing it to the voxel layer; `Scene::render`
   only draws voxel worlds when the active layer is voxel-capable (mirroring the raycast path).
 
-The sample project ships a `voxel_demo.owl` scene (a stone/grass platform under a perspective camera), reachable
+The sample project ships a `voxel_demo.owl` scene — a layered stone / dirt / grass terrain with a sand beach and a
+leaf-canopy tree, textured from the dedicated `voxel_blocks` tileset (16 block faces: grass, dirt, stone, sand, wood,
+leaves, … with room for future block types) — under a perspective camera, reachable
 from a **Voxel House** on the world map. Voxels currently render in **Play mode** — the editor viewport still uses
 the 2D top-down pass, so a dedicated 3D editor viewport is a later effort.
+
+To explore the world in Play, add a `scene::component::FlyCamera` to the perspective-camera entity (the demo does
+this): the scene drives the entity transform from a reusable `renderer::Camera3DController` each runtime frame —
+**WASD** moves in the facing plane, **Space / E** rises, **Left-Shift / Q** descends and the **arrow keys** look
+around. The move / look speeds are editable in the inspector. The same controller is designed to back the editor
+viewport once the 3D editor camera overhaul lands.
 
 ## What's Next
 

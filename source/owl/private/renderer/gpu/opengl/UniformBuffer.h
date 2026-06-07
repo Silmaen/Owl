@@ -42,9 +42,14 @@ public:
 
 	/**
 	 * @brief
-	 *  bind this uniform buffer.
+	 *  Re-bind this uniform buffer to its binding point.
+	 *
+	 * OpenGL uniform-buffer bindings are global state shared by every renderer:
+	 * several renderers create a UBO at the same binding (e.g. 0), so the last
+	 * one constructed wins. Renderers must call this before their draws to make
+	 * their own UBO current at draw time.
 	 */
-	void bind() override {}
+	void bind() override;
 
 	/**
 	 * @brief
@@ -58,5 +63,7 @@ public:
 private:
 	/// The renderer's ID.
 	uint32_t m_rendererId = 0;
+	/// Uniform-buffer binding point this UBO targets.
+	uint32_t m_binding = 0;
 };
 }// namespace owl::renderer::gpu::opengl

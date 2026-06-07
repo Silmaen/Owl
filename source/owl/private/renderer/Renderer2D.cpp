@@ -337,6 +337,9 @@ void Renderer2D::flush() {
 
 	RendererTilemap::flushPending();
 
+	// Re-assert our camera UBO: siblings share OpenGL uniform binding 0, last-bound wins (no-op on Vulkan).
+	g_Data->cameraUniformBuffer->bind();
+
 	if (!g_Data->quad.instances.empty()) {
 		const auto count = static_cast<uint32_t>(g_Data->quad.instances.size());
 		g_Data->quad.ssbo->setData(g_Data->quad.instances.data(),
