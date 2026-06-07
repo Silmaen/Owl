@@ -54,8 +54,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Voxel worlds render in the editor viewport** — `Scene::renderWithStack` now runs a `RendererVoxel` layer pass
   (with the viewport's 3D `CameraEditor`) after the flat 2D editor composite, so voxel worlds are visible and
   navigable (orbit / pan / zoom) while editing, not only in Play. 2D scene rendering in the editor is unchanged.
-- **Voxel demo free-fly camera** — `scripts/voxel_fly_camera.lua` on the demo's perspective camera (WASD move,
-  Space / E up, Shift / Q down, arrow keys look) so the voxel world can be explored in Play.
+- **Reusable 3D fly-camera controller** — `renderer::Camera3DController`, a renderer-agnostic free-fly / first-person
+  camera (position + yaw + pitch + tunable move / look speeds, clamped pitch) that turns keyboard input into motion
+  (WASD move, Space / E up, Left-Shift / Q down, arrow keys look) and exposes the camera basis, transform and view
+  matrix. Designed for sharing between the editor viewport and Play. Headless unit tests cover the basis, movement,
+  pitch clamping, Euler round-trip and the input-driven update.
+- **`FlyCamera` scene component** — `scene::component::FlyCamera` attaches the fly controller to a camera entity:
+  the scene drives the entity transform from `Camera3DController` each runtime frame. Replaces the demo's
+  `voxel_fly_camera.lua` (removed) for exploring 3D scenes in Play. Authored object with full editor support
+  (inspector speed fields, component icon, Add-Component entry, serialization round-trip test). The orientation now
+  tracks the camera's true facing (the Lua script had the yaw sign inverted, so movement matched the look direction
+  only at yaw 0).
+- **Dedicated voxel block textures** — new `tilesets/voxel_blocks.owltileset` (+ procedurally generated
+  `textures/voxel_blocks.png`, a 4×4 / 64 px atlas) with 16 distinct block faces (grass top/side, dirt, stone,
+  cobblestone, sand, log top/side, planks, leaves, snow, gravel, brick, water, ice, glass) to anticipate future block
+  types. `voxel_demo.owl` now uses it (proper grass-top / grass-side / dirt / stone blocks, a sand beach, and a
+  leaf-canopy tree) instead of borrowing the 2D platformer atlas. Texture generators live in
+  `sample_project/textures/generate_atlases.py`.
+- **Revised world atlases** — regenerated `textures/world_platform.png` (2D platformer: floor, platform, brick wall,
+  ladder, lava, spikes, background, victory zone) and `textures/world_topdown.png` (world map: grass, paths, mountain,
+  water, house parts, tree, flowers, bridge, teleporter, mushroom, fence, sign) with clearer, distinct procedural tiles
+  (same grid / tile names, so existing scenes are unchanged). The raycast atlases are deliberately left untouched.
 
 ### Changed
 
@@ -76,7 +95,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **Vulkan validation hardening** (surfaced by running Owl Nest with the validation layers enabled):
+- **Voxel texture borders / atlas bleeding** — two causes fixed: (1) the voxel renderer's per-face `tileRect` was the
+  full atlas cell with no inset, so the shader's `frac(uv)` tiling sampled the neighbouring tile at the 0/1 seam —
+  `tileRectFor` now insets the rect by half a texel on each side (matching `scene::Tileset::getTileUv` on the 2D
+  path); (2) the voxel block textures were not self-tileable, so every block boundary on a greedy-merged face showed a
+  seam — the generators now use seamless wrapping value-noise and patterns whose period divides 64; (3) the Vulkan
+  sampler is linear + anisotropic, and `frac(uv)` makes the auto-derivative spike at each block boundary, so the
+  anisotropic footprint smeared across the tile edge — the `voxel` shader now samples with `SampleGrad`, feeding the
+  continuous (un-`frac`-ed) uv gradient so the footprint stays inside the tile.
+- **OpenGL: all `Renderer2D` content was invisible** (sprites, text, circles, UI — only the background and 3D voxel
+  meshes drew). `gpu::opengl::UniformBuffer::bind()` was a no-op and only bound at construction, but `Renderer2D`,
+  `RendererTilemap` and `Renderer3D` all create their camera/scene UBO at the same OpenGL uniform binding (0), which is
+  global state (unlike Vulkan's per-renderer descriptors). The last UBO constructed stayed bound, so the 2D vertex
+  shader read a stale or zero `viewProjection` and collapsed every quad off-screen. `bind()` now re-binds via
+  `glBindBufferBase`, and `Renderer2D` / `RendererTilemap` / `Renderer3D` re-assert their UBO before drawing
+  (`RendererRaycast` already did). OpenGL-only — `bind()` stays a no-op on Vulkan, which was unaffected.
     - `VulkanCore::getQueueIndices()` now returns *distinct* queue families, so the swapchain is created with
       `EXCLUSIVE` sharing instead of `CONCURRENT` with duplicate indices when graphics and present share a family
       (`VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428`).

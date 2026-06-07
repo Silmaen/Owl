@@ -250,6 +250,8 @@ void RendererTilemap::flushPending() {
 
 	g_state->drawData->setInstanceData(g_state->instanceScratch.data(),
 									   static_cast<uint32_t>(drawn * sizeof(CellInstance)));
+	// Re-assert our camera UBO: siblings share OpenGL uniform binding 0, last-bound wins (no-op on Vulkan).
+	g_state->cameraUbo->bind();
 	gpu::RenderCommand::drawDataInstanced(g_state->drawData, /*iIndexCount=*/6u, drawn);
 	++g_state->stats.drawCallCount;
 	g_state->stats.instanceCount += drawn;

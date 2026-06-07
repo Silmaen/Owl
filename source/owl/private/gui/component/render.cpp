@@ -1041,4 +1041,11 @@ void renderProps(VoxelWorld& ioComponent) {
 	ImGui::ColorEdit3("Ambient", ioComponent.ambient.data());
 }
 
+void renderProps(FlyCamera& ioComponent) {
+	ImGui::DragFloat("Move Speed", &ioComponent.moveSpeed, 0.1f, 0.1f, 200.f, "%.2f");
+	fieldTooltip("Translation speed in world units per second (WASD move, Space/E up, Left-Shift/Q down).");
+	ImGui::DragFloat("Look Speed", &ioComponent.lookSpeed, 0.05f, 0.05f, 10.f, "%.2f");
+	fieldTooltip("Rotation speed in radians per second for the arrow-key look controls.");
+}
+
 }// namespace owl::gui::component

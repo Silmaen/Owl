@@ -124,6 +124,8 @@ void Renderer3D::drawMesh(const MeshHandle& iMesh, const math::mat4& iModel,
 
 	g_Data->scene.model = iModel;
 	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);
+	// Re-assert our scene UBO: siblings share OpenGL uniform binding 0, last-bound wins (no-op on Vulkan).
+	g_Data->sceneUniformBuffer->bind();
 
 	gpu::RenderCommand::beginTextureLoad();
 	g_Data->whiteTexture->bind(0);
