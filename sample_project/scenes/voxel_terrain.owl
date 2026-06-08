@@ -1,4 +1,4 @@
-Scene: VoxelDemo
+Scene: VoxelTerrain
 EnabledRenderers:
   - Name: world
     Enabled: false
@@ -7,12 +7,12 @@ EnabledRenderers:
   - Name: ui
     Enabled: false
 Entities:
-  - Entity: 3300000000000000001
+  - Entity: 3400000000000000001
     Tag:
-      tag: VoxelCamera
+      tag: TerrainCamera
     Transform:
-      translation: [8, 14, 26]
-      rotation: [-0.45, 0, 0]
+      translation: [8, 48, 40]
+      rotation: [-0.5, 0, 0]
       scale: [1, 1, 1]
     Camera:
       camera:
@@ -30,11 +30,11 @@ Entities:
     Hierarchy:
       parentId: 0
     FlyCamera:
-      MoveSpeed: 8
+      MoveSpeed: 16
       LookSpeed: 1.5
-  - Entity: 3300000000000000002
+  - Entity: 3400000000000000002
     Tag:
-      tag: VoxelTerrain
+      tag: ProceduralTerrain
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -49,6 +49,24 @@ Entities:
       SunDirection: [-0.4, -1, -0.6]
       Ambient: [0.4, 0.4, 0.45]
       Tileset: tilesets/voxel_blocks.owltileset
+      ProceduralTerrain: true
+      StreamRadius: 4
+      StreamHeight: 2
+      Terrain:
+        Seed: 1337
+        Frequency: 0.025
+        Octaves: 4
+        Lacunarity: 2
+        Persistence: 0.5
+        BaseHeight: 16
+        Amplitude: 18
+        SeaLevel: 10
+        DirtDepth: 4
+        CaveFrequency: 0.08
+        CaveThreshold: 0.55
+        Biomes: true
+        BiomeFrequency: 0.006
+        BlockIds: [1, 2, 3, 4, 5, 6]
       Blocks:
         - id: 1
           name: stone
@@ -71,25 +89,12 @@ Entities:
           solid: true
           faces: [5, 5, 5, 5, 5, 5]
         - id: 5
-          name: cobblestone
-          render: Opaque
-          solid: true
-          faces: [4, 4, 4, 4, 4, 4]
-        - id: 6
-          name: wood
-          render: Opaque
-          solid: true
-          faces: [7, 7, 6, 6, 7, 7]
-        - id: 7
-          name: planks
-          render: Opaque
-          solid: true
-          faces: [8, 8, 8, 8, 8, 8]
-        - id: 8
-          name: leaves
+          name: water
           render: Opaque
           solid: false
-          faces: [9, 9, 9, 9, 9, 9]
-      Chunks:
-        - Coord: [0, 0, 0]
-          Data: 256x1 256x3 5x4 11x2 5x4 11x2 5x4 11x2 5x4 11x2 5x4 187x2 153x0 1x6 255x0 1x6 222x0 3x8 12x0 5x8 11x0 2x8 1x6 2x8 11x0 5x8 12x0 3x8 189x0 3x8 12x0 5x8 11x0 5x8 11x0 5x8 12x0 3x8 2373x0
+          faces: [13, 13, 13, 13, 13, 13]
+        - id: 6
+          name: snow
+          render: Opaque
+          solid: true
+          faces: [10, 10, 10, 10, 10, 10]

@@ -33,6 +33,8 @@ namespace owl::scene {
 
 class Entity;
 class ScriptableEntity;
+/// Shared sink for asynchronously generated voxel chunks (defined in Scene.cpp).
+struct VoxelStreamState;
 
 /**
  * @brief
@@ -585,6 +587,17 @@ private:
 
 	/**
 	 * @brief
+	 *  Stream procedural voxel chunks in and out around a camera position.
+	 *
+	 * For each `VoxelWorld` with `proceduralTerrain`, generates missing chunks
+	 * within the streaming radius (budgeted per frame) from its `TerrainGenerator`
+	 * and removes chunks that fell outside it. No-op for authored voxel worlds.
+	 * @param[in] iCameraWorldPos The camera position in world space.
+	 */
+	void updateVoxelStreaming(const math::vec3& iCameraWorldPos);
+
+	/**
+	 * @brief
 	 *  Resolve every tilemap component's `.owltilemap` asset and its associated `.owltileset`.
 	 *
 	 * Two-phase pass over every `Tilemap` component in the scene:
@@ -692,6 +705,9 @@ private:
 	 * `Renderer2D` quad loop).
 	 */
 	const renderer::RenderLayer* mp_currentLayer = nullptr;
+
+	/// Shared sink collecting worker-generated voxel chunks for `updateVoxelStreaming` to install on the main thread.
+	shared<VoxelStreamState> m_voxelStream;
 
 	friend class Entity;
 	friend class ScriptableEntity;

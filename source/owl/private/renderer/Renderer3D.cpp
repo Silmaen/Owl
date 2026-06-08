@@ -144,4 +144,37 @@ void Renderer3D::drawMesh(const MeshHandle& iMesh, const math::mat4& iModel,
 	gpu::RenderCommand::setDepthTest(false);
 }
 
+void Renderer3D::drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat4& iModel,
+							std::span<const shared<gpu::Texture2D>> iTextures) {
+	OWL_PROFILE_FUNCTION()
+
+	if (iMeshes.empty())
+		return;
+	const gpu::RendererDescriptors::ScopedActive scoped{k_RendererKey};
+
+	g_Data->scene.model = iModel;
+	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);
+	g_Data->sceneUniformBuffer->bind();
+
+	gpu::RenderCommand::beginTextureLoad();
+	g_Data->whiteTexture->bind(0);
+	uint32_t slot = 1;
+	for (const auto& texture: iTextures) {
+		if (texture && slot < k_MaxTextureSlots) {
+			texture->bind(slot);
+			++slot;
+		}
+	}
+	gpu::RenderCommand::endTextureLoad();
+
+	gpu::RenderCommand::setDepthTest(true);
+	for (const auto& mesh: iMeshes) {
+		if (!mesh || mesh->getIndexCount() == 0)
+			continue;
+		mesh->bind();
+		gpu::RenderCommand::drawData(mesh, mesh->getIndexCount());
+	}
+	gpu::RenderCommand::setDepthTest(false);
+}
+
 }// namespace owl::renderer

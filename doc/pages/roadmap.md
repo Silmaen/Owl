@@ -405,10 +405,19 @@ tradition — slotted between the existing 2D/raycast/voxel options.
         - Greedy meshing or similar algorithm for efficient geometry — ![Done][done] `ChunkMesher` (greedy, per-axis)
         - Only exposed faces rendered (hidden face culling) — ![Done][done] visible-face-only, cross-chunk via provider
         - Frustum culling per chunk — ![Planned][planned] (renderer-side, lands with `RendererVoxel`)
-    - ![Planned][planned] Terrain generation
-        - Procedural terrain via noise functions (Perlin/Simplex)
-        - Configurable biomes, terrain height, cave generation
-        - Seed-based reproducible worlds
+    - ![Done][done] Terrain generation
+        - Procedural terrain via noise functions — ![Done][done] home-grown `math::PerlinNoise` (2D/3D + fBm,
+          seeded, dependency-free, headless-tested)
+        - Configurable terrain height + cave generation, seed-based reproducible worlds, **biomes** (low-frequency
+          biome field → desert / plains / snow / mountain surface) — ![Done][done] `data::voxel::TerrainGenerator`
+          (height-field layering, shoreline sand, optional sea fill, 3D-noise caves; headless-tested)
+        - Chunk streaming around the camera + editor params / Regenerate + demo scene — ![Done][done]
+          (`VoxelWorld.proceduralTerrain` + `Scene::updateVoxelStreaming`, load/unload around the camera, mesh-cache
+          pruning, inspector params, `voxel_terrain.owl` reachable from the world-map voxel house). Generation runs
+          **asynchronously on the task `Scheduler`** (workers fill chunks, main thread installs them) so movement
+          doesn't hitch.
+    - ![Planned][planned] Voxel player (next PR) — a controllable player in a voxel world: walk / run / jump with
+      gravity and **AABB-vs-voxel collision** (no world editing). Reuses the streamed `VoxelWorld` for the solid set.
     - ![Planned][planned] Block interaction
         - Block placement and destruction
         - Block picking (raycast from camera to find targeted block)
