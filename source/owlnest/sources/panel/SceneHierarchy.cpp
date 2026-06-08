@@ -65,6 +65,7 @@ auto componentIconName(const char* iCompName) -> const char* {
 			{"UI Slider", "comp_ui_slider"},     {"UI Progress Bar", "comp_ui_progress"},
 			{"Prefab Link", "prefab_icon"},      {"Tilemap", "owltileset_icon"},
 			{"Voxel World", "comp_voxel_world"}, {"Fly Camera", "comp_fly_camera"},
+			{"Voxel Player", "comp_player"},
 	};
 	if (const auto it = map.find(iCompName); it != map.end())
 		return it->second;

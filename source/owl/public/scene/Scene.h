@@ -598,6 +598,27 @@ private:
 
 	/**
 	 * @brief
+	 *  Drive `VoxelPlayer` entities: input, gravity, jump, and AABB-vs-voxel collision against every `VoxelWorld`.
+	 * @param[in] iTimeStep Elapsed time for this frame.
+	 */
+	void updateVoxelPlayers(const core::Timestep& iTimeStep);
+
+	/**
+	 * @brief
+	 *  Show a transient on-screen message (e.g. "Fly mode ON") for a few seconds.
+	 * @param[in] iMessage The message text.
+	 * @param[in] iSeconds How long to keep it on screen.
+	 */
+	void showToast(const std::string& iMessage, float iSeconds = 3.f);
+
+	/**
+	 * @brief
+	 *  Draw the active transient toast message as a screen-space overlay.
+	 */
+	void renderToast();
+
+	/**
+	 * @brief
 	 *  Resolve every tilemap component's `.owltilemap` asset and its associated `.owltileset`.
 	 *
 	 * Two-phase pass over every `Tilemap` component in the scene:
@@ -708,6 +729,11 @@ private:
 
 	/// Shared sink collecting worker-generated voxel chunks for `updateVoxelStreaming` to install on the main thread.
 	shared<VoxelStreamState> m_voxelStream;
+
+	/// Transient on-screen message text (drawn while `m_toastTimer` is positive).
+	std::string m_toastMessage;
+	/// Remaining display time for `m_toastMessage` in seconds.
+	float m_toastTimer = 0.f;
 
 	friend class Entity;
 	friend class ScriptableEntity;

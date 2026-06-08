@@ -9,6 +9,7 @@
 #include "RunnerLayer.h"
 
 #include <input/Input.h>
+#include <input/KeyCodes.h>
 #include <input/MouseCode.h>
 #include <physics/PhysicCommand.h>
 #include <scene/SaveManager.h>
@@ -17,6 +18,7 @@
 #include <scene/SettingsManager.h>
 #include <scene/UiInputSystem.h>
 #include <scene/component/components.h>
+#include <window/Window.h>
 
 #include <chrono>
 
@@ -44,6 +46,16 @@ auto isSubdir(const std::filesystem::path& iFile, const std::filesystem::path& i
 		return relative(iFile, iDir);
 	}
 	return std::nullopt;
+}
+
+void updateCursorCapture() {
+	auto& window = app::Application::get().getWindow();
+	if (window.getCursorMode() == window::CursorMode::Normal) {
+		if (input::Input::isMouseButtonPressed(input::mouse::ButtonLeft))
+			window.setCursorMode(window::CursorMode::Disabled);
+	} else if (input::Input::isKeyPressed(input::key::Escape)) {
+		window.setCursorMode(window::CursorMode::Normal);
+	}
 }
 }// namespace
 
@@ -308,6 +320,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 														 input::Input::getMousePos().y()};
 					scene::UiInputSystem::update(m_activeScene.get(), m_viewportSize, mousePos,
 												 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft));
+					updateCursorCapture();
 					m_activeScene->onUpdateRuntime(iTimeStep);
 					// Handle quit request from Lua (scene.quit()).
 					if (m_activeScene->quitRequested) {

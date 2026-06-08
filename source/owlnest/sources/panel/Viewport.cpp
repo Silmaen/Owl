@@ -214,6 +214,11 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	// Build voxel GPU resources while the depth FB is bound and no pass records (correct RP, no in-pass upload).
 	activeScene->prepareVoxelRenderData();
 
+	// Never leave the cursor captured outside Play (e.g. after Stop), or it would be stuck hidden in the editor.
+	if (mp_document->state() != SceneDocument::State::Play &&
+		app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled)
+		app::Application::get().getWindow().setCursorMode(window::CursorMode::Normal);
+
 	switch (mp_document->state()) {
 		case SceneDocument::State::Edit:
 			{
@@ -222,6 +227,14 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 			}
 		case SceneDocument::State::Play:
 			{
+				// Mouse-look capture: click the viewport to grab the cursor (hidden/locked), Esc or losing focus frees it.
+				auto& window = app::Application::get().getWindow();
+				if (window.getCursorMode() == window::CursorMode::Normal) {
+					if (m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+						window.setCursorMode(window::CursorMode::Disabled);
+				} else if (input::Input::isKeyPressed(input::key::Escape) || !m_focused) {
+					window.setCursorMode(window::CursorMode::Normal);
+				}
 				// UiRect uses Y=0 at bottom; ImGui mouse Y=0 at top → always flip.
 				const math::vec2 vpMouse = {mx, viewportSizeInternal.y() - my};
 				const bool mousePressed = ImGui::IsMouseDown(ImGuiMouseButton_Left);

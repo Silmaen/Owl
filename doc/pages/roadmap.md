@@ -416,8 +416,15 @@ tradition — slotted between the existing 2D/raycast/voxel options.
           pruning, inspector params, `voxel_terrain.owl` reachable from the world-map voxel house). Generation runs
           **asynchronously on the task `Scheduler`** (workers fill chunks, main thread installs them) so movement
           doesn't hitch.
-    - ![Planned][planned] Voxel player (next PR) — a controllable player in a voxel world: walk / run / jump with
-      gravity and **AABB-vs-voxel collision** (no world editing). Reuses the streamed `VoxelWorld` for the solid set.
+    - ![Done][done] Voxel player — `scene::component::VoxelPlayer`: first-person walk / run / jump with gravity and
+      **AABB-vs-voxel collision** (pure headless-tested `data::voxel::moveAabb`, per-axis resolve + sub-stepping), no
+      world editing. Drives the camera entity against every `VoxelWorld` solid set; the `voxel_terrain.owl` demo
+      spawns the player on the streamed terrain.
+        - **Mouse-look** via `window::Window::setCursorMode` (`CursorMode::Normal`/`Disabled`): left-click captures the
+          cursor, Escape releases it (editor also releases on focus-loss / leaving Play); wired in both editor Viewport
+          and runner.
+        - **Fly mode** (double-tap Space): horizontal WASD + Space/Shift altitude, collision-resolved; **J** toggles
+          super-speed. Transient ~3 s on-screen toast confirms each toggle.
     - ![Planned][planned] Block interaction
         - Block placement and destruction
         - Block picking (raycast from camera to find targeted block)

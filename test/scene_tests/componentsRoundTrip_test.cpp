@@ -461,3 +461,27 @@ TEST(ComponentRoundTrip, FlyCamera) {
 				EXPECT_FLOAT_EQ(fly.lookSpeed, 2.25f);
 			});
 }
+
+TEST(ComponentRoundTrip, VoxelPlayer) {
+	roundTrip(
+			"VoxelPlayer",
+			[](scene::Entity& iEnt) {
+				auto& vp = iEnt.addComponent<scene::component::VoxelPlayer>();
+				vp.walkSpeed = 6.5f;
+				vp.runSpeed = 11.f;
+				vp.jumpSpeed = 9.25f;
+				vp.gravity = 22.f;
+				vp.lookSpeed = 2.f;
+				vp.halfExtents = {0.35f, 0.95f, 0.35f};
+			},
+			[](const scene::Entity& iEnt) {
+				ASSERT_TRUE(iEnt.hasComponent<scene::component::VoxelPlayer>());
+				const auto& vp = iEnt.getComponent<scene::component::VoxelPlayer>();
+				EXPECT_FLOAT_EQ(vp.walkSpeed, 6.5f);
+				EXPECT_FLOAT_EQ(vp.runSpeed, 11.f);
+				EXPECT_FLOAT_EQ(vp.jumpSpeed, 9.25f);
+				EXPECT_FLOAT_EQ(vp.gravity, 22.f);
+				EXPECT_FLOAT_EQ(vp.lookSpeed, 2.f);
+				EXPECT_NEAR(vp.halfExtents.y(), 0.95f, 0.001f);
+			});
+}

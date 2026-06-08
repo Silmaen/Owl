@@ -29,6 +29,7 @@
 #include "core/task/Scheduler.h"
 #include "core/task/Task.h"
 #include "data/voxel/Chunk.h"
+#include "data/voxel/VoxelCollision.h"
 #include "input/Input.h"
 #include "physics/PhysicCommand.h"
 #include "scene/ScreenTransition.h"
@@ -37,6 +38,7 @@
 #include "script/ScriptInstance.h"
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
+#include "window/Window.h"
 
 #include <limits>
 #include <mutex>
@@ -506,6 +508,7 @@ void Scene::onEndRuntime() {
 void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender) {
 	OWL_PROFILE_FUNCTION()
 
+	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
 	m_visibilityCache.clear();
 	m_layerContentCacheFirst.clear();
 	m_layerContentCacheNotFirst.clear();
@@ -601,6 +604,8 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		transform.transform.translation() = controller.getPosition();
 		transform.transform.rotation() = controller.getEulerRotation();
 	}
+
+	updateVoxelPlayers(iTimeStep);
 
 	updateRaycastDynamicWalls(iTimeStep.getSeconds());
 
@@ -787,9 +792,10 @@ void Scene::onRenderRuntime() {
 	m_worldTransformCacheActive = false;
 }
 
-void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, const renderer::Camera& iCamera) {
+void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
+	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
 	m_visibilityCache.clear();
 	m_layerContentCacheFirst.clear();
 	m_layerContentCacheNotFirst.clear();
@@ -906,6 +912,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 			m_currentLayerName.clear();
 			mp_currentLayer = nullptr;
 		}
+		renderToast();
 		return;
 	}
 	renderer::Renderer2D::resetStats();
@@ -927,6 +934,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	m_currentLayerName.clear();
 	m_currentLayerIsFirst = true;
 	mp_currentLayer = nullptr;
+	renderToast();
 }
 
 void Scene::render() {
@@ -1232,6 +1240,194 @@ void Scene::updateVoxelStreaming(const math::vec3& iCameraWorldPos) {
 			}
 		}
 	}
+}
+
+namespace {
+
+void applyPlayerLook(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform, const float iDt,
+					 const bool iCursorCaptured) {
+	if (iCursorCaptured) {
+		const math::vec2 mouse = input::Input::getMousePos();
+		if (ioPlayer.mouseValid) {
+			ioPlayer.yaw -= (mouse.x() - ioPlayer.lastMouse.x()) * ioPlayer.mouseSensitivity;
+			ioPlayer.pitch -= (mouse.y() - ioPlayer.lastMouse.y()) * ioPlayer.mouseSensitivity;
+		}
+		ioPlayer.lastMouse = mouse;
+		ioPlayer.mouseValid = true;
+	} else {
+		ioPlayer.mouseValid = false;
+	}
+	if (input::Input::isKeyPressed(input::key::Left))
+		ioPlayer.yaw += ioPlayer.lookSpeed * iDt;
+	if (input::Input::isKeyPressed(input::key::Right))
+		ioPlayer.yaw -= ioPlayer.lookSpeed * iDt;
+	if (input::Input::isKeyPressed(input::key::Up))
+		ioPlayer.pitch += ioPlayer.lookSpeed * iDt;
+	if (input::Input::isKeyPressed(input::key::Down))
+		ioPlayer.pitch -= ioPlayer.lookSpeed * iDt;
+	ioPlayer.pitch = std::clamp(ioPlayer.pitch, -1.5f, 1.5f);
+	ioTransform.rotation() = math::vec3{ioPlayer.pitch, ioPlayer.yaw, 0.f};
+}
+
+auto updatePlayerModes(component::VoxelPlayer& ioPlayer, const float iDt) -> std::string {
+	std::string toast;
+	ioPlayer.doubleTapTimer = std::max(0.f, ioPlayer.doubleTapTimer - iDt);
+	const bool space = input::Input::isKeyPressed(input::key::Space);
+	if (const bool spaceEdge = space && !ioPlayer.spaceWasPressed; spaceEdge) {
+		if (ioPlayer.doubleTapTimer > 0.f) {
+			ioPlayer.flyMode = !ioPlayer.flyMode;
+			ioPlayer.velocityY = 0.f;
+			ioPlayer.doubleTapTimer = 0.f;
+			if (!ioPlayer.flyMode)
+				ioPlayer.superSpeed = false;
+			toast = ioPlayer.flyMode ? "Fly mode ON" : "Fly mode OFF";
+		} else {
+			ioPlayer.doubleTapTimer = 0.3f;
+		}
+	}
+	ioPlayer.spaceWasPressed = space;
+	const bool superKey = input::Input::isKeyPressed(input::key::J);
+	if (const bool superEdge = superKey && !ioPlayer.superSpeedWasPressed; superEdge && ioPlayer.flyMode) {
+		ioPlayer.superSpeed = !ioPlayer.superSpeed;
+		toast = ioPlayer.superSpeed ? "Super speed ON" : "Super speed OFF";
+	}
+	ioPlayer.superSpeedWasPressed = superKey;
+	return toast;
+}
+
+void applyPlayerMovement(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform, const float iDt,
+						 const data::voxel::SolidPredicate& iIsSolid) {
+	const float sy = std::sin(ioPlayer.yaw);
+	const float cy = std::cos(ioPlayer.yaw);
+	math::vec3 move{0.f, 0.f, 0.f};
+	if (input::Input::isKeyPressed(input::key::W))
+		move += math::vec3{-sy, 0.f, -cy};
+	if (input::Input::isKeyPressed(input::key::S))
+		move -= math::vec3{-sy, 0.f, -cy};
+	if (input::Input::isKeyPressed(input::key::D))
+		move += math::vec3{cy, 0.f, -sy};
+	if (input::Input::isKeyPressed(input::key::A))
+		move -= math::vec3{cy, 0.f, -sy};
+	const float horizLen = std::sqrt(move.x() * move.x() + move.z() * move.z());
+	const bool space = input::Input::isKeyPressed(input::key::Space);
+	math::vec3 velocity{0.f, 0.f, 0.f};
+	if (ioPlayer.flyMode) {
+		const float speed = ioPlayer.flySpeed * (ioPlayer.superSpeed ? ioPlayer.superSpeedMultiplier : 1.f);
+		if (horizLen > 0.f) {
+			velocity.x() = move.x() / horizLen * speed;
+			velocity.z() = move.z() / horizLen * speed;
+		}
+		if (space)
+			velocity.y() += speed;
+		if (input::Input::isKeyPressed(input::key::LeftShift))
+			velocity.y() -= speed;
+		ioPlayer.velocityY = 0.f;
+		ioPlayer.grounded = false;
+	} else {
+		const float speed = input::Input::isKeyPressed(input::key::LeftShift) ? ioPlayer.runSpeed : ioPlayer.walkSpeed;
+		if (horizLen > 0.f) {
+			velocity.x() = move.x() / horizLen * speed;
+			velocity.z() = move.z() / horizLen * speed;
+		}
+		if (ioPlayer.grounded && space)
+			ioPlayer.velocityY = ioPlayer.jumpSpeed;
+		ioPlayer.velocityY -= ioPlayer.gravity * iDt;
+		velocity.y() = ioPlayer.velocityY;
+	}
+	const auto result =
+			data::voxel::moveAabb(iIsSolid, ioTransform.translation(), ioPlayer.halfExtents, velocity * iDt);
+	ioTransform.translation() = result.position;
+	if (!ioPlayer.flyMode) {
+		if (result.onGround) {
+			ioPlayer.velocityY = 0.f;
+			ioPlayer.grounded = true;
+		} else {
+			ioPlayer.grounded = false;
+			if (result.hitCeiling)
+				ioPlayer.velocityY = 0.f;
+		}
+	}
+}
+
+}// namespace
+
+void Scene::updateVoxelPlayers(const core::Timestep& iTimeStep) {
+	OWL_PROFILE_FUNCTION()
+
+	const float dt = iTimeStep.getSeconds();
+	if (dt <= 0.f)
+		return;
+	const auto players = registry.view<component::Transform, component::VoxelPlayer>();
+	if (players.begin() == players.end())
+		return;
+
+	const auto isSolid = [this](const int32_t iBx, const int32_t iBy, const int32_t iBz) -> bool {
+		const math::vec3i block{iBx, iBy, iBz};
+		const auto view = registry.view<component::VoxelWorld>();
+		return std::ranges::any_of(view, [&](const auto entity) -> bool {
+			const auto& vw = view.get<component::VoxelWorld>(entity);
+			const auto id = vw.world.getBlock(block);
+			return id != data::voxel::g_AirBlock && vw.registry.get(id).solid;
+		});
+	};
+	const auto hasChunk = [this](const math::vec3& iPos) -> bool {
+		const math::vec3i block{static_cast<int32_t>(std::floor(iPos.x())), static_cast<int32_t>(std::floor(iPos.y())),
+								static_cast<int32_t>(std::floor(iPos.z()))};
+		const math::vec3i coord = data::voxel::worldToChunk(block);
+		const auto view = registry.view<component::VoxelWorld>();
+		return std::ranges::any_of(view, [&](const auto entity) -> bool {
+			return view.get<component::VoxelWorld>(entity).world.getChunk(coord) != nullptr;
+		});
+	};
+
+	const bool cursorCaptured = app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled;
+	for (const auto entity: players) {
+		auto [transform, player] = players.get<component::Transform, component::VoxelPlayer>(entity);
+		auto& tr = transform.transform;
+		if (!player.initialized) {
+			player.yaw = tr.rotation().y();
+			player.pitch = tr.rotation().x();
+			player.initialized = true;
+		}
+		applyPlayerLook(player, tr, dt, cursorCaptured);
+		if (const auto toast = updatePlayerModes(player, dt); !toast.empty())
+			showToast(toast);
+
+		// Hold still until the player's chunk has streamed in, so it never falls through an ungenerated world.
+		if (!hasChunk(tr.translation())) {
+			player.velocityY = 0.f;
+			continue;
+		}
+		applyPlayerMovement(player, tr, dt, isSolid);
+	}
+}
+
+void Scene::showToast(const std::string& iMessage, const float iSeconds) {
+	m_toastMessage = iMessage;
+	m_toastTimer = iSeconds;
+}
+
+void Scene::renderToast() {
+	OWL_PROFILE_FUNCTION()
+
+	if (m_toastTimer <= 0.f || m_toastMessage.empty() || m_viewportSize.x() == 0 || m_viewportSize.y() == 0)
+		return;
+	const auto vpW = static_cast<float>(m_viewportSize.x());
+	const auto vpH = static_cast<float>(m_viewportSize.y());
+	// Own pixel-space ortho camera so the overlay stays flat on screen regardless of the player's perspective view.
+	const renderer::CameraOrtho overlay{0.f, vpW, 0.f, vpH};
+	constexpr float kTextHeight = 28.f;
+	math::Transform textTransform;
+	textTransform.translation() = math::vec3{vpW * 0.3f, vpH - kTextHeight * 1.5f, 0.f};
+	textTransform.scale() = math::vec3{kTextHeight, kTextHeight, 1.f};
+	const auto font = app::Application::get().getFontLibrary().getDefaultFont();
+	renderer::Renderer2D::beginScene(overlay);
+	renderer::Renderer2D::drawString({.transform = textTransform,
+									  .text = m_toastMessage,
+									  .font = font,
+									  .color = math::vec4{1.f, 1.f, 0.6f, 1.f},
+									  .entityId = 0});
+	renderer::Renderer2D::endScene();
 }
 
 void Scene::renderRaycastSprites(const bool iEditorMode) {
@@ -2239,5 +2435,9 @@ OWL_API void Scene::onComponentAdded<component::VoxelWorld>([[maybe_unused]] con
 template<>
 OWL_API void Scene::onComponentAdded<component::FlyCamera>([[maybe_unused]] const Entity& iEntity,
 														   [[maybe_unused]] component::FlyCamera& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::VoxelPlayer>([[maybe_unused]] const Entity& iEntity,
+															 [[maybe_unused]] component::VoxelPlayer& ioComponent) {}
 
 }// namespace owl::scene

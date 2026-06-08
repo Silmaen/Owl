@@ -32,6 +32,15 @@ enum struct Type : uint8_t {
 
 /**
  * @brief
+ *  Cursor visibility / capture mode.
+ */
+enum struct CursorMode : uint8_t {
+	Normal,///< Standard visible, free cursor.
+	Disabled///< Cursor hidden and locked to the window for mouse-look (motion reported as raw/virtual deltas).
+};
+
+/**
+ * @brief
  *  Structure holding base windows properties.
  */
 struct Properties {
@@ -191,6 +200,20 @@ public:
 	 * @param[in] iIconPath Path to the icon image (PNG recommended).
 	 */
 	virtual void setIcon(const std::filesystem::path& iIconPath) = 0;
+
+	/**
+	 * @brief
+	 *  Set the cursor mode (visible/free or hidden/locked for mouse-look).
+	 * @param[in] iMode The cursor mode.
+	 */
+	virtual void setCursorMode(CursorMode iMode) = 0;
+
+	/**
+	 * @brief
+	 *  Get the current cursor mode.
+	 * @return The cursor mode.
+	 */
+	[[nodiscard]] virtual auto getCursorMode() const -> CursorMode = 0;
 
 	/**
 	 * @brief

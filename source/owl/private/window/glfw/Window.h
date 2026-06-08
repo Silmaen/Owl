@@ -150,6 +150,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the cursor mode (visible/free or hidden/locked for mouse-look).
+	 * @param[in] iMode The cursor mode.
+	 */
+	void setCursorMode(window::CursorMode iMode) override;
+
+	/**
+	 * @brief
+	 *  Get the current cursor mode.
+	 * @return The cursor mode.
+	 */
+	[[nodiscard]] auto getCursorMode() const -> window::CursorMode override { return m_cursorMode; }
+
+	/**
+	 * @brief
 	 *  Terminate the window.
 	 */
 	void shutdown() override;
@@ -164,6 +178,8 @@ private:
 
 	/// Pointer to the GLFW window.
 	GLFWwindow* mp_glfwWindow{nullptr};
+	/// Current cursor mode (visible/free or hidden/locked).
+	window::CursorMode m_cursorMode{window::CursorMode::Normal};
 
 	/**
 	 * @brief
