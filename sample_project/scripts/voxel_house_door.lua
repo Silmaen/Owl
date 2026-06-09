@@ -1,6 +1,6 @@
--- Voxel house door — opens the voxel demo scene when the player presses E
+-- Voxel house door — opens the procedural voxel terrain when the player presses E
 -- nearby. Stores the world position so the player can be returned to the same
--- spot later. Mirrors raycast_house_door.lua but targets the voxel demo.
+-- spot later. Mirrors raycast_house_door.lua but targets the voxel terrain.
 
 function on_create()
     log.trace("VoxelHouseDoor ready")
@@ -14,6 +14,6 @@ function on_voxel_door_interact(player_id)
         gamestate.set("world_return_x", px)
         gamestate.set("world_return_y", py)
     end
-    log.info("Entering voxel house — loading voxel demo")
-    scene.transition_to("scenes/voxel_demo.owl", "fade", 0.3)
+    log.info("Entering voxel house — loading voxel terrain")
+    scene.transition_to("scenes/voxel_terrain.owl", "fade", 0.3)
 end

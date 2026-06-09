@@ -10,11 +10,13 @@
 
 #include "core/Core.h"
 #include "core/Serializer.h"
+#include "data/voxel/TerrainGenerator.h"
 #include "data/voxel/VoxelWorld.h"
 #include "math/vectors.h"
 #include "scene/Tileset.h"
 
 #include <filesystem>
+#include <unordered_set>
 
 namespace owl::scene::component {
 
@@ -44,6 +46,16 @@ struct OWL_API VoxelWorld {
 	math::vec3 sunDirection{-0.4f, -1.f, -0.6f};
 	/// Ambient light colour added before the directional term.
 	math::vec3 ambient{0.35f, 0.35f, 0.4f};
+	/// When true, chunks are streamed in/out around the camera from `terrain` instead of being authored by hand.
+	bool proceduralTerrain = false;
+	/// Procedural terrain parameters (seed, height field, caves, block ids) used when `proceduralTerrain` is true.
+	data::voxel::TerrainParams terrain;
+	/// Horizontal streaming radius in chunks around the camera (X/Z).
+	int32_t streamRadius = 4;
+	/// Vertical streaming half-extent in chunks around the camera (Y).
+	int32_t streamHeight = 2;
+	/// Runtime set of chunk keys currently being generated asynchronously (not serialized; cleared on regenerate).
+	std::unordered_set<uint64_t> pendingChunks;
 
 	/**
 	 * @brief

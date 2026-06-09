@@ -117,6 +117,20 @@ public:
 	 */
 	static void drawMesh(const MeshHandle& iMesh, const math::mat4& iModel,
 						 std::span<const shared<gpu::Texture2D>> iTextures = {});
+
+	/**
+	 * @brief
+	 *  Draw many meshes that share one model matrix and texture set.
+	 *
+	 * Sets the model UBO and binds the textures once, then issues a geometry-only
+	 * draw per mesh — far cheaper than calling `drawMesh` per mesh when they share
+	 * state (e.g. all chunks of one voxel world). Null / empty handles are skipped.
+	 * @param[in] iMeshes The mesh handles to draw.
+	 * @param[in] iModel The shared model (object-to-world) matrix.
+	 * @param[in] iTextures Textures bound to slots `1..N` in order.
+	 */
+	static void drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat4& iModel,
+						   std::span<const shared<gpu::Texture2D>> iTextures = {});
 };
 
 }// namespace owl::renderer

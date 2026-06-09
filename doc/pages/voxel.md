@@ -168,11 +168,10 @@ A voxel world reaches the screen through two pieces:
   tile rather than stretch. The entity must carry a `RendererTag` routing it to the voxel layer; `Scene::render`
   only draws voxel worlds when the active layer is voxel-capable (mirroring the raycast path).
 
-The sample project ships a `voxel_demo.owl` scene — a layered stone / dirt / grass terrain with a sand beach and a
-leaf-canopy tree, textured from the dedicated `voxel_blocks` tileset (16 block faces: grass, dirt, stone, sand, wood,
-leaves, … with room for future block types) — under a perspective camera, reachable
-from a **Voxel House** on the world map. Voxels currently render in **Play mode** — the editor viewport still uses
-the 2D top-down pass, so a dedicated 3D editor viewport is a later effort.
+The sample project ships a `voxel_terrain.owl` scene — an endless seeded procedural landscape (see *Procedural
+Terrain* below), textured from the dedicated `voxel_blocks` tileset (16 block faces: grass, dirt, stone, sand, wood,
+leaves, … with room for future block types) — under a perspective camera, reachable from a **Voxel House** on the
+world map. Voxels render in both **Play** and the **editor viewport** (the world streams around the editor camera too).
 
 To explore the world in Play, add a `scene::component::FlyCamera` to the perspective-camera entity (the demo does
 this): the scene drives the entity transform from a reusable `renderer::Camera3DController` each runtime frame —
@@ -180,8 +179,22 @@ this): the scene drives the entity transform from a reusable `renderer::Camera3D
 around. The move / look speeds are editable in the inspector. The same controller is designed to back the editor
 viewport once the 3D editor camera overhaul lands.
 
+## Procedural Terrain
+
+A `VoxelWorld` can generate its blocks instead of storing them: tick **Procedural Terrain** in the inspector (or set
+`ProceduralTerrain: true` in the scene) and the world is filled from a seed. `data::voxel::TerrainGenerator` builds a
+2D fractal-Perlin (`math::PerlinNoise`) height field — stone with a dirt sub-layer and a grass surface, sand along the
+shoreline, optional water up to a sea level — and carves caves from a 3D Perlin field; the same seed always yields the
+same world. An optional low-frequency **biome** field varies the surface block (desert sand, grassy plains, snowy,
+rocky mountain tops). `Scene::updateVoxelStreaming` loads chunks in and unloads them out around the camera within the
+configurable radius/height; generation runs **asynchronously on the task `Scheduler`** (workers fill chunks, the main
+thread installs the finished ones), and `RendererVoxel` drops the meshes of unloaded chunks. All parameters (seed,
+frequency, octaves, amplitude, sea level, cave threshold, biomes, block ids, …) are editable in the inspector with a
+**Regenerate** button. The `scenes/voxel_terrain.owl` demo is an endless seeded landscape you fly through, reachable
+from the world-map voxel house.
+
 ## What's Next
 
-Procedural terrain generation with chunk streaming, block interaction (raycast pick, place/destroy, Lua API),
+Block interaction (raycast pick, place/destroy, Lua API),
 rendering polish (ambient occlusion, transparent/water passes), and the in-editor voxel authoring tools (brush,
 palette, chunk inspector).

@@ -14,7 +14,10 @@
 #include "renderer/Renderer3D.h"
 
 #include <array>
+#include <iterator>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace owl::renderer {
 
@@ -70,10 +73,13 @@ auto buildChunkMesh(const data::voxel::Chunk& iChunk, const data::voxel::BlockRe
 	const data::voxel::ChunkMesh mesh = data::voxel::ChunkMesher::mesh(iChunk, iRegistry, neighbor);
 	if (mesh.isEmpty())
 		return nullptr;
+	// Bake chunk origin into vertices so chunks share one model (avoids per-draw UBO last-write-wins on Vulkan).
+	const math::vec3 origin{static_cast<float>(iCoord.x() * k_ChunkSize), static_cast<float>(iCoord.y() * k_ChunkSize),
+							static_cast<float>(iCoord.z() * k_ChunkSize)};
 	std::vector<Mesh3DVertex> vertices;
 	vertices.reserve(mesh.vertices.size());
 	for (const auto& v: mesh.vertices)
-		vertices.push_back(Mesh3DVertex{.position = v.position,
+		vertices.push_back(Mesh3DVertex{.position = v.position + origin,
 										.normal = v.normal,
 										.uv = v.uv,
 										.textureIndex = k_AtlasSlot,
@@ -123,17 +129,22 @@ void RendererVoxel::prepareWorld(scene::component::VoxelWorld& ioComponent, cons
 	ioComponent.tileset->texture->setFilterMode(gpu::FilterMode::Nearest);
 
 	auto& cache = g_Data->entities[iEntityId];
+	std::unordered_set<uint64_t> live;
 	for (const auto& coord: ioComponent.world.chunkCoordinates()) {
 		const auto chunk = ioComponent.world.getChunk(coord);
 		if (!chunk || chunk->isEmpty())
 			continue;
 		const uint64_t key = packKey(coord);
+		live.insert(key);
 		if (const auto it = cache.chunks.find(key); it == cache.chunks.end() || chunk->isDirty()) {
 			cache.chunks[key] =
 					buildChunkMesh(*chunk, ioComponent.registry, ioComponent.world, coord, *ioComponent.tileset);
 			chunk->markClean();
 		}
 	}
+	// Drop cached meshes for chunks that were streamed out, so memory stays bounded as the camera moves.
+	for (auto it = cache.chunks.begin(); it != cache.chunks.end();)
+		it = live.contains(it->first) ? std::next(it) : cache.chunks.erase(it);
 }
 
 void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, const math::Transform& iWorldTransform,
@@ -150,19 +161,18 @@ void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, co
 	const std::array<shared<gpu::Texture2D>, 1> textures{ioComponent.tileset->texture};
 
 	const auto& cache = cacheIt->second;
+	// All chunks share one model + atlas (origin baked in), so batch into one drawMeshes (state set once).
 	const math::mat4 worldMat = iWorldTransform();
+	std::vector<Renderer3D::MeshHandle> meshes;
+	meshes.reserve(cache.chunks.size());
 	for (const auto& coord: ioComponent.world.chunkCoordinates()) {
 		const auto chunk = ioComponent.world.getChunk(coord);
 		if (!chunk || chunk->isEmpty())
 			continue;
-		const auto it = cache.chunks.find(packKey(coord));
-		if (it == cache.chunks.end() || !it->second)
-			continue;
-		const math::vec3 origin{static_cast<float>(coord.x() * k_ChunkSize),
-								static_cast<float>(coord.y() * k_ChunkSize),
-								static_cast<float>(coord.z() * k_ChunkSize)};
-		Renderer3D::drawMesh(it->second, math::translate(worldMat, origin), textures);
+		if (const auto it = cache.chunks.find(packKey(coord)); it != cache.chunks.end() && it->second)
+			meshes.push_back(it->second);
 	}
+	Renderer3D::drawMeshes(meshes, worldMat, textures);
 }
 
 }// namespace owl::renderer

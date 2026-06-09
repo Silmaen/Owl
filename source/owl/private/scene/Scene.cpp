@@ -9,6 +9,7 @@
 
 #include "scene/Scene.h"
 
+#include "data/voxel/TerrainGenerator.h"
 #include "renderer/BackgroundRenderer.h"
 #include "renderer/Camera3DController.h"
 #include "renderer/CameraOrtho.h"
@@ -25,6 +26,9 @@
 #include "scene/Tileset.h"
 
 #include "app/Application.h"
+#include "core/task/Scheduler.h"
+#include "core/task/Task.h"
+#include "data/voxel/Chunk.h"
 #include "input/Input.h"
 #include "physics/PhysicCommand.h"
 #include "scene/ScreenTransition.h"
@@ -35,8 +39,22 @@
 #include "sound/SoundSystem.h"
 
 #include <limits>
+#include <mutex>
 
 namespace owl::scene {
+
+// One worker-generated chunk (entity id, coord, filled chunk) awaiting main-thread installation.
+struct CompletedVoxelChunk {
+	int entityId;
+	math::vec3i coord;
+	shared<data::voxel::Chunk> chunk;
+};
+
+// Async voxel generation sink: workers push completed chunks under the mutex, the main thread drains them.
+struct VoxelStreamState {
+	std::mutex mutex;
+	std::vector<CompletedVoxelChunk> completed;
+};
 
 namespace {
 template<component::isComponent Component>
@@ -671,6 +689,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 			camTransform = getWorldTransform(camEntity);
 			cameraTransform = camTransform();
 		}
+		updateVoxelStreaming(camTransform.translation());
 		mainCamera->setTransform(cameraTransform);
 		// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
 		math::mat4 viewRotation = mainCamera->getView();
@@ -786,6 +805,9 @@ void Scene::onUpdateEditor([[maybe_unused]] const core::Timestep& iTimeStep, con
 	viewRotation(1, 3) = 0.0f;
 	viewRotation(2, 3) = 0.0f;
 	m_inverseViewRotation = inverse(iCamera.getProjection() * viewRotation);
+	// Stream procedural voxel terrain around the editor camera (its world position is the inverse-view translation).
+	const math::mat4 camToWorld = inverse(iCamera.getView());
+	updateVoxelStreaming(math::vec3{camToWorld(0, 3), camToWorld(1, 3), camToWorld(2, 3)});
 	renderWithStack(iCamera);
 	// Disarm per-pass caches; the next tick repopulates from scratch.
 	m_inUpdatePass = false;
@@ -1121,6 +1143,94 @@ void Scene::renderVoxelWorlds(const bool iEditorMode) {
 		auto& voxelWorld = view.get<component::VoxelWorld>(entity);
 		const math::Transform worldTransform = getWorldTransform(ent);
 		renderer::RendererVoxel::drawVoxelWorld(voxelWorld, worldTransform, static_cast<int>(entity));
+	}
+}
+
+void Scene::updateVoxelStreaming(const math::vec3& iCameraWorldPos) {
+	OWL_PROFILE_FUNCTION()
+
+	bool anyProcedural = false;
+	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view) {
+		if (view.get<component::VoxelWorld>(entity).proceduralTerrain) {
+			anyProcedural = true;
+			break;
+		}
+	}
+	if (!anyProcedural)
+		return;
+	if (!m_voxelStream)
+		m_voxelStream = mkShared<VoxelStreamState>();
+	auto& stream = *m_voxelStream;
+	const auto key = [](const math::vec3i& iCoord) -> uint64_t {
+		const auto enc = [](const int32_t iValue) -> uint64_t {
+			return static_cast<uint64_t>(static_cast<int64_t>(iValue) + (1 << 20)) & 0x1FFFFF;
+		};
+		return enc(iCoord.x()) | (enc(iCoord.y()) << 21) | (enc(iCoord.z()) << 42);
+	};
+
+	// Install chunks finished on worker threads (main thread; the worlds are only mutated here).
+	std::vector<CompletedVoxelChunk> done;
+	{
+		const std::lock_guard<std::mutex> lock{stream.mutex};
+		done.swap(stream.completed);
+	}
+	for (const auto& finished: done) {
+		const auto entity = static_cast<entt::entity>(finished.entityId);
+		if (!registry.valid(entity) || !registry.any_of<component::VoxelWorld>(entity))
+			continue;
+		auto& vw = registry.get<component::VoxelWorld>(entity);
+		vw.pendingChunks.erase(key(finished.coord));
+		if (!vw.proceduralTerrain || !finished.chunk)
+			continue;
+		const auto chunk = vw.world.getOrCreateChunk(finished.coord);
+		*chunk = *finished.chunk;
+		chunk->markDirty();
+	}
+
+	constexpr int32_t kMaxPushPerFrame = 16;
+	int32_t budget = kMaxPushPerFrame;
+	const math::vec3i camBlock{static_cast<int32_t>(std::floor(iCameraWorldPos.x())),
+							   static_cast<int32_t>(std::floor(iCameraWorldPos.y())),
+							   static_cast<int32_t>(std::floor(iCameraWorldPos.z()))};
+	auto& scheduler = app::Application::get().getTaskScheduler();
+	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view) {
+		auto& vw = view.get<component::VoxelWorld>(entity);
+		if (!vw.proceduralTerrain)
+			continue;
+		const int entityId = static_cast<int>(entity);
+		const int32_t r = std::max(0, vw.streamRadius);
+		const int32_t h = std::max(0, vw.streamHeight);
+		const math::vec3i camChunk = data::voxel::worldToChunk(camBlock);
+		// Queue missing chunks for async generation (budgeted; pendingChunks avoids re-queuing in-flight ones).
+		for (int32_t dy = -h; dy <= h && budget > 0; ++dy) {
+			for (int32_t dz = -r; dz <= r && budget > 0; ++dz) {
+				for (int32_t dx = -r; dx <= r && budget > 0; ++dx) {
+					const math::vec3i coord{camChunk.x() + dx, camChunk.y() + dy, camChunk.z() + dz};
+					const uint64_t k = key(coord);
+					if (vw.world.getChunk(coord) || vw.pendingChunks.contains(k))
+						continue;
+					vw.pendingChunks.insert(k);
+					--budget;
+					const data::voxel::TerrainParams params = vw.terrain;
+					auto sink = m_voxelStream;
+					scheduler.pushTask(core::task::Task{[params, coord, sink, entityId]() -> void {
+						auto chunk = mkShared<data::voxel::Chunk>(coord);
+						data::voxel::TerrainGenerator{params}.generateChunk(*chunk, coord);
+						const std::lock_guard<std::mutex> lock{sink->mutex};
+						sink->completed.push_back(
+								CompletedVoxelChunk{.entityId = entityId, .coord = coord, .chunk = chunk});
+					}});
+				}
+			}
+		}
+		// Unload chunks (and forget pending) that drifted outside the radius (+1 chunk of hysteresis).
+		for (const auto& coord: vw.world.chunkCoordinates()) {
+			if (std::abs(coord.x() - camChunk.x()) > r + 1 || std::abs(coord.z() - camChunk.z()) > r + 1 ||
+				std::abs(coord.y() - camChunk.y()) > h + 1) {
+				vw.world.removeChunk(coord);
+				vw.pendingChunks.erase(key(coord));
+			}
+		}
 	}
 }
 

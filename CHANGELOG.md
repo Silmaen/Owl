@@ -9,6 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Perlin noise in `owl::math`** — `math::PerlinNoise`, a seeded, dependency-free gradient-noise generator (2D/3D
+  samplers + `fbm` fractal Brownian motion helpers, reproducible per seed). Foundation for procedural voxel terrain
+  (and any other procedural system). 8 headless unit tests (determinism, zero-at-lattice, bounds, continuity, fBm).
+- **Procedural voxel terrain generator** — `data::voxel::TerrainGenerator` (+ `TerrainParams`): builds a 2D fBm height
+  field (grass / dirt / stone layering, sand at the shoreline, optional water up to a sea level) and carves caves from
+  a 3D Perlin field, per chunk and seed-reproducible. Block ids are parameters so it stays decoupled from a specific
+  `BlockRegistry`. 7 headless unit tests (height bounds, determinism, far-above-air / far-below-stone, flat-terrain
+  layering, beach + water fill, cave carving).
+- **Procedural terrain streaming in `VoxelWorld`** — the `VoxelWorld` component gains a `proceduralTerrain` mode with
+  serialized `TerrainParams` (seed, height field, caves, block ids) and a streaming radius/height. `Scene` streams
+  chunks in and out around the camera each frame (`updateVoxelStreaming`, budgeted generations per frame), in both
+  Play and the editor viewport; `RendererVoxel` now prunes meshes for streamed-out chunks so memory stays bounded.
+  All of an entity's chunks share one model matrix (the chunk origin is baked into the mesh vertices) and the atlas,
+  so they draw through a single batched `Renderer3D::drawMeshes` (UBO + texture state set once instead of per chunk) —
+  this also sidesteps the shared-UBO last-write-wins that otherwise collapses every chunk onto one position on Vulkan.
+  Chunk generation runs **asynchronously on the task `Scheduler`** (workers fill chunks, the main thread installs the
+  finished ones via a shared sink), so moving through the world doesn't hitch. Editor: full inspector for the terrain
+  parameters + a **Regenerate** button. New `scenes/voxel_terrain.owl` demo (an endless seeded landscape with a sea,
+  explored with the fly camera), reachable from the world-map voxel house. Authored (non-procedural) voxel worlds are
+  unchanged.
+- **Voxel biomes** — `TerrainGenerator` can vary the surface block from a low-frequency biome field (desert sand /
+  grassy plains / snowy / rocky mountain tops), configurable in the inspector; the demo world shows them.
+
 - **Voxel data model** — new `owl::data::voxel` module (foundation for the v0.2.1 voxel engine): `BlockRegistry`
   (block-type table with per-face texture indices, render kind, collision flag, YAML round-trip), `Chunk`
   (16³ cubic block grid with dirty tracking and run-length encode/decode), and `VoxelWorld` (sparse chunk
@@ -39,7 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the tile across greedy-merged quads (`tileRect.xy + frac(uv)*tileRect.zw`) so faces tile rather than stretch with
   the clamp-only sampler. Registered as the `"RendererVoxel"` stack layer; `Scene::render` routes `VoxelWorld` entities
   to it only when the active layer is voxel-capable (like the raycast path). Editor: component icon. Sample project:
-  a `voxel_demo.owl` scene (perspective camera + a two-layer stone/grass platform) reachable from a **voxel house**
+  a voxel scene reachable from a **voxel house**
   built in the world-map tilemap (roof/wall/door tiles + a path, the door tile being an interaction-trigger
   teleporter, same style as the other houses). The world-map tilemap was enlarged (32×24 → 48×24) to leave room for
   a future village of scene-demo houses. Headless tests cover the `voxel` shader compilation and layer registration.
@@ -68,8 +91,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Dedicated voxel block textures** — new `tilesets/voxel_blocks.owltileset` (+ procedurally generated
   `textures/voxel_blocks.png`, a 4×4 / 64 px atlas) with 16 distinct block faces (grass top/side, dirt, stone,
   cobblestone, sand, log top/side, planks, leaves, snow, gravel, brick, water, ice, glass) to anticipate future block
-  types. `voxel_demo.owl` now uses it (proper grass-top / grass-side / dirt / stone blocks, a sand beach, and a
-  leaf-canopy tree) instead of borrowing the 2D platformer atlas. Texture generators live in
+  types. The voxel demo uses it (proper grass-top / grass-side / dirt / stone blocks) instead of borrowing the 2D
+  platformer atlas. Texture generators live in
   `sample_project/textures/generate_atlases.py`.
 - **Revised world atlases** — regenerated `textures/world_platform.png` (2D platformer: floor, platform, brick wall,
   ladder, lava, spikes, background, victory zone) and `textures/world_topdown.png` (world map: grass, paths, mountain,

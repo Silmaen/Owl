@@ -48,6 +48,26 @@ void VoxelWorld::serialize(const core::Serializer& iOut) const {
 			<< ambient.z() << YAML::EndSeq;
 	if (!tilesetPath.empty())
 		emitter << YAML::Key << "Tileset" << YAML::Value << tilesetPath.generic_string();
+	emitter << YAML::Key << "ProceduralTerrain" << YAML::Value << proceduralTerrain;
+	emitter << YAML::Key << "StreamRadius" << YAML::Value << streamRadius;
+	emitter << YAML::Key << "StreamHeight" << YAML::Value << streamHeight;
+	emitter << YAML::Key << "Terrain" << YAML::Value << YAML::BeginMap;
+	emitter << YAML::Key << "Seed" << YAML::Value << terrain.seed;
+	emitter << YAML::Key << "Frequency" << YAML::Value << terrain.frequency;
+	emitter << YAML::Key << "Octaves" << YAML::Value << terrain.octaves;
+	emitter << YAML::Key << "Lacunarity" << YAML::Value << terrain.lacunarity;
+	emitter << YAML::Key << "Persistence" << YAML::Value << terrain.persistence;
+	emitter << YAML::Key << "BaseHeight" << YAML::Value << terrain.baseHeight;
+	emitter << YAML::Key << "Amplitude" << YAML::Value << terrain.amplitude;
+	emitter << YAML::Key << "SeaLevel" << YAML::Value << terrain.seaLevel;
+	emitter << YAML::Key << "DirtDepth" << YAML::Value << terrain.dirtDepth;
+	emitter << YAML::Key << "CaveFrequency" << YAML::Value << terrain.caveFrequency;
+	emitter << YAML::Key << "CaveThreshold" << YAML::Value << terrain.caveThreshold;
+	emitter << YAML::Key << "Biomes" << YAML::Value << terrain.biomes;
+	emitter << YAML::Key << "BiomeFrequency" << YAML::Value << terrain.biomeFrequency;
+	emitter << YAML::Key << "BlockIds" << YAML::Value << YAML::Flow << YAML::BeginSeq << terrain.stone << terrain.grass
+			<< terrain.dirt << terrain.sand << terrain.water << terrain.snow << YAML::EndSeq;
+	emitter << YAML::EndMap;
 	emitter << YAML::Key << "Blocks" << YAML::Value << YAML::BeginSeq;
 	for (size_t id = 1; id < registry.count(); ++id) {
 		const auto& block = registry.get(static_cast<data::voxel::BlockId>(id));
@@ -62,18 +82,21 @@ void VoxelWorld::serialize(const core::Serializer& iOut) const {
 		emitter << YAML::EndMap;
 	}
 	emitter << YAML::EndSeq;
-	emitter << YAML::Key << "Chunks" << YAML::Value << YAML::BeginSeq;
-	for (const auto& coord: world.chunkCoordinates()) {
-		const auto chunk = world.getChunk(coord);
-		if (!chunk || chunk->isEmpty())
-			continue;
-		emitter << YAML::BeginMap;
-		emitter << YAML::Key << "Coord" << YAML::Value << YAML::Flow << YAML::BeginSeq << coord.x() << coord.y()
-				<< coord.z() << YAML::EndSeq;
-		emitter << YAML::Key << "Data" << YAML::Value << chunk->encode();
-		emitter << YAML::EndMap;
+	// Procedural worlds stream their chunks from the seed at runtime, so authored chunks aren't persisted.
+	if (!proceduralTerrain) {
+		emitter << YAML::Key << "Chunks" << YAML::Value << YAML::BeginSeq;
+		for (const auto& coord: world.chunkCoordinates()) {
+			const auto chunk = world.getChunk(coord);
+			if (!chunk || chunk->isEmpty())
+				continue;
+			emitter << YAML::BeginMap;
+			emitter << YAML::Key << "Coord" << YAML::Value << YAML::Flow << YAML::BeginSeq << coord.x() << coord.y()
+					<< coord.z() << YAML::EndSeq;
+			emitter << YAML::Key << "Data" << YAML::Value << chunk->encode();
+			emitter << YAML::EndMap;
+		}
+		emitter << YAML::EndSeq;
 	}
-	emitter << YAML::EndSeq;
 	emitter << YAML::EndMap;// VoxelWorld
 }
 
@@ -101,6 +124,49 @@ void VoxelWorld::deserialize(const core::Serializer& iNode) {
 					block.faceTextures[f] = faces[f].as<uint16_t>();
 			}
 			(void) registry.registerBlock(block);
+		}
+	}
+	proceduralTerrain = node["ProceduralTerrain"] ? node["ProceduralTerrain"].as<bool>() : false;
+	if (const auto sr = node["StreamRadius"]; sr)
+		streamRadius = sr.as<int32_t>();
+	if (const auto sh = node["StreamHeight"]; sh)
+		streamHeight = sh.as<int32_t>();
+	terrain = data::voxel::TerrainParams{};
+	if (const auto t = node["Terrain"]; t && t.IsMap()) {
+		if (t["Seed"])
+			terrain.seed = t["Seed"].as<uint32_t>();
+		if (t["Frequency"])
+			terrain.frequency = t["Frequency"].as<float>();
+		if (t["Octaves"])
+			terrain.octaves = t["Octaves"].as<uint32_t>();
+		if (t["Lacunarity"])
+			terrain.lacunarity = t["Lacunarity"].as<float>();
+		if (t["Persistence"])
+			terrain.persistence = t["Persistence"].as<float>();
+		if (t["BaseHeight"])
+			terrain.baseHeight = t["BaseHeight"].as<int32_t>();
+		if (t["Amplitude"])
+			terrain.amplitude = t["Amplitude"].as<int32_t>();
+		if (t["SeaLevel"])
+			terrain.seaLevel = t["SeaLevel"].as<int32_t>();
+		if (t["DirtDepth"])
+			terrain.dirtDepth = t["DirtDepth"].as<int32_t>();
+		if (t["CaveFrequency"])
+			terrain.caveFrequency = t["CaveFrequency"].as<float>();
+		if (t["CaveThreshold"])
+			terrain.caveThreshold = t["CaveThreshold"].as<float>();
+		if (t["Biomes"])
+			terrain.biomes = t["Biomes"].as<bool>();
+		if (t["BiomeFrequency"])
+			terrain.biomeFrequency = t["BiomeFrequency"].as<float>();
+		if (const auto ids = t["BlockIds"]; ids && ids.IsSequence() && ids.size() >= 5) {
+			terrain.stone = ids[0].as<uint16_t>();
+			terrain.grass = ids[1].as<uint16_t>();
+			terrain.dirt = ids[2].as<uint16_t>();
+			terrain.sand = ids[3].as<uint16_t>();
+			terrain.water = ids[4].as<uint16_t>();
+			if (ids.size() >= 6)
+				terrain.snow = ids[5].as<uint16_t>();
 		}
 	}
 	world.clear();

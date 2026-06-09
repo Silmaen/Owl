@@ -1039,6 +1039,53 @@ void renderProps(VoxelWorld& ioComponent) {
 	ImGui::Separator();
 	drawVec3Control("Sun Direction", ioComponent.sunDirection);
 	ImGui::ColorEdit3("Ambient", ioComponent.ambient.data());
+	ImGui::Separator();
+	ImGui::Checkbox("Procedural Terrain", &ioComponent.proceduralTerrain);
+	fieldTooltip("Stream chunks in/out around the camera from the seed below, instead of authored chunks.");
+	if (ioComponent.proceduralTerrain) {
+		auto& t = ioComponent.terrain;
+		auto dragU32 = [](const char* iLabel, uint32_t& ioValue, const int iMin, const int iMax) -> void {
+			int v = static_cast<int>(ioValue);
+			if (ImGui::DragInt(iLabel, &v, 1.f, iMin, iMax))
+				ioValue = static_cast<uint32_t>(std::clamp(v, iMin, iMax));
+		};
+		auto dragId = [](const char* iLabel, data::voxel::BlockId& ioValue) -> void {
+			int v = static_cast<int>(ioValue);
+			if (ImGui::DragInt(iLabel, &v, 1.f, 0, 65535))
+				ioValue = static_cast<data::voxel::BlockId>(std::clamp(v, 0, 65535));
+		};
+		dragU32("Seed", t.seed, 0, 1000000);
+		ImGui::DragFloat("Frequency", &t.frequency, 0.001f, 0.001f, 0.5f, "%.4f");
+		dragU32("Octaves", t.octaves, 1, 8);
+		ImGui::DragFloat("Lacunarity", &t.lacunarity, 0.05f, 1.f, 4.f);
+		ImGui::DragFloat("Persistence", &t.persistence, 0.02f, 0.f, 1.f);
+		ImGui::DragInt("Base Height", &t.baseHeight);
+		ImGui::DragInt("Amplitude", &t.amplitude, 1.f, 0, 256);
+		ImGui::DragInt("Sea Level", &t.seaLevel);
+		ImGui::DragInt("Dirt Depth", &t.dirtDepth, 1.f, 0, 32);
+		ImGui::DragFloat("Cave Frequency", &t.caveFrequency, 0.005f, 0.f, 0.5f, "%.3f");
+		ImGui::DragFloat("Cave Threshold", &t.caveThreshold, 0.02f, 0.f, 2.f);
+		fieldTooltip("Cave noise above this carves rock to air; >= 1 disables caves.");
+		ImGui::Checkbox("Biomes", &t.biomes);
+		fieldTooltip("Vary the surface block by a low-frequency biome field (desert / plains / snow / mountain).");
+		if (t.biomes)
+			ImGui::DragFloat("Biome Frequency", &t.biomeFrequency, 0.001f, 0.001f, 0.1f, "%.4f");
+		ImGui::DragInt("Stream Radius", &ioComponent.streamRadius, 1.f, 0, 16);
+		ImGui::DragInt("Stream Height", &ioComponent.streamHeight, 1.f, 0, 16);
+		dragId("Stone Block", t.stone);
+		dragId("Grass Block", t.grass);
+		dragId("Dirt Block", t.dirt);
+		dragId("Sand Block", t.sand);
+		dragId("Water Block", t.water);
+		fieldTooltip("Block id used to fill water up to the sea level; 0 (air) disables water.");
+		if (t.biomes)
+			dragId("Snow Block", t.snow);
+		if (ImGui::Button("Regenerate")) {
+			ioComponent.world.clear();
+			ioComponent.pendingChunks.clear();
+		}
+		fieldTooltip("Clear streamed chunks so they regenerate from the current parameters.");
+	}
 }
 
 void renderProps(FlyCamera& ioComponent) {
