@@ -173,11 +173,26 @@ Terrain* below), textured from the dedicated `voxel_blocks` tileset (16 block fa
 leaves, … with room for future block types) — under a perspective camera, reachable from a **Voxel House** on the
 world map. Voxels render in both **Play** and the **editor viewport** (the world streams around the editor camera too).
 
-To explore the world in Play, add a `scene::component::FlyCamera` to the perspective-camera entity (the demo does
-this): the scene drives the entity transform from a reusable `renderer::Camera3DController` each runtime frame —
-**WASD** moves in the facing plane, **Space / E** rises, **Left-Shift / Q** descends and the **arrow keys** look
-around. The move / look speeds are editable in the inspector. The same controller is designed to back the editor
-viewport once the 3D editor camera overhaul lands.
+Two camera components drive a voxel world in Play. A `scene::component::FlyCamera` is a free-fly camera (no
+collision): **WASD** moves in the facing plane, **Space / E** rises, **Left-Shift / Q** descends, **arrow keys** look
+— handy for inspecting a world. A `scene::component::VoxelPlayer` is a grounded first-person character: **WASD** walks
+on the horizontal plane, **arrow keys** look, **Left-Shift** runs and **Space** jumps, with gravity and
+**AABB-vs-voxel collision** against every `VoxelWorld` (it does not edit the world). The collision is a pure,
+headless-tested `data::voxel::moveAabb` (per-axis resolution + sub-stepping for wall-sliding and no tunnelling); the
+player holds still until the chunk it stands in has streamed in. Both components serialize and are fully editable in
+the inspector; the same `Camera3DController` is designed to back the editor viewport once the 3D editor camera
+overhaul lands.
+
+The player also supports **mouse-look** and **flying**. Left-click the viewport (in the editor) or the window (in the
+runner) to capture the cursor and steer the view with the mouse — this calls `window::Window::setCursorMode` with
+`CursorMode::Disabled` to grab and hide the OS cursor (the GLFW backend also enables raw motion when available). Press
+**Escape** to release the cursor back to `CursorMode::Normal`; the editor additionally releases it when the viewport
+loses focus or when leaving Play. Per-player `mouseSensitivity` scales the rotation.
+
+**Double-tap Space** toggles **fly mode**: WASD then translate horizontally without changing altitude, **Space** rises
+and **Left-Shift** descends, and motion is still resolved against voxel collisions. While flying, **J** toggles a
+**super-speed** multiplier. A transient on-screen toast (about three seconds) confirms each toggle ("Fly mode ON/OFF",
+"Super speed ON/OFF").
 
 ## Procedural Terrain
 
@@ -190,8 +205,8 @@ rocky mountain tops). `Scene::updateVoxelStreaming` loads chunks in and unloads 
 configurable radius/height; generation runs **asynchronously on the task `Scheduler`** (workers fill chunks, the main
 thread installs the finished ones), and `RendererVoxel` drops the meshes of unloaded chunks. All parameters (seed,
 frequency, octaves, amplitude, sea level, cave threshold, biomes, block ids, …) are editable in the inspector with a
-**Regenerate** button. The `scenes/voxel_terrain.owl` demo is an endless seeded landscape you fly through, reachable
-from the world-map voxel house.
+**Regenerate** button. The `scenes/voxel_terrain.owl` demo is an endless seeded landscape you explore as a grounded
+`VoxelPlayer` (walk / run / jump with collision), reachable from the world-map voxel house.
 
 ## What's Next
 

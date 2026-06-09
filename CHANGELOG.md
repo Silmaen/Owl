@@ -31,6 +31,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unchanged.
 - **Voxel biomes** — `TerrainGenerator` can vary the surface block from a low-frequency biome field (desert sand /
   grassy plains / snowy / rocky mountain tops), configurable in the inspector; the demo world shows them.
+- **Voxel player** — `scene::component::VoxelPlayer`, a first-person grounded controller: WASD move (yaw-relative),
+  arrow-key look, Left-Shift run, Space jump, with gravity and **AABB-vs-voxel collision** (no world editing).
+  Collision is a pure, headless-tested `data::voxel::moveAabb` (per-axis resolve + sub-stepping for wall-sliding and
+  no tunnelling) that the scene drives against every `VoxelWorld`'s solid blocks; the player holds still until its
+  chunk has streamed in. Authored object with full editor support (inspector, icon, round-trip test). The
+  `voxel_terrain.owl` demo now spawns you as a player that walks / runs / jumps on the streamed terrain.
+  - **Mouse-look** — left-click the viewport (editor) or window (runner) to capture the cursor and look with the
+    mouse; press Escape to release it back to a normal cursor (the editor also releases on viewport focus-loss and
+    when leaving Play). Sensitivity is a per-player parameter.
+  - **Fly mode** — double-tap Space to toggle flying: WASD then translate horizontally at a fixed altitude, with
+    Space / Left-Shift for up / down, still resolved against voxel collisions. Press **J** (fly mode only) to toggle
+    a super-speed multiplier.
+  - A transient on-screen toast (≈3 s) announces "Fly mode ON/OFF" and "Super speed ON/OFF".
+- **Window cursor mode** — `window::Window` gains `setCursorMode` / `getCursorMode`
+  (`CursorMode::Normal` / `CursorMode::Disabled`); the GLFW backend grabs and hides the cursor (with raw motion when
+  available) for first-person mouse-look, the Null backend is a no-op.
 
 - **Voxel data model** — new `owl::data::voxel` module (foundation for the v0.2.1 voxel engine): `BlockRegistry`
   (block-type table with per-face texture indices, render kind, collision flag, YAML round-trip), `Chunk`

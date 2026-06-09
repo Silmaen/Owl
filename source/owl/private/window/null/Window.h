@@ -146,11 +146,28 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the cursor mode (no-op, state only).
+	 * @param[in] iMode The cursor mode.
+	 */
+	void setCursorMode(const window::CursorMode iMode) override { m_cursorMode = iMode; }
+
+	/**
+	 * @brief
+	 *  Get the current cursor mode.
+	 * @return The cursor mode.
+	 */
+	[[nodiscard]] auto getCursorMode() const -> window::CursorMode override { return m_cursorMode; }
+
+	/**
+	 * @brief
 	 *  Terminate the window.
 	 */
 	void shutdown() override;
 
 private:
+	/// Current cursor mode (state only on the null backend).
+	window::CursorMode m_cursorMode{window::CursorMode::Normal};
+
 	/**
 	 * @brief
 	 *  Initialize the window.

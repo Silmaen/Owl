@@ -9,10 +9,10 @@ EnabledRenderers:
 Entities:
   - Entity: 3400000000000000001
     Tag:
-      tag: TerrainCamera
+      tag: TerrainPlayer
     Transform:
-      translation: [8, 48, 40]
-      rotation: [-0.5, 0, 0]
+      translation: [8, 40, 8]
+      rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Camera:
       camera:
@@ -29,9 +29,13 @@ Entities:
       gameVisible: true
     Hierarchy:
       parentId: 0
-    FlyCamera:
-      MoveSpeed: 16
+    VoxelPlayer:
+      WalkSpeed: 5
+      RunSpeed: 9
+      JumpSpeed: 8.5
+      Gravity: 24
       LookSpeed: 1.5
+      HalfExtents: [0.4, 0.9, 0.4]
   - Entity: 3400000000000000002
     Tag:
       tag: ProceduralTerrain

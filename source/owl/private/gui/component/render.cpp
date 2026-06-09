@@ -1088,6 +1088,22 @@ void renderProps(VoxelWorld& ioComponent) {
 	}
 }
 
+void renderProps(VoxelPlayer& ioComponent) {
+	ImGui::DragFloat("Walk Speed", &ioComponent.walkSpeed, 0.1f, 0.f, 50.f, "%.2f");
+	ImGui::DragFloat("Run Speed", &ioComponent.runSpeed, 0.1f, 0.f, 50.f, "%.2f");
+	ImGui::DragFloat("Jump Speed", &ioComponent.jumpSpeed, 0.1f, 0.f, 50.f, "%.2f");
+	ImGui::DragFloat("Gravity", &ioComponent.gravity, 0.5f, 0.f, 100.f, "%.2f");
+	ImGui::DragFloat("Look Speed", &ioComponent.lookSpeed, 0.05f, 0.05f, 10.f, "%.2f");
+	ImGui::DragFloat("Mouse Sensitivity", &ioComponent.mouseSensitivity, 0.0005f, 0.0001f, 0.05f, "%.4f");
+	fieldTooltip(
+			"Radians per pixel while the cursor is captured (left-click the viewport to capture, Esc to release).");
+	ImGui::DragFloat("Fly Speed", &ioComponent.flySpeed, 0.5f, 0.f, 100.f, "%.2f");
+	ImGui::DragFloat("Super Speed x", &ioComponent.superSpeedMultiplier, 0.1f, 1.f, 20.f, "%.2f");
+	fieldTooltip("Fly mode: double-tap Space to toggle, J toggles super-speed; WASD horizontal, Space up, Shift down.");
+	drawVec3Control("Half Extents", ioComponent.halfExtents, 0.4f);
+	fieldTooltip("Half the player collision box on each axis (the transform is its centre / eye).");
+}
+
 void renderProps(FlyCamera& ioComponent) {
 	ImGui::DragFloat("Move Speed", &ioComponent.moveSpeed, 0.1f, 0.1f, 200.f, "%.2f");
 	fieldTooltip("Translation speed in world units per second (WASD move, Space/E up, Left-Shift/Q down).");
