@@ -195,6 +195,8 @@ public:
 	bool inFrame = false;
 	/// Desired depth test state for the next batch (off by default; Renderer3D enables it around 3D mesh draws).
 	bool depthTestEnabled = false;
+	/// Desired depth write state for the next batch (on by default; disabled for the blended transparent pass).
+	bool depthWriteEnabled = true;
 	bool firstBatch = true;
 
 	void popPipeline(int32_t iId);

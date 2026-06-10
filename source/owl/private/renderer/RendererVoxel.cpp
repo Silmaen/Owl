@@ -24,12 +24,18 @@ namespace owl::renderer {
 namespace {
 constexpr int32_t k_ChunkSize = static_cast<int32_t>(data::voxel::g_ChunkSize);
 
+struct ChunkMeshes {
+	Renderer3D::MeshHandle opaque;
+	Renderer3D::MeshHandle transparent;
+};
+
 struct EntityMeshes {
-	std::unordered_map<uint64_t, Renderer3D::MeshHandle> chunks;
+	std::unordered_map<uint64_t, ChunkMeshes> chunks;
 };
 
 struct InternalData {
 	std::unordered_map<int, EntityMeshes> entities;
+	math::vec3 cameraPosition{0.f, 0.f, 0.f};
 };
 
 shared<InternalData> g_Data;
@@ -62,29 +68,43 @@ auto tileRectFor(const scene::Tileset& iTileset, const uint16_t iTileIndex) -> m
 					  1.f / static_cast<float>(cols) - 2.f * halfU, 1.f / static_cast<float>(rows) - 2.f * halfV};
 }
 
-auto buildChunkMesh(const data::voxel::Chunk& iChunk, const data::voxel::BlockRegistry& iRegistry,
-					const data::voxel::VoxelWorld& iWorld, const math::vec3i& iCoord, const scene::Tileset& iTileset)
+auto uploadMesh(const data::voxel::ChunkMesh& iMesh, const math::vec3& iOrigin, const scene::Tileset& iTileset)
 		-> Renderer3D::MeshHandle {
+	if (iMesh.isEmpty())
+		return nullptr;
+	std::vector<Mesh3DVertex> vertices;
+	vertices.reserve(iMesh.vertices.size());
+	for (const auto& v: iMesh.vertices)
+		vertices.push_back(Mesh3DVertex{.position = v.position + iOrigin,
+										.normal = v.normal,
+										.uv = v.uv,
+										.textureIndex = k_AtlasSlot,
+										.tileRect = tileRectFor(iTileset, static_cast<uint16_t>(v.textureIndex)),
+										.ao = v.ao});
+	return Renderer3D::createMesh(vertices, iMesh.indices, "voxel");
+}
+
+auto buildChunkMeshes(const data::voxel::Chunk& iChunk, const data::voxel::BlockRegistry& iRegistry,
+					  const data::voxel::VoxelWorld& iWorld, const math::vec3i& iCoord, const scene::Tileset& iTileset)
+		-> ChunkMeshes {
 	const auto neighbor = [&iWorld, iCoord](const int32_t iX, const int32_t iY,
 											const int32_t iZ) -> data::voxel::BlockId {
 		return iWorld.getBlock(math::vec3i{iCoord.x() * k_ChunkSize + iX, iCoord.y() * k_ChunkSize + iY,
 										   iCoord.z() * k_ChunkSize + iZ});
 	};
-	const data::voxel::ChunkMesh mesh = data::voxel::ChunkMesher::mesh(iChunk, iRegistry, neighbor);
-	if (mesh.isEmpty())
-		return nullptr;
+	const data::voxel::ChunkMeshSet set = data::voxel::ChunkMesher::meshByKind(iChunk, iRegistry, neighbor);
 	// Bake chunk origin into vertices so chunks share one model (avoids per-draw UBO last-write-wins on Vulkan).
 	const math::vec3 origin{static_cast<float>(iCoord.x() * k_ChunkSize), static_cast<float>(iCoord.y() * k_ChunkSize),
 							static_cast<float>(iCoord.z() * k_ChunkSize)};
-	std::vector<Mesh3DVertex> vertices;
-	vertices.reserve(mesh.vertices.size());
-	for (const auto& v: mesh.vertices)
-		vertices.push_back(Mesh3DVertex{.position = v.position + origin,
-										.normal = v.normal,
-										.uv = v.uv,
-										.textureIndex = k_AtlasSlot,
-										.tileRect = tileRectFor(iTileset, static_cast<uint16_t>(v.textureIndex))});
-	return Renderer3D::createMesh(vertices, mesh.indices, "voxel");
+	return ChunkMeshes{.opaque = uploadMesh(set.opaque, origin, iTileset),
+					   .transparent = uploadMesh(set.transparent, origin, iTileset)};
+}
+
+auto chunkCenter(const math::vec3i& iCoord) -> math::vec3 {
+	const float half = static_cast<float>(k_ChunkSize) * 0.5f;
+	return math::vec3{static_cast<float>(iCoord.x() * k_ChunkSize) + half,
+					  static_cast<float>(iCoord.y() * k_ChunkSize) + half,
+					  static_cast<float>(iCoord.z() * k_ChunkSize) + half};
 }
 }// namespace
 
@@ -110,6 +130,10 @@ void RendererVoxel::beginScene(const Camera& iCamera, const VoxelConfig& iConfig
 
 	Renderer3D::beginScene(iCamera);
 	Renderer3D::setLighting(iConfig.sunDirection, iConfig.ambient);
+	if (g_Data) {
+		const math::vec4 worldPos = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+		g_Data->cameraPosition = math::vec3{worldPos.x(), worldPos.y(), worldPos.z()};
+	}
 }
 
 void RendererVoxel::endScene() {
@@ -138,7 +162,7 @@ void RendererVoxel::prepareWorld(scene::component::VoxelWorld& ioComponent, cons
 		live.insert(key);
 		if (const auto it = cache.chunks.find(key); it == cache.chunks.end() || chunk->isDirty()) {
 			cache.chunks[key] =
-					buildChunkMesh(*chunk, ioComponent.registry, ioComponent.world, coord, *ioComponent.tileset);
+					buildChunkMeshes(*chunk, ioComponent.registry, ioComponent.world, coord, *ioComponent.tileset);
 			chunk->markClean();
 		}
 	}
@@ -163,16 +187,37 @@ void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, co
 	const auto& cache = cacheIt->second;
 	// All chunks share one model + atlas (origin baked in), so batch into one drawMeshes (state set once).
 	const math::mat4 worldMat = iWorldTransform();
-	std::vector<Renderer3D::MeshHandle> meshes;
-	meshes.reserve(cache.chunks.size());
+	std::vector<Renderer3D::MeshHandle> opaque;
+	std::vector<std::pair<float, Renderer3D::MeshHandle>> transparent;
+	opaque.reserve(cache.chunks.size());
+	const math::vec3 camPos = g_Data->cameraPosition;
 	for (const auto& coord: ioComponent.world.chunkCoordinates()) {
 		const auto chunk = ioComponent.world.getChunk(coord);
 		if (!chunk || chunk->isEmpty())
 			continue;
-		if (const auto it = cache.chunks.find(packKey(coord)); it != cache.chunks.end() && it->second)
-			meshes.push_back(it->second);
+		const auto it = cache.chunks.find(packKey(coord));
+		if (it == cache.chunks.end())
+			continue;
+		if (it->second.opaque)
+			opaque.push_back(it->second.opaque);
+		if (it->second.transparent) {
+			const math::vec3 local = chunkCenter(coord);
+			const math::vec4 world = worldMat * math::vec4{local.x(), local.y(), local.z(), 1.f};
+			const float dx = world.x() - camPos.x();
+			const float dy = world.y() - camPos.y();
+			const float dz = world.z() - camPos.z();
+			transparent.emplace_back(dx * dx + dy * dy + dz * dz, it->second.transparent);
+		}
 	}
-	Renderer3D::drawMeshes(meshes, worldMat, textures);
+	Renderer3D::drawMeshes(opaque, worldMat, textures, /*iDepthWrite=*/true);
+	if (!transparent.empty()) {
+		// Back-to-front so alpha-over compositing is correct without per-fragment sorting.
+		std::ranges::sort(transparent, [](const auto& iA, const auto& iB) -> bool { return iA.first > iB.first; });
+		std::vector<Renderer3D::MeshHandle> sorted;
+		sorted.reserve(transparent.size());
+		for (auto& [distance, mesh]: transparent) sorted.push_back(std::move(mesh));
+		Renderer3D::drawMeshes(sorted, worldMat, textures, /*iDepthWrite=*/false);
+	}
 }
 
 }// namespace owl::renderer

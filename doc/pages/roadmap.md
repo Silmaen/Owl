@@ -445,8 +445,11 @@ tradition — slotted between the existing 2D/raycast/voxel options.
         - **Play-mode camera**: `voxel_fly_camera.lua` (WASD / Space-Shift / arrows) so the world is explorable in Play
           — ![Done][done] (movement feel still rough — see follow-ups)
         - Basic directional lighting — ![Done][done] (in `mesh3d` / `voxel`)
-        - Ambient occlusion per vertex for block edges — ![Planned][planned]
-        - Water/transparent block rendering with proper sorting — ![Planned][planned]
+        - Ambient occlusion per vertex for block edges — ![Done][done] (four-corner AO baked into `VoxelVertex.ao`,
+          AO-aware greedy merge + diagonal flip, multiplied in the `voxel` shader)
+        - Water/transparent block rendering with proper sorting — ![Done][done] (`ChunkMesher::meshByKind` splits
+          opaque vs transparent/water; `RendererVoxel` draws opaque then back-to-front transparent with depth writes
+          off via the new dynamic `setDepthMask`)
     - ![Planned][planned] Voxel rendering follow-ups (deferred from the voxel PR)
         - ![Done][done] Repair the **OpenGL** backend. Investigation found the depth/voxel path itself already worked on
           OpenGL; the real regression (a prior gap from never exercising OpenGL) was that **all `Renderer2D` content was

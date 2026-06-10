@@ -34,6 +34,8 @@ struct VoxelVertex {
 	math::vec2 uv;
 	/// Atlas tile index for the face, taken from `BlockType::faceTexture`.
 	uint32_t textureIndex = 0;
+	/// Per-vertex ambient-occlusion multiplier in `[0, 1]` (`1` = unoccluded, lower = darker concave corner).
+	float ao = 1.f;
 };
 
 /**
@@ -69,6 +71,21 @@ struct ChunkMesh {
 	 * @return The quad count (`indices.size() / 6`).
 	 */
 	[[nodiscard]] auto quadCount() const noexcept -> size_t { return indices.size() / 6; }
+};
+
+/**
+ * @brief
+ *  A chunk's geometry split into the two render passes it draws in.
+ *
+ * Opaque faces are batched in the depth-tested solid pass; transparent and
+ * water faces are emitted separately so the renderer can draw them after the
+ * opaque pass, back-to-front, with depth writes disabled.
+ */
+struct ChunkMeshSet {
+	/// Faces of opaque blocks (depth-write-on solid pass).
+	ChunkMesh opaque;
+	/// Faces of transparent and water blocks (blended, depth-write-off pass).
+	ChunkMesh transparent;
 };
 
 /**
@@ -109,6 +126,21 @@ public:
 	 * @return The generated mesh (empty when no face is visible).
 	 */
 	[[nodiscard]] static auto mesh(const Chunk& iChunk, const BlockRegistry& iRegistry) -> ChunkMesh;
+
+	/**
+	 * @brief
+	 *  Mesh a chunk into separate opaque and transparent geometry.
+	 *
+	 * Runs hidden-face culling and greedy meshing per render pass: opaque blocks
+	 * fill `ChunkMeshSet::opaque`, transparent and water blocks fill
+	 * `ChunkMeshSet::transparent`. Faces carry baked per-vertex ambient occlusion.
+	 * @param[in] iChunk The chunk to mesh.
+	 * @param[in] iRegistry The block registry resolving render kind and face textures.
+	 * @param[in] iNeighbor Provider for border neighbour blocks.
+	 * @return The opaque and transparent meshes (either may be empty).
+	 */
+	[[nodiscard]] static auto meshByKind(const Chunk& iChunk, const BlockRegistry& iRegistry,
+										 const NeighborProvider& iNeighbor) -> ChunkMeshSet;
 };
 
 }// namespace owl::data::voxel

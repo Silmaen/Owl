@@ -185,6 +185,57 @@ TEST_F(ChunkMesherFixture, TransparentNeighborDoesNotCull) {
 	EXPECT_TRUE(foundInterface);
 }
 
+TEST_F(ChunkMesherFixture, FlatSurfaceIsFullyLit) {
+	const Registry r;
+	Chunk chunk;
+	chunk.setBlock(5, 5, 5, r.stone);
+	const ChunkMesh mesh = ChunkMesher::mesh(chunk, r.reg);
+	ASSERT_FALSE(mesh.vertices.empty());
+	for (const auto& v: mesh.vertices) EXPECT_TRUE(fEq(v.ao, 1.f)) << "isolated block must have no ambient occlusion";
+}
+
+TEST_F(ChunkMesherFixture, DiagonalNeighborOccludesCorner) {
+	const Registry r;
+	Chunk chunk;
+	chunk.setBlock(0, 0, 0, r.stone);
+	chunk.setBlock(0, 1, 1, r.stone);// diagonally above-and-forward: occludes the +Y face corner toward +Z
+	const ChunkMesh mesh = ChunkMesher::mesh(chunk, r.reg);
+	bool darkened = false;
+	for (const auto& v: mesh.vertices) {
+		if (normalIs(v, 0, 1, 0) && v.ao < 0.999f)
+			darkened = true;
+	}
+	EXPECT_TRUE(darkened) << "a diagonal neighbour must darken the lower block's top face";
+}
+
+TEST_F(ChunkMesherFixture, OcclusionBreaksGreedyMerge) {
+	const Registry r;
+	Chunk flat;
+	Chunk walled;
+	for (int32_t z = 0; z < static_cast<int32_t>(g_ChunkSize); ++z) {
+		for (int32_t x = 0; x < static_cast<int32_t>(g_ChunkSize); ++x) {
+			flat.setBlock(x, 0, z, r.stone);
+			walled.setBlock(x, 0, z, r.stone);
+		}
+	}
+	walled.setBlock(8, 1, 8, r.stone);// a pillar on the floor casts AO on the surrounding top faces
+	EXPECT_EQ(quadsByNormal(ChunkMesher::mesh(flat, r.reg), 0, 1, 0), 1u);
+	EXPECT_GT(quadsByNormal(ChunkMesher::mesh(walled, r.reg), 0, 1, 0), 1u);
+}
+
+TEST_F(ChunkMesherFixture, MeshByKindSeparatesOpaqueAndTransparent) {
+	const Registry r;
+	Chunk chunk;
+	chunk.setBlock(0, 0, 0, r.stone);
+	chunk.setBlock(5, 0, 0, r.glass);
+	const ChunkMeshSet set =
+			ChunkMesher::meshByKind(chunk, r.reg, [](int32_t, int32_t, int32_t) -> BlockId { return g_AirBlock; });
+	EXPECT_EQ(set.opaque.quadCount(), 6u);
+	EXPECT_EQ(set.transparent.quadCount(), 6u);
+	for (const auto& v: set.opaque.vertices) EXPECT_EQ(v.textureIndex, 1u);// stone face texture
+	for (const auto& v: set.transparent.vertices) EXPECT_EQ(v.textureIndex, 5u);// glass face texture
+}
+
 TEST_F(ChunkMesherFixture, NeighborProviderCullsBoundaryFace) {
 	const Registry r;
 	const auto size = static_cast<int32_t>(g_ChunkSize);

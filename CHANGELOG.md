@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Voxel ambient occlusion** — the chunk mesher bakes a per-vertex AO term (four-corner sampling of opaque
+  neighbours in the face's outer plane) into a new `VoxelVertex.ao` / `Mesh3DVertex.ao` field; the `voxel` shader
+  darkens concave block edges with it. Greedy meshing is AO-aware (a merge breaks where corner occlusion differs) and
+  the split diagonal flips on asymmetric corners to avoid interpolation seams. Headless mesher tests cover
+  flat-surface-fully-lit, diagonal-neighbour occlusion, and occlusion-breaks-merge.
+- **Voxel transparent / water rendering** — blocks of render kind `Transparent` / `Water` mesh into a separate pass
+  (`ChunkMesher::meshByKind` → `ChunkMeshSet{opaque, transparent}`). `RendererVoxel` draws the opaque pass first
+  (depth-write on) then the transparent chunks sorted back-to-front by distance to the camera with depth writes
+  disabled, so water and glass blend correctly over the world behind them. The sample `voxel_terrain.owl` sea is now
+  translucent (water block flipped to render kind `Water`; semi-transparent water/ice/glass atlas tiles).
+- **Dynamic depth-write** — `gpu::RenderCommand::setDepthMask` now works on the Vulkan backend
+  (`VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE` + `vkCmdSetDepthWriteEnable`, mirroring the existing dynamic depth-test);
+  `Renderer3D::drawMeshes` gained an `iDepthWrite` flag for the blended transparent pass.
+
 - **Perlin noise in `owl::math`** — `math::PerlinNoise`, a seeded, dependency-free gradient-noise generator (2D/3D
   samplers + `fbm` fractal Brownian motion helpers, reproducible per seed). Foundation for procedural voxel terrain
   (and any other procedural system). 8 headless unit tests (determinism, zero-at-lattice, bounds, continuity, fBm).
