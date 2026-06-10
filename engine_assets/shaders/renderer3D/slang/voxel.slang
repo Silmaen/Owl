@@ -31,6 +31,7 @@ struct VertexInput {
 	[[vk::location(2)]] float2 uv : TEXCOORD0;
 	[[vk::location(3)]] int texIndex : TEXCOORD1;
 	[[vk::location(4)]] float4 tileRect : TEXCOORD2;
+	[[vk::location(5)]] float ao : TEXCOORD3;
 };
 
 struct FragmentInput {
@@ -38,6 +39,7 @@ struct FragmentInput {
 	[[vk::location(1)]] float2 uv : TEXCOORD0;
 	[[vk::location(2)]] nointerpolation int texIndex : TEXCOORD1;
 	[[vk::location(3)]] nointerpolation float4 tileRect : TEXCOORD2;
+	[[vk::location(4)]] float ao : TEXCOORD3;
 };
 
 struct FragmentOutput {
@@ -59,6 +61,7 @@ VertexOutput vertexMain(VertexInput input) {
 	output.frag.uv = input.uv;
 	output.frag.texIndex = input.texIndex;
 	output.frag.tileRect = input.tileRect;
+	output.frag.ao = input.ao;
 	return output;
 }
 
@@ -75,7 +78,7 @@ FragmentOutput fragmentMain(FragmentInput input) {
 	if (texColor.a < 0.001f)
 		discard;
 	float ndl = max(dot(normalize(input.normal), normalize(-gScene.sunDirection.xyz)), 0.0f);
-	float3 lit = texColor.rgb * (gScene.ambient.rgb + ndl);
+	float3 lit = texColor.rgb * (gScene.ambient.rgb + ndl) * input.ao;
 	output.color = float4(lit, texColor.a);
 	output.entityID = -1;
 	return output;

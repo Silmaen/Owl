@@ -23,9 +23,9 @@ namespace owl::renderer {
  *
  * The layout mirrors the `mesh3d.slang` vertex input: object-space position,
  * normal (for the directional-light term), texture coordinate, the index of the
- * texture slot to sample from the bound array, and an atlas sub-rect used by
- * frac-tiling shaders. The struct is tightly packed (52 bytes) so it can be
- * uploaded straight into a vertex buffer.
+ * texture slot to sample from the bound array, an atlas sub-rect used by
+ * frac-tiling shaders, and a per-vertex ambient-occlusion term. The struct is
+ * tightly packed (56 bytes) so it can be uploaded straight into a vertex buffer.
  */
 struct Mesh3DVertex {
 	/// Object-space position.
@@ -38,6 +38,8 @@ struct Mesh3DVertex {
 	uint32_t textureIndex = 0;
 	/// Atlas sub-rect `(uMin, vMin, uSize, vSize)` for frac-tiling shaders (`voxel`); `{0,0,1,1}` = full texture, ignored by `mesh3d`.
 	math::vec4 tileRect{0.f, 0.f, 1.f, 1.f};
+	/// Per-vertex ambient-occlusion multiplier in `[0, 1]` (`1` = unoccluded); used by `voxel`, ignored by `mesh3d`.
+	float ao = 1.f;
 };
 
 /**
@@ -128,9 +130,10 @@ public:
 	 * @param[in] iMeshes The mesh handles to draw.
 	 * @param[in] iModel The shared model (object-to-world) matrix.
 	 * @param[in] iTextures Textures bound to slots `1..N` in order.
+	 * @param[in] iDepthWrite Whether the pass writes depth (`false` for the blended back-to-front transparent pass).
 	 */
 	static void drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat4& iModel,
-						   std::span<const shared<gpu::Texture2D>> iTextures = {});
+						   std::span<const shared<gpu::Texture2D>> iTextures = {}, bool iDepthWrite = true);
 };
 
 }// namespace owl::renderer

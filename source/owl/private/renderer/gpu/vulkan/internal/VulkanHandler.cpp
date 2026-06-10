@@ -257,11 +257,13 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 			.pAttachments = att.data(),
 			.blendConstants = {0.f, 0.f, 0.f, 0.f}};
 	constexpr VkDynamicState dynamicStates[] = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
-												VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE};
+												VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE,
+												VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE};
 	const VkPipelineDynamicStateCreateInfo dynamicState{.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
 														.pNext = nullptr,
 														.flags = {},
-														.dynamicStateCount = 3,
+														.dynamicStateCount =
+																static_cast<uint32_t>(std::size(dynamicStates)),
 														.pDynamicStates = dynamicStates};
 	constexpr VkPipelineDepthStencilStateCreateInfo depthStencil{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
@@ -465,6 +467,7 @@ void VulkanHandler::beginBatch() {
 	const VkRect2D scissor{.offset = {0, 0}, .extent = toExtent(m_currentFramebuffer->getSpecification().size)};
 	vkCmdSetScissor(getCurrentCommandBuffer(), 0, 1, &scissor);
 	vkCmdSetDepthTestEnable(getCurrentCommandBuffer(), depthTestEnabled ? VK_TRUE : VK_FALSE);
+	vkCmdSetDepthWriteEnable(getCurrentCommandBuffer(), depthWriteEnabled ? VK_TRUE : VK_FALSE);
 }
 
 void VulkanHandler::endBatch() {

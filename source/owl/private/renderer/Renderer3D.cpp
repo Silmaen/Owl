@@ -38,7 +38,7 @@ struct InternalData {
 shared<InternalData> g_Data;
 }// namespace
 
-static_assert(sizeof(Mesh3DVertex) == 52, "Mesh3DVertex must stay tightly packed for direct VBO upload.");
+static_assert(sizeof(Mesh3DVertex) == 56, "Mesh3DVertex must stay tightly packed for direct VBO upload.");
 
 void Renderer3D::init() {
 	OWL_PROFILE_FUNCTION()
@@ -108,7 +108,8 @@ auto Renderer3D::createMesh(std::span<const Mesh3DVertex> iVertices, std::span<c
 				{"i_Normal", gpu::ShaderDataType::Float3},
 				{"i_Uv", gpu::ShaderDataType::Float2},
 				{"i_TexIndex", gpu::ShaderDataType::Int},
-				{"i_TileRect", gpu::ShaderDataType::Float4}},
+				{"i_TileRect", gpu::ShaderDataType::Float4},
+				{"i_Ao", gpu::ShaderDataType::Float}},
 			   k_ShaderFolder, indices, iShaderName);
 	draw->setVertexData(iVertices.data(), static_cast<uint32_t>(iVertices.size() * sizeof(Mesh3DVertex)));
 	return draw;
@@ -145,7 +146,7 @@ void Renderer3D::drawMesh(const MeshHandle& iMesh, const math::mat4& iModel,
 }
 
 void Renderer3D::drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat4& iModel,
-							std::span<const shared<gpu::Texture2D>> iTextures) {
+							std::span<const shared<gpu::Texture2D>> iTextures, const bool iDepthWrite) {
 	OWL_PROFILE_FUNCTION()
 
 	if (iMeshes.empty())
@@ -168,12 +169,16 @@ void Renderer3D::drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat
 	gpu::RenderCommand::endTextureLoad();
 
 	gpu::RenderCommand::setDepthTest(true);
+	if (!iDepthWrite)
+		gpu::RenderCommand::setDepthMask(false);
 	for (const auto& mesh: iMeshes) {
 		if (!mesh || mesh->getIndexCount() == 0)
 			continue;
 		mesh->bind();
 		gpu::RenderCommand::drawData(mesh, mesh->getIndexCount());
 	}
+	if (!iDepthWrite)
+		gpu::RenderCommand::setDepthMask(true);
 	gpu::RenderCommand::setDepthTest(false);
 }
 

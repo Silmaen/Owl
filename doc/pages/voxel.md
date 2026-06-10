@@ -131,14 +131,16 @@ Use `data::voxel::worldToChunk` / `data::voxel::worldToLocal` for the conversion
 ## Chunk Meshing
 
 `ChunkMesher` turns a `Chunk` into a `ChunkMesh` — an indexed list of `VoxelVertex` (position, normal, tile-space
-UV, atlas texture index) in chunk-local block space. It is **CPU-only**: uploading to a GPU buffer and placing the
-chunk in the world (a model transform) are the renderer's job.
+UV, atlas texture index, per-vertex ambient occlusion) in chunk-local block space. It is **CPU-only**: uploading to a
+GPU buffer and placing the chunk in the world (a model transform) are the renderer's job.
 
 ```c++
 const data::voxel::ChunkMesh mesh = data::voxel::ChunkMesher::mesh(chunk, registry, neighborProvider);
+// or, split into the two render passes the renderer draws:
+const data::voxel::ChunkMeshSet set = data::voxel::ChunkMesher::meshByKind(chunk, registry, neighborProvider);
 ```
 
-Two techniques keep the geometry small:
+Three techniques keep the geometry small and shaded:
 
 - **Hidden-face culling** — a face is emitted only when it is *visible*: the neighbour across it is non-opaque
   **and** a different block. Interior faces, shared faces between identical blocks, and faces hidden by an opaque
@@ -147,6 +149,14 @@ Two techniques keep the geometry small:
 - **Greedy meshing** — coplanar visible faces of the same block type merge into the largest possible rectangle, so
   a solid 16³ chunk collapses to **6 quads** (one per outer face) instead of thousands. Merged quads carry tiled
   UVs (`(0,0)`..`(w,h)`) so the per-face texture repeats across the rectangle.
+- **Ambient occlusion** — each face corner is darkened by the opaque blocks touching it in the face's outer plane
+  (the classic three-neighbour voxel-AO formula), baked into `VoxelVertex.ao` and multiplied into the lit colour by
+  the `voxel` shader. The greedy merge is AO-aware (it only merges faces whose corner occlusion matches, so a merge
+  breaks around an occluder) and the quad's split diagonal flips on asymmetric corners to avoid an interpolation
+  seam.
+
+`meshByKind` runs the same culling/merging/AO once per render pass: opaque blocks fill `ChunkMeshSet::opaque`,
+transparent and water blocks fill `ChunkMeshSet::transparent`.
 
 ```mermaid
 flowchart LR
@@ -163,10 +173,12 @@ A voxel world reaches the screen through two pieces:
   `VoxelWorld` chunks, the per-block texture paths, and the directional-light settings, all serialized inline in the
   `.owl` scene (block list + run-length-encoded chunks). It is fully inspectable/editable in Owl Nest.
 - **`RendererVoxel`** — a render-stack layer (factory key `"RendererVoxel"`) built on [Renderer3D](renderer.md). It
-  greedy-meshes each chunk, caches the GPU mesh per entity (rebuilt only when the chunk is dirty), resolves the
-  per-block textures (Nearest filtering), and draws them with the frac-tiled `voxel` shader so greedy-merged faces
-  tile rather than stretch. The entity must carry a `RendererTag` routing it to the voxel layer; `Scene::render`
-  only draws voxel worlds when the active layer is voxel-capable (mirroring the raycast path).
+  greedy-meshes each chunk into an opaque and a transparent mesh, caches both per entity (rebuilt only when the chunk
+  is dirty), resolves the per-block textures (Nearest filtering), and draws them with the frac-tiled `voxel` shader so
+  greedy-merged faces tile rather than stretch. It draws the **opaque pass first** (depth writes on), then the
+  **transparent pass** (water / glass) sorted **back-to-front** by chunk distance to the camera with depth writes
+  disabled, so the blend composites correctly. The entity must carry a `RendererTag` routing it to the voxel layer;
+  `Scene::render` only draws voxel worlds when the active layer is voxel-capable (mirroring the raycast path).
 
 The sample project ships a `voxel_terrain.owl` scene — an endless seeded procedural landscape (see *Procedural
 Terrain* below), textured from the dedicated `voxel_blocks` tileset (16 block faces: grass, dirt, stone, sand, wood,

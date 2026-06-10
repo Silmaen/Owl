@@ -153,8 +153,14 @@ void RenderAPI::endTextureLoad() {
 	vkd.commitTextureBind(frame);
 }
 
-void RenderAPI::setDepthMask([[maybe_unused]] const bool iEnabled) {
-	// Vulkan depth write is managed through pipeline state; no-op for now.
+void RenderAPI::setDepthMask(const bool iEnabled) {
+	auto& vkh = internal::VulkanHandler::get();
+	vkh.depthWriteEnabled = iEnabled;
+	// Apply immediately only while a batch is recording; otherwise the value is picked up at the next beginBatch.
+	if (vkh.inBatch) {
+		if (const auto& cmd = vkh.getCurrentCommandBuffer(); cmd != nullptr)
+			vkCmdSetDepthWriteEnable(cmd, iEnabled ? VK_TRUE : VK_FALSE);
+	}
 }
 
 void RenderAPI::setDepthTest(const bool iEnabled) {

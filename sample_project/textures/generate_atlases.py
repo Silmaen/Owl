@@ -162,6 +162,14 @@ def _voxel_tile(atlas: Image.Image, draw: ImageDraw.ImageDraw, index: int, name:
         draw.line([(ox + 10, oy + 10), (ox + 28, oy + 28)], fill=(235, 245, 250, 255), width=2)
     else:
         _noise(px, ox, oy, (200, 0, 200), 0, seed)  # missing-texture magenta
+    # Translucent block faces: drop the alpha so the voxel transparent pass blends them over what is behind.
+    translucent = {"water": 150, "ice": 205, "glass": 120}
+    if name in translucent:
+        alpha = translucent[name]
+        for y in range(TILE):
+            for x in range(TILE):
+                r, g, b, _ = px[ox + x, oy + y]
+                px[ox + x, oy + y] = (r, g, b, alpha)
 
 
 VOXEL_TILES = [

@@ -94,7 +94,7 @@ Entities:
           faces: [5, 5, 5, 5, 5, 5]
         - id: 5
           name: water
-          render: Opaque
+          render: Water
           solid: false
           faces: [13, 13, 13, 13, 13, 13]
         - id: 6

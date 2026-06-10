@@ -40,12 +40,13 @@ auto loadMesh3d() -> std::string {
 }// namespace
 
 TEST(Renderer3D, Mesh3DVertexIsTightlyPacked) {
-	EXPECT_EQ(sizeof(renderer::Mesh3DVertex), 52u);
+	EXPECT_EQ(sizeof(renderer::Mesh3DVertex), 56u);
 	EXPECT_EQ(offsetof(renderer::Mesh3DVertex, position), 0u);
 	EXPECT_EQ(offsetof(renderer::Mesh3DVertex, normal), 12u);
 	EXPECT_EQ(offsetof(renderer::Mesh3DVertex, uv), 24u);
 	EXPECT_EQ(offsetof(renderer::Mesh3DVertex, textureIndex), 32u);
 	EXPECT_EQ(offsetof(renderer::Mesh3DVertex, tileRect), 36u);
+	EXPECT_EQ(offsetof(renderer::Mesh3DVertex, ao), 52u);
 }
 
 TEST(Renderer3D, Mesh3dShaderCompilesVulkan) {
