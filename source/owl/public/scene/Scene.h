@@ -36,6 +36,10 @@ class ScriptableEntity;
 /// Shared sink for asynchronously generated voxel chunks (defined in Scene.cpp).
 struct VoxelStreamState;
 
+namespace component {
+struct VoxelPlayer;
+}// namespace component
+
 /**
  * @brief
  *  Class describing a scene.
@@ -323,6 +327,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Whether this scene wants the cursor captured for mouse-look (a `VoxelPlayer` with `captureCursor` is present).
+	 * @return True if at least one voxel player opts into cursor capture; false otherwise (the default).
+	 */
+	[[nodiscard]] auto wantsCursorCapture() const -> bool;
+
+	/**
+	 * @brief
 	 *  Set the parent of an entity. Handles reparenting and local transform recomputation.
 	 * @param[in] iChild The entity to reparent.
 	 * @param[in] iNewParent The new parent entity.
@@ -605,11 +616,32 @@ private:
 
 	/**
 	 * @brief
+	 *  Raycast from a player's eye and break (left-click) / place (right-click) a block in the targeted `VoxelWorld`.
+	 * @param[in,out] ioPlayer The player whose look direction casts the ray (its target / latch state is updated).
+	 * @param[in] iEye The ray origin (player eye / transform centre) in world space.
+	 * @param[in] iCursorCaptured Whether the cursor is captured; edits only fire while it is.
+	 */
+	void updatePlayerInteraction(component::VoxelPlayer& ioPlayer, const math::vec3& iEye, bool iCursorCaptured);
+
+	/**
+	 * @brief
 	 *  Show a transient on-screen message (e.g. "Fly mode ON") for a few seconds.
 	 * @param[in] iMessage The message text.
 	 * @param[in] iSeconds How long to keep it on screen.
 	 */
 	void showToast(const std::string& iMessage, float iSeconds = 3.f);
+
+	/**
+	 * @brief
+	 *  Draw the world-space voxel HUD (targeted-block highlight + aiming crosshair) through the active camera.
+	 *
+	 * Both the block wireframe and the crosshair are emitted as world-space lines
+	 * in a single `Renderer2D` scene that uses `iCamera` directly, so they project
+	 * exactly like the voxel world (no manual screen projection) and never mix a
+	 * second 2D camera into the frame.
+	 * @param[in] iCamera The active perspective camera.
+	 */
+	void renderHud(const renderer::Camera& iCamera);
 
 	/**
 	 * @brief
@@ -734,6 +766,14 @@ private:
 	std::string m_toastMessage;
 	/// Remaining display time for `m_toastMessage` in seconds.
 	float m_toastTimer = 0.f;
+	/// True while a `VoxelPlayer` targets a block this frame (drives the wireframe highlight).
+	bool m_hasVoxelHighlight = false;
+	/// World-grid coordinates of the highlighted block (valid when `m_hasVoxelHighlight`).
+	math::vec3i m_voxelHighlightBlock{0, 0, 0};
+	/// Outward normal of the ray-impacted face of the highlighted block (the only face outlined).
+	math::vec3i m_voxelHighlightNormal{0, 0, 0};
+	/// True while a captured `VoxelPlayer` is active (draws the centre-screen aiming crosshair).
+	bool m_showCrosshair = false;
 
 	friend class Entity;
 	friend class ScriptableEntity;

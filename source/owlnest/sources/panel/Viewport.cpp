@@ -216,8 +216,10 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 
 	// Never leave the cursor captured outside Play (e.g. after Stop), or it would be stuck hidden in the editor.
 	if (mp_document->state() != SceneDocument::State::Play &&
-		app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled)
+		app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled) {
 		app::Application::get().getWindow().setCursorMode(window::CursorMode::Normal);
+		ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
+	}
 
 	switch (mp_document->state()) {
 		case SceneDocument::State::Edit:
@@ -227,13 +229,17 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 			}
 		case SceneDocument::State::Play:
 			{
-				// Mouse-look capture: click the viewport to grab the cursor (hidden/locked), Esc or losing focus frees it.
+				// Click to capture the cursor (hidden/locked), Esc to free; no focus/hover release (the captured cursor's unbounded virtual position would read as "left the viewport" and cancel capture every frame). NoMouseCursorChange stops ImGui from re-showing the cursor while captured.
 				auto& window = app::Application::get().getWindow();
 				if (window.getCursorMode() == window::CursorMode::Normal) {
-					if (m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+					if (m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
+						activeScene->wantsCursorCapture()) {
 						window.setCursorMode(window::CursorMode::Disabled);
-				} else if (input::Input::isKeyPressed(input::key::Escape) || !m_focused) {
+						ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+					}
+				} else if (input::Input::isKeyPressed(input::key::Escape)) {
 					window.setCursorMode(window::CursorMode::Normal);
+					ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouseCursorChange;
 				}
 				// UiRect uses Y=0 at bottom; ImGui mouse Y=0 at top → always flip.
 				const math::vec2 vpMouse = {mx, viewportSizeInternal.y() - my};

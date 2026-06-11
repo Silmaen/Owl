@@ -156,7 +156,8 @@ Three techniques keep the geometry small and shaded:
   seam.
 
 `meshByKind` runs the same culling/merging/AO once per render pass: opaque blocks fill `ChunkMeshSet::opaque`,
-transparent and water blocks fill `ChunkMeshSet::transparent`.
+transparent and water blocks fill `ChunkMeshSet::transparent`. Ambient occlusion is optional — the `VoxelWorld`
+component exposes an **Ambient Occlusion** toggle (on by default); turning it off meshes every face flat-lit.
 
 ```mermaid
 flowchart LR
@@ -205,6 +206,23 @@ loses focus or when leaving Play. Per-player `mouseSensitivity` scales the rotat
 and **Left-Shift** descends, and motion is still resolved against voxel collisions. While flying, **J** toggles a
 **super-speed** multiplier. A transient on-screen toast (about three seconds) confirms each toggle ("Fly mode ON/OFF",
 "Super speed ON/OFF").
+
+Mouse-look capture is **opt-in**: the `VoxelPlayer` has a **Capture Cursor** flag (off by default) — only a player
+that enables it lets clicking the viewport hide / lock the cursor (the editor and runner check
+`Scene::wantsCursorCapture()`), so non-voxel scenes keep a normal cursor. With capture off, block break / place is
+disabled too (it is gated on the captured cursor).
+
+The player can also **edit the world** (when cursor capture is enabled). A centre-screen **crosshair** marks the aim point; a ray
+(`data::voxel::raycastVoxel`, Amanatides & Woo grid traversal) is cast from the eye through it (along the look
+direction) up to `reach` blocks. The targeted block is outlined with a wireframe **highlight** that draws only the
+edges of its camera-facing faces (the hidden back edges stay invisible). **Left-click breaks** it (replaced with
+air), **right-click places** the player's `placeBlock` in the empty cell against the face the ray hit — unless that
+cell would intersect the player's body. Edits only fire while the cursor
+is captured (so the click that captures the cursor never doubles as an edit). Because an edit on a chunk border also
+affects the neighbour chunk's visible faces, the edit calls `VoxelWorld::markNeighborChunksDirty`, which re-meshes the
+adjacent chunk (this is kept off `VoxelWorld::setBlock` so bulk terrain streaming does not pay for it). `reach` and
+`placeBlock` are authored on the `VoxelPlayer` component. (Per-block metadata — orientation / state — is not yet
+stored; the chunk holds a flat `BlockId` per cell.)
 
 ## Procedural Terrain
 

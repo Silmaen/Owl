@@ -85,14 +85,15 @@ auto uploadMesh(const data::voxel::ChunkMesh& iMesh, const math::vec3& iOrigin, 
 }
 
 auto buildChunkMeshes(const data::voxel::Chunk& iChunk, const data::voxel::BlockRegistry& iRegistry,
-					  const data::voxel::VoxelWorld& iWorld, const math::vec3i& iCoord, const scene::Tileset& iTileset)
-		-> ChunkMeshes {
+					  const data::voxel::VoxelWorld& iWorld, const math::vec3i& iCoord, const scene::Tileset& iTileset,
+					  const bool iAmbientOcclusion) -> ChunkMeshes {
 	const auto neighbor = [&iWorld, iCoord](const int32_t iX, const int32_t iY,
 											const int32_t iZ) -> data::voxel::BlockId {
 		return iWorld.getBlock(math::vec3i{iCoord.x() * k_ChunkSize + iX, iCoord.y() * k_ChunkSize + iY,
 										   iCoord.z() * k_ChunkSize + iZ});
 	};
-	const data::voxel::ChunkMeshSet set = data::voxel::ChunkMesher::meshByKind(iChunk, iRegistry, neighbor);
+	const data::voxel::ChunkMeshSet set =
+			data::voxel::ChunkMesher::meshByKind(iChunk, iRegistry, neighbor, iAmbientOcclusion);
 	// Bake chunk origin into vertices so chunks share one model (avoids per-draw UBO last-write-wins on Vulkan).
 	const math::vec3 origin{static_cast<float>(iCoord.x() * k_ChunkSize), static_cast<float>(iCoord.y() * k_ChunkSize),
 							static_cast<float>(iCoord.z() * k_ChunkSize)};
@@ -161,8 +162,8 @@ void RendererVoxel::prepareWorld(scene::component::VoxelWorld& ioComponent, cons
 		const uint64_t key = packKey(coord);
 		live.insert(key);
 		if (const auto it = cache.chunks.find(key); it == cache.chunks.end() || chunk->isDirty()) {
-			cache.chunks[key] =
-					buildChunkMeshes(*chunk, ioComponent.registry, ioComponent.world, coord, *ioComponent.tileset);
+			cache.chunks[key] = buildChunkMeshes(*chunk, ioComponent.registry, ioComponent.world, coord,
+												 *ioComponent.tileset, ioComponent.ambientOcclusion);
 			chunk->markClean();
 		}
 	}

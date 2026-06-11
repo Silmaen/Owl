@@ -137,10 +137,12 @@ public:
 	 * @param[in] iChunk The chunk to mesh.
 	 * @param[in] iRegistry The block registry resolving render kind and face textures.
 	 * @param[in] iNeighbor Provider for border neighbour blocks.
+	 * @param[in] iAmbientOcclusion When true, bake per-vertex ambient occlusion; when false, leave every vertex fully lit.
 	 * @return The opaque and transparent meshes (either may be empty).
 	 */
 	[[nodiscard]] static auto meshByKind(const Chunk& iChunk, const BlockRegistry& iRegistry,
-										 const NeighborProvider& iNeighbor) -> ChunkMeshSet;
+										 const NeighborProvider& iNeighbor, bool iAmbientOcclusion = true)
+			-> ChunkMeshSet;
 };
 
 }// namespace owl::data::voxel

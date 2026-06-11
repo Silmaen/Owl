@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Voxel ambient occlusion is now an option** — `VoxelWorld.ambientOcclusion` (default on) toggles the baked AO from
+  the inspector; turning it off rebuilds the chunk meshes flat-lit.
+- **Voxel mouse-look capture is now opt-in per player** — `VoxelPlayer.captureCursor` (default **off**) gates whether
+  clicking the viewport captures (hides / locks) the cursor for mouse-look. Only a player that enables it triggers
+  capture, so non-voxel scenes keep a normal cursor on click; the `voxel_terrain.owl` player sets it on. The editor
+  Viewport and the runner query `Scene::wantsCursorCapture()` before grabbing the cursor.
+
+- **Voxel block interaction** — the `VoxelPlayer` can now break and place blocks. A new pure, headless-tested
+  `data::voxel::raycastVoxel` (Amanatides & Woo grid DDA) casts a ray from the player's eye along its look
+  direction (through the centre-screen crosshair); **left-click breaks** the targeted block, **right-click places**
+  the player's `placeBlock` against the face the ray hit (skipped if it would intersect the player). Edits only fire
+  while the cursor is captured, and the capturing click is never read as an edit. A centre-screen **crosshair** marks
+  the aim point, and a wireframe **highlight** outlines the targeted block — drawing only the edges of its
+  camera-facing faces, so the hidden back edges stay invisible. `VoxelPlayer` gains authored `reach` and `placeBlock`
+  fields (inspector + serialized +
+  round-trip tested). `VoxelWorld::markNeighborChunksDirty` re-meshes the neighbour chunk when a border block is
+  edited (kept off `setBlock` so terrain streaming doesn't pay for it). Per-block metadata (orientation / state) is
+  deferred — it is a chunk-encoding schema change.
+
 - **Voxel ambient occlusion** — the chunk mesher bakes a per-vertex AO term (four-corner sampling of opaque
   neighbours in the face's outer plane) into a new `VoxelVertex.ao` / `Mesh3DVertex.ao` field; the `voxel` shader
   darkens concave block edges with it. Greedy meshing is AO-aware (a merge breaks where corner occlusion differs) and

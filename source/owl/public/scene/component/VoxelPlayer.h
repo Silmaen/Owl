@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 #include "core/Serializer.h"
+#include "data/voxel/Block.h"
 #include "math/vectors.h"
 
 namespace owl::scene::component {
@@ -45,6 +46,12 @@ struct OWL_API VoxelPlayer {
 	float superSpeedMultiplier = 4.f;
 	/// Half the player box size on each axis (collision AABB; the transform is its centre).
 	math::vec3 halfExtents{0.4f, 0.9f, 0.4f};
+	/// Maximum reach in blocks for breaking / placing (the targeting ray length).
+	float reach = 5.f;
+	/// Block id placed on right-click (resolved against the targeted world's registry).
+	data::voxel::BlockId placeBlock = 1;
+	/// When true, clicking the viewport captures (hides / locks) the cursor for mouse-look; off keeps a normal cursor.
+	bool captureCursor = false;
 
 	/// Vertical velocity (runtime; not serialized).
 	float velocityY = 0.f;
@@ -70,6 +77,14 @@ struct OWL_API VoxelPlayer {
 	bool spaceWasPressed = false;
 	/// Edge-detection latch for the 'J' key (runtime).
 	bool superSpeedWasPressed = false;
+	/// Edge-detection latch for the break (left mouse) button (runtime).
+	bool breakWasPressed = false;
+	/// Edge-detection latch for the place (right mouse) button (runtime).
+	bool placeWasPressed = false;
+	/// True while the targeting ray hits a block this frame (runtime; drives the highlight).
+	bool hasTarget = false;
+	/// World-grid coordinates of the currently targeted block (runtime; valid when `hasTarget`).
+	math::vec3i targetBlock{0, 0, 0};
 
 	/**
 	 * @brief

@@ -114,7 +114,7 @@ auto faceAo(const Chunk& iChunk, const BlockRegistry& iRegistry, const ChunkMesh
 
 void buildSliceMask(const Chunk& iChunk, const BlockRegistry& iRegistry, const ChunkMesher::NeighborProvider& iNeighbor,
 					const int32_t iAxis, const int32_t iU, const int32_t iV, const int32_t iLayer, const int32_t iStep,
-					const BlockClass iClass, std::vector<MaskCell>& oMask) {
+					const BlockClass iClass, const bool iAmbientOcclusion, std::vector<MaskCell>& oMask) {
 	std::ranges::fill(oMask, MaskCell{});
 	for (int32_t vv = 0; vv < k_Size; ++vv) {
 		for (int32_t uu = 0; uu < k_Size; ++uu) {
@@ -129,9 +129,10 @@ void buildSliceMask(const Chunk& iChunk, const BlockRegistry& iRegistry, const C
 			coord[static_cast<size_t>(iAxis)] = outer;
 			const BlockId neighbor = sampleBlock(iChunk, iNeighbor, coord[0], coord[1], coord[2]);
 			if (!iRegistry.isOpaque(neighbor) && neighbor != own)
-				oMask[maskIndex(uu, vv)] =
-						MaskCell{.block = own,
-								 .ao = faceAo(iChunk, iRegistry, iNeighbor, iAxis, iU, iV, outer, uu, vv)};
+				oMask[maskIndex(uu, vv)] = MaskCell{
+						.block = own,
+						.ao = iAmbientOcclusion ? faceAo(iChunk, iRegistry, iNeighbor, iAxis, iU, iV, outer, uu, vv)
+												: std::array<uint8_t, 4>{3, 3, 3, 3}};
 		}
 	}
 }
@@ -217,7 +218,7 @@ void emitSliceQuads(std::vector<MaskCell>& ioMask, ChunkMesh& ioMesh, const int3
 }
 
 auto meshImpl(const Chunk& iChunk, const BlockRegistry& iRegistry, const ChunkMesher::NeighborProvider& iNeighbor,
-			  const BlockClass iClass) -> ChunkMesh {
+			  const BlockClass iClass, const bool iAmbientOcclusion) -> ChunkMesh {
 	ChunkMesh out;
 	std::vector<MaskCell> mask(static_cast<size_t>(k_Size) * k_Size);
 	for (int32_t axis = 0; axis < 3; ++axis) {
@@ -229,7 +230,7 @@ auto meshImpl(const Chunk& iChunk, const BlockRegistry& iRegistry, const ChunkMe
 			const math::vec3 normal = buildNormal(axis, positive);
 			const BlockFace face = faceForAxisDir(axis, positive);
 			for (int32_t layer = 0; layer < k_Size; ++layer) {
-				buildSliceMask(iChunk, iRegistry, iNeighbor, axis, u, v, layer, step, iClass, mask);
+				buildSliceMask(iChunk, iRegistry, iNeighbor, axis, u, v, layer, step, iClass, iAmbientOcclusion, mask);
 				const float plane = positive ? static_cast<float>(layer + 1) : static_cast<float>(layer);
 				emitSliceQuads(mask, out, axis, u, v, plane, normal, face, iRegistry, !positive);
 			}
@@ -241,18 +242,19 @@ auto meshImpl(const Chunk& iChunk, const BlockRegistry& iRegistry, const ChunkMe
 
 auto ChunkMesher::mesh(const Chunk& iChunk, const BlockRegistry& iRegistry, const NeighborProvider& iNeighbor)
 		-> ChunkMesh {
-	return meshImpl(iChunk, iRegistry, iNeighbor, BlockClass::All);
+	return meshImpl(iChunk, iRegistry, iNeighbor, BlockClass::All, true);
 }
 
 auto ChunkMesher::mesh(const Chunk& iChunk, const BlockRegistry& iRegistry) -> ChunkMesh {
 	return meshImpl(
-			iChunk, iRegistry, [](int32_t, int32_t, int32_t) -> BlockId { return g_AirBlock; }, BlockClass::All);
+			iChunk, iRegistry, [](int32_t, int32_t, int32_t) -> BlockId { return g_AirBlock; }, BlockClass::All, true);
 }
 
-auto ChunkMesher::meshByKind(const Chunk& iChunk, const BlockRegistry& iRegistry, const NeighborProvider& iNeighbor)
-		-> ChunkMeshSet {
-	return ChunkMeshSet{.opaque = meshImpl(iChunk, iRegistry, iNeighbor, BlockClass::Opaque),
-						.transparent = meshImpl(iChunk, iRegistry, iNeighbor, BlockClass::NonOpaque)};
+auto ChunkMesher::meshByKind(const Chunk& iChunk, const BlockRegistry& iRegistry, const NeighborProvider& iNeighbor,
+							 const bool iAmbientOcclusion) -> ChunkMeshSet {
+	return ChunkMeshSet{.opaque = meshImpl(iChunk, iRegistry, iNeighbor, BlockClass::Opaque, iAmbientOcclusion),
+						.transparent =
+								meshImpl(iChunk, iRegistry, iNeighbor, BlockClass::NonOpaque, iAmbientOcclusion)};
 }
 
 }// namespace owl::data::voxel

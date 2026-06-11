@@ -36,6 +36,44 @@ auto renderKindFrom(const std::string& iName) -> data::voxel::BlockRenderKind {
 		return data::voxel::BlockRenderKind::Water;
 	return data::voxel::BlockRenderKind::Opaque;
 }
+
+void parseTerrain(const YAML::Node& iNode, data::voxel::TerrainParams& oTerrain) {
+	if (iNode["Seed"])
+		oTerrain.seed = iNode["Seed"].as<uint32_t>();
+	if (iNode["Frequency"])
+		oTerrain.frequency = iNode["Frequency"].as<float>();
+	if (iNode["Octaves"])
+		oTerrain.octaves = iNode["Octaves"].as<uint32_t>();
+	if (iNode["Lacunarity"])
+		oTerrain.lacunarity = iNode["Lacunarity"].as<float>();
+	if (iNode["Persistence"])
+		oTerrain.persistence = iNode["Persistence"].as<float>();
+	if (iNode["BaseHeight"])
+		oTerrain.baseHeight = iNode["BaseHeight"].as<int32_t>();
+	if (iNode["Amplitude"])
+		oTerrain.amplitude = iNode["Amplitude"].as<int32_t>();
+	if (iNode["SeaLevel"])
+		oTerrain.seaLevel = iNode["SeaLevel"].as<int32_t>();
+	if (iNode["DirtDepth"])
+		oTerrain.dirtDepth = iNode["DirtDepth"].as<int32_t>();
+	if (iNode["CaveFrequency"])
+		oTerrain.caveFrequency = iNode["CaveFrequency"].as<float>();
+	if (iNode["CaveThreshold"])
+		oTerrain.caveThreshold = iNode["CaveThreshold"].as<float>();
+	if (iNode["Biomes"])
+		oTerrain.biomes = iNode["Biomes"].as<bool>();
+	if (iNode["BiomeFrequency"])
+		oTerrain.biomeFrequency = iNode["BiomeFrequency"].as<float>();
+	if (const auto ids = iNode["BlockIds"]; ids && ids.IsSequence() && ids.size() >= 5) {
+		oTerrain.stone = ids[0].as<uint16_t>();
+		oTerrain.grass = ids[1].as<uint16_t>();
+		oTerrain.dirt = ids[2].as<uint16_t>();
+		oTerrain.sand = ids[3].as<uint16_t>();
+		oTerrain.water = ids[4].as<uint16_t>();
+		if (ids.size() >= 6)
+			oTerrain.snow = ids[5].as<uint16_t>();
+	}
+}
 }// namespace
 
 void VoxelWorld::serialize(const core::Serializer& iOut) const {
@@ -51,6 +89,7 @@ void VoxelWorld::serialize(const core::Serializer& iOut) const {
 	emitter << YAML::Key << "ProceduralTerrain" << YAML::Value << proceduralTerrain;
 	emitter << YAML::Key << "StreamRadius" << YAML::Value << streamRadius;
 	emitter << YAML::Key << "StreamHeight" << YAML::Value << streamHeight;
+	emitter << YAML::Key << "AmbientOcclusion" << YAML::Value << ambientOcclusion;
 	emitter << YAML::Key << "Terrain" << YAML::Value << YAML::BeginMap;
 	emitter << YAML::Key << "Seed" << YAML::Value << terrain.seed;
 	emitter << YAML::Key << "Frequency" << YAML::Value << terrain.frequency;
@@ -131,44 +170,11 @@ void VoxelWorld::deserialize(const core::Serializer& iNode) {
 		streamRadius = sr.as<int32_t>();
 	if (const auto sh = node["StreamHeight"]; sh)
 		streamHeight = sh.as<int32_t>();
+	if (const auto ao = node["AmbientOcclusion"]; ao)
+		ambientOcclusion = ao.as<bool>();
 	terrain = data::voxel::TerrainParams{};
-	if (const auto t = node["Terrain"]; t && t.IsMap()) {
-		if (t["Seed"])
-			terrain.seed = t["Seed"].as<uint32_t>();
-		if (t["Frequency"])
-			terrain.frequency = t["Frequency"].as<float>();
-		if (t["Octaves"])
-			terrain.octaves = t["Octaves"].as<uint32_t>();
-		if (t["Lacunarity"])
-			terrain.lacunarity = t["Lacunarity"].as<float>();
-		if (t["Persistence"])
-			terrain.persistence = t["Persistence"].as<float>();
-		if (t["BaseHeight"])
-			terrain.baseHeight = t["BaseHeight"].as<int32_t>();
-		if (t["Amplitude"])
-			terrain.amplitude = t["Amplitude"].as<int32_t>();
-		if (t["SeaLevel"])
-			terrain.seaLevel = t["SeaLevel"].as<int32_t>();
-		if (t["DirtDepth"])
-			terrain.dirtDepth = t["DirtDepth"].as<int32_t>();
-		if (t["CaveFrequency"])
-			terrain.caveFrequency = t["CaveFrequency"].as<float>();
-		if (t["CaveThreshold"])
-			terrain.caveThreshold = t["CaveThreshold"].as<float>();
-		if (t["Biomes"])
-			terrain.biomes = t["Biomes"].as<bool>();
-		if (t["BiomeFrequency"])
-			terrain.biomeFrequency = t["BiomeFrequency"].as<float>();
-		if (const auto ids = t["BlockIds"]; ids && ids.IsSequence() && ids.size() >= 5) {
-			terrain.stone = ids[0].as<uint16_t>();
-			terrain.grass = ids[1].as<uint16_t>();
-			terrain.dirt = ids[2].as<uint16_t>();
-			terrain.sand = ids[3].as<uint16_t>();
-			terrain.water = ids[4].as<uint16_t>();
-			if (ids.size() >= 6)
-				terrain.snow = ids[5].as<uint16_t>();
-		}
-	}
+	if (const auto t = node["Terrain"]; t && t.IsMap())
+		parseTerrain(t, terrain);
 	world.clear();
 	if (const auto chunks = node["Chunks"]; chunks && chunks.IsSequence()) {
 		for (const auto& chunkNode: chunks) {

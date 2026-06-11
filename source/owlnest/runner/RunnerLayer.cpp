@@ -48,10 +48,10 @@ auto isSubdir(const std::filesystem::path& iFile, const std::filesystem::path& i
 	return std::nullopt;
 }
 
-void updateCursorCapture() {
+void updateCursorCapture(const bool iAllowed) {
 	auto& window = app::Application::get().getWindow();
 	if (window.getCursorMode() == window::CursorMode::Normal) {
-		if (input::Input::isMouseButtonPressed(input::mouse::ButtonLeft))
+		if (iAllowed && input::Input::isMouseButtonPressed(input::mouse::ButtonLeft))
 			window.setCursorMode(window::CursorMode::Disabled);
 	} else if (input::Input::isKeyPressed(input::key::Escape)) {
 		window.setCursorMode(window::CursorMode::Normal);
@@ -320,7 +320,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 														 input::Input::getMousePos().y()};
 					scene::UiInputSystem::update(m_activeScene.get(), m_viewportSize, mousePos,
 												 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft));
-					updateCursorCapture();
+					updateCursorCapture(m_activeScene->wantsCursorCapture());
 					m_activeScene->onUpdateRuntime(iTimeStep);
 					// Handle quit request from Lua (scene.quit()).
 					if (m_activeScene->quitRequested) {
