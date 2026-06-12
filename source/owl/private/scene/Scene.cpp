@@ -30,7 +30,9 @@
 #include "core/task/Task.h"
 #include "data/voxel/Chunk.h"
 #include "data/voxel/VoxelCollision.h"
+#include "data/voxel/VoxelRaycast.h"
 #include "input/Input.h"
+#include "input/MouseCode.h"
 #include "physics/PhysicCommand.h"
 #include "scene/ScreenTransition.h"
 #include "scene/component/components.h"
@@ -912,6 +914,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 			m_currentLayerName.clear();
 			mp_currentLayer = nullptr;
 		}
+		renderHud(iCamera);
 		renderToast();
 		return;
 	}
@@ -934,6 +937,7 @@ void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	m_currentLayerName.clear();
 	m_currentLayerIsFirst = true;
 	mp_currentLayer = nullptr;
+	renderHud(iCamera);
 	renderToast();
 }
 
@@ -1295,6 +1299,14 @@ auto updatePlayerModes(component::VoxelPlayer& ioPlayer, const float iDt) -> std
 	return toast;
 }
 
+auto cellOverlapsBox(const math::vec3i& iCell, const math::vec3& iCenter, const math::vec3& iHalf) -> bool {
+	const auto cx = static_cast<float>(iCell.x());
+	const auto cy = static_cast<float>(iCell.y());
+	const auto cz = static_cast<float>(iCell.z());
+	return iCenter.x() + iHalf.x() > cx && iCenter.x() - iHalf.x() < cx + 1.f && iCenter.y() + iHalf.y() > cy &&
+		   iCenter.y() - iHalf.y() < cy + 1.f && iCenter.z() + iHalf.z() > cz && iCenter.z() - iHalf.z() < cz + 1.f;
+}
+
 void applyPlayerMovement(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform, const float iDt,
 						 const data::voxel::SolidPredicate& iIsSolid) {
 	const float sy = std::sin(ioPlayer.yaw);
@@ -1357,9 +1369,13 @@ void Scene::updateVoxelPlayers(const core::Timestep& iTimeStep) {
 	const float dt = iTimeStep.getSeconds();
 	if (dt <= 0.f)
 		return;
+	m_hasVoxelHighlight = false;
+	m_showCrosshair = false;
 	const auto players = registry.view<component::Transform, component::VoxelPlayer>();
 	if (players.begin() == players.end())
 		return;
+	// A voxel player is active this frame: show the aiming crosshair whether or not the cursor is captured.
+	m_showCrosshair = true;
 
 	const auto isSolid = [this](const int32_t iBx, const int32_t iBy, const int32_t iBz) -> bool {
 		const math::vec3i block{iBx, iBy, iBz};
@@ -1392,6 +1408,7 @@ void Scene::updateVoxelPlayers(const core::Timestep& iTimeStep) {
 		applyPlayerLook(player, tr, dt, cursorCaptured);
 		if (const auto toast = updatePlayerModes(player, dt); !toast.empty())
 			showToast(toast);
+		updatePlayerInteraction(player, tr.translation(), cursorCaptured);
 
 		// Hold still until the player's chunk has streamed in, so it never falls through an ungenerated world.
 		if (!hasChunk(tr.translation())) {
@@ -1402,9 +1419,130 @@ void Scene::updateVoxelPlayers(const core::Timestep& iTimeStep) {
 	}
 }
 
+void Scene::updatePlayerInteraction(component::VoxelPlayer& ioPlayer, const math::vec3& iEye,
+									const bool iCursorCaptured) {
+	const float cp = std::cos(ioPlayer.pitch);
+	const math::vec3 forward{-cp * std::sin(ioPlayer.yaw), std::sin(ioPlayer.pitch), -cp * std::cos(ioPlayer.yaw)};
+	const auto worlds = registry.view<component::VoxelWorld>();
+	const auto targetable = [&](const int32_t iX, const int32_t iY, const int32_t iZ) -> bool {
+		const math::vec3i block{iX, iY, iZ};
+		return std::ranges::any_of(worlds, [&](const auto entity) -> bool {
+			return !worlds.get<component::VoxelWorld>(entity).registry.isAir(
+					worlds.get<component::VoxelWorld>(entity).world.getBlock(block));
+		});
+	};
+	const auto hit = data::voxel::raycastVoxel(targetable, iEye, forward, ioPlayer.reach);
+	ioPlayer.hasTarget = hit.has_value();
+	if (hit) {
+		ioPlayer.targetBlock = hit->block;
+		m_hasVoxelHighlight = true;
+		m_voxelHighlightBlock = hit->block;
+		m_voxelHighlightNormal = hit->normal;
+	}
+
+	const bool leftHeld = input::Input::isMouseButtonPressed(input::mouse::ButtonLeft);
+	const bool rightHeld = input::Input::isMouseButtonPressed(input::mouse::ButtonRight);
+	bool breakEdge = false;
+	bool placeEdge = false;
+	if (iCursorCaptured) {
+		breakEdge = leftHeld && !ioPlayer.breakWasPressed;
+		placeEdge = rightHeld && !ioPlayer.placeWasPressed;
+	}
+	// Track the raw button state (even uncaptured) so the click that captures the cursor is never read as an edit edge.
+	ioPlayer.breakWasPressed = leftHeld;
+	ioPlayer.placeWasPressed = rightHeld;
+	if (!hit || !(breakEdge || placeEdge))
+		return;
+
+	for (const auto entity: worlds) {
+		auto& vw = worlds.get<component::VoxelWorld>(entity);
+		if (vw.registry.isAir(vw.world.getBlock(hit->block)))
+			continue;
+		if (breakEdge) {
+			vw.world.setBlock(hit->block, data::voxel::g_AirBlock);
+			vw.world.markNeighborChunksDirty(hit->block);
+		} else {
+			const math::vec3i target{hit->block.x() + hit->normal.x(), hit->block.y() + hit->normal.y(),
+									 hit->block.z() + hit->normal.z()};
+			if (vw.registry.isAir(vw.world.getBlock(target)) && !cellOverlapsBox(target, iEye, ioPlayer.halfExtents)) {
+				vw.world.setBlock(target, ioPlayer.placeBlock);
+				vw.world.markNeighborChunksDirty(target);
+			}
+		}
+		break;
+	}
+}
+
 void Scene::showToast(const std::string& iMessage, const float iSeconds) {
 	m_toastMessage = iMessage;
 	m_toastTimer = iSeconds;
+}
+
+void Scene::renderHud(const renderer::Camera& iCamera) {
+	OWL_PROFILE_FUNCTION()
+
+	if (!m_hasVoxelHighlight && !m_showCrosshair)
+		return;
+	const math::vec4 cameraPos4 = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	const math::vec3 cameraPos{cameraPos4.x(), cameraPos4.y(), cameraPos4.z()};
+	renderer::Renderer2D::beginScene(iCamera);
+
+	if (m_hasVoxelHighlight) {
+		constexpr float pad = 0.004f;
+		const float lx = static_cast<float>(m_voxelHighlightBlock.x()) - pad;
+		const float ly = static_cast<float>(m_voxelHighlightBlock.y()) - pad;
+		const float lz = static_cast<float>(m_voxelHighlightBlock.z()) - pad;
+		const float hx = lx + 1.f + 2.f * pad;
+		const float hy = ly + 1.f + 2.f * pad;
+		const float hz = lz + 1.f + 2.f * pad;
+		const std::array<math::vec3, 8> c{math::vec3{lx, ly, lz}, math::vec3{hx, ly, lz}, math::vec3{hx, hy, lz},
+										  math::vec3{lx, hy, lz}, math::vec3{lx, ly, hz}, math::vec3{hx, ly, hz},
+										  math::vec3{hx, hy, hz}, math::vec3{lx, hy, hz}};
+		struct Face {
+			math::vec3i normal;
+			std::array<int, 4> corners;
+		};
+		constexpr std::array<Face, 6> faces{Face{{0, 0, -1}, {0, 1, 2, 3}}, Face{{0, 0, 1}, {4, 5, 6, 7}},
+											Face{{0, -1, 0}, {0, 1, 5, 4}}, Face{{0, 1, 0}, {3, 2, 6, 7}},
+											Face{{-1, 0, 0}, {0, 3, 7, 4}}, Face{{1, 0, 0}, {1, 2, 6, 5}}};
+		const math::vec4 color{0.96f, 0.96f, 1.f, 0.9f};
+		// Outline only the face the ray hit (its outward normal matches the recorded hit normal).
+		for (const auto& face: faces) {
+			if (face.normal != m_voxelHighlightNormal)
+				continue;
+			for (size_t e = 0; e < 4; ++e)
+				renderer::Renderer2D::drawLine({.point1 = c[static_cast<size_t>(face.corners[e])],
+												.point2 = c[static_cast<size_t>(face.corners[(e + 1) % 4])],
+												.color = color});
+		}
+	}
+
+	if (m_showCrosshair) {
+		const math::mat4 invView = inverse(iCamera.getView());
+		const auto toWorldDir = [&](const float iX, const float iY, const float iZ) -> math::vec3 {
+			const math::vec4 v = invView * math::vec4{iX, iY, iZ, 0.f};
+			return math::vec3{v.x(), v.y(), v.z()}.normalized();
+		};
+		const math::vec3 right = toWorldDir(1.f, 0.f, 0.f);
+		const math::vec3 up = toWorldDir(0.f, 1.f, 0.f);
+		const math::vec3 forward = toWorldDir(0.f, 0.f, -1.f);
+		// Size the cross from the vertical FOV so it keeps a constant on-screen size at the fixed placement distance.
+		const float proj11 = iCamera.getProjection()(1, 1);
+		constexpr float distance = 1.f;
+		const float halfHeight = proj11 > 0.001f ? distance / proj11 : distance * 0.4f;
+		const float arm = halfHeight * 0.03f;
+		const float gap = arm * 0.35f;
+		const math::vec3 center = cameraPos + forward * distance;
+		const math::vec4 color{1.f, 1.f, 1.f, 0.9f};
+		renderer::Renderer2D::drawLine(
+				{.point1 = center - right * arm, .point2 = center - right * gap, .color = color});
+		renderer::Renderer2D::drawLine(
+				{.point1 = center + right * gap, .point2 = center + right * arm, .color = color});
+		renderer::Renderer2D::drawLine({.point1 = center - up * arm, .point2 = center - up * gap, .color = color});
+		renderer::Renderer2D::drawLine({.point1 = center + up * gap, .point2 = center + up * arm, .color = color});
+	}
+
+	renderer::Renderer2D::endScene();
 }
 
 void Scene::renderToast() {
@@ -1414,7 +1552,6 @@ void Scene::renderToast() {
 		return;
 	const auto vpW = static_cast<float>(m_viewportSize.x());
 	const auto vpH = static_cast<float>(m_viewportSize.y());
-	// Own pixel-space ortho camera so the overlay stays flat on screen regardless of the player's perspective view.
 	const renderer::CameraOrtho overlay{0.f, vpW, 0.f, vpH};
 	constexpr float kTextHeight = 28.f;
 	math::Transform textTransform;
@@ -2094,6 +2231,12 @@ auto Scene::getWorldsBuffer() const -> shared<renderer::gpu::StorageBuffer> {
 	if (!mp_worldTransformPass)
 		return nullptr;
 	return mp_worldTransformPass->getWorldBuffer();
+}
+
+auto Scene::wantsCursorCapture() const -> bool {
+	const auto view = registry.view<component::VoxelPlayer>();
+	return std::ranges::any_of(
+			view, [&](const auto iEntity) -> bool { return view.get<component::VoxelPlayer>(iEntity).captureCursor; });
 }
 
 auto Scene::isEffectivelyVisible(const Entity& iEntity, const bool iEditorMode) const -> bool {

@@ -431,6 +431,7 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 				vw.tilesetPath = "tilesets/world_platform.owltileset";
 				vw.sunDirection = math::vec3{0.1f, -0.9f, 0.2f};
 				vw.ambient = math::vec3{0.2f, 0.3f, 0.4f};
+				vw.ambientOcclusion = false;
 			},
 			[](const scene::Entity& iEnt) {
 				ASSERT_TRUE(iEnt.hasComponent<scene::component::VoxelWorld>());
@@ -443,6 +444,7 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 				EXPECT_EQ(vw.tilesetPath.generic_string(), "tilesets/world_platform.owltileset");
 				EXPECT_FLOAT_EQ(vw.sunDirection.y(), -0.9f);
 				EXPECT_FLOAT_EQ(vw.ambient.z(), 0.4f);
+				EXPECT_FALSE(vw.ambientOcclusion);
 			});
 }
 
@@ -473,6 +475,9 @@ TEST(ComponentRoundTrip, VoxelPlayer) {
 				vp.gravity = 22.f;
 				vp.lookSpeed = 2.f;
 				vp.halfExtents = {0.35f, 0.95f, 0.35f};
+				vp.reach = 7.5f;
+				vp.placeBlock = 4;
+				vp.captureCursor = true;
 			},
 			[](const scene::Entity& iEnt) {
 				ASSERT_TRUE(iEnt.hasComponent<scene::component::VoxelPlayer>());
@@ -483,5 +488,8 @@ TEST(ComponentRoundTrip, VoxelPlayer) {
 				EXPECT_FLOAT_EQ(vp.gravity, 22.f);
 				EXPECT_FLOAT_EQ(vp.lookSpeed, 2.f);
 				EXPECT_NEAR(vp.halfExtents.y(), 0.95f, 0.001f);
+				EXPECT_FLOAT_EQ(vp.reach, 7.5f);
+				EXPECT_EQ(vp.placeBlock, 4u);
+				EXPECT_TRUE(vp.captureCursor);
 			});
 }

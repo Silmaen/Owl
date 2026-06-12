@@ -26,6 +26,9 @@ void VoxelPlayer::serialize(const core::Serializer& iOut) const {
 	emitter << YAML::Key << "SuperSpeedMultiplier" << YAML::Value << superSpeedMultiplier;
 	emitter << YAML::Key << "HalfExtents" << YAML::Value << YAML::Flow << YAML::BeginSeq << halfExtents.x()
 			<< halfExtents.y() << halfExtents.z() << YAML::EndSeq;
+	emitter << YAML::Key << "Reach" << YAML::Value << reach;
+	emitter << YAML::Key << "PlaceBlock" << YAML::Value << static_cast<uint32_t>(placeBlock);
+	emitter << YAML::Key << "CaptureCursor" << YAML::Value << captureCursor;
 	emitter << YAML::EndMap;// VoxelPlayer
 }
 
@@ -49,6 +52,12 @@ void VoxelPlayer::deserialize(const core::Serializer& iNode) {
 		superSpeedMultiplier = node["SuperSpeedMultiplier"].as<float>();
 	if (const auto he = node["HalfExtents"]; he && he.IsSequence() && he.size() >= 3)
 		halfExtents = math::vec3{he[0].as<float>(), he[1].as<float>(), he[2].as<float>()};
+	if (node["Reach"])
+		reach = node["Reach"].as<float>();
+	if (node["PlaceBlock"])
+		placeBlock = static_cast<data::voxel::BlockId>(node["PlaceBlock"].as<uint32_t>());
+	if (node["CaptureCursor"])
+		captureCursor = node["CaptureCursor"].as<bool>();
 }
 
 }// namespace owl::scene::component

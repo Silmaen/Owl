@@ -1039,6 +1039,12 @@ void renderProps(VoxelWorld& ioComponent) {
 	ImGui::Separator();
 	drawVec3Control("Sun Direction", ioComponent.sunDirection);
 	ImGui::ColorEdit3("Ambient", ioComponent.ambient.data());
+	if (ImGui::Checkbox("Ambient Occlusion", &ioComponent.ambientOcclusion)) {
+		for (const auto& coord: ioComponent.world.chunkCoordinates())
+			if (const auto chunk = ioComponent.world.getChunk(coord))
+				chunk->markDirty();
+	}
+	fieldTooltip("Bake per-vertex ambient occlusion that darkens concave block edges; off gives flat lighting.");
 	ImGui::Separator();
 	ImGui::Checkbox("Procedural Terrain", &ioComponent.proceduralTerrain);
 	fieldTooltip("Stream chunks in/out around the camera from the seed below, instead of authored chunks.");
@@ -1102,6 +1108,15 @@ void renderProps(VoxelPlayer& ioComponent) {
 	fieldTooltip("Fly mode: double-tap Space to toggle, J toggles super-speed; WASD horizontal, Space up, Shift down.");
 	drawVec3Control("Half Extents", ioComponent.halfExtents, 0.4f);
 	fieldTooltip("Half the player collision box on each axis (the transform is its centre / eye).");
+	ImGui::DragFloat("Reach", &ioComponent.reach, 0.25f, 1.f, 32.f, "%.2f");
+	fieldTooltip("Targeting-ray length in blocks. Left-click breaks the targeted block, right-click places one.");
+	int placeBlock = static_cast<int>(ioComponent.placeBlock);
+	if (ImGui::DragInt("Place Block", &placeBlock, 0.1f, 1, 65535))
+		ioComponent.placeBlock = static_cast<data::voxel::BlockId>(std::max(1, placeBlock));
+	fieldTooltip("Block id placed on right-click (an index into the targeted world's block registry).");
+	ImGui::Checkbox("Capture Cursor", &ioComponent.captureCursor);
+	fieldTooltip("Let clicking the viewport hide/lock the cursor for mouse-look (Esc frees it). Off keeps a normal "
+				 "cursor and disables block break / place.");
 }
 
 void renderProps(FlyCamera& ioComponent) {

@@ -223,6 +223,17 @@ TEST_F(ChunkMesherFixture, OcclusionBreaksGreedyMerge) {
 	EXPECT_GT(quadsByNormal(ChunkMesher::mesh(walled, r.reg), 0, 1, 0), 1u);
 }
 
+TEST_F(ChunkMesherFixture, AmbientOcclusionDisabledLeavesFacesFullyLit) {
+	const Registry r;
+	Chunk chunk;
+	chunk.setBlock(0, 0, 0, r.stone);
+	chunk.setBlock(0, 1, 1, r.stone);// would occlude the lower block's top face when AO is on
+	const auto neighbor = [](int32_t, int32_t, int32_t) -> BlockId { return g_AirBlock; };
+	const ChunkMeshSet set = ChunkMesher::meshByKind(chunk, r.reg, neighbor, /*iAmbientOcclusion=*/false);
+	ASSERT_FALSE(set.opaque.vertices.empty());
+	for (const auto& v: set.opaque.vertices) EXPECT_TRUE(fEq(v.ao, 1.f)) << "AO disabled must leave every vertex lit";
+}
+
 TEST_F(ChunkMesherFixture, MeshByKindSeparatesOpaqueAndTransparent) {
 	const Registry r;
 	Chunk chunk;

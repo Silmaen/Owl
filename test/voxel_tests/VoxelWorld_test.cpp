@@ -90,6 +90,25 @@ TEST_F(VoxelWorldFixture, CrossChunkBoundary) {
 	EXPECT_EQ(world.getBlock(math::vec3i{16, 0, 0}), 2u);
 }
 
+TEST_F(VoxelWorldFixture, MarkNeighborChunksDirtyOnBorder) {
+	VoxelWorld world;
+	world.setBlock(math::vec3i{15, 0, 0}, 1);// last column of chunk (0,0,0)
+	world.setBlock(math::vec3i{16, 0, 0}, 1);// first column of chunk (1,0,0)
+	world.getChunk(math::vec3i{0, 0, 0})->markClean();
+	world.getChunk(math::vec3i{1, 0, 0})->markClean();
+	world.markNeighborChunksDirty(math::vec3i{15, 0, 0});
+	EXPECT_TRUE(world.getChunk(math::vec3i{1, 0, 0})->isDirty());
+	EXPECT_FALSE(world.getChunk(math::vec3i{0, 0, 0})->isDirty());// the edited chunk itself is left untouched
+}
+
+TEST_F(VoxelWorldFixture, MarkNeighborChunksDirtyInteriorIsNoOp) {
+	VoxelWorld world;
+	world.setBlock(math::vec3i{8, 8, 8}, 1);// interior block of chunk (0,0,0)
+	world.getChunk(math::vec3i{0, 0, 0})->markClean();
+	world.markNeighborChunksDirty(math::vec3i{8, 8, 8});
+	EXPECT_FALSE(world.getChunk(math::vec3i{0, 0, 0})->isDirty());
+}
+
 TEST_F(VoxelWorldFixture, EnumerationHelpers) {
 	VoxelWorld world;
 	world.setBlock(math::vec3i{0, 0, 0}, 1);

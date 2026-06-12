@@ -341,6 +341,16 @@ gameplay primitives (inventory, enemies).
           see without entering Play. Toggleable from the camera entity's context menu or a viewport overlay dropdown.
           Reverts to the editor camera on demand.
 - UI / HUD Editor
+    - ![Planned][planned] Text rendering quality — aspect-correct glyphs
+        - Today text drawn inside a `UiText` / `UiRect` is scaled to fill its rectangle, so a square-ish box
+          stretches or squashes the glyphs (characters look horizontally compressed or vertically elongated).
+        - Render glyphs at their **native aspect ratio**: advance the pen by each glyph's own metrics and use a single
+          uniform scale (px-per-em) rather than independent X/Y scales derived from the rect. The rectangle should
+          govern layout (wrap width, line height, alignment), not per-axis glyph distortion.
+        - Add text **fit / alignment** controls: horizontal (left / center / right) and vertical (top / middle /
+          bottom) alignment, optional word-wrap, and a fit mode (clip / shrink-to-fit / overflow) — so a glyph keeps
+          its shape and the box only decides where it sits and when it wraps.
+        - Applies to both the screen-space HUD path and world-space `Renderer2D::drawString`.
     - ![Planned][planned] Dedicated HUD layer, decoupled from the world renderer
         - Today the sample project ships a two-layer stack `[Renderer2D(world),
           Renderer2D(ui)]` and entities are tagged `ui` by hand — fine, but authoring the HUD still happens in the same
@@ -425,10 +435,12 @@ tradition — slotted between the existing 2D/raycast/voxel options.
           and runner.
         - **Fly mode** (double-tap Space): horizontal WASD + Space/Shift altitude, collision-resolved; **J** toggles
           super-speed. Transient ~3 s on-screen toast confirms each toggle.
-    - ![Planned][planned] Block interaction
-        - Block placement and destruction
-        - Block picking (raycast from camera to find targeted block)
-        - Block metadata (orientation, state)
+    - ![In Progress][progress] Block interaction
+        - Block placement and destruction — ![Done][done] (`VoxelPlayer` left-click breaks / right-click places,
+          edits dirty neighbour chunks at borders)
+        - Block picking (raycast from camera to find targeted block) — ![Done][done] (`data::voxel::raycastVoxel`
+          DDA + wireframe highlight of the targeted block)
+        - Block metadata (orientation, state) — ![Planned][planned] (deferred: chunk-encoding schema change)
     - ![Done][done] Voxel rendering (Vulkan)
         - Generic `Renderer3D` forward foundation (depth, perspective, textured, directional light, `mesh3d` shader)
           — ![Done][done] (reusable base)

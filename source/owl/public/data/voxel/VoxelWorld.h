@@ -60,6 +60,19 @@ public:
 
 	/**
 	 * @brief
+	 *  Mark the face-neighbour chunks of an edited world block dirty.
+	 *
+	 * `setBlock` only dirties the chunk it writes to. When the edited block sits
+	 * on a chunk border, the adjacent chunk's mesh must rebuild too (a hidden
+	 * face may become visible, or vice versa). Call this after an interactive
+	 * edit; it is a no-op for an interior block. It is deliberately kept off
+	 * `setBlock` so bulk generation (terrain streaming) does not pay for it.
+	 * @param[in] iWorld The edited world block position.
+	 */
+	void markNeighborChunksDirty(const math::vec3i& iWorld) const;
+
+	/**
+	 * @brief
 	 *  Get the chunk at a chunk coordinate without creating it.
 	 * @param[in] iCoord The chunk coordinate.
 	 * @return The chunk, or `nullptr` if it does not exist.

@@ -9,6 +9,8 @@
 
 #include "data/voxel/VoxelWorld.h"
 
+#include <array>
+
 namespace owl::data::voxel {
 
 namespace {
@@ -35,6 +37,20 @@ void VoxelWorld::setBlock(const math::vec3i& iWorld, const BlockId iBlock) {
 	const auto chunk = getOrCreateChunk(worldToChunk(iWorld));
 	const math::vec3i local = worldToLocal(iWorld);
 	chunk->setBlock(local.x(), local.y(), local.z(), iBlock);
+}
+
+void VoxelWorld::markNeighborChunksDirty(const math::vec3i& iWorld) const {
+	const math::vec3i ownChunk = worldToChunk(iWorld);
+	constexpr std::array<math::vec3i, 6> offsets{math::vec3i{1, 0, 0},  math::vec3i{-1, 0, 0}, math::vec3i{0, 1, 0},
+												 math::vec3i{0, -1, 0}, math::vec3i{0, 0, 1},  math::vec3i{0, 0, -1}};
+	for (const auto& offset: offsets) {
+		const math::vec3i neighborChunk =
+				worldToChunk(math::vec3i{iWorld.x() + offset.x(), iWorld.y() + offset.y(), iWorld.z() + offset.z()});
+		if (neighborChunk == ownChunk)
+			continue;
+		if (const auto chunk = getChunk(neighborChunk))
+			chunk->markDirty();
+	}
 }
 
 auto VoxelWorld::getChunk(const math::vec3i& iCoord) const -> shared<Chunk> {
