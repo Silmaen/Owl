@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Editor camera navigation overhaul** — `CameraEditor` gains a DCC-style scheme (shared by every scene viewport):
+  **Alt+LMB** rotates in place (look around, eye fixed), **Alt+RMB** pans, **Alt+MMB** dollies forward/back;
+  **Ctrl+LMB** orbits the reference point, **Ctrl+MMB/RMB** pan it, the wheel zooms (distance). Plain clicks stay
+  free for selection / the voxel brush. A small **XYZ orientation gizmo** is drawn in the viewport corner.
+- **Editor-specific voxel view distance** — `VoxelWorld` gains `editorStreamRadius` / `editorStreamHeight` (separate
+  horizontal / vertical, larger defaults); `Scene::updateVoxelStreaming` uses them while editing so you see further
+  authoring than at runtime. Inspector + serialized + round-trip tested.
+- **Voxel Palette texture thumbnails** — each block in the palette shows its top-face atlas tile next to the name.
+
+### Removed
+
+- **Chunk Inspector panel** — removed (low value); chunk diagnostics fold into future tooling if needed.
+
+- **Voxel editor in Owl Nest** — author voxel worlds directly in the editor viewport:
+  - **Brush**: a Voxel Palette panel picks a paint block / eraser; with the brush active, the editor camera
+    raycasts the targeted block (wireframe-highlighted on the impacted face) and **left-click places** the block on
+    that face, **right-click erases** the targeted block. Edits are undoable (`commands::VoxelEditCommand`, a
+    per-block delta that coalesces a continuous stroke into one history entry) and dirty neighbour chunks at borders.
+  - **Structures**: `data::voxel::VoxelStructure` captures a world's non-air bounding box to a `.owlvoxstruct` file
+    (YAML, run-length-encoded); the palette lists saved structures and a left-click **stamps** the selected one at the
+    targeted cell (undoable). Headless tests cover round-trip, capture, and stamping.
+  - **Chunk Inspector** panel: per-chunk coordinate / filled / dirty state plus totals (chunk count, estimated
+    memory, async pending count) for the active scene's voxel world.
+  - The editor drives the targeted-block highlight through a new `Scene::setEditorVoxelHighlight` (the in-Play
+    highlight stays player-driven).
+
 - **Voxel ambient occlusion is now an option** — `VoxelWorld.ambientOcclusion` (default on) toggles the baked AO from
   the inspector; turning it off rebuilds the chunk meshes flat-lit.
 - **Voxel mouse-look capture is now opt-in per player** — `VoxelPlayer.captureCursor` (default **off**) gates whether

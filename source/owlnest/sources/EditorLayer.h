@@ -15,6 +15,7 @@
 #include "ActionRegistry.h"
 #include "EditorSettings.h"
 #include "Project.h"
+#include "VoxelBrush.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
 #include "panel/AsyncProgressModal.h"
@@ -26,6 +27,7 @@
 #include "panel/SceneHierarchy.h"
 #include "panel/SceneSettings.h"
 #include "panel/SettingsPanel.h"
+#include "panel/VoxelPalette.h"
 
 namespace owl::nest {
 /**
@@ -732,8 +734,20 @@ private:
 	panel::AsyncProgressModal m_asyncProgress;
 	/// In-editor help / documentation panel.
 	panel::HelpPanel m_helpPanel;
+	/// Voxel brush palette (block / eraser / structure picker).
+	panel::VoxelPalette m_voxelPalette;
+	/// Shared voxel-brush state edited by the palette and consumed by the viewport.
+	VoxelBrush m_voxelBrush;
 
 public:
+	/**
+	 * @brief
+	 *  Mutable access to the shared voxel-brush state (read by the viewport, edited by the palette).
+	 * @return The voxel brush state.
+	 */
+	[[nodiscard]] auto getVoxelBrush() -> VoxelBrush& { return m_voxelBrush; }
+
+private:
 	/**
 	 * @brief
 	 *  Open the in-editor help on the contextual page for the component currently hovered
@@ -741,7 +755,6 @@ public:
 	 */
 	void onContextualHelp();
 
-private:
 	/// Maps menu / keyboard / ribbon actions to their handlers.
 	ActionRegistry m_actionRegistry;
 };

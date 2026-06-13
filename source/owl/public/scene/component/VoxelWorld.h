@@ -54,6 +54,10 @@ struct OWL_API VoxelWorld {
 	int32_t streamRadius = 4;
 	/// Vertical streaming half-extent in chunks around the camera (Y).
 	int32_t streamHeight = 2;
+	/// Horizontal streaming radius in chunks used in the editor viewport (usually larger, to see further authoring).
+	int32_t editorStreamRadius = 8;
+	/// Vertical streaming half-extent in chunks used in the editor viewport.
+	int32_t editorStreamHeight = 4;
 	/// When true, the mesher bakes per-vertex ambient occlusion into block edges (darkens concave corners).
 	bool ambientOcclusion = true;
 	/// Runtime set of chunk keys currently being generated asynchronously (not serialized; cleared on regenerate).

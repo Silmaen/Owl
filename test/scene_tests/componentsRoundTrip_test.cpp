@@ -432,6 +432,8 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 				vw.sunDirection = math::vec3{0.1f, -0.9f, 0.2f};
 				vw.ambient = math::vec3{0.2f, 0.3f, 0.4f};
 				vw.ambientOcclusion = false;
+				vw.editorStreamRadius = 12;
+				vw.editorStreamHeight = 5;
 			},
 			[](const scene::Entity& iEnt) {
 				ASSERT_TRUE(iEnt.hasComponent<scene::component::VoxelWorld>());
@@ -445,6 +447,8 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 				EXPECT_FLOAT_EQ(vw.sunDirection.y(), -0.9f);
 				EXPECT_FLOAT_EQ(vw.ambient.z(), 0.4f);
 				EXPECT_FALSE(vw.ambientOcclusion);
+				EXPECT_EQ(vw.editorStreamRadius, 12);
+				EXPECT_EQ(vw.editorStreamHeight, 5);
 			});
 }
 

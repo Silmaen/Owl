@@ -1210,8 +1210,9 @@ void Scene::updateVoxelStreaming(const math::vec3& iCameraWorldPos) {
 		if (!vw.proceduralTerrain)
 			continue;
 		const int entityId = static_cast<int>(entity);
-		const int32_t r = std::max(0, vw.streamRadius);
-		const int32_t h = std::max(0, vw.streamHeight);
+		const bool editorMode = status == Status::Editing;
+		const int32_t r = std::max(0, editorMode ? vw.editorStreamRadius : vw.streamRadius);
+		const int32_t h = std::max(0, editorMode ? vw.editorStreamHeight : vw.streamHeight);
 		const math::vec3i camChunk = data::voxel::worldToChunk(camBlock);
 		// Queue missing chunks for async generation (budgeted; pendingChunks avoids re-queuing in-flight ones).
 		for (int32_t dy = -h; dy <= h && budget > 0; ++dy) {
@@ -2231,6 +2232,14 @@ auto Scene::getWorldsBuffer() const -> shared<renderer::gpu::StorageBuffer> {
 	if (!mp_worldTransformPass)
 		return nullptr;
 	return mp_worldTransformPass->getWorldBuffer();
+}
+
+void Scene::setEditorVoxelHighlight(const bool iShow, const math::vec3i& iBlock, const math::vec3i& iNormal) {
+	m_hasVoxelHighlight = iShow;
+	if (iShow) {
+		m_voxelHighlightBlock = iBlock;
+		m_voxelHighlightNormal = iNormal;
+	}
 }
 
 auto Scene::wantsCursorCapture() const -> bool {

@@ -167,10 +167,24 @@ private:
 
 	/**
 	 * @brief
-	 *  Mouse rotation.
+	 *  Mouse rotation: orbit around the focal point (the focal point stays fixed, the camera circles it).
 	 * @param[in] iDelta The X Y deltas.
 	 */
 	void mouseRotate(const math::vec2& iDelta);
+
+	/**
+	 * @brief
+	 *  Rotate the camera around its own position (look around in place; the focal point follows the new facing).
+	 * @param[in] iDelta The X Y deltas.
+	 */
+	void rotateInPlace(const math::vec2& iDelta);
+
+	/**
+	 * @brief
+	 *  Dolly the camera (and its focal point) forward / backward along the view direction.
+	 * @param[in] iDelta The signed amount (drag up moves forward).
+	 */
+	void mouseDolly(float iDelta);
 
 	/**
 	 * @brief

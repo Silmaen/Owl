@@ -14,6 +14,10 @@
 
 #include "../UndoManager.h"
 #include "../commands/ComponentCommands.h"
+#include "../commands/VoxelCommands.h"
+
+#include <data/voxel/VoxelRaycast.h>
+#include <scene/component/VoxelWorld.h>
 
 #include <gui/IconBank.h>
 #include <owl.h>
@@ -224,6 +228,7 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	switch (mp_document->state()) {
 		case SceneDocument::State::Edit:
 			{
+				handleVoxelBrush(activeScene);
 				activeScene->onUpdateEditor(iTimeStep, m_editorCamera);
 				break;
 			}
@@ -301,6 +306,28 @@ void Viewport::onRenderInternal() {
 	}
 	renderGizmo();
 	renderOverlayToolbar();
+	renderCameraGizmo();
+}
+
+void Viewport::renderCameraGizmo() const {
+	if (mp_document == nullptr || mp_document->state() != SceneDocument::State::Edit)
+		return;
+	const math::mat4 view = m_editorCamera.getView();
+	// World axes mapped into view space; the (x, -y) components give their on-screen direction.
+	const std::array<std::pair<math::vec3, ImU32>, 3> axes{{{{1.f, 0.f, 0.f}, IM_COL32(230, 80, 80, 255)},
+															{{0.f, 1.f, 0.f}, IM_COL32(110, 210, 110, 255)},
+															{{0.f, 0.f, 1.f}, IM_COL32(90, 140, 235, 255)}}};
+	constexpr std::array<const char*, 3> labels{"X", "Y", "Z"};
+	constexpr float radius = 28.f;
+	const ImVec2 center{m_upper.x() - radius - 12.f, m_lower.y() + radius + 12.f};
+	auto* drawList = ImGui::GetWindowDrawList();
+	drawList->AddCircleFilled(center, radius + 4.f, IM_COL32(20, 20, 24, 120));
+	for (size_t i = 0; i < axes.size(); ++i) {
+		const math::vec4 v = view * math::vec4{axes[i].first.x(), axes[i].first.y(), axes[i].first.z(), 0.f};
+		const ImVec2 tip{center.x + v.x() * radius, center.y - v.y() * radius};
+		drawList->AddLine(center, tip, axes[i].second, 2.f);
+		drawList->AddText(ImVec2{tip.x - 4.f, tip.y - 7.f}, axes[i].second, labels[i]);
+	}
 }
 
 void Viewport::renderOverlay() const {
@@ -676,8 +703,103 @@ void Viewport::onEvent(event::Event& ioEvent) {
 			[this]<typename T0>(T0&& ioPh1) -> auto { return onMouseButtonPressed(std::forward<T0>(ioPh1)); });
 }
 
+void Viewport::handleVoxelBrush(const shared<scene::Scene>& iScene) {
+	if (m_parent == nullptr || !iScene) {
+		if (iScene)
+			iScene->setEditorVoxelHighlight(false);
+		return;
+	}
+	auto& brush = m_parent->getVoxelBrush();
+	if (!brush.active || !isHovered()) {
+		iScene->setEditorVoxelHighlight(false);
+		return;
+	}
+	// Find the first voxel world in the scene.
+	scene::Entity worldEntity;
+	scene::component::VoxelWorld* voxelWorld = nullptr;
+	if (const auto view = iScene->registry.view<scene::component::VoxelWorld>(); view.begin() != view.end()) {
+		const auto entity = *view.begin();
+		worldEntity = scene::Entity{entity, iScene.get()};
+		voxelWorld = &view.get<scene::component::VoxelWorld>(entity);
+	}
+	if (voxelWorld == nullptr) {
+		iScene->setEditorVoxelHighlight(false);
+		return;
+	}
+
+	// Ray from the editor camera through the cursor. The Vulkan editor projection negates Y (screen-top → NDC y -1); OpenGL keeps the GL convention (screen-top → +1).
+	const math::vec2 vpSize = m_upper - m_lower;
+	if (vpSize.x() <= 0.f || vpSize.y() <= 0.f) {
+		iScene->setEditorVoxelHighlight(false);
+		return;
+	}
+	const auto mousePos = ImGui::GetMousePos();
+	const float ndcX = 2.f * (mousePos.x - m_lower.x()) / vpSize.x() - 1.f;
+	const float screenY = 2.f * (mousePos.y - m_lower.y()) / vpSize.y() - 1.f;
+	const bool isOpenGl = renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL;
+	const float ndcY = isOpenGl ? -screenY : screenY;
+	const math::mat4 vpInv = inverse(m_editorCamera.getProjection() * m_editorCamera.getView());
+	const math::vec4 farPoint = vpInv * math::vec4{ndcX, ndcY, 0.f, 1.f};
+	if (std::abs(farPoint.w()) < 1e-6f) {
+		iScene->setEditorVoxelHighlight(false);
+		return;
+	}
+	const math::vec3 origin = m_editorCamera.getPosition();
+	const math::vec3 target{farPoint.x() / farPoint.w(), farPoint.y() / farPoint.w(), farPoint.z() / farPoint.w()};
+	const math::vec3 direction = (target - origin).normalized();
+
+	auto& world = voxelWorld->world;
+	const auto& registry = voxelWorld->registry;
+	const auto targetable = [&](const int32_t iX, const int32_t iY, const int32_t iZ) -> bool {
+		return !registry.isAir(world.getBlock(math::vec3i{iX, iY, iZ}));
+	};
+	const auto hit = data::voxel::raycastVoxel(targetable, origin, direction, 256.f);
+	if (!hit) {
+		iScene->setEditorVoxelHighlight(false);
+		return;
+	}
+	iScene->setEditorVoxelHighlight(true, hit->block, hit->normal);
+
+	if (gui::Guizmo::isOver() || mp_undoManager == nullptr)
+		return;
+	// Alt / Ctrl + click drive the editor camera, not the brush.
+	if (input::Input::isKeyPressed(input::key::LeftAlt) || input::Input::isKeyPressed(input::key::LeftControl))
+		return;
+	const bool place = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+	const bool erase = ImGui::IsMouseClicked(ImGuiMouseButton_Right);
+	if (!place && !erase)
+		return;
+	const math::vec3i adjacent{hit->block.x() + hit->normal.x(), hit->block.y() + hit->normal.y(),
+							   hit->block.z() + hit->normal.z()};
+	std::vector<commands::VoxelBlockEdit> edits;
+	const auto addEdit = [&](const math::vec3i& iCoord, const data::voxel::BlockId iNew) -> void {
+		if (const data::voxel::BlockId old = world.getBlock(iCoord); old != iNew)
+			edits.push_back({.coord = iCoord, .before = old, .after = iNew});
+	};
+	std::string description;
+	if (erase || (place && brush.eraser && !brush.structure.has_value())) {
+		addEdit(hit->block, data::voxel::g_AirBlock);
+		description = "Erase voxel";
+	} else if (place && brush.structure.has_value()) {
+		brush.structure->forEachSolid([&](const math::vec3i& iLocal, const data::voxel::BlockId iId) -> void {
+			addEdit(math::vec3i{adjacent.x() + iLocal.x(), adjacent.y() + iLocal.y(), adjacent.z() + iLocal.z()}, iId);
+		});
+		description = "Stamp structure";
+	} else if (place) {
+		addEdit(adjacent, brush.paintBlock);
+		description = "Paint voxel";
+	}
+	if (edits.empty())
+		return;
+	auto command = mkUniq<commands::VoxelEditCommand>(worldEntity.getUUID(), std::move(edits), description);
+	mp_undoManager->execute(std::move(command), *iScene);
+}
+
 auto Viewport::onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool {
 	if (mp_document == nullptr || mp_document->state() != SceneDocument::State::Edit)
+		return false;
+	// The voxel brush owns clicks when active; don't also change the entity selection.
+	if (m_parent != nullptr && m_parent->getVoxelBrush().active)
 		return false;
 	if (ioEvent.getMouseButton() == input::mouse::ButtonLeft) {
 		if (isHovered() && !gui::Guizmo::isOver() && !input::Input::isKeyPressed(input::key::LeftAlt))

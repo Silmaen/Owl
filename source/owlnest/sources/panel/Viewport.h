@@ -186,11 +186,24 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw a small XYZ axis gizmo in the viewport corner reflecting the editor camera orientation.
+	 */
+	void renderCameraGizmo() const;
+
+	/**
+	 * @brief
 	 *  Handle the mouse button pressed event.
 	 * @param[in,out] ioEvent The incoming event.
 	 * @return True when the event was consumed.
 	 */
 	auto onMouseButtonPressed(const event::MouseButtonPressedEvent& ioEvent) -> bool;
+
+	/**
+	 * @brief
+	 *  Drive the voxel brush in Edit mode: raycast the editor camera, highlight the targeted block, apply edits.
+	 * @param[in] iScene The active scene (holds the target `VoxelWorld`).
+	 */
+	void handleVoxelBrush(const shared<scene::Scene>& iScene);
 	/// The camera.
 	shared<renderer::Camera> m_camera;
 	/// The frame buffer where to do the render.

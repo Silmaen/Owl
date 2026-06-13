@@ -238,8 +238,29 @@ frequency, octaves, amplitude, sea level, cave threshold, biomes, block ids, …
 **Regenerate** button. The `scenes/voxel_terrain.owl` demo is an endless seeded landscape you explore as a grounded
 `VoxelPlayer` (walk / run / jump with collision), reachable from the world-map voxel house.
 
+## Editing in Owl Nest
+
+Voxel worlds are authored directly in the editor, not just at runtime:
+
+- **Voxel Palette** panel — pick a paint block from the active world's registry (each shown with its top-face atlas
+  thumbnail), the eraser, or a saved structure.
+  Tick **Brush active** to engage the tool: while in Edit mode the editor camera raycasts the block under the cursor
+  (the impacted face is wireframe-highlighted), **left-click places** the paint block against that face and
+  **right-click erases** the targeted block. Every edit is undoable — `commands::VoxelEditCommand` records a per-block
+  `{before, after}` delta and coalesces a continuous stroke into a single history entry, dirtying neighbour chunks at
+  borders so the mesh rebuilds correctly.
+- **Structures** — `data::voxel::VoxelStructure` is a finite block grid saved as a `.owlvoxstruct` file (YAML: a
+  `Size` triple plus run-length-encoded `Blocks`). "Save" in the palette captures the current world's non-air
+  bounding box; selecting a saved structure makes a left-click **stamp** it (its min corner at the targeted empty
+  cell), also undoable. Stamping is additive — air cells in the structure never erase the world.
+The editor sets the targeted-block highlight through `Scene::setEditorVoxelHighlight`; in Play the same highlight is
+driven by the `VoxelPlayer` instead.
+
+A procedural `VoxelWorld` streams further while editing than at runtime: `editorStreamRadius` / `editorStreamHeight`
+(separate horizontal / vertical, larger defaults) are used by `Scene::updateVoxelStreaming` in Edit mode, while
+`streamRadius` / `streamHeight` apply in Play. Navigate with the DCC-style editor camera (Alt / Ctrl + mouse, wheel
+to zoom); a corner XYZ gizmo shows the current orientation.
+
 ## What's Next
 
-Block interaction (raycast pick, place/destroy, Lua API),
-rendering polish (ambient occlusion, transparent/water passes), and the in-editor voxel authoring tools (brush,
-palette, chunk inspector).
+Per-block metadata (orientation / state — a chunk-encoding change), per-chunk frustum culling, and a Lua block API.

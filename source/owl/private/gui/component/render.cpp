@@ -1076,8 +1076,12 @@ void renderProps(VoxelWorld& ioComponent) {
 		fieldTooltip("Vary the surface block by a low-frequency biome field (desert / plains / snow / mountain).");
 		if (t.biomes)
 			ImGui::DragFloat("Biome Frequency", &t.biomeFrequency, 0.001f, 0.001f, 0.1f, "%.4f");
-		ImGui::DragInt("Stream Radius", &ioComponent.streamRadius, 1.f, 0, 16);
+		ImGui::DragInt("Stream Radius", &ioComponent.streamRadius, 1.f, 0, 32);
 		ImGui::DragInt("Stream Height", &ioComponent.streamHeight, 1.f, 0, 16);
+		fieldTooltip("Runtime view distance in chunks (horizontal radius / vertical half-extent), around the player.");
+		ImGui::DragInt("Editor Stream Radius", &ioComponent.editorStreamRadius, 1.f, 0, 32);
+		ImGui::DragInt("Editor Stream Height", &ioComponent.editorStreamHeight, 1.f, 0, 16);
+		fieldTooltip("View distance used while editing (usually larger, to see further); applies in the editor only.");
 		dragId("Stone Block", t.stone);
 		dragId("Grass Block", t.grass);
 		dragId("Dirt Block", t.dirt);

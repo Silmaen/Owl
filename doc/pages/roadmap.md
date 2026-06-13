@@ -321,11 +321,15 @@ gameplay primitives (inventory, enemies).
         - Pure ImGui implementation integrated with the task scheduler for async folder scanning
         - Benefits: consistent look-and-feel, truly non-blocking, theme-aware
         - Replaces the current sync `FileDialog::openFile/saveFile/pickFolder` blocking calls
-    - ![Planned][planned] Editor camera controls overhaul
-        - Current `CameraEditor` is awkward to manipulate (orbit feels off-axis, pan/zoom thresholds are inconsistent,
-          RMB-drag direction sometimes fights the user). Re-tune sensitivity per axis, add dead zones, support
-          Maya/Blender-style middle-click navigation as an option, surface the settings under
-          `Settings > Editor > Camera`.
+    - ![In Progress][progress] Editor camera controls overhaul
+        - **DCC-style navigation** — ![Done][done] (landed early, v0.2.1): Alt+LMB rotate-in-place, Alt+RMB pan,
+          Alt+MMB dolly; Ctrl+LMB orbit, Ctrl+MMB/RMB pan, wheel zoom — shared by every scene viewport. A corner XYZ
+          orientation gizmo shows the camera facing.
+        - **Orientation math reworked** — ![Done][done]: `CameraEditor` now builds its orientation from a proper
+          Euler quaternion, so a full 360° turn works and the view no longer shears (the old `{1,-pitch,-yaw,0}`
+          convention warped past ~180°).
+        - Still to do: per-axis sensitivity / dead zones under `Settings > Editor > Camera`, and an **interactive**
+          view-cube for axis snapping (now feasible on the reworked orientation math).
         - **Standard navigation presets** — quick buttons (ribbon `View` group + viewport overlay) for: **Reset View**
           (snap back to the default editor pose); axis-aligned ortho views **XY** (top-down), **XZ** (front), **YZ**
           (side); **Frame Selection** (zoom to fit the selected entity); **Frame Scene** (zoom to fit the whole scene's
@@ -407,10 +411,10 @@ tradition — slotted between the existing 2D/raycast/voxel options.
 **Goal:** Add the second non-2D rendering mode — a voxel engine for block-based worlds (Minecraft-style).
 
 - Voxel Engine
-    - ![In Progress][progress] Voxel world core
+    - ![Done][done] Voxel world core
         - Chunk-based world (cubic 16³ chunks, sparse `VoxelWorld` map) — ![Done][done] data model
         - Block type registry with textures per face — ![Done][done] `BlockRegistry`
-        - Chunk loading/unloading around camera — ![Planned][planned] (streaming, lands with terrain generation)
+        - Chunk loading/unloading around camera — ![Done][done] (`Scene::updateVoxelStreaming`, async generation)
     - ![In Progress][progress] Chunk meshing
         - Greedy meshing or similar algorithm for efficient geometry — ![Done][done] `ChunkMesher` (greedy, per-axis)
         - Only exposed faces rendered (hidden face culling) — ![Done][done] visible-face-only, cross-chunk via provider
@@ -435,7 +439,7 @@ tradition — slotted between the existing 2D/raycast/voxel options.
           and runner.
         - **Fly mode** (double-tap Space): horizontal WASD + Space/Shift altitude, collision-resolved; **J** toggles
           super-speed. Transient ~3 s on-screen toast confirms each toggle.
-    - ![In Progress][progress] Block interaction
+    - ![Done][done] Block interaction
         - Block placement and destruction — ![Done][done] (`VoxelPlayer` left-click breaks / right-click places,
           edits dirty neighbour chunks at borders)
         - Block picking (raycast from camera to find targeted block) — ![Done][done] (`data::voxel::raycastVoxel`
@@ -482,10 +486,12 @@ tradition — slotted between the existing 2D/raycast/voxel options.
         - **Investigate the remaining Vulkan validation messages**: the single-shared-descriptor-set
           `UPDATE_AFTER_BIND` cascade (needs per-batch/ring descriptor sets, not the `UPDATE_AFTER_BIND` flag) and the
           5-object `vkDestroyDevice` teardown leak (`whiteTexture` + a descriptor-set layout)
-    - ![Planned][planned] Voxel editor in Owl Nest
-        - Brush tools for painting blocks
-        - Prefab structures (trees, buildings) as reusable block templates
-        - Chunk inspector for debugging
+    - ![Done][done] Voxel editor in Owl Nest
+        - Brush tools for painting blocks — ![Done][done] (Voxel Palette + editor-camera raycast, left-click place /
+          right-click erase, undoable `VoxelEditCommand` with stroke coalescing)
+        - Prefab structures (trees, buildings) as reusable block templates — ![Done][done]
+          (`data::voxel::VoxelStructure` `.owlvoxstruct` capture / stamp, undoable)
+        - Chunk inspector for debugging — ![Done][done] (resident chunk list + totals panel)
 
 ## v0.2.0 -- 2026-06-02
 
