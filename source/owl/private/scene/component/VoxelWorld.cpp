@@ -89,6 +89,8 @@ void VoxelWorld::serialize(const core::Serializer& iOut) const {
 	emitter << YAML::Key << "ProceduralTerrain" << YAML::Value << proceduralTerrain;
 	emitter << YAML::Key << "StreamRadius" << YAML::Value << streamRadius;
 	emitter << YAML::Key << "StreamHeight" << YAML::Value << streamHeight;
+	emitter << YAML::Key << "EditorStreamRadius" << YAML::Value << editorStreamRadius;
+	emitter << YAML::Key << "EditorStreamHeight" << YAML::Value << editorStreamHeight;
 	emitter << YAML::Key << "AmbientOcclusion" << YAML::Value << ambientOcclusion;
 	emitter << YAML::Key << "Terrain" << YAML::Value << YAML::BeginMap;
 	emitter << YAML::Key << "Seed" << YAML::Value << terrain.seed;
@@ -170,6 +172,10 @@ void VoxelWorld::deserialize(const core::Serializer& iNode) {
 		streamRadius = sr.as<int32_t>();
 	if (const auto sh = node["StreamHeight"]; sh)
 		streamHeight = sh.as<int32_t>();
+	if (const auto esr = node["EditorStreamRadius"]; esr)
+		editorStreamRadius = esr.as<int32_t>();
+	if (const auto esh = node["EditorStreamHeight"]; esh)
+		editorStreamHeight = esh.as<int32_t>();
 	if (const auto ao = node["AmbientOcclusion"]; ao)
 		ambientOcclusion = ao.as<bool>();
 	terrain = data::voxel::TerrainParams{};

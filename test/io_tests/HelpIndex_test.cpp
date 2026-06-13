@@ -19,6 +19,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace fs = std::filesystem;
 
@@ -114,30 +115,29 @@ TEST(HelpIndex, BadgesAreFetchedAndCachedLocally) {
 	const auto readme = readBundledFile(root / "README.md");
 	ASSERT_FALSE(readme.empty());
 
-	// Badge fetching happens at configure time over HTTPS (`img.shields.io`). When the build
-	// agent has no outbound network — common on ARM64 / sandboxed CI runners — the download
-	// fails silently in `HelpAssets.cmake` and the URL is left untouched in the bundled
-	// README. Detect that case by checking whether the on-disk badge cache contains any SVG
-	// at all and skip; the rewriting logic is exercised whenever any badge was fetched.
-	const auto badgeDir = root / "images" / "badges";
-	bool sawSvgBadge = false;
-	if (fs::exists(badgeDir)) {
-		for (const auto& entry: fs::directory_iterator(badgeDir)) {
-			if (entry.path().extension() != ".svg")
-				continue;
-			const auto body = readBundledFile(entry.path());
-			if (!body.empty() && body.front() == '<' && body.find("<svg") != std::string::npos) {
-				sawSvgBadge = true;
-				break;
-			}
-		}
+	// Badge fetching happens at configure time over HTTPS (`img.shields.io`), one badge at a time.
+	// A badge that downloads is rewritten in the README to `images/badges/<sha>.svg`; one that fails
+	// (offline / sandboxed CI runner, rate-limiting, timeout) keeps its original shields.io URL. The
+	// fetch is therefore partial in general, so we must NOT assert that every shields.io URL is gone —
+	// that all-or-nothing check is what made this test flaky. Instead, collect the badges that WERE
+	// rewritten and verify each resolves to a real on-disk SVG (the fetch + cache + rewrite pipeline).
+	constexpr std::string_view marker = "](images/badges/";
+	std::vector<std::string> rewritten;
+	for (size_t pos = readme.find(marker); pos != std::string::npos; pos = readme.find(marker, pos + 1)) {
+		const size_t start = pos + 2;// skip "]("
+		const size_t end = readme.find(')', start);
+		if (end == std::string::npos)
+			break;
+		rewritten.push_back(readme.substr(start, end - start));
 	}
-	if (!sawSvgBadge)
+	if (rewritten.empty())
 		GTEST_SKIP() << "no badges were fetched at configure time (offline build agent?)";
 
-	// HTTPS image refs in the README (shields.io badges) are rewritten to images/badges/<sha>.svg.
-	EXPECT_EQ(readme.find("](https://img.shields.io/"), std::string::npos);
-	EXPECT_NE(readme.find("](images/badges/"), std::string::npos);
+	for (const auto& relative: rewritten) {
+		const auto body = readBundledFile(root / relative);
+		EXPECT_FALSE(body.empty()) << "rewritten badge missing on disk: " << relative;
+		EXPECT_NE(body.find("<svg"), std::string::npos) << "cached badge is not an SVG: " << relative;
+	}
 }
 
 TEST(HelpIndex, ReadmeLogoCopiedToImages) {

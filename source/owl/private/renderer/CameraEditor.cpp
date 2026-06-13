@@ -28,16 +28,29 @@ CameraEditor::CameraEditor(const float iFov, const float iAspectRatio, const flo
 CameraEditor::~CameraEditor() = default;
 
 void CameraEditor::onUpdate([[maybe_unused]] const core::Timestep& iTimeStep) {
-	if (input::Input::isKeyPressed(input::key::LeftAlt)) {
-		const math::vec2 mouse{input::Input::getMouseX(), input::Input::getMouseY()};
-		const math::vec2 delta = (mouse - m_initialMousePosition) * 0.003f;
-		m_initialMousePosition = mouse;
-		if (input::Input::isMouseButtonPressed(input::mouse::ButtonMiddle))
+	const math::vec2 mouse{input::Input::getMouseX(), input::Input::getMouseY()};
+	const math::vec2 delta = (mouse - m_initialMousePosition) * 0.003f;
+	// Track the cursor every frame so re-engaging a drag never produces a jump from a stale anchor.
+	m_initialMousePosition = mouse;
+	const bool alt = input::Input::isKeyPressed(input::key::LeftAlt);
+	const bool ctrl = input::Input::isKeyPressed(input::key::LeftControl);
+	const bool lmb = input::Input::isMouseButtonPressed(input::mouse::ButtonLeft);
+	const bool rmb = input::Input::isMouseButtonPressed(input::mouse::ButtonRight);
+	const bool mmb = input::Input::isMouseButtonPressed(input::mouse::ButtonMiddle);
+	if (alt) {
+		// Alt: camera-local navigation (the camera moves, its reference point follows).
+		if (lmb)
+			rotateInPlace(delta);
+		else if (rmb)
 			mousePan(delta);
-		else if (input::Input::isMouseButtonPressed(input::mouse::ButtonLeft))
+		else if (mmb)
+			mouseDolly(delta.y());
+	} else if (ctrl) {
+		// Ctrl: orbit navigation around the reference point.
+		if (lmb)
 			mouseRotate(delta);
-		else if (input::Input::isMouseButtonPressed(input::mouse::ButtonRight))
-			mouseZoom(delta.y());
+		else if (rmb || mmb)
+			mousePan(delta);
 	}
 	updateView();
 }
@@ -60,7 +73,10 @@ auto CameraEditor::getForwardDirection() const -> math::vec3 {
 	return rotate(getOrientation(), math::vec3({0.0f, 0.0f, -1.0f}));
 }
 
-auto CameraEditor::getOrientation() const -> math::quat { return {1.0, -m_pitch, -m_yaw, 0.0f}; }
+auto CameraEditor::getOrientation() const -> math::quat {
+	// Proper Euler->quat (yaw about world Y, pitch about local X): a real unit rotation, so a full 360deg turn works and the view never shears (the old `{1,-pitch,-yaw,0}` could not pass ~180deg, w fixed at 1).
+	return math::quat{math::vec3{-m_pitch, -m_yaw, 0.0f}};
+}
 
 void CameraEditor::updateProjection() {
 	m_aspectRatio = m_viewportSize.ratio();
@@ -103,6 +119,17 @@ void CameraEditor::mouseRotate(const math::vec2& iDelta) {
 	m_yaw += yawSign * iDelta.x() * rotationSpeed();
 	m_pitch += iDelta.y() * rotationSpeed();
 }
+
+void CameraEditor::rotateInPlace(const math::vec2& iDelta) {
+	// Keep the eye fixed: rotate, then move the focal point so `position = focal - forward * distance` is unchanged.
+	const math::vec3 eye = m_position;
+	const float yawSign = getUpDirection().y() < 0 ? -1.0f : 1.0f;
+	m_yaw += yawSign * iDelta.x() * rotationSpeed();
+	m_pitch += iDelta.y() * rotationSpeed();
+	m_focalPoint = eye + getForwardDirection() * m_distance;
+}
+
+void CameraEditor::mouseDolly(const float iDelta) { m_focalPoint += getForwardDirection() * iDelta * m_distance; }
 
 void CameraEditor::mouseZoom(const float iDelta) {
 	m_distance -= iDelta * zoomSpeed();

@@ -293,14 +293,17 @@ void EditorLayer::syncActiveDocumentPanels() {
 		m_sceneHierarchy.setUndoManager(nullptr);
 		m_sceneSettings.setScene(s_empty);
 		m_sceneSettings.setUndoManager(nullptr);
+		m_voxelPalette.setScene(s_empty);
 	} else {
 		m_sceneHierarchy.setContext(doc->getActiveScene());
 		m_sceneHierarchy.setUndoManager(&doc->undoManager());
 		m_sceneSettings.setScene(doc->getActiveScene());
 		m_sceneSettings.setUndoManager(&doc->undoManager());
+		m_voxelPalette.setScene(doc->getActiveScene());
 		// The per-document viewport owns its own undo pointer already (set in SceneDocument::onAttach).
 	}
 	m_sceneSettings.setProject(m_project);
+	m_voxelPalette.setProjectDirectory(m_project.projectDirectory);
 	m_sceneHierarchy.setActiveDocument(m_documents.getActive());
 	m_sceneHierarchy.setParentEditor(this);
 	if (doc != nullptr && doc->getActiveScene()) {
@@ -847,6 +850,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_logPanel.onImGuiRender();
 	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
 	m_helpPanel.onImGuiRender(iTimeStep);
+	m_voxelPalette.onImGuiRender(m_voxelBrush);
 	m_asyncProgress.onImGuiRender();
 
 	renderWelcomeScreen();

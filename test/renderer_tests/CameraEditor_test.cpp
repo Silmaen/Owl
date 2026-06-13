@@ -67,24 +67,21 @@ TEST(CameraEditor, Frames) {
 	owl::input::Input::init(owl::window::Type::Null);
 	ts.update();
 	cam.onUpdate(ts);
-	owl::input::Input::injectKey(owl::input::key::LeftAlt);// activate mouse ctrl
+	// Alt + left-drag rotates the camera in place: yaw changes, but the alt scheme never zooms.
+	owl::input::Input::injectKey(owl::input::key::LeftAlt);
+	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonLeft);
+	owl::input::Input::injectMousePos({0.f, 0.f});
 	ts.update();
-	cam.onUpdate(ts);
-	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonRight);
-	owl::input::Input::injectMousePos({0.f, 1.f});
+	cam.onUpdate(ts);// anchor the drag origin
+	owl::input::Input::injectMousePos({10.f, 0.f});
 	ts.update();
-	cam.onUpdate(ts);
-	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonRight);// release btn
-	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonLeft);// press btn
-	owl::input::Input::injectMousePos({1.f, 1.f});
-	ts.update();
-	cam.onUpdate(ts);
-	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonLeft);// release btn
-	owl::input::Input::injectMouseButton(owl::input::mouse::ButtonMiddle);// press btn
-	owl::input::Input::injectMousePos({1.f, 4.f});
-	ts.update();
-	cam.onUpdate(ts);
-	EXPECT_NEAR(cam.getDistance(), 9.988f, 0.01);
+	cam.onUpdate(ts);// drag right
+	EXPECT_NE(cam.getYaw(), 0.f);
+	EXPECT_NEAR(cam.getDistance(), 10.f, 0.001f);
+	// A wheel scroll is what changes the distance.
+	owl::event::MouseScrolledEvent scrE(0.f, 4.f);
+	cam.onEvent(scrE);
+	EXPECT_LT(cam.getDistance(), 10.f);
 
 	owl::input::Input::invalidate();
 }

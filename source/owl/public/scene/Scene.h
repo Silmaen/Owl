@@ -334,6 +334,18 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the editor-driven targeted-block highlight (the voxel brush in Edit mode drives this each frame).
+	 *
+	 * In Play the highlight is set by the voxel player; in the editor there is no
+	 * player, so the editor pushes the brush's current target here before render.
+	 * @param[in] iShow Whether to draw a highlight this frame.
+	 * @param[in] iBlock World-grid coordinates of the targeted block (used when `iShow`).
+	 * @param[in] iNormal Outward normal of the impacted face (used when `iShow`).
+	 */
+	void setEditorVoxelHighlight(bool iShow, const math::vec3i& iBlock = {}, const math::vec3i& iNormal = {});
+
+	/**
+	 * @brief
 	 *  Set the parent of an entity. Handles reparenting and local transform recomputation.
 	 * @param[in] iChild The entity to reparent.
 	 * @param[in] iNewParent The new parent entity.
