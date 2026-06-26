@@ -113,16 +113,37 @@ public:
 
 	/**
 	 * @brief
-	 *  Write the block at local coordinates, marking the chunk dirty on change.
+	 *  Read the packed metadata at local coordinates.
+	 * @param[in] iX Local x.
+	 * @param[in] iY Local y.
+	 * @param[in] iZ Local z.
+	 * @return The packed metadata, or `g_DefaultMeta` for out-of-range coordinates.
+	 */
+	[[nodiscard]] auto getMeta(int32_t iX, int32_t iY, int32_t iZ) const -> PackedMeta;
+
+	/**
+	 * @brief
+	 *  Write the block (and its metadata) at local coordinates, marking the chunk dirty on change.
 	 *
 	 * Out-of-range coordinates are silently ignored. The dirty flag is only set
-	 * when the stored value actually changes.
+	 * when the stored id or metadata actually changes.
 	 * @param[in] iX Local x.
 	 * @param[in] iY Local y.
 	 * @param[in] iZ Local z.
 	 * @param[in] iBlock The block id to store.
+	 * @param[in] iMeta The packed metadata to store (defaults to none).
 	 */
-	void setBlock(int32_t iX, int32_t iY, int32_t iZ, BlockId iBlock);
+	void setBlock(int32_t iX, int32_t iY, int32_t iZ, BlockId iBlock, PackedMeta iMeta = g_DefaultMeta);
+
+	/**
+	 * @brief
+	 *  Write only the packed metadata at local coordinates, marking the chunk dirty on change.
+	 * @param[in] iX Local x.
+	 * @param[in] iY Local y.
+	 * @param[in] iZ Local z.
+	 * @param[in] iMeta The packed metadata to store.
+	 */
+	void setMeta(int32_t iX, int32_t iY, int32_t iZ, PackedMeta iMeta);
 
 	/**
 	 * @brief
@@ -180,6 +201,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Direct read access to the linear metadata array for fast iteration (meshing).
+	 * @return The packed-metadata array, laid out per `localIndex`.
+	 */
+	[[nodiscard]] auto metadata() const noexcept -> const std::vector<PackedMeta>& { return m_meta; }
+
+	/**
+	 * @brief
 	 *  Run-length encode the block data to a compact string.
 	 * @return The encoded block data (space-separated `<count>x<id>` runs).
 	 */
@@ -201,6 +229,8 @@ private:
 	math::vec3i m_coord{0, 0, 0};
 	/// Linear block storage of `g_ChunkVolume` ids, laid out per `localIndex`.
 	std::vector<BlockId> m_blocks;
+	/// Linear metadata storage of `g_ChunkVolume` packed words, laid out per `localIndex` (parallel to `m_blocks`).
+	std::vector<PackedMeta> m_meta;
 	/// True when the chunk changed since the last `markClean`.
 	bool m_dirty = false;
 };

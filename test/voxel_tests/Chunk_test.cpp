@@ -101,3 +101,69 @@ TEST_F(ChunkFixture, DecodeRejectsShortRun) {
 	Chunk chunk;
 	EXPECT_FALSE(chunk.decode("10x1"));
 }
+
+TEST_F(ChunkFixture, MetaDefaultsToZero) {
+	const Chunk chunk;
+	EXPECT_EQ(chunk.getMeta(0, 0, 0), g_DefaultMeta);
+	EXPECT_EQ(chunk.metadata().size(), g_ChunkVolume);
+}
+
+TEST_F(ChunkFixture, SetBlockStoresMetaAndDirties) {
+	Chunk chunk;
+	const PackedMeta meta = packMeta({.orientation = BlockOrientation::AxisX, .state = 7});
+	chunk.setBlock(1, 2, 3, 5, meta);
+	EXPECT_EQ(chunk.getBlock(1, 2, 3), 5u);
+	EXPECT_EQ(chunk.getMeta(1, 2, 3), meta);
+	EXPECT_TRUE(chunk.isDirty());
+}
+
+TEST_F(ChunkFixture, SetMetaOnlyDirtiesOnChange) {
+	Chunk chunk;
+	chunk.setBlock(0, 0, 0, 4);
+	chunk.markClean();
+	chunk.setMeta(0, 0, 0, packMeta({.orientation = BlockOrientation::Yaw180, .state = 0}));
+	EXPECT_TRUE(chunk.isDirty());
+	EXPECT_EQ(unpackMeta(chunk.getMeta(0, 0, 0)).orientation, BlockOrientation::Yaw180);
+	chunk.markClean();
+	chunk.setMeta(0, 0, 0, packMeta({.orientation = BlockOrientation::Yaw180, .state = 0}));
+	EXPECT_FALSE(chunk.isDirty());
+}
+
+TEST_F(ChunkFixture, FillResetsMeta) {
+	Chunk chunk;
+	chunk.setBlock(2, 2, 2, 9, packMeta({.orientation = BlockOrientation::AxisZ, .state = 3}));
+	chunk.fill(1);
+	EXPECT_EQ(chunk.getMeta(2, 2, 2), g_DefaultMeta);
+}
+
+TEST_F(ChunkFixture, EncodeDecodeCarriesMeta) {
+	Chunk chunk;
+	const PackedMeta a = packMeta({.orientation = BlockOrientation::AxisX, .state = 12});
+	const PackedMeta b = packMeta({.orientation = BlockOrientation::YawCw90, .state = 0});
+	chunk.setBlock(0, 0, 0, 3, a);
+	chunk.setBlock(1, 0, 0, 3, b);
+	chunk.setBlock(2, 0, 0, 3, g_DefaultMeta);
+	const std::string encoded = chunk.encode();
+	Chunk restored;
+	ASSERT_TRUE(restored.decode(encoded));
+	EXPECT_EQ(restored.getMeta(0, 0, 0), a);
+	EXPECT_EQ(restored.getMeta(1, 0, 0), b);
+	EXPECT_EQ(restored.getMeta(2, 0, 0), g_DefaultMeta);
+	EXPECT_EQ(restored.metadata(), chunk.metadata());
+}
+
+TEST_F(ChunkFixture, LegacyEncodingDecodesToDefaultMeta) {
+	// A legacy id-only run string (no ":meta" suffix) must still decode, with default metadata everywhere.
+	Chunk chunk;
+	const std::string legacy = std::to_string(g_ChunkVolume - 1) + "x0 1x5";
+	ASSERT_TRUE(chunk.decode(legacy));
+	EXPECT_EQ(chunk.getBlock(g_ChunkSize - 1, g_ChunkSize - 1, g_ChunkSize - 1), 5u);
+	EXPECT_EQ(chunk.getMeta(g_ChunkSize - 1, g_ChunkSize - 1, g_ChunkSize - 1), g_DefaultMeta);
+}
+
+TEST_F(ChunkFixture, EncodeOmitsMetaSuffixWhenDefault) {
+	// All-default metadata must produce byte-identical output to the legacy id-only format.
+	Chunk chunk;
+	chunk.setBlock(0, 0, 0, 7);
+	EXPECT_EQ(chunk.encode().find(':'), std::string::npos);
+}

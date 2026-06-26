@@ -12,6 +12,8 @@
 
 #include <imgui.h>
 
+#include <algorithm>
+#include <array>
 #include <fstream>
 #include <sstream>
 
@@ -75,6 +77,21 @@ void VoxelPalette::onImGuiRender(VoxelBrush& ioBrush) {
 	ImGui::TextDisabled("(?)");
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("In Edit mode: left-click places / stamps, right-click erases the targeted block.");
+	ImGui::Separator();
+
+	constexpr std::array<const char*, data::voxel::g_OrientationCount> kOrientationNames{
+			"Identity", "Yaw 90 CW", "Yaw 180", "Yaw 90 CCW", "Axis X", "Axis Z"};
+	int orientation = static_cast<int>(ioBrush.orientation);
+	if (ImGui::Combo("Orientation", &orientation, kOrientationNames.data(), static_cast<int>(kOrientationNames.size())))
+		ioBrush.orientation = static_cast<data::voxel::BlockOrientation>(orientation);
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Orientation applied to painted blocks (remaps per-face textures; geometry is unchanged).");
+	int state = static_cast<int>(ioBrush.state);
+	if (ImGui::SliderInt("State", &state, 0, 255))
+		ioBrush.state = static_cast<uint8_t>(std::clamp(state, 0, 255));
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip(
+				"Free gameplay/editor state byte stored on painted blocks (not interpreted by the renderer).");
 	ImGui::Separator();
 
 	if (ImGui::Selectable("Eraser", ioBrush.eraser && !ioBrush.structure.has_value())) {

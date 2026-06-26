@@ -29,7 +29,8 @@ void VoxelEditCommand::apply(scene::Scene& ioScene, const bool iUseAfter) const 
 		return;
 	auto& voxelWorld = entity.getComponent<scene::component::VoxelWorld>().world;
 	const auto applyOne = [&](const VoxelBlockEdit& iEdit) -> void {
-		voxelWorld.setBlock(iEdit.coord, iUseAfter ? iEdit.after : iEdit.before);
+		voxelWorld.setBlock(iEdit.coord, iUseAfter ? iEdit.after : iEdit.before,
+							iUseAfter ? iEdit.afterMeta : iEdit.beforeMeta);
 		voxelWorld.markNeighborChunksDirty(iEdit.coord);
 	};
 	if (iUseAfter) {

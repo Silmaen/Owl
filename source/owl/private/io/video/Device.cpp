@@ -95,7 +95,6 @@ void convertMJpegToRgb24(const uint8_t* iJpegBuffer, const int32_t iJpegSize, co
 		stbi_image_free(buffer);
 		return;
 	}
-	//int rowSize = width * 3;
 	for (int i = 0; i < height; ++i) {
 		for (int j = 0; j < width; ++j) {
 			const int sourceIndex = (i * width + j) * 3;
@@ -103,7 +102,6 @@ void convertMJpegToRgb24(const uint8_t* iJpegBuffer, const int32_t iJpegSize, co
 			memcpy(oRgb24Buffer + destinationIndex, buffer + sourceIndex, 3);
 		}
 	}
-	//std::memcpy(rgb24Buffer, buffer, frameSize.surface() * 3);
 	stbi_image_free(buffer);
 }
 OWL_DIAG_POP

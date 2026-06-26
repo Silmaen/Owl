@@ -52,11 +52,20 @@ public:
 
 	/**
 	 * @brief
-	 *  Write the block at world coordinates, creating the chunk if needed.
+	 *  Read the packed block metadata at world coordinates.
+	 * @param[in] iWorld World block position.
+	 * @return The packed metadata, or `g_DefaultMeta` if the containing chunk is absent.
+	 */
+	[[nodiscard]] auto getMeta(const math::vec3i& iWorld) const -> PackedMeta;
+
+	/**
+	 * @brief
+	 *  Write the block (and its metadata) at world coordinates, creating the chunk if needed.
 	 * @param[in] iWorld World block position.
 	 * @param[in] iBlock The block id to store.
+	 * @param[in] iMeta The packed metadata to store (defaults to none).
 	 */
-	void setBlock(const math::vec3i& iWorld, BlockId iBlock);
+	void setBlock(const math::vec3i& iWorld, BlockId iBlock, PackedMeta iMeta = g_DefaultMeta);
 
 	/**
 	 * @brief

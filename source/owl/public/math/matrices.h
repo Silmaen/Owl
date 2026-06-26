@@ -65,7 +65,9 @@ public:
 	 * @param iInitList List for initialization.
 	 */
 	constexpr Matrix(std::initializer_list<BaseType> iInitList) noexcept {
-		std::copy_n(iInitList.begin(), NCol * NRow, m_data.begin());
+		const size_t count = std::min(iInitList.size(), NCol * NRow);
+		auto* const out = std::copy_n(iInitList.begin(), count, m_data.begin());
+		std::fill(out, m_data.end(), BaseType{});
 	}
 
 	/**

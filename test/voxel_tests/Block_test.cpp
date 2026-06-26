@@ -117,3 +117,51 @@ TEST_F(BlockFixture, DeserializeRejectsMalformed) {
 	EXPECT_FALSE(registry.deserializeFromString("not: a registry"));
 	EXPECT_EQ(registry.count(), 2u);
 }
+
+TEST_F(BlockFixture, PackMetaRoundTrip) {
+	for (uint8_t orient = 0; orient < g_OrientationCount; ++orient) {
+		for (const uint8_t state: std::array<uint8_t, 4>{0, 1, 42, 255}) {
+			const BlockMeta meta{.orientation = static_cast<BlockOrientation>(orient), .state = state};
+			EXPECT_EQ(unpackMeta(packMeta(meta)), meta);
+		}
+	}
+	EXPECT_EQ(packMeta(BlockMeta{}), g_DefaultMeta);
+	EXPECT_EQ(unpackMeta(g_DefaultMeta), BlockMeta{});
+}
+
+TEST_F(BlockFixture, OrientedFaceIdentityIsNoOp) {
+	for (const BlockFace face:
+		 {BlockFace::XNeg, BlockFace::XPos, BlockFace::YNeg, BlockFace::YPos, BlockFace::ZNeg, BlockFace::ZPos})
+		EXPECT_EQ(orientedFace(face, BlockOrientation::Identity), face);
+}
+
+TEST_F(BlockFixture, OrientedFaceIsAlwaysAPermutation) {
+	for (uint8_t orient = 0; orient < g_OrientationCount; ++orient) {
+		std::array<bool, g_FaceCount> seen{};
+		for (uint8_t f = 0; f < g_FaceCount; ++f) {
+			const auto local = orientedFace(static_cast<BlockFace>(f), static_cast<BlockOrientation>(orient));
+			EXPECT_FALSE(seen[static_cast<size_t>(local)]) << "orientation " << static_cast<int>(orient);
+			seen[static_cast<size_t>(local)] = true;
+		}
+	}
+}
+
+TEST_F(BlockFixture, OrientedFacePillarMapsCapsToAxis) {
+	// AxisX lays the pillar along world X: the local top/bottom caps (YPos/YNeg) show on world ±X.
+	EXPECT_EQ(orientedFace(BlockFace::XPos, BlockOrientation::AxisX), BlockFace::YPos);
+	EXPECT_EQ(orientedFace(BlockFace::XNeg, BlockOrientation::AxisX), BlockFace::YNeg);
+	// AxisZ lays the pillar along world Z: the caps show on world ±Z; world X faces stay as authored.
+	EXPECT_EQ(orientedFace(BlockFace::ZPos, BlockOrientation::AxisZ), BlockFace::YPos);
+	EXPECT_EQ(orientedFace(BlockFace::ZNeg, BlockOrientation::AxisZ), BlockFace::YNeg);
+	EXPECT_EQ(orientedFace(BlockFace::XPos, BlockOrientation::AxisZ), BlockFace::XPos);
+}
+
+TEST_F(BlockFixture, OrientedFaceYawKeepsVerticalCaps) {
+	for (const BlockOrientation yaw:
+		 {BlockOrientation::YawCw90, BlockOrientation::Yaw180, BlockOrientation::YawCcw90}) {
+		EXPECT_EQ(orientedFace(BlockFace::YPos, yaw), BlockFace::YPos);
+		EXPECT_EQ(orientedFace(BlockFace::YNeg, yaw), BlockFace::YNeg);
+	}
+	EXPECT_EQ(orientedFace(BlockFace::XNeg, BlockOrientation::Yaw180), BlockFace::XPos);
+	EXPECT_EQ(orientedFace(BlockFace::ZNeg, BlockOrientation::Yaw180), BlockFace::ZPos);
+}

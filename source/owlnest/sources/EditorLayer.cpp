@@ -666,6 +666,9 @@ void EditorLayer::onDetach() {
 
 	m_documents.clear();
 	OWL_TRACE("EditorLayer: closed all documents (and their viewports).")
+
+	// Free the static IconBank's atlas while the device is still valid, else it outlives vkDestroyDevice and leaks.
+	gui::IconBank::instance().clear();
 }
 
 void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {

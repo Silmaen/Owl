@@ -11,6 +11,8 @@
 #include "PhysicalDeviceCapabilities.h"
 #include "math/vectors.h"
 
+#include <string_view>
+
 /**
  * @brief
  *  Namespace for vulkan internal functions.
@@ -298,6 +300,19 @@ public:
 	 * @return The newly created command buffer (not yet recording).
 	 */
 	[[nodiscard]] auto createCommandBuffer() const -> VkCommandBuffer;
+
+	/**
+	 * @brief
+	 *  Tag a Vulkan object with a debug name (no-op unless debug messaging is enabled).
+	 *
+	 * The name surfaces in validation-layer messages — notably object-leak reports
+	 * at `vkDestroyDevice` — so an unnamed leaked object is one the engine did not
+	 * create (e.g. an ImGui-backend resource).
+	 * @param[in] iType The Vulkan object type.
+	 * @param[in] iHandle The object handle reinterpreted as `uint64_t`.
+	 * @param[in] iName The debug name to attach.
+	 */
+	void setObjectName(VkObjectType iType, uint64_t iHandle, std::string_view iName) const;
 
 private:
 	/**

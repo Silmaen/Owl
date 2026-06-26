@@ -33,9 +33,10 @@ auto matchesClass(const BlockRegistry& iRegistry, const BlockId iBlock, const Bl
 	return true;
 }
 
-// One greedy-mask cell: the block whose face lives here plus the four corner occlusion levels that gate merging.
+// One greedy-mask cell: block + orientation + four corner AO levels; all three gate merging through `operator==`.
 struct MaskCell {
 	BlockId block = g_AirBlock;
+	BlockOrientation orientation = BlockOrientation::Identity;
 	std::array<uint8_t, 4> ao{3, 3, 3, 3};
 
 	auto operator==(const MaskCell& iOther) const -> bool = default;
@@ -125,12 +126,14 @@ void buildSliceMask(const Chunk& iChunk, const BlockRegistry& iRegistry, const C
 			const BlockId own = iChunk.getBlock(coord[0], coord[1], coord[2]);
 			if (iRegistry.isAir(own) || !matchesClass(iRegistry, own, iClass))
 				continue;
+			const BlockOrientation orientation = unpackMeta(iChunk.getMeta(coord[0], coord[1], coord[2])).orientation;
 			const int32_t outer = iLayer + iStep;
 			coord[static_cast<size_t>(iAxis)] = outer;
 			const BlockId neighbor = sampleBlock(iChunk, iNeighbor, coord[0], coord[1], coord[2]);
 			if (!iRegistry.isOpaque(neighbor) && neighbor != own)
 				oMask[maskIndex(uu, vv)] = MaskCell{
 						.block = own,
+						.orientation = orientation,
 						.ao = iAmbientOcclusion ? faceAo(iChunk, iRegistry, iNeighbor, iAxis, iU, iV, outer, uu, vv)
 												: std::array<uint8_t, 4>{3, 3, 3, 3}};
 		}
@@ -209,7 +212,8 @@ void emitSliceQuads(std::vector<MaskCell>& ioMask, ChunkMesh& ioMesh, const int3
 					buildPos(iAxis, iU, iV, iPlane, static_cast<float>(i + width), static_cast<float>(j)),
 					buildPos(iAxis, iU, iV, iPlane, static_cast<float>(i + width), static_cast<float>(j + height)),
 					buildPos(iAxis, iU, iV, iPlane, static_cast<float>(i), static_cast<float>(j + height))};
-			const auto texture = static_cast<uint32_t>(iRegistry.get(cell.block).faceTexture(iFace));
+			const auto texture =
+					static_cast<uint32_t>(iRegistry.get(cell.block).faceTexture(orientedFace(iFace, cell.orientation)));
 			emitQuad(ioMesh, pos, iNormal, static_cast<float>(width), static_cast<float>(height), texture, cell.ao,
 					 iFlip, iAxis == 0);
 			i += width;

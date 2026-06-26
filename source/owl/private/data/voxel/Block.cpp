@@ -10,6 +10,7 @@
 #include "core/external/yaml.h"
 #include "data/voxel/Block.h"
 
+#include <array>
 #include <sstream>
 
 namespace owl::data::voxel {
@@ -46,7 +47,24 @@ auto renderKindFromString(const std::string& iName) -> BlockRenderKind {
 		return BlockRenderKind::Water;
 	return BlockRenderKind::Opaque;
 }
+
+// Per-orientation permutation: index by world face (XNeg,XPos,YNeg,YPos,ZNeg,ZPos), value is the local face shown there.
+constexpr std::array<std::array<BlockFace, g_FaceCount>, g_OrientationCount> k_FacePermutation{{
+		{BlockFace::XNeg, BlockFace::XPos, BlockFace::YNeg, BlockFace::YPos, BlockFace::ZNeg, BlockFace::ZPos},
+		{BlockFace::ZNeg, BlockFace::ZPos, BlockFace::YNeg, BlockFace::YPos, BlockFace::XPos, BlockFace::XNeg},
+		{BlockFace::XPos, BlockFace::XNeg, BlockFace::YNeg, BlockFace::YPos, BlockFace::ZPos, BlockFace::ZNeg},
+		{BlockFace::ZPos, BlockFace::ZNeg, BlockFace::YNeg, BlockFace::YPos, BlockFace::XNeg, BlockFace::XPos},
+		{BlockFace::YNeg, BlockFace::YPos, BlockFace::XPos, BlockFace::XNeg, BlockFace::ZNeg, BlockFace::ZPos},
+		{BlockFace::XNeg, BlockFace::XPos, BlockFace::ZPos, BlockFace::ZNeg, BlockFace::YNeg, BlockFace::YPos},
+}};
 }// namespace
+
+auto orientedFace(const BlockFace iWorldFace, const BlockOrientation iOrientation) noexcept -> BlockFace {
+	const auto orient = static_cast<size_t>(iOrientation);
+	if (orient >= g_OrientationCount)
+		return iWorldFace;
+	return k_FacePermutation[orient][static_cast<size_t>(iWorldFace)];
+}
 
 BlockRegistry::BlockRegistry() { m_types.push_back(makeAir()); }
 

@@ -28,6 +28,10 @@ struct VoxelBlockEdit {
 	data::voxel::BlockId before = 0;
 	/// Block id after the edit (applied on redo).
 	data::voxel::BlockId after = 0;
+	/// Packed metadata before the edit (restored on undo).
+	data::voxel::PackedMeta beforeMeta = data::voxel::g_DefaultMeta;
+	/// Packed metadata after the edit (applied on redo).
+	data::voxel::PackedMeta afterMeta = data::voxel::g_DefaultMeta;
 };
 
 /**

@@ -162,6 +162,23 @@ public:
 	 */
 	OWL_API [[nodiscard]] static auto extractFrustumPlanes(const math::mat4& iViewProj) -> std::array<math::vec4, 6>;
 
+	/**
+	 * @brief
+	 *  Conservative CPU test of an axis-aligned box against a frustum's 6 planes.
+	 *
+	 * Uses the positive-vertex (n/p-vertex) optimisation: the box is culled only
+	 * when it lies fully behind one plane, so it never rejects a visible box (it
+	 * may keep a box straddling a frustum edge, which is acceptable for draw
+	 * culling). Box coordinates must be in the same space as the matrix passed to
+	 * `extractFrustumPlanes`.
+	 * @param[in] iFrustumPlanes The 6 planes from `extractFrustumPlanes`.
+	 * @param[in] iMin The box min corner.
+	 * @param[in] iMax The box max corner.
+	 * @return True when the box is at least partially inside the frustum.
+	 */
+	OWL_API [[nodiscard]] static auto isAabbVisible(const std::array<math::vec4, 6>& iFrustumPlanes,
+													const math::vec3& iMin, const math::vec3& iMax) -> bool;
+
 private:
 	/// Workgroup size, matches the Slang shader.
 	static constexpr uint32_t kWorkgroupSize = 64;

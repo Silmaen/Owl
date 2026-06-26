@@ -36,6 +36,8 @@ struct OWL_API VoxelStructure {
 	math::vec3i size{0, 0, 0};
 	/// Dense block grid of `size` volume, indexed x-fastest then y then z.
 	std::vector<BlockId> blocks;
+	/// Dense packed-metadata grid parallel to `blocks` (empty or shorter means all-default metadata).
+	std::vector<PackedMeta> meta;
 
 	/**
 	 * @brief
@@ -65,10 +67,20 @@ struct OWL_API VoxelStructure {
 
 	/**
 	 * @brief
-	 *  Visit every non-air cell of the structure.
-	 * @param[in] iVisitor Callback receiving the local grid coordinate and block id.
+	 *  Read the packed metadata at local grid coordinates (out-of-range reads return default).
+	 * @param[in] iX Local x in `[0, size.x)`.
+	 * @param[in] iY Local y in `[0, size.y)`.
+	 * @param[in] iZ Local z in `[0, size.z)`.
+	 * @return The stored packed metadata, or `g_DefaultMeta` if out of range.
 	 */
-	void forEachSolid(const std::function<void(const math::vec3i&, BlockId)>& iVisitor) const;
+	[[nodiscard]] auto metaAt(int32_t iX, int32_t iY, int32_t iZ) const -> PackedMeta;
+
+	/**
+	 * @brief
+	 *  Visit every non-air cell of the structure.
+	 * @param[in] iVisitor Callback receiving the local grid coordinate, block id and packed metadata.
+	 */
+	void forEachSolid(const std::function<void(const math::vec3i&, BlockId, PackedMeta)>& iVisitor) const;
 
 	/**
 	 * @brief

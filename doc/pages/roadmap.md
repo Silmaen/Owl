@@ -292,6 +292,16 @@ cross-platform packaging from any host.
           `ImGuiCol_Text` / `Owl::Theme::buttonHovered`)
         - Side-by-side preview of the source `.md` next to the rendered output (debug aid for contributors editing
           pages)
+- Vulkan Backend Hardening
+    - ![Done][done] Per-batch descriptor sets — eliminated the `UPDATE_AFTER_BIND` validation cascade in v0.2.1. The new
+      fence-recycled `internal::DescriptorRing` hands every draw a distinct descriptor set and recycles a set only once
+      the submit fence of the batch that last bound it has signalled (keyed on fence, not frame index, so the
+      editor-viewport and main-swapchain submits sharing the global ring never alias). An Owl Nest session now produces
+      zero Vulkan validation messages.
+    - ![Done][done] Resolved the 5-object `vkDestroyDevice` teardown leak in v0.2.1. `vkSetDebugUtilsObjectName` tags
+      (`VulkanCore::setObjectName`) on every texture's image / view / sampler / memory / layout named the leaked objects
+      `tex.*:anon`, identifying the process-static `gui::IconBank` atlas texture (only freed at static destruction,
+      after `vkDestroyDevice`). Fixed by `EditorLayer::onDetach()` calling `IconBank::clear()` while the device is valid.
 - Performance
     - ![Planned][planned] Binary scene format
         - Replace YAML with a binary format (MessagePack / flatbuffers / custom) for `.owl` scenes, `.owltilemap`,
@@ -415,10 +425,12 @@ tradition — slotted between the existing 2D/raycast/voxel options.
         - Chunk-based world (cubic 16³ chunks, sparse `VoxelWorld` map) — ![Done][done] data model
         - Block type registry with textures per face — ![Done][done] `BlockRegistry`
         - Chunk loading/unloading around camera — ![Done][done] (`Scene::updateVoxelStreaming`, async generation)
-    - ![In Progress][progress] Chunk meshing
+    - ![Done][done] Chunk meshing
         - Greedy meshing or similar algorithm for efficient geometry — ![Done][done] `ChunkMesher` (greedy, per-axis)
         - Only exposed faces rendered (hidden face culling) — ![Done][done] visible-face-only, cross-chunk via provider
-        - Frustum culling per chunk — ![Planned][planned] (renderer-side, lands with `RendererVoxel`)
+        - Frustum culling per chunk — ![Done][done] (`RendererVoxel::drawVoxelWorld` culls each chunk's AABB against the
+          view-projection frustum on the CPU via the reusable `FrustumCullingPass::extractFrustumPlanes` /
+          `isAabbVisible` helpers; the GPU indirect-draw adoption stays a v0.3.0 item)
     - ![Done][done] Terrain generation
         - Procedural terrain via noise functions — ![Done][done] home-grown `math::PerlinNoise` (2D/3D + fBm,
           seeded, dependency-free, headless-tested)
@@ -444,7 +456,12 @@ tradition — slotted between the existing 2D/raycast/voxel options.
           edits dirty neighbour chunks at borders)
         - Block picking (raycast from camera to find targeted block) — ![Done][done] (`data::voxel::raycastVoxel`
           DDA + wireframe highlight of the targeted block)
-        - Block metadata (orientation, state) — ![Planned][planned] (deferred: chunk-encoding schema change)
+        - Block metadata (orientation, state) — ![Done][done] (`BlockMeta` = orientation + free state byte, packed into
+          a 16-bit word stored parallel to the block id in `Chunk` / `VoxelStructure`; the RLE run format carries an
+          optional `:meta` suffix so legacy id-only data still loads and all-default data stays byte-identical.
+          `orientedFace` remaps per-face textures so one block type reads as a pillar along any axis or a horizontally
+          facing block; the greedy mesher keys on orientation. Authored from the Voxel Palette orientation / state
+          picker, undoable, headless-tested)
     - ![Done][done] Voxel rendering (Vulkan)
         - Generic `Renderer3D` forward foundation (depth, perspective, textured, directional light, `mesh3d` shader)
           — ![Done][done] (reusable base)
@@ -483,9 +500,20 @@ tradition — slotted between the existing 2D/raycast/voxel options.
           (movement now tracks the camera's true facing — the Lua script had the yaw sign inverted). The controller is
           built renderer-agnostic so the **editor viewport** can adopt it; that adoption rides with the v0.2.3 *Editor
           camera controls overhaul*.
-        - **Investigate the remaining Vulkan validation messages**: the single-shared-descriptor-set
-          `UPDATE_AFTER_BIND` cascade (needs per-batch/ring descriptor sets, not the `UPDATE_AFTER_BIND` flag) and the
-          5-object `vkDestroyDevice` teardown leak (`whiteTexture` + a descriptor-set layout)
+        - **Investigate the remaining Vulkan validation messages** — confirmed against live runs with validation
+          enabled (llvmpipe). The **5-object `vkDestroyDevice` leak is fixed** ✅: `vkSetDebugUtilsObjectName`
+          instrumentation (`VulkanCore::setObjectName`) named the leaked objects `tex.*:anon`, identifying the
+          process-static `gui::IconBank` atlas texture — freed only at static destruction, after `vkDestroyDevice`.
+          `EditorLayer::onDetach()` now calls `IconBank::clear()` while the device is valid (symmetric with the
+          `buildIconBank()` in `onAttach`); teardown is clean. Teardown hardening also landed (`UiLayer::onDetach`
+          flushes `g_deferredTextureReleases`; `RendererDescriptors::releaseAll()` runs from `VulkanHandler::release()`).
+          The **`UPDATE_AFTER_BIND` cascade is also fixed** ✅: the single per-frame descriptor set
+          (`commitTextureBind` → `vkUpdateDescriptorSets`) was rewritten while a command buffer that bound it was still
+          recording. Replaced by the fence-recycled `internal::DescriptorRing` — each draw acquires a distinct set,
+          reused only after the submit fence of the batch that last bound it signals (keyed on fence, not frame index,
+          so the independently-submitted editor-viewport and main-swapchain passes sharing the global ring never alias).
+          **GPU-validated**: an Owl Nest session (open project → voxel scene → close) now produces **zero Vulkan
+          validation messages** and a clean teardown.
     - ![Done][done] Voxel editor in Owl Nest
         - Brush tools for painting blocks — ![Done][done] (Voxel Palette + editor-camera raycast, left-click place /
           right-click erase, undoable `VoxelEditCommand` with stroke coalescing)

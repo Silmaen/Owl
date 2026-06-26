@@ -221,8 +221,18 @@ cell would intersect the player's body. Edits only fire while the cursor
 is captured (so the click that captures the cursor never doubles as an edit). Because an edit on a chunk border also
 affects the neighbour chunk's visible faces, the edit calls `VoxelWorld::markNeighborChunksDirty`, which re-meshes the
 adjacent chunk (this is kept off `VoxelWorld::setBlock` so bulk terrain streaming does not pay for it). `reach` and
-`placeBlock` are authored on the `VoxelPlayer` component. (Per-block metadata — orientation / state — is not yet
-stored; the chunk holds a flat `BlockId` per cell.)
+`placeBlock` are authored on the `VoxelPlayer` component.
+
+### Per-block metadata
+
+Each cell stores, alongside its `BlockId`, a 16-bit metadata word (`data::voxel::BlockMeta`): a `BlockOrientation` plus
+a free gameplay/editor `state` byte. The chunk keeps a metadata array parallel to its block array, so the storage is a
+`(BlockId, PackedMeta)` pair per cell. Orientation never changes a block's geometry, collision, or opacity — it only
+remaps which per-face texture appears on each world face (`orientedFace`), so a single block type can read as a pillar
+laid along any axis (`AxisX` / `AxisZ`) or a horizontally-facing block (`YawCw90` / `Yaw180` / `YawCcw90`). The greedy
+mesher includes orientation in its merge key, so adjacent blocks textured differently never merge into one quad. The
+run-length encoding writes `<count>x<id>` for default metadata and `<count>x<id>:<meta>` otherwise, so legacy id-only
+data still loads and all-default chunks serialize byte-for-byte as before.
 
 ## Procedural Terrain
 
@@ -243,12 +253,13 @@ frequency, octaves, amplitude, sea level, cave threshold, biomes, block ids, …
 Voxel worlds are authored directly in the editor, not just at runtime:
 
 - **Voxel Palette** panel — pick a paint block from the active world's registry (each shown with its top-face atlas
-  thumbnail), the eraser, or a saved structure.
+  thumbnail), the eraser, or a saved structure. An **Orientation** dropdown and a **State** slider set the metadata
+  applied to painted blocks.
   Tick **Brush active** to engage the tool: while in Edit mode the editor camera raycasts the block under the cursor
-  (the impacted face is wireframe-highlighted), **left-click places** the paint block against that face and
-  **right-click erases** the targeted block. Every edit is undoable — `commands::VoxelEditCommand` records a per-block
-  `{before, after}` delta and coalesces a continuous stroke into a single history entry, dirtying neighbour chunks at
-  borders so the mesh rebuilds correctly.
+  (the impacted face is wireframe-highlighted), **left-click places** the paint block (with the chosen orientation /
+  state) against that face and **right-click erases** the targeted block. Every edit is undoable —
+  `commands::VoxelEditCommand` records a per-block `{before, after}` id + metadata delta and coalesces a continuous
+  stroke into a single history entry, dirtying neighbour chunks at borders so the mesh rebuilds correctly.
 - **Structures** — `data::voxel::VoxelStructure` is a finite block grid saved as a `.owlvoxstruct` file (YAML: a
   `Size` triple plus run-length-encoded `Blocks`). "Save" in the palette captures the current world's non-air
   bounding box; selecting a saved structure makes a left-click **stamp** it (its min corner at the targeted empty
@@ -263,4 +274,5 @@ to zoom); a corner XYZ gizmo shows the current orientation.
 
 ## What's Next
 
-Per-block metadata (orientation / state — a chunk-encoding change), per-chunk frustum culling, and a Lua block API.
+A Lua block API, and the GPU indirect-draw adoption of the frustum-culling pre-pass (currently culled per chunk on the
+CPU) — slated for the v0.3.0 3D pipeline.

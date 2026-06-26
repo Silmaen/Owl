@@ -168,10 +168,12 @@ can register layer types without touching engine sources.
 ### Per-renderer descriptor blocks (Vulkan)
 
 Each high-level renderer (`Renderer2D`, `RendererTilemap`, future renderers)
-owns its own Vulkan `VkDescriptorSetLayout` + descriptor pool + per-frame
-descriptor sets, matching exactly the bindings its shaders declare. The
-pattern lives behind a backend-neutral API so OpenGL and the headless `Null`
-backend can no-op every call:
+owns its own Vulkan `VkDescriptorSetLayout` plus a fence-recycled
+`DescriptorRing` that hands every draw a distinct descriptor set (recycled once
+the submit fence of the batch that last bound it has signalled), matching
+exactly the bindings its shaders declare. The pattern lives behind a
+backend-neutral API so OpenGL and the headless `Null` backend can no-op every
+call:
 
 ```c++
 // In MyRenderer::init(), declare the bindings the shaders use:
@@ -214,7 +216,7 @@ This pattern fixes two pre-existing pathologies:
 The same machinery also supports `BindingType::StorageBuffer` slots —
 the instanced `Renderer2D` rewrite (v0.2.0 Phase 1) declares binding 2
 as an SSBO and attaches its `vulkan::StorageBuffer` via
-`bindStorageBuffer` so the per-frame descriptor set picks up the
+`bindStorageBuffer` so each draw's descriptor set picks up the
 correct `VkBuffer` automatically.
 
 ### Raycast wall stripes on the GPU (Phase 3)
@@ -615,8 +617,8 @@ over when full triggers `nextBatch()` (flush + restart).
 The SSBO at binding 2 is swapped before each instanced drawcall via
 `gpu::StorageBuffer::bind()` — on OpenGL this calls
 `glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ...)`; on Vulkan it
-calls `internal::RendererDescriptors::bindStorageBuffer` which
-updates the per-frame descriptor set.
+calls `internal::RendererDescriptors::bindStorageBuffer`, recorded into
+each draw's descriptor set acquired from the `DescriptorRing`.
 
 ### Statistics
 

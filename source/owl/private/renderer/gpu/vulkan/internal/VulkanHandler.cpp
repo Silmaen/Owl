@@ -13,7 +13,10 @@
 #include "RendererDescriptors.h"
 #include "app/Application.h"
 #include "renderer/gpu/GraphContext.h"
+#include "renderer/gpu/RendererDescriptors.h"
 #include "utils.h"
+
+#include <bit>
 
 namespace owl::renderer::gpu::vulkan::internal {
 
@@ -56,6 +59,7 @@ void VulkanHandler::release() {
 			vkDestroyPipelineLayout(core.getLogicalDevice(), pipeLine.layout, nullptr);
 	}
 	m_pipeLines.clear();
+	m_pipelineCache.clear();
 
 	if (m_imGuiRenderPass != nullptr) {
 		vkDestroyRenderPass(core.getLogicalDevice(), m_imGuiRenderPass, nullptr);
@@ -69,6 +73,9 @@ void VulkanHandler::release() {
 	auto& vkd = Descriptors::get();
 	vkd.release();
 	OWL_CORE_TRACE("Vulkan: Descriptors released.")
+	// Destroy per-renderer descriptor blocks while the device is valid; their process-static storage else outlives it.
+	gpu::RendererDescriptors::releaseAll();
+	OWL_CORE_TRACE("Vulkan: per-renderer descriptor blocks released.")
 	core.release();
 	OWL_CORE_TRACE("Vulkan: core destroyed.")
 	m_state = State::Uninitialized;
@@ -172,6 +179,34 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 		if (auto* const rdLayout = rd->getDescriptorSetLayout(); rdLayout != nullptr && *rdLayout != nullptr)
 			setLayout = rdLayout;
 	}
+
+	auto hashCombine = [](size_t& ioSeed, const size_t iValue) -> void {
+		ioSeed ^= iValue + 0x9e3779b97f4a7c15ULL + (ioSeed << 6) + (ioSeed >> 2);
+	};
+	size_t key = std::hash<std::string>{}(iPipeLineName);
+	hashCombine(key, iDoubleSided ? 1ULL : 0ULL);
+	hashCombine(key, std::bit_cast<uint64_t>(*setLayout));
+	hashCombine(key, std::bit_cast<uint64_t>(m_currentFramebuffer->getRenderPass()));
+	for (uint32_t i = 0; i < iVertexInputInfo.vertexBindingDescriptionCount; ++i) {
+		const auto& bind = iVertexInputInfo.pVertexBindingDescriptions[i];
+		hashCombine(key, bind.binding);
+		hashCombine(key, bind.stride);
+		hashCombine(key, static_cast<size_t>(bind.inputRate));
+	}
+	for (uint32_t i = 0; i < iVertexInputInfo.vertexAttributeDescriptionCount; ++i) {
+		const auto& attr = iVertexInputInfo.pVertexAttributeDescriptions[i];
+		hashCombine(key, attr.location);
+		hashCombine(key, attr.binding);
+		hashCombine(key, static_cast<size_t>(attr.format));
+		hashCombine(key, attr.offset);
+	}
+	if (const auto it = m_pipelineCache.find(key); it != m_pipelineCache.end()) {
+		++m_pipeLines[it->second].refCount;
+		return it->second;
+	}
+	pData.key = key;
+	pData.refCount = 1;
+
 	const VkPipelineLayoutCreateInfo pipelineLayoutInfo{.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 														.pNext = nullptr,
 														.flags = {},
@@ -321,6 +356,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 
 	const auto id = m_pipeLines.empty() ? 0 : static_cast<int32_t>(m_pipeLines.rbegin()->first) + 1;
 	m_pipeLines.emplace(id, pData);
+	m_pipelineCache.emplace(key, id);
 
 	OWL_CORE_TRACE("Vulkan pipeline: {} Loaded.", iPipeLineName)
 	return id;
@@ -328,13 +364,19 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 
 void VulkanHandler::popPipeline(const int32_t iId) {
 	const auto& core = VulkanCore::get();
-	if (!m_pipeLines.contains(iId))
+	const auto it = m_pipeLines.find(iId);
+	if (it == m_pipeLines.end())
 		return;
-	if (m_pipeLines[iId].pipeLine != nullptr)
-		vkDestroyPipeline(core.getLogicalDevice(), m_pipeLines[iId].pipeLine, nullptr);
-	if (m_pipeLines[iId].layout != nullptr)
-		vkDestroyPipelineLayout(core.getLogicalDevice(), m_pipeLines[iId].layout, nullptr);
-	m_pipeLines.erase(iId);
+	if (it->second.refCount > 1) {
+		--it->second.refCount;
+		return;
+	}
+	if (it->second.pipeLine != nullptr)
+		vkDestroyPipeline(core.getLogicalDevice(), it->second.pipeLine, nullptr);
+	if (it->second.layout != nullptr)
+		vkDestroyPipelineLayout(core.getLogicalDevice(), it->second.layout, nullptr);
+	m_pipelineCache.erase(it->second.key);
+	m_pipeLines.erase(it);
 }
 
 void VulkanHandler::setClearColor(const math::vec4& iColor) { m_clearColor = iColor; }
@@ -514,6 +556,7 @@ void VulkanHandler::endBatch() {
 		m_state = State::ErrorSubmittingDrawCommand;
 		return;
 	}
+	RendererDescriptors::notifySubmitAll(*m_currentFramebuffer->getCurrentFence());
 	inBatch = false;
 	m_currentFramebuffer->batchTouch();
 }

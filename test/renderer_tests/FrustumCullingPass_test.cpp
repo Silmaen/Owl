@@ -46,6 +46,26 @@ TEST(FrustumCullingPass, dispatchAllocatesBuffers) {
 	owl::core::Log::invalidate();
 }
 
+TEST(FrustumCullingPass, isAabbVisibleKeepsBoxInsideClipCube) {
+	const auto planes = owl::renderer::utils::FrustumCullingPass::extractFrustumPlanes(owl::math::identity<float, 4>());
+	// A small box at the clip-space origin is inside the unit cube frustum.
+	EXPECT_TRUE(owl::renderer::utils::FrustumCullingPass::isAabbVisible(planes, owl::math::vec3{-0.5f, -0.5f, -0.5f},
+																		owl::math::vec3{0.5f, 0.5f, 0.5f}));
+	// A box that merely straddles a frustum face is kept (conservative).
+	EXPECT_TRUE(owl::renderer::utils::FrustumCullingPass::isAabbVisible(planes, owl::math::vec3{0.5f, 0.5f, 0.5f},
+																		owl::math::vec3{1.5f, 1.5f, 1.5f}));
+}
+
+TEST(FrustumCullingPass, isAabbVisibleCullsBoxOutsideClipCube) {
+	const auto planes = owl::renderer::utils::FrustumCullingPass::extractFrustumPlanes(owl::math::identity<float, 4>());
+	// Fully past the +X face.
+	EXPECT_FALSE(owl::renderer::utils::FrustumCullingPass::isAabbVisible(planes, owl::math::vec3{5.f, -0.5f, -0.5f},
+																		 owl::math::vec3{6.f, 0.5f, 0.5f}));
+	// Fully past the -Y face.
+	EXPECT_FALSE(owl::renderer::utils::FrustumCullingPass::isAabbVisible(planes, owl::math::vec3{-0.5f, -6.f, -0.5f},
+																		 owl::math::vec3{0.5f, -5.f, 0.5f}));
+}
+
 TEST(FrustumCullingPass, extractFrustumPlanesIdentityYieldsClipSpaceBounds) {
 	const auto planes = owl::renderer::utils::FrustumCullingPass::extractFrustumPlanes(owl::math::identity<float, 4>());
 	// Identity VP — frustum planes are the clip-space cube faces, all unit

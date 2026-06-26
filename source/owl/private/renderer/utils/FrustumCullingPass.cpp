@@ -146,4 +146,13 @@ auto FrustumCullingPass::extractFrustumPlanes(const math::mat4& iViewProj) -> st
 	return planes;
 }
 
+auto FrustumCullingPass::isAabbVisible(const std::array<math::vec4, 6>& iFrustumPlanes, const math::vec3& iMin,
+									   const math::vec3& iMax) -> bool {
+	return std::ranges::all_of(iFrustumPlanes, [&](const math::vec4& iPlane) -> bool {
+		const math::vec3 positive{iPlane.x() >= 0.f ? iMax.x() : iMin.x(), iPlane.y() >= 0.f ? iMax.y() : iMin.y(),
+								  iPlane.z() >= 0.f ? iMax.z() : iMin.z()};
+		return iPlane.x() * positive.x() + iPlane.y() * positive.y() + iPlane.z() * positive.z() + iPlane.w() >= 0.f;
+	});
+}
+
 }// namespace owl::renderer::utils

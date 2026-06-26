@@ -92,8 +92,8 @@ the `Documentation` action. Skip individual stages with `-- --no-format=true`
 
 ### Tests (`test/`)
 
-- Google Test framework, 15 test categories: core, debug, event, font, gui, input, io, layer, math, mesh, physic,
-  renderer, scene, script, sound
+- Google Test framework, 16 test categories: core, debug, event, font, gui, input, io, layer, math, mesh, physics,
+  renderer, scene, script, sound, voxel
 - Each category builds as `owl_<category>_unit_test`
 - Test helper utilities in `test/test_helper/`
 
@@ -262,7 +262,7 @@ The engine includes a persistent settings system for both game constants and pla
 
 ### Dependencies
 
-- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (31 external dependencies)
+- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (34 external dependencies)
 - Dependencies auto-download during CMake configure step
 - Versions are pinned explicitly in `depmanager.yml`
 - Key libraries: EnTT (ECS), ImGui/ImGuizmo (GUI), Box2D (physics), spdlog (logging), yaml-cpp (serialization), Vulkan
