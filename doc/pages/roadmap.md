@@ -416,110 +416,19 @@ tradition — slotted between the existing 2D/raycast/voxel options.
           `EnabledRenderers: [{ Name: iso, Type: RendererIsometric }]`, the projection helpers (`worldToScreen` /
           `screenToWorld`), and the depth-sort comparator.
 
-## v0.2.1 -- Expected 2026-10-01
+## v0.2.1 -- 2026-06-27
 
 **Goal:** Add the second non-2D rendering mode — a voxel engine for block-based worlds (Minecraft-style).
 
-- Voxel Engine
-    - ![Done][done] Voxel world core
-        - Chunk-based world (cubic 16³ chunks, sparse `VoxelWorld` map) — ![Done][done] data model
-        - Block type registry with textures per face — ![Done][done] `BlockRegistry`
-        - Chunk loading/unloading around camera — ![Done][done] (`Scene::updateVoxelStreaming`, async generation)
-    - ![Done][done] Chunk meshing
-        - Greedy meshing or similar algorithm for efficient geometry — ![Done][done] `ChunkMesher` (greedy, per-axis)
-        - Only exposed faces rendered (hidden face culling) — ![Done][done] visible-face-only, cross-chunk via provider
-        - Frustum culling per chunk — ![Done][done] (`RendererVoxel::drawVoxelWorld` culls each chunk's AABB against the
-          view-projection frustum on the CPU via the reusable `FrustumCullingPass::extractFrustumPlanes` /
-          `isAabbVisible` helpers; the GPU indirect-draw adoption stays a v0.3.0 item)
-    - ![Done][done] Terrain generation
-        - Procedural terrain via noise functions — ![Done][done] home-grown `math::PerlinNoise` (2D/3D + fBm,
-          seeded, dependency-free, headless-tested)
-        - Configurable terrain height + cave generation, seed-based reproducible worlds, **biomes** (low-frequency
-          biome field → desert / plains / snow / mountain surface) — ![Done][done] `data::voxel::TerrainGenerator`
-          (height-field layering, shoreline sand, optional sea fill, 3D-noise caves; headless-tested)
-        - Chunk streaming around the camera + editor params / Regenerate + demo scene — ![Done][done]
-          (`VoxelWorld.proceduralTerrain` + `Scene::updateVoxelStreaming`, load/unload around the camera, mesh-cache
-          pruning, inspector params, `voxel_terrain.owl` reachable from the world-map voxel house). Generation runs
-          **asynchronously on the task `Scheduler`** (workers fill chunks, main thread installs them) so movement
-          doesn't hitch.
-    - ![Done][done] Voxel player — `scene::component::VoxelPlayer`: first-person walk / run / jump with gravity and
-      **AABB-vs-voxel collision** (pure headless-tested `data::voxel::moveAabb`, per-axis resolve + sub-stepping), no
-      world editing. Drives the camera entity against every `VoxelWorld` solid set; the `voxel_terrain.owl` demo
-      spawns the player on the streamed terrain.
-        - **Mouse-look** via `window::Window::setCursorMode` (`CursorMode::Normal`/`Disabled`): left-click captures the
-          cursor, Escape releases it (editor also releases on focus-loss / leaving Play); wired in both editor Viewport
-          and runner.
-        - **Fly mode** (double-tap Space): horizontal WASD + Space/Shift altitude, collision-resolved; **J** toggles
-          super-speed. Transient ~3 s on-screen toast confirms each toggle.
-    - ![Done][done] Block interaction
-        - Block placement and destruction — ![Done][done] (`VoxelPlayer` left-click breaks / right-click places,
-          edits dirty neighbour chunks at borders)
-        - Block picking (raycast from camera to find targeted block) — ![Done][done] (`data::voxel::raycastVoxel`
-          DDA + wireframe highlight of the targeted block)
-        - Block metadata (orientation, state) — ![Done][done] (`BlockMeta` = orientation + free state byte, packed into
-          a 16-bit word stored parallel to the block id in `Chunk` / `VoxelStructure`; the RLE run format carries an
-          optional `:meta` suffix so legacy id-only data still loads and all-default data stays byte-identical.
-          `orientedFace` remaps per-face textures so one block type reads as a pillar along any axis or a horizontally
-          facing block; the greedy mesher keys on orientation. Authored from the Voxel Palette orientation / state
-          picker, undoable, headless-tested)
-    - ![Done][done] Voxel rendering (Vulkan)
-        - Generic `Renderer3D` forward foundation (depth, perspective, textured, directional light, `mesh3d` shader)
-          — ![Done][done] (reusable base)
-        - `RendererVoxel` stack layer + `VoxelWorld` scene component (per-entity chunk mesh cache, Play-mode dispatch)
-          — ![Done][done]
-        - **Depth-aware renderer** (symmetric `Depth24Stencil8` attachment on the editor viewport *and* swapchain
-          framebuffers + depth clear + per-batch dynamic depth test/write; 2D depth-off, 3D depth-on) — ![Done][done]
-          (fixed the batch-fence deadlock and the `renderPass-02684` incompatibility flood along the way)
-        - **Tileset-atlas texturing**: `VoxelWorld` references a `.owltileset`; per-face indices are atlas tile indices
-          mapped to UV sub-rects, with shader-side `frac()` tiling so greedy-merged quads tile rather than stretch
-          — ![Done][done]
-        - **Editor viewport rendering**: voxel worlds render and are navigable (orbit/pan/zoom) while editing, not only
-          in Play — ![Done][done]
-        - **Play-mode camera**: `voxel_fly_camera.lua` (WASD / Space-Shift / arrows) so the world is explorable in Play
-          — ![Done][done] (movement feel still rough — see follow-ups)
-        - Basic directional lighting — ![Done][done] (in `mesh3d` / `voxel`)
-        - Ambient occlusion per vertex for block edges — ![Done][done] (four-corner AO baked into `VoxelVertex.ao`,
-          AO-aware greedy merge + diagonal flip, multiplied in the `voxel` shader)
-        - Water/transparent block rendering with proper sorting — ![Done][done] (`ChunkMesher::meshByKind` splits
-          opaque vs transparent/water; `RendererVoxel` draws opaque then back-to-front transparent with depth writes
-          off via the new dynamic `setDepthMask`)
-    - ![Planned][planned] Voxel rendering follow-ups (deferred from the voxel PR)
-        - ![Done][done] Repair the **OpenGL** backend. Investigation found the depth/voxel path itself already worked on
-          OpenGL; the real regression (a prior gap from never exercising OpenGL) was that **all `Renderer2D` content was
-          invisible** because `gpu::opengl::UniformBuffer::bind()` was a no-op and the 2D / tilemap / 3D renderers share
-          the same global GL uniform binding 0, so the 2D shader read a stale/zero `viewProjection`. Fixed by making
-          `bind()` re-bind and re-asserting each renderer's UBO before its draws (OpenGL-only; Vulkan unaffected).
-        - ![Done][done] **Richer block textures** — dedicated `voxel_blocks` tileset (16 distinct block faces: grass
-          top/side, dirt, stone, cobblestone, sand, log top/side, planks, leaves, snow, gravel, brick, water, ice,
-          glass) anticipating future block types, replacing the borrowed platform atlas. The 2D platformer and
-          top-down world-map atlases were revised too (procedural generators in `generate_atlases.py`); raycast
-          textures left untouched.
-        - ![Done][done] **Improve camera movement** — reusable `renderer::Camera3DController` (free-fly /
-          first-person: position + yaw + pitch + tunable speeds, keyboard-driven, headless-tested) now backs the
-          Play-mode camera via the authored `scene::component::FlyCamera`, replacing the ad-hoc `voxel_fly_camera.lua`
-          (movement now tracks the camera's true facing — the Lua script had the yaw sign inverted). The controller is
-          built renderer-agnostic so the **editor viewport** can adopt it; that adoption rides with the v0.2.3 *Editor
-          camera controls overhaul*.
-        - **Investigate the remaining Vulkan validation messages** — confirmed against live runs with validation
-          enabled (llvmpipe). The **5-object `vkDestroyDevice` leak is fixed** ✅: `vkSetDebugUtilsObjectName`
-          instrumentation (`VulkanCore::setObjectName`) named the leaked objects `tex.*:anon`, identifying the
-          process-static `gui::IconBank` atlas texture — freed only at static destruction, after `vkDestroyDevice`.
-          `EditorLayer::onDetach()` now calls `IconBank::clear()` while the device is valid (symmetric with the
-          `buildIconBank()` in `onAttach`); teardown is clean. Teardown hardening also landed (`UiLayer::onDetach`
-          flushes `g_deferredTextureReleases`; `RendererDescriptors::releaseAll()` runs from `VulkanHandler::release()`).
-          The **`UPDATE_AFTER_BIND` cascade is also fixed** ✅: the single per-frame descriptor set
-          (`commitTextureBind` → `vkUpdateDescriptorSets`) was rewritten while a command buffer that bound it was still
-          recording. Replaced by the fence-recycled `internal::DescriptorRing` — each draw acquires a distinct set,
-          reused only after the submit fence of the batch that last bound it signals (keyed on fence, not frame index,
-          so the independently-submitted editor-viewport and main-swapchain passes sharing the global ring never alias).
-          **GPU-validated**: an Owl Nest session (open project → voxel scene → close) now produces **zero Vulkan
-          validation messages** and a clean teardown.
-    - ![Done][done] Voxel editor in Owl Nest
-        - Brush tools for painting blocks — ![Done][done] (Voxel Palette + editor-camera raycast, left-click place /
-          right-click erase, undoable `VoxelEditCommand` with stroke coalescing)
-        - Prefab structures (trees, buildings) as reusable block templates — ![Done][done]
-          (`data::voxel::VoxelStructure` `.owlvoxstruct` capture / stamp, undoable)
-        - Chunk inspector for debugging — ![Done][done] (resident chunk list + totals panel)
+- ![Done][done] Voxel Engine — block-based worlds (cubic 16³ chunks, `owl::data::voxel`). Detail in the CHANGELOG.
+    - **World core** — `BlockRegistry`, `Chunk` (RLE encode/decode), sparse `VoxelWorld`; async chunk streaming around the camera.
+    - **Meshing** — `ChunkMesher` greedy meshing with hidden-face culling, per-vertex ambient occlusion, per-chunk CPU frustum culling (GPU indirect-draw stays v0.3.0).
+    - **Terrain** — `math::PerlinNoise` + `TerrainGenerator` (height layering, shoreline, caves, biomes), seed-reproducible; async streaming + Regenerate; demo `voxel_terrain.owl`.
+    - **Player** — `VoxelPlayer` first-person walk / run / jump with AABB-vs-voxel collision; mouse-look (cursor capture), double-tap-Space fly mode.
+    - **Block interaction** — break / place blocks via `raycastVoxel`; per-block metadata (orientation + state).
+    - **Rendering (Vulkan + OpenGL)** — `Renderer3D` forward base + `RendererVoxel`; depth-aware framebuffers, tileset-atlas `frac()` tiling, directional lighting, transparent / water pass; voxel worlds render in the editor viewport and in Play. Reusable `Camera3DController` + `FlyCamera`.
+    - **Editor** — Voxel Palette brush (place / erase, undoable) and `.owlvoxstruct` structure capture / stamp; dedicated `voxel_blocks` tileset. _(Chunk inspector built then removed — low value.)_
+    - **Vulkan / OpenGL hardening** — fixed the OpenGL `Renderer2D`-invisible regression, the batch-fence deadlock, the `renderPass-02684` flood, the `vkDestroyDevice` leak, and the `UPDATE_AFTER_BIND` cascade (fence-recycled `DescriptorRing`); Owl Nest runs with zero Vulkan validation messages.
 
 ## v0.2.0 -- 2026-06-02
 

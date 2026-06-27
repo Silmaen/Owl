@@ -7,266 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-27
+
 ### Added
 
-- **Voxel block metadata (orientation + state)** — each voxel now stores a 16-bit metadata word (`data::voxel::BlockMeta`
-  = a `BlockOrientation` plus a free gameplay/editor state byte) parallel to its block id in `Chunk` and `VoxelStructure`.
-  `orientedFace` remaps a block's per-face textures so one block type can read as a pillar laid along any axis or a
-  horizontally-facing block (logs, furnaces); the greedy mesher keys on orientation so differently-oriented blocks never
-  merge. The run-length format gained an optional `:meta` suffix — legacy id-only data still loads and all-default data
-  stays byte-identical. Authored from the **Voxel Palette** orientation / state picker, undoable via `VoxelEditCommand`,
-  and preserved through structure capture / stamp. Shared `encodeBlockRuns` / `decodeBlockRuns` replace the duplicated
-  per-file RLE. Headless tests cover the permutation table, packing, chunk + structure round-trips, and meshing.
-- **Per-chunk frustum culling** — `RendererVoxel::drawVoxelWorld` skips chunks whose AABB lies fully outside the camera
-  frustum, via the reusable `renderer::utils::FrustumCullingPass::extractFrustumPlanes` / `isAabbVisible` CPU helpers
-  (the GPU indirect-draw adoption remains a v0.3.0 item). Headless-tested.
-- **Editor camera navigation overhaul** — `CameraEditor` gains a DCC-style scheme (shared by every scene viewport):
-  **Alt+LMB** rotates in place (look around, eye fixed), **Alt+RMB** pans, **Alt+MMB** dollies forward/back;
-  **Ctrl+LMB** orbits the reference point, **Ctrl+MMB/RMB** pan it, the wheel zooms (distance). Plain clicks stay
-  free for selection / the voxel brush. A small **XYZ orientation gizmo** is drawn in the viewport corner.
-- **Editor-specific voxel view distance** — `VoxelWorld` gains `editorStreamRadius` / `editorStreamHeight` (separate
-  horizontal / vertical, larger defaults); `Scene::updateVoxelStreaming` uses them while editing so you see further
-  authoring than at runtime. Inspector + serialized + round-trip tested.
-- **Voxel Palette texture thumbnails** — each block in the palette shows its top-face atlas tile next to the name.
-
-- **Voxel editor in Owl Nest** — author voxel worlds directly in the editor viewport:
-  - **Brush**: a Voxel Palette panel picks a paint block / eraser; with the brush active, the editor camera
-    raycasts the targeted block (wireframe-highlighted on the impacted face) and **left-click places** the block on
-    that face, **right-click erases** the targeted block. Edits are undoable (`commands::VoxelEditCommand`, a
-    per-block delta that coalesces a continuous stroke into one history entry) and dirty neighbour chunks at borders.
-  - **Structures**: `data::voxel::VoxelStructure` captures a world's non-air bounding box to a `.owlvoxstruct` file
-    (YAML, run-length-encoded); the palette lists saved structures and a left-click **stamps** the selected one at the
-    targeted cell (undoable). Headless tests cover round-trip, capture, and stamping.
-  - The editor drives the targeted-block highlight through a new `Scene::setEditorVoxelHighlight` (the in-Play
-    highlight stays player-driven).
-
-- **Voxel ambient occlusion is now an option** — `VoxelWorld.ambientOcclusion` (default on) toggles the baked AO from
-  the inspector; turning it off rebuilds the chunk meshes flat-lit.
-- **Voxel mouse-look capture is now opt-in per player** — `VoxelPlayer.captureCursor` (default **off**) gates whether
-  clicking the viewport captures (hides / locks) the cursor for mouse-look. Only a player that enables it triggers
-  capture, so non-voxel scenes keep a normal cursor on click; the `voxel_terrain.owl` player sets it on. The editor
-  Viewport and the runner query `Scene::wantsCursorCapture()` before grabbing the cursor.
-
-- **Voxel block interaction** — the `VoxelPlayer` can now break and place blocks. A new pure, headless-tested
-  `data::voxel::raycastVoxel` (Amanatides & Woo grid DDA) casts a ray from the player's eye along its look
-  direction (through the centre-screen crosshair); **left-click breaks** the targeted block, **right-click places**
-  the player's `placeBlock` against the face the ray hit (skipped if it would intersect the player). Edits only fire
-  while the cursor is captured, and the capturing click is never read as an edit. A centre-screen **crosshair** marks
-  the aim point, and a wireframe **highlight** outlines the targeted block — drawing only the edges of its
-  camera-facing faces, so the hidden back edges stay invisible. `VoxelPlayer` gains authored `reach` and `placeBlock`
-  fields (inspector + serialized +
-  round-trip tested). `VoxelWorld::markNeighborChunksDirty` re-meshes the neighbour chunk when a border block is
-  edited (kept off `setBlock` so terrain streaming doesn't pay for it). Per-block metadata (orientation / state) is
-  deferred — it is a chunk-encoding schema change.
-
-- **Voxel ambient occlusion** — the chunk mesher bakes a per-vertex AO term (four-corner sampling of opaque
-  neighbours in the face's outer plane) into a new `VoxelVertex.ao` / `Mesh3DVertex.ao` field; the `voxel` shader
-  darkens concave block edges with it. Greedy meshing is AO-aware (a merge breaks where corner occlusion differs) and
-  the split diagonal flips on asymmetric corners to avoid interpolation seams. Headless mesher tests cover
-  flat-surface-fully-lit, diagonal-neighbour occlusion, and occlusion-breaks-merge.
-- **Voxel transparent / water rendering** — blocks of render kind `Transparent` / `Water` mesh into a separate pass
-  (`ChunkMesher::meshByKind` → `ChunkMeshSet{opaque, transparent}`). `RendererVoxel` draws the opaque pass first
-  (depth-write on) then the transparent chunks sorted back-to-front by distance to the camera with depth writes
-  disabled, so water and glass blend correctly over the world behind them. The sample `voxel_terrain.owl` sea is now
-  translucent (water block flipped to render kind `Water`; semi-transparent water/ice/glass atlas tiles).
-- **Dynamic depth-write** — `gpu::RenderCommand::setDepthMask` now works on the Vulkan backend
-  (`VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE` + `vkCmdSetDepthWriteEnable`, mirroring the existing dynamic depth-test);
-  `Renderer3D::drawMeshes` gained an `iDepthWrite` flag for the blended transparent pass.
-
-- **Perlin noise in `owl::math`** — `math::PerlinNoise`, a seeded, dependency-free gradient-noise generator (2D/3D
-  samplers + `fbm` fractal Brownian motion helpers, reproducible per seed). Foundation for procedural voxel terrain
-  (and any other procedural system). 8 headless unit tests (determinism, zero-at-lattice, bounds, continuity, fBm).
-- **Procedural voxel terrain generator** — `data::voxel::TerrainGenerator` (+ `TerrainParams`): builds a 2D fBm height
-  field (grass / dirt / stone layering, sand at the shoreline, optional water up to a sea level) and carves caves from
-  a 3D Perlin field, per chunk and seed-reproducible. Block ids are parameters so it stays decoupled from a specific
-  `BlockRegistry`. 7 headless unit tests (height bounds, determinism, far-above-air / far-below-stone, flat-terrain
-  layering, beach + water fill, cave carving).
-- **Procedural terrain streaming in `VoxelWorld`** — the `VoxelWorld` component gains a `proceduralTerrain` mode with
-  serialized `TerrainParams` (seed, height field, caves, block ids) and a streaming radius/height. `Scene` streams
-  chunks in and out around the camera each frame (`updateVoxelStreaming`, budgeted generations per frame), in both
-  Play and the editor viewport; `RendererVoxel` now prunes meshes for streamed-out chunks so memory stays bounded.
-  All of an entity's chunks share one model matrix (the chunk origin is baked into the mesh vertices) and the atlas,
-  so they draw through a single batched `Renderer3D::drawMeshes` (UBO + texture state set once instead of per chunk) —
-  this also sidesteps the shared-UBO last-write-wins that otherwise collapses every chunk onto one position on Vulkan.
-  Chunk generation runs **asynchronously on the task `Scheduler`** (workers fill chunks, the main thread installs the
-  finished ones via a shared sink), so moving through the world doesn't hitch. Editor: full inspector for the terrain
-  parameters + a **Regenerate** button. New `scenes/voxel_terrain.owl` demo (an endless seeded landscape with a sea,
-  explored with the fly camera), reachable from the world-map voxel house. Authored (non-procedural) voxel worlds are
-  unchanged.
-- **Voxel biomes** — `TerrainGenerator` can vary the surface block from a low-frequency biome field (desert sand /
-  grassy plains / snowy / rocky mountain tops), configurable in the inspector; the demo world shows them.
-- **Voxel player** — `scene::component::VoxelPlayer`, a first-person grounded controller: WASD move (yaw-relative),
-  arrow-key look, Left-Shift run, Space jump, with gravity and **AABB-vs-voxel collision** (no world editing).
-  Collision is a pure, headless-tested `data::voxel::moveAabb` (per-axis resolve + sub-stepping for wall-sliding and
-  no tunnelling) that the scene drives against every `VoxelWorld`'s solid blocks; the player holds still until its
-  chunk has streamed in. Authored object with full editor support (inspector, icon, round-trip test). The
-  `voxel_terrain.owl` demo now spawns you as a player that walks / runs / jumps on the streamed terrain.
-  - **Mouse-look** — left-click the viewport (editor) or window (runner) to capture the cursor and look with the
-    mouse; press Escape to release it back to a normal cursor (the editor also releases on viewport focus-loss and
-    when leaving Play). Sensitivity is a per-player parameter.
-  - **Fly mode** — double-tap Space to toggle flying: WASD then translate horizontally at a fixed altitude, with
-    Space / Left-Shift for up / down, still resolved against voxel collisions. Press **J** (fly mode only) to toggle
-    a super-speed multiplier.
-  - A transient on-screen toast (≈3 s) announces "Fly mode ON/OFF" and "Super speed ON/OFF".
-- **Window cursor mode** — `window::Window` gains `setCursorMode` / `getCursorMode`
-  (`CursorMode::Normal` / `CursorMode::Disabled`); the GLFW backend grabs and hides the cursor (with raw motion when
-  available) for first-person mouse-look, the Null backend is a no-op.
-
-- **Voxel data model** — new `owl::data::voxel` module (foundation for the v0.2.1 voxel engine): `BlockRegistry`
-  (block-type table with per-face texture indices, render kind, collision flag, YAML round-trip), `Chunk`
-  (16³ cubic block grid with dirty tracking and run-length encode/decode), and `VoxelWorld` (sparse chunk
-  map with world-coordinate block access and floored negative-coordinate chunk resolution). New headless
-  `voxel_tests` category (26 tests).
-- **Voxel chunk meshing** — `data::voxel::ChunkMesher` builds a `ChunkMesh` (indexed `VoxelVertex` list) from a
-  `Chunk` by **greedy meshing with hidden-face culling**: a face is emitted only when visible (neighbour
-  non-opaque and a different block), coplanar same-block faces merge into the largest rectangle, each quad carries
-  the per-face atlas texture index and tiled UVs, and cross-chunk neighbour culling goes through a provider
-  callback. CPU-only (no GPU upload). 10 headless tests cover greedy merge, culling, winding, per-face textures,
-  transparency and boundary culling.
-- **3D forward rendering foundation** — `renderer::Renderer3D`, the engine's first true 3D draw path: a generic,
-  depth-tested, textured forward renderer with a single directional light, driven by the new `mesh3d` Slang shader
-  (per-frame camera + per-draw model UBO, 32-slot texture array, color + entity-id outputs). Meshes upload once via
-  `createMesh` and draw with a model matrix via `drawMesh` (immediate mode). Reusable by `RendererVoxel` and future
-  static-mesh renderers. Headless tests cover `Mesh3DVertex` packing, `mesh3d` compilation (Vulkan + OpenGL) and
-  descriptor reflection; on-screen integration lands with `RendererVoxel`.
-- **`VoxelWorld` scene component** — `scene::component::VoxelWorld`, the authored object placing a voxel world on an
-  entity: holds the `BlockRegistry`, the `data::voxel::VoxelWorld` chunks, a tileset-atlas reference (`tilesetPath`,
-  resolved to a shared `scene::Tileset` during scene resolve alongside tilemaps/doors), and directional light
-  settings, serialized inline in the scene (registry as a nested YAML doc, chunks run-length encoded). A block's
-  per-face index is a tile index into that atlas. Registered across the component tuples and `onComponentAdded`,
-  with an inspector panel (lighting + palette/chunk summary + a `.owltileset` drag-drop slot) and Add-Component menu
-  entry. Round-trip covered by `componentsRoundTrip` tests.
-- **`RendererVoxel` render layer** — draws `VoxelWorld` entities in 3D on top of `Renderer3D`: greedy-meshes each
-  chunk, caches the GPU mesh per entity (rebuilt only when a chunk is dirty), binds the world's tileset atlas once
-  (Nearest), bakes each face's tile UV sub-rect into the vertex, and draws with the `voxel` shader, which frac-tiles
-  the tile across greedy-merged quads (`tileRect.xy + frac(uv)*tileRect.zw`) so faces tile rather than stretch with
-  the clamp-only sampler. Registered as the `"RendererVoxel"` stack layer; `Scene::render` routes `VoxelWorld` entities
-  to it only when the active layer is voxel-capable (like the raycast path). Editor: component icon. Sample project:
-  a voxel scene reachable from a **voxel house**
-  built in the world-map tilemap (roof/wall/door tiles + a path, the door tile being an interaction-trigger
-  teleporter, same style as the other houses). The world-map tilemap was enlarged (32×24 → 48×24) to leave room for
-  a future village of scene-demo houses. Headless tests cover the `voxel` shader compilation and layer registration.
-- **Depth-aware rendering** — the editor viewport framebuffer now carries a `Depth24Stencil8` attachment, so 3D
-  geometry occludes correctly. `Renderer3D` enables depth test + write only around each mesh draw (2D layers stay
-  painter-ordered with depth off), and the Vulkan backend clears depth via the render pass (`loadOp=CLEAR`,
-  depth-only subpass dependency, clear-value array sized to the attachment count). This unblocks and **enables the
-  `RendererVoxel` GPU draw** — voxel scenes now render on screen. OpenGL gains depth automatically from the new
-  attachment; both backends start with depth test disabled and let `Renderer3D` scope it. The swapchain framebuffer
-  carries a matching depth attachment so every scene pipeline (2D + voxel) is render-pass compatible with both the
-  swapchain and the editor viewport target.
-- **Voxel worlds render in the editor viewport** — `Scene::renderWithStack` now runs a `RendererVoxel` layer pass
-  (with the viewport's 3D `CameraEditor`) after the flat 2D editor composite, so voxel worlds are visible and
-  navigable (orbit / pan / zoom) while editing, not only in Play. 2D scene rendering in the editor is unchanged.
-- **Reusable 3D fly-camera controller** — `renderer::Camera3DController`, a renderer-agnostic free-fly / first-person
-  camera (position + yaw + pitch + tunable move / look speeds, clamped pitch) that turns keyboard input into motion
-  (WASD move, Space / E up, Left-Shift / Q down, arrow keys look) and exposes the camera basis, transform and view
-  matrix. Designed for sharing between the editor viewport and Play. Headless unit tests cover the basis, movement,
-  pitch clamping, Euler round-trip and the input-driven update.
-- **`FlyCamera` scene component** — `scene::component::FlyCamera` attaches the fly controller to a camera entity:
-  the scene drives the entity transform from `Camera3DController` each runtime frame. Replaces the demo's
-  `voxel_fly_camera.lua` (removed) for exploring 3D scenes in Play. Authored object with full editor support
-  (inspector speed fields, component icon, Add-Component entry, serialization round-trip test). The orientation now
-  tracks the camera's true facing (the Lua script had the yaw sign inverted, so movement matched the look direction
-  only at yaw 0).
-- **Dedicated voxel block textures** — new `tilesets/voxel_blocks.owltileset` (+ procedurally generated
-  `textures/voxel_blocks.png`, a 4×4 / 64 px atlas) with 16 distinct block faces (grass top/side, dirt, stone,
-  cobblestone, sand, log top/side, planks, leaves, snow, gravel, brick, water, ice, glass) to anticipate future block
-  types. The voxel demo uses it (proper grass-top / grass-side / dirt / stone blocks) instead of borrowing the 2D
-  platformer atlas. Texture generators live in
-  `sample_project/textures/generate_atlases.py`.
-- **Revised world atlases** — regenerated `textures/world_platform.png` (2D platformer: floor, platform, brick wall,
-  ladder, lava, spikes, background, victory zone) and `textures/world_topdown.png` (world map: grass, paths, mountain,
-  water, house parts, tree, flowers, bridge, teleporter, mushroom, fence, sign) with clearer, distinct procedural tiles
-  (same grid / tile names, so existing scenes are unchanged). The raycast atlases are deliberately left untouched.
+- **Voxel data model** — `owl::data::voxel`: `BlockRegistry`, 16³ `Chunk` (RLE encode/decode), sparse `VoxelWorld`. New `voxel_tests` category.
+- **Chunk meshing** — `ChunkMesher`: greedy meshing with hidden-face culling, per-face atlas UVs, cross-chunk neighbour culling.
+- **Block metadata** — 16-bit orientation + state per block (`BlockMeta`); `orientedFace` remaps per-face textures; RLE gained an optional `:meta` suffix (legacy-compatible).
+- **Ambient occlusion** — per-vertex four-corner AO baked into the mesh, AO-aware greedy merge; toggle via `VoxelWorld.ambientOcclusion`.
+- **Transparent / water rendering** — separate back-to-front pass with depth-write off (`ChunkMesher::meshByKind`), plus dynamic `RenderCommand::setDepthMask` on Vulkan.
+- **3D forward rendering** — `Renderer3D`: depth-tested textured forward path with one directional light (`mesh3d` shader).
+- **`RendererVoxel` layer + `VoxelWorld` component** — draws voxel entities (per-entity mesh cache, tileset atlas with shader `frac()` tiling); per-chunk CPU frustum culling (`FrustumCullingPass`).
+- **Depth-aware rendering** — `Depth24Stencil8` on editor viewport + swapchain framebuffers; 3D depth on, 2D depth off.
+- **Voxel worlds in the editor viewport** — rendered and navigable while editing, not only in Play.
+- **Procedural terrain** — `math::PerlinNoise` (seeded 2D/3D + fBm) + `TerrainGenerator` (layering, shoreline, caves, biomes), seed-reproducible.
+- **Terrain streaming** — `VoxelWorld.proceduralTerrain`: async chunk stream in/out around the camera (task `Scheduler`) with mesh pruning; demo `scenes/voxel_terrain.owl`.
+- **Voxel player** — `VoxelPlayer`: first-person walk/run/jump with AABB-vs-voxel collision (`moveAabb`); mouse-look (opt-in cursor capture), double-tap-Space fly mode.
+- **Block interaction** — break / place blocks via `raycastVoxel` (grid DDA), crosshair + wireframe highlight, dirties border neighbour chunks.
+- **Voxel editor (Owl Nest)** — Voxel Palette brush (place/erase, undoable, stroke-coalesced), `.owlvoxstruct` structure capture/stamp, tile thumbnails.
+- **3D cameras** — reusable `Camera3DController` (free-fly / first-person) + `FlyCamera` component (replaces the demo fly-camera Lua script).
+- **Editor camera overhaul** — DCC-style navigation (Alt = look/pan/dolly, Ctrl = orbit/pan, wheel = zoom) on every viewport, corner XYZ gizmo, larger editor-only voxel view distance.
+- **Window cursor mode** — `Window::setCursorMode` (Normal/Disabled) for first-person mouse-look.
+- **Block + world textures** — new `voxel_blocks.owltileset` (16 faces); regenerated 2D platformer + world-map atlases (procedural generators).
 
 ### Changed
 
-- **Module taxonomy reorganization** (breaking — public namespaces changed, downstream consumers such as OwlDrone
-  must update includes/namespaces):
-    - Split application lifecycle out of `core` into a new `app` module: `owl::app::Application`, `app::AppParams`,
-      `app::EntryPoint`, `app::layer::Layer`, `app::layer::LayerStack` (headers under `app/`).
-    - Introduced a new `platform` module (`owl::platform`) for OS / native-platform services: moved
-      `FileDialog`, `fileToString` (`FileUtils`) and `openExternalUrl` there (out of `core::utils`).
-    - Moved asset packing (`PackReader` / `PackWriter` / `PackFormat` / `AssetScanner`) from `io::pack` to
-      `owl::data::assets::pack` — it operates on assets, not raw device I/O. `io` is now device-only
-      (`serial`, `video`).
-    - Moved `CameraOrthoController` from `input` to `owl::renderer` (next to the cameras).
-    - Renamed the `physic` module to `physics` (`owl::physics`); the `PhysicCommand` class name is unchanged.
-    - Renamed the mesh-iteration namespace `data::component` to `owl::data::meshrange` to disambiguate it from the
-      ECS `scene::component`.
-    - Documented the module-placement rules in `.claude/rules/module-layout.md` and `doc/pages/architecture.md`.
+- **Module taxonomy reorganization** (breaking — public namespaces changed): `app` split from `core`
+  (`Application` / `EntryPoint` / `Layer`); new `platform` module (`FileDialog`, `fileToString`, `openExternalUrl`);
+  asset packing `io::pack` → `data::assets::pack` (`io` is now device-only); `CameraOrthoController` `input` →
+  `renderer`; `physic` → `physics`; `data::component` → `data::meshrange`. Rules in `.claude/rules/module-layout.md`.
 
 ### Removed
 
-- **Chunk Inspector panel** — the voxel-editor chunk-diagnostics panel was dropped (low value); chunk diagnostics
-  fold into future tooling if needed.
+- **Chunk Inspector panel** — voxel-editor chunk-diagnostics panel dropped (low value).
 
 ### Fixed
 
-- **`math::Matrix` initializer-list constructor out-of-bounds read** — the constructor unconditionally `copy_n`'d
-  `NCol * NRow` elements from the initializer list, reading past the end when given a shorter list (AddressSanitizer
-  stack-buffer-overflow). It now copies at most `NCol * NRow` elements and zero-fills the remainder. Surfaced by an
-  ASan run of the test suite, where the voxel renderer initialised a `mat4` GLM-style as `{1.f}` (now
-  `math::identity<float, 4>()`); the constructor is hardened so any short list is safe.
-- **Vulkan pipeline storm (per-mesh pipeline duplication)** — `VulkanHandler::pushPipeline` built a brand-new
-  `VkPipeline` (+ layout) for every `DrawData`, so each voxel chunk mesh created its own copy of the identical `voxel`
-  pipeline — thousands of `vkCreateGraphicsPipelines` calls per scene load, all retained until shutdown (`~DrawData`
-  never popped). Pipelines are now deduplicated and refcounted: `pushPipeline` keys on the pipeline signature (shader
-  name, double-sided flag, descriptor-set-layout, render pass, full vertex-input layout) and reuses the existing
-  pipeline on a cache hit; `popPipeline` destroys it only when the last `DrawData` releases it. Every voxel chunk now
-  shares one pipeline (one `vkCreateGraphicsPipelines` instead of thousands). Vertex/index buffers stay per-mesh — only
-  the pipeline state is shared.
-- **Vulkan `vkDestroyDevice` object leak (IconBank atlas)** — the editor's icon atlas lives on a process-static
-  `gui::IconBank` singleton, so its `gpu::Texture2D` (image / memory / view / sampler + an ImGui descriptor-set layout)
-  was only released at static-destruction, *after* `vkDestroyDevice` — five leaked objects per run. `EditorLayer::onDetach()`
-  now calls `IconBank::clear()` while the device is still valid, symmetric with the `buildIconBank()` in `onAttach`.
-  Localised via new `vkSetDebugUtilsObjectName` tags (`VulkanCore::setObjectName`) on every texture's image / view /
-  sampler / memory / layout — the leak report named the objects `tex.*:anon`, pointing straight at the anon
-  Specification texture. Teardown hardening also landed: `UiLayer::onDetach()` flushes `g_deferredTextureReleases` and
-  `RendererDescriptors::releaseAll()` runs from `VulkanHandler::release()`, both while the device is valid.
-- **Vulkan `UPDATE_AFTER_BIND` validation cascade (per-batch descriptor sets)** — `RendererDescriptors` rewrote one
-  shared per-frame descriptor set on every draw (`commitTextureBind` → `vkUpdateDescriptorSets`), so a second draw in
-  the same frame invalidated the command buffer that bound it for the first — a cascade of `vkCmd*` "destroyed or
-  updated without UPDATE_AFTER_BIND" errors on scene load and the voxel pass. Replaced by a new fence-recycled
-  `internal::DescriptorRing`: each draw acquires a distinct set, and a set is reused only once the fence of the batch
-  that last bound it has signalled (`RendererDescriptors::notifySubmitAll` from `VulkanHandler::endBatch`). Recycling
-  keys on the submit fence rather than the frame index, so the editor-viewport and main-swapchain submits — independent
-  fences sharing the global ring within one displayed frame — never alias. With this and the IconBank fix, an Owl Nest
-  session (open project → voxel scene → close) produces **zero Vulkan validation messages**.
-- **Voxel texture borders / atlas bleeding** — two causes fixed: (1) the voxel renderer's per-face `tileRect` was the
-  full atlas cell with no inset, so the shader's `frac(uv)` tiling sampled the neighbouring tile at the 0/1 seam —
-  `tileRectFor` now insets the rect by half a texel on each side (matching `scene::Tileset::getTileUv` on the 2D
-  path); (2) the voxel block textures were not self-tileable, so every block boundary on a greedy-merged face showed a
-  seam — the generators now use seamless wrapping value-noise and patterns whose period divides 64; (3) the Vulkan
-  sampler is linear + anisotropic, and `frac(uv)` makes the auto-derivative spike at each block boundary, so the
-  anisotropic footprint smeared across the tile edge — the `voxel` shader now samples with `SampleGrad`, feeding the
-  continuous (un-`frac`-ed) uv gradient so the footprint stays inside the tile.
-- **OpenGL: all `Renderer2D` content was invisible** (sprites, text, circles, UI — only the background and 3D voxel
-  meshes drew). `gpu::opengl::UniformBuffer::bind()` was a no-op and only bound at construction, but `Renderer2D`,
-  `RendererTilemap` and `Renderer3D` all create their camera/scene UBO at the same OpenGL uniform binding (0), which is
-  global state (unlike Vulkan's per-renderer descriptors). The last UBO constructed stayed bound, so the 2D vertex
-  shader read a stale or zero `viewProjection` and collapsed every quad off-screen. `bind()` now re-binds via
-  `glBindBufferBase`, and `Renderer2D` / `RendererTilemap` / `Renderer3D` re-assert their UBO before drawing
-  (`RendererRaycast` already did). OpenGL-only — `bind()` stays a no-op on Vulkan, which was unaffected.
-    - `VulkanCore::getQueueIndices()` now returns *distinct* queue families, so the swapchain is created with
-      `EXCLUSIVE` sharing instead of `CONCURRENT` with duplicate indices when graphics and present share a family
-      (`VUID-VkSwapchainCreateInfoKHR-imageSharingMode-01428`).
-    - Enabled the `shaderDrawParameters` device feature (Vulkan 1.1) required by the Slang-compiled vertex shaders'
-      `DrawParameters` capability (`VUID-VkShaderModuleCreateInfo-pCode-08740`, previously logged for every shader
-      module).
-    - `StorageBuffer` now clears its binding across all renderer descriptor blocks before its `VkBuffer` is
-      destroyed, so a freed handle is never written into a descriptor set on the next scene
-      (`VUID-VkDescriptorBufferInfo-buffer-parameter`).
-- **Vulkan batch-fence deadlock** — `VulkanHandler::beginBatch()` is now idempotent (`if (inBatch) return;`). A
-  renderer that opens a render batch (`Renderer3D::beginScene`) and never closes it left the in-flight fence reset
-  but unsignalled; the next `beginBatch()` in the same frame (e.g. `Renderer2D::flush` for a screen transition)
-  hung forever in `vkWaitForFences`. This was the freeze when entering a voxel scene.
-- **Vulkan render-pass incompatibility flood** (`VUID-vkCmdDrawIndexed-renderPass-02684` + the
-  `UPDATE_AFTER_BIND` invalid-command-buffer cascade it triggered, every editor frame) — the 2D pipelines are
-  created against the swapchain framebuffer's render pass, which lacked the depth attachment the editor viewport
-  target gained. Giving the swapchain framebuffer a matching `Depth24Stencil8` attachment makes all scene
-  framebuffers share one attachment layout, so the 2D and voxel pipelines are render-pass compatible with every
-  target. ImGui (its own depth-free subpass) and depth-test-off 2D draws are unaffected.
+- **`math::Matrix` initializer-list ctor out-of-bounds read** — it copied a fixed `NCol*NRow` elements from any list (ASan stack-buffer-overflow on a short one); now clamps to the list size and zero-fills the rest.
+- **Vulkan pipeline storm** — `pushPipeline` built a new pipeline per `DrawData` (thousands per voxel scene); now deduplicated + refcounted by pipeline signature, so identical chunks share one.
+- **Vulkan `vkDestroyDevice` object leak** — the static `IconBank` atlas was freed after device destruction; now cleared in `EditorLayer::onDetach`. Added `vkSetDebugUtilsObjectName` instrumentation.
+- **Vulkan `UPDATE_AFTER_BIND` cascade** — one shared per-frame descriptor set was rewritten mid-frame; replaced by a fence-recycled `DescriptorRing` (a distinct set per draw). Owl Nest now runs with zero validation messages.
+- **Voxel atlas bleeding** — fixed via half-texel `tileRect` inset, seamless block textures, and `SampleGrad` tiling.
+- **OpenGL: all `Renderer2D` content invisible** — `UniformBuffer::bind()` was a no-op while 2D/tilemap/3D share GL binding 0; `bind()` now re-binds and each renderer re-asserts its UBO before drawing (Vulkan unaffected).
+- **Vulkan validation fixes** — distinct queue families (`EXCLUSIVE` swapchain sharing), enabled `shaderDrawParameters`, and clear a `StorageBuffer`'s descriptor binding before its `VkBuffer` is destroyed.
+- **Vulkan batch-fence deadlock** — `beginBatch()` is now idempotent (was the freeze when entering a voxel scene).
+- **Vulkan render-pass incompatibility flood** (`renderPass-02684`) — the swapchain framebuffer gained a matching `Depth24Stencil8` attachment so all scene pipelines share one layout.
 
 ## [0.2.0] - 2026-06-02
 
