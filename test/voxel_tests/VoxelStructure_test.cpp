@@ -78,3 +78,29 @@ TEST_F(VoxelStructureFixture, StampWritesSolidBlocksAtOrigin) {
 	EXPECT_EQ(world.getBlock(math::vec3i{10, 20, 30}), 7u);
 	EXPECT_EQ(world.getBlock(math::vec3i{11, 20, 30}), g_AirBlock);// air cell not stamped
 }
+
+TEST_F(VoxelStructureFixture, RoundTripPreservesMeta) {
+	VoxelStructure structure;
+	structure.size = math::vec3i{2, 1, 1};
+	structure.blocks = {1, 2};
+	const PackedMeta m0 = packMeta({.orientation = BlockOrientation::AxisX, .state = 9});
+	structure.meta = {m0, g_DefaultMeta};
+	const std::string yaml = structure.serializeToString("oriented");
+	VoxelStructure loaded;
+	ASSERT_TRUE(loaded.deserializeFromString(yaml));
+	EXPECT_EQ(loaded.meta, structure.meta);
+	EXPECT_EQ(loaded.metaAt(0, 0, 0), m0);
+	EXPECT_EQ(loaded.metaAt(1, 0, 0), g_DefaultMeta);
+}
+
+TEST_F(VoxelStructureFixture, CaptureAndStampPreserveMeta) {
+	const BlockRegistry reg = makeRegistry();
+	VoxelWorld world;
+	const PackedMeta m = packMeta({.orientation = BlockOrientation::AxisZ, .state = 4});
+	world.setBlock(math::vec3i{1, 2, 3}, 1, m);
+	const VoxelStructure structure = VoxelStructure::captureFromWorld(world, reg);
+	EXPECT_EQ(structure.metaAt(0, 0, 0), m);
+	VoxelWorld out;
+	structure.stampInto(out, math::vec3i{0, 0, 0});
+	EXPECT_EQ(out.getMeta(math::vec3i{0, 0, 0}), m);
+}

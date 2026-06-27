@@ -95,6 +95,13 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 	auto& vkd = internal::Descriptors::get();
 	if (!vkd.isTextureRegistered(m_textureId)) {
 		m_textureId = vkd.registerNewTexture();
+		auto& texData = vkd.getTextureData(m_textureId);
+		if (!getName().empty())
+			texData.debugName = getName();
+		else if (!getPath().empty())
+			texData.debugName = getPath().filename().string();
+		else
+			texData.debugName = "anon";
 		createImage(m_textureId, m_specification.size);
 	}
 	auto& data = vkd.getTextureData(m_textureId);

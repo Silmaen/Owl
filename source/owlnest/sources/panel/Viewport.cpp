@@ -772,21 +772,28 @@ void Viewport::handleVoxelBrush(const shared<scene::Scene>& iScene) {
 	const math::vec3i adjacent{hit->block.x() + hit->normal.x(), hit->block.y() + hit->normal.y(),
 							   hit->block.z() + hit->normal.z()};
 	std::vector<commands::VoxelBlockEdit> edits;
-	const auto addEdit = [&](const math::vec3i& iCoord, const data::voxel::BlockId iNew) -> void {
-		if (const data::voxel::BlockId old = world.getBlock(iCoord); old != iNew)
-			edits.push_back({.coord = iCoord, .before = old, .after = iNew});
+	const auto addEdit = [&](const math::vec3i& iCoord, const data::voxel::BlockId iNew,
+							 const data::voxel::PackedMeta iNewMeta) -> void {
+		const data::voxel::BlockId old = world.getBlock(iCoord);
+		const data::voxel::PackedMeta oldMeta = world.getMeta(iCoord);
+		if (old != iNew || oldMeta != iNewMeta)
+			edits.push_back(
+					{.coord = iCoord, .before = old, .after = iNew, .beforeMeta = oldMeta, .afterMeta = iNewMeta});
 	};
 	std::string description;
 	if (erase || (place && brush.eraser && !brush.structure.has_value())) {
-		addEdit(hit->block, data::voxel::g_AirBlock);
+		addEdit(hit->block, data::voxel::g_AirBlock, data::voxel::g_DefaultMeta);
 		description = "Erase voxel";
 	} else if (place && brush.structure.has_value()) {
-		brush.structure->forEachSolid([&](const math::vec3i& iLocal, const data::voxel::BlockId iId) -> void {
-			addEdit(math::vec3i{adjacent.x() + iLocal.x(), adjacent.y() + iLocal.y(), adjacent.z() + iLocal.z()}, iId);
+		brush.structure->forEachSolid([&](const math::vec3i& iLocal, const data::voxel::BlockId iId,
+										  const data::voxel::PackedMeta iMeta) -> void {
+			addEdit(math::vec3i{adjacent.x() + iLocal.x(), adjacent.y() + iLocal.y(), adjacent.z() + iLocal.z()}, iId,
+					iMeta);
 		});
 		description = "Stamp structure";
 	} else if (place) {
-		addEdit(adjacent, brush.paintBlock);
+		addEdit(adjacent, brush.paintBlock,
+				data::voxel::packMeta({.orientation = brush.orientation, .state = brush.state}));
 		description = "Paint voxel";
 	}
 	if (edits.empty())

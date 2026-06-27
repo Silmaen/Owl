@@ -12,6 +12,7 @@
 #include "data/voxel/ChunkMesher.h"
 #include "math/matrixCreation.h"
 #include "renderer/Renderer3D.h"
+#include "renderer/utils/FrustumCullingPass.h"
 
 #include <array>
 #include <iterator>
@@ -36,6 +37,7 @@ struct EntityMeshes {
 struct InternalData {
 	std::unordered_map<int, EntityMeshes> entities;
 	math::vec3 cameraPosition{0.f, 0.f, 0.f};
+	math::mat4 viewProjection = math::identity<float, 4>();
 };
 
 shared<InternalData> g_Data;
@@ -134,6 +136,7 @@ void RendererVoxel::beginScene(const Camera& iCamera, const VoxelConfig& iConfig
 	if (g_Data) {
 		const math::vec4 worldPos = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
 		g_Data->cameraPosition = math::vec3{worldPos.x(), worldPos.y(), worldPos.z()};
+		g_Data->viewProjection = iCamera.getViewProjection();
 	}
 }
 
@@ -188,6 +191,9 @@ void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, co
 	const auto& cache = cacheIt->second;
 	// All chunks share one model + atlas (origin baked in), so batch into one drawMeshes (state set once).
 	const math::mat4 worldMat = iWorldTransform();
+	// Cull per chunk: planes from view-projection * model test each chunk's AABB in chunk-local (origin-baked) space.
+	const std::array<math::vec4, 6> planes =
+			utils::FrustumCullingPass::extractFrustumPlanes(g_Data->viewProjection * worldMat);
 	std::vector<Renderer3D::MeshHandle> opaque;
 	std::vector<std::pair<float, Renderer3D::MeshHandle>> transparent;
 	opaque.reserve(cache.chunks.size());
@@ -198,6 +204,14 @@ void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, co
 			continue;
 		const auto it = cache.chunks.find(packKey(coord));
 		if (it == cache.chunks.end())
+			continue;
+		const math::vec3 aabbMin{static_cast<float>(coord.x() * k_ChunkSize),
+								 static_cast<float>(coord.y() * k_ChunkSize),
+								 static_cast<float>(coord.z() * k_ChunkSize)};
+		const math::vec3 aabbMax{aabbMin.x() + static_cast<float>(k_ChunkSize),
+								 aabbMin.y() + static_cast<float>(k_ChunkSize),
+								 aabbMin.z() + static_cast<float>(k_ChunkSize)};
+		if (!utils::FrustumCullingPass::isAabbVisible(planes, aabbMin, aabbMax))
 			continue;
 		if (it->second.opaque)
 			opaque.push_back(it->second.opaque);

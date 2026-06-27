@@ -13,6 +13,7 @@
 #include "VulkanHandler.h"
 #include "utils.h"
 
+#include <bit>
 #include <cstring>
 
 namespace owl::renderer::gpu::vulkan::internal {
@@ -58,23 +59,6 @@ void RendererDescriptors::init(std::span<const BindingDecl> iBindings) {
 	const auto& core = VulkanCore::get();
 	auto* const device = core.getLogicalDevice();
 
-	std::vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.reserve(m_bindings.size());
-	for (const auto& bd: m_bindings) {
-		poolSizes.push_back({.type = bd.type, .descriptorCount = bd.count * g_maxFrameInFlight});
-	}
-	const VkDescriptorPoolCreateInfo poolInfo{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-											  .pNext = nullptr,
-											  .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
-											  .maxSets = g_maxFrameInFlight,
-											  .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
-											  .pPoolSizes = poolSizes.data()};
-	if (const auto result = vkCreateDescriptorPool(device, &poolInfo, nullptr, &m_pool); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan RendererDescriptors[{}]: failed to create descriptor pool ({}).", m_rendererName,
-					   resultString(result))
-		return;
-	}
-
 	std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
 	layoutBindings.reserve(m_bindings.size());
 	for (const auto& [binding, type, count, stages]: m_bindings) {
@@ -95,18 +79,13 @@ void RendererDescriptors::init(std::span<const BindingDecl> iBindings) {
 					   resultString(result))
 		return;
 	}
+	core.setObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, std::bit_cast<uint64_t>(m_layout),
+					   "rd.layout:" + m_rendererName);
 
-	std::vector layouts(g_maxFrameInFlight, m_layout);
-	const VkDescriptorSetAllocateInfo allocInfo{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-												.pNext = nullptr,
-												.descriptorPool = m_pool,
-												.descriptorSetCount = g_maxFrameInFlight,
-												.pSetLayouts = layouts.data()};
-	m_sets.resize(g_maxFrameInFlight);
-	if (const auto result = vkAllocateDescriptorSets(device, &allocInfo, m_sets.data()); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan RendererDescriptors[{}]: failed to allocate descriptor sets ({}).", m_rendererName,
-					   resultString(result))
-	}
+	std::vector<VkDescriptorPoolSize> perSetSizes;
+	perSetSizes.reserve(m_bindings.size());
+	for (const auto& bd: m_bindings) perSetSizes.push_back({.type = bd.type, .descriptorCount = bd.count});
+	m_ring.init(m_layout, std::move(perSetSizes));
 }
 
 void RendererDescriptors::release() {
@@ -114,9 +93,8 @@ void RendererDescriptors::release() {
 		m_uniformBindings.clear();
 		m_storageBindings.clear();
 		m_textureBind.clear();
-		m_sets.clear();
+		m_ring.reset();
 		m_layout = nullptr;
-		m_pool = nullptr;
 		return;
 	}
 	const auto& core = VulkanCore::get();
@@ -142,17 +120,10 @@ void RendererDescriptors::release() {
 	m_storageBindings.clear();
 	m_textureBind.clear();
 
-	if (!m_sets.empty() && m_pool != nullptr) {
-		vkFreeDescriptorSets(device, m_pool, static_cast<uint32_t>(m_sets.size()), m_sets.data());
-	}
-	m_sets.clear();
+	m_ring.release();
 	if (m_layout != nullptr) {
 		vkDestroyDescriptorSetLayout(device, m_layout, nullptr);
 		m_layout = nullptr;
-	}
-	if (m_pool != nullptr) {
-		vkDestroyDescriptorPool(device, m_pool, nullptr);
-		m_pool = nullptr;
 	}
 }
 
@@ -206,7 +177,6 @@ void RendererDescriptors::bindStorageBuffer(const uint32_t iBinding, VkBuffer iB
 		return;
 	buffer = iBuffer;
 	size = iSize;
-	updateDescriptors();
 }
 
 void RendererDescriptors::unbindStorageBuffer(VkBuffer iBuffer) {
@@ -226,14 +196,17 @@ void RendererDescriptors::resetTextureBind() { m_textureBind.clear(); }
 
 void RendererDescriptors::textureBind(const uint32_t iIndex) { m_textureBind.emplace_back(iIndex); }
 
-void RendererDescriptors::commitTextureBind(const size_t iCurrentFrame) { updateDescriptor(iCurrentFrame); }
-
-void RendererDescriptors::updateDescriptors() {
-	for (size_t i = 0; i < g_maxFrameInFlight; ++i) updateDescriptor(i);
+void RendererDescriptors::commitTextureBind(const size_t iCurrentFrame) {
+	if (VkDescriptorSet set = m_ring.acquire(); set != nullptr)
+		writeDescriptor(set, iCurrentFrame);
 }
 
-void RendererDescriptors::updateDescriptor(const size_t iFrame) {
-	if (iFrame >= m_sets.size() || m_sets[iFrame] == nullptr)
+void RendererDescriptors::notifySubmitAll(VkFence iFence) {
+	for (auto* const desc: getRegistry() | std::views::values) desc->m_ring.onSubmit(iFence);
+}
+
+void RendererDescriptors::writeDescriptor(VkDescriptorSet iSet, const size_t iFrame) {
+	if (iSet == nullptr)
 		return;
 	const auto& core = VulkanCore::get();
 
@@ -297,7 +270,7 @@ void RendererDescriptors::updateDescriptor(const size_t iFrame) {
 	for (const auto& [binding, info]: uboInfos) {
 		writes.push_back({.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 						  .pNext = nullptr,
-						  .dstSet = m_sets[iFrame],
+						  .dstSet = iSet,
 						  .dstBinding = binding,
 						  .dstArrayElement = 0,
 						  .descriptorCount = 1,
@@ -309,7 +282,7 @@ void RendererDescriptors::updateDescriptor(const size_t iFrame) {
 	for (const auto& [binding, info]: ssboInfos) {
 		writes.push_back({.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 						  .pNext = nullptr,
-						  .dstSet = m_sets[iFrame],
+						  .dstSet = iSet,
 						  .dstBinding = binding,
 						  .dstArrayElement = 0,
 						  .descriptorCount = 1,
@@ -321,7 +294,7 @@ void RendererDescriptors::updateDescriptor(const size_t iFrame) {
 	if (!imageInfos.empty() && m_textureArrayBinding != std::numeric_limits<uint32_t>::max()) {
 		writes.push_back({.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 						  .pNext = nullptr,
-						  .dstSet = m_sets[iFrame],
+						  .dstSet = iSet,
 						  .dstBinding = m_textureArrayBinding,
 						  .dstArrayElement = 0,
 						  .descriptorCount = static_cast<uint32_t>(imageInfos.size()),
@@ -336,11 +309,7 @@ void RendererDescriptors::updateDescriptor(const size_t iFrame) {
 	}
 }
 
-auto RendererDescriptors::getDescriptorSet(const uint32_t iFrame) -> VkDescriptorSet* {
-	if (iFrame >= m_sets.size())
-		return nullptr;
-	return &m_sets[iFrame];
-}
+auto RendererDescriptors::getDescriptorSet(uint32_t) -> VkDescriptorSet* { return m_ring.currentPtr(); }
 
 auto RendererDescriptors::getForRenderer(const std::string& iName) -> RendererDescriptors* {
 	const auto& registry = getRegistry();

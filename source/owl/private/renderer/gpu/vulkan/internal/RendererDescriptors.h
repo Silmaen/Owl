@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "DescriptorRing.h"
 #include "Descriptors.h"// for TextureData
 #include <vulkan/vulkan.h>
 
@@ -162,10 +163,11 @@ public:
 
 	/**
 	 * @brief
-	 *  Mutable handle to the descriptor set for the given frame (used as
-	 *  the bind target by `RenderAPI::drawData`).
-	 * @param[in] iFrame Frame index.
-	 * @return Pointer to the descriptor set handle.
+	 *  Stable pointer to the descriptor set the current draw must bind (the set
+	 *  acquired by the most recent `commitTextureBind`). The frame index is no
+	 *  longer used — each draw owns a distinct set from the fence-recycled ring.
+	 * @param[in] iFrame Unused (kept for call-site compatibility).
+	 * @return Pointer to the current descriptor set handle.
 	 */
 	auto getDescriptorSet(uint32_t iFrame) -> VkDescriptorSet*;
 
@@ -179,16 +181,12 @@ public:
 
 	/**
 	 * @brief
-	 *  Refresh every in-flight frame's descriptor set.
+	 *  Tag the descriptor sets every registered renderer acquired during the
+	 *  just-submitted batch with that batch's fence, so they are recycled only
+	 *  once the GPU is done with them. Call right after `vkQueueSubmit`.
+	 * @param[in] iFence The fence the submitted command buffer signals.
 	 */
-	void updateDescriptors();
-
-	/**
-	 * @brief
-	 *  Refresh the descriptor set for a specific frame.
-	 * @param[in] iFrame Frame index.
-	 */
-	void updateDescriptor(size_t iFrame);
+	static void notifySubmitAll(VkFence iFence);
 
 	/**
 	 * @brief
@@ -277,10 +275,8 @@ private:
 	uint32_t m_textureArrayCount = 0;
 	/// Descriptor set layout for this renderer.
 	VkDescriptorSetLayout m_layout{nullptr};
-	/// Descriptor pool sized for `g_maxFrameInFlight` sets.
-	VkDescriptorPool m_pool{nullptr};
-	/// One descriptor set per in-flight frame.
-	std::vector<VkDescriptorSet> m_sets;
+	/// Fence-recycled ring handing a distinct descriptor set to every draw.
+	DescriptorRing m_ring;
 	/// Registered UBO bindings keyed by binding slot.
 	std::unordered_map<uint32_t, UboBinding> m_uniformBindings;
 	/// Registered SSBO bindings keyed by binding slot.
@@ -293,6 +289,14 @@ private:
 	 *  texture array) is per-renderer.
 	 */
 	std::vector<uint32_t> m_textureBind;
+
+	/**
+	 * @brief
+	 *  Write the current UBO + SSBO + texture-bind state into a freshly acquired set.
+	 * @param[in] iSet The descriptor set to write.
+	 * @param[in] iFrame Active in-flight frame index (selects the per-frame UBO buffers).
+	 */
+	void writeDescriptor(VkDescriptorSet iSet, size_t iFrame);
 };
 
 }// namespace owl::renderer::gpu::vulkan::internal

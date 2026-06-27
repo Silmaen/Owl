@@ -168,6 +168,10 @@ public:
 	struct PipeLineData {
 		VkPipeline pipeLine = nullptr;
 		VkPipelineLayout layout = nullptr;
+		/// Signature key (shader + layout + render pass + vertex format) shared pipelines are deduplicated by.
+		size_t key = 0;
+		/// Number of live `DrawData` sharing this pipeline; the pipeline is destroyed when it reaches zero.
+		uint32_t refCount = 0;
 	};
 
 	/**
@@ -191,16 +195,29 @@ public:
 					  VkPipelineVertexInputStateCreateInfo iVertexInputInfo, bool iDoubleSided = true) -> int32_t;
 
 	// Command buffer data
+	/// True while a batch (command buffer) is being recorded.
 	bool inBatch = false;
+	/// True while a frame is in progress (between begin/end frame).
 	bool inFrame = false;
 	/// Desired depth test state for the next batch (off by default; Renderer3D enables it around 3D mesh draws).
 	bool depthTestEnabled = false;
 	/// Desired depth write state for the next batch (on by default; disabled for the blended transparent pass).
 	bool depthWriteEnabled = true;
+	/// True until the main target's first batch of the frame is submitted (gates the image-available wait).
 	bool firstBatch = true;
 
+	/**
+	 * @brief
+	 *  Release a reference to a pipeline; the pipeline is destroyed once the last `DrawData` releases it.
+	 * @param[in] iId Pipeline identifier returned by `pushPipeline`.
+	 */
 	void popPipeline(int32_t iId);
 
+	/**
+	 * @brief
+	 *  Bind a pipeline and its descriptor set into the current command buffer for upcoming draws.
+	 * @param[in] iId Pipeline identifier returned by `pushPipeline`.
+	 */
 	void bindPipeline(int32_t iId);
 
 	/**
@@ -240,6 +257,13 @@ public:
 	 */
 	void swapFrame();
 
+	/**
+	 * @brief
+	 *  Record a draw into the current command buffer.
+	 * @param[in] iVertexCount Index count when indexed, otherwise vertex count.
+	 * @param[in] iIndexed When true, issue `vkCmdDrawIndexed`; otherwise `vkCmdDraw`.
+	 * @param[in] iInstanceCount Number of instances to draw.
+	 */
 	void drawData(uint32_t iVertexCount, bool iIndexed = true, uint32_t iInstanceCount = 1);
 
 	void setClearColor(const math::vec4& iColor);
@@ -319,5 +343,7 @@ private:
 
 	/// List of pipelines.
 	std::map<int32_t, PipeLineData> m_pipeLines;
+	/// Signature key -> pipeline id, so identical pipelines (e.g. every voxel chunk) are built once and shared.
+	std::unordered_map<size_t, int32_t> m_pipelineCache;
 };
 }// namespace owl::renderer::gpu::vulkan::internal

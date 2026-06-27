@@ -13,6 +13,8 @@
 #include "VulkanHandler.h"
 #include "utils.h"
 
+#include <bit>
+
 namespace owl::renderer::gpu::vulkan::internal {
 
 void TextureData::freeTexture() {
@@ -64,6 +66,8 @@ void TextureData::createDescriptorSet() {
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan Texture Descriptor: failed to create descriptor set layout ({}).", resultString(result))
 	}
+	core.setObjectName(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, std::bit_cast<uint64_t>(textureDescriptorSetLayout),
+					   "tex.layout:" + debugName);
 	const VkDescriptorSetAllocateInfo allocInfo{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
 												.pNext = nullptr,
 												.descriptorPool = pool,
@@ -110,6 +114,7 @@ void TextureData::createView() {
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan Texture: Error creating image views ({}).", internal::resultString(result))
 	}
+	vkc.setObjectName(VK_OBJECT_TYPE_IMAGE_VIEW, std::bit_cast<uint64_t>(textureImageView), "tex.view:" + debugName);
 }
 
 void TextureData::createSampler() {
@@ -138,6 +143,7 @@ void TextureData::createSampler() {
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan Texture: Error creating texture sampler ({}).", internal::resultString(result))
 	}
+	vkc.setObjectName(VK_OBJECT_TYPE_SAMPLER, std::bit_cast<uint64_t>(textureSampler), "tex.sampler:" + debugName);
 }
 
 void TextureData::createImage(const math::vec2ui& iDimensions) {
@@ -165,6 +171,7 @@ void TextureData::createImage(const math::vec2ui& iDimensions) {
 		OWL_CORE_ERROR("Vulkan Texture: failed to create image ({}).", internal::resultString(result))
 		return;
 	}
+	vkc.setObjectName(VK_OBJECT_TYPE_IMAGE, std::bit_cast<uint64_t>(textureImage), "tex.image:" + debugName);
 	VkMemoryRequirements memRequirements;
 	vkGetImageMemoryRequirements(vkc.getLogicalDevice(), textureImage, &memRequirements);
 	const VkMemoryAllocateInfo allocInfo{.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
@@ -176,6 +183,8 @@ void TextureData::createImage(const math::vec2ui& iDimensions) {
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan Texture: failed to allocate image memory ({}).", internal::resultString(result))
 	}
+	vkc.setObjectName(VK_OBJECT_TYPE_DEVICE_MEMORY, std::bit_cast<uint64_t>(textureImageMemory),
+					  "tex.memory:" + debugName);
 }
 
 Descriptors::Descriptors() = default;

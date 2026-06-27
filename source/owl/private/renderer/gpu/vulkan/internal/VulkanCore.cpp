@@ -126,6 +126,27 @@ void VulkanCore::release() {
 	m_instanceInfo.reset();
 }
 
+void VulkanCore::setObjectName(const VkObjectType iType, const uint64_t iHandle, const std::string_view iName) const {
+	if (!m_debugMessage || m_logicalDevice == nullptr || iHandle == 0)
+		return;
+
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG17("-Wcast-function-type-strict")
+	const auto func = reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(
+			vkGetDeviceProcAddr(m_logicalDevice, "vkSetDebugUtilsObjectNameEXT"));
+	OWL_DIAG_POP
+
+	if (func == nullptr)
+		return;
+	const std::string name{iName};
+	const VkDebugUtilsObjectNameInfoEXT info{.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+											 .pNext = nullptr,
+											 .objectType = iType,
+											 .objectHandle = iHandle,
+											 .pObjectName = name.c_str()};
+	func(m_logicalDevice, &info);
+}
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 void VulkanCore::createInstance() {

@@ -66,6 +66,8 @@ void RendererDescriptors::declare(const std::string& iRenderer, std::span<const 
 
 void RendererDescriptors::release(const std::string& iRenderer) { getOwnedBlocks().erase(iRenderer); }
 
+void RendererDescriptors::releaseAll() { getOwnedBlocks().clear(); }
+
 RendererDescriptors::ScopedActive::ScopedActive(const std::string& iRenderer) {
 	if (const auto api = RenderCommand::getApi(); api != RenderAPI::Type::Vulkan) {
 		return;

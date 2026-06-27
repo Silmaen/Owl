@@ -46,6 +46,86 @@ constexpr uint32_t g_FaceCount = 6;
 
 /**
  * @brief
+ *  In-world orientation of a block, applied by the mesher as a face permutation.
+ *
+ * Orientation never changes a block's geometry (a voxel is always a unit cube)
+ * nor its collision / opacity — it only remaps which per-face texture appears on
+ * each world face, so a single block type can read as a pillar laid along any
+ * axis (logs) or a horizontally-facing block (furnaces, stairs). `Identity` is
+ * the default and leaves every face textured as authored.
+ */
+enum struct BlockOrientation : uint8_t {
+	Identity = 0,///< Local axes match world axes (no rotation).
+	YawCw90 = 1,///< Rotated a quarter turn about the up (+Y) axis.
+	Yaw180 = 2,///< Rotated a half turn about the up (+Y) axis.
+	YawCcw90 = 3,///< Rotated a quarter turn the other way about the up (+Y) axis.
+	AxisX = 4,///< Pillar laid along world X: the top/bottom caps face ±X.
+	AxisZ = 5,///< Pillar laid along world Z: the top/bottom caps face ±Z.
+};
+
+/// Number of distinct block orientations.
+constexpr uint8_t g_OrientationCount = 6;
+
+/**
+ * @brief
+ *  Resolve which block-local face is shown at a given world face under an orientation.
+ *
+ * The mesher emits geometry with world-aligned normals and uses this to pick the
+ * texture: the tile drawn on `iWorldFace` is `BlockType::faceTexture` of the
+ * returned local face. `Identity` is the identity permutation.
+ * @param[in] iWorldFace The world-aligned face being textured.
+ * @param[in] iOrientation The block's orientation.
+ * @return The block-local face whose texture appears at `iWorldFace`.
+ */
+[[nodiscard]] OWL_API auto orientedFace(BlockFace iWorldFace, BlockOrientation iOrientation) noexcept -> BlockFace;
+
+/**
+ * @brief
+ *  Per-voxel metadata stored alongside the block id: orientation plus a free state byte.
+ *
+ * The `state` byte is opaque to the engine — gameplay and the editor may use it
+ * for growth stages, on/off, water level, etc. Only `orientation` is interpreted
+ * by the mesher.
+ */
+struct BlockMeta {
+	/// In-world orientation applied by the mesher.
+	BlockOrientation orientation = BlockOrientation::Identity;
+	/// Free gameplay / editor state byte (not interpreted by the mesher).
+	uint8_t state = 0;
+
+	auto operator==(const BlockMeta&) const noexcept -> bool = default;
+};
+
+/// Block metadata packed into 16 bits for storage: low byte orientation, high byte state.
+using PackedMeta = uint16_t;
+
+/// The default metadata word (`Identity` orientation, zero state); the implicit value of every block.
+constexpr PackedMeta g_DefaultMeta = 0;
+
+/**
+ * @brief
+ *  Pack block metadata into its 16-bit storage word.
+ * @param[in] iMeta The metadata to pack.
+ * @return The packed word (low byte orientation, high byte state).
+ */
+[[nodiscard]] constexpr auto packMeta(const BlockMeta iMeta) noexcept -> PackedMeta {
+	return static_cast<PackedMeta>(static_cast<uint8_t>(iMeta.orientation)) |
+		   static_cast<PackedMeta>(static_cast<PackedMeta>(iMeta.state) << 8);
+}
+
+/**
+ * @brief
+ *  Unpack a 16-bit storage word back into block metadata.
+ * @param[in] iPacked The packed word produced by `packMeta`.
+ * @return The decoded metadata.
+ */
+[[nodiscard]] constexpr auto unpackMeta(const PackedMeta iPacked) noexcept -> BlockMeta {
+	return BlockMeta{.orientation = static_cast<BlockOrientation>(iPacked & 0xFFu),
+					 .state = static_cast<uint8_t>(iPacked >> 8)};
+}
+
+/**
+ * @brief
  *  How a block participates in meshing, lighting and sorting.
  *
  * Drives face culling (an opaque neighbour hides the shared face) and which

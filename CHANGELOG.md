@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Voxel block metadata (orientation + state)** — each voxel now stores a 16-bit metadata word (`data::voxel::BlockMeta`
+  = a `BlockOrientation` plus a free gameplay/editor state byte) parallel to its block id in `Chunk` and `VoxelStructure`.
+  `orientedFace` remaps a block's per-face textures so one block type can read as a pillar laid along any axis or a
+  horizontally-facing block (logs, furnaces); the greedy mesher keys on orientation so differently-oriented blocks never
+  merge. The run-length format gained an optional `:meta` suffix — legacy id-only data still loads and all-default data
+  stays byte-identical. Authored from the **Voxel Palette** orientation / state picker, undoable via `VoxelEditCommand`,
+  and preserved through structure capture / stamp. Shared `encodeBlockRuns` / `decodeBlockRuns` replace the duplicated
+  per-file RLE. Headless tests cover the permutation table, packing, chunk + structure round-trips, and meshing.
+- **Per-chunk frustum culling** — `RendererVoxel::drawVoxelWorld` skips chunks whose AABB lies fully outside the camera
+  frustum, via the reusable `renderer::utils::FrustumCullingPass::extractFrustumPlanes` / `isAabbVisible` CPU helpers
+  (the GPU indirect-draw adoption remains a v0.3.0 item). Headless-tested.
 - **Editor camera navigation overhaul** — `CameraEditor` gains a DCC-style scheme (shared by every scene viewport):
   **Alt+LMB** rotates in place (look around, eye fixed), **Alt+RMB** pans, **Alt+MMB** dollies forward/back;
   **Ctrl+LMB** orbits the reference point, **Ctrl+MMB/RMB** pan it, the wheel zooms (distance). Plain clicks stay
@@ -18,10 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   authoring than at runtime. Inspector + serialized + round-trip tested.
 - **Voxel Palette texture thumbnails** — each block in the palette shows its top-face atlas tile next to the name.
 
-### Removed
-
-- **Chunk Inspector panel** — removed (low value); chunk diagnostics fold into future tooling if needed.
-
 - **Voxel editor in Owl Nest** — author voxel worlds directly in the editor viewport:
   - **Brush**: a Voxel Palette panel picks a paint block / eraser; with the brush active, the editor camera
     raycasts the targeted block (wireframe-highlighted on the impacted face) and **left-click places** the block on
@@ -30,8 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Structures**: `data::voxel::VoxelStructure` captures a world's non-air bounding box to a `.owlvoxstruct` file
     (YAML, run-length-encoded); the palette lists saved structures and a left-click **stamps** the selected one at the
     targeted cell (undoable). Headless tests cover round-trip, capture, and stamping.
-  - **Chunk Inspector** panel: per-chunk coordinate / filled / dirty state plus totals (chunk count, estimated
-    memory, async pending count) for the active scene's voxel world.
   - The editor drives the targeted-block highlight through a new `Scene::setEditorVoxelHighlight` (the in-Play
     highlight stays player-driven).
 
@@ -191,8 +196,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       ECS `scene::component`.
     - Documented the module-placement rules in `.claude/rules/module-layout.md` and `doc/pages/architecture.md`.
 
+### Removed
+
+- **Chunk Inspector panel** — the voxel-editor chunk-diagnostics panel was dropped (low value); chunk diagnostics
+  fold into future tooling if needed.
+
 ### Fixed
 
+- **`math::Matrix` initializer-list constructor out-of-bounds read** — the constructor unconditionally `copy_n`'d
+  `NCol * NRow` elements from the initializer list, reading past the end when given a shorter list (AddressSanitizer
+  stack-buffer-overflow). It now copies at most `NCol * NRow` elements and zero-fills the remainder. Surfaced by an
+  ASan run of the test suite, where the voxel renderer initialised a `mat4` GLM-style as `{1.f}` (now
+  `math::identity<float, 4>()`); the constructor is hardened so any short list is safe.
+- **Vulkan pipeline storm (per-mesh pipeline duplication)** — `VulkanHandler::pushPipeline` built a brand-new
+  `VkPipeline` (+ layout) for every `DrawData`, so each voxel chunk mesh created its own copy of the identical `voxel`
+  pipeline — thousands of `vkCreateGraphicsPipelines` calls per scene load, all retained until shutdown (`~DrawData`
+  never popped). Pipelines are now deduplicated and refcounted: `pushPipeline` keys on the pipeline signature (shader
+  name, double-sided flag, descriptor-set-layout, render pass, full vertex-input layout) and reuses the existing
+  pipeline on a cache hit; `popPipeline` destroys it only when the last `DrawData` releases it. Every voxel chunk now
+  shares one pipeline (one `vkCreateGraphicsPipelines` instead of thousands). Vertex/index buffers stay per-mesh — only
+  the pipeline state is shared.
+- **Vulkan `vkDestroyDevice` object leak (IconBank atlas)** — the editor's icon atlas lives on a process-static
+  `gui::IconBank` singleton, so its `gpu::Texture2D` (image / memory / view / sampler + an ImGui descriptor-set layout)
+  was only released at static-destruction, *after* `vkDestroyDevice` — five leaked objects per run. `EditorLayer::onDetach()`
+  now calls `IconBank::clear()` while the device is still valid, symmetric with the `buildIconBank()` in `onAttach`.
+  Localised via new `vkSetDebugUtilsObjectName` tags (`VulkanCore::setObjectName`) on every texture's image / view /
+  sampler / memory / layout — the leak report named the objects `tex.*:anon`, pointing straight at the anon
+  Specification texture. Teardown hardening also landed: `UiLayer::onDetach()` flushes `g_deferredTextureReleases` and
+  `RendererDescriptors::releaseAll()` runs from `VulkanHandler::release()`, both while the device is valid.
+- **Vulkan `UPDATE_AFTER_BIND` validation cascade (per-batch descriptor sets)** — `RendererDescriptors` rewrote one
+  shared per-frame descriptor set on every draw (`commitTextureBind` → `vkUpdateDescriptorSets`), so a second draw in
+  the same frame invalidated the command buffer that bound it for the first — a cascade of `vkCmd*` "destroyed or
+  updated without UPDATE_AFTER_BIND" errors on scene load and the voxel pass. Replaced by a new fence-recycled
+  `internal::DescriptorRing`: each draw acquires a distinct set, and a set is reused only once the fence of the batch
+  that last bound it has signalled (`RendererDescriptors::notifySubmitAll` from `VulkanHandler::endBatch`). Recycling
+  keys on the submit fence rather than the frame index, so the editor-viewport and main-swapchain submits — independent
+  fences sharing the global ring within one displayed frame — never alias. With this and the IconBank fix, an Owl Nest
+  session (open project → voxel scene → close) produces **zero Vulkan validation messages**.
 - **Voxel texture borders / atlas bleeding** — two causes fixed: (1) the voxel renderer's per-face `tileRect` was the
   full atlas cell with no inset, so the shader's `frac(uv)` tiling sampled the neighbouring tile at the 0/1 seam —
   `tileRectFor` now insets the rect by half a texel on each side (matching `scene::Tileset::getTileUv` on the 2D

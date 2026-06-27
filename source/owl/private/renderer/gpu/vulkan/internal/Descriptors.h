@@ -9,6 +9,7 @@
 #pragma once
 
 #include "math/vectors.h"
+#include <string>
 #include <vulkan/vulkan.h>
 
 namespace owl::renderer::gpu::vulkan::internal {
@@ -23,6 +24,8 @@ struct TextureData {
 	VkSampler textureSampler = nullptr;
 	VkDescriptorSet textureDescriptorSet = nullptr;
 	VkDescriptorSetLayout textureDescriptorSetLayout = nullptr;
+	/// Debug label propagated to the Vulkan objects so validation-layer leak reports name the owning texture.
+	std::string debugName;
 
 	/**
 	 * @brief

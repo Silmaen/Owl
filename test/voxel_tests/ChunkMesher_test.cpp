@@ -170,6 +170,36 @@ TEST_F(ChunkMesherFixture, FaceTexturesPerFace) {
 	EXPECT_EQ(texOfFace(0, 0, 1), 105u);// ZPos
 }
 
+TEST_F(ChunkMesherFixture, OrientationRemapsFaceTextures) {
+	const Registry r;
+	Chunk chunk;
+	// AxisX lays the marker pillar along world X: its caps (local YPos/YNeg) appear on the world ±X faces.
+	chunk.setBlock(0, 0, 0, r.marker, packMeta({.orientation = BlockOrientation::AxisX, .state = 0}));
+	const ChunkMesh mesh = ChunkMesher::mesh(chunk, r.reg);
+	const auto texOfFace = [&](const float iX, const float iY, const float iZ) -> uint32_t {
+		for (size_t q = 0; q * 4 < mesh.vertices.size(); ++q) {
+			if (normalIs(mesh.vertices[q * 4], iX, iY, iZ))
+				return mesh.vertices[q * 4].textureIndex;
+		}
+		return 0;
+	};
+	EXPECT_EQ(texOfFace(-1, 0, 0), 102u);// world XNeg shows local YNeg
+	EXPECT_EQ(texOfFace(1, 0, 0), 103u);// world XPos shows local YPos
+	EXPECT_EQ(texOfFace(0, 1, 0), 100u);// world YPos shows local XNeg
+	EXPECT_EQ(texOfFace(0, -1, 0), 101u);// world YNeg shows local XPos
+	EXPECT_EQ(texOfFace(0, 0, 1), 105u);// world ZPos unchanged
+}
+
+TEST_F(ChunkMesherFixture, DifferentOrientationsBreakGreedyMerge) {
+	const Registry r;
+	Chunk chunk;
+	// Two adjacent stone blocks textured differently per orientation must not merge into one top quad.
+	chunk.setBlock(0, 0, 0, r.marker, packMeta({.orientation = BlockOrientation::Identity, .state = 0}));
+	chunk.setBlock(1, 0, 0, r.marker, packMeta({.orientation = BlockOrientation::AxisX, .state = 0}));
+	const ChunkMesh mesh = ChunkMesher::mesh(chunk, r.reg);
+	EXPECT_EQ(quadsByNormal(mesh, 0, 1, 0), 2u);
+}
+
 TEST_F(ChunkMesherFixture, TransparentNeighborDoesNotCull) {
 	const Registry r;
 	Chunk chunk;

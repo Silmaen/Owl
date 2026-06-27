@@ -19,7 +19,6 @@ UniformBuffer::UniformBuffer(const uint32_t iSize, const uint32_t iBinding, cons
 	: m_renderer{iRenderer}, m_binding{iBinding} {
 	if (auto* const rd = internal::RendererDescriptors::getForRenderer(iRenderer); rd != nullptr) {
 		rd->registerUniform(iBinding, iSize);
-		rd->updateDescriptors();
 		return;
 	}
 	auto& vkd = internal::Descriptors::get();

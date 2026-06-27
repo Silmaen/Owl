@@ -32,6 +32,10 @@ struct VoxelBrush {
 	bool eraser = false;
 	/// Block id placed on a left-click when not erasing / stamping.
 	data::voxel::BlockId paintBlock = 1;
+	/// Orientation applied to painted blocks.
+	data::voxel::BlockOrientation orientation = data::voxel::BlockOrientation::Identity;
+	/// State byte applied to painted blocks.
+	uint8_t state = 0;
 	/// When set, a left-click stamps this structure (its min corner at the targeted empty cell) instead of one block.
 	std::optional<data::voxel::VoxelStructure> structure;
 	/// Display name of the selected structure (empty when none).

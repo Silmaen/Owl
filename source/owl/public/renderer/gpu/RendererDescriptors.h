@@ -93,6 +93,18 @@ public:
 
 	/**
 	 * @brief
+	 *  Release every per-renderer descriptor block at once.
+	 *
+	 * A last-resort teardown hook: the blocks otherwise live in a process-static
+	 * map that would be destroyed only at program exit — after the Vulkan device
+	 * is gone — leaking their layouts / pools. Called at device teardown (while
+	 * the device is still valid) so no block can outlive it, regardless of
+	 * per-renderer `shutdown()` ordering. Safe to call when nothing is registered.
+	 */
+	static void releaseAll();
+
+	/**
+	 * @brief
 	 *  RAII guard that makes `iRenderer`'s descriptor block the active one
 	 *  on the current thread. While alive, `Texture2D::bind`, pipeline-layout
 	 *  creation and the per-draw descriptor-set bind route through this

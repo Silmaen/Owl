@@ -67,10 +67,8 @@ void Framebuffer::invalidate() {
 void Framebuffer::bind() {
 	if (m_framebuffers.empty())
 		return;
-	//const auto& core = internal::VulkanCore::get();
 	auto& vkh = internal::VulkanHandler::get();
 	resetBatch();
-	//vkWaitForFences(core.getLogicalDevice(), 1, getCurrentFence(), VK_TRUE, UINT64_MAX);
 	if (!isMainTarget()) {
 		for (uint32_t i = 0; i < m_images.size(); ++i) {
 			if (m_specs.attachments[imgIdxToAtt(i)].format == AttachmentSpecification::Format::Depth24Stencil8)
@@ -530,7 +528,6 @@ void Framebuffer::createRenderPass() {
 												.pDepthStencilAttachment = nullptr,
 												.preserveAttachmentCount = 0,
 												.pPreserveAttachments = nullptr});
-	//}
 	std::vector dependencies = {VkSubpassDependency{
 			.srcSubpass = VK_SUBPASS_EXTERNAL,
 			.dstSubpass = 0,
@@ -539,7 +536,6 @@ void Framebuffer::createRenderPass() {
 			.srcAccessMask = 0,
 			.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
 			.dependencyFlags = {}}};
-	//if (isMainTarget()) {
 	dependencies.emplace_back(VkSubpassDependency{.srcSubpass = 0,
 												  .dstSubpass = 1,
 												  .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -547,7 +543,6 @@ void Framebuffer::createRenderPass() {
 												  .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 												  .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 												  .dependencyFlags = {}});
-	//}
 	m_SubPassCount = static_cast<uint32_t>(subpasses.size());
 	const VkRenderPassCreateInfo renderPassInfo{.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
 												.pNext = nullptr,
@@ -569,10 +564,7 @@ auto Framebuffer::isMainTarget() const -> bool { return m_specs.swapChainTarget;
 
 auto Framebuffer::hasBeenCalled() const -> bool { return m_called || m_specs.swapChainTarget; }
 
-auto Framebuffer::getSubpassCount() const -> uint32_t {
-	return m_SubPassCount;
-	//return isMainTarget() ? 2 : 1;
-}
+auto Framebuffer::getSubpassCount() const -> uint32_t { return m_SubPassCount; }
 
 void Framebuffer::nextFrame() { m_currentFrame = (m_currentFrame + 1) % m_specs.samples; }
 

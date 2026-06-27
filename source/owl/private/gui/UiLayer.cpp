@@ -138,6 +138,8 @@ void UiLayer::onDetach() {
 		vkDeviceWaitIdle(vkc.getLogicalDevice());
 		ImGui_ImplVulkan_Shutdown();
 	}
+	// Flush textures deferred after the last rendered frame; end() clears this only per-frame, so they would else leak.
+	g_deferredTextureReleases.clear();
 	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Glfw) {
 		ImGui_ImplGlfw_Shutdown();
 	}

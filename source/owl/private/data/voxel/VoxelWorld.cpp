@@ -33,10 +33,18 @@ auto VoxelWorld::getBlock(const math::vec3i& iWorld) const -> BlockId {
 	return it->second->getBlock(local.x(), local.y(), local.z());
 }
 
-void VoxelWorld::setBlock(const math::vec3i& iWorld, const BlockId iBlock) {
+auto VoxelWorld::getMeta(const math::vec3i& iWorld) const -> PackedMeta {
+	const auto it = m_chunks.find(packChunkKey(worldToChunk(iWorld)));
+	if (it == m_chunks.end())
+		return g_DefaultMeta;
+	const math::vec3i local = worldToLocal(iWorld);
+	return it->second->getMeta(local.x(), local.y(), local.z());
+}
+
+void VoxelWorld::setBlock(const math::vec3i& iWorld, const BlockId iBlock, const PackedMeta iMeta) {
 	const auto chunk = getOrCreateChunk(worldToChunk(iWorld));
 	const math::vec3i local = worldToLocal(iWorld);
-	chunk->setBlock(local.x(), local.y(), local.z(), iBlock);
+	chunk->setBlock(local.x(), local.y(), local.z(), iBlock, iMeta);
 }
 
 void VoxelWorld::markNeighborChunksDirty(const math::vec3i& iWorld) const {
