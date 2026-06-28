@@ -389,7 +389,7 @@ gameplay primitives (inventory, enemies).
 tradition — slotted between the existing 2D/raycast/voxel options.
 
 - Isometric Renderer
-    - ![Planned][planned] `RendererIsometric` layer (Transport Tycoon-style)
+    - ![In Progress][progress] `RendererIsometric` layer (Transport Tycoon-style)
         - Add `RendererIsometricLayer` (factory key `"RendererIsometric"`) so scenes can mix the isometric mode with the
           existing 2D / raycast / voxel stack just by listing it in `owl_project.yml` and tagging entities with the
           matching `RendererTag`.

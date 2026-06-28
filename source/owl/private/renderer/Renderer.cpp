@@ -13,6 +13,7 @@
 #include "renderer/Renderer2D.h"
 #include "renderer/Renderer2DLayer.h"
 #include "renderer/Renderer3D.h"
+#include "renderer/RendererIsometricLayer.h"
 #include "renderer/RendererRaycast.h"
 #include "renderer/RendererRaycastLayer.h"
 #include "renderer/RendererTilemap.h"
@@ -74,6 +75,7 @@ void Renderer::initShaders(const ShaderProgressCallback& iProgress) {
 	Renderer2DLayer::registerWithFactory();
 	RendererRaycastLayer::registerWithFactory();
 	RendererVoxelLayer::registerWithFactory();
+	RendererIsometricLayer::registerWithFactory();
 
 	m_internalState = State::Running;
 }

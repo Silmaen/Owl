@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Isometric renderer foundation** — `RendererIsometric` layer (factory key `"RendererIsometric"`) and `IsometricConfig` (tile size, Z step, origin); fixed 2:1 dimetric projection helpers `worldToScreen` / `screenToWorld` / `dimetricViewProjection` (world-to-NDC matrix shared by `Renderer2D`, gizmos, and picking). YAML config round-trip. See [isometric.md](doc/pages/isometric.md).
+
 ## [0.2.1] - 2026-06-27
 
 ### Added
