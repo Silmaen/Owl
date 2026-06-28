@@ -26,6 +26,7 @@ and accessible from the **Help** ribbon button or by pressing `F1`.
 | Lua scripting (gameplay)          | [scripting.md](scripting.md)       |
 | 2D renderer, sprites, fonts       | [renderer.md](renderer.md)         |
 | Voxel engine (blocks, chunks)     | [voxel.md](voxel.md)               |
+| Isometric renderer (TTD-style)    | [isometric.md](isometric.md)       |
 | Physics (Box2D bodies, triggers)  | [physics.md](physics.md)           |
 | Sound (effects, music, listeners) | [sound.md](sound.md)               |
 | Node graph editor                 | [node_graph.md](node_graph.md)     |

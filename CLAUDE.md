@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Owl (v0.2.1) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
+Owl (v0.2.2) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
 (GLFW, Null), and sound backends (OpenAL, Null). It uses an Entity-Component-System architecture (EnTT) with
 **hierarchical parent-child entities** and includes a scene editor (Owl Nest). Supported platforms: Linux (x64/arm64)
 and Windows (x64, MinGW).
@@ -280,8 +280,8 @@ OwlEngine can be built as a depmanager package for use by external projects (e.g
 # Build the OwlEngine package locally
 poetry run depmanager build .
 
-# The package will be available as owl_engine:0.2.1 in the local depmanager cache
-poetry run depmanager pack ls -p owl_engine:0.2.1
+# The package will be available as owl_engine:0.2.2 in the local depmanager cache
+poetry run depmanager pack ls -p owl_engine:0.2.2
 ```
 
 **Recipe details** (`owl_engine.py`):
@@ -295,7 +295,7 @@ poetry run depmanager pack ls -p owl_engine:0.2.1
 ```yaml
 packages:
   owl_engine:
-    version: 0.2.1
+    version: 0.2.2
     kind: "shared"
 ```
 

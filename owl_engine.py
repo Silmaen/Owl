@@ -11,7 +11,7 @@ class OwlEngineShared(Recipe):
     """
 
     name = "owl_engine"
-    version = "0.2.1"
+    version = "0.2.2"
     source_dir = "."
     kind = "shared"
     dependencies = [
