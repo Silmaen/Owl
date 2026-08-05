@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **CI — teamcity-github-bridge 1.10.0 wiring**: `CodeStyle` findings are now printed as GNU-style diagnostics
+  (`path:line:col: error: <check>: …`), which the plugin pins to the pull request's diff as Check Run annotations;
+  annotations enabled on the four configurations with distinct diagnostics (Linux/Windows Clang, Clang-Tidy, Code
+  Style) so one error is not annotated six times; a PR changing only `doc/` / `*.md` / `.claude/` / `LICENSE` skips
+  the C++ matrix (Code Style and Windows x64 Clang, which builds Doxygen, still run); a draft build's verdict is
+  reused when the PR flips to ready (`skipIfCommitPassed`); `[skip ci]` in a PR title or body and a `/ci full`
+  review comment for the main-only configurations; Check Run names shortened to `Build / Linux x64 / Clang`; the
+  bridge no longer triggers on `main` — that stays TeamCity's VCS trigger. One `githubBridge()` builder replaces
+  the two ad-hoc `BridgeHelpers.kt` overrides.
+
 ## [0.2.1] - 2026-06-27
 
 ### Added

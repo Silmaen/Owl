@@ -55,6 +55,13 @@ Each sub-check can be disabled with `-- --no-<name>=true`:
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
 `--no-cpp-style`, `--no-structural`.
 
+**Report findings through `_diag()`**, never `log.error()` directly. It prints
+`<repo-relative path>:<line>:<column>: error: <check>: <message>` — the
+GNU/clang diagnostic shape teamcity-github-bridge parses out of the build log to
+annotate the pull request's diff. A finding printed in any other shape never
+leaves the build log. Whole-file findings go on line 1; advisory ones pass
+`level="warning"`.
+
 ## Adding a New CI Action
 
 1. Create `ci/actions/myaction.py`

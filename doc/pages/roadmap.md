@@ -416,6 +416,12 @@ tradition — slotted between the existing 2D/raycast/voxel options.
           `EnabledRenderers: [{ Name: iso, Type: RendererIsometric }]`, the projection helpers (`worldToScreen` /
           `screenToWorld`), and the depth-sort comparator.
 
+- Build & CI
+    - ![Done][done] teamcity-github-bridge 1.10.0 wiring — `CodeStyle` findings become annotations on the pull
+      request's diff (GNU-style diagnostics through `_diag()`), doc-only PRs skip the C++ matrix, a draft build's
+      verdict is reused on ready, `[skip ci]` / `/ci full` escape hatches, shorter Check Run names. Detail in
+      [Continuous Integration](continuous_integration.md).
+
 ## v0.2.1 -- 2026-06-27
 
 **Goal:** Add the second non-2D rendering mode — a voxel engine for block-based worlds (Minecraft-style).

@@ -19,12 +19,12 @@ the server when `main` advances.
 
 The CI surface covers:
 
-| Area               | Coverage                                                                    |
-|--------------------|-----------------------------------------------------------------------------|
-| Build / Test       | Linux x64, Linux ARM64 (Docker-emulated), Windows x64 — Clang + GCC each    |
-| Quality            | clang-tidy, 4 sanitizers (Address, Thread, Leak, UB), Code Style aggregator |
-| Packaging          | Engine + Owl Nest, per platform — only on `main`                            |
-| GitHub integration | Draft PR suppression, Check Runs, ready_for_review retrigger                |
+| Area               | Coverage                                                                                    |
+|--------------------|---------------------------------------------------------------------------------------------|
+| Build / Test       | Linux x64, Linux ARM64 (Docker-emulated), Windows x64 — Clang + GCC each                    |
+| Quality            | clang-tidy, 4 sanitizers (Address, Thread, Leak, UB), Code Style aggregator                 |
+| Packaging          | Engine + Owl Nest, per platform — only on `main`                                            |
+| GitHub integration | Draft PR suppression, Check Runs (tests, timings, diff annotations), ready_for_review reuse |
 
 ## Project tree
 
@@ -61,21 +61,26 @@ flowchart TD
     classDef draft fill:#fff3cd,stroke:#856404,color:#856404
     classDef mainOnly fill:#d1ecf1,stroke:#0c5460,color:#0c5460
     class LxC,WxC,CS,SA draft
-    class LxG,LaG,WxG,SU,PLxE,PLaN,PWxE mainOnly
+    class LxG,LaG,WxG,SU,PLxE,PLaE,PLaN,PWxE mainOnly
 ```
 
 Legend:
 - **Yellow**: draft-friendly — auto-run on draft PRs too (fast feedback subset).
 - **Blue**: main-only — auto-run on `main` pushes only; PRs get a "Skipped:
-  branch out of scope" GitHub Check Run; manual triggers always allowed.
+  branch out of scope" GitHub Check Run; a reviewer can still ask for them with
+  the `/ci full` comment, and manual triggers always work.
 - Uncoloured: standard — auto-run on `main` pushes and on non-draft PRs.
+
+Orthogonal to the colours, a PR that changes **only** documentation
+(`doc/`, `*.md`, `.claude/`, `LICENSE`) runs just Code Style and Windows x64
+Clang — see [Doc-only pull requests](#doc-only-pull-requests).
 
 Source files:
 - `.teamcity/settings.kts` — entry point, registers `_Self.Project`.
 - `.teamcity/_Self/Project.kt` — root project, VCS root, project-level params.
 - `.teamcity/_Self/Github.kt` — GitHub App connection ID constant.
-- `.teamcity/_Self/BridgeHelpers.kt` — per-BT trigger overrides (see
-  [Per-BT trigger helpers](#per-bt-trigger-helpers)).
+- `.teamcity/_Self/BridgeHelpers.kt` — the `github-bridge` feature builder and
+  the per-BT overrides (see [Per-BT bridge gates](#per-bt-bridge-gates)).
 - `.teamcity/_Self/buildTypes/GlobalBuild.kt` — main build/test template.
 - `.teamcity/_Self/buildTypes/CodeStylingCheck.kt` — code style template.
 - `.teamcity/_Self/vcsRoots/HttpsGithubComSilmaenOwlGitRefsHeadsMain.kt` — VCS root.
@@ -135,8 +140,9 @@ Key inherited properties:
 - **Snapshot dependency on `QualityCodeStyle`** with `FAIL_TO_START` —
   every dependent waits for Code Style and fails fast if it fails.
 - **Build feature** `BRIDGE_GITHUB` (`type = github-bridge`) — opts the BT
-  into the [teamcity-github-bridge plugin](#teamcity-github-bridge-plugin)
-  with `triggerOnPrDraft = false`.
+  into the [teamcity-github-bridge plugin](#teamcity-github-bridge-plugin).
+  Template defaults: no draft PRs, no doc-only PRs, no diff annotations,
+  reuse a verdict already produced for the same commit.
 - **Failure conditions**: Google Test XML report ingestion, performance
   monitor.
 - **Requirement**: `teamcity.agent.jvm.os.name contains %platform%`.
@@ -146,8 +152,13 @@ Key inherited properties:
 Lightweight template for the Code Style aggregator only. It runs
 `ci_action.py CodeStyle` which bundles clang-format dry-run + codespell +
 comment-quality + private-member doc audit + cpp-style audit + structural
-audit. Inherits the same VCS root, runs in a single Docker step, and
-participates in the github-bridge feature with `triggerOnPrDraft = true`.
+audit. Inherits the same VCS root and runs in a single Docker step.
+
+Its bridge gates differ from `GlobalBuild` on all three axes: it runs on draft
+PRs, it runs on doc-only PRs (codespell and the markdown checks are exactly
+what such a PR changes), and it **annotates the diff** — every finding
+`ci/actions/code_style.py` reports is emitted as a compiler-style diagnostic
+for that reason, see [Diff annotations](#diff-annotations).
 
 ## Build matrix
 
@@ -167,21 +178,33 @@ participates in the github-bridge feature with `triggerOnPrDraft = true`.
 | Build/Quality/Sanitizer UB      | GlobalBuild      | `linux-sanitizer-undefined-behavior`  | main only        |
 | Packaging/LinuxX64/Engine       | GlobalBuild      | `package-engine-linux`                | main only        |
 | Packaging/LinuxX64/AppNest      | GlobalBuild      | `package-app-nest-linux`              | ready (no draft) |
-| Packaging/LinuxArm64/Engine     | GlobalBuild      | `package-engine-linux` (arm64)        | ready (no draft) |
+| Packaging/LinuxArm64/Engine     | GlobalBuild      | `package-engine-linux` (arm64)        | main only        |
 | Packaging/LinuxArm64/AppNest    | GlobalBuild      | `package-app-nest-linux` (arm64)      | main only        |
 | Packaging/WindowsX64/Engine     | GlobalBuild      | `package-engine-windows`              | main only        |
 | Packaging/WindowsX64/AppNest    | GlobalBuild      | `package-app-nest-windows`            | ready (no draft) |
 
 **Trigger profiles** above map to:
 
-| Profile          | Helper           | Auto on `main` push | Auto on ready PR | Auto on draft PR |
-|------------------|------------------|---------------------|------------------|------------------|
-| draft + ready    | `allowDraftPR()` | ✅                   | ✅                | ✅                |
-| ready (no draft) | _(default)_      | ✅                   | ✅                | ❌ (Skipped CR)   |
-| main only        | `skipAutoPRs()`  | ✅                   | ❌ (Skipped CR)   | ❌ (Skipped CR)   |
+| Profile          | Call                                | Auto on `main` push | Auto on ready PR | Auto on draft PR |
+|------------------|-------------------------------------|---------------------|------------------|------------------|
+| draft + ready    | `bridgeOverride(runOnDraftPr=true)` | ✅                   | ✅                | ✅                |
+| ready (no draft) | _(template default)_                | ✅                   | ✅                | ❌ (Skipped CR)   |
+| main only        | `skipAutoPRs()`                     | ✅                   | ❌ (Skipped CR)   | ❌ (Skipped CR)   |
 
 Manual triggers from the TeamCity UI **always** run regardless of profile —
-the gate short-circuits to `ALLOW` for any operator-initiated build.
+the gate short-circuits to `ALLOW` for any operator-initiated build. So does an
+explicit GitHub command: a build asked for by a PR comment, by *Re-run* in the
+Checks UI or through the plugin's API is stamped `triggerSource=command` and
+gated like a manual Run, which is what makes the `/ci full` escape hatch work
+on a "main only" BT.
+
+Two more ways to keep the matrix off a pull request, both read from the PR
+itself and both bypassed by a manual Run:
+
+- `[skip ci]` in the PR **title or body** — nothing is triggered at all
+  (`skipPhrase`, set on every bridge feature).
+- a PR that changes only documentation — see
+  [Doc-only pull requests](#doc-only-pull-requests).
 
 ## Triggering
 
@@ -210,6 +233,12 @@ CodeStylingCheck): fires only on pushes to `main`. Every BT inheriting a
 template gets this trigger automatically. There is **no** VCS trigger for
 feature-branch or PR-ref pushes — the second path handles those.
 
+The plugin has been able to trigger on plain branches since v1.9.0, which would
+make it a second enqueue path for the same push. It is therefore switched off
+project-wide (`teamcity.github.bridge.branchTrigger.enabled = false`), so this
+trigger stays the only thing that builds `main`. That kill switch is about
+*triggering* only: a `main` build still publishes its Check Run like any other.
+
 **Path B — GitHub webhook**: GitHub posts to the plugin's `/webhook`
 endpoint on `pull_request` events (`opened`, `synchronize`,
 `ready_for_review`). The plugin iterates every BT that carries the
@@ -219,31 +248,61 @@ skip (`findExistingBuildReason`) prevents duplicates when the same
 `(branch, head SHA)` already has a build queued, running, or recently
 finished.
 
-Why two paths? The plugin only handles `pull_request` events — it does not
-react to `push` events. Conversely, the VCS trigger has no way to suppress
-draft PRs (TeamCity's built-in `pullRequests { ignoreDrafts = true }` is
-silently ignored under GitHub App auth, which is the safety bug that
-motivated the plugin). Splitting the responsibility eliminates duplication
-and gives each kind of event its purpose-built handler.
+Why two paths? The VCS trigger has no way to suppress draft PRs (TeamCity's
+built-in `pullRequests { ignoreDrafts = true }` is silently ignored under
+GitHub App auth, which is the safety bug that motivated the plugin), and the
+plugin's branch path would only duplicate a trigger TeamCity already owns.
+Splitting the responsibility eliminates duplication and gives each kind of
+event its purpose-built handler.
 
-### Per-BT trigger helpers
+### Per-BT bridge gates
 
-Two extension helpers (in `.teamcity/_Self/BridgeHelpers.kt`) tune the
-inherited `BRIDGE_GITHUB` feature per BT. Both work by disabling the
-inherited feature (`disableSettings("BRIDGE_GITHUB")`) and re-attaching a
-fresh feature under a distinct id.
+`.teamcity/_Self/BridgeHelpers.kt` holds one builder, `githubBridge()`, used by
+both templates, plus `bridgeOverride()` for a BT that needs different gates. An
+override cannot edit an inherited feature's params, so it disables the
+template's feature (`disableSettings("BRIDGE_GITHUB")`) and attaches a fresh
+one (`BRIDGE_GITHUB_LOCAL`) with the **full** set — which is why the builder
+takes every knob with the template's own default, and why **one call per BT**
+is the rule: the plugin honours a single `github-bridge` feature.
 
-| Helper           | Re-attached id            | Effect                                                                                              |
-|------------------|---------------------------|-----------------------------------------------------------------------------------------------------|
-| `allowDraftPR()` | `BRIDGE_GITHUB_DRAFT`     | Sets `triggerOnPrDraft = true` — BT runs on draft PRs (fast-feedback subset)                        |
-| `skipAutoPRs()`  | `BRIDGE_GITHUB_MAIN_ONLY` | Sets `prTriggerBranchesOverride = -:*` — BT auto-runs on `main` only, PR events post a "Skipped" CR |
+| Argument        | Template default  | Effect when changed                                                                         |
+|-----------------|-------------------|---------------------------------------------------------------------------------------------|
+| `runOnDraftPr`  | `false`           | `true` puts the BT in the draft-friendly subset                                             |
+| `autoPrTrigger` | `true`            | `false` sets `prTriggerBranchesOverride = -:*` (main only) + the `/ci full` comment trigger |
+| `annotateDiff`  | `false`           | `true` lets this BT pin its diagnostics to the PR diff                                      |
+| `pathFilter`    | `CODE_ONLY_PATHS` | `""` makes the BT run on a doc-only PR as well                                              |
 
-The helpers are **mutually exclusive** on the same BT —
-`BridgeFeatureReader` only honours the first `github-bridge` feature it
-finds, so calling both yields undefined behaviour. The current matrix
-keeps `allowDraftPR()` for the lightest BTs (fast feedback for draft work)
-and `skipAutoPRs()` for the heaviest (GCC variants, UB sanitizer, Engine
-packagers).
+Fixed for every BT: `skipIfCommitPassed = true` and `skipPhrase = [skip ci]`.
+
+Who overrides what today:
+
+| BT                              | Call                                                                        | Why                                                   |
+|---------------------------------|-----------------------------------------------------------------------------|-------------------------------------------------------|
+| Build/LinuxX64/Clang            | `bridgeOverride(runOnDraftPr = true, annotateDiff = true)`                  | fast feedback; reference Clang diagnostics            |
+| Build/WindowsX64/Clang          | `bridgeOverride(runOnDraftPr = true, annotateDiff = true, pathFilter = "")` | fast feedback; MinGW-only diagnostics; builds Doxygen |
+| Build/Quality/Clang-Tidy        | `bridgeOverride(annotateDiff = true)`                                       | tidy findings belong to no other BT                   |
+| Build/Quality/Sanitizer Address | `bridgeOverride(runOnDraftPr = true)`                                       | fast feedback                                         |
+| GCC ×3, Sanitizer UB, packagers | `skipAutoPRs()`                                                             | too expensive to run on every PR push                 |
+
+### Doc-only pull requests
+
+Every BT on `GlobalBuild` carries a `pathFilter` excluding `doc/*`, `*.md`,
+`.claude/*` and `LICENSE`. The plugin keeps a BT as soon as **one** file changed
+by the PR matches, so a PR touching only those paths matches nothing and is
+dropped with a *"Skipped: paths out of scope"* Check Run instead of running the
+whole matrix.
+
+Two configurations deliberately have **no** filter, because those paths are
+their input:
+
+- **Code Style** — codespell and the markdown checks read `doc/` and the root
+  markdown files.
+- **Windows x64 Clang** — the only PR-side BT whose preset sets
+  `OWL_ENABLE_DOCUMENTATION=ON`, so Doxygen runs there with `WARN_AS_ERROR=YES`
+  over `doc/`, `README.md`, `CHANGELOG.md` and `CONTRIBUTING.md`.
+
+A doc-only PR is therefore still gated — by the two configurations that can
+actually fail on it.
 
 ## Code Style serialisation
 
@@ -269,39 +328,103 @@ The pipeline relies on a custom server-side plugin —
 — that closes the gaps between TeamCity 2026.1's bundled GitHub
 integration and what a real pipeline needs.
 
-What it provides, in roles relevant to Owl:
+Owl tracks the plugin's **1.10.0** line. What it provides, in roles relevant
+to Owl:
 
-| Role                 | Mechanism                                                                                  |
-|----------------------|--------------------------------------------------------------------------------------------|
-| Draft PR suppression | `DraftAwareBuildFilter` (StartBuildPrecondition) — holds builds with a visible wait reason |
-| Draft cancellation   | `DraftBuildQueueCleaner` — removes inappropriate queued builds                             |
-| Auto-trigger on PR   | `PullRequestEventListener` reacts to `opened`/`synchronize`/`ready_for_review`             |
-| Check Run publishing | `BuildStatusCheckRunPublisher` — rich GitHub Check Runs at every lifecycle transition      |
-| Visual pill tagging  | `PrPromotionTagger` + `SimplePageExtension` — `draft` / `ready` pills in TC UI             |
-| Webhook endpoint     | `/app/teamcity-github-bridge/webhook` with HMAC-SHA256 verification                        |
+| Role                  | Mechanism                                                                                  |
+|-----------------------|--------------------------------------------------------------------------------------------|
+| Draft PR suppression  | `DraftAwareBuildFilter` (StartBuildPrecondition) — holds builds with a visible wait reason |
+| Draft cancellation    | `DraftBuildQueueCleaner` — removes inappropriate queued builds                             |
+| Auto-trigger on PR    | `PullRequestEventListener` reacts to `opened`/`synchronize`/`ready_for_review`/`labeled`/… |
+| Obsolete-build stop   | A push to a PR, or closing it, stops the builds still running on the previous head         |
+| Check Run publishing  | `BuildStatusCheckRunPublisher` — rich GitHub Check Runs at every lifecycle transition      |
+| Visual pill tagging   | `PrPromotionTagger` + `SimplePageExtension` — `draft` / `ready` pills in TC UI             |
+| PR context on a build | A *Pull request* tab on the build page, and 16 published `…pullRequest.*` parameters       |
+| Webhook endpoint      | `/app/teamcity-github-bridge/webhook` with HMAC-SHA256 verification                        |
 
 Project-level params consumed by the plugin (set in `Project.kt`):
 
-| Parameter                             | Value          | Purpose                                        |
-|---------------------------------------|----------------|------------------------------------------------|
-| `teamcity.github.bridge.repo`         | `Silmaen/Owl`  | Webhook → BT routing (case-insensitive match)  |
-| `teamcity.github.bridge.connectionId` | (CID constant) | Used by the plugin to mint installation tokens |
+| Parameter                                      | Value               | Purpose                                                      |
+|------------------------------------------------|---------------------|--------------------------------------------------------------|
+| `teamcity.github.bridge.repo`                  | `Silmaen/Owl`       | Webhook → BT routing (case-insensitive match)                |
+| `teamcity.github.bridge.connectionId`          | (CID constant)      | Used by the plugin to mint installation tokens               |
+| `teamcity.github.bridge.branchTrigger.enabled` | `false`             | `main` belongs to `TRIGGER_1`; the bridge must not double it |
+| `teamcity.github.bridge.checkName.stripPrefix` | `TeamCity / Owl / ` | Shortens the Check Run names GitHub shows in the merge box   |
 
-The four optional trigger toggles
-(`branchTrigger.enabled` / `branches`, `prTrigger.enabled` / `branches`)
-are left unset, defaulting to enabled and all branches respectively. The
-per-BT overrides described above carry the constraints.
+`prTrigger.enabled` / `prTrigger.branches` are left unset (enabled, all
+branches); the per-BT gates described above carry the constraints.
+
+### What a Check Run says
+
+Server-side settings, not DSL — listed here because they are what a reviewer
+actually reads on a pull request. All are plugin defaults except where noted:
+
+- **the verdict, with test counts** — *"Build failed — 3 of 1046 tests failed
+  (2 new)"*, then the failing tests in the body, new ones first. Read from
+  TeamCity's own statistics, which Owl feeds through the `xmlReport` feature on
+  both templates (Google Test XML at `output/build/**/test/*_Report.xml`).
+- **timings** — total, working time and the wait split (dependencies / free
+  agent / other). The Code Style snapshot dependency shows up as the dependency
+  share.
+- **an infrastructure failure is named** — a lost checkout or an unresolvable
+  artifact dependency reads *"Infrastructure failure: …"* instead of looking
+  like a failing test. It still concludes `failure` and still blocks the merge
+  (`checkRun.infraNeutral` is off).
+- **artifact links** — direct downloads, which for the packaging BTs is the
+  installer itself.
+- **name** — `Build / Linux x64 / Clang` rather than
+  `TeamCity / Owl / Build / Linux x64 / Clang`, since GitHub truncates the end
+  of the name, which is the part that identifies the build. Renaming a check
+  starts a new row on GitHub: safe today because the repository's
+  *main merging* ruleset requires no status check by name, and any rule added
+  later must use the stripped name.
+
+### Diff annotations
+
+The plugin turns compiler diagnostics into Check Run **annotations**, pinned to
+the file and line in the pull request's diff. For a **Command Line** runner —
+which is how every `ci_action.py` step is wired — TeamCity reports a single
+build problem (*"Process exited with code 1"*) and the real diagnostics only
+ever exist in the build log, so the plugin scans the log of a failed build for
+GNU/clang (`file:42:7: error: …`) and MSVC shapes.
+
+Two consequences for this repository:
+
+1. **Annotations are enabled on four configurations only** — Linux x64 Clang,
+   Windows x64 Clang, Clang-Tidy and Code Style. The same compile error
+   reported by six configurations would otherwise be annotated six times on the
+   same line; these four are the ones whose findings are distinct.
+2. **`ci/actions/code_style.py` prints in that shape on purpose.** Every
+   finding goes through its `_diag()` helper as
+   `<repo-relative path>:<line>:<column>: error: <check>: <message>`, and the
+   clang-format / codespell outputs are re-emitted through it too (their own
+   paths are absolute, which GitHub rejects). A finding printed in any other
+   shape stays in the build log and never reaches the diff — so keep new
+   sub-checks going through `_diag()`.
 
 ## Project parameters
 
 Set on the root project (`Project.kt`) and inherited by every BT:
 
-| Parameter                             | Type  | Default       | Purpose                                                     |
-|---------------------------------------|-------|---------------|-------------------------------------------------------------|
-| `owl_git_branch`                      | param | `main`        | Default branch name used in branch_specification + VCS root |
-| `branch_specification`                | param | (multi-line)  | Refs TC pulls (main + open PR heads only)                   |
-| `teamcity.github.bridge.repo`         | param | `Silmaen/Owl` | Plugin: webhook → BT routing                                |
-| `teamcity.github.bridge.connectionId` | param | CID constant  | Plugin: GitHub App installation token mint                  |
+| Parameter                                      | Type  | Default             | Purpose                                                     |
+|------------------------------------------------|-------|---------------------|-------------------------------------------------------------|
+| `owl_git_branch`                               | param | `main`              | Default branch name used in branch_specification + VCS root |
+| `branch_specification`                         | param | (multi-line)        | Refs TC pulls (main + open PR heads only)                   |
+| `teamcity.github.bridge.repo`                  | param | `Silmaen/Owl`       | Plugin: webhook → BT routing                                |
+| `teamcity.github.bridge.connectionId`          | param | CID constant        | Plugin: GitHub App installation token mint                  |
+| `teamcity.github.bridge.branchTrigger.enabled` | param | `false`             | Plugin: leave `main` to the VCS trigger                     |
+| `teamcity.github.bridge.checkName.stripPrefix` | param | `TeamCity / Owl / ` | Plugin: shorten Check Run names                             |
+
+The plugin also **publishes** 16 read-only `teamcity.github.bridge.*`
+parameters into every build (`isPullRequest`, `isDraft`,
+`pullRequest.number` / `title` / `author` / `sourceBranch` / `targetBranch` /
+`headSha` / `url` / `baseSha` / `mergeBase` / `changedFiles` / `additions` /
+`deletions` / `commits` / `labels`). They are empty on a non-PR branch, so a
+step or a DSL condition can read them unconditionally. `mergeBase` is the one
+to diff against when a check should look at the pull request's own change
+(`git diff <mergeBase>..<headSha>`); diffing against `main` would also pick up
+everything that landed on it since the branch started. No Owl step consumes
+them yet.
 
 Template-level parameters live on `GlobalBuild` and `CodeStylingCheck`:
 preset name (`cmake_preset`), checkboxes (`run_tests`, `run_coverage`,

@@ -30,10 +30,29 @@ object Project : Project({
         // BridgeFeatureReader reads these via `buildType.project.parameters`
         // (the InheritableUserParametersHolder inheritance path), so they
         // belong on the root project rather than on each template.
-        // The other 4 keys (branchTrigger.enabled / branches, prTrigger.enabled / branches)
-        // default to "enabled = true" and "all branches", which is what we want.
         param("teamcity.github.bridge.repo", "Silmaen/Owl")
         param("teamcity.github.bridge.connectionId", GITHUB_CONNECTION_ID)
+
+        // The bridge must not trigger on non-PR branches: `main` belongs to
+        // the VCS trigger on each template, and two enqueue paths for one
+        // push is one too many. Publication is a separate axis — a `main`
+        // build still reports its Check Run.
+        param("teamcity.github.bridge.branchTrigger.enabled", "false")
+
+        // prTrigger.enabled / prTrigger.branches keep their defaults
+        // ("enabled" / all branches); the per-BT PR gates live on the
+        // github-bridge build feature (BridgeHelpers.kt).
+
+        // A Check Run is named "TeamCity / <buildType.fullName>", i.e.
+        // "TeamCity / Owl / Build / Linux x64 / Clang" here — mostly ancestry,
+        // while GitHub's merge box truncates the END, the part that says which
+        // build it was. Stripping the common prefix leaves
+        // "Build / Linux x64 / Clang". Matched literally, ignored when it does
+        // not match. This RENAMES the checks (GitHub keys a row on
+        // (name, head_sha)): safe here because the repository's "main merging"
+        // ruleset requires no status check by name — if one is ever added, it
+        // must use the stripped name.
+        param("teamcity.github.bridge.checkName.stripPrefix", "TeamCity / Owl / ")
     }
 
     subProject(Build.BuildProject)
