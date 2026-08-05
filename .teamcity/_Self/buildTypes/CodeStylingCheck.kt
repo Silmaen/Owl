@@ -1,5 +1,6 @@
 package _Self.buildTypes
 
+import _Self.githubBridge
 import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
@@ -24,8 +25,8 @@ object CodeStylingCheck : Template({
 
         // teamcity-github-bridge: opt-in is the BRIDGE_GITHUB feature below.
         // Project-level repo + connectionId live on _Self.Project.
-        // CodeStyle is part of the draft-friendly fast-feedback subset →
-        // triggerOnPrDraft=true so it runs on draft PRs too.
+        // CodeStyle is part of the draft-friendly fast-feedback subset so it
+        // runs on draft PRs too.
     }
 
     vcs {
@@ -68,13 +69,18 @@ object CodeStylingCheck : Template({
             id = "InvestigationsAutoAssigner"
         }
         // teamcity-github-bridge opt-in. CodeStyle is in the draft-friendly
-        // subset → triggerOnPrDraft=true. See GlobalBuild.kt for the
-        // rationale on retiring commitStatusPublisher + bundled pullRequests.
-        feature {
-            id = "BRIDGE_GITHUB"
-            type = "github-bridge"
-            param("triggerOnPrDraft", "true")
-        }
+        // subset → runOnDraftPr. It also runs on a doc-only PR (no path
+        // filter: codespell and the markdown checks are exactly what such a
+        // PR changes) and annotates the diff — every finding this gate reports
+        // is emitted as a compiler-style diagnostic by ci/actions/code_style.py
+        // precisely so the plugin can pin it to its line in the PR.
+        // See GlobalBuild.kt for the rationale on retiring
+        // commitStatusPublisher + bundled pullRequests.
+        githubBridge(
+            runOnDraftPr = true,
+            annotateDiff = true,
+            pathFilter = "",
+        )
         xmlReport {
             id = "BUILD_EXT_4"
             reportType = XmlReport.XmlReportType.GOOGLE_TEST

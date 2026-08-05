@@ -1,5 +1,6 @@
 package _Self.buildTypes
 
+import _Self.githubBridge
 import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
@@ -57,10 +58,8 @@ object GlobalBuild : Template({
 
         // teamcity-github-bridge: opt-in is the BRIDGE_GITHUB build feature
         // below. Project-level repo + connectionId live on _Self.Project.
-        // Default here: triggerOnPrDraft=false → draft PRs do NOT trigger
-        // builds for this template's children. Override per BT via
-        // Build.kt::allowDraftPR() (which disables this feature and re-adds
-        // it with triggerOnPrDraft=true).
+        // Default here: no draft PRs, no doc-only PRs, no diff annotations.
+        // Overridden per BT via bridgeOverride() (see BridgeHelpers.kt).
     }
 
     vcs {
@@ -176,7 +175,9 @@ object GlobalBuild : Template({
         // BRIDGE_GITHUB feature on pull_request.opened / synchronize /
         // ready_for_review events. The "Plugin-event path" pattern (v1.4.0+)
         // eliminates the double-trigger we had when both VCS and the plugin
-        // were enqueueing on every PR push.
+        // were enqueueing on every PR push. Symmetrically, the bridge's own
+        // non-PR branch path is switched off project-wide (Project.kt) so
+        // this trigger stays the only thing that builds `main`.
     }
 
     features {
@@ -184,17 +185,14 @@ object GlobalBuild : Template({
             id = "InvestigationsAutoAssigner"
         }
         // teamcity-github-bridge opt-in (v1.5.0+): the BT participates as
-        // soon as this feature is attached. Default for this template:
-        // run on non-PR branches + ready PRs, but NOT on draft PRs. The
-        // 4 draft-friendly BTs override this via Build.kt::allowDraftPR().
+        // soon as this feature is attached. Default for this template: run on
+        // ready PRs, but not on draft ones and not on a PR that changes only
+        // documentation. The draft-friendly BTs and the two that annotate the
+        // diff override it via bridgeOverride() — see BridgeHelpers.kt.
         // Everything PR-related (commitStatusPublisher, pullRequests
         // bundled feature) was retired in earlier passes; the plugin's
         // Check Runs + PrParameterProvider are the single sources of truth.
-        feature {
-            id = "BRIDGE_GITHUB"
-            type = "github-bridge"
-            param("triggerOnPrDraft", "false")
-        }
+        githubBridge()
         xmlReport {
             id = "BUILD_EXT_8"
             reportType = XmlReport.XmlReportType.GOOGLE_TEST

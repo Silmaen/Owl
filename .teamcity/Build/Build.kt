@@ -1,6 +1,6 @@
 package Build
 
-import _Self.allowDraftPR
+import _Self.bridgeOverride
 import _Self.buildTypes.CodeStylingCheck
 import _Self.buildTypes.GlobalBuild
 import _Self.skipAutoPRs
@@ -95,9 +95,12 @@ private val linuxX64 = stdPlatform(
     platformParam = "Linux",
     archParam = "amd64",
     perVariantConfig = mapOf(
-        // Linux x64 Clang is part of the draft-friendly fast-feedback subset.
+        // Linux x64 Clang is part of the draft-friendly fast-feedback subset,
+        // and it is the reference Clang build: its compiler diagnostics are
+        // the ones pinned to the PR diff (GCC's would duplicate them on the
+        // same lines).
         "Clang" to {
-            allowDraftPR()
+            bridgeOverride(runOnDraftPr = true, annotateDiff = true)
         },
     ),
 )
@@ -125,9 +128,13 @@ private val windowsX64 = stdPlatform(
     perVariantConfig = mapOf(
         // Windows + Clang is in the draft-friendly subset AND has stricter
         // failure conditions on test count and artifact size regression
-        // — historical guardrail for that toolchain.
+        // — historical guardrail for that toolchain. It annotates the diff
+        // with the MinGW-only diagnostics Linux never sees, and it is the one
+        // PR-side BT that must also run on a doc-only PR: its preset carries
+        // OWL_ENABLE_DOCUMENTATION=ON, so Doxygen (WARN_AS_ERROR) reads
+        // doc/ and the root markdown files here.
         "Clang" to {
-            allowDraftPR()
+            bridgeOverride(runOnDraftPr = true, annotateDiff = true, pathFilter = "")
             failureConditions {
                 failOnMetricChange {
                     id = "BUILD_EXT_1"
@@ -174,6 +181,9 @@ private val qualityClangTidy = BuildType({
         param("cmake_preset", "linux-clang-tidy")
         param("platform", "Linux") // override parent's "in" since clang-tidy needs Linux
     }
+    // clang-tidy findings are already `file:line:col: warning: … [check]` in
+    // the log and belong to no other BT, so they are worth pinning to the diff.
+    bridgeOverride(annotateDiff = true)
 })
 
 private data class Sanitizer(
@@ -213,9 +223,8 @@ private val sanitizerBuilds = sanitizers.map { s ->
         }
         if (s.mainOnlyAutoTrigger) {
             skipAutoPRs()
-        }
-        if (s.runOnDraft) {
-            allowDraftPR()
+        } else if (s.runOnDraft) {
+            bridgeOverride(runOnDraftPr = true)
         }
     })
 }

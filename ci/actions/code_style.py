@@ -30,6 +30,13 @@ Doxygen is **deliberately not** run here — the project already has a separate
 Each sub-check can be disabled with extra args (`-- --no-<name>=true`):
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
 `--no-cpp-style`, `--no-structural`.
+
+Every finding is reported through `_diag()` as a GNU/clang-style diagnostic —
+`<repo-relative path>:<line>:<column>: error: <check>: <message>` — including
+the ones clang-format and codespell produce themselves. That is what lets
+teamcity-github-bridge turn each finding into a GitHub Check Run annotation
+pinned to its line in the pull request's diff; anything printed in another
+shape only ever reaches the build log.
 """
 
 from __future__ import annotations
@@ -69,6 +76,52 @@ DOC_ROOTS: tuple[Path, ...] = (
 """Directories scanned by the typo check (in addition to source roots)."""
 
 
+def _rel(path: Path | str) -> str:
+    """
+    Repo-relative POSIX path, as GitHub needs it. Already-relative paths are
+    passed through, so a caller holding a `path.relative_to(root)` result can
+    hand it over unchanged.
+    """
+    p = Path(path)
+    try:
+        return p.relative_to(root).as_posix()
+    except ValueError:
+        return p.as_posix()
+
+
+def _diag(
+    path: Path | str,
+    line: int,
+    check: str,
+    message: str,
+    *,
+    column: int = 1,
+    level: str = "error",
+) -> None:
+    """
+    Report one finding as a GNU/clang-style diagnostic:
+    `<repo-relative path>:<line>:<column>: error: <check>: <message>`.
+
+    The shape carries meaning beyond the log: the teamcity-github-bridge plugin
+    scans a failed build's log for compiler diagnostics and turns each one into
+    a GitHub Check Run annotation pinned to that file and line in the pull
+    request's diff. A finding printed in any other shape stays invisible
+    outside the build log.
+
+    :param path: File the finding is about, absolute or repo-relative.
+    :param line: 1-based line number (use 1 for a whole-file finding).
+    :param check: Sub-check name, kept as the first word of the message.
+    :param message: What is wrong, on a single line.
+    :param column: 1-based column, when the tool reports one.
+    :param level: `error` (fails the gate) or `warning` (advisory only).
+    """
+    text = f"{_rel(path)}:{line}:{column}: {level}: {check}: {message}"
+    if level == "warning":
+        log.warning(text)
+    else:
+        log.error(text)
+
+
 def _iter_sources(roots: Iterable[Path], extensions: tuple[str, ...]) -> List[Path]:
     """
     Walk the given roots and return every source file with one of `extensions`.
@@ -87,6 +140,15 @@ def _iter_sources(roots: Iterable[Path], extensions: tuple[str, ...]) -> List[Pa
 # ────────────────────────────────────────────────────────────────────────────
 # Sub-check 1 — clang-format dry-run
 # ────────────────────────────────────────────────────────────────────────────
+
+
+_TOOL_DIAG_RE = re.compile(
+    r"^(?P<path>[^:]+):(?P<line>\d+):(?P<col>\d+):\s*(?:fatal error|error|warning|note)\s*:\s*(?P<msg>.+)$"
+)
+"""`clang-format --dry-run` output — a diagnostic with an absolute path."""
+
+_CODESPELL_DIAG_RE = re.compile(r"^(?P<path>[^:]+):(?P<line>\d+):\s*(?P<msg>.+)$")
+"""`codespell` output — `<path>:<line>: word ==> suggestion`, no column."""
 
 
 def _check_clang_format() -> int:
@@ -114,7 +176,20 @@ def _check_clang_format() -> int:
         )
         if result.returncode != 0:
             for line in (result.stderr or "").splitlines():
-                if line.strip():
+                if not line.strip():
+                    continue
+                # clang-format already speaks the diagnostic shape, but with an
+                # absolute path — re-emit it repo-relative so the annotation
+                # lands on a file GitHub knows.
+                if m := _TOOL_DIAG_RE.match(line):
+                    _diag(
+                        m["path"],
+                        int(m["line"]),
+                        "clang-format",
+                        m["msg"],
+                        column=int(m["col"]),
+                    )
+                else:
                     log.error(f"clang-format: {line}")
             failures += 1
     return failures
@@ -189,9 +264,13 @@ def _check_typos() -> int:
     result = subprocess.run(cmd, cwd=str(root), capture_output=True, text=True)
     misses = 0
     for line in (result.stdout or "").splitlines():
-        if line.strip():
+        if not line.strip():
+            continue
+        if m := _CODESPELL_DIAG_RE.match(line):
+            _diag(m["path"], int(m["line"]), "codespell", m["msg"])
+        else:
             log.error(f"codespell: {line}")
-            misses += 1
+        misses += 1
     return misses
 
 
@@ -292,16 +371,16 @@ def _check_comment_quality() -> int:
                     run_start = i
             else:
                 if run_start != -1 and i - run_start >= 2:
-                    log.error(
-                        f"slash-discipline: {path.relative_to(root)}:{run_start + 1}: "
-                        f"`///` block spans {i - run_start} lines — use `/** */`"
+                    _diag(
+                        path, run_start + 1, "slash-discipline",
+                        f"`///` block spans {i - run_start} lines — use `/** */`",
                     )
                     issues += 1
                 run_start = -1
         if run_start != -1 and len(lines) - run_start >= 2:
-            log.error(
-                f"slash-discipline: {path.relative_to(root)}:{run_start + 1}: "
-                f"`///` block spans {len(lines) - run_start} lines — use `/** */`"
+            _diag(
+                path, run_start + 1, "slash-discipline",
+                f"`///` block spans {len(lines) - run_start} lines — use `/** */`",
             )
             issues += 1
 
@@ -316,11 +395,10 @@ def _check_comment_quality() -> int:
                     continue
                 rest = stripped[len("@brief"):].lstrip()
                 if rest:
-                    log.error(
-                        f"brief-on-own-line: {path.relative_to(root)}:"
-                        f"{block_line_index + offset + 1}: `@brief` carries text "
-                        f"on the same line — content must go on the next line "
-                        f"indented one extra space"
+                    _diag(
+                        path, block_line_index + offset + 1, "brief-on-own-line",
+                        "`@brief` carries text on the same line — content must "
+                        "go on the next line indented one extra space",
                     )
                     issues += 1
 
@@ -348,9 +426,9 @@ def _check_comment_quality() -> int:
                 # Skip fenced lists like `- foo`.
                 if joined.startswith(("- ", "* ", "1. ")):
                     return 0
-                log.error(
-                    f"doc-punct: {path.relative_to(root)}:{block_line_index + 1}: "
-                    f"comment paragraph does not end with `.`: {joined[:80]}"
+                _diag(
+                    path, block_line_index + 1, "doc-punct",
+                    f"comment paragraph does not end with `.`: {joined[:80]}",
                 )
                 issues += 1
                 return 1
@@ -414,10 +492,10 @@ def _check_cpp_comment_discipline(path: Path, text: str) -> int:
         if m.end() == header_end_offset:
             continue
         line = text.count("\n", 0, m.start()) + 1
-        log.error(
-            f"cpp-doxy-block: {rel}:{line}: `/** */` Doxygen block in "
-            f"implementation file — move the documentation to the matching "
-            f"header"
+        _diag(
+            rel, line, "cpp-doxy-block",
+            "`/** */` Doxygen block in implementation file — move the "
+            "documentation to the matching header",
         )
         issues += 1
 
@@ -426,9 +504,10 @@ def _check_cpp_comment_discipline(path: Path, text: str) -> int:
         if i <= header_end_line:
             continue
         if _TRIPLE_SLASH_ANY_RE.match(line):
-            log.error(
-                f"cpp-triple-slash: {rel}:{i + 1}: `///` Doxygen comment in "
-                f"implementation file — use single-line `//` only inside `.cpp`"
+            _diag(
+                rel, i + 1, "cpp-triple-slash",
+                "`///` Doxygen comment in implementation file — use "
+                "single-line `//` only inside `.cpp`",
             )
             issues += 1
 
@@ -437,9 +516,10 @@ def _check_cpp_comment_discipline(path: Path, text: str) -> int:
         if "\n" not in body:
             continue
         line = text.count("\n", 0, m.start()) + 1
-        log.error(
-            f"cpp-multi-comment: {rel}:{line}: multi-line `/* */` comment in "
-            f"implementation file — use single-line `//` only"
+        _diag(
+            rel, line, "cpp-multi-comment",
+            "multi-line `/* */` comment in implementation file — use "
+            "single-line `//` only",
         )
         issues += 1
 
@@ -458,18 +538,18 @@ def _check_cpp_comment_discipline(path: Path, text: str) -> int:
                 run_start = i
         else:
             if run_start != -1 and i - run_start >= 2:
-                log.error(
-                    f"cpp-line-comment-run: {rel}:{run_start + 1}: "
-                    f"{i - run_start} consecutive `//` lines — collapse to "
-                    f"one line, move to the header, or refactor the code"
+                _diag(
+                    rel, run_start + 1, "cpp-line-comment-run",
+                    f"{i - run_start} consecutive `//` lines — collapse to one "
+                    f"line, move to the header, or refactor the code",
                 )
                 issues += 1
             run_start = -1
     if run_start != -1 and len(lines) - run_start >= 2:
-        log.error(
-            f"cpp-line-comment-run: {rel}:{run_start + 1}: "
-            f"{len(lines) - run_start} consecutive `//` lines — collapse to "
-            f"one line, move to the header, or refactor the code"
+        _diag(
+            rel, run_start + 1, "cpp-line-comment-run",
+            f"{len(lines) - run_start} consecutive `//` lines — collapse to one "
+            f"line, move to the header, or refactor the code",
         )
         issues += 1
 
@@ -586,9 +666,10 @@ def _check_function_doc_style(path: Path, lines: list[str], text: str) -> int:
         prev_stripped = prev.strip()
         # Case A: previous line is a `///` line (single triple-slash doc).
         if prev_stripped.startswith("///") and not prev_stripped.startswith("///<"):
-            log.error(
-                f"slash-on-fn: {rel}:{i + 1}: function declaration documented "
-                f"with `///` (must use `/** */`): {stripped[:80]}"
+            _diag(
+                rel, i + 1, "slash-on-fn",
+                f"function declaration documented with `///` (must use "
+                f"`/** */`): {stripped[:80]}",
             )
             issues += 1
             continue
@@ -642,16 +723,16 @@ def _check_function_doc_style(path: Path, lines: list[str], text: str) -> int:
             if "@copydoc" in block_text or "@copybrief" in block_text:
                 continue
             if "@return" not in block_text and "@returns" not in block_text:
-                log.error(
-                    f"missing-return-doc: {rel}:{i + 1}: non-void function "
-                    f"missing `@return`: {stripped[:80]}"
+                _diag(
+                    rel, i + 1, "missing-return-doc",
+                    f"non-void function missing `@return`: {stripped[:80]}",
                 )
                 issues += 1
             elif re.search(r"@returns?\s+TODO\.?\s*$", block_text, re.MULTILINE):
                 # Author dropped a placeholder and never came back to fill it.
-                log.error(
-                    f"return-todo: {rel}:{i + 1}: `@return TODO.` placeholder "
-                    f"left unfilled: {stripped[:80]}"
+                _diag(
+                    rel, i + 1, "return-todo",
+                    f"`@return TODO.` placeholder left unfilled: {stripped[:80]}",
                 )
                 issues += 1
 
@@ -723,9 +804,9 @@ def _check_private_member_docs() -> int:
                 continue
             if _has_doc_above(lines, i) or _has_inline_doc(line):
                 continue
-            log.error(
-                f"doc-audit: {path.relative_to(root)}:{i + 1}: undocumented "
-                f"private member: {stripped[:80]}"
+            _diag(
+                path, i + 1, "doc-audit",
+                f"undocumented private member: {stripped[:80]}",
             )
             misses += 1
     return misses
@@ -810,18 +891,19 @@ def _check_cpp_style() -> int:
             for line_no, line in enumerate(code_lines, start=1):
                 for pat, banned, replacement in _BANNED_STD_PTR:
                     if pat.search(line):
-                        log.error(
-                            f"smart-ptr: {rel}:{line_no}: use `{replacement}` "
-                            f"instead of `{banned}`"
+                        _diag(
+                            rel, line_no, "smart-ptr",
+                            f"use `{replacement}` instead of `{banned}`",
                         )
                         issues += 1
 
         # --- banned class-name suffixes
         for m in _BANNED_SUFFIX_RE.finditer(code):
             ln = code.count("\n", 0, m.start()) + 1
-            log.error(
-                f"class-suffix: {rel}:{ln}: forbidden class-name suffix "
-                f"on `{m.group(1)}` — fold helpers into a `utils` namespace"
+            _diag(
+                rel, ln, "class-suffix",
+                f"forbidden class-name suffix on `{m.group(1)}` — fold helpers "
+                f"into a `utils` namespace",
             )
             issues += 1
 
@@ -829,18 +911,13 @@ def _check_cpp_style() -> int:
         for m in _UI_PREFIX_RE.finditer(code):
             ln = code.count("\n", 0, m.start()) + 1
             ident = m.group(1)
-            log.error(
-                f"ui-prefix: {rel}:{ln}: use `Ui*` instead of `UI*` "
-                f"(found `{ident}`)"
-            )
+            _diag(rel, ln, "ui-prefix", f"use `Ui*` instead of `UI*` (found `{ident}`)")
             issues += 1
 
         # --- enum class
         for m in _ENUM_CLASS_RE.finditer(code):
             ln = code.count("\n", 0, m.start()) + 1
-            log.error(
-                f"enum-style: {rel}:{ln}: use `enum struct` instead of `enum class`"
-            )
+            _diag(rel, ln, "enum-style", "use `enum struct` instead of `enum class`")
             issues += 1
 
         # --- profile / diag blanks
@@ -848,32 +925,32 @@ def _check_cpp_style() -> int:
             if _PROFILE_FN_RE.match(line):
                 # Next line should be blank.
                 if i + 1 < len(code_lines) and code_lines[i + 1].strip():
-                    log.error(
-                        f"profile-blank: {rel}:{i + 1}: "
-                        f"`OWL_PROFILE_FUNCTION()` must be followed by a blank line"
+                    _diag(
+                        rel, i + 1, "profile-blank",
+                        "`OWL_PROFILE_FUNCTION()` must be followed by a blank line",
                     )
                     issues += 1
             if _DIAG_PUSH_RE.match(line):
                 # Previous line must be blank (or top of file).
                 if i > 0 and code_lines[i - 1].strip():
-                    log.error(
-                        f"diag-block: {rel}:{i + 1}: "
-                        f"`OWL_DIAG_PUSH` must be preceded by a blank line"
+                    _diag(
+                        rel, i + 1, "diag-block",
+                        "`OWL_DIAG_PUSH` must be preceded by a blank line",
                     )
                     issues += 1
                 # Next line must NOT be blank.
                 if i + 1 < len(code_lines) and not code_lines[i + 1].strip():
-                    log.error(
-                        f"diag-block: {rel}:{i + 2}: "
-                        f"no blank line allowed directly after `OWL_DIAG_PUSH`"
+                    _diag(
+                        rel, i + 2, "diag-block",
+                        "no blank line allowed directly after `OWL_DIAG_PUSH`",
                     )
                     issues += 1
             if _DIAG_POP_RE.match(line):
                 # Previous line must NOT be blank.
                 if i > 0 and not code_lines[i - 1].strip():
-                    log.error(
-                        f"diag-block: {rel}:{i}: "
-                        f"no blank line allowed directly before `OWL_DIAG_POP`"
+                    _diag(
+                        rel, i, "diag-block",
+                        "no blank line allowed directly before `OWL_DIAG_POP`",
                     )
                     issues += 1
                 # Next line must be blank (or end of file / closing brace).
@@ -882,9 +959,9 @@ def _check_cpp_style() -> int:
                     and code_lines[i + 1].strip()
                     and not code_lines[i + 1].lstrip().startswith(("}", ")", ";"))
                 ):
-                    log.error(
-                        f"diag-block: {rel}:{i + 2}: "
-                        f"`OWL_DIAG_POP` must be followed by a blank line"
+                    _diag(
+                        rel, i + 2, "diag-block",
+                        "`OWL_DIAG_POP` must be followed by a blank line",
                     )
                     issues += 1
 
@@ -902,9 +979,9 @@ def _check_cpp_style() -> int:
             stripped_msg = re.sub(r"\{[^{}]*\}", "X", msg).rstrip()
             if not stripped_msg.endswith((".", "?", "!", ":")):
                 ln = code.count("\n", 0, m.start()) + 1
-                log.error(
-                    f"log-msg: {rel}:{ln}: log message should end with `.`: "
-                    f'"{msg[:80]}"'
+                _diag(
+                    rel, ln, "log-msg",
+                    f'log message should end with `.`: "{msg[:80]}"',
                 )
                 issues += 1
 
@@ -979,13 +1056,13 @@ def _check_structural() -> int:
 
     for path in _iter_sources(SOURCE_ROOTS, CXX_EXTENSIONS):
         head = "\n".join(path.read_text(errors="replace").splitlines()[:12])
+        # Whole-file findings are reported on line 1 — that is where the header
+        # is missing from, and where an annotation on the diff belongs.
         if not _FILE_HEADER_RE.search(head):
-            log.error(f"file-header: {path.relative_to(root)}: missing `@file` tag")
+            _diag(path, 1, "file-header", "missing `@file` tag")
             issues += 1
         if not _COPYRIGHT_RE.search(head):
-            log.error(
-                f"file-header: {path.relative_to(root)}: missing `Copyright (c) YYYY` line"
-            )
+            _diag(path, 1, "file-header", "missing `Copyright (c) YYYY` line")
             issues += 1
 
     # OWL_API is only mandatory for symbols declared in PUBLIC headers — those
@@ -1020,7 +1097,7 @@ def _check_structural() -> int:
         # we then look at whether the same line carries `{` or `;`.
         class_intro_re = re.compile(r"\b(?:class|struct)\s+\w[\w<>:]*")
 
-        for line in lines:
+        for line_no, line in enumerate(lines, start=1):
             stripped = line.strip()
 
             # Open a class scope on the line that finally contains `{`.
@@ -1071,9 +1148,10 @@ def _check_structural() -> int:
                     continue
                 # Warning only — heuristic is broad and we don't want to block
                 # the build on every suspect signature.
-                log.warning(
-                    f"owl-api: {path.relative_to(root)}: free function may need "
-                    f"`OWL_API`: {stripped[:80]}"
+                _diag(
+                    path, line_no, "owl-api",
+                    f"free function may need `OWL_API`: {stripped[:80]}",
+                    level="warning",
                 )
 
     return issues
