@@ -139,7 +139,14 @@ poetry run python ci_action.py Test <preset>
 poetry run python ci_action.py Coverage <preset>
 poetry run python ci_action.py Clean <preset>
 poetry run python ci_action.py Documentation <preset>
+poetry run python ci_action.py ClangTidy <preset>
 ```
+
+`ClangTidy` needs the preset built first — it reads `compile_commands.json` and
+ninja's dependency database. On a pull request it analyses only the translation
+units the diff can affect (the touched `.cpp` files plus every `.cpp` that
+includes a touched header); elsewhere, all of them. See
+[Clang-tidy scoping](continuous_integration.md#clang-tidy-scoping).
 
 ### Multi-architecture CI (ARM64 + x86_64)
 

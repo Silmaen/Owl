@@ -13,24 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `docker/run.sh` runs any build, test or CI command in the Docker build image (`--gui`, `--perf`).
 - `bench/` engine benchmark harness (scene, serialization, Renderer2D, voxel, Lua, physics, Slang), built with `-DOWL_BENCHMARK=ON`.
+- `ClangTidy` CI action: on a pull request, analyses only the touched `.cpp` files plus every `.cpp` whose include closure (`ninja -t deps`) holds a touched header; elsewhere, everything.
 
 ### Changed
 
 - Roadmap rethought toward 1.0.0: v0.3.0 Foundations, renumbered releases, three reading levels (`ROADMAP.md`, `doc/pages/roadmap.md`, `doc/pages/design/`).
 - Changelog split the same way: one line per release in `CHANGELOG.md`, details in `doc/pages/changelog.md`.
-- **CI — teamcity-github-bridge 1.10.0 wiring**: `CodeStyle` findings are now printed as GNU-style diagnostics
-  (`path:line:col: error: <check>: …`), which the plugin pins to the pull request's diff as Check Run annotations;
-  annotations enabled on the four configurations with distinct diagnostics (Linux/Windows Clang, Clang-Tidy, Code
-  Style) so one error is not annotated six times; a PR changing only `doc/` / `*.md` / `.claude/` / `LICENSE` skips
-  the C++ matrix (Code Style and Windows x64 Clang, which builds Doxygen, still run); a draft build's verdict is
-  reused when the PR flips to ready (`skipIfCommitPassed`); `[skip ci]` in a PR title or body and a `/ci full`
-  review comment for the main-only configurations; Check Run names shortened to `Build / Linux x64 / Clang`; the
-  bridge no longer triggers on `main` — that stays TeamCity's VCS trigger. One `githubBridge()` builder replaces
-  the two ad-hoc `BridgeHelpers.kt` overrides.
+- clang-tidy decoupled from the compiler: `CMAKE_CXX_CLANG_TIDY` unset, the analysis is a `ClangTidy` step on `Build/Quality/Clang-Tidy` driven by `compile_commands.json`.
+- teamcity-github-bridge 1.10.0 wiring: findings pinned to the PR diff as Check Run annotations, doc-only PRs skip the C++ matrix, `[skip ci]` / `/ci full` phrases, `main` left to the VCS trigger.
 
 ### Fixed
 
 - Windows build with a recent libstdc++ (MSYS2): every file now includes the standard headers it uses, checked by the `std-includes` Code Style audit and the `linux-include-check` strict-libc++ build (`OWL_INCLUDE_CHECK`).
+- Doxygen on Windows: `doc/fix_md_links.py` writes its output as UTF-8, the locale codepage could not encode the doc pages' `✅` / `❌`.
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
 
 ## [0.2.1] - 2026-06-27

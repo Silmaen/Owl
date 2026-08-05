@@ -19,11 +19,21 @@ paths:
 poetry run python ci_action.py <Action> <preset> [-v] [-q] [-- --extra=args]
 ```
 
-Available actions: Build, Test, Coverage, Clean, Documentation, CodeStyle, IncludeCheck, Package, Help,
+Available actions: Build, Test, Coverage, Clean, Documentation, CodeStyle, ClangTidy, IncludeCheck, Package, Help,
 DefineTeamCityVariables, PublishDoc, PublishPackage.
 
 `IncludeCheck <preset>` configures a preset with `OWL_INCLUDE_CHECK=ON` (`linux-include-check`) and builds
 `owl_include_check`: every header and source compiled alone, without PCH, against strict libc++.
+
+`ClangTidy` drives clang-tidy from the build's `compile_commands.json` — the
+compiler hook (`CMAKE_CXX_CLANG_TIDY`) is deliberately unset, because it cannot
+skip a file. Requires the preset to be built first. On a pull request it
+analyses only the translation units the diff can affect (touched `.cpp` files
+plus every `.cpp` whose include closure, from `ninja -t deps`, contains a
+touched header); anywhere else, or whenever the narrowing is not trustworthy, it
+analyses all of them. Never make a doubtful case narrow the scope — falling back
+to the full run is the only acceptable direction. Details:
+`doc/pages/continuous_integration.md#clang-tidy-scoping`.
 
 `CodeStyle` is the project's read-only style/doc gate. It **only inspects** —
 it never rewrites sources. Sub-checks (all on by default):

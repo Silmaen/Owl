@@ -3,6 +3,7 @@ package Build
 import _Self.bridgeOverride
 import _Self.buildTypes.CodeStylingCheck
 import _Self.buildTypes.GlobalBuild
+import _Self.buildTypes.ciAction
 import _Self.skipAutoPRs
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
@@ -181,6 +182,30 @@ private val qualityClangTidy = BuildType({
     params {
         param("cmake_preset", "linux-clang-tidy")
         param("platform", "Linux") // override parent's "in" since clang-tidy needs Linux
+    }
+    // The analysis itself, and the only BT that runs it. It is not hooked into
+    // the compiler (cmake/Sanitizers.cmake leaves CMAKE_CXX_CLANG_TIDY unset):
+    // it reads the compilation database the template's Build step produced,
+    // which is what lets it analyse only the translation units a pull request
+    // can change the verdict of. A compiler hook cannot skip a file.
+    //
+    // A BT's own steps run after the ones it inherits, so this lands at the end
+    // of the template pipeline — for this preset that is right after Build,
+    // since OWL_TESTING=OFF and no release/coverage/doc/package step applies.
+    //
+    // The three bridge parameters carry the pull request context. They are
+    // always emitted for a BT carrying the `github-bridge` feature and empty
+    // outside a pull request, in which case the action analyses everything.
+    // `mergeBase` and not `baseSha`: the merge base is where the branches
+    // diverged, so the diff is this PR's own change and not what landed on
+    // `main` since.
+    steps {
+        script {
+            ciAction("ClangTidy", "Clang_Tidy", displayName = "Clang-Tidy",
+                extraArgs = "-- --is_pull_request=%teamcity.github.bridge.isPullRequest%" +
+                    " --merge_base=%teamcity.github.bridge.pullRequest.mergeBase%" +
+                    " --target_branch=%teamcity.github.bridge.pullRequest.targetBranch%")
+        }
     }
     // clang-tidy findings are already `file:line:col: warning: … [check]` in
     // the log and belong to no other BT, so they are worth pinning to the diff.

@@ -136,6 +136,12 @@ except the first, which sets `docker_image` from the preset metadata):
 Each Dockerised step uses the image set by step 1 (`%docker_image%`, derived
 from the CMake preset's `vendor.silmaen` block).
 
+One BT adds a step of its own on top of this pipeline: `Build/Quality/Clang-Tidy`
+appends a `ClangTidy` step (BT steps run after inherited ones, so it lands right
+after Build for that preset). It stays on that BT rather than moving into this
+template — a template step would be inherited by all eleven configurations just
+to be skipped by ten. See [Clang-tidy scoping](#clang-tidy-scoping).
+
 Key inherited properties:
 - **Trigger**: a single VCS trigger (`TRIGGER_1`) on `+:main`.
 - **Snapshot dependency on `QualityCodeStyle`** with `FAIL_TO_START` —
@@ -434,6 +440,84 @@ Two consequences for this repository:
    shape stays in the build log and never reaches the diff — so keep new
    sub-checks going through `_diag()`.
 
+## Clang-tidy scoping
+
+`Build/Quality/Clang-Tidy` is the only configuration this concerns. On a pull
+request it analyses only the translation units that pull request can change the
+verdict of. On `main`, on a manual run, and whenever the narrowing cannot be
+trusted, it analyses all of them — the behaviour every run had before.
+
+The analysis is **not** hooked into the compiler. `cmake/Sanitizers.cmake`
+deliberately leaves `CMAKE_CXX_CLANG_TIDY` unset (for the two `*-clang-tidy`
+presets, the only ones that set `OWL_ENABLE_CLANG_TIDY`) and only turns on
+`CMAKE_EXPORT_COMPILE_COMMANDS`; the BT's own `ClangTidy` step then drives
+clang-tidy from `compile_commands.json` once Build is done. The compiler hook
+has no way to skip a file, so selecting a subset is only possible from outside
+it.
+
+### How the subset is built
+
+```mermaid
+flowchart TD
+    MB["mergeBase..HEAD<br/>(git diff)"] --> CPP[".cpp touched"]
+    MB --> HDR["headers touched"]
+    MB --> CFG["CMakeLists / *.cmake<br/>.clang-tidy / depmanager.yml"]
+    HDR --> DEPS["ninja -t deps<br/>reverse include closure"]
+    DEPS --> TU["every .cpp that includes them,<br/>directly or transitively"]
+    CPP --> RUN["clang-tidy -p build_dir"]
+    TU --> RUN
+    CFG --> FULL["full scope<br/>(flags or check list moved)"]
+```
+
+The header step is the one that matters: a `.cpp` outside the diff still gets
+analysed when it includes a header the pull request touched. The closure comes
+from ninja's own dependency database, which holds the complete include list the
+compiler recorded for every object file — so an indirect include, several
+headers deep, is covered too. In practice a change to a core header
+(`math/matrices.h`) selects nearly every unit, and a change confined to an
+editor panel selects a handful.
+
+### Diff base
+
+The base is the pull request's **merge base**, read from
+`teamcity.github.bridge.pullRequest.mergeBase` and passed to the step as
+`--merge_base`. Not `baseSha`, and not `origin/main`: the target branch's head
+also carries everything that landed on `main` since the branch started, so
+diffing against it would report other contributors' findings on this pull
+request. When the parameter is empty (the bridge's `mergeBase.enabled` off, or
+the GitHub lookup failed) the action derives the merge base locally from
+`--target_branch` using git's three-dot form, which is the same comparison.
+
+### Falling back to the full scope
+
+Narrowing is an optimisation; missing a finding is not an acceptable failure
+mode. Any of these analyses everything:
+
+| Situation                                                           | Why                                    |
+|---------------------------------------------------------------------|----------------------------------------|
+| not a pull request (`main`, manual run)                             | nothing to narrow against              |
+| no usable diff base                                                 | the range would be a guess             |
+| the diff is empty against the base                                  | a real PR changes something — bad base |
+| `CMakeLists.txt`, `*.cmake`, `CMakePresets*.json`, `depmanager.yml` | compiler flags or dependencies moved   |
+| `.clang-tidy`                                                       | the check list itself changed          |
+| git, ninja or `.ninja_deps` unavailable                             | the mapping cannot be built            |
+
+Every fallback is logged with its reason, so a run that looks unexpectedly long
+says why in the build log.
+
+### Running it locally
+
+```bash
+poetry run python ci_action.py Build linux-clang-tidy      # produces the two databases
+poetry run python ci_action.py ClangTidy linux-clang-tidy  # full scope
+
+# What would a PR against main analyse? (--dry_run stops before the analysis)
+poetry run python ci_action.py ClangTidy linux-clang-tidy -- --diff_base=main --dry_run
+```
+
+`--full` forces the full scope, `--jobs=N` caps the parallel clang-tidy
+processes (default: CPU count).
+
 ## Project parameters
 
 Set on the root project (`Project.kt`) and inherited by every BT:
@@ -455,8 +539,9 @@ parameters into every build (`isPullRequest`, `isDraft`,
 step or a DSL condition can read them unconditionally. `mergeBase` is the one
 to diff against when a check should look at the pull request's own change
 (`git diff <mergeBase>..<headSha>`); diffing against `main` would also pick up
-everything that landed on it since the branch started. No Owl step consumes
-them yet.
+everything that landed on it since the branch started. The Clang-Tidy step is
+the one that consumes them today — `isPullRequest`, `mergeBase` and
+`targetBranch`, see [Clang-tidy scoping](#clang-tidy-scoping).
 
 Template-level parameters live on `GlobalBuild` and `CodeStylingCheck`:
 preset name (`cmake_preset`), checkboxes (`run_tests`, `run_coverage`,

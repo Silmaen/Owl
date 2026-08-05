@@ -75,4 +75,5 @@ if __name__ == "__main__":
     src = Path(sys.argv[1])
     with src.open(encoding="utf-8") as f:
         content = f.read()
-    sys.stdout.write(fix_links(content, src))
+    # Doxygen reads UTF-8; on Windows sys.stdout uses the locale codepage, which cannot encode ✅ / ❌.
+    sys.stdout.buffer.write(fix_links(content, src).encode("utf-8"))
