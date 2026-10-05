@@ -22,6 +22,7 @@ option(${PROJECT_PREFIX}_ENABLE_STACKTRACE "Use stacktrace within the memory tra
 option(${PROJECT_PREFIX}_ENABLE_PROFILING "Output profiling information during execution" OFF)
 option(${PROJECT_PREFIX}_USE_CCACHE "Use ccache (or sccache) as a compiler launcher when available" ON)
 option(${PROJECT_PREFIX}_BENCHMARK "Build the micro-benchmark harness in bench/" OFF)
+option(${PROJECT_PREFIX}_INCLUDE_CHECK "Add the owl_include_check target: every header and source compiled alone against strict libc++, without PCH (Clang only)" OFF)
 
 #
 # ---=== Base Configs ===---
@@ -66,6 +67,14 @@ endif ()
 #
 if (${PROJECT_PREFIX}_BENCHMARK)
     add_subdirectory(bench)
+endif ()
+
+#
+# ---=== INCLUDE CHECK ===---
+#
+include(IncludeCheck)
+if (${PROJECT_PREFIX}_INCLUDE_CHECK)
+    owl_setup_include_check()
 endif ()
 
 #

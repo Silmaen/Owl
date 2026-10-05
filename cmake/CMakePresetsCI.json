@@ -84,6 +84,19 @@
       }
     },
     {
+      "name": "linux-include-check",
+      "inherits": "linux-clang-release",
+      "cacheVariables": {
+        "OWL_INCLUDE_CHECK": "ON",
+        "OWL_BENCHMARK": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": ""
+        }
+      }
+    },
+    {
       "name": "linux-sanitizer-leak",
       "inherits": "linux-clang-debug",
       "cacheVariables": {

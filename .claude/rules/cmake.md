@@ -102,3 +102,4 @@ Tests are auto-discovered from `test/` subdirectories. See testing rules.
 | `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation                                                                                                       |
 | `OWL_PACKAGING`                           | OFF     | Enable packaging mode                                                                                                                         |
 | `OWL_BENCHMARK`                           | OFF     | Build the `owl_bench` micro-benchmark harness (`bench/`, see `bench/README.md`)                                                               |
+| `OWL_INCLUDE_CHECK`                       | OFF     | Add `owl_include_check`: every header and source compiled alone, no PCH, strict libc++ (Clang only, `linux-include-check` preset)             |

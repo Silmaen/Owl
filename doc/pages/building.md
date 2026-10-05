@@ -103,6 +103,7 @@ cmake --build output/build/<preset>
 | `linux-sanitizer-thread`             | ThreadSanitizer              |
 | `linux-sanitizer-undefined-behavior` | UndefinedBehaviorSanitizer   |
 | `linux-sanitizer-leak`               | LeakSanitizer                |
+| `linux-include-check`                | Strict-libc++ include check  |
 
 #### Packaging Presets
 

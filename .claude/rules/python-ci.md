@@ -19,8 +19,11 @@ paths:
 poetry run python ci_action.py <Action> <preset> [-v] [-q] [-- --extra=args]
 ```
 
-Available actions: Build, Test, Coverage, Clean, Documentation, CodeStyle, Package, Help, DefineTeamCityVariables,
-PublishDoc, PublishPackage.
+Available actions: Build, Test, Coverage, Clean, Documentation, CodeStyle, IncludeCheck, Package, Help,
+DefineTeamCityVariables, PublishDoc, PublishPackage.
+
+`IncludeCheck <preset>` configures a preset with `OWL_INCLUDE_CHECK=ON` (`linux-include-check`) and builds
+`owl_include_check`: every header and source compiled alone, without PCH, against strict libc++.
 
 `CodeStyle` is the project's read-only style/doc gate. It **only inspects** —
 it never rewrites sources. Sub-checks (all on by default):
@@ -48,13 +51,16 @@ it never rewrites sources. Sub-checks (all on by default):
    (`Subsystem: capitalized message ending with .`).
 6. **structural** — file headers (`@file` + `Copyright (c) YYYY`), `OWL_API`
    warnings for free functions declared in `source/owl/{public,private}`.
+7. **std-includes** — every file under `source/`, `test/`, `bench/` includes the
+   standard header of each `std::` symbol / `uint*_t` / `size_t` it names
+   (`ci/utils/std_includes.py`; a `.cpp` may rely on its own header and `owlpch.h`).
 
 Doxygen is **deliberately not** run here — the project already exposes a
 separate `Documentation` action that builds doxygen with `WARN_AS_ERROR=YES`.
 
 Each sub-check can be disabled with `-- --no-<name>=true`:
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`.
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`.
 
 **Report findings through `_diag()`**, never `log.error()` directly. It prints
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — the

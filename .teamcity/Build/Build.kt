@@ -5,17 +5,18 @@ import _Self.buildTypes.CodeStylingCheck
 import _Self.buildTypes.GlobalBuild
 import _Self.skipAutoPRs
 import jetbrains.buildServer.configs.kotlin.*
+import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
+import jetbrains.buildServer.configs.kotlin.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.failureConditions.BuildFailureOnMetric
 import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Build & Test top-level project
 //
-//  Generates 11 buildTypes across 4 sub-projects:
+//  Generates 13 buildTypes across 4 sub-projects:
 //    • Linux x64 / Linux ARM64 / Windows x64  (Clang + GCC each, 6 total)
-//    • Quality (CodeStyle + ClangTidy + 4 sanitizers, 6 total — minus CodeStyle
-//      which actually lives in this project but uses the CodeStylingCheck
-//      template, the others all use GlobalBuild)
+//    • Quality (CodeStyle + ClangTidy + IncludeCheck + 4 sanitizers, 7 total —
+//      CodeStyle uses the CodeStylingCheck template, the others GlobalBuild)
 //
 //  All IDs are pinned explicitly via id("...") to preserve TC build history.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -186,6 +187,34 @@ private val qualityClangTidy = BuildType({
     bridgeOverride(annotateDiff = true)
 })
 
+// Every header and source compiled alone against strict libc++ without the
+// PCH (cmake/IncludeCheck.cmake): catches the transitive standard includes a
+// recent libstdc++ (MSYS2 MinGW) no longer provides. Compile-only, so the
+// template's full build and test steps are switched off.
+private val qualityIncludeCheck = BuildType({
+    id("Build_Quality_IncludeCheck")
+    name = "Include Check"
+    templates(GlobalBuild)
+    params {
+        param("cmake_preset", "linux-include-check")
+        param("platform", "Linux")
+    }
+    steps {
+        script {
+            name = "Include Check"
+            id = "Include_Check"
+            scriptContent = "poetry run python3 ci_action.py IncludeCheck %cmake_preset%"
+            dockerImage = "%docker_image%"
+            dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
+            dockerPull = true
+            dockerRunParameters = "%docker_parameters%"
+        }
+    }
+    disableSettings("Build_Release", "Test_Release")
+    // The libc++ errors exist in no other BT, so they are pinned to the diff.
+    bridgeOverride(annotateDiff = true)
+})
+
 private data class Sanitizer(
     val idSuffix: String,
     val displayName: String,
@@ -236,6 +265,7 @@ private val quality = Project({
     buildType(QualityCodeStyle)
     sanitizerBuilds.forEach { buildType(it) }
     buildType(qualityClangTidy)
+    buildType(qualityIncludeCheck)
 
     params {
         // "in" matches both "Linux" and "Windows" via the substring requirement

@@ -23,13 +23,17 @@ Sub-checks (all on by default):
   message format (`Subsystem: capitalized message ending with .`).
 * **structural** — file header (`@file` tag, `Copyright (c) YYYY`); `OWL_API`
   warning for free functions in `source/owl/{public,private}` headers.
+* **std-includes** — every file includes the standard header of each `std::`
+  symbol (and `uint32_t` / `size_t`) it names, instead of relying on a
+  transitive include (see `ci/utils/std_includes.py`). A `.cpp` may rely on
+  its own header and on `owlpch.h`.
 
 Doxygen is **deliberately not** run here — the project already has a separate
 `Documentation` action that builds doxygen with `WARN_AS_ERROR=YES`.
 
 Each sub-check can be disabled with extra args (`-- --no-<name>=true`):
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`.
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`.
 
 Every finding is reported through `_diag()` as a GNU/clang-style diagnostic —
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — including
@@ -49,6 +53,7 @@ from typing import Iterable, List, Optional, Tuple
 
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
+from ci.utils.std_includes import audit_file, provided_to
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -69,6 +74,16 @@ CXX_EXTENSIONS: tuple[str, ...] = (".h", ".hpp", ".cpp", ".cc", ".cxx", ".inl")
 
 HEADER_EXTENSIONS: tuple[str, ...] = (".h", ".hpp")
 """File extensions inspected by header-only audits."""
+
+STD_INCLUDE_ROOTS: tuple[Path, ...] = (
+    root / "source",
+    root / "test",
+    root / "bench",
+)
+"""Directories scanned by the std-includes audit (tests and the runner included)."""
+
+PCH_HEADER: Path = root / "source" / "owl" / "private" / "owlpch.h"
+"""The engine's precompiled header: a `.cpp` that includes it may rely on its standard headers."""
 
 DOC_ROOTS: tuple[Path, ...] = (
     root / "doc",
@@ -1160,6 +1175,31 @@ def _check_structural() -> int:
 
 
 # ────────────────────────────────────────────────────────────────────────────
+# Sub-check 7 — standard-library includes (include what you use)
+# ────────────────────────────────────────────────────────────────────────────
+
+
+def _check_std_includes() -> int:
+    """
+    Every file must include the standard header of each `std` symbol it names:
+    a recent libstdc++ no longer provides `<cstdint>`, `<mutex>`, … transitively,
+    so relying on another header breaks the Windows (MSYS2) build.
+    """
+    log.info("code-style: std-includes audit...")
+    issues = 0
+    for path in _iter_sources(STD_INCLUDE_ROOTS, CXX_EXTENSIONS):
+        if "assets" in path.relative_to(root).parts:
+            continue
+        for finding in audit_file(path, provided_to(path, PCH_HEADER)):
+            _diag(
+                path, finding.line, "std-includes",
+                f"`{finding.symbol}` is used but `<{finding.header}>` is not included",
+            )
+            issues += 1
+    return issues
+
+
+# ────────────────────────────────────────────────────────────────────────────
 # Action entry point
 # ────────────────────────────────────────────────────────────────────────────
 
@@ -1177,6 +1217,7 @@ class CodeStyle(BaseAction):
         --no-doc-audit=true         skip private-member doc audit
         --no-cpp-style=true         skip cpp-style convention audit
         --no-structural=true        skip file-header / OWL_API audit
+        --no-std-includes=true      skip standard-library include audit
     """
 
     def run(
@@ -1198,6 +1239,7 @@ class CodeStyle(BaseAction):
             "doc-audit": opts.get("no-doc-audit", "false") == "true",
             "cpp-style": opts.get("no-cpp-style", "false") == "true",
             "structural": opts.get("no-structural", "false") == "true",
+            "std-includes": opts.get("no-std-includes", "false") == "true",
         }
 
         log.info(f"Running CodeStyle gate for preset: {preset.cmake_preset}")
@@ -1215,6 +1257,8 @@ class CodeStyle(BaseAction):
             results.append(("cpp-style", _check_cpp_style()))
         if not skip["structural"]:
             results.append(("structural", _check_structural()))
+        if not skip["std-includes"]:
+            results.append(("std-includes", _check_std_includes()))
 
         log.info("─" * 60)
         log.info("CodeStyle summary:")
