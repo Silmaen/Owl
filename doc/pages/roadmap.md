@@ -150,7 +150,7 @@ Owl RHI repaired, architecture opened, iteration sped up. No new gameplay featur
 - ![Planned][planned] Phase A — game export tested end to end, sample run headless ([Export](design/game-export.md))
 - ![Planned][planned] Phase A — full Wayland: icon, editor multi-window, X11 kept ([details](design/windowing-input.md))
 - ![In Progress][progress] Phase B — engine benchmark harness `bench/` (`OWL_BENCHMARK`)
-- ![In Progress][progress] Phase B — diff-scoped clang-tidy CI action, parallel by default (`Feature/TidyDiff`, H-03)
+- ![Done][done] Phase B — diff-scoped clang-tidy CI action, parallel by default (H-03)
 - ![Planned][planned] Phase B — editor tests, blocking sanitizers, Tracy, runner frame bench
 - ![Planned][planned] Phase B — tests without a window: scripted headless runner, image tests on lavapipe / llvmpipe
 - ![Planned][planned] Phase B — module dependency check, CI tooling tests, benchmarks with a regression threshold

@@ -90,9 +90,9 @@ Every fix lands with its regression test.
 - ![Planned][planned] Tests without a window (PR-18: F-01, B-06, B-20)
     - Headless runner driven by scripted inputs (load scene, play N frames, assert on the world)
     - Image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL), at least one per backend
-- ![In Progress][progress] Diff-scoped clang-tidy: a `ClangTidy` action driven by `compile_commands.json`, analysing on a
+- ![Done][done] Diff-scoped clang-tidy: a `ClangTidy` action driven by `compile_commands.json`, analysing on a
   pull request only the `.cpp` files the diff can affect (include closure from `ninja -t deps`), everything elsewhere
-  or when in doubt; finalized on `Feature/TidyDiff` right after this kickoff, with one job per core by default (H-03)
+  or when in doubt, one job per available core by default (H-03)
 - ![Planned][planned] ClangTidy multi-process with the static analyzer, honest coverage report
   (PR-19: H-03, F-07, F-04, F-08, F-09, H-07)
 - ![Planned][planned] Module dependency direction checked in CodeStyle; the 10-module cycle broken

@@ -419,6 +419,40 @@ def _log_level(line: str) -> int:
     return INFO
 
 
+def _available_cores() -> int:
+    """Return the number of cores this process may run on.
+
+    The scheduler affinity mask is preferred over ``os.cpu_count()``: in a
+    container or under ``taskset`` it is the number of cores actually usable.
+
+    :return: The usable core count, at least 1.
+    """
+    if hasattr(os, "sched_getaffinity"):
+        try:
+            return max(1, len(os.sched_getaffinity(0)))
+        except OSError:
+            pass
+    return os.cpu_count() or 1
+
+
+def _job_count(requested: str) -> int:
+    """Return the number of parallel clang-tidy processes to run.
+
+    :param requested: The ``--jobs`` value; empty, ``0`` or invalid means one
+        job per available core.
+    :return: The job count, at least 1.
+    """
+    if requested:
+        try:
+            jobs = int(requested)
+        except ValueError:
+            log.warning(f"clang-tidy: ignoring invalid --jobs={requested!r}.")
+            jobs = 0
+        if jobs > 0:
+            return jobs
+    return _available_cores()
+
+
 def _analyse(executable: str, build_dir: Path, source: Path) -> tuple[Path, int, str]:
     """
     Run clang-tidy on a single translation unit.
@@ -460,7 +494,8 @@ class ClangTidy(BaseAction):
       * ``--diff_base=<ref>`` — analyse the diff against this ref instead.
         Meant for local use: ``-- --diff_base=main``.
       * ``--full`` — force the full scope even in a pull request.
-      * ``--jobs=N`` — parallel clang-tidy processes (default: CPU count).
+      * ``--jobs=N`` — parallel clang-tidy processes (default: one per
+        available core).
       * ``--dry_run`` — list the translation units that would be analysed and
         stop. Cheap way to check the scoping without paying for the analysis.
     """
@@ -525,12 +560,7 @@ class ClangTidy(BaseAction):
             )
             return 1
 
-        try:
-            jobs = max(1, int(parsed.get("jobs", "0")))
-        except ValueError:
-            jobs = 0
-        if jobs == 0:
-            jobs = os.cpu_count() or 1
+        jobs = _job_count(parsed.get("jobs", ""))
 
         ordered = sorted(selected)
         log.info(

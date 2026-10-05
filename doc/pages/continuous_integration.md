@@ -516,7 +516,7 @@ poetry run python ci_action.py ClangTidy linux-clang-tidy -- --diff_base=main --
 ```
 
 `--full` forces the full scope, `--jobs=N` caps the parallel clang-tidy
-processes (default: CPU count).
+processes (default: one per available core, from the scheduler affinity mask).
 
 ## Project parameters
 
