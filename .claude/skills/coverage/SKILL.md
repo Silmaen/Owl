@@ -1,17 +1,16 @@
 ---
 name: coverage
-description: Run code coverage analysis for the Owl project
+description: Run code coverage analysis for the Owl project (Clang debug preset, gcovr.cfg) inside Docker
 ---
 
 # Generate code coverage
 
-1. Coverage requires a **debug** preset (e.g., `linux-gcc-debug`, `linux-clang-debug`).
-2. Use the CI system:
+1. Use `linux-clang-debug` (coverage flags are on in debug presets).
+2. Run:
    ```bash
-   poetry run python ci_action.py Coverage <debug-preset>
+   docker/run.sh poetry run python ci_action.py Coverage linux-clang-debug
    ```
-3. Or manually:
-   - Build with debug preset (coverage flags are auto-enabled in debug)
-   - Run tests via ctest
-   - Generate report: `poetry run gcovr -r . -o output/build/<preset>/Coverage/index.html`
-4. Report the coverage summary and location of the HTML report.
+3. Manual gcovr runs **always** use the project config: `poetry run gcovr --config gcovr.cfg …` — never pass
+   filters on the command line. With Clang, add `--gcov-executable "llvm-cov gcov"`.
+4. Report the global line/branch coverage, the five least-covered files touched by the current work, and the
+   HTML report path.

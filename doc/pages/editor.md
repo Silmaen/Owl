@@ -794,8 +794,8 @@ Owl Nest ships a built-in help browser that mirrors the Doxygen documentation
 maintained in `doc/pages/`. The bundle is produced by `cmake/HelpAssets.cmake`
 at configure time:
 
-- `doc/pages/*.md` plus the canonical root files (`README.md`, `CHANGELOG.md`,
-  `CONTRIBUTING.md`) are copied into `engine_assets/help/`.
+- `doc/pages/*.md`, `doc/pages/design/*.md` (flattened) plus the root `README.md` and `CONTRIBUTING.md` are
+  copied into `engine_assets/help/`.
 - An `index.yml` describing every page (id, title, category, path) is generated
   alongside; `panel::HelpPanel` reads it on first open.
 

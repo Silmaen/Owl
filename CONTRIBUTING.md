@@ -50,8 +50,8 @@ See [Contributing Guide](doc/pages/contributing.md) for the full style reference
 
 ## Documentation Conventions
 
-`doc/pages/*.md` plus the canonical root files (`README.md`, `CHANGELOG.md`,
-`CONTRIBUTING.md`) feed both Doxygen and the in-editor help panel. The bundle
+`doc/pages/*.md`, `doc/pages/design/*.md` plus the root `README.md` and `CONTRIBUTING.md` feed both Doxygen
+and the in-editor help panel (the root `CHANGELOG.md` / `ROADMAP.md` summaries feed Doxygen only). The bundle
 step (`cmake/HelpAssets.cmake`) strips Doxygen anchors (`{#page-name}`),
 `[TOC]` lines, and rewrites `(../images/foo.svg)` to `(images/foo.svg)`, so
 those source-side conventions remain valid for Doxygen builds.

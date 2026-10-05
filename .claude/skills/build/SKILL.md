@@ -1,21 +1,21 @@
 ---
 name: build
-description: Configure and build the Owl project with a CMake preset
+description: Configure and build the Owl project with a CMake preset inside the Docker build image
 ---
 
 # Build the project
 
-1. If no preset is specified in the arguments, ask the user which preset to use. Common presets:
-   - `linux-gcc-release` (default for Linux dev)
-   - `linux-clang-release`
-   - `linux-gcc-debug`, `linux-clang-debug`
-2. Configure (only if `output/build/<preset>` doesn't exist or user requests):
+All commands go through `docker/run.sh` (never native).
+
+1. Preset: the argument if given, else `linux-clang-release`. Use `linux-clang-debug` for coverage work.
+2. Configure only if `output/build/<preset>/CMakeCache.txt` is missing, a file was added/removed (GLOB),
+   or the user asks:
    ```bash
-   cmake --preset <preset> -S .
+   docker/run.sh cmake --preset <preset> -S .
    ```
-3. Build:
+3. Build (optionally `--target <name>`):
    ```bash
-   cmake --build output/build/<preset>
+   docker/run.sh cmake --build output/build/<preset>
    ```
-4. If the build fails, analyze the error output and suggest fixes.
-5. Report success/failure and number of targets built.
+4. On failure, quote the first real error (not the cascade), fix or propose a fix.
+5. Report success/failure and the number of steps built.

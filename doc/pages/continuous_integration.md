@@ -299,7 +299,7 @@ their input:
   markdown files.
 - **Windows x64 Clang** — the only PR-side BT whose preset sets
   `OWL_ENABLE_DOCUMENTATION=ON`, so Doxygen runs there with `WARN_AS_ERROR=YES`
-  over `doc/`, `README.md`, `CHANGELOG.md` and `CONTRIBUTING.md`.
+  over `doc/`, `README.md`, `CHANGELOG.md`, `ROADMAP.md` and `CONTRIBUTING.md`.
 
 A doc-only PR is therefore still gated — by the two configurations that can
 actually fail on it.

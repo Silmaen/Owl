@@ -1,456 +1,105 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Owl is a C++23 game engine (`OwlEngine`) with an editor (Owl Nest), a game runner, a Python CI wrapper and
+TeamCity pipelines. Version in development: see `project(... VERSION ...)` in `CMakeLists.txt` (0.3.0 in
+development at the time of writing; 0.2.1 is the last release). Backends: graphics OpenGL 4.5 / Vulkan 1.4 / Null, input
+GLFW / Null, sound OpenAL / Null. ECS on EnTT with parent-child hierarchy. Platforms: Linux x64/arm64,
+Windows x64 (MinGW).
 
-## Project Overview
+Detailed, path-scoped rules load automatically from `.claude/rules/` when you touch matching files
+(C++ style, CMake, tests, renderer, Slang, scene, editor, script, task system, dependencies, Python CI,
+docs, module layout). User documentation lives in `doc/pages/*.md` — read the relevant page before
+changing a subsystem. An ongoing repository audit lives in `doc/audit/` (entry point: `AUDIT.md`).
 
-Owl (v0.2.1) is a C++23 game engine with multiple graphics backends (OpenGL 4.5, Vulkan 1.4, Null), input backends
-(GLFW, Null), and sound backends (OpenAL, Null). It uses an Entity-Component-System architecture (EnTT) with
-**hierarchical parent-child entities** and includes a scene editor (Owl Nest). Supported platforms: Linux (x64/arm64)
-and Windows (x64, MinGW).
+## Build, test, run — Docker only
 
-## Build Commands
-
-**Prerequisites:** CMake 3.24+, Ninja, GCC 13+ or Clang 18+, Python 3.12+ with Poetry (for CI/dependency tooling),
-`depmanager` for fetching dependencies.
-
-### Configure and build (direct CMake with presets):
-
-```bash
-cmake --preset linux-gcc-release -S .
-cmake --build output/build/linux-gcc-release
-```
-
-### Available presets:
-
-- Linux: `linux-gcc-release`, `linux-gcc-debug`, `linux-clang-release`, `linux-clang-debug`
-- Windows (MinGW): `windows-gcc-release`, `windows-gcc-debug`, `windows-clang-release`, `windows-clang-debug`
-- CI-only: `linux-clang-tidy`, `windows-clang-tidy`, `linux-sanitizer-address`, `linux-sanitizer-thread`,
-  `linux-sanitizer-undefined-behavior`, `linux-sanitizer-leak`
-- Packaging: `package-engine-linux`, `package-engine-windows`, `package-app-nest-linux`, `package-app-nest-windows`
-
-### Run tests:
+Every compiler, CMake, CTest, Poetry, clang-tidy or clang-format call runs **inside the build image**
+through `docker/run.sh`, which mirrors CLion's *Docker Owl* toolchain (image
+`registry.argawaen.net/builder/devel-ubuntu2404:latest`, your UID/GID, repo mounted at its host path,
+`$HOME` = `../fake_home` → `/fhome` holding the Poetry venv, the DepManager cache and ccache). Never build
+natively, never install a tool on the host; if a tool is missing from the image, say so.
 
 ```bash
-ctest --test-dir output/build/<preset> --output-on-failure
+docker/run.sh cmake --preset linux-clang-release -S .          # configure (fetches deps)
+docker/run.sh cmake --build output/build/linux-clang-release   # ~1 min full build on 32 cores
+docker/run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
+docker/run.sh output/build/linux-clang-release/bin/owl_<cat>_tests_unit_test --gtest_filter='Suite.*'
+docker/run.sh --gui output/build/linux-clang-release/bin/OwlNest   # GPU + display + audio
+docker/run.sh --perf perf ...                                      # ptrace / perf events
 ```
 
-### CI system (Python wrapper):
-
-```bash
-poetry run python ci_action.py Build <preset>
-poetry run python ci_action.py Test <preset>
-poetry run python ci_action.py Coverage <preset>
-poetry run python ci_action.py Clean <preset>
-poetry run python ci_action.py Documentation <preset>
-poetry run python ci_action.py CodeStyle <preset>
-```
-
-`CodeStyle` is a **read-only** gate that bundles six sub-checks: clang-format
-dry-run, codespell typo scan, comment-quality (`///` discipline + sentence
-punctuation), private-member doc audit (catches missing `///` on `m_*`
-fields), cpp-style audit (banned `std::shared_ptr` / `*Service` / `UI*` /
-`enum class`; `OWL_PROFILE_FUNCTION()` blank-line rule; `OWL_DIAG_PUSH/POP`
-spacing; log-message formatting), and a structural audit (file headers,
-`OWL_API` on free functions). Doxygen is **not** invoked here — it lives in
-the `Documentation` action. Skip individual stages with `-- --no-format=true`
-/ `--no-typos=true` / `--no-comment-quality=true` / `--no-doc-audit=true` /
-`--no-cpp-style=true` / `--no-structural=true`.
-
-## Python Environment
-
-- This project uses **Poetry** for Python dependency management (`pyproject.toml`) incuding dev tools.
-- **Always** use `poetry run` to execute Python commands (e.g., `poetry run python ci_action.py ...`).
-- `pip` is forbidden, use **poetry** instead.
-- To install/sync dependencies: `poetry sync --no-root`
-- Never use the system Python directly; always go through Poetry's virtualenv.
-
-### Build output locations:
-
-- Binaries: `output/build/<preset>/bin/`
-- Libraries: `output/build/<preset>/lib/`
-- Install: `output/install/<preset>/`
-
-## Architecture
-
-### Engine library (`source/owl/`)
-
-- `public/` — Public API headers organized by module: `app/` (Application, EntryPoint, layer stack), `core/`, `data/`
-  (incl. `data/voxel/`, `data/meshrange/`), `debug/`, `event/`, `gui/`, `input/`, `io/`, `math/`, `physics/`,
-  `renderer/`, `scene/`, `script/`, `sound/`, `window/`
-- `private/` — Implementation files mirroring the public structure
-- Builds as `OwlEngine` (shared by default, controlled by `OWL_BUILD_SHARED`)
-
-### Applications (`source/`)
-
-- `owlnest/` — Scene editor with project management (two executables: editor + runner)
-  - Project system: `owl_project.yml` config (name, version, author, description, icon, window settings),
-    dynamic asset directories, scene import
-  - Scene hierarchy panel with drag-drop reparenting and context menus
-  - Project settings panel with full editing UI (metadata + window config), window title reflects active project
-  - Runner reads extended config from `runner.yml` at startup (title, icon, size, fullscreen, resizable)
-
-### Tests (`test/`)
-
-- Google Test framework, 16 test categories: core, debug, event, font, gui, input, io, layer, math, mesh, physics,
-  renderer, scene, script, sound, voxel
-- Each category builds as `owl_<category>_unit_test`
-- Test helper utilities in `test/test_helper/`
-
-### CI system (`ci/`)
-
-- Python-based CI orchestration, entry point: `ci_action.py`
-- Actions in `ci/actions/`: Build, Test, Coverage, Documentation, CodeStyle, Package, Clean, Help, DefineTeamCityVariables,
-  PublishDoc, PublishPackage
-- All actions extend `ci.actions.base.action.BaseAction`
-- Utilities in `ci/utils/`: preset parsing, cmake discovery, command execution, logging, publishing, python helpers, TeamCity integration
-
-### Engine assets (`engine_assets/`)
-
-- Runtime assets bundled with the engine: fonts, shaders, textures, logo
-
-### Scene Hierarchy
-
-Entities support parent-child relationships via the mandatory `Hierarchy` component (`parentId` UUID + `childrenIds`
-vector). Every entity has this component; root entities have `parentId == 0`.
-
-- **Transform**: `component::Transform` stores LOCAL transform. World transform computed via `Scene::getWorldTransform()`
-- **Visibility**: inherited — hidden parent hides all descendants (`Scene::isEffectivelyVisible()`)
-- **Reparenting**: `Scene::setParent()` checks circular refs, recomputes local transform to preserve world position
-- **Deletion**: `destroyEntity()` reparents children to grandparent; `destroyEntityWithChildren()` cascade-deletes
-- **Duplication**: `duplicateEntity()` creates root copy; `duplicateSubtree()` recursively duplicates with new UUIDs
-- **Serialization**: `parentId` saved in YAML; `childrenIds` rebuilt post-load via `rebuildHierarchyChildren()`
-- **Physics**: Box2D bodies are independent of hierarchy. `PhysicCommand` uses world transforms for init/sync and
-  converts back to local space. A non-physics child follows its physics parent; two physics entities move independently
-  regardless of parent-child relationship.
-
-### Undo/Redo System
-
-The editor includes a Command Pattern undo/redo system (`source/owlnest/sources/`).
-
-- **`UndoCommand`** (`UndoCommand.h`): abstract base — `undo()`, `redo()`, `description()`, `mergeWith()`, `typeId()`
-- **`UndoManager`** (`UndoManager.h`): undo/redo stacks, merge coalescing (1s timeout), dirty tracking, max depth (100)
-- **`EntitySnapshot`** (`EntitySnapshot.h`): captures/restores entity state via `SceneSerializer::serializeEntityToString()`
-- **Commands** (`commands/`): `EntityCommands` (create, delete, duplicate ± subtree), `ComponentCommands` (add, remove,
-  modify with merge), `HierarchyCommands` (reparent, unparent)
-- **Integration**: `EditorLayer` owns `UndoManager`, passes pointer to `SceneHierarchy` and `Viewport` panels
-- **Shortcuts**: Ctrl+Z / Ctrl+Y via `ActionRegistry`, Edit menu with dynamic labels
-- **Gizmo**: Viewport captures transform before/after manipulation, pushes `ModifyEntityCommand`
-- **Property edits**: `drawComponent<T>` compares entity YAML before/after `renderProps()`, merge coalesces rapid changes
-- **Selection**: restored after undo/redo via `selectAfterUndo`/`selectAfterRedo` hints on each command
-- **Dirty flag**: `*` in window title when unsaved changes exist, cleared on save
-
-### Prefab System
-
-The engine supports reusable entity subtree templates (`.owlprefab` files).
-
-- **`PrefabSerializer`** (`source/owl/public/scene/PrefabSerializer.h`): static methods for serialize, instantiate,
-  readInfo, applyToInstance, revertInstance
-- **File format:** YAML with `Prefab:` / `Version:` / `Entities:` keys, same entity format as scenes
-- **`PrefabLink`** component (`source/owl/public/scene/component/PrefabLink.h`): placed on instance root, stores
-  `prefabAssetPath`, `syncedVersion`, `uuidMapping` (instance↔canonical UUID pairs), `overriddenComponents`
-- **Instantiation:** loads prefab into temp scene, creates new entities with fresh UUIDs, remaps hierarchy parentIds,
-  copies all components via serialization round-trip, adds PrefabLink to root
-- **Update propagation:** `applyToInstance()` merges prefab YAML per-entity — non-overridden components from prefab,
-  overridden components preserved from instance. `revertInstance()` clears overrides then applies.
-- **Editor integration:** "Create Prefab..." in hierarchy context menu, `.owlprefab` drag-drop from ContentBrowser to
-  Viewport, blue tint on prefab instance entities in hierarchy, "Update from Prefab" / "Revert to Prefab" /
-  "Unlink Prefab" context menu actions, read-only PrefabLink display in inspector
-- **Undo/redo:** `InstantiatePrefabCommand`, `ApplyPrefabCommand` (covers both update and revert)
-
-### Icon System
-
-Editor icons are **SVG files loaded at runtime** via lunasvg with dynamic theme color substitution.
-
-- **SVG sources**: `source/owlnest/assets_sources/icons/<category>/` — never modified programmatically
-- **Categories**: `toolbar/`, `browser/`, `visibility/`, `triggers/`, `components/`, `panels/`, `actions/`,
-  `templates/` (not rendered)
-- **Runtime**: `IconBank::build()` loads SVGs, substitutes white (`#ffffff`) → theme text color and
-  fuchsia (`#ff00ff`) → theme accent color in memory, rasterizes via lunasvg, packs into 64px atlas with mipmaps
-- **Theme rebuild**: `IconBank::rebuild(colors)` re-rasterizes all SVGs when the theme changes
-- **Scene icons**: trigger overlay PNGs (512x512) pre-rasterized via
-  `poetry run python source/owlnest/assets/icons/generate_icons.py` (uses `cairosvg`)
-- **Adding an icon**: create SVG in the right category dir in `assets_sources/icons/`, register in
-  `buildIconBank()` in `EditorLayer.cpp`
-
-### CMake modules (`cmake/`)
-
-- Build configuration modules: `BaseConfig.cmake`, `CoverageConfig.cmake`, `Depmanager.cmake`,
-  `DocumentationConfig.cmake`, `Environment.cmake`, `OwlUtils.cmake`, `Poetry.cmake`, `Python.cmake`,
-  `Sanitizers.cmake`, `Vulkan.cmake`
-- Preset definitions: `CMakePresetsBase.json`, `CMakePresetsLinux.json`, `CMakePresetsMinGW.json`,
-  `CMakePresetsCI.json`, `CMakePresetsPackage.json`
-
-### Shader Pipeline (Slang)
-
-Shaders are written in **Slang** (`.slang` files), a single-source shading language compiled at runtime to SPIR-V for both OpenGL and Vulkan backends.
-
-- **Source location:** `engine_assets/shaders/<renderer>/slang/<name>.slang`
-- **Compilation:** `compileSlangToSpirv()` in `source/owl/private/renderer/utils/shaderFileUtils.cpp` — uses Slang C++ API to compile to SPIR-V with `BACKEND_VULKAN` or `BACKEND_OPENGL` preprocessor defines
-- **Reflection:** `shaderReflect()` in the same file — uses spirv-cross to extract uniform buffers and sampled images from SPIR-V
-- **Caching:** SPIR-V binaries cached as `.spv` files with hash-based validation (`computeShaderHash`, `isShaderCacheValid`)
-- **Entry points:** `[shader("vertex")] vertexMain` and `[shader("fragment")] fragmentMain` per file
-- **Key conventions:**
-  - `column_major float4x4` for matrices uploaded from C++ (Slang defaults to row-major)
-  - `[[vk::binding(N)]]` for explicit Vulkan descriptor bindings
-  - `#ifdef BACKEND_VULKAN` for texture binding differences (binding 1 for Vulkan, binding 0 for OpenGL)
-  - `NonUniformResourceIndex()` for texture array indexing (works on both backends)
-  - No sRGB conversion in shaders (framebuffers use UNORM format without hardware sRGB)
-
-### Task System
-
-The engine includes a task scheduler for asynchronous work, backed by [Taskflow](https://github.com/taskflow/taskflow)
-4.0 (header-only, PRIVATE dependency — not exposed in public headers).
-
-- **Public API** (`source/owl/public/core/task/`): `Task`, `Scheduler`, `Timer` — applications use these without
-  knowing about Taskflow
-- **Private implementation** (`source/owl/private/core/task/`): `SchedulerImpl` owns a `tf::Executor` (thread pool
-  sized to `hardware_concurrency`), `ParallelUtils.h` provides `parallelForEach`/`parallelForIndex` templates
-- **External header wrapper:** `source/owl/private/core/external/taskflow.h` (diagnostic suppression)
-- **Design:** Scheduler is main-thread-only (no mutex), worker tasks run on the Taskflow thread pool, termination
-  callbacks execute on the main thread during `poll()`
-- **If an app needs Taskflow directly**, it must link it explicitly in its own `CMakeLists.txt` — the engine does not
-  propagate Taskflow headers
-
-### Lua Scripting
-
-The engine embeds Lua 5.5 for gameplay scripting, attached to entities via the `LuaScript` component.
-
-- **Public API** (`source/owl/public/script/`): `ScriptEngine` (singleton manager), `ScriptInstance` (per-entity
-  isolated Lua state), `ScriptProperty` (typed property descriptor)
-- **Private implementation** (`source/owl/private/script/`): `LuaEngine` (low-level `lua_State*` wrapper),
-  `LuaBindings` (registers engine API tables: transform, physics, input, sound, scene, entity, time, log)
-- **External header wrapper:** `source/owl/private/core/external/lua.h` (diagnostic suppression for Lua C headers)
-- **Component:** `scene::component::LuaScript` — `scriptPath` + `properties` vector + runtime `instance`
-- **Sandboxing:** only `base`, `table`, `string`, `math`, `utf8`, `coroutine` libs; `io`, `os`, `dofile`,
-  `loadfile` removed
-- **Isolation:** each `ScriptInstance` owns its own `LuaEngine` (separate `lua_State`), no global pollution
-- **Lifecycle:** `ScriptEngine::init()` in `Scene::onStartRuntime()`, instances call `on_create`/`on_update`/`on_destroy`
-- **Properties:** declared in Lua via `properties = { {name, type, default}, ... }`, parsed by
-  `ScriptEngine::extractProperties()`, applied as globals before `on_create`
-- **Pack support:** scripts loaded from `.owlpack` via `Application::loadFromPack()` with filesystem fallback
-
-### Game State & Save System
-
-The engine includes a save/load system for game progression.
-
-- **`GameState`** (`source/owl/public/scene/GameState.h`): key-value store (`variant<int64_t, float, string, bool>`),
-  lives on `Scene`, copied across transitions, serialized in save files
-- **`SaveManager`** (`source/owl/public/scene/SaveManager.h`): static class for save/load to user directories
-  (`~/.local/share/<game>/saves/` on Linux, `%APPDATA%/<game>/saves/` on Windows)
-- **Save format:** YAML `.owl_save` files containing: header (version, timestamp, scenePath), GameState entries,
-  full scene data (entities + components), physics snapshots (velocities, wake state)
-- **Lua API:** `gamestate` table (set/get/remove/clear) + `save` table (save_game/load_game/list_saves/has_save/delete_save)
-- **Deferred load:** `save.load_game(slot)` sets `Scene::saveLoadRequest`, handled by RunnerLayer/EditorLayer after
-  `onUpdateRuntime()` (safe mid-script)
-- **Physics snapshots:** `PhysicCommand::getSnapshot/applySnapshot` captures and restores Box2D velocities after
-  `onStartRuntime()` on load
-
-### Game Settings
-
-The engine includes a persistent settings system for both game constants and player preferences.
-
-- **`SettingsManager`** (`source/owl/public/scene/SettingsManager.h`): two-layer static key-value store
-  (defaults from `game_settings.yml` + user overrides in `settings.yml`)
-- **Game defaults:** `game_settings.yml` in project assets — game designer constants (player speed, jump impulse, etc.)
-- **User overrides:** `settings.yml` in user directory (`~/.local/share/<game>/` on Linux, `%APPDATA%/<game>/` on Windows)
-- **Built-in keys:** `resolution_width`, `resolution_height`, `fullscreen`, `resizable`, `volume_master`,
-  `volume_music`, `volume_sfx` — auto-applied to Window and SoundCommand via `applyBuiltins()`
-- **Lua API:** `settings` table (get/set/save/load/reset/reset_all/apply)
-- **Runner integration:** defaults populated from `runner.yml`, then `game_settings.yml` loaded, then user
-  `settings.yml` loaded, then `applyBuiltins()` called — all before first scene load
-
-### Dependencies
-
-- Managed by [DepManager](https://github.com/Silmaen/DepManager) via `depmanager.yml` (34 external dependencies)
-- Dependencies auto-download during CMake configure step
-- Versions are pinned explicitly in `depmanager.yml`
-- Key libraries: EnTT (ECS), ImGui/ImGuizmo (GUI), Box2D (physics), spdlog (logging), yaml-cpp (serialization), Vulkan
-  SDK, GLFW, OpenAL, glad, freetype, msdfgen/msdf-atlas-gen (fonts), tinygltf/tinyobjloader/ufbx (mesh loading),
-  magic_enum (enum reflection), cpptrace/libdwarf/debugbreak (debugging), zeus (math), nfd (file dialogs), tinyxml2
-  (XML), libpng, zlib/zstd (compression), libsndfile (audio files), stb_image (image loading), lunasvg (SVG rendering),
-  googletest (testing), Taskflow (task parallelism), Lua (scripting)
-
-### DepManager Packaging (OwlEngine as a package)
-
-OwlEngine can be built as a depmanager package for use by external projects (e.g., OwlDrone). The recipe is defined in
-`owl_engine.py` at the project root, following the same pattern as recipes in the OwlDependencies project.
-
-```bash
-# Build the OwlEngine package locally
-poetry run depmanager build .
-
-# The package will be available as owl_engine:0.2.1 in the local depmanager cache
-poetry run depmanager pack ls -p owl_engine:0.2.1
-```
-
-**Recipe details** (`owl_engine.py`):
-- Produces both `shared` and `static` variants
-- Public dependencies: EnTT, imgui (declared in recipe `dependencies`)
-- Disables editor, tests, and sets packaging mode during build
-- Installs: library (`lib/`), public headers (`include/`), engine assets (`assets/`), CMake config files
-  (`lib/cmake/OwlEngine/`)
-
-**Downstream usage** (in consuming project's `depmanager.yml`):
-```yaml
-packages:
-  owl_engine:
-    version: 0.2.1
-    kind: "shared"
-```
-
-Then in CMakeLists.txt: `find_package(OwlEngine CONFIG REQUIRED)` and link with `Owl::OwlEngine`.
-
-## DepManager (`dmgr`) Usage
-
-DepManager is the C++ dependency manager for this project. It is installed as a Python package via Poetry and invoked
-through `poetry run depmanager`. **Never install depmanager with `pip`; it is managed by Poetry.**
-
-### Key Commands
-
-All commands must be prefixed with `poetry run`:
-
-```bash
-# Check depmanager version
-poetry run depmanager info version --raw
-
-# Get the CMake modules directory (used by cmake/Depmanager.cmake)
-poetry run depmanager info cmakedir --raw
-
-# Get the base storage directory
-poetry run depmanager info basedir --raw
-
-# List local packages (with optional query filters)
-poetry run depmanager pack ls
-poetry run depmanager pack ls -p <name>:<version> -t <static|shared|header>
-
-# List packages on a remote
-poetry run depmanager pack ls <remote_name>
-
-# Pull a specific package from a remote
-poetry run depmanager pack pull -p <name>:<version> <remote_name>
-
-# Push a local package to a remote
-poetry run depmanager pack push -p <name>:<version> <remote_name>
-
-# Clean local package cache
-poetry run depmanager pack clean        # clean unused packages
-poetry run depmanager pack clean -f     # full clean
-
-# List configured remotes
-poetry run depmanager remote list
-
-# Add a remote server
-poetry run depmanager remote add -n <name> -u <protocol>://<url[:port]>
-
-# Sync with a remote (bidirectional)
-poetry run depmanager remote sync <remote_name>
-
-# Build packages from recipes
-poetry run depmanager build <recipe_dir> [-r] [-f]
-```
-
-### Configuration File (`depmanager.yml`)
-
-Located at the project root. Structure:
-
-```yaml
-remote:
-  pull: true          # Allow downloading packages not found locally
-  pull-newer: true    # Download newer remote versions (implies pull)
-  server:             # Optional: configure a named remote inline
-    name: "server_name"
-    kind: "srvs"
-    url: "https://example.com"
-
-packages:
-  <package_name>:
-    version: "<version>"          # Exact version or range (e.g., ">=1.0.0")
-    kind: "static|shared|header"  # Optional, defaults to environment kind
-    optional: true                # Optional dependency (won't fail if missing)
-```
-
-### Rules for Working with DepManager
-
-1. **Always use `poetry run depmanager`** — never call `depmanager` directly, as it must run in Poetry's virtualenv.
-2. **Pin versions explicitly** in `depmanager.yml` — use exact versions (e.g., `3.1.1`), not ranges, to ensure
-   reproducible builds.
-3. **Specify `kind`** (`static`/`shared`) for each package that is not header-only — this controls the library type
-   fetched by depmanager. Header-only libraries (e.g., `entt`, `magic_enum`, `stb_image`) can omit `kind`.
-4. **Dependencies are fetched automatically** during CMake configure (`cmake --preset ...`) — the `cmake/Depmanager.cmake`
-   module handles initialization, version checking, and environment loading via `dm_load_environment()`.
-5. **Do not call `find_package()` directly** for depmanager-managed dependencies — use the `owl_target_link_libraries()`
-   helper function defined in `cmake/OwlUtils.cmake` which wraps `find_package()` and `target_link_libraries()`.
-6. **Adding a new dependency:**
-   - Add the entry to `depmanager.yml` with `version` and `kind`
-   - Use `owl_target_link_libraries(<target> <PRIVATE|PUBLIC|INTERFACE> <module> REQUIRED)` in the target's
-     `CMakeLists.txt`
-   - Optionally add `FORCE_RELEASE` to always link the release build of the dependency
-7. **Removing a dependency:** remove the entry from `depmanager.yml` and all corresponding `owl_target_link_libraries()`
-   calls in CMakeLists.txt files.
-8. **The `remote` section** controls auto-download behavior — `pull: true` allows fetching missing packages from the
-   configured remote server, `pull-newer: true` also updates to newer available versions.
-9. **Cross-compilation** is supported — depmanager handles architecture-specific packages via the `ARCH` parameter in
-   `dm_load_environment()`.
-10. **Query predicates** use the format `-p <name>:<version>` with optional filters: `-t <type>`, `-o <os>`,
-    `-a <arch>`, `-c <abi>`.
-
-## Code Style
-
-Enforced by `.clang-format` (LLVM-based) and `.clang-tidy`. Key conventions:
-
-- **Tabs** for indentation, 120-character column limit
-- **Member variables:** `m_` prefix
-- **Parameters:** `i` prefix (input), `o` prefix (output), `io` prefix (input/output)
-- **Local variables:** camelCase
-- Use `shared<T>` / `mkShared<T>()` instead of `std::shared_ptr<T>` / `std::make_shared<T>()`
-- Trailing return type syntax (`-> Type`) for non-void functions
-- Early returns to reduce nesting
-- Logging: `OWL_CORE_TRACE`, `OWL_CORE_INFO`, `OWL_CORE_WARN`, `OWL_CORE_ERROR`, `OWL_CORE_CRITICAL` (client equivalents
-  without `_CORE`)
-
-### Type usage
-
-- **Prefer `owl::math` vector types** (`math::vec2`, `math::vec4`, `math::vec2ui`, etc.) over third-party equivalents
-  (`ImVec2`, `ImVec4`, etc.). Convert to third-party types only at the call site (e.g., `gui::vec(myVec)` for ImGui).
-  This applies to public API, struct members, local variables, and function parameters alike.
-- **Use `math::vec2ui` for 2D sizes and coordinates** (image dimensions, grid positions, atlas offsets, etc.) instead of
-  separate `uint32_t` width/height pairs.
-- **Avoid raw pointers for data buffers.** Use `std::vector<T>` for owned data, `std::span<T>` /
-  `std::span<const T>` for non-owning views. When interfacing with C APIs that return raw pointers
-  (e.g., `stbi_load`), wrap them immediately in a RAII type (`std::unique_ptr` with custom deleter) and copy into a
-  `std::vector` as soon as practical.
-- **Doxygen:** Every public class, method, enum value, and struct field must have a `@brief` or `///` comment. For
-  functions, document all parameters (`@param[in]`/`@param[out]`) and return values (`@return`). Private members should
-  at minimum have a `///` one-liner.
-- **Doxygen lives in headers only.** `.cpp` / `.cc` / `.cxx` / `.inl` files carry only the file-header `/** @file … */`
-  block at the top. No other Doxygen blocks (`/** */`, `///`, `///<`), no multi-line `/* */` comments — the documentation
-  belongs alongside the declaration in the matching header, not duplicated in the implementation. Inside function bodies,
-  prefer no comment; when one is genuinely needed (non-obvious invariant, subtle workaround, surprising side effect), keep
-  it to a single `//` line. The `comment-quality` CodeStyle sub-check enforces this.
-- **Mermaid diagrams:** Use standard ` ```mermaid ` fenced blocks in documentation `.md` files for architecture
-  diagrams, flow charts, and sequence diagrams. These render natively on GitHub and are post-processed by mermaid.js
-  in the Doxygen HTML output. Prefer mermaid over ASCII art or external image files for any diagram that can be
-  expressed as text.
-
-## CMake Options
-
-| Option                                    | Default | Description                                                                                                                                   |
-|-------------------------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| `OWL_BUILD_SHARED`                        | ON      | Build engine as shared library                                                                                                                |
-| `OWL_BUILD_NEST`                          | ON      | Build Owl Nest editor                                                                                                                         |
-| `OWL_TESTING`                             | ON      | Enable unit tests                                                                                                                             |
-| `OWL_ENABLE_COVERAGE`                     | OFF     | Code coverage (auto-enabled in debug presets)                                                                                                 |
-| `OWL_ENABLE_MEMORY_TRACKER`               | OFF     | Install global `new`/`delete` overrides so `TrackerAPI` records every allocation (always on in Debug; opt-in in Release for leak diagnostics) |
-| `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (implies `OWL_ENABLE_MEMORY_TRACKER`; performance impact)                                                           |
-| `OWL_ENABLE_PROFILING`                    | OFF     | Profiling output                                                                                                                              |
-| `OWL_USE_RELEASE_THIRD_PARTY`             | ON      | Use release builds of third-party libraries                                                                                                   |
-| `OWL_ENABLE_VULKAN_LAYERS`                | OFF     | Copy Vulkan layers to binary directory                                                                                                        |
-| `OWL_ENABLE_CLANG_TIDY`                   | OFF     | Enable clang-tidy static analysis                                                                                                             |
-| `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF     | AddressSanitizer (CI presets)                                                                                                                 |
-| `OWL_ENABLE_THREAD_SANITIZER`             | OFF     | ThreadSanitizer (CI presets)                                                                                                                  |
-| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF     | UBSanitizer (CI presets)                                                                                                                      |
-| `OWL_ENABLE_LEAK_SANITIZER`               | OFF     | LeakSanitizer (CI presets)                                                                                                                    |
-| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only, CI presets)                                                                                                      |
-| `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation                                                                                                       |
-| `OWL_PACKAGING`                           | OFF     | Enable packaging mode                                                                                                                         |
+- **Clang presets only** for dev, tests and coverage: `linux-clang-release` (default),
+  `linux-clang-debug` (coverage on). GCC presets exist for CI parity only.
+- Other presets: `linux-clang-tidy`, `linux-sanitizer-{address,thread,undefined-behavior,leak}`,
+  `windows-{gcc,clang}-{release,debug}`, `package-{engine,app-nest}-{linux,windows}`.
+- Output: `output/build/<preset>/{bin,lib}`, install in `output/install/<preset>/`.
+- If a build dir ends up root-owned, chown it back through a throwaway root container.
+- Test binaries are `owl_<folder>_unit_test` (e.g. `owl_scene_tests_unit_test`); new `.cpp` files in
+  `test/<cat>_tests/` and anywhere in `source/` are picked up by `GLOB_RECURSE` (re-run configure).
+
+## CI actions (`ci_action.py`)
+
+`docker/run.sh poetry run python ci_action.py <Action> <preset> [-- --opt=value]`
+
+| Action                                             | What it does                                                                                   |
+|----------------------------------------------------|------------------------------------------------------------------------------------------------|
+| `Build`                                            | Configure + build the preset (with `linux-clang-tidy`, clang-tidy runs as the compiler hook).  |
+| `Test`                                             | CTest with reports.                                                                            |
+| `Coverage`                                         | gcovr through `gcovr.cfg` (never pass filters on the CLI); use `linux-clang-debug`.            |
+| `CodeStyle`                                        | Read-only gate: clang-format, codespell, comment quality, `m_*` docs, cpp-style bans, headers. |
+| `Documentation`                                    | Doxygen with `WARN_AS_ERROR=YES`.                                                              |
+| `Package`, `Clean`, `PublishDoc`, `PublishPackage` | As named; also `DefineTeamCityVariables`, `Help`.                                              |
+
+Run `CodeStyle` (and a `linux-clang-tidy` build when C++ changed) before calling C++ work done.
+
+## Python
+
+Poetry only (`pyproject.toml`): `poetry run …`, `poetry sync --no-root`. Never `pip`, never the system
+Python, never a bare `depmanager`. Inside the container the venv lives in `/fhome/.cache/pypoetry`.
+
+## Repository map
+
+| Path                      | Content                                                                                   |
+|---------------------------|-------------------------------------------------------------------------------------------|
+| `source/owl/public/`      | Public API, one folder per module = one namespace (see `.claude/rules/module-layout.md`). |
+| `source/owl/private/`     | Implementation, mirrors `public/`; third-party header wrappers in `core/external/`.       |
+| `source/owlnest/`         | Editor (`sources/`: panels, documents, undo commands) and runner (`runner/`).             |
+| `test/<cat>_tests/`       | Google Test, 16 categories, helpers in `test/test_helper/`.                               |
+| `engine_assets/`          | Fonts, Slang shaders (`shaders/<renderer>/slang/`), textures, logo.                       |
+| `sample_project/`         | Feature showcase game: every engine feature must be demonstrated there.                   |
+| `ci/`, `ci_action.py`     | Python CI (`ci/actions/*` extend `BaseAction`, auto-discovered).                          |
+| `.teamcity/`              | TeamCity Kotlin DSL (validate with Maven in Docker).                                      |
+| `cmake/`, `CMakePresets*` | Build modules and presets; `depmanager.yml` pins ~36 dependencies.                        |
+| `doc/pages/`              | User documentation (Doxygen + GitHub): `roadmap.md`, `changelog.md`, `design/` pages.     |
+
+## Workflow
+
+- Commits: one short imperative line, no body unless needed, **no `Co-Authored-By` or any attribution**.
+  Commit locally on a branch (never on `main`); **never `git push` nor `gh pr create`** — the user does.
+- PR descriptions (when asked): a few bullets, what and why.
+- Every PR updates `doc/pages/changelog.md` (`[Unreleased]`, one line per change), the `doc/pages/roadmap.md` badges
+  and the relevant `doc/pages/*.md` / `doc/pages/design/*.md`; root
+  `CHANGELOG.md` / `ROADMAP.md` change at release. Moving items between release sections is the user's call.
+- A release cycle starts with a kickoff PR (version bump + roadmap reorg) before any feature code.
+- No new public API without tests; every authored object ships full editor support in the same PR
+  (`.claude/rules/ongoing-quality.md`).
+- When the user says "CI is green" / "main is clean", the merged code is the truth, even if the roadmap
+  says otherwise. Confirm before modifying a working render path.
+
+## Pitfalls that already cost a debugging session
+
+- `math::mat4{1.f}` is **not** identity (positional fill). Use `math::identity<float, 4>()`.
+- Slang matrices default to row-major: declare `column_major float4x4` for C++ uploads.
+- `getRootPath()` (test helper) loops forever when CWD is the project root.
+- Slang: ~74 ms cold and ~20 ms per shader in Release (`bench/`, 2026-10); still share the session across
+  tests with `SetUpTestSuite`. Debug + coverage builds are much slower (not measured yet).
+- After changing the layout of a widely included public header (`Scene.h`, components), an incremental
+  build can keep a stale object → heap corruption in an unrelated test. Rebuild with `--clean-first`
+  before trusting the results.
+- Renderer backend invariants (GL global bindings, Vulkan batch/descriptor rules, shared model UBO):
+  `.claude/rules/renderer.md`.
+- Comment-stripping scripts must keep `// NOLINT*`, `// clang-format on/off`, `// IWYU pragma` lines;
+  check that every `NOLINTBEGIN` / `clang-format off` stays balanced.
+- `std::cerr` / iostreams are banned: logger macros, or `std::println(stderr, …)` before the logger exists.
+- Third-party code only through DepManager, never vendored.
+- Editor SVG icons (`source/owlnest/assets_sources/icons/`) are hand-made: never edit them by script.

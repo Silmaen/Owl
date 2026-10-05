@@ -6,6 +6,12 @@ feature should regress the baseline. Every PR is expected to move the needle for
 
 Mirrors the *Ongoing across all releases* section of `doc/pages/roadmap.md`; keep both in sync.
 
+## Render-Style Mixing
+
+- Owl's positioning: the engine that mixes rendering styles (2D, raycast, voxel, isometric, 3D) in one game
+- Every new rendering mode ships as a renderer-stack layer composing with the others and the HUD, in editor and Play
+- The sample project keeps at least one scene mixing two or more rendering styles
+
 ## Code Quality
 
 - Keep `clang-tidy` and `clang-format` clean — no new warnings, no `// NOLINT` without a comment
@@ -23,7 +29,7 @@ Mirrors the *Ongoing across all releases* section of `doc/pages/roadmap.md`; kee
 - **No new public API without tests** — add unit or integration tests alongside the feature, in
   the same PR
 - Coverage trend must go up over time, never down — measure with
-  `poetry run python ci_action.py Coverage linux-gcc-debug` (or your preferred preset)
+  `docker/run.sh poetry run python ci_action.py Coverage linux-clang-debug`
 - Unit tests for pure logic; integration tests for anything crossing module boundaries (scene +
   renderer, script + physics, pack + loader, etc.)
 - Opportunistically backfill tests for untested legacy paths when you touch them
@@ -40,6 +46,11 @@ Mirrors the *Ongoing across all releases* section of `doc/pages/roadmap.md`; kee
 - Avoid per-frame allocations — reuse buffers, pool short-lived objects, stream large assets
 - Document any non-obvious performance tradeoff with a one-line comment explaining *why*
 
+## Performance Budgets
+
+- `bench/` runs in CI against a stored baseline; a regression beyond the threshold fails the build
+- A release that adds a hot path adds its benchmark and its budget
+
 ## Documentation Quality
 
 - Every public class, method, enum value, and struct field has a `@brief` or `///` comment
@@ -50,7 +61,7 @@ Mirrors the *Ongoing across all releases* section of `doc/pages/roadmap.md`; kee
   the code change, not a follow-up
 - Prefer mermaid diagrams (```` ```mermaid ````) over ASCII art or external images for
   architecture, flow, or sequence diagrams
-- Update `CHANGELOG.md` (Unreleased section) and `doc/pages/roadmap.md` as features land —
+- Update `doc/pages/changelog.md` (Unreleased section) and `doc/pages/roadmap.md` as features land —
   roadmap items flip Planned → In Progress → Done in the PR that performs the work
 
 ## Editor Coverage for Authored Objects
@@ -87,7 +98,7 @@ Checklist to run through before considering a feature complete:
 3. Tests added for the new public API (unit + integration as appropriate)
 4. Coverage did not drop on affected modules
 5. `doc/pages/*.md` updated (existing page edited or new page added + linked)
-6. `CHANGELOG.md` has an entry under `[Unreleased]`
+6. `doc/pages/changelog.md` has an entry under `[Unreleased]`
 7. `doc/pages/roadmap.md` entry flipped to `![Done][done]` if the feature was on the roadmap
 8. No new clang-tidy warnings introduced
 9. Performance of hot paths verified unchanged (or improved)

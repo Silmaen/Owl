@@ -60,6 +60,7 @@ SOURCE_ROOTS: tuple[Path, ...] = (
     root / "source" / "owl" / "private",
     root / "source" / "owlnest" / "sources",
     root / "source" / "owlrunner" / "sources",
+    root / "bench",
 )
 """Directories scanned by every sub-check that walks the tree."""
 
@@ -71,7 +72,7 @@ HEADER_EXTENSIONS: tuple[str, ...] = (".h", ".hpp")
 
 DOC_ROOTS: tuple[Path, ...] = (
     root / "doc",
-    root,  # README, CHANGELOG, CONTRIBUTING at the root
+    root,  # README, CHANGELOG, ROADMAP, CONTRIBUTING at the root
 )
 """Directories scanned by the typo check (in addition to source roots)."""
 
@@ -250,13 +251,14 @@ def _check_typos() -> int:
     docs_dir = root / "doc"
     if docs_dir.exists():
         targets.append(str(docs_dir))
-    for f in ("README.md", "CHANGELOG.md", "CONTRIBUTING.md"):
+    for f in ("README.md", "CHANGELOG.md", "ROADMAP.md", "CONTRIBUTING.md"):
         p = root / f
         if p.exists():
             targets.append(str(p))
     if not targets:
         return 0
-    cmd = [*base_cmd, "--quiet-level=2"]
+    # The audit under doc/audit/ is written in French: an English typo list does not apply to it.
+    cmd = [*base_cmd, "--quiet-level=2", f"--skip={docs_dir / 'audit'}"]
     ignore_words = root / "ci" / "codespell-ignore-words.txt"
     if ignore_words.exists():
         cmd += [f"--ignore-words={ignore_words}"]
