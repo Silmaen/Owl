@@ -24,7 +24,7 @@ The engine library (`source/owl/`) is organized into the following modules:
 | `window`   | Window creation and management                                               |
 | `gui`      | ImGui/ImGuizmo integration for editor UI                                     |
 | `data`     | Data structures + their loaders: geometry/mesh, fonts, assets (+ `pack`), `voxel` |
-| `math`     | Math utilities (zeus library)                                                |
+| `math`     | Math utilities (vectors, matrices, quaternions, transforms)                  |
 | `debug`    | Profiling, memory tracking, stack traces (cpptrace)                          |
 | `event`    | Event system (application, input, window events)                             |
 | `io`       | External device / peripheral channels: serial, video                         |

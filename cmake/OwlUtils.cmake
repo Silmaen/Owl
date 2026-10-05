@@ -390,7 +390,7 @@ function(target_import_so_files TARGET)
             message(STATUS "Target: ${TARGET} of type ${TARGET_TYPE}: copy additional shared libs.")
             add_custom_command(TARGET ${TARGET} POST_BUILD
                     COMMAND ${Python3_EXECUTABLE} -u ${PROJECT_SOURCE_DIR}/cmake/importSharedLibs.py
-                    "$<TARGET_FILE:${TARGET}>" \"${CMAKE_PREFIX_PATH}\"
+                    "$<TARGET_FILE:${TARGET}>" \"${CMAKE_PREFIX_PATH}\" \"${${PROJECT_PREFIX}_SHARED_LIB_ROOTS}\"
                     COMMENT "Copy the needed shared libraries"
                     USES_TERMINAL
             )
@@ -438,40 +438,76 @@ function(print_system_n_target_infos)
     message(STATUS "--------------------------------")
 endfunction()
 
+# Conan only: compile the imgui backends and imgui_stdlib that the ConanCenter recipe ships as sources
+# (`res/bindings`, `res/misc/cpp`), into `${PROJECT_PREFIX_LOWER}_imgui_bindings`. The headers are staged
+# under `backends/` so `#include <backends/imgui_impl_glfw.h>` works as with the DepManager package.
+function(owl_conan_imgui_bindings)
+    set(BindingsTarget ${PROJECT_PREFIX_LOWER}_imgui_bindings)
+    if (TARGET ${BindingsTarget})
+        return()
+    endif ()
+    # Again here: the package variables are function-scoped and imgui may come in through imguizmo first.
+    find_package(imgui CONFIG REQUIRED)
+    string(TOUPPER "${${PROJECT_PREFIX}_CONAN_BUILD_TYPE}" BuildType)
+    set(ImguiRoot "${imgui_PACKAGE_FOLDER_${BuildType}}")
+    if (NOT EXISTS "${ImguiRoot}/res/bindings")
+        message(FATAL_ERROR "imgui bindings not found in the Conan package (${ImguiRoot}).")
+    endif ()
+    set(Staged "${CMAKE_BINARY_DIR}/imgui_bindings")
+    file(COPY "${ImguiRoot}/res/bindings/" DESTINATION "${Staged}/backends")
+    find_package(glfw3 REQUIRED)
+    find_package(VulkanHeaders REQUIRED)
+    find_package(VulkanLoader REQUIRED)
+    find_package(OpenGL REQUIRED)
+    add_library(${BindingsTarget} STATIC
+            "${Staged}/backends/imgui_impl_glfw.cpp"
+            "${Staged}/backends/imgui_impl_opengl2.cpp"
+            "${Staged}/backends/imgui_impl_opengl3.cpp"
+            "${Staged}/backends/imgui_impl_vulkan.cpp"
+            "${ImguiRoot}/res/misc/cpp/imgui_stdlib.cpp")
+    # Third-party sources: never analysed by clang-tidy.
+    set_target_properties(${BindingsTarget} PROPERTIES POSITION_INDEPENDENT_CODE ON FOLDER "External" CXX_CLANG_TIDY "")
+    target_include_directories(${BindingsTarget} SYSTEM PUBLIC "${Staged}" "${ImguiRoot}/res/misc/cpp")
+    target_link_libraries(${BindingsTarget} PUBLIC imgui::imgui PRIVATE glfw Vulkan::Headers Vulkan::Loader OpenGL::GL)
+endfunction()
+
 function(owl_target_link_libraries Target LinkType Module)
-    if (NOT TARGET ${Module}::${Module})
-        message(STATUS "Loading ${Module}....")
+    set(FindPackageArgs "")
+    set(ModuleTarget "${Module}::${Module}") # Valeur par défaut
+    foreach (arg IN LISTS ARGV)
+        if (arg STREQUAL "REQUIRED" OR
+                arg STREQUAL "QUIET" OR
+                arg STREQUAL "CONFIG" OR
+                arg MATCHES "^[0-9]+\\.[0-9]+.*"
+        )
+            list(APPEND FindPackageArgs ${arg})
+        elseif (arg STREQUAL MODULE_TARGET)
+            list(FIND ARGV MODULE_TARGET index)
+            math(EXPR next_index "${index} + 1")
+            list(GET ARGV ${next_index} ModuleTarget)
+        endif ()
+    endforeach ()
+    # FORCE_RELEASE is accepted for compatibility: `CMAKE_MAP_IMPORTED_CONFIG_DEBUG` is consulted at generate
+    # time, so the Release mapping is applied once at directory scope in the top-level CMakeLists.txt.
 
-        set(FindPackageArgs "")
-        set(ForceRelease OFF)
-        set(ModuleTarget "${Module}::${Module}") # Valeur par défaut
-        foreach (arg IN LISTS ARGV)
-            if (arg STREQUAL "REQUIRED" OR
-                    arg STREQUAL "QUIET" OR
-                    arg STREQUAL "CONFIG" OR
-                    arg MATCHES "^[0-9]+\\.[0-9]+.*"
-            )
-                list(APPEND FindPackageArgs ${arg})
-            elseif (arg STREQUAL FORCE_RELEASE)
-                set(ForceRelease ON)
-            elseif (arg STREQUAL MODULE_TARGET)
-                list(FIND ARGV MODULE_TARGET index)
-                math(EXPR next_index "${index} + 1")
-                list(GET ARGV ${next_index} ModuleTarget)
-            endif ()
-        endforeach ()
+    # Conan: a few packages use another CMake name or target than the DepManager ones (see cmake/Conan.cmake).
+    set(Package ${Module})
+    if (${PROJECT_PREFIX}_DEPENDENCY_PROVIDER STREQUAL "conan")
+        if (DEFINED ${PROJECT_PREFIX}_CONAN_PACKAGE_${Module})
+            set(Package ${${PROJECT_PREFIX}_CONAN_PACKAGE_${Module}})
+        endif ()
+        if (DEFINED ${PROJECT_PREFIX}_CONAN_TARGET_${Module})
+            set(ModuleTarget ${${PROJECT_PREFIX}_CONAN_TARGET_${Module}})
+        endif ()
+    endif ()
 
-        # `CMAKE_MAP_IMPORTED_CONFIG_DEBUG` is actually consulted at GENERATE time (link
-        # resolution + `$<TARGET_RUNTIME_DLLS:...>` evaluation), so forcing it just around
-        # `find_package` was a no-op.  The mapping is now applied once at directory scope in the
-        # top-level CMakeLists.txt (see `CMAKE_MAP_IMPORTED_CONFIG_DEBUG`), so both link and DLL
-        # copy consistently pick the Release variant in a Debug build when
-        # `OWL_USE_RELEASE_THIRD_PARTY` is ON.
-        find_package(${Module} ${FindPackageArgs})
+    if (NOT TARGET ${ModuleTarget} OR ${PROJECT_PREFIX}_DEPENDENCY_PROVIDER STREQUAL "conan")
+        message(STATUS "Loading ${Package}....")
+        find_package(${Package} ${FindPackageArgs})
         if (NOT TARGET ${ModuleTarget})
             message(FATAL_ERROR "Module ${ModuleTarget} not found. Please ensure it is built and available in the CMake path.")
         endif ()
-        message(STATUS "Found ${Module} version ${${Module}_VERSION} @ ${${Module}_DIR}")
+        message(STATUS "Found ${Package} version ${${Package}_VERSION} @ ${${Package}_DIR}")
     endif ()
 
     string(STRIP ${LinkType} LinkType)
@@ -482,4 +518,16 @@ function(owl_target_link_libraries Target LinkType Module)
     endif ()
 
     target_link_libraries(${Target} ${LinkType} ${ModuleTarget})
+    if (${PROJECT_PREFIX}_DEPENDENCY_PROVIDER STREQUAL "conan" AND DEFINED ${PROJECT_PREFIX}_CONAN_INCLUDE_SUBDIR_${Module})
+        string(TOUPPER "${${PROJECT_PREFIX}_CONAN_BUILD_TYPE}" BuildType)
+        foreach (IncludeDir IN LISTS ${Package}_INCLUDE_DIRS_${BuildType})
+            target_include_directories(${Target} SYSTEM ${LinkType}
+                    "${IncludeDir}/${${PROJECT_PREFIX}_CONAN_INCLUDE_SUBDIR_${Module}}")
+        endforeach ()
+    endif ()
+    if (${PROJECT_PREFIX}_DEPENDENCY_PROVIDER STREQUAL "conan" AND Module STREQUAL "imgui")
+        owl_conan_imgui_bindings()
+        # Build tree only: the bindings are compiled into the engine, the installed package does not export them.
+        target_link_libraries(${Target} ${LinkType} $<BUILD_INTERFACE:${PROJECT_PREFIX_LOWER}_imgui_bindings>)
+    endif ()
 endfunction()

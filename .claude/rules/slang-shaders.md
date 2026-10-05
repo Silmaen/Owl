@@ -19,7 +19,7 @@ float4 fragmentMain(VertexOutput input) : SV_Target { ... }
 
 ## Matrix Layout
 
-Slang defaults to **row-major**. C++ (GLM/zeus) sends **column-major** matrices. Always declare:
+Slang defaults to **row-major**. C++ (`owl::math`) sends **column-major** matrices. Always declare:
 ```slang
 column_major float4x4 u_ViewProjection;
 ```

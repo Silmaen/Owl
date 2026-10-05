@@ -1,7 +1,3 @@
-package _Self.buildTypes
-
-import _Self.githubBridge
-import _Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
 import jetbrains.buildServer.configs.kotlin.buildFeatures.investigationsAutoAssigner
@@ -9,36 +5,17 @@ import jetbrains.buildServer.configs.kotlin.buildFeatures.perfmon
 import jetbrains.buildServer.configs.kotlin.buildFeatures.xmlReport
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
-import jetbrains.buildServer.configs.kotlin.triggers.vcs
 
-// Helper: configure the current ScriptBuildStep as a Dockerized
-// `poetry run python3 ci_action.py <action> <preset>` invocation. Use inside a
-// `script { ... }` block, then add `conditions { ... }` if needed.
-// The first step in the pipeline ("Determine docker") is native (no Docker) — it
-// runs `DefineTeamCityVariables` which sets `docker_image` for subsequent steps,
-// so it cannot itself run in Docker. That step is written literally below.
-//
-// Not private: a single BT that needs one extra step of its own appends it with
-// the same wiring (see the Clang-Tidy BT in Build.kt) instead of the template
-// growing a step every configuration then has to skip.
-fun ScriptBuildStep.ciAction(
-    action: String,
-    stepId: String,
-    displayName: String = action,
-    preset: String = "%cmake_preset%",
-    extraArgs: String = "",
-) {
-    name = displayName
-    id = stepId
-    scriptContent = "poetry run python3 ci_action.py $action $preset" +
-        if (extraArgs.isNotEmpty()) " $extraArgs" else ""
-    dockerImage = "%docker_image%"
-    dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
-    dockerPull = true
-    dockerRunParameters = "%docker_parameters%"
-}
+/*
+ * Global Build: configure, build, test, coverage, documentation and package steps, each one
+ * gated by the parameters `DefineTeamCityVariables` sets from the preset at run time.
+ * Tool Build: the two steps of a tool that only reads the sources (Code Style).
+ * Their ids are the ones the server already knows; the dependency chain lives in the
+ * factories, not here.
+ */
 
-object GlobalBuild : Template({
+val globalBuild = Template {
+    id = RelativeId("GlobalBuild")
     name = "Global Build"
     description = "build and test"
 
@@ -58,6 +35,10 @@ object GlobalBuild : Template({
         checkbox("run_documentation", "false", checked = "true", unchecked = "false")
         checkbox("run_package", "false", checked = "true", unchecked = "false")
         param("release_preset", "")
+        // Third-party provider for this build (read by cmake/BaseConfig.cmake). Run a configuration with
+        // `conan` to try the Conan migration on its agent before switching the default.
+        select("env.OWL_DEPENDENCY_PROVIDER", "depmanager", label = "Dependency provider",
+            options = listOf("depmanager", "conan"))
         checkbox("publish_doc", "false", checked = "true", unchecked = "false")
 
         // teamcity-github-bridge: opt-in is the BRIDGE_GITHUB build feature
@@ -67,7 +48,7 @@ object GlobalBuild : Template({
     }
 
     vcs {
-        root(_Self.vcsRoots.HttpsGithubComSilmaenOwlGitRefsHeadsMain)
+        root(githubOwl)
     }
 
     steps {
@@ -167,21 +148,7 @@ object GlobalBuild : Template({
     }
 
     triggers {
-        vcs {
-            id = "TRIGGER_1"
-            branchFilter = """
-                +:main
-                +:refs/heads/main
-            """.trimIndent()
-        }
-        // TRIGGER_2 (VCS, feature-branch + PR refs) intentionally removed.
-        // PR refs are enqueued by teamcity-github-bridge via the
-        // BRIDGE_GITHUB feature on pull_request.opened / synchronize /
-        // ready_for_review events. The "Plugin-event path" pattern (v1.4.0+)
-        // eliminates the double-trigger we had when both VCS and the plugin
-        // were enqueueing on every PR push. Symmetrically, the bridge's own
-        // non-PR branch path is switched off project-wide (Project.kt) so
-        // this trigger stays the only thing that builds `main`.
+        mainBranchOnly()
     }
 
     features {
@@ -213,13 +180,79 @@ object GlobalBuild : Template({
         contains("teamcity.agent.jvm.os.arch", "%architecture%", "RQ_3")
     }
 
-    dependencies {
-        snapshot(Build.QualityCodeStyle) {
-            onDependencyFailure = FailureAction.FAIL_TO_START
-        }
-    }
 
     // We have no native ARM agents; ARM64 builds run via Docker emulation on
     // amd64 hosts. Disabling RQ_3 lets ARM jobs land on any-arch agent.
     disableSettings("RQ_3")
-})
+}
+
+val toolBuild = Template {
+    id = RelativeId("CodeSylingCheck")
+    // Keep the original (typo'd) ID so existing build history and references
+    // in TeamCity storage stay bound. The Kotlin object name is fixed for
+    // hygiene; the display name was also corrected.
+    name = "Code Styling Check"
+    description = "Check the code Style"
+
+    params {
+        param("docker_parameters", "")
+        param("extra_tc_vars", "")
+
+        // teamcity-github-bridge: opt-in is the BRIDGE_GITHUB feature below.
+        // Project-level repo + connectionId live on _Self.Project.
+        // CodeStyle is part of the draft-friendly fast-feedback subset so it
+        // runs on draft PRs too.
+    }
+
+    vcs {
+        root(githubOwl)
+    }
+
+    steps {
+        script {
+            name = "Determine Docker"
+            id = "Determine_Docker"
+            scriptContent = "python3 -u ci_action.py DefineTeamCityVariables %cmake_preset% %extra_tc_vars%"
+        }
+        script {
+            name = "Checking Code"
+            id = "Checking_Code"
+            scriptContent = "poetry run python3 -u ci_action.py CodeStyle %cmake_preset%"
+            dockerImage = "%docker_image%"
+            dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
+            dockerPull = true
+            dockerRunParameters = "%docker_parameters%"
+        }
+    }
+
+    triggers {
+        mainBranchOnly()
+    }
+
+    features {
+        investigationsAutoAssigner {
+            id = "InvestigationsAutoAssigner"
+        }
+        // teamcity-github-bridge opt-in. CodeStyle is in the draft-friendly
+        // subset → runOnDraftPr. It also runs on a doc-only PR (no path
+        // filter: codespell and the markdown checks are exactly what such a
+        // PR changes) and annotates the diff — every finding this gate reports
+        // is emitted as a compiler-style diagnostic by ci/actions/code_style.py
+        // precisely so the plugin can pin it to its line in the PR.
+        // See GlobalBuild.kt for the rationale on retiring
+        // commitStatusPublisher + bundled pullRequests.
+        githubBridge()
+        xmlReport {
+            id = "BUILD_EXT_4"
+            reportType = XmlReport.XmlReportType.GOOGLE_TEST
+            rules = "output/build/**/test/*_Report.xml"
+        }
+        perfmon {
+            id = "perfmon"
+        }
+    }
+
+    requirements {
+        contains("teamcity.agent.jvm.os.name", "%platform%", "RQ_1")
+    }
+}

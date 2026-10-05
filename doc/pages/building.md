@@ -13,7 +13,7 @@ This page explains how to configure, build, and test the Owl engine.
 | CMake      | 3.24+   | Build system generator                        |
 | Ninja      |         | Recommended build backend                     |
 | Clang      | 22+     | Or GCC 14+                                    |
-| Python     | 3.12+   | For CI tooling and DepManager                 |
+| Python     | 3.12+   | For CI tooling, DepManager and Conan          |
 | Poetry     |         | Python dependency manager                     |
 | DepManager |         | C++ dependency manager (installed via Poetry) |
 
@@ -53,6 +53,33 @@ If you don't have packages built yet, the [OwlDependencies](https://github.com/S
 repository ships ready-to-use build recipes for every dependency Owl depends on; build them locally
 with `poetry run depmanager build <recipe-dir>` and push them to your server. Once the server is
 populated, the next CMake configure auto-downloads everything Owl needs.
+
+### Third-party packages from Conan (migration in progress)
+
+Every Linux preset can take every dependency from [Conan 2](https://conan.io) and public infrastructure
+(ConanCenter, plus the few recipes kept in `conan/recipes/`), without any DepManager server:
+
+```bash
+poetry sync --no-root   # installs Conan 2 (dev group)
+cmake --preset linux-clang-release -DOWL_DEPENDENCY_PROVIDER=conan
+cmake --build output/build/linux-clang-release
+```
+
+The configure step runs `conan install` on `conanfile.py` with the profile of the compiler (`conan/profiles/linux-clang`
+or `conan/profiles/linux-gcc`) and the versioned lockfile `conan.lock`, into `output/build/<preset>/conan/`. The
+first run of each compiler builds the packages from source (ConanCenter has no Clang 22 nor GCC 14 binaries); later
+runs reuse the Conan cache. The shared libraries from the cache are copied next to the binaries, as with DepManager.
+`-DOWL_CONAN_HOME=<dir>` selects a dedicated cache, `-DOWL_CONAN_PROFILE` another profile, `-DOWL_CONAN_LOCKFILE=`
+(empty) resolves without the lockfile.
+
+The engine is also a Conan package, checked by `test_package/` (a program built on `find_package(OwlEngine)`):
+
+```bash
+poetry run conan create . --profile:all conan/profiles/linux-clang --lockfile conan.lock --lockfile-partial --build=missing
+```
+
+DepManager stays the default and the only provider of the Windows presets. Preset status, lockfile update command
+and the Windows plan: [Conan migration](design/conan-migration.md).
 
 ### Troubleshooting a fresh checkout
 
@@ -185,21 +212,25 @@ the `poetry run python ci_action.py …` invocation, or to a direct `cmake --pre
 
 ## CMake Options
 
-| Option                                    | Default | Description                                    |
-|-------------------------------------------|---------|------------------------------------------------|
-| `OWL_BUILD_SHARED`                        | ON      | Build engine as shared library                 |
-| `OWL_BUILD_NEST`                          | ON      | Build Owl Nest editor                          |
-| `OWL_TESTING`                             | ON      | Enable unit tests                              |
-| `OWL_ENABLE_COVERAGE`                     | OFF     | Code coverage (auto-enabled in debug presets)  |
-| `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (performance impact) |
-| `OWL_ENABLE_PROFILING`                    | OFF     | Profiling output                               |
-| `OWL_USE_RELEASE_THIRD_PARTY`             | ON      | Use release builds of third-party libraries    |
-| `OWL_ENABLE_VULKAN_LAYERS`                | OFF     | Copy Vulkan layers to binary directory         |
-| `OWL_ENABLE_CLANG_TIDY`                   | OFF     | Enable clang-tidy static analysis              |
-| `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF     | AddressSanitizer                               |
-| `OWL_ENABLE_THREAD_SANITIZER`             | OFF     | ThreadSanitizer                                |
-| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF     | UndefinedBehaviorSanitizer                     |
-| `OWL_ENABLE_LEAK_SANITIZER`               | OFF     | LeakSanitizer                                  |
-| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only)                   |
-| `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation        |
-| `OWL_PACKAGING`                           | OFF     | Enable packaging mode                          |
+| Option                                    | Default    | Description                                             |
+|-------------------------------------------|------------|---------------------------------------------------------|
+| `OWL_BUILD_SHARED`                        | ON         | Build engine as shared library                          |
+| `OWL_BUILD_NEST`                          | ON         | Build Owl Nest editor                                   |
+| `OWL_TESTING`                             | ON         | Enable unit tests                                       |
+| `OWL_ENABLE_COVERAGE`                     | OFF        | Code coverage (auto-enabled in debug presets)           |
+| `OWL_ENABLE_STACKTRACE`                   | OFF        | Memory tracker stacktrace (performance impact)          |
+| `OWL_ENABLE_PROFILING`                    | OFF        | Profiling output                                        |
+| `OWL_USE_RELEASE_THIRD_PARTY`             | ON         | Use release builds of third-party libraries             |
+| `OWL_ENABLE_VULKAN_LAYERS`                | OFF        | Copy Vulkan layers to binary directory                  |
+| `OWL_ENABLE_CLANG_TIDY`                   | OFF        | Enable clang-tidy static analysis                       |
+| `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF        | AddressSanitizer                                        |
+| `OWL_ENABLE_THREAD_SANITIZER`             | OFF        | ThreadSanitizer                                         |
+| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF        | UndefinedBehaviorSanitizer                              |
+| `OWL_ENABLE_LEAK_SANITIZER`               | OFF        | LeakSanitizer                                           |
+| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF        | MemorySanitizer (Clang-only)                            |
+| `OWL_ENABLE_DOCUMENTATION`                | OFF        | Enable Doxygen documentation generation                 |
+| `OWL_PACKAGING`                           | OFF        | Enable packaging mode                                   |
+| `OWL_DEPENDENCY_PROVIDER`                 | depmanager | Third-party provider: `depmanager` or `conan` (env too) |
+| `OWL_CONAN_PROFILE`                       | (auto)     | Conan profile, default `conan/profiles/<os>-<compiler>` |
+| `OWL_CONAN_HOME`                          | (empty)    | `CONAN_HOME` for the install (empty: Conan's default)   |
+| `OWL_CONAN_BUILD`                         | missing    | Value of `conan install --build`                        |

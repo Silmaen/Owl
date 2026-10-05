@@ -35,8 +35,9 @@ include(BaseConfig)
 # Set at directory scope so it propagates to every `add_subdirectory`.  Without this, Windows
 # Debug builds linked against `libd.lib` but the post-build copy brought `lib.dll`, causing the
 # loader to fail with `STATUS_DLL_NOT_FOUND` (0xc0000135) on every test binary.
+# The empty entry keeps configuration-less imported targets usable (CMake's FindOpenGL ones, used in Conan mode).
 if (${PROJECT_PREFIX}_USE_RELEASE_THIRD_PARTY)
-    set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG Release)
+    set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG Release "")
 endif ()
 
 #

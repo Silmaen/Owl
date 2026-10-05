@@ -158,7 +158,7 @@ Pick the kind based on what the caller needs to recover from:
 | Side-effect call where success/failure is enough          | `bool` (true on success)               | `Window::setIcon(path) -> bool`                                         |
 | Engine init that must succeed                             | Throw / `assert` / `OWL_CORE_CRITICAL` | `Vulkan::createInstance`                                                |
 
-`owl::expected<T, E>` is the project's wrapper alias for `std::expected` (or `zeus::expected` on toolchains that lack it). Use it whenever the caller needs to **know why** an operation failed, not just that it failed. Define a per-module error enum (`enum struct XxxError : uint8_t { ... }`) and return `owl::unexpected{XxxError::SomeReason}` rather than logging-and-returning-false.
+`owl::expected<T, E>` is the project's wrapper alias for `std::expected`. Use it whenever the caller needs to **know why** an operation failed, not just that it failed. Define a per-module error enum (`enum struct XxxError : uint8_t { ... }`) and return `owl::unexpected{XxxError::SomeReason}` rather than logging-and-returning-false.
 
 Prefer `owl::expected` over `bool` whenever:
 - the caller may want to act differently per failure cause,

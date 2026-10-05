@@ -1,0 +1,4 @@
+sources:
+  "0.23.1":
+    url: "https://github.com/ufbx/ufbx/archive/refs/tags/v0.23.1.tar.gz"
+    sha256: "21edd1021dfb430e37aa6214c9b3bbaa5634b1859cbbef7231e738af4f19c956"

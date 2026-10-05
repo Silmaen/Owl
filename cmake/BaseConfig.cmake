@@ -6,8 +6,21 @@ include(Environment)
 include(CompilerCache)
 # Setup Poetry, and sync python dependencies
 include(Poetry)
-# Initialize Dependency Manager
-include(Depmanager)
+# Third-party provider: DepManager (default) or Conan 2 (migration in progress, see conan-migration.md)
+if (DEFINED ENV{OWL_DEPENDENCY_PROVIDER} AND NOT "$ENV{OWL_DEPENDENCY_PROVIDER}" STREQUAL "")
+    set(_owl_default_provider "$ENV{OWL_DEPENDENCY_PROVIDER}")
+else ()
+    set(_owl_default_provider "depmanager")
+endif ()
+set(${PROJECT_PREFIX}_DEPENDENCY_PROVIDER "${_owl_default_provider}" CACHE STRING "Third-party dependency provider (depmanager or conan; default from the OWL_DEPENDENCY_PROVIDER environment variable)")
+set_property(CACHE ${PROJECT_PREFIX}_DEPENDENCY_PROVIDER PROPERTY STRINGS depmanager conan)
+if (${PROJECT_PREFIX}_DEPENDENCY_PROVIDER STREQUAL "conan")
+    include(Conan)
+elseif (${PROJECT_PREFIX}_DEPENDENCY_PROVIDER STREQUAL "depmanager")
+    include(Depmanager)
+else ()
+    message(FATAL_ERROR "Unknown ${PROJECT_PREFIX}_DEPENDENCY_PROVIDER '${${PROJECT_PREFIX}_DEPENDENCY_PROVIDER}' (depmanager or conan).")
+endif ()
 # Load Utility functions
 include(OwlUtils)
 #
@@ -149,7 +162,10 @@ else ()
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 endif ()
 
-set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/output/install)
+# Only a default: a preset, -DCMAKE_INSTALL_PREFIX or a package manager keeps its own prefix (audit G-06).
+if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/output/install CACHE PATH "Install prefix" FORCE)
+endif ()
 
 set(${PROJECT_PREFIX}_INSTALL_BIN "bin/${${PROJECT_PREFIX}_PLATFORM_STR}_${${PROJECT_PREFIX}_ARCH_STR}")
 set(${PROJECT_PREFIX}_INSTALL_LIB "lib/${${PROJECT_PREFIX}_PLATFORM_STR}_${${PROJECT_PREFIX}_ARCH_STR}")

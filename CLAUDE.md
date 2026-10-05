@@ -32,6 +32,8 @@ docker/run.sh --perf perf ...                                      # ptrace / pe
   `linux-clang-debug` (coverage on). GCC presets exist for CI parity only.
 - Other presets: `linux-clang-tidy`, `linux-sanitizer-{address,thread,undefined-behavior,leak}`,
   `windows-{gcc,clang}-{release,debug}`, `package-{engine,app-nest}-{linux,windows}`.
+- Conan 2 (migration in progress, every Linux preset): add `-DOWL_DEPENDENCY_PROVIDER=conan` (in a worktree,
+  also `-DOWL_CONAN_HOME=/fhome/.conan2-owl`); see `.claude/rules/dependencies.md`. DepManager stays the default.
 - Output: `output/build/<preset>/{bin,lib}`, install in `output/install/<preset>/`.
 - If a build dir ends up root-owned, chown it back through a throwaway root container.
 - Test binaries are `owl_<folder>_unit_test` (e.g. `owl_scene_tests_unit_test`); new `.cpp` files in
@@ -103,5 +105,5 @@ Python, never a bare `depmanager`. Inside the container the venv lives in `/fhom
 - Comment-stripping scripts must keep `// NOLINT*`, `// clang-format on/off`, `// IWYU pragma` lines;
   check that every `NOLINTBEGIN` / `clang-format off` stays balanced.
 - `std::cerr` / iostreams are banned: logger macros, or `std::println(stderr, …)` before the logger exists.
-- Third-party code only through DepManager, never vendored.
+- Third-party code only through DepManager or Conan (ConanCenter, else `conan/recipes/`), never vendored.
 - Editor SVG icons (`source/owlnest/assets_sources/icons/`) are hand-made: never edit them by script.

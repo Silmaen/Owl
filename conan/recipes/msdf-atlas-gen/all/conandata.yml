@@ -1,0 +1,4 @@
+sources:
+  "1.3":
+    url: "https://github.com/Chlumsky/msdf-atlas-gen/archive/refs/tags/v1.3.tar.gz"
+    sha256: "5d3d58e8bc92836baf23ce3a80ef79cc4c2d022fb86b7f160b11cc06cd62fe78"

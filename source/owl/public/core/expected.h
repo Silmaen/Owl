@@ -5,8 +5,8 @@
  * Copyright (c) 2025 All rights reserved.
  * All modification must get authorization from the author.
  *
- * Public alias for `std::expected` (C++23) with a fallback to `zeus::expected`
- * on toolchains that lack the standard implementation. Use `owl::expected<T, E>`
+ * Public alias for `std::expected` (C++23) with a minimal fallback on toolchains
+ * that lack the standard implementation. Use `owl::expected<T, E>`
  * and `owl::unexpected{...}` everywhere instead of picking the underlying type
  * directly.
  */
@@ -21,17 +21,6 @@ namespace owl {
 
 using std::expected;
 using std::unexpected;
-
-}// namespace owl
-
-#elif defined(__has_include) && __has_include(<zeus/expected.hpp>) && !defined(OWL_USE_CLANG_TIDY)
-
-#include <zeus/expected.hpp>
-
-namespace owl {
-
-using zeus::expected;
-using zeus::unexpected;
 
 }// namespace owl
 

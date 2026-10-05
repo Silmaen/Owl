@@ -142,9 +142,9 @@ basic gamepad support.
 Owl RHI repaired, architecture opened, iteration sped up. No new gameplay feature ([details](design/foundations.md)).
 
 - ![Done][done] teamcity-github-bridge 1.10.0 wiring (diff annotations, doc-only PRs skip the C++ matrix)
-- ![Planned][planned] Phase 0 — Conan 2 on ConanCenter, missing recipes first ([Conan](design/conan-migration.md))
+- ![In Progress][progress] Phase 0 — Conan 2 on ConanCenter, missing recipes first ([Conan](design/conan-migration.md))
 - ![Planned][planned] Phase 0 — breaking upgrades first: EnTT 4, Taskflow 4.1, yaml-cpp 0.9, lagging dependencies
-- ![Planned][planned] Phase 0 — OwlEngine Conan package with `test_package`, DepManager removed
+- ![In Progress][progress] Phase 0 — OwlEngine Conan package with `test_package`, DepManager removed
 - ![Planned][planned] Phase A — every confirmed correctness bug fixed with its regression test (PR-01 to PR-25)
 - ![Planned][planned] Phase A — `on_collision` implemented from Box2D contact events (D-07)
 - ![Planned][planned] Phase A — game export tested end to end, sample run headless ([Export](design/game-export.md))
@@ -160,7 +160,7 @@ Owl RHI repaired, architecture opened, iteration sped up. No new gameplay featur
 - ![Planned][planned] Phase C — optional CMake modules so each game can specialise the engine
 - ![Planned][planned] Phase C — typed Lua binding registry and editor command API
 - ![To evaluate][evaluate] Phase C — SDL3 for windowing, input, dialogues, audio (Wayland is the argument)
-- ![Planned][planned] Phase D — public dependencies reduced to EnTT (+ `Owl::Gui`), tinyxml2 and zeus removed
+- ![Planned][planned] Phase D — public dependencies reduced to EnTT (+ `Owl::Gui`)
 - ![Planned][planned] Phase D — hot reload of assets, Slang shaders and Lua scripts
 - ![Planned][planned] Phase D — autosave, crash recovery, session restore, error messages, project templates
 - ![Planned][planned] Phase D — Owl Nest interaction basics: tooltips, context menus, drag & drop, text scale / DPI
