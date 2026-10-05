@@ -23,6 +23,8 @@
 #include <tiny_obj_loader.h>
 #include <ufbx.h>
 
+#include <cstdint>
+
 using namespace owl::core;
 using namespace owl::math;
 using namespace owl::data::geometry;

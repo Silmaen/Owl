@@ -15,6 +15,12 @@
 #include <event/AppEvent.h>
 #include <scene/SceneCamera.h>
 
+#include <cstddef>
+#include <filesystem>
+#include <string>
+#include <utility>
+#include <vector>
+
 using namespace owl;
 
 // ============================================================================

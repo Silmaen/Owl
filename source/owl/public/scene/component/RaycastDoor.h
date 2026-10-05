@@ -12,6 +12,9 @@
 #include "input/KeyCodes.h"
 #include "scene/Tileset.h"
 
+#include <cstdint>
+#include <string>
+
 namespace owl::scene::component {
 /**
  * @brief

@@ -18,9 +18,11 @@ template<typename T>
 class TestWithParam : public ::testing::Test, public ::testing::WithParamInterface<T> {};
 
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <list>
 #include <queue>
+#include <stdexcept>
 
 #include <entt/entt.hpp>
 

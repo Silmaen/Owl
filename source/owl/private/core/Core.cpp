@@ -10,6 +10,9 @@
 
 #include "core/Core.h"
 
+#include <cstdint>
+#include <format>
+
 namespace owl {
 
 auto getVersionCode() -> uint32_t {

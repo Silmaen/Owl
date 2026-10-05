@@ -10,6 +10,10 @@
 
 #include "Device.h"
 
+#include <cstddef>
+#include <string>
+#include <vector>
+
 namespace owl::io::serial {
 /**
  * @brief

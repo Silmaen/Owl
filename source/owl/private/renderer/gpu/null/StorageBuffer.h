@@ -10,6 +10,9 @@
 
 #include "renderer/gpu/StorageBuffer.h"
 
+#include <cstdint>
+#include <vector>
+
 namespace owl::renderer::gpu::null {
 
 /**

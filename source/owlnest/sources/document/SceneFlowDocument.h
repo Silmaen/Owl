@@ -10,6 +10,8 @@
 
 #include "NodeGraphDocument.h"
 
+#include <filesystem>
+#include <string>
 #include <unordered_map>
 
 namespace owl::nest {

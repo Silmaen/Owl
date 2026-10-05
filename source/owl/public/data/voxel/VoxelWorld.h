@@ -11,6 +11,7 @@
 #include "data/voxel/Chunk.h"
 #include "math/vectors.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <unordered_map>

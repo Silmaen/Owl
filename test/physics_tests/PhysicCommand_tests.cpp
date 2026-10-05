@@ -6,6 +6,8 @@
 #include <scene/SceneBody.h>
 #include <scene/component/components.h>
 
+#include <chrono>
+
 using namespace owl::core;
 using namespace owl::physics;
 using namespace owl::scene;

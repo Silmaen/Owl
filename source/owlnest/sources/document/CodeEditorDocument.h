@@ -14,6 +14,9 @@
 #include "codeEditor/MarkdownPreview.h"
 #include "codeEditor/SvgPreview.h"
 
+#include <filesystem>
+#include <string>
+
 class TextEditor;
 
 namespace owl::nest {

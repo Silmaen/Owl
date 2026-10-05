@@ -13,6 +13,8 @@
 
 #include "core/Timestep.h"
 
+#include <cstdint>
+
 namespace owl::sound {
 /**
  * @brief

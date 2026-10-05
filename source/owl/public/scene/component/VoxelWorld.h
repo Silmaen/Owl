@@ -15,6 +15,7 @@
 #include "math/vectors.h"
 #include "scene/Tileset.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <unordered_set>
 

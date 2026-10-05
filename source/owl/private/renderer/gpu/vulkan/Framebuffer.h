@@ -12,6 +12,10 @@
 
 #include "renderer/gpu/Framebuffer.h"
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
 namespace owl::renderer::gpu::vulkan {
 /**
  * @brief

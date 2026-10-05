@@ -12,6 +12,10 @@
 #ifdef OWL_PLATFORM_LINUX
 #include <linux/videodev2.h>
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
 /**
  * @brief
  *  Linux video devices.

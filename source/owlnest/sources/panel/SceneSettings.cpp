@@ -13,7 +13,10 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <array>
+#include <cstddef>
 #include <sstream>
+#include <vector>
 
 namespace owl::nest::panel {
 

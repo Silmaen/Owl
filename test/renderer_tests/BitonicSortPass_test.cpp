@@ -12,6 +12,10 @@
 #include <renderer/utils/BitonicSortPass.h>
 
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+#include <vector>
 
 TEST(BitonicSortPass, initShutdownOnNullBackend) {
 	owl::core::Log::init(owl::core::Log::Level::Off);

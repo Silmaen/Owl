@@ -14,6 +14,12 @@
 #include <scene/TilemapAsset.h>
 #include <scene/Tileset.h>
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
+#include <format>
+#include <utility>
+
 namespace owl::nest::panel {
 
 namespace {

@@ -10,6 +10,9 @@
 
 #include <owl.h>
 
+#include <string>
+#include <vector>
+
 namespace owl::nest {
 /**
  * @brief

@@ -19,6 +19,8 @@
 #include <scene/component/UiRect.h>
 #include <scene/component/UiSlider.h>
 
+#include <filesystem>
+
 using namespace owl;
 using namespace owl::scene;
 

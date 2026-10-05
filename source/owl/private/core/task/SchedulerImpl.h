@@ -9,7 +9,10 @@
 #pragma once
 #include "core/external/taskflow.h"
 #include "core/task/Scheduler.h"
+#include <cstddef>
 #include <deque>
+#include <thread>
+#include <vector>
 
 namespace owl::core::task {
 /**

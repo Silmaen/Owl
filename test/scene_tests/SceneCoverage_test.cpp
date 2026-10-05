@@ -12,6 +12,11 @@
 #include <scene/Scene.h>
 #include <scene/component/components.h>
 
+#include <algorithm>
+#include <cstdint>
+#include <string>
+#include <tuple>
+
 using namespace owl;
 using namespace owl::scene;
 using namespace owl::scene::component;

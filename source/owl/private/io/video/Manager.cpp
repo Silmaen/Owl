@@ -15,6 +15,8 @@
 #include "linux/Device.h"
 #endif
 
+#include <cstdint>
+
 namespace owl::io::video {
 
 Manager::Manager() { updateDeviceList(); }

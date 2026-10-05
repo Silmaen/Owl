@@ -4,6 +4,10 @@
 #include <gui/Theme.h>
 #include <yaml-cpp/yaml.h>
 
+#include <filesystem>
+#include <fstream>
+#include <ios>
+
 using namespace owl::gui;
 using namespace owl::core;
 

@@ -9,7 +9,10 @@
 #pragma once
 
 #include "core/Core.h"
+#include <cstdint>
 #include <filesystem>
+#include <string>
+#include <vector>
 
 namespace owl::sound {
 /**

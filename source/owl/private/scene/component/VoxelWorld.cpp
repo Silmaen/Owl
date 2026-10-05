@@ -10,6 +10,8 @@
 #include "core/SerializerImpl.h"
 #include "scene/component/VoxelWorld.h"
 
+#include <cstdint>
+
 namespace owl::scene::component {
 
 namespace {

@@ -13,6 +13,7 @@
 #include "renderer/Renderer.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstring>
 
 namespace owl::gui::widgets {

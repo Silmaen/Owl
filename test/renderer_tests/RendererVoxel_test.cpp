@@ -12,6 +12,12 @@
 #include <renderer/RendererVoxelLayer.h>
 #include <renderer/utils/shaderFileUtils.h>
 
+#include <filesystem>
+#include <fstream>
+#include <ios>
+#include <sstream>
+#include <string>
+
 using namespace owl;
 
 namespace {

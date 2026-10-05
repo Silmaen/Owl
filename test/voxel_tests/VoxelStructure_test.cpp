@@ -12,6 +12,8 @@
 #include <data/voxel/VoxelStructure.h>
 #include <data/voxel/VoxelWorld.h>
 
+#include <string>
+
 using namespace owl;
 using namespace owl::data::voxel;
 

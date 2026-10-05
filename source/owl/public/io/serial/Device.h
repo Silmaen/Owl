@@ -13,6 +13,7 @@
  *  Base namespace for IO operations.
  */
 #include "core/Core.h"
+#include <cstddef>
 #include <string>
 
 

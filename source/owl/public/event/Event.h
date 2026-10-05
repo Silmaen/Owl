@@ -10,6 +10,9 @@
 
 #include "core/Core.h"
 
+#include <cstdint>
+#include <string>
+
 /**
  * @brief
  *  Namespace for Events.

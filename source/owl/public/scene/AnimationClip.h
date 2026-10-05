@@ -11,8 +11,10 @@
 #include "math/Curve.h"
 #include "renderer/gpu/Texture.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
+#include <string_view>
 
 namespace owl::scene {
 /**

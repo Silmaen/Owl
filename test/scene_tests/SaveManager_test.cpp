@@ -15,6 +15,13 @@
 #include <scene/component/SpriteRenderer.h>
 #include <scene/component/Transform.h>
 
+#include <chrono>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <string>
+#include <tuple>
+
 using namespace owl;
 using namespace owl::scene;
 

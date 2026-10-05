@@ -10,6 +10,9 @@
 
 #include <renderer/RenderLayerFactory.h>
 
+#include <string>
+#include <utility>
+
 namespace {
 class FakeLayer final : public owl::renderer::RenderLayer {
 public:

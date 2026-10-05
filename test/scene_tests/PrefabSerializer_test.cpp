@@ -18,6 +18,11 @@
 #include <scene/component/Transform.h>
 #include <scene/component/Visibility.h>
 
+#include <filesystem>
+#include <format>
+#include <fstream>
+#include <string>
+
 using namespace owl;
 using namespace owl::scene;
 

@@ -9,7 +9,11 @@
 
 #include "renderer/TextureDecoder.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
 #include <fstream>
+#include <vector>
 
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;

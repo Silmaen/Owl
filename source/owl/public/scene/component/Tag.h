@@ -11,6 +11,8 @@
 #include "core/Core.h"
 #include "core/Serializer.h"
 
+#include <string>
+
 namespace owl::scene::component {
 /**
  * @brief

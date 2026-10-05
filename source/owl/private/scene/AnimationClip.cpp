@@ -12,6 +12,7 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <cstdint>
 #include <fstream>
 #include <sstream>
 

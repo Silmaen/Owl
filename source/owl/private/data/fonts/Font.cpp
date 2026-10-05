@@ -14,6 +14,8 @@
 #undef INFINITE
 #include <msdf-atlas-gen/msdf-atlas-gen.h>
 
+#include <cstdint>
+
 namespace owl::data::fonts {
 
 struct MsdfData {

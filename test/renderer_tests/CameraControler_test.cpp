@@ -4,6 +4,8 @@
 #include <input/Input.h>
 #include <renderer/CameraOrthoController.h>
 
+#include <chrono>
+
 using namespace owl::input;
 using namespace owl::renderer;
 

@@ -10,6 +10,8 @@
 
 #include "renderer/gpu/RenderAPI.h"
 
+#include <cstdint>
+
 /**
  * @brief
  *  OpenGL 4.5-backed implementations of the renderer abstractions.

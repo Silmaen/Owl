@@ -15,6 +15,8 @@
 #include "renderer/gpu/vulkan/GraphContext.h"
 #include "utils.h"
 
+#include <limits>
+
 namespace owl::renderer::gpu::vulkan::internal {
 
 namespace {

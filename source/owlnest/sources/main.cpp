@@ -12,6 +12,8 @@
 #include <app/EntryPoint.h>
 #include <gui/UiLayer.h>
 
+#include <filesystem>
+
 namespace owl {
 
 OWL_DIAG_PUSH

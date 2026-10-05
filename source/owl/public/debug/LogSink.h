@@ -11,6 +11,7 @@
 #include "core/Log.h"
 
 #include <chrono>
+#include <cstddef>
 #include <deque>
 #include <mutex>
 #include <string>

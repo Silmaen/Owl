@@ -12,6 +12,8 @@
 #include <data/voxel/ChunkMesher.h>
 
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
 
 using namespace owl;
 using namespace owl::data::voxel;

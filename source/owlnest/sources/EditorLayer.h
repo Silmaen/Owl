@@ -29,6 +29,12 @@
 #include "panel/SettingsPanel.h"
 #include "panel/VoxelPalette.h"
 
+#include <cstddef>
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <vector>
+
 namespace owl::nest {
 /**
  * @brief

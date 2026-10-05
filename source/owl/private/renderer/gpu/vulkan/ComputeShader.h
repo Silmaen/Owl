@@ -8,8 +8,13 @@
 
 #pragma once
 
+#include "core/Core.h"
 #include "renderer/gpu/ComputeShader.h"
 #include <vulkan/vulkan.h>
+
+#include <cstdint>
+#include <string>
+#include <vector>
 
 namespace owl::renderer::gpu::vulkan {
 

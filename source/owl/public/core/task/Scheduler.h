@@ -10,6 +10,8 @@
 #include "Task.h"
 #include "Timer.h"
 
+#include <cstddef>
+
 /**
  * @brief
  *  Namespace for task management.

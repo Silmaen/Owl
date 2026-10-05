@@ -14,6 +14,8 @@
 #include "scene/component/components.h"
 #include <box2d/box2d.h>
 
+#include <cstdint>
+
 namespace owl::physics {
 
 namespace {

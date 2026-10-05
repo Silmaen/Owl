@@ -8,8 +8,14 @@
 #pragma once
 
 #include "core/Log.h"
+#include "core/Macros.h"
+#include <chrono>
+#include <cstddef>
 #include <fstream>
+#include <mutex>
+#include <string>
 #include <thread>
+#include <utility>
 
 namespace owl::debug {
 /// The type for microseconds.

@@ -13,6 +13,7 @@
 #include <math/vectors.h>
 #include <renderer/gpu/Texture.h>
 
+#include <cstdint>
 #include <string>
 
 struct ImVec2;

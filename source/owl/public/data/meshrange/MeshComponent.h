@@ -10,6 +10,11 @@
 
 #include "data/geometry/MeshCursorBase.h"
 #include "data/geometry/primitive/MeshVertex.h"
+#include "math/vectors.h"
+
+#include <cstddef>
+#include <type_traits>
+#include <vector>
 
 /**
  * @brief

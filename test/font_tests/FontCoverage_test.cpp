@@ -12,6 +12,8 @@
 #include <data/fonts/Font.h>
 #include <data/fonts/FontLibrary.h>
 
+#include <filesystem>
+
 using namespace owl::data::fonts;
 using namespace owl;
 

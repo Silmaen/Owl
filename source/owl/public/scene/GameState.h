@@ -11,6 +11,8 @@
 #include "core/Core.h"
 #include "core/Serializer.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <unordered_map>

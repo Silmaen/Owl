@@ -11,6 +11,9 @@
 #include <gui/IconBank.h>
 #include <magic_enum/magic_enum.hpp>
 
+#include <cstdint>
+#include <string>
+
 namespace owl::nest::panel {
 
 namespace {

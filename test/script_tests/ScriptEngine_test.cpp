@@ -12,7 +12,12 @@
 #include <scene/Scene.h>
 #include <script/ScriptEngine.h>
 
+#include <cstdint>
+#include <filesystem>
 #include <fstream>
+#include <string>
+#include <tuple>
+#include <vector>
 
 using namespace owl;
 using namespace owl::script;

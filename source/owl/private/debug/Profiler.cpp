@@ -9,7 +9,10 @@
 
 #include "debug/Profiler.h"
 
+#include <iomanip>
 #include <mutex>
+#include <sstream>
+#include <thread>
 
 namespace owl::debug {
 

@@ -15,6 +15,8 @@
 #include "renderer/Renderer2D.h"
 #include "renderer/gpu/RenderCommand.h"
 
+#include <cstdint>
+
 namespace owl::renderer {
 
 namespace {

@@ -10,6 +10,8 @@
 
 #include "renderer/gpu/RenderAPI.h"
 
+#include <cstdint>
+
 /**
  * @brief
  *  Vulkan 1.4-backed implementations of the renderer abstractions.

@@ -12,6 +12,7 @@
 
 #include <atomic>
 #include <mutex>
+#include <string>
 
 namespace owl::nest {
 /**

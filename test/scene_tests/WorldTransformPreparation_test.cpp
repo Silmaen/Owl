@@ -13,6 +13,9 @@
 #include <scene/Scene.h>
 #include <scene/component/components.h>
 
+#include <cstdint>
+#include <limits>
+
 using namespace owl;
 
 namespace {

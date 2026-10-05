@@ -10,6 +10,12 @@
 
 #include "core/Core.h"
 
+#include <cstddef>
+#include <format>
+#include <list>
+#include <string>
+#include <unordered_map>
+
 #ifndef OWL_TRACKER_VERBOSITY
 #define OWL_TRACKER_VERBOSITY 0
 #endif

@@ -12,6 +12,8 @@
 
 #include <math/Transform.h>
 
+#include <string>
+
 namespace owl::nest::commands {
 /**
  * @brief

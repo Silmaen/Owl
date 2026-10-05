@@ -10,6 +10,8 @@
 #include "core/SerializerImpl.h"
 #include "scene/component/Hierarchy.h"
 
+#include <cstdint>
+
 namespace owl::scene::component {
 
 void Hierarchy::serialize(const core::Serializer& iOut) const {

@@ -6,7 +6,10 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <filesystem>
 #include <fstream>
+#include <iterator>
+#include <string>
 
 TEST(SceneComponent, key) {
 	EXPECT_EQ(owl::scene::component::AnimatedSpriteRenderer::key(), "AnimatedSpriteRenderer");

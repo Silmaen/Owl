@@ -10,6 +10,13 @@
 
 #include "renderer/gpu/Shader.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 /**
  * @brief
  *  Namespace gathering utility functions used across different renderers.

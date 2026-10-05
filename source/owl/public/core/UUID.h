@@ -10,6 +10,10 @@
 
 #include "core/Core.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+
 namespace owl::core {
 /**
  * @brief

@@ -12,6 +12,9 @@
 #include "script/ScriptEngine.h"
 #include "script/ScriptInstance.h"
 
+#include <string>
+#include <vector>
+
 namespace owl::scene::component {
 /**
  * @brief

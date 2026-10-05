@@ -14,11 +14,14 @@
 #include <math/vectors.h>
 #include <renderer/gpu/Texture.h>
 
+#include <cstddef>
 #include <filesystem>
 #include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <utility>
+#include <vector>
 
 class TextEditor;
 struct ImVec2;

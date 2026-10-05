@@ -11,7 +11,12 @@
 #include "core/Core.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <type_traits>
 
 namespace owl::math {
 /**

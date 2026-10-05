@@ -14,6 +14,8 @@
 #include "data/voxel/VoxelStructure.h"
 #include "data/voxel/VoxelWorld.h"
 
+#include <cstdint>
+
 namespace owl::data::voxel {
 
 namespace {

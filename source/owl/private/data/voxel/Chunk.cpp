@@ -11,6 +11,8 @@
 
 #include "data/voxel/BlockRunLength.h"
 
+#include <cstdint>
+
 namespace owl::data::voxel {
 
 auto worldToChunk(const math::vec3i& iWorld) -> math::vec3i {

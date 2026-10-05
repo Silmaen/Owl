@@ -11,6 +11,7 @@
 #include "core/Core.h"
 #include "math/vectors.h"
 
+#include <cstdint>
 #include <optional>
 #include <string>
 

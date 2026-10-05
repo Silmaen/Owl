@@ -10,9 +10,14 @@
 
 #include <renderer/utils/shaderFileUtils.h>
 
+#include <filesystem>
 #include <format>
 #include <fstream>
 #include <sstream>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 namespace owl::bench {
 

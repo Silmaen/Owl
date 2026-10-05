@@ -10,6 +10,9 @@
 #include "renderer/gpu/Framebuffer.h"
 #include <vulkan/vulkan.h>
 
+#include <cstdint>
+#include <string_view>
+
 namespace owl::renderer::gpu::vulkan::internal {
 
 /**

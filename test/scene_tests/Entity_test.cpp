@@ -4,6 +4,8 @@
 #include <scene/Entity.h>
 #include <scene/component/Camera.h>
 
+#include <cstdint>
+
 using namespace owl::scene;
 
 TEST(Entity, creation) {

@@ -10,6 +10,7 @@
 #include "math/Curve.h"
 
 #include <algorithm>
+#include <cstddef>
 
 namespace owl::math {
 

@@ -9,6 +9,8 @@
 
 #include "data/geometry/primitive/Triangle.h"
 
+#include <cstdint>
+
 namespace owl::data::geometry::primitive {
 
 Triangle::Triangle() = default;

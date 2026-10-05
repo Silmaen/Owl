@@ -9,6 +9,9 @@
 
 #include "math/Transform.h"
 
+#include <cmath>
+#include <cstdint>
+
 namespace owl::math {
 
 namespace {

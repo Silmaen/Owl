@@ -10,6 +10,8 @@
 #include "core/SerializerImpl.h"
 #include "scene/component/LuaScript.h"
 
+#include <cstdint>
+
 namespace owl::scene::component {
 
 void LuaScript::serialize(const core::Serializer& iOut) const {

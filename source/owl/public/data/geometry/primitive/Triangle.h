@@ -9,6 +9,11 @@
 #pragma once
 
 #include "data/geometry/primitive/MeshVertex.h"
+#include "math/vectors.h"
+
+#include <array>
+#include <cstdint>
+#include <limits>
 
 /**
  * @brief

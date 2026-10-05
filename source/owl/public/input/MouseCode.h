@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 
 namespace owl::input {
 /// Wrap to mouse code.

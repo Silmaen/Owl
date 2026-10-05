@@ -13,6 +13,7 @@
 #include "../VoxelBrush.h"
 
 #include <filesystem>
+#include <string>
 
 namespace owl::nest::panel {
 

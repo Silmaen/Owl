@@ -10,6 +10,8 @@
 
 #include <owl.h>
 
+#include <cstdint>
+
 namespace owl::scene {
 
 class TilemapAsset;

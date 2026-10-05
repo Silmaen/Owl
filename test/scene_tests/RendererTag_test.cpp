@@ -15,6 +15,8 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <filesystem>
+
 TEST(RendererTagComponent, keyAndName) {
 	EXPECT_STREQ(owl::scene::component::RendererTag::key(), "RendererTag");
 	EXPECT_STREQ(owl::scene::component::RendererTag::name(), "Renderer Tag");

@@ -17,6 +17,9 @@
 #include <scene/TilemapAsset.h>
 #include <scene/component/components.h>
 
+#include <filesystem>
+#include <string>
+
 using namespace owl;
 using namespace owl::scene;
 

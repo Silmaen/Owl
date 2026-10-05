@@ -8,12 +8,16 @@
 
 #include "ContentBrowser.h"
 
-#include <algorithm>
 #include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <platform/FileDialog.h>
+
+#include <algorithm>
+#include <cstdint>
+#include <format>
+#include <optional>
 
 namespace owl::nest::panel {
 

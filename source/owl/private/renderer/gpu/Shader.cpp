@@ -18,6 +18,8 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <format>
+
 namespace owl::renderer::gpu {
 
 auto Shader::create(const Specification& iShaderName) -> shared<Shader> {

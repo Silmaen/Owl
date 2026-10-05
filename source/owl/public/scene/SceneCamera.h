@@ -12,6 +12,8 @@
 #include "math/trigonometry.h"
 #include "renderer/Camera.h"
 
+#include <cstdint>
+
 namespace owl::scene {
 /**
  * @brief

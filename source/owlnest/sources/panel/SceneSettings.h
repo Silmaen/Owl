@@ -13,6 +13,8 @@
 #include "../Project.h"
 #include "../UndoManager.h"
 
+#include <string>
+
 namespace owl::nest::panel {
 
 /**

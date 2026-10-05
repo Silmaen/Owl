@@ -11,6 +11,13 @@
 #include <debug/LogSink.h>
 #include <gui/IconBank.h>
 
+#include <chrono>
+#include <cstddef>
+#include <ctime>
+#include <format>
+#include <string>
+#include <string_view>
+
 namespace owl::nest::panel {
 
 namespace {

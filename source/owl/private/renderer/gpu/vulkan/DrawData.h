@@ -11,6 +11,11 @@
 #include "Shader.h"
 #include "renderer/gpu/DrawData.h"
 
+#include <cstdint>
+#include <format>
+#include <string>
+#include <vector>
+
 namespace owl::renderer::gpu::vulkan {
 /**
  * @brief

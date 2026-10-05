@@ -13,6 +13,8 @@
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/RendererDescriptors.h"
 
+#include <cstdint>
+
 namespace owl::renderer {
 
 namespace {

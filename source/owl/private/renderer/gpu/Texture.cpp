@@ -17,7 +17,11 @@
 #include "renderer/TextureDecoder.h"
 #include "vulkan/Texture.h"
 
+#include <cstdint>
+#include <format>
 #include <fstream>
+#include <span>
+#include <sstream>
 
 namespace owl::renderer::gpu {
 

@@ -12,6 +12,8 @@
 #include "renderer/Camera.h"
 #include "renderer/gpu/Texture.h"
 
+#include <cstdint>
+
 namespace owl::scene {
 class TilemapAsset;
 }// namespace owl::scene

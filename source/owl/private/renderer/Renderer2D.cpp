@@ -18,6 +18,8 @@
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/UniformBuffer.h"
 
+#include <cstdint>
+
 namespace owl::renderer {
 
 namespace utils {

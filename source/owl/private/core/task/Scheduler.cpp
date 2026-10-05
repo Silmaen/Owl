@@ -10,6 +10,9 @@
 #include "core/task/Scheduler.h"
 #include "core/task/SchedulerImpl.h"
 
+#include <future>
+#include <thread>
+
 namespace owl::core::task {
 
 Scheduler::Scheduler() : mp_impl{mkUniq<SchedulerImpl>()} {}

@@ -11,6 +11,8 @@
 #include "core/Serializer.h"
 #include "renderer/gpu/Texture.h"
 
+#include <cstdint>
+
 namespace owl::scene::component {
 /**
  * @brief

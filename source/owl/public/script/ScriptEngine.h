@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <variant>

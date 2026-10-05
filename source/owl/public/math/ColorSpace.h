@@ -10,6 +10,8 @@
 
 #include "math/vectors.h"
 
+#include <cmath>
+
 namespace owl::math {
 /**
  * \brief Convert sRGB colour to linear colour.

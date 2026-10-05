@@ -13,6 +13,8 @@
 
 #include <ImGuizmo.h>
 
+#include <cstdint>
+
 namespace owl::gui {
 
 void Guizmo::initialize(const math::vec2& iPosition, const math::vec2& iSize) {

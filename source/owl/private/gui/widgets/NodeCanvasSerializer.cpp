@@ -11,7 +11,9 @@
 
 #include "core/external/yaml.h"
 
+#include <cstdint>
 #include <fstream>
+#include <span>
 #include <sstream>
 #include <unordered_map>
 

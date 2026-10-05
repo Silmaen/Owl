@@ -10,6 +10,7 @@
 #include "app/Application.h"
 #include "platform/FileDialog.h"
 
+#include <cstdint>
 #include <cstring>
 #include <nfd.hpp>
 

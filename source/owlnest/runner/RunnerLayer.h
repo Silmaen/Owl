@@ -12,6 +12,11 @@
 #include <owl.h>
 #include <scene/SceneSerializer.h>
 
+#include <atomic>
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
 namespace owl::nest::runner {
 /// Configuration loaded from runner.yml.
 struct RunnerConfig {

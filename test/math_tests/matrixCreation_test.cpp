@@ -11,6 +11,9 @@
 #include <math/matrixCreation.h>
 #include <math/trigonometry.h>
 
+#include <cmath>
+#include <cstddef>
+
 using namespace owl::math;
 
 TEST(math, Identity) {

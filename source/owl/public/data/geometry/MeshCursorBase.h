@@ -9,6 +9,9 @@
 #pragma once
 #include <data/extradata/ExtraDataContainer.h>
 
+#include <cstddef>
+#include <cstdint>
+
 namespace owl::data::geometry {
 
 class StaticMesh;

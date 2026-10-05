@@ -11,6 +11,12 @@
 #include <core/Log.h>
 #include <scene/TilemapAsset.h>
 
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
 using namespace owl;
 using namespace owl::scene;
 

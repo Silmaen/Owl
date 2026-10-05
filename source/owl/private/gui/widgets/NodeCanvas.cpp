@@ -19,6 +19,8 @@ OWL_DIAG_DISABLE_CLANG("-Wunused-parameter")
 OWL_DIAG_POP
 
 #include <chrono>
+#include <cstdint>
+#include <span>
 
 namespace owl::gui::widgets {
 

@@ -11,6 +11,8 @@
 #include "DrawData.h"
 #include "math/vectors.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu {
 class StorageBuffer;
 }// namespace owl::renderer::gpu

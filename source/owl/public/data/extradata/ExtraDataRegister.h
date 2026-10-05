@@ -11,6 +11,8 @@
 #include "core/IFactory.h"
 #include "data/extradata/ExtraDataRegisterScope.h"
 
+#include <string>
+
 namespace owl::data::extradata {
 /**
  * @brief

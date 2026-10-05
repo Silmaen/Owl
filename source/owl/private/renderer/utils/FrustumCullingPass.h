@@ -13,6 +13,10 @@
 #include "renderer/gpu/ComputeShader.h"
 #include "renderer/gpu/StorageBuffer.h"
 
+#include <array>
+#include <cstdint>
+#include <span>
+
 namespace owl::renderer::utils {
 
 /**

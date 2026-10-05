@@ -13,6 +13,8 @@
 #include "renderer/gpu/opengl/StorageBuffer.h"
 #include "renderer/gpu/vulkan/StorageBuffer.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu {
 
 auto StorageBuffer::create(const uint32_t iSize, const uint32_t iBinding, [[maybe_unused]] const std::string& iRenderer)

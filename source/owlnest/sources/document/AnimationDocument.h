@@ -14,6 +14,11 @@
 #include <gui/widgets/Sequencer.h>
 #include <scene/AnimationClip.h>
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+#include <utility>
+
 namespace owl::nest {
 /**
  * @brief

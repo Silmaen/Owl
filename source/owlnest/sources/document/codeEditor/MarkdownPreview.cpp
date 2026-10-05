@@ -30,6 +30,9 @@ OWL_DIAG_POP
 #include <cstdint>
 #include <fstream>
 #include <sstream>
+#include <string_view>
+#include <type_traits>
+#include <variant>
 
 namespace owl::nest::codeEditor {
 

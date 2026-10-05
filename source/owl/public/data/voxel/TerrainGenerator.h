@@ -13,6 +13,8 @@
 #include "math/PerlinNoise.h"
 #include "math/vectors.h"
 
+#include <cstdint>
+
 namespace owl::data::voxel {
 
 /**

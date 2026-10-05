@@ -9,6 +9,7 @@
 #include "harness/Bench.h"
 
 #include <cmath>
+#include <cstdio>
 #include <format>
 #include <fstream>
 #include <print>

@@ -15,6 +15,9 @@ OWL_DIAG_DISABLE_CLANG("-Wshadow")
 #include <yaml-cpp/yaml.h>
 OWL_DIAG_POP
 
+#include <cstddef>
+#include <string>
+
 namespace owl::nest::commands {
 
 /**

@@ -10,6 +10,10 @@
 
 #include <math/PerlinNoise.h>
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+
 using namespace owl;
 
 TEST(PerlinNoise, DeterministicPerSeed) {

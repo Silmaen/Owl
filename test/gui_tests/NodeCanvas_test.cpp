@@ -9,6 +9,12 @@
 
 #include "gui/widgets/NodeCanvas.h"
 
+#include <algorithm>
+#include <cstdint>
+#include <string>
+#include <utility>
+#include <vector>
+
 using namespace owl;
 using namespace owl::gui::widgets;
 

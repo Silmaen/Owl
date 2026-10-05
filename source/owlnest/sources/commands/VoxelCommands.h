@@ -13,6 +13,8 @@
 #include <data/voxel/Block.h>
 #include <math/vectors.h>
 
+#include <cstddef>
+#include <string>
 #include <vector>
 
 namespace owl::nest::commands {

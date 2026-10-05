@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <utility>
+
 /**
  * @brief
  *  Namespace for mathematical functions.

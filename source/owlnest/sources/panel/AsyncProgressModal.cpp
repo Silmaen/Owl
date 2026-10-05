@@ -15,6 +15,8 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 #include <imgui.h>
 OWL_DIAG_POP
 
+#include <utility>
+
 namespace owl::nest::panel {
 
 void AsyncProgressModal::open(const std::string& iTitle, shared<AsyncProgressState> iState, const bool iCancellable) {

@@ -13,6 +13,10 @@
 
 #include <scene/Tileset.h>
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
 namespace owl::nest {
 /**
  * @brief

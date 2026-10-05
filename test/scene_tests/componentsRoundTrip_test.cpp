@@ -15,6 +15,9 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <filesystem>
+#include <string>
+
 using namespace owl;
 
 namespace {

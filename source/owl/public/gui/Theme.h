@@ -9,6 +9,12 @@
 
 #include "math/vectors.h"
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+#include <utility>
+#include <vector>
+
 namespace owl::gui {
 /**
  * @brief

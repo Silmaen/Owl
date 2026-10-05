@@ -5,6 +5,8 @@
 
 #include "renderer/gpu/RenderCommand.h"
 
+#include <string>
+
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;
 

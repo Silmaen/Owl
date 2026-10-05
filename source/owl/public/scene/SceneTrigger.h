@@ -11,6 +11,9 @@
 #include "Scene.h"
 #include "core/Core.h"
 
+#include <cstdint>
+#include <string>
+
 namespace owl::scene {
 /**
  * @brief

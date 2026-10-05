@@ -14,6 +14,8 @@
 #include "script/LuaBindings.h"
 #include "script/LuaEngine.h"
 
+#include <cstdint>
+
 namespace owl::script {
 struct ScriptInstance::Impl {
 	// Per-instance Lua engine (isolated state).

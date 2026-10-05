@@ -22,6 +22,10 @@ OWL_DIAG_DISABLE_CLANG("-Wshadow")
 OWL_DIAG_POP
 
 #include <chrono>
+#include <cstdint>
+#include <ctime>
+#include <exception>
+#include <format>
 #include <fstream>
 
 namespace owl::scene {

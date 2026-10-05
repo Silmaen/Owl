@@ -23,6 +23,10 @@
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
 
+#include <cstdint>
+#include <type_traits>
+#include <variant>
+
 namespace owl::script {
 
 namespace {

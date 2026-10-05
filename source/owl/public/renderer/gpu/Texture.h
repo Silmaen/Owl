@@ -12,6 +12,7 @@
 #include "core/Macros.h"
 #include "math/vectors.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <vector>

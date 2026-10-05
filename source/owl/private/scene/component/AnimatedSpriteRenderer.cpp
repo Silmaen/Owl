@@ -13,6 +13,8 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <cstdint>
+
 namespace owl::scene::component {
 
 namespace {

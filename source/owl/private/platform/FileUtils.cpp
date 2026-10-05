@@ -9,6 +9,8 @@
 
 #include "platform/FileUtils.h"
 
+#include <iterator>
+
 namespace owl::platform {
 
 auto fileToString(const std::filesystem::path& iFile) -> std::string {

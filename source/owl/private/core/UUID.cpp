@@ -9,6 +9,8 @@
 
 #include "core/UUID.h"
 
+#include <cstdint>
+
 namespace owl::core {
 
 namespace {

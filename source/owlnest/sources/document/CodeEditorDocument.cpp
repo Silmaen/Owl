@@ -15,8 +15,12 @@
 #include <app/Application.h>
 #include <gui/UiLayer.h>
 
+#include <algorithm>
+#include <cstdint>
+#include <format>
 #include <fstream>
 #include <sstream>
+#include <tuple>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")

@@ -11,6 +11,9 @@
 #include "../EntitySnapshot.h"
 #include "../UndoCommand.h"
 
+#include <string>
+#include <vector>
+
 namespace owl::nest::commands {
 /**
  * @brief

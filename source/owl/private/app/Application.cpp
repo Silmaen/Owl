@@ -22,6 +22,8 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 #include <imgui.h>
 OWL_DIAG_POP
 
+#include <cstdint>
+
 namespace owl::app {
 
 Application* Application::s_instance = nullptr;

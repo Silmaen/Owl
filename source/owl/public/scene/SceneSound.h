@@ -11,6 +11,7 @@
 #include "core/Core.h"
 #include "sound/SoundHandle.h"
 
+#include <cstdint>
 #include <string>
 
 namespace owl::scene {

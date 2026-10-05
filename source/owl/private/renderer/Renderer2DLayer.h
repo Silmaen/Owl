@@ -11,6 +11,9 @@
 #include "renderer/CameraOrtho.h"
 #include "renderer/RenderLayer.h"
 
+#include <cstdint>
+#include <string>
+
 namespace owl::renderer {
 /**
  * @brief

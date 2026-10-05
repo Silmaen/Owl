@@ -11,6 +11,8 @@
 #include "core/Serializer.h"
 #include "core/UUID.h"
 
+#include <cstdint>
+#include <string>
 #include <vector>
 
 namespace owl::scene::component {

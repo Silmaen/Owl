@@ -11,6 +11,12 @@
 #include "renderer/gpu/Shader.h"
 #include <vulkan/vulkan.h>
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 namespace owl::renderer::gpu::vulkan {
 /**
  * @brief

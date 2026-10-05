@@ -15,6 +15,10 @@
 
 #include <scene/TilemapAsset.h>
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
 struct ImDrawList;
 struct ImVec2;
 

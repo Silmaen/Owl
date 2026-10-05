@@ -12,6 +12,9 @@
 
 #include "../Project.h"
 
+#include <string>
+#include <vector>
+
 namespace owl::nest::panel {
 /**
  * @brief

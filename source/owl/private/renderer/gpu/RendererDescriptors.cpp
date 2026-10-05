@@ -12,6 +12,9 @@
 #include "renderer/gpu/RenderCommand.h"
 #include "vulkan/internal/RendererDescriptors.h"
 
+#include <cstdint>
+#include <span>
+
 namespace owl::renderer::gpu {
 
 namespace {

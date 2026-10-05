@@ -10,6 +10,8 @@
 
 #include "renderer/gpu/Buffer.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu::opengl {
 /**
  * @brief

@@ -16,6 +16,8 @@
 #include <scene/Scene.h>
 #include <scene/component/components.h>
 
+#include <chrono>
+
 using namespace owl;
 
 namespace {

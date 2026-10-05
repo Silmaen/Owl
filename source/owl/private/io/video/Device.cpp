@@ -9,6 +9,7 @@
 
 #include "io/video/Device.h"
 
+#include <cstdint>
 #include <cstring>
 #include <stb_image.h>
 

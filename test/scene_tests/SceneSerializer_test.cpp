@@ -8,6 +8,12 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <string>
+#include <vector>
+
 using namespace owl::scene;
 
 TEST(SceneSerializer, SaveLoad) {

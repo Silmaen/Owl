@@ -11,6 +11,8 @@
 #include "renderer/RenderLayer.h"
 #include "renderer/RendererVoxel.h"
 
+#include <string>
+
 namespace owl::renderer {
 
 /**

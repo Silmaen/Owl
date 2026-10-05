@@ -13,6 +13,13 @@
 #include <backends/imgui_impl_vulkan.h>
 #include <renderer/gpu/vulkan/Framebuffer.h>
 
+#include <cstddef>
+#include <cstdint>
+#include <map>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 /**
  * @brief
  *  Internal functions of the vulkan renderer.

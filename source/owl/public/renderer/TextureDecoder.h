@@ -12,6 +12,7 @@
 #include "gpu/Texture.h"
 #include "math/vectors.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <span>

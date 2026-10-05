@@ -10,6 +10,8 @@
 
 #include "renderer/gpu/Framebuffer.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu::null {
 /**
  * @brief

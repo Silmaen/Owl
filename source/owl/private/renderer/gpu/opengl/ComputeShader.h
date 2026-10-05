@@ -8,7 +8,11 @@
 
 #pragma once
 
+#include "core/Core.h"
 #include "renderer/gpu/ComputeShader.h"
+
+#include <cstdint>
+#include <string>
 
 namespace owl::renderer::gpu::opengl {
 

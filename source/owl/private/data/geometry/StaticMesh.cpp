@@ -10,6 +10,9 @@
 
 #include "data/geometry/StaticMesh.h"
 
+#include <cstdint>
+#include <iterator>
+
 namespace owl::data::geometry {
 
 StaticMesh::StaticMesh() = default;

@@ -12,6 +12,10 @@
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/RenderStack.h>
 
+#include <memory>
+#include <string>
+#include <utility>
+
 namespace {
 class TrackingLayer final : public owl::renderer::RenderLayer {
 public:

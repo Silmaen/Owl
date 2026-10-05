@@ -9,6 +9,9 @@
 #pragma once
 #include "core/Macros.h"
 
+// Taskflow uses std::bit_ceil / std::bit_width without including <bit> itself.
+#include <bit>
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wold-style-cast")
 OWL_DIAG_DISABLE_CLANG("-Wshadow")

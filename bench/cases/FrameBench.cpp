@@ -14,7 +14,11 @@
 #include <scene/Entity.h>
 #include <scene/component/components.h>
 
+#include <chrono>
+#include <cstdint>
 #include <format>
+#include <string>
+#include <tuple>
 
 namespace owl::bench {
 

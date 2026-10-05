@@ -10,6 +10,8 @@
 #include "core/SerializerImpl.h"
 #include "scene/component/VoxelPlayer.h"
 
+#include <cstdint>
+
 namespace owl::scene::component {
 
 void VoxelPlayer::serialize(const core::Serializer& iOut) const {

@@ -11,6 +11,8 @@
 #include "renderer/CameraOrtho.h"
 #include "renderer/gpu/Framebuffer.h"
 
+#include <string>
+
 namespace owl::gui {
 /**
  * @brief

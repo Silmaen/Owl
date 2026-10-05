@@ -11,6 +11,9 @@
 #include "math/matrices.h"
 #include "quaternion.h"
 
+#include <cmath>
+#include <cstddef>
+
 namespace owl::math {
 /**
  * @brief

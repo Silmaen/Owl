@@ -9,6 +9,10 @@
 
 #include "renderer/gpu/DrawData.h"
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
 namespace owl::renderer::gpu::null {
 /**
  * @brief

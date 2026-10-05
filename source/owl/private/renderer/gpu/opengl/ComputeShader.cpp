@@ -14,6 +14,8 @@
 #include "renderer/Renderer.h"
 #include "renderer/utils/shaderFileUtils.h"
 
+#include <sstream>
+
 namespace owl::renderer::gpu::opengl {
 
 namespace {

@@ -11,6 +11,7 @@
 #include <data/voxel/Block.h>
 #include <data/voxel/VoxelStructure.h>
 
+#include <cstdint>
 #include <optional>
 #include <string>
 

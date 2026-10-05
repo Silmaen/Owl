@@ -10,7 +10,11 @@
 #include "RunnerLayer.h"
 #include <app/EntryPoint.h>
 
+#include <cstdint>
 #include <cstdio>
+#include <exception>
+#include <filesystem>
+#include <string>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")

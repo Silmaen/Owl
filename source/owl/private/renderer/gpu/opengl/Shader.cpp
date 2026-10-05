@@ -13,6 +13,8 @@
 #include "platform/FileUtils.h"
 #include "renderer/utils/shaderFileUtils.h"
 
+#include <format>
+
 namespace owl::renderer::gpu::opengl {
 
 namespace utils {

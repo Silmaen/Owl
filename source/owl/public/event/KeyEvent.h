@@ -10,6 +10,10 @@
 #include "event/Event.h"
 #include "input/KeyCodes.h"
 
+#include <cstdint>
+#include <format>
+#include <string>
+
 namespace owl::event {
 /**
  * @brief

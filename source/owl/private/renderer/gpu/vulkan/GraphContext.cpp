@@ -12,6 +12,8 @@
 
 #include "internal/VulkanHandler.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu::vulkan {
 
 GraphContext::GraphContext(GLFWwindow* ioWindow) : mp_wnd(ioWindow) {}

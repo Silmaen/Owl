@@ -43,8 +43,10 @@
 #endif
 #endif
 
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 
 /**
  * @brief

@@ -20,6 +20,10 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 #include <imgui_internal.h>
 OWL_DIAG_POP
 
+#include <algorithm>
+#include <format>
+#include <vector>
+
 namespace owl::nest {
 
 namespace {

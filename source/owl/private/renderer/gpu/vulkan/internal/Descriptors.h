@@ -9,7 +9,11 @@
 #pragma once
 
 #include "math/vectors.h"
+#include <cstddef>
+#include <cstdint>
 #include <string>
+#include <unordered_map>
+#include <vector>
 #include <vulkan/vulkan.h>
 
 namespace owl::renderer::gpu::vulkan::internal {

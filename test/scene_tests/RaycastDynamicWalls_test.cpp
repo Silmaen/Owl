@@ -19,6 +19,10 @@
 #include <scene/component/RaycastPushWall.h>
 #include <scene/component/components.h>
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
 using namespace owl;
 
 namespace {

@@ -10,6 +10,7 @@
 
 #include "data/voxel/Block.h"
 
+#include <cstddef>
 #include <string>
 #include <string_view>
 #include <vector>

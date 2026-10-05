@@ -12,6 +12,10 @@
 
 #include <gui/widgets/NodeCanvas.h>
 
+#include <cstddef>
+#include <string>
+#include <vector>
+
 namespace owl::nest::commands {
 
 using NodeCanvas = gui::widgets::NodeCanvas;

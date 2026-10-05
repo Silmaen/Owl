@@ -12,6 +12,8 @@
 #pragma once
 
 #include "Tracker.h"
+
+#include <cstddef>
 #if defined(OWL_BUILD_SHARED) && defined(OWL_PLATFORM_WINDOWS)
 
 // NOLINTBEGIN(*-no-malloc,cppcoreguidelines-owning-memory,misc-definitions-in-headers)

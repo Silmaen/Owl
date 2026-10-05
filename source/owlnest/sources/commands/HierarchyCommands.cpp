@@ -11,6 +11,8 @@
 #include <scene/component/Hierarchy.h>
 #include <scene/component/Transform.h>
 
+#include <format>
+
 namespace owl::nest::commands {
 // --- ReparentCommand ---
 

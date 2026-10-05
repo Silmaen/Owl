@@ -11,6 +11,9 @@
 #include "../EditorLayer.h"
 #include "../document/SceneDocument.h"
 
+#include <cstdint>
+#include <utility>
+
 namespace owl::nest::commands {
 // --- SceneFlowCompositeCommand ---------------------------------------------
 

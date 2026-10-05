@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 #include "core/IFactory.h"
+#include "core/Macros.h"
 
 /**
  * @brief

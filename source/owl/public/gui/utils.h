@@ -13,6 +13,9 @@
 #include "renderer/gpu/Texture.h"
 #include <imgui.h>
 
+#include <cstdint>
+#include <optional>
+
 namespace owl::gui {
 /**
  * @brief

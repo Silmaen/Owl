@@ -13,7 +13,9 @@
 #include "renderer/gpu/Texture.h"
 
 #include <array>
+#include <cstdint>
 #include <span>
+#include <string>
 
 namespace owl::scene {
 

@@ -27,6 +27,16 @@
 #include <scene/PrefabSerializer.h>
 #include <scene/SceneSerializer.h>
 
+#include <algorithm>
+#include <cstdint>
+#include <filesystem>
+#include <format>
+#include <string_view>
+#include <tuple>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
 using namespace owl::scene::component;
 
 namespace owl::nest::panel {

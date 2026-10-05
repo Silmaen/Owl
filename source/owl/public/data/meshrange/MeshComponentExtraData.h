@@ -12,6 +12,10 @@
 #include "data/geometry/MeshCursorBase.h"
 #include "data/meshrange/MeshComponent.h"
 
+#include <cstddef>
+#include <utility>
+#include <vector>
+
 namespace owl::data::geometry {
 
 class StaticMesh;

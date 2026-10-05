@@ -7,7 +7,11 @@
  */
 
 #include "owlpch.h"
+#include <cstdint>
 #include <cstdio>
+#include <format>
+#include <iterator>
+#include <mutex>
 #include <stack>
 
 #include "debug/Tracker.h"

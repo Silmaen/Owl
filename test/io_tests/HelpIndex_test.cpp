@@ -14,11 +14,13 @@
 #include <gtest/gtest.h>
 #include <yaml-cpp/yaml.h>
 
+#include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <set>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace fs = std::filesystem;

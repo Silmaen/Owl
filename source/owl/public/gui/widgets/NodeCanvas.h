@@ -12,6 +12,7 @@
 #include "core/UUID.h"
 #include "math/vectors.h"
 
+#include <cstdint>
 #include <functional>
 #include <optional>
 #include <span>

@@ -11,6 +11,10 @@
 
 #include "core/SerializerImpl.h"
 
+#include <cstdint>
+#include <type_traits>
+#include <variant>
+
 namespace owl::scene {
 
 void GameState::set(const std::string& iKey, Value iValue) { m_data[iKey] = std::move(iValue); }

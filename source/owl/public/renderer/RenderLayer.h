@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "core/Macros.h"
 #include "math/vectors.h"
 #include "renderer/Camera.h"
 

@@ -10,6 +10,7 @@
 
 #include "gpu/Texture.h"
 #include "math/matrices.h"
+#include "math/matrixCreation.h"
 
 namespace owl::renderer {
 /**

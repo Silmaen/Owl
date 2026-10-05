@@ -9,6 +9,7 @@
 #include "EditorSettings.h"
 
 #include <algorithm>
+#include <fstream>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")

@@ -10,6 +10,7 @@
 
 #include "sound/SoundAPI.h"
 
+#include <cstdint>
 #include <unordered_map>
 
 /**

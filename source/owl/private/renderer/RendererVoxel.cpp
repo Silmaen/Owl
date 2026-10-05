@@ -15,6 +15,7 @@
 #include "renderer/utils/FrustumCullingPass.h"
 
 #include <array>
+#include <cstdint>
 #include <iterator>
 #include <unordered_map>
 #include <unordered_set>

@@ -12,6 +12,10 @@
 #include "UndoManager.h"
 #include "panel/Viewport.h"
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
 namespace owl::nest {
 
 /**

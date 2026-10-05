@@ -13,6 +13,8 @@
 #include "gui/utils.h"
 #include <imgui.h>
 
+#include <cstdint>
+
 namespace owl::gui {
 
 BaseDrawPanel::BaseDrawPanel(std::string&& iName) : m_panelName{std::move(iName)} {}

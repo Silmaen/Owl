@@ -11,8 +11,10 @@
 #include "NodeCanvas.h"
 
 #include <filesystem>
+#include <span>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace owl::gui::widgets {
 /**

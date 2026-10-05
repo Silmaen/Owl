@@ -10,6 +10,8 @@
 
 #include <math/vectors.h>
 
+#include <utility>
+
 using namespace owl::math;
 
 TEST(math, vectorDefaultConstruction) {

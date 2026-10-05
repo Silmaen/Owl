@@ -9,7 +9,10 @@
 #include "testHelper.h"
 
 #include <input/Input.h>
+#include <math/trigonometry.h>
 #include <renderer/Camera3DController.h>
+
+#include <chrono>
 
 using namespace owl;
 using namespace owl::input;

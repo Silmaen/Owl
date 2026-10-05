@@ -19,6 +19,12 @@
 #include <script/ScriptEngine.h>
 #include <script/ScriptInstance.h>
 
+#include <cstdint>
+#include <format>
+#include <optional>
+#include <string>
+#include <vector>
+
 using namespace owl;
 using namespace owl::script;
 

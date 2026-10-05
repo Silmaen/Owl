@@ -15,6 +15,8 @@
 #include <mfidl.h>
 #include <mfreadwrite.h>
 
+#include <vector>
+
 /**
  * @brief
  *  Windows video devices.

@@ -10,8 +10,12 @@
 
 #include "math/Transform.h"
 #include "math/matrices.h"
+#include "math/matrixCreation.h"
 #include "renderer/gpu/ComputeShader.h"
 #include "renderer/gpu/StorageBuffer.h"
+
+#include <cstdint>
+#include <span>
 
 namespace owl::renderer::utils {
 

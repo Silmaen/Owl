@@ -17,6 +17,11 @@
 
 #include <entt/entt.hpp>
 
+#include <cstdint>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 namespace owl::renderer::gpu {
 class StorageBuffer;
 }// namespace owl::renderer::gpu

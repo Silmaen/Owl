@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "core/Core.h"
+
 struct lua_State;
 
 namespace owl::script {

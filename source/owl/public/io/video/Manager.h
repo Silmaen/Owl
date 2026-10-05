@@ -10,6 +10,11 @@
 
 #include "Device.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <vector>
+
 /**
  * @brief
  *  namespace for video input devices.

@@ -11,6 +11,8 @@
 #include "scene/component/components.h"
 #include <core/Core.h>
 
+#include <tuple>
+
 /**
  * @brief
  *  Namespace defining functions for draw components in GUI.

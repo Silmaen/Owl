@@ -10,6 +10,11 @@
 
 #include <data/assets/pack/PackFormat.h>
 
+#include <cstddef>
+#include <cstdint>
+#include <string>
+#include <vector>
+
 using namespace owl::data::assets::pack;
 
 TEST(PackFormat, hashPath_deterministic) {

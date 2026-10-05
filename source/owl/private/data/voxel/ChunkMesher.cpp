@@ -10,6 +10,7 @@
 #include "data/voxel/ChunkMesher.h"
 
 #include <array>
+#include <cstdint>
 
 namespace owl::data::voxel {
 
