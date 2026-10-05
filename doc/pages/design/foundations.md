@@ -1,0 +1,206 @@
+# Foundations (v0.3.0) {#page-design-foundations}
+
+[TOC]
+
+Design page of the v0.3.0 release, summarised in the [Roadmap](../roadmap.md). The references in parentheses
+(`PR-xx`, `C-01`, `K-20`, …) point to the repository audit in `doc/audit/` (`90-synthese.md` for the PR plan,
+`10-constats-*.md` for the findings, `40-avenir.md` for the long-term work items, `20-mesures.md` for the numbers).
+
+## Goal
+
+Take the big risks first (the Conan migration and the breaking dependency upgrades), then
+stabilize the engine before building on it: fix every known correctness bug, put safety nets where the bugs were
+(editor tests, sanitizers, tests without a window), repair the Owl RHI so Vulkan is a real reference backend, open the
+architecture so each game can specialise the engine, move to public dependencies (Conan 2, ConanCenter) with fewer
+public ones, and make day-to-day iteration fast. **No new gameplay feature** in this release: hot reload, autosave,
+the editor command API and the UI interaction basics are iteration tooling, not game features.
+
+## Already landed
+
+- ![Done][done] teamcity-github-bridge 1.10.0 wiring — `CodeStyle` findings become annotations on the pull
+  request's diff (GNU-style diagnostics through `_diag()`), doc-only PRs skip the C++ matrix, a draft build's verdict
+  is reused on ready, `[skip ci]` / `/ci full` escape hatches, shorter Check Run names. Detail in
+  [Continuous Integration](../continuous_integration.md).
+
+## Phase 0 — Risk first: dependencies & Conan
+
+The biggest unknowns of the release come first, so that they surface while the plan can still change: everything
+after this phase builds on the new dependency chain.
+
+- ![Planned][planned] Conan 2 migration from DepManager, ConanCenter first (see [Conan migration](conan-migration.md))
+    - Missing recipes written first: Slang, ufbx, imgui_color_text_edit, the ImGuizmo bundle, nfd-extended,
+      tinyobjloader rc13
+    - Versions absent from ConanCenter (EnTT 4, Taskflow 4.1, OpenAL Soft 1.25, msdfgen 1.13): contributed upstream
+      or pinned locally until they land
+- ![Planned][planned] Breaking dependency upgrades done here, not later: EnTT 4, Taskflow 4.1, yaml-cpp 0.9, and the
+  lagging ones (G-08)
+- ![Planned][planned] OwlEngine Conan package with `test_package`; the install tree fixed first (PR-08, PR-09: G-01,
+  G-02, G-06, A-19, G-19, F-06, G-03)
+- ![Planned][planned] DepManager and `owl_engine.py` removed once every preset builds on Conan
+
+Exit of the phase: every preset (Linux GCC / Clang, arm64, MinGW) builds and passes the tests on the new chain.
+
+## Phase A — Correctness
+
+Every fix lands with its regression test.
+
+- ![Planned][planned] Deferred entity destruction; `destroy_entity(self)` no longer frees the running Lua VM
+  (PR-01: C-01, D-01)
+- ![Planned][planned] Undo restores entities in place; dirty flag driven by a generation counter, so closing never
+  loses edits silently (PR-03: E-01, E-02, C-05, E-05)
+- ![Planned][planned] Unbounded hierarchy depth, CPU world transforms sent to the GPU; `setParent` keeps the world
+  position at any depth (PR-04: P-01, C-18, P-03, P-04, B-12)
+- ![Planned][planned] Runtime scene robustness — Play isolated from the editor voxel world, no segfault on a dangling
+  `EntityLink`, SceneFlow double `addComponent`, hierarchy cycles and duplicate UUIDs rejected at load, failed
+  teleport recovers (PR-05: C-03, C-04, E-08, C-06, C-17, E-12)
+- ![Planned][planned] Voxel meshed in the scene render pipeline, so voxel scenes show in the exported game
+  (PR-06: D-03)
+- ![Planned][planned] `.owlpack` hardening — validated paths and sizes, exceptions caught, fuzzer in CI
+  (PR-07: D-02, D-28)
+- ![Planned][planned] Prefab update / revert in place, with override detection (PR-10: C-02, E-11)
+- ![Planned][planned] CI secrets kept out of argv and logs, `api.py` pinned (PR-12: H-01, H-02, G-09, H-12)
+- ![Planned][planned] Physics, sound and script lifecycle on EnTT hooks — no ghost collider, `on_destroy` always
+  called (PR-13: C-08, D-04)
+- ![Planned][planned] Lua hardening — text-only chunks, instruction / memory quotas, exception trampoline
+  (PR-14: D-06, D-16)
+- ![Planned][planned] Scene format version and atomic writes (PR-25: C-10, C-13)
+- ![Planned][planned] `on_collision` implemented — the callback documented since v0.1 is fed by Box2D contact events,
+  with the entity it collided with (D-07, I-02); the rest of the 2D physics API is v0.5.0, see
+  [Physics API](physics-api.md)
+- ![Planned][planned] Game export works end to end — packaging, pack, runner, assets, voxel in the runner (D-03),
+  window icon; an automated test exports the sample project and runs it headless. See [Game export](game-export.md)
+- ![Planned][planned] Full Wayland support — Owl icon, editor multi-window (detached ImGui windows), X11 kept as an
+  option. See [Windowing and input](windowing-input.md)
+- ![Planned][planned] OpenGL backend fixed and tested as the compatibility backend (B-16, B-07, B-18)
+
+## Phase B — Safety nets
+
+- ![In Progress][progress] Engine benchmark harness `bench/` behind `OWL_BENCHMARK` (scene, frame, Renderer2D,
+  YAML, voxel, Lua, physics, startup)
+- ![Planned][planned] `owlnest_tests` category: undo, commands, snapshots; the empty round-trip assertions fixed
+  (PR-02: E-03, F-02, C-07, P-14)
+- ![Planned][planned] Sanitizers that fail the build (ASan, UBSan, TSan), `--gtest_shuffle`, LSan job folded into
+  ASan (PR-11: F-03, F-05, F-12, H-05)
+- ![Planned][planned] Tracy behind `OWL_PROFILE_*`, memory tracker off in Debug timings, client logs on the client
+  logger (PR-16: D-12, D-11, D-23, A-17)
+    - Covers the former "Profiling tools" ongoing item: CPU/GPU timeline (Tracy + GPU timestamps), memory usage by
+      asset type, entity / component counts
+- ![Planned][planned] Runner `--frame-bench` mode with GPU timestamps — first OpenGL vs Vulkan numbers
+  (PR-17: 20-mesures §7, B-01)
+- ![Planned][planned] Tests without a window (PR-18: F-01, B-06, B-20)
+    - Headless runner driven by scripted inputs (load scene, play N frames, assert on the world)
+    - Image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL), at least one per backend
+- ![In Progress][progress] Diff-scoped clang-tidy: a `ClangTidy` action driven by `compile_commands.json`, analysing on a
+  pull request only the `.cpp` files the diff can affect (include closure from `ninja -t deps`), everything elsewhere
+  or when in doubt; finalized on `Feature/TidyDiff` right after this kickoff, with one job per core by default (H-03)
+- ![Planned][planned] ClangTidy multi-process with the static analyzer, honest coverage report
+  (PR-19: H-03, F-07, F-04, F-08, F-09, H-07)
+- ![Planned][planned] Module dependency direction checked in CodeStyle; the 10-module cycle broken
+  (PR-20: A-01, A-13)
+- ![Planned][planned] Tests for the CI tooling itself (pytest, ruff, mypy) (PR-34: H-04, H-08)
+- ![Planned][planned] Benchmarks in CI with a regression threshold against a stored baseline
+
+## Phase C — Owl RHI & architecture
+
+The Vulkan foundation is the second big risk of the release: it starts first in this phase, as soon as the frame
+bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alongside the rest of phase C.
+
+- ![Planned][planned] Vulkan foundation — real frames in flight, no `vkQueueWaitIdle` on the hot path, transitions
+  inside the frame, correct `loadOp`, swapchain image used only after acquisition (PR-28: B-01, B-02, B-04, B-19)
+- ![Planned][planned] Per-frame uniform ring and VMA sub-allocation (PR-29: B-03, B-11, B-23)
+- ![Planned][planned] Owl RHI named and documented; Vulkan reference, OpenGL frozen fallback, Null for tests. See
+  [Owl RHI](owl-rhi.md)
+- ![Planned][planned] ABI — YAML out of the public API, hidden visibility by default, third-party symbols not
+  exported (PR-27: A-03, G-07, A-10, A-12)
+- ![Planned][planned] Engine context and one world per scene (PR-33: A-04, D-15, A-08, A-07, F-05)
+- ![Planned][planned] Phased systems; gameplay moved out of `Scene` (PR-36: A-02, C-14)
+- ![Planned][planned] Open component registry, after the EnTT 4 upgrade (PR-37: A-05, A-18)
+- ![Planned][planned] Entity references by UUID, remapped on duplication (PR-35: C-12, C-04)
+- ![Planned][planned] `EditorLayer` split (packager, ribbon, project opening) (PR-32: E-07, E-12)
+- ![Planned][planned] Optional CMake modules so each game can specialise the engine
+    - Modules: core, render, physics, audio, script, Gui (`Owl::Gui`, the only one pulling imgui)
+    - Extension points documented: open component registry, replaceable phased systems, renderer-stack layers
+- ![Planned][planned] Typed Lua binding registry — one declaration per binding gives the Lua function, its
+  documentation and (later) its visual-scripting node; documented-but-missing bindings either land or leave the docs
+  (D-07, D-26). See [Visual scripting](visual-scripting.md)
+- ![Planned][planned] Editor command API — every editor mutation goes through a command executed by `UndoManager`;
+  the same API drives the headless runner and the tests. See [MCP server](mcp-server.md)
+- ![Planned][planned] Dead code removed or wired: unused `parallelForEach`, shared `LuaEngine`, single-use
+  `IFactory` (D-24, D-26, A-18)
+- ![To evaluate][evaluate] SDL3 for windowing, input, dialogues and audio (possibly SDL GPU as an Owl RHI backend);
+  the GLFW limits under Wayland are the concrete argument. See [Windowing and input](windowing-input.md)
+
+## Phase D — Usability & dependency reduction
+
+- ![Planned][planned] Fewer public dependencies — only EnTT, plus imgui through the optional `Owl::Gui` target;
+  tinyxml2 and zeus removed (see [Conan migration](conan-migration.md))
+- ![Planned][planned] Configure without network or Doxygen, CMake clean-up (PR-26: G-05, G-09, G-13, G-14, G-15,
+  I-09, G-08)
+- ![Planned][planned] Hot reload for iteration (editor and development runner)
+    - Assets: textures, scenes, tilesets reloaded when the file changes on disk
+    - Slang shaders recompiled and swapped live
+    - Lua scripts reloaded, with properties preserved
+    - Hot reload of a C++ game module is a separate v0.7.0 evaluation, see [Content pipeline](content-pipeline.md)
+- ![Planned][planned] Autosave and crash recovery — periodic autosave of dirty documents, recovery offered at the next
+  launch
+- ![Planned][planned] Session restore (persisted open tabs)
+    - Remember the list of open documents between launches (per project)
+    - Restore active tab, selection, and viewport layout
+    - Stored in `EditorSettings` or `owl_project.yml`
+- ![Planned][planned] Owl Nest UI interaction basics — tooltips, context menus, consistent drag & drop, text scale and
+  DPI. See [Owl Nest UI](nest-ui.md)
+- ![Planned][planned] Actionable error messages — load, script and pack errors name the file, the entity and the fix,
+  in the editor log and the runner
+- ![Planned][planned] Project templates (empty 2D, raycast, voxel, mixed-style) in the new-project dialogue
+- ![Planned][planned] Documentation faithful to the code — Lua, renderer, README, guides (PR-15: I-01, I-02, I-03,
+  I-04, I-05, D-07, B-16, B-18)
+- ![Planned][planned] Identifiers cited in `doc/pages` checked in CI (PR-39: I-01, I-09)
+- ![Planned][planned] Proportionate Doxygen — public API documented, no boilerplate `@brief` on trivial members
+  (PR-38: I-06, I-07)
+
+## Performance work
+
+- ![Planned][planned] Dense per-frame transforms, direct TRS composition (PR-21: P-02, P-06, C-09)
+- ![Planned][planned] Fixed-step physics, multi-threaded Box2D solver on Taskflow (PR-22: D-05, P-12, D-14)
+- ![Planned][planned] Inspector serializes only the edited component, only on edit (PR-23: E-04)
+- ![Planned][planned] Voxel meshing on workers with a per-frame budget, neighbours invalidated (PR-24: D-08, P-09, B-15)
+- ![Planned][planned] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18)
+- ![Planned][planned] Persistent, chunked and culled tilemap (PR-31: B-13)
+- ![Planned][planned] Faster scene loading (YAML path optimised or replaced, prefab instantiation without a YAML
+  round-trip per entity)
+- ![Planned][planned] Shaders precompiled at pack time, so the runner never compiles Slang at startup
+
+## Performance targets
+
+Measured on the `bench/` harness, Null backend unless stated (source: `doc/audit/20-mesures.md`).
+
+| Indicator                               | Measured today                              | v0.3.0 target                         |
+|-----------------------------------------|---------------------------------------------|---------------------------------------|
+| CPU frame, 10 000 sprites (`flat10000`) | 2.52 ms                                     | < 0.5 ms                              |
+| Renderer2D cost per quad                | 10.5 ns (`worldIndex`), 86 ns (transient)   | < 10 ns on every path                 |
+| GPU queue drains per frame (Vulkan)     | ≥ 10 (B-01)                                 | 0                                     |
+| Scene load per entity                   | 134 µs (10 000 entities: 1.34 s)            | < 10 µs                               |
+| Box2D step, 5 000 bodies in contact     | 4.88 ms (single thread)                     | < 1.5 ms (multi-thread, fixed step)   |
+| Voxel meshing                           | 350 µs per surface chunk on the main thread | off the main thread, per-frame budget |
+| Cold start (real runner, GPU backend)   | not measured (226 ms for a Null dummy app)  | measured, then shaders precompiled    |
+
+## Exit criteria
+
+The release ships when these hold, whatever the date:
+
+- Every preset builds on Conan 2, DepManager removed
+- Zero known correctness bug
+- Vulkan validation clean on NVIDIA, Intel and lavapipe
+- At least one image-comparison render test per backend (Vulkan, OpenGL)
+- UBSan and ASan blocking in CI
+- Editor coverage above 50 %
+- Exported sample project runs headless in CI
+- Performance targets above reached and protected by the CI regression threshold
+
+[done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square
+
+[progress]: https://img.shields.io/badge/-In_Progress-d29922?style=flat-square
+
+[planned]: https://img.shields.io/badge/-Planned-1f6feb?style=flat-square
+
+[evaluate]: https://img.shields.io/badge/-To_evaluate-8250df?style=flat-square

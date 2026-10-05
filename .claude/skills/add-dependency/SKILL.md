@@ -9,7 +9,8 @@ Arguments: `<package-name>` and optionally `<version>` and `<kind>` (static/shar
 
 ## Steps
 
-1. Check if the package already exists in `depmanager.yml`.
+1. Check if the package already exists in `depmanager.yml`, then in the catalogue:
+   `docker/run.sh poetry run depmanager pack ls -p <name>`. Never vendor sources.
 2. If not, add it to `depmanager.yml` under `packages:`:
    ```yaml
    <package_name>:
@@ -27,6 +28,7 @@ Arguments: `<package-name>` and optionally `<version>` and `<kind>` (static/shar
    - App deps: add to `source/<app>/CMakeLists.txt` with `${OWL_PROJECT} PRIVATE`
 4. Test the configure step:
    ```bash
-   cmake --preset linux-gcc-release -S .
+   docker/run.sh cmake --preset linux-clang-release -S .
    ```
+   Third-party headers that raise warnings get a wrapper in `source/owl/private/core/external/`.
 5. Report success/failure.

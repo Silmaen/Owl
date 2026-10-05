@@ -78,32 +78,32 @@ Every file starts with a Doxygen header:
 
 Use the same verb for the same intent everywhere:
 
-| Verb          | Meaning                                                      | Examples                                  |
-|---------------|--------------------------------------------------------------|-------------------------------------------|
-| `getX` / `setX` | Read / write of a property; **never** `updateX` for a setter | `getWindowTitle()`, `setWindowTitle()`    |
-| `isX`         | State predicate ("is in state X")                            | `isOpen()`, `isValid()`, `isEmpty()`      |
-| `hasX`        | Containment / presence predicate                             | `hasComponent()`, `hasOpenPack()`         |
-| `canX`        | Capability predicate                                         | `canPlay()`, `canShowPreview()`           |
-| `wasX`        | Past-tense / consume-once predicate                          | `wasDirty`, `wasSwapped`                  |
-| `onX`         | Event handler / lifecycle callback                           | `onUpdate`, `onAttach`, `onKeyPressed`    |
-| `createX`     | Factory creating a new owned instance                        | `createEntity`, `createApplication`       |
-| `destroyX`    | Tear down a previously-created instance                      | `destroyEntity`, `destroyEntityWithChildren` |
-| `release`     | GPU/OS resource cleanup (lower-level than `destroy`)         | `Texture::release`, `Buffer::release`     |
-| `clear`       | Empty a container without destroying the holder              | `Scene::clear`, `LogBuffer::clear`        |
-| `init` / `shutdown` | One-shot bring-up / tear-down of a subsystem           | `Log::init`, `Log::invalidate`            |
+| Verb                | Meaning                                                      | Examples                                     |
+|---------------------|--------------------------------------------------------------|----------------------------------------------|
+| `getX` / `setX`     | Read / write of a property; **never** `updateX` for a setter | `getWindowTitle()`, `setWindowTitle()`       |
+| `isX`               | State predicate ("is in state X")                            | `isOpen()`, `isValid()`, `isEmpty()`         |
+| `hasX`              | Containment / presence predicate                             | `hasComponent()`, `hasOpenPack()`            |
+| `canX`              | Capability predicate                                         | `canPlay()`, `canShowPreview()`              |
+| `wasX`              | Past-tense / consume-once predicate                          | `wasDirty`, `wasSwapped`                     |
+| `onX`               | Event handler / lifecycle callback                           | `onUpdate`, `onAttach`, `onKeyPressed`       |
+| `createX`           | Factory creating a new owned instance                        | `createEntity`, `createApplication`          |
+| `destroyX`          | Tear down a previously-created instance                      | `destroyEntity`, `destroyEntityWithChildren` |
+| `release`           | GPU/OS resource cleanup (lower-level than `destroy`)         | `Texture::release`, `Buffer::release`        |
+| `clear`             | Empty a container without destroying the holder              | `Scene::clear`, `LogBuffer::clear`           |
+| `init` / `shutdown` | One-shot bring-up / tear-down of a subsystem                 | `Log::init`, `Log::invalidate`               |
 
 `update*` is reserved for time-stepped updates (e.g. `onUpdate`, `updateDescriptor`); never use it as a synonym for "set".
 
 ### Class suffixes
 
-| Suffix       | Use for                                                       |
-|--------------|---------------------------------------------------------------|
-| `*Manager`   | Stateful coordinator owning a list/map of subordinate objects |
-| `*Handler`   | Single-method event/callback dispatcher                       |
-| `*Controller`| User-input → object-state translator                          |
-| `*Layer`     | A registered `Layer` in the engine layer stack                |
-| `*Command`   | An undo-aware action object                                   |
-| `*Document`  | A tab-bound editable artifact                                 |
+| Suffix        | Use for                                                       |
+|---------------|---------------------------------------------------------------|
+| `*Manager`    | Stateful coordinator owning a list/map of subordinate objects |
+| `*Handler`    | Single-method event/callback dispatcher                       |
+| `*Controller` | User-input → object-state translator                          |
+| `*Layer`      | A registered `Layer` in the engine layer stack                |
+| `*Command`    | An undo-aware action object                                   |
+| `*Document`   | A tab-bound editable artifact                                 |
 
 Do **not** introduce `*Service`, `*Helper`, `*Util` — fold those helpers into a free function in a `utils` namespace.
 
@@ -111,15 +111,15 @@ Do **not** introduce `*Service`, `*Helper`, `*Util` — fold those helpers into 
 
 Treat acronyms as words (PascalCase capitalises only the first letter); the first letter is the only one in caps:
 
-| Abbreviation | Class form                       | Member form     |
-|--------------|----------------------------------|-----------------|
-| UI           | `UiPanel`, `UiText`, `UiLayer`   | `m_uiLayer`     |
-| ID           | `EntityId`, `LinkId`             | `m_entityId`    |
-| UUID         | `Uuid`                           | `m_uuid`        |
-| API          | `RenderApi`, `SoundApi`          | `m_renderApi`   |
-| GLFW / GPU   | `GpuFramebuffer`, `GlfwInput`    | `m_gpuContext`  |
-| YAML         | `YamlSerializer`                 | `m_yamlNode`    |
-| HTTP / URL   | `HttpClient`, `UrlBuilder`       | `m_httpHeaders` |
+| Abbreviation | Class form                     | Member form     |
+|--------------|--------------------------------|-----------------|
+| UI           | `UiPanel`, `UiText`, `UiLayer` | `m_uiLayer`     |
+| ID           | `EntityId`, `LinkId`           | `m_entityId`    |
+| UUID         | `Uuid`                         | `m_uuid`        |
+| API          | `RenderApi`, `SoundApi`        | `m_renderApi`   |
+| GLFW / GPU   | `GpuFramebuffer`, `GlfwInput`  | `m_gpuContext`  |
+| YAML         | `YamlSerializer`               | `m_yamlNode`    |
+| HTTP / URL   | `HttpClient`, `UrlBuilder`     | `m_httpHeaders` |
 
 The only exception is `OWL_API` (a macro export tag), which keeps the all-caps spelling because macros use SCREAMING_SNAKE_CASE.
 
@@ -143,12 +143,12 @@ Void functions use normal syntax: `void onUpdate(const core::Timestep& iTimeStep
 
 Pick the kind based on what the caller needs to recover from:
 
-| Operation kind                      | Convention                          | Example |
-|-------------------------------------|-------------------------------------|---------|
-| Lookup that may legitimately miss   | `std::optional<T>`                  | `Application::loadFromPack(...) -> std::optional<std::vector<uint8_t>>` |
-| Operation that produces a value but may fail with context | **`owl::expected<T, ErrorEnum>`** | `PackReader::open(...) -> owl::expected<void, PackError>` |
-| Side-effect call where success/failure is enough | `bool` (true on success) | `Window::setIcon(path) -> bool` |
-| Engine init that must succeed       | Throw / `assert` / `OWL_CORE_CRITICAL` | `Vulkan::createInstance` |
+| Operation kind                                            | Convention                             | Example                                                                 |
+|-----------------------------------------------------------|----------------------------------------|-------------------------------------------------------------------------|
+| Lookup that may legitimately miss                         | `std::optional<T>`                     | `Application::loadFromPack(...) -> std::optional<std::vector<uint8_t>>` |
+| Operation that produces a value but may fail with context | **`owl::expected<T, ErrorEnum>`**      | `PackReader::open(...) -> owl::expected<void, PackError>`               |
+| Side-effect call where success/failure is enough          | `bool` (true on success)               | `Window::setIcon(path) -> bool`                                         |
+| Engine init that must succeed                             | Throw / `assert` / `OWL_CORE_CRITICAL` | `Vulkan::createInstance`                                                |
 
 `owl::expected<T, E>` is the project's wrapper alias for `std::expected` (or `zeus::expected` on toolchains that lack it). Use it whenever the caller needs to **know why** an operation failed, not just that it failed. Define a per-module error enum (`enum struct XxxError : uint8_t { ... }`) and return `owl::unexpected{XxxError::SomeReason}` rather than logging-and-returning-false.
 
@@ -160,6 +160,15 @@ Prefer `owl::expected` over `bool` whenever:
 Never use sentinel values (`-1`, empty string, `nullptr`) as silent error indicators on the public API — the caller should not have to know the sentinel.
 
 Every `return false;` / `return std::nullopt;` / `return owl::unexpected{...}` on an error path **must** be preceded by an `OWL_CORE_WARN` or `OWL_CORE_ERROR` log explaining the cause. Silent failures are bugs.
+
+## Type usage
+
+- Prefer `owl::math` types (`math::vec2`, `math::vec4`, `math::vec2ui`, …) over third-party ones (`ImVec2`, …)
+  everywhere; convert only at the call site (`gui::vec(myVec)` for ImGui).
+- `math::vec2ui` for 2D sizes and coordinates, not separate `uint32_t` width/height pairs.
+- No raw pointers for data buffers: `std::vector<T>` when owned, `std::span<T>` / `std::span<const T>` for
+  views. Wrap C APIs returning raw buffers (`stbi_load`) in a RAII type immediately and copy into a
+  `std::vector` as soon as practical.
 
 ## Smart Pointers
 
@@ -267,7 +276,8 @@ The Doxygen format used across the codebase:
 
 ## Logging
 
-Use engine macros (never `std::cout`, `printf`, `std::cerr`):
+Use engine macros (never `std::cout`, `printf`, `std::cerr`). Before the logger exists (startup, fatal
+paths), use `std::println(stderr, ...)` from `<print>`:
 ```
 OWL_CORE_TRACE / OWL_TRACE       — verbose debug
 OWL_CORE_INFO / OWL_INFO         — informational
@@ -279,13 +289,13 @@ OWL_CORE_CRITICAL / OWL_CRITICAL — fatal
 
 ### Level guidance
 
-| Level    | When to use                                                                |
-|----------|-----------------------------------------------------------------------------|
-| TRACE    | Frame-level / instrumented diagnostics. Must be cheap (no allocations) and stripped at higher log levels. |
-| INFO     | One-shot lifecycle events: subsystem initialised, project opened, pack written. |
-| WARN     | Recoverable failure or degraded operation: missing optional asset, fallback path taken, deprecated input. |
+| Level    | When to use                                                                                                       |
+|----------|-------------------------------------------------------------------------------------------------------------------|
+| TRACE    | Frame-level / instrumented diagnostics. Must be cheap (no allocations) and stripped at higher log levels.         |
+| INFO     | One-shot lifecycle events: subsystem initialised, project opened, pack written.                                   |
+| WARN     | Recoverable failure or degraded operation: missing optional asset, fallback path taken, deprecated input.         |
 | ERROR    | The caller's request could not be fulfilled. Always paired with an early return or a state transition to `Error`. |
-| CRITICAL | The engine cannot continue: GPU init failure, OOM, corrupted state. Followed by abort/exit. |
+| CRITICAL | The engine cannot continue: GPU init failure, OOM, corrupted state. Followed by abort/exit.                       |
 
 ### Message format
 
@@ -328,6 +338,14 @@ void MyClass::onUpdate() {
     }
 }
 ```
+
+## clang-tidy habits
+
+- Lambdas get a trailing return type too (`[]() -> void { … }`, `-> bool` for predicates).
+- Reverse iteration: `std::views::reverse`, not `rbegin()`/`rend()`.
+- `-Wswitch-enum`: list every enumerator, never rely on `default`.
+- Cognitive complexity above the threshold (typically a growing `deserialize`): extract a free helper.
+- `const auto x = static_cast<T>(…)` for cast initializations.
 
 ## Patterns
 

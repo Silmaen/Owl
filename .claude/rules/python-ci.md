@@ -8,7 +8,8 @@ paths:
 
 ## Environment
 
-- **Always** use `poetry run` to execute Python commands. Never use `pip` or system Python.
+- **Always** use `poetry run` to execute Python commands, inside the build image:
+  `docker/run.sh poetry run python ci_action.py …`. Never use `pip` or system Python.
 - Install/sync: `poetry sync --no-root`
 - Python version: >=3.12
 

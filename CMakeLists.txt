@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.24)
 set(PROJECT_PREFIX OWL)
 set(PROJECT_PREFIX_LOWER owl)
 set(ENGINE_NAME OwlEngine)
-project(Owl VERSION 0.2.1 LANGUAGES C CXX)
+project(Owl VERSION 0.3.0 LANGUAGES C CXX)
 #
 # ---=== Options ===---
 #
@@ -21,6 +21,7 @@ option(${PROJECT_PREFIX}_ENABLE_MEMORY_TRACKER "Install the global new/delete ov
 option(${PROJECT_PREFIX}_ENABLE_STACKTRACE "Use stacktrace within the memory tracker (slow down the code)" OFF)
 option(${PROJECT_PREFIX}_ENABLE_PROFILING "Output profiling information during execution" OFF)
 option(${PROJECT_PREFIX}_USE_CCACHE "Use ccache (or sccache) as a compiler launcher when available" ON)
+option(${PROJECT_PREFIX}_BENCHMARK "Build the micro-benchmark harness in bench/" OFF)
 
 #
 # ---=== Base Configs ===---
@@ -58,6 +59,13 @@ add_subdirectory(source)
 if (${PROJECT_PREFIX}_TESTING AND NOT ${PROJECT_PREFIX}_ENABLE_CLANG_TIDY)
     enable_testing()
     add_subdirectory(test)
+endif ()
+
+#
+# ---=== BENCHMARKS ===---
+#
+if (${PROJECT_PREFIX}_BENCHMARK)
+    add_subdirectory(bench)
 endif ()
 
 #

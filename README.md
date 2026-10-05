@@ -1,6 +1,6 @@
 # Owl
 
-![Version](https://img.shields.io/badge/version-0.2.1-blue)
+![Version](https://img.shields.io/badge/version-0.3.0--dev-blue)
 ![C++23](https://img.shields.io/badge/C%2B%2B-23-blue?logo=cplusplus)
 ![CMake 3.24+](https://img.shields.io/badge/CMake-3.24%2B-blue?logo=cmake)
 ![GitHub License](https://img.shields.io/github/license/Silmaen/Owl)
@@ -28,8 +28,8 @@ The full generated documentation is available online:
 - [Events & Input](doc/pages/event_input.md) -- Event system, keyboard, mouse, gamepad
 - [Lua Scripting](doc/pages/scripting.md) -- Lua scripting: API, lifecycle, sandboxing
 - [Building](doc/pages/building.md) -- Prerequisites, presets, testing, and CMake options
-- [Roadmap](doc/pages/roadmap.md) -- Planned and completed features by version
-- [Changelog](CHANGELOG.md) -- Version history and release notes
+- [Roadmap](doc/pages/roadmap.md) -- Planned and completed features by version (one-glance summary: `ROADMAP.md`)
+- [Changelog](doc/pages/changelog.md) -- Detailed version history (one line per release: `CHANGELOG.md`)
 - [Contributing](CONTRIBUTING.md) -- How to contribute (code style, PRs, issues)
 
 ## Features

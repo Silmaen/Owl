@@ -79,3 +79,26 @@ Tests are auto-discovered from `test/` subdirectories. See testing rules.
 - Use `${PROJECT_PREFIX}_PLATFORM_WINDOWS` and `${PROJECT_PREFIX}_PLATFORM_LINUX` guards
 - Linux shared lib copy: `target_import_so_files(target)`
 - Windows DLL copy: post-build `copy_if_different` with `$<TARGET_RUNTIME_DLLS:target>`
+
+## Options (`OWL_*`)
+
+| Option                                    | Default | Description                                                                                                                                   |
+|-------------------------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `OWL_BUILD_SHARED`                        | ON      | Build engine as shared library                                                                                                                |
+| `OWL_BUILD_NEST`                          | ON      | Build Owl Nest editor                                                                                                                         |
+| `OWL_TESTING`                             | ON      | Enable unit tests                                                                                                                             |
+| `OWL_ENABLE_COVERAGE`                     | OFF     | Code coverage (auto-enabled in debug presets)                                                                                                 |
+| `OWL_ENABLE_MEMORY_TRACKER`               | OFF     | Install global `new`/`delete` overrides so `TrackerAPI` records every allocation (always on in Debug; opt-in in Release for leak diagnostics) |
+| `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (implies `OWL_ENABLE_MEMORY_TRACKER`; performance impact)                                                           |
+| `OWL_ENABLE_PROFILING`                    | OFF     | Profiling output                                                                                                                              |
+| `OWL_USE_RELEASE_THIRD_PARTY`             | ON      | Use release builds of third-party libraries                                                                                                   |
+| `OWL_ENABLE_VULKAN_LAYERS`                | OFF     | Copy Vulkan layers to binary directory                                                                                                        |
+| `OWL_ENABLE_CLANG_TIDY`                   | OFF     | Enable clang-tidy static analysis                                                                                                             |
+| `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF     | AddressSanitizer (CI presets)                                                                                                                 |
+| `OWL_ENABLE_THREAD_SANITIZER`             | OFF     | ThreadSanitizer (CI presets)                                                                                                                  |
+| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF     | UBSanitizer (CI presets)                                                                                                                      |
+| `OWL_ENABLE_LEAK_SANITIZER`               | OFF     | LeakSanitizer (CI presets)                                                                                                                    |
+| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only, CI presets)                                                                                                      |
+| `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation                                                                                                       |
+| `OWL_PACKAGING`                           | OFF     | Enable packaging mode                                                                                                                         |
+| `OWL_BENCHMARK`                           | OFF     | Build the `owl_bench` micro-benchmark harness (`bench/`, see `bench/README.md`)                                                               |

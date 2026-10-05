@@ -117,9 +117,11 @@ void HelpPanel::loadIndex() {
 }
 
 void HelpPanel::loadPage(const std::string& iId) {
+	// Page ids are matched case-insensitively: `CONTRIBUTING.md` and `contributing.md` are one page.
 	const auto findEntry = [this](const std::string& iLookup) -> const PageEntry* {
+		const auto lookup = toLower(iLookup);
 		for (const auto& p: m_pages)
-			if (p.id == iLookup)
+			if (toLower(p.id) == lookup)
 				return &p;
 		return nullptr;
 	};

@@ -29,14 +29,16 @@ Arguments: `<category>` (e.g., scene, renderer, core) and `<test-name>`.
 using namespace owl;
 
 TEST(<Category>, <TestName>) {
-    // TODO: implement test
+	// Arrange / act / assert on real behaviour, not a placeholder.
 }
 ```
 
 4. No CMakeLists.txt changes needed — the test file is auto-discovered.
-5. Build and run the test to verify:
+5. Re-run configure (new file, GLOB), build and run the test to verify:
    ```bash
-   cmake --build output/build/linux-gcc-release --target owl_<category>_tests_unit_test
-   output/build/linux-gcc-release/bin/owl_<category>_tests_unit_test --gtest_filter="<Category>.<TestName>"
+   docker/run.sh cmake --preset linux-clang-release -S .
+   docker/run.sh cmake --build output/build/linux-clang-release --target owl_<category>_tests_unit_test
+   docker/run.sh bash -c 'cd output/build/linux-clang-release && bin/owl_<category>_tests_unit_test --gtest_filter="<Category>.<TestName>"'
    ```
+   Tests write only to a temp directory, never into the source tree.
 6. Report the test result.

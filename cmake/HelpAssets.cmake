@@ -5,7 +5,7 @@
 # Copyright (c) 2026 All rights reserved.
 #
 # Bundles the Markdown documentation pages from `doc/pages/` plus the canonical
-# repository-root files (README, CHANGELOG, CONTRIBUTING) into
+# repository-root files (README, CONTRIBUTING) into
 # `engine_assets/help/`, generates an `index.yml` describing each page, and
 # scrubs Doxygen-specific syntax (`{#page-anchor}`, `[TOC]`) so the bundled
 # pages render cleanly in the in-editor `HelpPanel` (md4c-based renderer).
@@ -97,17 +97,48 @@ function(owl_bundle_help_assets)
 
     # ---- Source files ----
     file(GLOB OWL_HELP_PAGES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/doc/pages/*.md")
+    # Design pages are flattened next to the guides; the help panel resolves links by basename.
+    file(GLOB OWL_HELP_DESIGN_PAGES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/doc/pages/design/*.md")
+    list(APPEND OWL_HELP_PAGES ${OWL_HELP_DESIGN_PAGES})
     set(OWL_HELP_ROOT_FILES
             "${CMAKE_SOURCE_DIR}/README.md"
-            "${CMAKE_SOURCE_DIR}/CHANGELOG.md"
             "${CMAKE_SOURCE_DIR}/CONTRIBUTING.md"
     )
+    # Pages are flattened by basename and the help panel matches ids case-insensitively, so two
+    # names differing only by case would overwrite each other (always on Windows). A doc page
+    # wins over a root file with the same name; two clashing pages are a configuration error.
+    set(_OWL_HELP_SEEN "")
+    foreach (HELP_FILE IN LISTS OWL_HELP_PAGES)
+        get_filename_component(_NAME "${HELP_FILE}" NAME)
+        string(TOLOWER "${_NAME}" _KEY)
+        if ("${_KEY}" IN_LIST _OWL_HELP_SEEN)
+            message(FATAL_ERROR "Owl: help pages clash on '${_NAME}' (case-insensitive): ${HELP_FILE}")
+        endif ()
+        list(APPEND _OWL_HELP_SEEN "${_KEY}")
+    endforeach ()
+    set(_OWL_HELP_ROOT_KEPT "")
+    foreach (HELP_FILE IN LISTS OWL_HELP_ROOT_FILES)
+        get_filename_component(_NAME "${HELP_FILE}" NAME)
+        string(TOLOWER "${_NAME}" _KEY)
+        if ("${_KEY}" IN_LIST _OWL_HELP_SEEN)
+            message(STATUS "Owl: help bundle uses doc/pages/${_KEY} instead of root ${_NAME}.")
+            continue()
+        endif ()
+        list(APPEND _OWL_HELP_SEEN "${_KEY}")
+        list(APPEND _OWL_HELP_ROOT_KEPT "${HELP_FILE}")
+    endforeach ()
+    set(OWL_HELP_ROOT_FILES ${_OWL_HELP_ROOT_KEPT})
     file(GLOB OWL_HELP_IMAGES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/doc/images/*")
     # Project-relative images referenced from the README (logo, etc.) — copy them into
     # `images/` alongside `doc/images/` so the rewritten markdown can find them.
     file(GLOB OWL_HELP_LOGO_IMAGES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/engine_assets/logo/*")
 
     # ---- Copy + scrub markdown ----
+    # Start from a clean page set so a renamed or dropped page does not linger in the bundle.
+    file(GLOB _OWL_HELP_STALE "${HELP_DIR}/*.md")
+    if (_OWL_HELP_STALE)
+        file(REMOVE ${_OWL_HELP_STALE})
+    endif ()
     foreach (HELP_FILE IN LISTS OWL_HELP_PAGES OWL_HELP_ROOT_FILES)
         if (NOT EXISTS "${HELP_FILE}")
             continue()
@@ -136,7 +167,7 @@ function(owl_bundle_help_assets)
         get_filename_component(FULLNAME "${HELP_FILE}" NAME)
         get_filename_component(PARENT_DIR "${HELP_FILE}" DIRECTORY)
         get_filename_component(PARENT_NAME "${PARENT_DIR}" NAME)
-        if (PARENT_NAME STREQUAL "pages")
+        if (PARENT_NAME STREQUAL "pages" OR PARENT_NAME STREQUAL "design")
             set(CATEGORY "guides")
         else ()
             set(CATEGORY "reference")

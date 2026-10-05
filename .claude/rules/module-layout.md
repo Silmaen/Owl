@@ -1,3 +1,8 @@
+---
+paths:
+  - "source/owl/**"
+---
+
 # Module & Namespace Layout
 
 The engine library (`source/owl/{public,private}`) is split into modules. **Folder maps 1:1 to
@@ -7,17 +12,17 @@ module.
 
 ## Rule per module
 
-| Module     | What lives here                                                                                  |
-|------------|--------------------------------------------------------------------------------------------------|
-| `app`      | Application lifecycle: `Application`, `AppParams`, `EntryPoint`, the `layer/` stack (`Layer`, `LayerStack`). |
-| `core`     | Foundation primitives every module may depend on: `Log`, `Assert`, `UUID`, `Serializer`, `Timestep`, `expected`, `IFactory`, `Environment`, `Macros`, `task/`, `utils/` (`StringUtils`). |
-| `data`     | Owned data structures **and their loaders/libraries**: `geometry` (mesh + `MeshLoader`), `fonts` (Font + `FontLibrary`), `assets` (Asset + `AssetLibrary` + `pack` = `.owlpack` bundling/scanning), `extradata`, `voxel`, `meshrange` (mesh-iteration accessors). |
-| `io`       | **External device / peripheral channels only**: `serial`, `video`. Not files, not asset bundling. |
-| `platform` | OS / native-platform services: `FileDialog` (native picker), `fileToString` (`FileUtils`), `openExternalUrl`. |
-| `scene`    | ECS world, **all** ECS components (`scene::component`), tilemap, prefab, save / settings.         |
-| `renderer` | Draw path + `gpu/` backends + camera types and camera controllers.                               |
-| `gui`      | ImGui widgets (`widgets`) and per-component render helpers (`component`).                          |
-| `event`, `input`, `window`, `sound`, `script`, `debug`, `physics`, `math` | Their namesake domain. |
+| Module                                                                    | What lives here                                                                                                                                                                                                                                                   |
+|---------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `app`                                                                     | Application lifecycle: `Application`, `AppParams`, `EntryPoint`, the `layer/` stack (`Layer`, `LayerStack`).                                                                                                                                                      |
+| `core`                                                                    | Foundation primitives every module may depend on: `Log`, `Assert`, `UUID`, `Serializer`, `Timestep`, `expected`, `IFactory`, `Environment`, `Macros`, `task/`, `utils/` (`StringUtils`).                                                                          |
+| `data`                                                                    | Owned data structures **and their loaders/libraries**: `geometry` (mesh + `MeshLoader`), `fonts` (Font + `FontLibrary`), `assets` (Asset + `AssetLibrary` + `pack` = `.owlpack` bundling/scanning), `extradata`, `voxel`, `meshrange` (mesh-iteration accessors). |
+| `io`                                                                      | **External device / peripheral channels only**: `serial`, `video`. Not files, not asset bundling.                                                                                                                                                                 |
+| `platform`                                                                | OS / native-platform services: `FileDialog` (native picker), `fileToString` (`FileUtils`), `openExternalUrl`.                                                                                                                                                     |
+| `scene`                                                                   | ECS world, **all** ECS components (`scene::component`), tilemap, prefab, save / settings.                                                                                                                                                                         |
+| `renderer`                                                                | Draw path + `gpu/` backends + camera types and camera controllers.                                                                                                                                                                                                |
+| `gui`                                                                     | ImGui widgets (`widgets`) and per-component render helpers (`component`).                                                                                                                                                                                         |
+| `event`, `input`, `window`, `sound`, `script`, `debug`, `physics`, `math` | Their namesake domain.                                                                                                                                                                                                                                            |
 
 ## Key distinctions (learned the hard way)
 
@@ -45,4 +50,4 @@ top-level `voxel/`). Only create a new top-level module for a genuinely new doma
 
 Folder==namespace means moving a header is a **public-API breaking change** for downstream consumers
 (e.g. OwlDrone). Batch module moves into a dedicated reorg PR (ideally at a release kickoff), never as a
-drive-by; update `CHANGELOG.md`, `architecture.md`, and this file in the same PR.
+drive-by; update `doc/pages/changelog.md`, `architecture.md`, and this file in the same PR.

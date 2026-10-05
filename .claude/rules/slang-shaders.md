@@ -1,6 +1,7 @@
 ---
 paths:
   - "engine_assets/shaders/**/*.slang"
+  - "source/owl/private/renderer/utils/shaderFileUtils.*"
 ---
 
 # Slang Shader Conventions
@@ -62,3 +63,7 @@ float4 texColor = u_Textures[NonUniformResourceIndex(texIndex)].Sample(u_Sampler
 - Compiled at runtime by `compileSlangToSpirv()` in `shaderFileUtils.cpp`
 - SPIR-V output cached as `.spv` with hash-based invalidation
 - Reflection via spirv-cross extracts uniform buffers and sampled images
+- Measured in Release (`bench/`): ~74 ms cold session, 17–22 ms per shader, 219 ms for all 13.
+  Share the session across tests with `SetUpTestSuite`. Headless compilation tests need no GPU.
+- Slang warning 41012 (capability auto-upgrade) is filtered from the logs on purpose.
+- Slang `float4x4(v0, v1, v2, v3)` takes **rows** (GLSL `mat4(...)` takes columns): `transpose()` when porting.
