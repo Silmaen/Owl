@@ -315,6 +315,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_viewportSize = iOther->m_viewportSize;
 	newScene->m_gameState = iOther->m_gameState;
 	newScene->m_enabledRenderers = iOther->m_enabledRenderers;
+	newScene->m_physicsSettings = iOther->m_physicsSettings;
 
 	auto& srcSceneRegistry = iOther->registry;
 	auto& dstSceneRegistry = newScene->registry;

@@ -9,8 +9,10 @@
 #pragma once
 
 #include "core/Core.h"
+#include "physics/PhysicsSettings.h"
 #include "scene/Scene.h"
 
+#include <cstdint>
 #include <vector>
 
 /**
@@ -75,10 +77,52 @@ public:
 
 	/**
 	 * @brief
-	 *  Compute One physical frame.
-	 * @param iTimestep The time step.
+	 *  Advance the world by one rendered frame, at the fixed rate of the scene's `PhysicsSettings`.
+	 *
+	 * The frame duration is added to an accumulator; as many fixed steps as it holds are run, at most
+	 * `maxStepsPerFrame` (the excess time is dropped). The contact events of all the steps are gathered,
+	 * a pair being reported at most once per frame. The entity transforms are then written, blended
+	 * between the last two steps when interpolation is on, so a frame without a step still moves them.
+	 * @param[in] iTimestep The duration of the rendered frame.
 	 */
 	static void frame(const core::Timestep& iTimestep);
+
+	/**
+	 * @brief
+	 *  Settings of the running world.
+	 * @return The clamped settings read from the scene at `init()`, or the defaults when not initialised.
+	 */
+	[[nodiscard]] static auto getSettings() -> PhysicsSettings;
+
+	/**
+	 * @brief
+	 *  Number of threads running the Box2D solver.
+	 * @return 1 for the single-threaded solver, the task pool size when multi-threaded, 0 when not initialised.
+	 */
+	[[nodiscard]] static auto getWorkerCount() -> uint32_t;
+
+	/**
+	 * @brief
+	 *  Number of fixed steps run by the last `frame()` call.
+	 * @return The step count, 0 when not initialised.
+	 */
+	[[nodiscard]] static auto getLastFrameStepCount() -> uint32_t;
+
+	/**
+	 * @brief
+	 *  Blend factor used for the transforms written by the last `frame()` call.
+	 * @return The leftover accumulated time over the step duration, in [0, 1); 1 when interpolation is off.
+	 */
+	[[nodiscard]] static auto getInterpolationAlpha() -> float;
+
+	/**
+	 * @brief
+	 *  Write the state of the last fixed step, not the interpolated one, into the entity transforms.
+	 *
+	 * Used before serialising a running scene (save game) so the saved positions match the saved
+	 * velocities. The next `frame()` writes interpolated transforms again.
+	 */
+	static void syncSimulatedTransforms();
 
 	/**
 	 * @brief

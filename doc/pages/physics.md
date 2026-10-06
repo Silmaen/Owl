@@ -87,9 +87,10 @@ lifecycle is shown in the diagram above.
 
 ### init(scene)
 
-Called from `Scene::onStartRuntime()`. Creates the Box2D world with default
-gravity `(0, -9.81)`, then iterates every entity that has both a `PhysicBody`
-and a `Transform` component. For each entity:
+Called from `Scene::onStartRuntime()`. Reads the scene's [physics settings](#fixed-step), creates the Box2D
+world with default gravity `(0, -9.81)` and, when several solver threads are used, the task callbacks of the
+[multi-threaded solver](#multi-threaded-solver), then iterates every entity that has both a `PhysicBody` and a
+`Transform` component. For each entity:
 
 1. Reads the **world transform** via `Scene::getWorldTransform()` (not the
    local transform) to compute the initial body position and rotation.
@@ -105,24 +106,104 @@ Collidable tilemaps, raycast doors and pushwalls get their bodies the same way, 
 
 ### frame(timestep)
 
-Called from `Scene::onUpdateRuntime()` once per frame. Performs three steps:
+Called from `Scene::onUpdateRuntime()` once per rendered frame. Performs four steps:
 
-1. **Box2D step** -- advances the simulation by the frame timestep with 4
-   sub-steps (`b2World_Step`).
-2. **Contact events** -- reads the begin / end touch events of the step
-   (`b2World_GetContactEvents`) and records the collisions that began (see
-   [Collision Events](#collision-events)).
-3. **Sync transforms** -- for each entity with a `PhysicBody`, reads the
-   body position and rotation from Box2D and writes them back to the entity's
-   `Transform` component. If the entity has a parent in the hierarchy, the
-   world position is converted back to **local space** using the inverse of
-   the parent's world transform.
+1. **Fixed steps** -- adds the frame duration to an accumulator and runs as many Box2D steps of
+   `1 / tickRate` seconds as it holds (`b2World_Step`, `solverSubSteps` sub-steps each), at most
+   `maxStepsPerFrame` (see [Fixed Step](#fixed-step)).
+2. **Contact events** -- after each step, reads the begin / end touch events (`b2World_GetContactEvents`) and
+   records the collisions that began (see [Collision Events](#collision-events)).
+3. **Capture** -- keeps the body poses of the last two steps.
+4. **Sync transforms** -- for each entity with a `PhysicBody`, writes the body position and rotation (blended
+   between the last two steps when interpolation is on) to the entity's `Transform` component. If the entity has
+   a parent in the hierarchy, the world position is converted back to **local space** using the inverse of the
+   parent's world transform.
 
 ### destroy()
 
 Called from `Scene::onEndRuntime()`. Destroys the Box2D world, clears the
 body-id map, and resets the `Impl` pointer and scene pointer. After this call,
 `isInitialized()` returns `false`.
+
+## Fixed Step {#fixed-step}
+
+The world advances at a fixed rate, whatever the frame rate: the result of a simulation depends only on the
+number of steps, not on how frames are cut. A frame of 40 ms at 60 Hz runs two steps and keeps 6.7 ms in the
+accumulator; a frame of 4 ms runs none and only moves the interpolated transforms.
+
+| Setting            | Default | Range     | Meaning                                                    |
+|--------------------|---------|-----------|------------------------------------------------------------|
+| `tickRate`         | `60`    | 1 to 1000 | Fixed steps per second                                     |
+| `maxStepsPerFrame` | `8`     | 1 to 64   | Steps run by one frame at most; the time beyond is dropped |
+| `solverSubSteps`   | `4`     | 1 to 16   | Box2D sub-steps inside one step                            |
+| `interpolate`      | `true`  |           | Draw the transforms blended between the last two steps     |
+| `workerCount`      | `0`     | 0 to 32   | Solver threads: 0 automatic, 1 single-threaded (see below) |
+
+The settings belong to the scene (`Scene::getPhysicsSettings()`, `physics::PhysicsSettings`) and are saved in the
+scene file only when they differ from the defaults:
+
+```yaml
+Scene: untitled
+Physics:
+  tickRate: 120
+  maxStepsPerFrame: 8
+  solverSubSteps: 4
+  interpolate: true
+  workerCount: 0
+Entities: ...
+```
+
+In Owl Nest they are edited in the **Physics** section of the *Scene Settings* panel (undoable); they are read
+when Play starts.
+
+- **Step bound.** A long frame (synchronous load, window drag) runs `maxStepsPerFrame` steps and drops the rest:
+  the game slows down for that frame instead of stalling under an ever larger backlog (spiral of death), and no
+  single step grows large enough to tunnel or explode contacts.
+- **Interpolation.** With `interpolate` on, `Transform` shows the pose between the last two steps, by the
+  fraction of a step left in the accumulator (`PhysicCommand::getInterpolationAlpha()`): motion is smooth at any
+  frame rate, at the cost of up to one step of display latency. Box2D stays the authority: velocities, impulses
+  and `getVelocity` act on the simulated state. `setTransform` (teleport) snaps both poses, so a teleport is never
+  blended. `SaveManager::save` calls `PhysicCommand::syncSimulatedTransforms()` first, so a save stores the
+  simulated positions that match its velocity snapshots.
+- **Per-frame input.** Scripts and `Player::parseInputs` still run once per frame: an impulse applied in
+  `on_update` lands before the frame's first step.
+
+```mermaid
+sequenceDiagram
+    participant S as Scene::onUpdateRuntime
+    participant P as PhysicCommand::frame
+    participant B as Box2D
+    S->>P: frame(dt)
+    P-->>P: accumulator += dt, n = steps it holds (at most maxStepsPerFrame)
+    loop n fixed steps
+        P->>B: b2World_Step(1 / tickRate, solverSubSteps)
+        P->>B: b2World_GetContactEvents
+    end
+    P-->>P: previous / current poses, alpha = accumulator / step
+    P-->>S: Transform = blend(previous, current, alpha)
+```
+
+## Multi-threaded Solver {#multi-threaded-solver}
+
+Box2D 3 runs its collision, solver and body-finalisation passes as parallel tasks handed to the host through
+`b2WorldDef.enqueueTask` / `finishTask`. Owl backs them with a Taskflow executor (`SolverTaskPool`, private to
+the engine), created on the first multi-threaded world and kept while the worker count does not change.
+
+- **Worker count.** `workerCount = 1` keeps Box2D's single-threaded path (no task pool). `0` (automatic) uses
+  half the hardware threads, at most 4, but only for worlds of at least 2 000 dynamic bodies counted at `init()`:
+  below that, dispatching the tasks costs more than it saves. `PhysicCommand::getWorkerCount()` reports the
+  count in use.
+- **Dedicated executor.** The pool does not share the `core::task::Scheduler` threads: within a step, Box2D's
+  solver tasks spin-wait on each other, so they must all run at once, and a long Scheduler job holding a worker
+  would stall the step.
+- **Reproducibility.** Each task is split into at most `workerCount` ranges, and Box2D receives the range index
+  as its worker index. A given worker count therefore gives the same result on every run; different counts
+  differ slightly (Box2D merges per-worker state, such as the island-split candidate, in an order that depends
+  on how bodies were partitioned).
+
+Measured on the 5 000-box pile of `bench/` (i9-13950HX, loaded machine, five physical cores): 5.1 ms per
+step single-threaded, 3.9 ms with 2 workers, 3.2 ms with 4, 2.9 ms with 8. The Box2D 3.1.1 package is built
+with SSE2, not AVX2 (`BOX2D_AVX2`); the AVX2 build is left to the package migration.
 
 ## Physics API
 
@@ -133,7 +214,12 @@ body-id map, and resets the `Impl` pointer and scene pointer. After this call,
 | `init(scene)`                              | Create Box2D world and bodies from scene      |
 | `destroy()`                                | Destroy Box2D world and clear all bodies      |
 | `isInitialized()`                          | Check if the physics world is active          |
-| `frame(timestep)`                          | Step the simulation and sync transforms       |
+| `frame(timestep)`                          | Run the fixed steps due and sync transforms   |
+| `getSettings()`                            | Settings of the running world                 |
+| `getLastFrameStepCount()`                  | Fixed steps run by the last `frame()`         |
+| `getWorkerCount()`                         | Solver threads in use (1 = single-threaded)   |
+| `getInterpolationAlpha()`                  | Blend factor of the last `frame()`            |
+| `syncSimulatedTransforms()`                | Write the last step's poses, not blended ones |
 | `takeCollisionEvents()`                    | Hand over and clear the collisions begun      |
 | `destroyBody(entity)`                      | Remove the entity's Box2D bodies              |
 | `impulse(entity, vec2f)`                   | Apply a linear impulse to the entity's centre |
@@ -167,7 +253,9 @@ void MyScript::onUpdate(const owl::core::Timestep& iTimeStep) {
 
 `frame()` turns Box2D contact events into entity-level collisions. Each begin-touch event is resolved to the two
 owning entities; Owl counts the touching shape pairs of every entity pair and records a `CollisionEvent`
-(`entityA`, `entityB` UUIDs) only when the count goes from 0 to 1. End-touch events decrement the count, so a body
+(`entityA`, `entityB` UUIDs) only when the count goes from 0 to 1. The events of all the fixed steps of a frame
+are gathered, and a pair is recorded at most once per frame even if it touches, separates and touches again
+within that frame's steps. End-touch events decrement the count, so a body
 resting on the ground, or a player crossing the cells of a tilemap (one Box2D shape per cell), yields one collision,
 not one per frame or per cell. `destroyBody()` forgets every pair of the destroyed entity.
 
@@ -185,9 +273,11 @@ sequenceDiagram
     participant B as Box2D
     participant L as Lua scripts
     S->>P: frame(dt)
-    P->>B: b2World_Step
-    P->>B: b2World_GetContactEvents
-    P-->>P: pair counts, begun collisions
+    loop each fixed step of the frame
+        P->>B: b2World_Step
+        P->>B: b2World_GetContactEvents
+        P-->>P: pair counts, begun collisions
+    end
     S->>P: takeCollisionEvents()
     S->>L: on_collision(other_id) on A, then on B
     S->>S: triggers, render

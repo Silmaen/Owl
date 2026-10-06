@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <sstream>
 #include <vector>
 
@@ -222,6 +223,49 @@ auto SceneSettings::renderAddLayerSection() -> bool {
 	return added;
 }
 
+void SceneSettings::renderPhysicsSection() const {
+	if (!ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
+		return;
+	const physics::PhysicsSettings before = m_scene->getPhysicsSettings();
+	physics::PhysicsSettings edited = before;
+	ImGui::SetNextItemWidth(160.f);
+	ImGui::DragFloat("Tick rate", &edited.tickRate, 1.f, physics::PhysicsSettings::minTickRate,
+					 physics::PhysicsSettings::maxTickRate, "%.0f Hz");
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Fixed physics steps per second, whatever the frame rate.");
+	auto maxSteps = static_cast<int>(edited.maxStepsPerFrame);
+	ImGui::SetNextItemWidth(160.f);
+	if (ImGui::DragInt("Max steps per frame", &maxSteps, 0.2f, 1,
+					   static_cast<int>(physics::PhysicsSettings::maxStepsLimit)))
+		edited.maxStepsPerFrame = static_cast<uint32_t>(std::max(maxSteps, 1));
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Time beyond this many steps in one frame is dropped: the game slows down instead of "
+						  "stalling.");
+	auto subSteps = static_cast<int>(edited.solverSubSteps);
+	ImGui::SetNextItemWidth(160.f);
+	if (ImGui::DragInt("Solver sub-steps", &subSteps, 0.1f, 1,
+					   static_cast<int>(physics::PhysicsSettings::maxSolverSubSteps)))
+		edited.solverSubSteps = static_cast<uint32_t>(std::max(subSteps, 1));
+	auto workers = static_cast<int>(edited.workerCount);
+	ImGui::SetNextItemWidth(160.f);
+	if (ImGui::DragInt("Solver threads", &workers, 0.1f, 0, static_cast<int>(physics::PhysicsSettings::maxWorkerCount),
+					   workers == 0 ? "auto" : "%d"))
+		edited.workerCount = static_cast<uint32_t>(std::max(workers, 0));
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Threads of the Box2D solver: 0 picks a count from the hardware, 1 is single-threaded.");
+	ImGui::Checkbox("Interpolate transforms", &edited.interpolate);
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Blend the drawn positions between the last two physics steps (smooth motion, one step "
+						  "of latency).");
+	ImGui::TextDisabled("Applied when Play starts.");
+	edited = edited.clamped();
+	if (edited == before)
+		return;
+	m_scene->getPhysicsSettings() = edited;
+	if (mp_undoManager != nullptr)
+		mp_undoManager->push(mkUniq<commands::ModifyPhysicsSettingsCommand>(before, edited));
+}
+
 void SceneSettings::onImGuiRender() {
 	if (!m_visible)
 		return;
@@ -253,6 +297,9 @@ void SceneSettings::onImGuiRender() {
 			ImGui::TextDisabled("Active scene — death");
 			break;
 	}
+	ImGui::Separator();
+
+	renderPhysicsSection();
 	ImGui::Separator();
 
 	if (mp_project->rendererStack.isEmpty()) {

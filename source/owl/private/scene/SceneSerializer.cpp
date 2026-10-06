@@ -58,6 +58,30 @@ void deserializeEntity(const shared<Scene>& ioScene, const core::Serializer& iNo
 	deserializeComponents(entity, iNode, component::OptionalComponents{});
 }
 
+void serializePhysicsSettings(YAML::Emitter& ioEmitter, const physics::PhysicsSettings& iSettings) {
+	if (iSettings == physics::PhysicsSettings{})
+		return;
+	ioEmitter << YAML::Key << "Physics" << YAML::Value << YAML::BeginMap;
+	ioEmitter << YAML::Key << "tickRate" << YAML::Value << iSettings.tickRate;
+	ioEmitter << YAML::Key << "maxStepsPerFrame" << YAML::Value << iSettings.maxStepsPerFrame;
+	ioEmitter << YAML::Key << "solverSubSteps" << YAML::Value << iSettings.solverSubSteps;
+	ioEmitter << YAML::Key << "interpolate" << YAML::Value << iSettings.interpolate;
+	ioEmitter << YAML::Key << "workerCount" << YAML::Value << iSettings.workerCount;
+	ioEmitter << YAML::EndMap;
+}
+
+auto deserializePhysicsSettings(const YAML::Node& iNode) -> physics::PhysicsSettings {
+	physics::PhysicsSettings settings;
+	if (!iNode || !iNode.IsMap())
+		return settings;
+	settings.tickRate = iNode["tickRate"].as<float>(settings.tickRate);
+	settings.maxStepsPerFrame = iNode["maxStepsPerFrame"].as<uint32_t>(settings.maxStepsPerFrame);
+	settings.solverSubSteps = iNode["solverSubSteps"].as<uint32_t>(settings.solverSubSteps);
+	settings.interpolate = iNode["interpolate"].as<bool>(settings.interpolate);
+	settings.workerCount = iNode["workerCount"].as<uint32_t>(settings.workerCount);
+	return settings.clamped();
+}
+
 }// namespace
 
 auto SceneSerializer::serializeToString() const -> std::string {
@@ -67,6 +91,7 @@ auto SceneSerializer::serializeToString() const -> std::string {
 	if (const auto& enabled = mp_scene->getEnabledRenderers(); !enabled.isEmpty()) {
 		sOut.getImpl()->emitter << YAML::Key << "EnabledRenderers" << YAML::Value << enabled.toYaml();
 	}
+	serializePhysicsSettings(sOut.getImpl()->emitter, mp_scene->getPhysicsSettings());
 	sOut.getImpl()->emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 	for (const auto& entity: mp_scene->getAllEntities()) {
 		if (!entity)
@@ -97,6 +122,7 @@ auto SceneSerializer::deserialize(const std::filesystem::path& iFilepath) const 
 		OWL_CORE_TRACE("Deserializing scene '{0}'.", sceneName)
 		if (const auto enabled = sData.getImpl()->node["EnabledRenderers"]; enabled)
 			mp_scene->getEnabledRenderers() = renderer::EnabledRenderersConfig::fromYaml(enabled);
+		mp_scene->getPhysicsSettings() = deserializePhysicsSettings(sData.getImpl()->node["Physics"]);
 		if (auto entities = sData.getImpl()->node["Entities"]; entities) {
 			for (auto entity: entities) {
 				const core::Serializer sEntity;
@@ -163,6 +189,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> bool {
 		const auto& sData = *iParsed.serializer;
 		if (const auto enabled = sData.getImpl()->node["EnabledRenderers"]; enabled)
 			mp_scene->getEnabledRenderers() = renderer::EnabledRenderersConfig::fromYaml(enabled);
+		mp_scene->getPhysicsSettings() = deserializePhysicsSettings(sData.getImpl()->node["Physics"]);
 		if (auto entities = sData.getImpl()->node["Entities"]; entities) {
 			for (auto entity: entities) {
 				const core::Serializer sEntity;

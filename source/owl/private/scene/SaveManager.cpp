@@ -62,6 +62,8 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 	OWL_PROFILE_FUNCTION()
 
 	try {
+		// Interpolated transforms lag the simulation: save the poses that match the saved velocities.
+		physics::PhysicCommand::syncSimulatedTransforms();
 		const SceneSerializer serializer(iScene);
 		const std::string sceneYaml = serializer.serializeToString();
 

@@ -575,10 +575,15 @@ by the Runner at startup.
 
 The Scene Settings panel is a dockable window opened via the ribbon
 (**Edit > Settings > Scene**). It edits the active scene's *global* settings —
-the `EnabledRenderers` block in the `.owl` file — without requiring the user
+the `EnabledRenderers` and `Physics` blocks in the `.owl` file — without requiring the user
 to hand-edit YAML.
 
-The panel mirrors `renderer::EnabledRenderersConfig`:
+The **Physics** section edits the scene's `physics::PhysicsSettings`: tick rate, maximum steps per frame,
+solver sub-steps, solver threads (`auto` = 0) and transform interpolation (see [Physics](physics.md)). Each change pushes an undoable
+`ModifyPhysicsSettingsCommand`; the settings are read when Play starts. It is shown even when the project
+declares no renderer stack.
+
+The renderer-stack section mirrors `renderer::EnabledRenderersConfig`:
 
 | Control                                  | Effect                                                                                               |
 |------------------------------------------|------------------------------------------------------------------------------------------------------|

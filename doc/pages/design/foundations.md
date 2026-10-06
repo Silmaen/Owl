@@ -191,7 +191,7 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 ## Performance work
 
 - ![Planned][planned] Dense per-frame transforms, direct TRS composition (PR-21: P-02, P-06, C-09)
-- ![Planned][planned] Fixed-step physics, multi-threaded Box2D solver on Taskflow (PR-22: D-05, P-12, D-14)
+- ![Done][done] Fixed-step physics, multi-threaded Box2D solver on Taskflow (PR-22: D-05, P-12, D-14)
 - ![Planned][planned] Inspector serializes only the edited component, only on edit (PR-23: E-04)
 - ![Planned][planned] Voxel meshing on workers with a per-frame budget, neighbours invalidated (PR-24: D-08, P-09, B-15)
 - ![Planned][planned] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18)

@@ -231,6 +231,42 @@ Boîtes dynamiques 1 × 1 en grille de 200 colonnes, sol statique ; `PhysicComma
 À 5 000 corps, la pile de 25 rangées ne s'endort pas et reste en contact : 4,9 ms par pas. Profil de `step_falling/1000` :
 `b2World_Step` 87,6 % (exécuté en série par `b2DefaultAddTaskFcn`), boucle de synchronisation vers les `Transform` 12,4 %.
 
+#### 3.7.1 Après PR-22 (pas fixe, solveur multi-thread) — 2026-10-05
+
+Branche `Feature/FixedStepPhysics`. Machine chargée par d'autres agents (load average 5 à 12, pics à 50 écartés) :
+chiffres relatifs, avant / après mesurés alternés dans la même fenêtre. Avant = `Feature/LuaOnCollision` (pas de 16 ms,
+`getSeconds()` tronque à la milliseconde) ; après = un pas fixe de 1/60 s par frame de 16,667 ms. Temps par frame.
+
+Mono-thread, `taskset -c 6` :
+
+| Cas                             | Avant (100 / 1 000 / 5 000 corps) | Après (100 / 1 000 / 5 000 corps) |
+|---------------------------------|-----------------------------------|-----------------------------------|
+| `physics/step_falling`          | 23,0 µs / 230 µs / 1,10 ms        | 22,2 µs / 227 µs / 1,11 ms        |
+| `physics/step_settled`          | 2,6 µs / 24,4 µs / 4,86 ms        | 2,0 µs / 18,2 µs / 5,04 ms        |
+| `physics/frame_empty` (0 corps) | 355 ns                            | 284 ns (60 Hz) ; 132 ns (144 Hz)  |
+
+Le surcoût de l'accumulateur est nul à l'échelle de la mesure : une frame sans pas (144 Hz, 60 % des frames) ne coûte
+que la boucle d'interpolation ; une frame vide à 60 Hz coûte le `b2World_Step` d'un monde vide (~280 ns).
+Synchronisation et interpolation des 5 000 `Transform` : 0,13 ms par frame ; événements de contact : 5 à 12 µs par pas.
+
+Multi-thread (`workerCount` réglé), même exécution, `taskset -c 6,8,10,12,14` (cinq cœurs physiques) :
+
+| Cas                        | 1 thread | 2 workers | 4 workers | 8 workers |
+|----------------------------|----------|-----------|-----------|-----------|
+| `step_falling/100_bodies`  | 23,5 µs  | 47,3 µs   | 46,5 µs   | 49,3 µs   |
+| `step_settled/100_bodies`  | 2,1 µs   | 4,7 µs    | 3,6 µs    | 5,0 µs    |
+| `step_falling/1000_bodies` | 227 µs   | 212 µs    | 208 µs    | 193 µs    |
+| `step_settled/1000_bodies` | 19,2 µs  | 20,3 µs   | 20,6 µs   | 21,9 µs   |
+| `step_falling/5000_bodies` | 1,11 ms  | 890 µs    | 726 µs    | 738 µs    |
+| `step_settled/5000_bodies` | 5,14 ms  | 3,85 ms   | 3,18 ms   | 2,86 ms   |
+
+Le gain n'apparaît qu'au-delà de quelques milliers de corps ; en dessous, la distribution des tâches coûte plus qu'elle
+ne rapporte, d'où le seuil automatique de 2 000 corps dynamiques. L'objectif v0.3.0 (5 000 corps sous 1,5 ms par pas)
+n'est pas atteint : 3,2 ms à 4 workers sur cette pile qui ne s'endort pas, dont `b2World_GetProfile` attribue l'essentiel
+au solveur de contraintes. Le paquet Box2D 3.1.1 est compilé en SSE2 sans AVX2 (`objdump` : 0 registre `ymm`), ce que
+Catto chiffre à ~×1,1 ; le reste est à chercher dans la scène (25 rangées en contact permanent) et la charge de la
+machine. Remesurer sur machine calme et après la migration du paquet (AVX2).
+
 ### 3.8 Scènes de `sample_project/` (backend Null)
 
 | Scène              | Entités | Fichier | Chargement | Frame éditeur | Quads |

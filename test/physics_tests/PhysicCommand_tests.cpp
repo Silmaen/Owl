@@ -53,7 +53,9 @@ TEST(PhysicCommand, Creation) {
 	EXPECT_TRUE(PhysicCommand::isInitialized());
 	PhysicCommand::frame(ts);
 	// test the new positions...
-	EXPECT_EQ(transform1.translation().y(), -0.0613125041f);
+	// 100 ms = 6 fixed steps of 1/60 s; the transform shows the blend between steps 5 and 6.
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(), 6u);
+	EXPECT_NEAR(transform1.translation().y(), -0.0357656f, 1e-5f);
 	EXPECT_EQ(transform2.translation().y(), 0.0f);
 	EXPECT_EQ(transform3.translation().y(), 0.0f);
 
@@ -95,6 +97,7 @@ TEST(PhysicCommand, badImpulse) {
 	PhysicCommand::impulse(b1, {0, 15});
 	EXPECT_EQ(PhysicCommand::getVelocity(b1), owl::math::vec2f(0, 0));
 
+	PhysicCommand::destroy();
 	Log::invalidate();
 }
 
@@ -119,6 +122,7 @@ TEST(PhysicCommand, Impulse) {
 	PhysicCommand::frame(ts);
 	EXPECT_NEAR(PhysicCommand::getVelocity(b1).y(), 14.019001, 0.001);
 
+	PhysicCommand::destroy();
 	Log::invalidate();
 }
 
@@ -139,6 +143,7 @@ TEST(PhysicCommand, GravityScaleZeroCancelsFalling) {
 	for (int i = 0; i < 10; ++i) PhysicCommand::frame(ts);
 	// Vertical velocity must stay at 0 — Box2D world gravity has no effect on this body.
 	EXPECT_NEAR(PhysicCommand::getVelocity(b1).y(), 0.0, 1e-3);
+	PhysicCommand::destroy();
 	Log::invalidate();
 }
 
@@ -165,6 +170,7 @@ TEST(PhysicCommand, GravityScaleNoOpEdgeCases) {
 	PhysicCommand::setGravityScale(noBody, 0.f);
 	// Static body — silently ignored (only Dynamic is meaningful).
 	PhysicCommand::setGravityScale(staticBody, 0.f);
+	PhysicCommand::destroy();
 	Log::invalidate();
 }
 
@@ -197,6 +203,7 @@ TEST(PhysicCommand, SetVelocityAndTransformGuards) {
 	EXPECT_EQ(PhysicCommand::getVelocity(staticBody), owl::math::vec2f(0, 0));
 	// setTransform on Static body still teleports the body (no type filter).
 	PhysicCommand::setTransform(staticBody, {5.f, 6.f}, 0.f);
+	PhysicCommand::destroy();
 	Log::invalidate();
 }
 
@@ -213,6 +220,7 @@ TEST(PhysicCommand, SetVelocityOnDynamicBodyApplied) {
 	const auto vel = PhysicCommand::getVelocity(b1);
 	EXPECT_NEAR(vel.x(), 3.f, 0.001f);
 	EXPECT_NEAR(vel.y(), -2.f, 0.001f);
+	PhysicCommand::destroy();
 	Log::invalidate();
 }
 
@@ -234,6 +242,7 @@ TEST(PhysicCommand, SnapshotRoundTrip) {
 	}
 
 	// Before init: default snapshot (awake was only false when an earlier test left a dangling world).
+	ASSERT_FALSE(PhysicCommand::isInitialized());
 	auto snap0 = PhysicCommand::getSnapshot(dyn);
 	EXPECT_EQ(snap0.linearVelocity, owl::math::vec2f(0, 0));
 	EXPECT_FLOAT_EQ(snap0.angularVelocity, 0.f);
@@ -265,6 +274,7 @@ TEST(PhysicCommand, SnapshotRoundTrip) {
 	const auto vel = PhysicCommand::getVelocity(dyn);
 	EXPECT_NEAR(vel.x(), 4.f, 0.001f);
 	EXPECT_NEAR(vel.y(), 5.f, 0.001f);
+	PhysicCommand::destroy();
 	Log::invalidate();
 }
 
@@ -282,6 +292,7 @@ TEST(PhysicCommand, GetVelocityGuards) {
 	EXPECT_EQ(PhysicCommand::getVelocity({}), owl::math::vec2f(0, 0));
 	// Entity without PhysicBody.
 	EXPECT_EQ(PhysicCommand::getVelocity(noBody), owl::math::vec2f(0, 0));
+	PhysicCommand::destroy();
 	Log::invalidate();
 }
 
