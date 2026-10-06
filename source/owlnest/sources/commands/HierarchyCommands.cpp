@@ -8,7 +8,6 @@
 
 #include "HierarchyCommands.h"
 
-#include <scene/component/Hierarchy.h>
 #include <scene/component/Transform.h>
 
 #include <format>
@@ -16,9 +15,9 @@
 namespace owl::nest::commands {
 // --- ReparentCommand ---
 
-ReparentCommand::ReparentCommand(const scene::Entity& iChild, const core::UUID iNewParentUuid)
-	: m_childUuid{iChild.getUUID()}, m_oldParentUuid{iChild.getComponent<scene::component::Hierarchy>().parentId},
-	  m_newParentUuid{iNewParentUuid},
+ReparentCommand::ReparentCommand(const scene::Entity& iChild, const core::UUID iNewParentUuid,
+								 const scene::Scene& iScene)
+	: m_childUuid{iChild.getUUID()}, m_oldSlot{HierarchySlot::capture(iChild, iScene)}, m_newParentUuid{iNewParentUuid},
 	  m_oldLocalTransform{iChild.getComponent<scene::component::Transform>().transform}, m_name{iChild.getName()} {
 	m_selectAfterUndo = m_childUuid;
 	m_selectAfterRedo = m_childUuid;
@@ -27,17 +26,10 @@ ReparentCommand::ReparentCommand(const scene::Entity& iChild, const core::UUID i
 ReparentCommand::~ReparentCommand() = default;
 
 void ReparentCommand::undo(scene::Scene& ioScene) {
-	auto child = ioScene.findEntityByUUID(m_childUuid);
+	const auto child = ioScene.findEntityByUUID(m_childUuid);
 	if (!child)
 		return;
-	// Restore original parent.
-	if (m_oldParentUuid != core::UUID{0}) {
-		if (auto oldParent = ioScene.findEntityByUUID(m_oldParentUuid); oldParent)
-			ioScene.setParent(child, oldParent);
-	} else {
-		ioScene.unparent(child);
-	}
-	// Restore old local transform (setParent/unparent recomputes it, so overwrite).
+	m_oldSlot.restore(child, ioScene);
 	child.getComponent<scene::component::Transform>().transform = m_oldLocalTransform;
 }
 
@@ -51,8 +43,8 @@ void ReparentCommand::redo(scene::Scene& ioScene) {
 auto ReparentCommand::description() const -> std::string { return std::format("Reparent '{}'", m_name); }
 
 // --- UnparentCommand ---
-UnparentCommand::UnparentCommand(const scene::Entity& iChild)
-	: m_childUuid{iChild.getUUID()}, m_oldParentUuid{iChild.getComponent<scene::component::Hierarchy>().parentId},
+UnparentCommand::UnparentCommand(const scene::Entity& iChild, const scene::Scene& iScene)
+	: m_childUuid{iChild.getUUID()}, m_oldSlot{HierarchySlot::capture(iChild, iScene)},
 	  m_oldLocalTransform{iChild.getComponent<scene::component::Transform>().transform}, m_name{iChild.getName()} {
 	m_selectAfterUndo = m_childUuid;
 	m_selectAfterRedo = m_childUuid;
@@ -61,12 +53,10 @@ UnparentCommand::UnparentCommand(const scene::Entity& iChild)
 UnparentCommand::~UnparentCommand() = default;
 
 void UnparentCommand::undo(scene::Scene& ioScene) {
-	auto child = ioScene.findEntityByUUID(m_childUuid);
+	const auto child = ioScene.findEntityByUUID(m_childUuid);
 	if (!child)
 		return;
-	if (auto oldParent = ioScene.findEntityByUUID(m_oldParentUuid); oldParent)
-		ioScene.setParent(child, oldParent);
-	// Restore old local transform.
+	m_oldSlot.restore(child, ioScene);
 	child.getComponent<scene::component::Transform>().transform = m_oldLocalTransform;
 }
 

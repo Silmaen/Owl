@@ -9,7 +9,9 @@
 #include "EntityCommands.h"
 
 #include <scene/component/Hierarchy.h>
+#include <scene/component/Transform.h>
 
+#include <cstddef>
 #include <format>
 
 namespace owl::nest::commands {
@@ -35,32 +37,31 @@ void CreateEntityCommand::redo(scene::Scene& ioScene) { m_snapshot.restore(ioSce
 auto CreateEntityCommand::description() const -> std::string { return std::format("Create '{}'", m_name); }
 
 // --- DeleteEntityCommand ---
-DeleteEntityCommand::DeleteEntityCommand(const scene::Entity& iEntity)
-	: m_snapshot{EntitySnapshot::capture(iEntity)}, m_name{iEntity.getName()} {
+DeleteEntityCommand::DeleteEntityCommand(const scene::Entity& iEntity, const scene::Scene& iScene)
+	: m_snapshot{EntitySnapshot::capture(iEntity)}, m_name{iEntity.getName()},
+	  m_slot{HierarchySlot::capture(iEntity, iScene)},
+	  m_childrenUuids{iEntity.getComponent<scene::component::Hierarchy>().childrenIds} {
 	m_selectAfterUndo = m_snapshot.uuid;
-	if (iEntity.hasComponent<scene::component::Hierarchy>()) {
-		const auto& hier = iEntity.getComponent<scene::component::Hierarchy>();
-		m_parentUuid = hier.parentId;
-		m_childrenUuids = hier.childrenIds;
+	for (const auto childUuid: m_childrenUuids) {
+		const auto child = iScene.findEntityByUUID(childUuid);
+		m_childrenLocal.push_back(child ? child.getComponent<scene::component::Transform>().transform
+										: math::Transform{});
 	}
 }
 
 DeleteEntityCommand::~DeleteEntityCommand() = default;
 
 void DeleteEntityCommand::undo(scene::Scene& ioScene) {
-	// Restore the entity.
-	auto entity = m_snapshot.restore(ioScene);
+	const auto entity = m_snapshot.restore(ioScene);
 	if (!entity)
 		return;
-	// Re-parent the entity under its original parent.
-	if (m_parentUuid != core::UUID{0}) {
-		if (auto parent = ioScene.findEntityByUUID(m_parentUuid); parent)
-			ioScene.setParent(entity, parent);
-	}
-	// Re-parent original children back under this entity.
-	for (const auto childUuid: m_childrenUuids) {
-		if (auto child = ioScene.findEntityByUUID(childUuid); child)
-			ioScene.setParent(child, entity);
+	m_slot.restore(entity, ioScene);
+	for (size_t i = 0; i < m_childrenUuids.size(); ++i) {
+		const auto child = ioScene.findEntityByUUID(m_childrenUuids[i]);
+		if (!child)
+			continue;
+		HierarchySlot{.parentUuid = m_snapshot.uuid, .siblingIndex = i}.restore(child, ioScene);
+		child.getComponent<scene::component::Transform>().transform = m_childrenLocal[i];
 	}
 }
 
@@ -75,23 +76,16 @@ auto DeleteEntityCommand::description() const -> std::string { return std::forma
 
 // --- DeleteSubtreeCommand ---
 DeleteSubtreeCommand::DeleteSubtreeCommand(const scene::Entity& iEntity, const scene::Scene& iScene)
-	: m_snapshot{SubtreeSnapshot::capture(iEntity, iScene)}, m_name{iEntity.getName()} {
+	: m_snapshot{SubtreeSnapshot::capture(iEntity, iScene)}, m_name{iEntity.getName()},
+	  m_slot{HierarchySlot::capture(iEntity, iScene)} {
 	m_selectAfterUndo = iEntity.getUUID();
-	if (iEntity.hasComponent<scene::component::Hierarchy>())
-		m_parentUuid = iEntity.getComponent<scene::component::Hierarchy>().parentId;
 }
 
 DeleteSubtreeCommand::~DeleteSubtreeCommand() = default;
 
 void DeleteSubtreeCommand::undo(scene::Scene& ioScene) {
-	auto root = m_snapshot.restore(ioScene);
-	if (!root)
-		return;
-	// Re-parent the root under its original parent.
-	if (m_parentUuid != core::UUID{0}) {
-		if (auto parent = ioScene.findEntityByUUID(m_parentUuid); parent)
-			ioScene.setParent(root, parent);
-	}
+	if (const auto root = m_snapshot.restore(ioScene); root)
+		m_slot.restore(root, ioScene);
 }
 
 void DeleteSubtreeCommand::redo(scene::Scene& ioScene) {

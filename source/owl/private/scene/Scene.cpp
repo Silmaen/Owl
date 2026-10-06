@@ -354,27 +354,28 @@ auto Scene::createEntityWithUUID(const core::UUID iUuid, const std::string& iNam
 }
 
 void Scene::destroyEntity(Entity& ioEntity) {
-	auto& [parentId, childrenIds] = ioEntity.getComponent<component::Hierarchy>();
-	const core::UUID grandParentId = parentId;
-	// Reparent children to this entity's parent (or root if no parent).
+	const core::UUID uuid = ioEntity.getUUID();
+	const auto [grandParentId, childrenIds] = ioEntity.getComponent<component::Hierarchy>();
+	const Entity grandParent = grandParentId != core::UUID{0} ? findEntityByUUID(grandParentId) : Entity{};
+	const math::mat4 toGrandParent =
+			grandParent ? math::inverse(getWorldTransform(grandParent)()) : math::identity<float, 4>();
+	std::vector<core::UUID> adopted;
 	for (const auto childId: childrenIds) {
-		if (const Entity child = findEntityByUUID(childId); child) {
-			auto& [uuid, ids] = child.getComponent<component::Hierarchy>();
-			uuid = grandParentId;
-			if (grandParentId != core::UUID{0}) {
-				if (const Entity grandParent = findEntityByUUID(grandParentId); grandParent) {
-					auto& [pid, v_uuid] = grandParent.getComponent<component::Hierarchy>();
-					v_uuid.push_back(childId);
-				}
-			}
-		}
+		const Entity child = findEntityByUUID(childId);
+		if (!child)
+			continue;
+		const math::Transform childWorld = getWorldTransform(child);
+		child.getComponent<component::Hierarchy>().parentId = grandParent ? grandParentId : core::UUID{0};
+		child.getComponent<component::Transform>().transform = math::Transform{toGrandParent * childWorld()};
+		adopted.push_back(childId);
 	}
-	// Remove this entity from its parent's children list.
-	if (grandParentId != core::UUID{0}) {
-		if (const Entity parent = findEntityByUUID(grandParentId); parent) {
-			auto& [pid, uuids] = parent.getComponent<component::Hierarchy>();
-			std::erase(uuids, ioEntity.getUUID());
-		}
+	// The children take the deleted entity's slot among the grandparent's children, keeping sibling order.
+	if (grandParent) {
+		auto& siblings = grandParent.getComponent<component::Hierarchy>().childrenIds;
+		auto slot = std::ranges::find(siblings, uuid);
+		if (slot != siblings.end())
+			slot = siblings.erase(slot);
+		siblings.insert(slot, adopted.begin(), adopted.end());
 	}
 	if (m_primaryPlayerCache == ioEntity.m_entityHandle)
 		m_primaryPlayerCache = entt::null;

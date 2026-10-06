@@ -740,7 +740,9 @@ The Edit menu labels dynamically show the description of the next undo/redo acti
 
 **Window title.** The editor window title reflects the active project name and current
 scene, refreshed by `refreshWindowTitle()`. An asterisk (`*`) suffix indicates unsaved
-changes (based on the undo history dirty state).
+changes. The flag compares the current undo state with the one that was saved, so undoing
+back to the save point clears it, and any other state (an edit after an undo, an edit merged
+into the saved step) sets it and makes closing the document ask to save.
 
 ## Prefab Workflow
 
@@ -865,6 +867,10 @@ Settings panel. The table below lists factory defaults.
 All entity, component, hierarchy, and gizmo editing operations are undoable. Rapid
 consecutive edits on the same property (e.g. dragging a slider) are automatically
 coalesced into a single undo step.
+
+Undo and redo restore an entity **in place**: it keeps its UUID, its children and its slot
+in the hierarchy, and the selection stays on it. Undoing the deletion of a parent puts its
+children back under it, at their original position and in their original order.
 
 ### Entity Operations
 

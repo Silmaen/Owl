@@ -14,15 +14,6 @@
 
 namespace owl::nest::commands {
 
-namespace {
-void restoreEntity(scene::Scene& ioScene, const EntitySnapshot& iSnapshot) {
-	if (auto existing = ioScene.findEntityByUUID(iSnapshot.uuid); existing)
-		ioScene.destroyEntity(existing);
-	iSnapshot.restore(ioScene);
-}
-
-}// namespace
-
 // --- AddComponentCommand ---
 AddComponentCommand::AddComponentCommand(EntitySnapshot iBefore, EntitySnapshot iAfter, std::string iComponentName)
 	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)}, m_componentName{std::move(iComponentName)} {
@@ -34,10 +25,10 @@ AddComponentCommand::~AddComponentCommand() = default;
 
 void AddComponentCommand::undo(scene::Scene& ioScene) {
 	if (m_before.uuid != core::UUID{0})
-		restoreEntity(ioScene, m_before);
+		m_before.restore(ioScene);
 }
 
-void AddComponentCommand::redo(scene::Scene& ioScene) { restoreEntity(ioScene, m_after); }
+void AddComponentCommand::redo(scene::Scene& ioScene) { m_after.restore(ioScene); }
 
 auto AddComponentCommand::description() const -> std::string { return std::format("Add {}", m_componentName); }
 
@@ -51,9 +42,9 @@ RemoveComponentCommand::RemoveComponentCommand(EntitySnapshot iBefore, EntitySna
 
 RemoveComponentCommand::~RemoveComponentCommand() = default;
 
-void RemoveComponentCommand::undo(scene::Scene& ioScene) { restoreEntity(ioScene, m_before); }
+void RemoveComponentCommand::undo(scene::Scene& ioScene) { m_before.restore(ioScene); }
 
-void RemoveComponentCommand::redo(scene::Scene& ioScene) { restoreEntity(ioScene, m_after); }
+void RemoveComponentCommand::redo(scene::Scene& ioScene) { m_after.restore(ioScene); }
 
 auto RemoveComponentCommand::description() const -> std::string { return std::format("Remove {}", m_componentName); }
 
@@ -68,9 +59,9 @@ ModifyEntityCommand::~ModifyEntityCommand() = default;
 
 void ModifyEntityCommand::captureAfter(const scene::Entity& iEntity) { m_after = EntitySnapshot::capture(iEntity); }
 
-void ModifyEntityCommand::undo(scene::Scene& ioScene) { restoreEntity(ioScene, m_before); }
+void ModifyEntityCommand::undo(scene::Scene& ioScene) { m_before.restore(ioScene); }
 
-void ModifyEntityCommand::redo(scene::Scene& ioScene) { restoreEntity(ioScene, m_after); }
+void ModifyEntityCommand::redo(scene::Scene& ioScene) { m_after.restore(ioScene); }
 
 auto ModifyEntityCommand::description() const -> std::string { return m_description; }
 

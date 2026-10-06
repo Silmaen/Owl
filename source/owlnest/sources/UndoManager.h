@@ -25,7 +25,10 @@ namespace owl::nest {
  *
  * Owns a stack of `UndoCommand<Target>` objects. Supports command merging
  * (coalescing rapid property edits) and dirty-state tracking for save
- * indicators. The class is header-only because it is a template; every
+ * indicators. Dirty tracking uses generations: every pushed command, and every
+ * merge into the top command, gets a fresh generation number; the current state
+ * is the generation of the top of the undo stack, and the document is dirty
+ * whenever it differs from the generation recorded by `markSaved()`. The class is header-only because it is a template; every
  * concrete instantiation (`SceneUndoManager`, `NodeGraphUndoManager`, ...) is
  * produced where it is used.
  */
@@ -55,18 +58,20 @@ public:
 	void push(uniq<UndoCommand<Target>> iCommand) {
 		if (m_mergeEnabled && !m_undoStack.empty()) {
 			auto& top = m_undoStack.back();
-			if (top->typeId() != 0 && top->typeId() == iCommand->typeId()) {
-				const auto elapsed = iCommand->m_timestamp - top->m_timestamp;
-				if (elapsed <= s_mergeTimeoutMs && top->mergeWith(*iCommand))
-					return;// Merged: discard the new command
+			if (top.command->typeId() != 0 && top.command->typeId() == iCommand->typeId()) {
+				const auto elapsed = iCommand->m_timestamp - top.command->m_timestamp;
+				if (elapsed <= s_mergeTimeoutMs && top.command->mergeWith(*iCommand)) {
+					top.generation = m_nextGeneration++;
+					return;
+				}
 			}
 		}
 		m_redoStack.clear();
-		if (m_undoStack.size() >= m_maxDepth) {
+		if (!m_undoStack.empty() && m_undoStack.size() >= m_maxDepth) {
+			m_baseGeneration = m_undoStack.front().generation;
 			m_undoStack.erase(m_undoStack.begin());
-			--m_savedIndex;
 		}
-		m_undoStack.push_back(std::move(iCommand));
+		m_undoStack.push_back({.command = std::move(iCommand), .generation = m_nextGeneration++});
 	}
 
 	/**
@@ -78,10 +83,6 @@ public:
 	void execute(uniq<UndoCommand<Target>> iCommand, Target& ioTarget) {
 		iCommand->redo(ioTarget);
 		m_lastSelectionHint = iCommand->m_selectAfterRedo;
-		/**
-		 * @brief
-		 *  Push.
-		 */
 		push(std::move(iCommand));
 	}
 
@@ -93,11 +94,11 @@ public:
 	void undo(Target& ioTarget) {
 		if (m_undoStack.empty())
 			return;
-		auto command = std::move(m_undoStack.back());
+		auto entry = std::move(m_undoStack.back());
 		m_undoStack.pop_back();
-		command->undo(ioTarget);
-		m_lastSelectionHint = command->m_selectAfterUndo;
-		m_redoStack.push_back(std::move(command));
+		entry.command->undo(ioTarget);
+		m_lastSelectionHint = entry.command->m_selectAfterUndo;
+		m_redoStack.push_back(std::move(entry));
 	}
 
 	/**
@@ -108,11 +109,11 @@ public:
 	void redo(Target& ioTarget) {
 		if (m_redoStack.empty())
 			return;
-		auto command = std::move(m_redoStack.back());
+		auto entry = std::move(m_redoStack.back());
 		m_redoStack.pop_back();
-		command->redo(ioTarget);
-		m_lastSelectionHint = command->m_selectAfterRedo;
-		m_undoStack.push_back(std::move(command));
+		entry.command->redo(ioTarget);
+		m_lastSelectionHint = entry.command->m_selectAfterRedo;
+		m_undoStack.push_back(std::move(entry));
 	}
 
 	/**
@@ -137,7 +138,7 @@ public:
 	[[nodiscard]] auto undoDescription() const -> std::string {
 		if (m_undoStack.empty())
 			return {};
-		return m_undoStack.back()->description();
+		return m_undoStack.back().command->description();
 	}
 
 	/**
@@ -148,7 +149,7 @@ public:
 	[[nodiscard]] auto redoDescription() const -> std::string {
 		if (m_redoStack.empty())
 			return {};
-		return m_redoStack.back()->description();
+		return m_redoStack.back().command->description();
 	}
 
 	/**
@@ -160,12 +161,13 @@ public:
 
 	/**
 	 * @brief
-	 *  Clear all history.
+	 *  Clear all history; the current state becomes the saved one.
 	 */
 	void clear() {
 		m_undoStack.clear();
 		m_redoStack.clear();
-		m_savedIndex = 0;
+		m_baseGeneration = m_nextGeneration++;
+		m_savedGeneration = m_baseGeneration;
 		m_lastSelectionHint = core::UUID{0};
 	}
 
@@ -185,28 +187,52 @@ public:
 	 * @brief
 	 *  Mark the current state as saved.
 	 */
-	void markSaved() { m_savedIndex = static_cast<int64_t>(m_undoStack.size()); }
+	void markSaved() { m_savedGeneration = currentGeneration(); }
 
 	/**
 	 * @brief
 	 *  Check if the state has changed since the last save.
 	 * @return True when the object is dirty.
 	 */
-	[[nodiscard]] auto isDirty() const -> bool { return static_cast<int64_t>(m_undoStack.size()) != m_savedIndex; }
+	[[nodiscard]] auto isDirty() const -> bool { return currentGeneration() != m_savedGeneration; }
 
 private:
+	/**
+	 * @brief
+	 *  A recorded command and the generation of the state it leads to.
+	 */
+	struct Entry {
+		/// The command.
+		uniq<UndoCommand<Target>> command;
+		/// Generation of the state reached once the command is applied.
+		uint64_t generation = 0;
+	};
+
+	/**
+	 * @brief
+	 *  Generation of the current state.
+	 * @return The generation of the top undo entry, or the base generation when the stack is empty.
+	 */
+	[[nodiscard]] auto currentGeneration() const -> uint64_t {
+		return m_undoStack.empty() ? m_baseGeneration : m_undoStack.back().generation;
+	}
+
 	/// Undo stack (most recent at back).
-	std::vector<uniq<UndoCommand<Target>>> m_undoStack;
+	std::vector<Entry> m_undoStack;
 	/// Redo stack (most recent at back).
-	std::vector<uniq<UndoCommand<Target>>> m_redoStack;
+	std::vector<Entry> m_redoStack;
 	/// Maximum undo history depth.
 	size_t m_maxDepth = 100;
 	/// Whether merge coalescing is enabled.
 	bool m_mergeEnabled = true;
 	/// Merge timeout in milliseconds.
 	static constexpr auto s_mergeTimeoutMs = std::chrono::milliseconds{1000};
-	/// Undo stack size at last save (for dirty tracking).
-	int64_t m_savedIndex = 0;
+	/// Next generation number to hand out.
+	uint64_t m_nextGeneration = 1;
+	/// Generation of the state below the oldest undo entry.
+	uint64_t m_baseGeneration = 0;
+	/// Generation of the state recorded by the last save.
+	uint64_t m_savedGeneration = 0;
 	/// Entity UUID to select after last undo/redo operation.
 	core::UUID m_lastSelectionHint{0};
 };

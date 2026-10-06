@@ -25,11 +25,11 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 
 ### Destruction
 
-| Method                                     | Behaviour                                                                 |
-|--------------------------------------------|---------------------------------------------------------------------------|
-| `Scene::destroyEntity(entity)`             | Children reparented to grandparent; world position preserved              |
-| `Scene::destroyEntityWithChildren(entity)` | Cascade delete of entire subtree                                          |
-| `Scene::destroyEntityDeferred(entity)`     | Runtime path: subtree queued, destroyed by `flushPendingDestructions()`   |
+| Method                                     | Behaviour                                                                        |
+|--------------------------------------------|----------------------------------------------------------------------------------|
+| `Scene::destroyEntity(entity)`             | Children reparented to grandparent in its sibling slot; world position preserved |
+| `Scene::destroyEntityWithChildren(entity)` | Cascade delete of entire subtree                                                 |
+| `Scene::destroyEntityDeferred(entity)`     | Runtime path: subtree queued, destroyed by `flushPendingDestructions()`          |
 
 The first two are immediate and meant for the editor. Runtime code (Lua `scene.destroy_entity`, trigger
 callbacks) uses the deferred form: the queue is flushed at the end of `onUpdateRuntime()` and at the start
@@ -453,14 +453,14 @@ see fresh `Visibility` state.
 
 ### Hierarchy Operations
 
-| Operation                | Behaviour                                                                       |
-|--------------------------|---------------------------------------------------------------------------------|
-| **Set parent**           | Cycle check at any depth, local transform recomputed to preserve world position |
-| **Unparent**             | Entity becomes root, world transform stored as new local                        |
-| **Delete entity**        | Children reparented to grandparent; world position preserved                    |
-| **Delete with children** | Cascade delete of entire subtree                                                |
-| **Duplicate entity**     | Duplicate is a root entity with no children                                     |
-| **Duplicate subtree**    | Recursive duplicate with new UUIDs and correct parent references                |
+| Operation                | Behaviour                                                                        |
+|--------------------------|----------------------------------------------------------------------------------|
+| **Set parent**           | Cycle check at any depth, local transform recomputed to preserve world position  |
+| **Unparent**             | Entity becomes root, world transform stored as new local                         |
+| **Delete entity**        | Children reparented to grandparent in its sibling slot; world position preserved |
+| **Delete with children** | Cascade delete of entire subtree                                                 |
+| **Duplicate entity**     | Duplicate is a root entity with no children                                      |
+| **Duplicate subtree**    | Recursive duplicate with new UUIDs and correct parent references                 |
 
 ### Physics and Hierarchy
 

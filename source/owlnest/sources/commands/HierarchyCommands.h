@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "../EntitySnapshot.h"
 #include "../UndoCommand.h"
 
 #include <math/Transform.h>
@@ -36,8 +37,9 @@ public:
 	 *  Construct before setParent is called.
 	 * @param[in] iChild The child entity being reparented.
 	 * @param[in] iNewParentUuid UUID of the new parent entity.
+	 * @param[in] iScene The scene holding the entity.
 	 */
-	ReparentCommand(const scene::Entity& iChild, core::UUID iNewParentUuid);
+	ReparentCommand(const scene::Entity& iChild, core::UUID iNewParentUuid, const scene::Scene& iScene);
 
 	/**
 	 * @brief
@@ -69,8 +71,8 @@ public:
 private:
 	/// UUID of the entity being reparented.
 	core::UUID m_childUuid;
-	/// Parent UUID before the reparent (used by undo).
-	core::UUID m_oldParentUuid;
+	/// Parent and sibling index before the reparent (restored on undo).
+	HierarchySlot m_oldSlot;
 	/// Parent UUID after the reparent (used by redo).
 	core::UUID m_newParentUuid;
 	/// Child's local transform before reparenting (preserved on undo).
@@ -98,8 +100,9 @@ public:
 	 * @brief
 	 *  Construct before unparent is called.
 	 * @param[in] iChild The child entity being unparented.
+	 * @param[in] iScene The scene holding the entity.
 	 */
-	explicit UnparentCommand(const scene::Entity& iChild);
+	UnparentCommand(const scene::Entity& iChild, const scene::Scene& iScene);
 
 	/**
 	 * @brief
@@ -131,8 +134,8 @@ public:
 private:
 	/// UUID of the entity being unparented.
 	core::UUID m_childUuid;
-	/// Parent UUID before the unparent (used by undo to re-attach).
-	core::UUID m_oldParentUuid;
+	/// Parent and sibling index before the unparent (restored on undo).
+	HierarchySlot m_oldSlot;
 	/// Child's local transform before unparenting (preserved on undo).
 	math::Transform m_oldLocalTransform;
 	/// Display name used in the Edit-menu undo/redo entry.

@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <exception>
 #include <format>
+#include <tuple>
 #include <unordered_set>
 
 namespace owl::scene {
@@ -158,6 +159,60 @@ auto deserializePhysicsSettings(const YAML::Node& iNode) -> physics::PhysicsSett
 	settings.interpolate = iNode["interpolate"].as<bool>(settings.interpolate);
 	settings.workerCount = iNode["workerCount"].as<uint32_t>(settings.workerCount);
 	return settings.clamped();
+}
+
+void linkIntoHierarchy(Scene& ioScene, const Entity& iEntity) {
+	const core::UUID uuid = iEntity.getUUID();
+	auto& hierarchy = iEntity.getComponent<component::Hierarchy>();
+	if (hierarchy.parentId != core::UUID{0}) {
+		if (const Entity parent = ioScene.findEntityByUUID(hierarchy.parentId); parent) {
+			if (auto& siblings = parent.getComponent<component::Hierarchy>().childrenIds;
+				std::ranges::find(siblings, uuid) == siblings.end())
+				siblings.push_back(uuid);
+		} else {
+			OWL_CORE_WARN("SceneSerializer: Parent {} of entity {} not found, orphaning entity.",
+						  static_cast<uint64_t>(hierarchy.parentId), static_cast<uint64_t>(uuid))
+			hierarchy.parentId = core::UUID{0};
+		}
+	}
+	for (const auto view = ioScene.registry.view<component::Hierarchy, component::ID>(); const auto handle: view) {
+		if (view.get<component::Hierarchy>(handle).parentId == uuid &&
+			std::ranges::find(hierarchy.childrenIds, view.get<component::ID>(handle).id) == hierarchy.childrenIds.end())
+			hierarchy.childrenIds.push_back(view.get<component::ID>(handle).id);
+	}
+}
+
+template<typename Component>
+auto componentYaml(const Component& iComponent) -> std::string {
+	const core::Serializer sOut;
+	sOut.getImpl()->emitter << YAML::BeginMap;
+	iComponent.serialize(sOut);
+	sOut.getImpl()->emitter << YAML::EndMap;
+	return YAML::Dump(YAML::Load(sOut.getImpl()->emitter.c_str())[Component::key()]);
+}
+
+template<typename Component>
+void applyComponent(Entity& ioEntity, const YAML::Node& iEntityNode, const bool iMandatory) {
+	const auto node = iEntityNode[Component::key()];
+	const bool present = ioEntity.hasComponent<Component>();
+	if (!node) {
+		if (iMandatory)
+			ioEntity.getComponent<Component>() = Component{};
+		else if (present)
+			ioEntity.removeComponent<Component>();
+		return;
+	}
+	if (present && componentYaml(ioEntity.getComponent<Component>()) == YAML::Dump(node))
+		return;
+	auto& comp = ioEntity.addOrReplaceComponent<Component>();
+	const core::Serializer sNode;
+	sNode.getImpl()->node.reset(node);
+	comp.deserialize(sNode);
+}
+
+template<typename... Components>
+void applyOptionalComponents(Entity& ioEntity, const YAML::Node& iEntityNode, const std::tuple<Components...>&) {
+	(..., applyComponent<Components>(ioEntity, iEntityNode, false));
 }
 
 }// namespace
@@ -328,9 +383,34 @@ auto SceneSerializer::deserializeEntityFromString(const shared<Scene>& ioScene, 
 		const auto uuid = sEntity.getImpl()->node["Entity"].as<uint64_t>();
 		auto entity = createEntityFromNode(ioScene, sEntity, uuid);
 		deserializeEntityComponents(entity, sEntity);
-		ioScene->rebuildHierarchyChildren();
+		linkIntoHierarchy(*ioScene, entity);
 	} catch (...) {
 		OWL_CORE_ERROR("Unable to deserialize entity from string.")
+		return false;
+	}
+	return true;
+}
+
+auto SceneSerializer::applyEntityFromString(const Entity& iEntity, const std::string& iYamlData) -> bool {
+	if (!iEntity) {
+		OWL_CORE_ERROR("SceneSerializer: Cannot apply entity data to an invalid entity.")
+		return false;
+	}
+	try {
+		const auto node = YAML::Load(iYamlData);
+		if (!node["Entity"] || core::UUID{node["Entity"].as<uint64_t>()} != iEntity.getUUID()) {
+			OWL_CORE_ERROR("SceneSerializer: Entity data does not describe entity {}.",
+						   static_cast<uint64_t>(iEntity.getUUID()))
+			return false;
+		}
+		Entity entity = iEntity;
+		if (const auto tag = node["Tag"]; tag && tag["tag"])
+			entity.getComponent<component::Tag>().tag = tag["tag"].as<std::string>();
+		applyComponent<component::Transform>(entity, node, true);
+		applyComponent<component::Visibility>(entity, node, true);
+		applyOptionalComponents(entity, node, component::OptionalComponents{});
+	} catch (...) {
+		OWL_CORE_ERROR("SceneSerializer: Unable to apply entity data from string.")
 		return false;
 	}
 	return true;

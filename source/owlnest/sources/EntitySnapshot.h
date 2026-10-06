@@ -10,6 +10,7 @@
 
 #include <owl.h>
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -36,10 +37,44 @@ struct EntitySnapshot {
 	/**
 	 * @brief
 	 *  Restore an entity into a scene from this snapshot.
-	 * @param[in,out] ioScene The scene to create the entity in.
+	 *
+	 * When an entity with this UUID exists it is updated in place: its handle, its hierarchy
+	 * links and the components the snapshot did not change are kept. Otherwise the entity is
+	 * created and linked under the parent recorded in the snapshot.
+	 * @param[in,out] ioScene The scene to restore the entity in.
 	 * @return The restored entity.
 	 */
 	auto restore(scene::Scene& ioScene) const -> scene::Entity;
+};
+
+/**
+ * @brief
+ *  Position of an entity in the hierarchy: its parent and its index among that parent's children.
+ */
+struct HierarchySlot {
+	/// Parent UUID (0 for a root entity).
+	core::UUID parentUuid{0};
+	/// Index among the parent's children.
+	size_t siblingIndex = 0;
+
+	/**
+	 * @brief
+	 *  Capture the slot an entity currently occupies.
+	 * @param[in] iEntity The entity.
+	 * @param[in] iScene The scene holding the entity.
+	 * @return The slot.
+	 */
+	[[nodiscard]] static auto capture(const scene::Entity& iEntity, const scene::Scene& iScene) -> HierarchySlot;
+
+	/**
+	 * @brief
+	 *  Move an entity back into this slot, leaving its local transform untouched.
+	 *
+	 * The index is clamped to the parent's children count; a missing parent makes the entity a root.
+	 * @param[in] iEntity The entity to move.
+	 * @param[in,out] ioScene The scene holding the entity.
+	 */
+	void restore(const scene::Entity& iEntity, scene::Scene& ioScene) const;
 };
 
 /**
@@ -64,7 +99,10 @@ struct SubtreeSnapshot {
 	/**
 	 * @brief
 	 *  Restore the entire subtree into a scene.
-	 * @param[in,out] ioScene The scene to create entities in.
+	 *
+	 * Entities that still exist are updated in place, missing ones are created, and the parent links
+	 * and sibling order inside the subtree are put back. The root keeps its current slot.
+	 * @param[in,out] ioScene The scene to restore the entities in.
 	 * @return The restored root entity.
 	 */
 	auto restore(scene::Scene& ioScene) const -> scene::Entity;

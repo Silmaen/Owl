@@ -55,7 +55,7 @@ Every fix lands with its regression test.
 
 - ![Done][done] Deferred entity destruction; `destroy_entity(self)` no longer frees the running Lua VM
   (PR-01: C-01, D-01)
-- ![Planned][planned] Undo restores entities in place; dirty flag driven by a generation counter, so closing never
+- ![Done][done] Undo restores entities in place; dirty flag driven by a generation counter, so closing never
   loses edits silently (PR-03: E-01, E-02, C-05, E-05)
 - ![Done][done] Unbounded hierarchy depth, CPU world transforms sent to the GPU; `setParent` keeps the world
   position at any depth (PR-04: P-01, C-18, P-03, P-04, B-12)

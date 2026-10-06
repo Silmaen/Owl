@@ -171,6 +171,20 @@ public:
 	[[nodiscard]] static auto deserializeEntityFromString(const shared<Scene>& ioScene, const std::string& iYamlData)
 			-> bool;
 
+	/**
+	 * @brief
+	 *  Apply a serialized entity onto an existing entity, in place.
+	 *
+	 * Tag, Transform, Visibility and every optional component take the state stored in the YAML;
+	 * optional components absent from it are removed, and a component whose YAML is unchanged is
+	 * left untouched (its runtime state survives). The entity handle, its UUID and its `Hierarchy`
+	 * component are preserved, so children stay attached and cached handles stay valid.
+	 * @param[in] iEntity The entity to update.
+	 * @param[in] iYamlData The YAML string (as produced by serializeEntityToString) of the same entity.
+	 * @return True if successful; false when the YAML is invalid or describes another entity.
+	 */
+	[[nodiscard]] static auto applyEntityFromString(const Entity& iEntity, const std::string& iYamlData) -> bool;
+
 private:
 	/// Parent Scene.
 	shared<Scene> mp_scene;

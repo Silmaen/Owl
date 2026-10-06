@@ -135,7 +135,7 @@ void SceneHierarchy::renderHierarchy() {
 					const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
 					if (const auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child) {
 						if (mp_undoManager != nullptr)
-							mp_undoManager->push(mkUniq<commands::UnparentCommand>(child));
+							mp_undoManager->push(mkUniq<commands::UnparentCommand>(child, *m_context));
 						m_context->unparent(child);
 					}
 				}
@@ -277,7 +277,7 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 			const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
 			if (const auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child && child != iEntity) {
 				if (mp_undoManager != nullptr)
-					mp_undoManager->push(mkUniq<commands::ReparentCommand>(child, iEntity.getUUID()));
+					mp_undoManager->push(mkUniq<commands::ReparentCommand>(child, iEntity.getUUID(), *m_context));
 				m_context->setParent(child, iEntity);
 			}
 		}
@@ -488,7 +488,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 	if (iParentId != core::UUID{0}) {
 		if (ib.menuItem("unparent", "Unparent")) {
 			if (mp_undoManager != nullptr)
-				mp_undoManager->push(mkUniq<commands::UnparentCommand>(iEntity));
+				mp_undoManager->push(mkUniq<commands::UnparentCommand>(iEntity, *m_context));
 			m_context->unparent(iEntity);
 		}
 	}
@@ -497,7 +497,7 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 	// --- Delete ---
 	if (ib.menuItem("delete_entity", iHasChildren ? "Delete Entity Only" : "Delete Entity")) {
 		if (mp_undoManager != nullptr)
-			mp_undoManager->push(mkUniq<commands::DeleteEntityCommand>(iEntity));
+			mp_undoManager->push(mkUniq<commands::DeleteEntityCommand>(iEntity, *m_context));
 		if (m_selection == iEntity)
 			m_selection = {};
 		auto entity = iEntity;
