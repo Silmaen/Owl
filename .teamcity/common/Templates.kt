@@ -106,6 +106,17 @@ val globalBuild = Template {
             ciAction("Coverage", "Code_Coverage", displayName = "Code Coverage")
             conditions {
                 equals("run_coverage", "true")
+                doesNotEqual("platform", "Windows")
+            }
+        }
+
+        script {
+            // Windows computes the coverage on `main` only, not on pull requests.
+            ciAction("Coverage", "Code_Coverage_Windows", displayName = "Code Coverage")
+            conditions {
+                equals("run_coverage", "true")
+                equals("platform", "Windows")
+                equals("teamcity.build.branch.is_default", "true")
             }
         }
 
