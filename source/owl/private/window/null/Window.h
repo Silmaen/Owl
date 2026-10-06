@@ -82,6 +82,27 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the native platform actually in use.
+	 * @return Always Platform::None.
+	 */
+	[[nodiscard]] auto getPlatform() const -> Platform override { return Platform::None; }
+
+	/**
+	 * @brief
+	 *  Get the content scale reported for the window.
+	 * @return Always 1.0 on both axes.
+	 */
+	[[nodiscard]] auto getContentScale() const -> math::vec2 override { return {1.f, 1.f}; }
+
+	/**
+	 * @brief
+	 *  Number of frames handed to the presentation engine.
+	 * @return The number of onUpdate() calls.
+	 */
+	[[nodiscard]] auto getPresentedFrames() const -> uint64_t override { return m_presentedFrames; }
+
+	/**
+	 * @brief
 	 *  Define the Event Callback function.
 	 * @param[in] iCallback The new callback function.
 	 */
@@ -171,6 +192,8 @@ public:
 private:
 	/// Current cursor mode (state only on the null backend).
 	window::CursorMode m_cursorMode{window::CursorMode::Normal};
+	/// Number of onUpdate() calls.
+	uint64_t m_presentedFrames{0};
 
 	/**
 	 * @brief

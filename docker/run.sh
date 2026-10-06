@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Run a command inside the Owl build image, mirroring CLion's "Docker Owl" toolchain.
 #
-# Usage: docker/run.sh [--gui] [--perf] [--] <command...>
-#   --gui   expose the GPU, X11/Wayland display and PulseAudio (run OwlNest, Vulkan/OpenGL tests).
-#   --perf  allow perf / gdb / valgrind (ptrace + perf events).
+# Usage: docker/run.sh [--gui] [--gpu=auto|intel|nvidia] [--platform=auto|wayland|x11] [--perf] [--] <command...>
+#   --gui       expose the GPU, X11/Wayland display and PulseAudio (run OwlNest, Vulkan/OpenGL tests).
+#   --gpu=      on a hybrid laptop, pin Vulkan, EGL and GLX to one GPU (nvidia = PRIME render offload); implies --gui.
+#   --platform= windowing platform of the engine (sets OWL_WINDOW_PLATFORM); implies --gui.
+#   --perf      allow perf / gdb / valgrind (ptrace + perf events).
 #
 # Examples:
 #   docker/run.sh cmake --preset linux-clang-release -S .
@@ -11,6 +13,7 @@
 #   docker/run.sh ctest --test-dir output/build/linux-clang-release --output-on-failure -j8
 #   docker/run.sh poetry run python ci_action.py CodeStyle linux-clang-release
 #   docker/run.sh --gui output/build/linux-clang-release/bin/OwlNest
+#   docker/run.sh --gpu=nvidia --platform=x11 output/build/linux-clang-release/bin/OwlRunner
 #
 # Environment overrides:
 #   OWL_DOCKER_IMAGE  image to use (default: the CI builder image).
@@ -32,9 +35,13 @@ gid="$(id -g)"
 
 gui=0
 perf=0
+gpu="auto"
+platform="${OWL_WINDOW_PLATFORM:-}"
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 	--gui) gui=1; shift ;;
+	--gpu=*) gpu="${1#--gpu=}"; gui=1; shift ;;
+	--platform=*) platform="${1#--platform=}"; gui=1; shift ;;
 	--perf) perf=1; shift ;;
 	--) shift; break ;;
 	*) break ;;
@@ -82,6 +89,24 @@ if [[ ${gui} -eq 1 ]]; then
 	[[ -e /dev/snd ]] && args+=(--device /dev/snd)
 	docker info --format '{{json .Runtimes}}' 2>/dev/null | grep -q nvidia && args+=(--gpus all
 		-e NVIDIA_DRIVER_CAPABILITIES=all)
+	[[ -n "${platform}" ]] && args+=(-e OWL_WINDOW_PLATFORM="${platform}")
+	case "${gpu}" in
+	auto) ;;
+	intel | mesa)
+		args+=(-e VK_DRIVER_FILES=/usr/share/vulkan/icd.d/intel_icd.json
+			-e __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json
+			-e __GLX_VENDOR_LIBRARY_NAME=mesa) ;;
+	nvidia)
+		args+=(-e VK_DRIVER_FILES=/etc/vulkan/icd.d/nvidia_icd.json
+			-e __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json
+			-e __NV_PRIME_RENDER_OFFLOAD=1 -e __GLX_VENDOR_LIBRARY_NAME=nvidia) ;;
+	*) echo "docker/run.sh: unknown --gpu=${gpu} (auto, intel or nvidia)." >&2; exit 2 ;;
+	esac
+	# A locked or hidden session gets no frame callbacks: vsync'ed Wayland swaps block, XWayland drops to ~1 fps.
+	if [[ -n "${XDG_SESSION_ID:-}" ]] && command -v loginctl > /dev/null &&
+		[[ "$(loginctl show-session "${XDG_SESSION_ID}" -p LockedHint --value 2>/dev/null)" == "yes" ]]; then
+		echo "docker/run.sh: warning: the desktop session is locked, the compositor will not present frames." >&2
+	fi
 fi
 
 if [[ ${perf} -eq 1 ]]; then

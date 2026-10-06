@@ -16,7 +16,9 @@
 #include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <optional>
 #include <string>
+#include <string_view>
 
 /**
  * @brief
@@ -43,6 +45,56 @@ enum struct CursorMode : uint8_t {
 
 /**
  * @brief
+ *  Native windowing platform (display server) used by the window manager.
+ */
+enum struct Platform : uint8_t {
+	Auto,///< Let the window manager pick (Wayland when available on Linux, X11 otherwise).
+	Wayland,///< Native Wayland.
+	X11,///< X11 (native X server or XWayland).
+	Win32,///< Windows desktop.
+	None///< No native platform (null window, headless, unsupported).
+};
+
+/// Name of the environment variable that overrides the requested platform (`auto`, `wayland` or `x11`).
+constexpr std::string_view g_PlatformEnvVar = "OWL_WINDOW_PLATFORM";
+
+/**
+ * @brief
+ *  Parse a platform name (case-insensitive: `auto`, `wayland`, `x11`, `win32`, `none`).
+ * @param[in] iName The name to parse.
+ * @return The platform, or `std::nullopt` when the name is not recognised.
+ */
+OWL_API auto parsePlatform(std::string_view iName) -> std::optional<Platform>;
+
+/**
+ * @brief
+ *  Lower-case name of a platform, as accepted by parsePlatform().
+ * @param[in] iPlatform The platform.
+ * @return The platform name.
+ */
+OWL_API auto platformName(Platform iPlatform) -> std::string_view;
+
+/**
+ * @brief
+ *  Resolve the platform to request, the environment variable taking precedence over the configured value.
+ * @param[in] iConfigured The platform from the application parameters.
+ * @param[in] iEnvValue Value of #g_PlatformEnvVar, or `std::nullopt` when unset; an unknown value is ignored.
+ * @return The platform to request.
+ */
+OWL_API auto resolvePlatform(Platform iConfigured, const std::optional<std::string_view>& iEnvValue) -> Platform;
+
+/**
+ * @brief
+ *  Turn an application name into a desktop application identifier (Wayland `app_id`, X11 `WM_CLASS`).
+ *
+ * Lower-cases ASCII letters, keeps digits, `.`, `-` and `_`, maps spaces to `-` and drops anything else.
+ * @param[in] iName The application name.
+ * @return The identifier, `owl-engine` when nothing usable remains.
+ */
+OWL_API auto makeAppId(std::string_view iName) -> std::string;
+
+/**
+ * @brief
  *  Structure holding base windows properties.
  */
 struct Properties {
@@ -56,6 +108,12 @@ struct Properties {
 	uint32_t width = 1600;
 	/// Height.
 	uint32_t height = 900;
+	/// Requested native platform (already resolved against the environment).
+	Platform platform = Platform::Auto;
+	/// Desktop application identifier (Wayland `app_id`, X11 `WM_CLASS`); derived from the title when empty.
+	std::string appId;
+	/// Under Wayland, write a user desktop entry so the compositor can show the icon.
+	bool installDesktopEntry = true;
 };
 
 /**
@@ -116,6 +174,27 @@ public:
 	 * @return The window manager's type.
 	 */
 	[[nodiscard]] virtual auto getType() const -> Type = 0;
+
+	/**
+	 * @brief
+	 *  Get the native platform actually in use.
+	 * @return The platform (Platform::None for a null window).
+	 */
+	[[nodiscard]] virtual auto getPlatform() const -> Platform = 0;
+
+	/**
+	 * @brief
+	 *  Get the content scale (DPI factor) reported for the window.
+	 * @return The horizontal and vertical scale, 1.0 for a standard-density display.
+	 */
+	[[nodiscard]] virtual auto getContentScale() const -> math::vec2 = 0;
+
+	/**
+	 * @brief
+	 *  Number of frames handed to the presentation engine since the window was created.
+	 * @return The frame count.
+	 */
+	[[nodiscard]] virtual auto getPresentedFrames() const -> uint64_t = 0;
 
 	/**
 	 * @brief

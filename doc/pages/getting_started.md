@@ -17,6 +17,10 @@ and accessible from the **Help** ribbon button or by pressing `F1`.
    docked around a central area. All panels are detachable — drag the title bar to
    tear them out into a floating window.
 
+On Linux, Owl runs natively under Wayland or under X11. Wayland is picked when available;
+set `OWL_WINDOW_PLATFORM=x11` to use X11 instead (needed for panels torn out into separate
+desktop windows, which GLFW cannot place under Wayland). See [Building](building.md).
+
 ## Where to Go Next
 
 | Topic                             | Page                               |

@@ -82,6 +82,8 @@ TEST(Core, AppParamsSerialize) {
 	paramsIni.width = 785;
 	paramsIni.height = 7415;
 	paramsIni.renderer = owl::renderer::gpu::RenderAPI::Type::OpenGL;
+	paramsIni.windowPlatform = owl::window::Platform::X11;
+	paramsIni.installDesktopEntry = false;
 	auto tmpFile = std::filesystem::temp_directory_path() / "param.yml";
 	paramsIni.saveToFile(tmpFile);
 
@@ -89,11 +91,30 @@ TEST(Core, AppParamsSerialize) {
 	EXPECT_NE(paramsIni.width, paramsLoad.width);
 	EXPECT_NE(paramsIni.height, paramsLoad.height);
 	EXPECT_NE(paramsIni.renderer, paramsLoad.renderer);
+	EXPECT_NE(paramsIni.windowPlatform, paramsLoad.windowPlatform);
+	EXPECT_NE(paramsIni.installDesktopEntry, paramsLoad.installDesktopEntry);
 	paramsLoad.loadFromFile(tmpFile);
 	EXPECT_EQ(paramsIni.width, paramsLoad.width);
 	EXPECT_EQ(paramsIni.height, paramsLoad.height);
 	EXPECT_EQ(paramsIni.renderer, paramsLoad.renderer);
+	EXPECT_EQ(paramsIni.windowPlatform, paramsLoad.windowPlatform);
+	EXPECT_EQ(paramsIni.installDesktopEntry, paramsLoad.installDesktopEntry);
 	remove(tmpFile);
+}
+
+TEST(Core, AppParamsUnknownPlatform) {
+	Log::init(Log::Level::Off);
+	const auto tmpFile = std::filesystem::temp_directory_path() / "param_platform.yml";
+	{
+		std::ofstream out(tmpFile);
+		out << "AppConfig:\n  windowPlatform: mir\n";
+	}
+	AppParams params;
+	params.windowPlatform = owl::window::Platform::Wayland;
+	params.loadFromFile(tmpFile);
+	EXPECT_EQ(params.windowPlatform, owl::window::Platform::Wayland);
+	remove(tmpFile);
+	Log::invalidate();
 }
 
 TEST(Core, ApplicationPackInteraction) {

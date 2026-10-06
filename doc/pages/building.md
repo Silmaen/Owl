@@ -162,6 +162,31 @@ self-heals.
 To force a refresh manually (e.g. after a corrupt wheel): prepend `OWL_CI_REFRESH_VENV=1` to
 the `poetry run python ci_action.py …` invocation, or to a direct `cmake --preset …` call.
 
+## Running under Wayland or X11
+
+On Linux the editor and the runner use GLFW with both display backends. By default (`auto`) they use Wayland when
+`WAYLAND_DISPLAY` is set and X11 otherwise; force one with the `OWL_WINDOW_PLATFORM` environment variable or the
+`windowPlatform` key of the application's `config.yml` (the variable wins):
+
+```bash
+OWL_WINDOW_PLATFORM=wayland output/build/linux-clang-release/bin/OwlNest   # native Wayland
+OWL_WINDOW_PLATFORM=x11 output/build/linux-clang-release/bin/OwlNest       # X11 / XWayland: detached editor windows
+docker/run.sh --platform=x11 --gpu=nvidia output/build/linux-clang-release/bin/OwlRunner
+```
+
+- `docker/run.sh --gui` mounts the Wayland socket, the X11 socket and `/dev/dri`; `--gpu=intel|nvidia` pins Vulkan,
+  EGL and GLX to one GPU of a hybrid laptop (`nvidia` turns PRIME render offload on), `--platform=` sets
+  `OWL_WINDOW_PLATFORM`.
+- Under Wayland the editor keeps detached panels inside its main window (GLFW cannot position windows); use X11 for
+  native detached windows.
+- Under Wayland the icon comes from a hidden desktop entry written to `~/.local/share/applications/<app_id>.desktop`
+  (`installDesktopEntry: false` in `config.yml` to opt out).
+- A locked or hidden session presents no frame: X11 windows that wait for presentation (vsync on, or any NVIDIA
+  PRIME window) crawl at about one frame per second until shown again (`docker/run.sh` warns when the session is
+  locked).
+
+See [Windowing and input](design/windowing-input.md) for the details and the GLFW limits.
+
 ## Build Output Locations
 
 | Output    | Path                         |

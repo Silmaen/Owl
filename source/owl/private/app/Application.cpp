@@ -23,11 +23,35 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 #include <imgui.h>
 OWL_DIAG_POP
 
+#include <atomic>
+#include <csignal>
 #include <cstdint>
 
 namespace owl::app {
 
 Application* Application::s_instance = nullptr;
+
+namespace {
+std::atomic_bool g_StopRequested{false};
+
+void onStopSignal(const int iSignal) {
+	if (g_StopRequested.exchange(true)) {
+		// Second signal: the main loop is stuck, fall back to the default (terminating) handler.
+		std::signal(iSignal, SIG_DFL);
+		std::raise(iSignal);
+	}
+}
+
+auto requestedWindowPlatform(const window::Platform iConfigured) -> window::Platform {
+	const auto envValue = core::getEnv(std::string{window::g_PlatformEnvVar});
+	if (envValue.empty() && core::getEnv("OWL_FORCE_X11") == "1") {
+		OWL_CORE_WARN("Application: OWL_FORCE_X11 is deprecated, use {}=x11.", window::g_PlatformEnvVar)
+		return window::Platform::X11;
+	}
+	return window::resolvePlatform(iConfigured,
+								   envValue.empty() ? std::nullopt : std::optional<std::string_view>{envValue});
+}
+}// namespace
 
 Application::Application(AppParams iAppParams)// NOLINT(readability-function-cognitive-complexity)
 	: m_initParams{std::move(iAppParams)} {
@@ -36,6 +60,11 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 	OWL_CORE_ASSERT(!s_instance, "Application already exists!")
 	s_instance = this;
+	g_StopRequested.store(false);
+	if (!m_initParams.isDummy) {
+		std::signal(SIGINT, onStopSignal);
+		std::signal(SIGTERM, onStopSignal);
+	}
 
 	// Look for things on the storages
 	{
@@ -134,6 +163,9 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 								: renderer::Renderer::getTextureLibrary().find(m_initParams.icon).value_or("").string(),
 				.width = m_initParams.width,
 				.height = m_initParams.height,
+				.platform = requestedWindowPlatform(m_initParams.windowPlatform),
+				.appId = m_initParams.appId,
+				.installDesktopEntry = m_initParams.installDesktopEntry,
 		});
 
 		input::Input::init();
@@ -295,6 +327,10 @@ Application::~Application() {
 
 		OWL_CORE_TRACE("Sound system shut down and invalidated.")
 	}
+	if (!m_initParams.isDummy) {
+		std::signal(SIGINT, SIG_DFL);
+		std::signal(SIGTERM, SIG_DFL);
+	}
 	invalidate();
 }
 
@@ -321,6 +357,11 @@ void Application::run() {
 #endif
 	while (m_state == State::Running) {
 		OWL_PROFILE_SCOPE("RunLoop")
+		if (g_StopRequested.load()) {
+			OWL_CORE_INFO("Application: Stop signal received, closing.")
+			close();
+			break;
+		}
 		OWL_CORE_FRAME_ADVANCE
 		m_stepper.update();
 
@@ -475,6 +516,14 @@ void AppParams::loadFromFile(const std::filesystem::path& iFile) {
 		get(appConfig, "hasGui", hasGui);
 		get(appConfig, "useDebugging", useDebugging);
 		get(appConfig, "frameLogFrequency", frameLogFrequency);
+		std::string platformStr;
+		get(appConfig, "windowPlatform", platformStr);
+		if (const auto platform = window::parsePlatform(platformStr); platform.has_value())
+			windowPlatform = platform.value();
+		else if (!platformStr.empty())
+			OWL_CORE_WARN("AppParams: Unknown windowPlatform '{}', keeping {}.", platformStr,
+						  window::platformName(windowPlatform))
+		get(appConfig, "installDesktopEntry", installDesktopEntry);
 	}
 }
 
@@ -490,6 +539,8 @@ void AppParams::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "hasGui" << YAML::Value << hasGui;
 	out << YAML::Key << "useDebugging" << YAML::Value << useDebugging;
 	out << YAML::Key << "frameLogFrequency" << YAML::Value << frameLogFrequency;
+	out << YAML::Key << "windowPlatform" << YAML::Value << std::string(window::platformName(windowPlatform));
+	out << YAML::Key << "installDesktopEntry" << YAML::Value << installDesktopEntry;
 
 	out << YAML::EndMap;
 	out << YAML::EndMap;

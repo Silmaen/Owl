@@ -36,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: `Experiment/*` pull requests run the fast subset only; secrets reach `ci_action.py` through `env.*` parameters; the CI flow is documented case by case (`main`, draft, ready, experiment, doc-only).
 - TeamCity DSL laid out like EvenementLoto's (`common/`, `build/`, `quality/`, `packaging/`), chain Code Style → builds → sanitizers → analyses → packages; PR builds named by their real branch; configs version 2026.2.
 - TeamCity follows the EvenementLoto model: findings annotated on the diff by default, PRs built from their `Feature/*` / `Experiment/*` head branch, packages never on a PR, no `/ci full` comment.
+- Explicit windowing platform (`OWL_WINDOW_PLATFORM` / `windowPlatform` in `config.yml`: `auto`, `wayland`, `x11`), with fallback to `auto` when the requested one fails.
+- Wayland `app_id` / X11 `WM_CLASS` per application and a hidden user desktop entry (`platform::installDesktopEntry`) so Wayland compositors show the Owl icon.
+- `SIGINT` / `SIGTERM` close the application cleanly; `Window::getPresentedFrames()` and an exit log report the presented frame count.
+- `docker/run.sh --gpu=intel|nvidia` (PRIME offload) and `--platform=wayland|x11`, with a warning when the desktop session is locked.
+- GLFW `FEATURE_UNAVAILABLE` errors (window position / icon under Wayland) logged at trace level instead of error.
 - Roadmap rethought toward 1.0.0: v0.3.0 Foundations, renumbered releases, three reading levels (`ROADMAP.md`, `doc/pages/roadmap.md`, `doc/pages/design/`).
 - Changelog split the same way: one line per release in `CHANGELOG.md`, details in `doc/pages/changelog.md`.
 - clang-tidy decoupled from the compiler: `CMAKE_CXX_CLANG_TIDY` unset, the analysis is a `ClangTidy` step on `Build/Quality/Clang-Tidy` driven by `compile_commands.json`.
@@ -81,6 +86,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LeakSanitizer preset, option and TeamCity job: on Linux ASan already reports leaks.
 - `PhysicCommand` no longer keeps a dangling `Scene*` once its scene is destroyed (`~Scene` releases the world through `PhysicCommand::releaseScene`), and the core, physics and renderer tests no longer depend on their order.
 - Memory tracker with `OWL_ENABLE_STACKTRACE`: an `AllocationInfo` built outside the tracker no longer deadlocks on cpptrace's mutex.
+- `OWL_FORCE_X11=1`, replaced by `OWL_WINDOW_PLATFORM=x11` (still honoured, with a warning).
+- OpenGL under Wayland no longer freezes after the first frame when the window is not shown: vsync is paced by the engine instead of blocking in `eglSwapBuffers`.
+- Wayland framebuffer kept at the window size (`GLFW_SCALE_FRAMEBUFFER` off), so HiDPI outputs no longer get a swapchain / viewport mismatch.
+- Owl Nest disables ImGui multi-viewports under Wayland instead of enabling windows GLFW cannot place.
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
 
 ### Security
