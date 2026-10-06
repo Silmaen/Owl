@@ -118,4 +118,9 @@ fun ScriptBuildStep.ciAction(action: String,
     id = stepId
     scriptContent = "poetry run python3 ci_action.py $action $preset" +
             if (extraArgs.isNotEmpty()) " $extraArgs" else ""
+    // Every CI action runs in the build image: the agents have neither Poetry nor the toolchain.
+    dockerImage = "%docker_image%"
+    dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
+    dockerPull = true
+    dockerRunParameters = "%docker_parameters%"
 }

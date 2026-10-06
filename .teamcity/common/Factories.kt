@@ -1,5 +1,6 @@
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
+import jetbrains.buildServer.configs.kotlin.triggers.schedule
 
 /*
  * One function per family of configuration. The ids are set explicitly to the ones the
@@ -16,12 +17,15 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.script
  * @param onDraft Also run on draft pull requests (the fast feedback subset).
  * @param onPullRequest Run on pull requests at all; off for the `main`-only ones.
  * @param pathFilter Skip pull requests touching only these paths; empty runs on all.
+ * @param nightly Build `main` once a night (when it changed) instead of on every push: for
+ *        the emulated arm64 configurations, which would hold the Linux agents for hours.
  * @param gates What must be green first.
  * @param extra Configuration-specific settings.
  */
 fun presetBuild(idValue: String, buildName: String, cmakePreset: String,
                 onDraft: Boolean = false, onPullRequest: Boolean = true,
                 pathFilter: String = CODE_ONLY_PATHS,
+                nightly: Boolean = false,
                 gates: List<BuildType> = listOf(codeStyle),
                 extra: BuildType.() -> Unit = {}) = BuildType {
     id = RelativeId(idValue)
@@ -38,6 +42,23 @@ fun presetBuild(idValue: String, buildName: String, cmakePreset: String,
 
     dependencies {
         after(*gates.toTypedArray())
+    }
+
+    if (nightly) {
+        disableSettings("vcsTrigger")
+        triggers {
+            schedule {
+                id = "nightly"
+                schedulingPolicy = daily {
+                    hour = 2
+                }
+                branchFilter = """
+                    +:main
+                    +:refs/heads/main
+                """.trimIndent()
+                withPendingChangesOnly = true
+            }
+        }
     }
     extra()
 }
@@ -86,8 +107,9 @@ fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<
 }
 
 /**
- * One package. Never triggered by a pull request: only a push to `main` or a manual run
- * packages anything; the check still appears on the commit it built. It waits for the
+ * One package. Never triggered by a pull request, nor by each push to `main`: packages are
+ * built once a night from `main` (when it changed), because each one publishes to the site;
+ * a manual run packages on demand. It waits for the
  * configuration that built and tested the same platform: an archive built from code whose
  * tests fail has no business existing.
  *
@@ -99,8 +121,8 @@ fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<
  * @param extraParams Platform-specific parameters (docker platform for arm64).
  */
 fun packageBuild(idValue: String, buildName: String, cmakePreset: String, platformName: String,
-                 tested: BuildType, extraParams: ParametrizedWithType.() -> Unit = {}) =
-        presetBuild(idValue, buildName, cmakePreset, onPullRequest = false,
+                 tested: BuildType, nightly: Boolean = false, extraParams: ParametrizedWithType.() -> Unit = {}) =
+        presetBuild(idValue, buildName, cmakePreset, onPullRequest = false, nightly = nightly,
                 gates = listOf(codeStyle, tested)) {
             params {
                 param("platform", platformName)

@@ -148,7 +148,7 @@ flowchart LR
 ```
 
 - **Yellow**: also run on draft pull requests (fast feedback subset).
-- **Blue**: `main` only (`triggerOnPrReady = false`): arm64 is emulated and slow, packages never run for a PR.
+- **Blue**: nightly on `main` only: arm64 is emulated and slow, packages publish to the site.
 - Uncoloured: run on every ready pull request and on `main`.
 
 | File                    | Content                                                                          |
@@ -171,18 +171,18 @@ says which presets exist, where they run and in which order.
 
 ## What runs when
 
-| Configuration                              | `main` push | Draft PR | Ready PR | `Experiment/*` PR | Doc-only PR | `[skip ci]` |
-|--------------------------------------------|-------------|----------|----------|-------------------|-------------|-------------|
-| Code Style                                 | ✅           | ✅        | ✅        | ✅                 | ✅           | ❌           |
-| Build Linux x64 / Clang                    | ✅           | ✅        | ✅        | ✅                 | ⏭           | ❌           |
-| Build Windows x64 / Clang (Doxygen)        | ✅           | ✅        | ✅        | ✅                 | ✅           | ❌           |
-| Build Linux x64 / GCC, Windows x64 / GCC   | ✅           | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Build Linux arm64 / Clang, GCC (emulated)  | ✅           | ❌        | ❌        | ❌                 | ❌           | ❌           |
-| Sanitizer Address (+ LSan)                 | ✅           | ✅        | ✅        | ✅                 | ⏭           | ❌           |
-| Sanitizer Thread, Sanitizer UB             | ✅           | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Clang-Tidy, Static Analyzer, Include Check | ✅           | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| PR Ready (merge gate, no agent)            | ✅           | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Packages (Engine, Nest × 3 platforms)      | ✅           | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Configuration                              | `main` push | Nightly (`main`) | Draft PR | Ready PR | `Experiment/*` PR | Doc-only PR | `[skip ci]` |
+|--------------------------------------------|-------------|------------------|----------|----------|-------------------|-------------|-------------|
+| Code Style                                 | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Linux x64 / Clang                    | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
+| Build Windows x64 / Clang (Doxygen)        | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Linux x64 / GCC, Windows x64 / GCC   | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Build Linux arm64 / Clang, GCC (emulated)  | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Sanitizer Address (+ LSan)                 | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
+| Sanitizer Thread, Sanitizer UB             | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Clang-Tidy, Static Analyzer, Include Check | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| PR Ready (merge gate, no agent)            | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Packages (Engine, Nest × 3 platforms)      | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 
 ✅ runs · ❌ not run · ⏭ a "Skipped" check is published, which GitHub counts as passing. A manual run, and *Re-run* in
 GitHub, always run a configuration.
@@ -194,7 +194,11 @@ GitHub, always run a configuration.
 - **`Experiment/*` pull requests** run the fast subset only (the draft one): the full-matrix configurations carry
   `prTriggerBranchesOverride = EXCLUDE_EXPERIMENT`. Their required checks are therefore *Skipped*: an experiment is not
   meant to be merged as such; move the work to a `Feature/*` branch to get the full verdict.
-- **`main`**: every configuration, through the templates' VCS trigger.
+- **`main` push**: every configuration but arm64 and the packages, through the templates' VCS trigger; the release
+  build and its tests (the `release_preset` steps) run only there, a pull request gets its verdict from the debug
+  build in half the time.
+- **Nightly** (02:00, `main`, only when it changed): the emulated arm64 builds (50 to 90 minutes each) and every
+  package, which publishes to the site.
 
 ## Triggering
 

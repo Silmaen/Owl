@@ -80,6 +80,9 @@ val globalBuild = Template {
                 preset = "%release_preset%")
             conditions {
                 doesNotMatch("release_preset", "^${'$'}")
+                // The release build and its tests run on `main` only: a pull request
+                // gets its verdict from the debug build, in half the time.
+                equals("teamcity.build.branch.is_default", "true")
             }
         }
 
@@ -106,6 +109,9 @@ val globalBuild = Template {
                 preset = "%release_preset%")
             conditions {
                 doesNotMatch("release_preset", "^${'$'}")
+                // The release build and its tests run on `main` only: a pull request
+                // gets its verdict from the debug build, in half the time.
+                equals("teamcity.build.branch.is_default", "true")
             }
         }
 
@@ -114,6 +120,9 @@ val globalBuild = Template {
                 preset = "%release_preset%")
             conditions {
                 doesNotMatch("release_preset", "^${'$'}")
+                // The release build and its tests run on `main` only: a pull request
+                // gets its verdict from the debug build, in half the time.
+                equals("teamcity.build.branch.is_default", "true")
                 equals("run_tests", "true")
             }
         }
