@@ -19,6 +19,7 @@
 #include "scene/ScreenTransition.h"
 #include "scene/SettingsManager.h"
 #include "scene/component/components.h"
+#include "script/LuaEngine.h"
 #include "script/ScriptEngine.h"
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
@@ -626,9 +627,7 @@ auto luaSaveListSaves(lua_State* iState) -> int {
 }
 
 void registerTable(lua_State* iState, const char* iTableName, const luaL_Reg* iFunctions) {
-	lua_newtable(iState);
-	luaL_setfuncs(iState, iFunctions, 0);
-	lua_setglobal(iState, iTableName);
+	LuaEngine::registerGuardedTable(iState, iTableName, iFunctions);
 }
 
 

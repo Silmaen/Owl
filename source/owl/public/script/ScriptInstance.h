@@ -22,6 +22,10 @@ namespace owl::script {
  *
  * Wraps a Lua environment table providing isolated state for one entity.
  * Supports lifecycle callbacks and typed property access.
+ *
+ * Every instance runs under its own ScriptQuotas (taken from ScriptEngine::getDefaultQuotas() at
+ * construction). A callback raising an ordinary error is logged and called again next time; a callback
+ * exceeding its memory or time quota disables the instance: no callback runs any more.
  */
 class OWL_API ScriptInstance final {
 public:
@@ -82,6 +86,27 @@ public:
 	 * @return True when the underlying Lua environment is initialised.
 	 */
 	[[nodiscard]] auto isValid() const -> bool;
+
+	/**
+	 * @brief
+	 *  Check whether the instance was disabled after exceeding a quota.
+	 * @return True when callbacks are no longer run.
+	 */
+	[[nodiscard]] auto isDisabled() const -> bool;
+
+	/**
+	 * @brief
+	 *  Change the memory and time limits of this instance.
+	 * @param[in] iQuotas The new limits, applied from the next call into the script.
+	 */
+	void setQuotas(const ScriptQuotas& iQuotas) const;
+
+	/**
+	 * @brief
+	 *  Get the memory and time limits of this instance.
+	 * @return The current limits.
+	 */
+	[[nodiscard]] auto getQuotas() const -> ScriptQuotas;
 
 	/**
 	 * @brief

@@ -71,7 +71,7 @@ Every fix lands with its regression test.
   scan in `CodeStyle` (PR-12: H-01, H-02, G-09, H-12)
 - ![Planned][planned] Physics, sound and script lifecycle on EnTT hooks — no ghost collider, `on_destroy` always
   called (PR-13: C-08, D-04)
-- ![Planned][planned] Lua hardening — text-only chunks, instruction / memory quotas, exception trampoline
+- ![Done][done] Lua hardening — text-only chunks, time / memory quotas, exception trampoline
   (PR-14: D-06, D-16)
 - ![Planned][planned] Scene format version and atomic writes (PR-25: C-10, C-13)
 - ![Planned][planned] `on_collision` implemented — the callback documented since v0.1 is fed by Box2D contact events,

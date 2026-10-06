@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -48,6 +49,20 @@ struct OWL_API ScriptProperty {
 	ScriptPropertyType type = ScriptPropertyType::Float;
 	/// Property value.
 	std::variant<float, int64_t, std::string, bool> value = 0.0f;
+};
+
+/**
+ * @brief
+ *  Resource limits of one Lua state (one per script instance).
+ *
+ * A limit set to zero is disabled. The defaults are generous: a gameplay script stays orders of magnitude
+ * below them, a runaway one is stopped before it freezes the frame for long or exhausts the host memory.
+ */
+struct OWL_API ScriptQuotas {
+	/// Heap ceiling of the state, in bytes (64 MiB by default).
+	size_t memoryBytes = size_t{64} * 1024 * 1024;
+	/// Wall-clock time allowed per host call (`on_update`, chunk execution...), in milliseconds (250 by default).
+	uint32_t timePerCallMs = 250;
 };
 
 /**
@@ -125,6 +140,20 @@ public:
 	 */
 	[[nodiscard]] static auto extractPropertiesFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName)
 			-> std::vector<ScriptProperty>;
+
+	/**
+	 * @brief
+	 *  Set the quotas given to every Lua state created afterwards.
+	 * @param[in] iQuotas Memory and time limits.
+	 */
+	static void setDefaultQuotas(const ScriptQuotas& iQuotas);
+
+	/**
+	 * @brief
+	 *  Get the quotas given to new Lua states.
+	 * @return The default memory and time limits.
+	 */
+	[[nodiscard]] static auto getDefaultQuotas() -> ScriptQuotas;
 
 	/**
 	 * @brief

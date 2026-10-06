@@ -59,6 +59,11 @@ void runInstances(Runner& ioRunner, const shared<scene::Scene>& iScene) {
 		std::ignore = single.createFromBuffer(buffer, label, uuid);
 		ioRunner.measure(std::format("script/on_update/{}/1_instance", label), 1,
 						 [&]() -> void { single.onUpdate(0.016f); });
+		const script::ScriptInstance unbounded;
+		unbounded.setQuotas({.memoryBytes = 0, .timePerCallMs = 0});
+		std::ignore = unbounded.createFromBuffer(buffer, label, uuid);
+		ioRunner.measure(std::format("script/on_update/{}/1_instance_no_quota", label), 1,
+						 [&]() -> void { unbounded.onUpdate(0.016f); });
 		if (!ioRunner.wants(std::format("script/on_update/{}/1000_instances", label)))
 			continue;
 		std::vector<script::ScriptInstance> pool(1000);
