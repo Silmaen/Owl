@@ -16,14 +16,13 @@ object Project : Project({
 
     params {
         param("owl_git_branch", "main")
-        // Only main is fetched directly. PR refs are managed by the
-        // teamcity-github-bridge plugin on the templates (refs/pull/*/head
-        // are pulled by TC's VCS root via the spec below; the plugin
-        // reacts to pull_request webhooks to actually enqueue builds).
-        // Push to a feature branch without an open PR = no CI activity.
+        // main plus the two allowed branch families. The bridge enqueues a
+        // pull request's build on its head branch (prBuildRef = branch); a
+        // push to a branch without an open pull request builds nothing.
         param("branch_specification", """
             +:refs/heads/(%owl_git_branch%)
-            +:refs/(pull/*)/head
+            +:refs/heads/(Feature/*)
+            +:refs/heads/(Experiment/*)
         """.trimIndent())
 
         // teamcity-github-bridge project-level config. The plugin's
@@ -37,7 +36,13 @@ object Project : Project({
         // the VCS trigger on each template, and two enqueue paths for one
         // push is one too many. Publication is a separate axis — a `main`
         // build still reports its Check Run.
-        param("teamcity.github.bridge.branchTrigger.enabled", "false")
+        // A pull request is built from its head branch (`Feature/*` or
+        // `Experiment/*`, the only names allowed), so its builds carry the
+        // branch name instead of `pull/N`.
+        param("teamcity.github.bridge.prBuildRef", "branch")
+        param("teamcity.github.bridge.prTrigger.enabled", "true")
+        param("teamcity.github.bridge.branchTrigger.enabled", "true")
+        param("teamcity.github.bridge.annotations.enabled", "true")
 
         // prTrigger.enabled / prTrigger.branches keep their defaults
         // ("enabled" / all branches); the per-BT PR gates live on the

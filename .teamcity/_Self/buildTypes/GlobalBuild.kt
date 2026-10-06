@@ -17,7 +17,11 @@ import jetbrains.buildServer.configs.kotlin.triggers.vcs
 // The first step in the pipeline ("Determine docker") is native (no Docker) — it
 // runs `DefineTeamCityVariables` which sets `docker_image` for subsequent steps,
 // so it cannot itself run in Docker. That step is written literally below.
-private fun ScriptBuildStep.ciAction(
+//
+// Not private: a single BT that needs one extra step of its own appends it with
+// the same wiring (see the Clang-Tidy BT in Build.kt) instead of the template
+// growing a step every configuration then has to skip.
+fun ScriptBuildStep.ciAction(
     action: String,
     stepId: String,
     displayName: String = action,

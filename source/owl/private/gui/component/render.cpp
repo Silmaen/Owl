@@ -957,7 +957,7 @@ void renderProps(RaycastDoor& ioComponent) {
 	fieldTooltip("Maximum distance between the player and the door's current centre for the built-in "
 				 "interaction key to fire.");
 	ImGui::Separator();
-	const char* stateName = "idle";
+	const char* stateName = nullptr;
 	switch (ioComponent.state) {
 		case RaycastDoor::State::Idle:
 			stateName = "idle";
@@ -1006,7 +1006,7 @@ void renderProps(RaycastPushWall& ioComponent) {
 	fieldTooltip("Maximum distance between the player and the pushwall's current centre for the built-in "
 				 "interaction key to fire.");
 	ImGui::Separator();
-	const char* stateName = "idle";
+	const char* stateName = nullptr;
 	switch (ioComponent.state) {
 		case RaycastPushWall::State::Idle:
 			stateName = "idle";

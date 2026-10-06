@@ -43,14 +43,16 @@ docker/run.sh --perf perf ...                                      # ptrace / pe
 
 | Action                                             | What it does                                                                                   |
 |----------------------------------------------------|------------------------------------------------------------------------------------------------|
-| `Build`                                            | Configure + build the preset (with `linux-clang-tidy`, clang-tidy runs as the compiler hook).  |
+| `Build`                                            | Configure + build the preset.                                                                  |
 | `Test`                                             | CTest with reports.                                                                            |
 | `Coverage`                                         | gcovr through `gcovr.cfg` (never pass filters on the CLI); use `linux-clang-debug`.            |
 | `CodeStyle`                                        | Read-only gate: clang-format, codespell, comment quality, `m_*` docs, cpp-style bans, headers. |
+| `ClangTidy`                                        | clang-tidy (or `--tool=analyzer`) over `compile_commands.json`; PR = diff-scoped.              |
 | `Documentation`                                    | Doxygen with `WARN_AS_ERROR=YES`.                                                              |
 | `Package`, `Clean`, `PublishDoc`, `PublishPackage` | As named; also `DefineTeamCityVariables`, `Help`.                                              |
 
-Run `CodeStyle` (and a `linux-clang-tidy` build when C++ changed) before calling C++ work done.
+Run `CodeStyle` (and `ClangTidy linux-clang-tidy -- --diff_base=main` after a `linux-clang-tidy` build when C++
+changed) before calling C++ work done.
 
 ## Python
 

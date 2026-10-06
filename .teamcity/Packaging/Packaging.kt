@@ -47,7 +47,7 @@ private fun packagePlatform(
     archParam: String,
     extraProjectParams: ParametrizedWithType.() -> Unit = {},
     engineMainOnly: Boolean = true,
-    appNestMainOnly: Boolean = false,
+    appNestMainOnly: Boolean = true,
 ) = Project({
     id(projectId)
     name = displayName
@@ -70,7 +70,6 @@ private val linuxX64 = packagePlatform(
     archParam = "amd64",
     // Engine = main only (long, expensive). AppNest also runs on PRs.
     engineMainOnly = true,
-    appNestMainOnly = false,
 )
 
 private val linuxArm64 = packagePlatform(
@@ -98,7 +97,6 @@ private val windowsX64 = packagePlatform(
     archParam = "amd64",
     // Engine = main only (long, expensive). AppNest also runs on PRs.
     engineMainOnly = true,
-    appNestMainOnly = false,
 )
 
 object PackagingProject : Project({

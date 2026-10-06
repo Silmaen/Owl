@@ -2,8 +2,12 @@ package _Self
 
 import jetbrains.buildServer.configs.kotlin.BuildFeatures
 import jetbrains.buildServer.configs.kotlin.BuildType
+import jetbrains.buildServer.configs.kotlin.Dependencies
+import jetbrains.buildServer.configs.kotlin.FailureAction
+import jetbrains.buildServer.configs.kotlin.ReuseBuilds
 
-// Wiring for the teamcity-github-bridge plugin (server-side, v1.10.0).
+// Wiring for the teamcity-github-bridge plugin (server-side, v1.10.0), modelled on
+// EvenementLoto.
 //
 // The per-BT opt-in is the `github-bridge` build feature: both templates carry
 // one built by `githubBridge()` below, and a BT that needs different gates
@@ -41,37 +45,29 @@ val CODE_ONLY_PATHS: String = """
 // Put in a PR title or body to keep the bridge from triggering anything.
 private const val SKIP_PHRASE: String = "[skip ci]"
 
-// Inline PR review comment that starts the build configurations the bridge
-// never triggers on its own (the heavy, main-only ones). A comment-triggered
-// build is stamped `triggerSource=command` (plugin v1.9.0) and gated like a
-// manual Run, so the `-:*` PR-branch override below does not remove it.
-private const val FULL_MATRIX_COMMENT: String = "/ci full"
-
 // Build the `github-bridge` feature. The defaults describe the common case:
-// runs on ready PRs but not on drafts, C++ paths only, no diff annotations.
-// The non-PR path is off project-wide (see Project.kt), so a `main` build
-// comes from the template's VCS trigger, never from the bridge.
+// runs on ready PRs but not on drafts, C++ paths only, findings pinned on the
+// diff. The plugin enqueues builds from pull request events only (it ignores
+// `push`), so a `main` build comes from the template's VCS trigger.
 fun BuildFeatures.githubBridge(
     featureId: String = BRIDGE_FEATURE_ID,
     runOnDraftPr: Boolean = false,
     autoPrTrigger: Boolean = true,
-    annotateDiff: Boolean = false,
+    annotateDiff: Boolean = true,
     pathFilter: String = CODE_ONLY_PATHS,
 ) {
     feature {
         id = featureId
         type = "github-bridge"
 
+        // Explicit, identical to the server state, rather than plugin defaults.
+        param("publishChecks", "true")
+        param("runOnApproval", "true")
+        param("triggerOnBranch", "true")
         param("triggerOnPrDraft", runOnDraftPr.toString())
-
-        if (!autoPrTrigger) {
-            // Every PR event returns SUPPRESS_BRANCH_PR → a "Skipped: branch
-            // out of scope" Check Run is posted (so reviewers see the BT was
-            // intentionally not run) and nothing is enqueued. A manual Run in
-            // TeamCity or the comment phrase above still runs it.
-            param("prTriggerBranchesOverride", "-:*")
-            param("commentTrigger", FULL_MATRIX_COMMENT)
-        }
+        // A main-only configuration never runs for a pull request; its Check
+        // Run still appears on the commits `main` builds.
+        param("triggerOnPrReady", autoPrTrigger.toString())
 
         if (pathFilter.isNotEmpty()) {
             param("pathFilter", pathFilter)
@@ -85,9 +81,8 @@ fun BuildFeatures.githubBridge(
 
         param("skipPhrase", SKIP_PHRASE)
 
-        // Compiler diagnostics pinned to the lines they concern in the PR
-        // diff. Left to the configurations whose diagnostics are distinct, so
-        // one compile error is not annotated six times on the same line.
+        // Findings pinned to the lines they concern in the PR diff. Off only
+        // where a finding would not be this pull request's doing.
         param("annotateDiff", annotateDiff.toString())
     }
 }
@@ -97,7 +92,7 @@ fun BuildFeatures.githubBridge(
 fun BuildType.bridgeOverride(
     runOnDraftPr: Boolean = false,
     autoPrTrigger: Boolean = true,
-    annotateDiff: Boolean = false,
+    annotateDiff: Boolean = true,
     pathFilter: String = CODE_ONLY_PATHS,
 ) {
     disableSettings(BRIDGE_FEATURE_ID)
@@ -112,6 +107,19 @@ fun BuildType.bridgeOverride(
     }
 }
 
-// Keep this BT off automated PR triggers: auto-runs on `main` only, and on a
-// PR only when a reviewer asks for it with the comment phrase.
+// Keep this BT off pull requests: it runs on `main` (VCS trigger) or by hand.
 fun BuildType.skipAutoPRs() = bridgeOverride(autoPrTrigger = false)
+
+// Snapshot dependencies on the configurations that must be green first. A
+// failed or cancelled gate stops the chain, and a gate already green for the
+// revision is reused instead of being run again.
+fun Dependencies.after(vararg gates: BuildType) {
+    gates.forEach { gate ->
+        snapshot(gate) {
+            onDependencyFailure = FailureAction.FAIL_TO_START
+            onDependencyCancel = FailureAction.FAIL_TO_START
+            reuseBuilds = ReuseBuilds.SUCCESSFUL
+            runOnSameAgent = false
+        }
+    }
+}

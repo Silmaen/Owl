@@ -19,7 +19,7 @@ the editor command API and the UI interaction basics are iteration tooling, not 
 
 - ![Done][done] teamcity-github-bridge 1.10.0 wiring — `CodeStyle` findings become annotations on the pull
   request's diff (GNU-style diagnostics through `_diag()`), doc-only PRs skip the C++ matrix, a draft build's verdict
-  is reused on ready, `[skip ci]` / `/ci full` escape hatches, shorter Check Run names. Detail in
+  is reused on ready, `[skip ci]` escape hatch, shorter Check Run names. Detail in
   [Continuous Integration](../continuous_integration.md).
 
 ## Phase 0 — Risk first: dependencies & Conan
@@ -90,9 +90,9 @@ Every fix lands with its regression test.
 - ![Planned][planned] Tests without a window (PR-18: F-01, B-06, B-20)
     - Headless runner driven by scripted inputs (load scene, play N frames, assert on the world)
     - Image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL), at least one per backend
-- ![In Progress][progress] Diff-scoped clang-tidy: a `ClangTidy` action driven by `compile_commands.json`, analysing on a
+- ![Done][done] Diff-scoped clang-tidy: a `ClangTidy` action driven by `compile_commands.json`, analysing on a
   pull request only the `.cpp` files the diff can affect (include closure from `ninja -t deps`), everything elsewhere
-  or when in doubt; finalized on `Feature/TidyDiff` right after this kickoff, with one job per core by default (H-03)
+  or when in doubt, one job per available core by default (H-03)
 - ![Planned][planned] ClangTidy multi-process with the static analyzer, honest coverage report
   (PR-19: H-03, F-07, F-04, F-08, F-09, H-07)
 - ![Planned][planned] Module dependency direction checked in CodeStyle; the 10-module cycle broken
