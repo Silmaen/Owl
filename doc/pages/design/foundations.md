@@ -19,7 +19,7 @@ the editor command API and the UI interaction basics are iteration tooling, not 
 
 - ![Done][done] teamcity-github-bridge 1.10.0 wiring — `CodeStyle` findings become annotations on the pull
   request's diff (GNU-style diagnostics through `_diag()`), doc-only PRs skip the C++ matrix, a draft build's verdict
-  is reused on ready, `[skip ci]` / `/ci full` escape hatches, shorter Check Run names. Detail in
+  is reused on ready, `[skip ci]` escape hatch, shorter Check Run names. Detail in
   [Continuous Integration](../continuous_integration.md).
 
 ## Phase 0 — Risk first: dependencies & Conan

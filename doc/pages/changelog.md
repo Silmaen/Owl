@@ -11,16 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `Clang Static Analyzer` CI configuration (`ClangTidy -- --tool=analyzer`); both analyses close the TeamCity chain and are the checks to require on `main`.
 - `docker/run.sh` runs any build, test or CI command in the Docker build image (`--gui`, `--perf`).
 - `bench/` engine benchmark harness (scene, serialization, Renderer2D, voxel, Lua, physics, Slang), built with `-DOWL_BENCHMARK=ON`.
 - `ClangTidy` CI action: on a pull request, analyses only the touched `.cpp` files plus every `.cpp` whose include closure (`ninja -t deps`) holds a touched header; elsewhere, everything.
 
 ### Changed
 
+- TeamCity follows the EvenementLoto model: findings annotated on the diff by default, PRs built from their `Feature/*` / `Experiment/*` head branch, packages never on a PR, no `/ci full` comment.
 - Roadmap rethought toward 1.0.0: v0.3.0 Foundations, renumbered releases, three reading levels (`ROADMAP.md`, `doc/pages/roadmap.md`, `doc/pages/design/`).
 - Changelog split the same way: one line per release in `CHANGELOG.md`, details in `doc/pages/changelog.md`.
 - clang-tidy decoupled from the compiler: `CMAKE_CXX_CLANG_TIDY` unset, the analysis is a `ClangTidy` step on `Build/Quality/Clang-Tidy` driven by `compile_commands.json`.
-- teamcity-github-bridge 1.10.0 wiring: findings pinned to the PR diff as Check Run annotations, doc-only PRs skip the C++ matrix, `[skip ci]` / `/ci full` phrases, `main` left to the VCS trigger.
+- teamcity-github-bridge 1.10.0 wiring: findings pinned to the PR diff as Check Run annotations, doc-only PRs skip the C++ matrix, `[skip ci]` phrase, `main` left to the VCS trigger.
 
 ### Fixed
 

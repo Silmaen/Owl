@@ -4,6 +4,7 @@ import _Self.bridgeOverride
 import _Self.buildTypes.CodeStylingCheck
 import _Self.buildTypes.GlobalBuild
 import _Self.buildTypes.ciAction
+import _Self.after
 import _Self.skipAutoPRs
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
@@ -16,13 +17,18 @@ import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
 //
 //  Generates 13 buildTypes across 4 sub-projects:
 //    • Linux x64 / Linux ARM64 / Windows x64  (Clang + GCC each, 6 total)
-//    • Quality (CodeStyle + ClangTidy + IncludeCheck + 4 sanitizers, 7 total —
+//    • Quality (CodeStyle + IncludeCheck + 4 sanitizers + ClangTidy + Clang Static Analyzer, 8 total —
 //      CodeStyle uses the CodeStylingCheck template, the others GlobalBuild)
 //
 //  All IDs are pinned explicitly via id("...") to preserve TC build history.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Standard (cross-OS) builds ───────────────────────────────────────────────
+
+// Every configuration a pull request runs, in declaration order. The two
+// analyses at the end of the chain depend on all of them, which makes the
+// analyses the only checks worth requiring before a merge.
+private val prGates = mutableListOf<BuildType>()
 
 private data class StdVariant(
     val idSuffix: String,     // e.g. "Clang", "Gcc"
@@ -52,7 +58,7 @@ private fun stdBuildType(
         skipAutoPRs()
     }
     extraConfig()
-})
+}).also { if (!mainOnlyAutoTrigger) prGates += it }
 
 // `mainOnlyAutoTriggerFor` lists the variant.idSuffix values that
 // should call skipAutoPRs() — i.e. auto-run on main only, never on PR
@@ -175,42 +181,6 @@ val QualityCodeStyle = BuildType({
     maxRunningBuilds = 1
 })
 
-private val qualityClangTidy = BuildType({
-    id("Build_Quality_ClangTidy")
-    name = "Clang-Tidy"
-    templates(GlobalBuild)
-    params {
-        param("cmake_preset", "linux-clang-tidy")
-        param("platform", "Linux") // override parent's "in" since clang-tidy needs Linux
-    }
-    // The analysis itself, and the only BT that runs it. It is not hooked into
-    // the compiler (cmake/Sanitizers.cmake leaves CMAKE_CXX_CLANG_TIDY unset):
-    // it reads the compilation database the template's Build step produced,
-    // which is what lets it analyse only the translation units a pull request
-    // can change the verdict of. A compiler hook cannot skip a file.
-    //
-    // A BT's own steps run after the ones it inherits, so this lands at the end
-    // of the template pipeline — for this preset that is right after Build,
-    // since OWL_TESTING=OFF and no release/coverage/doc/package step applies.
-    //
-    // The three bridge parameters carry the pull request context. They are
-    // always emitted for a BT carrying the `github-bridge` feature and empty
-    // outside a pull request, in which case the action analyses everything.
-    // `mergeBase` and not `baseSha`: the merge base is where the branches
-    // diverged, so the diff is this PR's own change and not what landed on
-    // `main` since.
-    steps {
-        script {
-            ciAction("ClangTidy", "Clang_Tidy", displayName = "Clang-Tidy",
-                extraArgs = "-- --is_pull_request=%teamcity.github.bridge.isPullRequest%" +
-                    " --merge_base=%teamcity.github.bridge.pullRequest.mergeBase%" +
-                    " --target_branch=%teamcity.github.bridge.pullRequest.targetBranch%")
-        }
-    }
-    // clang-tidy findings are already `file:line:col: warning: … [check]` in
-    // the log and belong to no other BT, so they are worth pinning to the diff.
-    bridgeOverride(annotateDiff = true)
-})
 
 // Every header and source compiled alone against strict libc++ without the
 // PCH (cmake/IncludeCheck.cmake): catches the transitive standard includes a
@@ -238,7 +208,7 @@ private val qualityIncludeCheck = BuildType({
     disableSettings("Build_Release", "Test_Release")
     // The libc++ errors exist in no other BT, so they are pinned to the diff.
     bridgeOverride(annotateDiff = true)
-})
+}).also { prGates += it }
 
 private data class Sanitizer(
     val idSuffix: String,
@@ -280,8 +250,49 @@ private val sanitizerBuilds = sanitizers.map { s ->
         } else if (s.runOnDraft) {
             bridgeOverride(runOnDraftPr = true)
         }
-    })
+    }).also { if (!s.mainOnlyAutoTrigger) prGates += it }
 }
+
+// clang-tidy, and the same binary restricted to the Clang static analyzer
+// checks: one configuration per tool. Both read the compilation database the
+// template's Build step produced (no compiler hook: cmake/Sanitizers.cmake
+// leaves CMAKE_CXX_CLANG_TIDY unset) and decide their scope at run time. In a
+// pull request they analyse only the translation units the diff can change the
+// verdict of, from the merge base the bridge publishes (`mergeBase`, not
+// `baseSha`: where the branches diverged, so the diff is this PR's own change);
+// anywhere else they analyse everything.
+//
+// They close the dependency chain: nothing reaches them unless every
+// configuration a pull request runs went green first, which makes them the
+// checks to require in the branch protection of `main`. Findings are
+// `file:line:col: warning: … [check]` lines owned by no other BT, so they are
+// pinned to the diff.
+private fun analysisBuild(idSuffix: String, displayName: String, tool: String) = BuildType({
+    id("Build_Quality_$idSuffix")
+    name = displayName
+    templates(GlobalBuild)
+    params {
+        param("cmake_preset", "linux-clang-tidy")
+        param("platform", "Linux") // override parent's "in": the analyses need Linux
+    }
+    steps {
+        script {
+            ciAction("ClangTidy", idSuffix, displayName = displayName,
+                extraArgs = "-- --tool=$tool" +
+                    " --is_pull_request=%teamcity.github.bridge.isPullRequest%" +
+                    " --merge_base=%teamcity.github.bridge.pullRequest.mergeBase%" +
+                    " --target_branch=%teamcity.github.bridge.pullRequest.targetBranch%")
+        }
+    }
+    dependencies {
+        after(*prGates.toTypedArray())
+    }
+})
+
+// The id keeps the existing configuration's build history.
+private val qualityClangTidy = analysisBuild("ClangTidy", "Clang-Tidy", "tidy")
+private val qualityClangAnalyzer =
+    analysisBuild("ClangAnalyzer", "Clang Static Analyzer", "analyzer")
 
 private val quality = Project({
     id("Build_Quality")
@@ -291,6 +302,7 @@ private val quality = Project({
     sanitizerBuilds.forEach { buildType(it) }
     buildType(qualityClangTidy)
     buildType(qualityIncludeCheck)
+    buildType(qualityClangAnalyzer)
 
     params {
         // "in" matches both "Linux" and "Windows" via the substring requirement

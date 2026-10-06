@@ -25,7 +25,8 @@ DefineTeamCityVariables, PublishDoc, PublishPackage.
 `IncludeCheck <preset>` configures a preset with `OWL_INCLUDE_CHECK=ON` (`linux-include-check`) and builds
 `owl_include_check`: every header and source compiled alone, without PCH, against strict libc++.
 
-`ClangTidy` drives clang-tidy from the build's `compile_commands.json` — the
+`ClangTidy` (`--tool=tidy`, default, or `--tool=analyzer` for the `clang-analyzer-*`
+checks only) drives clang-tidy from the build's `compile_commands.json` — the
 compiler hook (`CMAKE_CXX_CLANG_TIDY`) is deliberately unset, because it cannot
 skip a file. Requires the preset to be built first. On a pull request it
 analyses only the translation units the diff can affect (touched `.cpp` files

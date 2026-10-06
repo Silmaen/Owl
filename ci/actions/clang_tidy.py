@@ -54,6 +54,19 @@ HEADER_SUFFIXES: tuple[str, ...] = (".h", ".hpp", ".hxx", ".inl", ".ipp")
 # few dozen entries plus a count already do.
 LISTED_UNITS: int = 40
 
+# clang-tidy arguments per tool: the analyzer mode keeps only the Clang static
+# analyzer checks and makes each of them an error.
+TOOL_ARGS: dict[str, list[str]] = {
+    "tidy": [],
+    # optin.performance.Padding is a field-order suggestion, not a defect: it would
+    # flag every translation unit including Scene.h and stays a performance topic.
+    "analyzer": [
+        "--checks=-*,clang-analyzer-*,-clang-analyzer-optin.performance.Padding",
+        "--warnings-as-errors=clang-analyzer-*",
+    ],
+}
+TOOL_LABELS: dict[str, str] = {"tidy": "clang-tidy", "analyzer": "clang static analyzer"}
+
 # Repo-relative paths whose change invalidates the file-level mapping: compiler
 # flags, dependency versions or the check list itself moved, so every
 # translation unit needs re-analysing regardless of what else the diff touches.
@@ -453,13 +466,16 @@ def _job_count(requested: str) -> int:
     return _available_cores()
 
 
-def _analyse(executable: str, build_dir: Path, source: Path) -> tuple[Path, int, str]:
+def _analyse(
+    executable: str, build_dir: Path, source: Path, tool_args: list[str]
+) -> tuple[Path, int, str]:
     """
     Run clang-tidy on a single translation unit.
 
     :param executable: clang-tidy executable.
     :param build_dir: Build directory holding the compilation database.
     :param source: Source file to analyse.
+    :param tool_args: Extra clang-tidy arguments selecting the check set.
     :return: The source, clang-tidy's exit code, and its combined output.
     """
     command = [
@@ -468,6 +484,7 @@ def _analyse(executable: str, build_dir: Path, source: Path) -> tuple[Path, int,
         str(build_dir),
         "--quiet",
         "-extra-arg=-Wno-unknown-warning-option",
+        *tool_args,
         str(source),
     ]
     try:
@@ -496,6 +513,10 @@ class ClangTidy(BaseAction):
       * ``--full`` — force the full scope even in a pull request.
       * ``--jobs=N`` — parallel clang-tidy processes (default: one per
         available core).
+      * ``--tool=tidy|analyzer`` — ``tidy`` (default) runs the check set of
+        ``.clang-tidy``; ``analyzer`` runs the same binary restricted to the
+        Clang static analyzer checks (``clang-analyzer-*``), every finding an
+        error.
       * ``--dry_run`` — list the translation units that would be analysed and
         stop. Cheap way to check the scoping without paying for the analysis.
     """
@@ -561,6 +582,11 @@ class ClangTidy(BaseAction):
             return 1
 
         jobs = _job_count(parsed.get("jobs", ""))
+        tool = parsed.get("tool", "tidy").lower() or "tidy"
+        if tool not in TOOL_ARGS:
+            log.error(f"clang-tidy: unknown --tool={tool!r}, expected tidy or analyzer.")
+            return 1
+        tool_args = TOOL_ARGS[tool]
 
         ordered = sorted(selected)
         log.info(
@@ -570,7 +596,7 @@ class ClangTidy(BaseAction):
         failed: list[Path] = []
         with ThreadPoolExecutor(max_workers=jobs) as pool:
             results = pool.map(
-                lambda source: _analyse(executable, build_dir, source), ordered
+                lambda source: _analyse(executable, build_dir, source, tool_args), ordered
             )
             for index, (source, status, output) in enumerate(results, start=1):
                 log.info(f"[{index}/{len(ordered)}] {_rel(source)}")
@@ -582,9 +608,9 @@ class ClangTidy(BaseAction):
 
         if failed:
             log.error(
-                f"clang-tidy reported findings in {len(failed)} translation unit(s): "
+                f"{TOOL_LABELS[tool]} reported findings in {len(failed)} translation unit(s): "
                 f"{', '.join(_rel(source) for source in failed)}"
             )
             return 1
-        log.info("clang-tidy: no finding.")
+        log.info(f"{TOOL_LABELS[tool]}: no finding.")
         return 0

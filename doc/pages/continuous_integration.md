@@ -67,9 +67,8 @@ flowchart TD
 
 Legend:
 - **Yellow**: draft-friendly — auto-run on draft PRs too (fast feedback subset).
-- **Blue**: main-only — auto-run on `main` pushes only; PRs get a "Skipped:
-  branch out of scope" GitHub Check Run; a reviewer can still ask for them with
-  the `/ci full` comment, and manual triggers always work.
+- **Blue**: main-only — auto-run on `main` pushes only (`triggerOnPrReady = false`);
+  a manual run from TeamCity always works.
 - Uncoloured: standard — auto-run on `main` pushes and on non-draft PRs.
 
 Orthogonal to the colours, a PR that changes **only** documentation
@@ -200,11 +199,8 @@ for that reason, see [Diff annotations](#diff-annotations).
 | main only        | `skipAutoPRs()`                     | ✅                   | ❌ (Skipped CR)   | ❌ (Skipped CR)   |
 
 Manual triggers from the TeamCity UI **always** run regardless of profile —
-the gate short-circuits to `ALLOW` for any operator-initiated build. So does an
-explicit GitHub command: a build asked for by a PR comment, by *Re-run* in the
-Checks UI or through the plugin's API is stamped `triggerSource=command` and
-gated like a manual Run, which is what makes the `/ci full` escape hatch work
-on a "main only" BT.
+the gate short-circuits to `ALLOW` for any operator-initiated build, and so does
+*Re-run* in the GitHub Checks UI.
 
 Two more ways to keep the matrix off a pull request, both read from the PR
 itself and both bypassed by a manual Run:
@@ -276,11 +272,22 @@ is the rule: the plugin honours a single `github-bridge` feature.
 | Argument        | Template default  | Effect when changed                                                                         |
 |-----------------|-------------------|---------------------------------------------------------------------------------------------|
 | `runOnDraftPr`  | `false`           | `true` puts the BT in the draft-friendly subset                                             |
-| `autoPrTrigger` | `true`            | `false` sets `prTriggerBranchesOverride = -:*` (main only) + the `/ci full` comment trigger |
-| `annotateDiff`  | `false`           | `true` lets this BT pin its diagnostics to the PR diff                                      |
+| `autoPrTrigger` | `true`            | `false` sets `triggerOnPrReady = false`: the BT never runs for a pull request (main only)   |
+| `annotateDiff`  | `true`            | `false` keeps this BT's diagnostics off the PR diff                                         |
 | `pathFilter`    | `CODE_ONLY_PATHS` | `""` makes the BT run on a doc-only PR as well                                              |
 
-Fixed for every BT: `skipIfCommitPassed = true` and `skipPhrase = [skip ci]`.
+Fixed for every BT: `publishChecks`, `runOnApproval` and `triggerOnBranch` set to `true`,
+`skipIfCommitPassed = true` and `skipPhrase = [skip ci]`.
+
+### Dependency chain and required checks
+
+Every build depends on Code Style. The two analyses, **Clang-Tidy** and **Clang Static
+Analyzer** (the same `ClangTidy` action with `--tool=analyzer`: `clang-analyzer-*` checks
+only, every finding an error), depend on every configuration a pull request runs, so they
+close the chain: nothing reaches them unless all of those went green. They are therefore the
+checks to require in the branch protection of `main`. A pull request is built from its head
+branch (`prBuildRef = branch`), which the branch specification limits to `Feature/*` and
+`Experiment/*`. Packages never run for a pull request.
 
 Who overrides what today:
 
