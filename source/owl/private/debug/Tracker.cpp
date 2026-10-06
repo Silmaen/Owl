@@ -21,6 +21,16 @@
 #ifdef OWL_STACKTRACE
 #include <cpptrace/cpptrace.hpp>
 #endif
+#ifdef OWL_TRACKER_ACTIVE
+#ifdef OWL_PROFILER_TRACY
+#include "core/external/tracy.h"
+#define OWL_TRACKER_PROFILE_ALLOC(ptr, size) TracySecureAlloc(ptr, size);
+#define OWL_TRACKER_PROFILE_FREE(ptr) TracySecureFree(ptr);
+#else
+#define OWL_TRACKER_PROFILE_ALLOC(ptr, size)
+#define OWL_TRACKER_PROFILE_FREE(ptr)
+#endif
+#endif
 
 // NOLINTBEGIN(misc-no-recursion)
 
@@ -97,15 +107,18 @@ void operator delete(void* iMemory, size_t iSize) OWL_DEALLOC_EXCEPT;
 auto operator new(const size_t iSize) -> void* {
 	void* mem = malloc(iSize);
 	owl::debug::TrackerAPI::allocate(mem, iSize);
+	OWL_TRACKER_PROFILE_ALLOC(mem, iSize)
 	return mem;
 }
 
 void operator delete(void* iMemory, size_t iSize) OWL_DEALLOC_EXCEPT {
+	OWL_TRACKER_PROFILE_FREE(iMemory)
 	owl::debug::TrackerAPI::deallocate(iMemory, iSize);
 	free(iMemory);
 }
 
 void operator delete(void* iMemory) OWL_DEALLOC_EXCEPT {
+	OWL_TRACKER_PROFILE_FREE(iMemory)
 	owl::debug::TrackerAPI::deallocate(iMemory);
 	free(iMemory);
 }

@@ -9,6 +9,7 @@
 
 #include "core/external/opengl46.h"
 
+#include "GpuProfiler.h"
 #include "GraphContext.h"
 
 #include <cstdint>
@@ -29,6 +30,7 @@ void GraphContext::init() {
 	m_version = gladLoadGL(reinterpret_cast<GLADloadfunc>(glfwGetProcAddress));
 #endif
 	OWL_CORE_ASSERT(m_version, "Failed to initialize GLAD for OpenGL")
+	GpuProfiler::init();
 	OWL_CORE_INFO("OpenGL GraphContext Initiated.")
 	OWL_CORE_INFO("Device Info:")
 	OWL_CORE_INFO("  Vendor: {}", reinterpret_cast<const char*>(glGetString(GL_VENDOR)))
@@ -54,6 +56,7 @@ void GraphContext::swapBuffers() {
 	OWL_PROFILE_FUNCTION()
 
 	glfwSwapBuffers(mp_windowHandle);
+	GpuProfiler::collect();
 }
 
 auto GraphContext::getVersion() const -> Version {

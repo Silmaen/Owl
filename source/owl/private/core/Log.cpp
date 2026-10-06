@@ -123,13 +123,14 @@ void Log::init(const Level& iLevel, const uint64_t iFrequency) {
 
 void Log::setVerbosityLevel(const Level& iLevel) {
 	s_verbosity = iLevel;
+	// Synchronous flush only for warnings and above: flushing every shown message cost a disk write per log line.
 	if (g_CoreLogger) {
 		g_CoreLogger->set_level(fromLevel(s_verbosity));
-		g_CoreLogger->flush_on(fromLevel(s_verbosity));
+		g_CoreLogger->flush_on(spdlog::level::warn);
 	}
 	if (g_ClientLogger) {
 		g_ClientLogger->set_level(fromLevel(s_verbosity));
-		g_ClientLogger->flush_on(fromLevel(s_verbosity));
+		g_ClientLogger->flush_on(spdlog::level::warn);
 	}
 }
 

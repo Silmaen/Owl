@@ -130,6 +130,11 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zstd REQUIRED ${THIRD_
 # taskflow
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Taskflow REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "Taskflow::Taskflow")
 
+# Tracy client (OWL_PROFILER=tracy): private, the OWL_PROFILE_* macros of the public headers never include it
+if (${PROJECT_PREFIX}_PROFILER_BACKEND STREQUAL "tracy")
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Tracy CONFIG REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "Tracy::TracyClient")
+endif ()
+
 # ---------========= PUBLIC third party =========---------
 
 # Entt

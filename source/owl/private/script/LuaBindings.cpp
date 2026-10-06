@@ -353,22 +353,27 @@ auto luaTimeDelta(lua_State* iState) -> int {
 }
 
 auto luaLogTrace(lua_State* iState) -> int {
-	OWL_TRACE("{}", luaL_checkstring(iState, 1))
+	// Checked outside the macro: a disabled level evaluates none of its arguments.
+	const char* message = luaL_checkstring(iState, 1);
+	OWL_TRACE("{}", message)
 	return 0;
 }
 
 auto luaLogInfo(lua_State* iState) -> int {
-	OWL_INFO("{}", luaL_checkstring(iState, 1))
+	const char* message = luaL_checkstring(iState, 1);
+	OWL_INFO("{}", message)
 	return 0;
 }
 
 auto luaLogWarn(lua_State* iState) -> int {
-	OWL_WARN("{}", luaL_checkstring(iState, 1))
+	const char* message = luaL_checkstring(iState, 1);
+	OWL_WARN("{}", message)
 	return 0;
 }
 
 auto luaLogError(lua_State* iState) -> int {
-	OWL_ERROR("{}", luaL_checkstring(iState, 1))
+	const char* message = luaL_checkstring(iState, 1);
+	OWL_ERROR("{}", message)
 	return 0;
 }
 

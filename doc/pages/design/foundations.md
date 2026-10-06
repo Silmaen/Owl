@@ -91,10 +91,13 @@ Every fix lands with its regression test.
   (PR-02: E-03, F-02, C-07, P-14)
 - ![Done][done] Sanitizers that fail the build (ASan, UBSan, TSan), `--gtest_shuffle`, LSan job folded into
   ASan (PR-11: F-03, F-05, F-12, H-05)
-- ![Planned][planned] Tracy behind `OWL_PROFILE_*`, memory tracker off in Debug timings, client logs on the client
-  logger (PR-16: D-12, D-11, D-23, A-17)
-    - Covers the former "Profiling tools" ongoing item: CPU/GPU timeline (Tracy + GPU timestamps), memory usage by
-      asset type, entity / component counts
+- ![Done][done] Tracy behind `OWL_PROFILE_*`, memory tracker off in Debug timings, client logs on the client
+  logger (PR-16: D-12, D-11, D-23, A-17); see [Profiling](../profiling.md)
+    - `OWL_PROFILER=none|tracy|chrome` (default `none`), CPU zones, frame marks, thread names (Taskflow workers
+      included), allocations with the memory tracker, one GPU zone per OpenGL frame and per Vulkan batch
+    - Logs: disabled levels evaluate nothing, `OWL_LOG_LEVEL` compiled level, flush on warnings only
+    - Left for later: per-pass GPU zones (`OWL_PROFILE_GPU_SCOPE`, with the Owl RHI), Lua zones, memory usage by
+      asset type, entity / component counts, `tracy-capture` in the build image
 - ![Planned][planned] Runner `--frame-bench` mode with GPU timestamps — first OpenGL vs Vulkan numbers
   (PR-17: 20-mesures §7, B-01)
 - ![Planned][planned] Tests without a window (PR-18: F-01, B-06, B-20)

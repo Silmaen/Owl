@@ -102,3 +102,6 @@ Checks: '-*,
 CheckOptions:
   - key: readability-function-cognitive-complexity.Threshold
     value: 75
+  # The OWL_* log macros branch on the level (no argument evaluated when disabled): not the function's logic.
+  - key: readability-function-cognitive-complexity.IgnoreMacros
+    value: true

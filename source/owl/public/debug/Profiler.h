@@ -11,6 +11,7 @@
 #include "core/Macros.h"
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <mutex>
 #include <string>
@@ -18,6 +19,87 @@
 #include <utility>
 
 namespace owl::debug {
+
+/// Backend behind the `OWL_PROFILE_*` macros, chosen at configure time (`OWL_PROFILER`).
+enum struct ProfilerBackend : uint8_t {
+	None,///< Macros compiled out.
+	Tracy,///< Tracy client, zones sent to a connected Tracy profiler.
+	Chrome///< Chrome tracing JSON files written by `Profiler`.
+};
+
+/**
+ * @brief
+ *  Get the profiler backend the engine was built with.
+ * @return The backend.
+ */
+OWL_API auto getProfilerBackend() noexcept -> ProfilerBackend;
+
+/**
+ * @brief
+ *  Static description of a profiled zone, laid out as Tracy's source location (checked in `Profiler.cpp`).
+ */
+struct ProfileSourceLocation {
+	const char* name;///< Zone name, or nullptr to show the function name.
+	const char* function;///< Enclosing function.
+	const char* file;///< Source file.
+	uint32_t line;///< Source line.
+	uint32_t color;///< Zone color (0xRRGGBB), 0 for the default one.
+};
+
+/**
+ * @brief
+ *  Scoped profiler zone: begins on construction, ends on destruction (Tracy backend).
+ */
+class OWL_API ProfileZone final {
+public:
+	/**
+	 * @brief
+	 *  Begin the zone.
+	 * @param[in] iLocation Static location of the zone; must outlive the program.
+	 */
+	explicit ProfileZone(const ProfileSourceLocation* iLocation) noexcept;
+
+	ProfileZone(const ProfileZone&) = delete;
+
+	ProfileZone(ProfileZone&&) = delete;
+
+	auto operator=(const ProfileZone&) -> ProfileZone& = delete;
+
+	auto operator=(ProfileZone&&) -> ProfileZone& = delete;
+
+	/**
+	 * @brief
+	 *  End the zone.
+	 */
+	~ProfileZone();
+
+private:
+	/// Zone identifier given by the profiler.
+	[[maybe_unused]] uint32_t m_id{0};
+	/// Non-zero when the zone is recorded (a profiler is connected).
+	[[maybe_unused]] int32_t m_active{0};
+};
+
+/**
+ * @brief
+ *  Mark the end of a frame on the profiler timeline.
+ */
+OWL_API void markProfilerFrame() noexcept;
+
+/**
+ * @brief
+ *  Name the calling thread on the profiler timeline.
+ * @param[in] iName Thread name, copied by the profiler.
+ */
+OWL_API void setProfilerThreadName(const char* iName) noexcept;
+
+/**
+ * @brief
+ *  Check whether a profiler is connected and recording.
+ * @return True when a Tracy profiler is connected.
+ */
+OWL_API auto isProfilerConnected() noexcept -> bool;
+
 /// The type for microseconds.
 using FloatingPointMicroseconds = std::chrono::duration<double, std::micro>;
 
@@ -215,13 +297,7 @@ OWL_DIAG_POP
 }// namespace utils
 
 }// namespace owl::debug
-#ifndef OWL_PROFILE
-#define OWL_PROFILE 0
-#else
-#undef OWL_PROFILE
-#define OWL_PROFILE 1
-#endif
-#if OWL_PROFILE
+#if defined(OWL_PROFILER_TRACY) || defined(OWL_PROFILER_CHROME)
 // Resolve which function signature macro will be used. Note that this only
 // is resolved when the (pre)compiler starts, so the syntax highlighting
 // could mark the wrong one in your editor!
@@ -243,7 +319,21 @@ OWL_DIAG_POP
 #else
 #define OWL_FUNC_SIG "OWL_FUNC_SIG unknown!"
 #endif
+#endif
 
+#if defined(OWL_PROFILER_TRACY)
+#define OWL_PROFILE_BEGIN_SESSION(name, filepath)
+#define OWL_PROFILE_END_SESSION()
+#define OWL_PROFILE_ZONE_LINE2(name, line)                                                                             \
+	static constexpr ::owl::debug::ProfileSourceLocation owlProfileLocation##line{name, __FUNCTION__, __FILE__, line,  \
+																				  0};                                  \
+	const ::owl::debug::ProfileZone owlProfileZone##line{&owlProfileLocation##line};
+#define OWL_PROFILE_ZONE_LINE(name, line) OWL_PROFILE_ZONE_LINE2(name, line)
+#define OWL_PROFILE_SCOPE(name) OWL_PROFILE_ZONE_LINE(name, __LINE__)
+#define OWL_PROFILE_FUNCTION() OWL_PROFILE_ZONE_LINE(nullptr, __LINE__)
+#define OWL_PROFILE_FRAME_MARK() ::owl::debug::markProfilerFrame();
+#define OWL_PROFILE_THREAD_NAME(name) ::owl::debug::setProfilerThreadName(name);
+#elif defined(OWL_PROFILER_CHROME)
 #define OWL_PROFILE_BEGIN_SESSION(name, filepath) ::owl::debug::Profiler::get().beginSession(name, filepath);
 #define OWL_PROFILE_END_SESSION() ::owl::debug::Profiler::get().endSession();
 #define OWL_PROFILE_SCOPE_LINE2(name, line)                                                                            \
@@ -252,9 +342,13 @@ OWL_DIAG_POP
 #define OWL_PROFILE_SCOPE_LINE(name, line) OWL_PROFILE_SCOPE_LINE2(name, line)
 #define OWL_PROFILE_SCOPE(name) OWL_PROFILE_SCOPE_LINE(name, __LINE__)
 #define OWL_PROFILE_FUNCTION() OWL_PROFILE_SCOPE(OWL_FUNC_SIG)
+#define OWL_PROFILE_FRAME_MARK()
+#define OWL_PROFILE_THREAD_NAME(name)
 #else
 #define OWL_PROFILE_BEGIN_SESSION(name, filepath)
 #define OWL_PROFILE_END_SESSION()
 #define OWL_PROFILE_SCOPE(name)
 #define OWL_PROFILE_FUNCTION()
+#define OWL_PROFILE_FRAME_MARK()
+#define OWL_PROFILE_THREAD_NAME(name)
 #endif

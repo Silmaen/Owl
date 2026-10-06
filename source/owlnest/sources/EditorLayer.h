@@ -695,10 +695,12 @@ private:
 	Project m_project;
 	/// Persistent editor preferences (window layout, recent projects, etc.).
 	EditorSettings m_settings;
+#ifdef OWL_TRACKER_ACTIVE
 	/// Allocation counter from the previous frame, for the memory profiler readout.
 	size_t m_lastAllocCalls = 0;
 	/// Deallocation counter from the previous frame, for the memory profiler readout.
 	size_t m_lastDeallocCalls = 0;
+#endif
 	/// Open documents (scenes for now; later also Lua scripts, node graphs...).
 	DocumentManager m_documents;
 

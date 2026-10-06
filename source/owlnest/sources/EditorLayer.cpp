@@ -29,6 +29,7 @@
 #include <sound/SoundSystem.h>
 
 #include <imgui_stdlib.h>
+#include <magic_enum/magic_enum.hpp>
 
 #include <algorithm>
 #include <array>
@@ -943,6 +944,10 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 	ImGui::Begin("Stats");
 	ImGui::Text("%s", std::format("FPS: {:.2f}", iTimeStep.getFps()).c_str());
 	ImGui::Separator();
+	ImGui::Text("%s", std::format("Profiler: {}{}", magic_enum::enum_name(debug::getProfilerBackend()),
+								  debug::isProfilerConnected() ? " (connected)" : "")
+							  .c_str());
+#ifdef OWL_TRACKER_ACTIVE
 	ImGui::Text("%s", std::format("Current used memory: {}",
 								  core::utils::sizeToString(debug::TrackerAPI::globals().allocatedMemory))
 							  .c_str());
@@ -959,6 +964,9 @@ void EditorLayer::renderStats(const core::Timestep& iTimeStep) {
 							  .c_str());
 	m_lastAllocCalls = debug::TrackerAPI::globals().allocationCalls;
 	m_lastDeallocCalls = debug::TrackerAPI::globals().deallocationCalls;
+#else
+	ImGui::TextUnformatted("Memory tracker off (OWL_ENABLE_MEMORY_TRACKER).");
+#endif
 	ImGui::Separator();
 	std::string name = "None";
 	if (const auto* vp = activeViewport(); vp != nullptr) {

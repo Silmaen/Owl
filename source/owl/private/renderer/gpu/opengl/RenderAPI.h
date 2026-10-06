@@ -120,6 +120,18 @@ public:
 
 	/**
 	 * @brief
+	 *  Begin a frame (opens the frame GPU zone when profiling with Tracy).
+	 */
+	void beginFrame() override;
+
+	/**
+	 * @brief
+	 *  End a frame (closes the frame GPU zone when profiling with Tracy).
+	 */
+	void endFrame() override;
+
+	/**
+	 * @brief
 	 *  Enable or disable depth buffer writing.
 	 * @param[in] iEnabled True to enable depth writing, false to disable.
 	 */
