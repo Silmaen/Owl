@@ -41,6 +41,21 @@ struct VoxelPlayer;
 
 /**
  * @brief
+ *  CPU time of the phases of one `Scene::onUpdateRuntime`, in milliseconds.
+ */
+struct OWL_API RuntimeTimings {
+	/// Native and Lua script updates.
+	double scriptsMs{0.0};
+	/// Physics step (`PhysicCommand::frame`).
+	double physicsMs{0.0};
+	/// Render pass: voxel streaming, render stack recording and submission, screen transition.
+	double renderMs{0.0};
+	/// Whole update; the other phases (cameras, players, transforms, sound, triggers) are the remainder.
+	double totalMs{0.0};
+};
+
+/**
+ * @brief
  *  Class describing a scene.
  */
 class OWL_API Scene final {
@@ -130,6 +145,20 @@ public:
 	 * @param[in] iRender When true, issue the Renderer2D draw pass at the end.
 	 */
 	void onUpdateRuntime(const core::Timestep& iTimeStep, bool iRender = true);
+
+	/**
+	 * @brief
+	 *  Start or stop timing the phases of `onUpdateRuntime` (off by default).
+	 * @param[in] iEnabled True to time the next updates.
+	 */
+	void setRuntimeTimingsEnabled(const bool iEnabled) { m_runtimeTimingsEnabled = iEnabled; }
+
+	/**
+	 * @brief
+	 *  Get the phase timings of the last `onUpdateRuntime`.
+	 * @return The timings, zero while timing is off.
+	 */
+	[[nodiscard]] auto getLastRuntimeTimings() const -> const RuntimeTimings& { return m_lastRuntimeTimings; }
 
 	/**
 	 * @brief
@@ -499,6 +528,10 @@ private:
 	 *  Visibility / RendererTag flags don't mutate mid-pass.
 	 */
 	mutable bool m_inUpdatePass = false;
+	/// True while the phases of `onUpdateRuntime` are timed.
+	bool m_runtimeTimingsEnabled = false;
+	/// Phase timings of the last `onUpdateRuntime`.
+	RuntimeTimings m_lastRuntimeTimings;
 	/**
 	 * @brief
 	 *  Per-pass cache for `layerHasContent(name, iIsFirst=true)`. Populated

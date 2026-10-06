@@ -98,8 +98,8 @@ Every fix lands with its regression test.
     - Logs: disabled levels evaluate nothing, `OWL_LOG_LEVEL` compiled level, flush on warnings only
     - Left for later: per-pass GPU zones (`OWL_PROFILE_GPU_SCOPE`, with the Owl RHI), Lua zones, memory usage by
       asset type, entity / component counts, `tracy-capture` in the build image
-- ![Planned][planned] Runner `--frame-bench` mode with GPU timestamps — first OpenGL vs Vulkan numbers
-  (PR-17: 20-mesures §7, B-01)
+- ![Done][done] Runner `--frame-bench` mode with GPU timestamps — first OpenGL vs Vulkan numbers
+  (PR-17: 20-mesures §7, B-01; baseline in `doc/audit/20-mesures.md` §8)
 - ![Planned][planned] Tests without a window (PR-18: F-01, B-06, B-20)
     - Headless runner driven by scripted inputs (load scene, play N frames, assert on the world)
     - Image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL), at least one per backend
@@ -202,15 +202,16 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 
 Measured on the `bench/` harness, Null backend unless stated (source: `doc/audit/20-mesures.md`).
 
-| Indicator                               | Measured today                              | v0.3.0 target                         |
-|-----------------------------------------|---------------------------------------------|---------------------------------------|
-| CPU frame, 10 000 sprites (`flat10000`) | 2.52 ms                                     | < 0.5 ms                              |
-| Renderer2D cost per quad                | 10.5 ns (`worldIndex`), 86 ns (transient)   | < 10 ns on every path                 |
-| GPU queue drains per frame (Vulkan)     | ≥ 10 (B-01)                                 | 0                                     |
-| Scene load per entity                   | 134 µs (10 000 entities: 1.34 s)            | < 10 µs                               |
-| Box2D step, 5 000 bodies in contact     | 4.88 ms (single thread)                     | < 1.5 ms (multi-thread, fixed step)   |
-| Voxel meshing                           | 350 µs per surface chunk on the main thread | off the main thread, per-frame budget |
-| Cold start (real runner, GPU backend)   | not measured (226 ms for a Null dummy app)  | measured, then shaders precompiled    |
+| Indicator                               | Measured today                               | v0.3.0 target                         |
+|-----------------------------------------|----------------------------------------------|---------------------------------------|
+| CPU frame, 10 000 sprites (`flat10000`) | 2.52 ms                                      | < 0.5 ms                              |
+| Renderer2D cost per quad                | 10.5 ns (`worldIndex`), 86 ns (transient)    | < 10 ns on every path                 |
+| GPU queue drains per frame (Vulkan)     | 2 to 4 in the runner, ≥ 10 in the editor     | 0                                     |
+| Runner frame, Vulkan vs OpenGL (NVIDIA) | 0.6–2.0 ms vs 0.35–0.76 ms CPU (frame bench) | Vulkan ≤ OpenGL                       |
+| Scene load per entity                   | 134 µs (10 000 entities: 1.34 s)             | < 10 µs                               |
+| Box2D step, 5 000 bodies in contact     | 4.88 ms (single thread)                      | < 1.5 ms (multi-thread, fixed step)   |
+| Voxel meshing                           | 350 µs per surface chunk on the main thread  | off the main thread, per-frame budget |
+| Cold start (real runner, GPU backend)   | not measured (226 ms for a Null dummy app)   | measured, then shaders precompiled    |
 
 ## Exit criteria
 

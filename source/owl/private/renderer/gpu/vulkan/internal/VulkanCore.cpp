@@ -10,6 +10,7 @@
 
 #include "VulkanCore.h"
 
+#include "FrameProfiler.h"
 #include "VulkanHandler.h"
 #include "app/Application.h"
 #include "renderer/gpu/vulkan/GraphContext.h"
@@ -101,7 +102,8 @@ void VulkanCore::init(const VulkanConfiguration& iConfiguration) {
 }
 
 void VulkanCore::release() {
-	vkDeviceWaitIdle(m_logicalDevice);
+	FrameProfiler::get().deviceWaitIdle(m_logicalDevice);
+	FrameProfiler::get().release();
 	if (m_commandPool != nullptr) {
 		vkDestroyCommandPool(m_logicalDevice, m_commandPool, nullptr);
 		OWL_CORE_TRACE("Vulkan: commandPool destroyed.")
@@ -407,13 +409,32 @@ auto VulkanCore::getSurfaceFormat() const -> VkSurfaceFormatKHR {
 }
 
 auto VulkanCore::getPresentMode() const -> VkPresentModeKHR {
-	VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
-	for (const auto& availablePresentMode: m_phyProps->presentModes) {
-		if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
-			presentMode = availablePresentMode;
-		}
-	}
-	return presentMode;
+	const auto offers = [this](const VkPresentModeKHR iMode) -> bool {
+		return std::ranges::find(m_phyProps->presentModes, iMode) != m_phyProps->presentModes.end();
+	};
+	if (!m_vSync && offers(VK_PRESENT_MODE_IMMEDIATE_KHR))
+		return VK_PRESENT_MODE_IMMEDIATE_KHR;
+	if (offers(VK_PRESENT_MODE_MAILBOX_KHR))
+		return VK_PRESENT_MODE_MAILBOX_KHR;
+	return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+auto VulkanCore::getDeviceName() const -> std::string {
+	if (!m_phyProps)
+		return {};
+	return std::string{m_phyProps->properties.deviceName};
+}
+
+auto VulkanCore::getTimestampPeriod() const -> float {
+	if (!m_phyProps)
+		return 0.f;
+	return m_phyProps->properties.limits.timestampPeriod;
+}
+
+auto VulkanCore::getGraphicQueueTimestampBits() const -> uint32_t {
+	if (!m_phyProps || m_phyProps->graphicQueueIndex >= m_phyProps->queueFamilies.size())
+		return 0;
+	return m_phyProps->queueFamilies[m_phyProps->graphicQueueIndex].timestampValidBits;
 }
 
 auto VulkanCore::getImagecount() const -> uint32_t {
@@ -477,11 +498,14 @@ auto VulkanCore::beginSingleTimeCommands() const -> VkCommandBuffer {
 		OWL_CORE_ERROR("Vulkan: failed to begin command buffer for buffer copy.")
 		return nullptr;
 	}
+	FrameProfiler::get().beginOneShot(commandBuffer);
 	return commandBuffer;
 }
 
 void VulkanCore::endSingleTimeCommands(VkCommandBuffer iCommandBuffer) const {
 	const auto& core = get();
+	auto& profiler = FrameProfiler::get();
+	profiler.endOneShot(iCommandBuffer);
 	if (const VkResult result = vkEndCommandBuffer(iCommandBuffer); result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan: failed to end single time command buffer.")
 		return;
@@ -501,7 +525,8 @@ void VulkanCore::endSingleTimeCommands(VkCommandBuffer iCommandBuffer) const {
 		OWL_CORE_ERROR("Vulkan: failed to submit to queue for single time command buffer.")
 		return;
 	}
-	if (const VkResult result = vkQueueWaitIdle(core.getGraphicQueue()); result != VK_SUCCESS) {
+	profiler.countSubmit();
+	if (const VkResult result = profiler.queueWaitIdle(core.getGraphicQueue()); result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan: failed to wait for idle queue for single time command buffer.")
 		return;
 	}

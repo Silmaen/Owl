@@ -12,6 +12,8 @@
 #include "math/vectors.h"
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 namespace owl::renderer::gpu {
 class StorageBuffer;
@@ -32,6 +34,39 @@ class StorageBuffer;
  * `uniq<RenderAPI>` for the engine's lifetime.
  */
 namespace owl::renderer::gpu {
+/**
+ * @brief
+ *  GPU time of one rendered frame, measured with timestamp queries.
+ *
+ * Vulkan times every submitted command buffer (batches and one-shot copies, transitions, clears and compute
+ * dispatches); OpenGL times the span between `beginFrame` and `endFrame`.
+ */
+struct OWL_API GpuFrameTiming {
+	/// Backend frame number the timing belongs to (see `RenderAPI::getGpuFrameId`).
+	uint64_t frameId{0};
+	/// Sum of the timed GPU intervals of the frame, in milliseconds (GPU busy time).
+	double busyMs{0.0};
+	/// Time between the first and the last timestamp of the frame, in milliseconds (includes GPU idle gaps).
+	double spanMs{0.0};
+	/// Number of timed intervals (Vulkan: command buffers, OpenGL: 1).
+	uint32_t intervalCount{0};
+};
+
+/**
+ * @brief
+ *  Cumulative backend counters; profiling tools read them as per-frame deltas.
+ */
+struct OWL_API RenderCounters {
+	/// Draw calls issued through `RenderCommand` (all backends).
+	uint64_t drawCalls{0};
+	/// Command buffer submissions to the GPU queue (Vulkan only).
+	uint64_t submits{0};
+	/// `vkQueueWaitIdle` calls: the CPU waits for the queue to drain (Vulkan only).
+	uint64_t queueWaitIdles{0};
+	/// `vkDeviceWaitIdle` calls: the CPU waits for the whole device to drain (Vulkan only).
+	uint64_t deviceWaitIdles{0};
+};
+
 /**
  * @brief
  *  Abstract class to manage rendering API.
@@ -260,6 +295,65 @@ public:
 									 [[maybe_unused]] const shared<StorageBuffer>& iCommandBuffer,
 									 [[maybe_unused]] const shared<StorageBuffer>& iCountBuffer,
 									 [[maybe_unused]] uint32_t iMaxDrawCount) {}
+
+	/**
+	 * @brief
+	 *  Check whether the backend can measure GPU time with timestamp queries.
+	 * @return True when `setGpuTimestampsEnabled(true)` produces timings.
+	 */
+	[[nodiscard]] virtual auto hasGpuTimestamps() const -> bool { return false; }
+
+	/**
+	 * @brief
+	 *  Start or stop the per-frame GPU timestamp queries (off by default; no-op on the null backend).
+	 * @param[in] iEnabled True to time the next frames.
+	 */
+	virtual void setGpuTimestampsEnabled([[maybe_unused]] bool iEnabled) {}
+
+	/**
+	 * @brief
+	 *  Get the number of the frame being recorded, counted from the first timed frame.
+	 * @return The frame number, 0 when timing is off or unsupported.
+	 */
+	[[nodiscard]] virtual auto getGpuFrameId() const -> uint64_t { return 0; }
+
+	/**
+	 * @brief
+	 *  Hand over the GPU timings of the frames completed since the last call.
+	 *
+	 * Results arrive a few frames late (the queries are read once the GPU is done with them), in frame order.
+	 * @return The completed timings, oldest first.
+	 */
+	virtual auto popGpuFrameTimings() -> std::vector<GpuFrameTiming> { return {}; }
+
+	/**
+	 * @brief
+	 *  Get the cumulative backend counters (submissions, queue and device drains).
+	 * @return The counters since start-up; `drawCalls` is filled by `RenderCommand`.
+	 */
+	[[nodiscard]] virtual auto getRenderCounters() const -> RenderCounters { return {}; }
+
+	/**
+	 * @brief
+	 *  Record the vertical synchronisation request. On Vulkan it selects the present mode of the next swap chain
+	 *  creation (FIFO or MAILBOX when on, IMMEDIATE when off and available); OpenGL uses the window swap interval.
+	 * @param[in] iEnabled True to synchronise presentation with the display.
+	 */
+	virtual void setVSync([[maybe_unused]] bool iEnabled) {}
+
+	/**
+	 * @brief
+	 *  Describe how frames are presented.
+	 * @return The present mode (`fifo`, `mailbox`, `immediate`, `swap-interval-0`, ...), `none` without display.
+	 */
+	[[nodiscard]] virtual auto getPresentMode() const -> std::string { return "none"; }
+
+	/**
+	 * @brief
+	 *  Get the name of the GPU the backend runs on.
+	 * @return The device name, `none` for the null backend.
+	 */
+	[[nodiscard]] virtual auto getDeviceName() const -> std::string { return "none"; }
 
 protected:
 	/**

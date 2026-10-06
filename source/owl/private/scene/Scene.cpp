@@ -513,6 +513,14 @@ void Scene::onEndRuntime() {
 void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender) {
 	OWL_PROFILE_FUNCTION()
 
+	using clock = std::chrono::steady_clock;
+	const bool timed = m_runtimeTimingsEnabled;
+	const auto now = [timed]() -> clock::time_point { return timed ? clock::now() : clock::time_point{}; };
+	const auto elapsedMs = [](const clock::time_point& iFrom, const clock::time_point& iTo) -> double {
+		return std::chrono::duration<double, std::milli>(iTo - iFrom).count();
+	};
+	const auto tStart = now();
+	m_lastRuntimeTimings = {};
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
 	m_visibilityCache.clear();
 	m_layerContentCacheFirst.clear();
@@ -579,6 +587,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		}
 		return;
 	}
+	const auto tScripts = now();
 	registry.view<component::NativeScript>().each([iTimeStep, this](auto ioEntity, auto& ioNsc) -> auto {
 		if (!isEffectivelyVisible(Entity{ioEntity, this}, /*iEditorMode=*/false))
 			return;
@@ -597,6 +606,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 			luaScript.instance && luaScript.instance->isValid())
 			luaScript.instance->onUpdate(iTimeStep.getSeconds());
 	}
+	const auto tScriptsEnd = now();
 
 	for (const auto view = registry.view<component::Transform, component::FlyCamera>(); const auto entity: view) {
 		auto [transform, fly] = view.get<component::Transform, component::FlyCamera>(entity);
@@ -621,7 +631,9 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	}
 
 	// Physics
+	const auto tPhysics = now();
 	physics::PhysicCommand::frame(iTimeStep);
+	const auto tPhysicsEnd = now();
 
 	updateEntityLinks();
 	m_worldTransformCache.clear();
@@ -692,6 +704,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 		updateAnimatedSprite(view.get<component::AnimatedSpriteRenderer>(entity), iTimeStep);
 
 	// Render 2D
+	const auto tRender = now();
 	if (iRender && mainCamera != nullptr) {
 		if (primaryCameraEntity != entt::null) {
 			const Entity camEntity{primaryCameraEntity, this};
@@ -719,6 +732,13 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	// Disarm per-pass caches; the next tick repopulates from scratch.
 	m_inUpdatePass = false;
 	m_worldTransformCacheActive = false;
+	if (timed) {
+		const auto tEnd = clock::now();
+		m_lastRuntimeTimings = {.scriptsMs = elapsedMs(tScripts, tScriptsEnd),
+								.physicsMs = elapsedMs(tPhysics, tPhysicsEnd),
+								.renderMs = elapsedMs(tRender, tEnd),
+								.totalMs = elapsedMs(tStart, tEnd)};
+	}
 }
 
 void Scene::onRenderRuntime() {

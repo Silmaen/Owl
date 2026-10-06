@@ -27,8 +27,11 @@
 9. Box2D 3.1 tourne sur un seul thread : 4,9 ms par pas pour 5 000 boîtes empilées. Le solveur parallèle de Box2D v3
    n'est pas branché, alors que Taskflow est déjà là.
 10. La consigne « première compilation Slang ≈ 50 s » est fausse d'un facteur ~700 : 74 ms à froid, 17 à 22 ms par shader
-    ensuite, 219 ms pour les 13 shaders du moteur. Le frame bench GPU (OpenGL / Vulkan) reste à faire : il exige un mode
-    « frame bench » dans le runner (§7).
+    ensuite, 219 ms pour les 13 shaders du moteur.
+11. Frame bench GPU (§8, `OwlRunner --frame-bench`) : sur la RTX 5000 Ada, Vulkan coûte 1,2 à 4,6 fois le temps CPU
+    d'OpenGL par frame (0,6 à 2,0 ms contre 0,35 à 0,76 ms) pour un GPU occupé 0,01 à 0,09 ms ; le runner vide la file
+    2 à 4 fois par frame (`vkQueueWaitIdle`), plus 2 `vkDeviceWaitIdle` sur la scène raycast. lavapipe et llvmpipe ne
+    passent pas encore.
 
 ## 2. Protocole
 
@@ -557,7 +560,7 @@ Vérification   : Aucun code n'ajoute de composant scene::Entity (grep emplace/a
 
 ## 7. Mesures restant à faire
 
-1. **Frame bench GPU (priorité).** Le runner n'a pas de mode de mesure (`source/owlnest/runner/RunnerLayer.cpp`) et
+1. **Frame bench GPU (fait, §8).** Le runner n'avait pas de mode de mesure (`source/owlnest/runner/RunnerLayer.cpp`) et
    l'éditeur n'affiche qu'un FPS (`EditorLayer.cpp:935`). Il faut ajouter au runner, dans une PR hors audit, une option
    `--frame-bench <scène> --frames N --warmup M --csv <fichier>` qui charge la scène, passe en Play, caméra fixe ou
    trajectoire scriptée, et journalise par frame le temps CPU (`Timestep`), le temps GPU (requêtes de timestamp :
@@ -576,3 +579,114 @@ Vérification   : Aucun code n'ajoute de composant scene::Entity (grep emplace/a
 8. **Comparaison externe** : chiffres publiés d'EnTT, Box2D v3, yaml-cpp / rapidyaml, mailleurs voxel, sourcés et datés,
    dans `30-etat-de-l-art.md`.
 9. **Chaîne de build** (second rang) : build à froid, build incrémental après modification de `Scene.h`.
+
+## 8. Frame bench GPU — baseline v0.3.0
+
+> Statut : première campagne, 2026-10-05, branche `Feature/RunnerFrameBench` (PR-17). C'est la **référence à battre**
+> pour la refonte du socle Vulkan (PR-28, PR-29) : chaque PR de rendu relance la même matrice et compare.
+> Données brutes : un JSON par répétition, non versionné (dossier temporaire de la session de mesure) ; une
+> première campagne à load average 64 à 164 (`results/`) donnait des temps CPU 1,5 à 4 fois plus longs et sert
+> seulement à montrer la sensibilité à la charge.
+
+### 8.1 Protocole
+
+| Élément      | Valeur                                                                                                      |
+|--------------|-------------------------------------------------------------------------------------------------------------|
+| Outil        | `OwlRunner --frame-bench <scène> --backend <b> --frames 1000 --warmup 120 --out <json>` (`bench/README.md`) |
+| Build        | `linux-clang-release` dans `docker/run.sh --gui`, clang 22, `-O3`                                           |
+| Machine      | i9-13950HX, portable hybride : Intel UHD (RPL-S) principal, RTX 5000 Ada Laptop en PRIME offload            |
+| Affichage    | session Wayland (`WAYLAND_DISPLAY=wayland-0`), fenêtre GLFW via XWayland, 1280 × 720                        |
+| Épinglage    | `taskset -c 2-7` (P-cores) pour le processus entier                                                         |
+| Déterminisme | pas fixe 16,667 ms, entrées null (ni clavier, ni souris, ni capture), caméra primaire de la scène, son null |
+| Présentation | Vulkan `immediate` (vsync coupée), OpenGL `swap-interval-0`                                                 |
+| Répétitions  | 5 par configuration, 1 000 frames mesurées chacune ; chiffres = médiane des 5 médianes                      |
+| Charge       | load average 7,5 à 33,6 pendant la campagne (machine partagée avec d'autres agents)                         |
+
+Sélection du GPU, vérifiée par le champ `device` de chaque rapport :
+
+| Configuration   | Variables                                                         | `device` rapporté                                   |
+|-----------------|-------------------------------------------------------------------|-----------------------------------------------------|
+| Vulkan / NVIDIA | `VK_ICD_FILENAMES=/etc/vulkan/icd.d/nvidia_icd.json`              | NVIDIA RTX 5000 Ada Generation Laptop GPU           |
+| OpenGL / NVIDIA | `__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia`    | NVIDIA RTX 5000 Ada Generation Laptop GPU/PCIe/SSE2 |
+| Vulkan / Intel  | `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/intel_icd.json`         | Intel(R) Graphics (RPL-S)                           |
+| OpenGL / Intel  | `__GLX_VENDOR_LIBRARY_NAME=mesa MESA_LOADER_DRIVER_OVERRIDE=iris` | Mesa Intel(R) Graphics (RPL-S)                      |
+
+Mesures par frame : temps mur entre deux débuts de frame (`cpu_total`) et ses phases ; temps GPU par timestamps :
+Vulkan `vkCmdWriteTimestamp` autour de **chaque** command buffer soumis (batchs et one-shot), `gpu_busy` = somme des
+intervalles, `gpu_span` = premier au dernier timestamp ; OpenGL `glQueryCounter(GL_TIMESTAMP)` à `beginFrame` et
+`endFrame` (un seul intervalle : `busy` = `span`, temps d'attente du pilote compris). Les deux `gpu_busy` ne se
+comparent donc pas directement : en Vulkan c'est du travail GPU pur, en OpenGL une borne haute. Compteurs : draw calls,
+soumissions, `vkQueueWaitIdle`, `vkDeviceWaitIdle` (Vulkan seulement, compteur de debug dans
+`vulkan::internal::FrameProfiler`).
+
+Scènes : `main_menu` (UI 2D), `world_map` (tilemap vue de dessus), `platformer_house` (mélange : tilemap, 27 sprites,
+HUD UI, physique, 17 scripts Lua), `raycast_demo` (raycaster GPU + sprites billboard), `voxel_terrain` (voxel).
+
+### 8.2 Résultats (médianes, ms par frame)
+
+| Scène              | Backend | GPU    | CPU frame | CPU p99 | Prép. rendu | GPU busy | GPU span | Vidages / frame | Soumissions |
+|--------------------|---------|--------|-----------|---------|-------------|----------|----------|-----------------|-------------|
+| `main_menu`        | Vulkan  | NVIDIA | 1,07      | 3,39    | 0,48        | 0,039    | 0,63     | 3 + 0           | 6           |
+| `main_menu`        | OpenGL  | NVIDIA | 0,66      | 0,81    | 0,07        | 0,35     | 0,35     | —               | —           |
+| `main_menu`        | Vulkan  | Intel  | 3,11      | 6,05    | 1,38        | 0,96     | 2,85     | 3 + 0           | 6           |
+| `main_menu`        | OpenGL  | Intel  | 0,37      | 0,61    | 0,11        | 0,34     | 0,34     | —               | —           |
+| `world_map`        | Vulkan  | NVIDIA | 1,55      | 4,46    | 0,96        | 0,054    | 1,10     | 4 + 0           | 7           |
+| `world_map`        | OpenGL  | NVIDIA | 0,35      | 0,46    | 0,06        | 0,042    | 0,042    | —               | —           |
+| `world_map`        | Vulkan  | Intel  | 3,35      | 6,88    | 2,12        | 1,06     | 3,23     | 4 + 0           | 7           |
+| `world_map`        | OpenGL  | Intel  | 0,56      | 0,65    | 0,13        | 0,51     | 0,51     | —               | —           |
+| `platformer_house` | Vulkan  | NVIDIA | 1,60      | 4,77    | 0,97        | 0,055    | 1,14     | 4 + 0           | 7           |
+| `platformer_house` | OpenGL  | NVIDIA | 0,35      | 0,46    | 0,06        | 0,034    | 0,034    | —               | —           |
+| `platformer_house` | Vulkan  | Intel  | 3,54      | 6,74    | 1,88        | 1,29     | 3,38     | 4 + 0           | 7           |
+| `platformer_house` | OpenGL  | Intel  | 0,71      | 0,85    | 0,06        | 0,66     | 0,66     | —               | —           |
+| `raycast_demo`     | Vulkan  | NVIDIA | 2,04      | 4,96    | 1,12        | 0,094    | 1,55     | 3 + 2           | 8           |
+| `raycast_demo`     | OpenGL  | NVIDIA | 0,76      | 0,85    | 0,63        | 0,47     | 0,47     | —               | —           |
+| `raycast_demo`     | Vulkan  | Intel  | 2,98      | 7,09    | 2,08        | 1,09     | 2,84     | 3 + 2           | 8           |
+| `raycast_demo`     | OpenGL  | Intel  | 1,01      | 1,22    | 0,87        | 0,92     | 0,92     | —               | —           |
+| `voxel_terrain`    | Vulkan  | NVIDIA | 0,61      | 2,14    | 0,04        | 0,014    | 0,17     | 2 + 0           | 4           |
+| `voxel_terrain`    | OpenGL  | NVIDIA | 0,53      | 0,65    | 0,06        | 0,008    | 0,008    | —               | —           |
+| `voxel_terrain`    | Vulkan  | Intel  | 0,74      | 1,00    | 0,08        | 0,16     | 0,63     | 2 + 0           | 4           |
+| `voxel_terrain`    | OpenGL  | Intel  | 0,19      | 0,22    | 0,02        | 0,040    | 0,040    | —               | —           |
+
+« Vidages » = `vkQueueWaitIdle` + `vkDeviceWaitIdle` par frame ; constant d'une frame à l'autre (IQR nul). Draw calls :
+4 (`main_menu`), 6 (`world_map`), 5 (`platformer_house`), 3 (`raycast_demo`), 1 (`voxel_terrain`), identiques entre
+backends. Écart entre répétitions (max - min des médianes CPU) : 1 à 3 % sur Vulkan / NVIDIA pour les scènes 2D, jusqu'à
+78 % sur les configurations les plus courtes ou les plus chargées ; l'IQR intra-run reste sous 0,1 ms sur NVIDIA.
+
+### 8.3 Constats
+
+1. **B-01 mesuré dans le runner.** Sans éditeur (pas de `readPixel`, pas de framebuffer viewport), une frame Vulkan
+   vide la file 2 à 4 fois (`vkQueueWaitIdle` des `endSingleTimeCommands` : transitions, clears, compute des transforms,
+   upload tilemap) et le raycast ajoute 2 `vkDeviceWaitIdle` (`StorageBuffer::getData`). Les 4 à 8 soumissions par
+   frame sont donc sérialisées avec le CPU. Cible PR-28 : 0 vidage, 1 à 2 soumissions.
+2. **Le GPU attend le CPU.** Sur NVIDIA, le GPU travaille 0,014 à 0,094 ms par frame Vulkan, mais le premier et le
+   dernier timestamp sont espacés de 0,17 à 1,55 ms : plus de 90 % du « temps GPU » de la frame est de l'attente
+   d'enregistrement côté CPU. Les scènes d'exemple ne chargent pas le GPU ; elles mesurent le socle.
+3. **Vulkan est plus lent qu'OpenGL partout**, en temps CPU : facteur 1,2 (`voxel_terrain`) à 4,6 (`platformer_house`)
+   sur NVIDIA, 3,0 à 8,3 sur Intel. L'essentiel est la préparation du rendu (enregistrement + soumissions par batch :
+   0,5 à 1,1 ms hors voxel, contre 0,06 à 0,63 ms) ; `beginFrame` (attente de fence + acquisition) reste sous 0,05 ms.
+4. **Intel Vulkan : GPU 20 à 25 fois plus lent que NVIDIA** sur la même frame (0,96 à 1,29 ms busy en 2D), alors qu'OpenGL
+   Intel tient 0,34 à 0,66 ms de span. À regarder avec la sync validation (PM-09) : clears et transitions one-shot
+   sont chers sur ce pilote.
+5. **Voxel quasi vide.** `voxel_terrain` n'émet qu'un draw call et 0,01 à 0,16 ms de GPU : la mesure couvre le socle,
+   pas le maillage ni le streaming (M5, M6 restent à faire avec une trajectoire de caméra).
+6. **lavapipe et llvmpipe ne passent pas** (PR-18 en dépend) : lavapipe plante (SIGSEGV dans le code JIT) au premier
+   draw ; la validation montre des descripteurs jamais écrits (`VUID-vkCmdDrawIndexed-None-08114` sur `gInstances`,
+   `gSceneWorlds`, `gTransientWorlds`), tolérés par NVIDIA et Intel. llvmpipe (OpenGL 4.5) n'expose pas
+   `GL_ARB_gl_spirv` : `GLAD: ERROR glSpecializeShader is NULL!` puis plantage.
+7. **Wayland / vsync.** Sous la session Wayland, sans vsync, aucun blocage n'a été observé (200 runs, Vulkan et OpenGL,
+   NVIDIA et Intel). Avec `--vsync`, Vulkan choisit `mailbox` et tourne ; OpenGL (`swap-interval-1`, NVIDIA offload)
+   se fige au premier `swapBuffers` de l'écran de chargement, avec ou sans `WAYLAND_DISPLAY` (XWayland). Reproductible ;
+   relève de l'item v0.3.0 « full Wayland », non corrigé ici.
+8. **Sensibilité à la charge.** La campagne à load average 64 à 164 donnait 3,9 à 6,4 ms par frame Vulkan / NVIDIA au
+   lieu de 1,1 à 2,0 ms. Toute comparaison se fait à charge basse, épinglée, et cite la load average.
+
+### 8.4 Relancer la matrice
+
+```bash
+docker/run.sh --gui env VK_ICD_FILENAMES=/etc/vulkan/icd.d/nvidia_icd.json taskset -c 2-7 \
+    output/build/linux-clang-release/bin/OwlRunner --frame-bench sample_project/scenes/platformer_house.owl \
+    --backend vulkan --frames 1000 --warmup 120 --out output/frame-bench/platformer_house.vulkan.nvidia.json
+```
+
+Une boucle scènes × configurations × 5 répétitions, puis la médiane des médianes par série (`summary.<série>.median`
+de chaque JSON) ; comparer `cpu_total_ms`, `gpu_busy_ms`, `gpu_span_ms`, `queue_wait_idle` et `device_wait_idle`.

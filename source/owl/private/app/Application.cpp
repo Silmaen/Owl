@@ -73,7 +73,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		OWL_CORE_INFO("Working directory: {}.", m_workingDirectory.string())
 
 		// load config file if any
-		if (!m_initParams.isDummy) {
+		if (!m_initParams.isDummy && m_initParams.useConfigFile) {
 			OWL_SCOPE_UNTRACK
 			const auto configPath = m_workingDirectory / "config.yml";
 			if (exists(configPath))
@@ -169,6 +169,8 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 		});
 
 		input::Input::init();
+		if (!m_initParams.vSync)
+			mp_appWindow->setVSync(false);
 
 		OWL_CORE_INFO("Window Created.")
 	}
@@ -357,6 +359,10 @@ void Application::run() {
 #if OWL_TRACKER_VERBOSITY >= 3
 	uint64_t frameCount = 0;
 #endif
+	using clock = std::chrono::steady_clock;
+	const auto elapsedMs = [](const clock::time_point& iFrom, const clock::time_point& iTo) -> double {
+		return std::chrono::duration<double, std::milli>(iTo - iFrom).count();
+	};
 	while (m_state == State::Running) {
 		OWL_PROFILE_SCOPE("RunLoop")
 		if (g_StopRequested.load()) {
@@ -365,11 +371,19 @@ void Application::run() {
 			break;
 		}
 		OWL_CORE_FRAME_ADVANCE
+		const bool timed = m_frameTimingsEnabled;
+		const auto now = [timed]() -> clock::time_point { return timed ? clock::now() : clock::time_point{}; };
+		const auto tStart = now();
+		auto tBegin = tStart;
+		auto tLayers = tStart;
+		auto tGui = tStart;
+		auto tEnd = tStart;
 		m_stepper.update();
 
 		// Graphics part.
 		if (!m_minimized) {
 			renderer::gpu::RenderCommand::beginFrame();
+			tBegin = now();
 			if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Ready) {
 				m_state = State::Error;
 				continue;
@@ -379,14 +393,17 @@ void Application::run() {
 				OWL_PROFILE_SCOPE("LayerStack onUpdate")
 				for (const auto& layer: m_layerStack) layer->onUpdate(m_stepper);
 			}
+			tLayers = now();
 			if (mp_imGuiLayer) {
 				OWL_PROFILE_SCOPE("LayerStack onImUpdate")
 				mp_imGuiLayer->begin();
 				for (const auto& layer: m_layerStack) layer->onImGuiRender(m_stepper);
 				mp_imGuiLayer->end();
 			}
+			tGui = now();
 
 			renderer::gpu::RenderCommand::endFrame();
+			tEnd = now();
 		}
 
 		// sound part
@@ -398,9 +415,22 @@ void Application::run() {
 				continue;
 			}
 		}
+		const auto tSound = now();
 
 		mp_appWindow->onUpdate();
+		const auto tPresent = now();
 		m_scheduler.frame(m_stepper);
+		if (timed) {
+			const auto tDone = clock::now();
+			m_lastFrameTimings = {.beginFrameMs = elapsedMs(tStart, tBegin),
+								  .layersMs = elapsedMs(tBegin, tLayers),
+								  .guiMs = elapsedMs(tLayers, tGui),
+								  .endFrameMs = elapsedMs(tGui, tEnd),
+								  .soundMs = elapsedMs(tEnd, tSound),
+								  .presentMs = elapsedMs(tSound, tPresent),
+								  .schedulerMs = elapsedMs(tPresent, tDone),
+								  .totalMs = elapsedMs(tStart, tDone)};
+		}
 		OWL_PROFILE_FRAME_MARK()
 #if OWL_TRACKER_VERBOSITY >= 3
 		{

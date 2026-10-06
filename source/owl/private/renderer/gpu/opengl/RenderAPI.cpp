@@ -115,10 +115,6 @@ void RenderAPI::drawLineInstanced(const shared<DrawData>& iData, const uint32_t 
 							static_cast<int32_t>(iInstanceCount));
 }
 
-void RenderAPI::beginFrame() { GpuProfiler::beginFrame(); }
-
-void RenderAPI::endFrame() { GpuProfiler::endFrame(); }
-
 auto RenderAPI::getMaxTextureSlots() const -> uint32_t {
 	int32_t textureUnits = 0;
 	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &textureUnits);
@@ -159,6 +155,95 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData,
 									 /*stride=*/static_cast<GLsizei>(sizeof(uint32_t) * 5));
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 	glBindBuffer(GL_PARAMETER_BUFFER, 0);
+}
+
+RenderAPI::~RenderAPI() {
+	if (m_queriesCreated)
+		glDeleteQueries(static_cast<GLsizei>(g_slotCount * 2), m_queries.front().data());
+}
+
+auto RenderAPI::hasGpuTimestamps() const -> bool {
+	if (getState() != State::Ready)
+		return false;
+	GLint bits = 0;
+	glGetQueryiv(GL_TIMESTAMP, GL_QUERY_COUNTER_BITS, &bits);
+	return bits > 0;
+}
+
+void RenderAPI::setGpuTimestampsEnabled(const bool iEnabled) {
+	if (iEnabled == m_timingEnabled)
+		return;
+	if (!iEnabled) {
+		m_timingEnabled = false;
+		m_frameOpen = false;
+		return;
+	}
+	if (!hasGpuTimestamps()) {
+		OWL_CORE_WARN("OpenGL: GPU timestamps not supported by the context.")
+		return;
+	}
+	if (!m_queriesCreated) {
+		glGenQueries(static_cast<GLsizei>(g_slotCount * 2), m_queries.front().data());
+		m_queriesCreated = true;
+	}
+	m_slotFrame.fill(0);
+	m_completed.clear();
+	m_frameId = 0;
+	m_frameOpen = false;
+	m_timingEnabled = true;
+}
+
+void RenderAPI::beginFrame() {
+	GpuProfiler::beginFrame();
+	if (!m_timingEnabled)
+		return;
+	++m_frameId;
+	const auto slot = static_cast<size_t>(m_frameId % g_slotCount);
+	if (m_slotFrame[slot] != 0)
+		harvest(slot);
+	m_slotFrame[slot] = m_frameId;
+	glQueryCounter(m_queries[slot][0], GL_TIMESTAMP);
+	m_frameOpen = true;
+}
+
+void RenderAPI::endFrame() {
+	GpuProfiler::endFrame();
+	if (!m_timingEnabled || !m_frameOpen)
+		return;
+	glQueryCounter(m_queries[static_cast<size_t>(m_frameId % g_slotCount)][1], GL_TIMESTAMP);
+	m_frameOpen = false;
+}
+
+void RenderAPI::harvest(const size_t iSlot) {
+	GpuFrameTiming timing{.frameId = m_slotFrame[iSlot], .busyMs = 0.0, .spanMs = 0.0, .intervalCount = 0};
+	GLint available = 0;
+	glGetQueryObjectiv(m_queries[iSlot][1], GL_QUERY_RESULT_AVAILABLE, &available);
+	if (available != 0) {
+		GLuint64 begin = 0;
+		GLuint64 end = 0;
+		glGetQueryObjectui64v(m_queries[iSlot][0], GL_QUERY_RESULT, &begin);
+		glGetQueryObjectui64v(m_queries[iSlot][1], GL_QUERY_RESULT, &end);
+		if (end >= begin) {
+			timing.spanMs = static_cast<double>(end - begin) * 1e-6;
+			timing.busyMs = timing.spanMs;
+			timing.intervalCount = 1;
+		}
+	}
+	m_completed.push_back(timing);
+	m_slotFrame[iSlot] = 0;
+}
+
+auto RenderAPI::popGpuFrameTimings() -> std::vector<GpuFrameTiming> {
+	std::vector<GpuFrameTiming> out;
+	out.swap(m_completed);
+	return out;
+}
+
+auto RenderAPI::getDeviceName() const -> std::string {
+	if (getState() != State::Ready)
+		return "none";
+	const auto* const name = reinterpret_cast<const char*>(glGetString(GL_RENDERER));
+	return name == nullptr ? std::string{"unknown"} : std::string{name};
 }
 
 }// namespace owl::renderer::gpu::opengl

@@ -416,7 +416,7 @@ void Window::setVSync(const bool iEnabled) {
 						  1e9 / static_cast<double>(m_framePeriod.count()))
 		}
 	}
-
+	renderer::gpu::RenderCommand::setVSync(iEnabled);
 	m_windowData.vSync = iEnabled;
 }
 

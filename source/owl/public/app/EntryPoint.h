@@ -26,6 +26,7 @@
 // NOLINTBEGIN(misc-definitions-in-headers)
 auto main(int iArgc, char* iArgv[]) -> int {
 	owl::core::Log::init();
+	int exitCode = 0;
 	{
 		// Startup
 		OWL_PROFILE_BEGIN_SESSION("Startup", "OwlProfile-startup.json")
@@ -35,6 +36,7 @@ auto main(int iArgc, char* iArgv[]) -> int {
 		OWL_PROFILE_BEGIN_SESSION("Runtime", "OwlProfile-runtime.json")
 		OWL_CORE_TRACE("run!")
 		app->run();
+		exitCode = app->getExitCode();
 		OWL_PROFILE_END_SESSION()
 		// Shutdown
 		OWL_PROFILE_BEGIN_SESSION("Shutdown", "OwlProfile-shutdown.json")
@@ -92,6 +94,6 @@ auto main(int iArgc, char* iArgv[]) -> int {
 	}
 	// Destroy the logger
 	owl::core::Log::invalidate();
-	return 0;
+	return exitCode;
 }
 // NOLINTEND(misc-definitions-in-headers)

@@ -112,6 +112,20 @@ ctest --test-dir output/build/<preset> --output-on-failure
 Test executables are named `owl_<category>_unit_test` with 15 categories: core, debug,
 event, font, gui, input, io, layer, math, mesh, physic, renderer, scene, script, sound.
 
+## Measuring frames on the GPU
+
+`OwlRunner --frame-bench <scene.owl>` loads a scene, plays a warm-up then a fixed number of frames without vsync,
+with a fixed time step and no user input, and reports the CPU time per phase and the GPU time from timestamp queries
+(Vulkan and OpenGL), plus the queue drains per frame:
+
+```bash
+docker/run.sh --gui output/build/linux-clang-release/bin/OwlRunner \
+    --frame-bench sample_project/scenes/platformer_house.owl --backend opengl --frames 1000 --out fb.json
+```
+
+Options, output format and device selection: `bench/README.md`. The v0.3.0 baseline lives in
+`doc/audit/20-mesures.md`.
+
 ## CI System
 
 The Python-based CI system wraps CMake operations. The same Python actions are invoked locally

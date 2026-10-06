@@ -9,6 +9,7 @@
 
 #include "Descriptors.h"
 
+#include "FrameProfiler.h"
 #include "VulkanCore.h"
 #include "VulkanHandler.h"
 #include "utils.h"
@@ -20,7 +21,7 @@ namespace owl::renderer::gpu::vulkan::internal {
 void TextureData::freeTexture() {
 	const auto& core = VulkanCore::get();
 	const auto& pool = Descriptors::get().getSingleImageDescriptorPool();
-	vkDeviceWaitIdle(core.getLogicalDevice());
+	FrameProfiler::get().deviceWaitIdle(core.getLogicalDevice());
 	if (textureDescriptorSet != nullptr) {
 		vkFreeDescriptorSets(core.getLogicalDevice(), pool, 1, &textureDescriptorSet);
 		textureDescriptorSet = nullptr;

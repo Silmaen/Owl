@@ -23,6 +23,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstddef>
+#include <exception>
 #include <fstream>
 #include <ios>
 #include <optional>
@@ -139,9 +140,16 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 
 RunnerLayer::RunnerLayer() : Layer("RunnerLayer") {}
 
+RunnerLayer::RunnerLayer(const FrameBenchOptions& iBench)
+	: Layer("RunnerLayer"), m_frameBench{mkUniq<FrameBench>(iBench)} {}
+
 void RunnerLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
+	if (m_frameBench) {
+		attachFrameBench();
+		return;
+	}
 	// Load the config file
 	auto& app = app::Application::get();
 	{
@@ -251,6 +259,72 @@ void RunnerLayer::onAttach() {
 	installRenderStack();
 }
 
+void RunnerLayer::attachFrameBench() {
+	auto& app = app::Application::get();
+	const auto& options = m_frameBench->getOptions();
+	m_config.gameName = "OwlFrameBench";
+	if (!options.project.empty()) {
+		app.addAssetDirectory({"Frame bench project", options.project});
+		try {
+			const auto project = YAML::LoadFile((options.project / "owl_project.yml").string())["OwlProject"];
+			if (project) {
+				get(project, "name", m_config.gameName);
+				if (const auto stack = project["RendererStack"]; stack)
+					m_config.rendererStack = renderer::RendererStackConfig::fromYaml(stack);
+			}
+		} catch (const std::exception& iEx) {
+			OWL_WARN("FrameBench: Cannot read {}/owl_project.yml ({}).", options.project.string(), iEx.what())
+		}
+		if (const auto gameSettings = options.project / "game_settings.yml"; exists(gameSettings))
+			scene::SettingsManager::loadDefaults(gameSettings);
+	}
+	// User settings are skipped on purpose: they would make the run depend on the machine.
+	scene::SettingsManager::setGameName(m_config.gameName);
+	input::Input::init(window::Type::Null);
+	m_viewportSize = app.getWindow().getSize();
+	m_activeScene = mkShared<scene::Scene>();
+	if (const scene::SceneSerializer sc(m_activeScene); !sc.deserialize(options.scene)) {
+		OWL_ERROR("FrameBench: Failed to load scene {}.", options.scene.string())
+		m_activeScene.reset();
+		m_frameBench.reset();
+		app.setExitCode(2);
+		app.close();
+		return;
+	}
+	installRenderStack();
+	m_activeScene->setRuntimeTimingsEnabled(true);
+	m_frameBench->start();
+}
+
+void RunnerLayer::finishFrameBench(const bool iInterrupted) {
+	if (!m_frameBench || m_frameBench->isFinished())
+		return;
+	auto& app = app::Application::get();
+	app.setExitCode(m_frameBench->finish(iInterrupted));
+	app.close();
+}
+
+auto RunnerLayer::stepFrameBench() -> bool {
+	if (!m_frameBench)
+		return true;
+	m_frameBench->onFrameStart();
+	if (m_frameBench->isDone()) {
+		finishFrameBench(/*iInterrupted=*/false);
+		return false;
+	}
+	if (m_activeScene)
+		m_activeScene->setRuntimeTimingsEnabled(true);
+	return true;
+}
+
+void RunnerLayer::updateSceneRuntime(const core::Timestep& iTimeStep) {
+	if (!m_frameBench)
+		updateCursorCapture(m_activeScene->wantsCursorCapture());
+	m_activeScene->onUpdateRuntime(iTimeStep);
+	if (m_frameBench)
+		m_frameBench->onSceneUpdated(m_activeScene->getLastRuntimeTimings());
+}
+
 void RunnerLayer::installRenderStack() {
 	if (!m_activeScene)
 		return;
@@ -263,6 +337,7 @@ void RunnerLayer::installRenderStack() {
 void RunnerLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
 
+	finishFrameBench(/*iInterrupted=*/true);
 	// unload the active scene.
 	m_activeScene.reset();
 
@@ -272,6 +347,9 @@ void RunnerLayer::onDetach() {
 void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
+	if (!stepFrameBench())
+		return;
+	const core::Timestep& timeStep = m_frameBench ? m_frameBench->getTimeStep() : iTimeStep;
 	// resize
 	if (m_activeScene != nullptr) {
 		{
@@ -317,7 +395,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 				}
 			} else {
 				if (m_transition) {
-					scene::ScreenTransition::update(iTimeStep.getSeconds());
+					scene::ScreenTransition::update(timeStep.getSeconds());
 					scene::ScreenTransition::render(static_cast<float>(m_viewportSize.x()),
 													static_cast<float>(m_viewportSize.y()));
 					handleTeleportRequest();
@@ -328,8 +406,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 														 input::Input::getMousePos().y()};
 					scene::UiInputSystem::update(m_activeScene.get(), m_viewportSize, mousePos,
 												 input::Input::isMouseButtonPressed(input::mouse::ButtonLeft));
-					updateCursorCapture(m_activeScene->wantsCursorCapture());
-					m_activeScene->onUpdateRuntime(iTimeStep);
+					updateSceneRuntime(timeStep);
 					// Handle quit request from Lua (scene.quit()).
 					if (m_activeScene->quitRequested) {
 						m_activeScene->onEndRuntime();

@@ -12,6 +12,8 @@
 #include "core/Core.h"
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 namespace owl::renderer::gpu {
 /**
@@ -90,6 +92,7 @@ public:
 	 * @param[in] iIndexCount Number of vertex to draw (=0 all).
 	 */
 	static void drawData(const shared<DrawData>& iData, const uint32_t iIndexCount = 0) {
+		++m_drawCallCount;
 		m_renderAPI->drawData(iData, iIndexCount);
 	}
 
@@ -103,6 +106,7 @@ public:
 	 */
 	static void drawDataInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
 								  const uint32_t iInstanceCount) {
+		++m_drawCallCount;
 		m_renderAPI->drawDataInstanced(iData, iIndexCount, iInstanceCount);
 	}
 
@@ -113,6 +117,7 @@ public:
 		 * @param[in] iIndexCount Number of vertex to draw (=0 all).
 		 */
 	static void drawLine(const shared<DrawData>& iData, const uint32_t iIndexCount = 0) {
+		++m_drawCallCount;
 		m_renderAPI->drawLine(iData, iIndexCount);
 	}
 
@@ -128,6 +133,7 @@ public:
 	 */
 	static void drawLineInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
 								  const uint32_t iInstanceCount) {
+		++m_drawCallCount;
 		m_renderAPI->drawLineInstanced(iData, iIndexCount, iInstanceCount);
 	}
 
@@ -265,6 +271,7 @@ public:
 	 */
 	static void drawIndexedIndirect(const shared<DrawData>& iData, const shared<StorageBuffer>& iCommandBuffer,
 									const shared<StorageBuffer>& iCountBuffer, const uint32_t iMaxDrawCount) {
+		++m_drawCallCount;
 		if (m_renderAPI)
 			m_renderAPI->drawIndexedIndirect(iData, iCommandBuffer, iCountBuffer, iMaxDrawCount);
 	}
@@ -280,8 +287,98 @@ public:
 		return false;
 	}
 
+	/**
+	 * @brief
+	 *  Check whether the backend can measure GPU time with timestamp queries.
+	 * @return True when GPU frame timings are available.
+	 */
+	static auto hasGpuTimestamps() -> bool {
+		if (m_renderAPI)
+			return m_renderAPI->hasGpuTimestamps();
+		return false;
+	}
+
+	/**
+	 * @brief
+	 *  Start or stop the per-frame GPU timestamp queries.
+	 * @param[in] iEnabled True to time the next frames.
+	 */
+	static void setGpuTimestampsEnabled(const bool iEnabled) {
+		if (m_renderAPI)
+			m_renderAPI->setGpuTimestampsEnabled(iEnabled);
+	}
+
+	/**
+	 * @brief
+	 *  Get the number of the frame being recorded (see `RenderAPI::getGpuFrameId`).
+	 * @return The frame number, 0 when timing is off or unsupported.
+	 */
+	static auto getGpuFrameId() -> uint64_t {
+		if (m_renderAPI)
+			return m_renderAPI->getGpuFrameId();
+		return 0;
+	}
+
+	/**
+	 * @brief
+	 *  Hand over the GPU timings of the frames completed since the last call.
+	 * @return The completed timings, oldest first.
+	 */
+	static auto popGpuFrameTimings() -> std::vector<GpuFrameTiming> {
+		if (m_renderAPI)
+			return m_renderAPI->popGpuFrameTimings();
+		return {};
+	}
+
+	/**
+	 * @brief
+	 *  Get the cumulative render counters (draw calls, submissions, queue and device drains).
+	 * @return The counters since start-up.
+	 */
+	static auto getRenderCounters() -> RenderCounters {
+		RenderCounters counters;
+		if (m_renderAPI)
+			counters = m_renderAPI->getRenderCounters();
+		counters.drawCalls = m_drawCallCount;
+		return counters;
+	}
+
+	/**
+	 * @brief
+	 *  Record the vertical synchronisation request (see `RenderAPI::setVSync`).
+	 * @param[in] iEnabled True to synchronise presentation with the display.
+	 */
+	static void setVSync(const bool iEnabled) {
+		if (m_renderAPI)
+			m_renderAPI->setVSync(iEnabled);
+	}
+
+	/**
+	 * @brief
+	 *  Describe how frames are presented.
+	 * @return The present mode name.
+	 */
+	static auto getPresentMode() -> std::string {
+		if (m_renderAPI)
+			return m_renderAPI->getPresentMode();
+		return "none";
+	}
+
+	/**
+	 * @brief
+	 *  Get the name of the GPU the backend runs on.
+	 * @return The device name.
+	 */
+	static auto getDeviceName() -> std::string {
+		if (m_renderAPI)
+			return m_renderAPI->getDeviceName();
+		return "none";
+	}
+
 private:
 	/// Pointer to the render API
 	static uniq<RenderAPI> m_renderAPI;
+	/// Draw calls issued since start-up.
+	static uint64_t m_drawCallCount;
 };
 }// namespace owl::renderer::gpu

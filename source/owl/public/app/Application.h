@@ -77,6 +77,10 @@ struct OWL_API AppParams {
 	std::string appId{};
 	/// Under Wayland, write a hidden user desktop entry named after #appId so the compositor shows the icon.
 	bool installDesktopEntry{true};
+	/// Read and rewrite `config.yml` from the working directory (off: the parameters above are used as given).
+	bool useConfigFile{true};
+	/// Synchronise presentation with the display (set before the swap chain is created).
+	bool vSync{true};
 
 	/**
 	 * @brief
@@ -108,6 +112,29 @@ struct OWL_API AppParams {
 	void saveToFile(const std::filesystem::path& iFile) const;
 };
 // NOLINTEND(readability-redundant-member-init)
+
+/**
+ * @brief
+ *  CPU time of the phases of one main-loop iteration, in milliseconds.
+ */
+struct OWL_API FrameTimings {
+	/// `RenderCommand::beginFrame` (Vulkan: fence wait and swap chain image acquisition).
+	double beginFrameMs{0.0};
+	/// `onUpdate` of every layer.
+	double layersMs{0.0};
+	/// ImGui overlay (`onImGuiRender` of every layer and the overlay draw).
+	double guiMs{0.0};
+	/// `RenderCommand::endFrame` (last batch submission).
+	double endFrameMs{0.0};
+	/// Sound frame.
+	double soundMs{0.0};
+	/// Window update: event polling and buffer swap or present.
+	double presentMs{0.0};
+	/// Task scheduler frame (termination callbacks).
+	double schedulerMs{0.0};
+	/// Whole iteration.
+	double totalMs{0.0};
+};
 
 /**
  * @brief
@@ -206,6 +233,34 @@ public:
 	 *  Request the application to terminate.
 	 */
 	void close();
+
+	/**
+	 * @brief
+	 *  Set the code returned by the program entry point once the application stops.
+	 * @param[in] iExitCode The process exit code (0 on success).
+	 */
+	void setExitCode(const int iExitCode) { m_exitCode = iExitCode; }
+
+	/**
+	 * @brief
+	 *  Get the code the program entry point returns.
+	 * @return The process exit code.
+	 */
+	[[nodiscard]] auto getExitCode() const -> int { return m_exitCode; }
+
+	/**
+	 * @brief
+	 *  Start or stop timing the phases of the main loop (off by default).
+	 * @param[in] iEnabled True to time the next iterations.
+	 */
+	void setFrameTimingsEnabled(const bool iEnabled) { m_frameTimingsEnabled = iEnabled; }
+
+	/**
+	 * @brief
+	 *  Get the phase timings of the last completed main-loop iteration.
+	 * @return The timings, zero while timing is off.
+	 */
+	[[nodiscard]] auto getLastFrameTimings() const -> const FrameTimings& { return m_lastFrameTimings; }
 
 	/**
 	 * @brief
@@ -414,6 +469,12 @@ private:
 	State m_state = State::Created;
 	/// If Window minimized.
 	bool m_minimized = false;
+	/// True while the main-loop phases are timed.
+	bool m_frameTimingsEnabled = false;
+	/// Exit code returned by the entry point.
+	int m_exitCode = 0;
+	/// Phase timings of the last completed main-loop iteration.
+	FrameTimings m_lastFrameTimings;
 	/// The stack of layers.
 	app::layer::LayerStack m_layerStack;
 	/// Base Path to the working Directory.

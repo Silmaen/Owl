@@ -9,9 +9,12 @@
 
 #include "renderer/gpu/RenderCommand.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu {
 
 uniq<RenderAPI> RenderCommand::m_renderAPI = nullptr;
+uint64_t RenderCommand::m_drawCallCount = 0;
 
 void RenderCommand::create(const RenderAPI::Type& iType) { m_renderAPI = RenderAPI::create(iType); }
 

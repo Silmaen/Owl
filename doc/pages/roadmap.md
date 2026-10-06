@@ -152,12 +152,12 @@ up. No new gameplay feature ([details](design/foundations.md)).
 - ![In Progress][progress] Phase A — full Wayland: icon, editor multi-window, X11 kept ([details](design/windowing-input.md))
 - ![In Progress][progress] Phase B — engine benchmark harness `bench/` (`OWL_BENCHMARK`)
 - ![Done][done] Phase B — diff-scoped clang-tidy CI action, parallel by default (H-03)
-- ![Planned][planned] Phase B — editor tests, blocking sanitizers, Tracy, runner frame bench
 - ![Done][done] Phase B — blocking sanitizers, shuffled test order, LSan job removed (PR-11)
 - ![Done][done] Phase B — CI in two parallel levels, fast subset for `Experiment/*` PRs, `PR Ready` merge gate
 - ![Planned][planned] Phase B — package once per platform from the tested release tree, no rebuild ([details](design/foundations.md))
 - ![Done][done] Phase B — Tracy behind `OWL_PROFILE_*`, memory tracker opt-in, cheaper logs (PR-16, [Profiling](profiling.md))
-- ![Planned][planned] Phase B — editor tests, runner frame bench
+- ![Done][done] Phase B — runner frame bench: `OwlRunner --frame-bench`, GPU timestamps, Vulkan/OpenGL baseline (PR-17)
+- ![Planned][planned] Phase B — editor tests
 - ![Planned][planned] Phase B — tests without a window: scripted headless runner, image tests on lavapipe / llvmpipe
 - ![Planned][planned] Phase B — module dependency check, CI tooling tests, benchmarks with a regression threshold
 - ![Planned][planned] Phase C — Vulkan foundation first, as soon as the image tests land ([RHI](design/owl-rhi.md))

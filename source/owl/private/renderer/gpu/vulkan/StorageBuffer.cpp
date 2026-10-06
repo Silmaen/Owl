@@ -10,6 +10,7 @@
 
 #include "StorageBuffer.h"
 
+#include "internal/FrameProfiler.h"
 #include "internal/RendererDescriptors.h"
 #include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
@@ -74,7 +75,7 @@ void StorageBuffer::getData(void* oData, const uint32_t iSize, const uint32_t iO
 		return;
 	}
 	const auto& vkc = internal::VulkanCore::get();
-	vkDeviceWaitIdle(vkc.getLogicalDevice());
+	internal::FrameProfiler::get().deviceWaitIdle(vkc.getLogicalDevice());
 
 	void* mapped = nullptr;
 	vkMapMemory(vkc.getLogicalDevice(), m_memory, iOffset, iSize, 0, &mapped);
