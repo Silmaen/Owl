@@ -11,6 +11,7 @@
 #include "core/external/glfw3.h"
 #include "window/Window.h"
 
+#include <chrono>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -80,6 +81,27 @@ public:
 	 * @return The window manager's type.
 	 */
 	[[nodiscard]] auto getType() const -> Type override { return Type::Glfw; }
+
+	/**
+	 * @brief
+	 *  Get the native platform GLFW was initialised with.
+	 * @return The platform in use.
+	 */
+	[[nodiscard]] auto getPlatform() const -> Platform override;
+
+	/**
+	 * @brief
+	 *  Get the content scale reported by GLFW for the window.
+	 * @return The horizontal and vertical scale.
+	 */
+	[[nodiscard]] auto getContentScale() const -> math::vec2 override;
+
+	/**
+	 * @brief
+	 *  Number of frames handed to the presentation engine since the window was created.
+	 * @return The frame count.
+	 */
+	[[nodiscard]] auto getPresentedFrames() const -> uint64_t override { return m_presentedFrames; }
 
 	/**
 	 * @brief
@@ -180,10 +202,40 @@ private:
 	 */
 	void init(const Properties& iProps);
 
+	/**
+	 * @brief
+	 *  Set the window icon, or under Wayland the desktop entry that carries it.
+	 * @param[in] iProps Properties of the window.
+	 */
+	void initIcon(const Properties& iProps);
+
+	/**
+	 * @brief
+	 *  Sleep until the next refresh period when vertical sync is emulated (see m_paceFrames).
+	 */
+	void paceFrame();
+
 	/// Pointer to the GLFW window.
 	GLFWwindow* mp_glfwWindow{nullptr};
 	/// Current cursor mode (visible/free or hidden/locked).
 	window::CursorMode m_cursorMode{window::CursorMode::Normal};
+	/// Desktop application identifier (Wayland `app_id`, X11 `WM_CLASS`).
+	std::string m_appId;
+	/// Frames handed to the presentation engine.
+	uint64_t m_presentedFrames{0};
+	/**
+	 * @brief
+	 *  Emulate vertical sync with a timer instead of a blocking swap interval.
+	 *
+	 * Used for OpenGL under Wayland: `eglSwapInterval(1)` waits for the compositor frame callback, which never comes
+	 * while the surface is hidden (minimised, other workspace, locked session), freezing the whole main loop. The
+	 * compositor never tears, so swapping with interval 0 and sleeping to the refresh rate keeps the vsync pacing.
+	 */
+	bool m_paceFrames{false};
+	/// Refresh period used by the frame pacer.
+	std::chrono::nanoseconds m_framePeriod{16'666'667};
+	/// Deadline of the next paced frame.
+	std::chrono::steady_clock::time_point m_nextFrame;
 
 	/**
 	 * @brief

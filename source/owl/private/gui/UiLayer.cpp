@@ -79,7 +79,11 @@ void UiLayer::onAttach() {
 	io.ConfigDockingWithShift = false;
 	io.ConfigDockingTransparentPayload = true;
 	// ViewPort configuration
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;// Enable Multi-Viewport
+	if (m_withApp && app::Application::get().getWindow().getPlatform() == window::Platform::Wayland) {
+		OWL_CORE_INFO("UiLayer: Multi-viewports disabled under Wayland (GLFW cannot position windows).")
+	} else {
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+	}
 	io.ConfigViewportsNoDecoration = true;
 	io.ConfigViewportsNoAutoMerge = false;
 

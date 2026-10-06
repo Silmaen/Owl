@@ -5,7 +5,7 @@ One line per release. The detailed history (Keep a Changelog, one line per chang
 
 | Version     | Date       | Summary                                                                                            |
 |-------------|------------|----------------------------------------------------------------------------------------------------|
-| 0.3.0 (dev) | —          | Foundations in progress: benchmark harness, Docker wrapper, roadmap to 1.0.0                       |
+| 0.3.0 (dev) | —          | Foundations in progress: benchmark harness, Docker wrapper, Wayland platform, roadmap to 1.0.0     |
 | 0.2.1       | 2026-06-27 | Voxel engine: chunks, greedy meshing, terrain, player, block editing, Vulkan / OpenGL hardening    |
 | 0.2.0       | 2026-06-02 | Renderer stack, raycasting renderer, tilemaps, scene transitions, GPU-driven instanced Renderer2D  |
 | 0.1.1       | 2026-04-30 | Multi-document editor, async operations, code / node-graph / animation editors, ribbon menu        |

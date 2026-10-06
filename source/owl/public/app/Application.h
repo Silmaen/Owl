@@ -71,6 +71,12 @@ struct OWL_API AppParams {
 	std::string packFile{};
 	/// Game name for save directories (set by project system).
 	std::string gameName{};
+	/// Requested windowing platform (`windowPlatform` in config.yml; the `OWL_WINDOW_PLATFORM` variable overrides it).
+	window::Platform windowPlatform{window::Platform::Auto};
+	/// Desktop application identifier (Wayland `app_id`, X11 `WM_CLASS`); derived from #name when empty.
+	std::string appId{};
+	/// Under Wayland, write a hidden user desktop entry named after #appId so the compositor shows the icon.
+	bool installDesktopEntry{true};
 
 	/**
 	 * @brief

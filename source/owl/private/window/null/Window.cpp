@@ -47,7 +47,11 @@ void Window::shutdown() {
 	--s_winCount;
 }
 
-void Window::onUpdate() { OWL_PROFILE_FUNCTION() }
+void Window::onUpdate() {
+	OWL_PROFILE_FUNCTION()
+
+	++m_presentedFrames;
+}
 
 void Window::setVSync(bool iEnabled) {
 	OWL_PROFILE_FUNCTION()

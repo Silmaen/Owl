@@ -149,7 +149,7 @@ up. No new gameplay feature ([details](design/foundations.md)).
 - ![Planned][planned] Phase A — every confirmed correctness bug fixed with its regression test (PR-01 to PR-25)
 - ![Planned][planned] Phase A — `on_collision` implemented from Box2D contact events (D-07)
 - ![Planned][planned] Phase A — game export tested end to end, sample run headless ([Export](design/game-export.md))
-- ![Planned][planned] Phase A — full Wayland: icon, editor multi-window, X11 kept ([details](design/windowing-input.md))
+- ![In Progress][progress] Phase A — full Wayland: icon, editor multi-window, X11 kept ([details](design/windowing-input.md))
 - ![In Progress][progress] Phase B — engine benchmark harness `bench/` (`OWL_BENCHMARK`)
 - ![Done][done] Phase B — diff-scoped clang-tidy CI action, parallel by default (H-03)
 - ![Planned][planned] Phase B — editor tests, blocking sanitizers, Tracy, runner frame bench
