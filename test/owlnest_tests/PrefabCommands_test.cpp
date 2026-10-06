@@ -7,6 +7,7 @@
  */
 
 #include "commands/PrefabCommands.h"
+#include "commands/ComponentCommands.h"
 #include "nestTestHelper.h"
 #include "testHelper.h"
 
@@ -81,8 +82,6 @@ TEST_F(PrefabCommandsTest, InstantiateUndoRedo) {
 	EXPECT_EQ(childrenOf(restoredRoot).size(), 1u);
 }
 
-// The prefab merge itself (PrefabSerializer::applyToInstance) is PR-10 territory (C-02): the command is
-// exercised here on a hand-made before / after pair.
 TEST_F(PrefabCommandsTest, ApplyUndoRedo) {
 	const auto root = instantiate();
 	ASSERT_TRUE(root);
@@ -105,4 +104,100 @@ TEST_F(PrefabCommandsTest, ApplyUndoRedo) {
 	m_undo.redo(m_scene);
 	EXPECT_EQ(sceneState(m_scene), applied);
 	EXPECT_FLOAT_EQ(m_scene.findEntityByUUID(lidUuid).getComponent<scene::component::CircleRenderer>().thickness, 0.9f);
+}
+
+TEST_F(PrefabCommandsTest, UpdateFromPrefabInPlaceUndoRedo) {
+	scene::Scene source;
+	auto srcRoot = source.createEntity("Crate");
+	auto srcLid = source.createEntity("Lid");
+	srcLid.addComponent<scene::component::CircleRenderer>().thickness = 0.4f;
+	source.setParent(srcLid, srcRoot);
+	auto srcLabel = source.createEntity("Label");
+	source.setParent(srcLabel, srcRoot);
+	ASSERT_TRUE(scene::PrefabSerializer::serialize(srcRoot, source, m_prefabPath, "Crate"));
+	const auto root = instantiate();
+	ASSERT_TRUE(root);
+	const auto rootUuid = root.getUUID();
+	ASSERT_EQ(childrenOf(root).size(), 2u);
+	setLocalX(root, 10.f);
+	const auto initial = sceneState(m_scene);
+
+	auto srcHinge = source.createEntity("Hinge");
+	source.setParent(srcHinge, srcLid);
+	srcLid.getComponent<scene::component::CircleRenderer>().thickness = 0.8f;
+	source.destroyEntity(srcLabel);
+	ASSERT_TRUE(scene::PrefabSerializer::serialize(srcRoot, source, m_prefabPath, "Crate"));
+
+	auto before = SubtreeSnapshot::capture(root, m_scene);
+	ASSERT_TRUE(scene::PrefabSerializer::applyToInstance(m_prefabPath, root, m_scene));
+	m_undo.push(mkUniq<ApplyPrefabCommand>(std::move(before), SubtreeSnapshot::capture(root, m_scene),
+										   "Update from Prefab"));
+	const auto applied = sceneState(m_scene);
+	ASSERT_EQ(m_scene.getEntityCount(), 3u);
+	ASSERT_EQ(childrenOf(root).size(), 1u);
+	const auto lid = m_scene.findEntityByUUID(childrenOf(root).front());
+	EXPECT_FLOAT_EQ(lid.getComponent<scene::component::CircleRenderer>().thickness, 0.8f);
+	EXPECT_EQ(childrenOf(lid).size(), 1u);
+	EXPECT_FLOAT_EQ(localX(root), 10.f);
+
+	m_undo.undo(m_scene);
+	EXPECT_EQ(m_scene.getEntityCount(), 3u);
+	EXPECT_EQ(sceneState(m_scene), initial);
+	EXPECT_EQ(m_undo.lastSelectionHint(), rootUuid);
+
+	m_undo.redo(m_scene);
+	EXPECT_EQ(sceneState(m_scene), applied);
+}
+
+TEST_F(PrefabCommandsTest, ComponentEditRecordsOverrideUndoably) {
+	const auto root = instantiate();
+	ASSERT_TRUE(root);
+	const auto lid = m_scene.findEntityByUUID(childrenOf(root).front());
+	const auto& link = root.getComponent<scene::component::PrefabLink>();
+	auto before = EntitySnapshot::capture(lid);
+	lid.getComponent<scene::component::CircleRenderer>().thickness = 0.9f;
+	auto change = PrefabOverrideChange::record(lid, m_scene, before.yamlData);
+	EXPECT_FALSE(change.isEmpty());
+	EXPECT_EQ(link.overriddenComponents.size(), 1u);
+	auto cmd = mkUniq<ModifyEntityCommand>(lid.getUUID(), std::move(before), "Modify Circle Renderer");
+	cmd->captureAfter(lid);
+	cmd->setPrefabOverrides(std::move(change));
+	m_undo.push(std::move(cmd));
+
+	auto secondBefore = EntitySnapshot::capture(lid);
+	setLocalX(lid, 3.f);
+	auto second = PrefabOverrideChange::record(lid, m_scene, secondBefore.yamlData);
+	auto secondCmd = mkUniq<ModifyEntityCommand>(lid.getUUID(), std::move(secondBefore), "Modify Transform");
+	secondCmd->captureAfter(lid);
+	secondCmd->setPrefabOverrides(std::move(second));
+	m_undo.push(std::move(secondCmd));
+	EXPECT_EQ(link.overriddenComponents.size(), 2u);
+
+	m_undo.undo(m_scene);
+	EXPECT_TRUE(root.getComponent<scene::component::PrefabLink>().overriddenComponents.empty());
+	EXPECT_FLOAT_EQ(lid.getComponent<scene::component::CircleRenderer>().thickness, 0.4f);
+	m_undo.redo(m_scene);
+	EXPECT_EQ(root.getComponent<scene::component::PrefabLink>().overriddenComponents.size(), 2u);
+
+	ASSERT_TRUE(scene::PrefabSerializer::applyToInstance(m_prefabPath, root, m_scene));
+	EXPECT_FLOAT_EQ(lid.getComponent<scene::component::CircleRenderer>().thickness, 0.9f);
+	EXPECT_FLOAT_EQ(localX(lid), 3.f);
+}
+
+TEST_F(PrefabCommandsTest, OverrideChangeOutsideInstanceIsEmpty) {
+	const auto loose = m_scene.createEntity("Loose");
+	const auto before = EntitySnapshot::capture(loose);
+	setLocalX(loose, 2.f);
+	EXPECT_TRUE(PrefabOverrideChange::record(loose, m_scene, before.yamlData).isEmpty());
+	const auto root = instantiate();
+	ASSERT_TRUE(root);
+	const auto rootBefore = EntitySnapshot::capture(root);
+	setLocalX(root, 2.f);
+	EXPECT_TRUE(PrefabOverrideChange::record(root, m_scene, rootBefore.yamlData).isEmpty());
+	PrefabOverrideChange merged;
+	const PrefabOverrideChange filled{.rootUuid = root.getUUID(), .before = {}, .after = {"1:Tag"}};
+	merged.mergeWith(filled);
+	EXPECT_EQ(merged.after, filled.after);
+	merged.mergeWith(PrefabOverrideChange{});
+	EXPECT_EQ(merged.after, filled.after);
 }

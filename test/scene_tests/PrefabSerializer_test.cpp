@@ -281,16 +281,17 @@ TEST(PrefabSerializer, ApplyToInstanceRefreshesNonOverridden) {
 	root.getComponent<component::SpriteRenderer>().color = {0.f, 0.f, 1.f, 1.f};
 	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "ApplyPrefab"));
 
-	// 5. Apply — no overrides, so everything should update to the new prefab.
+	// 5. Apply — no overrides, so everything but the root placement updates to the new prefab.
 	EXPECT_TRUE(PrefabSerializer::applyToInstance(prefabFile, instance, *dstScene));
 
-	// Find the updated root entity (it was destroyed and recreated).
+	// The instance is updated in place.
 	const auto allEntities = dstScene->getAllEntities();
 	ASSERT_EQ(allEntities.size(), 1u);
 	const auto& updatedEntity = allEntities[0];
+	EXPECT_EQ(updatedEntity, instance);
 
-	// Transform should be updated from the prefab.
-	EXPECT_NEAR(updatedEntity.getComponent<component::Transform>().transform.translation().x(), 99.f, 0.01f);
+	// The root Transform is the instance placement: it is never taken from the prefab.
+	EXPECT_NEAR(updatedEntity.getComponent<component::Transform>().transform.translation().x(), 1.f, 0.01f);
 	// SpriteRenderer should be updated (not overridden).
 	EXPECT_NEAR(updatedEntity.getComponent<component::SpriteRenderer>().color.z(), 1.f, 0.01f);
 
@@ -337,8 +338,8 @@ TEST(PrefabSerializer, ApplyToInstancePreservesOverrides) {
 	ASSERT_EQ(allEntities.size(), 1u);
 	const auto& updated = allEntities[0];
 
-	// Transform should be updated from prefab (not overridden).
-	EXPECT_NEAR(updated.getComponent<component::Transform>().transform.translation().x(), 50.f, 0.01f);
+	// The root Transform is the instance placement, kept as is.
+	EXPECT_NEAR(updated.getComponent<component::Transform>().transform.translation().x(), 1.f, 0.01f);
 	// SpriteRenderer should be preserved (overridden) — green colour.
 	EXPECT_NEAR(updated.getComponent<component::SpriteRenderer>().color.y(), 1.f, 0.01f);
 	EXPECT_NEAR(updated.getComponent<component::SpriteRenderer>().color.z(), 0.f, 0.01f);
@@ -435,16 +436,17 @@ TEST(PrefabSerializer, RevertInstanceClearsOverrides) {
 		link.overriddenComponents.push_back(std::format("{}:Transform", canonicalUuid));
 	}
 
-	// 4. Revert — should clear overrides and restore everything from prefab.
+	// 4. Revert — should clear overrides and restore everything from prefab but the root placement.
 	EXPECT_TRUE(PrefabSerializer::revertInstance(prefabFile, instance, *dstScene));
 
 	const auto allEntities = dstScene->getAllEntities();
 	ASSERT_EQ(allEntities.size(), 1u);
 	const auto& reverted = allEntities[0];
+	EXPECT_TRUE(reverted.getComponent<component::PrefabLink>().overriddenComponents.empty());
 
-	// Transform should be back to prefab values.
-	EXPECT_NEAR(reverted.getComponent<component::Transform>().transform.translation().x(), 5.f, 0.01f);
-	EXPECT_NEAR(reverted.getComponent<component::Transform>().transform.translation().y(), 5.f, 0.01f);
+	// The root Transform is the instance placement: a revert keeps it.
+	EXPECT_NEAR(reverted.getComponent<component::Transform>().transform.translation().x(), 99.f, 0.01f);
+	EXPECT_NEAR(reverted.getComponent<component::Transform>().transform.translation().y(), 99.f, 0.01f);
 	// SpriteRenderer should be back to prefab values (red).
 	EXPECT_NEAR(reverted.getComponent<component::SpriteRenderer>().color.x(), 1.f, 0.01f);
 	EXPECT_NEAR(reverted.getComponent<component::SpriteRenderer>().color.y(), 0.f, 0.01f);

@@ -11,8 +11,36 @@
 #include "scene/component/PrefabLink.h"
 
 #include <cstdint>
+#include <format>
 
 namespace owl::scene::component {
+
+auto PrefabLink::overrideKey(const uint64_t iCanonicalUuid, const std::string& iComponentKey) -> std::string {
+	return std::format("{}:{}", iCanonicalUuid, iComponentKey);
+}
+
+auto PrefabLink::findCanonicalUuid(const uint64_t iInstanceUuid) const -> std::optional<uint64_t> {
+	const auto it = std::ranges::find(uuidMapping, iInstanceUuid, &UuidMapEntry::instanceUuid);
+	if (it == uuidMapping.end())
+		return std::nullopt;
+	return it->canonicalUuid;
+}
+
+auto PrefabLink::isOverridden(const uint64_t iCanonicalUuid, const std::string& iComponentKey) const -> bool {
+	return std::ranges::find(overriddenComponents, overrideKey(iCanonicalUuid, iComponentKey)) !=
+		   overriddenComponents.end();
+}
+
+auto PrefabLink::setOverridden(const uint64_t iCanonicalUuid, const std::string& iComponentKey) -> bool {
+	if (isOverridden(iCanonicalUuid, iComponentKey))
+		return false;
+	overriddenComponents.push_back(overrideKey(iCanonicalUuid, iComponentKey));
+	return true;
+}
+
+auto PrefabLink::clearOverride(const uint64_t iCanonicalUuid, const std::string& iComponentKey) -> bool {
+	return std::erase(overriddenComponents, overrideKey(iCanonicalUuid, iComponentKey)) > 0;
+}
 
 void PrefabLink::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << key();

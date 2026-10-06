@@ -12,6 +12,7 @@
 
 #include "../UndoManager.h"
 
+#include <optional>
 #include <string>
 
 namespace owl::nest {
@@ -175,6 +176,8 @@ private:
 	shared<scene::Scene> m_context = nullptr;
 	/// The selected item
 	scene::Entity m_selection;
+	/// Entity name when the name field was activated (set while a rename is being typed).
+	std::optional<std::string> m_renameBefore;
 	/// Undo manager (non-owning, optional).
 	SceneUndoManager* mp_undoManager = nullptr;
 	/// Active document — when it `overridesGlobalPanels()` the panel delegates its content to it.

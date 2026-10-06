@@ -45,8 +45,13 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
   (instance ↔ canonical), `overriddenComponents`.
 - Instantiation: load into a temp scene, fresh UUIDs, remap `parentId`, copy components through a
   serialization round-trip, add `PrefabLink`.
-- `applyToInstance()` takes non-overridden components from the prefab and keeps overridden ones;
-  `revertInstance()` clears overrides then applies.
+- `applyToInstance()` updates **in place** (`uuidMapping` + `applyEntityFromString`, never destroy /
+  recreate): non-overridden components from the prefab, overridden ones kept, the root Transform always
+  kept (implicit override), new prefab entities created under their parent, removed ones destroyed,
+  instance-only entities kept. `revertInstance()` clears overrides then applies; `revertComponent()`
+  reverts one component.
+- Overrides are recorded by `recordOverrides()` (diff against the pre-edit YAML); the editor calls it on
+  every entity edit through `PrefabOverrideChange` so the undo removes the mark too.
 
 ## Game state & saves
 

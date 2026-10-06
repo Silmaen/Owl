@@ -123,6 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deleting an entity keeps its children's world position and sibling order, and undoing the deletion puts them back exactly.
 - Editor dirty flag driven by an undo generation counter: "save, undo, edit" and an edit merged into the saved step now mark the document as modified.
 - `Scene::getEntityCount()` counts the entities instead of always returning 0; the round-trip tests that compared 0 to 0 now check real counts.
+- Prefab "Update from Prefab" / "Revert to Prefab" work in place: the instance keeps its hierarchy and placement, new and removed prefab entities follow, editor edits mark overrides (shown in the inspector, revertable per component, undoable), and Unlink is undoable.
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
 - `scene.destroy_entity` is deferred to the end of the frame (`Scene::destroyEntityDeferred`): a script destroying its own entity no longer frees its running Lua state, and the destroyed entity gets `on_destroy` once, loses its Box2D body and takes its children with it.
 - Lua `on_collision(other_id)` is now called: Box2D begin-touch contact events reach both entities' scripts once per touching pair, skipping entities hidden or pending destruction; `on_trigger_enter` / `on_trigger_exit` / `on_triggered` now receive the documented `other_id`.

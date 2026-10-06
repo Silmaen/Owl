@@ -337,8 +337,12 @@ void EditorLayer::handleContentBrowserDrop(const std::filesystem::path& iRelativ
 
 	const auto relString = iRelativePath.generic_string();
 	if (ext == ".owlprefab") {
-		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
-			instantiatePrefab(full.value(), relString);
+		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+			if (const auto full = assetsPath / iRelativePath; exists(full)) {
+				instantiatePrefab(full, relString);
+				break;
+			}
+		}
 	} else if (ext == ".owl") {
 		if (const auto full = renderer::Renderer::getTextureLibrary().find(relString); full.has_value())
 			openScene(full.value());
@@ -784,7 +788,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 			else if (ext == ".owlflow")
 				openNodeGraphFile(path);
 			else if (ext == ".owlprefab")
-				instantiatePrefab(path, path.filename().string());
+				instantiatePrefab(path);
 			else
 				openCodeFile(path);
 		}
@@ -2880,7 +2884,14 @@ void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, co
 	if (doc == nullptr || doc->state() != SceneDocument::State::Edit || !doc->getActiveScene())
 		return;
 	const auto& activeScene = doc->getActiveScene();
-	auto root = scene::PrefabSerializer::instantiate(iPrefabPath, activeScene, iAssetRelativePath);
+	std::string assetPath = iAssetRelativePath;
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (!assetPath.empty())
+			break;
+		if (const auto rel = iPrefabPath.lexically_relative(assetsPath); !rel.empty() && *rel.begin() != "..")
+			assetPath = rel.generic_string();
+	}
+	auto root = scene::PrefabSerializer::instantiate(iPrefabPath, activeScene, assetPath);
 	if (!root) {
 		OWL_WARN("Failed to instantiate prefab: {}.", iPrefabPath.string())
 		return;

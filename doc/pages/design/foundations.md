@@ -66,7 +66,7 @@ Every fix lands with its regression test.
   (PR-06: D-03)
 - ![Done][done] `.owlpack` hardening — validated paths and sizes, exceptions caught, libFuzzer target behind
   `OWL_FUZZING` (CI job still to wire) (PR-07: D-02, D-28)
-- ![Planned][planned] Prefab update / revert in place, with override detection (PR-10: C-02, E-11)
+- ![Done][done] Prefab update / revert in place, with override detection (PR-10: C-02, E-11)
 - ![Done][done] CI secrets kept out of argv and logs, `api.py` replaced by an in-repository upload client, secret
   scan in `CodeStyle` (PR-12: H-01, H-02, G-09, H-12)
 - ![Planned][planned] Physics, sound and script lifecycle on EnTT hooks — no ghost collider, `on_destroy` always

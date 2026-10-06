@@ -10,6 +10,7 @@
 
 #include "../EntitySnapshot.h"
 #include "../UndoCommand.h"
+#include "PrefabCommands.h"
 
 #include <cstddef>
 #include <string>
@@ -49,6 +50,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Attach the prefab override marks the edit changed, restored with the entity on undo / redo.
+	 * @param[in] iChange The override change.
+	 */
+	void setPrefabOverrides(PrefabOverrideChange iChange);
+
+	/**
+	 * @brief
 	 *  Undo.
 	 * @param[in,out] ioScene The target scene the action is applied to.
 	 */
@@ -75,6 +83,8 @@ private:
 	EntitySnapshot m_after;
 	/// Component display name.
 	std::string m_componentName;
+	/// Prefab override marks changed by the edit.
+	PrefabOverrideChange m_overrides;
 };
 /**
  * @brief
@@ -109,6 +119,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Attach the prefab override marks the edit changed, restored with the entity on undo / redo.
+	 * @param[in] iChange The override change.
+	 */
+	void setPrefabOverrides(PrefabOverrideChange iChange);
+
+	/**
+	 * @brief
 	 *  Undo.
 	 * @param[in,out] ioScene The target scene the action is applied to.
 	 */
@@ -135,6 +152,8 @@ private:
 	EntitySnapshot m_after;
 	/// Component display name.
 	std::string m_componentName;
+	/// Prefab override marks changed by the edit.
+	PrefabOverrideChange m_overrides;
 };
 /**
  * @brief
@@ -167,6 +186,13 @@ public:
 	 *  Destructor.
 	 */
 	~ModifyEntityCommand() override;
+
+	/**
+	 * @brief
+	 *  Attach the prefab override marks the edit changed, restored with the entity on undo / redo.
+	 * @param[in] iChange The override change.
+	 */
+	void setPrefabOverrides(PrefabOverrideChange iChange);
 
 	/**
 	 * @brief
@@ -219,6 +245,8 @@ private:
 	EntitySnapshot m_after;
 	/// Human-readable label shown in the Edit menu undo/redo entries.
 	std::string m_description;
+	/// Prefab override marks changed by the edit.
+	PrefabOverrideChange m_overrides;
 };
 
 }// namespace owl::nest::commands

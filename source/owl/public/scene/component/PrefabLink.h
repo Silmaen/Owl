@@ -12,6 +12,7 @@
 #include "core/UUID.h"
 
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -42,9 +43,54 @@ struct OWL_API PrefabLink {
 
 	/**
 	 * Per-component override keys. Format: "canonicalUUID:ComponentKey".
-	 * Components in this list are preserved during prefab update propagation.
+	 * A listed component keeps its instance state (present, absent or modified) when the prefab is
+	 * applied. The Transform of the instance root is always kept and never listed.
 	 */
 	std::vector<std::string> overriddenComponents;
+
+	/**
+	 * @brief
+	 *  Build the override key of a component of a prefab entity.
+	 * @param[in] iCanonicalUuid Canonical prefab UUID of the entity.
+	 * @param[in] iComponentKey YAML key of the component (e.g. "SpriteRenderer").
+	 * @return The key, formatted as "canonicalUUID:ComponentKey".
+	 */
+	[[nodiscard]] static auto overrideKey(uint64_t iCanonicalUuid, const std::string& iComponentKey) -> std::string;
+
+	/**
+	 * @brief
+	 *  Find the canonical prefab UUID of an instance entity.
+	 * @param[in] iInstanceUuid Instance entity UUID.
+	 * @return The canonical UUID, or nullopt when the entity is not part of this instance.
+	 */
+	[[nodiscard]] auto findCanonicalUuid(uint64_t iInstanceUuid) const -> std::optional<uint64_t>;
+
+	/**
+	 * @brief
+	 *  Check whether a component of a prefab entity is overridden on this instance.
+	 * @param[in] iCanonicalUuid Canonical prefab UUID of the entity.
+	 * @param[in] iComponentKey YAML key of the component.
+	 * @return True when the component is overridden.
+	 */
+	[[nodiscard]] auto isOverridden(uint64_t iCanonicalUuid, const std::string& iComponentKey) const -> bool;
+
+	/**
+	 * @brief
+	 *  Mark a component of a prefab entity as overridden.
+	 * @param[in] iCanonicalUuid Canonical prefab UUID of the entity.
+	 * @param[in] iComponentKey YAML key of the component.
+	 * @return True when the override was added, false when it already existed.
+	 */
+	auto setOverridden(uint64_t iCanonicalUuid, const std::string& iComponentKey) -> bool;
+
+	/**
+	 * @brief
+	 *  Remove the override mark of a component of a prefab entity.
+	 * @param[in] iCanonicalUuid Canonical prefab UUID of the entity.
+	 * @param[in] iComponentKey YAML key of the component.
+	 * @return True when an override was removed.
+	 */
+	auto clearOverride(uint64_t iCanonicalUuid, const std::string& iComponentKey) -> bool;
 
 	/**
 	 * @brief

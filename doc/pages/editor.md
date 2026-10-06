@@ -296,7 +296,7 @@ menu with the following actions:
 | Duplicate Subtree    | Recursively duplicate the entity and all descendants      |
 | Create Prefab...     | Save the entity subtree as a `.owlprefab` file            |
 | Update from Prefab   | Refresh non-overridden components from the prefab file    |
-| Revert to Prefab     | Reset all overrides, making the instance match the prefab |
+| Revert to Prefab     | Reset all overrides (the instance placement is kept)      |
 | Unlink Prefab        | Remove the PrefabLink, turning it into a regular entity   |
 | Unparent             | Move the entity to root level, preserving world transform |
 | Delete               | Remove the entity, reparenting children to grandparent    |
@@ -332,7 +332,8 @@ Each component has a collapsible header with a dedicated editor widget:
 - **Lua Script** -- Script asset path, editable property list
 - **Canvas** -- UI container for screen-space overlay elements
 - **UI Rect / Text / Image / Panel / Button / Slider / Progress Bar** -- In-game UI elements
-- **Prefab Link** -- Read-only display: source asset path, synced version, mapped entity count
+- **Prefab Link** -- Read-only display: source asset path, synced version, mapped entity count,
+  override count
 
 **Add Component.** The "Add Component" button at the bottom opens a dropdown listing
 all optional component types that the entity does not already have.
@@ -762,19 +763,34 @@ new entities with fresh UUIDs and adds a `PrefabLink` component to the root enti
 link stores the source asset path and a UUID mapping connecting each instance entity to its
 canonical prefab counterpart.
 
+### Overrides
+
+Editing an entity of a prefab instance marks the edited component as an **override** of the prefab:
+an inspector edit, a gizmo move, a rename, adding or removing a component, routing to a layer. The
+Transform of the instance root is never an override: the placement of an instance always belongs to
+the instance.
+
+An overridden component shows an accent bar on its header in the Properties panel (hover it for a
+tooltip). Its **+** menu offers **Revert this component**, which takes the prefab state back and clears
+the override; an overridden name shows a **Revert name** button. Undoing an edit also removes the
+override it created.
+
 ### Updating Instances
 
 When the source `.owlprefab` file is edited (e.g., by modifying the original entity and
-re-creating the prefab), instances can be updated:
+re-creating the prefab), instances can be updated in place, keeping their hierarchy and placement:
 
-- **Update from Prefab** -- Refreshes all components that have not been locally overridden.
-  Components that were modified on the instance are preserved.
-- **Revert to Prefab** -- Clears all local overrides and resets the instance to match the
-  prefab exactly.
+- **Update from Prefab** -- Refreshes every component that is not overridden. Entities added to
+  the prefab appear under their parent, entities removed from it are deleted, and entities added
+  to the instance only stay.
+- **Revert to Prefab** -- Clears all overrides and makes the instance match the prefab, except for
+  the placement of its root.
 - **Unlink Prefab** -- Removes the `PrefabLink` component, turning the instance into a
   standalone entity subtree with no connection to the source file.
 
-All prefab operations are fully undoable.
+All prefab operations are fully undoable, Unlink included. The sample project's
+`platformer_house.owl` holds two instances of `prefabs/coin_pair.owlprefab`; the second one overrides
+the colour of its right coin.
 
 ## Toolbar
 

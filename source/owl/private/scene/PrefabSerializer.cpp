@@ -23,7 +23,9 @@
 #include <exception>
 #include <format>
 #include <fstream>
+#include <functional>
 #include <queue>
+#include <ranges>
 
 namespace owl::scene {
 
@@ -274,120 +276,246 @@ auto loadPrefabToTempScene(const std::filesystem::path& iFilepath) -> std::optio
 	}
 }
 
-auto buildCanonicalYamlMap(const Scene& iPrefabScene) -> std::unordered_map<uint64_t, std::string> {
-	std::unordered_map<uint64_t, std::string> result;
+auto findPrefabRoot(const Scene& iPrefabScene) -> Entity {
 	for (const auto& entity: iPrefabScene.getAllEntities()) {
-		if (!entity)
-			continue;
-		result[static_cast<uint64_t>(entity.getUUID())] = SceneSerializer::serializeEntityToString(entity);
+		if (entity.getComponent<component::Hierarchy>().parentId == core::UUID{0})
+			return entity;
 	}
-	return result;
+	return {};
 }
 
-auto isOverridden(const std::vector<std::string>& iOverrides, uint64_t iCanonicalUuid, const std::string& iComponentKey)
-		-> bool {
-	const auto key = std::format("{}:{}", iCanonicalUuid, iComponentKey);
-	return std::ranges::find(iOverrides, key) != iOverrides.end();
+auto loadEntityNode(const Entity& iEntity) -> YAML::Node {
+	return YAML::Load(SceneSerializer::serializeEntityToString(iEntity));
+}
+
+auto collectComponentKeys(const YAML::Node& iFirst, const YAML::Node& iSecond) -> std::vector<std::string> {
+	std::vector<std::string> keys;
+	for (const auto& node: {iFirst, iSecond}) {
+		for (const auto& entry: node) {
+			auto key = entry.first.as<std::string>();
+			if (key != "Entity" && key != component::Hierarchy::key() && std::ranges::find(keys, key) == keys.end())
+				keys.push_back(std::move(key));
+		}
+	}
+	return keys;
+}
+
+auto mergeEntityYaml(const core::UUID iUuid, const YAML::Node& iPrefab, const YAML::Node& iInstance,
+					 const std::function<auto(const std::string&)->bool>& iKeepInstance) -> std::string {
+	YAML::Emitter out;
+	out << YAML::BeginMap;
+	out << YAML::Key << "Entity" << YAML::Value << static_cast<uint64_t>(iUuid);
+	for (const auto& key: collectComponentKeys(iPrefab, iInstance)) {
+		const auto& source = iKeepInstance(key) ? iInstance : iPrefab;
+		if (const auto node = source[key]; node)
+			out << YAML::Key << key << YAML::Value << node;
+	}
+	out << YAML::EndMap;
+	return out.c_str();
+}
+
+auto isInstancePlacement(const bool iIsRoot, const std::string& iComponentKey) -> bool {
+	return iIsRoot && iComponentKey == component::Transform::key();
+}
+
+auto keepsInstanceState(const component::PrefabLink& iLink, const uint64_t iCanonicalUuid, const std::string& iKey,
+						const bool iIsRoot) -> bool {
+	return iKey == component::PrefabLink::key() || isInstancePlacement(iIsRoot, iKey) ||
+		   iLink.isOverridden(iCanonicalUuid, iKey);
+}
+
+auto createInstanceEntity(Scene& ioScene, const Entity& iPrefabEntity,
+						  const std::unordered_map<uint64_t, uint64_t>& iCanonicalToInstance) -> Entity {
+	const auto entity = ioScene.createEntity(iPrefabEntity.getName());
+	const auto canonicalParent = static_cast<uint64_t>(iPrefabEntity.getComponent<component::Hierarchy>().parentId);
+	const auto found = iCanonicalToInstance.find(canonicalParent);
+	if (found == iCanonicalToInstance.end())
+		return entity;
+	if (const auto parent = ioScene.findEntityByUUID(core::UUID{found->second}); parent) {
+		entity.getComponent<component::Hierarchy>().parentId = parent.getUUID();
+		parent.getComponent<component::Hierarchy>().childrenIds.push_back(entity.getUUID());
+	}
+	return entity;
+}
+
+auto pruneOverrides(const std::vector<std::string>& iOverrides,
+					const std::vector<component::PrefabLink::UuidMapEntry>& iMapping) -> std::vector<std::string> {
+	std::vector<std::string> kept;
+	for (const auto& key: iOverrides) {
+		const bool alive = std::ranges::any_of(iMapping, [&key](const auto& iEntry) -> bool {
+			return key.starts_with(std::format("{}:", iEntry.canonicalUuid));
+		});
+		if (alive)
+			kept.push_back(key);
+	}
+	return kept;
 }
 
 }// namespace
 
 auto PrefabSerializer::applyToInstance(const std::filesystem::path& iFilepath, const Entity& ioInstanceRoot,
 									   Scene& ioScene) -> bool {
-	if (!ioInstanceRoot || !ioInstanceRoot.hasComponent<component::PrefabLink>())
+	if (!ioInstanceRoot || !ioInstanceRoot.hasComponent<component::PrefabLink>()) {
+		OWL_CORE_WARN("Prefab: Cannot apply a prefab to an entity that is not a prefab instance root.")
 		return false;
+	}
 	const auto loaded = loadPrefabToTempScene(iFilepath);
 	if (!loaded.has_value()) {
-		OWL_CORE_ERROR("Failed to load prefab for update: {}.", iFilepath.string())
+		OWL_CORE_ERROR("Prefab: Failed to load '{}' for update.", iFilepath.string())
+		return false;
+	}
+	const auto prefabRoot = findPrefabRoot(*loaded->scene);
+	if (!prefabRoot) {
+		OWL_CORE_ERROR("Prefab: '{}' has no root entity.", iFilepath.string())
 		return false;
 	}
 
-	// NOLINTNEXTLINE(performance-unnecessary-copy-initialization)
-	const auto prefabLink = ioInstanceRoot.getComponent<component::PrefabLink>();
-	const auto canonicalYaml = buildCanonicalYamlMap(*loaded->scene);
-	for (const auto& [instanceUuid, canonicalUuid]: prefabLink.uuidMapping) {
-		auto instanceEntity = ioScene.findEntityByUUID(core::UUID{instanceUuid});
-		if (!instanceEntity)
-			continue;
-		const auto it = canonicalYaml.find(canonicalUuid);
-		if (it == canonicalYaml.end())
-			continue;
-		// Parse the prefab entity YAML to get individual component nodes.
-		const auto prefabNode = YAML::Load(it->second);
-		// Serialize the instance entity for comparison.
-		const auto instanceYaml = SceneSerializer::serializeEntityToString(instanceEntity);
-		const auto instanceNode = YAML::Load(instanceYaml);
-		// Rebuild the entity from prefab YAML, keeping overridden parts from instance.
-		YAML::Emitter mergedEmitter;
-		mergedEmitter << YAML::BeginMap;
-		mergedEmitter << YAML::Key << "Entity" << YAML::Value << instanceUuid;
-		// Write components: use prefab for non-overridden, instance for overridden.
-		for (const auto& compEntry: prefabNode) {
-			const auto compKey = compEntry.first.as<std::string>();
-			if (compKey == "Entity")
-				continue;
-			if (compKey == "Tag") {
-				// Preserve instance name.
-				if (instanceNode["Tag"])
-					mergedEmitter << YAML::Key << "Tag" << YAML::Value << instanceNode["Tag"];
-				else
-					mergedEmitter << YAML::Key << "Tag" << YAML::Value << compEntry.second;
-				continue;
-			}
-			if (compKey == "Hierarchy") {
-				// Preserve instance hierarchy.
-				if (instanceNode["Hierarchy"])
-					mergedEmitter << YAML::Key << "Hierarchy" << YAML::Value << instanceNode["Hierarchy"];
-				continue;
-			}
-			if (compKey == "PrefabLink") {
-				continue;// PrefabLink is managed separately, not from the prefab file.
-			}
-			if (isOverridden(prefabLink.overriddenComponents, canonicalUuid, compKey)) {
-				// Use instance version.
-				if (instanceNode[compKey])
-					mergedEmitter << YAML::Key << compKey << YAML::Value << instanceNode[compKey];
-			} else {
-				// Use prefab version.
-				mergedEmitter << YAML::Key << compKey << YAML::Value << compEntry.second;
-			}
-		}
-		// Add instance-only components not in prefab (e.g., components added to instance only).
-		for (const auto& instEntry: instanceNode) {
-			const auto compKey = instEntry.first.as<std::string>();
-			if (compKey == "Entity" || compKey == "PrefabLink")
-				continue;
-			if (!prefabNode[compKey])
-				mergedEmitter << YAML::Key << compKey << YAML::Value << instEntry.second;
-		}
-		mergedEmitter << YAML::EndMap;
-		// Replace the instance entity.
-		ioScene.destroyEntity(instanceEntity);
-		const auto sceneRef = shared<Scene>(shared<Scene>{}, &ioScene);
-		std::ignore = SceneSerializer::deserializeEntityFromString(sceneRef, mergedEmitter.c_str());
+	// NOLINTNEXTLINE(performance-unnecessary-copy-initialization) the link is rewritten at the end.
+	const auto link = ioInstanceRoot.getComponent<component::PrefabLink>();
+	const auto rootUuid = static_cast<uint64_t>(ioInstanceRoot.getUUID());
+	std::unordered_map<uint64_t, uint64_t> canonicalToInstance;
+	for (const auto& [instanceUuid, canonicalUuid]: link.uuidMapping) {
+		if (instanceUuid != rootUuid && ioScene.findEntityByUUID(core::UUID{instanceUuid}))
+			canonicalToInstance.emplace(canonicalUuid, instanceUuid);
 	}
-	// Rebuild hierarchy and restore PrefabLink.
-	ioScene.rebuildHierarchyChildren();
-	// Re-add PrefabLink (it was on the root, which was destroyed and recreated).
-	auto newRoot = ioScene.findEntityByUUID(core::UUID{prefabLink.uuidMapping[0].instanceUuid});
-	if (newRoot) {
-		auto& newLink = newRoot.hasComponent<component::PrefabLink>() ? newRoot.getComponent<component::PrefabLink>()
-																	  : newRoot.addComponent<component::PrefabLink>();
-		newLink = prefabLink;
-		newLink.syncedVersion = loaded->version;
+	canonicalToInstance[static_cast<uint64_t>(prefabRoot.getUUID())] = rootUuid;
+
+	std::vector<component::PrefabLink::UuidMapEntry> mapping;
+	for (const auto& prefabEntity: collectSubtreeBFS(prefabRoot, *loaded->scene)) {
+		const auto canonicalUuid = static_cast<uint64_t>(prefabEntity.getUUID());
+		const bool isRoot = prefabEntity == prefabRoot;
+		Entity instanceEntity;
+		if (const auto found = canonicalToInstance.find(canonicalUuid); found != canonicalToInstance.end())
+			instanceEntity = ioScene.findEntityByUUID(core::UUID{found->second});
+		YAML::Node instanceNode{YAML::NodeType::Map};
+		if (instanceEntity) {
+			instanceNode = loadEntityNode(instanceEntity);
+		} else {
+			instanceEntity = createInstanceEntity(ioScene, prefabEntity, canonicalToInstance);
+			canonicalToInstance[canonicalUuid] = static_cast<uint64_t>(instanceEntity.getUUID());
+		}
+		const auto merged = mergeEntityYaml(
+				instanceEntity.getUUID(), loadEntityNode(prefabEntity), instanceNode,
+				[&](const std::string& iKey) -> bool { return keepsInstanceState(link, canonicalUuid, iKey, isRoot); });
+		if (!SceneSerializer::applyEntityFromString(instanceEntity, merged))
+			OWL_CORE_WARN("Prefab: Entity {} of '{}' could not be updated.", canonicalUuid, iFilepath.string())
+		mapping.push_back(
+				{.instanceUuid = static_cast<uint64_t>(instanceEntity.getUUID()), .canonicalUuid = canonicalUuid});
 	}
+
+	for (const auto& entry: std::views::reverse(link.uuidMapping)) {
+		if (entry.instanceUuid == rootUuid ||
+			std::ranges::find(mapping, entry.instanceUuid, &component::PrefabLink::UuidMapEntry::instanceUuid) !=
+					mapping.end())
+			continue;
+		if (auto stale = ioScene.findEntityByUUID(core::UUID{entry.instanceUuid}); stale)
+			ioScene.destroyEntity(stale);
+	}
+
+	auto& updatedLink = ioInstanceRoot.getComponent<component::PrefabLink>();
+	updatedLink.overriddenComponents = pruneOverrides(link.overriddenComponents, mapping);
+	updatedLink.uuidMapping = std::move(mapping);
+	updatedLink.syncedVersion = loaded->version;
 	return true;
 }
 
 auto PrefabSerializer::revertInstance(const std::filesystem::path& iFilepath, const Entity& ioInstanceRoot,
 									  Scene& ioScene) -> bool {
-	if (!ioInstanceRoot || !ioInstanceRoot.hasComponent<component::PrefabLink>())
+	if (!ioInstanceRoot || !ioInstanceRoot.hasComponent<component::PrefabLink>()) {
+		OWL_CORE_WARN("Prefab: Cannot revert an entity that is not a prefab instance root.")
 		return false;
+	}
+	auto& overrides = ioInstanceRoot.getComponent<component::PrefabLink>().overriddenComponents;
+	auto saved = std::move(overrides);
+	overrides.clear();
+	if (applyToInstance(iFilepath, ioInstanceRoot, ioScene))
+		return true;
+	OWL_CORE_WARN("Prefab: Revert of '{}' failed, overrides kept.", iFilepath.string())
+	ioInstanceRoot.getComponent<component::PrefabLink>().overriddenComponents = std::move(saved);
+	return false;
+}
 
-	// Clear all overrides and apply.
-	auto& prefabLink = ioInstanceRoot.getComponent<component::PrefabLink>();
-	prefabLink.overriddenComponents.clear();
-	return applyToInstance(iFilepath, ioInstanceRoot, ioScene);
+auto PrefabSerializer::revertComponent(const std::filesystem::path& iFilepath, const Entity& iInstanceRoot,
+									   const Entity& iEntity, const std::string& iComponentKey) -> bool {
+	if (!iInstanceRoot || !iInstanceRoot.hasComponent<component::PrefabLink>() || !iEntity) {
+		OWL_CORE_WARN("Prefab: Cannot revert a component outside a prefab instance.")
+		return false;
+	}
+	if (iComponentKey == component::Hierarchy::key() || iComponentKey == component::PrefabLink::key() ||
+		isInstancePlacement(iEntity == iInstanceRoot, iComponentKey)) {
+		OWL_CORE_WARN("Prefab: Component {} belongs to the instance and cannot be reverted.", iComponentKey)
+		return false;
+	}
+	auto& link = iInstanceRoot.getComponent<component::PrefabLink>();
+	const auto canonicalUuid = link.findCanonicalUuid(static_cast<uint64_t>(iEntity.getUUID()));
+	if (!canonicalUuid.has_value()) {
+		OWL_CORE_WARN("Prefab: Entity {} is not part of the instance.", static_cast<uint64_t>(iEntity.getUUID()))
+		return false;
+	}
+	const auto loaded = loadPrefabToTempScene(iFilepath);
+	if (!loaded.has_value()) {
+		OWL_CORE_ERROR("Prefab: Failed to load '{}' for a component revert.", iFilepath.string())
+		return false;
+	}
+	const auto prefabEntity = loaded->scene->findEntityByUUID(core::UUID{*canonicalUuid});
+	if (!prefabEntity) {
+		OWL_CORE_WARN("Prefab: Entity {} no longer exists in '{}'.", *canonicalUuid, iFilepath.string())
+		return false;
+	}
+	const auto merged =
+			mergeEntityYaml(iEntity.getUUID(), loadEntityNode(prefabEntity), loadEntityNode(iEntity),
+							[&iComponentKey](const std::string& iKey) -> bool { return iKey != iComponentKey; });
+	if (!SceneSerializer::applyEntityFromString(iEntity, merged)) {
+		OWL_CORE_WARN("Prefab: Component {} could not be reverted.", iComponentKey)
+		return false;
+	}
+	link.clearOverride(*canonicalUuid, iComponentKey);
+	return true;
+}
+
+auto PrefabSerializer::findInstanceRoot(const Entity& iEntity, const Scene& iScene) -> Entity {
+	if (!iEntity)
+		return {};
+	const auto uuid = static_cast<uint64_t>(iEntity.getUUID());
+	Entity current = iEntity;
+	while (current) {
+		if (current.hasComponent<component::PrefabLink>() &&
+			current.getComponent<component::PrefabLink>().findCanonicalUuid(uuid).has_value())
+			return current;
+		const auto parentId = current.getComponent<component::Hierarchy>().parentId;
+		if (parentId == core::UUID{0})
+			break;
+		current = iScene.findEntityByUUID(parentId);
+	}
+	return {};
+}
+
+auto PrefabSerializer::recordOverrides(const Entity& iEntity, const Scene& iScene, const std::string& iBeforeYaml)
+		-> bool {
+	const auto root = findInstanceRoot(iEntity, iScene);
+	if (!root)
+		return false;
+	auto& link = root.getComponent<component::PrefabLink>();
+	const auto canonicalUuid = link.findCanonicalUuid(static_cast<uint64_t>(iEntity.getUUID())).value_or(0);
+	try {
+		const auto before = YAML::Load(iBeforeYaml);
+		const auto after = loadEntityNode(iEntity);
+		bool recorded = false;
+		for (const auto& key: collectComponentKeys(before, after)) {
+			if (key == component::PrefabLink::key() || isInstancePlacement(root == iEntity, key))
+				continue;
+			const auto previous = before[key];
+			const auto current = after[key];
+			const bool changed = static_cast<bool>(previous) != static_cast<bool>(current) ||
+								 (previous && YAML::Dump(previous) != YAML::Dump(current));
+			if (changed && link.setOverridden(canonicalUuid, key))
+				recorded = true;
+		}
+		return recorded;
+	} catch (const std::exception& e) {
+		OWL_CORE_WARN("Prefab: Cannot compare entity states to record overrides: {}.", e.what())
+		return false;
+	}
 }
 
 }// namespace owl::scene

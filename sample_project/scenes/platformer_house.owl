@@ -1051,6 +1051,218 @@ Entities:
     gameVisible: true
   LuaScript:
     scriptPath: scripts/coin.lua
+- Entity: 3000000000000000501
+  Tag:
+    tag: CoinPairA
+  Transform:
+    translation:
+    - 12.5
+    - -11.0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+  PrefabLink:
+    prefabAssetPath: prefabs/coin_pair.owlprefab
+    syncedVersion: 1
+    uuidMapping:
+    - inst: 3000000000000000501
+      canon: 5100000000000000001
+    - inst: 3000000000000000502
+      canon: 5100000000000000002
+    - inst: 3000000000000000503
+      canon: 5100000000000000003
+- Entity: 3000000000000000502
+  Tag:
+    tag: CoinLeft
+  Transform:
+    translation:
+    - -0.800000012
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.699999988
+    - 0.699999988
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/animated_coin.png
+    columns: 6
+    rows: 3
+    firstFrame: 0
+    lastFrame: 17
+    frameDuration: 0.0799999982
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000501
+  LuaScript:
+    scriptPath: scripts/coin.lua
+- Entity: 3000000000000000503
+  Tag:
+    tag: CoinRight
+  Transform:
+    translation:
+    - 0.800000012
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.699999988
+    - 0.699999988
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/animated_coin.png
+    columns: 6
+    rows: 3
+    firstFrame: 0
+    lastFrame: 17
+    frameDuration: 0.0799999982
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000501
+  LuaScript:
+    scriptPath: scripts/coin.lua
+- Entity: 3000000000000000511
+  Tag:
+    tag: CoinPairB
+  Transform:
+    translation:
+    - 35.5
+    - -12.0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+  PrefabLink:
+    prefabAssetPath: prefabs/coin_pair.owlprefab
+    syncedVersion: 1
+    uuidMapping:
+    - inst: 3000000000000000511
+      canon: 5100000000000000001
+    - inst: 3000000000000000512
+      canon: 5100000000000000002
+    - inst: 3000000000000000513
+      canon: 5100000000000000003
+    overrides:
+    - 5100000000000000003:AnimatedSpriteRenderer
+- Entity: 3000000000000000512
+  Tag:
+    tag: CoinLeft
+  Transform:
+    translation:
+    - -0.800000012
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.699999988
+    - 0.699999988
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/animated_coin.png
+    columns: 6
+    rows: 3
+    firstFrame: 0
+    lastFrame: 17
+    frameDuration: 0.0799999982
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000511
+  LuaScript:
+    scriptPath: scripts/coin.lua
+- Entity: 3000000000000000513
+  Tag:
+    tag: CoinRight
+  Transform:
+    translation:
+    - 0.800000012
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.699999988
+    - 0.699999988
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 0.800000012
+    - 0.300000012
+    - 1
+    texture: nam:textures/animated_coin.png
+    columns: 6
+    rows: 3
+    firstFrame: 0
+    lastFrame: 17
+    frameDuration: 0.0799999982
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 3000000000000000511
+  LuaScript:
+    scriptPath: scripts/coin.lua
 - Entity: 3000000000000000050
   Tag:
     tag: VictoryZone

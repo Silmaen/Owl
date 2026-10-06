@@ -1,0 +1,98 @@
+Prefab: CoinPair
+Version: 1
+Entities:
+- Entity: 5100000000000000001
+  Tag:
+    tag: CoinPair
+  Transform:
+    translation:
+    - 0
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 1
+    - 1
+    - 1
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}
+- Entity: 5100000000000000002
+  Tag:
+    tag: CoinLeft
+  Transform:
+    translation:
+    - -0.800000012
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.699999988
+    - 0.699999988
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/animated_coin.png
+    columns: 6
+    rows: 3
+    firstFrame: 0
+    lastFrame: 17
+    frameDuration: 0.0799999982
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 5100000000000000001
+  LuaScript:
+    scriptPath: scripts/coin.lua
+- Entity: 5100000000000000003
+  Tag:
+    tag: CoinRight
+  Transform:
+    translation:
+    - 0.800000012
+    - 0
+    - 0
+    rotation:
+    - 0
+    - 0
+    - 0
+    scale:
+    - 0.699999988
+    - 0.699999988
+    - 1
+  AnimatedSpriteRenderer:
+    color:
+    - 1
+    - 1
+    - 1
+    - 1
+    texture: nam:textures/animated_coin.png
+    columns: 6
+    rows: 3
+    firstFrame: 0
+    lastFrame: 17
+    frameDuration: 0.0799999982
+    loop: true
+  Trigger:
+    Type: LuaCallback
+    CallbackName: on_coin_collected
+  Visibility:
+    gameVisible: true
+  Hierarchy:
+    parentId: 5100000000000000001
+  LuaScript:
+    scriptPath: scripts/coin.lua

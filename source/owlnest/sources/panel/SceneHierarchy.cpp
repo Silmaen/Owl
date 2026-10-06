@@ -59,6 +59,69 @@ auto findPrefabRoot(const scene::Entity& iEntity, const scene::Scene& iScene) ->
 	return {};
 }
 
+auto resolvePrefabPath(const PrefabLink& iLink) -> std::filesystem::path {
+	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+		if (auto candidate = assetsPath / iLink.prefabAssetPath; exists(candidate))
+			return candidate;
+	}
+	return {};
+}
+
+auto isComponentOverridden(const scene::Entity& iEntity, const std::string& iComponentKey) -> bool {
+	const auto* scene = iEntity.getScene();
+	if (scene == nullptr)
+		return false;
+	const auto root = scene::PrefabSerializer::findInstanceRoot(iEntity, *scene);
+	if (!root)
+		return false;
+	const auto& link = root.getComponent<PrefabLink>();
+	const auto canonical = link.findCanonicalUuid(static_cast<uint64_t>(iEntity.getUUID()));
+	return canonical.has_value() && link.isOverridden(*canonical, iComponentKey);
+}
+
+auto recordOverrides(const scene::Entity& iEntity, const std::string& iBeforeYaml) -> commands::PrefabOverrideChange {
+	const auto* scene = iEntity.getScene();
+	if (scene == nullptr)
+		return {};
+	return commands::PrefabOverrideChange::record(iEntity, *scene, iBeforeYaml);
+}
+
+void revertComponentToPrefab(const scene::Entity& iEntity, const std::string& iComponentKey, const char* iLabel,
+							 SceneUndoManager* iUndoManager) {
+	const auto* scene = iEntity.getScene();
+	if (scene == nullptr)
+		return;
+	const auto root = scene::PrefabSerializer::findInstanceRoot(iEntity, *scene);
+	if (!root)
+		return;
+	const auto prefabPath = resolvePrefabPath(root.getComponent<PrefabLink>());
+	if (prefabPath.empty()) {
+		OWL_WARN("Prefab {} not found in the asset directories.", root.getComponent<PrefabLink>().prefabAssetPath)
+		return;
+	}
+	auto before = EntitySnapshot::capture(iEntity);
+	auto change = commands::PrefabOverrideChange::capture(iEntity, *scene);
+	if (!scene::PrefabSerializer::revertComponent(prefabPath, root, iEntity, iComponentKey))
+		return;
+	change.captureAfter(*scene);
+	if (iUndoManager == nullptr)
+		return;
+	auto cmd = mkUniq<commands::ModifyEntityCommand>(iEntity.getUUID(), std::move(before),
+													 std::format("Revert {} to Prefab", iLabel));
+	cmd->captureAfter(iEntity);
+	cmd->setPrefabOverrides(std::move(change));
+	iUndoManager->push(std::move(cmd));
+}
+
+void drawOverrideMarker() {
+	const auto itemMin = ImGui::GetItemRectMin();
+	const auto itemMax = ImGui::GetItemRectMax();
+	ImGui::GetWindowDrawList()->AddRectFilled(itemMin, {itemMin.x + 3.0f, itemMax.y},
+											  ImGui::GetColorU32(ImGuiCol_CheckMark));
+	if (ImGui::IsItemHovered())
+		ImGui::SetTooltip("Overrides the prefab: kept by Update from Prefab");
+}
+
 auto componentIconName(const char* iCompName) -> const char* {
 	static const std::unordered_map<std::string_view, const char*> map = {
 			{"Transform", "comp_transform"},     {"Camera", "comp_camera"},
@@ -187,16 +250,18 @@ void SceneHierarchy::renderRootEntities() {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
 				const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
 				if (auto e = m_context->findEntityByUUID(core::UUID{droppedUuid}); e) {
-					auto before = mp_undoManager != nullptr ? EntitySnapshot::capture(e) : EntitySnapshot{};
+					auto before = EntitySnapshot::capture(e);
 					if (e.getComponent<Hierarchy>().parentId != core::UUID{0})
 						m_context->unparent(e);
 					auto& tag = e.hasComponent<RendererTag>() ? e.getComponent<RendererTag>()
 															  : e.addComponent<RendererTag>();
 					tag.rendererName = name;
+					auto overrides = recordOverrides(e, before.yamlData);
 					if (mp_undoManager != nullptr) {
 						auto cmd = mkUniq<commands::ModifyEntityCommand>(e.getUUID(), std::move(before),
 																		 std::format("Route to layer '{}'", name));
 						cmd->captureAfter(e);
+						cmd->setPrefabOverrides(std::move(overrides));
 						mp_undoManager->push(std::move(cmd));
 					}
 				}
@@ -415,44 +480,31 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 	// --- Prefab ---
 	ImGui::Separator();
 	if (isPrefabRoot(iEntity)) {
-		const auto& link = iEntity.getComponent<PrefabLink>();
-		// Resolve the full path from asset directories.
-		std::filesystem::path prefabFullPath;
-		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-			if (const auto p = assetsPath / link.prefabAssetPath; exists(p)) {
-				prefabFullPath = p;
-				break;
-			}
-		}
+		const auto prefabFullPath = resolvePrefabPath(iEntity.getComponent<PrefabLink>());
 		const bool prefabExists = !prefabFullPath.empty();
 		if (ib.menuItem("prefab_icon", "Update from Prefab", nullptr, prefabExists)) {
 			auto before = SubtreeSnapshot::capture(iEntity, *m_context);
-			if (scene::PrefabSerializer::applyToInstance(prefabFullPath, iEntity, *m_context)) {
-				auto root = m_context->findEntityByUUID(before.entities[0].uuid);
-				if (root && mp_undoManager != nullptr) {
-					auto after = SubtreeSnapshot::capture(root, *m_context);
-					mp_undoManager->push(mkUniq<commands::ApplyPrefabCommand>(
-
-							std::move(before), std::move(after), "Update from Prefab"));
-				}
-			}
+			if (scene::PrefabSerializer::applyToInstance(prefabFullPath, iEntity, *m_context) &&
+				mp_undoManager != nullptr)
+				mp_undoManager->push(mkUniq<commands::ApplyPrefabCommand>(
+						std::move(before), SubtreeSnapshot::capture(iEntity, *m_context), "Update from Prefab"));
 		}
 		if (ib.menuItem("prefab_icon", "Revert to Prefab", nullptr, prefabExists)) {
 			auto before = SubtreeSnapshot::capture(iEntity, *m_context);
-			if (scene::PrefabSerializer::revertInstance(prefabFullPath, iEntity, *m_context)) {
-				auto root = m_context->findEntityByUUID(before.entities[0].uuid);
-				if (root && mp_undoManager != nullptr) {
-					auto after = SubtreeSnapshot::capture(root, *m_context);
-					mp_undoManager->push(mkUniq<commands::ApplyPrefabCommand>(
-
-							std::move(before), std::move(after), "Revert to Prefab"));
-				}
-			}
+			if (scene::PrefabSerializer::revertInstance(prefabFullPath, iEntity, *m_context) &&
+				mp_undoManager != nullptr)
+				mp_undoManager->push(mkUniq<commands::ApplyPrefabCommand>(
+						std::move(before), SubtreeSnapshot::capture(iEntity, *m_context), "Revert to Prefab"));
 		}
 
 		ImGui::Separator();
-		if (ib.menuItem("prefab_icon", "Unlink Prefab"))
+		if (ib.menuItem("prefab_icon", "Unlink Prefab")) {
+			auto before = EntitySnapshot::capture(iEntity);
 			iEntity.removeComponent<PrefabLink>();
+			if (mp_undoManager != nullptr)
+				mp_undoManager->push(mkUniq<commands::RemoveComponentCommand>(
+						std::move(before), EntitySnapshot::capture(iEntity), PrefabLink::name()));
+		}
 
 		ImGui::Separator();
 	}
@@ -588,12 +640,14 @@ void addComponentPop(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, co
 		else
 			clicked = ImGui::MenuItem(Comp::name());
 		if (clicked) {
-			auto before = iUndoManager != nullptr ? EntitySnapshot::capture(ioEntity) : EntitySnapshot{};
+			auto before = EntitySnapshot::capture(ioEntity);
 			ioEntity.addComponent<Comp>();
+			auto overrides = recordOverrides(ioEntity, before.yamlData);
 			if (iUndoManager != nullptr) {
 				auto after = EntitySnapshot::capture(ioEntity);
-				iUndoManager->push(
-						mkUniq<commands::AddComponentCommand>(std::move(before), std::move(after), Comp::name()));
+				auto cmd = mkUniq<commands::AddComponentCommand>(std::move(before), std::move(after), Comp::name());
+				cmd->setPrefabOverrides(std::move(overrides));
+				iUndoManager->push(std::move(cmd));
 			}
 			ImGui::CloseCurrentPopup();
 		}
@@ -617,6 +671,9 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 		const auto* iconId = componentIconName(T::name());
 		const std::string label = iconId ? std::format("     {}", T::name()) : std::string(T::name());
 		const bool open = ImGui::TreeNodeEx(label.c_str(), treeNodeFlags);
+		const bool overridden = isComponentOverridden(ioEntity, T::key());
+		if (overridden)
+			drawOverrideMarker();
 
 		// Track which component header is currently hovered so F1 can open the matching help page.
 		if (ImGui::IsItemHovered())
@@ -643,35 +700,42 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 		if (ImGui::IsItemHovered())
 			ImGui::SetTooltip("Component Settings");
 		bool removeComponent = false;
+		bool revertComponent = false;
 		if (ImGui::BeginPopup("ComponentSettings")) {
+			if (overridden && ImGui::MenuItem("Revert this component"))
+				revertComponent = true;
 			if (ImGui::MenuItem("Remove component"))
 				removeComponent = true;
 			ImGui::EndPopup();
 		}
 		if (open) {
-			// Capture state before renderProps for undo tracking.
-			const auto beforeYaml =
-					iUndoManager != nullptr ? scene::SceneSerializer::serializeEntityToString(ioEntity) : std::string{};
+			const auto beforeYaml = scene::SceneSerializer::serializeEntityToString(ioEntity);
 			gui::component::renderProps(component);
-			if (iUndoManager != nullptr) {
-				const auto afterYaml = scene::SceneSerializer::serializeEntityToString(ioEntity);
-				if (beforeYaml != afterYaml) {
+			if (const auto afterYaml = scene::SceneSerializer::serializeEntityToString(ioEntity);
+				beforeYaml != afterYaml) {
+				auto overrides = recordOverrides(ioEntity, beforeYaml);
+				if (iUndoManager != nullptr) {
 					auto cmd = mkUniq<commands::ModifyEntityCommand>(ioEntity.getUUID(),
 																	 EntitySnapshot{ioEntity.getUUID(), beforeYaml},
 																	 std::format("Modify {}", T::name()));
 					cmd->captureAfter(ioEntity);
+					cmd->setPrefabOverrides(std::move(overrides));
 					iUndoManager->push(std::move(cmd));
 				}
 			}
 			ImGui::TreePop();
 		}
+		if (revertComponent)
+			revertComponentToPrefab(ioEntity, T::key(), T::name(), iUndoManager);
 		if (removeComponent) {
-			auto before = iUndoManager != nullptr ? EntitySnapshot::capture(ioEntity) : EntitySnapshot{};
+			auto before = EntitySnapshot::capture(ioEntity);
 			ioEntity.removeComponent<T>();
+			auto overrides = recordOverrides(ioEntity, before.yamlData);
 			if (iUndoManager != nullptr) {
 				auto after = EntitySnapshot::capture(ioEntity);
-				iUndoManager->push(
-						mkUniq<commands::RemoveComponentCommand>(std::move(before), std::move(after), T::name()));
+				auto cmd = mkUniq<commands::RemoveComponentCommand>(std::move(before), std::move(after), T::name());
+				cmd->setPrefabOverrides(std::move(overrides));
+				iUndoManager->push(std::move(cmd));
 			}
 		}
 		ImGui::PopID();
@@ -694,27 +758,35 @@ void drawComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoMan
 void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 	if (iEntity.hasComponent<Tag>()) {
 		auto& tag = iEntity.getComponent<Tag>().tag;
-		const auto beforeTag = mp_undoManager != nullptr ? tag : std::string{};
+		const auto frameTag = tag;
 		ImGui::InputText("##Tag", &tag);
-		if (mp_undoManager != nullptr && ImGui::IsItemDeactivatedAfterEdit() && tag != beforeTag) {
-			// Capture after state (tag already changed in-place by InputText).
-			auto cmd = mkUniq<commands::ModifyEntityCommand>(
-					iEntity.getUUID(),
-					EntitySnapshot{iEntity.getUUID(), scene::SceneSerializer::serializeEntityToString(iEntity)},
-					"Rename Entity");
-			// The "before" snapshot has the old tag — reconstruct it.
-			auto& tagRef = iEntity.getComponent<Tag>().tag;
-			const auto currentTag = tagRef;
-			tagRef = beforeTag;
-			cmd = mkUniq<commands::ModifyEntityCommand>(iEntity.getUUID(), EntitySnapshot::capture(iEntity),
-														"Rename Entity");
-			tagRef = currentTag;
-			cmd->captureAfter(iEntity);
-			mp_undoManager->push(std::move(cmd));
+		if (ImGui::IsItemActivated())
+			m_renameBefore = frameTag;
+		if (ImGui::IsItemDeactivatedAfterEdit() && m_renameBefore.has_value() && tag != *m_renameBefore) {
+			const auto currentTag = tag;
+			tag = *m_renameBefore;
+			auto before = EntitySnapshot::capture(iEntity);
+			tag = currentTag;
+			auto overrides = recordOverrides(iEntity, before.yamlData);
+			if (mp_undoManager != nullptr) {
+				auto cmd = mkUniq<commands::ModifyEntityCommand>(iEntity.getUUID(), std::move(before), "Rename Entity");
+				cmd->captureAfter(iEntity);
+				cmd->setPrefabOverrides(std::move(overrides));
+				mp_undoManager->push(std::move(cmd));
+			}
 		}
+		if (ImGui::IsItemDeactivated())
+			m_renameBefore.reset();
 	}
 	ImGui::SameLine();
 	ImGui::Text("Entity name");
+	if (isComponentOverridden(iEntity, Tag::key())) {
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Revert name"))
+			revertComponentToPrefab(iEntity, Tag::key(), "name", mp_undoManager);
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("The name overrides the prefab: revert it to the prefab name");
+	}
 
 	ImGui::PushItemWidth(-1);
 	{
