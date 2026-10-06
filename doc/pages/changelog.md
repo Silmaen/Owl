@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `PR Ready` composite TeamCity configuration: red when any ready-PR configuration is red, the single check to require on `main`.
 - Conan profiles for Windows MinGW (`windows-clang`, `windows-gcc`), DLLs deployed next to the binaries, provider selectable through `OWL_DEPENDENCY_PROVIDER` (environment and TeamCity parameter).
 - `Clang Static Analyzer` CI configuration (`ClangTidy -- --tool=analyzer`); both analyses close the TeamCity chain and are the checks to require on `main`.
 - `docker/run.sh` runs any build, test or CI command in the Docker build image (`--gui`, `--perf`).
@@ -23,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CI in two levels: Code Style and Include Check in parallel, then every build, sanitizer and analysis after Code Style only.
+- CI: `Experiment/*` pull requests run the fast subset only; secrets reach `ci_action.py` through `env.*` parameters; the CI flow is documented case by case (`main`, draft, ready, experiment, doc-only).
 - TeamCity DSL laid out like EvenementLoto's (`common/`, `build/`, `quality/`, `packaging/`), chain Code Style → builds → sanitizers → analyses → packages; PR builds named by their real branch; configs version 2026.2.
 - TeamCity follows the EvenementLoto model: findings annotated on the diff by default, PRs built from their `Feature/*` / `Experiment/*` head branch, packages never on a PR, no `/ci full` comment.
 - Roadmap rethought toward 1.0.0: v0.3.0 Foundations, renumbered releases, three reading levels (`ROADMAP.md`, `doc/pages/roadmap.md`, `doc/pages/design/`).
@@ -36,7 +39,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ClangTidy` runs one job per available core by default instead of a single process (`--jobs=N` still overrides).
 - Doxygen on Windows: `doc/fix_md_links.py` writes its output as UTF-8, the locale codepage could not encode the doc pages' `✅` / `❌`.
 - Installed OwlEngine package: headers under `include/` again, no `-Werror -Weverything` imposed on consumers, preset install prefix honoured.
+- **CI — teamcity-github-bridge 1.10.0 wiring**: `CodeStyle` findings are now printed as GNU-style diagnostics
+  (`path:line:col: error: <check>: …`), which the plugin pins to the pull request's diff as Check Run annotations;
+  annotations enabled on the four configurations with distinct diagnostics (Linux/Windows Clang, Clang-Tidy, Code
+  Style) so one error is not annotated six times; a PR changing only `doc/` / `*.md` / `.claude/` / `LICENSE` skips
+  the C++ matrix (Code Style and Windows x64 Clang, which builds Doxygen, still run); a draft build's verdict is
+  reused when the PR flips to ready (`skipIfCommitPassed`); `[skip ci]` in a PR title or body and a `/ci full`
+  review comment for the main-only configurations; Check Run names shortened to `Build / Linux x64 / Clang`; the
+  bridge no longer triggers on `main` — that stays TeamCity's VCS trigger. One `githubBridge()` builder replaces
+  the two ad-hoc `BridgeHelpers.kt` overrides.
+- Sanitizers now fail the build on their first report (`-fno-sanitize-recover=all`, `halt_on_error=1` set by ctest), sanitizer presets run the tests with `--gtest_shuffle`, and the UB job no longer captures a stack trace per allocation (its tests went from about 30 min to under 10 s).
+### Removed
+- LeakSanitizer preset, option and TeamCity job: on Linux ASan already reports leaks.
+- `PhysicCommand` no longer keeps a dangling `Scene*` once its scene is destroyed (`~Scene` releases the world through `PhysicCommand::releaseScene`), and the core, physics and renderer tests no longer depend on their order.
+- Memory tracker with `OWL_ENABLE_STACKTRACE`: an `AllocationInfo` built outside the tracker no longer deadlocks on cpptrace's mutex.
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
+
+### Security
+
+- CI secrets never reach argv or the log: publication and DepManager passwords come from `OWL_DEPLOY_PASSWORD` / `OWL_REMOTE_PASSWORD`, exported by the TeamCity step only, and `--password` / `--remote_passwd` are refused.
+- `ci.utils.secrets` masks every registered secret in every CI log record and the value of any sensitive flag in a logged command (`run_command`).
+- Publication no longer downloads and runs the server's `api.py`: the upload client lives in `ci/utils/publish.py`, runs in process and requires HTTPS.
+- `CodeStyle` gains a `secrets` sub-check that fails on a tracked `.env` or a committed key, token or URL password.
+- CMake configure no longer prints `.env` values, only their keys.
+- First Python tests of the CI tooling (`ci/tests/`, pytest) cover masking, publication and the secret scan.
 
 ## [0.2.1] - 2026-06-27
 

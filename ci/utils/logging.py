@@ -61,4 +61,8 @@ def setup_logging(level: int = logging.DEBUG) -> None:
         else:
             handler = logging.StreamHandler()
 
+    from ci.utils.secrets import SecretFilter
+
+    # Every record is masked at the handler, whatever logger emitted it.
+    handler.addFilter(SecretFilter())
     logging.basicConfig(level=level, handlers=[handler])

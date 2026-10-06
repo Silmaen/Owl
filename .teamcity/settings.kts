@@ -68,8 +68,9 @@ project {
     subProject(analysis)
     subProject(packaging)
 
-    // The order is the dependency chain, read top to bottom: the builds, the sanitizers
-    // that need them, the analyses that need those, then what ships.
+    // Two levels, as parallel as the agents allow. Level 1: Code Style and Include Check,
+    // which wait for nothing. Level 2: every build, sanitizer and analysis, after Code Style
+    // only. Packages run on `main` only, after the build that tested their platform.
     subProjectsOrder = arrayListOf(
             RelativeId("Build_LinuxX64"),
             RelativeId("Build_WindowsX64"),

@@ -13,8 +13,8 @@ class Build(BaseAction):
     """Build the project using CMake and Ninja for a given preset.
 
     Extra arguments (after ``--``):
-      * ``--remote_url`` / ``--remote_login`` / ``--remote_passwd`` /
-        ``--remote_name`` — optional. When ``remote_url`` is supplied, the
+      * ``--remote_url`` / ``--remote_login`` / ``--remote_name`` — optional
+        (password from ``OWL_REMOTE_PASSWORD``). When ``remote_url`` is supplied, the
         DepManager remote is registered (idempotent) before the CMake
         configure step. This lets a fresh TeamCity agent self-bootstrap in
         a single Build step without an extra ConfigureRemote stage. See

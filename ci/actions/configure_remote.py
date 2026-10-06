@@ -14,16 +14,17 @@ class ConfigureRemote(BaseAction):
         When omitted the action logs a no-op and returns 0 so the step can be
         wired into every build without breaking those that don't need it.
       * ``--remote_login=<login>`` — optional username for authenticated pulls.
-      * ``--remote_passwd=<passwd>`` — optional password; encrypted at rest by
-        depmanager in ``~/.edm/config.yaml``.
       * ``--remote_name=<name>`` — optional remote alias (default: ``default``).
+
+    The optional password is read from the ``OWL_REMOTE_PASSWORD`` environment
+    variable (encrypted at rest by depmanager in ``~/.edm/config.yaml``);
+    ``--remote_passwd`` is refused, a secret never goes on a command line.
 
     Typical TeamCity invocation::
 
+        OWL_REMOTE_PASSWORD='%remote_passwd%' \\
         poetry run python ci_action.py ConfigureRemote linux-clang-release \\
-            -- --remote_url=%depmanager.remote.url% \\
-               --remote_login=%depmanager.remote.login% \\
-               --remote_passwd=%depmanager.remote.passwd%
+            -- --remote_url=%remote_url% --remote_login=%remote_login%
 
     The action ignores the ``preset`` argument — it is required only because
     every action takes one, and keeping the signature uniform lets TeamCity
@@ -35,9 +36,9 @@ class ConfigureRemote(BaseAction):
 
         :param preset: Unused (kept for uniformity with other actions).
         :param extra_args: ``--remote_url`` / ``--remote_login`` /
-            ``--remote_passwd`` / ``--remote_name`` parameters.
+            ``--remote_name`` parameters.
         :return: 0 on success or when no URL was supplied; non-zero when
-            ``depmanager remote add`` failed.
+            the registration failed or a password was passed as an argument.
         """
 
         _ = preset  # action is preset-agnostic

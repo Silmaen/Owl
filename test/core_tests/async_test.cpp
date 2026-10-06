@@ -61,11 +61,16 @@ TEST(core_task, SchedulerTasks) {
 	{
 		Scheduler scheduler;
 		Timestep ts;
+		std::atomic_bool workDone = false;
 
-		scheduler.pushTask(Task([&] -> void {}, [&] -> void { counter++; }));
+		scheduler.pushTask(Task([&] -> void { workDone = true; }, [&] -> void { counter++; }));
 		ts.forceUpdate(std::chrono::milliseconds(100));
 		scheduler.frame(ts);
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
+		// Wait for the worker instead of a fixed sleep: a pool still busy from a previous test may start it late.
+		const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+		while (!workDone && std::chrono::steady_clock::now() < deadline)
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));//let the future become ready
 		EXPECT_EQ(counter, 0);
 		ts.forceUpdate(std::chrono::milliseconds(100));
 		scheduler.frame(ts);

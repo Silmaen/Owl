@@ -126,10 +126,9 @@ cmake --build output/build/<preset>
 |--------------------------------------|------------------------------|
 | `linux-clang-tidy`                   | Static analysis (clang-tidy) |
 | `windows-clang-tidy`                 | Static analysis (clang-tidy) |
-| `linux-sanitizer-address`            | AddressSanitizer             |
+| `linux-sanitizer-address`            | AddressSanitizer (+ LSan)    |
 | `linux-sanitizer-thread`             | ThreadSanitizer              |
 | `linux-sanitizer-undefined-behavior` | UndefinedBehaviorSanitizer   |
-| `linux-sanitizer-leak`               | LeakSanitizer                |
 | `linux-include-check`                | Strict-libc++ include check  |
 
 #### Packaging Presets
@@ -226,7 +225,6 @@ the `poetry run python ci_action.py …` invocation, or to a direct `cmake --pre
 | `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF        | AddressSanitizer                                        |
 | `OWL_ENABLE_THREAD_SANITIZER`             | OFF        | ThreadSanitizer                                         |
 | `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF        | UndefinedBehaviorSanitizer                              |
-| `OWL_ENABLE_LEAK_SANITIZER`               | OFF        | LeakSanitizer                                           |
 | `OWL_ENABLE_MEMORY_SANITIZER`             | OFF        | MemorySanitizer (Clang-only)                            |
 | `OWL_ENABLE_DOCUMENTATION`                | OFF        | Enable Doxygen documentation generation                 |
 | `OWL_PACKAGING`                           | OFF        | Enable packaging mode                                   |

@@ -15,4 +15,6 @@ TEST(Environement, variables) {
 	appendEnv("BBOOBBOOBB", "lo");
 	const std::string uhu = std::format("lo{}yo", g_sep);
 	EXPECT_STREQ(getEnv("BBOOBBOOBB").c_str(), uhu.c_str());
+	// Leave the process environment as found so the test can repeat or run in any order.
+	setEnv("BBOOBBOOBB", "");
 }

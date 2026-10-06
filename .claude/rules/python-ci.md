@@ -65,6 +65,9 @@ it never rewrites sources. Sub-checks (all on by default):
 7. **std-includes** — every file under `source/`, `test/`, `bench/` includes the
    standard header of each `std::` symbol / `uint*_t` / `size_t` it names
    (`ci/utils/std_includes.py`; a `.cpp` may rely on its own header and `owlpch.h`).
+7. **secrets** — git-tracked files scanned for private keys, GitHub / AWS /
+   Slack tokens and passwords in URLs; a tracked `.env` fails. Prints the kind
+   and position only, never the match.
 
 Doxygen is **deliberately not** run here — the project already exposes a
 separate `Documentation` action that builds doxygen with `WARN_AS_ERROR=YES`.
@@ -72,6 +75,7 @@ separate `Documentation` action that builds doxygen with `WARN_AS_ERROR=YES`.
 Each sub-check can be disabled with `-- --no-<name>=true`:
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
 `--no-cpp-style`, `--no-structural`, `--no-std-includes`.
+`--no-cpp-style`, `--no-structural`, `--no-secrets`.
 
 **Report findings through `_diag()`**, never `log.error()` directly. It prints
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — the
@@ -106,6 +110,25 @@ class MyAction(BaseAction):
 - Return `int` exit codes from actions (0 = success)
 - Use `from __future__ import annotations` if needed for forward refs
 - Stateless actions: instantiated once, reused across calls
+
+## Secrets
+
+- **Never a secret in argv or in a log.** A password, token or key is read from an environment variable
+  with `ci.utils.secrets.get_secret()` (which registers it for masking), never from an extra argument;
+  refuse the old argument with `reject_secret_args()`. TeamCity provides it as an `env.*`
+  parameter of the Global Build template (`common/Templates.kt`), referencing a server password parameter.
+- Never hand a secret to a child process on its command line: call the library in process (DepManager's
+  Python API, `requests`) or pass it through the child's environment.
+- Log commands only through `run_command` / `redact_command()`, never `' '.join(cmd)`; anything else that
+  may echo a secret (server responses, exceptions) goes through `redact()`. Do not log a dict or object
+  that holds a secret.
+- Never download and execute code at CI time; publication uses the in-repository client in
+  `ci/utils/publish.py` (HTTPS only).
+
+## Tests
+
+`docker/run.sh poetry run pytest` runs `ci/tests/`. Tests use fake values and mocks only (no network, no real
+credential, no real publication) and write only to `tmp_path`.
 
 ## DepManager
 

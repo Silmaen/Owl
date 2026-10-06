@@ -22,21 +22,122 @@ The CI surface covers:
 | Area               | Coverage                                                                                    |
 |--------------------|---------------------------------------------------------------------------------------------|
 | Build / Test       | Linux x64, Linux ARM64 (Docker-emulated), Windows x64 — Clang + GCC each                    |
-| Quality            | clang-tidy, 4 sanitizers (Address, Thread, Leak, UB), Code Style aggregator                 |
+| Quality            | clang-tidy, 3 blocking sanitizers (Address + Leak, Thread, UB), Code Style aggregator       |
 | Packaging          | Engine + Owl Nest, per platform — only on `main`                                            |
 | GitHub integration | Draft PR suppression, Check Runs (tests, timings, diff annotations), ready_for_review reuse |
 
 ## Project tree
 
 The DSL (`.teamcity/`) is laid out like EvenementLoto's: one entry point, a `common/` folder, one file per
-sub-project. The order of the sub-projects **is** the dependency chain, read top to bottom.
+sub-project. The chain has two levels, as parallel as the agents allow: Code Style and Include Check wait for
+nothing; every build, sanitizer and analysis waits for Code Style only (each one builds its own preset, none consumes
+another's output). A broken commit therefore fails several configurations at once instead of stopping at the first.
+```mermaid
+flowchart TD
+    Root[Root project<br/>Owl] --> Build[Build]
+    Root --> Pkg[Packaging]
+    Build --> Lx[Linux x64]
+    Build --> La[Linux arm64]
+    Build --> Wx[Windows x64]
+    Build --> Q[Quality]
+    Lx --> LxC[Clang]
+    Lx --> LxG[GCC]
+    La --> LaC[Clang]
+    La --> LaG[GCC]
+    Wx --> WxC[Clang]
+    Wx --> WxG[GCC]
+    Q --> CS[Code Style]
+    Q --> CT[Clang-Tidy]
+    Q --> SA[Sanitizer Address]
+    Q --> ST[Sanitizer Thread]
+    Q --> SU[Sanitizer UB]
+    Pkg --> PLx[Linux x64]
+    Pkg --> PLa[Linux arm64]
+    Pkg --> PWx[Windows x64]
+    PLx --> PLxE[Engine]
+    PLx --> PLxN[App - Nest]
+    PLa --> PLaE[Engine]
+    PLa --> PLaN[App - Nest]
+    PWx --> PWxE[Engine]
+    PWx --> PWxN[App - Nest]
+    classDef draft fill:#fff3cd,stroke:#856404,color:#856404
+    classDef mainOnly fill:#d1ecf1,stroke:#0c5460,color:#0c5460
+    class LxC,WxC,CS,SA draft
+    class LxG,LaG,WxG,SU,PLxE,PLaE,PLaN,PWxE mainOnly
+```
+Legend:
+- **Yellow**: draft-friendly — auto-run on draft PRs too (fast feedback subset).
+- **Blue**: main-only — auto-run on `main` pushes only; PRs get a "Skipped:
+  branch out of scope" GitHub Check Run; a reviewer can still ask for them with
+  the `/ci full` comment, and manual triggers always work.
+- Uncoloured: standard — auto-run on `main` pushes and on non-draft PRs.
+Orthogonal to the colours, a PR that changes **only** documentation
+(`doc/`, `*.md`, `.claude/`, `LICENSE`) runs just Code Style and Windows x64
+Clang — see [Doc-only pull requests](#doc-only-pull-requests).
+Source files:
+- `.teamcity/settings.kts` — entry point, registers `_Self.Project`.
+- `.teamcity/_Self/Project.kt` — root project, VCS root, project-level params.
+- `.teamcity/_Self/Github.kt` — GitHub App connection ID constant.
+- `.teamcity/_Self/BridgeHelpers.kt` — the `github-bridge` feature builder and
+  the per-BT overrides (see [Per-BT bridge gates](#per-bt-bridge-gates)).
+- `.teamcity/_Self/buildTypes/GlobalBuild.kt` — main build/test template.
+- `.teamcity/_Self/buildTypes/CodeStylingCheck.kt` — code style template.
+- `.teamcity/_Self/vcsRoots/HttpsGithubComSilmaenOwlGitRefsHeadsMain.kt` — VCS root.
+- `.teamcity/Build/Build.kt` — Build sub-project + 11 BTs.
+- `.teamcity/Packaging/Packaging.kt` — Packaging sub-project + 6 BTs.
+## VCS root
+A single Git VCS root (`HttpsGithubComSilmaenOwlGitRefsHeadsMain`) points at
+[Silmaen/Owl](https://github.com/Silmaen/Owl). The default branch is
+parameterised via `owl_git_branch` (default `main`). The root pulls a
+restricted set of refs only:
++:refs/heads/(%owl_git_branch%)
++:refs/(pull/*)/head
+Concretely: TC sees only `main` and open-PR head refs. A push to a feature
+branch **without an open PR** is invisible to TC — no builds run. This is
+intentional: gating CI behind a PR avoids burning CI minutes on
+work-in-progress branches.
+## Templates
+Two templates carry the per-BT-shared configuration.
+### GlobalBuild (`_Self.buildTypes.GlobalBuild`)
+The canonical build-and-test template used by every BT in `Build/` (except
+Code Style) and every BT in `Packaging/`.
+Pipeline (each step is a `ci_action.py` sub-action invoked through Docker
+except the first, which sets `docker_image` from the preset metadata):
+| Step                      | Condition                                      |
+|---------------------------|------------------------------------------------|
+| Determine docker (native) | always                                         |
+| Define Remote             | always — configures DepManager remote          |
+| Clean output              | always                                         |
+| Clean release             | `release_preset` non-empty                     |
+| Build                     | always                                         |
+| Test                      | `run_tests == true`                            |
+| Code Coverage             | `run_coverage == true`                         |
+| Build Release             | `release_preset` non-empty                     |
+| Test Release              | `release_preset` non-empty + `run_tests`       |
+| Documentation             | `run_documentation == true`                    |
+| Package                   | `run_package == true`                          |
+| Publish Package           | `run_package` + on default branch              |
+| Publish Documentation     | `run_package` + default branch + `publish_doc` |
+Each Dockerised step uses the image set by step 1 (`%docker_image%`, derived
+from the CMake preset's `vendor.silmaen` block).
+**Secrets.** The steps that need a password (Define Remote, Publish Package, Publish Documentation) read it from
+`OWL_REMOTE_PASSWORD` / `OWL_DEPLOY_PASSWORD`, which the Global Build template sets as `env.*` parameters from the
+`%remote_passwd%` / `%deploy_passwd%` password parameters of the server: the secret never appears on a command line,
+and TeamCity masks its value in the log. This works the same on the Linux (Docker) and Windows agents.
 
 ```mermaid
 flowchart LR
-    CS[Code Style] --> LxC[Linux x64 Clang] & LxG[Linux x64 GCC] & WxC[Windows x64 Clang] & WxG[Windows x64 GCC]
-    CS --> LaC[Linux arm64 Clang] & LaG[Linux arm64 GCC]
-    LxC & WxC --> SA[Sanitizer Address] & SL[Sanitizer Leak] & ST[Sanitizer Thread] & SU[Sanitizer UB]
-    SA & SL & ST & SU --> CT[Clang-Tidy] & AN[Static Analyzer] & IC[Include Check]
+    subgraph L1[Level 1]
+        CS[Code Style]
+        IC[Include Check]
+    end
+    subgraph L2[Level 2: after Code Style]
+        LxC[Linux x64 Clang] & LxG[Linux x64 GCC] & WxC[Windows x64 Clang] & WxG[Windows x64 GCC]
+        SA[Sanitizer Address] & ST[Sanitizer Thread] & SU[Sanitizer UB]
+        CT[Clang-Tidy] & AN[Static Analyzer]
+        LaC[Linux arm64 Clang] & LaG[Linux arm64 GCC]
+    end
+    CS --> LxC & LxG & WxC & WxG & SA & ST & SU & CT & AN & LaC & LaG
     LxC --> PL[Packages Linux x64]
     WxC --> PW[Packages Windows x64]
     LaC --> PA[Packages Linux arm64]
@@ -59,13 +160,41 @@ flowchart LR
 | `common/Factories.kt`   | `presetBuild()`, `analysisBuild()`, `packageBuild()`                             |
 | `quality/CodeStyle.kt`  | The gate every other configuration waits for                                     |
 | `build/*.kt`            | Build Linux x64, Build Windows x64, Build Linux arm64                            |
-| `quality/Sanitizers.kt` | The four sanitizers, after the two Clang builds                                  |
-| `quality/Analysis.kt`   | Clang-Tidy, Static Analyzer, Include Check, after the four sanitizers            |
+| `quality/Sanitizers.kt` | The three sanitizers, after Code Style                                           |
+| `quality/PrReady.kt`    | The `PR Ready` merge gate: red when any ready-PR configuration is red            |
+| `quality/Analysis.kt`   | Clang-Tidy, Static Analyzer (after Code Style), Include Check (level 1)          |
 | `packaging/Package.kt`  | Engine and Owl Nest packages, after the build that tested their platform         |
 
 The configuration ids are the ones the server already knew (`Build_LinuxX64_Clang`, `Build_Quality_ClangTidy`, …),
 so the build history is kept. Everything a build does lives in `ci/` (`ci_action.py <Action> <preset>`); the DSL only
 says which presets exist, where they run and in which order.
+
+## What runs when
+
+| Configuration                              | `main` push | Draft PR | Ready PR | `Experiment/*` PR | Doc-only PR | `[skip ci]` |
+|--------------------------------------------|-------------|----------|----------|-------------------|-------------|-------------|
+| Code Style                                 | ✅           | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Linux x64 / Clang                    | ✅           | ✅        | ✅        | ✅                 | ⏭           | ❌           |
+| Build Windows x64 / Clang (Doxygen)        | ✅           | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Linux x64 / GCC, Windows x64 / GCC   | ✅           | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Build Linux arm64 / Clang, GCC (emulated)  | ✅           | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Sanitizer Address (+ LSan)                 | ✅           | ✅        | ✅        | ✅                 | ⏭           | ❌           |
+| Sanitizer Thread, Sanitizer UB             | ✅           | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Clang-Tidy, Static Analyzer, Include Check | ✅           | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| PR Ready (merge gate, no agent)            | ✅           | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Packages (Engine, Nest × 3 platforms)      | ✅           | ❌        | ❌        | ❌                 | ❌           | ❌           |
+
+✅ runs · ❌ not run · ⏭ a "Skipped" check is published, which GitHub counts as passing. A manual run, and *Re-run* in
+GitHub, always run a configuration.
+
+- **Draft → ready**: only what the draft did not run is built. `skipIfCommitPassed` drops an automatic build whose
+  commit already passed in that configuration and republishes the earlier success (`Build passed (reused #N)`), and
+  the snapshot dependencies reuse a build already green for the revision (`reuseBuilds = SUCCESSFUL`). A new commit
+  runs everything again.
+- **`Experiment/*` pull requests** run the fast subset only (the draft one): the full-matrix configurations carry
+  `prTriggerBranchesOverride = EXCLUDE_EXPERIMENT`. Their required checks are therefore *Skipped*: an experiment is not
+  meant to be merged as such; move the work to a `Feature/*` branch to get the full verdict.
+- **`main`**: every configuration, through the templates' VCS trigger.
 
 ## Triggering
 
@@ -92,10 +221,12 @@ verdict is republished when the PR turns ready) and `skipPhrase = [skip ci]`.
 
 ### Required checks
 
-**Clang-Tidy** and **Static Analyzer** close the chain: nothing reaches them unless Code Style, every pull-request
-build and the four sanitizers went green. They are the checks to require in the branch protection of `main`.
-GitHub shows a check by the tail of its name (`checkName.stripPrefix = "TeamCity / Owl / "`), e.g.
-`Analysis / Clang-Tidy`: a protection rule names it literally.
+Require **one** check in the branch protection of `main`: **`Analysis / PR Ready`**. It is a composite configuration
+(`quality/PrReady.kt`): it uses no agent, depends on every configuration a ready pull request runs (Code Style,
+Include Check, the four builds, the three sanitizers, Clang-Tidy, Static Analyzer) and turns red, naming the failed
+dependency, as soon as one of them is red. Like them it is not run for drafts nor `Experiment/…` pull requests (the PR
+cannot be merged until it is ready), and it skips documentation-only pull requests rather than pulling the whole
+matrix in. GitHub shows a check by the tail of its name (`checkName.stripPrefix = "TeamCity / Owl / "`).
 
 ### Doc-only pull requests
 
@@ -350,12 +481,19 @@ the one that consumes them today — `isPullRequest`, `mergeBase` and
 Template-level parameters live on `GlobalBuild` and `CodeStylingCheck`:
 preset name (`cmake_preset`), checkboxes (`run_tests`, `run_coverage`,
 `run_documentation`, `run_package`, `publish_doc`), Docker plumbing
-(`docker_image`, `docker_parameters`, `extra_tc_vars`), publishing
-credentials (`deploy_url`, `deploy_login`, `deploy_passwd`). Most are
+(`docker_image`, `docker_parameters`, `extra_tc_vars`). Most are
 populated at runtime by the first build step
 (`ci_action.py DefineTeamCityVariables`) from the CMake preset's
 `vendor.silmaen` block, so they need no manual upkeep when a preset
 changes.
+
+The credentials (`deploy_url`, `deploy_login`, `deploy_passwd`,
+`remote_url`, `remote_login`, `remote_passwd`) are **not** in the DSL: they
+are set on the server, above this project. `deploy_passwd` and
+`remote_passwd` must be of type *password* there, so TeamCity masks them in
+the build log as a second line of defence. Declaring them in the DSL would
+shadow the server values with empty ones, which is why the DSL only
+references them.
 
 ## DSL development workflow
 

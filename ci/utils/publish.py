@@ -1,39 +1,142 @@
 """
 Utility functions for publishing packages and documentation to a remote server.
+
+The upload client lives here, in the repository. It used to be an ``api.py``
+downloaded from the target server at each publication and executed with the
+credentials on its command line; it is now reviewed code, run in process, and
+the password comes from the environment (``OWL_DEPLOY_PASSWORD``).
 """
 import os
 import platform
 import re
+import tarfile
+from dataclasses import dataclass
 from pathlib import Path
 
 from ci import root, log
+from ci.utils.secrets import redact
+
+DEPLOY_PASSWORD_ENV = "OWL_DEPLOY_PASSWORD"
+"""Environment variable holding the publication server password."""
+
+LARGE_FILE_THRESHOLD = 100 * 1024 * 1024
+"""Size above which a file goes to ``/upload`` (nginx upload module) instead of ``/api``."""
+
+UPLOAD_TIMEOUT = (30, 3600)
+"""Connect and read timeouts (seconds) of an upload request."""
 
 
-def download_api_script(url: str, dest: Path) -> bool:
+@dataclass
+class Revision:
+    """One package or documentation revision to push to the delivery server."""
+
+    rev_type: str
+    """``e`` engine package, ``a`` application package, ``d`` documentation."""
+    branch: str
+    """Version the revision belongs to."""
+    file: Path
+    """Archive to upload (a documentation directory is compacted first)."""
+    hash: str = ""
+    """Short git hash (packages only)."""
+    name: str = ""
+    """Human-readable package name (packages only)."""
+    flavor_name: str = ""
+    """Platform flavour, e.g. ``linux glibc_2.39 x64`` (packages only)."""
+    date: str = ""
+    """ISO build date (packages only)."""
+
+
+def normalize_server_url(url: str) -> str | None:
     """
-    Download the api.py script from the remote server.
-    :param url: The base server URL.
-    :param dest: Destination path for the downloaded script.
-    :return: True on success, False on failure.
-    """
-    from requests import get
+    Normalise the delivery server URL and enforce HTTPS.
 
-    script_url = f"{url}/static/scripts/api.py"
-    if not script_url.startswith("http"):
-        script_url = "https://" + script_url
+    :param url: The URL as given (``host``, ``host/path`` or ``https://host``).
+    :return: The ``https://`` URL without trailing slash, or ``None`` for any other scheme.
+    """
+    url = url.strip().rstrip("/")
+    if "://" not in url:
+        return f"https://{url}"
+    if url.startswith("https://"):
+        return url
+    return None
+
+
+def compact_directory(directory: Path, branch: str) -> Path:
+    """
+    Pack a documentation directory into ``Archive_<branch>.tgz`` next to it.
+
+    :param directory: The directory to pack (its content goes at the archive root).
+    :param branch: The version, used in the archive name.
+    :return: Path of the archive.
+    """
+    output = directory.parent / f"Archive_{branch}.tgz"
+    with tarfile.open(output, "w:gz") as tar:
+        for item in sorted(directory.iterdir()):
+            tar.add(item, arcname=item.relative_to(directory))
+    return output
+
+
+def push_revision(server_url: str, login: str, password: str, revision: Revision) -> int:
+    """
+    Upload a revision to the delivery server (multipart POST, HTTP basic auth).
+
+    :param server_url: The server base URL; must be HTTPS (see :func:`normalize_server_url`).
+    :param login: The account login.
+    :param password: The account password (never logged).
+    :param revision: What to upload; a documentation directory is compacted first.
+    :return: 0 on success, 1 on failure.
+    """
+    import requests
+    from requests.auth import HTTPBasicAuth
+    from requests_toolbelt import MultipartEncoder
+
+    destination = normalize_server_url(server_url)
+    if destination is None:
+        log.error("Publish: the server URL must use https.")
+        return 1
+    upload = revision.file
+    if revision.rev_type == "d":
+        if not upload.is_dir() or not (upload / "index.html").exists():
+            log.error(f"Publish: documentation must be a directory holding index.html: {upload}.")
+            return 1
+        upload = compact_directory(upload, revision.branch)
+    if not upload.is_file():
+        log.error(f"Publish: nothing to upload at {upload}.")
+        return 1
+    endpoint = "api" if upload.stat().st_size < LARGE_FILE_THRESHOLD else "upload"
     try:
-        r = get(script_url, stream=True)
-        if r.status_code != 200:
-            log.error(f"HTTP error while downloading api.py: {r.status_code}")
-            return False
-        with open(dest, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-        return True
+        with open(upload, "rb") as stream:
+            encoder = MultipartEncoder(
+                fields={
+                    "action": "push_doc" if revision.rev_type == "d" else "push",
+                    "hash": revision.hash,
+                    "branch": revision.branch,
+                    "name": revision.name,
+                    "flavor_name": revision.flavor_name,
+                    "date": revision.date,
+                    "rev_type": revision.rev_type,
+                    "package": (upload.name, stream, "application/octet-stream"),
+                }
+            )
+            response = requests.post(
+                f"{destination}/{endpoint}",
+                auth=HTTPBasicAuth(login, password),
+                data=encoder,
+                headers={"Content-Type": encoder.content_type},
+                timeout=UPLOAD_TIMEOUT,
+            )
     except Exception as err:
-        log.error(f"Error downloading api.py: {err}")
-        return False
+        log.error(redact(f"Publish: upload to {destination} failed: {type(err).__name__}: {err}"))
+        return 1
+    body = redact(response.content.decode("utf-8", errors="replace")[:2000])
+    if response.status_code == 201:
+        log.warning(f"Publish: server answered {response.status_code} {response.reason}: {body}")
+        return 0
+    if response.status_code != 200:
+        log.error(f"Publish: server answered {response.status_code} {response.reason}: {body}")
+        return 1
+    log.info(f"Publish: {upload.name} uploaded to {destination}/{endpoint}.")
+    return 0
 
 
 def get_project_version() -> str:
@@ -162,19 +265,3 @@ def get_platform_info() -> dict[str, str]:
         .replace("v8", "64")
     )
     return {"os": os_name, "arch": arch}
-
-
-def run_api_push(api_script: Path, args: dict[str, str]) -> int:
-    """
-    Call the api.py push command with the given arguments.
-    :param api_script: Path to the downloaded api.py script.
-    :param args: Dictionary of arguments to pass to the push command.
-    :return: Exit code of the subprocess.
-    """
-    import sys
-    from ci.utils.run import run_command
-
-    cmd = [sys.executable, "-u", str(api_script), "push"]
-    for key, value in args.items():
-        cmd += [f"--{key}", str(value)]
-    return run_command(cmd)

@@ -2,13 +2,16 @@
 Action to publish documentation to a remote server.
 """
 
-from ci import log, root
+from ci import log
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.publish import (
-    download_api_script,
+    DEPLOY_PASSWORD_ENV,
+    Revision,
     get_project_version,
-    run_api_push,
+    normalize_server_url,
+    push_revision,
 )
+from ci.utils.secrets import get_secret, reject_secret_args
 
 
 class PublishDoc(BaseAction):
@@ -20,27 +23,35 @@ class PublishDoc(BaseAction):
         """
         Publish documentation for the given preset.
         :param preset: The preset configuration.
-        :param extra_args: Required: --url, --login, --password. Optional: --dry-run.
+        :param extra_args: Required: --url, --login (the password comes from
+            OWL_DEPLOY_PASSWORD, never from the command line). Optional: --dry-run.
         :return: Exit code indicating success or failure.
         """
         log.info(f"Publishing documentation with preset: {preset.cmake_preset}")
 
         # Parse extra arguments
         params = self.parse_extra_args(extra_args)
+        refused = reject_secret_args(params, {"password": DEPLOY_PASSWORD_ENV})
+        if refused:
+            log.error(refused)
+            return 1
         url = params.get("url")
         login = params.get("login")
-        password = params.get("password")
+        password = get_secret(DEPLOY_PASSWORD_ENV)
         dry_run = params.get("dry-run") == "true"
 
         # Validate required parameters
         if not url:
             log.error("Missing required parameter: --url")
             return 1
+        if normalize_server_url(url) is None:
+            log.error("The publication URL must use https.")
+            return 1
         if not login:
             log.error("Missing required parameter: --login")
             return 1
-        if not password:
-            log.error("Missing required parameter: --password")
+        if not password and not dry_run:
+            log.error(f"Missing publication password: set {DEPLOY_PASSWORD_ENV}.")
             return 1
 
         # Determine documentation directory
@@ -55,17 +66,9 @@ class PublishDoc(BaseAction):
             log.error("Could not determine project version from CMakeLists.txt.")
             return 1
 
-        # Build info dict
-        info = {
-            "type": "d",
-            "branch": version,
-            "file": str(doc_dir),
-            "user": login,
-            "passwd": password,
-            "url": url,
-        }
+        revision = Revision(rev_type="d", branch=version, file=doc_dir)
 
-        log.info(f"Documentation info: {info}")
+        log.info(f"Documentation info: {revision}, user={login}, url={url}")
 
         if dry_run:
             if not doc_dir.exists():
@@ -82,10 +85,4 @@ class PublishDoc(BaseAction):
             log.error(f"index.html not found in documentation directory: {doc_dir}")
             return 1
 
-        # Download api.py from the server
-        api_script = root / "ci" / "api.py"
-        if not download_api_script(url, api_script):
-            return 1
-
-        # Push the documentation
-        return run_api_push(api_script, info)
+        return push_revision(url, login, password, revision)

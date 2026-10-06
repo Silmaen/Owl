@@ -273,7 +273,7 @@ void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core:
 
 Scene::Scene() = default;
 
-Scene::~Scene() = default;
+Scene::~Scene() { physics::PhysicCommand::releaseScene(this); }
 
 auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	shared<Scene> newScene = mkShared<Scene>();

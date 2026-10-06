@@ -5,7 +5,6 @@ if (${PROJECT_PREFIX}_COMPILER_CLANG)
     option(${PROJECT_PREFIX}_ENABLE_ADDRESS_SANITIZER "Enable address sanitizer" OFF)
     option(${PROJECT_PREFIX}_ENABLE_THREAD_SANITIZER "Enable thread sanitizer" OFF)
     option(${PROJECT_PREFIX}_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER "Enable undefined behavior sanitizer" OFF)
-    option(${PROJECT_PREFIX}_ENABLE_LEAK_SANITIZER "Enable memory leaks sanitizer" OFF)
     option(${PROJECT_PREFIX}_ENABLE_MEMORY_SANITIZER "Enable memory sanitizer" OFF)
 endif ()
 # ----------------------------------------------------------------------------------------------------------------------
@@ -39,7 +38,7 @@ endif ()
 # ----------------------------------------------------------------------------------------------------------------------
 if (${PROJECT_PREFIX}_ENABLE_ADDRESS_SANITIZER)
     math(EXPR ${PROJECT_PREFIX}_SANITIZER_COUNT "${${PROJECT_PREFIX}_SANITIZER_COUNT} + 1")
-    target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -fsanitize=address -fsanitize-recover=address -O0 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls)
+    target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -fsanitize=address -fno-sanitize-recover=all -O0 -g3 -fno-omit-frame-pointer -fno-optimize-sibling-calls)
     target_link_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -fsanitize=address)
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_SANITIZER)
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_ADDRESS_SANITIZER)
@@ -63,28 +62,22 @@ endif ()
 # ----------------------------------------------------------------------------------------------------------------------
 if (${PROJECT_PREFIX}_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER)
     math(EXPR ${PROJECT_PREFIX}_SANITIZER_COUNT "${${PROJECT_PREFIX}_SANITIZER_COUNT} + 1")
-    target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -fsanitize=undefined -fsanitize-recover=undefined -O0 -g3 -fno-omit-frame-pointer)
+    target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -fsanitize=undefined -fno-sanitize-recover=all -O0 -g3 -fno-omit-frame-pointer)
     target_link_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -fsanitize=undefined)
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_SANITIZER)
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_UNDEFINED_BEHAVIOR_SANITIZER)
 endif ()
 
 # ----------------------------------------------------------------------------------------------------------------------
-# Clang sanitizer - leak Sanitizer
-# ----------------------------------------------------------------------------------------------------------------------
-if (${PROJECT_PREFIX}_ENABLE_LEAK_SANITIZER)
-    math(EXPR ${PROJECT_PREFIX}_SANITIZER_COUNT "${${PROJECT_PREFIX}_SANITIZER_COUNT} + 1")
-    target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -fsanitize=leak -fsanitize-recover=leak -O0 -g3 -fno-omit-frame-pointer)
-    target_link_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -fsanitize=leak)
-    target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_SANITIZER)
-    target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_LEAK_SANITIZER)
-    target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_SANITIZER_CUSTOM_ALLOCATOR)
-endif ()
-
-# ----------------------------------------------------------------------------------------------------------------------
 # Compatibility check
-if (${PROJECT_PREFIX}_SANITIZER_COUNT GREATER 1)
-    message(FATAL_ERROR "You can only use code coverage/inspection tools one by one.")
+# AddressSanitizer and UndefinedBehaviorSanitizer are designed to be combined; every other pair is rejected.
+# LeakSanitizer has no dedicated option: on Linux it is part of AddressSanitizer (detect_leaks=1).
+set(${PROJECT_PREFIX}_SANITIZER_ALLOWED_COUNT 1)
+if (${PROJECT_PREFIX}_ENABLE_ADDRESS_SANITIZER AND ${PROJECT_PREFIX}_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER)
+    set(${PROJECT_PREFIX}_SANITIZER_ALLOWED_COUNT 2)
+endif ()
+if (${PROJECT_PREFIX}_SANITIZER_COUNT GREATER ${PROJECT_PREFIX}_SANITIZER_ALLOWED_COUNT)
+    message(FATAL_ERROR "You can only use code coverage/inspection tools one by one (except Address + Undefined behavior).")
 endif ()
 
 if (${PROJECT_PREFIX}_ENABLE_COVERAGE AND ${PROJECT_PREFIX}_SANITIZER_COUNT GREATER 0)

@@ -229,11 +229,11 @@ TEST(PhysicCommand, SnapshotRoundTrip) {
 		body.type = SceneBody::BodyType::Dynamic;
 	}
 
-	// Before init: snapshot is empty.
+	// Before init: default snapshot (awake was only false when an earlier test left a dangling world).
 	auto snap0 = PhysicCommand::getSnapshot(dyn);
 	EXPECT_EQ(snap0.linearVelocity, owl::math::vec2f(0, 0));
 	EXPECT_FLOAT_EQ(snap0.angularVelocity, 0.f);
-	EXPECT_FALSE(snap0.awake);
+	EXPECT_TRUE(snap0.awake);
 
 	PhysicCommand::init(&scene);
 
@@ -323,6 +323,42 @@ TEST(PhysicCommand, FrameBeforeInitIsNoOp) {
 	Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(16));
 	PhysicCommand::frame(ts);// must not crash, must not init.
+	EXPECT_FALSE(PhysicCommand::isInitialized());
+	Log::invalidate();
+}
+
+// Destroying the bound scene releases the static world, so no later test sees a dangling scene (audit F-05).
+TEST(PhysicCommand, SceneDestructionReleasesWorld) {
+	Log::init(Log::Level::Off);
+	{
+		Scene scene;
+		auto b1 = scene.createEntity("body1");
+		b1.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Dynamic;
+		PhysicCommand::init(&scene);
+		EXPECT_TRUE(PhysicCommand::isInitialized());
+	}
+	EXPECT_FALSE(PhysicCommand::isInitialized());
+	Timestep ts;
+	ts.forceUpdate(std::chrono::milliseconds(16));
+	PhysicCommand::frame(ts);
+	EXPECT_FALSE(PhysicCommand::isInitialized());
+	Log::invalidate();
+}
+
+// Releasing a scene that is not the bound one keeps the world alive; destroy() is idempotent.
+TEST(PhysicCommand, ReleaseSceneIgnoresUnboundScene) {
+	Log::init(Log::Level::Off);
+	Scene bound;
+	PhysicCommand::init(&bound);
+	{
+		const Scene other;
+		PhysicCommand::releaseScene(&other);
+	}
+	PhysicCommand::releaseScene(nullptr);
+	EXPECT_TRUE(PhysicCommand::isInitialized());
+	PhysicCommand::releaseScene(&bound);
+	EXPECT_FALSE(PhysicCommand::isInitialized());
+	PhysicCommand::destroy();
 	EXPECT_FALSE(PhysicCommand::isInitialized());
 	Log::invalidate();
 }

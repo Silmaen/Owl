@@ -50,9 +50,7 @@ fun presetBuild(idValue: String, buildName: String, cmakePreset: String,
  * anywhere else, everything. They build the `linux-clang-tidy` preset first (the
  * compilation database and ninja's dependency database are their inputs).
  *
- * They sit at the end of the dependency chain, which makes them the checks worth
- * requiring before a merge: nothing reaches them unless every build and every sanitizer
- * went green first.
+ * They run after Code Style only, in parallel with the builds and the sanitizers.
  *
  * @param idValue The configuration id.
  * @param buildName The configuration name.

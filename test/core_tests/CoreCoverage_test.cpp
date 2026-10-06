@@ -98,10 +98,8 @@ TEST(CoreCoverage, FactoryRegisterAndLookup) {
 TEST(CoreCoverage, FactoryCreateProduct) {
 	auto& factory = core::IFactory::getInstance();
 
-	// Ensure TestProduct is registered (may already be from previous test).
-	if (!factory.isRegistered("TestProduct")) {
-		core::factoryRegisterType<TestProduct>();
-	}
+	// Registration is idempotent: it returns the existing pid when another test already registered the type.
+	TestProduct::s_pid = core::factoryRegisterType<TestProduct>();
 
 	// Single creation.
 	core::FactoryProduct* product = factory.createProduct("TestProduct");

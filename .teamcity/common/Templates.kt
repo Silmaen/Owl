@@ -35,6 +35,11 @@ val globalBuild = Template {
         checkbox("run_documentation", "false", checked = "true", unchecked = "false")
         checkbox("run_package", "false", checked = "true", unchecked = "false")
         param("release_preset", "")
+        // Secrets reach ci_action.py through its environment, never its command line
+        // (visible to `ps`, echoed in the log). The referenced parameters are password
+        // parameters on the server, so TeamCity masks their value everywhere.
+        param("env.OWL_REMOTE_PASSWORD", "%remote_passwd%")
+        param("env.OWL_DEPLOY_PASSWORD", "%deploy_passwd%")
         // Third-party provider for this build (read by cmake/BaseConfig.cmake). Run a configuration with
         // `conan` to try the Conan migration on its agent before switching the default.
         select("env.OWL_DEPENDENCY_PROVIDER", "depmanager", label = "Dependency provider",
@@ -63,7 +68,7 @@ val globalBuild = Template {
 
         script {
             ciAction("ConfigureRemote", "Define_Remote", displayName = "Define Remote",
-                extraArgs = "-- --remote_url=%remote_url% --remote_login=%remote_login% --remote_passwd=%remote_passwd%")
+                extraArgs = "-- --remote_url=%remote_url% --remote_login=%remote_login%")
         }
 
         script {
@@ -129,7 +134,7 @@ val globalBuild = Template {
 
         script {
             ciAction("PublishPackage", "Publish", displayName = "Publish Package",
-                extraArgs = "--url=%deploy_url% --login=%deploy_login% --password=%deploy_passwd%")
+                extraArgs = "--url=%deploy_url% --login=%deploy_login%")
             conditions {
                 equals("run_package", "true")
                 equals("teamcity.build.branch.is_default", "true")
@@ -138,7 +143,7 @@ val globalBuild = Template {
 
         script {
             ciAction("PublishDoc", "Publish_Doc", displayName = "Publish Documentation",
-                extraArgs = "--url=%deploy_url% --login=%deploy_login% --password=%deploy_passwd%")
+                extraArgs = "--url=%deploy_url% --login=%deploy_login%")
             conditions {
                 equals("run_package", "true")
                 equals("teamcity.build.branch.is_default", "true")

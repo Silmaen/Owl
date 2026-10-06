@@ -47,7 +47,8 @@
       "cacheVariables": {
         "OWL_ENABLE_ADDRESS_SANITIZER": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
-        "OWL_ENABLE_STACKTRACE": "ON"
+        "OWL_ENABLE_STACKTRACE": "ON",
+        "OWL_TEST_SHUFFLE": "ON"
       },
       "vendor": {
         "silmaen": {
@@ -61,7 +62,8 @@
       "cacheVariables": {
         "OWL_ENABLE_THREAD_SANITIZER": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
-        "OWL_ENABLE_STACKTRACE": "ON"
+        "OWL_ENABLE_STACKTRACE": "ON",
+        "OWL_TEST_SHUFFLE": "ON"
       },
       "vendor": {
         "silmaen": {
@@ -75,7 +77,8 @@
       "cacheVariables": {
         "OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
-        "OWL_ENABLE_STACKTRACE": "ON"
+        "OWL_ENABLE_STACKTRACE": "OFF",
+        "OWL_TEST_SHUFFLE": "ON"
       },
       "vendor": {
         "silmaen": {
@@ -95,20 +98,8 @@
           "release_preset": ""
         }
       }
-    },
-    {
-      "name": "linux-sanitizer-leak",
-      "inherits": "linux-clang-debug",
-      "cacheVariables": {
-        "OWL_ENABLE_LEAK_SANITIZER": "ON",
-        "OWL_ENABLE_COVERAGE": "OFF",
-        "OWL_ENABLE_STACKTRACE": "ON"
-      },
-      "vendor": {
-        "silmaen": {
-          "release_preset": ""
-        }
-      }
     }
-  ]
+  ],
+  "buildPresets": [],
+  "testPresets": []
 }

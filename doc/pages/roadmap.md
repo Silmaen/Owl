@@ -152,6 +152,10 @@ Owl RHI repaired, architecture opened, iteration sped up. No new gameplay featur
 - ![In Progress][progress] Phase B — engine benchmark harness `bench/` (`OWL_BENCHMARK`)
 - ![Done][done] Phase B — diff-scoped clang-tidy CI action, parallel by default (H-03)
 - ![Planned][planned] Phase B — editor tests, blocking sanitizers, Tracy, runner frame bench
+- ![Done][done] Phase B — blocking sanitizers, shuffled test order, LSan job removed (PR-11)
+- ![Done][done] Phase B — CI in two parallel levels, fast subset for `Experiment/*` PRs, `PR Ready` merge gate
+- ![Planned][planned] Phase B — package once per platform from the tested release tree, no rebuild ([details](design/foundations.md))
+- ![Planned][planned] Phase B — editor tests, Tracy, runner frame bench
 - ![Planned][planned] Phase B — tests without a window: scripted headless runner, image tests on lavapipe / llvmpipe
 - ![Planned][planned] Phase B — module dependency check, CI tooling tests, benchmarks with a regression threshold
 - ![Planned][planned] Phase C — Vulkan foundation first, as soon as the image tests land ([RHI](design/owl-rhi.md))

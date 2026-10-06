@@ -27,13 +27,17 @@ Sub-checks (all on by default):
   symbol (and `uint32_t` / `size_t`) it names, instead of relying on a
   transitive include (see `ci/utils/std_includes.py`). A `.cpp` may rely on
   its own header and on `owlpch.h`.
+* **secrets** — every git-tracked text file is scanned for high-confidence
+  credential shapes (private keys, GitHub / AWS / Slack tokens, passwords
+  embedded in URLs), and a tracked `.env` fails outright. Only the kind and
+  position of a finding are printed, never the matched text.
 
 Doxygen is **deliberately not** run here — the project already has a separate
 `Documentation` action that builds doxygen with `WARN_AS_ERROR=YES`.
 
 Each sub-check can be disabled with extra args (`-- --no-<name>=true`):
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`, `--no-std-includes`.
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-secrets`.
 
 Every finding is reported through `_diag()` as a GNU/clang-style diagnostic —
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — including
@@ -1199,6 +1203,91 @@ def _check_std_includes() -> int:
     return issues
 
 
+# Sub-check 8 — committed secrets
+# ────────────────────────────────────────────────────────────────────────────
+
+SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("private key", re.compile(r"-----BEGIN (?:[A-Z]+ )*PRIVATE KEY(?: BLOCK)?-----")),
+    ("GitHub token", re.compile(r"\b(?:gh[pousr]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{60,})\b")),
+    ("AWS access key", re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b")),
+    ("Slack token", re.compile(r"\bxox[abposr]-[A-Za-z0-9-]{10,}\b")),
+    ("credentials in URL", re.compile(r"\b[a-z][a-z0-9+.-]*://[^\s/:@'\"]+:[^\s/@'\"%$<>{}]{4,}@[\w.-]+")),
+)
+"""High-confidence secret shapes; broad heuristics would drown the gate in false positives."""
+
+_SECRET_FORBIDDEN_FILES: tuple[str, ...] = (".env",)
+"""File names that must never be tracked, whatever their content."""
+
+_SECRET_MAX_FILE_SIZE = 2 * 1024 * 1024
+"""Larger tracked files (assets) are skipped."""
+
+
+def _tracked_files() -> List[Path]:
+    """
+    List the files tracked by git, falling back to a tree walk without `.git` / `output`.
+
+    :return: Absolute paths, sorted.
+    """
+    try:
+        ret = subprocess.run(
+            ["git", "ls-files", "-z"], cwd=root, capture_output=True, check=False
+        )
+        if ret.returncode == 0:
+            names = [n for n in ret.stdout.decode("utf-8", errors="replace").split("\0") if n]
+            return sorted(root / n for n in names)
+    except OSError:
+        pass
+    skipped = {".git", "output", ".venv", "node_modules"}
+    return sorted(
+        p for p in root.rglob("*") if p.is_file() and not skipped.intersection(p.relative_to(root).parts)
+    )
+
+
+def scan_text_for_secrets(text: str) -> list[tuple[int, int, str]]:
+    """
+    Find secret-looking strings in a text.
+
+    :param text: The file content.
+    :return: One ``(line, column, kind)`` per finding, 1-based; the secret itself is never returned.
+    """
+    findings: list[tuple[int, int, str]] = []
+    for line_no, line in enumerate(text.splitlines(), start=1):
+        for kind, pattern in SECRET_PATTERNS:
+            match = pattern.search(line)
+            if match:
+                findings.append((line_no, match.start() + 1, kind))
+    return findings
+
+
+def _check_secrets() -> int:
+    """
+    Fail on any tracked file that looks like it holds a credential (H-12).
+
+    The matched text is never printed — only its kind and position — so a real
+    leak is not copied a second time into the build log.
+
+    :return: Number of findings.
+    """
+    issues = 0
+    for path in _tracked_files():
+        if path.name in _SECRET_FORBIDDEN_FILES:
+            _diag(path, 1, "secrets", f"`{path.name}` must not be tracked (it is meant for local credentials)")
+            issues += 1
+            continue
+        try:
+            if not path.is_file() or path.stat().st_size > _SECRET_MAX_FILE_SIZE:
+                continue
+            data = path.read_bytes()
+        except OSError:
+            continue
+        if b"\0" in data[:8192]:
+            continue
+        for line_no, column, kind in scan_text_for_secrets(data.decode("utf-8", errors="replace")):
+            _diag(path, line_no, "secrets", f"possible {kind} committed", column=column)
+            issues += 1
+    return issues
+
+
 # ────────────────────────────────────────────────────────────────────────────
 # Action entry point
 # ────────────────────────────────────────────────────────────────────────────
@@ -1218,6 +1307,7 @@ class CodeStyle(BaseAction):
         --no-cpp-style=true         skip cpp-style convention audit
         --no-structural=true        skip file-header / OWL_API audit
         --no-std-includes=true      skip standard-library include audit
+        --no-secrets=true           skip committed-secret scan
     """
 
     def run(
@@ -1240,6 +1330,7 @@ class CodeStyle(BaseAction):
             "cpp-style": opts.get("no-cpp-style", "false") == "true",
             "structural": opts.get("no-structural", "false") == "true",
             "std-includes": opts.get("no-std-includes", "false") == "true",
+            "secrets": opts.get("no-secrets", "false") == "true",
         }
 
         log.info(f"Running CodeStyle gate for preset: {preset.cmake_preset}")
@@ -1259,6 +1350,8 @@ class CodeStyle(BaseAction):
             results.append(("structural", _check_structural()))
         if not skip["std-includes"]:
             results.append(("std-includes", _check_std_includes()))
+        if not skip["secrets"]:
+            results.append(("secrets", _check_secrets()))
 
         log.info("─" * 60)
         log.info("CodeStyle summary:")

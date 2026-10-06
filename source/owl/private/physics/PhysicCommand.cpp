@@ -213,10 +213,18 @@ void PhysicCommand::init(scene::Scene* iScene) {
 
 void PhysicCommand::destroy() {
 	m_scene = nullptr;
+	if (!m_impl)
+		return;
 	b2DestroyWorld(m_impl->worldId);
 	m_impl->worldId = {.index1 = 0, .generation = 0};
 	m_impl->bodies.clear();
 	m_impl.reset();
+}
+
+void PhysicCommand::releaseScene(const scene::Scene* iScene) {
+	if (iScene == nullptr || m_scene != iScene)
+		return;
+	destroy();
 }
 
 auto PhysicCommand::isInitialized() -> bool { return m_scene != nullptr; }

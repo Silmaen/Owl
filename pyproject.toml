@@ -13,12 +13,19 @@ depmanager = "^0.5.5"
 black = "^26.1.0"
 gcovr = "^8.6"
 codespell = "^2.3.0"
+requests = "^2.33.1"
+requests-toolbelt = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 rich = "^14.3.2"
 pillow = "^12.1.1"
 cairosvg = "^2.9.0"
 conan = "^2.33.0"
+pytest = "^9.1.1"
+
+[tool.pytest.ini_options]
+testpaths = ["ci/tests"]
+pythonpath = ["."]
 
 [build-system]
 requires = ["poetry-core"]

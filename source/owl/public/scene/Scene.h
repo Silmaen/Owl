@@ -67,7 +67,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Destructor.
+	 *  Destructor, also releases the physics world when it is bound to this scene.
 	 */
 	~Scene();
 

@@ -30,7 +30,7 @@ docker/run.sh --perf perf ...                                      # ptrace / pe
 
 - **Clang presets only** for dev, tests and coverage: `linux-clang-release` (default),
   `linux-clang-debug` (coverage on). GCC presets exist for CI parity only.
-- Other presets: `linux-clang-tidy`, `linux-sanitizer-{address,thread,undefined-behavior,leak}`,
+- Other presets: `linux-clang-tidy`, `linux-sanitizer-{address,thread,undefined-behavior}`,
   `windows-{gcc,clang}-{release,debug}`, `package-{engine,app-nest}-{linux,windows}`.
 - Conan 2 (migration in progress, every Linux preset): add `-DOWL_DEPENDENCY_PROVIDER=conan` (in a worktree,
   also `-DOWL_CONAN_HOME=/fhome/.conan2-owl`); see `.claude/rules/dependencies.md`. DepManager stays the default.

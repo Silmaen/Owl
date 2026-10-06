@@ -2,15 +2,18 @@
 Action to publish built packages to a remote server.
 """
 import re
-from ci import log, root
+from ci import log
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.publish import (
-    download_api_script,
+    DEPLOY_PASSWORD_ENV,
+    Revision,
     get_project_version,
     get_git_hash,
     get_platform_info,
-    run_api_push,
+    normalize_server_url,
+    push_revision,
 )
+from ci.utils.secrets import get_secret, reject_secret_args
 from datetime import datetime
 
 
@@ -23,16 +26,21 @@ class PublishPackage(BaseAction):
         """
         Publish a built package for the given preset.
         :param preset: The preset configuration.
-        :param extra_args: Required: --url, --login, --password. Optional: --hash, --dry-run.
+        :param extra_args: Required: --url, --login (the password comes from
+            OWL_DEPLOY_PASSWORD, never from the command line). Optional: --hash, --dry-run.
         :return: Exit code indicating success or failure.
         """
         log.info(f"Publishing package with preset: {preset.cmake_preset}")
 
         # Parse extra arguments
         params = self.parse_extra_args(extra_args)
+        refused = reject_secret_args(params, {"password": DEPLOY_PASSWORD_ENV})
+        if refused:
+            log.error(refused)
+            return 1
         url = params.get("url")
         login = params.get("login")
-        password = params.get("password")
+        password = get_secret(DEPLOY_PASSWORD_ENV)
         git_hash = params.get("hash")
         dry_run = params.get("dry-run") == "true"
 
@@ -40,11 +48,14 @@ class PublishPackage(BaseAction):
         if not url:
             log.error("Missing required parameter: --url")
             return 1
+        if normalize_server_url(url) is None:
+            log.error("The publication URL must use https.")
+            return 1
         if not login:
             log.error("Missing required parameter: --login")
             return 1
-        if not password:
-            log.error("Missing required parameter: --password")
+        if not password and not dry_run:
+            log.error(f"Missing publication password: set {DEPLOY_PASSWORD_ENV}.")
             return 1
 
         # Validate that preset has OWL_PACKAGE_NAME
@@ -93,21 +104,17 @@ class PublishPackage(BaseAction):
         packages_folder = preset.get_build_dir()
         package_file = packages_folder / filename
 
-        # Build info dict
-        info = {
-            "type": pkg_type,
-            "hash": git_hash,
-            "branch": version,
-            "name": friendly_name,
-            "flavor_name": f"{plat['os']} {plat['arch']}",
-            "date": datetime.now().isoformat(),
-            "file": str(package_file),
-            "user": login,
-            "passwd": password,
-            "url": url,
-        }
+        revision = Revision(
+            rev_type=pkg_type,
+            branch=version,
+            file=package_file,
+            hash=git_hash,
+            name=friendly_name,
+            flavor_name=f"{plat['os']} {plat['arch']}",
+            date=datetime.now().isoformat(),
+        )
 
-        log.info(f"Package info: {info}")
+        log.info(f"Package info: {revision}, user={login}, url={url}")
 
         if dry_run:
             if not package_file.exists():
@@ -119,10 +126,4 @@ class PublishPackage(BaseAction):
             log.error(f"Package file not found: {package_file}")
             return 1
 
-        # Download api.py from the server
-        api_script = root / "ci" / "api.py"
-        if not download_api_script(url, api_script):
-            return 1
-
-        # Push the package
-        return run_api_push(api_script, info)
+        return push_revision(url, login, password, revision)

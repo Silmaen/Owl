@@ -64,7 +64,8 @@ Every fix lands with its regression test.
 - ![Planned][planned] `.owlpack` hardening — validated paths and sizes, exceptions caught, fuzzer in CI
   (PR-07: D-02, D-28)
 - ![Planned][planned] Prefab update / revert in place, with override detection (PR-10: C-02, E-11)
-- ![Planned][planned] CI secrets kept out of argv and logs, `api.py` pinned (PR-12: H-01, H-02, G-09, H-12)
+- ![Done][done] CI secrets kept out of argv and logs, `api.py` replaced by an in-repository upload client, secret
+  scan in `CodeStyle` (PR-12: H-01, H-02, G-09, H-12)
 - ![Planned][planned] Physics, sound and script lifecycle on EnTT hooks — no ghost collider, `on_destroy` always
   called (PR-13: C-08, D-04)
 - ![Planned][planned] Lua hardening — text-only chunks, instruction / memory quotas, exception trampoline
@@ -85,7 +86,7 @@ Every fix lands with its regression test.
   YAML, voxel, Lua, physics, startup)
 - ![Planned][planned] `owlnest_tests` category: undo, commands, snapshots; the empty round-trip assertions fixed
   (PR-02: E-03, F-02, C-07, P-14)
-- ![Planned][planned] Sanitizers that fail the build (ASan, UBSan, TSan), `--gtest_shuffle`, LSan job folded into
+- ![Done][done] Sanitizers that fail the build (ASan, UBSan, TSan), `--gtest_shuffle`, LSan job folded into
   ASan (PR-11: F-03, F-05, F-12, H-05)
 - ![Planned][planned] Tracy behind `OWL_PROFILE_*`, memory tracker off in Debug timings, client logs on the client
   logger (PR-16: D-12, D-11, D-23, A-17)
@@ -105,6 +106,21 @@ Every fix lands with its regression test.
   (PR-20: A-01, A-13)
 - ![Planned][planned] Tests for the CI tooling itself (pytest, ruff, mypy) (PR-34: H-04, H-08)
 - ![Planned][planned] Benchmarks in CI with a regression threshold against a stored baseline
+
+### Packages without a rebuild
+
+Today each platform builds its two packages (Engine SDK, Owl Nest) in their own trees, apart from the tested builds.
+Reusing the tested tree is not possible as is:
+
+- the tested builds are development builds (`OWL_DEVELOPMENT`: assets searched in the repository), the packages are
+  not; shipping the tested tree would ship a development binary;
+- the Engine SDK is multi-config (Debug + Release, documentation, `lib/` / `include/` / `assets/` layout,
+  `OWL_PACKAGE_ENGINE`), Owl Nest is a Release application with everything in `bin/`.
+
+The work: make the asset lookup a runtime decision instead of `OWL_DEVELOPMENT` / `OWL_PACKAGE_ENGINE`, produce both
+archives from one packaging tree with CPack components, and make that preset the release preset the Clang builds
+already build and test, so the archive ships exactly what was tested. Packages run on `main` only, so this saves
+agent time, not pull-request latency.
 
 ## Phase C — Owl RHI & architecture
 

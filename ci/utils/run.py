@@ -5,6 +5,7 @@ Utility function for running application commands.
 from logging import INFO, WARNING, ERROR
 
 from ci import log
+from ci.utils.secrets import redact_command
 
 # enum for mode of log level determination
 MODE_BY_CONTENT = 0
@@ -94,7 +95,7 @@ def run_command(command: list[str] | str,
 
     if isinstance(command, str):
         command = command.split()
-    log.info(f"Running command: {' '.join(command)}")
+    log.info(f"Running command: {redact_command(command)}")
     try:
         env = environ.copy()
         if detection_mode == MODE_BY_COLOR:
@@ -174,7 +175,7 @@ def run_command(command: list[str] | str,
         )
         return 1
     except Exception as e:
-        log.error(f"Error running command '{' '.join(command)}': {e}")
+        log.error(f"Error running command '{redact_command(command)}': {e}")
         return 1
 
 
@@ -205,5 +206,5 @@ def run_command_capture_output(command: list[str] | str) -> tuple[int, str]:
         )
         return 1, ""
     except Exception as e:
-        log.error(f"Error running command '{' '.join(command)}': {e}")
+        log.error(f"Error running command '{redact_command(command)}': {e}")
         return 1, ""

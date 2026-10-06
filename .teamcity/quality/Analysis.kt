@@ -2,7 +2,9 @@ import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
 
-private val analysisGates = listOf(sanitizerAddress, sanitizerLeak, sanitizerThread, sanitizerUndefinedBehavior)
+// Level 2: after Code Style only, in parallel with the builds and the sanitizers (each analysis
+// builds its own preset).
+private val analysisGates = listOf(codeStyle)
 
 val clangTidy = analysisBuild("Build_Quality_ClangTidy", "Clang-Tidy", "tidy", analysisGates)
 val staticAnalyzer = analysisBuild("Build_Quality_ClangAnalyzer", "Static Analyzer", "analyzer", analysisGates)
@@ -38,9 +40,7 @@ val includeCheck = BuildType {
         githubBridge()
     }
 
-    dependencies {
-        after(*analysisGates.toTypedArray())
-    }
+    // Level 1, in parallel with Code Style: it waits for nothing.
 }
 
 val analysis = Project {
@@ -50,7 +50,8 @@ val analysis = Project {
     buildType(clangTidy)
     buildType(staticAnalyzer)
     buildType(includeCheck)
-    buildTypesOrder = arrayListOf(clangTidy, staticAnalyzer, includeCheck)
+    buildType(prReady)
+    buildTypesOrder = arrayListOf(clangTidy, staticAnalyzer, includeCheck, prReady)
 
     params {
         param("platform", "Linux")

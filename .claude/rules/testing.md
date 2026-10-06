@@ -73,6 +73,21 @@ docker/run.sh poetry run python ci_action.py Test linux-clang-release
 ```
 The whole suite runs in a few seconds once built (Release; debug + coverage is slower).
 
+## Order independence and sanitizers
+
+- Sanitizer presets set `OWL_TEST_SHUFFLE=ON`: every binary runs with `--gtest_shuffle`, so a test must not
+  depend on another one's side effects (static state, environment variables, factory registrations). Reset
+  what you touch, and never keep a pointer to a test-local object in static state.
+- The seed is random and printed at the top of the binary's output (`Note: Randomizing tests' orders with a
+  seed of N .`). Reproduce a failing order with the same seed:
+  ```bash
+  docker/run.sh env GTEST_RANDOM_SEED=N ctest --test-dir output/build/linux-sanitizer-address -R physics --output-on-failure
+  docker/run.sh output/build/linux-sanitizer-address/bin/owl_physics_tests_unit_test --gtest_shuffle --gtest_random_seed=N
+  ```
+- ctest sets `ASAN_OPTIONS` / `UBSAN_OPTIONS` / `TSAN_OPTIONS` with `halt_on_error=1` (`test/CMakeLists.txt`), and
+  the code is built with `-fno-sanitize-recover=all`: any sanitizer report fails the test. When running a binary
+  by hand outside ctest, UBSan still aborts (no recovery compiled in).
+
 ## Conventions
 
 - Test names: `TEST(Module, Behavior)` — e.g., `TEST(Scene, CopyCreatesIndependentScene)`

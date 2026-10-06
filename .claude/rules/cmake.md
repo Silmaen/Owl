@@ -98,10 +98,10 @@ Tests are auto-discovered from `test/` subdirectories. See testing rules.
 | `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF        | AddressSanitizer (CI presets)                                                                                                                 |
 | `OWL_ENABLE_THREAD_SANITIZER`             | OFF        | ThreadSanitizer (CI presets)                                                                                                                  |
 | `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF        | UBSanitizer (CI presets)                                                                                                                      |
-| `OWL_ENABLE_LEAK_SANITIZER`               | OFF        | LeakSanitizer (CI presets)                                                                                                                    |
 | `OWL_ENABLE_MEMORY_SANITIZER`             | OFF        | MemorySanitizer (Clang-only, CI presets)                                                                                                      |
 | `OWL_ENABLE_DOCUMENTATION`                | OFF        | Enable Doxygen documentation generation                                                                                                       |
 | `OWL_PACKAGING`                           | OFF        | Enable packaging mode                                                                                                                         |
 | `OWL_BENCHMARK`                           | OFF        | Build the `owl_bench` micro-benchmark harness (`bench/`, see `bench/README.md`)                                                               |
 | `OWL_INCLUDE_CHECK`                       | OFF        | Add `owl_include_check`: every header and source compiled alone, no PCH, strict libc++ (Clang only, `linux-include-check` preset)             |
 | `OWL_DEPENDENCY_PROVIDER`                 | depmanager | Third-party provider: `depmanager` or `conan` (see `.claude/rules/dependencies.md`)                                                           |
+| `OWL_TEST_SHUFFLE`                        | OFF        | Run every test binary with `--gtest_shuffle` (ON in the sanitizer presets; seed via `GTEST_RANDOM_SEED`)                                      |

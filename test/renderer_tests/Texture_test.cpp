@@ -95,5 +95,6 @@ TEST(Texture, CreateFromString) {
 		const auto tex = Texture2D::createFromSerialized("pat:bob");
 		EXPECT_EQ(tex, nullptr);
 	}
+	RenderCommand::invalidate();
 	owl::core::Log::invalidate();
 }

@@ -231,6 +231,8 @@ auto TrackerAPI::globals() -> const AllocationState& { return StateManager::getG
 // =========================== Allocation Info =================================
 AllocationInfo::AllocationInfo(void* iLocation, const size_t iSize) : location{iLocation}, size{iSize} {
 #ifdef OWL_STACKTRACE
+	// cpptrace allocates under its own mutex: tracking those allocations would re-enter it and deadlock.
+	const AntiLoopScope antiLoop;
 	traceInternal = mkShared<TraceInternal>();
 	traceInternal->fullTrace = cpptrace::generate_trace();
 #endif

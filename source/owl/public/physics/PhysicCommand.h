@@ -51,9 +51,18 @@ public:
 
 	/**
 	 * @brief
-	 *  Destroy the world and unlink scene.
+	 *  Destroy the world and unlink scene. Does nothing when physics is not initialized.
 	 */
 	static void destroy();
+
+	/**
+	 * @brief
+	 *  Destroy the world only if it is bound to the given scene.
+	 *
+	 * Called by the scene destructor so the static state never outlives the scene it points to.
+	 * @param[in] iScene The scene being released.
+	 */
+	static void releaseScene(const scene::Scene* iScene);
 
 	/**
 	 * @brief

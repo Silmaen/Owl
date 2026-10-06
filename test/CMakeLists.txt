@@ -1,6 +1,17 @@
 
 file(GLOB children CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
 
+option(${PROJECT_PREFIX}_TEST_SHUFFLE "Run every gtest binary with --gtest_shuffle (seed from GTEST_RANDOM_SEED, else random and logged)" OFF)
+set(${PROJECT_PREFIX}_TEST_EXTRA_ARGS)
+if (${PROJECT_PREFIX}_TEST_SHUFFLE)
+    list(APPEND ${PROJECT_PREFIX}_TEST_EXTRA_ARGS --gtest_shuffle)
+endif ()
+# Any sanitizer report must fail the test, under ctest as on the CI.
+set(${PROJECT_PREFIX}_TEST_ENVIRONMENT
+        "ASAN_OPTIONS=halt_on_error=1:detect_leaks=1:detect_stack_use_after_return=1:strict_init_order=1:check_initialization_order=1"
+        "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1"
+        "TSAN_OPTIONS=halt_on_error=1:second_deadlock_stack=1")
+
 add_custom_target(All_Tests)
 # googletest
 find_package(GTest REQUIRED)
@@ -34,8 +45,9 @@ foreach (child ${children})
                 find_package(md4c CONFIG REQUIRED)
                 target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test md4c::md4c)
             endif ()
-            add_test(${PROJECT_PREFIX_LOWER}_${child}_UTests ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml)
-            set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 3600)
+            add_test(${PROJECT_PREFIX_LOWER}_${child}_UTests ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
+            set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 3600
+                    ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
             # Tests that touch shared process-level resources (freetype, GLFW init, OpenAL, msdfgen globals)
             # are serialized via RESOURCE_LOCK to avoid sporadic SEGFAULTs in parallel ctest runs.
             if (${child} STREQUAL "font_tests" OR ${child} STREQUAL "core_tests" OR

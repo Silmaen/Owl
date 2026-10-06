@@ -8,6 +8,8 @@ using namespace owl::renderer::gpu;
 
 TEST(Renderer, creation) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
+	// The test checks init() without a render API, so start from none whatever ran before.
+	RenderCommand::invalidate();
 	Renderer::reset();
 	EXPECT_EQ(Renderer::getState(), Renderer::State::Created);
 	Renderer::init();

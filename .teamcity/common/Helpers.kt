@@ -22,6 +22,12 @@ val CODE_ONLY_PATHS: String = """
 """.trimIndent()
 
 /**
+ * Pull request source branches a full-matrix configuration builds: every branch but the
+ * exploratory `Experiment/…` ones, which get a "Skipped: branch out of scope" check.
+ */
+const val EXCLUDE_EXPERIMENT: String = "+:*\n-:Experiment/*\n-:refs/heads/Experiment/*"
+
+/**
  * Snapshot dependencies on the configurations that must be green first. A failed or
  * cancelled gate stops the chain; a gate already green for the revision is reused.
  *
@@ -64,11 +70,14 @@ fun Triggers.mainBranchOnly() {
  *        configurations that run on `main` only.
  * @param annotateDiff write the findings on the diff.
  * @param pathFilter skip pull requests touching only these paths; empty runs on every PR.
+ * @param onExperiment also run for pull requests from `Experiment/…` branches. Those run
+ *        the fast subset only (the draft one): exploratory work does not pay the full matrix.
  */
 fun BuildFeatures.githubBridge(triggerOnPrDraft: Boolean = false,
                               triggerOnPrReady: Boolean = true,
                               annotateDiff: Boolean = true,
-                              pathFilter: String = CODE_ONLY_PATHS) {
+                              pathFilter: String = CODE_ONLY_PATHS,
+                              onExperiment: Boolean = triggerOnPrDraft) {
     feature {
         id = "github-bridge"
         type = "github-bridge"
@@ -81,6 +90,8 @@ fun BuildFeatures.githubBridge(triggerOnPrDraft: Boolean = false,
             param("triggerOnPrDraft", "true")
         if (pathFilter.isNotEmpty())
             param("pathFilter", pathFilter)
+        if (!onExperiment)
+            param("prTriggerBranchesOverride", EXCLUDE_EXPERIMENT)
         // A draft build already produced a verdict for this commit: republish it rather
         // than build again when the PR flips to ready. Owl merges by squash only.
         param("skipIfCommitPassed", "true")
