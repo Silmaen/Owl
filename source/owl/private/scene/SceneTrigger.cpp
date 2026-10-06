@@ -20,16 +20,19 @@
 namespace owl::scene {
 
 namespace {
+auto canDispatch(const Entity& iEntity) -> bool {
+	return iEntity.hasComponent<component::LuaScript>() && !iEntity.getScene()->isPendingDestruction(iEntity);
+}
+
 void dispatchLuaCallback(const Entity& iEntity, const std::string& iFuncName, const uint64_t iArg) {
-	if (!iEntity.hasComponent<component::LuaScript>())
+	if (!canDispatch(iEntity))
 		return;
 	if (const auto& ls = iEntity.getComponent<component::LuaScript>(); ls.instance && ls.instance->isValid())
-		std::ignore = ls.instance->callFunction(iFuncName);
-	static_cast<void>(iArg);
+		std::ignore = ls.instance->callFunction(iFuncName, iArg);
 }
 
 void dispatchLuaCallbackNoArg(const Entity& iEntity, const std::string& iFuncName) {
-	if (!iEntity.hasComponent<component::LuaScript>())
+	if (!canDispatch(iEntity))
 		return;
 	if (const auto& ls = iEntity.getComponent<component::LuaScript>(); ls.instance && ls.instance->isValid())
 		std::ignore = ls.instance->callFunction(iFuncName);

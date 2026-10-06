@@ -103,7 +103,7 @@ function on_destroy()
     log.info("Entity destroyed")
 end
 
--- Called when a physics collision is detected with another entity
+-- Called when this entity's physics body starts touching another entity's body
 function on_collision(other_entity_id)
     log.info("Collided with " .. other_entity_id)
 end
@@ -111,14 +111,31 @@ end
 
 ### Lifecycle Callbacks
 
-| Callback                 | When                                   | Arguments                  |
-|--------------------------|----------------------------------------|----------------------------|
-| `on_create()`            | Scene enters Play mode                 | None                       |
-| `on_update(dt)`          | Every frame during Play mode           | `dt`: delta time (seconds) |
-| `on_destroy()`           | Entity destroyed, or Play mode ends    | None                       |
-| `on_collision(other_id)` | Collision detected with another entity | `other_id`: UUID           |
+| Callback                 | When                                       | Arguments                  |
+|--------------------------|--------------------------------------------|----------------------------|
+| `on_create()`            | Scene enters Play mode                     | None                       |
+| `on_update(dt)`          | Every frame during Play mode               | `dt`: delta time (seconds) |
+| `on_destroy()`           | Entity destroyed, or Play mode ends        | None                       |
+| `on_collision(other_id)` | Body starts touching another entity's body | `other_id`: UUID           |
 
 All callbacks are optional — missing callbacks are silently skipped.
+
+### Collision Callback
+
+`on_collision(other_id)` is fed by Box2D contact events. It needs a Box2D body on both sides: a `PhysicBody`
+component, a collidable tilemap, or the automatic body of a raycast door or pushwall. Only the entity receiving the
+callback needs a `LuaScript`.
+
+- Both entities are notified, each with the other's UUID, right after the physics step of the frame (before
+  triggers).
+- A pair is reported **once** when its first contact begins. It is reported again only after the two bodies have
+  fully separated: resting on the ground, or sliding from one tilemap cell to the next, does not call it again.
+- Entities that are hidden, or queued for destruction (themselves or through an ancestor), are skipped. The check is
+  made before each call, so if the first entity's callback destroys the second, the second is not notified.
+- `scene.destroy_entity` in the callback is deferred like everywhere else (see
+  [Entity destruction](#entity-destruction)): destroying the entity itself or `other_id` is safe.
+- Two static bodies never collide, and a body that only moves through `transform.set_position` does not move in
+  Box2D (use `physics.set_velocity` or `physics.set_transform`).
 
 ### The `entity_id` Global
 
@@ -365,7 +382,9 @@ and fire events. The engine provides 7 trigger types:
 
 ### Trigger Callbacks
 
-All overlap-based triggers (except Victory, Death, Target) fire edge events:
+All overlap-based triggers (except Victory, Death, Target) fire edge events, on the trigger entity's script and
+on the player's script. `other_id` is the other side: the player's UUID for the trigger, the trigger's UUID for the
+player.
 
 ```lua
 -- Called once when the player enters the trigger volume
@@ -387,6 +406,9 @@ inspector (the **Callback** field); if left empty, the default name is used:
 | **Timer**       | `on_timer`       | When the timer duration expires       |
 | **Interaction** | `on_interact`    | When the player presses E in range    |
 | **LuaCallback** | `on_triggered`   | Every frame while the player overlaps |
+
+`on_triggered` receives the player's UUID as its only argument (`on_triggered(other_id)`); `on_timer` and
+`on_interact` take no argument.
 
 ### Timer Example
 
@@ -461,8 +483,10 @@ Lua callbacks to match your game.
 ### onUpdateRuntime (each frame)
 
 - For each `LuaScript` with a valid instance, calls `on_update(dt)`
+- Steps the physics, then calls `on_collision(other_id)` for every collision begun during the step
+- Runs the triggers (`on_trigger_enter` / `on_trigger_exit` / primary callbacks)
 
-### Entity destruction
+### Entity destruction {#entity-destruction}
 
 `scene.destroy_entity(id)` does not destroy anything right away: it queues the entity, which stays valid
 until the end of the current `onUpdateRuntime()`, after scripts, physics and triggers have run. A script

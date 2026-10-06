@@ -15,6 +15,8 @@
 #include <box2d/box2d.h>
 
 #include <cstdint>
+#include <map>
+#include <span>
 
 namespace owl::physics {
 
@@ -42,9 +44,64 @@ public:
 
 	auto operator=(Impl&&) -> Impl& = delete;
 
+	void registerBody(const b2BodyId iBody, const scene::Entity& iOwner) {
+		bodyOwners[b2StoreBodyId(iBody)] = iOwner.getUUID();
+	}
+
+	[[nodiscard]] auto ownerOf(const b2ShapeId iShape) const -> std::optional<core::UUID> {
+		if (!b2Shape_IsValid(iShape))
+			return std::nullopt;
+		if (const auto it = bodyOwners.find(b2StoreBodyId(b2Shape_GetBody(iShape))); it != bodyOwners.end())
+			return it->second;
+		return std::nullopt;
+	}
+
+	[[nodiscard]] auto pairKey(const b2ShapeId iShapeA, const b2ShapeId iShapeB) const
+			-> std::optional<std::pair<core::UUID, core::UUID>> {
+		const auto ownerA = ownerOf(iShapeA);
+		const auto ownerB = ownerOf(iShapeB);
+		if (!ownerA || !ownerB || *ownerA == *ownerB)
+			return std::nullopt;
+		return std::pair{*ownerA, *ownerB};
+	}
+
+	void collectContactEvents() {
+		const b2ContactEvents events = b2World_GetContactEvents(worldId);
+		for (const auto& event: std::span(events.beginEvents, static_cast<size_t>(events.beginCount))) {
+			const auto pair = pairKey(event.shapeIdA, event.shapeIdB);
+			if (!pair)
+				continue;
+			if (++touching[ordered(*pair)] == 1)
+				collisionBegins.push_back({.entityA = pair->first, .entityB = pair->second});
+		}
+		for (const auto& event: std::span(events.endEvents, static_cast<size_t>(events.endCount))) {
+			const auto pair = pairKey(event.shapeIdA, event.shapeIdB);
+			if (!pair)
+				continue;
+			if (const auto it = touching.find(ordered(*pair)); it != touching.end() && --it->second == 0)
+				touching.erase(it);
+		}
+	}
+
+	void forgetEntity(const core::UUID iEntity) {
+		std::erase_if(touching, [iEntity](const auto& iEntry) -> bool {
+			return iEntry.first.first == iEntity || iEntry.first.second == iEntity;
+		});
+		std::erase_if(bodyOwners, [iEntity](const auto& iEntry) -> bool { return iEntry.second == iEntity; });
+	}
+
+	[[nodiscard]] static auto ordered(const std::pair<core::UUID, core::UUID>& iPair) -> std::pair<uint64_t, uint64_t> {
+		const auto first = static_cast<uint64_t>(iPair.first);
+		const auto second = static_cast<uint64_t>(iPair.second);
+		return first < second ? std::pair{first, second} : std::pair{second, first};
+	}
+
 	b2WorldId worldId{0, 0};
 	uint64_t nextId = 1;
 	std::unordered_map<uint64_t, b2BodyId> bodies;
+	std::unordered_map<uint64_t, core::UUID> bodyOwners;
+	std::map<std::pair<uint64_t, uint64_t>, uint32_t> touching;
+	std::vector<CollisionEvent> collisionBegins;
 };
 shared<PhysicCommand::Impl> PhysicCommand::m_impl = nullptr;
 scene::Scene* PhysicCommand::m_scene = nullptr;
@@ -94,6 +151,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		sbody.bodyId = m_impl->nextId;
 		m_impl->bodies[m_impl->nextId] = body;
 		m_impl->nextId++;
+		m_impl->registerBody(body, entity);
 
 		const b2Polygon dynamicBox = b2MakeBox(sbody.colliderSize.x() * worldTransform.scale().x() * 0.5f,
 											   sbody.colliderSize.y() * worldTransform.scale().y() * 0.5f);
@@ -101,6 +159,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		shapeDef.density = sbody.density;
 		shapeDef.material.friction = sbody.friction;
 		shapeDef.material.restitution = sbody.restitution;
+		shapeDef.enableContactEvents = true;
 		b2CreatePolygonShape(body, &shapeDef, &dynamicBox);
 	}
 
@@ -130,6 +189,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		const b2BodyId tileBody = b2CreateBody(m_impl->worldId, &bodyDef);
 		m_impl->bodies[m_impl->nextId] = tileBody;
 		m_impl->nextId++;
+		m_impl->registerBody(tileBody, entity);
 		const float cellSize = assetData.cellSize;
 		const float originX = -static_cast<float>(assetData.width - 1) * 0.5f * cellSize;
 		const float originY = static_cast<float>(assetData.height - 1) * 0.5f * cellSize;
@@ -138,6 +198,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 		shapeDef.density = 0.f;// static
 		shapeDef.material.friction = 0.5f;
+		shapeDef.enableContactEvents = true;
 		for (const auto& layer: assetData.layers) {
 			for (uint32_t y = 0; y < assetData.height; ++y) {
 				for (uint32_t x = 0; x < assetData.width; ++x) {
@@ -180,10 +241,12 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 		shapeDef.density = 0.f;
 		shapeDef.material.friction = 0.5f;
+		shapeDef.enableContactEvents = true;
 		b2CreatePolygonShape(body, &shapeDef, &plateBox);
 		door.bodyId = m_impl->nextId;
 		m_impl->bodies[m_impl->nextId] = body;
 		m_impl->nextId++;
+		m_impl->registerBody(body, entity);
 	}
 	for (const auto view = m_scene->registry.view<scene::component::RaycastPushWall, scene::component::Transform>();
 		 const auto e: view) {
@@ -204,10 +267,12 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		b2ShapeDef shapeDef = b2DefaultShapeDef();
 		shapeDef.density = 0.f;
 		shapeDef.material.friction = 0.5f;
+		shapeDef.enableContactEvents = true;
 		b2CreatePolygonShape(body, &shapeDef, &block);
 		push.bodyId = m_impl->nextId;
 		m_impl->bodies[m_impl->nextId] = body;
 		m_impl->nextId++;
+		m_impl->registerBody(body, entity);
 	}
 }
 
@@ -236,13 +301,17 @@ void PhysicCommand::frame(const core::Timestep& iTimestep) {
 	}
 	// Update the physical world
 	b2World_Step(m_impl->worldId, iTimestep.getSeconds(), 4);
+	m_impl->collectContactEvents();
 
 	// apply to the entities
 	for (const auto view = m_scene->registry.view<scene::component::Transform, scene::component::PhysicBody>();
 		 const auto entity: view) {
 		auto&& [transform, physic] = view.get<scene::component::Transform, scene::component::PhysicBody>(entity);
-		const auto [x, y] = b2Body_GetPosition(m_impl->bodies[physic.body.bodyId]);
-		const float angle = b2Rot_GetAngle(b2Body_GetRotation(m_impl->bodies[physic.body.bodyId]));
+		const auto bodyIt = m_impl->bodies.find(physic.body.bodyId);
+		if (bodyIt == m_impl->bodies.end())
+			continue;
+		const auto [x, y] = b2Body_GetPosition(bodyIt->second);
+		const float angle = b2Rot_GetAngle(b2Body_GetRotation(bodyIt->second));
 		// Convert world position from Box2D back to local space.
 		const scene::Entity ent{entity, m_scene};
 		const auto& hierarchy = ent.getComponent<scene::component::Hierarchy>();
@@ -268,6 +337,12 @@ void PhysicCommand::frame(const core::Timestep& iTimestep) {
 	}
 }
 
+auto PhysicCommand::takeCollisionEvents() -> std::vector<CollisionEvent> {
+	if (!isInitialized())
+		return {};
+	return std::exchange(m_impl->collisionBegins, {});
+}
+
 void PhysicCommand::destroyBody(const scene::Entity& iEntity) {
 	if (!isInitialized() || !iEntity)
 		return;
@@ -286,6 +361,7 @@ void PhysicCommand::destroyBody(const scene::Entity& iEntity) {
 		release(iEntity.getComponent<scene::component::RaycastDoor>().bodyId);
 	if (iEntity.hasComponent<scene::component::RaycastPushWall>())
 		release(iEntity.getComponent<scene::component::RaycastPushWall>().bodyId);
+	m_impl->forgetEntity(iEntity.getUUID());
 }
 
 void PhysicCommand::impulse(const scene::Entity& iEntity, const math::vec2f& iImpulse) {

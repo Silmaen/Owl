@@ -16,7 +16,7 @@ code, Lua bindings and the editor only see the interface. One physics world per 
 
 - Fixed-step simulation, multi-threaded Box2D solver on Taskflow (PR-22: D-05, P-12, D-14)
 - Bodies destroyed with their entity, no ghost collider (PR-13: C-08, D-04)
-- `on_collision` implemented from Box2D contact events, with the other entity (D-07, I-02)
+- `on_collision` implemented from Box2D contact events, with the other entity (D-07, I-02) — done
 
 ## v0.5.0 — 2D physics complete
 

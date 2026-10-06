@@ -74,7 +74,7 @@ Every fix lands with its regression test.
 - ![Done][done] Lua hardening — text-only chunks, time / memory quotas, exception trampoline
   (PR-14: D-06, D-16)
 - ![Planned][planned] Scene format version and atomic writes (PR-25: C-10, C-13)
-- ![Planned][planned] `on_collision` implemented — the callback documented since v0.1 is fed by Box2D contact events,
+- ![Done][done] `on_collision` implemented — the callback documented since v0.1 is fed by Box2D contact events,
   with the entity it collided with (D-07, I-02); the rest of the 2D physics API is v0.5.0, see
   [Physics API](physics-api.md)
 - ![Planned][planned] Game export works end to end — packaging, pack, runner, assets, voxel in the runner (D-03),

@@ -11,6 +11,8 @@
 #include "core/Core.h"
 #include "scene/Scene.h"
 
+#include <vector>
+
 /**
  * @brief
  *  Namespace for phyisics management.
@@ -77,6 +79,28 @@ public:
 	 * @param iTimestep The time step.
 	 */
 	static void frame(const core::Timestep& iTimestep);
+
+	/**
+	 * @brief
+	 *  Two entities whose bodies started touching during a physics step.
+	 */
+	struct CollisionEvent {
+		/// UUID of the first entity of the pair.
+		core::UUID entityA;
+		/// UUID of the second entity of the pair.
+		core::UUID entityB;
+	};
+
+	/**
+	 * @brief
+	 *  Hand over the collisions that began during the last `frame()` calls, and clear them.
+	 *
+	 * Built from Box2D begin-touch contact events. A pair is reported once when its first contact
+	 * begins; contacts between further shapes of the same two entities (tilemap cells) are not
+	 * reported again until all of them have ended.
+	 * @return The begun collisions, in Box2D event order.
+	 */
+	[[nodiscard]] static auto takeCollisionEvents() -> std::vector<CollisionEvent>;
 
 	/**
 	 * @brief

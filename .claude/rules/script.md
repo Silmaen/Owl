@@ -26,6 +26,10 @@ User-facing reference: `doc/pages/scripting.md`. Update it with every binding ch
   `longjmp`s over the binding's frame. Throw a C++ exception instead when a check comes later.
 - Lifecycle: `ScriptEngine::init()` in `Scene::onStartRuntime()`; instances call `on_create` /
   `on_update` / `on_destroy`.
+- Event callbacks: `on_collision(other_id)` (from `PhysicCommand::takeCollisionEvents()`, dispatched by
+  `Scene::dispatchCollisionEvents()` after the physics step), `on_trigger_enter(other_id)` /
+  `on_trigger_exit(other_id)` / `on_triggered(other_id)`, `on_timer()`, `on_interact()`. Never dispatch to an
+  entity for which `Scene::isPendingDestructionInTree()` is true; destruction from a callback is deferred.
 - Properties: `properties = { {name, type, default}, ... }`, parsed by
   `ScriptEngine::extractProperties()`, set as globals before `on_create`.
 - **The `properties` table is editor metadata only.** At runtime the globals come from the component's

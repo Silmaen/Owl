@@ -96,16 +96,23 @@ and a `Transform` component. For each entity:
 2. Creates a `b2BodyId` with the appropriate body type, position, rotation,
    and `fixedRotation` flag.
 3. Creates a box-shaped polygon collider scaled by `colliderSize * worldScale`.
-4. Applies the `density`, `friction`, and `restitution` material properties.
-5. Stores the mapping from an internal `bodyId` to the Box2D `b2BodyId`.
+4. Applies the `density`, `friction`, and `restitution` material properties, and enables Box2D contact events
+   on the shape.
+5. Stores the mapping from an internal `bodyId` to the Box2D `b2BodyId`, and from the Box2D body to the owning
+   entity's UUID.
+
+Collidable tilemaps, raycast doors and pushwalls get their bodies the same way, owned by their entity.
 
 ### frame(timestep)
 
-Called from `Scene::onUpdateRuntime()` once per frame. Performs two steps:
+Called from `Scene::onUpdateRuntime()` once per frame. Performs three steps:
 
 1. **Box2D step** -- advances the simulation by the frame timestep with 4
    sub-steps (`b2World_Step`).
-2. **Sync transforms** -- for each entity with a `PhysicBody`, reads the
+2. **Contact events** -- reads the begin / end touch events of the step
+   (`b2World_GetContactEvents`) and records the collisions that began (see
+   [Collision Events](#collision-events)).
+3. **Sync transforms** -- for each entity with a `PhysicBody`, reads the
    body position and rotation from Box2D and writes them back to the entity's
    `Transform` component. If the entity has a parent in the hierarchy, the
    world position is converted back to **local space** using the inverse of
@@ -127,6 +134,8 @@ body-id map, and resets the `Impl` pointer and scene pointer. After this call,
 | `destroy()`                                | Destroy Box2D world and clear all bodies      |
 | `isInitialized()`                          | Check if the physics world is active          |
 | `frame(timestep)`                          | Step the simulation and sync transforms       |
+| `takeCollisionEvents()`                    | Hand over and clear the collisions begun      |
+| `destroyBody(entity)`                      | Remove the entity's Box2D bodies              |
 | `impulse(entity, vec2f)`                   | Apply a linear impulse to the entity's centre |
 | `getVelocity(entity) -> vec2f`             | Read the entity's current linear velocity     |
 | `setVelocity(entity, vec2f)`               | Override the entity's linear velocity         |
@@ -152,6 +161,37 @@ void MyScript::onUpdate(const owl::core::Timestep& iTimeStep) {
         }
     }
 }
+```
+
+## Collision Events {#collision-events}
+
+`frame()` turns Box2D contact events into entity-level collisions. Each begin-touch event is resolved to the two
+owning entities; Owl counts the touching shape pairs of every entity pair and records a `CollisionEvent`
+(`entityA`, `entityB` UUIDs) only when the count goes from 0 to 1. End-touch events decrement the count, so a body
+resting on the ground, or a player crossing the cells of a tilemap (one Box2D shape per cell), yields one collision,
+not one per frame or per cell. `destroyBody()` forgets every pair of the destroyed entity.
+
+`Scene::onUpdateRuntime()` calls `PhysicCommand::takeCollisionEvents()` right after `frame()`, and
+`Scene::dispatchCollisionEvents()` calls Lua `on_collision(other_id)` on both entities (see
+[Lua Scripting](scripting.md)). Entities that are hidden or queued for destruction (`Scene::isPendingDestructionInTree()`)
+are skipped, and the check is redone before each call. The events are read from a vector owned by the caller, not
+from an EnTT view, and destruction from a callback is deferred to the end of the frame, so a callback cannot
+invalidate the dispatch.
+
+```mermaid
+sequenceDiagram
+    participant S as Scene::onUpdateRuntime
+    participant P as PhysicCommand
+    participant B as Box2D
+    participant L as Lua scripts
+    S->>P: frame(dt)
+    P->>B: b2World_Step
+    P->>B: b2World_GetContactEvents
+    P-->>P: pair counts, begun collisions
+    S->>P: takeCollisionEvents()
+    S->>L: on_collision(other_id) on A, then on B
+    S->>S: triggers, render
+    S->>S: flushPendingDestructions()
 ```
 
 ## Player Integration

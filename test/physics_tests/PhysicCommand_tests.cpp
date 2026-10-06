@@ -7,6 +7,10 @@
 #include <scene/component/components.h>
 
 #include <chrono>
+#include <cstdint>
+#include <set>
+#include <utility>
+#include <vector>
 
 using namespace owl::core;
 using namespace owl::physics;
@@ -360,5 +364,55 @@ TEST(PhysicCommand, ReleaseSceneIgnoresUnboundScene) {
 	EXPECT_FALSE(PhysicCommand::isInitialized());
 	PhysicCommand::destroy();
 	EXPECT_FALSE(PhysicCommand::isInitialized());
+	Log::invalidate();
+}
+
+namespace {
+auto makeFallingPair(Scene& ioScene) -> std::pair<Entity, Entity> {
+	auto ground = ioScene.createEntity("ground");
+	ground.getComponent<component::Transform>().transform.scale() = {10.f, 1.f, 1.f};
+	ground.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Static;
+	auto box = ioScene.createEntity("box");
+	box.getComponent<component::Transform>().transform.translation() = {0.f, 1.5f, 0.f};
+	box.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Dynamic;
+	return {ground, box};
+}
+}// namespace
+
+TEST(PhysicCommand, CollisionReportedOncePerPair) {
+	Log::init(Log::Level::Off);
+	Scene scene;
+	const auto [ground, box] = makeFallingPair(scene);
+	EXPECT_TRUE(PhysicCommand::takeCollisionEvents().empty());
+	PhysicCommand::init(&scene);
+	Timestep ts;
+	ts.forceUpdate(std::chrono::milliseconds(16));
+	std::vector<PhysicCommand::CollisionEvent> events;
+	for (int i = 0; i < 120; ++i) {
+		PhysicCommand::frame(ts);
+		for (const auto& event: PhysicCommand::takeCollisionEvents()) events.push_back(event);
+	}
+	ASSERT_EQ(events.size(), 1u);
+	const std::set<uint64_t> pair{events.front().entityA, events.front().entityB};
+	EXPECT_EQ(pair, (std::set<uint64_t>{ground.getUUID(), box.getUUID()}));
+	EXPECT_TRUE(PhysicCommand::takeCollisionEvents().empty());
+	PhysicCommand::destroy();
+	Log::invalidate();
+}
+
+TEST(PhysicCommand, DestroyedBodyStopsReportingCollisions) {
+	Log::init(Log::Level::Off);
+	Scene scene;
+	const auto [ground, box] = makeFallingPair(scene);
+	PhysicCommand::init(&scene);
+	Timestep ts;
+	ts.forceUpdate(std::chrono::milliseconds(16));
+	for (int i = 0; i < 60; ++i) PhysicCommand::frame(ts);
+	EXPECT_EQ(PhysicCommand::takeCollisionEvents().size(), 1u);
+	PhysicCommand::destroyBody(ground);
+	for (int i = 0; i < 60; ++i) PhysicCommand::frame(ts);
+	EXPECT_TRUE(PhysicCommand::takeCollisionEvents().empty());
+	EXPECT_LT(box.getComponent<component::Transform>().transform.translation().y(), 0.f);
+	PhysicCommand::destroy();
 	Log::invalidate();
 }
