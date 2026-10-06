@@ -277,8 +277,7 @@ auto luaSceneDestroyEntity(lua_State* iState) -> int {
 	if (activeScene == nullptr)
 		return 0;
 	const auto uuid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
-	if (auto entity = activeScene->findEntityByUUID(core::UUID{uuid}); entity)
-		activeScene->destroyEntity(entity);
+	activeScene->destroyEntityDeferred(activeScene->findEntityByUUID(core::UUID{uuid}));
 	return 0;
 }
 
