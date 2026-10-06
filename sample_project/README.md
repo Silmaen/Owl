@@ -93,7 +93,7 @@ it directly.
 |------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `main_menu.lua`              | Dynamic Démarrer/Continuer button, save slot info, settings dispatch, fade transitions, `gamestate` continue snapshot, `save.has_save/list/delete`, `scene.load_scene`            |
 | `world_player.lua`           | Top-down 4-direction movement (gravity scale = 0 + `set_velocity`), camera-follow, ESC pause, teleporter visibility gate, world-return position restore                          |
-| `platformer_player.lua`      | Tight side-scroller controls (state machine grounded / rising / falling, coyote time, jump buffer), no air control, camera-follow, HUD update, ESC pause                          |
+| `platformer_player.lua`      | Tight side-scroller controls (state machine grounded / rising / falling, coyote time, jump buffer), no air control, camera-follow, HUD update, ESC pause, `on_collision` trace    |
 | `house_door.lua`             | `Trigger.Type=Interaction`, gates entry on `house_<n>_done` flag, saves world-return position, loads platformer scene                                                              |
 | `level_complete.lua`         | Marks the visited house as done, increments `houses_visited`, returns to the world map                                                                                            |
 | `teleporter.lua`             | `Trigger.Type=Interaction`, loads the victory scene (visibility currently controlled by `world_player.lua`)                                                                       |
@@ -134,6 +134,7 @@ it directly.
 - [x] `log` (trace, info, warn, error)
 - [x] `trigger` (start_timer, stop_timer, reset_timer)
 - [x] Trigger callbacks (on_trigger_enter/exit, on_timer, on_interact, custom)
+- [x] Collision callback (`on_collision(other_id)` from Box2D contacts)
 
 ### Gameplay Systems
 - [x] Scene transitions (menu / world map / platformer / victory / game-over / settings)

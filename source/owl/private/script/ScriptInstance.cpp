@@ -134,6 +134,12 @@ auto ScriptInstance::callFunction(const std::string& iName) const -> bool {
 	return called;
 }
 
+auto ScriptInstance::callFunction(const std::string& iName, const uint64_t iEntityId) const -> bool {
+	if (!isValid())
+		return false;
+	return mp_impl->engine.callFunction(iName, iEntityId);
+}
+
 // ---- Property access ----
 void ScriptInstance::setProperty(const std::string& iName, const float iValue) const {
 	if (!isValid())

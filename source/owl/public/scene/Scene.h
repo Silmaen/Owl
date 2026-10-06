@@ -396,6 +396,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Check whether an entity will be destroyed by the next flush, queued itself or through an ancestor.
+	 * @param[in] iEntity The entity to check.
+	 * @return True if the entity or one of its ancestors is waiting in the destruction queue.
+	 */
+	[[nodiscard]] auto isPendingDestructionInTree(const Entity& iEntity) const -> bool;
+
+	/**
+	 * @brief
 	 *  Destroy every entity queued by `destroyEntityDeferred()`, with its children.
 	 *
 	 * Each destroyed entity first gets its runtime teardown: Lua `on_destroy` (called once), native
@@ -404,6 +412,16 @@ public:
 	 * triggers) and at the start of `onEndRuntime()`.
 	 */
 	void flushPendingDestructions();
+
+	/**
+	 * @brief
+	 *  Call Lua `on_collision(other_id)` on both entities of every collision begun this step.
+	 *
+	 * Called from `onUpdateRuntime` right after the physics step. Entities that are gone, hidden, or
+	 * queued for destruction (themselves or through an ancestor) are skipped; the check is redone
+	 * before each call, so a callback that destroys the other entity cancels its notification.
+	 */
+	void dispatchCollisionEvents();
 
 	/**
 	 * @brief

@@ -147,7 +147,7 @@ up. No new gameplay feature ([details](design/foundations.md)).
 - ![Done][done] Phase 0 — breaking upgrades first: EnTT 4, Taskflow 4.1, lagging dependencies
 - ![Done][done] Phase 0 — DepManager and `owl_engine.py` removed: Conan the only provider, consumers on the packaged archive
 - ![Planned][planned] Phase A — every confirmed correctness bug fixed with its regression test (PR-01 to PR-25)
-- ![Planned][planned] Phase A — `on_collision` implemented from Box2D contact events (D-07)
+- ![Done][done] Phase A — `on_collision` implemented from Box2D contact events (D-07)
 - ![Planned][planned] Phase A — game export tested end to end, sample run headless ([Export](design/game-export.md))
 - ![In Progress][progress] Phase A — full Wayland: icon, editor multi-window, X11 kept ([details](design/windowing-input.md))
 - ![In Progress][progress] Phase B — engine benchmark harness `bench/` (`OWL_BENCHMARK`)

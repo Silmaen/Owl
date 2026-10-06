@@ -142,6 +142,15 @@ public:
 	 */
 	[[nodiscard]] auto callFunction(const std::string& iName) const -> bool;
 
+	/**
+	 * @brief
+	 *  Call an arbitrary named function in the script with an entity UUID argument.
+	 * @param[in] iName The function name.
+	 * @param[in] iEntityId The UUID passed as the function's single argument.
+	 * @return True if the function existed and was called successfully.
+	 */
+	[[nodiscard]] auto callFunction(const std::string& iName, uint64_t iEntityId) const -> bool;
+
 	// ---- Property access ----
 	/**
 	 * @brief

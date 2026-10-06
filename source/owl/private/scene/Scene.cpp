@@ -669,6 +669,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	const auto tPhysics = now();
 	physics::PhysicCommand::frame(iTimeStep);
 	const auto tPhysicsEnd = now();
+	dispatchCollisionEvents();
 
 	updateEntityLinks();
 	m_worldTransformCache.clear();
@@ -2422,6 +2423,38 @@ void Scene::destroyEntityDeferred(const Entity& iEntity) {
 
 auto Scene::isPendingDestruction(const Entity& iEntity) const -> bool {
 	return iEntity && std::ranges::find(m_pendingDestructions, iEntity.getUUID()) != m_pendingDestructions.end();
+}
+
+auto Scene::isPendingDestructionInTree(const Entity& iEntity) const -> bool {
+	Entity current = iEntity;
+	// Bounded by the entity count so a corrupted (cyclic) hierarchy cannot loop forever.
+	const size_t maxDepth = registry.view<component::ID>().size();
+	for (size_t depth = 0; current && depth <= maxDepth; ++depth) {
+		if (isPendingDestruction(current))
+			return true;
+		const auto parentId = current.getComponent<component::Hierarchy>().parentId;
+		if (parentId == core::UUID{0})
+			return false;
+		current = findEntityByUUID(parentId);
+	}
+	return false;
+}
+
+void Scene::dispatchCollisionEvents() {
+	const auto notify = [this](const core::UUID iSelf, const core::UUID iOther) -> void {
+		const Entity self = findEntityByUUID(iSelf);
+		if (!self || !self.hasComponent<component::LuaScript>() || isPendingDestructionInTree(self) ||
+			!isEffectivelyVisible(self, /*iEditorMode=*/false))
+			return;
+		// Hold the instance itself: the callback may grow component storages and move the component.
+		if (const auto* instance = self.getComponent<component::LuaScript>().instance.get();
+			instance != nullptr && instance->isValid())
+			instance->onCollision(iOther);
+	};
+	for (const auto& [entityA, entityB]: physics::PhysicCommand::takeCollisionEvents()) {
+		notify(entityA, entityB);
+		notify(entityB, entityA);
+	}
 }
 
 void Scene::flushPendingDestructions() {
