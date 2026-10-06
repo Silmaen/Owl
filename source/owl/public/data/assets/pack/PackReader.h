@@ -31,6 +31,13 @@ enum struct PackOpenError : uint8_t {
 	TocReadFailed,///< I/O error while reading the table of contents.
 	TocDecompressionFailed,///< zstd decompression of the TOC failed.
 	TocSizeMismatch,///< Decoded TOC entry count differs from the header's claim.
+	TocOutOfBounds,///< TOC offset or size points outside the file.
+	TocTooLarge,///< Declared TOC size exceeds `g_maxTocSize`.
+	EntryOutOfBounds,///< An entry's data block lies outside the data area of the file.
+	EntrySizeInvalid,///< An entry's stored and original sizes are inconsistent or exceed `g_maxEntrySize`.
+	InvalidEntry,///< An entry has an unknown asset type.
+	UnsafeEntryPath,///< An entry path is absolute or escapes the pack root (see `isSafeEntryPath`).
+	UnexpectedException,///< An exception was raised while parsing; converted, never propagated.
 };
 
 /**
@@ -69,6 +76,9 @@ public:
 	/**
 	 * @brief
 	 *  Open a pack file and read its table of contents, returning a categorised error on failure.
+	 *
+	 * Every size and offset read from the file is checked against the real file size and the format limits
+	 * before any allocation, and every entry path must pass `isSafeEntryPath`. Never throws.
 	 * @param[in] iPackFile Path to the pack file.
 	 * @return Empty success on success, or `owl::unexpected{PackOpenError::*}` on failure.
 	 */
@@ -92,7 +102,7 @@ public:
 	 * @brief
 	 *  Read and decompress an entry by path.
 	 * @param[in] iPath The asset path.
-	 * @return The decompressed data, or nullopt on failure.
+	 * @return The decompressed data, or nullopt on failure (never throws).
 	 */
 	[[nodiscard]] auto readEntry(const std::string& iPath) const -> std::optional<std::vector<uint8_t>>;
 
@@ -134,6 +144,22 @@ public:
 	[[nodiscard]] auto getHeader() const -> const PackHeader& { return m_header; }
 
 private:
+	/**
+	 * @brief
+	 *  Body of `tryOpen`, which may throw; `tryOpen` converts exceptions into errors.
+	 * @param[in] iPackFile Path to the pack file.
+	 * @return Empty success, or the reason of the failure.
+	 */
+	[[nodiscard]] auto openImpl(const std::filesystem::path& iPackFile) -> owl::expected<void, PackOpenError>;
+
+	/**
+	 * @brief
+	 *  Check one decoded TOC entry against the file layout and the format limits.
+	 * @param[in] iEntry The entry to check.
+	 * @return Empty success, or the reason the entry is rejected.
+	 */
+	[[nodiscard]] auto validateEntry(const TocEntry& iEntry) const -> owl::expected<void, PackOpenError>;
+
 	/**
 	 * @brief
 	 *  Find a TOC entry by path.

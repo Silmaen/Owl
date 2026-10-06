@@ -21,7 +21,8 @@ val prReady = BuildType {
     }
 
     features {
-        githubBridge(annotateDiff = false)
+        // The check the branch protection of `main` requires: its name must not follow the tree.
+        githubBridge(annotateDiff = false, checkName = "PR Ready")
     }
 
     dependencies {

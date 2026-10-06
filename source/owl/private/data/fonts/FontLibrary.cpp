@@ -10,7 +10,7 @@
 #include "data/fonts/FontLibrary.h"
 
 #include "app/Application.h"
-#include "data/assets/pack/PackReader.h"
+#include "data/assets/pack/PackExtractor.h"
 
 namespace owl::data::fonts {
 
@@ -58,16 +58,13 @@ void FontLibrary::loadFont(const std::string& iName) {
 			if (std::filesystem::path(entry).stem() == iName) {
 				auto data = app::Application::get().loadFromPack(entry);
 				if (data) {
-					const auto tempDir = std::filesystem::temp_directory_path() / "owl_pack_cache";
-					std::filesystem::create_directories(tempDir);
-					const auto tempFile = tempDir / std::filesystem::path(entry).filename();
-					{
-						std::ofstream out(tempFile, std::ios::binary);
-						out.write(reinterpret_cast<const char*>(data->data()),
-								  static_cast<std::streamsize>(data->size()));
+					const auto tempFile = std::filesystem::temp_directory_path() / "owl_pack_cache" /
+										  std::filesystem::path(entry).filename();
+					if (assets::pack::writeEntryFile(tempFile, *data)) {
+						m_fonts.emplace(iName, mkShared<Font>(tempFile, iName == m_defaultFontName));
+						return;
 					}
-					m_fonts.emplace(iName, mkShared<Font>(tempFile, iName == m_defaultFontName));
-					return;
+					OWL_CORE_WARN("FontLibrary: cannot cache pack entry '{}', trying font directories.", entry)
 				}
 			}
 		}

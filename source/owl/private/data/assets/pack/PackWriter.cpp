@@ -36,6 +36,17 @@ void PackWriter::addData(const std::vector<uint8_t>& iData, const std::string& i
 
 auto PackWriter::write(const std::filesystem::path& iOutputFile, const PackFlags iFlags,
 					   const ProgressCallback& iProgress, const CancelCheck& iCancelCheck) const -> bool {
+	for (const auto& entry: m_entries) {
+		if (!isSafeEntryPath(entry.packPath)) {
+			OWL_CORE_ERROR("Pack: entry path '{}' is absolute or escapes the pack root.", entry.packPath)
+			return false;
+		}
+		if (entry.rawData.size() > g_maxEntrySize) {
+			OWL_CORE_ERROR("Pack: entry '{}' is {} bytes (limit {}).", entry.packPath, entry.rawData.size(),
+						   g_maxEntrySize)
+			return false;
+		}
+	}
 	std::ofstream file(iOutputFile, std::ios::binary);
 	if (!file.is_open()) {
 		OWL_CORE_ERROR("Pack: cannot open '{}' for writing.", iOutputFile.string())

@@ -25,6 +25,10 @@ Owl is a game engine intended for offline/local use. The primary security concer
 
 - **Asset pack integrity**: `.owlpack` files use obfuscation but not cryptographic
   security -- they should not be relied upon for DRM
+- **Untrusted asset packs**: since 0.3.0 the pack reader validates every offset, size and
+  entry path before use and confines extraction to the target directory; a forged pack is
+  rejected with an error. Packs are not signed, so a modified pack can still replace game
+  assets
 - **Lua sandboxing**: The Lua scripting environment removes `io`, `os`, `dofile`, and
   `loadfile` but is not a security sandbox for untrusted code
 - **Save files**: Save data is stored in user-writable directories and is not

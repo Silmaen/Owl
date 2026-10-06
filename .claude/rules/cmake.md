@@ -105,3 +105,4 @@ Tests are auto-discovered from `test/` subdirectories. See testing rules.
 | `OWL_INCLUDE_CHECK`                       | OFF        | Add `owl_include_check`: every header and source compiled alone, no PCH, strict libc++ (Clang only, `linux-include-check` preset)             |
 | `OWL_DEPENDENCY_PROVIDER`                 | depmanager | Third-party provider: `depmanager` or `conan` (see `.claude/rules/dependencies.md`)                                                           |
 | `OWL_TEST_SHUFFLE`                        | OFF        | Run every test binary with `--gtest_shuffle` (ON in the sanitizer presets; seed via `GTEST_RANDOM_SEED`)                                      |
+| `OWL_FUZZING`                             | OFF        | Build the libFuzzer targets in `fuzz/` (Clang only; instruments the engine, combine with ASan)                                                |

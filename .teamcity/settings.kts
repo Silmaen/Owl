@@ -58,6 +58,17 @@ project {
         // What GitHub shows for each check: the tail of the name, not the ancestry. The
         // prefix must match exactly, and a protection rule names a check literally.
         param("teamcity.github.bridge.checkName.stripPrefix", "TeamCity / Owl / ")
+        // A pull request opened with nobody assigned goes to its author (needs the App's Issues: write).
+        param("teamcity.github.bridge.autoAssignAuthor", "true")
+        // Labels added by what a pull request changes; only added, never removed (plugin 1.11+).
+        param("teamcity.github.bridge.labelRules", """
+            documentation <= paths +:doc/**, +:**/*.md, +:.claude/**
+            documentation <= title ^doc
+            ci            <= paths +:.teamcity/**, +:ci/**, +:ci_action.py, +:docker/**, +:cmake/CMakePresets*.json
+            dependencies  <= paths +:conanfile.py, +:conan/**, +:conan.lock, +:depmanager.yml
+            engine        <= paths +:source/owl/**
+            editor        <= paths +:source/owlnest/**
+        """.trimIndent())
     }
 
     // At the root, beside each other: the two level-1 gates and the single check required on `main`.

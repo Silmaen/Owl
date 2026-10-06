@@ -13,6 +13,7 @@
 #include "core/Environment.h"
 #include "core/external/yaml.h"
 #include "core/utils/StringUtils.h"
+#include "data/assets/pack/PackExtractor.h"
 #include "input/Input.h"
 #include "renderer/Renderer.h"
 #include "sound/SoundSystem.h"
@@ -68,28 +69,12 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 			packPath = m_workingDirectory / packPath;
 		if (openPack(packPath)) {
 			const auto assetsDir = m_workingDirectory / "assets";
-			for (const auto& entryPath: m_packReader.listEntries()) {
-				if (entryPath.ends_with(".slang")) {
-					const auto spvPath = assetsDir / (entryPath + ".spv");
-					if (exists(spvPath))
-						continue;
-				}
-				const auto destFile = assetsDir / entryPath;
-				if (exists(destFile)) {
-					const auto entrySize = m_packReader.entrySize(entryPath);
-					std::error_code ec;
-					if (entrySize.has_value() && std::filesystem::file_size(destFile, ec) == *entrySize && !ec)
-						continue;
-				}
-				auto data = m_packReader.readEntry(entryPath);
-				if (!data)
-					continue;
-
-				std::filesystem::create_directories(destFile.parent_path());
-
-				std::ofstream out(destFile, std::ios::binary);
-				if (out.good())
-					out.write(reinterpret_cast<const char*>(data->data()), static_cast<std::streamsize>(data->size()));
+			if (const auto extracted = data::assets::pack::extractPack(m_packReader, assetsDir); extracted) {
+				OWL_CORE_INFO("Pack: extracted {} entries into '{}' ({} up to date).", extracted->written,
+							  assetsDir.string(), extracted->skipped)
+			} else {
+				OWL_CORE_ERROR("Pack: extraction into '{}' failed ({}).", assetsDir.string(),
+							   magic_enum::enum_name(extracted.error()))
 			}
 		} else {
 			OWL_CORE_ERROR("Failed to open asset pack: {}.", packPath.string())
@@ -515,8 +500,8 @@ void AppParams::saveToFile(const std::filesystem::path& iFile) const {
 
 auto Application::openPack(const std::filesystem::path& iPackFile) -> bool {
 	closePack();
-	if (!m_packReader.open(iPackFile)) {
-		OWL_CORE_ERROR("Failed to open asset pack: {}.", iPackFile.string())
+	if (const auto opened = m_packReader.tryOpen(iPackFile); !opened) {
+		OWL_CORE_ERROR("Failed to open asset pack: {} ({}).", iPackFile.string(), magic_enum::enum_name(opened.error()))
 		return false;
 	}
 	OWL_CORE_INFO("Opened asset pack: {} ({} entries).", iPackFile.string(), m_packReader.getHeader().entryCount)

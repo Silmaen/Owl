@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CI on teamcity-github-bridge 1.11.0: PR Ready keeps a fixed check name (`checkName`), pull requests get labels by changed paths and are assigned to their author.
 - TeamCity: Include Check and PR Ready move to the root beside Code Style (GitHub checks `Include Check` and `PR Ready`).
 - CI: Windows builds compute the coverage on `main` only, no longer on pull requests.
 - CI on Conan everywhere (the TeamCity `OWL_DEPENDENCY_PROVIDER` default) and on a single Ubuntu 26.04 image (`builder-ubuntu2604`: GCC 15, Clang 22) for every Linux preset and `docker/run.sh`.
@@ -40,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Pack extraction and the texture / font pack caches now detect and log failed writes instead of failing silently.
 - `docker/run.sh` works from a git worktree: it mounts the main git directory and finds the shared `fake_home`.
 - TeamCity: `triggerOnPrDraft` is written explicitly on every configuration (the plugin defaults to `true`, so draft PRs ran the whole matrix).
 - Conan on Windows: host settings and options go through a generated profile (cmd.exe split `&:shared=…` at `&`), and configure stops when `conan install` produced no toolchain.
@@ -83,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CodeStyle` gains a `secrets` sub-check that fails on a tracked `.env` or a committed key, token or URL password.
 - CMake configure no longer prints `.env` values, only their keys.
 - First Python tests of the CI tooling (`ci/tests/`, pytest) cover masking, publication and the secret scan.
+- `.owlpack` reader hardened against forged packs: no write outside the extraction directory (`..`, absolute paths, symbolic links), sizes bounded by the file before any allocation, typed errors instead of escaping exceptions; `OWL_FUZZING` builds a libFuzzer target on `PackReader`.
 
 ## [0.2.1] - 2026-06-27
 

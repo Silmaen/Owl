@@ -232,3 +232,4 @@ the `poetry run python ci_action.py …` invocation, or to a direct `cmake --pre
 | `OWL_CONAN_PROFILE`                       | (auto)     | Conan profile, default `conan/profiles/<os>-<compiler>` |
 | `OWL_CONAN_HOME`                          | (empty)    | `CONAN_HOME` for the install (empty: Conan's default)   |
 | `OWL_CONAN_BUILD`                         | missing    | Value of `conan install --build`                        |
+| `OWL_FUZZING`                             | OFF        | libFuzzer targets in `fuzz/` (Clang-only)               |

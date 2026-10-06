@@ -69,6 +69,18 @@ if (${PROJECT_PREFIX}_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER)
 endif ()
 
 # ----------------------------------------------------------------------------------------------------------------------
+# libFuzzer coverage instrumentation (fuzz targets link -fsanitize=fuzzer themselves)
+# ----------------------------------------------------------------------------------------------------------------------
+if (${PROJECT_PREFIX}_FUZZING)
+    if (NOT ${PROJECT_PREFIX}_COMPILER_CLANG)
+        message(FATAL_ERROR "${PROJECT_PREFIX}_FUZZING requires Clang (libFuzzer).")
+    endif ()
+    target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -fsanitize=fuzzer-no-link -g)
+    target_link_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -fsanitize=fuzzer-no-link)
+    target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_FUZZING)
+endif ()
+
+# ----------------------------------------------------------------------------------------------------------------------
 # Compatibility check
 # AddressSanitizer and UndefinedBehaviorSanitizer are designed to be combined; every other pair is rejected.
 # LeakSanitizer has no dedicated option: on Linux it is part of AddressSanitizer (detect_leaks=1).

@@ -9,7 +9,10 @@
 #include "data/assets/pack/PackFormat.h"
 #include "core/Macros.h"
 
+#include <algorithm>
 #include <cstring>
+#include <memory>
+#include <new>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wunsafe-buffer-usage")
@@ -26,6 +29,25 @@ constexpr uint64_t g_fnvPrime = 1099511628211ULL;
 // Obfuscation seed.
 constexpr uint8_t g_obfuscationSeed = 0xA7;
 }// namespace
+
+auto isSafeEntryPath(const std::string_view iPath) -> bool {
+	if (iPath.empty() || iPath.front() == '/' || iPath.front() == '\\')
+		return false;
+	if (iPath.find_first_of(std::string_view{"\0:", 2}) != std::string_view::npos)
+		return false;
+	size_t start = 0;
+	while (start <= iPath.size()) {
+		const auto end = iPath.find_first_of("/\\", start);
+		const auto component =
+				iPath.substr(start, end == std::string_view::npos ? std::string_view::npos : end - start);
+		if (component == "..")
+			return false;
+		if (end == std::string_view::npos)
+			break;
+		start = end + 1;
+	}
+	return true;
+}
 
 auto hashPath(const std::string& iPath) -> uint64_t {
 	uint64_t hash = g_fnvBasis;
@@ -58,11 +80,69 @@ auto compressBuffer(const std::vector<uint8_t>& iData) -> std::vector<uint8_t> {
 auto decompressBuffer(const std::vector<uint8_t>& iCompressed, const uint64_t iOriginalSize) -> std::vector<uint8_t> {
 	if (iCompressed.empty() || iOriginalSize == 0)
 		return {};
-	std::vector<uint8_t> decompressed(iOriginalSize);
-	const auto result = ZSTD_decompress(decompressed.data(), iOriginalSize, iCompressed.data(), iCompressed.size());
-	if ((ZSTD_isError(result) != 0u) || result != iOriginalSize)
+	if (iOriginalSize > g_maxEntrySize) {
+		OWL_CORE_WARN("Pack: refusing to decompress {} bytes (limit {}).", iOriginalSize, g_maxEntrySize)
 		return {};
-	return decompressed;
+	}
+	const auto frameSize = ZSTD_getFrameContentSize(iCompressed.data(), iCompressed.size());
+	if (frameSize == ZSTD_CONTENTSIZE_ERROR) {
+		OWL_CORE_WARN("Pack: block is not a zstd frame.")
+		return {};
+	}
+	try {
+		if (frameSize != ZSTD_CONTENTSIZE_UNKNOWN) {
+			if (frameSize != iOriginalSize) {
+				OWL_CORE_WARN("Pack: zstd frame holds {} bytes, {} declared.", frameSize, iOriginalSize)
+				return {};
+			}
+			std::vector<uint8_t> decompressed(iOriginalSize);
+			const auto result =
+					ZSTD_decompress(decompressed.data(), decompressed.size(), iCompressed.data(), iCompressed.size());
+			if ((ZSTD_isError(result) != 0u) || result != iOriginalSize) {
+				OWL_CORE_WARN("Pack: zstd decompression failed.")
+				return {};
+			}
+			return decompressed;
+		}
+		// Frame without a recorded size: stream it so the output only grows with the bytes really produced.
+		const uniq<ZSTD_DStream, decltype(&ZSTD_freeDStream)> stream(ZSTD_createDStream(), &ZSTD_freeDStream);
+		if (stream == nullptr) {
+			OWL_CORE_WARN("Pack: cannot create a zstd stream.")
+			return {};
+		}
+		std::vector<uint8_t> decompressed(std::min<uint64_t>(iOriginalSize, ZSTD_DStreamOutSize()));
+		ZSTD_inBuffer input{.src = iCompressed.data(), .size = iCompressed.size(), .pos = 0};
+		ZSTD_outBuffer output{.dst = decompressed.data(), .size = decompressed.size(), .pos = 0};
+		size_t pending = 1;
+		while (pending != 0) {
+			if (output.pos == output.size) {
+				if (output.size == iOriginalSize) {
+					OWL_CORE_WARN("Pack: zstd frame exceeds its declared {} bytes.", iOriginalSize)
+					return {};
+				}
+				decompressed.resize(std::min<uint64_t>(iOriginalSize, decompressed.size() * 2));
+				output.dst = decompressed.data();
+				output.size = decompressed.size();
+			}
+			pending = ZSTD_decompressStream(stream.get(), &output, &input);
+			if (ZSTD_isError(pending) != 0u) {
+				OWL_CORE_WARN("Pack: zstd stream decompression failed.")
+				return {};
+			}
+			if (pending != 0 && input.pos == input.size && output.pos < output.size) {
+				OWL_CORE_WARN("Pack: truncated zstd frame.")
+				return {};
+			}
+		}
+		if (output.pos != iOriginalSize || input.pos != input.size) {
+			OWL_CORE_WARN("Pack: zstd frame holds {} bytes, {} declared.", output.pos, iOriginalSize)
+			return {};
+		}
+		return decompressed;
+	} catch (const std::bad_alloc&) {
+		OWL_CORE_WARN("Pack: out of memory decompressing {} bytes.", iOriginalSize)
+		return {};
+	}
 }
 
 auto serializeToc(const std::vector<TocEntry>& iEntries) -> std::vector<uint8_t> {
