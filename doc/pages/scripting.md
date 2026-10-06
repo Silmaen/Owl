@@ -13,8 +13,9 @@ via the `LuaScript` component, which provides lifecycle callbacks (`on_create`,
 configurable values in the editor inspector.
 
 Each script instance runs in an **isolated Lua state** — global variables in one
-script do not affect other scripts. The Lua environment is **sandboxed**: the `io`,
-`os`, `dofile`, and `loadfile` standard functions are removed for security.
+script do not affect other scripts. The Lua environment is **sandboxed**: no file or
+system access, source chunks only, and a memory and time quota per instance (see
+[Sandbox and quotas](#sandbox-and-quotas)).
 
 ## Architecture
 
@@ -466,20 +467,68 @@ Lua callbacks to match your game.
 - For each `LuaScript` with a valid instance, calls `on_destroy()`
 - Resets all instances and calls `ScriptEngine::shutdown()`
 
-## Sandboxing
+## Sandbox and quotas {#sandbox-and-quotas}
 
-The Lua environment is restricted for security:
+### Libraries
 
-| Available                                          | Removed             |
-|----------------------------------------------------|---------------------|
-| `base` (print, type, pairs, ipairs, tostring, ...) | `io` (file access)  |
-| `table` (insert, remove, sort, ...)                | `os` (system calls) |
-| `string` (format, find, sub, ...)                  | `dofile`            |
-| `math` (sin, cos, sqrt, random, ...)               | `loadfile`          |
-| `utf8`                                             |                     |
-| `coroutine`                                        |                     |
+| Available                                          | Removed or restricted                                         |
+|----------------------------------------------------|---------------------------------------------------------------|
+| `base` (print, type, pairs, ipairs, tostring, ...) | `io`, `os`, `debug`, `package`, `require`: not opened         |
+| `table` (insert, remove, sort, ...)                | `dofile`, `loadfile`: removed                                 |
+| `string` (format, find, sub, ...)                  | `string.dump`: removed                                        |
+| `math` (sin, cos, sqrt, random, ...)               | `load`: text chunks only, whatever `mode` the script passes   |
+| `utf8`                                             | `setmetatable`: a metatable with `__gc` is refused            |
+| `coroutine`                                        | `collectgarbage`: only `"count"` and `"isrunning"`            |
+|                                                    | `getmetatable("")`: returns `false` (string metatable locked) |
 
-Scripts cannot access the filesystem, execute system commands, or load external Lua files.
+Scripts and packs are loaded as **source text only**: a precompiled (bytecode) chunk is
+refused by the engine and by `load`, since forged bytecode can crash the interpreter.
+`load(text, name, mode, env)` still works, its chunk runs in the script's own state.
+
+### Quotas
+
+Each script instance has its own `ScriptQuotas`, taken from
+`ScriptEngine::setDefaultQuotas()` when the instance is created and adjustable per
+instance with `ScriptInstance::setQuotas()`. A value of zero disables the limit.
+
+| Quota           | Default | Enforcement                                                             |
+|-----------------|---------|-------------------------------------------------------------------------|
+| `memoryBytes`   | 64 MiB  | Custom allocator: an allocation that would cross the ceiling is refused |
+| `timePerCallMs` | 250 ms  | Watchdog thread: a call still running after its budget is interrupted   |
+
+The time budget covers one host call: one `on_create`, `on_update`, `on_destroy`, the
+execution of the chunk when the script loads, or the property extraction done by the
+editor. The watchdog costs nothing while scripts behave (each call only bumps a counter);
+when a call overruns, it signals the script thread, which arms a hook that raises
+`time budget exceeded` on the next Lua instruction, in whichever coroutine is running.
+The hook keeps firing until the call returns, so a script cannot swallow the error with
+`pcall` and loop on.
+
+### What happens on failure
+
+| Failure                                              | Effect                                                       |
+|------------------------------------------------------|--------------------------------------------------------------|
+| `error()`, bad argument, runtime error in a callback | Logged with a stack trace; the callback runs again next time |
+| C++ exception thrown inside an engine binding        | Converted to a Lua error (`C++ exception: ...`), as above    |
+| Memory or time quota exceeded                        | Logged; the instance is **disabled**, no callback runs again |
+| Syntax error, bytecode chunk                         | Logged; the script is not loaded                             |
+
+`ScriptInstance::isDisabled()` tells whether an instance was stopped by a quota.
+
+### What is guaranteed, and what is not
+
+- Every call from the engine into Lua is protected: a script error never unwinds through
+  engine code, and a C++ exception never crosses a Lua frame (bindings run behind a
+  trampoline that catches it and raises it as a Lua error once the C++ frames are gone).
+- The engine reads and writes globals with raw accesses, so a metatable the script puts
+  on `_G` or on its `properties` table never runs outside a protected call.
+- A script cannot reach the filesystem, the OS, the debug library or other scripts' states.
+- **Not covered:** a single long call into a C library function (for example a
+  pathological `string.find` pattern on a large string) is only interrupted when it
+  returns to Lua code; the memory ceiling bounds the size of such strings. Engine bindings
+  run with the memory ceiling lifted (they allocate a bounded amount). The quotas protect
+  the game from a runaway or buggy script; they are not a security boundary for
+  untrusted code from the network.
 
 ## Asset Packing
 

@@ -27,6 +27,83 @@ public:
 
 uniq<ScriptEngine::Impl> ScriptEngine::s_impl;
 
+namespace {
+
+auto defaultQuotas() -> ScriptQuotas& {
+	static ScriptQuotas quotas;
+	return quotas;
+}
+
+// Raw reads only: a script-provided metatable on the properties table must not run outside a protected call.
+auto rawField(lua_State* iState, const int iTableIndex, const char* iKey) -> int {
+	const int tableIndex = lua_absindex(iState, iTableIndex);
+	lua_pushstring(iState, iKey);
+	return lua_rawget(iState, tableIndex);
+}
+
+auto parsePropertyType(lua_State* iState) -> ScriptPropertyType {
+	if (lua_isstring(iState, -1) == 0)
+		return ScriptPropertyType::Float;
+	const std::string_view typeName = lua_tostring(iState, -1);
+	if (typeName == "int")
+		return ScriptPropertyType::Int;
+	if (typeName == "string")
+		return ScriptPropertyType::String;
+	if (typeName == "bool")
+		return ScriptPropertyType::Bool;
+	return ScriptPropertyType::Float;
+}
+
+auto parseProperty(lua_State* iState, const int iEntryIndex) -> ScriptProperty {
+	ScriptProperty prop;
+	rawField(iState, iEntryIndex, "name");
+	if (lua_isstring(iState, -1) != 0)
+		prop.name = lua_tostring(iState, -1);
+	lua_pop(iState, 1);
+	rawField(iState, iEntryIndex, "type");
+	prop.type = parsePropertyType(iState);
+	lua_pop(iState, 1);
+	rawField(iState, iEntryIndex, "default");
+	switch (prop.type) {
+		case ScriptPropertyType::Float:
+			prop.value = lua_isnumber(iState, -1) != 0 ? static_cast<float>(lua_tonumber(iState, -1)) : 0.0f;
+			break;
+		case ScriptPropertyType::Int:
+			prop.value = lua_isinteger(iState, -1) != 0 ? static_cast<int64_t>(lua_tointeger(iState, -1)) : int64_t{0};
+			break;
+		case ScriptPropertyType::String:
+			prop.value = lua_isstring(iState, -1) != 0 ? std::string(lua_tostring(iState, -1)) : std::string{};
+			break;
+		case ScriptPropertyType::Bool:
+			prop.value = lua_isboolean(iState, -1) != 0 ? lua_toboolean(iState, -1) != 0 : false;
+			break;
+	}
+	lua_pop(iState, 1);
+	return prop;
+}
+
+auto readProperties(lua_State* iState) -> std::vector<ScriptProperty> {
+	lua_pushglobaltable(iState);
+	if (rawField(iState, -1, "properties") != LUA_TTABLE) {
+		lua_pop(iState, 2);
+		return {};
+	}
+	const int tableIndex = lua_gettop(iState);
+	std::vector<ScriptProperty> props;
+	lua_pushnil(iState);
+	while (lua_next(iState, tableIndex) != 0) {
+		if (lua_type(iState, -1) == LUA_TTABLE) {
+			if (auto prop = parseProperty(iState, lua_gettop(iState)); !prop.name.empty())
+				props.push_back(std::move(prop));
+		}
+		lua_pop(iState, 1);
+	}
+	lua_pop(iState, 2);
+	return props;
+}
+
+}// namespace
+
 void ScriptEngine::init(scene::Scene* iScene) {
 	OWL_PROFILE_FUNCTION()
 
@@ -66,60 +143,7 @@ auto ScriptEngine::extractProperties(const std::filesystem::path& iPath) -> std:
 	const LuaEngine tempEngine;
 	if (!tempEngine.isValid() || !tempEngine.loadScript(iPath))
 		return {};
-	auto* state = tempEngine.getState();
-	lua_getglobal(state, "properties");
-	if (lua_istable(state, -1) == 0) {
-		lua_pop(state, 1);
-		return {};
-	}
-	std::vector<ScriptProperty> props;
-	lua_pushnil(state);
-	while (lua_next(state, -2) != 0) {
-		if (lua_istable(state, -1) != 0) {
-			ScriptProperty prop;
-			lua_getfield(state, -1, "name");
-			if (lua_isstring(state, -1) != 0)
-				prop.name = lua_tostring(state, -1);
-			lua_pop(state, 1);
-
-			lua_getfield(state, -1, "type");
-			if (lua_isstring(state, -1) != 0) {
-				if (const std::string typeName = lua_tostring(state, -1); typeName == "float")
-					prop.type = ScriptPropertyType::Float;
-				else if (typeName == "int")
-					prop.type = ScriptPropertyType::Int;
-				else if (typeName == "string")
-					prop.type = ScriptPropertyType::String;
-				else if (typeName == "bool")
-					prop.type = ScriptPropertyType::Bool;
-			}
-			lua_pop(state, 1);
-
-			lua_getfield(state, -1, "default");
-			switch (prop.type) {
-				case ScriptPropertyType::Float:
-					prop.value = lua_isnumber(state, -1) != 0 ? static_cast<float>(lua_tonumber(state, -1)) : 0.0f;
-					break;
-				case ScriptPropertyType::Int:
-					prop.value =
-							lua_isinteger(state, -1) != 0 ? static_cast<int64_t>(lua_tointeger(state, -1)) : int64_t{0};
-					break;
-				case ScriptPropertyType::String:
-					prop.value = lua_isstring(state, -1) != 0 ? std::string(lua_tostring(state, -1)) : std::string{};
-					break;
-				case ScriptPropertyType::Bool:
-					prop.value = lua_isboolean(state, -1) != 0 ? lua_toboolean(state, -1) != 0 : false;
-					break;
-			}
-			lua_pop(state, 1);
-
-			if (!prop.name.empty())
-				props.push_back(std::move(prop));
-		}
-		lua_pop(state, 1);
-	}
-	lua_pop(state, 1);
-	return props;
+	return readProperties(tempEngine.getState());
 }
 
 auto ScriptEngine::extractPropertiesFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName)
@@ -127,61 +151,12 @@ auto ScriptEngine::extractPropertiesFromBuffer(const std::vector<uint8_t>& iData
 	const LuaEngine tempEngine;
 	if (!tempEngine.isValid() || !tempEngine.loadBuffer(iData, iName))
 		return {};
-	auto* state = tempEngine.getState();
-	lua_getglobal(state, "properties");
-	if (lua_istable(state, -1) == 0) {
-		lua_pop(state, 1);
-		return {};
-	}
-	std::vector<ScriptProperty> props;
-	lua_pushnil(state);
-	while (lua_next(state, -2) != 0) {
-		if (lua_istable(state, -1) != 0) {
-			ScriptProperty prop;
-			lua_getfield(state, -1, "name");
-			if (lua_isstring(state, -1) != 0)
-				prop.name = lua_tostring(state, -1);
-			lua_pop(state, 1);
-
-			lua_getfield(state, -1, "type");
-			if (lua_isstring(state, -1) != 0) {
-				if (const std::string typeName = lua_tostring(state, -1); typeName == "float")
-					prop.type = ScriptPropertyType::Float;
-				else if (typeName == "int")
-					prop.type = ScriptPropertyType::Int;
-				else if (typeName == "string")
-					prop.type = ScriptPropertyType::String;
-				else if (typeName == "bool")
-					prop.type = ScriptPropertyType::Bool;
-			}
-			lua_pop(state, 1);
-
-			lua_getfield(state, -1, "default");
-			switch (prop.type) {
-				case ScriptPropertyType::Float:
-					prop.value = lua_isnumber(state, -1) != 0 ? static_cast<float>(lua_tonumber(state, -1)) : 0.0f;
-					break;
-				case ScriptPropertyType::Int:
-					prop.value =
-							lua_isinteger(state, -1) != 0 ? static_cast<int64_t>(lua_tointeger(state, -1)) : int64_t{0};
-					break;
-				case ScriptPropertyType::String:
-					prop.value = lua_isstring(state, -1) != 0 ? std::string(lua_tostring(state, -1)) : std::string{};
-					break;
-				case ScriptPropertyType::Bool:
-					prop.value = lua_isboolean(state, -1) != 0 ? lua_toboolean(state, -1) != 0 : false;
-					break;
-			}
-			lua_pop(state, 1);
-
-			if (!prop.name.empty())
-				props.push_back(std::move(prop));
-		}
-		lua_pop(state, 1);
-	}
-	lua_pop(state, 1);
-	return props;
+	return readProperties(tempEngine.getState());
 }
+
+void ScriptEngine::setDefaultQuotas(const ScriptQuotas& iQuotas) { defaultQuotas() = iQuotas; }
+
+auto ScriptEngine::getDefaultQuotas() -> ScriptQuotas { return defaultQuotas(); }
 
 auto ScriptEngine::getActiveScene() -> scene::Scene* {
 	if (!s_impl)

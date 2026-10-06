@@ -92,6 +92,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CMake configure no longer prints `.env` values, only their keys.
 - First Python tests of the CI tooling (`ci/tests/`, pytest) cover masking, publication and the secret scan.
 - `.owlpack` reader hardened against forged packs: no write outside the extraction directory (`..`, absolute paths, symbolic links), sizes bounded by the file before any allocation, typed errors instead of escaping exceptions; `OWL_FUZZING` builds a libFuzzer target on `PackReader`.
+- Lua sandbox hardened: chunks load as text only (bytecode refused, also through `load`), `string.dump` removed, `setmetatable` refuses `__gc`, `collectgarbage` restricted, string metatable locked.
+- Lua quotas per `ScriptInstance` (`ScriptQuotas`): 64 MiB memory ceiling through a custom allocator and a 250 ms time budget per call through a watchdog thread; a script exceeding one is disabled instead of freezing or exhausting the game.
+- Every engine call into Lua is protected with a stack trace, host reads of globals bypass script metatables, and bindings run behind an exception trampoline: no C++ exception crosses a Lua frame (PR-14: D-06, D-16).
 
 ## [0.2.1] - 2026-06-27
 

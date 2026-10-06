@@ -14,8 +14,16 @@ User-facing reference: `doc/pages/scripting.md`. Update it with every binding ch
 - Lua headers only through `source/owl/private/core/external/lua.h` (diagnostic suppression).
 - Bound tables (`registerTable` in `LuaBindings.cpp`): `transform`, `physics`, `input`, `sound`, `scene`,
   `time`, `log`, `entity`, `ui`, `gamestate`, `save`, `settings`, `trigger`, `door`, `pushwall`.
-- Sandbox: only `base`, `table`, `string`, `math`, `utf8`, `coroutine`; `io`, `os`, `dofile`, `loadfile`
-  are removed. Never re-open them.
+- Sandbox: only `base`, `table`, `string`, `math`, `utf8`, `coroutine`; `io`, `os`, `dofile`, `loadfile`,
+  `string.dump` are removed, `load` is text-only, `setmetatable` refuses `__gc`, `collectgarbage` keeps
+  `count` / `isrunning`. Never re-open them. Chunks load in mode `"t"` only (no bytecode).
+- Quotas per `ScriptInstance` (`ScriptQuotas`: 64 MiB, 250 ms per call by default): allocator ceiling +
+  watchdog thread (signal → count hook). Quota exceeded → instance disabled; plain error → logged, retried.
+- Every host call into Lua goes through `LuaEngine::protectedCall` (pcall + traceback); host reads/writes
+  of globals are raw (`pushRawGlobal`), never `lua_getglobal` / `lua_getfield` on script tables.
+- Bindings are registered through `LuaEngine::registerGuardedTable` (exception trampoline). In a binding,
+  call every `luaL_check*` **before** creating any object with a non-trivial destructor: a Lua error
+  `longjmp`s over the binding's frame. Throw a C++ exception instead when a check comes later.
 - Lifecycle: `ScriptEngine::init()` in `Scene::onStartRuntime()`; instances call `on_create` /
   `on_update` / `on_destroy`.
 - Properties: `properties = { {name, type, default}, ... }`, parsed by

@@ -48,6 +48,10 @@ foreach (child ${children})
             add_test(${PROJECT_PREFIX_LOWER}_${child}_UTests ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
             set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 3600
                     ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
+            if (${child} STREQUAL "script_tests")
+                # Hostile-script tests rely on the Lua quotas: a quota that never fires must fail, not hang.
+                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 300)
+            endif ()
             # Tests that touch shared process-level resources (freetype, GLFW init, OpenAL, msdfgen globals)
             # are serialized via RESOURCE_LOCK to avoid sporadic SEGFAULTs in parallel ctest runs.
             if (${child} STREQUAL "font_tests" OR ${child} STREQUAL "core_tests" OR

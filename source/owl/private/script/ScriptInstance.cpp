@@ -24,6 +24,21 @@ struct ScriptInstance::Impl {
 	bool loaded = false;
 	// Entity UUID.
 	uint64_t entityId = 0;
+	// Set once a callback exceeded a quota: no callback runs any more.
+	bool disabled = false;
+	// Script path or chunk name, for diagnostics.
+	std::string name;
+
+	void checkQuota(const std::string_view iFunction, const bool iCalled) {
+		if (iCalled)
+			return;
+		if (const auto status = engine.getLastStatus();
+			status == LuaStatus::MemoryQuota || status == LuaStatus::TimeQuota) {
+			disabled = true;
+			OWL_CORE_ERROR("ScriptInstance: Script '{}' of entity {} disabled, '{}' exceeded its {} quota.", name,
+						   entityId, iFunction, status == LuaStatus::MemoryQuota ? "memory" : "time")
+		}
+	}
 };
 
 ScriptInstance::ScriptInstance() : mp_impl{mkUniq<Impl>()} {}
@@ -44,6 +59,7 @@ auto ScriptInstance::create(const std::string& iScriptPath, const uint64_t iEnti
 	// Store entity_id as a global.
 	mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
 	mp_impl->entityId = iEntityId;
+	mp_impl->name = iScriptPath;
 	if (!mp_impl->engine.loadScript(iScriptPath)) {
 		OWL_CORE_ERROR("ScriptInstance: Failed to load script '{}'.", iScriptPath)
 		return false;
@@ -61,6 +77,7 @@ auto ScriptInstance::createFromBuffer(const std::vector<uint8_t>& iData, const s
 	registerBindings(mp_impl->engine.getState());
 	mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
 	mp_impl->entityId = iEntityId;
+	mp_impl->name = iName;
 	if (!mp_impl->engine.loadBuffer(iData, iName)) {
 		OWL_CORE_ERROR("ScriptInstance: Failed to load buffer '{}'.", iName)
 		return false;
@@ -71,37 +88,50 @@ auto ScriptInstance::createFromBuffer(const std::vector<uint8_t>& iData, const s
 
 auto ScriptInstance::isValid() const -> bool { return mp_impl && mp_impl->loaded && mp_impl->engine.isValid(); }
 
+auto ScriptInstance::isDisabled() const -> bool { return mp_impl && mp_impl->disabled; }
+
+void ScriptInstance::setQuotas(const ScriptQuotas& iQuotas) const {
+	if (mp_impl)
+		mp_impl->engine.setQuotas(iQuotas);
+}
+
+auto ScriptInstance::getQuotas() const -> ScriptQuotas {
+	return mp_impl ? mp_impl->engine.getQuotas() : ScriptEngine::getDefaultQuotas();
+}
+
 void ScriptInstance::onCreate() const {
-	if (!isValid())
+	if (!isValid() || mp_impl->disabled)
 		return;
-	std::ignore = mp_impl->engine.callFunction("on_create");
+	mp_impl->checkQuota("on_create", mp_impl->engine.callFunction("on_create"));
 }
 
 void ScriptInstance::onUpdate(const float iDeltaTime) const {
-	if (!isValid())
+	if (!isValid() || mp_impl->disabled)
 		return;
 	// Store delta time in Lua registry for the time.delta() binding.
 	lua_pushnumber(mp_impl->engine.getState(), static_cast<lua_Number>(iDeltaTime));
 	lua_setfield(mp_impl->engine.getState(), LUA_REGISTRYINDEX, "owl_dt");
-	std::ignore = mp_impl->engine.callFunction("on_update", iDeltaTime);
+	mp_impl->checkQuota("on_update", mp_impl->engine.callFunction("on_update", iDeltaTime));
 }
 
 void ScriptInstance::onDestroy() const {
-	if (!isValid())
+	if (!isValid() || mp_impl->disabled)
 		return;
-	std::ignore = mp_impl->engine.callFunction("on_destroy");
+	mp_impl->checkQuota("on_destroy", mp_impl->engine.callFunction("on_destroy"));
 }
 
 void ScriptInstance::onCollision(const uint64_t iOtherEntityId) const {
-	if (!isValid())
+	if (!isValid() || mp_impl->disabled)
 		return;
-	std::ignore = mp_impl->engine.callFunction("on_collision", iOtherEntityId);
+	mp_impl->checkQuota("on_collision", mp_impl->engine.callFunction("on_collision", iOtherEntityId));
 }
 
 auto ScriptInstance::callFunction(const std::string& iName) const -> bool {
-	if (!isValid())
+	if (!isValid() || mp_impl->disabled)
 		return false;
-	return mp_impl->engine.callFunction(iName);
+	const bool called = mp_impl->engine.callFunction(iName);
+	mp_impl->checkQuota(iName, called);
+	return called;
 }
 
 // ---- Property access ----
