@@ -269,6 +269,40 @@ void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core:
 		ioAnim.m_playing = false;
 }
 
+auto collectSubtree(const Scene& iScene, const Entity& iRoot) -> std::vector<Entity> {
+	std::vector<Entity> subtree{iRoot};
+	for (size_t i = 0; i < subtree.size(); ++i) {
+		for (const auto childId: subtree[i].getComponent<component::Hierarchy>().childrenIds) {
+			if (const Entity child = iScene.findEntityByUUID(childId); child)
+				subtree.push_back(child);
+		}
+	}
+	return subtree;
+}
+
+void releaseRuntimeResources(const Entity& iEntity) {
+	if (iEntity.hasComponent<component::LuaScript>()) {
+		auto& luaScript = iEntity.getComponent<component::LuaScript>();
+		if (luaScript.instance && luaScript.instance->isValid())
+			luaScript.instance->onDestroy();
+		luaScript.instance.reset();
+	}
+	if (iEntity.hasComponent<component::NativeScript>()) {
+		if (auto& nsc = iEntity.getComponent<component::NativeScript>(); nsc.instance != nullptr) {
+			nsc.instance->onDestroy();
+			if (nsc.destroyScript != nullptr)
+				nsc.destroyScript(&nsc);
+		}
+	}
+	physics::PhysicCommand::destroyBody(iEntity);
+	if (iEntity.hasComponent<component::SoundSource>()) {
+		auto& soundComp = iEntity.getComponent<component::SoundSource>().sound;
+		if (soundComp.runtimeHandle != sound::invalidSoundHandle)
+			sound::SoundCommand::stop(soundComp.runtimeHandle);
+		soundComp.runtimeHandle = sound::invalidSoundHandle;
+	}
+}
+
 }// namespace
 
 Scene::Scene() = default;
@@ -494,6 +528,7 @@ void Scene::onStartRuntime() {
 void Scene::onEndRuntime() {
 	OWL_PROFILE_FUNCTION()
 
+	flushPendingDestructions();
 	// Stop all active sounds (both component-based and Lua-created).
 	sound::SoundCommand::stopAll();
 
@@ -739,6 +774,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 								.renderMs = elapsedMs(tRender, tEnd),
 								.totalMs = elapsedMs(tStart, tEnd)};
 	}
+	flushPendingDestructions();
 }
 
 void Scene::onRenderRuntime() {
@@ -2376,6 +2412,29 @@ void Scene::destroyEntityWithChildren(Entity& ioEntity) {// NOLINT(misc-no-recur
 		registry.destroy(handle);
 	}
 	ioEntity.m_entityHandle = entt::null;
+}
+
+void Scene::destroyEntityDeferred(const Entity& iEntity) {
+	if (!iEntity || isPendingDestruction(iEntity))
+		return;
+	m_pendingDestructions.push_back(iEntity.getUUID());
+}
+
+auto Scene::isPendingDestruction(const Entity& iEntity) const -> bool {
+	return iEntity && std::ranges::find(m_pendingDestructions, iEntity.getUUID()) != m_pendingDestructions.end();
+}
+
+void Scene::flushPendingDestructions() {
+	while (!m_pendingDestructions.empty()) {
+		for (const auto batch = std::exchange(m_pendingDestructions, {}); const auto uuid: batch) {
+			const Entity root = findEntityByUUID(uuid);
+			if (!root)
+				continue;
+			for (const auto& member: collectSubtree(*this, root)) releaseRuntimeResources(member);
+			if (Entity alive = findEntityByUUID(uuid); alive)
+				destroyEntityWithChildren(alive);
+		}
+	}
 }
 
 auto Scene::duplicateSubtree(const Entity& iEntity) -> Entity {

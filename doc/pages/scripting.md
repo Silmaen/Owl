@@ -115,7 +115,7 @@ end
 |--------------------------|----------------------------------------|----------------------------|
 | `on_create()`            | Scene enters Play mode                 | None                       |
 | `on_update(dt)`          | Every frame during Play mode           | `dt`: delta time (seconds) |
-| `on_destroy()`           | Scene exits Play mode                  | None                       |
+| `on_destroy()`           | Entity destroyed, or Play mode ends    | None                       |
 | `on_collision(other_id)` | Collision detected with another entity | `other_id`: UUID           |
 
 All callbacks are optional — missing callbacks are silently skipped.
@@ -193,7 +193,7 @@ Key codes match the GLFW key constants (e.g. `65` = A, `87` = W, `32` = Space).
 |-----------------------------------|---------------------------------------------------|
 | `scene.find_entity(name)`         | Find entity by name, returns UUID (0 = not found) |
 | `scene.create_entity(name)`       | Create a new entity, returns UUID                 |
-| `scene.destroy_entity(entity_id)` | Destroy an entity                                 |
+| `scene.destroy_entity(entity_id)` | Destroy an entity and its children (end of frame) |
 
 ### `entity`
 
@@ -461,6 +461,13 @@ Lua callbacks to match your game.
 ### onUpdateRuntime (each frame)
 
 - For each `LuaScript` with a valid instance, calls `on_update(dt)`
+
+### Entity destruction
+
+`scene.destroy_entity(id)` does not destroy anything right away: it queues the entity, which stays valid
+until the end of the current `onUpdateRuntime()`, after scripts, physics and triggers have run. A script
+may therefore destroy its own entity and keep running. At that point the entity and all its children are
+destroyed; each of them gets `on_destroy()` once, loses its Box2D body and stops its `SoundSource`.
 
 ### onEndRuntime
 

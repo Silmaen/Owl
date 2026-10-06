@@ -284,8 +284,11 @@ TEST(LuaBindings, sceneCreateAndDestroyEntity) {
 	const auto created = inst.getPropertyInt("id");
 	ASSERT_TRUE(created.has_value());
 	EXPECT_NE(created.value(), 0);
-	// Entity must have been destroyed.
-	EXPECT_FALSE(scn->findEntityByUUID(core::UUID{static_cast<uint64_t>(created.value())}));
+	const core::UUID createdUuid{static_cast<uint64_t>(created.value())};
+	// Destruction is deferred to the next flush point.
+	EXPECT_TRUE(scn->isPendingDestruction(scn->findEntityByUUID(createdUuid)));
+	scn->flushPendingDestructions();
+	EXPECT_FALSE(scn->findEntityByUUID(createdUuid));
 	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }

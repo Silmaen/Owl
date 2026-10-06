@@ -268,6 +268,26 @@ void PhysicCommand::frame(const core::Timestep& iTimestep) {
 	}
 }
 
+void PhysicCommand::destroyBody(const scene::Entity& iEntity) {
+	if (!isInitialized() || !iEntity)
+		return;
+	const auto release = [](uint64_t& ioBodyId) -> void {
+		if (ioBodyId == 0)
+			return;
+		if (const auto it = m_impl->bodies.find(ioBodyId); it != m_impl->bodies.end()) {
+			b2DestroyBody(it->second);
+			m_impl->bodies.erase(it);
+		}
+		ioBodyId = 0;
+	};
+	if (iEntity.hasComponent<scene::component::PhysicBody>())
+		release(iEntity.getComponent<scene::component::PhysicBody>().body.bodyId);
+	if (iEntity.hasComponent<scene::component::RaycastDoor>())
+		release(iEntity.getComponent<scene::component::RaycastDoor>().bodyId);
+	if (iEntity.hasComponent<scene::component::RaycastPushWall>())
+		release(iEntity.getComponent<scene::component::RaycastPushWall>().bodyId);
+}
+
 void PhysicCommand::impulse(const scene::Entity& iEntity, const math::vec2f& iImpulse) {
 	if (!isInitialized()) {
 		logNotInitialized("impulse");

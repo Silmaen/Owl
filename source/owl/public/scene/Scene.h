@@ -377,6 +377,36 @@ public:
 
 	/**
 	 * @brief
+	 *  Queue an entity and its subtree for destruction at the next safe point.
+	 *
+	 * Used by every runtime-originated destruction (Lua `scene.destroy_entity`, trigger callbacks): the
+	 * entity stays alive until `flushPendingDestructions()`, so a script may destroy its own entity
+	 * without freeing the Lua state that is running it. Queuing the same entity twice is a no-op.
+	 * @param[in] iEntity The entity to destroy.
+	 */
+	void destroyEntityDeferred(const Entity& iEntity);
+
+	/**
+	 * @brief
+	 *  Check whether an entity is queued for deferred destruction.
+	 * @param[in] iEntity The entity to check.
+	 * @return True if the entity is waiting in the destruction queue.
+	 */
+	[[nodiscard]] auto isPendingDestruction(const Entity& iEntity) const -> bool;
+
+	/**
+	 * @brief
+	 *  Destroy every entity queued by `destroyEntityDeferred()`, with its children.
+	 *
+	 * Each destroyed entity first gets its runtime teardown: Lua `on_destroy` (called once), native
+	 * script `onDestroy`, Box2D body removal and sound stop. Destructions queued by `on_destroy` are
+	 * processed in the same call. Run at the end of `onUpdateRuntime()` (after scripts, physics and
+	 * triggers) and at the start of `onEndRuntime()`.
+	 */
+	void flushPendingDestructions();
+
+	/**
+	 * @brief
 	 *  Duplicate an entity and all its descendants recursively.
 	 * @param[in] iEntity Root entity of the subtree to duplicate.
 	 * @return The duplicated root entity.
@@ -493,6 +523,8 @@ private:
 	 *  so even paths that bypass the canonical create remain correct.
 	 */
 	mutable std::unordered_map<core::UUID, entt::entity> m_uuidIndex;
+	/// UUIDs queued by `destroyEntityDeferred()`, drained by `flushPendingDestructions()`.
+	std::vector<core::UUID> m_pendingDestructions;
 	/**
 	 * @brief
 	 *  Tilemap / RaycastDoor / RaycastPushWall asset cache dirty bit. True on

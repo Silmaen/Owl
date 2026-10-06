@@ -25,10 +25,15 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 
 ### Destruction
 
-| Method                                     | Behaviour                                                    |
-|--------------------------------------------|--------------------------------------------------------------|
-| `Scene::destroyEntity(entity)`             | Children reparented to grandparent; world position preserved |
-| `Scene::destroyEntityWithChildren(entity)` | Cascade delete of entire subtree                             |
+| Method                                     | Behaviour                                                                 |
+|--------------------------------------------|---------------------------------------------------------------------------|
+| `Scene::destroyEntity(entity)`             | Children reparented to grandparent; world position preserved              |
+| `Scene::destroyEntityWithChildren(entity)` | Cascade delete of entire subtree                                          |
+| `Scene::destroyEntityDeferred(entity)`     | Runtime path: subtree queued, destroyed by `flushPendingDestructions()`   |
+
+The first two are immediate and meant for the editor. Runtime code (Lua `scene.destroy_entity`, trigger
+callbacks) uses the deferred form: the queue is flushed at the end of `onUpdateRuntime()` and at the start
+of `onEndRuntime()`, and each destroyed entity gets `on_destroy`, Box2D body removal and sound stop.
 
 ### Component API
 

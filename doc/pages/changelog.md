@@ -113,6 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `raycast_demo.owl` uses asset-relative texture paths instead of absolute paths from one machine.
 - Voxel worlds now show in the exported game: `Scene::renderWithStack` meshes them for the runner and the editor alike (D-03).
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
+- `scene.destroy_entity` is deferred to the end of the frame (`Scene::destroyEntityDeferred`): a script destroying its own entity no longer frees its running Lua state, and the destroyed entity gets `on_destroy` once, loses its Box2D body and takes its children with it.
 
 ### Security
 

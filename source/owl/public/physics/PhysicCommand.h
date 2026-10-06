@@ -80,6 +80,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Remove the Box2D bodies owned by an entity (PhysicBody, raycast door or pushwall body).
+	 *
+	 * Called before an entity is destroyed at runtime so it leaves no ghost collider. No-op when
+	 * physics is not initialised or the entity owns no body.
+	 * @param[in] iEntity The entity whose bodies are removed.
+	 */
+	static void destroyBody(const scene::Entity& iEntity);
+
+	/**
+	 * @brief
 	 *  Apply an impulsion to the given entity (if Entity supports it).
 	 * @param iEntity The Entity where to apply impulse.
 	 * @param iImpulse The impulse force and direction.

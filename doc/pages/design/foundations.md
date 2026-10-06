@@ -53,7 +53,7 @@ DepManager removed.
 
 Every fix lands with its regression test.
 
-- ![Planned][planned] Deferred entity destruction; `destroy_entity(self)` no longer frees the running Lua VM
+- ![Done][done] Deferred entity destruction; `destroy_entity(self)` no longer frees the running Lua VM
   (PR-01: C-01, D-01)
 - ![Planned][planned] Undo restores entities in place; dirty flag driven by a generation counter, so closing never
   loses edits silently (PR-03: E-01, E-02, C-05, E-05)
