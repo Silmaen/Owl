@@ -16,6 +16,7 @@ target_include_directories(${RUNNER_NAME} PRIVATE sources)
 target_compile_definitions(${RUNNER_NAME} PRIVATE OWL_ASSETS_LOCATION="source/owlnest/assets")
 target_link_libraries(${RUNNER_NAME} PRIVATE ${ENGINE_NAME})
 set_target_properties(${RUNNER_NAME} PROPERTIES FOLDER "App")
+target_import_so_files(${RUNNER_NAME})
 
 # yaml
 owl_target_link_libraries(${RUNNER_NAME} PRIVATE yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})

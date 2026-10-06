@@ -45,7 +45,7 @@ target_sources(${ENGINE_NAME}
         PRIVATE
         ${SRCS}
         PUBLIC FILE_SET HEADERS
-        BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR} FILES
+        BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/public FILES
         ${HDRS_PUBLIC}
 )
 set_target_properties(${ENGINE_NAME} PROPERTIES FOLDER "Engine")
@@ -55,7 +55,15 @@ target_include_directories(${ENGINE_NAME}
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/public>
         $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(${ENGINE_NAME} PUBLIC ${CMAKE_PROJECT_NAME}_Base)
+# Owl_Base carries the project's own warnings (-Werror -Weverything...) and build settings: in-tree consumers
+# (editor, tests) inherit them, the installed package does not. It only exports what the public headers need.
+target_link_libraries(${ENGINE_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_PROJECT_NAME}_Base>)
+target_compile_features(${ENGINE_NAME} PUBLIC cxx_std_23)
+if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
+    target_compile_definitions(${ENGINE_NAME} INTERFACE $<INSTALL_INTERFACE:${PROJECT_PREFIX}_PLATFORM_WINDOWS>)
+elseif (${PROJECT_PREFIX}_PLATFORM_LINUX)
+    target_compile_definitions(${ENGINE_NAME} INTERFACE $<INSTALL_INTERFACE:${PROJECT_PREFIX}_PLATFORM_LINUX>)
+endif ()
 target_link_libraries(${ENGINE_NAME} PRIVATE ${ENGINE_NAME}Private)
 
 # ---------========= PRIVATE third party =========---------
@@ -70,9 +78,6 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lua CONFIG REQUIRED ${
 
 # cpptrace
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace REQUIRED ${THIRD_PARTY_RELEASE})
-
-# debugbreak
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE debugbreak REQUIRED ${THIRD_PARTY_RELEASE})
 
 # glad
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glad 2.0 REQUIRED ${THIRD_PARTY_RELEASE})
@@ -119,12 +124,6 @@ owl_target_link_vulkan(${ENGINE_NAME})
 # spdlog
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE spdlog REQUIRED ${THIRD_PARTY_RELEASE})
 
-# yaml
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
-
-# zeus
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zeus REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "zeus::expected")
-
 # zstd
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zstd REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "zstd::libzstd_static")
 
@@ -138,6 +137,9 @@ owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED ${THIRD_PARTY_RELE
 
 # ImGui
 owl_target_link_libraries(${ENGINE_NAME} PUBLIC imgui REQUIRED ${THIRD_PARTY_RELEASE})
+
+# yaml-cpp: public until YAML leaves the public headers (renderer/RenderLayer.h, audit G-07 / PR-27)
+owl_target_link_libraries(${ENGINE_NAME} PUBLIC yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
 
 
 # additional windows libs
@@ -179,7 +181,7 @@ endif ()
 #    Installations
 # ------------------------------------------------------------------------------
 if (${PROJECT_PREFIX}_PACKAGE_ENGINE)
-    install(TARGETS ${ENGINE_NAME} ${CMAKE_PROJECT_NAME}_Base
+    install(TARGETS ${ENGINE_NAME}
             EXPORT OwlEngineTargets
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib

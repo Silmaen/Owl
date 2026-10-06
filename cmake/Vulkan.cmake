@@ -27,7 +27,12 @@ function(owl_target_link_vulkan target_name)
                 $<BUILD_INTERFACE:${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH="${${PROJECT_PREFIX}_VULKAN_LAYER_BIN_PATH}">)
     endif ()
     # Spir-V cross
-    if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
+    if (${PROJECT_PREFIX}_DEPENDENCY_PROVIDER STREQUAL "conan")
+        # ConanCenter ships SPIRV-Cross as one package with one target per component.
+        find_package(spirv-cross REQUIRED)
+        message(STATUS "Found spirv-cross version ${spirv-cross_VERSION} @ ${spirv-cross_DIR}")
+        target_link_libraries(${target_name}Private INTERFACE spirv-cross-cpp)
+    elseif (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
         find_package(spirv_cross_c_shared REQUIRED)
         message(STATUS "Found spirv_cross_c_shared version ${spirv_cross_c_shared_VERSION} @ ${spirv_cross_c_shared_DIR}")
         target_link_libraries(${target_name}Private INTERFACE spirv-cross-c-shared)

@@ -15,19 +15,30 @@
 #endif
 
 #ifdef OWL_ENABLE_ASSERTS
-#include <debugbreak.h>
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#include <intrin.h>
+/// Stop in the attached debugger.
+#define OWL_DEBUG_BREAK() __debugbreak()
+#elif defined(__clang__)
+/// Stop in the attached debugger.
+#define OWL_DEBUG_BREAK() __builtin_debugtrap()
+#else
+#include <csignal>
+/// Stop in the attached debugger.
+#define OWL_DEBUG_BREAK() std::raise(SIGTRAP)
+#endif
 #define OWL_ASSERT(x, ...)                                                                                             \
 	{                                                                                                                  \
 		if (!(x)) {                                                                                                    \
 			OWL_ERROR("Assertion Failed: {}.", __VA_ARGS__)                                                            \
-			debug_break();                                                                                             \
+			OWL_DEBUG_BREAK();                                                                                         \
 		}                                                                                                              \
 	}
 #define OWL_CORE_ASSERT(x, ...)                                                                                        \
 	{                                                                                                                  \
 		if (!(x)) {                                                                                                    \
 			OWL_CORE_ERROR("Assertion Failed: {}.", __VA_ARGS__)                                                       \
-			debug_break();                                                                                             \
+			OWL_DEBUG_BREAK();                                                                                         \
 		}                                                                                                              \
 	}
 #else

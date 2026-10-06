@@ -1,0 +1,9 @@
+sources:
+  "1.4.1":
+    nfd:
+      url: "https://github.com/btzy/nativefiledialog-extended/archive/refs/tags/v1.4.1.tar.gz"
+      sha256: "4a01eafa921169f009f3e83bea8e287d9e5d0b94ca9064cf7f0a546652d7c884"
+    # Git submodule 3ps/wayland-protocols, absent from the GitHub archive.
+    wayland-protocols:
+      url: "https://gitlab.freedesktop.org/wayland/wayland-protocols/-/releases/1.45/downloads/wayland-protocols-1.45.tar.xz"
+      sha256: "4d2b2a9e3e099d017dc8107bf1c334d27bb87d9e4aff19a0c8d856d17cd41ef0"

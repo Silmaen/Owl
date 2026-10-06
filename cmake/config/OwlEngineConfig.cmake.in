@@ -3,6 +3,7 @@
 include(CMakeFindDependencyMacro)
 find_dependency(EnTT CONFIG)
 find_dependency(imgui CONFIG)
+find_dependency(yaml-cpp CONFIG)
 
 if (NOT TARGET Owl::OwlEngine)
     include("${CMAKE_CURRENT_LIST_DIR}/OwlEngineTargets.cmake")

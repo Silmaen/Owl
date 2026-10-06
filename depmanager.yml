@@ -10,8 +10,6 @@ packages:
   cpptrace:
     version: 1.0.4
     kind: "static"
-  debugbreak:
-    version: 1.0
   entt:
     version: 3.15.0
   freetype:
@@ -77,9 +75,6 @@ packages:
   tinyobjloader:
     version: 2.0.0-rc13
     kind: "static"
-  tinyxml2:
-    version: 11.0.0
-    kind: "static"
   ufbx:
     version: 0.20.1
     kind: "static"
@@ -89,8 +84,6 @@ packages:
   yaml-cpp:
     version: 0.8.0
     kind: "static"
-  zeus:
-    version: 1.3.1
   zlib:
     version: 1.3.1
     kind: "static"

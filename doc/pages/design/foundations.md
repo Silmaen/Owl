@@ -27,15 +27,21 @@ the editor command API and the UI interaction basics are iteration tooling, not 
 The biggest unknowns of the release come first, so that they surface while the plan can still change: everything
 after this phase builds on the new dependency chain.
 
-- ![Planned][planned] Conan 2 migration from DepManager, ConanCenter first (see [Conan migration](conan-migration.md))
-    - Missing recipes written first: Slang, ufbx, imgui_color_text_edit, the ImGuizmo bundle, nfd-extended,
-      tinyobjloader rc13
+- ![In Progress][progress] Conan 2 migration from DepManager, ConanCenter first (see [Conan migration](conan-migration.md))
+    - `linux-clang-release` builds and passes its tests on Conan (`-DOWL_DEPENDENCY_PROVIDER=conan`), with local
+      recipes for Slang, ufbx, imgui_color_text_edit, ImGuizmo 1.10, nfd-extended and the msdf-atlas-gen library;
+      tinyobjloader steps back to rc10; tinyxml2, zeus and debugbreak removed
+    - Every Linux preset (GCC / Clang release and debug, coverage, clang-tidy, the four sanitizers) builds and passes
+      its tests on Conan (UBSan: renderer suite times out), pinned by `conan.lock`, shared libraries copied next to the
+      binaries; MinGW blocked in the image (no toolchain), plan in the design page
     - Versions absent from ConanCenter (EnTT 4, Taskflow 4.1, OpenAL Soft 1.25, msdfgen 1.13): contributed upstream
       or pinned locally until they land
 - ![Planned][planned] Breaking dependency upgrades done here, not later: EnTT 4, Taskflow 4.1, yaml-cpp 0.9, and the
   lagging ones (G-08)
-- ![Planned][planned] OwlEngine Conan package with `test_package`; the install tree fixed first (PR-08, PR-09: G-01,
+- ![In Progress][progress] OwlEngine Conan package with `test_package`; the install tree fixed first (PR-08, PR-09: G-01,
   G-02, G-06, A-19, G-19, F-06, G-03)
+    - `conan create .` packages `owlengine` (shared) and `test_package/` builds on `find_package(OwlEngine)`;
+      install tree fixed; the `Package` CI action does not run it yet
 - ![Planned][planned] DepManager and `owl_engine.py` removed once every preset builds on Conan
 
 Exit of the phase: every preset (Linux GCC / Clang, arm64, MinGW) builds and passes the tests on the new chain.
@@ -132,8 +138,8 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 
 ## Phase D — Usability & dependency reduction
 
-- ![Planned][planned] Fewer public dependencies — only EnTT, plus imgui through the optional `Owl::Gui` target;
-  tinyxml2 and zeus removed (see [Conan migration](conan-migration.md))
+- ![Planned][planned] Fewer public dependencies — only EnTT, plus imgui through the optional `Owl::Gui` target
+  (see [Conan migration](conan-migration.md))
 - ![Planned][planned] Configure without network or Doxygen, CMake clean-up (PR-26: G-05, G-09, G-13, G-14, G-15,
   I-09, G-08)
 - ![Planned][planned] Hot reload for iteration (editor and development runner)

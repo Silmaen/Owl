@@ -1,0 +1,5 @@
+sources:
+  # Commit used by the DepManager package; v1.92.9 rewrote the cursor API (DocPos), to adopt in both modes.
+  "cci.20260417":
+    url: "https://github.com/goossens/ImGuiColorTextEdit/archive/9670c32ec0fde0f048da5dae19decf8cc310ca38.tar.gz"
+    sha256: "b87941a0308732af1fe23458c15e50674532b3704f763f215b3a5aa1260c7169"

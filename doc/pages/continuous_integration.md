@@ -28,277 +28,74 @@ The CI surface covers:
 
 ## Project tree
 
-```mermaid
-flowchart TD
-    Root[Root project<br/>Owl] --> Build[Build]
-    Root --> Pkg[Packaging]
-    Build --> Lx[Linux x64]
-    Build --> La[Linux arm64]
-    Build --> Wx[Windows x64]
-    Build --> Q[Quality]
-    Lx --> LxC[Clang]
-    Lx --> LxG[GCC]
-    La --> LaC[Clang]
-    La --> LaG[GCC]
-    Wx --> WxC[Clang]
-    Wx --> WxG[GCC]
-    Q --> CS[Code Style]
-    Q --> CT[Clang-Tidy]
-    Q --> IC[Include Check]
-    Q --> SA[Sanitizer Address]
-    Q --> ST[Sanitizer Thread]
-    Q --> SL[Sanitizer Leak]
-    Q --> SU[Sanitizer UB]
-    Pkg --> PLx[Linux x64]
-    Pkg --> PLa[Linux arm64]
-    Pkg --> PWx[Windows x64]
-    PLx --> PLxE[Engine]
-    PLx --> PLxN[App - Nest]
-    PLa --> PLaE[Engine]
-    PLa --> PLaN[App - Nest]
-    PWx --> PWxE[Engine]
-    PWx --> PWxN[App - Nest]
-
-    classDef draft fill:#fff3cd,stroke:#856404,color:#856404
-    classDef mainOnly fill:#d1ecf1,stroke:#0c5460,color:#0c5460
-    class LxC,WxC,CS,SA draft
-    class LxG,LaG,WxG,SU,PLxE,PLaE,PLaN,PWxE mainOnly
-```
-
-Legend:
-- **Yellow**: draft-friendly — auto-run on draft PRs too (fast feedback subset).
-- **Blue**: main-only — auto-run on `main` pushes only (`triggerOnPrReady = false`);
-  a manual run from TeamCity always works.
-- Uncoloured: standard — auto-run on `main` pushes and on non-draft PRs.
-
-Orthogonal to the colours, a PR that changes **only** documentation
-(`doc/`, `*.md`, `.claude/`, `LICENSE`) runs just Code Style and Windows x64
-Clang — see [Doc-only pull requests](#doc-only-pull-requests).
-
-Source files:
-- `.teamcity/settings.kts` — entry point, registers `_Self.Project`.
-- `.teamcity/_Self/Project.kt` — root project, VCS root, project-level params.
-- `.teamcity/_Self/Github.kt` — GitHub App connection ID constant.
-- `.teamcity/_Self/BridgeHelpers.kt` — the `github-bridge` feature builder and
-  the per-BT overrides (see [Per-BT bridge gates](#per-bt-bridge-gates)).
-- `.teamcity/_Self/buildTypes/GlobalBuild.kt` — main build/test template.
-- `.teamcity/_Self/buildTypes/CodeStylingCheck.kt` — code style template.
-- `.teamcity/_Self/vcsRoots/HttpsGithubComSilmaenOwlGitRefsHeadsMain.kt` — VCS root.
-- `.teamcity/Build/Build.kt` — Build sub-project + 12 BTs.
-- `.teamcity/Packaging/Packaging.kt` — Packaging sub-project + 6 BTs.
-
-## VCS root
-
-A single Git VCS root (`HttpsGithubComSilmaenOwlGitRefsHeadsMain`) points at
-[Silmaen/Owl](https://github.com/Silmaen/Owl). The default branch is
-parameterised via `owl_git_branch` (default `main`). The root pulls a
-restricted set of refs only:
-
-```
-+:refs/heads/(%owl_git_branch%)
-+:refs/(pull/*)/head
-```
-
-Concretely: TC sees only `main` and open-PR head refs. A push to a feature
-branch **without an open PR** is invisible to TC — no builds run. This is
-intentional: gating CI behind a PR avoids burning CI minutes on
-work-in-progress branches.
-
-## Templates
-
-Two templates carry the per-BT-shared configuration.
-
-### GlobalBuild (`_Self.buildTypes.GlobalBuild`)
-
-The canonical build-and-test template used by every BT in `Build/` (except
-Code Style) and every BT in `Packaging/`.
-
-Pipeline (each step is a `ci_action.py` sub-action invoked through Docker
-except the first, which sets `docker_image` from the preset metadata):
-
-| Step                      | Condition                                      |
-|---------------------------|------------------------------------------------|
-| Determine docker (native) | always                                         |
-| Define Remote             | always — configures DepManager remote          |
-| Clean output              | always                                         |
-| Clean release             | `release_preset` non-empty                     |
-| Build                     | always                                         |
-| Test                      | `run_tests == true`                            |
-| Code Coverage             | `run_coverage == true`                         |
-| Build Release             | `release_preset` non-empty                     |
-| Test Release              | `release_preset` non-empty + `run_tests`       |
-| Documentation             | `run_documentation == true`                    |
-| Package                   | `run_package == true`                          |
-| Publish Package           | `run_package` + on default branch              |
-| Publish Documentation     | `run_package` + default branch + `publish_doc` |
-
-Each Dockerised step uses the image set by step 1 (`%docker_image%`, derived
-from the CMake preset's `vendor.silmaen` block).
-
-One BT adds a step of its own on top of this pipeline: `Build/Quality/Clang-Tidy`
-appends a `ClangTidy` step (BT steps run after inherited ones, so it lands right
-after Build for that preset). It stays on that BT rather than moving into this
-template — a template step would be inherited by all eleven configurations just
-to be skipped by ten. See [Clang-tidy scoping](#clang-tidy-scoping).
-
-Key inherited properties:
-- **Trigger**: a single VCS trigger (`TRIGGER_1`) on `+:main`.
-- **Snapshot dependency on `QualityCodeStyle`** with `FAIL_TO_START` —
-  every dependent waits for Code Style and fails fast if it fails.
-- **Build feature** `BRIDGE_GITHUB` (`type = github-bridge`) — opts the BT
-  into the [teamcity-github-bridge plugin](#teamcity-github-bridge-plugin).
-  Template defaults: no draft PRs, no doc-only PRs, no diff annotations,
-  reuse a verdict already produced for the same commit.
-- **Failure conditions**: Google Test XML report ingestion, performance
-  monitor.
-- **Requirement**: `teamcity.agent.jvm.os.name contains %platform%`.
-
-### CodeStylingCheck (`_Self.buildTypes.CodeStylingCheck`)
-
-Lightweight template for the Code Style aggregator only. It runs
-`ci_action.py CodeStyle` which bundles clang-format dry-run + codespell +
-comment-quality + private-member doc audit + cpp-style audit + structural
-audit + std-includes audit (see [Include check](#include-check)). Inherits the same VCS root and runs in a single Docker step.
-
-Its bridge gates differ from `GlobalBuild` on all three axes: it runs on draft
-PRs, it runs on doc-only PRs (codespell and the markdown checks are exactly
-what such a PR changes), and it **annotates the diff** — every finding
-`ci/actions/code_style.py` reports is emitted as a compiler-style diagnostic
-for that reason, see [Diff annotations](#diff-annotations).
-
-## Build matrix
-
-| BT                              | Template         | Preset                                | Trigger profile  |
-|---------------------------------|------------------|---------------------------------------|------------------|
-| Build/LinuxX64/Clang            | GlobalBuild      | `linux-clang-debug`                   | draft + ready    |
-| Build/LinuxX64/GCC              | GlobalBuild      | `linux-gcc-debug`                     | main only        |
-| Build/LinuxArm64/Clang          | GlobalBuild      | `linux-clang-debug` (ARM64 emulation) | ready (no draft) |
-| Build/LinuxArm64/GCC            | GlobalBuild      | `linux-gcc-debug` (ARM64 emulation)   | main only        |
-| Build/WindowsX64/Clang          | GlobalBuild      | `windows-clang-debug`                 | draft + ready    |
-| Build/WindowsX64/GCC            | GlobalBuild      | `windows-gcc-debug`                   | main only        |
-| Build/Quality/Code Style        | CodeStylingCheck | `linux-clang-debug`                   | draft + ready    |
-| Build/Quality/Clang-Tidy        | GlobalBuild      | `linux-clang-tidy`                    | ready (no draft) |
-| Build/Quality/Include Check     | GlobalBuild      | `linux-include-check`                 | ready (no draft) |
-| Build/Quality/Sanitizer Address | GlobalBuild      | `linux-sanitizer-address`             | draft + ready    |
-| Build/Quality/Sanitizer thread  | GlobalBuild      | `linux-sanitizer-thread`              | ready (no draft) |
-| Build/Quality/Sanitizer leak    | GlobalBuild      | `linux-sanitizer-leak`                | ready (no draft) |
-| Build/Quality/Sanitizer UB      | GlobalBuild      | `linux-sanitizer-undefined-behavior`  | main only        |
-| Packaging/LinuxX64/Engine       | GlobalBuild      | `package-engine-linux`                | main only        |
-| Packaging/LinuxX64/AppNest      | GlobalBuild      | `package-app-nest-linux`              | ready (no draft) |
-| Packaging/LinuxArm64/Engine     | GlobalBuild      | `package-engine-linux` (arm64)        | main only        |
-| Packaging/LinuxArm64/AppNest    | GlobalBuild      | `package-app-nest-linux` (arm64)      | main only        |
-| Packaging/WindowsX64/Engine     | GlobalBuild      | `package-engine-windows`              | main only        |
-| Packaging/WindowsX64/AppNest    | GlobalBuild      | `package-app-nest-windows`            | ready (no draft) |
-
-**Trigger profiles** above map to:
-
-| Profile          | Call                                | Auto on `main` push | Auto on ready PR | Auto on draft PR |
-|------------------|-------------------------------------|---------------------|------------------|------------------|
-| draft + ready    | `bridgeOverride(runOnDraftPr=true)` | ✅                   | ✅                | ✅                |
-| ready (no draft) | _(template default)_                | ✅                   | ✅                | ❌ (Skipped CR)   |
-| main only        | `skipAutoPRs()`                     | ✅                   | ❌ (Skipped CR)   | ❌ (Skipped CR)   |
-
-Manual triggers from the TeamCity UI **always** run regardless of profile —
-the gate short-circuits to `ALLOW` for any operator-initiated build, and so does
-*Re-run* in the GitHub Checks UI.
-
-Two more ways to keep the matrix off a pull request, both read from the PR
-itself and both bypassed by a manual Run:
-
-- `[skip ci]` in the PR **title or body** — nothing is triggered at all
-  (`skipPhrase`, set on every bridge feature).
-- a PR that changes only documentation — see
-  [Doc-only pull requests](#doc-only-pull-requests).
-
-## Triggering
-
-Two trigger paths coexist by design. Each owns a disjoint event class.
+The DSL (`.teamcity/`) is laid out like EvenementLoto's: one entry point, a `common/` folder, one file per
+sub-project. The order of the sub-projects **is** the dependency chain, read top to bottom.
 
 ```mermaid
 flowchart LR
-    push[Push to main] --> tc[TC VCS poll]
-    tc --> trig[TRIGGER_1 fires]
-    trig --> q[Enqueue build]
-
-    pr[PR opened / sync / ready_for_review] --> gh[GitHub webhook]
-    gh --> plg[teamcity-github-bridge<br/>PullRequestEventListener]
-    plg --> gate{BridgeGate.decide}
-    gate -->|ALLOW| q
-    gate -->|SUPPRESS_DRAFT| sk[Post Skipped Check Run]
-    gate -->|SUPPRESS_BRANCH_PR| sk
-    gate -->|SUPPRESS_HARD| nil[Drop]
-
-    q --> dep[Pull snapshot deps<br/>CodeStyle, etc.]
-    dep --> run[Run on agent]
+    CS[Code Style] --> LxC[Linux x64 Clang] & LxG[Linux x64 GCC] & WxC[Windows x64 Clang] & WxG[Windows x64 GCC]
+    CS --> LaC[Linux arm64 Clang] & LaG[Linux arm64 GCC]
+    LxC & WxC --> SA[Sanitizer Address] & SL[Sanitizer Leak] & ST[Sanitizer Thread] & SU[Sanitizer UB]
+    SA & SL & ST & SU --> CT[Clang-Tidy] & AN[Static Analyzer] & IC[Include Check]
+    LxC --> PL[Packages Linux x64]
+    WxC --> PW[Packages Windows x64]
+    LaC --> PA[Packages Linux arm64]
+    classDef draft fill:#fff3cd,stroke:#856404,color:#856404
+    classDef mainOnly fill:#d1ecf1,stroke:#0c5460,color:#0c5460
+    class CS,LxC,WxC,SA draft
+    class LaC,LaG,PL,PW,PA mainOnly
 ```
 
-**Path A — VCS trigger** (`TRIGGER_1` on GlobalBuild, `TRIGGER_4` on
-CodeStylingCheck): fires only on pushes to `main`. Every BT inheriting a
-template gets this trigger automatically. There is **no** VCS trigger for
-feature-branch or PR-ref pushes — the second path handles those.
+- **Yellow**: also run on draft pull requests (fast feedback subset).
+- **Blue**: `main` only (`triggerOnPrReady = false`): arm64 is emulated and slow, packages never run for a PR.
+- Uncoloured: run on every ready pull request and on `main`.
 
-The plugin has been able to trigger on plain branches since v1.9.0, which would
-make it a second enqueue path for the same push. It is therefore switched off
-project-wide (`teamcity.github.bridge.branchTrigger.enabled = false`), so this
-trigger stays the only thing that builds `main`. That kill switch is about
-*triggering* only: a `main` build still publishes its Check Run like any other.
+| File                    | Content                                                                          |
+|-------------------------|----------------------------------------------------------------------------------|
+| `settings.kts`          | The project: parameters, VCS root, templates, sub-projects and their order       |
+| `common/Vcs.kt`         | The git VCS root, the GitHub App connection id                                   |
+| `common/Templates.kt`   | Global Build (configure → package steps) and Tool Build (Code Style)             |
+| `common/Helpers.kt`     | `mainBranchOnly()`, `githubBridge()`, `after()`, `ciAction()`, `CODE_ONLY_PATHS` |
+| `common/Factories.kt`   | `presetBuild()`, `analysisBuild()`, `packageBuild()`                             |
+| `quality/CodeStyle.kt`  | The gate every other configuration waits for                                     |
+| `build/*.kt`            | Build Linux x64, Build Windows x64, Build Linux arm64                            |
+| `quality/Sanitizers.kt` | The four sanitizers, after the two Clang builds                                  |
+| `quality/Analysis.kt`   | Clang-Tidy, Static Analyzer, Include Check, after the four sanitizers            |
+| `packaging/Package.kt`  | Engine and Owl Nest packages, after the build that tested their platform         |
 
-**Path B — GitHub webhook**: GitHub posts to the plugin's `/webhook`
-endpoint on `pull_request` events (`opened`, `synchronize`,
-`ready_for_review`). The plugin iterates every BT that carries the
-`github-bridge` build feature, calls `BridgeGate.decide` with the BT's
-config and the PR's draft state, and enqueues the matching ones. The smart
-skip (`findExistingBuildReason`) prevents duplicates when the same
-`(branch, head SHA)` already has a build queued, running, or recently
-finished.
+The configuration ids are the ones the server already knew (`Build_LinuxX64_Clang`, `Build_Quality_ClangTidy`, …),
+so the build history is kept. Everything a build does lives in `ci/` (`ci_action.py <Action> <preset>`); the DSL only
+says which presets exist, where they run and in which order.
 
-Why two paths? The VCS trigger has no way to suppress draft PRs (TeamCity's
-built-in `pullRequests { ignoreDrafts = true }` is silently ignored under
-GitHub App auth, which is the safety bug that motivated the plugin), and the
-plugin's branch path would only duplicate a trigger TeamCity already owns.
-Splitting the responsibility eliminates duplication and gives each kind of
-event its purpose-built handler.
+## Triggering
 
-### Per-BT bridge gates
+- **`main`**: the templates' VCS trigger (`mainBranchOnly()`); the bridge plugin ignores `push` events.
+- **Pull requests**: the GitHub App bridge, on the PR's **head branch** (`prBuildRef = branch`): TeamCity shows the
+  real branch name (`Feature/…`), never `pull/N`. The branch specification is `main`, `Feature/*` and `Experiment/*`,
+  the only branch names allowed.
+- **Manual runs** always run, whatever the configuration's pull request settings; so does *Re-run* in GitHub.
 
-`.teamcity/_Self/BridgeHelpers.kt` holds one builder, `githubBridge()`, used by
-both templates, plus `bridgeOverride()` for a BT that needs different gates. An
-override cannot edit an inherited feature's params, so it disables the
-template's feature (`disableSettings("BRIDGE_GITHUB")`) and attaches a fresh
-one (`BRIDGE_GITHUB_LOCAL`) with the **full** set — which is why the builder
-takes every knob with the template's own default, and why **one call per BT**
-is the rule: the plugin honours a single `github-bridge` feature.
+### The `github-bridge` feature
 
-| Argument        | Template default  | Effect when changed                                                                         |
-|-----------------|-------------------|---------------------------------------------------------------------------------------------|
-| `runOnDraftPr`  | `false`           | `true` puts the BT in the draft-friendly subset                                             |
-| `autoPrTrigger` | `true`            | `false` sets `triggerOnPrReady = false`: the BT never runs for a pull request (main only)   |
-| `annotateDiff`  | `true`            | `false` keeps this BT's diagnostics off the PR diff                                         |
-| `pathFilter`    | `CODE_ONLY_PATHS` | `""` makes the BT run on a doc-only PR as well                                              |
+`githubBridge()` (`common/Helpers.kt`) sets every parameter explicitly. Each configuration declares the feature
+itself, with the same id as its template's, which replaces the inherited one:
 
-Fixed for every BT: `publishChecks`, `runOnApproval` and `triggerOnBranch` set to `true`,
-`skipIfCommitPassed = true` and `skipPhrase = [skip ci]`.
+| Argument           | Default           | Effect                                               |
+|--------------------|-------------------|------------------------------------------------------|
+| `triggerOnPrDraft` | `false`           | `true` puts the configuration in the draft subset    |
+| `triggerOnPrReady` | `true`            | `false`: never runs for a pull request (`main` only) |
+| `annotateDiff`     | `true`            | findings pinned to the lines of the PR diff          |
+| `pathFilter`       | `CODE_ONLY_PATHS` | `""` runs on documentation-only pull requests too    |
 
-### Dependency chain and required checks
+Always set: `publishChecks`, `runOnApproval`, `triggerOnBranch` to `true`, `skipIfCommitPassed = true` (a draft's
+verdict is republished when the PR turns ready) and `skipPhrase = [skip ci]`.
 
-Every build depends on Code Style. The two analyses, **Clang-Tidy** and **Clang Static
-Analyzer** (the same `ClangTidy` action with `--tool=analyzer`: `clang-analyzer-*` checks
-only, every finding an error), depend on every configuration a pull request runs, so they
-close the chain: nothing reaches them unless all of those went green. They are therefore the
-checks to require in the branch protection of `main`. A pull request is built from its head
-branch (`prBuildRef = branch`), which the branch specification limits to `Feature/*` and
-`Experiment/*`. Packages never run for a pull request.
+### Required checks
 
-Who overrides what today:
-
-| BT                              | Call                                                                        | Why                                                   |
-|---------------------------------|-----------------------------------------------------------------------------|-------------------------------------------------------|
-| Build/LinuxX64/Clang            | `bridgeOverride(runOnDraftPr = true, annotateDiff = true)`                  | fast feedback; reference Clang diagnostics            |
-| Build/WindowsX64/Clang          | `bridgeOverride(runOnDraftPr = true, annotateDiff = true, pathFilter = "")` | fast feedback; MinGW-only diagnostics; builds Doxygen |
-| Build/Quality/Clang-Tidy        | `bridgeOverride(annotateDiff = true)`                                       | tidy findings belong to no other BT                   |
-| Build/Quality/Include Check     | `bridgeOverride(annotateDiff = true)`                                       | strict-libc++ errors belong to no other BT            |
-| Build/Quality/Sanitizer Address | `bridgeOverride(runOnDraftPr = true)`                                       | fast feedback                                         |
-| GCC ×3, Sanitizer UB, packagers | `skipAutoPRs()`                                                             | too expensive to run on every PR push                 |
+**Clang-Tidy** and **Static Analyzer** close the chain: nothing reaches them unless Code Style, every pull-request
+build and the four sanitizers went green. They are the checks to require in the branch protection of `main`.
+GitHub shows a check by the tail of its name (`checkName.stripPrefix = "TeamCity / Owl / "`), e.g.
+`Analysis / Clang-Tidy`: a protection rule names it literally.
 
 ### Doc-only pull requests
 

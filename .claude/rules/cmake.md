@@ -24,7 +24,8 @@ Adding a new `.cpp` or `.h` file requires no CMakeLists.txt modification.
 
 ## Linking Dependencies
 
-**Never call `find_package()` directly** for depmanager-managed packages. Use the wrapper:
+**Never call `find_package()` directly** for depmanager- or Conan-managed packages. Use the wrapper (it
+maps the Conan names that differ, see `cmake/Conan.cmake`):
 ```cmake
 owl_target_link_libraries(TargetName PRIVATE|PUBLIC|INTERFACE ModuleName REQUIRED ${THIRD_PARTY_RELEASE})
 ```
@@ -82,24 +83,25 @@ Tests are auto-discovered from `test/` subdirectories. See testing rules.
 
 ## Options (`OWL_*`)
 
-| Option                                    | Default | Description                                                                                                                                   |
-|-------------------------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| `OWL_BUILD_SHARED`                        | ON      | Build engine as shared library                                                                                                                |
-| `OWL_BUILD_NEST`                          | ON      | Build Owl Nest editor                                                                                                                         |
-| `OWL_TESTING`                             | ON      | Enable unit tests                                                                                                                             |
-| `OWL_ENABLE_COVERAGE`                     | OFF     | Code coverage (auto-enabled in debug presets)                                                                                                 |
-| `OWL_ENABLE_MEMORY_TRACKER`               | OFF     | Install global `new`/`delete` overrides so `TrackerAPI` records every allocation (always on in Debug; opt-in in Release for leak diagnostics) |
-| `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (implies `OWL_ENABLE_MEMORY_TRACKER`; performance impact)                                                           |
-| `OWL_ENABLE_PROFILING`                    | OFF     | Profiling output                                                                                                                              |
-| `OWL_USE_RELEASE_THIRD_PARTY`             | ON      | Use release builds of third-party libraries                                                                                                   |
-| `OWL_ENABLE_VULKAN_LAYERS`                | OFF     | Copy Vulkan layers to binary directory                                                                                                        |
-| `OWL_ENABLE_CLANG_TIDY`                   | OFF     | Enable clang-tidy static analysis                                                                                                             |
-| `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF     | AddressSanitizer (CI presets)                                                                                                                 |
-| `OWL_ENABLE_THREAD_SANITIZER`             | OFF     | ThreadSanitizer (CI presets)                                                                                                                  |
-| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF     | UBSanitizer (CI presets)                                                                                                                      |
-| `OWL_ENABLE_LEAK_SANITIZER`               | OFF     | LeakSanitizer (CI presets)                                                                                                                    |
-| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only, CI presets)                                                                                                      |
-| `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation                                                                                                       |
-| `OWL_PACKAGING`                           | OFF     | Enable packaging mode                                                                                                                         |
-| `OWL_BENCHMARK`                           | OFF     | Build the `owl_bench` micro-benchmark harness (`bench/`, see `bench/README.md`)                                                               |
-| `OWL_INCLUDE_CHECK`                       | OFF     | Add `owl_include_check`: every header and source compiled alone, no PCH, strict libc++ (Clang only, `linux-include-check` preset)             |
+| Option                                    | Default    | Description                                                                                                                                   |
+|-------------------------------------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| `OWL_BUILD_SHARED`                        | ON         | Build engine as shared library                                                                                                                |
+| `OWL_BUILD_NEST`                          | ON         | Build Owl Nest editor                                                                                                                         |
+| `OWL_TESTING`                             | ON         | Enable unit tests                                                                                                                             |
+| `OWL_ENABLE_COVERAGE`                     | OFF        | Code coverage (auto-enabled in debug presets)                                                                                                 |
+| `OWL_ENABLE_MEMORY_TRACKER`               | OFF        | Install global `new`/`delete` overrides so `TrackerAPI` records every allocation (always on in Debug; opt-in in Release for leak diagnostics) |
+| `OWL_ENABLE_STACKTRACE`                   | OFF        | Memory tracker stacktrace (implies `OWL_ENABLE_MEMORY_TRACKER`; performance impact)                                                           |
+| `OWL_ENABLE_PROFILING`                    | OFF        | Profiling output                                                                                                                              |
+| `OWL_USE_RELEASE_THIRD_PARTY`             | ON         | Use release builds of third-party libraries                                                                                                   |
+| `OWL_ENABLE_VULKAN_LAYERS`                | OFF        | Copy Vulkan layers to binary directory                                                                                                        |
+| `OWL_ENABLE_CLANG_TIDY`                   | OFF        | Enable clang-tidy static analysis                                                                                                             |
+| `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF        | AddressSanitizer (CI presets)                                                                                                                 |
+| `OWL_ENABLE_THREAD_SANITIZER`             | OFF        | ThreadSanitizer (CI presets)                                                                                                                  |
+| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF        | UBSanitizer (CI presets)                                                                                                                      |
+| `OWL_ENABLE_LEAK_SANITIZER`               | OFF        | LeakSanitizer (CI presets)                                                                                                                    |
+| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF        | MemorySanitizer (Clang-only, CI presets)                                                                                                      |
+| `OWL_ENABLE_DOCUMENTATION`                | OFF        | Enable Doxygen documentation generation                                                                                                       |
+| `OWL_PACKAGING`                           | OFF        | Enable packaging mode                                                                                                                         |
+| `OWL_BENCHMARK`                           | OFF        | Build the `owl_bench` micro-benchmark harness (`bench/`, see `bench/README.md`)                                                               |
+| `OWL_INCLUDE_CHECK`                       | OFF        | Add `owl_include_check`: every header and source compiled alone, no PCH, strict libc++ (Clang only, `linux-include-check` preset)             |
+| `OWL_DEPENDENCY_PROVIDER`                 | depmanager | Third-party provider: `depmanager` or `conan` (see `.claude/rules/dependencies.md`)                                                           |

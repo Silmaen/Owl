@@ -9,7 +9,8 @@ execute_process(
         ERROR_STRIP_TRAILING_WHITESPACE
 )
 
-if (POETRY_CHECK_RESULT EQUAL 0)
+# A source tree without pyproject.toml (the OwlEngine Conan package build) uses the system Python.
+if (POETRY_CHECK_RESULT EQUAL 0 AND EXISTS "${CMAKE_SOURCE_DIR}/pyproject.toml")
     message(STATUS "Poetry is installed: ${POETRY_VERSION_OUTPUT}")
 
     # CI-only escape hatch: wipe every Poetry virtualenv tied to this project before sync.

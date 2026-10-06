@@ -1,0 +1,9 @@
+{
+    "version": 4,
+    "vendor": {
+        "conan": {}
+    },
+    "include": [
+        "build/clang-22-x86_64-23-release/generators/CMakePresets.json"
+    ]
+}

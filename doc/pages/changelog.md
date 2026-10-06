@@ -11,13 +11,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Conan profiles for Windows MinGW (`windows-clang`, `windows-gcc`), DLLs deployed next to the binaries, provider selectable through `OWL_DEPENDENCY_PROVIDER` (environment and TeamCity parameter).
 - `Clang Static Analyzer` CI configuration (`ClangTidy -- --tool=analyzer`); both analyses close the TeamCity chain and are the checks to require on `main`.
 - `docker/run.sh` runs any build, test or CI command in the Docker build image (`--gui`, `--perf`).
 - `bench/` engine benchmark harness (scene, serialization, Renderer2D, voxel, Lua, physics, Slang), built with `-DOWL_BENCHMARK=ON`.
 - `ClangTidy` CI action: on a pull request, analyses only the touched `.cpp` files plus every `.cpp` whose include closure (`ninja -t deps`) holds a touched header; elsewhere, everything.
+- `-DOWL_DEPENDENCY_PROVIDER=conan` builds `linux-clang-release` with Conan 2 and ConanCenter (`conanfile.py`, six local recipes in `conan/recipes/`), without the DepManager server.
+- Every Linux preset builds on Conan, pinned by `conan.lock`, and `conan create .` packages OwlEngine, checked by `test_package/` (`find_package(OwlEngine)`).
+### Removed
+- Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).
 
 ### Changed
 
+- TeamCity DSL laid out like EvenementLoto's (`common/`, `build/`, `quality/`, `packaging/`), chain Code Style → builds → sanitizers → analyses → packages; PR builds named by their real branch; configs version 2026.2.
 - TeamCity follows the EvenementLoto model: findings annotated on the diff by default, PRs built from their `Feature/*` / `Experiment/*` head branch, packages never on a PR, no `/ci full` comment.
 - Roadmap rethought toward 1.0.0: v0.3.0 Foundations, renumbered releases, three reading levels (`ROADMAP.md`, `doc/pages/roadmap.md`, `doc/pages/design/`).
 - Changelog split the same way: one line per release in `CHANGELOG.md`, details in `doc/pages/changelog.md`.
@@ -29,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Windows build with a recent libstdc++ (MSYS2): every file now includes the standard headers it uses, checked by the `std-includes` Code Style audit and the `linux-include-check` strict-libc++ build (`OWL_INCLUDE_CHECK`).
 - `ClangTidy` runs one job per available core by default instead of a single process (`--jobs=N` still overrides).
 - Doxygen on Windows: `doc/fix_md_links.py` writes its output as UTF-8, the locale codepage could not encode the doc pages' `✅` / `❌`.
+- Installed OwlEngine package: headers under `include/` again, no `-Werror -Weverything` imposed on consumers, preset install prefix honoured.
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
 
 ## [0.2.1] - 2026-06-27

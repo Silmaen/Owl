@@ -1,33 +1,81 @@
 import jetbrains.buildServer.configs.kotlin.*
 
 /*
-The settings script is an entry point for defining a single
-TeamCity project. TeamCity looks for the 'settings.kts' file in a
-project directory and runs it if it's found, so the script name
-shouldn't be changed and its package should be the same as the
-project's id.
+Entry point of the "Owl" project, laid out like EvenementLoto's.
 
-The script should contain a single call to the project() function
-with a Project instance or an init function as an argument.
+This file holds nothing but the project itself: its parameters, the VCS root, the
+templates it registers and the sub-projects in the order of the dependency chain.
+Everything else is split to mirror that hierarchy:
 
-VcsRoots, BuildTypes, and Templates of this project must be
-registered inside project using the vcsRoot(), buildType(), and
-template() methods respectively.
+    common/Vcs.kt           the git VCS root and the GitHub App connection id
+    common/Templates.kt     Global Build and Tool Build
+    common/Helpers.kt       the VCS trigger, the GitHub bridge feature, the dependencies
+    common/Factories.kt     one function per family of configuration
+    quality/CodeStyle.kt    the gate every other configuration waits for
+    build/Linux.kt          Build Linux x64
+    build/LinuxArm64.kt     Build Linux arm64 (emulated, main only)
+    build/Windows.kt        Build Windows x64
+    quality/Sanitizers.kt   the four sanitizers
+    quality/Analysis.kt     clang-tidy, the static analyzer, the include check
+    packaging/Package.kt    the engine and editor packages
 
-Subprojects can be defined either in their own settings.kts or by
-calling the subProjects() method in this project.
+A declaration cannot live in this file if another file needs it: the top-level values of
+a `.kts` are members of the script's own class, invisible from a `.kt` beside it.
 
-To debug settings scripts in command-line, run the
-
-    mvnDebug org.jetbrains.teamcity:teamcity-configs-maven-plugin:generate
-
-command and attach your debugger to the port 8000.
-
-To debug in IntelliJ Idea, open the 'Maven Projects' tool window (View ->
-Tool Windows -> Maven Projects), find the generate task
-node (Plugins -> teamcity-configs -> teamcity-configs:generate),
-the 'Debug' option is available in the context menu for the task.
+Everything a build does lives in `ci/` and is driven by `ci_action.py <Action> <preset>`;
+the DSL only describes which presets exist, where they run and in which order.
 */
 
-version = "2026.1"
-project(_Self.Project)
+version = "2026.2"
+
+project {
+    description = "Les configurations pour le moteur de jeu"
+
+    vcsRoot(githubOwl)
+
+    template(globalBuild)
+    template(toolBuild)
+
+    params {
+        param("owl_git_branch", "main")
+        // main plus the only two allowed branch families.
+        param("branch_specification", """
+            +:refs/heads/(%owl_git_branch%)
+            +:refs/heads/(Feature/*)
+            +:refs/heads/(Experiment/*)
+        """.trimIndent())
+        // Pull requests are built by the GitHub App bridge on their head branch
+        // (prBuildRef = branch): TeamCity shows `Feature/…`, not `pull/N`. Branch pushes
+        // are not built by the bridge, so main relies on the templates' VCS trigger.
+        param("teamcity.github.bridge.repo", "Silmaen/Owl")
+        param("teamcity.github.bridge.connectionId", GITHUB_CONNECTION_ID)
+        param("teamcity.github.bridge.prBuildRef", "branch")
+        param("teamcity.github.bridge.prTrigger.enabled", "true")
+        param("teamcity.github.bridge.branchTrigger.enabled", "true")
+        param("teamcity.github.bridge.annotations.enabled", "true")
+        // What GitHub shows for each check: the tail of the name, not the ancestry. The
+        // prefix must match exactly, and a protection rule names a check literally.
+        param("teamcity.github.bridge.checkName.stripPrefix", "TeamCity / Owl / ")
+    }
+
+    // The gate, at the root.
+    buildType(codeStyle)
+
+    subProject(linuxX64)
+    subProject(windowsX64)
+    subProject(linuxArm64)
+    subProject(sanitizers)
+    subProject(analysis)
+    subProject(packaging)
+
+    // The order is the dependency chain, read top to bottom: the builds, the sanitizers
+    // that need them, the analyses that need those, then what ships.
+    subProjectsOrder = arrayListOf(
+            RelativeId("Build_LinuxX64"),
+            RelativeId("Build_WindowsX64"),
+            RelativeId("Build_LinuxArm64"),
+            RelativeId("Sanitizers"),
+            RelativeId("Analysis"),
+            RelativeId("Packaging"),
+    )
+}

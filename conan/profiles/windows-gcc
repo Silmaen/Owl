@@ -1,0 +1,21 @@
+{# Windows, MSYS2 MinGW64 GCC + libstdc++ (the toolchain of the windows-gcc-* presets). #}
+{% set compiler, version, compiler_exe = detect_api.detect_gcc_compiler("gcc") %}
+[settings]
+os=Windows
+arch={{ detect_api.detect_arch() }}
+compiler=gcc
+compiler.version={{ detect_api.default_compiler_version(compiler, version) }}
+compiler.libcxx=libstdc++11
+compiler.threads=posix
+compiler.exception=seh
+compiler.cppstd=23
+build_type=Release
+
+[conf]
+tools.build:compiler_executables={"c": "gcc", "cpp": "g++", "rc": "windres"}
+tools.cmake.cmaketoolchain:generator=Ninja
+tools.system.package_manager:mode=check
+
+[buildenv]
+CC=gcc
+CXX=g++
