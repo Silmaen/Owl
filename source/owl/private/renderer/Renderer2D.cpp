@@ -18,7 +18,9 @@
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/UniformBuffer.h"
 
+#include <bit>
 #include <cstdint>
+#include <span>
 
 namespace owl::renderer {
 
@@ -107,7 +109,10 @@ struct InternalData {
 	shared<gpu::UniformBuffer> cameraUniformBuffer;
 	std::vector<shared<gpu::Texture2D>> textureSlots;
 	uint32_t textureSlotIndex = 1;
-	shared<gpu::StorageBuffer> sceneWorlds;
+	std::vector<math::mat4> sceneWorlds;
+	bool sceneWorldsDirty = false;
+	uint32_t sceneWorldsCapacity = 0;
+	shared<gpu::StorageBuffer> sceneWorldsSsbo;
 	shared<gpu::StorageBuffer> sceneWorldsFallback;
 	std::vector<math::mat4> transientWorlds;
 	shared<gpu::StorageBuffer> transientWorldsSsbo;
@@ -282,7 +287,8 @@ void Renderer2D::shutdown() {
 	g_Data->circle = utils::BatchData<utils::CircleInstance>{};
 	g_Data->line = utils::BatchData<utils::LineInstance>{};
 	g_Data->text = utils::BatchData<utils::TextInstance>{};
-	g_Data->sceneWorlds.reset();
+	g_Data->sceneWorlds.clear();
+	g_Data->sceneWorldsSsbo.reset();
 	g_Data->sceneWorldsFallback.reset();
 	g_Data->transientWorldsSsbo.reset();
 	g_Data->transientWorlds.clear();
@@ -320,11 +326,19 @@ void Renderer2D::flush() {
 		}
 	}
 
+	shared<gpu::StorageBuffer> retiredSceneWorlds = g_Data->sceneWorldsDirty ? reserveSceneWorlds() : nullptr;
 	gpu::RenderCommand::beginBatch();
+	retiredSceneWorlds.reset();
 	gpu::RenderCommand::beginTextureLoad();
 	for (uint32_t i = 0; i < g_Data->textureSlotIndex; i++) g_Data->textureSlots[i]->bind(i);
 	gpu::RenderCommand::endTextureLoad();
 
+	if (g_Data->sceneWorldsDirty) {
+		g_Data->sceneWorldsDirty = false;
+		if (!g_Data->sceneWorlds.empty() && g_Data->sceneWorldsSsbo != nullptr)
+			g_Data->sceneWorldsSsbo->setData(g_Data->sceneWorlds.data(),
+											 static_cast<uint32_t>(g_Data->sceneWorlds.size() * sizeof(math::mat4)), 0);
+	}
 	if (!g_Data->transientWorlds.empty()) {
 		g_Data->transientWorldsSsbo->setData(g_Data->transientWorlds.data(),
 											 static_cast<uint32_t>(g_Data->transientWorlds.size() * sizeof(math::mat4)),
@@ -332,8 +346,8 @@ void Renderer2D::flush() {
 	}
 	g_Data->transientWorldsSsbo->bind(/*iBinding=*/4u);
 
-	const auto& sceneWorlds = g_Data->sceneWorlds ? g_Data->sceneWorlds : g_Data->sceneWorldsFallback;
-	sceneWorlds->bind(/*iBinding=*/3u);
+	const bool hasSceneWorlds = !g_Data->sceneWorlds.empty() && g_Data->sceneWorldsSsbo != nullptr;
+	(hasSceneWorlds ? g_Data->sceneWorldsSsbo : g_Data->sceneWorldsFallback)->bind(/*iBinding=*/3u);
 
 	BackgroundRenderer::flushPending(bgTexIndex);
 
@@ -387,10 +401,22 @@ void Renderer2D::startBatch() {
 	g_Data->transientWorlds.reserve(utils::g_maxTransientWorldsPerBatch);
 }
 
-void Renderer2D::setSceneWorldsBuffer(const shared<gpu::StorageBuffer>& iWorldsBuffer) {
+void Renderer2D::setSceneWorlds(const std::span<const math::mat4> iWorlds) {
 	if (!g_Data)
 		return;
-	g_Data->sceneWorlds = iWorldsBuffer;
+	g_Data->sceneWorlds.assign(iWorlds.begin(), iWorlds.end());
+	g_Data->sceneWorldsDirty = true;
+}
+
+auto Renderer2D::reserveSceneWorlds() -> shared<gpu::StorageBuffer> {
+	const auto count = static_cast<uint32_t>(g_Data->sceneWorlds.size());
+	if (count == 0 || (count <= g_Data->sceneWorldsCapacity && g_Data->sceneWorldsSsbo != nullptr))
+		return nullptr;
+	g_Data->sceneWorldsCapacity = std::bit_ceil(count);
+	auto retired = std::move(g_Data->sceneWorldsSsbo);
+	g_Data->sceneWorldsSsbo = gpu::StorageBuffer::create(
+			g_Data->sceneWorldsCapacity * static_cast<uint32_t>(sizeof(math::mat4)), 3, "Renderer2D");
+	return retired;
 }
 
 void Renderer2D::nextBatch() {

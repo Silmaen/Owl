@@ -255,15 +255,18 @@ flowchart LR
 ### Scene world matrices on the GPU (Phase 2)
 
 Phase 2 of the renderer modernisation moved per-entity world matrices
-from per-instance CPU upload to a GPU-resident SSBO populated by the
-compute pre-pass `renderer::utils::WorldTransformPass`. Each instance
-record in the quad / circle / text batches now carries a small
-`int32_t worldIndex` instead of a 64-byte `mat4 transform`:
+from per-instance CPU upload to one SSBO per frame. `Scene::prepareWorldTransforms`
+composes every world matrix on the CPU in a pre-order pass (no depth limit) and
+hands them to `Renderer2D::setSceneWorlds`, which uploads them once at the next
+`flush()`, after the batch is open. Each instance record in the quad / circle /
+text batches carries a small `int32_t worldIndex` instead of a 64-byte
+`mat4 transform`. (A compute pass used to recompose the hierarchy on the GPU from
+the local matrices; it duplicated the CPU work and capped the depth at 64.)
 
 ```mermaid
 flowchart LR
-    Scene["Scene::prepareWorldTransforms"] -->|topo-sorted entries| WT["WorldTransformPass<br/>(compute shader)"]
-    WT -->|worlds[] SSBO| Bind3["Renderer2D binding 3<br/>sceneWorlds"]
+    Scene["Scene::prepareWorldTransforms<br/>(CPU, parents first)"] -->|world matrices| Up["Renderer2D::setSceneWorlds<br/>(uploaded at flush)"]
+    Up -->|sceneWorlds SSBO| Bind3["Renderer2D binding 3<br/>sceneWorlds"]
     Renderer2D -->|appended per draw| TW["transientWorlds[]<br/>(per-batch scratch)"]
     TW --> Bind4["Renderer2D binding 4<br/>transientWorlds"]
     Bind3 -->|positive worldIndex| VS["Vertex shader<br/>resolveWorldMatrix"]
@@ -280,12 +283,10 @@ flowchart LR
   `transientWorlds[]` SSBO and emits a negative `worldIndex` that
   points into it.
 - `gpu::StorageBuffer::bind(uint32_t iBinding)` lets the same SSBO be
-  bound at different slot numbers across descriptor blocks
-  (`WorldTransformPass` writes at slot 2 of the compute descriptor;
-  Renderer2D consumes at slot 3 of its own descriptor).
+  bound at different slot numbers across descriptor blocks.
 - Per-instance footprint dropped: `QuadInstance` 128 → 80 bytes,
   `CircleInstance` 96 → 48 bytes, `TextInstance` 128 → 80 bytes. `Scene`
-  pre-fills `m_worldTransformCache` in the same linear walk so the CPU
+  pre-fills `m_worldTransformCache` in the same pre-order walk so the CPU
   consumers that genuinely need a world matrix (raycast DDA, physics sync,
   `EntityLink`, the editor inspector / gizmo) keep their O(1) cache hit
   without a GPU readback.
@@ -334,7 +335,7 @@ The modernisation targets throughput, so validate changes against the three
 reference scenes rather than micro-benchmarks:
 
 - a **5 000-quad** flat scene (Renderer2D instanced batch),
-- a **deep-hierarchy** scene (exercises `WorldTransformPass` topo-sort + the
+- a **deep-hierarchy** scene (exercises the pre-order world pass + the
   `sceneWorlds[]` SSBO), and
 - the **`raycast_demo`** scene (DDA compute pre-pass + wall stripe shader).
 

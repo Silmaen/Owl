@@ -143,15 +143,6 @@ auto loadShipped(const std::string& iRenderer, const std::string& iShaderName) -
 
 }// namespace
 
-TEST(SlangCompute, shippedWorldTransformShaderCompiles) {
-	owl::core::Log::init(owl::core::Log::Level::Off);
-	const auto source = loadShipped("world_transform", "world_transform");
-	ASSERT_FALSE(source.empty());
-	const auto result = owl::renderer::utils::compileSlangToSpirv(source, "world_transform_check", /*iForVulkan=*/true);
-	EXPECT_TRUE(result.success);
-	owl::core::Log::invalidate();
-}
-
 TEST(SlangCompute, shippedBitonicSortShaderCompiles) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto source = loadShipped("bitonic_sort", "bitonic_sort");

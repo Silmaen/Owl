@@ -18,6 +18,7 @@
 
 #include <array>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -329,22 +330,30 @@ public:
 
 	/**
 	 * @brief
-	 *  Install the scene's GPU world-matrix SSBO as the `sceneWorlds[]` binding
-	 *  for the upcoming draws. Pass `nullptr` to revert to the internal
-	 *  identity-only fallback (which keeps the shader bindings filled when
-	 *  there is no active scene).
+	 *  Set the scene world matrices read by the `sceneWorlds[]` binding of the
+	 *  upcoming draws. An empty span reverts to the internal identity-only
+	 *  fallback (which keeps the shader bindings filled when there is no
+	 *  active scene).
 	 *
-	 * Scene calls this once at the start of every layer pass with the buffer
-	 * returned by `Scene::getWorldsBuffer()`. Each `drawQuad / drawCircle /
-	 * drawString` callsite that supplies a non-negative `worldIndex` indexes
-	 * into this buffer; negative `worldIndex` falls back to the per-batch
-	 * transient buffer Renderer2D maintains internally.
-	 * @param[in] iWorldsBuffer External world-matrix SSBO, or `nullptr` to
-	 *  reset to the fallback.
+	 * `Scene::prepareWorldTransforms()` calls this every frame with the
+	 * matrices it composed on the CPU. They are copied, then uploaded once at
+	 * the next `flush()`, after the batch is open (same synchronisation as the
+	 * per-batch transient worlds). Each `drawQuad / drawCircle` callsite that
+	 * supplies a non-negative `worldIndex` indexes into them; a negative
+	 * `worldIndex` falls back to the per-batch transient buffer.
+	 * @param[in] iWorlds World matrices, indexed by `Scene::getWorldIndex()`.
 	 */
-	static void setSceneWorldsBuffer(const shared<gpu::StorageBuffer>& iWorldsBuffer);
+	static void setSceneWorlds(std::span<const math::mat4> iWorlds);
 
 private:
+	/**
+	 * @brief
+	 *  Grow the scene-worlds SSBO to fit the matrices of the last `setSceneWorlds()` call. Called by `flush()`
+	 *  before the batch opens, since no GPU resource is created inside a render pass.
+	 * @return The replaced buffer (or nullptr), kept alive by `flush()` until the batch fence has been waited.
+	 */
+	static auto reserveSceneWorlds() -> shared<gpu::StorageBuffer>;
+
 	/**
 	 * @brief
 	 *  Combine flush and reset.

@@ -2,7 +2,7 @@
 // `{key, value}` pairs ascending by `key` using groupshared memory. Caller
 // pads up to `kSortSize` (1024) — tail slots filled with `+INF` keys so they
 // land at the end and downstream consumers can ignore them via the
-// `WorldTransformPass`-style entry count.
+// caller-side entry count.
 //
 // Painter's-order callers (farthest first) negate their input distance so
 // the ascending sort lays elements out back-to-front naturally.

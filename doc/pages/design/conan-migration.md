@@ -9,7 +9,8 @@ Design page for the v0.3.0 dependency work, summarised in the [Roadmap](../roadm
 
 Anyone can build Owl from public infrastructure. DepManager (packages served by the maintainer's server) is replaced by
 **Conan 2**, preferring **ConanCenter** recipes; in-house recipes are avoided and listed honestly when they remain.
-The engine itself is published as a Conan package. DepManager and `owl_engine.py` are removed at the end of the cycle.
+DepManager and `owl_engine.py` are removed at the end of phase 0; consumers then use the packaged archive (CPack)
+until v1.0.0 publishes the engine as a Conan package (`conan create .` already works, see below).
 
 ## Place in the release
 
@@ -158,7 +159,7 @@ docker/run.sh poetry run conan create . --profile:all conan/profiles/linux-clang
 - `libOwlEngine.so` keeps `$ORIGIN` as its only RPATH, so GNU ld finds its own shared dependencies (glfw, OpenAL Soft,
   libsndfile, Slang, Vulkan loader) only through `LD_LIBRARY_PATH`: `test_package` builds in Conan's run environment.
   A Conan consumer does the same (or links with lld, which does not resolve them); to revisit with PR-27.
-- Not yet wired into the `Package` CI action (PR-09 remainder), nor published to a remote.
+- Not wired into the `Package` CI action nor published to a remote: that is v1.0.0 (PR-09 remainder).
 
 ### Windows (MinGW)
 
@@ -258,7 +259,7 @@ Before the switch of the default:
 - Windows MinGW presets on Conan (see above), on the Windows agents
 - Linux arm64 (`linux-*` presets on the arm64 agent): the profiles detect the architecture, Slang has an arm64
   binary; to run once
-- CI: the `Package` action runs `conan create` (PR-09), a lockfile update report (G-08)
+- CI: a lockfile update report (G-08); the `Package` action running `conan create` waits for v1.0.0 (PR-09)
 - Vulkan validation layers (`OWL_ENABLE_VULKAN_LAYERS`) from `vulkan-validationlayers`
 
 After it:
