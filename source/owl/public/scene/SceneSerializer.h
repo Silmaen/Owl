@@ -9,6 +9,7 @@
 #pragma once
 
 #include "Scene.h"
+#include "core/FormatVersion.h"
 #include "core/Serializer.h"
 #include "core/expected.h"
 
@@ -29,6 +30,9 @@ enum struct SceneLoadError : uint8_t {
 	InvalidYaml,///< The data is not valid YAML.
 	NotAScene,///< The YAML has no `Scene` key, or its top-level layout is not a scene.
 	InvalidEntity,///< An entity is malformed (missing `Entity` id, field of the wrong type...).
+	InvalidFormatVersion,///< The `FormatVersion` field is not a positive integer.
+	NewerFormatVersion,///< The file was created by a newer version of Owl.
+	MigrationFailed,///< The file could not be migrated from its format version to the current one.
 };
 
 /**
@@ -78,10 +82,18 @@ public:
 
 	/**
 	 * @brief
-	 *  Save the scene into a file.
-	 * @param[in] iFilepath The file where to save.
+	 *  Format descriptor of the scene files (`.owl`), with its migration chain.
+	 * @return The scene format.
 	 */
-	void serialize(const std::filesystem::path& iFilepath) const;
+	[[nodiscard]] static auto format() -> const core::DocumentFormat&;
+
+	/**
+	 * @brief
+	 *  Save the scene into a file, atomically (see `platform::writeFileAtomic`).
+	 * @param[in] iFilepath The file where to save.
+	 * @return True on success; on failure the previous file is left untouched.
+	 */
+	[[nodiscard]] auto serialize(const std::filesystem::path& iFilepath) const -> bool;
 
 	/**
 	 * @brief
@@ -130,6 +142,7 @@ public:
 	 *  Must run on the main thread (creates entities and may create GPU
 	 *  textures via the async texture path).
 	 *
+	 * An older format version is migrated first (see `core::upgradeDocument`), a newer one is refused.
 	 * The data is validated on the way: a malformed entity aborts the load and
 	 * removes every entity it already created (the bound scene is left as it was).
 	 * Recoverable corruption is repaired with a warning: a duplicated UUID gets a

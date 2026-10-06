@@ -23,6 +23,7 @@
 #include <gui/IconBank.h>
 #include <gui/utils.h>
 #include <physics/PhysicCommand.h>
+#include <platform/AtomicFile.h>
 #include <scene/PrefabSerializer.h>
 #include <scene/component/components.h>
 #include <sound/SoundCommand.h>
@@ -2051,13 +2052,10 @@ void EditorLayer::saveSceneAs(const std::filesystem::path& iScenePath) {
 
 	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
 			[state, yamlData, path = iScenePath]() -> void {
-				std::ofstream fileOut(path);
-				if (!fileOut.is_open()) {
-					state->setError("Failed to open file for writing: " + path.string());
+				if (const auto written = platform::writeFileAtomic(path, *yamlData); !written) {
+					state->setError(std::format("Failed to save {}: {}.", path.string(), describe(written.error())));
 					return;
 				}
-				fileOut << *yamlData;
-				fileOut.close();
 				state->progress.store(1.0f);
 				state->setMessage("Done!");
 				OWL_CORE_INFO("Scene saved to {}.", path.string())
@@ -2163,8 +2161,10 @@ void EditorLayer::newProject() {
 	Project project;
 	project.name = dir.filename().string();
 	project.projectDirectory = dir;
-	project.saveToFile(dir / "owl_project.yml");
-
+	if (!project.saveToFile(dir / "owl_project.yml")) {
+		OWL_ERROR("New Project: Cannot create the project file in {}.", dir.string())
+		return;
+	}
 	openProject(dir);
 }
 
@@ -2192,7 +2192,10 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	if (m_project.isLoaded())
 		closeProject();
 
-	m_project.loadFromFile(configFile);
+	if (!m_project.loadFromFile(configFile)) {
+		OWL_ERROR("Open Project: Cannot load {}.", configFile.string())
+		return;
+	}
 	app::Application::get().addAssetDirectory({std::format("Project: {}", m_project.name), m_project.projectDirectory});
 	m_contentBrowser.attach();
 	refreshWindowTitle();
@@ -2212,7 +2215,8 @@ void EditorLayer::saveProject() {
 		return;
 	if (getState() == State::Edit)
 		saveCurrentScene();
-	m_project.saveToFile(m_project.projectDirectory / "owl_project.yml");
+	if (!m_project.saveToFile(m_project.projectDirectory / "owl_project.yml"))
+		OWL_ERROR("Save Project: Cannot write the project file.")
 }
 
 void EditorLayer::saveProjectAs() {
@@ -2231,7 +2235,10 @@ void EditorLayer::saveProjectAs() {
 	// Flush the current yml + active scene into the source tree before copying.
 	if (getState() == State::Edit)
 		saveCurrentScene();
-	m_project.saveToFile(m_project.projectDirectory / "owl_project.yml");
+	if (!m_project.saveToFile(m_project.projectDirectory / "owl_project.yml")) {
+		OWL_ERROR("Save Project As: Cannot write the project file, copy aborted.")
+		return;
+	}
 	std::filesystem::copy(m_project.projectDirectory, dest,
 						  std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing,
 						  ec);

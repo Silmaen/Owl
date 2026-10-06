@@ -46,7 +46,7 @@ void roundTrip(const char* iCaseName, Mutate&& iMutate, Verify&& iVerify) {
 	iMutate(ent);
 	const scene::SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / (std::string("owl_rt_") + iCaseName + ".yml");
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 	ASSERT_TRUE(exists(fs));
 	const auto sc2 = mkShared<scene::Scene>();
 	const scene::SceneSerializer loader(sc2);

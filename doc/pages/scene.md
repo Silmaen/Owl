@@ -473,7 +473,7 @@ See [Physics > Hierarchy Interaction](physics.md) for details.
 
 | Method                              | Description                                     |
 |-------------------------------------|-------------------------------------------------|
-| `serialize(path)`                   | Write scene to `.owl` file                      |
+| `serialize(path)`                   | Write scene to `.owl` file, atomically          |
 | `deserialize(path)`                 | Read scene from file                            |
 | `deserializeFromBuffer(data, name)` | Read from memory (pack file)                    |
 | `parseBuffer(data, name)`           | Parse YAML only (worker thread)                 |
@@ -482,12 +482,15 @@ See [Physics > Hierarchy Interaction](physics.md) for details.
 The three loading calls return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`);
 `describe(error)` gives a readable reason for the editor or the log.
 
-| `SceneLoadError` | Cause                                                              |
-|------------------|--------------------------------------------------------------------|
-| `FileUnreadable` | The file does not exist or cannot be read                          |
-| `InvalidYaml`    | The data is not YAML                                               |
-| `NotAScene`      | No `Scene` key, or `Entities` is not a list                        |
-| `InvalidEntity`  | An entity has no scalar `Entity` id, or a field of the wrong type  |
+| `SceneLoadError`       | Cause                                                              |
+|------------------------|--------------------------------------------------------------------|
+| `FileUnreadable`       | The file does not exist or cannot be read                          |
+| `InvalidYaml`          | The data is not YAML                                               |
+| `NotAScene`            | No `Scene` key, or `Entities` is not a list                        |
+| `InvalidEntity`        | An entity has no scalar `Entity` id, or a field of the wrong type  |
+| `InvalidFormatVersion` | `FormatVersion` is not a positive integer                          |
+| `NewerFormatVersion`   | The file was created by a newer version of Owl                     |
+| `MigrationFailed`      | A migration step could not convert the file to the current format  |
 
 A failed load removes the entities it had already created: the target scene is left as it was.
 Recoverable corruption is repaired with a warning instead of failing the load:
@@ -501,6 +504,7 @@ Recoverable corruption is repaired with a warning instead of failing the load:
 
 ```yaml
 Scene: My Scene
+FormatVersion: 1
 Entities:
   - Entity: 12345678
     Tag:
@@ -528,6 +532,61 @@ Components are serialized in the order defined by `SerializableComponents`. The
 `Hierarchy` component only stores `parentId`; children lists are rebuilt after
 deserialization via `Scene::rebuildHierarchyChildren()`, which also performs the parent and
 cycle repairs above.
+
+### Format versions and migrations
+
+Every file the engine writes carries a root `FormatVersion` integer:
+
+| File                                | Format descriptor                              |
+|-------------------------------------|------------------------------------------------|
+| `.owl` scene                        | `SceneSerializer::format()`                    |
+| `.owlprefab` prefab                 | `PrefabSerializer::format()`                   |
+| `.owl_save` save                    | `SaveManager::format()`                        |
+| `.owltileset` tileset               | `Tileset::format()`                            |
+| `.owltilemap` tilemap               | `TilemapAsset::format()`                       |
+| `.owlanim` animation clip           | `AnimationClip::format()`                      |
+| `.owlvoxstruct` structure           | `data::voxel::VoxelStructure::format()`        |
+| `.owlflow` node graph               | `gui::widgets::NodeCanvasSerializer::format()` |
+| `settings.yml`, `game_settings.yml` | `SettingsManager::format()`                    |
+| `owl_project.yml` (Owl Nest)        | `nest::Project::format()`                      |
+
+The prefab `Version` key is something else: it counts the edits of one prefab and feeds
+`PrefabLink::syncedVersion`. A save embeds its scene with the scene's own `FormatVersion`.
+
+On load, `core::upgradeDocument` (or `upgradeYamlDocument` inside the engine) reads the version:
+
+```mermaid
+flowchart LR
+    A[FormatVersion] -->|absent| B[version 1]
+    A -->|not a positive integer| E1[InvalidVersion]
+    A -->|greater than current| E2[NewerVersion: created by a newer Owl]
+    A -->|lower than current| M[migrations v to v+1 ... current]
+    B --> M
+    M -->|a step fails or throws| E3[MigrationFailed]
+    M --> OK[document at the current version]
+```
+
+Files written before versioning have no key and load as version 1. A refused file is never
+partially loaded: the scene, prefab instance, project or settings stay as they were.
+
+A `core::DocumentFormat` is a name plus an ordered list of `core::MigrationStep`:
+`migrations[i]` upgrades version `i + 1` to `i + 2`, so the current version is always
+`migrations.size() + 1` and adding a migration is what bumps the version. To change a format:
+
+1. Write a step `auto migrateV1toV2(const core::Serializer& ioDocument) -> bool` in the format's
+   `.cpp`. It edits the YAML root in place (`ioDocument.getImpl()->node`), logs and returns false
+   when it cannot convert, and never touches `FormatVersion`.
+2. Append it to the format's migration array (`g_sceneMigrations` in `SceneSerializer.cpp`, ...).
+3. Change the writer to the new layout; it stamps the new version through `emitFormatVersion`.
+4. Keep an old-version file as a test fixture and check it loads through the migration.
+
+### Atomic writes
+
+Every one of these files is written with `platform::writeFileAtomic(path, content)`: the content goes
+to a temporary file in the same folder, is flushed to disk (`fsync`, `_commit` on Windows), then
+renamed over the target. A crash, a full disk or any failed step removes the temporary file, leaves
+the previous file intact, logs the cause and returns a `platform::WriteError`; the serializers turn
+it into `false`.
 
 ### Play copy
 

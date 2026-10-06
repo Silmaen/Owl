@@ -9,8 +9,10 @@
 
 #include "scene/SaveManager.h"
 
+#include "core/FormatVersionYaml.h"
 #include "core/SerializerImpl.h"
 #include "physics/PhysicCommand.h"
+#include "platform/AtomicFile.h"
 #include "scene/Entity.h"
 #include "scene/SceneSerializer.h"
 #include "scene/component/PhysicBody.h"
@@ -29,6 +31,13 @@ OWL_DIAG_POP
 #include <fstream>
 
 namespace owl::scene {
+
+namespace {
+constexpr std::array<core::MigrationStep, 0> g_saveMigrations{};
+constexpr core::DocumentFormat g_saveFormat{.name = "Save", .migrations = g_saveMigrations};
+}// namespace
+
+auto SaveManager::format() -> const core::DocumentFormat& { return g_saveFormat; }
 
 std::string SaveManager::s_gameName;
 
@@ -79,8 +88,8 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 		// Build save file using a single Serializer.
 		const core::Serializer sOut;
 		sOut.getImpl()->emitter << YAML::BeginMap;
+		emitFormatVersion(sOut.getImpl()->emitter, g_saveFormat);
 		sOut.getImpl()->emitter << YAML::Key << "OwlSave" << YAML::Value << YAML::BeginMap;
-		sOut.getImpl()->emitter << YAML::Key << "version" << YAML::Value << 1;
 		sOut.getImpl()->emitter << YAML::Key << "timestamp" << YAML::Value << timestamp;
 		sOut.getImpl()->emitter << YAML::Key << "scenePath" << YAML::Value << iScenePath;
 		sOut.getImpl()->emitter << YAML::EndMap;
@@ -115,13 +124,11 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 
 		sOut.getImpl()->emitter << YAML::EndMap;
 
-		std::ofstream file(getSlotPath(iSlot));
-		if (!file.is_open()) {
-			OWL_CORE_ERROR("SaveManager: Cannot write to slot {}.", iSlot)
+		if (const auto written = platform::writeFileAtomic(getSlotPath(iSlot), sOut.getImpl()->emitter.c_str());
+			!written) {
+			OWL_CORE_ERROR("SaveManager: Cannot write to slot {}: {}.", iSlot, describe(written.error()))
 			return false;
 		}
-		file << sOut.getImpl()->emitter.c_str();
-		file.close();
 		OWL_CORE_INFO("SaveManager: Saved to slot {} at {}.", iSlot, timestamp)
 		return true;
 	} catch (const std::exception& e) {
@@ -140,7 +147,12 @@ auto SaveManager::load(const uint32_t iSlot, const shared<Scene>& iScene) -> Loa
 			OWL_CORE_ERROR("SaveManager: No save file for slot {}.", iSlot)
 			return result;
 		}
-		const YAML::Node root = YAML::LoadFile(path.string());
+		YAML::Node root = YAML::LoadFile(path.string());
+		if (const auto version = upgradeYamlDocument(g_saveFormat, root, path.string()); !version) {
+			OWL_CORE_ERROR("SaveManager: Cannot load slot {}: {}.", iSlot, describe(version.error()))
+			result.formatError = version.error();
+			return result;
+		}
 
 		// Load GameState.
 		if (root["GameState"]) {

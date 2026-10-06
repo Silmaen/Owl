@@ -100,7 +100,7 @@ TEST(UIWidgets, serializeDeserializeViaScene) {
 		scn->setParent(panelEnt, canvas);
 
 		const SceneSerializer serializer(scn);
-		serializer.serialize(scenePath);
+		EXPECT_TRUE(serializer.serialize(scenePath));
 	}
 	{
 		auto scn = mkShared<Scene>();

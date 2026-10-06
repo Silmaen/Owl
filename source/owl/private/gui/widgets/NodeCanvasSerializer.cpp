@@ -9,7 +9,9 @@
 
 #include "gui/widgets/NodeCanvasSerializer.h"
 
+#include "core/FormatVersionYaml.h"
 #include "core/external/yaml.h"
+#include "platform/AtomicFile.h"
 
 #include <cstdint>
 #include <fstream>
@@ -20,7 +22,8 @@
 namespace owl::gui::widgets {
 
 namespace {
-constexpr int g_currentVersion = 1;
+constexpr std::array<core::MigrationStep, 0> g_nodeGraphMigrations{};
+constexpr core::DocumentFormat g_nodeGraphFormat{.name = "NodeGraph", .migrations = g_nodeGraphMigrations};
 
 void emitPin(YAML::Emitter& ioOut, const NodePin& iPin) {
 	ioOut << YAML::Flow << YAML::BeginMap;
@@ -96,7 +99,7 @@ auto parseNode(const YAML::Node& iNode) -> std::optional<Node> {
 void emitCanvas(YAML::Emitter& ioOut, const NodeCanvas& iCanvas, std::string_view iName) {
 	ioOut << YAML::BeginMap;
 	ioOut << YAML::Key << "NodeGraph" << YAML::Value << std::string{iName};
-	ioOut << YAML::Key << "Version" << YAML::Value << g_currentVersion;
+	core::emitFormatVersion(ioOut, g_nodeGraphFormat);
 	ioOut << YAML::Key << "Nodes" << YAML::Value << YAML::BeginSeq;
 	for (const auto& node: iCanvas.nodes()) emitNode(ioOut, node);
 	ioOut << YAML::EndSeq;
@@ -114,6 +117,8 @@ auto NodeCanvasSerializer::serializeToString(const NodeCanvas& iCanvas, std::str
 	return std::string{out.c_str()};
 }
 
+auto NodeCanvasSerializer::format() -> const core::DocumentFormat& { return g_nodeGraphFormat; }
+
 auto NodeCanvasSerializer::deserializeFromString(NodeCanvas& ioCanvas, std::string_view iYaml) -> bool {
 	YAML::Node root;
 	try {
@@ -126,9 +131,9 @@ auto NodeCanvasSerializer::deserializeFromString(NodeCanvas& ioCanvas, std::stri
 		OWL_CORE_ERROR("NodeCanvasSerializer: top-level YAML is not a map.")
 		return false;
 	}
-	if (const auto version = root["Version"]; version && version.as<int>() > g_currentVersion) {
-		OWL_CORE_WARN("NodeCanvasSerializer: document version {} is newer than supported {}.", version.as<int>(),
-					  g_currentVersion)
+	if (!core::upgradeYamlDocument(g_nodeGraphFormat, root, "<buffer>")) {
+		OWL_CORE_ERROR("NodeCanvasSerializer: Document cannot be read.")
+		return false;
 	}
 
 	ioCanvas.clear();
@@ -152,13 +157,11 @@ auto NodeCanvasSerializer::deserializeFromString(NodeCanvas& ioCanvas, std::stri
 
 auto NodeCanvasSerializer::serializeToFile(const NodeCanvas& iCanvas, const std::filesystem::path& iPath,
 										   std::string_view iName) -> bool {
-	std::ofstream out(iPath);
-	if (!out) {
-		OWL_CORE_ERROR("NodeCanvasSerializer: cannot open '{}' for writing.", iPath.string())
+	if (const auto written = platform::writeFileAtomic(iPath, serializeToString(iCanvas, iName)); !written) {
+		OWL_CORE_ERROR("NodeCanvasSerializer: Cannot write '{}': {}.", iPath.string(), describe(written.error()))
 		return false;
 	}
-	out << serializeToString(iCanvas, iName);
-	return out.good();
+	return true;
 }
 
 auto NodeCanvasSerializer::deserializeFromFile(NodeCanvas& ioCanvas, const std::filesystem::path& iPath) -> bool {

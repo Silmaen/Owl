@@ -9,10 +9,12 @@
 #pragma once
 
 #include "Scene.h"
+#include "core/FormatVersion.h"
 #include "physics/PhysicCommand.h"
 
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -44,6 +46,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Format descriptor of the save files (`.owl_save`), with its migration chain.
+	 *
+	 * The embedded scene keeps its own scene format version.
+	 * @return The save format.
+	 */
+	[[nodiscard]] static auto format() -> const core::DocumentFormat&;
+
+	/**
+	 * @brief
 	 *  Set the game name (used for the save directory).
 	 * @param[in] iGameName The game name.
 	 */
@@ -58,7 +69,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Save the current scene and game state to a slot.
+	 *  Save the current scene and game state to a slot, atomically: a failed save keeps the previous one.
 	 * @param[in] iSlot Save slot number.
 	 * @param[in] iScene The scene to save.
 	 * @param[in] iScenePath The current scene file path (for restore).
@@ -73,6 +84,8 @@ public:
 	struct LoadResult {
 		/// Whether the load succeeded.
 		bool success = false;
+		/// Why the save file could not be read, when its format version is the cause.
+		std::optional<core::FormatError> formatError;
 		/// Physics snapshots to apply after onStartRuntime (keyed by entity UUID).
 		std::unordered_map<uint64_t, physics::PhysicCommand::PhysicsSnapshot> physicsSnapshots;
 	};

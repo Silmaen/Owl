@@ -7,12 +7,14 @@
  */
 #include "owlpch.h"
 
+#include "core/FormatVersionYaml.h"
 #include "core/external/yaml.h"
 #include "data/voxel/Block.h"
 #include "data/voxel/BlockRunLength.h"
 #include "data/voxel/Chunk.h"
 #include "data/voxel/VoxelStructure.h"
 #include "data/voxel/VoxelWorld.h"
+#include "platform/AtomicFile.h"
 
 #include <cstdint>
 
@@ -20,7 +22,11 @@ namespace owl::data::voxel {
 
 namespace {
 constexpr int32_t k_ChunkSize = static_cast<int32_t>(g_ChunkSize);
+constexpr std::array<core::MigrationStep, 0> g_structureMigrations{};
+constexpr core::DocumentFormat g_structureFormat{.name = "VoxelStructure", .migrations = g_structureMigrations};
 }// namespace
+
+auto VoxelStructure::format() -> const core::DocumentFormat& { return g_structureFormat; }
 
 auto VoxelStructure::volume() const -> size_t {
 	if (size.x() <= 0 || size.y() <= 0 || size.z() <= 0)
@@ -57,7 +63,7 @@ auto VoxelStructure::serializeToString(const std::string_view iName) const -> st
 	YAML::Emitter emitter;
 	emitter << YAML::BeginMap;
 	emitter << YAML::Key << "Structure" << YAML::Value << std::string{iName};
-	emitter << YAML::Key << "Version" << YAML::Value << 1;
+	core::emitFormatVersion(emitter, g_structureFormat);
 	emitter << YAML::Key << "Size" << YAML::Value << YAML::Flow << YAML::BeginSeq << size.x() << size.y() << size.z()
 			<< YAML::EndSeq;
 	emitter << YAML::Key << "Blocks" << YAML::Value << encodeBlockRuns(blocks, meta);
@@ -69,7 +75,17 @@ auto VoxelStructure::deserializeFromString(const std::string_view iYaml) -> bool
 	size = math::vec3i{0, 0, 0};
 	blocks.clear();
 	meta.clear();
-	const YAML::Node node = YAML::Load(std::string{iYaml});
+	YAML::Node node;
+	try {
+		node = YAML::Load(std::string{iYaml});
+	} catch (const YAML::Exception& iEx) {
+		OWL_CORE_WARN("VoxelStructure: Invalid YAML in structure document: {}.", iEx.what())
+		return false;
+	}
+	if (!node.IsMap() || !core::upgradeYamlDocument(g_structureFormat, node, "<buffer>")) {
+		OWL_CORE_WARN("VoxelStructure: Structure document cannot be read.")
+		return false;
+	}
 	const auto sizeNode = node["Size"];
 	if (!sizeNode || !sizeNode.IsSequence() || sizeNode.size() < 3) {
 		OWL_CORE_WARN("VoxelStructure: missing or malformed Size in structure document.")
@@ -87,6 +103,14 @@ auto VoxelStructure::deserializeFromString(const std::string_view iYaml) -> bool
 		size = math::vec3i{0, 0, 0};
 		blocks.clear();
 		meta.clear();
+		return false;
+	}
+	return true;
+}
+
+auto VoxelStructure::saveToFile(const std::filesystem::path& iPath, const std::string_view iName) const -> bool {
+	if (const auto written = platform::writeFileAtomic(iPath, serializeToString(iName)); !written) {
+		OWL_CORE_ERROR("VoxelStructure: Failed to write '{}': {}.", iPath.string(), describe(written.error()))
 		return false;
 	}
 	return true;

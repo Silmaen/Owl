@@ -51,12 +51,10 @@ void VoxelPalette::saveStructure(const std::string& iName) const {
 	std::error_code ec;
 	std::filesystem::create_directories(dir, ec);
 	const std::filesystem::path file = dir / (iName + ".owlvoxstruct");
-	std::ofstream out(file, std::ios::binary | std::ios::trunc);
-	if (!out.is_open()) {
-		OWL_WARN("VoxelPalette: failed to write structure {}.", file.generic_string())
+	if (!structure.saveToFile(file, iName)) {
+		OWL_WARN("VoxelPalette: Failed to write structure {}.", file.generic_string())
 		return;
 	}
-	out << structure.serializeToString(iName);
 	OWL_INFO("VoxelPalette: saved structure {}.", file.generic_string())
 }
 

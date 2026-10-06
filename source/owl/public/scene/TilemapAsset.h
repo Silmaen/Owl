@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "core/FormatVersion.h"
 #include "scene/component/Tilemap.h"
 
 #include <cstdint>
@@ -32,7 +33,7 @@ class Tileset;
  * The on-disk format is YAML with the extension `.owltilemap`:
  * ```yaml
  * Tilemap: <name>
- * Version: 1
+ * FormatVersion: 1
  * tilesetPath: assets/tilesets/dungeon.owltileset
  * width: 32
  * height: 16
@@ -71,6 +72,13 @@ public:
 	 * @return The extension literal (`".owltilemap"`).
 	 */
 	static auto fileExtension() noexcept -> const char* { return ".owltilemap"; }
+
+	/**
+	 * @brief
+	 *  Format descriptor of the `.owltilemap` files, with its migration chain.
+	 * @return The TilemapAsset format.
+	 */
+	[[nodiscard]] static auto format() -> const core::DocumentFormat&;
 
 	/// Relative path (from the project root) to the `.owltileset` asset.
 	std::filesystem::path tilesetPath;
@@ -148,7 +156,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Save the tilemap asset to disk.
+	 *  Save the tilemap asset to disk. Atomic: a failed write keeps the previous file.
 	 * @param[in] iPath Destination file (`.owltilemap` is conventional).
 	 * @param[in] iName Optional display name; defaults to the file stem.
 	 * @return True on success.

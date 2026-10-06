@@ -7,7 +7,9 @@
  */
 #include "owlpch.h"
 
+#include "core/FormatVersionYaml.h"
 #include "core/external/yaml.h"
+#include "platform/AtomicFile.h"
 #include "scene/TilemapAsset.h"
 
 #include <charconv>
@@ -16,6 +18,13 @@
 #include <sstream>
 
 namespace owl::scene {
+
+namespace {
+constexpr std::array<core::MigrationStep, 0> g_tilemapMigrations{};
+constexpr core::DocumentFormat g_tilemapFormat{.name = "Tilemap", .migrations = g_tilemapMigrations};
+}// namespace
+
+auto TilemapAsset::format() -> const core::DocumentFormat& { return g_tilemapFormat; }
 
 namespace {
 constexpr int32_t k_Empty = scene::component::g_EmptyTileIndex;
@@ -108,7 +117,7 @@ auto TilemapAsset::serializeToString(const std::string_view iName) const -> std:
 	YAML::Emitter emitter;
 	emitter << YAML::BeginMap;
 	emitter << YAML::Key << "Tilemap" << YAML::Value << std::string{iName};
-	emitter << YAML::Key << "Version" << YAML::Value << 1;
+	core::emitFormatVersion(emitter, g_tilemapFormat);
 	if (!tilesetPath.empty())
 		emitter << YAML::Key << "tilesetPath" << YAML::Value << tilesetPath.generic_string();
 	emitter << YAML::Key << "width" << YAML::Value << width;
@@ -140,8 +149,14 @@ auto TilemapAsset::deserializeFromString(const std::string_view iYaml) -> bool {
 		OWL_CORE_ERROR("TilemapAsset: failed to parse YAML — {}.", e.what())
 		return false;
 	}
-	if (!root || !root.IsMap() || !root["Tilemap"])
+	if (!root || !root.IsMap() || !root["Tilemap"]) {
+		OWL_CORE_WARN("TilemapAsset: Document is not a tilemap.")
 		return false;
+	}
+	if (!core::upgradeYamlDocument(g_tilemapFormat, root, "<buffer>")) {
+		OWL_CORE_ERROR("TilemapAsset: Document cannot be read.")
+		return false;
+	}
 	TilemapAsset parsed;
 	if (root["tilesetPath"])
 		parsed.tilesetPath = root["tilesetPath"].as<std::string>();
@@ -173,14 +188,12 @@ auto TilemapAsset::deserializeFromString(const std::string_view iYaml) -> bool {
 }
 
 auto TilemapAsset::saveToFile(const std::filesystem::path& iPath, const std::string_view iName) const -> bool {
-	std::ofstream out(iPath, std::ios::binary);
-	if (!out.is_open()) {
-		OWL_CORE_ERROR("TilemapAsset: failed to open '{}' for writing.", iPath.string())
+	const auto displayName = iName.empty() ? iPath.stem().string() : std::string{iName};
+	if (const auto written = platform::writeFileAtomic(iPath, serializeToString(displayName)); !written) {
+		OWL_CORE_ERROR("TilemapAsset: Failed to write '{}': {}.", iPath.string(), describe(written.error()))
 		return false;
 	}
-	const auto displayName = iName.empty() ? iPath.stem().string() : std::string{iName};
-	out << serializeToString(displayName);
-	return out.good();
+	return true;
 }
 
 auto TilemapAsset::loadFromFile(const std::filesystem::path& iPath) -> bool {

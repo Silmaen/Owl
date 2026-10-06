@@ -79,7 +79,7 @@ TEST(LuaScriptComponent, serializeDeserializeViaScene) {
 		comp.properties.push_back({.name = "active", .type = ScriptPropertyType::Bool, .value = true});
 
 		const SceneSerializer serializer(scn);
-		serializer.serialize(scenePath);
+		EXPECT_TRUE(serializer.serialize(scenePath));
 	}
 
 	// Reload from YAML.
@@ -131,7 +131,7 @@ TEST(LuaScriptComponent, serializeEmptyProperties) {
 		auto entity = scn->createEntity("EmptyProps");
 		entity.addComponent<component::LuaScript>().scriptPath = "scripts/empty.lua";
 		const SceneSerializer serializer(scn);
-		serializer.serialize(scenePath);
+		EXPECT_TRUE(serializer.serialize(scenePath));
 	}
 	{
 		auto scn = mkShared<Scene>();

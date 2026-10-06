@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "core/FormatVersion.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -80,9 +81,17 @@ public:
 
 	/**
 	 * @brief
-	 *  Save user overrides to settings.yml.
+	 *  Save user overrides to settings.yml, atomically: a failed save keeps the previous file.
+	 * @return True on success.
 	 */
-	static void saveUserSettings();
+	[[nodiscard]] static auto saveUserSettings() -> bool;
+
+	/**
+	 * @brief
+	 *  Format descriptor shared by `game_settings.yml` and `settings.yml`, with its migration chain.
+	 * @return The settings format.
+	 */
+	[[nodiscard]] static auto format() -> const core::DocumentFormat&;
 
 	/**
 	 * @brief

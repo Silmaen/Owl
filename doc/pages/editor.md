@@ -425,7 +425,7 @@ component.
 
 ```yaml
 AnimationClip: walk
-Version: 1
+FormatVersion: 1
 texture: characters/hero
 columns: 4
 rows: 2

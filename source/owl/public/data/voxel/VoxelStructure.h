@@ -8,11 +8,13 @@
 
 #pragma once
 
+#include "core/FormatVersion.h"
 #include "data/voxel/Block.h"
 #include "math/vectors.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <string>
 #include <string_view>
@@ -40,6 +42,13 @@ struct OWL_API VoxelStructure {
 	std::vector<BlockId> blocks;
 	/// Dense packed-metadata grid parallel to `blocks` (empty or shorter means all-default metadata).
 	std::vector<PackedMeta> meta;
+
+	/**
+	 * @brief
+	 *  Format descriptor of the `.owlvoxstruct` files, with its migration chain.
+	 * @return The voxel structure format.
+	 */
+	[[nodiscard]] static auto format() -> const core::DocumentFormat&;
 
 	/**
 	 * @brief
@@ -99,6 +108,15 @@ struct OWL_API VoxelStructure {
 	 * @return True on success, false if malformed.
 	 */
 	auto deserializeFromString(std::string_view iYaml) -> bool;
+
+	/**
+	 * @brief
+	 *  Write the structure to a `.owlvoxstruct` file. Atomic: a failed write keeps the previous file.
+	 * @param[in] iPath Destination file.
+	 * @param[in] iName Display name written under the `Structure:` key.
+	 * @return True on success.
+	 */
+	[[nodiscard]] auto saveToFile(const std::filesystem::path& iPath, std::string_view iName) const -> bool;
 
 	/**
 	 * @brief

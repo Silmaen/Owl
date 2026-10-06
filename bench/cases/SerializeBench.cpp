@@ -79,7 +79,8 @@ void runPrefab(Runner& ioRunner) {
 		const auto source = makeSpriteScene(size, Shape::Forest);
 		const auto root = source->getRootEntities().front();
 		const auto path = dir / std::format("prefab{}.owlprefab", size);
-		scene::PrefabSerializer::serialize(root, *source, path, std::format("prefab{}", size));
+		if (!scene::PrefabSerializer::serialize(root, *source, path, std::format("prefab{}", size)))
+			continue;
 		for (const uint32_t sceneSize: {0U, 10000U}) {
 			shared<scene::Scene> target;
 			ioRunner.measureWithSetup(

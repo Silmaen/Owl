@@ -929,7 +929,7 @@ void registerBindings(lua_State* iState) {
 			}, val.value());
 			return 1;
 		}},
-		{"save", [](lua_State*) -> int { scene::SettingsManager::saveUserSettings(); return 0; }},
+		{"save", [](lua_State* s) -> int { lua_pushboolean(s, scene::SettingsManager::saveUserSettings() ? 1 : 0); return 1; }},
 		{"load", [](lua_State*) -> int { scene::SettingsManager::loadUserSettings(); return 0; }},
 		{"reset", [](lua_State* s) -> int { scene::SettingsManager::resetToDefault(luaL_checkstring(s, 1)); return 0; }},
 		{"reset_all", [](lua_State*) -> int { scene::SettingsManager::resetAllToDefaults(); return 0; }},

@@ -457,12 +457,9 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		ImGui::Separator();
 	}
 	if (ib.menuItem("prefab_icon", "Create Prefab...")) {
-		if (const auto filepath =
-
-					platform::FileDialog::saveFile("Owl Prefab (*.owlprefab)|owlprefab\n");
-			!filepath.empty())
-
-			scene::PrefabSerializer::serialize(iEntity, *m_context, filepath, iEntity.getName());
+		if (const auto filepath = platform::FileDialog::saveFile("Owl Prefab (*.owlprefab)|owlprefab\n");
+			!filepath.empty() && !scene::PrefabSerializer::serialize(iEntity, *m_context, filepath, iEntity.getName()))
+			OWL_ERROR("SceneHierarchy: Prefab {} was not created.", filepath.string())
 	}
 	// --- Tilemap quick action: open the referenced asset in the tilemap editor.
 	if (iEntity.hasComponent<scene::component::Tilemap>() && mp_parentEditor != nullptr) {

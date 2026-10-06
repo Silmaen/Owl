@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "core/FormatVersion.h"
 #include "math/Curve.h"
 #include "renderer/gpu/Texture.h"
 
@@ -30,7 +31,7 @@ namespace owl::scene {
  * The asset is YAML-serialized with the extension `.owlanim`. The on-disk schema is:
  * ```yaml
  * AnimationClip: <name>
- * Version: 1
+ * FormatVersion: 1
  * texture: <texture serialized name>     # optional
  * columns: 4
  * rows: 2
@@ -70,6 +71,13 @@ public:
 	 */
 	static auto fileExtension() noexcept -> const char* { return ".owlanim"; }
 
+	/**
+	 * @brief
+	 *  Format descriptor of the `.owlanim` files, with its migration chain.
+	 * @return The AnimationClip format.
+	 */
+	[[nodiscard]] static auto format() -> const core::DocumentFormat&;
+
 	/// Spritesheet texture (may be null while the asset is being authored).
 	shared<renderer::gpu::Texture2D> texture;
 	/// Number of columns in the spritesheet grid (>= 1).
@@ -105,7 +113,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Save the clip to a file on disk.
+	 *  Save the clip to a file on disk. Atomic: a failed write keeps the previous file.
 	 * @param[in] iPath Destination file (any extension is allowed; `.owlanim` is conventional).
 	 * @param[in] iName Optional display name.
 	 * @return True on success.

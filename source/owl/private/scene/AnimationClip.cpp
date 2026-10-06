@@ -7,7 +7,9 @@
  */
 #include "owlpch.h"
 
+#include "core/FormatVersionYaml.h"
 #include "core/external/yaml.h"
+#include "platform/AtomicFile.h"
 #include "scene/AnimationClip.h"
 
 #include <magic_enum/magic_enum.hpp>
@@ -17,6 +19,13 @@
 #include <sstream>
 
 namespace owl::scene {
+
+namespace {
+constexpr std::array<core::MigrationStep, 0> g_animationClipMigrations{};
+constexpr core::DocumentFormat g_animationClipFormat{.name = "AnimationClip", .migrations = g_animationClipMigrations};
+}// namespace
+
+auto AnimationClip::format() -> const core::DocumentFormat& { return g_animationClipFormat; }
 
 namespace {
 void emitSpeedCurve(YAML::Emitter& ioEmitter, const math::Curve& iCurve) {
@@ -55,7 +64,7 @@ auto AnimationClip::serializeToString(const std::string_view iName) const -> std
 	YAML::Emitter emitter;
 	emitter << YAML::BeginMap;
 	emitter << YAML::Key << "AnimationClip" << YAML::Value << std::string{iName};
-	emitter << YAML::Key << "Version" << YAML::Value << 1;
+	core::emitFormatVersion(emitter, g_animationClipFormat);
 	if (texture)
 		emitter << YAML::Key << "texture" << YAML::Value << texture->getSerializeString();
 	emitter << YAML::Key << "columns" << YAML::Value << columns;
@@ -77,8 +86,14 @@ auto AnimationClip::deserializeFromString(const std::string_view iYaml) -> bool 
 		OWL_CORE_ERROR("AnimationClip: failed to parse YAML — {}.", e.what())
 		return false;
 	}
-	if (!root || !root.IsMap() || !root["AnimationClip"])
+	if (!root || !root.IsMap() || !root["AnimationClip"]) {
+		OWL_CORE_WARN("AnimationClip: Document is not an animation clip.")
 		return false;
+	}
+	if (!core::upgradeYamlDocument(g_animationClipFormat, root, "<buffer>")) {
+		OWL_CORE_ERROR("AnimationClip: Document cannot be read.")
+		return false;
+	}
 	AnimationClip parsed;
 	if (root["texture"])
 		parsed.texture =
@@ -101,14 +116,12 @@ auto AnimationClip::deserializeFromString(const std::string_view iYaml) -> bool 
 }
 
 auto AnimationClip::saveToFile(const std::filesystem::path& iPath, const std::string_view iName) const -> bool {
-	std::ofstream out(iPath, std::ios::binary);
-	if (!out.is_open()) {
-		OWL_CORE_ERROR("AnimationClip: failed to open '{}' for writing.", iPath.string())
+	const auto displayName = iName.empty() ? iPath.stem().string() : std::string{iName};
+	if (const auto written = platform::writeFileAtomic(iPath, serializeToString(displayName)); !written) {
+		OWL_CORE_ERROR("AnimationClip: Failed to write '{}': {}.", iPath.string(), describe(written.error()))
 		return false;
 	}
-	const auto displayName = iName.empty() ? iPath.stem().string() : std::string{iName};
-	out << serializeToString(displayName);
-	return out.good();
+	return true;
 }
 
 auto AnimationClip::loadFromFile(const std::filesystem::path& iPath) -> bool {

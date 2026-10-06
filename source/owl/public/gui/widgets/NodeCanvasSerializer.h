@@ -9,6 +9,7 @@
 #pragma once
 
 #include "NodeCanvas.h"
+#include "core/FormatVersion.h"
 
 #include <filesystem>
 #include <span>
@@ -29,7 +30,7 @@ namespace owl::gui::widgets {
  * Top-level YAML structure:
  * ```yaml
  * NodeGraph: <display name>
- * Version: 1
+ * FormatVersion: 1
  * Nodes:
  *   - id: 12345
  *     title: "Level 1"
@@ -51,6 +52,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Format descriptor of the node graph documents, with its migration chain.
+	 * @return The node graph format.
+	 */
+	[[nodiscard]] static auto format() -> const core::DocumentFormat&;
+
+	/**
+	 * @brief
 	 *  Serialize the canvas to a YAML string.
 	 * @param[in] iCanvas The canvas to snapshot.
 	 * @param[in] iName Optional display name written under the `NodeGraph:` key (may be empty).
@@ -69,7 +77,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Write the canvas to a file on disk.
+	 *  Write the canvas to a file on disk. Atomic: a failed write keeps the previous file.
 	 * @param[in] iCanvas The canvas to snapshot.
 	 * @param[in] iPath Destination file.
 	 * @param[in] iName Optional display name.

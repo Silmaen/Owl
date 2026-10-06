@@ -66,7 +66,7 @@ TEST(SceneComponent, TextSerializeDeserializeRoundTrip) {
 
 	const owl::scene::SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tempTextRoundTrip.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 	ASSERT_TRUE(exists(fs));
 
 	const auto sc2 = owl::mkShared<owl::scene::Scene>();
@@ -120,7 +120,7 @@ TEST(SceneComponent, TextSerializeWithFont) {
 
 	const owl::scene::SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tempTextFontComponent.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 	ASSERT_TRUE(exists(fs));
 
 	// Deserialize — with Application active, font should be resolved.
@@ -167,7 +167,7 @@ TEST(SceneComponent, TextEmptyString) {
 
 	const owl::scene::SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tempTextEmpty.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 	ASSERT_TRUE(exists(fs));
 
 	const auto sc2 = owl::mkShared<owl::scene::Scene>();
@@ -224,7 +224,7 @@ TEST(SceneComponent, AnimatedSpriteRendererSerializesSpeedCurve) {
 
 	const owl::scene::SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tempAnimSpeedCurve.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 	ASSERT_TRUE(exists(fs));
 
 	const auto sc2 = owl::mkShared<owl::scene::Scene>();
@@ -265,7 +265,7 @@ TEST(SceneComponent, AnimatedSpriteRendererDefaultEmptyCurveOmitsKey) {
 
 	const owl::scene::SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tempAnimDefaultCurve.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 	ASSERT_TRUE(exists(fs));
 
 	std::string content;
