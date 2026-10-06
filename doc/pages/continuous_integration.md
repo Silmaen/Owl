@@ -12,7 +12,7 @@ how to extend or validate it. For local build instructions see
 
 Owl is built and tested by a self-hosted **TeamCity 2026.1+** server at
 [builder.argawaen.net](https://builder.argawaen.net). The full server
-configuration lives in the repository under [`.teamcity/`](../../.teamcity)
+configuration lives in the repository under `.teamcity/`
 as a **Kotlin DSL** — every project, build configuration, template, trigger,
 parameter and snapshot dependency is code, reviewed in PRs, and applied to
 the server when `main` advances.
@@ -72,19 +72,17 @@ Legend:
   the `/ci full` comment, and manual triggers always work.
 - Uncoloured: standard — auto-run on `main` pushes and on non-draft PRs.
 Orthogonal to the colours, a PR that changes **only** documentation
-(`doc/`, `*.md`, `.claude/`, `LICENSE`) runs just Code Style and Windows x64
+(`doc/`, `*.md`, `.claude/`, `LICENSE`) runs just Code Style and Linux x64
 Clang — see [Doc-only pull requests](#doc-only-pull-requests).
 Source files:
-- `.teamcity/settings.kts` — entry point, registers `_Self.Project`.
-- `.teamcity/_Self/Project.kt` — root project, VCS root, project-level params.
-- `.teamcity/_Self/Github.kt` — GitHub App connection ID constant.
-- `.teamcity/_Self/BridgeHelpers.kt` — the `github-bridge` feature builder and
-  the per-BT overrides (see [Per-BT bridge gates](#per-bt-bridge-gates)).
-- `.teamcity/_Self/buildTypes/GlobalBuild.kt` — main build/test template.
-- `.teamcity/_Self/buildTypes/CodeStylingCheck.kt` — code style template.
-- `.teamcity/_Self/vcsRoots/HttpsGithubComSilmaenOwlGitRefsHeadsMain.kt` — VCS root.
-- `.teamcity/Build/Build.kt` — Build sub-project + 11 BTs.
-- `.teamcity/Packaging/Packaging.kt` — Packaging sub-project + 6 BTs.
+- `.teamcity/settings.kts` — entry point: root project, sub-projects and build order.
+- `.teamcity/common/Vcs.kt` — the GitHub VCS root.
+- `.teamcity/common/Templates.kt` — `globalBuild` (build, test, coverage, docs, package steps) and `toolBuild`.
+- `.teamcity/common/Helpers.kt` — `ciAction` steps in the build image, the `githubBridge` feature, snapshot helpers.
+- `.teamcity/common/Factories.kt` — `presetBuild`, `analysisBuild` and `packageBuild` builders.
+- `.teamcity/quality/` — Code Style, Include Check, sanitizers, Clang-Tidy, Static Analyzer and the PR Ready composite.
+- `.teamcity/build/` — Linux x64, Linux arm64 and Windows x64 builds.
+- `.teamcity/packaging/Package.kt` — the nightly packages.
 ## VCS root
 A single Git VCS root (`HttpsGithubComSilmaenOwlGitRefsHeadsMain`) points at
 [Silmaen/Owl](https://github.com/Silmaen/Owl). The default branch is
@@ -103,21 +101,22 @@ The canonical build-and-test template used by every BT in `Build/` (except
 Code Style) and every BT in `Packaging/`.
 Pipeline (each step is a `ci_action.py` sub-action invoked through Docker
 except the first, which sets `docker_image` from the preset metadata):
-| Step                      | Condition                                      |
-|---------------------------|------------------------------------------------|
-| Determine docker (native) | always                                         |
-| Define Remote             | always — configures DepManager remote          |
-| Clean output              | always                                         |
-| Clean release             | `release_preset` non-empty                     |
-| Build                     | always                                         |
-| Test                      | `run_tests == true`                            |
-| Code Coverage             | `run_coverage == true`                         |
-| Build Release             | `release_preset` non-empty                     |
-| Test Release              | `release_preset` non-empty + `run_tests`       |
-| Documentation             | `run_documentation == true`                    |
-| Package                   | `run_package == true`                          |
-| Publish Package           | `run_package` + on default branch              |
-| Publish Documentation     | `run_package` + default branch + `publish_doc` |
+| Step                      | Condition                                                      |
+|---------------------------|----------------------------------------------------------------|
+| Determine docker (native) | always                                                         |
+| Define Remote             | always — configures DepManager remote                          |
+| Clean output              | always                                                         |
+| Clean release             | `release_preset` non-empty + default branch                    |
+| Build                     | always                                                         |
+| Test                      | `run_tests == true`                                            |
+| Code Coverage             | `run_coverage == true`                                         |
+| Build Release             | `release_preset` non-empty + default branch                    |
+| Build Release (docs)      | `release_preset` + `run_documentation`, off the default branch |
+| Test Release              | `release_preset` non-empty + default branch + `run_tests`      |
+| Documentation             | `run_documentation` + `release_preset` non-empty               |
+| Package                   | `run_package == true`                                          |
+| Publish Package           | `run_package` + on default branch                              |
+| Publish Documentation     | `run_package` + default branch + `publish_doc`                 |
 Each Dockerised step uses the image set by step 1 (`%docker_image%`, derived
 from the CMake preset's `vendor.silmaen` block).
 **Secrets.** The steps that need a password (Define Remote, Publish Package, Publish Documentation) read it from
@@ -174,8 +173,8 @@ says which presets exist, where they run and in which order.
 | Configuration                              | `main` push | Nightly (`main`) | Draft PR | Ready PR | `Experiment/*` PR | Doc-only PR | `[skip ci]` |
 |--------------------------------------------|-------------|------------------|----------|----------|-------------------|-------------|-------------|
 | Code Style                                 | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
-| Build Linux x64 / Clang                    | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
-| Build Windows x64 / Clang (Doxygen)        | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Linux x64 / Clang (Doxygen)          | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
+| Build Windows x64 / Clang                  | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
 | Build Linux x64 / GCC, Windows x64 / GCC   | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | Build Linux arm64 / Clang, GCC (emulated)  | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Sanitizer Address (+ LSan)                 | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
@@ -245,8 +244,8 @@ their input:
 
 - **Code Style** — codespell and the markdown checks read `doc/` and the root
   markdown files.
-- **Windows x64 Clang** — the only PR-side BT whose preset sets
-  `OWL_ENABLE_DOCUMENTATION=ON`, so Doxygen runs there with `WARN_AS_ERROR=YES`
+- **Linux x64 Clang** — the only BT whose preset sets `OWL_ENABLE_DOCUMENTATION=ON`; it builds the release
+  everywhere (its tests stay on `main`) and Doxygen documents it, with `WARN_AS_ERROR=YES`
   over `doc/`, `README.md`, `CHANGELOG.md`, `ROADMAP.md` and `CONTRIBUTING.md`.
 
 A doc-only PR is therefore still gated — by the two configurations that can

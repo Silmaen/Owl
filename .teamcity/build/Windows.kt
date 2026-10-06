@@ -4,22 +4,12 @@ import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
 
 val windowsGcc = presetBuild("Build_WindowsX64_Gcc", "GCC", "windows-gcc-debug")
 
-// Builds Doxygen: it runs on documentation-only pull requests too.
-val windowsClang = presetBuild("Build_WindowsX64_Clang", "Clang", "windows-clang-debug",
-        onDraft = true, pathFilter = "") {
+val windowsClang = presetBuild("Build_WindowsX64_Clang", "Clang", "windows-clang-debug", onDraft = true) {
     failureConditions {
         failOnMetricChange {
             id = "BUILD_EXT_1"
             metric = BuildFailureOnMetric.MetricType.TEST_COUNT
             threshold = 20
-            units = BuildFailureOnMetric.MetricUnit.PERCENTS
-            comparison = BuildFailureOnMetric.MetricComparison.LESS
-            compareTo = build { buildRule = lastSuccessful() }
-        }
-        failOnMetricChange {
-            id = "BUILD_EXT_2"
-            metric = BuildFailureOnMetric.MetricType.ARTIFACT_SIZE
-            threshold = 10
             units = BuildFailureOnMetric.MetricUnit.PERCENTS
             comparison = BuildFailureOnMetric.MetricComparison.LESS
             compareTo = build { buildRule = lastSuccessful() }

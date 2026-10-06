@@ -40,10 +40,15 @@ val globalBuild = Template {
         // parameters on the server, so TeamCity masks their value everywhere.
         param("env.OWL_REMOTE_PASSWORD", "%remote_passwd%")
         param("env.OWL_DEPLOY_PASSWORD", "%deploy_passwd%")
-        // Third-party provider for this build (read by cmake/BaseConfig.cmake). Run a configuration with
-        // `conan` to try the Conan migration on its agent before switching the default.
-        select("env.OWL_DEPENDENCY_PROVIDER", "depmanager", label = "Dependency provider",
+        // Third-party provider: Conan everywhere (dependencies built by each agent's own toolchain).
+        // DepManager stays selectable for a manual run during the transition.
+        select("env.OWL_DEPENDENCY_PROVIDER", "conan", label = "Dependency provider",
             options = listOf("depmanager", "conan"))
+        // Conan binary cache: read first, filled with every binary an agent builds; skipped when unreachable.
+        param("env.OWL_CONAN_CACHE_URL", "%conan_server%")
+        param("env.OWL_CONAN_CACHE_UPLOAD", "ON")
+        param("env.CONAN_LOGIN_USERNAME_OWL_CACHE", "%conan_user%")
+        param("env.CONAN_PASSWORD_OWL_CACHE", "%conan_password%")
         checkbox("publish_doc", "false", checked = "true", unchecked = "false")
 
         // teamcity-github-bridge: opt-in is the BRIDGE_GITHUB build feature
@@ -116,6 +121,17 @@ val globalBuild = Template {
         }
 
         script {
+            // Elsewhere the release is built only for the documentation, its tests stay on `main`.
+            ciAction("Build", "Build_Release_Doc", displayName = "Build Release",
+                preset = "%release_preset%")
+            conditions {
+                doesNotMatch("release_preset", "^${'$'}")
+                doesNotEqual("teamcity.build.branch.is_default", "true")
+                equals("run_documentation", "true")
+            }
+        }
+
+        script {
             ciAction("Test", "Test_Debug", displayName = "Test Release",
                 preset = "%release_preset%")
             conditions {
@@ -131,6 +147,8 @@ val globalBuild = Template {
             ciAction("Documentation", "Documentation")
             conditions {
                 equals("run_documentation", "true")
+                // Documents the release build, compiled for it off `main` too.
+                doesNotMatch("release_preset", "^${'$'}")
             }
         }
 

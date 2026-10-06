@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Optional Conan binary cache (`OWL_CONAN_CACHE_URL`, remote `owl-cache`): read before ConanCenter, filled by every CI build with the binaries of Owl's graph it built, even when the install fails midway, skipped with a warning when unreachable.
 - `PR Ready` composite TeamCity configuration: red when any ready-PR configuration is red, the single check to require on `main`.
 - Conan profiles for Windows MinGW (`windows-clang`, `windows-gcc`), DLLs deployed next to the binaries, provider selectable through `OWL_DEPENDENCY_PROVIDER` (environment and TeamCity parameter).
 - `Clang Static Analyzer` CI configuration (`ClangTidy -- --tool=analyzer`); both analyses close the TeamCity chain and are the checks to require on `main`.
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CI on Conan everywhere (the TeamCity `OWL_DEPENDENCY_PROVIDER` default) and on a single Ubuntu 26.04 image (`builder-ubuntu2604`: GCC 15, Clang 22) for every Linux preset and `docker/run.sh`.
 - CI: release build and tests on `main` only; arm64 builds and every package nightly (they held the agents for hours and packages publish to the site).
 - CI in two levels: Code Style and Include Check in parallel, then every build, sanitizer and analysis after Code Style only.
 - CI: `Experiment/*` pull requests run the fast subset only; secrets reach `ci_action.py` through `env.*` parameters; the CI flow is documented case by case (`main`, draft, ready, experiment, doc-only).
@@ -36,6 +38,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- TeamCity: `triggerOnPrDraft` is written explicitly on every configuration (the plugin defaults to `true`, so draft PRs ran the whole matrix).
+- Conan on Windows: host settings and options go through a generated profile (cmd.exe split `&:shared=…` at `&`), and configure stops when `conan install` produced no toolchain.
+- `ClangTidy` analyses only the repository's own translation units: the third-party sources a Conan build compiles (imgui backends, `imgui_stdlib.cpp`) no longer fail the gate.
+- `run_command` reads stdout and stderr concurrently: on Windows it read them one after the other, so the Conan install showed nothing and hung once its stderr pipe filled.
+- Conan package builds run their Python generators with the interpreter that runs Conan (glad needs jinja2, missing from MSYS2's Python), and `owl-local` is registered again only when missing, no longer wiping its recipe cache at every configure.
+- `libmp3lame` local recipe: MinGW Clang builds it with autotools (ConanCenter's recipe ran `nmake`, taking it for clang-cl).
+- Conan profiles force one version per build tool (`cmake/4.4.3`, `pkgconf/2.5.1` through `[replace_tool_requires]`, `CMAKE_POLICY_VERSION_MINIMUM=3.5` for old upstream projects), instead of one per recipe range.
+- Windows test binaries copy the gtest DLLs only when gtest is shared (DepManager); Conan links it statically.
+- `Log` names its file sink with `SPDLOG_FILENAME_T`, so Windows builds against spdlog with or without wide filenames (Conan's has none).
+- `windows-gcc` Conan profile pins MinGW's `gcc.exe` by full path: in the MSYS2 bash of autotools builds a bare `gcc` was MSYS's POSIX compiler (mpg123 failed); ImGuizmo and plutovg are shared, and the imgui backends and imgui_stdlib compiled into the engine drop their API macro, as a shared imgui declares them dllimport on Windows.
+- CI: Doxygen moves to Linux x64 Clang, which builds the release on every run for it (release tests stay on `main`); Windows x64 Clang drops its artifact-size gate, wrong whenever a run skips the release.
+- `conan.lock` pins the current `slang` recipe revision (a fresh Conan cache, as on a new agent, could not resolve the old one).
+- Windows CI: dependencies from Conan, built by the agent's GCC 16 toolchain (the prebuilt DepManager packages broke the GCC test runtime and the Clang link).
 - TeamCity: every `ci_action.py` step runs in the build image again (lost in the DSL relayout: `poetry: not found`).
 - Windows build with a recent libstdc++ (MSYS2): every file now includes the standard headers it uses, checked by the `std-includes` Code Style audit and the `linux-include-check` strict-libc++ build (`OWL_INCLUDE_CHECK`).
 - `ClangTidy` runs one job per available core by default instead of a single process (`--jobs=N` still overrides).

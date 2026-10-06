@@ -35,7 +35,7 @@ docker/run.sh poetry run depmanager build <recipe_dir> [-r] [-f]
 
 ## Conan 2 (migration in progress, `-DOWL_DEPENDENCY_PROVIDER=conan`)
 
-DepManager stays the default until every preset builds on Conan (see `doc/pages/design/conan-migration.md`).
+DepManager stays the CMake default until every preset builds on Conan (see `doc/pages/design/conan-migration.md`); the CI already builds everything on Conan.
 
 - `conanfile.py` (root) lists the dependencies; `cmake/Conan.cmake` runs `conan install` at configure time
   into `output/build/<preset>/conan/` and puts the CMakeDeps files on `CMAKE_PREFIX_PATH`.
@@ -53,6 +53,7 @@ DepManager stays the default until every preset builds on Conan (see `doc/pages/
   dependency goes under `if self.options.nest`.
 - Shared libraries of the Conan cache are copied next to the binaries by `target_import_so_files()`.
 - In a worktree sharing `fake_home`, pass `-DOWL_CONAN_HOME=/fhome/.conan2-owl` so Owl keeps its own cache.
+- Optional binary cache: `OWL_CONAN_CACHE_URL` (remote `owl-cache`, `OWL_CONAN_CACHE_UPLOAD=ON` to fill it); unreachable means ConanCenter only.
 
 ```bash
 docker/run.sh cmake --preset linux-clang-release -DOWL_DEPENDENCY_PROVIDER=conan -DOWL_CONAN_HOME=/fhome/.conan2-owl

@@ -15,5 +15,12 @@ tools.cmake.cmaketoolchain:generator=Ninja
 tools.system.package_manager:mode=check
 
 [buildenv]
+# CMake 4 refuses cmake_minimum_required below 3.5, still declared by some upstream projects.
+CMAKE_POLICY_VERSION_MINIMUM=3.5
 CC=clang
 CXX=clang++
+
+# One version per build tool, the highest the recipes resolve (they each ask their own range).
+[replace_tool_requires]
+cmake/*: cmake/4.4.3
+pkgconf/*: pkgconf/2.5.1

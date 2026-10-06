@@ -3,6 +3,7 @@ Utility function for running application commands.
 """
 
 from logging import INFO, WARNING, ERROR
+from typing import IO
 
 from ci import log
 from ci.utils.secrets import redact_command
@@ -91,6 +92,7 @@ def run_command(command: list[str] | str,
     :return: The exit code of the command.
     """
     import subprocess
+    import threading
     from os import environ
 
     if isinstance(command, str):
@@ -106,66 +108,33 @@ def run_command(command: list[str] | str,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            errors="replace",
             bufsize=1,
             env=env,
         )
-        import select
-        from sys import platform
 
-        # Process Outputs in real time
-        if platform != "win32":
-            import fcntl
-            import os as os_module
-            fcntl.fcntl(process.stdout, fcntl.F_SETFL, os_module.O_NONBLOCK)
-            fcntl.fcntl(process.stderr, fcntl.F_SETFL, os_module.O_NONBLOCK)
-            while process.poll() is None:
-                reads = [process.stdout, process.stderr]
-                ret = select.select(reads, [], [])
-                for stream in ret[0]:
-                    try:
-                        line = stream.readline()
-                        if not line:
-                            continue
-                        line = line.rstrip("\n")
-                        if line:
-                            is_stderr = stream == process.stderr
-                            level = _determine_log_level(line, detection_mode)
-                            if is_stderr:
-                                level = max(level, WARNING)
-                            if detection_mode == MODE_BY_COLOR:
-                                line = _strip_ansi_codes(line)
-                            log.log(level, line)
-                    except (BlockingIOError, IOError):
-                        continue  # Capture any remaining output after process ends
-            for line in process.stdout:
-                line = line.rstrip("\n")
-                if line:
-                    level = _determine_log_level(line, detection_mode)
-                    if detection_mode == MODE_BY_COLOR:
-                        line = _strip_ansi_codes(line)
-                    log.log(level, line)
-            for line in process.stderr:
-                line = line.rstrip("\n")
-                if line:
-                    level = max(_determine_log_level(line, detection_mode), WARNING)
-                    if detection_mode == MODE_BY_COLOR:
-                        line = _strip_ansi_codes(line)
-                    log.log(level, line)
-        else:
-            for line in process.stdout:
-                line = line.rstrip("\n")
-                if line:
-                    level = _determine_log_level(line, detection_mode)
-                    if detection_mode == MODE_BY_COLOR:
-                        line = _strip_ansi_codes(line)
-                    log.log(level, line)
-            for line in process.stderr:
-                line = line.rstrip("\n")
-                if line:
-                    level = max(_determine_log_level(line, detection_mode), WARNING)
-                    if detection_mode == MODE_BY_COLOR:
-                        line = _strip_ansi_codes(line)
-                    log.log(level, line)
+        # One reader thread per stream: reading them one after the other holds the output back until
+        # the end and deadlocks once the unread pipe fills (Conan writes its whole progress to stderr).
+        def pump(stream: IO[str], is_stderr: bool) -> None:
+            for raw in stream:
+                line = raw.rstrip("\n")
+                if not line:
+                    continue
+                level = _determine_log_level(line, detection_mode)
+                if is_stderr:
+                    level = max(level, WARNING)
+                if detection_mode == MODE_BY_COLOR:
+                    line = _strip_ansi_codes(line)
+                log.log(level, line)
+
+        readers = [
+            threading.Thread(target=pump, args=(process.stdout, False), daemon=True),
+            threading.Thread(target=pump, args=(process.stderr, True), daemon=True),
+        ]
+        for reader in readers:
+            reader.start()
+        for reader in readers:
+            reader.join()
 
         process.wait()
         return process.returncode

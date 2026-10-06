@@ -103,11 +103,8 @@ void Log::init(const Level& iLevel, const uint64_t iFrequency) {
 	}
 	std::vector<spdlog::sink_ptr> logSinks;
 	logSinks.emplace_back(mkShared<spdlog::sinks::stdout_color_sink_mt>());
-#ifdef WIN32
-	logSinks.emplace_back(mkShared<spdlog::sinks::basic_file_sink_mt>(L"Owl.log", true));
-#else
-	logSinks.emplace_back(mkShared<spdlog::sinks::basic_file_sink_mt>("Owl.log", true));
-#endif
+	// Wide or narrow, whichever filename type spdlog was built with (SPDLOG_WCHAR_FILENAMES).
+	logSinks.emplace_back(mkShared<spdlog::sinks::basic_file_sink_mt>(SPDLOG_FILENAME_T("Owl.log"), true));
 
 	logSinks.emplace_back(mkShared<EditorLogSink>(g_logBuffer));
 

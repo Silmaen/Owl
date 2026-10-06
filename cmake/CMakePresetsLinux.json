@@ -19,7 +19,7 @@
       },
       "vendor": {
         "silmaen": {
-          "docker_image": "builder-clang-llvm22-ubuntu2404"
+          "docker_image": "builder-ubuntu2604"
         }
       }
     },
@@ -31,7 +31,7 @@
       ],
       "vendor": {
         "silmaen": {
-          "docker_image": "builder-gcc14-ubuntu2404"
+          "docker_image": "builder-ubuntu2604"
         }
       }
     },
@@ -46,7 +46,7 @@
       },
       "vendor": {
         "silmaen": {
-          "docker_image": "builder-gcc14-ubuntu2404",
+          "docker_image": "builder-ubuntu2604",
           "release_preset": "linux-gcc-release"
         }
       }
@@ -65,7 +65,8 @@
         "clang-debug"
       ],
       "cacheVariables": {
-        "OWL_ENABLE_COVERAGE": "ON"
+        "OWL_ENABLE_COVERAGE": "ON",
+        "OWL_ENABLE_DOCUMENTATION": "ON"
       },
       "vendor": {
         "silmaen": {

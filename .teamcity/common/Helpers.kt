@@ -86,8 +86,8 @@ fun BuildFeatures.githubBridge(triggerOnPrDraft: Boolean = false,
         param("runOnApproval", "true")
         param("triggerOnBranch", "true")
         param("triggerOnPrReady", triggerOnPrReady.toString())
-        if (triggerOnPrDraft)
-            param("triggerOnPrDraft", "true")
+        // Always explicit: the plugin defaults to `true`, so an absent value runs on drafts.
+        param("triggerOnPrDraft", triggerOnPrDraft.toString())
         if (pathFilter.isNotEmpty())
             param("pathFilter", pathFilter)
         if (!onExperiment)
