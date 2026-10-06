@@ -12,6 +12,9 @@
 #include <data/voxel/VoxelWorld.h>
 
 #include <cstddef>
+#include <cstdint>
+#include <utility>
+#include <vector>
 
 using namespace owl;
 using namespace owl::data::voxel;
@@ -137,4 +140,49 @@ TEST_F(VoxelWorldFixture, CopyDoesNotShareChunks) {
 	assigned.setBlock(math::vec3i{1, 2, 3}, 5);
 	EXPECT_EQ(original.getBlock(math::vec3i{1, 2, 3}), 1u);
 	EXPECT_EQ(assigned.getBlock(math::vec3i{1, 2, 3}), 5u);
+}
+
+TEST_F(VoxelWorldFixture, MarkNeighborChunksDirtyReachesEdgeAndCornerChunks) {
+	VoxelWorld world;
+	for (int32_t cy = 0; cy <= 1; ++cy)
+		for (int32_t cz = 0; cz <= 1; ++cz)
+			for (int32_t cx = 0; cx <= 1; ++cx) world.setBlock(math::vec3i{cx * 16 + 8, cy * 16 + 8, cz * 16 + 8}, 1);
+	world.setBlock(math::vec3i{-8, 8, 8}, 1);// chunk (-1,0,0): not adjacent to the corner block
+	std::vector<std::pair<math::vec3i, uint64_t>> before;
+	world.forEachChunk([&](const math::vec3i& iCoord, const Chunk& iChunk) -> void {
+		before.emplace_back(iCoord, iChunk.getRevision());
+	});
+	world.markNeighborChunksDirty(math::vec3i{15, 15, 15});// corner of chunk (0,0,0)
+	for (const auto& [coord, revision]: before) {
+		const bool expectChange = coord != math::vec3i{0, 0, 0} && coord != math::vec3i{-1, 0, 0};
+		EXPECT_EQ(world.getChunk(coord)->getRevision() != revision, expectChange)
+				<< coord.x() << "," << coord.y() << "," << coord.z();
+	}
+}
+
+TEST_F(VoxelWorldFixture, InsertChunkInvalidatesItsNeighbors) {
+	VoxelWorld world;
+	world.setBlock(math::vec3i{8, 8, 8}, 1);
+	world.setBlock(math::vec3i{8 + 16, 8 + 16, 8}, 1);// edge neighbour (1,1,0)
+	world.setBlock(math::vec3i{8 + 48, 8, 8}, 1);// (3,0,0): not a neighbour of (1,0,0)
+	const uint64_t own = world.getChunk(math::vec3i{0, 0, 0})->getRevision();
+	const uint64_t edge = world.getChunk(math::vec3i{1, 1, 0})->getRevision();
+	const uint64_t far = world.getChunk(math::vec3i{3, 0, 0})->getRevision();
+	Chunk generated;
+	generated.setBlock(0, 0, 0, 2);
+	const auto installed = world.insertChunk(math::vec3i{1, 0, 0}, std::move(generated));
+	EXPECT_EQ(installed->getCoord(), (math::vec3i{1, 0, 0}));
+	EXPECT_EQ(world.getBlock(math::vec3i{16, 0, 0}), 2u);
+	EXPECT_NE(world.getChunk(math::vec3i{0, 0, 0})->getRevision(), own);
+	EXPECT_NE(world.getChunk(math::vec3i{1, 1, 0})->getRevision(), edge);
+	EXPECT_EQ(world.getChunk(math::vec3i{3, 0, 0})->getRevision(), far);
+}
+
+TEST_F(VoxelWorldFixture, InsertAirChunkLeavesNeighborsAlone) {
+	VoxelWorld world;
+	world.setBlock(math::vec3i{8, 8, 8}, 1);
+	const uint64_t own = world.getChunk(math::vec3i{0, 0, 0})->getRevision();
+	world.insertChunk(math::vec3i{1, 0, 0}, Chunk{});
+	EXPECT_EQ(world.getChunk(math::vec3i{0, 0, 0})->getRevision(), own);
+	EXPECT_TRUE(world.hasChunk(math::vec3i{1, 0, 0}));
 }

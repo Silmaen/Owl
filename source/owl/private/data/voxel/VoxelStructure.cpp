@@ -171,8 +171,9 @@ auto VoxelStructure::captureFromWorld(const VoxelWorld& iWorld, const BlockRegis
 
 void VoxelStructure::stampInto(VoxelWorld& ioWorld, const math::vec3i& iOrigin) const {
 	forEachSolid([&](const math::vec3i& iLocal, const BlockId iId, const PackedMeta iMeta) -> void {
-		ioWorld.setBlock(math::vec3i{iOrigin.x() + iLocal.x(), iOrigin.y() + iLocal.y(), iOrigin.z() + iLocal.z()}, iId,
-						 iMeta);
+		const math::vec3i target{iOrigin.x() + iLocal.x(), iOrigin.y() + iLocal.y(), iOrigin.z() + iLocal.z()};
+		ioWorld.setBlock(target, iId, iMeta);
+		ioWorld.markNeighborChunksDirty(target);
 	});
 }
 

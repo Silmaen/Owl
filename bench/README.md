@@ -38,7 +38,9 @@ cd output/build/linux-clang-release-bench/bin
 
 Groups (name prefixes): `scene`, `serialize`, `prefab`, `renderer2d`, `frame`, `voxel`, `script`,
 `physics`, `sample`, `slang`. The first Slang compilation is only "cold" when `slang` is the first group to
-compile a shader in the process, which is the case for a full run.
+compile a shader in the process, which is the case for a full run. `voxel/streaming` streams a procedural world
+through a real `RendererVoxel` layer with frames paced at 60 Hz (about 12 s) and reports the main-thread CPU time per
+frame (p50, p99, peak), the meshing work and the chunk appearance latency.
 
 ## Reading the output
 

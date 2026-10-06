@@ -94,11 +94,22 @@ public:
 
 	~Chunk() = default;
 
-	Chunk(const Chunk&) = default;
+	/**
+	 * @brief
+	 *  Copy constructor: the copy shares the source revision (stamping the source first if needed).
+	 * @param[in] iOther The chunk to copy.
+	 */
+	Chunk(const Chunk& iOther);
 
 	Chunk(Chunk&&) = default;
 
-	auto operator=(const Chunk&) -> Chunk& = default;
+	/**
+	 * @brief
+	 *  Copy assignment: the copy shares the source revision (stamping the source first if needed).
+	 * @param[in] iOther The chunk to copy.
+	 * @return This chunk.
+	 */
+	auto operator=(const Chunk& iOther) -> Chunk&;
 
 	auto operator=(Chunk&&) -> Chunk& = default;
 
@@ -155,10 +166,23 @@ public:
 
 	/**
 	 * @brief
-	 *  Whether the chunk contains only air.
+	 *  Whether the chunk contains only air (constant time: the non-air count is kept by every write).
 	 * @return True if no non-air block is present.
 	 */
-	[[nodiscard]] auto isEmpty() const -> bool;
+	[[nodiscard]] auto isEmpty() const noexcept -> bool { return m_solidCount == 0; }
+
+	/**
+	 * @brief
+	 *  Content revision: a process-unique number that changes whenever the chunk's blocks change.
+	 *
+	 * Every write (and `markDirty`, which neighbour edits use) invalidates the revision; the next call stamps a new
+	 * one from a global counter, so two different contents never share a revision, across chunks and worlds. A copy
+	 * keeps the revision of its source (same content). Asynchronous meshing tags its result with the revision it
+	 * read and drops the result when the chunk moved on meanwhile. Not thread-safe: call it on the thread that owns
+	 * the chunk.
+	 * @return The current content revision (never 0).
+	 */
+	[[nodiscard]] auto getRevision() const -> uint64_t;
 
 	/**
 	 * @brief
@@ -189,9 +213,12 @@ public:
 
 	/**
 	 * @brief
-	 *  Force the dirty flag on (e.g. after a neighbour edit invalidates the mesh).
+	 *  Force the dirty flag on and invalidate the revision (e.g. after a neighbour edit invalidates the mesh).
 	 */
-	void markDirty() noexcept { m_dirty = true; }
+	void markDirty() noexcept {
+		m_dirty = true;
+		m_revision = 0;
+	}
 
 	/**
 	 * @brief
@@ -234,6 +261,10 @@ private:
 	std::vector<PackedMeta> m_meta;
 	/// True when the chunk changed since the last `markClean`.
 	bool m_dirty = false;
+	/// Number of non-air blocks (keeps `isEmpty` constant time).
+	uint32_t m_solidCount = 0;
+	/// Content revision, 0 while not stamped since the last change (see `getRevision`).
+	mutable uint64_t m_revision = 0;
 };
 
 }// namespace owl::data::voxel

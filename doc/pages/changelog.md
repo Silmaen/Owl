@@ -58,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GLFW `FEATURE_UNAVAILABLE` errors (window position / icon under Wayland) logged at trace level instead of error.
 - The memory tracker is no longer on by default in Debug (it doubled the live allocations and skewed Debug timings): opt in with `OWL_ENABLE_MEMORY_TRACKER`.
 - A log message below the verbosity no longer formats nor evaluates its arguments, and the log file is flushed on warnings only.
+- Voxel chunks are meshed on the task workers from an immutable `ChunkNeighborhood` copy and uploaded under a per-frame budget (`VoxelMeshingConfig`): the streaming frame peak drops from 14.3 ms to 0.35 ms on the main thread (PR-24).
 - Roadmap rethought toward 1.0.0: v0.3.0 Foundations, renumbered releases, three reading levels (`ROADMAP.md`, `doc/pages/roadmap.md`, `doc/pages/design/`).
 - Changelog split the same way: one line per release in `CHANGELOG.md`, details in `doc/pages/changelog.md`.
 - clang-tidy decoupled from the compiler: `CMAKE_CXX_CLANG_TIDY` unset, the analysis is a `ClangTidy` step on `Build/Quality/Clang-Tidy` driven by `compile_commands.json`.
@@ -132,6 +133,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Textures picked inside an asset directory are saved as `nam:` relative names, no longer as absolute `pat:` paths that break on another machine and in the pack.
 - Export rewrites the remaining absolute `pat:` references of scenes, tilesets and tilemaps to the packed `nam:` entry; `raycast_demo.owl` no longer points at a developer checkout.
 - `AssetScanner` packs the `VoxelWorld` tileset and its atlas, and the `UiText` font.
+- Voxel edits and streamed-in chunks re-mesh every neighbour chunk whose faces or ambient occlusion they change, edge and corner chunks included; a chunk generated with old parameters or already streamed out is dropped (D-08).
 - The project icon is found in the asset directories too, so the exported game gets its icon.
 - `runner.yml` and `game_info.yml` are written with a YAML emitter: a game name or description with `:` or `#` no longer corrupts them.
 - Re-exporting over a previous export replaces the bundled shared libraries instead of keeping stale ones.

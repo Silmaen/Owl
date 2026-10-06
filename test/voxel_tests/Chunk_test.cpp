@@ -170,3 +170,60 @@ TEST_F(ChunkFixture, EncodeOmitsMetaSuffixWhenDefault) {
 	chunk.setBlock(0, 0, 0, 7);
 	EXPECT_EQ(chunk.encode().find(':'), std::string::npos);
 }
+
+TEST_F(ChunkFixture, IsEmptyTracksEveryWrite) {
+	Chunk chunk;
+	chunk.setBlock(1, 1, 1, 3);
+	chunk.setBlock(2, 1, 1, 3);
+	EXPECT_FALSE(chunk.isEmpty());
+	chunk.setBlock(1, 1, 1, 4);
+	chunk.setBlock(1, 1, 1, g_AirBlock);
+	EXPECT_FALSE(chunk.isEmpty());
+	chunk.setBlock(2, 1, 1, g_AirBlock);
+	EXPECT_TRUE(chunk.isEmpty());
+	chunk.fill(2);
+	EXPECT_FALSE(chunk.isEmpty());
+	chunk.fill(g_AirBlock);
+	EXPECT_TRUE(chunk.isEmpty());
+	Chunk source;
+	source.setBlock(5, 5, 5, 9);
+	Chunk decoded;
+	ASSERT_TRUE(decoded.decode(source.encode()));
+	EXPECT_FALSE(decoded.isEmpty());
+	ASSERT_TRUE(decoded.decode(Chunk{}.encode()));
+	EXPECT_TRUE(decoded.isEmpty());
+}
+
+TEST_F(ChunkFixture, RevisionChangesOnlyWithContent) {
+	Chunk chunk;
+	const uint64_t initial = chunk.getRevision();
+	EXPECT_NE(initial, 0u);
+	EXPECT_EQ(chunk.getRevision(), initial);
+	chunk.setBlock(1, 2, 3, g_AirBlock);
+	EXPECT_EQ(chunk.getRevision(), initial);
+	chunk.setBlock(1, 2, 3, 5);
+	const uint64_t written = chunk.getRevision();
+	EXPECT_NE(written, initial);
+	chunk.setMeta(1, 2, 3, 2);
+	const uint64_t meta = chunk.getRevision();
+	EXPECT_NE(meta, written);
+	chunk.markDirty();
+	EXPECT_NE(chunk.getRevision(), meta);
+	chunk.markClean();
+	const uint64_t cleaned = chunk.getRevision();
+	EXPECT_EQ(chunk.getRevision(), cleaned);
+	chunk.fill(1);
+	EXPECT_NE(chunk.getRevision(), cleaned);
+}
+
+TEST_F(ChunkFixture, RevisionsAreUniqueAndCopiesKeepThem) {
+	Chunk first;
+	Chunk second;
+	EXPECT_NE(first.getRevision(), second.getRevision());
+	const Chunk copy{first};
+	EXPECT_EQ(copy.getRevision(), first.getRevision());
+	Chunk edited{first};
+	edited.setBlock(0, 0, 0, 1);
+	EXPECT_NE(edited.getRevision(), first.getRevision());
+	EXPECT_NE(edited.getRevision(), second.getRevision());
+}

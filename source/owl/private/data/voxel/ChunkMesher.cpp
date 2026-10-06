@@ -9,6 +9,8 @@
 
 #include "data/voxel/ChunkMesher.h"
 
+#include "data/voxel/ChunkNeighborhood.h"
+
 #include <array>
 #include <cstdint>
 
@@ -260,6 +262,15 @@ auto ChunkMesher::meshByKind(const Chunk& iChunk, const BlockRegistry& iRegistry
 	return ChunkMeshSet{.opaque = meshImpl(iChunk, iRegistry, iNeighbor, BlockClass::Opaque, iAmbientOcclusion),
 						.transparent =
 								meshImpl(iChunk, iRegistry, iNeighbor, BlockClass::NonOpaque, iAmbientOcclusion)};
+}
+
+auto ChunkMesher::meshByKind(const ChunkNeighborhood& iNeighborhood, const BlockRegistry& iRegistry,
+							 const bool iAmbientOcclusion) -> ChunkMeshSet {
+	const NeighborProvider neighbor = [&iNeighborhood](const int32_t iX, const int32_t iY,
+													   const int32_t iZ) -> BlockId {
+		return iNeighborhood.getBlock(iX, iY, iZ);
+	};
+	return meshByKind(iNeighborhood.getChunk(), iRegistry, neighbor, iAmbientOcclusion);
 }
 
 }// namespace owl::data::voxel

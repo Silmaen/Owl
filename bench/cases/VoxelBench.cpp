@@ -159,6 +159,7 @@ void runVoxelBenches(Runner& ioRunner) {
 	runGeneration(ioRunner, palette);
 	runMeshing(ioRunner, palette);
 	runSceneCopy(ioRunner, palette);
+	runVoxelStreamingBenches(ioRunner);
 }
 
 }// namespace owl::bench

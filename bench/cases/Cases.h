@@ -78,6 +78,13 @@ void runVoxelBenches(Runner& ioRunner);
 
 /**
  * @brief
+ *  Voxel streaming frames: main-thread cost per frame while terrain streams in (Play walk, editor load).
+ * @param[in,out] ioRunner The runner.
+ */
+void runVoxelStreamingBenches(Runner& ioRunner);
+
+/**
+ * @brief
  *  Lua scripting benchmarks.
  * @param[in,out] ioRunner The runner.
  */

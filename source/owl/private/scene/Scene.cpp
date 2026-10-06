@@ -50,10 +50,11 @@
 
 namespace owl::scene {
 
-// One worker-generated chunk (entity id, coord, filled chunk) awaiting main-thread installation.
+// One worker-generated chunk (entity id, coord, parameters it was generated with, filled chunk) awaiting installation.
 struct CompletedVoxelChunk {
 	int entityId;
 	math::vec3i coord;
+	data::voxel::TerrainParams params;
 	shared<data::voxel::Chunk> chunk;
 };
 
@@ -64,6 +65,13 @@ struct VoxelStreamState {
 };
 
 namespace {
+auto unpackChunkKey(const uint64_t iKey) -> math::vec3i {
+	const auto dec = [](const uint64_t iBits) -> int32_t {
+		return static_cast<int32_t>(static_cast<int64_t>(iBits & 0x1FFFFF) - (1 << 20));
+	};
+	return math::vec3i{dec(iKey), dec(iKey >> 21), dec(iKey >> 42)};
+}
+
 template<component::isComponent Component>
 void copyComponent(entt::registry& oDst, const entt::registry& iSrc,
 				   const std::unordered_map<core::UUID, entt::entity>& iEnttMap) {
@@ -527,6 +535,9 @@ void Scene::onStartRuntime() {
 	}
 	// Drop cached voxel meshes from a previous run; renderWithStack() rebuilds them on the next rendered frame.
 	renderer::RendererVoxel::clearCache();
+	// Generation requested by the scene this one was copied from completes into that scene, not this one.
+	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view)
+		view.get<component::VoxelWorld>(entity).pendingChunks.clear();
 	OWL_CORE_INFO("Scene::onStartRuntime: total {:.1f} ms.", ms(clk::now() - runtimeStart))
 }
 
@@ -1204,6 +1215,7 @@ void Scene::prepareVoxelRenderData() {
 
 	// Ensure tileset atlases are resolved before meshing (gated/cheap).
 	resolveAllTilemapAssets();
+	renderer::RendererVoxel::beginPrepare();
 	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view) {
 		renderer::RendererVoxel::prepareWorld(view.get<component::VoxelWorld>(entity), static_cast<int>(entity));
 	}
@@ -1252,17 +1264,16 @@ void Scene::updateVoxelStreaming(const math::vec3& iCameraWorldPos) {
 		const std::lock_guard<std::mutex> lock{stream.mutex};
 		done.swap(stream.completed);
 	}
-	for (const auto& finished: done) {
+	for (auto& finished: done) {
 		const auto entity = static_cast<entt::entity>(finished.entityId);
 		if (!registry.valid(entity) || !registry.any_of<component::VoxelWorld>(entity))
 			continue;
 		auto& vw = registry.get<component::VoxelWorld>(entity);
-		vw.pendingChunks.erase(key(finished.coord));
-		if (!vw.proceduralTerrain || !finished.chunk)
+		// Not pending any more (streamed out or regenerated) or generated with older parameters: stale, drop it.
+		if (vw.pendingChunks.erase(key(finished.coord)) == 0 || !vw.proceduralTerrain || !finished.chunk ||
+			finished.params != vw.terrain)
 			continue;
-		const auto chunk = vw.world.getOrCreateChunk(finished.coord);
-		*chunk = *finished.chunk;
-		chunk->markDirty();
+		vw.world.insertChunk(finished.coord, std::move(*finished.chunk));
 	}
 
 	constexpr int32_t kMaxPushPerFrame = 16;
@@ -1296,20 +1307,24 @@ void Scene::updateVoxelStreaming(const math::vec3& iCameraWorldPos) {
 						auto chunk = mkShared<data::voxel::Chunk>(coord);
 						data::voxel::TerrainGenerator{params}.generateChunk(*chunk, coord);
 						const std::lock_guard<std::mutex> lock{sink->mutex};
-						sink->completed.push_back(
-								CompletedVoxelChunk{.entityId = entityId, .coord = coord, .chunk = chunk});
+						sink->completed.push_back(CompletedVoxelChunk{.entityId = entityId,
+																	  .coord = coord,
+																	  .params = params,
+																	  .chunk = chunk});
 					}});
 				}
 			}
 		}
-		// Unload chunks (and forget pending) that drifted outside the radius (+1 chunk of hysteresis).
+		// Unload chunks (and forget pending ones) that drifted outside the radius (+1 chunk of hysteresis).
+		const auto outside = [&](const math::vec3i& iCoord) -> bool {
+			return std::abs(iCoord.x() - camChunk.x()) > r + 1 || std::abs(iCoord.z() - camChunk.z()) > r + 1 ||
+				   std::abs(iCoord.y() - camChunk.y()) > h + 1;
+		};
 		for (const auto& coord: vw.world.chunkCoordinates()) {
-			if (std::abs(coord.x() - camChunk.x()) > r + 1 || std::abs(coord.z() - camChunk.z()) > r + 1 ||
-				std::abs(coord.y() - camChunk.y()) > h + 1) {
+			if (outside(coord))
 				vw.world.removeChunk(coord);
-				vw.pendingChunks.erase(key(coord));
-			}
 		}
+		std::erase_if(vw.pendingChunks, [&](const uint64_t iKey) -> bool { return outside(unpackChunkKey(iKey)); });
 	}
 }
 
