@@ -9,6 +9,17 @@ paths:
 
 User-facing reference: `doc/pages/scene.md`. Keep it in sync when behaviour changes.
 
+## File formats (versioning and writes)
+
+- **Every file format the engine writes is versioned**: a root `FormatVersion` integer written through
+  `core::emitFormatVersion`, read through `core::upgradeYamlDocument` / `upgradeDocument` with the format's
+  `core::DocumentFormat` (absent ⇒ 1, newer ⇒ refused, older ⇒ migration chain). A new format gets its own
+  descriptor and a `format()` accessor; changing a layout means appending a `MigrationStep` (never editing
+  an old one) plus a test loading an old-version fixture.
+- **Every write of these files goes through `platform::writeFileAtomic`** (temp file + flush + rename): no
+  `std::ofstream` on a user document. A failed write keeps the old file and is reported (`false` /
+  `WriteError`), never silent.
+
 ## Hierarchy
 
 Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `childrenIds`); roots have

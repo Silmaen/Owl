@@ -74,7 +74,7 @@ TEST_F(TilemapComponentFixture, SerializePathOnlyForm) {
 
 	const SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tilemap_path_only.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 
 	const auto sc2 = mkShared<Scene>();
 	const SceneSerializer loader(sc2);
@@ -107,7 +107,7 @@ TEST_F(TilemapComponentFixture, SerializeInlineFallbackForUnsavedAsset) {
 
 	const SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tilemap_inline.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 
 	const auto sc2 = mkShared<Scene>();
 	const SceneSerializer loader(sc2);

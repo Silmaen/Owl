@@ -134,7 +134,7 @@ TEST(UIInteractive, serializeDeserializeViaScene) {
 		scn->setParent(barEnt, canvas);
 
 		const SceneSerializer serializer(scn);
-		serializer.serialize(scenePath);
+		EXPECT_TRUE(serializer.serialize(scenePath));
 	}
 	{
 		auto scn = mkShared<Scene>();

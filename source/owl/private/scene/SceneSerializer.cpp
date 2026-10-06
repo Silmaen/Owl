@@ -10,8 +10,10 @@
 #include "scene/SceneSerializer.h"
 
 #include "app/Application.h"
+#include "core/FormatVersionYaml.h"
 #include "core/Serializer.h"
 #include "core/SerializerImpl.h"
+#include "platform/AtomicFile.h"
 #include "scene/Entity.h"
 #include "scene/component/componentsSerialization.h"
 
@@ -32,6 +34,12 @@ auto describe(const SceneLoadError iError) -> std::string_view {
 			return "the file is not a scene";
 		case SceneLoadError::InvalidEntity:
 			return "an entity is malformed";
+		case SceneLoadError::InvalidFormatVersion:
+			return describe(core::FormatError::InvalidVersion);
+		case SceneLoadError::NewerFormatVersion:
+			return describe(core::FormatError::NewerVersion);
+		case SceneLoadError::MigrationFailed:
+			return describe(core::FormatError::MigrationFailed);
 	}
 	return "unknown error";
 }
@@ -39,6 +47,22 @@ auto describe(const SceneLoadError iError) -> std::string_view {
 SceneSerializer::SceneSerializer(const shared<Scene>& iScene) : mp_scene(iScene) {}
 
 namespace {
+
+constexpr std::array<core::MigrationStep, 0> g_sceneMigrations{};
+constexpr core::DocumentFormat g_sceneFormat{.name = "Scene", .migrations = g_sceneMigrations};
+
+auto toSceneLoadError(const core::FormatError iError) -> SceneLoadError {
+	switch (iError) {
+		case core::FormatError::InvalidVersion:
+			return SceneLoadError::InvalidFormatVersion;
+		case core::FormatError::NewerVersion:
+			return SceneLoadError::NewerFormatVersion;
+		case core::FormatError::MigrationFailed:
+			return SceneLoadError::MigrationFailed;
+	}
+	return SceneLoadError::MigrationFailed;
+}
+
 void serializeEntity(const core::Serializer& iOut, const Entity& iEntity) {
 	iOut.getImpl()->emitter << YAML::BeginMap;// Entity
 	iOut.getImpl()->emitter << YAML::Key << "Entity" << YAML::Value << iEntity.getUUID();
@@ -138,10 +162,13 @@ auto deserializePhysicsSettings(const YAML::Node& iNode) -> physics::PhysicsSett
 
 }// namespace
 
+auto SceneSerializer::format() -> const core::DocumentFormat& { return g_sceneFormat; }
+
 auto SceneSerializer::serializeToString() const -> std::string {
 	const core::Serializer sOut;
 	sOut.getImpl()->emitter << YAML::BeginMap;
 	sOut.getImpl()->emitter << YAML::Key << "Scene" << YAML::Value << "untitled";
+	emitFormatVersion(sOut.getImpl()->emitter, g_sceneFormat);
 	if (const auto& enabled = mp_scene->getEnabledRenderers(); !enabled.isEmpty()) {
 		sOut.getImpl()->emitter << YAML::Key << "EnabledRenderers" << YAML::Value << enabled.toYaml();
 	}
@@ -157,10 +184,12 @@ auto SceneSerializer::serializeToString() const -> std::string {
 	return sOut.getImpl()->emitter.c_str();
 }
 
-void SceneSerializer::serialize(const std::filesystem::path& iFilepath) const {
-	std::ofstream fileOut(iFilepath);
-	fileOut << serializeToString();
-	fileOut.close();
+auto SceneSerializer::serialize(const std::filesystem::path& iFilepath) const -> bool {
+	if (const auto written = platform::writeFileAtomic(iFilepath, serializeToString()); !written) {
+		OWL_CORE_ERROR("SceneSerializer: Unable to save scene {}: {}.", iFilepath.string(), describe(written.error()))
+		return false;
+	}
+	return true;
 }
 
 auto SceneSerializer::deserialize(const std::filesystem::path& iFilepath) const -> SceneLoadResult {
@@ -191,10 +220,20 @@ auto SceneSerializer::parseBuffer(const std::vector<uint8_t>& iData, const std::
 		const std::string yamlStr(iData.begin(), iData.end());
 		out.serializer = mkShared<core::Serializer>();
 		out.serializer->getImpl()->node.reset(YAML::Load(yamlStr));
-		const auto& root = out.serializer->getImpl()->node;
-		const auto entities = root.IsMap() ? root["Entities"] : YAML::Node{};
-		if (!root.IsMap() || !root["Scene"] || !root["Scene"].IsScalar() ||
-			(entities && !entities.IsNull() && !entities.IsSequence())) {
+		auto& root = out.serializer->getImpl()->node;
+		if (!root.IsMap() || !root["Scene"] || !root["Scene"].IsScalar()) {
+			out.error = std::format("Buffer {} is not a scene", iSourceName);
+			out.failure = SceneLoadError::NotAScene;
+			out.serializer.reset();
+			return out;
+		}
+		if (const auto version = upgradeYamlDocument(g_sceneFormat, root, iSourceName); !version) {
+			out.error = std::format("Buffer {} cannot be read: {}", iSourceName, describe(version.error()));
+			out.failure = toSceneLoadError(version.error());
+			out.serializer.reset();
+			return out;
+		}
+		if (const auto entities = root["Entities"]; entities && !entities.IsNull() && !entities.IsSequence()) {
 			out.error = std::format("Buffer {} is not a scene", iSourceName);
 			out.failure = SceneLoadError::NotAScene;
 			out.serializer.reset();

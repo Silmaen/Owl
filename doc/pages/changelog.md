@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Conan profiles for Windows MinGW (`windows-clang`, `windows-gcc`), DLLs deployed next to the binaries, provider selectable through `OWL_DEPENDENCY_PROVIDER` (environment and TeamCity parameter).
 - `Clang Static Analyzer` CI configuration (`ClangTidy -- --tool=analyzer`); both analyses close the TeamCity chain and are the checks to require on `main`.
 - `docker/run.sh` runs any build, test or CI command in the Docker build image (`--gui`, `--perf`).
+- Versioned file formats: scenes, prefabs, saves, tilesets, tilemaps, animation clips, voxel structures, node graphs, settings and `owl_project.yml` carry a `FormatVersion`; files without it load as version 1, newer files are refused with a clear error, older ones go through a registered migration chain (`core::DocumentFormat`).
+- `platform::writeFileAtomic` (temporary file, `fsync`, atomic rename) now writes all those files: a crash or a full disk keeps the previous file instead of truncating it.
 - `bench/` engine benchmark harness (scene, serialization, Renderer2D, voxel, Lua, physics, Slang), built with `-DOWL_BENCHMARK=ON`.
 - `ClangTidy` CI action: on a pull request, analyses only the touched `.cpp` files plus every `.cpp` whose include closure (`ninja -t deps`) holds a touched header; elsewhere, everything.
 - `-DOWL_DEPENDENCY_PROVIDER=conan` builds `linux-clang-release` with Conan 2 and ConanCenter (`conanfile.py`, six local recipes in `conan/recipes/`), without the DepManager server.
@@ -114,6 +116,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Raycast scenes no longer leak their textures past the device: the per-frame sprite, wall and door lists are cleared after drawing.
 - `raycast_demo.owl` uses asset-relative texture paths instead of absolute paths from one machine.
 - Voxel worlds now show in the exported game: `Scene::renderWithStack` meshes them for the runner and the editor alike (D-03).
+- `SceneSerializer::serialize`, `PrefabSerializer::serialize`, `SettingsManager::saveUserSettings` and the editor's `Project::loadFromFile` / `saveToFile` return `bool`; Lua `settings.save()` returns whether it succeeded.
+- `SceneSerializer::deserialize`, `deserializeFromBuffer` and `applyParsed` return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`) instead of `bool`.
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
 - `scene.destroy_entity` is deferred to the end of the frame (`Scene::destroyEntityDeferred`): a script destroying its own entity no longer frees its running Lua state, and the destroyed entity gets `on_destroy` once, loses its Box2D body and takes its children with it.
 - Lua `on_collision(other_id)` is now called: Box2D begin-touch contact events reach both entities' scripts once per touching pair, skipping entities hidden or pending destruction; `on_trigger_enter` / `on_trigger_exit` / `on_triggered` now receive the documented `other_id`.

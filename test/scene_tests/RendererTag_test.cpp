@@ -54,7 +54,7 @@ TEST(RendererTagComponent, serializeRoundTrip) {
 
 	const owl::scene::SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "rendererTagRoundTrip.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 	ASSERT_TRUE(exists(fs));
 
 	const auto sc2 = owl::mkShared<owl::scene::Scene>();
@@ -97,7 +97,7 @@ TEST(RendererTagComponent, sceneEnabledRenderersRoundTrip) {
 
 	const owl::scene::SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "enabledRenderersRoundTrip.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 
 	const auto sc2 = owl::mkShared<owl::scene::Scene>();
 	const owl::scene::SceneSerializer loader(sc2);

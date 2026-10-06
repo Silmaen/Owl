@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "core/FormatVersion.h"
 #include "math/vectors.h"
 #include "renderer/gpu/Texture.h"
 
@@ -71,7 +72,7 @@ struct OWL_API TileMeta {
  * The on-disk format is YAML with the extension `.owltileset`:
  * ```yaml
  * Tileset: <name>
- * Version: 1
+ * FormatVersion: 1
  * texture: <texture serialized name>     # optional
  * tileWidth: 32
  * tileHeight: 32
@@ -106,6 +107,13 @@ public:
 	 * @return The extension literal (`".owltileset"`).
 	 */
 	static auto fileExtension() noexcept -> const char* { return ".owltileset"; }
+
+	/**
+	 * @brief
+	 *  Format descriptor of the `.owltileset` files, with its migration chain.
+	 * @return The Tileset format.
+	 */
+	[[nodiscard]] static auto format() -> const core::DocumentFormat&;
 
 	/// Atlas texture (may be null while authoring).
 	shared<renderer::gpu::Texture2D> texture;
@@ -228,7 +236,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Save the tileset to disk.
+	 *  Save the tileset to disk. Atomic: a failed write keeps the previous file.
 	 * @param[in] iPath Destination file (`.owltileset` is conventional).
 	 * @param[in] iName Optional display name; defaults to the file stem.
 	 * @return True on success.

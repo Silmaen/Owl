@@ -319,7 +319,7 @@ project assets) overlaid with user overrides (`settings.yml` in user directory).
 | `settings.get(key)`        | Get a setting (override > default > nil)          |
 | `settings.get(key, def)`   | Get a setting with a fallback value               |
 | `settings.set(key, value)` | Set a user override (int, float, string, or bool) |
-| `settings.save()`          | Save user overrides to `settings.yml`             |
+| `settings.save()`          | Save user overrides to `settings.yml`, true if OK |
 | `settings.load()`          | Reload user overrides from `settings.yml`         |
 | `settings.reset(key)`      | Remove a user override (revert to default)        |
 | `settings.reset_all()`     | Remove all user overrides                         |

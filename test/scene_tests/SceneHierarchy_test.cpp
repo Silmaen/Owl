@@ -268,7 +268,7 @@ TEST(SceneHierarchy, SerializationRoundTrip) {
 		child.getComponent<Transform>().transform.translation() = {3.f, 0.f, 0.f};
 		sc->setParent(child, parent);
 		const SceneSerializer serializer(sc);
-		serializer.serialize(filePath);
+		EXPECT_TRUE(serializer.serialize(filePath));
 	}
 	{
 		const owl::shared<Scene> sc = owl::mkShared<Scene>();

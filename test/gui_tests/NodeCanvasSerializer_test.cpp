@@ -191,3 +191,31 @@ TEST(NodeCanvasSerializer, SerializeToFileFailsOnInvalidPath) {
 	EXPECT_FALSE(NodeCanvasSerializer::serializeToFile(src, badPath, "x"));
 	owl::core::Log::invalidate();
 }
+
+TEST(NodeCanvasSerializer, FileRoundTripCarriesTheFormatVersion) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	NodeCanvas src;
+	src.addNode(makeNode("A", {1.0f, 2.0f}, {}, {"out"}));
+	const auto dir = std::filesystem::temp_directory_path() / "owl_node_canvas_format_test";
+	std::filesystem::create_directories(dir);
+	const auto path = dir / "flow.owlflow";
+	ASSERT_TRUE(NodeCanvasSerializer::serializeToFile(src, path, "flow"));
+	NodeCanvas dst;
+	ASSERT_TRUE(NodeCanvasSerializer::deserializeFromFile(dst, path));
+	EXPECT_EQ(dst.nodes().size(), 1u);
+
+	const auto yaml = NodeCanvasSerializer::serializeToString(src, "flow");
+	const auto at = yaml.find("FormatVersion: 1\n");
+	ASSERT_NE(at, std::string::npos);
+	std::string legacy = yaml;
+	legacy.replace(at, 17, "Version: 1\n");
+	EXPECT_TRUE(NodeCanvasSerializer::deserializeFromString(dst, legacy));
+	std::string future = yaml;
+	future.replace(at, 16, "FormatVersion: 5");
+	NodeCanvas untouched;
+	untouched.addNode(makeNode("Keep", {0.0f, 0.0f}));
+	EXPECT_FALSE(NodeCanvasSerializer::deserializeFromString(untouched, future));
+	EXPECT_EQ(untouched.nodes().size(), 1u);
+	std::filesystem::remove_all(dir);
+	owl::core::Log::invalidate();
+}

@@ -114,7 +114,7 @@ TEST(SettingsManager, SaveLoadRoundTrip) {
 	SettingsManager::set("fullscreen", true);
 	SettingsManager::set("score", int64_t{42});
 
-	SettingsManager::saveUserSettings();
+	EXPECT_TRUE(SettingsManager::saveUserSettings());
 
 	// Clear overrides and reload.
 	SettingsManager::resetAllToDefaults();

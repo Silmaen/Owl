@@ -116,7 +116,7 @@ TEST(GenerateSampleScenes, mainMenu) {
 	scn->setParent(versionEntity, canvasEntity);
 
 	const SceneSerializer serializer(scn);
-	serializer.serialize(dir / "main_menu.owl");
+	EXPECT_TRUE(serializer.serialize(dir / "main_menu.owl"));
 	EXPECT_TRUE(std::filesystem::exists(dir / "main_menu.owl"));
 	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
@@ -250,7 +250,7 @@ TEST(GenerateSampleScenes, gameplay) {
 	scn->setParent(instrEntity, hudCanvas);
 
 	const SceneSerializer serializer(scn);
-	serializer.serialize(dir / "gameplay.owl");
+	EXPECT_TRUE(serializer.serialize(dir / "gameplay.owl"));
 	EXPECT_TRUE(std::filesystem::exists(dir / "gameplay.owl"));
 	std::filesystem::remove_all(dir);
 	core::Log::invalidate();

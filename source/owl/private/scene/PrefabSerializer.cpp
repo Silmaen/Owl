@@ -10,8 +10,10 @@
 #include "scene/PrefabSerializer.h"
 #include "scene/SceneSerializer.h"
 
+#include "core/FormatVersionYaml.h"
 #include "core/Serializer.h"
 #include "core/SerializerImpl.h"
+#include "platform/AtomicFile.h"
 #include "scene/Entity.h"
 #include "scene/component/Hierarchy.h"
 #include "scene/component/PrefabLink.h"
@@ -26,6 +28,21 @@
 namespace owl::scene {
 
 namespace {
+
+constexpr std::array<core::MigrationStep, 0> g_prefabMigrations{};
+constexpr core::DocumentFormat g_prefabFormat{.name = "Prefab", .migrations = g_prefabMigrations};
+
+auto loadPrefabDocument(const std::filesystem::path& iFilepath) -> std::optional<YAML::Node> {
+	auto root = YAML::LoadFile(iFilepath.string());
+	if (!root.IsMap() || !root["Prefab"]) {
+		OWL_CORE_ERROR("Prefab: '{}' is not a prefab file (missing 'Prefab' key).", iFilepath.string())
+		return std::nullopt;
+	}
+	if (!upgradeYamlDocument(g_prefabFormat, root, iFilepath.string()))
+		return std::nullopt;
+	return root;
+}
+
 void serializeEntity(const core::Serializer& iOut, const Entity& iEntity) {
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "Entity" << YAML::Value << iEntity.getUUID();
@@ -78,6 +95,7 @@ auto PrefabSerializer::serializeToString(const Entity& iRootEntity, const Scene&
 	const core::Serializer sOut;
 	sOut.getImpl()->emitter << YAML::BeginMap;
 	sOut.getImpl()->emitter << YAML::Key << "Prefab" << YAML::Value << iPrefabName;
+	emitFormatVersion(sOut.getImpl()->emitter, g_prefabFormat);
 	sOut.getImpl()->emitter << YAML::Key << "Version" << YAML::Value << 1;
 	sOut.getImpl()->emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 	for (const auto& entity: entities) serializeEntity(sOut, entity);
@@ -86,22 +104,28 @@ auto PrefabSerializer::serializeToString(const Entity& iRootEntity, const Scene&
 	return sOut.getImpl()->emitter.c_str();
 }
 
-void PrefabSerializer::serialize(const Entity& iRootEntity, const Scene& iScene, const std::filesystem::path& iFilepath,
-								 const std::string& iPrefabName) {
-	std::ofstream fileOut(iFilepath);
-	fileOut << serializeToString(iRootEntity, iScene, iPrefabName);
-	fileOut.close();
+auto PrefabSerializer::format() -> const core::DocumentFormat& { return g_prefabFormat; }
+
+auto PrefabSerializer::serialize(const Entity& iRootEntity, const Scene& iScene, const std::filesystem::path& iFilepath,
+								 const std::string& iPrefabName) -> bool {
+	if (const auto written = platform::writeFileAtomic(iFilepath, serializeToString(iRootEntity, iScene, iPrefabName));
+		!written) {
+		OWL_CORE_ERROR("Prefab: Unable to save '{}': {}.", iFilepath.string(), describe(written.error()))
+		return false;
+	}
+	return true;
 }
 
 auto PrefabSerializer::instantiate(const std::filesystem::path& iFilepath, const shared<Scene>& ioScene,
 								   const std::string& iAssetRelativePath) -> Entity {
 	try {
-		const core::Serializer sData;
-		sData.getImpl()->node.reset(YAML::LoadFile(iFilepath.string()));
-		if (!sData.getImpl()->node["Prefab"]) {
-			OWL_CORE_ERROR("File {} is not a prefab.", iFilepath.string())
+		const auto document = loadPrefabDocument(iFilepath);
+		if (!document) {
+			OWL_CORE_ERROR("Prefab: Unable to instantiate '{}'.", iFilepath.string())
 			return {};
 		}
+		const core::Serializer sData;
+		sData.getImpl()->node.reset(*document);
 		const uint32_t version = sData.getImpl()->node["Version"] ? sData.getImpl()->node["Version"].as<uint32_t>() : 1;
 
 		const auto entitiesNode = sData.getImpl()->node["Entities"];
@@ -191,9 +215,12 @@ auto PrefabSerializer::instantiate(const std::filesystem::path& iFilepath, const
 
 auto PrefabSerializer::readInfo(const std::filesystem::path& iFilepath) -> std::optional<PrefabInfo> {
 	try {
-		const auto data = YAML::LoadFile(iFilepath.string());
-		if (!data["Prefab"])
+		const auto document = loadPrefabDocument(iFilepath);
+		if (!document) {
+			OWL_CORE_WARN("Prefab: Cannot read info from '{}'.", iFilepath.string())
 			return std::nullopt;
+		}
+		const auto& data = *document;
 		PrefabInfo info;
 		info.name = data["Prefab"].as<std::string>();
 		info.version = data["Version"] ? data["Version"].as<uint32_t>() : 1;
@@ -217,12 +244,13 @@ struct LoadedPrefab {
 
 auto loadPrefabToTempScene(const std::filesystem::path& iFilepath) -> std::optional<LoadedPrefab> {
 	try {
-		const core::Serializer sData;
-		sData.getImpl()->node.reset(YAML::LoadFile(iFilepath.string()));
-		if (!sData.getImpl()->node["Prefab"]) {
-			OWL_CORE_WARN("Prefab: '{}' is not a valid prefab file (missing 'Prefab' key).", iFilepath.string())
+		const auto document = loadPrefabDocument(iFilepath);
+		if (!document) {
+			OWL_CORE_WARN("Prefab: Cannot load '{}'.", iFilepath.string())
 			return std::nullopt;
 		}
+		const core::Serializer sData;
+		sData.getImpl()->node.reset(*document);
 		const uint32_t version = sData.getImpl()->node["Version"] ? sData.getImpl()->node["Version"].as<uint32_t>() : 1;
 		const auto entitiesNode = sData.getImpl()->node["Entities"];
 		if (!entitiesNode) {

@@ -111,7 +111,7 @@ own schema into node
 
 ```yaml
 NodeGraph: MyFlow
-Version: 1
+FormatVersion: 1
 Nodes:
   - id: 12345
     title: "Level 1"

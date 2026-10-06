@@ -12,6 +12,9 @@
 #include <data/voxel/VoxelStructure.h>
 #include <data/voxel/VoxelWorld.h>
 
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <string>
 
 using namespace owl;
@@ -105,4 +108,44 @@ TEST_F(VoxelStructureFixture, CaptureAndStampPreserveMeta) {
 	VoxelWorld out;
 	structure.stampInto(out, math::vec3i{0, 0, 0});
 	EXPECT_EQ(out.getMeta(math::vec3i{0, 0, 0}), m);
+}
+
+TEST_F(VoxelStructureFixture, FileRoundTripCarriesTheFormatVersion) {
+	VoxelStructure structure;
+	structure.size = math::vec3i{1, 2, 1};
+	structure.blocks = {1, 2};
+	const auto dir = std::filesystem::temp_directory_path() / "owl_voxel_structure_format_test";
+	std::filesystem::create_directories(dir);
+	const auto path = dir / "pillar.owlvoxstruct";
+	ASSERT_TRUE(structure.saveToFile(path, "pillar"));
+	std::string text;
+	{
+		const std::ifstream in(path, std::ios::binary);
+		std::stringstream buffer;
+		buffer << in.rdbuf();
+		text = buffer.str();
+	}
+	EXPECT_NE(text.find("FormatVersion: 1"), std::string::npos);
+	VoxelStructure loaded;
+	ASSERT_TRUE(loaded.deserializeFromString(text));
+	EXPECT_EQ(loaded.at(0, 1, 0), 2);
+	std::filesystem::remove_all(dir);
+}
+
+TEST_F(VoxelStructureFixture, FormatVersionIsChecked) {
+	VoxelStructure structure;
+	structure.size = math::vec3i{1, 1, 1};
+	structure.blocks = {1};
+	const std::string current = structure.serializeToString("one");
+	const auto at = current.find("FormatVersion: 1\n");
+	ASSERT_NE(at, std::string::npos);
+	VoxelStructure loaded;
+	EXPECT_TRUE(loaded.deserializeFromString(current));
+	std::string legacy = current;
+	legacy.erase(at, 17);
+	EXPECT_TRUE(loaded.deserializeFromString(legacy));
+	std::string future = current;
+	future.replace(at, 16, "FormatVersion: 9");
+	EXPECT_FALSE(loaded.deserializeFromString(future));
+	EXPECT_FALSE(loaded.deserializeFromString("Structure: [unterminated"));
 }

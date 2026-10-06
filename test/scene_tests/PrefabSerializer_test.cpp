@@ -40,7 +40,7 @@ TEST(PrefabSerializer, SerializeAndInstantiate) {
 	root.addComponent<component::SpriteRenderer>().color = {0.5f, 0.5f, 0.5f, 1.f};
 
 	const auto prefabFile = std::filesystem::temp_directory_path() / "test_prefab.owlprefab";
-	PrefabSerializer::serialize(root, *srcScene, prefabFile, "TestPrefab");
+	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "TestPrefab"));
 	ASSERT_TRUE(exists(prefabFile));
 
 	// Instantiate into a fresh scene.
@@ -99,7 +99,7 @@ TEST(PrefabSerializer, ReadInfo) {
 	srcScene->setParent(child, root);
 
 	const auto prefabFile = std::filesystem::temp_directory_path() / "test_info.owlprefab";
-	PrefabSerializer::serialize(root, *srcScene, prefabFile, "InfoPrefab");
+	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "InfoPrefab"));
 	ASSERT_TRUE(exists(prefabFile));
 
 	const auto info = PrefabSerializer::readInfo(prefabFile);
@@ -152,7 +152,7 @@ TEST(PrefabSerializer, InstantiateSubtree) {
 	srcScene->setParent(child, root);
 
 	const auto prefabFile = std::filesystem::temp_directory_path() / "test_subtree.owlprefab";
-	PrefabSerializer::serialize(root, *srcScene, prefabFile, "SubtreePrefab");
+	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "SubtreePrefab"));
 
 	auto dstScene = mkShared<Scene>();
 	auto instanceRoot = PrefabSerializer::instantiate(prefabFile, dstScene, "sub.owlprefab");
@@ -184,7 +184,7 @@ TEST(PrefabSerializer, InstantiateDefaultAssetPath) {
 	auto srcScene = mkShared<Scene>();
 	auto root = srcScene->createEntity("DefPath");
 	const auto prefabFile = std::filesystem::temp_directory_path() / "default_path.owlprefab";
-	PrefabSerializer::serialize(root, *srcScene, prefabFile, "DefPathPrefab");
+	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "DefPathPrefab"));
 
 	auto dstScene = mkShared<Scene>();
 	auto instance = PrefabSerializer::instantiate(prefabFile, dstScene);
@@ -266,7 +266,7 @@ TEST(PrefabSerializer, ApplyToInstanceRefreshesNonOverridden) {
 	root.addComponent<component::SpriteRenderer>().color = {1.f, 0.f, 0.f, 1.f};
 
 	const auto prefabFile = std::filesystem::temp_directory_path() / "apply_test.owlprefab";
-	PrefabSerializer::serialize(root, *srcScene, prefabFile, "ApplyPrefab");
+	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "ApplyPrefab"));
 
 	// 2. Instantiate.
 	auto dstScene = mkShared<Scene>();
@@ -279,7 +279,7 @@ TEST(PrefabSerializer, ApplyToInstanceRefreshesNonOverridden) {
 	// 4. Now update the prefab source: change transform and SpriteRenderer colour.
 	root.getComponent<component::Transform>().transform.translation() = {99.f, 0.f, 0.f};
 	root.getComponent<component::SpriteRenderer>().color = {0.f, 0.f, 1.f, 1.f};
-	PrefabSerializer::serialize(root, *srcScene, prefabFile, "ApplyPrefab");
+	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "ApplyPrefab"));
 
 	// 5. Apply — no overrides, so everything should update to the new prefab.
 	EXPECT_TRUE(PrefabSerializer::applyToInstance(prefabFile, instance, *dstScene));
@@ -312,7 +312,7 @@ TEST(PrefabSerializer, ApplyToInstancePreservesOverrides) {
 	root.addComponent<component::SpriteRenderer>().color = {1.f, 0.f, 0.f, 1.f};
 
 	const auto prefabFile = std::filesystem::temp_directory_path() / "override_test.owlprefab";
-	PrefabSerializer::serialize(root, *srcScene, prefabFile, "OverridePrefab");
+	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "OverridePrefab"));
 
 	// 2. Instantiate.
 	auto dstScene = mkShared<Scene>();
@@ -328,7 +328,7 @@ TEST(PrefabSerializer, ApplyToInstancePreservesOverrides) {
 	// 4. Update the prefab (change both transform and sprite colour).
 	root.getComponent<component::Transform>().transform.translation() = {50.f, 0.f, 0.f};
 	root.getComponent<component::SpriteRenderer>().color = {0.f, 0.f, 1.f, 1.f};
-	PrefabSerializer::serialize(root, *srcScene, prefabFile, "OverridePrefab");
+	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "OverridePrefab"));
 
 	// 5. Apply — SpriteRenderer is overridden, so it should stay green.
 	EXPECT_TRUE(PrefabSerializer::applyToInstance(prefabFile, instance, *dstScene));
@@ -388,7 +388,7 @@ TEST(PrefabSerializer, ApplyToInstanceMissingFile) {
 	auto srcScene = mkShared<Scene>();
 	auto root = srcScene->createEntity("MissingFileRoot");
 	const auto prefabFile = std::filesystem::temp_directory_path() / "apply_missing.owlprefab";
-	PrefabSerializer::serialize(root, *srcScene, prefabFile, "MissingTest");
+	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "MissingTest"));
 
 	auto dstScene = mkShared<Scene>();
 	auto instance = PrefabSerializer::instantiate(prefabFile, dstScene, "apply_missing.owlprefab");
@@ -418,7 +418,7 @@ TEST(PrefabSerializer, RevertInstanceClearsOverrides) {
 	root.addComponent<component::SpriteRenderer>().color = {1.f, 0.f, 0.f, 1.f};
 
 	const auto prefabFile = std::filesystem::temp_directory_path() / "revert_test.owlprefab";
-	PrefabSerializer::serialize(root, *srcScene, prefabFile, "RevertPrefab");
+	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "RevertPrefab"));
 
 	// 2. Instantiate.
 	auto dstScene = mkShared<Scene>();
@@ -491,7 +491,7 @@ TEST(PrefabSerializer, RevertInstanceMissingFile) {
 	auto srcScene = mkShared<Scene>();
 	auto root = srcScene->createEntity("RevertMissRoot");
 	const auto prefabFile = std::filesystem::temp_directory_path() / "revert_missing.owlprefab";
-	PrefabSerializer::serialize(root, *srcScene, prefabFile, "RevertMissTest");
+	EXPECT_TRUE(PrefabSerializer::serialize(root, *srcScene, prefabFile, "RevertMissTest"));
 
 	auto dstScene = mkShared<Scene>();
 	auto instance = PrefabSerializer::instantiate(prefabFile, dstScene, "revert_missing.owlprefab");

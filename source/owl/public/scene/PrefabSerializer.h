@@ -9,6 +9,7 @@
 #pragma once
 
 #include "Scene.h"
+#include "core/FormatVersion.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -30,14 +31,24 @@ public:
 
 	/**
 	 * @brief
-	 *  Serialize an entity subtree to a .owlprefab file.
+	 *  Format descriptor of the prefab files (`.owlprefab`), with its migration chain.
+	 *
+	 * Distinct from the prefab `Version`, which counts the edits of one prefab's content.
+	 * @return The prefab format.
+	 */
+	[[nodiscard]] static auto format() -> const core::DocumentFormat&;
+
+	/**
+	 * @brief
+	 *  Serialize an entity subtree to a .owlprefab file, atomically (see `platform::writeFileAtomic`).
 	 * @param[in] iRootEntity The root entity of the subtree.
 	 * @param[in] iScene The scene containing the entity.
 	 * @param[in] iFilepath Path to write the .owlprefab file.
 	 * @param[in] iPrefabName Human-readable name for the prefab.
+	 * @return True on success; on failure the previous file is left untouched.
 	 */
-	static void serialize(const Entity& iRootEntity, const Scene& iScene, const std::filesystem::path& iFilepath,
-						  const std::string& iPrefabName);
+	[[nodiscard]] static auto serialize(const Entity& iRootEntity, const Scene& iScene,
+										const std::filesystem::path& iFilepath, const std::string& iPrefabName) -> bool;
 
 	/**
 	 * @brief
@@ -55,7 +66,8 @@ public:
 	 *  Instantiate a prefab from file into a scene.
 	 *
 	 * Creates new entities with new UUIDs and adds a PrefabLink component
-	 * to the root entity with the UUID mapping and asset path.
+	 * to the root entity with the UUID mapping and asset path. An older format
+	 * version is migrated on the fly, a newer one is refused.
 	 * @param[in] iFilepath Path to the .owlprefab file.
 	 * @param[in] ioScene The scene to instantiate into.
 	 * @param[in] iAssetRelativePath Relative path for the PrefabLink (e.g., "prefabs/enemy.owlprefab").

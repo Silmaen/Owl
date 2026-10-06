@@ -16,6 +16,7 @@
 #include "EditorLayer.h"
 
 #include <gui/widgets/NodeCanvasSerializer.h>
+#include <platform/AtomicFile.h>
 #include <scene/Entity.h>
 #include <scene/component/Transform.h>
 #include <scene/component/Trigger.h>
@@ -433,15 +434,13 @@ void applyBarycentreOrdering(const std::vector<SceneSummary>& iSummaries, const 
 }
 
 auto writeEmptyScene(const std::filesystem::path& iAbsolutePath) -> bool {
-	std::ofstream out(iAbsolutePath);
-	if (!out) {
-		OWL_CORE_ERROR("SceneFlow: cannot open '{}' for writing.", iAbsolutePath.string())
+	const auto content = std::format("Scene: {}\n{}: {}\nEntities: []\n", iAbsolutePath.stem().string(),
+									 core::g_FormatVersionKey, scene::SceneSerializer::format().currentVersion());
+	if (const auto written = platform::writeFileAtomic(iAbsolutePath, content); !written) {
+		OWL_CORE_ERROR("SceneFlow: Cannot write '{}': {}.", iAbsolutePath.string(), describe(written.error()))
 		return false;
 	}
-	const auto stem = iAbsolutePath.stem().string();
-	out << "Scene: " << stem << '\n';
-	out << "Entities: []\n";
-	return out.good();
+	return true;
 }
 
 }// namespace

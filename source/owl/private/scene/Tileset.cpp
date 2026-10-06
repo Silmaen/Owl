@@ -7,7 +7,9 @@
  */
 #include "owlpch.h"
 
+#include "core/FormatVersionYaml.h"
 #include "core/external/yaml.h"
+#include "platform/AtomicFile.h"
 #include "scene/Tileset.h"
 
 #include <cstdint>
@@ -15,6 +17,13 @@
 #include <sstream>
 
 namespace owl::scene {
+
+namespace {
+constexpr std::array<core::MigrationStep, 0> g_tilesetMigrations{};
+constexpr core::DocumentFormat g_tilesetFormat{.name = "Tileset", .migrations = g_tilesetMigrations};
+}// namespace
+
+auto Tileset::format() -> const core::DocumentFormat& { return g_tilesetFormat; }
 
 namespace {
 constexpr auto g_FullAtlasUv = std::array<math::vec2, 4>{math::vec2{0.f, 0.f}, math::vec2{1.f, 0.f},
@@ -109,7 +118,7 @@ auto Tileset::serializeToString(const std::string_view iName) const -> std::stri
 	YAML::Emitter emitter;
 	emitter << YAML::BeginMap;
 	emitter << YAML::Key << "Tileset" << YAML::Value << std::string{iName};
-	emitter << YAML::Key << "Version" << YAML::Value << 1;
+	core::emitFormatVersion(emitter, g_tilesetFormat);
 	if (texture)
 		emitter << YAML::Key << "texture" << YAML::Value << texture->getSerializeString();
 	emitter << YAML::Key << "tileWidth" << YAML::Value << tileWidth;
@@ -158,8 +167,14 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 		OWL_CORE_ERROR("Tileset: failed to parse YAML — {}.", e.what())
 		return false;
 	}
-	if (!root || !root.IsMap() || !root["Tileset"])
+	if (!root || !root.IsMap() || !root["Tileset"]) {
+		OWL_CORE_WARN("Tileset: Document is not a tileset.")
 		return false;
+	}
+	if (!core::upgradeYamlDocument(g_tilesetFormat, root, "<buffer>")) {
+		OWL_CORE_ERROR("Tileset: Document cannot be read.")
+		return false;
+	}
 	Tileset parsed;
 	if (const auto fm = root["filterMode"]; fm && fm.IsScalar()) {
 		if (const auto v = fm.as<std::string>(); v == "Nearest")
@@ -206,14 +221,12 @@ auto Tileset::deserializeFromString(const std::string_view iYaml) -> bool {
 }
 
 auto Tileset::saveToFile(const std::filesystem::path& iPath, const std::string_view iName) const -> bool {
-	std::ofstream out(iPath, std::ios::binary);
-	if (!out.is_open()) {
-		OWL_CORE_ERROR("Tileset: failed to open '{}' for writing.", iPath.string())
+	const auto displayName = iName.empty() ? iPath.stem().string() : std::string{iName};
+	if (const auto written = platform::writeFileAtomic(iPath, serializeToString(displayName)); !written) {
+		OWL_CORE_ERROR("Tileset: Failed to write '{}': {}.", iPath.string(), describe(written.error()))
 		return false;
 	}
-	const auto displayName = iName.empty() ? iPath.stem().string() : std::string{iName};
-	out << serializeToString(displayName);
-	return out.good();
+	return true;
 }
 
 auto Tileset::loadFromFile(const std::filesystem::path& iPath) -> bool {

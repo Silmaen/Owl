@@ -22,7 +22,7 @@ TEST(SceneSerializer, SaveLoad) {
 	sc->createEntityWithUUID(5, "bobObject");
 	const SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tempSave.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 
 	ASSERT_TRUE(exists(fs));
 	const auto sc2 = owl::mkShared<Scene>();
@@ -64,7 +64,7 @@ TEST(SceneSerializer, SaveLoadFULL) {
 
 	const SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tempSave.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 
 	ASSERT_TRUE(exists(fs));
 	const auto sc2 = owl::mkShared<Scene>();
@@ -87,7 +87,7 @@ TEST(SceneSerializer, VisibilityRoundTrip) {
 
 	const SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "tempVisibility.yml";
-	saver.serialize(fs);
+	EXPECT_TRUE(saver.serialize(fs));
 
 	ASSERT_TRUE(exists(fs));
 	const auto sc2 = owl::mkShared<Scene>();

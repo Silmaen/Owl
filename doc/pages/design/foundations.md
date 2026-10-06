@@ -73,7 +73,8 @@ Every fix lands with its regression test.
   called (PR-13: C-08, D-04)
 - ![Done][done] Lua hardening — text-only chunks, time / memory quotas, exception trampoline
   (PR-14: D-06, D-16)
-- ![Planned][planned] Scene format version and atomic writes (PR-25: C-10, C-13)
+- ![Done][done] Format version and atomic writes — every engine file carries a `FormatVersion` with a migration
+  chain, newer files are refused, and writes go through a temporary file renamed in place (PR-25: C-10, C-13)
 - ![Done][done] `on_collision` implemented — the callback documented since v0.1 is fed by Box2D contact events,
   with the entity it collided with (D-07, I-02); the rest of the 2D physics API is v0.5.0, see
   [Physics API](physics-api.md)

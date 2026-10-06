@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <core/FormatVersion.h>
 #include <owl.h>
 #include <renderer/RenderStack.h>
 
@@ -55,17 +56,28 @@ struct Project {
 
 	/**
 	 * @brief
-	 *  Load project configuration from a YAML file.
-	 * @param[in] iFile The file to load.
+	 *  Format descriptor of `owl_project.yml`, with its migration chain.
+	 * @return The project format.
 	 */
-	void loadFromFile(const std::filesystem::path& iFile);
+	[[nodiscard]] static auto format() -> const core::DocumentFormat&;
 
 	/**
 	 * @brief
-	 *  Save project configuration to a YAML file.
-	 * @param[in] iFile The file to save.
+	 *  Load project configuration from a YAML file.
+	 *
+	 * An older format version is migrated, a newer one is refused.
+	 * @param[in] iFile The file to load.
+	 * @return True on success; on failure the project is left as it was.
 	 */
-	void saveToFile(const std::filesystem::path& iFile) const;
+	[[nodiscard]] auto loadFromFile(const std::filesystem::path& iFile) -> bool;
+
+	/**
+	 * @brief
+	 *  Save project configuration to a YAML file, atomically: a failed save keeps the previous file.
+	 * @param[in] iFile The file to save.
+	 * @return True on success.
+	 */
+	[[nodiscard]] auto saveToFile(const std::filesystem::path& iFile) const -> bool;
 
 	/**
 	 * @brief

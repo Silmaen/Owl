@@ -10,6 +10,8 @@
 #include "scene/SettingsManager.h"
 
 #include "app/Application.h"
+#include "core/FormatVersionYaml.h"
+#include "platform/AtomicFile.h"
 #include "sound/SoundCommand.h"
 
 OWL_DIAG_PUSH
@@ -22,7 +24,6 @@ OWL_DIAG_POP
 #include <fstream>
 #include <type_traits>
 #include <variant>
-
 namespace owl::scene {
 
 std::string SettingsManager::s_gameName;
@@ -54,6 +55,10 @@ auto SettingsManager::getUserDirectory() -> std::filesystem::path {
 auto SettingsManager::getSettingsPath() -> std::filesystem::path { return getUserDirectory() / "settings.yml"; }
 
 namespace {
+
+constexpr std::array<core::MigrationStep, 0> g_settingsMigrations{};
+constexpr core::DocumentFormat g_settingsFormat{.name = "Settings", .migrations = g_settingsMigrations};
+
 void serializeValue(YAML::Emitter& iOut, const std::string& iKey, const SettingsManager::Value& iValue) {
 	iOut << YAML::BeginMap;
 	iOut << YAML::Key << "key" << YAML::Value << iKey;
@@ -98,23 +103,35 @@ auto deserializeEntries(const YAML::Node& iNode) -> std::unordered_map<std::stri
 	return result;
 }
 
+auto loadSettingsEntries(YAML::Node iRoot, const std::string_view iSection, const std::string_view iSourceName)
+		-> std::optional<std::unordered_map<std::string, SettingsManager::Value>> {
+	if (!core::upgradeYamlDocument(g_settingsFormat, iRoot, iSourceName)) {
+		OWL_CORE_WARN("SettingsManager: Ignoring settings from {}.", iSourceName)
+		return std::nullopt;
+	}
+	const auto entries = iRoot[std::string{iSection}];
+	if (!entries)
+		return std::nullopt;
+	return deserializeEntries(entries);
+}
+
 }// namespace
+
+auto SettingsManager::format() -> const core::DocumentFormat& { return g_settingsFormat; }
 
 void SettingsManager::loadDefaults(const std::filesystem::path& iPath) {
 	if (!exists(iPath))
 		return;
 	try {
-		const auto data = YAML::LoadFile(iPath.string());
-		if (const auto entries = data["GameSettings"]; entries)
-			s_defaults = deserializeEntries(entries);
+		if (auto entries = loadSettingsEntries(YAML::LoadFile(iPath.string()), "GameSettings", iPath.string()); entries)
+			s_defaults = std::move(*entries);
 	} catch (...) { OWL_CORE_WARN("Failed to load game settings from {}.", iPath.string()) }
 }
 
 void SettingsManager::loadDefaultsFromString(const std::string& iContent) {
 	try {
-		const auto data = YAML::Load(iContent);
-		if (const auto entries = data["GameSettings"]; entries)
-			s_defaults = deserializeEntries(entries);
+		if (auto entries = loadSettingsEntries(YAML::Load(iContent), "GameSettings", "<buffer>"); entries)
+			s_defaults = std::move(*entries);
 	} catch (...) { OWL_CORE_WARN("Failed to parse game settings from string.") }
 }
 
@@ -123,23 +140,28 @@ void SettingsManager::loadUserSettings() {
 	if (!exists(path))
 		return;
 	try {
-		const auto data = YAML::LoadFile(path.string());
-		if (const auto entries = data["UserSettings"]; entries)
-			s_overrides = deserializeEntries(entries);
+		if (auto entries = loadSettingsEntries(YAML::LoadFile(path.string()), "UserSettings", path.string()); entries)
+			s_overrides = std::move(*entries);
 	} catch (...) { OWL_CORE_WARN("Failed to load user settings from {}.", path.string()) }
 }
 
-void SettingsManager::saveUserSettings() {
+auto SettingsManager::saveUserSettings() -> bool {
 	const auto path = getSettingsPath();
-	create_directories(path.parent_path());
+	std::error_code ec;
+	create_directories(path.parent_path(), ec);
 	YAML::Emitter out;
 	out << YAML::BeginMap;
+	core::emitFormatVersion(out, g_settingsFormat);
 	out << YAML::Key << "UserSettings" << YAML::Value << YAML::BeginSeq;
 	for (const auto& [key, value]: s_overrides) serializeValue(out, key, value);
 	out << YAML::EndSeq;
 	out << YAML::EndMap;
-	std::ofstream fileOut(path);
-	fileOut << out.c_str();
+	if (const auto written = platform::writeFileAtomic(path, out.c_str()); !written) {
+		OWL_CORE_ERROR("SettingsManager: Cannot save user settings to {}: {}.", path.string(),
+					   describe(written.error()))
+		return false;
+	}
+	return true;
 }
 
 void SettingsManager::setDefault(const std::string& iKey, Value iValue) { s_defaults[iKey] = std::move(iValue); }
