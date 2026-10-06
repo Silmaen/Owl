@@ -1,0 +1,73 @@
+Scene: RenderTestText
+EnabledRenderers:
+- {Name: raycast_world, Enabled: false}
+Entities:
+- Entity: 9200000000000000001
+  Tag: {tag: MainCamera}
+  Transform:
+    translation: [0, 0, 5]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Camera:
+    camera: {projectionType: Orthographic, perspectiveFOV: 0.785398185, perspectiveNear: 0.00999999978, perspectiveFar: 1000,
+      orthographicSize: 8, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+  Visibility: {gameVisible: true}
+- Entity: 9200000000000000002
+  Tag: {tag: Background}
+  Transform:
+    translation: [0, 0, -1]
+    rotation: [0, 0, 0]
+    scale: [20, 15, 1]
+  BackgroundTexture:
+    mode: 0
+    type: 0
+    color: [0.08, 0.08, 0.1, 1]
+    topColor: [0.08, 0.08, 0.1, 1]
+  Visibility: {gameVisible: true}
+- Entity: 9200000000000000003
+  Tag: {tag: Title}
+  Transform:
+    translation: [-5, 1.5, 0]
+    rotation: [0, 0, 0]
+    scale: [1.5, 1.5, 1]
+  TextRenderer: {color: [1, 1, 1, 1], kerning: 0, lineSpacing: 0, text: Owl Engine}
+  Visibility: {gameVisible: true}
+- Entity: 9200000000000000004
+  Tag: {tag: Multiline}
+  Transform:
+    translation: [-5, -0.5, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  TextRenderer: {color: [0.4, 0.85, 1, 1], kerning: 0, lineSpacing: 0, text: "Image tests\non lavapipe & llvmpipe"}
+  Visibility: {gameVisible: true}
+- Entity: 9200000000000000005
+  Tag: {tag: Rotated}
+  Transform:
+    translation: [1.5, -3, 0]
+    rotation: [0, 0, 0.3]
+    scale: [0.7, 0.7, 1]
+  TextRenderer: {color: [1, 0.6, 0.2, 1], kerning: 0, lineSpacing: 0, text: "0123456789 !?"}
+  Visibility: {gameVisible: true}
+- Entity: 9200000000000000010
+  Tag: {tag: HudCanvas}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Canvas: {space: ScreenOverlay, sortOrder: 0}
+  Visibility: {gameVisible: true}
+  Hierarchy: {}
+  RendererTag: {Name: ui}
+- Entity: 9200000000000000011
+  Tag: {tag: HudLabel}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 9200000000000000010}
+  RendererTag: {Name: ui}
+  UiRect: {anchor: TopLeft, pivotX: 0, pivotY: 1, sizeX: 300, sizeY: 30, offsetX: 10, offsetY: -10}
+  UiText: {text: 'Screen-space UI text', color: [0.6, 1, 0.6, 1], fontSize: 20, alignment: Left, kerning: 0, lineSpacing: 0}

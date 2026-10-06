@@ -99,7 +99,7 @@ auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::files
 		std::fputs(options.error().c_str(), stderr);
 		std::fputs(".\nUsage: OwlRunner --frame-bench <scene.owl> [--frames N] [--warmup M] "
 				   "[--backend vulkan|opengl|null] [--out results.json] [--project <dir>] [--size WxH] "
-				   "[--timestep-ms T] [--vsync] [--validation]\n",
+				   "[--timestep-ms T] [--vsync] [--validation] [--capture frame.png]\n",
 				   stderr);
 		std::exit(2);// NOLINT(concurrency-mt-unsafe)
 	}

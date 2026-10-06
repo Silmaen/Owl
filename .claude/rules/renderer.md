@@ -34,7 +34,7 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
 - **Pipelines are deduplicated** in `VulkanHandler::pushPipeline` (key = shader name, sidedness, set
   layout, render pass, vertex input; refcounted). Never build a pipeline per mesh.
 - **No GPU resource creation inside a render pass** (`endSingleTimeCommands` waits on the queue). Build
-  meshes and textures beforehand (`RendererVoxel::prepareWorld()` from `Scene::onStartRuntime`).
+  meshes and textures beforehand (`Scene::prepareVoxelRenderData()`, run by `renderWithStack` before any layer).
 - **Process-static GPU holders** (e.g. `gui::IconBank`) must be cleared by their owner before device
   teardown (`EditorLayer::onDetach()`), or they leak at `vkDestroyDevice`.
 - **One 2D camera per frame.** Renderer2D's view-projection UBO is shared too: mixing a perspective and an
@@ -48,12 +48,25 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   textures, and `SampleGrad` with the continuous (non-fract) UV derivatives. `Texture2D::setFilterMode`
   is not implemented on Vulkan (linear + anisotropic sampler).
 
+- **Vulkan descriptors are written at draw time** (`RendererDescriptors::getDescriptorSet`, from
+  `bindPipeline`), after the draw's SSBO binds; every declared binding is written, unbound ones with a default
+  resource. Never write a set at `endTextureLoad`: the storage buffers are bound after it.
+- **Colour samplers never enable depth comparison**: NVIDIA ignores it, lavapipe returns the compare result.
+- **OpenGL texture units are global too**: a pass that binds its own textures (tilemap) clobbers units 0..n; a
+  renderer drawing after it rebinds its slots.
+- **Vertices given in NDC** (background quad) need the Vulkan Y flip in the shader, like the projections.
+- **OpenGL shader path**: SPIR-V when the driver has GL 4.6 or `GL_ARB_gl_spirv` (built-ins remapped by
+  `remapBuiltinsForOpenGl`), GLSL 4.50 from spirv-cross otherwise (llvmpipe). `OWL_OPENGL_SHADERS=glsl|spirv`
+  forces it; check both when touching a shader.
+
 ## Vulkan validation
 
-Enabled at runtime, not by CMake: Owl Nest *Parameters → Use Debugging* (`useDebugging`). Layers come from
-the system or `-DOWL_ENABLE_VULKAN_LAYERS=ON`. Use a **release** build (debug builds flood stdout with gcov
-`profiling:` lines). `VulkanCore::setObjectName` tags resources so leak reports name them. Running it
-needs a GPU: `docker/run.sh --gui …`. Never mark a GPU issue fixed without a validation-layer run.
+Enabled at runtime, not by CMake: Owl Nest *Parameters → Use Debugging* (`useDebugging`), `OwlRunner
+--frame-bench … --validation`. Layers come from the system or `-DOWL_ENABLE_VULKAN_LAYERS=ON`. Use a **release**
+build (debug builds flood stdout with gcov `profiling:` lines). `VulkanCore::setObjectName` tags resources so leak
+reports name them. **Zero validation message** on the sample scenes is the bar on NVIDIA, Intel and lavapipe
+(`VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json`, no GPU needed). The image tests (`ctest -L render`) fail on
+any `VUID`. Never mark a GPU issue fixed without a validation-layer run.
 
 ## Frame cost
 

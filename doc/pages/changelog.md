@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DepManager: `depmanager.yml`, `cmake/Depmanager.cmake`, `owl_engine.py`, the `ConfigureRemote` CI action and the *Define Remote* TeamCity step; Conan 2 is the only provider (`OWL_DEPENDENCY_PROVIDER` is gone) and other projects take OwlEngine from the packaged archive.
 - Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).
 - `OwlRunner --frame-bench`: deterministic frame benchmark with CPU phase timings, GPU timestamps (Vulkan, OpenGL) and Vulkan queue-drain counters, JSON report; RHI gains `GpuFrameTiming`, `RenderCounters` and a vsync request.
+- Image tests (`owl_render_tests`, CTest label `render`): six reference scenes rendered offscreen on lavapipe and llvmpipe, compared to versioned PNGs with a per-pixel tolerance (PR-18).
+- `OwlRunner --frame-bench --capture <png>` renders into an offscreen framebuffer and writes the last frame; `Framebuffer::readColorAttachment` and `renderer::writeImagePng` back it.
+- OpenGL GLSL fallback: without `GL_ARB_gl_spirv` (llvmpipe, GL 4.5 drivers) the Slang SPIR-V is translated to GLSL 4.50 by spirv-cross, `OWL_OPENGL_SHADERS=glsl|spirv` forces the choice.
 
 ### Changed
 
@@ -99,6 +102,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenGL under Wayland no longer freezes after the first frame when the window is not shown: vsync is paced by the engine instead of blocking in `eglSwapBuffers`.
 - Wayland framebuffer kept at the window size (`GLFW_SCALE_FRAMEBUFFER` off), so HiDPI outputs no longer get a swapchain / viewport mismatch.
 - Owl Nest disables ImGui multi-viewports under Wayland instead of enabling windows GLFW cannot place.
+- Vulkan descriptor sets are written at draw time with every declared binding (default white texture and empty buffers for unbound ones): no more `VUID-08114`, lavapipe no longer crashes.
+- Vulkan colour samplers no longer enable depth comparison, which made lavapipe sample textures as plain white.
+- Vulkan background quad flipped to Vulkan clip space: gradients, textures and skyboxes now match OpenGL.
+- OpenGL: the main context is made current again after ImGui platform windows, so the window keeps rendering.
+- OpenGL: Renderer2D rebinds its texture units after the tilemap pass, which reuses units 0..n.
+- OpenGL SPIR-V: `InstanceIndex` / `VertexIndex` mapped to the OpenGL built-ins, so instanced 2D draws show on NVIDIA.
+- Shader cache key covers backend, module, Slang version, macros and profile (B-05), not only the source.
+- Raycast scenes no longer leak their textures past the device: the per-frame sprite, wall and door lists are cleared after drawing.
+- `raycast_demo.owl` uses asset-relative texture paths instead of absolute paths from one machine.
+- Voxel worlds now show in the exported game: `Scene::renderWithStack` meshes them for the runner and the editor alike (D-03).
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
 
 ### Security

@@ -199,6 +199,8 @@ auto parseFrameBenchOptions(const int iArgc, char** iArgv, const std::filesystem
 			options.project = resolve(value);
 		} else if (arg == "--out") {
 			options.out = resolve(value);
+		} else if (arg == "--capture") {
+			options.capture = resolve(value);
 		} else if (arg == "--frames") {
 			if (!parseUnsigned(value, options.frames) || options.frames == 0)
 				return badValue();

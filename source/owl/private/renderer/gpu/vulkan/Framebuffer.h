@@ -81,6 +81,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Read back a whole 8-bit colour attachment (see the base class).
+	 * @param[in] iAttachmentIndex Index of the attachment.
+	 * @return RGBA bytes, top row first; empty on failure.
+	 */
+	[[nodiscard]] auto readColorAttachment(uint32_t iAttachmentIndex) -> std::vector<uint8_t> override;
+
+	/**
+	 * @brief
 	 *  Clear Attachment.
 	 * @param[in] iAttachmentIndex Attachment's index.
 	 * @param[in] iValue Clearing value.

@@ -180,6 +180,9 @@ A voxel world reaches the screen through two pieces:
   **transparent pass** (water / glass) sorted **back-to-front** by chunk distance to the camera with depth writes
   disabled, so the blend composites correctly. The entity must carry a `RendererTag` routing it to the voxel layer;
   `Scene::render` only draws voxel worlds when the active layer is voxel-capable (mirroring the raycast path).
+  Dirty chunks are meshed and uploaded by `Scene::renderWithStack` before the first layer draws, so the editor
+  viewport and the exported game (`OwlRunner`) share the same path; `RendererVoxel::getStatistics()` reports the
+  cached and drawn mesh counts.
 
 The sample project ships a `voxel_terrain.owl` scene — an endless seeded procedural landscape (see *Procedural
 Terrain* below), textured from the dedicated `voxel_blocks` tileset (16 block faces: grass, dirt, stone, sand, wood,

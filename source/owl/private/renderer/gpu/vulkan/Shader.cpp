@@ -123,11 +123,12 @@ void Shader::compileOrGetVulkanBinaries(const std::string& iSlangSource) {
 	auto& shaderData = m_vulkanSpirv;
 	shaderData.clear();
 
-	// Check if all cached stages are valid
+	const auto cacheKey =
+			renderer::utils::getShaderCacheKey(iSlangSource, getRenderer() + "/" + getName(), /*iForVulkan=*/true);
 	bool allCached = true;
 	for (const auto stage: {ShaderType::Vertex, ShaderType::Fragment}) {
 		const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "vulkan", stage);
-		if (!renderer::utils::isShaderCacheValid(cachedPath, iSlangSource)) {
+		if (!renderer::utils::isShaderCacheValid(cachedPath, cacheKey)) {
 			allCached = false;
 			break;
 		}
@@ -154,7 +155,7 @@ void Shader::compileOrGetVulkanBinaries(const std::string& iSlangSource) {
 			OWL_CORE_TRACE("Write compiled shader file, size {}.", data.size())
 			if (!renderer::utils::writeCachedShader(cachedPath, data))
 				OWL_CORE_WARN("Failed to write the compiled shader.")
-			renderer::utils::writeShaderHash(cachedPath, iSlangSource);
+			renderer::utils::writeShaderHash(cachedPath, cacheKey);
 		}
 	}
 	for (auto&& [stage, data]: shaderData)

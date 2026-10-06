@@ -355,6 +355,10 @@ void Renderer2D::flush() {
 
 	// Re-assert our camera UBO: siblings share OpenGL uniform binding 0, last-bound wins (no-op on Vulkan).
 	g_Data->cameraUniformBuffer->bind();
+	// The tilemap rebinds OpenGL texture units 0..n to its atlases: give our slots back (Vulkan sets are per renderer).
+	if (gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::OpenGL) {
+		for (uint32_t i = 0; i < g_Data->textureSlotIndex; i++) g_Data->textureSlots[i]->bind(i);
+	}
 
 	if (!g_Data->quad.instances.empty()) {
 		const auto count = static_cast<uint32_t>(g_Data->quad.instances.size());

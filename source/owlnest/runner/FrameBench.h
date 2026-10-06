@@ -33,6 +33,8 @@ struct FrameBenchOptions {
 	std::filesystem::path project;
 	/// JSON output file; empty for the text summary only.
 	std::filesystem::path out;
+	/// PNG of the last measured frame, rendered offscreen; empty to render to the window only.
+	std::filesystem::path capture;
 	/// Measured frames.
 	uint32_t frames{1000};
 	/// Warm-up frames run before the measure.

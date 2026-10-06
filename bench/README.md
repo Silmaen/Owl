@@ -79,10 +79,13 @@ docker/run.sh --gui output/build/linux-clang-release/bin/OwlRunner \
 | `--timestep-ms <t>` | 16.667   | Fixed simulation step fed to the scene, whatever the real frame time.         |
 | `--vsync`           | off      | Keep vertical synchronisation (the present mode is reported either way).      |
 | `--validation`      | off      | Vulkan validation layers.                                                     |
+| `--capture <png>`   | (none)   | Render offscreen and write the last frame as a PNG (image tests).             |
 
 The run is deterministic: fixed time step, null input backend (no keyboard, mouse or cursor capture), the scene's
-own primary camera, null sound, no `config.yml` and no user `settings.yml`. It exits with 0 on success, 2 on a bad
-option or scene, 3 when the scene quits early, 4 when the renderer cannot start, 5 when the report cannot be written.
+own primary camera, null sound, no `config.yml` and no user `settings.yml`. With `--capture`, asynchronous loads are
+finished before every frame so the image does not depend on timing. It exits with 0 on success, 2 on a bad option or
+scene, 3 when the scene quits early, 4 when the renderer cannot start, 5 when the report cannot be written, 6 when the
+capture cannot be read back or written.
 
 Per frame it records the wall time between two frame starts and its phases (`beginFrame`, scene update, scripts,
 physics, render preparation, GUI, submission, present), the draw calls, the queue submissions, the

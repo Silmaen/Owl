@@ -463,7 +463,7 @@ is selected at startup via `RenderCommand::create(Type)`.
 
 | Backend  | API         | Notes                                         |
 |----------|-------------|-----------------------------------------------|
-| `OpenGL` | OpenGL 4.5  | Widely supported on desktop; limited on ARM64 |
+| `OpenGL` | OpenGL 4.5  | Fallback; SPIR-V shaders, GLSL without SPIR-V |
 | `Vulkan` | Vulkan 1.4+ | Modern low-level API; full desktop support    |
 | `Null`   | None        | Headless mode for servers or testing          |
 
@@ -482,6 +482,52 @@ is selected at startup via `RenderCommand::create(Type)`.
 | `beginBatch()` / `endBatch()` | Batch render pass (Vulkan subpass)       |
 
 See [Architecture](architecture.md) for the backend selection and application startup flow.
+
+### OpenGL shader path {#renderer-opengl-shaders}
+
+OpenGL needs 4.5 core. When the driver ingests SPIR-V (GL 4.6 or `GL_ARB_gl_spirv`), the Slang SPIR-V goes through
+`glShaderBinary` + `glSpecializeShader`, with the Vulkan-only `InstanceIndex` / `VertexIndex` built-ins remapped to
+`gl_InstanceID` / `gl_VertexID` (`remapBuiltinsForOpenGl`). Otherwise (llvmpipe, GL 4.5 drivers) the same SPIR-V is
+translated to GLSL 4.50 by spirv-cross (`crossCompileToGlsl`) and compiled with `glShaderSource`. Both paths share the
+SPIR-V cache, whose key holds the backend, the module, the Slang version, the macros and the profile. The startup log
+says which path runs; `OWL_OPENGL_SHADERS=glsl` or `spirv` forces it.
+
+### Vulkan descriptors and validation
+
+A renderer's descriptor set is written at draw time, from the UBO, SSBO and textures bound before that draw. Every
+binding its layout declares is written: a binding nothing was bound to gets a default resource (1x1 white texture,
+zeroed uniform or storage buffer). With the validation layers on (`--validation` in the frame bench, *Use Debugging*
+in Owl Nest), the sample scenes run with zero message on NVIDIA, Intel and lavapipe; keep it that way.
+
+## Image tests {#render-image-tests}
+
+`test/render_tests` (`owl_render_tests_unit_test`, CTest label `render`) renders six reference scenes on lavapipe
+(Vulkan) and llvmpipe (OpenGL) and compares each capture to a versioned PNG:
+
+| Scene     | Covers                                                                         |
+|-----------|--------------------------------------------------------------------------------|
+| `sprites` | Gradient background, plain, rotated, textured, tiled and tinted quads, circles |
+| `text`    | World-space MSDF text (multi-line, rotated) and a screen-space UI label        |
+| `tilemap` | Instanced tilemap with several tilesets                                        |
+| `raycast` | GPU raycaster: walls, doors, billboard sprites, floor and ceiling              |
+| `voxel`   | Procedural voxel terrain with water, seen by the voxel player                  |
+| `mixed`   | Platformer level: tilemap, sprites, animated sprite, HUD text and panel        |
+
+Each case runs `OwlRunner --frame-bench <scene> --capture <png>` (320 x 180, 60 warm-up frames, fixed time step, Vulkan
+validation on) in its own process, then compares RGB per pixel: a pixel differs above 24 / 255 on a channel, the test
+fails above 0.25 % of differing pixels. Software rasterisers are deterministic run to run; the tolerance absorbs a
+Mesa update, not a missing sprite. On failure the capture, a diff (differing pixels in red) and the runner log are left
+in `<build>/render_tests/`. The scenes live in `test/render_tests/scenes/` and use the sample project's assets.
+
+```bash
+docker/run.sh ctest --test-dir output/build/linux-clang-release -L render --output-on-failure
+# Regenerate the references (writes test/render_tests/references/<backend>/<scene>.png):
+docker/run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render
+```
+
+CTest starts the binary under `xvfb-run` when it is installed; without a display or without lavapipe
+(`OWL_RENDER_TESTS_VK_ICD` overrides `/usr/share/vulkan/icd.d/lvp_icd.json`) the cases are skipped. The whole label
+takes about 8 s (25 s with a cold shader cache).
 
 ## Renderer2D: The Batch Renderer {#renderer2d}
 
@@ -770,20 +816,22 @@ A `Framebuffer` represents an off-screen render target with one or more typed at
 
 ### Key Methods
 
-| Method                      | Description                                |
-|-----------------------------|--------------------------------------------|
-| `bind()` / `unbind()`       | Activate/deactivate the framebuffer        |
-| `resize(size)`              | Recreate attachments at new size           |
-| `readPixel(index, x, y)`    | Read integer pixel (entity ID picking)     |
-| `clearAttachment(index, v)` | Clear an attachment to a value             |
-| `isUpsideDown()`            | Backend-specific Y-flip (Vulkan vs OpenGL) |
+| Method                       | Description                                |
+|------------------------------|--------------------------------------------|
+| `bind()` / `unbind()`        | Activate/deactivate the framebuffer        |
+| `resize(size)`               | Recreate attachments at new size           |
+| `readPixel(index, x, y)`     | Read integer pixel (entity ID picking)     |
+| `readColorAttachment(index)` | Read a whole RGBA attachment (captures)    |
+| `clearAttachment(index, v)`  | Clear an attachment to a value             |
+| `isUpsideDown()`             | Backend-specific Y-flip (Vulkan vs OpenGL) |
 
 The editor viewport uses a framebuffer with `Rgba8` + `RedInteger` + `Depth24Stencil8`
 to render the scene and support mouse-based entity picking.
 
 ## Shader System
 
-Shaders are written in **Slang** and compiled to SPIR-V at runtime.
+Shaders are written in **Slang** and compiled to SPIR-V at runtime (translated to GLSL on OpenGL drivers without
+SPIR-V support, see [OpenGL shader path](#renderer-opengl-shaders)).
 See [Architecture > Shader Pipeline](architecture.md) for the
 compilation, reflection, and caching pipeline.
 

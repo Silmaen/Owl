@@ -58,7 +58,12 @@ VertexOutput vertexMain(VertexInput input) {
 	output.frag.invVR1   = input.invVR1;
 	output.frag.invVR2   = input.invVR2;
 	output.frag.invVR3   = input.invVR3;
+#ifdef BACKEND_VULKAN
+	// Vertices are given in OpenGL NDC (y up); Vulkan clip space is y down, like the flipped projections.
+	output.svPosition    = float4(input.position.x, -input.position.y, 0.0, 1.0);
+#else
 	output.svPosition    = float4(input.position.xy, 0.0, 1.0);
+#endif
 	return output;
 }
 

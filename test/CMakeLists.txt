@@ -59,9 +59,28 @@ foreach (child ${children})
                             OWL_RUNNER_EXECUTABLE="$<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner>")
                 endif ()
             endif ()
-            add_test(${PROJECT_PREFIX_LOWER}_${child}_UTests ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
+            # render_tests run OwlRunner on lavapipe / llvmpipe and compare its captures to reference images; they need
+            # a display, so ctest starts them under xvfb-run when it exists. Label `render` to run or skip them alone.
+            set(TEST_LAUNCHER "")
+            if (${child} STREQUAL "render_tests")
+                target_compile_definitions(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
+                        OWL_RENDER_TEST_OUTPUT_DIR="${CMAKE_BINARY_DIR}/render_tests")
+                if (TARGET ${CMAKE_PROJECT_NAME}Runner)
+                    add_dependencies(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${CMAKE_PROJECT_NAME}Runner)
+                    target_compile_definitions(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
+                            OWL_RUNNER_EXECUTABLE="$<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner>")
+                endif ()
+                find_program(XVFB_RUN_PROGRAM xvfb-run)
+                if (XVFB_RUN_PROGRAM)
+                    set(TEST_LAUNCHER ${XVFB_RUN_PROGRAM} -a -s "-screen 0 1280x1024x24")
+                endif ()
+            endif ()
+            add_test(NAME ${PROJECT_PREFIX_LOWER}_${child}_UTests COMMAND ${TEST_LAUNCHER} ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
             set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 3600
                     ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
+            if (${child} STREQUAL "render_tests")
+                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES LABELS render)
+            endif ()
             if (${child} STREQUAL "script_tests")
                 # Hostile-script tests rely on the Lua quotas: a quota that never fires must fail, not hang.
                 set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 300)

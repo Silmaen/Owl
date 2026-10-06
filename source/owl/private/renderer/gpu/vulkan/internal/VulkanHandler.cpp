@@ -79,6 +79,7 @@ void VulkanHandler::release() {
 	OWL_CORE_TRACE("Vulkan: Descriptors released.")
 	// Destroy per-renderer descriptor blocks while the device is valid; their process-static storage else outlives it.
 	gpu::RendererDescriptors::releaseAll();
+	RendererDescriptors::releaseDefaults();
 	OWL_CORE_TRACE("Vulkan: per-renderer descriptor blocks released.")
 	core.release();
 	OWL_CORE_TRACE("Vulkan: core destroyed.")

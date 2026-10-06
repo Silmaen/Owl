@@ -162,22 +162,27 @@ public:
 
 	/**
 	 * @brief
-	 *  Refresh the per-frame descriptor set with the current UBO + texture
-	 *  bind state. Call after every `beginScene` / `setUniformData` / batch
-	 *  rebuild for the active frame index.
-	 * @param[in] iCurrentFrame Active in-flight frame index.
+	 *  Mark the texture-bind list as complete. The descriptor set itself is written lazily by
+	 *  `getDescriptorSet` at draw time, once the storage buffers of that draw are bound too.
 	 */
-	void commitTextureBind(size_t iCurrentFrame);
+	void commitTextureBind();
 
 	/**
 	 * @brief
-	 *  Stable pointer to the descriptor set the current draw must bind (the set
-	 *  acquired by the most recent `commitTextureBind`). The frame index is no
-	 *  longer used — each draw owns a distinct set from the fence-recycled ring.
-	 * @param[in] iFrame Unused (kept for call-site compatibility).
-	 * @return Pointer to the current descriptor set handle.
+	 *  Descriptor set the current draw must bind. Acquires and writes a fresh set from the
+	 *  fence-recycled ring when the bind state changed since the last draw or a batch was
+	 *  submitted, so each draw sees exactly the UBO, SSBO and textures bound before it.
+	 * @param[in] iFrame Active in-flight frame index (selects the per-frame UBO buffers).
+	 * @return Pointer to the current descriptor set handle (null handle when the ring is exhausted).
 	 */
 	auto getDescriptorSet(uint32_t iFrame) -> VkDescriptorSet*;
+
+	/**
+	 * @brief
+	 *  Destroy the default resources (white texture, empty uniform and storage buffers) written
+	 *  into bindings nothing was bound to. Call once, before the logical device is destroyed.
+	 */
+	static void releaseDefaults();
 
 	/**
 	 * @brief
@@ -297,14 +302,26 @@ private:
 	 *  texture array) is per-renderer.
 	 */
 	std::vector<uint32_t> m_textureBind;
+	/// True when the bind state changed (or a batch was submitted) since the current set was written.
+	bool m_dirty = true;
 
 	/**
 	 * @brief
-	 *  Write the current UBO + SSBO + texture-bind state into a freshly acquired set.
+	 *  Write the current UBO + SSBO + texture-bind state into a freshly acquired set. Every
+	 *  declared binding is written: bindings nothing was bound to get a default resource.
 	 * @param[in] iSet The descriptor set to write.
 	 * @param[in] iFrame Active in-flight frame index (selects the per-frame UBO buffers).
 	 */
 	void writeDescriptor(VkDescriptorSet iSet, size_t iFrame);
+
+	/**
+	 * @brief
+	 *  Image infos for the texture array: the bound textures in order, padded up to the array size
+	 *  with the default white texture (also used for any unloaded texture).
+	 * @param[in] iCount Number of slots of the texture array.
+	 * @return One info per slot, or nothing when the default texture is missing.
+	 */
+	[[nodiscard]] auto collectImageInfos(uint32_t iCount) const -> std::vector<VkDescriptorImageInfo>;
 };
 
 }// namespace owl::renderer::gpu::vulkan::internal

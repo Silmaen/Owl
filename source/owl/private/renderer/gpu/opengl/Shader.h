@@ -17,6 +17,36 @@
 #include <vector>
 
 namespace owl::renderer::gpu::opengl {
+
+/**
+ * @brief
+ *  How OpenGL programs receive the shaders compiled by Slang.
+ */
+enum struct ShaderFormat : uint8_t {
+	Spirv,///< SPIR-V binary through `glShaderBinary` + `glSpecializeShader` (GL 4.6 or `GL_ARB_gl_spirv`).
+	Glsl///< GLSL 4.50 source translated from the same SPIR-V by spirv-cross (any GL 4.5 driver).
+};
+
+/**
+ * @brief
+ *  Format used by every OpenGL program of the process: SPIR-V when the driver ingests it, GLSL otherwise.
+ *  The environment variable `OWL_OPENGL_SHADERS` (`glsl` or `spirv`) forces the choice. Needs a current context
+ *  the first time.
+ * @return The selected format.
+ */
+OWL_API auto getShaderFormat() -> ShaderFormat;
+
+/**
+ * @brief
+ *  Create and compile one OpenGL shader object from the SPIR-V of a stage, in the format of `getShaderFormat`.
+ * @param[in] iStage Shader stage.
+ * @param[in] iSpirv OpenGL SPIR-V of the stage (`compileSlangToSpirv(..., false)`).
+ * @param[in] iName Shader name, for the logs.
+ * @return The shader object, or 0 on failure (logged).
+ */
+OWL_API auto createShaderObject(ShaderType iStage, const std::vector<uint32_t>& iSpirv, const std::string& iName)
+		-> uint32_t;
+
 /**
  * @brief
  *  Specialized class managing OpenGL shader.

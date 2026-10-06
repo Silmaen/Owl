@@ -13,6 +13,8 @@
 #include "renderer/Camera.h"
 #include "scene/component/VoxelWorld.h"
 
+#include <cstdint>
+
 namespace owl::renderer {
 
 /**
@@ -39,6 +41,17 @@ struct VoxelConfig {
  */
 class OWL_API RendererVoxel final {
 public:
+	/**
+	 * @brief
+	 *  Mesh counters, for diagnostics and headless tests.
+	 */
+	struct Statistics {
+		/// GPU chunk meshes (opaque + transparent) currently cached across every voxel world.
+		uint32_t cachedMeshCount = 0;
+		/// Chunk meshes submitted to `Renderer3D` since the last `beginScene`.
+		uint32_t drawnMeshCount = 0;
+	};
+
 	/**
 	 * @brief
 	 *  Initialize the renderer (resets the mesh / texture caches).
@@ -69,9 +82,10 @@ public:
 	 * @brief
 	 *  Build and cache the GPU meshes and textures for a voxel world.
 	 *
-	 *  Must be called **outside** any render pass (e.g. from `Scene::onStartRuntime`): it creates GPU buffers,
-	 *  pipelines and textures, which submit single-time command buffers and therefore must not run while a frame's
-	 *  command buffer is being recorded. `drawVoxelWorld` then only binds and draws these cached resources.
+	 *  Must be called **outside** any render pass (`Scene::renderWithStack` does it before the first layer): it
+	 *  creates GPU buffers, pipelines and textures, which submit single-time command buffers and therefore must not
+	 *  run while a frame's command buffer is being recorded. `drawVoxelWorld` then only binds and draws these cached
+	 *  resources.
 	 * @param[in,out] ioComponent The voxel world component (chunks are marked clean as they are meshed).
 	 * @param[in] iEntityId The entity id (keys the per-entity mesh cache).
 	 */
@@ -92,6 +106,13 @@ public:
 	 *  Drop all cached meshes (call on scene transitions to avoid stale geometry).
 	 */
 	static void clearCache();
+
+	/**
+	 * @brief
+	 *  Read the mesh counters.
+	 * @return The cached mesh count and the meshes drawn since the last `beginScene`.
+	 */
+	[[nodiscard]] static auto getStatistics() -> Statistics;
 };
 
 }// namespace owl::renderer

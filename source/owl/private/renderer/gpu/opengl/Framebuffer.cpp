@@ -11,6 +11,7 @@
 #include "Framebuffer.h"
 #include "core/external/opengl46.h"
 
+#include <cstddef>
 #include <utility>
 
 namespace owl::renderer::gpu::opengl {
@@ -212,6 +213,37 @@ auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const
 	int pixelData = 0;
 	glReadPixels(iX, iY, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
 	return pixelData;
+}
+
+auto Framebuffer::readColorAttachment(const uint32_t iAttachmentIndex) -> std::vector<uint8_t> {
+	if (iAttachmentIndex >= m_colorAttachments.size()) {
+		OWL_CORE_WARN("OpenGL Framebuffer: No colour attachment {} to read back.", iAttachmentIndex)
+		return {};
+	}
+	if (const auto format = m_colorAttachmentSpecifications[iAttachmentIndex].format;
+		format != AttachmentSpecification::Format::Surface && format != AttachmentSpecification::Format::Rgba8) {
+		OWL_CORE_WARN("OpenGL Framebuffer: Attachment {} is not an 8-bit colour attachment.", iAttachmentIndex)
+		return {};
+	}
+	const auto width = static_cast<size_t>(m_specs.size.x());
+	const auto height = static_cast<size_t>(m_specs.size.y());
+	const size_t rowSize = width * 4;
+	std::vector<uint8_t> pixels(rowSize * height);
+	GLint previous = 0;
+	glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &previous);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_rendererId);
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + iAttachmentIndex);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glReadPixels(0, 0, static_cast<GLsizei>(width), static_cast<GLsizei>(height), GL_RGBA, GL_UNSIGNED_BYTE,
+				 pixels.data());
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, static_cast<GLuint>(previous));
+	// OpenGL stores the bottom row first.
+	std::vector<uint8_t> flipped(pixels.size());
+	for (size_t row = 0; row < height; ++row)
+		std::ranges::copy_n(pixels.begin() + static_cast<std::ptrdiff_t>(row * rowSize),
+							static_cast<std::ptrdiff_t>(rowSize),
+							flipped.begin() + static_cast<std::ptrdiff_t>((height - 1 - row) * rowSize));
+	return flipped;
 }
 
 void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const int iValue) {

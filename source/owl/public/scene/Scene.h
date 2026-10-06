@@ -126,15 +126,6 @@ public:
 
 	/**
 	 * @brief
-	 *  Build/cache the GPU resources for voxel worlds (meshes, textures, pipeline).
-	 *
-	 *  Call after the depth-carrying render target is bound but **before** its render pass begins, so the voxel
-	 *  pipeline is created against a depth-compatible render pass and no GPU resources are created mid-pass.
-	 */
-	void prepareVoxelRenderData();
-
-	/**
-	 * @brief
 	 *  Update actions for the runtime.
 	 *
 	 * Advances physics, scripts, triggers, and animations. When `iRender` is true
@@ -615,6 +606,15 @@ private:
 	 * @param[in] iEditorMode True if the scene is being drawn for the editor view.
 	 */
 	void renderRaycastDynamicWalls(bool iEditorMode);
+
+	/**
+	 * @brief
+	 *  Build/cache the GPU resources for voxel worlds (meshes, textures, pipeline).
+	 *
+	 *  Called by `renderWithStack` before the first layer records a draw, so the editor and the runner share one
+	 *  path: the voxel pipeline is created against the bound render target and no GPU resource is created mid-pass.
+	 */
+	void prepareVoxelRenderData();
 
 	/**
 	 * @brief

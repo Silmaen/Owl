@@ -109,6 +109,9 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE SndFile REQUIRED ${THI
 # stb_image
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE stb_image REQUIRED ${THIRD_PARTY_RELEASE})
 
+# libpng (PNG writing; already a dependency of msdf-atlas-gen)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE PNG REQUIRED ${THIRD_PARTY_RELEASE})
+
 # tinygltf
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE TinyGLTF REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "tinygltf::tinygltf")
 

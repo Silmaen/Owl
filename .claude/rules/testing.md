@@ -46,6 +46,18 @@ TEST(CategoryName, TestName) {
 Tests **never write into the source tree**: use a temp directory (`std::filesystem::temp_directory_path()`)
 and clean up. Fixtures that need GPU or audio must degrade to the Null backend in CI.
 
+## Image tests (`test/render_tests`, label `render`)
+
+- One case = one scene of `test/render_tests/scenes/` rendered by `OwlRunner --frame-bench --capture` on lavapipe
+  (Vulkan) or llvmpipe (OpenGL), compared to `test/render_tests/references/<backend>/<scene>.png` (RGB, 24 / 255
+  per channel, 0.25 % of pixels). Captures, diffs and logs of failures go to `<build>/render_tests/`.
+- Scenes have no Lua script, no physics and no input: the capture must not depend on timing.
+- A deliberate visual change regenerates the references, reviewed image by image before committing:
+  `docker/run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-clang-release -L render`.
+  This is the only command that writes into the source tree.
+- CTest wraps the binary in `xvfb-run`; without a display or lavapipe the cases skip. About 8 s: run them in a
+  CI stage of their own (`ctest -L render`, `-LE render` for the rest).
+
 ## Expensive Test Fixtures
 
 For tests requiring slow one-time setup (e.g., a Slang compilation session), use `SetUpTestSuite`:
@@ -91,7 +103,7 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
 ## Conventions
 
 - Test names: `TEST(Module, Behavior)` — e.g., `TEST(Scene, CopyCreatesIndependentScene)`
-- Existing categories (one folder each): core, debug, event, font, gui, input, io, layer, math, mesh, physics, renderer,
-  scene, script, sound, voxel
+- Existing categories (one folder each): core, debug, event, font, gui, input, io, layer, math, mesh, physics, render,
+  renderer, runner, scene, script, sound, voxel
 - Tests link against both `OwlEngine` and `OwlEnginePrivate` (access to private headers)
 - Timeout per test suite: 3600s (1 hour)

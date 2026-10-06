@@ -12,6 +12,8 @@
 #include <input/KeyCodes.h>
 #include <input/MouseCode.h>
 #include <physics/PhysicCommand.h>
+#include <renderer/TextureDecoder.h>
+#include <renderer/gpu/Framebuffer.h>
 #include <scene/SaveManager.h>
 #include <scene/SceneSerializer.h>
 #include <scene/ScreenTransition.h>
@@ -41,6 +43,30 @@ OWL_DIAG_POP
 namespace owl::nest::runner {
 
 namespace {
+
+// Binds the capture target for the scope of a frame (no-op without one).
+struct ScopedCaptureTarget {
+	explicit ScopedCaptureTarget(shared<renderer::gpu::Framebuffer> iTarget) : target{std::move(iTarget)} {
+		if (target)
+			target->bind();
+	}
+
+	~ScopedCaptureTarget() {
+		if (target)
+			target->unbind();
+	}
+
+	ScopedCaptureTarget(const ScopedCaptureTarget&) = delete;
+
+	ScopedCaptureTarget(ScopedCaptureTarget&&) = delete;
+
+	auto operator=(const ScopedCaptureTarget&) -> ScopedCaptureTarget& = delete;
+
+	auto operator=(ScopedCaptureTarget&&) -> ScopedCaptureTarget& = delete;
+
+	// Framebuffer bound for the scope.
+	shared<renderer::gpu::Framebuffer> target;
+};
 template<class T>
 void get(const YAML::Node& iNode, const std::string& iKey, T& oValue) {
 	if (const auto val = iNode[iKey]; val)
@@ -292,8 +318,41 @@ void RunnerLayer::attachFrameBench() {
 		return;
 	}
 	installRenderStack();
+	if (!options.capture.empty()) {
+		using Format = renderer::gpu::AttachmentSpecification::Format;
+		using Tiling = renderer::gpu::AttachmentSpecification::Tiling;
+		m_captureTarget =
+				renderer::gpu::Framebuffer::create({.size = m_viewportSize,
+													.attachments = {{Format::Surface, Tiling::Optimal},
+																	{Format::RedInteger, Tiling::Optimal},
+																	{Format::Depth24Stencil8, Tiling::Optimal}},
+													.samples = 1,
+													.swapChainTarget = false,
+													.debugName = "capture"});
+	}
 	m_activeScene->setRuntimeTimingsEnabled(true);
 	m_frameBench->start();
+}
+
+auto RunnerLayer::writeCapture() const -> bool {
+	const auto& path = m_frameBench->getOptions().capture;
+	if (!m_captureTarget) {
+		OWL_ERROR("FrameBench: No capture target for {}.", path.string())
+		return false;
+	}
+	auto pixels = m_captureTarget->readColorAttachment(0);
+	if (pixels.empty()) {
+		OWL_ERROR("FrameBench: Cannot read the capture target back for {}.", path.string())
+		return false;
+	}
+	// The window shows colours only: make the capture opaque so it reads the same in any viewer.
+	for (size_t i = 3; i < pixels.size(); i += 4) pixels[i] = 255;
+	if (!path.parent_path().empty())
+		std::filesystem::create_directories(path.parent_path());
+	if (!renderer::writeImagePng(path, m_captureTarget->getSpecification().size, pixels))
+		return false;
+	OWL_INFO("FrameBench: Capture written to {}.", path.string())
+	return true;
 }
 
 void RunnerLayer::finishFrameBench(const bool iInterrupted) {
@@ -309,11 +368,17 @@ auto RunnerLayer::stepFrameBench() -> bool {
 		return true;
 	m_frameBench->onFrameStart();
 	if (m_frameBench->isDone()) {
+		const bool captured = m_frameBench->getOptions().capture.empty() || writeCapture();
 		finishFrameBench(/*iInterrupted=*/false);
+		if (!captured)
+			app::Application::get().setExitCode(6);
 		return false;
 	}
 	if (m_activeScene)
 		m_activeScene->setRuntimeTimingsEnabled(true);
+	// A capture must not depend on how fast the async texture decodes run: finish them before every frame.
+	if (m_captureTarget)
+		app::Application::get().getTaskScheduler().waitEmptyQueue();
 	return true;
 }
 
@@ -338,6 +403,7 @@ void RunnerLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
 
 	finishFrameBench(/*iInterrupted=*/true);
+	m_captureTarget.reset();
 	// unload the active scene.
 	m_activeScene.reset();
 
@@ -350,6 +416,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 	if (!stepFrameBench())
 		return;
 	const core::Timestep& timeStep = m_frameBench ? m_frameBench->getTimeStep() : iTimeStep;
+	const ScopedCaptureTarget captureScope{m_captureTarget};
 	// resize
 	if (m_activeScene != nullptr) {
 		{

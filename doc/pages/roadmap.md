@@ -158,7 +158,8 @@ up. No new gameplay feature ([details](design/foundations.md)).
 - ![Done][done] Phase B — Tracy behind `OWL_PROFILE_*`, memory tracker opt-in, cheaper logs (PR-16, [Profiling](profiling.md))
 - ![Done][done] Phase B — runner frame bench: `OwlRunner --frame-bench`, GPU timestamps, Vulkan/OpenGL baseline (PR-17)
 - ![Planned][planned] Phase B — editor tests
-- ![Planned][planned] Phase B — tests without a window: scripted headless runner, image tests on lavapipe / llvmpipe
+- ![Done][done] Phase B — image tests on lavapipe / llvmpipe, validation clean, OpenGL GLSL fallback (PR-18)
+- ![Planned][planned] Phase B — tests without a window: scripted headless runner
 - ![Planned][planned] Phase B — module dependency check, CI tooling tests, benchmarks with a regression threshold
 - ![Planned][planned] Phase C — Vulkan foundation first, as soon as the image tests land ([RHI](design/owl-rhi.md))
 - ![Planned][planned] Phase C — Owl RHI named, OpenGL frozen as fallback, backend interface ready for more

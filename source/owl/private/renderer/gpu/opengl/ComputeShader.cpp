@@ -9,6 +9,7 @@
 #include "owlpch.h"
 
 #include "ComputeShader.h"
+#include "Shader.h"
 
 #include "core/external/opengl46.h"
 #include "renderer/Renderer.h"
@@ -57,26 +58,10 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 	}
 	const auto& spirv = it->second;
 
-	const GLuint program = glCreateProgram();
-	const GLuint shaderId = glCreateShader(GL_COMPUTE_SHADER);
-	glShaderBinary(1, &shaderId, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(),
-				   static_cast<GLsizei>(spirv.size() * sizeof(uint32_t)));
-	// Slang emits the entry point under the canonical name `main` in SPIR-V.
-	glSpecializeShader(shaderId, "main", 0, nullptr, nullptr);
-	GLint compileStatus = 0;
-	glGetShaderiv(shaderId, GL_COMPILE_STATUS, &compileStatus);
-	if (compileStatus == GL_FALSE) {
-		GLint logLen = 0;
-		glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &logLen);
-		if (logLen > 0) {
-			std::vector<GLchar> log(static_cast<size_t>(logLen));
-			glGetShaderInfoLog(shaderId, logLen, &logLen, log.data());
-			OWL_CORE_ERROR("OpenGL compute shader: specialize failed for '{}': {}.", m_name, log.data())
-		}
-		glDeleteShader(shaderId);
-		glDeleteProgram(program);
+	const GLuint shaderId = createShaderObject(ShaderType::Compute, spirv, m_name);
+	if (shaderId == 0)
 		return;
-	}
+	const GLuint program = glCreateProgram();
 	glAttachShader(program, shaderId);
 	glLinkProgram(program);
 	GLint isLinked = 0;

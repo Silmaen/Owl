@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -132,6 +133,39 @@ OWL_API auto shaderReflect(const std::string& iShaderName, const std::string& iR
 						   const std::vector<uint32_t>& iShaderData) -> ShaderReflectionData;
 
 OWL_API auto computeShaderHash(const std::string& iSource) -> std::string;
+
+/**
+ * @brief
+ *  Build the cache key of a Slang shader: everything that changes the compiled output.
+ *  Pass it to `isShaderCacheValid` / `writeShaderHash` instead of the bare source.
+ * @param[in] iSource Slang source.
+ * @param[in] iModuleName Shader name (the module path inside the asset tree).
+ * @param[in] iForVulkan Target backend (selects the profile and the `BACKEND_*` macro).
+ * @return The key: backend, module, Slang version, macros, profile and source.
+ */
+OWL_API auto getShaderCacheKey(const std::string& iSource, const std::string& iModuleName, bool iForVulkan)
+		-> std::string;
+
+/**
+ * @brief
+ *  Make Slang's SPIR-V valid for `GL_ARB_gl_spirv`: the Vulkan-only `InstanceIndex` / `VertexIndex` built-ins become
+ *  the OpenGL `InstanceId` / `VertexId` (`gl_InstanceID`, `gl_VertexID`). Slang subtracts the base instance / vertex
+ *  from them, which is exact as long as draws use a zero base, as every Owl draw does.
+ * @param[in,out] ioSpirv SPIR-V words, patched in place.
+ * @return Number of decorations changed.
+ */
+OWL_API auto remapBuiltinsForOpenGl(std::vector<uint32_t>& ioSpirv) -> uint32_t;
+
+/**
+ * @brief
+ *  Translate an OpenGL SPIR-V module (`compileSlangToSpirv(..., false)`) into GLSL 4.50 core source, for OpenGL
+ *  drivers without `GL_ARB_gl_spirv`. Bindings and locations are kept, so the reflection of the SPIR-V applies.
+ * @param[in] iSpirv SPIR-V words of one entry point.
+ * @param[in] iName Shader name, for the logs.
+ * @return The GLSL source, or nothing when the translation fails.
+ */
+OWL_API auto crossCompileToGlsl(const std::vector<uint32_t>& iSpirv, const std::string& iName)
+		-> std::optional<std::string>;
 
 /**
  * @brief

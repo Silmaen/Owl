@@ -486,7 +486,7 @@ void Scene::onStartRuntime() {
 		if (trigger.type == SceneTrigger::TriggerType::Timer)
 			trigger.startTimer();
 	}
-	// Drop cached voxel meshes from a previous run; prepareVoxelRenderData() rebuilds them against the depth target.
+	// Drop cached voxel meshes from a previous run; renderWithStack() rebuilds them on the next rendered frame.
 	renderer::RendererVoxel::clearCache();
 	OWL_CORE_INFO("Scene::onStartRuntime: total {:.1f} ms.", ms(clk::now() - runtimeStart))
 }
@@ -907,6 +907,7 @@ auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) 
 void Scene::renderWithStack(const renderer::Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
+	prepareVoxelRenderData();
 	const auto& stack = renderer::Renderer::getRenderStack();
 	if (const bool editorMode = (status == Status::Editing); editorMode || stack.isEmpty()) {
 		renderer::Renderer2D::resetStats();
@@ -1156,7 +1157,7 @@ void Scene::renderTilemaps(const bool iEditorMode, const bool iRaycastLayer) {
 void Scene::prepareVoxelRenderData() {
 	OWL_PROFILE_FUNCTION()
 
-	// Ensure tileset atlases are resolved before meshing (gated/cheap); the editor viewport drives this pre-Play.
+	// Ensure tileset atlases are resolved before meshing (gated/cheap).
 	resolveAllTilemapAssets();
 	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view) {
 		renderer::RendererVoxel::prepareWorld(view.get<component::VoxelWorld>(entity), static_cast<int>(entity));
@@ -1645,6 +1646,8 @@ void Scene::renderRaycastSprites(const bool iEditorMode) {
 								  .entityId = static_cast<int>(entity)});
 	}
 	renderer::RendererRaycast::drawSprites(raycastSprites);
+	// The thread-local scratch must not keep textures alive past the frame (they would outlive the device).
+	raycastSprites.clear();
 }
 
 namespace {
@@ -1679,6 +1682,7 @@ void Scene::renderRaycastDynamicWalls(const bool iEditorMode) {
 						 .entityId = static_cast<int>(entity)});
 	}
 	renderer::RendererRaycast::drawDynamicWalls(walls);
+	walls.clear();
 
 	// Doors — 2 static laterals + 1 moving plate per door cell, route to drawDoors.
 	thread_local std::vector<renderer::RaycastDoorData> doors;
@@ -1705,6 +1709,7 @@ void Scene::renderRaycastDynamicWalls(const bool iEditorMode) {
 						 .entityId = static_cast<int>(entity)});
 	}
 	renderer::RendererRaycast::drawDoors(doors);
+	doors.clear();
 }
 
 void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
