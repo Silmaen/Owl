@@ -85,16 +85,38 @@ public:
 
 	/**
 	 * @brief
-	 *  Mark the face-neighbour chunks of an edited world block dirty.
+	 *  Mark dirty every other chunk whose mesh reads an edited world block.
 	 *
-	 * `setBlock` only dirties the chunk it writes to. When the edited block sits
-	 * on a chunk border, the adjacent chunk's mesh must rebuild too (a hidden
-	 * face may become visible, or vice versa). Call this after an interactive
-	 * edit; it is a no-op for an interior block. It is deliberately kept off
-	 * `setBlock` so bulk generation (terrain streaming) does not pay for it.
+	 * `setBlock` only dirties the chunk it writes to. The mesher reads one block
+	 * beyond its chunk on every side (face culling, and the edge / corner cells
+	 * of ambient occlusion), so a block within one cell of a chunk border feeds
+	 * up to seven chunks: the face, edge and corner neighbours across that
+	 * border. Call this after an interactive edit; it is a no-op for an interior
+	 * block. It is deliberately kept off `setBlock` so bulk generation (terrain
+	 * streaming) does not pay for it.
 	 * @param[in] iWorld The edited world block position.
 	 */
 	void markNeighborChunksDirty(const math::vec3i& iWorld) const;
+
+	/**
+	 * @brief
+	 *  Mark the 26 chunks around a chunk coordinate dirty (face, edge and corner neighbours).
+	 * @param[in] iCoord The chunk coordinate whose neighbours must re-mesh.
+	 */
+	void markChunkNeighborsDirty(const math::vec3i& iCoord) const;
+
+	/**
+	 * @brief
+	 *  Install a fully built chunk (e.g. one generated on a worker), replacing any chunk at that coordinate.
+	 *
+	 * The chunk is re-coordinated, marked dirty, and — when it or the chunk it replaces holds a non-air block —
+	 * its 26 neighbours are marked dirty too, since their border faces and ambient occlusion were meshed against
+	 * the previous content (absent chunks read as air).
+	 * @param[in] iCoord The chunk coordinate.
+	 * @param[in] iChunk The chunk content (moved in).
+	 * @return The installed chunk.
+	 */
+	auto insertChunk(const math::vec3i& iCoord, Chunk&& iChunk) -> shared<Chunk>;
 
 	/**
 	 * @brief

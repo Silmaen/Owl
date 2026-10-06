@@ -10,6 +10,7 @@
 
 #include "Block.h"
 #include "Chunk.h"
+#include "core/Macros.h"
 #include "math/PerlinNoise.h"
 #include "math/vectors.h"
 
@@ -64,6 +65,17 @@ struct TerrainParams {
 	float biomeFrequency = 0.006f;
 	/// Surface block for the snowy biome; `g_AirBlock` falls back to grass.
 	BlockId snow = g_AirBlock;
+
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG("-Wfloat-equal")
+	/**
+	 * @brief
+	 *  Exact member-wise equality (a streamed chunk generated with other parameters is stale).
+	 * @param[in] iOther The parameters to compare with.
+	 * @return True when every parameter is exactly equal.
+	 */
+	auto operator==(const TerrainParams& iOther) const -> bool = default;
+	OWL_DIAG_POP
 };
 
 /**

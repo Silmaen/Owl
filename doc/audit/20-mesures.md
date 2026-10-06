@@ -21,7 +21,8 @@
 6. La sérialisation YAML est le point le plus lent : 117 à 134 µs par entité au chargement (1,34 s pour 10 000 entités),
    256 µs par entité pour instancier un prefab, 26 µs + 106 µs pour un aller-retour d'entité (undo).
 7. Le maillage voxel prend 350 µs par chunk 16³ de terrain (1,7 ms dans le pire cas), sur le thread principal, sans budget
-   par frame. La génération (13 à 108 µs) est déjà asynchrone.
+   par frame. La génération (13 à 108 µs) est déjà asynchrone. Après PR-24 (§3.10), il passe sur les workers : pic de
+   frame en streaming de 14,3 ms à 0,35 ms, plus aucune frame au-dessus de 5 ms.
 8. Lua est raisonnable : 43 ns par `on_update` vide, 133 ns avec `get_position` + `set_position`, 30 µs et ~9 Ko par
    `ScriptInstance` (un `lua_State` par entité).
 9. Box2D 3.1 tourne sur un seul thread : 4,9 ms par pas pour 5 000 boîtes empilées. Le solveur parallèle de Box2D v3
@@ -299,6 +300,40 @@ streaming éditeur ne produit aucun maillage. Ces scènes ne servent qu'au futur
 La compilation « à froid » comprend la création de la session globale Slang (`shaderFileUtils.cpp:185-194`). Une passe non
 épinglée sur machine chargée donnait 185 ms : on reste, dans tous les cas, très loin de 50 s.
 
+### 3.10 Streaming voxel par frame (après audit : PR-24)
+
+`voxel/streaming/*` (`bench/cases/VoxelStreamingBench.cpp`) : monde procédural, couche `RendererVoxel` réelle (backend
+Null : l'upload ne coûte rien, seul le CPU est mesuré), frames cadencées à 60 Hz comme une boucle synchronisée, temps
+CPU du thread principal par frame (`CLOCK_THREAD_CPUTIME_ID`, scène + `Scheduler::frame`). Avant = `Feature/GameExport`
+(maillage synchrone dans `prepareWorld`), après = maillage sur les workers. `taskset -c 6`, avant / après alternés,
+médiane de 3 passes (min-max entre crochets), machine chargée (load average 18 à 32).
+
+| Scénario                                     | Mesure                       | Avant               | Après                 |
+|----------------------------------------------|------------------------------|---------------------|-----------------------|
+| `runtime_walk/walk` (Play, r = 4, h = 2,     | pic de frame                 | 14,3 ms [12,4-17,2] | 0,35 ms [0,34-0,57]   |
+| 32 chunks à 1 chunk / 16 frames, 518 frames) | p99 / p50                    | 9,06 / 1,17 ms      | 0,34 / 0,08 ms        |
+|                                              | frames > 5 ms                | 32                  | 0                     |
+|                                              | CPU thread principal (total) | 889 ms              | 55 ms                 |
+|                                              | CPU processus (total)        | 1 098 ms            | 828 ms                |
+|                                              | maillage, tous threads       | (dans le principal) | 651 ms, 1 152 uploads |
+|                                              | latence d'apparition moyenne | 0 (même frame)      | 29 ms (1,75 frame)    |
+| `runtime_walk/initial_load` (405 chunks)     | pic / frames > 5 ms          | 11,9 ms / 10        | 0,48 ms / 0           |
+|                                              | latence moyenne / max        | 0                   | 58 / 183 ms           |
+| `editor_load` (r = 8, h = 4, 2 601 chunks,   | pic / p50                    | 13,7 / 5,94 ms      | 0,49 / 0,31 ms        |
+| 168 frames)                                  | frames > 5 ms                | 96                  | 0                     |
+|                                              | CPU thread principal (total) | 982 ms              | 51 ms                 |
+|                                              | CPU processus (total)        | 1 398 ms            | 1 606 ms              |
+|                                              | meshes finaux / uploads      | 1 887 / —           | 1 492 / 1 974         |
+|                                              | latence moyenne / max        | 0                   | 422 ms / 2,0 s        |
+
+Sur 4 cœurs (`taskset -c 6-9`, 2 passes), même tableau : pic de la marche 12,0 → 0,54 ms, latences identiques. La latence
+n'est donc pas bornée par le CPU : un chunk attend que ses voisins en cours de génération soient installés (la
+génération reste à 16 chunks par frame), puis passe au plus 32 uploads par frame. Le travail total augmente dans
+l'éditeur (+15 % de CPU processus) parce que l'arrivée d'un voisin remaille désormais le chunk déjà maillé (D-08) ; en
+contrepartie, 395 meshes de moins restent à dessiner : leurs faces de bord étaient cachées par des voisins arrivés après
+coup et ne sont plus émises. La marche coûte moins au total (828 contre 1 098 ms) : le thread principal ne fait plus
+que capturer, téléverser et dessiner.
+
 ## 4. Constats
 
 ```text
@@ -474,7 +509,8 @@ Comparaison    : Opinion : les mailleurs gloutons par masques de bits traitent d
                  temps ; Minecraft et ses dérivés maillent sur des threads de travail.
 Recommandation : corriger, effort M : raccourci pour les chunks uniformes, accès direct au tableau avec bordure
                  recopiée (au lieu d'un std::function par voisin), maillage sur les workers Taskflow avec upload budgété.
-Statut         : confirmé (mesuré)
+Statut         : corrigé par PR-24 (maillage sur workers, upload budgété, §3.10) ; le raccourci des chunks uniformes
+                 et l'accès direct au tableau restent à faire
 Vérification   : RendererVoxel.cpp:149-176 remaille dans la frame tout chunk sale non vide ; le budget de 16
                  (Scene.cpp:1202) porte sur la mise en file de la génération, et l'installation des chunks finis n'est
                  pas bornée (done.swap, Scene.cpp:1184), ce qui peut même dépasser 16 maillages par frame.
@@ -576,7 +612,7 @@ Vérification   : Aucun code n'ajoute de composant scene::Entity (grep emplace/a
 | D, M1 : Lua par entité                 | 43-261 ns par appel, 30,5 µs et 9 Ko par instance (§3.6) ; `find_entity` non mesuré |
 | D, M2 : pas Box2D                      | 100 → 5 000 corps (§3.7) ; 10 000 corps et hiérarchie non mesurés                   |
 | D, M4 : génération et maillage voxel   | §3.5, 15 échantillons, IQR < 2 %                                                    |
-| D, M5 et M6 : coût voxel par frame     | non mesuré : demande une couche `RendererVoxel` active (frame bench GPU, §7)        |
+| D, M5 et M6 : coût voxel par frame     | CPU mesuré en §3.10 (backend Null) ; coût GPU de l'upload : frame bench GPU (§7)    |
 | CE : transforms, copie, snapshot       | §3.1 et §3.4 ; chaînes de 1 000 en plus des chaînes de 16                           |
 
 ## 6. Le harnais

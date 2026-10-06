@@ -11,7 +11,6 @@
 
 #include <array>
 #include <cstdint>
-
 namespace owl::data::voxel {
 
 namespace {
@@ -50,15 +49,18 @@ void VoxelWorld::setBlock(const math::vec3i& iWorld, const BlockId iBlock, const
 
 void VoxelWorld::markNeighborChunksDirty(const math::vec3i& iWorld) const {
 	const math::vec3i ownChunk = worldToChunk(iWorld);
-	constexpr std::array<math::vec3i, 6> offsets{math::vec3i{1, 0, 0},  math::vec3i{-1, 0, 0}, math::vec3i{0, 1, 0},
-												 math::vec3i{0, -1, 0}, math::vec3i{0, 0, 1},  math::vec3i{0, 0, -1}};
-	for (const auto& offset: offsets) {
-		const math::vec3i neighborChunk =
-				worldToChunk(math::vec3i{iWorld.x() + offset.x(), iWorld.y() + offset.y(), iWorld.z() + offset.z()});
-		if (neighborChunk == ownChunk)
-			continue;
-		if (const auto chunk = getChunk(neighborChunk))
-			chunk->markDirty();
+	const math::vec3i low = worldToChunk(math::vec3i{iWorld.x() - 1, iWorld.y() - 1, iWorld.z() - 1});
+	const math::vec3i high = worldToChunk(math::vec3i{iWorld.x() + 1, iWorld.y() + 1, iWorld.z() + 1});
+	for (int32_t cy = low.y(); cy <= high.y(); ++cy) {
+		for (int32_t cz = low.z(); cz <= high.z(); ++cz) {
+			for (int32_t cx = low.x(); cx <= high.x(); ++cx) {
+				const math::vec3i coord{cx, cy, cz};
+				if (coord == ownChunk)
+					continue;
+				if (const auto chunk = getChunk(coord))
+					chunk->markDirty();
+			}
+		}
 	}
 }
 
@@ -73,6 +75,30 @@ auto VoxelWorld::operator=(const VoxelWorld& iOther) -> VoxelWorld& {
 	VoxelWorld copy(iOther);
 	m_chunks = std::move(copy.m_chunks);
 	return *this;
+}
+
+void VoxelWorld::markChunkNeighborsDirty(const math::vec3i& iCoord) const {
+	for (int32_t dy = -1; dy <= 1; ++dy) {
+		for (int32_t dz = -1; dz <= 1; ++dz) {
+			for (int32_t dx = -1; dx <= 1; ++dx) {
+				if (dx == 0 && dy == 0 && dz == 0)
+					continue;
+				if (const auto chunk = getChunk(math::vec3i{iCoord.x() + dx, iCoord.y() + dy, iCoord.z() + dz}))
+					chunk->markDirty();
+			}
+		}
+	}
+}
+
+auto VoxelWorld::insertChunk(const math::vec3i& iCoord, Chunk&& iChunk) -> shared<Chunk> {
+	const auto chunk = getOrCreateChunk(iCoord);
+	const bool affectsNeighbors = !chunk->isEmpty() || !iChunk.isEmpty();
+	*chunk = std::move(iChunk);
+	chunk->setCoord(iCoord);
+	chunk->markDirty();
+	if (affectsNeighbors)
+		markChunkNeighborsDirty(iCoord);
+	return chunk;
 }
 
 auto VoxelWorld::getChunk(const math::vec3i& iCoord) const -> shared<Chunk> {

@@ -101,9 +101,12 @@ const data::voxel::BlockId id = chunk.getBlock(1, 2, 3);
 const bool dirty = chunk.isDirty();// true until markClean()
 ```
 
-Writes set a `dirty` flag only when the stored value actually changes — the mesher and persistence layers use it to
-re-mesh or re-save just the chunks that moved. `Chunk::encode` / `decode` run-length encode the block data to a
-compact string (`"<count>x<id>"` runs) for storage.
+Writes set a `dirty` flag only when the stored value actually changes, and invalidate the chunk **revision**
+(`Chunk::getRevision`): a process-unique number stamped on demand from a global counter, so two different contents
+never share one. A copy keeps the revision of its source (same content). The renderer keys its meshes by revision,
+which is how an asynchronous mesh is recognised as stale. The chunk also counts its non-air blocks, so `isEmpty` is
+constant time. `Chunk::encode` / `decode` run-length encode the block data to a compact string (`"<count>x<id>"`
+runs) for storage.
 
 ## The World
 
@@ -155,6 +158,12 @@ Three techniques keep the geometry small and shaded:
   breaks around an occluder) and the quad's split diagonal flips on asymmetric corners to avoid an interpolation
   seam.
 
+The mesher reads one cell beyond its chunk on every side: the face neighbour for culling, the edge and corner cells
+for ambient occlusion. `data::voxel::ChunkNeighborhood::capture(world, coord)` copies exactly that — the chunk with its
+metadata plus the one-cell shell of its 26 neighbours (an `18³` grid) and the chunk revision — and
+`ChunkMesher::meshByKind(neighborhood, registry, ao)` meshes the copy. The result is identical to meshing the live
+world, but it reads nothing shared, so it runs on a worker thread while the world keeps changing.
+
 `meshByKind` runs the same culling/merging/AO once per render pass: opaque blocks fill `ChunkMeshSet::opaque`,
 transparent and water blocks fill `ChunkMeshSet::transparent`. Ambient occlusion is optional — the `VoxelWorld`
 component exposes an **Ambient Occlusion** toggle (on by default); turning it off meshes every face flat-lit.
@@ -174,15 +183,16 @@ A voxel world reaches the screen through two pieces:
   `VoxelWorld` chunks, the per-block texture paths, and the directional-light settings, all serialized inline in the
   `.owl` scene (block list + run-length-encoded chunks). It is fully inspectable/editable in Owl Nest.
 - **`RendererVoxel`** — a render-stack layer (factory key `"RendererVoxel"`) built on [Renderer3D](renderer.md). It
-  greedy-meshes each chunk into an opaque and a transparent mesh, caches both per entity (rebuilt only when the chunk
-  is dirty), resolves the per-block textures (Nearest filtering), and draws them with the frac-tiled `voxel` shader so
+  greedy-meshes each chunk into an opaque and a transparent mesh on the task workers (see *Asynchronous Meshing*
+  below), caches both per entity (rebuilt when the chunk revision changes), resolves the per-block textures (Nearest
+  filtering), and draws them with the frac-tiled `voxel` shader so
   greedy-merged faces tile rather than stretch. It draws the **opaque pass first** (depth writes on), then the
   **transparent pass** (water / glass) sorted **back-to-front** by chunk distance to the camera with depth writes
   disabled, so the blend composites correctly. The entity must carry a `RendererTag` routing it to the voxel layer;
   `Scene::render` only draws voxel worlds when the active layer is voxel-capable (mirroring the raycast path).
-  Dirty chunks are meshed and uploaded by `Scene::renderWithStack` before the first layer draws, so the editor
-  viewport and the exported game (`OwlRunner`) share the same path; `RendererVoxel::getStatistics()` reports the
-  cached and drawn mesh counts.
+  Finished meshes are uploaded by `Scene::renderWithStack` before the first layer draws, so the editor viewport and
+  the exported game (`OwlRunner`) share the same path; `RendererVoxel::getStatistics()` reports the cached and drawn
+  mesh counts and the meshing counters.
 
 The sample project ships a `voxel_terrain.owl` scene — an endless seeded procedural landscape (see *Procedural
 Terrain* below), textured from the dedicated `voxel_blocks` tileset (16 block faces: grass, dirt, stone, sand, wood,
@@ -221,10 +231,56 @@ direction) up to `reach` blocks. The targeted block is outlined with a wireframe
 edges of its camera-facing faces (the hidden back edges stay invisible). **Left-click breaks** it (replaced with
 air), **right-click places** the player's `placeBlock` in the empty cell against the face the ray hit — unless that
 cell would intersect the player's body. Edits only fire while the cursor
-is captured (so the click that captures the cursor never doubles as an edit). Because an edit on a chunk border also
-affects the neighbour chunk's visible faces, the edit calls `VoxelWorld::markNeighborChunksDirty`, which re-meshes the
-adjacent chunk (this is kept off `VoxelWorld::setBlock` so bulk terrain streaming does not pay for it). `reach` and
+is captured (so the click that captures the cursor never doubles as an edit). Because an edit near a chunk border also
+affects the neighbour chunks' visible faces and ambient occlusion, the edit calls `VoxelWorld::markNeighborChunksDirty`,
+which re-meshes the face, edge and corner neighbours it touches (this is kept off `VoxelWorld::setBlock` so bulk
+terrain streaming does not pay for it). `reach` and
 `placeBlock` are authored on the `VoxelPlayer` component.
+
+### Asynchronous Meshing
+
+Meshing a surface chunk costs about 350 µs, so a streaming frame that meshed every new chunk on the main thread
+spiked to 9-14 ms. The main thread now only captures, uploads and draws, and stays under 0.6 ms per frame while
+terrain streams in (`bench/` group `voxel/streaming`, numbers in `doc/audit/20-mesures.md` §3.10):
+
+```mermaid
+sequenceDiagram
+    participant Main as Main thread (prepareWorld)
+    participant Worker as Task worker
+    Main->>Main: scan chunks, revision without mesh or job, nearest first
+    Main->>Main: capture ChunkNeighborhood (chunk + 26-neighbour shell)
+    Main->>Worker: push job (copy, registry snapshot, atlas grid)
+    Worker->>Worker: meshByKind + Mesh3DVertex conversion
+    Worker-->>Main: result (revision, CPU vertices) under a mutex
+    Main->>Main: next frame: revision still current? upload within the budget, else drop
+```
+
+- **Revision check.** A job carries the revision it captured. When it comes back, the result is uploaded only if the
+  chunk still exists and still has that revision; otherwise it is dropped (`discardedMeshCount`) and a new job is
+  queued for the current content. The previous mesh stays drawn until its replacement is uploaded, so an edit never
+  makes a chunk flicker.
+- **Neighbours.** An edit marks the chunks across the border dirty (`VoxelWorld::markNeighborChunksDirty`: face,
+  edge and corner neighbours, up to seven chunks for a corner block), from every edit path: the player's break /
+  place, the editor brush and structure stamp (`VoxelEditCommand`, undo and redo included) and
+  `VoxelStructure::stampInto`. A streamed chunk is installed with `VoxelWorld::insertChunk`, which dirties its 26
+  neighbours unless both the new and the replaced content are all air, so their border faces and ambient occlusion
+  are rebuilt against it. A chunk whose neighbour is still being generated waits for it rather than being meshed
+  twice.
+- **Budget.** Uploads run in `RendererVoxel::prepareWorld`, outside any render pass, within the window opened by
+  `RendererVoxel::beginPrepare()` once per frame. An all-air chunk drops its mesh without a job.
+
+`RendererVoxel::setMeshingConfig` tunes it (`VoxelMeshingConfig`):
+
+| Field                | Default | Meaning                                                                             |
+|----------------------|---------|-------------------------------------------------------------------------------------|
+| `async`              | `true`  | Mesh on the workers; `false` (or no `Application`) meshes and uploads in the frame. |
+| `maxUploadsPerFrame` | `32`    | Chunk meshes uploaded per frame at most (at least one always goes through).         |
+| `uploadBudgetMs`     | `2`     | Upload time per frame, checked between two uploads.                                 |
+| `maxJobsInFlight`    | `32`    | Meshing jobs queued or running at once (bounds the copies, keeps priorities fresh). |
+
+Generation follows the same rules: a generated chunk is installed only if it is still pending (not streamed out nor
+cleared by *Regenerate*) and was generated with the current `TerrainParams`; a Play scene forgets the generation its
+editor scene had in flight.
 
 ### Per-block metadata
 
@@ -246,7 +302,8 @@ shoreline, optional water up to a sea level — and carves caves from a 3D Perli
 same world. An optional low-frequency **biome** field varies the surface block (desert sand, grassy plains, snowy,
 rocky mountain tops). `Scene::updateVoxelStreaming` loads chunks in and unloads them out around the camera within the
 configurable radius/height; generation runs **asynchronously on the task `Scheduler`** (workers fill chunks, the main
-thread installs the finished ones), and `RendererVoxel` drops the meshes of unloaded chunks. All parameters (seed,
+thread installs the finished ones with `VoxelWorld::insertChunk`, see *Asynchronous Meshing*), and `RendererVoxel`
+drops the meshes of unloaded chunks. All parameters (seed,
 frequency, octaves, amplitude, sea level, cave threshold, biomes, block ids, …) are editable in the inspector with a
 **Regenerate** button. The `scenes/voxel_terrain.owl` demo is an endless seeded landscape you explore as a grounded
 `VoxelPlayer` (walk / run / jump with collision), reachable from the world-map voxel house.

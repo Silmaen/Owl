@@ -18,6 +18,8 @@
 
 namespace owl::data::voxel {
 
+class ChunkNeighborhood;
+
 /**
  * @brief
  *  One vertex of a chunk mesh, in chunk-local block space.
@@ -145,6 +147,21 @@ public:
 	[[nodiscard]] static auto meshByKind(const Chunk& iChunk, const BlockRegistry& iRegistry,
 										 const NeighborProvider& iNeighbor, bool iAmbientOcclusion = true)
 			-> ChunkMeshSet;
+
+	/**
+	 * @brief
+	 *  Mesh a captured neighbourhood into separate opaque and transparent geometry (worker-safe).
+	 *
+	 * Gives exactly the mesh of the `Chunk` overload called on the live world the neighbourhood was captured
+	 * from, but reads only the neighbourhood and the registry: it may run on a worker thread while the world is
+	 * being edited.
+	 * @param[in] iNeighborhood The captured chunk and border shell.
+	 * @param[in] iRegistry The block registry resolving render kind and face textures.
+	 * @param[in] iAmbientOcclusion When true, bake per-vertex ambient occlusion; when false, leave every vertex fully lit.
+	 * @return The opaque and transparent meshes (either may be empty).
+	 */
+	[[nodiscard]] static auto meshByKind(const ChunkNeighborhood& iNeighborhood, const BlockRegistry& iRegistry,
+										 bool iAmbientOcclusion = true) -> ChunkMeshSet;
 };
 
 }// namespace owl::data::voxel

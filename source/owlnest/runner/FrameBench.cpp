@@ -10,6 +10,7 @@
 
 #include "FrameBenchStats.h"
 
+#include <renderer/RendererVoxel.h>
 #include <renderer/gpu/RenderCommand.h>
 
 #include <algorithm>
@@ -249,6 +250,12 @@ void FrameBench::start() {
 	m_device = renderer::gpu::RenderCommand::getDeviceName();
 	m_presentMode = renderer::gpu::RenderCommand::getPresentMode();
 	m_windowSize = app.getWindow().getSize();
+	// A capture is compared to a reference image: mesh every voxel chunk in its frame, as a fixed frame count needs.
+	if (!m_options.capture.empty()) {
+		auto meshing = renderer::RendererVoxel::getMeshingConfig();
+		meshing.async = false;
+		renderer::RendererVoxel::setMeshingConfig(meshing);
+	}
 	OWL_INFO("FrameBench: {} on {} ({}, present {}), {} warm-up + {} measured frames.",
 			 m_options.scene.filename().string(), backendName(m_options.backend), m_device, m_presentMode,
 			 m_options.warmup, m_options.frames)

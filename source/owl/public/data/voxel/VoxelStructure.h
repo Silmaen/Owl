@@ -131,6 +131,8 @@ struct OWL_API VoxelStructure {
 	/**
 	 * @brief
 	 *  Stamp the structure's non-air blocks into a world with its min corner at an origin.
+	 *
+	 * Chunks across a border of a stamped block are marked dirty too (`VoxelWorld::markNeighborChunksDirty`).
 	 * @param[in,out] ioWorld The world to write into.
 	 * @param[in] iOrigin World coordinate the structure's local `(0,0,0)` maps to.
 	 */
