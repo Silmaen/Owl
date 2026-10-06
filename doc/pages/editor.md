@@ -736,6 +736,30 @@ main thread via a progress modal (`AsyncProgressModal`). Pack Game additionally 
 **pre-packaging validation** step that lists missing references (textures, sounds,
 scripts, scenes) before proceeding — the user can either cancel or confirm to pack anyway.
 
+**Exporting a game.** Pack Game writes `<output>/<GameName>/` (the name with spaces and reserved characters
+turned into `_`):
+
+| File                       | Content                                                            |
+|----------------------------|--------------------------------------------------------------------|
+| `<GameName>.owlpack`       | Every scanned asset, engine shaders and fonts, `game_settings.yml` |
+| `<GameName>` / `.exe`      | Copy of `OwlRunner`                                                |
+| `*.so` / `*.dll`           | Shared libraries found next to the editor                          |
+| `runner.yml`               | First scene, pack, window defaults, renderer stack, icon           |
+| `game_info.yml`            | Name, version, author, description, engine version, date, platform |
+| `launch.sh` (Linux)        | Sets `LD_LIBRARY_PATH` to the game folder and starts the game      |
+| `<GameName>.zip` (Windows) | Archive of the game folder, next to it                             |
+| icon                       | The project icon, at its project-relative path                     |
+
+The same export runs without a window from the command line, which CI uses:
+
+```bash
+OwlNest --export <project dir or owl_project.yml> <output dir>
+<output dir>/<GameName>/launch.sh --headless --smoke-test 60
+```
+
+`--headless` uses the Null window, renderer and sound backends; `--smoke-test [frames]` plays every scene of the
+pack for that many frames and exits with code 1 if any error was logged. See [Game export](design/game-export.md).
+
 The Edit menu labels dynamically show the description of the next undo/redo action
 (e.g., "Undo Delete 'Player'").
 

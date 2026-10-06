@@ -38,6 +38,15 @@ Texture::Texture(const Specification& iSpecs) : m_specification{iSpecs} {}
 		return "nam:" + m_name;
 	}
 	if (!m_path.empty()) {
+		// A file inside an asset directory is saved by name so the scene stays portable (packs, other machines).
+		if (app::Application::instanced() && m_path.is_absolute()) {
+			const auto normalized = m_path.lexically_normal();
+			for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
+				if (const auto rel = normalized.lexically_relative(assetsPath.lexically_normal());
+					!rel.empty() && *rel.begin() != "..")
+					return "nam:" + rel.generic_string();
+			}
+		}
 		return "pat:" + m_path.string();
 	}
 	return std::format("spec:{}", m_specification.toString());

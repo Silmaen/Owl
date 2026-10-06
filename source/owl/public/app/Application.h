@@ -236,20 +236,6 @@ public:
 
 	/**
 	 * @brief
-	 *  Set the code returned by the program entry point once the application stops.
-	 * @param[in] iExitCode The process exit code (0 on success).
-	 */
-	void setExitCode(const int iExitCode) { m_exitCode = iExitCode; }
-
-	/**
-	 * @brief
-	 *  Get the code the program entry point returns.
-	 * @return The process exit code.
-	 */
-	[[nodiscard]] auto getExitCode() const -> int { return m_exitCode; }
-
-	/**
-	 * @brief
 	 *  Start or stop timing the phases of the main loop (off by default).
 	 * @param[in] iEnabled True to time the next iterations.
 	 */
@@ -350,6 +336,22 @@ public:
 	 * @return The current application's state.
 	 */
 	[[nodiscard]] auto getState() const -> const State& { return m_state; }
+
+	/**
+	 * @brief
+	 *  Set the process exit code returned by `main` once the application stops.
+	 * @param[in] iCode The exit code (0 means success).
+	 */
+	void setExitCode(const int iCode) { m_exitCode = iCode; }
+
+	/**
+	 * @brief
+	 *  Get the process exit code.
+	 * @return The exit code, 1 when the application ended in the Error state and no code was set.
+	 */
+	[[nodiscard]] auto getExitCode() const -> int {
+		return m_exitCode == 0 && m_state == State::Error ? 1 : m_exitCode;
+	}
 
 	/**
 	 * @brief
@@ -467,12 +469,12 @@ private:
 	shared<gui::UiLayer> mp_imGuiLayer = nullptr;
 	/// Running state.
 	State m_state = State::Created;
+	/// Process exit code returned by `main`.
+	int m_exitCode = 0;
 	/// If Window minimized.
 	bool m_minimized = false;
 	/// True while the main-loop phases are timed.
 	bool m_frameTimingsEnabled = false;
-	/// Exit code returned by the entry point.
-	int m_exitCode = 0;
 	/// Phase timings of the last completed main-loop iteration.
 	FrameTimings m_lastFrameTimings;
 	/// The stack of layers.

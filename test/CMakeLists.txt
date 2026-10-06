@@ -91,6 +91,15 @@ foreach (child ${children})
                 ${child} STREQUAL "sound_tests" OR ${child} STREQUAL "script_tests")
                 set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES RESOURCE_LOCK owl_engine_globals)
             endif ()
+            # export_tests exports sample_project with OwlNest and plays it with the exported OwlRunner.
+            if (${child} STREQUAL "export_tests")
+                set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES LABELS "export")
+                foreach (app_target ${CMAKE_PROJECT_NAME}Nest ${CMAKE_PROJECT_NAME}Runner)
+                    if (TARGET ${app_target})
+                        add_dependencies(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${app_target})
+                    endif ()
+                endforeach ()
+            endif ()
             if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
                 # Copy every runtime DLL the test binary's full link graph pulls in next to the executable: a test
                 # may surface transitive DLLs the engine's own post-build copy did not see (gtest is static).

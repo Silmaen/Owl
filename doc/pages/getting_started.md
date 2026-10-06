@@ -37,6 +37,13 @@ desktop windows, which GLFW cannot place under Wayland). See [Building](building
 | Engine architecture               | [architecture.md](architecture.md) |
 | How to contribute                 | [contributing.md](contributing.md) |
 
+## Shipping Your Game
+
+**File > Pack Game** exports the open project to a folder you can copy anywhere: the game executable, its
+shared libraries, one `.owlpack` holding every asset, `runner.yml` and a `launch.sh` on Linux. Start the game
+with `launch.sh` (Linux) or the `.exe` (Windows). Fix the validation warnings before shipping: a reference listed
+there is missing from the pack. Details in [editor.md](editor.md) and [Game export](design/game-export.md).
+
 ## Useful Shortcuts
 
 | Shortcut            | Action                     |

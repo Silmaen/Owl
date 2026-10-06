@@ -330,14 +330,15 @@ void AssetScanner::scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recurs
 		addTextureField(bg);
 	if (auto img = iEntity["UiImage"]; img)
 		addTextureField(img);
-	if (auto text = iEntity["TextRenderer"]; text)
-		if (auto font = text["font"]; font) {
-			const auto name = font.as<std::string>();
-			if (auto ref = resolveFont(name); ref && !hasAsset(ioAssets, ref->packPath))
-				ioAssets.push_back(*ref);
-			else if (!ref)
-				pushWarning(ioWarnings, "Font", name, iSceneName);
-		}
+	for (const char* component: {"TextRenderer", "UiText"})
+		if (auto text = iEntity[component]; text)
+			if (auto font = text["font"]; font) {
+				const auto name = font.as<std::string>();
+				if (auto ref = resolveFont(name); ref && !hasAsset(ioAssets, ref->packPath))
+					ioAssets.push_back(*ref);
+				else if (!ref)
+					pushWarning(ioWarnings, "Font", name, iSceneName);
+			}
 	if (auto soundSrc = iEntity["SoundSource"]; soundSrc)
 		if (auto asset = soundSrc["soundAsset"]; asset) {
 			const auto name = asset.as<std::string>();
@@ -374,6 +375,9 @@ void AssetScanner::scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recurs
 		if (auto node = iEntity[component]; node)
 			if (auto path = node["tilesetPath"]; path)
 				scanTileset(path.as<std::string>(), iSceneName, ioAssets, ioWarnings);
+	if (auto voxel = iEntity["VoxelWorld"]; voxel)
+		if (auto path = voxel["Tileset"]; path)
+			scanTileset(path.as<std::string>(), iSceneName, ioAssets, ioWarnings);
 }
 
 void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {

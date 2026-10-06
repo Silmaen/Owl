@@ -78,7 +78,7 @@ Every fix lands with its regression test.
 - ![Done][done] `on_collision` implemented — the callback documented since v0.1 is fed by Box2D contact events,
   with the entity it collided with (D-07, I-02); the rest of the 2D physics API is v0.5.0, see
   [Physics API](physics-api.md)
-- ![Planned][planned] Game export works end to end — packaging, pack, runner, assets, voxel in the runner (D-03),
+- ![Done][done] Game export works end to end — packaging, pack, runner, assets, voxel in the runner (D-03),
   window icon; an automated test exports the sample project and runs it headless. See [Game export](game-export.md)
 - ![In Progress][progress] Full Wayland support — Owl icon, editor multi-window (detached ImGui windows), X11 kept as an
   option. See [Windowing and input](windowing-input.md)
