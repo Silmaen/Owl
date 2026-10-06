@@ -59,7 +59,7 @@ TEST_F(EntityCommandsTest, DeleteLeafUndoRedo) {
 	const auto uuid = entity.getUUID();
 	const auto before = sceneState(m_scene);
 
-	m_undo.execute(mkUniq<DeleteEntityCommand>(entity), m_scene);
+	m_undo.execute(mkUniq<DeleteEntityCommand>(entity, m_scene), m_scene);
 	EXPECT_FALSE(m_scene.findEntityByUUID(uuid));
 	EXPECT_EQ(m_scene.getEntityCount(), 0u);
 
@@ -79,7 +79,7 @@ TEST_F(EntityCommandsTest, DeleteChildUndoRestoresParentLink) {
 	const auto childUuid = child.getUUID();
 	const auto before = sceneState(m_scene);
 
-	m_undo.execute(mkUniq<DeleteEntityCommand>(child), m_scene);
+	m_undo.execute(mkUniq<DeleteEntityCommand>(child, m_scene), m_scene);
 	EXPECT_TRUE(childrenOf(parent).empty());
 
 	m_undo.undo(m_scene);
@@ -98,7 +98,7 @@ TEST_F(EntityCommandsTest, DeleteParentUndoReattachesChildren) {
 	m_scene.setParent(childB, parent);
 	const auto parentUuid = parent.getUUID();
 
-	m_undo.execute(mkUniq<DeleteEntityCommand>(parent), m_scene);
+	m_undo.execute(mkUniq<DeleteEntityCommand>(parent, m_scene), m_scene);
 	EXPECT_EQ(parentOf(childA), core::UUID{0});
 	EXPECT_EQ(parentOf(childB), core::UUID{0});
 
@@ -110,20 +110,18 @@ TEST_F(EntityCommandsTest, DeleteParentUndoReattachesChildren) {
 	EXPECT_EQ(childrenOf(restored), (std::vector{childA.getUUID(), childB.getUUID()}));
 }
 
-// C-05, fixed by PR-03 (children keep their world position when their parent is deleted).
-TEST_F(EntityCommandsTest, DISABLED_DeleteParentKeepsChildrenWorld) {
+TEST_F(EntityCommandsTest, DeleteParentKeepsChildrenWorld) {
 	auto parent = m_scene.createEntity("Parent");
 	auto child = m_scene.createEntity("Child");
 	setLocalX(parent, 5.f);
 	m_scene.setParent(child, parent);
 	ASSERT_FLOAT_EQ(worldX(m_scene, child), 0.f);
 
-	m_undo.execute(mkUniq<DeleteEntityCommand>(parent), m_scene);
+	m_undo.execute(mkUniq<DeleteEntityCommand>(parent, m_scene), m_scene);
 	EXPECT_FLOAT_EQ(worldX(m_scene, child), 0.f);
 }
 
-// C-05, fixed by PR-03 (undo restores the children local transforms and sibling order).
-TEST_F(EntityCommandsTest, DISABLED_DeleteParentUndoRestoresScene) {
+TEST_F(EntityCommandsTest, DeleteParentUndoRestoresScene) {
 	auto grandParent = m_scene.createEntity("GrandParent");
 	auto sibling = m_scene.createEntity("Sibling");
 	auto parent = m_scene.createEntity("Parent");
@@ -136,7 +134,7 @@ TEST_F(EntityCommandsTest, DISABLED_DeleteParentUndoRestoresScene) {
 	setLocalX(child, 2.f);
 	const auto before = sceneState(m_scene);
 
-	m_undo.execute(mkUniq<DeleteEntityCommand>(parent), m_scene);
+	m_undo.execute(mkUniq<DeleteEntityCommand>(parent, m_scene), m_scene);
 	m_undo.undo(m_scene);
 	EXPECT_EQ(sceneState(m_scene), before);
 }
@@ -196,4 +194,37 @@ TEST_F(EntityCommandsTest, DuplicateSubtreeUndoRedo) {
 	m_undo.redo(m_scene);
 	EXPECT_EQ(m_scene.getEntityCount(), 4u);
 	EXPECT_EQ(sceneState(m_scene), duplicated);
+}
+
+TEST_F(EntityCommandsTest, DeleteSubtreeUndoRestoresSiblingSlot) {
+	auto anchor = m_scene.createEntity("Anchor");
+	auto first = m_scene.createEntity("First");
+	auto root = m_scene.createEntity("Root");
+	auto last = m_scene.createEntity("Last");
+	auto child = m_scene.createEntity("Child");
+	m_scene.setParent(first, anchor);
+	m_scene.setParent(root, anchor);
+	m_scene.setParent(last, anchor);
+	m_scene.setParent(child, root);
+	const auto before = sceneState(m_scene);
+
+	m_undo.execute(mkUniq<DeleteSubtreeCommand>(root, m_scene), m_scene);
+	m_undo.undo(m_scene);
+	EXPECT_EQ(sceneState(m_scene), before);
+}
+
+TEST_F(EntityCommandsTest, DeleteParentRedoUndoTwice) {
+	auto parent = m_scene.createEntity("Parent");
+	auto child = m_scene.createEntity("Child");
+	setLocalX(parent, 5.f);
+	m_scene.setParent(child, parent);
+	setLocalX(child, 1.f);
+	const auto before = sceneState(m_scene);
+	m_undo.execute(mkUniq<DeleteEntityCommand>(parent, m_scene), m_scene);
+	const auto deleted = sceneState(m_scene);
+	m_undo.undo(m_scene);
+	m_undo.redo(m_scene);
+	EXPECT_EQ(sceneState(m_scene), deleted);
+	m_undo.undo(m_scene);
+	EXPECT_EQ(sceneState(m_scene), before);
 }

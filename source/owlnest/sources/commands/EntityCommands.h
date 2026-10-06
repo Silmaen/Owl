@@ -11,6 +11,7 @@
 #include "../EntitySnapshot.h"
 #include "../UndoCommand.h"
 
+#include <math/Transform.h>
 #include <string>
 #include <vector>
 
@@ -91,8 +92,9 @@ public:
 	 * @brief
 	 *  Construct before an entity is destroyed.
 	 * @param[in] iEntity The entity about to be destroyed.
+	 * @param[in] iScene The scene holding the entity.
 	 */
-	explicit DeleteEntityCommand(const scene::Entity& iEntity);
+	DeleteEntityCommand(const scene::Entity& iEntity, const scene::Scene& iScene);
 
 	/**
 	 * @brief
@@ -126,10 +128,12 @@ private:
 	EntitySnapshot m_snapshot;
 	/// Display name used in the Edit-menu undo/redo entry.
 	std::string m_name;
-	/// Parent UUID (for re-parenting on undo).
-	core::UUID m_parentUuid{0};
-	/// Children UUIDs (for re-parenting on undo).
+	/// Parent and sibling index of the entity (restored on undo).
+	HierarchySlot m_slot;
+	/// Children UUIDs, in sibling order (re-attached on undo).
 	std::vector<core::UUID> m_childrenUuids;
+	/// Children local transforms before the deletion (restored on undo).
+	std::vector<math::Transform> m_childrenLocal;
 };
 /**
  * @brief
@@ -187,8 +191,8 @@ private:
 	SubtreeSnapshot m_snapshot;
 	/// Display name used in the Edit-menu undo/redo entry.
 	std::string m_name;
-	/// Parent UUID of the subtree root (for re-parenting on undo).
-	core::UUID m_parentUuid{0};
+	/// Parent and sibling index of the subtree root (restored on undo).
+	HierarchySlot m_slot;
 };
 /**
  * @brief

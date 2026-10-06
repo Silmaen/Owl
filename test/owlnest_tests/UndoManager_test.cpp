@@ -274,8 +274,7 @@ TEST(UndoManager, ClearResetsHistoryAndDirty) {
 	EXPECT_EQ(manager.lastSelectionHint(), core::UUID{0});
 }
 
-// E-02, fixed by PR-03 (dirty generation counter).
-TEST(UndoManager, DISABLED_DirtyAfterSaveUndoEdit) {
+TEST(UndoManager, DirtyAfterSaveUndoEdit) {
 	UndoManager<Counter> manager;
 	manager.setMergeEnabled(false);
 	Counter target;
@@ -286,8 +285,7 @@ TEST(UndoManager, DISABLED_DirtyAfterSaveUndoEdit) {
 	EXPECT_TRUE(manager.isDirty());
 }
 
-// E-02, fixed by PR-03 (dirty generation counter).
-TEST(UndoManager, DISABLED_DirtyAfterMergeIntoSavedCommand) {
+TEST(UndoManager, DirtyAfterMergeIntoSavedCommand) {
 	UndoManager<Counter> manager;
 	Counter target;
 	pushApplied(manager, target, mkUniq<AddCommand>(1, 42));
@@ -298,8 +296,7 @@ TEST(UndoManager, DISABLED_DirtyAfterMergeIntoSavedCommand) {
 	EXPECT_TRUE(manager.isDirty());
 }
 
-// E-02, fixed by PR-03 (dirty generation counter).
-TEST(UndoManager, DISABLED_DirtyWhenSavePointDroppedFromRedo) {
+TEST(UndoManager, DirtyWhenSavePointDroppedFromRedo) {
 	UndoManager<Counter> manager;
 	manager.setMergeEnabled(false);
 	Counter target;
@@ -310,5 +307,36 @@ TEST(UndoManager, DISABLED_DirtyWhenSavePointDroppedFromRedo) {
 	manager.undo(target);
 	manager.execute(mkUniq<AddCommand>(5), target);
 	manager.execute(mkUniq<AddCommand>(7), target);
+	EXPECT_TRUE(manager.isDirty());
+}
+
+TEST(UndoManager, ClearAfterEditsIsClean) {
+	UndoManager<Counter> manager;
+	Counter target;
+	manager.execute(mkUniq<AddCommand>(1), target);
+	manager.markSaved();
+	manager.execute(mkUniq<AddCommand>(2), target);
+	ASSERT_TRUE(manager.isDirty());
+	manager.clear();
+	EXPECT_FALSE(manager.isDirty());
+	manager.execute(mkUniq<AddCommand>(3), target);
+	EXPECT_TRUE(manager.isDirty());
+	manager.undo(target);
+	EXPECT_FALSE(manager.isDirty());
+}
+
+TEST(UndoManager, DirtyAfterRedoPastSavePoint) {
+	UndoManager<Counter> manager;
+	manager.setMergeEnabled(false);
+	Counter target;
+	manager.execute(mkUniq<AddCommand>(1), target);
+	manager.execute(mkUniq<AddCommand>(2), target);
+	manager.undo(target);
+	manager.markSaved();
+	manager.redo(target);
+	EXPECT_TRUE(manager.isDirty());
+	manager.undo(target);
+	EXPECT_FALSE(manager.isDirty());
+	manager.undo(target);
 	EXPECT_TRUE(manager.isDirty());
 }

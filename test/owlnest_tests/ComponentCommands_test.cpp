@@ -122,8 +122,7 @@ TEST_F(ComponentCommandsTest, ModifyDoesNotMergeAcrossEntities) {
 	EXPECT_TRUE(m_undo.canUndo());
 }
 
-// E-01, fixed by PR-03 (undo restores the entity in place).
-TEST_F(ComponentCommandsTest, DISABLED_ModifyParentUndoKeepsChildren) {
+TEST_F(ComponentCommandsTest, ModifyParentUndoKeepsChildren) {
 	auto parent = m_scene.createEntity("Parent");
 	auto child = m_scene.createEntity("Child");
 	setLocalX(parent, 5.f);
@@ -148,8 +147,7 @@ TEST_F(ComponentCommandsTest, DISABLED_ModifyParentUndoKeepsChildren) {
 	EXPECT_FLOAT_EQ(worldX(m_scene, m_scene.findEntityByUUID(childUuid)), 3.f);
 }
 
-// E-01, fixed by PR-03 (undo restores the entity in place).
-TEST_F(ComponentCommandsTest, DISABLED_AddComponentOnParentUndoKeepsChildren) {
+TEST_F(ComponentCommandsTest, AddComponentOnParentUndoKeepsChildren) {
 	auto parent = m_scene.createEntity("Parent");
 	auto child = m_scene.createEntity("Child");
 	m_scene.setParent(child, parent);
@@ -166,8 +164,7 @@ TEST_F(ComponentCommandsTest, DISABLED_AddComponentOnParentUndoKeepsChildren) {
 	EXPECT_EQ(sceneState(m_scene), after);
 }
 
-// E-05, fixed by PR-03 (the entity handle survives an undo, so selections and links stay valid).
-TEST_F(ComponentCommandsTest, DISABLED_ModifyUndoKeepsEntityHandle) {
+TEST_F(ComponentCommandsTest, ModifyUndoKeepsEntityHandle) {
 	auto entity = m_scene.createEntity("E");
 	const auto handle = static_cast<entt::entity>(entity);
 	m_undo.push(modifyX(entity, 8.f));
@@ -175,4 +172,20 @@ TEST_F(ComponentCommandsTest, DISABLED_ModifyUndoKeepsEntityHandle) {
 	EXPECT_TRUE(entity);
 	EXPECT_EQ(static_cast<entt::entity>(m_scene.findEntityByUUID(entity.getUUID())), handle);
 	EXPECT_FLOAT_EQ(localX(entity), 0.f);
+}
+
+TEST_F(ComponentCommandsTest, ModifyUndoKeepsDeepHierarchy) {
+	auto root = m_scene.createEntity("Root");
+	auto middle = m_scene.createEntity("Middle");
+	auto leaf = m_scene.createEntity("Leaf");
+	m_scene.setParent(middle, root);
+	m_scene.setParent(leaf, middle);
+	setLocalX(middle, 2.f);
+	const auto before = sceneState(m_scene);
+	m_undo.push(modifyX(middle, 5.f));
+	m_undo.undo(m_scene);
+	EXPECT_EQ(sceneState(m_scene), before);
+	m_undo.redo(m_scene);
+	EXPECT_FLOAT_EQ(worldX(m_scene, leaf), 5.f);
+	EXPECT_EQ(parentOf(leaf), middle.getUUID());
 }

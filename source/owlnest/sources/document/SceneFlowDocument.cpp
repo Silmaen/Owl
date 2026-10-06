@@ -594,7 +594,7 @@ void SceneFlowDocument::onLinkErased(core::UUID iLinkId) {
 		return;
 	const gui::widgets::Link linkSnapshot{.id = iLinkId, .fromPin = origin.outputPinId, .toPin = origin.inputPinId};
 
-	auto sceneCmd = mkUniq<commands::DeleteEntityCommand>(entity);
+	auto sceneCmd = mkUniq<commands::DeleteEntityCommand>(entity, *scene);
 	auto canvasCmd = mkUniq<commands::RemovePinAndLinkCommand>(origin.sourceNodeId, pinSnapshot, linkSnapshot);
 
 	m_canvas.removeOutputPin(origin.sourceNodeId, origin.outputPinId);

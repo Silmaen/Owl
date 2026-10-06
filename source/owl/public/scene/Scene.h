@@ -108,7 +108,10 @@ public:
 
 	/**
 	 * @brief
-	 *  Destroy n entity.
+	 *  Destroy an entity, handing its children over to its parent.
+	 *
+	 * The children take the entity's place among its parent's children (sibling order kept) and
+	 * their local transform is recomputed so their world position does not move.
 	 * @param[in,out] ioEntity Entity to destroy.
 	 */
 	void destroyEntity(Entity& ioEntity);

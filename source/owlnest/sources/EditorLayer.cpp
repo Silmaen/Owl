@@ -589,7 +589,8 @@ void EditorLayer::onAttach() {
 										if (doc == nullptr)
 											return;
 										if (auto ent = getSelectedEntity(); ent) {
-											doc->undoManager().push(mkUniq<commands::DeleteEntityCommand>(ent));
+											doc->undoManager().push(
+													mkUniq<commands::DeleteEntityCommand>(ent, *doc->getActiveScene()));
 											doc->getActiveScene()->destroyEntity(ent);
 
 											setSelectedEntity({});

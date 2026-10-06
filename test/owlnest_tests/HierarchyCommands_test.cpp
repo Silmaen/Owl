@@ -26,7 +26,7 @@ TEST_F(HierarchyCommandsTest, ReparentUndoRedo) {
 	setLocalX(child, 3.f);
 	const auto before = sceneState(m_scene);
 
-	m_undo.execute(mkUniq<ReparentCommand>(child, parent.getUUID()), m_scene);
+	m_undo.execute(mkUniq<ReparentCommand>(child, parent.getUUID(), m_scene), m_scene);
 	EXPECT_EQ(m_undo.undoDescription(), "Reparent 'Child'");
 	EXPECT_EQ(parentOf(child), parent.getUUID());
 	EXPECT_FLOAT_EQ(worldX(m_scene, child), 3.f);
@@ -52,7 +52,7 @@ TEST_F(HierarchyCommandsTest, ReparentBetweenParentsUndoRestoresOldParent) {
 	setLocalX(child, 2.f);
 	const auto before = sceneState(m_scene);
 
-	m_undo.execute(mkUniq<ReparentCommand>(child, newParent.getUUID()), m_scene);
+	m_undo.execute(mkUniq<ReparentCommand>(child, newParent.getUUID(), m_scene), m_scene);
 	EXPECT_EQ(childrenOf(newParent), std::vector{child.getUUID()});
 	EXPECT_TRUE(childrenOf(oldParent).empty());
 	EXPECT_FLOAT_EQ(worldX(m_scene, child), 3.f);
@@ -71,7 +71,7 @@ TEST_F(HierarchyCommandsTest, UnparentUndoRedo) {
 	setLocalX(child, 2.f);
 	const auto before = sceneState(m_scene);
 
-	m_undo.execute(mkUniq<UnparentCommand>(child), m_scene);
+	m_undo.execute(mkUniq<UnparentCommand>(child, m_scene), m_scene);
 	EXPECT_EQ(m_undo.undoDescription(), "Unparent 'Child'");
 	EXPECT_EQ(parentOf(child), core::UUID{0});
 	EXPECT_FLOAT_EQ(localX(child), 7.f);
@@ -89,9 +89,39 @@ TEST_F(HierarchyCommandsTest, UnparentUndoRedo) {
 TEST_F(HierarchyCommandsTest, ReparentOfMissingEntityIsNoOp) {
 	auto parent = m_scene.createEntity("Parent");
 	auto child = m_scene.createEntity("Child");
-	auto command = mkUniq<ReparentCommand>(child, parent.getUUID());
+	auto command = mkUniq<ReparentCommand>(child, parent.getUUID(), m_scene);
 	m_scene.destroyEntity(child);
 	command->redo(m_scene);
 	command->undo(m_scene);
 	EXPECT_TRUE(childrenOf(parent).empty());
+}
+
+TEST_F(HierarchyCommandsTest, ReparentUndoRestoresSiblingOrder) {
+	auto oldParent = m_scene.createEntity("Old");
+	auto newParent = m_scene.createEntity("New");
+	auto first = m_scene.createEntity("First");
+	auto moved = m_scene.createEntity("Moved");
+	auto last = m_scene.createEntity("Last");
+	m_scene.setParent(first, oldParent);
+	m_scene.setParent(moved, oldParent);
+	m_scene.setParent(last, oldParent);
+	const auto before = sceneState(m_scene);
+
+	m_undo.execute(mkUniq<ReparentCommand>(moved, newParent.getUUID(), m_scene), m_scene);
+	m_undo.undo(m_scene);
+	EXPECT_EQ(childrenOf(oldParent), (std::vector{first.getUUID(), moved.getUUID(), last.getUUID()}));
+	EXPECT_EQ(sceneState(m_scene), before);
+}
+
+TEST_F(HierarchyCommandsTest, UnparentUndoRestoresSiblingOrder) {
+	auto parent = m_scene.createEntity("Parent");
+	auto first = m_scene.createEntity("First");
+	auto second = m_scene.createEntity("Second");
+	m_scene.setParent(first, parent);
+	m_scene.setParent(second, parent);
+	const auto before = sceneState(m_scene);
+
+	m_undo.execute(mkUniq<UnparentCommand>(first, m_scene), m_scene);
+	m_undo.undo(m_scene);
+	EXPECT_EQ(sceneState(m_scene), before);
 }

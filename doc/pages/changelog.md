@@ -119,6 +119,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Voxel worlds now show in the exported game: `Scene::renderWithStack` meshes them for the runner and the editor alike (D-03).
 - `SceneSerializer::serialize`, `PrefabSerializer::serialize`, `SettingsManager::saveUserSettings` and the editor's `Project::loadFromFile` / `saveToFile` return `bool`; Lua `settings.save()` returns whether it succeeded.
 - `SceneSerializer::deserialize`, `deserializeFromBuffer` and `applyParsed` return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`) instead of `bool`.
+- Editor undo restores entities in place: undoing an edit of a parent no longer detaches and moves its children, and the entity handle, UUID and sibling slot survive.
+- Deleting an entity keeps its children's world position and sibling order, and undoing the deletion puts them back exactly.
+- Editor dirty flag driven by an undo generation counter: "save, undo, edit" and an edit merged into the saved step now mark the document as modified.
 - `Scene::getEntityCount()` counts the entities instead of always returning 0; the round-trip tests that compared 0 to 0 now check real counts.
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
 - `scene.destroy_entity` is deferred to the end of the frame (`Scene::destroyEntityDeferred`): a script destroying its own entity no longer frees its running Lua state, and the destroyed entity gets `on_destroy` once, loses its Box2D body and takes its children with it.

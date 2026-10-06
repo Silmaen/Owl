@@ -119,3 +119,70 @@ TEST_F(EntitySnapshotTest, SubtreeRestoreOfEmptySnapshotIsInvalid) {
 	const SubtreeSnapshot empty;
 	EXPECT_FALSE(empty.restore(m_scene));
 }
+
+TEST_F(EntitySnapshotTest, RestoreExistingEntityIsInPlace) {
+	auto parent = m_scene.createEntity("Parent");
+	auto child = m_scene.createEntity("Child");
+	m_scene.setParent(child, parent);
+	const auto snapshot = EntitySnapshot::capture(parent);
+	const auto handle = static_cast<entt::entity>(parent);
+	setLocalX(parent, 6.f);
+	parent.addComponent<scene::component::CircleRenderer>();
+
+	const auto restored = snapshot.restore(m_scene);
+	EXPECT_EQ(static_cast<entt::entity>(restored), handle);
+	EXPECT_FLOAT_EQ(localX(parent), 0.f);
+	EXPECT_FALSE(parent.hasComponent<scene::component::CircleRenderer>());
+	EXPECT_EQ(childrenOf(parent), std::vector{child.getUUID()});
+	EXPECT_EQ(m_scene.getEntityCount(), 2u);
+}
+
+TEST_F(EntitySnapshotTest, HierarchySlotRoundTrip) {
+	auto parent = m_scene.createEntity("Parent");
+	auto first = m_scene.createEntity("First");
+	auto second = m_scene.createEntity("Second");
+	auto third = m_scene.createEntity("Third");
+	m_scene.setParent(first, parent);
+	m_scene.setParent(second, parent);
+	m_scene.setParent(third, parent);
+	const auto slot = HierarchySlot::capture(second, m_scene);
+	EXPECT_EQ(slot.parentUuid, parent.getUUID());
+	EXPECT_EQ(slot.siblingIndex, 1u);
+
+	m_scene.unparent(second);
+	setLocalX(second, 4.f);
+	slot.restore(second, m_scene);
+	EXPECT_EQ(childrenOf(parent), (std::vector{first.getUUID(), second.getUUID(), third.getUUID()}));
+	EXPECT_EQ(parentOf(second), parent.getUUID());
+	EXPECT_FLOAT_EQ(localX(second), 4.f);
+}
+
+TEST_F(EntitySnapshotTest, HierarchySlotClampsIndexAndHandlesMissingParent) {
+	auto parent = m_scene.createEntity("Parent");
+	auto child = m_scene.createEntity("Child");
+	HierarchySlot{.parentUuid = parent.getUUID(), .siblingIndex = 42}.restore(child, m_scene);
+	EXPECT_EQ(childrenOf(parent), std::vector{child.getUUID()});
+	HierarchySlot{.parentUuid = core::UUID{}, .siblingIndex = 0}.restore(child, m_scene);
+	EXPECT_EQ(parentOf(child), core::UUID{0});
+	EXPECT_TRUE(childrenOf(parent).empty());
+}
+
+TEST_F(EntitySnapshotTest, SubtreeRestoreInPlaceRepairsLinksAndOrder) {
+	auto root = m_scene.createEntity("Root");
+	auto childA = m_scene.createEntity("A");
+	auto childB = m_scene.createEntity("B");
+	m_scene.setParent(childA, root);
+	m_scene.setParent(childB, root);
+	setLocalX(childA, 1.f);
+	const auto before = sceneState(m_scene);
+	const auto snapshot = SubtreeSnapshot::capture(root, m_scene);
+	const auto handle = static_cast<entt::entity>(childA);
+
+	m_scene.unparent(childA);
+	setLocalX(childA, 9.f);
+	m_scene.setParent(childA, root);
+
+	snapshot.restore(m_scene);
+	EXPECT_EQ(static_cast<entt::entity>(m_scene.findEntityByUUID(childA.getUUID())), handle);
+	EXPECT_EQ(sceneState(m_scene), before);
+}

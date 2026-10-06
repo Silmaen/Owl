@@ -36,19 +36,6 @@ auto InstantiatePrefabCommand::description() const -> std::string {
 }
 
 // --- ApplyPrefabCommand ---
-namespace {
-void destroyAndRestoreSubtree(scene::Scene& ioScene, const SubtreeSnapshot& iSnapshot) {
-	// Destroy existing entities matching the snapshot UUIDs.
-	for (const auto& entitySnap: iSnapshot.entities) {
-		if (auto entity = ioScene.findEntityByUUID(entitySnap.uuid); entity)
-			ioScene.destroyEntity(entity);
-	}
-	// Restore the entire subtree from snapshot.
-	iSnapshot.restore(ioScene);
-}
-
-}// namespace
-
 ApplyPrefabCommand::ApplyPrefabCommand(SubtreeSnapshot iBefore, SubtreeSnapshot iAfter, std::string iDescription)
 	: m_before{std::move(iBefore)}, m_after{std::move(iAfter)}, m_description{std::move(iDescription)} {
 	if (!m_before.entities.empty())
@@ -59,9 +46,9 @@ ApplyPrefabCommand::ApplyPrefabCommand(SubtreeSnapshot iBefore, SubtreeSnapshot 
 
 ApplyPrefabCommand::~ApplyPrefabCommand() = default;
 
-void ApplyPrefabCommand::undo(scene::Scene& ioScene) { destroyAndRestoreSubtree(ioScene, m_before); }
+void ApplyPrefabCommand::undo(scene::Scene& ioScene) { m_before.restore(ioScene); }
 
-void ApplyPrefabCommand::redo(scene::Scene& ioScene) { destroyAndRestoreSubtree(ioScene, m_after); }
+void ApplyPrefabCommand::redo(scene::Scene& ioScene) { m_after.restore(ioScene); }
 
 auto ApplyPrefabCommand::description() const -> std::string { return m_description; }
 
