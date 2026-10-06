@@ -24,7 +24,12 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
   modify with merge), `HierarchyCommands` (reparent, unparent), `PrefabCommands` (instantiate, apply /
   revert), `VoxelCommands`, `NodeGraphCommands`, `SceneFlowCommands`, `SceneSettingsCommands`. Scene
   commands derive from `SceneUndoCommand`.
-- Property edits: `drawComponent<T>` compares the entity YAML before/after `renderProps()`.
+- Property edits: `drawComponent<T>` wraps `renderProps()` in `panel::InspectorEditTracker`. A session opens
+  on interaction with the body (click / release over it, active widget, key with the nav focus inside),
+  captures **the component alone** (`SceneSerializer::serializeComponentToString`) and pushes one
+  `ModifyEntityCommand` when it ends, prefab override marks included.
+- **No per-frame serialization in the inspector**: nothing may serialize an entity or a component on a frame
+  where nothing is edited (`InspectorEditTracker::serializationCount()` is the spy the tests check).
 - Gizmo: `Viewport` captures the transform before/after manipulation and pushes `ModifyEntityCommand`.
 - Selection is restored through each command's `selectAfterUndo` / `selectAfterRedo` hints.
 

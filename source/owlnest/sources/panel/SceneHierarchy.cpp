@@ -25,7 +25,6 @@
 #include <renderer/RenderStack.h>
 #include <renderer/Renderer.h>
 #include <scene/PrefabSerializer.h>
-#include <scene/SceneSerializer.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -150,6 +149,7 @@ auto componentIconName(const char* iCompName) -> const char* {
 [[maybe_unused]] SceneHierarchy::SceneHierarchy(const shared<scene::Scene>& iScene) { setContext(iScene); }
 
 void SceneHierarchy::setContext(const shared<scene::Scene>& iContext) {
+	m_inspector.flush(m_context.get(), mp_undoManager);
 	m_context = iContext;
 	m_selection = {};
 }
@@ -575,10 +575,15 @@ void SceneHierarchy::renderProperties() {
 			(mp_activeDocument != nullptr ? mp_activeDocument->propertiesPanelTitle() : std::string{"Properties"}) +
 			std::string{"###Properties"};
 	ImGui::Begin(title.c_str());
-	if (mp_activeDocument != nullptr && mp_activeDocument->overridesGlobalPanels())
+	if (mp_activeDocument != nullptr && mp_activeDocument->overridesGlobalPanels()) {
+		m_inspector.flush(m_context.get(), mp_undoManager);
 		mp_activeDocument->renderPropertiesPanel();
-	else if (m_selection)
-		drawComponents(m_selection);
+	} else {
+		m_inspector.beginFrame(m_selection, m_context.get(), mp_undoManager);
+		if (m_selection)
+			drawComponents(m_selection);
+		m_inspector.endFrame(m_context.get(), mp_undoManager);
+	}
 	ImGui::End();
 }
 
@@ -655,7 +660,7 @@ void addComponentPop(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, co
 }
 
 template<isNamedComponent T>
-void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
+void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, InspectorEditTracker& ioInspector) {
 	constexpr ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
 												 ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
 												 ImGuiTreeNodeFlags_FramePadding;
@@ -709,20 +714,9 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager) {
 			ImGui::EndPopup();
 		}
 		if (open) {
-			const auto beforeYaml = scene::SceneSerializer::serializeEntityToString(ioEntity);
+			ioInspector.beginComponent(ioEntity, T::key());
 			gui::component::renderProps(component);
-			if (const auto afterYaml = scene::SceneSerializer::serializeEntityToString(ioEntity);
-				beforeYaml != afterYaml) {
-				auto overrides = recordOverrides(ioEntity, beforeYaml);
-				if (iUndoManager != nullptr) {
-					auto cmd = mkUniq<commands::ModifyEntityCommand>(ioEntity.getUUID(),
-																	 EntitySnapshot{ioEntity.getUUID(), beforeYaml},
-																	 std::format("Modify {}", T::name()));
-					cmd->captureAfter(ioEntity);
-					cmd->setPrefabOverrides(std::move(overrides));
-					iUndoManager->push(std::move(cmd));
-				}
-			}
+			ioInspector.endComponent(ioEntity, T::key(), T::name(), iUndoManager);
 			ImGui::TreePop();
 		}
 		if (revertComponent)
@@ -749,8 +743,9 @@ void addComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoMana
 }
 
 template<isNamedComponent... Component>
-void drawComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const std::tuple<Component...>&) {
-	(..., drawComponent<Component>(ioEntity, iUndoManager));
+void drawComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, InspectorEditTracker& ioInspector,
+							 const std::tuple<Component...>&) {
+	(..., drawComponent<Component>(ioEntity, iUndoManager, ioInspector));
 }
 
 }// namespace
@@ -818,7 +813,7 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 		ImGui::EndPopup();
 	}
 	ImGui::PopItemWidth();
-	drawComponentsFromTuple(m_selection, mp_undoManager, gui::component::DrawableComponents{});
+	drawComponentsFromTuple(m_selection, mp_undoManager, m_inspector, gui::component::DrawableComponents{});
 }
 
 }// namespace owl::nest::panel

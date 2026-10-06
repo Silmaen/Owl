@@ -73,6 +73,8 @@ ModifyEntityCommand::~ModifyEntityCommand() = default;
 
 void ModifyEntityCommand::captureAfter(const scene::Entity& iEntity) { m_after = EntitySnapshot::capture(iEntity); }
 
+void ModifyEntityCommand::setAfter(EntitySnapshot iAfter) { m_after = std::move(iAfter); }
+
 void ModifyEntityCommand::setPrefabOverrides(PrefabOverrideChange iChange) { m_overrides = std::move(iChange); }
 
 void ModifyEntityCommand::undo(scene::Scene& ioScene) {

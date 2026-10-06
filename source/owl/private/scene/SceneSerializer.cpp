@@ -215,6 +215,28 @@ void applyOptionalComponents(Entity& ioEntity, const YAML::Node& iEntityNode, co
 	(..., applyComponent<Components>(ioEntity, iEntityNode, false));
 }
 
+template<typename Component>
+auto serializeComponentByKey(const Entity& iEntity, const std::string_view iKey, std::string& oYaml) -> bool {
+	if (iKey != Component::key())
+		return false;
+	if (!iEntity.hasComponent<Component>())
+		return true;
+	const core::Serializer sOut;
+	sOut.getImpl()->emitter << YAML::BeginMap;
+	iEntity.getComponent<Component>().serialize(sOut);
+	sOut.getImpl()->emitter << YAML::EndMap;
+	oYaml = sOut.getImpl()->emitter.c_str();
+	return true;
+}
+
+template<typename... Components>
+auto serializeComponentsByKey(const Entity& iEntity, const std::string_view iKey, const std::tuple<Components...>&)
+		-> std::string {
+	std::string yaml;
+	std::ignore = (... || serializeComponentByKey<Components>(iEntity, iKey, yaml));
+	return yaml;
+}
+
 }// namespace
 
 auto SceneSerializer::format() -> const core::DocumentFormat& { return g_sceneFormat; }
@@ -414,6 +436,41 @@ auto SceneSerializer::applyEntityFromString(const Entity& iEntity, const std::st
 		return false;
 	}
 	return true;
+}
+
+auto SceneSerializer::serializeComponentToString(const Entity& iEntity, const std::string_view iComponentKey)
+		-> std::string {
+	if (!iEntity)
+		return {};
+	return serializeComponentsByKey(iEntity, iComponentKey, component::SerializableComponents{});
+}
+
+auto SceneSerializer::replaceComponentInString(const std::string& iEntityYaml, const std::string_view iComponentKey,
+											   const std::string& iComponentYaml) -> std::string {
+	try {
+		auto entity = YAML::Load(iEntityYaml);
+		if (!entity.IsMap()) {
+			OWL_CORE_WARN("SceneSerializer: Entity data is not a map, cannot replace component {}.", iComponentKey)
+			return {};
+		}
+		const std::string key{iComponentKey};
+		if (iComponentYaml.empty()) {
+			entity.remove(key);
+		} else {
+			const auto component = YAML::Load(iComponentYaml);
+			if (!component[key]) {
+				OWL_CORE_WARN("SceneSerializer: Component data does not describe component {}.", iComponentKey)
+				return {};
+			}
+			entity[key] = component[key];
+		}
+		YAML::Emitter out;
+		out << entity;
+		return out.c_str();
+	} catch (const std::exception& e) {
+		OWL_CORE_WARN("SceneSerializer: Cannot replace component {}: {}.", iComponentKey, e.what())
+		return {};
+	}
 }
 
 }// namespace owl::scene

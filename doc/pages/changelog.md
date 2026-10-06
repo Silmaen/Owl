@@ -119,6 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Voxel worlds now show in the exported game: `Scene::renderWithStack` meshes them for the runner and the editor alike (D-03).
 - `SceneSerializer::serialize`, `PrefabSerializer::serialize`, `SettingsManager::saveUserSettings` and the editor's `Project::loadFromFile` / `saveToFile` return `bool`; Lua `settings.save()` returns whether it succeeded.
 - `SceneSerializer::deserialize`, `deserializeFromBuffer` and `applyParsed` return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`) instead of `bool`.
+- Inspector edits serialize only the edited component, only while it is edited (`InspectorEditTracker`, `SceneSerializer::serializeComponentToString`): an idle inspector on a 13-component entity drops from 3.1 ms to 0.03 ms per frame, and an edit records one undo step when it ends.
 - Editor undo restores entities in place: undoing an edit of a parent no longer detaches and moves its children, and the entity handle, UUID and sibling slot survive.
 - Deleting an entity keeps its children's world position and sibling order, and undoing the deletion puts them back exactly.
 - Editor dirty flag driven by an undo generation counter: "save, undo, edit" and an edit merged into the saved step now mark the document as modified.

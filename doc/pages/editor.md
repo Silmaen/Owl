@@ -884,6 +884,11 @@ All entity, component, hierarchy, and gizmo editing operations are undoable. Rap
 consecutive edits on the same property (e.g. dragging a slider) are automatically
 coalesced into a single undo step.
 
+An inspector edit is recorded when it ends — on release of a drag, on validation of a text
+field, on the click of a checkbox, on the choice in a combo or on a drop into an asset slot.
+Nothing is serialized while the inspector is only displayed: the edited component is captured
+when the interaction starts, so the panel costs no more than drawing its widgets.
+
 Undo and redo restore an entity **in place**: it keeps its UUID, its children and its slot
 in the hierarchy, and the selection stays on it. Undoing the deletion of a parent puts its
 children back under it, at their original position and in their original order.
