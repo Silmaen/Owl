@@ -253,7 +253,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot.png
+      texture: nam:textures/wolf3d_sprites/tree_pot.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -277,7 +277,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot.png
+      texture: nam:textures/wolf3d_sprites/tree_pot.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -301,7 +301,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_pilar.png
+      texture: nam:textures/wolf3d_sprites/lamp_pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -325,7 +325,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_pilar.png
+      texture: nam:textures/wolf3d_sprites/lamp_pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -349,7 +349,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_pilar.png
+      texture: nam:textures/wolf3d_sprites/lamp_pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -373,7 +373,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_pilar.png
+      texture: nam:textures/wolf3d_sprites/lamp_pilar.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -397,7 +397,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table_chairs.png
+      texture: nam:textures/wolf3d_sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -421,7 +421,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/flag.png
+      texture: nam:textures/wolf3d_sprites/flag.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -445,7 +445,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -460,7 +460,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -475,7 +475,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -490,7 +490,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/blue_pot.png
+      texture: nam:textures/wolf3d_sprites/blue_pot.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -514,7 +514,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/blue_pot.png
+      texture: nam:textures/wolf3d_sprites/blue_pot.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -538,7 +538,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling_candle.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -553,7 +553,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -568,7 +568,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -583,7 +583,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -598,7 +598,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/armor.png
+      texture: nam:textures/wolf3d_sprites/armor.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -622,7 +622,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/sausages.png
+      texture: nam:textures/wolf3d_sprites/sausages.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -637,7 +637,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -661,7 +661,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -685,7 +685,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -711,7 +711,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling_candle.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -726,7 +726,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling_candle.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -741,7 +741,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -765,7 +765,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -789,7 +789,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -813,7 +813,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table.png
+      texture: nam:textures/wolf3d_sprites/table.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -837,7 +837,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/puddle.png
+      texture: nam:textures/wolf3d_sprites/puddle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -852,7 +852,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/basket.png
+      texture: nam:textures/wolf3d_sprites/basket.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -867,7 +867,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -882,7 +882,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -906,7 +906,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table_chairs.png
+      texture: nam:textures/wolf3d_sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -930,7 +930,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table.png
+      texture: nam:textures/wolf3d_sprites/table.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -954,7 +954,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
+      texture: nam:textures/wolf3d_sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -978,7 +978,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
+      texture: nam:textures/wolf3d_sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1002,7 +1002,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
+      texture: nam:textures/wolf3d_sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1039,7 +1039,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1054,7 +1054,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling_candle.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling_candle.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1069,7 +1069,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1084,7 +1084,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1099,7 +1099,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1114,7 +1114,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1129,7 +1129,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1213,7 +1213,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
+      texture: nam:textures/wolf3d_sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1266,7 +1266,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table_chairs.png
+      texture: nam:textures/wolf3d_sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1290,7 +1290,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/pit_water.png
+      texture: nam:textures/wolf3d_sprites/pit_water.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1314,7 +1314,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/pit.png
+      texture: nam:textures/wolf3d_sprites/pit.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1338,7 +1338,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/table_chairs.png
+      texture: nam:textures/wolf3d_sprites/table_chairs.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1395,7 +1395,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1419,7 +1419,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1443,7 +1443,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1467,7 +1467,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/tree_pot_dead.png
+      texture: nam:textures/wolf3d_sprites/tree_pot_dead.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1491,7 +1491,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1506,7 +1506,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1521,7 +1521,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1536,7 +1536,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1551,7 +1551,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1566,7 +1566,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1581,7 +1581,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1596,7 +1596,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1611,7 +1611,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1626,7 +1626,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1641,7 +1641,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1656,7 +1656,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1671,7 +1671,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/barrel_wood.png
+      texture: nam:textures/wolf3d_sprites/barrel_wood.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1695,7 +1695,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1710,7 +1710,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/green_barrel.png
+      texture: nam:textures/wolf3d_sprites/green_barrel.png
     PhysicBody:
       type: Static
       fixedRotation: true
@@ -1734,7 +1734,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1749,7 +1749,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -1764,7 +1764,7 @@ Entities:
     SpriteRenderer:
       color: [1, 1, 1, 1]
       tilingFactor: 1
-      texture: pat:/data/sources/personnel/stack_owl/Owl/sample_project/textures/wolf3d_sprites/lamp_ceiling.png
+      texture: nam:textures/wolf3d_sprites/lamp_ceiling.png
     Visibility:
       gameVisible: true
     Hierarchy:

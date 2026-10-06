@@ -36,9 +36,90 @@ auto shaderStageToGlShader(const ShaderType& iStage) -> uint32_t {
 	OWL_CORE_ASSERT(false, "Unsupported Shader Type")
 	return 0;
 }
+
+auto checkCompileStatus(const GLuint iShader, const std::string& iName) -> bool {
+	GLint status = 0;
+	glGetShaderiv(iShader, GL_COMPILE_STATUS, &status);
+	if (status != GL_FALSE)
+		return true;
+	GLint logLength = 0;
+	glGetShaderiv(iShader, GL_INFO_LOG_LENGTH, &logLength);
+	std::string log(static_cast<size_t>(std::max(logLength, 1)), '\0');
+	glGetShaderInfoLog(iShader, logLength, &logLength, log.data());
+	OWL_CORE_ERROR("OpenGL Shader: Compilation of {} failed ({}).", iName, log.c_str())
+	return false;
+}
+
+auto isSpirvSupported() -> bool {
+	// The debug glad wrappers are never null: test the real pointers, then the version or the extension string.
+	if (glad_glSpecializeShader == nullptr || glad_glShaderBinary == nullptr)
+		return false;
+	GLint major = 0;
+	GLint minor = 0;
+	glGetIntegerv(GL_MAJOR_VERSION, &major);
+	glGetIntegerv(GL_MINOR_VERSION, &minor);
+	if (major > 4 || (major == 4 && minor >= 6))
+		return true;
+	GLint extensionCount = 0;
+	glGetIntegerv(GL_NUM_EXTENSIONS, &extensionCount);
+	for (GLint i = 0; i < extensionCount; ++i) {
+		if (const auto* name = reinterpret_cast<const char*>(glGetStringi(GL_EXTENSIONS, static_cast<GLuint>(i)));
+			name != nullptr && std::string_view{name} == "GL_ARB_gl_spirv")
+			return true;
+	}
+	return false;
+}
+
+auto detectShaderFormat() -> ShaderFormat {
+	// NOLINTNEXTLINE(concurrency-mt-unsafe): read once, the engine never writes the environment.
+	if (const char* forced = std::getenv("OWL_OPENGL_SHADERS"); forced != nullptr) {
+		const std::string_view value{forced};
+		if (value == "glsl")
+			return ShaderFormat::Glsl;
+		if (value == "spirv")
+			return ShaderFormat::Spirv;
+		OWL_CORE_WARN("OpenGL Shader: Unknown OWL_OPENGL_SHADERS value '{}' (expected glsl or spirv).", value)
+	}
+	return isSpirvSupported() ? ShaderFormat::Spirv : ShaderFormat::Glsl;
+}
 }// namespace
 
 }// namespace utils
+
+auto getShaderFormat() -> ShaderFormat {
+	static const ShaderFormat format = utils::detectShaderFormat();
+	return format;
+}
+
+auto createShaderObject(const ShaderType iStage, const std::vector<uint32_t>& iSpirv, const std::string& iName)
+		-> uint32_t {
+	if (iSpirv.empty()) {
+		OWL_CORE_ERROR("OpenGL Shader: No SPIR-V for {} ({}).", iName, magic_enum::enum_name(iStage))
+		return 0;
+	}
+	const GLuint shaderId = glCreateShader(utils::shaderStageToGlShader(iStage));
+	if (getShaderFormat() == ShaderFormat::Spirv) {
+		auto spirv = iSpirv;
+		renderer::utils::remapBuiltinsForOpenGl(spirv);
+		glShaderBinary(1, &shaderId, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(),
+					   static_cast<GLsizei>(spirv.size() * sizeof(uint32_t)));
+		glSpecializeShader(shaderId, "main", 0, nullptr, nullptr);
+	} else {
+		const auto glsl = renderer::utils::crossCompileToGlsl(iSpirv, iName);
+		if (!glsl.has_value()) {
+			glDeleteShader(shaderId);
+			return 0;
+		}
+		const char* text = glsl->c_str();
+		glShaderSource(shaderId, 1, &text, nullptr);
+		glCompileShader(shaderId);
+	}
+	if (!utils::checkCompileStatus(shaderId, iName)) {
+		glDeleteShader(shaderId);
+		return 0;
+	}
+	return shaderId;
+}
 
 Shader::Shader(const std::string& iShaderName, const std::string& iRenderer, const std::string& /*iVertexSrc*/,
 			   const std::string& /*iFragmentSrc*/)
@@ -92,11 +173,12 @@ void Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) {
 	auto& shaderData = m_openGlSpirv;
 	shaderData.clear();
 
-	// Check if all cached stages are valid
+	const auto cacheKey =
+			renderer::utils::getShaderCacheKey(iSlangSource, getRenderer() + "/" + getName(), /*iForVulkan=*/false);
 	bool allCached = true;
 	for (const auto stage: {ShaderType::Vertex, ShaderType::Fragment}) {
 		const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
-		if (!renderer::utils::isShaderCacheValid(cachedPath, iSlangSource)) {
+		if (!renderer::utils::isShaderCacheValid(cachedPath, cacheKey)) {
 			allCached = false;
 			break;
 		}
@@ -122,7 +204,7 @@ void Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) {
 			if (!renderer::utils::writeCachedShader(cachedPath, data))
 
 				OWL_CORE_WARN("Failed to write the compiled shader.")
-			renderer::utils::writeShaderHash(cachedPath, iSlangSource);
+			renderer::utils::writeShaderHash(cachedPath, cacheKey);
 		}
 	}
 	for (auto&& [stage, data]: shaderData)
@@ -136,11 +218,10 @@ void Shader::createProgram() {
 	// list of shader's id
 	std::vector<GLuint> shaderIDs;
 	for (auto&& [stage, spirv]: m_openGlSpirv) {
-		const GLuint shaderId = shaderIDs.emplace_back(glCreateShader(utils::shaderStageToGlShader(stage)));
-		OWL_CORE_ASSERT(!spirv.empty(), "Empty shader data")
-		glShaderBinary(1, &shaderId, GL_SHADER_BINARY_FORMAT_SPIR_V, spirv.data(),
-					   static_cast<GLsizei>(spirv.size() * sizeof(uint32_t)));
-		glSpecializeShader(shaderId, "main", 0, nullptr, nullptr);
+		const GLuint shaderId = createShaderObject(stage, spirv, getName());
+		if (shaderId == 0)
+			continue;
+		shaderIDs.push_back(shaderId);
 		glAttachShader(program, shaderId);
 	}
 	glLinkProgram(program);

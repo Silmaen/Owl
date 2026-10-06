@@ -9,6 +9,7 @@
 
 #include "GpuProfiler.h"
 #include "RenderAPI.h"
+#include "Shader.h"
 #include "StorageBuffer.h"
 #include "app/Application.h"
 #include "core/external/opengl46.h"
@@ -58,6 +59,9 @@ void RenderAPI::init() {
 
 	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
 #endif
+
+	OWL_CORE_INFO("OpenGL: Shaders loaded as {}.",
+				  getShaderFormat() == ShaderFormat::Spirv ? "SPIR-V" : "GLSL 4.50 (no GL_ARB_gl_spirv)")
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -146,6 +150,10 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData,
 	const auto* countSsbo = dynamic_cast<const StorageBuffer*>(iCountBuffer.get());
 	if (cmdSsbo == nullptr || countSsbo == nullptr || cmdSsbo->getHandle() == 0 || countSsbo->getHandle() == 0) {
 		OWL_CORE_WARN("OpenGL: drawIndexedIndirect with non-OpenGL or empty SSBOs.")
+		return;
+	}
+	if (glad_glMultiDrawElementsIndirectCount == nullptr) {
+		OWL_CORE_WARN("OpenGL: drawIndexedIndirect needs OpenGL 4.6 (glMultiDrawElementsIndirectCount), skipped.")
 		return;
 	}
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, cmdSsbo->getHandle());

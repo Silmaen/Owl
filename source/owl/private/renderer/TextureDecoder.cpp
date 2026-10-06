@@ -9,6 +9,7 @@
 
 #include "renderer/TextureDecoder.h"
 
+#include <png.h>
 #include <stb_image.h>
 
 #include <cstdint>
@@ -82,6 +83,26 @@ auto decodeImageFile(const std::filesystem::path& iPath, int iDesiredChannels) -
 	}
 	const int effectiveChannels = iDesiredChannels == 0 ? channels : iDesiredChannels;
 	return makeDecodedImage(data, width, height, effectiveChannels);
+}
+
+auto writeImagePng(const std::filesystem::path& iPath, const math::vec2ui iSize, const std::span<const uint8_t> iRgba)
+		-> bool {
+	if (iSize.surface() == 0 || iRgba.size() != static_cast<size_t>(iSize.surface()) * 4) {
+		OWL_CORE_ERROR("TextureDecoder: Cannot write {} ({}x{} image, {} bytes).", iPath.string(), iSize.x(), iSize.y(),
+					   iRgba.size())
+		return false;
+	}
+	png_image image{};
+	image.version = PNG_IMAGE_VERSION;
+	image.width = iSize.x();
+	image.height = iSize.y();
+	image.format = PNG_FORMAT_RGBA;
+	if (png_image_write_to_file(&image, iPath.string().c_str(), 0, iRgba.data(), 0, nullptr) == 0) {
+		OWL_CORE_ERROR("TextureDecoder: Failed to write {} ({}).", iPath.string(), image.message)
+		png_image_free(&image);
+		return false;
+	}
+	return true;
 }
 
 }// namespace owl::renderer

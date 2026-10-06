@@ -17,6 +17,7 @@
 #include <array>
 #include <cstdint>
 #include <iterator>
+#include <ranges>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -39,6 +40,7 @@ struct InternalData {
 	std::unordered_map<int, EntityMeshes> entities;
 	math::vec3 cameraPosition{0.f, 0.f, 0.f};
 	math::mat4 viewProjection = math::identity<float, 4>();
+	uint32_t drawnMeshCount = 0;
 };
 
 shared<InternalData> g_Data;
@@ -138,6 +140,7 @@ void RendererVoxel::beginScene(const Camera& iCamera, const VoxelConfig& iConfig
 		const math::vec4 worldPos = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
 		g_Data->cameraPosition = math::vec3{worldPos.x(), worldPos.y(), worldPos.z()};
 		g_Data->viewProjection = iCamera.getViewProjection();
+		g_Data->drawnMeshCount = 0;
 	}
 }
 
@@ -225,6 +228,7 @@ void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, co
 			transparent.emplace_back(dx * dx + dy * dy + dz * dz, it->second.transparent);
 		}
 	}
+	g_Data->drawnMeshCount += static_cast<uint32_t>(opaque.size() + transparent.size());
 	Renderer3D::drawMeshes(opaque, worldMat, textures, /*iDepthWrite=*/true);
 	if (!transparent.empty()) {
 		// Back-to-front so alpha-over compositing is correct without per-fragment sorting.
@@ -234,6 +238,19 @@ void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, co
 		for (auto& [distance, mesh]: transparent) sorted.push_back(std::move(mesh));
 		Renderer3D::drawMeshes(sorted, worldMat, textures, /*iDepthWrite=*/false);
 	}
+}
+
+auto RendererVoxel::getStatistics() -> Statistics {
+	Statistics stats;
+	if (!g_Data)
+		return stats;
+	for (const auto& entity: g_Data->entities | std::views::values) {
+		for (const auto& meshes: entity.chunks | std::views::values)
+			stats.cachedMeshCount += static_cast<uint32_t>(meshes.opaque != nullptr) +
+									 static_cast<uint32_t>(meshes.transparent != nullptr);
+	}
+	stats.drawnMeshCount = g_Data->drawnMeshCount;
+	return stats;
 }
 
 }// namespace owl::renderer

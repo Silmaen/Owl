@@ -145,13 +145,12 @@ void RenderAPI::beginTextureLoad() {
 }
 
 void RenderAPI::endTextureLoad() {
-	const auto frame = internal::VulkanHandler::get().getCurrentFrameIndex();
 	if (auto* const rd = internal::RendererDescriptors::getActive(); rd != nullptr) {
-		rd->commitTextureBind(frame);
+		rd->commitTextureBind();
 		return;
 	}
 	auto& vkd = internal::Descriptors::get();
-	vkd.commitTextureBind(frame);
+	vkd.commitTextureBind(internal::VulkanHandler::get().getCurrentFrameIndex());
 }
 
 void RenderAPI::setDepthMask(const bool iEnabled) {

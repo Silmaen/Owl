@@ -1,0 +1,92 @@
+Scene: RenderTestSprites
+EnabledRenderers:
+- {Name: raycast_world, Enabled: false}
+Entities:
+- Entity: 9100000000000000001
+  Tag: {tag: MainCamera}
+  Transform:
+    translation: [0, 0, 5]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Camera:
+    camera: {projectionType: Orthographic, perspectiveFOV: 0.785398185, perspectiveNear: 0.00999999978, perspectiveFar: 1000,
+      orthographicSize: 10, orthographicNear: -1, orthographicFar: 10}
+    primary: true
+    fixedAspectRatio: false
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000002
+  Tag: {tag: Background}
+  Transform:
+    translation: [0, 0, -1]
+    rotation: [0, 0, 0]
+    scale: [20, 15, 1]
+  BackgroundTexture:
+    mode: 0
+    type: 1
+    color: [0.1, 0.12, 0.2, 1]
+    topColor: [0.45, 0.6, 0.85, 1]
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000003
+  Tag: {tag: RedQuad}
+  Transform:
+    translation: [-4.5, 1.5, 0]
+    rotation: [0, 0, 0]
+    scale: [2, 2, 1]
+  SpriteRenderer: {color: [0.9, 0.15, 0.1, 1], tilingFactor: 1}
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000004
+  Tag: {tag: RotatedQuad}
+  Transform:
+    translation: [-1.5, 1.5, 0]
+    rotation: [0, 0, 0.6]
+    scale: [2, 1.2, 1]
+  SpriteRenderer: {color: [0.2, 0.85, 0.3, 0.75], tilingFactor: 1}
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000005
+  Tag: {tag: Player}
+  Transform:
+    translation: [1.5, 1.5, 0]
+    rotation: [0, 0, 0]
+    scale: [2, 2, 1]
+  SpriteRenderer: {color: [1, 1, 1, 1], tilingFactor: 1, texture: 'nam:textures/player.png'}
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000006
+  Tag: {tag: Portal}
+  Transform:
+    translation: [4.5, 1.5, 0]
+    rotation: [0, 0, 0]
+    scale: [2, 2, 1]
+  SpriteRenderer: {color: [1, 1, 1, 1], tilingFactor: 1, texture: 'nam:textures/portal.png'}
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000007
+  Tag: {tag: TiledLava}
+  Transform:
+    translation: [-3, -2.5, 0]
+    rotation: [0, 0, 0]
+    scale: [5, 2, 1]
+  SpriteRenderer: {color: [1, 1, 1, 1], tilingFactor: 2, texture: 'nam:textures/lava_tile.png'}
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000008
+  Tag: {tag: TintedHazard}
+  Transform:
+    translation: [1.5, -2.5, 0]
+    rotation: [0, 0, 0]
+    scale: [2, 2, 1]
+  SpriteRenderer: {color: [0.4, 0.6, 1, 1], tilingFactor: 1, texture: 'nam:textures/hazard.png'}
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000009
+  Tag: {tag: Disc}
+  Transform:
+    translation: [4.5, -2.5, 0.1]
+    rotation: [0, 0, 0]
+    scale: [2, 2, 1]
+  CircleRenderer: {color: [0.95, 0.75, 0.2, 1], thickness: 1, fade: 0.01}
+  Visibility: {gameVisible: true}
+- Entity: 9100000000000000010
+  Tag: {tag: Ring}
+  Transform:
+    translation: [4.5, -2.5, 0.2]
+    rotation: [0, 0, 0]
+    scale: [3, 3, 1]
+  CircleRenderer: {color: [0.85, 0.3, 0.95, 1], thickness: 0.15, fade: 0.05}
+  Visibility: {gameVisible: true}

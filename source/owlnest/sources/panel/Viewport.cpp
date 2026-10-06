@@ -225,9 +225,6 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 	// Clear our entity ID attachment to -1
 	m_framebuffer->clearAttachment(1, -1);
 
-	// Build voxel GPU resources while the depth FB is bound and no pass records (correct RP, no in-pass upload).
-	activeScene->prepareVoxelRenderData();
-
 	// Never leave the cursor captured outside Play (e.g. after Stop), or it would be stuck hidden in the editor.
 	if (mp_document->state() != SceneDocument::State::Play &&
 		app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled) {

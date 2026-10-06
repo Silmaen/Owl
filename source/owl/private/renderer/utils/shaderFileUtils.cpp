@@ -23,8 +23,10 @@ OWL_DIAG_POP
 #include "renderer/Renderer.h"
 
 #include <cctype>
+#include <exception>
 #include <format>
 #include <mutex>
+#include <slang-tag-version.h>
 
 namespace owl::renderer::utils {
 
@@ -159,6 +161,67 @@ auto shaderReflect(const std::string& iShaderName, const std::string& iRenderer,
 auto computeShaderHash(const std::string& iSource) -> std::string {
 	const std::hash<std::string> hasher;
 	return std::to_string(hasher(iSource));
+}
+
+auto getShaderCacheKey(const std::string& iSource, const std::string& iModuleName, const bool iForVulkan)
+		-> std::string {
+	return std::format("backend={};module={};slang={};macros=BACKEND_{}=1;profile={};source={}",
+					   iForVulkan ? "vulkan" : "opengl", iModuleName, SLANG_TAG_VERSION,
+					   iForVulkan ? "VULKAN" : "OPENGL", iForVulkan ? "spirv_1_6" : "glsl_450", iSource);
+}
+
+auto remapBuiltinsForOpenGl(std::vector<uint32_t>& ioSpirv) -> uint32_t {
+	constexpr size_t headerWords = 5;
+	constexpr uint32_t opDecorate = 71;
+	constexpr uint32_t decorationBuiltIn = 11;
+	uint32_t patched = 0;
+	for (size_t i = headerWords; i < ioSpirv.size();) {
+		const uint32_t wordCount = ioSpirv[i] >> 16u;
+		if (wordCount == 0)
+			break;
+		if ((ioSpirv[i] & 0xffffu) == opDecorate && wordCount >= 4 && i + 3 < ioSpirv.size() &&
+			ioSpirv[i + 2] == decorationBuiltIn) {
+			auto& builtin = ioSpirv[i + 3];
+			if (builtin == spv::BuiltInInstanceIndex) {
+				builtin = spv::BuiltInInstanceId;
+				++patched;
+			} else if (builtin == spv::BuiltInVertexIndex) {
+				builtin = spv::BuiltInVertexId;
+				++patched;
+			}
+		}
+		i += wordCount;
+	}
+	return patched;
+}
+
+auto crossCompileToGlsl(const std::vector<uint32_t>& iSpirv, const std::string& iName) -> std::optional<std::string> {
+	OWL_PROFILE_FUNCTION()
+
+	if (iSpirv.empty()) {
+		OWL_CORE_ERROR("Shader {}: Empty SPIR-V, no GLSL to generate.", iName)
+		return std::nullopt;
+	}
+	std::string glsl;
+	try {
+		spirv_cross::CompilerGLSL compiler(iSpirv);
+		spirv_cross::CompilerGLSL::Options options;
+		options.version = 450;
+		options.es = false;
+		options.vulkan_semantics = false;
+		options.vertex.support_nonzero_base_instance = false;
+		compiler.set_common_options(options);
+		glsl = compiler.compile();
+	} catch (const std::exception& iEx) {
+		OWL_CORE_ERROR("Shader {}: SPIR-V to GLSL translation failed ({}).", iName, iEx.what())
+		return std::nullopt;
+	}
+	// NonUniformResourceIndex maps to GL_NV_gpu_shader5; GL drivers without it index sampler arrays natively.
+	constexpr std::string_view nvRequire = "#extension GL_NV_gpu_shader5 : require\n";
+	if (const auto pos = glsl.find(nvRequire); pos != std::string::npos)
+		glsl.replace(pos, nvRequire.size(),
+					 "#ifdef GL_NV_gpu_shader5\n#extension GL_NV_gpu_shader5 : enable\n#endif\n");
+	return glsl;
 }
 
 auto isShaderCacheValid(const std::filesystem::path& iCachedPath, const std::string& iSource) -> bool {

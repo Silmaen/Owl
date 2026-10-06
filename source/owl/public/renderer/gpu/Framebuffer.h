@@ -126,6 +126,17 @@ public:
 
 	/**
 	 * @brief
+	 *  Read back a whole 8-bit colour attachment (`Surface` or `Rgba8`) of an offscreen framebuffer, after its
+	 *  `unbind()`. Waits for the GPU: meant for captures and image tests, never for a frame loop.
+	 * @param[in] iAttachmentIndex Index of the attachment.
+	 * @return `width * height * 4` bytes, RGBA, top row first; empty when the attachment cannot be read back.
+	 */
+	[[nodiscard]] virtual auto readColorAttachment([[maybe_unused]] uint32_t iAttachmentIndex) -> std::vector<uint8_t> {
+		return {};
+	}
+
+	/**
+	 * @brief
 	 *  Reset an attachment with the given value.
 	 * @param[in] iAttachmentIndex Index of the attachment.
 	 * @param[in] iValue The new value to affect.

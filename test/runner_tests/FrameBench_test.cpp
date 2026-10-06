@@ -67,6 +67,14 @@ TEST(FrameBenchOptions, ParseAndReject) {
 	storage[8] = "null";
 	storage[2] = "missing_scene.owl";
 	EXPECT_FALSE(parseFrameBenchOptions(static_cast<int>(argv.size()), argv.data(), scene.parent_path()).has_value());
+	std::array<std::string, 5> capture{"OwlRunner", "--frame-bench", sceneArg, "--capture", "shots/frame.png"};
+	std::vector<char*> captureArgv;
+	for (auto& arg: capture) captureArgv.push_back(arg.data());
+	const auto withCapture =
+			parseFrameBenchOptions(static_cast<int>(captureArgv.size()), captureArgv.data(), scene.parent_path());
+	ASSERT_TRUE(withCapture.has_value());
+	EXPECT_EQ(withCapture->capture, scene.parent_path() / "shots" / "frame.png");
+	EXPECT_TRUE(options->capture.empty());
 	std::array<std::string, 1> plain{"OwlRunner"};
 	std::vector<char*> plainArgv{plain[0].data()};
 	EXPECT_FALSE(hasFrameBenchFlag(1, plainArgv.data()));

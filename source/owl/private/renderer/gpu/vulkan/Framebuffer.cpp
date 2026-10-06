@@ -243,6 +243,59 @@ auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const
 	return pixel;
 }
 
+auto Framebuffer::readColorAttachment(const uint32_t iAttachmentIndex) -> std::vector<uint8_t> {
+	if (iAttachmentIndex >= m_specs.attachments.size() || isMainTarget()) {
+		OWL_CORE_WARN("Vulkan Framebuffer ({}): No offscreen attachment {} to read back.", m_specs.debugName,
+					  iAttachmentIndex)
+		return {};
+	}
+	const auto format = m_specs.attachments[iAttachmentIndex].format;
+	if (format != AttachmentSpecification::Format::Surface && format != AttachmentSpecification::Format::Rgba8) {
+		OWL_CORE_WARN("Vulkan Framebuffer ({}): Attachment {} is not an 8-bit colour attachment.", m_specs.debugName,
+					  iAttachmentIndex)
+		return {};
+	}
+	const auto& vkc = internal::VulkanCore::get();
+	internal::FrameProfiler::get().deviceWaitIdle(vkc.getLogicalDevice());
+	const VkDeviceSize size = static_cast<VkDeviceSize>(m_specs.size.surface()) * 4;
+	VkBuffer staging = nullptr;
+	VkDeviceMemory stagingMemory = nullptr;
+	internal::createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+						   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging,
+						   stagingMemory);
+	if (staging == nullptr || stagingMemory == nullptr) {
+		OWL_CORE_ERROR("Vulkan Framebuffer ({}): Failed to create the read-back buffer.", m_specs.debugName)
+		return {};
+	}
+	VkImage image = m_images[attToImgIdx(iAttachmentIndex)].image;
+	// unbind() leaves the colour images in SHADER_READ_ONLY_OPTIMAL; give them back in that layout.
+	internal::transitionImageLayout(image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+									VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+	internal::copyImageToBuffer(image, staging, m_specs.size);
+	internal::transitionImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+									VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	std::vector<uint8_t> pixels(static_cast<size_t>(size));
+	void* mapped = nullptr;
+	if (vkMapMemory(vkc.getLogicalDevice(), stagingMemory, 0, size, 0, &mapped) != VK_SUCCESS) {
+		OWL_CORE_ERROR("Vulkan Framebuffer ({}): Failed to map the read-back buffer.", m_specs.debugName)
+		internal::freeBuffer(vkc.getLogicalDevice(), staging, stagingMemory);
+		return {};
+	}
+
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
+	memcpy(pixels.data(), mapped, pixels.size());
+	OWL_DIAG_POP
+
+	vkUnmapMemory(vkc.getLogicalDevice(), stagingMemory);
+	internal::freeBuffer(vkc.getLogicalDevice(), staging, stagingMemory);
+	if (const VkFormat vkFormat = internal::attachmentFormatToVulkan(format);
+		vkFormat == VK_FORMAT_B8G8R8A8_UNORM || vkFormat == VK_FORMAT_B8G8R8A8_SRGB) {
+		for (size_t i = 0; i + 3 < pixels.size(); i += 4) std::swap(pixels[i], pixels[i + 2]);
+	}
+	return pixels;
+}
+
 void Framebuffer::clearAttachment(const uint32_t iAttachmentIndex, const int iValue) {
 	if (m_specs.attachments[iAttachmentIndex].format != AttachmentSpecification::Format::RedInteger) {
 		OWL_CORE_WARN("Vulkan Framebuffer ({}): Try to int-clear non integer attachment.", m_specs.debugName)
@@ -655,8 +708,8 @@ void Framebuffer::createDescriptorSets() {
 										  .mipLodBias = {},
 										  .anisotropyEnable = VK_TRUE,
 										  .maxAnisotropy = core.getMaxSamplerAnisotropy(),
-										  .compareEnable = VK_TRUE,
-										  .compareOp = VK_COMPARE_OP_LESS,
+										  .compareEnable = VK_FALSE,
+										  .compareOp = VK_COMPARE_OP_ALWAYS,
 										  .minLod = -1000,
 										  .maxLod = 1000,
 										  .borderColor = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK,

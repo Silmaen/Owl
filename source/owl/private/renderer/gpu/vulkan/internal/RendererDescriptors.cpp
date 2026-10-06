@@ -24,6 +24,81 @@ auto getRegistry() -> std::unordered_map<std::string, RendererDescriptors*>& {
 	static std::unordered_map<std::string, RendererDescriptors*> sRegistry;
 	return sRegistry;
 }
+
+// Size of the default uniform and storage buffers (covers every uniform block of the engine shaders).
+constexpr VkDeviceSize g_defaultBufferSize = 4096;
+
+// Resources written into declared bindings nothing was bound to, so every descriptor a shader reads is valid.
+struct DefaultResources {
+	VkBuffer uniform = nullptr;// Zeroed uniform buffer.
+	VkDeviceMemory uniformMemory = nullptr;// Memory of the uniform buffer.
+	VkBuffer storage = nullptr;// Zeroed storage buffer.
+	VkDeviceMemory storageMemory = nullptr;// Memory of the storage buffer.
+	TextureData image;// 1x1 opaque white texture.
+};
+
+auto getDefaults() -> DefaultResources& {
+	static DefaultResources sDefaults;
+	return sDefaults;
+}
+
+void createZeroedBuffer(const VkBufferUsageFlags iUsage, VkBuffer& oBuffer, VkDeviceMemory& oMemory) {
+	const auto& core = VulkanCore::get();
+	createBuffer(g_defaultBufferSize, iUsage,
+				 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, oBuffer, oMemory);
+	void* mapped = nullptr;
+	if (oMemory == nullptr ||
+		vkMapMemory(core.getLogicalDevice(), oMemory, 0, g_defaultBufferSize, 0, &mapped) != VK_SUCCESS) {
+		OWL_CORE_ERROR("Vulkan RendererDescriptors: Failed to map a default buffer.")
+		return;
+	}
+
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
+	memset(mapped, 0, g_defaultBufferSize);
+	OWL_DIAG_POP
+
+	vkUnmapMemory(core.getLogicalDevice(), oMemory);
+}
+
+void createWhiteImage(TextureData& oImage) {
+	const auto& core = VulkanCore::get();
+	constexpr uint32_t white = 0xffffffff;
+	VkBuffer staging = nullptr;
+	VkDeviceMemory stagingMemory = nullptr;
+	createBuffer(sizeof(white), VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+				 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging, stagingMemory);
+	void* mapped = nullptr;
+	if (vkMapMemory(core.getLogicalDevice(), stagingMemory, 0, sizeof(white), 0, &mapped) == VK_SUCCESS) {
+
+		OWL_DIAG_PUSH
+		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
+		memcpy(mapped, &white, sizeof(white));
+		OWL_DIAG_POP
+
+		vkUnmapMemory(core.getLogicalDevice(), stagingMemory);
+	}
+	oImage.debugName = "rd.defaultWhite";
+	oImage.createImage({1, 1});
+	vkBindImageMemory(core.getLogicalDevice(), oImage.textureImage, oImage.textureImageMemory, 0);
+	transitionImageLayout(oImage.textureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	copyBufferToImage(staging, oImage.textureImage, {1, 1});
+	transitionImageLayout(oImage.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+						  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	freeBuffer(core.getLogicalDevice(), staging, stagingMemory);
+	oImage.createView();
+	oImage.createSampler();
+}
+
+void ensureDefaults() {
+	auto& defaults = getDefaults();
+	if (defaults.uniform == nullptr)
+		createZeroedBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, defaults.uniform, defaults.uniformMemory);
+	if (defaults.storage == nullptr)
+		createZeroedBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, defaults.storage, defaults.storageMemory);
+	if (defaults.image.textureImage == nullptr)
+		createWhiteImage(defaults.image);
+}
 }// namespace
 
 RendererDescriptors::RendererDescriptors(std::string iRendererName) : m_rendererName{std::move(iRendererName)} {
@@ -56,6 +131,7 @@ void RendererDescriptors::init(std::span<const BindingDecl> iBindings) {
 		}
 	}
 
+	ensureDefaults();
 	const auto& core = VulkanCore::get();
 	auto* const device = core.getLogicalDevice();
 
@@ -127,6 +203,30 @@ void RendererDescriptors::release() {
 	}
 }
 
+void RendererDescriptors::releaseDefaults() {
+	auto& defaults = getDefaults();
+	if (VulkanHandler::get().getState() != VulkanHandler::State::Running) {
+		defaults = DefaultResources{};
+		return;
+	}
+	auto* const device = VulkanCore::get().getLogicalDevice();
+	if (defaults.uniform != nullptr)
+		freeBuffer(device, defaults.uniform, defaults.uniformMemory);
+	if (defaults.storage != nullptr)
+		freeBuffer(device, defaults.storage, defaults.storageMemory);
+	// TextureData::freeTexture would recreate the global single-image pool, already released at this point.
+	auto& image = defaults.image;
+	if (image.textureSampler != nullptr)
+		vkDestroySampler(device, image.textureSampler, nullptr);
+	if (image.textureImageView != nullptr)
+		vkDestroyImageView(device, image.textureImageView, nullptr);
+	if (image.textureImage != nullptr)
+		vkDestroyImage(device, image.textureImage, nullptr);
+	if (image.textureImageMemory != nullptr)
+		vkFreeMemory(device, image.textureImageMemory, nullptr);
+	defaults = DefaultResources{};
+}
+
 void RendererDescriptors::registerUniform(const uint32_t iBinding, const uint32_t iSize) {
 	const auto& core = VulkanCore::get();
 	auto* const device = core.getLogicalDevice();
@@ -143,6 +243,7 @@ void RendererDescriptors::registerUniform(const uint32_t iBinding, const uint32_
 	memory.assign(g_maxFrameInFlight, nullptr);
 	mapped.assign(g_maxFrameInFlight, nullptr);
 	size = iSize;
+	m_dirty = true;
 	for (size_t i = 0; i < g_maxFrameInFlight; i++) {
 		createBuffer(iSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 					 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffers[i], memory[i]);
@@ -177,6 +278,7 @@ void RendererDescriptors::bindStorageBuffer(const uint32_t iBinding, VkBuffer iB
 		return;
 	buffer = iBuffer;
 	size = iSize;
+	m_dirty = true;
 }
 
 void RendererDescriptors::unbindStorageBuffer(VkBuffer iBuffer) {
@@ -187,121 +289,80 @@ void RendererDescriptors::unbindStorageBuffer(VkBuffer iBuffer) {
 			if (ssbo.buffer == iBuffer) {
 				ssbo.buffer = nullptr;
 				ssbo.size = 0;
+				desc->m_dirty = true;
 			}
 		}
 	}
 }
 
-void RendererDescriptors::resetTextureBind() { m_textureBind.clear(); }
-
-void RendererDescriptors::textureBind(const uint32_t iIndex) { m_textureBind.emplace_back(iIndex); }
-
-void RendererDescriptors::commitTextureBind(const size_t iCurrentFrame) {
-	if (VkDescriptorSet set = m_ring.acquire(); set != nullptr)
-		writeDescriptor(set, iCurrentFrame);
+void RendererDescriptors::resetTextureBind() {
+	m_textureBind.clear();
+	m_dirty = true;
 }
 
+void RendererDescriptors::textureBind(const uint32_t iIndex) {
+	m_textureBind.emplace_back(iIndex);
+	m_dirty = true;
+}
+
+void RendererDescriptors::commitTextureBind() { m_dirty = true; }
+
 void RendererDescriptors::notifySubmitAll(VkFence iFence) {
-	for (auto* const desc: getRegistry() | std::views::values) desc->m_ring.onSubmit(iFence);
+	for (auto* const desc: getRegistry() | std::views::values) {
+		desc->m_ring.onSubmit(iFence);
+		desc->m_dirty = true;
+	}
 }
 
 void RendererDescriptors::writeDescriptor(VkDescriptorSet iSet, const size_t iFrame) {
 	if (iSet == nullptr)
 		return;
 	const auto& core = VulkanCore::get();
+	const auto& defaults = getDefaults();
 
-	std::vector<std::pair<uint32_t, VkDescriptorBufferInfo>> uboInfos;
-	uboInfos.reserve(m_uniformBindings.size());
-	for (const auto& [binding, ubo]: m_uniformBindings) {
-		if (iFrame >= ubo.buffers.size() || ubo.buffers[iFrame] == nullptr)
-			continue;
-		uboInfos.emplace_back(binding, VkDescriptorBufferInfo{
-											   .buffer = ubo.buffers[iFrame],
-											   .offset = 0,
-											   .range = ubo.size,
-									   });
-	}
-
-	std::vector<std::pair<uint32_t, VkDescriptorBufferInfo>> ssboInfos;
-	ssboInfos.reserve(m_storageBindings.size());
-	for (const auto& [binding, ssbo]: m_storageBindings) {
-		if (ssbo.buffer == nullptr)
-			continue;
-		ssboInfos.emplace_back(binding, VkDescriptorBufferInfo{
-												.buffer = ssbo.buffer,
-												.offset = 0,
-												.range = ssbo.size,
-										});
-	}
-
+	std::vector<VkDescriptorBufferInfo> bufferInfos;
+	bufferInfos.reserve(m_bindings.size());
 	std::vector<VkDescriptorImageInfo> imageInfos;
-	if (m_textureArrayCount > 0) {
-		imageInfos.reserve(m_textureArrayCount);
-		VkDescriptorImageInfo fallback{};
-		auto& globalTextures = Descriptors::get();
-		for (const auto& id: m_textureBind) {
-			if (!globalTextures.isTextureRegistered(id)) {
-				imageInfos.push_back(fallback);
-				continue;
-			}
-			const auto& texData = globalTextures.getTextureData(id);
-			if (texData.textureSampler == nullptr || texData.textureImageView == nullptr) {
-				imageInfos.push_back(fallback);
-				continue;
-			}
-			const VkDescriptorImageInfo info{.sampler = texData.textureSampler,
-											 .imageView = texData.textureImageView,
-											 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
-			if (fallback.sampler == nullptr)
-				fallback = info;
-			imageInfos.push_back(info);
-		}
-		if (fallback.sampler != nullptr) {
-			for (auto& info: imageInfos) {
-				if (info.sampler == nullptr)
-					info = fallback;
-			}
-			while (imageInfos.size() < m_textureArrayCount) imageInfos.push_back(fallback);
-		}
-	}
-
 	std::vector<VkWriteDescriptorSet> writes;
-	writes.reserve(uboInfos.size() + ssboInfos.size() + (imageInfos.empty() ? 0 : 1));
-	for (const auto& [binding, info]: uboInfos) {
-		writes.push_back({.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-						  .pNext = nullptr,
-						  .dstSet = iSet,
-						  .dstBinding = binding,
-						  .dstArrayElement = 0,
-						  .descriptorCount = 1,
-						  .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-						  .pImageInfo = nullptr,
-						  .pBufferInfo = &info,
-						  .pTexelBufferView = nullptr});
-	}
-	for (const auto& [binding, info]: ssboInfos) {
-		writes.push_back({.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-						  .pNext = nullptr,
-						  .dstSet = iSet,
-						  .dstBinding = binding,
-						  .dstArrayElement = 0,
-						  .descriptorCount = 1,
-						  .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-						  .pImageInfo = nullptr,
-						  .pBufferInfo = &info,
-						  .pTexelBufferView = nullptr});
-	}
-	if (!imageInfos.empty() && m_textureArrayBinding != std::numeric_limits<uint32_t>::max()) {
-		writes.push_back({.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-						  .pNext = nullptr,
-						  .dstSet = iSet,
-						  .dstBinding = m_textureArrayBinding,
-						  .dstArrayElement = 0,
-						  .descriptorCount = static_cast<uint32_t>(imageInfos.size()),
-						  .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-						  .pImageInfo = imageInfos.data(),
-						  .pBufferInfo = nullptr,
-						  .pTexelBufferView = nullptr});
+	writes.reserve(m_bindings.size());
+	for (const auto& [binding, type, count, stages]: m_bindings) {
+		VkWriteDescriptorSet write{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+								   .pNext = nullptr,
+								   .dstSet = iSet,
+								   .dstBinding = binding,
+								   .dstArrayElement = 0,
+								   .descriptorCount = 1,
+								   .descriptorType = type,
+								   .pImageInfo = nullptr,
+								   .pBufferInfo = nullptr,
+								   .pTexelBufferView = nullptr};
+		if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+			VkDescriptorBufferInfo info{.buffer = defaults.uniform, .offset = 0, .range = g_defaultBufferSize};
+			if (const auto it = m_uniformBindings.find(binding); it != m_uniformBindings.end() &&
+																 iFrame < it->second.buffers.size() &&
+																 it->second.buffers[iFrame] != nullptr)
+				info = {.buffer = it->second.buffers[iFrame], .offset = 0, .range = it->second.size};
+			if (info.buffer == nullptr)
+				continue;
+			write.pBufferInfo = &bufferInfos.emplace_back(info);
+		} else if (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
+			VkDescriptorBufferInfo info{.buffer = defaults.storage, .offset = 0, .range = g_defaultBufferSize};
+			if (const auto it = m_storageBindings.find(binding);
+				it != m_storageBindings.end() && it->second.buffer != nullptr)
+				info = {.buffer = it->second.buffer, .offset = 0, .range = it->second.size};
+			if (info.buffer == nullptr)
+				continue;
+			write.pBufferInfo = &bufferInfos.emplace_back(info);
+		} else if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER && binding == m_textureArrayBinding) {
+			imageInfos = collectImageInfos(count);
+			if (imageInfos.empty())
+				continue;
+			write.descriptorCount = static_cast<uint32_t>(imageInfos.size());
+			write.pImageInfo = imageInfos.data();
+		} else {
+			continue;
+		}
+		writes.push_back(write);
 	}
 	if (!writes.empty()) {
 		vkUpdateDescriptorSets(core.getLogicalDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0,
@@ -309,7 +370,44 @@ void RendererDescriptors::writeDescriptor(VkDescriptorSet iSet, const size_t iFr
 	}
 }
 
-auto RendererDescriptors::getDescriptorSet(uint32_t) -> VkDescriptorSet* { return m_ring.currentPtr(); }
+auto RendererDescriptors::collectImageInfos(const uint32_t iCount) const -> std::vector<VkDescriptorImageInfo> {
+	const auto& defaults = getDefaults();
+	const VkDescriptorImageInfo fallback{.sampler = defaults.image.textureSampler,
+										 .imageView = defaults.image.textureImageView,
+										 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+	if (fallback.sampler == nullptr || fallback.imageView == nullptr)
+		return {};
+	auto& globalTextures = Descriptors::get();
+	std::vector<VkDescriptorImageInfo> infos;
+	infos.reserve(iCount);
+	for (const auto& id: m_textureBind) {
+		if (infos.size() >= iCount)
+			break;
+		if (!globalTextures.isTextureRegistered(id)) {
+			infos.push_back(fallback);
+			continue;
+		}
+		const auto& texData = globalTextures.getTextureData(id);
+		if (texData.textureSampler == nullptr || texData.textureImageView == nullptr) {
+			infos.push_back(fallback);
+			continue;
+		}
+		infos.push_back({.sampler = texData.textureSampler,
+						 .imageView = texData.textureImageView,
+						 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+	}
+	while (infos.size() < iCount) infos.push_back(fallback);
+	return infos;
+}
+
+auto RendererDescriptors::getDescriptorSet(const uint32_t iFrame) -> VkDescriptorSet* {
+	if (m_dirty || *m_ring.currentPtr() == nullptr) {
+		if (VkDescriptorSet set = m_ring.acquire(); set != nullptr)
+			writeDescriptor(set, iFrame);
+		m_dirty = false;
+	}
+	return m_ring.currentPtr();
+}
 
 auto RendererDescriptors::getForRenderer(const std::string& iName) -> RendererDescriptors* {
 	const auto& registry = getRegistry();

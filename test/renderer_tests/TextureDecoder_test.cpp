@@ -105,3 +105,34 @@ TEST(TextureDecoder, DecodeMissingFileReturnsInvalid) {
 	EXPECT_TRUE(decoded.pixels.empty());
 	owl::core::Log::invalidate();
 }
+
+TEST(TextureDecoder, WriteImagePngRoundTrips) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	const auto file = std::filesystem::temp_directory_path() / "owl_write_image_png_test.png";
+	std::filesystem::remove(file);
+	std::vector<uint8_t> pixels(3u * 2u * 4u);
+	for (size_t i = 0; i < pixels.size(); ++i) pixels[i] = static_cast<uint8_t>(i * 10);
+	ASSERT_TRUE(writeImagePng(file, {3, 2}, pixels));
+	const auto decoded = decodeImageFile(file, 4);
+	ASSERT_TRUE(decoded.valid);
+	EXPECT_EQ(decoded.size.x(), 3u);
+	EXPECT_EQ(decoded.size.y(), 2u);
+	// The decoder returns the bottom row first (OpenGL convention): compare with the rows swapped.
+	std::vector<uint8_t> bottomFirst(pixels.begin() + 12, pixels.end());
+	bottomFirst.insert(bottomFirst.end(), pixels.begin(), pixels.begin() + 12);
+	EXPECT_EQ(decoded.pixels, bottomFirst);
+	std::filesystem::remove(file);
+	owl::core::Log::invalidate();
+}
+
+TEST(TextureDecoder, WriteImagePngRejectsBadInput) {
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	const auto file = std::filesystem::temp_directory_path() / "owl_write_image_png_bad.png";
+	const std::vector<uint8_t> pixels(5, 0);
+	EXPECT_FALSE(writeImagePng(file, {3, 2}, pixels));
+	EXPECT_FALSE(writeImagePng(file, {0, 0}, {}));
+	EXPECT_FALSE(writeImagePng(std::filesystem::temp_directory_path() / "owl_no_such_dir__" / "x.png", {1, 1},
+							   std::vector<uint8_t>(4, 0)));
+	EXPECT_FALSE(exists(file));
+	owl::core::Log::invalidate();
+}

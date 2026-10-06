@@ -25,10 +25,23 @@ and because it already carries the renderer stack.
   after its acquire semaphore (B-19), versioned UBO / SSBO (B-04)
 - Per-frame uniform ring, so several `drawMesh` and several cameras per frame are correct (B-03), VMA
   sub-allocation (B-11, B-23)
-- OpenGL frozen in features but fixed and tested: the "4.5" claim made true or the docs say 4.6 (B-16), culling and
-  mipmaps as documented (B-07, B-18)
-- Image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL), validation clean on NVIDIA, Intel and
-  lavapipe
+- OpenGL frozen in features but fixed and tested: the "4.5" claim made true (B-16, done in PR-18, see below), culling
+  and mipmaps as documented (B-07, B-18)
+- Done (PR-18): image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL), validation clean on NVIDIA,
+  Intel and lavapipe for the sample scenes
+
+### OpenGL as the fallback
+
+OpenGL 4.5 core is the minimum (DSA, SSBOs, compute). Shaders are still written once in Slang and compiled to SPIR-V;
+the backend then picks how the driver receives them:
+
+| Driver                                      | Path                                                                       |
+|---------------------------------------------|----------------------------------------------------------------------------|
+| GL 4.6 or `GL_ARB_gl_spirv` (NVIDIA, Mesa)  | SPIR-V through `glShaderBinary` + `glSpecializeShader` (default)           |
+| GL 4.5 without it (llvmpipe, older drivers) | GLSL 4.50 translated from the same SPIR-V by spirv-cross, `glShaderSource` |
+
+Both paths share the SPIR-V cache and its reflection. `OWL_OPENGL_SHADERS=glsl` (or `spirv`) forces one. Only
+`glMultiDrawElementsIndirectCount` (indirect draws, unused in production) still needs GL 4.6 and is skipped below it.
 - The backend interface is cleaned up and documented so a further backend can be added without touching the renderers
 
 ## v0.6.0 — 3D on the RHI

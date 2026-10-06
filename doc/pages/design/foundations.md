@@ -62,7 +62,7 @@ Every fix lands with its regression test.
 - ![Planned][planned] Runtime scene robustness — Play isolated from the editor voxel world, no segfault on a dangling
   `EntityLink`, SceneFlow double `addComponent`, hierarchy cycles and duplicate UUIDs rejected at load, failed
   teleport recovers (PR-05: C-03, C-04, E-08, C-06, C-17, E-12)
-- ![Planned][planned] Voxel meshed in the scene render pipeline, so voxel scenes show in the exported game
+- ![Done][done] Voxel meshed in the scene render pipeline, so voxel scenes show in the exported game
   (PR-06: D-03)
 - ![Done][done] `.owlpack` hardening — validated paths and sizes, exceptions caught, libFuzzer target behind
   `OWL_FUZZING` (CI job still to wire) (PR-07: D-02, D-28)
@@ -100,9 +100,11 @@ Every fix lands with its regression test.
       asset type, entity / component counts, `tracy-capture` in the build image
 - ![Done][done] Runner `--frame-bench` mode with GPU timestamps — first OpenGL vs Vulkan numbers
   (PR-17: 20-mesures §7, B-01; baseline in `doc/audit/20-mesures.md` §8)
-- ![Planned][planned] Tests without a window (PR-18: F-01, B-06, B-20)
-    - Headless runner driven by scripted inputs (load scene, play N frames, assert on the world)
-    - Image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL), at least one per backend
+- ![Done][done] Image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL): six reference scenes per
+  backend, Vulkan validation clean on the sample, OpenGL GLSL fallback for drivers without `GL_ARB_gl_spirv`
+  (PR-18: F-01, B-06, B-20)
+- ![Planned][planned] Tests without a window: headless runner driven by scripted inputs (load scene, play N frames,
+  assert on the world)
 - ![Done][done] Diff-scoped clang-tidy: a `ClangTidy` action driven by `compile_commands.json`, analysing on a
   pull request only the `.cpp` files the diff can affect (include closure from `ninja -t deps`), everything elsewhere
   or when in doubt, one job per available core by default (H-03)

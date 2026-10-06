@@ -212,6 +212,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Read the offscreen capture target back and write it as the `--capture` PNG.
+	 * @return True on success.
+	 */
+	[[nodiscard]] auto writeCapture() const -> bool;
+
+	/**
+	 * @brief
 	 *  Run the scene update (cursor capture outside a frame bench, phase timings inside).
 	 * @param[in] iTimeStep Time step fed to the scene.
 	 */
@@ -230,5 +237,7 @@ private:
 	shared<PendingTransition> m_transition;
 	/// Frame bench driver (nullptr in a normal run).
 	uniq<FrameBench> m_frameBench;
+	/// Offscreen target the scene renders into when the frame bench writes a capture.
+	shared<renderer::gpu::Framebuffer> m_captureTarget;
 };
 }// namespace owl::nest::runner

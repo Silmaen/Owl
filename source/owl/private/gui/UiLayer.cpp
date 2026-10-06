@@ -227,7 +227,8 @@ void UiLayer::end() const {
 		GLFWwindow* backupCurrentContext = glfwGetCurrentContext();
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
-		if (renderer::gpu::RenderCommand::getApi() != renderer::gpu::RenderAPI::Type::OpenGL)
+		// Platform windows make their own GL context current: give the main one back (Vulkan has none).
+		if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL)
 			glfwMakeContextCurrent(backupCurrentContext);
 	}
 }
