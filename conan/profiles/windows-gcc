@@ -1,5 +1,11 @@
 {# Windows, MSYS2 MinGW64 GCC + libstdc++ (the toolchain of the windows-gcc-* presets). #}
 {% set compiler, version, compiler_exe = detect_api.detect_gcc_compiler("gcc") %}
+{# Full path of the MinGW GCC, first on the Windows PATH: in the MSYS2 bash of autotools builds, a bare `gcc`
+   is MSYS's own POSIX-runtime compiler (no _wopen, _O_BINARY...), not MinGW's. #}
+{% set ns = namespace(bin="") %}
+{% for dir in (os.getenv("PATH") or "").split(os.pathsep) | reverse %}
+{% if dir and os.path.isfile(os.path.join(dir, "gcc.exe")) %}{% set ns.bin = dir | replace(os.sep, "/") ~ "/" %}{% endif %}
+{% endfor %}
 [settings]
 os=Windows
 arch={{ detect_api.detect_arch() }}
@@ -12,10 +18,17 @@ compiler.cppstd=23
 build_type=Release
 
 [conf]
-tools.build:compiler_executables={"c": "gcc", "cpp": "g++", "rc": "windres"}
+tools.build:compiler_executables={"c": "{{ ns.bin }}gcc.exe", "cpp": "{{ ns.bin }}g++.exe", "rc": "{{ ns.bin }}windres.exe"}
 tools.cmake.cmaketoolchain:generator=Ninja
 tools.system.package_manager:mode=check
 
 [buildenv]
-CC=gcc
-CXX=g++
+# CMake 4 refuses cmake_minimum_required below 3.5, still declared by some upstream projects.
+CMAKE_POLICY_VERSION_MINIMUM=3.5
+CC={{ ns.bin }}gcc.exe
+CXX={{ ns.bin }}g++.exe
+
+# One version per build tool, the highest the recipes resolve (they each ask their own range).
+[replace_tool_requires]
+cmake/*: cmake/4.4.3
+pkgconf/*: pkgconf/2.5.1

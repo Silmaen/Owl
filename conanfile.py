@@ -42,6 +42,10 @@ class OwlEngineConan(ConanFile):
         "nest": False,
         # LGPL libraries stay shared; imgui is shared so the engine and the editor see one context.
         "imgui/*:shared": True,
+        # ImGuizmo declares its functions IMGUI_API (dllimport on Windows): a static ImGuizmo cannot satisfy them.
+        "imguizmo/*:shared": True,
+        # plutovg (lunasvg's) drops dllimport only with PLUTOVG_BUILD_STATIC, which its recipe does not export.
+        "plutovg/*:shared": True,
         "glfw/*:shared": True,
         "openal-soft/*:shared": True,
         "libsndfile/*:shared": True,

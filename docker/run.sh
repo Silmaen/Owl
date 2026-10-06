@@ -19,7 +19,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-image="${OWL_DOCKER_IMAGE:-registry.argawaen.net/builder/devel-ubuntu2404:latest}"
+image="${OWL_DOCKER_IMAGE:-registry.argawaen.net/builder/devel-ubuntu2604:latest}"
 docker_home="${OWL_DOCKER_HOME:-$(cd "${repo_root}/.." && pwd)/fake_home}"
 uid="$(id -u)"
 gid="$(id -g)"

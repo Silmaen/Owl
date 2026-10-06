@@ -459,16 +459,24 @@ function(owl_conan_imgui_bindings)
     find_package(VulkanHeaders REQUIRED)
     find_package(VulkanLoader REQUIRED)
     find_package(OpenGL REQUIRED)
+    # imgui_stdlib declares its functions IMGUI_API (dllimport from a shared imgui on Windows) but is compiled into
+    # the engine: staged without the macro (file(CONFIGURE) rewrites it only when it changes).
+    file(READ "${ImguiRoot}/res/misc/cpp/imgui_stdlib.h" StdlibHeader)
+    string(REPLACE "IMGUI_API " "" StdlibHeader "${StdlibHeader}")
+    file(CONFIGURE OUTPUT "${Staged}/misc/imgui_stdlib.h" CONTENT "${StdlibHeader}" @ONLY)
+    file(COPY "${ImguiRoot}/res/misc/cpp/imgui_stdlib.cpp" DESTINATION "${Staged}/misc")
     add_library(${BindingsTarget} STATIC
             "${Staged}/backends/imgui_impl_glfw.cpp"
             "${Staged}/backends/imgui_impl_opengl2.cpp"
             "${Staged}/backends/imgui_impl_opengl3.cpp"
             "${Staged}/backends/imgui_impl_vulkan.cpp"
-            "${ImguiRoot}/res/misc/cpp/imgui_stdlib.cpp")
+            "${Staged}/misc/imgui_stdlib.cpp")
     # Third-party sources: never analysed by clang-tidy.
     set_target_properties(${BindingsTarget} PROPERTIES POSITION_INDEPENDENT_CODE ON FOLDER "External" CXX_CLANG_TIDY "")
-    target_include_directories(${BindingsTarget} SYSTEM PUBLIC "${Staged}" "${ImguiRoot}/res/misc/cpp")
+    target_include_directories(${BindingsTarget} SYSTEM PUBLIC "${Staged}" "${Staged}/misc")
     target_link_libraries(${BindingsTarget} PUBLIC imgui::imgui PRIVATE glfw Vulkan::Headers Vulkan::Loader OpenGL::GL)
+    # The backends default to IMGUI_API, dllimport from a shared imgui on Windows; they live in the engine instead.
+    target_compile_definitions(${BindingsTarget} PUBLIC IMGUI_IMPL_API=)
 endfunction()
 
 function(owl_target_link_libraries Target LinkType Module)

@@ -45,8 +45,7 @@
         "clang-debug"
       ],
       "cacheVariables": {
-        "OWL_ENABLE_COVERAGE": "ON",
-        "OWL_ENABLE_DOCUMENTATION": "ON"
+        "OWL_ENABLE_COVERAGE": "ON"
       },
       "vendor": {
         "silmaen": {

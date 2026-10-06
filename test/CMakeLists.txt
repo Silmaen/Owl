@@ -61,9 +61,16 @@ foreach (child ${children})
                 # test may surface additional transitive DLLs that weren't on the engine's
                 # `TARGET_RUNTIME_DLLS` evaluation (different linkage path).  Idempotent via
                 # `copy_if_different`.
+                # gtest is a DLL from DepManager only; Conan links it statically (an INTERFACE target).
+                set(gtest_copy)
+                get_target_property(gtest_type GTest::gtest TYPE)
+                if (gtest_type STREQUAL "SHARED_LIBRARY")
+                    set(gtest_copy
+                            COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GTest::gtest>" "${CMAKE_BINARY_DIR}/bin"
+                            COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GTest::gtest_main>" "${CMAKE_BINARY_DIR}/bin")
+                endif ()
                 add_custom_command(TARGET ${PROJECT_PREFIX_LOWER}_${child}_unit_test POST_BUILD
-                        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GTest::gtest>" "${CMAKE_BINARY_DIR}/bin"
-                        COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GTest::gtest_main>" "${CMAKE_BINARY_DIR}/bin"
+                        ${gtest_copy}
                         COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_RUNTIME_DLLS:${PROJECT_PREFIX_LOWER}_${child}_unit_test>" "${CMAKE_BINARY_DIR}/bin"
                         COMMAND_EXPAND_LISTS
                 )

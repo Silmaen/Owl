@@ -5,7 +5,7 @@ The analysis is driven from `compile_commands.json` **after** the build rather
 than hooked into the compiler through `CMAKE_CXX_CLANG_TIDY`, because that is
 what makes the set of analysed translation units selectable. Two scopes:
 
-* **full** — every C++ translation unit in `compile_commands.json`. Runs on
+* **full** — every C++ translation unit of the repository in `compile_commands.json`. Runs on
   `main`, on a manual run, and whenever the diff scope cannot be established
   with certainty.
 * **diff** — only the translation units a pull request can change the verdict
@@ -203,11 +203,16 @@ def _load_translation_units(build_dir: Path) -> Optional[dict[str, Path]]:
         return None
 
     units: dict[str, Path] = {}
+    build_root = build_dir.resolve()
     for entry in entries:
+        directory = entry.get("directory", str(build_dir))
         source = Path(entry.get("file", ""))
         if source.suffix not in TU_SUFFIXES or not source.is_file():
             continue
-        directory = entry.get("directory", str(build_dir))
+        # Third-party sources compiled into the build (Conan cache, copied imgui backends) are not ours to analyse.
+        resolved = (Path(directory) / source).resolve()
+        if not resolved.is_relative_to(root) or resolved.is_relative_to(build_root):
+            continue
         output = entry.get("output")
         if not output:
             continue

@@ -15,7 +15,7 @@ changing a subsystem. An ongoing repository audit lives in `doc/audit/` (entry p
 
 Every compiler, CMake, CTest, Poetry, clang-tidy or clang-format call runs **inside the build image**
 through `docker/run.sh`, which mirrors CLion's *Docker Owl* toolchain (image
-`registry.argawaen.net/builder/devel-ubuntu2404:latest`, your UID/GID, repo mounted at its host path,
+`registry.argawaen.net/builder/devel-ubuntu2604:latest`, your UID/GID, repo mounted at its host path,
 `$HOME` = `../fake_home` → `/fhome` holding the Poetry venv, the DepManager cache and ccache). Never build
 natively, never install a tool on the host; if a tool is missing from the image, say so.
 

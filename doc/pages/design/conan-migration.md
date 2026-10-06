@@ -21,7 +21,7 @@ public dependencies comes later, in phase D, once the chain is stable.
 
 Every Linux preset configures and builds with every dependency from Conan 2, and passes its tests (UBSan: renderer suite
 times out at 3600 s; table below).
-DepManager stays the default provider: the switch is the maintainer's decision.
+DepManager stays the CMake default provider (the switch is the maintainer's decision); the CI builds every configuration on Conan.
 
 ```bash
 docker/run.sh cmake --preset <preset> -DOWL_DEPENDENCY_PROVIDER=conan
@@ -75,6 +75,11 @@ Measured on 2026-10-05 in the build image (`docker/run.sh`, Clang 22.1, GCC 14.2
   targets (FindOpenGL) still resolve. With the option OFF, `conan install` asks for the preset's build type.
 - One binary set per compiler: Release, Debug, coverage, clang-tidy and the sanitizers of one compiler share it.
 
+Every profile replaces the build tools the recipes ask in their own ranges by one version, the highest resolved
+(`[replace_tool_requires]`: `cmake/4.4.3`, `pkgconf/2.5.1`), so each agent builds and caches one copy of each. CMake 4
+refuses a `cmake_minimum_required` below 3.5, still declared by a few upstream projects: the profiles set
+`CMAKE_POLICY_VERSION_MINIMUM=3.5` in `[buildenv]`.
+
 ### Sanitizers: dependencies not instrumented
 
 Decision: the dependencies are **not** built with the sanitizers; only Owl's code is (`Owl_Base` flags).
@@ -102,6 +107,21 @@ The first command re-resolves from scratch; the second adds what the GCC profile
 (Windows, arm64) is added the same way, with `--lockfile conan.lock`. Run them with the same `CONAN_HOME` as the build
 (`-DOWL_CONAN_HOME`), where `cmake/Conan.cmake` registered the `owl-local` remote. A local recipe's revision is a hash
 of its content: regenerating without changing a recipe only moves its timestamp, a diff not worth committing.
+
+### Binary cache (`owl-cache`)
+
+ConanCenter has no binary for our compilers, so a cold agent builds every dependency (about 1 h 45 on Windows). An
+optional Conan server serves as a shared binary cache:
+
+- `OWL_CONAN_CACHE_URL` (CMake or environment) registers it as the `owl-cache` remote, after `owl-local` and before
+  ConanCenter. Credentials come from Conan's own `CONAN_LOGIN_USERNAME_OWL_CACHE` / `CONAN_PASSWORD_OWL_CACHE`.
+- At configure time `cmake/Conan.cmake` logs in and lists `zlib/*` on it; any failure disables the remote with a
+  warning, and the install falls back to ConanCenter. Without a URL the remote is removed.
+- With `OWL_CONAN_CACHE_UPLOAD=ON`, every binary of the local cache (latest package revisions) is uploaded (`conan list "*:*#latest"`, then
+  `conan upload --list`), also after a failed install, so the packages built before the failure are kept; the
+  server skips what it holds, and a failed upload is only a warning.
+- TeamCity sets all four from the `conan_server`, `conan_user` and `conan_password` project parameters, so every CI
+  build reads and fills the cache.
 
 ### Shared libraries next to the binaries
 
@@ -141,6 +161,11 @@ docker/run.sh poetry run conan create . --profile:all conan/profiles/linux-clang
 - Not yet wired into the `Package` CI action (PR-09 remainder), nor published to a remote.
 
 ### Windows (MinGW)
+
+**CI: the Windows configurations use Conan** (`env.OWL_DEPENDENCY_PROVIDER = conan` on Windows x64 GCC / Clang and the
+Windows packages). The agent's MSYS2 moved to GCC 16 and the prebuilt DepManager packages no longer match it: the GCC
+tests died at load time (`0xc0000139`, entry point not found) and the Clang link hit duplicate `std::__unicode`
+symbols. Linux stays on DepManager until the switch of every preset.
 
 Prepared, not yet run on a Windows agent (the build image has no MinGW toolchain):
 
@@ -224,6 +249,7 @@ ConanCenter as is.
 | `imguizmo` 1.10                      | ConanCenter's only recent version (cci.20231114) calls `BeginChildFrame`, removed in imgui 1.92                |
 | `nativefiledialog-extended` 1.4.1    | Absent; the GitHub archive lacks the `wayland-protocols` submodule, fetched as a second source                 |
 | `msdf-atlas-gen` 1.3                 | ConanCenter's recipe packages the command-line tool only; this one builds the library on ConanCenter's msdfgen |
+| `libmp3lame` 3.100                   | ConanCenter's recipe, except MinGW Clang builds with autotools: upstream takes every Windows Clang for clang-cl |
 
 ## What remains
 
@@ -232,8 +258,7 @@ Before the switch of the default:
 - Windows MinGW presets on Conan (see above), on the Windows agents
 - Linux arm64 (`linux-*` presets on the arm64 agent): the profiles detect the architecture, Slang has an arm64
   binary; to run once
-- CI: the TeamCity configurations pass `-DOWL_DEPENDENCY_PROVIDER=conan` and keep a Conan cache per agent, the
-  `Package` action runs `conan create` (PR-09), a lockfile update report (G-08)
+- CI: the `Package` action runs `conan create` (PR-09), a lockfile update report (G-08)
 - Vulkan validation layers (`OWL_ENABLE_VULKAN_LAYERS`) from `vulkan-validationlayers`
 
 After it:
@@ -242,7 +267,7 @@ After it:
 - Versions not on ConanCenter yet: EnTT 4.0.0, Taskflow 4.1.0, OpenAL Soft 1.25, msdfgen 1.13, msdf-atlas-gen 1.4,
   tinyobjloader rc13 — contribute them upstream (or bump the local recipes) rather than adding recipes
 - Breaking upgrade EnTT 4 (before the open component registry, PR-37)
-- Propose the six local recipes (or their new versions) to ConanCenter, msdf-atlas-gen as a library option
+- Propose the seven local recipes (or their new versions) to ConanCenter, msdf-atlas-gen as a library option, the libmp3lame clang-cl fix
 - imgui-color-text-edit v1.92.9: port `CodeEditorDocument` to the `DocPos` cursor API, then bump both providers
 - Static OwlEngine package; YAML out of the public headers (PR-27)
 
