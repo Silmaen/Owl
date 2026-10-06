@@ -185,6 +185,33 @@ public:
 	 */
 	[[nodiscard]] static auto applyEntityFromString(const Entity& iEntity, const std::string& iYamlData) -> bool;
 
+	/**
+	 * @brief
+	 *  Serialize a single component of an entity to a YAML string.
+	 *
+	 * Much cheaper than `serializeEntityToString` when only one component matters, e.g. to detect
+	 * whether an edit changed it.
+	 * @param[in] iEntity The entity holding the component.
+	 * @param[in] iComponentKey The component key (`Component::key()`).
+	 * @return A one-key YAML map (`<key>: …`), or an empty string when the entity lacks the component or
+	 *  the key names no serializable component.
+	 */
+	[[nodiscard]] static auto serializeComponentToString(const Entity& iEntity, std::string_view iComponentKey)
+			-> std::string;
+
+	/**
+	 * @brief
+	 *  Replace one component in a serialized entity.
+	 * @param[in] iEntityYaml The entity YAML (as produced by serializeEntityToString).
+	 * @param[in] iComponentKey The component key (`Component::key()`).
+	 * @param[in] iComponentYaml The component YAML (as produced by serializeComponentToString); an empty
+	 *  string removes the component from the entity YAML.
+	 * @return The entity YAML holding the given component state, or an empty string when either YAML is
+	 *  invalid.
+	 */
+	[[nodiscard]] static auto replaceComponentInString(const std::string& iEntityYaml, std::string_view iComponentKey,
+													   const std::string& iComponentYaml) -> std::string;
+
 private:
 	/// Parent Scene.
 	shared<Scene> mp_scene;

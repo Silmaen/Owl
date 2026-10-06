@@ -197,8 +197,16 @@ public:
 	/**
 	 * @brief
 	 *  Capture the entity's current state as the "after" state.
+	 * @param[in] iEntity The modified entity.
 	 */
 	void captureAfter(const scene::Entity& iEntity);
+
+	/**
+	 * @brief
+	 *  Set the "after" state from a snapshot already taken.
+	 * @param[in] iAfter The entity state after modification.
+	 */
+	void setAfter(EntitySnapshot iAfter);
 
 	/**
 	 * @brief

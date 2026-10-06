@@ -11,6 +11,7 @@
 #include <owl.h>
 
 #include "../UndoManager.h"
+#include "InspectorEditTracker.h"
 
 #include <optional>
 #include <string>
@@ -178,6 +179,8 @@ private:
 	scene::Entity m_selection;
 	/// Entity name when the name field was activated (set while a rename is being typed).
 	std::optional<std::string> m_renameBefore;
+	/// Turns the property edits into undo steps, serializing only while a component is edited.
+	InspectorEditTracker m_inspector;
 	/// Undo manager (non-owning, optional).
 	SceneUndoManager* mp_undoManager = nullptr;
 	/// Active document — when it `overridesGlobalPanels()` the panel delegates its content to it.
