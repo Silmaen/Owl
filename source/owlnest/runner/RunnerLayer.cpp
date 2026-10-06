@@ -8,6 +8,7 @@
 
 #include "RunnerLayer.h"
 
+#include <debug/LogSink.h>
 #include <input/Input.h>
 #include <input/KeyCodes.h>
 #include <input/MouseCode.h>
@@ -22,6 +23,7 @@
 #include <scene/component/components.h>
 #include <window/Window.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
@@ -164,7 +166,7 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 	fileOut.close();
 }
 
-RunnerLayer::RunnerLayer() : Layer("RunnerLayer") {}
+RunnerLayer::RunnerLayer(const SmokeTest& iSmokeTest) : Layer("RunnerLayer"), m_smokeTest{iSmokeTest} {}
 
 RunnerLayer::RunnerLayer(const FrameBenchOptions& iBench)
 	: Layer("RunnerLayer"), m_frameBench{mkUniq<FrameBench>(iBench)} {}
@@ -181,7 +183,8 @@ void RunnerLayer::onAttach() {
 	{
 		const auto config = app.getWorkingDirectory() / "runner.yml";
 		if (!exists(config)) {
-			OWL_CORE_ERROR("Runner config not found")
+			OWL_CORE_ERROR("Runner: Config {} not found.", config.string())
+			app.setExitCode(1);
 			app.close();
 			return;
 		}
@@ -242,47 +245,91 @@ void RunnerLayer::onAttach() {
 	scene::SettingsManager::applyBuiltins();
 
 	m_viewportSize = window.getSize();
-	m_activeScene = mkShared<scene::Scene>();
+	if (!loadScene(m_config.firstScene)) {
+		app.setExitCode(1);
+		app.close();
+		return;
+	}
+	if (m_smokeTest.frames > 0)
+		initSmokeTest();
+}
 
-	bool loaded = false;
-	// Try loading first scene from pack, then from filesystem.
+auto RunnerLayer::loadScene(const std::string& iSceneName) -> bool {
+	const auto& app = app::Application::get();
+	auto newScene = mkShared<scene::Scene>();
 	if (app.hasOpenPack()) {
-		// Resolve first scene name for pack lookup.
-		std::string sceneName = m_config.firstScene;
-		// If firstScene was resolved to an absolute path, try to find it in pack by filename.
-		if (std::filesystem::path(sceneName).is_absolute()) {
+		std::string packName = iSceneName;
+		if (std::filesystem::path(packName).is_absolute()) {
 			for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
-				if (sceneName.starts_with(assetsPath.string())) {
-					sceneName = relative(std::filesystem::path(sceneName), assetsPath).string();
+				if (packName.starts_with(assetsPath.string())) {
+					packName = relative(std::filesystem::path(packName), assetsPath).generic_string();
 					break;
 				}
 			}
 		}
-		if (auto data = app.loadFromPack(sceneName); data) {
-			if (const scene::SceneSerializer sc(m_activeScene); !sc.deserializeFromBuffer(*data, sceneName)) {
-				OWL_CORE_ERROR("Failed to load first scene from pack")
-				app.close();
-				return;
+		if (auto data = app.loadFromPack(packName); data) {
+			if (const scene::SceneSerializer sc(newScene); !sc.deserializeFromBuffer(*data, packName)) {
+				OWL_CORE_ERROR("Runner: Cannot load scene {} from the pack.", packName)
+				return false;
 			}
-			loaded = true;
+			m_activeScene = newScene;
+			installRenderStack();
+			return true;
 		}
 	}
-
-	// Fallback: load from filesystem if pack didn't have the scene.
-	if (!loaded) {
-		if (!std::filesystem::exists(m_config.firstScene)) {
-			OWL_CORE_ERROR("Runner first scene {} not found", m_config.firstScene)
-			app.close();
-			return;
-		}
-		if (const scene::SceneSerializer sc(m_activeScene); !sc.deserialize(m_config.firstScene)) {
-			OWL_CORE_ERROR("Failed to load first scene")
-			app.close();
-			return;
-		}
+	if (!std::filesystem::exists(iSceneName)) {
+		OWL_CORE_ERROR("Runner: Scene {} not found.", iSceneName)
+		return false;
 	}
-
+	if (const scene::SceneSerializer sc(newScene); !sc.deserialize(iSceneName)) {
+		OWL_CORE_ERROR("Runner: Cannot load scene {}.", iSceneName)
+		return false;
+	}
+	m_activeScene = newScene;
 	installRenderStack();
+	return true;
+}
+
+void RunnerLayer::initSmokeTest() {
+	const auto& app = app::Application::get();
+	m_smokeScenes = {m_config.firstScene};
+	if (app.hasOpenPack()) {
+		const auto firstName = std::filesystem::path(m_config.firstScene).filename();
+		auto packScenes = app.getPackReader().listEntries(data::assets::pack::AssetType::Scene);
+		std::ranges::sort(packScenes);
+		for (auto& name: packScenes) {
+			if (std::filesystem::path(name).filename() != firstName)
+				m_smokeScenes.push_back(std::move(name));
+		}
+	}
+	m_smokeIndex = 0;
+	m_smokeFrame = 0;
+	OWL_CORE_INFO("Runner: Smoke test of {} scene(s), {} frame(s) each.", m_smokeScenes.size(), m_smokeTest.frames)
+}
+
+auto RunnerLayer::stepSmokeTest() -> bool {
+	if (m_transition || ++m_smokeFrame <= m_smokeTest.frames)
+		return false;
+	if (m_activeScene && m_activeScene->status != scene::Scene::Status::Editing)
+		m_activeScene->onEndRuntime();
+	m_smokeFrame = 0;
+	while (++m_smokeIndex < m_smokeScenes.size()) {
+		OWL_CORE_INFO("Runner: Smoke test playing {} ({}/{}).", m_smokeScenes[m_smokeIndex], m_smokeIndex + 1,
+					  m_smokeScenes.size())
+		if (loadScene(m_smokeScenes[m_smokeIndex]))
+			return false;
+		++m_smokeFailures;
+	}
+	auto& app = app::Application::get();
+	if (const auto errors = core::Log::getLogBuffer().getErrorCount(); errors > 0 || m_smokeFailures > 0) {
+		OWL_CORE_ERROR("Runner: Smoke test failed, {} error log(s), {} scene(s) not loaded.", errors, m_smokeFailures)
+		app.setExitCode(1);
+	} else {
+		OWL_CORE_INFO("Runner: Smoke test passed on {} scene(s).", m_smokeScenes.size())
+	}
+	m_activeScene.reset();
+	app.close();
+	return true;
 }
 
 void RunnerLayer::attachFrameBench() {
@@ -415,6 +462,8 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 
 	if (!stepFrameBench())
 		return;
+	if (m_smokeTest.frames > 0 && m_activeScene != nullptr && stepSmokeTest())
+		return;
 	const core::Timestep& timeStep = m_frameBench ? m_frameBench->getTimeStep() : iTimeStep;
 	const ScopedCaptureTarget captureScope{m_captureTarget};
 	// resize
@@ -477,7 +526,11 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 					// Handle quit request from Lua (scene.quit()).
 					if (m_activeScene->quitRequested) {
 						m_activeScene->onEndRuntime();
-
+						if (m_smokeTest.frames > 0) {
+							m_activeScene->quitRequested = false;
+							m_smokeFrame = m_smokeTest.frames;
+							return;
+						}
 						app::Application::get().close();
 						return;
 					}

@@ -22,4 +22,6 @@ User-facing reference: `doc/pages/architecture.md`, `doc/pages/voxel.md`.
 - `Application::openPack()` / `loadFromPack()` / `packContains()`; texture, font and script loaders try the
   open pack first, then the filesystem. Pack assets are extracted to `owl_pack_cache/` temp files.
 - The runner opens the pack named by `PackFile` in `runner.yml`; Owl Nest *Project → Pack Game* writes one.
+- `GameExporter` is the only export path (*Pack Game*, `OwlNest --export`, `export_tests`). Any asset reference a
+  component adds must be followed by `AssetScanner`, or the end-to-end export test fails.
 - A loader that produces an engine data type lives next to that type (`MeshLoader` in `data/geometry`).

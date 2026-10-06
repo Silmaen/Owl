@@ -89,6 +89,24 @@ auto Project::loadFromFile(const std::filesystem::path& iFile) -> bool {
 	return true;
 }
 
+auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const std::filesystem::path& iRunnerDir) const
+		-> data::assets::pack::ExportSettings {
+	return {.gameName = name,
+			.firstScene = firstScene,
+			.version = version,
+			.author = author,
+			.description = description,
+			.icon = icon,
+			.projectDirectory = projectDirectory,
+			.outputDirectory = iOutputDir,
+			.runnerDirectory = iRunnerDir,
+			.windowSize = {window.width, window.height},
+			.fullscreen = window.fullscreen,
+			.resizable = window.resizable,
+			.rendererStack = rendererStack,
+			.packFlags = data::assets::pack::PackFlags::Default};
+}
+
 auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
 	YAML::Emitter out;
 	out << YAML::BeginMap;

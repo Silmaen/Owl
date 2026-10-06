@@ -34,6 +34,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OwlRunner --frame-bench --capture <png>` renders into an offscreen framebuffer and writes the last frame; `Framebuffer::readColorAttachment` and `renderer::writeImagePng` back it.
 - OpenGL GLSL fallback: without `GL_ARB_gl_spirv` (llvmpipe, GL 4.5 drivers) the Slang SPIR-V is translated to GLSL 4.50 by spirv-cross, `OWL_OPENGL_SHADERS=glsl|spirv` forces the choice.
 - `owlnest_tests` category: undo manager, every scene command family, node-graph commands and entity snapshots, linked through the new `OwlNestCore` editor library.
+- `GameExporter` (`data::assets::pack`): one export path shared by *Pack Game*, `OwlNest --export <project> <output>` and the tests.
+- Runner `--headless` (Null window, renderer and sound) and `--smoke-test [frames]` (plays every packed scene, non-zero exit code on any error log).
+- `export_tests` (CTest label `export`): exports `sample_project`, moves the game out of its export folder and smoke-tests every scene headless.
+- `Application::setExitCode()`: `main` returns it, and 1 when the application ended in the `Error` state.
 
 ### Changed
 
@@ -125,6 +129,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Editor dirty flag driven by an undo generation counter: "save, undo, edit" and an edit merged into the saved step now mark the document as modified.
 - `Scene::getEntityCount()` counts the entities instead of always returning 0; the round-trip tests that compared 0 to 0 now check real counts.
 - Prefab "Update from Prefab" / "Revert to Prefab" work in place: the instance keeps its hierarchy and placement, new and removed prefab entities follow, editor edits mark overrides (shown in the inspector, revertable per component, undoable), and Unlink is undoable.
+- Textures picked inside an asset directory are saved as `nam:` relative names, no longer as absolute `pat:` paths that break on another machine and in the pack.
+- Export rewrites the remaining absolute `pat:` references of scenes, tilesets and tilemaps to the packed `nam:` entry; `raycast_demo.owl` no longer points at a developer checkout.
+- `AssetScanner` packs the `VoxelWorld` tileset and its atlas, and the `UiText` font.
+- The project icon is found in the asset directories too, so the exported game gets its icon.
+- `runner.yml` and `game_info.yml` are written with a YAML emitter: a game name or description with `:` or `#` no longer corrupts them.
+- Re-exporting over a previous export replaces the bundled shared libraries instead of keeping stale ones.
+- `launch.sh` no longer adds the current directory to `LD_LIBRARY_PATH` when it is empty.
+- The runner exits with code 1 when `runner.yml` or the first scene is missing.
+- A missing tilemap or tileset at scene start is logged as a warning instead of being ignored silently.
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
 - `scene.destroy_entity` is deferred to the end of the frame (`Scene::destroyEntityDeferred`): a script destroying its own entity no longer frees its running Lua state, and the destroyed entity gets `on_destroy` once, loses its Box2D body and takes its children with it.
 - Lua `on_collision(other_id)` is now called: Box2D begin-touch contact events reach both entities' scripts once per touching pair, skipping entities hidden or pending destruction; `on_trigger_enter` / `on_trigger_exit` / `on_triggered` now receive the documented `other_id`.

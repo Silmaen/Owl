@@ -18,6 +18,7 @@
 #include "document/TilesetDocument.h"
 
 #include <data/assets/pack/AssetScanner.h>
+#include <data/assets/pack/GameExporter.h>
 #include <data/assets/pack/PackWriter.h>
 #include <gui/FontPreviewCache.h>
 #include <gui/IconBank.h>
@@ -2401,97 +2402,6 @@ void EditorLayer::packScene() {
 			[state]() -> void { state->completed.store(true); }));
 }
 
-namespace {
-void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem::path& iDestDir) {
-	std::error_code ec;
-	for (const auto& entry: std::filesystem::directory_iterator(iSrcDir, ec)) {
-		if (!entry.is_regular_file() && !entry.is_symlink())
-			continue;
-		const auto ext = entry.path().extension().string();
-		const auto filename = entry.path().filename().string();
-		// Copy .so files (Linux) and .dll files (Windows).
-		if (ext == ".so" || filename.find(".so.") != std::string::npos || ext == ".dll") {
-			const auto dest = iDestDir / entry.path().filename();
-			if (!exists(dest)) {
-				std::error_code copyEc;
-				std::filesystem::copy(entry.path(), dest, std::filesystem::copy_options::copy_symlinks, copyEc);
-				if (copyEc)
-					OWL_CORE_WARN("Failed to copy {}: {}.", entry.path().string(), copyEc.message())
-			}
-		}
-	}
-}
-
-auto sanitizeFilename(const std::string& iName) -> std::string {
-	std::string result;
-	result.reserve(iName.size());
-	for (const auto ch: iName) {
-		if (ch == '/' || ch == '\\' || ch == ':' || ch == '*' || ch == '?' || ch == '"' || ch == '<' || ch == '>' ||
-			ch == '|' || ch == ' ')
-			result += '_';
-		else
-			result += ch;
-	}
-	return result;
-}
-
-#ifdef OWL_PLATFORM_LINUX
-
-void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string& iExeName) {
-	std::ofstream script(iGameDir / "launch.sh");
-	script << "#!/bin/sh\n";
-	script << "# Launcher for " << iExeName << "\n";
-	script << "SCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"\n";
-	script << "export LD_LIBRARY_PATH=\"${SCRIPT_DIR}:${LD_LIBRARY_PATH}\"\n";
-	script << "exec \"${SCRIPT_DIR}/" << iExeName << "\" \"$@\"\n";
-	script.close();
-	std::error_code ec;
-	std::filesystem::permissions(iGameDir / "launch.sh",
-								 std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec |
-										 std::filesystem::perms::others_exec,
-								 std::filesystem::perm_options::add, ec);
-}
-#endif
-
-void writeMetadata(const std::filesystem::path& iGameDir, const std::string& iGameName, const std::string& iVersion,
-				   const std::string& iAuthor, const std::string& iDescription) {
-	const auto now = std::chrono::system_clock::now();
-	const auto days = std::chrono::floor<std::chrono::days>(now);
-	const std::chrono::year_month_day ymd{days};
-	const auto packDate = std::format("{:%Y-%m-%d}", ymd);
-#ifdef OWL_PLATFORM_LINUX
-	constexpr auto platform = "linux-x64";
-#elif defined(OWL_PLATFORM_WINDOWS)
-	constexpr auto platform = "windows-x64";
-#else
-	constexpr auto platform = "unknown";
-#endif
-	std::ofstream meta(iGameDir / "game_info.yml");
-	meta << "GameInfo:\n";
-	meta << "  Name: " << iGameName << "\n";
-	if (!iVersion.empty())
-		meta << "  Version: " << iVersion << "\n";
-	if (!iAuthor.empty())
-		meta << "  Author: " << iAuthor << "\n";
-	if (!iDescription.empty())
-		meta << "  Description: " << iDescription << "\n";
-	meta << "  EngineVersion: " << owl::getVersionString() << "\n";
-	meta << "  PackDate: " << packDate << "\n";
-	meta << "  Platform: " << platform << "\n";
-}
-
-#ifdef OWL_PLATFORM_WINDOWS
-
-auto createZipArchive(const std::filesystem::path& iSourceDir, const std::filesystem::path& iOutputZip) -> bool {
-	const auto cmd = std::format(
-			"powershell -NoProfile -Command \"Compress-Archive -Path '{}\\*' -DestinationPath '{}' -Force\"",
-			iSourceDir.string(), iOutputZip.string());
-	return std::system(cmd.c_str()) == 0;// NOLINT(concurrency-mt-unsafe)
-}
-#endif
-
-}// namespace
-
 void EditorLayer::packGame() {
 	if (!m_project.isLoaded() || m_asyncProgress.isActive() || m_showPackValidation || m_showPackWizard)
 		return;
@@ -2580,33 +2490,18 @@ void EditorLayer::renderPackWizardModal() {
 void EditorLayer::launchPackValidation() {
 	m_pendingPackWarnings.clear();
 
-	// Launch async validation: scan project + collect warnings off the main thread.
 	auto state = mkShared<AsyncProgressState>();
 	state->setMessage("Validating project...");
 	state->progress.store(0.3f);
 	m_asyncProgress.open("Validating...", state, false);
 
-	const auto projectDir = m_project.projectDirectory;
-	const auto firstScene = m_project.firstScene;
+	auto settings = m_project.makeExportSettings(m_pendingPackDestDir, app::Application::get().getWorkingDirectory());
 	auto warningsOut = mkShared<std::vector<std::string>>();
 	auto assetsOut = mkShared<std::vector<data::assets::pack::AssetReference>>();
-	const auto runnerSrcDir = app::Application::get().getWorkingDirectory();
 
 	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
-			[state, projectDir, firstScene, warningsOut, assetsOut, runnerSrcDir]() -> void {
-				*assetsOut = data::assets::pack::AssetScanner::scanProject(projectDir, firstScene, warningsOut.get());
-				state->progress.store(0.8f);
-				bool hasRunner = false;
-				for (const auto& candidate: {"OwlRunner", "OwlRunner.exe"}) {
-					if (exists(runnerSrcDir / candidate)) {
-						hasRunner = true;
-						break;
-					}
-				}
-				if (!hasRunner)
-					warningsOut->emplace_back("OwlRunner executable not found — packed game will not be playable.");
-				if (assetsOut->empty())
-					warningsOut->emplace_back("No assets to pack — check firstScene and its references.");
+			[state, exportSettings = std::move(settings), warningsOut, assetsOut]() -> void {
+				*warningsOut = data::assets::pack::GameExporter::validate(exportSettings, *assetsOut);
 				state->progress.store(1.0f);
 			},
 			[this, state, warningsOut, assetsOut]() -> void {
@@ -2659,223 +2554,40 @@ void EditorLayer::renderPackValidationModal() {
 }
 
 void EditorLayer::startPackGame() {
-	const auto destDir = m_pendingPackDestDir;
+	auto settings = m_project.makeExportSettings(m_pendingPackDestDir, app::Application::get().getWorkingDirectory());
+	settings.packFlags =
+			(m_packCompress ? data::assets::pack::PackFlags::Compressed : data::assets::pack::PackFlags::None) |
+			(m_packObfuscate ? data::assets::pack::PackFlags::Obfuscated : data::assets::pack::PackFlags::None);
 	m_pendingPackDestDir.clear();
 	m_pendingPackWarnings.clear();
-	// Reuse the pre-scanned assets from the validation pass (avoids a double scan).
-	auto preScanned = m_pendingPackAssets;
+	auto preScanned =
+			m_pendingPackAssets ? m_pendingPackAssets : mkShared<std::vector<data::assets::pack::AssetReference>>();
 	m_pendingPackAssets.reset();
-	// Snapshot project data (copy by value for thread safety).
-	const auto gameName = sanitizeFilename(m_project.name);
-	const auto projectDir = m_project.projectDirectory;
-	const auto firstScene = m_project.firstScene;
-	const auto projectName = m_project.name;
-	const auto projectVersion = m_project.version;
-	const auto projectAuthor = m_project.author;
-	const auto projectDesc = m_project.description;
-	const auto projectIcon = m_project.icon;
-	const auto windowCfg = m_project.window;
-	const auto rendererStackCfg = m_project.rendererStack;
-	const auto runnerSrcDir = app::Application::get().getWorkingDirectory();
-	const auto gameDir = destDir / gameName;
-	if (std::error_code ec; !std::filesystem::create_directories(gameDir, ec) && ec) {
-		OWL_CORE_ERROR("Pack: cannot create output directory '{}': {}.", gameDir.string(), ec.message())
-		// Open an error modal so the user sees the failure instead of a silent abort.
-		auto errState = mkShared<AsyncProgressState>();
-		errState->setError(std::format("Cannot create output directory '{}': {}.\n"
-									   "Tip: make sure the parent path contains only directories, "
-									   "not a file with the same name as the output folder.",
-									   gameDir.string(), ec.message()));
-		m_asyncProgress.open("Packaging Error", errState, false);
-		return;
-	}
 
-	// Create shared progress state and open the modal.
 	auto state = mkShared<AsyncProgressState>();
 	m_asyncProgress.open("Packing Game...", state, true);
-	// Push async task to the scheduler.
 	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
-			// --- Worker function (runs on thread pool) ---
-			[state, gameName, gameDir, projectDir, firstScene, projectName, projectVersion, projectAuthor, projectDesc,
-			 projectIcon, windowCfg, rendererStackCfg, runnerSrcDir, preScanned, compress = m_packCompress,
-			 obfuscate = m_packObfuscate]() -> void {
+			[state, exportSettings = std::move(settings), preScanned]() -> void {
 				const auto startTime = std::chrono::steady_clock::now();
-				const auto packFlags =
-						(compress ? data::assets::pack::PackFlags::Compressed : data::assets::pack::PackFlags::None) |
-						(obfuscate ? data::assets::pack::PackFlags::Obfuscated : data::assets::pack::PackFlags::None);
-				// Phase 1: Use pre-scanned assets (from validation) or re-scan if missing.
-				std::vector<data::assets::pack::AssetReference> assets;
-				if (preScanned && !preScanned->empty()) {
-					assets = *preScanned;
-				} else {
-					state->setMessage("Scanning assets...");
-					assets = data::assets::pack::AssetScanner::scanProject(projectDir, firstScene);
-				}
-				if (assets.empty()) {
-					state->setError("No assets found to pack.");
-					return;
-				}
-				if (state->cancelRequested.load())
-					return;
-				state->progress.store(0.15f);
-				state->setMessage("Building pack (" + std::to_string(assets.size()) + " assets)...");
-				// Phase 2: Build and write pack file (20% – 80%).
-				data::assets::pack::PackWriter writer;
-				for (const auto& ref: assets) writer.addFile(ref.diskPath, ref.packPath, ref.assetType);
-				if (const auto gsPath = projectDir / "game_settings.yml"; exists(gsPath))
-					writer.addFile(gsPath, "game_settings.yml", data::assets::pack::AssetType::Other);
-				const auto packFilename = gameName + ".owlpack";
-				const auto packPath = gameDir / packFilename;
-				const bool writeOk = writer.write(
-						packPath, packFlags,
-						[&state](const uint32_t iCurrent, const uint32_t iTotal) -> void {
-							state->progress.store(0.2f +
-												  0.6f * static_cast<float>(iCurrent) / static_cast<float>(iTotal));
+				const auto result = data::assets::pack::GameExporter::exportGame(
+						exportSettings, *preScanned,
+						[&state](const float iFraction, const std::string& iMessage) -> void {
+							state->progress.store(iFraction);
+							state->setMessage(iMessage);
 						},
 						[&state]() -> bool { return state->cancelRequested.load(); });
-				if (!writeOk) {
-					if (state->cancelRequested.load())
-						state->setError("Packaging cancelled.");
-					else
-						state->setError("Failed to write game pack.");
+				if (!result) {
+					state->setError(std::format("Packaging failed: {}.",
+												data::assets::pack::GameExporter::getErrorMessage(result.error())));
 					return;
 				}
-				state->progress.store(0.82f);
-				// Phase 3: Generate config files (80% – 90%).
-				state->setMessage("Writing configuration...");
-				{
-					std::string resolvedFirstScene = firstScene;
-					if (std::filesystem::path(resolvedFirstScene).extension() != ".owl")
-						resolvedFirstScene += ".owl";
-					for (const auto& ref: assets) {
-						if (ref.assetType == data::assets::pack::AssetType::Scene &&
-							ref.packPath.ends_with(resolvedFirstScene)) {
-							resolvedFirstScene = ref.packPath;
-							break;
-						}
-					}
-
-					std::ofstream configOut(gameDir / "runner.yml");
-					configOut << "RunnerConfig:\n";
-					configOut << "  FirstScene: " << resolvedFirstScene << "\n";
-					configOut << "  PackFile: " << packFilename << "\n";
-					configOut << "  GameName: " << projectName << "\n";
-					if (!projectVersion.empty())
-						configOut << "  Version: " << projectVersion << "\n";
-					if (!projectAuthor.empty())
-						configOut << "  Author: " << projectAuthor << "\n";
-					if (!projectIcon.empty())
-						configOut << "  Icon: " << projectIcon << "\n";
-					configOut << "  WindowWidth: " << windowCfg.width << "\n";
-					configOut << "  WindowHeight: " << windowCfg.height << "\n";
-					configOut << "  Fullscreen: " << (windowCfg.fullscreen ? "true" : "false") << "\n";
-					configOut << "  Resizable: " << (windowCfg.resizable ? "true" : "false") << "\n";
-					if (!rendererStackCfg.isEmpty()) {
-						YAML::Emitter rsEmit;
-						rsEmit << YAML::BeginMap;
-						rsEmit << YAML::Key << "RendererStack" << YAML::Value << rendererStackCfg.toYaml();
-						rsEmit << YAML::EndMap;
-						std::istringstream rsIn{rsEmit.c_str()};
-						std::string line;
-						while (std::getline(rsIn, line)) {
-							if (line.empty() || line.front() == '{' || line.front() == '}')
-								continue;
-							configOut << "  " << line << "\n";
-						}
-					}
-				}
-				if (state->cancelRequested.load())
-					return;
-
-				// Copy icon.
-				if (!projectIcon.empty()) {
-					const auto iconSrc = projectDir / projectIcon;
-					if (exists(iconSrc)) {
-						const auto iconDst = gameDir / projectIcon;
-
-						std::filesystem::create_directories(iconDst.parent_path());
-						std::error_code ec;
-
-						std::filesystem::copy(iconSrc, iconDst, std::filesystem::copy_options::overwrite_existing, ec);
-					}
-				}
-				state->progress.store(0.88f);
-
-				// Phase 4: Copy runner + shared libs (90% – 100%).
-				state->setMessage("Copying runner...");
-				std::filesystem::path runnerExe;
-				for (const auto& candidate: {"OwlRunner", "OwlRunner.exe"}) {
-					if (const auto p = runnerSrcDir / candidate; exists(p)) {
-						runnerExe = p;
-						break;
-					}
-				}
-				if (runnerExe.empty()) {
-					state->setError("OwlRunner executable not found.");
-					return;
-				}
-#ifdef OWL_PLATFORM_WINDOWS
-				const auto exeFilename = gameName + ".exe";
-#else
-				const auto& exeFilename = gameName;
-#endif
-				const auto destExe = gameDir / exeFilename;
-				{
-					std::error_code ec;
-
-					std::filesystem::copy_file(runnerExe, destExe, std::filesystem::copy_options::overwrite_existing,
-											   ec);
-					if (ec) {
-						state->setError(std::format("Failed to copy runner: {}", ec.message()));
-						return;
-					}
-				}
-#ifdef OWL_PLATFORM_LINUX
-				{
-					std::error_code ec;
-
-					std::filesystem::permissions(destExe,
-												 std::filesystem::perms::owner_exec |
-														 std::filesystem::perms::group_exec |
-														 std::filesystem::perms::others_exec,
-												 std::filesystem::perm_options::add, ec);
-					if (ec)
-
-						OWL_CORE_WARN("Failed to set exec permissions on {}: {}.", destExe.string(), ec.message())
-				}
-#endif
-				copySharedLibs(runnerSrcDir, gameDir);
-#ifdef OWL_PLATFORM_LINUX
-				writeLinuxLauncher(gameDir, exeFilename);
-#endif
-				writeMetadata(gameDir, projectName, projectVersion, projectAuthor, projectDesc);
-#ifdef OWL_PLATFORM_WINDOWS
-				{
-					const auto zipPath = gameDir.parent_path() / (gameName + ".zip");
-
-					createZipArchive(gameDir, zipPath);
-				}
-#endif
-				state->progress.store(1.0f);
-
-				// Compute post-pack report: duration, pack size, output path.
-				const auto endTime = std::chrono::steady_clock::now();
-				const auto durationMs =
-						std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
-				const auto packFile = gameDir / (gameName + ".owlpack");
-				std::error_code sizeEc;
-				const auto packBytes = exists(packFile) ? std::filesystem::file_size(packFile, sizeEc) : 0;
-				const auto mib = static_cast<double>(packBytes) / (1024.0 * 1024.0);
-				state->setMessage(std::format("Packed {} assets ({:.2f} MiB)\n"
-											  "Output: {}\n"
-											  "Duration: {:.1f}s",
-											  assets.size(), mib, gameDir.string(),
-											  static_cast<double>(durationMs) / 1000.0));
-
-				OWL_CORE_INFO("Game exported: {} ({} assets, {:.2f} MiB) -> {} in {:.1f}s.", projectName, assets.size(),
-							  mib, gameDir.string(), static_cast<double>(durationMs) / 1000.0)
+				const auto seconds =
+						std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime).count();
+				state->setMessage(std::format("Packed {} assets ({:.2f} MiB)\nOutput: {}\nDuration: {:.1f}s",
+											  result->assetCount,
+											  static_cast<double>(result->packBytes) / (1024.0 * 1024.0),
+											  result->gameDirectory.string(), seconds));
 			},
-			// --- Termination callback (runs on main thread) ---
 			[state]() -> void { state->completed.store(true); }));
 }
 

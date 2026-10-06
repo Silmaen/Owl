@@ -9,6 +9,7 @@
 #pragma once
 
 #include <core/FormatVersion.h>
+#include <data/assets/pack/GameExporter.h>
 #include <owl.h>
 #include <renderer/RenderStack.h>
 
@@ -85,6 +86,17 @@ struct Project {
 	 * @return True if a project directory is set.
 	 */
 	[[nodiscard]] auto isLoaded() const -> bool { return !projectDirectory.empty(); }
+
+	/**
+	 * @brief
+	 *  Build the game export settings of this project.
+	 * @param[in] iOutputDir Parent folder of the exported game.
+	 * @param[in] iRunnerDir Folder holding the OwlRunner executable and the shared libraries.
+	 * @return The export settings (default pack flags).
+	 */
+	[[nodiscard]] auto makeExportSettings(const std::filesystem::path& iOutputDir,
+										  const std::filesystem::path& iRunnerDir) const
+			-> data::assets::pack::ExportSettings;
 };
 
 }// namespace owl::nest

@@ -10,8 +10,10 @@
 
 #include "core/Log.h"
 
+#include <atomic>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <mutex>
 #include <string>
@@ -61,11 +63,20 @@ public:
 	 */
 	void clear();
 
+	/**
+	 * @brief
+	 *  Get the number of Error and Critical entries pushed since startup.
+	 * @return The error count, unaffected by eviction and by clear().
+	 */
+	[[nodiscard]] auto getErrorCount() const -> uint64_t { return m_errorCount.load(); }
+
 private:
 	/// Guards `m_entries` against concurrent log writes from worker threads.
 	mutable std::mutex m_mutex;
 	/// Bounded ring buffer of recent log entries (oldest evicted on capacity overflow).
 	std::deque<LogEntry> m_entries;
+	/// Cumulative count of Error and Critical entries.
+	std::atomic<uint64_t> m_errorCount{0};
 };
 
 }// namespace owl::debug

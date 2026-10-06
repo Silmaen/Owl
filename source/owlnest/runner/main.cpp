@@ -10,12 +10,15 @@
 #include "RunnerLayer.h"
 #include <app/EntryPoint.h>
 
+#include <cctype>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
+#include <span>
 #include <string>
+#include <string_view>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -70,6 +73,34 @@ auto readEarlyConfig(const std::filesystem::path& iWorkDir) -> EarlyConfig {
 	return cfg;
 }
 
+// Command-line options of the runner.
+struct RunnerOptions {
+	// Run without window, GPU nor audio (Null backends).
+	bool headless{false};
+	// Smoke-test options (inactive when frames is 0).
+	nest::runner::SmokeTest smokeTest;
+};
+
+auto parseOptions(const int iArgc, char** iArgv) -> RunnerOptions {
+	RunnerOptions options;
+	const std::span args(iArgv, static_cast<size_t>(iArgc));
+	for (size_t i = 1; i < args.size(); ++i) {
+		const std::string_view arg(args[i]);
+		if (arg == "--headless") {
+			options.headless = true;
+		} else if (arg == "--smoke-test") {
+			options.smokeTest.frames = 60;
+			if (i + 1 < args.size()) {
+				if (const std::string_view next(args[i + 1]); !next.empty() && std::isdigit(next.front()) != 0) {
+					options.smokeTest.frames = static_cast<uint32_t>(std::stoul(std::string(next)));
+					++i;
+				}
+			}
+		}
+	}
+	return options;
+}
+
 }// namespace
 
 OWL_DIAG_PUSH
@@ -77,9 +108,9 @@ OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
 class OwlNest final : public app::Application {
 public:
 	OwlNest() = delete;
-	explicit OwlNest(const app::AppParams& iParam) : Application(iParam) {
+	OwlNest(const app::AppParams& iParam, const nest::runner::SmokeTest& iSmokeTest) : Application(iParam) {
 		if (getState() == State::Running)
-			pushLayer(mkShared<nest::runner::RunnerLayer>());
+			pushLayer(mkShared<nest::runner::RunnerLayer>(iSmokeTest));
 	}
 
 	OwlNest(const app::AppParams& iParam, const nest::runner::FrameBenchOptions& iBench) : Application(iParam) {
@@ -141,8 +172,9 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 
 	const auto workDir = std::filesystem::current_path();
 	const auto [packFile, gameName, icon, width, height] = readEarlyConfig(workDir);
+	const auto options = parseOptions(iArgc, iArgv);
 
-	return mkShared<OwlNest>(AppParams{
+	AppParams params{
 			.args = iArgv,
 			.name = gameName,
 #ifdef OWL_ASSETS_LOCATION
@@ -153,7 +185,14 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 			.height = height,
 			.argCount = iArgc,
 			.packFile = packFile,
-	});
+	};
+	if (options.headless) {
+		params.renderer = renderer::gpu::RenderAPI::Type::Null;
+		params.sound = sound::SoundAPI::Type::Null;
+		params.hasGui = false;
+		params.isDummy = true;
+	}
+	return mkShared<OwlNest>(params, options.smokeTest);
 }
 
 }// namespace owl

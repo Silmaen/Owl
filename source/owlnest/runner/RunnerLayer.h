@@ -15,9 +15,11 @@
 #include <scene/SceneSerializer.h>
 
 #include <atomic>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <vector>
 
 namespace owl::nest::runner {
 /// Configuration loaded from runner.yml.
@@ -65,6 +67,15 @@ struct RunnerConfig {
 
 /**
  * @brief
+ *  Smoke-test mode: play every packed scene for a few frames, then quit with a non-zero exit code on any error log.
+ */
+struct SmokeTest {
+	/// Frames played per scene (0 disables the smoke test).
+	uint32_t frames{0};
+};
+
+/**
+ * @brief
  *  Class RunnerLayer
  */
 class RunnerLayer final : public app::layer::Layer {
@@ -79,9 +90,10 @@ public:
 
 	/**
 	 * @brief
-	 *  Default constructor.
+	 *  Constructor.
+	 * @param[in] iSmokeTest Smoke-test options (inactive by default).
 	 */
-	RunnerLayer();
+	explicit RunnerLayer(const SmokeTest& iSmokeTest = {});
 
 	/**
 	 * @brief
@@ -224,6 +236,27 @@ private:
 	 */
 	void updateSceneRuntime(const core::Timestep& iTimeStep);
 
+	/**
+	 * @brief
+	 *  Load a scene from the open pack, or from the asset directories, into a fresh active scene.
+	 * @param[in] iSceneName Pack path or file path of the scene.
+	 * @return True when the scene was loaded.
+	 */
+	auto loadScene(const std::string& iSceneName) -> bool;
+
+	/**
+	 * @brief
+	 *  Collect the scenes the smoke test plays: the first scene, then every other scene in the pack.
+	 */
+	void initSmokeTest();
+
+	/**
+	 * @brief
+	 *  Count a smoke-test frame and switch to the next scene (or quit) once the scene played enough frames.
+	 * @return True when the application is closing.
+	 */
+	auto stepSmokeTest() -> bool;
+
 	shared<scene::Scene> m_activeScene;
 	math::vec2ui m_viewportSize = {0, 0};
 	RunnerConfig m_config;
@@ -239,5 +272,15 @@ private:
 	uniq<FrameBench> m_frameBench;
 	/// Offscreen target the scene renders into when the frame bench writes a capture.
 	shared<renderer::gpu::Framebuffer> m_captureTarget;
+	/// Smoke-test options.
+	SmokeTest m_smokeTest;
+	/// Scenes left to play in smoke-test mode, in order.
+	std::vector<std::string> m_smokeScenes;
+	/// Index of the scene being played in smoke-test mode.
+	size_t m_smokeIndex = 0;
+	/// Frames played on the current smoke-test scene.
+	uint32_t m_smokeFrame = 0;
+	/// Scenes that failed to load in smoke-test mode.
+	uint32_t m_smokeFailures = 0;
 };
 }// namespace owl::nest::runner

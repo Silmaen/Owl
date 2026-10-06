@@ -1911,8 +1911,11 @@ void Scene::resolveAllTilemapAssets() {
 				tilemapPath,
 				[&](const std::string_view iYaml) -> bool { return resolved->deserializeFromString(iYaml); },
 				[&](const std::filesystem::path& iPath) -> bool { return resolved->loadFromFile(iPath); });
-		if (loaded)
-			asset = std::move(resolved);
+		if (!loaded) {
+			OWL_CORE_WARN("Scene: Tilemap {} not found.", tilemapPath.generic_string())
+			continue;
+		}
+		asset = std::move(resolved);
 	}
 
 	std::unordered_map<std::string, shared<Tileset>> tilesetCache;
@@ -1926,8 +1929,11 @@ void Scene::resolveAllTilemapAssets() {
 		const bool loaded = loadAsset(
 				iPath, [&](const std::string_view iYaml) -> bool { return fresh->deserializeFromString(iYaml); },
 				[&](const std::filesystem::path& iFullPath) -> bool { return fresh->loadFromFile(iFullPath); });
-		if (!loaded)
+		if (!loaded) {
+			OWL_CORE_WARN("Scene: Tileset {} not found.", key)
+			tilesetCache.emplace(key, nullptr);
 			return nullptr;
+		}
 		tilesetCache.emplace(key, fresh);
 		return fresh;
 	};
