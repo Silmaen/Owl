@@ -114,4 +114,78 @@ private:
 	std::string m_afterYaml;
 };
 
+/**
+ * @brief
+ *  Undoable edit of a scene's `PhysicsSettings` (tick rate, step bound, sub-steps, interpolation).
+ *
+ * Holds the settings before and after the edit; successive edits within the `UndoManager` merge
+ * window collapse into one history entry.
+ */
+class ModifyPhysicsSettingsCommand final : public SceneUndoCommand {
+public:
+	ModifyPhysicsSettingsCommand(const ModifyPhysicsSettingsCommand&) = delete;
+
+	ModifyPhysicsSettingsCommand(ModifyPhysicsSettingsCommand&&) = default;
+
+	auto operator=(const ModifyPhysicsSettingsCommand&) -> ModifyPhysicsSettingsCommand& = delete;
+
+	auto operator=(ModifyPhysicsSettingsCommand&&) -> ModifyPhysicsSettingsCommand& = default;
+
+	/**
+	 * @brief
+	 *  Construct from the settings before and after the edit.
+	 * @param[in] iBefore Settings prior to the edit.
+	 * @param[in] iAfter Settings after the edit.
+	 */
+	ModifyPhysicsSettingsCommand(const physics::PhysicsSettings& iBefore, const physics::PhysicsSettings& iAfter);
+
+	/**
+	 * @brief
+	 *  Destructor.
+	 */
+	~ModifyPhysicsSettingsCommand() override;
+
+	/**
+	 * @brief
+	 *  Restore the settings prior to the edit.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void undo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Apply the edited settings again.
+	 * @param[in,out] ioScene The target scene.
+	 */
+	void redo(scene::Scene& ioScene) override;
+
+	/**
+	 * @brief
+	 *  Description.
+	 * @return Human-readable description for menus and tooltips.
+	 */
+	[[nodiscard]] auto description() const -> std::string override;
+
+	/**
+	 * @brief
+	 *  Coalesce two consecutive physics-settings edits into one undo step.
+	 * @param[in] iOther The previously pushed command, candidate for merging.
+	 * @return True when the merge succeeded; false otherwise.
+	 */
+	[[nodiscard]] auto mergeWith(const SceneUndoCommand& iOther) -> bool override;
+
+	/**
+	 * @brief
+	 *  Stable identifier of the command type for merge compatibility checks.
+	 * @return The command type id.
+	 */
+	[[nodiscard]] auto typeId() const -> size_t override;
+
+private:
+	/// Settings before the edit.
+	physics::PhysicsSettings m_before;
+	/// Settings after the edit.
+	physics::PhysicsSettings m_after;
+};
+
 }// namespace owl::nest::commands

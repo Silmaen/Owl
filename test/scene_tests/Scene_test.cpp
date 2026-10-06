@@ -140,6 +140,9 @@ TEST(Scene, RenderGame_loose) {
 	owl::input::Input::init(owl::window::Type::Null);
 	Scene sc;
 	createMinGameScene(sc);
+	// One 0.5 s physics step per frame, as the scenario was tuned for, and no interpolation lag.
+	sc.getPhysicsSettings().tickRate = 2.f;
+	sc.getPhysicsSettings().interpolate = false;
 	owl::core::Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(500));
 
@@ -173,6 +176,9 @@ TEST(Scene, RenderGame_win) {
 	owl::input::Input::init(owl::window::Type::Null);
 	Scene sc;
 	createMinGameScene(sc);
+	// One 0.5 s physics step per frame, as the scenario was tuned for, and no interpolation lag.
+	sc.getPhysicsSettings().tickRate = 2.f;
+	sc.getPhysicsSettings().interpolate = false;
 	owl::core::Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(500));
 

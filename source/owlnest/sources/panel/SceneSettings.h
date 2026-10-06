@@ -119,6 +119,13 @@ private:
 	 */
 	auto renderAddLayerSection() -> bool;
 
+	/**
+	 * @brief
+	 *  Render the physics section (tick rate, step bound, sub-steps, interpolation); pushes an
+	 *  undoable `ModifyPhysicsSettingsCommand` on change.
+	 */
+	void renderPhysicsSection() const;
+
 	/// Active project (non-owning).
 	const Project* mp_project = nullptr;
 	/// Active scene (shared_ptr — same lifetime as `SceneDocument`).

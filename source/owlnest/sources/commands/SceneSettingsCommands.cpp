@@ -47,4 +47,30 @@ void ModifyEnabledRenderersCommand::apply(scene::Scene& ioScene, const std::stri
 	ioScene.getEnabledRenderers() = renderer::EnabledRenderersConfig::fromYaml(node);
 }
 
+ModifyPhysicsSettingsCommand::ModifyPhysicsSettingsCommand(const physics::PhysicsSettings& iBefore,
+														   const physics::PhysicsSettings& iAfter)
+	: m_before{iBefore}, m_after{iAfter} {}
+
+ModifyPhysicsSettingsCommand::~ModifyPhysicsSettingsCommand() = default;
+
+void ModifyPhysicsSettingsCommand::undo(scene::Scene& ioScene) { ioScene.getPhysicsSettings() = m_before; }
+
+void ModifyPhysicsSettingsCommand::redo(scene::Scene& ioScene) { ioScene.getPhysicsSettings() = m_after; }
+
+auto ModifyPhysicsSettingsCommand::description() const -> std::string { return "Edit scene physics"; }
+
+auto ModifyPhysicsSettingsCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
+	const auto* other = dynamic_cast<const ModifyPhysicsSettingsCommand*>(&iOther);
+	if (other == nullptr)
+		return false;
+	m_after = other->m_after;
+	m_timestamp = other->m_timestamp;
+	return true;
+}
+
+auto ModifyPhysicsSettingsCommand::typeId() const -> size_t {
+	constexpr size_t kTypeHash = 0x4D6F645068797353ULL;// "ModPhysS"
+	return kTypeHash;
+}
+
 }// namespace owl::nest::commands

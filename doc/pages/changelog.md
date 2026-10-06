@@ -84,6 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Client log macros with arguments (`OWL_INFO("… {}", x)`) went to the engine logger instead of `APP`.
 - `OWL_ENABLE_PROFILING` never enabled the Chrome profiler (the header tested another macro).
 - Installed OwlEngine package: headers under `include/` again, no `-Werror -Weverything` imposed on consumers, preset install prefix honoured.
+- Physics runs at a fixed step (60 Hz by default, per-scene `Physics:` settings edited in *Scene Settings*) with an accumulator, a bound on steps per frame and interpolated transforms; the result no longer depends on the frame rate and `on_collision` still fires once per pair and frame.
+- Performance: the Box2D solver runs multi-threaded on a dedicated Taskflow executor (`workerCount`, automatic above 2 000 dynamic bodies), 5 000 stacked boxes going from 5.1 to 3.2 ms per step with 4 workers.
 - **CI — teamcity-github-bridge 1.10.0 wiring**: `CodeStyle` findings are now printed as GNU-style diagnostics
   (`path:line:col: error: <check>: …`), which the plugin pins to the pull request's diff as Check Run annotations;
   annotations enabled on the four configurations with distinct diagnostics (Linux/Windows Clang, Clang-Tidy, Code
