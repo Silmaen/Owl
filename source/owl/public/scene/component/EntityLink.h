@@ -49,7 +49,9 @@ struct OWL_API EntityLink {
 	 * @param iNode The YAML node to read.
 	 */
 	void deserialize(const core::Serializer& iNode);
-	/// The linked entity.
+	/// The linked entity (runtime-resolved from `linkedEntityName`, invalid while the target is missing).
 	Entity linkedEntity;
+	/// Runtime flag: the missing target was already reported, so the warning is emitted once (not serialized).
+	bool wasUnresolvedReported = false;
 };
 }// namespace owl::scene::component

@@ -130,6 +130,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua sandbox hardened: chunks load as text only (bytecode refused, also through `load`), `string.dump` removed, `setmetatable` refuses `__gc`, `collectgarbage` restricted, string metatable locked.
 - Lua quotas per `ScriptInstance` (`ScriptQuotas`): 64 MiB memory ceiling through a custom allocator and a 250 ms time budget per call through a watchdog thread; a script exceeding one is disabled instead of freezing or exhausting the game.
 - Every engine call into Lua is protected with a stack trace, host reads of globals bypass script metatables, and bindings run behind an exception trampoline: no C++ exception crosses a Lua frame (PR-14: D-06, D-16).
+- `SceneSerializer::deserialize`, `deserializeFromBuffer` and `applyParsed` return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`) instead of `bool`.
+- An `EntityLink` whose target is missing (misspelt, destroyed or renamed) is ignored with a single warning instead of crashing `onUpdateRuntime`.
+- Play no longer shares voxel chunks with the editor scene: `VoxelWorld` copies are deep, so blocks broken or placed in Play no longer stay in the editor scene after Stop.
+- A script hiding an entity, or a trigger teleporting the player, takes effect in the same frame: the per-pass caches are armed after scripts, physics, links and triggers.
+- Scene loading validates its input: a malformed scene fails with a typed `SceneLoadError` and is rolled back, duplicated UUIDs are renamed, dangling parents and hierarchy cycles are moved to the root, and the editor names the reason a scene cannot be opened.
+- SceneFlow: creating a teleport link no longer adds a second `Transform` to the new trigger entity (assertion in Debug, storage corruption in Release).
+- A teleport to a missing or corrupted level keeps the current level playing, in the editor and in the runner, instead of leaving a stopped runtime.
 
 ## [0.2.1] - 2026-06-27
 

@@ -154,9 +154,6 @@ void SceneDocument::handleTeleportRequest(const math::vec2ui& iViewportSize) {
 		return;
 	}
 
-	const auto previousGameState = m_activeScene->getGameState();
-	m_activeScene->onEndRuntime();
-
 	using clk = std::chrono::steady_clock;
 	const auto t0 = clk::now();
 
@@ -178,11 +175,14 @@ void SceneDocument::handleTeleportRequest(const math::vec2ui& iViewportSize) {
 		return;
 	}
 	const auto newScene = mkShared<scene::Scene>();
-	if (const scene::SceneSerializer sc(newScene); !sc.applyParsed(parsed)) {
-		OWL_CORE_ERROR("Teleport: failed to apply level '{}'.", request.levelName)
+	const scene::SceneSerializer serializer(newScene);
+	if (const auto loaded = serializer.applyParsed(parsed); !loaded) {
+		OWL_CORE_ERROR("Teleport: Failed to load level '{}': {}.", request.levelName, scene::describe(loaded.error()))
 		return;
 	}
-	newScene->getGameState() = previousGameState;
+	// The running level is only torn down once the target loaded, so a failed teleport keeps playing.
+	newScene->getGameState() = m_activeScene->getGameState();
+	m_activeScene->onEndRuntime();
 	newScene->onViewportResize(iViewportSize);
 
 	m_pendingTeleportVelocity = true;

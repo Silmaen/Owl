@@ -1740,7 +1740,8 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 					return;
 				}
 				const auto newScene = mkShared<scene::Scene>();
-				if (const scene::SceneSerializer serializer(newScene); serializer.applyParsed(*parsed)) {
+				if (const scene::SceneSerializer serializer(newScene);
+					const auto loaded = serializer.applyParsed(*parsed)) {
 					SceneDocument* target = nullptr;
 					if (auto* current = activeSceneDocument();
 						current != nullptr && current->filePath().empty() && !current->isDirty())
@@ -1754,7 +1755,8 @@ void EditorLayer::openScene(const std::filesystem::path& iScenePath) {
 					m_documents.setActive(target);
 					syncActiveDocumentPanels();
 				} else {
-					state->setError("Failed to apply parsed scene.");
+					state->setError(std::format("Cannot open scene '{}': {}.", scenePath.string(),
+												scene::describe(loaded.error())));
 				}
 				state->completed.store(true);
 			}));
@@ -2012,8 +2014,9 @@ auto EditorLayer::loadOrOpenSceneDocument(const std::filesystem::path& iScenePat
 	file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size));
 	const auto newScene = mkShared<scene::Scene>();
 	const scene::SceneSerializer serializer(newScene);
-	if (!serializer.deserializeFromBuffer(bytes, iScenePath.string())) {
-		OWL_CORE_WARN("loadOrOpenSceneDocument: failed to deserialize '{}'.", iScenePath.string())
+	if (const auto loaded = serializer.deserializeFromBuffer(bytes, iScenePath.string()); !loaded) {
+		OWL_CORE_WARN("loadOrOpenSceneDocument: Cannot open scene '{}': {}.", iScenePath.string(),
+					  scene::describe(loaded.error()))
 		return nullptr;
 	}
 	auto doc = mkUniq<SceneDocument>();

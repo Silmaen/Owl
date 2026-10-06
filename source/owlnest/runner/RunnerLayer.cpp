@@ -545,9 +545,6 @@ void RunnerLayer::handleTeleportRequest() {
 	transition->targetName = request.targetName;
 	transition->sourceName = resolvedName;
 
-	// End the old runtime now — we stop simulating the old scene while loading.
-	m_activeScene->onEndRuntime();
-
 	// Capture variables needed by the worker.
 	const bool hasPack = app.hasOpenPack();
 	std::vector<std::pair<std::string, std::filesystem::path>> searchRoots;
@@ -622,10 +619,14 @@ void RunnerLayer::finishTransition() {
 	using clk = std::chrono::steady_clock;
 	const auto t0 = clk::now();
 	auto newScene = mkShared<scene::Scene>();
-	if (const scene::SceneSerializer sc(newScene); !sc.applyParsed(*transition->parsed)) {
-		OWL_CORE_ERROR("Teleport: failed to apply parsed level '{}'", transition->sourceName)
+	const scene::SceneSerializer serializer(newScene);
+	if (const auto loaded = serializer.applyParsed(*transition->parsed); !loaded) {
+		OWL_CORE_ERROR("Teleport: Failed to load level '{}': {}.", transition->sourceName,
+					   scene::describe(loaded.error()))
 		return;
 	}
+	// The old level stops only once the new one loaded, so a failed teleport resumes the current level.
+	m_activeScene->onEndRuntime();
 	OWL_CORE_INFO("RunnerLayer::finishTransition: applyParsed '{}' {:.1f} ms.", transition->sourceName,
 				  std::chrono::duration<double, std::milli>{clk::now() - t0}.count())
 	newScene->getGameState() = transition->previousGameState;

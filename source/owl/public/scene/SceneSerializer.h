@@ -10,13 +10,37 @@
 
 #include "Scene.h"
 #include "core/Serializer.h"
+#include "core/expected.h"
 
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace owl::scene {
+
+/**
+ * @brief
+ *  Reason why a scene could not be loaded.
+ */
+enum struct SceneLoadError : uint8_t {
+	FileUnreadable,///< The scene file does not exist or cannot be read.
+	InvalidYaml,///< The data is not valid YAML.
+	NotAScene,///< The YAML has no `Scene` key, or its top-level layout is not a scene.
+	InvalidEntity,///< An entity is malformed (missing `Entity` id, field of the wrong type...).
+};
+
+/**
+ * @brief
+ *  Human-readable description of a scene load error.
+ * @param[in] iError The error.
+ * @return A short sentence fragment describing the error.
+ */
+[[nodiscard]] OWL_API auto describe(SceneLoadError iError) -> std::string_view;
+
+/// Result of a scene load: nothing on success, the failure reason otherwise.
+using SceneLoadResult = expected<void, SceneLoadError>;
 
 /**
  * @brief
@@ -36,6 +60,8 @@ struct OWL_API ParsedScene {
 	bool valid = false;
 	/// Optional human-readable error message when `valid` is false.
 	std::string error;
+	/// Failure reason when `valid` is false.
+	SceneLoadError failure = SceneLoadError::InvalidYaml;
 };
 /**
  * @brief
@@ -67,20 +93,22 @@ public:
 	/**
 	 * @brief
 	 *  Load the scene from a file.
+	 *
+	 * Same validation and rollback as `applyParsed`.
 	 * @param[in] iFilepath The file to load.
-	 * @return True if everything works.
+	 * @return Nothing on success, the failure reason otherwise.
 	 */
-	[[nodiscard]] auto deserialize(const std::filesystem::path& iFilepath) const -> bool;
+	[[nodiscard]] auto deserialize(const std::filesystem::path& iFilepath) const -> SceneLoadResult;
 
 	/**
 	 * @brief
 	 *  Load the scene from a memory buffer.
 	 * @param[in] iData The raw YAML data.
 	 * @param[in] iSourceName Optional source name for error messages.
-	 * @return True if everything works.
+	 * @return Nothing on success, the failure reason otherwise.
 	 */
 	[[nodiscard]] auto deserializeFromBuffer(const std::vector<uint8_t>& iData,
-											 const std::string& iSourceName = "<buffer>") const -> bool;
+											 const std::string& iSourceName = "<buffer>") const -> SceneLoadResult;
 
 	/**
 	 * @brief
@@ -101,10 +129,16 @@ public:
 	 *  Apply a `ParsedScene` produced by `parseBuffer` to the bound scene.
 	 *  Must run on the main thread (creates entities and may create GPU
 	 *  textures via the async texture path).
+	 *
+	 * The data is validated on the way: a malformed entity aborts the load and
+	 * removes every entity it already created (the bound scene is left as it was).
+	 * Recoverable corruption is repaired with a warning: a duplicated UUID gets a
+	 * fresh one, a missing parent or a hierarchy cycle is moved to the root
+	 * (see `Scene::rebuildHierarchyChildren`).
 	 * @param[in] iParsed The parsed YAML — typically produced on a worker.
-	 * @return True when the scene populated cleanly.
+	 * @return Nothing when the scene populated cleanly, the failure reason otherwise.
 	 */
-	[[nodiscard]] auto applyParsed(const ParsedScene& iParsed) const -> bool;
+	[[nodiscard]] auto applyParsed(const ParsedScene& iParsed) const -> SceneLoadResult;
 
 	/**
 	 * @brief

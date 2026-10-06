@@ -10,6 +10,9 @@
 
 #include <data/voxel/ChunkMesher.h>
 #include <data/voxel/TerrainGenerator.h>
+#include <scene/Entity.h>
+#include <scene/Scene.h>
+#include <scene/component/VoxelWorld.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -127,6 +130,26 @@ void runMeshing(Runner& ioRunner, const Palette& iPalette) {
 	}
 }
 
+void runSceneCopy(Runner& ioRunner, const Palette& iPalette) {
+	const data::voxel::TerrainGenerator generator(iPalette.params);
+	for (const int32_t radius: {1, 4}) {
+		auto scn = mkShared<scene::Scene>();
+		auto& voxel = scn->createEntity("voxel").addComponent<scene::component::VoxelWorld>();
+		voxel.registry = iPalette.registry;
+		for (int32_t cz = -radius; cz <= radius; ++cz) {
+			for (int32_t cy = -2; cy <= 2; ++cy) {
+				for (int32_t cx = -radius; cx <= radius; ++cx)
+					generator.generateChunk(*voxel.world.getOrCreateChunk(math::vec3i{cx, cy, cz}));
+			}
+		}
+		const auto chunks = voxel.world.chunkCount();
+		shared<scene::Scene> copy;
+		ioRunner.measureWithSetup(
+				std::format("voxel/scene_copy/{}chunks", chunks), static_cast<uint64_t>(chunks),
+				[&]() -> void { copy.reset(); }, [&]() -> void { copy = scene::Scene::copy(scn); });
+	}
+}
+
 }// namespace
 
 void runVoxelBenches(Runner& ioRunner) {
@@ -135,6 +158,7 @@ void runVoxelBenches(Runner& ioRunner) {
 	const Palette palette;
 	runGeneration(ioRunner, palette);
 	runMeshing(ioRunner, palette);
+	runSceneCopy(ioRunner, palette);
 }
 
 }// namespace owl::bench
