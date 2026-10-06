@@ -29,7 +29,8 @@ TEST(SceneSerializer, SaveLoad) {
 	const SceneSerializer loader(sc2);
 	EXPECT_TRUE(loader.deserialize(fs));
 
-	EXPECT_EQ(sc2->getEntityCount(), sc->getEntityCount());
+	EXPECT_EQ(sc->getEntityCount(), 1u);
+	EXPECT_EQ(sc2->getEntityCount(), 1u);
 	remove(fs);
 	EXPECT_FALSE(exists(fs));
 	owl::core::Log::invalidate();
@@ -71,7 +72,8 @@ TEST(SceneSerializer, SaveLoadFULL) {
 	const SceneSerializer loader(sc2);
 	EXPECT_TRUE(loader.deserialize(fs));
 
-	EXPECT_EQ(sc2->getEntityCount(), sc->getEntityCount());
+	EXPECT_EQ(sc->getEntityCount(), 2u);
+	EXPECT_EQ(sc2->getEntityCount(), 2u);
 	remove(fs);
 	EXPECT_FALSE(exists(fs));
 	owl::core::Log::invalidate();
@@ -94,7 +96,7 @@ TEST(SceneSerializer, VisibilityRoundTrip) {
 	const SceneSerializer loader(sc2);
 	EXPECT_TRUE(loader.deserialize(fs));
 
-	EXPECT_EQ(sc2->getEntityCount(), sc->getEntityCount());
+	EXPECT_EQ(sc2->getEntityCount(), 1u);
 	const auto entities = sc2->getAllEntities();
 	ASSERT_EQ(entities.size(), 1u);
 	const auto& vis2 = entities[0].getComponent<component::Visibility>();

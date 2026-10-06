@@ -2169,7 +2169,7 @@ auto Scene::getPrimaryPlayer() const -> Entity {
 }
 
 auto Scene::getEntityCount() const -> uint32_t {
-	const auto* st = registry.storage<Entity>();
+	const auto* st = registry.storage<component::ID>();
 	if (st == nullptr)
 		return 0;
 	return static_cast<uint32_t>(st->size());

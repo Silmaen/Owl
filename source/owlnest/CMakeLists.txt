@@ -23,44 +23,38 @@ owl_target_link_libraries(${RUNNER_NAME} PRIVATE yaml-cpp REQUIRED ${THIRD_PARTY
 # ----==== app Runner ====----
 
 #
-#  Main Executable
+#  Editor core library: every editor source but the entry point, shared by the
+#  OwlNest executable and the owlnest_tests unit tests.
 #
+set(OWL_NEST_CORE ${OWL_PROJECT}Core)
 file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
         sources/*.cpp
 )
+list(REMOVE_ITEM SRCS ${CMAKE_CURRENT_SOURCE_DIR}/sources/main.cpp)
 file(GLOB_RECURSE HDRS CONFIGURE_DEPENDS
         sources/*.h
 )
-add_executable(${OWL_PROJECT}
-        ${SRCS} ${HDRS})
-set_target_properties(${OWL_PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-set_target_properties(${OWL_PROJECT} PROPERTIES FOLDER "App")
+add_library(${OWL_NEST_CORE} STATIC ${SRCS} ${HDRS})
+set_target_properties(${OWL_NEST_CORE} PROPERTIES FOLDER "App")
+target_include_directories(${OWL_NEST_CORE} PUBLIC sources)
+target_link_libraries(${OWL_NEST_CORE} PUBLIC ${ENGINE_NAME})
+target_compile_definitions(${OWL_NEST_CORE} PUBLIC OWL_ASSETS_LOCATION="source/owlnest/assets")
 
-target_include_directories(${OWL_PROJECT} PRIVATE sources)
-
-target_link_libraries(${OWL_PROJECT} PRIVATE
-        ${ENGINE_NAME}
-)
-add_dependencies(${OWL_PROJECT} ${CMAKE_PROJECT_NAME}Runner)
-
-target_compile_definitions(${OWL_PROJECT} PRIVATE OWL_ASSETS_LOCATION="source/owlnest/assets")
-
-target_import_so_files(${OWL_PROJECT})
 # ----==== third party ====----
 
 # magic_enum
-owl_target_link_libraries(${OWL_PROJECT} PRIVATE magic_enum REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC magic_enum REQUIRED ${THIRD_PARTY_RELEASE})
 
 # ImGui
 owl_target_link_libraries(${ENGINE_NAME} PRIVATE imgui REQUIRED ${THIRD_PARTY_RELEASE})
 
 # imgui_color_text_edit (syntax-highlighting text editor widget)
-owl_target_link_libraries(${OWL_PROJECT} PRIVATE imgui_color_text_edit REQUIRED ${THIRD_PARTY_RELEASE}
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC imgui_color_text_edit REQUIRED ${THIRD_PARTY_RELEASE}
         MODULE_TARGET "imgui_color_text_edit::imgui_color_text_edit")
 
 # md4c (CommonMark + GFM tables/strikethrough/autolinks parser, used by the
 # editor's MarkdownPreview / HelpPanel renderer).
-owl_target_link_libraries(${OWL_PROJECT} PRIVATE md4c REQUIRED ${THIRD_PARTY_RELEASE}
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC md4c REQUIRED ${THIRD_PARTY_RELEASE}
         MODULE_TARGET "md4c::md4c")
 
 # lunasvg (live SVG rendering for the code editor preview)
@@ -68,15 +62,26 @@ owl_target_link_libraries(${OWL_PROJECT} PRIVATE md4c REQUIRED ${THIRD_PARTY_REL
 # `plutovg::plutovg` import target references `Threads::Threads` in its link
 # interface. The engine library only links lunasvg into an INTERFACE target so
 # CMake never has to resolve that property; here we link it into a real
-# executable target which forces full resolution.
+# target which forces full resolution.
 find_package(Threads REQUIRED)
-owl_target_link_libraries(${OWL_PROJECT} PRIVATE lunasvg REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC lunasvg REQUIRED ${THIRD_PARTY_RELEASE})
 
 # yaml
 find_package(yaml-cpp REQUIRED)
-target_link_libraries(${OWL_PROJECT} PRIVATE yaml-cpp::yaml-cpp)
+target_link_libraries(${OWL_NEST_CORE} PUBLIC yaml-cpp::yaml-cpp)
 
 # ----==== third party ====----
+
+#
+#  Main Executable
+#
+add_executable(${OWL_PROJECT} sources/main.cpp)
+set_target_properties(${OWL_PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set_target_properties(${OWL_PROJECT} PROPERTIES FOLDER "App")
+target_link_libraries(${OWL_PROJECT} PRIVATE ${OWL_NEST_CORE})
+add_dependencies(${OWL_PROJECT} ${CMAKE_PROJECT_NAME}Runner)
+
+target_import_so_files(${OWL_PROJECT})
 
 if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
     add_custom_command(TARGET ${OWL_PROJECT} POST_BUILD

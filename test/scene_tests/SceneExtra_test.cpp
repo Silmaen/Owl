@@ -84,7 +84,8 @@ TEST(Scene, CopyPreservesViewportSize) {
 	sc->onViewportResize({1920, 1080});
 	sc->createEntity("test");
 	const auto copy = Scene::copy(sc);
-	EXPECT_EQ(copy->getEntityCount(), sc->getEntityCount());
+	EXPECT_EQ(sc->getEntityCount(), 1u);
+	EXPECT_EQ(copy->getEntityCount(), 1u);
 }
 
 TEST(Scene, OnRenderRuntimeEmpty) {

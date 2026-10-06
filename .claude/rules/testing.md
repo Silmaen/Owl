@@ -104,6 +104,7 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
 
 - Test names: `TEST(Module, Behavior)` — e.g., `TEST(Scene, CopyCreatesIndependentScene)`
 - Existing categories (one folder each): core, debug, event, font, gui, input, io, layer, math, mesh, physics, render,
-  renderer, runner, scene, script, sound, voxel
+  renderer, runner, scene, script, sound, voxel, owlnest (editor: links the `OwlNestCore` static library, skipped when
+  `OWL_BUILD_NEST` is off)
 - Tests link against both `OwlEngine` and `OwlEnginePrivate` (access to private headers)
 - Timeout per test suite: 3600s (1 hour)
