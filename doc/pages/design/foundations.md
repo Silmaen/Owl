@@ -88,7 +88,7 @@ Every fix lands with its regression test.
 
 - ![In Progress][progress] Engine benchmark harness `bench/` behind `OWL_BENCHMARK` (scene, frame, Renderer2D,
   YAML, voxel, Lua, physics, startup)
-- ![Planned][planned] `owlnest_tests` category: undo, commands, snapshots; the empty round-trip assertions fixed
+- ![Done][done] `owlnest_tests` category: undo, commands, snapshots; the empty round-trip assertions fixed
   (PR-02: E-03, F-02, C-07, P-14)
 - ![Done][done] Sanitizers that fail the build (ASan, UBSan, TSan), `--gtest_shuffle`, LSan job folded into
   ASan (PR-11: F-03, F-05, F-12, H-05)

@@ -395,13 +395,10 @@ TEST_F(SceneRuntimeTest, PrimaryPlayerCacheRevalidatesWhenFlagCleared) {
 	EXPECT_EQ(scn.getPrimaryPlayer(), other);
 }
 
-// getEntityCount currently uses registry.storage<Entity>() which is never populated
-// (Entity is a non-component wrapper) so it always returns 0. Exercise the path
-// without asserting on the value to keep the existing behaviour pinned.
-TEST_F(SceneRuntimeTest, EntityCountIsCallable) {
+TEST_F(SceneRuntimeTest, EntityCountTracksCreatedEntities) {
 	scene::Scene scn;
 	EXPECT_EQ(scn.getEntityCount(), 0u);
 	scn.createEntity("a");
 	scn.createEntity("b");
-	(void) scn.getEntityCount();
+	EXPECT_EQ(scn.getEntityCount(), 2u);
 }

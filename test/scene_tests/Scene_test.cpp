@@ -75,7 +75,8 @@ TEST(Scene, Copy) {
 	owl::shared<Scene> sc2 = owl::mkShared<Scene>();
 	sc2->onViewportResize({800, 600});
 	sc2 = Scene::copy(sc);
-	EXPECT_TRUE(sc2->getEntityCount() == sc->getEntityCount());
+	EXPECT_EQ(sc->getEntityCount(), 3u);
+	EXPECT_EQ(sc2->getEntityCount(), 3u);
 }
 
 TEST(Scene, RenderEmpty) {

@@ -109,8 +109,10 @@ Tests use Google Test and are enabled by default (`OWL_TESTING=ON`):
 ctest --test-dir output/build/<preset> --output-on-failure
 ```
 
-Test executables are named `owl_<category>_unit_test` with 15 categories: core, debug,
-event, font, gui, input, io, layer, math, mesh, physic, renderer, scene, script, sound.
+Test executables are named `owl_<category>_unit_test` with 17 categories: core, debug,
+event, font, gui, input, io, layer, math, mesh, owlnest, physics, renderer, scene, script, sound, voxel.
+`owlnest_tests` links the editor sources through the `OwlNestCore` static library and is skipped when
+`OWL_BUILD_NEST` is off.
 
 ## Measuring frames on the GPU
 

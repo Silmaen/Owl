@@ -87,8 +87,9 @@ TEST(SceneCoverage, GetEntityCountAfterCreateAndDestroy) {
 	auto a = sc.createEntity("A");
 	sc.createEntity("B");
 	sc.createEntity("C");
-	EXPECT_EQ(sc.getAllEntities().size(), 3u);
+	EXPECT_EQ(sc.getEntityCount(), 3u);
 	sc.destroyEntity(a);
+	EXPECT_EQ(sc.getEntityCount(), 2u);
 	EXPECT_EQ(sc.getAllEntities().size(), 2u);
 }
 

@@ -9,17 +9,10 @@
  * itself (`MarkdownPreview`) is exercised manually in the editor since ImGui
  * state is unavailable in headless tests, but the parser is pure logic and
  * easy to unit-test.
- *
- * The parser source is included directly so the test can run against
- * `owl_scene_tests_unit_test` (which links neither md4c nor the editor sources
- * — pulling them in via CMake would force every scene test to depend on the
- * editor's full link graph).
  */
 
-// NOLINTBEGIN: include the parser TU directly so the test target stays self-contained.
-#include "../../source/owlnest/sources/document/codeEditor/MarkdownDocument.cpp"
-// NOLINTEND
-
+#include "document/codeEditor/MarkdownDocument.h"
+#include "external/md4c_wrapper.h"
 #include "testHelper.h"
 
 #include <gtest/gtest.h>
