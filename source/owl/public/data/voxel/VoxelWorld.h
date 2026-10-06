@@ -28,6 +28,10 @@ namespace owl::data::voxel {
  * create the containing chunk on demand. The world holds no rendering or
  * collision state — it is the authoritative block store that the mesher,
  * renderer and gameplay layers query.
+ *
+ * Copying a world is a deep copy: every chunk is cloned, so the copy and the
+ * original never share block storage (the Play scene built by `Scene::copy`
+ * must not write into the editor scene's chunks).
  */
 class OWL_API VoxelWorld final {
 public:
@@ -35,11 +39,22 @@ public:
 
 	~VoxelWorld() = default;
 
-	VoxelWorld(const VoxelWorld&) = default;
+	/**
+	 * @brief
+	 *  Deep copy: clone every chunk of the other world.
+	 * @param[in] iOther The world to copy.
+	 */
+	VoxelWorld(const VoxelWorld& iOther);
 
 	VoxelWorld(VoxelWorld&&) = default;
 
-	auto operator=(const VoxelWorld&) -> VoxelWorld& = default;
+	/**
+	 * @brief
+	 *  Deep copy assignment: clone every chunk of the other world.
+	 * @param[in] iOther The world to copy.
+	 * @return This world.
+	 */
+	auto operator=(const VoxelWorld& iOther) -> VoxelWorld&;
 
 	auto operator=(VoxelWorld&&) -> VoxelWorld& = default;
 

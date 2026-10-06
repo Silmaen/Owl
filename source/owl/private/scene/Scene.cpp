@@ -331,6 +331,9 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 
 	// Copy components (except IDComponent and TagComponent)
 	copyComponentFromTuple(dstSceneRegistry, srcSceneRegistry, enttMap, component::CopiableComponents{});
+	// In-flight streaming jobs belong to the source scene: the copy must queue its own.
+	for (const auto view = dstSceneRegistry.view<component::VoxelWorld>(); const auto entity: view)
+		view.get<component::VoxelWorld>(entity).pendingChunks.clear();
 
 	return newScene;
 }
@@ -558,10 +561,8 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	const auto tStart = now();
 	m_lastRuntimeTimings = {};
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
-	m_visibilityCache.clear();
-	m_layerContentCacheFirst.clear();
-	m_layerContentCacheNotFirst.clear();
-	m_inUpdatePass = true;
+	m_inUpdatePass = false;
+	m_worldTransformCacheActive = false;
 
 	// find camera
 	renderer::Camera* mainCamera = nullptr;
@@ -673,35 +674,6 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	dispatchCollisionEvents();
 
 	updateEntityLinks();
-	m_worldTransformCache.clear();
-	m_worldTransformCacheActive = true;
-	prepareWorldTransforms();
-	// Sound: update listener and spatial source positions
-	for (const auto view = registry.view<component::Transform, component::SoundListener>(); const auto entity: view) {
-		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
-			listener.primary) {
-			const Entity ent{entity, this};
-			const auto wt = getWorldTransform(ent);
-
-			sound::SoundCommand::setListenerPosition(
-					{wt.translation().x(), wt.translation().y(), wt.translation().z()});
-			const float rotZ = wt.rotation().z();
-
-			sound::SoundCommand::setListenerOrientation({std::sin(rotZ), std::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
-			break;
-		}
-	}
-	for (const auto view = registry.view<component::Transform, component::SoundSource>(); const auto entity: view) {
-		auto& [soundComp] = view.get<component::SoundSource>(entity);
-		if (soundComp.runtimeHandle == sound::invalidSoundHandle || !soundComp.spatial)
-			continue;
-		const Entity ent{entity, this};
-		const auto wt = getWorldTransform(ent);
-
-		sound::SoundCommand::setPosition(soundComp.runtimeHandle,
-										 {wt.translation().x(), wt.translation().y(), wt.translation().z()});
-	}
-
 	{
 		auto player = getPrimaryPlayer();
 		for (const auto view = registry.view<component::Trigger>(); const auto ent: view) {
@@ -735,6 +707,40 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 			trigger.setOverlapping(overlapping);
 		}
 	}
+	// Every mutating phase (scripts, physics, links, trigger callbacks) is done: arm the per-pass caches.
+	m_visibilityCache.clear();
+	m_layerContentCacheFirst.clear();
+	m_layerContentCacheNotFirst.clear();
+	m_inUpdatePass = true;
+	m_worldTransformCache.clear();
+	m_worldTransformCacheActive = true;
+	prepareWorldTransforms();
+	// Sound: update listener and spatial source positions
+	for (const auto view = registry.view<component::Transform, component::SoundListener>(); const auto entity: view) {
+		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
+			listener.primary) {
+			const Entity ent{entity, this};
+			const auto wt = getWorldTransform(ent);
+
+			sound::SoundCommand::setListenerPosition(
+					{wt.translation().x(), wt.translation().y(), wt.translation().z()});
+			const float rotZ = wt.rotation().z();
+
+			sound::SoundCommand::setListenerOrientation({std::sin(rotZ), std::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
+			break;
+		}
+	}
+	for (const auto view = registry.view<component::Transform, component::SoundSource>(); const auto entity: view) {
+		auto& [soundComp] = view.get<component::SoundSource>(entity);
+		if (soundComp.runtimeHandle == sound::invalidSoundHandle || !soundComp.spatial)
+			continue;
+		const Entity ent{entity, this};
+		const auto wt = getWorldTransform(ent);
+
+		sound::SoundCommand::setPosition(soundComp.runtimeHandle,
+										 {wt.translation().x(), wt.translation().y(), wt.translation().z()});
+	}
+
 	// Update animated sprites
 	for (const auto view = registry.view<component::AnimatedSpriteRenderer>(); const auto entity: view)
 
@@ -1968,10 +1974,15 @@ void Scene::resolveAllEntityLinks() {
 			link.linkedEntity = {};
 			continue;
 		}
-		if (const auto it = tagIndex.find(link.linkedEntityName); it != tagIndex.end())
+		if (const auto it = tagIndex.find(link.linkedEntityName); it != tagIndex.end()) {
 			link.linkedEntity = Entity{it->second, this};
-		else
-			link.linkedEntity = {};
+			link.wasUnresolvedReported = false;
+			continue;
+		}
+		link.linkedEntity = {};
+		OWL_CORE_WARN("Scene: Entity link of '{}' targets missing entity '{}', link ignored.",
+					  Entity(entity, this).getName(), link.linkedEntityName)
+		link.wasUnresolvedReported = true;
 	}
 }
 
@@ -1979,6 +1990,7 @@ void Scene::updateEntityLinks() {
 	OWL_PROFILE_FUNCTION()
 
 	const auto rescanTag = [this](component::EntityLink& ioLink) -> void {
+		ioLink.linkedEntity = {};
 		for (const auto view = registry.view<component::Tag>(); const auto entity: view) {
 			if (view.get<component::Tag>(entity).tag == ioLink.linkedEntityName) {
 				ioLink.linkedEntity = {entity, this};
@@ -2011,8 +2023,18 @@ void Scene::updateEntityLinks() {
 		if (!isEffectivelyVisible(host, /*iEditorMode=*/false))
 			continue;
 		auto [transform, link] = view.get<component::Transform, component::EntityLink>(entity);
+		if (link.linkedEntityName.empty())
+			continue;
 		if (!link.linkedEntity || link.linkedEntity.getComponent<component::Tag>().tag != link.linkedEntityName)
 			rescanTag(link);
+		if (!link.linkedEntity) {
+			if (!link.wasUnresolvedReported)
+				OWL_CORE_WARN("Scene: Entity link of '{}' lost its target '{}', link ignored.", host.getName(),
+							  link.linkedEntityName)
+			link.wasUnresolvedReported = true;
+			continue;
+		}
+		link.wasUnresolvedReported = false;
 		applyLocalFromWorld(transform, host, getWorldTransform(link.linkedEntity));
 	}
 }
@@ -2503,22 +2525,47 @@ auto Scene::duplicateSubtree(const Entity& iEntity) -> Entity {
 }
 
 void Scene::rebuildHierarchyChildren() {
-	// Clear all children lists.
-	for (const auto view = registry.view<component::Hierarchy>(); const auto entity: view) {
-		view.get<component::Hierarchy>(entity).childrenIds.clear();
-	}
-	// Rebuild from parentId references.
+	std::unordered_map<core::UUID, entt::entity> byUuid;
 	for (const auto view = registry.view<component::Hierarchy, component::ID>(); const auto entity: view) {
-		if (auto& [parentId, childrenIds] = view.get<component::Hierarchy>(entity); parentId != core::UUID{0}) {
-			if (const Entity parent = findEntityByUUID(parentId)) {
-				parent.getComponent<component::Hierarchy>().childrenIds.push_back(view.get<component::ID>(entity).id);
-			} else {
-				// Parent not found (corrupted data), orphan this entity.
-				OWL_CORE_WARN("rebuildHierarchyChildren: parent {} not found, orphaning entity.",
-							  static_cast<uint64_t>(parentId))
-				parentId = core::UUID{0};
-			}
+		view.get<component::Hierarchy>(entity).childrenIds.clear();
+		byUuid.emplace(view.get<component::ID>(entity).id, entity);
+	}
+	for (const auto view = registry.view<component::Hierarchy, component::ID>(); const auto entity: view) {
+		if (auto& parentId = view.get<component::Hierarchy>(entity).parentId;
+			parentId != core::UUID{0} && !byUuid.contains(parentId)) {
+			OWL_CORE_WARN("Scene: Parent {} of entity {} not found, entity moved to the root.",
+						  static_cast<uint64_t>(parentId), static_cast<uint64_t>(view.get<component::ID>(entity).id))
+			parentId = core::UUID{0};
 		}
+	}
+	breakHierarchyCycles(byUuid);
+	for (const auto view = registry.view<component::Hierarchy, component::ID>(); const auto entity: view) {
+		if (const auto parentId = view.get<component::Hierarchy>(entity).parentId; parentId != core::UUID{0})
+			registry.get<component::Hierarchy>(byUuid.at(parentId))
+					.childrenIds.push_back(view.get<component::ID>(entity).id);
+	}
+}
+
+void Scene::breakHierarchyCycles(const std::unordered_map<core::UUID, entt::entity>& iByUuid) {
+	enum struct Mark : uint8_t { InProgress, Done };
+	std::unordered_map<core::UUID, Mark> marks;
+	marks.reserve(iByUuid.size());
+	std::vector<core::UUID> path;
+	for (const auto& [rootUuid, rootEntity]: iByUuid) {
+		path.clear();
+		core::UUID current = rootUuid;
+		while (current != core::UUID{0} && !marks.contains(current)) {
+			marks.emplace(current, Mark::InProgress);
+			path.push_back(current);
+			current = registry.get<component::Hierarchy>(iByUuid.at(current)).parentId;
+		}
+		if (current != core::UUID{0} && marks.at(current) == Mark::InProgress) {
+			const core::UUID cutAt = path.back();
+			OWL_CORE_WARN("Scene: Hierarchy cycle through entity {} broken, entity moved to the root.",
+						  static_cast<uint64_t>(cutAt))
+			registry.get<component::Hierarchy>(iByUuid.at(cutAt)).parentId = core::UUID{0};
+		}
+		for (const auto uuid: path) marks.at(uuid) = Mark::Done;
 	}
 }
 

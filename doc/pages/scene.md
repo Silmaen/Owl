@@ -92,7 +92,7 @@ stateDiagram-v2
 | Method                             | When Called        | What It Does                                                                           |
 |------------------------------------|--------------------|----------------------------------------------------------------------------------------|
 | `onStartRuntime()`                 | Play pressed       | Initialize physics, start sounds with `playOnStart`, reset animated sprites            |
-| `onUpdateRuntime(timestep)`        | Each frame (Play)  | Scripts, input, physics, entity links, sounds, animated sprites, triggers, then render |
+| `onUpdateRuntime(timestep)`        | Each frame (Play)  | Scripts, input, physics, entity links, triggers, sounds, animated sprites, then render |
 | `onRenderRuntime()`                | Each frame (Pause) | Render only, no simulation                                                             |
 | `onUpdateEditor(timestep, camera)` | Each frame (Edit)  | Render with editor camera                                                              |
 | `onEndRuntime()`                   | Stop pressed       | Stop sounds, destroy physics                                                           |
@@ -301,7 +301,9 @@ See [Lua Scripting > Trigger System](scripting.md) for callback details and exam
 | `linkedEntityName` | `string` | `""`    | Name of the entity to follow |
 
 YAML key: `EntityLink`. The linked entity's world position is copied to this entity
-each frame, converting to local space when parented.
+each frame, converting to local space when parented. A link whose target does not exist
+(misspelt name, target destroyed or renamed) is ignored, with one warning, until an entity
+with that name appears.
 
 #### NativeScript
 
@@ -469,11 +471,31 @@ See [Physics > Hierarchy Interaction](physics.md) for details.
 
 `SceneSerializer` handles YAML I/O:
 
-| Method                              | Description                  |
-|-------------------------------------|------------------------------|
-| `serialize(path)`                   | Write scene to `.owl` file   |
-| `deserialize(path)`                 | Read scene from file         |
-| `deserializeFromBuffer(data, name)` | Read from memory (pack file) |
+| Method                              | Description                                     |
+|-------------------------------------|-------------------------------------------------|
+| `serialize(path)`                   | Write scene to `.owl` file                      |
+| `deserialize(path)`                 | Read scene from file                            |
+| `deserializeFromBuffer(data, name)` | Read from memory (pack file)                    |
+| `parseBuffer(data, name)`           | Parse YAML only (worker thread)                 |
+| `applyParsed(parsed)`               | Create the entities of a parsed scene (main)    |
+
+The three loading calls return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`);
+`describe(error)` gives a readable reason for the editor or the log.
+
+| `SceneLoadError` | Cause                                                              |
+|------------------|--------------------------------------------------------------------|
+| `FileUnreadable` | The file does not exist or cannot be read                          |
+| `InvalidYaml`    | The data is not YAML                                               |
+| `NotAScene`      | No `Scene` key, or `Entities` is not a list                        |
+| `InvalidEntity`  | An entity has no scalar `Entity` id, or a field of the wrong type  |
+
+A failed load removes the entities it had already created: the target scene is left as it was.
+Recoverable corruption is repaired with a warning instead of failing the load:
+
+- a duplicated (or null) entity UUID gets a fresh one, the first entity keeps the original;
+- an entity whose parent does not exist moves to the root;
+- a hierarchy cycle (including an entity parented to itself) is cut, one entity of the cycle
+  becoming a root, so duplication and cascade deletion always terminate.
 
 ### YAML Format
 
@@ -504,7 +526,14 @@ Entities:
 
 Components are serialized in the order defined by `SerializableComponents`. The
 `Hierarchy` component only stores `parentId`; children lists are rebuilt after
-deserialization via `Scene::rebuildHierarchyChildren()`.
+deserialization via `Scene::rebuildHierarchyChildren()`, which also performs the parent and
+cycle repairs above.
+
+### Play copy
+
+Pressing Play runs `Scene::copy()` of the editor scene. Components are copied by value and
+`VoxelWorld` chunks are deep-copied, so blocks broken or placed in Play never reach the editor
+scene; voxel chunks still being generated for the editor are re-queued by the copy.
 
 ## Teleport System
 
@@ -512,7 +541,8 @@ Cross-scene teleportation uses a `TeleportRequest` on the Scene:
 
 1. Player collides with a Teleport trigger
 2. `SceneTrigger::onTriggered()` fills the `TeleportRequest` with `levelName`, `targetName`, and player velocity
-3. The editor/runner detects the request and loads the target scene
+3. The editor/runner detects the request and loads the target scene; the current level is only
+   stopped once the target loaded, so a missing or corrupted level logs an error and play goes on
 4. The next frame, the target scene starts runtime and applies the initial velocity to the player at the target entity position
 
 The `levelName` field accepts `test_level`, `test_level.owl`, or `scenes/test_level.owl` —
@@ -540,15 +570,15 @@ values across the multiple component-group scans of a render frame:
 
 | Cache                            | Key                            | Gated by                       | Cleared at      |
 |----------------------------------|--------------------------------|--------------------------------|-----------------|
-| `m_visibilityCache`              | `(entity, editorMode)`         | `m_inUpdatePass`               | Start of tick   |
-| `m_layerContentCacheFirst`       | layer name                     | `m_inUpdatePass`               | Start of tick   |
-| `m_layerContentCacheNotFirst`    | layer name                     | `m_inUpdatePass`               | Start of tick   |
+| `m_visibilityCache`              | `(entity, editorMode)`         | `m_inUpdatePass`               | After mutators  |
+| `m_layerContentCacheFirst`       | layer name                     | `m_inUpdatePass`               | After mutators  |
+| `m_layerContentCacheNotFirst`    | layer name                     | `m_inUpdatePass`               | After mutators  |
 | `m_worldTransformCache`          | entity                         | `m_worldTransformCacheActive`  | After mutators  |
 | `m_tilemapAssetsDirty` flag      | scene-wide                     | (own gate)                     | After resolve   |
 
-The world-transform cache uses a narrower gate (`m_worldTransformCacheActive`)
-because scripts and physics mutate transforms mid-tick — arming the cache only
-after those phases finish keeps it safe.
+In `onUpdateRuntime` every cache is armed only once the mutating phases are done —
+scripts, physics, entity links and trigger callbacks (which can hide entities or
+teleport the player) — so a change made by any of them shows in the same frame.
 
 The dirty flag on `resolveAllTilemapAssets` is set true by
 `onComponentAdded<Tilemap | RaycastDoor | RaycastPushWall>` and by the public

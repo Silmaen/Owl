@@ -528,7 +528,6 @@ void SceneFlowDocument::onLinkDrafted(core::UUID iLinkId, core::UUID iFromPin, c
 	// Materialize the Trigger entity in the source scene at world origin.
 	const auto destStem = std::filesystem::path{destRel}.stem().string();
 	auto entity = scene->createEntity(std::format("Teleport_to_{}", destStem));
-	entity.addComponent<scene::component::Transform>();// default-constructed at (0,0,0).
 	auto& trig = entity.addComponent<scene::component::Trigger>();
 	trig.trigger.type = scene::SceneTrigger::TriggerType::Teleport;
 	trig.trigger.levelName = destRel;

@@ -62,6 +62,19 @@ void VoxelWorld::markNeighborChunksDirty(const math::vec3i& iWorld) const {
 	}
 }
 
+VoxelWorld::VoxelWorld(const VoxelWorld& iOther) {
+	m_chunks.reserve(iOther.m_chunks.size());
+	for (const auto& [key, chunk]: iOther.m_chunks) m_chunks.emplace(key, mkShared<Chunk>(*chunk));
+}
+
+auto VoxelWorld::operator=(const VoxelWorld& iOther) -> VoxelWorld& {
+	if (this == &iOther)
+		return *this;
+	VoxelWorld copy(iOther);
+	m_chunks = std::move(copy.m_chunks);
+	return *this;
+}
+
 auto VoxelWorld::getChunk(const math::vec3i& iCoord) const -> shared<Chunk> {
 	const auto it = m_chunks.find(packChunkKey(iCoord));
 	return it == m_chunks.end() ? nullptr : it->second;

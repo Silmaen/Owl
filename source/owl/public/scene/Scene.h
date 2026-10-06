@@ -437,6 +437,9 @@ public:
 	 *  Rebuild children lists from parent references.
 	 *
 	 * Called after deserialization to reconstruct childrenIds from parentId relationships.
+	 * Repairs corrupted data on the way, with a warning each time: an entity whose parent
+	 * does not exist moves to the root, and every hierarchy cycle is cut (one entity of the
+	 * cycle becomes a root), so subtree walks always terminate.
 	 */
 	void rebuildHierarchyChildren();
 
@@ -541,6 +544,13 @@ public:
 	[[nodiscard]] auto getPhysicsSettings() const -> const physics::PhysicsSettings& { return m_physicsSettings; }
 
 private:
+	/**
+	 * @brief
+	 *  Cut every parent cycle by moving one entity of each cycle to the root.
+	 * @param[in] iByUuid Index of the scene entities by UUID (parents already known to exist).
+	 */
+	void breakHierarchyCycles(const std::unordered_map<core::UUID, entt::entity>& iByUuid);
+
 	/// Game state key-value store (progression data).
 	GameState m_gameState;
 	/// Scene-level enable/override of the project renderer stack (empty → all active with defaults).
@@ -575,15 +585,16 @@ private:
 	 *  visibility (current entity + all ancestors). Only consulted when
 	 *  `m_inUpdatePass` is true — outside an update tick (tests, inspector
 	 *  inspection helpers, …) the cache is bypassed so callers always see
-	 *  fresh `Visibility` state. Cleared at the start of every update tick.
+	 *  fresh `Visibility` state. Cleared whenever the cache is armed.
 	 */
 	mutable std::unordered_map<uint64_t, bool> m_visibilityCache;
 	/**
 	 * @brief
-	 *  True while `onUpdateRuntime` / `onUpdateEditor` (and the render passes
-	 *  they spawn) are running — gates `m_visibilityCache` and
-	 *  `m_layerContentCache*` so they only serve callers that can guarantee
-	 *  Visibility / RendererTag flags don't mutate mid-pass.
+	 *  True during the read-only tail of `onUpdateRuntime` (armed once scripts,
+	 *  physics, entity links and trigger callbacks have run) and during
+	 *  `onUpdateEditor` — gates `m_visibilityCache` and `m_layerContentCache*`
+	 *  so they only serve callers that can guarantee Visibility / RendererTag
+	 *  flags don't mutate mid-pass.
 	 */
 	mutable bool m_inUpdatePass = false;
 	/// True while the phases of `onUpdateRuntime` are timed.
@@ -608,7 +619,7 @@ private:
 	 *  sound listener / source paths; caching kills the duplicates. Gated
 	 *  by `m_worldTransformCacheActive` (a narrower window than
 	 *  `m_inUpdatePass`) — only valid after the mutating phases (scripts /
-	 *  physics / entity links) have finished, where transforms are stable.
+	 *  physics / entity links / triggers) have finished, where transforms are stable.
 	 */
 	mutable std::unordered_map<entt::entity, math::Transform> m_worldTransformCache;
 	/**

@@ -122,3 +122,19 @@ TEST_F(VoxelWorldFixture, EnumerationHelpers) {
 	world.clear();
 	EXPECT_EQ(world.chunkCount(), 0u);
 }
+
+TEST_F(VoxelWorldFixture, CopyDoesNotShareChunks) {
+	VoxelWorld original;
+	original.setBlock(math::vec3i{1, 2, 3}, 1);
+	VoxelWorld copy(original);
+	copy.setBlock(math::vec3i{1, 2, 3}, g_AirBlock);
+	copy.setBlock(math::vec3i{40, 2, 3}, 2);
+	EXPECT_EQ(original.getBlock(math::vec3i{1, 2, 3}), 1u);
+	EXPECT_EQ(original.chunkCount(), 1u);
+	EXPECT_NE(copy.getChunk(math::vec3i{0, 0, 0}), original.getChunk(math::vec3i{0, 0, 0}));
+	VoxelWorld assigned;
+	assigned = original;
+	assigned.setBlock(math::vec3i{1, 2, 3}, 5);
+	EXPECT_EQ(original.getBlock(math::vec3i{1, 2, 3}), 1u);
+	EXPECT_EQ(assigned.getBlock(math::vec3i{1, 2, 3}), 5u);
+}
