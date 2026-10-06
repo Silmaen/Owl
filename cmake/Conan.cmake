@@ -51,6 +51,11 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
     else ()
         set(_owl_conan_nest False)
     endif ()
+    if (${PROJECT_PREFIX}_PROFILER STREQUAL "tracy")
+        set(_owl_conan_tracy True)
+    else ()
+        set(_owl_conan_tracy False)
+    endif ()
 
     set(_owl_conan_env)
     if (${PROJECT_PREFIX}_CONAN_HOME)
@@ -201,7 +206,8 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
             "[options]\n"
             "&:shared=${_owl_conan_shared}\n"
             "&:testing=${_owl_conan_testing}\n"
-            "&:nest=${_owl_conan_nest}\n\n"
+            "&:nest=${_owl_conan_nest}\n"
+            "&:tracy=${_owl_conan_tracy}\n\n"
             # Recipes running a Python generator at build time (glad needs jinja2) get the interpreter running
             # Conan, which has jinja2, not the first Python on PATH (MSYS2's on Windows, without it). Conan
             # renders profiles as Jinja templates, with `os` (hence `os.sys`) in scope.
@@ -302,6 +308,7 @@ unset(_owl_conan_os)
 unset(_owl_conan_shared)
 unset(_owl_conan_testing)
 unset(_owl_conan_nest)
+unset(_owl_conan_tracy)
 unset(_owl_conan_env)
 unset(_owl_conan_local_recipes)
 unset(_owl_conan_update)

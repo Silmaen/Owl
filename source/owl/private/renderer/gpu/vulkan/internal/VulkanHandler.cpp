@@ -10,6 +10,7 @@
 #include "VulkanHandler.h"
 
 #include "Descriptors.h"
+#include "GpuProfiler.h"
 #include "RendererDescriptors.h"
 #include "app/Application.h"
 #include "renderer/gpu/GraphContext.h"
@@ -44,6 +45,7 @@ void VulkanHandler::initVulkan() {
 			return;
 		OWL_CORE_TRACE("Vulkan: Descriptor pool created.")
 	}
+	GpuProfiler::init();
 	m_state = State::Running;
 }
 
@@ -51,6 +53,7 @@ void VulkanHandler::release() {
 	auto& core = VulkanCore::get();
 	if (core.getInstance() == nullptr)
 		return;// nothing can exist without instance.
+	GpuProfiler::release();
 
 	for (auto&& [id, pipeLine]: m_pipeLines) {
 		if (pipeLine.pipeLine != nullptr)
@@ -487,6 +490,7 @@ void VulkanHandler::beginBatch() {
 		m_state = State::ErrorBeginCommandBuffer;
 		return;
 	}
+	GpuProfiler::beginBatch(getCurrentCommandBuffer());
 
 	const auto& clearValues = m_currentFramebuffer->getClearValues();
 	const VkRenderPassBeginInfo renderPassInfo{
@@ -517,6 +521,7 @@ void VulkanHandler::endBatch() {
 		m_currentFramebuffer->nextSubpass();
 	}
 	vkCmdEndRenderPass(getCurrentCommandBuffer());
+	GpuProfiler::endBatch();
 	if (const VkResult result = vkEndCommandBuffer(getCurrentCommandBuffer()); result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan fb [{}]: failed to end command buffer ({}).", m_currentFramebuffer->getName(),
 					   resultString(result))

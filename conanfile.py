@@ -35,11 +35,14 @@ class OwlEngineConan(ConanFile):
     topics = ("game-engine", "ecs", "vulkan", "opengl")
     package_type = "library"
     settings = "os", "arch", "compiler", "build_type"
-    options = {"shared": [True, False], "testing": [True, False], "nest": [True, False]}
+    options = {"shared": [True, False], "testing": [True, False], "nest": [True, False], "tracy": [True, False]}
     default_options = {
         "shared": True,
         "testing": False,
         "nest": False,
+        "tracy": False,
+        # Tracy client: zones cost a flag test until a profiler connects, nothing is buffered before.
+        "tracy/*:on_demand": True,
         # LGPL libraries stay shared; imgui is shared so the engine and the editor see one context.
         "imgui/*:shared": True,
         # ImGuizmo declares its functions IMGUI_API (dllimport on Windows): a static ImGuizmo cannot satisfy them.
@@ -118,6 +121,9 @@ class OwlEngineConan(ConanFile):
         self.requires("vulkan-loader/1.4.357.0")
         self.requires("vulkan-utility-libraries/1.4.357.0")
         self.requires("zstd/1.5.7")
+        # Profiler client behind the OWL_PROFILE_* macros (OWL_PROFILER=tracy), private to the engine.
+        if self.options.tracy:
+            self.requires("tracy/0.13.1")
         # Owl Nest only.
         if self.options.nest:
             self.requires("imgui-color-text-edit/cci.20260417")
@@ -137,6 +143,7 @@ class OwlEngineConan(ConanFile):
         tc.cache_variables["OWL_BUILD_SHARED"] = bool(self.options.shared)
         tc.cache_variables["OWL_BUILD_NEST"] = False
         tc.cache_variables["OWL_TESTING"] = False
+        tc.cache_variables["OWL_PROFILER"] = "tracy" if self.options.tracy else "none"
         tc.cache_variables["OWL_PACKAGING"] = True
         tc.cache_variables["OWL_PACKAGE_ENGINE"] = True
         tc.cache_variables["OWL_USE_CCACHE"] = False

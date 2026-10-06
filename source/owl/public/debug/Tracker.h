@@ -20,7 +20,8 @@
 #define OWL_TRACKER_VERBOSITY 0
 #endif
 
-#if defined(OWL_DEBUG) && !defined(OWL_COVERAGE)
+// Opt-in in every build type (OWL_ENABLE_MEMORY_TRACKER): it doubles the live allocation set and skews Debug timings.
+#if defined(OWL_MEMORY_TRACKER) && !defined(OWL_COVERAGE)
 #if OWL_TRACKER_VERBOSITY < 1
 #undef OWL_TRACKER_VERBOSITY
 #define OWL_TRACKER_VERBOSITY 1
@@ -34,7 +35,7 @@
 #endif
 #endif
 
-#if defined(OWL_DEBUG) || defined(OWL_MEMORY_TRACKER)
+#if defined(OWL_MEMORY_TRACKER)
 #define OWL_TRACKER_ACTIVE 1
 #endif
 

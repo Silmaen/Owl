@@ -11,10 +11,46 @@
 #include "core/task/Scheduler.h"
 #include <cstddef>
 #include <deque>
+#include <exception>
 #include <thread>
 #include <vector>
 
 namespace owl::core::task {
+/**
+ * @brief
+ *  Taskflow worker hook naming each worker thread on the profiler timeline ("Worker N").
+ */
+class ProfiledWorker final : public tf::WorkerInterface {
+public:
+	ProfiledWorker() = default;
+
+	ProfiledWorker(const ProfiledWorker&) = delete;
+
+	ProfiledWorker(ProfiledWorker&&) = delete;
+
+	auto operator=(const ProfiledWorker&) -> ProfiledWorker& = delete;
+
+	auto operator=(ProfiledWorker&&) -> ProfiledWorker& = delete;
+
+	~ProfiledWorker() override = default;
+
+	/**
+	 * @brief
+	 *  Name the worker thread before it enters the scheduling loop.
+	 * @param[in] ioWorker The Taskflow worker.
+	 */
+	void scheduler_prologue(tf::Worker& ioWorker) override;// NOLINT(readability-identifier-naming) Taskflow API
+
+	/**
+	 * @brief
+	 *  Nothing to do when the worker leaves the scheduling loop.
+	 * @param[in] ioWorker The Taskflow worker.
+	 * @param[in] iException Exception raised by the worker, if any.
+	 */
+	void scheduler_epilogue(tf::Worker& ioWorker,// NOLINT(readability-identifier-naming) Taskflow API
+							std::exception_ptr iException) override;
+};
+
 /**
  * @brief
  *  Private implementation of the Scheduler, hiding Taskflow internals.
@@ -24,7 +60,7 @@ struct SchedulerImpl {
 	 * @brief
 	 *  The Taskflow executor (thread pool) — declared first so it is destroyed last.
 	 */
-	tf::Executor executor{std::thread::hardware_concurrency()};
+	tf::Executor executor{std::thread::hardware_concurrency(), tf::make_worker_interface<ProfiledWorker>()};
 	/// Tasks waiting to be submitted.
 	std::deque<shared<Task>> tasksQueue;
 	/// Currently running tasks.

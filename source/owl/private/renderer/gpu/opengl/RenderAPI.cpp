@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "GpuProfiler.h"
 #include "RenderAPI.h"
 #include "StorageBuffer.h"
 #include "app/Application.h"
@@ -113,6 +114,10 @@ void RenderAPI::drawLineInstanced(const shared<DrawData>& iData, const uint32_t 
 	glDrawElementsInstanced(GL_LINES, static_cast<int32_t>(count), GL_UNSIGNED_INT, nullptr,
 							static_cast<int32_t>(iInstanceCount));
 }
+
+void RenderAPI::beginFrame() { GpuProfiler::beginFrame(); }
+
+void RenderAPI::endFrame() { GpuProfiler::endFrame(); }
 
 auto RenderAPI::getMaxTextureSlots() const -> uint32_t {
 	int32_t textureUnits = 0;

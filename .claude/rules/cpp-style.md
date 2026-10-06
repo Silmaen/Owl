@@ -320,6 +320,8 @@ OWL_CORE_ERROR("PackReader: corrupted TOC at offset {} (expected magic {:#x}).",
 - Subsystem prefix mandatory in infrastructure code (Vulkan, IO, script, sound, GPU); optional but encouraged elsewhere.
 - No trailing newline (the logger adds it).
 - Avoid emitting from hot loops (`onUpdate`, render passes). If you must, gate with `OWL_CORE_FRAME_TRACE` (sampled at the configured frame frequency).
+- A message below the verbosity evaluates neither its format nor its arguments; below `OWL_LOG_LEVEL` (compile
+  time) it is not compiled. The macros are expressions: `if (c) OWL_CORE_WARN("…") else …` is safe.
 
 ## Diagnostic Suppression
 
@@ -334,7 +336,10 @@ For clang-tidy: `// NOLINTBEGIN(check-name)` ... `// NOLINTEND(check-name)`
 
 ## Profiling
 
-Use profiling macros at function/scope entry — followed by a blank line:
+`OWL_PROFILE_*` (`debug/Profiler.h`) is the only profiling API; never include Tracy outside
+`private/core/external/tracy.h` and the GPU profilers of the backends. Backend picked by `OWL_PROFILER`
+(`none` / `tracy` / `chrome`, see `doc/pages/profiling.md`). Zone names are string literals.
+
 ```c++
 void MyClass::onUpdate() {
     OWL_PROFILE_FUNCTION()
@@ -346,6 +351,11 @@ void MyClass::onUpdate() {
     }
 }
 ```
+
+- `OWL_PROFILE_FUNCTION()` / `OWL_PROFILE_SCOPE()` at function / scope entry, followed by a blank line.
+- `OWL_PROFILE_FRAME_MARK()` once per frame (already in `Application::run`); `OWL_PROFILE_THREAD_NAME()` at the
+  start of any thread the engine creates outside Taskflow (whose workers are named already).
+- No zone in a loop body executed thousands of times per frame: zone the loop, not the item.
 
 ## clang-tidy habits
 

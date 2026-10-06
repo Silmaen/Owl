@@ -352,6 +352,8 @@ void Application::invalidate() { s_instance = nullptr; }
 void Application::run() {
 	OWL_PROFILE_FUNCTION()
 
+	OWL_PROFILE_THREAD_NAME("Main")
+
 #if OWL_TRACKER_VERBOSITY >= 3
 	uint64_t frameCount = 0;
 #endif
@@ -399,6 +401,7 @@ void Application::run() {
 
 		mp_appWindow->onUpdate();
 		m_scheduler.frame(m_stepper);
+		OWL_PROFILE_FRAME_MARK()
 #if OWL_TRACKER_VERBOSITY >= 3
 		{
 			if (const auto& memState = debug::TrackerAPI::checkState();

@@ -35,7 +35,8 @@ docker/run.sh cmake --preset <preset>
   `OWL_CONAN_HOME` (a dedicated cache), `OWL_CONAN_BUILD` (`--build`, default `missing`), `OWL_CONAN_LOCKFILE`
   (default `conan.lock`, empty to resolve freely), `OWL_CONAN_INSTALL` (OFF when Conan drives CMake itself).
 - The recipe options follow the CMake ones: `shared` (`OWL_BUILD_SHARED`), `testing` (`OWL_TESTING`, gtest as a
-  test requirement) and `nest` (`OWL_BUILD_NEST`, imgui-color-text-edit and md4c).
+  test requirement), `nest` (`OWL_BUILD_NEST`, imgui-color-text-edit and md4c) and `tracy` (`OWL_PROFILER=tracy`,
+  the Tracy client built `on_demand`, see [Profiling](../profiling.md)).
 - `owl_target_link_libraries()` stays the only entry point: it maps the two names that differ (`stb_image` →
   `stb::stb`, `TinyGLTF` → `TinyGLTF::TinyGLTF`) and builds the imgui backends; no other `CMakeLists.txt` changed.
 - ConanCenter's imgui ships its backends and `imgui_stdlib` as sources (`res/bindings`, `res/misc/cpp`):
@@ -94,8 +95,8 @@ to `conan install`, so a ConanCenter recipe update never changes a build silentl
 `conanfile.py` or of a local recipe, or to pick newer revisions:
 
 ```bash
-docker/run.sh poetry run conan lock create . --profile:all conan/profiles/linux-clang -o "&:testing=True" -o "&:nest=True" --lockfile-out conan.lock
-docker/run.sh poetry run conan lock create . --profile:all conan/profiles/linux-gcc -o "&:testing=True" -o "&:nest=True" --lockfile conan.lock --lockfile-out conan.lock
+docker/run.sh poetry run conan lock create . --profile:all conan/profiles/linux-clang -o "&:testing=True" -o "&:nest=True" -o "&:tracy=True" --lockfile-out conan.lock
+docker/run.sh poetry run conan lock create . --profile:all conan/profiles/linux-gcc -o "&:testing=True" -o "&:nest=True" -o "&:tracy=True" --lockfile conan.lock --lockfile-out conan.lock
 ```
 
 The first command re-resolves from scratch; the second adds what the GCC profile resolves differently. A new profile
@@ -209,6 +210,7 @@ Checked on 2026-10-05 with `conan search -r conancenter` (Conan 2.33). "Owl (Con
 | tinygltf              | 2.9.6          | 2.9.7           | ConanCenter           | header  | Pulls nlohmann_json                                                            |
 | tinyobjloader         | 2.0.0-rc13     | 2.0.0-rc13      | local recipe          | static  | ConanCenter stops at rc10: its recipe, without the rc10 patch (upstream since) |
 | tinyxml2              | 11.0.0         | —               | removed               | —       | Declared, never used (10.0.0 still comes in through msdfgen-ext)               |
+| tracy                 | —              | 0.13.1          | ConanCenter           | static  | Optional (`tracy` option), `on_demand`; 0.14.1 upstream                        |
 | ufbx                  | 0.20.1         | 0.23.1          | local recipe          | static  | Absent from ConanCenter (single source file)                                   |
 | vulkan                | 1.4.341 (SDK)  | 1.4.357.0       | ConanCenter           | shared  | vulkan-headers, vulkan-loader, vulkan-utility-libraries                        |
 | yaml-cpp              | 0.8.0          | 0.9.0           | ConanCenter           | static  |                                                                                |

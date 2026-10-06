@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ClangTidy` CI action: on a pull request, analyses only the touched `.cpp` files plus every `.cpp` whose include closure (`ninja -t deps`) holds a touched header; elsewhere, everything.
 - `-DOWL_DEPENDENCY_PROVIDER=conan` builds `linux-clang-release` with Conan 2 and ConanCenter (`conanfile.py`, six local recipes in `conan/recipes/`), without the DepManager server.
 - Every Linux preset builds on Conan, pinned by `conan.lock`, and `conan create .` packages OwlEngine, checked by `test_package/` (`find_package(OwlEngine)`).
+- `-DOWL_PROFILER=tracy` puts Tracy (ConanCenter, on demand) behind the `OWL_PROFILE_*` macros: CPU zones, frame marks, named Taskflow workers, OpenGL and Vulkan GPU zones, tracked allocations ([Profiling](profiling.md)).
+- `-DOWL_LOG_LEVEL=<level>` compiles out the log macros below a level.
+### Deprecated
+- `OWL_ENABLE_PROFILING`, replaced by `OWL_PROFILER=chrome`.
 ### Removed
 - DepManager: `depmanager.yml`, `cmake/Depmanager.cmake`, `owl_engine.py`, the `ConfigureRemote` CI action and the *Define Remote* TeamCity step; Conan 2 is the only provider (`OWL_DEPENDENCY_PROVIDER` is gone) and other projects take OwlEngine from the packaged archive.
 - Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).
@@ -41,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SIGINT` / `SIGTERM` close the application cleanly; `Window::getPresentedFrames()` and an exit log report the presented frame count.
 - `docker/run.sh --gpu=intel|nvidia` (PRIME offload) and `--platform=wayland|x11`, with a warning when the desktop session is locked.
 - GLFW `FEATURE_UNAVAILABLE` errors (window position / icon under Wayland) logged at trace level instead of error.
+- The memory tracker is no longer on by default in Debug (it doubled the live allocations and skewed Debug timings): opt in with `OWL_ENABLE_MEMORY_TRACKER`.
+- A log message below the verbosity no longer formats nor evaluates its arguments, and the log file is flushed on warnings only.
 - Roadmap rethought toward 1.0.0: v0.3.0 Foundations, renumbered releases, three reading levels (`ROADMAP.md`, `doc/pages/roadmap.md`, `doc/pages/design/`).
 - Changelog split the same way: one line per release in `CHANGELOG.md`, details in `doc/pages/changelog.md`.
 - clang-tidy decoupled from the compiler: `CMAKE_CXX_CLANG_TIDY` unset, the analysis is a `ClangTidy` step on `Build/Quality/Clang-Tidy` driven by `compile_commands.json`.
@@ -71,6 +77,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Windows build with a recent libstdc++ (MSYS2): every file now includes the standard headers it uses, checked by the `std-includes` Code Style audit and the `linux-include-check` strict-libc++ build (`OWL_INCLUDE_CHECK`).
 - `ClangTidy` runs one job per available core by default instead of a single process (`--jobs=N` still overrides).
 - Doxygen on Windows: `doc/fix_md_links.py` writes its output as UTF-8, the locale codepage could not encode the doc pages' `✅` / `❌`.
+- Client log macros with arguments (`OWL_INFO("… {}", x)`) went to the engine logger instead of `APP`.
+- `OWL_ENABLE_PROFILING` never enabled the Chrome profiler (the header tested another macro).
 - Installed OwlEngine package: headers under `include/` again, no `-Werror -Weverything` imposed on consumers, preset install prefix honoured.
 - **CI — teamcity-github-bridge 1.10.0 wiring**: `CodeStyle` findings are now printed as GNU-style diagnostics
   (`path:line:col: error: <check>: …`), which the plugin pins to the pull request's diff as Check Run annotations;

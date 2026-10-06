@@ -14,6 +14,11 @@
 #include <string_view>
 #include <utility>
 
+#ifndef OWL_LOG_COMPILED_LEVEL
+/// Lowest log level compiled in (index in `owl::core::Log::Level`), set by `OWL_LOG_LEVEL` at configure time.
+#define OWL_LOG_COMPILED_LEVEL 0
+#endif
+
 namespace owl::debug {
 
 class LogBuffer;
@@ -94,6 +99,24 @@ public:
 
 	/**
 	 * @brief
+	 *  Check whether a level is compiled in (`OWL_LOG_LEVEL`); the macros below it expand to nothing evaluated.
+	 * @param[in] iLevel Severity level.
+	 * @return True if messages of this level are compiled in.
+	 */
+	static constexpr auto isLevelCompiled(const Level& iLevel) -> bool {
+		return iLevel >= static_cast<Level>(OWL_LOG_COMPILED_LEVEL) && iLevel != Level::Off;
+	}
+
+	/**
+	 * @brief
+	 *  Check whether a level passes the runtime verbosity, before any formatting is paid.
+	 * @param[in] iLevel Severity level.
+	 * @return True if messages of this level are emitted.
+	 */
+	static auto isLevelEnabled(const Level& iLevel) -> bool { return iLevel >= s_verbosity && iLevel != Level::Off; }
+
+	/**
+	 * @brief
 	 *  Log a formatted message on the engine ("core") logger.
 	 * @tparam Args Format argument types.
 	 * @param[in] iLevel Severity level.
@@ -102,6 +125,8 @@ public:
 	 */
 	template<typename... Args>
 	static void logCore(const Level& iLevel, std::format_string<Args...> iFmt, Args&&... iArgs) noexcept {
+		if (!isLevelEnabled(iLevel))
+			return;
 		try {
 			logCore(iLevel, std::format(iFmt, std::forward<Args>(iArgs)...));
 		} catch (...) {// NOLINT(bugprone-empty-catch) logging must never propagate exceptions
@@ -126,8 +151,10 @@ public:
 	 */
 	template<typename... Args>
 	static void logClient(const Level& iLevel, std::format_string<Args...> iFmt, Args&&... iArgs) noexcept {
+		if (!isLevelEnabled(iLevel))
+			return;
 		try {
-			logCore(iLevel, std::format(iFmt, std::forward<Args>(iArgs)...));
+			logClient(iLevel, std::format(iFmt, std::forward<Args>(iArgs)...));
 		} catch (...) {// NOLINT(bugprone-empty-catch) logging must never propagate exceptions
 		}
 	}
@@ -157,22 +184,30 @@ private:
 };
 }// namespace owl::core
 
-// Core log macros;
+// A level below OWL_LOG_COMPILED_LEVEL or below the verbosity evaluates neither the format nor its arguments.
+#define OWL_LOG_AT(logger, level, ...)                                                                                 \
+	((::owl::core::Log::isLevelCompiled(::owl::core::Log::Level::level) &&                                             \
+	  ::owl::core::Log::isLevelEnabled(::owl::core::Log::Level::level))                                                \
+			 ? ::owl::core::Log::logger(::owl::core::Log::Level::level, __VA_ARGS__)                                   \
+			 : void());
+
+// Core log macros
 #define OWL_CORE_FRAME_TRACE(...)                                                                                      \
-	if (::owl::core::Log::frameLog()) {                                                                                \
-		::owl::core::Log::logCore(::owl::core::Log::Level::Trace, __VA_ARGS__);                                        \
-	}
+	((::owl::core::Log::isLevelCompiled(::owl::core::Log::Level::Trace) && ::owl::core::Log::frameLog() &&             \
+	  ::owl::core::Log::isLevelEnabled(::owl::core::Log::Level::Trace))                                                \
+			 ? ::owl::core::Log::logCore(::owl::core::Log::Level::Trace, __VA_ARGS__)                                  \
+			 : void());
 #define OWL_CORE_FRAME_ADVANCE ::owl::core::Log::newFrame();
 
-#define OWL_CORE_TRACE(...) ::owl::core::Log::logCore(::owl::core::Log::Level::Trace, __VA_ARGS__);
-#define OWL_CORE_INFO(...) ::owl::core::Log::logCore(::owl::core::Log::Level::Info, __VA_ARGS__);
-#define OWL_CORE_WARN(...) ::owl::core::Log::logCore(::owl::core::Log::Level::Warning, __VA_ARGS__);
-#define OWL_CORE_ERROR(...) ::owl::core::Log::logCore(::owl::core::Log::Level::Error, __VA_ARGS__);
-#define OWL_CORE_CRITICAL(...) ::owl::core::Log::logCore(::owl::core::Log::Level::Critical, __VA_ARGS__);
+#define OWL_CORE_TRACE(...) OWL_LOG_AT(logCore, Trace, __VA_ARGS__)
+#define OWL_CORE_INFO(...) OWL_LOG_AT(logCore, Info, __VA_ARGS__)
+#define OWL_CORE_WARN(...) OWL_LOG_AT(logCore, Warning, __VA_ARGS__)
+#define OWL_CORE_ERROR(...) OWL_LOG_AT(logCore, Error, __VA_ARGS__)
+#define OWL_CORE_CRITICAL(...) OWL_LOG_AT(logCore, Critical, __VA_ARGS__)
 
 // Client log macros
-#define OWL_TRACE(...) ::owl::core::Log::logClient(::owl::core::Log::Level::Trace, __VA_ARGS__);
-#define OWL_INFO(...) ::owl::core::Log::logClient(::owl::core::Log::Level::Info, __VA_ARGS__);
-#define OWL_WARN(...) ::owl::core::Log::logClient(::owl::core::Log::Level::Warning, __VA_ARGS__);
-#define OWL_ERROR(...) ::owl::core::Log::logClient(::owl::core::Log::Level::Error, __VA_ARGS__);
-#define OWL_CRITICAL(...) ::owl::core::Log::logClient(::owl::core::Log::Level::Critical, __VA_ARGS__);
+#define OWL_TRACE(...) OWL_LOG_AT(logClient, Trace, __VA_ARGS__)
+#define OWL_INFO(...) OWL_LOG_AT(logClient, Info, __VA_ARGS__)
+#define OWL_WARN(...) OWL_LOG_AT(logClient, Warning, __VA_ARGS__)
+#define OWL_ERROR(...) OWL_LOG_AT(logClient, Error, __VA_ARGS__)
+#define OWL_CRITICAL(...) OWL_LOG_AT(logClient, Critical, __VA_ARGS__)

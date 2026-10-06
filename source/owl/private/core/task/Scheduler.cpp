@@ -9,11 +9,21 @@
 
 #include "core/task/Scheduler.h"
 #include "core/task/SchedulerImpl.h"
+#include "debug/Profiler.h"
 
+#include <exception>
+#include <format>
 #include <future>
 #include <thread>
 
 namespace owl::core::task {
+
+void ProfiledWorker::scheduler_prologue(tf::Worker& ioWorker) {
+	debug::setProfilerThreadName(std::format("Worker {}", ioWorker.id()).c_str());
+}
+
+void ProfiledWorker::scheduler_epilogue([[maybe_unused]] tf::Worker& ioWorker,
+										[[maybe_unused]] std::exception_ptr iException) {}
 
 Scheduler::Scheduler() : mp_impl{mkUniq<SchedulerImpl>()} {}
 

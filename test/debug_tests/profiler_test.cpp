@@ -35,3 +35,40 @@ TEST(profiler, timer) {
 	}
 	owl::core::Log::invalidate();
 }
+
+TEST(profiler, backendMatchesTheBuild) {
+#if defined(OWL_PROFILER_TRACY)
+	EXPECT_EQ(getProfilerBackend(), ProfilerBackend::Tracy);
+#elif defined(OWL_PROFILER_CHROME)
+	EXPECT_EQ(getProfilerBackend(), ProfilerBackend::Chrome);
+#else
+	EXPECT_EQ(getProfilerBackend(), ProfilerBackend::None);
+#endif
+}
+
+TEST(profiler, facadeWithoutConnectedProfiler) {
+	EXPECT_FALSE(isProfilerConnected());
+	setProfilerThreadName("Test thread");
+	static constexpr ProfileSourceLocation location{.name = "zone",
+													.function = "facadeWithoutConnectedProfiler",
+													.file = __FILE__,
+													.line = __LINE__,
+													.color = 0};
+	{ const ProfileZone zone{&location}; }
+	markProfilerFrame();
+}
+
+namespace {
+void profiledFunction() {
+	OWL_PROFILE_FUNCTION()
+
+	OWL_PROFILE_SCOPE("Macro scope")
+	OWL_PROFILE_FRAME_MARK()
+}
+}// namespace
+
+TEST(profiler, macrosCompileInEveryBackend) {
+	OWL_PROFILE_THREAD_NAME("Macro thread")
+	profiledFunction();
+	SUCCEED();
+}

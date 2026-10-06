@@ -10,11 +10,71 @@
 #include "debug/Profiler.h"
 
 #include <iomanip>
+#ifdef OWL_PROFILER_TRACY
+#include "core/external/tracy.h"
+#endif
+#include <cstddef>
 #include <mutex>
 #include <sstream>
 #include <thread>
 
 namespace owl::debug {
+
+#ifdef OWL_PROFILER_TRACY
+static_assert(sizeof(ProfileSourceLocation) == sizeof(___tracy_source_location_data));
+static_assert(offsetof(ProfileSourceLocation, name) == offsetof(___tracy_source_location_data, name));
+static_assert(offsetof(ProfileSourceLocation, function) == offsetof(___tracy_source_location_data, function));
+static_assert(offsetof(ProfileSourceLocation, file) == offsetof(___tracy_source_location_data, file));
+static_assert(offsetof(ProfileSourceLocation, line) == offsetof(___tracy_source_location_data, line));
+static_assert(offsetof(ProfileSourceLocation, color) == offsetof(___tracy_source_location_data, color));
+#endif
+
+auto getProfilerBackend() noexcept -> ProfilerBackend {
+#if defined(OWL_PROFILER_TRACY)
+	return ProfilerBackend::Tracy;
+#elif defined(OWL_PROFILER_CHROME)
+	return ProfilerBackend::Chrome;
+#else
+	return ProfilerBackend::None;
+#endif
+}
+
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast) same layout as Tracy's struct, checked by the asserts above
+ProfileZone::ProfileZone([[maybe_unused]] const ProfileSourceLocation* iLocation) noexcept {
+#ifdef OWL_PROFILER_TRACY
+	const auto ctx = ___tracy_emit_zone_begin(reinterpret_cast<const ___tracy_source_location_data*>(iLocation), 1);
+	m_id = ctx.id;
+	m_active = ctx.active;
+#endif
+}
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
+
+ProfileZone::~ProfileZone() {
+#ifdef OWL_PROFILER_TRACY
+	if (m_active != 0)
+		___tracy_emit_zone_end(TracyCZoneCtx{.id = m_id, .active = m_active});
+#endif
+}
+
+void markProfilerFrame() noexcept {
+#ifdef OWL_PROFILER_TRACY
+	___tracy_emit_frame_mark(nullptr);
+#endif
+}
+
+void setProfilerThreadName([[maybe_unused]] const char* iName) noexcept {
+#ifdef OWL_PROFILER_TRACY
+	___tracy_set_thread_name(iName);
+#endif
+}
+
+auto isProfilerConnected() noexcept -> bool {
+#ifdef OWL_PROFILER_TRACY
+	return ___tracy_connected() != 0;
+#else
+	return false;
+#endif
+}
 
 Profiler::Profiler() = default;
 
@@ -37,7 +97,7 @@ void Profiler::beginSession(const std::string& iName, const std::string& iFilepa
 		writeHeader();
 	} else {
 		if (core::Log::initiated()) {// Edge case: BeginSession() might be  before Log::Init()
-			OWL_CORE_ERROR("Instrumentor could not open results file '{}'.", iFilepath)
+			OWL_CORE_ERROR("Profiler: Could not open results file '{}'.", iFilepath)
 		}
 	}
 }
