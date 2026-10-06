@@ -10,6 +10,7 @@
 #include "VulkanHandler.h"
 
 #include "Descriptors.h"
+#include "FrameProfiler.h"
 #include "GpuProfiler.h"
 #include "RendererDescriptors.h"
 #include "app/Application.h"
@@ -404,6 +405,7 @@ void VulkanHandler::beginFrame() {
 		return;
 	const auto& core = VulkanCore::get();
 	inFrame = true;
+	FrameProfiler::get().onBeginFrame();
 	if (!isMainFramebuffer()) {
 		OWL_CORE_WARN("Vulkan begin frame on non main framebuffer: {}.", m_currentFramebuffer->getName())
 		unbindFramebuffer();
@@ -491,6 +493,7 @@ void VulkanHandler::beginBatch() {
 		return;
 	}
 	GpuProfiler::beginBatch(getCurrentCommandBuffer());
+	m_batchTimestamp = FrameProfiler::get().writeBegin(getCurrentCommandBuffer());
 
 	const auto& clearValues = m_currentFramebuffer->getClearValues();
 	const VkRenderPassBeginInfo renderPassInfo{
@@ -521,6 +524,10 @@ void VulkanHandler::endBatch() {
 		m_currentFramebuffer->nextSubpass();
 	}
 	vkCmdEndRenderPass(getCurrentCommandBuffer());
+	if (m_batchTimestamp.has_value()) {
+		FrameProfiler::get().writeEnd(getCurrentCommandBuffer(), *m_batchTimestamp);
+		m_batchTimestamp.reset();
+	}
 	GpuProfiler::endBatch();
 	if (const VkResult result = vkEndCommandBuffer(getCurrentCommandBuffer()); result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan fb [{}]: failed to end command buffer ({}).", m_currentFramebuffer->getName(),
@@ -561,6 +568,7 @@ void VulkanHandler::endBatch() {
 		m_state = State::ErrorSubmittingDrawCommand;
 		return;
 	}
+	FrameProfiler::get().countSubmit();
 	RendererDescriptors::notifySubmitAll(*m_currentFramebuffer->getCurrentFence());
 	inBatch = false;
 	m_currentFramebuffer->batchTouch();

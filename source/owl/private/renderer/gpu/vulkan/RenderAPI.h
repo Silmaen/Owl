@@ -11,6 +11,8 @@
 #include "renderer/gpu/RenderAPI.h"
 
 #include <cstdint>
+#include <string>
+#include <vector>
 
 /**
  * @brief
@@ -191,5 +193,61 @@ public:
 	 */
 	void drawIndexedIndirect(const shared<DrawData>& iData, const shared<renderer::gpu::StorageBuffer>& iCommandBuffer,
 							 const shared<renderer::gpu::StorageBuffer>& iCountBuffer, uint32_t iMaxDrawCount) override;
+
+	/**
+	 * @brief
+	 *  Check whether the graphics queue can write timestamps.
+	 * @return True when GPU frame timings are available.
+	 */
+	[[nodiscard]] auto hasGpuTimestamps() const -> bool override;
+
+	/**
+	 * @brief
+	 *  Start or stop the `vkCmdWriteTimestamp` queries around every submitted command buffer.
+	 * @param[in] iEnabled True to time the next frames.
+	 */
+	void setGpuTimestampsEnabled(bool iEnabled) override;
+
+	/**
+	 * @brief
+	 *  Get the number of the frame being recorded.
+	 * @return The frame number, 0 when timing is off.
+	 */
+	[[nodiscard]] auto getGpuFrameId() const -> uint64_t override;
+
+	/**
+	 * @brief
+	 *  Hand over the GPU timings read back since the last call.
+	 * @return The completed timings, oldest first.
+	 */
+	auto popGpuFrameTimings() -> std::vector<GpuFrameTiming> override;
+
+	/**
+	 * @brief
+	 *  Get the submission and drain counters.
+	 * @return The counters since start-up.
+	 */
+	[[nodiscard]] auto getRenderCounters() const -> RenderCounters override;
+
+	/**
+	 * @brief
+	 *  Select the present mode of the next swap chain creation.
+	 * @param[in] iEnabled True for MAILBOX or FIFO, false for IMMEDIATE when available.
+	 */
+	void setVSync(bool iEnabled) override;
+
+	/**
+	 * @brief
+	 *  Name the present mode the swap chain uses.
+	 * @return `immediate`, `mailbox`, `fifo` or `fifo-relaxed`.
+	 */
+	[[nodiscard]] auto getPresentMode() const -> std::string override;
+
+	/**
+	 * @brief
+	 *  Get the name of the physical device.
+	 * @return The device name.
+	 */
+	[[nodiscard]] auto getDeviceName() const -> std::string override;
 };
 }// namespace owl::renderer::gpu::vulkan

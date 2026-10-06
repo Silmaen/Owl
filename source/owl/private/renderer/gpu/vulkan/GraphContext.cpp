@@ -10,6 +10,7 @@
 
 #include "GraphContext.h"
 
+#include "internal/FrameProfiler.h"
 #include "internal/VulkanHandler.h"
 
 #include <cstdint>
@@ -47,7 +48,7 @@ void GraphContext::waitIdle() {
 	if (vkh.getLogicalDevice() == nullptr)
 		return;
 	OWL_CORE_TRACE("GraphContext Wait for Idle.")
-	vkDeviceWaitIdle(vkh.getLogicalDevice());
+	internal::FrameProfiler::get().deviceWaitIdle(vkh.getLogicalDevice());
 }
 
 }// namespace owl::renderer::gpu::vulkan

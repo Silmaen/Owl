@@ -241,6 +241,34 @@ public:
 
 	/**
 	 * @brief
+	 *  Request vertical synchronisation for the next swap chain creation.
+	 * @param[in] iEnabled True for FIFO or MAILBOX, false for IMMEDIATE when the surface offers it.
+	 */
+	void setVSync(const bool iEnabled) { m_vSync = iEnabled; }
+
+	/**
+	 * @brief
+	 *  Get the name of the selected physical device.
+	 * @return The device name, empty before initialisation.
+	 */
+	[[nodiscard]] auto getDeviceName() const -> std::string;
+
+	/**
+	 * @brief
+	 *  Get the duration of one timestamp tick.
+	 * @return Nanoseconds per tick, 0 before initialisation.
+	 */
+	[[nodiscard]] auto getTimestampPeriod() const -> float;
+
+	/**
+	 * @brief
+	 *  Get the number of valid timestamp bits of the graphics queue family.
+	 * @return The bit count, 0 when the queue cannot write timestamps.
+	 */
+	[[nodiscard]] auto getGraphicQueueTimestampBits() const -> uint32_t;
+
+	/**
+	 * @brief
 	 *  Get image count.
 	 * @return The image count.
 	 */
@@ -326,6 +354,8 @@ private:
 
 	/// Vulkan requested configuration.
 	VulkanConfiguration m_config{};
+	/// Vertical synchronisation request for the swap chain present mode.
+	bool m_vSync = true;
 	/// Vulkan instance.
 	VkInstance m_instance = nullptr;
 	/// Vulkan selected physical device.

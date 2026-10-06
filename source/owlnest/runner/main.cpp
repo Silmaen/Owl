@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <exception>
 #include <filesystem>
 #include <string>
@@ -80,16 +81,63 @@ public:
 		if (getState() == State::Running)
 			pushLayer(mkShared<nest::runner::RunnerLayer>());
 	}
+
+	OwlNest(const app::AppParams& iParam, const nest::runner::FrameBenchOptions& iBench) : Application(iParam) {
+		if (getState() == State::Running)
+			pushLayer(mkShared<nest::runner::RunnerLayer>(iBench));
+		else
+			setExitCode(4);
+	}
 };
+
+namespace {
+auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::filesystem::path& iCallerDir)
+		-> shared<app::Application> {
+	auto options = nest::runner::parseFrameBenchOptions(iArgc, iArgv, iCallerDir);
+	if (!options.has_value()) {
+		std::fputs("OwlRunner --frame-bench: ", stderr);
+		std::fputs(options.error().c_str(), stderr);
+		std::fputs(".\nUsage: OwlRunner --frame-bench <scene.owl> [--frames N] [--warmup M] "
+				   "[--backend vulkan|opengl|null] [--out results.json] [--project <dir>] [--size WxH] "
+				   "[--timestep-ms T] [--vsync] [--validation]\n",
+				   stderr);
+		std::exit(2);// NOLINT(concurrency-mt-unsafe)
+	}
+	const bool headless = options->backend == renderer::gpu::RenderAPI::Type::Null;
+	return mkShared<OwlNest>(
+			app::AppParams{
+					.args = iArgv,
+					.name = "Owl Frame Bench",
+#ifdef OWL_ASSETS_LOCATION
+					.assetsPattern = OWL_ASSETS_LOCATION,
+#endif
+					.width = options->size.x(),
+					.height = options->size.y(),
+					.argCount = iArgc,
+					.renderer = options->backend,
+					.sound = sound::SoundAPI::Type::Null,
+					.hasGui = !headless,
+					.useDebugging = options->validation,
+					.isDummy = headless,
+					.useConfigFile = false,
+					.vSync = options->vSync,
+			},
+			*options);
+}
+}// namespace
 OWL_DIAG_POP
 
 auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
+	const auto callerDir = std::filesystem::current_path();
 	if (iArgc > 0 && iArgv[0] != nullptr) {
 		if (const auto exeDir = std::filesystem::absolute(std::filesystem::path(iArgv[0])).parent_path();
 			std::filesystem::exists(exeDir)) {
 			std::filesystem::current_path(exeDir);
 		}
 	}
+
+	if (nest::runner::hasFrameBenchFlag(iArgc, iArgv))
+		return createFrameBenchApplication(iArgc, iArgv, callerDir);
 
 	const auto workDir = std::filesystem::current_path();
 	const auto [packFile, gameName, icon, width, height] = readEarlyConfig(workDir);

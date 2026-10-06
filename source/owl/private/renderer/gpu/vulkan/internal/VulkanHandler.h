@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -337,6 +338,8 @@ private:
 	bool m_debugMessage = false;
 	/// True when the swap-chain needs to be recreated on the next frame (window resize).
 	bool m_resize = false;
+	/// Begin timestamp query of the recording batch (set only while GPU timing is on).
+	std::optional<uint32_t> m_batchTimestamp;
 	/// Render pass used by the ImGui overlay layer.
 	VkRenderPass m_imGuiRenderPass{};
 

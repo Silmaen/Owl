@@ -16,6 +16,7 @@
 #include "gui/FontPreviewCache.h"
 #include "gui/utils.h"
 #include "renderer/gpu/RenderCommand.h"
+#include "renderer/gpu/vulkan/internal/FrameProfiler.h"
 #include "renderer/gpu/vulkan/internal/VulkanHandler.h"
 
 #include <input/Input.h>
@@ -139,7 +140,7 @@ void UiLayer::onDetach() {
 		ImGui_ImplOpenGL3_Shutdown();
 	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
 		const auto& vkc = renderer::gpu::vulkan::internal::VulkanCore::get();
-		vkDeviceWaitIdle(vkc.getLogicalDevice());
+		renderer::gpu::vulkan::internal::FrameProfiler::get().deviceWaitIdle(vkc.getLogicalDevice());
 		ImGui_ImplVulkan_Shutdown();
 	}
 	// Flush textures deferred after the last rendered frame; end() clears this only per-frame, so they would else leak.

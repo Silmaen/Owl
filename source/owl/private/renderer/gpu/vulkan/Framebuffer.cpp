@@ -13,6 +13,7 @@
 #include "GraphContext.h"
 #include "app/Application.h"
 #include "internal/Descriptors.h"
+#include "internal/FrameProfiler.h"
 #include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
 #include "internal/utils.h"
@@ -54,7 +55,7 @@ Framebuffer::~Framebuffer() {
 
 void Framebuffer::invalidate() {
 	const auto& vkc = internal::VulkanCore::get();
-	vkDeviceWaitIdle(vkc.getLogicalDevice());
+	internal::FrameProfiler::get().deviceWaitIdle(vkc.getLogicalDevice());
 	cleanup();
 
 	createImages();
@@ -143,7 +144,7 @@ void Framebuffer::cleanup() {
 	}
 	m_framebuffers.clear();
 	const auto& pool = internal::Descriptors::get().getSingleImageDescriptorPool();
-	vkDeviceWaitIdle(vkc.getLogicalDevice());
+	internal::FrameProfiler::get().deviceWaitIdle(vkc.getLogicalDevice());
 	for (auto& [image, memory, view, sampler, dSet, dSetLayout]: m_images) {
 		if (dSet != nullptr)
 			vkFreeDescriptorSets(vkc.getLogicalDevice(), pool, 1, &dSet);

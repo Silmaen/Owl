@@ -10,7 +10,11 @@
 
 #include "renderer/gpu/RenderAPI.h"
 
+#include <array>
+#include <cstddef>
 #include <cstdint>
+#include <string>
+#include <vector>
 
 /**
  * @brief
@@ -46,7 +50,7 @@ public:
 	 * @brief
 	 *  Destructor.
 	 */
-	~RenderAPI() override = default;
+	~RenderAPI() override;
 
 	/**
 	 * @brief
@@ -120,13 +124,14 @@ public:
 
 	/**
 	 * @brief
-	 *  Begin a frame (opens the frame GPU zone when profiling with Tracy).
+	 *  Begin a frame: opens the frame GPU zone when profiling with Tracy and, when GPU timestamps are
+	 *  enabled, reads back the timestamp slot it reuses and writes the begin timestamp.
 	 */
 	void beginFrame() override;
 
 	/**
 	 * @brief
-	 *  End a frame (closes the frame GPU zone when profiling with Tracy).
+	 *  End a frame: closes the frame GPU zone when profiling with Tracy and writes the end timestamp.
 	 */
 	void endFrame() override;
 
@@ -160,5 +165,83 @@ public:
 	 */
 	void drawIndexedIndirect(const shared<DrawData>& iData, const shared<renderer::gpu::StorageBuffer>& iCommandBuffer,
 							 const shared<renderer::gpu::StorageBuffer>& iCountBuffer, uint32_t iMaxDrawCount) override;
+
+	/**
+	 * @brief
+	 *  Check whether the context can write `GL_TIMESTAMP` queries.
+	 * @return True when GPU frame timings are available.
+	 */
+	[[nodiscard]] auto hasGpuTimestamps() const -> bool override;
+
+	/**
+	 * @brief
+	 *  Start or stop the `glQueryCounter` timestamps around every frame.
+	 * @param[in] iEnabled True to time the next frames.
+	 */
+	void setGpuTimestampsEnabled(bool iEnabled) override;
+
+	/**
+	 * @brief
+	 *  Get the number of the frame being recorded.
+	 * @return The frame number, 0 when timing is off.
+	 */
+	[[nodiscard]] auto getGpuFrameId() const -> uint64_t override { return m_timingEnabled ? m_frameId : 0; }
+
+	/**
+	 * @brief
+	 *  Hand over the GPU timings read back since the last call.
+	 * @return The completed timings, oldest first.
+	 */
+	auto popGpuFrameTimings() -> std::vector<GpuFrameTiming> override;
+
+	/**
+	 * @brief
+	 *  Record the swap interval requested through the window.
+	 * @param[in] iEnabled True for a swap interval of 1.
+	 */
+	void setVSync(const bool iEnabled) override { m_vSync = iEnabled; }
+
+	/**
+	 * @brief
+	 *  Name the swap interval in use.
+	 * @return `swap-interval-1` or `swap-interval-0`.
+	 */
+	[[nodiscard]] auto getPresentMode() const -> std::string override {
+		return m_vSync ? "swap-interval-1" : "swap-interval-0";
+	}
+
+	/**
+	 * @brief
+	 *  Get the `GL_RENDERER` string.
+	 * @return The device name.
+	 */
+	[[nodiscard]] auto getDeviceName() const -> std::string override;
+
+private:
+	/**
+	 * @brief
+	 *  Read back one timestamp slot and push its timing.
+	 * @param[in] iSlot The slot index.
+	 */
+	void harvest(size_t iSlot);
+
+	/// Frames kept in the query ring.
+	static constexpr size_t g_slotCount = 4;
+	/// Begin and end timestamp query of each slot.
+	std::array<std::array<uint32_t, 2>, g_slotCount> m_queries{};
+	/// Frame number recorded in each slot (0 = empty).
+	std::array<uint64_t, g_slotCount> m_slotFrame{};
+	/// Frames read back and not handed over yet.
+	std::vector<GpuFrameTiming> m_completed;
+	/// Number of the frame being recorded.
+	uint64_t m_frameId{0};
+	/// True once the query objects exist.
+	bool m_queriesCreated{false};
+	/// True while timestamps are recorded.
+	bool m_timingEnabled{false};
+	/// True while the begin timestamp of the current frame is written and the end one is not.
+	bool m_frameOpen{false};
+	/// Swap interval requested through the window.
+	bool m_vSync{true};
 };
 }// namespace owl::renderer::gpu::opengl

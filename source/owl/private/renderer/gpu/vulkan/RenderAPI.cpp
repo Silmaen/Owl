@@ -13,6 +13,7 @@
 #include "app/Application.h"
 #include "core/external/glfw3.h"
 #include "internal/Descriptors.h"
+#include "internal/FrameProfiler.h"
 #include "internal/RendererDescriptors.h"
 #include "internal/VulkanHandler.h"
 
@@ -210,5 +211,35 @@ void RenderAPI::storageBufferMemoryBarrier() {
 								 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
 						 0, 1, &barrier, 0, nullptr, 0, nullptr);
 }
+
+auto RenderAPI::hasGpuTimestamps() const -> bool { return internal::FrameProfiler::get().isSupported(); }
+
+void RenderAPI::setGpuTimestampsEnabled(const bool iEnabled) { internal::FrameProfiler::get().setEnabled(iEnabled); }
+
+auto RenderAPI::getGpuFrameId() const -> uint64_t { return internal::FrameProfiler::get().getFrameId(); }
+
+auto RenderAPI::popGpuFrameTimings() -> std::vector<GpuFrameTiming> {
+	return internal::FrameProfiler::get().popTimings();
+}
+
+auto RenderAPI::getRenderCounters() const -> RenderCounters { return internal::FrameProfiler::get().getCounters(); }
+
+void RenderAPI::setVSync(const bool iEnabled) { internal::VulkanCore::get().setVSync(iEnabled); }
+
+auto RenderAPI::getPresentMode() const -> std::string {
+	const auto& core = internal::VulkanCore::get();
+	if (core.getLogicalDevice() == nullptr)
+		return "none";
+	const VkPresentModeKHR mode = core.getPresentMode();
+	if (mode == VK_PRESENT_MODE_IMMEDIATE_KHR)
+		return "immediate";
+	if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
+		return "mailbox";
+	if (mode == VK_PRESENT_MODE_FIFO_KHR)
+		return "fifo";
+	return "other";
+}
+
+auto RenderAPI::getDeviceName() const -> std::string { return internal::VulkanCore::get().getDeviceName(); }
 
 }// namespace owl::renderer::gpu::vulkan

@@ -45,6 +45,20 @@ foreach (child ${children})
                 find_package(md4c CONFIG REQUIRED)
                 target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test md4c::md4c)
             endif ()
+            # runner_tests compiles the runner's frame bench sources and runs the OwlRunner executable
+            # (headless, null backend) when the editor apps are built.
+            if (${child} STREQUAL "runner_tests")
+                target_include_directories(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
+                        ${CMAKE_SOURCE_DIR}/source/owlnest/runner)
+                target_sources(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
+                        ${CMAKE_SOURCE_DIR}/source/owlnest/runner/FrameBench.cpp
+                        ${CMAKE_SOURCE_DIR}/source/owlnest/runner/FrameBenchStats.cpp)
+                if (TARGET ${CMAKE_PROJECT_NAME}Runner)
+                    add_dependencies(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${CMAKE_PROJECT_NAME}Runner)
+                    target_compile_definitions(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
+                            OWL_RUNNER_EXECUTABLE="$<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner>")
+                endif ()
+            endif ()
             add_test(${PROJECT_PREFIX_LOWER}_${child}_UTests ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
             set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 3600
                     ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")

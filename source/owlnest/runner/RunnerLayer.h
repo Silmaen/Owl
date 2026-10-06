@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "FrameBench.h"
+
 #include <data/assets/pack/PackReader.h>
 #include <owl.h>
 #include <scene/SceneSerializer.h>
@@ -80,6 +82,13 @@ public:
 	 *  Default constructor.
 	 */
 	RunnerLayer();
+
+	/**
+	 * @brief
+	 *  Constructor for a frame bench run: the scene comes from the options instead of `runner.yml`.
+	 * @param[in] iBench The frame bench options.
+	 */
+	explicit RunnerLayer(const FrameBenchOptions& iBench);
 
 	/**
 	 * @brief
@@ -181,6 +190,33 @@ private:
 	/// swap so per-scene overrides apply post-teleport.
 	void installRenderStack();
 
+	/**
+	 * @brief
+	 *  Frame bench start-up: project assets and renderer stack, scene, null input, timings.
+	 */
+	void attachFrameBench();
+
+	/**
+	 * @brief
+	 *  Write the frame bench report, set the exit code and stop the application.
+	 * @param[in] iInterrupted True when the run stopped before the end.
+	 */
+	void finishFrameBench(bool iInterrupted);
+
+	/**
+	 * @brief
+	 *  Frame bench step at the top of `onUpdate`: close the previous frame, stop when the bench is done.
+	 * @return False when the bench is over and the frame must be skipped.
+	 */
+	auto stepFrameBench() -> bool;
+
+	/**
+	 * @brief
+	 *  Run the scene update (cursor capture outside a frame bench, phase timings inside).
+	 * @param[in] iTimeStep Time step fed to the scene.
+	 */
+	void updateSceneRuntime(const core::Timestep& iTimeStep);
+
 	shared<scene::Scene> m_activeScene;
 	math::vec2ui m_viewportSize = {0, 0};
 	RunnerConfig m_config;
@@ -192,5 +228,7 @@ private:
 	std::string m_teleportTargetName;
 	/// In-flight async scene transition (nullptr when idle).
 	shared<PendingTransition> m_transition;
+	/// Frame bench driver (nullptr in a normal run).
+	uniq<FrameBench> m_frameBench;
 };
 }// namespace owl::nest::runner
