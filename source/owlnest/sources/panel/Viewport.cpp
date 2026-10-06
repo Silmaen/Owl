@@ -689,10 +689,13 @@ void Viewport::renderGizmo() {
 		if (!isUsing && m_gizmoWasUsing && mp_undoManager != nullptr && !m_gizmoBeforeYaml.empty()) {
 			const auto afterYaml = scene::SceneSerializer::serializeEntityToString(selectedEntity);
 			if (m_gizmoBeforeYaml != afterYaml) {
+				auto overrides =
+						commands::PrefabOverrideChange::record(selectedEntity, *activeScene, m_gizmoBeforeYaml);
 				auto cmd = mkUniq<commands::ModifyEntityCommand>(
 						selectedEntity.getUUID(), EntitySnapshot{selectedEntity.getUUID(), m_gizmoBeforeYaml},
 						"Transform (Gizmo)");
 				cmd->captureAfter(selectedEntity);
+				cmd->setPrefabOverrides(std::move(overrides));
 				mp_undoManager->push(std::move(cmd));
 			}
 			m_gizmoBeforeYaml.clear();

@@ -23,12 +23,18 @@ AddComponentCommand::AddComponentCommand(EntitySnapshot iBefore, EntitySnapshot 
 
 AddComponentCommand::~AddComponentCommand() = default;
 
+void AddComponentCommand::setPrefabOverrides(PrefabOverrideChange iChange) { m_overrides = std::move(iChange); }
+
 void AddComponentCommand::undo(scene::Scene& ioScene) {
 	if (m_before.uuid != core::UUID{0})
 		m_before.restore(ioScene);
+	m_overrides.restoreBefore(ioScene);
 }
 
-void AddComponentCommand::redo(scene::Scene& ioScene) { m_after.restore(ioScene); }
+void AddComponentCommand::redo(scene::Scene& ioScene) {
+	m_after.restore(ioScene);
+	m_overrides.restoreAfter(ioScene);
+}
 
 auto AddComponentCommand::description() const -> std::string { return std::format("Add {}", m_componentName); }
 
@@ -42,9 +48,17 @@ RemoveComponentCommand::RemoveComponentCommand(EntitySnapshot iBefore, EntitySna
 
 RemoveComponentCommand::~RemoveComponentCommand() = default;
 
-void RemoveComponentCommand::undo(scene::Scene& ioScene) { m_before.restore(ioScene); }
+void RemoveComponentCommand::setPrefabOverrides(PrefabOverrideChange iChange) { m_overrides = std::move(iChange); }
 
-void RemoveComponentCommand::redo(scene::Scene& ioScene) { m_after.restore(ioScene); }
+void RemoveComponentCommand::undo(scene::Scene& ioScene) {
+	m_before.restore(ioScene);
+	m_overrides.restoreBefore(ioScene);
+}
+
+void RemoveComponentCommand::redo(scene::Scene& ioScene) {
+	m_after.restore(ioScene);
+	m_overrides.restoreAfter(ioScene);
+}
 
 auto RemoveComponentCommand::description() const -> std::string { return std::format("Remove {}", m_componentName); }
 
@@ -59,9 +73,17 @@ ModifyEntityCommand::~ModifyEntityCommand() = default;
 
 void ModifyEntityCommand::captureAfter(const scene::Entity& iEntity) { m_after = EntitySnapshot::capture(iEntity); }
 
-void ModifyEntityCommand::undo(scene::Scene& ioScene) { m_before.restore(ioScene); }
+void ModifyEntityCommand::setPrefabOverrides(PrefabOverrideChange iChange) { m_overrides = std::move(iChange); }
 
-void ModifyEntityCommand::redo(scene::Scene& ioScene) { m_after.restore(ioScene); }
+void ModifyEntityCommand::undo(scene::Scene& ioScene) {
+	m_before.restore(ioScene);
+	m_overrides.restoreBefore(ioScene);
+}
+
+void ModifyEntityCommand::redo(scene::Scene& ioScene) {
+	m_after.restore(ioScene);
+	m_overrides.restoreAfter(ioScene);
+}
 
 auto ModifyEntityCommand::description() const -> std::string { return m_description; }
 
@@ -73,6 +95,7 @@ auto ModifyEntityCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
 		return false;
 	// Keep our "before" state, take the other's "after" state.
 	m_after = other->m_after;
+	m_overrides.mergeWith(other->m_overrides);
 	m_timestamp = other->m_timestamp;
 	return true;
 }

@@ -170,6 +170,6 @@ it directly.
 
 ### Not Yet Demonstrated
 - [ ] NativeScript (C++ scripting, only Lua exercised)
-- [ ] EntityLink / PrefabLink components (no prefab in the current sample)
+- [ ] EntityLink component
 - [ ] Timer triggers (the original `hazard_timer.lua` was retired with the legacy
       gameplay scenes)

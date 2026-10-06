@@ -96,10 +96,15 @@ public:
 
 	/**
 	 * @brief
-	 *  Apply prefab updates to an existing instance.
+	 *  Apply prefab updates to an existing instance, in place.
 	 *
-	 * Non-overridden components are refreshed from the prefab file.
-	 * Overridden components (listed in PrefabLink::overriddenComponents) are preserved.
+	 * Entities are matched through `PrefabLink::uuidMapping` and updated with
+	 * `SceneSerializer::applyEntityFromString`: handles, UUIDs and the instance hierarchy survive.
+	 * For each mapped entity, every component takes the prefab state except the overridden ones
+	 * (listed in `PrefabLink::overriddenComponents`) and the Transform of the instance root, which
+	 * always keeps the instance placement. Entities new in the prefab are created under their
+	 * mapped parent; mapped entities gone from the prefab are destroyed (their children move to
+	 * the grandparent, keeping their world position). Entities added to the instance only are kept.
 	 * @param[in] iFilepath Path to the .owlprefab file.
 	 * @param[in,out] ioInstanceRoot Root entity of the prefab instance.
 	 * @param[in,out] ioScene The scene.
@@ -110,7 +115,10 @@ public:
 
 	/**
 	 * @brief
-	 *  Revert all overrides on an instance, making it match the prefab exactly.
+	 *  Revert all overrides on an instance, making it match the prefab.
+	 *
+	 * Clears `PrefabLink::overriddenComponents` then applies the prefab: only the Transform of the
+	 * instance root (its placement) and the entities added to the instance only are kept.
 	 * @param[in] iFilepath Path to the .owlprefab file.
 	 * @param[in,out] ioInstanceRoot Root entity of the prefab instance.
 	 * @param[in,out] ioScene The scene.
@@ -118,6 +126,45 @@ public:
 	 */
 	[[nodiscard]] static auto revertInstance(const std::filesystem::path& iFilepath, const Entity& ioInstanceRoot,
 											 Scene& ioScene) -> bool;
+
+	/**
+	 * @brief
+	 *  Revert one component of an instance entity to its prefab state and clear its override.
+	 *
+	 * A component absent from the prefab entity is removed. The Transform of the instance root is
+	 * never reverted (it is the instance placement).
+	 * @param[in] iFilepath Path to the .owlprefab file.
+	 * @param[in] iInstanceRoot Root entity of the prefab instance.
+	 * @param[in] iEntity Instance entity holding the component (the root or one of its mapped entities).
+	 * @param[in] iComponentKey YAML key of the component (e.g. "SpriteRenderer").
+	 * @return True if the component was reverted.
+	 */
+	[[nodiscard]] static auto revertComponent(const std::filesystem::path& iFilepath, const Entity& iInstanceRoot,
+											  const Entity& iEntity, const std::string& iComponentKey) -> bool;
+
+	/**
+	 * @brief
+	 *  Find the root of the prefab instance an entity belongs to.
+	 * @param[in] iEntity The entity (an instance root or one of its mapped entities).
+	 * @param[in] iScene The scene holding the entity.
+	 * @return The nearest ancestor-or-self carrying a `PrefabLink` that maps the entity, or an invalid entity.
+	 */
+	[[nodiscard]] static auto findInstanceRoot(const Entity& iEntity, const Scene& iScene) -> Entity;
+
+	/**
+	 * @brief
+	 *  Mark as overridden every component of an instance entity that changed since a snapshot.
+	 *
+	 * Compares the entity with its YAML before the edit, component by component; added, removed and
+	 * modified components are recorded in the instance `PrefabLink`. `Hierarchy`, `PrefabLink` and
+	 * the Transform of the instance root are never recorded. Entities outside any instance, or added
+	 * to an instance only, are ignored.
+	 * @param[in] iEntity The edited entity.
+	 * @param[in] iScene The scene holding the entity.
+	 * @param[in] iBeforeYaml The entity YAML before the edit (`SceneSerializer::serializeEntityToString`).
+	 * @return True when at least one new override was recorded.
+	 */
+	static auto recordOverrides(const Entity& iEntity, const Scene& iScene, const std::string& iBeforeYaml) -> bool;
 };
 
 }// namespace owl::scene

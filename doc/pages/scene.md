@@ -411,10 +411,33 @@ children (direct or nested) of an entity with a `Canvas` component.
 | `prefabAssetPath`      | `string`               | `PrefabLink` | Relative path to the `.owlprefab` source file   |
 | `syncedVersion`        | `uint32_t`             | —            | Prefab version when last synced                 |
 | `uuidMapping`          | `vector<UuidMapEntry>` | —            | Instance UUID ↔ canonical UUID pairs            |
-| `overriddenComponents` | `vector<string>`       | —            | Per-component override keys preserved on update |
+| `overriddenComponents` | `vector<string>`       | `overrides`  | Per-component override keys preserved on update |
 
 Placed only on the root entity of a prefab instance. Children are tracked via the
 `uuidMapping`. See [Editor Prefab Workflow](editor.md) for usage details.
+
+An override key is `canonicalUUID:ComponentKey` (e.g. `5100000000000000003:AnimatedSpriteRenderer`).
+A listed component keeps its instance state on update, whether it was modified, added or removed.
+
+#### Updating an instance
+
+`PrefabSerializer::applyToInstance()` updates the instance **in place**: entities are matched through
+`uuidMapping` and rewritten with `SceneSerializer::applyEntityFromString()`, so handles, UUIDs and the
+instance hierarchy survive.
+
+| Element                                  | On update                                             |
+|------------------------------------------|-------------------------------------------------------|
+| Transform of the instance root           | Always kept: the placement is an implicit override    |
+| Overridden component                     | Kept as on the instance (modified, added or removed)  |
+| Any other component (incl. `Tag`)        | Taken from the prefab, added or removed to match it   |
+| Entity new in the prefab                 | Created under its mapped parent, added to the mapping |
+| Mapped entity gone from the prefab       | Destroyed; its children move to the grandparent       |
+| Entity added to the instance only        | Kept where it is                                      |
+
+`revertInstance()` clears every override then updates: only the root placement and the entities added to
+the instance only are kept. `revertComponent()` reverts a single component and clears its override.
+`recordOverrides()` compares an entity with its state before an edit and marks the changed components;
+`findInstanceRoot()` finds the instance an entity belongs to.
 
 ## Transform Hierarchy
 
