@@ -12,11 +12,13 @@ Everything else is split to mirror that hierarchy:
     common/Helpers.kt       the VCS trigger, the GitHub bridge feature, the dependencies
     common/Factories.kt     one function per family of configuration
     quality/CodeStyle.kt    the gate every other configuration waits for
+    quality/IncludeCheck.kt every file compiled alone, in parallel with Code Style
+    quality/PrReady.kt      the composite check required on `main`
     build/Linux.kt          Build Linux x64
     build/LinuxArm64.kt     Build Linux arm64 (emulated, main only)
     build/Windows.kt        Build Windows x64
     quality/Sanitizers.kt   the four sanitizers
-    quality/Analysis.kt     clang-tidy, the static analyzer, the include check
+    quality/Analysis.kt     clang-tidy and the static analyzer
     packaging/Package.kt    the engine and editor packages
 
 A declaration cannot live in this file if another file needs it: the top-level values of
@@ -58,8 +60,11 @@ project {
         param("teamcity.github.bridge.checkName.stripPrefix", "TeamCity / Owl / ")
     }
 
-    // The gate, at the root.
+    // At the root, beside each other: the two level-1 gates and the single check required on `main`.
     buildType(codeStyle)
+    buildType(includeCheck)
+    buildType(prReady)
+    buildTypesOrder = arrayListOf(codeStyle, includeCheck, prReady)
 
     subProject(linuxX64)
     subProject(windowsX64)

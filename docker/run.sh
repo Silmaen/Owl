@@ -20,7 +20,13 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 image="${OWL_DOCKER_IMAGE:-registry.argawaen.net/builder/devel-ubuntu2604:latest}"
-docker_home="${OWL_DOCKER_HOME:-$(cd "${repo_root}/.." && pwd)/fake_home}"
+# The default $HOME sits next to the main checkout, also when running from a git worktree.
+main_root="${repo_root}"
+if [[ -f "${repo_root}/.git" ]]; then
+	common_dir="$(git -C "${repo_root}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+	[[ -n "${common_dir}" ]] && main_root="$(dirname "${common_dir}")"
+fi
+docker_home="${OWL_DOCKER_HOME:-$(cd "${main_root}/.." && pwd)/fake_home}"
 uid="$(id -u)"
 gid="$(id -g)"
 
@@ -54,6 +60,11 @@ if [[ -t 0 && -t 1 ]]; then
 	args+=(-it)
 elif [[ ! -t 0 ]]; then
 	args+=(-i)
+fi
+# In a git worktree, .git is a file pointing at the main repository: mount its git dir so git works inside.
+if [[ -f "${repo_root}/.git" ]]; then
+	common_git="$(git -C "${repo_root}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+	[[ -n "${common_git}" && -d "${common_git}" && "${common_git}" != "${repo_root}"* ]] && args+=(-v "${common_git}:${common_git}")
 fi
 for extra in ${OWL_DOCKER_MOUNTS:-}; do
 	[[ -d "${extra}" ]] && args+=(-v "${extra}:${extra}")

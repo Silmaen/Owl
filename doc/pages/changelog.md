@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- TeamCity: Include Check and PR Ready move to the root beside Code Style (GitHub checks `Include Check` and `PR Ready`).
+- CI: Windows builds compute the coverage on `main` only, no longer on pull requests.
 - CI on Conan everywhere (the TeamCity `OWL_DEPENDENCY_PROVIDER` default) and on a single Ubuntu 26.04 image (`builder-ubuntu2604`: GCC 15, Clang 22) for every Linux preset and `docker/run.sh`.
 - CI: release build and tests on `main` only; arm64 builds and every package nightly (they held the agents for hours and packages publish to the site).
 - CI in two levels: Code Style and Include Check in parallel, then every build, sanitizer and analysis after Code Style only.
@@ -38,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `docker/run.sh` works from a git worktree: it mounts the main git directory and finds the shared `fake_home`.
 - TeamCity: `triggerOnPrDraft` is written explicitly on every configuration (the plugin defaults to `true`, so draft PRs ran the whole matrix).
 - Conan on Windows: host settings and options go through a generated profile (cmd.exe split `&:shared=…` at `&`), and configure stops when `conan install` produced no toolchain.
 - `ClangTidy` analyses only the repository's own translation units: the third-party sources a Conan build compiles (imgui backends, `imgui_stdlib.cpp`) no longer fail the gate.

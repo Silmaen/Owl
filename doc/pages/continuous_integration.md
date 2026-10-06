@@ -32,6 +32,8 @@ The DSL (`.teamcity/`) is laid out like EvenementLoto's: one entry point, a `com
 sub-project. The chain has two levels, as parallel as the agents allow: Code Style and Include Check wait for
 nothing; every build, sanitizer and analysis waits for Code Style only (each one builds its own preset, none consumes
 another's output). A broken commit therefore fails several configurations at once instead of stopping at the first.
+Code Style, Include Check and PR Ready sit side by side at the root of the project; the builds, sanitizers, analyses
+and packages each have their sub-project.
 ```mermaid
 flowchart TD
     Root[Root project<br/>Owl] --> Build[Build]
@@ -109,7 +111,7 @@ except the first, which sets `docker_image` from the preset metadata):
 | Clean release             | `release_preset` non-empty + default branch                    |
 | Build                     | always                                                         |
 | Test                      | `run_tests == true`                                            |
-| Code Coverage             | `run_coverage == true`                                         |
+| Code Coverage             | `run_coverage == true`; on Windows, default branch only        |
 | Build Release             | `release_preset` non-empty + default branch                    |
 | Build Release (docs)      | `release_preset` + `run_documentation`, off the default branch |
 | Test Release              | `release_preset` non-empty + default branch + `run_tests`      |
@@ -150,19 +152,20 @@ flowchart LR
 - **Blue**: nightly on `main` only: arm64 is emulated and slow, packages publish to the site.
 - Uncoloured: run on every ready pull request and on `main`.
 
-| File                    | Content                                                                          |
-|-------------------------|----------------------------------------------------------------------------------|
-| `settings.kts`          | The project: parameters, VCS root, templates, sub-projects and their order       |
-| `common/Vcs.kt`         | The git VCS root, the GitHub App connection id                                   |
-| `common/Templates.kt`   | Global Build (configure → package steps) and Tool Build (Code Style)             |
-| `common/Helpers.kt`     | `mainBranchOnly()`, `githubBridge()`, `after()`, `ciAction()`, `CODE_ONLY_PATHS` |
-| `common/Factories.kt`   | `presetBuild()`, `analysisBuild()`, `packageBuild()`                             |
-| `quality/CodeStyle.kt`  | The gate every other configuration waits for                                     |
-| `build/*.kt`            | Build Linux x64, Build Windows x64, Build Linux arm64                            |
-| `quality/Sanitizers.kt` | The three sanitizers, after Code Style                                           |
-| `quality/PrReady.kt`    | The `PR Ready` merge gate: red when any ready-PR configuration is red            |
-| `quality/Analysis.kt`   | Clang-Tidy, Static Analyzer (after Code Style), Include Check (level 1)          |
-| `packaging/Package.kt`  | Engine and Owl Nest packages, after the build that tested their platform         |
+| File                      | Content                                                                              |
+|---------------------------|--------------------------------------------------------------------------------------|
+| `settings.kts`            | The project: parameters, VCS root, templates, sub-projects and their order           |
+| `common/Vcs.kt`           | The git VCS root, the GitHub App connection id                                       |
+| `common/Templates.kt`     | Global Build (configure → package steps) and Tool Build (Code Style)                 |
+| `common/Helpers.kt`       | `mainBranchOnly()`, `githubBridge()`, `after()`, `ciAction()`, `CODE_ONLY_PATHS`     |
+| `common/Factories.kt`     | `presetBuild()`, `analysisBuild()`, `packageBuild()`                                 |
+| `quality/CodeStyle.kt`    | The gate every other configuration waits for (root project)                          |
+| `quality/IncludeCheck.kt` | Every file compiled alone, level 1 beside Code Style (root project)                  |
+| `build/*.kt`              | Build Linux x64, Build Windows x64, Build Linux arm64                                |
+| `quality/Sanitizers.kt`   | The three sanitizers, after Code Style                                               |
+| `quality/PrReady.kt`      | The `PR Ready` merge gate (root project): red when any ready-PR configuration is red |
+| `quality/Analysis.kt`     | Clang-Tidy and Static Analyzer, after Code Style                                     |
+| `packaging/Package.kt`    | Engine and Owl Nest packages, after the build that tested their platform             |
 
 The configuration ids are the ones the server already knew (`Build_LinuxX64_Clang`, `Build_Quality_ClangTidy`, …),
 so the build history is kept. Everything a build does lives in `ci/` (`ci_action.py <Action> <preset>`); the DSL only
@@ -224,7 +227,7 @@ verdict is republished when the PR turns ready) and `skipPhrase = [skip ci]`.
 
 ### Required checks
 
-Require **one** check in the branch protection of `main`: **`Analysis / PR Ready`**. It is a composite configuration
+Require **one** check in the branch protection of `main`: **`PR Ready`**. It is a composite configuration
 (`quality/PrReady.kt`): it uses no agent, depends on every configuration a ready pull request runs (Code Style,
 Include Check, the four builds, the three sanitizers, Clang-Tidy, Static Analyzer) and turns red, naming the failed
 dependency, as soon as one of them is red. Like them it is not run for drafts nor `Experiment/…` pull requests (the PR
@@ -380,7 +383,7 @@ Two consequences for this repository:
 
 ## Clang-tidy scoping
 
-`Build/Quality/Clang-Tidy` is the only configuration this concerns. On a pull
+`Analysis / Clang-Tidy` is the only configuration this concerns. On a pull
 request it analyses only the translation units that pull request can change the
 verdict of. On `main`, on a manual run, and whenever the narrowing cannot be
 trusted, it analyses all of them — the behaviour every run had before.

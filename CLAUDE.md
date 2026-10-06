@@ -80,6 +80,7 @@ Python, never a bare `depmanager`. Inside the container the venv lives in `/fhom
 
 - Commits: one short imperative line, no body unless needed, **no `Co-Authored-By` or any attribution**.
   Commit locally on a branch (never on `main`); **never `git push` nor `gh pr create`** — the user does.
+- Branch names: **`Feature/*` or `Experiment/*` only** (no `Fix/`, `Test/`, `Perf/`): one branch per PR.
 - PR descriptions (when asked): a few bullets, what and why.
 - Every PR updates `doc/pages/changelog.md` (`[Unreleased]`, one line per change), the `doc/pages/roadmap.md` badges
   and the relevant `doc/pages/*.md` / `doc/pages/design/*.md`; root
