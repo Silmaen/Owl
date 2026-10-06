@@ -11,6 +11,7 @@
 #include <gui/IconBank.h>
 
 #include <algorithm>
+#include <format>
 
 namespace owl::nest::panel {
 

@@ -13,6 +13,8 @@
 #include "core/Serializer.h"
 #include "data/fonts/Font.h"
 
+#include <string>
+
 namespace owl::scene::component {
 /**
  * @brief

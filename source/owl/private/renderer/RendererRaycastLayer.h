@@ -13,6 +13,8 @@
 #include "renderer/RendererRaycast.h"
 #include "scene/Tileset.h"
 
+#include <string>
+
 namespace owl::renderer {
 /**
  * @brief

@@ -8,10 +8,16 @@
 
 #include "testHelper.h"
 
+#include <core/Macros.h>
 #include <data/assets/pack/AssetScanner.h>
 #include <data/assets/pack/PackWriter.h>
 
+#include <cstdint>
+#include <filesystem>
 #include <fstream>
+#include <string>
+#include <utility>
+#include <vector>
 #include <gtest/gtest.h>
 
 using namespace owl::data::assets::pack;

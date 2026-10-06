@@ -15,6 +15,10 @@
 #include "scene/Entity.h"
 #include "scene/component/componentsSerialization.h"
 
+#include <cstdint>
+#include <exception>
+#include <format>
+
 namespace owl::scene {
 
 SceneSerializer::SceneSerializer(const shared<Scene>& iScene) : mp_scene(iScene) {}

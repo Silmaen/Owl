@@ -11,6 +11,8 @@
 #include "RenderAPI.h"
 #include "core/Core.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu {
 /**
  * @brief

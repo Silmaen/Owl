@@ -11,6 +11,8 @@
 #include <app/Application.h>
 #include <imgui.h>
 
+#include <cstdint>
+
 namespace owl::gui {
 
 BasePanel::BasePanel(std::string&& iName) : m_name{std::move(iName)} {}

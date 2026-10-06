@@ -11,8 +11,13 @@
 #include "Scene.h"
 #include "component/ID.h"
 #include "component/Tag.h"
+#include "core/Macros.h"
 
 #include <entt/entity/entity.hpp>
+
+#include <cstdint>
+#include <string>
+#include <utility>
 
 namespace owl::scene {
 /**

@@ -10,6 +10,8 @@
 
 #include <app/layer/LayerStack.h>
 
+#include <iterator>
+
 using namespace owl::app::layer;
 
 TEST(LayerStack, base) {

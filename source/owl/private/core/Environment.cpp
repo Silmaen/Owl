@@ -10,6 +10,8 @@
 
 #include "core/Environment.h"
 
+#include <format>
+
 namespace owl::core {
 
 auto getEnv(const std::string& iKey) -> std::string {

@@ -10,6 +10,10 @@
 
 #include "window/Window.h"
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
 /**
  * @brief
  *  Namespace for the glfw  elements.

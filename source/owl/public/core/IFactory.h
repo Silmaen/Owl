@@ -9,8 +9,12 @@
 #pragma once
 
 #include "core/Core.h"
+#include "core/Macros.h"
+#include <cstdint>
 #include <string>
+#include <type_traits>
 #include <typeindex>
+#include <vector>
 
 namespace owl::core {
 

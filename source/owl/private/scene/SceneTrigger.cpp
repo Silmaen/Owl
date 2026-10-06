@@ -14,6 +14,9 @@
 #include "scene/Entity.h"
 #include "scene/component/components.h"
 
+#include <cmath>
+#include <cstdint>
+
 namespace owl::scene {
 
 namespace {

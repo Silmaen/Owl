@@ -10,6 +10,14 @@
 
 #include "core/Core.h"
 #include "data/geometry/MeshCursor.h"
+#include "math/vectors.h"
+
+#include <cstddef>
+#include <iterator>
+#include <optional>
+#include <tuple>
+#include <type_traits>
+#include <utility>
 
 namespace owl::data::geometry {
 

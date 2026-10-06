@@ -10,6 +10,7 @@
 
 #include "data/fonts/Font.h"
 #include <list>
+#include <string>
 #include <unordered_map>
 
 /**

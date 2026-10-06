@@ -9,6 +9,10 @@
 #pragma once
 
 #include "core/Core.h"
+#include "math/matrices.h"
+#include "math/vectors.h"
+
+#include <cstdint>
 
 namespace owl::gui {
 /**

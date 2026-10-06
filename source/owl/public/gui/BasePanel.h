@@ -12,6 +12,8 @@
 #include "event/Event.h"
 #include "math/vectors.h"
 
+#include <string>
+
 namespace owl::gui {
 /**
  * @brief

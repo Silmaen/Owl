@@ -12,7 +12,13 @@
 #include <script/ScriptEngine.h>
 #include <script/ScriptInstance.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <format>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 namespace owl::bench {
 

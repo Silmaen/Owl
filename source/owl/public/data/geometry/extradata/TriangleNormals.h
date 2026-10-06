@@ -8,8 +8,14 @@
 
 #pragma once
 
+#include "core/Core.h"
 #include "data/extradata/ExtraDataBase.h"
 #include "data/meshrange/MeshComponentExtraData.h"
+#include "math/vectors.h"
+
+#include <array>
+#include <cstddef>
+#include <string>
 
 namespace owl::data::geometry::extradata {
 /**

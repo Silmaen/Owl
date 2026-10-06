@@ -11,8 +11,13 @@
 #include <data/voxel/ChunkMesher.h>
 #include <data/voxel/TerrainGenerator.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <format>
 #include <random>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace owl::bench {
 

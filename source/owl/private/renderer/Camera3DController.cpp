@@ -10,6 +10,8 @@
 #include "input/Input.h"
 #include "renderer/Camera3DController.h"
 
+#include <cmath>
+
 namespace owl::renderer {
 
 void Camera3DController::onUpdate(const core::Timestep& iTimeStep) {

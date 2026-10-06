@@ -10,6 +10,12 @@
 
 #include <owl.h>
 
+#include <cstdint>
+#include <functional>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 namespace owl::nest {
 /// Modifier flags for keyboard shortcuts.
 enum struct Modifiers : uint8_t {

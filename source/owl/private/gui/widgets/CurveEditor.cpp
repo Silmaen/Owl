@@ -11,6 +11,8 @@
 
 #include <ImCurveEdit.h>
 
+#include <cstdint>
+
 namespace owl::gui::widgets {
 
 namespace {

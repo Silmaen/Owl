@@ -44,6 +44,10 @@
 #include "VoxelPlayer.h"
 #include "VoxelWorld.h"
 
+#include <concepts>
+#include <tuple>
+#include <type_traits>
+
 namespace owl::scene::component {
 /**
  * @brief

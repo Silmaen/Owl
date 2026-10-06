@@ -9,6 +9,9 @@
 #pragma once
 #include <math/math.h>
 
+#include <cmath>
+#include <cstddef>
+
 static constexpr bool matrixCompare(const owl::math::mat4& iFirstMatrix, const owl::math::mat4& iSecondMatrix) {
 	bool same = true;
 	for (size_t col = 0; col < 4; ++col) {

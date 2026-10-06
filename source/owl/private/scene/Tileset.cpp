@@ -10,6 +10,7 @@
 #include "core/external/yaml.h"
 #include "scene/Tileset.h"
 
+#include <cstdint>
 #include <fstream>
 #include <sstream>
 

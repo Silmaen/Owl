@@ -11,6 +11,9 @@
 #include "core/Serializer.h"
 #include "data/fonts/Font.h"
 
+#include <cstdint>
+#include <string>
+
 namespace owl::scene::component {
 /**
  * @brief

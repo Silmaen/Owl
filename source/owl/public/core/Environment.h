@@ -9,6 +9,8 @@
 #pragma once
 #include "core/Core.h"
 
+#include <string>
+
 namespace owl::core {
 
 #ifdef OWL_PLATFORM_WINDOWS

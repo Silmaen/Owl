@@ -9,6 +9,9 @@
 
 #include "gui/widgets/Sequencer.h"
 
+#include <utility>
+#include <vector>
+
 using namespace owl;
 using namespace owl::gui::widgets;
 

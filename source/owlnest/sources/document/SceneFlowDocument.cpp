@@ -30,12 +30,20 @@ OWL_DIAG_POP
 
 #include <algorithm>
 #include <array>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <format>
 #include <fstream>
+#include <limits>
+#include <optional>
 #include <queue>
 #include <regex>
 #include <sstream>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace owl::nest {
 

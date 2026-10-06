@@ -11,6 +11,8 @@
 #include <core/Log.h>
 #include <data/voxel/VoxelWorld.h>
 
+#include <cstddef>
+
 using namespace owl;
 using namespace owl::data::voxel;
 

@@ -8,6 +8,7 @@
 
 #include "testHelper.h"
 
+#include <core/Macros.h>
 #include <renderer/utils/shaderFileUtils.h>
 
 OWL_DIAG_PUSH
@@ -16,6 +17,15 @@ OWL_DIAG_DISABLE_CLANG("-Wshadow")
 OWL_DIAG_DISABLE_GCC("-Wshadow")
 #include <spirv_cross.hpp>
 OWL_DIAG_POP
+
+#include <algorithm>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <ios>
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace {
 

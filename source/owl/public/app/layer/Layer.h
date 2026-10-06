@@ -7,6 +7,7 @@
  */
 
 #pragma once
+#include <string>
 #include <utility>
 
 #include "core/Core.h"

@@ -2,7 +2,10 @@
 #include "testHelper.h"
 
 #include <math/vectors.h>
+#include <cstdint>
 #include <ranges>
+#include <unordered_map>
+#include <vector>
 #include <renderer/gpu/null/Buffer.h>
 #include <renderer/gpu/null/DrawData.h>
 

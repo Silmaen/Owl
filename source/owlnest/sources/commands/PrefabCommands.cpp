@@ -8,6 +8,9 @@
 
 #include "PrefabCommands.h"
 
+#include <format>
+#include <utility>
+
 namespace owl::nest::commands {
 // --- InstantiatePrefabCommand ---
 

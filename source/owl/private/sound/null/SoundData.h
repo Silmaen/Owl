@@ -10,6 +10,8 @@
 
 #include "sound/SoundData.h"
 
+#include <cstdint>
+
 namespace owl::sound::null {
 /**
  * @brief

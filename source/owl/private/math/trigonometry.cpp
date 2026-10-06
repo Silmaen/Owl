@@ -9,6 +9,8 @@
 
 #include "math/trigonometry.h"
 
+#include <cmath>
+
 namespace owl::math {
 
 auto atan2(const float iY, const float iX) -> float { return std::atan2(iY, iX); }

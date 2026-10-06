@@ -8,8 +8,19 @@
 
 #include "testHelper.h"
 
+#include <core/Macros.h>
 #include <data/assets/pack/PackReader.h>
 #include <data/assets/pack/PackWriter.h>
+
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <format>
+#include <fstream>
+#include <ios>
+#include <string>
+#include <vector>
 
 using namespace owl::data::assets::pack;
 

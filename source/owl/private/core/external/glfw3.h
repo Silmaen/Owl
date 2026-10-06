@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "core/Macros.h"
+
 #include <vulkan/vulkan.h>
 
 OWL_DIAG_PUSH

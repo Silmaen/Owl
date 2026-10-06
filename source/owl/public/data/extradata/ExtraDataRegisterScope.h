@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 #include <functional>
+#include <utility>
 
 namespace owl::data::extradata {
 /**

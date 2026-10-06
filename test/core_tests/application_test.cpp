@@ -3,7 +3,9 @@
 
 #include <app/Application.h>
 #include <event/KeyEvent.h>
+#include <filesystem>
 #include <fstream>
+#include <string>
 #include <platform/FileUtils.h>
 #include <renderer/Renderer.h>
 

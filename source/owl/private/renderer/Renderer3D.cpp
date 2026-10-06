@@ -14,6 +14,8 @@
 #include "renderer/gpu/UniformBuffer.h"
 
 #include <array>
+#include <cstdint>
+#include <span>
 
 namespace owl::renderer {
 

@@ -11,7 +11,9 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/Hierarchy.h>
 
+#include <cstddef>
 #include <queue>
+#include <tuple>
 
 namespace owl::nest {
 

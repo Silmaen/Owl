@@ -13,7 +13,9 @@
 #include "renderer/gpu/DrawData.h"
 #include "renderer/gpu/Texture.h"
 
+#include <cstdint>
 #include <span>
+#include <string>
 
 namespace owl::renderer {
 

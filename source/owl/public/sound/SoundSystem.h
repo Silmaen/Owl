@@ -12,6 +12,8 @@
 
 #include <data/assets/AssetLibrary.h>
 
+#include <cstdint>
+
 /**
  * @brief
  *  Namespace for sound management.

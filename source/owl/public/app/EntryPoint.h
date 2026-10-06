@@ -12,6 +12,10 @@
 #include "debug/Profiler.h"
 #include "debug/TrackerClient.h"
 
+#include <cstddef>
+#include <string>
+#include <unordered_map>
+
 /**
  * @brief
  *  Main entry point for the program.

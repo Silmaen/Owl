@@ -9,6 +9,8 @@
 
 #include "core/task/Task.h"
 
+#include <future>
+
 namespace owl::core::task {
 
 Task::Task(const std::function<void()>& iExec, const std::function<void()>& iEnds)

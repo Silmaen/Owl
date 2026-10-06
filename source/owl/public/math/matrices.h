@@ -10,6 +10,14 @@
 
 #include "vectors.h"
 
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <cstddef>
+#include <initializer_list>
+#include <type_traits>
+#include <utility>
+
 namespace owl::math {
 /**
  * @brief

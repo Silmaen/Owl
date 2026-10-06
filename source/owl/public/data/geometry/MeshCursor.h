@@ -11,6 +11,12 @@
 #include "data/geometry/MeshCursorBase.h"
 #include "data/meshrange/MeshComponentExtraData.h"
 
+#include <cstddef>
+#include <optional>
+#include <tuple>
+#include <type_traits>
+#include <utility>
+
 namespace owl::data::geometry {
 
 template<bool IsConst, MeshElementType ElementType, typename... Components>

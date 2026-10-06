@@ -11,6 +11,9 @@
 #include <renderer/gpu/RenderCommand.h>
 #include <renderer/utils/RaycastDDAPass.h>
 
+#include <cstdint>
+#include <vector>
+
 TEST(RaycastDDAPass, initShutdownOnNullBackend) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	owl::renderer::gpu::RenderCommand::create(owl::renderer::gpu::RenderAPI::Type::Null);

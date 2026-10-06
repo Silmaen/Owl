@@ -15,6 +15,7 @@
 #include <cstring>
 #include <fcntl.h>
 #include <filesystem>
+#include <format>
 #include <linux/media.h>
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>

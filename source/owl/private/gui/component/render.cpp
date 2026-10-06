@@ -25,6 +25,9 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
+#include <cstdint>
+#include <format>
+
 using namespace owl::scene;
 using namespace owl::scene::component;
 

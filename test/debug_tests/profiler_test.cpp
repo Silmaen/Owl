@@ -3,6 +3,8 @@
 
 #include <debug/Profiler.h>
 
+#include <filesystem>
+
 using namespace owl::debug;
 
 TEST(profiler, creation) {

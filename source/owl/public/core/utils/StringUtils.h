@@ -9,6 +9,7 @@
 #pragma once
 
 #include <core/Core.h>
+#include <cstddef>
 #include <string>
 
 namespace owl::core::utils {

@@ -12,8 +12,11 @@
 #include <core/Log.h>
 #include <renderer/utils/shaderFileUtils.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <vector>
 
 using namespace owl;
 using owl::renderer::gpu::ShaderType;

@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <app/Application.h>
+#include <math/Transform.h>
 #include <renderer/CameraOrtho.h>
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/Renderer.h>
@@ -18,6 +19,11 @@
 #include <scene/component/Tilemap.h>
 
 #include "renderer/RendererRaycastLayer.h"
+
+#include <array>
+#include <cstdint>
+#include <span>
+#include <utility>
 
 using namespace owl;
 using owl::renderer::CameraOrtho;

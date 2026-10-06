@@ -9,6 +9,8 @@
 #include <renderer/gpu/Texture.h>
 #include <renderer/gpu/UniformBuffer.h>
 
+#include <filesystem>
+
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;
 

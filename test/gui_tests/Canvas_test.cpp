@@ -16,6 +16,8 @@
 #include <scene/component/UiRect.h>
 #include <scene/component/components.h>
 
+#include <filesystem>
+
 using namespace owl;
 using namespace owl::scene;
 

@@ -11,6 +11,12 @@
 #include "data/geometry/MeshRangeIterator.h"
 #include "data/geometry/StaticMesh.h"
 
+#include <cstddef>
+#include <limits>
+#include <tuple>
+#include <type_traits>
+#include <utility>
+
 namespace owl::data::geometry {
 
 constexpr size_t INVALID_INDEX = std::numeric_limits<size_t>::max();

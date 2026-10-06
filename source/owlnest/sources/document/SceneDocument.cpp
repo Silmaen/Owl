@@ -16,7 +16,11 @@
 #include <sound/SoundSystem.h>
 
 #include <chrono>
+#include <cmath>
+#include <cstddef>
 #include <fstream>
+#include <tuple>
+#include <vector>
 
 namespace owl::nest {
 

@@ -11,6 +11,9 @@
 #include <core/Log.h>
 #include <data/voxel/Chunk.h>
 
+#include <cstdint>
+#include <string>
+
 using namespace owl;
 using namespace owl::data::voxel;
 

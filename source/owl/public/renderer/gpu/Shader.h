@@ -11,7 +11,11 @@
 #include "core/Core.h"
 #include "math/matrices.h"
 
+#include <cstdint>
 #include <filesystem>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace owl::renderer::gpu {
 /**

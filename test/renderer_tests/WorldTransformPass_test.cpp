@@ -11,6 +11,9 @@
 #include <renderer/gpu/RenderCommand.h>
 #include <renderer/utils/WorldTransformPass.h>
 
+#include <span>
+#include <vector>
+
 TEST(WorldTransformPass, initOnNullBackendSucceeds) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	owl::renderer::gpu::RenderCommand::create(owl::renderer::gpu::RenderAPI::Type::Null);

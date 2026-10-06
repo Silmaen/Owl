@@ -11,6 +11,10 @@
 #include <owl.h>
 #include <renderer/RenderStack.h>
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
 namespace owl::nest {
 /**
  * @brief

@@ -14,6 +14,11 @@
 #include <scene/GameState.h>
 #include <scene/Scene.h>
 
+#include <algorithm>
+#include <cstdint>
+#include <string>
+#include <tuple>
+
 using namespace owl;
 using namespace owl::scene;
 

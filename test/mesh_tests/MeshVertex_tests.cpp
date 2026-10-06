@@ -2,6 +2,9 @@
 
 #include <data/geometry/primitive/MeshVertex.h>
 
+#include <cstdint>
+#include <limits>
+
 using namespace owl::core;
 using namespace owl::math;
 using namespace owl::data::geometry::primitive;

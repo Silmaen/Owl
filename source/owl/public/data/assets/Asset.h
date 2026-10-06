@@ -10,6 +10,9 @@
 
 #include "core/Core.h"
 
+#include <filesystem>
+#include <vector>
+
 /**
  * @namespace owl::data
  * @brief

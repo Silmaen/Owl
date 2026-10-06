@@ -11,6 +11,8 @@
 #include "Core.h"
 
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 namespace owl::core {

@@ -11,6 +11,7 @@
 
 #include <array>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 
 namespace owl::data::voxel {

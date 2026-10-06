@@ -9,6 +9,11 @@
 #pragma once
 #include "core/Timestep.h"
 
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+
 namespace owl::core::task {
 
 class Scheduler;

@@ -8,6 +8,8 @@
 
 #include "SceneSettingsCommands.h"
 
+#include <utility>
+
 namespace owl::nest::commands {
 
 ModifyEnabledRenderersCommand::ModifyEnabledRenderersCommand(std::string iBeforeYaml, std::string iAfterYaml)

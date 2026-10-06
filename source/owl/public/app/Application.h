@@ -20,8 +20,12 @@
 #include "sound/SoundAPI.h"
 #include "window/Window.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <list>
+#include <optional>
+#include <string>
+#include <vector>
 
 // Forward declaration of the program entry point (definition in EntryPoint.h).
 auto main(int iArgc, char* iArgv[]) -> int;

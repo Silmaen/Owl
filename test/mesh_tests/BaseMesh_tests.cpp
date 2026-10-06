@@ -6,6 +6,8 @@
 #include <data/geometry/extradata/TriangleNormals.h>
 #include <data/geometry/extradata/VertexNormal.h>
 
+#include <utility>
+
 using namespace owl::core;
 using namespace owl::math;
 using namespace owl::data::geometry;

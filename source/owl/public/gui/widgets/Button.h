@@ -10,6 +10,7 @@
 #include "Widget.h"
 #include "math/vectors.h"
 #include <functional>
+#include <string>
 
 namespace owl::gui::widgets {
 /**

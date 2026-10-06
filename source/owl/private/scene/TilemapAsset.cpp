@@ -11,6 +11,7 @@
 #include "scene/TilemapAsset.h"
 
 #include <charconv>
+#include <cstdint>
 #include <fstream>
 #include <sstream>
 

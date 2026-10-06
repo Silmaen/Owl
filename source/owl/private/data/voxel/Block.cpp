@@ -11,6 +11,7 @@
 #include "data/voxel/Block.h"
 
 #include <array>
+#include <cstdint>
 #include <sstream>
 
 namespace owl::data::voxel {

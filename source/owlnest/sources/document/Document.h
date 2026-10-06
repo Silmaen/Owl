@@ -12,6 +12,10 @@
 
 #include "../UndoManager.h"
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
 namespace owl::nest {
 
 class EditorLayer;

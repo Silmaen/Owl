@@ -11,6 +11,10 @@
 #include "core/external/glfw3.h"
 #include "window/Window.h"
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
 /**
  * @brief
  *  Namespace for the glfw  elements.

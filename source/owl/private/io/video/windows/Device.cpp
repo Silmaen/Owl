@@ -16,6 +16,8 @@
 #include <mfapi.h>
 #include <windows.h>
 
+#include <cstdint>
+
 namespace owl::io::video::windows {
 
 namespace {

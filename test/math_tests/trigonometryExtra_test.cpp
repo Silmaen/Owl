@@ -10,6 +10,8 @@
 
 #include <math/trigonometry.h>
 
+#include <numbers>
+
 using namespace owl::math;
 
 TEST(math, RadiansDegrees) {
@@ -34,8 +36,8 @@ TEST(math, RadiansDegreesVector) {
 }
 
 TEST(math, Atan2Values) {
-	EXPECT_NEAR(atan2(0.f, 1.f), 0.f, 0.0001f);
-	EXPECT_NEAR(atan2(1.f, 0.f), std::numbers::pi_v<float> / 2.f, 0.0001f);
-	EXPECT_NEAR(atan2(0.f, -1.f), std::numbers::pi_v<float>, 0.0001f);
-	EXPECT_NEAR(atan2(-1.f, 0.f), -std::numbers::pi_v<float> / 2.f, 0.0001f);
+	EXPECT_NEAR(owl::math::atan2(0.f, 1.f), 0.f, 0.0001f);
+	EXPECT_NEAR(owl::math::atan2(1.f, 0.f), std::numbers::pi_v<float> / 2.f, 0.0001f);
+	EXPECT_NEAR(owl::math::atan2(0.f, -1.f), std::numbers::pi_v<float>, 0.0001f);
+	EXPECT_NEAR(owl::math::atan2(-1.f, 0.f), -std::numbers::pi_v<float> / 2.f, 0.0001f);
 }

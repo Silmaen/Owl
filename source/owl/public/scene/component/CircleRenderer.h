@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Serializer.h"
+#include "math/vectors.h"
 
 namespace owl::scene::component {
 /**

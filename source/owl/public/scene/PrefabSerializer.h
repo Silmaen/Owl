@@ -10,7 +10,11 @@
 
 #include "Scene.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
 #include <optional>
+#include <string>
 
 namespace owl::scene {
 /**

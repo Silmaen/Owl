@@ -9,6 +9,8 @@
 
 #include <math/Curve.h>
 
+#include <cstddef>
+
 using owl::math::Curve;
 using owl::math::CurveInterpolation;
 using owl::math::Keyframe;

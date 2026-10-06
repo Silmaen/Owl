@@ -19,6 +19,8 @@
 #include "renderer/RendererVoxel.h"
 #include "renderer/RendererVoxelLayer.h"
 
+#include <cstdint>
+
 namespace owl::renderer {
 
 Renderer::State Renderer::m_internalState = State::Created;

@@ -11,8 +11,10 @@
 #include "app/layer/Layer.h"
 #include "renderer/gpu/Texture.h"
 
+#include <cstdint>
 #include <functional>
 #include <string>
+#include <utility>
 
 struct ImFont;
 

@@ -10,6 +10,13 @@
 
 #include <owl.h>
 
+#include <atomic>
+#include <filesystem>
+#include <functional>
+#include <string>
+#include <utility>
+#include <vector>
+
 namespace owl::nest::panel {
 /**
  * @brief

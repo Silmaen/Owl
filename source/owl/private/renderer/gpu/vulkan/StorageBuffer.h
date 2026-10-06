@@ -11,6 +11,8 @@
 #include "renderer/gpu/StorageBuffer.h"
 #include <vulkan/vulkan.h>
 
+#include <cstdint>
+
 namespace owl::renderer::gpu::vulkan {
 
 /**

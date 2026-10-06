@@ -13,8 +13,10 @@
 #include "math/vectors.h"
 #include "renderer/gpu/GraphContext.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <functional>
+#include <string>
 
 /**
  * @brief

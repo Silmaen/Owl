@@ -9,6 +9,7 @@
 #include "DocumentManager.h"
 
 #include <algorithm>
+#include <format>
 
 namespace owl::nest {
 

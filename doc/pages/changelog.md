@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Windows build with a recent libstdc++ (MSYS2): every file now includes the standard headers it uses, checked by the `std-includes` Code Style audit and the `linux-include-check` strict-libc++ build (`OWL_INCLUDE_CHECK`).
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
 
 ## [0.2.1] - 2026-06-27

@@ -9,6 +9,10 @@
 #pragma once
 
 #include "core/Core.h"
+#include "math/vectors.h"
+
+#include <cstdint>
+#include <limits>
 
 namespace owl::data::geometry::primitive {
 /**

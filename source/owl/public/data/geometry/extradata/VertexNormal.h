@@ -8,8 +8,12 @@
 
 #pragma once
 
+#include "core/Core.h"
 #include "data/extradata/ExtraDataBase.h"
 #include "data/meshrange/MeshComponentExtraData.h"
+#include "math/vectors.h"
+
+#include <string>
 
 /**
  * @brief

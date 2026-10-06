@@ -3,6 +3,8 @@
 
 #include <core/Core.h>
 
+#include <cstdint>
+
 using namespace owl;
 
 TEST(Core, ptr) {

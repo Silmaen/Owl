@@ -10,6 +10,8 @@
 
 #include "renderer/gpu/StorageBuffer.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu::opengl {
 
 /**

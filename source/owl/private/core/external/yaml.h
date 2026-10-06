@@ -7,11 +7,15 @@
  */
 #pragma once
 
+#include "core/Macros.h"
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_DISABLE_CLANG("-Wshadow")
 #include <yaml-cpp/yaml.h>
 OWL_DIAG_POP
+
+#include <string>
 
 /**
  * @brief

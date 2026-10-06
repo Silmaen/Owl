@@ -10,6 +10,8 @@
 
 #include <scene/component/Hierarchy.h>
 
+#include <format>
+
 namespace owl::nest::commands {
 // --- CreateEntityCommand ---
 

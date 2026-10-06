@@ -11,7 +11,11 @@
 #include <core/Log.h>
 #include <script/LuaEngine.h>
 
+#include <cstdint>
+#include <filesystem>
 #include <fstream>
+#include <string>
+#include <vector>
 
 using namespace owl::script;
 

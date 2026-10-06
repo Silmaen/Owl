@@ -9,7 +9,12 @@
 #pragma once
 
 #include <owl.h>
+
+#include <cstddef>
+#include <filesystem>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace owl::nest {
 /**

@@ -11,6 +11,8 @@
 #include "math/YamlSerializers.h"
 #include "scene/component/RaycastPushWall.h"
 
+#include <cstdint>
+
 namespace owl::scene::component {
 
 void RaycastPushWall::serialize(const core::Serializer& iOut) const {

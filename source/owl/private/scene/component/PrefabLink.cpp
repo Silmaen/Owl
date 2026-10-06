@@ -10,6 +10,8 @@
 #include "core/SerializerImpl.h"
 #include "scene/component/PrefabLink.h"
 
+#include <cstdint>
+
 namespace owl::scene::component {
 
 void PrefabLink::serialize(const core::Serializer& iOut) const {

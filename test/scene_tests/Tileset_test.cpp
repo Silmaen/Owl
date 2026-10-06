@@ -11,6 +11,9 @@
 #include <core/Log.h>
 #include <scene/Tileset.h>
 
+#include <filesystem>
+#include <string>
+
 using namespace owl;
 using namespace owl::scene;
 

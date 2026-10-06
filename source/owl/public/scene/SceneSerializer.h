@@ -11,6 +11,11 @@
 #include "Scene.h"
 #include "core/Serializer.h"
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+#include <vector>
+
 namespace owl::scene {
 
 /**

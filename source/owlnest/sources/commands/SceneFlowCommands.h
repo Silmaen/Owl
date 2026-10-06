@@ -11,6 +11,7 @@
 #include "NodeGraphCommands.h"
 
 #include <filesystem>
+#include <string>
 
 namespace owl::nest {
 

@@ -8,6 +8,10 @@
 
 #include "ComponentCommands.h"
 
+#include <cstdint>
+#include <format>
+#include <utility>
+
 namespace owl::nest::commands {
 
 namespace {

@@ -9,6 +9,8 @@
 
 #include "renderer/gpu/UniformBuffer.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu::null {
 /**
  * @brief

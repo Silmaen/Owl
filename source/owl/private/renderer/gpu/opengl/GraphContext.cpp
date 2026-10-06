@@ -11,6 +11,8 @@
 
 #include "GraphContext.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu::opengl {
 
 GraphContext::GraphContext(GLFWwindow* ioWindow) : mp_windowHandle(ioWindow) {

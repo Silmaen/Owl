@@ -11,6 +11,8 @@
 #include "core/Core.h"
 #include "scene/Entity.h"
 
+#include <string>
+
 namespace owl::scene::component {
 /**
  * @brief

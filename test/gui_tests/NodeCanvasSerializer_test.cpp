@@ -10,6 +10,11 @@
 #include "gui/widgets/NodeCanvas.h"
 #include "gui/widgets/NodeCanvasSerializer.h"
 
+#include <filesystem>
+#include <string>
+#include <utility>
+#include <vector>
+
 using namespace owl;
 using namespace owl::gui::widgets;
 

@@ -8,8 +8,12 @@
 
 #include "testHelper.h"
 
+#include <math/matrixCreation.h>
 #include <renderer/gpu/RenderCommand.h>
 #include <renderer/utils/FrustumCullingPass.h>
+
+#include <array>
+#include <vector>
 
 TEST(FrustumCullingPass, initShutdownOnNullBackend) {
 	owl::core::Log::init(owl::core::Log::Level::Off);

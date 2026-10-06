@@ -14,6 +14,8 @@ OWL_DIAG_DISABLE_CLANG("-Wshadow")
 #include <yaml-cpp/yaml.h>
 OWL_DIAG_POP
 
+#include <fstream>
+
 namespace owl::nest {
 
 void Project::loadFromFile(const std::filesystem::path& iFile) {

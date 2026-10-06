@@ -8,6 +8,9 @@
 
 #pragma once
 
+#include "core/Core.h"
+
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>

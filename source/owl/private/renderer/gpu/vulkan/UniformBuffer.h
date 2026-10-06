@@ -9,6 +9,9 @@
 
 #include "renderer/gpu/UniformBuffer.h"
 
+#include <cstdint>
+#include <string>
+
 namespace owl::renderer::gpu::vulkan {
 /**
  * @brief

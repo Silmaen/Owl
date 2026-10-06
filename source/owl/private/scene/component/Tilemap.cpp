@@ -12,6 +12,7 @@
 #include "scene/component/Tilemap.h"
 
 #include <charconv>
+#include <cstdint>
 
 namespace owl::scene::component {
 

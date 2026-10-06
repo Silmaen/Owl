@@ -21,6 +21,14 @@
 #include <window/Window.h>
 
 #include <chrono>
+#include <cmath>
+#include <cstddef>
+#include <fstream>
+#include <ios>
+#include <optional>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")

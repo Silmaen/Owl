@@ -10,6 +10,8 @@
 
 #include "core/Serializer.h"
 
+#include <cstdint>
+
 namespace owl::scene::component {
 /**
  * @brief

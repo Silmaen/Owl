@@ -10,6 +10,10 @@
 
 #include "Document.h"
 
+#include <cstddef>
+#include <string>
+#include <vector>
+
 namespace owl::nest {
 /**
  * @brief

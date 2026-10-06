@@ -11,6 +11,11 @@
 #include "event/Event.h"
 #include "math/vectors.h"
 
+#include <cstdint>
+#include <filesystem>
+#include <format>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace owl::event {

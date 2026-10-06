@@ -10,6 +10,8 @@
 
 #include "renderer/gpu/RenderAPI.h"
 
+#include <cstdint>
+
 /**
  * @brief
  *  Headless / null-backend implementations of the renderer abstractions.

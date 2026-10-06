@@ -11,6 +11,7 @@
 #include <owl.h>
 
 #include <chrono>
+#include <cstddef>
 #include <string>
 
 namespace owl::nest {

@@ -8,7 +8,9 @@
 
 #include "NodeGraphCommands.h"
 
+#include <cstdint>
 #include <typeinfo>
+#include <utility>
 
 namespace owl::nest::commands {
 // --- AddNodeCommand --------------------------------------------------------

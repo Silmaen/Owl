@@ -13,6 +13,9 @@
 #include <core/Log.h>
 #include <core/Macros.h>
 
+#include <cstddef>
+#include <utility>
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wswitch-enum")
 namespace owl::nest::codeEditor {

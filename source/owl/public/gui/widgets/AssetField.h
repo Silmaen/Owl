@@ -11,6 +11,7 @@
 #include "core/Core.h"
 #include "renderer/gpu/Texture.h"
 
+#include <cstdint>
 #include <filesystem>
 #include <imgui.h>
 

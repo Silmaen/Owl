@@ -2,6 +2,8 @@
 
 #include "mathHelpers.h"
 
+#include <cstddef>
+
 using namespace owl;
 
 OWL_DIAG_PUSH

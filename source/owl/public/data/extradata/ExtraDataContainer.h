@@ -9,6 +9,8 @@
 #pragma once
 
 #include "data/extradata/ExtraDataBase.h"
+#include <cstddef>
+#include <memory>
 #include <vector>
 
 namespace owl::data::extradata {

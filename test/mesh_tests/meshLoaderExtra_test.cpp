@@ -10,6 +10,9 @@
 
 #include <data/geometry/MeshLoader.h>
 
+#include <filesystem>
+#include <fstream>
+
 using namespace owl::core;
 using namespace owl::data;
 

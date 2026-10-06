@@ -13,7 +13,10 @@
 #include <renderer/Renderer2D.h>
 #include <renderer/gpu/Texture.h>
 
+#include <cstdint>
 #include <format>
+#include <string>
+#include <vector>
 
 namespace owl::bench {
 

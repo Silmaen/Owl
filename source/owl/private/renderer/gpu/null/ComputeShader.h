@@ -8,7 +8,10 @@
 
 #pragma once
 
+#include "core/Core.h"
 #include "renderer/gpu/ComputeShader.h"
+
+#include <cstdint>
 
 namespace owl::renderer::gpu::null {
 

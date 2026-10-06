@@ -12,7 +12,10 @@
 #include <scene/Scene.h>
 #include <scene/component/VoxelWorld.h>
 
+#include <cstdint>
 #include <ranges>
+#include <string_view>
+#include <utility>
 
 namespace owl::nest::commands {
 

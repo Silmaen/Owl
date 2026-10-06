@@ -13,6 +13,9 @@
 
 #include <gui/widgets/NodeCanvas.h>
 
+#include <filesystem>
+#include <string>
+
 namespace owl::nest {
 /**
  * @brief

@@ -26,8 +26,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <limits>
 #include <ranges>
+#include <span>
 
 namespace owl::renderer {
 

@@ -5,6 +5,15 @@
 #include <core/task/Scheduler.h>
 #include <core/task/SchedulerImpl.h>
 
+#include <atomic>
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <numeric>
+#include <thread>
+#include <vector>
+
 using namespace owl::core;
 using namespace owl::core::task;
 

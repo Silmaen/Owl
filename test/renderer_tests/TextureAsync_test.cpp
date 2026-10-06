@@ -11,6 +11,9 @@
 #include "renderer/gpu/RenderCommand.h"
 #include "renderer/gpu/Texture.h"
 
+#include <filesystem>
+#include <string>
+
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;
 

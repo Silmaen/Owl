@@ -13,6 +13,8 @@
 #include "renderer/gpu/opengl/UniformBuffer.h"
 #include "renderer/gpu/vulkan/UniformBuffer.h"
 
+#include <cstdint>
+
 namespace owl::renderer::gpu {
 
 auto UniformBuffer::create(uint32_t iSize, uint32_t iBinding, const std::string& iRenderer) -> shared<UniformBuffer> {

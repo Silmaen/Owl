@@ -14,6 +14,9 @@
 #include "event/KeyEvent.h"
 #include "event/MouseEvent.h"
 
+#include <cstdint>
+#include <format>
+
 namespace owl::event {
 
 Event::~Event() = default;

@@ -3,6 +3,9 @@
 
 #include <core/Environment.h>
 
+#include <format>
+#include <string>
+
 using namespace owl::core;
 
 TEST(Environement, variables) {

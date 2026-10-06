@@ -10,6 +10,7 @@
 
 #include <data/voxel/TerrainGenerator.h>
 
+#include <cstdint>
 #include <set>
 
 using namespace owl;

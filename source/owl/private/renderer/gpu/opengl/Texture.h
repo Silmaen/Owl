@@ -10,6 +10,9 @@
 
 #include "renderer/gpu/Texture.h"
 
+#include <cstdint>
+#include <filesystem>
+
 namespace owl::renderer::gpu::opengl {
 /**
  * @brief

@@ -11,6 +11,9 @@
 #include "core/Serializer.h"
 #include "math/vectors.h"
 
+#include <cstdint>
+#include <string>
+
 namespace owl::scene::component {
 /**
  * @brief

@@ -12,6 +12,8 @@
 #include "core/SerializerImpl.h"
 #include "scene/component/components.h"
 
+#include <tuple>
+
 namespace owl::scene::component {
 /**
  * @brief

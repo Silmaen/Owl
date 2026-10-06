@@ -11,6 +11,8 @@
 #include "core/Core.h"
 #include "math/vectors.h"
 
+#include <cstdint>
+
 namespace owl::scene {
 /**
  * @brief

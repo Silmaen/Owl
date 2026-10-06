@@ -11,6 +11,8 @@
 #include "core/Core.h"
 #include "math/vectors.h"
 
+#include <cstdint>
+
 namespace owl::sound {
 /// Opaque handle to an active sound source.
 using SoundHandle = uint64_t;

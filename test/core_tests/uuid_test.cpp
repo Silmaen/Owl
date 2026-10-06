@@ -3,6 +3,9 @@
 
 #include <core/UUID.h>
 
+#include <cstdint>
+#include <functional>
+
 using namespace owl::core;
 
 TEST(UUID, generate) {

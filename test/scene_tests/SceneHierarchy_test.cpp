@@ -13,6 +13,9 @@
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 
+#include <cstdint>
+#include <filesystem>
+
 using namespace owl::scene;
 using namespace owl::scene::component;
 

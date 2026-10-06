@@ -18,6 +18,12 @@ OWL_DIAG_DISABLE_GCC("-Wshadow")
 #include <spirv_cross.hpp>
 OWL_DIAG_POP
 
+#include <filesystem>
+#include <fstream>
+#include <ios>
+#include <sstream>
+#include <string>
+
 using namespace owl;
 
 namespace {

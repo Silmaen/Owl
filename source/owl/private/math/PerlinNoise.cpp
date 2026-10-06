@@ -10,6 +10,7 @@
 #include "math/PerlinNoise.h"
 
 #include <cmath>
+#include <cstdint>
 #include <numeric>
 #include <random>
 

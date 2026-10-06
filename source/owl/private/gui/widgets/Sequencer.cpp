@@ -16,6 +16,8 @@ OWL_DIAG_POP
 
 #include <ImSequencer.h>
 
+#include <cstdint>
+
 namespace owl::gui::widgets {
 
 namespace {

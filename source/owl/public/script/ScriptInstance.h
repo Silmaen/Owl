@@ -10,8 +10,10 @@
 
 #include "ScriptEngine.h"
 
+#include <cstdint>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace owl::script {
 /**

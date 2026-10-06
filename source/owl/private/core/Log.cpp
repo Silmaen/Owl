@@ -19,6 +19,9 @@ OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
 #include <spdlog/sinks/stdout_color_sinks.h>
 OWL_DIAG_POP
 
+#include <cstdint>
+#include <mutex>
+
 namespace owl::core {
 
 namespace {

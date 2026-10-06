@@ -13,6 +13,13 @@
 #include "data/geometry/MeshRangeIterator.h"
 #include "data/geometry/primitive/MeshVertex.h"
 #include "data/geometry/primitive/Triangle.h"
+#include "math/vectors.h"
+
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <utility>
+#include <vector>
 
 /**
  * @brief

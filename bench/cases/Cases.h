@@ -13,6 +13,8 @@
 #include <core/Core.h>
 #include <scene/Scene.h>
 
+#include <cstdint>
+
 /**
  * @brief
  *  Benchmark groups. Each `run*` function registers and runs the cases of one engine subsystem.

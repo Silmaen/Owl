@@ -12,7 +12,12 @@
 #include "math/vectors.h"
 #include "renderer/gpu/Texture.h"
 
+#include <cstdint>
+#include <filesystem>
+#include <optional>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace owl::gui {
 /// Theme colours used for dynamic SVG icon rendering.

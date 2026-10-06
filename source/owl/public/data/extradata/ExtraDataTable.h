@@ -11,6 +11,9 @@
 
 #include "data/extradata/ExtraDataContainer.h"
 
+#include <cstddef>
+#include <vector>
+
 namespace owl::data::extradata {
 /**
  * @brief

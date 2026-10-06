@@ -5,6 +5,9 @@
 #include <renderer/Renderer.h>
 #include <renderer/Renderer2D.h>
 
+#include <cstdint>
+#include <vector>
+
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;
 using namespace owl::renderer;

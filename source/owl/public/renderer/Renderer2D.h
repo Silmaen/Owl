@@ -16,6 +16,11 @@
 #include "renderer/gpu/Texture.h"
 #include "scene/component/SpriteRenderer.h"
 
+#include <array>
+#include <cstdint>
+#include <string>
+#include <vector>
+
 namespace owl::renderer::gpu {
 class StorageBuffer;
 }// namespace owl::renderer::gpu

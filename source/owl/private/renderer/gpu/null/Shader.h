@@ -10,6 +10,12 @@
 
 #include "renderer/gpu/Shader.h"
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 namespace owl::renderer::gpu::null {
 /**
  * @brief

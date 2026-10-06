@@ -23,6 +23,8 @@ OWL_DIAG_DISABLE_GCC("-Wshadow")
 #include <spirv_cross.hpp>
 OWL_DIAG_POP
 
+#include <sstream>
+
 namespace owl::renderer::gpu::vulkan {
 
 namespace {

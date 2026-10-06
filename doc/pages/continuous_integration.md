@@ -44,6 +44,7 @@ flowchart TD
     Wx --> WxG[GCC]
     Q --> CS[Code Style]
     Q --> CT[Clang-Tidy]
+    Q --> IC[Include Check]
     Q --> SA[Sanitizer Address]
     Q --> ST[Sanitizer Thread]
     Q --> SL[Sanitizer Leak]
@@ -152,7 +153,7 @@ Key inherited properties:
 Lightweight template for the Code Style aggregator only. It runs
 `ci_action.py CodeStyle` which bundles clang-format dry-run + codespell +
 comment-quality + private-member doc audit + cpp-style audit + structural
-audit. Inherits the same VCS root and runs in a single Docker step.
+audit + std-includes audit (see [Include check](#include-check)). Inherits the same VCS root and runs in a single Docker step.
 
 Its bridge gates differ from `GlobalBuild` on all three axes: it runs on draft
 PRs, it runs on doc-only PRs (codespell and the markdown checks are exactly
@@ -172,6 +173,7 @@ for that reason, see [Diff annotations](#diff-annotations).
 | Build/WindowsX64/GCC            | GlobalBuild      | `windows-gcc-debug`                   | main only        |
 | Build/Quality/Code Style        | CodeStylingCheck | `linux-clang-debug`                   | draft + ready    |
 | Build/Quality/Clang-Tidy        | GlobalBuild      | `linux-clang-tidy`                    | ready (no draft) |
+| Build/Quality/Include Check     | GlobalBuild      | `linux-include-check`                 | ready (no draft) |
 | Build/Quality/Sanitizer Address | GlobalBuild      | `linux-sanitizer-address`             | draft + ready    |
 | Build/Quality/Sanitizer thread  | GlobalBuild      | `linux-sanitizer-thread`              | ready (no draft) |
 | Build/Quality/Sanitizer leak    | GlobalBuild      | `linux-sanitizer-leak`                | ready (no draft) |
@@ -281,6 +283,7 @@ Who overrides what today:
 | Build/LinuxX64/Clang            | `bridgeOverride(runOnDraftPr = true, annotateDiff = true)`                  | fast feedback; reference Clang diagnostics            |
 | Build/WindowsX64/Clang          | `bridgeOverride(runOnDraftPr = true, annotateDiff = true, pathFilter = "")` | fast feedback; MinGW-only diagnostics; builds Doxygen |
 | Build/Quality/Clang-Tidy        | `bridgeOverride(annotateDiff = true)`                                       | tidy findings belong to no other BT                   |
+| Build/Quality/Include Check     | `bridgeOverride(annotateDiff = true)`                                       | strict-libc++ errors belong to no other BT            |
 | Build/Quality/Sanitizer Address | `bridgeOverride(runOnDraftPr = true)`                                       | fast feedback                                         |
 | GCC ×3, Sanitizer UB, packagers | `skipAutoPRs()`                                                             | too expensive to run on every PR push                 |
 
@@ -303,6 +306,35 @@ their input:
 
 A doc-only PR is therefore still gated — by the two configurations that can
 actually fail on it.
+
+## Include check
+
+A recent libstdc++ (MSYS2 MinGW) no longer includes `<cstdint>`, `<mutex>`, … transitively, so a file that
+names `uint32_t` or `std::mutex` without including the header breaks the Windows build while every Linux
+configuration stays green — the precompiled header `owlpch.h` hides the gap. Two complementary gates catch it
+on Linux:
+
+- **`std-includes` (Code Style)** — a lexical audit (`ci/utils/std_includes.py`): every file under `source/`,
+  `test/` and `bench/` must include the standard header of each `std::` symbol, `uint*_t` and `size_t` it names.
+  A `.cpp` may rely on its own header and on `owlpch.h`. Fast, runs on every PR, any platform.
+- **Include Check (`linux-include-check`)** — `ci_action.py IncludeCheck` configures the preset (it sets
+  `OWL_INCLUDE_CHECK=ON`) and builds `owl_include_check`, defined in `cmake/IncludeCheck.cmake`:
+  - `owl_header_check` compiles every header of `source/owl/{public,private}`, `source/owlnest/{sources,runner}`,
+    `test/test_helper` and `bench/` alone in a generated translation unit;
+  - `owl_source_check` compiles every `.cpp` of the engine, the editor, the runner, the tests and the bench again;
+  - both with the flags of the real target, **without the PCH**, against libc++ with
+    `_LIBCPP_REMOVE_TRANSITIVE_INCLUDES` (`-Wno-everything`: only the hard errors matter). Nothing is linked, so
+    the libstdc++-built dependencies are no obstacle.
+
+Run it locally (the build image ships libc++):
+
+```bash
+docker/run.sh poetry run python ci_action.py IncludeCheck linux-include-check
+docker/run.sh cmake --build output/build/linux-include-check --target owl_header_check   # headers only
+```
+
+The compile check catches project headers that are not self-contained too (a missing `core/Macros.h`), which
+the lexical audit cannot see; the lexical audit catches what libc++ happens to provide transitively.
 
 ## Code Style serialisation
 
@@ -390,10 +422,10 @@ GNU/clang (`file:42:7: error: …`) and MSVC shapes.
 
 Two consequences for this repository:
 
-1. **Annotations are enabled on four configurations only** — Linux x64 Clang,
-   Windows x64 Clang, Clang-Tidy and Code Style. The same compile error
-   reported by six configurations would otherwise be annotated six times on the
-   same line; these four are the ones whose findings are distinct.
+1. **Annotations are enabled on five configurations only** — Linux x64 Clang,
+   Windows x64 Clang, Clang-Tidy, Include Check and Code Style. The same compile
+   error reported by six configurations would otherwise be annotated six times
+   on the same line; these five are the ones whose findings are distinct.
 2. **`ci/actions/code_style.py` prints in that shape on purpose.** Every
    finding goes through its `_diag()` helper as
    `<repo-relative path>:<line>:<column>: error: <check>: <message>`, and the

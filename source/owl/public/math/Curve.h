@@ -10,6 +10,8 @@
 
 #include "core/Core.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 namespace owl::math {

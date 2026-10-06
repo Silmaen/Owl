@@ -14,6 +14,9 @@
 
 #include <algorithm>
 #include <array>
+#include <cstdint>
+#include <cstdio>
+#include <format>
 #include <fstream>
 #include <sstream>
 

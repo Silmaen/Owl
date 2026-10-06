@@ -11,6 +11,11 @@
 #include <core/Log.h>
 #include <data/voxel/Block.h>
 
+#include <array>
+#include <cstddef>
+#include <cstdint>
+#include <string>
+
 using namespace owl;
 using namespace owl::data::voxel;
 

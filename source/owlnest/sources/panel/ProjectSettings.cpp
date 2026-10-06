@@ -12,6 +12,13 @@
 #include <imgui_stdlib.h>
 #include <renderer/RenderLayerFactory.h>
 
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <filesystem>
+#include <format>
+#include <utility>
+
 namespace owl::nest::panel {
 
 namespace {

@@ -10,6 +10,11 @@
 
 #include "core/Core.h"
 
+#include <cstdint>
+#include <string>
+#include <utility>
+#include <vector>
+
 namespace owl::renderer::gpu {
 /**
  * @brief

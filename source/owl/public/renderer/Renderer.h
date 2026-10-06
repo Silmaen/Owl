@@ -15,7 +15,9 @@
 #include "renderer/CameraOrtho.h"
 #include "renderer/RenderStack.h"
 
+#include <cstdint>
 #include <functional>
+#include <string>
 
 /**
  * @brief

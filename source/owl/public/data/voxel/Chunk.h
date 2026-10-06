@@ -11,6 +11,7 @@
 #include "data/voxel/Block.h"
 #include "math/vectors.h"
 
+#include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>

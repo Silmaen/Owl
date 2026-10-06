@@ -18,6 +18,10 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 #include <imgui.h>
 OWL_DIAG_POP
 
+#include <algorithm>
+#include <cstddef>
+#include <vector>
+
 namespace owl::nest::codeEditor {
 
 SvgPreview::SvgPreview() = default;

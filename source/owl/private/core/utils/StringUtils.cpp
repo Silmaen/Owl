@@ -10,6 +10,8 @@
 
 #include "core/utils/StringUtils.h"
 
+#include <format>
+
 namespace owl::core::utils {
 
 auto sizeToString(const size_t iSize) -> std::string {

@@ -11,6 +11,9 @@
 
 #include <stb_image.h>
 
+#include <cstdint>
+#include <span>
+
 namespace owl::renderer {
 
 namespace {

@@ -12,6 +12,14 @@
 #include "Descriptors.h"// for TextureData
 #include <vulkan/vulkan.h>
 
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <span>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 namespace owl::renderer::gpu::vulkan::internal {
 
 /**

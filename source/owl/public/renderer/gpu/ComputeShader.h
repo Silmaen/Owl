@@ -9,6 +9,10 @@
 #pragma once
 
 #include "StorageBuffer.h"
+#include "core/Core.h"
+
+#include <cstdint>
+#include <string>
 
 namespace owl::renderer::gpu {
 

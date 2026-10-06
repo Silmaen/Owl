@@ -12,6 +12,8 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <cstdint>
+
 namespace owl::scene::component {
 
 void Canvas::serialize(const core::Serializer& iOut) const {

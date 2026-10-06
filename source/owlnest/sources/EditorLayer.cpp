@@ -30,9 +30,18 @@
 
 #include <imgui_stdlib.h>
 
+#include <algorithm>
+#include <array>
 #include <chrono>
+#include <cstdint>
 #include <cstdlib>
+#include <format>
+#include <fstream>
 #include <sstream>
+#include <string_view>
+#include <tuple>
+#include <unordered_map>
+#include <utility>
 
 
 namespace owl::nest {

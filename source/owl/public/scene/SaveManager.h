@@ -11,7 +11,11 @@
 #include "Scene.h"
 #include "physics/PhysicCommand.h"
 
+#include <cstdint>
 #include <filesystem>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace owl::scene {
 /**

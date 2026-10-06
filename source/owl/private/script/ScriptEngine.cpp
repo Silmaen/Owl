@@ -14,6 +14,8 @@
 #include "script/LuaBindings.h"
 #include "script/LuaEngine.h"
 
+#include <cstdint>
+
 namespace owl::script {
 class ScriptEngine::Impl {
 public:

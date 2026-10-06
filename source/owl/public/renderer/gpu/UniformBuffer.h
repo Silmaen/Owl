@@ -8,6 +8,11 @@
 
 #pragma once
 
+#include "core/Core.h"
+
+#include <cstdint>
+#include <string>
+
 namespace owl::renderer::gpu {
 /**
  * @brief

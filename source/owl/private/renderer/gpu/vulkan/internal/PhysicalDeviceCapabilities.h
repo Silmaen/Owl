@@ -10,6 +10,12 @@
 
 #include <vulkan/vulkan.h>
 
+#include <cstddef>
+#include <cstdint>
+#include <limits>
+#include <string>
+#include <vector>
+
 namespace owl::renderer::gpu::vulkan::internal {
 /**
  * @brief

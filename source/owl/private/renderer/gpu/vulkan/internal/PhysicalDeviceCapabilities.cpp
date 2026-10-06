@@ -17,6 +17,9 @@
 
 #include <vulkan/vulkan.h>
 
+#include <format>
+#include <iterator>
+
 namespace owl::renderer::gpu::vulkan::internal {
 
 PhysicalDeviceCapabilities::PhysicalDeviceCapabilities(const VkPhysicalDevice& iDev) : device(iDev) {

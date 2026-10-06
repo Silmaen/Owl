@@ -11,6 +11,9 @@
 #include "renderer/gpu/Buffer.h"
 #include <vulkan/vulkan.h>
 
+#include <cstdint>
+#include <vector>
+
 namespace owl::renderer::gpu::vulkan {
 /**
  * @brief

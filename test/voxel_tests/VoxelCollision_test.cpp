@@ -10,6 +10,8 @@
 
 #include <data/voxel/VoxelCollision.h>
 
+#include <cstdint>
+
 using namespace owl;
 using namespace owl::data::voxel;
 

@@ -10,6 +10,12 @@
 
 #include "core/IFactory.h"
 
+#include <cstdint>
+#include <map>
+#include <string>
+#include <typeindex>
+#include <vector>
+
 namespace owl::core {
 /**
  * @brief

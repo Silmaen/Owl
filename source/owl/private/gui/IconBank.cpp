@@ -13,8 +13,13 @@
 
 #include "core/external/lunasvg.h"
 
+#include <cctype>
+#include <cmath>
+#include <cstdint>
 #include <cstring>
+#include <format>
 #include <fstream>
+#include <iterator>
 #include <span>
 #include <stb_image.h>
 

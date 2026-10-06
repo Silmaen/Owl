@@ -15,6 +15,9 @@
 #include <scene/Tileset.h>
 #include <scene/component/Tilemap.h>
 
+#include <string>
+#include <utility>
+
 using namespace owl;
 using owl::renderer::CameraOrtho;
 using owl::renderer::Renderer;

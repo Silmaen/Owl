@@ -13,7 +13,12 @@
 #include <scene/Entity.h>
 #include <scene/SceneSerializer.h>
 
+#include <algorithm>
+#include <chrono>
+#include <filesystem>
 #include <format>
+#include <string>
+#include <vector>
 
 namespace owl::bench {
 

@@ -11,6 +11,10 @@
 #include "core/Core.h"
 #include "data/geometry/StaticMesh.h"
 
+#include <filesystem>
+#include <string>
+#include <vector>
+
 namespace owl::data {
 /**
  * @brief

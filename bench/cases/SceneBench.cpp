@@ -11,7 +11,12 @@
 #include <scene/Entity.h>
 #include <scene/component/components.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <format>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace owl::bench {
 

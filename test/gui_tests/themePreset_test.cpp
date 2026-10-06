@@ -10,6 +10,8 @@
 
 #include <gui/Theme.h>
 
+#include <filesystem>
+
 using namespace owl::gui;
 using namespace owl::core;
 

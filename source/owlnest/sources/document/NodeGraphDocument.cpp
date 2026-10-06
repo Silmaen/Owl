@@ -18,6 +18,10 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 #include <imgui_internal.h>
 OWL_DIAG_POP
 
+#include <cstdint>
+#include <format>
+#include <tuple>
+
 namespace owl::nest {
 
 NodeGraphDocument::NodeGraphDocument() = default;

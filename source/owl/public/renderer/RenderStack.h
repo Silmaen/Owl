@@ -10,6 +10,7 @@
 
 #include "RenderLayer.h"
 
+#include <string>
 #include <vector>
 
 namespace owl::renderer {

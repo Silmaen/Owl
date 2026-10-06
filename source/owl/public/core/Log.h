@@ -9,7 +9,10 @@
 #pragma once
 
 #include "core/Core.h"
+#include <cstdint>
 #include <format>
+#include <string_view>
+#include <utility>
 
 namespace owl::debug {
 

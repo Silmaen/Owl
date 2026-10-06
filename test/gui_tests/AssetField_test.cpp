@@ -9,6 +9,8 @@
 
 #include "gui/widgets/AssetField.h"
 
+#include <string>
+
 using namespace owl::gui::widgets;
 
 TEST(AssetField, IsPathOfKindAcceptsTextureExtensions) {

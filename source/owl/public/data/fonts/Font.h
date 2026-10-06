@@ -13,6 +13,9 @@
 
 #include "math/box.h"
 
+#include <filesystem>
+#include <string>
+
 namespace owl::data::fonts {
 
 struct MsdfData;

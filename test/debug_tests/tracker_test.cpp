@@ -5,6 +5,10 @@
 #include <debug/TrackerClient.h>
 #include <math/matrices.h>
 
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+
 using namespace owl::debug;
 
 namespace {

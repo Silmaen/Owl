@@ -17,6 +17,9 @@
 #include "scene/component/PrefabLink.h"
 #include "scene/component/componentsSerialization.h"
 
+#include <cstdint>
+#include <exception>
+#include <format>
 #include <fstream>
 #include <queue>
 

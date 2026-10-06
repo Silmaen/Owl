@@ -18,6 +18,8 @@
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 
+#include <cstdint>
+
 namespace owl::renderer {
 
 namespace {

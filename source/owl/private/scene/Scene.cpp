@@ -42,8 +42,11 @@
 #include "sound/SoundSystem.h"
 #include "window/Window.h"
 
+#include <cmath>
+#include <cstdint>
 #include <limits>
 #include <mutex>
+#include <tuple>
 
 namespace owl::scene {
 

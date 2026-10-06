@@ -21,6 +21,10 @@
 #include <scene/component/UiText.h>
 #include <scene/component/components.h>
 
+#include <cstdint>
+#include <filesystem>
+#include <format>
+
 using namespace owl;
 using namespace owl::scene;
 

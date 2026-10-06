@@ -25,6 +25,8 @@
 #include <gtest/gtest.h>
 
 #include <string>
+#include <variant>
+#include <vector>
 
 using owl::nest::codeEditor::InlineKind;
 using owl::nest::codeEditor::MarkdownDocument;

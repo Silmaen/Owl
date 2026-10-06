@@ -22,6 +22,10 @@ OWL_DIAG_POP
 
 #include "renderer/Renderer.h"
 
+#include <cctype>
+#include <format>
+#include <mutex>
+
 namespace owl::renderer::utils {
 
 auto getCacheDirectory(const std::string& iRenderer, const std::string& iRendererApi) -> std::filesystem::path {

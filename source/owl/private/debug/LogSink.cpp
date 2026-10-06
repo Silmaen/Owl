@@ -10,6 +10,9 @@
 
 #include "debug/LogSink.h"
 
+#include <deque>
+#include <mutex>
+
 namespace owl::debug {
 
 void LogBuffer::push(LogEntry iEntry) {

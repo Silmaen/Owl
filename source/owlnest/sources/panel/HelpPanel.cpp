@@ -22,6 +22,8 @@ OWL_DIAG_POP
 
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
+#include <exception>
 #include <fstream>
 #include <sstream>
 

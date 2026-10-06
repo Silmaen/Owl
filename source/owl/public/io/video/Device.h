@@ -10,6 +10,10 @@
 #include "core/Core.h"
 #include "renderer/gpu/Texture.h"
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
 namespace owl::io::video {
 /**
  * @brief

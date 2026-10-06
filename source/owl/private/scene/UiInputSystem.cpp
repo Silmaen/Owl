@@ -19,6 +19,7 @@
 #include "script/ScriptInstance.h"
 
 #include <algorithm>
+#include <cstdint>
 
 namespace owl::scene {
 

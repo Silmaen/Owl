@@ -10,6 +10,8 @@
 
 #include <math/vectors.h>
 
+#include <cstdint>
+
 using namespace owl::math;
 
 // ---------- Default construction for various scalar types ----------

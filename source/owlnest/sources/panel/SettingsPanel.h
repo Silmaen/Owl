@@ -11,6 +11,8 @@
 #include "../ActionRegistry.h"
 #include "../EditorSettings.h"
 
+#include <string>
+
 namespace owl::nest::panel {
 /**
  * @brief
