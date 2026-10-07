@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Benchmarks in CI: `owl_bench` compiled on every pull request (`linux-clang-debug`), run nightly on `main` by the `Bench` action against `bench/baseline/linux-bench.json`; a median slower by more than 15 % twice fails the build.
 - Optional Conan binary cache (`OWL_CONAN_CACHE_URL`, remote `owl-cache`): read before ConanCenter, filled by every CI build with the binaries of Owl's graph it built, even when the install fails midway, skipped with a warning when unreachable.
 - `PR Ready` composite TeamCity configuration: red when any ready-PR configuration is red, the single check to require on `main`.
 - Conan profiles for Windows MinGW (`windows-clang`, `windows-gcc`), DLLs deployed next to the binaries, provider selectable through `OWL_DEPENDENCY_PROVIDER` (environment and TeamCity parameter).

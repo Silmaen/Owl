@@ -15,6 +15,7 @@
       "name": "linux-clang-tidy",
       "inherits": "linux-clang-debug",
       "cacheVariables": {
+        "OWL_BENCHMARK": "OFF",
         "OWL_ENABLE_CLANG_TIDY": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "OFF",
@@ -45,6 +46,7 @@
       "name": "linux-sanitizer-address",
       "inherits": "linux-clang-debug",
       "cacheVariables": {
+        "OWL_BENCHMARK": "OFF",
         "OWL_ENABLE_ADDRESS_SANITIZER": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON",
@@ -60,6 +62,7 @@
       "name": "linux-sanitizer-thread",
       "inherits": "linux-clang-debug",
       "cacheVariables": {
+        "OWL_BENCHMARK": "OFF",
         "OWL_ENABLE_THREAD_SANITIZER": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "ON",
@@ -75,10 +78,25 @@
       "name": "linux-sanitizer-undefined-behavior",
       "inherits": "linux-clang-debug",
       "cacheVariables": {
+        "OWL_BENCHMARK": "OFF",
         "OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "OFF",
         "OWL_TEST_SHUFFLE": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": ""
+        }
+      }
+    },
+    {
+      "name": "linux-bench",
+      "inherits": "linux-clang-release",
+      "cacheVariables": {
+        "OWL_BENCHMARK": "ON",
+        "OWL_TESTING": "OFF",
+        "OWL_BUILD_NEST": "OFF"
       },
       "vendor": {
         "silmaen": {

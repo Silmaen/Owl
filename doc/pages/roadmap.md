@@ -160,7 +160,8 @@ up. No new gameplay feature ([details](design/foundations.md)).
 - ![Done][done] Phase B — editor tests: `owlnest_tests` (undo, every command family, snapshots)
 - ![Done][done] Phase B — image tests on lavapipe / llvmpipe, validation clean, OpenGL GLSL fallback (PR-18)
 - ![Planned][planned] Phase B — tests without a window: scripted headless runner
-- ![Planned][planned] Phase B — module dependency check, CI tooling tests, benchmarks with a regression threshold
+- ![Done][done] Phase B — benchmarks in CI: compiled on every PR, nightly run against a baseline (+15 % fails)
+- ![Planned][planned] Phase B — module dependency check, CI tooling tests
 - ![Planned][planned] Phase C — Vulkan foundation first, as soon as the image tests land ([RHI](design/owl-rhi.md))
 - ![Planned][planned] Phase C — Owl RHI named, OpenGL frozen as fallback, backend interface ready for more
 - ![Planned][planned] Phase C — ABI cleanup, world per scene, phased systems, open component registry
