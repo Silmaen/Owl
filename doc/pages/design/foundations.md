@@ -28,13 +28,12 @@ The biggest unknowns of the release come first, so that they surface while the p
 after this phase builds on the new dependency chain, so the phase closes before phases A to D start. The OwlEngine
 Conan package is the one exception: it moves to v1.0.0 ([Stable release](stable-release.md)).
 
-- ![In Progress][progress] Conan 2 migration from DepManager, ConanCenter first (see [Conan migration](conan-migration.md))
-    - `linux-clang-release` builds and passes its tests on Conan (`-DOWL_DEPENDENCY_PROVIDER=conan`), with local
-      recipes for Slang, ufbx, imgui_color_text_edit, ImGuizmo 1.10, nfd-extended and the msdf-atlas-gen library;
-      tinyobjloader steps back to rc10; tinyxml2, zeus and debugbreak removed
-    - Every Linux preset (GCC / Clang release and debug, coverage, clang-tidy, the sanitizers) and the Windows MinGW
-      ones build and pass their tests on Conan in CI, pinned by `conan.lock`, shared libraries copied next to the
-      binaries, binaries shared through the `owl-cache` server; arm64 still to confirm
+- ![Done][done] Conan 2 migration from DepManager, ConanCenter first (see [Conan migration](conan-migration.md))
+    - Local recipes for Slang, ufbx, imgui_color_text_edit, ImGuizmo 1.10, nfd-extended, the msdf-atlas-gen library
+      and libmp3lame; tinyobjloader steps back to rc10; tinyxml2, zeus and debugbreak removed
+    - Every preset builds and passes its tests on Conan in CI: Linux x64 GCC / Clang (release, debug, coverage,
+      clang-tidy, include check, sanitizers), Linux arm64, Windows MinGW GCC / Clang and the packages, pinned by
+      `conan.lock`, shared libraries copied next to the binaries, binaries shared through the `owl-cache` server
     - Versions absent from ConanCenter (EnTT 4, Taskflow 4.1, OpenAL Soft 1.25, msdfgen 1.13): contributed upstream
       or pinned locally until they land
 - ![Planned][planned] Breaking dependency upgrades done here, not later: EnTT 4, Taskflow 4.1 and the lagging ones
@@ -43,8 +42,8 @@ Conan package is the one exception: it moves to v1.0.0 ([Stable release](stable-
   honoured (PR-08: G-01, G-02, G-06, A-19, G-19)
 - ![Planned][planned] OwlEngine Conan package (PR-09: F-06, G-03) — moved to v1.0.0. `conan create .` already
   packages `owlengine` (shared) and `test_package/` builds on `find_package(OwlEngine)`; the CI runs neither
-- ![Planned][planned] DepManager and `owl_engine.py` removed once every preset builds on Conan; until the v1.0.0
-  package, consumers (OwlDrone) use the packaged archive: the CPack install tree and `find_package(OwlEngine)`
+- ![Done][done] DepManager, `depmanager.yml`, `cmake/Depmanager.cmake` and `owl_engine.py` removed; until the
+  v1.0.0 package, consumers (OwlDrone) use the packaged archive: the CPack install tree and `find_package(OwlEngine)`
 
 Exit of the phase: every preset (Linux GCC / Clang, arm64, MinGW) builds and passes the tests on Conan alone, with
 DepManager removed.

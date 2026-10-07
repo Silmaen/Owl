@@ -5,7 +5,6 @@ Action compiling every header and source alone against strict libc++, without th
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.preset import get_build_dir
-from ci.utils.remote import configure_remote, parse_remote_args
 from ci.utils.run import run_command, MODE_BY_COLOR, MODE_FOR_NINJA
 
 CHECK_TARGET = "owl_include_check"
@@ -21,9 +20,8 @@ class IncludeCheck(BaseAction):
     transitive standard include fails here, as it would with a recent libstdc++ (MSYS2 MinGW).
     Nothing is linked, so the check needs no libc++ build of the dependencies.
 
-    Extra arguments (after ``--``): the DepManager remote flags of :class:`Build`
-    (``--remote_url`` / ``--remote_login`` / ``--remote_passwd`` / ``--remote_name``) and
-    ``--target=<name>`` to build only ``owl_header_check`` or ``owl_source_check``.
+    Extra argument (after ``--``): ``--target=<name>`` to build only ``owl_header_check`` or
+    ``owl_source_check``.
     """
 
     def run(self, preset: PresetConfig, extra_args=None) -> int:
@@ -38,10 +36,6 @@ class IncludeCheck(BaseAction):
             log.error(f"IncludeCheck: preset '{preset.cmake_preset}' does not set OWL_INCLUDE_CHECK=ON.")
             return 1
         args = self.parse_extra_args(extra_args)
-        remote_status = configure_remote(parse_remote_args(args))
-        if remote_status != 0:
-            log.error("IncludeCheck: DepManager remote registration failed; aborting before CMake configure.")
-            return remote_status
         cmd = ["cmake", "--preset", preset.cmake_preset, "-S", str(root)]
         if preset.cmake_generator not in [None, ""]:
             cmd += ["-G", preset.cmake_generator]

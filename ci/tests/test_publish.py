@@ -1,7 +1,7 @@
 """
-Tests of the in-repository publication client and of the publish / remote actions' secret handling.
+Tests of the in-repository publication client and of the publish actions' secret handling.
 
-Every HTTP call and DepManager call is mocked: nothing leaves the machine.
+Every HTTP call is mocked: nothing leaves the machine.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import requests
 from ci.actions.publish_doc import PublishDoc
 from ci.actions.publish_package import PublishPackage
 from ci.tests.conftest import FAKE_PASSWORD
-from ci.utils import publish, remote, secrets
+from ci.utils import publish, secrets
 from ci.utils.publish import Revision, normalize_server_url, push_revision
 
 
@@ -131,39 +131,3 @@ def test_publish_actions_require_password_env(action: type, monkeypatch: pytest.
     assert action().run(preset, ["--url=https://h", "--login=bob"]) == 1
     assert publish.DEPLOY_PASSWORD_ENV in masked_caplog.text
 
-
-def test_remote_refuses_password_argument(masked_caplog: pytest.LogCaptureFixture) -> None:
-    config = remote.parse_remote_args({"remote_url": "srvs://h", "remote_passwd": FAKE_PASSWORD})
-    assert remote.configure_remote(config) == 1
-    assert remote.REMOTE_PASSWORD_ENV in masked_caplog.text
-    assert FAKE_PASSWORD not in masked_caplog.text
-
-
-def test_remote_reads_password_from_environment(monkeypatch: pytest.MonkeyPatch,
-                                                masked_caplog: pytest.LogCaptureFixture) -> None:
-    calls: list[tuple[Any, ...]] = []
-
-    class _FakeRemoteCommand:
-        def add(self, *args: Any) -> None:
-            calls.append(args)
-
-    import depmanager.command.remote as dm_remote
-
-    monkeypatch.setattr(dm_remote, "RemoteCommand", _FakeRemoteCommand)
-    monkeypatch.setenv(remote.REMOTE_PASSWORD_ENV, FAKE_PASSWORD)
-    config = remote.parse_remote_args({"remote_url": "srvs://h", "remote_login": "bob"})
-    assert remote.configure_remote(config) == 0
-    assert calls == [("default", "srvs://h", True, "bob", FAKE_PASSWORD)]
-    assert FAKE_PASSWORD not in masked_caplog.text
-
-
-def test_remote_invalid_url_fails(monkeypatch: pytest.MonkeyPatch) -> None:
-    class _ExitingRemoteCommand:
-        def add(self, *args: Any) -> None:
-            raise SystemExit(-666)
-
-    import depmanager.command.remote as dm_remote
-
-    monkeypatch.setattr(dm_remote, "RemoteCommand", _ExitingRemoteCommand)
-    monkeypatch.delenv(remote.REMOTE_PASSWORD_ENV, raising=False)
-    assert remote.configure_remote(remote.parse_remote_args({"remote_url": "nope"})) != 0

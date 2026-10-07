@@ -5,8 +5,8 @@
  * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  *
- * Thin wrapper around the DepManager-provided `md4c` package (see
- * `depmanager.yml`). Only suppresses the strict warnings raised when including
+ * Thin wrapper around the `md4c` package (see
+ * `conanfile.py`). Only suppresses the strict warnings raised when including
  * the third-party header; contains no vendored code.
  */
 

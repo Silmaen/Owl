@@ -130,8 +130,8 @@ appears next to the scene tabs.
 | Markdown | `.md`, `.markdown`                              | built-in    |
 | XML/SVG  | `.xml`, `.svg`                                  | custom      |
 
-- Powered by the **imgui_color_text_edit** widget (MIT), fetched through DepManager
-  (`imgui_color_text_edit` 1.92.7 in `depmanager.yml`; `imgui` aligned to 1.92.7-docking).
+- Powered by the **imgui_color_text_edit** widget (MIT), from a local Conan recipe
+  (`imgui-color-text-edit` in `conan/recipes/`, see [Conan migration](design/conan-migration.md)).
 - Ctrl+S saves in place; `Scene > Close` (or Ctrl+W) closes with a
   discard/cancel prompt when the buffer is dirty.
 - The footer status line shows the detected language, cursor line/column, and
@@ -145,7 +145,7 @@ splitter sets the per-document ratio; the **Text → Preview** ribbon button
 toggles the preview off when more horizontal room is needed.
 
 - Markdown is parsed by `md4c` (CommonMark + GFM tables / strikethrough /
-  autolinks, DepManager package) into a typed block list — `MdHeading`,
+  autolinks, Conan package) into a typed block list — `MdHeading`,
   `MdParagraph`, `MdCodeBlock`, `MdImage`, `MdTable`, `MdList`, `MdBlockQuote`,
   `MdHRule` (`MarkdownDocument.h`). The renderer walks the list and emits
   ImGui calls directly: scaled headings via `PushFont(font, baseSize × ratio)`,

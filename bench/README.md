@@ -1,7 +1,7 @@
 # Owl benchmarks
 
 `owl_bench` is a single executable of CPU micro-benchmarks for the engine, run headless on the Null render
-backend. DepManager has no Google Benchmark package, so it uses a small in-house harness
+backend. It uses a small in-house harness
 (`bench/harness/Bench.h`): `steady_clock`, warm-up samples, auto-calibrated batch size, median, quartiles,
 CSV / JSON output. It is off by default (`OWL_BENCHMARK=OFF`) and never built by CI.
 

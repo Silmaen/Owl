@@ -5,8 +5,8 @@
  * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  *
- * Thin wrapper around the DepManager-provided `imgui_color_text_edit` package
- * (see `depmanager.yml`). Only suppresses the strict warnings raised when
+ * Thin wrapper around the `imgui_color_text_edit` package
+ * (see `conanfile.py`). Only suppresses the strict warnings raised when
  * including the third-party header; contains no vendored code.
  */
 

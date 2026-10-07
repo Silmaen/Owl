@@ -19,7 +19,7 @@
 
 /**
  * @brief
- *  Minimal in-house micro-benchmark harness (no Google Benchmark package in DepManager).
+ *  Minimal in-house micro-benchmark harness (no external benchmark library).
  */
 namespace owl::bench {
 

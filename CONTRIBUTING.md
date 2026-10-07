@@ -69,8 +69,8 @@ No CMakeLists.txt edits needed -- just add a `.cpp` file in the right folder.
 
 ## Adding Dependencies
 
-Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager).
-See [Building](doc/pages/building.md) for details.
+Dependencies come from Conan 2 (`conanfile.py`, pinned by `conan.lock`).
+See [Building](doc/pages/building.md) and [Contributing](doc/pages/contributing.md) for details.
 
 ## Reporting Issues
 

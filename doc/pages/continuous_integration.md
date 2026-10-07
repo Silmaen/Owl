@@ -106,7 +106,6 @@ except the first, which sets `docker_image` from the preset metadata):
 | Step                      | Condition                                                      |
 |---------------------------|----------------------------------------------------------------|
 | Determine docker (native) | always                                                         |
-| Define Remote             | always — configures DepManager remote                          |
 | Clean output              | always                                                         |
 | Clean release             | `release_preset` non-empty + default branch                    |
 | Build                     | always                                                         |
@@ -121,9 +120,9 @@ except the first, which sets `docker_image` from the preset metadata):
 | Publish Documentation     | `run_package` + default branch + `publish_doc`                 |
 Each Dockerised step uses the image set by step 1 (`%docker_image%`, derived
 from the CMake preset's `vendor.silmaen` block).
-**Secrets.** The steps that need a password (Define Remote, Publish Package, Publish Documentation) read it from
-`OWL_REMOTE_PASSWORD` / `OWL_DEPLOY_PASSWORD`, which the Global Build template sets as `env.*` parameters from the
-`%remote_passwd%` / `%deploy_passwd%` password parameters of the server: the secret never appears on a command line,
+**Secrets.** The steps that need a password (Publish Package, Publish Documentation) read it from
+`OWL_DEPLOY_PASSWORD`, which the Global Build template sets as an `env.*` parameter from the `%deploy_passwd%`
+password parameter of the server: the secret never appears on a command line,
 and TeamCity masks its value in the log. This works the same on the Linux (Docker) and Windows agents.
 
 ```mermaid
@@ -407,7 +406,7 @@ it.
 flowchart TD
     MB["mergeBase..HEAD<br/>(git diff)"] --> CPP[".cpp touched"]
     MB --> HDR["headers touched"]
-    MB --> CFG["CMakeLists / *.cmake<br/>.clang-tidy / depmanager.yml"]
+    MB --> CFG["CMakeLists / *.cmake<br/>.clang-tidy / conanfile.py / conan.lock"]
     HDR --> DEPS["ninja -t deps<br/>reverse include closure"]
     DEPS --> TU["every .cpp that includes them,<br/>directly or transitively"]
     CPP --> RUN["clang-tidy -p build_dir"]
@@ -439,14 +438,14 @@ the GitHub lookup failed) the action derives the merge base locally from
 Narrowing is an optimisation; missing a finding is not an acceptable failure
 mode. Any of these analyses everything:
 
-| Situation                                                           | Why                                    |
-|---------------------------------------------------------------------|----------------------------------------|
-| not a pull request (`main`, manual run)                             | nothing to narrow against              |
-| no usable diff base                                                 | the range would be a guess             |
-| the diff is empty against the base                                  | a real PR changes something — bad base |
-| `CMakeLists.txt`, `*.cmake`, `CMakePresets*.json`, `depmanager.yml` | compiler flags or dependencies moved   |
-| `.clang-tidy`                                                       | the check list itself changed          |
-| git, ninja or `.ninja_deps` unavailable                             | the mapping cannot be built            |
+| Situation                                                                       | Why                                    |
+|---------------------------------------------------------------------------------|----------------------------------------|
+| not a pull request (`main`, manual run)                                         | nothing to narrow against              |
+| no usable diff base                                                             | the range would be a guess             |
+| the diff is empty against the base                                              | a real PR changes something — bad base |
+| `CMakeLists.txt`, `*.cmake`, `CMakePresets*.json`, `conanfile.py`, `conan.lock` | compiler flags or dependencies moved   |
+| `.clang-tidy`                                                                   | the check list itself changed          |
+| git, ninja or `.ninja_deps` unavailable                                         | the mapping cannot be built            |
 
 Every fallback is logged with its reason, so a run that looks unexpectedly long
 says why in the build log.
@@ -498,11 +497,10 @@ populated at runtime by the first build step
 `vendor.silmaen` block, so they need no manual upkeep when a preset
 changes.
 
-The credentials (`deploy_url`, `deploy_login`, `deploy_passwd`,
-`remote_url`, `remote_login`, `remote_passwd`) are **not** in the DSL: they
-are set on the server, above this project. `deploy_passwd` and
-`remote_passwd` must be of type *password* there, so TeamCity masks them in
-the build log as a second line of defence. Declaring them in the DSL would
+The credentials (`deploy_url`, `deploy_login`, `deploy_passwd`, and the Conan cache's `conan_server`,
+`conan_user`, `conan_password`) are **not** in the DSL: they are set on the server, above this project.
+`deploy_passwd` and `conan_password` must be of type *password* there, so TeamCity masks them in the build log as
+a second line of defence. Declaring them in the DSL would
 shadow the server values with empty ones, which is why the DSL only
 references them.
 

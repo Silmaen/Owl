@@ -13,9 +13,9 @@ This page explains how to configure, build, and test the Owl engine.
 | CMake      | 3.24+   | Build system generator                        |
 | Ninja      |         | Recommended build backend                     |
 | Clang      | 22+     | Or GCC 14+                                    |
-| Python     | 3.12+   | For CI tooling, DepManager and Conan          |
+| Python     | 3.12+   | For CI tooling and Conan                      |
 | Poetry     |         | Python dependency manager                     |
-| DepManager |         | C++ dependency manager (installed via Poetry) |
+| Conan      | 2       | C++ dependency manager (installed via Poetry) |
 
 Install Python dependencies:
 
@@ -25,76 +25,37 @@ poetry sync --no-root
 
 ### Third-party packages
 
-Owl pulls every native dependency through DepManager, which fetches pre-built packages from a
-remote server during `cmake --preset`. Before the first configure you must:
-
-1. Stand up a [DepManager server](https://github.com/Silmaen/DepManagerServer) (or point Owl at
-   an existing one) and register it via `poetry run depmanager remote add ...`. The Silmaen-hosted
-   server backing the public CI is reachable at `srvs://package.argawaen.net` (read-only for
-   anonymous users; push requires a maintainer login).
-
-   ```bash
-   # First-time setup on a fresh machine — registers the default remote and verifies the connection.
-   poetry sync --no-root
-   poetry run depmanager remote add -n default -u srvs://package.argawaen.net -d
-   poetry run depmanager remote ls   # expect `[ ONLINE ]` next to the entry
-   ```
-
-   The `-d` flag marks the remote as the default; CMake / `dm_load_environment` will pull from
-   it whenever a package isn't in the local cache. Settings live in `~/.edm/config.yaml`; copying
-   that file across machines is the quickest way to re-provision a workstation. If your remote
-   requires authenticated pulls, add `-l <login> -p <passwd>` to the `remote add` invocation
-   (the password is encrypted at rest).
-
-2. Populate that server with the libraries pinned in `depmanager.yml` (Box2D, EnTT, GLFW,
-   ImGui, ImGuizmo, msdfgen, Vulkan SDK, OpenAL, libsndfile, Lua, zstd, Taskflow…).
-
-If you don't have packages built yet, the [OwlDependencies](https://github.com/Silmaen/OwlDependencies)
-repository ships ready-to-use build recipes for every dependency Owl depends on; build them locally
-with `poetry run depmanager build <recipe-dir>` and push them to your server. Once the server is
-populated, the next CMake configure auto-downloads everything Owl needs.
-
-### Third-party packages from Conan (migration in progress)
-
-Every Linux preset can take every dependency from [Conan 2](https://conan.io) and public infrastructure
-(ConanCenter, plus the few recipes kept in `conan/recipes/`), without any DepManager server:
+Every dependency comes from [Conan 2](https://conan.io) and public infrastructure: ConanCenter, plus the few
+recipes kept in `conan/recipes/` (served as the local `owl-local` remote). No server to set up:
 
 ```bash
 poetry sync --no-root   # installs Conan 2 (dev group)
-cmake --preset linux-clang-release -DOWL_DEPENDENCY_PROVIDER=conan
+cmake --preset linux-clang-release
 cmake --build output/build/linux-clang-release
 ```
 
-The configure step runs `conan install` on `conanfile.py` with the profile of the compiler (`conan/profiles/linux-clang`
-or `conan/profiles/linux-gcc`) and the versioned lockfile `conan.lock`, into `output/build/<preset>/conan/`. The
-first run of each compiler builds the packages from source (ConanCenter has no Clang 22 nor GCC 14 binaries); later
-runs reuse the Conan cache. The shared libraries from the cache are copied next to the binaries, as with DepManager.
+The configure step runs `conan install` on `conanfile.py` with the profile of the compiler
+(`conan/profiles/<os>-<compiler>`) and the versioned lockfile `conan.lock`, into `output/build/<preset>/conan/`. The
+first run of each compiler builds the packages from source (ConanCenter has no binaries for these compilers); later
+runs reuse the Conan cache. The shared libraries from the cache are copied next to the binaries.
 `-DOWL_CONAN_HOME=<dir>` selects a dedicated cache, `-DOWL_CONAN_PROFILE` another profile, `-DOWL_CONAN_LOCKFILE=`
-(empty) resolves without the lockfile.
+(empty) resolves without the lockfile, and `OWL_CONAN_CACHE_URL` adds a binary cache server (the CI uses one).
 
-The engine is also a Conan package, checked by `test_package/` (a program built on `find_package(OwlEngine)`):
+The engine is also a Conan package, checked by `test_package/` (a program built on `find_package(OwlEngine)`);
+publishing it is a v1.0.0 item, until then other projects use the packaged archive (`package-engine-*` presets):
 
 ```bash
 poetry run conan create . --profile:all conan/profiles/linux-clang --lockfile conan.lock --lockfile-partial --build=missing
 ```
 
-DepManager stays the default and the only provider of the Windows presets. Preset status, lockfile update command
-and the Windows plan: [Conan migration](design/conan-migration.md).
+Preset status, lockfile update command and the local recipes: [Conan migration](design/conan-migration.md).
 
 ### Troubleshooting a fresh checkout
 
-If `cmake --preset …` aborts with `Missing required package …` for every entry in
-`depmanager.yml`, the remote either isn't registered or isn't reachable. Check in this order:
-
-```bash
-poetry run depmanager remote ls     # any `[ ONLINE ]` remote?
-poetry run depmanager pack ls       # any packages cached locally?
-```
-
-If `remote ls` returns nothing or shows `[ OFFLINE ]`, re-run the `remote add` command above. The
-configuration file the warnings reference (`~/.edm/config.yaml`) is created by the first
-`remote add`; deleting it forces a clean re-setup. Once a working remote is registered, re-run
-`cmake --preset <preset>` to retry the fetch.
+If `cmake --preset …` fails in `conan install`, the output above the error names the package. A package
+`not resolved` usually means `conan.lock` and `conanfile.py` disagree: regenerate the lockfile (design page). A
+build failure of a third party on a new compiler is fixed in its profile or in a local recipe, never by vendoring.
+`-DOWL_CONAN_HOME=<empty dir>` reproduces a fresh agent.
 
 ## Configure and Build
 
@@ -228,7 +189,6 @@ the `poetry run python ci_action.py …` invocation, or to a direct `cmake --pre
 | `OWL_ENABLE_MEMORY_SANITIZER`             | OFF        | MemorySanitizer (Clang-only)                            |
 | `OWL_ENABLE_DOCUMENTATION`                | OFF        | Enable Doxygen documentation generation                 |
 | `OWL_PACKAGING`                           | OFF        | Enable packaging mode                                   |
-| `OWL_DEPENDENCY_PROVIDER`                 | depmanager | Third-party provider: `depmanager` or `conan` (env too) |
 | `OWL_CONAN_PROFILE`                       | (auto)     | Conan profile, default `conan/profiles/<os>-<compiler>` |
 | `OWL_CONAN_HOME`                          | (empty)    | `CONAN_HOME` for the install (empty: Conan's default)   |
 | `OWL_CONAN_BUILD`                         | missing    | Value of `conan install --build`                        |

@@ -70,7 +70,7 @@ The full generated documentation is available online:
 ## Quick Start
 
 ```bash
-# Install Python dependencies (for DepManager and CI tools)
+# Install Python dependencies (Conan and CI tools)
 poetry sync --no-root
 
 # Configure and build
@@ -85,10 +85,6 @@ See [Building](doc/pages/building.md) for the full build guide and all available
 
 ## Dependencies
 
-Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager)
-![GitHub Tag](https://img.shields.io/github/v/tag/Silmaen/DepManager)
-and declared in [depmanager.yml](depmanager.yml). They are automatically downloaded
-during CMake configure.
-
-Dependency recipes are maintained in a separate repository:
-[OwlDependencies](https://github.com/Silmaen/OwlDependencies).
+Dependencies come from [Conan 2](https://conan.io) and [ConanCenter](https://conan.io/center), declared in
+[conanfile.py](conanfile.py) and pinned by `conan.lock`; the few recipes missing from ConanCenter live in
+`conan/recipes/`. They are fetched (or built) during CMake configure, from public infrastructure only.

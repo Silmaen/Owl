@@ -72,7 +72,8 @@ TOOL_LABELS: dict[str, str] = {"tidy": "clang-tidy", "analyzer": "clang static a
 # translation unit needs re-analysing regardless of what else the diff touches.
 FULL_SCOPE_FILES: tuple[str, ...] = (
     ".clang-tidy",
-    "depmanager.yml",
+    "conanfile.py",
+    "conan.lock",
 )
 
 # Same, as patterns: any CMake input.
