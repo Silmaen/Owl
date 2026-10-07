@@ -111,8 +111,7 @@ post-processing — with full 3D editing ([details](design/3d-core.md)).
 
 ## v0.5.0 -- Expected 2027-04-15
 
-**Goal:** Complete the 2D experience — lighting, HUD, text, full 2D physics — and give Owl Nest its visual overhaul
-([details](design/2d-complete.md)).
+**Goal:** Complete the 2D experience — lighting, HUD, text, full 2D physics ([details](design/2d-complete.md)).
 
 - ![Planned][planned] 2D lighting (point / spot lights, normal-mapped sprites, 2D shadows)
 - ![Planned][planned] Full 2D physics: callbacks, queries, joints, 3D-ready API ([Physics](design/physics-api.md))
@@ -120,8 +119,6 @@ post-processing — with full 3D editing ([details](design/3d-core.md)).
 - ![Planned][planned] Dedicated HUD layer and HUD editor mode
 - ![Planned][planned] Tileset editor: compose the atlas from source images
 - ![Planned][planned] First procedural brick for tilemaps ([PCG graphs](design/pcg-graphs.md))
-- ![Planned][planned] Owl Nest visual overhaul: thumbnails, theme, icon set, style guide ([Nest UI](design/nest-ui.md))
-- ![In Progress][progress] Editor camera controls overhaul (presets, view-cube, sensitivity)
 - ![Planned][planned] "Look through scene camera" mode
 - ![Planned][planned] Custom ImGui-based file picker
 - ![Planned][planned] Help panel: mermaid diagrams and rendering polish
@@ -140,7 +137,8 @@ basic gamepad support.
 
 **Goal:** Foundations — phase 0 first and closed before the rest starts (Conan as the only provider, breaking
 dependency upgrades), then every known bug fixed, safety nets, Owl RHI repaired, architecture opened, iteration sped
-up. No new gameplay feature ([details](design/foundations.md)).
+up, Owl Nest made ergonomic. No new gameplay feature ([details](design/foundations.md)). Order, one PR each: the
+rest of A and B, then D, then C, then E.
 
 - ![Done][done] teamcity-github-bridge 1.10.0 wiring (diff annotations, doc-only PRs skip the C++ matrix)
 - ![Done][done] Phase 0 — Conan 2 on ConanCenter, missing recipes first, every preset green in CI ([Conan](design/conan-migration.md))
@@ -162,17 +160,20 @@ up. No new gameplay feature ([details](design/foundations.md)).
 - ![Planned][planned] Phase B — tests without a window: scripted headless runner
 - ![Done][done] Phase B — benchmarks in CI: compiled on every PR, nightly run against a baseline (+15 % fails)
 - ![Planned][planned] Phase B — module dependency check, CI tooling tests
+- ![Planned][planned] Phase D — public dependencies reduced to EnTT (+ `Owl::Gui`)
+- ![Planned][planned] Phase D — hot reload of assets, Slang shaders and Lua scripts
+- ![Planned][planned] Phase D — autosave, crash recovery, session restore, error messages, project templates
+- ![Planned][planned] Phase D — documentation faithful to the code and checked in CI
 - ![Planned][planned] Phase C — Vulkan foundation first, as soon as the image tests land ([RHI](design/owl-rhi.md))
 - ![Planned][planned] Phase C — Owl RHI named, OpenGL frozen as fallback, backend interface ready for more
 - ![Planned][planned] Phase C — ABI cleanup, world per scene, phased systems, open component registry
 - ![Planned][planned] Phase C — optional CMake modules so each game can specialise the engine
 - ![Planned][planned] Phase C — typed Lua binding registry and editor command API
 - ![To evaluate][evaluate] Phase C — SDL3 for windowing, input, dialogues, audio (Wayland is the argument)
-- ![Planned][planned] Phase D — public dependencies reduced to EnTT (+ `Owl::Gui`)
-- ![Planned][planned] Phase D — hot reload of assets, Slang shaders and Lua scripts
-- ![Planned][planned] Phase D — autosave, crash recovery, session restore, error messages, project templates
-- ![Planned][planned] Phase D — Owl Nest interaction basics: tooltips, context menus, drag & drop, text scale / DPI
-- ![Planned][planned] Phase D — documentation faithful to the code and checked in CI
+- ![Planned][planned] Phase E — Owl Nest ergonomics revamp, designed together, no new feature ([Nest UI](design/nest-ui.md))
+- ![Planned][planned] Phase E — interaction basics: tooltips, context menus, drag & drop, text scale / DPI
+- ![Planned][planned] Phase E — visual overhaul: theme, icon set, thumbnails, style guide
+- ![In Progress][progress] Phase E — editor camera controls overhaul (presets, view-cube, sensitivity)
 - ![Planned][planned] Performance targets met: frame, Renderer2D, Vulkan drains, scene load, Box2D, voxel, start-up
 
 ## v0.2.1 -- 2026-06-27
