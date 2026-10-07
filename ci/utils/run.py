@@ -3,6 +3,7 @@ Utility function for running application commands.
 """
 
 from logging import INFO, WARNING, ERROR
+from pathlib import Path
 from typing import IO
 
 from ci import log
@@ -83,12 +84,14 @@ def _strip_ansi_codes(text: str) -> str:
 
 
 def run_command(command: list[str] | str,
-                detection_mode: int = MODE_BY_CONTENT) -> int:
+                detection_mode: int = MODE_BY_CONTENT,
+                cwd: Path | None = None) -> int:
     """
     Runs a potentially long command as a subprocess and logs its output in real-time.
 
     :param command: The command to run as a list of strings.
     :param detection_mode: Log Level detection mode.
+    :param cwd: Working directory of the command (default: the current one).
     :return: The exit code of the command.
     """
     import subprocess
@@ -111,6 +114,7 @@ def run_command(command: list[str] | str,
             errors="replace",
             bufsize=1,
             env=env,
+            cwd=cwd,
         )
 
         # One reader thread per stream: reading them one after the other holds the output back until

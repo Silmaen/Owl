@@ -114,7 +114,8 @@ Every fix lands with its regression test.
 - ![Planned][planned] Module dependency direction checked in CodeStyle; the 10-module cycle broken
   (PR-20: A-01, A-13)
 - ![Planned][planned] Tests for the CI tooling itself (pytest, ruff, mypy) (PR-34: H-04, H-08)
-- ![Planned][planned] Benchmarks in CI with a regression threshold against a stored baseline
+- ![Done][done] Benchmarks in CI with a regression threshold against a stored baseline: compiled on every pull
+  request, run nightly on `main` (`Bench` action, +15 % on the median, suspects measured twice)
 
 ### Packages without a rebuild
 

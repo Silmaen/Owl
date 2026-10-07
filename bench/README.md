@@ -3,7 +3,8 @@
 `owl_bench` is a single executable of CPU micro-benchmarks for the engine, run headless on the Null render
 backend. It uses a small in-house harness
 (`bench/harness/Bench.h`): `steady_clock`, warm-up samples, auto-calibrated batch size, median, quartiles,
-CSV / JSON output. It is off by default (`OWL_BENCHMARK=OFF`) and never built by CI.
+CSV / JSON output. It is off by default (`OWL_BENCHMARK=OFF`); the CI compiles it on every pull request
+(`linux-clang-debug`) and runs it every night on `main` against a baseline (see [In CI](#in-ci)).
 
 ## Build
 
@@ -41,6 +42,22 @@ Groups (name prefixes): `scene`, `serialize`, `prefab`, `renderer2d`, `frame`, `
 compile a shader in the process, which is the case for a full run. `voxel/streaming` streams a procedural world
 through a real `RendererVoxel` layer with frames paced at 60 Hz (about 12 s) and reports the main-thread CPU time per
 frame (p50, p99, peak), the meshing work and the chunk appearance latency.
+
+
+## In CI
+
+The nightly *Benchmarks* configuration builds the `linux-bench` preset (release, no tests, no editor) and runs
+`ci_action.py Bench linux-bench`: `owl_bench` writes `output/bench/linux-bench.json` (published as an artifact),
+compared to `bench/baseline/linux-bench.json`. A benchmark whose median exceeds its baseline by more than 15 %
+is measured again alone, and the faster of the two medians is kept; one still beyond the threshold fails the
+build. Without a baseline the run only reports: commit the artifact of a nightly run as the baseline (or run the
+action with `-- --update-baseline` on the same agent), and refresh it when a change is deliberately slower or
+the agent changes.
+
+```bash
+docker/run.sh poetry run python ci_action.py Build linux-bench
+docker/run.sh poetry run python ci_action.py Bench linux-bench -- --threshold=0.15
+```
 
 ## Reading the output
 
