@@ -186,8 +186,10 @@ if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
     endif ()
 elseif (${PROJECT_PREFIX}_PLATFORM_LINUX)
     set(CMAKE_PLATFORM_USES_PATH_WHEN_NO_SONAME OFF)
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath='$ORIGIN' -Wl,--disable-new-dtags")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-rpath='$ORIGIN' -Wl,--disable-new-dtags")
+    # --as-needed (Ubuntu's gcc default, not clang's): Conan's xorg/system lists every libxcb-*, and a binary
+    # recording all of them as NEEDED does not start on a desktop missing an unused one (libxcb-ewmh2).
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,-rpath='$ORIGIN' -Wl,--disable-new-dtags")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed -Wl,-rpath='$ORIGIN' -Wl,--disable-new-dtags")
 endif ()
 add_dependencies(${CMAKE_PROJECT_NAME}_Base ${CMAKE_PROJECT_NAME}_SuperBase)
 
