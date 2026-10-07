@@ -146,7 +146,7 @@ up. No new gameplay feature ([details](design/foundations.md)).
 - ![Done][done] Phase 0 — Conan 2 on ConanCenter, missing recipes first, every preset green in CI ([Conan](design/conan-migration.md))
 - ![Done][done] Phase 0 — breaking upgrades first: EnTT 4, Taskflow 4.1, lagging dependencies
 - ![Done][done] Phase 0 — DepManager and `owl_engine.py` removed: Conan the only provider, consumers on the packaged archive
-- ![Planned][planned] Phase A — every confirmed correctness bug fixed with its regression test (PR-01 to PR-25)
+- ![In Progress][progress] Phase A — every confirmed correctness bug fixed with its regression test (PR-01 to PR-25)
 - ![Done][done] Phase A — `on_collision` implemented from Box2D contact events (D-07)
 - ![Done][done] Phase A — game export tested end to end, sample run headless ([Export](design/game-export.md))
 - ![In Progress][progress] Phase A — full Wayland: icon, editor multi-window, X11 kept ([details](design/windowing-input.md))
@@ -157,7 +157,7 @@ up. No new gameplay feature ([details](design/foundations.md)).
 - ![Planned][planned] Phase B — package once per platform from the tested release tree, no rebuild ([details](design/foundations.md))
 - ![Done][done] Phase B — Tracy behind `OWL_PROFILE_*`, memory tracker opt-in, cheaper logs (PR-16, [Profiling](profiling.md))
 - ![Done][done] Phase B — runner frame bench: `OwlRunner --frame-bench`, GPU timestamps, Vulkan/OpenGL baseline (PR-17)
-- ![Planned][planned] Phase B — editor tests
+- ![Done][done] Phase B — editor tests: `owlnest_tests` (undo, every command family, snapshots)
 - ![Done][done] Phase B — image tests on lavapipe / llvmpipe, validation clean, OpenGL GLSL fallback (PR-18)
 - ![Planned][planned] Phase B — tests without a window: scripted headless runner
 - ![Planned][planned] Phase B — module dependency check, CI tooling tests, benchmarks with a regression threshold
