@@ -10,7 +10,7 @@ endif ()
 set(${PROJECT_PREFIX}_TEST_ENVIRONMENT
         "ASAN_OPTIONS=halt_on_error=1:detect_leaks=1:detect_stack_use_after_return=1:strict_init_order=1:check_initialization_order=1"
         "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1"
-        "TSAN_OPTIONS=halt_on_error=1:second_deadlock_stack=1")
+        "TSAN_OPTIONS=halt_on_error=1:second_deadlock_stack=1:suppressions=${CMAKE_CURRENT_SOURCE_DIR}/tsan.supp")
 
 add_custom_target(All_Tests)
 # googletest
