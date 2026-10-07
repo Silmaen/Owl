@@ -166,6 +166,7 @@ flowchart LR
 | `quality/Sanitizers.kt`   | The three sanitizers, after Code Style                                               |
 | `quality/PrReady.kt`      | The `PR Ready` merge gate (root project): red when any ready-PR configuration is red |
 | `quality/Analysis.kt`     | Clang-Tidy and Static Analyzer, after Code Style                                     |
+| `quality/Fuzz.kt`         | Nightly fuzzing: `Fuzz` action on `linux-fuzz`, failing inputs published             |
 | `packaging/Package.kt`    | Engine and Owl Nest packages, after the build that tested their platform             |
 
 The configuration ids are the ones the server already knew (`Build_LinuxX64_Clang`, `Build_Quality_ClangTidy`, …),
@@ -182,6 +183,7 @@ says which presets exist, where they run and in which order.
 | Build Linux x64 / GCC, Windows x64 / GCC   | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | Build Linux arm64 / Clang, GCC (emulated)  | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Benchmarks (`linux-bench`)                 | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Fuzzing (`linux-fuzz`)                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Sanitizer Address (+ LSan)                 | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
 | Sanitizer Thread, Sanitizer UB             | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | Clang-Tidy, Static Analyzer, Include Check | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
@@ -255,6 +257,19 @@ their input:
 
 A doc-only PR is therefore still gated — by the two configurations that can
 actually fail on it.
+
+## Fuzzing
+
+`linux-fuzz` builds every `fuzz/*_fuzzer.cpp` (libFuzzer, `OWL_FUZZING=ON`) with AddressSanitizer. The `Fuzz` action
+runs each `owl_*_fuzzer` for five minutes (`-- --time=<seconds>`, `-- --fuzzer=<name>` for one) on
+`output/fuzz/<fuzzer>/corpus`, seeded from `fuzz/corpus/<name>/` when that folder exists. A crash, a leak or a
+timeout fails the build; its input lands in `output/fuzz/<fuzzer>/artifacts/`, published as `fuzz-artifacts`, and
+replays with `bin/<fuzzer> <input>`.
+
+```bash
+docker/run.sh poetry run python ci_action.py Build linux-fuzz
+docker/run.sh poetry run python ci_action.py Fuzz linux-fuzz -- --time=60
+```
 
 ## Include check
 

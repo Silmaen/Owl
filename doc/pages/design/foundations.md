@@ -68,7 +68,7 @@ Every fix lands with its regression test.
 - ![Done][done] Voxel meshed in the scene render pipeline, so voxel scenes show in the exported game
   (PR-06: D-03)
 - ![Done][done] `.owlpack` hardening — validated paths and sizes, exceptions caught, libFuzzer target behind
-  `OWL_FUZZING` (CI job still to wire) (PR-07: D-02, D-28)
+  `OWL_FUZZING`, run nightly by the `Fuzzing` CI job (PR-07: D-02, D-28)
 - ![Done][done] Prefab update / revert in place, with override detection (PR-10: C-02, E-11)
 - ![Done][done] CI secrets kept out of argv and logs, `api.py` replaced by an in-repository upload client, secret
   scan in `CodeStyle` (PR-12: H-01, H-02, G-09, H-12)
