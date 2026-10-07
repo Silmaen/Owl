@@ -70,6 +70,21 @@ auto quotaAlloc(void* iUserData, void* iPtr, const size_t iOldSize, const size_t
 	return block;
 }
 
+#ifdef OWL_PLATFORM_LINUX
+// TSan holds a thread's asynchronous signals until its next intercepted call, which a running Lua loop never makes.
+#if defined(__SANITIZE_THREAD__)
+constexpr bool g_threadSanitizer = true;
+#elif defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+constexpr bool g_threadSanitizer = true;
+#else
+constexpr bool g_threadSanitizer = false;
+#endif
+#else
+constexpr bool g_threadSanitizer = false;
+#endif
+#endif
+
 void overdueHook(lua_State* iState, [[maybe_unused]] lua_Debug* iDebug) {
 	auto* quota = quotaOf(iState);
 	if (!quota->enforced)
@@ -182,11 +197,13 @@ private:
 		ioSlot.firedSequence = sequence;
 		ioSlot.targetSequence.store(sequence, std::memory_order_relaxed);
 #ifdef OWL_PLATFORM_LINUX
-		pthread_kill(ioSlot.thread, signalNumber());
-#else
-		// No thread-directed signal here: set the hook from this thread, as the reference interpreter does.
-		interruptIfOverdue(ioSlot);
+		if constexpr (!g_threadSanitizer) {
+			pthread_kill(ioSlot.thread, signalNumber());
+			return;
+		}
 #endif
+		// No usable thread signal (absent, or held back by TSan): set the hook from here, like the reference lua.c.
+		interruptIfOverdue(ioSlot);
 	}
 
 	std::mutex m_mutex;
