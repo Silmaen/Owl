@@ -28,7 +28,7 @@ auto makeRelativePath(const std::filesystem::path& iAbsolute) -> std::string {
 		return iAbsolute.filename().string();
 	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
 		if (iAbsolute.string().starts_with(assetsPath.string())) {
-			return relative(iAbsolute, assetsPath).string();
+			return relative(iAbsolute, assetsPath).generic_string();
 		}
 	}
 	return iAbsolute.filename().string();
@@ -126,7 +126,7 @@ auto AssetScanner::resolveFont(const std::string& iFontName) -> std::optional<As
 			if (!item.is_regular_file() || item.path().extension() != ".ttf")
 				continue;
 			if (item.path().stem() == iFontName) {
-				const auto rel = relative(item.path(), assetsPath).string();
+				const auto rel = relative(item.path(), assetsPath).generic_string();
 				return AssetReference{.packPath = rel, .diskPath = item.path(), .assetType = AssetType::Font};
 			}
 		}
@@ -389,7 +389,7 @@ void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 			for (const auto& item: std::filesystem::recursive_directory_iterator(shadersDir)) {
 				if (!item.is_regular_file())
 					continue;
-				if (const auto rel = relative(item.path(), assetsPath).string(); !hasAsset(ioAssets, rel)) {
+				if (const auto rel = relative(item.path(), assetsPath).generic_string(); !hasAsset(ioAssets, rel)) {
 					ioAssets.push_back({.packPath = rel, .diskPath = item.path(), .assetType = AssetType::Other});
 				}
 			}
@@ -401,7 +401,7 @@ void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 				const auto ext = item.path().extension().string();
 				if (ext != ".ttf" && ext != ".otf")
 					continue;
-				if (const auto rel = relative(item.path(), assetsPath).string(); !hasAsset(ioAssets, rel)) {
+				if (const auto rel = relative(item.path(), assetsPath).generic_string(); !hasAsset(ioAssets, rel)) {
 					ioAssets.push_back({.packPath = rel, .diskPath = item.path(), .assetType = AssetType::Font});
 				}
 			}
@@ -416,7 +416,7 @@ void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 				const auto ext = item.path().extension().string();
 				if (ext != ".png" && ext != ".jpg" && ext != ".jpeg")
 					continue;
-				if (const auto rel = relative(item.path(), assetsPath).string(); !hasAsset(ioAssets, rel)) {
+				if (const auto rel = relative(item.path(), assetsPath).generic_string(); !hasAsset(ioAssets, rel)) {
 					ioAssets.push_back({.packPath = rel, .diskPath = item.path(), .assetType = AssetType::Texture});
 				}
 			}
