@@ -457,6 +457,38 @@ void RunnerLayer::onDetach() {
 	OWL_TRACE("RunnerLayer: deleted activeScene.")
 }
 
+void RunnerLayer::applyPendingTeleport() {
+	if (!m_pendingTeleportVelocity)
+		return;
+	// Apply stored velocity and position after physics init on new scene.
+	m_pendingTeleportVelocity = false;
+	if (const scene::Entity player = m_activeScene->getPrimaryPlayer()) {
+		// Find target entity and position player there.
+		for (const auto view = m_activeScene->registry.view<scene::component::Tag, scene::component::Transform>();
+			 const auto ent: view) {
+			if (view.get<scene::component::Tag>(ent).tag == m_teleportTargetName) {
+				const auto& targetTransform = view.get<scene::component::Transform>(ent).transform;
+				const float targetRotation = targetTransform.rotation().z();
+				// Rotate the stored velocity by the target rotation.
+				const float cosR = std::cos(targetRotation);
+				const float sinR = std::sin(targetRotation);
+				const math::vec2f finalVelocity = {m_teleportVelocity.x() * cosR - m_teleportVelocity.y() * sinR,
+												   m_teleportVelocity.x() * sinR + m_teleportVelocity.y() * cosR};
+
+				physics::PhysicCommand::setTransform(
+						player, {targetTransform.translation().x(), targetTransform.translation().y()}, targetRotation);
+
+				physics::PhysicCommand::setVelocity(player, finalVelocity);
+				auto& playerTransform = player.getComponent<scene::component::Transform>().transform;
+				playerTransform.translation().x() = targetTransform.translation().x();
+				playerTransform.translation().y() = targetTransform.translation().y();
+				playerTransform.rotation().z() = targetRotation;
+				break;
+			}
+		}
+	}
+}
+
 void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
@@ -477,38 +509,7 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 			m_activeScene->onViewportResize(m_viewportSize);
 			if (m_activeScene->status == scene::Scene::Status::Editing) {
 				m_activeScene->onStartRuntime();
-				if (m_pendingTeleportVelocity) {
-					// Apply stored velocity and position after physics init on new scene.
-					m_pendingTeleportVelocity = false;
-					if (const scene::Entity player = m_activeScene->getPrimaryPlayer()) {
-						// Find target entity and position player there.
-						for (const auto view =
-									 m_activeScene->registry.view<scene::component::Tag, scene::component::Transform>();
-							 const auto ent: view) {
-							if (view.get<scene::component::Tag>(ent).tag == m_teleportTargetName) {
-								const auto& targetTransform = view.get<scene::component::Transform>(ent).transform;
-								const float targetRotation = targetTransform.rotation().z();
-								// Rotate the stored velocity by the target rotation.
-								const float cosR = std::cos(targetRotation);
-								const float sinR = std::sin(targetRotation);
-								const math::vec2f finalVelocity = {
-										m_teleportVelocity.x() * cosR - m_teleportVelocity.y() * sinR,
-										m_teleportVelocity.x() * sinR + m_teleportVelocity.y() * cosR};
-
-								physics::PhysicCommand::setTransform(
-										player, {targetTransform.translation().x(), targetTransform.translation().y()},
-										targetRotation);
-
-								physics::PhysicCommand::setVelocity(player, finalVelocity);
-								auto& playerTransform = player.getComponent<scene::component::Transform>().transform;
-								playerTransform.translation().x() = targetTransform.translation().x();
-								playerTransform.translation().y() = targetTransform.translation().y();
-								playerTransform.rotation().z() = targetRotation;
-								break;
-							}
-						}
-					}
-				}
+				applyPendingTeleport();
 			} else {
 				if (m_transition) {
 					scene::ScreenTransition::update(timeStep.getSeconds());

@@ -190,6 +190,11 @@ private:
 	 *  Handle teleport request.
 	 */
 	void handleTeleportRequest();
+	/**
+	 * @brief
+	 *  Place the player at the teleport target of a freshly started scene, with the stored velocity rotated.
+	 */
+	void applyPendingTeleport();
 
 	/**
 	 * @brief
