@@ -10,6 +10,7 @@
 
 #include "ImageCompare.h"
 
+#include <cstdio>
 #include <renderer/TextureDecoder.h>
 
 #include <cstdint>
@@ -17,7 +18,6 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
-#include <print>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -163,7 +163,7 @@ TEST_P(RenderImage, matchesReference) {
 	if (!getEnv("OWL_RENDER_TESTS_UPDATE").empty()) {
 		std::filesystem::create_directories(reference.parent_path());
 		std::filesystem::copy_file(actualFile, reference, std::filesystem::copy_options::overwrite_existing);
-		std::println("Reference updated: {}", reference.string());
+		std::fputs(std::format("Reference updated: {}\n", reference.string()).c_str(), stdout);
 		return;
 	}
 	const auto expected = renderer::decodeImageFile(reference, 4);

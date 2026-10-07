@@ -10,6 +10,8 @@
 
 #include <core/Log.h>
 #include <core/external/lua.h>
+#include <cstdio>
+#include <format>
 #include <scene/Scene.h>
 #include <script/LuaBindings.h>
 #include <script/LuaEngine.h>
@@ -21,7 +23,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <mutex>
-#include <print>
 #include <stdexcept>
 #include <stop_token>
 #include <string>
@@ -56,8 +57,10 @@ public:
 		: m_thread{[this, iDelay](const std::stop_token& iStop) -> void {
 			  std::unique_lock<std::mutex> lock(m_mutex);
 			  if (!m_wake.wait_for(lock, iStop, iDelay, []() -> bool { return false; }) && !iStop.stop_requested()) {
-				  std::println(stderr, "LuaSandbox: test exceeded its {} s deadline, a quota did not fire.",
-							   iDelay.count());
+				  std::fputs(std::format("LuaSandbox: test exceeded its {} s deadline, a quota did not fire.\n",
+										 iDelay.count())
+									 .c_str(),
+							 stderr);
 				  std::abort();
 			  }
 		  }} {}
