@@ -123,6 +123,15 @@ foreach (child ${children})
     endif ()
 endforeach ()
 
+# Wayland smoke test: the runner presents frames on a headless weston (Vulkan and OpenGL); skipped without weston.
+if (${PROJECT_PREFIX}_PLATFORM_LINUX AND TARGET ${CMAKE_PROJECT_NAME}Runner)
+    add_test(NAME ${PROJECT_PREFIX_LOWER}_wayland_smoke
+            COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/wayland_smoke.sh $<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner>
+            ${PROJECT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/wayland_smoke)
+    set_tests_properties(${PROJECT_PREFIX_LOWER}_wayland_smoke PROPERTIES LABELS "render;wayland" SKIP_RETURN_CODE 77
+            TIMEOUT 300 ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
+endif ()
+
 if (${PROJECT_PREFIX}_ENABLE_COVERAGE)
 
     set(COVERAGE_RESULT_DIR ${CMAKE_BINARY_DIR}/Coverage)
