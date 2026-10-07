@@ -19,8 +19,11 @@ paths:
 poetry run python ci_action.py <Action> <preset> [-v] [-q] [-- --extra=args]
 ```
 
-Available actions: Build, Test, Coverage, Clean, Documentation, CodeStyle, ClangTidy, IncludeCheck, Package, Help,
-DefineTeamCityVariables, PublishDoc, PublishPackage.
+Available actions: Build, Test, Coverage, Clean, Documentation, CodeStyle, ClangTidy, IncludeCheck, Bench, Fuzz,
+Package, Help, DefineTeamCityVariables, PublishDoc, PublishPackage.
+
+`Fuzz <preset>` runs every `owl_*_fuzzer` of a preset built with `OWL_FUZZING=ON` (`linux-fuzz`) for a fixed time;
+any crash, leak or timeout fails it (see `doc/pages/continuous_integration.md#fuzzing`).
 
 `IncludeCheck <preset>` configures a preset with `OWL_INCLUDE_CHECK=ON` (`linux-include-check`) and builds
 `owl_include_check`: every header and source compiled alone, without PCH, against strict libc++.

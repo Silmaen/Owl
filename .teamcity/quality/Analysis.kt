@@ -14,7 +14,8 @@ val analysis = Project {
     buildType(clangTidy)
     buildType(staticAnalyzer)
     buildType(bench)
-    buildTypesOrder = arrayListOf(clangTidy, staticAnalyzer, bench)
+    buildType(fuzz)
+    buildTypesOrder = arrayListOf(clangTidy, staticAnalyzer, bench, fuzz)
 
     params {
         param("platform", "Linux")

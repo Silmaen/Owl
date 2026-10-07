@@ -121,6 +121,22 @@
       }
     },
     {
+      "name": "linux-fuzz",
+      "inherits": "linux-clang-release",
+      "cacheVariables": {
+        "OWL_FUZZING": "ON",
+        "OWL_ENABLE_ADDRESS_SANITIZER": "ON",
+        "OWL_BENCHMARK": "OFF",
+        "OWL_TESTING": "OFF",
+        "OWL_BUILD_NEST": "OFF"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": ""
+        }
+      }
+    },
+    {
       "name": "linux-include-check",
       "inherits": "linux-clang-release",
       "cacheVariables": {
