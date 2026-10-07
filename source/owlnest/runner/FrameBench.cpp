@@ -18,10 +18,10 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <format>
 #include <fstream>
 #include <functional>
-#include <print>
 #include <span>
 #include <string_view>
 
@@ -328,7 +328,8 @@ auto FrameBench::finish(const bool iInterrupted) -> int {
 	}
 	app::Application::get().setFrameTimingsEnabled(false);
 	renderer::gpu::RenderCommand::setGpuTimestampsEnabled(false);
-	std::println("{}", toText());
+	// Not std::println: on MinGW its console path lives in libstdc++exp, which nothing links.
+	std::fputs(std::format("{}\n", toText()).c_str(), stdout);
 	int code = iInterrupted ? 3 : 0;
 	if (!m_options.out.empty()) {
 		std::error_code ec;
