@@ -78,6 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Image tests pin the llvmpipe vector width, so a CI agent without AVX2 no longer fails the tilemap capture.
+- `OwlRunner --frame-bench` links on MinGW again: its report no longer goes through `std::println`, whose console path needs `libstdc++exp`.
 - Vulkan: Owl Nest text and images render again with ImGui 1.92.9, whose backend expects sampled-image texture sets and more descriptor sets than the ImGui pool allowed.
 - CI: the engine package builds its documentation again (the Documentation step required a release preset, which a package preset has not, so Publish Documentation found nothing).
 - Hierarchies deeper than 64 levels: world transforms, inherited visibility and `setParent` cycle checks walk the whole chain, so `setParent` no longer corrupts a deep entity's position; world matrices are composed once on the CPU and uploaded by `Renderer2D` (the `world_transform` compute pass, which recomposed them on the GPU with the same 64-level cap, is removed).

@@ -60,11 +60,12 @@ auto getVulkanIcd() -> std::filesystem::path {
 	return "/usr/share/vulkan/icd.d/lvp_icd.json";
 }
 
-// Environment selecting the software driver of a backend (lavapipe or llvmpipe).
+// Environment selecting the software driver of a backend (lavapipe or llvmpipe). The vector width is pinned: llvmpipe
+// otherwise picks it from the CPU (128 bits without AVX2), and filtered pixels then drift from the references.
 auto getDriverEnvironment(const std::string& iBackend) -> std::string {
 	if (iBackend == "vulkan")
-		return std::format("VK_ICD_FILENAMES={}", getVulkanIcd().string());
-	return "LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe __GLX_VENDOR_LIBRARY_NAME=mesa";
+		return std::format("LP_NATIVE_VECTOR_WIDTH=256 VK_ICD_FILENAMES={}", getVulkanIcd().string());
+	return "LP_NATIVE_VECTOR_WIDTH=256 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe __GLX_VENDOR_LIBRARY_NAME=mesa";
 }
 
 auto getOutputDir() -> std::filesystem::path {
