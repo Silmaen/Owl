@@ -49,6 +49,9 @@ public:
 	/**
 	 * @brief
 	 *  Initialize the physical world based on the given scene.
+	 * From then on the bodies follow their components: a `PhysicBody` added while running gets its body at
+	 * the next `frame()`, and removing a `PhysicBody`, `Tilemap`, raycast door or pushwall component (or its
+	 * entity) destroys the matching body.
 	 * @param iScene The Scene onto apply physics.
 	 */
 	static void init(scene::Scene* iScene);
@@ -148,10 +151,10 @@ public:
 
 	/**
 	 * @brief
-	 *  Remove the Box2D bodies owned by an entity (PhysicBody, raycast door or pushwall body).
+	 *  Remove the Box2D bodies owned by an entity (PhysicBody, tilemap, raycast door or pushwall body).
 	 *
-	 * Called before an entity is destroyed at runtime so it leaves no ghost collider. No-op when
-	 * physics is not initialised or the entity owns no body.
+	 * Component removal already does it; this drops the bodies of an entity that stays in the scene. No-op
+	 * when physics is not initialised, the entity belongs to another scene or owns no body.
 	 * @param[in] iEntity The entity whose bodies are removed.
 	 */
 	static void destroyBody(const scene::Entity& iEntity);

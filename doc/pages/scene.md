@@ -33,7 +33,14 @@ Scenes are serialized to and from YAML files (`.owl` extension).
 
 The first two are immediate and meant for the editor. Runtime code (Lua `scene.destroy_entity`, trigger
 callbacks) uses the deferred form: the queue is flushed at the end of `onUpdateRuntime()` and at the start
-of `onEndRuntime()`, and each destroyed entity gets `on_destroy`, Box2D body removal and sound stop.
+of `onEndRuntime()`. All three give each destroyed entity `on_destroy`, Box2D body removal and sound stop,
+the whole subtree being still intact when the scripts run.
+
+While the scene runs, the runtime resources also follow their components (EnTT `on_construct` / `on_destroy`
+hooks, connected by `onStartRuntime()` and disconnected by `onEndRuntime()`): removing a `LuaScript` or
+`NativeScript` calls its `on_destroy`, removing a `SoundSource` stops it, removing a `PhysicBody`, `Tilemap`,
+raycast door or pushwall destroys its body, and a `PhysicBody` added (or duplicated) gets a body of its own at
+the next physics frame.
 
 ### Component API
 

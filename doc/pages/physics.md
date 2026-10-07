@@ -104,6 +104,11 @@ world with default gravity `(0, -9.81)` and, when several solver threads are use
 
 Collidable tilemaps, raycast doors and pushwalls get their bodies the same way, owned by their entity.
 
+From then on the bodies follow their components: a `PhysicBody` added while running gets its body at the next
+`frame()` (once its transform and parent are set), a copied one never shares the source's body, and removing a
+`PhysicBody`, `Tilemap`, door or pushwall component, or its entity, destroys the body. A door or pushwall added
+while running gets no body.
+
 ### frame(timestep)
 
 Called from `Scene::onUpdateRuntime()` once per rendered frame. Performs four steps:

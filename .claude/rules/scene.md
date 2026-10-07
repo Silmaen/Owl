@@ -30,8 +30,11 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
 - `Scene::setParent()` rejects cycles and recomputes the local transform to keep the world position.
 - `destroyEntity()` reparents children to the grandparent; `destroyEntityWithChildren()` cascades.
   Both are immediate (editor). Runtime code (Lua, triggers) must use `destroyEntityDeferred()`: the
-  subtree is destroyed by `flushPendingDestructions()` at the end of `onUpdateRuntime()`, with
-  `on_destroy`, Box2D body removal and sound stop.
+  subtree is destroyed by `flushPendingDestructions()` at the end of `onUpdateRuntime()`. All three run
+  `on_destroy`, remove Box2D bodies and stop sounds before destroying anything.
+- In Play, EnTT hooks tie runtime resources to components (`PhysicCommand::init` for bodies,
+  `onStartRuntime` for scripts and sounds): never create or destroy a Box2D body, script instance or
+  runtime sound by hand next to an `addComponent` / `removeComponent`.
 - `duplicateEntity()` makes a root copy; `duplicateSubtree()` duplicates recursively with new UUIDs.
 - Only `parentId` is serialized; `childrenIds` is rebuilt after load by `rebuildHierarchyChildren()`.
 - Physics: Box2D bodies ignore the hierarchy. `PhysicCommand` works in world space and converts back to

@@ -72,7 +72,7 @@ Every fix lands with its regression test.
 - ![Done][done] Prefab update / revert in place, with override detection (PR-10: C-02, E-11)
 - ![Done][done] CI secrets kept out of argv and logs, `api.py` replaced by an in-repository upload client, secret
   scan in `CodeStyle` (PR-12: H-01, H-02, G-09, H-12)
-- ![Planned][planned] Physics, sound and script lifecycle on EnTT hooks — no ghost collider, `on_destroy` always
+- ![Done][done] Physics, sound and script lifecycle on EnTT hooks — no ghost collider, `on_destroy` always
   called (PR-13: C-08, D-04)
 - ![Done][done] Lua hardening — text-only chunks, time / memory quotas, exception trampoline
   (PR-14: D-06, D-16)
