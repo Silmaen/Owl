@@ -85,6 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: build artifacts leave out the test executables, keeping the Windows `BuildArtefact.zip` under the server's 300 MB limit.
 - Windows: test binaries and `OwlRunner` exit again: the Box2D solver pool is released with the physics world and the Lua watchdog is never destroyed, so no static destructor waits for threads Windows already killed.
 - Windows: the frame bench runner test quotes its whole command line, which `cmd /c` otherwise mangles.
+- Wayland works again on Linux: GLFW comes from a local recipe building both backends against the system Wayland (ConanCenter's built X11 only, and with Wayland on shipped a libwayland that hid the system one from the GPU drivers).
+- `importSharedLibs.py` copies a library next to the binaries again when its package changed, instead of keeping the first copy forever (a stale X11-only `libglfw.so.3`, an old `libopenal.so.1`).
 - Linux binaries link with `--as-needed`: they no longer require every `libxcb-*` that Conan's `xorg/system` lists, so Owl Nest and exported games start on a desktop missing an unused one (`libxcb-ewmh2`, `libxcb-dri2-0`).
 - TSan builds: the Lua time quota fires again, the watchdog setting the hook from its own thread because TSan holds back the interrupt signal.
 - TSan: the Vulkan image tests no longer fail on races inside lavapipe and the validation layer, suppressed by library in `test/tsan.supp`.

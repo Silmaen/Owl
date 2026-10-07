@@ -21,6 +21,42 @@ def is_external(path: str, roots: list[str]) -> bool:
     return any(path.startswith(root.rstrip("/") + "/") for root in roots)
 
 
+def is_up_to_date(copied: Path, source: Path) -> bool:
+    """
+    Tell if a library already copied next to the binary matches its source (copy2 keeps the modification time).
+
+    :param copied: The library next to the binary.
+    :param source: The library in the package cache.
+    :return: True when the copy exists with the same size and modification time, so a rebuilt package is copied again.
+    """
+    if not copied.exists():
+        return False
+    copied_stat, source_stat = copied.stat(), source.resolve().stat()
+    return copied_stat.st_size == source_stat.st_size and int(copied_stat.st_mtime) == int(source_stat.st_mtime)
+
+
+def package_copy_of(binary: Path, name: str) -> Path | None:
+    """
+    Find, in the run paths the binary was linked with, the package library a copy next to it came from.
+
+    :param binary: The binary whose RPATH / RUNPATH is read.
+    :param name: The library file name (soname), e.g. libglfw.so.3.
+    :return: The first matching library outside the binary's directory, or None.
+    """
+    from subprocess import run, PIPE
+
+    out = run(["readelf", "-d", str(binary)], stdout=PIPE, stderr=PIPE, text=True)
+    for line in out.stdout.splitlines():
+        if "(RPATH)" not in line and "(RUNPATH)" not in line:
+            continue
+        for entry in line.split("[", 1)[-1].rstrip("]").split(":"):
+            if not entry or "$ORIGIN" in entry or Path(entry).resolve() == binary.parent.resolve():
+                continue
+            if (Path(entry) / name).exists():
+                return Path(entry) / name
+    return None
+
+
 def list_missing_so(binary: Path, has_missing: bool, roots: list[str]):
     """
     List missing and external shared object dependencies for a given binary.
@@ -50,11 +86,17 @@ def list_missing_so(binary: Path, has_missing: bool, roots: list[str]):
         extern_so = []
         for line in lines:
             items = line.split()
-            if len(items) < 3 or items[1] != "=>" or not is_external(items[2], roots):
+            if len(items) < 3 or items[1] != "=>":
                 continue
-            if (binary.parent / items[0]).exists():
+            source = items[2]
+            if Path(source).parent.resolve() == binary.parent.resolve():
+                # ldd sees the copy first ($ORIGIN): compare it with the package it came from.
+                source = str(package_copy_of(binary, items[0]) or "")
+            if not source or not is_external(source, roots):
                 continue
-            extern_so.append([items[0], items[2]])
+            if is_up_to_date(binary.parent / items[0], Path(source)):
+                continue
+            extern_so.append([items[0], source])
         return missing_so, extern_so
     except Exception as err:
         print(f"Exception while searching dependencies: {err}", file=stderr)

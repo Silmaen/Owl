@@ -187,7 +187,7 @@ Checked on 2026-10-05 with `conan search -r conancenter` (Conan 2.33). "Owl (Con
 | entt                  | 3.15.0         | 4.0.0           | local recipe          | header  | ConanCenter stops at 3.16.0; its recipe, C++20 for 4.x                         |
 | freetype              | 2.13.3         | 2.13.2          | ConanCenter           | static  | Transitive, pinned by msdfgen 1.12 (2.14.3 on ConanCenter)                     |
 | glad                  | 2.0.4          | 2.0.8           | ConanCenter           | static  | Generated at build time: GL 4.6 compatibility                                  |
-| glfw                  | 3.4.0          | 3.4             | ConanCenter           | shared  |                                                                                |
+| glfw                  | 3.4.0          | 3.4             | local recipe          | shared  | ConanCenter: X11 only, or its own libwayland; both backends, system Wayland    |
 | googletest            | 1.17.0         | 1.18.0          | ConanCenter (`gtest`) | static  |                                                                                |
 | imgui                 | 1.92.7-docking | 1.92.9b-docking | ConanCenter           | shared  | Backends compiled by Owl (see above)                                           |
 | imgui_color_text_edit | 1.92.7         | cci.20260417    | local recipe          | static  | Absent; DepManager's commit (v1.92.9 rewrote the cursor API)                   |

@@ -12,7 +12,9 @@ multi-window behaving on both; tested on GNOME and KDE, with a CI smoke test und
 
 ### Platform selection
 
-GLFW 3.4 is built with both the Wayland and the X11 backends. The engine picks one explicitly at `glfwInit`:
+GLFW 3.4 is built with both the Wayland and the X11 backends (local Conan recipe `conan/recipes/glfw`, against the
+system Wayland: a libwayland shipped next to the binaries would hide the system one from the GPU drivers). The engine
+picks one explicitly at `glfwInit`:
 
 | Source                                 | Values                       | Priority |
 |----------------------------------------|------------------------------|----------|
