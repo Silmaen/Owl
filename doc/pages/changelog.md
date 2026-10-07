@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- TSan: the Vulkan image tests no longer fail on races inside lavapipe and the validation layer, suppressed by library in `test/tsan.supp`.
 - Windows: packed assets keep `/` in their pack paths (`AssetScanner` wrote `scenes\level.owl`), so an exported game finds its scenes, fonts and textures.
 - Image tests cap llvmpipe at SSE4.1 with Mesa's shader cache off, so a CI agent without AVX no longer fails the tilemap capture.
 - `OwlRunner --frame-bench` links on MinGW again: its report no longer goes through `std::println`, whose console path needs `libstdc++exp`.

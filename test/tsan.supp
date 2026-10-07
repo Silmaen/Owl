@@ -1,0 +1,6 @@
+# ThreadSanitizer suppressions, scoped to uninstrumented third-party GPU code reached by the image tests.
+# lavapipe and its LLVM JIT synchronise through code TSan does not see: their internal races are false positives.
+race:libvulkan_lvp.so
+race:libLLVM.so
+# The Khronos validation layer takes its own rwlocks in both orders on one thread.
+deadlock:libVkLayer_khronos_validation.so
