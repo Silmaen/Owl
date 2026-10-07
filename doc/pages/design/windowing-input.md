@@ -82,12 +82,34 @@ whose PRIME presents wait for the X server whatever the swap interval.
   OpenGL on llvmpipe (Xvfb without a GPU) crashes on the missing `glSpecializeShader` (no `GL_ARB_gl_spirv`), and
   Mesa's Intel Vulkan driver crashes on Xvfb; neither is a supported target.
 
+### Manual check on a visible desktop (October 2026)
+
+Owl Nest on KDE Plasma 6.6 (Wayland session, Intel + NVIDIA), native and in `docker/run.sh`, in five combinations:
+Wayland / X11 (XWayland) × Vulkan / OpenGL × Intel / NVIDIA. Platform selection, fractional scales (125 %, 150 %, text
+blurry as expected until the DPI work), fullscreen, cursor capture, hidden / locked window, clean close (button,
+Alt+F4, `SIGTERM`), detached panels (inside the window on Wayland, native windows on X11), keyboard (AZERTY, accents,
+shortcuts), clipboard, file drag and drop and the file dialog all pass.
+
+| Combination                     | Frames per second (vsync on) |
+|---------------------------------|------------------------------|
+| Native, Wayland, Vulkan         | ~100 (mailbox)               |
+| Native, Wayland, OpenGL         | 60 (monitor rate)            |
+| Native, X11 (XWayland), Vulkan  | ~30                          |
+| Docker, Wayland, Vulkan, Intel  | ~250 (mailbox)               |
+| Docker, Wayland, OpenGL, Intel  | 60                           |
+| Docker, Wayland, Vulkan, NVIDIA | ~350 (mailbox)               |
+| Docker, X11, Vulkan, NVIDIA     | 60                           |
+
+- On the **first** launch KDE shows the window under the launching application (the IDE) and the generic icon, in
+  the task bar only: the desktop entry is written during that launch and KWin reads it from the next one. From the
+  second launch the icon, the Alt+Tab entry and the application id are right.
+- Inside Docker, OpenAL Soft logs `Failed to create PipeWire event context` and falls back to PulseAudio (sound works):
+  the build image lacks PipeWire's client configuration (`libpipewire-0.3-common`).
+
 ### Still to verify
 
-Visible-window checks could not be run (session locked during the work): icon pick-up by KWin / GNOME Shell from the
-desktop entry, fractional scales (125 %, 150 %), fullscreen toggling, cursor capture and the Xvfb-free X11 path on a
-visible desktop. GNOME (Mutter) is untested. The CI smoke test needs a headless compositor in the build image
-(`weston` with its headless backend is missing).
+GNOME (Mutter): icon, scales, cursor capture, detached panels and the libdecor decorations. The CI smoke test under a
+headless compositor waits for `weston` in the build image.
 
 ### Known GLFW 3.4 limits under Wayland (argument for the SDL3 evaluation)
 
