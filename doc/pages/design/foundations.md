@@ -83,7 +83,7 @@ Every fix lands with its regression test.
   [Physics API](physics-api.md)
 - ![Done][done] Game export works end to end — packaging, pack, runner, assets, voxel in the runner (D-03),
   window icon; an automated test exports the sample project and runs it headless. See [Game export](game-export.md)
-- ![In Progress][progress] Full Wayland support — Owl icon, editor multi-window (detached ImGui windows), X11 kept as an
+- ![Done][done] Full Wayland support — Owl icon, editor multi-window (detached ImGui windows), X11 kept as an
   option. See [Windowing and input](windowing-input.md)
 - ![Planned][planned] OpenGL backend fixed and tested as the compatibility backend (B-16, B-07, B-18)
 

@@ -5,7 +5,7 @@
 Design page for platform windowing (Wayland), the SDL3 evaluation and input actions, summarised in the
 [Roadmap](../roadmap.md).
 
-## Wayland (v0.3.0, platform correctness) — In Progress
+## Wayland (v0.3.0, platform correctness) — Done
 
 Goal: full Wayland support for the editor and the runner, X11 kept as an option; the Owl icon on Wayland; editor
 multi-window behaving on both; tested on GNOME and KDE, with a CI smoke test under a headless compositor if feasible.
@@ -106,10 +106,15 @@ shortcuts), clipboard, file drag and drop and the file dialog all pass.
 - Inside Docker, OpenAL Soft logs `Failed to create PipeWire event context` and falls back to PulseAudio (sound works):
   the build image lacks PipeWire's client configuration (`libpipewire-0.3-common`).
 
-### Still to verify
+GNOME (Mutter) passes the same checks.
 
-GNOME (Mutter): icon, scales, cursor capture, detached panels and the libdecor decorations. The CI smoke test under a
-headless compositor waits for `weston` in the build image.
+### CI smoke test
+
+`test/wayland_smoke.sh` (CTest `owl_wayland_smoke`, labels `render` and `wayland`) starts a headless weston (pixman
+renderer, private `XDG_RUNTIME_DIR`), then plays 30 frames of `test/render_tests/scenes/sprites.owl` with
+`OwlRunner --frame-bench` on the Wayland platform, Vulkan on lavapipe then OpenGL on llvmpipe; it fails when the
+runner crashes, logs an error or did not pick Wayland. Without `weston` it reports *Skipped*. It found that GLFW 3.4
+dereferenced a missing `wl_seat` (a compositor without input devices): the local recipe patches it.
 
 ### Known GLFW 3.4 limits under Wayland (argument for the SDL3 evaluation)
 

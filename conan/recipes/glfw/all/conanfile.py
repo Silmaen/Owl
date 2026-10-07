@@ -64,6 +64,10 @@ class GlfwConan(ConanFile):
         src_cmake = os.path.join(self.source_folder, "src", "CMakeLists.txt")
         replace_in_file(self, src_cmake, "POSITION_INDEPENDENT_CODE ON", "")
         replace_in_file(self, src_cmake, 'target_link_libraries(glfw PRIVATE "-static-libgcc")', "")
+        # A compositor without input devices (headless weston in CI) announces no wl_seat: 3.4 dereferenced it.
+        replace_in_file(self, os.path.join(self.source_folder, "src", "wl_init.c"),
+                        "if (wl_seat_get_version(_glfw.wl.seat) >= WL_KEYBOARD_REPEAT_INFO_SINCE_VERSION)",
+                        "if (_glfw.wl.seat && wl_seat_get_version(_glfw.wl.seat) >= WL_KEYBOARD_REPEAT_INFO_SINCE_VERSION)")
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
