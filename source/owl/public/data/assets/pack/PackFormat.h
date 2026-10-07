@@ -13,6 +13,7 @@
 #include <array>
 #include <cstdint>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace owl::data::assets::pack {
@@ -21,6 +22,12 @@ constexpr std::array<char, 4> g_packMagic = {'O', 'W', 'L', 'P'};
 
 /// Current pack format version.
 constexpr uint8_t g_packVersion = 1;
+
+/// Upper bound on a decompressed table of contents (64 MiB); larger claims are rejected before any allocation.
+constexpr uint64_t g_maxTocSize = 64ULL << 20U;
+
+/// Upper bound on a single decompressed entry (1 GiB); larger claims are rejected before any allocation.
+constexpr uint64_t g_maxEntrySize = 1ULL << 30U;
 
 /// Pack file flags.
 enum struct PackFlags : uint8_t {
@@ -83,6 +90,17 @@ struct TocEntry {
 
 /**
  * @brief
+ *  Check that a TOC entry path stays inside the pack root once extracted.
+ *
+ * Rejects empty paths, absolute paths (`/x`, `\\x`, `C:x`), any `..` component (with `/` or `\\` as
+ * separator), and paths containing a NUL byte or a colon.
+ * @param[in] iPath The entry path as stored in the TOC.
+ * @return True if the path is relative and cannot escape its root.
+ */
+OWL_API auto isSafeEntryPath(std::string_view iPath) -> bool;
+
+/**
+ * @brief
  *  Compute FNV-1a 64-bit hash of a path string.
  * @param[in] iPath The path to hash.
  * @return The hash value.
@@ -109,8 +127,9 @@ OWL_API auto compressBuffer(const std::vector<uint8_t>& iData) -> std::vector<ui
  * @brief
  *  Decompress a zstd-compressed buffer.
  * @param[in] iCompressed The compressed data.
- * @param[in] iOriginalSize The expected original size.
- * @return The decompressed data, or empty on failure.
+ * @param[in] iOriginalSize The expected original size; must match the zstd frame size when the frame records it,
+ * and may not exceed `g_maxEntrySize`.
+ * @return The decompressed data, or empty on failure (never throws).
  */
 OWL_API auto decompressBuffer(const std::vector<uint8_t>& iCompressed, uint64_t iOriginalSize) -> std::vector<uint8_t>;
 

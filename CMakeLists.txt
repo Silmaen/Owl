@@ -23,6 +23,7 @@ option(${PROJECT_PREFIX}_ENABLE_PROFILING "Output profiling information during e
 option(${PROJECT_PREFIX}_USE_CCACHE "Use ccache (or sccache) as a compiler launcher when available" ON)
 option(${PROJECT_PREFIX}_BENCHMARK "Build the micro-benchmark harness in bench/" OFF)
 option(${PROJECT_PREFIX}_INCLUDE_CHECK "Add the owl_include_check target: every header and source compiled alone against strict libc++, without PCH (Clang only)" OFF)
+option(${PROJECT_PREFIX}_FUZZING "Build the libFuzzer targets in fuzz/ (Clang only, instruments the engine)" OFF)
 
 #
 # ---=== Base Configs ===---
@@ -76,6 +77,13 @@ endif ()
 include(IncludeCheck)
 if (${PROJECT_PREFIX}_INCLUDE_CHECK)
     owl_setup_include_check()
+endif ()
+
+#
+# ---=== FUZZING ===---
+#
+if (${PROJECT_PREFIX}_FUZZING)
+    add_subdirectory(fuzz)
 endif ()
 
 #

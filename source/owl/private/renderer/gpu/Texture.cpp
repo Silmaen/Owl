@@ -11,6 +11,7 @@
 
 #include "app/Application.h"
 #include "core/task/Scheduler.h"
+#include "data/assets/pack/PackExtractor.h"
 #include "null/Texture.h"
 #include "opengl/Texture.h"
 #include "renderer/Renderer.h"
@@ -190,17 +191,16 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 		// Check pack first.
 		if (app::Application::instanced() && app::Application::get().hasOpenPack()) {
 			if (auto data = app::Application::get().loadFromPack(val); data) {
-				const auto tempDir = std::filesystem::temp_directory_path() / "owl_pack_cache";
-				std::filesystem::create_directories(tempDir);
-				const auto tempFile = tempDir / std::filesystem::path(val).filename();
-				{
-					std::ofstream out(tempFile, std::ios::binary);
-					out.write(reinterpret_cast<const char*>(data->data()), static_cast<std::streamsize>(data->size()));
-				}
-				auto texture = create(tempFile);
-				if (texture != nullptr) {
-					texture->m_name = val;
-					return texture;
+				const auto tempFile = std::filesystem::temp_directory_path() / "owl_pack_cache" /
+									  std::filesystem::path(val).filename();
+				if (data::assets::pack::writeEntryFile(tempFile, *data)) {
+					auto texture = create(tempFile);
+					if (texture != nullptr) {
+						texture->m_name = val;
+						return texture;
+					}
+				} else {
+					OWL_CORE_WARN("Texture2D: cannot cache pack entry '{}', trying asset directories.", val)
 				}
 			}
 		}

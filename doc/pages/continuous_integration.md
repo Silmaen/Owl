@@ -307,21 +307,24 @@ The pipeline relies on a custom server-side plugin —
 — that closes the gaps between TeamCity 2026.1's bundled GitHub
 integration and what a real pipeline needs.
 
-Owl tracks the plugin's **1.10.0** line. What it provides, in roles relevant
+Owl tracks the plugin's **1.11.0** line. What it provides, in roles relevant
 to Owl:
 
-| Role                  | Mechanism                                                                                  |
-|-----------------------|--------------------------------------------------------------------------------------------|
-| Draft PR suppression  | `DraftAwareBuildFilter` (StartBuildPrecondition) — holds builds with a visible wait reason |
-| Draft cancellation    | `DraftBuildQueueCleaner` — removes inappropriate queued builds                             |
-| Auto-trigger on PR    | `PullRequestEventListener` reacts to `opened`/`synchronize`/`ready_for_review`/`labeled`/… |
-| Obsolete-build stop   | A push to a PR, or closing it, stops the builds still running on the previous head         |
-| Check Run publishing  | `BuildStatusCheckRunPublisher` — rich GitHub Check Runs at every lifecycle transition      |
-| Visual pill tagging   | `PrPromotionTagger` + `SimplePageExtension` — `draft` / `ready` pills in TC UI             |
-| PR context on a build | A *Pull request* tab on the build page, and 16 published `…pullRequest.*` parameters       |
-| Webhook endpoint      | `/app/teamcity-github-bridge/webhook` with HMAC-SHA256 verification                        |
+| Role                  | Mechanism                                                                                          |
+|-----------------------|----------------------------------------------------------------------------------------------------|
+| Draft PR suppression  | `DraftAwareBuildFilter` (StartBuildPrecondition) — holds builds with a visible wait reason         |
+| Draft cancellation    | `DraftBuildQueueCleaner` — removes inappropriate queued builds                                     |
+| Auto-trigger on PR    | `PullRequestEventListener` reacts to `opened`/`synchronize`/`ready_for_review`/`labeled`/…         |
+| Obsolete-build stop   | A push to a PR, or closing it, stops the builds still running on the previous head (`skipped`)     |
+| Check Run publishing  | `BuildStatusCheckRunPublisher` — rich GitHub Check Runs at every lifecycle transition              |
+| Visual pill tagging   | `PrPromotionTagger` + `SimplePageExtension` — `draft` / `ready` pills in TC UI                     |
+| PR context on a build | A *Pull request* tab on the build page, and 16 published `…pullRequest.*` parameters               |
+| Webhook endpoint      | `/app/teamcity-github-bridge/webhook` with HMAC-SHA256 verification                                |
+| Stable check name     | `checkName` on PR Ready: moving it in the project tree no longer renames the required check        |
+| Labels and assignee   | `labelRules` add `documentation` / `ci` / `dependencies` / `engine` / `editor`; `autoAssignAuthor` |
+| Superseded build      | A build stopped by a newer push concludes `skipped` ("Superseded by …"), not a red `cancelled`     |
 
-Project-level params consumed by the plugin (set in `Project.kt`):
+Project-level params consumed by the plugin (set in `settings.kts`):
 
 | Parameter                                      | Value               | Purpose                                                      |
 |------------------------------------------------|---------------------|--------------------------------------------------------------|
@@ -329,6 +332,8 @@ Project-level params consumed by the plugin (set in `Project.kt`):
 | `teamcity.github.bridge.connectionId`          | (CID constant)      | Used by the plugin to mint installation tokens               |
 | `teamcity.github.bridge.branchTrigger.enabled` | `false`             | `main` belongs to `TRIGGER_1`; the bridge must not double it |
 | `teamcity.github.bridge.checkName.stripPrefix` | `TeamCity / Owl / ` | Shortens the Check Run names GitHub shows in the merge box   |
+| `teamcity.github.bridge.autoAssignAuthor`      | `true`              | A PR opened with nobody assigned goes to its author          |
+| `teamcity.github.bridge.labelRules`            | (rules)             | Labels by changed paths; see `settings.kts`                  |
 
 `prTrigger.enabled` / `prTrigger.branches` are left unset (enabled, all
 branches); the per-BT gates described above carry the constraints.

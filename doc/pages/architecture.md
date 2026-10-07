@@ -305,6 +305,12 @@ fonts, sounds, scripts, meshes), follows teleport trigger links to other scenes,
 Discovered assets are compressed with **zstd** and written to a `.owlpack` binary archive with an XOR-obfuscated table
 of contents. At runtime, the game runner transparently loads assets from the pack file via `PackReader`.
 
+A pack is treated as untrusted input: `PackReader::tryOpen` bounds every offset and size by the real file size and
+by `g_maxTocSize` / `g_maxEntrySize` before allocating, rejects absolute or `..` entry paths, and returns a typed
+`PackOpenError` instead of throwing. `extractPack` confines every entry to the destination directory (symbolic links
+resolved) and reports failed writes as `PackExtractError`. The `OWL_FUZZING` option builds a libFuzzer target,
+`owl_pack_reader_fuzzer`, over the reader.
+
 ## Dependency Management
 
 Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager) and declared in `depmanager.yml` at the

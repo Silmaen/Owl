@@ -72,12 +72,14 @@ fun Triggers.mainBranchOnly() {
  * @param pathFilter skip pull requests touching only these paths; empty runs on every PR.
  * @param onExperiment also run for pull requests from `Experiment/…` branches. Those run
  *        the fast subset only (the draft one): exploratory work does not pay the full matrix.
+ * @param checkName fixed Check Run name; empty derives it from the project tree.
  */
 fun BuildFeatures.githubBridge(triggerOnPrDraft: Boolean = false,
                               triggerOnPrReady: Boolean = true,
                               annotateDiff: Boolean = true,
                               pathFilter: String = CODE_ONLY_PATHS,
-                              onExperiment: Boolean = triggerOnPrDraft) {
+                              onExperiment: Boolean = triggerOnPrDraft,
+                              checkName: String = "") {
     feature {
         id = "github-bridge"
         type = "github-bridge"
@@ -86,8 +88,11 @@ fun BuildFeatures.githubBridge(triggerOnPrDraft: Boolean = false,
         param("runOnApproval", "true")
         param("triggerOnBranch", "true")
         param("triggerOnPrReady", triggerOnPrReady.toString())
-        // Always explicit: the plugin defaults to `true`, so an absent value runs on drafts.
+        // Always explicit, whatever the plugin's default (`true` up to 1.10, `false` since 1.11).
         param("triggerOnPrDraft", triggerOnPrDraft.toString())
+        // A fixed name survives moving the configuration in the project tree (1.11+).
+        if (checkName.isNotEmpty())
+            param("checkName", checkName)
         if (pathFilter.isNotEmpty())
             param("pathFilter", pathFilter)
         if (!onExperiment)

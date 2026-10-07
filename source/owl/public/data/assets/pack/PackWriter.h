@@ -62,7 +62,8 @@ public:
 	 * @param[in] iFlags Pack flags (compression, obfuscation).
 	 * @param[in] iProgress Optional progress callback invoked per entry.
 	 * @param[in] iCancelCheck Optional cancel check invoked per entry.
-	 * @return True on success, false on error or cancellation.
+	 * @return True on success, false on error (I/O, entry path rejected by `isSafeEntryPath`, entry larger than
+	 * `g_maxEntrySize`) or cancellation.
 	 */
 	[[nodiscard]] auto write(const std::filesystem::path& iOutputFile, PackFlags iFlags = PackFlags::Default,
 							 const ProgressCallback& iProgress = {}, const CancelCheck& iCancelCheck = {}) const
