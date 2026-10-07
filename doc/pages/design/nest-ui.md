@@ -10,7 +10,11 @@ A much more polished Owl Nest before 1.0, inspired by Unreal Engine's editor but
 thumbnails, icons everywhere, adjustable text scale, context menus, tooltips, a crafted theme and drag & drop
 everywhere it makes sense.
 
-## v0.3.0 — interaction basics (usability)
+All of it lands in v0.3.0 as phase E of [Foundations](foundations.md): an ergonomics revamp designed together with the
+maintainer, with no new feature. It opens with a review of the main workflows (pain points listed, target layout
+agreed), then the three parts below.
+
+## Interaction basics
 
 - Tooltips on every button, field and icon (extends the `fieldTooltip()` helper of v0.1.1 to the whole editor)
 - Context menus on every selectable object: hierarchy entries, Content Browser items, viewport selection, tabs,
@@ -18,9 +22,9 @@ everywhere it makes sense.
 - Consistent drag & drop: assets onto viewport / inspector fields / hierarchy, entities onto entity fields, files from
   the OS file manager into the Content Browser; one payload convention, one visual feedback
 - Adjustable text scale and DPI awareness (per-monitor scale, crisp fonts, icon atlas tier chosen by scale)
-- Session restore and autosave live in [Foundations](foundations.md), phase D
+- Session restore and autosave live in [Foundations](foundations.md), phase D (before the revamp)
 
-## v0.5.0 — visual overhaul
+## Visual overhaul
 
 - Asset thumbnails in the Content Browser and asset fields (textures, prefabs, scenes, tilesets, meshes, sounds),
   rendered in the background and cached
@@ -29,7 +33,7 @@ everywhere it makes sense.
   action
 - Panel layout presets and a cleaner ribbon
 
-## Editor camera controls overhaul (v0.5.0, In Progress)
+## Editor camera controls overhaul (In Progress)
 
 - **DCC-style navigation** — ![Done][done] (landed early, v0.2.1): Alt+LMB rotate-in-place, Alt+RMB pan, Alt+MMB
   dolly; Ctrl+LMB orbit, Ctrl+MMB/RMB pan, wheel zoom — shared by every scene viewport. A corner XYZ orientation gizmo

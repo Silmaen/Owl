@@ -13,7 +13,10 @@ stabilize the engine before building on it: fix every known correctness bug, put
 (editor tests, sanitizers, tests without a window), repair the Owl RHI so Vulkan is a real reference backend, open the
 architecture so each game can specialise the engine, move to public dependencies (Conan 2, ConanCenter) with fewer
 public ones, and make day-to-day iteration fast. **No new gameplay feature** in this release: hot reload, autosave,
-the editor command API and the UI interaction basics are iteration tooling, not game features.
+the editor command API and the Owl Nest ergonomics revamp are iteration tooling, not game features.
+
+Order, one pull request per step: the rest of phases A and B together, then phase D, then phase C, then phase E (the
+Owl Nest ergonomics revamp, on the architecture phase C leaves behind).
 
 ## Already landed
 
@@ -25,7 +28,7 @@ the editor command API and the UI interaction basics are iteration tooling, not 
 ## Phase 0 — Risk first: dependencies & Conan
 
 The biggest unknowns of the release come first, so that they surface while the plan can still change: everything
-after this phase builds on the new dependency chain, so the phase closes before phases A to D start. The OwlEngine
+after this phase builds on the new dependency chain, so the phase closes before phases A to E start. The OwlEngine
 Conan package is the one exception: it moves to v1.0.0 ([Stable release](stable-release.md)).
 
 - ![Done][done] Conan 2 migration from DepManager, ConanCenter first (see [Conan migration](conan-migration.md))
@@ -132,6 +135,32 @@ archives from one packaging tree with CPack components, and make that preset the
 already build and test, so the archive ships exactly what was tested. Packages run on `main` only, so this saves
 agent time, not pull-request latency.
 
+## Phase D — Usability & dependency reduction
+
+- ![Planned][planned] Fewer public dependencies — only EnTT, plus imgui through the optional `Owl::Gui` target
+  (see [Conan migration](conan-migration.md))
+- ![Planned][planned] Configure without network or Doxygen, CMake clean-up (PR-26: G-05, G-09, G-13, G-14, G-15,
+  I-09, G-08)
+- ![Planned][planned] Hot reload for iteration (editor and development runner)
+    - Assets: textures, scenes, tilesets reloaded when the file changes on disk
+    - Slang shaders recompiled and swapped live
+    - Lua scripts reloaded, with properties preserved
+    - Hot reload of a C++ game module is a separate v0.7.0 evaluation, see [Content pipeline](content-pipeline.md)
+- ![Planned][planned] Autosave and crash recovery — periodic autosave of dirty documents, recovery offered at the next
+  launch
+- ![Planned][planned] Session restore (persisted open tabs)
+    - Remember the list of open documents between launches (per project)
+    - Restore active tab, selection, and viewport layout
+    - Stored in `EditorSettings` or `owl_project.yml`
+- ![Planned][planned] Actionable error messages — load, script and pack errors name the file, the entity and the fix,
+  in the editor log and the runner
+- ![Planned][planned] Project templates (empty 2D, raycast, voxel, mixed-style) in the new-project dialogue
+- ![Planned][planned] Documentation faithful to the code — Lua, renderer, README, guides (PR-15: I-01, I-02, I-03,
+  I-04, I-05, D-07, B-16, B-18)
+- ![Planned][planned] Identifiers cited in `doc/pages` checked in CI (PR-39: I-01, I-09)
+- ![Planned][planned] Proportionate Doxygen — public API documented, no boilerplate `@brief` on trivial members
+  (PR-38: I-06, I-07)
+
 ## Phase C — Owl RHI & architecture
 
 The Vulkan foundation is the second big risk of the release: it starts first in this phase, as soon as the frame
@@ -162,33 +191,15 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 - ![To evaluate][evaluate] SDL3 for windowing, input, dialogues and audio (possibly SDL GPU as an Owl RHI backend);
   the GLFW limits under Wayland are the concrete argument. See [Windowing and input](windowing-input.md)
 
-## Phase D — Usability & dependency reduction
+## Phase E — Owl Nest ergonomics revamp
 
-- ![Planned][planned] Fewer public dependencies — only EnTT, plus imgui through the optional `Owl::Gui` target
-  (see [Conan migration](conan-migration.md))
-- ![Planned][planned] Configure without network or Doxygen, CMake clean-up (PR-26: G-05, G-09, G-13, G-14, G-15,
-  I-09, G-08)
-- ![Planned][planned] Hot reload for iteration (editor and development runner)
-    - Assets: textures, scenes, tilesets reloaded when the file changes on disk
-    - Slang shaders recompiled and swapped live
-    - Lua scripts reloaded, with properties preserved
-    - Hot reload of a C++ game module is a separate v0.7.0 evaluation, see [Content pipeline](content-pipeline.md)
-- ![Planned][planned] Autosave and crash recovery — periodic autosave of dirty documents, recovery offered at the next
-  launch
-- ![Planned][planned] Session restore (persisted open tabs)
-    - Remember the list of open documents between launches (per project)
-    - Restore active tab, selection, and viewport layout
-    - Stored in `EditorSettings` or `owl_project.yml`
-- ![Planned][planned] Owl Nest UI interaction basics — tooltips, context menus, consistent drag & drop, text scale and
-  DPI. See [Owl Nest UI](nest-ui.md)
-- ![Planned][planned] Actionable error messages — load, script and pack errors name the file, the entity and the fix,
-  in the editor log and the runner
-- ![Planned][planned] Project templates (empty 2D, raycast, voxel, mixed-style) in the new-project dialogue
-- ![Planned][planned] Documentation faithful to the code — Lua, renderer, README, guides (PR-15: I-01, I-02, I-03,
-  I-04, I-05, D-07, B-16, B-18)
-- ![Planned][planned] Identifiers cited in `doc/pages` checked in CI (PR-39: I-01, I-09)
-- ![Planned][planned] Proportionate Doxygen — public API documented, no boilerplate `@brief` on trivial members
-  (PR-38: I-06, I-07)
+A much more ergonomic editor, designed together with the maintainer, with no new feature: the existing tools
+reorganised, made discoverable and consistent. See [Owl Nest UI](nest-ui.md).
+
+- ![Planned][planned] Ergonomics review — main workflows walked through, pain points listed, target layout agreed
+- ![Planned][planned] Interaction basics — tooltips, context menus, consistent drag & drop, text scale and DPI
+- ![Planned][planned] Visual overhaul — theme, icon set, asset thumbnails, style guide, layout presets, cleaner ribbon
+- ![In Progress][progress] Editor camera controls overhaul — presets, interactive view-cube, sensitivity
 
 ## Performance work
 
@@ -229,6 +240,7 @@ The release ships when these hold, whatever the date:
 - UBSan and ASan blocking in CI
 - Editor coverage above 50 %
 - Exported sample project runs headless in CI
+- Owl Nest ergonomics revamp shipped, with no new feature
 - Performance targets above reached and protected by the CI regression threshold
 
 [done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square
