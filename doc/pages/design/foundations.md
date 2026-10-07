@@ -25,26 +25,29 @@ the editor command API and the UI interaction basics are iteration tooling, not 
 ## Phase 0 — Risk first: dependencies & Conan
 
 The biggest unknowns of the release come first, so that they surface while the plan can still change: everything
-after this phase builds on the new dependency chain.
+after this phase builds on the new dependency chain, so the phase closes before phases A to D start. The OwlEngine
+Conan package is the one exception: it moves to v1.0.0 ([Stable release](stable-release.md)).
 
 - ![In Progress][progress] Conan 2 migration from DepManager, ConanCenter first (see [Conan migration](conan-migration.md))
     - `linux-clang-release` builds and passes its tests on Conan (`-DOWL_DEPENDENCY_PROVIDER=conan`), with local
       recipes for Slang, ufbx, imgui_color_text_edit, ImGuizmo 1.10, nfd-extended and the msdf-atlas-gen library;
       tinyobjloader steps back to rc10; tinyxml2, zeus and debugbreak removed
-    - Every Linux preset (GCC / Clang release and debug, coverage, clang-tidy, the four sanitizers) builds and passes
-      its tests on Conan (UBSan: renderer suite times out), pinned by `conan.lock`, shared libraries copied next to the
-      binaries; MinGW blocked in the image (no toolchain), plan in the design page
+    - Every Linux preset (GCC / Clang release and debug, coverage, clang-tidy, the sanitizers) and the Windows MinGW
+      ones build and pass their tests on Conan in CI, pinned by `conan.lock`, shared libraries copied next to the
+      binaries, binaries shared through the `owl-cache` server; arm64 still to confirm
     - Versions absent from ConanCenter (EnTT 4, Taskflow 4.1, OpenAL Soft 1.25, msdfgen 1.13): contributed upstream
       or pinned locally until they land
-- ![Planned][planned] Breaking dependency upgrades done here, not later: EnTT 4, Taskflow 4.1, yaml-cpp 0.9, and the
-  lagging ones (G-08)
-- ![In Progress][progress] OwlEngine Conan package with `test_package`; the install tree fixed first (PR-08, PR-09: G-01,
-  G-02, G-06, A-19, G-19, F-06, G-03)
-    - `conan create .` packages `owlengine` (shared) and `test_package/` builds on `find_package(OwlEngine)`;
-      install tree fixed; the `Package` CI action does not run it yet
-- ![Planned][planned] DepManager and `owl_engine.py` removed once every preset builds on Conan
+- ![Planned][planned] Breaking dependency upgrades done here, not later: EnTT 4, Taskflow 4.1 and the lagging ones
+  (G-08); yaml-cpp 0.9 is already the Conan version
+- ![Done][done] Install tree fixed: headers under `include/`, no build flag imposed on consumers, preset prefix
+  honoured (PR-08: G-01, G-02, G-06, A-19, G-19)
+- ![Planned][planned] OwlEngine Conan package (PR-09: F-06, G-03) — moved to v1.0.0. `conan create .` already
+  packages `owlengine` (shared) and `test_package/` builds on `find_package(OwlEngine)`; the CI runs neither
+- ![Planned][planned] DepManager and `owl_engine.py` removed once every preset builds on Conan; until the v1.0.0
+  package, consumers (OwlDrone) use the packaged archive: the CPack install tree and `find_package(OwlEngine)`
 
-Exit of the phase: every preset (Linux GCC / Clang, arm64, MinGW) builds and passes the tests on the new chain.
+Exit of the phase: every preset (Linux GCC / Clang, arm64, MinGW) builds and passes the tests on Conan alone, with
+DepManager removed.
 
 ## Phase A — Correctness
 
@@ -54,7 +57,7 @@ Every fix lands with its regression test.
   (PR-01: C-01, D-01)
 - ![Planned][planned] Undo restores entities in place; dirty flag driven by a generation counter, so closing never
   loses edits silently (PR-03: E-01, E-02, C-05, E-05)
-- ![Planned][planned] Unbounded hierarchy depth, CPU world transforms sent to the GPU; `setParent` keeps the world
+- ![Done][done] Unbounded hierarchy depth, CPU world transforms sent to the GPU; `setParent` keeps the world
   position at any depth (PR-04: P-01, C-18, P-03, P-04, B-12)
 - ![Planned][planned] Runtime scene robustness — Play isolated from the editor voxel world, no segfault on a dangling
   `EntityLink`, SceneFlow double `addComponent`, hierarchy cycles and duplicate UUIDs rejected at load, failed

@@ -5,6 +5,7 @@
 #include <renderer/Renderer.h>
 #include <renderer/Renderer2D.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -112,6 +113,26 @@ TEST(Renderer2D, fakeQuadSpriteScene) {
 	EXPECT_EQ(st.quadCount, 3);
 	EXPECT_EQ(st.getTotalIndexCount(), 18);
 	EXPECT_EQ(st.getTotalVertexCount(), 12);
+
+	RenderCommand::invalidate();
+	Log::invalidate();
+}
+
+TEST(Renderer2D, sceneWorldsUploadedAndGrownAtFlush) {
+	Log::init(owl::core::Log::Level::Off);
+	RenderCommand::create(RenderAPI::Type::Null);
+	Renderer::init();
+	const CameraEditor cam;
+	for (const size_t count: {size_t{64}, size_t{1000}, size_t{0}}) {
+		std::vector<mat4> worlds(count, identity<float, 4>());
+		Renderer2D::setSceneWorlds(worlds);
+		Renderer2D::resetStats();
+		Renderer2D::beginScene(cam);
+		Renderer2D::drawQuad(
+				{.transform = Transform{}, .worldIndex = count == 0 ? -1 : static_cast<int32_t>(count - 1)});
+		Renderer2D::endScene();
+		EXPECT_EQ(Renderer2D::getStats().quadCount, 1u);
+	}
 
 	RenderCommand::invalidate();
 	Log::invalidate();

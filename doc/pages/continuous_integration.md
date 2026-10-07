@@ -115,7 +115,7 @@ except the first, which sets `docker_image` from the preset metadata):
 | Build Release             | `release_preset` non-empty + default branch                    |
 | Build Release (docs)      | `release_preset` + `run_documentation`, off the default branch |
 | Test Release              | `release_preset` non-empty + default branch + `run_tests`      |
-| Documentation             | `run_documentation` + `release_preset` non-empty               |
+| Documentation             | `run_documentation == true`                                    |
 | Package                   | `run_package == true`                                          |
 | Publish Package           | `run_package` + on default branch                              |
 | Publish Documentation     | `run_package` + default branch + `publish_doc`                 |

@@ -424,14 +424,23 @@ by walking the parent chain:
 worldTransform = parentWorldTransform * localTransform
 ```
 
-Root entities (`parentId == 0`) have local = world (no overhead).
+Root entities (`parentId == 0`) have local = world (no overhead). There is no depth
+limit: `getWorldTransform()` walks the whole chain, and a chain longer than the number
+of entities (a loop in corrupted data) is reported and falls back to the local transform.
+
+Once per frame, `Scene::prepareWorldTransforms()` composes every world matrix in a
+single pre-order pass (parents before children, each matrix computed once). The result
+(`getWorldMatrices()`, indexed by `getWorldIndex()`) feeds the per-pass cache and is
+uploaded by `Renderer2D` as its `sceneWorlds[]` buffer; the GPU never recomposes the
+hierarchy.
 
 ### Visibility Inheritance
 
 If any ancestor is hidden, the entity is effectively hidden.
-`Scene::isEffectivelyVisible()` walks the parent chain to check. During an
-update tick the result is memoised per (entity, mode) in `m_visibilityCache` so
-sibling entities sharing the same root pay the walk only once. Outside the
+`Scene::isEffectivelyVisible()` walks the parent chain to check, at any depth. During an
+update tick the result is memoised per (entity, mode) in `m_visibilityCache` for the
+entity and every ancestor visited, so a deep chain costs one walk in total, not one per
+entity. Outside the
 tick (tests, inspector inspection) the cache is bypassed, so callers always
 see fresh `Visibility` state.
 
@@ -439,7 +448,7 @@ see fresh `Visibility` state.
 
 | Operation                | Behaviour                                                                       |
 |--------------------------|---------------------------------------------------------------------------------|
-| **Set parent**           | Circular reference check, local transform recomputed to preserve world position |
+| **Set parent**           | Cycle check at any depth, local transform recomputed to preserve world position |
 | **Unparent**             | Entity becomes root, world transform stored as new local                        |
 | **Delete entity**        | Children reparented to grandparent; world position preserved                    |
 | **Delete with children** | Cascade delete of entire subtree                                                |

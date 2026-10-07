@@ -57,7 +57,7 @@ TEST_F(WorldTransformPreparationFixture, FlatSceneAssignsConsecutiveSlots) {
 	EXPECT_NE(ia, ib);
 	EXPECT_NE(ib, ic);
 	EXPECT_NE(ia, ic);
-	EXPECT_NE(sc.getWorldsBuffer(), nullptr);
+	EXPECT_EQ(sc.getWorldMatrices().size(), 3u);
 }
 
 TEST_F(WorldTransformPreparationFixture, ParentVisitedBeforeChild) {

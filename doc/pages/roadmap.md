@@ -27,7 +27,7 @@ Development is heavily AI-assisted (the AI writes the code, the maintainer tests
 
 - ![Planned][planned] Public API frozen, semantic versioning and deprecation policy
 - ![Planned][planned] Versioned scene and save formats with tested migrations
-- ![Planned][planned] Consumable SDK: `find_package(OwlEngine)` with 1–2 public dependencies, consumer test in CI
+- ![Planned][planned] Consumable SDK: OwlEngine Conan package, `find_package(OwlEngine)` with 1–2 public dependencies, consumer test in CI
 - ![Planned][planned] Two showcase games (2D and 3D) authored only in the editor, each mixing rendering styles
 - ![Planned][planned] Linux and Windows flawless, the Web as third platform
 - ![Planned][planned] Zero known crash; fuzzers on every file loader
@@ -138,13 +138,14 @@ basic gamepad support.
 
 ## v0.3.0 -- Expected 2027-01-15
 
-**Goal:** Foundations — risks first (Conan, breaking dependency upgrades), then every known bug fixed, safety nets,
-Owl RHI repaired, architecture opened, iteration sped up. No new gameplay feature ([details](design/foundations.md)).
+**Goal:** Foundations — phase 0 first and closed before the rest starts (Conan as the only provider, breaking
+dependency upgrades), then every known bug fixed, safety nets, Owl RHI repaired, architecture opened, iteration sped
+up. No new gameplay feature ([details](design/foundations.md)).
 
 - ![Done][done] teamcity-github-bridge 1.10.0 wiring (diff annotations, doc-only PRs skip the C++ matrix)
 - ![In Progress][progress] Phase 0 — Conan 2 on ConanCenter, missing recipes first ([Conan](design/conan-migration.md))
-- ![Planned][planned] Phase 0 — breaking upgrades first: EnTT 4, Taskflow 4.1, yaml-cpp 0.9, lagging dependencies
-- ![In Progress][progress] Phase 0 — OwlEngine Conan package with `test_package`, DepManager removed
+- ![Planned][planned] Phase 0 — breaking upgrades first: EnTT 4, Taskflow 4.1, lagging dependencies
+- ![Planned][planned] Phase 0 — DepManager and `owl_engine.py` removed: Conan the only provider, consumers on the packaged archive
 - ![Planned][planned] Phase A — every confirmed correctness bug fixed with its regression test (PR-01 to PR-25)
 - ![Planned][planned] Phase A — `on_collision` implemented from Box2D contact events (D-07)
 - ![Planned][planned] Phase A — game export tested end to end, sample run headless ([Export](design/game-export.md))

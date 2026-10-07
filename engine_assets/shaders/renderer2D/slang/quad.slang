@@ -6,7 +6,7 @@
 //
 // World matrix lookup: instances reference a slot in one of two SSBOs
 // instead of carrying a baked mat4. Positive `worldIndex` reads
-// `gSceneWorlds[worldIndex]` (computed by `WorldTransformPass`); negative
+// `gSceneWorlds[worldIndex]` (composed on the CPU by `Scene`); negative
 // `worldIndex` reads `gTransientWorlds[-(worldIndex + 1)]` (the per-batch
 // scratch buffer Renderer2D uploads for non-entity callers like UI builders
 // or gizmos). The split lets entity draws skip the per-instance mat4 upload

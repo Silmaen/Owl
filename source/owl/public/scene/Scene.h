@@ -18,17 +18,11 @@
 #include <entt/entt.hpp>
 
 #include <cstdint>
+#include <optional>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-namespace owl::renderer::gpu {
-class StorageBuffer;
-}// namespace owl::renderer::gpu
-
-namespace owl::renderer::utils {
-class WorldTransformPass;
-}// namespace owl::renderer::utils
 
 /**
  * @brief
@@ -264,7 +258,10 @@ public:
 
 	/**
 	 * @brief
-	 *  Compute the world-space transform for an entity (walks parent chain).
+	 *  Compute the world-space transform for an entity.
+	 *
+	 * Walks the whole parent chain, whatever its depth. A chain that loops (corrupted data) is detected and the
+	 * entity's local transform is returned instead.
 	 * @param[in] iEntity The entity.
 	 * @return The world-space transform.
 	 */
@@ -272,30 +269,19 @@ public:
 
 	/**
 	 * @brief
-	 *  Rebuild the GPU world-transform SSBO and the entity → slot index map
-	 *  for the current frame.
+	 *  Compute the world matrix of every entity for the current frame and hand them to the 2D renderer.
 	 *
-	 * Walks every entity carrying both `Transform` and `Hierarchy` in pre-order
-	 * (root → leaf) so the resulting topo-sorted entry array satisfies the
-	 * `parentIdx < own index` contract that
-	 * `renderer::utils::WorldTransformPass` requires. The same pass populates
-	 * `m_worldTransformCache` and an internal CPU mirror of the world matrices,
-	 * which lets `getWorldTransform()` and other CPU consumers serve cached
-	 * data without a GPU readback.
-	 *
-	 * Idempotent within a frame — the prepared state is invalidated when
-	 * `m_worldTransformCacheActive` is cleared at the end of a tick. Renderers
-	 * call `getWorldsBuffer()` / `getWorldIndex(entity)` to consume the result.
-	 *
-	 * Lazy-inits the underlying `WorldTransformPass` on the first call. The
-	 * renderer must be initialised (so the compute shader can be compiled)
-	 * before invoking this function.
+	 * Walks every entity carrying both `Transform` and `Hierarchy` in pre-order (parents before children, no depth
+	 * limit), composing `world = parentWorld * local` once per entity. The matrices are stored in the array returned
+	 * by `getWorldMatrices()` (slot = `getWorldIndex(entity)`), mirrored into `m_worldTransformCache` for the CPU
+	 * consumers, and passed to `renderer::Renderer2D::setSceneWorlds()`, which uploads them as its `sceneWorlds[]`
+	 * storage buffer. The GPU never recomposes the hierarchy.
 	 */
 	void prepareWorldTransforms() const;
 
 	/**
 	 * @brief
-	 *  Look up the slot index of an entity in the GPU `worlds[]` SSBO populated
+	 *  Look up the slot index of an entity in the world-matrix array populated
 	 *  by the most recent `prepareWorldTransforms()` call.
 	 *
 	 * Returns `UINT32_MAX` when the entity is missing from the current frame's
@@ -305,21 +291,19 @@ public:
 	 * the transient world path on the renderer (a per-frame scratch SSBO).
 	 * @param[in] iEntity The entity to look up.
 	 * @return The slot index, or `UINT32_MAX` if the entity is not in the
-	 * current frame's GPU buffer.
+	 * current frame's world-matrix array.
 	 */
 	[[nodiscard]] auto getWorldIndex(const Entity& iEntity) const -> uint32_t;
 
 	/**
 	 * @brief
-	 *  GPU world-matrix SSBO populated by `prepareWorldTransforms()`.
+	 *  World matrices computed by the last `prepareWorldTransforms()` call.
 	 *
-	 * Indexed by the slot returned from `getWorldIndex()`. Renderers bind this
-	 * as the `sceneWorlds[]` storage buffer in their instanced draw shaders.
-	 * Returns `nullptr` until the first `prepareWorldTransforms()` call has
-	 * succeeded.
-	 * @return The world-matrix SSBO, or `nullptr` if no frame has been prepared.
+	 * Indexed by the slot returned from `getWorldIndex()`; this is exactly what the 2D renderer uploads to its
+	 * `sceneWorlds[]` storage buffer. Empty until the first prepare call.
+	 * @return A view over the world matrices, valid until the next `prepareWorldTransforms()` call.
 	 */
-	[[nodiscard]] auto getWorldsBuffer() const -> shared<renderer::gpu::StorageBuffer>;
+	[[nodiscard]] auto getWorldMatrices() const -> std::span<const math::mat4>;
 
 	/**
 	 * @brief
@@ -544,20 +528,14 @@ private:
 	 *  values to the post-mutation reads.
 	 */
 	mutable bool m_worldTransformCacheActive = false;
+	/// World matrices of the last `prepareWorldTransforms()` call, indexed by world slot (parents before children).
+	mutable std::vector<math::mat4> m_worldMatrices;
 	/**
 	 * @brief
-	 *  GPU compute pass that walks the parent chain and writes world matrices
-	 *  into a `worlds[]` SSBO. Held by `uniq` (the engine `std::unique_ptr`
-	 *  alias) so the full type only needs to be known in `Scene.cpp`.
-	 *  Lazily constructed on the first `prepareWorldTransforms()` call,
-	 *  destroyed with the scene.
-	 */
-	mutable uniq<renderer::utils::WorldTransformPass> mp_worldTransformPass;
-	/**
-	 * @brief
-	 *  Per-frame entity → slot index in the GPU `worlds[]` SSBO populated by
-	 *  `prepareWorldTransforms()`. Refilled on every prepare call alongside
-	 *  `m_worldTransformCache`; lookup via `getWorldIndex()`.
+	 *  Per-frame entity → slot index in `m_worldMatrices` (and the renderer's
+	 *  `sceneWorlds[]` SSBO) populated by `prepareWorldTransforms()`. Refilled
+	 *  on every prepare call alongside `m_worldTransformCache`; lookup via
+	 *  `getWorldIndex()`.
 	 */
 	mutable std::unordered_map<entt::entity, uint32_t> m_entityToWorldIndex;
 	/**
@@ -727,6 +705,19 @@ private:
 	 * @param[in] iCamera The camera used for the rendering passes.
 	 */
 	void renderWithStack(const renderer::Camera& iCamera);
+
+	/**
+	 * @brief
+	 *  Compose an entity's world matrix by walking its whole parent chain, with no depth limit.
+	 *
+	 * A chain longer than the number of entities can only be a loop: it is reported and rejected.
+	 * @param[in] iEntity The entity.
+	 * @param[in] iForbiddenAncestor UUID that must not appear in the chain (`0` for none); `setParent` uses it to
+	 *  reject a reparent that would create a cycle in the same walk that composes the new parent's world.
+	 * @return The world matrix, or `std::nullopt` when the chain loops or contains `iForbiddenAncestor`.
+	 */
+	[[nodiscard]] auto composeWorldMatrix(const Entity& iEntity, core::UUID iForbiddenAncestor) const
+			-> std::optional<math::mat4>;
 
 	/**
 	 * @brief

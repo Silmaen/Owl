@@ -38,9 +38,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changelog split the same way: one line per release in `CHANGELOG.md`, details in `doc/pages/changelog.md`.
 - clang-tidy decoupled from the compiler: `CMAKE_CXX_CLANG_TIDY` unset, the analysis is a `ClangTidy` step on `Build/Quality/Clang-Tidy` driven by `compile_commands.json`.
 - teamcity-github-bridge 1.10.0 wiring: findings pinned to the PR diff as Check Run annotations, doc-only PRs skip the C++ matrix, `[skip ci]` phrase, `main` left to the VCS trigger.
+- `Scene::getWorldsBuffer()` replaced by `Scene::getWorldMatrices()`, `Renderer2D::setSceneWorldsBuffer()` by `Renderer2D::setSceneWorlds()`; `renderer::utils::WorldTransformPass` removed.
 
 ### Fixed
 
+- CI: the engine package builds its documentation again (the Documentation step required a release preset, which a package preset has not, so Publish Documentation found nothing).
+- Hierarchies deeper than 64 levels: world transforms, inherited visibility and `setParent` cycle checks walk the whole chain, so `setParent` no longer corrupts a deep entity's position; world matrices are composed once on the CPU and uploaded by `Renderer2D` (the `world_transform` compute pass, which recomposed them on the GPU with the same 64-level cap, is removed).
 - Pack extraction and the texture / font pack caches now detect and log failed writes instead of failing silently.
 - `docker/run.sh` works from a git worktree: it mounts the main git directory and finds the shared `fake_home`.
 - TeamCity: `triggerOnPrDraft` is written explicitly on every configuration (the plugin defaults to `true`, so draft PRs ran the whole matrix).

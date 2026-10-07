@@ -157,9 +157,9 @@ val globalBuild = Template {
         script {
             ciAction("Documentation", "Documentation")
             conditions {
+                // Documents the release build (a package preset is one; a debug preset with
+                // documentation builds its release for it, off `main` too).
                 equals("run_documentation", "true")
-                // Documents the release build, compiled for it off `main` too.
-                doesNotMatch("release_preset", "^${'$'}")
             }
         }
 

@@ -20,7 +20,6 @@
 #include "renderer/RendererTilemap.h"
 #include "renderer/RendererVoxel.h"
 #include "renderer/gpu/StorageBuffer.h"
-#include "renderer/utils/WorldTransformPass.h"
 #include "scene/Entity.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
@@ -46,6 +45,7 @@
 #include <cstdint>
 #include <limits>
 #include <mutex>
+#include <span>
 #include <tuple>
 
 namespace owl::scene {
@@ -627,7 +627,6 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	m_worldTransformCache.clear();
 	m_worldTransformCacheActive = true;
 	prepareWorldTransforms();
-	renderer::Renderer2D::setSceneWorldsBuffer(getWorldsBuffer());
 	// Sound: update listener and spatial source positions
 	for (const auto view = registry.view<component::Transform, component::SoundListener>(); const auto entity: view) {
 		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
@@ -728,7 +727,6 @@ void Scene::onRenderRuntime() {
 	m_worldTransformCache.clear();
 	m_worldTransformCacheActive = true;
 	prepareWorldTransforms();
-	renderer::Renderer2D::setSceneWorldsBuffer(getWorldsBuffer());
 
 	// find camera
 	renderer::Camera* mainCamera = nullptr;
@@ -808,7 +806,6 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 	m_inUpdatePass = true;
 	m_worldTransformCacheActive = true;
 	prepareWorldTransforms();
-	renderer::Renderer2D::setSceneWorldsBuffer(getWorldsBuffer());
 
 	// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
 	math::mat4 viewRotation = iCamera.getView();
@@ -2131,36 +2128,40 @@ auto Scene::getChildren(const Entity& iEntity) const -> std::vector<Entity> {
 	return children;
 }
 
+auto Scene::composeWorldMatrix(const Entity& iEntity, const core::UUID iForbiddenAncestor) const
+		-> std::optional<math::mat4> {
+	math::mat4 worldMat = iEntity.getComponent<component::Transform>().transform();
+	core::UUID ancestorId = iEntity.getComponent<component::Hierarchy>().parentId;
+	const size_t maxAncestors = registry.storage<entt::entity>()->size();
+	size_t ancestors = 0;
+	while (ancestorId != core::UUID{0}) {
+		if (ancestorId == iForbiddenAncestor)
+			return std::nullopt;
+		if (++ancestors > maxAncestors) {
+			OWL_CORE_WARN("Scene: Circular hierarchy detected above entity {}.",
+						  static_cast<uint64_t>(iEntity.getUUID()))
+			return std::nullopt;
+		}
+		const Entity ancestor = findEntityByUUID(ancestorId);
+		if (!ancestor)
+			break;
+		worldMat = ancestor.getComponent<component::Transform>().transform() * worldMat;
+		ancestorId = ancestor.getComponent<component::Hierarchy>().parentId;
+	}
+	return worldMat;
+}
+
 auto Scene::getWorldTransform(const Entity& iEntity) const -> math::Transform {
 	const auto handle = static_cast<entt::entity>(iEntity);
 	if (m_worldTransformCacheActive) {
 		if (const auto it = m_worldTransformCache.find(handle); it != m_worldTransformCache.end())
 			return it->second;
 	}
-	constexpr uint32_t maxDepth = 64;
-	const auto& localTransform = iEntity.getComponent<component::Transform>().transform;
-	const auto& [parentId, childrenIds] = iEntity.getComponent<component::Hierarchy>();
-	const auto compute = [&]() -> math::Transform {
-		if (parentId == core::UUID{0})
-			return localTransform;
-		// Walk the parent chain, collecting transforms.
-		math::mat4 worldMat = localTransform();
-		core::UUID currentParentId = parentId;
-		uint32_t depth = 0;
-		while (currentParentId != core::UUID{0} && depth < maxDepth) {
-			const Entity parent = findEntityByUUID(currentParentId);
-			if (!parent)
-				break;
-			const auto& parentTransform = parent.getComponent<component::Transform>().transform;
-			worldMat = parentTransform() * worldMat;
-			currentParentId = parent.getComponent<component::Hierarchy>().parentId;
-			++depth;
-		}
-		if (depth >= maxDepth)
-			OWL_CORE_WARN("getWorldTransform: depth limit reached, possible circular hierarchy.")
-		return math::Transform{worldMat};
-	};
-	const math::Transform result = compute();
+	math::Transform result = iEntity.getComponent<component::Transform>().transform;
+	if (iEntity.getComponent<component::Hierarchy>().parentId != core::UUID{0}) {
+		if (const auto worldMat = composeWorldMatrix(iEntity, core::UUID{0}); worldMat.has_value())
+			result = math::Transform{*worldMat};
+	}
 	if (m_worldTransformCacheActive)
 		m_worldTransformCache.emplace(handle, result);
 	return result;
@@ -2169,59 +2170,40 @@ auto Scene::getWorldTransform(const Entity& iEntity) const -> math::Transform {
 void Scene::prepareWorldTransforms() const {
 	OWL_PROFILE_FUNCTION()
 
-	if (!mp_worldTransformPass) {
-		mp_worldTransformPass = mkUniq<renderer::utils::WorldTransformPass>();
-		mp_worldTransformPass->init();
-	}
-
 	m_entityToWorldIndex.clear();
+	m_worldMatrices.clear();
 
-	thread_local std::vector<renderer::utils::WorldTransformPass::Entry> entries;
-	thread_local std::vector<math::mat4> cpuWorlds;
-	entries.clear();
-	cpuWorlds.clear();
-
-	// Pre-order traversal stack — children pushed in reverse so siblings are visited left-to-right.
-	thread_local std::vector<entt::entity> stack;
+	// Pre-order stack of (entity, parent slot); children are pushed reversed so siblings stay left-to-right.
+	thread_local std::vector<std::pair<entt::entity, int32_t>> stack;
 	stack.clear();
 	for (const auto e: registry.view<component::Transform, component::Hierarchy>()) {
-		if (const auto& [parentId, childrenIds] = registry.get<component::Hierarchy>(e); parentId == core::UUID{0})
-			stack.push_back(e);
+		if (registry.get<component::Hierarchy>(e).parentId == core::UUID{0})
+			stack.emplace_back(e, -1);
 	}
 
 	while (!stack.empty()) {
-		const entt::entity e = stack.back();
+		const auto [e, parentSlot] = stack.back();
 		stack.pop_back();
 
-		const auto& localTransform = registry.get<component::Transform>(e).transform;
-		const auto& hierarchy = registry.get<component::Hierarchy>(e);
-
-		const math::mat4 localMat = localTransform();
-		int32_t parentIdx = -1;
-		math::mat4 worldMat = localMat;
-		if (hierarchy.parentId != core::UUID{0}) {
-			if (const Entity parentEnt = findEntityByUUID(hierarchy.parentId); parentEnt) {
-				const auto parentHandle = static_cast<entt::entity>(parentEnt);
-				if (const auto it = m_entityToWorldIndex.find(parentHandle); it != m_entityToWorldIndex.end()) {
-					parentIdx = static_cast<int32_t>(it->second);
-					worldMat = cpuWorlds[it->second] * localMat;
-				}
-			}
-		}
-
-		const auto slot = static_cast<uint32_t>(entries.size());
-		m_entityToWorldIndex.emplace(e, slot);
-		entries.push_back({.local = localMat, .parentIdx = parentIdx});
-		cpuWorlds.push_back(worldMat);
+		const math::mat4 localMat = registry.get<component::Transform>(e).transform();
+		const math::mat4 worldMat =
+				parentSlot < 0 ? localMat : m_worldMatrices[static_cast<size_t>(parentSlot)] * localMat;
+		const auto slot = static_cast<int32_t>(m_worldMatrices.size());
+		m_entityToWorldIndex.emplace(e, static_cast<uint32_t>(slot));
+		m_worldMatrices.push_back(worldMat);
 		m_worldTransformCache.insert_or_assign(e, math::Transform{worldMat});
 
-		for (const auto& childId: hierarchy.childrenIds | std::views::reverse) {
-			if (const Entity childEnt = findEntityByUUID(childId); childEnt)
-				stack.push_back(static_cast<entt::entity>(childEnt));
+		const core::UUID uuid = registry.get<component::ID>(e).id;
+		for (const auto& childId: registry.get<component::Hierarchy>(e).childrenIds | std::views::reverse) {
+			// Only follow children that point back here, so a stale childrenIds list can never loop the walk.
+			if (const Entity child = findEntityByUUID(childId);
+				child && child.hasComponent<component::Transform>() &&
+				child.getComponent<component::Hierarchy>().parentId == uuid)
+				stack.emplace_back(static_cast<entt::entity>(child), slot);
 		}
 	}
 
-	mp_worldTransformPass->compute(entries);
+	renderer::Renderer2D::setSceneWorlds(m_worldMatrices);
 }
 
 auto Scene::getWorldIndex(const Entity& iEntity) const -> uint32_t {
@@ -2231,11 +2213,7 @@ auto Scene::getWorldIndex(const Entity& iEntity) const -> uint32_t {
 	return std::numeric_limits<uint32_t>::max();
 }
 
-auto Scene::getWorldsBuffer() const -> shared<renderer::gpu::StorageBuffer> {
-	if (!mp_worldTransformPass)
-		return nullptr;
-	return mp_worldTransformPass->getWorldBuffer();
-}
+auto Scene::getWorldMatrices() const -> std::span<const math::mat4> { return m_worldMatrices; }
 
 void Scene::setEditorVoxelHighlight(const bool iShow, const math::vec3i& iBlock, const math::vec3i& iNormal) {
 	m_hasVoxelHighlight = iShow;
@@ -2252,40 +2230,49 @@ auto Scene::wantsCursorCapture() const -> bool {
 }
 
 auto Scene::isEffectivelyVisible(const Entity& iEntity, const bool iEditorMode) const -> bool {
-	const auto handle = static_cast<entt::entity>(iEntity);
-	const uint64_t key = (static_cast<uint64_t>(static_cast<uint32_t>(handle)) << 1) | (iEditorMode ? 1ULL : 0ULL);
-	if (m_inUpdatePass) {
-		if (const auto it = m_visibilityCache.find(key); it != m_visibilityCache.end())
-			return it->second;
-	}
-
-	constexpr uint32_t maxDepth = 64;
-	const auto compute = [&]() -> bool {
-		if (const auto* vis = registry.try_get<component::Visibility>(handle); vis != nullptr) {
-			if (const bool visible = iEditorMode ? vis->editorVisible : vis->gameVisible; !visible)
-				return false;
-		}
-		core::UUID currentParentId = iEntity.getComponent<component::Hierarchy>().parentId;
-		uint32_t depth = 0;
-		while (currentParentId != core::UUID{0} && depth < maxDepth) {
-			const Entity parent = findEntityByUUID(currentParentId);
-			if (!parent)
-				break;
-			if (const auto* parentVis = registry.try_get<component::Visibility>(static_cast<entt::entity>(parent));
-				parentVis != nullptr) {
-				if (const bool parentVisible = iEditorMode ? parentVis->editorVisible : parentVis->gameVisible;
-					!parentVisible)
-					return false;
-			}
-			currentParentId = parent.getComponent<component::Hierarchy>().parentId;
-			++depth;
-		}
-		return true;
+	const auto isSelfVisible = [&](const entt::entity iHandle) -> bool {
+		const auto* vis = registry.try_get<component::Visibility>(iHandle);
+		return vis == nullptr || (iEditorMode ? vis->editorVisible : vis->gameVisible);
 	};
-	const bool result = compute();
-	if (m_inUpdatePass)
-		m_visibilityCache.emplace(key, result);
-	return result;
+	const auto cacheKey = [iEditorMode](const entt::entity iHandle) -> uint64_t {
+		return (static_cast<uint64_t>(static_cast<uint32_t>(iHandle)) << 1) | (iEditorMode ? 1ULL : 0ULL);
+	};
+	// Climb to a cached ancestor or the root, then resolve downwards so every visited ancestor is cached too.
+	thread_local std::vector<entt::entity> chain;
+	chain.clear();
+	const size_t maxChain = registry.storage<entt::entity>()->size();
+	bool inheritedVisible = true;
+	auto current = static_cast<entt::entity>(iEntity);
+	while (true) {
+		if (m_inUpdatePass) {
+			if (const auto it = m_visibilityCache.find(cacheKey(current)); it != m_visibilityCache.end()) {
+				inheritedVisible = it->second;
+				break;
+			}
+		} else if (!isSelfVisible(current)) {
+			return false;
+		}
+		chain.push_back(current);
+		if (chain.size() > maxChain) {
+			OWL_CORE_WARN("Scene: Circular hierarchy detected above entity {}.",
+						  static_cast<uint64_t>(iEntity.getUUID()))
+			break;
+		}
+		const core::UUID parentId = registry.get<component::Hierarchy>(current).parentId;
+		if (parentId == core::UUID{0})
+			break;
+		const Entity parent = findEntityByUUID(parentId);
+		if (!parent)
+			break;
+		current = static_cast<entt::entity>(parent);
+	}
+	if (!m_inUpdatePass)
+		return true;
+	for (const auto handle: chain | std::views::reverse) {
+		inheritedVisible = inheritedVisible && isSelfVisible(handle);
+		m_visibilityCache.emplace(cacheKey(handle), inheritedVisible);
+	}
+	return inheritedVisible;
 }
 
 void Scene::setParent(const Entity& iChild, const Entity& iNewParent) const {
@@ -2295,23 +2282,14 @@ void Scene::setParent(const Entity& iChild, const Entity& iNewParent) const {
 		OWL_CORE_WARN("setParent: cannot parent entity to itself.")
 		return;
 	}
-	// Check for circular reference: walk iNewParent's ancestor chain.
 	const core::UUID childUuid = iChild.getUUID();
-	core::UUID ancestorId = iNewParent.getComponent<component::Hierarchy>().parentId;
-	uint32_t depth = 0;
-	while (ancestorId != core::UUID{0} && depth < 64) {
-		if (ancestorId == childUuid) {
-			OWL_CORE_WARN("setParent: circular hierarchy detected, refusing reparent.")
-			return;
-		}
-		const Entity ancestor = findEntityByUUID(ancestorId);
-		if (!ancestor)
-			break;
-		ancestorId = ancestor.getComponent<component::Hierarchy>().parentId;
-		++depth;
+	const auto newParentWorld = composeWorldMatrix(iNewParent, childUuid);
+	if (!newParentWorld.has_value()) {
+		OWL_CORE_WARN("setParent: circular hierarchy detected, refusing reparent.")
+		return;
 	}
-	// Compute current world transform before reparenting.
-	const math::Transform currentWorld = getWorldTransform(iChild);
+	const math::mat4 currentWorld =
+			composeWorldMatrix(iChild, core::UUID{0}).value_or(iChild.getComponent<component::Transform>().transform());
 	auto& [parentId, childrenIds] = iChild.getComponent<component::Hierarchy>();
 	// Remove from old parent.
 	if (parentId != core::UUID{0}) {
@@ -2324,8 +2302,7 @@ void Scene::setParent(const Entity& iChild, const Entity& iNewParent) const {
 	parentId = iNewParent.getUUID();
 	iNewParent.getComponent<component::Hierarchy>().childrenIds.push_back(childUuid);
 	// Recompute local transform: local = inverse(newParentWorld) * currentWorld.
-	const math::Transform newParentWorld = getWorldTransform(iNewParent);
-	const math::mat4 newLocal = math::inverse(newParentWorld()) * currentWorld();
+	const math::mat4 newLocal = math::inverse(*newParentWorld) * currentWorld;
 	iChild.getComponent<component::Transform>().transform = math::Transform{newLocal};
 }
 
