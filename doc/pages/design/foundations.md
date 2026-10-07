@@ -30,14 +30,15 @@ Conan package is the one exception: it moves to v1.0.0 ([Stable release](stable-
 
 - ![Done][done] Conan 2 migration from DepManager, ConanCenter first (see [Conan migration](conan-migration.md))
     - Local recipes for Slang, ufbx, imgui_color_text_edit, ImGuizmo 1.10, nfd-extended, the msdf-atlas-gen library
-      and libmp3lame; tinyobjloader steps back to rc10; tinyxml2, zeus and debugbreak removed
+      and libmp3lame; tinyxml2, zeus and debugbreak removed
     - Every preset builds and passes its tests on Conan in CI: Linux x64 GCC / Clang (release, debug, coverage,
       clang-tidy, include check, sanitizers), Linux arm64, Windows MinGW GCC / Clang and the packages, pinned by
       `conan.lock`, shared libraries copied next to the binaries, binaries shared through the `owl-cache` server
-    - Versions absent from ConanCenter (EnTT 4, Taskflow 4.1, OpenAL Soft 1.25, msdfgen 1.13): contributed upstream
-      or pinned locally until they land
-- ![Planned][planned] Breaking dependency upgrades done here, not later: EnTT 4, Taskflow 4.1 and the lagging ones
-  (G-08); yaml-cpp 0.9 is already the Conan version
+    - Versions absent from ConanCenter (EnTT 4, Taskflow 4.1, OpenAL Soft 1.25, msdfgen 1.13, msdf-atlas-gen 1.4,
+      tinyobjloader rc13): local recipes until they land there
+- ![Done][done] Breaking dependency upgrades done here, not later: EnTT 4, Taskflow 4.1 and the lagging direct
+  versions (G-08: OpenAL Soft 1.25.2, msdfgen 1.13, msdf-atlas-gen 1.4, tinyobjloader rc13); yaml-cpp 0.9 was
+  already the Conan version
 - ![Done][done] Install tree fixed: headers under `include/`, no build flag imposed on consumers, preset prefix
   honoured (PR-08: G-01, G-02, G-06, A-19, G-19)
 - ![Planned][planned] OwlEngine Conan package (PR-09: F-06, G-03) — moved to v1.0.0. `conan create .` already

@@ -178,43 +178,43 @@ symbols). With Conan every dependency is built by the agent's own compiler.
 Checked on 2026-10-05 with `conan search -r conancenter` (Conan 2.33). "Owl (Conan)" is the version Owl uses;
 "DepManager" the one `depmanager.yml` pinned when it was removed.
 
-| Dependency            | DepManager     | Owl (Conan)     | Source                | Linkage | Note                                                             |
-|-----------------------|----------------|-----------------|-----------------------|---------|------------------------------------------------------------------|
-| box2d                 | 3.1.1          | 3.1.1           | ConanCenter           | static  | Latest on ConanCenter                                            |
-| cpptrace              | 1.0.4          | 1.0.4           | ConanCenter           | static  | Pulls libdwarf 2.1.0 (DepManager: 2.2.0)                         |
-| debugbreak            | 1.0            | —               | removed               | —       | Replaced by `OWL_DEBUG_BREAK()` in `core/Assert.h`               |
-| entt                  | 3.15.0         | 3.16.0          | ConanCenter           | header  | EnTT 4.0.0 not on ConanCenter yet                                |
-| freetype              | 2.13.3         | 2.13.2          | ConanCenter           | static  | Transitive, pinned by msdfgen 1.12 (2.14.3 on ConanCenter)       |
-| glad                  | 2.0.4          | 2.0.8           | ConanCenter           | static  | Generated at build time: GL 4.6 compatibility                    |
-| glfw                  | 3.4.0          | 3.4             | ConanCenter           | shared  |                                                                  |
-| googletest            | 1.17.0         | 1.18.0          | ConanCenter (`gtest`) | static  |                                                                  |
-| imgui                 | 1.92.7-docking | 1.92.9b-docking | ConanCenter           | shared  | Backends compiled by Owl (see above)                             |
-| imgui_color_text_edit | 1.92.7         | cci.20260417    | local recipe          | static  | Absent; DepManager's commit (v1.92.9 rewrote the cursor API)     |
-| imguizmo              | 1.92.7         | 1.10            | local recipe          | static  | ConanCenter's cci.20231114 does not build with imgui 1.92        |
-| libpng                | 1.6.50         | 1.6.58          | ConanCenter           | static  | Transitive (msdf-atlas-gen)                                      |
-| libsndfile            | 1.2.2          | 1.2.2           | ConanCenter           | shared  | LGPL: kept shared                                                |
-| lua                   | 5.5.0          | 5.5.0           | ConanCenter           | static  |                                                                  |
-| lunasvg               | 3.5.0          | 3.5.0           | ConanCenter           | static  | Pulls plutovg 1.3.2                                              |
-| magic_enum            | 0.9.7          | 0.9.8           | ConanCenter           | header  |                                                                  |
-| md4c                  | 0.5.2          | 0.5.2           | ConanCenter           | static  |                                                                  |
-| msdf-atlas-gen        | 1.3            | 1.3             | local recipe          | static  | ConanCenter packages the tool only; 1.4 upstream                 |
-| msdfgen               | 1.12.1         | 1.12            | ConanCenter           | static  | Pinned by msdf-atlas-gen 1.3; 1.13 not on ConanCenter            |
-| nfd (extended)        | 1.2.1          | 1.4.1           | local recipe          | static  | Absent from ConanCenter; GTK 3 + wayland-client (system)         |
-| openal                | 1.24.3         | 1.24.3          | ConanCenter           | shared  | `openal-soft`; 1.25 not on ConanCenter; LGPL: shared             |
-| slang                 | (Vulkan SDK)   | 2026.19         | local recipe          | shared  | Upstream release binaries (DepManager: 2026.1)                   |
-| spdlog                | 1.16.0         | 1.17.0          | ConanCenter           | static  | `use_std_fmt`: no fmt dependency                                 |
-| spirv-cross           | (Vulkan SDK)   | 1.4.357.0       | ConanCenter           | static  | Only the core/glsl/cpp/reflect components                        |
-| stb_image             | 2.28           | cci.20240531    | ConanCenter (`stb`)   | header  |                                                                  |
-| taskflow              | 4.0.0          | 4.0.0           | ConanCenter           | header  | 4.1.0 not on ConanCenter yet                                     |
-| tinygltf              | 2.9.6          | 2.9.7           | ConanCenter           | header  | Pulls nlohmann_json                                              |
-| tinyobjloader         | 2.0.0-rc13     | 2.0.0-rc10      | ConanCenter           | static  | Step back to rc10, enough for `MeshLoader`                       |
-| tinyxml2              | 11.0.0         | —               | removed               | —       | Declared, never used (10.0.0 still comes in through msdfgen-ext) |
-| ufbx                  | 0.20.1         | 0.23.1          | local recipe          | static  | Absent from ConanCenter (single source file)                     |
-| vulkan                | 1.4.341 (SDK)  | 1.4.357.0       | ConanCenter           | shared  | vulkan-headers, vulkan-loader, vulkan-utility-libraries          |
-| yaml-cpp              | 0.8.0          | 0.9.0           | ConanCenter           | static  |                                                                  |
-| zeus                  | 1.3.1          | —               | removed               | —       | Dead fallback branch of `core/expected.h`                        |
-| zlib                  | 1.3.1          | 1.3.2           | ConanCenter           | static  | Transitive                                                       |
-| zstd                  | 1.5.7          | 1.5.7           | ConanCenter           | static  |                                                                  |
+| Dependency            | DepManager     | Owl (Conan)     | Source                | Linkage | Note                                                                           |
+|-----------------------|----------------|-----------------|-----------------------|---------|--------------------------------------------------------------------------------|
+| box2d                 | 3.1.1          | 3.1.1           | ConanCenter           | static  | Latest on ConanCenter                                                          |
+| cpptrace              | 1.0.4          | 1.0.4           | ConanCenter           | static  | Pulls libdwarf 2.1.0 (DepManager: 2.2.0)                                       |
+| debugbreak            | 1.0            | —               | removed               | —       | Replaced by `OWL_DEBUG_BREAK()` in `core/Assert.h`                             |
+| entt                  | 3.15.0         | 4.0.0           | local recipe          | header  | ConanCenter stops at 3.16.0; its recipe, C++20 for 4.x                         |
+| freetype              | 2.13.3         | 2.13.2          | ConanCenter           | static  | Transitive, pinned by msdfgen 1.12 (2.14.3 on ConanCenter)                     |
+| glad                  | 2.0.4          | 2.0.8           | ConanCenter           | static  | Generated at build time: GL 4.6 compatibility                                  |
+| glfw                  | 3.4.0          | 3.4             | ConanCenter           | shared  |                                                                                |
+| googletest            | 1.17.0         | 1.18.0          | ConanCenter (`gtest`) | static  |                                                                                |
+| imgui                 | 1.92.7-docking | 1.92.9b-docking | ConanCenter           | shared  | Backends compiled by Owl (see above)                                           |
+| imgui_color_text_edit | 1.92.7         | cci.20260417    | local recipe          | static  | Absent; DepManager's commit (v1.92.9 rewrote the cursor API)                   |
+| imguizmo              | 1.92.7         | 1.10            | local recipe          | static  | ConanCenter's cci.20231114 does not build with imgui 1.92                      |
+| libpng                | 1.6.50         | 1.6.58          | ConanCenter           | static  | Transitive (msdf-atlas-gen)                                                    |
+| libsndfile            | 1.2.2          | 1.2.2           | ConanCenter           | shared  | LGPL: kept shared                                                              |
+| lua                   | 5.5.0          | 5.5.0           | ConanCenter           | static  |                                                                                |
+| lunasvg               | 3.5.0          | 3.5.0           | ConanCenter           | static  | Pulls plutovg 1.3.2                                                            |
+| magic_enum            | 0.9.7          | 0.9.8           | ConanCenter           | header  |                                                                                |
+| md4c                  | 0.5.2          | 0.5.2           | ConanCenter           | static  |                                                                                |
+| msdf-atlas-gen        | 1.3            | 1.4             | local recipe          | static  | ConanCenter packages the tool only; this one builds the library                |
+| msdfgen               | 1.12.1         | 1.13            | local recipe          | static  | ConanCenter stops at 1.12: its recipe, unchanged                               |
+| nfd (extended)        | 1.2.1          | 1.4.1           | local recipe          | static  | Absent from ConanCenter; GTK 3 + wayland-client (system)                       |
+| openal                | 1.24.3         | 1.25.2          | local recipe          | shared  | `openal-soft`, ConanCenter stops at 1.24.3; LGPL: shared                       |
+| slang                 | (Vulkan SDK)   | 2026.19         | local recipe          | shared  | Upstream release binaries (DepManager: 2026.1)                                 |
+| spdlog                | 1.16.0         | 1.17.0          | ConanCenter           | static  | `use_std_fmt`: no fmt dependency                                               |
+| spirv-cross           | (Vulkan SDK)   | 1.4.357.0       | ConanCenter           | static  | Only the core/glsl/cpp/reflect components                                      |
+| stb_image             | 2.28           | cci.20240531    | ConanCenter (`stb`)   | header  |                                                                                |
+| taskflow              | 4.0.0          | 4.1.0           | local recipe          | header  | ConanCenter stops at 4.0.0; its recipe, unchanged                              |
+| tinygltf              | 2.9.6          | 2.9.7           | ConanCenter           | header  | Pulls nlohmann_json                                                            |
+| tinyobjloader         | 2.0.0-rc13     | 2.0.0-rc13      | local recipe          | static  | ConanCenter stops at rc10: its recipe, without the rc10 patch (upstream since) |
+| tinyxml2              | 11.0.0         | —               | removed               | —       | Declared, never used (10.0.0 still comes in through msdfgen-ext)               |
+| ufbx                  | 0.20.1         | 0.23.1          | local recipe          | static  | Absent from ConanCenter (single source file)                                   |
+| vulkan                | 1.4.341 (SDK)  | 1.4.357.0       | ConanCenter           | shared  | vulkan-headers, vulkan-loader, vulkan-utility-libraries                        |
+| yaml-cpp              | 0.8.0          | 0.9.0           | ConanCenter           | static  |                                                                                |
+| zeus                  | 1.3.1          | —               | removed               | —       | Dead fallback branch of `core/expected.h`                                      |
+| zlib                  | 1.3.1          | 1.3.2           | ConanCenter           | static  | Transitive                                                                     |
+| zstd                  | 1.5.7          | 1.5.7           | ConanCenter           | static  |                                                                                |
 
 ## Local recipes (`conan/recipes/`)
 
@@ -224,29 +224,34 @@ refreshed (`--update=<name>`) by `cmake/Conan.cmake`. Each downloads the
 public upstream archive (sha256 pinned) and adds at most a few-line `CMakeLists.txt`, so each can be proposed to
 ConanCenter as is.
 
-| Recipe                               | Why it is local                                                                                                |
-|--------------------------------------|----------------------------------------------------------------------------------------------------------------|
-| `slang` 2026.19                      | Absent; building it pulls LLVM-sized dependencies, so the recipe repackages the upstream release binaries      |
-| `ufbx` 0.23.1                        | Absent; one `.c` file, upstream ships no build system                                                          |
-| `imgui-color-text-edit` cci.20260417 | Absent (goossens fork); pinned to the DepManager commit until the v1.92.9 cursor API is adopted                |
-| `imguizmo` 1.10                      | ConanCenter's only recent version (cci.20231114) calls `BeginChildFrame`, removed in imgui 1.92                |
-| `nativefiledialog-extended` 1.4.1    | Absent; the GitHub archive lacks the `wayland-protocols` submodule, fetched as a second source                 |
-| `msdf-atlas-gen` 1.3                 | ConanCenter's recipe packages the command-line tool only; this one builds the library on ConanCenter's msdfgen |
+| Recipe                               | Why it is local                                                                                                 |
+|--------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| `slang` 2026.19                      | Absent; building it pulls LLVM-sized dependencies, so the recipe repackages the upstream release binaries       |
+| `ufbx` 0.23.1                        | Absent; one `.c` file, upstream ships no build system                                                           |
+| `imgui-color-text-edit` cci.20260417 | Absent (goossens fork); pinned to the DepManager commit until the v1.92.9 cursor API is adopted                 |
+| `imguizmo` 1.10                      | ConanCenter's only recent version (cci.20231114) calls `BeginChildFrame`, removed in imgui 1.92                 |
+| `nativefiledialog-extended` 1.4.1    | Absent; the GitHub archive lacks the `wayland-protocols` submodule, fetched as a second source                  |
+| `msdf-atlas-gen` 1.4                 | ConanCenter's recipe packages the command-line tool only; this one builds the library on ConanCenter's msdfgen  |
 | `libmp3lame` 3.100                   | ConanCenter's recipe, except MinGW Clang builds with autotools: upstream takes every Windows Clang for clang-cl |
+| `entt` 4.0.0                         | ConanCenter stops at 3.16.0: its recipe, requiring C++20 from 4.x                                               |
+| `taskflow` 4.1.0                     | ConanCenter stops at 4.0.0: its recipe, unchanged                                                               |
+| `openal-soft` 1.25.2                 | ConanCenter stops at 1.24.3: its recipe, `-Werror=function-effects` off (libstdc++ is not `nonblocking`)        |
+| `msdfgen` 1.13                       | ConanCenter stops at 1.12 (needed by msdf-atlas-gen 1.4): its recipe, unchanged                                 |
+| `tinyobjloader` 2.0.0-rc13           | ConanCenter stops at rc10: its recipe, unchanged                                                                |
 
 ## What remains
 
 Phase 0, before anything else of v0.3.0:
 
-- Breaking upgrade EnTT 4 and Taskflow 4.1 (before the open component registry, PR-37), and the lagging versions
-  (G-08), with a lockfile update report in CI. Versions not on ConanCenter yet (EnTT 4.0.0, Taskflow 4.1.0,
-  OpenAL Soft 1.25, msdfgen 1.13, msdf-atlas-gen 1.4, tinyobjloader rc13): contribute them upstream, or bump the
-  local recipes, rather than adding recipes
+- EnTT 4.0.0 and Taskflow 4.1.0 are in, through local recipes until ConanCenter has them
+- The lagging direct versions (G-08) are in too, through local recipes: OpenAL Soft 1.25.2, msdfgen 1.13,
+  msdf-atlas-gen 1.4, tinyobjloader rc13. Left: a lockfile update report in CI (`conan graph outdated`, whose
+  `cci.*` hits are false positives); the transitive versions follow their recipes
 
 Later:
 
 - Vulkan validation layers (`OWL_ENABLE_VULKAN_LAYERS`) from `vulkan-validationlayers`
-- Propose the seven local recipes (or their new versions) to ConanCenter, msdf-atlas-gen as a library option, the
+- Propose the twelve local recipes (or their new versions) to ConanCenter, msdf-atlas-gen as a library option, the
   libmp3lame clang-cl fix
 - imgui-color-text-edit v1.92.9: port `CodeEditorDocument` to the `DocPos` cursor API, then bump the recipe
 - v1.0.0: the OwlEngine Conan package published and run by the `Package` action (PR-09), a static variant, YAML

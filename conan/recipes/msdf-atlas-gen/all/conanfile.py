@@ -38,7 +38,7 @@ class MsdfAtlasGenConan(ConanFile):
         cmake_layout(self, src_folder="src")
 
     def requirements(self):
-        self.requires("msdfgen/1.12", transitive_headers=True)
+        self.requires("msdfgen/1.13", transitive_headers=True)
         self.requires("libpng/[>=1.6 <2]")
 
     def source(self):

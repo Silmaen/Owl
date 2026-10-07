@@ -660,17 +660,17 @@ void Framebuffer::createDescriptorSets() {
 										  .maxLod = 1000,
 										  .borderColor = VK_BORDER_COLOR_INT_TRANSPARENT_BLACK,
 										  .unnormalizedCoordinates = VK_FALSE};
-	static constexpr VkDescriptorSetLayoutBinding samplerLayoutBinding{
-			.binding = 0,
-			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			.descriptorCount = 1,
-			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-			.pImmutableSamplers = nullptr};
+	// ImGui >= 1.92.9 binds its own sampler: the texture id is a sampled-image set.
+	static constexpr VkDescriptorSetLayoutBinding imageLayoutBinding{.binding = 0,
+																	 .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+																	 .descriptorCount = 1,
+																	 .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+																	 .pImmutableSamplers = nullptr};
 	constexpr VkDescriptorSetLayoutCreateInfo layoutCi{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 													   .pNext = nullptr,
 													   .flags = {},
 													   .bindingCount = 1,
-													   .pBindings = &samplerLayoutBinding};
+													   .pBindings = &imageLayoutBinding};
 	for (uint32_t imgIdx = 0; imgIdx < m_images.size(); ++imgIdx) {
 		if (m_specs.attachments[imgIdxToAtt(imgIdx)].format == AttachmentSpecification::Format::Depth24Stencil8)
 			continue;
@@ -704,7 +704,7 @@ void Framebuffer::createDescriptorSets() {
 									   .dstBinding = 0,
 									   .dstArrayElement = 0,
 									   .descriptorCount = 1,
-									   .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+									   .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 									   .pImageInfo = &info,
 									   .pBufferInfo = nullptr,
 									   .pTexelBufferView = nullptr};

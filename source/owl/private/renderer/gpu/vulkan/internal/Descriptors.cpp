@@ -50,17 +50,17 @@ void TextureData::freeTexture() {
 void TextureData::createDescriptorSet() {
 	const auto& pool = Descriptors::get().getSingleImageDescriptorPool();
 	const auto& core = VulkanCore::get();
-	static constexpr VkDescriptorSetLayoutBinding samplerLayoutBinding{
-			.binding = 0,
-			.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-			.descriptorCount = 1,
-			.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-			.pImmutableSamplers = nullptr};
+	// ImGui >= 1.92.9 binds its own sampler: the texture id is a sampled-image set.
+	static constexpr VkDescriptorSetLayoutBinding imageLayoutBinding{.binding = 0,
+																	 .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+																	 .descriptorCount = 1,
+																	 .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+																	 .pImmutableSamplers = nullptr};
 	constexpr VkDescriptorSetLayoutCreateInfo layoutCi{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 													   .pNext = nullptr,
 													   .flags = {},
 													   .bindingCount = 1,
-													   .pBindings = &samplerLayoutBinding};
+													   .pBindings = &imageLayoutBinding};
 	if (const auto result =
 				vkCreateDescriptorSetLayout(core.getLogicalDevice(), &layoutCi, nullptr, &textureDescriptorSetLayout);
 		result != VK_SUCCESS) {
@@ -86,7 +86,7 @@ void TextureData::createDescriptorSet() {
 								   .dstBinding = 0,
 								   .dstArrayElement = 0,
 								   .descriptorCount = 1,
-								   .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+								   .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 								   .pImageInfo = &info,
 								   .pBufferInfo = nullptr,
 								   .pTexelBufferView = nullptr};
@@ -261,19 +261,19 @@ void Descriptors::createDescriptors() {
 															.descriptorCount = 1,
 															.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
 															.pImmutableSamplers = nullptr};
-	constexpr VkDescriptorSetLayoutBinding samplerLayoutBinding{.binding = 1,
-																.descriptorType =
-																		VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-																.descriptorCount = 32,
-																.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
-																.pImmutableSamplers = nullptr};
+	constexpr VkDescriptorSetLayoutBinding imageLayoutBinding{.binding = 1,
+															  .descriptorType =
+																	  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+															  .descriptorCount = 32,
+															  .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+															  .pImmutableSamplers = nullptr};
 	constexpr VkDescriptorSetLayoutBinding drawUboLayoutBinding{.binding = 2,
 																.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 																.descriptorCount = 1,
 																.stageFlags = VK_SHADER_STAGE_VERTEX_BIT |
 																			  VK_SHADER_STAGE_FRAGMENT_BIT,
 																.pImmutableSamplers = nullptr};
-	std::vector bindings = {uboLayoutBinding, samplerLayoutBinding, drawUboLayoutBinding};
+	std::vector bindings = {uboLayoutBinding, imageLayoutBinding, drawUboLayoutBinding};
 	const VkDescriptorSetLayoutCreateInfo layoutInfo{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
 													 .pNext = nullptr,
 													 .flags = {},
@@ -445,7 +445,7 @@ void Descriptors::createImguiDescriptorPool() {
 	if (m_imguiDescriptorPool != nullptr)
 		return;
 	const auto& core = VulkanCore::get();
-	// Descriptor pools.
+	// ImGui >= 1.92.9 allocates its two sampler sets and every texture set from this pool.
 	std::vector<VkDescriptorPoolSize> poolSizes{
 			{.type = VK_DESCRIPTOR_TYPE_SAMPLER, .descriptorCount = 1000},
 			{.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .descriptorCount = 1000},
@@ -462,7 +462,7 @@ void Descriptors::createImguiDescriptorPool() {
 	const VkDescriptorPoolCreateInfo poolInfo{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 											  .pNext = nullptr,
 											  .flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
-											  .maxSets = g_maxFrameInFlight,
+											  .maxSets = 1000,
 											  .poolSizeCount = static_cast<uint32_t>(poolSizes.size()),
 											  .pPoolSizes = poolSizes.data()};
 	if (const VkResult result =
@@ -478,7 +478,7 @@ void Descriptors::createSingleImageDescriptorPool() {
 	const auto& core = VulkanCore::get();
 	// Descriptor pools.
 	std::vector<VkDescriptorPoolSize> poolSizes{
-			{.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, .descriptorCount = 1000},
+			{.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, .descriptorCount = 1000},
 	};
 	const VkDescriptorPoolCreateInfo poolInfo{.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
 											  .pNext = nullptr,
