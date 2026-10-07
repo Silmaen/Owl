@@ -12,18 +12,18 @@
 #include <string>
 
 TEST(SceneComponent, key) {
-	EXPECT_EQ(owl::scene::component::AnimatedSpriteRenderer::key(), "AnimatedSpriteRenderer");
-	EXPECT_EQ(owl::scene::component::Camera::key(), "Camera");
-	EXPECT_EQ(owl::scene::component::CircleRenderer::key(), "CircleRenderer");
-	EXPECT_EQ(owl::scene::component::EntityLink::key(), "EntityLink");
-	EXPECT_EQ(owl::scene::component::PhysicBody::key(), "PhysicBody");
-	EXPECT_EQ(owl::scene::component::Player::key(), "Player");
-	EXPECT_EQ(owl::scene::component::SpriteRenderer::key(), "SpriteRenderer");
-	EXPECT_EQ(owl::scene::component::Tag::key(), "Tag");
-	EXPECT_EQ(owl::scene::component::Text::key(), "TextRenderer");
-	EXPECT_EQ(owl::scene::component::Transform::key(), "Transform");
-	EXPECT_EQ(owl::scene::component::Trigger::key(), "Trigger");
-	EXPECT_EQ(owl::scene::component::Visibility::key(), "Visibility");
+	EXPECT_STREQ(owl::scene::component::AnimatedSpriteRenderer::key(), "AnimatedSpriteRenderer");
+	EXPECT_STREQ(owl::scene::component::Camera::key(), "Camera");
+	EXPECT_STREQ(owl::scene::component::CircleRenderer::key(), "CircleRenderer");
+	EXPECT_STREQ(owl::scene::component::EntityLink::key(), "EntityLink");
+	EXPECT_STREQ(owl::scene::component::PhysicBody::key(), "PhysicBody");
+	EXPECT_STREQ(owl::scene::component::Player::key(), "Player");
+	EXPECT_STREQ(owl::scene::component::SpriteRenderer::key(), "SpriteRenderer");
+	EXPECT_STREQ(owl::scene::component::Tag::key(), "Tag");
+	EXPECT_STREQ(owl::scene::component::Text::key(), "TextRenderer");
+	EXPECT_STREQ(owl::scene::component::Transform::key(), "Transform");
+	EXPECT_STREQ(owl::scene::component::Trigger::key(), "Trigger");
+	EXPECT_STREQ(owl::scene::component::Visibility::key(), "Visibility");
 }
 
 TEST(SceneComponent, name) {
