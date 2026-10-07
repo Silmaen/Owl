@@ -19,7 +19,9 @@
 #include <cmath>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <span>
+#include <utility>
 
 namespace owl::physics {
 
@@ -177,11 +179,141 @@ public:
 		ioTransform.rotation().z() = iAngle;
 	}
 
-	void forgetEntity(const core::UUID iEntity) {
+	void forgetContacts(const core::UUID iEntity) {
 		std::erase_if(touching, [iEntity](const auto& iEntry) -> bool {
 			return iEntry.first.first == iEntity || iEntry.first.second == iEntity;
 		});
-		std::erase_if(bodyOwners, [iEntity](const auto& iEntry) -> bool { return iEntry.second == iEntity; });
+	}
+
+	[[nodiscard]] auto find(const uint64_t iBodyId) const -> std::optional<b2BodyId> {
+		if (iBodyId == 0)
+			return std::nullopt;
+		if (const auto it = bodies.find(iBodyId); it != bodies.end())
+			return it->second;
+		return std::nullopt;
+	}
+
+	auto store(const b2BodyId iBody, const scene::Entity& iOwner) -> uint64_t {
+		const uint64_t bodyId = nextId++;
+		bodies[bodyId] = iBody;
+		registerBody(iBody, iOwner);
+		return bodyId;
+	}
+
+	// Reads no component, so it is safe inside a destruction signal.
+	void release(uint64_t& ioBodyId) {
+		if (ioBodyId == 0)
+			return;
+		if (const auto it = bodies.find(ioBodyId); it != bodies.end()) {
+			if (const auto owner = bodyOwners.find(b2StoreBodyId(it->second)); owner != bodyOwners.end()) {
+				forgetContacts(owner->second);
+				bodyOwners.erase(owner);
+			}
+			b2DestroyBody(it->second);
+			bodies.erase(it);
+		}
+		untrackBody(ioBodyId);
+		ioBodyId = 0;
+	}
+
+	void createPhysicBody(scene::Scene& ioScene, const entt::entity iEntity) {
+		const scene::Entity entity{iEntity, &ioScene};
+		auto& [sbody] = entity.getComponent<scene::component::PhysicBody>();
+		const math::Transform worldTransform = ioScene.getWorldTransform(entity);
+		b2BodyDef bodyDef = b2DefaultBodyDef();
+		switch (sbody.type) {
+			case scene::SceneBody::BodyType::Static:
+				bodyDef.type = b2_staticBody;
+				break;
+			case scene::SceneBody::BodyType::Dynamic:
+				bodyDef.type = b2_dynamicBody;
+				break;
+			case scene::SceneBody::BodyType::Kinematic:
+				bodyDef.type = b2_kinematicBody;
+				break;
+		}
+		bodyDef.fixedRotation = sbody.fixedRotation;
+		bodyDef.position.x = worldTransform.translation().x();
+		bodyDef.position.y = worldTransform.translation().y();
+		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
+
+		const b2BodyId body = b2CreateBody(worldId, &bodyDef);
+		OWL_INFO("PhysicCommand: body created ({} {} {}).", body.index1, body.world0, body.generation)
+		sbody.bodyId = store(body, entity);
+		trackBody(iEntity, sbody.bodyId, body);
+
+		const b2Polygon dynamicBox = b2MakeBox(sbody.colliderSize.x() * worldTransform.scale().x() * 0.5f,
+											   sbody.colliderSize.y() * worldTransform.scale().y() * 0.5f);
+		b2ShapeDef shapeDef = b2DefaultShapeDef();
+		shapeDef.density = sbody.density;
+		shapeDef.material.friction = sbody.friction;
+		shapeDef.material.restitution = sbody.restitution;
+		shapeDef.enableContactEvents = true;
+		b2CreatePolygonShape(body, &shapeDef, &dynamicBox);
+	}
+
+	// Created a frame late so the entity is fully set up (transform, parent) when its body is placed.
+	void createPendingBodies(scene::Scene& ioScene) {
+		for (const auto entity: std::exchange(pendingBodies, {})) {
+			const auto* physicBody = ioScene.registry.try_get<scene::component::PhysicBody>(entity);
+			if (physicBody != nullptr && physicBody->body.bodyId == 0 &&
+				ioScene.registry.all_of<scene::component::Transform, scene::component::Hierarchy>(entity))
+				createPhysicBody(ioScene, entity);
+		}
+	}
+
+	void onPhysicBodyAdded(entt::registry& ioRegistry, const entt::entity iEntity) {
+		// A copied component (duplication) carries the source's id: the copy must own a body of its own.
+		ioRegistry.get<scene::component::PhysicBody>(iEntity).body.bodyId = 0;
+		pendingBodies.push_back(iEntity);
+	}
+
+	static void onDoorAdded(entt::registry& ioRegistry, const entt::entity iEntity) {
+		ioRegistry.get<scene::component::RaycastDoor>(iEntity).bodyId = 0;
+	}
+
+	static void onPushWallAdded(entt::registry& ioRegistry, const entt::entity iEntity) {
+		ioRegistry.get<scene::component::RaycastPushWall>(iEntity).bodyId = 0;
+	}
+
+	void onPhysicBodyRemoved(entt::registry& ioRegistry, const entt::entity iEntity) {
+		std::erase(pendingBodies, iEntity);
+		release(ioRegistry.get<scene::component::PhysicBody>(iEntity).body.bodyId);
+	}
+
+	void onTilemapRemoved(entt::registry& /*ioRegistry*/, const entt::entity iEntity) {
+		if (const auto it = tilemapBodies.find(iEntity); it != tilemapBodies.end()) {
+			release(it->second);
+			tilemapBodies.erase(it);
+		}
+	}
+
+	void onDoorRemoved(entt::registry& ioRegistry, const entt::entity iEntity) {
+		release(ioRegistry.get<scene::component::RaycastDoor>(iEntity).bodyId);
+	}
+
+	void onPushWallRemoved(entt::registry& ioRegistry, const entt::entity iEntity) {
+		release(ioRegistry.get<scene::component::RaycastPushWall>(iEntity).bodyId);
+	}
+
+	void connect(entt::registry& ioRegistry) {
+		ioRegistry.on_construct<scene::component::PhysicBody>().connect<&Impl::onPhysicBodyAdded>(*this);
+		ioRegistry.on_destroy<scene::component::PhysicBody>().connect<&Impl::onPhysicBodyRemoved>(*this);
+		ioRegistry.on_destroy<scene::component::Tilemap>().connect<&Impl::onTilemapRemoved>(*this);
+		ioRegistry.on_construct<scene::component::RaycastDoor>().connect<&Impl::onDoorAdded>();
+		ioRegistry.on_construct<scene::component::RaycastPushWall>().connect<&Impl::onPushWallAdded>();
+		ioRegistry.on_destroy<scene::component::RaycastDoor>().connect<&Impl::onDoorRemoved>(*this);
+		ioRegistry.on_destroy<scene::component::RaycastPushWall>().connect<&Impl::onPushWallRemoved>(*this);
+	}
+
+	void disconnect(entt::registry& ioRegistry) {
+		ioRegistry.on_construct<scene::component::PhysicBody>().disconnect(static_cast<const void*>(this));
+		ioRegistry.on_destroy<scene::component::PhysicBody>().disconnect(static_cast<const void*>(this));
+		ioRegistry.on_destroy<scene::component::Tilemap>().disconnect(static_cast<const void*>(this));
+		ioRegistry.on_construct<scene::component::RaycastDoor>().disconnect<&Impl::onDoorAdded>();
+		ioRegistry.on_construct<scene::component::RaycastPushWall>().disconnect<&Impl::onPushWallAdded>();
+		ioRegistry.on_destroy<scene::component::RaycastDoor>().disconnect(static_cast<const void*>(this));
+		ioRegistry.on_destroy<scene::component::RaycastPushWall>().disconnect(static_cast<const void*>(this));
 	}
 
 	[[nodiscard]] static auto ordered(const std::pair<core::UUID, core::UUID>& iPair) -> std::pair<uint64_t, uint64_t> {
@@ -193,6 +325,8 @@ public:
 	b2WorldId worldId{0, 0};
 	uint64_t nextId = 1;
 	std::unordered_map<uint64_t, b2BodyId> bodies;
+	std::unordered_map<entt::entity, uint64_t> tilemapBodies;
+	std::vector<entt::entity> pendingBodies;
 	std::unordered_map<uint64_t, core::UUID> bodyOwners;
 	std::map<std::pair<uint64_t, uint64_t>, uint32_t> touching;
 	std::vector<CollisionEvent> collisionBegins;
@@ -244,45 +378,8 @@ void PhysicCommand::init(scene::Scene* iScene) {
 	OWL_INFO("PhysicCommand::init(), world created ({} {}).", m_impl->worldId.index1, m_impl->worldId.generation)
 
 	// Add entities...
-	for (const auto& view = m_scene->registry.view<scene::component::PhysicBody, scene::component::Transform>();
-		 const auto& e: view) {
-		const scene::Entity entity{e, m_scene};
-		auto& [sbody] = entity.getComponent<scene::component::PhysicBody>();
-		const math::Transform worldTransform = m_scene->getWorldTransform(entity);
-		b2BodyDef bodyDef = b2DefaultBodyDef();
-		switch (sbody.type) {
-			case scene::SceneBody::BodyType::Static:
-				bodyDef.type = b2_staticBody;
-				break;
-			case scene::SceneBody::BodyType::Dynamic:
-				bodyDef.type = b2_dynamicBody;
-				break;
-			case scene::SceneBody::BodyType::Kinematic:
-				bodyDef.type = b2_kinematicBody;
-				break;
-		}
-		bodyDef.fixedRotation = sbody.fixedRotation;
-		bodyDef.position.x = worldTransform.translation().x();
-		bodyDef.position.y = worldTransform.translation().y();
-		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
-
-		const b2BodyId body = b2CreateBody(m_impl->worldId, &bodyDef);
-		OWL_INFO("PhysicCommand::init(), body created ({} {} {}).", body.index1, body.world0, body.generation)
-		sbody.bodyId = m_impl->nextId;
-		m_impl->bodies[m_impl->nextId] = body;
-		m_impl->trackBody(e, m_impl->nextId, body);
-		m_impl->nextId++;
-		m_impl->registerBody(body, entity);
-
-		const b2Polygon dynamicBox = b2MakeBox(sbody.colliderSize.x() * worldTransform.scale().x() * 0.5f,
-											   sbody.colliderSize.y() * worldTransform.scale().y() * 0.5f);
-		b2ShapeDef shapeDef = b2DefaultShapeDef();
-		shapeDef.density = sbody.density;
-		shapeDef.material.friction = sbody.friction;
-		shapeDef.material.restitution = sbody.restitution;
-		shapeDef.enableContactEvents = true;
-		b2CreatePolygonShape(body, &shapeDef, &dynamicBox);
-	}
+	for (const auto e: m_scene->registry.view<scene::component::PhysicBody, scene::component::Transform>())
+		m_impl->createPhysicBody(*m_scene, e);
 
 	for (const auto view = m_scene->registry.view<scene::component::Tilemap, scene::component::Transform>();
 		 const auto e: view) {
@@ -308,9 +405,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		bodyDef.position.y = worldTransform.translation().y();
 		bodyDef.rotation = b2MakeRot(worldTransform.rotation().z());
 		const b2BodyId tileBody = b2CreateBody(m_impl->worldId, &bodyDef);
-		m_impl->bodies[m_impl->nextId] = tileBody;
-		m_impl->nextId++;
-		m_impl->registerBody(tileBody, entity);
+		m_impl->tilemapBodies[e] = m_impl->store(tileBody, entity);
 		const float cellSize = assetData.cellSize;
 		const float originX = -static_cast<float>(assetData.width - 1) * 0.5f * cellSize;
 		const float originY = static_cast<float>(assetData.height - 1) * 0.5f * cellSize;
@@ -364,10 +459,7 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		shapeDef.material.friction = 0.5f;
 		shapeDef.enableContactEvents = true;
 		b2CreatePolygonShape(body, &shapeDef, &plateBox);
-		door.bodyId = m_impl->nextId;
-		m_impl->bodies[m_impl->nextId] = body;
-		m_impl->nextId++;
-		m_impl->registerBody(body, entity);
+		door.bodyId = m_impl->store(body, entity);
 	}
 	for (const auto view = m_scene->registry.view<scene::component::RaycastPushWall, scene::component::Transform>();
 		 const auto e: view) {
@@ -390,14 +482,15 @@ void PhysicCommand::init(scene::Scene* iScene) {
 		shapeDef.material.friction = 0.5f;
 		shapeDef.enableContactEvents = true;
 		b2CreatePolygonShape(body, &shapeDef, &block);
-		push.bodyId = m_impl->nextId;
-		m_impl->bodies[m_impl->nextId] = body;
-		m_impl->nextId++;
-		m_impl->registerBody(body, entity);
+		push.bodyId = m_impl->store(body, entity);
 	}
+	// Bodies follow their components from now on: added ones are created, removed ones destroyed.
+	m_impl->connect(m_scene->registry);
 }
 
 void PhysicCommand::destroy() {
+	if (m_impl && m_scene != nullptr)
+		m_impl->disconnect(m_scene->registry);
 	m_scene = nullptr;
 	if (!m_impl)
 		return;
@@ -424,6 +517,7 @@ void PhysicCommand::frame(const core::Timestep& iTimestep) {
 		return;
 	}
 	auto& impl = *m_impl;
+	impl.createPendingBodies(*m_scene);
 	const double step = impl.stepSeconds;
 	impl.accumulator += std::max(0.0, static_cast<double>(iTimestep.getMilliseconds()) / 1000.0);
 	// The tolerance absorbs the rounding of frame durations that are whole multiples of the step.
@@ -476,25 +570,19 @@ auto PhysicCommand::takeCollisionEvents() -> std::vector<CollisionEvent> {
 }
 
 void PhysicCommand::destroyBody(const scene::Entity& iEntity) {
-	if (!isInitialized() || !iEntity)
+	if (!isInitialized() || !iEntity || iEntity.getScene() != m_scene)
 		return;
-	const auto release = [](uint64_t& ioBodyId) -> void {
-		if (ioBodyId == 0)
-			return;
-		if (const auto it = m_impl->bodies.find(ioBodyId); it != m_impl->bodies.end()) {
-			b2DestroyBody(it->second);
-			m_impl->bodies.erase(it);
-		}
-		m_impl->untrackBody(ioBodyId);
-		ioBodyId = 0;
-	};
+	auto& registry = m_scene->registry;
+	const auto handle = static_cast<entt::entity>(iEntity);
 	if (iEntity.hasComponent<scene::component::PhysicBody>())
-		release(iEntity.getComponent<scene::component::PhysicBody>().body.bodyId);
+		m_impl->onPhysicBodyRemoved(registry, handle);
+	if (iEntity.hasComponent<scene::component::Tilemap>())
+		m_impl->onTilemapRemoved(registry, handle);
 	if (iEntity.hasComponent<scene::component::RaycastDoor>())
-		release(iEntity.getComponent<scene::component::RaycastDoor>().bodyId);
+		m_impl->onDoorRemoved(registry, handle);
 	if (iEntity.hasComponent<scene::component::RaycastPushWall>())
-		release(iEntity.getComponent<scene::component::RaycastPushWall>().bodyId);
-	m_impl->forgetEntity(iEntity.getUUID());
+		m_impl->onPushWallRemoved(registry, handle);
+	m_impl->forgetContacts(iEntity.getUUID());
 }
 
 void PhysicCommand::impulse(const scene::Entity& iEntity, const math::vec2f& iImpulse) {
@@ -512,7 +600,8 @@ void PhysicCommand::impulse(const scene::Entity& iEntity, const math::vec2f& iIm
 	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
 	if (body.type == scene::SceneBody::BodyType::Static)
 		return;
-	b2Body_ApplyLinearImpulseToCenter(m_impl->bodies[body.bodyId], {iImpulse.x(), iImpulse.y()}, true);
+	if (const auto handle = m_impl->find(body.bodyId); handle)
+		b2Body_ApplyLinearImpulseToCenter(*handle, {iImpulse.x(), iImpulse.y()}, true);
 }
 
 auto PhysicCommand::getVelocity(const scene::Entity& iEntity) -> math::vec2f {
@@ -530,7 +619,10 @@ auto PhysicCommand::getVelocity(const scene::Entity& iEntity) -> math::vec2f {
 	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
 	if (body.type == scene::SceneBody::BodyType::Static)
 		return {0.0f, 0.0f};
-	const auto [x, y] = b2Body_GetLinearVelocity(m_impl->bodies[body.bodyId]);
+	const auto handle = m_impl->find(body.bodyId);
+	if (!handle)
+		return {0.0f, 0.0f};
+	const auto [x, y] = b2Body_GetLinearVelocity(*handle);
 	return {x, y};
 }
 
@@ -546,8 +638,10 @@ void PhysicCommand::setTransform(const scene::Entity& iEntity, const math::vec2f
 	// Explicit `PhysicBody` takes priority — that's the designer-authored body.
 	if (iEntity.hasComponent<scene::component::PhysicBody>()) {
 		auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
-		b2Body_SetTransform(m_impl->bodies[body.bodyId], {iPosition.x(), iPosition.y()}, b2MakeRot(iRotation));
-		m_impl->snapBody(body.bodyId);
+		if (const auto handle = m_impl->find(body.bodyId); handle) {
+			b2Body_SetTransform(*handle, {iPosition.x(), iPosition.y()}, b2MakeRot(iRotation));
+			m_impl->snapBody(body.bodyId);
+		}
 		return;
 	}
 	// Otherwise fall back to the auto-created kinematic body for raycast doors / pushwalls.
@@ -556,10 +650,8 @@ void PhysicCommand::setTransform(const scene::Entity& iEntity, const math::vec2f
 		bodyId = iEntity.getComponent<scene::component::RaycastDoor>().bodyId;
 	else if (iEntity.hasComponent<scene::component::RaycastPushWall>())
 		bodyId = iEntity.getComponent<scene::component::RaycastPushWall>().bodyId;
-	if (bodyId == 0)
-		return;
-	if (const auto it = m_impl->bodies.find(bodyId); it != m_impl->bodies.end())
-		b2Body_SetTransform(it->second, {iPosition.x(), iPosition.y()}, b2MakeRot(iRotation));
+	if (const auto handle = m_impl->find(bodyId); handle)
+		b2Body_SetTransform(*handle, {iPosition.x(), iPosition.y()}, b2MakeRot(iRotation));
 }
 
 void PhysicCommand::setVelocity(const scene::Entity& iEntity, const math::vec2f& iVelocity) {
@@ -576,7 +668,8 @@ void PhysicCommand::setVelocity(const scene::Entity& iEntity, const math::vec2f&
 	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
 	if (body.type == scene::SceneBody::BodyType::Static)
 		return;
-	b2Body_SetLinearVelocity(m_impl->bodies[body.bodyId], {iVelocity.x(), iVelocity.y()});
+	if (const auto handle = m_impl->find(body.bodyId); handle)
+		b2Body_SetLinearVelocity(*handle, {iVelocity.x(), iVelocity.y()});
 }
 
 void PhysicCommand::setGravityScale(const scene::Entity& iEntity, const float iScale) {
@@ -593,9 +686,12 @@ void PhysicCommand::setGravityScale(const scene::Entity& iEntity, const float iS
 	auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
 	if (body.type != scene::SceneBody::BodyType::Dynamic)
 		return;
-	b2Body_SetGravityScale(m_impl->bodies[body.bodyId], iScale);
+	const auto handle = m_impl->find(body.bodyId);
+	if (!handle)
+		return;
+	b2Body_SetGravityScale(*handle, iScale);
 	// Wake the body so the new scale takes effect immediately.
-	b2Body_SetAwake(m_impl->bodies[body.bodyId], true);
+	b2Body_SetAwake(*handle, true);
 }
 
 auto PhysicCommand::getSnapshot(const scene::Entity& iEntity) -> PhysicsSnapshot {
@@ -605,11 +701,13 @@ auto PhysicCommand::getSnapshot(const scene::Entity& iEntity) -> PhysicsSnapshot
 	const auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
 	if (body.type == scene::SceneBody::BodyType::Static)
 		return snapshot;
-	const auto bodyId = m_impl->bodies[body.bodyId];
-	const auto [vx, vy] = b2Body_GetLinearVelocity(bodyId);
+	const auto handle = m_impl->find(body.bodyId);
+	if (!handle)
+		return snapshot;
+	const auto [vx, vy] = b2Body_GetLinearVelocity(*handle);
 	snapshot.linearVelocity = {vx, vy};
-	snapshot.angularVelocity = b2Body_GetAngularVelocity(bodyId);
-	snapshot.awake = b2Body_IsAwake(bodyId);
+	snapshot.angularVelocity = b2Body_GetAngularVelocity(*handle);
+	snapshot.awake = b2Body_IsAwake(*handle);
 	return snapshot;
 }
 
@@ -619,11 +717,13 @@ void PhysicCommand::applySnapshot(const scene::Entity& iEntity, const PhysicsSna
 	const auto& [body] = iEntity.getComponent<scene::component::PhysicBody>();
 	if (body.type == scene::SceneBody::BodyType::Static)
 		return;
-	const auto bodyId = m_impl->bodies[body.bodyId];
-	b2Body_SetLinearVelocity(bodyId, {iSnapshot.linearVelocity.x(), iSnapshot.linearVelocity.y()});
-	b2Body_SetAngularVelocity(bodyId, iSnapshot.angularVelocity);
+	const auto handle = m_impl->find(body.bodyId);
+	if (!handle)
+		return;
+	b2Body_SetLinearVelocity(*handle, {iSnapshot.linearVelocity.x(), iSnapshot.linearVelocity.y()});
+	b2Body_SetAngularVelocity(*handle, iSnapshot.angularVelocity);
 	if (iSnapshot.awake)
-		b2Body_SetAwake(bodyId, true);
+		b2Body_SetAwake(*handle, true);
 }
 
 }// namespace owl::physics

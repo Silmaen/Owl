@@ -47,6 +47,7 @@
 #include <mutex>
 #include <span>
 #include <tuple>
+#include <utility>
 
 namespace owl::scene {
 
@@ -288,34 +289,61 @@ auto collectSubtree(const Scene& iScene, const Entity& iRoot) -> std::vector<Ent
 	return subtree;
 }
 
+void releaseLuaScript(entt::registry& ioRegistry, const entt::entity iEntity) {
+	// Taken out first: `on_destroy` may grow the storages and move the component.
+	if (const auto instance = std::move(ioRegistry.get<component::LuaScript>(iEntity).instance);
+		instance && instance->isValid())
+		instance->onDestroy();
+}
+
+void releaseNativeScript(entt::registry& ioRegistry, const entt::entity iEntity) {
+	if (auto& nsc = ioRegistry.get<component::NativeScript>(iEntity); nsc.instance != nullptr) {
+		nsc.instance->onDestroy();
+		if (nsc.destroyScript != nullptr)
+			nsc.destroyScript(&nsc);
+		nsc.instance = nullptr;
+	}
+}
+
+void releaseSoundSource(entt::registry& ioRegistry, const entt::entity iEntity) {
+	auto& soundComp = ioRegistry.get<component::SoundSource>(iEntity).sound;
+	if (soundComp.runtimeHandle != sound::invalidSoundHandle)
+		sound::SoundCommand::stop(soundComp.runtimeHandle);
+	soundComp.runtimeHandle = sound::invalidSoundHandle;
+}
+
 void releaseRuntimeResources(const Entity& iEntity) {
-	if (iEntity.hasComponent<component::LuaScript>()) {
-		auto& luaScript = iEntity.getComponent<component::LuaScript>();
-		if (luaScript.instance && luaScript.instance->isValid())
-			luaScript.instance->onDestroy();
-		luaScript.instance.reset();
-	}
-	if (iEntity.hasComponent<component::NativeScript>()) {
-		if (auto& nsc = iEntity.getComponent<component::NativeScript>(); nsc.instance != nullptr) {
-			nsc.instance->onDestroy();
-			if (nsc.destroyScript != nullptr)
-				nsc.destroyScript(&nsc);
-		}
-	}
+	auto& registry = iEntity.getScene()->registry;
+	const auto handle = static_cast<entt::entity>(iEntity);
+	if (registry.all_of<component::LuaScript>(handle))
+		releaseLuaScript(registry, handle);
+	if (registry.all_of<component::NativeScript>(handle))
+		releaseNativeScript(registry, handle);
 	physics::PhysicCommand::destroyBody(iEntity);
-	if (iEntity.hasComponent<component::SoundSource>()) {
-		auto& soundComp = iEntity.getComponent<component::SoundSource>().sound;
-		if (soundComp.runtimeHandle != sound::invalidSoundHandle)
-			sound::SoundCommand::stop(soundComp.runtimeHandle);
-		soundComp.runtimeHandle = sound::invalidSoundHandle;
-	}
+	if (registry.all_of<component::SoundSource>(handle))
+		releaseSoundSource(registry, handle);
+}
+
+void connectRuntimeHooks(entt::registry& ioRegistry) {
+	ioRegistry.on_destroy<component::LuaScript>().connect<&releaseLuaScript>();
+	ioRegistry.on_destroy<component::NativeScript>().connect<&releaseNativeScript>();
+	ioRegistry.on_destroy<component::SoundSource>().connect<&releaseSoundSource>();
+}
+
+void disconnectRuntimeHooks(entt::registry& ioRegistry) {
+	ioRegistry.on_destroy<component::LuaScript>().disconnect<&releaseLuaScript>();
+	ioRegistry.on_destroy<component::NativeScript>().disconnect<&releaseNativeScript>();
+	ioRegistry.on_destroy<component::SoundSource>().disconnect<&releaseSoundSource>();
 }
 
 }// namespace
 
 Scene::Scene() = default;
 
-Scene::~Scene() { physics::PhysicCommand::releaseScene(this); }
+Scene::~Scene() {
+	disconnectRuntimeHooks(registry);
+	physics::PhysicCommand::releaseScene(this);
+}
 
 auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	shared<Scene> newScene = mkShared<Scene>();
@@ -362,6 +390,7 @@ auto Scene::createEntityWithUUID(const core::UUID iUuid, const std::string& iNam
 }
 
 void Scene::destroyEntity(Entity& ioEntity) {
+	releaseRuntimeResources(ioEntity);
 	const core::UUID uuid = ioEntity.getUUID();
 	const auto [grandParentId, childrenIds] = ioEntity.getComponent<component::Hierarchy>();
 	const Entity grandParent = grandParentId != core::UUID{0} ? findEntityByUUID(grandParentId) : Entity{};
@@ -538,6 +567,7 @@ void Scene::onStartRuntime() {
 	// Generation requested by the scene this one was copied from completes into that scene, not this one.
 	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view)
 		view.get<component::VoxelWorld>(entity).pendingChunks.clear();
+	connectRuntimeHooks(registry);
 	OWL_CORE_INFO("Scene::onStartRuntime: total {:.1f} ms.", ms(clk::now() - runtimeStart))
 }
 
@@ -545,6 +575,7 @@ void Scene::onEndRuntime() {
 	OWL_PROFILE_FUNCTION()
 
 	flushPendingDestructions();
+	disconnectRuntimeHooks(registry);
 	// Stop all active sounds (both component-based and Lua-created).
 	sound::SoundCommand::stopAll();
 
@@ -2450,6 +2481,8 @@ void Scene::destroyEntityWithChildren(Entity& ioEntity) {// NOLINT(misc-no-recur
 				queue.push_back(child);
 		}
 	}
+	// The whole subtree is still intact when the scripts' `on_destroy` run.
+	for (const auto handle: toDestroy) releaseRuntimeResources(Entity{handle, this});
 	for (const auto handle: toDestroy) {
 		if (m_primaryPlayerCache == handle)
 			m_primaryPlayerCache = entt::null;
