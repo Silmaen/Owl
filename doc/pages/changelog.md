@@ -24,11 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Every Linux preset builds on Conan, pinned by `conan.lock`, and `conan create .` packages OwlEngine, checked by `test_package/` (`find_package(OwlEngine)`).
 - `-DOWL_PROFILER=tracy` puts Tracy (ConanCenter, on demand) behind the `OWL_PROFILE_*` macros: CPU zones, frame marks, named Taskflow workers, OpenGL and Vulkan GPU zones, tracked allocations ([Profiling](profiling.md)).
 - `-DOWL_LOG_LEVEL=<level>` compiles out the log macros below a level.
-### Deprecated
-- `OWL_ENABLE_PROFILING`, replaced by `OWL_PROFILER=chrome`.
-### Removed
-- DepManager: `depmanager.yml`, `cmake/Depmanager.cmake`, `owl_engine.py`, the `ConfigureRemote` CI action and the *Define Remote* TeamCity step; Conan 2 is the only provider (`OWL_DEPENDENCY_PROVIDER` is gone) and other projects take OwlEngine from the packaged archive.
-- Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).
 - `OwlRunner --frame-bench`: deterministic frame benchmark with CPU phase timings, GPU timestamps (Vulkan, OpenGL) and Vulkan queue-drain counters, JSON report; RHI gains `GpuFrameTiming`, `RenderCounters` and a vsync request.
 - Image tests (`owl_render_tests`, CTest label `render`): six reference scenes rendered offscreen on lavapipe and llvmpipe, compared to versioned PNGs with a per-pixel tolerance (PR-18).
 - `OwlRunner --frame-bench --capture <png>` renders into an offscreen framebuffer and writes the last frame; `Framebuffer::readColorAttachment` and `renderer::writeImagePng` back it.
@@ -64,6 +59,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - clang-tidy decoupled from the compiler: `CMAKE_CXX_CLANG_TIDY` unset, the analysis is a `ClangTidy` step on `Build/Quality/Clang-Tidy` driven by `compile_commands.json`.
 - teamcity-github-bridge 1.10.0 wiring: findings pinned to the PR diff as Check Run annotations, doc-only PRs skip the C++ matrix, `[skip ci]` phrase, `main` left to the VCS trigger.
 - `Scene::getWorldsBuffer()` replaced by `Scene::getWorldMatrices()`, `Renderer2D::setSceneWorldsBuffer()` by `Renderer2D::setSceneWorlds()`; `renderer::utils::WorldTransformPass` removed.
+- Physics runs at a fixed step (60 Hz by default, per-scene `Physics:` settings edited in *Scene Settings*) with an accumulator, a bound on steps per frame and interpolated transforms; the result no longer depends on the frame rate and `on_collision` still fires once per pair and frame.
+- Performance: the Box2D solver runs multi-threaded on a dedicated Taskflow executor (`workerCount`, automatic above 2 000 dynamic bodies), 5 000 stacked boxes going from 5.1 to 3.2 ms per step with 4 workers.
+- Sanitizers now fail the build on their first report (`-fno-sanitize-recover=all`, `halt_on_error=1` set by ctest), sanitizer presets run the tests with `--gtest_shuffle`, and the UB job no longer captures a stack trace per allocation (its tests went from about 30 min to under 10 s).
+- `SceneSerializer::deserialize`, `deserializeFromBuffer` and `applyParsed` return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`) instead of `bool`.
+
+### Deprecated
+
+- `OWL_ENABLE_PROFILING`, replaced by `OWL_PROFILER=chrome`.
+- `OWL_FORCE_X11=1`, replaced by `OWL_WINDOW_PLATFORM=x11` (still honoured, with a warning).
+
+### Removed
+
+- DepManager: `depmanager.yml`, `cmake/Depmanager.cmake`, `owl_engine.py`, the `ConfigureRemote` CI action and the *Define Remote* TeamCity step; Conan 2 is the only provider (`OWL_DEPENDENCY_PROVIDER` is gone) and other projects take OwlEngine from the packaged archive.
+- Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).
+- LeakSanitizer preset, option and TeamCity job: on Linux ASan already reports leaks.
 
 ### Fixed
 
@@ -92,23 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Client log macros with arguments (`OWL_INFO("… {}", x)`) went to the engine logger instead of `APP`.
 - `OWL_ENABLE_PROFILING` never enabled the Chrome profiler (the header tested another macro).
 - Installed OwlEngine package: headers under `include/` again, no `-Werror -Weverything` imposed on consumers, preset install prefix honoured.
-- Physics runs at a fixed step (60 Hz by default, per-scene `Physics:` settings edited in *Scene Settings*) with an accumulator, a bound on steps per frame and interpolated transforms; the result no longer depends on the frame rate and `on_collision` still fires once per pair and frame.
-- Performance: the Box2D solver runs multi-threaded on a dedicated Taskflow executor (`workerCount`, automatic above 2 000 dynamic bodies), 5 000 stacked boxes going from 5.1 to 3.2 ms per step with 4 workers.
-- **CI — teamcity-github-bridge 1.10.0 wiring**: `CodeStyle` findings are now printed as GNU-style diagnostics
-  (`path:line:col: error: <check>: …`), which the plugin pins to the pull request's diff as Check Run annotations;
-  annotations enabled on the four configurations with distinct diagnostics (Linux/Windows Clang, Clang-Tidy, Code
-  Style) so one error is not annotated six times; a PR changing only `doc/` / `*.md` / `.claude/` / `LICENSE` skips
-  the C++ matrix (Code Style and Windows x64 Clang, which builds Doxygen, still run); a draft build's verdict is
-  reused when the PR flips to ready (`skipIfCommitPassed`); `[skip ci]` in a PR title or body and a `/ci full`
-  review comment for the main-only configurations; Check Run names shortened to `Build / Linux x64 / Clang`; the
-  bridge no longer triggers on `main` — that stays TeamCity's VCS trigger. One `githubBridge()` builder replaces
-  the two ad-hoc `BridgeHelpers.kt` overrides.
-- Sanitizers now fail the build on their first report (`-fno-sanitize-recover=all`, `halt_on_error=1` set by ctest), sanitizer presets run the tests with `--gtest_shuffle`, and the UB job no longer captures a stack trace per allocation (its tests went from about 30 min to under 10 s).
-### Removed
-- LeakSanitizer preset, option and TeamCity job: on Linux ASan already reports leaks.
 - `PhysicCommand` no longer keeps a dangling `Scene*` once its scene is destroyed (`~Scene` releases the world through `PhysicCommand::releaseScene`), and the core, physics and renderer tests no longer depend on their order.
 - Memory tracker with `OWL_ENABLE_STACKTRACE`: an `AllocationInfo` built outside the tracker no longer deadlocks on cpptrace's mutex.
-- `OWL_FORCE_X11=1`, replaced by `OWL_WINDOW_PLATFORM=x11` (still honoured, with a warning).
 - OpenGL under Wayland no longer freezes after the first frame when the window is not shown: vsync is paced by the engine instead of blocking in `eglSwapBuffers`.
 - Wayland framebuffer kept at the window size (`GLFW_SCALE_FRAMEBUFFER` off), so HiDPI outputs no longer get a swapchain / viewport mismatch.
 - Owl Nest disables ImGui multi-viewports under Wayland instead of enabling windows GLFW cannot place.
@@ -143,6 +138,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Help bundle: page names differing only by case no longer overwrite each other, stale pages are removed, and `HelpPanel` matches page ids case-insensitively.
 - `scene.destroy_entity` is deferred to the end of the frame (`Scene::destroyEntityDeferred`): a script destroying its own entity no longer frees its running Lua state, and the destroyed entity gets `on_destroy` once, loses its Box2D body and takes its children with it.
 - Lua `on_collision(other_id)` is now called: Box2D begin-touch contact events reach both entities' scripts once per touching pair, skipping entities hidden or pending destruction; `on_trigger_enter` / `on_trigger_exit` / `on_triggered` now receive the documented `other_id`.
+- An `EntityLink` whose target is missing (misspelt, destroyed or renamed) is ignored with a single warning instead of crashing `onUpdateRuntime`.
+- Play no longer shares voxel chunks with the editor scene: `VoxelWorld` copies are deep, so blocks broken or placed in Play no longer stay in the editor scene after Stop.
+- A script hiding an entity, or a trigger teleporting the player, takes effect in the same frame: the per-pass caches are armed after scripts, physics, links and triggers.
+- Scene loading validates its input: a malformed scene fails with a typed `SceneLoadError` and is rolled back, duplicated UUIDs are renamed, dangling parents and hierarchy cycles are moved to the root, and the editor names the reason a scene cannot be opened.
+- SceneFlow: creating a teleport link no longer adds a second `Transform` to the new trigger entity (assertion in Debug, storage corruption in Release).
+- A teleport to a missing or corrupted level keeps the current level playing, in the editor and in the runner, instead of leaving a stopped runtime.
 
 ### Security
 
@@ -156,13 +157,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Lua sandbox hardened: chunks load as text only (bytecode refused, also through `load`), `string.dump` removed, `setmetatable` refuses `__gc`, `collectgarbage` restricted, string metatable locked.
 - Lua quotas per `ScriptInstance` (`ScriptQuotas`): 64 MiB memory ceiling through a custom allocator and a 250 ms time budget per call through a watchdog thread; a script exceeding one is disabled instead of freezing or exhausting the game.
 - Every engine call into Lua is protected with a stack trace, host reads of globals bypass script metatables, and bindings run behind an exception trampoline: no C++ exception crosses a Lua frame (PR-14: D-06, D-16).
-- `SceneSerializer::deserialize`, `deserializeFromBuffer` and `applyParsed` return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`) instead of `bool`.
-- An `EntityLink` whose target is missing (misspelt, destroyed or renamed) is ignored with a single warning instead of crashing `onUpdateRuntime`.
-- Play no longer shares voxel chunks with the editor scene: `VoxelWorld` copies are deep, so blocks broken or placed in Play no longer stay in the editor scene after Stop.
-- A script hiding an entity, or a trigger teleporting the player, takes effect in the same frame: the per-pass caches are armed after scripts, physics, links and triggers.
-- Scene loading validates its input: a malformed scene fails with a typed `SceneLoadError` and is rolled back, duplicated UUIDs are renamed, dangling parents and hierarchy cycles are moved to the root, and the editor names the reason a scene cannot be opened.
-- SceneFlow: creating a teleport link no longer adds a second `Transform` to the new trigger entity (assertion in Debug, storage corruption in Release).
-- A teleport to a missing or corrupted level keeps the current level playing, in the editor and in the runner, instead of leaving a stopped runtime.
 
 ## [0.2.1] - 2026-06-27
 
