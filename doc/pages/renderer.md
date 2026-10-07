@@ -527,8 +527,8 @@ docker/run.sh env OWL_RENDER_TESTS_UPDATE=1 ctest --test-dir output/build/linux-
 
 CTest starts the binary under `xvfb-run` when it is installed; without a display or without lavapipe
 (`OWL_RENDER_TESTS_VK_ICD` overrides `/usr/share/vulkan/icd.d/lvp_icd.json`) the cases are skipped. The whole label
-takes about 8 s (25 s with a cold shader cache). The runs pin `LP_NATIVE_VECTOR_WIDTH=256`, so the captures do not depend on
-whether the CPU has AVX2.
+takes about 8 s (25 s with a cold shader cache). The runs cap llvmpipe at SSE4.1 (`GALLIUM_OVERRIDE_CPU_CAPS`) with Mesa's shader
+cache off, so the captures do not depend on whether the CPU has AVX.
 
 ## Renderer2D: The Batch Renderer {#renderer2d}
 

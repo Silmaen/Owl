@@ -60,12 +60,16 @@ auto getVulkanIcd() -> std::filesystem::path {
 	return "/usr/share/vulkan/icd.d/lvp_icd.json";
 }
 
-// Environment selecting the software driver of a backend (lavapipe or llvmpipe). The vector width is pinned: llvmpipe
-// otherwise picks it from the CPU (128 bits without AVX2), and filtered pixels then drift from the references.
+// Environment selecting the software driver of a backend (lavapipe or llvmpipe). The CPU features are capped at
+// SSE4.1, so the tilemap seams do not drift with the host (AVX or not); Mesa's shader cache ignores that cap, so it
+// is off, or code built for AVX is reloaded and crashes.
+constexpr auto g_softwareCpu = "GALLIUM_OVERRIDE_CPU_CAPS=sse4.1 MESA_SHADER_CACHE_DISABLE=true";
+
 auto getDriverEnvironment(const std::string& iBackend) -> std::string {
 	if (iBackend == "vulkan")
-		return std::format("LP_NATIVE_VECTOR_WIDTH=256 VK_ICD_FILENAMES={}", getVulkanIcd().string());
-	return "LP_NATIVE_VECTOR_WIDTH=256 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe __GLX_VENDOR_LIBRARY_NAME=mesa";
+		return std::format("{} VK_ICD_FILENAMES={}", g_softwareCpu, getVulkanIcd().string());
+	return std::format("{} LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe __GLX_VENDOR_LIBRARY_NAME=mesa",
+					   g_softwareCpu);
 }
 
 auto getOutputDir() -> std::filesystem::path {

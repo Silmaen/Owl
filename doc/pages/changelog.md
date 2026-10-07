@@ -78,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Image tests pin the llvmpipe vector width, so a CI agent without AVX2 no longer fails the tilemap capture.
+- Image tests cap llvmpipe at SSE4.1 with Mesa's shader cache off, so a CI agent without AVX no longer fails the tilemap capture.
 - `OwlRunner --frame-bench` links on MinGW again: its report no longer goes through `std::println`, whose console path needs `libstdc++exp`.
 - Vulkan: Owl Nest text and images render again with ImGui 1.92.9, whose backend expects sampled-image texture sets and more descriptor sets than the ImGui pool allowed.
 - CI: the engine package builds its documentation again (the Documentation step required a release preset, which a package preset has not, so Publish Documentation found nothing).
