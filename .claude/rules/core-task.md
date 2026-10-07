@@ -5,7 +5,7 @@ paths:
   - "test/core_tests/**"
 ---
 
-# Task system (Taskflow 4.0)
+# Task system (Taskflow 4.1)
 
 - Public API (`core/task/`): `Task`, `Scheduler`, `Timer` — no Taskflow type ever appears in a public
   header. Taskflow is a PRIVATE, header-only dependency.

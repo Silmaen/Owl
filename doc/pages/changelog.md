@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- EnTT 4.0.0 (C++20), Taskflow 4.1.0, OpenAL Soft 1.25.2, msdfgen 1.13, msdf-atlas-gen 1.4 and tinyobjloader rc13, through local Conan recipes until ConanCenter publishes them.
 - CI on teamcity-github-bridge 1.11.0: PR Ready keeps a fixed check name (`checkName`), pull requests get labels by changed paths and are assigned to their author.
 - TeamCity: Include Check and PR Ready move to the root beside Code Style (GitHub checks `Include Check` and `PR Ready`).
 - CI: Windows builds compute the coverage on `main` only, no longer on pull requests.

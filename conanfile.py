@@ -88,7 +88,7 @@ class OwlEngineConan(ConanFile):
 
     def requirements(self):
         # Public dependencies of OwlEngine (its public headers include them).
-        self.requires("entt/3.16.0", transitive_headers=True)
+        self.requires("entt/4.0.0", transitive_headers=True)
         # force: the imgui-based recipes pin another imgui version.
         self.requires("imgui/1.92.9b-docking", transitive_headers=True, force=True)
         # Public until YAML leaves the public headers (renderer/RenderLayer.h, audit G-07).
@@ -102,17 +102,17 @@ class OwlEngineConan(ConanFile):
         self.requires("lua/5.5.0")
         self.requires("lunasvg/3.5.0")
         self.requires("magic_enum/0.9.8")
-        self.requires("msdf-atlas-gen/1.3")
+        self.requires("msdf-atlas-gen/1.4")
         self.requires("nativefiledialog-extended/1.4.1")
-        self.requires("openal-soft/1.24.3")
+        self.requires("openal-soft/1.25.2")
         self.requires("libsndfile/1.2.2")
         self.requires("slang/2026.19")
         self.requires("spdlog/1.17.0")
         self.requires("spirv-cross/1.4.357.0")
         self.requires("stb/cci.20240531")
-        self.requires("taskflow/4.0.0")
+        self.requires("taskflow/4.1.0")
         self.requires("tinygltf/2.9.7")
-        self.requires("tinyobjloader/2.0.0-rc10")
+        self.requires("tinyobjloader/2.0.0-rc13")
         self.requires("ufbx/0.23.1")
         self.requires("vulkan-headers/1.4.357.0")
         self.requires("vulkan-loader/1.4.357.0")
