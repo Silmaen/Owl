@@ -35,6 +35,13 @@ using namespace owl::data::assets::pack;
 
 namespace {
 
+// Runner file name the exporter looks for on this platform.
+#ifdef OWL_PLATFORM_WINDOWS
+constexpr auto g_runnerFile = "OwlRunner.exe";
+#else
+constexpr auto g_runnerFile = "OwlRunner";
+#endif
+
 void writeFile(const std::filesystem::path& iPath, const std::string& iContent) {
 	std::filesystem::create_directories(iPath.parent_path());
 	std::ofstream out(iPath, std::ios::binary);
@@ -115,7 +122,7 @@ protected:
 																  "    VoxelWorld:\n"
 																  "      Tileset: tilesets/blocks.owltileset\n",
 																  (m_project / "textures" / "a.png").string()));
-		writeFile(m_runner / "OwlRunner", "RUNNER");
+		writeFile(m_runner / g_runnerFile, "RUNNER");
 		writeFile(m_runner / "libfake.so", "NEW-LIB");
 		app::Application::get().addAssetDirectory({"Project: test", m_project});
 	}
