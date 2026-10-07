@@ -117,8 +117,7 @@ class MyAction(BaseAction):
   with `ci.utils.secrets.get_secret()` (which registers it for masking), never from an extra argument;
   refuse the old argument with `reject_secret_args()`. TeamCity provides it as an `env.*`
   parameter of the Global Build template (`common/Templates.kt`), referencing a server password parameter.
-- Never hand a secret to a child process on its command line: call the library in process (DepManager's
-  Python API, `requests`) or pass it through the child's environment.
+- Never hand a secret to a child process on its command line: call the library in process (`requests`) or pass it through the child's environment.
 - Log commands only through `run_command` / `redact_command()`, never `' '.join(cmd)`; anything else that
   may echo a secret (server responses, exceptions) goes through `redact()`. Do not log a dict or object
   that holds a secret.
@@ -129,15 +128,3 @@ class MyAction(BaseAction):
 
 `docker/run.sh poetry run pytest` runs `ci/tests/`. Tests use fake values and mocks only (no network, no real
 credential, no real publication) and write only to `tmp_path`.
-
-## DepManager
-
-Always through Poetry:
-
-```bash
-poetry run depmanager info version --raw
-poetry run depmanager pack ls
-poetry run depmanager info cmakedir --raw
-```
-
-Never call `depmanager` directly.

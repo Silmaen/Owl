@@ -56,21 +56,9 @@ foreach (child ${children})
                 set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES RESOURCE_LOCK owl_engine_globals)
             endif ()
             if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
-                # Copy gtest + every runtime DLL the test binary's full link graph pulls in next to
-                # the executable.  The engine's own post-build copies OwlEngine-side deps, but a
-                # test may surface additional transitive DLLs that weren't on the engine's
-                # `TARGET_RUNTIME_DLLS` evaluation (different linkage path).  Idempotent via
-                # `copy_if_different`.
-                # gtest is a DLL from DepManager only; Conan links it statically (an INTERFACE target).
-                set(gtest_copy)
-                get_target_property(gtest_type GTest::gtest TYPE)
-                if (gtest_type STREQUAL "SHARED_LIBRARY")
-                    set(gtest_copy
-                            COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GTest::gtest>" "${CMAKE_BINARY_DIR}/bin"
-                            COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_FILE:GTest::gtest_main>" "${CMAKE_BINARY_DIR}/bin")
-                endif ()
+                # Copy every runtime DLL the test binary's full link graph pulls in next to the executable: a test
+                # may surface transitive DLLs the engine's own post-build copy did not see (gtest is static).
                 add_custom_command(TARGET ${PROJECT_PREFIX_LOWER}_${child}_unit_test POST_BUILD
-                        ${gtest_copy}
                         COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_RUNTIME_DLLS:${PROJECT_PREFIX_LOWER}_${child}_unit_test>" "${CMAKE_BINARY_DIR}/bin"
                         COMMAND_EXPAND_LISTS
                 )

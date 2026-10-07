@@ -313,8 +313,8 @@ resolved) and reports failed writes as `PackExtractError`. The `OWL_FUZZING` opt
 
 ## Dependency Management
 
-Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager) and declared in `depmanager.yml` at the
-project root. During CMake configure, the `cmake/Depmanager.cmake`
-module automatically downloads missing packages from the configured remote server.
+Dependencies come from Conan 2, declared in `conanfile.py` at the project root and pinned by `conan.lock`. During
+CMake configure, the `cmake/Conan.cmake` module runs `conan install` (ConanCenter, plus the local recipes of
+`conan/recipes/`) and puts the generated package configurations on the CMake search path.
 
 See [Building](building.md) for instructions on configuring and building with dependencies.

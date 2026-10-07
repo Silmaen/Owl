@@ -16,7 +16,7 @@ changing a subsystem. An ongoing repository audit lives in `doc/audit/` (entry p
 Every compiler, CMake, CTest, Poetry, clang-tidy or clang-format call runs **inside the build image**
 through `docker/run.sh`, which mirrors CLion's *Docker Owl* toolchain (image
 `registry.argawaen.net/builder/devel-ubuntu2604:latest`, your UID/GID, repo mounted at its host path,
-`$HOME` = `../fake_home` → `/fhome` holding the Poetry venv, the DepManager cache and ccache). Never build
+`$HOME` = `../fake_home` → `/fhome` holding the Poetry venv, the Conan cache and ccache). Never build
 natively, never install a tool on the host; if a tool is missing from the image, say so.
 
 ```bash
@@ -32,8 +32,8 @@ docker/run.sh --perf perf ...                                      # ptrace / pe
   `linux-clang-debug` (coverage on). GCC presets exist for CI parity only.
 - Other presets: `linux-clang-tidy`, `linux-sanitizer-{address,thread,undefined-behavior}`,
   `windows-{gcc,clang}-{release,debug}`, `package-{engine,app-nest}-{linux,windows}`.
-- Conan 2 (migration in progress, every Linux preset): add `-DOWL_DEPENDENCY_PROVIDER=conan` (in a worktree,
-  also `-DOWL_CONAN_HOME=/fhome/.conan2-owl`); see `.claude/rules/dependencies.md`. DepManager stays the default.
+- Dependencies: Conan 2 only (`conanfile.py`, `conan.lock`); in a worktree add `-DOWL_CONAN_HOME=/fhome/.conan2-owl`;
+  see `.claude/rules/dependencies.md`.
 - Output: `output/build/<preset>/{bin,lib}`, install in `output/install/<preset>/`.
 - If a build dir ends up root-owned, chown it back through a throwaway root container.
 - Test binaries are `owl_<folder>_unit_test` (e.g. `owl_scene_tests_unit_test`); new `.cpp` files in
@@ -59,7 +59,7 @@ changed) before calling C++ work done.
 ## Python
 
 Poetry only (`pyproject.toml`): `poetry run …`, `poetry sync --no-root`. Never `pip`, never the system
-Python, never a bare `depmanager`. Inside the container the venv lives in `/fhome/.cache/pypoetry`.
+Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.cache/pypoetry`.
 
 ## Repository map
 
@@ -73,7 +73,7 @@ Python, never a bare `depmanager`. Inside the container the venv lives in `/fhom
 | `sample_project/`         | Feature showcase game: every engine feature must be demonstrated there.                   |
 | `ci/`, `ci_action.py`     | Python CI (`ci/actions/*` extend `BaseAction`, auto-discovered).                          |
 | `.teamcity/`              | TeamCity Kotlin DSL (validate with Maven in Docker).                                      |
-| `cmake/`, `CMakePresets*` | Build modules and presets; `depmanager.yml` pins ~36 dependencies.                        |
+| `cmake/`, `CMakePresets*` | Build modules and presets; `conanfile.py` lists the dependencies, `conan.lock` pins them. |
 | `doc/pages/`              | User documentation (Doxygen + GitHub): `roadmap.md`, `changelog.md`, `design/` pages.     |
 
 ## Workflow
@@ -106,5 +106,5 @@ Python, never a bare `depmanager`. Inside the container the venv lives in `/fhom
 - Comment-stripping scripts must keep `// NOLINT*`, `// clang-format on/off`, `// IWYU pragma` lines;
   check that every `NOLINTBEGIN` / `clang-format off` stays balanced.
 - `std::cerr` / iostreams are banned: logger macros, or `std::println(stderr, …)` before the logger exists.
-- Third-party code only through DepManager or Conan (ConanCenter, else `conan/recipes/`), never vendored.
+- Third-party code only through Conan (ConanCenter, else `conan/recipes/`), never vendored.
 - Editor SVG icons (`source/owlnest/assets_sources/icons/`) are hand-made: never edit them by script.

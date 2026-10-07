@@ -9,8 +9,8 @@ Design page for the v0.3.0 dependency work, summarised in the [Roadmap](../roadm
 
 Anyone can build Owl from public infrastructure. DepManager (packages served by the maintainer's server) is replaced by
 **Conan 2**, preferring **ConanCenter** recipes; in-house recipes are avoided and listed honestly when they remain.
-DepManager and `owl_engine.py` are removed at the end of phase 0; consumers then use the packaged archive (CPack)
-until v1.0.0 publishes the engine as a Conan package (`conan create .` already works, see below).
+DepManager and `owl_engine.py` are removed in phase 0; consumers use the packaged archive (CPack) until v1.0.0
+publishes the engine as a Conan package (`conan create .` already works, see below).
 
 ## Place in the release
 
@@ -18,19 +18,18 @@ This is **Phase 0** of v0.3.0 ([Foundations](foundations.md)): it runs first, be
 riskiest items (missing recipes, versions absent from ConanCenter, breaking upgrades) surface early. The reduction of
 public dependencies comes later, in phase D, once the chain is stable.
 
-## Current state (2026-10-05)
+## Current state (2026-10-07)
 
-Every Linux preset configures and builds with every dependency from Conan 2, and passes its tests (UBSan: renderer suite
-times out at 3600 s; table below).
-DepManager stays the CMake default provider (the switch is the maintainer's decision); the CI builds every configuration on Conan.
+Conan 2 is the only provider. Every preset builds and passes its tests on Conan in CI (Ubuntu 26.04 image, binaries
+shared through the `owl-cache` server, table below); DepManager, `depmanager.yml`, `cmake/Depmanager.cmake`
+and `owl_engine.py` are gone.
 
 ```bash
-docker/run.sh cmake --preset <preset> -DOWL_DEPENDENCY_PROVIDER=conan
+docker/run.sh cmake --preset <preset>
 ```
 
-- `OWL_DEPENDENCY_PROVIDER` (`depmanager` by default, or `conan`) picks the provider in `cmake/BaseConfig.cmake`.
 - `conanfile.py` (root) is both the dependency list and the OwlEngine package recipe. `cmake/Conan.cmake` runs
-  `conan install` at configure time, as `cmake/Depmanager.cmake` loads its environment, into
+  `conan install` at configure time into
   `output/build/<preset>/conan/` (CMakeDeps files), then puts that folder on `CMAKE_PREFIX_PATH`.
 - Conan 2 comes from Poetry (dev group). Options: `OWL_CONAN_PROFILE` (default `conan/profiles/<os>-<compiler>`),
   `OWL_CONAN_HOME` (a dedicated cache), `OWL_CONAN_BUILD` (`--build`, default `missing`), `OWL_CONAN_LOCKFILE`
@@ -47,25 +46,20 @@ docker/run.sh cmake --preset <preset> -DOWL_DEPENDENCY_PROVIDER=conan
 - ConanCenter has no binary for Clang 22 nor GCC 14: the first configure of each compiler builds the packages from
   source (about 50), later ones reuse the cache.
 
-### Presets in Conan mode
+### Presets
 
-Measured on 2026-10-05 in the build image (`docker/run.sh`, Clang 22.1, GCC 14.2), with a dedicated Conan cache.
+State of the CI on 2026-10-07 (TeamCity, Ubuntu 26.04 image for Linux, MSYS2 MinGW64 with GCC 16.2 / Clang 22 on the
+Windows agents):
 
-| Preset                               | Configure | Build | Tests                               | Note                                                         |
-|--------------------------------------|-----------|-------|-------------------------------------|--------------------------------------------------------------|
-| `linux-clang-release`                | yes       | yes   | 16 / 16                             | Reference                                                    |
-| `linux-clang-debug`                  | yes       | yes   | 16 / 16                             | Coverage flags on                                            |
-| `linux-gcc-release`                  | yes       | yes   | 16 / 16                             | `linux-gcc` profile, packages built once from source         |
-| `linux-gcc-debug`                    | yes       | yes   | 16 / 16                             | Coverage flags on                                            |
-| `linux-clang-tidy`                   | yes       | yes   | — (no tests)                        | clang-tidy clean; the imgui backends are not analysed        |
-| `linux-sanitizer-address`            | yes       | yes   | 16 / 16                             |                                                              |
-| `linux-sanitizer-leak`               | yes       | yes   | 16 / 16                             |                                                              |
-| `linux-sanitizer-thread`             | yes       | yes   | 16 / 16 with `docker/run.sh --perf` | TSan must disable ASLR: needs `seccomp=unconfined`, as in CI |
-| `linux-sanitizer-undefined-behavior` | yes       | yes   | 15 / 16, renderer timeout           | Renderer suite > 3600 s under UBSan; no UBSan report         |
-| `package-app-nest-linux`             | yes       | yes   | CPack archive                       | Ships the Conan `.so` and the Slang modules                  |
-| `package-engine-linux`               | —         | —     | —                                   | Not run; `conan create` covers the engine package            |
-| `windows-*`, `windows-clang-tidy`    | —         | —     | —                                   | Prepared (profiles, graph resolves); first agent run pending |
-| Linux arm64                          | —         | —     | —                                   | Not run here (x86_64 host)                                   |
+| Configuration                            | Presets                                                          | State                                    |
+|------------------------------------------|------------------------------------------------------------------|------------------------------------------|
+| Build Linux x64 / Clang, GCC             | `linux-clang-debug` / `-release`, `linux-gcc-debug` / `-release` | Green, release + Doxygen on Clang        |
+| Include Check                            | `linux-include-check`                                            | Green (strict libc++, no PCH)            |
+| Clang-Tidy, Static Analyzer              | `linux-clang-tidy`                                               | Green; third-party sources not analysed  |
+| Sanitizers Address, Thread, Undefined    | `linux-sanitizer-*`                                              | Green                                    |
+| Build Linux arm64 / Clang, GCC (nightly) | `linux-*` on the arm64 agent                                     | Green once the dependency cache was warm |
+| Build Windows x64 / Clang, GCC           | `windows-*`                                                      | Green                                    |
+| Packages (nightly)                       | `package-engine-*`, `package-app-nest-*`                         | Ship the Conan shared libraries          |
 
 ### Profiles and build types
 
@@ -163,38 +157,26 @@ docker/run.sh poetry run conan create . --profile:all conan/profiles/linux-clang
 
 ### Windows (MinGW)
 
-**CI: the Windows configurations use Conan** (`env.OWL_DEPENDENCY_PROVIDER = conan` on Windows x64 GCC / Clang and the
-Windows packages). The agent's MSYS2 moved to GCC 16 and the prebuilt DepManager packages no longer match it: the GCC
-tests died at load time (`0xc0000139`, entry point not found) and the Clang link hit duplicate `std::__unicode`
-symbols. Linux stays on DepManager until the switch of every preset.
-
-Prepared, not yet run on a Windows agent (the build image has no MinGW toolchain):
+The Windows configurations moved to Conan first: the agent's MSYS2 moved to GCC 16 and the prebuilt DepManager packages
+no longer matched it (GCC tests died at load time with `0xc0000139`, the Clang link hit duplicate `std::__unicode`
+symbols). With Conan every dependency is built by the agent's own compiler.
 
 - Profiles `conan/profiles/windows-clang` and `windows-gcc` (MSYS2 MinGW64, libstdc++, C++23), picked by
-  `cmake/Conan.cmake` from the compiler of the `windows-*` presets. `conan graph info` resolves the whole graph with
-  both profiles (68 and 70 packages, no invalid configuration), checked from Linux with `-pr:b linux-clang`.
-- `slang` recipe: the MSVC import library is also shipped as `libslang.dll.a`, the name MinGW linkers search; both
-  `lld` and GNU `ld` read the MSVC short import format.
-- Shared libraries: Windows has no RPATH, so `conan install` runs the `runtime_deploy` deployer into
-  `<build>/bin`, next to the executables.
+  `cmake/Conan.cmake` from the compiler of the `windows-*` presets. `windows-gcc` names MinGW's `gcc.exe` by full
+  path: in the MSYS2 bash of autotools recipes a bare `gcc` is MSYS's own POSIX compiler.
+- Host settings and options go through a generated profile (cmd.exe splits `&:shared=…` at `&`).
+- `slang` recipe: the MSVC import library is also shipped as `libslang.dll.a`, the name MinGW linkers search.
+- `libmp3lame` local recipe: MinGW Clang builds with autotools (ConanCenter takes every Windows Clang for clang-cl).
+- ImGuizmo and plutovg are shared, and the imgui backends and `imgui_stdlib` compiled into the engine drop their API
+  macro: a shared imgui declares them `dllimport`.
+- Shared libraries: Windows has no RPATH, so `conan install` runs the `runtime_deploy` deployer into `<build>/bin`.
 - Lockfile: `conan.lock` is resolved with the Linux profiles; on Windows `--lockfile-partial` lets the Windows-only
-  requirements (e.g. `jwasm` as a build requirement with GCC) resolve. Extend the lockfile from a Windows agent
-  (`conan lock create … --lockfile conan.lock --lockfile-out conan.lock`) before dropping `--lockfile-partial`.
-- Trying it: every TeamCity configuration exposes `env.OWL_DEPENDENCY_PROVIDER` (default `depmanager`); a custom run
-  with `conan` on *Windows x64 / Clang* exercises the whole chain on the agent. Locally:
-  `OWL_DEPENDENCY_PROVIDER=conan cmake --preset windows-clang-debug`.
-- Expected first-run cost: most ConanCenter packages have no MinGW binary and build from source (`--build=missing`),
-  then stay in the agent's Conan cache.
-- This also fixes the duplicate `std::__unicode` symbols seen with DepManager's prebuilt `spdlog` (built by another
-  toolchain): with Conan, every dependency is built by the agent's own compiler.
-
-Remaining risks, to check on the first agent run: local recipes on Windows (`nativefiledialog-extended` Win32 branch,
-`ufbx`, `msdf-atlas-gen`), Slang's runtime modules next to `slang.dll`, and `windres` for GLFW resources.
+  requirements resolve. Extend the lockfile from a Windows agent before dropping `--lockfile-partial`.
 
 ## Inventory
 
-Checked on 2026-10-05 with `conan search -r conancenter` (Conan 2.33). "Owl (Conan)" is the version the Conan build
-uses; "DepManager" the one still pinned in `depmanager.yml`.
+Checked on 2026-10-05 with `conan search -r conancenter` (Conan 2.33). "Owl (Conan)" is the version Owl uses;
+"DepManager" the one `depmanager.yml` pinned when it was removed.
 
 | Dependency            | DepManager     | Owl (Conan)     | Source                | Linkage | Note                                                             |
 |-----------------------|----------------|-----------------|-----------------------|---------|------------------------------------------------------------------|
@@ -254,23 +236,21 @@ ConanCenter as is.
 
 ## What remains
 
-Before the switch of the default:
+Phase 0, before anything else of v0.3.0:
 
-- Windows MinGW presets on Conan (see above), on the Windows agents
-- Linux arm64 (`linux-*` presets on the arm64 agent): the profiles detect the architecture, Slang has an arm64
-  binary; to run once
-- CI: a lockfile update report (G-08); the `Package` action running `conan create` waits for v1.0.0 (PR-09)
+- Breaking upgrade EnTT 4 and Taskflow 4.1 (before the open component registry, PR-37), and the lagging versions
+  (G-08), with a lockfile update report in CI. Versions not on ConanCenter yet (EnTT 4.0.0, Taskflow 4.1.0,
+  OpenAL Soft 1.25, msdfgen 1.13, msdf-atlas-gen 1.4, tinyobjloader rc13): contribute them upstream, or bump the
+  local recipes, rather than adding recipes
+
+Later:
+
 - Vulkan validation layers (`OWL_ENABLE_VULKAN_LAYERS`) from `vulkan-validationlayers`
-
-After it:
-
-- DepManager, `depmanager.yml`, `cmake/Depmanager.cmake` and `owl_engine.py` removed
-- Versions not on ConanCenter yet: EnTT 4.0.0, Taskflow 4.1.0, OpenAL Soft 1.25, msdfgen 1.13, msdf-atlas-gen 1.4,
-  tinyobjloader rc13 — contribute them upstream (or bump the local recipes) rather than adding recipes
-- Breaking upgrade EnTT 4 (before the open component registry, PR-37)
-- Propose the seven local recipes (or their new versions) to ConanCenter, msdf-atlas-gen as a library option, the libmp3lame clang-cl fix
-- imgui-color-text-edit v1.92.9: port `CodeEditorDocument` to the `DocPos` cursor API, then bump both providers
-- Static OwlEngine package; YAML out of the public headers (PR-27)
+- Propose the seven local recipes (or their new versions) to ConanCenter, msdf-atlas-gen as a library option, the
+  libmp3lame clang-cl fix
+- imgui-color-text-edit v1.92.9: port `CodeEditorDocument` to the `DocPos` cursor API, then bump the recipe
+- v1.0.0: the OwlEngine Conan package published and run by the `Package` action (PR-09), a static variant, YAML
+  out of the public headers (PR-27)
 
 ## Fewer public dependencies (phase D)
 

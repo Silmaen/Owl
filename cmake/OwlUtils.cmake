@@ -438,9 +438,9 @@ function(print_system_n_target_infos)
     message(STATUS "--------------------------------")
 endfunction()
 
-# Conan only: compile the imgui backends and imgui_stdlib that the ConanCenter recipe ships as sources
+# Compile the imgui backends and imgui_stdlib that the ConanCenter recipe ships as sources
 # (`res/bindings`, `res/misc/cpp`), into `${PROJECT_PREFIX_LOWER}_imgui_bindings`. The headers are staged
-# under `backends/` so `#include <backends/imgui_impl_glfw.h>` works as with the DepManager package.
+# under `backends/` so `#include <backends/imgui_impl_glfw.h>` resolves.
 function(owl_conan_imgui_bindings)
     set(BindingsTarget ${PROJECT_PREFIX_LOWER}_imgui_bindings)
     if (TARGET ${BindingsTarget})
@@ -498,25 +498,22 @@ function(owl_target_link_libraries Target LinkType Module)
     # FORCE_RELEASE is accepted for compatibility: `CMAKE_MAP_IMPORTED_CONFIG_DEBUG` is consulted at generate
     # time, so the Release mapping is applied once at directory scope in the top-level CMakeLists.txt.
 
-    # Conan: a few packages use another CMake name or target than the DepManager ones (see cmake/Conan.cmake).
+    # A few Conan packages use another CMake name or target than the module name (see cmake/Conan.cmake).
     set(Package ${Module})
-    if (${PROJECT_PREFIX}_DEPENDENCY_PROVIDER STREQUAL "conan")
-        if (DEFINED ${PROJECT_PREFIX}_CONAN_PACKAGE_${Module})
-            set(Package ${${PROJECT_PREFIX}_CONAN_PACKAGE_${Module}})
-        endif ()
-        if (DEFINED ${PROJECT_PREFIX}_CONAN_TARGET_${Module})
-            set(ModuleTarget ${${PROJECT_PREFIX}_CONAN_TARGET_${Module}})
-        endif ()
+    if (DEFINED ${PROJECT_PREFIX}_CONAN_PACKAGE_${Module})
+        set(Package ${${PROJECT_PREFIX}_CONAN_PACKAGE_${Module}})
+    endif ()
+    if (DEFINED ${PROJECT_PREFIX}_CONAN_TARGET_${Module})
+        set(ModuleTarget ${${PROJECT_PREFIX}_CONAN_TARGET_${Module}})
     endif ()
 
-    if (NOT TARGET ${ModuleTarget} OR ${PROJECT_PREFIX}_DEPENDENCY_PROVIDER STREQUAL "conan")
-        message(STATUS "Loading ${Package}....")
-        find_package(${Package} ${FindPackageArgs})
-        if (NOT TARGET ${ModuleTarget})
-            message(FATAL_ERROR "Module ${ModuleTarget} not found. Please ensure it is built and available in the CMake path.")
-        endif ()
-        message(STATUS "Found ${Package} version ${${Package}_VERSION} @ ${${Package}_DIR}")
+    # find_package again even when the target exists: the Conan package variables are function-scoped.
+    message(STATUS "Loading ${Package}....")
+    find_package(${Package} ${FindPackageArgs})
+    if (NOT TARGET ${ModuleTarget})
+        message(FATAL_ERROR "Module ${ModuleTarget} not found. Please ensure it is built and available in the CMake path.")
     endif ()
+    message(STATUS "Found ${Package} version ${${Package}_VERSION} @ ${${Package}_DIR}")
 
     string(STRIP ${LinkType} LinkType)
     if (NOT ("${LinkType}" STREQUAL "PRIVATE" OR
@@ -526,14 +523,14 @@ function(owl_target_link_libraries Target LinkType Module)
     endif ()
 
     target_link_libraries(${Target} ${LinkType} ${ModuleTarget})
-    if (${PROJECT_PREFIX}_DEPENDENCY_PROVIDER STREQUAL "conan" AND DEFINED ${PROJECT_PREFIX}_CONAN_INCLUDE_SUBDIR_${Module})
+    if (DEFINED ${PROJECT_PREFIX}_CONAN_INCLUDE_SUBDIR_${Module})
         string(TOUPPER "${${PROJECT_PREFIX}_CONAN_BUILD_TYPE}" BuildType)
         foreach (IncludeDir IN LISTS ${Package}_INCLUDE_DIRS_${BuildType})
             target_include_directories(${Target} SYSTEM ${LinkType}
                     "${IncludeDir}/${${PROJECT_PREFIX}_CONAN_INCLUDE_SUBDIR_${Module}}")
         endforeach ()
     endif ()
-    if (${PROJECT_PREFIX}_DEPENDENCY_PROVIDER STREQUAL "conan" AND Module STREQUAL "imgui")
+    if (Module STREQUAL "imgui")
         owl_conan_imgui_bindings()
         # Build tree only: the bindings are compiled into the engine, the installed package does not export them.
         target_link_libraries(${Target} ${LinkType} $<BUILD_INTERFACE:${PROJECT_PREFIX_LOWER}_imgui_bindings>)

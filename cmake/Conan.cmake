@@ -1,9 +1,8 @@
 #
-# Third-party dependencies from Conan 2 (OWL_DEPENDENCY_PROVIDER=conan).
+# Third-party dependencies from Conan 2, the only provider.
 #
-# Runs `conan install` on the root `conanfile.py` at configure time, the way `Depmanager.cmake` loads its
-# environment, then puts the generated CMakeDeps files on CMAKE_PREFIX_PATH. Conan itself comes from the
-# Poetry environment (dev group).
+# Runs `conan install` on the root `conanfile.py` at configure time, then puts the generated CMakeDeps files on
+# CMAKE_PREFIX_PATH. Conan itself comes from the Poetry environment (dev group).
 #
 set(${PROJECT_PREFIX}_CONAN_PROFILE "" CACHE STRING
         "Conan profile for host and build (default: conan/profiles/<os>-<compiler>)")
@@ -31,7 +30,7 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
         message(FATAL_ERROR "Conan profile '${${PROJECT_PREFIX}_CONAN_PROFILE}' not found.")
     endif ()
 
-    # Release third parties in a Debug build, as with DepManager (CMAKE_MAP_IMPORTED_CONFIG_DEBUG maps them).
+    # Release third parties in a Debug build (CMAKE_MAP_IMPORTED_CONFIG_DEBUG maps them).
     if (${PROJECT_PREFIX}_USE_RELEASE_THIRD_PARTY OR NOT CMAKE_BUILD_TYPE)
         set(${PROJECT_PREFIX}_CONAN_BUILD_TYPE Release)
     else ()
@@ -291,11 +290,11 @@ if (_owl_glibc MATCHES "glibc ([0-9]+\\.[0-9]+)")
     set(${PROJECT_PREFIX}_GLIBC_STR "glibc_${CMAKE_MATCH_1}")
 endif ()
 
-# Packages whose CMake name or target differs from the DepManager one used in the CMakeLists.
+# Packages whose CMake name or target differs from the module name used in the CMakeLists.
 set(${PROJECT_PREFIX}_CONAN_PACKAGE_stb_image stb)
 set(${PROJECT_PREFIX}_CONAN_TARGET_stb_image stb::stb)
 set(${PROJECT_PREFIX}_CONAN_TARGET_TinyGLTF TinyGLTF::TinyGLTF)
-# lunasvg: ConanCenter exports `include/`, the headers live in `include/lunasvg/` (DepManager exports the latter).
+# lunasvg: ConanCenter exports `include/`, the engine includes the headers as if `include/lunasvg/` were exported.
 set(${PROJECT_PREFIX}_CONAN_INCLUDE_SUBDIR_lunasvg lunasvg)
 
 unset(_owl_conan_compiler)

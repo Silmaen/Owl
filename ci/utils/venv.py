@@ -7,8 +7,7 @@ bind-mounted workspace holding the venv — the ARM64 job ends up loading wheels
 x86_64 and crashes at import (classic case: `cryptography/_rust.abi3.so: cannot open shared
 object file`).
 
-This module detects the situation by attempting the *exact* import that depmanager's boot
-chain requires.  Running inside the target venv (we're invoked via `poetry run python3
+This module detects the situation by importing a compiled extension of the venv (Pillow's).  Running inside the target venv (we're invoked via `poetry run python3
 ci_action.py`), an `ImportError` proves the venv is broken for this host — `ci_action.py`
 then exports `OWL_CI_REFRESH_VENV=1`, which `cmake/Poetry.cmake` consumes to `poetry env
 remove --all` + `poetry sync` and (re)stamp the venv with a platform marker.
@@ -72,7 +71,7 @@ def platform_matches_marker(venv_path: Path) -> bool:
 
 def venv_import_broken() -> bool:
     """
-    Try the exact import that depmanager's boot chain fails on when the venv contains wheels
+    Import a compiled extension of the venv (Pillow's), which fails when the venv contains wheels
     built for a different architecture.  We run the import in the *current* Python process
     (which is already inside the target venv thanks to `poetry run python3 ci_action.py`), so
     the check is instantaneous and free of subprocess timeouts.
@@ -81,7 +80,7 @@ def venv_import_broken() -> bool:
         when it succeeds.
     """
     try:
-        import cryptography.fernet  # noqa: F401
+        import PIL._imaging  # noqa: F401
     except ImportError:
         return True
     return False

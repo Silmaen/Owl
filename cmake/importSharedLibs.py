@@ -16,10 +16,8 @@ def is_external(path: str, roots: list[str]) -> bool:
 
     :param path: The resolved path of the shared object, as printed by ldd.
     :param roots: Package cache roots (Conan) whose libraries must be copied.
-    :return: True for a DepManager (``.edm``) library or one under a given root.
+    :return: True for a library under one of the given roots.
     """
-    if ".edm" in path:
-        return True
     return any(path.startswith(root.rstrip("/") + "/") for root in roots)
 
 

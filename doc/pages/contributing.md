@@ -57,15 +57,15 @@ Test executables follow the naming pattern `owl_<folder>_unit_test`.
 
 ## Adding Dependencies
 
-Dependencies are managed by [DepManager](https://github.com/Silmaen/DepManager) via
-`depmanager.yml`.
+Dependencies come from Conan 2 via `conanfile.py`, pinned by `conan.lock`.
 
-1. Add an entry to `depmanager.yml` with explicit `version` and `kind` (`static`, `shared`, or omit for header-only)
+1. Add `self.requires("<name>/<version>")` to `conanfile.py` with an exact version (ConanCenter first, otherwise a
+   minimal recipe in `conan/recipes/`), its linkage in `default_options`, then regenerate `conan.lock`
 2. In the target's `CMakeLists.txt`, use:
    ```cmake
    owl_target_link_libraries(<target> <PRIVATE|PUBLIC|INTERFACE> <module> REQUIRED)
    ```
-3. Do **not** call `find_package()` directly for DepManager-managed dependencies
+3. Do **not** call `find_package()` directly for Conan-managed dependencies
 
 See [Building](building.md) for the full build setup.
 

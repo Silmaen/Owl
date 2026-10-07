@@ -1,5 +1,5 @@
 #
-# Owl micro-benchmarks (in-house harness: no Google Benchmark package is available in DepManager).
+# Owl micro-benchmarks (in-house harness, no external benchmark library).
 #
 set(OWL_BENCH ${PROJECT_PREFIX_LOWER}_bench)
 file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

@@ -143,9 +143,9 @@ dependency upgrades), then every known bug fixed, safety nets, Owl RHI repaired,
 up. No new gameplay feature ([details](design/foundations.md)).
 
 - ![Done][done] teamcity-github-bridge 1.10.0 wiring (diff annotations, doc-only PRs skip the C++ matrix)
-- ![In Progress][progress] Phase 0 — Conan 2 on ConanCenter, missing recipes first ([Conan](design/conan-migration.md))
+- ![Done][done] Phase 0 — Conan 2 on ConanCenter, missing recipes first, every preset green in CI ([Conan](design/conan-migration.md))
 - ![Planned][planned] Phase 0 — breaking upgrades first: EnTT 4, Taskflow 4.1, lagging dependencies
-- ![Planned][planned] Phase 0 — DepManager and `owl_engine.py` removed: Conan the only provider, consumers on the packaged archive
+- ![Done][done] Phase 0 — DepManager and `owl_engine.py` removed: Conan the only provider, consumers on the packaged archive
 - ![Planned][planned] Phase A — every confirmed correctness bug fixed with its regression test (PR-01 to PR-25)
 - ![Planned][planned] Phase A — `on_collision` implemented from Box2D contact events (D-07)
 - ![Planned][planned] Phase A — game export tested end to end, sample run headless ([Export](design/game-export.md))

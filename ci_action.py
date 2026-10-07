@@ -68,10 +68,10 @@ def main():
             "Poetry venv appears broken for this host — forcing refresh "
             f"(now: {current_platform_signature()})"
         )
-        # Actions other than `Build` invoke `poetry run depmanager` (or another venv-resident
+        # Actions other than `Build` invoke `poetry run conan` (or another venv-resident
         # tool) before any CMake configure step runs — that means `cmake/Poetry.cmake`'s
         # in-CMake `poetry env remove --all` + `poetry sync` would arrive too late and the
-        # current process would already have hit `ImportError` on `cryptography/_rust.abi3.so`.
+        # current process would already have hit `ImportError` on a compiled extension.
         # Perform the refresh inline so every downstream `poetry run …` invocation in this
         # process sees a freshly-synced venv.  Best-effort: a failure here logs but doesn't
         # abort — CMake will retry the same operations and surface a clearer error on its own

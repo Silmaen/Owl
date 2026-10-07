@@ -90,7 +90,7 @@ Every callback is optional. Install them with `setOn*` methods before the first 
 
 ### Backend
 
-The pimpl wraps **`GraphEditor`** from the `imguizmo` DepManager package (version 1.92.7). Since ImGuizmo is distributed
+The pimpl wraps **`GraphEditor`** from the `imguizmo` package (1.10, local Conan recipe). Since ImGuizmo is distributed
 as a bundle, the same package also ships `ImSequencer`, `ImCurveEdit`, `ImGradient`,
 `ImZoomSlider` and `ImLightRig` — available for future asset editors without any new dependency.
 

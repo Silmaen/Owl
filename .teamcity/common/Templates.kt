@@ -38,12 +38,7 @@ val globalBuild = Template {
         // Secrets reach ci_action.py through its environment, never its command line
         // (visible to `ps`, echoed in the log). The referenced parameters are password
         // parameters on the server, so TeamCity masks their value everywhere.
-        param("env.OWL_REMOTE_PASSWORD", "%remote_passwd%")
         param("env.OWL_DEPLOY_PASSWORD", "%deploy_passwd%")
-        // Third-party provider: Conan everywhere (dependencies built by each agent's own toolchain).
-        // DepManager stays selectable for a manual run during the transition.
-        select("env.OWL_DEPENDENCY_PROVIDER", "conan", label = "Dependency provider",
-            options = listOf("depmanager", "conan"))
         // Conan binary cache: read first, filled with every binary an agent builds; skipped when unreachable.
         param("env.OWL_CONAN_CACHE_URL", "%conan_server%")
         param("env.OWL_CONAN_CACHE_UPLOAD", "ON")
@@ -69,11 +64,6 @@ val globalBuild = Template {
             id = "RUNNER_24"
             scriptContent =
                 "python3 ci_action.py DefineTeamCityVariables %cmake_preset% %extra_tc_vars%"
-        }
-
-        script {
-            ciAction("ConfigureRemote", "Define_Remote", displayName = "Define Remote",
-                extraArgs = "-- --remote_url=%remote_url% --remote_login=%remote_login%")
         }
 
         script {

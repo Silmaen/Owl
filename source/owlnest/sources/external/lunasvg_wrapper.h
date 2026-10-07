@@ -5,7 +5,7 @@
  * Copyright (c) 2026 All rights reserved.
  * All modification must get authorization from the author.
  *
- * Owlnest-side wrapper around the DepManager-provided `lunasvg` package.
+ * Owlnest-side wrapper around the `lunasvg` package (Conan).
  * The engine has its own `core/external/lunasvg.h` for private use; owlnest
  * needs a separate wrapper because it links lunasvg directly (the engine
  * does not propagate it).

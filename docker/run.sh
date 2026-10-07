@@ -14,7 +14,7 @@
 #
 # Environment overrides:
 #   OWL_DOCKER_IMAGE  image to use (default: the CI builder image).
-#   OWL_DOCKER_HOME   host directory mounted as $HOME (poetry venv, depmanager cache, ccache).
+#   OWL_DOCKER_HOME   host directory mounted as $HOME (poetry venv, conan cache, ccache).
 #   OWL_DOCKER_MOUNTS extra host directories (space separated), mounted at the same path (e.g. a scratch dir).
 set -euo pipefail
 

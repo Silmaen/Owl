@@ -24,8 +24,8 @@ Adding a new `.cpp` or `.h` file requires no CMakeLists.txt modification.
 
 ## Linking Dependencies
 
-**Never call `find_package()` directly** for depmanager- or Conan-managed packages. Use the wrapper (it
-maps the Conan names that differ, see `cmake/Conan.cmake`):
+**Never call `find_package()` directly** for Conan-managed packages. Use the wrapper (it maps the Conan
+names that differ, see `cmake/Conan.cmake`):
 ```cmake
 owl_target_link_libraries(TargetName PRIVATE|PUBLIC|INTERFACE ModuleName REQUIRED ${THIRD_PARTY_RELEASE})
 ```
@@ -44,9 +44,9 @@ owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED ${THIRD_PARTY_RELE
 
 ## Adding a New Dependency
 
-1. Add entry to `depmanager.yml` with `version` and `kind` (static/shared/header)
+1. Add `self.requires(...)` to `conanfile.py` (and its linkage in `default_options`), then relock `conan.lock`
 2. Add `owl_target_link_libraries()` call in the appropriate `CMakeLists.txt`
-3. Dependencies are auto-fetched during `cmake --preset` configure step
+3. Dependencies are auto-fetched during `cmake --preset` configure step (see `.claude/rules/dependencies.md`)
 
 ## Application Targets
 
@@ -103,6 +103,5 @@ Tests are auto-discovered from `test/` subdirectories. See testing rules.
 | `OWL_PACKAGING`                           | OFF        | Enable packaging mode                                                                                                                         |
 | `OWL_BENCHMARK`                           | OFF        | Build the `owl_bench` micro-benchmark harness (`bench/`, see `bench/README.md`)                                                               |
 | `OWL_INCLUDE_CHECK`                       | OFF        | Add `owl_include_check`: every header and source compiled alone, no PCH, strict libc++ (Clang only, `linux-include-check` preset)             |
-| `OWL_DEPENDENCY_PROVIDER`                 | depmanager | Third-party provider: `depmanager` or `conan` (see `.claude/rules/dependencies.md`)                                                           |
 | `OWL_TEST_SHUFFLE`                        | OFF        | Run every test binary with `--gtest_shuffle` (ON in the sanitizer presets; seed via `GTEST_RANDOM_SEED`)                                      |
 | `OWL_FUZZING`                             | OFF        | Build the libFuzzer targets in `fuzz/` (Clang only; instruments the engine, combine with ASan)                                                |

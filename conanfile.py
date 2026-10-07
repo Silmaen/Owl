@@ -3,8 +3,8 @@ Conan 2 recipe of the Owl engine.
 
 Two uses:
 
-- `cmake/Conan.cmake` runs `conan install` on it at configure time when the build is configured with
-  `-DOWL_DEPENDENCY_PROVIDER=conan`, and finds the packages through the generated `CMakeDeps` files;
+- `cmake/Conan.cmake` runs `conan install` on it at configure time and finds the packages through the generated
+  `CMakeDeps` files;
 - `conan create .` builds and packages OwlEngine (`owlengine/<version>`), then builds `test_package/`
   against it: `find_package(OwlEngine)` on the installed CMake config and a program linked to `Owl::OwlEngine`.
 
@@ -133,7 +133,6 @@ class OwlEngineConan(ConanFile):
         # Never write a CMakeUserPresets.json in the source tree.
         tc.user_presets_path = False
         # Only read by `conan create` (CMake driven by Conan); cmake/Conan.cmake ignores this toolchain.
-        tc.cache_variables["OWL_DEPENDENCY_PROVIDER"] = "conan"
         tc.cache_variables["OWL_CONAN_INSTALL"] = False
         tc.cache_variables["OWL_BUILD_SHARED"] = bool(self.options.shared)
         tc.cache_variables["OWL_BUILD_NEST"] = False
