@@ -11,6 +11,7 @@
 #include "panel/SceneHierarchy.h"
 #include "testHelper.h"
 
+#include <cstdio>
 #include <gui/UiLayer.h>
 #include <imgui_stdlib.h>
 #include <scene/PrefabSerializer.h>
@@ -22,7 +23,6 @@
 #include <filesystem>
 #include <format>
 #include <functional>
-#include <print>
 #include <string>
 #include <string_view>
 
@@ -437,8 +437,10 @@ TEST_F(InspectorEditTest, InspectorIdleFramesDoNotSerialize) {
 			total += clk::now() - t0;
 		m_layer.end();
 	}
-	std::println("Inspector idle frame, 13 components: {:.4f} ms.",
-				 std::chrono::duration<double, std::milli>{total}.count() / frames);
+	std::fputs(std::format("Inspector idle frame, 13 components: {:.4f} ms.\n",
+						   std::chrono::duration<double, std::milli>{total}.count() / frames)
+					   .c_str(),
+			   stdout);
 	EXPECT_EQ(panel::InspectorEditTracker::serializationCount(), start);
 	EXPECT_FALSE(m_undo.canUndo());
 }
