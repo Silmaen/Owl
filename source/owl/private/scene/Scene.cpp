@@ -19,6 +19,7 @@
 #include "renderer/RendererTilemap.h"
 #include "renderer/RendererVoxel.h"
 #include "renderer/gpu/StorageBuffer.h"
+#include "scene/ComponentRegistry.h"
 #include "scene/Entity.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
@@ -70,34 +71,10 @@ auto unpackChunkKey(const uint64_t iKey) -> math::vec3i {
 	return math::vec3i{dec(iKey), dec(iKey >> 21), dec(iKey >> 42)};
 }
 
-template<component::isComponent Component>
-void copyComponent(entt::registry& oDst, const entt::registry& iSrc,
-				   const std::unordered_map<core::UUID, entt::entity>& iEnttMap) {
-	for (auto view = iSrc.view<Component>(); auto e: view) {
-		const core::UUID uuid = iSrc.get<component::ID>(e).id;
-		OWL_CORE_ASSERT(iEnttMap.contains(uuid), "Error: Component not found in map.")
-		const entt::entity dstEnttId = iEnttMap.at(uuid);
-		auto& component = iSrc.get<Component>(e);
-		oDst.emplace_or_replace<Component>(dstEnttId, component);
-	}
-}
-
-template<typename... Components>
-void copyComponentFromTuple(entt::registry& oDst, const entt::registry& iSrc,
-							const std::unordered_map<core::UUID, entt::entity>& iEnttMap,
-							const std::tuple<Components...>&) {
-	(..., copyComponent<Components>(oDst, iSrc, iEnttMap));
-}
-
-template<component::isComponent Component>
-void copyComponentIfExists(Entity& oDst, const Entity& iSrc) {
-	if (iSrc.hasComponent<Component>())
-		oDst.addOrReplaceComponent<Component>(iSrc.getComponent<Component>());
-}
-
-template<typename... Components>
-void copyComponentIfExistsFromTuple(Entity& oDst, const Entity& iSrc, const std::tuple<Components...>&) {
-	(..., copyComponentIfExists<Components>(oDst, iSrc));
+void copyCopiableComponents(Entity& oDst, const Entity& iSrc) {
+	for (const auto& desc: ComponentRegistry::getAll())
+		if (desc.copiable)
+			desc.copy(oDst, iSrc);
 }
 
 auto computeTextAspect(const shared<data::fonts::Font>& iFont, const std::string& iText, const float iKerning,
@@ -326,7 +303,9 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	}
 
 	// Copy components (except IDComponent and TagComponent)
-	copyComponentFromTuple(dstSceneRegistry, srcSceneRegistry, enttMap, component::CopiableComponents{});
+	for (const auto& desc: ComponentRegistry::getAll())
+		if (desc.copiable)
+			desc.copyAll(dstSceneRegistry, srcSceneRegistry, enttMap);
 	// In-flight streaming jobs belong to the source scene: the copy must queue its own.
 	for (const auto view = dstSceneRegistry.view<component::VoxelWorld>(); const auto entity: view)
 		view.get<component::VoxelWorld>(entity).pendingChunks.clear();
@@ -1552,7 +1531,7 @@ auto Scene::getAllEntities() const -> std::vector<Entity> {
 auto Scene::duplicateEntity(const Entity& iEntity) -> Entity {
 	const std::string name = iEntity.getName();
 	Entity newEntity = createEntity(name);
-	copyComponentIfExistsFromTuple(newEntity, iEntity, component::CopiableComponents{});
+	copyCopiableComponents(newEntity, iEntity);
 	// Reset hierarchy: duplicate is always a root entity with no children.
 	auto& [parentId, childrenIds] = newEntity.getComponent<component::Hierarchy>();
 	parentId = core::UUID{0};
@@ -1918,7 +1897,7 @@ void Scene::flushPendingDestructions() {
 auto Scene::duplicateSubtree(const Entity& iEntity) -> Entity {
 	// Duplicate the root entity.
 	Entity newRoot = createEntity(iEntity.getName());
-	copyComponentIfExistsFromTuple(newRoot, iEntity, component::CopiableComponents{});
+	copyCopiableComponents(newRoot, iEntity);
 	// Reset hierarchy for the new root.
 	auto& [parentId, childrenIds] = newRoot.getComponent<component::Hierarchy>();
 	parentId = core::UUID{0};
@@ -1932,7 +1911,7 @@ auto Scene::duplicateSubtree(const Entity& iEntity) -> Entity {
 		const auto [srcEntity, dstParent] = stack.back();
 		stack.pop_back();
 		Entity newChild = createEntity(srcEntity.getName());
-		copyComponentIfExistsFromTuple(newChild, srcEntity, component::CopiableComponents{});
+		copyCopiableComponents(newChild, srcEntity);
 		auto& [pid, c_ids] = newChild.getComponent<component::Hierarchy>();
 		pid = dstParent.getUUID();
 		c_ids.clear();
@@ -1989,11 +1968,6 @@ void Scene::breakHierarchyCycles(const std::unordered_map<core::UUID, entt::enti
 		}
 		for (const auto uuid: path) marks.at(uuid) = Mark::Done;
 	}
-}
-
-template<typename T>
-void Scene::onComponentAdded([[maybe_unused]] const Entity& iEntity, [[maybe_unused]] T& ioComponent) {
-	OWL_CORE_ASSERT(false, "Unknown component")
 }
 
 template<>

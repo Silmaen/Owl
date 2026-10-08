@@ -14,6 +14,7 @@
 #include "HierarchyCommands.h"
 #include "PrefabCommands.h"
 
+#include <scene/ComponentRegistry.h>
 #include <scene/PrefabSerializer.h>
 #include <scene/component/components.h>
 
@@ -82,42 +83,25 @@ auto entityArg(const scene::Scene& iScene, const CommandArgs& iArgs, const std::
 	return fail(CommandError::UnknownEntity, std::format("no entity matches `{}`", iName));
 }
 
-template<typename Comp>
-auto matchesName(const std::string& iName) -> bool {
-	if (iName == Comp::name())
-		return true;
-	if constexpr (scene::component::isSerializableComponent<Comp>)
-		return iName == Comp::key();
-	else
-		return false;
+auto optionalComponent(const std::string& iName) -> const scene::ComponentDescriptor* {
+	const auto* desc = scene::ComponentRegistry::find(iName);
+	return desc != nullptr && desc->optional ? desc : nullptr;
 }
 
-template<typename... Comp>
-auto addByName(scene::Entity& ioEntity, const std::string& iName, const std::tuple<Comp...>& /*iList*/)
-		-> std::optional<std::string> {
-	std::optional<std::string> added;
-	const auto tryOne = [&]<typename C>() -> void {
-		if (added || !matchesName<C>(iName) || ioEntity.hasComponent<C>())
-			return;
-		ioEntity.addComponent<C>();
-		added = C::name();
-	};
-	(tryOne.template operator()<Comp>(), ...);
-	return added;
+auto addByName(scene::Entity& ioEntity, const std::string& iName) -> std::optional<std::string> {
+	const auto* desc = optionalComponent(iName);
+	if (desc == nullptr || desc->has(ioEntity))
+		return std::nullopt;
+	desc->add(ioEntity);
+	return desc->name;
 }
 
-template<typename... Comp>
-auto removeByName(scene::Entity& ioEntity, const std::string& iName, const std::tuple<Comp...>& /*iList*/)
-		-> std::optional<std::string> {
-	std::optional<std::string> removed;
-	const auto tryOne = [&]<typename C>() -> void {
-		if (removed || !matchesName<C>(iName) || !ioEntity.hasComponent<C>())
-			return;
-		ioEntity.removeComponent<C>();
-		removed = C::name();
-	};
-	(tryOne.template operator()<Comp>(), ...);
-	return removed;
+auto removeByName(scene::Entity& ioEntity, const std::string& iName) -> std::optional<std::string> {
+	const auto* desc = optionalComponent(iName);
+	if (desc == nullptr || !desc->has(ioEntity))
+		return std::nullopt;
+	desc->remove(ioEntity);
+	return desc->name;
 }
 
 auto createEntity(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
@@ -226,7 +210,7 @@ auto addComponent(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs)
 		return unexpected<CommandFailure>{entity.error()};
 	const auto name = iArgs.getText("component");
 	auto before = EntitySnapshot::capture(*entity);
-	const auto added = addByName(*entity, name, scene::component::OptionalComponents{});
+	const auto added = addByName(*entity, name);
 	if (!added)
 		return fail(CommandError::InvalidArgument,
 					std::format("`{}` is not an optional component, or the entity already has it", name));
@@ -242,7 +226,7 @@ auto removeComponent(const shared<scene::Scene>& ioScene, const CommandArgs& iAr
 		return unexpected<CommandFailure>{entity.error()};
 	const auto name = iArgs.getText("component");
 	auto before = EntitySnapshot::capture(*entity);
-	const auto removed = removeByName(*entity, name, scene::component::OptionalComponents{});
+	const auto removed = removeByName(*entity, name);
 	if (!removed)
 		return fail(CommandError::InvalidArgument,
 					std::format("`{}` is not an optional component of the entity", name));

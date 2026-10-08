@@ -185,7 +185,8 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
   scene owns its physics world, its script bindings and its UI mouse state; the engine context that owns the
   application-wide singletons remains
 - ![Done][done] Phased systems; gameplay moved out of `Scene` (PR-36: A-02, C-14). See [Systems and phases](../scene.md#systems)
-- ![Planned][planned] Open component registry, after the EnTT 4 upgrade (PR-37: A-05, A-18)
+- ![Done][done] Open component registry, after the EnTT 4 upgrade (PR-37: A-05, A-18). See
+  [Game components](../scene.md#component-registry)
 - ![Planned][planned] Entity references by UUID, remapped on duplication (PR-35: C-12, C-04)
 - ![Done][done] `EditorLayer` split (packager, ribbon, project opening); level transitions shared with the runner
   (`scene::LevelTransition`) (PR-32: E-07, E-12)

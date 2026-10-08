@@ -24,6 +24,7 @@
 #include <renderer/RenderLayer.h>
 #include <renderer/RenderStack.h>
 #include <renderer/Renderer.h>
+#include <scene/ComponentRegistry.h>
 #include <scene/PrefabSerializer.h>
 
 #include <algorithm>
@@ -704,6 +705,47 @@ void drawComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoMan
 	(..., drawComponent<Component>(ioEntity, iUndoManager, iCommands, ioInspector));
 }
 
+void addGameComponentItems(scene::Entity& ioEntity, const commands::CommandTarget& iCommands) {
+	for (const auto& desc: scene::ComponentRegistry::getAll()) {
+		if (desc.builtin || !desc.optional || desc.has(ioEntity))
+			continue;
+		if (ImGui::MenuItem(desc.name.c_str())) {
+			std::ignore =
+					iCommands.execute("component.add", {{"entity", entityArgOf(ioEntity)}, {"component", desc.name}});
+			ImGui::CloseCurrentPopup();
+		}
+	}
+}
+
+void drawGameComponents(scene::Entity& ioEntity, SceneUndoManager* iUndoManager,
+						const commands::CommandTarget& iCommands, InspectorEditTracker& ioInspector) {
+	for (const auto& desc: scene::ComponentRegistry::getAll()) {
+		if (desc.builtin || !desc.has(ioEntity))
+			continue;
+		ImGui::PushID(desc.key.c_str());
+		ImGui::Separator();
+		const bool open =
+				ImGui::TreeNodeEx(desc.name.c_str(), ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
+															 ImGuiTreeNodeFlags_SpanAvailWidth);
+		if (ImGui::BeginPopupContextItem("ComponentSettings")) {
+			if (desc.optional && ImGui::MenuItem("Remove component"))
+				std::ignore = iCommands.execute("component.remove",
+												{{"entity", entityArgOf(ioEntity)}, {"component", desc.name}});
+			ImGui::EndPopup();
+		}
+		if (open) {
+			ioInspector.beginComponent(ioEntity, desc.key);
+			if (desc.inspect)
+				std::ignore = desc.inspect(ioEntity);
+			else
+				ImGui::TextDisabled("No inspector registered for this component.");
+			ioInspector.endComponent(ioEntity, desc.key, desc.name, iUndoManager);
+			ImGui::TreePop();
+		}
+		ImGui::PopID();
+	}
+}
+
 }// namespace
 
 void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
@@ -766,11 +808,13 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 	if (ImGui::BeginPopup("AddComponent")) {
 		const std::string layerTypeKey = layerTypeKeyForEntity(m_selection);
 		addComponentsFromTuple(m_selection, getCommandTarget(), layerTypeKey, OptionalComponents{});
+		addGameComponentItems(m_selection, getCommandTarget());
 		ImGui::EndPopup();
 	}
 	ImGui::PopItemWidth();
 	drawComponentsFromTuple(m_selection, mp_undoManager, getCommandTarget(), m_inspector,
 							gui::component::DrawableComponents{});
+	drawGameComponents(m_selection, mp_undoManager, getCommandTarget(), m_inspector);
 }
 
 }// namespace owl::nest::panel

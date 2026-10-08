@@ -27,6 +27,13 @@ Runtime gameplay goes into a system (engine ones: `private/scene/systems/`, name
 `registerEngineSystems`), never back into `Scene.cpp`. Only `Scripts` to `PostPhysics` may mutate the world;
 `Late` runs with the per-pass caches armed. Reference: `doc/pages/scene.md#systems`.
 
+## Components
+
+`scene::ComponentRegistry` drives serialization, copies (`Scene::copy`, duplication), prefabs and the editor
+commands: never iterate `SerializableComponents` / `CopiableComponents` / `OptionalComponents` for those again (the
+tuples only seed the engine entries, in serialization order). A new engine component goes into the tuples and
+gets its `onComponentAdded` specialisation declared at the end of `Scene.h`.
+
 ## Hierarchy
 
 Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `childrenIds`); roots have

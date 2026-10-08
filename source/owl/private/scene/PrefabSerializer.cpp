@@ -48,7 +48,7 @@ auto loadPrefabDocument(const std::filesystem::path& iFilepath) -> std::optional
 void serializeEntity(const core::Serializer& iOut, const Entity& iEntity) {
 	iOut.getImpl()->emitter << YAML::BeginMap;
 	iOut.getImpl()->emitter << YAML::Key << "Entity" << YAML::Value << iEntity.getUUID();
-	serializeComponents(iEntity, iOut, component::SerializableComponents{});
+	component::serializeComponents(iEntity, iOut);
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
@@ -85,7 +85,7 @@ void deserializeEntity(const shared<Scene>& ioScene, const core::Serializer& iNo
 		auto& comp = entity.getComponent<component::Hierarchy>();
 		comp.deserialize(sNode);
 	}
-	deserializeComponents(entity, iNode, component::OptionalComponents{});
+	component::deserializeOptionalComponents(entity, iNode);
 }
 
 }// namespace
@@ -194,7 +194,7 @@ auto PrefabSerializer::instantiate(const std::filesystem::path& iFilepath, const
 			const core::Serializer sEntity;
 			sEntity.getImpl()->node.reset(YAML::Load(entityYaml));
 
-			component::deserializeComponents(dstEntity, sEntity, component::OptionalComponents{});
+			component::deserializeOptionalComponents(dstEntity, sEntity);
 		}
 
 		// Phase 5: Rebuild hierarchy in the target scene.

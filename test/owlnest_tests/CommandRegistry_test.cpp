@@ -10,6 +10,8 @@
 #include "UndoManager.h"
 #include "testHelper.h"
 
+#include <core/SerializerImpl.h>
+#include <scene/ComponentRegistry.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/component/CircleRenderer.h>
@@ -22,6 +24,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <tuple>
 #include <variant>
 
 using namespace owl;
@@ -125,6 +128,41 @@ TEST_F(CommandRegistryTest, SetTransformAndComponents) {
 	EXPECT_FALSE(m_scene->findEntityByUUID(entity.getUUID()).hasComponent<scene::component::CircleRenderer>());
 	m_undo.undo(*m_scene);
 	EXPECT_TRUE(m_scene->findEntityByUUID(entity.getUUID()).hasComponent<scene::component::CircleRenderer>());
+}
+
+namespace {
+/// A component a game registers: the editor commands handle it like an engine one.
+struct GameHealth {
+	int64_t value = 100;
+	static auto key() -> const char* { return "GameHealth"; }
+	static auto name() -> const char* { return "Game Health"; }
+	void serialize(const core::Serializer& iOut) const {
+		iOut.getImpl()->emitter << YAML::Key << key() << YAML::Value << YAML::BeginMap;
+		iOut.getImpl()->emitter << YAML::Key << "value" << YAML::Value << value;
+		iOut.getImpl()->emitter << YAML::EndMap;
+	}
+	void deserialize(const core::Serializer& iNode) {
+		if (const auto node = iNode.getImpl()->node["value"]; node)
+			value = node.as<int64_t>();
+	}
+};
+}// namespace
+
+TEST_F(CommandRegistryTest, AddsAndRemovesARegisteredGameComponent) {
+	ASSERT_TRUE(scene::ComponentRegistry::registerComponent<GameHealth>());
+	const auto entity = m_scene->createEntity("Hero");
+	ASSERT_TRUE(
+			run("component.add", {{"entity", idOf(entity)}, {"component", std::string{"Game Health"}}}).has_value());
+	EXPECT_TRUE(entity.hasComponent<GameHealth>());
+	m_undo.undo(*m_scene);
+	EXPECT_FALSE(m_scene->findEntityByUUID(entity.getUUID()).hasComponent<GameHealth>());
+	m_undo.redo(*m_scene);
+	const auto restored = m_scene->findEntityByUUID(entity.getUUID());
+	ASSERT_TRUE(restored.hasComponent<GameHealth>());
+	ASSERT_TRUE(run("component.remove", {{"entity", idOf(restored)}, {"component", std::string{"GameHealth"}}})
+						.has_value());
+	EXPECT_FALSE(m_scene->findEntityByUUID(entity.getUUID()).hasComponent<GameHealth>());
+	std::ignore = scene::ComponentRegistry::unregisterComponent(GameHealth::key());
 }
 
 TEST_F(CommandRegistryTest, RefusesBadCallsWithoutChangingAnything) {

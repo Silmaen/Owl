@@ -45,7 +45,41 @@ class ScriptableEntity;
 struct VoxelStreamState;
 
 namespace component {
+struct AnimatedSpriteRenderer;
+struct BackgroundTexture;
+struct Camera;
+struct Canvas;
+struct CircleRenderer;
+struct EntityLink;
+struct FlyCamera;
+struct Hierarchy;
+struct ID;
+struct LuaScript;
+struct NativeScript;
+struct PhysicBody;
+struct Player;
+struct PrefabLink;
+struct RaycastDoor;
+struct RaycastPushWall;
+struct RendererTag;
+struct SoundListener;
+struct SoundSource;
+struct SpriteRenderer;
+struct Tag;
+struct Text;
+struct Tilemap;
+struct Transform;
+struct Trigger;
+struct UiButton;
+struct UiImage;
+struct UiPanel;
+struct UiProgressBar;
+struct UiRect;
+struct UiSlider;
+struct UiText;
+struct Visibility;
 struct VoxelPlayer;
+struct VoxelWorld;
 }// namespace component
 
 /**
@@ -718,13 +752,16 @@ private:
 	mutable std::unordered_map<entt::entity, uint32_t> m_entityToWorldIndex;
 	/**
 	 * @brief
-	 *  Action when component is added to an entity.
-	 * @tparam T Type of the added component.
-	 * @param[in] iEntity Entity receiving new component.
+	 *  Hook run when a component is added to an entity.
+	 *
+	 * The engine components have their own specialisation (declared after the class); a component registered by
+	 * a game (`ComponentRegistry`) needs none and gets this empty one.
+	 * @tparam T The component type.
+	 * @param[in] iEntity The entity.
 	 * @param[in,out] ioComponent The new component.
 	 */
 	template<typename T>
-	void onComponentAdded(const Entity& iEntity, T& ioComponent);
+	void onComponentAdded([[maybe_unused]] const Entity& iEntity, [[maybe_unused]] T& ioComponent) {}
 
 	/**
 	 * @brief
@@ -945,5 +982,122 @@ private:
 	friend class ScriptableEntity;
 	friend class physics::PhysicCommand;
 };
+
+template<>
+OWL_API void Scene::onComponentAdded<component::ID>(const Entity& iEntity, component::ID& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Tag>(const Entity& iEntity, component::Tag& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Transform>(const Entity& iEntity, component::Transform& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Camera>(const Entity& iEntity, component::Camera& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::SpriteRenderer>(const Entity& iEntity,
+																component::SpriteRenderer& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::AnimatedSpriteRenderer>(const Entity& iEntity,
+																		component::AnimatedSpriteRenderer& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::CircleRenderer>(const Entity& iEntity,
+																component::CircleRenderer& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::NativeScript>(const Entity& iEntity,
+															  component::NativeScript& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Text>(const Entity& iEntity, component::Text& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::PhysicBody>(const Entity& iEntity, component::PhysicBody& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Player>(const Entity& iEntity, component::Player& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Trigger>(const Entity& iEntity, component::Trigger& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::EntityLink>(const Entity& iEntity, component::EntityLink& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::BackgroundTexture>(const Entity& iEntity,
+																   component::BackgroundTexture& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Visibility>(const Entity& iEntity, component::Visibility& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Hierarchy>(const Entity& iEntity, component::Hierarchy& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::SoundSource>(const Entity& iEntity,
+															 component::SoundSource& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::SoundListener>(const Entity& iEntity,
+															   component::SoundListener& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::LuaScript>(const Entity& iEntity, component::LuaScript& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Canvas>(const Entity& iEntity, component::Canvas& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiRect>(const Entity& iEntity, component::UiRect& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiText>(const Entity& iEntity, component::UiText& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiImage>(const Entity& iEntity, component::UiImage& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiPanel>(const Entity& iEntity, component::UiPanel& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiButton>(const Entity& iEntity, component::UiButton& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiSlider>(const Entity& iEntity, component::UiSlider& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::UiProgressBar>(const Entity& iEntity,
+															   component::UiProgressBar& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::PrefabLink>(const Entity& iEntity, component::PrefabLink& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::RendererTag>(const Entity& iEntity,
+															 component::RendererTag& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Tilemap>(const Entity& iEntity, component::Tilemap& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::RaycastDoor>(const Entity& iEntity,
+															 component::RaycastDoor& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::RaycastPushWall>(const Entity& iEntity,
+																 component::RaycastPushWall& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::VoxelWorld>(const Entity& iEntity, component::VoxelWorld& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::FlyCamera>(const Entity& iEntity, component::FlyCamera& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::VoxelPlayer>(const Entity& iEntity,
+															 component::VoxelPlayer& ioComponent);
 
 }// namespace owl::scene

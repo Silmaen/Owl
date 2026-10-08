@@ -60,6 +60,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `export_tests` (CTest label `export`): exports `sample_project`, moves the game out of its export folder and smoke-tests every scene headless.
 - `Application::setExitCode()`: `main` returns it, and 1 when the application ended in the `Error` state.
 - `scene::SystemSchedule`: the runtime frame is a list of named systems in fixed phases (`SystemPhase`) that a game adds, replaces or removes, for every scene (`getDefault()`) or one (`Scene::getSystems()`).
+- `scene::ComponentRegistry`: a game registers its own components, which scenes and prefabs then save and load, duplication and the Play copy keep, and the editor adds, removes and inspects (`component.add`, inspector body), replacing the closed component lists for these uses.
 
 ### Changed
 

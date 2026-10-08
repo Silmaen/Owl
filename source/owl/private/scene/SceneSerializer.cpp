@@ -15,6 +15,7 @@
 #include "core/SerializerImpl.h"
 #include "platform/AtomicFile.h"
 #include "renderer/RenderStackYaml.h"
+#include "scene/ComponentRegistry.h"
 #include "scene/Entity.h"
 #include "scene/component/componentsSerialization.h"
 
@@ -91,7 +92,7 @@ auto toSceneLoadError(const core::FormatError iError) -> SceneLoadError {
 void serializeEntity(const core::Serializer& iOut, const Entity& iEntity) {
 	iOut.getImpl()->emitter << YAML::BeginMap;// Entity
 	iOut.getImpl()->emitter << YAML::Key << "Entity" << YAML::Value << iEntity.getUUID();
-	serializeComponents(iEntity, iOut, component::SerializableComponents{});
+	component::serializeComponents(iEntity, iOut);
 	iOut.getImpl()->emitter << YAML::EndMap;// Entity
 }
 
@@ -111,7 +112,7 @@ void deserializeEntityComponents(Entity& ioEntity, const core::Serializer& iNode
 		ioEntity.getComponent<component::Visibility>().deserialize(sNode);
 	if (sNode.getImpl()->node.reset(iNode.getImpl()->node["Hierarchy"]); sNode.getImpl()->node)
 		ioEntity.getComponent<component::Hierarchy>().deserialize(sNode);
-	deserializeComponents(ioEntity, iNode, component::OptionalComponents{});
+	component::deserializeOptionalComponents(ioEntity, iNode);
 }
 
 using SeenUuids = std::unordered_set<uint64_t>;
@@ -247,31 +248,43 @@ void applyComponent(Entity& ioEntity, const YAML::Node& iEntityNode, const bool 
 	comp.deserialize(sNode);
 }
 
-template<typename... Components>
-void applyOptionalComponents(Entity& ioEntity, const YAML::Node& iEntityNode, const std::tuple<Components...>&) {
-	(..., applyComponent<Components>(ioEntity, iEntityNode, false));
-}
-
-template<typename Component>
-auto serializeComponentByKey(const Entity& iEntity, const std::string_view iKey, std::string& oYaml) -> bool {
-	if (iKey != Component::key())
-		return false;
-	if (!iEntity.hasComponent<Component>())
-		return true;
+auto descriptorYaml(const ComponentDescriptor& iDesc, const Entity& iEntity) -> std::string {
 	const core::Serializer sOut;
 	sOut.getImpl()->emitter << YAML::BeginMap;
-	iEntity.getComponent<Component>().serialize(sOut);
+	iDesc.serialize(iEntity, sOut);
 	sOut.getImpl()->emitter << YAML::EndMap;
-	oYaml = sOut.getImpl()->emitter.c_str();
-	return true;
+	return YAML::Dump(YAML::Load(sOut.getImpl()->emitter.c_str())[iDesc.key]);
 }
 
-template<typename... Components>
-auto serializeComponentsByKey(const Entity& iEntity, const std::string_view iKey, const std::tuple<Components...>&)
-		-> std::string {
-	std::string yaml;
-	std::ignore = (... || serializeComponentByKey<Components>(iEntity, iKey, yaml));
-	return yaml;
+void applyOptionalComponents(Entity& ioEntity, const YAML::Node& iEntityNode) {
+	for (const auto& desc: ComponentRegistry::getAll()) {
+		if (!desc.optional)
+			continue;
+		const auto node = iEntityNode[desc.key];
+		const bool present = desc.has(ioEntity);
+		if (!node) {
+			if (present)
+				desc.remove(ioEntity);
+			continue;
+		}
+		if (present && descriptorYaml(desc, ioEntity) == YAML::Dump(node))
+			continue;
+		const core::Serializer sNode;
+		sNode.getImpl()->node.reset(node);
+		desc.deserialize(ioEntity, sNode);
+	}
+}
+
+auto serializeComponentByKey(const Entity& iEntity, const std::string_view iKey) -> std::string {
+	const auto& all = ComponentRegistry::getAll();
+	const auto desc = std::ranges::find(all, iKey, &ComponentDescriptor::key);
+	if (desc == all.end() || !desc->has(iEntity))
+		return {};
+	const core::Serializer sOut;
+	sOut.getImpl()->emitter << YAML::BeginMap;
+	desc->serialize(iEntity, sOut);
+	sOut.getImpl()->emitter << YAML::EndMap;
+	return sOut.getImpl()->emitter.c_str();
 }
 
 }// namespace
@@ -466,7 +479,7 @@ auto SceneSerializer::applyEntityFromString(const Entity& iEntity, const std::st
 			entity.getComponent<component::Tag>().tag = tag["tag"].as<std::string>();
 		applyComponent<component::Transform>(entity, node, true);
 		applyComponent<component::Visibility>(entity, node, true);
-		applyOptionalComponents(entity, node, component::OptionalComponents{});
+		applyOptionalComponents(entity, node);
 	} catch (...) {
 		OWL_CORE_ERROR("SceneSerializer: Unable to apply entity data from string.")
 		return false;
@@ -478,7 +491,7 @@ auto SceneSerializer::serializeComponentToString(const Entity& iEntity, const st
 		-> std::string {
 	if (!iEntity)
 		return {};
-	return serializeComponentsByKey(iEntity, iComponentKey, component::SerializableComponents{});
+	return serializeComponentByKey(iEntity, iComponentKey);
 }
 
 auto SceneSerializer::replaceComponentInString(const std::string& iEntityYaml, const std::string_view iComponentKey,
