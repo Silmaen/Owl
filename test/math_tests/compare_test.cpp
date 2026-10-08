@@ -1,3 +1,11 @@
+/**
+ * @file compare_test.cpp
+ * @author Silmaen
+ * @date 02/07/2024
+ * Copyright (c) 2024 All rights reserved.
+ * All modification must get authorization from the author.
+ */
+
 #include "testHelper.h"
 
 #include "mathHelpers.h"

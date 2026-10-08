@@ -46,12 +46,13 @@ struct RunnerConfig {
 	bool fullscreen{false};
 	/// Whether the window is resizable.
 	bool resizable{true};
-	/// Renderer-stack definition forwarded from the project's `RendererStack:`
-	/// block. The runner consumes this on startup (and after every cross-level
-	/// teleport) to call `Renderer::setRenderStack` — without it, packaged
-	/// games fall back to a single implicit `Renderer2D` and any scene that
-	/// relies on a custom stack (raycaster, future voxel, screen-overlay UI)
-	/// renders incorrectly.
+	/**
+	 * @brief
+	 *  Renderer-stack definition forwarded from the project's `RendererStack:` block.
+	 * The runner consumes it on startup (and after every cross-level teleport) to call `Renderer::setRenderStack`:
+	 * without it, packaged games fall back to a single implicit `Renderer2D` and any scene that relies on a custom
+	 * stack (raycaster, voxel, screen-overlay UI) renders incorrectly.
+	 */
 	renderer::RendererStackConfig rendererStack;
 
 	/**
@@ -78,7 +79,7 @@ struct SmokeTest {
 
 /**
  * @brief
- *  Class RunnerLayer
+ *  Layer that plays a game: the packed game of `runner.yml`, a frame bench or a scenario.
  */
 class RunnerLayer final : public app::layer::Layer {
 public:
@@ -176,9 +177,12 @@ private:
 
 	/// State of an in-flight cross-level teleport loaded asynchronously.
 	struct PendingTransition {
-		/// Parsed YAML root (filled on worker thread). The worker reads the
-		/// scene bytes and runs `SceneSerializer::parseBuffer` so the main
-		/// thread only pays the entity-creation + GPU upload cost.
+		/**
+		 * @brief
+		 *  Parsed YAML root, filled on the worker thread.
+		 * The worker reads the scene bytes and runs `SceneSerializer::parseBuffer` so the main thread only pays the
+		 * entity creation and the GPU uploads.
+		 */
 		shared<scene::ParsedScene> parsed;
 		/// Resolved source name (for logging).
 		std::string sourceName;
@@ -210,10 +214,13 @@ private:
 	 *  Finish a pending async transition: deserialize on main thread and swap scene.
 	 */
 	void finishTransition();
-	/// Build the engine's `RenderStack` from `m_config.rendererStack` filtered
-	/// by the active scene's `EnabledRenderers`, and install it via
-	/// `Renderer::setRenderStack`. Called at startup and after every scene
-	/// swap so per-scene overrides apply post-teleport.
+
+	/**
+	 * @brief
+	 *  Build the engine's `RenderStack` from `m_config.rendererStack` filtered by the active scene's
+	 *  `EnabledRenderers`, and install it via `Renderer::setRenderStack`.
+	 * Called at startup and after every scene swap so per-scene overrides apply after a teleport.
+	 */
 	void installRenderStack();
 
 	/**

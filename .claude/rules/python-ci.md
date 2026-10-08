@@ -40,7 +40,9 @@ to the full run is the only acceptable direction. Details:
 `doc/pages/continuous_integration.md#clang-tidy-scoping`.
 
 `CodeStyle` is the project's read-only style/doc gate. It **only inspects** —
-it never rewrites sources. Sub-checks (all on by default):
+it never rewrites sources. It walks `source/owl/{public,private}`, `source/owlnest/{sources,runner}`, `test/` and
+`bench/` (a missing root fails the gate); `comment-quality` skips `test/`, whose comments are not API documentation.
+Sub-checks (all on by default):
 
 1. **clang-format** dry-run on every C++ source.
 2. **typos** via `codespell` (allowlist in `ci/codespell-ignore-words.txt`

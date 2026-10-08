@@ -1,13 +1,20 @@
+/**
+ * @file Buffer_tests.cpp
+ * @author Silmaen
+ * @date 03/07/2024
+ * Copyright (c) 2024 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "testHelper.h"
 
-#include <math/vectors.h>
 #include <cstdint>
+#include <math/vectors.h>
 #include <ranges>
-#include <unordered_map>
-#include <vector>
 #include <renderer/gpu/null/Buffer.h>
 #include <renderer/gpu/null/DrawData.h>
+#include <unordered_map>
+#include <vector>
 
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;

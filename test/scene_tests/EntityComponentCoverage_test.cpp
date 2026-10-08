@@ -311,7 +311,7 @@ TEST(EntityComponentCoverage, UiRect) {
 TEST(EntityComponentCoverage, UiText) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
-	auto ent = sc.createEntity("UITextEnt");
+	auto ent = sc.createEntity("UiTextEnt");
 
 	EXPECT_FALSE(ent.hasComponent<component::UiText>());
 	auto& ut = ent.addComponent<component::UiText>();
@@ -354,7 +354,7 @@ TEST(EntityComponentCoverage, UiImage) {
 TEST(EntityComponentCoverage, UiPanel) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
-	auto ent = sc.createEntity("UIPanelEnt");
+	auto ent = sc.createEntity("UiPanelEnt");
 
 	EXPECT_FALSE(ent.hasComponent<component::UiPanel>());
 	auto& panel = ent.addComponent<component::UiPanel>();
@@ -378,7 +378,7 @@ TEST(EntityComponentCoverage, UiPanel) {
 TEST(EntityComponentCoverage, UiButton) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
-	auto ent = sc.createEntity("UIButtonEnt");
+	auto ent = sc.createEntity("UiButtonEnt");
 
 	EXPECT_FALSE(ent.hasComponent<component::UiButton>());
 	auto& btn = ent.addComponent<component::UiButton>();
@@ -399,7 +399,7 @@ TEST(EntityComponentCoverage, UiButton) {
 TEST(EntityComponentCoverage, UiSlider) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
-	auto ent = sc.createEntity("UISliderEnt");
+	auto ent = sc.createEntity("UiSliderEnt");
 
 	EXPECT_FALSE(ent.hasComponent<component::UiSlider>());
 	auto& slider = ent.addComponent<component::UiSlider>();

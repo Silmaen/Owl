@@ -174,7 +174,8 @@ TEST(SlangCompute, shippedRaycastStripeShaderCompiles) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto source = loadShipped("raycast_stripe", "raycast_stripe");
 	ASSERT_FALSE(source.empty());
-	const auto resultVk = owl::renderer::utils::compileSlangToSpirv(source, "raycast_stripe_vk_check", /*iForVulkan=*/true);
+	const auto resultVk =
+			owl::renderer::utils::compileSlangToSpirv(source, "raycast_stripe_vk_check", /*iForVulkan=*/true);
 	EXPECT_TRUE(resultVk.success);
 	const auto resultGl =
 			owl::renderer::utils::compileSlangToSpirv(source, "raycast_stripe_gl_check", /*iForVulkan=*/false);

@@ -15,10 +15,10 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <gtest/gtest.h>
 #include <string>
 #include <utility>
 #include <vector>
-#include <gtest/gtest.h>
 
 using namespace owl::data::assets::pack;
 

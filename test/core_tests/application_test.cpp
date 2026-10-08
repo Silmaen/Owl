@@ -1,3 +1,10 @@
+/**
+ * @file application_test.cpp
+ * @author Silmaen
+ * @date 03/08/2023
+ * Copyright (c) 2023 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "testHelper.h"
 
@@ -5,9 +12,9 @@
 #include <event/KeyEvent.h>
 #include <filesystem>
 #include <fstream>
-#include <string>
 #include <platform/FileUtils.h>
 #include <renderer/Renderer.h>
+#include <string>
 
 using namespace owl::core;
 using namespace owl::app;

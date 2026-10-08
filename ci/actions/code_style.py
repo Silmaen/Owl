@@ -70,10 +70,14 @@ SOURCE_ROOTS: tuple[Path, ...] = (
     root / "source" / "owl" / "public",
     root / "source" / "owl" / "private",
     root / "source" / "owlnest" / "sources",
-    root / "source" / "owlrunner" / "sources",
+    root / "source" / "owlnest" / "runner",
+    root / "test",
     root / "bench",
 )
 """Directories scanned by every sub-check that walks the tree."""
+
+API_DOC_ROOTS: tuple[Path, ...] = tuple(r for r in SOURCE_ROOTS if r != root / "test")
+"""Directories whose comments are API documentation (comment-quality): every source root but the tests."""
 
 CXX_EXTENSIONS: tuple[str, ...] = (".h", ".hpp", ".cpp", ".cc", ".cxx", ".inl")
 """File extensions inspected by `clang-format` and the cpp-style audit."""
@@ -152,7 +156,8 @@ def _iter_sources(roots: Iterable[Path], extensions: tuple[str, ...]) -> list[Pa
     out: list[Path] = []
     for r in roots:
         if not r.exists():
-            continue
+            # A missing root is a stale list, not an empty directory: say it instead of scanning nothing.
+            raise FileNotFoundError(f"CodeStyle source root {r} does not exist")
         for path in sorted(r.rglob("*")):
             if path.is_file() and path.suffix in extensions:
                 out.append(path)
@@ -368,7 +373,7 @@ def _check_comment_quality() -> int:
     """
     log.info("code-style: comment-quality audit...")
     issues = 0
-    for path in _iter_sources(SOURCE_ROOTS, CXX_EXTENSIONS):
+    for path in _iter_sources(API_DOC_ROOTS, CXX_EXTENSIONS):
         text = path.read_text(errors="replace")
         lines = text.splitlines()
 

@@ -714,7 +714,7 @@ void RunnerLayer::finishTransition() {
 	m_transition.reset();
 
 	if (transition->failed.load() || !transition->parsed) {
-		OWL_CORE_ERROR("Teleport: level '{}' not found or invalid", transition->sourceName)
+		OWL_CORE_ERROR("Teleport: level '{}' not found or invalid.", transition->sourceName)
 		return;
 	}
 
@@ -758,7 +758,7 @@ void RunnerLayer::finishTransition() {
 				[&](const auto&, const scene::component::BackgroundTexture& iBt) -> void { countOne(iBt.texture); });
 		m_activeScene->registry.view<scene::component::UiImage>().each(
 				[&](const auto&, const scene::component::UiImage& iUi) -> void { countOne(iUi.texture); });
-		OWL_CORE_TRACE("Teleport finished: {} texture(s) still decoding on workers", pending)
+		OWL_CORE_TRACE("Teleport finished: {} texture(s) still decoding on workers.", pending)
 	}
 }
 

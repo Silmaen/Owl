@@ -36,7 +36,7 @@ TEST(Canvas, createAndDefaults) {
 TEST(UiRect, createAndDefaults) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<Scene>();
-	auto entity = scn->createEntity("UIElement");
+	auto entity = scn->createEntity("UiElement");
 	auto& rect = entity.addComponent<component::UiRect>();
 
 	EXPECT_EQ(rect.anchor, component::UiRect::Anchor::Center);

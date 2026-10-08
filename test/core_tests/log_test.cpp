@@ -42,15 +42,15 @@ TEST(Log, basic) {
 TEST(Log, clientMessagesGoToTheClientLogger) {
 	Log::init(Log::Level::Trace);
 	Log::getLogBuffer().clear();
-	OWL_INFO("client message {}", 1)
+	OWL_INFO("client message {}.", 1)
 	EXPECT_EQ(lastEntry().loggerName, "APP");
-	EXPECT_EQ(lastEntry().message, "client message 1");
-	OWL_INFO("client message without argument")
+	EXPECT_EQ(lastEntry().message, "client message 1.");
+	OWL_INFO("client message without argument.")
 	EXPECT_EQ(lastEntry().loggerName, "APP");
 	OWL_CORE_INFO("core message {}", 2)
 	EXPECT_EQ(lastEntry().loggerName, "OWL");
 	EXPECT_EQ(lastEntry().message, "core message 2");
-	OWL_CORE_WARN("core message without argument")
+	OWL_CORE_WARN("core message without argument.")
 	EXPECT_EQ(lastEntry().loggerName, "OWL");
 	Log::invalidate();
 }

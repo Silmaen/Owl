@@ -76,18 +76,7 @@ struct ScenarioStep {
 /**
  * @brief
  *  Scripted headless run: a scene, then steps that play frames with injected inputs and check the world.
- *
- * File format (YAML, `.owltest`):
- * @code{.yaml}
- * scene: ../../sample_project/scenes/platformer_house.owl   # relative to the file
- * timestep_ms: 16.667                                       # optional fixed step
- * steps:
- *   - frames: 30
- *   - input: {keys: [Right], frames: 60}
- *   - expect: {player: true, translation.x: {greater: 2.0}}
- *   - expect: {entity: Coin, exists: false}
- *   - expect: {gamestate: score, equals: 10}
- * @endcode
+ * The `.owltest` YAML format is described in `doc/pages/editor.md` (Scripted headless runs).
  */
 class ScenarioTest final {
 public:

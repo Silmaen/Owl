@@ -225,8 +225,8 @@ TEST_F(RaycastDynamicWallsTest, DoorSurvivesSceneSerializerRoundTrip) {
 	d.interactionRange = 1.25f;
 	const auto uuid = door.getUUID();
 
-	const scene::SceneSerializer ser(sourceScene);
-	const std::string yaml = ser.serializeToString();
+	const scene::SceneSerializer serializer(sourceScene);
+	const std::string yaml = serializer.serializeToString();
 	ASSERT_FALSE(yaml.empty());
 
 	auto loadedScene = mkShared<scene::Scene>();
