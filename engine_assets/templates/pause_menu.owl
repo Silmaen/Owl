@@ -8,7 +8,6 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Visibility:
-      editorVisible: true
       gameVisible: true
     Hierarchy:
       parentId: 0
@@ -23,11 +22,10 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Visibility:
-      editorVisible: true
       gameVisible: true
     Hierarchy:
       parentId: 2000
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -35,7 +33,7 @@ Entities:
       sizeY: 250
       offsetX: 0
       offsetY: 0
-    UIPanel:
+    UiPanel:
       backgroundColor: [0.1, 0.1, 0.1, 0.85]
       borderColor: [1, 1, 1, 0.3]
       borderWidth: 2
@@ -50,11 +48,10 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Visibility:
-      editorVisible: true
       gameVisible: true
     Hierarchy:
       parentId: 2000
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -62,7 +59,7 @@ Entities:
       sizeY: 40
       offsetX: 0
       offsetY: 70
-    UIText:
+    UiText:
       text: "Paused"
       color: [1, 1, 1, 1]
       fontSize: 32
@@ -77,11 +74,10 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Visibility:
-      editorVisible: true
       gameVisible: true
     Hierarchy:
       parentId: 2000
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -89,13 +85,13 @@ Entities:
       sizeY: 45
       offsetX: 0
       offsetY: 10
-    UIButton:
+    UiButton:
       normalColor: [0.3, 0.5, 0.3, 1]
       hoverColor: [0.4, 0.6, 0.4, 1]
       pressedColor: [0.2, 0.4, 0.2, 1]
       disabledColor: [0.15, 0.15, 0.15, 0.5]
       onClickCallback: on_resume_clicked
-    UIText:
+    UiText:
       text: "Resume"
       color: [1, 1, 1, 1]
       fontSize: 22
@@ -110,11 +106,10 @@ Entities:
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Visibility:
-      editorVisible: true
       gameVisible: true
     Hierarchy:
       parentId: 2000
-    UIRect:
+    UiRect:
       anchor: Center
       pivotX: 0.5
       pivotY: 0.5
@@ -122,13 +117,13 @@ Entities:
       sizeY: 45
       offsetX: 0
       offsetY: -50
-    UIButton:
+    UiButton:
       normalColor: [0.5, 0.3, 0.3, 1]
       hoverColor: [0.6, 0.4, 0.4, 1]
       pressedColor: [0.4, 0.2, 0.2, 1]
       disabledColor: [0.15, 0.15, 0.15, 0.5]
       onClickCallback: on_quit_to_menu_clicked
-    UIText:
+    UiText:
       text: "Quit to Menu"
       color: [1, 1, 1, 1]
       fontSize: 22

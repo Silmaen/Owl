@@ -34,7 +34,6 @@ Entities:
       scale: [12, 1, 1]
     SpriteRenderer:
       color: [0.25, 0.55, 0.3, 1]
-      tilingFactor: 1
     Visibility:
       gameVisible: true
     Hierarchy:
@@ -48,7 +47,6 @@ Entities:
       scale: [1, 1, 1]
     SpriteRenderer:
       color: [0.95, 0.6, 0.2, 1]
-      tilingFactor: 1
     Visibility:
       gameVisible: true
     Hierarchy:
