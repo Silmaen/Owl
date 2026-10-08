@@ -23,21 +23,14 @@
 namespace owl::physics {
 /**
  * @brief
- *  Class for physics management.
+ *  Physics of the scenes: each scene owns its Box2D world, created by `init()` and reached through the
+ *  scene (scene-level calls) or the entity (body calls).
  */
 class OWL_API PhysicCommand final {
 public:
-	/**
-	 * @brief
-	 *  Default constructor.
-	 */
-	PhysicCommand();
+	PhysicCommand() = delete;
 
-	/**
-	 * @brief
-	 *  Default destructor.
-	 */
-	~PhysicCommand() = default;
+	~PhysicCommand() = delete;
 
 	PhysicCommand(const PhysicCommand&) = delete;
 
@@ -49,75 +42,75 @@ public:
 
 	/**
 	 * @brief
-	 *  Initialize the physical world based on the given scene.
-	 * From then on the bodies follow their components: a `PhysicBody` added while running gets its body at
-	 * the next `frame()`, and removing a `PhysicBody`, `Tilemap`, raycast door or pushwall component (or its
-	 * entity) destroys the matching body.
-	 * @param iScene The Scene onto apply physics.
-	 */
-	static void init(scene::Scene* iScene);
-
-	/**
-	 * @brief
-	 *  Destroy the world and unlink scene. Does nothing when physics is not initialized.
-	 */
-	static void destroy();
-
-	/**
-	 * @brief
-	 *  Destroy the world only if it is bound to the given scene.
+	 *  Create the physical world of a scene, replacing the one it already has.
 	 *
-	 * Called by the scene destructor so the static state never outlives the scene it points to.
-	 * @param[in] iScene The scene being released.
+	 * The world belongs to the scene: several scenes simulate side by side, and the scene destructor
+	 * destroys it. From then on the bodies follow their components: a `PhysicBody` added while running gets
+	 * its body at the next `frame()`, and removing a `PhysicBody`, `Tilemap`, raycast door or pushwall
+	 * component (or its entity) destroys the matching body.
+	 * @param[in,out] ioScene The scene whose world is created.
 	 */
-	static void releaseScene(const scene::Scene* iScene);
+	static void init(scene::Scene& ioScene);
 
 	/**
 	 * @brief
-	 *  Check if physic is initiated and link to the scene.
-	 * @return True if initiated.
+	 *  Destroy the world of a scene. Does nothing when the scene has none.
+	 * @param[in,out] ioScene The scene whose world is destroyed.
 	 */
-	static auto isInitialized() -> bool;
+	static void destroy(scene::Scene& ioScene);
 
 	/**
 	 * @brief
-	 *  Advance the world by one rendered frame, at the fixed rate of the scene's `PhysicsSettings`.
+	 *  Check if a scene has a physical world.
+	 * @param[in] iScene The scene to check.
+	 * @return True if its world exists.
+	 */
+	[[nodiscard]] static auto isInitialized(const scene::Scene& iScene) -> bool;
+
+	/**
+	 * @brief
+	 *  Advance the world of a scene by one rendered frame, at the fixed rate of its `PhysicsSettings`.
 	 *
 	 * The frame duration is added to an accumulator; as many fixed steps as it holds are run, at most
 	 * `maxStepsPerFrame` (the excess time is dropped). The contact events of all the steps are gathered,
 	 * a pair being reported at most once per frame. The entity transforms are then written, blended
 	 * between the last two steps when interpolation is on, so a frame without a step still moves them.
+	 * @param[in,out] ioScene The scene whose world is stepped.
 	 * @param[in] iTimestep The duration of the rendered frame.
 	 */
-	static void frame(const core::Timestep& iTimestep);
+	static void frame(scene::Scene& ioScene, const core::Timestep& iTimestep);
 
 	/**
 	 * @brief
-	 *  Settings of the running world.
-	 * @return The clamped settings read from the scene at `init()`, or the defaults when not initialised.
+	 *  Settings of the running world of a scene.
+	 * @param[in] iScene The scene.
+	 * @return The clamped settings read from the scene at `init()`, or the defaults when it has no world.
 	 */
-	[[nodiscard]] static auto getSettings() -> PhysicsSettings;
+	[[nodiscard]] static auto getSettings(const scene::Scene& iScene) -> PhysicsSettings;
 
 	/**
 	 * @brief
-	 *  Number of threads running the Box2D solver.
-	 * @return 1 for the single-threaded solver, the task pool size when multi-threaded, 0 when not initialised.
+	 *  Number of threads running the Box2D solver of a scene.
+	 * @param[in] iScene The scene.
+	 * @return 1 for the single-threaded solver, the task pool size when multi-threaded, 0 without a world.
 	 */
-	[[nodiscard]] static auto getWorkerCount() -> uint32_t;
+	[[nodiscard]] static auto getWorkerCount(const scene::Scene& iScene) -> uint32_t;
 
 	/**
 	 * @brief
-	 *  Number of fixed steps run by the last `frame()` call.
-	 * @return The step count, 0 when not initialised.
+	 *  Number of fixed steps run by the last `frame()` call on a scene.
+	 * @param[in] iScene The scene.
+	 * @return The step count, 0 without a world.
 	 */
-	[[nodiscard]] static auto getLastFrameStepCount() -> uint32_t;
+	[[nodiscard]] static auto getLastFrameStepCount(const scene::Scene& iScene) -> uint32_t;
 
 	/**
 	 * @brief
-	 *  Blend factor used for the transforms written by the last `frame()` call.
+	 *  Blend factor used for the transforms written by the last `frame()` call on a scene.
+	 * @param[in] iScene The scene.
 	 * @return The leftover accumulated time over the step duration, in [0, 1); 1 when interpolation is off.
 	 */
-	[[nodiscard]] static auto getInterpolationAlpha() -> float;
+	[[nodiscard]] static auto getInterpolationAlpha(const scene::Scene& iScene) -> float;
 
 	/**
 	 * @brief
@@ -125,8 +118,9 @@ public:
 	 *
 	 * Used before serialising a running scene (save game) so the saved positions match the saved
 	 * velocities. The next `frame()` writes interpolated transforms again.
+	 * @param[in,out] ioScene The scene whose transforms are written.
 	 */
-	static void syncSimulatedTransforms();
+	static void syncSimulatedTransforms(scene::Scene& ioScene);
 
 	/**
 	 * @brief
@@ -141,21 +135,22 @@ public:
 
 	/**
 	 * @brief
-	 *  Hand over the collisions that began during the last `frame()` calls, and clear them.
+	 *  Hand over the collisions that began during the last `frame()` calls on a scene, and clear them.
 	 *
 	 * Built from Box2D begin-touch contact events. A pair is reported once when its first contact
 	 * begins; contacts between further shapes of the same two entities (tilemap cells) are not
 	 * reported again until all of them have ended.
+	 * @param[in,out] ioScene The scene.
 	 * @return The begun collisions, in Box2D event order.
 	 */
-	[[nodiscard]] static auto takeCollisionEvents() -> std::vector<CollisionEvent>;
+	[[nodiscard]] static auto takeCollisionEvents(scene::Scene& ioScene) -> std::vector<CollisionEvent>;
 
 	/**
 	 * @brief
 	 *  Remove the Box2D bodies owned by an entity (PhysicBody, tilemap, raycast door or pushwall body).
 	 *
 	 * Component removal already does it; this drops the bodies of an entity that stays in the scene. No-op
-	 * when physics is not initialised, the entity belongs to another scene or owns no body.
+	 * when the entity's scene has no world or the entity owns no body.
 	 * @param[in] iEntity The entity whose bodies are removed.
 	 */
 	static void destroyBody(const scene::Entity& iEntity);
@@ -221,14 +216,6 @@ public:
 	 * @param[in] iSnapshot The snapshot to apply.
 	 */
 	static void applySnapshot(const scene::Entity& iEntity, const PhysicsSnapshot& iSnapshot);
-
-private:
-	/// Implementation class.
-	class Impl;
-	/// Pointer to the implementation.
-	static shared<Impl> m_impl;
-	/// pointer to the active scene.
-	static scene::Scene* m_scene;
 };
 
 }// namespace owl::physics

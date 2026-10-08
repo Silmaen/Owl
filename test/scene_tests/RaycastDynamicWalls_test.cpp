@@ -30,11 +30,7 @@ namespace {
 class RaycastDynamicWallsTest : public ::testing::Test {
 protected:
 	void SetUp() override { core::Log::init(core::Log::Level::Off); }
-	void TearDown() override {
-		if (physics::PhysicCommand::isInitialized())
-			physics::PhysicCommand::destroy();
-		core::Log::invalidate();
-	}
+	void TearDown() override { core::Log::invalidate(); }
 };
 
 // Build a default Scene with a single door entity sitting at the origin, ready

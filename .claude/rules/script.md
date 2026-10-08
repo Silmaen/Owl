@@ -9,7 +9,7 @@ paths:
 
 User-facing reference: `doc/pages/scripting.md` (guide) and `doc/pages/lua-api.md` (generated, never by hand).
 
-- Public: `ScriptEngine` (singleton: active scene, quotas, property extraction; no Lua state of its own), `ScriptInstance` (one isolated `lua_State` per entity),
+- Public: `ScriptEngine` (static: quotas, property extraction; no scene, no Lua state), `ScriptInstance` (one isolated `lua_State` per entity),
   `ScriptProperty`. Private: `LuaEngine` (raw `lua_State*` wrapper), `LuaBindings`.
 - Lua headers only through `source/owl/private/core/external/lua.h` (diagnostic suppression).
 - **Typed binding registry** (`LuaBindings.h`): every binding is one `LuaBinding` in `declareBindings()`
@@ -29,9 +29,10 @@ User-facing reference: `doc/pages/scripting.md` (guide) and `doc/pages/lua-api.m
 - Bindings are registered through `LuaEngine::registerGuardedTable` (exception trampoline). In a binding,
   call every `luaL_check*` **before** creating any object with a non-trivial destructor: a Lua error
   `longjmp`s over the binding's frame. Throw a C++ exception instead when a check comes later.
-- Lifecycle: `ScriptEngine::init()` in `Scene::onStartRuntime()`; instances call `on_create` /
+- Lifecycle: `Scene::onStartRuntime()` creates each instance bound to its scene (`ScriptInstance::setScene`,
+  read by the bindings through `getBoundScene(L)`, never a global); instances call `on_create` /
   `on_update` / `on_destroy`.
-- Event callbacks: `on_collision(other_id)` (from `PhysicCommand::takeCollisionEvents()`, dispatched by
+- Event callbacks: `on_collision(other_id)` (from `PhysicCommand::takeCollisionEvents(scene)`, dispatched by
   `Scene::dispatchCollisionEvents()` after the physics step), `on_trigger_enter(other_id)` /
   `on_trigger_exit(other_id)` / `on_triggered(other_id)`, `on_timer()`, `on_interact()`. Never dispatch to an
   entity for which `Scene::isPendingDestructionInTree()` is true; destruction from a callback is deferred.

@@ -43,7 +43,7 @@ namespace owl::script {
 
 namespace {
 auto findEntity(lua_State* iState) -> std::optional<scene::Entity> {
-	const auto* activeScene = ScriptEngine::getActiveScene();
+	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return std::nullopt;
 	const auto uuid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
@@ -254,7 +254,7 @@ auto luaSoundSetVolume(lua_State* iState) -> int {
 }
 
 auto luaSceneFindEntity(lua_State* iState) -> int {
-	auto* activeScene = ScriptEngine::getActiveScene();
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
 		lua_pushinteger(iState, 0);
 		return 1;
@@ -272,7 +272,7 @@ auto luaSceneFindEntity(lua_State* iState) -> int {
 }
 
 auto luaSceneCreateEntity(lua_State* iState) -> int {
-	auto* activeScene = ScriptEngine::getActiveScene();
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
 		lua_pushinteger(iState, 0);
 		return 1;
@@ -284,7 +284,7 @@ auto luaSceneCreateEntity(lua_State* iState) -> int {
 }
 
 auto luaSceneDestroyEntity(lua_State* iState) -> int {
-	auto* activeScene = ScriptEngine::getActiveScene();
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
 	const auto uuid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
@@ -293,7 +293,7 @@ auto luaSceneDestroyEntity(lua_State* iState) -> int {
 }
 
 auto luaSceneLoadScene(lua_State* iState) -> int {
-	auto* activeScene = ScriptEngine::getActiveScene();
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
 	const char* levelName = luaL_checkstring(iState, 1);
@@ -346,7 +346,7 @@ auto luaSceneTransitionTo(lua_State* iState) -> int {
 }
 
 auto luaSceneQuit([[maybe_unused]] lua_State* iState) -> int {
-	auto* activeScene = ScriptEngine::getActiveScene();
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene != nullptr)
 		activeScene->quitRequested = true;
 	return 0;
@@ -528,7 +528,7 @@ auto luaUiTransitionPlay(lua_State* iState) -> int {
 }
 
 auto luaGamestateSet(lua_State* iState) -> int {
-	auto* activeScene = ScriptEngine::getActiveScene();
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
 	const char* key = luaL_checkstring(iState, 1);
@@ -544,7 +544,7 @@ auto luaGamestateSet(lua_State* iState) -> int {
 }
 
 auto luaGamestateGet(lua_State* iState) -> int {
-	auto* activeScene = ScriptEngine::getActiveScene();
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
 		lua_pushnil(iState);
 		return 1;
@@ -577,21 +577,21 @@ auto luaGamestateGet(lua_State* iState) -> int {
 }
 
 auto luaGamestateRemove(lua_State* iState) -> int {
-	auto* activeScene = ScriptEngine::getActiveScene();
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene != nullptr)
 		activeScene->getGameState().remove(luaL_checkstring(iState, 1));
 	return 0;
 }
 
 auto luaGamestateClear([[maybe_unused]] lua_State* iState) -> int {// NOLINT(readability-non-const-parameter)
-	auto* activeScene = ScriptEngine::getActiveScene();
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene != nullptr)
 		activeScene->getGameState().clear();
 	return 0;
 }
 
 auto luaSaveSaveGame(lua_State* iState) -> int {
-	auto* activeScene = ScriptEngine::getActiveScene();
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
 	const auto slot = static_cast<uint32_t>(luaL_checkinteger(iState, 1));
@@ -603,7 +603,7 @@ auto luaSaveSaveGame(lua_State* iState) -> int {
 }
 
 auto luaSaveLoadGame(lua_State* iState) -> int {
-	auto* activeScene = ScriptEngine::getActiveScene();
+	auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
 	const auto slot = static_cast<uint32_t>(luaL_checkinteger(iState, 1));
@@ -642,7 +642,7 @@ auto luaSaveListSaves(lua_State* iState) -> int {
 }
 
 auto luaDoorActivate(lua_State* iState) -> int {
-	const auto* activeScene = ScriptEngine::getActiveScene();
+	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
 	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
@@ -656,7 +656,7 @@ auto luaDoorActivate(lua_State* iState) -> int {
 }
 
 auto luaDoorClose(lua_State* iState) -> int {
-	const auto* activeScene = ScriptEngine::getActiveScene();
+	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
 	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
@@ -673,7 +673,7 @@ auto luaDoorClose(lua_State* iState) -> int {
 }
 
 auto luaDoorIsOpen(lua_State* iState) -> int {
-	const auto* activeScene = ScriptEngine::getActiveScene();
+	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
 		lua_pushboolean(iState, 0);
 		return 1;
@@ -690,7 +690,7 @@ auto luaDoorIsOpen(lua_State* iState) -> int {
 }
 
 auto luaDoorGetState(lua_State* iState) -> int {
-	const auto* activeScene = ScriptEngine::getActiveScene();
+	const auto* activeScene = getBoundScene(iState);
 	const char* defaultState = "idle";
 	if (activeScene == nullptr) {
 		lua_pushstring(iState, defaultState);
@@ -721,7 +721,7 @@ auto luaDoorGetState(lua_State* iState) -> int {
 }
 
 auto luaPushwallActivate(lua_State* iState) -> int {
-	const auto* activeScene = ScriptEngine::getActiveScene();
+	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
 	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
@@ -735,7 +735,7 @@ auto luaPushwallActivate(lua_State* iState) -> int {
 }
 
 auto luaPushwallHasMoved(lua_State* iState) -> int {
-	const auto* activeScene = ScriptEngine::getActiveScene();
+	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr) {
 		lua_pushboolean(iState, 0);
 		return 1;
@@ -752,7 +752,7 @@ auto luaPushwallHasMoved(lua_State* iState) -> int {
 }
 
 auto luaPushwallGetState(lua_State* iState) -> int {
-	const auto* activeScene = ScriptEngine::getActiveScene();
+	const auto* activeScene = getBoundScene(iState);
 	const char* defaultState = "idle";
 	if (activeScene == nullptr) {
 		lua_pushstring(iState, defaultState);
@@ -845,7 +845,7 @@ auto luaSettingsApply([[maybe_unused]] lua_State* iState) -> int {// NOLINT(read
 
 template<typename Action>
 auto withTrigger(lua_State* iState, Action&& iAction) -> int {
-	const auto* activeScene = ScriptEngine::getActiveScene();
+	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
 		return 0;
 	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
@@ -1162,6 +1162,18 @@ auto generateLuaReference() -> std::string {
 		page += markdownTable(rows);
 	}
 	return page;
+}
+
+void setBoundScene(lua_State* iState, scene::Scene* iScene) {
+	lua_pushlightuserdata(iState, iScene);
+	lua_setfield(iState, LUA_REGISTRYINDEX, "owl_scene");
+}
+
+auto getBoundScene(lua_State* iState) -> scene::Scene* {
+	lua_getfield(iState, LUA_REGISTRYINDEX, "owl_scene");
+	auto* const boundScene = static_cast<scene::Scene*>(lua_touserdata(iState, -1));
+	lua_pop(iState, 1);
+	return boundScene;
 }
 
 void registerBindings(lua_State* iState) {

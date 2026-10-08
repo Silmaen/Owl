@@ -106,8 +106,9 @@ auto Scene::onAssetFileChanged(const std::filesystem::path& iFile) -> bool {
 				continue;
 			used = true;
 			const auto* tag = registry.try_get<component::Tag>(entity);
-			auto fresh = loadScriptInstance(luaScript, static_cast<uint64_t>(registry.get<component::ID>(entity).id),
-											tag != nullptr ? tag->tag : std::string{});
+			auto fresh =
+					loadScriptInstance(*this, luaScript, static_cast<uint64_t>(registry.get<component::ID>(entity).id),
+									   tag != nullptr ? tag->tag : std::string{});
 			if (!fresh) {
 				OWL_CORE_ERROR("Scene: Reload of script '{}' failed, the previous version keeps running.",
 							   luaScript.scriptPath)

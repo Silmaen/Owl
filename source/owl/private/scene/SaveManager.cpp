@@ -72,7 +72,7 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 
 	try {
 		// Interpolated transforms lag the simulation: save the poses that match the saved velocities.
-		physics::PhysicCommand::syncSimulatedTransforms();
+		physics::PhysicCommand::syncSimulatedTransforms(*iScene);
 		const SceneSerializer serializer(iScene);
 		const std::string sceneYaml = serializer.serializeToString();
 
@@ -100,7 +100,7 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 		sOut.getImpl()->emitter << YAML::Key << "SceneData" << YAML::Value << YAML::Load(sceneYaml);
 
 		// Physics snapshots (velocities for dynamic bodies).
-		if (physics::PhysicCommand::isInitialized()) {
+		if (physics::PhysicCommand::isInitialized(*iScene)) {
 			sOut.getImpl()->emitter << YAML::Key << "PhysicsSnapshots" << YAML::Value << YAML::BeginSeq;
 			for (const auto& entity: iScene->getAllEntities()) {
 				if (!entity.hasComponent<component::PhysicBody>())

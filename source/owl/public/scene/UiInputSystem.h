@@ -16,7 +16,8 @@ namespace owl::scene {
  *  Manages UI input: hit-testing, hover/focus tracking, click routing.
  *
  * Called once per frame during runtime. Updates button states, handles clicks,
- * and invokes Lua callbacks. UI elements consume mouse events before the scene.
+ * and invokes Lua callbacks. UI elements consume mouse events before the scene. The hover and press state
+ * lives in each scene (`Scene::getUiInputState()`).
  */
 class OWL_API UiInputSystem final {
 public:
@@ -25,7 +26,7 @@ public:
 	/**
 	 * @brief
 	 *  Process UI input for the current frame.
-	 * @param[in] iScene The active scene.
+	 * @param[in] iScene The scene whose UI receives the mouse (nullptr: nothing happens).
 	 * @param[in] iViewportSize The viewport dimensions.
 	 * @param[in] iMousePos Mouse position in viewport coordinates.
 	 * @param[in] iMousePressed Whether the left mouse button is currently pressed.
@@ -35,22 +36,18 @@ public:
 
 	/**
 	 * @brief
-	 *  Check if the UI is currently consuming the mouse (hover over interactive element).
+	 *  Check if the UI of a scene is currently consuming the mouse (hover over interactive element).
+	 * @param[in] iScene The scene.
 	 * @return True if a UI element is hovered or focused.
 	 */
-	[[nodiscard]] static auto isUIConsuming() -> bool;
+	[[nodiscard]] static auto isUIConsuming(const Scene& iScene) -> bool;
 
 	/**
 	 * @brief
-	 *  Reset the input system state.
+	 *  Reset the UI input state of a scene.
+	 * @param[in,out] ioScene The scene.
 	 */
-	static void reset();
-
-private:
-	/// Whether a UI element is currently hovered.
-	static bool s_consuming;
-	/// Whether the mouse was pressed last frame (for click detection).
-	static bool s_wasPressed;
+	static void reset(Scene& ioScene);
 };
 
 }// namespace owl::scene

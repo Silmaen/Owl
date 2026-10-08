@@ -9,7 +9,8 @@ gameplay code.
 ## Overview
 
 Owl provides 2D rigid-body physics via [Box2D](https://box2d.org/), controlled
-through the `PhysicCommand` static facade and the `PhysicBody` ECS component.
+through the `PhysicCommand` static facade and the `PhysicBody` ECS component. Each scene owns its own
+Box2D world, so several scenes simulate side by side.
 All physics simulation operates in **world space**, independent of the scene
 hierarchy (see [Physics and Hierarchy](#hierarchy) below). Physics is only
 active during **Play mode** -- entities are not simulated while editing.
@@ -25,22 +26,25 @@ renderer modules (see [Architecture](architecture.md)):
 flowchart LR
     Lua["Lua physics.*"] --> PC[PhysicCommand]
     Scene --> PC
-    PC --> Impl[PhysicCommand::Impl]
-    Impl --> B2[Box2D b2WorldId]
+    Scene -- owns --> World[PhysicsWorld]
+    PC --> World
+    World --> B2[Box2D b2WorldId]
     PB[PhysicBody Component] --> SB[SceneBody]
-    SB --> Impl
+    SB --> World
 ```
 
 | Class                   | Role                                                                               |
 |-------------------------|------------------------------------------------------------------------------------|
 | `PhysicCommand`         | Static facade: `init` / `destroy` / `frame` / `impulse` / `velocity` / `transform` |
-| `PhysicCommand::Impl`   | Pimpl class wrapping the Box2D `b2WorldId` and a body-id map                       |
+| `PhysicsWorld`          | Private class of one scene: the Box2D `b2WorldId`, its body map and solver pool    |
 | `SceneBody`             | Data class holding physics properties (type, density, friction, ...)               |
 | `component::PhysicBody` | ECS component wrapping a single `SceneBody` instance                               |
 
-`PhysicCommand` holds a `shared<Impl>` pointer and a raw `Scene*` that are set
-during `init()` and cleared during `destroy()`. All public methods are static
-and delegate to the implementation through these two members.
+`PhysicCommand` holds no state. `init(scene)` creates the scene's `PhysicsWorld`, which the scene keeps
+(`Scene::getPhysicsWorld()`) until `destroy(scene)`, `onEndRuntime()` or its destructor. The scene-level calls
+(`frame`, `takeCollisionEvents`, `getSettings`...) take the scene; the body calls (`impulse`, `getVelocity`...)
+take an entity and act on the world of its scene. A scene destroyed while simulated takes its world with it,
+so nothing dangles.
 
 ## PhysicBody Component
 
@@ -165,10 +169,10 @@ when Play starts.
   the game slows down for that frame instead of stalling under an ever larger backlog (spiral of death), and no
   single step grows large enough to tunnel or explode contacts.
 - **Interpolation.** With `interpolate` on, `Transform` shows the pose between the last two steps, by the
-  fraction of a step left in the accumulator (`PhysicCommand::getInterpolationAlpha()`): motion is smooth at any
-  frame rate, at the cost of up to one step of display latency. Box2D stays the authority: velocities, impulses
+  fraction of a step left in the accumulator (`PhysicCommand::getInterpolationAlpha(scene)`): motion is smooth at
+  any frame rate, at the cost of up to one step of display latency. Box2D stays the authority: velocities, impulses
   and `getVelocity` act on the simulated state. `setTransform` (teleport) snaps both poses, so a teleport is never
-  blended. `SaveManager::save` calls `PhysicCommand::syncSimulatedTransforms()` first, so a save stores the
+  blended. `SaveManager::save` calls `PhysicCommand::syncSimulatedTransforms(scene)` first, so a save stores the
   simulated positions that match its velocity snapshots.
 - **Per-frame input.** Scripts and `Player::parseInputs` still run once per frame: an impulse applied in
   `on_update` lands before the frame's first step.
@@ -178,7 +182,7 @@ sequenceDiagram
     participant S as Scene::onUpdateRuntime
     participant P as PhysicCommand::frame
     participant B as Box2D
-    S->>P: frame(dt)
+    S->>P: frame(scene, dt)
     P-->>P: accumulator += dt, n = steps it holds (at most maxStepsPerFrame)
     loop n fixed steps
         P->>B: b2World_Step(1 / tickRate, solverSubSteps)
@@ -192,11 +196,11 @@ sequenceDiagram
 
 Box2D 3 runs its collision, solver and body-finalisation passes as parallel tasks handed to the host through
 `b2WorldDef.enqueueTask` / `finishTask`. Owl backs them with a Taskflow executor (`SolverTaskPool`, private to
-the engine), created on the first multi-threaded world and kept while the worker count does not change.
+the engine), owned by each multi-threaded world and destroyed with it.
 
 - **Worker count.** `workerCount = 1` keeps Box2D's single-threaded path (no task pool). `0` (automatic) uses
   half the hardware threads, at most 4, but only for worlds of at least 2 000 dynamic bodies counted at `init()`:
-  below that, dispatching the tasks costs more than it saves. `PhysicCommand::getWorkerCount()` reports the
+  below that, dispatching the tasks costs more than it saves. `PhysicCommand::getWorkerCount(scene)` reports the
   count in use.
 - **Dedicated executor.** The pool does not share the `core::task::Scheduler` threads: within a step, Box2D's
   solver tasks spin-wait on each other, so they must all run at once, and a long Scheduler job holding a worker
@@ -264,7 +268,7 @@ within that frame's steps. End-touch events decrement the count, so a body
 resting on the ground, or a player crossing the cells of a tilemap (one Box2D shape per cell), yields one collision,
 not one per frame or per cell. `destroyBody()` forgets every pair of the destroyed entity.
 
-`Scene::onUpdateRuntime()` calls `PhysicCommand::takeCollisionEvents()` right after `frame()`, and
+`Scene::onUpdateRuntime()` calls `PhysicCommand::takeCollisionEvents(scene)` right after `frame()`, and
 `Scene::dispatchCollisionEvents()` calls Lua `on_collision(other_id)` on both entities (see
 [Lua Scripting](scripting.md)). Entities that are hidden or queued for destruction (`Scene::isPendingDestructionInTree()`)
 are skipped, and the check is redone before each call. The events are read from a vector owned by the caller, not
@@ -277,7 +281,7 @@ sequenceDiagram
     participant P as PhysicCommand
     participant B as Box2D
     participant L as Lua scripts
-    S->>P: frame(dt)
+    S->>P: frame(scene, dt)
     loop each fixed step of the frame
         P->>B: b2World_Step
         P->>B: b2World_GetContactEvents

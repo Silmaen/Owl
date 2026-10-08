@@ -96,8 +96,11 @@ TEST(UiProgressBar, createAndDefaults) {
 }
 
 TEST(UiInputSystem, resetAndConsuming) {
-	UiInputSystem::reset();
-	EXPECT_FALSE(UiInputSystem::isUIConsuming());
+	Scene scn;
+	scn.getUiInputState().consuming = true;
+	EXPECT_TRUE(UiInputSystem::isUIConsuming(scn));
+	UiInputSystem::reset(scn);
+	EXPECT_FALSE(UiInputSystem::isUIConsuming(scn));
 }
 
 TEST(UIInteractive, serializeDeserializeViaScene) {

@@ -60,8 +60,6 @@ protected:
 	}
 
 	void TearDown() override {
-		if (physics::PhysicCommand::isInitialized())
-			physics::PhysicCommand::destroy();
 		renderer::RendererVoxel::clearCache();
 		renderer::Renderer::setRenderStack(renderer::RenderStack{});
 	}

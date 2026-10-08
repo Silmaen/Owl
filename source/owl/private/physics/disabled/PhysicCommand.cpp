@@ -16,15 +16,7 @@
 
 namespace owl::physics {
 
-// Empty: no physics world without the physics module.
-class PhysicCommand::Impl {};
-
-shared<PhysicCommand::Impl> PhysicCommand::m_impl = nullptr;
-scene::Scene* PhysicCommand::m_scene = nullptr;
-
-PhysicCommand::PhysicCommand() = default;
-
-void PhysicCommand::init([[maybe_unused]] scene::Scene* iScene) {
+void PhysicCommand::init([[maybe_unused]] scene::Scene& ioScene) {
 	static bool sWarned = false;
 	if (!sWarned) {
 		OWL_CORE_WARN("Physic: not built in (OWL_MODULE_PHYSICS=OFF), bodies stay where they are.")
@@ -32,25 +24,27 @@ void PhysicCommand::init([[maybe_unused]] scene::Scene* iScene) {
 	}
 }
 
-void PhysicCommand::destroy() {}
+void PhysicCommand::destroy([[maybe_unused]] scene::Scene& ioScene) {}
 
-void PhysicCommand::releaseScene([[maybe_unused]] const scene::Scene* iScene) {}
+auto PhysicCommand::isInitialized([[maybe_unused]] const scene::Scene& iScene) -> bool { return false; }
 
-auto PhysicCommand::isInitialized() -> bool { return false; }
+void PhysicCommand::frame([[maybe_unused]] scene::Scene& ioScene, [[maybe_unused]] const core::Timestep& iTimestep) {}
 
-void PhysicCommand::frame([[maybe_unused]] const core::Timestep& iTimestep) {}
+auto PhysicCommand::getSettings([[maybe_unused]] const scene::Scene& iScene) -> PhysicsSettings {
+	return PhysicsSettings{};
+}
 
-auto PhysicCommand::getSettings() -> PhysicsSettings { return PhysicsSettings{}; }
+auto PhysicCommand::getWorkerCount([[maybe_unused]] const scene::Scene& iScene) -> uint32_t { return 0; }
 
-auto PhysicCommand::getWorkerCount() -> uint32_t { return 0; }
+auto PhysicCommand::getLastFrameStepCount([[maybe_unused]] const scene::Scene& iScene) -> uint32_t { return 0; }
 
-auto PhysicCommand::getLastFrameStepCount() -> uint32_t { return 0; }
+auto PhysicCommand::getInterpolationAlpha([[maybe_unused]] const scene::Scene& iScene) -> float { return 1.f; }
 
-auto PhysicCommand::getInterpolationAlpha() -> float { return 1.f; }
+void PhysicCommand::syncSimulatedTransforms([[maybe_unused]] scene::Scene& ioScene) {}
 
-void PhysicCommand::syncSimulatedTransforms() {}
-
-auto PhysicCommand::takeCollisionEvents() -> std::vector<CollisionEvent> { return {}; }
+auto PhysicCommand::takeCollisionEvents([[maybe_unused]] scene::Scene& ioScene) -> std::vector<CollisionEvent> {
+	return {};
+}
 
 void PhysicCommand::destroyBody([[maybe_unused]] const scene::Entity& iEntity) {}
 

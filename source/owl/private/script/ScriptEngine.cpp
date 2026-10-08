@@ -16,14 +16,6 @@
 #include <cstdint>
 
 namespace owl::script {
-class ScriptEngine::Impl {
-public:
-	// The scene the script instances act on; each instance owns its Lua state.
-	scene::Scene* activeScene = nullptr;
-};
-
-uniq<ScriptEngine::Impl> ScriptEngine::s_impl;
-
 namespace {
 
 auto defaultQuotas() -> ScriptQuotas& {
@@ -101,23 +93,6 @@ auto readProperties(lua_State* iState) -> std::vector<ScriptProperty> {
 
 }// namespace
 
-void ScriptEngine::init(scene::Scene* iScene) {
-	OWL_PROFILE_FUNCTION()
-
-	s_impl = mkUniq<Impl>();
-	s_impl->activeScene = iScene;
-	OWL_CORE_TRACE("ScriptEngine: Initialized.")
-}
-
-void ScriptEngine::shutdown() {
-	OWL_PROFILE_FUNCTION()
-
-	s_impl.reset();
-	OWL_CORE_TRACE("ScriptEngine: Shut down.")
-}
-
-auto ScriptEngine::isInitialized() -> bool { return s_impl != nullptr; }
-
 auto ScriptEngine::extractProperties(const std::filesystem::path& iPath) -> std::vector<ScriptProperty> {
 	const LuaEngine tempEngine;
 	if (!tempEngine.isValid() || !tempEngine.loadScript(iPath))
@@ -136,11 +111,5 @@ auto ScriptEngine::extractPropertiesFromBuffer(const std::vector<uint8_t>& iData
 void ScriptEngine::setDefaultQuotas(const ScriptQuotas& iQuotas) { defaultQuotas() = iQuotas; }
 
 auto ScriptEngine::getDefaultQuotas() -> ScriptQuotas { return defaultQuotas(); }
-
-auto ScriptEngine::getActiveScene() -> scene::Scene* {
-	if (!s_impl)
-		return nullptr;
-	return s_impl->activeScene;
-}
 
 }// namespace owl::script

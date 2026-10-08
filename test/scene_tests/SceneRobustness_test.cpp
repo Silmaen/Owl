@@ -40,8 +40,6 @@ protected:
 	}
 
 	void TearDown() override {
-		if (physics::PhysicCommand::isInitialized())
-			physics::PhysicCommand::destroy();
 		std::filesystem::remove_all(m_dir);
 		core::Log::invalidate();
 	}

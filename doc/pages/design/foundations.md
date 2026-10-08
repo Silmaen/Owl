@@ -181,7 +181,9 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
   [Owl RHI](owl-rhi.md)
 - ![Done][done] ABI — YAML out of the public API, hidden visibility by default, third-party symbols not
   exported (PR-27: A-03, G-07, A-10); the header weight (A-12) stays to watch, after a build-time measurement
-- ![Planned][planned] Engine context and one world per scene (PR-33: A-04, D-15, A-08, A-07, F-05)
+- ![In Progress][progress] Engine context and one world per scene (PR-33: A-04, D-15, A-08, A-07, F-05): each
+  scene owns its physics world, its script bindings and its UI mouse state; the engine context that owns the
+  application-wide singletons remains
 - ![Planned][planned] Phased systems; gameplay moved out of `Scene` (PR-36: A-02, C-14)
 - ![Planned][planned] Open component registry, after the EnTT 4 upgrade (PR-37: A-05, A-18)
 - ![Planned][planned] Entity references by UUID, remapped on duplication (PR-35: C-12, C-04)

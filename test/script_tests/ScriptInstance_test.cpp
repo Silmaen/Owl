@@ -40,7 +40,6 @@ auto writeTempScript(const std::filesystem::path& iDir, const std::string& iFile
 TEST(ScriptInstance, createAndLifecycle) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const auto dir = std::filesystem::temp_directory_path() / "owl_scriptinstance_test_1";
 	std::filesystem::remove_all(dir);
@@ -61,6 +60,7 @@ TEST(ScriptInstance, createAndLifecycle) {
 									  "end\n");
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	EXPECT_FALSE(inst.isValid());
 	EXPECT_TRUE(inst.create(path.string(), 42));
 	EXPECT_TRUE(inst.isValid());
@@ -83,7 +83,6 @@ TEST(ScriptInstance, createAndLifecycle) {
 	ASSERT_TRUE(val.has_value());
 	EXPECT_TRUE(val.value());
 
-	ScriptEngine::shutdown();
 	std::filesystem::remove_all(dir);
 	core::Log::invalidate();
 }
@@ -91,7 +90,6 @@ TEST(ScriptInstance, createAndLifecycle) {
 TEST(ScriptInstance, createFromBuffer) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "buf_val = 0\n"
 							   "function on_create()\n"
@@ -100,6 +98,7 @@ TEST(ScriptInstance, createFromBuffer) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	EXPECT_TRUE(inst.createFromBuffer(data, "buf_inst", 1));
 	EXPECT_TRUE(inst.isValid());
 	inst.onCreate();
@@ -108,19 +107,18 @@ TEST(ScriptInstance, createFromBuffer) {
 	ASSERT_TRUE(val.has_value());
 	EXPECT_EQ(val.value(), 99);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(ScriptInstance, runtimeErrorNamesScriptEntityAndFix) {
 	core::Log::init(core::Log::Level::Error);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	const std::string script = "function on_update(dt)\n"
 							   "  error('boom')\n"
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	inst.setEntityName("Hero");
 	ASSERT_TRUE(inst.createFromBuffer(data, "scripts/hero.lua", 77));
 	core::Log::getLogBuffer().clear();
@@ -136,19 +134,18 @@ TEST(ScriptInstance, runtimeErrorNamesScriptEntityAndFix) {
 		EXPECT_NE(entry.message.find("Fix: "), std::string::npos) << entry.message;
 	}
 	EXPECT_TRUE(found);
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(ScriptInstance, propertyRoundTrip) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "speed = 0\nname = ''\nflag = false\ncount = 0\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "props", 1));
 
 	inst.setProperty("speed", 3.14f);
@@ -163,14 +160,12 @@ TEST(ScriptInstance, propertyRoundTrip) {
 	inst.setProperty("count", static_cast<int64_t>(42));
 	EXPECT_EQ(inst.getPropertyInt("count").value_or(0), 42);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(ScriptInstance, onCollision) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "collided_with = 0\n"
 							   "function on_collision(other_id)\n"
@@ -179,6 +174,7 @@ TEST(ScriptInstance, onCollision) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "collision", 1));
 
 	inst.onCollision(12345);
@@ -186,19 +182,18 @@ TEST(ScriptInstance, onCollision) {
 	ASSERT_TRUE(val.has_value());
 	EXPECT_EQ(val.value(), 12345);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(ScriptInstance, missingCallbacksDoNotCrash) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "-- no callbacks defined\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "empty_script", 1));
 
 	// These should not crash.
@@ -207,7 +202,6 @@ TEST(ScriptInstance, missingCallbacksDoNotCrash) {
 	inst.onDestroy();
 	inst.onCollision(0);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -231,7 +225,6 @@ TEST(ScriptInstance, invalidInstanceOperations) {
 TEST(ScriptInstance, isolatedStates) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script1 = "counter = 0\nfunction on_create()\n  counter = 10\nend\n";
 	const std::string script2 = "counter = 0\nfunction on_create()\n  counter = 20\nend\n";
@@ -239,7 +232,9 @@ TEST(ScriptInstance, isolatedStates) {
 	const std::vector<uint8_t> data2(script2.begin(), script2.end());
 
 	const ScriptInstance inst1;
+	inst1.setScene(scn.get());
 	const ScriptInstance inst2;
+	inst2.setScene(scn.get());
 	ASSERT_TRUE(inst1.createFromBuffer(data1, "script1", 1));
 	ASSERT_TRUE(inst2.createFromBuffer(data2, "script2", 2));
 
@@ -249,6 +244,5 @@ TEST(ScriptInstance, isolatedStates) {
 	EXPECT_EQ(inst1.getPropertyInt("counter").value_or(0), 10);
 	EXPECT_EQ(inst2.getPropertyInt("counter").value_or(0), 20);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }

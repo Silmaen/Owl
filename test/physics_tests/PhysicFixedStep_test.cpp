@@ -33,11 +33,7 @@ class PhysicFixedStepTest : public ::testing::Test {
 protected:
 	void SetUp() override { core::Log::init(core::Log::Level::Off); }
 
-	void TearDown() override {
-		if (PhysicCommand::isInitialized())
-			PhysicCommand::destroy();
-		core::Log::invalidate();
-	}
+	void TearDown() override { core::Log::invalidate(); }
 };
 
 auto makeFrame(const int64_t iMicroseconds) -> core::Timestep {
@@ -81,11 +77,11 @@ auto readPositions(const std::vector<Entity>& iBoxes) -> std::vector<math::vec3f
 auto simulate(const std::vector<int64_t>& iFrames) -> std::vector<math::vec3f> {
 	Scene scene;
 	const auto boxes = makeStack(scene);
-	PhysicCommand::init(&scene);
-	for (const auto frame: iFrames) PhysicCommand::frame(makeFrame(frame));
-	PhysicCommand::syncSimulatedTransforms();
+	PhysicCommand::init(scene);
+	for (const auto frame: iFrames) PhysicCommand::frame(scene, makeFrame(frame));
+	PhysicCommand::syncSimulatedTransforms(scene);
 	auto positions = readPositions(boxes);
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	return positions;
 }
 
@@ -117,62 +113,62 @@ TEST_F(PhysicFixedStepTest, StepCountFollowsTheTickRate) {
 	Scene scene;
 	addBox(scene, {0.f, 5.f, 0.f});
 	scene.getPhysicsSettings().tickRate = 120.f;
-	PhysicCommand::init(&scene);
-	EXPECT_FLOAT_EQ(PhysicCommand::getSettings().tickRate, 120.f);
-	PhysicCommand::frame(makeFrame(16'667));
-	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(), 2u);
-	PhysicCommand::frame(makeFrame(4'000));
-	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(), 0u);
-	PhysicCommand::frame(makeFrame(4'400));
-	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(), 1u);
+	PhysicCommand::init(scene);
+	EXPECT_FLOAT_EQ(PhysicCommand::getSettings(scene).tickRate, 120.f);
+	PhysicCommand::frame(scene, makeFrame(16'667));
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 2u);
+	PhysicCommand::frame(scene, makeFrame(4'000));
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 0u);
+	PhysicCommand::frame(scene, makeFrame(4'400));
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 1u);
 }
 
 TEST_F(PhysicFixedStepTest, StepsPerFrameAreBoundedAndTheExcessIsDropped) {
 	Scene scene;
 	addBox(scene, {0.f, 5.f, 0.f});
 	scene.getPhysicsSettings().maxStepsPerFrame = 5;
-	PhysicCommand::init(&scene);
-	PhysicCommand::frame(makeFrame(2'000'000));
-	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(), 5u);
-	PhysicCommand::frame(makeFrame(0));
-	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(), 0u);
-	PhysicCommand::frame(makeFrame(16'667));
-	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(), 1u);
+	PhysicCommand::init(scene);
+	PhysicCommand::frame(scene, makeFrame(2'000'000));
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 5u);
+	PhysicCommand::frame(scene, makeFrame(0));
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 0u);
+	PhysicCommand::frame(scene, makeFrame(16'667));
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 1u);
 }
 
 TEST_F(PhysicFixedStepTest, InterpolationBlendsTheLastTwoSteps) {
 	Scene scene;
 	auto box = addBox(scene, {0.f, 0.f, 0.f});
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 	PhysicCommand::setGravityScale(box, 0.f);
 	PhysicCommand::setVelocity(box, {6.f, 0.f});
 	const auto& transform = box.getComponent<component::Transform>().transform;
 	constexpr float step = 1.f / 60.f;
 
-	PhysicCommand::frame(makeFrame(25'000));
-	ASSERT_EQ(PhysicCommand::getLastFrameStepCount(), 1u);
-	const float alpha = PhysicCommand::getInterpolationAlpha();
+	PhysicCommand::frame(scene, makeFrame(25'000));
+	ASSERT_EQ(PhysicCommand::getLastFrameStepCount(scene), 1u);
+	const float alpha = PhysicCommand::getInterpolationAlpha(scene);
 	EXPECT_NEAR(alpha, 0.5f, 1e-3f);
 	EXPECT_NEAR(transform.translation().x(), 6.f * step * alpha, 1e-4f);
 
-	PhysicCommand::frame(makeFrame(4'000));
-	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(), 0u);
-	EXPECT_GT(PhysicCommand::getInterpolationAlpha(), alpha);
-	EXPECT_NEAR(transform.translation().x(), 6.f * step * PhysicCommand::getInterpolationAlpha(), 1e-4f);
+	PhysicCommand::frame(scene, makeFrame(4'000));
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 0u);
+	EXPECT_GT(PhysicCommand::getInterpolationAlpha(scene), alpha);
+	EXPECT_NEAR(transform.translation().x(), 6.f * step * PhysicCommand::getInterpolationAlpha(scene), 1e-4f);
 
-	PhysicCommand::syncSimulatedTransforms();
+	PhysicCommand::syncSimulatedTransforms(scene);
 	EXPECT_NEAR(transform.translation().x(), 6.f * step, 1e-4f);
 }
 
 TEST_F(PhysicFixedStepTest, TeleportIsNotInterpolated) {
 	Scene scene;
 	auto box = addBox(scene, {0.f, 0.f, 0.f});
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 	PhysicCommand::setGravityScale(box, 0.f);
-	PhysicCommand::frame(makeFrame(25'000));
+	PhysicCommand::frame(scene, makeFrame(25'000));
 	PhysicCommand::setTransform(box, {10.f, 3.f}, 0.f);
-	PhysicCommand::frame(makeFrame(1'000));
-	ASSERT_EQ(PhysicCommand::getLastFrameStepCount(), 0u);
+	PhysicCommand::frame(scene, makeFrame(1'000));
+	ASSERT_EQ(PhysicCommand::getLastFrameStepCount(scene), 0u);
 	const auto& transform = box.getComponent<component::Transform>().transform;
 	EXPECT_FLOAT_EQ(transform.translation().x(), 10.f);
 	EXPECT_FLOAT_EQ(transform.translation().y(), 3.f);
@@ -182,11 +178,11 @@ TEST_F(PhysicFixedStepTest, WithoutInterpolationTransformsShowTheLastStep) {
 	Scene scene;
 	auto box = addBox(scene, {0.f, 0.f, 0.f});
 	scene.getPhysicsSettings().interpolate = false;
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 	PhysicCommand::setGravityScale(box, 0.f);
 	PhysicCommand::setVelocity(box, {6.f, 0.f});
-	PhysicCommand::frame(makeFrame(25'000));
-	EXPECT_FLOAT_EQ(PhysicCommand::getInterpolationAlpha(), 1.f);
+	PhysicCommand::frame(scene, makeFrame(25'000));
+	EXPECT_FLOAT_EQ(PhysicCommand::getInterpolationAlpha(scene), 1.f);
 	EXPECT_NEAR(box.getComponent<component::Transform>().transform.translation().x(), 6.f / 60.f, 1e-4f);
 }
 
@@ -203,14 +199,14 @@ TEST_F(PhysicFixedStepTest, CollisionReportedOnceInAFrameOfManySteps) {
 	body.friction = 0.f;
 	body.fixedRotation = true;
 	scene.getPhysicsSettings().maxStepsPerFrame = 64;
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 	PhysicCommand::setGravityScale(ball, 0.f);
 	PhysicCommand::setVelocity(ball, {10.f, 0.f});
 	// The ball crosses the 2 m gap every 0.2 s: each wall is hit about five times in a one-second frame.
 	for (int i = 0; i < 3; ++i) {
-		PhysicCommand::frame(makeFrame(1'000'000));
-		ASSERT_EQ(PhysicCommand::getLastFrameStepCount(), 60u);
-		const auto events = PhysicCommand::takeCollisionEvents();
+		PhysicCommand::frame(scene, makeFrame(1'000'000));
+		ASSERT_EQ(PhysicCommand::getLastFrameStepCount(scene), 60u);
+		const auto events = PhysicCommand::takeCollisionEvents(scene);
 		ASSERT_EQ(events.size(), 2u) << "frame " << i;
 		EXPECT_NE(events[0].entityA == ball.getUUID() ? events[0].entityB : events[0].entityA,
 				  events[1].entityA == ball.getUUID() ? events[1].entityB : events[1].entityA);

@@ -35,7 +35,6 @@ TEST(LuaBindings, transformGetSetPosition) {
 	auto& [transform] = entity.getComponent<scene::component::Transform>();
 	transform.translation() = {1.0f, 2.0f, 3.0f};
 
-	ScriptEngine::init(scn.get());
 
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
 	// Use entity_id global (set by ScriptInstance::create*) to avoid uint64 literal precision issues.
@@ -47,6 +46,7 @@ TEST(LuaBindings, transformGetSetPosition) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "transform_test", uuid));
 	inst.onCreate();
 
@@ -60,7 +60,6 @@ TEST(LuaBindings, transformGetSetPosition) {
 	EXPECT_NEAR(transform.translation().y(), 20.0f, 0.01f);
 	EXPECT_NEAR(transform.translation().z(), 30.0f, 0.01f);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -70,7 +69,6 @@ TEST(LuaBindings, sceneFindEntity) {
 	auto entity = scn->createEntity("MyTarget");
 	const auto expectedUuid = static_cast<uint64_t>(entity.getUUID());
 
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "found_id = 0\n"
 							   "function on_create()\n"
@@ -79,6 +77,7 @@ TEST(LuaBindings, sceneFindEntity) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "find_test", 1));
 	inst.onCreate();
 
@@ -86,14 +85,12 @@ TEST(LuaBindings, sceneFindEntity) {
 	ASSERT_TRUE(foundId.has_value());
 	EXPECT_EQ(static_cast<uint64_t>(foundId.value()), expectedUuid);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, sceneFindEntityNotFound) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "found_id = -1\n"
 							   "function on_create()\n"
@@ -102,6 +99,7 @@ TEST(LuaBindings, sceneFindEntityNotFound) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "notfound_test", 1));
 	inst.onCreate();
 
@@ -109,7 +107,6 @@ TEST(LuaBindings, sceneFindEntityNotFound) {
 	ASSERT_TRUE(foundId.has_value());
 	EXPECT_EQ(foundId.value(), 0);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -119,7 +116,6 @@ TEST(LuaBindings, entityHasComponent) {
 	auto entity = scn->createEntity("CompTest");
 	// Entity has Transform by default, no PhysicBody.
 
-	ScriptEngine::init(scn.get());
 
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
 	const std::string script = "has_transform = false\n"
@@ -131,13 +127,13 @@ TEST(LuaBindings, entityHasComponent) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "comp_test", uuid));
 	inst.onCreate();
 
 	EXPECT_TRUE(inst.getPropertyBool("has_transform").value_or(false));
 	EXPECT_FALSE(inst.getPropertyBool("has_physic").value_or(true));
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -146,7 +142,6 @@ TEST(LuaBindings, entityGetName) {
 	auto scn = mkShared<scene::Scene>();
 	auto entity = scn->createEntity("NamedEntity");
 
-	ScriptEngine::init(scn.get());
 
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
 	const std::string script = "ent_name = ''\n"
@@ -156,19 +151,18 @@ TEST(LuaBindings, entityGetName) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "name_test", uuid));
 	inst.onCreate();
 
 	EXPECT_EQ(inst.getPropertyString("ent_name").value_or(""), "NamedEntity");
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, logDoesNotCrash) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "function on_create()\n"
 							   "  log.trace('trace msg')\n"
@@ -179,17 +173,16 @@ TEST(LuaBindings, logDoesNotCrash) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "log_test", 1));
 	inst.onCreate();// Should not crash.
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, timeDelta) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "dt_val = 0\n"
 							   "function on_update(dt)\n"
@@ -198,6 +191,7 @@ TEST(LuaBindings, timeDelta) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "time_test", 1));
 	inst.onUpdate(0.033f);
 
@@ -205,7 +199,6 @@ TEST(LuaBindings, timeDelta) {
 	ASSERT_TRUE(dt.has_value());
 	EXPECT_NEAR(dt.value(), 0.033f, 0.001f);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -217,7 +210,6 @@ TEST(LuaBindings, transformRotationScaleRoundTrip) {
 	transform.rotation() = {0.1f, 0.2f, 0.3f};
 	transform.scale() = {2.f, 3.f, 4.f};
 
-	ScriptEngine::init(scn.get());
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
 	const std::string script = "rx, ry, rz = 0, 0, 0\n"
 							   "sx, sy, sz = 0, 0, 0\n"
@@ -229,6 +221,7 @@ TEST(LuaBindings, transformRotationScaleRoundTrip) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "rot_scale_test", uuid));
 	inst.onCreate();
 
@@ -239,7 +232,6 @@ TEST(LuaBindings, transformRotationScaleRoundTrip) {
 	EXPECT_NEAR(transform.scale().x(), 5.f, 0.01f);
 	EXPECT_NEAR(transform.scale().z(), 7.f, 0.01f);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -247,7 +239,6 @@ TEST(LuaBindings, transformRotationScaleRoundTrip) {
 TEST(LuaBindings, transformGettersFallbackOnMissingEntity) {
 	core::Log::init(core::Log::Level::Off);
 	const auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	const std::string script = "px, py, pz = 9, 9, 9\n"
 							   "rx, ry, rz = 9, 9, 9\n"
 							   "sx, sy, sz = 9, 9, 9\n"
@@ -258,20 +249,19 @@ TEST(LuaBindings, transformGettersFallbackOnMissingEntity) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "fallback_test", 1));
 	inst.onCreate();
 	EXPECT_NEAR(inst.getPropertyFloat("px").value_or(-1), 0.f, 0.001f);
 	EXPECT_NEAR(inst.getPropertyFloat("rz").value_or(-1), 0.f, 0.001f);
 	EXPECT_NEAR(inst.getPropertyFloat("sx").value_or(-1), 1.f, 0.001f);
 	EXPECT_NEAR(inst.getPropertyFloat("sz").value_or(-1), 1.f, 0.001f);
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, sceneCreateAndDestroyEntity) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	const std::string script = "id = 0\n"
 							   "function on_create()\n"
 							   "  id = scene.create_entity('NewEnt')\n"
@@ -279,6 +269,7 @@ TEST(LuaBindings, sceneCreateAndDestroyEntity) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "create_destroy_test", 1));
 	inst.onCreate();
 	const auto created = inst.getPropertyInt("id");
@@ -289,33 +280,30 @@ TEST(LuaBindings, sceneCreateAndDestroyEntity) {
 	EXPECT_TRUE(scn->isPendingDestruction(scn->findEntityByUUID(createdUuid)));
 	scn->flushPendingDestructions();
 	EXPECT_FALSE(scn->findEntityByUUID(createdUuid));
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, sceneLoadAndQuit) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	const std::string script = "function on_create()\n"
 							   "  scene.load_scene('Other')\n"
 							   "  scene.quit()\n"
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "load_quit_test", 1));
 	inst.onCreate();
 	EXPECT_TRUE(scn->teleportRequest.pending);
 	EXPECT_EQ(scn->teleportRequest.levelName, "Other");
 	EXPECT_TRUE(scn->quitRequested);
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, sceneTransitionToParsesTypes) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	// Default (no type) → fade pair.
 	const std::string script = "function on_create()\n"
 							   "  scene.transition_to('next.scene')\n"
@@ -325,9 +313,9 @@ TEST(LuaBindings, sceneTransitionToParsesTypes) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "transition_test", 1));
 	inst.onCreate();// must not crash; ScreenTransition request paths exercised.
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -343,7 +331,6 @@ TEST(LuaBindings, uiTextSetGetAndVisibility) {
 	auto& button = ent.addComponent<scene::component::UiButton>();
 	button.state = scene::component::UiButton::State::Normal;
 
-	ScriptEngine::init(scn.get());
 	const auto uuid = static_cast<uint64_t>(ent.getUUID());
 	const std::string script = "txt = ''\n"
 							   "sv = -1\n"
@@ -358,6 +345,7 @@ TEST(LuaBindings, uiTextSetGetAndVisibility) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "ui_test", uuid));
 	inst.onCreate();
 
@@ -368,7 +356,6 @@ TEST(LuaBindings, uiTextSetGetAndVisibility) {
 	EXPECT_NEAR(slider.value, 0.9f, 0.01f);
 	EXPECT_NEAR(inst.getPropertyFloat("sv").value_or(0), 0.9f, 0.01f);
 	EXPECT_EQ(button.state, scene::component::UiButton::State::Disabled);
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -376,7 +363,6 @@ TEST(LuaBindings, uiGettersFallbackWhenComponentMissing) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
 	auto ent = scn->createEntity("noUi");
-	ScriptEngine::init(scn.get());
 	const auto uuid = static_cast<uint64_t>(ent.getUUID());
 	const std::string script = "txt = 'init'\n"
 							   "sv = 99\n"
@@ -386,18 +372,17 @@ TEST(LuaBindings, uiGettersFallbackWhenComponentMissing) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "ui_fallback_test", uuid));
 	inst.onCreate();
 	EXPECT_EQ(inst.getPropertyString("txt").value_or("?"), "");
 	EXPECT_NEAR(inst.getPropertyFloat("sv").value_or(-1), 0.f, 0.001f);
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, uiTransitionsAndIsActive) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	scene::ScreenTransition::reset();// reset
 	const std::string script = "active1 = true\n"
 							   "function on_create()\n"
@@ -411,18 +396,17 @@ TEST(LuaBindings, uiTransitionsAndIsActive) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "ui_trans_test", 1));
 	inst.onCreate();
 	EXPECT_FALSE(inst.getPropertyBool("active1").value_or(true));
 	scene::ScreenTransition::reset();
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, gamestateSetGetRemoveClear) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	const std::string script = "vbool = nil\n"
 							   "vint = nil\n"
 							   "vnum = nil\n"
@@ -445,6 +429,7 @@ TEST(LuaBindings, gamestateSetGetRemoveClear) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_test", 1));
 	inst.onCreate();
 	EXPECT_TRUE(inst.getPropertyBool("vbool").value_or(false));
@@ -453,14 +438,12 @@ TEST(LuaBindings, gamestateSetGetRemoveClear) {
 	EXPECT_EQ(inst.getPropertyString("vstr").value_or(""), "arthur");
 	EXPECT_EQ(inst.getPropertyString("vmissdefault").value_or(""), "fallback");
 	EXPECT_TRUE(scn->getGameState().get("flag") == std::nullopt);// removed + cleared
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, inputBindings) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	const std::string script = "kp = nil\n"
 							   "mp = nil\n"
 							   "mx = nil\n"
@@ -473,6 +456,7 @@ TEST(LuaBindings, inputBindings) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "input_test", 1));
 	inst.onCreate();
 	// In headless tests no input device is registered → all return false / 0.
@@ -480,14 +464,12 @@ TEST(LuaBindings, inputBindings) {
 	EXPECT_FALSE(inst.getPropertyBool("mp").value_or(true));
 	EXPECT_NEAR(inst.getPropertyFloat("mx").value_or(-1), 0.f, 0.001f);
 	EXPECT_NEAR(inst.getPropertyFloat("my").value_or(-1), 0.f, 0.001f);
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, soundBindingsWithoutSoundSystem) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	// SoundSystem is not running → play returns invalidSoundHandle but does not crash.
 	const std::string script = "h = nil\n"
 							   "function on_create()\n"
@@ -499,25 +481,19 @@ TEST(LuaBindings, soundBindingsWithoutSoundSystem) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "sound_test", 1));
 	inst.onCreate();
 	const auto h = inst.getPropertyInt("h");
 	ASSERT_TRUE(h.has_value());
 	// Invalid handle (sound system off) is 0.
 	EXPECT_EQ(h.value(), 0);
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, sceneFunctionsWithoutActiveScene) {
 	core::Log::init(core::Log::Level::Off);
-	// No ScriptEngine::init() — so getActiveScene returns nullptr.
-	// We have to manually create a Lua state without binding the scene.
-	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
-	ScriptEngine::shutdown();
-	// Now active scene is nullptr.
-	ScriptEngine::init(nullptr);
+	// The instance is bound to no scene: the scene bindings return their neutral value.
 
 	const std::string script = "found = 99\n"
 							   "created = 99\n"
@@ -534,13 +510,11 @@ TEST(LuaBindings, sceneFunctionsWithoutActiveScene) {
 	inst.onCreate();
 	EXPECT_EQ(inst.getPropertyInt("found").value_or(-1), 0);
 	EXPECT_EQ(inst.getPropertyInt("created").value_or(-1), 0);
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, gamestateOpsWithoutActiveScene) {
 	core::Log::init(core::Log::Level::Off);
-	ScriptEngine::init(nullptr);
 	const std::string script = "v = 'kept'\n"
 							   "function on_create()\n"
 							   "  gamestate.set('a', 1)\n"
@@ -553,14 +527,12 @@ TEST(LuaBindings, gamestateOpsWithoutActiveScene) {
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_no_scene_test", 1));
 	inst.onCreate();
 	// Without a scene, set is a no-op and get returns nil → property unchanged.
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, settingsBindings) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	scene::SettingsManager::resetAllToDefaults();
 	scene::SettingsManager::set("flag", true);
 	const std::string script = "vbool = nil\n"
@@ -582,13 +554,13 @@ TEST(LuaBindings, settingsBindings) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "settings_test", 1));
 	inst.onCreate();
 	EXPECT_TRUE(inst.getPropertyBool("vbool").value_or(false));
 	EXPECT_EQ(inst.getPropertyInt("vint").value_or(0), 7);
 	EXPECT_EQ(inst.getPropertyString("vstr").value_or(""), "arthur");
 	EXPECT_EQ(inst.getPropertyString("vmiss").value_or(""), "def");
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -600,7 +572,6 @@ TEST(LuaBindings, triggerTimerBindings) {
 	trig.trigger.type = scene::SceneTrigger::TriggerType::Timer;
 	trig.trigger.timerDuration = 1.0f;
 
-	ScriptEngine::init(scn.get());
 	const auto uuid = static_cast<uint64_t>(ent.getUUID());
 	const std::string script = "function on_create()\n"
 							   "  trigger.start_timer(entity_id)\n"
@@ -609,9 +580,9 @@ TEST(LuaBindings, triggerTimerBindings) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "trigger_test", uuid));
 	inst.onCreate();
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -619,7 +590,6 @@ TEST(LuaBindings, triggerOnEntityWithoutTriggerIsNoOp) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
 	auto ent = scn->createEntity("noTrig");
-	ScriptEngine::init(scn.get());
 	const auto uuid = static_cast<uint64_t>(ent.getUUID());
 	const std::string script = "function on_create()\n"
 							   "  trigger.start_timer(entity_id)\n"
@@ -628,15 +598,14 @@ TEST(LuaBindings, triggerOnEntityWithoutTriggerIsNoOp) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "trig_notrig_test", uuid));
 	inst.onCreate();
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, triggerWithNullSceneIsNoOp) {
 	core::Log::init(core::Log::Level::Off);
-	ScriptEngine::init(nullptr);
 	const std::string script = "function on_create()\n"
 							   "  trigger.start_timer(123)\n"
 							   "  trigger.stop_timer(123)\n"
@@ -646,14 +615,12 @@ TEST(LuaBindings, triggerWithNullSceneIsNoOp) {
 	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "trig_null_test", 1));
 	inst.onCreate();
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(LuaBindings, saveQueriesAndDeferredRequests) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	const std::string script = "has = nil\n"
 							   "saves = nil\n"
 							   "function on_create()\n"
@@ -665,13 +632,13 @@ TEST(LuaBindings, saveQueriesAndDeferredRequests) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "save_test", 1));
 	inst.onCreate();
 	EXPECT_TRUE(scn->saveLoadRequest.pending);
 	EXPECT_TRUE(scn->saveLoadRequest.isLoad);
 	EXPECT_EQ(scn->saveLoadRequest.slot, 7u);
 	EXPECT_FALSE(inst.getPropertyBool("has").value_or(true));
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -683,7 +650,6 @@ TEST(LuaBindings, doorActivateTransitionsIdleToOpening) {
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
 	const auto signedUuid = static_cast<int64_t>(uuid);
 
-	ScriptEngine::init(scn.get());
 	const std::string script = std::format("state = \"\"\n"
 										   "function on_create()\n"
 										   "  door.activate({})\n"
@@ -692,6 +658,7 @@ TEST(LuaBindings, doorActivateTransitionsIdleToOpening) {
 										   signedUuid, signedUuid);
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "door_test", uuid));
 	inst.onCreate();
 	EXPECT_EQ(entity.getComponent<scene::component::RaycastDoor>().state,
@@ -699,7 +666,6 @@ TEST(LuaBindings, doorActivateTransitionsIdleToOpening) {
 	const auto reported = inst.getPropertyString("state");
 	ASSERT_TRUE(reported.has_value());
 	EXPECT_EQ(reported.value(), "opening");
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -714,7 +680,6 @@ TEST(LuaBindings, doorIsOpenAndCloseSwitchesState) {
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
 	const auto signedUuid = static_cast<int64_t>(uuid);
 
-	ScriptEngine::init(scn.get());
 	const std::string script = std::format("opened = false\n"
 										   "function on_create()\n"
 										   "  opened = door.is_open({})\n"
@@ -723,13 +688,13 @@ TEST(LuaBindings, doorIsOpenAndCloseSwitchesState) {
 										   signedUuid, signedUuid);
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "door_close_test", uuid));
 	inst.onCreate();
 	EXPECT_TRUE(inst.getPropertyBool("opened").value_or(false));
 	EXPECT_EQ(entity.getComponent<scene::component::RaycastDoor>().state,
 			  scene::component::RaycastDoor::State::Closing);
 	EXPECT_FLOAT_EQ(entity.getComponent<scene::component::RaycastDoor>().holdTimer, 0.f);
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -741,7 +706,6 @@ TEST(LuaBindings, pushwallActivateAndHasMoved) {
 	const auto uuid = static_cast<uint64_t>(entity.getUUID());
 	const auto signedUuid = static_cast<int64_t>(uuid);
 
-	ScriptEngine::init(scn.get());
 	const std::string script = std::format("before = false\n"
 										   "state = \"\"\n"
 										   "function on_create()\n"
@@ -752,13 +716,13 @@ TEST(LuaBindings, pushwallActivateAndHasMoved) {
 										   signedUuid, signedUuid, signedUuid);
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "push_test", uuid));
 	inst.onCreate();
 	EXPECT_FALSE(inst.getPropertyBool("before").value_or(true));
 	EXPECT_EQ(entity.getComponent<scene::component::RaycastPushWall>().state,
 			  scene::component::RaycastPushWall::State::Moving);
 	EXPECT_EQ(inst.getPropertyString("state").value_or(""), "moving");
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -767,7 +731,6 @@ TEST(LuaBindings, doorPushwallApisHandleMissingEntity) {
 	// not crash or mutate state — Lua errors silently fall back to default returns.
 	core::Log::init(core::Log::Level::Off);
 	const auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 	const std::string script = "door.activate(0)\n"
 							   "door.close(0)\n"
 							   "open = door.is_open(0)\n"
@@ -777,11 +740,11 @@ TEST(LuaBindings, doorPushwallApisHandleMissingEntity) {
 							   "push_state = pushwall.get_state(0)\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "missing_test", 1));
 	EXPECT_EQ(inst.getPropertyBool("open").value_or(true), false);
 	EXPECT_EQ(inst.getPropertyBool("moved").value_or(true), false);
 	EXPECT_EQ(inst.getPropertyString("door_state").value_or(""), "idle");
 	EXPECT_EQ(inst.getPropertyString("push_state").value_or(""), "idle");
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }

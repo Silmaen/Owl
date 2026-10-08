@@ -364,9 +364,9 @@ Lua callbacks to match your game.
 
 ### onStartRuntime
 
-1. `ScriptEngine::init(scene)` records the active scene the bindings act on (it owns no Lua state)
-2. For each entity with a `LuaScript` component:
-   - Creates a `ScriptInstance` (isolated Lua state)
+1. For each entity with a `LuaScript` component:
+   - Creates a `ScriptInstance` (isolated Lua state) bound to the scene (`ScriptInstance::setScene`): its
+     bindings act on that scene only, so the scripts of several scenes run side by side
    - Loads the script from file or `.owlpack`
    - Applies property values from the component to the Lua globals
    - Calls `on_create()`
@@ -387,7 +387,7 @@ destroyed; each of them gets `on_destroy()` once, loses its Box2D body and stops
 ### onEndRuntime
 
 - For each `LuaScript` with a valid instance, calls `on_destroy()`
-- Resets all instances and calls `ScriptEngine::shutdown()`
+- Resets all instances
 
 ## Sandbox and quotas {#sandbox-and-quotas}
 
