@@ -92,7 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GLFW no longer crashes at init on a Wayland compositor without input devices (no `wl_seat`, e.g. headless weston).
 - Wayland works again on Linux: GLFW comes from a local recipe building both backends against the system Wayland (ConanCenter's built X11 only, and with Wayland on shipped a libwayland that hid the system one from the GPU drivers).
 - `importSharedLibs.py` copies a library next to the binaries again when its package changed, instead of keeping the first copy forever (a stale X11-only `libglfw.so.3`, an old `libopenal.so.1`).
-- Linux binaries link with `--as-needed`: they no longer require every `libxcb-*` that Conan's `xorg/system` lists, so Owl Nest and exported games start on a desktop missing an unused one (`libxcb-ewmh2`, `libxcb-dri2-0`).
+- Linux binaries link with `--as-needed`: they no longer require every `libxcb-*` that Conan's `xorg/system` lists, so Owl Nest and exported games start on a desktop missing an unused one (`libxcb-ewmh2`, `libxcb-dri2-0`); the OpenGL backend keeps the GL library GLFW loads resident, so its Mesa driver is not unloaded before LeakSanitizer runs.
 - TSan builds: the Lua time quota fires again, the watchdog setting the hook from its own thread because TSan holds back the interrupt signal.
 - TSan: the Vulkan image tests no longer fail on races inside lavapipe and the validation layer, suppressed by library in `test/tsan.supp`.
 - Windows: packed assets keep `/` in their pack paths (`AssetScanner` wrote `scenes\level.owl`), so an exported game finds its scenes, fonts and textures.

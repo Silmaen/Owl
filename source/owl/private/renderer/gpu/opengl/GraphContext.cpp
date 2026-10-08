@@ -14,7 +14,23 @@
 
 #include <cstdint>
 
+#ifdef OWL_PLATFORM_LINUX
+#include <dlfcn.h>
+#endif
+
 namespace owl::renderer::gpu::opengl {
+
+namespace {
+
+#ifdef OWL_PLATFORM_LINUX
+// GLFW unloads the GL library at glfwTerminate, and Mesa's driver with it, before LeakSanitizer runs.
+void keepGlLibrariesLoaded() {
+	for (const char* library: {"libGL.so.1", "libGLX.so.0", "libOpenGL.so.0", "libEGL.so.1"})
+		dlopen(library, RTLD_LAZY | RTLD_NOLOAD | RTLD_NODELETE);
+}
+#endif
+
+}// namespace
 
 GraphContext::GraphContext(GLFWwindow* ioWindow) : mp_windowHandle(ioWindow) {
 	OWL_CORE_ASSERT(ioWindow, "Windows handle is nullptr")
@@ -24,6 +40,9 @@ void GraphContext::init() {
 	OWL_PROFILE_FUNCTION()
 
 	glfwMakeContextCurrent(mp_windowHandle);
+#ifdef OWL_PLATFORM_LINUX
+	keepGlLibrariesLoaded();
+#endif
 #ifdef OLD_GLAD
 	version = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
 #else

@@ -15,7 +15,8 @@ if ! command -v weston >/dev/null 2>&1; then
 	exit 77
 fi
 mkdir -p "${work}"
-XDG_RUNTIME_DIR="$(mktemp -d "${work}/xdg.XXXXXX")"
+# A Wayland socket path is limited to 108 bytes: keep the runtime directory short, outside the build tree.
+XDG_RUNTIME_DIR="$(mktemp -d "${TMPDIR:-/tmp}/owl-xdg.XXXXXX")"
 export XDG_RUNTIME_DIR
 chmod 700 "${XDG_RUNTIME_DIR}"
 socket=owl-smoke
