@@ -50,6 +50,15 @@ void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
 		ImGui::SetTooltip("Pixel size of the main UI font. Takes effect on the next startup.");
 
 	ImGui::Spacing();
+	ImGui::TextUnformatted("Autosave every");
+	ImGui::SameLine();
+	if (ImGui::SliderInt("##autosaveInterval", &ioSettings.autosaveIntervalSeconds, 0, 600, "%d s"))
+		ioSettings.autosaveIntervalSeconds = std::clamp(ioSettings.autosaveIntervalSeconds, 0, 3600);
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+		ImGui::SetTooltip("Modified documents are copied aside at this interval and offered back after a crash. "
+						  "0 disables the autosave.");
+
+	ImGui::Spacing();
 	ImGui::SeparatorText("Gizmo Snap");
 	ImGui::Checkbox("Enable snap to grid", &ioSettings.snapEnabled);
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))

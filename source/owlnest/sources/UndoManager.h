@@ -191,6 +191,12 @@ public:
 
 	/**
 	 * @brief
+	 *  Mark the current state as not saved (content replaced outside the undo history, e.g. by a recovery).
+	 */
+	void markUnsaved() { m_savedGeneration = m_nextGeneration++; }
+
+	/**
+	 * @brief
 	 *  Check if the state has changed since the last save.
 	 * @return True when the object is dirty.
 	 */

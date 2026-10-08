@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iterator>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -73,6 +74,25 @@ auto SceneDocument::save() -> bool {
 
 auto SceneDocument::saveAs(const std::filesystem::path& iPath) -> bool {
 	m_scenePath = iPath;
+	return true;
+}
+
+auto SceneDocument::recoverySnapshot() const -> std::optional<std::string> {
+	if (!m_editorScene)
+		return std::nullopt;
+	return scene::SceneSerializer(m_editorScene).serializeToString();
+}
+
+auto SceneDocument::restoreRecoverySnapshot(const std::string& iSnapshot) -> bool {
+	const auto restored = mkShared<scene::Scene>();
+	const std::vector<uint8_t> bytes(iSnapshot.begin(), iSnapshot.end());
+	const auto source = m_scenePath.empty() ? std::string{"autosave"} : m_scenePath.string();
+	if (const auto loaded = scene::SceneSerializer(restored).deserializeFromBuffer(bytes, source); !loaded) {
+		OWL_WARN("Recovery: Cannot restore the autosave of '{}': {}.", title(), scene::describe(loaded.error()))
+		return false;
+	}
+	applyLoadedScene(restored, m_scenePath, m_viewport.getSize());
+	m_undoManager.markUnsaved();
 	return true;
 }
 

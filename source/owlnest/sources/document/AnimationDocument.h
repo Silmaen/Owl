@@ -16,6 +16,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -134,6 +135,21 @@ public:
 	 * @return True on success; false on failure.
 	 */
 	auto saveAs(const std::filesystem::path& iPath) -> bool override;
+
+	/**
+	 * @brief
+	 *  Current content, serialized in the document's file format.
+	 * @return The content.
+	 */
+	[[nodiscard]] auto recoverySnapshot() const -> std::optional<std::string> override;
+
+	/**
+	 * @brief
+	 *  Replace the content with an autosaved snapshot, keeping the path; the document becomes dirty.
+	 * @param[in] iSnapshot The serialized content.
+	 * @return True when the snapshot was applied.
+	 */
+	auto restoreRecoverySnapshot(const std::string& iSnapshot) -> bool override;
 
 	/**
 	 * @brief

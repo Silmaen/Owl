@@ -123,6 +123,20 @@ auto TilemapDocument::isDirty() const -> bool {
 	return m_asset.serializeToString(displayName) != m_savedSnapshot;
 }
 
+auto TilemapDocument::recoverySnapshot() const -> std::optional<std::string> {
+	return m_asset.serializeToString(m_path.empty() ? std::string{"untitled"} : m_path.stem().string());
+}
+
+auto TilemapDocument::restoreRecoverySnapshot(const std::string& iSnapshot) -> bool {
+	const auto tileset = m_asset.tileset;
+	if (!m_asset.deserializeFromString(iSnapshot)) {
+		OWL_WARN("Recovery: Cannot restore the autosave of tilemap '{}'.", title())
+		return false;
+	}
+	m_asset.tileset = tileset;
+	return true;
+}
+
 void TilemapDocument::onAttach(EditorLayer* iEditor) {
 	mp_editorLayer = iEditor;
 	resolveTileset();

@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 
 namespace owl::nest {
@@ -139,6 +140,21 @@ public:
 	 * @return The bool = 0.
 	 */
 	virtual auto saveAs(const std::filesystem::path& iPath) -> bool = 0;
+
+	/**
+	 * @brief
+	 *  Current content, in the document's file format, for the autosave (crash recovery).
+	 * @return The content, or nothing when this document type is not autosaved.
+	 */
+	[[nodiscard]] virtual auto recoverySnapshot() const -> std::optional<std::string> { return std::nullopt; }
+
+	/**
+	 * @brief
+	 *  Replace the content with an autosaved snapshot, keeping the file path; the document becomes dirty.
+	 * @param[in] iSnapshot Content returned by `recoverySnapshot()` in a previous session.
+	 * @return True when the snapshot was applied.
+	 */
+	virtual auto restoreRecoverySnapshot([[maybe_unused]] const std::string& iSnapshot) -> bool { return false; }
 
 	/**
 	 * @brief
