@@ -674,4 +674,9 @@ auto VulkanHandler::getCurrentFrameBufferName() const -> std::string {
 
 auto VulkanHandler::getCurrentFrameIndex() const -> uint32_t { return m_swapChain->getImageIndex(); }
 
+auto VulkanHandler::get() -> VulkanHandler& {
+	static VulkanHandler handler;
+	return handler;
+}
+
 }// namespace owl::renderer::gpu::vulkan::internal

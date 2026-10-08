@@ -337,3 +337,11 @@ CMake configure, the `cmake/Conan.cmake` module runs `conan install` (ConanCente
 `conan/recipes/`) and puts the generated package configurations on the CMake search path.
 
 See [Building](building.md) for instructions on configuring and building with dependencies.
+
+### Exported symbols
+
+`libOwlEngine.so` exports only what `OWL_API` marks, as the Windows DLL does: the library is compiled with hidden
+visibility and linked with `--exclude-libs,ALL`, so none of the statically linked dependencies (yaml-cpp, spdlog,
+Lua, msdfgen, zstd...) leaks to a game that links its own copy. A class, a free function or an explicit template
+instantiation used outside the engine (editor, tests, games) carries `OWL_API`, else the Linux link fails too. A
+singleton of a private header lives out of line in its `.cpp`, or each binary would get its own copy.

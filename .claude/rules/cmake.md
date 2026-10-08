@@ -79,6 +79,8 @@ Tests are auto-discovered from `test/` subdirectories. See testing rules.
 - Use `${PROJECT_PREFIX}_PLATFORM_WINDOWS` and `${PROJECT_PREFIX}_PLATFORM_LINUX` guards
 - Linux shared lib copy: `target_import_so_files(target)`
 - Windows DLL copy: post-build `copy_if_different` with `$<TARGET_RUNTIME_DLLS:target>`
+- Exports: `libOwlEngine.so` is built with hidden visibility and `--exclude-libs,ALL` (the only per-target
+  flags, set in `source/owl/CMakeLists.txt`); a symbol used outside the engine needs `OWL_API` on Linux too
 
 ## Options (`OWL_*`)
 

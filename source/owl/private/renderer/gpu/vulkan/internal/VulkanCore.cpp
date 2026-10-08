@@ -632,4 +632,9 @@ auto InstanceInformations::hasExtensions(const std::vector<std::string>& iExtens
 
 // ============= InstanceInformations =====================
 
+auto VulkanCore::get() -> VulkanCore& {
+	static VulkanCore instance;
+	return instance;
+}
+
 }// namespace owl::renderer::gpu::vulkan::internal

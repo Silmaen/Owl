@@ -51,10 +51,7 @@ public:
 	 *  Handler for vulkan objects.
 	 * @return Vulcan handler
 	 */
-	static auto get() -> VulkanHandler& {
-		static VulkanHandler handler;
-		return handler;
-	}
+	static auto get() -> VulkanHandler&;
 
 	/**
 	 * @brief

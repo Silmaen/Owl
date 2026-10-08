@@ -177,4 +177,9 @@ void FrameProfiler::release() {
 	m_pool = VK_NULL_HANDLE;
 }
 
+auto FrameProfiler::get() -> FrameProfiler& {
+	static FrameProfiler instance;
+	return instance;
+}
+
 }// namespace owl::renderer::gpu::vulkan::internal

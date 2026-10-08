@@ -22,7 +22,8 @@
 #define OWL_API
 #endif
 #elif defined(OWL_PLATFORM_LINUX)
-#define OWL_API
+// libOwlEngine.so is built with hidden visibility: only what OWL_API marks is exported.
+#define OWL_API __attribute__((visibility("default")))
 #else
 #define OWL_API
 #if defined(__APPLE__) || defined(__MACH__)

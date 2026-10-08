@@ -117,10 +117,7 @@ public:
 	 *  Singleton get instance.
 	 * @return Instance of Vulkan core.
 	 */
-	static auto get() -> VulkanCore& {
-		static VulkanCore instance;
-		return instance;
-	}
+	static auto get() -> VulkanCore&;
 
 	/**
 	 * @brief
