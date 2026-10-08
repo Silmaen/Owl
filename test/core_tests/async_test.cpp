@@ -24,6 +24,18 @@
 using namespace owl::core;
 using namespace owl::core::task;
 
+namespace {
+
+/// Poll a condition until it holds, with a wide deadline: a loaded machine may start a worker very late.
+template<typename Pred>
+void waitUntil(Pred&& iPred) {
+	const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+	while (!iPred() && std::chrono::steady_clock::now() < deadline)
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+}
+
+}// namespace
+
 TEST(core_task, SchedulerBasic) {
 	Scheduler scheduler;
 	Timestep ts;
@@ -36,7 +48,6 @@ TEST(core_task, SchedulerBasic) {
 	// do a frame with empty queue
 	ts.forceUpdate(std::chrono::milliseconds(100));
 	scheduler.frame(ts);
-	std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
 
 	// add an empty task
 	EXPECT_EQ(scheduler.pushTask(Task([&] -> void {})), 1);
@@ -47,16 +58,18 @@ TEST(core_task, SchedulerBasic) {
 	// faking a new frame
 	ts.forceUpdate(std::chrono::milliseconds(100));
 	scheduler.frame(ts);
-	std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
 
 	EXPECT_FALSE(scheduler.isTaskFinished(1));
 	EXPECT_TRUE(scheduler.isTaskRunning(1));
 	EXPECT_FALSE(scheduler.isTaskInQueue(1));
 
 	// faking a new frame
-	ts.forceUpdate(std::chrono::milliseconds(100));
-	scheduler.frame(ts);
-	std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
+	// the worker may start late on a loaded machine: keep framing (empty queue) until the task is polled as done
+	waitUntil([&]() -> bool {
+		ts.forceUpdate(std::chrono::milliseconds(100));
+		scheduler.frame(ts);
+		return scheduler.isTaskFinished(1);
+	});
 
 	EXPECT_TRUE(scheduler.isTaskFinished(1));
 	EXPECT_FALSE(scheduler.isTaskRunning(1));
@@ -73,15 +86,14 @@ TEST(core_task, SchedulerTasks) {
 		scheduler.pushTask(Task([&] -> void { workDone = true; }, [&] -> void { counter++; }));
 		ts.forceUpdate(std::chrono::milliseconds(100));
 		scheduler.frame(ts);
-		// Wait for the worker instead of a fixed sleep: a pool still busy from a previous test may start it late.
-		const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-		while (!workDone && std::chrono::steady_clock::now() < deadline)
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));//let the future become ready
+		waitUntil([&]() -> bool { return workDone.load(); });
+		// the termination callback only runs once a frame polls the finished future
 		EXPECT_EQ(counter, 0);
-		ts.forceUpdate(std::chrono::milliseconds(100));
-		scheduler.frame(ts);
-		std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
+		waitUntil([&]() -> bool {
+			ts.forceUpdate(std::chrono::milliseconds(100));
+			scheduler.frame(ts);
+			return counter == 1;
+		});
 		EXPECT_EQ(counter, 1);
 		scheduler.pushTask(Task([&] -> void {}, [&] -> void { counter++; }));
 		scheduler.pushTask(Task([&] -> void {}, [&] -> void { counter++; }));
@@ -120,7 +132,7 @@ TEST(core_task, SchedulerTimers) {
 
 	ts.forceUpdate(std::chrono::milliseconds(101));
 	scheduler.frame(ts);// a_t2, t3(2)
-	std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
+	waitUntil([&]() -> bool { return counter >= 4; });
 	EXPECT_EQ(counter, 4);
 
 	t1.lock()->setPaused(true);
@@ -135,7 +147,7 @@ TEST(core_task, SchedulerTimers) {
 
 	ts.forceUpdate(std::chrono::milliseconds(101));// total 303
 	scheduler.frame(ts);// t1, a_t2
-	std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
+	waitUntil([&]() -> bool { return counter >= 6; });
 	EXPECT_EQ(counter, 6);
 
 	t3.lock()->resume();
@@ -147,7 +159,7 @@ TEST(core_task, SchedulerTimers) {
 	scheduler.clearTimers();
 	ts.forceUpdate(std::chrono::milliseconds(101));// total 505
 	scheduler.frame(ts);// a_t2
-	std::this_thread::sleep_for(std::chrono::milliseconds(5));//slowdown a little before checking
+	waitUntil([&]() -> bool { return counter >= 8; });
 	EXPECT_EQ(counter, 8);
 }
 
