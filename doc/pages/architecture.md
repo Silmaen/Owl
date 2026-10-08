@@ -54,6 +54,37 @@ imgui under `gui/` (CodeStyle `public-deps`): the other dependencies stay privat
 | 1     | `math`, `debug`, `platform`, `script` |
 | 0     | `core`                                |
 
+### Optional modules
+
+A game specialises the engine at build time with five CMake options (`OWL_MODULE_*`, see
+[Building](building.md#engine-modules)). They follow the layers above: an optional module only swaps the
+implementation behind a public API of its layer, never removes a type a lower layer names, so no public header of the
+core depends on whether it is built.
+
+| CMake module | Engine modules it backs              | Implementation built in                                       | When off                            |
+|--------------|--------------------------------------|---------------------------------------------------------------|-------------------------------------|
+| core         | every module                         | ECS, scene, data, assets, renderer front end, Null backends   | always built                        |
+| render       | `renderer`, `window`, `input`        | `gpu/opengl`, `gpu/vulkan`, `window/glfw`, `input/glfw`       | Null backends: headless             |
+| physics      | `physics`                            | `physics/PhysicCommand.cpp` (Box2D)                           | `physics/disabled/`: no-op          |
+| audio        | `sound`                              | `sound/openal`                                                | Null sound backend                  |
+| script       | `script`                             | `script/` (Lua)                                               | `script/disabled/`: scripts skipped |
+| Gui          | `gui`, the ImGui overlay of `app`    | `gui/`, `Owl::Gui`                                            | no `gui/` headers, no overlay       |
+
+`OWL_WITH_<MODULE>` (`0` or `1`, a public definition of `Owl::OwlEngine`) guards the few call sites that reach a
+backend: the backend factories, the ImGui overlay of `Application`, the ImGui init data of the Vulkan backend.
+
+### Extension points
+
+What a game plugs in without patching the engine, and what the architecture work of v0.3.0 adds:
+
+| Extension point       | Today                                                                                        | Coming                                                       |
+|-----------------------|----------------------------------------------------------------------------------------------|--------------------------------------------------------------|
+| Renderer-stack layers | `renderer::RenderLayerFactory::registerType()`: a layer type by name, created from the stack | Owl RHI pipeline objects and explicit bindings (B-07)        |
+| Application layers    | `app::Application::pushLayer()` / `pushOverlay()`: per-frame update, events, ImGui render    | —                                                            |
+| Extra data            | `data::extradata::ExtraDataRegistry`: typed extra data per mesh vertex, face or mesh         | —                                                            |
+| Components            | Closed type lists (`scene::component::SerializableComponents`, `CopiableComponents`)         | Open component registry, after the EnTT 4 upgrade (PR-37)    |
+| Systems               | Fixed order in `Scene::onUpdateRuntime()`                                                    | Phased, replaceable systems; gameplay out of `Scene` (PR-36) |
+
 **Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
 [Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·
 [Lua Scripting](scripting.md) · [Editor (Owl Nest)](editor.md) ·

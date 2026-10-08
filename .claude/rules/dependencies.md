@@ -28,7 +28,9 @@ external sources into the repo. Check ConanCenter and `conan/recipes/` before as
   names that differ (`OWL_CONAN_PACKAGE_<Module>` / `OWL_CONAN_TARGET_<Module>` in `cmake/Conan.cmake`) and
   compiles the imgui backends from the package.
 - Recipe options mirror CMake: `shared`, `testing` (gtest), `nest` (editor-only packages), `tracy`
-  (`OWL_PROFILER=tracy`). An editor-only dependency goes under `if self.options.nest`.
+  (`OWL_PROFILER=tracy`), and one per engine module (`render`, `physics`, `audio`, `script`, `gui` =
+  `OWL_MODULE_*`). An editor-only dependency goes under `if self.options.nest`, a module's under its option, linked in
+  `source/owl/CMakeLists.txt` under the matching `if (OWL_MODULE_*)`.
 - Removing a dependency: drop it from `conanfile.py`, every matching `owl_target_link_libraries()`, and relock.
 - Shared libraries of the Conan cache are copied next to the binaries by `target_import_so_files()`.
 - In a worktree sharing `fake_home`, pass `-DOWL_CONAN_HOME=/fhome/.conan2-owl` so Owl keeps its own cache.
