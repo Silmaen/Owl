@@ -51,24 +51,23 @@ TEST(PhysicCommand, Creation) {
 
 	Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(100));
-	EXPECT_FALSE(PhysicCommand::isInitialized());
-	PhysicCommand::frame(ts);
-	PhysicCommand::init(nullptr);
-	EXPECT_FALSE(PhysicCommand::isInitialized());
-	PhysicCommand::init(&scene);
-	EXPECT_TRUE(PhysicCommand::isInitialized());
-	PhysicCommand::init(&scene);
-	EXPECT_TRUE(PhysicCommand::isInitialized());
-	PhysicCommand::frame(ts);
+	EXPECT_FALSE(PhysicCommand::isInitialized(scene));
+	PhysicCommand::frame(scene, ts);
+	EXPECT_FALSE(PhysicCommand::isInitialized(scene));
+	PhysicCommand::init(scene);
+	EXPECT_TRUE(PhysicCommand::isInitialized(scene));
+	PhysicCommand::init(scene);
+	EXPECT_TRUE(PhysicCommand::isInitialized(scene));
+	PhysicCommand::frame(scene, ts);
 	// test the new positions...
 	// 100 ms = 6 fixed steps of 1/60 s; the transform shows the blend between steps 5 and 6.
-	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(), 6u);
+	EXPECT_EQ(PhysicCommand::getLastFrameStepCount(scene), 6u);
 	EXPECT_NEAR(transform1.translation().y(), -0.0357656f, 1e-5f);
 	EXPECT_EQ(transform2.translation().y(), 0.0f);
 	EXPECT_EQ(transform3.translation().y(), 0.0f);
 
-	PhysicCommand::destroy();
-	EXPECT_FALSE(PhysicCommand::isInitialized());
+	PhysicCommand::destroy(scene);
+	EXPECT_FALSE(PhysicCommand::isInitialized(scene));
 	Log::invalidate();
 }
 
@@ -83,7 +82,7 @@ TEST(PhysicCommand, badImpulse) {
 	EXPECT_EQ(PhysicCommand::getVelocity(b1), owl::math::vec2f(0, 0));
 
 	// initialization
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 
 	// void entity
 	PhysicCommand::impulse({}, {0, 15});
@@ -105,7 +104,7 @@ TEST(PhysicCommand, badImpulse) {
 	PhysicCommand::impulse(b1, {0, 15});
 	EXPECT_EQ(PhysicCommand::getVelocity(b1), owl::math::vec2f(0, 0));
 
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	Log::invalidate();
 }
 
@@ -123,14 +122,14 @@ TEST(PhysicCommand, Impulse) {
 		transform1.translation().x() = 15.0f;
 	}
 
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 	PhysicCommand::impulse(b1, {0, 15});
 	Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(100));
-	PhysicCommand::frame(ts);
+	PhysicCommand::frame(scene, ts);
 	EXPECT_NEAR(PhysicCommand::getVelocity(b1).y(), 14.019001, 0.001);
 
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	Log::invalidate();
 }
 
@@ -144,14 +143,14 @@ TEST(PhysicCommand, GravityScaleZeroCancelsFalling) {
 		auto& [body] = b1.addComponent<component::PhysicBody>();
 		body.type = SceneBody::BodyType::Dynamic;
 	}
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 	PhysicCommand::setGravityScale(b1, 0.f);
 	Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(500));
-	for (int i = 0; i < 10; ++i) PhysicCommand::frame(ts);
+	for (int i = 0; i < 10; ++i) PhysicCommand::frame(scene, ts);
 	// Vertical velocity must stay at 0 — Box2D world gravity has no effect on this body.
 	EXPECT_NEAR(PhysicCommand::getVelocity(b1).y(), 0.0, 1e-3);
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	Log::invalidate();
 }
 
@@ -171,15 +170,15 @@ TEST(PhysicCommand, GravityScaleNoOpEdgeCases) {
 
 	// Uninitialized: warns and does nothing.
 	PhysicCommand::setGravityScale(noBody, 0.f);
-	EXPECT_FALSE(PhysicCommand::isInitialized());
-	PhysicCommand::init(&scene);
-	ASSERT_TRUE(PhysicCommand::isInitialized());
+	EXPECT_FALSE(PhysicCommand::isInitialized(scene));
+	PhysicCommand::init(scene);
+	ASSERT_TRUE(PhysicCommand::isInitialized(scene));
 	// Null entity, entity without PhysicBody, static body (only Dynamic is meaningful): all ignored.
 	EXPECT_NO_THROW(PhysicCommand::setGravityScale({}, 0.f));
 	EXPECT_NO_THROW(PhysicCommand::setGravityScale(noBody, 0.f));
 	EXPECT_NO_THROW(PhysicCommand::setGravityScale(staticBody, 0.f));
 	EXPECT_EQ(PhysicCommand::getVelocity(staticBody), owl::math::vec2f(0, 0));
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	Log::invalidate();
 }
 
@@ -200,7 +199,7 @@ TEST(PhysicCommand, SetVelocityAndTransformGuards) {
 	PhysicCommand::setVelocity(noBody, {1.f, 1.f});
 	PhysicCommand::setTransform(noBody, {0.f, 0.f}, 0.f);
 
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 	// Null entity.
 	PhysicCommand::setVelocity({}, {1.f, 1.f});
 	PhysicCommand::setTransform({}, {0.f, 0.f}, 0.f);
@@ -212,7 +211,7 @@ TEST(PhysicCommand, SetVelocityAndTransformGuards) {
 	EXPECT_EQ(PhysicCommand::getVelocity(staticBody), owl::math::vec2f(0, 0));
 	// setTransform on Static body still teleports the body (no type filter).
 	PhysicCommand::setTransform(staticBody, {5.f, 6.f}, 0.f);
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	Log::invalidate();
 }
 
@@ -224,12 +223,12 @@ TEST(PhysicCommand, SetVelocityOnDynamicBodyApplied) {
 		auto& [body] = b1.addComponent<component::PhysicBody>();
 		body.type = SceneBody::BodyType::Dynamic;
 	}
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 	PhysicCommand::setVelocity(b1, {3.f, -2.f});
 	const auto vel = PhysicCommand::getVelocity(b1);
 	EXPECT_NEAR(vel.x(), 3.f, 0.001f);
 	EXPECT_NEAR(vel.y(), -2.f, 0.001f);
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	Log::invalidate();
 }
 
@@ -251,13 +250,13 @@ TEST(PhysicCommand, SnapshotRoundTrip) {
 	}
 
 	// Before init: default snapshot (awake was only false when an earlier test left a dangling world).
-	ASSERT_FALSE(PhysicCommand::isInitialized());
+	ASSERT_FALSE(PhysicCommand::isInitialized(scene));
 	auto snap0 = PhysicCommand::getSnapshot(dyn);
 	EXPECT_EQ(snap0.linearVelocity, owl::math::vec2f(0, 0));
 	EXPECT_FLOAT_EQ(snap0.angularVelocity, 0.f);
 	EXPECT_TRUE(snap0.awake);
 
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 
 	// Static body: zero snapshot, applySnapshot is no-op.
 	auto snapStatic = PhysicCommand::getSnapshot(staticBody);
@@ -283,7 +282,7 @@ TEST(PhysicCommand, SnapshotRoundTrip) {
 	const auto vel = PhysicCommand::getVelocity(dyn);
 	EXPECT_NEAR(vel.x(), 4.f, 0.001f);
 	EXPECT_NEAR(vel.y(), 5.f, 0.001f);
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	Log::invalidate();
 }
 
@@ -296,12 +295,12 @@ TEST(PhysicCommand, GetVelocityGuards) {
 	// Uninitialized.
 	EXPECT_EQ(PhysicCommand::getVelocity(noBody), owl::math::vec2f(0, 0));
 
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 	// Null entity.
 	EXPECT_EQ(PhysicCommand::getVelocity({}), owl::math::vec2f(0, 0));
 	// Entity without PhysicBody.
 	EXPECT_EQ(PhysicCommand::getVelocity(noBody), owl::math::vec2f(0, 0));
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	Log::invalidate();
 }
 
@@ -325,17 +324,17 @@ TEST(PhysicCommand, FrameUpdatesChildBodiesInLocalSpace) {
 		body.type = SceneBody::BodyType::Dynamic;
 	}
 
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 	Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(100));
-	PhysicCommand::frame(ts);
+	PhysicCommand::frame(scene, ts);
 
 	// Child is parented to parent at (10,0). Its world-pos is around (10, gravity*dt^2/2)
 	// but the LOCAL translation must reflect "world − parent" so the local x stays near 0.
 	const auto& [childTransform] = child.getComponent<component::Transform>();
 	EXPECT_NEAR(childTransform.translation().x(), 0.f, 0.5f);
 
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	Log::invalidate();
 }
 
@@ -346,44 +345,51 @@ TEST(PhysicCommand, FrameBeforeInitIsNoOp) {
 	scene.createEntity("e1");
 	Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(16));
-	PhysicCommand::frame(ts);// must not crash, must not init.
-	EXPECT_FALSE(PhysicCommand::isInitialized());
+	PhysicCommand::frame(scene, ts);// must not crash, must not init.
+	EXPECT_FALSE(PhysicCommand::isInitialized(scene));
 	Log::invalidate();
 }
 
-// Destroying the bound scene releases the static world, so no later test sees a dangling scene (audit F-05).
-TEST(PhysicCommand, SceneDestructionReleasesWorld) {
+// Each scene owns its world: two scenes simulate side by side, and destroying one leaves the other (audit A-04, F-05).
+TEST(PhysicCommand, EachSceneOwnsItsWorld) {
 	Log::init(Log::Level::Off);
-	{
-		Scene scene;
-		auto b1 = scene.createEntity("body1");
-		b1.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Dynamic;
-		PhysicCommand::init(&scene);
-		EXPECT_TRUE(PhysicCommand::isInitialized());
-	}
-	EXPECT_FALSE(PhysicCommand::isInitialized());
+	Scene kept;
+	auto keptBox = kept.createEntity("box");
+	keptBox.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Dynamic;
+	PhysicCommand::init(kept);
 	Timestep ts;
-	ts.forceUpdate(std::chrono::milliseconds(16));
-	PhysicCommand::frame(ts);
-	EXPECT_FALSE(PhysicCommand::isInitialized());
+	ts.forceUpdate(std::chrono::milliseconds(100));
+	{
+		Scene other;
+		auto otherBox = other.createEntity("box");
+		otherBox.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Dynamic;
+		PhysicCommand::init(other);
+		EXPECT_TRUE(PhysicCommand::isInitialized(other));
+		EXPECT_NE(kept.getPhysicsWorld(), other.getPhysicsWorld());
+		for (int i = 0; i < 5; ++i) PhysicCommand::frame(other, ts);
+		EXPECT_LT(otherBox.getComponent<component::Transform>().transform.translation().y(), 0.f);
+		EXPECT_FLOAT_EQ(keptBox.getComponent<component::Transform>().transform.translation().y(), 0.f);
+	}
+	EXPECT_TRUE(PhysicCommand::isInitialized(kept));
+	for (int i = 0; i < 5; ++i) PhysicCommand::frame(kept, ts);
+	EXPECT_LT(keptBox.getComponent<component::Transform>().transform.translation().y(), 0.f);
 	Log::invalidate();
 }
 
-// Releasing a scene that is not the bound one keeps the world alive; destroy() is idempotent.
-TEST(PhysicCommand, ReleaseSceneIgnoresUnboundScene) {
+// destroy() releases the world of its scene only and is idempotent.
+TEST(PhysicCommand, DestroyIsPerSceneAndIdempotent) {
 	Log::init(Log::Level::Off);
-	Scene bound;
-	PhysicCommand::init(&bound);
-	{
-		const Scene other;
-		PhysicCommand::releaseScene(&other);
-	}
-	PhysicCommand::releaseScene(nullptr);
-	EXPECT_TRUE(PhysicCommand::isInitialized());
-	PhysicCommand::releaseScene(&bound);
-	EXPECT_FALSE(PhysicCommand::isInitialized());
-	PhysicCommand::destroy();
-	EXPECT_FALSE(PhysicCommand::isInitialized());
+	Scene first;
+	Scene second;
+	PhysicCommand::init(first);
+	PhysicCommand::init(second);
+	PhysicCommand::destroy(first);
+	EXPECT_FALSE(PhysicCommand::isInitialized(first));
+	EXPECT_TRUE(PhysicCommand::isInitialized(second));
+	PhysicCommand::destroy(first);
+	EXPECT_FALSE(PhysicCommand::isInitialized(first));
+	PhysicCommand::destroy(second);
+	EXPECT_FALSE(PhysicCommand::isInitialized(second));
 	Log::invalidate();
 }
 
@@ -403,20 +409,20 @@ TEST(PhysicCommand, CollisionReportedOncePerPair) {
 	Log::init(Log::Level::Off);
 	Scene scene;
 	const auto [ground, box] = makeFallingPair(scene);
-	EXPECT_TRUE(PhysicCommand::takeCollisionEvents().empty());
-	PhysicCommand::init(&scene);
+	EXPECT_TRUE(PhysicCommand::takeCollisionEvents(scene).empty());
+	PhysicCommand::init(scene);
 	Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(16));
 	std::vector<PhysicCommand::CollisionEvent> events;
 	for (int i = 0; i < 120; ++i) {
-		PhysicCommand::frame(ts);
-		for (const auto& event: PhysicCommand::takeCollisionEvents()) events.push_back(event);
+		PhysicCommand::frame(scene, ts);
+		for (const auto& event: PhysicCommand::takeCollisionEvents(scene)) events.push_back(event);
 	}
 	ASSERT_EQ(events.size(), 1u);
 	const std::set<uint64_t> pair{events.front().entityA, events.front().entityB};
 	EXPECT_EQ(pair, (std::set<uint64_t>{ground.getUUID(), box.getUUID()}));
-	EXPECT_TRUE(PhysicCommand::takeCollisionEvents().empty());
-	PhysicCommand::destroy();
+	EXPECT_TRUE(PhysicCommand::takeCollisionEvents(scene).empty());
+	PhysicCommand::destroy(scene);
 	Log::invalidate();
 }
 
@@ -424,15 +430,15 @@ TEST(PhysicCommand, DestroyedBodyStopsReportingCollisions) {
 	Log::init(Log::Level::Off);
 	Scene scene;
 	const auto [ground, box] = makeFallingPair(scene);
-	PhysicCommand::init(&scene);
+	PhysicCommand::init(scene);
 	Timestep ts;
 	ts.forceUpdate(std::chrono::milliseconds(16));
-	for (int i = 0; i < 60; ++i) PhysicCommand::frame(ts);
-	EXPECT_EQ(PhysicCommand::takeCollisionEvents().size(), 1u);
+	for (int i = 0; i < 60; ++i) PhysicCommand::frame(scene, ts);
+	EXPECT_EQ(PhysicCommand::takeCollisionEvents(scene).size(), 1u);
 	PhysicCommand::destroyBody(ground);
-	for (int i = 0; i < 60; ++i) PhysicCommand::frame(ts);
-	EXPECT_TRUE(PhysicCommand::takeCollisionEvents().empty());
+	for (int i = 0; i < 60; ++i) PhysicCommand::frame(scene, ts);
+	EXPECT_TRUE(PhysicCommand::takeCollisionEvents(scene).empty());
 	EXPECT_LT(box.getComponent<component::Transform>().transform.translation().y(), 0.f);
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	Log::invalidate();
 }

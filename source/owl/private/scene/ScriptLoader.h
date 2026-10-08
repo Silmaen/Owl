@@ -14,16 +14,19 @@
 
 namespace owl::scene {
 
+class Scene;
+
 /**
  * @brief
  *  Load the script of a component into a new instance (open pack first, then the asset directories, then the raw
  *  path) and give it the component's serialized properties. `on_create` is not called.
+ * @param[in,out] ioScene The scene the script acts on (bound to the instance).
  * @param[in] iScript The component.
  * @param[in] iEntityId UUID of the entity owning the component.
  * @param[in] iEntityName Tag of the entity, named in the error messages.
  * @return The instance, or null when the script cannot be found or does not compile (logged, with a fix).
  */
-auto loadScriptInstance(const component::LuaScript& iScript, uint64_t iEntityId, const std::string& iEntityName)
-		-> uniq<script::ScriptInstance>;
+auto loadScriptInstance(Scene& ioScene, const component::LuaScript& iScript, uint64_t iEntityId,
+						const std::string& iEntityName) -> uniq<script::ScriptInstance>;
 
 }// namespace owl::scene

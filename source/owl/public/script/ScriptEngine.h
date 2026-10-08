@@ -17,11 +17,6 @@
 #include <variant>
 #include <vector>
 
-namespace owl::scene {
-
-class Scene;
-}
-
 /**
  * @brief
  *  Namespace for scripting.
@@ -67,10 +62,10 @@ struct OWL_API ScriptQuotas {
 
 /**
  * @brief
- *  Global script engine manager (singleton pattern).
+ *  Script services shared by every scene: default quotas and property parser.
  *
- * Holds the scene the scripts act on, the default quotas and the property parser. It owns no Lua state:
- * every ScriptInstance owns its own.
+ * It holds no scene and no Lua state: every ScriptInstance owns its state and acts on the scene it is bound
+ * to (`ScriptInstance::setScene`), so several scenes run their scripts side by side.
  */
 class OWL_API ScriptEngine final {
 public:
@@ -85,26 +80,6 @@ public:
 	auto operator=(const ScriptEngine&) -> ScriptEngine& = delete;
 
 	auto operator=(ScriptEngine&&) -> ScriptEngine& = delete;
-
-	/**
-	 * @brief
-	 *  Initialize the scripting engine.
-	 * @param[in] iScene The active scene (used by Lua bindings).
-	 */
-	static void init(scene::Scene* iScene);
-
-	/**
-	 * @brief
-	 *  Shut down the scripting engine and release resources.
-	 */
-	static void shutdown();
-
-	/**
-	 * @brief
-	 *  Check whether the engine is initialized.
-	 * @return True if initialized.
-	 */
-	[[nodiscard]] static auto isInitialized() -> bool;
 
 	/**
 	 * @brief
@@ -137,19 +112,6 @@ public:
 	 * @return The default memory and time limits.
 	 */
 	[[nodiscard]] static auto getDefaultQuotas() -> ScriptQuotas;
-
-	/**
-	 * @brief
-	 *  Access the active scene (used internally by Lua bindings).
-	 * @return The active scene, or nullptr.
-	 */
-	[[nodiscard]] static auto getActiveScene() -> scene::Scene*;
-
-private:
-	/// Forward-declared implementation.
-	class Impl;
-	/// The implementation.
-	static uniq<Impl> s_impl;
 };
 
 }// namespace owl::script

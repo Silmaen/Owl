@@ -20,14 +20,8 @@ namespace {
 
 class UiInputSystemTest : public ::testing::Test {
 protected:
-	void SetUp() override {
-		core::Log::init(core::Log::Level::Off);
-		scene::UiInputSystem::reset();
-	}
-	void TearDown() override {
-		scene::UiInputSystem::reset();
-		core::Log::invalidate();
-	}
+	void SetUp() override { core::Log::init(core::Log::Level::Off); }
+	void TearDown() override { core::Log::invalidate(); }
 };
 
 auto makeButton(scene::Scene& iScene, const scene::Entity& iCanvas, const math::vec2& iCenter, const math::vec2& iSize)
@@ -47,7 +41,8 @@ auto makeButton(scene::Scene& iScene, const scene::Entity& iCanvas, const math::
 
 TEST_F(UiInputSystemTest, NullSceneDoesNothing) {
 	scene::UiInputSystem::update(nullptr, {800u, 600u}, {10.f, 10.f}, false);
-	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming());
+	const scene::Scene untouched;
+	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming(untouched));
 }
 
 TEST_F(UiInputSystemTest, NotPlayingDoesNothing) {
@@ -57,7 +52,7 @@ TEST_F(UiInputSystemTest, NotPlayingDoesNothing) {
 	auto button = makeButton(scn, canvas, {100.f, 100.f}, {80.f, 40.f});
 	// status defaults to Editing; UiInputSystem only runs in Playing.
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, false);
-	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming());
+	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming(scn));
 	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
 }
 
@@ -70,7 +65,7 @@ TEST_F(UiInputSystemTest, ButtonHoverPressClick) {
 
 	// Hover only — no press.
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, false);
-	EXPECT_TRUE(scene::UiInputSystem::isUIConsuming());
+	EXPECT_TRUE(scene::UiInputSystem::isUIConsuming(scn));
 	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Hovered);
 
 	// Press while hovered.
@@ -79,7 +74,7 @@ TEST_F(UiInputSystemTest, ButtonHoverPressClick) {
 
 	// Move outside while still pressed → Normal (not consuming).
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {500.f, 500.f}, true);
-	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming());
+	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming(scn));
 	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
 }
 
@@ -92,7 +87,7 @@ TEST_F(UiInputSystemTest, DisabledButtonIgnoresPointer) {
 	button.getComponent<scene::component::UiButton>().state = scene::component::UiButton::State::Disabled;
 
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, true);
-	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming());
+	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming(scn));
 	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Disabled);
 }
 
@@ -123,7 +118,7 @@ TEST_F(UiInputSystemTest, SliderUpdatesValueWhenDragged) {
 
 	// Hover but not pressed: no value change but consuming.
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {200.f, 100.f}, false);
-	EXPECT_TRUE(scene::UiInputSystem::isUIConsuming());
+	EXPECT_TRUE(scene::UiInputSystem::isUIConsuming(scn));
 }
 
 TEST_F(UiInputSystemTest, HiddenChildIsSkipped) {
@@ -135,7 +130,7 @@ TEST_F(UiInputSystemTest, HiddenChildIsSkipped) {
 	button.getComponent<scene::component::Visibility>().gameVisible = false;
 
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, true);
-	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming());
+	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming(scn));
 	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
 }
 
@@ -148,6 +143,24 @@ TEST_F(UiInputSystemTest, HiddenCanvasSkipsAllChildren) {
 	auto button = makeButton(scn, canvas, {100.f, 100.f}, {80.f, 40.f});
 
 	scene::UiInputSystem::update(&scn, {800u, 600u}, {100.f, 100.f}, true);
-	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming());
+	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming(scn));
 	EXPECT_EQ(button.getComponent<scene::component::UiButton>().state, scene::component::UiButton::State::Normal);
+}
+
+TEST_F(UiInputSystemTest, HoverStateIsPerScene) {
+	scene::Scene hovered;
+	hovered.status = scene::Scene::Status::Playing;
+	auto canvas = hovered.createEntity("Canvas");
+	canvas.addComponent<scene::component::Canvas>();
+	makeButton(hovered, canvas, {100.f, 100.f}, {80.f, 40.f});
+	scene::Scene idle;
+	idle.status = scene::Scene::Status::Playing;
+	scene::UiInputSystem::update(&hovered, {800u, 600u}, {100.f, 100.f}, true);
+	scene::UiInputSystem::update(&idle, {800u, 600u}, {100.f, 100.f}, false);
+	EXPECT_TRUE(scene::UiInputSystem::isUIConsuming(hovered));
+	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming(idle));
+	EXPECT_TRUE(hovered.getUiInputState().wasPressed);
+	EXPECT_FALSE(idle.getUiInputState().wasPressed);
+	scene::UiInputSystem::reset(hovered);
+	EXPECT_FALSE(scene::UiInputSystem::isUIConsuming(hovered));
 }

@@ -32,6 +32,9 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
   Both are immediate (editor). Runtime code (Lua, triggers) must use `destroyEntityDeferred()`: the
   subtree is destroyed by `flushPendingDestructions()` at the end of `onUpdateRuntime()`. All three run
   `on_destroy`, remove Box2D bodies and stop sounds before destroying anything.
+- Each scene owns its runtime world: Box2D world (`PhysicCommand::init(scene)`, kept in `Scene`, destroyed
+  with it), script instances bound to it (`ScriptInstance::setScene`), UI mouse state
+  (`Scene::getUiInputState()`). Never keep a scene pointer in static state.
 - In Play, EnTT hooks tie runtime resources to components (`PhysicCommand::init` for bodies,
   `onStartRuntime` for scripts and sounds): never create or destroy a Box2D body, script instance or
   runtime sound by hand next to an `addComponent` / `removeComponent`.

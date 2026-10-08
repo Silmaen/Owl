@@ -345,7 +345,7 @@ Scene::Scene() = default;
 
 Scene::~Scene() {
 	disconnectRuntimeHooks(registry);
-	physics::PhysicCommand::releaseScene(this);
+	physics::PhysicCommand::destroy(*this);
 }
 
 auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
@@ -445,7 +445,7 @@ void Scene::onStartRuntime() {
 	OWL_CORE_INFO("Scene::onStartRuntime: entity-link resolve {:.1f} ms.", ms(clk::now() - linksStart))
 
 	const auto physicsStart = clk::now();
-	physics::PhysicCommand::init(this);
+	physics::PhysicCommand::init(*this);
 	OWL_CORE_INFO("Scene::onStartRuntime: physics init {:.1f} ms.", ms(clk::now() - physicsStart))
 
 	const auto soundStart = clk::now();
@@ -496,14 +496,13 @@ void Scene::onStartRuntime() {
 	const auto luaStart = clk::now();
 	size_t luaCount = 0;
 	// Initialize Lua scripting
-	script::ScriptEngine::init(this);
 	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
 		auto& luaScript = view.get<component::LuaScript>(entity);
 		if (luaScript.scriptPath.empty())
 			continue;
 		const auto uuid = static_cast<uint64_t>(registry.get<component::ID>(entity).id);
 		const auto* tag = registry.try_get<component::Tag>(entity);
-		luaScript.instance = loadScriptInstance(luaScript, uuid, tag != nullptr ? tag->tag : std::string{});
+		luaScript.instance = loadScriptInstance(*this, luaScript, uuid, tag != nullptr ? tag->tag : std::string{});
 		if (luaScript.instance)
 			luaScript.instance->onCreate();
 		++luaCount;
@@ -549,9 +548,8 @@ void Scene::onEndRuntime() {
 			luaScript.instance->onDestroy();
 		luaScript.instance.reset();
 	}
-	script::ScriptEngine::shutdown();
 
-	physics::PhysicCommand::destroy();
+	physics::PhysicCommand::destroy(*this);
 	status = Status::Editing;
 }
 
@@ -675,7 +673,7 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 
 	// Physics
 	const auto tPhysics = now();
-	physics::PhysicCommand::frame(iTimeStep);
+	physics::PhysicCommand::frame(*this, iTimeStep);
 	const auto tPhysicsEnd = now();
 	dispatchCollisionEvents();
 
@@ -2490,7 +2488,7 @@ void Scene::dispatchCollisionEvents() {
 			instance != nullptr && instance->isValid())
 			instance->onCollision(iOther);
 	};
-	for (const auto& [entityA, entityB]: physics::PhysicCommand::takeCollisionEvents()) {
+	for (const auto& [entityA, entityB]: physics::PhysicCommand::takeCollisionEvents(*this)) {
 		notify(entityA, entityB);
 		notify(entityB, entityA);
 	}

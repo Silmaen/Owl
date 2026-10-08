@@ -30,6 +30,12 @@
  * @brief
  *  Namespace for the scene elements.
  */
+namespace owl::physics {
+class PhysicCommand;
+/// Box2D world of one scene (defined by the physics module).
+class PhysicsWorld;
+}// namespace owl::physics
+
 namespace owl::scene {
 
 class Entity;
@@ -560,6 +566,38 @@ public:
 	 */
 	[[nodiscard]] auto getPhysicsSettings() const -> const PhysicsSettings& { return m_physicsSettings; }
 
+	/**
+	 * @brief
+	 *  Physical world of this scene, created by `physics::PhysicCommand::init()`.
+	 * @return The world, or nullptr while the scene is not simulated.
+	 */
+	[[nodiscard]] auto getPhysicsWorld() const -> physics::PhysicsWorld* { return m_physicsWorld.get(); }
+
+	/**
+	 * @brief
+	 *  Mouse state of the scene's runtime UI, kept by `UiInputSystem` from one frame to the next.
+	 */
+	struct UiInputState {
+		/// Whether a UI element is currently hovered.
+		bool consuming = false;
+		/// Whether the mouse was pressed last frame (for click detection).
+		bool wasPressed = false;
+	};
+
+	/**
+	 * @brief
+	 *  Access the runtime UI mouse state of this scene.
+	 * @return The UI input state.
+	 */
+	[[nodiscard]] auto getUiInputState() -> UiInputState& { return m_uiInputState; }
+
+	/**
+	 * @brief
+	 *  Access the runtime UI mouse state of this scene.
+	 * @return The UI input state.
+	 */
+	[[nodiscard]] auto getUiInputState() const -> const UiInputState& { return m_uiInputState; }
+
 private:
 	/**
 	 * @brief
@@ -574,6 +612,10 @@ private:
 	renderer::EnabledRenderersConfig m_enabledRenderers;
 	/// Fixed-step rate, step bound, interpolation and solver settings of the scene's physics world.
 	PhysicsSettings m_physicsSettings;
+	/// Box2D world of the scene while it is simulated (owned here, managed by `physics::PhysicCommand`).
+	shared<physics::PhysicsWorld> m_physicsWorld;
+	/// Runtime UI mouse state (hover, previous press).
+	UiInputState m_uiInputState;
 	/// Cached primary-player entity handle. `entt::null` means "not resolved yet".
 	mutable entt::entity m_primaryPlayerCache = entt::null;
 	/**
@@ -913,6 +955,7 @@ private:
 
 	friend class Entity;
 	friend class ScriptableEntity;
+	friend class physics::PhysicCommand;
 };
 
 }// namespace owl::scene

@@ -22,11 +22,7 @@ namespace {
 class SceneTriggerTest : public ::testing::Test {
 protected:
 	void SetUp() override { core::Log::init(core::Log::Level::Off); }
-	void TearDown() override {
-		if (physics::PhysicCommand::isInitialized())
-			physics::PhysicCommand::destroy();
-		core::Log::invalidate();
-	}
+	void TearDown() override { core::Log::invalidate(); }
 };
 
 }// namespace
@@ -155,7 +151,7 @@ TEST_F(SceneTriggerTest, TeleportSameLevelMovesPlayerToTarget) {
 	auto& [targetTransform] = targetEnt.getComponent<scene::component::Transform>();
 	targetTransform.translation() = {25.f, 50.f, 0.f};
 
-	physics::PhysicCommand::init(&scn);
+	physics::PhysicCommand::init(scn);
 	physics::PhysicCommand::setVelocity(player, {3.f, 0.f});
 
 	scene::SceneTrigger trigger;
@@ -178,7 +174,7 @@ TEST_F(SceneTriggerTest, TeleportCrossLevelSetsRequest) {
 	}
 	auto triggerEnt = scn.createEntity("TeleportTrigger");
 
-	physics::PhysicCommand::init(&scn);
+	physics::PhysicCommand::init(scn);
 	physics::PhysicCommand::setVelocity(player, {2.f, 1.f});
 
 	scene::SceneTrigger trigger;

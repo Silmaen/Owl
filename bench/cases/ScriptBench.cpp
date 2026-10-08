@@ -43,12 +43,16 @@ void runInstances(Runner& ioRunner, const shared<scene::Scene>& iScene) {
 	const auto emptyBuffer = toBuffer(g_EmptyScript);
 	ioRunner.measure("script/create_instance/empty_script", 1, [&]() -> void {
 		const script::ScriptInstance inst;
+		inst.setScene(iScene.get());
 		doNotOptimize(inst.createFromBuffer(emptyBuffer, "bench_empty", uuid));
 	});
 	if (ioRunner.wants("script/memory")) {
 		std::vector<script::ScriptInstance> pool(1000);
 		const size_t before = allocatedBytes();
-		for (auto& inst: pool) doNotOptimize(inst.createFromBuffer(emptyBuffer, "bench_empty", uuid));
+		for (auto& inst: pool) {
+			inst.setScene(iScene.get());
+			doNotOptimize(inst.createFromBuffer(emptyBuffer, "bench_empty", uuid));
+		}
 		ioRunner.metric("script/memory/bytes_per_instance", static_cast<double>(allocatedBytes() - before) / 1000.0,
 						"B/instance (lua_State + bindings)");
 	}
@@ -56,10 +60,12 @@ void runInstances(Runner& ioRunner, const shared<scene::Scene>& iScene) {
 									   std::pair{"arith_100", &g_ArithScript}}) {
 		const auto buffer = toBuffer(*source);
 		const script::ScriptInstance single;
+		single.setScene(iScene.get());
 		std::ignore = single.createFromBuffer(buffer, label, uuid);
 		ioRunner.measure(std::format("script/on_update/{}/1_instance", label), 1,
 						 [&]() -> void { single.onUpdate(0.016f); });
 		const script::ScriptInstance unbounded;
+		unbounded.setScene(iScene.get());
 		unbounded.setQuotas({.memoryBytes = 0, .timePerCallMs = 0});
 		std::ignore = unbounded.createFromBuffer(buffer, label, uuid);
 		ioRunner.measure(std::format("script/on_update/{}/1_instance_no_quota", label), 1,
@@ -67,8 +73,10 @@ void runInstances(Runner& ioRunner, const shared<scene::Scene>& iScene) {
 		if (!ioRunner.wants(std::format("script/on_update/{}/1000_instances", label)))
 			continue;
 		std::vector<script::ScriptInstance> pool(1000);
-		for (size_t i = 0; i < pool.size(); ++i)
+		for (size_t i = 0; i < pool.size(); ++i) {
+			pool[i].setScene(iScene.get());
 			std::ignore = pool[i].createFromBuffer(buffer, label, static_cast<uint64_t>(entities[i].getUUID()));
+		}
 		ioRunner.measure(std::format("script/on_update/{}/1000_instances", label), pool.size(), [&]() -> void {
 			for (const auto& inst: pool) inst.onUpdate(0.016f);
 		});
@@ -81,9 +89,7 @@ void runScriptBenches(Runner& ioRunner) {
 	if (!ioRunner.wants("script"))
 		return;
 	const auto scn = makeSpriteScene(10000, Shape::Flat);
-	script::ScriptEngine::init(scn.get());
 	runInstances(ioRunner, scn);
-	script::ScriptEngine::shutdown();
 }
 
 }// namespace owl::bench

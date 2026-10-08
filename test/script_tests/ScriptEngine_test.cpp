@@ -9,8 +9,11 @@
 #include "testHelper.h"
 
 #include <core/Log.h>
+#include <scene/Entity.h>
 #include <scene/Scene.h>
+#include <scene/component/Transform.h>
 #include <script/ScriptEngine.h>
+#include <script/ScriptInstance.h>
 
 #include <cstdint>
 #include <filesystem>
@@ -35,19 +38,28 @@ auto writeTempScript(const std::filesystem::path& iDir, const std::string& iFile
 
 }// namespace
 
-TEST(ScriptEngine, initAndShutdown) {
+TEST(ScriptEngine, InstancesActOnTheirOwnScene) {
 	core::Log::init(core::Log::Level::Off);
-	EXPECT_FALSE(ScriptEngine::isInitialized());
-
-	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
-	EXPECT_TRUE(ScriptEngine::isInitialized());
-	EXPECT_EQ(ScriptEngine::getActiveScene(), scn.get());
-
-	ScriptEngine::shutdown();
-	EXPECT_FALSE(ScriptEngine::isInitialized());
-	EXPECT_EQ(ScriptEngine::getActiveScene(), nullptr);
-
+	scene::Scene first;
+	scene::Scene second;
+	const auto inFirst = first.createEntity("Probe");
+	const auto inSecond = second.createEntity("Probe");
+	const std::string script = "function on_create()\n"
+							   "  transform.set_position(entity_id, 4.0, 5.0, 6.0)\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance firstScript;
+	firstScript.setScene(&first);
+	EXPECT_EQ(firstScript.getScene(), &first);
+	ASSERT_TRUE(firstScript.createFromBuffer(data, "first", static_cast<uint64_t>(inFirst.getUUID())));
+	const ScriptInstance secondScript;
+	ASSERT_TRUE(secondScript.createFromBuffer(data, "second", static_cast<uint64_t>(inFirst.getUUID())));
+	secondScript.setScene(&second);
+	firstScript.onCreate();
+	secondScript.onCreate();
+	EXPECT_FLOAT_EQ(inFirst.getComponent<scene::component::Transform>().transform.translation().x(), 4.f);
+	// The second script targets the UUID of the first scene's entity: its own scene has no such entity.
+	EXPECT_FLOAT_EQ(inSecond.getComponent<scene::component::Transform>().transform.translation().x(), 0.f);
 	core::Log::invalidate();
 }
 

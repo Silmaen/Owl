@@ -56,16 +56,16 @@ auto simulatePile(const uint32_t iWorkers) -> RunResult {
 		boxes.push_back(box);
 	}
 	RunResult result;
-	PhysicCommand::init(&scene);
-	result.workers = PhysicCommand::getWorkerCount();
+	PhysicCommand::init(scene);
+	result.workers = PhysicCommand::getWorkerCount(scene);
 	for (int f = 0; f < 240; ++f) {
-		PhysicCommand::frame(makeFrame(16'667));
-		result.collisions += PhysicCommand::takeCollisionEvents().size();
+		PhysicCommand::frame(scene, makeFrame(16'667));
+		result.collisions += PhysicCommand::takeCollisionEvents(scene).size();
 	}
-	PhysicCommand::syncSimulatedTransforms();
+	PhysicCommand::syncSimulatedTransforms(scene);
 	for (const auto& box: boxes)
 		result.positions.push_back(box.getComponent<component::Transform>().transform.translation());
-	PhysicCommand::destroy();
+	PhysicCommand::destroy(scene);
 	return result;
 }
 
@@ -104,16 +104,16 @@ TEST(PhysicMultiThread, WorkerCountSettings) {
 	settings.workerCount = 1000;
 	EXPECT_EQ(settings.getEffectiveWorkerCount(0), uint32_t{PhysicsSettings::maxWorkerCount});
 	EXPECT_EQ(settings.clamped().workerCount, uint32_t{PhysicsSettings::maxWorkerCount});
-	EXPECT_EQ(PhysicCommand::getWorkerCount(), 0u);
 	Scene scene;
+	EXPECT_EQ(PhysicCommand::getWorkerCount(scene), 0u);
 	scene.getPhysicsSettings().workerCount = 2;
-	PhysicCommand::init(&scene);
-	EXPECT_EQ(PhysicCommand::getWorkerCount(), 2u);
-	PhysicCommand::frame(makeFrame(16'667));
+	PhysicCommand::init(scene);
+	EXPECT_EQ(PhysicCommand::getWorkerCount(scene), 2u);
+	PhysicCommand::frame(scene, makeFrame(16'667));
 	scene.getPhysicsSettings().workerCount = 3;
-	PhysicCommand::init(&scene);
-	EXPECT_EQ(PhysicCommand::getWorkerCount(), 3u);
-	PhysicCommand::frame(makeFrame(16'667));
-	PhysicCommand::destroy();
+	PhysicCommand::init(scene);
+	EXPECT_EQ(PhysicCommand::getWorkerCount(scene), 3u);
+	PhysicCommand::frame(scene, makeFrame(16'667));
+	PhysicCommand::destroy(scene);
 	core::Log::invalidate();
 }

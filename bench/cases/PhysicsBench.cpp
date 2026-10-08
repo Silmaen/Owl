@@ -59,53 +59,40 @@ void runPhysicsBenches(Runner& ioRunner) {
 		ioRunner.measureWithSetup(
 				std::format("physics/frame_empty/{}", rate), g_FramesPerSample,
 				[&]() -> void {
-					if (physics::PhysicCommand::isInitialized())
-						physics::PhysicCommand::destroy();
 					scn = mkShared<scene::Scene>();
-					physics::PhysicCommand::init(scn.get());
+					physics::PhysicCommand::init(*scn);
 				},
 				[&]() -> void {
-					for (uint32_t f = 0; f < g_FramesPerSample; ++f) physics::PhysicCommand::frame(frame);
+					for (uint32_t f = 0; f < g_FramesPerSample; ++f) physics::PhysicCommand::frame(*scn, frame);
 				});
 	}
 	for (const uint32_t count: {100U, 1000U, 5000U}) {
 		shared<scene::Scene> scn;
 		ioRunner.measureWithSetup(
-				std::format("physics/init/{}_bodies", count), count,
-				[&]() -> void {
-					if (physics::PhysicCommand::isInitialized())
-						physics::PhysicCommand::destroy();
-					scn = makeBoxScene(count, 1);
-				},
-				[&]() -> void { physics::PhysicCommand::init(scn.get()); });
+				std::format("physics/init/{}_bodies", count), count, [&]() -> void { scn = makeBoxScene(count, 1); },
+				[&]() -> void { physics::PhysicCommand::init(*scn); });
 		for (const uint32_t workers: {1U, 2U, 4U, 8U}) {
 			const std::string suffix = workers == 1 ? std::string{} : std::format("_mt{}", workers);
 			ioRunner.measureWithSetup(
 					std::format("physics/step_falling{}/{}_bodies", suffix, count), g_FramesPerSample,
 					[&]() -> void {
-						if (physics::PhysicCommand::isInitialized())
-							physics::PhysicCommand::destroy();
 						scn = makeBoxScene(count, workers);
-						physics::PhysicCommand::init(scn.get());
+						physics::PhysicCommand::init(*scn);
 					},
 					[&]() -> void {
-						for (uint32_t f = 0; f < g_FramesPerSample; ++f) physics::PhysicCommand::frame(step);
+						for (uint32_t f = 0; f < g_FramesPerSample; ++f) physics::PhysicCommand::frame(*scn, step);
 					});
 			ioRunner.measureWithSetup(
 					std::format("physics/step_settled{}/{}_bodies", suffix, count), g_FramesPerSample,
 					[&]() -> void {
-						if (physics::PhysicCommand::isInitialized())
-							physics::PhysicCommand::destroy();
 						scn = makeBoxScene(count, workers);
-						physics::PhysicCommand::init(scn.get());
-						for (uint32_t f = 0; f < 600; ++f) physics::PhysicCommand::frame(step);
+						physics::PhysicCommand::init(*scn);
+						for (uint32_t f = 0; f < 600; ++f) physics::PhysicCommand::frame(*scn, step);
 					},
 					[&]() -> void {
-						for (uint32_t f = 0; f < g_FramesPerSample; ++f) physics::PhysicCommand::frame(step);
+						for (uint32_t f = 0; f < g_FramesPerSample; ++f) physics::PhysicCommand::frame(*scn, step);
 					});
 		}
-		if (physics::PhysicCommand::isInitialized())
-			physics::PhysicCommand::destroy();
 	}
 }
 

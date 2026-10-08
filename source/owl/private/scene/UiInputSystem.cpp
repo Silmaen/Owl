@@ -23,8 +23,6 @@
 
 namespace owl::scene {
 
-bool UiInputSystem::s_consuming = false;
-bool UiInputSystem::s_wasPressed = false;
 
 namespace {
 auto hitTestRect(const component::UiRect& iRect, const math::vec2& iParentSize, const math::vec2& iPoint) -> bool {
@@ -79,14 +77,16 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 						   const bool iMousePressed) {
 	OWL_PROFILE_FUNCTION()
 
-	s_consuming = false;
-
-	if (iScene == nullptr || iScene->status != Scene::Status::Playing)
+	if (iScene == nullptr)
+		return;
+	auto& state = iScene->getUiInputState();
+	state.consuming = false;
+	if (iScene->status != Scene::Status::Playing)
 		return;
 
 	const auto vpSize = math::vec2{static_cast<float>(iViewportSize.x()), static_cast<float>(iViewportSize.y())};
-	const bool clicked = !s_wasPressed && iMousePressed;
-	s_wasPressed = iMousePressed;
+	const bool clicked = !state.wasPressed && iMousePressed;
+	state.wasPressed = iMousePressed;
 
 	// Iterate Canvas entities (sorted by sortOrder, highest first for input priority).
 	struct CanvasEntry {
@@ -120,7 +120,7 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 				if (button.state == component::UiButton::State::Disabled)
 					continue;
 				if (hovered) {
-					s_consuming = true;
+					state.consuming = true;
 					if (iMousePressed)
 						button.state = component::UiButton::State::Pressed;
 					else
@@ -138,7 +138,7 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 			if (child.hasComponent<component::UiSlider>()) {
 				auto& slider = child.getComponent<component::UiSlider>();
 				if (hovered && iMousePressed) {
-					s_consuming = true;
+					state.consuming = true;
 					const math::vec2 center = rect.computePosition(vpSize);
 					const float leftEdge = center.x() - rect.size.x() * 0.5f;
 					const float normalized = std::clamp((iMousePos.x() - leftEdge) / rect.size.x(), 0.f, 1.f);
@@ -148,18 +148,15 @@ void UiInputSystem::update(Scene* iScene, const math::vec2ui& iViewportSize, con
 						invokeSliderCallback(iScene, child, slider.onValueChangedCallback, slider.value);
 					}
 				} else if (hovered) {
-					s_consuming = true;
+					state.consuming = true;
 				}
 			}
 		}
 	}
 }
 
-auto UiInputSystem::isUIConsuming() -> bool { return s_consuming; }
+auto UiInputSystem::isUIConsuming(const Scene& iScene) -> bool { return iScene.getUiInputState().consuming; }
 
-void UiInputSystem::reset() {
-	s_consuming = false;
-	s_wasPressed = false;
-}
+void UiInputSystem::reset(Scene& ioScene) { ioScene.getUiInputState() = {}; }
 
 }// namespace owl::scene

@@ -108,6 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Performance: the Box2D solver runs multi-threaded on a dedicated Taskflow executor (`workerCount`, automatic above 2 000 dynamic bodies), 5 000 stacked boxes going from 5.1 to 3.2 ms per step with 4 workers.
 - Sanitizers now fail the build on their first report (`-fno-sanitize-recover=all`, `halt_on_error=1` set by ctest), sanitizer presets run the tests with `--gtest_shuffle`, and the UB job no longer captures a stack trace per allocation (its tests went from about 30 min to under 10 s).
 - `SceneSerializer::deserialize`, `deserializeFromBuffer` and `applyParsed` return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`) instead of `bool`.
+- Each scene owns its physics world, its script bindings and its UI mouse state (`PhysicCommand` calls take the scene, `ScriptInstance::setScene`, `Scene::getUiInputState`): several scenes run side by side and a destroyed scene leaves nothing dangling.
 
 ### Deprecated
 
@@ -126,6 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The Lua state `ScriptEngine` kept with bindings that no script ran in (each `ScriptInstance` owns its own), with `ScriptEngine::loadScript` / `loadScriptFromBuffer` that only fed it.
 - The generic `core::IFactory` / `FactoryProduct` / `ProductAllocator`, whose only user was the mesh extra data: `data::extradata::ExtraDataRegistry` (`ExtraDataPid`, `getExtraDataPid<T>()`) replaces it, and `ExtraDataContainer` copies now clone the values instead of default-constructing them.
 - `RenderAPI` / `RenderCommand` `drawLine`, `drawLineInstanced`, `setDepthTest`, `setDepthMask`, `beginTextureLoad` and `endTextureLoad`, replaced by `PipelineState` and `bindTextures`.
+- `ScriptEngine::init`, `shutdown`, `isInitialized` and `getActiveScene`, and `PhysicCommand::releaseScene`: no global points to an active scene any more.
 
 ### Fixed
 

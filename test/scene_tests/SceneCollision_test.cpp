@@ -39,8 +39,6 @@ protected:
 	}
 
 	void TearDown() override {
-		if (physics::PhysicCommand::isInitialized())
-			physics::PhysicCommand::destroy();
 		std::filesystem::remove_all(m_dir);
 		core::Log::invalidate();
 	}
@@ -154,7 +152,7 @@ TEST_F(SceneCollisionTest, ChildOfPendingEntityIsNotNotified) {
 	EXPECT_TRUE(scn.isPendingDestructionInTree(ground));
 	EXPECT_FALSE(scn.isPendingDestructionInTree(box));
 	for (int i = 0; i < 60; ++i) {
-		physics::PhysicCommand::frame(makeStep(16));
+		physics::PhysicCommand::frame(scn, makeStep(16));
 		scn.dispatchCollisionEvents();
 	}
 	EXPECT_LT(box.getComponent<component::Transform>().transform.translation().y(), 1.1f);

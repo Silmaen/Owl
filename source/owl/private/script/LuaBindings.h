@@ -17,6 +17,10 @@
 
 struct lua_State;
 
+namespace owl::scene {
+class Scene;
+}// namespace owl::scene
+
 namespace owl::script {
 
 /**
@@ -113,5 +117,21 @@ OWL_API auto generateLuaReference() -> std::string;
  * @param[in] iState The Lua state to register bindings into.
  */
 OWL_API void registerBindings(lua_State* iState);
+
+/**
+ * @brief
+ *  Bind a Lua state to the scene its bindings act on (stored in the state's registry).
+ * @param[in] iState The Lua state.
+ * @param[in] iScene The scene, or nullptr to unbind.
+ */
+OWL_API void setBoundScene(lua_State* iState, scene::Scene* iScene);
+
+/**
+ * @brief
+ *  Scene a Lua state is bound to.
+ * @param[in] iState The Lua state.
+ * @return The scene given to `setBoundScene`, or nullptr.
+ */
+OWL_API auto getBoundScene(lua_State* iState) -> scene::Scene*;
 
 }// namespace owl::script

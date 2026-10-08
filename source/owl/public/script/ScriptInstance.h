@@ -15,12 +15,16 @@
 #include <string>
 #include <vector>
 
+namespace owl::scene {
+class Scene;
+}// namespace owl::scene
+
 namespace owl::script {
 /**
  * @brief
  *  Per-entity script instance.
  *
- * Wraps a Lua environment table providing isolated state for one entity.
+ * Wraps a Lua environment table providing isolated state for one entity of one scene.
  * Supports lifecycle callbacks and typed property access.
  *
  * Every instance runs under its own ScriptQuotas (taken from ScriptEngine::getDefaultQuotas() at
@@ -66,6 +70,23 @@ public:
 	 * @param[in] iEntityName The entity's tag; empty keeps the UUID only.
 	 */
 	void setEntityName(const std::string& iEntityName) const;
+
+	/**
+	 * @brief
+	 *  Bind the instance to the scene its bindings act on (`transform`, `scene`, `physics`...).
+	 *
+	 * Each instance carries its own scene, so scripts of several scenes run side by side. Without a scene the
+	 * bindings that need one do nothing and return their neutral value.
+	 * @param[in] iScene The scene, or nullptr.
+	 */
+	void setScene(scene::Scene* iScene) const;
+
+	/**
+	 * @brief
+	 *  Scene the instance is bound to.
+	 * @return The scene given to `setScene`, or nullptr.
+	 */
+	[[nodiscard]] auto getScene() const -> scene::Scene*;
 
 	/**
 	 * @brief

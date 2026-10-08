@@ -17,10 +17,11 @@
 
 namespace owl::scene {
 
-auto loadScriptInstance(const component::LuaScript& iScript, const uint64_t iEntityId, const std::string& iEntityName)
-		-> uniq<script::ScriptInstance> {
+auto loadScriptInstance(Scene& ioScene, const component::LuaScript& iScript, const uint64_t iEntityId,
+						const std::string& iEntityName) -> uniq<script::ScriptInstance> {
 	auto instance = mkUniq<script::ScriptInstance>();
 	instance->setEntityName(iEntityName);
+	instance->setScene(&ioScene);
 	bool loaded = false;
 	if (app::Application::instanced()) {
 		const auto& app = app::Application::get();

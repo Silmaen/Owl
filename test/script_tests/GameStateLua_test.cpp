@@ -24,7 +24,6 @@ using namespace owl::script;
 TEST(GameStateLua, setAndGetInt) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "function on_create()\n"
 							   "  gamestate.set('coins', 42)\n"
@@ -32,6 +31,7 @@ TEST(GameStateLua, setAndGetInt) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_int", 1));
 	inst.onCreate();
 
@@ -39,14 +39,12 @@ TEST(GameStateLua, setAndGetInt) {
 	ASSERT_TRUE(val.has_value());
 	EXPECT_EQ(std::get<int64_t>(val.value()), 42);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(GameStateLua, setAndGetFloat) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "function on_create()\n"
 							   "  gamestate.set('speed', 3.14)\n"
@@ -54,6 +52,7 @@ TEST(GameStateLua, setAndGetFloat) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_float", 1));
 	inst.onCreate();
 
@@ -61,14 +60,12 @@ TEST(GameStateLua, setAndGetFloat) {
 	ASSERT_TRUE(val.has_value());
 	EXPECT_NEAR(std::get<float>(val.value()), 3.14f, 0.01f);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(GameStateLua, setAndGetString) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "function on_create()\n"
 							   "  gamestate.set('name', 'hero')\n"
@@ -76,6 +73,7 @@ TEST(GameStateLua, setAndGetString) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_string", 1));
 	inst.onCreate();
 
@@ -83,14 +81,12 @@ TEST(GameStateLua, setAndGetString) {
 	ASSERT_TRUE(val.has_value());
 	EXPECT_EQ(std::get<std::string>(val.value()), "hero");
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(GameStateLua, setAndGetBool) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "function on_create()\n"
 							   "  gamestate.set('unlocked', true)\n"
@@ -98,6 +94,7 @@ TEST(GameStateLua, setAndGetBool) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_bool", 1));
 	inst.onCreate();
 
@@ -105,14 +102,12 @@ TEST(GameStateLua, setAndGetBool) {
 	ASSERT_TRUE(val.has_value());
 	EXPECT_TRUE(std::get<bool>(val.value()));
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(GameStateLua, getWithDefault) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "result = 0\n"
 							   "function on_create()\n"
@@ -121,6 +116,7 @@ TEST(GameStateLua, getWithDefault) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_default", 1));
 	inst.onCreate();
 
@@ -128,7 +124,6 @@ TEST(GameStateLua, getWithDefault) {
 	ASSERT_TRUE(val.has_value());
 	EXPECT_EQ(val.value(), 99);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
@@ -136,7 +131,6 @@ TEST(GameStateLua, getReturnsStoredValue) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
 	scn->getGameState().set("level", int64_t{5});
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "result = 0\n"
 							   "function on_create()\n"
@@ -145,6 +139,7 @@ TEST(GameStateLua, getReturnsStoredValue) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_read", 1));
 	inst.onCreate();
 
@@ -152,14 +147,12 @@ TEST(GameStateLua, getReturnsStoredValue) {
 	ASSERT_TRUE(val.has_value());
 	EXPECT_EQ(val.value(), 5);
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }
 
 TEST(GameStateLua, removeAndClear) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
 
 	const std::string script = "function on_create()\n"
 							   "  gamestate.set('a', 1)\n"
@@ -169,12 +162,12 @@ TEST(GameStateLua, removeAndClear) {
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
 	const ScriptInstance inst;
+	inst.setScene(scn.get());
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_remove", 1));
 	inst.onCreate();
 
 	EXPECT_FALSE(scn->getGameState().get("a").has_value());
 	EXPECT_TRUE(scn->getGameState().get("b").has_value());
 
-	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }

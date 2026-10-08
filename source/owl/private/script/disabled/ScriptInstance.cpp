@@ -17,6 +17,8 @@ namespace owl::script {
 struct ScriptInstance::Impl {
 	// Quotas kept for getQuotas(), as the Lua implementation does.
 	ScriptQuotas quotas = ScriptEngine::getDefaultQuotas();
+	// Scene given to setScene(), kept for getScene().
+	scene::Scene* boundScene = nullptr;
 };
 
 ScriptInstance::ScriptInstance() : mp_impl{mkUniq<Impl>()} {}
@@ -26,6 +28,15 @@ ScriptInstance::~ScriptInstance() = default;
 ScriptInstance::ScriptInstance(ScriptInstance&& iOther) noexcept = default;
 
 auto ScriptInstance::operator=(ScriptInstance&& iOther) noexcept -> ScriptInstance& = default;
+
+void ScriptInstance::setEntityName([[maybe_unused]] const std::string& iEntityName) const {}
+
+void ScriptInstance::setScene(scene::Scene* iScene) const {
+	if (mp_impl)
+		mp_impl->boundScene = iScene;
+}
+
+auto ScriptInstance::getScene() const -> scene::Scene* { return mp_impl ? mp_impl->boundScene : nullptr; }
 
 auto ScriptInstance::create(const std::string& iScriptPath, [[maybe_unused]] const uint64_t iEntityId) const -> bool {
 	OWL_CORE_WARN("ScriptInstance: Lua not built in (OWL_MODULE_SCRIPT=OFF), script '{}' not loaded.", iScriptPath)

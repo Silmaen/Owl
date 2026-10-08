@@ -29,11 +29,7 @@ class DeepHierarchyFixture : public testing::Test {
 protected:
 	void SetUp() override { core::Log::init(core::Log::Level::Off); }
 
-	void TearDown() override {
-		if (physics::PhysicCommand::isInitialized())
-			physics::PhysicCommand::destroy();
-		core::Log::invalidate();
-	}
+	void TearDown() override { core::Log::invalidate(); }
 };
 
 auto referenceWorld(const scene::Scene& iScene, const scene::Entity& iEntity) -> math::mat4 {

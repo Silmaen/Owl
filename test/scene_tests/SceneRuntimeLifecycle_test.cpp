@@ -40,8 +40,6 @@ protected:
 	}
 
 	void TearDown() override {
-		if (physics::PhysicCommand::isInitialized())
-			physics::PhysicCommand::destroy();
 		std::filesystem::remove_all(m_dir);
 		core::Log::invalidate();
 	}
@@ -205,7 +203,7 @@ TEST_F(SceneRuntimeLifecycleTest, EditModeRemovalTriggersNothing) {
 	coin.removeComponent<component::PhysicBody>();
 	coin.removeComponent<component::LuaScript>();
 	EXPECT_EQ(getInt(scn, "destroyed"), 1);
-	EXPECT_FALSE(physics::PhysicCommand::isInitialized());
+	EXPECT_FALSE(physics::PhysicCommand::isInitialized(scn));
 }
 
 TEST_F(SceneRuntimeLifecycleTest, DestroyBodyIgnoresAnotherScene) {
