@@ -3,6 +3,7 @@ file(GLOB children CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAK
 
 option(${PROJECT_PREFIX}_TEST_SHUFFLE "Run every gtest binary with --gtest_shuffle (seed from GTEST_RANDOM_SEED, else random and logged)" OFF)
 option(${PROJECT_PREFIX}_RENDER_TESTS "Build the image tests (OwlRunner on lavapipe / llvmpipe, label render)" ON)
+set(${PROJECT_PREFIX}_TEST_TIMEOUT 600 CACHE STRING "Per test binary ctest timeout in seconds (a hung binary costs this much)")
 set(${PROJECT_PREFIX}_TEST_EXTRA_ARGS)
 if (${PROJECT_PREFIX}_TEST_SHUFFLE)
     list(APPEND ${PROJECT_PREFIX}_TEST_EXTRA_ARGS --gtest_shuffle)
@@ -80,7 +81,7 @@ foreach (child ${children})
                 endif ()
             endif ()
             add_test(NAME ${PROJECT_PREFIX_LOWER}_${child}_UTests COMMAND ${TEST_LAUNCHER} ${CMAKE_BINARY_DIR}/bin/${PROJECT_PREFIX_LOWER}_${child}_unit_test --gtest_output=xml:test/${child}_UTest_Report.xml ${${PROJECT_PREFIX}_TEST_EXTRA_ARGS})
-            set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 3600
+            set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT ${${PROJECT_PREFIX}_TEST_TIMEOUT}
                     ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
             if (${child} STREQUAL "render_tests")
                 set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES LABELS render)

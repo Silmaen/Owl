@@ -97,7 +97,8 @@
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_DOCUMENTATION": "OFF",
         "OWL_BENCHMARK": "OFF",
-        "OWL_RENDER_TESTS": "OFF"
+        "OWL_RENDER_TESTS": "OFF",
+        "OWL_TEST_TIMEOUT": "3600"
       },
       "vendor": {
         "silmaen": {

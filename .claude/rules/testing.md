@@ -109,4 +109,5 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
   renderer, runner, scene, script, sound, voxel, owlnest (editor: links the `OwlNestCore` static library, skipped when
   `OWL_BUILD_NEST` is off)
 - Tests link against both `OwlEngine` and `OwlEnginePrivate` (access to private headers)
-- Timeout per test suite: 3600s (1 hour)
+- Timeout per test binary: `OWL_TEST_TIMEOUT`, 600 s (3600 s on `linux-emulated`; `script_tests` 300 s): a hang
+  costs minutes, not an hour. The slowest binary takes ~190 s (GCC Debug `scene_tests`).

@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Tests: the per-binary ctest timeout drops from 1 h to 10 min (`OWL_TEST_TIMEOUT`, 1 h on the emulated arm64), so a hung binary no longer stalls a build for hours.
 - CI: the emulated arm64 nightly builds Clang only, on a `linux-emulated` preset without coverage, benchmarks or image tests, so it fits its time limit.
 - EnTT 4.0.0 (C++20), Taskflow 4.1.0, OpenAL Soft 1.25.2, msdfgen 1.13, msdf-atlas-gen 1.4 and tinyobjloader rc13, through local Conan recipes until ConanCenter publishes them.
 - CI on teamcity-github-bridge 1.11.0: PR Ready keeps a fixed check name (`checkName`), pull requests get labels by changed paths and are assigned to their author.
@@ -79,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Windows: test binaries and `OwlRunner` exit again: the Box2D solver pool is released with the physics world and the Lua watchdog is never destroyed, so no static destructor waits for threads Windows already killed.
 - Windows: the frame bench runner test quotes its whole command line, which `cmd /c` otherwise mangles.
 - TSan builds: the Lua time quota fires again, the watchdog setting the hook from its own thread because TSan holds back the interrupt signal.
 - TSan: the Vulkan image tests no longer fail on races inside lavapipe and the validation layer, suppressed by library in `test/tsan.supp`.
