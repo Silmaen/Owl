@@ -115,7 +115,8 @@ while running gets no body.
 
 ### frame(timestep)
 
-Called from `Scene::onUpdateRuntime()` once per rendered frame. Performs four steps:
+Called by the `owl.physics` system (phase `Physics`, see [Systems and phases](scene.md#systems)) once per
+rendered frame. Performs four steps:
 
 1. **Fixed steps** -- adds the frame duration to an accumulator and runs as many Box2D steps of
    `1 / tickRate` seconds as it holds (`b2World_Step`, `solverSubSteps` sub-steps each), at most
@@ -268,8 +269,8 @@ within that frame's steps. End-touch events decrement the count, so a body
 resting on the ground, or a player crossing the cells of a tilemap (one Box2D shape per cell), yields one collision,
 not one per frame or per cell. `destroyBody()` forgets every pair of the destroyed entity.
 
-`Scene::onUpdateRuntime()` calls `PhysicCommand::takeCollisionEvents(scene)` right after `frame()`, and
-`Scene::dispatchCollisionEvents()` calls Lua `on_collision(other_id)` on both entities (see
+The `owl.physics` system calls `Scene::dispatchCollisionEvents()` right after `frame()`: it takes
+`PhysicCommand::takeCollisionEvents(scene)` and calls Lua `on_collision(other_id)` on both entities (see
 [Lua Scripting](scripting.md)). Entities that are hidden or queued for destruction (`Scene::isPendingDestructionInTree()`)
 are skipped, and the check is redone before each call. The events are read from a vector owned by the caller, not
 from an EnTT view, and destruction from a callback is deferred to the end of the frame, so a callback cannot
@@ -315,7 +316,7 @@ See [Scene System](scene.md) for more details on the entity component model.
 ## Trigger Collision
 
 Triggers are special entities that react when the player overlaps them.
-Trigger detection runs after the physics step in `onUpdateRuntime()`: for each
+Trigger detection runs after the physics step (`owl.triggers` system, phase `PostPhysics`): for each
 entity with a `Trigger` component, the scene computes the axis-aligned bounding
 boxes of both the trigger and the primary player and checks for intersection.
 

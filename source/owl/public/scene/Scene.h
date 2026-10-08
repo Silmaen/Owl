@@ -15,6 +15,7 @@
 #include "renderer/Camera.h"
 #include "renderer/RenderStack.h"
 #include "scene/PhysicsSettings.h"
+#include "scene/SystemSchedule.h"
 
 #include <entt/entt.hpp>
 
@@ -52,13 +53,13 @@ struct VoxelPlayer;
  *  CPU time of the phases of one `Scene::onUpdateRuntime`, in milliseconds.
  */
 struct OWL_API RuntimeTimings {
-	/// Native and Lua script updates.
+	/// `SystemPhase::Scripts`: native and Lua script updates.
 	double scriptsMs{0.0};
-	/// Physics step (`PhysicCommand::frame`).
+	/// `SystemPhase::Physics`: physics step and collision callbacks.
 	double physicsMs{0.0};
 	/// Render pass: voxel streaming, render stack recording and submission, screen transition.
 	double renderMs{0.0};
-	/// Whole update; the other phases (cameras, players, transforms, sound, triggers) are the remainder.
+	/// Whole update; the other phases (gameplay, links, triggers, transforms, sound) are the remainder.
 	double totalMs{0.0};
 };
 
@@ -152,7 +153,9 @@ public:
 	 * @brief
 	 *  Update actions for the runtime.
 	 *
-	 * Advances physics, scripts, triggers, and animations. When `iRender` is true
+	 * Runs the systems of `getSystems()` phase by phase (`SystemPhase` order; only `Ended` once the game is
+	 * won or lost), prepares the world transforms between `PostPhysics` and `Late`, then flushes the deferred
+	 * destructions. When `iRender` is true
 	 * (the default) also draws the scene with the primary camera. Set it to
 	 * false to run simulation in the background without touching the renderer
 	 * (used by the editor for non-active document tabs in Play mode).
@@ -174,23 +177,6 @@ public:
 	 * @return The timings, zero while timing is off.
 	 */
 	[[nodiscard]] auto getLastRuntimeTimings() const -> const RuntimeTimings& { return m_lastRuntimeTimings; }
-
-	/**
-	 * @brief
-	 *  Advance `RaycastDoor` / `RaycastPushWall` state machines for one tick.
-	 *
-	 * Handles the engine-built-in activation path (player proximity + key edge),
-	 * advances the open/close (or one-shot slide) animation, updates each
-	 * entity's local transform along `slideDirection`, and mirrors that to the
-	 * kinematic Box2D body when the entity carries a `PhysicBody`. Lua scripts
-	 * that bypass the built-in path (by setting `interactionKey` to `0`) drive
-	 * the same state machine through `door.activate` / `pushwall.activate`.
-	 *
-	 * Called automatically by `onUpdateRuntime`; exposed publicly so tests and
-	 * tool code can drive the state machine deterministically.
-	 * @param[in] iTimeStep The elapsed time in seconds for this tick.
-	 */
-	void updateRaycastDynamicWalls(float iTimeStep);
 
 	/**
 	 * @brief
@@ -367,15 +353,44 @@ public:
 
 	/**
 	 * @brief
-	 *  Set the editor-driven targeted-block highlight (the voxel brush in Edit mode drives this each frame).
+	 *  Set the targeted-block highlight of the voxel HUD for this frame.
 	 *
-	 * In Play the highlight is set by the voxel player; in the editor there is no
-	 * player, so the editor pushes the brush's current target here before render.
+	 * In Play the `owl.voxel_players` system sets it from the player's target; in the editor there is no
+	 * player, so the voxel brush pushes its current target here before render.
 	 * @param[in] iShow Whether to draw a highlight this frame.
 	 * @param[in] iBlock World-grid coordinates of the targeted block (used when `iShow`).
 	 * @param[in] iNormal Outward normal of the impacted face (used when `iShow`).
 	 */
 	void setEditorVoxelHighlight(bool iShow, const math::vec3i& iBlock = {}, const math::vec3i& iNormal = {});
+
+	/**
+	 * @brief
+	 *  Show or hide the aiming crosshair of the voxel HUD for this frame.
+	 * @param[in] iShow True to draw the crosshair.
+	 */
+	void setShowCrosshair(bool iShow);
+
+	/**
+	 * @brief
+	 *  Show a transient on-screen message (e.g. "Fly mode ON") for a few seconds.
+	 * @param[in] iMessage The message text.
+	 * @param[in] iSeconds How long to keep it on screen.
+	 */
+	void showToast(const std::string& iMessage, float iSeconds = 3.f);
+
+	/**
+	 * @brief
+	 *  Access the systems this scene runs every runtime frame (a copy of `SystemSchedule::getDefault()`).
+	 * @return The schedule.
+	 */
+	[[nodiscard]] auto getSystems() -> SystemSchedule& { return m_systems; }
+
+	/**
+	 * @brief
+	 *  Access the systems this scene runs every runtime frame.
+	 * @return The schedule.
+	 */
+	[[nodiscard]] auto getSystems() const -> const SystemSchedule& { return m_systems; }
 
 	/**
 	 * @brief
@@ -616,6 +631,8 @@ private:
 	shared<physics::PhysicsWorld> m_physicsWorld;
 	/// Runtime UI mouse state (hover, previous press).
 	UiInputState m_uiInputState;
+	/// Systems run every runtime frame, phase by phase.
+	SystemSchedule m_systems;
 	/// Cached primary-player entity handle. `entt::null` means "not resolved yet".
 	mutable entt::entity m_primaryPlayerCache = entt::null;
 	/**
@@ -774,30 +791,6 @@ private:
 
 	/**
 	 * @brief
-	 *  Drive `VoxelPlayer` entities: input, gravity, jump, and AABB-vs-voxel collision against every `VoxelWorld`.
-	 * @param[in] iTimeStep Elapsed time for this frame.
-	 */
-	void updateVoxelPlayers(const core::Timestep& iTimeStep);
-
-	/**
-	 * @brief
-	 *  Raycast from a player's eye and break (left-click) / place (right-click) a block in the targeted `VoxelWorld`.
-	 * @param[in,out] ioPlayer The player whose look direction casts the ray (its target / latch state is updated).
-	 * @param[in] iEye The ray origin (player eye / transform centre) in world space.
-	 * @param[in] iCursorCaptured Whether the cursor is captured; edits only fire while it is.
-	 */
-	void updatePlayerInteraction(component::VoxelPlayer& ioPlayer, const math::vec3& iEye, bool iCursorCaptured);
-
-	/**
-	 * @brief
-	 *  Show a transient on-screen message (e.g. "Fly mode ON") for a few seconds.
-	 * @param[in] iMessage The message text.
-	 * @param[in] iSeconds How long to keep it on screen.
-	 */
-	void showToast(const std::string& iMessage, float iSeconds = 3.f);
-
-	/**
-	 * @brief
 	 *  Draw the world-space voxel HUD (targeted-block highlight + aiming crosshair) through the active camera.
 	 *
 	 * Both the block wireframe and the crosshair are emitted as world-space lines
@@ -845,18 +838,6 @@ private:
 
 	/**
 	 * @brief
-	 *  Refresh every visible `EntityLink` host's transform from its target.
-	 *
-	 * Called from `onUpdateRuntime` after physics. Hidden hosts are skipped
-	 * (matching the dormant pattern used by triggers and scripts), and a
-	 * stale `linkedEntity` triggers a one-shot tag rescan to recover from
-	 * tag renames; the warm cache from `resolveAllEntityLinks` keeps the
-	 * common case at O(1).
-	 */
-	void updateEntityLinks();
-
-	/**
-	 * @brief
 	 *  Draw screen-space UI overlays (Canvas entities) within the current render batch.
 	 * @param[in] iEffectiveViewProjection The view-projection matrix the active layer has bound
 	 * to `Renderer2D` (world camera VP for legacy 2D layers, pixel-space ortho VP for raycast /
@@ -875,6 +856,13 @@ private:
 	 * @param[in] iCamera The camera used for the rendering passes.
 	 */
 	void renderWithStack(const renderer::Camera& iCamera);
+
+	/**
+	 * @brief
+	 *  Render one runtime frame through the primary camera: voxel streaming, renderer stack, screen transition.
+	 * @param[in] iTimeStep The frame duration (advances the screen transition).
+	 */
+	void renderRuntimeFrame(const core::Timestep& iTimeStep);
 
 	/**
 	 * @brief

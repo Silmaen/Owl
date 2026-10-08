@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Runner `--headless` (Null window, renderer and sound) and `--smoke-test [frames]` (plays every packed scene, non-zero exit code on any error log).
 - `export_tests` (CTest label `export`): exports `sample_project`, moves the game out of its export folder and smoke-tests every scene headless.
 - `Application::setExitCode()`: `main` returns it, and 1 when the application ended in the `Error` state.
+- `scene::SystemSchedule`: the runtime frame is a list of named systems in fixed phases (`SystemPhase`) that a game adds, replaces or removes, for every scene (`getDefault()`) or one (`Scene::getSystems()`).
 
 ### Changed
 
@@ -109,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sanitizers now fail the build on their first report (`-fno-sanitize-recover=all`, `halt_on_error=1` set by ctest), sanitizer presets run the tests with `--gtest_shuffle`, and the UB job no longer captures a stack trace per allocation (its tests went from about 30 min to under 10 s).
 - `SceneSerializer::deserialize`, `deserializeFromBuffer` and `applyParsed` return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`) instead of `bool`.
 - Each scene owns its physics world, its script bindings and its UI mouse state (`PhysicCommand` calls take the scene, `ScriptInstance::setScene`, `Scene::getUiInputState`): several scenes run side by side and a destroyed scene leaves nothing dangling.
+- `Scene::onUpdateRuntime` holds no gameplay any more: scripts, voxel player, raycast doors, physics, links, triggers, sound, animation and the game-over message are engine systems (`scene::systems`, `owl.*`), in the same order as before.
 
 ### Deprecated
 
@@ -128,6 +130,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The generic `core::IFactory` / `FactoryProduct` / `ProductAllocator`, whose only user was the mesh extra data: `data::extradata::ExtraDataRegistry` (`ExtraDataPid`, `getExtraDataPid<T>()`) replaces it, and `ExtraDataContainer` copies now clone the values instead of default-constructing them.
 - `RenderAPI` / `RenderCommand` `drawLine`, `drawLineInstanced`, `setDepthTest`, `setDepthMask`, `beginTextureLoad` and `endTextureLoad`, replaced by `PipelineState` and `bindTextures`.
 - `ScriptEngine::init`, `shutdown`, `isInitialized` and `getActiveScene`, and `PhysicCommand::releaseScene`: no global points to an active scene any more.
+- `Scene::updateRaycastDynamicWalls`, replaced by the `owl.raycast_walls` system.
 
 ### Fixed
 

@@ -117,7 +117,7 @@ struct OWL_API RaycastDoor {
 	/// Maximum distance (cells) between the player centre and the door centre for the built-in key to fire.
 	float interactionRange = 1.5f;
 
-	/// Runtime state — not authored, advanced by `Scene::updateRaycastDynamicWalls`.
+	/// Runtime state — not authored, advanced by the `owl.raycast_walls` system (`scene::systems::updateRaycastDynamicWalls`).
 	State state = State::Idle;
 	/// Current slide progress, in cells. `0` at closed, `1.0` at open (the renderer adds the +1-pixel margin).
 	float currentOffset = 0.0f;

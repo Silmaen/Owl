@@ -20,6 +20,13 @@ User-facing reference: `doc/pages/scene.md`. Keep it in sync when behaviour chan
   `std::ofstream` on a user document. A failed write keeps the old file and is reported (`false` /
   `WriteError`), never silent.
 
+## Runtime systems
+
+`Scene::onUpdateRuntime()` only runs the scene's `SystemSchedule` phase by phase (`SystemPhase`), then renders.
+Runtime gameplay goes into a system (engine ones: `private/scene/systems/`, named `owl.*`, registered by
+`registerEngineSystems`), never back into `Scene.cpp`. Only `Scripts` to `PostPhysics` may mutate the world;
+`Late` runs with the per-pass caches armed. Reference: `doc/pages/scene.md#systems`.
+
 ## Hierarchy
 
 Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `childrenIds`); roots have

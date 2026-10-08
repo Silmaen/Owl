@@ -387,7 +387,7 @@ collider matches the moving surface:
   `1.0` cell along the slide axis — exactly the plate footprint.
 - Pushwall: full `1×1×1` cube — matches the rendered surface.
 
-`Scene::updateRaycastDynamicWalls` mirrors the plate position onto the body each tick via `PhysicCommand::setTransform`,
+the `owl.raycast_walls` system (`scene::systems::updateRaycastDynamicWalls`) mirrors the plate position onto the body each tick via `PhysicCommand::setTransform`,
 so:
 
 - **Closed door = not traversable.** The plate is at the cell centre, the kinematic body is at the cell centre, the
@@ -405,7 +405,7 @@ so:
 | Closing    | —              | `currentOffset -= closeSpeed · dt`; back to Idle when `currentOffset ≤ 0`.           |
 | —          | Final          | Stay forever.                                                                        |
 
-Each tick `Scene::updateRaycastDynamicWalls` advances the state machine, shifts the entity's local
+Each tick the `owl.raycast_walls` system (`scene::systems::updateRaycastDynamicWalls`) advances the state machine, shifts the entity's local
 `Transform.translation` along `slideDirection` by the offset delta, and — if the entity carries a `PhysicBody` — mirrors
 the new world position onto the Box2D body via
 `PhysicCommand::setTransform`. Kinematic bodies respect `setTransform`, so the player collider sees the door's actual

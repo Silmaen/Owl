@@ -11,7 +11,6 @@
 
 #include "data/voxel/TerrainGenerator.h"
 #include "renderer/BackgroundRenderer.h"
-#include "renderer/Camera3DController.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/Renderer.h"
 #include "renderer/Renderer2D.h"
@@ -29,10 +28,6 @@
 #include "core/task/Scheduler.h"
 #include "core/task/Task.h"
 #include "data/voxel/Chunk.h"
-#include "data/voxel/VoxelCollision.h"
-#include "data/voxel/VoxelRaycast.h"
-#include "input/Input.h"
-#include "input/MouseCode.h"
 #include "physics/PhysicCommand.h"
 #include "scene/ScreenTransition.h"
 #include "scene/component/components.h"
@@ -40,7 +35,6 @@
 #include "script/ScriptInstance.h"
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
-#include "window/Window.h"
 
 #include <cmath>
 #include <cstdint>
@@ -104,17 +98,6 @@ void copyComponentIfExists(Entity& oDst, const Entity& iSrc) {
 template<typename... Components>
 void copyComponentIfExistsFromTuple(Entity& oDst, const Entity& iSrc, const std::tuple<Components...>&) {
 	(..., copyComponentIfExists<Components>(oDst, iSrc));
-}
-
-auto getColliderBox(const Entity& iEntity, const math::Transform& iWorldTransform) -> math::box2f {
-	auto halfDiag = math::vec2f{iWorldTransform.scale().x() * 0.5f, iWorldTransform.scale().y() * 0.5f};
-	if (iEntity.hasComponent<component::PhysicBody>()) {
-		auto& [body] = iEntity.getComponent<component::PhysicBody>();
-		halfDiag.x() *= body.colliderSize.x();
-		halfDiag.y() *= body.colliderSize.y();
-	}
-	const math::vec2f center = {iWorldTransform.translation().x(), iWorldTransform.translation().y()};
-	return {center - halfDiag, center + halfDiag};
 }
 
 auto computeTextAspect(const shared<data::fonts::Font>& iFont, const std::string& iText, const float iKerning,
@@ -254,33 +237,6 @@ void renderUIChild(const Entity& iChild, const math::Transform& iTransform, cons
 	}
 }
 
-void updateAnimatedSprite(component::AnimatedSpriteRenderer& ioAnim, const core::Timestep& iTimeStep) {
-	if (!ioAnim.m_playing || ioAnim.columns == 0 || ioAnim.rows == 0 || ioAnim.frameDuration <= 0.0f)
-		return;
-	const uint32_t totalFrames = ioAnim.lastFrame >= ioAnim.firstFrame ? ioAnim.lastFrame - ioAnim.firstFrame + 1 : 1;
-	float deltaSeconds = iTimeStep.getSeconds();
-	if (!ioAnim.speedCurve.empty()) {
-		const float progress = totalFrames > 1 ? static_cast<float>(ioAnim.m_currentFrame - ioAnim.firstFrame) /
-														 static_cast<float>(totalFrames - 1)
-											   : 0.f;
-		deltaSeconds *= ioAnim.speedCurve.evaluate(progress);
-	}
-	ioAnim.m_elapsedTime += deltaSeconds;
-	if (ioAnim.m_elapsedTime < ioAnim.frameDuration)
-		return;
-	const auto framesToAdvance = static_cast<uint32_t>(ioAnim.m_elapsedTime / ioAnim.frameDuration);
-	ioAnim.m_elapsedTime -= static_cast<float>(framesToAdvance) * ioAnim.frameDuration;
-	if (ioAnim.loop) {
-		ioAnim.m_currentFrame =
-				ioAnim.firstFrame + (ioAnim.m_currentFrame - ioAnim.firstFrame + framesToAdvance) % totalFrames;
-		return;
-	}
-	const uint32_t newFrame = ioAnim.m_currentFrame + framesToAdvance;
-	ioAnim.m_currentFrame = std::min(newFrame, ioAnim.lastFrame);
-	if (ioAnim.m_currentFrame >= ioAnim.lastFrame)
-		ioAnim.m_playing = false;
-}
-
 auto collectSubtree(const Scene& iScene, const Entity& iRoot) -> std::vector<Entity> {
 	std::vector<Entity> subtree{iRoot};
 	for (size_t i = 0; i < subtree.size(); ++i) {
@@ -341,7 +297,7 @@ void disconnectRuntimeHooks(entt::registry& ioRegistry) {
 
 }// namespace
 
-Scene::Scene() = default;
+Scene::Scene() : m_systems{SystemSchedule::getDefault()} {}
 
 Scene::~Scene() {
 	disconnectRuntimeHooks(registry);
@@ -355,6 +311,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_gameState = iOther->m_gameState;
 	newScene->m_enabledRenderers = iOther->m_enabledRenderers;
 	newScene->m_physicsSettings = iOther->m_physicsSettings;
+	newScene->m_systems = iOther->m_systems;
 
 	auto& srcSceneRegistry = iOther->registry;
 	auto& dstSceneRegistry = newScene->registry;
@@ -567,150 +524,19 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
 	m_inUpdatePass = false;
 	m_worldTransformCacheActive = false;
-
-	// find camera
-	renderer::Camera* mainCamera = nullptr;
-	math::mat4 cameraTransform;
-	math::Transform camTransform;
-	entt::entity primaryCameraEntity = entt::null;
-	for (const auto view = registry.view<component::Transform, component::Camera>(); const auto entity: view) {
-		auto [transform, camera] = view.get<component::Transform, component::Camera>(entity);
-		if (camera.primary) {
-			mainCamera = &camera.camera;
-			primaryCameraEntity = entity;
-			const Entity camEntity{entity, this};
-			camTransform = getWorldTransform(camEntity);
-			cameraTransform = camTransform();
-			break;
-		}
-	}
-	if (status == Status::Victory) {
-		if (iRender && mainCamera != nullptr) {
-			const auto font = app::Application::get().getFontLibrary().getDefaultFont();
-			math::Transform textTransform = camTransform;
-			textTransform.translation().z() = 0;
-			textTransform.scale().x() = 3.f;
-			mainCamera->setTransform(cameraTransform);
-
-			renderer::Renderer2D::resetStats();
-
-			renderer::Renderer2D::beginScene(*mainCamera);
-
-			renderer::Renderer2D::drawString({.transform = textTransform,
-											  .text = "Victory!",
-											  .font = font,
-											  .color = {1, 1, 1, 1},
-											  .entityId = 0});
-
-			renderer::Renderer2D::endScene();
-		}
-		return;
-	}
-	if (status == Status::Death) {
-		if (iRender && mainCamera != nullptr) {
-			const auto font = app::Application::get().getFontLibrary().getDefaultFont();
-			math::Transform textTransform = camTransform;
-			textTransform.translation().z() = 0;
-			textTransform.scale().x() = 3.f;
-			mainCamera->setTransform(cameraTransform);
-
-			renderer::Renderer2D::resetStats();
-
-			renderer::Renderer2D::beginScene(*mainCamera);
-
-			renderer::Renderer2D::drawString({.transform = textTransform,
-											  .text = "You loose!",
-											  .font = font,
-											  .color = {1, 1, 1, 1},
-											  .entityId = 0});
-
-			renderer::Renderer2D::endScene();
-		}
+	const SystemContext context{.timeStep = iTimeStep, .render = iRender};
+	if (status == Status::Victory || status == Status::Death) {
+		m_systems.run(SystemPhase::Ended, *this, context);
 		return;
 	}
 	const auto tScripts = now();
-	registry.view<component::NativeScript>().each([iTimeStep, this](auto ioEntity, auto& ioNsc) -> auto {
-		if (!isEffectivelyVisible(Entity{ioEntity, this}, /*iEditorMode=*/false))
-			return;
-		if (!ioNsc.instance) {
-			ioNsc.instance = ioNsc.instantiateScript();
-			ioNsc.instance->entity = Entity{ioEntity, this};
-			ioNsc.instance->onCreate();
-		}
-		ioNsc.instance->onUpdate(iTimeStep);
-	});
-
-	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
-		if (!isEffectivelyVisible(Entity{entity, this}, /*iEditorMode=*/false))
-			continue;
-		if (auto& luaScript = view.get<component::LuaScript>(entity);
-			luaScript.instance && luaScript.instance->isValid())
-			luaScript.instance->onUpdate(iTimeStep.getSeconds());
-	}
+	m_systems.run(SystemPhase::Scripts, *this, context);
 	const auto tScriptsEnd = now();
-
-	for (const auto view = registry.view<component::Transform, component::FlyCamera>(); const auto entity: view) {
-		auto [transform, fly] = view.get<component::Transform, component::FlyCamera>(entity);
-		renderer::Camera3DController controller;
-		controller.setMoveSpeed(fly.moveSpeed);
-		controller.setLookSpeed(fly.lookSpeed);
-		controller.setPosition(transform.transform.translation());
-		controller.setEulerRotation(transform.transform.rotation());
-		controller.onUpdate(iTimeStep);
-		transform.transform.translation() = controller.getPosition();
-		transform.transform.rotation() = controller.getEulerRotation();
-	}
-
-	updateVoxelPlayers(iTimeStep);
-
-	updateRaycastDynamicWalls(iTimeStep.getSeconds());
-
-	// Inputs
-	if (const Entity player = getPrimaryPlayer()) {
-		auto& [primary, iplayer] = player.getComponent<component::Player>();
-		iplayer.parseInputs(player);
-	}
-
-	// Physics
+	m_systems.run(SystemPhase::PrePhysics, *this, context);
 	const auto tPhysics = now();
-	physics::PhysicCommand::frame(*this, iTimeStep);
+	m_systems.run(SystemPhase::Physics, *this, context);
 	const auto tPhysicsEnd = now();
-	dispatchCollisionEvents();
-
-	updateEntityLinks();
-	{
-		auto player = getPrimaryPlayer();
-		for (const auto view = registry.view<component::Trigger>(); const auto ent: view) {
-			const Entity entity{ent, this};
-			auto& trigger = entity.getComponent<component::Trigger>().trigger;
-			if (!isEffectivelyVisible(entity, /*iEditorMode=*/false)) {
-				// Hidden trigger: cancel any in-progress timer and clear overlap state.
-				if (trigger.type == SceneTrigger::TriggerType::Timer)
-					trigger.stopTimer();
-				if (trigger.wasOverlapping() && player)
-					trigger.onTriggerExit(player, entity);
-				trigger.setOverlapping(false);
-				continue;
-			}
-			// Timer triggers: update independently of overlap.
-			if (trigger.type == SceneTrigger::TriggerType::Timer) {
-				trigger.updateTimer(iTimeStep.getSeconds(), entity);
-				continue;
-			}
-			// Overlap-based triggers.
-			if (!player)
-				continue;
-			const bool overlapping = getColliderBox(entity, getWorldTransform(entity))
-											 .intersect(getColliderBox(player, getWorldTransform(player)));
-			if (overlapping && !trigger.wasOverlapping())
-				trigger.onTriggerEnter(player, entity);
-			if (overlapping)
-				trigger.onTriggered(player, entity);
-			if (!overlapping && trigger.wasOverlapping())
-				trigger.onTriggerExit(player, entity);
-			trigger.setOverlapping(overlapping);
-		}
-	}
+	m_systems.run(SystemPhase::PostPhysics, *this, context);
 	// Every mutating phase (scripts, physics, links, trigger callbacks) is done: arm the per-pass caches.
 	m_visibilityCache.clear();
 	m_layerContentCacheFirst.clear();
@@ -719,63 +545,11 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	m_worldTransformCache.clear();
 	m_worldTransformCacheActive = true;
 	prepareWorldTransforms();
-	// Sound: update listener and spatial source positions
-	for (const auto view = registry.view<component::Transform, component::SoundListener>(); const auto entity: view) {
-		if (const auto& [transform, listener] = view.get<component::Transform, component::SoundListener>(entity);
-			listener.primary) {
-			const Entity ent{entity, this};
-			const auto wt = getWorldTransform(ent);
+	m_systems.run(SystemPhase::Late, *this, context);
 
-			sound::SoundCommand::setListenerPosition(
-					{wt.translation().x(), wt.translation().y(), wt.translation().z()});
-			const float rotZ = wt.rotation().z();
-
-			sound::SoundCommand::setListenerOrientation({std::sin(rotZ), std::cos(rotZ), 0.0f}, {0.0f, 0.0f, 1.0f});
-			break;
-		}
-	}
-	for (const auto view = registry.view<component::Transform, component::SoundSource>(); const auto entity: view) {
-		auto& [soundComp] = view.get<component::SoundSource>(entity);
-		if (soundComp.runtimeHandle == sound::invalidSoundHandle || !soundComp.spatial)
-			continue;
-		const Entity ent{entity, this};
-		const auto wt = getWorldTransform(ent);
-
-		sound::SoundCommand::setPosition(soundComp.runtimeHandle,
-										 {wt.translation().x(), wt.translation().y(), wt.translation().z()});
-	}
-
-	// Update animated sprites
-	for (const auto view = registry.view<component::AnimatedSpriteRenderer>(); const auto entity: view)
-
-		updateAnimatedSprite(view.get<component::AnimatedSpriteRenderer>(entity), iTimeStep);
-
-	// Render 2D
 	const auto tRender = now();
-	if (iRender && mainCamera != nullptr) {
-		if (primaryCameraEntity != entt::null) {
-			const Entity camEntity{primaryCameraEntity, this};
-			camTransform = getWorldTransform(camEntity);
-			cameraTransform = camTransform();
-		}
-		updateVoxelStreaming(camTransform.translation());
-		mainCamera->setTransform(cameraTransform);
-		// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
-		math::mat4 viewRotation = mainCamera->getView();
-
-		viewRotation(0, 3) = 0.0f;
-
-		viewRotation(1, 3) = 0.0f;
-
-		viewRotation(2, 3) = 0.0f;
-		m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
-
-		renderWithStack(*mainCamera);
-
-		ScreenTransition::update(iTimeStep.getSeconds());
-
-		ScreenTransition::render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
-	}
+	if (iRender)
+		renderRuntimeFrame(iTimeStep);
 	// Disarm per-pass caches; the next tick repopulates from scratch.
 	m_inUpdatePass = false;
 	m_worldTransformCacheActive = false;
@@ -787,6 +561,37 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 								.totalMs = elapsedMs(tStart, tEnd)};
 	}
 	flushPendingDestructions();
+}
+
+void Scene::renderRuntimeFrame(const core::Timestep& iTimeStep) {
+	renderer::Camera* mainCamera = nullptr;
+	math::Transform camTransform;
+	for (const auto view = registry.view<component::Transform, component::Camera>(); const auto entity: view) {
+		if (auto& camera = view.get<component::Camera>(entity); camera.primary) {
+			mainCamera = &camera.camera;
+			camTransform = getWorldTransform(Entity{entity, this});
+			break;
+		}
+	}
+	if (mainCamera == nullptr)
+		return;
+	updateVoxelStreaming(camTransform.translation());
+	mainCamera->setTransform(camTransform());
+	// Compute inverse(projection * viewRotation) for skybox (includes FOV/aspect ratio)
+	math::mat4 viewRotation = mainCamera->getView();
+
+	viewRotation(0, 3) = 0.0f;
+
+	viewRotation(1, 3) = 0.0f;
+
+	viewRotation(2, 3) = 0.0f;
+	m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
+
+	renderWithStack(*mainCamera);
+
+	ScreenTransition::update(iTimeStep.getSeconds());
+
+	ScreenTransition::render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
 }
 
 void Scene::onRenderRuntime() {
@@ -1320,232 +1125,7 @@ void Scene::updateVoxelStreaming(const math::vec3& iCameraWorldPos) {
 	}
 }
 
-namespace {
-
-void applyPlayerLook(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform, const float iDt,
-					 const bool iCursorCaptured) {
-	if (iCursorCaptured) {
-		const math::vec2 mouse = input::Input::getMousePos();
-		if (ioPlayer.mouseValid) {
-			ioPlayer.yaw -= (mouse.x() - ioPlayer.lastMouse.x()) * ioPlayer.mouseSensitivity;
-			ioPlayer.pitch -= (mouse.y() - ioPlayer.lastMouse.y()) * ioPlayer.mouseSensitivity;
-		}
-		ioPlayer.lastMouse = mouse;
-		ioPlayer.mouseValid = true;
-	} else {
-		ioPlayer.mouseValid = false;
-	}
-	if (input::Input::isKeyPressed(input::key::Left))
-		ioPlayer.yaw += ioPlayer.lookSpeed * iDt;
-	if (input::Input::isKeyPressed(input::key::Right))
-		ioPlayer.yaw -= ioPlayer.lookSpeed * iDt;
-	if (input::Input::isKeyPressed(input::key::Up))
-		ioPlayer.pitch += ioPlayer.lookSpeed * iDt;
-	if (input::Input::isKeyPressed(input::key::Down))
-		ioPlayer.pitch -= ioPlayer.lookSpeed * iDt;
-	ioPlayer.pitch = std::clamp(ioPlayer.pitch, -1.5f, 1.5f);
-	ioTransform.rotation() = math::vec3{ioPlayer.pitch, ioPlayer.yaw, 0.f};
-}
-
-auto updatePlayerModes(component::VoxelPlayer& ioPlayer, const float iDt) -> std::string {
-	std::string toast;
-	ioPlayer.doubleTapTimer = std::max(0.f, ioPlayer.doubleTapTimer - iDt);
-	const bool space = input::Input::isKeyPressed(input::key::Space);
-	if (const bool spaceEdge = space && !ioPlayer.spaceWasPressed; spaceEdge) {
-		if (ioPlayer.doubleTapTimer > 0.f) {
-			ioPlayer.flyMode = !ioPlayer.flyMode;
-			ioPlayer.velocityY = 0.f;
-			ioPlayer.doubleTapTimer = 0.f;
-			if (!ioPlayer.flyMode)
-				ioPlayer.superSpeed = false;
-			toast = ioPlayer.flyMode ? "Fly mode ON" : "Fly mode OFF";
-		} else {
-			ioPlayer.doubleTapTimer = 0.3f;
-		}
-	}
-	ioPlayer.spaceWasPressed = space;
-	const bool superKey = input::Input::isKeyPressed(input::key::J);
-	if (const bool superEdge = superKey && !ioPlayer.superSpeedWasPressed; superEdge && ioPlayer.flyMode) {
-		ioPlayer.superSpeed = !ioPlayer.superSpeed;
-		toast = ioPlayer.superSpeed ? "Super speed ON" : "Super speed OFF";
-	}
-	ioPlayer.superSpeedWasPressed = superKey;
-	return toast;
-}
-
-auto cellOverlapsBox(const math::vec3i& iCell, const math::vec3& iCenter, const math::vec3& iHalf) -> bool {
-	const auto cx = static_cast<float>(iCell.x());
-	const auto cy = static_cast<float>(iCell.y());
-	const auto cz = static_cast<float>(iCell.z());
-	return iCenter.x() + iHalf.x() > cx && iCenter.x() - iHalf.x() < cx + 1.f && iCenter.y() + iHalf.y() > cy &&
-		   iCenter.y() - iHalf.y() < cy + 1.f && iCenter.z() + iHalf.z() > cz && iCenter.z() - iHalf.z() < cz + 1.f;
-}
-
-void applyPlayerMovement(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform, const float iDt,
-						 const data::voxel::SolidPredicate& iIsSolid) {
-	const float sy = std::sin(ioPlayer.yaw);
-	const float cy = std::cos(ioPlayer.yaw);
-	math::vec3 move{0.f, 0.f, 0.f};
-	if (input::Input::isKeyPressed(input::key::W))
-		move += math::vec3{-sy, 0.f, -cy};
-	if (input::Input::isKeyPressed(input::key::S))
-		move -= math::vec3{-sy, 0.f, -cy};
-	if (input::Input::isKeyPressed(input::key::D))
-		move += math::vec3{cy, 0.f, -sy};
-	if (input::Input::isKeyPressed(input::key::A))
-		move -= math::vec3{cy, 0.f, -sy};
-	const float horizLen = std::sqrt(move.x() * move.x() + move.z() * move.z());
-	const bool space = input::Input::isKeyPressed(input::key::Space);
-	math::vec3 velocity{0.f, 0.f, 0.f};
-	if (ioPlayer.flyMode) {
-		const float speed = ioPlayer.flySpeed * (ioPlayer.superSpeed ? ioPlayer.superSpeedMultiplier : 1.f);
-		if (horizLen > 0.f) {
-			velocity.x() = move.x() / horizLen * speed;
-			velocity.z() = move.z() / horizLen * speed;
-		}
-		if (space)
-			velocity.y() += speed;
-		if (input::Input::isKeyPressed(input::key::LeftShift))
-			velocity.y() -= speed;
-		ioPlayer.velocityY = 0.f;
-		ioPlayer.grounded = false;
-	} else {
-		const float speed = input::Input::isKeyPressed(input::key::LeftShift) ? ioPlayer.runSpeed : ioPlayer.walkSpeed;
-		if (horizLen > 0.f) {
-			velocity.x() = move.x() / horizLen * speed;
-			velocity.z() = move.z() / horizLen * speed;
-		}
-		if (ioPlayer.grounded && space)
-			ioPlayer.velocityY = ioPlayer.jumpSpeed;
-		ioPlayer.velocityY -= ioPlayer.gravity * iDt;
-		velocity.y() = ioPlayer.velocityY;
-	}
-	const auto result =
-			data::voxel::moveAabb(iIsSolid, ioTransform.translation(), ioPlayer.halfExtents, velocity * iDt);
-	ioTransform.translation() = result.position;
-	if (!ioPlayer.flyMode) {
-		if (result.onGround) {
-			ioPlayer.velocityY = 0.f;
-			ioPlayer.grounded = true;
-		} else {
-			ioPlayer.grounded = false;
-			if (result.hitCeiling)
-				ioPlayer.velocityY = 0.f;
-		}
-	}
-}
-
-}// namespace
-
-void Scene::updateVoxelPlayers(const core::Timestep& iTimeStep) {
-	OWL_PROFILE_FUNCTION()
-
-	const float dt = iTimeStep.getSeconds();
-	if (dt <= 0.f)
-		return;
-	m_hasVoxelHighlight = false;
-	m_showCrosshair = false;
-	const auto players = registry.view<component::Transform, component::VoxelPlayer>();
-	if (players.begin() == players.end())
-		return;
-	// A voxel player is active this frame: show the aiming crosshair whether or not the cursor is captured.
-	m_showCrosshair = true;
-
-	const auto isSolid = [this](const int32_t iBx, const int32_t iBy, const int32_t iBz) -> bool {
-		const math::vec3i block{iBx, iBy, iBz};
-		const auto view = registry.view<component::VoxelWorld>();
-		return std::ranges::any_of(view, [&](const auto entity) -> bool {
-			const auto& vw = view.get<component::VoxelWorld>(entity);
-			const auto id = vw.world.getBlock(block);
-			return id != data::voxel::g_AirBlock && vw.registry.get(id).solid;
-		});
-	};
-	const auto hasChunk = [this](const math::vec3& iPos) -> bool {
-		const math::vec3i block{static_cast<int32_t>(std::floor(iPos.x())), static_cast<int32_t>(std::floor(iPos.y())),
-								static_cast<int32_t>(std::floor(iPos.z()))};
-		const math::vec3i coord = data::voxel::worldToChunk(block);
-		const auto view = registry.view<component::VoxelWorld>();
-		return std::ranges::any_of(view, [&](const auto entity) -> bool {
-			return view.get<component::VoxelWorld>(entity).world.getChunk(coord) != nullptr;
-		});
-	};
-
-	const bool cursorCaptured = app::Application::get().getWindow().getCursorMode() == window::CursorMode::Disabled;
-	for (const auto entity: players) {
-		auto [transform, player] = players.get<component::Transform, component::VoxelPlayer>(entity);
-		auto& tr = transform.transform;
-		if (!player.initialized) {
-			player.yaw = tr.rotation().y();
-			player.pitch = tr.rotation().x();
-			player.initialized = true;
-		}
-		applyPlayerLook(player, tr, dt, cursorCaptured);
-		if (const auto toast = updatePlayerModes(player, dt); !toast.empty())
-			showToast(toast);
-		updatePlayerInteraction(player, tr.translation(), cursorCaptured);
-
-		// Hold still until the player's chunk has streamed in, so it never falls through an ungenerated world.
-		if (!hasChunk(tr.translation())) {
-			player.velocityY = 0.f;
-			continue;
-		}
-		applyPlayerMovement(player, tr, dt, isSolid);
-	}
-}
-
-void Scene::updatePlayerInteraction(component::VoxelPlayer& ioPlayer, const math::vec3& iEye,
-									const bool iCursorCaptured) {
-	const float cp = std::cos(ioPlayer.pitch);
-	const math::vec3 forward{-cp * std::sin(ioPlayer.yaw), std::sin(ioPlayer.pitch), -cp * std::cos(ioPlayer.yaw)};
-	const auto worlds = registry.view<component::VoxelWorld>();
-	const auto targetable = [&](const int32_t iX, const int32_t iY, const int32_t iZ) -> bool {
-		const math::vec3i block{iX, iY, iZ};
-		return std::ranges::any_of(worlds, [&](const auto entity) -> bool {
-			return !worlds.get<component::VoxelWorld>(entity).registry.isAir(
-					worlds.get<component::VoxelWorld>(entity).world.getBlock(block));
-		});
-	};
-	const auto hit = data::voxel::raycastVoxel(targetable, iEye, forward, ioPlayer.reach);
-	ioPlayer.hasTarget = hit.has_value();
-	if (hit) {
-		ioPlayer.targetBlock = hit->block;
-		m_hasVoxelHighlight = true;
-		m_voxelHighlightBlock = hit->block;
-		m_voxelHighlightNormal = hit->normal;
-	}
-
-	const bool leftHeld = input::Input::isMouseButtonPressed(input::mouse::ButtonLeft);
-	const bool rightHeld = input::Input::isMouseButtonPressed(input::mouse::ButtonRight);
-	bool breakEdge = false;
-	bool placeEdge = false;
-	if (iCursorCaptured) {
-		breakEdge = leftHeld && !ioPlayer.breakWasPressed;
-		placeEdge = rightHeld && !ioPlayer.placeWasPressed;
-	}
-	// Track the raw button state (even uncaptured) so the click that captures the cursor is never read as an edit edge.
-	ioPlayer.breakWasPressed = leftHeld;
-	ioPlayer.placeWasPressed = rightHeld;
-	if (!hit || !(breakEdge || placeEdge))
-		return;
-
-	for (const auto entity: worlds) {
-		auto& vw = worlds.get<component::VoxelWorld>(entity);
-		if (vw.registry.isAir(vw.world.getBlock(hit->block)))
-			continue;
-		if (breakEdge) {
-			vw.world.setBlock(hit->block, data::voxel::g_AirBlock);
-			vw.world.markNeighborChunksDirty(hit->block);
-		} else {
-			const math::vec3i target{hit->block.x() + hit->normal.x(), hit->block.y() + hit->normal.y(),
-									 hit->block.z() + hit->normal.z()};
-			if (vw.registry.isAir(vw.world.getBlock(target)) && !cellOverlapsBox(target, iEye, ioPlayer.halfExtents)) {
-				vw.world.setBlock(target, ioPlayer.placeBlock);
-				vw.world.markNeighborChunksDirty(target);
-			}
-		}
-		break;
-	}
-}
+void Scene::setShowCrosshair(const bool iShow) { m_showCrosshair = iShow; }
 
 void Scene::showToast(const std::string& iMessage, const float iSeconds) {
 	m_toastMessage = iMessage;
@@ -1764,125 +1344,6 @@ void Scene::renderRaycastDynamicWalls(const bool iEditorMode) {
 	doors.clear();
 }
 
-void Scene::updateRaycastDynamicWalls(const float iTimeStep) {
-	OWL_PROFILE_FUNCTION()
-
-	// Find primary player position once (used for built-in proximity activation).
-	math::vec2 playerWorldXY{0.f, 0.f};
-	bool hasPlayer = false;
-	if (const Entity player = getPrimaryPlayer()) {
-		const auto wt = getWorldTransform(player);
-		playerWorldXY = {wt.translation().x(), wt.translation().y()};
-		hasPlayer = true;
-	}
-
-	for (const auto view = registry.view<component::Transform, component::RaycastDoor>(); const auto entity: view) {
-		const Entity ent{entity, this};
-		auto& door = view.get<component::RaycastDoor>(entity);
-		auto& [transform] = view.get<component::Transform>(entity);
-
-		// Built-in activation (proximity + key edge). `interactionKey == 0` disables.
-		if (door.state == component::RaycastDoor::State::Idle && door.interactionKey != 0 && hasPlayer) {
-			const float dx = playerWorldXY.x() - transform.translation().x();
-			const float dy = playerWorldXY.y() - transform.translation().y();
-			const float distSq = dx * dx + dy * dy;
-			const bool keyHeld = input::Input::isKeyPressed(door.interactionKey);
-			const bool keyEdge = keyHeld && !door.keyHeldLastTick;
-			if (keyEdge && distSq <= door.interactionRange * door.interactionRange)
-				door.state = component::RaycastDoor::State::Opening;
-			door.keyHeldLastTick = keyHeld;
-		} else if (door.interactionKey != 0) {
-			door.keyHeldLastTick = input::Input::isKeyPressed(door.interactionKey);
-		}
-
-		const float prevOffset = door.currentOffset;
-		switch (door.state) {
-			case component::RaycastDoor::State::Idle:
-				break;
-			case component::RaycastDoor::State::Opening:
-				door.currentOffset += std::max(0.f, door.slideSpeed) * iTimeStep;
-				if (door.currentOffset >= 1.f) {
-					door.currentOffset = 1.f;
-					door.state = component::RaycastDoor::State::Open;
-					door.holdTimer = std::max(0.f, door.holdTime);
-				}
-				break;
-			case component::RaycastDoor::State::Open:
-				door.holdTimer -= iTimeStep;
-				if (door.holdTimer <= 0.f)
-					door.state = component::RaycastDoor::State::Closing;
-				break;
-			case component::RaycastDoor::State::Closing:
-				door.currentOffset -= std::max(0.f, door.closeSpeed) * iTimeStep;
-				if (door.currentOffset <= 0.f) {
-					door.currentOffset = 0.f;
-					door.state = component::RaycastDoor::State::Idle;
-				}
-				break;
-		}
-		const float delta = door.currentOffset - prevOffset;
-		if (std::abs(delta) > 1e-6f) {
-			using OD = component::RaycastDoor::OpeningDirection;
-			float dx = 0.f;
-			float dy = 0.f;
-			switch (door.openingDirection) {
-				case OD::East:
-					dx = 1.f;
-					break;
-				case OD::West:
-					dx = -1.f;
-					break;
-				case OD::North:
-					dy = 1.f;
-					break;
-				case OD::South:
-					dy = -1.f;
-					break;
-			}
-			const math::Transform wt = getWorldTransform(ent);
-			const float plateX = wt.translation().x() + dx * door.currentOffset;
-			const float plateY = wt.translation().y() + dy * door.currentOffset;
-			physics::PhysicCommand::setTransform(ent, math::vec2f{plateX, plateY}, wt.rotation().z());
-		}
-	}
-
-	// Pushwalls — Idle → Moving → Final, one-shot.
-	for (const auto view = registry.view<component::Transform, component::RaycastPushWall>(); const auto entity: view) {
-		const Entity ent{entity, this};
-		auto& push = view.get<component::RaycastPushWall>(entity);
-		auto& [transform] = view.get<component::Transform>(entity);
-
-		if (push.state == component::RaycastPushWall::State::Idle && push.interactionKey != 0 && hasPlayer) {
-			const float dx = playerWorldXY.x() - transform.translation().x();
-			const float dy = playerWorldXY.y() - transform.translation().y();
-			const float distSq = dx * dx + dy * dy;
-			const bool keyHeld = input::Input::isKeyPressed(push.interactionKey);
-			if (const bool keyEdge = keyHeld && !push.keyHeldLastTick;
-				keyEdge && distSq <= push.interactionRange * push.interactionRange)
-				push.state = component::RaycastPushWall::State::Moving;
-			push.keyHeldLastTick = keyHeld;
-		} else if (push.interactionKey != 0) {
-			push.keyHeldLastTick = input::Input::isKeyPressed(push.interactionKey);
-		}
-
-		const float prevOffset = push.currentOffset;
-		if (push.state == component::RaycastPushWall::State::Moving) {
-			push.currentOffset += std::max(0.f, push.slideSpeed) * iTimeStep;
-			if (push.currentOffset >= push.slideDistance) {
-				push.currentOffset = push.slideDistance;
-				push.state = component::RaycastPushWall::State::Final;
-			}
-		}
-		if (const float delta = push.currentOffset - prevOffset; std::abs(delta) > 1e-6f) {
-			transform.translation().x() += push.slideDirection.x() * delta;
-			transform.translation().y() += push.slideDirection.y() * delta;
-			const math::Transform wt = getWorldTransform(ent);
-			physics::PhysicCommand::setTransform(ent, math::vec2f{wt.translation().x(), wt.translation().y()},
-												 wt.rotation().z());
-		}
-	}
-}
-
 void Scene::resolveAllTilemapAssets() {
 	if (!m_tilemapAssetsDirty)
 		return;
@@ -1997,59 +1458,6 @@ void Scene::resolveAllEntityLinks() {
 		OWL_CORE_WARN("Scene: Entity link of '{}' targets missing entity '{}', link ignored.",
 					  Entity(entity, this).getName(), link.linkedEntityName)
 		link.wasUnresolvedReported = true;
-	}
-}
-
-void Scene::updateEntityLinks() {
-	OWL_PROFILE_FUNCTION()
-
-	const auto rescanTag = [this](component::EntityLink& ioLink) -> void {
-		ioLink.linkedEntity = {};
-		for (const auto view = registry.view<component::Tag>(); const auto entity: view) {
-			if (view.get<component::Tag>(entity).tag == ioLink.linkedEntityName) {
-				ioLink.linkedEntity = {entity, this};
-				return;
-			}
-		}
-	};
-	const auto applyLocalFromWorld = [this](component::Transform& ioTransform, const Entity& iHost,
-											const math::Transform& iLinkedWorld) -> void {
-		const auto& [parentId, childrenIds] = iHost.getComponent<component::Hierarchy>();
-		if (parentId == core::UUID{0}) {
-			ioTransform.transform.translation() = iLinkedWorld.translation();
-			return;
-		}
-		const Entity parent = findEntityByUUID(parentId);
-		if (!parent) {
-			ioTransform.transform.translation() = iLinkedWorld.translation();
-			return;
-		}
-		const math::mat4 parentWorldInv = math::inverse(getWorldTransform(parent)());
-		const math::vec4 localPos =
-				parentWorldInv * math::vec4{iLinkedWorld.translation().x(), iLinkedWorld.translation().y(),
-											iLinkedWorld.translation().z(), 1.0f};
-		ioTransform.transform.translation().x() = localPos.x();
-		ioTransform.transform.translation().y() = localPos.y();
-		ioTransform.transform.translation().z() = localPos.z();
-	};
-	for (const auto view = registry.view<component::Transform, component::EntityLink>(); const auto entity: view) {
-		const Entity host{entity, this};
-		if (!isEffectivelyVisible(host, /*iEditorMode=*/false))
-			continue;
-		auto [transform, link] = view.get<component::Transform, component::EntityLink>(entity);
-		if (link.linkedEntityName.empty())
-			continue;
-		if (!link.linkedEntity || link.linkedEntity.getComponent<component::Tag>().tag != link.linkedEntityName)
-			rescanTag(link);
-		if (!link.linkedEntity) {
-			if (!link.wasUnresolvedReported)
-				OWL_CORE_WARN("Scene: Entity link of '{}' lost its target '{}', link ignored.", host.getName(),
-							  link.linkedEntityName)
-			link.wasUnresolvedReported = true;
-			continue;
-		}
-		link.wasUnresolvedReported = false;
-		applyLocalFromWorld(transform, host, getWorldTransform(link.linkedEntity));
 	}
 }
 
