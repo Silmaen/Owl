@@ -124,7 +124,7 @@ foreach (child ${children})
 endforeach ()
 
 # Wayland smoke test: the runner presents frames on a headless weston (Vulkan and OpenGL); skipped without weston.
-if (${PROJECT_PREFIX}_PLATFORM_LINUX AND TARGET ${CMAKE_PROJECT_NAME}Runner)
+if (${PROJECT_PREFIX}_PLATFORM_LINUX AND ${PROJECT_PREFIX}_RENDER_TESTS AND TARGET ${CMAKE_PROJECT_NAME}Runner)
     add_test(NAME ${PROJECT_PREFIX_LOWER}_wayland_smoke
             COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/wayland_smoke.sh $<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner>
             ${PROJECT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/wayland_smoke)
