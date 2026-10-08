@@ -490,7 +490,9 @@ OpenGL needs 4.5 core. When the driver ingests SPIR-V (GL 4.6 or `GL_ARB_gl_spir
 `gl_InstanceID` / `gl_VertexID` (`remapBuiltinsForOpenGl`). Otherwise (llvmpipe, GL 4.5 drivers) the same SPIR-V is
 translated to GLSL 4.50 by spirv-cross (`crossCompileToGlsl`) and compiled with `glShaderSource`. Both paths share the
 SPIR-V cache, whose key holds the backend, the module, the Slang version, the macros and the profile. The startup log
-says which path runs; `OWL_OPENGL_SHADERS=glsl` or `spirv` forces it.
+says which path runs; `OWL_OPENGL_SHADERS=glsl` or `spirv` forces it. The only other 4.6 entry point,
+`glMultiDrawElementsIndirectCount` (`drawIndexedIndirect`), is skipped with a warning on a 4.5 driver; no renderer
+uses it yet.
 
 ### Vulkan descriptors and validation
 
@@ -834,7 +836,10 @@ A `Framebuffer` represents an off-screen render target with one or more typed at
 | `isUpsideDown()`             | Backend-specific Y-flip (Vulkan vs OpenGL) |
 
 The editor viewport uses a framebuffer with `Rgba8` + `RedInteger` + `Depth24Stencil8`
-to render the scene and support mouse-based entity picking.
+to render the scene and support mouse-based entity picking. On OpenGL `readPixel` never stalls: it queues the read
+into a pixel pack buffer behind a fence and returns the latest completed one, a frame or two late, so the viewport
+checks that the entity still exists. Vulkan still reads synchronously (one queue drain per hovered frame), until the
+phase C work on frames in flight.
 
 ## Shader System
 

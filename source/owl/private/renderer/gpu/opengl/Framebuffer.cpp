@@ -11,6 +11,7 @@
 #include "Framebuffer.h"
 #include "core/external/opengl46.h"
 
+#include <algorithm>
 #include <cstddef>
 #include <utility>
 
@@ -112,6 +113,12 @@ Framebuffer::Framebuffer(FramebufferSpecification iSpec) : m_specs{std::move(iSp
 }
 
 Framebuffer::~Framebuffer() {
+	for (auto& read: m_pixelReads) {
+		if (read.fence != nullptr)
+			glDeleteSync(static_cast<GLsync>(read.fence));
+		if (read.buffer != 0)
+			glDeleteBuffers(1, &read.buffer);
+	}
 	glDeleteFramebuffers(1, &m_rendererId);
 	glDeleteTextures(static_cast<GLsizei>(m_colorAttachments.size()), m_colorAttachments.data());
 	glDeleteTextures(1, &m_depthAttachment);
@@ -209,10 +216,34 @@ void Framebuffer::resize(const math::vec2ui iSize) {
 auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const int iY) -> int {
 	OWL_CORE_ASSERT(iAttachmentIndex < m_colorAttachments.size(), "ReadPixel bad attachment index")
 
+	for (auto& read: m_pixelReads) {
+		if (read.fence == nullptr)
+			continue;
+		if (const GLenum status = glClientWaitSync(static_cast<GLsync>(read.fence), 0, 0);
+			status != GL_ALREADY_SIGNALED && status != GL_CONDITION_SATISFIED)
+			continue;
+		glDeleteSync(static_cast<GLsync>(read.fence));
+		read.fence = nullptr;
+		if (read.order > m_pixelValueOrder) {
+			glGetNamedBufferSubData(read.buffer, 0, sizeof(int), &m_pixelValue);
+			m_pixelValueOrder = read.order;
+		}
+	}
+	auto* const slot =
+			std::ranges::find_if(m_pixelReads, [](const PixelRead& iRead) -> bool { return iRead.fence == nullptr; });
+	if (slot == m_pixelReads.end())
+		return m_pixelValue;
+	if (slot->buffer == 0) {
+		glCreateBuffers(1, &slot->buffer);
+		glNamedBufferData(slot->buffer, sizeof(int), nullptr, GL_STREAM_READ);
+	}
 	glReadBuffer(GL_COLOR_ATTACHMENT0 + iAttachmentIndex);
-	int pixelData = 0;
-	glReadPixels(iX, iY, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
-	return pixelData;
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, slot->buffer);
+	glReadPixels(iX, iY, 1, 1, GL_RED_INTEGER, GL_INT, nullptr);
+	glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+	slot->fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+	slot->order = ++m_pixelReadCount;
+	return m_pixelValue;
 }
 
 auto Framebuffer::readColorAttachment(const uint32_t iAttachmentIndex) -> std::vector<uint8_t> {

@@ -116,7 +116,10 @@ public:
 	virtual void resize(math::vec2ui iSize) = 0;
 
 	/**
-	 * Get the Pixel information.
+	 * @brief
+	 *  Get the Pixel information (picking).
+	 * A backend may answer from an asynchronous read (OpenGL): the value can lag the request by a frame or two, so
+	 * the caller checks that what it designates still exists.
 	 * @param[in] iAttachmentIndex Index in the attachment.
 	 * @param[in] iX Horizontal coordinate.
 	 * @param[in] iY Vertical coordinate.
