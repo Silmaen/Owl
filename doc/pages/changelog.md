@@ -86,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: build artifacts leave out the test executables, keeping the Windows `BuildArtefact.zip` under the server's 300 MB limit.
 - Windows: test binaries and `OwlRunner` exit again: the Box2D solver pool is released with the physics world and the Lua watchdog is never destroyed, so no static destructor waits for threads Windows already killed.
 - Windows: the frame bench runner test quotes its whole command line, which `cmd /c` otherwise mangles.
+- OpenGL picking no longer stalls the pipeline each hovered frame: `readPixel` reads through a fenced pixel pack buffer and returns the latest completed value; the viewport ignores an entity destroyed since.
 - Textures: `generateMips` is honoured on both backends (OpenGL `glGenerateTextureMipmap`, Vulkan blit chain) and now defaults to `false`; `Nearest` filtering applies on Vulkan too (the raycast walls rendered blurred there), and `Linear` magnifies linearly on OpenGL as on Vulkan.
 - OpenGL textures: `R8` allocates a valid `GL_R8` storage (was `GL_RED_INTEGER`) and `Rgba32F` uploads floats.
 - GLFW no longer crashes at init on a Wayland compositor without input devices (no `wl_seat`, e.g. headless weston).

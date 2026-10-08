@@ -287,9 +287,12 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 
 	if (mouseX >= 0 && mouseY >= 0 && mouseX < static_cast<int>(viewportSizeInternal.x()) &&
 		mouseY < static_cast<int>(viewportSizeInternal.y())) {
+		// The pick may lag a frame or two (OpenGL reads asynchronously): the entity can be gone since.
 		const int pixelData = m_framebuffer->readPixel(1, mouseX, mouseY);
-		m_hoveredEntity = pixelData == -1 ? scene::Entity()
-										  : scene::Entity(static_cast<entt::entity>(pixelData), activeScene.get());
+		const auto handle = static_cast<entt::entity>(pixelData);
+		m_hoveredEntity = pixelData == -1 || !activeScene->registry.valid(handle)
+								  ? scene::Entity()
+								  : scene::Entity(handle, activeScene.get());
 	}
 	renderOverlay();
 

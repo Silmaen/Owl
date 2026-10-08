@@ -10,6 +10,7 @@
 
 #include "renderer/gpu/Framebuffer.h"
 
+#include <array>
 #include <cstdint>
 #include <vector>
 
@@ -68,11 +69,13 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the value of given pixel.
+	 *  Get the value of given pixel, without stalling the pipeline.
+	 * The read goes to a pixel pack buffer guarded by a fence; the call returns the latest read the GPU completed,
+	 * so the value lags the request by one or two frames (-1 before the first one lands).
 	 * @param[in] iAttachmentIndex Attachment's index.
 	 * @param[in] iX X coordinate.
 	 * @param[in] iY Y coordinate.
-	 * @return Pixel value.
+	 * @return Pixel value of the latest completed read.
 	 */
 	auto readPixel(uint32_t iAttachmentIndex, int iX, int iY) -> int override;
 
@@ -144,5 +147,23 @@ private:
 	std::vector<AttachmentSpecification> m_colorAttachmentSpecifications;
 	/// Format / sample count for the depth attachment (None = no depth).
 	AttachmentSpecification m_depthAttachmentSpecification = {};
+
+	/// One asynchronous pixel read: its pack buffer and the fence of the glReadPixels writing it.
+	struct PixelRead {
+		/// Pixel pack buffer holding one int.
+		uint32_t buffer = 0;
+		/// GLsync of the pending read, null when the slot is free.
+		void* fence = nullptr;
+		/// Issue order, so the newest completed read wins.
+		uint64_t order = 0;
+	};
+	/// Pixel reads in flight (picking).
+	std::array<PixelRead, 2> m_pixelReads{};
+	/// Issue counter of the pixel reads.
+	uint64_t m_pixelReadCount = 0;
+	/// Issue order of the read `m_pixelValue` comes from.
+	uint64_t m_pixelValueOrder = 0;
+	/// Value of the latest completed pixel read.
+	int m_pixelValue = -1;
 };
 }// namespace owl::renderer::gpu::opengl
