@@ -175,8 +175,8 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 - ![Planned][planned] Owl RHI named and documented; Vulkan reference, OpenGL frozen fallback, Null for tests;
   pipeline objects and explicit bindings instead of global state and call-order conventions (B-07). See
   [Owl RHI](owl-rhi.md)
-- ![Planned][planned] ABI — YAML out of the public API, hidden visibility by default, third-party symbols not
-  exported (PR-27: A-03, G-07, A-10, A-12)
+- ![Done][done] ABI — YAML out of the public API, hidden visibility by default, third-party symbols not
+  exported (PR-27: A-03, G-07, A-10); the header weight (A-12) stays to watch, after a build-time measurement
 - ![Planned][planned] Engine context and one world per scene (PR-33: A-04, D-15, A-08, A-07, F-05)
 - ![Planned][planned] Phased systems; gameplay moved out of `Scene` (PR-36: A-02, C-14)
 - ![Planned][planned] Open component registry, after the EnTT 4 upgrade (PR-37: A-05, A-18)
@@ -190,7 +190,7 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
   (D-07, D-26). See [Visual scripting](visual-scripting.md)
 - ![Planned][planned] Editor command API — every editor mutation goes through a command executed by `UndoManager`;
   the same API drives the headless runner and the tests. See [MCP server](mcp-server.md)
-- ![Planned][planned] Dead code removed or wired: unused `parallelForEach`, shared `LuaEngine`, single-use
+- ![Done][done] Dead code removed or wired: unused `parallelForEach`, shared `LuaEngine`, single-use
   `IFactory` (D-24, D-26, A-18)
 - ![To evaluate][evaluate] SDL3 for windowing, input, dialogues and audio (possibly SDL GPU as an Owl RHI backend);
   the GLFW limits under Wayland are the concrete argument. See [Windowing and input](windowing-input.md)
