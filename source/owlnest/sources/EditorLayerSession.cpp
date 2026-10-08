@@ -8,6 +8,8 @@
 
 #include "EditorLayer.h"
 
+#include "AssetKind.h"
+
 #include "document/SceneFlowDocument.h"
 
 #include <cstddef>
@@ -140,19 +142,12 @@ auto EditorLayer::restoreProjectSession() -> bool {
 			OWL_WARN("Session: '{}' no longer exists, its tab is not reopened.", stored)
 			continue;
 		}
-		const auto ext = path.extension().string();
-		if (ext == ".owl")
+		if (const auto kind = classifyAsset(path); kind == AssetKind::Scene)
 			std::ignore = loadOrOpenSceneDocument(path);
-		else if (ext == ".owltilemap")
-			openTilemapFile(path);
-		else if (ext == ".owltileset")
-			openTilesetFile(path);
-		else if (ext == ".owlanim")
-			openAnimationFile(path);
-		else if (ext == ".owlflow")
-			openNodeGraphFile(path);
-		else
+		else if (kind == AssetKind::Prefab)
 			openCodeFile(path);
+		else
+			openAssetFile(path);
 		++restored;
 	}
 	if (restored == 0)

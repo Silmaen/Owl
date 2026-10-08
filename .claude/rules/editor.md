@@ -42,9 +42,10 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
   with lunasvg into a 64 px mipmapped atlas; `IconBank::rebuild(colors)` on theme change.
 - Scene trigger overlays (512×512 PNG) are pre-rasterized by
   `poetry run python source/owlnest/assets/icons/generate_icons.py`.
-- New icon: add the SVG in the right category, register it in `buildIconBank()` (`EditorLayer.cpp`).
+- New icon: add the SVG in the right category, register it in `utils::buildIconBank()` (`EditorResources.cpp`).
 
 ## Panels
 
-New panels follow the `SceneSettings` wiring pattern. `EditorLayer.cpp` is already ~2 900 lines: put new
-logic in a panel, document or command, not in `EditorLayer`.
+New panels follow the `SceneSettings` wiring pattern. `EditorLayer` only routes: the ribbon is `RibbonBuilder`,
+packaging `GamePackager`, project and asset opening `EditorLayerProject.cpp` (extension table `classifyAsset`). Put
+new logic in a panel, document or command, not in `EditorLayer`.

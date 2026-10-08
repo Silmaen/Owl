@@ -185,7 +185,8 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 - ![Planned][planned] Phased systems; gameplay moved out of `Scene` (PR-36: A-02, C-14)
 - ![Planned][planned] Open component registry, after the EnTT 4 upgrade (PR-37: A-05, A-18)
 - ![Planned][planned] Entity references by UUID, remapped on duplication (PR-35: C-12, C-04)
-- ![Planned][planned] `EditorLayer` split (packager, ribbon, project opening) (PR-32: E-07, E-12)
+- ![Done][done] `EditorLayer` split (packager, ribbon, project opening); level transitions shared with the runner
+  (`scene::LevelTransition`) (PR-32: E-07, E-12)
 - ![Done][done] Optional CMake modules so each game can specialise the engine: `OWL_MODULE_RENDER`, `_PHYSICS`,
   `_AUDIO`, `_SCRIPT`, `_GUI` (and Conan options) around an always-built core; a module off drops its third parties
   and keeps its public API (Null backend or no-op); `linux-clang-minimal` (every module off) runs in CI. See
