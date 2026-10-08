@@ -108,6 +108,7 @@ cmake --build output/build/<preset>
 | `linux-sanitizer-thread`             | ThreadSanitizer              |
 | `linux-sanitizer-undefined-behavior` | UndefinedBehaviorSanitizer   |
 | `linux-include-check`                | Strict-libc++ include check  |
+| `linux-clang-minimal`                | Every optional module off    |
 
 #### Packaging
 
@@ -270,3 +271,34 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_ENABLE_MEMORY_TRACKER`                | OFF     | Allocation tracker, opt-in in every build type (Debug included)                  |
 | `OWL_PROFILER`                             | none    | `OWL_PROFILE_*` backend: `none`, `tracy` or `chrome` ([Profiling](profiling.md)) |
 | `OWL_LOG_LEVEL`                            | trace   | Lowest log level compiled in (`trace` to `off`)                                  |
+| `OWL_MODULE_RENDER`                        | ON      | OpenGL / Vulkan backends, GLFW, Slang ([Engine modules](#engine-modules))        |
+| `OWL_MODULE_PHYSICS`                       | ON      | Box2D physics ([Engine modules](#engine-modules))                                |
+| `OWL_MODULE_AUDIO`                         | ON      | OpenAL backend, libsndfile ([Engine modules](#engine-modules))                   |
+| `OWL_MODULE_SCRIPT`                        | ON      | Lua scripting ([Engine modules](#engine-modules))                                |
+| `OWL_MODULE_GUI`                           | ON      | ImGui layer, widgets, `Owl::Gui` ([Engine modules](#engine-modules))             |
+
+## Engine modules
+
+The core (ECS, scene, data, assets, renderer front end, Null backends) is always built. Each optional module is a
+CMake option and a recipe option of the same name: turned off, it leaves out its sources and its third parties, and
+its public API stays, backed by the Null backend or a no-op, so a game compiles against the same headers.
+
+| Option               | Conan option | Third parties left out                                     | Without it                                                  |
+|----------------------|--------------|------------------------------------------------------------|-------------------------------------------------------------|
+| `OWL_MODULE_RENDER`  | `render`     | glad, GLFW, lunasvg, Vulkan, SPIRV-Cross, Slang            | Null window, input and graphics: the engine runs headless   |
+| `OWL_MODULE_PHYSICS` | `physics`    | Box2D                                                      | `PhysicCommand` does nothing, bodies stay where they are    |
+| `OWL_MODULE_AUDIO`   | `audio`      | OpenAL Soft, libsndfile                                    | Null sound backend                                          |
+| `OWL_MODULE_SCRIPT`  | `script`     | Lua                                                        | `ScriptInstance` never loads, scripts are skipped           |
+| `OWL_MODULE_GUI`     | `gui`        | imgui, ImGuizmo                                            | No `UiLayer`, no `gui/` headers, no `Owl::Gui` target       |
+
+- The code sees `OWL_WITH_<MODULE>` (`0` or `1`), a public definition of `Owl::OwlEngine`; a consumer checks a module
+  with `find_package(OwlEngine COMPONENTS Physics)` (components `Render`, `Physics`, `Audio`, `Script`, `Gui`).
+- `OWL_MODULE_GUI` needs `OWL_MODULE_RENDER` (turned off otherwise). Owl Nest, OwlRunner, the benchmarks and the
+  fuzzers need every module: `OWL_BUILD_NEST`, `OWL_BENCHMARK` and `OWL_FUZZING` are turned off when one is missing.
+- Tests: `physics_tests`, `script_tests` and `gui_tests` go with their module; a test elsewhere that needs a module
+  starts with `OWL_REQUIRE_MODULE(PHYSICS)` (`testHelper.h`), which skips it.
+- `linux-clang-minimal` turns every module off: 23 Conan packages instead of 47, `libOwlEngine.so` 9.3 MB instead
+  of 13.7 MB (Release). The CI builds and tests it on every pull request (*Clang Minimal Modules*): one more agent
+  job, about 45 s of cold build and 3 s of tests on 32 cores, plus the configure.
+- `conan create . -o "owlengine/*:physics=False"` packages a specialised engine; `test_package` checks `Owl::Gui`
+  only when the package has the gui module.

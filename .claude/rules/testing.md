@@ -120,6 +120,10 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
 - Existing categories (one folder each): core, debug, event, font, gui, input, io, layer, math, mesh, physics, render,
   renderer, runner, scene, script, sound, voxel, owlnest (editor: links the `OwlNestCore` static library, skipped when
   `OWL_BUILD_NEST` is off)
+- Optional modules: `physics_tests`, `script_tests`, `gui_tests` are skipped with their module (`OWL_MODULE_*`); a test
+  elsewhere that needs a module starts with `OWL_REQUIRE_MODULE(PHYSICS)` (at the end of a fixture's `SetUp` for
+  the whole fixture), and code reaching a private backend header sits under `#if OWL_WITH_RENDER`.
+  `linux-clang-minimal` (every module off) must pass.
 - Tests link against both `OwlEngine` and `OwlEnginePrivate` (access to private headers)
 - Timeout per test binary: `OWL_TEST_TIMEOUT`, 600 s (3600 s on `linux-emulated`; `script_tests` 300 s): a hang
   costs minutes, not an hour. The slowest binary takes ~190 s (GCC Debug `scene_tests`).

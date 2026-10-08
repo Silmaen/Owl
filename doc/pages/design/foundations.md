@@ -182,9 +182,14 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 - ![Planned][planned] Open component registry, after the EnTT 4 upgrade (PR-37: A-05, A-18)
 - ![Planned][planned] Entity references by UUID, remapped on duplication (PR-35: C-12, C-04)
 - ![Planned][planned] `EditorLayer` split (packager, ribbon, project opening) (PR-32: E-07, E-12)
-- ![Planned][planned] Optional CMake modules so each game can specialise the engine
+- ![Done][done] Optional CMake modules so each game can specialise the engine: `OWL_MODULE_RENDER`, `_PHYSICS`,
+  `_AUDIO`, `_SCRIPT`, `_GUI` (and Conan options) around an always-built core; a module off drops its third parties
+  and keeps its public API (Null backend or no-op); `linux-clang-minimal` (every module off) runs in CI. See
+  [Building](../building.md#engine-modules)
     - Modules: core, render, physics, audio, script, Gui (`Owl::Gui`, the only one pulling imgui)
-    - Extension points documented: open component registry, replaceable phased systems, renderer-stack layers
+    - Extension points documented ([Architecture](../architecture.md#extension-points)): renderer-stack layers and
+      application layers today; the open component registry (PR-37) and replaceable phased systems (PR-36) come with
+      their PRs
 - ![Planned][planned] Typed Lua binding registry — one declaration per binding gives the Lua function, its
   documentation and (later) its visual-scripting node; documented-but-missing bindings either land or leave the docs
   (D-07, D-26). See [Visual scripting](visual-scripting.md)

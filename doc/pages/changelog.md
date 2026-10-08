@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Optional engine modules: `OWL_MODULE_RENDER`, `OWL_MODULE_PHYSICS`, `OWL_MODULE_AUDIO`, `OWL_MODULE_SCRIPT` and `OWL_MODULE_GUI` (Conan options `render`, `physics`, `audio`, `script`, `gui`) leave out a module and its third parties while its public API stays, backed by the Null backend or a no-op; `OWL_WITH_<MODULE>` and `find_package(OwlEngine COMPONENTS Physics)` tell a game what is built in.
+- `linux-clang-minimal` preset (every optional module off: 23 Conan packages instead of 47), built and tested on every pull request by *Clang Minimal Modules*.
+- `OWL_REQUIRE_MODULE(<MODULE>)` (`testHelper.h`) skips a test whose module is not built.
+- Architecture page: the engine's extension points (renderer-stack layers, application layers, extra data) and those the open component registry and the phased systems will add.
 - `DependencyReport` CI action, run on every `main` build of Build Linux x64 / Clang: the Conan dependencies with a newer version on ConanCenter (`conan graph outdated`, `cci.*` false positives dropped), logged and counted, never failing the build.
 - Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the nightly bench pinned to the agent that measured it.
 - CodeStyle `test-assertions` sub-check: every gtest test asserts something; the 26 that only ran code now check its effect (or say `EXPECT_NO_THROW`), e.g. a trigger timer is seen firing and stopping.

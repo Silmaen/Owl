@@ -24,6 +24,13 @@ module.
 | `gui`                                                                     | ImGui widgets (`widgets`) and per-component render helpers (`component`).                                                                                                                                                                                         |
 | `event`, `input`, `window`, `sound`, `script`, `debug`, `physics`, `math` | Their namesake domain.                                                                                                                                                                                                                                            |
 
+## Optional modules (`OWL_MODULE_*`)
+
+render (`renderer/gpu/{opengl,vulkan}`, `window/glfw`, `input/glfw`), physics, audio (`sound/openal`), script and
+gui can be left out of the build. The public API of physics and script stays: their no-op implementation lives in
+`private/<module>/disabled/`, compiled instead of the real one. Code outside a backend that names it goes under
+`#if OWL_WITH_<MODULE>`; a new backend file of an optional module needs no CMake edit if it sits in those folders.
+
 ## Dependency direction (layers)
 
 A public header of a module includes only its own module and modules of a **lower** layer; two modules of one layer
