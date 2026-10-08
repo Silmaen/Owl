@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- A configure needs neither the network nor Doxygen: `poetry sync` runs only when `poetry.lock` changed, help badges come from their cache (`OWL_HELP_FETCH_BADGES=ON` downloads), the `documentation` target exists when Doxygen is found (`OWL_ENABLE_DOCUMENTATION=ON` requires it) and its `Doxyfile` is generated in the build tree with absolute paths and the venv's Python.
 - Packages without a rebuild: `cpack` writes the `OwlEngine` and `OwlNest` archives (CPack components) from the release tree the Clang builds test on `main`, the nightly x64 package jobs only publish them, and assets are located at run time (`OWL_DEVELOPMENT`, `OWL_PACKAGE_ENGINE`, `OWL_PACKAGING` and the `package-engine-*` / `package-app-nest-*` presets removed, `package-linux` for arm64).
 - Engine modules are layered (`core` up to `gui`) and the public headers follow it, checked by the CodeStyle `module-deps` sub-check: the 10-module include cycle is gone. `PhysicsSettings` and `PhysicsSnapshot` moved to `scene` (aliases kept in `physics`), `MeshLoader` to `data::geometry` (alias kept in `data`), and `GameExporterSettings::rendererStack` became `rendererStackYaml`; `input::Input::init()` without argument picks GLFW.
 - Tests: the per-binary ctest timeout drops from 1 h to 10 min (`OWL_TEST_TIMEOUT`, 1 h on the emulated arm64), so a hung binary no longer stalls a build for hours.
@@ -85,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- Dead CMake: the no-op `FORCE_RELEASE` flag (`THIRD_PARTY_RELEASE`), the unused `print_target_properties` and `dump_cmake_variables`, the orphan `cmake/Python.cmake`.
 - 97 dead `NOLINT` check names (checks `.clang-tidy` does not enable), and the CodeStyle `nolint` sub-check that keeps them out.
 - DepManager: `depmanager.yml`, `cmake/Depmanager.cmake`, `owl_engine.py`, the `ConfigureRemote` CI action and the *Define Remote* TeamCity step; Conan 2 is the only provider (`OWL_DEPENDENCY_PROVIDER` is gone) and other projects take OwlEngine from the packaged archive.
 - Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).

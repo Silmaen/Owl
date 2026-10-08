@@ -20,7 +20,7 @@ Arguments: `<package-name>` and optionally `<version>` and `<linkage>` (static/s
 3. Regenerate `conan.lock` (`conan lock create` commands of `doc/pages/design/conan-migration.md`).
 4. Add the `owl_target_link_libraries()` call in the appropriate `CMakeLists.txt`:
    ```cmake
-   owl_target_link_libraries(<target> PRIVATE <package_name> REQUIRED ${THIRD_PARTY_RELEASE})
+   owl_target_link_libraries(<target> PRIVATE <package_name> REQUIRED)
    ```
    - Engine internal deps: add to `source/owl/CMakeLists.txt` with `${ENGINE_NAME}Private INTERFACE`
    - Engine public deps: add to `source/owl/CMakeLists.txt` with `${ENGINE_NAME} PUBLIC`

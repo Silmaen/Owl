@@ -64,87 +64,84 @@ endif ()
 target_link_libraries(${ENGINE_NAME} PRIVATE ${ENGINE_NAME}Private)
 
 # ---------========= PRIVATE third party =========---------
-if (${PROJECT_PREFIX}_USE_RELEASE_THIRD_PARTY)
-    set(THIRD_PARTY_RELEASE FORCE_RELEASE)
-endif ()
 # box2d
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED)
 
 # lua
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lua CONFIG REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lua CONFIG REQUIRED)
 
 # cpptrace
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace REQUIRED)
 
 # glad
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glad 2.0 REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glad 2.0 REQUIRED)
 
 # GLFW
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw3 MODULE_TARGET glfw REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw3 MODULE_TARGET glfw REQUIRED)
 
 # ImGuizmo
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE imguizmo REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE imguizmo REQUIRED)
 
 # lunasvg
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lunasvg REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lunasvg REQUIRED)
 
 # magic_enum
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE magic_enum REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE magic_enum REQUIRED)
 
 # msdf-atlas-gen
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE msdf-atlas-gen REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE msdf-atlas-gen REQUIRED)
 
 # NativeFile Dialog
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE nfd REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE nfd REQUIRED)
 
 # OpenAL
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE OpenAL CONFIG REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE OpenAL CONFIG REQUIRED)
 
 # SndFile
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE SndFile REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "SndFile::sndfile")
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE SndFile REQUIRED MODULE_TARGET "SndFile::sndfile")
 
 # stb_image
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE stb_image REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE stb_image REQUIRED)
 
 # libpng (PNG writing; already a dependency of msdf-atlas-gen)
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE PNG REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE PNG REQUIRED)
 
 # tinygltf
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE TinyGLTF REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "tinygltf::tinygltf")
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE TinyGLTF REQUIRED MODULE_TARGET "tinygltf::tinygltf")
 
 # tinyobjloader
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE tinyobjloader REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE tinyobjloader REQUIRED)
 
 # ufbx
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE ufbx REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE ufbx REQUIRED)
 
 # Vulkan
 owl_target_link_vulkan(${ENGINE_NAME})
 
 # spdlog
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE spdlog REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE spdlog REQUIRED)
 
 # zstd
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zstd REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "zstd::libzstd_static")
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zstd REQUIRED MODULE_TARGET "zstd::libzstd_static")
 
 # taskflow
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Taskflow REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "Taskflow::Taskflow")
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Taskflow REQUIRED MODULE_TARGET "Taskflow::Taskflow")
 
 # Tracy client (OWL_PROFILER=tracy): private, the OWL_PROFILE_* macros of the public headers never include it
 if (${PROJECT_PREFIX}_PROFILER_BACKEND STREQUAL "tracy")
-    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Tracy CONFIG REQUIRED ${THIRD_PARTY_RELEASE} MODULE_TARGET "Tracy::TracyClient")
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Tracy CONFIG REQUIRED MODULE_TARGET "Tracy::TracyClient")
 endif ()
 
 # ---------========= PUBLIC third party =========---------
 
 # Entt
-owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED)
 
 # ImGui
-owl_target_link_libraries(${ENGINE_NAME} PUBLIC imgui REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME} PUBLIC imgui REQUIRED)
 
 # yaml-cpp: public until YAML leaves the public headers (renderer/RenderLayer.h, audit G-07 / PR-27)
-owl_target_link_libraries(${ENGINE_NAME} PUBLIC yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME} PUBLIC yaml-cpp REQUIRED)
 
 
 # additional windows libs

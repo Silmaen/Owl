@@ -19,7 +19,7 @@ set_target_properties(${RUNNER_NAME} PROPERTIES FOLDER "App")
 target_import_so_files(${RUNNER_NAME})
 
 # yaml
-owl_target_link_libraries(${RUNNER_NAME} PRIVATE yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${RUNNER_NAME} PRIVATE yaml-cpp REQUIRED)
 # ----==== app Runner ====----
 
 #
@@ -43,18 +43,18 @@ target_compile_definitions(${OWL_NEST_CORE} PUBLIC OWL_ASSETS_LOCATION="source/o
 # ----==== third party ====----
 
 # magic_enum
-owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC magic_enum REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC magic_enum REQUIRED)
 
 # ImGui
-owl_target_link_libraries(${ENGINE_NAME} PRIVATE imgui REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME} PRIVATE imgui REQUIRED)
 
 # imgui_color_text_edit (syntax-highlighting text editor widget)
-owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC imgui_color_text_edit REQUIRED ${THIRD_PARTY_RELEASE}
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC imgui_color_text_edit REQUIRED
         MODULE_TARGET "imgui_color_text_edit::imgui_color_text_edit")
 
 # md4c (CommonMark + GFM tables/strikethrough/autolinks parser, used by the
 # editor's MarkdownPreview / HelpPanel renderer).
-owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC md4c REQUIRED ${THIRD_PARTY_RELEASE}
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC md4c REQUIRED
         MODULE_TARGET "md4c::md4c")
 
 # lunasvg (live SVG rendering for the code editor preview)
@@ -64,7 +64,7 @@ owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC md4c REQUIRED ${THIRD_PARTY_RE
 # CMake never has to resolve that property; here we link it into a real
 # target which forces full resolution.
 find_package(Threads REQUIRED)
-owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC lunasvg REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC lunasvg REQUIRED)
 
 # yaml
 find_package(yaml-cpp REQUIRED)

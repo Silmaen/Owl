@@ -14,24 +14,30 @@
 #  * `../images/foo.svg` (Doxygen INPUT convention) -> `images/foo.svg`
 #  * `engine_assets/<dir>/foo.png` (project-relative paths used in the README,
 #    such as `engine_assets/logo/logo_owl.png`) -> `images/foo.png`
-#  * `https://...` images are downloaded once at configure time, cached under
-#    `images/badges/<sha1>.svg`, and the reference is rewritten to the local
-#    path. shields.io URLs all return SVG so the renderer picks them up via
-#    `lunasvg` like any other local SVG image.
+#  * `https://...` images are read from the cache `images/badges/<sha1>.svg`
+#    and the reference is rewritten to the local path. A missing one is
+#    downloaded only with OWL_HELP_FETCH_BADGES=ON: by default the configure
+#    never uses the network and the reference stays remote. shields.io URLs all
+#    return SVG so the renderer picks them up via `lunasvg` like any other local
+#    SVG image.
 #
 # External text links (`[text](https://...)`) are PRESERVED — the renderer
 # routes them to the user's default browser at click time (see
 # `core::utils::openExternalUrl`).
 # =============================================================================
 
-# Download an HTTPS image into the local cache and return its bundled path
-# (relative to the help root). Reuses the on-disk cache when available.
-# Empty OUT_LOCAL when the download fails (caller leaves the URL untouched).
+# Return the bundled path (relative to the help root) of a cached HTTPS image,
+# downloading it first when OWL_HELP_FETCH_BADGES is ON. Empty OUT_LOCAL when it
+# is neither cached nor downloaded (caller leaves the URL untouched).
 function(_owl_help_fetch_image IMG_URL CACHE_DIR OUT_LOCAL)
     string(SHA1 HASH "${IMG_URL}")
     # All shields.io and other badge providers return SVG (lunasvg handles them).
     set(LOCAL_NAME "${HASH}.svg")
     set(LOCAL_PATH "${CACHE_DIR}/${LOCAL_NAME}")
+    if (NOT EXISTS "${LOCAL_PATH}" AND NOT ${PROJECT_PREFIX}_HELP_FETCH_BADGES)
+        set(${OUT_LOCAL} "" PARENT_SCOPE)
+        return()
+    endif ()
     if (NOT EXISTS "${LOCAL_PATH}")
         file(DOWNLOAD "${IMG_URL}" "${LOCAL_PATH}"
                 STATUS DL_STATUS
