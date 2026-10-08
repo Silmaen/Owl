@@ -215,8 +215,10 @@ TEST(CoreCoverage, WindowResizeEventGetSize) {
 
 TEST(CoreCoverage, LogMacrosAllLevels) {
 	core::Log::init(core::Log::Level::Trace);
+	core::Log::getLogBuffer().clear();
+	const auto errorsBefore = core::Log::getLogBuffer().getErrorCount();
 
-	// Exercise every core macro — this covers the log dispatch paths.
+	// Every core and client macro reaches the log buffer.
 	OWL_CORE_TRACE("trace message {}.", 1)
 	OWL_CORE_INFO("info message {}", 2)
 	OWL_CORE_WARN("warn message {}", 3)
@@ -228,6 +230,8 @@ TEST(CoreCoverage, LogMacrosAllLevels) {
 	OWL_WARN("client warn {}", 30)
 	OWL_ERROR("client error {}", 40)
 	OWL_CRITICAL("client critical {}.", 50)
+	EXPECT_EQ(core::Log::getLogBuffer().getEntries().size(), 10u);
+	EXPECT_EQ(core::Log::getLogBuffer().getErrorCount() - errorsBefore, 4u);// error + critical, core and client
 	core::Log::invalidate();
 }
 
@@ -269,12 +273,14 @@ TEST(CoreCoverage, LogVerbosityLevel) {
 }
 
 TEST(CoreCoverage, LogSetVerbosityBeforeInit) {
-	// setVerbosityLevel when loggers are null should not crash.
-	core::Log::setVerbosityLevel(core::Log::Level::Off);
-	core::Log::setVerbosityLevel(core::Log::Level::Trace);
-	// Re-init to confirm normal operation after.
+	// setVerbosityLevel without loggers is safe and leaves the log uninitialised.
+	EXPECT_NO_THROW(core::Log::setVerbosityLevel(core::Log::Level::Off));
+	EXPECT_NO_THROW(core::Log::setVerbosityLevel(core::Log::Level::Trace));
+	EXPECT_FALSE(core::Log::initiated());
 	core::Log::init(core::Log::Level::Off);
+	EXPECT_TRUE(core::Log::initiated());
 	core::Log::invalidate();
+	EXPECT_FALSE(core::Log::initiated());
 }
 
 TEST(CoreCoverage, LogBufferCapture) {

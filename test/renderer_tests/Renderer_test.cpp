@@ -36,9 +36,10 @@ TEST(Renderer, fakeScene) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	Renderer::init();
+	EXPECT_EQ(Renderer::getState(), Renderer::State::Running);
 	const CameraOrtho cam(0, 0, 800, 600);
-	Renderer::beginScene(cam);
-	Renderer::endScene();
+	EXPECT_NO_THROW(Renderer::beginScene(cam));
+	EXPECT_NO_THROW(Renderer::endScene());
 	RenderCommand::invalidate();
 	owl::core::Log::invalidate();
 }

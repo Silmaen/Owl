@@ -80,9 +80,9 @@ TEST(SoundSystem, listenerControl) {
 	SoundCommand::create(SoundAPI::Type::Null);
 	SoundSystem::init();
 
-	// Verify these don't crash
-	SoundCommand::setListenerPosition({5.0f, 10.0f, 0.0f});
-	SoundCommand::setListenerOrientation({0.0f, 0.0f, -1.0f}, {0.0f, 1.0f, 0.0f});
+	// The Null backend keeps no listener state: the calls only have to be accepted.
+	EXPECT_NO_THROW(SoundCommand::setListenerPosition({5.0f, 10.0f, 0.0f}));
+	EXPECT_NO_THROW(SoundCommand::setListenerOrientation({0.0f, 0.0f, -1.0f}, {0.0f, 1.0f, 0.0f}));
 
 	SoundCommand::invalidate();
 	owl::core::Log::invalidate();

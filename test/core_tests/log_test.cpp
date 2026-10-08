@@ -31,12 +31,16 @@ TEST(Log, basic) {
 	Log::setVerbosityLevel(Log::Level::Off);
 	Log::init();
 	Log::init();
+	EXPECT_TRUE(Log::initiated());
 	Log::newFrame();
 	Log::setFrameFrequency(0);
 	Log::newFrame();
+	EXPECT_FALSE(Log::frameLog());// frequency 0: no frame log
 	Log::setFrameFrequency(1);
 	Log::newFrame();
+	EXPECT_TRUE(Log::frameLog());// every frame
 	Log::invalidate();
+	EXPECT_FALSE(Log::initiated());
 }
 
 TEST(Log, clientMessagesGoToTheClientLogger) {

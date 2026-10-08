@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the nightly bench pinned to the agent that measured it.
+- CodeStyle `test-assertions` sub-check: every gtest test asserts something; the 26 that only ran code now check its effect (or say `EXPECT_NO_THROW`), e.g. a trigger timer is seen firing and stopping.
 - clang-tidy and the static analyzer analyse the tests too (`test/.clang-tidy` relaxes only what a test is right to do); the 224 findings they raised are fixed.
 - Coverage gate: the `Coverage` action publishes the line and branch coverage to TeamCity, and the Linux Clang build fails when the line coverage drops more than one point below its last successful build.
 - CodeStyle `python` sub-check: `ruff check`, `ruff format --check`, `mypy` and the `ci/tests` pytest suite (never run in CI before) on the CI code (configured in `pyproject.toml`; `black`, never run, removed).

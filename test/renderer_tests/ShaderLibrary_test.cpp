@@ -79,6 +79,6 @@ TEST(Shader, createBeforeRendererInitDoesNotCrash) {
 	// Renderer not initialised → `requireInit()` returns false, the function
 	// must skip the texture-library lookup and bail out gracefully.
 	const auto sh = Shader::create(Shader::Specification{{.name = "noInit", .renderer = ""}});
-	(void) sh;// behaviour is null-API-dependent — exercise the early-bypass path.
+	EXPECT_EQ(sh, nullptr);// no render API: no shader
 	owl::core::Log::invalidate();
 }

@@ -15,8 +15,12 @@
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/component/components.h>
+#include <sound/SoundHandle.h>
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <cstring>
 
 using namespace owl;
 
@@ -70,6 +74,9 @@ TEST_F(SceneRuntimeTest, SoundListenerAndSourceOnStart) {
 
 	scn.onStartRuntime();
 	scn.onUpdateRuntime(makeStep(16), false);
+	EXPECT_EQ(scn.status, scene::Scene::Status::Playing);
+	// The asset is missing: nothing plays.
+	EXPECT_EQ(source.getComponent<scene::component::SoundSource>().sound.runtimeHandle, sound::invalidSoundHandle);
 	scn.onEndRuntime();
 }
 
@@ -81,6 +88,7 @@ TEST_F(SceneRuntimeTest, SoundSourceEmptyAssetSkipped) {
 	snd.playOnStart = true;
 	snd.soundAsset = "";
 	scn.onStartRuntime();
+	EXPECT_EQ(source.getComponent<scene::component::SoundSource>().sound.runtimeHandle, sound::invalidSoundHandle);
 	scn.onEndRuntime();
 }
 
@@ -112,6 +120,7 @@ TEST_F(SceneRuntimeTest, TimerTriggersAutoStart) {
 
 	scn.onStartRuntime();
 	scn.onUpdateRuntime(makeStep(16), false);
+	EXPECT_TRUE(ent.getComponent<scene::component::Trigger>().trigger.isTimerRunning());
 	scn.onEndRuntime();
 }
 
@@ -127,6 +136,8 @@ TEST_F(SceneRuntimeTest, HiddenTriggerCancelsTimer) {
 
 	scn.onStartRuntime();
 	scn.onUpdateRuntime(makeStep(16), false);
+	EXPECT_FALSE(ent.getComponent<scene::component::Trigger>().trigger.isTimerRunning());
+	EXPECT_FALSE(ent.getComponent<scene::component::Trigger>().trigger.wasOverlapping());
 	scn.onEndRuntime();
 }
 
@@ -225,17 +236,22 @@ TEST_F(SceneRuntimeTest, HiddenEntityLinkSkipsTracking) {
 TEST_F(SceneRuntimeTest, OnViewportResizeUpdatesNonFixedCameras) {
 	scene::Scene scn;
 	auto cam1 = scn.createEntity("cam1");
-	auto& c1 = cam1.addComponent<scene::component::Camera>();
-	c1.fixedAspectRatio = false;
+	cam1.addComponent<scene::component::Camera>().fixedAspectRatio = false;
 	auto cam2 = scn.createEntity("cam2");
-	auto& c2 = cam2.addComponent<scene::component::Camera>();
-	c2.fixedAspectRatio = true;
+	cam2.addComponent<scene::component::Camera>().fixedAspectRatio = true;
+	const auto freeBefore = cam1.getComponent<scene::component::Camera>().camera.getProjection();
+	const auto fixedBefore = cam2.getComponent<scene::component::Camera>().camera.getProjection();
 
-	scn.onViewportResize({320u, 240u});
-	// We don't have getViewportSize on the Camera here, but the call must not crash;
-	// the viewport-stored size becomes the new default for newly added cameras.
-	auto cam3 = scn.createEntity("cam3");
-	(void) cam3.addComponent<scene::component::Camera>();
+	scn.onViewportResize({800u, 400u});
+	// Only the free-aspect camera follows the viewport: it now has a finite projection (the default one, with no
+	// aspect ratio yet, holds infinities), the fixed one keeps its projection bit for bit.
+	const auto& freeAfter = cam1.getComponent<scene::component::Camera>().camera.getProjection();
+	const auto& fixedAfter = cam2.getComponent<scene::component::Camera>().camera.getProjection();
+	EXPECT_TRUE(std::all_of(freeAfter.data(), freeAfter.data() + 16,
+							[](const float iV) -> bool { return std::isfinite(iV); }));
+	EXPECT_FALSE(std::all_of(freeBefore.data(), freeBefore.data() + 16,
+							 [](const float iV) -> bool { return std::isfinite(iV); }));
+	EXPECT_EQ(std::memcmp(fixedAfter.data(), fixedBefore.data(), sizeof(float) * 16), 0);
 }
 
 // duplicateEntity makes a root entity. Already covered in SceneHierarchy_test, but
@@ -274,8 +290,11 @@ TEST_F(SceneRuntimeTest, CameraInheritsViewportSizeAfterResize) {
 	scene::Scene scn;
 	scn.onViewportResize({640u, 480u});
 	auto e = scn.createEntity("cam");
-	auto& cam = e.addComponent<scene::component::Camera>();
-	(void) cam;// camera should now have a non-zero viewport — no crash either way.
+	const auto& cam = e.addComponent<scene::component::Camera>();
+	// A camera added after a resize takes the scene's viewport size: its projection is finite.
+	const auto& projection = cam.camera.getProjection();
+	EXPECT_TRUE(std::all_of(projection.data(), projection.data() + 16,
+							[](const float iV) -> bool { return std::isfinite(iV); }));
 }
 
 // Adding a Text component without an Application should leave the font as nullptr

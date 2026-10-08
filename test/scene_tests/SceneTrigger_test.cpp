@@ -103,19 +103,22 @@ TEST_F(SceneTriggerTest, TimerFiresAfterDuration) {
 	trigger.timerDuration = 0.5f;
 	trigger.timerRepeating = false;
 	trigger.startTimer();
-	trigger.updateTimer(0.4f, triggerEnt);// not yet
-	trigger.updateTimer(0.2f, triggerEnt);// fires
-	// One-shot timer stops; further ticks do nothing.
+	trigger.updateTimer(0.4f, triggerEnt);
+	EXPECT_TRUE(trigger.isTimerRunning());// not due yet
+	trigger.updateTimer(0.2f, triggerEnt);
+	EXPECT_FALSE(trigger.isTimerRunning());// fired: a one-shot timer stops
 	trigger.updateTimer(0.5f, triggerEnt);
+	EXPECT_FALSE(trigger.isTimerRunning());
 
-	// Repeating timer keeps ticking.
+	// A repeating timer keeps running after each period.
 	trigger.timerRepeating = true;
 	trigger.startTimer();
 	trigger.updateTimer(0.5f, triggerEnt);
 	trigger.updateTimer(0.5f, triggerEnt);
+	EXPECT_TRUE(trigger.isTimerRunning());
 	trigger.stopTimer();
-	trigger.updateTimer(1.0f, triggerEnt);// stopped, no fire
-	trigger.resetTimer();
+	trigger.updateTimer(1.0f, triggerEnt);
+	EXPECT_FALSE(trigger.isTimerRunning());
 }
 
 TEST_F(SceneTriggerTest, InteractionRequiresKeyEdge) {
@@ -124,9 +127,9 @@ TEST_F(SceneTriggerTest, InteractionRequiresKeyEdge) {
 	auto triggerEnt = scn.createEntity("Trigger");
 	scene::SceneTrigger trigger;
 	trigger.type = scene::SceneTrigger::TriggerType::Interaction;
-	// No input system — `Input::isKeyPressed` returns false. The path that
-	// depends on the edge transition is exercised; no crash expected.
+	// No input system: the key never goes down, so the trigger never fires.
 	trigger.onTriggered(player, triggerEnt);
+	EXPECT_FALSE(trigger.isTriggered());
 }
 
 TEST_F(SceneTriggerTest, LuaCallbackWithoutScriptIsNoOp) {
@@ -136,7 +139,8 @@ TEST_F(SceneTriggerTest, LuaCallbackWithoutScriptIsNoOp) {
 	scene::SceneTrigger trigger;
 	trigger.type = scene::SceneTrigger::TriggerType::LuaCallback;
 	trigger.callbackName = "on_pickup";
-	trigger.onTriggered(player, triggerEnt);// no LuaScript → no-op, no crash.
+	EXPECT_NO_THROW(trigger.onTriggered(player, triggerEnt));// no LuaScript: nothing to call
+	EXPECT_FALSE(trigger.isTriggered());
 }
 
 TEST_F(SceneTriggerTest, TeleportSameLevelMovesPlayerToTarget) {
@@ -193,13 +197,15 @@ TEST_F(SceneTriggerTest, EnterExitNoOpWithoutScripts) {
 	auto player = scn.createEntity("Player");
 	auto triggerEnt = scn.createEntity("Trigger");
 	scene::SceneTrigger trigger;
-	trigger.onTriggerEnter(player, triggerEnt);
-	trigger.onTriggerExit(player, triggerEnt);
+	EXPECT_NO_THROW(trigger.onTriggerEnter(player, triggerEnt));
+	EXPECT_NO_THROW(trigger.onTriggerExit(player, triggerEnt));
+	EXPECT_FALSE(trigger.isTriggered());
 }
 
 TEST_F(SceneTriggerTest, OverlappingFlag) {
 	scene::SceneTrigger trigger;
 	trigger.setOverlapping(true);
+	EXPECT_TRUE(trigger.wasOverlapping());
 	trigger.setOverlapping(false);
-	// Plain setter with no observable side-effect — exercises the line.
+	EXPECT_FALSE(trigger.wasOverlapping());
 }

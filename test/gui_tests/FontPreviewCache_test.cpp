@@ -25,8 +25,9 @@ TEST(FontPreviewCache, RequestNullFontReturnsNullFramebuffer) {
 TEST(FontPreviewCache, ClearIsIdempotent) {
 	core::Log::init(core::Log::Level::Off);
 	auto& cache = gui::FontPreviewCache::get();
-	cache.clear();
-	cache.clear();// safe to call twice
+	EXPECT_NO_THROW(cache.clear());
+	EXPECT_NO_THROW(cache.clear());// safe to call twice
+	EXPECT_EQ(cache.request(nullptr), nullptr);// nothing cached, no font: no preview
 	core::Log::invalidate();
 }
 
@@ -34,6 +35,6 @@ TEST(FontPreviewCache, PumpPendingNoOpWhenEmpty) {
 	core::Log::init(core::Log::Level::Off);
 	auto& cache = gui::FontPreviewCache::get();
 	cache.clear();
-	cache.pumpPending();// must not crash with nothing pending
+	EXPECT_NO_THROW(cache.pumpPending());// nothing pending
 	core::Log::invalidate();
 }

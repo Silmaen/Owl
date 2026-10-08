@@ -110,7 +110,7 @@ TEST(SoundCoverage, stopEntitySoundInvalidEntity) {
 
 	// Default-constructed entity is invalid.
 	const owl::scene::Entity invalidEntity;
-	SoundHelper::stopEntitySound(invalidEntity);// Should not crash.
+	EXPECT_NO_THROW(SoundHelper::stopEntitySound(invalidEntity));
 
 	SoundCommand::invalidate();
 	owl::core::Log::invalidate();

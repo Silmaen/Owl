@@ -65,10 +65,10 @@ auto makeLayer(const TilemapAsset& iAsset, const std::string& iName, const bool 
 
 TEST(RendererTilemap, initIsIdempotentAndShutdownSafe) {
 	bootRendererStack();
-	RendererTilemap::init();
-	RendererTilemap::init();
-	RendererTilemap::shutdown();
-	RendererTilemap::shutdown();
+	EXPECT_NO_THROW(RendererTilemap::init());
+	EXPECT_NO_THROW(RendererTilemap::init());
+	EXPECT_NO_THROW(RendererTilemap::shutdown());
+	EXPECT_NO_THROW(RendererTilemap::shutdown());
 	teardownRendererStack();
 }
 

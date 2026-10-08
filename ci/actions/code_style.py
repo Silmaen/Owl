@@ -27,6 +27,8 @@ Sub-checks (all on by default):
   symbol (and `uint32_t` / `size_t`) it names, instead of relying on a
   transitive include (see `ci/utils/std_includes.py`). A `.cpp` may rely on
   its own header and on `owlpch.h`.
+* **test-assertions** — every `TEST` / `TEST_F` / `TEST_P` asserts something (gtest macro or an `expect…` /
+  `assert…` / `check…` helper); a smoke test says so with `EXPECT_NO_THROW` (`ci/utils/test_assertions.py`).
 * **nolint** — every check named by a `NOLINT(...)` marker is one `.clang-tidy` enables (`clang-tidy
   --list-checks`; static-analyzer checks always count), so no suppression is dead weight (`ci/utils/nolint.py`).
 * **python** — `ruff check`, `ruff format --check`, `mypy` and the `ci/tests/` pytest suite on the CI's own
@@ -42,7 +44,8 @@ Doxygen is **deliberately not** run here — the project already has a separate
 
 Each sub-check can be disabled with extra args (`-- --no-<name>=true`):
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-nolint`, `--no-python`, `--no-secrets`.
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-test-assertions`, `--no-nolint`, `--no-python`,
+`--no-secrets`.
 
 Every finding is reported through `_diag()` as a GNU/clang-style diagnostic —
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — including
@@ -1348,6 +1351,26 @@ def _check_secrets() -> int:
 # ────────────────────────────────────────────────────────────────────────────
 
 
+def _check_test_assertions() -> int:
+    """
+    Flag the tests whose body asserts nothing.
+
+    :return: The number of such tests.
+    """
+    from ci.utils.test_assertions import empty_tests
+
+    log.info("code-style: test-assertion audit...")
+    empty = empty_tests(_iter_sources([root / "test"], (".cpp",)))
+    for test in empty:
+        _diag(
+            test.path,
+            test.line,
+            "test-assertions",
+            f"{test.name} asserts nothing (use EXPECT_NO_THROW for a smoke test)",
+        )
+    return len(empty)
+
+
 def _check_nolint() -> int:
     """
     Flag `NOLINT(...)` markers naming a clang-tidy check that never runs.
@@ -1398,6 +1421,7 @@ class CodeStyle(BaseAction):
         --no-cpp-style=true         skip cpp-style convention audit
         --no-structural=true        skip file-header / OWL_API audit
         --no-std-includes=true      skip standard-library include audit
+        --no-test-assertions=true   skip the test-without-assertion audit
         --no-nolint=true            skip the dead NOLINT audit
         --no-python=true            skip ruff / mypy on the CI code
         --no-secrets=true           skip committed-secret scan
@@ -1423,6 +1447,7 @@ class CodeStyle(BaseAction):
             "cpp-style": opts.get("no-cpp-style", "false") == "true",
             "structural": opts.get("no-structural", "false") == "true",
             "std-includes": opts.get("no-std-includes", "false") == "true",
+            "test-assertions": opts.get("no-test-assertions", "false") == "true",
             "nolint": opts.get("no-nolint", "false") == "true",
             "python": opts.get("no-python", "false") == "true",
             "secrets": opts.get("no-secrets", "false") == "true",
@@ -1445,6 +1470,8 @@ class CodeStyle(BaseAction):
             results.append(("structural", _check_structural()))
         if not skip["std-includes"]:
             results.append(("std-includes", _check_std_includes()))
+        if not skip["test-assertions"]:
+            results.append(("test-assertions", _check_test_assertions()))
         if not skip["nolint"]:
             results.append(("nolint", _check_nolint()))
         if not skip["python"]:
