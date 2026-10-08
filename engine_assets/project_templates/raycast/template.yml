@@ -1,0 +1,4 @@
+Template:
+  name: Raycast
+  description: A first-person raycast room (tilemap walls, W/S to move, A/D to turn) under a 2D HUD.
+  order: 2

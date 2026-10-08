@@ -1,0 +1,107 @@
+Scene: Main
+EnabledRenderers:
+  - Name: raycast_world
+    Enabled: true
+Entities:
+  - Entity: 7200000000000000001
+    Tag:
+      tag: Player
+    Transform:
+      translation: [0.5, 0.5, 0.5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.785398185
+        perspectiveNear: 0.00999999978
+        perspectiveFar: 1000
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.4, 0.4, 1]
+      density: 1
+      restitution: 0
+      friction: 0.2
+    Player:
+      primary: true
+      linearImpulse: 0
+      jumpImpulse: 0
+      canJump: false
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    LuaScript:
+      scriptPath: scripts/player.lua
+      properties:
+        - name: speed
+          type: float
+          value: 3
+        - name: turn_speed
+          type: float
+          value: 1.8
+  - Entity: 7200000000000000002
+    Tag:
+      tag: Walls
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Tilemap:
+      tilemapPath: tilemaps/room.owltilemap
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    RendererTag:
+      Name: raycast_world
+  - Entity: 7200000000000000010
+    Tag:
+      tag: HUDCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 0
+    RendererTag:
+      Name: ui
+  - Entity: 7200000000000000011
+    Tag:
+      tag: Hint
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7200000000000000010
+    UiRect:
+      anchor: BottomCenter
+      pivotX: 0.5
+      pivotY: 0
+      sizeX: 600
+      sizeY: 32
+      offsetX: 0
+      offsetY: 16
+    UiText:
+      text: "W/S move, A/D turn"
+      color: [1, 1, 1, 1]
+      fontSize: 24
+      alignment: Center
+      kerning: 0
+      lineSpacing: 0
+    RendererTag:
+      Name: ui

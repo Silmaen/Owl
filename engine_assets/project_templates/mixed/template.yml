@@ -1,0 +1,4 @@
+Template:
+  name: Mixed styles
+  description: Every renderer in one stack (2D, raycast, voxel, HUD); a raycast room under a 2D HUD and a voxel terrain.
+  order: 4

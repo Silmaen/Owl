@@ -1,0 +1,16 @@
+FormatVersion: 1
+OwlProject:
+  name: Voxel
+  firstScene: scenes/main.owl
+  version: 0.1.0
+  window:
+    width: 1280
+    height: 720
+    fullscreen: false
+    resizable: true
+  RendererStack:
+    - Type: RendererVoxel
+      Name: voxel_world
+      DefaultConfig:
+        SunDirection: [-0.4, -1.0, -0.6]
+        Ambient: [0.4, 0.4, 0.45]

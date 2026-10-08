@@ -734,7 +734,7 @@ The editor menus are organized around three axes: **File** (project), **Edit**
 
 | Operation     | Menu Path             | Description                                          |
 |---------------|-----------------------|------------------------------------------------------|
-| New Project   | File > New Project    | Create a directory and blank `owl_project.yml`       |
+| New Project   | File > New Project    | Name, folder and template of a new project (below)   |
 | Open Project  | File > Open Project   | Select a directory containing `owl_project.yml`      |
 | Open Recent   | File > Open Recent    | Sub-menu of recently opened projects (up to 10)      |
 | Save Project  | File > Save Project   | Write current project settings to YAML               |
@@ -796,6 +796,23 @@ OwlNest --export <project dir or owl_project.yml> <output dir>
 
 `--headless` uses the Null window, renderer and sound backends; `--smoke-test [frames]` plays every scene of the
 pack for that many frames and exits with code 1 if any error was logged. See [Game export](design/game-export.md).
+
+### Project templates
+
+**New Project** asks for a name, a location and a template; the project is created in `<location>/<name>`, which
+must be new or empty, and opened on its first scene. The templates are folders of
+`engine_assets/project_templates/`, each holding a `template.yml` (name, description, order), an `owl_project.yml`
+(renamed to the chosen name) and the scenes and assets copied into the project:
+
+| Template     | Renderer stack           | Content                                                    |
+|--------------|--------------------------|------------------------------------------------------------|
+| Empty 2D     | `world` (2D), `ui`       | Camera, ground and player sprites, HUD title               |
+| Raycast      | `raycast_world`, `ui`    | Tilemap room, Lua first-person player (W/S, A/D), HUD hint |
+| Voxel        | `voxel_world`            | Procedural streamed terrain, `VoxelPlayer` (WASD, space)   |
+| Mixed styles | 2D, raycast, voxel, `ui` | Raycast room under a 2D HUD, voxel `terrain.owl`           |
+
+A new folder in `project_templates/` with these two files is offered as a template too. Without any template
+installed, the project starts empty (an `owl_project.yml` and a `scenes/` folder).
 
 ### Session restore
 

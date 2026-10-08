@@ -863,6 +863,8 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 
 	renderCloseDocumentModal();
 	handleRecoveryChoice(m_recoveryPrompt.onImGuiRender());
+	if (const auto request = m_newProjectDialog.onImGuiRender(); request)
+		createProject(*request);
 	//=============================================================
 	m_sceneHierarchy.onImGuiRender();
 	m_contentBrowser.onImGuiRender();
@@ -2172,21 +2174,15 @@ void EditorLayer::handleTeleportRequest() {
 }
 
 void EditorLayer::newProject() {
-	const auto dir = platform::FileDialog::pickFolder();
-	if (dir.empty())
-		return;
-	if (!exists(dir))
-		create_directories(dir);
-	create_directories(dir / "scenes");
-
-	Project project;
-	project.name = dir.filename().string();
-	project.projectDirectory = dir;
-	if (!project.saveToFile(dir / "owl_project.yml")) {
-		OWL_ERROR("New Project: Cannot create the project file in {}.", dir.string())
-		return;
+	std::filesystem::path templatesRoot;
+	for (const auto& [title, path]: app::Application::get().getAssetDirectories()) {
+		if (title == "Engine assets")
+			templatesRoot = path / "project_templates";
 	}
-	openProject(dir);
+	const auto parent = m_settings.recentProjects.empty()
+								? app::Application::get().getWorkingDirectory()
+								: std::filesystem::path{m_settings.recentProjects.front()}.parent_path();
+	m_newProjectDialog.open(listProjectTemplates(templatesRoot), parent);
 }
 
 void EditorLayer::handleSaveLoadRequest() {

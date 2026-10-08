@@ -1,0 +1,4 @@
+Template:
+  name: Empty 2D
+  description: A 2D world and a HUD layer, with a camera, a ground and a player sprite.
+  order: 1
