@@ -11,13 +11,16 @@
 
 #include "app/Application.h"
 
+#include <filesystem>
 #include <string>
 #include <variant>
 
 namespace owl::scene {
 
-auto loadScriptInstance(const component::LuaScript& iScript, const uint64_t iEntityId) -> uniq<script::ScriptInstance> {
+auto loadScriptInstance(const component::LuaScript& iScript, const uint64_t iEntityId, const std::string& iEntityName)
+		-> uniq<script::ScriptInstance> {
 	auto instance = mkUniq<script::ScriptInstance>();
+	instance->setEntityName(iEntityName);
 	bool loaded = false;
 	if (app::Application::instanced()) {
 		const auto& app = app::Application::get();
@@ -33,10 +36,18 @@ auto loadScriptInstance(const component::LuaScript& iScript, const uint64_t iEnt
 			}
 		}
 	}
-	if (!loaded)
-		loaded = instance->create(iScript.scriptPath, iEntityId);
 	if (!loaded) {
-		OWL_CORE_ERROR("Scene: Failed to load script '{}'.", iScript.scriptPath)
+		if (!exists(std::filesystem::path{iScript.scriptPath})) {
+			OWL_CORE_ERROR("Scene: Cannot find script '{}' of entity '{}' ({}) in the pack or the asset folders. "
+						   "Fix: set the LuaScript path relative to the project folder (e.g. `scripts/player.lua`).",
+						   iScript.scriptPath, iEntityName, iEntityId)
+			return nullptr;
+		}
+		loaded = instance->create(iScript.scriptPath, iEntityId);
+	}
+	if (!loaded) {
+		OWL_CORE_ERROR("Scene: Failed to load script '{}' of entity '{}' ({}).", iScript.scriptPath, iEntityName,
+					   iEntityId)
 		return nullptr;
 	}
 	for (const auto& [name, type, value]: iScript.properties) {

@@ -9,8 +9,60 @@
 #include "data/assets/pack/PackReader.h"
 
 #include <cstring>
+#include <string_view>
 
 namespace owl::data::assets::pack {
+
+auto describe(const PackOpenError iError) -> std::string_view {
+	switch (iError) {
+		case PackOpenError::CannotOpenFile:
+			return "the file is missing or not readable";
+		case PackOpenError::ShortHeader:
+			return "the file is truncated";
+		case PackOpenError::InvalidMagic:
+			return "the file is not an Owl pack";
+		case PackOpenError::UnsupportedVersion:
+			return "the pack was written by another Owl version";
+		case PackOpenError::TocReadFailed:
+		case PackOpenError::TocDecompressionFailed:
+		case PackOpenError::TocSizeMismatch:
+		case PackOpenError::TocOutOfBounds:
+		case PackOpenError::TocTooLarge:
+			return "the table of contents is corrupted";
+		case PackOpenError::EntryOutOfBounds:
+		case PackOpenError::EntrySizeInvalid:
+		case PackOpenError::InvalidEntry:
+			return "an entry is corrupted";
+		case PackOpenError::UnsafeEntryPath:
+			return "an entry path leaves the pack folder";
+		case PackOpenError::UnexpectedException:
+			return "the pack could not be parsed";
+	}
+	return "unknown error";
+}
+
+auto fixHint(const PackOpenError iError) -> std::string_view {
+	switch (iError) {
+		case PackOpenError::CannotOpenFile:
+			return "check `PackFile` in `runner.yml` and that the pack sits next to the runner";
+		case PackOpenError::UnsupportedVersion:
+			return "pack the game again with this Owl version (Owl Nest, Project > Pack Game)";
+		case PackOpenError::ShortHeader:
+		case PackOpenError::InvalidMagic:
+		case PackOpenError::TocReadFailed:
+		case PackOpenError::TocDecompressionFailed:
+		case PackOpenError::TocSizeMismatch:
+		case PackOpenError::TocOutOfBounds:
+		case PackOpenError::TocTooLarge:
+		case PackOpenError::EntryOutOfBounds:
+		case PackOpenError::EntrySizeInvalid:
+		case PackOpenError::InvalidEntry:
+		case PackOpenError::UnsafeEntryPath:
+		case PackOpenError::UnexpectedException:
+			return "copy the pack again or pack the game again (Owl Nest, Project > Pack Game)";
+	}
+	return "pack the game again";
+}
 
 PackReader::~PackReader() { close(); }
 

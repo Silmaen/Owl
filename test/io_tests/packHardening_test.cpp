@@ -106,6 +106,21 @@ protected:
 };
 OWL_DIAG_POP
 
+// --- error messages ----------------------------------------------------------
+
+TEST(PackOpenErrorText, every_error_has_a_description_and_a_fix) {
+	for (const auto error:
+		 {PackOpenError::CannotOpenFile, PackOpenError::ShortHeader, PackOpenError::InvalidMagic,
+		  PackOpenError::UnsupportedVersion, PackOpenError::TocReadFailed, PackOpenError::TocDecompressionFailed,
+		  PackOpenError::TocSizeMismatch, PackOpenError::TocOutOfBounds, PackOpenError::TocTooLarge,
+		  PackOpenError::EntryOutOfBounds, PackOpenError::EntrySizeInvalid, PackOpenError::InvalidEntry,
+		  PackOpenError::UnsafeEntryPath, PackOpenError::UnexpectedException}) {
+		EXPECT_FALSE(describe(error).empty());
+		EXPECT_FALSE(fixHint(error).empty());
+	}
+	EXPECT_NE(fixHint(PackOpenError::CannotOpenFile).find("runner.yml"), std::string_view::npos);
+}
+
 // --- isSafeEntryPath ---------------------------------------------------------
 
 TEST(PackFormatPath, accepts_relative_paths) {

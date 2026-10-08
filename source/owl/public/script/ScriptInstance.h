@@ -62,6 +62,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Name the owning entity in the error messages (call before `create`).
+	 * @param[in] iEntityName The entity's tag; empty keeps the UUID only.
+	 */
+	void setEntityName(const std::string& iEntityName) const;
+
+	/**
+	 * @brief
 	 *  Initialize this instance with a script and entity ID.
 	 * @param[in] iScriptPath Path to the .lua script (relative to assets).
 	 * @param[in] iEntityId The owning entity's UUID (as uint64_t).

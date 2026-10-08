@@ -19,6 +19,8 @@
 #include <format>
 #include <mutex>
 #include <stop_token>
+#include <string>
+#include <string_view>
 #include <thread>
 
 #ifdef OWL_PLATFORM_LINUX
@@ -37,7 +39,28 @@ struct LuaEngine::Quota {
 	bool timeExceeded = false;
 	LuaStatus lastStatus = LuaStatus::Ok;
 	std::string warning;
+	std::string errorContext;
 };
+
+auto fixHint(const LuaStatus iStatus) -> std::string_view {
+	switch (iStatus) {
+		case LuaStatus::Ok:
+			return "nothing to fix";
+		case LuaStatus::Missing:
+			return "define the function in the script, or remove the call";
+		case LuaStatus::LoadError:
+			return "fix the syntax error at the reported line, or check the script path of the LuaScript component";
+		case LuaStatus::RuntimeError:
+			return "fix the script at the first line of the traceback; the callback runs again on its next call";
+		case LuaStatus::MemoryQuota:
+			return "stop the script from growing its tables without bound, or raise its memory quota";
+		case LuaStatus::TimeQuota:
+			return "split the long loop across frames, or raise the time quota";
+		case LuaStatus::Invalid:
+			return "restart the scene; if it persists, the system is out of memory";
+	}
+	return "check the script";
+}
 
 namespace {
 
@@ -529,16 +552,22 @@ auto LuaEngine::protectedCall(const int iArgCount, const std::string& iWhat) con
 	else
 		mp_quota->lastStatus = LuaStatus::RuntimeError;
 	const char* message = lua_tostring(mp_state, -1);
-	OWL_CORE_ERROR("LuaEngine: Error in {}: {}.", iWhat, message != nullptr ? message : "(no message)")
+	OWL_CORE_ERROR("LuaEngine: Error in {}{}: {}. Fix: {}.", iWhat, mp_quota->errorContext,
+				   message != nullptr ? message : "(no message)", fixHint(mp_quota->lastStatus))
 	lua_pop(mp_state, 2);
 	return false;
+}
+
+void LuaEngine::setErrorContext(const std::string& iContext) const {
+	mp_quota->errorContext = iContext.empty() ? std::string{} : std::format(" of {}", iContext);
 }
 
 auto LuaEngine::runLoadedChunk(const int iLoadResult, const std::string& iName) const -> bool {
 	if (iLoadResult != LUA_OK) {
 		mp_quota->lastStatus = iLoadResult == LUA_ERRMEM ? LuaStatus::MemoryQuota : LuaStatus::LoadError;
 		const char* message = lua_tostring(mp_state, -1);
-		OWL_CORE_ERROR("LuaEngine: Error loading '{}': {}.", iName, message != nullptr ? message : "(no message)")
+		OWL_CORE_ERROR("LuaEngine: Error loading '{}'{}: {}. Fix: {}.", iName, mp_quota->errorContext,
+					   message != nullptr ? message : "(no message)", fixHint(mp_quota->lastStatus))
 		lua_pop(mp_state, 1);
 		return false;
 	}

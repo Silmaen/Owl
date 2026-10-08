@@ -158,7 +158,7 @@ imported-configuration fallback.
     - Remember the list of open documents between launches (per project)
     - Restore active tab, selection, and viewport layout
     - Stored in `EditorSettings` or `owl_project.yml`
-- ![Planned][planned] Actionable error messages — load, script and pack errors name the file, the entity and the fix,
+- ![Done][done] Actionable error messages — load, script and pack errors name the file, the entity and the fix,
   in the editor log and the runner
 - ![Planned][planned] Project templates (empty 2D, raycast, voxel, mixed-style) in the new-project dialogue
 - ![Planned][planned] Documentation faithful to the code — Lua, renderer, README, guides (PR-15: I-01, I-02, I-03,

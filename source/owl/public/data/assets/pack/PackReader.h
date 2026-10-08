@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <fstream>
 #include <optional>
+#include <string_view>
 #include <unordered_map>
 
 namespace owl::data::assets::pack {
@@ -39,6 +40,22 @@ enum struct PackOpenError : uint8_t {
 	UnsafeEntryPath,///< An entry path is absolute or escapes the pack root (see `isSafeEntryPath`).
 	UnexpectedException,///< An exception was raised while parsing; converted, never propagated.
 };
+
+/**
+ * @brief
+ *  Human-readable description of a pack open error.
+ * @param[in] iError The error.
+ * @return A short sentence fragment describing the error.
+ */
+[[nodiscard]] OWL_API auto describe(PackOpenError iError) -> std::string_view;
+
+/**
+ * @brief
+ *  What the user can do to fix a pack open error.
+ * @param[in] iError The error.
+ * @return A short imperative sentence fragment, logged after `Fix:`.
+ */
+[[nodiscard]] OWL_API auto fixHint(PackOpenError iError) -> std::string_view;
 
 /**
  * @brief

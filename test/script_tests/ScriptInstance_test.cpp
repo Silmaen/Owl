@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <core/Log.h>
+#include <debug/LogSink.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <script/ScriptEngine.h>
@@ -107,6 +108,34 @@ TEST(ScriptInstance, createFromBuffer) {
 	ASSERT_TRUE(val.has_value());
 	EXPECT_EQ(val.value(), 99);
 
+	ScriptEngine::shutdown();
+	core::Log::invalidate();
+}
+
+TEST(ScriptInstance, runtimeErrorNamesScriptEntityAndFix) {
+	core::Log::init(core::Log::Level::Error);
+	auto scn = mkShared<scene::Scene>();
+	ScriptEngine::init(scn.get());
+	const std::string script = "function on_update(dt)\n"
+							   "  error('boom')\n"
+							   "end\n";
+	const std::vector<uint8_t> data(script.begin(), script.end());
+	const ScriptInstance inst;
+	inst.setEntityName("Hero");
+	ASSERT_TRUE(inst.createFromBuffer(data, "scripts/hero.lua", 77));
+	core::Log::getLogBuffer().clear();
+	inst.onUpdate(0.016f);
+	bool found = false;
+	for (const auto& entry: core::Log::getLogBuffer().getEntries()) {
+		if (entry.message.find("boom") == std::string::npos)
+			continue;
+		found = true;
+		EXPECT_NE(entry.message.find("on_update"), std::string::npos) << entry.message;
+		EXPECT_NE(entry.message.find("scripts/hero.lua"), std::string::npos) << entry.message;
+		EXPECT_NE(entry.message.find("'Hero' (77)"), std::string::npos) << entry.message;
+		EXPECT_NE(entry.message.find("Fix: "), std::string::npos) << entry.message;
+	}
+	EXPECT_TRUE(found);
 	ScriptEngine::shutdown();
 	core::Log::invalidate();
 }

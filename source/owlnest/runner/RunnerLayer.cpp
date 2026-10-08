@@ -284,7 +284,9 @@ auto RunnerLayer::loadScene(const std::string& iSceneName) -> bool {
 		}
 		if (auto data = app.loadFromPack(packName); data) {
 			if (const scene::SceneSerializer sc(newScene); !sc.deserializeFromBuffer(*data, packName)) {
-				OWL_CORE_ERROR("Runner: Cannot load scene {} from the pack.", packName)
+				OWL_CORE_ERROR("Runner: Cannot load scene '{}' from the pack (cause above)."
+							   " Fix: correct the scene in Owl Nest and pack the game again.",
+							   packName)
 				return false;
 			}
 			m_activeScene = newScene;
@@ -293,11 +295,13 @@ auto RunnerLayer::loadScene(const std::string& iSceneName) -> bool {
 		}
 	}
 	if (!std::filesystem::exists(iSceneName)) {
-		OWL_CORE_ERROR("Runner: Scene {} not found.", iSceneName)
+		OWL_CORE_ERROR("Runner: Scene '{}' not found."
+					   " Fix: check `FirstScene` in `runner.yml`, or pack the game again so that the scene is in it.",
+					   iSceneName)
 		return false;
 	}
 	if (const scene::SceneSerializer sc(newScene); !sc.deserialize(iSceneName)) {
-		OWL_CORE_ERROR("Runner: Cannot load scene {}.", iSceneName)
+		OWL_CORE_ERROR("Runner: Cannot load scene '{}' (cause above). Fix: correct the scene in Owl Nest.", iSceneName)
 		return false;
 	}
 	m_activeScene = newScene;
@@ -740,7 +744,9 @@ void RunnerLayer::finishTransition() {
 	m_transition.reset();
 
 	if (transition->failed.load() || !transition->parsed) {
-		OWL_CORE_ERROR("Teleport: level '{}' not found or invalid.", transition->sourceName)
+		OWL_CORE_ERROR("Teleport: Level '{}' not found or invalid."
+					   " Fix: check the target scene of the teleport trigger, relative to the project folder.",
+					   transition->sourceName)
 		return;
 	}
 
@@ -749,8 +755,8 @@ void RunnerLayer::finishTransition() {
 	auto newScene = mkShared<scene::Scene>();
 	const scene::SceneSerializer serializer(newScene);
 	if (const auto loaded = serializer.applyParsed(*transition->parsed); !loaded) {
-		OWL_CORE_ERROR("Teleport: Failed to load level '{}': {}.", transition->sourceName,
-					   scene::describe(loaded.error()))
+		OWL_CORE_ERROR("Teleport: Failed to load level '{}': {}. Fix: {}.", transition->sourceName,
+					   scene::describe(loaded.error()), scene::fixHint(loaded.error()))
 		return;
 	}
 	// The old level stops only once the new one loaded, so a failed teleport resumes the current level.
