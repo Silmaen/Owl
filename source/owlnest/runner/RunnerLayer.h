@@ -194,8 +194,6 @@ private:
 		shared<scene::ParsedScene> parsed;
 		/// Resolved source name (for logging).
 		std::string sourceName;
-		/// GameState snapshot to copy into the new scene.
-		scene::GameState previousGameState;
 		/// Velocity to apply after the new scene's physics init.
 		math::vec2f velocity = {0.f, 0.f};
 		/// Name of the target entity for rotation/position.

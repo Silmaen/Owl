@@ -10,13 +10,13 @@
 
 #include <imgui.h>
 #include <physics/PhysicCommand.h>
+#include <scene/LevelTransition.h>
+#include <scene/SaveManager.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
 
-#include <chrono>
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
@@ -24,6 +24,7 @@
 #include <optional>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace owl::nest {
@@ -189,55 +190,17 @@ void SceneDocument::handleTeleportRequest(const math::vec2ui& iViewportSize) {
 	const auto request = m_activeScene->teleportRequest;
 	m_activeScene->teleportRequest.pending = false;
 
-	std::string resolvedName = request.levelName;
-	if (std::filesystem::path(resolvedName).extension() != ".owl")
-		resolvedName += ".owl";
-
-	const auto& app = app::Application::get();
-	std::filesystem::path levelPath;
-	for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
-		if (exists(assetsPath / resolvedName)) {
-			levelPath = assetsPath / resolvedName;
-			break;
-		}
-		if (exists(assetsPath / "scenes" / resolvedName)) {
-			levelPath = assetsPath / "scenes" / resolvedName;
-			break;
-		}
-	}
-	if (levelPath.empty()) {
-		OWL_CORE_ERROR("Teleport: level '{}' not found.", resolvedName)
+	const auto source = scene::LevelTransition::readLevel(request.levelName, scene::LevelTransition::getSearchRoots());
+	if (!source) {
+		OWL_CORE_ERROR("Teleport: Level '{}' not found. Fix: check the target scene of the teleport trigger.",
+					   request.levelName)
 		return;
 	}
-
-	using clk = std::chrono::steady_clock;
-	const auto t0 = clk::now();
-
-	std::ifstream file(levelPath, std::ios::binary | std::ios::ate);
-	if (!file.is_open()) {
-		OWL_CORE_ERROR("Teleport: failed to open level '{}'.", levelPath.string())
+	const auto parsed = scene::SceneSerializer::parseBuffer(source->bytes, source->sourceName);
+	const auto newScene = scene::LevelTransition::loadLevel(parsed, *m_activeScene);
+	if (!newScene)
 		return;
-	}
-	const auto size = static_cast<size_t>(file.tellg());
-	file.seekg(0);
-	std::vector<uint8_t> bytes(size);
-	file.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size));
-	OWL_CORE_INFO("SceneDocument::handleTeleportRequest: read {} bytes from '{}' {:.1f} ms.", bytes.size(),
-				  levelPath.string(), std::chrono::duration<double, std::milli>{clk::now() - t0}.count())
-
-	const auto parsed = scene::SceneSerializer::parseBuffer(bytes, levelPath.string());
-	if (!parsed.valid) {
-		OWL_CORE_ERROR("Teleport: failed to parse level '{}': {}.", request.levelName, parsed.error)
-		return;
-	}
-	const auto newScene = mkShared<scene::Scene>();
-	const scene::SceneSerializer serializer(newScene);
-	if (const auto loaded = serializer.applyParsed(parsed); !loaded) {
-		OWL_CORE_ERROR("Teleport: Failed to load level '{}': {}.", request.levelName, scene::describe(loaded.error()))
-		return;
-	}
 	// The running level is only torn down once the target loaded, so a failed teleport keeps playing.
-	newScene->getGameState() = m_activeScene->getGameState();
 	m_activeScene->onEndRuntime();
 	newScene->onViewportResize(iViewportSize);
 
@@ -254,20 +217,13 @@ void SceneDocument::handleSaveLoadRequest(const math::vec2ui& iViewportSize) {
 		return;
 	const auto slr = m_activeScene->saveLoadRequest;
 	m_activeScene->saveLoadRequest.pending = false;
-	if (slr.isLoad) {
-		auto newScene = mkShared<scene::Scene>();
-		if (auto loadResult = scene::SaveManager::load(slr.slot, newScene); loadResult.success) {
-			m_activeScene->onEndRuntime();
-			m_activeScene = newScene;
-			m_activeScene->onViewportResize(iViewportSize);
-			m_activeScene->onStartRuntime();
-			for (const auto& [uuid, snap]: loadResult.physicsSnapshots)
-				if (auto entity = m_activeScene->findEntityByUUID(core::UUID{uuid}); entity)
-					physics::PhysicCommand::applySnapshot(entity, snap);
-			m_sceneSwapped = true;
-		}
-	} else {
+	if (!slr.isLoad) {
 		std::ignore = scene::SaveManager::save(slr.slot, m_activeScene, m_scenePath.string());
+		return;
+	}
+	if (auto loaded = scene::LevelTransition::loadSavedGame(slr.slot, *m_activeScene, iViewportSize); loaded) {
+		m_activeScene = std::move(loaded);
+		m_sceneSwapped = true;
 	}
 }
 
@@ -275,28 +231,7 @@ void SceneDocument::applyPendingTeleportVelocity() {
 	if (!m_pendingTeleportVelocity || !m_activeScene)
 		return;
 	m_pendingTeleportVelocity = false;
-	const scene::Entity player = m_activeScene->getPrimaryPlayer();
-	if (!player)
-		return;
-	for (const auto view = m_activeScene->registry.view<scene::component::Tag, scene::component::Transform>();
-		 const auto ent: view) {
-		if (view.get<scene::component::Tag>(ent).tag == m_teleportTargetName) {
-			const auto& targetTransform = view.get<scene::component::Transform>(ent).transform;
-			const float targetRotation = targetTransform.rotation().z();
-			const float cosR = std::cos(targetRotation);
-			const float sinR = std::sin(targetRotation);
-			const math::vec2f finalVelocity = {m_teleportVelocity.x() * cosR - m_teleportVelocity.y() * sinR,
-											   m_teleportVelocity.x() * sinR + m_teleportVelocity.y() * cosR};
-			physics::PhysicCommand::setTransform(
-					player, {targetTransform.translation().x(), targetTransform.translation().y()}, targetRotation);
-			physics::PhysicCommand::setVelocity(player, finalVelocity);
-			auto& playerTransform = player.getComponent<scene::component::Transform>().transform;
-			playerTransform.translation().x() = targetTransform.translation().x();
-			playerTransform.translation().y() = targetTransform.translation().y();
-			playerTransform.rotation().z() = targetRotation;
-			break;
-		}
-	}
+	scene::LevelTransition::placeArrival(*m_activeScene, m_teleportTargetName, m_teleportVelocity);
 }
 
 auto SceneDocument::canUndo() const -> bool {

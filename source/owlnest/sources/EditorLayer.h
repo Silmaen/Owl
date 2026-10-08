@@ -8,14 +8,14 @@
 
 #pragma once
 
-#include <data/assets/pack/AssetScanner.h>
-#include <gui/widgets/Ribbon.h>
 #include <owlgui.h>
 
 #include "ActionRegistry.h"
 #include "EditorSettings.h"
+#include "GamePackager.h"
 #include "Project.h"
 #include "RecoveryManager.h"
+#include "RibbonBuilder.h"
 #include "VoxelBrush.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
@@ -45,6 +45,8 @@ namespace owl::nest {
  *  Class EditorLayer.
  */
 class EditorLayer final : public app::layer::Layer {
+	friend class RibbonBuilder;
+
 public:
 	EditorLayer(const EditorLayer&) = delete;
 
@@ -143,6 +145,14 @@ public:
 	 *  Open a text/code file as a new `CodeEditorDocument` (or switch to one already open).
 	 */
 	void openCodeFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  Open a file in the document its extension calls for (see classifyAsset); prefabs are instantiated and
+	 *  unknown files open in the code editor.
+	 * @param[in] iPath Absolute path of the file.
+	 */
+	void openAssetFile(const std::filesystem::path& iPath);
 
 	/**
 	 * @brief
@@ -463,54 +473,6 @@ private:
 	 */
 	void renderStats(const core::Timestep& iTimeStep);
 
-	/**
-	 * @brief
-	 *  Populate `m_ribbon` with the File, Edit, and contextual tabs bound to ActionRegistry.
-	 * The contextual tab contents depend on the active document type.
-	 */
-	void buildRibbon();
-
-	/**
-	 * @brief
-	 *  Contextual tab for scene documents (Playback, Gizmo, Scene file ops, Package).
-	 */
-	void buildSceneTab();
-
-	/**
-	 * @brief
-	 *  Build node graph tab.
-	 */
-	void buildNodeGraphTab();
-
-	/**
-	 * @brief
-	 *  Contextual tab for animation-clip documents (Playback, Frame, File).
-	 */
-	void buildAnimationTab();
-
-	/**
-	 * @brief
-	 *  Contextual tab for code / text documents (Save, Save As, Close, language…).
-	 */
-	void buildCodeTab();
-
-	/**
-	 * @brief
-	 *  Contextual tab for tilemap documents (Save / Save As / Close + undo helpers).
-	 */
-	void buildTilemapTab();
-
-	/**
-	 * @brief
-	 *  Contextual tab for tileset documents (Save / Save As / Close + grid helpers).
-	 */
-	void buildTilesetTab();
-
-	/**
-	 * @brief
-	 *  Rebuild the ribbon when the active document type changes.
-	 */
-	void refreshRibbonForActiveDoc();
 
 	/**
 	 * @brief
@@ -518,17 +480,6 @@ private:
 	 */
 	void renderWelcomeScreen();
 
-	/**
-	 * @brief
-	 *  Render the packaging wizard dialog (shown before running pack).
-	 */
-	void renderPackWizardModal();
-
-	/**
-	 * @brief
-	 *  Render the pre-packaging validation modal (missing assets confirmation).
-	 */
-	void renderPackValidationModal();
 
 	/**
 	 * @brief
@@ -552,17 +503,6 @@ private:
 	 */
 	void renderSnapStepPopup();
 
-	/**
-	 * @brief
-	 *  Launch the async validation + pack pipeline with the current wizard settings.
-	 */
-	void launchPackValidation();
-
-	/**
-	 * @brief
-	 *  Start the async packaging process (called after validation).
-	 */
-	void startPackGame();
 
 	/**
 	 * @brief
@@ -656,31 +596,12 @@ private:
 	 */
 	void performRedo();
 
-	/// Top-of-window action ribbon (File / Edit / View / Project tabs).
-	gui::widgets::Ribbon m_ribbon;
-	/**
-	 * Last document type for which the ribbon's contextual tab was populated.  When the active
-	 * document switches to a different type, we rebuild the ribbon.
-	 */
-	std::optional<DocumentType> m_lastRibbonDocType;
+	/// Builds and draws the ribbon.
+	RibbonBuilder m_ribbonBuilder{*this};
 	/// 2D camera controller wired to the active viewport for pan/zoom.
 	renderer::CameraOrthoController m_cameraController;
 	/// Whether the welcome screen should be shown (hidden when user closes it).
 	bool m_showWelcomeScreen = true;
-	/// Pending pack destination directory (validated, awaiting user confirmation).
-	std::filesystem::path m_pendingPackDestDir;
-	/// Warnings collected during pre-packaging validation (empty when no issues).
-	std::vector<std::string> m_pendingPackWarnings;
-	/// Pre-scanned assets shared between validation and pack tasks (avoids double scan).
-	shared<std::vector<data::assets::pack::AssetReference>> m_pendingPackAssets;
-	/// True when the validation modal should be shown on the next frame.
-	bool m_showPackValidation = false;
-	/// True when the packaging wizard modal is visible.
-	bool m_showPackWizard = false;
-	/// Compress blobs in the output pack (zstd).
-	bool m_packCompress = true;
-	/// XOR-obfuscate the pack TOC to deter casual inspection.
-	bool m_packObfuscate = true;
 	/// Pending document id to close (awaits dirty-confirmation modal). 0 when idle.
 	core::UUID m_pendingCloseDocId{0};
 	/// True when the close-confirmation modal should open on the next frame.
@@ -837,5 +758,7 @@ private:
 
 	/// Maps menu / keyboard / ribbon actions to their handlers.
 	ActionRegistry m_actionRegistry;
+	/// Scene and game packaging (wizard, validation, background export).
+	GamePackager m_packager{m_project, m_asyncProgress};
 };
 }// namespace owl::nest

@@ -170,6 +170,7 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase C — Owl RHI named, OpenGL frozen as fallback, backend interface ready for more
 - ![In Progress][progress] Phase C — ABI cleanup, world per scene, phased systems, open component registry
 - ![Done][done] Phase C — optional CMake modules so each game can specialise the engine
+- ![Done][done] Phase C — `EditorLayer` split (packager, ribbon, project opening), level transitions shared
 - ![Planned][planned] Phase C — typed Lua binding registry and editor command API
 - ![To evaluate][evaluate] Phase C — SDL3 for windowing, input, dialogues, audio (Wayland is the argument)
 - ![Planned][planned] Phase E — Owl Nest ergonomics revamp, designed together, no new feature ([Nest UI](design/nest-ui.md))

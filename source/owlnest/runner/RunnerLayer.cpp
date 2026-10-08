@@ -16,6 +16,7 @@
 #include <platform/FileWatcher.h>
 #include <renderer/TextureDecoder.h>
 #include <renderer/gpu/Framebuffer.h>
+#include <scene/LevelTransition.h>
 #include <scene/SaveManager.h>
 #include <scene/SceneSerializer.h>
 #include <scene/ScreenTransition.h>
@@ -26,12 +27,10 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cmath>
 #include <cstddef>
 #include <exception>
 #include <format>
 #include <fstream>
-#include <ios>
 #include <optional>
 #include <string_view>
 #include <tuple>
@@ -533,33 +532,8 @@ void RunnerLayer::onDetach() {
 void RunnerLayer::applyPendingTeleport() {
 	if (!m_pendingTeleportVelocity)
 		return;
-	// Apply stored velocity and position after physics init on new scene.
 	m_pendingTeleportVelocity = false;
-	if (const scene::Entity player = m_activeScene->getPrimaryPlayer()) {
-		// Find target entity and position player there.
-		for (const auto view = m_activeScene->registry.view<scene::component::Tag, scene::component::Transform>();
-			 const auto ent: view) {
-			if (view.get<scene::component::Tag>(ent).tag == m_teleportTargetName) {
-				const auto& targetTransform = view.get<scene::component::Transform>(ent).transform;
-				const float targetRotation = targetTransform.rotation().z();
-				// Rotate the stored velocity by the target rotation.
-				const float cosR = std::cos(targetRotation);
-				const float sinR = std::sin(targetRotation);
-				const math::vec2f finalVelocity = {m_teleportVelocity.x() * cosR - m_teleportVelocity.y() * sinR,
-												   m_teleportVelocity.x() * sinR + m_teleportVelocity.y() * cosR};
-
-				physics::PhysicCommand::setTransform(
-						player, {targetTransform.translation().x(), targetTransform.translation().y()}, targetRotation);
-
-				physics::PhysicCommand::setVelocity(player, finalVelocity);
-				auto& playerTransform = player.getComponent<scene::component::Transform>().transform;
-				playerTransform.translation().x() = targetTransform.translation().x();
-				playerTransform.translation().y() = targetTransform.translation().y();
-				playerTransform.rotation().z() = targetRotation;
-				break;
-			}
-		}
-	}
+	scene::LevelTransition::placeArrival(*m_activeScene, m_teleportTargetName, m_teleportVelocity);
 }
 
 void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
@@ -624,21 +598,11 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 					if (m_activeScene && m_activeScene->saveLoadRequest.pending) {
 						const auto slr = m_activeScene->saveLoadRequest;
 						m_activeScene->saveLoadRequest.pending = false;
-						if (slr.isLoad) {
-							auto newScene = owl::mkShared<scene::Scene>();
-							if (auto loadResult = scene::SaveManager::load(slr.slot, newScene); loadResult.success) {
-								m_activeScene->onEndRuntime();
-								m_activeScene = newScene;
-								m_activeScene->onViewportResize(m_viewportSize);
-								m_activeScene->onStartRuntime();
-								for (const auto& [uuid, snap]: loadResult.physicsSnapshots)
-									if (auto entity = m_activeScene->findEntityByUUID(core::UUID{uuid}); entity)
-
-										physics::PhysicCommand::applySnapshot(entity, snap);
-							}
-						} else {
+						if (!slr.isLoad)
 							std::ignore = scene::SaveManager::save(slr.slot, m_activeScene, "");
-						}
+						else if (auto loaded = scene::LevelTransition::loadSavedGame(slr.slot, *m_activeScene,
+																					 m_viewportSize))
+							m_activeScene = std::move(loaded);
 					}
 				}
 			}
@@ -663,75 +627,28 @@ void RunnerLayer::handleTeleportRequest() {
 	const auto request = m_activeScene->teleportRequest;
 	m_activeScene->teleportRequest.pending = false;
 
-	// Ensure the level name has an .owl extension.
-	std::string resolvedName = request.levelName;
-	if (std::filesystem::path(resolvedName).extension() != ".owl")
-		resolvedName += ".owl";
-
-	const auto& app = app::Application::get();
-
-	// Build the transition state now, capturing the current GameState and velocity.
 	auto transition = mkShared<PendingTransition>();
-	transition->previousGameState = m_activeScene->getGameState();
 	transition->velocity = request.initialVelocity;
 	transition->targetName = request.targetName;
-	transition->sourceName = resolvedName;
-
-	// Capture variables needed by the worker.
-	const bool hasPack = app.hasOpenPack();
-	std::vector<std::pair<std::string, std::filesystem::path>> searchRoots;
-	for (const auto& [title, assetsPath]: app.getAssetDirectories()) searchRoots.emplace_back(title, assetsPath);
+	transition->sourceName = scene::LevelTransition::resolveLevelName(request.levelName);
 
 	m_transition = transition;
 
 	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
-			// Worker: read scene bytes + parse YAML off-main-thread.
-			[transition, hasPack, searchRoots, resolvedName, &app]() -> void {
+			[transition, levelName = request.levelName, roots = scene::LevelTransition::getSearchRoots()]() -> void {
 				using clk = std::chrono::steady_clock;
 				const auto t0 = clk::now();
-				const auto loadBytes = [&](std::vector<uint8_t>& oBuf) -> bool {
-					if (hasPack) {
-						for (const auto& tryName: {resolvedName, "scenes/" + resolvedName}) {
-							if (auto data = app.loadFromPack(tryName); data) {
-								oBuf = std::move(*data);
-								transition->sourceName = tryName;
-								return true;
-							}
-						}
-					}
-					for (const auto& [title, assetsPath]: searchRoots) {
-						std::filesystem::path levelPath;
-						if (exists(assetsPath / resolvedName))
-							levelPath = assetsPath / resolvedName;
-						else if (exists(assetsPath / "scenes" / resolvedName))
-							levelPath = assetsPath / "scenes" / resolvedName;
-						if (levelPath.empty())
-							continue;
-						std::ifstream file(levelPath, std::ios::binary | std::ios::ate);
-						if (!file.is_open())
-							continue;
-						const auto size = static_cast<size_t>(file.tellg());
-						file.seekg(0);
-						oBuf.resize(size);
-						file.read(reinterpret_cast<char*>(oBuf.data()), static_cast<std::streamsize>(size));
-						transition->sourceName = levelPath.string();
-						return true;
-					}
-					return false;
-				};
-				std::vector<uint8_t> bytes;
-				if (!loadBytes(bytes)) {
+				auto source = scene::LevelTransition::readLevel(levelName, roots);
+				if (!source) {
 					transition->failed.store(true);
 					return;
 				}
-				const auto bytesEnd = clk::now();
+				transition->sourceName = source->sourceName;
 				OWL_CORE_INFO("RunnerLayer::teleport worker: file read '{}' {:.1f} ms ({} bytes).",
-							  transition->sourceName, std::chrono::duration<double, std::milli>{bytesEnd - t0}.count(),
-							  bytes.size())
+							  transition->sourceName,
+							  std::chrono::duration<double, std::milli>{clk::now() - t0}.count(), source->bytes.size())
 				transition->parsed = mkShared<scene::ParsedScene>(
-						scene::SceneSerializer::parseBuffer(bytes, transition->sourceName));
-				if (!transition->parsed->valid)
-					transition->failed.store(true);
+						scene::SceneSerializer::parseBuffer(source->bytes, transition->sourceName));
 			},
 			// Termination (main thread): mark ready so the next frame can deserialize + swap.
 			[transition]() -> void { transition->ready.store(true); }));
@@ -744,7 +661,7 @@ void RunnerLayer::finishTransition() {
 	m_transition.reset();
 
 	if (transition->failed.load() || !transition->parsed) {
-		OWL_CORE_ERROR("Teleport: Level '{}' not found or invalid."
+		OWL_CORE_ERROR("Teleport: Level '{}' not found."
 					   " Fix: check the target scene of the teleport trigger, relative to the project folder.",
 					   transition->sourceName)
 		return;
@@ -752,18 +669,13 @@ void RunnerLayer::finishTransition() {
 
 	using clk = std::chrono::steady_clock;
 	const auto t0 = clk::now();
-	auto newScene = mkShared<scene::Scene>();
-	const scene::SceneSerializer serializer(newScene);
-	if (const auto loaded = serializer.applyParsed(*transition->parsed); !loaded) {
-		OWL_CORE_ERROR("Teleport: Failed to load level '{}': {}. Fix: {}.", transition->sourceName,
-					   scene::describe(loaded.error()), scene::fixHint(loaded.error()))
+	auto newScene = scene::LevelTransition::loadLevel(*transition->parsed, *m_activeScene);
+	if (!newScene)
 		return;
-	}
 	// The old level stops only once the new one loaded, so a failed teleport resumes the current level.
 	m_activeScene->onEndRuntime();
 	OWL_CORE_INFO("RunnerLayer::finishTransition: applyParsed '{}' {:.1f} ms.", transition->sourceName,
 				  std::chrono::duration<double, std::milli>{clk::now() - t0}.count())
-	newScene->getGameState() = transition->previousGameState;
 	newScene->onViewportResize(m_viewportSize);
 
 	m_pendingTeleportVelocity = true;
