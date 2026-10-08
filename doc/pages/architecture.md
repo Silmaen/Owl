@@ -87,7 +87,7 @@ What a game plugs in without patching the engine, and what the architecture work
 
 **Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
 [Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·
-[Lua Scripting](scripting.md) · [Editor (Owl Nest)](editor.md) ·
+[Lua Scripting](scripting.md) · [Lua API](lua-api.md) · [Editor (Owl Nest)](editor.md) ·
 [Node Graph Framework](node_graph.md)
 
 ## Backend System
@@ -261,8 +261,8 @@ create physical constraints between entities.
 | Physics parent falls → physics child     | Each body moves **independently** according to Box2D simulation. No physical link.                                                          |
 | Physics parent moves → non-physics child | Child **follows** the parent via transform inheritance (normal hierarchy behaviour).                                                        |
 
-To physically attach a child body to a parent body (e.g., an object welded to a platform), use Box2D joints (weld,
-revolute, etc.) — this is separate from the hierarchy system.
+Joints between bodies (weld, revolute...) are not exposed yet: they are planned with the physics API
+([Physics API](design/physics-api.md)). The hierarchy never links two bodies physically.
 
 ### Serialization
 

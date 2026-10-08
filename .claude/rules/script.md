@@ -7,13 +7,18 @@ paths:
 
 # Lua scripting (Lua 5.5)
 
-User-facing reference: `doc/pages/scripting.md`. Update it with every binding change.
+User-facing reference: `doc/pages/scripting.md` (guide) and `doc/pages/lua-api.md` (generated, never by hand).
 
-- Public: `ScriptEngine` (singleton), `ScriptInstance` (one isolated `lua_State` per entity),
+- Public: `ScriptEngine` (singleton: active scene, quotas, property extraction; no Lua state of its own), `ScriptInstance` (one isolated `lua_State` per entity),
   `ScriptProperty`. Private: `LuaEngine` (raw `lua_State*` wrapper), `LuaBindings`.
 - Lua headers only through `source/owl/private/core/external/lua.h` (diagnostic suppression).
-- Bound tables (`registerTable` in `LuaBindings.cpp`): `transform`, `physics`, `input`, `sound`, `scene`,
-  `time`, `log`, `entity`, `ui`, `gamestate`, `save`, `settings`, `trigger`, `door`, `pushwall`.
+- **Typed binding registry** (`LuaBindings.h`): every binding is one `LuaBinding` in `declareBindings()`
+  (`LuaBindings.cpp`: table, name, C function, description, typed params / returns); `registerBindings` registers
+  them and `generateLuaReference()` writes `doc/pages/lua-api.md`. Adding or changing a binding: edit the
+  declaration, then copy the page the failing `LuaBindingRegistry.ReferencePageMatchesTheRegistry` test writes to
+  the temporary folder over `doc/pages/lua-api.md`. Every `table.fn(` in `scripting.md` must be bound (tested).
+- Tables (`getLuaTables()`): `transform`, `physics`, `input`, `sound`, `scene`, `time`, `log`, `entity`, `ui`,
+  `gamestate`, `save`, `settings`, `trigger`, `door`, `pushwall`.
 - Sandbox: only `base`, `table`, `string`, `math`, `utf8`, `coroutine`; `io`, `os`, `dofile`, `loadfile`,
   `string.dump` are removed, `load` is text-only, `setmetatable` refuses `__gc`, `collectgarbage` keeps
   `count` / `isrunning`. Never re-open them. Chunks load in mode `"t"` only (no bytecode).

@@ -160,98 +160,19 @@ the engine sets each property as a Lua global with the value configured in the i
 
 ## Engine API Reference
 
-The following Lua tables are available in every script.
-
-### `transform`
-
-| Function                                        | Description                         |
-|-------------------------------------------------|-------------------------------------|
-| `transform.get_position(entity_id)`             | Returns `x, y, z` (local transform) |
-| `transform.set_position(entity_id, x, y, z)`    | Set local position                  |
-| `transform.get_rotation(entity_id)`             | Returns `rx, ry, rz` (radians)      |
-| `transform.set_rotation(entity_id, rx, ry, rz)` | Set local rotation                  |
-| `transform.get_scale(entity_id)`                | Returns `sx, sy, sz`                |
-| `transform.set_scale(entity_id, sx, sy, sz)`    | Set local scale                     |
-
-### `physics`
-
-| Function                                       | Description                                    |
-|------------------------------------------------|------------------------------------------------|
-| `physics.impulse(entity_id, fx, fy)`           | Apply an impulse force                         |
-| `physics.get_velocity(entity_id)`              | Returns `vx, vy`                               |
-| `physics.set_velocity(entity_id, vx, vy)`      | Set linear velocity                            |
-| `physics.set_transform(entity_id, x, y, rot)`  | Set body position and rotation                 |
-| `physics.set_gravity_scale(entity_id, scale)`  | Scale world gravity for this body (0 = none)   |
+Every script sees the tables below. The full list of functions, with their typed parameters and returned values,
+is the [Lua API reference](lua-api.md), generated from the binding registry; this section only adds what a
+function table cannot say.
 
 ### `input`
 
-| Function                                | Description                          |
-|-----------------------------------------|--------------------------------------|
-| `input.is_key_pressed(keycode)`         | Returns `true` if the key is pressed |
-| `input.is_mouse_button_pressed(button)` | Returns `true` if button is pressed  |
-| `input.get_mouse_x()`                   | Returns mouse X position             |
-| `input.get_mouse_y()`                   | Returns mouse Y position             |
-
 Key codes match the GLFW key constants (e.g. `65` = A, `87` = W, `32` = Space).
-
-### `sound`
-
-| Function                        | Description                    |
-|---------------------------------|--------------------------------|
-| `sound.play(asset_path)`        | Play a sound, returns a handle |
-| `sound.stop(handle)`            | Stop a playing sound           |
-| `sound.pause(handle)`           | Pause a playing sound          |
-| `sound.resume(handle)`          | Resume a paused sound          |
-| `sound.set_volume(handle, vol)` | Set volume (0.0 to 2.0)        |
 
 ### `scene`
 
-| Function                          | Description                                       |
-|-----------------------------------|---------------------------------------------------|
-| `scene.find_entity(name)`         | Find entity by name, returns UUID (0 = not found) |
-| `scene.create_entity(name)`       | Create a new entity, returns UUID                 |
-| `scene.destroy_entity(entity_id)` | Destroy an entity and its children (end of frame) |
-
-### `entity`
-
-| Function                                     | Description                   |
-|----------------------------------------------|-------------------------------|
-| `entity.has_component(entity_id, comp_name)` | Check for a component by name |
-| `entity.get_name(entity_id)`                 | Get the entity's Tag name     |
-
-Supported component names for `has_component`: `"Transform"`, `"PhysicBody"`,
-`"SpriteRenderer"`, `"Camera"`, `"Text"`, `"SoundSource"`.
-
-### `time`
-
-| Function       | Description                          |
-|----------------|--------------------------------------|
-| `time.delta()` | Returns the current frame delta time |
-
-### `log`
-
-| Function         | Description          |
-|------------------|----------------------|
-| `log.trace(msg)` | Log at trace level   |
-| `log.info(msg)`  | Log at info level    |
-| `log.warn(msg)`  | Log at warning level |
-| `log.error(msg)` | Log at error level   |
+`scene.find_entity` scans every entity: call it once (in `on_create`) and keep the id.
 
 ### `ui`
-
-| Function                                 | Description                                  |
-|------------------------------------------|----------------------------------------------|
-| `ui.set_text(entity_id, text)`           | Set UiText content                           |
-| `ui.get_text(entity_id)`                 | Get UiText content                           |
-| `ui.set_visible(entity_id, bool)`        | Set entity game visibility                   |
-| `ui.set_progress(entity_id, value)`      | Set UiProgressBar value (0..1)               |
-| `ui.get_slider_value(entity_id)`         | Get UiSlider value                           |
-| `ui.set_slider_value(entity_id, value)`  | Set UiSlider value                           |
-| `ui.set_button_enabled(entity_id, bool)` | Enable/disable a UiButton                    |
-| `ui.transition_fade_in(duration)`        | Start fade-in transition (seconds)           |
-| `ui.transition_fade_out(duration)`       | Start fade-out transition (seconds)          |
-| `ui.transition_play(type, duration, …)`  | Start a transition with custom kind / colour |
-| `ui.is_transition_active()`              | Check if a transition is in progress         |
 
 #### Transition kinds
 
@@ -286,25 +207,9 @@ existed.
 
 ### `gamestate`
 
-| Function                      | Description                                        |
-|-------------------------------|----------------------------------------------------|
-| `gamestate.set(key, value)`   | Store a value (auto-detects int/float/string/bool) |
-| `gamestate.get(key)`          | Get value or nil if missing                        |
-| `gamestate.get(key, default)` | Get value or default if missing                    |
-| `gamestate.remove(key)`       | Remove a key                                       |
-| `gamestate.clear()`           | Remove all entries                                 |
-
 The game state persists across scene transitions and is included in save files.
 
 ### `save`
-
-| Function                 | Description                                 |
-|--------------------------|---------------------------------------------|
-| `save.save_game(slot)`   | Save scene + game state to slot             |
-| `save.load_game(slot)`   | Load a save (deferred to next frame)        |
-| `save.has_save(slot)`    | Check if a save exists                      |
-| `save.delete_save(slot)` | Delete a save file                          |
-| `save.list_saves()`      | Returns table of `{slot, timestamp, scene}` |
 
 Save files are stored in the user directory (`~/.local/share/<game>/saves/` on Linux,
 `%APPDATA%/<game>/saves/` on Windows) as YAML `.owl_save` files.
@@ -313,17 +218,6 @@ Save files are stored in the user directory (`~/.local/share/<game>/saves/` on L
 
 Persistent game settings with a two-layer system: game defaults (`game_settings.yml` in
 project assets) overlaid with user overrides (`settings.yml` in user directory).
-
-| Function                   | Description                                       |
-|----------------------------|---------------------------------------------------|
-| `settings.get(key)`        | Get a setting (override > default > nil)          |
-| `settings.get(key, def)`   | Get a setting with a fallback value               |
-| `settings.set(key, value)` | Set a user override (int, float, string, or bool) |
-| `settings.save()`          | Save user overrides to `settings.yml`, true if OK |
-| `settings.load()`          | Reload user overrides from `settings.yml`         |
-| `settings.reset(key)`      | Remove a user override (revert to default)        |
-| `settings.reset_all()`     | Remove all user overrides                         |
-| `settings.apply()`         | Apply built-in settings to window and sound       |
 
 **Built-in keys** (auto-applied by `settings.apply()`):
 
@@ -334,8 +228,11 @@ project assets) overlaid with user overrides (`settings.yml` in user directory).
 | `fullscreen`        | bool  | Fullscreen mode            |
 | `resizable`         | bool  | Window resizable           |
 | `volume_master`     | float | Master volume (0.0–1.0)    |
-| `volume_music`      | float | Music volume (for scripts) |
-| `volume_sfx`        | float | SFX volume (for scripts)   |
+| `volume_music`      | float | Read by scripts only       |
+| `volume_sfx`        | float | Read by scripts only       |
+
+`volume_music` and `volume_sfx` are stored and returned, but the engine applies only `volume_master`: there is
+no per-category mixing yet (`SoundSource` categories are not read at run time).
 
 Custom game-specific keys (e.g., `player_speed`, `player_jump_impulse`) can be defined in
 `game_settings.yml` and read from Lua the same way.
@@ -358,12 +255,6 @@ GameSettings:
 ### `trigger`
 
 Control trigger entities from Lua.
-
-| Function                   | Description                   |
-|----------------------------|-------------------------------|
-| `trigger.start_timer(eid)` | Start/restart a Timer trigger |
-| `trigger.stop_timer(eid)`  | Stop a Timer trigger          |
-| `trigger.reset_timer(eid)` | Reset elapsed time to 0       |
 
 ## Trigger System
 

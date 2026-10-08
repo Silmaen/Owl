@@ -71,7 +71,7 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
 - `SettingsManager` (static, two layers): defaults from `game_settings.yml` (project assets) + user
   overrides in `settings.yml` (user dir).
 - Built-in keys auto-applied by `applyBuiltins()`: `resolution_width`, `resolution_height`, `fullscreen`,
-  `resizable`, `volume_master`, `volume_music`, `volume_sfx`.
+  `resizable`, `volume_master`; `volume_music` / `volume_sfx` are stored for scripts only (no category mixing yet).
 - Runner order: `runner.yml` defaults → `game_settings.yml` → user `settings.yml` → `applyBuiltins()` →
   first scene load.
 

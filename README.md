@@ -27,6 +27,7 @@ The full generated documentation is available online:
 - [Sound System](doc/pages/sound.md) -- Sound system: components, spatial audio, and gameplay triggers
 - [Events & Input](doc/pages/event_input.md) -- Event system, keyboard, mouse, gamepad
 - [Lua Scripting](doc/pages/scripting.md) -- Lua scripting: API, lifecycle, sandboxing
+- [Lua API reference](doc/pages/lua-api.md) -- Every Lua binding, generated from the binding registry
 - [Building](doc/pages/building.md) -- Prerequisites, presets, testing, and CMake options
 - [Roadmap](doc/pages/roadmap.md) -- Planned and completed features by version (one-glance summary: `ROADMAP.md`)
 - [Changelog](doc/pages/changelog.md) -- Detailed version history (one line per release: `CHANGELOG.md`)

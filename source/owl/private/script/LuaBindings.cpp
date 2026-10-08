@@ -10,6 +10,7 @@
 
 #include "LuaBindings.h"
 
+#include "core/Macros.h"
 #include "core/external/lua.h"
 #include "input/Input.h"
 #include "physics/PhysicCommand.h"
@@ -24,9 +25,19 @@
 #include "sound/SoundCommand.h"
 #include "sound/SoundSystem.h"
 
+#include <algorithm>
+#include <array>
+#include <cstddef>
 #include <cstdint>
+#include <deque>
+#include <format>
+#include <ranges>
+#include <string>
+#include <string_view>
 #include <type_traits>
+#include <utility>
 #include <variant>
+#include <vector>
 
 namespace owl::script {
 
@@ -630,11 +641,6 @@ auto luaSaveListSaves(lua_State* iState) -> int {
 	return 1;
 }
 
-void registerTable(lua_State* iState, const char* iTableName, const luaL_Reg* iFunctions) {
-	LuaEngine::registerGuardedTable(iState, iTableName, iFunctions);
-}
-
-
 auto luaDoorActivate(lua_State* iState) -> int {
 	const auto* activeScene = ScriptEngine::getActiveScene();
 	if (activeScene == nullptr)
@@ -773,227 +779,417 @@ auto luaPushwallGetState(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaSettingsSet(lua_State* iState) -> int {
+	const char* key = luaL_checkstring(iState, 1);
+	if (lua_isboolean(iState, 2) != 0)
+		scene::SettingsManager::set(key, lua_toboolean(iState, 2) != 0);
+	else if (lua_isinteger(iState, 2) != 0)
+		scene::SettingsManager::set(key, static_cast<int64_t>(lua_tointeger(iState, 2)));
+	else if (lua_isnumber(iState, 2) != 0)
+		scene::SettingsManager::set(key, static_cast<float>(lua_tonumber(iState, 2)));
+	else if (lua_isstring(iState, 2) != 0)
+		scene::SettingsManager::set(key, std::string(lua_tostring(iState, 2)));
+	return 0;
+}
+
+auto luaSettingsGet(lua_State* iState) -> int {
+	const char* key = luaL_checkstring(iState, 1);
+	const auto val = scene::SettingsManager::get(key);
+	if (!val.has_value()) {
+		if (lua_gettop(iState) >= 2)
+			lua_pushvalue(iState, 2);
+		else
+			lua_pushnil(iState);
+		return 1;
+	}
+	std::visit(
+			[iState]<typename T0>(const T0& iValue) -> void {
+				using T = std::decay_t<T0>;
+				if constexpr (std::is_same_v<T, int64_t>)
+					lua_pushinteger(iState, static_cast<lua_Integer>(iValue));
+				else if constexpr (std::is_same_v<T, float>)
+					lua_pushnumber(iState, static_cast<lua_Number>(iValue));
+				else if constexpr (std::is_same_v<T, std::string>)
+					lua_pushstring(iState, iValue.c_str());
+				else if constexpr (std::is_same_v<T, bool>)
+					lua_pushboolean(iState, iValue ? 1 : 0);
+			},
+			val.value());
+	return 1;
+}
+
+auto luaSettingsSave(lua_State* iState) -> int {
+	lua_pushboolean(iState, scene::SettingsManager::saveUserSettings() ? 1 : 0);
+	return 1;
+}
+
+auto luaSettingsLoad([[maybe_unused]] lua_State* iState) -> int {// NOLINT(readability-non-const-parameter)
+	scene::SettingsManager::loadUserSettings();
+	return 0;
+}
+
+auto luaSettingsReset(lua_State* iState) -> int {
+	scene::SettingsManager::resetToDefault(luaL_checkstring(iState, 1));
+	return 0;
+}
+
+auto luaSettingsResetAll([[maybe_unused]] lua_State* iState) -> int {// NOLINT(readability-non-const-parameter)
+	scene::SettingsManager::resetAllToDefaults();
+	return 0;
+}
+
+auto luaSettingsApply([[maybe_unused]] lua_State* iState) -> int {// NOLINT(readability-non-const-parameter)
+	scene::SettingsManager::applyBuiltins();
+	return 0;
+}
+
+template<typename Action>
+auto withTrigger(lua_State* iState, Action&& iAction) -> int {
+	const auto* activeScene = ScriptEngine::getActiveScene();
+	if (activeScene == nullptr)
+		return 0;
+	const auto uid = static_cast<uint64_t>(luaL_checkinteger(iState, 1));
+	if (const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
+		entity && entity.hasComponent<scene::component::Trigger>())
+		std::forward<Action>(iAction)(entity.getComponent<scene::component::Trigger>().trigger);
+	return 0;
+}
+
+auto luaTriggerStartTimer(lua_State* iState) -> int {
+	return withTrigger(iState, [](scene::SceneTrigger& ioTrigger) -> void { ioTrigger.startTimer(); });
+}
+
+auto luaTriggerStopTimer(lua_State* iState) -> int {
+	return withTrigger(iState, [](scene::SceneTrigger& ioTrigger) -> void { ioTrigger.stopTimer(); });
+}
+
+auto luaTriggerResetTimer(lua_State* iState) -> int {
+	return withTrigger(iState, [](scene::SceneTrigger& ioTrigger) -> void { ioTrigger.resetTimer(); });
+}
+
+using enum LuaType;
+
+OWL_DIAG_PUSH
+OWL_DIAG_DISABLE_CLANG("-Wmissing-designated-field-initializers")
+OWL_DIAG_DISABLE_GCC("-Wmissing-field-initializers")
+auto declareBindings() -> std::vector<LuaBinding> {
+	const LuaValue entityId{.name = "entity_id", .type = Entity};
+	// clang-format off
+	return {
+		{.table = "transform", .name = "get_position", .function = luaTransformGetPosition,
+		 .description = "Local position of the entity (zeros when it has no transform).",
+		 .params = {entityId}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "transform", .name = "set_position", .function = luaTransformSetPosition,
+		 .description = "Set the local position.",
+		 .params = {entityId, {"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "transform", .name = "get_rotation", .function = luaTransformGetRotation,
+		 .description = "Local rotation, in radians.",
+		 .params = {entityId}, .returns = {{"rx", Number}, {"ry", Number}, {"rz", Number}}},
+		{.table = "transform", .name = "set_rotation", .function = luaTransformSetRotation,
+		 .description = "Set the local rotation, in radians.",
+		 .params = {entityId, {"rx", Number}, {"ry", Number}, {"rz", Number}}},
+		{.table = "transform", .name = "get_scale", .function = luaTransformGetScale,
+		 .description = "Local scale.",
+		 .params = {entityId}, .returns = {{"sx", Number}, {"sy", Number}, {"sz", Number}}},
+		{.table = "transform", .name = "set_scale", .function = luaTransformSetScale,
+		 .description = "Set the local scale.",
+		 .params = {entityId, {"sx", Number}, {"sy", Number}, {"sz", Number}}},
+		{.table = "physics", .name = "impulse", .function = luaPhysicsImpulse,
+		 .description = "Apply a linear impulse to the body.",
+		 .params = {entityId, {"fx", Number}, {"fy", Number}}},
+		{.table = "physics", .name = "get_velocity", .function = luaPhysicsGetVelocity,
+		 .description = "Linear velocity of the body (zeros without a body).",
+		 .params = {entityId}, .returns = {{"vx", Number}, {"vy", Number}}},
+		{.table = "physics", .name = "set_velocity", .function = luaPhysicsSetVelocity,
+		 .description = "Set the linear velocity of the body.",
+		 .params = {entityId, {"vx", Number}, {"vy", Number}}},
+		{.table = "physics", .name = "set_transform", .function = luaPhysicsSetTransform,
+		 .description = "Move the body to a world position and rotation (radians).",
+		 .params = {entityId, {"x", Number}, {"y", Number}, {"rotation", Number}}},
+		{.table = "physics", .name = "set_gravity_scale", .function = luaPhysicsSetGravityScale,
+		 .description = "Scale the world gravity for this body (0 = none).",
+		 .params = {entityId, {"scale", Number}}},
+		{.table = "input", .name = "is_key_pressed", .function = luaInputIsKeyPressed,
+		 .description = "Whether a key is held (GLFW key code: 65 = A, 87 = W, 32 = Space).",
+		 .params = {{"keycode", Integer}}, .returns = {{"pressed", Boolean}}},
+		{.table = "input", .name = "is_mouse_button_pressed", .function = luaInputIsMouseButtonPressed,
+		 .description = "Whether a mouse button is held (0 = left, 1 = right, 2 = middle).",
+		 .params = {{"button", Integer}}, .returns = {{"pressed", Boolean}}},
+		{.table = "input", .name = "get_mouse_x", .function = luaInputGetMouseX,
+		 .description = "Mouse X position in the window, in pixels.", .returns = {{"x", Number}}},
+		{.table = "input", .name = "get_mouse_y", .function = luaInputGetMouseY,
+		 .description = "Mouse Y position in the window, in pixels.", .returns = {{"y", Number}}},
+		{.table = "sound", .name = "play", .function = luaSoundPlay,
+		 .description = "Play a sound asset (loaded on first use); an invalid handle when sound is off or missing.",
+		 .params = {{"asset_path", String}}, .returns = {{"handle", Integer}}},
+		{.table = "sound", .name = "stop", .function = luaSoundStop,
+		 .description = "Stop a playing sound.", .params = {{"handle", Integer}}},
+		{.table = "sound", .name = "pause", .function = luaSoundPause,
+		 .description = "Pause a playing sound.", .params = {{"handle", Integer}}},
+		{.table = "sound", .name = "resume", .function = luaSoundResume,
+		 .description = "Resume a paused sound.", .params = {{"handle", Integer}}},
+		{.table = "sound", .name = "set_volume", .function = luaSoundSetVolume,
+		 .description = "Set the volume of a sound (0.0 to 2.0).",
+		 .params = {{"handle", Integer}, {"volume", Number}}},
+		{.table = "scene", .name = "find_entity", .function = luaSceneFindEntity,
+		 .description = "First entity with this tag (0 when none); scans every entity, cache the result.",
+		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
+		{.table = "scene", .name = "create_entity", .function = luaSceneCreateEntity,
+		 .description = "Create an empty entity.",
+		 .params = {{"name", String}}, .returns = {{"entity_id", Entity}}},
+		{.table = "scene", .name = "destroy_entity", .function = luaSceneDestroyEntity,
+		 .description = "Destroy an entity and its children at the end of the frame.", .params = {entityId}},
+		{.table = "scene", .name = "load_scene", .function = luaSceneLoadScene,
+		 .description = "Load another level after this frame, keeping the game state (no transition).",
+		 .params = {{"level", String}}},
+		{.table = "scene", .name = "transition_to", .function = luaSceneTransitionTo,
+		 .description = "Load a level behind a screen transition (kind as in `ui.transition_play`, `fade` by default).",
+		 .params = {{"scene_path", String}, {"kind", String, true}, {"duration", Number, true}}},
+		{.table = "scene", .name = "quit", .function = luaSceneQuit,
+		 .description = "Quit the game (stop Play in the editor) after this frame."},
+		{.table = "time", .name = "delta", .function = luaTimeDelta,
+		 .description = "Duration of the current frame, in seconds.", .returns = {{"seconds", Number}}},
+		{.table = "log", .name = "trace", .function = luaLogTrace,
+		 .description = "Log a message at trace level.", .params = {{"message", String}}},
+		{.table = "log", .name = "info", .function = luaLogInfo,
+		 .description = "Log a message at info level.", .params = {{"message", String}}},
+		{.table = "log", .name = "warn", .function = luaLogWarn,
+		 .description = "Log a message at warning level.", .params = {{"message", String}}},
+		{.table = "log", .name = "error", .function = luaLogError,
+		 .description = "Log a message at error level.", .params = {{"message", String}}},
+		{.table = "entity", .name = "has_component", .function = luaEntityHasComponent,
+		 .description = "Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, `Camera`, "
+						"`Text`, `SoundSource`, `Canvas` or a `Ui*` component.",
+		 .params = {entityId, {"component", String}}, .returns = {{"has", Boolean}}},
+		{.table = "entity", .name = "get_name", .function = luaEntityGetName,
+		 .description = "Tag of the entity (empty when unknown).", .params = {entityId}, .returns = {{"name", String}}},
+		{.table = "ui", .name = "set_text", .function = luaUiSetText,
+		 .description = "Set the text of a `UiText`.", .params = {entityId, {"text", String}}},
+		{.table = "ui", .name = "get_text", .function = luaUiGetText,
+		 .description = "Text of a `UiText`.", .params = {entityId}, .returns = {{"text", String}}},
+		{.table = "ui", .name = "set_visible", .function = luaUiSetVisible,
+		 .description = "Show or hide the entity in the game.", .params = {entityId, {"visible", Boolean}}},
+		{.table = "ui", .name = "set_progress", .function = luaUiSetProgress,
+		 .description = "Set the value of a `UiProgressBar` (0 to 1).", .params = {entityId, {"value", Number}}},
+		{.table = "ui", .name = "get_slider_value", .function = luaUiGetSliderValue,
+		 .description = "Value of a `UiSlider`.", .params = {entityId}, .returns = {{"value", Number}}},
+		{.table = "ui", .name = "set_slider_value", .function = luaUiSetSliderValue,
+		 .description = "Set the value of a `UiSlider`.", .params = {entityId, {"value", Number}}},
+		{.table = "ui", .name = "set_button_enabled", .function = luaUiSetButtonEnabled,
+		 .description = "Enable or disable a `UiButton`.", .params = {entityId, {"enabled", Boolean}}},
+		{.table = "ui", .name = "transition_fade_in", .function = luaUiTransitionFadeIn,
+		 .description = "Start a fade-in screen transition.", .params = {{"duration", Number}}},
+		{.table = "ui", .name = "transition_fade_out", .function = luaUiTransitionFadeOut,
+		 .description = "Start a fade-out screen transition.", .params = {{"duration", Number}}},
+		{.table = "ui", .name = "transition_play", .function = luaUiTransitionPlay,
+		 .description = "Start a screen transition of a kind (see Transition kinds), opaque black by default.",
+		 .params = {{"kind", String}, {"duration", Number}, {"r", Number, true}, {"g", Number, true},
+					{"b", Number, true}, {"a", Number, true}}},
+		{.table = "ui", .name = "is_transition_active", .function = luaUiIsTransitionActive,
+		 .description = "Whether a screen transition is running.", .returns = {{"active", Boolean}}},
+		{.table = "gamestate", .name = "set", .function = luaGamestateSet,
+		 .description = "Store a value (integer, number, string or boolean) kept across levels and in saves.",
+		 .params = {{"key", String}, {"value", Any}}},
+		{.table = "gamestate", .name = "get", .function = luaGamestateGet,
+		 .description = "Stored value, or `default` (nil when absent) when the key is missing.",
+		 .params = {{"key", String}, {"default", Any, true}}, .returns = {{"value", Any}}},
+		{.table = "gamestate", .name = "remove", .function = luaGamestateRemove,
+		 .description = "Remove a key.", .params = {{"key", String}}},
+		{.table = "gamestate", .name = "clear", .function = luaGamestateClear,
+		 .description = "Remove every key."},
+		{.table = "save", .name = "save_game", .function = luaSaveSaveGame,
+		 .description = "Save the level and the game state to a slot after this frame.", .params = {{"slot", Integer}}},
+		{.table = "save", .name = "load_game", .function = luaSaveLoadGame,
+		 .description = "Load a slot after this frame; the level keeps running when the slot does not load.",
+		 .params = {{"slot", Integer}}},
+		{.table = "save", .name = "has_save", .function = luaSaveHasSave,
+		 .description = "Whether a slot holds a save.", .params = {{"slot", Integer}}, .returns = {{"exists", Boolean}}},
+		{.table = "save", .name = "delete_save", .function = luaSaveDeleteSave,
+		 .description = "Delete the save of a slot.", .params = {{"slot", Integer}}},
+		{.table = "save", .name = "list_saves", .function = luaSaveListSaves,
+		 .description = "Every save, as a list of `{slot, timestamp, scene}`.", .returns = {{"saves", Table}}},
+		{.table = "settings", .name = "get", .function = luaSettingsGet,
+		 .description = "Setting value: user override, else game default, else `default` (nil when absent).",
+		 .params = {{"key", String}, {"default", Any, true}}, .returns = {{"value", Any}}},
+		{.table = "settings", .name = "set", .function = luaSettingsSet,
+		 .description = "Set a user override (integer, number, string or boolean).",
+		 .params = {{"key", String}, {"value", Any}}},
+		{.table = "settings", .name = "save", .function = luaSettingsSave,
+		 .description = "Write the user overrides to `settings.yml`.", .returns = {{"ok", Boolean}}},
+		{.table = "settings", .name = "load", .function = luaSettingsLoad,
+		 .description = "Reload the user overrides from `settings.yml`."},
+		{.table = "settings", .name = "reset", .function = luaSettingsReset,
+		 .description = "Remove a user override (back to the game default).", .params = {{"key", String}}},
+		{.table = "settings", .name = "reset_all", .function = luaSettingsResetAll,
+		 .description = "Remove every user override."},
+		{.table = "settings", .name = "apply", .function = luaSettingsApply,
+		 .description = "Apply the built-in keys to the window and the sound."},
+		{.table = "trigger", .name = "start_timer", .function = luaTriggerStartTimer,
+		 .description = "Start or restart a Timer trigger.", .params = {entityId}},
+		{.table = "trigger", .name = "stop_timer", .function = luaTriggerStopTimer,
+		 .description = "Stop a Timer trigger.", .params = {entityId}},
+		{.table = "trigger", .name = "reset_timer", .function = luaTriggerResetTimer,
+		 .description = "Reset the elapsed time of a Timer trigger to 0.", .params = {entityId}},
+		{.table = "door", .name = "activate", .function = luaDoorActivate,
+		 .description = "Open a closed raycast door.", .params = {entityId}},
+		{.table = "door", .name = "close", .function = luaDoorClose,
+		 .description = "Close an open or opening raycast door.", .params = {entityId}},
+		{.table = "door", .name = "is_open", .function = luaDoorIsOpen,
+		 .description = "Whether the raycast door is fully open.", .params = {entityId}, .returns = {{"open", Boolean}}},
+		{.table = "door", .name = "get_state", .function = luaDoorGetState,
+		 .description = "State of the raycast door: `idle`, `opening`, `open` or `closing`.",
+		 .params = {entityId}, .returns = {{"state", String}}},
+		{.table = "pushwall", .name = "activate", .function = luaPushwallActivate,
+		 .description = "Start pushing an idle raycast push-wall.", .params = {entityId}},
+		{.table = "pushwall", .name = "has_moved", .function = luaPushwallHasMoved,
+		 .description = "Whether the push-wall reached its final position.",
+		 .params = {entityId}, .returns = {{"moved", Boolean}}},
+		{.table = "pushwall", .name = "get_state", .function = luaPushwallGetState,
+		 .description = "State of the push-wall: `idle`, `moving` or `final`.",
+		 .params = {entityId}, .returns = {{"state", String}}},
+	};
+	// clang-format on
+}
+OWL_DIAG_POP
+
+auto typeName(const LuaType iType) -> std::string_view {
+	switch (iType) {
+		case Boolean:
+			return "boolean";
+		case Integer:
+			return "integer";
+		case Number:
+			return "number";
+		case String:
+			return "string";
+		case Table:
+			return "table";
+		case Entity:
+			return "entity";
+		case Any:
+			return "any";
+	}
+	return "";
+}
+
+auto describeSignature(const LuaBinding& iBinding) -> std::string {
+	std::string params;
+	for (const auto& param: iBinding.params) {
+		if (!params.empty())
+			params += ", ";
+		const auto text = std::format("{}: {}", param.name, typeName(param.type));
+		params += param.optional ? std::format("[{}]", text) : text;
+	}
+	return std::format("`{}.{}({})`", iBinding.table, iBinding.name, params);
+}
+
+auto describeReturns(const LuaBinding& iBinding) -> std::string {
+	if (iBinding.returns.empty())
+		return {};
+	std::string returns;
+	for (const auto& value: iBinding.returns) {
+		if (!returns.empty())
+			returns += ", ";
+		returns += std::format("`{}: {}`", value.name, typeName(value.type));
+	}
+	return returns;
+}
+
+auto markdownTable(const std::vector<std::array<std::string, 3>>& iRows) -> std::string {
+	std::array<size_t, 3> widths{};
+	for (const auto& row: iRows)
+		for (size_t col = 0; col < 3; ++col) widths[col] = std::max(widths[col], row[col].size());
+	const auto line = [&widths](const std::array<std::string, 3>& iRow) -> std::string {
+		std::string out = "|";
+		for (size_t col = 0; col < 3; ++col)
+			out += " " + iRow[col] + std::string(widths[col] - iRow[col].size(), ' ') + " |";
+		return out + "\n";
+	};
+	std::string out = line(iRows.front());
+	out += "|";
+	for (const auto width: widths) out += std::string(width + 2, '-') + "|";
+	out += "\n";
+	for (const auto& row: iRows | std::views::drop(1)) out += line(row);
+	return out;
+}
+
 }// namespace
+
+auto getLuaBindings() -> const std::vector<LuaBinding>& {
+	static const std::vector<LuaBinding> s_bindings = declareBindings();
+	return s_bindings;
+}
+
+auto getLuaTables() -> const std::vector<LuaTable>& {
+	static const std::vector<LuaTable> s_tables{
+			{.name = "transform", .description = "Local transform of an entity."},
+			{.name = "physics", .description = "Box2D body of an entity."},
+			{.name = "input", .description = "Keyboard and mouse state."},
+			{.name = "sound", .description = "Sound playback, by handle."},
+			{.name = "scene", .description = "Entities of the running level and level changes."},
+			{.name = "time", .description = "Frame time."},
+			{.name = "log", .description = "Engine log."},
+			{.name = "entity", .description = "Entity queries."},
+			{.name = "ui", .description = "HUD widgets and screen transitions."},
+			{.name = "gamestate", .description = "Values kept across levels and stored in saves."},
+			{.name = "save", .description = "Save slots (applied after the frame)."},
+			{.name = "settings", .description = "Game settings: defaults from `game_settings.yml`, user overrides."},
+			{.name = "trigger", .description = "Timer triggers."},
+			{.name = "door", .description = "Raycast doors."},
+			{.name = "pushwall", .description = "Raycast push-walls."},
+	};
+	return s_tables;
+}
+
+auto generateLuaReference() -> std::string {
+	std::string page = "# Lua API reference {#page-lua-api}\n\n[TOC]\n\n"
+					   "Every table and function a script can call. This page is generated from the binding registry "
+					   "(`getLuaBindings()` in `source/owl/private/script/LuaBindings.cpp`): do not edit it by hand. "
+					   "When a binding changes, `owl_script_tests_unit_test` fails and writes the new page to "
+					   "the temporary folder (the failure names the file): copy it over this one. See [Lua "
+					   "scripting](scripting.md) for the "
+					   "callbacks, the properties and the sandbox.\n\n"
+					   "An `entity` is the integer UUID of an entity (`entity_id` in its own script, "
+					   "`scene.find_entity` for the others); `[name: type]` is optional.\n";
+	for (const auto& table: getLuaTables()) {
+		page += std::format("\n## `{}`\n\n{}\n\n", table.name, table.description);
+		std::vector<std::array<std::string, 3>> rows{{"Function", "Returns", "Description"}};
+		for (const auto& binding: getLuaBindings()) {
+			if (binding.table == table.name)
+				rows.push_back(
+						{describeSignature(binding), describeReturns(binding), std::string{binding.description}});
+		}
+		page += markdownTable(rows);
+	}
+	return page;
+}
 
 void registerBindings(lua_State* iState) {
 	OWL_PROFILE_FUNCTION()
 
-	// clang-format off
-	static const luaL_Reg transformFuncs[] = {
-		{"get_position", luaTransformGetPosition},
-		{"set_position", luaTransformSetPosition},
-		{"get_rotation", luaTransformGetRotation},
-		{"set_rotation", luaTransformSetRotation},
-		{"get_scale", luaTransformGetScale},
-		{"set_scale", luaTransformSetScale},
-		{nullptr, nullptr}
+	struct Registration {
+		std::string table;
+		std::deque<std::string> names;
+		std::vector<luaL_Reg> functions;
 	};
-	static const luaL_Reg physicsFuncs[] = {
-		{"impulse", luaPhysicsImpulse},
-		{"get_velocity", luaPhysicsGetVelocity},
-		{"set_velocity", luaPhysicsSetVelocity},
-		{"set_transform", luaPhysicsSetTransform},
-		{"set_gravity_scale", luaPhysicsSetGravityScale},
-		{nullptr, nullptr}
-	};
-	static const luaL_Reg inputFuncs[] = {
-		{"is_key_pressed", luaInputIsKeyPressed},
-		{"is_mouse_button_pressed", luaInputIsMouseButtonPressed},
-		{"get_mouse_x", luaInputGetMouseX},
-		{"get_mouse_y", luaInputGetMouseY},
-		{nullptr, nullptr}
-	};
-	static const luaL_Reg soundFuncs[] = {
-		{"play", luaSoundPlay},
-		{"stop", luaSoundStop},
-		{"pause", luaSoundPause},
-		{"resume", luaSoundResume},
-		{"set_volume", luaSoundSetVolume},
-		{nullptr, nullptr}
-	};
-	static const luaL_Reg sceneFuncs[] = {
-		{"find_entity", luaSceneFindEntity},
-		{"create_entity", luaSceneCreateEntity},
-		{"destroy_entity", luaSceneDestroyEntity},
-		{"load_scene", luaSceneLoadScene},
-		{"transition_to", luaSceneTransitionTo},
-		{"quit", luaSceneQuit},
-		{nullptr, nullptr}
-	};
-	static  constexpr luaL_Reg timeFuncs[] = {
-		{"delta", luaTimeDelta},
-		{nullptr, nullptr}
-	};
-	static const luaL_Reg logFuncs[] = {
-		{"trace", luaLogTrace},
-		{"info", luaLogInfo},
-		{"warn", luaLogWarn},
-		{"error", luaLogError},
-		{nullptr, nullptr}
-	};
-	static  constexpr luaL_Reg entityFuncs[] = {
-		{"has_component", luaEntityHasComponent},
-		{"get_name", luaEntityGetName},
-		{nullptr, nullptr}
-	};
-	static const luaL_Reg uiFuncs[] = {
-		{"set_text", luaUiSetText},
-		{"get_text", luaUiGetText},
-		{"set_visible", luaUiSetVisible},
-		{"set_progress", luaUiSetProgress},
-		{"get_slider_value", luaUiGetSliderValue},
-		{"set_slider_value", luaUiSetSliderValue},
-		{"set_button_enabled", luaUiSetButtonEnabled},
-		{"transition_fade_in", luaUiTransitionFadeIn},
-		{"transition_fade_out", luaUiTransitionFadeOut},
-		{"transition_play", luaUiTransitionPlay},
-		{"is_transition_active", luaUiIsTransitionActive},
-		{nullptr, nullptr}
-	};
-	// clang-format on
-
-	registerTable(iState, "transform", transformFuncs);
-
-	registerTable(iState, "physics", physicsFuncs);
-
-	registerTable(iState, "input", inputFuncs);
-
-	registerTable(iState, "sound", soundFuncs);
-
-	registerTable(iState, "scene", sceneFuncs);
-
-	registerTable(iState, "time", timeFuncs);
-
-	registerTable(iState, "log", logFuncs);
-
-	registerTable(iState, "entity", entityFuncs);
-
-	registerTable(iState, "ui", uiFuncs);
-
-	// clang-format off
-	static const luaL_Reg gamestateFuncs[] = {
-		{"set", luaGamestateSet},
-		{"get", luaGamestateGet},
-		{"remove", luaGamestateRemove},
-		{"clear", luaGamestateClear},
-		{nullptr, nullptr}
-	};
-	static const luaL_Reg saveFuncs[] = {
-		{"save_game", luaSaveSaveGame},
-		{"load_game", luaSaveLoadGame},
-		{"has_save", luaSaveHasSave},
-		{"delete_save", luaSaveDeleteSave},
-		{"list_saves", luaSaveListSaves},
-		{nullptr, nullptr}
-	};
-	static const luaL_Reg settingsFuncs[] = {
-		{"set", [](lua_State* s) -> int {
-			const char* key = luaL_checkstring(s, 1);
-			if (lua_isboolean(s, 2) != 0)
-
-				scene::SettingsManager::set(key, lua_toboolean(s, 2) != 0);
-			else if (lua_isinteger(s, 2) != 0)
-
-				scene::SettingsManager::set(key, static_cast<int64_t>(lua_tointeger(s, 2)));
-			else if (lua_isnumber(s, 2) != 0)
-
-				scene::SettingsManager::set(key, static_cast<float>(lua_tonumber(s, 2)));
-			else if (lua_isstring(s, 2) != 0)
-
-				scene::SettingsManager::set(key, std::string(lua_tostring(s, 2)));
-			return 0;
-		}},
-		{"get", [](lua_State* s) -> int {
-			const char* key = luaL_checkstring(s, 1);
-			const auto val = scene::SettingsManager::get(key);
-			if (!val.has_value()) {
-				if (lua_gettop(s) >= 2)
-
-					lua_pushvalue(s, 2);
-				else
-
-					lua_pushnil(s);
-				return 1;
+	static const auto s_registrations = []() -> std::vector<Registration> {
+		std::vector<Registration> tables;
+		// No reallocation: the registered names point into each deque.
+		tables.reserve(getLuaTables().size());
+		for (const auto& table: getLuaTables()) {
+			auto& registration =
+					tables.emplace_back(Registration{.table = std::string{table.name}, .names = {}, .functions = {}});
+			for (const auto& binding: getLuaBindings()) {
+				if (binding.table == table.name)
+					registration.functions.push_back(
+							{registration.names.emplace_back(binding.name).c_str(), binding.function});
 			}
-
-			std::visit([s]<typename T0>(const T0& v) -> void {
-				using T = std::decay_t<T0>;
-				if constexpr (std::is_same_v<T, int64_t>)
-					lua_pushinteger(s, static_cast<lua_Integer>(v));
-				else if constexpr (std::is_same_v<T, float>)
-					lua_pushnumber(s, static_cast<lua_Number>(v));
-				else if constexpr (std::is_same_v<T, std::string>)
-					lua_pushstring(s, v.c_str());
-				else if constexpr (std::is_same_v<T, bool>)
-					lua_pushboolean(s, v ? 1 : 0);
-			}, val.value());
-			return 1;
-		}},
-		{"save", [](lua_State* s) -> int { lua_pushboolean(s, scene::SettingsManager::saveUserSettings() ? 1 : 0); return 1; }},
-		{"load", [](lua_State*) -> int { scene::SettingsManager::loadUserSettings(); return 0; }},
-		{"reset", [](lua_State* s) -> int { scene::SettingsManager::resetToDefault(luaL_checkstring(s, 1)); return 0; }},
-		{"reset_all", [](lua_State*) -> int { scene::SettingsManager::resetAllToDefaults(); return 0; }},
-		{"apply", [](lua_State*) -> int { scene::SettingsManager::applyBuiltins(); return 0; }},
-		{nullptr, nullptr}
-	};
-	static  constexpr luaL_Reg triggerFuncs[] = {
-		{"start_timer", [](lua_State* s) -> int {
-			const auto* activeScene = ScriptEngine::getActiveScene();
-			if (activeScene == nullptr) return 0;
-			const auto uid = static_cast<uint64_t>(luaL_checkinteger(s, 1));
-			if (const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
-				entity && entity.hasComponent<scene::component::Trigger>())
-				entity.getComponent<scene::component::Trigger>().trigger.startTimer();
-			return 0;
-		}},
-		{"stop_timer", [](lua_State* s) -> int {
-			const auto* activeScene = ScriptEngine::getActiveScene();
-			if (activeScene == nullptr) return 0;
-			const auto uid = static_cast<uint64_t>(luaL_checkinteger(s, 1));
-			if (const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
-				entity && entity.hasComponent<scene::component::Trigger>())
-				entity.getComponent<scene::component::Trigger>().trigger.stopTimer();
-			return 0;
-		}},
-		{"reset_timer", [](lua_State* s) -> int {
-			const auto* activeScene = ScriptEngine::getActiveScene();
-			if (activeScene == nullptr) return 0;
-			const auto uid = static_cast<uint64_t>(luaL_checkinteger(s, 1));
-			if (const auto entity = activeScene->findEntityByUUID(core::UUID{uid});
-				entity && entity.hasComponent<scene::component::Trigger>())
-				entity.getComponent<scene::component::Trigger>().trigger.resetTimer();
-			return 0;
-		}},
-		{nullptr, nullptr}
-	};
-	// clang-format on
-
-	// clang-format off
-	static const luaL_Reg doorFuncs[] = {
-		{"activate", luaDoorActivate},
-		{"close", luaDoorClose},
-		{"is_open", luaDoorIsOpen},
-		{"get_state", luaDoorGetState},
-		{nullptr, nullptr}
-	};
-	static const luaL_Reg pushwallFuncs[] = {
-		{"activate", luaPushwallActivate},
-		{"has_moved", luaPushwallHasMoved},
-		{"get_state", luaPushwallGetState},
-		{nullptr, nullptr}
-	};
-	// clang-format on
-	registerTable(iState, "gamestate", gamestateFuncs);
-
-	registerTable(iState, "save", saveFuncs);
-
-	registerTable(iState, "settings", settingsFuncs);
-
-	registerTable(iState, "trigger", triggerFuncs);
-
-	registerTable(iState, "door", doorFuncs);
-
-	registerTable(iState, "pushwall", pushwallFuncs);
+			registration.functions.push_back({nullptr, nullptr});
+		}
+		return tables;
+	}();
+	for (const auto& registration: s_registrations)
+		LuaEngine::registerGuardedTable(iState, registration.table.c_str(), registration.functions.data());
 }
 
 }// namespace owl::script

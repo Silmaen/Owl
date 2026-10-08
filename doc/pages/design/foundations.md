@@ -195,7 +195,7 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
     - Extension points documented ([Architecture](../architecture.md#extension-points)): renderer-stack layers and
       application layers today; the open component registry (PR-37) and replaceable phased systems (PR-36) come with
       their PRs
-- ![Planned][planned] Typed Lua binding registry — one declaration per binding gives the Lua function, its
+- ![Done][done] Typed Lua binding registry — one declaration per binding gives the Lua function, its
   documentation and (later) its visual-scripting node; documented-but-missing bindings either land or leave the docs
   (D-07, D-26). See [Visual scripting](visual-scripting.md)
 - ![Done][done] Editor command API — every editor mutation goes through a command executed by `UndoManager`;
