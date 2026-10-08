@@ -88,6 +88,14 @@ TEST(UndoManager, StartsEmptyAndClean) {
 	EXPECT_EQ(manager.lastSelectionHint(), core::UUID{0});
 }
 
+TEST(UndoManager, MarkUnsavedMakesTheStateDirtyUntilTheNextSave) {
+	UndoManager<Counter> manager;
+	manager.markUnsaved();
+	EXPECT_TRUE(manager.isDirty());
+	manager.markSaved();
+	EXPECT_FALSE(manager.isDirty());
+}
+
 TEST(UndoManager, ExecuteAppliesAndRecords) {
 	UndoManager<Counter> manager;
 	Counter target;

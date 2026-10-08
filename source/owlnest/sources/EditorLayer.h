@@ -15,6 +15,7 @@
 #include "ActionRegistry.h"
 #include "EditorSettings.h"
 #include "Project.h"
+#include "RecoveryManager.h"
 #include "VoxelBrush.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
@@ -24,6 +25,7 @@
 #include "panel/LogPanel.h"
 #include "panel/Parameters.h"
 #include "panel/ProjectSettings.h"
+#include "panel/RecoveryPrompt.h"
 #include "panel/SceneHierarchy.h"
 #include "panel/SceneSettings.h"
 #include "panel/SettingsPanel.h"
@@ -716,6 +718,40 @@ private:
 	DocumentManager m_documents;
 	/// Id of the hot reload listener registered at attach.
 	uint32_t m_hotReloadListener = 0;
+	/// Autosave of the modified documents of the open project (crash recovery).
+	RecoveryManager m_recovery;
+	/// Modal offering the autosaves of a session that ended with unsaved changes.
+	panel::RecoveryPrompt m_recoveryPrompt;
+
+	/**
+	 * @brief
+	 *  Point the autosave at the open project and offer the autosaves its previous session left.
+	 */
+	void startProjectRecovery();
+
+	/**
+	 * @brief
+	 *  Apply the user's choice in the recovery modal.
+	 * @param[in] iChoice The choice made this frame.
+	 */
+	void handleRecoveryChoice(panel::RecoveryPrompt::Choice iChoice);
+
+	/**
+	 * @brief
+	 *  Open (or create) the document an autosave belongs to.
+	 * @param[in] iEntry The autosave.
+	 * @return The document, or null when its file no longer exists.
+	 */
+	auto openDocumentForRecovery(const RecoveryEntry& iEntry) -> Document*;
+
+	/**
+	 * @brief
+	 *  Find an open document of a type by its file.
+	 * @param[in] iType The document type.
+	 * @param[in] iPath The file the document edits.
+	 * @return The document, or null when none is open.
+	 */
+	[[nodiscard]] auto findDocument(DocumentType iType, const std::filesystem::path& iPath) const -> Document*;
 
 	/**
 	 * @brief

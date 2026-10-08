@@ -11,6 +11,7 @@
 #include "NodeGraphDocument.h"
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -67,6 +68,13 @@ public:
 	 * @return The display title.
 	 */
 	[[nodiscard]] auto title() const -> std::string override { return "Scene Flow"; }
+
+	/**
+	 * @brief
+	 *  The scene flow mirrors the project's scenes: it is rebuilt from them, never autosaved.
+	 * @return Nothing.
+	 */
+	[[nodiscard]] auto recoverySnapshot() const -> std::optional<std::string> override { return std::nullopt; }
 
 	/**
 	 * @brief

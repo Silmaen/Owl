@@ -47,6 +47,18 @@ auto AnimationDocument::isDirty() const -> bool {
 		   m_savedSnapshot;
 }
 
+auto AnimationDocument::recoverySnapshot() const -> std::optional<std::string> {
+	return m_clip.serializeToString(m_path.empty() ? std::string{"untitled"} : m_path.stem().string());
+}
+
+auto AnimationDocument::restoreRecoverySnapshot(const std::string& iSnapshot) -> bool {
+	if (!m_clip.deserializeFromString(iSnapshot)) {
+		OWL_WARN("Recovery: Cannot restore the autosave of animation '{}'.", title())
+		return false;
+	}
+	return true;
+}
+
 void AnimationDocument::onAttach(EditorLayer* iEditor) {
 	mp_editorLayer = iEditor;
 	refreshSavedSnapshot();

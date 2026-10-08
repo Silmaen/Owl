@@ -540,7 +540,8 @@ Displayed metrics:
 The Settings panel is a dockable window opened via **Edit > Editor Settings**.
 It contains three sections:
 
-**General.** Toggles like the Show Stats Panel checkbox.
+**General.** Toggles like the Show Stats Panel checkbox, font sizes, and the autosave interval
+(see [Autosave and crash recovery](#autosave-and-crash-recovery)).
 
 **Theme selection.** A dropdown listing built-in theme presets (e.g. "Dark"). Changing
 the theme calls `UiLayer::setTheme()` and triggers `IconBank::rebuild()` to re-rasterize
@@ -795,6 +796,21 @@ OwlNest --export <project dir or owl_project.yml> <output dir>
 
 `--headless` uses the Null window, renderer and sound backends; `--smoke-test [frames]` plays every scene of the
 pack for that many frames and exits with code 1 if any error was logged. See [Game export](design/game-export.md).
+
+### Autosave and crash recovery
+
+While a project is open, every modified document (scene, script or text file, tilemap, tileset, animation clip,
+node graph) is copied aside every 60 seconds (*Settings > General > Autosave every*, 0 disables it), and once more
+when the editor quits or the project closes. The copies live outside the project, in
+`OwlNest_recovery/<project>-<hash>/` next to `OwlNest_settings.yml`: one snapshot per document and a
+`recovery.yml` manifest. Saving a document drops its snapshot; the Scene Flow view is not autosaved (it is rebuilt
+from the scenes).
+
+When a project is opened and snapshots are left (crash, or quit without saving), the *Recover Unsaved Work?* modal
+lists them with their file and time. **Recover** reopens each document with the autosaved content, marked as
+modified so that nothing is written until you save; **Discard** deletes the snapshots. A snapshot older than its
+file (saved after the autosave) is never offered. A snapshot that cannot be restored is kept in a
+`<folder>-kept-<time>` folder named in the log.
 
 ### Scripted headless runs (`--scenario`)
 

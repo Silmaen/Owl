@@ -14,6 +14,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 
 namespace owl::nest {
@@ -116,6 +117,21 @@ public:
 	 * @return True on success; false on I/O failure.
 	 */
 	auto saveAs(const std::filesystem::path& iPath) -> bool override;
+
+	/**
+	 * @brief
+	 *  The editor scene (not the Play copy), serialized.
+	 * @return The scene YAML, or nothing when no scene is loaded.
+	 */
+	[[nodiscard]] auto recoverySnapshot() const -> std::optional<std::string> override;
+
+	/**
+	 * @brief
+	 *  Load an autosaved scene in place of the current one, keeping the path; the document becomes dirty.
+	 * @param[in] iSnapshot The scene YAML.
+	 * @return True when the scene loaded.
+	 */
+	auto restoreRecoverySnapshot(const std::string& iSnapshot) -> bool override;
 
 	/**
 	 * @brief

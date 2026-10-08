@@ -152,7 +152,7 @@ imported-configuration fallback.
     - Shipped: a background poller (`platform::FileWatcher`, one atomic read per frame, no measurable cost in the
       frame bench), never active with an asset pack open; a failed reload keeps the previous version. A shader
       reload changes code, not bindings: a new binding needs a restart. See [Editor](../editor.md#editor-hot-reload)
-- ![Planned][planned] Autosave and crash recovery — periodic autosave of dirty documents, recovery offered at the next
+- ![Done][done] Autosave and crash recovery — periodic autosave of dirty documents, recovery offered at the next
   launch
 - ![Planned][planned] Session restore (persisted open tabs)
     - Remember the list of open documents between launches (per project)

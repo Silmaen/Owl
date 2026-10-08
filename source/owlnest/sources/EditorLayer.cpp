@@ -685,6 +685,8 @@ void EditorLayer::onDetach() {
 		ui->setTopBarCallback({});
 	m_ribbon.clear();
 
+	// Unsaved changes survive a quit too: Nest asks nothing on exit.
+	m_recovery.autosave(m_documents);
 	m_documents.clear();
 	OWL_TRACE("EditorLayer: closed all documents (and their viewports).")
 
@@ -696,6 +698,10 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
 	gui::FontPreviewCache::get().pumpPending();
+
+	m_recovery.setInterval(static_cast<float>(m_settings.autosaveIntervalSeconds));
+	if (m_recovery.onUpdate(iTimeStep.getSeconds()))
+		m_recovery.autosave(m_documents);
 
 	auto* activeDoc = activeSceneDocument();
 	for (const auto& docPtr: m_documents.list()) {
@@ -855,6 +861,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	for (const auto id: toClose) requestCloseDocument(id);
 
 	renderCloseDocumentModal();
+	handleRecoveryChoice(m_recoveryPrompt.onImGuiRender());
 	//=============================================================
 	m_sceneHierarchy.onImGuiRender();
 	m_contentBrowser.onImGuiRender();
@@ -2215,6 +2222,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 
 	// Add to recent projects list.
 	m_settings.pushRecentProject(iDir);
+	startProjectRecovery();
 
 	if (!m_project.firstScene.empty()) {
 		const auto scenePath = m_project.projectDirectory / m_project.firstScene;
@@ -2268,6 +2276,8 @@ void EditorLayer::closeProject() {
 		return;
 	app::Application::get().removeAssetDirectory(m_project.projectDirectory);
 	m_contentBrowser.attach();
+	m_recovery.autosave(m_documents);
+	m_recovery.setDirectory({});
 	m_project = {};
 	refreshWindowTitle();
 }

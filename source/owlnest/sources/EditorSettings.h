@@ -47,6 +47,8 @@ struct EditorSettings {
 	bool snapAutoFromTilemap = true;
 	/// Whether the in-viewport camera markers (icon + forward arrow + FOV cone) are drawn in Edit mode.
 	bool showCameraGizmos = true;
+	/// Seconds between two autosaves of the modified documents (crash recovery); 0 disables the autosave.
+	int autosaveIntervalSeconds = 60;
 	/// Custom keybinding overrides (action ID -> shortcut string). Only non-default bindings.
 	std::unordered_map<std::string, std::string> keybindingOverrides;
 	/// Recently opened project directories (most recent first).

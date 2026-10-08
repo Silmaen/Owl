@@ -95,6 +95,21 @@ auto TilesetDocument::isDirty() const -> bool {
 	return m_tileset.serializeToString(displayName) != m_savedSnapshot;
 }
 
+auto TilesetDocument::recoverySnapshot() const -> std::optional<std::string> {
+	return m_tileset.serializeToString(m_path.empty() ? std::string{"untitled"} : m_path.stem().string());
+}
+
+auto TilesetDocument::restoreRecoverySnapshot(const std::string& iSnapshot) -> bool {
+	const auto texture = m_tileset.texture;
+	if (!m_tileset.deserializeFromString(iSnapshot)) {
+		OWL_WARN("Recovery: Cannot restore the autosave of tileset '{}'.", title())
+		return false;
+	}
+	if (!m_tileset.texture)
+		m_tileset.texture = texture;
+	return true;
+}
+
 void TilesetDocument::onAttach(EditorLayer* iEditor) {
 	mp_editorLayer = iEditor;
 	resolveTexture();

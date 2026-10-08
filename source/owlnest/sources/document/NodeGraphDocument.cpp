@@ -38,6 +38,18 @@ auto NodeGraphDocument::isDirty() const -> bool {
 	return gui::widgets::NodeCanvasSerializer::serializeToString(m_canvas) != m_savedSnapshot;
 }
 
+auto NodeGraphDocument::recoverySnapshot() const -> std::optional<std::string> {
+	return gui::widgets::NodeCanvasSerializer::serializeToString(m_canvas);
+}
+
+auto NodeGraphDocument::restoreRecoverySnapshot(const std::string& iSnapshot) -> bool {
+	if (!gui::widgets::NodeCanvasSerializer::deserializeFromString(m_canvas, iSnapshot)) {
+		OWL_WARN("Recovery: Cannot restore the autosave of graph '{}'.", title())
+		return false;
+	}
+	return true;
+}
+
 void NodeGraphDocument::onAttach(EditorLayer* iEditor) {
 	mp_editorLayer = iEditor;
 	onCanvasReady();

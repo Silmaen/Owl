@@ -46,6 +46,19 @@ auto CodeEditorDocument::isDirty() const -> bool {
 	return mp_editor->GetText() != m_savedText;
 }
 
+auto CodeEditorDocument::recoverySnapshot() const -> std::optional<std::string> {
+	if (!mp_editor)
+		return std::nullopt;
+	return mp_editor->GetText();
+}
+
+auto CodeEditorDocument::restoreRecoverySnapshot(const std::string& iSnapshot) -> bool {
+	if (!mp_editor)
+		return false;
+	mp_editor->SetText(iSnapshot);
+	return true;
+}
+
 void CodeEditorDocument::onAttach(EditorLayer* iEditor) {
 	mp_editorLayer = iEditor;
 	mp_editor = mkUniq<TextEditor>();
