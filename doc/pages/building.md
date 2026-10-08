@@ -43,10 +43,10 @@ runs reuse the Conan cache. The shared libraries from the cache are copied next 
 (empty) resolves without the lockfile, and `OWL_CONAN_CACHE_URL` adds a binary cache server (the CI uses one).
 
 Once the Conan cache holds the packages, a configure needs neither the network nor Doxygen: `poetry sync` runs only
-when the venv is missing or `poetry.lock` changed since the build tree last synced, the badge images of the help
-pages come from their local cache (`-DOWL_HELP_FETCH_BADGES=ON` downloads the missing ones), and the `documentation`
-target exists only when Doxygen is found (`-DOWL_ENABLE_DOCUMENTATION=ON` requires it). The `Doxyfile` is generated
-in the build tree.
+when the venv is missing or `poetry.lock` changed since the build tree last synced, the badge images of the help pages
+come from their local cache (`-DOWL_HELP_FETCH_BADGES=ON`, set by the packaged presets `linux-clang-release`,
+`windows-clang-release` and `package-linux`, downloads the missing ones), and the `documentation` target exists only
+when Doxygen is found (`-DOWL_ENABLE_DOCUMENTATION=ON` requires it). The `Doxyfile` is generated in the build tree.
 
 The engine is also a Conan package, checked by `test_package/` (two programs built on `find_package(OwlEngine)`);
 publishing it is a v1.0.0 item, until then other projects use the packaged `OwlEngine` archive (see
@@ -254,7 +254,7 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER`  | OFF     | UndefinedBehaviorSanitizer                                                       |
 | `OWL_ENABLE_MEMORY_SANITIZER`              | OFF     | MemorySanitizer (Clang-only)                                                     |
 | `OWL_ENABLE_DOCUMENTATION`                 | OFF     | Require Doxygen (otherwise `documentation` exists only when Doxygen is found)    |
-| `OWL_HELP_FETCH_BADGES`                    | OFF     | Download the help badge images missing from the local cache (network)            |
+| `OWL_HELP_FETCH_BADGES`                    | OFF     | Download the help badges missing from the cache (ON in the packaged presets)     |
 | `OWL_ENABLE_RENDERER_VERBOSE_CAPABILITIES` | OFF     | Log every capability of the graphics device at start-up                          |
 | `OWL_ENABLE_SHADER_REFLECT_RESOURCES`      | OFF     | Log the resources reflected from every compiled shader                           |
 | `OWL_USE_CCACHE`                           | ON      | ccache (or sccache) as compiler launcher when available                          |
