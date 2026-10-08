@@ -96,6 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DepManager: `depmanager.yml`, `cmake/Depmanager.cmake`, `owl_engine.py`, the `ConfigureRemote` CI action and the *Define Remote* TeamCity step; Conan 2 is the only provider (`OWL_DEPENDENCY_PROVIDER` is gone) and other projects take OwlEngine from the packaged archive.
 - Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).
 - LeakSanitizer preset, option and TeamCity job: on Linux ASan already reports leaks.
+- `parallelForEach` / `parallelForIndex` (`core/task/ParallelUtils.h`), which nothing called, and the `Scheduler::getImpl()` accessor that only they used.
 
 ### Fixed
 
