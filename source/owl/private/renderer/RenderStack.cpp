@@ -9,6 +9,7 @@
 
 #include "renderer/RenderLayerFactory.h"
 #include "renderer/RenderStack.h"
+#include "renderer/RenderStackYaml.h"
 
 #include <algorithm>
 #include <ranges>
@@ -43,34 +44,37 @@ void mergeYaml(YAML::Node& ioBase, const YAML::Node& iOverride) {
 
 }// namespace
 
-// ---------------------------------------------------------------- RendererStackConfig
-auto RendererStackConfig::find(const std::string& iName) const -> const RendererStackEntry* {
-	const auto it = std::ranges::find_if(entries, [&](const auto& e) -> bool { return e.name == iName; });
-	if (it == entries.end())
-		return nullptr;
-	return &*it;
+auto parseYamlText(const std::string& iYaml) -> YAML::Node {
+	if (iYaml.empty())
+		return YAML::Node{};
+	try {
+		return YAML::Load(iYaml);
+	} catch (const YAML::Exception& e) {
+		OWL_CORE_WARN("RenderStack: Invalid YAML config ignored ({}).", e.what())
+		return YAML::Node{};
+	}
 }
 
-auto RendererStackConfig::makeDefault() -> RendererStackConfig {
-	RendererStackConfig cfg;
-	cfg.entries.push_back({.typeKey = g_DefaultLayerType, .name = g_DefaultLayerName, .defaultConfig = YAML::Node{}});
-	return cfg;
+auto dumpYamlText(const YAML::Node& iNode) -> std::string {
+	if (!iNode || iNode.IsNull() || (!iNode.IsScalar() && iNode.size() == 0))
+		return {};
+	return YAML::Dump(iNode);
 }
 
-auto RendererStackConfig::toYaml() const -> YAML::Node {
+auto stackToYaml(const RendererStackConfig& iConfig) -> YAML::Node {
 	YAML::Node out{YAML::NodeType::Sequence};
-	for (const auto& entry: entries) {
+	for (const auto& entry: iConfig.entries) {
 		YAML::Node item{YAML::NodeType::Map};
 		item["Type"] = entry.typeKey;
 		item["Name"] = entry.name;
-		if (entry.defaultConfig && entry.defaultConfig.size() > 0)
-			item["DefaultConfig"] = entry.defaultConfig;
+		if (const auto cfg = parseYamlText(entry.defaultConfig); cfg && cfg.size() > 0)
+			item["DefaultConfig"] = cfg;
 		out.push_back(item);
 	}
 	return out;
 }
 
-auto RendererStackConfig::fromYaml(const YAML::Node& iNode) -> RendererStackConfig {
+auto stackFromYaml(const YAML::Node& iNode) -> RendererStackConfig {
 	RendererStackConfig cfg;
 	if (!iNode || !iNode.IsSequence())
 		return cfg;
@@ -93,11 +97,63 @@ auto RendererStackConfig::fromYaml(const YAML::Node& iNode) -> RendererStackConf
 			OWL_CORE_WARN("RendererStackConfig: duplicate name '{}' — keeping first.", entry.name)
 			continue;
 		}
-		if (const auto cfgNode = item["DefaultConfig"])
-			entry.defaultConfig = YAML::Clone(cfgNode);
+		entry.defaultConfig = dumpYamlText(item["DefaultConfig"]);
 		cfg.entries.push_back(std::move(entry));
 	}
 	return cfg;
+}
+
+auto enabledToYaml(const EnabledRenderersConfig& iConfig) -> YAML::Node {
+	YAML::Node out{YAML::NodeType::Sequence};
+	for (const auto& entry: iConfig.entries) {
+		YAML::Node item{YAML::NodeType::Map};
+		item["Name"] = entry.name;
+		item["Enabled"] = entry.enabled;
+		if (const auto overrides = parseYamlText(entry.overrides); overrides && overrides.size() > 0)
+			item["Overrides"] = overrides;
+		out.push_back(item);
+	}
+	return out;
+}
+
+auto enabledFromYaml(const YAML::Node& iNode) -> EnabledRenderersConfig {
+	EnabledRenderersConfig cfg;
+	if (!iNode || !iNode.IsSequence())
+		return cfg;
+	for (const auto& item: iNode) {
+		if (!item.IsMap())
+			continue;
+		EnabledRenderersConfig::Entry entry;
+		if (const auto n = item["Name"]; n && n.IsScalar())
+			entry.name = n.as<std::string>();
+		if (entry.name.empty())
+			continue;
+		if (const auto e = item["Enabled"])
+			entry.enabled = e.as<bool>(true);
+		entry.overrides = dumpYamlText(item["Overrides"]);
+		cfg.entries.push_back(std::move(entry));
+	}
+	return cfg;
+}
+
+// ---------------------------------------------------------------- RendererStackConfig
+auto RendererStackConfig::find(const std::string& iName) const -> const RendererStackEntry* {
+	const auto it = std::ranges::find_if(entries, [&](const auto& e) -> bool { return e.name == iName; });
+	if (it == entries.end())
+		return nullptr;
+	return &*it;
+}
+
+auto RendererStackConfig::makeDefault() -> RendererStackConfig {
+	RendererStackConfig cfg;
+	cfg.entries.push_back({.typeKey = g_DefaultLayerType, .name = g_DefaultLayerName, .defaultConfig = {}});
+	return cfg;
+}
+
+auto RendererStackConfig::toYaml() const -> std::string { return YAML::Dump(stackToYaml(*this)); }
+
+auto RendererStackConfig::fromYaml(const std::string& iYaml) -> RendererStackConfig {
+	return stackFromYaml(parseYamlText(iYaml));
 }
 
 // ---------------------------------------------------------------- EnabledRenderersConfig
@@ -108,38 +164,10 @@ auto EnabledRenderersConfig::find(const std::string& iName) const -> const Entry
 	return &*it;
 }
 
-auto EnabledRenderersConfig::toYaml() const -> YAML::Node {
-	YAML::Node out{YAML::NodeType::Sequence};
-	for (const auto& entry: entries) {
-		YAML::Node item{YAML::NodeType::Map};
-		item["Name"] = entry.name;
-		item["Enabled"] = entry.enabled;
-		if (entry.overrides && entry.overrides.size() > 0)
-			item["Overrides"] = entry.overrides;
-		out.push_back(item);
-	}
-	return out;
-}
+auto EnabledRenderersConfig::toYaml() const -> std::string { return YAML::Dump(enabledToYaml(*this)); }
 
-auto EnabledRenderersConfig::fromYaml(const YAML::Node& iNode) -> EnabledRenderersConfig {
-	EnabledRenderersConfig cfg;
-	if (!iNode || !iNode.IsSequence())
-		return cfg;
-	for (const auto& item: iNode) {
-		if (!item.IsMap())
-			continue;
-		Entry entry;
-		if (const auto n = item["Name"]; n && n.IsScalar())
-			entry.name = n.as<std::string>();
-		if (entry.name.empty())
-			continue;
-		if (const auto e = item["Enabled"])
-			entry.enabled = e.as<bool>(true);
-		if (const auto o = item["Overrides"])
-			entry.overrides = YAML::Clone(o);
-		cfg.entries.push_back(std::move(entry));
-	}
-	return cfg;
+auto EnabledRenderersConfig::fromYaml(const std::string& iYaml) -> EnabledRenderersConfig {
+	return enabledFromYaml(parseYamlText(iYaml));
 }
 
 // ---------------------------------------------------------------- RenderStack
@@ -172,12 +200,12 @@ auto RenderStack::buildFromConfig(const RendererStackConfig& iProject, const Ena
 						   iProjectEntry.typeKey)
 			return;
 		}
-		YAML::Node merged = iProjectEntry.defaultConfig && iProjectEntry.defaultConfig.IsMap()
-									? YAML::Clone(iProjectEntry.defaultConfig)
-									: YAML::Node{YAML::NodeType::Map};
-		if (iSceneEntry != nullptr && iSceneEntry->overrides)
-			mergeYaml(merged, iSceneEntry->overrides);
-		layer->applyConfig(merged);
+		YAML::Node merged = parseYamlText(iProjectEntry.defaultConfig);
+		if (!merged.IsMap())
+			merged = YAML::Node{YAML::NodeType::Map};
+		if (iSceneEntry != nullptr)
+			mergeYaml(merged, parseYamlText(iSceneEntry->overrides));
+		layer->applyConfig(YAML::Dump(merged));
 		stack.m_layers.push_back(std::move(layer));
 	};
 

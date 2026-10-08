@@ -10,7 +10,7 @@
 
 #include <data/assets/pack/AssetScanner.h>
 #include <gui/widgets/Ribbon.h>
-#include <owl.h>
+#include <owlgui.h>
 
 #include "ActionRegistry.h"
 #include "EditorSettings.h"

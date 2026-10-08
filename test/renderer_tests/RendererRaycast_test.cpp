@@ -18,6 +18,7 @@
 #include <scene/Tileset.h>
 #include <scene/component/Tilemap.h>
 
+#include "core/external/yaml.h"
 #include "renderer/RendererRaycastLayer.h"
 
 #include <array>
@@ -149,7 +150,7 @@ TEST(RendererRaycast, applyConfigParsesYaml) {
 	floor.push_back(1.f);
 	cfg["FloorColor"] = floor;
 
-	layer->applyConfig(cfg);
+	layer->applyConfig(YAML::Dump(cfg));
 	const auto& parsed = layer->getConfig();
 	EXPECT_FLOAT_EQ(parsed.fovDegrees, 90.f);
 	EXPECT_FLOAT_EQ(parsed.maxDistance, 32.f);

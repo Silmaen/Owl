@@ -43,8 +43,7 @@ void ModifyEnabledRenderersCommand::apply(scene::Scene& ioScene, const std::stri
 		ioScene.getEnabledRenderers() = renderer::EnabledRenderersConfig{};
 		return;
 	}
-	const auto node = YAML::Load(iYaml);
-	ioScene.getEnabledRenderers() = renderer::EnabledRenderersConfig::fromYaml(node);
+	ioScene.getEnabledRenderers() = renderer::EnabledRenderersConfig::fromYaml(iYaml);
 }
 
 ModifyPhysicsSettingsCommand::ModifyPhysicsSettingsCommand(const scene::PhysicsSettings& iBefore,

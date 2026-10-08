@@ -56,7 +56,7 @@ void readProjectConfig(const YAML::Node& iConfig, Project& oProject) {
 	if (const auto win = iConfig["window"]; win)
 		readWindowSettings(win, oProject.window);
 	if (const auto stack = iConfig["RendererStack"]; stack)
-		oProject.rendererStack = renderer::RendererStackConfig::fromYaml(stack);
+		oProject.rendererStack = renderer::RendererStackConfig::fromYaml(YAML::Dump(stack));
 }
 
 }// namespace
@@ -103,7 +103,7 @@ auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const 
 			.windowSize = {window.width, window.height},
 			.fullscreen = window.fullscreen,
 			.resizable = window.resizable,
-			.rendererStackYaml = rendererStack.isEmpty() ? std::string{} : YAML::Dump(rendererStack.toYaml()),
+			.rendererStackYaml = rendererStack.isEmpty() ? std::string{} : rendererStack.toYaml(),
 			.packFlags = data::assets::pack::PackFlags::Default};
 }
 
@@ -129,7 +129,7 @@ auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
 	out << YAML::Key << "resizable" << YAML::Value << window.resizable;
 	out << YAML::EndMap;// window
 	if (!rendererStack.isEmpty())
-		out << YAML::Key << "RendererStack" << YAML::Value << rendererStack.toYaml();
+		out << YAML::Key << "RendererStack" << YAML::Value << YAML::Load(rendererStack.toYaml());
 	out << YAML::EndMap;// OwlProject
 	out << YAML::EndMap;
 

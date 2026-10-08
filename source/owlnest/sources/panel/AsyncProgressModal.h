@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <owl.h>
+#include <owlgui.h>
 
 #include <atomic>
 #include <mutex>

@@ -10,7 +10,7 @@
 
 #include <core/FormatVersion.h>
 #include <data/assets/pack/GameExporter.h>
-#include <owl.h>
+#include <owlgui.h>
 #include <renderer/RenderStack.h>
 
 #include <cstdint>

@@ -132,16 +132,24 @@ if (${PROJECT_PREFIX}_PROFILER_BACKEND STREQUAL "tracy")
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Tracy CONFIG REQUIRED MODULE_TARGET "Tracy::TracyClient")
 endif ()
 
+# yaml-cpp: the public headers carry YAML as text (renderer/RenderStack.h), never yaml-cpp types (audit G-07)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED)
+
+# ImGui: private to the engine; the gui/ headers that include it come with Owl::Gui
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE imgui REQUIRED)
+
 # ---------========= PUBLIC third party =========---------
 
-# Entt
+# Entt: the only public dependency of Owl::OwlEngine (scene/Scene.h, scene/Entity.h)
 owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED)
 
-# ImGui
-owl_target_link_libraries(${ENGINE_NAME} PUBLIC imgui REQUIRED)
-
-# yaml-cpp: public until YAML leaves the public headers (renderer/RenderLayer.h, audit G-07 / PR-27)
-owl_target_link_libraries(${ENGINE_NAME} PUBLIC yaml-cpp REQUIRED)
+# Owl::Gui: the engine plus imgui, for the consumers of <owlgui.h> (the editor, a game's own tools)
+add_library(${ENGINE_NAME}Gui INTERFACE)
+add_library(Owl::Gui ALIAS ${ENGINE_NAME}Gui)
+set_target_properties(${ENGINE_NAME}Gui PROPERTIES EXPORT_NAME Gui)
+target_link_libraries(${ENGINE_NAME}Gui INTERFACE ${ENGINE_NAME} imgui::imgui)
+# Build tree only, as for the engine: imgui_stdlib and the backends (the editor uses imgui_stdlib).
+target_link_libraries(${ENGINE_NAME}Gui INTERFACE $<BUILD_INTERFACE:${PROJECT_PREFIX_LOWER}_imgui_bindings>)
 
 
 # additional windows libs
@@ -192,6 +200,10 @@ install(TARGETS ${ENGINE_NAME}
         RUNTIME DESTINATION bin
         FRAMEWORK DESTINATION lib
         FILE_SET HEADERS DESTINATION include
+)
+install(TARGETS ${ENGINE_NAME}Gui
+        EXPORT OwlEngineGuiTargets
+        COMPONENT Engine
 )
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
         DESTINATION assets

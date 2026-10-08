@@ -140,7 +140,7 @@ imported-configuration fallback.
 
 ## Phase D — Usability & dependency reduction
 
-- ![Planned][planned] Fewer public dependencies — only EnTT, plus imgui through the optional `Owl::Gui` target
+- ![Done][done] Fewer public dependencies — only EnTT, plus imgui through the optional `Owl::Gui` target
   (see [Conan migration](conan-migration.md))
 - ![Done][done] Configure without network or Doxygen, CMake clean-up (PR-26: G-05, G-09, G-13, G-14, G-15,
   I-09, G-08)

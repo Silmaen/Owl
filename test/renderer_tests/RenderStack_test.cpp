@@ -8,6 +8,8 @@
 
 #include "testHelper.h"
 
+#include "core/external/yaml.h"
+
 #include <renderer/CameraOrtho.h>
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/RenderStack.h>
@@ -28,7 +30,7 @@ public:
 	void onBeginFrame(const owl::renderer::Camera&) override { ++beginCount; }
 	void onRender(owl::scene::Scene&) override { ++renderCount; }
 	void onEndFrame() override { ++endCount; }
-	void applyConfig(const YAML::Node& iConfig) override { lastConfig = YAML::Clone(iConfig); }
+	void applyConfig(const std::string& iConfig) override { lastConfig = YAML::Load(iConfig); }
 
 	int beginCount = 0;
 	int renderCount = 0;
@@ -62,10 +64,10 @@ TEST(RendererStackConfig, makeDefault) {
 
 TEST(RendererStackConfig, yamlRoundTrip) {
 	RendererStackConfig cfg;
-	cfg.entries.push_back({.typeKey = "Renderer2D", .name = "world", .defaultConfig = YAML::Node{}});
+	cfg.entries.push_back({.typeKey = "Renderer2D", .name = "world", .defaultConfig = {}});
 	YAML::Node hudCfg;
 	hudCfg["Order"] = 10;
-	cfg.entries.push_back({.typeKey = "Renderer2D", .name = "hud", .defaultConfig = hudCfg});
+	cfg.entries.push_back({.typeKey = "Renderer2D", .name = "hud", .defaultConfig = YAML::Dump(hudCfg)});
 
 	const auto yaml = cfg.toYaml();
 	const auto round = RendererStackConfig::fromYaml(yaml);
@@ -74,8 +76,8 @@ TEST(RendererStackConfig, yamlRoundTrip) {
 	EXPECT_EQ(round.entries[0].typeKey, "Renderer2D");
 	EXPECT_EQ(round.entries[0].name, "world");
 	EXPECT_EQ(round.entries[1].name, "hud");
-	ASSERT_TRUE(round.entries[1].defaultConfig);
-	EXPECT_EQ(round.entries[1].defaultConfig["Order"].as<int>(), 10);
+	ASSERT_FALSE(round.entries[1].defaultConfig.empty());
+	EXPECT_EQ(YAML::Load(round.entries[1].defaultConfig)["Order"].as<int>(), 10);
 }
 
 TEST(RendererStackConfig, fromYamlSkipsInvalid) {
@@ -93,7 +95,7 @@ TEST(RendererStackConfig, fromYamlSkipsInvalid) {
 	duplicate["Name"] = "world";
 	node.push_back(duplicate);
 
-	const auto cfg = RendererStackConfig::fromYaml(node);
+	const auto cfg = RendererStackConfig::fromYaml(YAML::Dump(node));
 	ASSERT_EQ(cfg.entries.size(), 1u);
 	EXPECT_EQ(cfg.entries[0].name, "world");
 	owl::core::Log::invalidate();
@@ -101,8 +103,8 @@ TEST(RendererStackConfig, fromYamlSkipsInvalid) {
 
 TEST(RendererStackConfig, find) {
 	RendererStackConfig cfg;
-	cfg.entries.push_back({.typeKey = "Renderer2D", .name = "world", .defaultConfig = YAML::Node{}});
-	cfg.entries.push_back({.typeKey = "Renderer2D", .name = "hud", .defaultConfig = YAML::Node{}});
+	cfg.entries.push_back({.typeKey = "Renderer2D", .name = "world", .defaultConfig = {}});
+	cfg.entries.push_back({.typeKey = "Renderer2D", .name = "hud", .defaultConfig = {}});
 
 	const auto* hud = cfg.find("hud");
 	ASSERT_NE(hud, nullptr);
@@ -114,8 +116,8 @@ TEST(EnabledRenderersConfig, yamlRoundTrip) {
 	EnabledRenderersConfig cfg;
 	YAML::Node overrides;
 	overrides["Fov"] = 90;
-	cfg.entries.push_back({.name = "world", .enabled = true, .overrides = overrides});
-	cfg.entries.push_back({.name = "hud", .enabled = false, .overrides = YAML::Node{}});
+	cfg.entries.push_back({.name = "world", .enabled = true, .overrides = YAML::Dump(overrides)});
+	cfg.entries.push_back({.name = "hud", .enabled = false, .overrides = {}});
 
 	const auto yaml = cfg.toYaml();
 	const auto round = EnabledRenderersConfig::fromYaml(yaml);
@@ -123,8 +125,8 @@ TEST(EnabledRenderersConfig, yamlRoundTrip) {
 	ASSERT_EQ(round.entries.size(), 2u);
 	EXPECT_EQ(round.entries[0].name, "world");
 	EXPECT_TRUE(round.entries[0].enabled);
-	ASSERT_TRUE(round.entries[0].overrides);
-	EXPECT_EQ(round.entries[0].overrides["Fov"].as<int>(), 90);
+	ASSERT_FALSE(round.entries[0].overrides.empty());
+	EXPECT_EQ(YAML::Load(round.entries[0].overrides)["Fov"].as<int>(), 90);
 	EXPECT_FALSE(round.entries[1].enabled);
 }
 
@@ -161,14 +163,14 @@ TEST(RenderStack, buildAppliesSceneOverrides) {
 	YAML::Node defaultCfg;
 	defaultCfg["Fov"] = 60;
 	defaultCfg["Range"] = 100;
-	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = defaultCfg});
-	project.entries.push_back({.typeKey = "Tracking", .name = "hud", .defaultConfig = YAML::Node{}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = YAML::Dump(defaultCfg)});
+	project.entries.push_back({.typeKey = "Tracking", .name = "hud", .defaultConfig = {}});
 
 	EnabledRenderersConfig scene;
 	YAML::Node overrides;
 	overrides["Fov"] = 90;
-	scene.entries.push_back({.name = "world", .enabled = true, .overrides = overrides});
-	scene.entries.push_back({.name = "hud", .enabled = false, .overrides = YAML::Node{}});
+	scene.entries.push_back({.name = "world", .enabled = true, .overrides = YAML::Dump(overrides)});
+	scene.entries.push_back({.name = "hud", .enabled = false, .overrides = {}});
 
 	const auto stack = RenderStack::buildFromConfig(project, scene);
 	ASSERT_EQ(stack.getLayers().size(), 1u);// hud disabled
@@ -197,12 +199,12 @@ TEST(RenderStack, sceneOverrideAppliedWhenProjectHasNoDefault) {
 
 	RendererStackConfig project;
 	// Note: NO defaultConfig on `world`.
-	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = YAML::Node{}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = {}});
 
 	EnabledRenderersConfig scene;
 	YAML::Node overrides;
 	overrides["Space"] = std::string{"Screen"};
-	scene.entries.push_back({.name = "world", .enabled = true, .overrides = overrides});
+	scene.entries.push_back({.name = "world", .enabled = true, .overrides = YAML::Dump(overrides)});
 
 	const auto stack = RenderStack::buildFromConfig(project, scene);
 	ASSERT_EQ(stack.getLayers().size(), 1u);
@@ -222,8 +224,8 @@ TEST(RenderStack, frameCallbackOrder) {
 	registerTrackingFactory();
 
 	RendererStackConfig project;
-	project.entries.push_back({.typeKey = "Tracking", .name = "a", .defaultConfig = YAML::Node{}});
-	project.entries.push_back({.typeKey = "Tracking", .name = "b", .defaultConfig = YAML::Node{}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "a", .defaultConfig = {}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "b", .defaultConfig = {}});
 
 	auto stack = RenderStack::buildFromConfig(project, EnabledRenderersConfig{});
 	ASSERT_EQ(stack.getLayers().size(), 2u);
@@ -250,8 +252,8 @@ TEST(RenderStack, findByName) {
 	registerTrackingFactory();
 
 	RendererStackConfig project;
-	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = YAML::Node{}});
-	project.entries.push_back({.typeKey = "Tracking", .name = "hud", .defaultConfig = YAML::Node{}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = {}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "hud", .defaultConfig = {}});
 
 	const auto stack = RenderStack::buildFromConfig(project, EnabledRenderersConfig{});
 	EXPECT_EQ(stack.getDefaultLayer()->getName(), "world");
@@ -270,14 +272,14 @@ TEST(RenderStack, sceneOverridesLayerOrder) {
 	registerTrackingFactory();
 
 	RendererStackConfig project;
-	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = YAML::Node{}});
-	project.entries.push_back({.typeKey = "Tracking", .name = "fx", .defaultConfig = YAML::Node{}});
-	project.entries.push_back({.typeKey = "Tracking", .name = "ui", .defaultConfig = YAML::Node{}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = {}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "fx", .defaultConfig = {}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "ui", .defaultConfig = {}});
 
 	// Scene reorders to ui, world (fx is not mentioned and must append at the end).
 	EnabledRenderersConfig scene;
-	scene.entries.push_back({.name = "ui", .enabled = true, .overrides = YAML::Node{}});
-	scene.entries.push_back({.name = "world", .enabled = true, .overrides = YAML::Node{}});
+	scene.entries.push_back({.name = "ui", .enabled = true, .overrides = {}});
+	scene.entries.push_back({.name = "world", .enabled = true, .overrides = {}});
 
 	const auto stack = RenderStack::buildFromConfig(project, scene);
 	ASSERT_EQ(stack.getLayers().size(), 3u);
@@ -295,8 +297,8 @@ TEST(RenderStack, sceneSilenceKeepsProjectOrder) {
 	registerTrackingFactory();
 
 	RendererStackConfig project;
-	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = YAML::Node{}});
-	project.entries.push_back({.typeKey = "Tracking", .name = "ui", .defaultConfig = YAML::Node{}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = {}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "ui", .defaultConfig = {}});
 
 	const auto stack = RenderStack::buildFromConfig(project, EnabledRenderersConfig{});
 	ASSERT_EQ(stack.getLayers().size(), 2u);
@@ -313,11 +315,11 @@ TEST(RenderStack, sceneIgnoresUnknownLayerName) {
 	registerTrackingFactory();
 
 	RendererStackConfig project;
-	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = YAML::Node{}});
+	project.entries.push_back({.typeKey = "Tracking", .name = "world", .defaultConfig = {}});
 
 	EnabledRenderersConfig scene;
-	scene.entries.push_back({.name = "ghost", .enabled = true, .overrides = YAML::Node{}});
-	scene.entries.push_back({.name = "world", .enabled = true, .overrides = YAML::Node{}});
+	scene.entries.push_back({.name = "ghost", .enabled = true, .overrides = {}});
+	scene.entries.push_back({.name = "world", .enabled = true, .overrides = {}});
 
 	const auto stack = RenderStack::buildFromConfig(project, scene);
 	ASSERT_EQ(stack.getLayers().size(), 1u);

@@ -12,6 +12,7 @@
 #include "app/Application.h"
 #include "math/YamlSerializers.h"
 #include "renderer/RenderLayerFactory.h"
+#include "renderer/RenderStackYaml.h"
 #include "renderer/Renderer2D.h"
 #include "renderer/gpu/RenderCommand.h"
 
@@ -97,32 +98,33 @@ void RendererRaycastLayer::onEndFrame() {
 	gpu::RenderCommand::setDepthTest(true);
 }
 
-void RendererRaycastLayer::applyConfig(const YAML::Node& iConfig) {
-	if (!iConfig || !iConfig.IsMap())
+void RendererRaycastLayer::applyConfig(const std::string& iConfig) {
+	const auto config = parseYamlText(iConfig);
+	if (!config || !config.IsMap())
 		return;
-	if (const auto v = iConfig["Fov"]; v && v.IsScalar())
+	if (const auto v = config["Fov"]; v && v.IsScalar())
 		m_config.fovDegrees = v.as<float>(m_config.fovDegrees);
-	if (const auto v = iConfig["MaxDistance"]; v && v.IsScalar())
+	if (const auto v = config["MaxDistance"]; v && v.IsScalar())
 		m_config.maxDistance = v.as<float>(m_config.maxDistance);
-	if (const auto v = iConfig["CeilingColor"]; v && v.IsSequence() && v.size() == 4)
+	if (const auto v = config["CeilingColor"]; v && v.IsSequence() && v.size() == 4)
 		m_config.ceilingColor = v.as<math::vec4>(m_config.ceilingColor);
-	if (const auto v = iConfig["FloorColor"]; v && v.IsSequence() && v.size() == 4)
+	if (const auto v = config["FloorColor"]; v && v.IsSequence() && v.size() == 4)
 		m_config.floorColor = v.as<math::vec4>(m_config.floorColor);
-	if (const auto v = iConfig["NumRays"]; v && v.IsScalar())
+	if (const auto v = config["NumRays"]; v && v.IsScalar())
 		m_config.numRays = v.as<uint32_t>(m_config.numRays);
-	if (const auto v = iConfig["FogColor"]; v && v.IsSequence() && v.size() == 4)
+	if (const auto v = config["FogColor"]; v && v.IsSequence() && v.size() == 4)
 		m_config.fogColor = v.as<math::vec4>(m_config.fogColor);
-	if (const auto v = iConfig["FogStart"]; v && v.IsScalar())
+	if (const auto v = config["FogStart"]; v && v.IsScalar())
 		m_config.fogStart = v.as<float>(m_config.fogStart);
-	if (const auto v = iConfig["FogEnd"]; v && v.IsScalar())
+	if (const auto v = config["FogEnd"]; v && v.IsScalar())
 		m_config.fogEnd = v.as<float>(m_config.fogEnd);
-	if (const auto v = iConfig["FloorTileset"]; v && v.IsScalar())
+	if (const auto v = config["FloorTileset"]; v && v.IsScalar())
 		m_config.floorTilesetPath = v.as<std::string>(m_config.floorTilesetPath);
-	if (const auto v = iConfig["FloorTileIndex"]; v && v.IsScalar())
+	if (const auto v = config["FloorTileIndex"]; v && v.IsScalar())
 		m_config.floorTileIndex = v.as<uint32_t>(m_config.floorTileIndex);
-	if (const auto v = iConfig["CeilingTileset"]; v && v.IsScalar())
+	if (const auto v = config["CeilingTileset"]; v && v.IsScalar())
 		m_config.ceilingTilesetPath = v.as<std::string>(m_config.ceilingTilesetPath);
-	if (const auto v = iConfig["CeilingTileIndex"]; v && v.IsScalar())
+	if (const auto v = config["CeilingTileIndex"]; v && v.IsScalar())
 		m_config.ceilingTileIndex = v.as<uint32_t>(m_config.ceilingTileIndex);
 	m_floorTileset.reset();
 	m_ceilingTileset.reset();

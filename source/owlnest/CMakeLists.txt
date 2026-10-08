@@ -37,16 +37,13 @@ file(GLOB_RECURSE HDRS CONFIGURE_DEPENDS
 add_library(${OWL_NEST_CORE} STATIC ${SRCS} ${HDRS})
 set_target_properties(${OWL_NEST_CORE} PROPERTIES FOLDER "App")
 target_include_directories(${OWL_NEST_CORE} PUBLIC sources)
-target_link_libraries(${OWL_NEST_CORE} PUBLIC ${ENGINE_NAME})
+target_link_libraries(${OWL_NEST_CORE} PUBLIC Owl::Gui)
 target_compile_definitions(${OWL_NEST_CORE} PUBLIC OWL_ASSETS_LOCATION="source/owlnest/assets")
 
 # ----==== third party ====----
 
 # magic_enum
 owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC magic_enum REQUIRED)
-
-# ImGui
-owl_target_link_libraries(${ENGINE_NAME} PRIVATE imgui REQUIRED)
 
 # imgui_color_text_edit (syntax-highlighting text editor widget)
 owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC imgui_color_text_edit REQUIRED

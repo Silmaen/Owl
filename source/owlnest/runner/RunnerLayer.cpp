@@ -129,7 +129,7 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 		if (firstScene.empty())
 			firstScene = sceneName;
 		if (const auto stack = appConfig["RendererStack"]; stack)
-			rendererStack = renderer::RendererStackConfig::fromYaml(stack);
+			rendererStack = renderer::RendererStackConfig::fromYaml(YAML::Dump(stack));
 	}
 }
 
@@ -160,7 +160,7 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 	out << YAML::Key << "Fullscreen" << YAML::Value << fullscreen;
 	out << YAML::Key << "Resizable" << YAML::Value << resizable;
 	if (!rendererStack.isEmpty())
-		out << YAML::Key << "RendererStack" << YAML::Value << rendererStack.toYaml();
+		out << YAML::Key << "RendererStack" << YAML::Value << YAML::Load(rendererStack.toYaml());
 	out << YAML::EndMap;
 	out << YAML::EndMap;
 	std::ofstream fileOut(iPath);
@@ -354,7 +354,7 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 			if (project) {
 				get(project, "name", m_config.gameName);
 				if (const auto stack = project["RendererStack"]; stack)
-					m_config.rendererStack = renderer::RendererStackConfig::fromYaml(stack);
+					m_config.rendererStack = renderer::RendererStackConfig::fromYaml(YAML::Dump(stack));
 			}
 		} catch (const std::exception& iEx) {
 			OWL_WARN("{}: Cannot read {}/owl_project.yml ({}).", iMode, iProject.string(), iEx.what())

@@ -48,9 +48,18 @@ pages come from their local cache (`-DOWL_HELP_FETCH_BADGES=ON` downloads the mi
 target exists only when Doxygen is found (`-DOWL_ENABLE_DOCUMENTATION=ON` requires it). The `Doxyfile` is generated
 in the build tree.
 
-The engine is also a Conan package, checked by `test_package/` (a program built on `find_package(OwlEngine)`);
+The engine is also a Conan package, checked by `test_package/` (two programs built on `find_package(OwlEngine)`);
 publishing it is a v1.0.0 item, until then other projects use the packaged `OwlEngine` archive (see
-[Packaging](#packaging)):
+[Packaging](#packaging)). `Owl::OwlEngine` (`<owl.h>`) exposes EnTT as its only dependency; the headers that include
+imgui (`<owlgui.h>`, `gui/utils.h`, `gui/widgets/AssetField.h`, `gui/widgets/CurveEditor.h`) come with the optional
+`Owl::Gui` target:
+
+```cmake
+find_package(OwlEngine CONFIG REQUIRED COMPONENTS Gui)  # COMPONENTS Gui only for Owl::Gui (needs imgui)
+target_link_libraries(my_game PRIVATE Owl::OwlEngine)
+target_link_libraries(my_tools PRIVATE Owl::Gui)
+```
+
 
 ```bash
 poetry run conan create . --profile:all conan/profiles/linux-clang --lockfile conan.lock --lockfile-partial --build=missing

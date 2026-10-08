@@ -10,6 +10,7 @@
 #include "renderer/Renderer2DLayer.h"
 
 #include "renderer/RenderLayerFactory.h"
+#include "renderer/RenderStackYaml.h"
 #include "renderer/Renderer2D.h"
 
 #include <algorithm>
@@ -59,10 +60,11 @@ void Renderer2DLayer::onRender([[maybe_unused]] scene::Scene& ioScene) {}
 
 void Renderer2DLayer::onEndFrame() { Renderer2D::endScene(); }
 
-void Renderer2DLayer::applyConfig(const YAML::Node& iConfig) {
-	if (!iConfig || !iConfig.IsMap())
+void Renderer2DLayer::applyConfig(const std::string& iConfig) {
+	const auto config = parseYamlText(iConfig);
+	if (!config || !config.IsMap())
 		return;
-	if (const auto v = iConfig["Space"]; v && v.IsScalar())
+	if (const auto v = config["Space"]; v && v.IsScalar())
 		m_space = parseSpace(v.as<std::string>());
 }
 

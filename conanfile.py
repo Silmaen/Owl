@@ -90,12 +90,11 @@ class OwlEngineConan(ConanFile):
             raise ConanInvalidConfiguration(f"{self.ref}: only the shared library is packaged for now")
 
     def requirements(self):
-        # Public dependencies of OwlEngine (its public headers include them).
+        # The only public dependency of Owl::OwlEngine (scene/Scene.h, scene/Entity.h include it).
         self.requires("entt/4.0.0", transitive_headers=True)
-        # force: the imgui-based recipes pin another imgui version.
+        # Public through the optional Owl::Gui target only (<owlgui.h>); force: the imgui-based recipes pin another
+        # imgui version.
         self.requires("imgui/1.92.9b-docking", transitive_headers=True, force=True)
-        # Public until YAML leaves the public headers (renderer/RenderLayer.h, audit G-07).
-        self.requires("yaml-cpp/0.9.0", transitive_headers=True, transitive_libs=True)
         # Private dependencies.
         self.requires("box2d/3.1.1")
         self.requires("cpptrace/1.0.4")
@@ -120,6 +119,7 @@ class OwlEngineConan(ConanFile):
         self.requires("vulkan-headers/1.4.357.0")
         self.requires("vulkan-loader/1.4.357.0")
         self.requires("vulkan-utility-libraries/1.4.357.0")
+        self.requires("yaml-cpp/0.9.0")
         self.requires("zstd/1.5.7")
         # Profiler client behind the OWL_PROFILE_* macros (OWL_PROFILER=tracy), private to the engine.
         if self.options.tracy:
