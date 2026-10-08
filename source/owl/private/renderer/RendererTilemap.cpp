@@ -54,6 +54,7 @@ struct InternalState {
 	shared<gpu::UniformBuffer> cameraUbo;
 	CameraUbo cameraBuffer;
 	std::vector<CellInstance> instanceScratch;
+	std::vector<shared<gpu::Texture2D>> textureScratch;
 	std::vector<PendingTilemap> pending;
 	RendererTilemap::Statistics stats;
 };
@@ -96,7 +97,7 @@ void RendererTilemap::init() {
 
 	g_state->drawData = gpu::DrawData::create();
 	g_state->drawData->initInstanced(vertexLayout, instanceLayout, /*iVertexCapacity=*/4u, kMaxInstancesPerDraw,
-									 "tilemap_instanced", quadIndices, "tilemap_instanced");
+									 "tilemap_instanced", quadIndices, "tilemap_instanced", {});
 
 	constexpr std::array<int32_t, 4> cornerIndices{0, 1, 2, 3};
 	g_state->drawData->setVertexData(cornerIndices.data(),
@@ -246,14 +247,12 @@ void RendererTilemap::flushPending() {
 	}
 	const uint32_t drawn = std::min(instanceCount, kMaxInstancesPerDraw);
 
-	gpu::RenderCommand::beginTextureLoad();
-	for (size_t i = 0; i < slots.size(); ++i) slots[i]->texture->bind(static_cast<uint32_t>(i));
-	gpu::RenderCommand::endTextureLoad();
+	g_state->textureScratch.clear();
+	for (const auto* tileset: slots) g_state->textureScratch.push_back(tileset->texture);
+	gpu::RenderCommand::bindTextures(g_state->textureScratch);
 
 	g_state->drawData->setInstanceData(g_state->instanceScratch.data(),
 									   static_cast<uint32_t>(drawn * sizeof(CellInstance)));
-	// Re-assert our camera UBO: siblings share OpenGL uniform binding 0, last-bound wins (no-op on Vulkan).
-	g_state->cameraUbo->bind();
 	gpu::RenderCommand::drawDataInstanced(g_state->drawData, /*iIndexCount=*/6u, drawn);
 	++g_state->stats.drawCallCount;
 	g_state->stats.instanceCount += drawn;

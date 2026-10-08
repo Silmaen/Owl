@@ -15,7 +15,8 @@ namespace owl::renderer::gpu::opengl {
 DrawData::~DrawData() = default;
 
 void DrawData::init(const BufferLayout& iLayout, const std::string& iRenderer, std::vector<uint32_t>& iIndices,
-					const std::string& iShaderName) {
+					const std::string& iShaderName, const PipelineState& iState) {
+	m_pipelineState = iState;
 	if (iLayout.getStride() > 0) {
 		mp_vertexArray = mkShared<VertexArray>();
 		mp_vertexBuffer = mkShared<VertexBuffer>(iLayout.getStride() * iIndices.size());
@@ -29,7 +30,8 @@ void DrawData::init(const BufferLayout& iLayout, const std::string& iRenderer, s
 void DrawData::initInstanced(const BufferLayout& iVertexLayout, const BufferLayout& iInstanceLayout,
 							 const uint32_t iVertexCapacity, const uint32_t iInstanceCapacity,
 							 const std::string& iRenderer, std::vector<uint32_t>& iIndices,
-							 const std::string& iShaderName) {
+							 const std::string& iShaderName, const PipelineState& iState) {
+	m_pipelineState = iState;
 	if (iVertexLayout.getStride() == 0 || iInstanceLayout.getStride() == 0)
 		return;
 	mp_vertexArray = mkShared<VertexArray>();

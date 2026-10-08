@@ -17,8 +17,11 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
 
 ## Backend invariants (each one cost a debugging session)
 
-- **OpenGL bindings are global state.** `Renderer2D`, `RendererTilemap` and `Renderer3D` share UBO binding
-  0: every renderer must call its UBO `bind()` before its draws. A no-op `bind()` = silent collision.
+- **Owl RHI: a draw inherits nothing.** Fixed-function state is the `PipelineState` given to `DrawData::init`
+  (topology, culling, blending, depth); there is no global toggle. Bindings belong to the renderer block: create
+  UBOs, bind textures (`RenderCommand::bindTextures`) and SSBOs, and draw under the renderer's `ScopedActive`. On
+  OpenGL (global binding points, UBO 0 and units 0..n shared) `opengl::BindingTable` re-applies the block's UBOs and
+  textures when another block drew in between; a bind made outside any block is not tracked.
 - **Vulkan: one command buffer per frame, two frames in flight.** A batch is a render pass in it, not a
   submission; the frame is submitted once at `endFrame`. Never wait on a queue or the device in a frame:
   a CPU read-back goes through `VulkanHandler::flushFrame` / `submitNow` (counted as `fence_wait`).
@@ -32,15 +35,17 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   several `drawMesh` models or 2D cameras in one frame are correct on Vulkan as on OpenGL.
 - **One attachment layout for every framebuffer** (`Surface`, `RedInteger`, `Depth24Stencil8`, swapchain
   included) so all pipelines stay render-pass compatible.
-- **Pipelines are deduplicated** in `VulkanHandler::pushPipeline` (key = shader name, sidedness, set
-  layout, render pass, vertex input; refcounted). Never build a pipeline per mesh.
+- **Pipelines are deduplicated** in `VulkanHandler::pushPipeline` (key = shader name, topology, culling,
+  blending, set layout, render pass, vertex input; refcounted; depth is dynamic state set at each bind). Never build
+  a pipeline per mesh.
 - **Uploads close the render pass.** A buffer or texture upload in a frame is recorded outside any pass
   (the next draw reopens one that loads the attachments): build meshes and textures before the layers
   draw (`Scene::prepareVoxelRenderData()`, run by `renderWithStack` before any layer) to keep passes whole.
 - **Process-static GPU holders** (e.g. `gui::IconBank`) must be cleared by their owner before device
   teardown (`EditorLayer::onDetach()`), or they leak at `vkDestroyDevice`.
-- **Blend is always on** (both backends); transparency only toggles depth-write (dynamic state on Vulkan).
-  Transparent geometry is sorted back-to-front in its own pass.
+- **Transparency** is alpha blending with depth test but no depth write (`Renderer3D::transparentMeshState`), the
+  geometry sorted back-to-front in its own pass. Front faces are counter-clockwise on both backends (Vulkan pipelines
+  use `COUNTER_CLOCKWISE` with the flipped projection); no renderer culls yet.
 - **Vulkan flips projection Y** (`proj(1,1) *= -1`): any screen→NDC ray or picking math is backend
   dependent (`isOpenGl ? -y : y`). Iso / gizmo projections must follow the same convention.
 - **Tiling an atlas cell with `frac(uv)`** needs all three: half-texel inset of the cell, self-tileable
@@ -49,10 +54,9 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
 
 - **Vulkan descriptors are written at draw time** (`RendererDescriptors::getDescriptorSet`, from
   `bindPipeline`), after the draw's SSBO binds; every declared binding is written, unbound ones with a default
-  resource. Never write a set at `endTextureLoad`: the storage buffers are bound after it.
+  resource. Never write a set when the textures are bound: the storage buffers are bound after them.
 - **Colour samplers never enable depth comparison**: NVIDIA ignores it, lavapipe returns the compare result.
-- **OpenGL texture units are global too**: a pass that binds its own textures (tilemap) clobbers units 0..n; a
-  renderer drawing after it rebinds its slots.
+- **OpenGL `glClear` honours the depth mask**: `RenderAPI::clear` turns it back on and forgets the applied state.
 - **Vertices given in NDC** (background quad) need the Vulkan Y flip in the shader, like the projections.
 - **OpenGL shader path**: SPIR-V when the driver has GL 4.6 or `GL_ARB_gl_spirv` (built-ins remapped by
   `remapBuiltinsForOpenGl`), GLSL 4.50 from spirv-cross otherwise (llvmpipe). `OWL_OPENGL_SHADERS=glsl|spirv`

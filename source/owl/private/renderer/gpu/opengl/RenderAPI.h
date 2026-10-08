@@ -13,6 +13,8 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <optional>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -100,27 +102,17 @@ public:
 
 	/**
 	 * @brief
-	 *  Binding the draw of vertex array as line.
-	 * @param[in] iData Draw data to render.
-	 * @param[in] iIndexCount Number of vertex to draw (=0 all).
-	 */
-	void drawLine(const shared<DrawData>& iData, uint32_t iIndexCount) override;
-
-	/**
-	 * @brief
-	 *  Instanced line draw via `glDrawElementsInstanced(GL_LINES, …)`.
-	 * @param[in] iData Draw data with index buffer `{0, 1}`.
-	 * @param[in] iIndexCount Indices per instance (2).
-	 * @param[in] iInstanceCount Number of instances.
-	 */
-	void drawLineInstanced(const shared<DrawData>& iData, uint32_t iIndexCount, uint32_t iInstanceCount) override;
-
-	/**
-	 * @brief
 	 *  Get the maximum number of texture slots.
 	 * @return Number of texture slots.
 	 */
 	[[nodiscard]] auto getMaxTextureSlots() const -> uint32_t override;
+
+	/**
+	 * @brief
+	 *  Bind the textures to units `0..N-1` (`glBindTextures`) and record them in the active renderer block.
+	 * @param[in] iTextures Textures in unit order.
+	 */
+	void bindTextures(std::span<const shared<Texture2D>> iTextures) override;
 
 	/**
 	 * @brief
@@ -135,19 +127,6 @@ public:
 	 */
 	void endFrame() override;
 
-	/**
-	 * @brief
-	 *  Enable or disable depth buffer writing.
-	 * @param[in] iEnabled True to enable depth writing, false to disable.
-	 */
-	void setDepthMask(bool iEnabled) override;
-
-	/**
-	 * @brief
-	 *  Set the depth test.
-	 * @param[in] iEnabled Enable flag.
-	 */
-	void setDepthTest(bool iEnabled) override;
 
 	/**
 	 * @brief
@@ -224,6 +203,18 @@ private:
 	 * @param[in] iSlot The slot index.
 	 */
 	void harvest(size_t iSlot);
+
+	/**
+	 * @brief
+	 *  Prepare a draw: apply the fixed-function state that differs from the previous draw, bind the draw data and
+	 *  re-apply the bindings of the active renderer block when another block changed them.
+	 * @param[in] iData The draw data.
+	 * @return The GL primitive mode of the draw.
+	 */
+	auto prepareDraw(const shared<DrawData>& iData) -> uint32_t;
+
+	/// Fixed-function state applied by the last draw (unset until the first one).
+	std::optional<PipelineState> m_appliedState;
 
 	/// Frames kept in the query ring.
 	static constexpr size_t g_slotCount = 4;

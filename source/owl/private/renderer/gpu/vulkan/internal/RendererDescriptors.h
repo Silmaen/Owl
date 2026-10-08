@@ -149,24 +149,19 @@ public:
 
 	/**
 	 * @brief
-	 *  Reset the per-frame texture-bind list.
+	 *  Replace the sampled textures of the block: slot `i` samples `iTextureIds[i]`, the other slots the default
+	 *  texture. The descriptor set is rewritten at the next draw only when the list changed.
+	 * @param[in] iTextureIds Registry ids (`Texture2D::getTextureId`) in slot order; 0 is the default texture.
 	 */
-	void resetTextureBind();
+	void setTextures(std::span<const uint32_t> iTextureIds);
 
 	/**
 	 * @brief
-	 *  Append `iIndex` to the per-frame texture-bind list. Order matters —
-	 *  the list maps directly to the shader's texture array slots.
-	 * @param[in] iIndex Texture slot id.
+	 *  Put one texture in one sampler slot, keeping the other slots.
+	 * @param[in] iSlot Sampler slot.
+	 * @param[in] iTextureId Registry id of the texture.
 	 */
-	void textureBind(uint32_t iIndex);
-
-	/**
-	 * @brief
-	 *  Mark the texture-bind list as complete. The descriptor set itself is written lazily by
-	 *  `getDescriptorSet` at draw time, once the storage buffers of that draw are bound too.
-	 */
-	void commitTextureBind();
+	void textureBind(uint32_t iSlot, uint32_t iTextureId);
 
 	/**
 	 * @brief

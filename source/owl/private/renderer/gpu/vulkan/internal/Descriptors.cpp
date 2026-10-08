@@ -180,7 +180,7 @@ Descriptors::~Descriptors() { release(); }
 
 void Descriptors::release() {
 	const auto& core = VulkanCore::get();
-	resetTextureBind();
+	m_textureBind.clear();
 	m_textureBind.shrink_to_fit();
 	if (!m_textures.empty()) {
 		for (auto& [id, tex]: m_textures) {
@@ -387,11 +387,16 @@ auto Descriptors::getTextureData(const uint32_t iIndex) -> TextureData& { return
 
 void Descriptors::unregisterTexture(const uint32_t iIndex) { m_textures.unregisterTexture(iIndex); }
 
-void Descriptors::resetTextureBind() { m_textureBind.clear(); }
+void Descriptors::setTextures(const std::span<const uint32_t> iTextureIds, const size_t iCurrentFrame) {
+	m_textureBind.assign(iTextureIds.begin(), iTextureIds.end());
+	updateDescriptor(iCurrentFrame);
+}
 
-void Descriptors::commitTextureBind(const size_t iCurrentFrame) { updateDescriptor(iCurrentFrame); }
-
-void Descriptors::textureBind(const uint32_t iIndex) { m_textureBind.emplace_back(iIndex); }
+void Descriptors::textureBind(const uint32_t iSlot, const uint32_t iTextureId) {
+	if (iSlot >= m_textureBind.size())
+		m_textureBind.resize(iSlot + 1, 0);
+	m_textureBind[iSlot] = iTextureId;
+}
 
 void Descriptors::createImguiDescriptorPool() {
 	if (m_imguiDescriptorPool != nullptr)

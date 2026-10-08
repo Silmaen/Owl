@@ -10,6 +10,7 @@
 #include "RenderAPI.h"
 
 #include "StorageBuffer.h"
+#include "Texture.h"
 #include "app/Application.h"
 #include "core/external/glfw3.h"
 #include "internal/Descriptors.h"
@@ -82,22 +83,17 @@ void RenderAPI::drawDataInstanced(const shared<DrawData>& iData, const uint32_t 
 	vkh.drawData(count, isIndexed, iInstanceCount);
 }
 
-void RenderAPI::drawLine(const shared<DrawData>& iData, const uint32_t iIndexCount) {
-	auto& vkh = internal::VulkanHandler::get();
-	iData->bind();
-	const uint32_t count = (iIndexCount != 0u) ? iIndexCount : iData->getIndexCount();
-	vkh.drawData(count, false);
-}
-
-void RenderAPI::drawLineInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
-								  const uint32_t iInstanceCount) {
-	if (iInstanceCount == 0)
+void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture2D>> iTextures) {
+	thread_local std::vector<uint32_t> slots;
+	slots.clear();
+	for (const auto& texture: iTextures)
+		slots.push_back(texture ? static_cast<const Texture2D*>(texture.get())->getTextureId() : 0u);
+	if (auto* const rd = internal::RendererDescriptors::getActive(); rd != nullptr) {
+		rd->setTextures(slots);
 		return;
-	auto& vkh = internal::VulkanHandler::get();
-	iData->bind();
-	const bool isIndexed = iData->getIndexCount() > 0;
-	const uint32_t count = (iIndexCount != 0u) ? iIndexCount : iData->getIndexCount();
-	vkh.drawData(count, isIndexed, iInstanceCount);
+	}
+	auto& vkd = internal::Descriptors::get();
+	vkd.setTextures(slots, internal::VulkanHandler::get().getCurrentFrameIndex());
 }
 
 void RenderAPI::beginFrame() {
@@ -135,39 +131,6 @@ void RenderAPI::endFrame() {
 	vkh.endFrame();
 }
 
-void RenderAPI::beginTextureLoad() {
-	if (auto* const rd = internal::RendererDescriptors::getActive(); rd != nullptr) {
-		rd->resetTextureBind();
-		return;
-	}
-	auto& vkd = internal::Descriptors::get();
-	vkd.resetTextureBind();
-}
-
-void RenderAPI::endTextureLoad() {
-	if (auto* const rd = internal::RendererDescriptors::getActive(); rd != nullptr) {
-		rd->commitTextureBind();
-		return;
-	}
-	auto& vkd = internal::Descriptors::get();
-	vkd.commitTextureBind(internal::VulkanHandler::get().getCurrentFrameIndex());
-}
-
-void RenderAPI::setDepthMask(const bool iEnabled) {
-	auto& vkh = internal::VulkanHandler::get();
-	vkh.depthWriteEnabled = iEnabled;
-	// Apply immediately only while a batch is recording; otherwise the value is picked up at the next beginBatch.
-	if (auto* const cmd = vkh.getRenderPassCommandBuffer(); cmd != nullptr)
-		vkCmdSetDepthWriteEnable(cmd, iEnabled ? VK_TRUE : VK_FALSE);
-}
-
-void RenderAPI::setDepthTest(const bool iEnabled) {
-	auto& vkh = internal::VulkanHandler::get();
-	vkh.depthTestEnabled = iEnabled;
-	// Apply immediately only while a batch is recording; otherwise the value is picked up at the next beginBatch.
-	if (auto* const cmd = vkh.getRenderPassCommandBuffer(); cmd != nullptr)
-		vkCmdSetDepthTestEnable(cmd, iEnabled ? VK_TRUE : VK_FALSE);
-}
 
 void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData, const shared<gpu::StorageBuffer>& iCommandBuffer,
 									const shared<gpu::StorageBuffer>& iCountBuffer, const uint32_t iMaxDrawCount) {

@@ -66,7 +66,14 @@ public:
 
 	/**
 	 * @brief
-	 *  Activate the texture in the GPU.
+	 *  Get the identifier of the texture in the descriptor registry.
+	 * @return The registry identifier (0 when the texture was never registered).
+	 */
+	[[nodiscard]] auto getTextureId() const -> uint32_t { return m_textureId; }
+
+	/**
+	 * @brief
+	 *  Put the texture in one sampler slot of the active renderer block (the other slots are kept).
 	 * @param[in] iSlot Slot into put the texture.
 	 */
 	void bind(uint32_t iSlot) const override;

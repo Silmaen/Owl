@@ -17,7 +17,8 @@ namespace owl::renderer::gpu::vulkan {
 DrawData::~DrawData() = default;
 
 void DrawData::init(const BufferLayout& iLayout, const std::string& iRenderer, std::vector<uint32_t>& iIndices,
-					const std::string& iShaderName) {
+					const std::string& iShaderName, const PipelineState& iState) {
+	m_pipelineState = iState;
 	m_shaderName = iShaderName;
 	m_renderer = iRenderer;
 	setShader(iShaderName, iRenderer);
@@ -47,7 +48,7 @@ void DrawData::init(const BufferLayout& iLayout, const std::string& iRenderer, s
 	};
 	if (m_pipelineId >= 0)
 		vkh.popPipeline(m_pipelineId);
-	m_pipelineId = vkh.pushPipeline(mp_shader->getName(), shaderStages, vertexInputInfo);
+	m_pipelineId = vkh.pushPipeline(mp_shader->getName(), shaderStages, vertexInputInfo, m_pipelineState);
 	const auto& vkc = internal::VulkanCore::get();
 
 	for (const auto& stage: shaderStages) vkDestroyShaderModule(vkc.getLogicalDevice(), stage.module, nullptr);
@@ -59,7 +60,8 @@ void DrawData::init(const BufferLayout& iLayout, const std::string& iRenderer, s
 void DrawData::initInstanced(const BufferLayout& iVertexLayout, const BufferLayout& iInstanceLayout,
 							 const uint32_t iVertexCapacity, const uint32_t iInstanceCapacity,
 							 const std::string& iRenderer, std::vector<uint32_t>& iIndices,
-							 const std::string& iShaderName) {
+							 const std::string& iShaderName, const PipelineState& iState) {
+	m_pipelineState = iState;
 	if (iVertexLayout.getStride() == 0 || iInstanceLayout.getStride() == 0)
 		return;
 	m_shaderName = iShaderName;
@@ -95,7 +97,7 @@ void DrawData::initInstanced(const BufferLayout& iVertexLayout, const BufferLayo
 	};
 	if (m_pipelineId >= 0)
 		vkh.popPipeline(m_pipelineId);
-	m_pipelineId = vkh.pushPipeline(mp_shader->getName(), shaderStages, vertexInputInfo);
+	m_pipelineId = vkh.pushPipeline(mp_shader->getName(), shaderStages, vertexInputInfo, m_pipelineState);
 	const auto& vkc = internal::VulkanCore::get();
 	for (const auto& stage: shaderStages) vkDestroyShaderModule(vkc.getLogicalDevice(), stage.module, nullptr);
 	if (m_pipelineId < 0)
@@ -114,7 +116,7 @@ void DrawData::bind() const {
 	if (m_pipelineId < 0)
 		return;
 	auto& vkh = internal::VulkanHandler::get();
-	vkh.bindPipeline(m_pipelineId);
+	vkh.bindPipeline(m_pipelineId, m_pipelineState);
 	if (mp_vertexBuffer)
 		mp_vertexBuffer->bind();
 	if (mp_instanceBuffer)

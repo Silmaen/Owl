@@ -9,8 +9,11 @@
 
 #include "GpuProfiler.h"
 #include "RenderAPI.h"
+
+#include "BindingTable.h"
 #include "Shader.h"
 #include "StorageBuffer.h"
+#include "Texture.h"
 #include "app/Application.h"
 #include "core/external/opengl46.h"
 
@@ -66,9 +69,9 @@ void RenderAPI::init() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// Depth test stays off by default (2D is painter-ordered); Renderer3D enables it around 3D mesh draws.
-	glDisable(GL_DEPTH_TEST);
+	// Every draw applies its own PipelineState (depth, culling, blending); only the line style is global.
 	glEnable(GL_LINE_SMOOTH);
+	glLineWidth(2.0f);
 
 	// renderer is now ready
 	setState(State::Ready);
@@ -83,40 +86,67 @@ void RenderAPI::setClearColor(const math::vec4& iColor) {
 	glClearColor(iColor.r(), iColor.g(), iColor.b(), iColor.a());
 }
 
-void RenderAPI::clear() { glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); }
+void RenderAPI::clear() {
+	// glClear honours the depth mask: a draw that left it off would keep the old depth.
+	glDepthMask(GL_TRUE);
+	m_appliedState.reset();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+auto RenderAPI::prepareDraw(const shared<DrawData>& iData) -> uint32_t {
+	const auto& state = iData->getPipelineState();
+	const bool depthMask = !state.depthTest || state.depthWrite;
+	const bool first = !m_appliedState.has_value();
+	if (first || m_appliedState->depthTest != state.depthTest) {
+		if (state.depthTest)
+			glEnable(GL_DEPTH_TEST);
+		else
+			glDisable(GL_DEPTH_TEST);
+	}
+	if (first || (!m_appliedState->depthTest || m_appliedState->depthWrite) != depthMask)
+		glDepthMask(depthMask ? GL_TRUE : GL_FALSE);
+	if (first || m_appliedState->cullMode != state.cullMode) {
+		if (state.cullMode == CullMode::None) {
+			glDisable(GL_CULL_FACE);
+		} else {
+			glEnable(GL_CULL_FACE);
+			glCullFace(state.cullMode == CullMode::Back ? GL_BACK : GL_FRONT);
+		}
+	}
+	if (first || m_appliedState->blendMode != state.blendMode) {
+		if (state.blendMode == BlendMode::Alpha)
+			glEnable(GL_BLEND);
+		else
+			glDisable(GL_BLEND);
+	}
+	m_appliedState = state;
+	iData->bind();
+	BindingTable::applyActive();
+	return state.topology == PrimitiveTopology::Lines ? GL_LINES : GL_TRIANGLES;
+}
 
 void RenderAPI::drawData(const shared<DrawData>& iData, const uint32_t iIndexCount) {
-	iData->bind();
+	const auto mode = prepareDraw(iData);
 	const uint32_t count = (iIndexCount != 0u) ? iIndexCount : iData->getIndexCount();
-	glDrawElements(GL_TRIANGLES, static_cast<int32_t>(count), GL_UNSIGNED_INT, nullptr);
+	glDrawElements(mode, static_cast<int32_t>(count), GL_UNSIGNED_INT, nullptr);
 }
 
 void RenderAPI::drawDataInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
 								  const uint32_t iInstanceCount) {
 	if (iInstanceCount == 0)
 		return;
-	iData->bind();
+	const auto mode = prepareDraw(iData);
 	const uint32_t count = (iIndexCount != 0u) ? iIndexCount : iData->getIndexCount();
-	glDrawElementsInstanced(GL_TRIANGLES, static_cast<int32_t>(count), GL_UNSIGNED_INT, nullptr,
+	glDrawElementsInstanced(mode, static_cast<int32_t>(count), GL_UNSIGNED_INT, nullptr,
 							static_cast<int32_t>(iInstanceCount));
 }
 
-void RenderAPI::drawLine(const shared<DrawData>& iData, const uint32_t iIndexCount) {
-	iData->bind();
-	const uint32_t count = (iIndexCount != 0u) ? iIndexCount : iData->getIndexCount();
-	glLineWidth(2.0f);
-	glDrawArrays(GL_LINES, 0, static_cast<int32_t>(count));
-}
-
-void RenderAPI::drawLineInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
-								  const uint32_t iInstanceCount) {
-	if (iInstanceCount == 0)
-		return;
-	iData->bind();
-	const uint32_t count = (iIndexCount != 0u) ? iIndexCount : iData->getIndexCount();
-	glLineWidth(2.0f);
-	glDrawElementsInstanced(GL_LINES, static_cast<int32_t>(count), GL_UNSIGNED_INT, nullptr,
-							static_cast<int32_t>(iInstanceCount));
+void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture2D>> iTextures) {
+	thread_local std::vector<uint32_t> names;
+	names.clear();
+	for (const auto& texture: iTextures)
+		names.push_back(texture ? static_cast<uint32_t>(texture->getRendererId()) : 0u);
+	BindingTable::bindTextures(names);
 }
 
 auto RenderAPI::getMaxTextureSlots() const -> uint32_t {
@@ -125,14 +155,6 @@ auto RenderAPI::getMaxTextureSlots() const -> uint32_t {
 	return std::min(32u, static_cast<uint32_t>(textureUnits));
 }
 
-void RenderAPI::setDepthMask(const bool iEnabled) { glDepthMask(iEnabled ? GL_TRUE : GL_FALSE); }
-
-void RenderAPI::setDepthTest(const bool iEnabled) {
-	if (iEnabled)
-		glEnable(GL_DEPTH_TEST);
-	else
-		glDisable(GL_DEPTH_TEST);
-}
 
 void RenderAPI::storageBufferMemoryBarrier() {
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT | GL_UNIFORM_BARRIER_BIT |
@@ -145,7 +167,7 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData,
 									const uint32_t iMaxDrawCount) {
 	if (!iData || !iCommandBuffer || !iCountBuffer || iMaxDrawCount == 0)
 		return;
-	iData->bind();
+	const auto mode = prepareDraw(iData);
 	const auto* cmdSsbo = dynamic_cast<const StorageBuffer*>(iCommandBuffer.get());
 	const auto* countSsbo = dynamic_cast<const StorageBuffer*>(iCountBuffer.get());
 	if (cmdSsbo == nullptr || countSsbo == nullptr || cmdSsbo->getHandle() == 0 || countSsbo->getHandle() == 0) {
@@ -158,7 +180,7 @@ void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData,
 	}
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, cmdSsbo->getHandle());
 	glBindBuffer(GL_PARAMETER_BUFFER, countSsbo->getHandle());
-	glMultiDrawElementsIndirectCount(GL_TRIANGLES, GL_UNSIGNED_INT, /*indirect=*/nullptr,
+	glMultiDrawElementsIndirectCount(mode, GL_UNSIGNED_INT, /*indirect=*/nullptr,
 									 /*drawcount=*/0, static_cast<GLsizei>(iMaxDrawCount),
 									 /*stride=*/static_cast<GLsizei>(sizeof(uint32_t) * 5));
 	glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);

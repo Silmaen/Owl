@@ -79,10 +79,11 @@ TEST(Renderer, DrawDataNull) {
 				{"Ident", ShaderDataType::Int},
 		};
 		std::vector<uint32_t> ind{0, 1, 2, 2, 1, 3};
-		data.init(layout, "bob", ind, "noshader");
+		data.init(layout, "bob", ind, "noshader", {.topology = PrimitiveTopology::Lines});
 	}
 	data.bind();
 	EXPECT_EQ(data.getIndexCount(), 0);
+	EXPECT_EQ(data.getPipelineState().topology, PrimitiveTopology::Lines);
 	data.setShader("super", "bob");
 	data.unbind();
 	const std::vector<owl::math::vec3> vtx{{0, 0, 0}, {0, 1, 0}, {1, 0, 0}, {1, 1, 0}};

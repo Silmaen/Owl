@@ -9,6 +9,7 @@
 
 #include "renderer/gpu/RendererDescriptors.h"
 
+#include "opengl/BindingTable.h"
 #include "renderer/gpu/RenderCommand.h"
 #if OWL_WITH_RENDER
 #include "vulkan/internal/RendererDescriptors.h"
@@ -52,7 +53,11 @@ auto getOwnedBlocks() -> std::unordered_map<std::string, uniq<vulkan::internal::
 }// namespace
 
 void RendererDescriptors::declare(const std::string& iRenderer, std::span<const BindingDecl> iBindings) {
-	// Null and OpenGL backends have no descriptor-set concept — no-op.
+	if (const auto api = RenderCommand::getApi(); api == RenderAPI::Type::OpenGL) {
+		opengl::BindingTable::release(iRenderer);
+		static_cast<void>(opengl::BindingTable::getForRenderer(iRenderer));
+		return;
+	}
 	if (const auto api = RenderCommand::getApi(); api != RenderAPI::Type::Vulkan) {
 		return;
 	}
@@ -70,11 +75,24 @@ void RendererDescriptors::declare(const std::string& iRenderer, std::span<const 
 	getOwnedBlocks()[iRenderer] = std::move(block);
 }
 
-void RendererDescriptors::release(const std::string& iRenderer) { getOwnedBlocks().erase(iRenderer); }
+void RendererDescriptors::release(const std::string& iRenderer) {
+	getOwnedBlocks().erase(iRenderer);
+	opengl::BindingTable::release(iRenderer);
+}
 
-void RendererDescriptors::releaseAll() { getOwnedBlocks().clear(); }
+void RendererDescriptors::releaseAll() {
+	getOwnedBlocks().clear();
+	opengl::BindingTable::releaseAll();
+}
 
 RendererDescriptors::ScopedActive::ScopedActive(const std::string& iRenderer) {
+	if (const auto api = RenderCommand::getApi(); api == RenderAPI::Type::OpenGL) {
+		mp_state = opengl::BindingTable::getActive();
+		opengl::BindingTable::setActive(&opengl::BindingTable::getForRenderer(iRenderer));
+		m_engaged = true;
+		m_openGl = true;
+		return;
+	}
 	if (const auto api = RenderCommand::getApi(); api != RenderAPI::Type::Vulkan) {
 		return;
 	}
@@ -90,6 +108,10 @@ RendererDescriptors::ScopedActive::ScopedActive(const std::string& iRenderer) {
 RendererDescriptors::ScopedActive::~ScopedActive() {
 	if (!m_engaged)
 		return;
+	if (m_openGl) {
+		opengl::BindingTable::setActive(static_cast<opengl::BindingTable*>(mp_state));
+		return;
+	}
 	vulkan::internal::RendererDescriptors::setActive(static_cast<vulkan::internal::RendererDescriptors*>(mp_state));
 }
 #else

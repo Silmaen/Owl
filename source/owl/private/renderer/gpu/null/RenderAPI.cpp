@@ -28,14 +28,23 @@ void RenderAPI::setClearColor([[maybe_unused]] const math::vec4& iColor) {}
 
 void RenderAPI::clear() {}
 
-void RenderAPI::drawData([[maybe_unused]] const shared<DrawData>& iData, [[maybe_unused]] uint32_t iIndexCount) {}
+void RenderAPI::drawData(const shared<renderer::gpu::DrawData>& iData, [[maybe_unused]] uint32_t iIndexCount) {
+	recordDraw(iData);
+}
 
-void RenderAPI::drawDataInstanced([[maybe_unused]] const shared<DrawData>& iData, [[maybe_unused]] uint32_t iIndexCount,
-								  [[maybe_unused]] uint32_t iInstanceCount) {}
+void RenderAPI::drawDataInstanced(const shared<renderer::gpu::DrawData>& iData, [[maybe_unused]] uint32_t iIndexCount,
+								  [[maybe_unused]] uint32_t iInstanceCount) {
+	recordDraw(iData);
+}
 
-void RenderAPI::drawLine([[maybe_unused]] const shared<DrawData>& iData, [[maybe_unused]] uint32_t iIndexCount) {}
+void RenderAPI::bindTextures(const std::span<const shared<renderer::gpu::Texture2D>> iTextures) {
+	m_boundTextureCount = iTextures.size();
+}
 
-void RenderAPI::drawLineInstanced([[maybe_unused]] const shared<DrawData>& iData, [[maybe_unused]] uint32_t iIndexCount,
-								  [[maybe_unused]] uint32_t iInstanceCount) {}
+void RenderAPI::recordDraw(const shared<renderer::gpu::DrawData>& iData) {
+	constexpr size_t maxRecordedDraws = 256;
+	if (iData && m_drawnStates.size() < maxRecordedDraws)
+		m_drawnStates.push_back(iData->getPipelineState());
+}
 
 }// namespace owl::renderer::gpu::null

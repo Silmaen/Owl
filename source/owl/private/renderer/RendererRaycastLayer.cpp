@@ -60,7 +60,6 @@ void RendererRaycastLayer::onBeginFrame(const Camera& iCamera) {
 	const auto vh = static_cast<float>(m_viewport.y());
 	const CameraOrtho ortho(0.f, vw, 0.f, vh);
 	resolveBackdropTilesets();
-	gpu::RenderCommand::setDepthTest(false);
 	Renderer2D::resetStats();
 	Renderer2D::beginScene(ortho);
 	RendererRaycast::resetStats();
@@ -95,7 +94,6 @@ void RendererRaycastLayer::onEndFrame() {
 
 	RendererRaycast::endScene();
 	Renderer2D::endScene();
-	gpu::RenderCommand::setDepthTest(true);
 }
 
 void RendererRaycastLayer::applyConfig(const std::string& iConfig) {

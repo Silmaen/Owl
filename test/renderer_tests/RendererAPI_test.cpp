@@ -33,8 +33,7 @@ TEST(RenderAPI, RenderComamand) {
 	RenderCommand::init();
 	EXPECT_EQ(RenderCommand::getState(), RenderAPI::State::Ready);
 	RenderCommand::setViewport(1, 1, 45, 65);
-	RenderCommand::beginTextureLoad();
-	RenderCommand::endTextureLoad();
+	RenderCommand::bindTextures({});
 	RenderCommand::beginFrame();
 	RenderCommand::beginBatch();
 	RenderCommand::endBatch();

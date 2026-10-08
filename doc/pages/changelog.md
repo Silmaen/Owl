@@ -57,6 +57,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No public header names a yaml-cpp type any more (`AssetScanner` keeps its scene walk private), and CodeStyle (`public-deps`) rejects a public include of a third-party header the package does not provide.
 - `libOwlEngine.so` exports only the `OWL_API` symbols (hidden visibility, `--exclude-libs,ALL`): 3 763 dynamic symbols instead of 17 841, none from the statically linked yaml-cpp, spdlog, Lua, msdfgen, zstd or libpng, so a game linking its own copy no longer risks interposition.
 - A configure needs neither the network nor Doxygen: `poetry sync` runs only when `poetry.lock` changed, help badges come from their cache (`OWL_HELP_FETCH_BADGES=ON`, set by the packaged presets, downloads), the `documentation` target exists when Doxygen is found (`OWL_ENABLE_DOCUMENTATION=ON` requires it) and its `Doxyfile` is generated in the build tree with absolute paths and the venv's Python.
+- Owl RHI named and documented (*Owl RHI* in the renderer page): Vulkan reference, OpenGL frozen fallback, Null recording the state of each draw for tests, and the list of classes a further backend implements.
+- Owl RHI pipeline objects: a `PipelineState` (topology, culling, blending, depth test and write) given to `DrawData::init` drives every draw on both backends, instead of global depth toggles, a topology picked from the shader name `"line"` and hard-coded blending; `Renderer3D::createMesh` takes one (`opaqueMeshState`, `transparentMeshState`) and `drawMeshes` loses `iDepthWrite`.
+- Owl RHI explicit bindings: `RenderCommand::bindTextures(span)` sets the textures of the active renderer block, Vulkan `Texture2D::bind(slot)` honours its slot, and OpenGL keeps a binding table per block, so no renderer re-binds its uniform buffer or textures after another one drew.
 - Vulkan records each frame in one command buffer with two real frames in flight: no `vkQueueWaitIdle` on the hot path, transitions, clears and uploads inside the frame, one submission per frame (B-01, B-19).
 - Vulkan render passes load what earlier passes drew (only the first pass of a frame clears depth and the swapchain image), and the swapchain image is written only after its acquire semaphore, with one render-finished semaphore per image (B-02, B-19).
 - Vulkan uniforms and CPU-written storage buffers go through a per-frame ring, so several cameras or `drawMesh` models in one frame are correct, and descriptor sets come from per-frame pools reset in one call (B-03, B-04, B-23).
@@ -109,10 +112,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `parallelForEach` / `parallelForIndex` (`core/task/ParallelUtils.h`), which nothing called, and the `Scheduler::getImpl()` accessor that only they used.
 - The Lua state `ScriptEngine` kept with bindings that no script ran in (each `ScriptInstance` owns its own), with `ScriptEngine::loadScript` / `loadScriptFromBuffer` that only fed it.
 - The generic `core::IFactory` / `FactoryProduct` / `ProductAllocator`, whose only user was the mesh extra data: `data::extradata::ExtraDataRegistry` (`ExtraDataPid`, `getExtraDataPid<T>()`) replaces it, and `ExtraDataContainer` copies now clone the values instead of default-constructing them.
+- `RenderAPI` / `RenderCommand` `drawLine`, `drawLineInstanced`, `setDepthTest`, `setDepthMask`, `beginTextureLoad` and `endTextureLoad`, replaced by `PipelineState` and `bindTextures`.
 
 ### Fixed
 
 - `core_task` scheduler tests no longer fail on a loaded machine: they wait for the worker (condition and 30 s deadline) instead of sleeping 5 ms.
+- The raycast layer no longer leaves the depth test on for the layers drawn after it (a HUD layer then drew depth-tested).
 - OpenGL on the SPIR-V path (NVIDIA): the HUD, text and every Renderer2D draw without an entity reappear; the `quad`, `circle` and `text` shaders gave the scene and transient world buffers one block type, which the driver bound to a single buffer. A test checks every shipped shader keeps one block type per storage buffer.
 - `Matrix::norm()` is the Frobenius norm: it summed `a_ij * a_ji` (wrong for any non-symmetric matrix) and read out of range on a non-square one.
 - The Lua sandbox bytecode test loads its whole fake chunk: the literal was cut at its embedded NUL.

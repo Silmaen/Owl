@@ -12,6 +12,7 @@
 #include "math/vectors.h"
 #include <cstddef>
 #include <cstdint>
+#include <span>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -154,18 +155,19 @@ public:
 
 	/**
 	 * @brief
-	 *  Reset texture bind.
+	 *  Replace the sampled textures of the global set (slot `i` = `iTextureIds[i]`) and rewrite it.
+	 * @param[in] iTextureIds Registry ids in slot order; 0 is the default texture.
+	 * @param[in] iCurrentFrame Current in-flight frame index.
 	 */
-	void resetTextureBind();
+	void setTextures(std::span<const uint32_t> iTextureIds, size_t iCurrentFrame);
 
 	/**
 	 * @brief
-	 *  Commit texture bind.
-	 * @param[in] iCurrentFrame Current in-flight frame index.
+	 *  Put one texture in one sampler slot of the global set, keeping the other slots.
+	 * @param[in] iSlot Sampler slot.
+	 * @param[in] iTextureId Registry id of the texture.
 	 */
-	void commitTextureBind(size_t iCurrentFrame);
-
-	void textureBind(uint32_t iIndex);
+	void textureBind(uint32_t iSlot, uint32_t iTextureId);
 
 	/**
 	 * @brief
