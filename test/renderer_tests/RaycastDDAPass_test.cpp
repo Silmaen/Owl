@@ -33,7 +33,7 @@ TEST(RaycastDDAPass, updateAllocatesGridAndMeta) {
 	pass.init();
 	std::vector<int32_t> grid(8 * 8, -1);
 	std::vector<owl::renderer::utils::RaycastDDAPass::TileMeta> meta(4);
-	pass.update(grid, 8, 8, meta);
+	EXPECT_NO_THROW(pass.update(grid, 8, 8, meta));
 	pass.shutdown();
 	owl::renderer::gpu::RenderCommand::invalidate();
 	owl::core::Log::invalidate();

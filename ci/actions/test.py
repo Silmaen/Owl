@@ -24,9 +24,7 @@ class Test(BaseAction):
         if not build_dir.exists():
             log.error(f"Build directory does not exist: {build_dir}")
             return 1
-        test = run_command(
-            ["ctest", "--test-dir", str(build_dir), "--output-on-failure"]
-        )
+        test = run_command(["ctest", "--test-dir", str(build_dir), "--output-on-failure"])
         if test != 0:
             log.error("Tests failed.")
             return test

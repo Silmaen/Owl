@@ -1,3 +1,10 @@
+/**
+ * @file box_test.cpp
+ * @author Silmaen
+ * @date 23/10/2024
+ * Copyright (c) 2024 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "testHelper.h"
 
@@ -23,10 +30,10 @@ TEST(Box, Simple) {
 }
 
 TEST(Box, changes) {
-	box2f boxE;
-	boxE.scale(vec2{1, 2});
-	EXPECT_TRUE(boxE.isEmpty());
-	EXPECT_NEAR(boxE.min().x(), 0.f, 0.001);
+	box2f emptyBox;
+	emptyBox.scale(vec2{1, 2});
+	EXPECT_TRUE(emptyBox.isEmpty());
+	EXPECT_NEAR(emptyBox.min().x(), 0.f, 0.001);
 	box2f box{vec2{-1, -2}, vec2{2, 3}};
 	EXPECT_TRUE(box.contains(vec2(0, 0)));
 	box.translate(vec2{1.1f, 2.1f});

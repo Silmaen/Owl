@@ -101,7 +101,7 @@ TEST(LuaBindings, sceneFindEntityNotFound) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "notfound_test", 1));
 	inst.onCreate();
 
@@ -130,7 +130,7 @@ TEST(LuaBindings, entityHasComponent) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "comp_test", uuid));
 	inst.onCreate();
 
@@ -155,7 +155,7 @@ TEST(LuaBindings, entityGetName) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "name_test", uuid));
 	inst.onCreate();
 
@@ -178,7 +178,7 @@ TEST(LuaBindings, logDoesNotCrash) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "log_test", 1));
 	inst.onCreate();// Should not crash.
 
@@ -197,7 +197,7 @@ TEST(LuaBindings, timeDelta) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "time_test", 1));
 	inst.onUpdate(0.033f);
 

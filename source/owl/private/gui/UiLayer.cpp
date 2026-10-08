@@ -235,7 +235,6 @@ void UiLayer::end() const {
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
-// NOLINTBEGIN(readability-convert-member-functions-to-static)
 void UiLayer::setTheme(const Theme& iTheme) {
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
@@ -354,6 +353,5 @@ void UiLayer::initializeDocking() const {
 	}
 	style.WindowMinSize.x = minWinSizeX;
 }
-// NOLINTEND(readability-convert-member-functions-to-static)
 
 }// namespace owl::gui

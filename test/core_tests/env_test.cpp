@@ -1,3 +1,10 @@
+/**
+ * @file env_test.cpp
+ * @author Silmaen
+ * @date 30/04/2024
+ * Copyright (c) 2024 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "testHelper.h"
 
@@ -8,7 +15,7 @@
 
 using namespace owl::core;
 
-TEST(Environement, variables) {
+TEST(Environment, variables) {
 	EXPECT_STREQ(getEnv("BBOOBBOOBB").c_str(), "");
 	appendEnv("BBOOBBOOBB", "yo");
 	EXPECT_STREQ(getEnv("BBOOBBOOBB").c_str(), "yo");

@@ -1,0 +1,11 @@
+# The platformer player walks right then back left on the house floor, at full health.
+scene: ../../sample_project/scenes/platformer_house.owl
+steps:
+  - frames: 30
+  - expect: {player: true, translation.x: {equals: 4.5, tolerance: 0.01}}
+  - expect: {gamestate: health, equals: 1}
+  - input: {key: Right, frames: 20}
+  - expect: {player: true, translation.x: {greater: 5.0}}
+  - input: {key: Left, frames: 40}
+  - expect: {player: true, translation.x: {less: 5.0}}
+  - expect: {gamestate: health, equals: 1}

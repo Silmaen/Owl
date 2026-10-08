@@ -1,8 +1,17 @@
+/**
+ * @file matrix_test.cpp
+ * @author Silmaen
+ * @date 02/07/2024
+ * Copyright (c) 2024 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "math/matrixCreation.h"
 #include "testHelper.h"
 
 #include <math/linAlgebra.h>
+
+#include <cmath>
 
 using namespace owl::math;
 
@@ -17,7 +26,7 @@ TEST(math, matrixRowCol) {
 
 TEST(math, matrixBase) {
 	constexpr mat3 mat{1, 2, 3, 4, 5, 6, 7, 8, 9};
-	EXPECT_NEAR(mat.norm(), 16.15549, 0.001);
+	EXPECT_NEAR(mat.norm(), 16.88194, 0.001);
 	EXPECT_FALSE(mat == mat3({9, 8, 7, 6, 5, 4, 3, 2, 1}));
 	EXPECT_TRUE(mat != mat3({9, 8, 7, 6, 5, 4, 3, 2, 1}));
 	EXPECT_NEAR(mat(0, 0), 1, 0.001);
@@ -125,4 +134,13 @@ TEST(math, matrixInverse) {
 		EXPECT_NEAR(ident(3, 1), 0, 0.0001f);
 		EXPECT_NEAR(ident(3, 2), 0, 0.0001f);
 	}
+}
+
+TEST(math, matrixNormIsFrobenius) {
+	// Not symmetric: sum of a_ij^2, not of a_ij * a_ji.
+	constexpr mat2 mat{1, 0, 5, 1};
+	EXPECT_NEAR(mat.norm(), std::sqrt(27.f), 0.0001f);
+	// Not square: every component counts once, none is read out of range.
+	constexpr Matrix<float, 2, 3> wide{1, 2, 3, 4, 5, 6};
+	EXPECT_NEAR(wide.norm(), std::sqrt(91.f), 0.0001f);
 }

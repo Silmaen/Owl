@@ -1,3 +1,11 @@
+/**
+ * @file PhysicCommand_tests.cpp
+ * @author Silmaen
+ * @date 29/12/2024
+ * Copyright (c) 2024 All rights reserved.
+ * All modification must get authorization from the author.
+ */
+
 #include "testHelper.h"
 
 #include <physics/PhysicCommand.h>
@@ -161,15 +169,16 @@ TEST(PhysicCommand, GravityScaleNoOpEdgeCases) {
 		body.type = SceneBody::BodyType::Static;
 	}
 
-	// Uninitialized: warns but does not crash.
+	// Uninitialized: warns and does nothing.
 	PhysicCommand::setGravityScale(noBody, 0.f);
+	EXPECT_FALSE(PhysicCommand::isInitialized());
 	PhysicCommand::init(&scene);
-	// Null entity.
-	PhysicCommand::setGravityScale({}, 0.f);
-	// Entity without PhysicBody.
-	PhysicCommand::setGravityScale(noBody, 0.f);
-	// Static body — silently ignored (only Dynamic is meaningful).
-	PhysicCommand::setGravityScale(staticBody, 0.f);
+	ASSERT_TRUE(PhysicCommand::isInitialized());
+	// Null entity, entity without PhysicBody, static body (only Dynamic is meaningful): all ignored.
+	EXPECT_NO_THROW(PhysicCommand::setGravityScale({}, 0.f));
+	EXPECT_NO_THROW(PhysicCommand::setGravityScale(noBody, 0.f));
+	EXPECT_NO_THROW(PhysicCommand::setGravityScale(staticBody, 0.f));
+	EXPECT_EQ(PhysicCommand::getVelocity(staticBody), owl::math::vec2f(0, 0));
 	PhysicCommand::destroy();
 	Log::invalidate();
 }

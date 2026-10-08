@@ -149,18 +149,18 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase A — game export tested end to end, sample run headless ([Export](design/game-export.md))
 - ![Done][done] Phase A — full Wayland: icon, editor multi-window, X11 kept ([details](design/windowing-input.md))
 - ![Done][done] Phase A — OpenGL compatibility backend fixed and tested, mipmaps and Nearest filtering on both backends
-- ![In Progress][progress] Phase B — engine benchmark harness `bench/` (`OWL_BENCHMARK`)
+- ![Done][done] Phase B — engine benchmark harness `bench/` (`OWL_BENCHMARK`), runner cold start measured
 - ![Done][done] Phase B — diff-scoped clang-tidy CI action, parallel by default (H-03)
 - ![Done][done] Phase B — blocking sanitizers, shuffled test order, LSan job removed (PR-11)
 - ![Done][done] Phase B — CI in two parallel levels, fast subset for `Experiment/*` PRs, `PR Ready` merge gate
-- ![Planned][planned] Phase B — package once per platform from the tested release tree, no rebuild ([details](design/foundations.md))
+- ![Done][done] Phase B — package once per platform from the tested release tree, no rebuild ([details](design/foundations.md))
 - ![Done][done] Phase B — Tracy behind `OWL_PROFILE_*`, memory tracker opt-in, cheaper logs (PR-16, [Profiling](profiling.md))
 - ![Done][done] Phase B — runner frame bench: `OwlRunner --frame-bench`, GPU timestamps, Vulkan/OpenGL baseline (PR-17)
 - ![Done][done] Phase B — editor tests: `owlnest_tests` (undo, every command family, snapshots)
 - ![Done][done] Phase B — image tests on lavapipe / llvmpipe, validation clean, OpenGL GLSL fallback (PR-18)
-- ![Planned][planned] Phase B — tests without a window: scripted headless runner
+- ![Done][done] Phase B — tests without a window: scripted headless runner (`OwlRunner --scenario`)
 - ![Done][done] Phase B — benchmarks in CI: compiled on every PR, nightly run against a baseline (+15 % fails)
-- ![Planned][planned] Phase B — module dependency check, CI tooling tests
+- ![Done][done] Phase B — module dependency check, CI tooling tests
 - ![Planned][planned] Phase D — public dependencies reduced to EnTT (+ `Owl::Gui`)
 - ![Planned][planned] Phase D — hot reload of assets, Slang shaders and Lua scripts
 - ![Planned][planned] Phase D — autosave, crash recovery, session restore, error messages, project templates

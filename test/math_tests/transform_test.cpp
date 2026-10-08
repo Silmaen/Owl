@@ -1,3 +1,10 @@
+/**
+ * @file transform_test.cpp
+ * @author Silmaen
+ * @date 03/08/2023
+ * Copyright (c) 2023 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "testHelper.h"
 
@@ -7,7 +14,7 @@
 
 using namespace owl::math;
 
-constexpr bool vecNear(const vec3& a, const vec3& b, float accuracy = 0.001f) {
+constexpr auto vecNear(const vec3& a, const vec3& b, float accuracy = 0.001f) -> bool {
 	return (std::abs(a[0] - b[0]) < accuracy) && (std::abs(a[1] - b[1]) < accuracy) &&
 		   (std::abs(a[2] - b[2]) < accuracy);
 }

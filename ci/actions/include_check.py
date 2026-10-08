@@ -5,7 +5,7 @@ Action compiling every header and source alone against strict libc++, without th
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.preset import get_build_dir
-from ci.utils.run import run_command, MODE_BY_COLOR, MODE_FOR_NINJA
+from ci.utils.run import MODE_BY_COLOR, MODE_FOR_NINJA, run_command
 
 CHECK_TARGET = "owl_include_check"
 """Umbrella target defined by `cmake/IncludeCheck.cmake` (headers + sources)."""

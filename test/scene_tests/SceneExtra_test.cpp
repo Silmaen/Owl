@@ -14,6 +14,7 @@
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/component/components.h>
+#include <window/Window.h>
 
 using namespace owl::scene;
 
@@ -94,9 +95,11 @@ TEST(Scene, OnRenderRuntimeEmpty) {
 	Scene sc;
 	sc.onViewportResize({800, 600});
 	sc.onStartRuntime();
-	// No camera => early return, no crash.
-	sc.onRenderRuntime();
+	EXPECT_EQ(sc.status, Scene::Status::Playing);
+	// No camera: nothing to render, the call returns early.
+	EXPECT_NO_THROW(sc.onRenderRuntime());
 	sc.onEndRuntime();
+	EXPECT_EQ(sc.status, Scene::Status::Editing);
 	owl::input::Input::invalidate();
 	owl::core::Log::invalidate();
 }

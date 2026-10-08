@@ -40,7 +40,9 @@ to the full run is the only acceptable direction. Details:
 `doc/pages/continuous_integration.md#clang-tidy-scoping`.
 
 `CodeStyle` is the project's read-only style/doc gate. It **only inspects** —
-it never rewrites sources. Sub-checks (all on by default):
+it never rewrites sources. It walks `source/owl/{public,private}`, `source/owlnest/{sources,runner}`, `test/` and
+`bench/` (a missing root fails the gate); `comment-quality` skips `test/`, whose comments are not API documentation.
+Sub-checks (all on by default):
 
 1. **clang-format** dry-run on every C++ source.
 2. **typos** via `codespell` (allowlist in `ci/codespell-ignore-words.txt`
@@ -68,7 +70,14 @@ it never rewrites sources. Sub-checks (all on by default):
 7. **std-includes** — every file under `source/`, `test/`, `bench/` includes the
    standard header of each `std::` symbol / `uint*_t` / `size_t` it names
    (`ci/utils/std_includes.py`; a `.cpp` may rely on its own header and `owlpch.h`).
-7. **secrets** — git-tracked files scanned for private keys, GitHub / AWS /
+8. **test-assertions** — every gtest `TEST*` body asserts something (a gtest macro, or an `expect…` /
+   `assert…` / `check…` helper); a smoke test uses `EXPECT_NO_THROW`.
+9. **nolint** — a `NOLINT(...)` naming a check `.clang-tidy` does not enable is dead: it fails the gate
+   (`clang-tidy --list-checks`; `clang-analyzer-*` always counts).
+10. **python** — `ruff check`, `ruff format --check`, `mypy` and `pytest ci/tests` on `ci/` and `ci_action.py` (configuration in
+   `pyproject.toml`: 120 columns, rules `E F W I UP B SIM`); fix with `poetry run ruff check --fix` and
+   `poetry run ruff format`.
+11. **secrets** — git-tracked files scanned for private keys, GitHub / AWS /
    Slack tokens and passwords in URLs; a tracked `.env` fails. Prints the kind
    and position only, never the match.
 
@@ -77,8 +86,8 @@ separate `Documentation` action that builds doxygen with `WARN_AS_ERROR=YES`.
 
 Each sub-check can be disabled with `-- --no-<name>=true`:
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`, `--no-std-includes`.
-`--no-cpp-style`, `--no-structural`, `--no-secrets`.
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-test-assertions`, `--no-nolint`, `--no-python`,
+`--no-secrets`.
 
 **Report findings through `_diag()`**, never `log.error()` directly. It prints
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — the
@@ -107,7 +116,9 @@ class MyAction(BaseAction):
 
 ## Code Conventions
 
-- Type hints on all function signatures
+- Type hints on all function signatures; the code passes `ruff` and `mypy` (CodeStyle `python` sub-check)
+- Build output through `run_command(..., MODE_FOR_NINJA)`: only `: error:`, `FAILED:`, a stopped build and link
+  errors are logged as errors, `: warning:` as warnings, the rest as information
 - Use `pathlib.Path` for file paths (not string concatenation)
 - Logging via `ci.log` (standard Python logging, autoconfigured for TeamCity/Rich)
 - Return `int` exit codes from actions (0 = success)

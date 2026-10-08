@@ -76,7 +76,6 @@ public:
 	constexpr auto operator=(Transform&&) -> Transform& = default;
 
 	// NOLINTBEGIN(google-explicit-constructor)
-	// NOLINTBEGIN(hicpp-explicit-conversions)
 	/**
 	 * @brief
 	 *  Constructor from matrix.
@@ -90,7 +89,6 @@ public:
 	 * @return The transformation matrix.
 	 */
 	auto operator()() const -> mat4;
-	// NOLINTEND(hicpp-explicit-conversions)
 	// NOLINTEND(google-explicit-constructor)
 
 	// Accessors.

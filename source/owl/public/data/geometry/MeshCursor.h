@@ -267,7 +267,7 @@ public:
 	auto get() -> decltype(auto) {
 		static_assert(sizeof...(Components) > 0);
 		OWL_CORE_ASSERT(m_components, "")
-		return std::get<N>(*m_components);// NOLINT(bugprone-unchecked-optional-access)
+		return std::get<N>(*m_components);
 	}
 
 	/**
@@ -282,7 +282,7 @@ public:
 	[[nodiscard]] auto get() const -> decltype(auto) {
 		static_assert(sizeof...(Components) > 0);
 		OWL_CORE_ASSERT(m_components, "")
-		return std::get<N>(*m_components);// NOLINT(bugprone-unchecked-optional-access)
+		return std::get<N>(*m_components);
 	}
 
 private:
@@ -358,7 +358,7 @@ private:
 /// @cond
 
 namespace std {
-//NOLINTBEGIN(cert-dcl58-cpp,bugprone-std-namespace-modification)
+//NOLINTBEGIN(bugprone-std-namespace-modification)
 template<typename... Components>
 struct tuple_size<owl::data::geometry::MeshCursor<false, owl::data::geometry::MeshElementType::Vertex, Components...>>
 	: std::integral_constant<std::size_t, sizeof...(Components)> {};
@@ -405,7 +405,7 @@ struct tuple_element<
 	using type = std::tuple_element_t<
 			N, typename owl::data::geometry::MeshCursor<true, owl::data::geometry::MeshElementType::Vertex,
 														Components...>::ComponentsT>;
-	//NOLINTEND(cert-dcl58-cpp,bugprone-std-namespace-modification)
+	//NOLINTEND(bugprone-std-namespace-modification)
 };
 /// @endcond
 

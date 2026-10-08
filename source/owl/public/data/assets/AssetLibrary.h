@@ -10,7 +10,16 @@
 
 #include "data/assets/Asset.h"
 
-#include "app/Application.h"
+#include "data/assets/AssetSearchPaths.h"
+
+#include <algorithm>
+#include <concepts>
+#include <filesystem>
+#include <optional>
+#include <string>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 /**
  * @brief
@@ -194,13 +203,7 @@ public:
 		std::vector<std::string> result;
 		std::vector<std::string> ext = AssetType::extensions();
 		// get a list of directory to search.
-		std::list<app::Application::AssetDirectory> assetDirectories;
-		if (app::Application::instanced()) {
-			assetDirectories = app::Application::get().getAssetDirectories();
-		} else {
-			assetDirectories.push_back({"cwd", std::filesystem::current_path()});
-		}
-		for (const auto& [title, assetsPath]: assetDirectories) {
+		for (const auto& assetsPath: getAssetSearchPaths()) {
 			if (!std::filesystem::exists(assetsPath))
 				continue;
 			for (const auto& entry: std::filesystem::recursive_directory_iterator(assetsPath)) {
@@ -223,15 +226,9 @@ public:
 			return std::nullopt;
 		const std::vector<std::string> ext = AssetType::extensions();
 		// get a list of directory to search.
-		std::list<app::Application::AssetDirectory> assetDirectories;
-		if (app::Application::instanced()) {
-			assetDirectories = app::Application::get().getAssetDirectories();
-		} else {
-			assetDirectories.push_back({"cwd", std::filesystem::current_path()});
-		}
 		const std::filesystem::path name(iName);
 		const bool hasExtension = name.has_extension();
-		for (const auto& [title, assetsPath]: assetDirectories) {
+		for (const auto& assetsPath: getAssetSearchPaths()) {
 			// check base folders
 			{
 				std::filesystem::path filePath = assetsPath / name;

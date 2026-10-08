@@ -1,3 +1,10 @@
+/**
+ * @file tracker_test.cpp
+ * @author Silmaen
+ * @date 05/12/2022
+ * Copyright (c) 2022 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "core/utils/StringUtils.h"
 #include "testHelper.h"
@@ -75,7 +82,7 @@ TEST(Tracker, stacktrace) {
 	}
 }
 
-TEST(MemorySize, formating) {
+TEST(MemorySize, formatting) {
 	std::size_t st{488};
 	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "488 B");
 	st += 1024;

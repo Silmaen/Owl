@@ -1,3 +1,10 @@
+/**
+ * @file Renderer_test.cpp
+ * @author Silmaen
+ * @date 03/08/2023
+ * Copyright (c) 2023 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "testHelper.h"
 
@@ -29,9 +36,10 @@ TEST(Renderer, fakeScene) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	RenderCommand::create(RenderAPI::Type::Null);
 	Renderer::init();
+	EXPECT_EQ(Renderer::getState(), Renderer::State::Running);
 	const CameraOrtho cam(0, 0, 800, 600);
-	Renderer::beginScene(cam);
-	Renderer::endScene();
+	EXPECT_NO_THROW(Renderer::beginScene(cam));
+	EXPECT_NO_THROW(Renderer::endScene());
 	RenderCommand::invalidate();
 	owl::core::Log::invalidate();
 }

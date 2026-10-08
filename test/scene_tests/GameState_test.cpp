@@ -55,7 +55,7 @@ TEST(GameState, setGetBool) {
 }
 
 TEST(GameState, getDefault) {
-	GameState gs;
+	const GameState gs;
 	const auto val = gs.get("missing", int64_t{99});
 	EXPECT_EQ(std::get<int64_t>(val), 99);
 	EXPECT_FALSE(gs.get("missing").has_value());

@@ -12,9 +12,9 @@
 #include "core/Timestep.h"
 #include "core/UUID.h"
 #include "math/Transform.h"
-#include "physics/PhysicsSettings.h"
 #include "renderer/Camera.h"
 #include "renderer/RenderStack.h"
+#include "scene/PhysicsSettings.h"
 
 #include <entt/entt.hpp>
 
@@ -537,14 +537,14 @@ public:
 	 *  Access the scene's physics settings (mutable). Read by `PhysicCommand::init()`.
 	 * @return The physics settings.
 	 */
-	[[nodiscard]] auto getPhysicsSettings() -> physics::PhysicsSettings& { return m_physicsSettings; }
+	[[nodiscard]] auto getPhysicsSettings() -> PhysicsSettings& { return m_physicsSettings; }
 
 	/**
 	 * @brief
 	 *  Access the scene's physics settings (const).
 	 * @return The physics settings.
 	 */
-	[[nodiscard]] auto getPhysicsSettings() const -> const physics::PhysicsSettings& { return m_physicsSettings; }
+	[[nodiscard]] auto getPhysicsSettings() const -> const PhysicsSettings& { return m_physicsSettings; }
 
 private:
 	/**
@@ -559,7 +559,7 @@ private:
 	/// Scene-level enable/override of the project renderer stack (empty → all active with defaults).
 	renderer::EnabledRenderersConfig m_enabledRenderers;
 	/// Fixed-step rate, step bound, interpolation and solver settings of the scene's physics world.
-	physics::PhysicsSettings m_physicsSettings;
+	PhysicsSettings m_physicsSettings;
 	/// Cached primary-player entity handle. `entt::null` means "not resolved yet".
 	mutable entt::entity m_primaryPlayerCache = entt::null;
 	/**

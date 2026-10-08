@@ -182,7 +182,7 @@ TEST(RendererRaycast, drawWithEmptyTilemapDoesNothing) {
 	RendererRaycast::resetStats();
 	RendererRaycast::beginScene(cam, {800, 600}, config);
 	const TilemapAsset empty;
-	RendererRaycast::drawTilemapWalls(empty, math::Transform{}, /*entityId=*/-1);
+	RendererRaycast::drawTilemapWalls(empty, math::Transform{}, /*iEntityId=*/-1);
 	RendererRaycast::endScene();
 	const auto stats = RendererRaycast::getStats();
 	EXPECT_EQ(stats.drawCalls, 0u);

@@ -116,12 +116,12 @@ TEST(TerrainGenerator, CavesCarveSolid) {
 	p.baseHeight = 0;
 	p.amplitude = 0;
 	p.caveFrequency = 0.1f;
-	const TerrainGenerator solid{[&] {
+	const TerrainGenerator solid{[&] -> TerrainParams {
 		TerrainParams q = p;
 		q.caveThreshold = 2.f;// no caves
 		return q;
 	}()};
-	const TerrainGenerator carved{[&] {
+	const TerrainGenerator carved{[&] -> TerrainParams {
 		TerrainParams q = p;
 		q.caveThreshold = 0.3f;// generous caves
 		return q;

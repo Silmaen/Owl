@@ -57,7 +57,8 @@ foreach (child ${children})
                         ${CMAKE_SOURCE_DIR}/source/owlnest/runner)
                 target_sources(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
                         ${CMAKE_SOURCE_DIR}/source/owlnest/runner/FrameBench.cpp
-                        ${CMAKE_SOURCE_DIR}/source/owlnest/runner/FrameBenchStats.cpp)
+                        ${CMAKE_SOURCE_DIR}/source/owlnest/runner/FrameBenchStats.cpp
+                        ${CMAKE_SOURCE_DIR}/source/owlnest/runner/ScenarioTest.cpp)
                 if (TARGET ${CMAKE_PROJECT_NAME}Runner)
                     add_dependencies(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${CMAKE_PROJECT_NAME}Runner)
                     target_compile_definitions(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
@@ -130,6 +131,18 @@ if (${PROJECT_PREFIX}_PLATFORM_LINUX AND ${PROJECT_PREFIX}_RENDER_TESTS AND TARG
             ${PROJECT_SOURCE_DIR} ${CMAKE_BINARY_DIR}/wayland_smoke)
     set_tests_properties(${PROJECT_PREFIX_LOWER}_wayland_smoke PROPERTIES LABELS "render;wayland" SKIP_RETURN_CODE 77
             TIMEOUT 300 ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
+endif ()
+
+# Scripted headless runs: OwlRunner plays each test/scenarios/*.owltest and fails on a broken expectation.
+if (TARGET ${CMAKE_PROJECT_NAME}Runner)
+    file(GLOB SCENARIO_FILES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scenarios/*.owltest)
+    foreach (scenario ${SCENARIO_FILES})
+        get_filename_component(scenarioName ${scenario} NAME_WE)
+        add_test(NAME ${PROJECT_PREFIX_LOWER}_scenario_${scenarioName}
+                COMMAND $<TARGET_FILE:${CMAKE_PROJECT_NAME}Runner> --scenario ${scenario})
+        set_tests_properties(${PROJECT_PREFIX_LOWER}_scenario_${scenarioName} PROPERTIES LABELS scenario TIMEOUT 300
+                ENVIRONMENT "${${PROJECT_PREFIX}_TEST_ENVIRONMENT}")
+    endforeach ()
 endif ()
 
 if (${PROJECT_PREFIX}_ENABLE_COVERAGE)

@@ -50,7 +50,6 @@ void registerTrackingFactory() {
 
 using owl::renderer::EnabledRenderersConfig;
 using owl::renderer::RendererStackConfig;
-using owl::renderer::RendererStackEntry;
 using owl::renderer::RenderLayerFactory;
 using owl::renderer::RenderStack;
 

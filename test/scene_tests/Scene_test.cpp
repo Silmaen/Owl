@@ -1,3 +1,10 @@
+/**
+ * @file Scene_test.cpp
+ * @author Silmaen
+ * @date 03/08/2023
+ * Copyright (c) 2023 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "input/null/Input.h"
 #include "testHelper.h"
@@ -6,6 +13,7 @@
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/component/components.h>
+#include <window/Window.h>
 
 #include <chrono>
 

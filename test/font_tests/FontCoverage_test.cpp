@@ -20,7 +20,7 @@ using namespace owl;
 TEST(FontCoverage, nonExistentFontFile) {
 	core::Log::init(core::Log::Level::Off);
 	// Constructing a Font with a nonexistent path should not crash.
-	Font font(std::filesystem::path("/nonexistent/path/to/font.ttf"));
+	const Font font(std::filesystem::path("/nonexistent/path/to/font.ttf"));
 	EXPECT_EQ(font.getAtlasTexture(), nullptr);
 	EXPECT_TRUE(font.getName().empty());
 	EXPECT_FALSE(font.isDefault());

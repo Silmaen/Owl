@@ -47,8 +47,11 @@ auto simulatePile(const uint32_t iWorkers) -> RunResult {
 	std::vector<Entity> boxes;
 	for (uint32_t i = 0; i < 600; ++i) {
 		auto box = scene.createEntity("box");
-		box.getComponent<component::Transform>().transform.translation() = {
-				-45.f + 1.5f * static_cast<float>(i % 60), 2.f + 1.5f * static_cast<float>(i / 60), 0.f};
+		const auto column = static_cast<float>(i % 60);
+		const uint32_t rowIndex = i / 60;
+		const auto row = static_cast<float>(rowIndex);
+		box.getComponent<component::Transform>().transform.translation() = {-45.f + 1.5f * column, 2.f + 1.5f * row,
+																			0.f};
 		box.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Dynamic;
 		boxes.push_back(box);
 	}

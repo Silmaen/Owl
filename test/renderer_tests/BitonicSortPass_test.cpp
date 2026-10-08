@@ -107,13 +107,11 @@ TEST(BitonicSortPass, tailIsPaddedWithInfiniteKeys) {
 	pass.sort(items);
 	EXPECT_EQ(pass.getItemCount(), 5u);
 
-	std::vector<owl::renderer::utils::BitonicSortPass::Item> full(
-			owl::renderer::utils::BitonicSortPass::kSortSize);
-	pass.getBuffer()->getData(
-			full.data(),
-			owl::renderer::utils::BitonicSortPass::kSortSize *
-					static_cast<std::uint32_t>(sizeof(owl::renderer::utils::BitonicSortPass::Item)),
-			0);
+	std::vector<owl::renderer::utils::BitonicSortPass::Item> full(owl::renderer::utils::BitonicSortPass::kSortSize);
+	pass.getBuffer()->getData(full.data(),
+							  owl::renderer::utils::BitonicSortPass::kSortSize *
+									  static_cast<std::uint32_t>(sizeof(owl::renderer::utils::BitonicSortPass::Item)),
+							  0);
 	for (std::size_t i = 0; i < items.size(); ++i) EXPECT_FLOAT_EQ(full[i].key, items[i].key);
 	for (std::size_t i = items.size(); i < owl::renderer::utils::BitonicSortPass::kSortSize; ++i)
 		EXPECT_TRUE(std::isinf(full[i].key));

@@ -1,3 +1,10 @@
+/**
+ * @file vector_test.cpp
+ * @author Silmaen
+ * @date 02/07/2024
+ * Copyright (c) 2024 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "testHelper.h"
 
@@ -83,7 +90,7 @@ TEST(math, vectorsComponents) {
 
 
 TEST(math, vectorCrossProduct) {
-	vec3 test{1, 2, 3};
+	const vec3 test{1, 2, 3};
 	constexpr vec3 test2{3, 4, 1};
 	vec3 res = test ^ test2;
 	EXPECT_NEAR(res.x(), -10, 0.001);

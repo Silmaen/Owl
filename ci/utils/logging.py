@@ -15,9 +15,7 @@ class TeamCityFormatter(logging.Formatter):
         if level == "ERROR":
             return f"##teamcity[message text='{self._escape(message)}' status='ERROR']"
         elif level == "WARNING":
-            return (
-                f"##teamcity[message text='{self._escape(message)}' status='WARNING']"
-            )
+            return f"##teamcity[message text='{self._escape(message)}' status='WARNING']"
         else:
             return f"##teamcity[message text='{self._escape(message)}']"
 
@@ -44,22 +42,20 @@ def setup_logging(level: int = logging.DEBUG) -> None:
     :param level: The logging level to set (default is logging.INFO).
     """
     from os import environ
+
+    handler: logging.Handler
     if "TEAMCITY_VERSION" in environ:
         handler = logging.StreamHandler()
         handler.setFormatter(TeamCityFormatter())
     else:
         try:
-            import rich.logging
+            from rich.logging import RichHandler
         except ImportError:
-            print(
-                "WARNING: Rich python library not found. Falling back to standard logging."
-            )
-            rich = None
-        if rich is not None:
-            handler = rich.logging.RichHandler(markup=True, log_time_format="[%Y/%m/%d %X]")
-            handler.setFormatter(logging.Formatter("%(message)s"))
-        else:
+            print("WARNING: Rich python library not found. Falling back to standard logging.")
             handler = logging.StreamHandler()
+        else:
+            handler = RichHandler(markup=True, log_time_format="[%Y/%m/%d %X]")
+            handler.setFormatter(logging.Formatter("%(message)s"))
 
     from ci.utils.secrets import SecretFilter
 

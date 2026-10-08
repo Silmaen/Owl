@@ -205,13 +205,11 @@ private:
 	/// Pitch angle in radians (rotation around camera right).
 	float m_pitch = 0.0f;
 
-	// NOLINTBEGIN(*-magic-numbers)
 	/// Movement speed in world units per second.
 	float m_moveSpeed = 8.0f;
 	/// Look speed in radians per second.
 	float m_lookSpeed = 1.5f;
 	/// Pitch clamp in radians (just under 90 degrees).
 	float m_pitchLimit = 1.5f;
-	// NOLINTEND(*-magic-numbers)
 };
 }// namespace owl::renderer

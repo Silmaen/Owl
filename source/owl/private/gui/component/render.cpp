@@ -681,8 +681,7 @@ void renderProps(UiRect& ioComponent) {
 
 void renderProps(UiText& ioComponent) {
 	ImGui::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
-	ImGui::ColorEdit4("Color", reinterpret_cast<float*>(
-									   &ioComponent.color));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));
 	ImGui::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
 	const std::string currentAlign{magic_enum::enum_name(ioComponent.alignment)};
 	if (ImGui::BeginCombo("Alignment", currentAlign.c_str())) {
@@ -700,17 +699,12 @@ void renderProps(UiText& ioComponent) {
 
 void renderProps(UiImage& ioComponent) {
 	widgets::textureField("Texture", ioComponent.texture);
-	ImGui::ColorEdit4(
-			"Tint", reinterpret_cast<float*>(&ioComponent.tint));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Tint", reinterpret_cast<float*>(&ioComponent.tint));
 }
 
 void renderProps(UiPanel& ioComponent) {
-	ImGui::ColorEdit4("Background",
-					  reinterpret_cast<float*>(
-							  &ioComponent.backgroundColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-	ImGui::ColorEdit4(
-			"Border Color",
-			reinterpret_cast<float*>(&ioComponent.borderColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
+	ImGui::ColorEdit4("Border Color", reinterpret_cast<float*>(&ioComponent.borderColor));
 	ImGui::DragFloat("Border Width", &ioComponent.borderWidth, 0.5f, 0.0f, 20.0f);
 	const std::string currentLayout{magic_enum::enum_name(ioComponent.layout)};
 	if (ImGui::BeginCombo("Layout", currentLayout.c_str())) {
@@ -728,21 +722,13 @@ void renderProps(UiPanel& ioComponent) {
 }
 
 void renderProps(UiButton& ioComponent) {
-	ImGui::ColorEdit4(
-			"Normal Color",
-			reinterpret_cast<float*>(&ioComponent.normalColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Normal Color", reinterpret_cast<float*>(&ioComponent.normalColor));
 	fieldTooltip("Button background color in the default (not hovered, not pressed) state.");
-	ImGui::ColorEdit4(
-			"Hover Color",
-			reinterpret_cast<float*>(&ioComponent.hoverColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Hover Color", reinterpret_cast<float*>(&ioComponent.hoverColor));
 	fieldTooltip("Button background color when the mouse is hovering over it.");
-	ImGui::ColorEdit4(
-			"Pressed Color",
-			reinterpret_cast<float*>(&ioComponent.pressedColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Pressed Color", reinterpret_cast<float*>(&ioComponent.pressedColor));
 	fieldTooltip("Button background color while the mouse button is held down.");
-	ImGui::ColorEdit4(
-			"Disabled Color",
-			reinterpret_cast<float*>(&ioComponent.disabledColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Disabled Color", reinterpret_cast<float*>(&ioComponent.disabledColor));
 	fieldTooltip("Button background color when disabled (cannot be clicked).");
 	ImGui::InputText("On Click Callback", &ioComponent.onClickCallback);
 	fieldTooltip("Lua function name to call when the button is clicked (e.g. on_play_clicked).");
@@ -755,27 +741,17 @@ void renderProps(UiSlider& ioComponent) {
 	fieldTooltip("Minimum allowed value.");
 	ImGui::DragFloat("Max", &ioComponent.maxValue, 0.1f);
 	fieldTooltip("Maximum allowed value.");
-	ImGui::ColorEdit4(
-			"Track Color",
-			reinterpret_cast<float*>(&ioComponent.trackColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-	ImGui::ColorEdit4(
-			"Fill Color",
-			reinterpret_cast<float*>(&ioComponent.fillColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-	ImGui::ColorEdit4(
-			"Handle Color",
-			reinterpret_cast<float*>(&ioComponent.handleColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));
+	ImGui::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));
+	ImGui::ColorEdit4("Handle Color", reinterpret_cast<float*>(&ioComponent.handleColor));
 	ImGui::InputText("On Value Changed", &ioComponent.onValueChangedCallback);
 	fieldTooltip("Lua function called when the value changes. Receives the new value in _slider_value.");
 }
 
 void renderProps(UiProgressBar& ioComponent) {
 	ImGui::DragFloat("Value", &ioComponent.value, 0.01f, 0.0f, 1.0f);
-	ImGui::ColorEdit4("Background",
-					  reinterpret_cast<float*>(
-							  &ioComponent.backgroundColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-	ImGui::ColorEdit4(
-			"Fill Color",
-			reinterpret_cast<float*>(&ioComponent.fillColor));// NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+	ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
+	ImGui::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));
 }
 
 void renderProps(PrefabLink& ioComponent) {

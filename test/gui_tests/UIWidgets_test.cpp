@@ -65,7 +65,7 @@ TEST(UiPanel, createAndDefaults) {
 	core::Log::invalidate();
 }
 
-TEST(UIWidgets, serializeDeserializeViaScene) {
+TEST(UiWidgets, serializeDeserializeViaScene) {
 	core::Log::init(core::Log::Level::Off);
 	const auto dir = std::filesystem::temp_directory_path() / "owl_ui_widgets_test";
 	std::filesystem::remove_all(dir);

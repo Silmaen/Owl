@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "gui/BasePanel.h"
+#include "gui/UiLayer.h"
 #include <app/Application.h>
 #include <imgui.h>
 

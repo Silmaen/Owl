@@ -74,7 +74,7 @@ auto replaceTarget(const std::filesystem::path& iTemp, const std::filesystem::pa
 void syncDirectory(const std::filesystem::path& /*iDir*/) {}
 #else
 auto openTemp(const std::filesystem::path& iTemp, const std::filesystem::path& iTarget) -> int {
-	const int fd = ::open(iTemp.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0666);// NOLINT(hicpp-signed-bitwise)
+	const int fd = ::open(iTemp.c_str(), O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0666);
 	if (struct stat previous{}; fd >= 0 && ::stat(iTarget.c_str(), &previous) == 0)
 		std::ignore = ::fchmod(fd, previous.st_mode & 07777U);
 	return fd;
@@ -91,7 +91,7 @@ auto replaceTarget(const std::filesystem::path& iTemp, const std::filesystem::pa
 }
 
 void syncDirectory(const std::filesystem::path& iDir) {
-	const int fd = ::open(iDir.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);// NOLINT(hicpp-signed-bitwise)
+	const int fd = ::open(iDir.c_str(), O_RDONLY | O_DIRECTORY | O_CLOEXEC);
 	if (fd < 0)
 		return;
 	std::ignore = ::fsync(fd);

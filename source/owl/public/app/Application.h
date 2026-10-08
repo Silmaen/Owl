@@ -9,13 +9,13 @@
 #pragma once
 
 #include "app/layer/LayerStack.h"
+#include "core/Macros.h"
 #include "core/Timestep.h"
 #include "core/task/Scheduler.h"
 #include "core/task/Task.h"
 #include "data/assets/pack/PackReader.h"
 #include "data/fonts/FontLibrary.h"
 #include "event/AppEvent.h"
-#include "gui/UiLayer.h"
 #include "renderer/gpu/RenderAPI.h"
 #include "sound/SoundAPI.h"
 #include "window/Window.h"
@@ -29,6 +29,10 @@
 
 // Forward declaration of the program entry point (definition in EntryPoint.h).
 auto main(int iArgc, char* iArgv[]) -> int;
+
+namespace owl::gui {
+class UiLayer;
+}// namespace owl::gui
 
 namespace owl::app {
 /// Default Windows width.

@@ -6,14 +6,14 @@ downloaded from the target server at each publication and executed with the
 credentials on its command line; it is now reviewed code, run in process, and
 the password comes from the environment (``OWL_DEPLOY_PASSWORD``).
 """
+
 import os
 import platform
-import re
 import tarfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from ci import root, log
+from ci import log, root
 from ci.utils.secrets import redact
 
 DEPLOY_PASSWORD_ENV = "OWL_DEPLOY_PASSWORD"
@@ -147,7 +147,7 @@ def get_project_version() -> str:
     cmake_file = root / "CMakeLists.txt"
     if not cmake_file.exists():
         return "Bad Version"
-    with open(cmake_file, "r") as f:
+    with open(cmake_file) as f:
         for line in f:
             if not line.strip().startswith("project"):
                 continue
@@ -222,27 +222,25 @@ def get_git_hash() -> str:
 
     :return: The short git hash, or "0000000" on failure.
     """
-    from subprocess import run, PIPE
+    from subprocess import run
 
     try:
-        ret = run(["git", "log", "-1", "--format=%h"], stdout=PIPE, stderr=PIPE, text=True)
+        ret = run(["git", "log", "-1", "--format=%h"], capture_output=True, text=True)
         if ret.returncode == 0:
             sha = ret.stdout.strip()[:7]
             if sha:
                 return sha
-        log.warning(
-            f"git log returned {ret.returncode}, falling back to BUILD_VCS_NUMBER / .git/HEAD"
-        )
+        log.warning(f"git log returned {ret.returncode}, falling back to BUILD_VCS_NUMBER / .git/HEAD")
     except Exception as err:
         log.warning(f"git log raised {err}, falling back to BUILD_VCS_NUMBER / .git/HEAD")
 
-    sha = _hash_from_teamcity_env()
-    if sha:
-        return sha[:7]
+    env_sha = _hash_from_teamcity_env()
+    if env_sha:
+        return env_sha[:7]
 
-    sha = _hash_from_git_refs(root)
-    if sha:
-        return sha[:7]
+    ref_sha = _hash_from_git_refs(root)
+    if ref_sha:
+        return ref_sha[:7]
 
     log.error("Could not retrieve git hash via git, BUILD_VCS_NUMBER, or .git/HEAD.")
     return "0000000"
@@ -256,12 +254,5 @@ def get_platform_info() -> dict[str, str]:
     os_name = platform.system().replace("Darwin", "MacOS").lower()
     if os_name == "linux":
         os_name += f" glibc_{platform.libc_ver()[1]}"
-    arch = (
-        platform.machine()
-        .lower()
-        .replace("amd", "x")
-        .replace("86_", "")
-        .replace("arch", "rm")
-        .replace("v8", "64")
-    )
+    arch = platform.machine().lower().replace("amd", "x").replace("86_", "").replace("arch", "rm").replace("v8", "64")
     return {"os": os_name, "arch": arch}

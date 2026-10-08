@@ -62,9 +62,12 @@ auto addBox(Scene& ioScene, const math::vec3f& iPosition) -> Entity {
 auto makeStack(Scene& ioScene) -> std::vector<Entity> {
 	addGround(ioScene);
 	std::vector<Entity> boxes;
-	for (int i = 0; i < 12; ++i)
-		boxes.push_back(addBox(ioScene,
-							   {static_cast<float>(i % 4) * 1.1f - 2.f, 1.5f + static_cast<float>(i / 4) * 1.2f, 0.f}));
+	for (int i = 0; i < 12; ++i) {
+		const int rowIndex = i / 4;
+		const auto column = static_cast<float>(i % 4);
+		const auto row = static_cast<float>(rowIndex);
+		boxes.push_back(addBox(ioScene, {column * 1.1f - 2.f, 1.5f + row * 1.2f, 0.f}));
+	}
 	return boxes;
 }
 

@@ -311,7 +311,7 @@ TEST(EntityComponentCoverage, UiRect) {
 TEST(EntityComponentCoverage, UiText) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
-	auto ent = sc.createEntity("UITextEnt");
+	auto ent = sc.createEntity("UiTextEnt");
 
 	EXPECT_FALSE(ent.hasComponent<component::UiText>());
 	auto& ut = ent.addComponent<component::UiText>();
@@ -354,7 +354,7 @@ TEST(EntityComponentCoverage, UiImage) {
 TEST(EntityComponentCoverage, UiPanel) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
-	auto ent = sc.createEntity("UIPanelEnt");
+	auto ent = sc.createEntity("UiPanelEnt");
 
 	EXPECT_FALSE(ent.hasComponent<component::UiPanel>());
 	auto& panel = ent.addComponent<component::UiPanel>();
@@ -378,7 +378,7 @@ TEST(EntityComponentCoverage, UiPanel) {
 TEST(EntityComponentCoverage, UiButton) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
-	auto ent = sc.createEntity("UIButtonEnt");
+	auto ent = sc.createEntity("UiButtonEnt");
 
 	EXPECT_FALSE(ent.hasComponent<component::UiButton>());
 	auto& btn = ent.addComponent<component::UiButton>();
@@ -399,7 +399,7 @@ TEST(EntityComponentCoverage, UiButton) {
 TEST(EntityComponentCoverage, UiSlider) {
 	core::Log::init(core::Log::Level::Off);
 	Scene sc;
-	auto ent = sc.createEntity("UISliderEnt");
+	auto ent = sc.createEntity("UiSliderEnt");
 
 	EXPECT_FALSE(ent.hasComponent<component::UiSlider>());
 	auto& slider = ent.addComponent<component::UiSlider>();
@@ -450,8 +450,8 @@ TEST(EntityComponentCoverage, PrefabLink) {
 	auto& pl = ent.addComponent<component::PrefabLink>();
 	pl.prefabAssetPath = "prefabs/enemy.owlprefab";
 	pl.syncedVersion = 3;
-	pl.uuidMapping.push_back({100, 200});
-	pl.overriddenComponents.push_back("200:Transform");
+	pl.uuidMapping.emplace_back(100, 200);
+	pl.overriddenComponents.emplace_back("200:Transform");
 	EXPECT_TRUE(ent.hasComponent<component::PrefabLink>());
 	EXPECT_EQ(ent.getComponent<component::PrefabLink>().prefabAssetPath, "prefabs/enemy.owlprefab");
 	EXPECT_EQ(ent.getComponent<component::PrefabLink>().syncedVersion, 3u);

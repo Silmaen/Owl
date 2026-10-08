@@ -11,7 +11,6 @@
 #include "AssetScanner.h"
 #include "core/expected.h"
 #include "math/vectors.h"
-#include "renderer/RenderStack.h"
 
 #include <filesystem>
 #include <functional>
@@ -46,8 +45,8 @@ struct OWL_API ExportSettings {
 	bool fullscreen{false};
 	/// Whether the game window is resizable.
 	bool resizable{true};
-	/// Project renderer stack, forwarded to `runner.yml`.
-	renderer::RendererStackConfig rendererStack;
+	/// Project renderer stack as YAML (`RendererStackConfig::toYaml`), forwarded to `runner.yml`; empty for none.
+	std::string rendererStackYaml;
 	/// Pack flags (compression, obfuscation).
 	PackFlags packFlags{PackFlags::Default};
 };

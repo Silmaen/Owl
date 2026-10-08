@@ -31,26 +31,30 @@ TEST(Log, basic) {
 	Log::setVerbosityLevel(Log::Level::Off);
 	Log::init();
 	Log::init();
+	EXPECT_TRUE(Log::initiated());
 	Log::newFrame();
 	Log::setFrameFrequency(0);
 	Log::newFrame();
+	EXPECT_FALSE(Log::frameLog());// frequency 0: no frame log
 	Log::setFrameFrequency(1);
 	Log::newFrame();
+	EXPECT_TRUE(Log::frameLog());// every frame
 	Log::invalidate();
+	EXPECT_FALSE(Log::initiated());
 }
 
 TEST(Log, clientMessagesGoToTheClientLogger) {
 	Log::init(Log::Level::Trace);
 	Log::getLogBuffer().clear();
-	OWL_INFO("client message {}", 1)
+	OWL_INFO("client message {}.", 1)
 	EXPECT_EQ(lastEntry().loggerName, "APP");
-	EXPECT_EQ(lastEntry().message, "client message 1");
-	OWL_INFO("client message without argument")
+	EXPECT_EQ(lastEntry().message, "client message 1.");
+	OWL_INFO("client message without argument.")
 	EXPECT_EQ(lastEntry().loggerName, "APP");
 	OWL_CORE_INFO("core message {}", 2)
 	EXPECT_EQ(lastEntry().loggerName, "OWL");
 	EXPECT_EQ(lastEntry().message, "core message 2");
-	OWL_CORE_WARN("core message without argument")
+	OWL_CORE_WARN("core message without argument.")
 	EXPECT_EQ(lastEntry().loggerName, "OWL");
 	Log::invalidate();
 }

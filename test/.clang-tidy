@@ -1,0 +1,14 @@
+# Tests inherit the engine's checks, minus the ones whose pattern is the point of a test or only noise there:
+# suspicious argument order (tests build odd hierarchies on purpose), copies and moves of values whose copy / move
+# constructor is under test, push_back in a loop, widening in buffer-size arithmetic, float loop counters, static
+# fixtures that may throw, and the rule of five on small fixture classes.
+---
+InheritParentConfig: true
+Checks: '-readability-suspicious-call-argument,
+  -performance-unnecessary-copy-initialization,
+  -performance-move-const-arg,
+  -performance-inefficient-vector-operation,
+  -bugprone-implicit-widening-of-multiplication-result,
+  -bugprone-float-loop-counter,
+  -bugprone-throwing-static-initialization,
+  -cppcoreguidelines-special-member-functions'

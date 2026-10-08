@@ -35,6 +35,10 @@ val globalBuild = Template {
         checkbox("run_documentation", "false", checked = "true", unchecked = "false")
         checkbox("run_package", "false", checked = "true", unchecked = "false")
         param("release_preset", "")
+        // The release tree of `main` writes the archives (release preset flagged `package`); only the package
+        // configurations publish them.
+        checkbox("package_release", "false", checked = "true", unchecked = "false")
+        checkbox("publish_package", "false", checked = "true", unchecked = "false")
         // Secrets reach ci_action.py through its environment, never its command line
         // (visible to `ps`, echoed in the log). The referenced parameters are password
         // parameters on the server, so TeamCity masks their value everywhere.
@@ -82,11 +86,11 @@ val globalBuild = Template {
         }
 
         script {
-            ciAction("Build", "Build_Release", displayName = "Build")
+            ciAction("Build", "Build_Preset", displayName = "Build")
         }
 
         script {
-            ciAction("Test", "Test_Release", displayName = "Test")
+            ciAction("Test", "Test_Preset", displayName = "Test")
             conditions {
                 equals("run_tests", "true")
             }
@@ -111,7 +115,7 @@ val globalBuild = Template {
         }
 
         script {
-            ciAction("Build", "Build_Debug", displayName = "Build Release",
+            ciAction("Build", "Build_Release_Main", displayName = "Build Release",
                 preset = "%release_preset%")
             conditions {
                 doesNotMatch("release_preset", "^${'$'}")
@@ -133,7 +137,7 @@ val globalBuild = Template {
         }
 
         script {
-            ciAction("Test", "Test_Debug", displayName = "Test Release",
+            ciAction("Test", "Test_Release_Main", displayName = "Test Release",
                 preset = "%release_preset%")
             conditions {
                 doesNotMatch("release_preset", "^${'$'}")
@@ -141,6 +145,16 @@ val globalBuild = Template {
                 // gets its verdict from the debug build, in half the time.
                 equals("teamcity.build.branch.is_default", "true")
                 equals("run_tests", "true")
+            }
+        }
+
+        script {
+            ciAction("Package", "Package_Release_Main", displayName = "Package Release",
+                preset = "%release_preset%")
+            conditions {
+                doesNotMatch("release_preset", "^${'$'}")
+                equals("teamcity.build.branch.is_default", "true")
+                equals("package_release", "true")
             }
         }
 
@@ -164,7 +178,7 @@ val globalBuild = Template {
             ciAction("PublishPackage", "Publish", displayName = "Publish Package",
                 extraArgs = "--url=%deploy_url% --login=%deploy_login%")
             conditions {
-                equals("run_package", "true")
+                equals("publish_package", "true")
                 equals("teamcity.build.branch.is_default", "true")
             }
         }
@@ -173,7 +187,7 @@ val globalBuild = Template {
             ciAction("PublishDoc", "Publish_Doc", displayName = "Publish Documentation",
                 extraArgs = "--url=%deploy_url% --login=%deploy_login%")
             conditions {
-                equals("run_package", "true")
+                equals("publish_package", "true")
                 equals("teamcity.build.branch.is_default", "true")
                 equals("publish_doc", "true")
             }

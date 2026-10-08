@@ -30,7 +30,7 @@ auto findRoot() -> std::filesystem::path {
 }
 
 auto readFile(const std::filesystem::path& iPath) -> std::string {
-	std::ifstream in(iPath, std::ios::binary);
+	const std::ifstream in(iPath, std::ios::binary);
 	std::stringstream ss;
 	ss << in.rdbuf();
 	return ss.str();

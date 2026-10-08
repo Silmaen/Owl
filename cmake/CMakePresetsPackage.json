@@ -6,122 +6,23 @@
     "patch": 0
   },
   "include": [
-    "CMakePresetsBase.json"
+    "CMakePresetsLinux.json"
   ],
   "configurePresets": [
     {
-      "name": "packaging-common",
-      "binaryDir": "output/build/${presetName}",
-      "installDir": "output/install/${presetName}",
-      "hidden": true,
-      "cacheVariables": {
-        "OWL_PACKAGING": "ON",
-        "OWL_TESTING": "OFF",
-        "CMAKE_INSTALL_PREFIX": "output/install/${presetName}",
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_EXE_LINKER_FLAGS_INIT": "-fuse-ld=lld",
-        "CMAKE_SHARED_LINKER_FLAGS_INIT": "-fuse-ld=lld"
-      }
-    },
-    {
-      "name": "packaging",
-      "generator": "Ninja Multi-Config",
-      "hidden": true,
+      "name": "package-linux",
       "inherits": [
-        "packaging-common"
+        "linux-clang-release"
       ],
       "cacheVariables": {
-        "CMAKE_CONFIGURATION_TYPES": "Debug;Release"
-      }
-    },
-    {
-      "name": "package-engine-windows",
-      "inherits": [
-        "packaging"
-      ],
-      "cacheVariables": {
-        "OWL_PACKAGE_NAME": "OwlEngine",
-        "OWL_BUILD_NEST": "OFF",
-        "OWL_PACKAGE_ENGINE": "ON"
+        "OWL_TESTING": "OFF"
       },
       "vendor": {
         "silmaen": {
-          "archive_format": "zip"
-        }
-      }
-    },
-    {
-      "name": "package-engine-linux",
-      "inherits": [
-        "package-engine-windows"
-      ],
-      "vendor": {
-        "silmaen": {
-          "docker_registry": "registry.argawaen.net",
-          "docker_namespace": "builder",
           "docker_image": "builder-ubuntu2604",
-          "docker_parameters": "-u %env.BUILDER_UID%:%env.BUILDER_GID% --platform=%docker_build_platform% -v %teamcity.agent.home.dir%/user/cache_dir:/tmp/cache_dir --network host -v %teamcity.agent.home.dir%/user:/home/user -e HOME=/home/user -e TEAMCITY_VERSION=%teamcity.version%",
-          "publish_doc": true,
-          "archive_format": "tar.gz"
+          "package": true,
+          "publish_doc": false
         }
-      },
-      "cacheVariables": {
-        "OWL_ENABLE_DOCUMENTATION": "ON"
-      }
-    },
-    {
-      "name": "packaging-app-windows",
-      "generator": "Ninja",
-      "hidden": true,
-      "inherits": [
-        "packaging-common"
-      ],
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      },
-      "vendor": {
-        "silmaen": {
-          "archive_format": "zip"
-        }
-      }
-    },
-    {
-      "name": "packaging-app-linux",
-      "hidden": true,
-      "inherits": [
-        "packaging-app-windows"
-      ],
-      "vendor": {
-        "silmaen": {
-          "archive_format": "tar.gz",
-          "docker_registry": "registry.argawaen.net",
-          "docker_namespace": "builder",
-          "docker_image": "builder-ubuntu2604",
-          "docker_parameters": "-u %env.BUILDER_UID%:%env.BUILDER_GID% --platform=%docker_build_platform% -v %teamcity.agent.home.dir%/user/cache_dir:/tmp/cache_dir --network host -v %teamcity.agent.home.dir%/user:/home/user -e HOME=/home/user -e TEAMCITY_VERSION=%teamcity.version%"
-        }
-      }
-    },
-    {
-      "name": "package-app-nest-windows",
-      "inherits": [
-        "packaging-app-windows"
-      ],
-      "cacheVariables": {
-        "OWL_PACKAGE_NAME": "OwlNest",
-        "OWL_BUILD_NEST": "ON",
-        "OWL_PACKAGE_ENGINE": "OFF"
-      }
-    },
-    {
-      "name": "package-app-nest-linux",
-      "inherits": [
-        "packaging-app-linux"
-      ],
-      "cacheVariables": {
-        "OWL_PACKAGE_NAME": "OwlNest",
-        "OWL_BUILD_NEST": "ON",
-        "OWL_PACKAGE_ENGINE": "OFF"
       }
     }
   ]

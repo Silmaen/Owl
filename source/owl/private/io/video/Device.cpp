@@ -19,7 +19,6 @@ namespace {
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
-// NOLINTBEGIN(*-magic-numbers)
 void convertNv12ToRgb24(const uint8_t* iNv12Buffer, const math::vec2ui& iSize, uint8_t* oRgb24Buffer) {
 	// Each component Y occupy width * height bytes.
 	const uint32_t ySize = iSize.surface();
@@ -106,7 +105,6 @@ void convertMJpegToRgb24(const uint8_t* iJpegBuffer, const int32_t iJpegSize, co
 	stbi_image_free(buffer);
 }
 OWL_DIAG_POP
-// NOLINTEND(*-magic-numbers)
 
 }// namespace
 

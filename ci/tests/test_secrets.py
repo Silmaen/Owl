@@ -66,7 +66,9 @@ def test_secret_filter_masks_formatted_record() -> None:
     assert record.getMessage() == f"pass={secrets.MASK}"
 
 
-def test_run_command_never_logs_the_secret(monkeypatch: pytest.MonkeyPatch, masked_caplog: pytest.LogCaptureFixture) -> None:
+def test_run_command_never_logs_the_secret(
+    monkeypatch: pytest.MonkeyPatch, masked_caplog: pytest.LogCaptureFixture
+) -> None:
     monkeypatch.setenv("OWL_TEST_SECRET", FAKE_PASSWORD)
     secrets.get_secret("OWL_TEST_SECRET")
     code = run_command(

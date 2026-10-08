@@ -28,7 +28,6 @@ using owl::nest::codeEditor::MdBlockQuote;
 using owl::nest::codeEditor::MdCodeBlock;
 using owl::nest::codeEditor::MdHeading;
 using owl::nest::codeEditor::MdHRule;
-using owl::nest::codeEditor::MdImage;
 using owl::nest::codeEditor::MdList;
 using owl::nest::codeEditor::MdParagraph;
 using owl::nest::codeEditor::MdTable;

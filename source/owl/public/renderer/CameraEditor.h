@@ -223,7 +223,6 @@ private:
 	 */
 	[[nodiscard]] auto zoomSpeed() const -> float;
 
-	// NOLINTBEGIN(*-magic-numbers)
 	/// Field of View.
 	float m_fov = 45.0f;
 	/// Aspect ratio.
@@ -247,7 +246,6 @@ private:
 	float m_pitch = 0.0f;
 	/// Camera's yaw.
 	float m_yaw = 0.0f;
-	// NOLINTEND(*-magic-numbers)
 
 	/// Viewport size.
 	math::vec2ui m_viewportSize = {1280, 720};

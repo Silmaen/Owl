@@ -44,7 +44,7 @@ struct TestSaveGuard {
 
 TEST(SaveManager, saveDirectory) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 	const auto dir = SaveManager::getSaveDirectory();
 	EXPECT_TRUE(exists(dir));
 	EXPECT_TRUE(dir.string().find("saves") != std::string::npos);
@@ -53,14 +53,14 @@ TEST(SaveManager, saveDirectory) {
 
 TEST(SaveManager, hasSaveEmpty) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 	EXPECT_FALSE(SaveManager::hasSave(1));
 	core::Log::invalidate();
 }
 
 TEST(SaveManager, saveAndLoad) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	// Create scene with entities and game state.
 	auto scn = mkShared<Scene>();
@@ -94,7 +94,7 @@ TEST(SaveManager, saveAndLoad) {
 
 TEST(SaveManager, listSaves) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	auto scn = mkShared<Scene>();
 	scn->createEntity("E1");
@@ -114,7 +114,7 @@ TEST(SaveManager, listSaves) {
 
 TEST(SaveManager, deleteSave) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	auto scn = mkShared<Scene>();
 	scn->createEntity("E1");
@@ -128,7 +128,7 @@ TEST(SaveManager, deleteSave) {
 
 TEST(SaveManager, getScenePath) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	auto scn = mkShared<Scene>();
 	scn->createEntity("E1");
@@ -141,7 +141,7 @@ TEST(SaveManager, getScenePath) {
 
 TEST(SaveManager, loadNonExistentSlot) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	auto scn = mkShared<Scene>();
 	const auto result = SaveManager::load(999, scn);
@@ -153,7 +153,7 @@ TEST(SaveManager, loadNonExistentSlot) {
 
 TEST(SaveManager, loadCorruptSaveFile) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	// Create a corrupt save file manually.
 	const auto savePath = SaveManager::getSaveDirectory() / "save_50.owl_save";
@@ -177,7 +177,7 @@ TEST(SaveManager, loadCorruptSaveFile) {
 
 TEST(SaveManager, loadSaveWithoutSceneData) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	// Write a valid YAML save file that is missing SceneData.
 	const auto savePath = SaveManager::getSaveDirectory() / "save_51.owl_save";
@@ -204,7 +204,7 @@ TEST(SaveManager, loadSaveWithoutSceneData) {
 
 TEST(SaveManager, loadSaveWithPhysicsSnapshots) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	// Write a save file with explicit PhysicsSnapshots section.
 	const auto savePath = SaveManager::getSaveDirectory() / "save_52.owl_save";
@@ -255,7 +255,7 @@ TEST(SaveManager, loadSaveWithPhysicsSnapshots) {
 
 TEST(SaveManager, loadSaveWithPartialPhysicsSnapshot) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	// A snapshot entry missing some fields should use defaults.
 	const auto savePath = SaveManager::getSaveDirectory() / "save_53.owl_save";
@@ -290,7 +290,7 @@ TEST(SaveManager, loadSaveWithPartialPhysicsSnapshot) {
 
 TEST(SaveManager, loadSavePhysicsSnapshotMissingUuid) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	// A snapshot entry without uuid should be skipped.
 	const auto savePath = SaveManager::getSaveDirectory() / "save_54.owl_save";
@@ -321,7 +321,7 @@ TEST(SaveManager, loadSavePhysicsSnapshotMissingUuid) {
 
 TEST(SaveManager, listSavesWithCorruptFile) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	// Create one valid save.
 	auto scn = mkShared<Scene>();
@@ -347,7 +347,7 @@ TEST(SaveManager, listSavesWithCorruptFile) {
 
 TEST(SaveManager, listSavesIgnoresNonSaveFiles) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	auto scn = mkShared<Scene>();
 	scn->createEntity("E1");
@@ -371,7 +371,7 @@ TEST(SaveManager, listSavesIgnoresNonSaveFiles) {
 
 TEST(SaveManager, deleteSaveNonExistent) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	// Deleting a non-existent save should not crash.
 	SaveManager::deleteSave(999);
@@ -395,7 +395,7 @@ TEST(SaveManager, defaultGameName) {
 
 TEST(SaveManager, loadSetsLoadedFromSave) {
 	core::Log::init(core::Log::Level::Off);
-	TestSaveGuard guard;
+	const TestSaveGuard guard;
 
 	auto scn = mkShared<Scene>();
 	scn->createEntity("E1");

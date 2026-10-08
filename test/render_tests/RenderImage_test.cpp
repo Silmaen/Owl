@@ -42,20 +42,19 @@ constexpr math::vec2ui g_captureSize{320, 180};
 constexpr uint32_t g_warmupFrames = 60;
 
 auto readFile(const std::filesystem::path& iPath) -> std::string {
-	std::ifstream in(iPath, std::ios::binary);
+	const std::ifstream in(iPath, std::ios::binary);
 	std::stringstream ss;
 	ss << in.rdbuf();
 	return ss.str();
 }
 
 auto getEnv(const char* iName) -> std::string {
-	// NOLINTNEXTLINE(concurrency-mt-unsafe): tests read the environment before spawning anything.
 	const char* value = std::getenv(iName);
 	return value == nullptr ? std::string{} : std::string{value};
 }
 
 auto getVulkanIcd() -> std::filesystem::path {
-	if (const auto custom = getEnv("OWL_RENDER_TESTS_VK_ICD"); !custom.empty())
+	if (auto custom = getEnv("OWL_RENDER_TESTS_VK_ICD"); !custom.empty())
 		return custom;
 	return "/usr/share/vulkan/icd.d/lvp_icd.json";
 }
@@ -148,7 +147,7 @@ TEST_P(RenderImage, matchesReference) {
 									 getDriverEnvironment(backend), OWL_RUNNER_EXECUTABLE, sceneFile.string(),
 									 (root / "sample_project").string(), backend, g_warmupFrames, g_captureSize.x(),
 									 g_captureSize.y(), actualFile.string(), logFile.string());
-	// NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c): the runner must run in its own process (one GPU context).
+	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
 	const int status = std::system(command.c_str());
 	const auto log = readFile(logFile);
 	ASSERT_EQ(status, 0) << "OwlRunner failed, log: " << logFile;

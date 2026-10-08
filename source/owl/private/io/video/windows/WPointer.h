@@ -64,14 +64,14 @@ public:
 	 */
 	auto operator->() -> Ptr* { return mp_object; }
 
-	// NOLINTBEGIN(google-explicit-constructor,hicpp-explicit-conversions)
+	// NOLINTBEGIN(google-explicit-constructor)
 	/**
 	 * @brief
 	 *  Explicit type casting to bool.
 	 * @return True if pointer is non-void.
 	 */
 	operator bool() const { return mp_object != nullptr; }
-	// NOLINTEND(google-explicit-constructor,hicpp-explicit-conversions)
+	// NOLINTEND(google-explicit-constructor)
 
 	/**
 	 * @brief

@@ -485,7 +485,7 @@ auto LuaEngine::getLastStatus() const -> LuaStatus { return mp_quota->lastStatus
 void LuaEngine::registerGuardedTable(lua_State* iState, const char* iTableName, const luaL_Reg* iFunctions) {
 	lua_pushglobaltable(iState);
 	lua_newtable(iState);
-	for (const auto* reg = iFunctions; reg->name != nullptr; ++reg) {// NOLINT(*-pointer-arithmetic) luaL_Reg list.
+	for (const auto* reg = iFunctions; reg->name != nullptr; ++reg) {
 		lua_pushcfunction(iState, reg->func);
 		lua_pushcclosure(iState, guardedBinding, 1);
 		lua_setfield(iState, -2, reg->name);

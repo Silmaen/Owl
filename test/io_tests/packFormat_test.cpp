@@ -35,7 +35,7 @@ TEST(PackFormat, hashPath_empty) {
 }
 
 TEST(PackFormat, obfuscate_symmetric) {
-	std::vector<uint8_t> original = {0x01, 0x02, 0x03, 0x04, 0x05, 0xAA, 0xBB, 0xCC};
+	const std::vector<uint8_t> original = {0x01, 0x02, 0x03, 0x04, 0x05, 0xAA, 0xBB, 0xCC};
 	auto data = original;
 	obfuscateBuffer(data, 42);
 	EXPECT_NE(data, original);
@@ -112,7 +112,7 @@ TEST(PackFormat, toc_round_trip) {
 }
 
 TEST(PackFormat, toc_empty) {
-	std::vector<TocEntry> empty;
+	const std::vector<TocEntry> empty;
 	auto serialized = serializeToc(empty);
 	EXPECT_TRUE(serialized.empty());
 	auto deserialized = deserializeToc(serialized);

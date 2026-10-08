@@ -102,7 +102,7 @@ TEST(CoreCoverage, FactoryCreateProduct) {
 	TestProduct::s_pid = core::factoryRegisterType<TestProduct>();
 
 	// Single creation.
-	core::FactoryProduct* product = factory.createProduct("TestProduct");
+	const core::FactoryProduct* product = factory.createProduct("TestProduct");
 	ASSERT_NE(product, nullptr);
 	EXPECT_NE(product->getPid(), core::INVALID_FACTORY_PID);
 	// NOLINTBEGIN(cppcoreguidelines-owning-memory)
@@ -180,11 +180,11 @@ TEST(CoreCoverage, EventHandledFlagPropagation) {
 
 	// Dispatcher sets handled to true via OR.
 	event::EventDispatcher dispatcher(tick);
-	dispatcher.dispatch<event::AppTickEvent>([](event::Event&) { return true; });
+	dispatcher.dispatch<event::AppTickEvent>([](event::Event&) -> bool { return true; });
 	EXPECT_TRUE(tick.handled);
 
 	// Once handled, it stays handled even if a new dispatch returns false.
-	dispatcher.dispatch<event::AppTickEvent>([](event::Event&) { return false; });
+	dispatcher.dispatch<event::AppTickEvent>([](event::Event&) -> bool { return false; });
 	EXPECT_TRUE(tick.handled);
 }
 
@@ -194,7 +194,7 @@ TEST(CoreCoverage, EventDispatcherTypeMismatch) {
 
 	// Dispatch for a different type should return false and not call the callback.
 	bool called = false;
-	const bool dispatched = dispatcher.dispatch<event::AppTickEvent>([&called](event::Event&) {
+	const bool dispatched = dispatcher.dispatch<event::AppTickEvent>([&called](event::Event&) -> bool {
 		called = true;
 		return true;
 	});
@@ -215,19 +215,23 @@ TEST(CoreCoverage, WindowResizeEventGetSize) {
 
 TEST(CoreCoverage, LogMacrosAllLevels) {
 	core::Log::init(core::Log::Level::Trace);
+	core::Log::getLogBuffer().clear();
+	const auto errorsBefore = core::Log::getLogBuffer().getErrorCount();
 
-	// Exercise every core macro — this covers the log dispatch paths.
-	OWL_CORE_TRACE("trace message {}", 1)
+	// Every core and client macro reaches the log buffer.
+	OWL_CORE_TRACE("trace message {}.", 1)
 	OWL_CORE_INFO("info message {}", 2)
 	OWL_CORE_WARN("warn message {}", 3)
-	OWL_CORE_ERROR("error message {}", 4)
-	OWL_CORE_CRITICAL("critical message {}", 5)
+	OWL_CORE_ERROR("error message {}.", 4)
+	OWL_CORE_CRITICAL("critical message {}.", 5)
 	// Exercise every client macro.
 	OWL_TRACE("client trace {}", 10)
 	OWL_INFO("client info {}", 20)
 	OWL_WARN("client warn {}", 30)
 	OWL_ERROR("client error {}", 40)
-	OWL_CRITICAL("client critical {}", 50)
+	OWL_CRITICAL("client critical {}.", 50)
+	EXPECT_EQ(core::Log::getLogBuffer().getEntries().size(), 10u);
+	EXPECT_EQ(core::Log::getLogBuffer().getErrorCount() - errorsBefore, 4u);// error + critical, core and client
 	core::Log::invalidate();
 }
 
@@ -269,12 +273,14 @@ TEST(CoreCoverage, LogVerbosityLevel) {
 }
 
 TEST(CoreCoverage, LogSetVerbosityBeforeInit) {
-	// setVerbosityLevel when loggers are null should not crash.
-	core::Log::setVerbosityLevel(core::Log::Level::Off);
-	core::Log::setVerbosityLevel(core::Log::Level::Trace);
-	// Re-init to confirm normal operation after.
+	// setVerbosityLevel without loggers is safe and leaves the log uninitialised.
+	EXPECT_NO_THROW(core::Log::setVerbosityLevel(core::Log::Level::Off));
+	EXPECT_NO_THROW(core::Log::setVerbosityLevel(core::Log::Level::Trace));
+	EXPECT_FALSE(core::Log::initiated());
 	core::Log::init(core::Log::Level::Off);
+	EXPECT_TRUE(core::Log::initiated());
 	core::Log::invalidate();
+	EXPECT_FALSE(core::Log::initiated());
 }
 
 TEST(CoreCoverage, LogBufferCapture) {
@@ -283,7 +289,7 @@ TEST(CoreCoverage, LogBufferCapture) {
 	auto& buffer = core::Log::getLogBuffer();
 	buffer.clear();
 
-	OWL_CORE_INFO("buffer test message")
+	OWL_CORE_INFO("buffer test message.")
 	// Give spdlog a moment to flush through sinks.
 	const auto entries = buffer.getEntries();
 	// The buffer should have captured at least one entry.
@@ -423,7 +429,7 @@ TEST(CoreCoverage, AllocationStateResetState) {
 TEST(CoreCoverage, AllocationInfoToStrWithoutStacktrace) {
 	// In non-stacktrace builds, toStr should still produce a meaningful string.
 	int dummy = 0;
-	debug::AllocationInfo info(&dummy, 64);
+	const debug::AllocationInfo info(&dummy, 64);
 	const auto str = info.toStr(false, false);
 	EXPECT_FALSE(str.empty());
 	// Should mention the size.
@@ -435,7 +441,7 @@ TEST(CoreCoverage, AllocationInfoToStrWithoutStacktrace) {
 // ============================================================================
 
 TEST(CoreCoverage, SceneCameraDefaultIsOrthographic) {
-	scene::SceneCamera cam;
+	const scene::SceneCamera cam;
 	EXPECT_EQ(cam.getProjectionType(), scene::SceneCamera::ProjectionType::Orthographic);
 	EXPECT_FLOAT_EQ(cam.getOrthographicSize(), 10.0f);
 	EXPECT_FLOAT_EQ(cam.getOrthographicNearClip(), -1.0f);
@@ -520,6 +526,6 @@ TEST(CoreCoverage, SceneCameraCopyAndMove) {
 	EXPECT_FLOAT_EQ(camCopy.getPerspectiveVerticalFov(), math::radians(45.0f));
 
 	// Move constructor.
-	scene::SceneCamera camMove(std::move(cam));
+	const scene::SceneCamera camMove(std::move(cam));
 	EXPECT_EQ(camMove.getProjectionType(), scene::SceneCamera::ProjectionType::Perspective);
 }

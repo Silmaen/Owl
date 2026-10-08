@@ -15,10 +15,10 @@
 #include <string>
 #include <vector>
 
-namespace owl::data {
+namespace owl::data::geometry {
 /**
  * @brief
- *  Class MeshLoader.
+ *  Loads static meshes from OBJ, glTF and FBX files.
  */
 class OWL_API MeshLoader {
 public:
@@ -57,7 +57,7 @@ public:
 	 * @param[in] iFilePath Path to the mesh file.
 	 * @return The loaded static mesh or nullptr if loading failed.
 	 */
-	[[nodiscard]] static auto loadStaticMesh(const std::filesystem::path& iFilePath) -> shared<geometry::StaticMesh> {
+	[[nodiscard]] static auto loadStaticMesh(const std::filesystem::path& iFilePath) -> shared<StaticMesh> {
 		if (!std::filesystem::exists(iFilePath)) {
 			OWL_CORE_ERROR("MeshLoader::loadStaticMesh: File {} does not exist!", iFilePath.string())
 			return nullptr;
@@ -83,7 +83,7 @@ private:
 	 * @param[in] iFilePath Path to the OBJ file.
 	 * @return The loaded static mesh.
 	 */
-	static auto loadObj(const std::filesystem::path& iFilePath) -> shared<geometry::StaticMesh>;
+	static auto loadObj(const std::filesystem::path& iFilePath) -> shared<StaticMesh>;
 
 	/**
 	 * @brief
@@ -91,7 +91,7 @@ private:
 	 * @param[in] iFilePath Path to the FBX file.
 	 * @return The loaded static mesh.
 	 */
-	static auto loadFbx(const std::filesystem::path& iFilePath) -> shared<geometry::StaticMesh>;
+	static auto loadFbx(const std::filesystem::path& iFilePath) -> shared<StaticMesh>;
 
 	/**
 	 * @brief
@@ -99,7 +99,12 @@ private:
 	 * @param[in] iFilePath Path to the GLTF/GLB file.
 	 * @return The loaded static mesh.
 	 */
-	static auto loadGltf(const std::filesystem::path& iFilePath) -> shared<geometry::StaticMesh>;
+	static auto loadGltf(const std::filesystem::path& iFilePath) -> shared<StaticMesh>;
 };
 
+}// namespace owl::data::geometry
+
+namespace owl::data {
+/// Former location of the loader, kept for the code written before it joined `data::geometry`.
+using geometry::MeshLoader;
 }// namespace owl::data

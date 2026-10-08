@@ -42,7 +42,7 @@ struct SettingsGuard {
 
 TEST(SettingsManager, DefaultValues) {
 	core::Log::init(core::Log::Level::Off);
-	SettingsGuard guard;
+	const SettingsGuard guard;
 
 	SettingsManager::setDefault("speed", 8.0f);
 	SettingsManager::setDefault("lives", int64_t{3});
@@ -61,7 +61,7 @@ TEST(SettingsManager, DefaultValues) {
 
 TEST(SettingsManager, OverridesTakesPrecedence) {
 	core::Log::init(core::Log::Level::Off);
-	SettingsGuard guard;
+	const SettingsGuard guard;
 
 	SettingsManager::setDefault("volume", 1.0f);
 	SettingsManager::set("volume", 0.5f);
@@ -76,7 +76,7 @@ TEST(SettingsManager, OverridesTakesPrecedence) {
 
 TEST(SettingsManager, ResetToDefault) {
 	core::Log::init(core::Log::Level::Off);
-	SettingsGuard guard;
+	const SettingsGuard guard;
 
 	SettingsManager::setDefault("speed", 8.0f);
 	SettingsManager::set("speed", 12.0f);
@@ -90,7 +90,7 @@ TEST(SettingsManager, ResetToDefault) {
 
 TEST(SettingsManager, ResetAllToDefaults) {
 	core::Log::init(core::Log::Level::Off);
-	SettingsGuard guard;
+	const SettingsGuard guard;
 
 	SettingsManager::setDefault("a", int64_t{1});
 	SettingsManager::set("a", int64_t{99});
@@ -106,7 +106,7 @@ TEST(SettingsManager, ResetAllToDefaults) {
 
 TEST(SettingsManager, SaveLoadRoundTrip) {
 	core::Log::init(core::Log::Level::Off);
-	SettingsGuard guard;
+	const SettingsGuard guard;
 
 	SettingsManager::setDefault("default_only", 1.0f);
 	SettingsManager::set("volume", 0.75f);
@@ -133,7 +133,7 @@ TEST(SettingsManager, SaveLoadRoundTrip) {
 
 TEST(SettingsManager, GetWithFallback) {
 	core::Log::init(core::Log::Level::Off);
-	SettingsGuard guard;
+	const SettingsGuard guard;
 
 	const auto val = SettingsManager::get("missing", 42.0f);
 	EXPECT_FLOAT_EQ(std::get<float>(val), 42.0f);
@@ -142,7 +142,7 @@ TEST(SettingsManager, GetWithFallback) {
 
 TEST(SettingsManager, HasAndKeys) {
 	core::Log::init(core::Log::Level::Off);
-	SettingsGuard guard;
+	const SettingsGuard guard;
 
 	SettingsManager::setDefault("a", int64_t{1});
 	SettingsManager::set("b", 2.0f);
@@ -158,7 +158,7 @@ TEST(SettingsManager, HasAndKeys) {
 
 TEST(SettingsManager, LoadDefaultsFromFile) {
 	core::Log::init(core::Log::Level::Off);
-	SettingsGuard guard;
+	const SettingsGuard guard;
 
 	const auto dir = std::filesystem::temp_directory_path() / "owl_settings_test";
 	std::filesystem::create_directories(dir);
@@ -184,7 +184,7 @@ TEST(SettingsManager, LoadDefaultsFromFile) {
 
 TEST(SettingsManager, LoadDefaultsNonexistentFile) {
 	core::Log::init(core::Log::Level::Off);
-	SettingsGuard guard;
+	const SettingsGuard guard;
 
 	SettingsManager::loadDefaults("/nonexistent/path.yml");
 	EXPECT_TRUE(SettingsManager::keys().empty());
@@ -193,7 +193,7 @@ TEST(SettingsManager, LoadDefaultsNonexistentFile) {
 
 TEST(SettingsManager, TypedGetMismatchReturnsNullopt) {
 	core::Log::init(core::Log::Level::Off);
-	SettingsGuard guard;
+	const SettingsGuard guard;
 
 	SettingsManager::set("val", int64_t{42});
 	EXPECT_FALSE(SettingsManager::getAs<float>("val").has_value());

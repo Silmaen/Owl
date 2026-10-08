@@ -156,7 +156,7 @@ TEST_F(RaycastDynamicWallsTest, DoorYamlRoundTrip) {
 	source.interactionKey = input::key::F;
 	source.interactionRange = 2.0f;
 
-	core::Serializer outSerializer;
+	const core::Serializer outSerializer;
 	outSerializer.getImpl()->emitter << YAML::BeginMap;
 	source.serialize(outSerializer);
 	outSerializer.getImpl()->emitter << YAML::EndMap;
@@ -165,7 +165,7 @@ TEST_F(RaycastDynamicWallsTest, DoorYamlRoundTrip) {
 	const YAML::Node root = YAML::Load(yamlText);
 	ASSERT_TRUE(root[scene::component::RaycastDoor::key()]);
 	scene::component::RaycastDoor restored;
-	core::Serializer inSerializer;
+	const core::Serializer inSerializer;
 	inSerializer.getImpl()->node = root[scene::component::RaycastDoor::key()];
 	restored.deserialize(inSerializer);
 
@@ -188,7 +188,7 @@ TEST_F(RaycastDynamicWallsTest, PushWallYamlRoundTrip) {
 	source.interactionKey = input::key::Space;
 	source.interactionRange = 1.75f;
 
-	core::Serializer outSerializer;
+	const core::Serializer outSerializer;
 	outSerializer.getImpl()->emitter << YAML::BeginMap;
 	source.serialize(outSerializer);
 	outSerializer.getImpl()->emitter << YAML::EndMap;
@@ -197,7 +197,7 @@ TEST_F(RaycastDynamicWallsTest, PushWallYamlRoundTrip) {
 	const YAML::Node root = YAML::Load(yamlText);
 	ASSERT_TRUE(root[scene::component::RaycastPushWall::key()]);
 	scene::component::RaycastPushWall restored;
-	core::Serializer inSerializer;
+	const core::Serializer inSerializer;
 	inSerializer.getImpl()->node = root[scene::component::RaycastPushWall::key()];
 	restored.deserialize(inSerializer);
 
@@ -225,8 +225,8 @@ TEST_F(RaycastDynamicWallsTest, DoorSurvivesSceneSerializerRoundTrip) {
 	d.interactionRange = 1.25f;
 	const auto uuid = door.getUUID();
 
-	const scene::SceneSerializer ser(sourceScene);
-	const std::string yaml = ser.serializeToString();
+	const scene::SceneSerializer serializer(sourceScene);
+	const std::string yaml = serializer.serializeToString();
 	ASSERT_FALSE(yaml.empty());
 
 	auto loadedScene = mkShared<scene::Scene>();

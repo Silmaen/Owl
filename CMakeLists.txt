@@ -63,7 +63,7 @@ add_subdirectory(source)
 #
 # ---=== TESTING PROCEDURES ===---
 #
-if (${PROJECT_PREFIX}_TESTING AND NOT ${PROJECT_PREFIX}_ENABLE_CLANG_TIDY)
+if (${PROJECT_PREFIX}_TESTING)
     enable_testing()
     add_subdirectory(test)
 endif ()
@@ -103,8 +103,6 @@ set_target_properties(clean_bin PROPERTIES FOLDER "Utils")
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Include CPack package
-if (${PROJECT_PREFIX}_PACKAGING)
-    include(CPackConfig.cmake)
-    include(CPack)
-endif ()
+include(CPackConfig.cmake)
+include(CPack)
 # ----------------------------------------------------------------------------------------------------------------------

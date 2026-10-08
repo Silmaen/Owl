@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 #include "physics/PhysicsSettings.h"
+#include "scene/PhysicsSnapshot.h"
 #include "scene/Scene.h"
 
 #include <cstdint>
@@ -202,18 +203,8 @@ public:
 	 */
 	static void setGravityScale(const scene::Entity& iEntity, float iScale);
 
-	/**
-	 * @brief
-	 *  Snapshot of a physics body's runtime state (for save/load).
-	 */
-	struct PhysicsSnapshot {
-		/// Linear velocity.
-		math::vec2f linearVelocity{0.f, 0.f};
-		/// Angular velocity.
-		float angularVelocity = 0.f;
-		/// Whether the body is awake.
-		bool awake = true;
-	};
+	/// Snapshot of a physics body's runtime state (for save/load), defined with the scene that saves it.
+	using PhysicsSnapshot = scene::PhysicsSnapshot;
 
 	/**
 	 * @brief

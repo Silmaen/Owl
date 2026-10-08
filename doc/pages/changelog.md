@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the nightly bench pinned to the agent that measured it.
+- CodeStyle `test-assertions` sub-check: every gtest test asserts something; the 26 that only ran code now check its effect (or say `EXPECT_NO_THROW`), e.g. a trigger timer is seen firing and stopping.
+- clang-tidy and the static analyzer analyse the tests too (`test/.clang-tidy` relaxes only what a test is right to do); the 224 findings they raised are fixed.
+- Coverage gate: the `Coverage` action publishes the line and branch coverage to TeamCity, and the Linux Clang build fails when the line coverage drops more than one point below its last successful build.
+- CodeStyle `python` sub-check: `ruff check`, `ruff format --check`, `mypy` and the `ci/tests` pytest suite (never run in CI before) on the CI code (configured in `pyproject.toml`; `black`, never run, removed).
+- `OwlRunner --scenario <file.owltest>`: scripted headless runs (frames, held inputs, expectations on entities and the game state), with four sample scenarios run by CTest (label `scenario`).
+- `OwlRunner --frame-bench` measures the cold start (`startup_ms`: engine ready, first frame), so start-up time has a number on a real backend.
 - Wayland smoke test (`owl_wayland_smoke`, label `wayland`): the runner presents frames on a headless weston with Vulkan and OpenGL; skipped where weston is missing.
 - Nightly fuzzing: `linux-fuzz` preset (libFuzzer + AddressSanitizer) and `Fuzz` CI action running every `owl_*_fuzzer` for five minutes, failing inputs published by the `Fuzzing` TeamCity configuration.
 - Benchmarks in CI: `owl_bench` compiled on every pull request (`linux-clang-debug`), run nightly on `main` by the `Bench` action against `bench/baseline/linux-bench.json`; a median slower by more than 15 % twice fails the build.
@@ -40,6 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Packages without a rebuild: `cpack` writes the `OwlEngine` and `OwlNest` archives (CPack components) from the release tree the Clang builds test on `main`, the nightly x64 package jobs only publish them, and assets are located at run time (`OWL_DEVELOPMENT`, `OWL_PACKAGE_ENGINE`, `OWL_PACKAGING` and the `package-engine-*` / `package-app-nest-*` presets removed, `package-linux` for arm64).
+- Engine modules are layered (`core` up to `gui`) and the public headers follow it, checked by the CodeStyle `module-deps` sub-check: the 10-module include cycle is gone. `PhysicsSettings` and `PhysicsSnapshot` moved to `scene` (aliases kept in `physics`), `MeshLoader` to `data::geometry` (alias kept in `data`), and `GameExporterSettings::rendererStack` became `rendererStackYaml`; `input::Input::init()` without argument picks GLFW.
 - Tests: the per-binary ctest timeout drops from 1 h to 10 min (`OWL_TEST_TIMEOUT`, 1 h on the emulated arm64), so a hung binary no longer stalls a build for hours.
 - CI: the emulated arm64 nightly builds Clang only, on a `linux-emulated` preset without coverage, benchmarks or image tests, so it fits its time limit.
 - EnTT 4.0.0 (C++20), Taskflow 4.1.0, OpenAL Soft 1.25.2, msdfgen 1.13, msdf-atlas-gen 1.4 and tinyobjloader rc13, through local Conan recipes until ConanCenter publishes them.
@@ -77,12 +85,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- 97 dead `NOLINT` check names (checks `.clang-tidy` does not enable), and the CodeStyle `nolint` sub-check that keeps them out.
 - DepManager: `depmanager.yml`, `cmake/Depmanager.cmake`, `owl_engine.py`, the `ConfigureRemote` CI action and the *Define Remote* TeamCity step; Conan 2 is the only provider (`OWL_DEPENDENCY_PROVIDER` is gone) and other projects take OwlEngine from the packaged archive.
 - Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).
 - LeakSanitizer preset, option and TeamCity job: on Linux ASan already reports leaks.
 
 ### Fixed
 
+- `Matrix::norm()` is the Frobenius norm: it summed `a_ij * a_ji` (wrong for any non-symmetric matrix) and read out of range on a non-square one.
+- The Lua sandbox bytecode test loads its whole fake chunk: the literal was cut at its embedded NUL.
+- CodeStyle now checks `test/` and `source/owlnest/runner` (it pointed at a missing `source/owlrunner`, skipped in silence; a missing root now fails): 48 test file headers, typos and formatting fixed.
+- CI build logs: only compiler, linker and Ninja errors show as errors in TeamCity, warnings as warnings (every compiler line was red).
+- CI: the native `DefineTeamCityVariables` step runs on a host Python older than 3.12 again, and the TeamCity step ids say what they build (`Build_Preset`, `Build_Release_Main`).
 - MinGW Release: the physics tests link again, passing the exported `PhysicsSettings` limits by value (an odr-use of a `static constexpr` member of an `OWL_API` class needs an import MinGW never emits).
 - CI: build artifacts leave out the test executables, keeping the Windows `BuildArtefact.zip` under the server's 300 MB limit.
 - Windows: test binaries and `OwlRunner` exit again: the Box2D solver pool is released with the physics world and the Lua watchdog is never destroyed, so no static destructor waits for threads Windows already killed.

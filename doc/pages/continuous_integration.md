@@ -23,7 +23,7 @@ The CI surface covers:
 |--------------------|---------------------------------------------------------------------------------------------|
 | Build / Test       | Linux x64 and Windows x64 — Clang + GCC each; Linux ARM64 (Docker-emulated) — Clang only    |
 | Quality            | clang-tidy, 3 blocking sanitizers (Address + Leak, Thread, UB), Code Style aggregator       |
-| Packaging          | Engine + Owl Nest, per platform — only on `main`                                            |
+| Packaging          | Engine + Owl Nest archives of the tested release tree, per platform — only on `main`        |
 | GitHub integration | Draft PR suppression, Check Runs (tests, timings, diff annotations), ready_for_review reuse |
 
 ## Project tree
@@ -81,7 +81,7 @@ Source files:
 - `.teamcity/common/Vcs.kt` — the GitHub VCS root.
 - `.teamcity/common/Templates.kt` — `globalBuild` (build, test, coverage, docs, package steps) and `toolBuild`.
 - `.teamcity/common/Helpers.kt` — `ciAction` steps in the build image, the `githubBridge` feature, snapshot helpers.
-- `.teamcity/common/Factories.kt` — `presetBuild`, `analysisBuild` and `packageBuild` builders.
+- `.teamcity/common/Factories.kt` — `presetBuild`, `analysisBuild`, `packageBuild` and `publishBuild` builders.
 - `.teamcity/quality/` — Code Style, Include Check, sanitizers, Clang-Tidy, Static Analyzer and the PR Ready composite.
 - `.teamcity/build/` — Linux x64, Linux arm64 and Windows x64 builds.
 - `.teamcity/packaging/Package.kt` — the nightly packages.
@@ -114,10 +114,16 @@ except the first, which sets `docker_image` from the preset metadata):
 | Build Release             | `release_preset` non-empty + default branch                    |
 | Build Release (docs)      | `release_preset` + `run_documentation`, off the default branch |
 | Test Release              | `release_preset` non-empty + default branch + `run_tests`      |
+| Package Release           | `release_preset` + default branch + `package_release`          |
+
+The Code Coverage step publishes the line and branch coverage of `gcovr.cfg`'s scope (the engine without its
+platform backends, which headless tests cannot reach) as TeamCity coverage statistics (`CodeCoverageL`,
+`CodeCoverageB` and their absolute counts). Linux x64 / Clang fails when the line coverage drops more than one point
+below its last successful build (`COVERAGE_DROP`).
 | Documentation             | `run_documentation == true`                                    |
 | Package                   | `run_package == true`                                          |
-| Publish Package           | `run_package` + on default branch                              |
-| Publish Documentation     | `run_package` + default branch + `publish_doc`                 |
+| Publish Package           | `publish_package` + on default branch                          |
+| Publish Documentation     | `publish_package` + default branch + `publish_doc`             |
 Each Dockerised step uses the image set by step 1 (`%docker_image%`, derived
 from the CMake preset's `vendor.silmaen` block).
 **Secrets.** The steps that need a password (Publish Package, Publish Documentation) read it from
@@ -159,7 +165,7 @@ flowchart LR
 | `common/Vcs.kt`           | The git VCS root, the GitHub App connection id                                       |
 | `common/Templates.kt`     | Global Build (configure → package steps) and Tool Build (Code Style)                 |
 | `common/Helpers.kt`       | `mainBranchOnly()`, `githubBridge()`, `after()`, `ciAction()`, `CODE_ONLY_PATHS`     |
-| `common/Factories.kt`     | `presetBuild()`, `analysisBuild()`, `packageBuild()`                                 |
+| `common/Factories.kt`     | `presetBuild()`, `analysisBuild()`, `packageBuild()`, `publishBuild()`               |
 | `quality/CodeStyle.kt`    | The gate every other configuration waits for (root project)                          |
 | `quality/IncludeCheck.kt` | Every file compiled alone, level 1 beside Code Style (root project)                  |
 | `build/*.kt`              | Build Linux x64, Build Windows x64, Build Linux arm64                                |
@@ -167,7 +173,7 @@ flowchart LR
 | `quality/PrReady.kt`      | The `PR Ready` merge gate (root project): red when any ready-PR configuration is red |
 | `quality/Analysis.kt`     | Clang-Tidy and Static Analyzer, after Code Style                                     |
 | `quality/Fuzz.kt`         | Nightly fuzzing: `Fuzz` action on `linux-fuzz`, failing inputs published             |
-| `packaging/Package.kt`    | Engine and Owl Nest packages, after the build that tested their platform             |
+| `packaging/Package.kt`    | Engine and Owl Nest archives, published after the build that tested their platform   |
 
 The configuration ids are the ones the server already knew (`Build_LinuxX64_Clang`, `Build_Quality_ClangTidy`, …),
 so the build history is kept. Everything a build does lives in `ci/` (`ci_action.py <Action> <preset>`); the DSL only
@@ -188,7 +194,7 @@ says which presets exist, where they run and in which order.
 | Sanitizer Thread, Sanitizer UB             | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | Clang-Tidy, Static Analyzer, Include Check | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | PR Ready (merge gate, no agent)            | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Packages (Engine, Nest × 3 platforms)      | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Packages (one per platform, × 3)           | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 
 ✅ runs · ❌ not run · ⏭ a "Skipped" check is published, which GitHub counts as passing. A manual run, and *Re-run* in
 GitHub, always run a configuration.
@@ -205,6 +211,11 @@ GitHub, always run a configuration.
   build in half the time.
 - **Nightly** (02:00, `main`, only when it changed): the emulated arm64 builds (50 to 90 minutes each) and every
   package, which publishes to the site.
+- **Packages without a rebuild**: on `main`, the Clang builds package their tested release tree (`Package Release`,
+  release preset flagged `package` in its `vendor.silmaen` block, both archives kept as artifacts). The x64 package
+  configurations (`publishBuild()`) build nothing: they take those archives and the documentation from the build of
+  the same chain and publish them. arm64 has no tested release tree and still builds `package-linux`
+  (`packageBuild()`).
 
 ## Triggering
 
@@ -405,6 +416,11 @@ Two consequences for this repository:
 
 ## Clang-tidy scoping
 
+`linux-clang-tidy` builds the tests too (`OWL_TESTING=ON`), so both analyses cover `test/` (about 510 translation
+units): `test/.clang-tidy` inherits the root configuration minus the checks whose pattern is the point of a test
+(suspicious argument order, copies and moves under test, float loop counters, …), and the analyzer mode drops
+`EnumCastOutOfRange` and `FloatLoopCounter` on test files (`TEST_ANALYZER_EXCLUSIONS`).
+
 `Analysis / Clang-Tidy` is the only configuration this concerns. On a pull
 request it analyses only the translation units that pull request can change the
 verdict of. On `main`, on a manual run, and whenever the narrowing cannot be
@@ -536,8 +552,8 @@ new BT, follow one of the existing patterns:
   list, or call `stdPlatform(...)` for a brand-new platform.
 - **Quality / sanitizer-style one-off**: add to the `sanitizers` list
   in `Build.kt`.
-- **Packaging build**: extend the `kinds` list in `Packaging.kt`, or
-  call `packagePlatform(...)` for a new platform.
+- **Packaging build**: in `packaging/Package.kt`, `publishBuild(...)` for a platform whose Clang build packages its
+  release tree, `packageBuild(...)` for one that has none.
 
 ### Validate locally
 

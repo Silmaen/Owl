@@ -1,3 +1,10 @@
+/**
+ * @file fontLibrary_test.cpp
+ * @author Silmaen
+ * @date 23/10/2024
+ * Copyright (c) 2024 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "testHelper.h"
 

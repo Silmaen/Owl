@@ -37,6 +37,11 @@ def test_the_seed_corpus_is_added_only_when_it_exists(tmp_path: Path) -> None:
     seed.mkdir()
     with_seed = fuzzer_command(binary, work, seed, 60)
 
-    assert without == [str(binary), "-max_total_time=60", f"-artifact_prefix={work / 'artifacts'}/",
-                       "-print_final_stats=1", str(work / "corpus")]
+    assert without == [
+        str(binary),
+        "-max_total_time=60",
+        f"-artifact_prefix={work / 'artifacts'}/",
+        "-print_final_stats=1",
+        str(work / "corpus"),
+    ]
     assert with_seed == [*without, str(seed)]

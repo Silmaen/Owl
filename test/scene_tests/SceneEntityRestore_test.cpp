@@ -27,7 +27,7 @@ void setLocalX(const Entity& iEntity, const float iX) {
 	iEntity.getComponent<Transform>().transform.translation().x() = iX;
 }
 
-auto sceneRef(Scene& iScene) -> shared<Scene> { return shared<Scene>(shared<Scene>{}, &iScene); }
+auto sceneRef(Scene& iScene) -> shared<Scene> { return {shared<Scene>{}, &iScene}; }
 
 }// namespace
 

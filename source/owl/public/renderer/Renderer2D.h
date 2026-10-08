@@ -14,13 +14,16 @@
 #include "renderer/CameraEditor.h"
 #include "renderer/CameraOrtho.h"
 #include "renderer/gpu/Texture.h"
-#include "scene/component/SpriteRenderer.h"
 
 #include <array>
 #include <cstdint>
 #include <span>
 #include <string>
 #include <vector>
+
+namespace owl::scene::component {
+struct SpriteRenderer;
+}// namespace owl::scene::component
 
 namespace owl::renderer::gpu {
 class StorageBuffer;

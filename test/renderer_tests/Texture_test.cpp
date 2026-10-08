@@ -1,3 +1,11 @@
+/**
+ * @file Texture_test.cpp
+ * @author Silmaen
+ * @date 08/01/2025
+ * Copyright (c) 2025 All rights reserved.
+ * All modification must get authorization from the author.
+ */
+
 #include "testHelper.h"
 
 #include "renderer/gpu/Texture.h"
@@ -38,7 +46,7 @@ TEST(TextureSpecifications, PixelSize) {
 
 // Round-trip Specification::toString/fromString — covers the parsing branches.
 TEST(TextureSpecifications, FromStringRoundTrip) {
-	Texture::Specification spec{.size = {640, 480}, .format = ImageFormat::Rgba8, .generateMips = false};
+	const Texture::Specification spec{.size = {640, 480}, .format = ImageFormat::Rgba8, .generateMips = false};
 	const std::string serialized = spec.toString();
 	Texture::Specification parsed;
 	parsed.fromString(serialized);

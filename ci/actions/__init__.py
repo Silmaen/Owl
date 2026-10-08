@@ -5,8 +5,9 @@ def get_actions() -> dict[str, BaseAction]:
     """Dynamically load all actions that inherit from BaseAction."""
     import inspect
     import pkgutil
-    from pathlib import Path
     from importlib import import_module
+    from pathlib import Path
+
     actions = {}
     current_package = __name__
     package_dir = Path(__file__).resolve().parent

@@ -311,8 +311,8 @@ public:
 	 */
 	[[nodiscard]] constexpr auto transposed() const noexcept -> Matrix<BaseType, NRow, NCol> {
 		Matrix<BaseType, NRow, NCol> mat;
-		for (std::size_t row = 0; row < NRow; ++row) {
-			for (std::size_t col = 0; col < NCol; ++col) { mat(col, row) = get(row, col); }
+		for (std::size_t i = 0; i < NRow; ++i) {
+			for (std::size_t j = 0; j < NCol; ++j) { mat(j, i) = get(i, j); }
 		}
 		return mat;
 	}
@@ -323,21 +323,21 @@ public:
 	 * @return This updated matrix.
 	 */
 	constexpr auto transpose() noexcept -> Matrix& {
-		for (std::size_t row = 0; row < NRow; ++row) {
-			for (std::size_t col = row; col < NCol; ++col) { std::swap(get(col, row), get(row, col)); }
+		for (std::size_t i = 0; i < NRow; ++i) {
+			for (std::size_t j = i; j < NCol; ++j) { std::swap(get(j, i), get(i, j)); }
 		}
 		return *this;
 	}
 
 	/**
 	 * @brief
-	 *  Compute the norm of the matrix.
+	 *  Compute the Frobenius norm of the matrix (square root of the sum of the squared components).
 	 * @return The norm of the matrix.
 	 */
 	[[nodiscard]] constexpr auto norm() const noexcept -> BaseType {
 		BaseType normVal{};
 		for (std::size_t row = 0; row < NRow; ++row) {
-			for (std::size_t col = 0; col < NCol; ++col) { normVal += get(col, row) * get(row, col); }
+			for (std::size_t col = 0; col < NCol; ++col) { normVal += get(row, col) * get(row, col); }
 		}
 		if constexpr (std::is_floating_point_v<BaseType>)
 			normVal = std::sqrt(normVal);

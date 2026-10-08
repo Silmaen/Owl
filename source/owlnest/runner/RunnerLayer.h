@@ -9,6 +9,7 @@
 #pragma once
 
 #include "FrameBench.h"
+#include "ScenarioTest.h"
 
 #include <data/assets/pack/PackReader.h>
 #include <owl.h>
@@ -19,6 +20,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace owl::nest::runner {
@@ -44,12 +46,13 @@ struct RunnerConfig {
 	bool fullscreen{false};
 	/// Whether the window is resizable.
 	bool resizable{true};
-	/// Renderer-stack definition forwarded from the project's `RendererStack:`
-	/// block. The runner consumes this on startup (and after every cross-level
-	/// teleport) to call `Renderer::setRenderStack` — without it, packaged
-	/// games fall back to a single implicit `Renderer2D` and any scene that
-	/// relies on a custom stack (raycaster, future voxel, screen-overlay UI)
-	/// renders incorrectly.
+	/**
+	 * @brief
+	 *  Renderer-stack definition forwarded from the project's `RendererStack:` block.
+	 * The runner consumes it on startup (and after every cross-level teleport) to call `Renderer::setRenderStack`:
+	 * without it, packaged games fall back to a single implicit `Renderer2D` and any scene that relies on a custom
+	 * stack (raycaster, voxel, screen-overlay UI) renders incorrectly.
+	 */
 	renderer::RendererStackConfig rendererStack;
 
 	/**
@@ -76,7 +79,7 @@ struct SmokeTest {
 
 /**
  * @brief
- *  Class RunnerLayer
+ *  Layer that plays a game: the packed game of `runner.yml`, a frame bench or a scenario.
  */
 class RunnerLayer final : public app::layer::Layer {
 public:
@@ -101,6 +104,13 @@ public:
 	 * @param[in] iBench The frame bench options.
 	 */
 	explicit RunnerLayer(const FrameBenchOptions& iBench);
+
+	/**
+	 * @brief
+	 *  Constructor for a scripted headless run: the scene and the steps come from the scenario.
+	 * @param[in] iScenario The scenario.
+	 */
+	explicit RunnerLayer(ScenarioTest iScenario);
 
 	/**
 	 * @brief
@@ -167,9 +177,12 @@ private:
 
 	/// State of an in-flight cross-level teleport loaded asynchronously.
 	struct PendingTransition {
-		/// Parsed YAML root (filled on worker thread). The worker reads the
-		/// scene bytes and runs `SceneSerializer::parseBuffer` so the main
-		/// thread only pays the entity-creation + GPU upload cost.
+		/**
+		 * @brief
+		 *  Parsed YAML root, filled on the worker thread.
+		 * The worker reads the scene bytes and runs `SceneSerializer::parseBuffer` so the main thread only pays the
+		 * entity creation and the GPU uploads.
+		 */
 		shared<scene::ParsedScene> parsed;
 		/// Resolved source name (for logging).
 		std::string sourceName;
@@ -201,17 +214,39 @@ private:
 	 *  Finish a pending async transition: deserialize on main thread and swap scene.
 	 */
 	void finishTransition();
-	/// Build the engine's `RenderStack` from `m_config.rendererStack` filtered
-	/// by the active scene's `EnabledRenderers`, and install it via
-	/// `Renderer::setRenderStack`. Called at startup and after every scene
-	/// swap so per-scene overrides apply post-teleport.
+
+	/**
+	 * @brief
+	 *  Build the engine's `RenderStack` from `m_config.rendererStack` filtered by the active scene's
+	 *  `EnabledRenderers`, and install it via `Renderer::setRenderStack`.
+	 * Called at startup and after every scene swap so per-scene overrides apply after a teleport.
+	 */
 	void installRenderStack();
+
+	/**
+	 * @brief
+	 *  Load a scene straight from a source project (frame bench, scenario): project assets, renderer stack and
+	 *  game settings (no user settings, so the run does not depend on the machine), null input, the scene.
+	 * @param[in] iProject The project directory, empty for none.
+	 * @param[in] iScene The scene file.
+	 * @param[in] iMode Name of the mode, for the messages.
+	 * @return True when the scene was loaded; otherwise the exit code is 2 and the application closes.
+	 */
+	auto attachSourceScene(const std::filesystem::path& iProject, const std::filesystem::path& iScene,
+						   std::string_view iMode) -> bool;
 
 	/**
 	 * @brief
 	 *  Frame bench start-up: project assets and renderer stack, scene, null input, timings.
 	 */
 	void attachFrameBench();
+
+	/**
+	 * @brief
+	 *  Scenario step at the top of `onUpdate`: run the due expectations, set the inputs, stop when it is over.
+	 * @return False when the scenario is over and the frame must be skipped.
+	 */
+	auto stepScenario() -> bool;
 
 	/**
 	 * @brief
@@ -277,6 +312,8 @@ private:
 	uniq<FrameBench> m_frameBench;
 	/// Offscreen target the scene renders into when the frame bench writes a capture.
 	shared<renderer::gpu::Framebuffer> m_captureTarget;
+	/// Scripted headless run (nullptr in a normal run).
+	uniq<ScenarioTest> m_scenario;
 	/// Smoke-test options.
 	SmokeTest m_smokeTest;
 	/// Scenes left to play in smoke-test mode, in order.

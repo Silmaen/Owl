@@ -49,7 +49,7 @@ void writeFile(const std::filesystem::path& iPath, const std::string& iContent) 
 }
 
 auto readFile(const std::filesystem::path& iPath) -> std::string {
-	std::ifstream in(iPath, std::ios::binary);
+	const std::ifstream in(iPath, std::ios::binary);
 	std::stringstream buffer;
 	buffer << in.rdbuf();
 	return buffer.str();
@@ -73,7 +73,7 @@ auto readPackEntry(const std::filesystem::path& iPack, const std::string& iEntry
 
 #ifdef OWL_PLATFORM_LINUX
 auto runCommand(const std::string& iCommand) -> int {
-	// NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c,bugprone-command-processor) Launching the game is the test.
+	// NOLINTNEXTLINE(bugprone-command-processor) Launching the game is the test.
 	const int status = std::system(iCommand.c_str());
 	return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
@@ -145,7 +145,7 @@ protected:
 				.windowSize = {800, 600},
 				.fullscreen = false,
 				.resizable = true,
-				.rendererStack = {},
+				.rendererStackYaml = {},
 				.packFlags = PackFlags::Default};
 	}
 

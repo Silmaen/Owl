@@ -1,3 +1,10 @@
+/**
+ * @file SoundSystem_test.cpp
+ * @author Silmaen
+ * @date 06/11/2024
+ * Copyright (c) 2024 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "testHelper.h"
 
@@ -73,9 +80,9 @@ TEST(SoundSystem, listenerControl) {
 	SoundCommand::create(SoundAPI::Type::Null);
 	SoundSystem::init();
 
-	// Verify these don't crash
-	SoundCommand::setListenerPosition({5.0f, 10.0f, 0.0f});
-	SoundCommand::setListenerOrientation({0.0f, 0.0f, -1.0f}, {0.0f, 1.0f, 0.0f});
+	// The Null backend keeps no listener state: the calls only have to be accepted.
+	EXPECT_NO_THROW(SoundCommand::setListenerPosition({5.0f, 10.0f, 0.0f}));
+	EXPECT_NO_THROW(SoundCommand::setListenerOrientation({0.0f, 0.0f, -1.0f}, {0.0f, 1.0f, 0.0f}));
 
 	SoundCommand::invalidate();
 	owl::core::Log::invalidate();

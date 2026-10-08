@@ -46,7 +46,7 @@ TEST(FrameBenchStats, SummarizeUnsortedSeries) {
 
 TEST(FrameBenchOptions, ParseAndReject) {
 	const auto scene = owl::test::getRootPath() / "sample_project" / "scenes" / "main_menu.owl";
-	std::string sceneArg = scene.string();
+	const std::string sceneArg = scene.string();
 	std::array<std::string, 12> storage{"OwlRunner", "--frame-bench", sceneArg, "--frames", "42",      "--warmup",
 										"3",         "--backend",     "null",   "--size",   "640x480", "--vsync"};
 	std::vector<char*> argv;
@@ -93,7 +93,7 @@ TEST(FrameBenchRun, NullBackendWritesReport) {
 	// cmd /c strips the first and last quote of a line that starts with one: wrap the whole line.
 	command = std::format(R"("{}")", command);
 #endif
-	// NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c)
+	// NOLINTNEXTLINE(bugprone-command-processor) The bench is the runner process itself.
 	ASSERT_EQ(std::system(command.c_str()), 0);
 	ASSERT_TRUE(exists(out));
 	const auto report = YAML::LoadFile(out.string());
@@ -101,6 +101,9 @@ TEST(FrameBenchRun, NullBackendWritesReport) {
 	EXPECT_EQ(report["frames_measured"].as<uint32_t>(), 8u);
 	EXPECT_FALSE(report["interrupted"].as<bool>());
 	EXPECT_FALSE(report["gpu_timestamps"].as<bool>());
+	const auto startup = report["startup_ms"];
+	EXPECT_GT(startup["engine_ready"].as<double>(), 0.0);
+	EXPECT_GE(startup["first_frame"].as<double>(), startup["engine_ready"].as<double>());
 	const auto summary = report["summary"];
 	EXPECT_EQ(summary["cpu_total_ms"]["count"].as<uint32_t>(), 8u);
 	EXPECT_GT(summary["cpu_total_ms"]["median"].as<double>(), 0.0);

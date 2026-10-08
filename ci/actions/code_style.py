@@ -27,6 +27,15 @@ Sub-checks (all on by default):
   symbol (and `uint32_t` / `size_t`) it names, instead of relying on a
   transitive include (see `ci/utils/std_includes.py`). A `.cpp` may rely on
   its own header and on `owlpch.h`.
+* **module-deps** — a public header includes only its own module and lower layers of the engine's layer stack
+  (`ci/utils/module_deps.py`), so the public API stays acyclic.
+* **test-assertions** — every `TEST` / `TEST_F` / `TEST_P` asserts something (gtest macro or an `expect…` /
+  `assert…` / `check…` helper); a smoke test says so with `EXPECT_NO_THROW` (`ci/utils/test_assertions.py`).
+* **nolint** — every check named by a `NOLINT(...)` marker is one `.clang-tidy` enables (`clang-tidy
+  --list-checks`; static-analyzer checks always count), so no suppression is dead weight (`ci/utils/nolint.py`).
+* **python** — `ruff check`, `ruff format --check`, `mypy` and the `ci/tests/` pytest suite on the CI's own
+  code (`ci/`, `ci_action.py`),
+  configured in `pyproject.toml` (see `ci/utils/python_lint.py`).
 * **secrets** — every git-tracked text file is scanned for high-confidence
   credential shapes (private keys, GitHub / AWS / Slack tokens, passwords
   embedded in URLs), and a tracked `.env` fails outright. Only the kind and
@@ -37,7 +46,8 @@ Doxygen is **deliberately not** run here — the project already has a separate
 
 Each sub-check can be disabled with extra args (`-- --no-<name>=true`):
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-secrets`.
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-module-deps`, `--no-test-assertions`, `--no-nolint`,
+`--no-python`, `--no-secrets`.
 
 Every finding is reported through `_diag()` as a GNU/clang-style diagnostic —
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — including
@@ -52,13 +62,12 @@ from __future__ import annotations
 import re
 import shutil
 import subprocess
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, List, Optional, Tuple
 
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.std_includes import audit_file, provided_to
-
 
 # ────────────────────────────────────────────────────────────────────────────
 # Source discovery
@@ -68,10 +77,14 @@ SOURCE_ROOTS: tuple[Path, ...] = (
     root / "source" / "owl" / "public",
     root / "source" / "owl" / "private",
     root / "source" / "owlnest" / "sources",
-    root / "source" / "owlrunner" / "sources",
+    root / "source" / "owlnest" / "runner",
+    root / "test",
     root / "bench",
 )
 """Directories scanned by every sub-check that walks the tree."""
+
+API_DOC_ROOTS: tuple[Path, ...] = tuple(r for r in SOURCE_ROOTS if r != root / "test")
+"""Directories whose comments are API documentation (comment-quality): every source root but the tests."""
 
 CXX_EXTENSIONS: tuple[str, ...] = (".h", ".hpp", ".cpp", ".cc", ".cxx", ".inl")
 """File extensions inspected by `clang-format` and the cpp-style audit."""
@@ -142,15 +155,16 @@ def _diag(
         log.error(text)
 
 
-def _iter_sources(roots: Iterable[Path], extensions: tuple[str, ...]) -> List[Path]:
+def _iter_sources(roots: Iterable[Path], extensions: tuple[str, ...]) -> list[Path]:
     """
     Walk the given roots and return every source file with one of `extensions`.
     Returned in deterministic (sorted) order so the report is stable.
     """
-    out: List[Path] = []
+    out: list[Path] = []
     for r in roots:
         if not r.exists():
-            continue
+            # A missing root is a stale list, not an empty directory: say it instead of scanning nothing.
+            raise FileNotFoundError(f"CodeStyle source root {r} does not exist")
         for path in sorted(r.rglob("*")):
             if path.is_file() and path.suffix in extensions:
                 out.append(path)
@@ -187,7 +201,7 @@ def _check_clang_format() -> int:
     failures = 0
     batch_size = 32
     for i in range(0, len(files), batch_size):
-        chunk = [str(p) for p in files[i: i + batch_size]]
+        chunk = [str(p) for p in files[i : i + batch_size]]
         result = subprocess.run(
             ["clang-format", "--dry-run", "--Werror", *chunk],
             cwd=str(root),
@@ -220,7 +234,7 @@ def _check_clang_format() -> int:
 # ────────────────────────────────────────────────────────────────────────────
 
 
-def _resolve_codespell_command() -> Optional[List[str]]:
+def _resolve_codespell_command() -> list[str] | None:
     """
     Find codespell across the three deployment scenarios:
 
@@ -234,6 +248,7 @@ def _resolve_codespell_command() -> Optional[List[str]]:
     reachable from the current interpreter.
     """
     import sys
+
     if (path := shutil.which("codespell")) is not None:
         return [path]
     sibling = Path(sys.executable).parent / "codespell"
@@ -263,7 +278,7 @@ def _check_typos() -> int:
             "`poetry run python ci_action.py …` or `poetry sync` first"
         )
         return 0
-    targets: List[str] = []
+    targets: list[str] = []
     for r in SOURCE_ROOTS:
         if r.exists():
             targets.append(str(r))
@@ -324,9 +339,7 @@ _FUNCTION_DECL_RE = re.compile(
 # Anchored on `)` (followed by optional cv-/noexcept-qualifiers) so an arrow
 # operator in a body expression (e.g. `m_x->doThing()`) cannot be misread as
 # a trailing return type.
-_RETURN_TRAILING_RE = re.compile(
-    r"\)\s*(?:const\s*|noexcept\s*|override\s*|final\s*)*->\s*([^;{]+?)\s*[;{]"
-)
+_RETURN_TRAILING_RE = re.compile(r"\)\s*(?:const\s*|noexcept\s*|override\s*|final\s*)*->\s*([^;{]+?)\s*[;{]")
 # Specifiers consumed BEFORE looking for the leading return type. Matched as a
 # greedy block so a token like `explicit` can never be mistaken for the type.
 # `OWL_API` (and conventional `*_API` export macros) are also accepted in
@@ -336,9 +349,7 @@ _LEADING_SPECIFIERS_RE = re.compile(
     r"^\s*(?:\[\[[^\]]+\]\]\s*|explicit\s+|virtual\s+|inline\s+|constexpr\s+|"
     r"static\s+|friend\s+|extern\s+|noexcept\s+|OWL_API\s+|[A-Z][A-Z0-9_]+_API\s+)+"
 )
-_RETURN_LEADING_RE = re.compile(
-    r"^\s*(?P<ret>[\w:<>,&\*\s]+?)\s+\w+\s*\("
-)
+_RETURN_LEADING_RE = re.compile(r"^\s*(?P<ret>[\w:<>,&\*\s]+?)\s+\w+\s*\(")
 # Strip export-macro tokens that happen to be captured inside the return type
 # (e.g. `void OWL_API foo(...)` → captured `ret = "void OWL_API"`).
 _API_MACRO_RE = re.compile(r"\b(?:OWL_API|[A-Z][A-Z0-9_]+_API)\b")
@@ -369,7 +380,7 @@ def _check_comment_quality() -> int:
     """
     log.info("code-style: comment-quality audit...")
     issues = 0
-    for path in _iter_sources(SOURCE_ROOTS, CXX_EXTENSIONS):
+    for path in _iter_sources(API_DOC_ROOTS, CXX_EXTENSIONS):
         text = path.read_text(errors="replace")
         lines = text.splitlines()
 
@@ -393,14 +404,18 @@ def _check_comment_quality() -> int:
             else:
                 if run_start != -1 and i - run_start >= 2:
                     _diag(
-                        path, run_start + 1, "slash-discipline",
+                        path,
+                        run_start + 1,
+                        "slash-discipline",
                         f"`///` block spans {i - run_start} lines — use `/** */`",
                     )
                     issues += 1
                 run_start = -1
         if run_start != -1 and len(lines) - run_start >= 2:
             _diag(
-                path, run_start + 1, "slash-discipline",
+                path,
+                run_start + 1,
+                "slash-discipline",
                 f"`///` block spans {len(lines) - run_start} lines — use `/** */`",
             )
             issues += 1
@@ -414,10 +429,12 @@ def _check_comment_quality() -> int:
                 stripped = raw.strip().lstrip("*").strip()
                 if not stripped.startswith("@brief"):
                     continue
-                rest = stripped[len("@brief"):].lstrip()
+                rest = stripped[len("@brief") :].lstrip()
                 if rest:
                     _diag(
-                        path, block_line_index + offset + 1, "brief-on-own-line",
+                        path,
+                        block_line_index + offset + 1,
+                        "brief-on-own-line",
                         "`@brief` carries text on the same line — content must "
                         "go on the next line indented one extra space",
                     )
@@ -448,13 +465,15 @@ def _check_comment_quality() -> int:
                 if joined.startswith(("- ", "* ", "1. ")):
                     return 0
                 _diag(
-                    path, block_line_index + 1, "doc-punct",
+                    path,
+                    block_line_index + 1,
+                    "doc-punct",
                     f"comment paragraph does not end with `.`: {joined[:80]}",
                 )
                 issues += 1
                 return 1
 
-            for j, raw in enumerate(block_lines):
+            for raw in block_lines:
                 stripped = raw.strip().lstrip("*").strip()
                 if not stripped:
                     _flush_paragraph()
@@ -512,11 +531,12 @@ def _check_cpp_comment_discipline(path: Path, text: str) -> int:
     for m in _DOXY_BLOCK_RE.finditer(text):
         if m.end() == header_end_offset:
             continue
-        line = text.count("\n", 0, m.start()) + 1
+        block_line = text.count("\n", 0, m.start()) + 1
         _diag(
-            rel, line, "cpp-doxy-block",
-            "`/** */` Doxygen block in implementation file — move the "
-            "documentation to the matching header",
+            rel,
+            block_line,
+            "cpp-doxy-block",
+            "`/** */` Doxygen block in implementation file — move the documentation to the matching header",
         )
         issues += 1
 
@@ -526,9 +546,10 @@ def _check_cpp_comment_discipline(path: Path, text: str) -> int:
             continue
         if _TRIPLE_SLASH_ANY_RE.match(line):
             _diag(
-                rel, i + 1, "cpp-triple-slash",
-                "`///` Doxygen comment in implementation file — use "
-                "single-line `//` only inside `.cpp`",
+                rel,
+                i + 1,
+                "cpp-triple-slash",
+                "`///` Doxygen comment in implementation file — use single-line `//` only inside `.cpp`",
             )
             issues += 1
 
@@ -536,11 +557,12 @@ def _check_cpp_comment_discipline(path: Path, text: str) -> int:
         body = m.group()
         if "\n" not in body:
             continue
-        line = text.count("\n", 0, m.start()) + 1
+        comment_line = text.count("\n", 0, m.start()) + 1
         _diag(
-            rel, line, "cpp-multi-comment",
-            "multi-line `/* */` comment in implementation file — use "
-            "single-line `//` only",
+            rel,
+            comment_line,
+            "cpp-multi-comment",
+            "multi-line `/* */` comment in implementation file — use single-line `//` only",
         )
         issues += 1
 
@@ -560,7 +582,9 @@ def _check_cpp_comment_discipline(path: Path, text: str) -> int:
         else:
             if run_start != -1 and i - run_start >= 2:
                 _diag(
-                    rel, run_start + 1, "cpp-line-comment-run",
+                    rel,
+                    run_start + 1,
+                    "cpp-line-comment-run",
                     f"{i - run_start} consecutive `//` lines — collapse to one "
                     f"line, move to the header, or refactor the code",
                 )
@@ -568,7 +592,9 @@ def _check_cpp_comment_discipline(path: Path, text: str) -> int:
             run_start = -1
     if run_start != -1 and len(lines) - run_start >= 2:
         _diag(
-            rel, run_start + 1, "cpp-line-comment-run",
+            rel,
+            run_start + 1,
+            "cpp-line-comment-run",
             f"{len(lines) - run_start} consecutive `//` lines — collapse to one "
             f"line, move to the header, or refactor the code",
         )
@@ -627,16 +653,36 @@ def _check_function_doc_style(path: Path, lines: list[str], text: str) -> int:
         # `(` and `)` and a terminator (`;` or `{`).
         if "(" not in stripped or ")" not in stripped:
             continue
-        if not (stripped.endswith(";") or stripped.endswith("{") or
-                stripped.endswith("}") or "= delete" in stripped or "= default" in stripped):
+        if not (
+            stripped.endswith(";")
+            or stripped.endswith("{")
+            or stripped.endswith("}")
+            or "= delete" in stripped
+            or "= default" in stripped
+        ):
             continue
         # Filter out lines that are clearly not function declarations:
         # keywords, control flow, macro calls, calls used as expressions.
         first_token = stripped.split("(", 1)[0]
-        if any(k in first_token for k in (
-            "if ", "else", "while ", "for ", "switch ", "case ", "return ",
-            "throw ", "do ", "catch ", "try ", "do{", "//", "/*",
-        )):
+        if any(
+            k in first_token
+            for k in (
+                "if ",
+                "else",
+                "while ",
+                "for ",
+                "switch ",
+                "case ",
+                "return ",
+                "throw ",
+                "do ",
+                "catch ",
+                "try ",
+                "do{",
+                "//",
+                "/*",
+            )
+        ):
             continue
         if first_token.strip().startswith(("#", "@", "//")):
             continue
@@ -688,9 +734,10 @@ def _check_function_doc_style(path: Path, lines: list[str], text: str) -> int:
         # Case A: previous line is a `///` line (single triple-slash doc).
         if prev_stripped.startswith("///") and not prev_stripped.startswith("///<"):
             _diag(
-                rel, i + 1, "slash-on-fn",
-                f"function declaration documented with `///` (must use "
-                f"`/** */`): {stripped[:80]}",
+                rel,
+                i + 1,
+                "slash-on-fn",
+                f"function declaration documented with `///` (must use `/** */`): {stripped[:80]}",
             )
             issues += 1
             continue
@@ -714,7 +761,7 @@ def _check_function_doc_style(path: Path, lines: list[str], text: str) -> int:
             # Doxygen block).
             if "/**" not in lines[block_start_line]:
                 continue
-            block_text = "\n".join(lines[block_start_line: block_end_line + 1])
+            block_text = "\n".join(lines[block_start_line : block_end_line + 1])
             # Determine the function's return type. Try trailing-return
             # syntax first, fall back to leading (after stripping specifiers
             # like `explicit` / `virtual` / attributes that would otherwise
@@ -745,14 +792,18 @@ def _check_function_doc_style(path: Path, lines: list[str], text: str) -> int:
                 continue
             if "@return" not in block_text and "@returns" not in block_text:
                 _diag(
-                    rel, i + 1, "missing-return-doc",
+                    rel,
+                    i + 1,
+                    "missing-return-doc",
                     f"non-void function missing `@return`: {stripped[:80]}",
                 )
                 issues += 1
             elif re.search(r"@returns?\s+TODO\.?\s*$", block_text, re.MULTILINE):
                 # Author dropped a placeholder and never came back to fill it.
                 _diag(
-                    rel, i + 1, "return-todo",
+                    rel,
+                    i + 1,
+                    "return-todo",
                     f"`@return TODO.` placeholder left unfilled: {stripped[:80]}",
                 )
                 issues += 1
@@ -826,7 +877,9 @@ def _check_private_member_docs() -> int:
             if _has_doc_above(lines, i) or _has_inline_doc(line):
                 continue
             _diag(
-                path, i + 1, "doc-audit",
+                path,
+                i + 1,
+                "doc-audit",
                 f"undocumented private member: {stripped[:80]}",
             )
             misses += 1
@@ -850,9 +903,7 @@ _BANNED_STD_PTR = (
 )
 
 # Banned class-name suffixes per `.claude/rules/cpp-style.md`.
-_BANNED_SUFFIX_RE = re.compile(
-    r"\b(?:class|struct)\s+(\w+(?:Service|Helper|Util))\b"
-)
+_BANNED_SUFFIX_RE = re.compile(r"\b(?:class|struct)\s+(\w+(?:Service|Helper|Util))\b")
 
 # `UI*` identifier prefix (project wants `Ui*`). We match `UI` followed by
 # uppercase to avoid matching legitimate macros like `UIDS`.
@@ -862,9 +913,7 @@ _UI_PREFIX_RE = re.compile(r"\b(UI(?:Layer|Panel|Text|Widget|Button|Slider|Eleme
 _ENUM_CLASS_RE = re.compile(r"\benum\s+class\b")
 
 # Logging macros — capture the format string to lint its content.
-_LOG_MACRO_RE = re.compile(
-    r'\bOWL_(?:CORE_)?(?:TRACE|INFO|WARN|ERROR|CRITICAL)\s*\(\s*"((?:[^"\\]|\\.)*)"'
-)
+_LOG_MACRO_RE = re.compile(r'\bOWL_(?:CORE_)?(?:TRACE|INFO|WARN|ERROR|CRITICAL)\s*\(\s*"((?:[^"\\]|\\.)*)"')
 
 # `OWL_PROFILE_FUNCTION()` should be followed by a blank line.
 _PROFILE_FN_RE = re.compile(r"^\s*OWL_PROFILE_FUNCTION\s*\(\s*\)\s*$")
@@ -897,7 +946,6 @@ def _check_cpp_style() -> int:
             text = path.read_text(errors="replace")
         except OSError:
             continue
-        lines = text.splitlines()
         rel = path.relative_to(root)
 
         # Strip line-comments and block-comments before pattern checks so we
@@ -913,7 +961,9 @@ def _check_cpp_style() -> int:
                 for pat, banned, replacement in _BANNED_STD_PTR:
                     if pat.search(line):
                         _diag(
-                            rel, line_no, "smart-ptr",
+                            rel,
+                            line_no,
+                            "smart-ptr",
                             f"use `{replacement}` instead of `{banned}`",
                         )
                         issues += 1
@@ -922,9 +972,10 @@ def _check_cpp_style() -> int:
         for m in _BANNED_SUFFIX_RE.finditer(code):
             ln = code.count("\n", 0, m.start()) + 1
             _diag(
-                rel, ln, "class-suffix",
-                f"forbidden class-name suffix on `{m.group(1)}` — fold helpers "
-                f"into a `utils` namespace",
+                rel,
+                ln,
+                "class-suffix",
+                f"forbidden class-name suffix on `{m.group(1)}` — fold helpers into a `utils` namespace",
             )
             issues += 1
 
@@ -943,26 +994,31 @@ def _check_cpp_style() -> int:
 
         # --- profile / diag blanks
         for i, line in enumerate(code_lines):
-            if _PROFILE_FN_RE.match(line):
-                # Next line should be blank.
-                if i + 1 < len(code_lines) and code_lines[i + 1].strip():
-                    _diag(
-                        rel, i + 1, "profile-blank",
-                        "`OWL_PROFILE_FUNCTION()` must be followed by a blank line",
-                    )
-                    issues += 1
+            # Next line should be blank.
+            if _PROFILE_FN_RE.match(line) and i + 1 < len(code_lines) and code_lines[i + 1].strip():
+                _diag(
+                    rel,
+                    i + 1,
+                    "profile-blank",
+                    "`OWL_PROFILE_FUNCTION()` must be followed by a blank line",
+                )
+                issues += 1
             if _DIAG_PUSH_RE.match(line):
                 # Previous line must be blank (or top of file).
                 if i > 0 and code_lines[i - 1].strip():
                     _diag(
-                        rel, i + 1, "diag-block",
+                        rel,
+                        i + 1,
+                        "diag-block",
                         "`OWL_DIAG_PUSH` must be preceded by a blank line",
                     )
                     issues += 1
                 # Next line must NOT be blank.
                 if i + 1 < len(code_lines) and not code_lines[i + 1].strip():
                     _diag(
-                        rel, i + 2, "diag-block",
+                        rel,
+                        i + 2,
+                        "diag-block",
                         "no blank line allowed directly after `OWL_DIAG_PUSH`",
                     )
                     issues += 1
@@ -970,7 +1026,9 @@ def _check_cpp_style() -> int:
                 # Previous line must NOT be blank.
                 if i > 0 and not code_lines[i - 1].strip():
                     _diag(
-                        rel, i, "diag-block",
+                        rel,
+                        i,
+                        "diag-block",
                         "no blank line allowed directly before `OWL_DIAG_POP`",
                     )
                     issues += 1
@@ -981,7 +1039,9 @@ def _check_cpp_style() -> int:
                     and not code_lines[i + 1].lstrip().startswith(("}", ")", ";"))
                 ):
                     _diag(
-                        rel, i + 2, "diag-block",
+                        rel,
+                        i + 2,
+                        "diag-block",
                         "`OWL_DIAG_POP` must be followed by a blank line",
                     )
                     issues += 1
@@ -1001,7 +1061,9 @@ def _check_cpp_style() -> int:
             if not stripped_msg.endswith((".", "?", "!", ":")):
                 ln = code.count("\n", 0, m.start()) + 1
                 _diag(
-                    rel, ln, "log-msg",
+                    rel,
+                    ln,
+                    "log-msg",
                     f'log message should end with `.`: "{msg[:80]}"',
                 )
                 issues += 1
@@ -1020,7 +1082,7 @@ def _strip_comments(text: str) -> str:
     i = 0
     while i < n:
         # `//` line comment
-        if text[i:i + 2] == "//":
+        if text[i : i + 2] == "//":
             j = text.find("\n", i)
             if j == -1:
                 j = n
@@ -1028,7 +1090,7 @@ def _strip_comments(text: str) -> str:
                 out[k] = " "
             i = j
         # `/* */` block comment
-        elif text[i:i + 2] == "/*":
+        elif text[i : i + 2] == "/*":
             j = text.find("*/", i + 2)
             if j == -1:
                 j = n
@@ -1123,19 +1185,17 @@ def _check_structural() -> int:
 
             # Open a class scope on the line that finally contains `{`.
             opened_here = False
-            if class_intro_re.search(stripped) and "{" in stripped and not stripped.endswith(";"):
-                class_open_depths.append(brace_depth)
-                opened_here = True
-                pending_class = False
-            elif pending_class and "{" in stripped:
-                class_open_depths.append(brace_depth)
-                opened_here = True
-                pending_class = False
-            elif (
+            if (
                 class_intro_re.search(stripped)
-                and "{" not in stripped
-                and ";" not in stripped
+                and "{" in stripped
+                and not stripped.endswith(";")
+                or pending_class
+                and "{" in stripped
             ):
+                class_open_depths.append(brace_depth)
+                opened_here = True
+                pending_class = False
+            elif class_intro_re.search(stripped) and "{" not in stripped and ";" not in stripped:
                 # Class header line, body opens later.
                 pending_class = True
 
@@ -1170,7 +1230,9 @@ def _check_structural() -> int:
                 # Warning only — heuristic is broad and we don't want to block
                 # the build on every suspect signature.
                 _diag(
-                    path, line_no, "owl-api",
+                    path,
+                    line_no,
+                    "owl-api",
                     f"free function may need `OWL_API`: {stripped[:80]}",
                     level="warning",
                 )
@@ -1196,7 +1258,9 @@ def _check_std_includes() -> int:
             continue
         for finding in audit_file(path, provided_to(path, PCH_HEADER)):
             _diag(
-                path, finding.line, "std-includes",
+                path,
+                finding.line,
+                "std-includes",
                 f"`{finding.symbol}` is used but `<{finding.header}>` is not included",
             )
             issues += 1
@@ -1222,25 +1286,21 @@ _SECRET_MAX_FILE_SIZE = 2 * 1024 * 1024
 """Larger tracked files (assets) are skipped."""
 
 
-def _tracked_files() -> List[Path]:
+def _tracked_files() -> list[Path]:
     """
     List the files tracked by git, falling back to a tree walk without `.git` / `output`.
 
     :return: Absolute paths, sorted.
     """
     try:
-        ret = subprocess.run(
-            ["git", "ls-files", "-z"], cwd=root, capture_output=True, check=False
-        )
+        ret = subprocess.run(["git", "ls-files", "-z"], cwd=root, capture_output=True, check=False)
         if ret.returncode == 0:
             names = [n for n in ret.stdout.decode("utf-8", errors="replace").split("\0") if n]
             return sorted(root / n for n in names)
     except OSError:
         pass
     skipped = {".git", "output", ".venv", "node_modules"}
-    return sorted(
-        p for p in root.rglob("*") if p.is_file() and not skipped.intersection(p.relative_to(root).parts)
-    )
+    return sorted(p for p in root.rglob("*") if p.is_file() and not skipped.intersection(p.relative_to(root).parts))
 
 
 def scan_text_for_secrets(text: str) -> list[tuple[int, int, str]]:
@@ -1293,6 +1353,83 @@ def _check_secrets() -> int:
 # ────────────────────────────────────────────────────────────────────────────
 
 
+def _check_module_deps() -> int:
+    """
+    Flag the public headers that include a module of the same or a higher layer.
+
+    :return: The number of upward includes.
+    """
+    from ci.utils.module_deps import LAYER_OF, upward_includes
+
+    log.info("code-style: module layering audit...")
+    public = root / "source" / "owl" / "public"
+    found = upward_includes(public, _iter_sources([public], HEADER_EXTENSIONS))
+    for entry in found:
+        if entry.module not in LAYER_OF or entry.target not in LAYER_OF:
+            message = f"module `{entry.module if entry.module not in LAYER_OF else entry.target}` has no layer"
+        else:
+            message = f"`{entry.module}` (layer {LAYER_OF[entry.module]}) must not include `{entry.target}` "
+            message += f"(layer {LAYER_OF[entry.target]}): forward-declare, or move the code to its layer"
+        _diag(entry.path, entry.line, "module-deps", message)
+    return len(found)
+
+
+def _check_test_assertions() -> int:
+    """
+    Flag the tests whose body asserts nothing.
+
+    :return: The number of such tests.
+    """
+    from ci.utils.test_assertions import empty_tests
+
+    log.info("code-style: test-assertion audit...")
+    empty = empty_tests(_iter_sources([root / "test"], (".cpp",)))
+    for test in empty:
+        _diag(
+            test.path,
+            test.line,
+            "test-assertions",
+            f"{test.name} asserts nothing (use EXPECT_NO_THROW for a smoke test)",
+        )
+    return len(empty)
+
+
+def _check_nolint() -> int:
+    """
+    Flag `NOLINT(...)` markers naming a clang-tidy check that never runs.
+
+    :return: The number of dead check names.
+    """
+    from ci.utils.nolint import active_checks, dead_suppressions
+
+    log.info("code-style: dead NOLINT audit...")
+    active = active_checks(root)
+    if active is None:
+        log.warning("nolint: clang-tidy not found, audit skipped")
+        return 0
+    dead = dead_suppressions(_iter_sources(SOURCE_ROOTS, CXX_EXTENSIONS), active)
+    for entry in dead:
+        _diag(
+            entry.path, entry.line, "nolint", f"`{entry.check}` is not enabled in .clang-tidy: drop it from the NOLINT"
+        )
+    return len(dead)
+
+
+def _check_python() -> int:
+    """
+    Lint and type-check the CI code with ruff and mypy (configuration in `pyproject.toml`).
+
+    :return: The number of findings.
+    """
+    from ci.utils.python_lint import lint_python
+
+    log.info("code-style: ruff, mypy and pytest on the CI code...")
+    findings = lint_python()
+    for finding in findings:
+        _diag(finding.path, finding.line, finding.tool, finding.message, column=finding.column)
+    return len(findings)
+
+
 class CodeStyle(BaseAction):
     """
     Aggregate code-style and doc-quality gate (read-only — never rewrites
@@ -1307,13 +1444,17 @@ class CodeStyle(BaseAction):
         --no-cpp-style=true         skip cpp-style convention audit
         --no-structural=true        skip file-header / OWL_API audit
         --no-std-includes=true      skip standard-library include audit
+        --no-module-deps=true       skip the module layering audit
+        --no-test-assertions=true   skip the test-without-assertion audit
+        --no-nolint=true            skip the dead NOLINT audit
+        --no-python=true            skip ruff / mypy on the CI code
         --no-secrets=true           skip committed-secret scan
     """
 
     def run(
         self,
         preset: PresetConfig,
-        extra_args: Optional[list[str]] = None,
+        extra_args: list[str] | None = None,
     ) -> int:
         """
         Run every enabled sub-check sequentially and aggregate exit codes.
@@ -1330,12 +1471,16 @@ class CodeStyle(BaseAction):
             "cpp-style": opts.get("no-cpp-style", "false") == "true",
             "structural": opts.get("no-structural", "false") == "true",
             "std-includes": opts.get("no-std-includes", "false") == "true",
+            "module-deps": opts.get("no-module-deps", "false") == "true",
+            "test-assertions": opts.get("no-test-assertions", "false") == "true",
+            "nolint": opts.get("no-nolint", "false") == "true",
+            "python": opts.get("no-python", "false") == "true",
             "secrets": opts.get("no-secrets", "false") == "true",
         }
 
         log.info(f"Running CodeStyle gate for preset: {preset.cmake_preset}")
 
-        results: List[Tuple[str, int]] = []
+        results: list[tuple[str, int]] = []
         if not skip["format"]:
             results.append(("clang-format", _check_clang_format()))
         if not skip["typos"]:
@@ -1350,6 +1495,14 @@ class CodeStyle(BaseAction):
             results.append(("structural", _check_structural()))
         if not skip["std-includes"]:
             results.append(("std-includes", _check_std_includes()))
+        if not skip["module-deps"]:
+            results.append(("module-deps", _check_module_deps()))
+        if not skip["test-assertions"]:
+            results.append(("test-assertions", _check_test_assertions()))
+        if not skip["nolint"]:
+            results.append(("nolint", _check_nolint()))
+        if not skip["python"]:
+            results.append(("python (ruff, mypy, pytest)", _check_python()))
         if not skip["secrets"]:
             results.append(("secrets", _check_secrets()))
 

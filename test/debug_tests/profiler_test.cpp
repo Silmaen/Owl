@@ -1,3 +1,10 @@
+/**
+ * @file profiler_test.cpp
+ * @author Silmaen
+ * @date 03/08/2023
+ * Copyright (c) 2023 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "testHelper.h"
 
@@ -28,11 +35,12 @@ TEST(profiler, creation) {
 
 TEST(profiler, timer) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	{ const ProfileTimer timer("toto"); }
-	{
+	// Without a profiler backend a timer has nothing to report: it only has to be safe to scope and stop.
+	EXPECT_NO_THROW({ const ProfileTimer timer("toto"); });
+	EXPECT_NO_THROW({
 		ProfileTimer timer("toto2");
 		timer.stop();
-	}
+	});
 	owl::core::Log::invalidate();
 }
 

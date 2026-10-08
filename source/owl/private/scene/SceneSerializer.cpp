@@ -137,8 +137,8 @@ auto readFile(const std::filesystem::path& iFilepath) -> std::optional<std::vect
 	return bytes;
 }
 
-void serializePhysicsSettings(YAML::Emitter& ioEmitter, const physics::PhysicsSettings& iSettings) {
-	if (iSettings == physics::PhysicsSettings{})
+void serializePhysicsSettings(YAML::Emitter& ioEmitter, const PhysicsSettings& iSettings) {
+	if (iSettings == PhysicsSettings{})
 		return;
 	ioEmitter << YAML::Key << "Physics" << YAML::Value << YAML::BeginMap;
 	ioEmitter << YAML::Key << "tickRate" << YAML::Value << iSettings.tickRate;
@@ -149,8 +149,8 @@ void serializePhysicsSettings(YAML::Emitter& ioEmitter, const physics::PhysicsSe
 	ioEmitter << YAML::EndMap;
 }
 
-auto deserializePhysicsSettings(const YAML::Node& iNode) -> physics::PhysicsSettings {
-	physics::PhysicsSettings settings;
+auto deserializePhysicsSettings(const YAML::Node& iNode) -> PhysicsSettings {
+	PhysicsSettings settings;
 	if (!iNode || !iNode.IsMap())
 		return settings;
 	settings.tickRate = iNode["tickRate"].as<float>(settings.tickRate);

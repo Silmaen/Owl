@@ -37,7 +37,6 @@ import subprocess
 from concurrent.futures import ThreadPoolExecutor
 from logging import ERROR, INFO, WARNING
 from pathlib import Path
-from typing import Optional
 
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
@@ -66,6 +65,29 @@ TOOL_ARGS: dict[str, list[str]] = {
     ],
 }
 TOOL_LABELS: dict[str, str] = {"tidy": "clang-tidy", "analyzer": "clang static analyzer"}
+
+# Analyzer checks a test is right to trip: it casts out-of-range values to test enum validation, and samples
+# curves with float loop counters. `test/.clang-tidy` relaxes the tidy set; the analyzer set is given on the
+# command line, which overrides any configuration file, so the test exclusions are added here.
+TEST_ANALYZER_EXCLUSIONS: tuple[str, ...] = (
+    "clang-analyzer-optin.core.EnumCastOutOfRange",
+    "clang-analyzer-security.FloatLoopCounter",
+)
+
+
+def tool_arguments(tool: str, source: Path) -> list[str]:
+    """
+    clang-tidy arguments selecting the check set of a tool for one translation unit.
+
+    :param tool: ``tidy`` or ``analyzer``.
+    :param source: The translation unit.
+    :return: The arguments; analyzer runs on a test file also exclude `TEST_ANALYZER_EXCLUSIONS`.
+    """
+    arguments = list(TOOL_ARGS[tool])
+    if tool == "analyzer" and (root / "test") in source.parents:
+        arguments[0] += "".join(f",-{check}" for check in TEST_ANALYZER_EXCLUSIONS)
+    return arguments
+
 
 # Repo-relative paths whose change invalidates the file-level mapping: compiler
 # flags, dependency versions or the check list itself moved, so every
@@ -121,7 +143,7 @@ def _norm(path: str, base: Path) -> str:
 # ────────────────────────────────────────────────────────────────────────────
 
 
-def _git(*args: str, quiet: bool = False) -> Optional[str]:
+def _git(*args: str, quiet: bool = False) -> str | None:
     """
     Run a git command in the repository and capture its stdout.
 
@@ -141,10 +163,7 @@ def _git(*args: str, quiet: bool = False) -> Optional[str]:
         return None
     if proc.returncode != 0:
         if not quiet:
-            log.warning(
-                f"clang-tidy: `git {' '.join(args)}` exited {proc.returncode}: "
-                f"{proc.stderr.strip()}"
-            )
+            log.warning(f"clang-tidy: `git {' '.join(args)}` exited {proc.returncode}: {proc.stderr.strip()}")
         return None
     return proc.stdout
 
@@ -160,7 +179,7 @@ def _is_commit(ref: str) -> bool:
     return out is not None and out.strip() != ""
 
 
-def _changed_files(base: str) -> Optional[list[str]]:
+def _changed_files(base: str) -> list[str] | None:
     """
     List the files the current checkout changes with respect to `base`.
 
@@ -182,7 +201,7 @@ def _changed_files(base: str) -> Optional[list[str]]:
 # ────────────────────────────────────────────────────────────────────────────
 
 
-def _load_translation_units(build_dir: Path) -> Optional[dict[str, Path]]:
+def _load_translation_units(build_dir: Path) -> dict[str, Path] | None:
     """
     Read `compile_commands.json` and map each object file to its source.
 
@@ -221,7 +240,7 @@ def _load_translation_units(build_dir: Path) -> Optional[dict[str, Path]]:
     return units
 
 
-def _dependent_objects(build_dir: Path, headers: set[str]) -> Optional[set[str]]:
+def _dependent_objects(build_dir: Path, headers: set[str]) -> set[str] | None:
     """
     Find the object files whose recorded include closure contains one of
     `headers`.
@@ -256,14 +275,11 @@ def _dependent_objects(build_dir: Path, headers: set[str]) -> Optional[set[str]]
         log.warning(f"clang-tidy: cannot run `ninja -t deps` ({err}).")
         return None
     if proc.returncode != 0:
-        log.warning(
-            f"clang-tidy: `ninja -t deps` exited {proc.returncode}: "
-            f"{proc.stderr.strip()}"
-        )
+        log.warning(f"clang-tidy: `ninja -t deps` exited {proc.returncode}: {proc.stderr.strip()}")
         return None
 
     objects: set[str] = set()
-    current: Optional[str] = None
+    current: str | None = None
     for line in proc.stdout.splitlines():
         if not line:
             continue
@@ -294,7 +310,7 @@ def _forces_full_scope(path: str) -> bool:
     return any(pattern.search(path) for pattern in FULL_SCOPE_PATTERNS)
 
 
-def _resolve_base(parsed: dict[str, str]) -> Optional[str]:
+def _resolve_base(parsed: dict[str, str]) -> str | None:
     """
     Determine the commit the diff scope is computed against.
 
@@ -314,15 +330,12 @@ def _resolve_base(parsed: dict[str, str]) -> Optional[str]:
         if _is_commit(explicit):
             return explicit
         log.warning(
-            f"clang-tidy: --diff_base='{explicit}' is not a commit in this "
-            "checkout; falling back to the full scope."
+            f"clang-tidy: --diff_base='{explicit}' is not a commit in this checkout; falling back to the full scope."
         )
         return None
 
     if parsed.get("is_pull_request", "").strip().lower() != "true":
-        log.info(
-            "clang-tidy: no pull request context, analysing every translation unit."
-        )
+        log.info("clang-tidy: no pull request context, analysing every translation unit.")
         return None
 
     candidates: list[str] = []
@@ -344,20 +357,16 @@ def _resolve_base(parsed: dict[str, str]) -> Optional[str]:
     for candidate in candidates:
         if _is_commit(candidate):
             return candidate
-        log.warning(
-            f"clang-tidy: diff base '{candidate}' is not a commit in this checkout."
-        )
-    log.warning(
-        "clang-tidy: no usable diff base, falling back to the full scope."
-    )
+        log.warning(f"clang-tidy: diff base '{candidate}' is not a commit in this checkout.")
+    log.warning("clang-tidy: no usable diff base, falling back to the full scope.")
     return None
 
 
 def _select(
-        units: dict[str, Path],
-        base: str,
-        build_dir: Path,
-) -> Optional[set[Path]]:
+    units: dict[str, Path],
+    base: str,
+    build_dir: Path,
+) -> set[Path] | None:
     """
     Narrow the translation units to those the diff can change the verdict of.
 
@@ -389,16 +398,8 @@ def _select(
         return None
 
     sources = set(units.values())
-    selected = {
-        path
-        for path in (root / entry for entry in changed)
-        if path.suffix in TU_SUFFIXES and path in sources
-    }
-    headers = {
-        _norm(str(root / entry), root)
-        for entry in changed
-        if Path(entry).suffix in HEADER_SUFFIXES
-    }
+    selected = {path for path in (root / entry for entry in changed) if path.suffix in TU_SUFFIXES and path in sources}
+    headers = {_norm(str(root / entry), root) for entry in changed if Path(entry).suffix in HEADER_SUFFIXES}
     if not headers:
         return selected
 
@@ -472,9 +473,7 @@ def _job_count(requested: str) -> int:
     return _available_cores()
 
 
-def _analyse(
-    executable: str, build_dir: Path, source: Path, tool_args: list[str]
-) -> tuple[Path, int, str]:
+def _analyse(executable: str, build_dir: Path, source: Path, tool_args: list[str]) -> tuple[Path, int, str]:
     """
     Run clang-tidy on a single translation unit.
 
@@ -548,23 +547,18 @@ class ClangTidy(BaseAction):
         if units is None:
             return 1
         if not units:
-            log.error(
-                f"clang-tidy: no C++ translation unit found in {_rel(build_dir)}."
-            )
+            log.error(f"clang-tidy: no C++ translation unit found in {_rel(build_dir)}.")
             return 1
 
         base = _resolve_base(parsed)
-        selected: Optional[set[Path]] = None
+        selected: set[Path] | None = None
         if base is not None:
             selected = _select(units, base, build_dir)
         if selected is None:
             selected = set(units.values())
             log.info(f"clang-tidy: full scope, {len(selected)} translation unit(s).")
         else:
-            log.info(
-                f"clang-tidy: diff scope, {len(selected)} of {len(set(units.values()))} "
-                "translation unit(s):"
-            )
+            log.info(f"clang-tidy: diff scope, {len(selected)} of {len(set(units.values()))} translation unit(s):")
             listed = sorted(selected)
             for source in listed[:LISTED_UNITS]:
                 log.info(f"  {_rel(source)}")
@@ -592,17 +586,13 @@ class ClangTidy(BaseAction):
         if tool not in TOOL_ARGS:
             log.error(f"clang-tidy: unknown --tool={tool!r}, expected tidy or analyzer.")
             return 1
-        tool_args = TOOL_ARGS[tool]
 
         ordered = sorted(selected)
-        log.info(
-            f"Running {executable} on {len(ordered)} translation unit(s) "
-            f"with {jobs} parallel job(s)."
-        )
+        log.info(f"Running {executable} on {len(ordered)} translation unit(s) with {jobs} parallel job(s).")
         failed: list[Path] = []
         with ThreadPoolExecutor(max_workers=jobs) as pool:
             results = pool.map(
-                lambda source: _analyse(executable, build_dir, source, tool_args), ordered
+                lambda source: _analyse(executable, build_dir, source, tool_arguments(tool, source)), ordered
             )
             for index, (source, status, output) in enumerate(results, start=1):
                 log.info(f"[{index}/{len(ordered)}] {_rel(source)}")

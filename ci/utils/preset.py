@@ -1,9 +1,10 @@
 """
 Gathering tools for presets
 """
-from typing import Any, Dict, Optional, List
 
-from ci import root, Path, log
+from typing import Any
+
+from ci import Path, log, root
 
 config_file = root / "ci" / "PresetsParameters.json"
 
@@ -26,22 +27,22 @@ class PresetConfig:
     def __init__(self, preset: str):
         self.cmake_preset = preset
         # docker related fields
-        self.docker_registry: Optional[str] = None
-        self.docker_namespace: Optional[str] = None
-        self.docker_image: Optional[str] = None
-        self.docker_parameters: Optional[str] = None
+        self.docker_registry: str | None = None
+        self.docker_namespace: str | None = None
+        self.docker_image: str | None = None
+        self.docker_parameters: str | None = None
 
         # Cmake related fields can be added here as needed
-        self.cmake_generator: Optional[str] = None
-        self.cmake_build_types: List[str] = []
-        self.build_directory: Optional[Path] = None
-        self.compiler: Optional[str] = None
+        self.cmake_generator: str | None = None
+        self.cmake_build_types: list[str] = []
+        self.build_directory: Path | None = None
+        self.compiler: str | None = None
 
         # validity flag
         self.is_valid = False
 
         # action related fields
-        self.release_preset: Optional[str] = None
+        self.release_preset: str | None = None
         self.run_coverage: bool = False
         self.run_tests: bool = True
         self.run_documentation: bool = False
@@ -49,8 +50,8 @@ class PresetConfig:
         self.publish_doc: bool = False
 
         # raw config storage from CMake preset file
-        self.raw_config: Optional[Dict[str, Any]] = None
-        self.archive_format: Optional[str] = None
+        self.raw_config: dict[str, Any] | None = None
+        self.archive_format: str | None = None
         # import the preset values
         if preset in [None, ""]:
             log.error("No preset name provided.")
@@ -62,8 +63,9 @@ class PresetConfig:
         self.__import()
 
     def __import(self):
-        """Internal import method. it will reed the actual CMakePresets.json file and import the values for this preset."""
+        """Internal import method: read CMakePresets.json and import the values of this preset."""
         from ci.utils.cmake import get_preset_config, list_cmake_presets
+
         self.raw_config = get_preset_config(self.cmake_preset)
         if not self.raw_config:
             log.error(f"Preset '{self.cmake_preset}' not found in any preset file.")
@@ -73,8 +75,7 @@ class PresetConfig:
         # Recursively expand variables in the config
         self.raw_config = self.__expand_variables(self.raw_config, substitutions)
         if self.raw_config is None:
-            log.error(
-                f"Failed to load preset configuration for '{self.cmake_preset}'.")
+            log.error(f"Failed to load preset configuration for '{self.cmake_preset}'.")
             return
 
         def is_true(value: Any) -> bool:
@@ -101,11 +102,12 @@ class PresetConfig:
                         self.archive_format = "zip"
                     else:
                         self.archive_format = "tar.gz"
-                if "release_preset" in vendor_conf:
-                    if vendor_conf["release_preset"] in list_cmake_presets():
-                        self.release_preset = vendor_conf["release_preset"]
+                if "release_preset" in vendor_conf and vendor_conf["release_preset"] in list_cmake_presets():
+                    self.release_preset = vendor_conf["release_preset"]
                 if "publish_doc" in vendor_conf:
                     self.publish_doc = is_true(vendor_conf["publish_doc"])
+                if "package" in vendor_conf:
+                    self.run_package = is_true(vendor_conf["package"])
 
         if "generator" in self.raw_config:
             self.cmake_generator = self.raw_config["generator"]
@@ -114,22 +116,15 @@ class PresetConfig:
             if "CMAKE_BUILD_TYPE" in cache_variables:
                 self.cmake_build_types = [cache_variables["CMAKE_BUILD_TYPE"]]
             elif "CMAKE_CONFIGURATION_TYPES" in self.raw_config["cacheVariables"]:
-                self.cmake_build_types = cache_variables[
-                    "CMAKE_CONFIGURATION_TYPES"
-                ].split(";")
+                self.cmake_build_types = cache_variables["CMAKE_CONFIGURATION_TYPES"].split(";")
             if "OWL_TESTING" in cache_variables:
                 self.run_tests = is_true(cache_variables["OWL_TESTING"])
             if "OWL_ENABLE_COVERAGE" in cache_variables:
-                self.run_coverage = is_true(
-                    cache_variables["OWL_ENABLE_COVERAGE"]) and self.run_tests
+                self.run_coverage = is_true(cache_variables["OWL_ENABLE_COVERAGE"]) and self.run_tests
             if "OWL_ENABLE_DOCUMENTATION" in cache_variables:
-                self.run_documentation = (
-                            is_true(cache_variables["OWL_ENABLE_DOCUMENTATION"])
-                            and ("Release" in self.cmake_build_types or
-                                 self.release_preset not in [None, ""]))
-            if "OWL_PACKAGE_NAME" in cache_variables:
-                self.run_package = cache_variables["OWL_PACKAGE_NAME"] not in [None,
-                                                                               ""]
+                self.run_documentation = is_true(cache_variables["OWL_ENABLE_DOCUMENTATION"]) and (
+                    "Release" in self.cmake_build_types or self.release_preset not in [None, ""]
+                )
             if "CMAKE_CXX_COMPILER" in cache_variables:
                 self.compiler = cache_variables["CMAKE_CXX_COMPILER"]
 
@@ -141,14 +136,11 @@ class PresetConfig:
         self.is_valid = True
 
     def __repr__(self):
-        items = (
-            "%s = %r" % (k, v)
-            for k, v in self.__dict__.items()
-            if v not in [None, ""] and k != "raw_config"
-        )
-        return f"{self.__class__.__name__}: {"\n  ".join(items)}"
+        items = (f"{k} = {v!r}" for k, v in self.__dict__.items() if v not in [None, ""] and k != "raw_config")
+        separator = "\n  "
+        return f"{self.__class__.__name__}: {separator.join(items)}"
 
-    def __expand_variables(self, i_data: Any, i_substitutions: Dict[str, str]) -> Any:
+    def __expand_variables(self, i_data: Any, i_substitutions: dict[str, str]) -> Any:
         """Recursively expand ${variable} expressions in dictionaries, lists, and strings."""
         if isinstance(i_data, dict):
             result = {}
@@ -166,7 +158,7 @@ class PresetConfig:
             return i_data
 
     @staticmethod
-    def __expand_string(i_string: str, i_substitutions: Dict[str, str]) -> str:
+    def __expand_string(i_string: str, i_substitutions: dict[str, str]) -> str:
         """Expand ${variable} expressions in a string."""
         import re
 
@@ -184,7 +176,7 @@ class PresetConfig:
         """
         if self.build_directory is not None:
             return self.build_directory
-        return root / "build" / self.cmake_preset
+        return root / "output" / "build" / self.cmake_preset
 
     def get_release_build_dir(self) -> Path:
         """

@@ -1,3 +1,11 @@
+/**
+ * @file Triangle_tests.cpp
+ * @author Silmaen
+ * @date 25/10/2025
+ * Copyright (c) 2025 All rights reserved.
+ * All modification must get authorization from the author.
+ */
+
 #include "testHelper.h"
 
 #include <data/geometry/primitive/Triangle.h>
@@ -18,7 +26,9 @@ TEST(Triangle, BasicOperations) {
 	triangle.setIndex(3);
 	EXPECT_EQ(triangle.getIndex(), 3);
 
-	MeshVertex v0, v1, v2;
+	MeshVertex v0;
+	MeshVertex v1;
+	MeshVertex v2;
 	v0.setIndex(0);
 	v1.setIndex(1);
 	v2.setIndex(2);

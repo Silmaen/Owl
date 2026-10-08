@@ -1,0 +1,8 @@
+# The top-down player walks east (D) then north (W) on the world map; keys follow the sample's QWERTY codes.
+scene: ../../sample_project/scenes/world_map.owl
+steps:
+  - frames: 30
+  - input: {key: D, frames: 60}
+  - expect: {player: true, translation.x: {greater: 12.0}}
+  - input: {key: W, frames: 30}
+  - expect: {player: true, translation.y: {greater: -16.0}}

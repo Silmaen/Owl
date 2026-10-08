@@ -251,7 +251,7 @@ AllocationInfo::AllocationInfo(void* iLocation, const size_t iSize) : location{i
 #endif
 }
 
-auto AllocationInfo::getLibName() const -> std::string {// NOLINT(readability-convert-member-functions-to-static)
+auto AllocationInfo::getLibName() const -> std::string {
 #ifdef OWL_STACKTRACE
 	if (traceInternal && !traceInternal->fullTrace.empty()) {
 		auto last = traceInternal->getCallerInfo();

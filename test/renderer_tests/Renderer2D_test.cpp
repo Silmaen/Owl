@@ -1,9 +1,17 @@
+/**
+ * @file Renderer2D_test.cpp
+ * @author Silmaen
+ * @date 03/08/2023
+ * Copyright (c) 2023 All rights reserved.
+ * All modification must get authorization from the author.
+ */
 
 #include "testHelper.h"
 
 #include <app/Application.h>
 #include <renderer/Renderer.h>
 #include <renderer/Renderer2D.h>
+#include <scene/component/SpriteRenderer.h>
 
 #include <cstddef>
 #include <cstdint>

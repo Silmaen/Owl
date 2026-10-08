@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "app/Application.h"
 #include "core/Core.h"
 #include "core/Serializer.h"
 #include "data/fonts/Font.h"

@@ -1,8 +1,9 @@
 """
 Cmake utility functions for CI scripts.
 """
+
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 from ci import root
 
@@ -13,13 +14,11 @@ def _load_preset_file(i_file_path: Path) -> dict[str, Any]:
     """Load a CMake preset JSON file."""
     import json
 
-    with open(i_file_path, "r") as file:
+    with open(i_file_path) as file:
         return json.load(file)
 
 
-def _resolve_includes(
-        i_preset_file: Path, i_data: Dict[str, Any], io_visited: set
-) -> List[Dict[str, Any]]:
+def _resolve_includes(i_preset_file: Path, i_data: dict[str, Any], io_visited: set) -> list[dict[str, Any]]:
     """Recursively resolve included preset files."""
     all_presets = [i_data]
 
@@ -35,17 +34,15 @@ def _resolve_includes(
 
             if include_file.exists():
                 included_data = _load_preset_file(include_file)
-                all_presets.extend(
-                    _resolve_includes(include_file, included_data, io_visited)
-                )
+                all_presets.extend(_resolve_includes(include_file, included_data, io_visited))
     return all_presets
 
 
 def _find_preset_by_name(
-        i_name: str,
-        i_all_presets: List[Dict[str, Any]],
-        i_preset_type: str = "configurePresets",
-) -> Optional[Dict[str, Any]]:
+    i_name: str,
+    i_all_presets: list[dict[str, Any]],
+    i_preset_type: str = "configurePresets",
+) -> dict[str, Any] | None:
     """Find a preset configuration by name across all loaded files."""
     for presetFile in i_all_presets:
         if i_preset_type in presetFile:
@@ -55,7 +52,7 @@ def _find_preset_by_name(
     return None
 
 
-def _deep_merge(i_base: Dict[str, Any], i_override: Dict[str, Any]) -> Dict[str, Any]:
+def _deep_merge(i_base: dict[str, Any], i_override: dict[str, Any]) -> dict[str, Any]:
     """Deep merge two dictionaries. Override values take precedence."""
     result = i_base.copy()
 
@@ -69,16 +66,16 @@ def _deep_merge(i_base: Dict[str, Any], i_override: Dict[str, Any]) -> Dict[str,
 
 
 def _merge_preset_with_inheritance(
-        i_preset_name: str,
-        i_all_presets: List[Dict[str, Any]],
-        i_preset_type: str = "configurePresets",
-) -> Dict[str, Any]:
+    i_preset_name: str,
+    i_all_presets: list[dict[str, Any]],
+    i_preset_type: str = "configurePresets",
+) -> dict[str, Any]:
     """Recursively merge a preset with all its inherited presets."""
     preset = _find_preset_by_name(i_preset_name, i_all_presets, i_preset_type)
     if not preset:
         return {}
 
-    merged_config = {}
+    merged_config: dict = {}
 
     # Resolve inheritance chain
     if "inherits" in preset:
@@ -87,9 +84,7 @@ def _merge_preset_with_inheritance(
             inherits = [inherits]
 
         for parentName in inherits:
-            parent_config = _merge_preset_with_inheritance(
-                parentName, i_all_presets, i_preset_type
-            )
+            parent_config = _merge_preset_with_inheritance(parentName, i_all_presets, i_preset_type)
             merged_config = _deep_merge(merged_config, parent_config)
 
     # Merge current preset (overrides parents)
@@ -103,7 +98,7 @@ def _merge_preset_with_inheritance(
     return merged_config
 
 
-def get_preset_config(i_preset_name: str) -> Dict[str, Any]:
+def get_preset_config(i_preset_name: str) -> dict[str, Any]:
     """Get complete configuration for a preset including all inherited values."""
     global preset_file
     data = _load_preset_file(preset_file)
