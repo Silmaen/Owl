@@ -99,7 +99,7 @@ The whole suite runs in a few seconds once built (Release; debug + coverage is s
 - ctest sets `ASAN_OPTIONS` / `UBSAN_OPTIONS` / `TSAN_OPTIONS` with `halt_on_error=1` (`test/CMakeLists.txt`), and
   the code is built with `-fno-sanitize-recover=all`: any sanitizer report fails the test. When running a binary
   by hand outside ctest, UBSan still aborts (no recovery compiled in).
-- `test/tsan.supp` silences TSan only inside uninstrumented GPU code (lavapipe, LLVM, the validation layer);
+- `test/tsan.supp` silences TSan only inside uninstrumented GPU code (lavapipe, llvmpipe, LLVM, the validation layer);
   never add an Owl symbol there. Locally TSan needs ASLR off: `docker/run.sh --perf setarch -R ctest …`.
 
 ## Conventions
