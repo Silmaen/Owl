@@ -92,6 +92,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `core_task` scheduler tests no longer fail on a loaded machine: they wait for the worker (condition and 30 s deadline) instead of sleeping 5 ms.
 - `Matrix::norm()` is the Frobenius norm: it summed `a_ij * a_ji` (wrong for any non-symmetric matrix) and read out of range on a non-square one.
 - The Lua sandbox bytecode test loads its whole fake chunk: the literal was cut at its embedded NUL.
 - CodeStyle now checks `test/` and `source/owlnest/runner` (it pointed at a missing `source/owlrunner`, skipped in silence; a missing root now fails): 48 test file headers, typos and formatting fixed.
