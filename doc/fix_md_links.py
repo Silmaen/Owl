@@ -31,6 +31,7 @@ PAGE_MAP = {
     "roadmap": "page-roadmap",
     "scene": "page-scene",
     "scripting": "page-scripting",
+    "lua-api": "page-lua-api",
     "sound": "page-sound",
 }
 

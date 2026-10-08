@@ -10,6 +10,8 @@ Design page for the Blueprints-style visual scripting, summarised in the [Roadma
   reference page
 - Documented-but-missing bindings either land or leave the docs (D-07); the unused shared `LuaEngine` goes (D-26)
 - The registry is the source of the v0.7.0 node palette
+- Shipped as `script::getLuaBindings()` (private header `LuaBindings.h`) and the generated
+  [Lua API reference](../lua-api.md); it moves to the public API when the node palette needs it
 
 ## v0.7.0 — visual scripting MVP
 

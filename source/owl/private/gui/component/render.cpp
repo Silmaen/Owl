@@ -558,7 +558,7 @@ void renderProps(SoundSource& ioComponent) {
 		}
 		ImGui::EndCombo();
 	}
-	fieldTooltip("Category used for per-category volume mixing. SFX, Music, or Ambient.");
+	fieldTooltip("Category of the sound: SFX, Music, or Ambient (stored, not used for mixing yet).");
 	ImGui::DragFloat("Volume", &ioComponent.sound.volume, 0.01f, 0.0f, 2.0f);
 	fieldTooltip("Gain factor (0 = silent, 1 = normal, 2 = 200%).");
 	ImGui::DragFloat("Pitch", &ioComponent.sound.pitch, 0.01f, 0.1f, 3.0f);

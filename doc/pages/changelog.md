@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Slang shaders recompile and swap live on Vulkan and OpenGL; the pipelines of the draws using them are rebuilt with their own state and binding block, a compilation error keeps the running binaries.
 - `platform::FileWatcher` polls directory trees on a background thread, so watching costs one atomic read per frame; `app::HotReload` dispatches the changes (`AppParams::hotReload`, *Hot Reload* in *Parameters*, `OwlRunner --no-hot-reload`, `--frame-bench --hot-reload`), never with an asset pack open.
 - `stylemix` image test: a voxel world, perspective Renderer2D sprites, a `Space: Screen` HUD (canvas, text, progress bar) and the voxel crosshair in one frame, on Vulkan and OpenGL.
+- Typed Lua binding registry: each binding is one declaration (table, name, typed parameters and returns, description) that registers the function and generates the new [Lua API reference](lua-api.md); a test fails when the page or `scripting.md` drifts from the registry.
 - Editor command API: `commands::CommandRegistry` names the scene commands (`entity.create`, `entity.delete`, `component.add`, `prefab.instantiate`...) with typed, validated arguments; the hierarchy, the inspector menus, the shortcuts, the tests and the runner's new `command` / `undo` / `redo` scenario steps all run them through the scene `UndoManager` (library `OwlNestCommands`).
 - `EngineSceneTemplates` test: every component and field of the scenes shipped in `engine_assets` survives a load / save round trip, so a key the serializer ignores fails CI.
 - Owl Nest project templates: the new-project dialogue asks for a name, a folder and a template (empty 2D, raycast, voxel, mixed styles) copied from `engine_assets/project_templates/`.
@@ -116,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - Dead CMake: the no-op `FORCE_RELEASE` flag (`THIRD_PARTY_RELEASE`), the unused `print_target_properties` and `dump_cmake_variables`, the orphan `cmake/Python.cmake`.
+- `ScriptEngine::loadScript` / `loadScriptFromBuffer` and the shared Lua state behind them, which no script ever ran in (each `ScriptInstance` has its own).
 - 97 dead `NOLINT` check names (checks `.clang-tidy` does not enable), and the CodeStyle `nolint` sub-check that keeps them out.
 - DepManager: `depmanager.yml`, `cmake/Depmanager.cmake`, `owl_engine.py`, the `ConfigureRemote` CI action and the *Define Remote* TeamCity step; Conan 2 is the only provider (`OWL_DEPENDENCY_PROVIDER` is gone) and other projects take OwlEngine from the packaged archive.
 - Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).
@@ -132,6 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `core_task` scheduler tests no longer fail on a loaded machine: they wait for the worker (condition and 30 s deadline) instead of sleeping 5 ms.
 - The raycast layer no longer leaves the depth test on for the layers drawn after it (a HUD layer then drew depth-tested).
 - OpenGL on the SPIR-V path (NVIDIA): the HUD, text and every Renderer2D draw without an entity reappear; the `quad`, `circle` and `text` shaders gave the scene and transient world buffers one block type, which the driver bound to a single buffer. A test checks every shipped shader keeps one block type per storage buffer.
+- Documentation promising what the engine does not do: `scene.load_scene`, `scene.transition_to`, `scene.quit`, `door.*` and `pushwall.*` are now documented, while Box2D joints and per-category volumes are described as not available yet.
 - The scene templates of `engine_assets/templates/` (main menu, pause menu, game over) use the current `UiRect` / `UiText` / `UiButton` / `UiPanel` keys and lose the dropped `editorVisible`: their UI was silently ignored at load.
 - `Matrix::norm()` is the Frobenius norm: it summed `a_ij * a_ji` (wrong for any non-symmetric matrix) and read out of range on a non-square one.
 - The Lua sandbox bytecode test loads its whole fake chunk: the literal was cut at its embedded NUL.
