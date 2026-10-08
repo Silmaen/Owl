@@ -35,17 +35,17 @@ TEST(SceneComponent, key) {
 }
 
 TEST(SceneComponent, name) {
-	EXPECT_EQ(owl::scene::component::AnimatedSpriteRenderer::name(), "Animated Sprite");
-	EXPECT_EQ(owl::scene::component::Camera::name(), "Camera");
-	EXPECT_EQ(owl::scene::component::CircleRenderer::name(), "Circle Renderer");
-	EXPECT_EQ(owl::scene::component::EntityLink::name(), "Entity Link");
-	EXPECT_EQ(owl::scene::component::PhysicBody::name(), "Physical body");
-	EXPECT_EQ(owl::scene::component::Player::name(), "Player");
-	EXPECT_EQ(owl::scene::component::SpriteRenderer::name(), "Sprite Renderer");
-	EXPECT_EQ(owl::scene::component::Text::name(), "Text Renderer");
-	EXPECT_EQ(owl::scene::component::Transform::name(), "Transform");
-	EXPECT_EQ(owl::scene::component::Trigger::name(), "Trigger");
-	EXPECT_EQ(owl::scene::component::Visibility::name(), "Visibility");
+	EXPECT_STREQ(owl::scene::component::AnimatedSpriteRenderer::name(), "Animated Sprite");
+	EXPECT_STREQ(owl::scene::component::Camera::name(), "Camera");
+	EXPECT_STREQ(owl::scene::component::CircleRenderer::name(), "Circle Renderer");
+	EXPECT_STREQ(owl::scene::component::EntityLink::name(), "Entity Link");
+	EXPECT_STREQ(owl::scene::component::PhysicBody::name(), "Physical body");
+	EXPECT_STREQ(owl::scene::component::Player::name(), "Player");
+	EXPECT_STREQ(owl::scene::component::SpriteRenderer::name(), "Sprite Renderer");
+	EXPECT_STREQ(owl::scene::component::Text::name(), "Text Renderer");
+	EXPECT_STREQ(owl::scene::component::Transform::name(), "Transform");
+	EXPECT_STREQ(owl::scene::component::Trigger::name(), "Trigger");
+	EXPECT_STREQ(owl::scene::component::Visibility::name(), "Visibility");
 }
 
 TEST(SceneComponent, TextSerializeDeserializeRoundTrip) {

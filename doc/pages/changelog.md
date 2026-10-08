@@ -119,6 +119,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Sanitizers: `SceneComponent.name` compares the component names as strings, not pointers, and LeakSanitizer ignores the GTK caches libdecor leaves in the Wayland smoke test (`test/lsan.supp`).
+- `main` builds again: the conflict marker left in `VulkanHandler.h` is resolved and the `MemoryAllocator` singleton lives in its source file, so hidden visibility no longer duplicates it (`-Wunique-object-duplication`); `linux-clang-minimal` builds and passes again (Null shader reload without Slang, hot-reload tests skipped without the render or script module).
 - `core_task` scheduler tests no longer fail on a loaded machine: they wait for the worker (condition and 30 s deadline) instead of sleeping 5 ms.
 - The raycast layer no longer leaves the depth test on for the layers drawn after it (a HUD layer then drew depth-tested).
 - OpenGL on the SPIR-V path (NVIDIA): the HUD, text and every Renderer2D draw without an entity reappear; the `quad`, `circle` and `text` shaders gave the scene and transient world buffers one block type, which the driver bound to a single buffer. A test checks every shipped shader keeps one block type per storage buffer.
