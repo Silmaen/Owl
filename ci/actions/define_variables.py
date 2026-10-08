@@ -70,7 +70,8 @@ class DefineTeamCityVariables(BaseAction):
             )
         artifact_path = """+:output/build/%cmake_preset%/bin => BuildArtefact.zip!bin/debug/
 +:output/build/%cmake_preset%/lib => BuildArtefact.zip!lib/debug/
-+:output/build/%cmake_preset%/test/*.xml => BuildArtefact.zip!test/debug/"""
++:output/build/%cmake_preset%/test/*.xml => BuildArtefact.zip!test/debug/
+-:output/build/%cmake_preset%/bin/owl_*_unit_test*"""
         if preset.run_coverage:
             artifact_path += """
 +:output/build/%cmake_preset%/Coverage => Coverage.zip"""
@@ -79,6 +80,7 @@ class DefineTeamCityVariables(BaseAction):
 +:output/build/%release_preset%/bin => BuildArtefact.zip!bin/release/
 +:output/build/%release_preset%/lib => BuildArtefact.zip!lib/release/
 +:output/build/%release_preset%/test/*.xml => BuildArtefact.zip!test/release/
+-:output/build/%release_preset%/bin/owl_*_unit_test*
 +:output/build/%release_preset%/Documentation/html => Documentation.zip
 +:output/build/%release_preset%/*.zip
 +:output/build/%release_preset%/*.tar.gz"""
