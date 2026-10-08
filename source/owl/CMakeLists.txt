@@ -62,6 +62,11 @@ elseif (${PROJECT_PREFIX}_PLATFORM_LINUX)
     target_compile_definitions(${ENGINE_NAME} INTERFACE $<INSTALL_INTERFACE:${PROJECT_PREFIX}_PLATFORM_LINUX>)
 endif ()
 target_link_libraries(${ENGINE_NAME} PRIVATE ${ENGINE_NAME}Private)
+if (${PROJECT_PREFIX}_PLATFORM_LINUX)
+    # Export only the OWL_API symbols, as the Windows DLL does, and none of the static third-party libraries.
+    set_target_properties(${ENGINE_NAME} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+    target_link_options(${ENGINE_NAME} PRIVATE "LINKER:--exclude-libs,ALL")
+endif ()
 
 # ---------========= PRIVATE third party =========---------
 # box2d

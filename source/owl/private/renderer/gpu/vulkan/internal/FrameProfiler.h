@@ -51,10 +51,7 @@ public:
 	 *  Singleton access.
 	 * @return The profiler.
 	 */
-	static auto get() -> FrameProfiler& {
-		static FrameProfiler instance;
-		return instance;
-	}
+	static auto get() -> FrameProfiler&;
 
 	/**
 	 * @brief

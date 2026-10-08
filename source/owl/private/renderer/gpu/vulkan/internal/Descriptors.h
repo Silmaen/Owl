@@ -87,10 +87,7 @@ public:
 	 *  Singleton's accessor.
 	 * @return The instance of this object.
 	 */
-	static auto get() -> Descriptors& {
-		static Descriptors instance;
-		return instance;
-	}
+	static auto get() -> Descriptors&;
 
 	/**
 	 * @brief

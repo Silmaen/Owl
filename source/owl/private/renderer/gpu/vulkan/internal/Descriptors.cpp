@@ -523,4 +523,9 @@ auto Descriptors::TextureList::getTextureData(uint32_t iIndex) -> tex {
 	return iter->second;
 }
 
+auto Descriptors::get() -> Descriptors& {
+	static Descriptors instance;
+	return instance;
+}
+
 }// namespace owl::renderer::gpu::vulkan::internal

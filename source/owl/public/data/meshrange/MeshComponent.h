@@ -24,7 +24,7 @@ namespace owl::data::meshrange {
 
 class EditMeshVertexCoordinate;
 template<bool IsConst = true>
-class MeshVertexCoordinate;
+class OWL_API MeshVertexCoordinate;
 
 /**
  * @brief
