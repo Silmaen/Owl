@@ -79,6 +79,8 @@ auto readEarlyConfig(const std::filesystem::path& iWorkDir) -> EarlyConfig {
 struct RunnerOptions {
 	// Run without window, GPU nor audio (Null backends).
 	bool headless{false};
+	// Do not watch the asset directories (hot reload is on by default when no pack is configured).
+	bool noHotReload{false};
 	// Smoke-test options (inactive when frames is 0).
 	nest::runner::SmokeTest smokeTest;
 };
@@ -90,6 +92,8 @@ auto parseOptions(const int iArgc, char** iArgv) -> RunnerOptions {
 		const std::string_view arg(args[i]);
 		if (arg == "--headless") {
 			options.headless = true;
+		} else if (arg == "--no-hot-reload") {
+			options.noHotReload = true;
 		} else if (arg == "--smoke-test") {
 			options.smokeTest.frames = 60;
 			if (i + 1 < args.size()) {
@@ -139,7 +143,7 @@ auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::files
 		std::fputs(options.error().c_str(), stderr);
 		std::fputs(".\nUsage: OwlRunner --frame-bench <scene.owl> [--frames N] [--warmup M] "
 				   "[--backend vulkan|opengl|null] [--out results.json] [--project <dir>] [--size WxH] "
-				   "[--timestep-ms T] [--vsync] [--validation] [--capture frame.png]\n",
+				   "[--timestep-ms T] [--vsync] [--validation] [--hot-reload] [--capture frame.png]\n",
 				   stderr);
 		std::exit(2);
 	}
@@ -162,6 +166,7 @@ auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::files
 					.isDummy = headless,
 					.useConfigFile = false,
 					.vSync = options->vSync,
+					.hotReload = options->hotReload,
 			},
 			*options);
 }
@@ -231,6 +236,7 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 			.height = height,
 			.argCount = iArgc,
 			.packFile = packFile,
+			.hotReload = packFile.empty() && !options.noHotReload,
 	};
 	if (options.headless) {
 		params.renderer = renderer::gpu::RenderAPI::Type::Null;

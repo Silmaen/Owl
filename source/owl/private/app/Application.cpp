@@ -282,6 +282,8 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	// wait for all asynchronous tasks
 	m_scheduler.waitEmptyQueue();
 
+	setHotReloadEnabled(m_initParams.hotReload);
+
 	OWL_CORE_TRACE("Application creation done.")
 }
 
@@ -302,6 +304,7 @@ void Application::disableDocking() const {
 Application::~Application() {
 	OWL_PROFILE_FUNCTION()
 
+	m_hotReload.setEnabled(false);
 	m_fontLibrary.destroy();
 	if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Error) {
 		// Ensure the GPU is idle before tearing anything down.
@@ -342,10 +345,28 @@ Application::~Application() {
 	invalidate();
 }
 
-void Application::addAssetDirectory(const AssetDirectory& iDir) { m_assetDirectories.push_front(iDir); }
+void Application::addAssetDirectory(const AssetDirectory& iDir) {
+	m_assetDirectories.push_front(iDir);
+	if (m_hotReload.isEnabled())
+		m_hotReload.watchDirectory(iDir.assetsPath);
+}
 
 void Application::removeAssetDirectory(const std::filesystem::path& iPath) {
 	m_assetDirectories.remove_if([&iPath](const AssetDirectory& iDir) -> bool { return iDir.assetsPath == iPath; });
+	m_hotReload.unwatchDirectory(iPath);
+}
+
+void Application::setHotReloadEnabled(const bool iEnabled) {
+	m_initParams.hotReload = iEnabled;
+	if (iEnabled && hasOpenPack()) {
+		OWL_CORE_INFO("Hot reload: Off, the assets come from a pack.")
+		m_hotReload.setEnabled(false);
+		return;
+	}
+	if (iEnabled) {
+		for (const auto& [title, assetsPath]: m_assetDirectories) m_hotReload.watchDirectory(assetsPath);
+	}
+	m_hotReload.setEnabled(iEnabled);
 }
 
 void Application::setWindowTitle(const std::string& iTitle) {
@@ -394,6 +415,7 @@ void Application::run() {
 				m_state = State::Error;
 				continue;
 			}
+			m_hotReload.onFrame();
 			{
 
 				OWL_PROFILE_SCOPE("LayerStack onUpdate")
@@ -565,6 +587,7 @@ void AppParams::loadFromFile(const std::filesystem::path& iFile) {
 			OWL_CORE_WARN("AppParams: Unknown windowPlatform '{}', keeping {}.", platformStr,
 						  window::platformName(windowPlatform))
 		get(appConfig, "installDesktopEntry", installDesktopEntry);
+		get(appConfig, "hotReload", hotReload);
 	}
 }
 
@@ -582,6 +605,7 @@ void AppParams::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "frameLogFrequency" << YAML::Value << frameLogFrequency;
 	out << YAML::Key << "windowPlatform" << YAML::Value << std::string(window::platformName(windowPlatform));
 	out << YAML::Key << "installDesktopEntry" << YAML::Value << installDesktopEntry;
+	out << YAML::Key << "hotReload" << YAML::Value << hotReload;
 
 	out << YAML::EndMap;
 	out << YAML::EndMap;
@@ -597,6 +621,7 @@ auto Application::openPack(const std::filesystem::path& iPackFile) -> bool {
 		return false;
 	}
 	OWL_CORE_INFO("Opened asset pack: {} ({} entries).", iPackFile.string(), m_packReader.getHeader().entryCount)
+	m_hotReload.setEnabled(false);
 	return true;
 }
 

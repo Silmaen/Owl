@@ -18,7 +18,10 @@
 #include <chrono>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
+#include <iterator>
+#include <string>
 #include <tuple>
 #include <vector>
 
@@ -98,6 +101,39 @@ void SceneDocument::applyLoadedScene(const shared<scene::Scene>& iScene, const s
 	m_stopRequested = false;
 	m_pendingTeleportVelocity = false;
 	m_undoManager.clear();
+}
+
+auto SceneDocument::reloadFromDisk(const math::vec2ui& iViewportSize) -> bool {
+	if (m_scenePath.empty() || !m_editorScene)
+		return false;
+	if (m_state != State::Edit) {
+		OWL_WARN("Hot reload: Scene '{}' changed on disk; stop the play to reload it.", m_scenePath.string())
+		return false;
+	}
+	if (isDirty()) {
+		OWL_WARN("Hot reload: Scene '{}' changed on disk but has unsaved edits, kept; save or reopen it to choose.",
+				 m_scenePath.string())
+		return false;
+	}
+	std::ifstream file(m_scenePath, std::ios::binary);
+	if (!file.is_open()) {
+		OWL_WARN("Hot reload: Cannot read scene '{}'.", m_scenePath.string())
+		return false;
+	}
+	const std::vector<uint8_t> bytes{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+	if (const std::string text(bytes.begin(), bytes.end());
+		text == scene::SceneSerializer(m_editorScene).serializeToString())
+		return false;
+	const auto fresh = mkShared<scene::Scene>();
+	if (const auto loaded = scene::SceneSerializer(fresh).deserializeFromBuffer(bytes, m_scenePath.string()); !loaded) {
+		OWL_ERROR("Hot reload: Scene '{}' failed to load ({}), the open version is kept.", m_scenePath.string(),
+				  scene::describe(loaded.error()))
+		return false;
+	}
+	applyLoadedScene(fresh, m_scenePath, iViewportSize);
+	m_sceneSwapped = true;
+	OWL_INFO("Hot reload: Scene '{}' reloaded.", m_scenePath.string())
+	return true;
 }
 
 void SceneDocument::onScenePlay() {

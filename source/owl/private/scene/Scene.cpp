@@ -24,6 +24,7 @@
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
 
+#include "ScriptLoader.h"
 #include "app/Application.h"
 #include "core/task/Scheduler.h"
 #include "core/task/Task.h"
@@ -498,51 +499,10 @@ void Scene::onStartRuntime() {
 		auto& luaScript = view.get<component::LuaScript>(entity);
 		if (luaScript.scriptPath.empty())
 			continue;
-		luaScript.instance = mkUniq<script::ScriptInstance>();
 		const auto uuid = static_cast<uint64_t>(registry.get<component::ID>(entity).id);
-		bool loaded = false;
-		if (app::Application::instanced()) {
-			auto& app = app::Application::get();
-			// Try pack first.
-			if (app.packContains(luaScript.scriptPath))
-				if (const auto data = app.loadFromPack(luaScript.scriptPath))
-					loaded = luaScript.instance->createFromBuffer(*data, luaScript.scriptPath, uuid);
-			// Resolve against asset directories.
-			if (!loaded) {
-				for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
-					if (const auto resolved = assetsPath / luaScript.scriptPath; exists(resolved)) {
-						loaded = luaScript.instance->create(resolved.string(), uuid);
-						break;
-					}
-				}
-			}
-		}
-		// Fallback: try raw path (absolute or CWD-relative).
-		if (!loaded)
-			loaded = luaScript.instance->create(luaScript.scriptPath, uuid);
-		if (!loaded)
-			OWL_CORE_ERROR("onStartRuntime: FAILED to load script '{}'.", luaScript.scriptPath)
-		if (loaded) {
-			for (const auto& [name, type, value]: luaScript.properties) {
-				switch (type) {
-					case script::ScriptPropertyType::Float:
-						luaScript.instance->setProperty(name, std::get<float>(value));
-						break;
-					case script::ScriptPropertyType::Int:
-						luaScript.instance->setProperty(name, std::get<int64_t>(value));
-						break;
-					case script::ScriptPropertyType::String:
-						luaScript.instance->setProperty(name, std::get<std::string>(value));
-						break;
-					case script::ScriptPropertyType::Bool:
-						luaScript.instance->setProperty(name, std::get<bool>(value));
-						break;
-				}
-			}
+		luaScript.instance = loadScriptInstance(luaScript, uuid);
+		if (luaScript.instance)
 			luaScript.instance->onCreate();
-		} else {
-			luaScript.instance.reset();
-		}
 		++luaCount;
 	}
 	OWL_CORE_INFO("Scene::onStartRuntime: lua compile + onCreate ({} scripts) {:.1f} ms.", luaCount,

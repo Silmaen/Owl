@@ -329,6 +329,23 @@ public:
 	 * @return The datasets possible extension.
 	 */
 	static auto extension() -> std::vector<std::string> { return {".jpg", ".png"}; }
+
+	/**
+	 * @brief
+	 *  Decode the texture's file again and swap its pixels (hot reload). The image gets fresh GPU storage, so the
+	 *  size may change; the pixel format and the filter mode are kept. On a decode error the previous pixels stay.
+	 * @return True when the new pixels are in use.
+	 */
+	auto reloadFromFile() -> bool;
+
+protected:
+	/**
+	 * @brief
+	 *  Replace the GPU storage by a new one of the given specification; the old one is released once no frame
+	 *  uses it any more. The pixels are undefined until the next `setData`.
+	 * @param[in] iSpecs Specification of the new storage.
+	 */
+	virtual void reallocate(const Specification& iSpecs) { m_specification = iSpecs; }
 };
 OWL_DIAG_POP
 }// namespace owl::renderer::gpu

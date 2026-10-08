@@ -19,6 +19,7 @@
 #include <entt/entt.hpp>
 
 #include <cstdint>
+#include <filesystem>
 #include <optional>
 #include <span>
 #include <string>
@@ -127,6 +128,19 @@ public:
 	 *  End scene runtime mode.
 	 */
 	void onEndRuntime();
+
+	/**
+	 * @brief
+	 *  Hot reload: take a file changed on disk into account.
+	 *
+	 *  - `.owltileset` / `.owltilemap`: the components using it drop their copy, re-resolved from disk at the next
+	 *    `resolveAllTilemapAssets` (colliders built at `onStartRuntime` are not rebuilt);
+	 *  - `.lua`: each running instance of the script is replaced by a fresh one, given the current values of the
+	 *    component's properties, then `on_create` runs; a script that fails to load keeps the previous instance.
+	 * @param[in] iFile The changed file (absolute, or relative to the working directory).
+	 * @return True when something of the scene uses the file.
+	 */
+	auto onAssetFileChanged(const std::filesystem::path& iFile) -> bool;
 
 	/**
 	 * @brief

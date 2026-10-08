@@ -132,6 +132,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Hot reload: reload the running scene when its file changed, else hand the file to the scene (tilesets,
+	 *  tilemaps, Lua scripts).
+	 * @param[in] iFile The changed file.
+	 */
+	void onAssetFileChanged(const std::filesystem::path& iFile);
+
+	/**
+	 * @brief
 	 *  Handle the update event.
 	 * @param[in] iTimeStep Frame time delta.
 	 */
@@ -298,6 +306,10 @@ private:
 	auto stepSmokeTest() -> bool;
 
 	shared<scene::Scene> m_activeScene;
+	/// File of the running scene (empty when it came from a pack), reloaded by the hot reload.
+	std::filesystem::path m_scenePath;
+	/// Id of the hot reload listener.
+	uint32_t m_hotReloadListener = 0;
 	math::vec2ui m_viewportSize = {0, 0};
 	RunnerConfig m_config;
 	/// If true, need to apply velocity after physics init on next frame.

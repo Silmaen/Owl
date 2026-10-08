@@ -550,6 +550,31 @@ warning. A "Reset to Defaults" button restores all factory bindings.
 Keybinding overrides and recent projects are persisted in `OwlNest_settings.yml`
 alongside other editor settings.
 
+### Hot reload {#editor-hot-reload}
+
+Owl Nest and the development runner watch the asset directories (project and engine assets) and reload what changes
+on disk, at the start of the next frame:
+
+| File                         | What reloads                                                                             |
+|------------------------------|------------------------------------------------------------------------------------------|
+| `.png`, `.jpg`               | Every texture of the library loaded from it (the size may change)                        |
+| `.slang`                     | Every shader compiled from it, Vulkan and OpenGL; its pipelines are rebuilt              |
+| `.owltileset`, `.owltilemap` | The tilemaps, doors, push walls and voxel worlds using it, edited and played scenes      |
+| `.lua`                       | Every running instance of the script, see [Scripting](scripting.md#scripting-hot-reload) |
+| `.owl`                       | The scene document of that file, when it is not playing and has no unsaved edit          |
+
+- **A failed reload keeps the previous version**: an unreadable image keeps its pixels, a shader that does not compile
+  keeps its binaries, a script that does not load keeps running. The error goes to the Log panel with the file, and
+  the Slang or Lua diagnostic (file, line, message).
+- A scene with unsaved edits is never replaced: a warning says the file changed on disk. The editor's own saves are
+  recognised (the file holds what the editor would write) and reload nothing.
+- **Cost**: a background thread compares modification times every 500 ms and the frame reads one atomic flag; the
+  frame bench measures it with `OwlRunner --frame-bench <scene> --hot-reload`.
+- **Turn it off**: *Debug > Hot Reload* in the *Parameters* dialog (`hotReload` in `config.yml`), `OwlRunner
+  --no-hot-reload`. A packaged game never watches: the hot reload stays off whenever an asset pack is open.
+- Not reloaded: colliders built when the play started (a tilemap's collision flags apply at the next play), new
+  bindings in a shader (restart), C++ game code (a v0.7.0 evaluation).
+
 ### Project Settings
 
 The Project Settings dialog is opened via **Project > Project Settings**. It edits the

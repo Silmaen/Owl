@@ -144,11 +144,14 @@ imported-configuration fallback.
   (see [Conan migration](conan-migration.md))
 - ![Done][done] Configure without network or Doxygen, CMake clean-up (PR-26: G-05, G-09, G-13, G-14, G-15,
   I-09, G-08)
-- ![Planned][planned] Hot reload for iteration (editor and development runner)
+- ![Done][done] Hot reload for iteration (editor and development runner)
     - Assets: textures, scenes, tilesets reloaded when the file changes on disk
     - Slang shaders recompiled and swapped live
     - Lua scripts reloaded, with properties preserved
     - Hot reload of a C++ game module is a separate v0.7.0 evaluation, see [Content pipeline](content-pipeline.md)
+    - Shipped: a background poller (`platform::FileWatcher`, one atomic read per frame, no measurable cost in the
+      frame bench), never active with an asset pack open; a failed reload keeps the previous version. A shader
+      reload changes code, not bindings: a new binding needs a restart. See [Editor](../editor.md#editor-hot-reload)
 - ![Planned][planned] Autosave and crash recovery — periodic autosave of dirty documents, recovery offered at the next
   launch
 - ![Planned][planned] Session restore (persisted open tabs)

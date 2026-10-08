@@ -340,6 +340,34 @@ auto Texture2D::createFromSerializedForDeserialize(const std::string& iTextureSe
 	return texture;
 }
 
+auto Texture2D::reloadFromFile() -> bool {
+	OWL_PROFILE_FUNCTION()
+
+	if (m_path.empty()) {
+		OWL_CORE_WARN("Texture: Cannot reload '{}', it has no file.", getName())
+		return false;
+	}
+	if (m_loadState == LoadState::Pending) {
+		OWL_CORE_WARN("Texture: Reload of '{}' skipped, the first load is still running.", m_path.string())
+		return false;
+	}
+	const int channels = m_specification.format == ImageFormat::Rgb8 ? 3 : 4;
+	const auto decoded = decodeImageFile(m_path, channels);
+	if (!decoded.valid) {
+		OWL_CORE_ERROR("Texture: Reload of '{}' failed (unreadable image), the previous pixels stay in use.",
+					   m_path.string())
+		return false;
+	}
+	auto specs = m_specification;
+	specs.size = decoded.size;
+	specs.format = decoded.format;
+	reallocate(specs);
+	setData(const_cast<uint8_t*>(decoded.pixels.data()), static_cast<uint32_t>(decoded.pixels.size()));
+	m_loadState = LoadState::Ready;
+	OWL_CORE_INFO("Texture: '{}' reloaded ({}x{}).", m_path.string(), specs.size.x(), specs.size.y())
+	return true;
+}
+
 Texture::~Texture() = default;
 
 }// namespace owl::renderer::gpu

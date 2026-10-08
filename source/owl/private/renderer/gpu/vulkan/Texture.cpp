@@ -122,6 +122,13 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 }
 OWL_DIAG_POP
 
+void Texture2D::reallocate(const Specification& iSpecs) {
+	if (m_textureId > 0)
+		internal::Descriptors::get().unregisterTexture(m_textureId);
+	m_textureId = 0;
+	m_specification = iSpecs;
+}
+
 void Texture2D::setFilterMode(const FilterMode iMode) {
 	m_specification.filterMode = iMode;
 	auto& vkd = internal::Descriptors::get();
