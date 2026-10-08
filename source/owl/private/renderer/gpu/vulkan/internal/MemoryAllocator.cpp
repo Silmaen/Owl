@@ -43,6 +43,11 @@ auto toAllocationInfo(const MemoryUsage iMemory) -> VmaAllocationCreateInfo {
 
 MemoryAllocator::~MemoryAllocator() = default;
 
+auto MemoryAllocator::get() -> MemoryAllocator& {
+	static MemoryAllocator allocator;
+	return allocator;
+}
+
 auto MemoryAllocator::init(VkInstance iInstance, VkPhysicalDevice iPhysicalDevice, VkDevice iDevice) -> bool {
 	release();
 	const VmaAllocatorCreateInfo info{.flags = {},

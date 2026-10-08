@@ -11,6 +11,7 @@ endif ()
 # Any sanitizer report must fail the test, under ctest as on the CI.
 set(${PROJECT_PREFIX}_TEST_ENVIRONMENT
         "ASAN_OPTIONS=halt_on_error=1:detect_leaks=1:detect_stack_use_after_return=1:strict_init_order=1:check_initialization_order=1"
+        "LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp"
         "UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1"
         "TSAN_OPTIONS=halt_on_error=1:second_deadlock_stack=1:suppressions=${CMAKE_CURRENT_SOURCE_DIR}/tsan.supp")
 

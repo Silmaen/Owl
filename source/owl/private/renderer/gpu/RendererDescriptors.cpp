@@ -128,6 +128,7 @@ RendererDescriptors::ScopedActive::ScopedActive([[maybe_unused]] const std::stri
 RendererDescriptors::ScopedActive::~ScopedActive() {
 	// Never engaged without the Vulkan backend: nothing to restore.
 	m_engaged = false;
+	m_openGl = false;
 	mp_state = nullptr;
 }
 #endif

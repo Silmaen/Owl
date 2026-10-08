@@ -13,11 +13,8 @@
 
 #if OWL_WITH_GUI
 #include <backends/imgui_impl_vulkan.h>
-<<<<<<< HEAD
 #endif
-=======
 #include <renderer/gpu/PipelineState.h>
->>>>>>> 79e382d7 (Name the Owl RHI and give every draw an explicit pipeline state and binding block)
 #include <renderer/gpu/vulkan/Framebuffer.h>
 
 #include <array>

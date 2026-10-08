@@ -1,0 +1,10 @@
+# LeakSanitizer suppressions, scoped to uninstrumented system GUI libraries reached by the Wayland smoke test.
+# Under weston, GLFW's libdecor loads its GTK plugin for the window decorations: GTK, GDK, Pango, fontconfig and GLib
+# keep process-lifetime caches that are never freed, reported as leaks at exit.
+leak:libgtk-3.so
+leak:libgdk-3.so
+leak:libpango
+leak:libfontconfig.so
+leak:libglib-2.0.so
+leak:libgobject-2.0.so
+leak:libdecor

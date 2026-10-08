@@ -19,9 +19,15 @@ using namespace owl::data::extradata;
 
 namespace {
 
-class TestExtraData final : public MeshExtraData<TestExtraData, float> {
+// Derives from the exported ExtraDataBase, not the MeshExtraData template: on Windows a class template marked
+// OWL_API is dllimport, and the engine DLL cannot provide its vtable for a type it does not know.
+class TestExtraData final : public ExtraDataBase {
 public:
-	[[nodiscard]] auto getValue() const -> const float& override { return value; }
+	[[nodiscard]] auto getPid() const -> ExtraDataPid override { return getExtraDataPid<TestExtraData>(); }
+
+	[[nodiscard]] auto clone() const -> owl::uniq<ExtraDataBase> override { return owl::mkUniq<TestExtraData>(*this); }
+
+	[[nodiscard]] auto getValue() const -> const float& { return value; }
 
 	float value = 0.f;
 };

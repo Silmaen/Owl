@@ -72,10 +72,7 @@ public:
 	 *  Singleton accessor.
 	 * @return The allocator.
 	 */
-	static auto get() -> MemoryAllocator& {
-		static MemoryAllocator allocator;
-		return allocator;
-	}
+	static auto get() -> MemoryAllocator&;
 
 	/**
 	 * @brief

@@ -102,6 +102,7 @@ TEST_F(HotReloadTest, TextureTakesTheNewPixelsAndKeepsThemOnError) {
 }
 
 TEST_F(HotReloadTest, ShaderRecompilesAndKeepsThePreviousVersionOnError) {
+	OWL_REQUIRE_MODULE(RENDER);
 	const auto file = m_dir / "shaders" / "hot" / "slang" / "flat.slang";
 	writeText(file, shaderSource("1.0"));
 	const auto shader = Shader::create(m_dir / "shaders" / "hot" / "slang" / "flat");
@@ -122,6 +123,7 @@ TEST_F(HotReloadTest, ShaderRecompilesAndKeepsThePreviousVersionOnError) {
 }
 
 TEST_F(HotReloadTest, WatchedFileIsDispatchedToTheLibrariesAndListeners) {
+	OWL_REQUIRE_MODULE(RENDER);
 	const auto image = m_dir / "sprite.png";
 	writeImage(image, 2);
 	auto texture = Texture2D::create(image);

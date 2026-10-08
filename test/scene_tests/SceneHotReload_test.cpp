@@ -46,6 +46,7 @@ auto scriptVersion(const int iVersion) -> std::string {
 }// namespace
 
 TEST(SceneHotReload, ScriptIsReplacedAndKeepsItsProperties) {
+	OWL_REQUIRE_MODULE(SCRIPT);
 	core::Log::init(core::Log::Level::Off);
 	const auto dir = makeDir("owl_scene_hotreload_lua");
 	const auto file = dir / "mover.lua";
