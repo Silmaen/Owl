@@ -197,6 +197,8 @@ public:
 		size_t key = 0;
 		/// Number of live `DrawData` sharing this pipeline; the pipeline is destroyed when it reaches zero.
 		uint32_t refCount = 0;
+		/// Descriptor set layout the pipeline was built with, reused when a shader reload rebuilds it.
+		VkDescriptorSetLayout setLayout = nullptr;
 	};
 
 	/**
@@ -214,11 +216,13 @@ public:
 	 * @param[in] iShaderStages Shader stage create-infos to bind into the pipeline.
 	 * @param[in] iVertexInputInfo Vertex input layout description.
 	 * @param[in] iState Fixed-function state: topology, culling and blending are baked in, depth stays dynamic.
+	 * @param[in] iSetLayout Descriptor set layout to build with; null takes the active renderer block's (or the
+	 *  global one).
 	 * @return The pipeline id (use it with `getPipeline`/`bindPipeline`).
 	 */
 	auto pushPipeline(const std::string& iPipeLineName, std::vector<VkPipelineShaderStageCreateInfo>& iShaderStages,
-					  VkPipelineVertexInputStateCreateInfo iVertexInputInfo, const gpu::PipelineState& iState)
-			-> int32_t;
+					  VkPipelineVertexInputStateCreateInfo iVertexInputInfo, const gpu::PipelineState& iState,
+					  VkDescriptorSetLayout iSetLayout = nullptr) -> int32_t;
 
 	// Command buffer data
 	/// True while a render pass (batch) is open in the frame command buffer.

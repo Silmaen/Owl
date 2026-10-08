@@ -525,6 +525,16 @@ binding its layout declares is written: a binding nothing was bound to gets a de
 zeroed uniform or storage buffer). With the validation layers on (`--validation` in the frame bench, *Use Debugging*
 in Owl Nest), the sample scenes run with zero message on NVIDIA, Intel and lavapipe; keep it that way.
 
+### Shader hot reload {#renderer-shader-hot-reload}
+
+`Shader::reload` recompiles a shader from its Slang file (`getSourcePath`) and swaps the binaries only when every stage
+compiles (and, on OpenGL, links); otherwise the running ones stay and the Slang diagnostic is logged. A successful
+reload bumps `getGeneration`. On OpenGL the program is replaced. On Vulkan every live `DrawData` using the shader
+rebuilds its pipeline with its own `PipelineState`, vertex input and binding-block layout; the pipeline name carries
+the generation so the deduplication never hands back a pipeline of the old binaries, and the old one is released
+through `deferRelease`. The binding layout comes from the renderer block, not from the shader: a reload changes code,
+not bindings. `app::HotReload` calls it when a watched `.slang` file changes (see [Editor](editor.md#editor-hot-reload)).
+
 ### Vulkan frames in flight
 
 Two frames are in flight. Each owns one primary command buffer that records the whole frame — every framebuffer

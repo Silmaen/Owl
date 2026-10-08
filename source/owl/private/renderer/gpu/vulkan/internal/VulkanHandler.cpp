@@ -202,7 +202,7 @@ void VulkanHandler::createSwapChain() {
 }
 
 auto VulkanHandler::getPipeline(const int32_t iId) const -> VulkanHandler::PipeLineData {
-	if (m_state == State::Running || !m_pipeLines.contains(iId))
+	if (!m_pipeLines.contains(iId))
 		return {};
 	return m_pipeLines.at(iId);
 }
@@ -225,15 +225,16 @@ auto VulkanHandler::getRenderPassCommandBuffer() const -> VkCommandBuffer {
 auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 								 std::vector<VkPipelineShaderStageCreateInfo>& iShaderStages,
 								 VkPipelineVertexInputStateCreateInfo iVertexInputInfo,
-								 const gpu::PipelineState& iState) -> int32_t {
+								 const gpu::PipelineState& iState, VkDescriptorSetLayout iSetLayout) -> int32_t {
 	const auto& core = VulkanCore::get();
 	auto& vkd = Descriptors::get();
 	PipeLineData pData;
-	auto* setLayout = vkd.getDescriptorSetLayout();
-	if (auto* const rd = RendererDescriptors::getActive(); rd != nullptr) {
+	VkDescriptorSetLayout setLayoutHandle = iSetLayout != nullptr ? iSetLayout : *vkd.getDescriptorSetLayout();
+	if (auto* const rd = RendererDescriptors::getActive(); iSetLayout == nullptr && rd != nullptr) {
 		if (auto* const rdLayout = rd->getDescriptorSetLayout(); rdLayout != nullptr && *rdLayout != nullptr)
-			setLayout = rdLayout;
+			setLayoutHandle = *rdLayout;
 	}
+	const auto* setLayout = &setLayoutHandle;
 
 	auto hashCombine = [](size_t& ioSeed, const size_t iValue) -> void {
 		ioSeed ^= iValue + 0x9e3779b97f4a7c15ULL + (ioSeed << 6) + (ioSeed >> 2);
@@ -263,6 +264,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 	}
 	pData.key = key;
 	pData.refCount = 1;
+	pData.setLayout = setLayoutHandle;
 
 	const VkPipelineLayoutCreateInfo pipelineLayoutInfo{.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 														.pNext = nullptr,

@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -231,6 +232,15 @@ public:
 	 */
 	void uploadUniformFloat4(const std::string& iName, const math::vec4& iValue) const;
 
+protected:
+	/**
+	 * @brief
+	 *  Compile and link a new Slang source; the program in use is replaced only when both succeed.
+	 * @param[in] iSlangSource The new Slang source.
+	 * @return True when the new program is in use.
+	 */
+	auto recompile(const std::string& iSlangSource) -> bool override;
+
 private:
 	/// Id of the shader in the GPU.
 	uint32_t m_programId = 0;
@@ -244,16 +254,21 @@ private:
 
 	/**
 	 * @brief
-	 *  Compile the Slang source to OpenGL SPIR-V (or load it from cache when valid).
+	 *  Compile the Slang source to OpenGL SPIR-V, or read it from the cache when it is valid.
 	 * @param[in] iSlangSource The Slang shader source code.
+	 * @return The SPIR-V of every stage, or nothing when the compilation failed (logged).
 	 */
-	void compileOrGetOpenGlBinaries(const std::string& iSlangSource);
+	[[nodiscard]] auto compileOrGetOpenGlBinaries(const std::string& iSlangSource) const
+			-> std::optional<std::unordered_map<ShaderType, std::vector<uint32_t>>>;
 
 	/**
 	 * @brief
-	 *  Create program.
+	 *  Create and link a program from the SPIR-V of its stages.
+	 * @param[in] iSpirv SPIR-V of every stage.
+	 * @return The program id, or 0 when a stage fails to compile or the program fails to link (logged).
 	 */
-	void createProgram();
+	[[nodiscard]] auto createProgram(const std::unordered_map<ShaderType, std::vector<uint32_t>>& iSpirv) const
+			-> uint32_t;
 
 	/// SPIR-V binaries (one entry per shader stage) compiled for the OpenGL backend.
 	std::unordered_map<ShaderType, std::vector<uint32_t>> m_openGlSpirv;

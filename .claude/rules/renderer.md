@@ -35,6 +35,10 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   several `drawMesh` models or 2D cameras in one frame are correct on Vulkan as on OpenGL.
 - **One attachment layout for every framebuffer** (`Surface`, `RedInteger`, `Depth24Stencil8`, swapchain
   included) so all pipelines stay render-pass compatible.
+- **Shader hot reload rebuilds pipelines, not layouts.** `Shader::reload` swaps the binaries only when they compile;
+  on Vulkan `DrawData::rebuildPipelines` rebuilds each live draw's pipeline with its stored state and set layout, the
+  shader generation in the pipeline name keeps the dedup from returning an old pipeline. Never rebuild from the
+  active renderer block at reload time (none is active then).
 - **Pipelines are deduplicated** in `VulkanHandler::pushPipeline` (key = shader name, topology, culling,
   blending, set layout, render pass, vertex input; refcounted; depth is dynamic state set at each bind). Never build
   a pipeline per mesh.
