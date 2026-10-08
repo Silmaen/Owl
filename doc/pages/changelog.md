@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the nightly bench pinned to the agent that measured it.
+- Coverage gate: the `Coverage` action publishes the line and branch coverage to TeamCity, and the Linux Clang build fails when the line coverage drops more than one point below its last successful build.
 - CodeStyle `python` sub-check: `ruff check`, `ruff format --check`, `mypy` and the `ci/tests` pytest suite (never run in CI before) on the CI code (configured in `pyproject.toml`; `black`, never run, removed).
 - `OwlRunner --scenario <file.owltest>`: scripted headless runs (frames, held inputs, expectations on entities and the game state), with four sample scenarios run by CTest (label `scenario`).
 - `OwlRunner --frame-bench` measures the cold start (`startup_ms`: engine ready, first frame), so start-up time has a number on a real backend.

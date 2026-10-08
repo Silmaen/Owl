@@ -114,6 +114,11 @@ except the first, which sets `docker_image` from the preset metadata):
 | Build Release             | `release_preset` non-empty + default branch                    |
 | Build Release (docs)      | `release_preset` + `run_documentation`, off the default branch |
 | Test Release              | `release_preset` non-empty + default branch + `run_tests`      |
+
+The Code Coverage step publishes the line and branch coverage of `gcovr.cfg`'s scope (the engine without its
+platform backends, which headless tests cannot reach) as TeamCity coverage statistics (`CodeCoverageL`,
+`CodeCoverageB` and their absolute counts). Linux x64 / Clang fails when the line coverage drops more than one point
+below its last successful build (`COVERAGE_DROP`).
 | Documentation             | `run_documentation == true`                                    |
 | Package                   | `run_package == true`                                          |
 | Publish Package           | `run_package` + on default branch                              |

@@ -29,7 +29,8 @@ Mirrors the *Ongoing across all releases* section of `doc/pages/roadmap.md`; kee
 - **No new public API without tests** — add unit or integration tests alongside the feature, in
   the same PR
 - Coverage trend must go up over time, never down — measure with
-  `docker/run.sh poetry run python ci_action.py Coverage linux-clang-debug`
+  `docker/run.sh poetry run python ci_action.py Coverage linux-clang-debug`; the Linux Clang build fails when the
+  line coverage (engine without backends, `gcovr.cfg`) drops more than one point below its last successful build
 - Unit tests for pure logic; integration tests for anything crossing module boundaries (scene +
   renderer, script + physics, pack + loader, etc.)
 - Opportunistically backfill tests for untested legacy paths when you touch them
