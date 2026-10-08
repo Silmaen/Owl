@@ -294,7 +294,6 @@ The engine includes a task scheduler backed by [Taskflow](https://github.com/tas
 
 - **Public API** (`core/task/`): `Task`, `Scheduler`, `Timer`
 - **Private implementation**: `SchedulerImpl` owns a `tf::Executor` (thread pool sized to `hardware_concurrency`)
-- **Parallel utilities**: `parallelForEach` / `parallelForIndex` templates
 - Taskflow is a PRIVATE dependency — not exposed in public headers
 
 ## Game Settings

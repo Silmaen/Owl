@@ -27,8 +27,6 @@ void ProfiledWorker::scheduler_epilogue([[maybe_unused]] tf::Worker& ioWorker,
 
 Scheduler::Scheduler() : mp_impl{mkUniq<SchedulerImpl>()} {}
 
-auto Scheduler::getImpl() const -> SchedulerImpl& { return *mp_impl; }
-
 Scheduler::~Scheduler() {
 	mp_impl->tasksQueue.clear();
 	waitRunning();

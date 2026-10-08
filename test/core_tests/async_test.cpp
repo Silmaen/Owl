@@ -8,16 +8,12 @@
 
 #include "testHelper.h"
 
-#include <core/task/ParallelUtils.h>
 #include <core/task/Scheduler.h>
-#include <core/task/SchedulerImpl.h>
 
 #include <atomic>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <functional>
-#include <numeric>
 #include <thread>
 #include <vector>
 
@@ -212,35 +208,4 @@ TEST(core_task, SchedulerStress) {
 	}
 	scheduler.waitEmptyQueue();
 	EXPECT_EQ(counter, taskCount);
-}
-
-TEST(core_task, ParallelForEach) {
-	tf::Executor executor{4};
-	constexpr size_t count = 1000;
-	std::vector<std::atomic_int> values(count);
-	for (auto& v: values) { v.store(0); }
-
-	std::vector<size_t> indices(count);
-	std::iota(indices.begin(), indices.end(), 0);
-
-	std::function<void(size_t)> const func = [&](const size_t iIdx) -> void { values[iIdx].store(1); };
-	parallelForEach(executor, indices.begin(), indices.end(), func);
-
-	for (size_t i = 0; i < count; ++i) { EXPECT_EQ(values[i].load(), 1) << "Index " << i << " was not processed"; }
-}
-
-TEST(core_task, ParallelForIndex) {
-	tf::Executor executor{4};
-	constexpr size_t count = 500;
-	std::vector<std::atomic_int> values(count);
-	for (auto& v: values) { v.store(0); }
-
-	std::function<void(size_t)> const func = [&](const size_t iIdx) -> void {
-		values[iIdx].store(static_cast<int>(iIdx * 2));
-	};
-	parallelForIndex(executor, size_t{0}, count, size_t{1}, func);
-
-	for (size_t i = 0; i < count; ++i) {
-		EXPECT_EQ(values[i].load(), static_cast<int>(i * 2)) << "Index " << i << " has wrong value";
-	}
 }

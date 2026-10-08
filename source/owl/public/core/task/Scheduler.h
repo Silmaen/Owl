@@ -133,19 +133,6 @@ public:
 	 */
 	void clearTimers();
 
-	/**
-	 * @brief
-	 *  Engine-internal accessor for the Taskflow-backed implementation.
-	 *
-	 * Returns a reference to the private `SchedulerImpl` struct so engine
-	 * code (which includes the private header) can reach the `tf::Executor`
-	 * for `parallelForEach` / `parallelForIndex`. External callers can hold
-	 * the reference but cannot use it without the private header — this is
-	 * intentional: the Taskflow dependency stays PRIVATE.
-	 * @return Reference to the private implementation.
-	 */
-	[[nodiscard]] auto getImpl() const -> SchedulerImpl&;
-
 private:
 	/// Private implementation hiding Taskflow internals.
 	uniq<SchedulerImpl> mp_impl;
