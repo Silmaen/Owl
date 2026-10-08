@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Slang shaders recompile and swap live on Vulkan and OpenGL; the pipelines of the draws using them are rebuilt with their own state and binding block, a compilation error keeps the running binaries.
 - `platform::FileWatcher` polls directory trees on a background thread, so watching costs one atomic read per frame; `app::HotReload` dispatches the changes (`AppParams::hotReload`, *Hot Reload* in *Parameters*, `OwlRunner --no-hot-reload`, `--frame-bench --hot-reload`), never with an asset pack open.
 - `stylemix` image test: a voxel world, perspective Renderer2D sprites, a `Space: Screen` HUD (canvas, text, progress bar) and the voxel crosshair in one frame, on Vulkan and OpenGL.
+- Owl Nest project templates: the new-project dialogue asks for a name, a folder and a template (empty 2D, raycast, voxel, mixed styles) copied from `engine_assets/project_templates/`.
 - Owl Nest session restore: opening a project again reopens its tabs, the active tab and the selected entity (`ProjectSession` in `OwlNest_settings.yml`).
 - Owl Nest autosave and crash recovery: modified documents are copied aside every 60 s and at exit (`RecoveryManager`, outside the project), and the next opening of the project offers to recover them.
 - Actionable error messages: scene, Lua script and pack failures name the file, the entity (tag, id, line) and end with a `Fix:` hint, in the editor log and the runner (`scene::fixHint`, `pack::describe` / `pack::fixHint`, `ScriptInstance::setEntityName`).

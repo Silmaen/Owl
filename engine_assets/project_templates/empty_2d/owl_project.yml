@@ -1,0 +1,15 @@
+FormatVersion: 1
+OwlProject:
+  name: Empty 2D
+  firstScene: scenes/main.owl
+  version: 0.1.0
+  window:
+    width: 1280
+    height: 720
+    fullscreen: false
+    resizable: true
+  RendererStack:
+    - Type: Renderer2D
+      Name: world
+    - Type: Renderer2D
+      Name: ui

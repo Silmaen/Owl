@@ -161,7 +161,7 @@ imported-configuration fallback.
     - Stored in `EditorSettings` (per user), not in `owl_project.yml` (shared through version control)
 - ![Done][done] Actionable error messages — load, script and pack errors name the file, the entity and the fix,
   in the editor log and the runner
-- ![Planned][planned] Project templates (empty 2D, raycast, voxel, mixed-style) in the new-project dialogue
+- ![Done][done] Project templates (empty 2D, raycast, voxel, mixed-style) in the new-project dialogue
 - ![Planned][planned] Documentation faithful to the code — Lua, renderer, README, guides (PR-15: I-01, I-02, I-03,
   I-04, I-05, D-07, B-16, B-18)
 - ![Planned][planned] Identifiers cited in `doc/pages` checked in CI (PR-39: I-01, I-09)

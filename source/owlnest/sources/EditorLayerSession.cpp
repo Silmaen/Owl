@@ -13,7 +13,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <system_error>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 namespace owl::nest {
@@ -178,13 +180,34 @@ auto EditorLayer::restoreProjectSession() -> bool {
 	if (active != nullptr)
 		active->requestFocus();
 	syncActiveDocumentPanels();
-	if (const auto* scene = activeSceneDocument(); scene != nullptr && session->selectedEntity != 0 &&
-												   scene->getEditorScene()) {
+	if (const auto* scene = activeSceneDocument();
+		scene != nullptr && session->selectedEntity != 0 && scene->getEditorScene()) {
 		if (const auto entity = scene->getEditorScene()->findEntityByUUID(core::UUID{session->selectedEntity}); entity)
 			setSelectedEntity(entity);
 	}
 	OWL_INFO("Session: Reopened {} document(s) of project '{}'.", restored, m_project.name)
 	return true;
+}
+
+void EditorLayer::createProject(const panel::NewProjectRequest& iRequest) {
+	const auto& dir = iRequest.directory;
+	if (iRequest.projectTemplate) {
+		if (const auto created = createProjectFromTemplate(*iRequest.projectTemplate, dir, iRequest.name); !created) {
+			OWL_ERROR("New Project: Cannot create '{}': {}.", dir.string(), describe(created.error()))
+			return;
+		}
+	} else {
+		std::error_code ec;
+		create_directories(dir / "scenes", ec);
+		Project project;
+		project.name = iRequest.name;
+		project.projectDirectory = dir;
+		if (ec || !project.saveToFile(dir / "owl_project.yml")) {
+			OWL_ERROR("New Project: Cannot create the project file in '{}'.", dir.string())
+			return;
+		}
+	}
+	openProject(dir);
 }
 
 auto EditorLayer::findDocument(const DocumentType iType, const std::filesystem::path& iPath) const -> Document* {

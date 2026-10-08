@@ -23,6 +23,7 @@
 #include "panel/ContentBrowser.h"
 #include "panel/HelpPanel.h"
 #include "panel/LogPanel.h"
+#include "panel/NewProjectDialog.h"
 #include "panel/Parameters.h"
 #include "panel/ProjectSettings.h"
 #include "panel/RecoveryPrompt.h"
@@ -722,6 +723,15 @@ private:
 	RecoveryManager m_recovery;
 	/// Modal offering the autosaves of a session that ended with unsaved changes.
 	panel::RecoveryPrompt m_recoveryPrompt;
+	/// Modal asking for the name, the folder and the template of a new project.
+	panel::NewProjectDialog m_newProjectDialog;
+
+	/**
+	 * @brief
+	 *  Create the project the new-project dialogue asked for, then open it.
+	 * @param[in] iRequest The request.
+	 */
+	void createProject(const panel::NewProjectRequest& iRequest);
 
 	/**
 	 * @brief

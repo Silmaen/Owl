@@ -1,0 +1,4 @@
+Template:
+  name: Voxel
+  description: A procedural voxel terrain streamed around a first-person player (WASD, space to jump).
+  order: 3
