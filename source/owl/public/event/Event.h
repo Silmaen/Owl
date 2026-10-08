@@ -23,28 +23,28 @@ namespace owl::event {
  *  Type of events.
  */
 enum struct Type : uint8_t {
-	None = 0,/// No type.
+	None = 0,///< No type.
 
-	WindowClose,/// Window close.
-	WindowResize,/// Window resize.
-	WindowFocus,/// Window Focus.
-	WindowLostFocus,/// Window lost focus.
-	WindowMoved,/// Window moved.
+	WindowClose,///< Window close.
+	WindowResize,///< Window resize.
+	WindowFocus,///< Window Focus.
+	WindowLostFocus,///< Window lost focus.
+	WindowMoved,///< Window moved.
 
-	AppTick,/// Application tick.
-	AppUpdate,/// Application update.
-	AppRender,/// Application render.
+	AppTick,///< Application tick.
+	AppUpdate,///< Application update.
+	AppRender,///< Application render.
 
-	KeyPressed,/// Keyboard's key pressed.
-	KeyReleased,/// Keyboard's key released.
-	KeyTyped,/// Keyboard's key typed.
+	KeyPressed,///< Keyboard's key pressed.
+	KeyReleased,///< Keyboard's key released.
+	KeyTyped,///< Keyboard's key typed.
 
-	MouseButtonPressed,/// Mouse's button pressed.
-	MouseButtonReleased,/// Mouse's button released.
-	MouseMoved,/// Mouse moved.
-	MouseScrolled,/// Mouse wheel scrolled.
+	MouseButtonPressed,///< Mouse's button pressed.
+	MouseButtonReleased,///< Mouse's button released.
+	MouseMoved,///< Mouse moved.
+	MouseScrolled,///< Mouse wheel scrolled.
 
-	FileDrop/// File(s) dropped from OS.
+	FileDrop///< File(s) dropped from OS.
 };
 
 /**
@@ -52,12 +52,12 @@ enum struct Type : uint8_t {
  *  Event categories.
  */
 enum Category : uint8_t {
-	None = 0,/// No category.
-	Application = 1u,/// Application event.
-	Input = 2u,/// Input event.
-	Keyboard = 4u,/// Keyboard event.
-	Mouse = 8u,/// Mouse event.
-	MouseButton = 16u/// Mouse button.
+	None = 0,///< No category.
+	Application = 1u,///< Application event.
+	Input = 2u,///< Input event.
+	Keyboard = 4u,///< Keyboard event.
+	Mouse = 8u,///< Mouse event.
+	MouseButton = 16u///< Mouse button.
 };
 
 /**
@@ -66,12 +66,30 @@ enum Category : uint8_t {
  */
 class OWL_API Event {
 public:
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	Event(const Event&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	Event(Event&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const Event&) -> Event& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(Event&&) -> Event& = default;
 
 	Event() = default;

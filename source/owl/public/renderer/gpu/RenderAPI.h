@@ -82,6 +82,11 @@ public:
 		Vulkan = 2,///< Vulkan renderer API.
 	};
 
+	/**
+	 * @brief
+	 *  Create the API of a graphics backend.
+	 * @param[in] iType The backend type.
+	 */
 	explicit RenderAPI(const Type& iType) : m_type{iType} {}
 
 	RenderAPI(const RenderAPI&) = delete;

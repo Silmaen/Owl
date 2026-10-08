@@ -17,6 +17,7 @@
 
 namespace owl::core {
 
+/// Milliseconds in a second.
 constexpr float g_Millis{1000.f};
 /**
  * @brief

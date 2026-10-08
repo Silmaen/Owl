@@ -82,10 +82,10 @@ public:
 	 * `InAnim` — new scene loaded, playing the in animation to reveal it.
 	 */
 	enum struct Phase : uint8_t {
-		Idle,
-		OutAnim,
-		Loading,
-		InAnim,
+		Idle,///< No transition running.
+		OutAnim,///< Fading out the current scene.
+		Loading,///< Loading the next scene.
+		InAnim,///< Fading in the new scene.
 	};
 
 	/**

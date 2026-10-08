@@ -21,12 +21,30 @@ namespace owl::renderer::gpu {
  */
 class OWL_API DrawData {
 public:
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	DrawData(const DrawData&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	DrawData(DrawData&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const DrawData&) -> DrawData& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(DrawData&&) -> DrawData& = default;
 
 	DrawData() = default;

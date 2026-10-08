@@ -17,6 +17,7 @@
 #include <unordered_map>
 
 #ifndef OWL_TRACKER_VERBOSITY
+/// Verbosity of the allocation report (0: summary only).
 #define OWL_TRACKER_VERBOSITY 0
 #endif
 
@@ -111,6 +112,11 @@ struct OWL_API AllocationInfo {
 	 */
 	[[nodiscard]] OWL_API auto toStr(bool iTracePrint = true, bool iFullTrace = false) const -> std::string;
 
+	/**
+	 * @brief
+	 *  Name of the library that made the allocation, read from its call stack.
+	 * @return `owl`, a dependency name, or an empty string without stack trace.
+	 */
 	[[nodiscard]] OWL_API auto getLibName() const -> std::string;
 };
 /**
@@ -126,12 +132,30 @@ struct OWL_API AllocationState {
 
 	AllocationState() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	AllocationState(const AllocationState&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	AllocationState(AllocationState&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const AllocationState&) -> AllocationState& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(AllocationState&&) -> AllocationState& = default;
 	/// Amount of allocated memory.
 	std::size_t allocatedMemory{0};
@@ -267,5 +291,7 @@ public:
 
 }// namespace owl::debug
 
+/// Stop tracking allocations until the end of the scope.
 #define OWL_SCOPE_UNTRACK const owl::debug::ScopeUntrack scopeUntrack;
+/// Track allocations until the end of the scope, even inside an untracked one.
 #define OWL_SCOPE_FORCE_TRACK const owl::debug::ScopeTrack scopeTrack;

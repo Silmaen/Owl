@@ -22,12 +22,30 @@ class OWL_API UniformBuffer {
 public:
 	UniformBuffer() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	UniformBuffer(const UniformBuffer&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	UniformBuffer(UniformBuffer&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const UniformBuffer&) -> UniformBuffer& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(UniformBuffer&&) -> UniformBuffer& = default;
 
 	/**

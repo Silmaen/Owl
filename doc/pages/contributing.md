@@ -57,8 +57,10 @@ Use `enum struct` (scoped enumerations) with an explicit underlying type for all
 
 ## Documentation
 
-All public API types and functions have Doxygen doc-comments: `/** ... */` blocks with `@brief`, `@param` and
-`@return`, `///` for a one-line member or enum value. Implementation files carry only their file header.
+Every element of a public header (types, functions, special members, fields, enum values, typedefs, macros) has a
+Doxygen doc-comment: `/** ... */` blocks with `@brief`, `@param` and `@return`, `///<` for a one-line field or enum
+value. The `documentation` target extracts the public API only and fails on a missing one. Implementation files
+carry only their file header.
 
 The user documentation lives in `doc/pages/` and changes in the same pull request as the code it describes:
 

@@ -30,12 +30,30 @@ public:
 	 */
 	~CameraEditor() override;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	CameraEditor(const CameraEditor&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	CameraEditor(CameraEditor&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const CameraEditor&) -> CameraEditor& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(CameraEditor&&) -> CameraEditor& = default;
 
 	/**

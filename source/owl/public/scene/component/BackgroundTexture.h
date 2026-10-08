@@ -20,9 +20,16 @@ namespace owl::scene::component {
  */
 struct OWL_API BackgroundTexture {
 	/// Background display mode.
-	enum struct Mode : uint8_t { Background = 0, Skybox = 1 };
+	enum struct Mode : uint8_t {
+		Background = 0,///< Flat backdrop behind the scene.
+		Skybox = 1,///< Sky box around the camera.
+	};
 	/// Background type (used in Background mode).
-	enum struct Type : uint8_t { SolidColor = 0, Gradient = 1, Texture = 2 };
+	enum struct Type : uint8_t {
+		SolidColor = 0,///< One colour.
+		Gradient = 1,///< Vertical gradient.
+		Texture = 2,///< An image.
+	};
 
 	/// Display mode.
 	Mode mode = Mode::Background;

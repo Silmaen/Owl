@@ -46,6 +46,10 @@ public:
 	 */
 	VoxelWorld(const VoxelWorld& iOther);
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	VoxelWorld(VoxelWorld&&) = default;
 
 	/**
@@ -56,6 +60,11 @@ public:
 	 */
 	auto operator=(const VoxelWorld& iOther) -> VoxelWorld&;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(VoxelWorld&&) -> VoxelWorld& = default;
 
 	/**

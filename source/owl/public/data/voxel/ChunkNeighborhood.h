@@ -40,12 +40,30 @@ public:
 
 	~ChunkNeighborhood() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	ChunkNeighborhood(const ChunkNeighborhood&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	ChunkNeighborhood(ChunkNeighborhood&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const ChunkNeighborhood&) -> ChunkNeighborhood& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(ChunkNeighborhood&&) -> ChunkNeighborhood& = default;
 
 	/**

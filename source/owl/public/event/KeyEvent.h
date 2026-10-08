@@ -36,6 +36,11 @@ public:
 	[[nodiscard]] auto getCategoryFlags() const -> uint8_t final;
 
 protected:
+	/**
+	 * @brief
+	 *  Create a key event.
+	 * @param[in] iKeyCode The key.
+	 */
 	explicit KeyEvent(const input::KeyCode iKeyCode) : m_keyCode(iKeyCode) {}
 	/// Key code.
 	input::KeyCode m_keyCode;

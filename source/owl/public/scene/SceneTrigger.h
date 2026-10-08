@@ -48,12 +48,14 @@ public:
 	/**
 	 * @brief
 	 *  Default copy affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(const SceneTrigger&) -> SceneTrigger& = default;
 
 	/**
 	 * @brief
 	 *  Default move affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(SceneTrigger&&) -> SceneTrigger& = default;
 
@@ -94,13 +96,13 @@ public:
 	 *  The type of trigger.
 	 */
 	enum struct TriggerType : uint8_t {
-		Victory,/// Player win.
-		Death,/// Player loose.
-		Target,/// Passive position marker (no action on collision).
-		Teleport,/// Teleport the player to a named target entity, optionally in another level.
-		Timer,/// Fires after a duration, optionally repeating.
-		Interaction,/// Fires when the player presses interact key within range.
-		LuaCallback,/// Generic: calls on_triggered in Lua on overlap.
+		Victory,///< Player win.
+		Death,///< Player loose.
+		Target,///< Passive position marker (no action on collision).
+		Teleport,///< Teleport the player to a named target entity, optionally in another level.
+		Timer,///< Fires after a duration, optionally repeating.
+		Interaction,///< Fires when the player presses interact key within range.
+		LuaCallback,///< Generic: calls on_triggered in Lua on overlap.
 	};
 	/// The type of trigger.
 	TriggerType type = TriggerType::Victory;
@@ -138,6 +140,7 @@ public:
 	/**
 	 * @brief
 	 *  Set overlap state for the current frame.
+	 * @param[in] iOverlapping True while the player overlaps the trigger.
 	 */
 	void setOverlapping(const bool iOverlapping) { m_playerOverlapping = iOverlapping; }
 

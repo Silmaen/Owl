@@ -46,14 +46,18 @@ class OWL_API MeshRangeIterator {
 	using CursorType = MeshCursor<IsConst, ElementType, Components...>;
 
 public:
+	/// Random-access iterator.
 	using iterator_category = std::random_access_iterator_tag;
+	/// Distance between two iterators.
 	using difference_type = std::ptrdiff_t;
 
+	/// The component itself when there is only one, the cursor otherwise.
 	using value_type = std::conditional_t<
 			sizeof...(Components) == 1,
 			std::tuple_element_t<0, std::tuple<typename std::remove_cvref_t<Components>::ComponentType...>>,
 			CursorType>;
 
+	/// Reference to the value (the position itself for coordinates only).
 	using reference = std::conditional_t<IsOnlyCoordinateComponent<Components...>, math::vec3,
 										 std::conditional_t<IsConst, const value_type, value_type>&>;
 

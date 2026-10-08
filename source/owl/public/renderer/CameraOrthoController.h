@@ -20,12 +20,30 @@ namespace owl::renderer {
  */
 class OWL_API CameraOrthoController final {
 public:
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	CameraOrthoController(const CameraOrthoController&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	CameraOrthoController(CameraOrthoController&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const CameraOrthoController&) -> CameraOrthoController& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(CameraOrthoController&&) -> CameraOrthoController& = default;
 
 	/**

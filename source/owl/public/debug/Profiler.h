@@ -119,8 +119,13 @@ struct ProfileResult {
  *  Profile Session Data.
  */
 struct ProfileSession {
+	/**
+	 * @brief
+	 *  Name a session.
+	 * @param[in] iName The session name.
+	 */
 	explicit ProfileSession(std::string iName) : name{std::move(iName)} {}
-	std::string name;/// Session's name.
+	std::string name;///< Session's name.
 };
 
 /**
@@ -261,6 +266,7 @@ namespace utils {
  */
 template<size_t N>
 struct ChangeResult {
+	/// Characters of the string.
 	char data[N];
 };
 /**
@@ -345,10 +351,16 @@ OWL_DIAG_POP
 #define OWL_PROFILE_FRAME_MARK()
 #define OWL_PROFILE_THREAD_NAME(name)
 #else
+/// Start a profiling session written to `filepath` (chrome backend only).
 #define OWL_PROFILE_BEGIN_SESSION(name, filepath)
+/// End the profiling session (chrome backend only).
 #define OWL_PROFILE_END_SESSION()
+/// Profile the enclosing scope under `name`.
 #define OWL_PROFILE_SCOPE(name)
+/// Profile the enclosing function.
 #define OWL_PROFILE_FUNCTION()
+/// Mark the end of a frame.
 #define OWL_PROFILE_FRAME_MARK()
+/// Name the current thread in the profiler.
 #define OWL_PROFILE_THREAD_NAME(name)
 #endif

@@ -32,9 +32,13 @@ namespace owl::data::geometry {
  */
 class OWL_API StaticMesh {
 public:
+	/// Iterator on the vertices.
 	using VertexIterator = std::vector<geometry::primitive::MeshVertex>::iterator;
+	/// Const iterator on the vertices.
 	using ConstVertexIterator = std::vector<geometry::primitive::MeshVertex>::const_iterator;
+	/// Iterator on the triangles.
 	using TriangleIterator = MeshRangeIterator<false, MeshElementType::Triangle>;
+	/// Const iterator on the triangles.
 	using ConstTriangleIterator = MeshRangeIterator<true, MeshElementType::Triangle>;
 
 	/**
@@ -63,13 +67,15 @@ public:
 
 	/**
 	 * @brief
-	 *  Default copy affectation operator.
+	 *  Copy a mesh.
+	 * @return This mesh.
 	 */
 	auto operator=(const StaticMesh&) -> StaticMesh&;
 
 	/**
 	 * @brief
-	 *  Default move affectation operator.
+	 *  Move a mesh into this one.
+	 * @return This mesh.
 	 */
 	auto operator=(StaticMesh&&) noexcept -> StaticMesh&;
 
@@ -129,6 +135,11 @@ public:
 	 */
 	auto getTriangles() -> std::vector<primitive::Triangle>&;
 
+	/**
+	 * @brief
+	 *  Tell whether the mesh has neither vertex nor triangle.
+	 * @return True when the mesh is empty.
+	 */
 	[[nodiscard]] auto isEmpty() const -> bool { return getTriangleCount() == 0 && getVertexCount() == 0; }
 
 	/**

@@ -23,6 +23,7 @@
 #define OWL_COMPILER gcc
 #define OWL_COMPILER_GCC
 #else
+/// Name of the compiler (`clang`, `gcc`, `clang_cl` or `msvc`).
 #define OWL_COMPILER unknown
 #endif
 
@@ -36,6 +37,7 @@
 #elif defined(OWL_COMPILER_GCC) || defined(OWL_COMPILER_CLANG)
 #define OWL_DO_PRAGMA(arg) _Pragma(#arg)
 #else
+/// Emit a pragma from a macro.
 #define OWL_DO_PRAGMA(arg)
 #endif
 
@@ -108,16 +110,27 @@
 #define OWL_DIAG_DISABLE_CLANG_CL(diag)
 #define OWL_DIAG_DISABLE_MSVC(diag) OWL_DO_PRAGMA(warning(disable : diag))
 #else
+/// Restore the warning state saved by `OWL_DIAG_PUSH`.
 #define OWL_DIAG_POP
+/// Save the warning state.
 #define OWL_DIAG_PUSH
+/// Disable a Clang warning (no-op on the other compilers).
 #define OWL_DIAG_DISABLE_CLANG(diag)
+/// Disable a Clang warning from Clang 16 on.
 #define OWL_DIAG_DISABLE_CLANG16(diag)
+/// Disable a Clang warning from Clang 17 on.
 #define OWL_DIAG_DISABLE_CLANG17(diag)
+/// Disable a Clang warning from Clang 18 on.
 #define OWL_DIAG_DISABLE_CLANG18(diag)
+/// Disable a Clang warning from Clang 19 on.
 #define OWL_DIAG_DISABLE_CLANG19(diag)
+/// Disable a Clang warning from Clang 20 on.
 #define OWL_DIAG_DISABLE_CLANG20(diag)
+/// Disable a GCC warning (no-op on the other compilers).
 #define OWL_DIAG_DISABLE_GCC(diag)
+/// Disable a clang-cl warning (no-op on the other compilers).
 #define OWL_DIAG_DISABLE_CLANG_CL(diag)
+/// Disable an MSVC warning (no-op on the other compilers).
 #define OWL_DIAG_DISABLE_MSVC(diag)
 #endif
 

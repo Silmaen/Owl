@@ -101,6 +101,7 @@ public:
 
 /// Tag type used by error-only constructors.
 struct unexpect_t {};
+/// Tag value selecting the error-holding constructors.
 inline constexpr unexpect_t unexpect{};
 
 /**
@@ -115,6 +116,11 @@ private:
 	E m_error;
 
 public:
+	/**
+	 * @brief
+	 *  Wrap the error that was accessed.
+	 * @param[in] error The error held by the `expected`.
+	 */
 	explicit bad_expected_access(E error) : m_error(std::move(error)) {}
 
 	/**
@@ -185,8 +191,11 @@ private:
 	}
 
 public:
+	/// Type of the held value.
 	using value_type = T;
+	/// Type of the held error.
 	using error_type = E;
+	/// Type wrapping an error for construction.
 	using unexpected_type = unexpected<E>;
 
 	/**
@@ -195,12 +204,32 @@ public:
 	 */
 	constexpr expected() : m_value(), m_has_value(true) {}
 
+	/**
+	 * @brief
+	 *  Hold a copy of a value.
+	 * @param[in] v The value.
+	 */
 	constexpr expected(const T& v) : m_value(v), m_has_value(true) {}
 
+	/**
+	 * @brief
+	 *  Hold a value.
+	 * @param[in] v The value, moved.
+	 */
 	constexpr expected(T&& v) : m_value(std::move(v)), m_has_value(true) {}
 
+	/**
+	 * @brief
+	 *  Hold a copy of an error.
+	 * @param[in] u The error.
+	 */
 	constexpr expected(const unexpected<E>& u) : m_error(u.error()), m_has_value(false) {}
 
+	/**
+	 * @brief
+	 *  Hold an error.
+	 * @param[in] u The error, moved.
+	 */
 	constexpr expected(unexpected<E>&& u) : m_error(std::move(u.error())), m_has_value(false) {}
 
 	/**
@@ -209,6 +238,11 @@ public:
 	 */
 	~expected() { destroy(); }
 
+	/**
+	 * @brief
+	 *  Copy the held value or error.
+	 * @param[in] rhs The `expected` to copy.
+	 */
 	expected(const expected& rhs) : m_has_value(rhs.m_has_value) {
 		if (m_has_value)
 			new (&m_value) T(rhs.m_value);
@@ -357,9 +391,10 @@ public:
 	 *  Return the value when present, otherwise the supplied default.
 	 * @tparam U Source type for conversion.
 	 * @param[in] default_value Fallback value used when no value is held.
+	 * @return The held value, or `default_value` converted to `T`.
 	 */
 	template<typename U>
-	constexpr T value_or(U&& default_value) const& {
+	constexpr auto value_or(U&& default_value) const& -> T {
 		return m_has_value ? m_value : static_cast<T>(std::forward<U>(default_value));
 	}
 
@@ -371,11 +406,13 @@ public:
 	 * @return The stored value or the fallback.
 	 */
 	template<typename U>
-	constexpr T value_or(U&& default_value) && {
+	constexpr auto value_or(U&& default_value) && -> T {
 		return m_has_value ? std::move(m_value) : static_cast<T>(std::forward<U>(default_value));
 	}
 };
 
+// Doxygen mixes the members of this specialisation with the primary template's: it stays out of the API reference.
+/// @cond
 /**
  * @brief
  *  `expected<void, E>` specialisation — value-less success/failure carrier.
@@ -401,8 +438,18 @@ public:
 	 */
 	constexpr expected() : m_dummy{}, m_has_value(true) {}
 
+	/**
+	 * @brief
+	 *  Hold a copy of an error.
+	 * @param[in] u The error.
+	 */
 	constexpr expected(const unexpected<E>& u) : m_error(u.error()), m_has_value(false) {}
 
+	/**
+	 * @brief
+	 *  Hold an error.
+	 * @param[in] u The error, moved.
+	 */
 	constexpr expected(unexpected<E>&& u) : m_error(std::move(u.error())), m_has_value(false) {}
 
 	/**
@@ -442,6 +489,7 @@ public:
 	 */
 	constexpr E& error() & { return m_error; }
 };
+/// @endcond
 
 }// namespace owl
 

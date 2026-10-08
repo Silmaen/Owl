@@ -225,6 +225,9 @@ The Doxygen format used across the codebase:
 
 - **Block style**: always `/** ... */` for any multi-line comment, function, class, struct, or enum.
 - **`///`** is reserved for **single-line comments on a member variable or an enum value**, e.g. `bool m_dirty = false;///< True when unsaved changes exist.`
+- **Every element of a public header gets a `@brief`** (or `///<` for a field or an enum value), defaulted and
+  deleted special members and destructors included: the `documentation` target extracts the public API only and
+  fails on a missing one (`EXTRACT_ALL=NO`, `WARN_AS_ERROR`).
 - `@brief` **must be on its own line**, with the description on the **next line indented by one extra space** after the `*`:
   ```c++
   /**

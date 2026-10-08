@@ -33,12 +33,30 @@ public:
 	 */
 	~ExtraDataTable();
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	ExtraDataTable(const ExtraDataTable&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	ExtraDataTable(ExtraDataTable&&) noexcept = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const ExtraDataTable&) -> ExtraDataTable& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(ExtraDataTable&&) noexcept -> ExtraDataTable& = default;
 
 	/**

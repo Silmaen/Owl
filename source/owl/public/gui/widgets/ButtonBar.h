@@ -39,12 +39,30 @@ public:
 
 	ButtonBar() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	ButtonBar(const ButtonBar&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	ButtonBar(ButtonBar&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const ButtonBar&) -> ButtonBar& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(ButtonBar&&) -> ButtonBar& = default;
 
 	/**

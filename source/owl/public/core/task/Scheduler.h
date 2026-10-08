@@ -81,6 +81,7 @@ public:
 	/**
 	 * @brief
 	 *  Execute each frame.
+	 * @param[in] iTimestep The time step of the frame.
 	 */
 	void frame(const Timestep& iTimestep);
 

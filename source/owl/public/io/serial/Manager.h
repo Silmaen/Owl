@@ -21,6 +21,7 @@ namespace owl::io::serial {
  */
 class OWL_API Manager final {
 public:
+	/// List of devices.
 	using DeviceList = std::vector<Device>;
 
 	Manager(const Manager&) = delete;

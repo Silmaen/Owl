@@ -19,6 +19,7 @@
 
 namespace owl::data::geometry {
 
+/// Index marking an unset range bound.
 constexpr size_t INVALID_INDEX = std::numeric_limits<size_t>::max();
 
 /**
@@ -30,8 +31,11 @@ constexpr size_t INVALID_INDEX = std::numeric_limits<size_t>::max();
 template<bool IsConst, MeshElementType ElementType, typename... Components>
 class OWL_API MeshRange {
 public:
+	/// Mesh type of the range.
 	using MeshType = std::conditional_t<IsConst, const StaticMesh, StaticMesh>;
+	/// Iterator on the range.
 	using iterator = MeshRangeIterator<IsConst, ElementType, Components...>;
+	/// Const iterator on the range.
 	using const_iterator = MeshRangeIterator<true, ElementType, Components...>;
 
 	static_assert(
@@ -181,7 +185,8 @@ template<bool IsConst, typename... Components>
 class OWL_API MeshTriangleRange : public MeshRange<IsConst, MeshElementType::Triangle, Components...> {
 	using MeshRange<IsConst, MeshElementType::Triangle, Components...>::MeshRange;
 };
-// Helper to determine if a component requires write access.
+// Deduction guides: a mutable mesh gives a writable range.
+/// @cond
 template<typename... Components>
 MeshVertexRange(StaticMesh&, Components&&...) -> MeshVertexRange<false, std::remove_cvref_t<Components>...>;
 
@@ -209,5 +214,6 @@ MeshTriangleRange(StaticMesh&, size_t, size_t, Components&&...)
 template<typename... Components>
 MeshTriangleRange(const StaticMesh&, size_t, size_t, Components&&...)
 		-> MeshTriangleRange<true, std::remove_cvref_t<Components>...>;
+/// @endcond
 
 }// namespace owl::data::geometry

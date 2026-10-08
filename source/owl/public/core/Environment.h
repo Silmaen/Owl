@@ -16,6 +16,7 @@ namespace owl::core {
 #ifdef OWL_PLATFORM_WINDOWS
 constexpr char g_sep[] = ";";
 #else
+/// Separator of the values of a list variable (`:`, `;` on Windows).
 constexpr char g_sep[] = ":";
 #endif
 

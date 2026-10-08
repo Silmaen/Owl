@@ -185,6 +185,7 @@ private:
 }// namespace owl::core
 
 // A level below OWL_LOG_COMPILED_LEVEL or below the verbosity evaluates neither the format nor its arguments.
+/// Log through `logger` at `level` when the level is compiled in and enabled.
 #define OWL_LOG_AT(logger, level, ...)                                                                                 \
 	((::owl::core::Log::isLevelCompiled(::owl::core::Log::Level::level) &&                                             \
 	  ::owl::core::Log::isLevelEnabled(::owl::core::Log::Level::level))                                                \
@@ -192,22 +193,34 @@ private:
 			 : void());
 
 // Core log macros
+/// Log an engine trace message on the sampled frames only (`Log::frameLog`).
 #define OWL_CORE_FRAME_TRACE(...)                                                                                      \
 	((::owl::core::Log::isLevelCompiled(::owl::core::Log::Level::Trace) && ::owl::core::Log::frameLog() &&             \
 	  ::owl::core::Log::isLevelEnabled(::owl::core::Log::Level::Trace))                                                \
 			 ? ::owl::core::Log::logCore(::owl::core::Log::Level::Trace, __VA_ARGS__)                                  \
 			 : void());
+/// Advance the frame counter of the frame trace.
 #define OWL_CORE_FRAME_ADVANCE ::owl::core::Log::newFrame();
 
+/// Log an engine trace message.
 #define OWL_CORE_TRACE(...) OWL_LOG_AT(logCore, Trace, __VA_ARGS__)
+/// Log an engine information message.
 #define OWL_CORE_INFO(...) OWL_LOG_AT(logCore, Info, __VA_ARGS__)
+/// Log an engine warning.
 #define OWL_CORE_WARN(...) OWL_LOG_AT(logCore, Warning, __VA_ARGS__)
+/// Log an engine error.
 #define OWL_CORE_ERROR(...) OWL_LOG_AT(logCore, Error, __VA_ARGS__)
+/// Log an engine critical error.
 #define OWL_CORE_CRITICAL(...) OWL_LOG_AT(logCore, Critical, __VA_ARGS__)
 
 // Client log macros
+/// Log a client trace message.
 #define OWL_TRACE(...) OWL_LOG_AT(logClient, Trace, __VA_ARGS__)
+/// Log a client information message.
 #define OWL_INFO(...) OWL_LOG_AT(logClient, Info, __VA_ARGS__)
+/// Log a client warning.
 #define OWL_WARN(...) OWL_LOG_AT(logClient, Warning, __VA_ARGS__)
+/// Log a client error.
 #define OWL_ERROR(...) OWL_LOG_AT(logClient, Error, __VA_ARGS__)
+/// Log a client critical error.
 #define OWL_CRITICAL(...) OWL_LOG_AT(logClient, Critical, __VA_ARGS__)

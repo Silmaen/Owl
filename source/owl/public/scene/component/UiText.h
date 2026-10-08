@@ -31,7 +31,11 @@ struct OWL_API UiText {
 	/// Font size in pixels.
 	float fontSize = 16.f;
 	/// Text alignment.
-	enum struct Alignment : uint8_t { Left, Center, Right };
+	enum struct Alignment : uint8_t {
+		Left,///< Aligned on the left edge.
+		Center,///< Centred.
+		Right,///< Aligned on the right edge.
+	};
 	/// Current alignment.
 	Alignment alignment = Alignment::Left;
 	/// Kerning adjustment.

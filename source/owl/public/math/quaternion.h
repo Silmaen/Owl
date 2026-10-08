@@ -480,7 +480,7 @@ constexpr auto rotate(const Quaternion<BaseType>& iQuaternion, const Vector<Base
 	return iVector + (((uv * iQuaternion.w()) + uuv) * BaseType{2});
 }
 
-using quat = Quaternion<float>;
-using quatd = Quaternion<double>;
+using quat = Quaternion<float>;///< Float quaternion.
+using quatd = Quaternion<double>;///< Double quaternion.
 
 }// namespace owl::math

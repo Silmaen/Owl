@@ -54,7 +54,9 @@ Mirrors the *Ongoing across all releases* section of `doc/pages/roadmap.md`; kee
 
 ## Documentation Quality
 
-- Every public class, method, enum value, and struct field has a `@brief` or `///` comment
+- Every public class, method, enum value, and struct field has a `@brief` or `///` comment, trivial special
+  members (defaulted, deleted, destructors) included
+  — enforced: Doxygen extracts the public API only (`EXTRACT_ALL=NO`, `EXTRACT_PRIVATE=NO`) and the `documentation` target fails on any undocumented element
 - Function parameters documented with `@param[in]` / `@param[out]` / `@param[in,out]`; return
   values with `@return`
 - Private members get at least a `///` one-liner describing intent

@@ -43,7 +43,9 @@ baseline on these axes; each release is expected to move the needle forward. The
 
 ## Documentation quality
 
-- Every public class, method, enum value, and struct field has a `@brief` / `///` comment
+- Every public class, method, enum value, and struct field has a `@brief` / `///` comment, trivial special
+  members included
+  — enforced: Doxygen extracts the public API only (`EXTRACT_ALL=NO`, `EXTRACT_PRIVATE=NO`) and the `documentation` target fails on any undocumented element
 - Private members get at least a `///` one-liner
 - Keep `doc/pages/*.md` in sync with behaviour — update pages in the same PR as the feature
 - Prefer mermaid diagrams over ASCII art or external images for architecture/flow/sequence

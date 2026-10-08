@@ -18,15 +18,20 @@ namespace owl::gui::widgets {
  *  Data associated with Button.
 	 */
 struct ButtonData : WidgetData {
+	/// Name of the icon in the `IconBank`.
 	std::string icon;
+	/// Text shown when the icon is missing.
 	std::string replacementText;
+	/// Tell whether the button is drawn as selected.
 	std::function<bool()> isSelected{[] -> bool { return false; }};
 	/**
 	 * @brief
-	 *  Void.
+	 *  Action run on click.
 	 */
 	std::function<void()> onClick{[] -> void {}};
+	/// Size of the button (zero: automatic).
 	math::vec2 size{0, 0};
+	/// Tooltip text.
 	std::string tooltip;
 };
 
@@ -44,12 +49,30 @@ public:
 
 	Button() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	Button(const Button&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	Button(Button&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const Button&) -> Button& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(Button&&) -> Button& = default;
 
 private:

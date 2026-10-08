@@ -165,7 +165,7 @@ imported-configuration fallback.
 - ![Done][done] Documentation faithful to the code — Lua, renderer, README, guides (PR-15: I-01, I-02, I-03,
   I-04, I-05, D-07, B-16, B-18)
 - ![Done][done] Identifiers cited in `doc/pages` checked in CI (PR-39: I-01, I-09)
-- ![Planned][planned] Proportionate Doxygen — public API documented, no boilerplate `@brief` on trivial members
+- ![Done][done] Doxygen really checks the public API — every public element documented, the build fails otherwise
   (PR-38: I-06, I-07)
 
 ## Phase C — Owl RHI & architecture

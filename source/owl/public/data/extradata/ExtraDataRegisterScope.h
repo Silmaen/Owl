@@ -40,6 +40,7 @@ public:
 	/**
 	 * @brief
 	 *  Assignment by move.
+	 * @return A reference to this object.
 	 */
 	auto operator=(ExtraDataRegisterScope&&) noexcept -> ExtraDataRegisterScope& = default;
 

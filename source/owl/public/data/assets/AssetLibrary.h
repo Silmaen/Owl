@@ -43,6 +43,7 @@ namespace owl::data::assets {
 template<assetDataType DataType>
 class AssetLibrary final {
 public:
+	/// Asset type held by the library.
 	using AssetType = Asset<DataType>;
 
 	/**
@@ -72,12 +73,14 @@ public:
 	/**
 	 * @brief
 	 *  Default copy affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(const AssetLibrary&) -> AssetLibrary& = default;
 
 	/**
 	 * @brief
 	 *  Default move affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(AssetLibrary&&) -> AssetLibrary& = default;
 

@@ -73,10 +73,19 @@ public:
 
 	PackReader(const PackReader&) = delete;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	PackReader(PackReader&&) noexcept = default;
 
 	auto operator=(const PackReader&) -> PackReader& = delete;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(PackReader&&) noexcept -> PackReader& = default;
 
 	/**

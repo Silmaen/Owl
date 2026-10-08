@@ -50,12 +50,30 @@ public:
 
 	~Curve() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	Curve(const Curve&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	Curve(Curve&&) noexcept = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const Curve&) -> Curve& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(Curve&&) noexcept -> Curve& = default;
 
 	/**

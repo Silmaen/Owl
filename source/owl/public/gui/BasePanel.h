@@ -23,7 +23,8 @@ class OWL_API BasePanel {
 public:
 	/**
 	 * @brief
-	 *  Default constructor.
+	 *  Create the panel.
+	 * @param[in] iName Name of the panel (window title).
 	 */
 	explicit BasePanel(std::string&& iName);
 
@@ -48,12 +49,14 @@ public:
 	/**
 	 * @brief
 	 *  Default copy affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(const BasePanel&) -> BasePanel& = default;
 
 	/**
 	 * @brief
 	 *  Default move affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(BasePanel&&) -> BasePanel& = default;
 

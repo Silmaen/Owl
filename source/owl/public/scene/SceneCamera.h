@@ -27,12 +27,30 @@ public:
 	 */
 	SceneCamera();
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	SceneCamera(const SceneCamera&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	SceneCamera(SceneCamera&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const SceneCamera&) -> SceneCamera& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(SceneCamera&&) -> SceneCamera& = default;
 
 	/**
@@ -92,8 +110,8 @@ public:
 	 *  Projection types.
 	 */
 	enum struct ProjectionType : uint8_t {
-		Perspective = 0,/// Perspective projection.
-		Orthographic = 1/// Orthographic projection.
+		Perspective = 0,///< Perspective projection.
+		Orthographic = 1///< Orthographic projection.
 	};
 
 	/**

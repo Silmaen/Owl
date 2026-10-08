@@ -22,7 +22,8 @@ class OWL_API BaseDrawPanel {
 public:
 	/**
 	 * @brief
-	 *  Default constructor.
+	 *  Create the panel.
+	 * @param[in] iName Name of the panel (window title).
 	 */
 	explicit BaseDrawPanel(std::string&& iName);
 
@@ -47,12 +48,14 @@ public:
 	/**
 	 * @brief
 	 *  Default copy affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(const BaseDrawPanel&) -> BaseDrawPanel& = default;
 
 	/**
 	 * @brief
 	 *  Default move affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(BaseDrawPanel&&) -> BaseDrawPanel& = default;
 

@@ -30,12 +30,30 @@ public:
 
 	virtual ~ExtraDataBase() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	ExtraDataBase(const ExtraDataBase&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	ExtraDataBase(ExtraDataBase&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const ExtraDataBase&) -> ExtraDataBase& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(ExtraDataBase&&) -> ExtraDataBase& = default;
 
 	/**
@@ -67,6 +85,7 @@ class OWL_API MeshExtraData : public ExtraDataBase {
 	MeshExtraData() = default;
 
 public:
+	/// Type of the stored data.
 	using Type = DataType;
 
 	/**

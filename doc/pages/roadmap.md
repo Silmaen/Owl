@@ -165,7 +165,7 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase D — configure without network or Doxygen, CMake clean-up (PR-26)
 - ![Done][done] Phase D — hot reload of assets, Slang shaders and Lua scripts ([Editor](editor.md#editor-hot-reload))
 - ![Done][done] Phase D — autosave, crash recovery, session restore, error messages, project templates
-- ![Planned][planned] Phase D — documentation faithful to the code and checked in CI
+- ![Done][done] Phase D — documentation faithful to the code, checked in CI, Doxygen checking the public API
 - ![Done][done] Phase C — Vulkan foundation first, as soon as the image tests land ([RHI](design/owl-rhi.md))
 - ![Done][done] Phase C — Owl RHI named, OpenGL frozen as fallback, backend interface ready for more
 - ![Done][done] Phase C — ABI cleanup, world per scene, phased systems, open component registry

@@ -23,7 +23,7 @@ namespace owl::renderer::gpu {
 struct AttachmentSpecification {
 	/// Format for the texture frame buffer.
 	enum struct Format : uint8_t {
-		None = 0,
+		None = 0,///< No format.
 		/// Colour.
 		Rgba8,
 		/// Single integer.
@@ -74,12 +74,30 @@ class OWL_API Framebuffer {
 public:
 	Framebuffer() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	Framebuffer(const Framebuffer&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	Framebuffer(Framebuffer&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const Framebuffer&) -> Framebuffer& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(Framebuffer&&) -> Framebuffer& = default;
 
 	/**

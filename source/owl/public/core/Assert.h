@@ -42,6 +42,8 @@
 		}                                                                                                              \
 	}
 #else
+/// Check a condition in client code; a debug engine build logs the message and breaks when it fails.
 #define OWL_ASSERT(x, ...)
+/// Check a condition in engine code; a debug engine build logs the message and breaks when it fails.
 #define OWL_CORE_ASSERT(x, ...)
 #endif

@@ -117,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `EntityLink` references its target by UUID (`linkedEntityId`), the name kept for display and as fallback: renaming the target keeps the link, and `duplicateSubtree` and prefab instantiation relink the copies to each other; scene and prefab formats move to version 2, whose migration binds the old name-only links.
 - `app::EngineContext`, owned by `Application` and reached from each scene, holds the screen transition, the game settings and the voxel mesh cache instead of static storage: `ScreenTransition` and `SettingsManager` are instances, `RendererVoxel` takes a `VoxelMeshCache`, and an isolated test creates its own context.
 - Documentation faithful to the code: renderer namespaces and vertex layout, editor ribbon paths, TeamCity DSL names, built-in settings, a Docker Quick Start, one contributor guide (`doc/pages/contributing.md`) and a security policy limited to the latest minor release.
+- Doxygen really checks the public API: `EXTRACT_ALL` no longer hides the undocumented elements, so the `documentation` target fails on any of them, and the ~650 that were missing (members, enum values, parameters) are documented.
 
 ### Deprecated
 
