@@ -162,8 +162,8 @@ OwlProject:
 
 When a project is opened, its directory is added as a high-priority asset directory, making its contents visible in the
 content browser. The editor window title reflects the active project name. Scenes can be imported into the project via
-the **Project >
-Import Scene** menu item.
+the **Scene > File > Import**
+ribbon button.
 
 ### Async Packaging Flow
 
@@ -349,8 +349,8 @@ key-value store for game configuration:
   on Linux, `%APPDATA%/<game>/` on Windows)
 
 Built-in keys (`resolution_width`, `resolution_height`, `fullscreen`, `resizable`,
-`volume_master`, `volume_music`, `volume_sfx`) are auto-applied to the Window and SoundCommand via
-`SettingsManager::applyBuiltins()`. Custom keys (e.g., `player_speed`)
+`volume_master`) are auto-applied to the Window and SoundCommand via `SettingsManager::applyBuiltins()`;
+`volume_music` and `volume_sfx` are stored for scripts only (no per-category mixing yet). Custom keys (e.g., `player_speed`)
 are stored and accessible from Lua but not automatically applied.
 
 See [Lua Scripting > settings](scripting.md) for the Lua API.

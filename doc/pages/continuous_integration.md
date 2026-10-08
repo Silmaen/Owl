@@ -99,9 +99,9 @@ intentional: gating CI behind a PR avoids burning CI minutes on
 work-in-progress branches.
 ## Templates
 Two templates carry the per-BT-shared configuration.
-### GlobalBuild (`_Self.buildTypes.GlobalBuild`)
-The canonical build-and-test template used by every BT in `Build/` (except
-Code Style) and every BT in `Packaging/`.
+### GlobalBuild (`globalBuild` in `common/Templates.kt`)
+The canonical build-and-test template used by every BT of the *Build* sub-project (except
+Code Style, which uses `toolBuild`) and every BT of *Packaging*.
 Pipeline (each step is a `ci_action.py` sub-action invoked through Docker
 except the first, which sets `docker_image` from the preset metadata):
 | Step                      | Condition                                                      |
@@ -341,7 +341,7 @@ multiple downstream BTs queue at the same time (e.g. three idle agents
 each grab a different BT), they each request a Code Style execution. To
 avoid running it three times in parallel:
 
-1. **`maxRunningBuilds = 1`** on `QualityCodeStyle` — TC caps concurrent
+1. **`maxRunningBuilds = 1`** on `codeStyle` (`quality/CodeStyle.kt`) — TC caps concurrent
    executions to one. Subsequent requests wait in the queue.
 2. **Default `reuseBuilds = ReuseBuilds.SUCCESSFUL`** on the snapshot
    dependency — once the running Code Style finishes successfully, the
@@ -522,7 +522,7 @@ processes (default: one per available core, from the scheduler affinity mask).
 
 ## Project parameters
 
-Set on the root project (`Project.kt`) and inherited by every BT:
+Set on the root project (`.teamcity/settings.kts`) and inherited by every BT:
 
 | Parameter                                      | Type  | Default             | Purpose                                                     |
 |------------------------------------------------|-------|---------------------|-------------------------------------------------------------|
@@ -545,7 +545,7 @@ everything that landed on it since the branch started. The Clang-Tidy step is
 the one that consumes them today — `isPullRequest`, `mergeBase` and
 `targetBranch`, see [Clang-tidy scoping](#clang-tidy-scoping).
 
-Template-level parameters live on `GlobalBuild` and `CodeStylingCheck`:
+Template-level parameters live on `globalBuild` and `toolBuild` (`common/Templates.kt`):
 preset name (`cmake_preset`), checkboxes (`run_tests`, `run_coverage`,
 `run_documentation`, `run_package`, `publish_doc`), Docker plumbing
 (`docker_image`, `docker_parameters`, `extra_tc_vars`). Most are
@@ -568,13 +568,13 @@ references them.
 Open `.teamcity/` in any Kotlin-aware IDE (IntelliJ IDEA picks up the
 `pom.xml` and offers full completion against the TeamCity DSL APIs).
 The file layout is described in [Project tree](#project-tree); every
-build configuration lives in either `Build/` or `Packaging/`. To add a
+build configuration lives in the *Build* or the *Packaging* sub-project. To add a
 new BT, follow one of the existing patterns:
 
-- **Cross-platform standard build**: extend `Build.kt`'s `StdVariant`
-  list, or call `stdPlatform(...)` for a brand-new platform.
-- **Quality / sanitizer-style one-off**: add to the `sanitizers` list
-  in `Build.kt`.
+- **Cross-platform standard build**: a `presetBuild(...)` (`common/Factories.kt`) in the platform's file
+  (`build/Linux.kt`, `build/Windows.kt`, `build/LinuxArm64.kt`), added to its `Project`.
+- **Quality / sanitizer-style one-off**: a `presetBuild(...)` in `quality/Sanitizers.kt`, added to the
+  `sanitizers` project.
 - **Packaging build**: in `packaging/Package.kt`, `publishBuild(...)` for a platform whose Clang build packages its
   release tree, `packageBuild(...)` for one that has none.
 

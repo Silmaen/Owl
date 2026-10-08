@@ -201,7 +201,7 @@ Behaviour in this first slice:
 - **Pin styling** — labels are rendered inside the node frame (`NodeCanvas::CustomDraw`); GraphEditor receives `nullptr`
   for slot names so nothing leaks outside the rect. Each pin can carry its own
   `NodePin::labelColor`. Pin labels are compact — just the source identifier with a single-glyph kind hint. Teleport
-  pins are white with the bare scene name (e.g. `LevelPortal`); Death pins are red and prefix the entity name with
+  pins are white with the bare scene name (e.g. `world_map`); Death pins are red and prefix the entity name with
   `[X]`; Victory pins are green with a `[*]` prefix; Lua transitions are blue with a `[l]` prefix followed by the script
   slug.
 - **Layered layout** — `refreshFromProject` runs a BFS from the project's first scene to assign each scene its column =

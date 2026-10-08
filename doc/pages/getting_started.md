@@ -39,7 +39,7 @@ desktop windows, which GLFW cannot place under Wayland). See [Building](building
 
 ## Shipping Your Game
 
-**File > Pack Game** exports the open project to a folder you can copy anywhere: the game executable, its
+**File > Package > Pack Game** exports the open project to a folder you can copy anywhere: the game executable, its
 shared libraries, one `.owlpack` holding every asset, `runner.yml` and a `launch.sh` on Linux. Start the game
 with `launch.sh` (Linux) or the `.exe` (Windows). Fix the validation warnings before shipping: a reference listed
 there is missing from the pack. Details in [editor.md](editor.md) and [Game export](design/game-export.md).
@@ -58,6 +58,6 @@ there is missing from the pack. Details in [editor.md](editor.md) and [Game expo
 ## Sample Project
 
 A complete demonstrator covering all major engine features lives in
-`sample_project/`. Open it from **File → Open Project** and play any scene to see
+`sample_project/`. Open it from **File → Project → Open** in the ribbon and play any scene to see
 how Lua scripts, UI, sound and triggers fit together. Treat the sample as both a
 showcase and a reference for your own projects.

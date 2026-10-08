@@ -513,7 +513,7 @@ To drive either object from a Lua script instead of the built-in key, set the co
 |---------------------------------------------------------------------|-------------------------------------------------------|
 | `source/owl/public/renderer/RendererRaycast.h`                      | Public static-facade API + payload structs            |
 | `source/owl/private/renderer/RendererRaycast.cpp`                   | Implementation: pose, DDA, stripes, dynamic-wall AABB |
-| `source/owl/private/renderer/RendererRaycastLayer.h/cpp`            | `RenderLayer` adapter + YAML config parsing           |
+| `source/owl/private/renderer/RendererRaycastLayer.h`                | `RenderLayer` adapter + YAML config parsing           |
 | `source/owl/public/scene/component/RaycastDoor.h`                   | Door component (open / hold / close cycle)            |
 | `source/owl/public/scene/component/RaycastPushWall.h`               | Pushwall component (one-shot slide)                   |
 | `source/owl/private/scene/component/RaycastDoor.cpp`                | Door YAML serialize / deserialize                     |

@@ -19,23 +19,22 @@ and GPU-managed texture slot allocation.
 
 ![Renderer Architecture](../images/renderer_architecture.svg)
 
-The renderer module is split into sub-namespaces / sub-folders by renderer
-kind: `owl::renderer::stack` (orchestration), `owl::renderer::renderer2d`
-(2D batch), `owl::renderer::rendererraycast` (raycaster). The base building
-blocks (`Camera`, `Texture`, `Shader`, `Buffer`, `Framebuffer`, `RenderAPI`,
-`RenderCommand`) stay in `owl::renderer` because they're shared by every
-renderer kind.
+Every renderer kind, the render stack and the base building blocks (`Camera`, `Texture`, `Shader`, `Buffer`,
+`Framebuffer`, `RenderAPI`, `RenderCommand`) live in the single `owl::renderer` namespace: the public facades in
+`source/owl/public/renderer/`, the layer adapters (`Renderer2DLayer`, `RendererRaycastLayer`, `RendererVoxelLayer`)
+in `source/owl/private/renderer/`. Only the GPU objects and their backends sit one level down, in
+`owl::renderer::gpu` (`gpu::opengl`, `gpu::vulkan`, `gpu::null`).
 
 | Class                                            | Role                                                                       |
 |--------------------------------------------------|----------------------------------------------------------------------------|
 | `Renderer`                                       | Lifecycle (init/shutdown/reset), owns `ShaderLibrary` and `TextureLibrary` |
-| `stack::RenderStack`                             | Ordered list of active `RenderLayer` instances for the current scene       |
-| `stack::RenderLayer`                             | Abstract interface for one renderer in the stack (begin/render/end)        |
-| `stack::RenderLayerFactory`                      | String-keyed registry of layer constructors (`"Renderer2D"`, ...)          |
-| `renderer2d::Renderer2D`                         | Static 2D batch renderer: quads, circles, lines, text                      |
-| `renderer2d::Renderer2DLayer`                    | `RenderLayer` adapter wrapping `Renderer2D` (registered at engine init)    |
-| `rendererraycast::RendererRaycast`               | Static facade for the CPU-DDA raycaster                                    |
-| `rendererraycast::RendererRaycastLayer`          | `RenderLayer` adapter for the raycaster (factory key `"RendererRaycast"`)  |
+| `RenderStack`                                    | Ordered list of active `RenderLayer` instances for the current scene       |
+| `RenderLayer`                                    | Abstract interface for one renderer in the stack (begin/render/end)        |
+| `RenderLayerFactory`                             | String-keyed registry of layer constructors (`"Renderer2D"`, ...)          |
+| `Renderer2D`                                     | Static 2D batch renderer: quads, circles, lines, text                      |
+| `Renderer2DLayer`                                | `RenderLayer` adapter wrapping `Renderer2D` (registered at engine init)    |
+| `RendererRaycast`                                | Static facade for the CPU-DDA raycaster                                    |
+| `RendererRaycastLayer`                           | `RenderLayer` adapter for the raycaster (factory key `"RendererRaycast"`)  |
 | `BackgroundRenderer`                             | Deferred fullscreen background/skybox rendering                            |
 | `RenderCommand`                                  | Static facade delegating to the active `RenderAPI`                         |
 | `RenderAPI`                                      | Owl RHI backend interface (Vulkan, OpenGL, Null)                           |
@@ -157,7 +156,7 @@ walks in reverse so layers can flush nested resources cleanly.
    (`onBeginFrame`, `onRender`, `onEndFrame`, `applyConfig`).
 2. Provide a `static void registerWithFactory()` that calls
    `RenderLayerFactory::registerType("MyType", ...)` exactly once.
-3. Invoke `MyLayer::registerWithFactory()` from `Renderer::initShaders` so the
+3. Invoke your layer's `registerWithFactory()` from `Renderer::initShaders` so the
    type is available before any project loads.
 4. Bump the project YAML to reference the new `Type: MyType` and any
    `DefaultConfig` keys your `applyConfig` consumes. `applyConfig` receives the
@@ -353,7 +352,7 @@ the headless suite asserts correctness (stats, SSBO round-trip), not timing.
 
 ## Raycaster {#renderer-raycaster}
 
-`RendererRaycast` (in `renderer/rendererraycast/`) is the first non-2D
+`RendererRaycast` (`renderer/RendererRaycast.h`) is the first non-2D
 renderer to ride on the stack. It synthesises a Wolfenstein-style first-person
 view from a top-down 2D `scene::component::Tilemap`: each non-empty cell is a
 wall, each empty cell is walkable space.
@@ -440,8 +439,9 @@ implements WASD strafing + Q/E turning following this convention.
 single directional light. It is the reusable base for `RendererVoxel` (and future static-mesh renderers); unlike
 `Renderer2D` (a unit quad + per-instance SSBO) it draws **real per-vertex geometry**.
 
-- **Vertex** (`renderer::Mesh3DVertex`, 36 bytes, tightly packed): object-space `position`, `normal`, `uv`, and a
-  `textureIndex` selecting a slot in the bound texture array.
+- **Vertex** (`renderer::Mesh3DVertex`, 56 bytes, tightly packed): object-space `position`, `normal`, `uv`, a
+  `textureIndex` selecting a slot in the bound texture array, and the `tileRect` atlas sub-rect and `ao` factor
+  read by the voxel shader only.
 - **Shader** (`engine_assets/shaders/renderer3D/slang/mesh3d.slang`): vertex transforms position by a per-draw model
   matrix then the per-frame view-projection (both `column_major`, supplied through one scene UBO at binding 0);
   fragment samples `gTextures[texIndex]` (binding 1) and applies `ambient + max(dot(N, -sunDir), 0)`. Outputs colour
@@ -677,8 +677,8 @@ front, mapping accented glyphs (`éàüÇ`…) to their atlas codepoint and subs
 
 ### Batching Internals
 
-Each draw primitive emits one `XxxInstance` struct into a CPU-side
-`std::vector`. At `flush()` the vector is uploaded to a per-batch
+Each draw primitive emits one instance struct (`QuadInstance`, `CircleInstance`, `LineInstance`,
+`TextInstance`) into a CPU-side `std::vector`. At `flush()` the vector is uploaded to a per-batch
 `StorageBuffer` and the renderer issues a single instanced drawcall —
 `glDrawElementsInstanced` / `vkCmdDrawIndexed` for quads / circles /
 text (shared 4-vertex unit quad VBO + `{0,1,2, 2,3,0}` index buffer)

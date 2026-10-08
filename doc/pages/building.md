@@ -6,17 +6,30 @@ This page explains how to configure, build, and test the Owl engine.
 
 ## Prerequisites
 
+### Build image
+
+The reference environment is the CI build image, driven by `docker/run.sh`: it runs any command in the image with
+your user, the repository mounted at its own path and a persistent home (Poetry venv, Conan cache, ccache) next to
+the checkout. Every command of this page works prefixed with it, which is how the project is developed:
+
+```bash
+docker/run.sh cmake --preset linux-clang-release -S .
+docker/run.sh cmake --build output/build/linux-clang-release
+```
+
 ### Software
 
-| Tool       | Version | Notes                                         |
-|------------|---------|-----------------------------------------------|
-| CMake      | 3.24+   | Build system generator                        |
-| Ninja      |         | Recommended build backend                     |
-| Clang      | 22+     | Or GCC 14+                                    |
-| Python     | 3.12+   | For CI tooling and Conan                      |
-| Poetry     |         | Python dependency manager                     |
-| Conan      | 2       | C++ dependency manager (installed via Poetry) |
-| Doxygen    | 1.9.1+  | Optional: API documentation (with Graphviz)   |
+To build without the image, install:
+
+| Tool    | Version | Notes                                                                  |
+|---------|---------|------------------------------------------------------------------------|
+| CMake   | 3.24+   | Build system generator                                                 |
+| Ninja   |         | Recommended build backend                                              |
+| Clang   | 22+     | Or GCC 14+ (tested versions; CMake warns below Clang 18 / GCC 13)      |
+| Python  | 3.12+   | For CI tooling and Conan                                               |
+| Poetry  |         | Python dependency manager                                              |
+| Conan   | 2       | C++ dependency manager (installed via Poetry)                          |
+| Doxygen | 1.9.1+  | Optional: API documentation (with Graphviz), `documentation` target    |
 
 Install Python dependencies:
 

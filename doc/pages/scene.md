@@ -692,7 +692,7 @@ Cross-scene teleportation uses a `TeleportRequest` on the Scene:
    stopped once the target loaded, so a missing or corrupted level logs an error and play goes on
 4. The next frame, the target scene starts runtime and applies the initial velocity to the player at the target entity position
 
-The `levelName` field accepts `test_level`, `test_level.owl`, or `scenes/test_level.owl` —
+The `levelName` field accepts `victory`, `victory.owl`, or `scenes/victory.owl` —
 the engine auto-appends `.owl` and searches asset directories including a `scenes/` subdirectory.
 
 ## Render Pipeline
