@@ -154,10 +154,11 @@ imported-configuration fallback.
       reload changes code, not bindings: a new binding needs a restart. See [Editor](../editor.md#editor-hot-reload)
 - ![Done][done] Autosave and crash recovery — periodic autosave of dirty documents, recovery offered at the next
   launch
-- ![Planned][planned] Session restore (persisted open tabs)
+- ![Done][done] Session restore (persisted open tabs)
     - Remember the list of open documents between launches (per project)
-    - Restore active tab, selection, and viewport layout
-    - Stored in `EditorSettings` or `owl_project.yml`
+    - Restore active tab and selection; the dock layout stays global (`imgui.ini`), a per-project layout waits for
+      the Nest UI revamp (phase E)
+    - Stored in `EditorSettings` (per user), not in `owl_project.yml` (shared through version control)
 - ![Done][done] Actionable error messages — load, script and pack errors name the file, the entity and the fix,
   in the editor log and the runner
 - ![Planned][planned] Project templates (empty 2D, raycast, voxel, mixed-style) in the new-project dialogue

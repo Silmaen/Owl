@@ -8,7 +8,13 @@
 
 #include "EditorLayer.h"
 
+#include "document/SceneFlowDocument.h"
+
+#include <cstddef>
+#include <cstdint>
 #include <filesystem>
+#include <tuple>
+#include <vector>
 
 namespace owl::nest {
 
@@ -101,6 +107,84 @@ auto EditorLayer::openDocumentForRecovery(const RecoveryEntry& iEntry) -> Docume
 			break;
 	}
 	return findDocument(iEntry.type, path);
+}
+
+void EditorLayer::saveProjectSession() {
+	if (!m_project.isLoaded())
+		return;
+	ProjectSession session;
+	const auto& dir = m_project.projectDirectory;
+	for (const auto& doc: m_documents.list()) {
+		if (!doc || doc->filePath().empty() || dynamic_cast<const SceneFlowDocument*>(doc.get()) != nullptr)
+			continue;
+		session.documents.push_back(ProjectSession::toStored(dir, doc->filePath()));
+	}
+	if (const auto* active = m_documents.getActive(); active != nullptr && !active->filePath().empty())
+		session.activeDocument = ProjectSession::toStored(dir, active->filePath());
+	if (const auto selected = getSelectedEntity(); activeSceneDocument() != nullptr && selected)
+		session.selectedEntity = static_cast<uint64_t>(selected.getUUID());
+	m_settings.setProjectSession(dir, session);
+}
+
+auto EditorLayer::restoreProjectSession() -> bool {
+	const auto session = m_settings.getProjectSession(m_project.projectDirectory);
+	if (!session || session->documents.empty())
+		return false;
+	const auto& dir = m_project.projectDirectory;
+	size_t restored = 0;
+	for (const auto& stored: session->documents) {
+		const auto path = ProjectSession::resolve(dir, stored);
+		if (!exists(path)) {
+			OWL_WARN("Session: '{}' no longer exists, its tab is not reopened.", stored)
+			continue;
+		}
+		const auto ext = path.extension().string();
+		if (ext == ".owl")
+			std::ignore = loadOrOpenSceneDocument(path);
+		else if (ext == ".owltilemap")
+			openTilemapFile(path);
+		else if (ext == ".owltileset")
+			openTilesetFile(path);
+		else if (ext == ".owlanim")
+			openAnimationFile(path);
+		else if (ext == ".owlflow")
+			openNodeGraphFile(path);
+		else
+			openCodeFile(path);
+		++restored;
+	}
+	if (restored == 0)
+		return false;
+	// Drop the blank tab the editor starts with, now that the session filled the strip.
+	std::vector<core::UUID> blanks;
+	for (const auto& doc: m_documents.list()) {
+		if (doc && doc->type() == DocumentType::Scene && doc->filePath().empty() && !doc->isDirty())
+			blanks.push_back(doc->id());
+	}
+	if (blanks.size() < m_documents.size()) {
+		for (const auto id: blanks) std::ignore = m_documents.remove(id);
+	}
+	Document* active = nullptr;
+	if (!session->activeDocument.empty()) {
+		const auto activePath = ProjectSession::resolve(dir, session->activeDocument);
+		for (const auto& doc: m_documents.list()) {
+			if (doc && doc->filePath() == activePath)
+				active = doc.get();
+		}
+	}
+	if (active == nullptr && !m_documents.empty())
+		active = m_documents.list().back().get();
+	m_documents.setActive(active);
+	if (active != nullptr)
+		active->requestFocus();
+	syncActiveDocumentPanels();
+	if (const auto* scene = activeSceneDocument(); scene != nullptr && session->selectedEntity != 0 &&
+												   scene->getEditorScene()) {
+		if (const auto entity = scene->getEditorScene()->findEntityByUUID(core::UUID{session->selectedEntity}); entity)
+			setSelectedEntity(entity);
+	}
+	OWL_INFO("Session: Reopened {} document(s) of project '{}'.", restored, m_project.name)
+	return true;
 }
 
 auto EditorLayer::findDocument(const DocumentType iType, const std::filesystem::path& iPath) const -> Document* {

@@ -797,6 +797,13 @@ OwlNest --export <project dir or owl_project.yml> <output dir>
 `--headless` uses the Null window, renderer and sound backends; `--smoke-test [frames]` plays every scene of the
 pack for that many frames and exits with code 1 if any error was logged. See [Game export](design/game-export.md).
 
+### Session restore
+
+Closing a project or quitting the editor records its session in `OwlNest_settings.yml`: the files of the open tabs
+(relative to the project), the active tab and the entity selected in the active scene. Opening the project again
+reopens them instead of `firstScene`; a file that no longer exists is skipped with a warning. Only the projects of
+the recent list keep a session. The dock layout is shared by all projects (`imgui.ini`).
+
 ### Autosave and crash recovery
 
 While a project is open, every modified document (scene, script or text file, tilemap, tileset, animation clip,
