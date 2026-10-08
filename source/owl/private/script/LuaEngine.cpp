@@ -153,11 +153,12 @@ public:
 		m_thread = std::jthread([this](const std::stop_token& iStop) -> void { run(iStop); });
 	}
 
-	~Watchdog() = default;
+	~Watchdog() = delete;
 
 	static auto instance() -> Watchdog& {
-		static Watchdog watchdog;
-		return watchdog;
+		// Never destroyed: at exit Windows kills the thread first, and joining it could wait forever.
+		static auto* watchdog = new Watchdog();// NOLINT(cppcoreguidelines-owning-memory) intentional leak.
+		return *watchdog;
 	}
 
 	void add(CallSlot* iSlot) {

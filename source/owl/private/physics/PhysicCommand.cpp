@@ -31,8 +31,14 @@ inline void logNotInitialized(const char* iFunc) {
 
 inline void logNullEntity(const char* iFunc) { OWL_CORE_WARN("Physic: {} called with null entity; ignoring.", iFunc) }
 
+auto solverPoolStorage() -> uniq<SolverTaskPool>& {
+	// Never destroyed: at exit Windows kills the workers first, and the executor would wait for them forever.
+	static auto* storage = new uniq<SolverTaskPool>();// NOLINT(cppcoreguidelines-owning-memory) intentional leak.
+	return *storage;
+}
+
 auto solverPool(const uint32_t iWorkerCount) -> SolverTaskPool* {
-	static uniq<SolverTaskPool> pool;
+	auto& pool = solverPoolStorage();
 	if (iWorkerCount <= 1)
 		return nullptr;
 	if (!pool || pool->getWorkerCount() != iWorkerCount)
@@ -399,6 +405,7 @@ void PhysicCommand::destroy() {
 	m_impl->worldId = {.index1 = 0, .generation = 0};
 	m_impl->bodies.clear();
 	m_impl.reset();
+	solverPoolStorage().reset();
 }
 
 void PhysicCommand::releaseScene(const scene::Scene* iScene) {
