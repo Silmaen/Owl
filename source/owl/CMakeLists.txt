@@ -208,6 +208,12 @@ install(TARGETS ${ENGINE_NAME}Gui
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
         DESTINATION assets
         COMPONENT Engine
+        # A bundle generated there by an older configure.
+        PATTERN "help" EXCLUDE
+)
+install(DIRECTORY ${${PROJECT_PREFIX}_HELP_DIR}/
+        DESTINATION assets/help
+        COMPONENT Engine
 )
 if (${PROJECT_PREFIX}_BUILD_NEST)
     install(TARGETS ${ENGINE_NAME}
@@ -230,6 +236,11 @@ if (${PROJECT_PREFIX}_BUILD_NEST)
     )
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
             DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/assets
+            COMPONENT Nest
+            PATTERN "help" EXCLUDE
+    )
+    install(DIRECTORY ${${PROJECT_PREFIX}_HELP_DIR}/
+            DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/assets/help
             COMPONENT Nest
     )
 endif ()

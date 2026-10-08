@@ -39,6 +39,8 @@ set_target_properties(${OWL_NEST_CORE} PROPERTIES FOLDER "App")
 target_include_directories(${OWL_NEST_CORE} PUBLIC sources)
 target_link_libraries(${OWL_NEST_CORE} PUBLIC Owl::Gui)
 target_compile_definitions(${OWL_NEST_CORE} PUBLIC OWL_ASSETS_LOCATION="source/owlnest/assets")
+# The help bundle of this build tree, used when no asset directory holds `help/` (a package installs it in assets/).
+target_compile_definitions(${OWL_NEST_CORE} PUBLIC OWL_HELP_BUILD_DIR="${${PROJECT_PREFIX}_HELP_DIR}")
 
 # ----==== third party ====----
 

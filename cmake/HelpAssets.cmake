@@ -6,11 +6,11 @@
 #
 # Bundles the Markdown documentation pages from `doc/pages/` plus the canonical
 # repository-root files (README, CONTRIBUTING) into
-# `engine_assets/help/`, generates an `index.yml` describing each page, and
+# `<build>/help/` (installed as `assets/help/`), generates an `index.yml` describing each page, and
 # scrubs Doxygen-specific syntax (`{#page-anchor}`, `[TOC]`) so the bundled
 # pages render cleanly in the in-editor `HelpPanel` (md4c-based renderer).
 #
-# Image references are normalised to point at `engine_assets/help/images/`:
+# Image references are normalised to point at `<build>/help/images/`:
 #  * `../images/foo.svg` (Doxygen INPUT convention) -> `images/foo.svg`
 #  * `engine_assets/<dir>/foo.png` (project-relative paths used in the README,
 #    such as `engine_assets/logo/logo_owl.png`) -> `images/foo.png`
@@ -94,7 +94,9 @@ function(_owl_help_extract_title IN_FILE OUT_VAR)
 endfunction()
 
 function(owl_bundle_help_assets)
-    set(HELP_DIR "${CMAKE_SOURCE_DIR}/engine_assets/help")
+    # In the build tree: the configure writes nothing in the sources (audit G-09).
+    set(HELP_DIR "${CMAKE_BINARY_DIR}/help")
+    set(${PROJECT_PREFIX}_HELP_DIR "${HELP_DIR}" PARENT_SCOPE)
     set(IMG_OUT_DIR "${HELP_DIR}/images")
     set(BADGE_CACHE_DIR "${IMG_OUT_DIR}/badges")
     file(MAKE_DIRECTORY "${HELP_DIR}")
@@ -163,7 +165,7 @@ function(owl_bundle_help_assets)
     # ---- Index ----
     # Each entry: id (basename without extension), title (first H1 line, scrubbed),
     # category (parent directory: "pages" → "guides", root → "reference"),
-    # path (file basename relative to engine_assets/help/).
+    # path (file basename relative to the help root).
     set(INDEX_CONTENT "Help:\n  Version: 1\n  Pages:\n")
     foreach (HELP_FILE IN LISTS OWL_HELP_PAGES OWL_HELP_ROOT_FILES)
         if (NOT EXISTS "${HELP_FILE}")

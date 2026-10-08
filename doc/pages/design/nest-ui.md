@@ -72,11 +72,11 @@ context menu or a viewport overlay dropdown. Reverts to the editor camera on dem
 - Today the md4c-based renderer treats ` ```mermaid ` fences as plain code blocks; the actual diagrams (used by
   `architecture.md`, `editor.md`, `node_graph.md`, `physics.md`, `renderer.md`, `scene.md`, `scripting.md`,
   `sound.md`) only render on GitHub / Doxygen
-- Build-time pre-render of mermaid blocks → SVG (or PNG) files in `engine_assets/help/images/mermaid/`, with the
+- Build-time pre-render of mermaid blocks → SVG (or PNG) files in the build tree's `help/images/mermaid/`, with the
   Markdown rewriter swapping each fence for an `![alt](images/mermaid/<sha>.svg)` reference. No runtime JS/Node
   dependency — pre-rendering can run with a packaged tool or a custom subset renderer in C++
 - Update `cmake/HelpAssets.cmake` to invoke the pre-renderer and surface the cache files
-- Tests: assert each bundled `engine_assets/help/*.md` no longer contains ` ```mermaid ` after the bundle step and
+- Tests: assert each bundled `help/*.md` no longer contains ` ```mermaid ` after the bundle step and
   that the rasterized diagram files exist
 
 ### Help-panel rendering polish (V2)

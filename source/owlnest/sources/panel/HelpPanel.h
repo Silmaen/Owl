@@ -22,7 +22,7 @@ namespace owl::nest::panel {
  *  Dockable in-editor help browser.
  *
  * Reads the bundled help index produced by `cmake/HelpAssets.cmake` (one
- * `engine_assets/help/index.yml` describing every page) and renders the
+ * `help/index.yml` describing every page) and renders the
  * selected `.md` page through `codeEditor::MarkdownPreview`.
  *
  * - `open()` shows the panel without changing the current page.
@@ -68,20 +68,21 @@ public:
 	 */
 	void onImGuiRender(const core::Timestep& iTimeStep);
 
+	/**
+	 * @brief
+	 *  Locate the help bundle: `help/` in an asset directory (`assets/help` of a package), else the bundle of the
+	 *  build tree (`OWL_HELP_BUILD_DIR`).
+	 * @return The help root, empty when none holds an `index.yml`.
+	 */
+	[[nodiscard]] static auto resolveHelpRoot() -> std::filesystem::path;
+
 private:
 	struct PageEntry {
 		std::string id;///< Basename without extension, used as canonical id.
 		std::string title;///< First H1 line of the page (Doxygen anchor stripped).
 		std::string category;///< "guides" or "reference".
-		std::string path;///< File name relative to engine_assets/help/.
+		std::string path;///< File name relative to the help root.
 	};
-
-	/**
-	 * @brief
-	 *  Locate engine_assets/help/ relative to the runtime CWD. Empty on failure.
-	 * @return The std filesystem path.
-	 */
-	[[nodiscard]] static auto resolveHelpRoot() -> std::filesystem::path;
 
 	/**
 	 * @brief

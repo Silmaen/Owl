@@ -875,7 +875,8 @@ maintained in `doc/pages/`. The bundle is produced by `cmake/HelpAssets.cmake`
 at configure time:
 
 - `doc/pages/*.md`, `doc/pages/design/*.md` (flattened) plus the root `README.md` and `CONTRIBUTING.md` are
-  copied into `engine_assets/help/`.
+  copied into `<build>/help/` (the configure writes nothing in the sources); both CPack components install it as
+  `assets/help/`. `panel::HelpPanel` looks for `help/` in the asset directories first, then in its build tree.
 - An `index.yml` describing every page (id, title, category, path) is generated
   alongside; `panel::HelpPanel` reads it on first open.
 
@@ -906,9 +907,10 @@ panel opens on the editor overview.
   via `platform::openExternalUrl` (Linux: `xdg-open`; Windows:
   `ShellExecuteW`). Other schemes are rejected and logged at warn level.
 - HTTPS images referenced from the markdown (e.g. shields.io badges in the
-  README) are downloaded once at configure time by `cmake/HelpAssets.cmake`,
-  cached under `engine_assets/help/images/badges/<sha1>.svg`, and rewritten in
-  the bundled markdown so the runtime renders them as ordinary local SVGs.
+  README) are cached under `<build>/help/images/badges/<sha1>.svg` and rewritten
+  in the bundled markdown so the runtime renders them as ordinary local SVGs; a
+  configure downloads the missing ones only with `OWL_HELP_FETCH_BADGES=ON`
+  (set by the packaged presets).
 
 To add a new page: create the `.md` under `doc/pages/`, start with the
 `# Title {#page-name}` / `[TOC]` header pair (Doxygen anchor), and re-run

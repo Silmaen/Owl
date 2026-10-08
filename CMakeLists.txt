@@ -52,12 +52,13 @@ endif ()
 #
 # ---=== Bundle help pages ===---
 # Copy the Markdown documentation pages from `doc/pages/` plus the canonical
-# README/CHANGELOG/CONTRIBUTING into `engine_assets/help/`, and generate a
-# small `index.yml` describing each page (id, title, category). The runtime
-# `HelpPanel` reads this directory; the existing `engine_assets/` install
-# rule embeds it into packaged builds automatically.
+# README/CONTRIBUTING into `<build>/help/`, and generate a small `index.yml`
+# describing each page (id, title, category). The runtime `HelpPanel` reads it
+# from the build tree, or from `assets/help/` where both CPack components
+# install it.
 include(HelpAssets)
 owl_bundle_help_assets()
+target_compile_definitions(${CMAKE_PROJECT_NAME}_BaseTest INTERFACE ${PROJECT_PREFIX}_HELP_BUILD_DIR="${${PROJECT_PREFIX}_HELP_DIR}")
 
 #
 # ---=== The Program ===---
