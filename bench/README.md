@@ -53,6 +53,9 @@ is measured again alone, and the faster of the two medians is kept; one still be
 build. Without a baseline the run only reports: commit the artifact of a nightly run as the baseline (or run the
 action with `-- --update-baseline` on the same agent), and refresh it when a change is deliberately slower or
 the agent changes.
+The configuration is pinned to the agent `linux-build-hephaistos` (8 cores): the committed baseline is the
+median of its 5 runs of 2026-10-08 (builds 34968 to 34988, listed in `context.baseline_runs`). Timings from
+another agent do not compare (artemis is 20 % faster but varies 10.7 % between runs, against 1.7 % here).
 
 ```bash
 docker/run.sh poetry run python ci_action.py Build linux-bench

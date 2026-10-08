@@ -1,0 +1,2131 @@
+{
+  "context": {
+    "load_start": "7.67 5.77 4.35 1/474 20",
+    "load_end": "2.74 3.25 3.59 1/459 1465",
+    "samples": 15,
+    "warmup": 2,
+    "min_sample_ms": 10,
+    "baseline_runs": [
+      "b34968-hephaistos.json",
+      "b34976-hephaistos.json",
+      "b34982-hephaistos.json",
+      "b34986-hephaistos.json",
+      "b34988-hephaistos.json"
+    ]
+  },
+  "results": [
+    {
+      "name": "scene/create_entities/1000",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 236070.0,
+      "p25_ns": 235127.0,
+      "p75_ns": 241727.0,
+      "min_ns": 233276.0,
+      "max_ns": 264496.0
+    },
+    {
+      "name": "scene/create_entities/10000",
+      "items": 10000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 2431517.0,
+      "p25_ns": 2421356.0,
+      "p75_ns": 2450095.5,
+      "min_ns": 2413429.0,
+      "max_ns": 2469932.0
+    },
+    {
+      "name": "scene/create_entities/100000",
+      "items": 100000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 29498870.0,
+      "p25_ns": 29341758.0,
+      "p75_ns": 29540286.5,
+      "min_ns": 29214747.0,
+      "max_ns": 29822523.0
+    },
+    {
+      "name": "scene/world_transform/chain1000_all",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 101245838.0,
+      "p25_ns": 101227714.0,
+      "p75_ns": 101258690.0,
+      "min_ns": 100755190.0,
+      "max_ns": 101645341.0
+    },
+    {
+      "name": "scene/prepare_world_transforms/chain1000",
+      "items": 1000,
+      "batch": 31,
+      "samples": 15,
+      "median_ns": 383263.0,
+      "p25_ns": 383046.7,
+      "p75_ns": 383944.5,
+      "min_ns": 382711.0,
+      "max_ns": 384619.3
+    },
+    {
+      "name": "scene/world_transform/chain1000_leaf",
+      "items": 1,
+      "batch": 60,
+      "samples": 15,
+      "median_ns": 199133.2,
+      "p25_ns": 199120.4,
+      "p75_ns": 199162.3,
+      "min_ns": 199061.0,
+      "max_ns": 199466.1
+    },
+    {
+      "name": "scene/world_transform/wide10000_all",
+      "items": 10000,
+      "batch": 3,
+      "samples": 15,
+      "median_ns": 4407519.7,
+      "p25_ns": 4406087.8,
+      "p75_ns": 4409126.0,
+      "min_ns": 4403396.7,
+      "max_ns": 4414154.7
+    },
+    {
+      "name": "scene/prepare_world_transforms/wide10000",
+      "items": 10000,
+      "batch": 3,
+      "samples": 15,
+      "median_ns": 3821231.7,
+      "p25_ns": 3815527.7,
+      "p75_ns": 3822407.2,
+      "min_ns": 3809078.7,
+      "max_ns": 3831964.0
+    },
+    {
+      "name": "scene/world_transform/flat10000_all",
+      "items": 10000,
+      "batch": 62,
+      "samples": 15,
+      "median_ns": 193744.8,
+      "p25_ns": 193699.7,
+      "p75_ns": 193947.9,
+      "min_ns": 193582.6,
+      "max_ns": 194362.0
+    },
+    {
+      "name": "scene/prepare_world_transforms/flat10000",
+      "items": 10000,
+      "batch": 4,
+      "samples": 15,
+      "median_ns": 3097821.8,
+      "p25_ns": 3095403.4,
+      "p75_ns": 3100117.6,
+      "min_ns": 3092653.2,
+      "max_ns": 3110777.5
+    },
+    {
+      "name": "scene/world_transform/forest10000_all",
+      "items": 10000,
+      "batch": 3,
+      "samples": 15,
+      "median_ns": 4428985.3,
+      "p25_ns": 4428740.5,
+      "p75_ns": 4430836.0,
+      "min_ns": 4427355.3,
+      "max_ns": 4438111.0
+    },
+    {
+      "name": "scene/prepare_world_transforms/forest10000",
+      "items": 10000,
+      "batch": 3,
+      "samples": 15,
+      "median_ns": 3882579.0,
+      "p25_ns": 3879913.5,
+      "p75_ns": 3885999.3,
+      "min_ns": 3877131.0,
+      "max_ns": 3891330.7
+    },
+    {
+      "name": "scene/set_parent/chain1000_build",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 102355020.0,
+      "p25_ns": 101749581.5,
+      "p75_ns": 102672142.5,
+      "min_ns": 101454809.0,
+      "max_ns": 103310058.0
+    },
+    {
+      "name": "scene/set_parent/wide10000_build",
+      "items": 10000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 6386804.0,
+      "p25_ns": 6383172.0,
+      "p75_ns": 6411249.5,
+      "min_ns": 6368645.0,
+      "max_ns": 6489331.0
+    },
+    {
+      "name": "scene/view_iterate/transform_sprite/1000",
+      "items": 1000,
+      "batch": 2326,
+      "samples": 15,
+      "median_ns": 4957.9,
+      "p25_ns": 4956.9,
+      "p75_ns": 4960.9,
+      "min_ns": 4954.9,
+      "max_ns": 4965.2
+    },
+    {
+      "name": "scene/find_entity_by_uuid/1000",
+      "items": 1000,
+      "batch": 349,
+      "samples": 15,
+      "median_ns": 33729.8,
+      "p25_ns": 33717.5,
+      "p75_ns": 33757.7,
+      "min_ns": 33686.2,
+      "max_ns": 33966.7
+    },
+    {
+      "name": "scene/copy/1000",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 593596.0,
+      "p25_ns": 590279.0,
+      "p75_ns": 597577.5,
+      "min_ns": 584097.0,
+      "max_ns": 605959.0
+    },
+    {
+      "name": "scene/view_iterate/transform_sprite/10000",
+      "items": 10000,
+      "batch": 221,
+      "samples": 15,
+      "median_ns": 53433.8,
+      "p25_ns": 53417.0,
+      "p75_ns": 53505.1,
+      "min_ns": 53391.8,
+      "max_ns": 53828.6
+    },
+    {
+      "name": "scene/find_entity_by_uuid/10000",
+      "items": 10000,
+      "batch": 26,
+      "samples": 15,
+      "median_ns": 452365.8,
+      "p25_ns": 452031.4,
+      "p75_ns": 452604.9,
+      "min_ns": 451554.5,
+      "max_ns": 456003.0
+    },
+    {
+      "name": "scene/copy/10000",
+      "items": 10000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 6743349.0,
+      "p25_ns": 6732210.0,
+      "p75_ns": 6757321.5,
+      "min_ns": 6715761.0,
+      "max_ns": 6791611.0
+    },
+    {
+      "name": "scene/view_iterate/transform_sprite/100000",
+      "items": 100000,
+      "batch": 15,
+      "samples": 15,
+      "median_ns": 734572.7,
+      "p25_ns": 733697.3,
+      "p75_ns": 735992.8,
+      "min_ns": 732742.8,
+      "max_ns": 746688.1
+    },
+    {
+      "name": "scene/find_entity_by_uuid/100000",
+      "items": 100000,
+      "batch": 2,
+      "samples": 15,
+      "median_ns": 5302489.0,
+      "p25_ns": 5299922.5,
+      "p75_ns": 5307500.5,
+      "min_ns": 5295435.5,
+      "max_ns": 5319007.0
+    },
+    {
+      "name": "serialize/scene_to_string/1000",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 57845818.0,
+      "p25_ns": 57834714.0,
+      "p75_ns": 57860206.5,
+      "min_ns": 57800421.0,
+      "max_ns": 57955608.0
+    },
+    {
+      "name": "serialize/scene_from_string/1000",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 210007089.0,
+      "p25_ns": 209690909.5,
+      "p75_ns": 210333954.5,
+      "min_ns": 209027004.0,
+      "max_ns": 211923019.0
+    },
+    {
+      "name": "serialize/scene_parse_only/1000",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 97816477.0,
+      "p25_ns": 97722923.0,
+      "p75_ns": 97871619.0,
+      "min_ns": 97605062.0,
+      "max_ns": 98038999.0
+    },
+    {
+      "name": "serialize/scene_to_string/10000",
+      "items": 10000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 582169186.0,
+      "p25_ns": 582009395.0,
+      "p75_ns": 582404357.5,
+      "min_ns": 581515881.0,
+      "max_ns": 582911803.0
+    },
+    {
+      "name": "serialize/scene_from_string/10000",
+      "items": 10000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 2154040905.0,
+      "p25_ns": 2151848215.5,
+      "p75_ns": 2158364229.5,
+      "min_ns": 2148929577.0,
+      "max_ns": 2194603618.0
+    },
+    {
+      "name": "serialize/scene_parse_only/10000",
+      "items": 10000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 1003621897.0,
+      "p25_ns": 1002794012.5,
+      "p75_ns": 1004202294.0,
+      "min_ns": 1001554058.0,
+      "max_ns": 1005687514.0
+    },
+    {
+      "name": "serialize/entity_to_string/scene1",
+      "items": 1,
+      "batch": 241,
+      "samples": 15,
+      "median_ns": 49590.6,
+      "p25_ns": 49558.7,
+      "p75_ns": 49695.5,
+      "min_ns": 49462.5,
+      "max_ns": 49805.9
+    },
+    {
+      "name": "serialize/entity_from_string/scene1",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 190322.0,
+      "p25_ns": 189240.0,
+      "p75_ns": 191789.0,
+      "min_ns": 188576.0,
+      "max_ns": 203313.0
+    },
+    {
+      "name": "serialize/entity_to_string/scene10000",
+      "items": 1,
+      "batch": 237,
+      "samples": 15,
+      "median_ns": 50709.7,
+      "p25_ns": 50697.1,
+      "p75_ns": 50737.3,
+      "min_ns": 50667.3,
+      "max_ns": 50888.7
+    },
+    {
+      "name": "serialize/entity_from_string/scene10000",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 269455.0,
+      "p25_ns": 268372.0,
+      "p75_ns": 274972.5,
+      "min_ns": 266242.0,
+      "max_ns": 280979.0
+    },
+    {
+      "name": "prefab/instantiate/10_entities/scene0",
+      "items": 10,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 4436924.0,
+      "p25_ns": 4432209.5,
+      "p75_ns": 4447924.0,
+      "min_ns": 4421139.0,
+      "max_ns": 4452429.0
+    },
+    {
+      "name": "prefab/instantiate/10_entities/scene10000",
+      "items": 10,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 7238750.0,
+      "p25_ns": 7217727.5,
+      "p75_ns": 7263474.5,
+      "min_ns": 7176520.0,
+      "max_ns": 7302028.0
+    },
+    {
+      "name": "prefab/instantiate/100_entities/scene0",
+      "items": 100,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 43417274.0,
+      "p25_ns": 43390665.0,
+      "p75_ns": 43459425.0,
+      "min_ns": 43326758.0,
+      "max_ns": 43677140.0
+    },
+    {
+      "name": "prefab/instantiate/100_entities/scene10000",
+      "items": 100,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 46445580.0,
+      "p25_ns": 46393780.0,
+      "p75_ns": 46493247.5,
+      "min_ns": 46330199.0,
+      "max_ns": 46963140.0
+    },
+    {
+      "name": "renderer2d/transform_to_matrix/1000",
+      "items": 1000,
+      "batch": 95,
+      "samples": 15,
+      "median_ns": 125164.6,
+      "p25_ns": 125153.3,
+      "p75_ns": 125170.4,
+      "min_ns": 124898.6,
+      "max_ns": 125321.3
+    },
+    {
+      "name": "renderer2d/quads_color/1000",
+      "items": 1000,
+      "batch": 76,
+      "samples": 15,
+      "median_ns": 154858.7,
+      "p25_ns": 154802.2,
+      "p75_ns": 154873.9,
+      "min_ns": 154715.4,
+      "max_ns": 155056.3
+    },
+    {
+      "name": "renderer2d/quads_world_index/1000",
+      "items": 1000,
+      "batch": 674,
+      "samples": 15,
+      "median_ns": 17899.3,
+      "p25_ns": 17888.1,
+      "p75_ns": 17904.2,
+      "min_ns": 17878.3,
+      "max_ns": 17934.5
+    },
+    {
+      "name": "renderer2d/quads_16_textures/1000",
+      "items": 1000,
+      "batch": 69,
+      "samples": 15,
+      "median_ns": 167629.4,
+      "p25_ns": 167603.3,
+      "p75_ns": 167655.5,
+      "min_ns": 167453.3,
+      "max_ns": 167788.7
+    },
+    {
+      "name": "renderer2d/circles/1000",
+      "items": 1000,
+      "batch": 80,
+      "samples": 15,
+      "median_ns": 150966.8,
+      "p25_ns": 150944.9,
+      "p75_ns": 150976.6,
+      "min_ns": 150858.4,
+      "max_ns": 151060.8
+    },
+    {
+      "name": "renderer2d/transform_to_matrix/10000",
+      "items": 10000,
+      "batch": 9,
+      "samples": 15,
+      "median_ns": 1252177.8,
+      "p25_ns": 1250591.5,
+      "p75_ns": 1252488.2,
+      "min_ns": 1249602.1,
+      "max_ns": 1253861.9
+    },
+    {
+      "name": "renderer2d/quads_color/10000",
+      "items": 10000,
+      "batch": 7,
+      "samples": 15,
+      "median_ns": 1572018.9,
+      "p25_ns": 1571679.6,
+      "p75_ns": 1572048.9,
+      "min_ns": 1571131.0,
+      "max_ns": 1574243.9
+    },
+    {
+      "name": "renderer2d/quads_world_index/10000",
+      "items": 10000,
+      "batch": 58,
+      "samples": 15,
+      "median_ns": 206734.4,
+      "p25_ns": 206714.2,
+      "p75_ns": 206870.4,
+      "min_ns": 206459.9,
+      "max_ns": 206979.5
+    },
+    {
+      "name": "renderer2d/quads_16_textures/10000",
+      "items": 10000,
+      "batch": 6,
+      "samples": 15,
+      "median_ns": 1698933.8,
+      "p25_ns": 1698602.1,
+      "p75_ns": 1699603.1,
+      "min_ns": 1697432.2,
+      "max_ns": 1700086.2
+    },
+    {
+      "name": "renderer2d/circles/10000",
+      "items": 10000,
+      "batch": 7,
+      "samples": 15,
+      "median_ns": 1535510.9,
+      "p25_ns": 1535211.6,
+      "p75_ns": 1535795.2,
+      "min_ns": 1535052.0,
+      "max_ns": 1536508.7
+    },
+    {
+      "name": "renderer2d/transform_to_matrix/100000",
+      "items": 100000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 12528033.0,
+      "p25_ns": 12520594.5,
+      "p75_ns": 12533690.0,
+      "min_ns": 12443669.0,
+      "max_ns": 12541443.0
+    },
+    {
+      "name": "renderer2d/quads_color/100000",
+      "items": 100000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 15719381.0,
+      "p25_ns": 15715260.5,
+      "p75_ns": 15721930.5,
+      "min_ns": 15710511.0,
+      "max_ns": 15760798.0
+    },
+    {
+      "name": "renderer2d/quads_world_index/100000",
+      "items": 100000,
+      "batch": 5,
+      "samples": 15,
+      "median_ns": 2521389.0,
+      "p25_ns": 2519127.8,
+      "p75_ns": 2523824.8,
+      "min_ns": 2517233.2,
+      "max_ns": 2525055.8
+    },
+    {
+      "name": "renderer2d/quads_16_textures/100000",
+      "items": 100000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 16977954.0,
+      "p25_ns": 16974008.0,
+      "p75_ns": 16981341.5,
+      "min_ns": 16968805.0,
+      "max_ns": 17239238.0
+    },
+    {
+      "name": "renderer2d/circles/100000",
+      "items": 100000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 15364229.0,
+      "p25_ns": 15361225.5,
+      "p75_ns": 15402782.0,
+      "min_ns": 15353473.0,
+      "max_ns": 15444548.0
+    },
+    {
+      "name": "renderer2d/text/100_strings_54_chars",
+      "items": 5400,
+      "batch": 5,
+      "samples": 15,
+      "median_ns": 2000851.8,
+      "p25_ns": 2000488.5,
+      "p75_ns": 2001075.2,
+      "min_ns": 1999524.6,
+      "max_ns": 2009638.0
+    },
+    {
+      "name": "frame/editor_update/flat1000",
+      "items": 1000,
+      "batch": 23,
+      "samples": 15,
+      "median_ns": 516957.5,
+      "p25_ns": 516681.2,
+      "p75_ns": 517845.5,
+      "min_ns": 516277.0,
+      "max_ns": 517980.6
+    },
+    {
+      "name": "frame/editor_update/flat10000",
+      "items": 10000,
+      "batch": 2,
+      "samples": 15,
+      "median_ns": 5085277.5,
+      "p25_ns": 5083880.2,
+      "p75_ns": 5085801.2,
+      "min_ns": 5082623.0,
+      "max_ns": 5087582.0
+    },
+    {
+      "name": "frame/editor_update/forest10000",
+      "items": 10000,
+      "batch": 2,
+      "samples": 15,
+      "median_ns": 6458079.0,
+      "p25_ns": 6456018.2,
+      "p75_ns": 6459633.2,
+      "min_ns": 6453818.0,
+      "max_ns": 6510985.0
+    },
+    {
+      "name": "frame/editor_update/chain1000",
+      "items": 1000,
+      "batch": 18,
+      "samples": 15,
+      "median_ns": 638195.4,
+      "p25_ns": 638069.3,
+      "p75_ns": 638627.7,
+      "min_ns": 637919.9,
+      "max_ns": 639363.3
+    },
+    {
+      "name": "frame/runtime_update/logic_flat1000",
+      "items": 1000,
+      "batch": 30,
+      "samples": 15,
+      "median_ns": 391196.0,
+      "p25_ns": 391019.0,
+      "p75_ns": 391233.2,
+      "min_ns": 390814.2,
+      "max_ns": 391910.7
+    },
+    {
+      "name": "frame/runtime_update/render_flat1000",
+      "items": 1000,
+      "batch": 22,
+      "samples": 15,
+      "median_ns": 529893.4,
+      "p25_ns": 529620.4,
+      "p75_ns": 529980.7,
+      "min_ns": 529445.8,
+      "max_ns": 531775.7
+    },
+    {
+      "name": "frame/runtime_update/logic_flat10000",
+      "items": 10000,
+      "batch": 3,
+      "samples": 15,
+      "median_ns": 3807474.3,
+      "p25_ns": 3806287.2,
+      "p75_ns": 3808941.2,
+      "min_ns": 3804983.3,
+      "max_ns": 3815599.7
+    },
+    {
+      "name": "frame/runtime_update/render_flat10000",
+      "items": 10000,
+      "batch": 2,
+      "samples": 15,
+      "median_ns": 5169404.0,
+      "p25_ns": 5166121.0,
+      "p75_ns": 5173227.5,
+      "min_ns": 5163676.5,
+      "max_ns": 5189763.0
+    },
+    {
+      "name": "voxel/generate_chunk/surface",
+      "items": 4096,
+      "batch": 169,
+      "samples": 15,
+      "median_ns": 70644.5,
+      "p25_ns": 70628.3,
+      "p75_ns": 70680.8,
+      "min_ns": 70610.6,
+      "max_ns": 70813.5
+    },
+    {
+      "name": "voxel/generate_chunk/underground",
+      "items": 4096,
+      "batch": 61,
+      "samples": 15,
+      "median_ns": 195603.1,
+      "p25_ns": 195569.3,
+      "p75_ns": 195644.9,
+      "min_ns": 195364.8,
+      "max_ns": 195788.6
+    },
+    {
+      "name": "voxel/generate_chunk/sky",
+      "items": 4096,
+      "batch": 486,
+      "samples": 15,
+      "median_ns": 24701.4,
+      "p25_ns": 24699.7,
+      "p75_ns": 24705.1,
+      "min_ns": 24691.6,
+      "max_ns": 24718.4
+    },
+    {
+      "name": "voxel/mesh_by_kind/full/no_ao",
+      "items": 1,
+      "batch": 17,
+      "samples": 15,
+      "median_ns": 683554.6,
+      "p25_ns": 683359.4,
+      "p75_ns": 683618.3,
+      "min_ns": 683184.8,
+      "max_ns": 684811.8
+    },
+    {
+      "name": "voxel/mesh_by_kind/full/ao",
+      "items": 1,
+      "batch": 15,
+      "samples": 15,
+      "median_ns": 783486.2,
+      "p25_ns": 783332.4,
+      "p75_ns": 783837.6,
+      "min_ns": 782890.1,
+      "max_ns": 787043.5
+    },
+    {
+      "name": "voxel/encode_rle/full",
+      "items": 1,
+      "batch": 2598,
+      "samples": 15,
+      "median_ns": 4620.7,
+      "p25_ns": 4620.3,
+      "p75_ns": 4621.9,
+      "min_ns": 4619.6,
+      "max_ns": 4634.9
+    },
+    {
+      "name": "voxel/mesh_by_kind/random50/no_ao",
+      "items": 1,
+      "batch": 9,
+      "samples": 15,
+      "median_ns": 1237503.7,
+      "p25_ns": 1237371.7,
+      "p75_ns": 1237965.4,
+      "min_ns": 1236897.7,
+      "max_ns": 1242081.7
+    },
+    {
+      "name": "voxel/mesh_by_kind/random50/ao",
+      "items": 1,
+      "batch": 5,
+      "samples": 15,
+      "median_ns": 2042101.0,
+      "p25_ns": 2041612.1,
+      "p75_ns": 2043337.2,
+      "min_ns": 2038092.0,
+      "max_ns": 2045188.0
+    },
+    {
+      "name": "voxel/encode_rle/random50",
+      "items": 1,
+      "batch": 187,
+      "samples": 15,
+      "median_ns": 63923.1,
+      "p25_ns": 63886.5,
+      "p75_ns": 63939.5,
+      "min_ns": 63765.3,
+      "max_ns": 63975.9
+    },
+    {
+      "name": "voxel/mesh_by_kind/checkerboard/no_ao",
+      "items": 1,
+      "batch": 7,
+      "samples": 15,
+      "median_ns": 1625188.6,
+      "p25_ns": 1624779.5,
+      "p75_ns": 1625966.9,
+      "min_ns": 1621547.7,
+      "max_ns": 1628521.3
+    },
+    {
+      "name": "voxel/mesh_by_kind/checkerboard/ao",
+      "items": 1,
+      "batch": 4,
+      "samples": 15,
+      "median_ns": 2728142.0,
+      "p25_ns": 2726195.0,
+      "p75_ns": 2729844.5,
+      "min_ns": 2718746.8,
+      "max_ns": 2734689.8
+    },
+    {
+      "name": "voxel/encode_rle/checkerboard",
+      "items": 1,
+      "batch": 100,
+      "samples": 15,
+      "median_ns": 102116.2,
+      "p25_ns": 102065.9,
+      "p75_ns": 102134.7,
+      "min_ns": 101973.0,
+      "max_ns": 102262.9
+    },
+    {
+      "name": "voxel/mesh_by_kind/terrain_surface/no_ao",
+      "items": 1,
+      "batch": 25,
+      "samples": 15,
+      "median_ns": 474575.6,
+      "p25_ns": 474424.8,
+      "p75_ns": 474952.8,
+      "min_ns": 474271.1,
+      "max_ns": 476100.7
+    },
+    {
+      "name": "voxel/mesh_by_kind/terrain_surface/ao",
+      "items": 1,
+      "batch": 20,
+      "samples": 15,
+      "median_ns": 576261.6,
+      "p25_ns": 576141.1,
+      "p75_ns": 576560.2,
+      "min_ns": 575877.4,
+      "max_ns": 577658.5
+    },
+    {
+      "name": "voxel/encode_rle/terrain_surface",
+      "items": 1,
+      "batch": 914,
+      "samples": 15,
+      "median_ns": 12912.7,
+      "p25_ns": 12901.9,
+      "p75_ns": 12921.6,
+      "min_ns": 12893.8,
+      "max_ns": 12937.2
+    },
+    {
+      "name": "voxel/mesh_by_kind/terrain_underground/no_ao",
+      "items": 1,
+      "batch": 17,
+      "samples": 15,
+      "median_ns": 683608.0,
+      "p25_ns": 683384.1,
+      "p75_ns": 683753.9,
+      "min_ns": 683230.0,
+      "max_ns": 684943.2
+    },
+    {
+      "name": "voxel/mesh_by_kind/terrain_underground/ao",
+      "items": 1,
+      "batch": 15,
+      "samples": 15,
+      "median_ns": 783602.6,
+      "p25_ns": 783544.3,
+      "p75_ns": 783837.7,
+      "min_ns": 782992.6,
+      "max_ns": 784803.9
+    },
+    {
+      "name": "voxel/encode_rle/terrain_underground",
+      "items": 1,
+      "batch": 2597,
+      "samples": 15,
+      "median_ns": 4620.4,
+      "p25_ns": 4620.2,
+      "p75_ns": 4621.2,
+      "min_ns": 4619.5,
+      "max_ns": 4623.2
+    },
+    {
+      "name": "voxel/scene_copy/45chunks",
+      "items": 45,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 70541.0,
+      "p25_ns": 70332.5,
+      "p75_ns": 71135.0,
+      "min_ns": 70122.0,
+      "max_ns": 79830.0
+    },
+    {
+      "name": "voxel/scene_copy/405chunks",
+      "items": 405,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 1100238.0,
+      "p25_ns": 1098876.5,
+      "p75_ns": 1106804.0,
+      "min_ns": 1094651.0,
+      "max_ns": 1124893.0
+    },
+    {
+      "name": "script/create_instance/empty_script",
+      "items": 1,
+      "batch": 39,
+      "samples": 15,
+      "median_ns": 115262.6,
+      "p25_ns": 99549.4,
+      "p75_ns": 141847.1,
+      "min_ns": 91526.9,
+      "max_ns": 205585.9
+    },
+    {
+      "name": "script/on_update/empty/1_instance",
+      "items": 1,
+      "batch": 85898,
+      "samples": 15,
+      "median_ns": 137.5,
+      "p25_ns": 137.4,
+      "p75_ns": 137.5,
+      "min_ns": 137.4,
+      "max_ns": 137.8
+    },
+    {
+      "name": "script/on_update/empty/1_instance_no_quota",
+      "items": 1,
+      "batch": 85752,
+      "samples": 15,
+      "median_ns": 137.9,
+      "p25_ns": 137.9,
+      "p75_ns": 138.0,
+      "min_ns": 137.8,
+      "max_ns": 138.6
+    },
+    {
+      "name": "script/on_update/empty/1000_instances",
+      "items": 1000,
+      "batch": 46,
+      "samples": 15,
+      "median_ns": 257733.1,
+      "p25_ns": 257575.2,
+      "p75_ns": 257857.8,
+      "min_ns": 255162.6,
+      "max_ns": 257935.2
+    },
+    {
+      "name": "script/on_update/get_set_position/1_instance",
+      "items": 1,
+      "batch": 29437,
+      "samples": 15,
+      "median_ns": 408.5,
+      "p25_ns": 408.5,
+      "p75_ns": 408.8,
+      "min_ns": 408.4,
+      "max_ns": 409.1
+    },
+    {
+      "name": "script/on_update/get_set_position/1_instance_no_quota",
+      "items": 1,
+      "batch": 29166,
+      "samples": 15,
+      "median_ns": 405.3,
+      "p25_ns": 404.9,
+      "p75_ns": 405.4,
+      "min_ns": 404.1,
+      "max_ns": 405.6
+    },
+    {
+      "name": "script/on_update/get_set_position/1000_instances",
+      "items": 1000,
+      "batch": 19,
+      "samples": 15,
+      "median_ns": 600716.9,
+      "p25_ns": 600323.7,
+      "p75_ns": 616878.3,
+      "min_ns": 600059.0,
+      "max_ns": 618618.9
+    },
+    {
+      "name": "script/on_update/arith_100/1_instance",
+      "items": 1,
+      "batch": 9248,
+      "samples": 15,
+      "median_ns": 1264.1,
+      "p25_ns": 1260.0,
+      "p75_ns": 1271.0,
+      "min_ns": 1252.2,
+      "max_ns": 1280.9
+    },
+    {
+      "name": "script/on_update/arith_100/1_instance_no_quota",
+      "items": 1,
+      "batch": 9396,
+      "samples": 15,
+      "median_ns": 1261.5,
+      "p25_ns": 1252.6,
+      "p75_ns": 1266.3,
+      "min_ns": 1245.9,
+      "max_ns": 1274.0
+    },
+    {
+      "name": "script/on_update/arith_100/1000_instances",
+      "items": 1000,
+      "batch": 8,
+      "samples": 15,
+      "median_ns": 1428073.5,
+      "p25_ns": 1426432.2,
+      "p75_ns": 1429225.9,
+      "min_ns": 1423097.1,
+      "max_ns": 1433381.6
+    },
+    {
+      "name": "physics/frame_empty/60hz",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 489531.0,
+      "p25_ns": 488588.0,
+      "p75_ns": 495013.0,
+      "min_ns": 488203.0,
+      "max_ns": 508318.0
+    },
+    {
+      "name": "physics/frame_empty/144hz",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 197237.0,
+      "p25_ns": 197027.5,
+      "p75_ns": 197551.5,
+      "min_ns": 196887.0,
+      "max_ns": 204990.0
+    },
+    {
+      "name": "physics/init/100_bodies",
+      "items": 100,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 104834.0,
+      "p25_ns": 103857.0,
+      "p75_ns": 107733.0,
+      "min_ns": 102809.0,
+      "max_ns": 122924.0
+    },
+    {
+      "name": "physics/step_falling/100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 4525765.0,
+      "p25_ns": 4523145.5,
+      "p75_ns": 4547415.5,
+      "min_ns": 4513472.0,
+      "max_ns": 4563689.0
+    },
+    {
+      "name": "physics/step_settled/100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 763665.0,
+      "p25_ns": 762826.5,
+      "p75_ns": 766144.5,
+      "min_ns": 758566.0,
+      "max_ns": 786992.0
+    },
+    {
+      "name": "physics/step_falling_mt2/100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 5976403.0,
+      "p25_ns": 5963202.5,
+      "p75_ns": 6002457.0,
+      "min_ns": 5940996.0,
+      "max_ns": 6121121.0
+    },
+    {
+      "name": "physics/step_settled_mt2/100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 1005880.0,
+      "p25_ns": 992924.5,
+      "p75_ns": 1020931.5,
+      "min_ns": 956501.0,
+      "max_ns": 1310606.0
+    },
+    {
+      "name": "physics/step_falling_mt4/100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 7457918.0,
+      "p25_ns": 7079574.0,
+      "p75_ns": 7716058.0,
+      "min_ns": 6604993.0,
+      "max_ns": 8561016.0
+    },
+    {
+      "name": "physics/step_settled_mt4/100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 1069089.0,
+      "p25_ns": 1058158.0,
+      "p75_ns": 1096153.0,
+      "min_ns": 1013913.0,
+      "max_ns": 1402869.0
+    },
+    {
+      "name": "physics/step_falling_mt8/100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 7252649.0,
+      "p25_ns": 7203165.5,
+      "p75_ns": 7281459.0,
+      "min_ns": 7108280.0,
+      "max_ns": 7344349.0
+    },
+    {
+      "name": "physics/step_settled_mt8/100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 984159.0,
+      "p25_ns": 970644.5,
+      "p75_ns": 1078098.5,
+      "min_ns": 959365.0,
+      "max_ns": 1257665.0
+    },
+    {
+      "name": "physics/init/1000_bodies",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 1101426.0,
+      "p25_ns": 1097863.5,
+      "p75_ns": 1106769.0,
+      "min_ns": 1090810.0,
+      "max_ns": 1115954.0
+    },
+    {
+      "name": "physics/step_falling/1000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 28249795.0,
+      "p25_ns": 28234429.0,
+      "p75_ns": 28295353.0,
+      "min_ns": 28207469.0,
+      "max_ns": 28554171.0
+    },
+    {
+      "name": "physics/step_settled/1000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 3427202.0,
+      "p25_ns": 3409950.5,
+      "p75_ns": 3444068.5,
+      "min_ns": 3399823.0,
+      "max_ns": 3464916.0
+    },
+    {
+      "name": "physics/step_falling_mt2/1000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 43878938.0,
+      "p25_ns": 42937349.0,
+      "p75_ns": 44635584.0,
+      "min_ns": 38986967.0,
+      "max_ns": 47862721.0
+    },
+    {
+      "name": "physics/step_settled_mt2/1000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 8456112.0,
+      "p25_ns": 8078994.0,
+      "p75_ns": 8632361.0,
+      "min_ns": 7189507.0,
+      "max_ns": 8794156.0
+    },
+    {
+      "name": "physics/step_falling_mt4/1000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 35308911.0,
+      "p25_ns": 32773640.0,
+      "p75_ns": 36282803.0,
+      "min_ns": 28986290.0,
+      "max_ns": 38562531.0
+    },
+    {
+      "name": "physics/step_settled_mt4/1000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 7237353.0,
+      "p25_ns": 6652941.0,
+      "p75_ns": 7705232.5,
+      "min_ns": 5927865.0,
+      "max_ns": 8312448.0
+    },
+    {
+      "name": "physics/step_falling_mt8/1000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 20526672.0,
+      "p25_ns": 20397811.5,
+      "p75_ns": 20642727.0,
+      "min_ns": 20084855.0,
+      "max_ns": 21143607.0
+    },
+    {
+      "name": "physics/step_settled_mt8/1000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 3762239.0,
+      "p25_ns": 3725851.5,
+      "p75_ns": 4278415.0,
+      "min_ns": 3682269.0,
+      "max_ns": 4726214.0
+    },
+    {
+      "name": "physics/init/5000_bodies",
+      "items": 5000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 6267372.0,
+      "p25_ns": 6212405.5,
+      "p75_ns": 6298068.5,
+      "min_ns": 6175528.0,
+      "max_ns": 6407198.0
+    },
+    {
+      "name": "physics/step_falling/5000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 116565301.0,
+      "p25_ns": 116529331.5,
+      "p75_ns": 116685186.5,
+      "min_ns": 116324552.0,
+      "max_ns": 117353970.0
+    },
+    {
+      "name": "physics/step_settled/5000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 554266805.0,
+      "p25_ns": 554001620.5,
+      "p75_ns": 554526866.0,
+      "min_ns": 553285589.0,
+      "max_ns": 555740295.0
+    },
+    {
+      "name": "physics/step_falling_mt2/5000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 239332050.0,
+      "p25_ns": 238552189.0,
+      "p75_ns": 240567860.5,
+      "min_ns": 236992523.0,
+      "max_ns": 243888677.0
+    },
+    {
+      "name": "physics/step_settled_mt2/5000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 586131454.0,
+      "p25_ns": 568298524.5,
+      "p75_ns": 591094817.5,
+      "min_ns": 550717318.0,
+      "max_ns": 602149616.0
+    },
+    {
+      "name": "physics/step_falling_mt4/5000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 194640904.0,
+      "p25_ns": 186793087.5,
+      "p75_ns": 201407437.5,
+      "min_ns": 183665960.0,
+      "max_ns": 210332970.0
+    },
+    {
+      "name": "physics/step_settled_mt4/5000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 567066109.0,
+      "p25_ns": 552894248.5,
+      "p75_ns": 576742867.5,
+      "min_ns": 543079852.0,
+      "max_ns": 598603752.0
+    },
+    {
+      "name": "physics/step_falling_mt8/5000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 69399963.0,
+      "p25_ns": 68374911.5,
+      "p75_ns": 70470973.0,
+      "min_ns": 67771292.0,
+      "max_ns": 72619874.0
+    },
+    {
+      "name": "physics/step_settled_mt8/5000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 208602427.0,
+      "p25_ns": 206547333.0,
+      "p75_ns": 211234023.0,
+      "min_ns": 204433913.0,
+      "max_ns": 214209130.0
+    },
+    {
+      "name": "sample/load/game_over",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 2124557.0,
+      "p25_ns": 2121729.0,
+      "p75_ns": 2132414.0,
+      "min_ns": 2109821.0,
+      "max_ns": 2152425.0
+    },
+    {
+      "name": "sample/editor_update/game_over",
+      "items": 1,
+      "batch": 592,
+      "samples": 15,
+      "median_ns": 20403.9,
+      "p25_ns": 20340.8,
+      "p75_ns": 20505.9,
+      "min_ns": 20286.5,
+      "max_ns": 20545.3
+    },
+    {
+      "name": "sample/load/main_menu",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 5028073.0,
+      "p25_ns": 5018295.5,
+      "p75_ns": 5033174.5,
+      "min_ns": 5014594.0,
+      "max_ns": 5049934.0
+    },
+    {
+      "name": "sample/editor_update/main_menu",
+      "items": 1,
+      "batch": 183,
+      "samples": 15,
+      "median_ns": 66019.1,
+      "p25_ns": 66014.1,
+      "p75_ns": 66126.2,
+      "min_ns": 65950.8,
+      "max_ns": 66704.4
+    },
+    {
+      "name": "sample/load/platformer_house",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 11016908.0,
+      "p25_ns": 11011006.0,
+      "p75_ns": 11031267.5,
+      "min_ns": 10995053.0,
+      "max_ns": 11120213.0
+    },
+    {
+      "name": "sample/editor_update/platformer_house",
+      "items": 1,
+      "batch": 199,
+      "samples": 15,
+      "median_ns": 59901.9,
+      "p25_ns": 59871.2,
+      "p75_ns": 59939.2,
+      "min_ns": 59831.7,
+      "max_ns": 60141.9
+    },
+    {
+      "name": "sample/load/raycast_demo",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 25716153.0,
+      "p25_ns": 25685108.0,
+      "p75_ns": 25747967.0,
+      "min_ns": 25647846.0,
+      "max_ns": 26051624.0
+    },
+    {
+      "name": "sample/editor_update/raycast_demo",
+      "items": 1,
+      "batch": 120,
+      "samples": 15,
+      "median_ns": 98677.9,
+      "p25_ns": 98622.8,
+      "p75_ns": 98705.0,
+      "min_ns": 98557.2,
+      "max_ns": 98896.7
+    },
+    {
+      "name": "sample/load/settings_menu",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 3034124.0,
+      "p25_ns": 3025115.0,
+      "p75_ns": 3035906.0,
+      "min_ns": 3023579.0,
+      "max_ns": 3054728.0
+    },
+    {
+      "name": "sample/editor_update/settings_menu",
+      "items": 1,
+      "batch": 310,
+      "samples": 15,
+      "median_ns": 39038.1,
+      "p25_ns": 38992.0,
+      "p75_ns": 39058.4,
+      "min_ns": 38728.4,
+      "max_ns": 39135.3
+    },
+    {
+      "name": "sample/load/victory",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 1736648.0,
+      "p25_ns": 1734345.0,
+      "p75_ns": 1738464.5,
+      "min_ns": 1723728.0,
+      "max_ns": 1752014.0
+    },
+    {
+      "name": "sample/editor_update/victory",
+      "items": 1,
+      "batch": 617,
+      "samples": 15,
+      "median_ns": 19609.9,
+      "p25_ns": 19605.1,
+      "p75_ns": 19631.6,
+      "min_ns": 19555.1,
+      "max_ns": 19668.3
+    },
+    {
+      "name": "sample/load/voxel_terrain",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 1114207.0,
+      "p25_ns": 1112740.5,
+      "p75_ns": 1116127.5,
+      "min_ns": 1108898.0,
+      "max_ns": 1133204.0
+    },
+    {
+      "name": "sample/editor_update/voxel_terrain",
+      "items": 1,
+      "batch": 358,
+      "samples": 15,
+      "median_ns": 73000.1,
+      "p25_ns": 72982.6,
+      "p75_ns": 73088.5,
+      "min_ns": 72878.0,
+      "max_ns": 73395.4
+    },
+    {
+      "name": "sample/load/world_map",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 3971417.0,
+      "p25_ns": 3970055.0,
+      "p75_ns": 3977634.0,
+      "min_ns": 3967087.0,
+      "max_ns": 4011090.0
+    },
+    {
+      "name": "sample/editor_update/world_map",
+      "items": 1,
+      "batch": 241,
+      "samples": 15,
+      "median_ns": 49556.2,
+      "p25_ns": 49540.7,
+      "p75_ns": 49575.1,
+      "min_ns": 49511.2,
+      "max_ns": 49775.6
+    },
+    {
+      "name": "slang/compile_cold/quad_vulkan_first_in_process",
+      "items": 1,
+      "batch": 1,
+      "samples": 1,
+      "median_ns": 183508856.0,
+      "p25_ns": 183508856.0,
+      "p75_ns": 183508856.0,
+      "min_ns": 183508856.0,
+      "max_ns": 183508856.0
+    },
+    {
+      "name": "slang/compile_warm/quad_vulkan",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 33407640.0,
+      "p25_ns": 33345601.0,
+      "p75_ns": 33457665.0,
+      "min_ns": 33294406.0,
+      "max_ns": 33587906.0
+    },
+    {
+      "name": "slang/compile_warm/quad_opengl",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 33224634.0,
+      "p25_ns": 33167415.0,
+      "p75_ns": 33281922.0,
+      "min_ns": 33134693.0,
+      "max_ns": 33631208.0
+    },
+    {
+      "name": "slang/compile_warm/voxel_vulkan",
+      "items": 1,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 58215498.0,
+      "p25_ns": 58163812.5,
+      "p75_ns": 58274935.0,
+      "min_ns": 58074483.0,
+      "max_ns": 58337584.0
+    },
+    {
+      "name": "slang/compile_warm/all_engine_shaders_vulkan",
+      "items": 12,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 459367098.0,
+      "p25_ns": 459149130.0,
+      "p75_ns": 459566826.5,
+      "min_ns": 458726754.0,
+      "max_ns": 461925901.0
+    },
+    {
+      "name": "slang/cache_hit/quad_validate_and_read",
+      "items": 1,
+      "batch": 1383,
+      "samples": 15,
+      "median_ns": 8625.6,
+      "p25_ns": 8615.6,
+      "p75_ns": 8632.1,
+      "min_ns": 8599.2,
+      "max_ns": 8682.2
+    }
+  ],
+  "metrics": [
+    {
+      "name": "app/startup_ms/dummy_null_backend",
+      "value": 105.925195,
+      "unit": "ms"
+    },
+    {
+      "name": "scene/memory/bytes_per_sprite_entity",
+      "value": 277.9464,
+      "unit": "B/entity"
+    },
+    {
+      "name": "scene/world_transform/chain1000_leaf_x_engine",
+      "value": 1000,
+      "unit": "(expected 1000)"
+    },
+    {
+      "name": "scene/world_transform/chain1000_leaf_x_full_walk",
+      "value": 1000,
+      "unit": "(expected 1000)"
+    },
+    {
+      "name": "scene/set_parent/chain1000_leaf_x_after_reparent",
+      "value": 999,
+      "unit": "(expected 999, world position must be preserved)"
+    },
+    {
+      "name": "serialize/scene_yaml_size/1000",
+      "value": 299429,
+      "unit": "bytes"
+    },
+    {
+      "name": "serialize/scene_yaml_size/10000",
+      "value": 3003423,
+      "unit": "bytes"
+    },
+    {
+      "name": "serialize/entity_yaml_size",
+      "value": 204,
+      "unit": "bytes"
+    },
+    {
+      "name": "serialize/entity_yaml_size",
+      "value": 204,
+      "unit": "bytes"
+    },
+    {
+      "name": "renderer2d/quads_color/1000_draw_calls",
+      "value": 1,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/quads_world_index/1000_draw_calls",
+      "value": 1,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/quads_16_textures/1000_draw_calls",
+      "value": 1,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/circles/1000_draw_calls",
+      "value": 1,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/quads_color/10000_draw_calls",
+      "value": 3,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/quads_world_index/10000_draw_calls",
+      "value": 1,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/quads_16_textures/10000_draw_calls",
+      "value": 3,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/circles/10000_draw_calls",
+      "value": 3,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/quads_color/100000_draw_calls",
+      "value": 25,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/quads_world_index/100000_draw_calls",
+      "value": 5,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/quads_16_textures/100000_draw_calls",
+      "value": 25,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "renderer2d/circles/100000_draw_calls",
+      "value": 25,
+      "unit": "draw calls (one frame)"
+    },
+    {
+      "name": "frame/editor_update/flat1000_quads",
+      "value": 1000,
+      "unit": "quads (last frame)"
+    },
+    {
+      "name": "frame/editor_update/flat10000_quads",
+      "value": 10000,
+      "unit": "quads (last frame)"
+    },
+    {
+      "name": "frame/editor_update/forest10000_quads",
+      "value": 10000,
+      "unit": "quads (last frame)"
+    },
+    {
+      "name": "frame/editor_update/chain1000_quads",
+      "value": 1000,
+      "unit": "quads (last frame)"
+    },
+    {
+      "name": "voxel/chunk_storage_bytes",
+      "value": 16384,
+      "unit": "bytes (blocks + meta, excluding mesh)"
+    },
+    {
+      "name": "voxel/mesh_by_kind/full/quads",
+      "value": 6,
+      "unit": "quads"
+    },
+    {
+      "name": "voxel/mesh_by_kind/full/mesh_bytes",
+      "value": 1104,
+      "unit": "bytes"
+    },
+    {
+      "name": "voxel/mesh_by_kind/random50/quads",
+      "value": 6071,
+      "unit": "quads"
+    },
+    {
+      "name": "voxel/mesh_by_kind/random50/mesh_bytes",
+      "value": 1117064,
+      "unit": "bytes"
+    },
+    {
+      "name": "voxel/mesh_by_kind/checkerboard/quads",
+      "value": 12288,
+      "unit": "quads"
+    },
+    {
+      "name": "voxel/mesh_by_kind/checkerboard/mesh_bytes",
+      "value": 2260992,
+      "unit": "bytes"
+    },
+    {
+      "name": "voxel/mesh_by_kind/terrain_surface/quads",
+      "value": 301,
+      "unit": "quads"
+    },
+    {
+      "name": "voxel/mesh_by_kind/terrain_surface/mesh_bytes",
+      "value": 55384,
+      "unit": "bytes"
+    },
+    {
+      "name": "voxel/mesh_by_kind/terrain_underground/quads",
+      "value": 6,
+      "unit": "quads"
+    },
+    {
+      "name": "voxel/mesh_by_kind/terrain_underground/mesh_bytes",
+      "value": 1104,
+      "unit": "bytes"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/frames",
+      "value": 81,
+      "unit": "frames"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/main_p50_ms",
+      "value": 0.28291,
+      "unit": "ms (main-thread CPU per frame)"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/main_p99_ms",
+      "value": 0.659349,
+      "unit": "ms"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/main_max_ms",
+      "value": 0.680371,
+      "unit": "ms"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/frames_over_2ms",
+      "value": 0,
+      "unit": "frames"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/frames_over_5ms",
+      "value": 0,
+      "unit": "frames"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/main_total_ms",
+      "value": 26.397356,
+      "unit": "ms (main-thread CPU, whole scenario)"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/process_cpu_ms",
+      "value": 916.073345,
+      "unit": "ms (all threads)"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/wall_ms",
+      "value": 1350.132081,
+      "unit": "ms"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/resident_chunks",
+      "value": 405,
+      "unit": "chunks"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/cached_meshes",
+      "value": 256,
+      "unit": "meshes"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/uploaded_meshes",
+      "value": 186,
+      "unit": "meshes"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/discarded_results",
+      "value": 3,
+      "unit": "results"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/meshing_cpu_ms",
+      "value": 608.107301,
+      "unit": "ms (meshing work, any thread)"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/latency_mean_ms",
+      "value": 707.3407516827956,
+      "unit": "ms (chunk needs a mesh -> uploaded)"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/initial_load/latency_max_ms",
+      "value": 1116.714392,
+      "unit": "ms (since init)"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/frames",
+      "value": 520,
+      "unit": "frames"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/main_p50_ms",
+      "value": 0.298019,
+      "unit": "ms (main-thread CPU per frame)"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/main_p99_ms",
+      "value": 0.643197,
+      "unit": "ms"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/main_max_ms",
+      "value": 0.694813,
+      "unit": "ms"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/frames_over_2ms",
+      "value": 0,
+      "unit": "frames"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/frames_over_5ms",
+      "value": 0,
+      "unit": "frames"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/main_total_ms",
+      "value": 164.047951,
+      "unit": "ms (main-thread CPU, whole scenario)"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/process_cpu_ms",
+      "value": 4844.725548,
+      "unit": "ms (all threads)"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/wall_ms",
+      "value": 8667.023175,
+      "unit": "ms"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/resident_chunks",
+      "value": 450,
+      "unit": "chunks"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/cached_meshes",
+      "value": 263,
+      "unit": "meshes"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/uploaded_meshes",
+      "value": 1152,
+      "unit": "meshes"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/discarded_results",
+      "value": 0,
+      "unit": "results"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/meshing_cpu_ms",
+      "value": 3558.547981,
+      "unit": "ms (meshing work, any thread)"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/latency_mean_ms",
+      "value": 117.11791794010418,
+      "unit": "ms (chunk needs a mesh -> uploaded)"
+    },
+    {
+      "name": "voxel/streaming/runtime_walk/walk/latency_max_ms",
+      "value": 1116.714392,
+      "unit": "ms (since init)"
+    },
+    {
+      "name": "voxel/streaming/editor_load/frames",
+      "value": 520,
+      "unit": "frames"
+    },
+    {
+      "name": "voxel/streaming/editor_load/main_p50_ms",
+      "value": 1.139563,
+      "unit": "ms (main-thread CPU per frame)"
+    },
+    {
+      "name": "voxel/streaming/editor_load/main_p99_ms",
+      "value": 1.544653,
+      "unit": "ms"
+    },
+    {
+      "name": "voxel/streaming/editor_load/main_max_ms",
+      "value": 1.61385,
+      "unit": "ms"
+    },
+    {
+      "name": "voxel/streaming/editor_load/frames_over_2ms",
+      "value": 0,
+      "unit": "frames"
+    },
+    {
+      "name": "voxel/streaming/editor_load/frames_over_5ms",
+      "value": 0,
+      "unit": "frames"
+    },
+    {
+      "name": "voxel/streaming/editor_load/main_total_ms",
+      "value": 560.324355,
+      "unit": "ms (main-thread CPU, whole scenario)"
+    },
+    {
+      "name": "voxel/streaming/editor_load/process_cpu_ms",
+      "value": 8323.424103,
+      "unit": "ms (all threads)"
+    },
+    {
+      "name": "voxel/streaming/editor_load/wall_ms",
+      "value": 8667.028874,
+      "unit": "ms"
+    },
+    {
+      "name": "voxel/streaming/editor_load/resident_chunks",
+      "value": 2601,
+      "unit": "chunks"
+    },
+    {
+      "name": "voxel/streaming/editor_load/cached_meshes",
+      "value": 1492,
+      "unit": "meshes"
+    },
+    {
+      "name": "voxel/streaming/editor_load/uploaded_meshes",
+      "value": 1271,
+      "unit": "meshes"
+    },
+    {
+      "name": "voxel/streaming/editor_load/discarded_results",
+      "value": 0,
+      "unit": "results"
+    },
+    {
+      "name": "voxel/streaming/editor_load/meshing_cpu_ms",
+      "value": 5099.393484,
+      "unit": "ms (meshing work, any thread)"
+    },
+    {
+      "name": "voxel/streaming/editor_load/latency_mean_ms",
+      "value": 5042.793627667992,
+      "unit": "ms (chunk needs a mesh -> uploaded)"
+    },
+    {
+      "name": "voxel/streaming/editor_load/latency_max_ms",
+      "value": 8467.282425,
+      "unit": "ms (since init)"
+    },
+    {
+      "name": "script/memory/bytes_per_instance",
+      "value": 13315.872,
+      "unit": "B/instance (lua_State + bindings)"
+    },
+    {
+      "name": "sample/entities/game_over",
+      "value": 7,
+      "unit": "entities"
+    },
+    {
+      "name": "sample/file_bytes/game_over",
+      "value": 4155,
+      "unit": "bytes"
+    },
+    {
+      "name": "sample/editor_update/game_over_quads",
+      "value": 33,
+      "unit": "Renderer2D quads (last frame)"
+    },
+    {
+      "name": "sample/entities/main_menu",
+      "value": 17,
+      "unit": "entities"
+    },
+    {
+      "name": "sample/file_bytes/main_menu",
+      "value": 10321,
+      "unit": "bytes"
+    },
+    {
+      "name": "sample/editor_update/main_menu_quads",
+      "value": 115,
+      "unit": "Renderer2D quads (last frame)"
+    },
+    {
+      "name": "sample/entities/platformer_house",
+      "value": 40,
+      "unit": "entities"
+    },
+    {
+      "name": "sample/file_bytes/platformer_house",
+      "value": 22669,
+      "unit": "bytes"
+    },
+    {
+      "name": "sample/editor_update/platformer_house_quads",
+      "value": 97,
+      "unit": "Renderer2D quads (last frame)"
+    },
+    {
+      "name": "sample/entities/raycast_demo",
+      "value": 110,
+      "unit": "entities"
+    },
+    {
+      "name": "sample/file_bytes/raycast_demo",
+      "value": 51487,
+      "unit": "bytes"
+    },
+    {
+      "name": "sample/editor_update/raycast_demo_quads",
+      "value": 99,
+      "unit": "Renderer2D quads (last frame)"
+    },
+    {
+      "name": "sample/entities/settings_menu",
+      "value": 10,
+      "unit": "entities"
+    },
+    {
+      "name": "sample/file_bytes/settings_menu",
+      "value": 6105,
+      "unit": "bytes"
+    },
+    {
+      "name": "sample/editor_update/settings_menu_quads",
+      "value": 71,
+      "unit": "Renderer2D quads (last frame)"
+    },
+    {
+      "name": "sample/entities/victory",
+      "value": 6,
+      "unit": "entities"
+    },
+    {
+      "name": "sample/file_bytes/victory",
+      "value": 3271,
+      "unit": "bytes"
+    },
+    {
+      "name": "sample/editor_update/victory_quads",
+      "value": 32,
+      "unit": "Renderer2D quads (last frame)"
+    },
+    {
+      "name": "sample/entities/voxel_terrain",
+      "value": 2,
+      "unit": "entities"
+    },
+    {
+      "name": "sample/file_bytes/voxel_terrain",
+      "value": 2453,
+      "unit": "bytes"
+    },
+    {
+      "name": "sample/editor_update/voxel_terrain_quads",
+      "value": 0,
+      "unit": "Renderer2D quads (last frame)"
+    },
+    {
+      "name": "sample/entities/world_map",
+      "value": 17,
+      "unit": "entities"
+    },
+    {
+      "name": "sample/file_bytes/world_map",
+      "value": 7313,
+      "unit": "bytes"
+    },
+    {
+      "name": "sample/editor_update/world_map_quads",
+      "value": 77,
+      "unit": "Renderer2D quads (last frame)"
+    },
+    {
+      "name": "slang/compile_cold/success",
+      "value": 1,
+      "unit": "bool"
+    },
+    {
+      "name": "slang/engine_shader_files",
+      "value": 12,
+      "unit": "files"
+    },
+    {
+      "name": "slang/spirv_words/quad_first_stage",
+      "value": 350,
+      "unit": "words"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the nightly bench pinned to the agent that measured it.
 - Wayland smoke test (`owl_wayland_smoke`, label `wayland`): the runner presents frames on a headless weston with Vulkan and OpenGL; skipped where weston is missing.
 - Nightly fuzzing: `linux-fuzz` preset (libFuzzer + AddressSanitizer) and `Fuzz` CI action running every `owl_*_fuzzer` for five minutes, failing inputs published by the `Fuzzing` TeamCity configuration.
 - Benchmarks in CI: `owl_bench` compiled on every pull request (`linux-clang-debug`), run nightly on `main` by the `Bench` action against `bench/baseline/linux-bench.json`; a median slower by more than 15 % twice fails the build.

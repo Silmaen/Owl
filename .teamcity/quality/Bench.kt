@@ -9,6 +9,10 @@ import jetbrains.buildServer.configs.kotlin.buildSteps.script
  */
 val bench = presetBuild("Build_Quality_Bench", "Benchmarks", "linux-bench",
         onPullRequest = false, nightly = true) {
+    // Timings only compare on the agent that measured the baseline (run-to-run: hephaistos 1.7 %, artemis 10.7 %).
+    requirements {
+        equals("teamcity.agent.name", "linux-build-hephaistos")
+    }
     artifactRules = """
         %artifact_path%
         output/bench/*.json
