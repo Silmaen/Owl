@@ -98,6 +98,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LeakSanitizer preset, option and TeamCity job: on Linux ASan already reports leaks.
 - `parallelForEach` / `parallelForIndex` (`core/task/ParallelUtils.h`), which nothing called, and the `Scheduler::getImpl()` accessor that only they used.
 - The Lua state `ScriptEngine` kept with bindings that no script ran in (each `ScriptInstance` owns its own), with `ScriptEngine::loadScript` / `loadScriptFromBuffer` that only fed it.
+- The generic `core::IFactory` / `FactoryProduct` / `ProductAllocator`, whose only user was the mesh extra data: `data::extradata::ExtraDataRegistry` (`ExtraDataPid`, `getExtraDataPid<T>()`) replaces it, and `ExtraDataContainer` copies now clone the values instead of default-constructing them.
 
 ### Fixed
 

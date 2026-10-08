@@ -88,7 +88,8 @@ struct OWL_API MeshCursorInitializer {
 			if (isExtraDataDefined<typename RawType::DataType>(iMesh))
 				addExtraData<typename RawType::DataType>(iMesh);
 		} else if constexpr (IsWriteExtraDataPid<RawType, ElementType>()) {
-			if (const core::FactoryPid pid = iComponent.GetPID(); core::hasFactoryPid(pid)) {
+			if (const data::extradata::ExtraDataPid pid = iComponent.GetPID();
+				data::extradata::ExtraDataRegistry::isRegistered(pid)) {
 				if (!isExtraDataDefined(iMesh, pid))
 					addExtraData(iMesh, pid);
 			}
@@ -136,7 +137,8 @@ struct OWL_API MeshCursorInitializer {
 	 * @param[in] iPid  The factory PID of the extra data.
 	 * @return True if the extra data is defined on all elements, false otherwise.
 	 */
-	[[nodiscard]] static auto isExtraDataDefined(const MeshType& iMesh, const core::FactoryPid iPid) -> bool {
+	[[nodiscard]] static auto isExtraDataDefined(const MeshType& iMesh, const data::extradata::ExtraDataPid iPid)
+			-> bool {
 		if constexpr (ElementType == MeshElementType::Vertex) {
 			return iMesh.isExtraDataDefinedOnAllVertices(iPid);
 		} else {
@@ -150,7 +152,7 @@ struct OWL_API MeshCursorInitializer {
 	 * @param[in] iMesh The mesh to modify.
 	 * @param[in] iPid  The factory PID of the extra data.
 	 */
-	static void addExtraData(MeshType& iMesh, const core::FactoryPid iPid) {
+	static void addExtraData(MeshType& iMesh, const data::extradata::ExtraDataPid iPid) {
 		if constexpr (ElementType == MeshElementType::Vertex) {
 			iMesh.addVertexExtraData(iPid);
 		} else {

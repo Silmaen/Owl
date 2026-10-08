@@ -30,22 +30,20 @@ auto ExtraDataContainer::operator=(ExtraDataContainer&& iOther) noexcept -> Extr
 	return *this;
 }
 
-ExtraDataContainer::ExtraDataContainer(const core::FactoryPid iEdPid, const size_t iInitialSize) : m_edPid(iEdPid) {
-	OWL_ASSERT(iEdPid != core::INVALID_FACTORY_PID, "ExtraDataContainer::ExtraDataContainer: Invalid ExtraData pid")
+ExtraDataContainer::ExtraDataContainer(const ExtraDataPid iEdPid, const size_t iInitialSize) : m_edPid(iEdPid) {
+	OWL_ASSERT(iEdPid != g_invalidExtraDataPid, "ExtraDataContainer::ExtraDataContainer: Invalid ExtraData pid")
 	m_extraDataList.resize(iInitialSize);
 	init();
 }
 
 void ExtraDataContainer::init() {
-	const core::IFactory& gFactory = core::IFactory::getInstance();
-	if (std::string pKey; gFactory.getKey(m_edPid, pKey)) {
-		for (auto& ed: m_extraDataList) {
-			if (!ed) {
-				ed = shared<ExtraDataBase>(dynamic_cast<ExtraDataBase*>(gFactory.createProduct(pKey)));
-			}
-		}
-	} else {
+	if (!ExtraDataRegistry::isRegistered(m_edPid)) {
 		OWL_CORE_ERROR("ExtraDataContainer::init: Unknown ExtraData pid {}.", m_edPid)
+		return;
+	}
+	for (auto& ed: m_extraDataList) {
+		if (!ed)
+			ed = ExtraDataRegistry::create(m_edPid);
 	}
 }
 
@@ -60,17 +58,8 @@ auto ExtraDataContainer::getExtraData(size_t iIndex) const -> shared<ExtraDataBa
 
 auto ExtraDataContainer::clone() const -> ExtraDataContainer {
 	ExtraDataContainer newEdc(m_edPid, 0);
-	const core::IFactory& gFactory = core::IFactory::getInstance();
-	std::string pKey;
-	if (!gFactory.getKey(m_edPid, pKey))
-		return newEdc;
 	newEdc.m_extraDataList.reserve(m_extraDataList.size());
-	for (const auto& ed: m_extraDataList) {
-		if (auto* newEd = dynamic_cast<ExtraDataBase*>(gFactory.createProduct(pKey))) {
-			*newEd = *ed;
-			newEdc.m_extraDataList.push_back(shared<ExtraDataBase>(newEd));
-		}
-	}
+	for (const auto& ed: m_extraDataList) newEdc.m_extraDataList.emplace_back(ed ? ed->clone() : nullptr);
 	return newEdc;
 }
 
