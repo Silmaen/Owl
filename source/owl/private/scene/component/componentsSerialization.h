@@ -10,64 +10,49 @@
 
 #include "core/Serializer.h"
 #include "core/SerializerImpl.h"
+#include "scene/ComponentRegistry.h"
+#include "scene/Entity.h"
 #include "scene/component/components.h"
 
-#include <tuple>
+#include <string>
 
 namespace owl::scene::component {
+
 /**
  * @brief
- *  Serialize a single component.
- * @tparam Component The Serializable component type.
- * @param iEntity The Entity to serialize.
- * @param iOut The YAML context.
+ *  Serialize every registered component of an entity, in registry order.
+ * @param[in] iEntity The Entity to serialize.
+ * @param[in] iOut The YAML context (inside the entity map).
  */
-template<isSerializableComponent Component>
-void serializeComponent(const Entity& iEntity, const core::Serializer& iOut) {
-	if (iEntity.hasComponent<Component>()) {
-		iEntity.getComponent<Component>().serialize(iOut);
-	}
+inline void serializeComponents(const Entity& iEntity, const core::Serializer& iOut) {
+	for (const auto& desc: ComponentRegistry::getAll()) desc.serialize(iEntity, iOut);
 }
 
 /**
  * @brief
- *  Serialize a list of component.
- * @tparam Components The Serializable component types (deduced from the last parameter).
- * @param iEntity The Entity to serialize.
- * @param iOut The YAML context.
+ *  Deserialize one registered component of an entity when its key is in the entity node.
+ * @param[in,out] ioEntity The Entity to fill.
+ * @param[in] iNode The YAML entity node.
+ * @param[in] iDesc The component descriptor.
  */
-template<isSerializableComponent... Components>
-void serializeComponents(const Entity& iEntity, const core::Serializer& iOut, const std::tuple<Components...>&) {
-	(..., serializeComponent<Components>(iEntity, iOut));
-}
-
-/**
- * @brief
- *  Deserialize a single component.
- * @tparam Component The Serializable component type.
- * @param iEntity The Entity to deserialize.
- * @param iNode The YAML context.
- */
-template<isDeserializableComponent Component>
-void deserializeComponent(Entity& iEntity, const core::Serializer& iNode) {
-	if (auto node = iNode.getImpl()->node[Component::key()]; node) {
-		auto& comp = iEntity.addComponent<Component>();
+inline void deserializeComponent(Entity& ioEntity, const core::Serializer& iNode, const ComponentDescriptor& iDesc) {
+	if (auto node = iNode.getImpl()->node[iDesc.key]; node) {
 		const core::Serializer sNode;
 		sNode.getImpl()->node.reset(node);
-		comp.deserialize(sNode);
+		iDesc.deserialize(ioEntity, sNode);
 	}
 }
 
 /**
  * @brief
- *  Deserialize a list of components.
- * @tparam Components The Serializable component types (deduced from the last parameter).
- * @param iEntity The Entity to deserialize.
- * @param iNode The YAML context.
+ *  Deserialize every optional registered component found in an entity node.
+ * @param[in,out] ioEntity The Entity to fill.
+ * @param[in] iNode The YAML entity node.
  */
-template<isDeserializableComponent... Components>
-void deserializeComponents(Entity& iEntity, const core::Serializer& iNode, const std::tuple<Components...>&) {
-	(..., deserializeComponent<Components>(iEntity, iNode));
+inline void deserializeOptionalComponents(Entity& ioEntity, const core::Serializer& iNode) {
+	for (const auto& desc: ComponentRegistry::getAll())
+		if (desc.optional)
+			deserializeComponent(ioEntity, iNode, desc);
 }
 
 }// namespace owl::scene::component

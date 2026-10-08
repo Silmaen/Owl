@@ -77,13 +77,13 @@ backend: the backend factories, the ImGui overlay of `Application`, the ImGui in
 
 What a game plugs in without patching the engine, and what the architecture work of v0.3.0 adds:
 
-| Extension point       | Today                                                                                                                                                 | Coming                                                    |
-|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------|
-| Renderer-stack layers | `renderer::RenderLayerFactory::registerType()`: a layer type by name, created from the stack                                                          | Owl RHI pipeline objects and explicit bindings (B-07)     |
-| Application layers    | `app::Application::pushLayer()` / `pushOverlay()`: per-frame update, events, ImGui render                                                             | —                                                         |
-| Extra data            | `data::extradata::ExtraDataRegistry`: typed extra data per mesh vertex, face or mesh                                                                  | —                                                         |
-| Components            | Closed type lists (`scene::component::SerializableComponents`, `CopiableComponents`)                                                                  | Open component registry, after the EnTT 4 upgrade (PR-37) |
-| Systems               | `scene::SystemSchedule`: named systems in fixed phases, added, replaced or removed per game or per scene (see [Systems and phases](scene.md#systems)) | —                                                         |
+| Extension point       | Today                                                                                                                                                                                      | Coming                                                |
+|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| Renderer-stack layers | `renderer::RenderLayerFactory::registerType()`: a layer type by name, created from the stack                                                                                               | Owl RHI pipeline objects and explicit bindings (B-07) |
+| Application layers    | `app::Application::pushLayer()` / `pushOverlay()`: per-frame update, events, ImGui render                                                                                                  | —                                                     |
+| Extra data            | `data::extradata::ExtraDataRegistry`: typed extra data per mesh vertex, face or mesh                                                                                                       | —                                                     |
+| Components            | `scene::ComponentRegistry::registerComponent<T>()`: saved, loaded, copied, added and inspected in the editor like an engine component (see [Game components](scene.md#component-registry)) | —                                                     |
+| Systems               | `scene::SystemSchedule`: named systems in fixed phases, added, replaced or removed per game or per scene (see [Systems and phases](scene.md#systems))                                      | —                                                     |
 
 **Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
 [Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·

@@ -107,7 +107,8 @@ concept isDeserializableComponent =
 /**
  * @brief
  *  List of copiable components.
- * @note All except ID and Tag.
+ * @note All except ID and Tag. With the two lists below, it only seeds the engine entries of
+ * `scene::ComponentRegistry`, which the engine and the games use.
  */
 using CopiableComponents =
 		std::tuple<Transform, Camera, Canvas, SpriteRenderer, AnimatedSpriteRenderer, CircleRenderer, Text, Tilemap,

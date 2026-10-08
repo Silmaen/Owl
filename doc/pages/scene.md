@@ -137,6 +137,31 @@ The engine systems live in `scene::systems` (private, `source/owl/private/scene/
 
 ![Component Overview](../images/component_overview.svg)
 
+### Game components (open registry) {#component-registry}
+
+`scene::ComponentRegistry` lists every component the scene saves, loads, copies and shows in the editor: the engine
+ones first (in serialization order), then those a game registers at startup, before loading any scene. A game
+component needs a `key()`, `serialize()` / `deserialize()` like the engine ones, and optionally a `name()`:
+
+```c++
+struct Score {
+    int64_t points = 0;
+    static auto key() -> const char* { return "Score"; }
+    static auto name() -> const char* { return "Score"; }
+    void serialize(const core::Serializer& iOut) const;    // writes `Score: {points: ...}`
+    void deserialize(const core::Serializer& iNode);       // reads the value under `Score`
+};
+
+scene::ComponentRegistry::registerComponent<Score>(/* optional inspector body: */ [](scene::Entity& ioEntity) {
+    return ImGui::DragScalar("Points", ImGuiDataType_S64, &ioEntity.getComponent<Score>().points);
+});
+```
+
+It is then written in scenes and prefabs, copied by duplication and the Play copy, offered by "Add Component" and
+the `component.add` / `component.remove` editor commands, and drawn in the inspector (its body, or a note when
+none is registered), undoable like the engine components. `ComponentRegistry::describe<T>()` builds the descriptor
+for finer control (not optional, not copied) through `registerDescriptor`.
+
 ### Mandatory Components
 
 These are automatically added to every entity and cannot be removed.
