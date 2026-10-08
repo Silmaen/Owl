@@ -11,6 +11,9 @@
 
 #include "VulkanCore.h"
 
+#include <algorithm>
+#include <cstdint>
+
 namespace owl::renderer::gpu::vulkan::internal {
 
 auto attachmentFormatToVulkan(const AttachmentSpecification::Format& iFormat) -> VkFormat {
@@ -149,15 +152,16 @@ constexpr auto layoutToStgFlag(const VkImageLayout& iLayout) -> VkPipelineStageF
 }
 }// namespace
 
-void transitionImageLayout(const VkImage& iImage, const VkImageLayout iOldLayout, const VkImageLayout iNewLayout) {
+void transitionImageLayout(const VkImage& iImage, const VkImageLayout iOldLayout, const VkImageLayout iNewLayout,
+						   const uint32_t iLevelCount) {
 	const auto& core = VulkanCore::get();
 	const auto& commandBuffer = core.beginSingleTimeCommands();
-	transitionImageLayout(commandBuffer, iImage, iOldLayout, iNewLayout);
+	transitionImageLayout(commandBuffer, iImage, iOldLayout, iNewLayout, iLevelCount);
 	core.endSingleTimeCommands(commandBuffer);
 }
 
 void transitionImageLayout(const VkCommandBuffer& iCmd, const VkImage& iImage, const VkImageLayout iOldLayout,
-						   const VkImageLayout iNewLayout) {
+						   const VkImageLayout iNewLayout, const uint32_t iLevelCount) {
 	const VkImageMemoryBarrier barrier{.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 									   .pNext = nullptr,
 									   .srcAccessMask = layoutToAccFlag(iOldLayout),
@@ -169,11 +173,58 @@ void transitionImageLayout(const VkCommandBuffer& iCmd, const VkImage& iImage, c
 									   .image = iImage,
 									   .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
 															.baseMipLevel = 0,
-															.levelCount = 1,
+															.levelCount = iLevelCount,
 															.baseArrayLayer = 0,
 															.layerCount = 1}};
 	vkCmdPipelineBarrier(iCmd, layoutToStgFlag(iOldLayout), layoutToStgFlag(iNewLayout), 0, 0, nullptr, 0, nullptr, 1,
 						 &barrier);
+}
+
+void generateMipmaps(const VkImage& iImage, const math::vec2ui& iSize, const uint32_t iLevelCount) {
+	const auto& core = VulkanCore::get();
+	const auto& commandBuffer = core.beginSingleTimeCommands();
+	const auto levelBarrier = [&](const uint32_t iLevel, const VkImageLayout iOld, const VkImageLayout iNew) -> void {
+		const VkImageMemoryBarrier barrier{.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+										   .pNext = nullptr,
+										   .srcAccessMask = layoutToAccFlag(iOld),
+										   .dstAccessMask = layoutToAccFlag(iNew),
+										   .oldLayout = iOld,
+										   .newLayout = iNew,
+										   .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+										   .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+										   .image = iImage,
+										   .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+																.baseMipLevel = iLevel,
+																.levelCount = 1,
+																.baseArrayLayer = 0,
+																.layerCount = 1}};
+		vkCmdPipelineBarrier(commandBuffer, layoutToStgFlag(iOld), layoutToStgFlag(iNew), 0, 0, nullptr, 0, nullptr, 1,
+							 &barrier);
+	};
+	auto width = static_cast<int32_t>(iSize.x());
+	auto height = static_cast<int32_t>(iSize.y());
+	for (uint32_t level = 1; level < iLevelCount; ++level) {
+		levelBarrier(level - 1, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+		const int32_t nextWidth = std::max(width / 2, 1);
+		const int32_t nextHeight = std::max(height / 2, 1);
+		const VkImageBlit blit{.srcSubresource = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+												  .mipLevel = level - 1,
+												  .baseArrayLayer = 0,
+												  .layerCount = 1},
+							   .srcOffsets = {{0, 0, 0}, {width, height, 1}},
+							   .dstSubresource = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+												  .mipLevel = level,
+												  .baseArrayLayer = 0,
+												  .layerCount = 1},
+							   .dstOffsets = {{0, 0, 0}, {nextWidth, nextHeight, 1}}};
+		vkCmdBlitImage(commandBuffer, iImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, iImage,
+					   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+		levelBarrier(level - 1, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		width = nextWidth;
+		height = nextHeight;
+	}
+	levelBarrier(iLevelCount - 1, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	core.endSingleTimeCommands(commandBuffer);
 }
 
 void copyBufferToImage(const VkBuffer& iBuffer, const VkImage& iImage, const math::vec2ui& iSize,

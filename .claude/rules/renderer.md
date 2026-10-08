@@ -46,7 +46,7 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
   dependent (`isOpenGl ? -y : y`). Iso / gizmo projections must follow the same convention.
 - **Tiling an atlas cell with `frac(uv)`** needs all three: half-texel inset of the cell, self-tileable
   textures, and `SampleGrad` with the continuous (non-fract) UV derivatives. `Texture2D::setFilterMode`
-  is not implemented on Vulkan (linear + anisotropic sampler).
+  works on both backends; on Vulkan it waits for the device (never call it per frame).
 
 - **Vulkan descriptors are written at draw time** (`RendererDescriptors::getDescriptorSet`, from
   `bindPipeline`), after the draw's SSBO binds; every declared binding is written, unbound ones with a default

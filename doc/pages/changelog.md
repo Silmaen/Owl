@@ -86,6 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: build artifacts leave out the test executables, keeping the Windows `BuildArtefact.zip` under the server's 300 MB limit.
 - Windows: test binaries and `OwlRunner` exit again: the Box2D solver pool is released with the physics world and the Lua watchdog is never destroyed, so no static destructor waits for threads Windows already killed.
 - Windows: the frame bench runner test quotes its whole command line, which `cmd /c` otherwise mangles.
+- Textures: `generateMips` is honoured on both backends (OpenGL `glGenerateTextureMipmap`, Vulkan blit chain) and now defaults to `false`; `Nearest` filtering applies on Vulkan too (the raycast walls rendered blurred there), and `Linear` magnifies linearly on OpenGL as on Vulkan.
+- OpenGL textures: `R8` allocates a valid `GL_R8` storage (was `GL_RED_INTEGER`) and `Rgba32F` uploads floats.
 - GLFW no longer crashes at init on a Wayland compositor without input devices (no `wl_seat`, e.g. headless weston).
 - Wayland works again on Linux: GLFW comes from a local recipe building both backends against the system Wayland (ConanCenter's built X11 only, and with Wayland on shipped a libwayland that hid the system one from the GPU drivers).
 - `importSharedLibs.py` copies a library next to the binaries again when its package changed, instead of keeping the first copy forever (a stale X11-only `libglfw.so.3`, an old `libopenal.so.1`).

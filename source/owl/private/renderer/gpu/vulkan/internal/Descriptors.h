@@ -28,6 +28,10 @@ struct TextureData {
 	VkSampler textureSampler = nullptr;
 	VkDescriptorSet textureDescriptorSet = nullptr;
 	VkDescriptorSetLayout textureDescriptorSetLayout = nullptr;
+	/// Mipmap levels of the image, set before `createImage` (1 without mipmaps).
+	uint32_t mipLevels = 1;
+	/// Nearest sampling (pixel art) instead of linear and trilinear.
+	bool nearest = false;
 	/// Debug label propagated to the Vulkan objects so validation-layer leak reports name the owning texture.
 	std::string debugName;
 

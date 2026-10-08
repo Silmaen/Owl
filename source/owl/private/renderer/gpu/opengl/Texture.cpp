@@ -23,11 +23,15 @@ auto glDataFormat(const ImageFormat& iFormat) -> GLenum {
 		case ImageFormat::R8:
 			return GL_RED;
 		case ImageFormat::Rgba32F:
-			return GL_RGBA32F;
+			return GL_RGBA;
 		case ImageFormat::None:
 			return GL_NONE;
 	}
 	return GL_NONE;
+}
+
+auto glDataType(const ImageFormat& iFormat) -> GLenum {
+	return iFormat == ImageFormat::Rgba32F ? GL_FLOAT : GL_UNSIGNED_BYTE;
 }
 
 auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
@@ -37,7 +41,7 @@ auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
 		case ImageFormat::Rgb8:
 			return GL_RGB8;
 		case ImageFormat::R8:
-			return GL_RED_INTEGER;
+			return GL_R8;
 		case ImageFormat::Rgba32F:
 			return GL_RGBA32F;
 		case ImageFormat::None:
@@ -46,13 +50,13 @@ auto glInternalDataFormat(const ImageFormat& iFormat) -> GLenum {
 	return GL_NONE;
 }
 
-void applySamplerFilter(const GLuint iTexture, const FilterMode iMode) {
+void applySamplerFilter(const GLuint iTexture, const FilterMode iMode, const uint32_t iMipLevels) {
 	if (iMode == FilterMode::Nearest) {
 		glTextureParameteri(iTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTextureParameteri(iTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	} else {
-		glTextureParameteri(iTexture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTextureParameteri(iTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTextureParameteri(iTexture, GL_TEXTURE_MIN_FILTER, iMipLevels > 1 ? GL_LINEAR_MIPMAP_LINEAR : GL_LINEAR);
+		glTextureParameteri(iTexture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	}
 	glTextureParameteri(iTexture, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTextureParameteri(iTexture, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -73,24 +77,26 @@ Texture2D::Texture2D(std::filesystem::path iPath) : renderer::gpu::Texture2D{std
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_textureId);
 
-	glTextureStorage2D(m_textureId, 1, glInternalDataFormat(m_specification.format),
+	m_mipLevels = m_specification.getMipLevelCount();
+	glTextureStorage2D(m_textureId, static_cast<GLsizei>(m_mipLevels), glInternalDataFormat(m_specification.format),
 					   static_cast<GLsizei>(m_specification.size.x()), static_cast<GLsizei>(m_specification.size.y()));
 
-	applySamplerFilter(m_textureId, m_specification.filterMode);
+	applySamplerFilter(m_textureId, m_specification.filterMode, m_mipLevels);
 
 	setData(const_cast<uint8_t*>(decoded.pixels.data()), static_cast<uint32_t>(decoded.pixels.size()));
 }
 
-Texture2D::Texture2D(const Specification& iSpecs) : renderer::gpu::Texture2D{iSpecs} {
+Texture2D::Texture2D(const Specification& iSpecs)
+	: renderer::gpu::Texture2D{iSpecs}, m_mipLevels{iSpecs.getMipLevelCount()} {
 
 	OWL_PROFILE_FUNCTION()
 
 	glCreateTextures(GL_TEXTURE_2D, 1, &m_textureId);
 
-	glTextureStorage2D(m_textureId, 1, glInternalDataFormat(m_specification.format),
+	glTextureStorage2D(m_textureId, static_cast<GLsizei>(m_mipLevels), glInternalDataFormat(m_specification.format),
 					   static_cast<GLsizei>(m_specification.size.x()), static_cast<GLsizei>(m_specification.size.y()));
 
-	applySamplerFilter(m_textureId, m_specification.filterMode);
+	applySamplerFilter(m_textureId, m_specification.filterMode, m_mipLevels);
 }
 
 Texture2D::~Texture2D() {
@@ -110,7 +116,7 @@ void Texture2D::setFilterMode(const FilterMode iMode) {
 
 	m_specification.filterMode = iMode;
 	if (m_textureId != 0)
-		applySamplerFilter(m_textureId, iMode);
+		applySamplerFilter(m_textureId, iMode, m_mipLevels);
 }
 
 void Texture2D::setData(void* iData, [[maybe_unused]] const uint32_t iSize) {
@@ -120,7 +126,9 @@ void Texture2D::setData(void* iData, [[maybe_unused]] const uint32_t iSize) {
 					"Data size mismatch texture size!")
 	glTextureSubImage2D(m_textureId, 0, 0, 0, static_cast<GLsizei>(m_specification.size.x()),
 						static_cast<GLsizei>(m_specification.size.y()), glDataFormat(m_specification.format),
-						GL_UNSIGNED_BYTE, iData);
+						glDataType(m_specification.format), iData);
+	if (m_mipLevels > 1)
+		glGenerateTextureMipmap(m_textureId);
 }
 
 }// namespace owl::renderer::gpu::opengl

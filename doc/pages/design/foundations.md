@@ -85,7 +85,8 @@ Every fix lands with its regression test.
   window icon; an automated test exports the sample project and runs it headless. See [Game export](game-export.md)
 - ![Done][done] Full Wayland support — Owl icon, editor multi-window (detached ImGui windows), X11 kept as an
   option. See [Windowing and input](windowing-input.md)
-- ![Planned][planned] OpenGL backend fixed and tested as the compatibility backend (B-16, B-07, B-18)
+- ![In Progress][progress] OpenGL backend fixed and tested as the compatibility backend: honest version check, asynchronous
+  picking (B-16), mipmaps generated and Nearest filtering honoured on both backends (B-18)
 
 ## Phase B — Safety nets
 
@@ -169,7 +170,8 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 - ![Planned][planned] Vulkan foundation — real frames in flight, no `vkQueueWaitIdle` on the hot path, transitions
   inside the frame, correct `loadOp`, swapchain image used only after acquisition (PR-28: B-01, B-02, B-04, B-19)
 - ![Planned][planned] Per-frame uniform ring and VMA sub-allocation (PR-29: B-03, B-11, B-23)
-- ![Planned][planned] Owl RHI named and documented; Vulkan reference, OpenGL frozen fallback, Null for tests. See
+- ![Planned][planned] Owl RHI named and documented; Vulkan reference, OpenGL frozen fallback, Null for tests;
+  pipeline objects and explicit bindings instead of global state and call-order conventions (B-07). See
   [Owl RHI](owl-rhi.md)
 - ![Planned][planned] ABI — YAML out of the public API, hidden visibility by default, third-party symbols not
   exported (PR-27: A-03, G-07, A-10, A-12)

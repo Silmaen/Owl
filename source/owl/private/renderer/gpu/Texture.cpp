@@ -18,6 +18,8 @@
 #include "renderer/TextureDecoder.h"
 #include "vulkan/Texture.h"
 
+#include <algorithm>
+#include <bit>
 #include <cstdint>
 #include <format>
 #include <fstream>
@@ -66,7 +68,13 @@ void Texture::Specification::fromString(const std::string& iString) {
 	std::getline(ss, token, ':');
 	format = magic_enum::enum_cast<ImageFormat>(token).value_or(ImageFormat::Rgb8);
 	std::getline(ss, token, ':');
-	generateMips = token != "false";
+	generateMips = token == "true";
+}
+
+auto Texture::Specification::getMipLevelCount() const -> uint32_t {
+	if (!generateMips || filterMode == FilterMode::Nearest)
+		return 1;
+	return static_cast<uint32_t>(std::bit_width(std::max({size.x(), size.y(), 1u})));
 }
 
 auto Texture::Specification::getPixelSize() const -> uint8_t {

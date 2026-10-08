@@ -197,8 +197,10 @@ void freeBuffer(const VkDevice& iDevice, const VkBuffer& iBuffer, const VkDevice
  * @param[in] iImage The image handle.
  * @param[in] iOldLayout Previous image layout.
  * @param[in] iNewLayout New image layout to transition to.
+ * @param[in] iLevelCount Number of mipmap levels transitioned, from level 0.
  */
-void transitionImageLayout(const VkImage& iImage, VkImageLayout iOldLayout, VkImageLayout iNewLayout);
+void transitionImageLayout(const VkImage& iImage, VkImageLayout iOldLayout, VkImageLayout iNewLayout,
+						   uint32_t iLevelCount = 1);
 
 /**
  * @brief
@@ -207,9 +209,21 @@ void transitionImageLayout(const VkImage& iImage, VkImageLayout iOldLayout, VkIm
  * @param[in] iImage The image handle.
  * @param[in] iOldLayout Previous image layout.
  * @param[in] iNewLayout New image layout to transition to.
+ * @param[in] iLevelCount Number of mipmap levels transitioned, from level 0.
  */
 void transitionImageLayout(const VkCommandBuffer& iCmd, const VkImage& iImage, VkImageLayout iOldLayout,
-						   VkImageLayout iNewLayout);
+						   VkImageLayout iNewLayout, uint32_t iLevelCount = 1);
+
+/**
+ * @brief
+ *  Fill the mipmap chain of an image from its level 0 by successive linear blits.
+ * Expects every level in `TRANSFER_DST_OPTIMAL` (level 0 holding the pixels) and leaves them all in
+ * `SHADER_READ_ONLY_OPTIMAL`.
+ * @param[in] iImage The image handle (RGBA8, created with transfer source and destination usage).
+ * @param[in] iSize Size of level 0.
+ * @param[in] iLevelCount Number of mipmap levels of the image.
+ */
+void generateMipmaps(const VkImage& iImage, const math::vec2ui& iSize, uint32_t iLevelCount);
 
 /**
  * @brief

@@ -10,6 +10,7 @@
 #include "Texture.h"
 
 #include "internal/Descriptors.h"
+#include "internal/FrameProfiler.h"
 #include "internal/RendererDescriptors.h"
 #include "internal/VulkanHandler.h"
 #include "internal/utils.h"
@@ -102,13 +103,19 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 			texData.debugName = getPath().filename().string();
 		else
 			texData.debugName = "anon";
+		texData.mipLevels = m_specification.getMipLevelCount();
+		texData.nearest = m_specification.filterMode == FilterMode::Nearest;
 		createImage(m_textureId, m_specification.size);
 	}
 	auto& data = vkd.getTextureData(m_textureId);
-	internal::transitionImageLayout(data.textureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	internal::transitionImageLayout(data.textureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+									data.mipLevels);
 	internal::copyBufferToImage(stagingBuffer, data.textureImage, m_specification.size);
-	internal::transitionImageLayout(data.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-									VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	if (data.mipLevels > 1)
+		internal::generateMipmaps(data.textureImage, m_specification.size, data.mipLevels);
+	else
+		internal::transitionImageLayout(data.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+										VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	internal::freeBuffer(vkc.getLogicalDevice(), stagingBuffer, stagingBufferMemory);
 	if (data.textureImageView == nullptr)
@@ -117,6 +124,22 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 		data.createSampler();
 }
 OWL_DIAG_POP
+
+void Texture2D::setFilterMode(const FilterMode iMode) {
+	m_specification.filterMode = iMode;
+	auto& vkd = internal::Descriptors::get();
+	if (!vkd.isTextureRegistered(m_textureId))
+		return;
+	auto& data = vkd.getTextureData(m_textureId);
+	if (data.nearest == (iMode == FilterMode::Nearest))
+		return;
+	data.nearest = iMode == FilterMode::Nearest;
+	if (data.textureSampler == nullptr)
+		return;
+	// The batches read the sampler from TextureData each frame; the old one may still be in flight.
+	internal::FrameProfiler::get().deviceWaitIdle(internal::VulkanCore::get().getLogicalDevice());
+	data.createSampler();
+}
 
 auto Texture2D::getRendererId() const -> uint64_t {
 	auto& desc = internal::Descriptors::get();
