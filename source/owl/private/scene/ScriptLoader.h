@@ -10,6 +10,7 @@
 #include "scene/component/LuaScript.h"
 
 #include <cstdint>
+#include <string>
 
 namespace owl::scene {
 
@@ -19,8 +20,10 @@ namespace owl::scene {
  *  path) and give it the component's serialized properties. `on_create` is not called.
  * @param[in] iScript The component.
  * @param[in] iEntityId UUID of the entity owning the component.
- * @return The instance, or null when the script cannot be found or does not compile (logged).
+ * @param[in] iEntityName Tag of the entity, named in the error messages.
+ * @return The instance, or null when the script cannot be found or does not compile (logged, with a fix).
  */
-auto loadScriptInstance(const component::LuaScript& iScript, uint64_t iEntityId) -> uniq<script::ScriptInstance>;
+auto loadScriptInstance(const component::LuaScript& iScript, uint64_t iEntityId, const std::string& iEntityName)
+		-> uniq<script::ScriptInstance>;
 
 }// namespace owl::scene

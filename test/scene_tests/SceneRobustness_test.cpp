@@ -10,6 +10,7 @@
 
 #include <core/Log.h>
 #include <core/Timestep.h>
+#include <debug/LogSink.h>
 #include <physics/PhysicCommand.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
@@ -183,6 +184,39 @@ TEST_F(SceneRobustnessTest, CorruptedSceneFailsWithTypedErrorAndRollsBack) {
 				"    Transform: {translation: notanumber}\n",
 				SceneLoadError::InvalidEntity);
 	expectError("Scene: x\nEntities:\n  - Entity: notanumber\n", SceneLoadError::InvalidEntity);
+}
+
+// Phase D: a load error names the file, the entity and the fix.
+TEST_F(SceneRobustnessTest, LoadErrorNamesFileEntityAndFix) {
+	core::Log::setVerbosityLevel(core::Log::Level::Error);
+	core::Log::getLogBuffer().clear();
+	const auto scn = mkShared<Scene>();
+	const SceneSerializer serializer(scn);
+	const std::string yaml = "Scene: x\nEntities:\n  - Entity: 1\n    Tag: {tag: Fine}\n  - Entity: 42\n"
+							 "    Tag: {tag: Broken}\n    Transform: {translation: notanumber}\n";
+	const std::vector<uint8_t> bytes(yaml.begin(), yaml.end());
+	ASSERT_FALSE(serializer.deserializeFromBuffer(bytes, "scenes/level.owl"));
+	bool found = false;
+	for (const auto& entry: core::Log::getLogBuffer().getEntries()) {
+		if (entry.message.find("scenes/level.owl") == std::string::npos)
+			continue;
+		found = true;
+		EXPECT_NE(entry.message.find("42"), std::string::npos) << entry.message;
+		EXPECT_NE(entry.message.find("'Broken'"), std::string::npos) << entry.message;
+		EXPECT_NE(entry.message.find("line 5"), std::string::npos) << entry.message;
+		EXPECT_NE(entry.message.find("Fix: "), std::string::npos) << entry.message;
+	}
+	EXPECT_TRUE(found);
+}
+
+// Phase D: every load error has a fix hint.
+TEST(SceneLoadErrorHint, EveryErrorHasAFix) {
+	for (const auto error: {SceneLoadError::FileUnreadable, SceneLoadError::InvalidYaml, SceneLoadError::NotAScene,
+							SceneLoadError::InvalidEntity, SceneLoadError::InvalidFormatVersion,
+							SceneLoadError::NewerFormatVersion, SceneLoadError::MigrationFailed}) {
+		EXPECT_FALSE(fixHint(error).empty());
+		EXPECT_NE(fixHint(error), describe(error));
+	}
 }
 
 // C-06: a missing file reports FileUnreadable.

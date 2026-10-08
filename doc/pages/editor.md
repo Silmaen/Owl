@@ -503,6 +503,17 @@ Warning, Error, Critical. Disabled levels are hidden from the output.
 **Auto-scroll.** Enabled by default, the panel automatically scrolls to the newest
 message. Scrolling up manually disables auto-scroll until re-enabled.
 
+**Actionable errors.** A failed scene load, Lua script or pack names the file, the entity
+(tag, id, line) and ends with a `Fix:` hint; the runner prints the same messages:
+
+```
+SceneSerializer: Cannot load scene 'scenes/level.owl': entity #1 (id 42) 'Broken' at line 5 is malformed
+(yaml-cpp: error at line 7, column 30: bad conversion). Fix: fix or remove the reported entity in the file, then
+reload the scene.
+LuaEngine: Error in on_update of script 'scripts/hero.lua' on entity 'Hero' (77): [string "scripts/hero.lua"]:2:
+boom. Fix: fix the script at the first line of the traceback; the callback runs again on its next call.
+```
+
 ### Stats
 
 The Stats panel is a small overlay window that displays real-time performance

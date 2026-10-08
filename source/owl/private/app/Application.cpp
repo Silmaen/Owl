@@ -106,11 +106,11 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 				OWL_CORE_INFO("Pack: extracted {} entries into '{}' ({} up to date).", extracted->written,
 							  assetsDir.string(), extracted->skipped)
 			} else {
-				OWL_CORE_ERROR("Pack: extraction into '{}' failed ({}).", assetsDir.string(),
-							   magic_enum::enum_name(extracted.error()))
+				OWL_CORE_ERROR("Pack: Extraction of '{}' into '{}' failed ({})."
+							   " Fix: check that the runner folder is writable and has free space, or pack the game "
+							   "again.",
+							   packPath.string(), assetsDir.string(), magic_enum::enum_name(extracted.error()))
 			}
-		} else {
-			OWL_CORE_ERROR("Failed to open asset pack: {}.", packPath.string())
 		}
 	}
 	// Lowest priority first: a development tree finds the engine and app assets above the working directory.
@@ -617,7 +617,9 @@ void AppParams::saveToFile(const std::filesystem::path& iFile) const {
 auto Application::openPack(const std::filesystem::path& iPackFile) -> bool {
 	closePack();
 	if (const auto opened = m_packReader.tryOpen(iPackFile); !opened) {
-		OWL_CORE_ERROR("Failed to open asset pack: {} ({}).", iPackFile.string(), magic_enum::enum_name(opened.error()))
+		OWL_CORE_ERROR("Pack: Cannot open '{}': {} ({}). Fix: {}.", iPackFile.string(),
+					   data::assets::pack::describe(opened.error()), magic_enum::enum_name(opened.error()),
+					   data::assets::pack::fixHint(opened.error()))
 		return false;
 	}
 	OWL_CORE_INFO("Opened asset pack: {} ({} entries).", iPackFile.string(), m_packReader.getHeader().entryCount)

@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 struct lua_State;
@@ -35,6 +36,14 @@ enum struct LuaStatus : uint8_t {
 	TimeQuota,///< The call ran longer than its time budget.
 	Invalid,///< The Lua state could not be created.
 };
+
+/**
+ * @brief
+ *  What the user can do about a failed load or call.
+ * @param[in] iStatus The status of the failed load or call.
+ * @return A short imperative sentence fragment, logged after `Fix:`.
+ */
+[[nodiscard]] auto fixHint(LuaStatus iStatus) -> std::string_view;
 
 /**
  * @brief
@@ -114,6 +123,13 @@ public:
 	 * @return The status of the last host call into Lua.
 	 */
 	[[nodiscard]] auto getLastStatus() const -> LuaStatus;
+
+	/**
+	 * @brief
+	 *  Name the owner of this state in every error message (e.g. the script and its entity).
+	 * @param[in] iContext Text inserted after the failing callback name; empty to drop it.
+	 */
+	void setErrorContext(const std::string& iContext) const;
 
 	/**
 	 * @brief

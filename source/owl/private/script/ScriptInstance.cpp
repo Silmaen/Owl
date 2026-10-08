@@ -15,6 +15,9 @@
 #include "script/LuaEngine.h"
 
 #include <cstdint>
+#include <format>
+#include <string>
+#include <string_view>
 
 namespace owl::script {
 struct ScriptInstance::Impl {
@@ -28,6 +31,19 @@ struct ScriptInstance::Impl {
 	bool disabled = false;
 	// Script path or chunk name, for diagnostics.
 	std::string name;
+	// Tag of the owning entity, for diagnostics.
+	std::string entityName;
+
+	[[nodiscard]] auto owner() const -> std::string {
+		return entityName.empty() ? std::format("entity {}", entityId)
+								  : std::format("entity '{}' ({})", entityName, entityId);
+	}
+
+	void bind(const std::string& iName, const uint64_t iEntityId) {
+		entityId = iEntityId;
+		name = iName;
+		engine.setErrorContext(std::format("script '{}' on {}", name, owner()));
+	}
 
 	void checkQuota(const std::string_view iFunction, const bool iCalled) {
 		if (iCalled)
@@ -35,8 +51,8 @@ struct ScriptInstance::Impl {
 		if (const auto status = engine.getLastStatus();
 			status == LuaStatus::MemoryQuota || status == LuaStatus::TimeQuota) {
 			disabled = true;
-			OWL_CORE_ERROR("ScriptInstance: Script '{}' of entity {} disabled, '{}' exceeded its {} quota.", name,
-						   entityId, iFunction, status == LuaStatus::MemoryQuota ? "memory" : "time")
+			OWL_CORE_ERROR("ScriptInstance: Script '{}' on {} disabled, '{}' exceeded its {} quota. Fix: {}.", name,
+						   owner(), iFunction, status == LuaStatus::MemoryQuota ? "memory" : "time", fixHint(status))
 		}
 	}
 };
@@ -49,6 +65,11 @@ ScriptInstance::ScriptInstance(ScriptInstance&& iOther) noexcept = default;
 
 auto ScriptInstance::operator=(ScriptInstance&& iOther) noexcept -> ScriptInstance& = default;
 
+void ScriptInstance::setEntityName(const std::string& iEntityName) const {
+	if (mp_impl)
+		mp_impl->entityName = iEntityName;
+}
+
 auto ScriptInstance::create(const std::string& iScriptPath, const uint64_t iEntityId) const -> bool {
 	OWL_PROFILE_FUNCTION()
 
@@ -58,10 +79,9 @@ auto ScriptInstance::create(const std::string& iScriptPath, const uint64_t iEnti
 	registerBindings(mp_impl->engine.getState());
 	// Store entity_id as a global.
 	mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
-	mp_impl->entityId = iEntityId;
-	mp_impl->name = iScriptPath;
+	mp_impl->bind(iScriptPath, iEntityId);
 	if (!mp_impl->engine.loadScript(iScriptPath)) {
-		OWL_CORE_ERROR("ScriptInstance: Failed to load script '{}'.", iScriptPath)
+		OWL_CORE_ERROR("ScriptInstance: Failed to load script '{}' on {}.", iScriptPath, mp_impl->owner())
 		return false;
 	}
 	mp_impl->loaded = true;
@@ -76,10 +96,9 @@ auto ScriptInstance::createFromBuffer(const std::vector<uint8_t>& iData, const s
 		return false;
 	registerBindings(mp_impl->engine.getState());
 	mp_impl->engine.setGlobal("entity_id", static_cast<int64_t>(iEntityId));
-	mp_impl->entityId = iEntityId;
-	mp_impl->name = iName;
+	mp_impl->bind(iName, iEntityId);
 	if (!mp_impl->engine.loadBuffer(iData, iName)) {
-		OWL_CORE_ERROR("ScriptInstance: Failed to load buffer '{}'.", iName)
+		OWL_CORE_ERROR("ScriptInstance: Failed to load buffer '{}' on {}.", iName, mp_impl->owner())
 		return false;
 	}
 	mp_impl->loaded = true;

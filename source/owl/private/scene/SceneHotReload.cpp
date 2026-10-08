@@ -18,6 +18,7 @@
 #include "scene/component/LuaScript.h"
 #include "scene/component/RaycastDoor.h"
 #include "scene/component/RaycastPushWall.h"
+#include "scene/component/Tag.h"
 #include "scene/component/Tilemap.h"
 #include "scene/component/VoxelWorld.h"
 
@@ -104,7 +105,9 @@ auto Scene::onAssetFileChanged(const std::filesystem::path& iFile) -> bool {
 			if (!luaScript.instance || !isAssetFile(luaScript.scriptPath, iFile))
 				continue;
 			used = true;
-			auto fresh = loadScriptInstance(luaScript, static_cast<uint64_t>(registry.get<component::ID>(entity).id));
+			const auto* tag = registry.try_get<component::Tag>(entity);
+			auto fresh = loadScriptInstance(luaScript, static_cast<uint64_t>(registry.get<component::ID>(entity).id),
+											tag != nullptr ? tag->tag : std::string{});
 			if (!fresh) {
 				OWL_CORE_ERROR("Scene: Reload of script '{}' failed, the previous version keeps running.",
 							   luaScript.scriptPath)

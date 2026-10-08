@@ -43,6 +43,14 @@ enum struct SceneLoadError : uint8_t {
  */
 [[nodiscard]] OWL_API auto describe(SceneLoadError iError) -> std::string_view;
 
+/**
+ * @brief
+ *  What the user can do to fix a scene load error.
+ * @param[in] iError The error.
+ * @return A short imperative sentence fragment, logged after `Fix:`.
+ */
+[[nodiscard]] OWL_API auto fixHint(SceneLoadError iError) -> std::string_view;
+
 /// Result of a scene load: nothing on success, the failure reason otherwise.
 using SceneLoadResult = expected<void, SceneLoadError>;
 
@@ -60,6 +68,8 @@ struct OWL_API ParsedScene {
 	shared<core::Serializer> serializer;
 	/// Scene name extracted from the YAML header (informational; may be empty).
 	std::string sceneName;
+	/// File path or pack entry the buffer came from, named in the error messages.
+	std::string sourceName;
 	/// True when the buffer parsed cleanly and looked like a scene file.
 	bool valid = false;
 	/// Optional human-readable error message when `valid` is false.

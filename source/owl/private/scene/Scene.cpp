@@ -44,9 +44,11 @@
 
 #include <cmath>
 #include <cstdint>
+#include <filesystem>
 #include <limits>
 #include <mutex>
 #include <span>
+#include <string>
 #include <tuple>
 #include <utility>
 
@@ -500,7 +502,8 @@ void Scene::onStartRuntime() {
 		if (luaScript.scriptPath.empty())
 			continue;
 		const auto uuid = static_cast<uint64_t>(registry.get<component::ID>(entity).id);
-		luaScript.instance = loadScriptInstance(luaScript, uuid);
+		const auto* tag = registry.try_get<component::Tag>(entity);
+		luaScript.instance = loadScriptInstance(luaScript, uuid, tag != nullptr ? tag->tag : std::string{});
 		if (luaScript.instance)
 			luaScript.instance->onCreate();
 		++luaCount;
