@@ -38,11 +38,20 @@ struct QuadInstance {
 [[vk::binding(2)]]
 StructuredBuffer<QuadInstance> gInstances;
 
+// One element type per buffer: the OpenGL SPIR-V path (NVIDIA) aliases storage buffers sharing a block type.
+struct SceneWorld {
+	column_major float4x4 world;
+};
+
+struct TransientWorld {
+	column_major float4x4 world;
+};
+
 [[vk::binding(3)]]
-StructuredBuffer<column_major float4x4> gSceneWorlds;
+StructuredBuffer<SceneWorld> gSceneWorlds;
 
 [[vk::binding(4)]]
-StructuredBuffer<column_major float4x4> gTransientWorlds;
+StructuredBuffer<TransientWorld> gTransientWorlds;
 
 struct VertexInput {
 	[[vk::location(0)]] int cornerIndex : POSITION;
@@ -77,9 +86,9 @@ static const float2 kCorners[4] = {
 
 float4x4 resolveWorldMatrix(int worldIndex) {
 	if (worldIndex < 0) {
-		return gTransientWorlds[-(worldIndex + 1)];
+		return gTransientWorlds[-(worldIndex + 1)].world;
 	}
-	return gSceneWorlds[worldIndex];
+	return gSceneWorlds[worldIndex].world;
 }
 
 [shader("vertex")]

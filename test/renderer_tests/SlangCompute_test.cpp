@@ -25,6 +25,7 @@ OWL_DIAG_POP
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <ranges>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -182,6 +183,35 @@ TEST(SlangCompute, shippedRaycastStripeShaderCompiles) {
 	const auto resultGl =
 			owl::renderer::utils::compileSlangToSpirv(source, "raycast_stripe_gl_check", /*iForVulkan=*/false);
 	EXPECT_TRUE(resultGl.success);
+	owl::core::Log::invalidate();
+}
+
+TEST(SlangCompute, shippedShadersGiveEachStorageBufferItsOwnBlockType) {
+	// The OpenGL SPIR-V path (NVIDIA) binds every storage buffer sharing a block type to the same buffer.
+	owl::core::Log::init(owl::core::Log::Level::Off);
+	uint32_t checked = 0;
+	for (const auto& entry: std::filesystem::recursive_directory_iterator(findRoot() / "engine_assets" / "shaders")) {
+		if (entry.path().extension() != ".slang")
+			continue;
+		const std::ifstream in(entry.path(), std::ios::binary);
+		std::stringstream ss;
+		ss << in.rdbuf();
+		const auto name = entry.path().stem().string();
+		const auto result = owl::renderer::utils::compileSlangToSpirv(ss.str(), name + "_gl_blocks", false);
+		ASSERT_TRUE(result.success) << name;
+		for (const auto& spirv: result.spirvData | std::views::values) {
+			const spirv_cross::Compiler compiler(spirv);
+			std::vector<uint32_t> blockTypes;
+			for (const auto& buffer: compiler.get_shader_resources().storage_buffers) {
+				const auto blockType = static_cast<uint32_t>(buffer.base_type_id);
+				EXPECT_EQ(std::ranges::count(blockTypes, blockType), 0)
+						<< name << ": " << buffer.name << " shares its block type with another storage buffer";
+				blockTypes.push_back(blockType);
+			}
+		}
+		++checked;
+	}
+	EXPECT_GE(checked, 10u);
 	owl::core::Log::invalidate();
 }
 #endif

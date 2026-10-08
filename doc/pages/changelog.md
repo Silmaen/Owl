@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OWL_REQUIRE_MODULE(<MODULE>)` (`testHelper.h`) skips a test whose module is not built.
 - Architecture page: the engine's extension points (renderer-stack layers, application layers, extra data) and those the open component registry and the phased systems will add.
 - `DependencyReport` CI action, run on every `main` build of Build Linux x64 / Clang: the Conan dependencies with a newer version on ConanCenter (`conan graph outdated`, `cci.*` false positives dropped), logged and counted, never failing the build.
+- `stylemix` image test: a voxel world, perspective Renderer2D sprites, a `Space: Screen` HUD (canvas, text, progress bar) and the voxel crosshair in one frame, on Vulkan and OpenGL.
 - Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the nightly bench pinned to the agent that measured it.
 - CodeStyle `test-assertions` sub-check: every gtest test asserts something; the 26 that only ran code now check its effect (or say `EXPECT_NO_THROW`), e.g. a trigger timer is seen firing and stopping.
 - clang-tidy and the static analyzer analyse the tests too (`test/.clang-tidy` relaxes only what a test is right to do); the 224 findings they raised are fixed.
@@ -112,6 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `core_task` scheduler tests no longer fail on a loaded machine: they wait for the worker (condition and 30 s deadline) instead of sleeping 5 ms.
+- OpenGL on the SPIR-V path (NVIDIA): the HUD, text and every Renderer2D draw without an entity reappear; the `quad`, `circle` and `text` shaders gave the scene and transient world buffers one block type, which the driver bound to a single buffer. A test checks every shipped shader keeps one block type per storage buffer.
 - `Matrix::norm()` is the Frobenius norm: it summed `a_ij * a_ji` (wrong for any non-symmetric matrix) and read out of range on a non-square one.
 - The Lua sandbox bytecode test loads its whole fake chunk: the literal was cut at its embedded NUL.
 - CodeStyle now checks `test/` and `source/owlnest/runner` (it pointed at a missing `source/owlrunner`, skipped in silence; a missing root now fails): 48 test file headers, typos and formatting fixed.
