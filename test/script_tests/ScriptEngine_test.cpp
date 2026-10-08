@@ -51,43 +51,6 @@ TEST(ScriptEngine, initAndShutdown) {
 	core::Log::invalidate();
 }
 
-TEST(ScriptEngine, loadScript) {
-	core::Log::init(core::Log::Level::Off);
-	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
-
-	const auto dir = std::filesystem::temp_directory_path() / "owl_scriptengine_test_1";
-	std::filesystem::remove_all(dir);
-	const auto path = writeTempScript(dir, "engine_test.lua", "test_var = 123\n");
-
-	EXPECT_TRUE(ScriptEngine::loadScript(path));
-
-	ScriptEngine::shutdown();
-	std::filesystem::remove_all(dir);
-	core::Log::invalidate();
-}
-
-TEST(ScriptEngine, loadScriptFromBuffer) {
-	core::Log::init(core::Log::Level::Off);
-	auto scn = mkShared<scene::Scene>();
-	ScriptEngine::init(scn.get());
-
-	const std::string script = "buf_var = 456";
-	const std::vector<uint8_t> data(script.begin(), script.end());
-	EXPECT_TRUE(ScriptEngine::loadScriptFromBuffer(data, "buffer_test"));
-
-	ScriptEngine::shutdown();
-	core::Log::invalidate();
-}
-
-TEST(ScriptEngine, loadScriptNotInitialized) {
-	core::Log::init(core::Log::Level::Off);
-	EXPECT_FALSE(ScriptEngine::loadScript("/nonexistent.lua"));
-	const std::vector<uint8_t> data;
-	EXPECT_FALSE(ScriptEngine::loadScriptFromBuffer(data, "empty"));
-	core::Log::invalidate();
-}
-
 TEST(ScriptEngine, extractProperties) {
 	core::Log::init(core::Log::Level::Off);
 	const auto dir = std::filesystem::temp_directory_path() / "owl_scriptengine_test_2";

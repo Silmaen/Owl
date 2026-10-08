@@ -473,7 +473,7 @@ Lua callbacks to match your game.
 
 ### onStartRuntime
 
-1. `ScriptEngine::init(scene)` creates the shared engine state
+1. `ScriptEngine::init(scene)` records the active scene the bindings act on (it owns no Lua state)
 2. For each entity with a `LuaScript` component:
    - Creates a `ScriptInstance` (isolated Lua state)
    - Loads the script from file or `.owlpack`

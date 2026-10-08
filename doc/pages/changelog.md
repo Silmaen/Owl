@@ -97,6 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).
 - LeakSanitizer preset, option and TeamCity job: on Linux ASan already reports leaks.
 - `parallelForEach` / `parallelForIndex` (`core/task/ParallelUtils.h`), which nothing called, and the `Scheduler::getImpl()` accessor that only they used.
+- The Lua state `ScriptEngine` kept with bindings that no script ran in (each `ScriptInstance` owns its own), with `ScriptEngine::loadScript` / `loadScriptFromBuffer` that only fed it.
 
 ### Fixed
 
