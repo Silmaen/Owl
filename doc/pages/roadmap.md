@@ -166,7 +166,7 @@ rest of A and B, then D, then C, then E.
 - ![Planned][planned] Phase D — hot reload of assets, Slang shaders and Lua scripts
 - ![Planned][planned] Phase D — autosave, crash recovery, session restore, error messages, project templates
 - ![Planned][planned] Phase D — documentation faithful to the code and checked in CI
-- ![Planned][planned] Phase C — Vulkan foundation first, as soon as the image tests land ([RHI](design/owl-rhi.md))
+- ![Done][done] Phase C — Vulkan foundation first, as soon as the image tests land ([RHI](design/owl-rhi.md))
 - ![Planned][planned] Phase C — Owl RHI named, OpenGL frozen as fallback, backend interface ready for more
 - ![In Progress][progress] Phase C — ABI cleanup, world per scene, phased systems, open component registry
 - ![Done][done] Phase C — optional CMake modules so each game can specialise the engine

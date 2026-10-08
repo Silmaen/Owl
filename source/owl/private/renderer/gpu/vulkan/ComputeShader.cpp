@@ -134,55 +134,29 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 		return;
 	}
 
-	if (!m_bindings.empty()) {
-		VkDescriptorPoolSize poolSize{};
-		poolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		poolSize.descriptorCount = static_cast<uint32_t>(m_bindings.size());
-		VkDescriptorPoolCreateInfo poolInfo{};
-		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-		poolInfo.poolSizeCount = 1;
-		poolInfo.pPoolSizes = &poolSize;
-		poolInfo.maxSets = 1;
-		if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan compute shader: failed to create descriptor pool for '{}'.", m_name)
-			return;
-		}
-		VkDescriptorSetAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		allocInfo.descriptorPool = m_descriptorPool;
-		allocInfo.descriptorSetCount = 1;
-		allocInfo.pSetLayouts = &m_descriptorLayout;
-		if (vkAllocateDescriptorSets(device, &allocInfo, &m_descriptorSet) != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan compute shader: failed to allocate descriptor set for '{}'.", m_name)
-			return;
-		}
-	}
+	if (!m_bindings.empty())
+		m_ring.init(m_descriptorLayout, {{.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+										  .descriptorCount = static_cast<uint32_t>(m_bindings.size())}});
 	m_ready = true;
 }
 
 ComputeShader::~ComputeShader() {
+	m_bound.clear();
 	if (internal::VulkanHandler::get().getState() != internal::VulkanHandler::State::Running) {
-		m_pipeline = nullptr;
-		m_layout = nullptr;
-		m_descriptorLayout = nullptr;
-		m_descriptorPool = nullptr;
-		m_descriptorSet = nullptr;
+		m_ring.reset();
 		return;
 	}
-	auto* const device = internal::VulkanCore::get().getLogicalDevice();
-	if (m_pipeline != nullptr)
-		vkDestroyPipeline(device, m_pipeline, nullptr);
-	if (m_layout != nullptr)
-		vkDestroyPipelineLayout(device, m_layout, nullptr);
-	if (m_descriptorPool != nullptr)
-		vkDestroyDescriptorPool(device, m_descriptorPool, nullptr);
-	if (m_descriptorLayout != nullptr)
-		vkDestroyDescriptorSetLayout(device, m_descriptorLayout, nullptr);
-	m_pipeline = nullptr;
-	m_layout = nullptr;
-	m_descriptorPool = nullptr;
-	m_descriptorLayout = nullptr;
-	m_descriptorSet = nullptr;
+	m_ring.release();
+	internal::VulkanHandler::get().deferRelease([device = internal::VulkanCore::get().getLogicalDevice(),
+												 pipeline = m_pipeline, layout = m_layout,
+												 setLayout = m_descriptorLayout]() -> void {
+		if (pipeline != nullptr)
+			vkDestroyPipeline(device, pipeline, nullptr);
+		if (layout != nullptr)
+			vkDestroyPipelineLayout(device, layout, nullptr);
+		if (setLayout != nullptr)
+			vkDestroyDescriptorSetLayout(device, setLayout, nullptr);
+	});
 }
 
 void ComputeShader::buildDescriptorSetLayout(const std::vector<uint32_t>& iBindings) {
@@ -208,43 +182,65 @@ void ComputeShader::buildDescriptorSetLayout(const std::vector<uint32_t>& iBindi
 }
 
 void ComputeShader::bindStorageBuffer(const uint32_t iBinding, const shared<renderer::gpu::StorageBuffer>& iBuffer) {
-	if (!m_ready || m_descriptorSet == nullptr || !iBuffer)
+	if (!m_ready || !iBuffer)
 		return;
 	const auto* vkBuf = dynamic_cast<const StorageBuffer*>(iBuffer.get());
-	if (vkBuf == nullptr || vkBuf->getHandle() == nullptr) {
-		OWL_CORE_WARN("Vulkan compute shader: bindStorageBuffer with non-Vulkan / empty SSBO on '{}'.", m_name)
+	if (vkBuf == nullptr) {
+		OWL_CORE_WARN("Vulkan compute shader: bindStorageBuffer with non-Vulkan SSBO on '{}'.", m_name)
 		return;
 	}
-	VkDescriptorBufferInfo bufInfo{};
-	bufInfo.buffer = vkBuf->getHandle();
-	bufInfo.offset = 0;
-	bufInfo.range = vkBuf->getSize();
-	VkWriteDescriptorSet write{};
-	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write.dstSet = m_descriptorSet;
-	write.dstBinding = iBinding;
-	write.descriptorCount = 1;
-	write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	write.pBufferInfo = &bufInfo;
-	auto* const device = internal::VulkanCore::get().getLogicalDevice();
-	vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+	for (auto& [binding, buffer]: m_bound) {
+		if (binding == iBinding) {
+			buffer = iBuffer;
+			return;
+		}
+	}
+	m_bound.emplace_back(iBinding, iBuffer);
 }
 
 void ComputeShader::dispatch(const uint32_t iGroupsX, const uint32_t iGroupsY, const uint32_t iGroupsZ) {
 	if (!m_ready || iGroupsX == 0 || iGroupsY == 0 || iGroupsZ == 0)
 		return;
-	// One-shot command buffer: callers may run before any batch is open, and `endSingleTimeCommands`'s queue wait acts as the barrier.
-	const auto& core = internal::VulkanCore::get();
-	auto* const cmd = core.beginSingleTimeCommands();
-	if (cmd == nullptr) {
-		OWL_CORE_WARN("Vulkan compute shader: failed to allocate one-shot command buffer for '{}'.", m_name)
+	auto& vkh = internal::VulkanHandler::get();
+	// Recorded in the frame command buffer (a frame starts if none is recording); a read-back flushes it.
+	if (vkh.getCurrentCommandBuffer() == nullptr)
 		return;
-	}
-	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
-	if (m_descriptorSet != nullptr)
-		vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, m_layout, 0, 1, &m_descriptorSet, 0, nullptr);
-	vkCmdDispatch(cmd, iGroupsX, iGroupsY, iGroupsZ);
-	core.endSingleTimeCommands(cmd);
+	const auto record = [this, &vkh, iGroupsX, iGroupsY, iGroupsZ](VkCommandBuffer iCmd) -> void {
+		VkDescriptorSet set = nullptr;
+		if (!m_bindings.empty()) {
+			set = m_ring.acquire(vkh.getCurrentFrameIndex(), vkh.getFrameSerial());
+			if (set == nullptr)
+				return;
+			std::vector<VkDescriptorBufferInfo> infos;
+			infos.reserve(m_bound.size());
+			std::vector<VkWriteDescriptorSet> writes;
+			writes.reserve(m_bound.size());
+			for (const auto& [binding, buffer]: m_bound) {
+				const auto view = static_cast<StorageBuffer*>(buffer.get())->resolve();
+				if (view.buffer == nullptr)
+					continue;
+				const auto& info = infos.emplace_back(
+						VkDescriptorBufferInfo{.buffer = view.buffer, .offset = view.offset, .range = view.range});
+				writes.push_back({.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+								  .pNext = nullptr,
+								  .dstSet = set,
+								  .dstBinding = binding,
+								  .dstArrayElement = 0,
+								  .descriptorCount = 1,
+								  .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+								  .pImageInfo = nullptr,
+								  .pBufferInfo = &info,
+								  .pTexelBufferView = nullptr});
+			}
+			vkUpdateDescriptorSets(internal::VulkanCore::get().getLogicalDevice(), static_cast<uint32_t>(writes.size()),
+								   writes.data(), 0, nullptr);
+		}
+		vkCmdBindPipeline(iCmd, VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
+		if (set != nullptr)
+			vkCmdBindDescriptorSets(iCmd, VK_PIPELINE_BIND_POINT_COMPUTE, m_layout, 0, 1, &set, 0, nullptr);
+		vkCmdDispatch(iCmd, iGroupsX, iGroupsY, iGroupsZ);
+	};
+	vkh.recordTransfer(record);
 }
 
 }// namespace owl::renderer::gpu::vulkan

@@ -130,6 +130,7 @@ auto makeSeries() -> std::vector<Series> {
 			{"submits", counter(&S::submits)},
 			{"queue_wait_idle", counter(&S::queueWaitIdles)},
 			{"device_wait_idle", counter(&S::deviceWaitIdles)},
+			{"fence_wait", counter(&S::fenceWaits)},
 	};
 }
 
@@ -281,6 +282,7 @@ void FrameBench::onFrameStart() {
 		sample.submits = counters.submits - m_counters.submits;
 		sample.queueWaitIdles = counters.queueWaitIdles - m_counters.queueWaitIdles;
 		sample.deviceWaitIdles = counters.deviceWaitIdles - m_counters.deviceWaitIdles;
+		sample.fenceWaits = counters.fenceWaits - m_counters.fenceWaits;
 		m_current.reset();
 	}
 	m_frameStart = now;

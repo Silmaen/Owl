@@ -215,10 +215,10 @@ void UiLayer::end() const {
 		const auto& vkh = renderer::gpu::vulkan::internal::VulkanHandler::get();
 		renderer::gpu::RenderCommand::beginBatch();
 		renderer::gpu::RenderCommand::nextSubpass();
-		if (VkCommandBuffer cmd = vkh.getCurrentCommandBuffer(); cmd != VK_NULL_HANDLE)
+		if (VkCommandBuffer cmd = vkh.getRenderPassCommandBuffer(); cmd != VK_NULL_HANDLE)
 			ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
 		else
-			OWL_CORE_WARN("UiLayer: skipped ImGui submission — Vulkan command buffer not ready.")
+			OWL_CORE_FRAME_TRACE("UiLayer: skipped ImGui submission (no swapchain image this frame).")
 		renderer::gpu::RenderCommand::endBatch();
 	}
 	g_deferredTextureReleases.clear();

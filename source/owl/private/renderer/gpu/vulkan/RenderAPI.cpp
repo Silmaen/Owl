@@ -59,7 +59,7 @@ void RenderAPI::setClearColor(const math::vec4& iColor) {
 }
 
 void RenderAPI::clear() {
-	const auto& vkh = internal::VulkanHandler::get();
+	auto& vkh = internal::VulkanHandler::get();
 	vkh.clear();
 }
 
@@ -157,58 +157,49 @@ void RenderAPI::setDepthMask(const bool iEnabled) {
 	auto& vkh = internal::VulkanHandler::get();
 	vkh.depthWriteEnabled = iEnabled;
 	// Apply immediately only while a batch is recording; otherwise the value is picked up at the next beginBatch.
-	if (vkh.inBatch) {
-		if (const auto& cmd = vkh.getCurrentCommandBuffer(); cmd != nullptr)
-			vkCmdSetDepthWriteEnable(cmd, iEnabled ? VK_TRUE : VK_FALSE);
-	}
+	if (auto* const cmd = vkh.getRenderPassCommandBuffer(); cmd != nullptr)
+		vkCmdSetDepthWriteEnable(cmd, iEnabled ? VK_TRUE : VK_FALSE);
 }
 
 void RenderAPI::setDepthTest(const bool iEnabled) {
 	auto& vkh = internal::VulkanHandler::get();
 	vkh.depthTestEnabled = iEnabled;
 	// Apply immediately only while a batch is recording; otherwise the value is picked up at the next beginBatch.
-	if (vkh.inBatch) {
-		if (const auto& cmd = vkh.getCurrentCommandBuffer(); cmd != nullptr)
-			vkCmdSetDepthTestEnable(cmd, iEnabled ? VK_TRUE : VK_FALSE);
-	}
+	if (auto* const cmd = vkh.getRenderPassCommandBuffer(); cmd != nullptr)
+		vkCmdSetDepthTestEnable(cmd, iEnabled ? VK_TRUE : VK_FALSE);
 }
 
 void RenderAPI::drawIndexedIndirect(const shared<DrawData>& iData, const shared<gpu::StorageBuffer>& iCommandBuffer,
 									const shared<gpu::StorageBuffer>& iCountBuffer, const uint32_t iMaxDrawCount) {
 	if (!iData || !iCommandBuffer || !iCountBuffer || iMaxDrawCount == 0)
 		return;
-	auto* const cmd = internal::VulkanHandler::get().getCurrentCommandBuffer();
-	if (cmd == nullptr)
-		return;
-	iData->bind();
-	const auto* cmdSsbo = dynamic_cast<const StorageBuffer*>(iCommandBuffer.get());
-	const auto* countSsbo = dynamic_cast<const StorageBuffer*>(iCountBuffer.get());
-	if (cmdSsbo == nullptr || countSsbo == nullptr || cmdSsbo->getHandle() == nullptr ||
-		countSsbo->getHandle() == nullptr) {
+	auto& vkh = internal::VulkanHandler::get();
+	auto* const cmdSsbo = dynamic_cast<StorageBuffer*>(iCommandBuffer.get());
+	auto* const countSsbo = dynamic_cast<StorageBuffer*>(iCountBuffer.get());
+	if (cmdSsbo == nullptr || countSsbo == nullptr) {
 		OWL_CORE_WARN("Vulkan: drawIndexedIndirect with non-Vulkan SSBOs.")
 		return;
 	}
-	vkCmdDrawIndexedIndirectCount(cmd, cmdSsbo->getHandle(), 0, countSsbo->getHandle(), 0, iMaxDrawCount,
+	const auto commands = cmdSsbo->resolve();
+	const auto count = countSsbo->resolve();
+	if (commands.buffer == nullptr || count.buffer == nullptr)
+		return;
+	iData->bind();
+	if (!vkh.inBatch)
+		vkh.beginBatch();
+	auto* const cmd = vkh.getRenderPassCommandBuffer();
+	if (cmd == nullptr)
+		return;
+	vkCmdDrawIndexedIndirectCount(cmd, commands.buffer, commands.offset, count.buffer, count.offset, iMaxDrawCount,
 								  static_cast<uint32_t>(sizeof(uint32_t) * 5));
 }
 
 void RenderAPI::storageBufferMemoryBarrier() {
 	auto& handler = internal::VulkanHandler::get();
-	// No-op outside an active batch — compute dispatches there run on a one-shot CB whose queue wait is the barrier.
-	if (!handler.inBatch)
+	// The barrier is recorded outside any render pass, between every earlier and every later command.
+	if (!handler.isRecording())
 		return;
-	auto* const cmd = handler.getCurrentCommandBuffer();
-	if (cmd == nullptr)
-		return;
-	VkMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-	barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
-							VK_ACCESS_UNIFORM_READ_BIT | VK_ACCESS_INDIRECT_COMMAND_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
-	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-						 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-								 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT,
-						 0, 1, &barrier, 0, nullptr, 0, nullptr);
+	handler.recordTransfer([](VkCommandBuffer) -> void {});
 }
 
 auto RenderAPI::hasGpuTimestamps() const -> bool { return internal::FrameProfiler::get().isSupported(); }

@@ -9,11 +9,13 @@
 #pragma once
 
 #include "core/Core.h"
+#include "internal/DescriptorRing.h"
 #include "renderer/gpu/ComputeShader.h"
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace owl::renderer::gpu::vulkan {
@@ -93,10 +95,10 @@ private:
 	VkPipelineLayout m_layout{nullptr};
 	/// Descriptor set layout for SSBOs.
 	VkDescriptorSetLayout m_descriptorLayout{nullptr};
-	/// Descriptor pool owning the descriptor set.
-	VkDescriptorPool m_descriptorPool{nullptr};
-	/// Descriptor set bound at dispatch time.
-	VkDescriptorSet m_descriptorSet{nullptr};
+	/// Per-frame descriptor sets, one per dispatch.
+	internal::DescriptorRing m_ring;
+	/// Storage buffers bound per binding slot, written into the set of each dispatch.
+	std::vector<std::pair<uint32_t, shared<renderer::gpu::StorageBuffer>>> m_bound;
 	/// Shader name (for diagnostics).
 	std::string m_name;
 	/// True when construction succeeded.

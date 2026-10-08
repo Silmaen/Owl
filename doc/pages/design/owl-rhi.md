@@ -20,11 +20,11 @@ and because it already carries the renderer stack.
 
 ## v0.3.0 — repair and name the RHI
 
-- Real frames in flight: no `vkQueueWaitIdle` on the hot path (≥ 10 queue drains per frame today, B-01)
-- Image transitions recorded inside the frame, correct `loadOp` between batches (B-02), swapchain image written only
-  after its acquire semaphore (B-19), versioned UBO / SSBO (B-04)
-- Per-frame uniform ring, so several `drawMesh` and several cameras per frame are correct (B-03), VMA
-  sub-allocation (B-11, B-23)
+- Done (PR-28): real frames in flight, no `vkQueueWaitIdle` on the hot path (≥ 10 queue drains per frame before, B-01)
+- Done (PR-28): image transitions recorded inside the frame, correct `loadOp` between batches (B-02), swapchain
+  image written only after its acquire semaphore (B-19), versioned UBO / SSBO (B-04)
+- Done (PR-29): per-frame uniform ring, so several `drawMesh` and several cameras per frame are correct (B-03), VMA
+  sub-allocation (B-11), per-frame descriptor pools (B-23)
 - OpenGL frozen in features but fixed and tested: the "4.5" claim made true (B-16, done in PR-18, see below), culling
   and mipmaps as documented (B-07, B-18)
 - Done (PR-18): image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL), validation clean on NVIDIA,

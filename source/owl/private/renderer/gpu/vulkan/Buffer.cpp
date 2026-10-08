@@ -59,13 +59,13 @@ void VertexBuffer::release() {
 		OWL_CORE_WARN("Vulkan vertex buffer: Trying to delete vertex buffer after VulkanHandler release...")
 		return;
 	}
-	internal::freeBuffer(m_buffer);
+	internal::releaseBuffer(m_buffer);
 }
 
 void VertexBuffer::bind() const { bindAtBinding(0); }
 
 void VertexBuffer::bindAtBinding(const uint32_t iBinding) const {
-	const auto& vkh = internal::VulkanHandler::get();
+	auto& vkh = internal::VulkanHandler::get();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
 		OWL_CORE_WARN("Vulkan vertex buffer: Trying to bind vertex buffer after VulkanHandler release...")
 		return;
@@ -146,12 +146,12 @@ void IndexBuffer::release() {
 		OWL_CORE_WARN("Vulkan vertex buffer: Trying to delete vertex buffer after VulkanHandler release...")
 		return;
 	}
-	internal::freeBuffer(m_buffer);
+	internal::releaseBuffer(m_buffer);
 	m_count = 0;
 }
 
 void IndexBuffer::bind() const {
-	const auto& vkh = internal::VulkanHandler::get();
+	auto& vkh = internal::VulkanHandler::get();
 	if (vkh.getState() != internal::VulkanHandler::State::Running) {
 		OWL_CORE_WARN("Vulkan vertex buffer: Trying to bind vertex buffer after VulkanHandler release...")
 		return;

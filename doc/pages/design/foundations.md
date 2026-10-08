@@ -169,9 +169,9 @@ imported-configuration fallback.
 The Vulkan foundation is the second big risk of the release: it starts first in this phase, as soon as the frame
 bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alongside the rest of phase C.
 
-- ![Planned][planned] Vulkan foundation — real frames in flight, no `vkQueueWaitIdle` on the hot path, transitions
+- ![Done][done] Vulkan foundation — real frames in flight, no `vkQueueWaitIdle` on the hot path, transitions
   inside the frame, correct `loadOp`, swapchain image used only after acquisition (PR-28: B-01, B-02, B-04, B-19)
-- ![Planned][planned] Per-frame uniform ring and VMA sub-allocation (PR-29: B-03, B-11, B-23)
+- ![Done][done] Per-frame uniform ring and VMA sub-allocation (PR-29: B-03, B-11, B-23)
 - ![Planned][planned] Owl RHI named and documented; Vulkan reference, OpenGL frozen fallback, Null for tests;
   pipeline objects and explicit bindings instead of global state and call-order conventions (B-07). See
   [Owl RHI](owl-rhi.md)

@@ -156,11 +156,6 @@ auto FrameProfiler::popTimings() -> std::vector<GpuFrameTiming> {
 	return out;
 }
 
-auto FrameProfiler::queueWaitIdle(VkQueue iQueue) -> VkResult {
-	++m_counters.queueWaitIdles;
-	return vkQueueWaitIdle(iQueue);
-}
-
 auto FrameProfiler::deviceWaitIdle(VkDevice iDevice) -> VkResult {
 	++m_counters.deviceWaitIdles;
 	return vkDeviceWaitIdle(iDevice);

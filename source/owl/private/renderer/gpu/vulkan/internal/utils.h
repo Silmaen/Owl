@@ -166,15 +166,6 @@ auto attachmentTilingToVulkan(const AttachmentSpecification::Tiling& iTiling) ->
 
 /**
  * @brief
- *  Copy `iSize` bytes between two device buffers using a transient command buffer.
- * @param[in] iSrcBuffer Source buffer.
- * @param[in] iDstBuffer Destination buffer.
- * @param[in] iSize Number of bytes to copy.
- */
-void copyBuffer(const VkBuffer& iSrcBuffer, const VkBuffer& iDstBuffer, VkDeviceSize iSize);
-
-/**
- * @brief
  *  Create a buffer in a VMA sub-allocation.
  * @param[in] iSize Buffer size in bytes.
  * @param[in] iUsage Buffer usage flags.
@@ -194,6 +185,13 @@ void freeBuffer(AllocatedBuffer& ioBuffer);
 
 /**
  * @brief
+ *  Destroy a buffer once the GPU is done with every frame recorded so far.
+ * @param[in,out] ioBuffer The buffer, reset to empty.
+ */
+void releaseBuffer(AllocatedBuffer& ioBuffer);
+
+/**
+ * @brief
  *  Copy bytes into a persistently mapped buffer.
  * @param[in] iBuffer The mapped buffer.
  * @param[in] iData Source bytes.
@@ -204,7 +202,8 @@ void writeMapped(const AllocatedBuffer& iBuffer, const void* iData, size_t iSize
 
 /**
  * @brief
- *  Copy bytes into a device-local buffer through a staging buffer.
+ *  Copy bytes into a device-local buffer: recorded in the frame (staging in the frame ring) or, outside a frame,
+ *  through a one-shot submission.
  * @param[in] iDestination Device-local buffer (with `TRANSFER_DST` usage).
  * @param[in] iData Source bytes.
  * @param[in] iSize Number of bytes, copied at offset 0.
@@ -213,59 +212,70 @@ void uploadToDeviceBuffer(VkBuffer iDestination, const void* iData, VkDeviceSize
 
 /**
  * @brief
- *  Transition image layout.
+ *  Record an image layout transition with explicit synchronisation scopes.
+ * @param[in] iCmd The command buffer.
  * @param[in] iImage The image handle.
+ * @param[in] iAspect Aspects of the image.
  * @param[in] iOldLayout Previous image layout.
- * @param[in] iNewLayout New image layout to transition to.
- * @param[in] iLevelCount Number of mipmap levels transitioned, from level 0.
+ * @param[in] iNewLayout New image layout.
+ * @param[in] iSrcStage Stages of the earlier accesses.
+ * @param[in] iSrcAccess Earlier accesses to make available.
+ * @param[in] iDstStage Stages of the later accesses.
+ * @param[in] iDstAccess Later accesses.
+ * @param[in] iLevelCount Number of mipmap levels, from level 0.
  */
-void transitionImageLayout(const VkImage& iImage, VkImageLayout iOldLayout, VkImageLayout iNewLayout,
-						   uint32_t iLevelCount = 1);
+void imageBarrier(VkCommandBuffer iCmd, VkImage iImage, VkImageAspectFlags iAspect, VkImageLayout iOldLayout,
+				  VkImageLayout iNewLayout, VkPipelineStageFlags iSrcStage, VkAccessFlags iSrcAccess,
+				  VkPipelineStageFlags iDstStage, VkAccessFlags iDstAccess, uint32_t iLevelCount = 1);
 
 /**
  * @brief
- *  Transition image layout.
+ *  Record an image layout transition of a colour image, scopes deduced from the layouts.
  * @param[in] iCmd The command buffer.
  * @param[in] iImage The image handle.
  * @param[in] iOldLayout Previous image layout.
  * @param[in] iNewLayout New image layout to transition to.
  * @param[in] iLevelCount Number of mipmap levels transitioned, from level 0.
  */
-void transitionImageLayout(const VkCommandBuffer& iCmd, const VkImage& iImage, VkImageLayout iOldLayout,
-						   VkImageLayout iNewLayout, uint32_t iLevelCount = 1);
+void transitionImageLayout(VkCommandBuffer iCmd, VkImage iImage, VkImageLayout iOldLayout, VkImageLayout iNewLayout,
+						   uint32_t iLevelCount = 1);
 
 /**
  * @brief
- *  Fill the mipmap chain of an image from its level 0 by successive linear blits.
+ *  Record the fill of the mipmap chain of an image from its level 0 by successive linear blits.
  * Expects every level in `TRANSFER_DST_OPTIMAL` (level 0 holding the pixels) and leaves them all in
  * `SHADER_READ_ONLY_OPTIMAL`.
+ * @param[in] iCmd The command buffer.
  * @param[in] iImage The image handle (RGBA8, created with transfer source and destination usage).
  * @param[in] iSize Size of level 0.
  * @param[in] iLevelCount Number of mipmap levels of the image.
  */
-void generateMipmaps(const VkImage& iImage, const math::vec2ui& iSize, uint32_t iLevelCount);
+void generateMipmaps(VkCommandBuffer iCmd, VkImage iImage, const math::vec2ui& iSize, uint32_t iLevelCount);
 
 /**
  * @brief
- *  Copy buffer to image.
+ *  Record a buffer to image copy (image in `TRANSFER_DST_OPTIMAL`).
+ * @param[in] iCmd The command buffer.
  * @param[in] iBuffer The buffer.
  * @param[in] iImage The image handle.
- * @param[in] iSize Target size.
- * @param[in] iOffset Offset in elements/bytes.
+ * @param[in] iSize Copied size.
+ * @param[in] iOffset Offset in the image.
  */
-void copyBufferToImage(const VkBuffer& iBuffer, const VkImage& iImage, const math::vec2ui& iSize,
+void copyBufferToImage(VkCommandBuffer iCmd, VkBuffer iBuffer, VkImage iImage, const math::vec2ui& iSize,
 					   const math::vec2i& iOffset = {0, 0});
 
 /**
  * @brief
- *  Copy image to buffer.
+ *  Record an image to buffer copy (image in `TRANSFER_SRC_OPTIMAL`).
+ * @param[in] iCmd The command buffer.
  * @param[in] iImage The image handle.
  * @param[in] iBuffer The buffer.
- * @param[in] iSize Target size.
- * @param[in] iOffset Offset in elements/bytes.
+ * @param[in] iSize Copied size.
+ * @param[in] iOffset Offset in the image.
+ * @param[in] iBufferOffset Offset in the buffer, in bytes.
  */
-void copyImageToBuffer(const VkImage& iImage, const VkBuffer& iBuffer, const math::vec2ui& iSize,
-					   const math::vec2i& iOffset = {0, 0});
+void copyImageToBuffer(VkCommandBuffer iCmd, VkImage iImage, VkBuffer iBuffer, const math::vec2ui& iSize,
+					   const math::vec2i& iOffset = {0, 0}, VkDeviceSize iBufferOffset = 0);
 
 /**
  * @brief

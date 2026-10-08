@@ -300,6 +300,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Alignment that satisfies both the uniform and the storage buffer offset limits.
+	 * @return The alignment in bytes (a power of two).
+	 */
+	[[nodiscard]] auto getMinBufferOffsetAlignment() const -> VkDeviceSize;
+
+	/**
+	 * @brief
 	 *  Allocate and start recording a one-shot command buffer (closed by `endSingleTimeCommands`).
 	 * @return The freshly recording command buffer.
 	 */
