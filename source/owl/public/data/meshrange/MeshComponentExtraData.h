@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "core/IFactory.h"
+#include "data/extradata/ExtraDataRegistry.h"
 #include "data/geometry/MeshCursorBase.h"
 #include "data/meshrange/MeshComponent.h"
 
@@ -54,7 +54,9 @@ struct OWL_API ReadMeshExtraData {
 	 *  Get the extra data product id.
 	 * @return The extra data product id.
 	 */
-	[[nodiscard]] static auto getPid() -> core::FactoryPid { return core::getFactoryPid<TExtraData>(); }
+	[[nodiscard]] static auto getPid() -> data::extradata::ExtraDataPid {
+		return data::extradata::getExtraDataPid<TExtraData>();
+	}
 };
 
 /**
@@ -440,7 +442,7 @@ protected:
 	/// Iterator on extra data.
 	ExtraDataIterator m_extraDataIte;
 	/// ExtraData PID.
-	core::FactoryPid m_extraDataPid;
+	data::extradata::ExtraDataPid m_extraDataPid;
 };
 /**
  * @brief

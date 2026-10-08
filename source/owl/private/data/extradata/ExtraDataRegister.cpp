@@ -8,7 +8,6 @@
 #include "owlpch.h"
 
 #include "data/extradata/ExtraDataRegister.h"
-#include "data/extradata/ExtraDataRegister_Internal.h"
 #include "data/geometry/extradata/TriangleNormals.h"
 #include "data/geometry/extradata/TriangleUVCoordinate.h"
 #include "data/geometry/extradata/VertexNormal.h"
@@ -28,9 +27,9 @@ namespace {
 auto factoryExtraDataRegistration() -> ExtraDataRegistrationScopeVector {
 	ExtraDataRegistrationScopeVector extraDataRegistrationScopes;
 
-	extraDataRegistrationScopes.emplace_back(registerExtraDataInternal<TriangleUVCoordinate>());
-	extraDataRegistrationScopes.emplace_back(registerExtraDataInternal<TriangleNormals>());
-	extraDataRegistrationScopes.emplace_back(registerExtraDataInternal<VertexNormal>());
+	extraDataRegistrationScopes.emplace_back(registerExtraData<TriangleUVCoordinate>());
+	extraDataRegistrationScopes.emplace_back(registerExtraData<TriangleNormals>());
+	extraDataRegistrationScopes.emplace_back(registerExtraData<VertexNormal>());
 
 	return extraDataRegistrationScopes;
 }

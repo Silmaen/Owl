@@ -87,37 +87,38 @@ void StaticMesh::clear() {
 	return newMesh;
 }
 
-auto StaticMesh::addVertexExtraData(const core::FactoryPid iExtraDataId) -> bool {
+auto StaticMesh::addVertexExtraData(const data::extradata::ExtraDataPid iExtraDataId) -> bool {
 	m_verticesExtraDataContainer.addExtraData(iExtraDataId);
 	return m_verticesExtraDataContainer.isExtraDataDefined(iExtraDataId);
 }
 
-auto StaticMesh::deleteVertexExtraData(const core::FactoryPid iExtraDataId) -> bool {
+auto StaticMesh::deleteVertexExtraData(const data::extradata::ExtraDataPid iExtraDataId) -> bool {
 	return m_verticesExtraDataContainer.deleteExtraData(iExtraDataId);
 }
 
-auto StaticMesh::isExtraDataDefinedOnAllVertices(const core::FactoryPid iExtraDataId) const -> bool {
+auto StaticMesh::isExtraDataDefinedOnAllVertices(const data::extradata::ExtraDataPid iExtraDataId) const -> bool {
 	return m_verticesExtraDataContainer.isExtraDataDefined(iExtraDataId);
 }
 
-auto StaticMesh::getVertexExtraData(const core::FactoryPid iExtraDataId) const -> const extradata::ExtraDataContainer* {
+auto StaticMesh::getVertexExtraData(const data::extradata::ExtraDataPid iExtraDataId) const
+		-> const extradata::ExtraDataContainer* {
 	return m_verticesExtraDataContainer.getExtraData(iExtraDataId);
 }
 
-auto StaticMesh::addTriangleExtraData(const core::FactoryPid iExtraDataId) -> bool {
+auto StaticMesh::addTriangleExtraData(const data::extradata::ExtraDataPid iExtraDataId) -> bool {
 	m_trianglesExtraDataContainer.addExtraData(iExtraDataId);
 	return m_trianglesExtraDataContainer.isExtraDataDefined(iExtraDataId);
 }
 
-auto StaticMesh::deleteTriangleExtraData(const core::FactoryPid iExtraDataId) -> bool {
+auto StaticMesh::deleteTriangleExtraData(const data::extradata::ExtraDataPid iExtraDataId) -> bool {
 	return m_trianglesExtraDataContainer.deleteExtraData(iExtraDataId);
 }
 
-auto StaticMesh::isExtraDataDefinedOnAllTriangles(const core::FactoryPid iExtraDataId) const -> bool {
+auto StaticMesh::isExtraDataDefinedOnAllTriangles(const data::extradata::ExtraDataPid iExtraDataId) const -> bool {
 	return m_trianglesExtraDataContainer.isExtraDataDefined(iExtraDataId);
 }
 
-auto StaticMesh::getTriangleExtraData(const core::FactoryPid iExtraDataId) const
+auto StaticMesh::getTriangleExtraData(const data::extradata::ExtraDataPid iExtraDataId) const
 		-> const extradata::ExtraDataContainer* {
 	return m_trianglesExtraDataContainer.getExtraData(iExtraDataId);
 }

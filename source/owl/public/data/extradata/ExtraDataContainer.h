@@ -65,7 +65,7 @@ public:
 	 * @param iEdPid       Product ID of the extra data.
 	 * @param iInitialSize Initial size of the extra data container.
 	 */
-	ExtraDataContainer(core::FactoryPid iEdPid, size_t iInitialSize);
+	ExtraDataContainer(ExtraDataPid iEdPid, size_t iInitialSize);
 
 	/**
 	 * @brief
@@ -102,7 +102,7 @@ public:
 	 *  Get the Product ID of the extra data.
 	 * @return The Product ID of the extra data.
 	 */
-	[[nodiscard]] auto getEdPid() const -> core::FactoryPid { return m_edPid; }
+	[[nodiscard]] auto getEdPid() const -> ExtraDataPid { return m_edPid; }
 
 	/**
 	 * @brief
@@ -120,7 +120,7 @@ public:
 
 private:
 	/// Product ID of the extra data.
-	core::FactoryPid m_edPid{core::INVALID_FACTORY_PID};
+	ExtraDataPid m_edPid{g_invalidExtraDataPid};
 
 	/**
 	 * @brief

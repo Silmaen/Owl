@@ -25,20 +25,20 @@ MeshCursorBase<true, MeshElementType::Triangle>::MeshCursorBase(const MeshType& 
 	reset(iIndex);
 }
 
-auto MeshCursorBase<true, MeshElementType::Vertex>::getExtraDataContainer(const core::FactoryPid& iPid) const
-		-> const extradata::ExtraDataContainer* {
+auto MeshCursorBase<true, MeshElementType::Vertex>::getExtraDataContainer(
+		const data::extradata::ExtraDataPid& iPid) const -> const extradata::ExtraDataContainer* {
 	return m_mesh->getVertexExtraData(iPid);
 }
-auto MeshCursorBase<false, MeshElementType::Vertex>::getExtraDataContainer(const core::FactoryPid& iPid) const
-		-> const extradata::ExtraDataContainer* {
+auto MeshCursorBase<false, MeshElementType::Vertex>::getExtraDataContainer(
+		const data::extradata::ExtraDataPid& iPid) const -> const extradata::ExtraDataContainer* {
 	return m_mesh->getVertexExtraData(iPid);
 }
-auto MeshCursorBase<true, MeshElementType::Triangle>::getExtraDataContainer(const core::FactoryPid& iPid) const
-		-> const extradata::ExtraDataContainer* {
+auto MeshCursorBase<true, MeshElementType::Triangle>::getExtraDataContainer(
+		const data::extradata::ExtraDataPid& iPid) const -> const extradata::ExtraDataContainer* {
 	return m_mesh->getTriangleExtraData(iPid);
 }
-auto MeshCursorBase<false, MeshElementType::Triangle>::getExtraDataContainer(const core::FactoryPid& iPid) const
-		-> const extradata::ExtraDataContainer* {
+auto MeshCursorBase<false, MeshElementType::Triangle>::getExtraDataContainer(
+		const data::extradata::ExtraDataPid& iPid) const -> const extradata::ExtraDataContainer* {
 	return m_mesh->getTriangleExtraData(iPid);
 }
 

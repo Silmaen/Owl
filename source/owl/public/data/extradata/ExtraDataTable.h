@@ -62,7 +62,7 @@ public:
 	 */
 	template<class ExtraDataType>
 	[[nodiscard]] auto isExtraDataDefined() const -> bool {
-		return isExtraDataDefined(core::getFactoryPid<ExtraDataType>());
+		return isExtraDataDefined(getExtraDataPid<ExtraDataType>());
 	}
 
 	/**
@@ -78,7 +78,7 @@ public:
 	 */
 	template<typename ExtraDataType>
 	auto addExtraData(ExtraDataType& iExtraData) -> bool {
-		return addExtraData(core::getFactoryPid<ExtraDataType>(), iExtraData);
+		return addExtraData(getExtraDataPid<ExtraDataType>(), iExtraData);
 	}
 
 	/**
@@ -89,7 +89,7 @@ public:
 	 */
 	template<typename ExtraDataType>
 	auto deleteExtraData() -> bool {
-		return deleteExtraData(core::getFactoryPid<ExtraDataType>());
+		return deleteExtraData(getExtraDataPid<ExtraDataType>());
 	}
 
 	/**
@@ -98,7 +98,7 @@ public:
 	 * @param iPid Product ID of extra data to check.
 	 * @return True if extra data is defined, false otherwise.
 	 */
-	[[nodiscard]] auto isExtraDataDefined(core::FactoryPid iPid) const -> bool;
+	[[nodiscard]] auto isExtraDataDefined(ExtraDataPid iPid) const -> bool;
 
 	/**
 	 * @brief
@@ -110,7 +110,7 @@ public:
 	 * @param iPid Product ID of extra data to add.
 	 * @return True if extra data has been added, false if extra data of the same type is already defined.
 	 */
-	auto addExtraData(core::FactoryPid iPid) -> bool;
+	auto addExtraData(ExtraDataPid iPid) -> bool;
 
 	/**
 	 * @brief
@@ -118,7 +118,7 @@ public:
 	 * @param iPid Product ID of extra data to delete.
 	 * @return True if extra data has been found and deleted, false otherwise.
 	 */
-	auto deleteExtraData(core::FactoryPid iPid) -> bool;
+	auto deleteExtraData(ExtraDataPid iPid) -> bool;
 
 	/**
 	 * @brief
@@ -126,7 +126,7 @@ public:
 	 * @param iPid Product ID of extra data to get.
 	 * @return The extra data container.
 	 */
-	[[nodiscard]] auto getExtraData(core::FactoryPid iPid) const -> const ExtraDataContainer*;
+	[[nodiscard]] auto getExtraData(ExtraDataPid iPid) const -> const ExtraDataContainer*;
 
 	/**
 	 * @brief

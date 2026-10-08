@@ -45,19 +45,19 @@ void ExtraDataTable::removeElement(const size_t iIndex) {
 	for (auto& container: m_extraDataList) { container.removeExtraData(iIndex); }
 }
 
-auto ExtraDataTable::isExtraDataDefined(core::FactoryPid iPid) const -> bool {
+auto ExtraDataTable::isExtraDataDefined(ExtraDataPid iPid) const -> bool {
 	return std::ranges::any_of(m_extraDataList,
 							   [iPid](const ExtraDataContainer& iEdc) -> bool { return iEdc.getEdPid() == iPid; });
 }
 
-auto ExtraDataTable::addExtraData(core::FactoryPid iPid) -> bool {
+auto ExtraDataTable::addExtraData(ExtraDataPid iPid) -> bool {
 	if (isExtraDataDefined(iPid))
 		return false;
 	m_extraDataList.emplace_back(iPid, m_size);
 	return true;
 }
 
-auto ExtraDataTable::deleteExtraData(core::FactoryPid iPid) -> bool {
+auto ExtraDataTable::deleteExtraData(ExtraDataPid iPid) -> bool {
 	if (!isExtraDataDefined(iPid))
 		return false;
 	m_extraDataList.erase(
@@ -68,7 +68,7 @@ auto ExtraDataTable::deleteExtraData(core::FactoryPid iPid) -> bool {
 	return true;
 }
 
-auto ExtraDataTable::getExtraData(const core::FactoryPid iPid) const -> const ExtraDataContainer* {
+auto ExtraDataTable::getExtraData(const ExtraDataPid iPid) const -> const ExtraDataContainer* {
 	for (const auto& container: m_extraDataList) {
 		if (container.getEdPid() == iPid)
 			return &container;

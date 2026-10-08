@@ -221,7 +221,7 @@ public:
 	 */
 	template<typename ExtraDataType>
 	auto addVertexExtraData() -> bool {
-		return addVertexExtraData(core::getFactoryPid<ExtraDataType>());
+		return addVertexExtraData(data::extradata::getExtraDataPid<ExtraDataType>());
 	}
 
 	/**
@@ -232,7 +232,7 @@ public:
 	 */
 	template<typename ExtraDataType>
 	auto deleteVertexExtraData() -> bool {
-		return deleteVertexExtraData(core::getFactoryPid<ExtraDataType>());
+		return deleteVertexExtraData(data::extradata::getExtraDataPid<ExtraDataType>());
 	}
 
 	/**
@@ -243,7 +243,7 @@ public:
 	 */
 	template<typename ExtraDataType>
 	[[nodiscard]] auto isExtraDataDefinedOnAllVertices() const -> bool {
-		return isExtraDataDefinedOnAllVertices(core::getFactoryPid<ExtraDataType>());
+		return isExtraDataDefinedOnAllVertices(data::extradata::getExtraDataPid<ExtraDataType>());
 	}
 
 	/**
@@ -256,7 +256,7 @@ public:
 	 */
 	template<typename ExtraDataType>
 	auto addTriangleExtraData() -> bool {
-		return addTriangleExtraData(core::getFactoryPid<ExtraDataType>());
+		return addTriangleExtraData(data::extradata::getExtraDataPid<ExtraDataType>());
 	}
 
 	/**
@@ -267,7 +267,7 @@ public:
 	 */
 	template<typename ExtraDataType>
 	auto deleteTriangleExtraData() -> bool {
-		return deleteTriangleExtraData(core::getFactoryPid<ExtraDataType>());
+		return deleteTriangleExtraData(data::extradata::getExtraDataPid<ExtraDataType>());
 	}
 
 	/**
@@ -278,7 +278,7 @@ public:
 	 */
 	template<typename ExtraDataType>
 	[[nodiscard]] auto isExtraDataDefinedOnAllTriangles() const -> bool {
-		return isExtraDataDefinedOnAllTriangles(core::getFactoryPid<ExtraDataType>());
+		return isExtraDataDefinedOnAllTriangles(data::extradata::getExtraDataPid<ExtraDataType>());
 	}
 
 	/**
@@ -297,7 +297,7 @@ public:
 	 */
 	template<typename ExtraDataType>
 	[[nodiscard]] auto createTriangleExtraDataRange() const -> std::vector<shared<ExtraDataType>> {
-		auto cluster = getTriangleExtraData(core::getFactoryPid<ExtraDataType>());
+		auto cluster = getTriangleExtraData(data::extradata::getExtraDataPid<ExtraDataType>());
 		if (cluster == nullptr)
 			return {};
 		// Convert to proper type
@@ -324,7 +324,7 @@ public:
 	 */
 	template<typename ExtraDataType>
 	auto createVertexExtraDataRange() const -> std::vector<shared<ExtraDataType>> {
-		auto cluster = getVertexExtraData(core::getFactoryPid<ExtraDataType>());
+		auto cluster = getVertexExtraData(data::extradata::getExtraDataPid<ExtraDataType>());
 		if (cluster == nullptr)
 			return {};
 		// Convert to proper type
@@ -345,7 +345,7 @@ private:
 	 * @param[in]  iExtraDataId        Product ID of extra data to attach.
 	 * @return	True All extra data have been attached to vertices, false otherwise.
 	 */
-	auto addVertexExtraData(core::FactoryPid iExtraDataId) -> bool;
+	auto addVertexExtraData(data::extradata::ExtraDataPid iExtraDataId) -> bool;
 
 	/**
 	 * @brief
@@ -354,7 +354,7 @@ private:
 	 * @return Objects allocated from the factory and attached to the vertices or
 	 *         nullopt if extra data are incomplete or not found.
 	 */
-	[[nodiscard]] auto getVertexExtraData(core::FactoryPid iExtraDataId) const
+	[[nodiscard]] auto getVertexExtraData(data::extradata::ExtraDataPid iExtraDataId) const
 			-> const ::owl::data::extradata::ExtraDataContainer*;
 
 	/**
@@ -363,7 +363,7 @@ private:
 	 * @param[in] iExtraDataId Product ID of extra data to delete.
 	 * @return True if there was no error during the execution, false if the extra data are not found.
 	 */
-	auto deleteVertexExtraData(core::FactoryPid iExtraDataId) -> bool;
+	auto deleteVertexExtraData(data::extradata::ExtraDataPid iExtraDataId) -> bool;
 
 	/**
 	 * @brief
@@ -371,7 +371,7 @@ private:
 	 * @param[in]  iExtraDataId       Product ID of extra data to attach.
 	 * @return	True All extra data have been attached to triangles, false otherwise.
 	 */
-	auto addTriangleExtraData(core::FactoryPid iExtraDataId) -> bool;
+	auto addTriangleExtraData(data::extradata::ExtraDataPid iExtraDataId) -> bool;
 
 	/**
 	 * @brief
@@ -380,7 +380,7 @@ private:
 	 * @return Objects allocated from the factory and attached to the triangles or
 	 *         nullopt if extra data are incomplete or not found.
 	 */
-	[[nodiscard]] auto getTriangleExtraData(core::FactoryPid iExtraDataId) const
+	[[nodiscard]] auto getTriangleExtraData(data::extradata::ExtraDataPid iExtraDataId) const
 			-> const ::owl::data::extradata::ExtraDataContainer*;
 
 	/**
@@ -389,7 +389,7 @@ private:
 	 * @param[in] iExtraDataId Product ID of extra data to delete.
 	 * @return True if there was no error during the execution, false if the extra data are not found.
 	 */
-	auto deleteTriangleExtraData(core::FactoryPid iExtraDataId) -> bool;
+	auto deleteTriangleExtraData(data::extradata::ExtraDataPid iExtraDataId) -> bool;
 
 	/**
 	 * @brief
@@ -397,7 +397,7 @@ private:
 	 * @param[in] iExtraDataId Product ID of the extra data to check.
 	 * @return True if the extra data is present on each element.
 	 */
-	[[nodiscard]] auto isExtraDataDefinedOnAllVertices(core::FactoryPid iExtraDataId) const -> bool;
+	[[nodiscard]] auto isExtraDataDefinedOnAllVertices(data::extradata::ExtraDataPid iExtraDataId) const -> bool;
 
 	/**
 	 * @brief
@@ -405,7 +405,7 @@ private:
 	 * @param[in] iExtraDataId Product ID of the extra data to check.
 	 * @return True if the extra data is present on each element.
 	 */
-	[[nodiscard]] auto isExtraDataDefinedOnAllTriangles(core::FactoryPid iExtraDataId) const -> bool;
+	[[nodiscard]] auto isExtraDataDefinedOnAllTriangles(data::extradata::ExtraDataPid iExtraDataId) const -> bool;
 
 	template<bool IsConst, MeshElementType ElementType>
 	friend class MeshCursorBase;

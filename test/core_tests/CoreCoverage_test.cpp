@@ -8,7 +8,6 @@
 
 #include "testHelper.h"
 
-#include <core/IFactory.h>
 #include <core/Log.h>
 #include <debug/LogSink.h>
 #include <debug/Tracker.h>
@@ -22,127 +21,6 @@
 #include <vector>
 
 using namespace owl;
-
-// ============================================================================
-// Target 1: Factory.cpp — register, unregister, lookup, create, edge cases
-// ============================================================================
-
-namespace {
-/// Minimal concrete FactoryProduct for testing.
-class TestProduct final : public core::FactoryProduct {
-public:
-	TestProduct() = default;
-	[[nodiscard]] auto getPid() const -> core::FactoryPid override { return s_pid; }
-	static auto getStaticType() -> std::string { return "TestProduct"; }
-	static core::FactoryPid s_pid;
-};
-core::FactoryPid TestProduct::s_pid = core::INVALID_FACTORY_PID;
-
-/// Second product type to test multiple registrations.
-class TestProduct2 final : public core::FactoryProduct {
-public:
-	TestProduct2() = default;
-	[[nodiscard]] auto getPid() const -> core::FactoryPid override { return s_pid; }
-	static auto getStaticType() -> std::string { return "TestProduct2"; }
-	static core::FactoryPid s_pid;
-};
-core::FactoryPid TestProduct2::s_pid = core::INVALID_FACTORY_PID;
-
-}// namespace
-
-TEST(CoreCoverage, FactoryRegisterAndLookup) {
-	auto& factory = core::IFactory::getInstance();
-
-	// Register TestProduct via the template helper.
-	const core::FactoryPid pid = core::factoryRegisterType<TestProduct>();
-	TestProduct::s_pid = pid;
-	EXPECT_NE(pid, core::INVALID_FACTORY_PID);
-
-	// isRegistered by key.
-	EXPECT_TRUE(factory.isRegistered("TestProduct"));
-	EXPECT_FALSE(factory.isRegistered("NonExistent"));
-
-	// isRegistered by PID.
-	EXPECT_TRUE(factory.isRegistered(pid));
-	EXPECT_FALSE(factory.isRegistered(core::INVALID_FACTORY_PID));
-
-	// getKey from PID.
-	std::string key;
-	EXPECT_TRUE(factory.getKey(pid, key));
-	EXPECT_EQ(key, "TestProduct");
-	// Invalid PID returns false.
-	std::string badKey;
-	EXPECT_FALSE(factory.getKey(core::INVALID_FACTORY_PID, badKey));
-
-	// getPid by type_index.
-	const core::FactoryPid pidByType = factory.getPid(typeid(TestProduct));
-	EXPECT_EQ(pidByType, pid);
-	// Unknown type returns INVALID.
-	const core::FactoryPid pidUnknown = factory.getPid(typeid(int));
-	EXPECT_EQ(pidUnknown, core::INVALID_FACTORY_PID);
-
-	// getPid by key.
-	const core::FactoryPid pidByKey = factory.getPid(std::string("TestProduct"));
-	EXPECT_EQ(pidByKey, pid);
-	const core::FactoryPid pidBadKey = factory.getPid(std::string("NotRegistered"));
-	EXPECT_EQ(pidBadKey, core::INVALID_FACTORY_PID);
-
-	// getFactoryPid<T> template.
-	EXPECT_EQ(core::getFactoryPid<TestProduct>(), pid);
-
-	// hasFactoryPid.
-	EXPECT_TRUE(core::hasFactoryPid(pid));
-	EXPECT_FALSE(core::hasFactoryPid(core::INVALID_FACTORY_PID));
-}
-
-TEST(CoreCoverage, FactoryCreateProduct) {
-	auto& factory = core::IFactory::getInstance();
-
-	// Registration is idempotent: it returns the existing pid when another test already registered the type.
-	TestProduct::s_pid = core::factoryRegisterType<TestProduct>();
-
-	// Single creation.
-	const core::FactoryProduct* product = factory.createProduct("TestProduct");
-	ASSERT_NE(product, nullptr);
-	EXPECT_NE(product->getPid(), core::INVALID_FACTORY_PID);
-	// NOLINTBEGIN(cppcoreguidelines-owning-memory)
-	delete product;
-	// NOLINTEND(cppcoreguidelines-owning-memory)
-
-	// Creation with unknown key returns nullptr.
-	EXPECT_EQ(factory.createProduct("UnknownProduct"), nullptr);
-
-	// Multiple creation.
-	std::vector<core::FactoryProduct*> elements;
-	const bool ok = factory.createProducts("TestProduct", 3, elements);
-	EXPECT_TRUE(ok);
-	EXPECT_EQ(elements.size(), 3u);
-	// NOLINTBEGIN(cppcoreguidelines-owning-memory)
-	for (auto* elem: elements) { delete elem; }
-	// NOLINTEND(cppcoreguidelines-owning-memory)
-
-	// Multiple creation with unknown key.
-	std::vector<core::FactoryProduct*> badElements;
-	EXPECT_FALSE(factory.createProducts("UnknownProduct", 2, badElements));
-}
-
-TEST(CoreCoverage, FactoryDuplicateRegistration) {
-	// Register TestProduct2.
-	const core::FactoryPid pid2 = core::factoryRegisterType<TestProduct2>();
-	TestProduct2::s_pid = pid2;
-	EXPECT_NE(pid2, core::INVALID_FACTORY_PID);
-
-	// Register it again — should be a no-op (key already present).
-	const core::FactoryPid pidAgain = core::factoryRegisterType<TestProduct2>();
-	EXPECT_EQ(pidAgain, pid2);
-}
-
-TEST(CoreCoverage, FactoryProductAllocatorDefaults) {
-	// Default-constructed allocator has null function pointers.
-	const core::ProductAllocator alloc;
-	EXPECT_EQ(alloc.singleAllocator, nullptr);
-	EXPECT_EQ(alloc.multipleAllocator, nullptr);
-}
 
 // ============================================================================
 // Target 2: Event.h + AppEvent.h — FileDropEvent, EventDispatcher, handled flag

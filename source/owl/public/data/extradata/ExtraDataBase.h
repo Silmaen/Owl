@@ -9,8 +9,8 @@
 #pragma once
 
 #include "core/Core.h"
-#include "core/IFactory.h"
 #include "core/Macros.h"
+#include "data/extradata/ExtraDataRegistry.h"
 
 /**
  * @brief
@@ -24,8 +24,27 @@ namespace owl::data::extradata {
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wweak-vtables")
-class OWL_API ExtraDataBase : public core::FactoryProduct {
+class OWL_API ExtraDataBase {
 public:
+	ExtraDataBase() = default;
+
+	virtual ~ExtraDataBase() = default;
+
+	ExtraDataBase(const ExtraDataBase&) = default;
+
+	ExtraDataBase(ExtraDataBase&&) = default;
+
+	auto operator=(const ExtraDataBase&) -> ExtraDataBase& = default;
+
+	auto operator=(ExtraDataBase&&) -> ExtraDataBase& = default;
+
+	/**
+	 * @brief
+	 *  Get the identifier of the extra-data type.
+	 * @return The identifier given by ExtraDataRegistry.
+	 */
+	[[nodiscard]] virtual auto getPid() const -> ExtraDataPid = 0;
+
 	/**
 	 * @brief
 	 *  Clone the extra data.
@@ -57,7 +76,7 @@ public:
 	 *  This id should be unique.
 	 * @return The product identifier of the extra data.
 	 */
-	[[nodiscard]] auto getPid() const -> core::FactoryPid override { return core::getFactoryPid<ExtraData>(); }
+	[[nodiscard]] auto getPid() const -> ExtraDataPid override { return getExtraDataPid<ExtraData>(); }
 
 	/**
 	 * @brief
