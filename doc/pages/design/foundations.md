@@ -205,7 +205,7 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
   the same API drives the headless runner and the tests. See [MCP server](mcp-server.md)
 - ![Done][done] Dead code removed or wired: unused `parallelForEach`, shared `LuaEngine`, single-use
   `IFactory` (D-24, D-26, A-18)
-- ![To evaluate][evaluate] SDL3 for windowing, input, dialogues and audio (possibly SDL GPU as an Owl RHI backend);
+- ![Done][done] SDL3 evaluation (windowing, input, dialogues, audio, SDL GPU): stay on GLFW, SDL3 rejected, OpenAL kept;
   the GLFW limits under Wayland are the concrete argument. See [Windowing and input](windowing-input.md)
 
 ## Phase E — Owl Nest ergonomics revamp

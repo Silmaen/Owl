@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest session restore: opening a project again reopens its tabs, the active tab and the selected entity (`ProjectSession` in `OwlNest_settings.yml`).
 - Owl Nest autosave and crash recovery: modified documents are copied aside every 60 s and at exit (`RecoveryManager`, outside the project), and the next opening of the project offers to recover them.
 - Actionable error messages: scene, Lua script and pack failures name the file, the entity (tag, id, line) and end with a `Fix:` hint, in the editor log and the runner (`scene::fixHint`, `pack::describe` / `pack::fixHint`, `ScriptInstance::setEntityName`).
+- Windowing evaluation in `windowing-input.md`: Owl stays on GLFW (SDL3 rejected, gamepads included), OpenAL Soft is kept, SDL GPU is not an option.
 - Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the nightly bench pinned to the agent that measured it.
 - CodeStyle `test-assertions` sub-check: every gtest test asserts something; the 26 that only ran code now check its effect (or say `EXPECT_NO_THROW`), e.g. a trigger timer is seen firing and stopping.
 - clang-tidy and the static analyzer analyse the tests too (`test/.clang-tidy` relaxes only what a test is right to do); the 224 findings they raised are fixed.

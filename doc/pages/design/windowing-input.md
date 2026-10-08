@@ -12,7 +12,7 @@ multi-window behaving on both; tested on GNOME and KDE, with a CI smoke test und
 
 ### Platform selection
 
-GLFW 3.4 is built with both the Wayland and the X11 backends (local Conan recipe `conan/recipes/glfw`, against the
+GLFW 3.5.1 is built with both the Wayland and the X11 backends (local Conan recipe `conan/recipes/glfw`, against the
 system Wayland: a libwayland shipped next to the binaries would hide the system one from the GPU drivers). The engine
 picks one explicitly at `glfwInit`:
 
@@ -114,36 +114,85 @@ GNOME (Mutter) passes the same checks.
 renderer, private `XDG_RUNTIME_DIR`), then plays 30 frames of `test/render_tests/scenes/sprites.owl` with
 `OwlRunner --frame-bench` on the Wayland platform, Vulkan on lavapipe then OpenGL on llvmpipe; it fails when the
 runner crashes, logs an error or did not pick Wayland. Without `weston` it reports *Skipped*. It found that GLFW 3.4
-dereferenced a missing `wl_seat` (a compositor without input devices): the local recipe patches it.
+dereferenced a missing `wl_seat` (a compositor without input devices): the local recipe patched it until GLFW 3.5.1
+fixed it upstream.
 
-### Known GLFW 3.4 limits under Wayland (argument for the SDL3 evaluation)
+### Known GLFW 3.5.1 limits under Wayland
 
-- **No window icon.** `glfwSetWindowIcon` is unavailable under Wayland, GLFW does not implement
+- **No window icon.** `glfwSetWindowIcon` is still unavailable under Wayland in 3.5.1: GLFW does not implement
   `xdg-toplevel-icon-v1` (KWin 6 supports it, `wayland-protocols` 1.45 in the image ships it) and does not expose its
   `xdg_toplevel`, so the engine cannot add it either. The desktop entry is the only route, and it requires writing
-  into the user's data directory. SDL 3.2 sets the icon through `xdg-toplevel-icon-v1`.
+  into the user's data directory.
 - **No global window positions.** `glfwSetWindowPos` / `glfwGetWindowPos` are unavailable, so ImGui cannot place
   detached viewports (the ImGui GLFW backend itself refuses viewports under Wayland). Detached panels stay inside the
-  main window; X11 (`OWL_WINDOW_PLATFORM=x11`, XWayland) keeps native detached windows. SDL3 hits the same protocol
-  limit; whether its ImGui backend handles detached windows better is a question for the evaluation.
-- **No fractional scaling.** GLFW 3.4 uses integer `wl_surface.set_buffer_scale` and ignores
-  `wp_fractional_scale_v1`; at 125 % or 150 % it renders at 2× and lets the compositor downscale. The engine turns
-  framebuffer scaling off and lets the compositor upscale (correct size, slightly soft). SDL3 implements
-  fractional scaling with `wp_viewporter`.
-- **Blocking vsync on hidden surfaces.** GLFW forwards the swap interval to EGL as is; SDL emulates it with a
-  frame-callback wait and a timeout. Owl now does its own pacing for OpenGL.
+  main window; X11 (`OWL_WINDOW_PLATFORM=x11`, XWayland) keeps native detached windows. This is a protocol limit, not
+  a GLFW one: SDL3 has the same.
+- **Fractional scaling is there, Owl does not use it yet.** Since 3.4 GLFW implements `wp_fractional_scale_v1` with
+  `wp_viewporter` when `GLFW_SCALE_FRAMEBUFFER` is on (its default). Owl turns that hint off because the swapchain,
+  the viewports and ImGui are sized from the window size: the buffer stays at 1× and the compositor upscales it
+  (correct size, slightly soft at 125 % or 150 %). Turning it on needs framebuffer-size resize events, ImGui's
+  `DisplayFramebufferScale` and picking in framebuffer pixels: engine work, not a GLFW gap.
+- **Vsync on hidden surfaces.** GLFW 3.5.1 no longer blocks: under Wayland it drives the swap interval itself, waiting
+  for the frame callback with a 20 ms timeout. Owl still paces OpenGL itself: on the headless weston of the smoke
+  test, interval 1 gives irregular frames (median 13.3 ms, p95 20.8 ms, the timeout firing every other frame) where
+  the pacer holds 16.67 ms ± 0.1 ms. To be measured again on a visible desktop before switching.
 
-## SDL3 evaluation (v0.3.0, To evaluate)
+## SDL3 evaluation (v0.3.0, Done): rejected
 
-- ![To evaluate][evaluate] SDL3 for windowing, input, dialogues and audio, possibly SDL GPU as an Owl RHI backend
-- Questions to answer: does SDL3 solve the Wayland icon and multi-window placement; what does it replace (GLFW, NFD,
-  OpenAL Soft); cost of the switch; impact on the public dependency count
-- No commitment: the maintainer is not convinced; the outcome is a short written verdict
+- ![Done][done] Evaluation of SDL3 for windowing, input, dialogues and audio, possibly SDL GPU as an Owl RHI backend
+- **Decision (October 2026): Owl stays on GLFW. SDL3 is rejected for the window, the input, the dialogues and the
+  gamepads alike; OpenAL Soft is kept; SDL GPU is rejected.** Another alternative may be looked at later, not SDL3.
+
+Why:
+
+- GLFW 3.5.1 closes most of the Wayland gaps the evaluation started from: fractional scaling exists (Owl's choice to
+  turn it off, see above), vsync no longer hangs on hidden surfaces. The remaining ones (window icon, global
+  positions) are protocol limits SDL3 shares or depends on the compositor for.
+- The native modal file dialogues of NFD (portal, GTK, Win32) are preferred over SDL's asynchronous
+  `SDL_Show*Dialog`, which would change the editor's Open / Save As flow.
+- Gamepads stay on GLFW too (`glfwGetGamepadState`, SDL-compatible mapping database through
+  `glfwUpdateGamepadMappings`); rumble and hot-plug details are not worth a second windowing library.
+- A backend swap of about 12 files plus a release with two backends to test, for no feature Owl lacks.
+
+### What SDL3 would have brought
+
+| Owl pain (GLFW)                 | SDL 3.4                                                                                        | GLFW 3.5.1                                     |
+|---------------------------------|------------------------------------------------------------------------------------------------|------------------------------------------------|
+| No Wayland window icon          | `SDL_SetWindowIcon` uses `xdg-toplevel-icon-v1` (needs a compositor that has it: KWin, Mutter) | Not supported: desktop entry                   |
+| Fractional scaling              | `wp_fractional_scale_v1` + `wp_viewporter`; `SDL_GetWindowPixelDensity` / `DisplayScale`       | Same protocols with `GLFW_SCALE_FRAMEBUFFER`   |
+| Blocking vsync on hidden window | frame-callback swap with a timeout                                                             | Same since 3.5.1 (20 ms timeout)               |
+| Window placement                | Same protocol limit: no global position under Wayland (`SDL_GetWindowPosition` is relative)    | Same limit                                     |
+| Gamepad (I-03, D-25)            | Joystick / gamepad API, mapping database, rumble and hot-plug built in                         | Gamepad API and mapping database, no rumble    |
+| File dialogs                    | `SDL_ShowOpenFileDialog` / `SaveFileDialog` / `OpenFolderDialog`, asynchronous                 | None: NFD, modal (kept)                        |
+| Text input, IME, clipboard      | Built in (IME and composition are better than GLFW)                                            | Char callback and clipboard                    |
+
+SDL audio is a stream API without 3D positioning, EFX or HRTF: it never was a replacement for OpenAL Soft.
+
+### Prototype (scratchpad, throwaway)
+
+SDL 3.4.16 compiled through Conan in the build image (profile `linux-clang`, Release, shared). With the Wayland
+driver forced under headless weston 14: window created with `SDL_WINDOW_VULKAN | HIGH_PIXEL_DENSITY`, driver
+`wayland`, pixel density 1.0, events pumped, clean quit. `SDL_SetWindowIcon` failed with *required
+xdg_toplevel_icon_v1 protocol not supported*: weston 14 lacks the protocol.
+
+### Cost that was weighed
+
+- `libSDL3.so` is 3.8 MB in Release with Wayland, X11, OpenGL, Vulkan and dbus (GLFW is well under 1 MB, NFD small).
+- Recipe options to tune (`pulseaudio`, `alsa`, `sndio`, `libusb` off), `libudev-dev` in the build image for
+  joystick hot-plug.
+- About 12 files behind the `window`, `input` and `GraphContext` seams, the ImGui backend, the key-code translation,
+  and a release with both backends.
+
+### SDL GPU: rejected
+
+SDL GPU has no OpenGL backend and its own shader and resource model: it would be a third RHI path next to the
+existing OpenGL and Vulkan ones, for no feature Owl lacks. The Owl RHI work (Phase C) stays on Vulkan and OpenGL.
 
 ## Input actions and basic gamepad (v0.4.0)
 
 - Named actions bound to keys, mouse buttons and gamepad buttons / axes; Lua reads actions, not keys (K-30)
-- Gamepad backend on GLFW (or SDL3 if adopted), so the gamepad mentioned in the README becomes true (I-03, D-25)
+- Gamepad backend on GLFW (`glfwGetGamepadState`, mappings through `glfwUpdateGamepadMappings`), so the gamepad
+  mentioned in the README becomes true (I-03, D-25)
 - Editor: action map edited in Project Settings, undoable
 
 ## Gamepad improvements (v0.10.0)
@@ -152,4 +201,4 @@ dereferenced a missing `wl_seat` (a compositor without input devices): the local
 - Haptic feedback / vibration API
 - Analogue stick dead zone and curve configuration
 
-[evaluate]: https://img.shields.io/badge/-To_evaluate-8250df?style=flat-square
+[done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square

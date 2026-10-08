@@ -173,7 +173,7 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase C — `EditorLayer` split (packager, ribbon, project opening), level transitions shared
 - ![Done][done] Phase C — editor command API: named, undoable commands for the editor, the runner and the tests
 - ![Done][done] Phase C — typed Lua binding registry, generated [Lua API reference](lua-api.md)
-- ![To evaluate][evaluate] Phase C — SDL3 for windowing, input, dialogues, audio (Wayland is the argument)
+- ![Done][done] Phase C — SDL3 evaluation: Owl stays on GLFW (SDL3 rejected, gamepads included), OpenAL kept
 - ![Planned][planned] Phase E — Owl Nest ergonomics revamp, designed together, no new feature ([Nest UI](design/nest-ui.md))
 - ![Planned][planned] Phase E — interaction basics: tooltips, context menus, drag & drop, text scale / DPI
 - ![Planned][planned] Phase E — visual overhaul: theme, icon set, thumbnails, style guide
