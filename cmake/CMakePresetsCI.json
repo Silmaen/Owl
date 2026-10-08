@@ -139,6 +139,26 @@
       }
     },
     {
+      "name": "linux-clang-minimal",
+      "inherits": "linux-clang-release",
+      "cacheVariables": {
+        "OWL_MODULE_RENDER": "OFF",
+        "OWL_MODULE_PHYSICS": "OFF",
+        "OWL_MODULE_AUDIO": "OFF",
+        "OWL_MODULE_SCRIPT": "OFF",
+        "OWL_MODULE_GUI": "OFF",
+        "OWL_BUILD_NEST": "OFF",
+        "OWL_BENCHMARK": "OFF",
+        "OWL_RENDER_TESTS": "OFF"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": "",
+          "package": false
+        }
+      }
+    },
+    {
       "name": "linux-include-check",
       "inherits": "linux-clang-release",
       "cacheVariables": {

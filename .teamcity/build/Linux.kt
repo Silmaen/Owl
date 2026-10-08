@@ -28,13 +28,17 @@ val linuxClang = presetBuild("Build_LinuxX64_Clang", "Clang", "linux-clang-debug
     }
 }
 
+// Every optional engine module off (OWL_MODULE_*): the headless core alone must build and pass its tests.
+val linuxClangMinimal = presetBuild("Build_LinuxX64_ClangMinimal", "Clang Minimal Modules", "linux-clang-minimal")
+
 val linuxX64 = Project {
     id = RelativeId("Build_LinuxX64")
     name = "Build Linux x64"
 
     buildType(linuxGcc)
     buildType(linuxClang)
-    buildTypesOrder = arrayListOf(linuxGcc, linuxClang)
+    buildType(linuxClangMinimal)
+    buildTypesOrder = arrayListOf(linuxGcc, linuxClang, linuxClangMinimal)
 
     params {
         param("platform", "Linux")

@@ -26,7 +26,7 @@ val prReady = BuildType {
     }
 
     dependencies {
-        listOf(codeStyle, includeCheck, linuxClang, linuxGcc, windowsClang, windowsGcc,
+        listOf(codeStyle, includeCheck, linuxClang, linuxGcc, linuxClangMinimal, windowsClang, windowsGcc,
                 sanitizerAddress, sanitizerThread, sanitizerUndefinedBehavior,
                 clangTidy, staticAnalyzer).forEach { gate ->
             snapshot(gate) {

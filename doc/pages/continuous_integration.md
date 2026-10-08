@@ -22,6 +22,7 @@ The CI surface covers:
 | Area               | Coverage                                                                                    |
 |--------------------|---------------------------------------------------------------------------------------------|
 | Build / Test       | Linux x64 and Windows x64 — Clang + GCC each; Linux ARM64 (Docker-emulated) — Clang only    |
+| Engine modules     | Linux x64 Clang with every optional module off (`linux-clang-minimal`)                      |
 | Quality            | clang-tidy, 3 blocking sanitizers (Address + Leak, Thread, UB), Code Style aggregator       |
 | Packaging          | Engine + Owl Nest archives of the tested release tree, per platform — only on `main`        |
 | GitHub integration | Draft PR suppression, Check Runs (tests, timings, diff annotations), ready_for_review reuse |
@@ -44,6 +45,7 @@ flowchart TD
     Build --> Q[Quality]
     Lx --> LxC[Clang]
     Lx --> LxG[GCC]
+    Lx --> LxM[Clang Minimal Modules]
     La --> LaC[Clang]
     La --> LaG[GCC]
     Wx --> WxC[Clang]
@@ -138,12 +140,13 @@ flowchart LR
         IC[Include Check]
     end
     subgraph L2[Level 2: after Code Style]
-        LxC[Linux x64 Clang] & LxG[Linux x64 GCC] & WxC[Windows x64 Clang] & WxG[Windows x64 GCC]
+        LxC[Linux x64 Clang] & LxG[Linux x64 GCC] & LxM[Linux x64 Clang Minimal] & WxC[Windows x64 Clang]
+        WxG[Windows x64 GCC]
         SA[Sanitizer Address] & ST[Sanitizer Thread] & SU[Sanitizer UB]
         CT[Clang-Tidy] & AN[Static Analyzer]
         LaC[Linux arm64 Clang]
     end
-    CS --> LxC & LxG & WxC & WxG & SA & ST & SU & CT & AN & LaC
+    CS --> LxC & LxG & LxM & WxC & WxG & SA & ST & SU & CT & AN & LaC
     LxC --> PL[Packages Linux x64]
     WxC --> PW[Packages Windows x64]
     LaC --> PA[Packages Linux arm64]
@@ -187,6 +190,7 @@ says which presets exist, where they run and in which order.
 | Build Linux x64 / Clang (Doxygen)          | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
 | Build Windows x64 / Clang                  | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
 | Build Linux x64 / GCC, Windows x64 / GCC   | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Build Linux x64 / Clang Minimal Modules    | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | Build Linux arm64 / Clang, GCC (emulated)  | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Benchmarks (`linux-bench`)                 | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Fuzzing (`linux-fuzz`)                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
