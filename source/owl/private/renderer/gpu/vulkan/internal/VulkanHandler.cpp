@@ -18,6 +18,8 @@
 #include "renderer/gpu/RendererDescriptors.h"
 #include "utils.h"
 
+#include <algorithm>
+#include <array>
 #include <bit>
 
 namespace owl::renderer::gpu::vulkan::internal {
@@ -34,6 +36,9 @@ void VulkanHandler::initVulkan() {
 		OWL_CORE_TRACE("Vulkan: Core created.")
 	}
 	{
+		createFrames();
+		if (m_state != State::Uninitialized)
+			return;
 		createSwapChain();
 		if (m_state != State::Uninitialized)
 			return;
@@ -54,6 +59,14 @@ void VulkanHandler::release() {
 	auto& core = VulkanCore::get();
 	if (core.getInstance() == nullptr)
 		return;// nothing can exist without instance.
+	if (core.getLogicalDevice() != nullptr)
+		vkDeviceWaitIdle(core.getLogicalDevice());
+	m_releasing = true;
+	m_completedSerial = m_frameSerial;
+	runReleases();
+	m_recording = false;
+	inBatch = false;
+	inFrame = false;
 	GpuProfiler::release();
 
 	for (auto&& [id, pipeLine]: m_pipeLines) {
@@ -81,9 +94,13 @@ void VulkanHandler::release() {
 	gpu::RendererDescriptors::releaseAll();
 	RendererDescriptors::releaseDefaults();
 	OWL_CORE_TRACE("Vulkan: per-renderer descriptor blocks released.")
+	runReleases();
+	m_ring.release();
+	releaseFrames();
 	core.release();
 	OWL_CORE_TRACE("Vulkan: core destroyed.")
 	m_state = State::Uninitialized;
+	m_releasing = false;
 }
 
 #if OWL_WITH_GUI
@@ -108,8 +125,8 @@ auto VulkanHandler::toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplV
 			.Queue = core.getGraphicQueue(),
 			.DescriptorPool = vkd.getImguiDescriptorPool(),
 			.DescriptorPoolSize = 0,// Use the default descriptor pool
-			.MinImageCount = m_swapChain->getImageCount(),
-			.ImageCount = m_swapChain->getImageCount(),
+			.MinImageCount = std::max(2u, m_swapChain->getImageCount()),
+			.ImageCount = std::max(2u, m_swapChain->getImageCount()),
 			.PipelineCache = VK_NULL_HANDLE,
 			.PipelineInfoMain =
 					{.RenderPass = m_swapChain->getRenderPass(),
@@ -168,11 +185,19 @@ auto VulkanHandler::getPipeline(const int32_t iId) const -> VulkanHandler::PipeL
 	return m_pipeLines.at(iId);
 }
 
-auto VulkanHandler::getCurrentCommandBuffer() const -> VkCommandBuffer {
-	if (m_currentFramebuffer == nullptr)
+auto VulkanHandler::getCurrentCommandBuffer() -> VkCommandBuffer {
+	if (m_state != State::Running)
 		return VK_NULL_HANDLE;
-	const auto* cmd = m_currentFramebuffer->getCurrentCommandbuffer();
-	return cmd != nullptr ? *cmd : VK_NULL_HANDLE;
+	if (!m_recording && !startFrame())
+		return VK_NULL_HANDLE;
+	m_pendingCommands = true;
+	return m_frames[m_frameSlot].commandBuffer;
+}
+
+auto VulkanHandler::getRenderPassCommandBuffer() const -> VkCommandBuffer {
+	if (!inBatch || !m_recording)
+		return VK_NULL_HANDLE;
+	return m_frames[m_frameSlot].commandBuffer;
 }
 
 auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
@@ -378,17 +403,43 @@ void VulkanHandler::popPipeline(const int32_t iId) {
 		--it->second.refCount;
 		return;
 	}
-	if (it->second.pipeLine != nullptr)
-		vkDestroyPipeline(core.getLogicalDevice(), it->second.pipeLine, nullptr);
-	if (it->second.layout != nullptr)
-		vkDestroyPipelineLayout(core.getLogicalDevice(), it->second.layout, nullptr);
+	deferRelease(
+			[device = core.getLogicalDevice(), pipeline = it->second.pipeLine, layout = it->second.layout]() -> void {
+				if (pipeline != nullptr)
+					vkDestroyPipeline(device, pipeline, nullptr);
+				if (layout != nullptr)
+					vkDestroyPipelineLayout(device, layout, nullptr);
+			});
 	m_pipelineCache.erase(it->second.key);
 	m_pipeLines.erase(it);
 }
 
 void VulkanHandler::setClearColor(const math::vec4& iColor) { m_clearColor = iColor; }
 
-void VulkanHandler::clear() const { m_currentFramebuffer->clearAttachment(0, m_clearColor); }
+void VulkanHandler::clear() {
+	beginBatch();
+	if (!inBatch)
+		return;
+	if (m_currentFramebuffer->getCurrentSubpass() != 0) {
+		endBatch();
+		beginBatch();
+	}
+	std::array<VkClearAttachment, 2> attachments{};
+	uint32_t count = 0;
+	attachments[count++] = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+							.colorAttachment = m_currentFramebuffer->colorAttachmentIndex(0),
+							.clearValue = {.color = {.float32 = {m_clearColor.r(), m_clearColor.g(), m_clearColor.b(),
+																 m_clearColor.a()}}}};
+	if (m_currentFramebuffer->hasDepth())
+		attachments[count++] = {.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+								.colorAttachment = 0,
+								.clearValue = {.depthStencil = {.depth = 1.0f, .stencil = 0}}};
+	const VkClearRect rect{
+			.rect = {.offset = {0, 0}, .extent = toExtent(m_currentFramebuffer->getSpecification().size)},
+			.baseArrayLayer = 0,
+			.layerCount = 1};
+	vkCmdClearAttachments(m_frames[m_frameSlot].commandBuffer, count, attachments.data(), 1, &rect);
+}
 
 void VulkanHandler::drawData(const uint32_t iVertexCount, const bool iIndexed, const uint32_t iInstanceCount) {
 	if (m_state != State::Running)
@@ -397,62 +448,317 @@ void VulkanHandler::drawData(const uint32_t iVertexCount, const bool iIndexed, c
 		return;
 	if (!inBatch)
 		beginBatch();
+	if (!inBatch)
+		return;
+	auto* const cmd = m_frames[m_frameSlot].commandBuffer;
 	if (iIndexed)
-		vkCmdDrawIndexed(getCurrentCommandBuffer(), iVertexCount, iInstanceCount, 0, 0, 0);
+		vkCmdDrawIndexed(cmd, iVertexCount, iInstanceCount, 0, 0, 0);
 	else
-		vkCmdDraw(getCurrentCommandBuffer(), iVertexCount, iInstanceCount, 0, 0);
+		vkCmdDraw(cmd, iVertexCount, iInstanceCount, 0, 0);
 }
 
-void VulkanHandler::beginFrame() {
-	if (m_state != State::Running)
-		return;
+void VulkanHandler::createFrames() {
 	const auto& core = VulkanCore::get();
-	inFrame = true;
-	FrameProfiler::get().onBeginFrame();
-	if (!isMainFramebuffer()) {
-		OWL_CORE_WARN("Vulkan begin frame on non main framebuffer: {}.", m_currentFramebuffer->getName())
-		unbindFramebuffer();
+	auto* const device = core.getLogicalDevice();
+	constexpr VkSemaphoreCreateInfo semaphoreInfo{.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+												  .pNext = nullptr,
+												  .flags = {}};
+	constexpr VkFenceCreateInfo signaledFence{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+											  .pNext = nullptr,
+											  .flags = VK_FENCE_CREATE_SIGNALED_BIT};
+	constexpr VkFenceCreateInfo unsignaledFence{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+												.pNext = nullptr,
+												.flags = {}};
+	for (auto& frame: m_frames) {
+		frame.commandBuffer = core.createCommandBuffer();
+		if (frame.commandBuffer == nullptr) {
+			m_state = State::ErrorCreatingCommandBuffer;
+			return;
+		}
+		if (vkCreateFence(device, &signaledFence, nullptr, &frame.fence) != VK_SUCCESS ||
+			vkCreateSemaphore(device, &semaphoreInfo, nullptr, &frame.imageAvailable) != VK_SUCCESS) {
+			OWL_CORE_ERROR("Vulkan: failed to create the frame synchronisation objects.")
+			m_state = State::ErrorCreatingSyncObjects;
+			return;
+		}
+		frame.serial = 0;
 	}
-	unbindFramebuffer();
-	m_currentFramebuffer->resetBatch();
-	vkWaitForFences(core.getLogicalDevice(), 1, m_currentFramebuffer->getCurrentFence(), VK_TRUE, UINT64_MAX);
+	if (vkCreateFence(device, &unsignaledFence, nullptr, &m_flushFence) != VK_SUCCESS) {
+		OWL_CORE_ERROR("Vulkan: failed to create the flush fence.")
+		m_state = State::ErrorCreatingSyncObjects;
+		return;
+	}
+	m_transientAlignment = core.getMinBufferOffsetAlignment();
+	m_frameSlot = 0;
+	m_frameSerial = 0;
+	m_completedSerial = 0;
+}
+
+void VulkanHandler::releaseFrames() {
+	auto* const device = VulkanCore::get().getLogicalDevice();
+	if (device == nullptr)
+		return;
+	for (auto& frame: m_frames) {
+		if (frame.fence != nullptr)
+			vkDestroyFence(device, frame.fence, nullptr);
+		if (frame.imageAvailable != nullptr)
+			vkDestroySemaphore(device, frame.imageAvailable, nullptr);
+		frame = {};
+	}
+	if (m_flushFence != nullptr)
+		vkDestroyFence(device, m_flushFence, nullptr);
+	m_flushFence = nullptr;
+	m_presentPending = false;
+}
+
+void VulkanHandler::runReleases() {
+	while (!m_releases.empty() && m_releases.front().first <= m_completedSerial) {
+		auto release = std::move(m_releases.front().second);
+		m_releases.pop_front();
+		release();
+	}
+}
+
+void VulkanHandler::deferRelease(std::function<void()> iRelease) {
+	if (!iRelease)
+		return;
+	if (m_state != State::Running || m_releasing) {
+		iRelease();
+		return;
+	}
+	m_releases.emplace_back(m_frameSerial, std::move(iRelease));
+}
+
+auto VulkanHandler::allocateTransient(const VkDeviceSize iSize) -> RingSlice {
+	if (!m_recording && !startFrame())
+		return {};
+	return m_ring.allocate(iSize, m_transientAlignment);
+}
+
+void VulkanHandler::recreateSwapChain() {
+	auto& core = VulkanCore::get();
+	core.updateSurfaceInformation();
+	const auto size = toSize(core.getCurrentExtent());
+	if (size.x() == 0 || size.y() == 0) {
+		m_resize = true;
+		return;
+	}
+	m_resize = false;
+	if (m_swapChain->getSpecification().size == size)
+		m_swapChain->invalidate();
+	else
+		m_swapChain->resize(size);
+}
+
+void VulkanHandler::acquireImage() {
+	const auto& core = VulkanCore::get();
+	m_imageAcquired = false;
+	m_imageWaited = false;
+	if (m_resize)
+		recreateSwapChain();
+	const auto& frame = m_frames[m_frameSlot];
 	uint32_t imageIndex = 0;
-	VkResult result = vkAcquireNextImageKHR(core.getLogicalDevice(), m_currentFramebuffer->getSwapChain(), UINT64_MAX,
-											m_currentFramebuffer->getCurrentImageAvailableSemaphore(), VK_NULL_HANDLE,
-											&imageIndex);
+	VkResult result = vkAcquireNextImageKHR(core.getLogicalDevice(), m_swapChain->getSwapChain(), UINT64_MAX,
+											frame.imageAvailable, VK_NULL_HANDLE, &imageIndex);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-		m_currentFramebuffer->resize(toSize(core.getCurrentExtent()));
-		m_resize = false;
-		result = vkAcquireNextImageKHR(core.getLogicalDevice(), m_currentFramebuffer->getSwapChain(), UINT64_MAX,
-									   m_currentFramebuffer->getCurrentImageAvailableSemaphore(), VK_NULL_HANDLE,
-									   &imageIndex);
+		recreateSwapChain();
+		result = vkAcquireNextImageKHR(core.getLogicalDevice(), m_swapChain->getSwapChain(), UINT64_MAX,
+									   frame.imageAvailable, VK_NULL_HANDLE, &imageIndex);
 	}
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		m_resize = true;
 		return;
 	}
 	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-		OWL_CORE_ERROR("Vulkan fb [{}]: failed to acquire next image ({}).", m_currentFramebuffer->getName(),
-					   resultString(result))
+		OWL_CORE_ERROR("Vulkan: failed to acquire next image ({}).", resultString(result))
 		m_state = State::ErrorAcquiringNextImage;
 		return;
 	}
-	if (result == VK_SUBOPTIMAL_KHR)
-		vkResetFences(core.getLogicalDevice(), 1, m_currentFramebuffer->getCurrentFence());
-	m_currentFramebuffer->setCurrentImage(imageIndex);
+	m_imageAcquired = true;
+	m_swapChain->setCurrentImage(imageIndex);
+}
+
+auto VulkanHandler::beginCommandBuffer() -> bool {
+	auto* const cmd = m_frames[m_frameSlot].commandBuffer;
+	if (const VkResult result = vkResetCommandBuffer(cmd, 0); result != VK_SUCCESS) {
+		OWL_CORE_ERROR("Vulkan: failed to reset the frame command buffer ({}).", resultString(result))
+		m_state = State::ErrorResetCommandBuffer;
+		return false;
+	}
+	constexpr VkCommandBufferBeginInfo beginInfo{.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+												 .pNext = nullptr,
+												 .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+												 .pInheritanceInfo = nullptr};
+	if (const VkResult result = vkBeginCommandBuffer(cmd, &beginInfo); result != VK_SUCCESS) {
+		OWL_CORE_ERROR("Vulkan: failed to begin the frame command buffer ({}).", resultString(result))
+		m_state = State::ErrorBeginCommandBuffer;
+		return false;
+	}
+	m_recording = true;
+	m_pendingCommands = false;
+	GpuProfiler::beginBatch(cmd);
+	m_batchTimestamp = FrameProfiler::get().writeBegin(cmd);
+	recordFullBarrier(cmd);
+	return true;
+}
+
+auto VulkanHandler::submitCommandBuffer(const bool iLast, VkFence iFence) -> bool {
+	auto& frame = m_frames[m_frameSlot];
+	if (m_batchTimestamp.has_value()) {
+		FrameProfiler::get().writeEnd(frame.commandBuffer, *m_batchTimestamp);
+		m_batchTimestamp.reset();
+	}
+	GpuProfiler::endBatch();
+	recordHostBarrier(frame.commandBuffer);
+	m_recording = false;
+	if (const VkResult result = vkEndCommandBuffer(frame.commandBuffer); result != VK_SUCCESS) {
+		OWL_CORE_ERROR("Vulkan: failed to end the frame command buffer ({}).", resultString(result))
+		m_state = State::ErrorEndCommandBuffer;
+		return false;
+	}
+	const bool waitImage = m_imageAcquired && !m_imageWaited;
+	const bool signalImage = iLast && m_imageAcquired;
+	constexpr VkPipelineStageFlags waitStage =
+			VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
+	VkSemaphore renderFinished =
+			signalImage ? m_swapChain->getRenderFinishedSemaphore(m_swapChain->getCurrentImage()) : VK_NULL_HANDLE;
+	const VkSubmitInfo submitInfo{.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+								  .pNext = nullptr,
+								  .waitSemaphoreCount = waitImage ? 1u : 0u,
+								  .pWaitSemaphores = waitImage ? &frame.imageAvailable : nullptr,
+								  .pWaitDstStageMask = waitImage ? &waitStage : nullptr,
+								  .commandBufferCount = 1,
+								  .pCommandBuffers = &frame.commandBuffer,
+								  .signalSemaphoreCount = signalImage ? 1u : 0u,
+								  .pSignalSemaphores = signalImage ? &renderFinished : nullptr};
+	const auto& core = VulkanCore::get();
+	vkResetFences(core.getLogicalDevice(), 1, &iFence);
+	if (const VkResult result = vkQueueSubmit(core.getGraphicQueue(), 1, &submitInfo, iFence); result != VK_SUCCESS) {
+		OWL_CORE_ERROR("Vulkan: failed to submit the frame command buffer ({}).", resultString(result))
+		m_state = State::ErrorSubmittingDrawCommand;
+		return false;
+	}
+	m_imageWaited = m_imageWaited || waitImage;
+	FrameProfiler::get().countSubmit();
+	return true;
+}
+
+auto VulkanHandler::startFrame() -> bool {
+	if (m_state != State::Running)
+		return false;
+	if (m_recording)
+		return true;
+	const auto& core = VulkanCore::get();
+	auto& frame = m_frames[m_frameSlot];
+	vkWaitForFences(core.getLogicalDevice(), 1, &frame.fence, VK_TRUE, UINT64_MAX);
+	m_completedSerial = std::max(m_completedSerial, frame.serial);
+	runReleases();
+	m_ring.beginFrame(m_frameSlot);
+	frame.serial = ++m_frameSerial;
+	FrameProfiler::get().onBeginFrame();
+	acquireImage();
+	if (m_state != State::Running || !beginCommandBuffer())
+		return false;
+	inFrame = true;
+	return true;
+}
+
+void VulkanHandler::beginFrame() {
+	if (m_state != State::Running)
+		return;
+	if (!isMainFramebuffer()) {
+		OWL_CORE_WARN("Vulkan: begin frame on non main framebuffer {}.", m_currentFramebuffer->getName())
+	}
+	unbindFramebuffer();
+	startFrame();
+}
+
+void VulkanHandler::flushFrame() {
+	if (!m_recording || !m_pendingCommands)
+		return;
+	if (inBatch)
+		endBatch();
+	if (!submitCommandBuffer(false, m_flushFence))
+		return;
+	const auto& core = VulkanCore::get();
+	FrameProfiler::get().countFenceWait();
+	vkWaitForFences(core.getLogicalDevice(), 1, &m_flushFence, VK_TRUE, UINT64_MAX);
+	beginCommandBuffer();
+}
+
+void VulkanHandler::recordFullBarrier(VkCommandBuffer iCmd) {
+	constexpr VkMemoryBarrier barrier{.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+									  .pNext = nullptr,
+									  .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+									  .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT};
+	vkCmdPipelineBarrier(iCmd, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 1, &barrier,
+						 0, nullptr, 0, nullptr);
+}
+
+void VulkanHandler::recordHostBarrier(VkCommandBuffer iCmd) {
+	constexpr VkMemoryBarrier barrier{.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+									  .pNext = nullptr,
+									  .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+									  .dstAccessMask = VK_ACCESS_HOST_READ_BIT};
+	vkCmdPipelineBarrier(iCmd, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_HOST_BIT, 0, 1, &barrier, 0,
+						 nullptr, 0, nullptr);
+}
+
+void VulkanHandler::recordTransfer(const std::function<void(VkCommandBuffer)>& iRecord) {
+	if (!iRecord || VulkanCore::get().getLogicalDevice() == nullptr)
+		return;
+	if (m_recording) {
+		if (inBatch)
+			endBatch();
+		m_pendingCommands = true;
+		auto* const cmd = m_frames[m_frameSlot].commandBuffer;
+		recordFullBarrier(cmd);
+		iRecord(cmd);
+		recordFullBarrier(cmd);
+		return;
+	}
+	submitNow(iRecord);
+}
+
+void VulkanHandler::submitNow(const std::function<void(VkCommandBuffer)>& iRecord) {
+	if (!iRecord || VulkanCore::get().getLogicalDevice() == nullptr)
+		return;
+	if (m_recording)
+		flushFrame();
+	const auto& core = VulkanCore::get();
+	auto* const cmd = core.beginSingleTimeCommands();
+	if (cmd == nullptr)
+		return;
+	recordFullBarrier(cmd);
+	iRecord(cmd);
+	recordFullBarrier(cmd);
+	recordHostBarrier(cmd);
+	core.endSingleTimeCommands(cmd);
 }
 
 void VulkanHandler::endFrame() {
 	if (m_state != State::Running)
 		return;
 	if (!isMainFramebuffer()) {
-		OWL_CORE_WARN("Vulkan ending frame on non main framebuffer: {}.", m_currentFramebuffer->getName())
+		OWL_CORE_WARN("Vulkan: ending frame on non main framebuffer {}.", m_currentFramebuffer->getName())
 		unbindFramebuffer();
 	}
-	//OWL_CORE_TRACE("Vulkan fb [{}]: Ending frame {} / {}.", m_currentframebuffer->getName(),
+	inFrame = false;
+	if (!m_recording)
+		return;
 	if (inBatch)
 		endBatch();
-	inFrame = false;
+	// The acquired image leaves in the present layout only through a render pass.
+	if (m_imageAcquired && !m_swapChain->wasRenderedIn(m_frameSerial)) {
+		beginBatch();
+		endBatch();
+	}
+	if (!submitCommandBuffer(true, m_frames[m_frameSlot].fence))
+		return;
+	m_presentPending = m_imageAcquired;
+	m_presentImage = m_swapChain->getCurrentImage();
+	m_imageAcquired = false;
+	m_frameSlot = (m_frameSlot + 1) % g_maxFrameInFlight;
 }
 
 void VulkanHandler::nextSubpass(bool internal) {
@@ -461,53 +767,35 @@ void VulkanHandler::nextSubpass(bool internal) {
 		return;
 	}
 	if (internal) {
-		vkCmdNextSubpass(getCurrentCommandBuffer(), VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdNextSubpass(m_frames[m_frameSlot].commandBuffer, VK_SUBPASS_CONTENTS_INLINE);
 	} else {
 		m_currentFramebuffer->nextSubpass();
 	}
 }
 
 void VulkanHandler::beginBatch() {
-	// Idempotent: re-opening a recording batch would reset the in-flight fence with no submit and deadlock the next wait.
-	if (inBatch)
+	if (inBatch || m_state != State::Running)
 		return;
-	if (!inFrame)
-		beginFrame();
-	inBatch = true;
-	const auto& core = VulkanCore::get();
-	vkWaitForFences(core.getLogicalDevice(), 1, m_currentFramebuffer->getCurrentFence(), VK_TRUE, UINT64_MAX);
-	vkResetFences(core.getLogicalDevice(), 1, m_currentFramebuffer->getCurrentFence());
-
-	if (const VkResult result = vkResetCommandBuffer(getCurrentCommandBuffer(), /*VkCommandBufferResetFlagBits*/ 0);
-		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan fb [{}]: failed to reset recording command buffer ({}).",
-					   m_currentFramebuffer->getName(), resultString(result))
-		m_state = State::ErrorResetCommandBuffer;
+	if (!m_recording && !startFrame())
 		return;
-	}
-	constexpr VkCommandBufferBeginInfo beginInfo{.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-												 .pNext = nullptr,
-												 .flags = {},
-												 .pInheritanceInfo = nullptr};
-	if (const VkResult result = vkBeginCommandBuffer(getCurrentCommandBuffer(), &beginInfo); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan fb [{}]: failed to begin recording command buffer ({}).",
-					   m_currentFramebuffer->getName(), resultString(result))
-		m_state = State::ErrorBeginCommandBuffer;
+	if (m_currentFramebuffer->isMainTarget() && !m_imageAcquired)
 		return;
-	}
-	GpuProfiler::beginBatch(getCurrentCommandBuffer());
-	m_batchTimestamp = FrameProfiler::get().writeBegin(getCurrentCommandBuffer());
-
-	const auto& clearValues = m_currentFramebuffer->getClearValues();
+	auto* const cmd = m_frames[m_frameSlot].commandBuffer;
+	m_pendingCommands = true;
+	m_currentFramebuffer->prepareForRendering(cmd);
+	auto& clearValues = m_currentFramebuffer->getClearValues();
+	if (m_currentFramebuffer->isMainTarget() && !clearValues.empty())
+		clearValues[0].color = {.float32 = {m_clearColor.r(), m_clearColor.g(), m_clearColor.b(), m_clearColor.a()}};
 	const VkRenderPassBeginInfo renderPassInfo{
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.pNext = nullptr,
-			.renderPass = m_currentFramebuffer->getRenderPass(),
+			.renderPass = m_currentFramebuffer->acquirePassRenderPass(m_frameSerial),
 			.framebuffer = m_currentFramebuffer->getCurrentFramebuffer(),
 			.renderArea = {.offset = {0, 0}, .extent = toExtent(m_currentFramebuffer->getSpecification().size)},
 			.clearValueCount = static_cast<uint32_t>(clearValues.size()),
 			.pClearValues = clearValues.empty() ? nullptr : clearValues.data()};
-	vkCmdBeginRenderPass(getCurrentCommandBuffer(), &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	inBatch = true;
 	m_currentFramebuffer->resetSubPass();
 	const VkViewport viewport{.x = 0.0f,
 							  .y = 0.0f,
@@ -515,104 +803,53 @@ void VulkanHandler::beginBatch() {
 							  .height = static_cast<float>(m_currentFramebuffer->getSpecification().size.y()),
 							  .minDepth = 0.0f,
 							  .maxDepth = 1.0f};
-	vkCmdSetViewport(getCurrentCommandBuffer(), 0, 1, &viewport);
+	vkCmdSetViewport(cmd, 0, 1, &viewport);
 	const VkRect2D scissor{.offset = {0, 0}, .extent = toExtent(m_currentFramebuffer->getSpecification().size)};
-	vkCmdSetScissor(getCurrentCommandBuffer(), 0, 1, &scissor);
-	vkCmdSetDepthTestEnable(getCurrentCommandBuffer(), depthTestEnabled ? VK_TRUE : VK_FALSE);
-	vkCmdSetDepthWriteEnable(getCurrentCommandBuffer(), depthWriteEnabled ? VK_TRUE : VK_FALSE);
+	vkCmdSetScissor(cmd, 0, 1, &scissor);
+	vkCmdSetDepthTestEnable(cmd, depthTestEnabled ? VK_TRUE : VK_FALSE);
+	vkCmdSetDepthWriteEnable(cmd, depthWriteEnabled ? VK_TRUE : VK_FALSE);
 }
 
 void VulkanHandler::endBatch() {
-	while (m_currentFramebuffer->getCurrentSubpass() != m_currentFramebuffer->getSubpassCount() - 1) {
+	if (!inBatch)
+		return;
+	while (m_currentFramebuffer->getCurrentSubpass() + 1 < m_currentFramebuffer->getSubpassCount())
 		m_currentFramebuffer->nextSubpass();
-	}
-	vkCmdEndRenderPass(getCurrentCommandBuffer());
-	if (m_batchTimestamp.has_value()) {
-		FrameProfiler::get().writeEnd(getCurrentCommandBuffer(), *m_batchTimestamp);
-		m_batchTimestamp.reset();
-	}
-	GpuProfiler::endBatch();
-	if (const VkResult result = vkEndCommandBuffer(getCurrentCommandBuffer()); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan fb [{}]: failed to end command buffer ({}).", m_currentFramebuffer->getName(),
-					   resultString(result))
-		m_state = State::ErrorEndCommandBuffer;
-		return;
-	}
-	const std::vector<VkPipelineStageFlags> waitStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-	const bool skipSemaphores = m_resize && m_currentFramebuffer->isMainTarget();
-	std::vector<VkSemaphore> signalSemaphores;
-	if (!skipSemaphores)
-		signalSemaphores.push_back(m_currentFramebuffer->getCurrentFinishedSemaphore());
-	std::vector<VkSemaphore> waiter;
-
-	if (m_currentFramebuffer->isMainTarget() && m_currentFramebuffer->isFirstBatch()) {
-		if (!skipSemaphores)
-			waiter.push_back(m_currentFramebuffer->getCurrentImageAvailableSemaphore());
-	} else {
-		if (m_currentFramebuffer->hasBeenCalled())
-			waiter.push_back(m_currentFramebuffer->getCurrentFinishedSemaphore());
-	}
-
-	const VkSubmitInfo submitInfo{.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-								  .pNext = nullptr,
-								  .waitSemaphoreCount = static_cast<uint32_t>(waiter.size()),
-								  .pWaitSemaphores = waiter.data(),
-								  .pWaitDstStageMask = waitStages.data(),
-								  .commandBufferCount = 1,
-								  .pCommandBuffers = m_currentFramebuffer->getCurrentCommandbuffer(),
-								  .signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size()),
-								  .pSignalSemaphores = signalSemaphores.data()};
-	const auto& core = VulkanCore::get();
-	if (const VkResult result =
-				vkQueueSubmit(core.getGraphicQueue(), 1, &submitInfo, *m_currentFramebuffer->getCurrentFence());
-		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan fb [{}]: failed to submit draw command buffer ({}).", m_currentFramebuffer->getName(),
-					   resultString(result))
-		m_state = State::ErrorSubmittingDrawCommand;
-		return;
-	}
-	FrameProfiler::get().countSubmit();
-	RendererDescriptors::notifySubmitAll(*m_currentFramebuffer->getCurrentFence());
+	vkCmdEndRenderPass(m_frames[m_frameSlot].commandBuffer);
 	inBatch = false;
-	m_currentFramebuffer->batchTouch();
 }
 
 void VulkanHandler::swapFrame() {
 	if (m_state != State::Running)
 		return;
-	if (inFrame)
+	if (inFrame || m_recording)
 		endFrame();
-	// Handle pending resize without presenting — the finished semaphore may not have been signalled.
-	if (m_resize) {
-		m_resize = false;
-		const auto& core = VulkanCore::get();
-		m_currentFramebuffer->resize(toSize(core.getCurrentExtent()));
-		m_currentFramebuffer->nextFrame();
+	if (!m_presentPending) {
+		if (m_resize)
+			recreateSwapChain();
 		return;
 	}
-	std::array waiter = {m_currentFramebuffer->getCurrentFinishedSemaphore()};
-	const std::array swapChains = {m_currentFramebuffer->getSwapChain()};
-
+	m_presentPending = false;
+	VkSemaphore waiter = m_swapChain->getRenderFinishedSemaphore(m_presentImage);
+	VkSwapchainKHR swapChain = m_swapChain->getSwapChain();
 	const VkPresentInfoKHR presentInfo{.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 									   .pNext = nullptr,
-									   .waitSemaphoreCount = static_cast<uint32_t>(waiter.size()),
-									   .pWaitSemaphores = waiter.data(),
-									   .swapchainCount = static_cast<uint32_t>(swapChains.size()),
-									   .pSwapchains = swapChains.data(),
-									   .pImageIndices = m_currentFramebuffer->getCurrentImage(),
+									   .waitSemaphoreCount = 1,
+									   .pWaitSemaphores = &waiter,
+									   .swapchainCount = 1,
+									   .pSwapchains = &swapChain,
+									   .pImageIndices = &m_presentImage,
 									   .pResults = nullptr};
 	const auto& core = VulkanCore::get();
 	if (const VkResult result = vkQueuePresentKHR(core.getPresentQueue(), &presentInfo);
 		m_resize || result != VK_SUCCESS) {
-		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_resize) {
-			m_resize = false;
-			m_currentFramebuffer->resize(toSize(core.getCurrentExtent()));
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || result == VK_SUCCESS) {
+			recreateSwapChain();
 		} else {
 			OWL_CORE_ERROR("Vulkan: failed to present queue ({}).", resultString(result))
 			m_state = State::ErrorPresentingQueue;
 		}
 	}
-	m_currentFramebuffer->nextFrame();
 }
 
 void VulkanHandler::bindPipeline(const int32_t iId) {
@@ -622,7 +859,10 @@ void VulkanHandler::bindPipeline(const int32_t iId) {
 		OWL_CORE_WARN("Vulkan: cannot bind pipeline with id {}.", iId)
 		return;
 	}
-	vkCmdBindPipeline(getCurrentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeLines[iId].pipeLine);
+	auto* const cmd = getCurrentCommandBuffer();
+	if (cmd == nullptr)
+		return;
+	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeLines[iId].pipeLine);
 	const VkDescriptorSet* set = nullptr;
 	if (auto* const rd = RendererDescriptors::getActive(); rd != nullptr) {
 		set = rd->getDescriptorSet(getCurrentFrameIndex());
@@ -630,8 +870,7 @@ void VulkanHandler::bindPipeline(const int32_t iId) {
 	if (set == nullptr || *set == nullptr) {
 		set = Descriptors::get().getDescriptorSet(getCurrentFrameIndex());
 	}
-	vkCmdBindDescriptorSets(getCurrentCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeLines[iId].layout, 0, 1,
-							set, 0, nullptr);
+	vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeLines[iId].layout, 0, 1, set, 0, nullptr);
 }
 
 void VulkanHandler::setResize() {
@@ -641,28 +880,14 @@ void VulkanHandler::setResize() {
 }
 
 void VulkanHandler::bindFramebuffer(Framebuffer* iFrameBuffer) {
-	if (inBatch) {
-		OWL_CORE_WARN("VBulkan: bind framebuffer called in batch, ending batch!")
+	if (inBatch)
 		endBatch();
-	}
-#ifdef VKFB_DEBUG
-	if (m_currentFramebuffer && iFrameBuffer && m_currentFramebuffer != iFrameBuffer)
-		OWL_CORE_TRACE("Vulkan Change framebuffer [{}] -> [{}].", m_currentFramebuffer->getName(),
-					   iFrameBuffer->getName())
-#endif
 	m_currentFramebuffer = iFrameBuffer;
 }
 
 void VulkanHandler::unbindFramebuffer() {
-	if (inBatch) {
-		OWL_CORE_WARN("Vulkan: unbind framebuffer called in batch, ending batch!")
+	if (inBatch)
 		endBatch();
-	}
-#ifdef VKFB_DEBUG
-	if (m_currentFramebuffer && m_swapChain.get() && m_currentFramebuffer != m_swapChain.get())
-		OWL_CORE_TRACE("Vulkan Change framebuffer [{}] -> [{}].", m_currentFramebuffer->getName(),
-					   m_swapChain.get()->getName())
-#endif
 	m_currentFramebuffer = m_swapChain.get();
 }
 
@@ -674,7 +899,7 @@ auto VulkanHandler::getCurrentFrameBufferName() const -> std::string {
 	return m_currentFramebuffer->getName();
 }
 
-auto VulkanHandler::getCurrentFrameIndex() const -> uint32_t { return m_swapChain->getImageIndex(); }
+auto VulkanHandler::getCurrentFrameIndex() const -> uint32_t { return m_frameSlot; }
 
 auto VulkanHandler::get() -> VulkanHandler& {
 	static VulkanHandler handler;

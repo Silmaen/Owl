@@ -20,27 +20,28 @@
 namespace owl::renderer::gpu::vulkan::internal {
 
 void TextureData::freeTexture() {
-	const auto& core = VulkanCore::get();
-	const auto& pool = Descriptors::get().getSingleImageDescriptorPool();
-	FrameProfiler::get().deviceWaitIdle(core.getLogicalDevice());
-	if (textureDescriptorSet != nullptr) {
-		vkFreeDescriptorSets(core.getLogicalDevice(), pool, 1, &textureDescriptorSet);
-		textureDescriptorSet = nullptr;
-	}
-	if (textureDescriptorSetLayout != nullptr) {
-		vkDestroyDescriptorSetLayout(core.getLogicalDevice(), textureDescriptorSetLayout, nullptr);
-		textureDescriptorSetLayout = nullptr;
-	}
-	if (textureSampler != nullptr) {
-		vkDestroySampler(core.getLogicalDevice(), textureSampler, nullptr);
-		textureSampler = nullptr;
-	}
-	if (textureImageView != nullptr) {
-		vkDestroyImageView(core.getLogicalDevice(), textureImageView, nullptr);
-		textureImageView = nullptr;
-	}
-	AllocatedImage image{.image = textureImage, .allocation = textureImageMemory};
-	MemoryAllocator::get().destroyImage(image);
+	auto* const device = VulkanCore::get().getLogicalDevice();
+	auto* const pool = Descriptors::get().getSingleImageDescriptorPool();
+	VulkanHandler::get().deferRelease(
+			[device, pool, set = textureDescriptorSet, setLayout = textureDescriptorSetLayout, sampler = textureSampler,
+			 view = textureImageView,
+			 image = AllocatedImage{.image = textureImage, .allocation = textureImageMemory}]() mutable -> void {
+				if (device == nullptr)
+					return;
+				if (set != nullptr)
+					vkFreeDescriptorSets(device, pool, 1, &set);
+				if (setLayout != nullptr)
+					vkDestroyDescriptorSetLayout(device, setLayout, nullptr);
+				if (sampler != nullptr)
+					vkDestroySampler(device, sampler, nullptr);
+				if (view != nullptr)
+					vkDestroyImageView(device, view, nullptr);
+				MemoryAllocator::get().destroyImage(image);
+			});
+	textureDescriptorSet = nullptr;
+	textureDescriptorSetLayout = nullptr;
+	textureSampler = nullptr;
+	textureImageView = nullptr;
 	textureImage = nullptr;
 	textureImageMemory = nullptr;
 }
@@ -107,7 +108,9 @@ void TextureData::createView() {
 																.baseArrayLayer = 0,
 																.layerCount = 1}};
 	if (textureImageView != nullptr)
-		vkDestroyImageView(vkc.getLogicalDevice(), textureImageView, nullptr);
+		VulkanHandler::get().deferRelease([device = vkc.getLogicalDevice(), view = textureImageView]() -> void {
+			vkDestroyImageView(device, view, nullptr);
+		});
 	if (const VkResult result = vkCreateImageView(vkc.getLogicalDevice(), &createInfo, nullptr, &textureImageView);
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan Texture: Error creating image views ({}).", internal::resultString(result))
@@ -137,7 +140,9 @@ void TextureData::createSampler() {
 										  .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,
 										  .unnormalizedCoordinates = VK_FALSE};
 	if (textureSampler != nullptr)
-		vkDestroySampler(vkc.getLogicalDevice(), textureSampler, nullptr);
+		VulkanHandler::get().deferRelease([device = vkc.getLogicalDevice(), sampler = textureSampler]() -> void {
+			vkDestroySampler(device, sampler, nullptr);
+		});
 	if (const VkResult result = vkCreateSampler(vkc.getLogicalDevice(), &samplerInfo, nullptr, &textureSampler);
 		result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan Texture: Error creating texture sampler ({}).", internal::resultString(result))

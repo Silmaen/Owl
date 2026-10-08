@@ -29,7 +29,7 @@ UniformBuffer::UniformBuffer(const uint32_t iSize, const uint32_t iBinding, cons
 UniformBuffer::~UniformBuffer() = default;
 
 void UniformBuffer::setData(const void* iData, const uint32_t iSize, uint32_t) {
-	if (const auto* const rd = internal::RendererDescriptors::getForRenderer(m_renderer); rd != nullptr) {
+	if (auto* const rd = internal::RendererDescriptors::getForRenderer(m_renderer); rd != nullptr) {
 		rd->setUniformData(m_binding, iData, iSize);
 		return;
 	}

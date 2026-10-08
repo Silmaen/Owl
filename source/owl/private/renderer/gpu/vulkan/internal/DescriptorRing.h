@@ -8,6 +8,9 @@
 
 #pragma once
 
+#include "VulkanCore.h"
+
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <vector>
@@ -17,17 +20,13 @@ namespace owl::renderer::gpu::vulkan::internal {
 
 /**
  * @brief
- *  A fence-recycled pool of descriptor sets sharing one layout.
+ *  Descriptor sets of one layout, allocated from pools owned by each frame in flight.
  *
- *  Each draw acquires a distinct set, so a set bound to an in-flight command
- *  buffer is never rewritten — the root cause of the `UPDATE_AFTER_BIND`
- *  validation cascade (a single shared per-frame set rewritten between draws).
- *  On batch submit every set acquired since the previous submit is tagged with
- *  that batch's fence; a set is reused only once its fence has signalled. Sets
- *  are never freed individually — the ring grows to the high-water mark and
- *  whole pools are released together. Recycling keys on the submit fence (not
- *  the frame index) so sets stay correct even when several framebuffers submit
- *  independently within one displayed frame.
+ *  Each draw acquires a distinct set, so a set referenced by a recorded command is never rewritten — the root cause
+ *  of the `UPDATE_AFTER_BIND` validation cascade (a single shared set rewritten between draws). The pools of a frame
+ *  slot are reset in one call (`vkResetDescriptorPool`) the first time the slot is used by a new frame, once the GPU
+ *  is done with the frame that filled them; they grow to the high-water mark of a frame and are never freed one set at
+ *  a time.
  */
 class DescriptorRing final {
 public:
@@ -65,10 +64,12 @@ public:
 
 	/**
 	 * @brief
-	 *  Get an idle set for the current draw; it becomes the current set.
+	 *  Get a fresh set for the current draw of a frame; it becomes the current set.
+	 * @param[in] iSlot Frame slot recording the draw.
+	 * @param[in] iSerial Serial of the frame recording the draw (a new serial resets the slot's pools).
 	 * @return The acquired descriptor set, or null when uninitialised / allocation failed.
 	 */
-	auto acquire() -> VkDescriptorSet;
+	auto acquire(uint32_t iSlot, uint64_t iSerial) -> VkDescriptorSet;
 
 	/**
 	 * @brief
@@ -77,43 +78,28 @@ public:
 	 */
 	auto currentPtr() -> VkDescriptorSet* { return &m_current; }
 
-	/**
-	 * @brief
-	 *  Tag every set acquired since the previous submit with the batch fence.
-	 * @param[in] iFence The fence the just-submitted command buffer signals.
-	 */
-	void onSubmit(VkFence iFence);
-
 private:
-	/**
-	 * @brief
-	 *  One pooled descriptor set plus the fence of its last submission.
-	 */
-	struct Entry {
-		VkDescriptorSet set = nullptr;///< The descriptor set handle.
-		VkFence fence = nullptr;///< Fence of the batch last using it (meaningful only while busy).
-		bool busy = false;///< True while claimed this batch or in flight; false when reusable.
+	/// Pools of one frame slot.
+	struct Slot {
+		std::vector<VkDescriptorPool> pools;///< Owned pools, grown on demand.
+		size_t active = 0;///< Pool being allocated from.
+		uint32_t setsInActive = 0;///< Sets already taken from the active pool.
+		uint64_t serial = 0;///< Frame serial the pools were last reset for.
 	};
 
 	/**
 	 * @brief
-	 *  Allocate a fresh idle set, creating a new pool block when the current one is full.
-	 * @return Index of the new entry in m_entries, or SIZE_MAX on failure.
+	 *  Create one pool block.
+	 * @return The pool, or null on failure (logged).
 	 */
-	auto allocate() -> size_t;
+	[[nodiscard]] auto createPool() const -> VkDescriptorPool;
 
 	/// The shared layout for every set in the ring (not owned).
 	VkDescriptorSetLayout m_layout = nullptr;
 	/// Per-set descriptor budget used to size each pool block.
 	std::vector<VkDescriptorPoolSize> m_perSetSizes;
-	/// Owned descriptor pools, grown on demand.
-	std::vector<VkDescriptorPool> m_pools;
-	/// Sets already allocated from the last pool block.
-	uint32_t m_setsInCurrentPool = 0;
-	/// Every allocated set with its in-flight fence tag.
-	std::vector<Entry> m_entries;
-	/// Entry indices acquired since the last onSubmit (tagged together on submit).
-	std::vector<size_t> m_pendingThisBatch;
+	/// Pools of every frame slot.
+	std::array<Slot, g_maxFrameInFlight> m_slots{};
 	/// Set returned by the last acquire (the one to bind).
 	VkDescriptorSet m_current = nullptr;
 };

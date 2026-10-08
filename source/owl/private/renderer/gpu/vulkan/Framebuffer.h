@@ -11,8 +11,11 @@
 #include <vulkan/vulkan_core.h>
 
 #include "internal/MemoryAllocator.h"
+#include "internal/VulkanCore.h"
 #include "renderer/gpu/Framebuffer.h"
 
+#include <algorithm>
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -24,13 +27,13 @@ namespace owl::renderer::gpu::vulkan {
  */
 class OWL_API Framebuffer final : public renderer::gpu::Framebuffer {
 public:
-	Framebuffer(const Framebuffer&) = default;
+	Framebuffer(const Framebuffer&) = delete;
 
-	Framebuffer(Framebuffer&&) = default;
+	Framebuffer(Framebuffer&&) = delete;
 
-	auto operator=(const Framebuffer&) -> Framebuffer& = default;
+	auto operator=(const Framebuffer&) -> Framebuffer& = delete;
 
-	auto operator=(Framebuffer&&) -> Framebuffer& = default;
+	auto operator=(Framebuffer&&) -> Framebuffer& = delete;
 
 	/**
 	 * @brief
@@ -121,215 +124,184 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the current framebuffer.
-	 * @return The current framebuffer.
+	 *  Get the framebuffer of the current swapchain image (or the only one off-screen).
+	 * @return The framebuffer handle.
 	 */
 	[[nodiscard]] auto getCurrentFramebuffer() const -> VkFramebuffer { return m_framebuffers[m_currentImage]; }
 
 	/**
 	 * @brief
-	 *  Get the render pass.
+	 *  Get the render pass that loads every attachment (pipelines are built against it).
 	 * @return The render pass.
 	 */
 	[[nodiscard]] auto getRenderPass() const -> VkRenderPass { return m_renderPass; }
 
 	/**
 	 * @brief
-	 *  Get the per-attachment render-pass clear values.
-	 * @return Clear values indexed by attachment (depth slot set to 1.0; color slots are zeroed and ignored by their
-	 *  `DONT_CARE` load op).
+	 *  Pick the render pass of the next batch: the first of a frame clears depth (and the swapchain image), the
+	 *  others load every attachment. Both are compatible with the same pipelines.
+	 * @param[in] iFrameSerial Serial of the frame being recorded.
+	 * @return The render pass to begin.
 	 */
-	[[nodiscard]] auto getClearValues() const -> const std::vector<VkClearValue>& { return m_clearValues; }
+	[[nodiscard]] auto acquirePassRenderPass(uint64_t iFrameSerial) -> VkRenderPass;
 
 	/**
 	 * @brief
-	 *  Get the image count.
+	 *  Check a render pass of this frame already ran on the framebuffer.
+	 * @param[in] iFrameSerial Serial of the frame being recorded.
+	 * @return True once a batch of that frame was opened.
+	 */
+	[[nodiscard]] auto wasRenderedIn(const uint64_t iFrameSerial) const -> bool { return m_passSerial == iFrameSerial; }
+
+	/**
+	 * @brief
+	 *  Get the render-pass clear values (depth = 1.0, colours zeroed, the first one of the swapchain set by the caller).
+	 * @return The clear values, one per attachment.
+	 */
+	[[nodiscard]] auto getClearValues() -> std::vector<VkClearValue>& { return m_clearValues; }
+
+	/**
+	 * @brief
+	 *  Get the number of swapchain images (1 off-screen).
 	 * @return The image count.
 	 */
-	[[nodiscard]] auto getImageCount() const -> uint32_t { return m_specs.samples; }
+	[[nodiscard]] auto getImageCount() const -> uint32_t { return std::max(1u, m_swapChainImageCount); }
 
 	/**
 	 * @brief
-	 *  Get the image index.
-	 * @return The image index.
-	 */
-	[[nodiscard]] auto getImageIndex() const -> uint32_t { return m_currentFrame; }
-
-	/**
-	 * @brief
-	 *  Get the swap chain.
-	 * @return The swap chain.
+	 *  Get the swapchain.
+	 * @return The swapchain handle, null off-screen.
 	 */
 	[[nodiscard]] auto getSwapChain() const -> VkSwapchainKHR { return m_swapChain; }
 
 	/**
 	 * @brief
-	 *  Next frame.
+	 *  Semaphore signalled when the rendering of a swapchain image is done (one per image, waited by the present).
+	 * @param[in] iImage Swapchain image index.
+	 * @return The semaphore.
 	 */
-	void nextFrame();
-
-	/**
-	 * @brief
-	 *  Get the current finished semaphore.
-	 * @return The current finished semaphore.
-	 */
-	[[nodiscard]] auto getCurrentFinishedSemaphore() const -> VkSemaphore {
-		return m_samples[m_currentFrame].renderFinishedSemaphore;
+	[[nodiscard]] auto getRenderFinishedSemaphore(const uint32_t iImage) const -> VkSemaphore {
+		return m_renderFinished[iImage];
 	}
 
 	/**
 	 * @brief
-	 *  Get the current image available semaphore.
-	 * @return The current image available semaphore.
+	 *  Set the acquired swapchain image the next passes render into.
+	 * @param[in] iImage The image index.
 	 */
-	[[nodiscard]] auto getCurrentImageAvailableSemaphore() const -> VkSemaphore {
-		if (m_samples[m_currentFrame].imageAvailableSemaphore != nullptr)
-			return m_samples[m_currentFrame].imageAvailableSemaphore;
-		return m_samples[m_currentFrame].renderFinishedSemaphore;
-	}
-
-	/**
-	 * @brief
-	 *  Get the current commandbuffer.
-	 * @return The current commandbuffer.
-	 */
-	[[nodiscard]] auto getCurrentCommandbuffer() -> VkCommandBuffer* {
-		return &m_samples[m_currentFrame].commandBuffer;
-	}
-
-	/**
-	 * @brief
-	 *  Get the current fence.
-	 * @return The current fence.
-	 */
-	[[nodiscard]] auto getCurrentFence() -> VkFence* { return &m_samples[m_currentFrame].inFlightFence; }
-
 	void setCurrentImage(const uint32_t iImage) { m_currentImage = iImage; }
 
 	/**
 	 * @brief
-	 *  Get the current image.
-	 * @return The current image.
+	 *  Get the acquired swapchain image index.
+	 * @return The image index.
 	 */
-	[[nodiscard]] auto getCurrentImage() -> uint32_t* { return &m_currentImage; }
+	[[nodiscard]] auto getCurrentImage() const -> uint32_t { return m_currentImage; }
 
 	/**
 	 * @brief
-	 *  Get the name.
+	 *  Get the debug name.
 	 * @return The name.
 	 */
 	[[nodiscard]] auto getName() const -> const std::string& { return m_specs.debugName; }
 
 	/**
 	 * @brief
-	 *  Get the color attachment formats.
-	 * @return The color attachment formats.
+	 *  Get the formats of the colour attachments.
+	 * @return The colour formats, in attachment order.
 	 */
 	[[nodiscard]] auto getColorAttachmentFormats() const -> std::vector<VkFormat>;
 
 	/**
 	 * @brief
-	 *  Check whether first batch.
-	 * @return True when first batch.
-	 */
-	[[nodiscard]] auto isFirstBatch() const -> bool { return m_firstBatch; }
-
-	/**
-	 * @brief
-	 *  Reset batch.
-	 */
-	void resetBatch() { m_firstBatch = true; }
-
-	/**
-	 * @brief
-	 *  Batch touch.
-	 */
-	void batchTouch() {
-		m_firstBatch = false;
-		m_called = true;
-	}
-
-	/**
-	 * @brief
-	 *  Reset sub pass.
+	 *  Rewind the subpass counter (a render pass begins).
 	 */
 	void resetSubPass() { m_currentSubPass = 0; }
 
 	/**
 	 * @brief
-	 *  Get the current image ptr.
-	 * @return The current image ptr.
-	 */
-	[[nodiscard]] auto getCurrentImagePtr() const -> VkImage { return m_images[m_currentImage].image; }
-
-	/**
-	 * @brief
-	 *  Check whether main target.
-	 * @return True when main target.
+	 *  Check this is the swapchain framebuffer.
+	 * @return True for the swapchain.
 	 */
 	[[nodiscard]] auto isMainTarget() const -> bool;
 
 	/**
 	 * @brief
-	 *  Check whether been called is present.
-	 * @return True when been called is present.
+	 *  Check the framebuffer has a depth attachment.
+	 * @return True with a depth attachment.
 	 */
-	[[nodiscard]] auto hasBeenCalled() const -> bool;
+	[[nodiscard]] auto hasDepth() const -> bool;
 
 	/**
 	 * @brief
-	 *  Get the subpass count.
+	 *  Get the subpass count of the render pass.
 	 * @return The subpass count.
 	 */
 	[[nodiscard]] auto getSubpassCount() const -> uint32_t;
 
 	/**
 	 * @brief
-	 *  Get the current subpass.
-	 * @return The current subpass.
+	 *  Get the active subpass.
+	 * @return The subpass index.
 	 */
 	[[nodiscard]] auto getCurrentSubpass() const -> uint32_t { return m_currentSubPass; }
 
 	/**
 	 * @brief
-	 *  Next subpass.
+	 *  Move to the next subpass of the open render pass.
 	 */
 	void nextSubpass();
+
+	/**
+	 * @brief
+	 *  Record the transitions of the off-screen colour images to the attachment layout (before a render pass).
+	 * @param[in] iCmd Command buffer.
+	 */
+	void prepareForRendering(VkCommandBuffer iCmd);
+
+	/**
+	 * @brief
+	 *  Record the transitions of the off-screen colour images to the sampled layout (after the last render pass).
+	 * @param[in] iCmd Command buffer.
+	 */
+	void prepareForSampling(VkCommandBuffer iCmd);
+
+	/**
+	 * @brief
+	 *  Index of an attachment among the colour attachments of the first subpass.
+	 * @param[in] iAttachmentIndex Attachment index.
+	 * @return The colour attachment index.
+	 */
+	[[nodiscard]] auto colorAttachmentIndex(uint32_t iAttachmentIndex) const -> uint32_t;
 
 private:
 	/// The specs.
 	FramebufferSpecification m_specs;
-	/// Vulkan render pass owned by this framebuffer.
+	/// Render pass loading every attachment (pipelines are built against it).
 	VkRenderPass m_renderPass{};
+	/// Render pass of the first batch of a frame: depth cleared, swapchain image cleared.
+	VkRenderPass m_firstRenderPass{};
 	/// Per-attachment render-pass clear values (depth = 1.0, color slots zeroed). Sized to the attachment count.
 	std::vector<VkClearValue> m_clearValues;
-	/// In-flight frame index (0 .. `MAX_FRAMES_IN_FLIGHT - 1`).
-	uint32_t m_currentFrame = 0;
 	/// Acquired swapchain image index for this frame.
 	uint32_t m_currentImage = 0;
 	/// Swapchain handle (only set on the on-screen framebuffer).
 	VkSwapchainKHR m_swapChain = nullptr;
 	/// Number of images in the swapchain.
 	uint32_t m_swapChainImageCount = 0;
-	/// True until the first sample is queued in the current frame.
-	bool m_firstBatch = true;
-	/// True once `begin()` has been called this frame.
-	bool m_called = false;
+	/// Serial of the last frame a batch was opened in.
+	uint64_t m_passSerial = 0;
 	/// Index of the active subpass within `m_renderPass`.
 	uint32_t m_currentSubPass = 0;
-	/// Total number of subpasses in `m_renderPass`.
-	uint32_t m_SubPassCount = 0;
-	// one per sample...
-	/**
-	 * @brief
-	 *  Structure for vulkan sample manipulations.
-	 */
-	struct Sample {
-		VkSemaphore imageAvailableSemaphore;
-		VkSemaphore renderFinishedSemaphore;
-		VkFence inFlightFence;
-		VkCommandBuffer commandBuffer;
-	};
+	/// One render-finished semaphore per swapchain image (empty off-screen).
+	std::vector<VkSemaphore> m_renderFinished;
+	/// Read-back slots of the picking reads, one per frame in flight.
+	internal::AllocatedBuffer m_pickBuffer;
+	/// Frame serial of the pending pick of each slot (0 when none).
+	std::array<uint64_t, internal::g_maxFrameInFlight> m_pickSerial{};
+	/// Last pick value read back.
+	int m_lastPick = -1;
+
 	/**
 	 * @brief
 	 *  Structure for vulkan image manipulation.
@@ -341,78 +313,97 @@ private:
 		VkSampler imageSampler;
 		VkDescriptorSet descriptorSet;
 		VkDescriptorSetLayout descriptorSetLayout;
+		VkImageLayout layout;///< Tracked layout (off-screen colour images).
 	};
-	std::vector<Sample> m_samples;
+	/// The images.
 	std::vector<Image> m_images;
-	std::vector<VkFramebuffer> m_framebuffers;// need renderpass & all images views created
+	/// The framebuffers, one per swapchain image (one off-screen).
+	std::vector<VkFramebuffer> m_framebuffers;
 
 	/**
 	 * @brief
-	 *  Cleanup.
-	 */
-	void cleanup();
-
-	/**
-	 * @brief
-	 *  Deep cleanup.
+	 *  Destroy everything, render passes and semaphores included.
 	 */
 	void deepCleanup();
 
 	/**
 	 * @brief
-	 *  Create command buffers.
+	 *  Destroy the size-dependent objects (images, views, framebuffers, swapchain).
 	 */
-	void createCommandBuffers();
+	void cleanup();
 
 	/**
 	 * @brief
-	 *  Create sync objects.
+	 *  Create the per-image render-finished semaphores of the swapchain.
 	 */
 	void createSyncObjects();
 
 	/**
 	 * @brief
-	 *  Create images.
+	 *  Destroy the per-image render-finished semaphores.
+	 */
+	void releaseSyncObjects();
+
+	/**
+	 * @brief
+	 *  Create the images (and the swapchain).
 	 */
 	void createImages();
 
 	/**
 	 * @brief
-	 *  Create image views.
+	 *  Create the image views.
 	 */
 	void createImageViews();
 
 	/**
 	 * @brief
-	 *  Create frame buffer.
+	 *  Create the framebuffers.
 	 */
 	void createFrameBuffer();
 
 	/**
 	 * @brief
-	 *  Create render pass.
+	 *  Create both render passes.
 	 */
 	void createRenderPass();
 
 	/**
 	 * @brief
-	 *  Create descriptor sets.
+	 *  Create one render pass.
+	 * @param[in] iFirst True for the first-of-frame variant.
+	 * @return The render pass.
+	 */
+	[[nodiscard]] auto buildRenderPass(bool iFirst) const -> VkRenderPass;
+
+	/**
+	 * @brief
+	 *  Create the descriptor sets ImGui samples the colour attachments with.
 	 */
 	void createDescriptorSets();
 
 	/**
 	 * @brief
-	 *  Translate an engine attachment slot to its underlying Vulkan image-view index.
-	 * @param[in] iAttachmentIndex Attachment slot index (0 = first colour).
-	 * @return The matching image-view index.
+	 *  Record a clear of one colour attachment, in the open render pass when this framebuffer is drawn to, in a
+	 *  transfer otherwise.
+	 * @param[in] iAttachmentIndex Attachment index.
+	 * @param[in] iValue Clear value.
+	 */
+	void recordClear(uint32_t iAttachmentIndex, const VkClearColorValue& iValue);
+
+	/**
+	 * @brief
+	 *  Convert attachment index into image index.
+	 * @param[in] iAttachmentIndex Attachment index.
+	 * @return Image index.
 	 */
 	[[nodiscard]] auto attToImgIdx(uint32_t iAttachmentIndex) const -> uint32_t;
 
 	/**
 	 * @brief
-	 *  Translate a Vulkan image-view index back to its engine attachment slot.
-	 * @param[in] iImageIndex Image-view index in the framebuffer.
-	 * @return The matching attachment slot.
+	 *  Convert image index into attachment index.
+	 * @param[in] iImageIndex Image index.
+	 * @return Attachment index.
 	 */
 	[[nodiscard]] auto imgIdxToAtt(uint32_t iImageIndex) const -> uint32_t;
 };

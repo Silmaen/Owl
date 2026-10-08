@@ -10,6 +10,7 @@
 #include "utils.h"
 
 #include "VulkanCore.h"
+#include "VulkanHandler.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -69,21 +70,20 @@ auto attachmentTilingToVulkan(const AttachmentSpecification::Tiling& iTiling) ->
 	return VK_IMAGE_TILING_OPTIMAL;
 }
 
-void copyBuffer(const VkBuffer& iSrcBuffer, const VkBuffer& iDstBuffer, const VkDeviceSize iSize) {
-	const auto& core = VulkanCore::get();
-	const VkCommandBuffer& commandBuffer = core.beginSingleTimeCommands();
-	VkBufferCopy copyRegion{};
-	copyRegion.size = iSize;
-	vkCmdCopyBuffer(commandBuffer, iSrcBuffer, iDstBuffer, 1, &copyRegion);
-	core.endSingleTimeCommands(commandBuffer);
-}
-
 auto createBuffer(const VkDeviceSize iSize, const VkBufferUsageFlags iUsage, const MemoryUsage iMemory,
 				  const std::string_view iName) -> AllocatedBuffer {
 	return MemoryAllocator::get().createBuffer(iSize, iUsage, iMemory, iName);
 }
 
 void freeBuffer(AllocatedBuffer& ioBuffer) { MemoryAllocator::get().destroyBuffer(ioBuffer); }
+
+void releaseBuffer(AllocatedBuffer& ioBuffer) {
+	if (ioBuffer.buffer == nullptr)
+		return;
+	VulkanHandler::get().deferRelease(
+			[buffer = ioBuffer]() mutable -> void { MemoryAllocator::get().destroyBuffer(buffer); });
+	ioBuffer = {};
+}
 
 void writeMapped(const AllocatedBuffer& iBuffer, const void* iData, const size_t iSize, const size_t iOffset) {
 	if (iBuffer.mapped == nullptr || iData == nullptr || iSize == 0 || iOffset + iSize > iBuffer.size)
@@ -99,11 +99,31 @@ void writeMapped(const AllocatedBuffer& iBuffer, const void* iData, const size_t
 void uploadToDeviceBuffer(VkBuffer iDestination, const void* iData, const VkDeviceSize iSize) {
 	if (iDestination == nullptr || iData == nullptr || iSize == 0)
 		return;
+	auto& vkh = VulkanHandler::get();
+	if (vkh.isRecording()) {
+		const auto slice = vkh.allocateTransient(iSize);
+		if (slice.data == nullptr)
+			return;
+
+		OWL_DIAG_PUSH
+		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
+		memcpy(slice.data, iData, iSize);
+		OWL_DIAG_POP
+
+		vkh.recordTransfer([&slice, iDestination, iSize](VkCommandBuffer iCmd) -> void {
+			const VkBufferCopy region{.srcOffset = slice.offset, .dstOffset = 0, .size = iSize};
+			vkCmdCopyBuffer(iCmd, slice.buffer, iDestination, 1, &region);
+		});
+		return;
+	}
 	auto staging = createBuffer(iSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, MemoryUsage::Upload, "staging");
 	if (staging.buffer == nullptr)
 		return;
 	writeMapped(staging, iData, iSize);
-	copyBuffer(staging.buffer, iDestination, iSize);
+	vkh.submitNow([&staging, iDestination, iSize](VkCommandBuffer iCmd) -> void {
+		const VkBufferCopy region{.srcOffset = 0, .dstOffset = 0, .size = iSize};
+		vkCmdCopyBuffer(iCmd, staging.buffer, iDestination, 1, &region);
+	});
 	freeBuffer(staging);
 }
 
@@ -139,37 +159,34 @@ constexpr auto layoutToStgFlag(const VkImageLayout& iLayout) -> VkPipelineStageF
 }
 }// namespace
 
-void transitionImageLayout(const VkImage& iImage, const VkImageLayout iOldLayout, const VkImageLayout iNewLayout,
-						   const uint32_t iLevelCount) {
-	const auto& core = VulkanCore::get();
-	const auto& commandBuffer = core.beginSingleTimeCommands();
-	transitionImageLayout(commandBuffer, iImage, iOldLayout, iNewLayout, iLevelCount);
-	core.endSingleTimeCommands(commandBuffer);
-}
-
-void transitionImageLayout(const VkCommandBuffer& iCmd, const VkImage& iImage, const VkImageLayout iOldLayout,
-						   const VkImageLayout iNewLayout, const uint32_t iLevelCount) {
+void imageBarrier(VkCommandBuffer iCmd, VkImage iImage, const VkImageAspectFlags iAspect,
+				  const VkImageLayout iOldLayout, const VkImageLayout iNewLayout, const VkPipelineStageFlags iSrcStage,
+				  const VkAccessFlags iSrcAccess, const VkPipelineStageFlags iDstStage, const VkAccessFlags iDstAccess,
+				  const uint32_t iLevelCount) {
 	const VkImageMemoryBarrier barrier{.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 									   .pNext = nullptr,
-									   .srcAccessMask = layoutToAccFlag(iOldLayout),
-									   .dstAccessMask = layoutToAccFlag(iNewLayout),
+									   .srcAccessMask = iSrcAccess,
+									   .dstAccessMask = iDstAccess,
 									   .oldLayout = iOldLayout,
 									   .newLayout = iNewLayout,
 									   .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 									   .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 									   .image = iImage,
-									   .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+									   .subresourceRange = {.aspectMask = iAspect,
 															.baseMipLevel = 0,
 															.levelCount = iLevelCount,
 															.baseArrayLayer = 0,
 															.layerCount = 1}};
-	vkCmdPipelineBarrier(iCmd, layoutToStgFlag(iOldLayout), layoutToStgFlag(iNewLayout), 0, 0, nullptr, 0, nullptr, 1,
-						 &barrier);
+	vkCmdPipelineBarrier(iCmd, iSrcStage, iDstStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
-void generateMipmaps(const VkImage& iImage, const math::vec2ui& iSize, const uint32_t iLevelCount) {
-	const auto& core = VulkanCore::get();
-	const auto& commandBuffer = core.beginSingleTimeCommands();
+void transitionImageLayout(VkCommandBuffer iCmd, VkImage iImage, const VkImageLayout iOldLayout,
+						   const VkImageLayout iNewLayout, const uint32_t iLevelCount) {
+	imageBarrier(iCmd, iImage, VK_IMAGE_ASPECT_COLOR_BIT, iOldLayout, iNewLayout, layoutToStgFlag(iOldLayout),
+				 layoutToAccFlag(iOldLayout), layoutToStgFlag(iNewLayout), layoutToAccFlag(iNewLayout), iLevelCount);
+}
+
+void generateMipmaps(VkCommandBuffer iCmd, VkImage iImage, const math::vec2ui& iSize, const uint32_t iLevelCount) {
 	const auto levelBarrier = [&](const uint32_t iLevel, const VkImageLayout iOld, const VkImageLayout iNew) -> void {
 		const VkImageMemoryBarrier barrier{.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
 										   .pNext = nullptr,
@@ -185,7 +202,7 @@ void generateMipmaps(const VkImage& iImage, const math::vec2ui& iSize, const uin
 																.levelCount = 1,
 																.baseArrayLayer = 0,
 																.layerCount = 1}};
-		vkCmdPipelineBarrier(commandBuffer, layoutToStgFlag(iOld), layoutToStgFlag(iNew), 0, 0, nullptr, 0, nullptr, 1,
+		vkCmdPipelineBarrier(iCmd, layoutToStgFlag(iOld), layoutToStgFlag(iNew), 0, 0, nullptr, 0, nullptr, 1,
 							 &barrier);
 	};
 	auto width = static_cast<int32_t>(iSize.x());
@@ -204,20 +221,17 @@ void generateMipmaps(const VkImage& iImage, const math::vec2ui& iSize, const uin
 												  .baseArrayLayer = 0,
 												  .layerCount = 1},
 							   .dstOffsets = {{0, 0, 0}, {nextWidth, nextHeight, 1}}};
-		vkCmdBlitImage(commandBuffer, iImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, iImage,
-					   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+		vkCmdBlitImage(iCmd, iImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, iImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+					   1, &blit, VK_FILTER_LINEAR);
 		levelBarrier(level - 1, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		width = nextWidth;
 		height = nextHeight;
 	}
 	levelBarrier(iLevelCount - 1, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	core.endSingleTimeCommands(commandBuffer);
 }
 
-void copyBufferToImage(const VkBuffer& iBuffer, const VkImage& iImage, const math::vec2ui& iSize,
+void copyBufferToImage(VkCommandBuffer iCmd, VkBuffer iBuffer, VkImage iImage, const math::vec2ui& iSize,
 					   const math::vec2i& iOffset) {
-	const auto& core = VulkanCore::get();
-	const auto& commandBuffer = core.beginSingleTimeCommands();
 	const VkBufferImageCopy region{.bufferOffset = 0,
 								   .bufferRowLength = 0,
 								   .bufferImageHeight = 0,
@@ -227,15 +241,12 @@ void copyBufferToImage(const VkBuffer& iBuffer, const VkImage& iImage, const mat
 														.layerCount = 1},
 								   .imageOffset = {iOffset.x(), iOffset.y(), 0},
 								   .imageExtent = {iSize.x(), iSize.y(), 1}};
-	vkCmdCopyBufferToImage(commandBuffer, iBuffer, iImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-	core.endSingleTimeCommands(commandBuffer);
+	vkCmdCopyBufferToImage(iCmd, iBuffer, iImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 }
 
-void copyImageToBuffer(const VkImage& iImage, const VkBuffer& iBuffer, const math::vec2ui& iSize,
-					   const math::vec2i& iOffset) {
-	const auto& core = VulkanCore::get();
-	const auto& commandBuffer = core.beginSingleTimeCommands();
-	const VkBufferImageCopy region{.bufferOffset = 0,
+void copyImageToBuffer(VkCommandBuffer iCmd, VkImage iImage, VkBuffer iBuffer, const math::vec2ui& iSize,
+					   const math::vec2i& iOffset, const VkDeviceSize iBufferOffset) {
+	const VkBufferImageCopy region{.bufferOffset = iBufferOffset,
 								   .bufferRowLength = 0,
 								   .bufferImageHeight = 0,
 								   .imageSubresource = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
@@ -244,9 +255,7 @@ void copyImageToBuffer(const VkImage& iImage, const VkBuffer& iBuffer, const mat
 														.layerCount = 1},
 								   .imageOffset = {iOffset.x(), iOffset.y(), 0},
 								   .imageExtent = {iSize.x(), iSize.y(), 1}};
-	vkCmdCopyImageToBuffer(commandBuffer, iImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, iBuffer, 1, &region);
-	core.endSingleTimeCommands(commandBuffer);
+	vkCmdCopyImageToBuffer(iCmd, iImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, iBuffer, 1, &region);
 }
-
 
 }// namespace owl::renderer::gpu::vulkan::internal

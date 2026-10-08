@@ -11,6 +11,7 @@
 
 #include "VulkanCore.h"
 #include "VulkanHandler.h"
+#include "renderer/gpu/vulkan/StorageBuffer.h"
 #include "utils.h"
 
 #include <bit>
@@ -53,11 +54,14 @@ void createWhiteImage(TextureData& oImage) {
 	writeMapped(staging, &white, sizeof(white));
 	oImage.debugName = "rd.defaultWhite";
 	oImage.createImage({1, 1});
-	transitionImageLayout(oImage.textureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	copyBufferToImage(staging.buffer, oImage.textureImage, {1, 1});
-	transitionImageLayout(oImage.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-						  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	freeBuffer(staging);
+	VulkanHandler::get().recordTransfer([&oImage, &staging](VkCommandBuffer iCmd) -> void {
+		transitionImageLayout(iCmd, oImage.textureImage, VK_IMAGE_LAYOUT_UNDEFINED,
+							  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+		copyBufferToImage(iCmd, staging.buffer, oImage.textureImage, {1, 1});
+		transitionImageLayout(iCmd, oImage.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+							  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	});
+	releaseBuffer(staging);
 	oImage.createView();
 	oImage.createSampler();
 }
@@ -148,9 +152,6 @@ void RendererDescriptors::release() {
 	const auto& core = VulkanCore::get();
 	auto* const device = core.getLogicalDevice();
 
-	for (auto& ubo: m_uniformBindings | std::views::values) {
-		for (auto& buffer: ubo.buffers) freeBuffer(buffer);
-	}
 	m_uniformBindings.clear();
 	m_storageBindings.clear();
 	m_textureBind.clear();
@@ -183,47 +184,50 @@ void RendererDescriptors::releaseDefaults() {
 }
 
 void RendererDescriptors::registerUniform(const uint32_t iBinding, const uint32_t iSize) {
-	auto& [buffers, size] = m_uniformBindings[iBinding];
-	for (auto& buffer: buffers) freeBuffer(buffer);
-	buffers.assign(g_maxFrameInFlight, {});
-	size = iSize;
+	auto& ubo = m_uniformBindings[iBinding];
+	ubo.shadow.assign(iSize, 0);
+	ubo.size = iSize;
+	ubo.slice = {};
+	ubo.sliceSerial = 0;
+	ubo.dirty = true;
 	m_dirty = true;
-	for (auto& buffer: buffers)
-		buffer = createBuffer(iSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, MemoryUsage::Upload,
-							  "rd.ubo:" + m_rendererName);
 }
 
-void RendererDescriptors::setUniformData(const uint32_t iBinding, const void* iData, const size_t iSize) const {
-	const auto& vkh = VulkanHandler::get();
+void RendererDescriptors::setUniformData(const uint32_t iBinding, const void* iData, const size_t iSize) {
 	const auto it = m_uniformBindings.find(iBinding);
 	if (it == m_uniformBindings.end()) {
 		OWL_CORE_WARN("Vulkan RendererDescriptors[{}]: setUniformData on unregistered binding {}.", m_rendererName,
 					  iBinding)
 		return;
 	}
-	const auto frame = vkh.getCurrentFrameIndex();
-	if (frame >= it->second.buffers.size())
+	if (iData == nullptr || iSize == 0)
 		return;
-	writeMapped(it->second.buffers[frame], iData, iSize);
-}
 
-void RendererDescriptors::bindStorageBuffer(const uint32_t iBinding, VkBuffer iBuffer, const VkDeviceSize iSize) {
-	auto& [buffer, size] = m_storageBindings[iBinding];
-	if (buffer == iBuffer && size == iSize)
-		return;
-	buffer = iBuffer;
-	size = iSize;
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
+	memcpy(it->second.shadow.data(), iData, std::min<size_t>(iSize, it->second.shadow.size()));
+	OWL_DIAG_POP
+
+	it->second.dirty = true;
 	m_dirty = true;
 }
 
-void RendererDescriptors::unbindStorageBuffer(VkBuffer iBuffer) {
+void RendererDescriptors::bindStorageBuffer(const uint32_t iBinding, StorageBuffer* iBuffer) {
+	auto& binding = m_storageBindings[iBinding];
+	if (binding.buffer == iBuffer)
+		return;
+	binding.buffer = iBuffer;
+	binding.version = 0;
+	m_dirty = true;
+}
+
+void RendererDescriptors::unbindStorageBuffer(const StorageBuffer* iBuffer) {
 	if (iBuffer == nullptr)
 		return;
 	for (auto* const desc: getRegistry() | std::views::values) {
 		for (auto& ssbo: desc->m_storageBindings | std::views::values) {
 			if (ssbo.buffer == iBuffer) {
 				ssbo.buffer = nullptr;
-				ssbo.size = 0;
 				desc->m_dirty = true;
 			}
 		}
@@ -242,24 +246,40 @@ void RendererDescriptors::textureBind(const uint32_t iIndex) {
 
 void RendererDescriptors::commitTextureBind() { m_dirty = true; }
 
-void RendererDescriptors::notifySubmitAll(VkFence iFence) {
-	for (auto* const desc: getRegistry() | std::views::values) {
-		desc->m_ring.onSubmit(iFence);
-		desc->m_dirty = true;
+auto RendererDescriptors::resolveUniform(UboBinding& ioUbo) -> VkDescriptorBufferInfo {
+	auto& vkh = VulkanHandler::get();
+	if (ioUbo.dirty || ioUbo.sliceSerial != vkh.getFrameSerial() || ioUbo.slice.buffer == nullptr) {
+		ioUbo.slice = vkh.allocateTransient(ioUbo.size);
+		if (ioUbo.slice.data == nullptr)
+			return {};
+
+		OWL_DIAG_PUSH
+		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
+		memcpy(ioUbo.slice.data, ioUbo.shadow.data(), ioUbo.shadow.size());
+		OWL_DIAG_POP
+
+		ioUbo.sliceSerial = vkh.getFrameSerial();
+		ioUbo.dirty = false;
 	}
+	return {.buffer = ioUbo.slice.buffer, .offset = ioUbo.slice.offset, .range = ioUbo.size};
 }
 
-void RendererDescriptors::writeDescriptor(VkDescriptorSet iSet, const size_t iFrame) {
+auto RendererDescriptors::hasStaleStorage() const -> bool {
+	return std::ranges::any_of(m_storageBindings | std::views::values, [](const StorageBinding& iBinding) -> bool {
+		return iBinding.buffer != nullptr && iBinding.buffer->resolve().version != iBinding.version;
+	});
+}
+
+void RendererDescriptors::writeDescriptor(VkDescriptorSet iSet) {
 	if (iSet == nullptr)
 		return;
 	const auto& core = VulkanCore::get();
 	const auto& defaults = getDefaults();
 
-	std::vector<VkDescriptorBufferInfo> bufferInfos;
-	bufferInfos.reserve(m_bindings.size());
-	std::vector<VkDescriptorImageInfo> imageInfos;
-	std::vector<VkWriteDescriptorSet> writes;
-	writes.reserve(m_bindings.size());
+	m_bufferInfos.clear();
+	m_bufferInfos.reserve(m_bindings.size());
+	m_imageInfos.clear();
+	m_writes.clear();
 	for (const auto& [binding, type, count, stages]: m_bindings) {
 		VkWriteDescriptorSet write{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
 								   .pNext = nullptr,
@@ -273,72 +293,77 @@ void RendererDescriptors::writeDescriptor(VkDescriptorSet iSet, const size_t iFr
 								   .pTexelBufferView = nullptr};
 		if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
 			VkDescriptorBufferInfo info{.buffer = defaults.uniform.buffer, .offset = 0, .range = g_defaultBufferSize};
-			if (const auto it = m_uniformBindings.find(binding); it != m_uniformBindings.end() &&
-																 iFrame < it->second.buffers.size() &&
-																 it->second.buffers[iFrame].buffer != nullptr)
-				info = {.buffer = it->second.buffers[iFrame].buffer, .offset = 0, .range = it->second.size};
+			if (const auto it = m_uniformBindings.find(binding); it != m_uniformBindings.end()) {
+				if (const auto resolved = resolveUniform(it->second); resolved.buffer != nullptr)
+					info = resolved;
+			}
 			if (info.buffer == nullptr)
 				continue;
-			write.pBufferInfo = &bufferInfos.emplace_back(info);
+			write.pBufferInfo = &m_bufferInfos.emplace_back(info);
 		} else if (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
 			VkDescriptorBufferInfo info{.buffer = defaults.storage.buffer, .offset = 0, .range = g_defaultBufferSize};
 			if (const auto it = m_storageBindings.find(binding);
-				it != m_storageBindings.end() && it->second.buffer != nullptr)
-				info = {.buffer = it->second.buffer, .offset = 0, .range = it->second.size};
+				it != m_storageBindings.end() && it->second.buffer != nullptr) {
+				if (const auto view = it->second.buffer->resolve(); view.buffer != nullptr) {
+					info = {.buffer = view.buffer, .offset = view.offset, .range = view.range};
+					it->second.version = view.version;
+				}
+			}
 			if (info.buffer == nullptr)
 				continue;
-			write.pBufferInfo = &bufferInfos.emplace_back(info);
+			write.pBufferInfo = &m_bufferInfos.emplace_back(info);
 		} else if (type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER && binding == m_textureArrayBinding) {
-			imageInfos = collectImageInfos(count);
-			if (imageInfos.empty())
+			if (!collectImageInfos(count))
 				continue;
-			write.descriptorCount = static_cast<uint32_t>(imageInfos.size());
-			write.pImageInfo = imageInfos.data();
+			write.descriptorCount = static_cast<uint32_t>(m_imageInfos.size());
+			write.pImageInfo = m_imageInfos.data();
 		} else {
 			continue;
 		}
-		writes.push_back(write);
+		m_writes.push_back(write);
 	}
-	if (!writes.empty()) {
-		vkUpdateDescriptorSets(core.getLogicalDevice(), static_cast<uint32_t>(writes.size()), writes.data(), 0,
+	if (!m_writes.empty()) {
+		vkUpdateDescriptorSets(core.getLogicalDevice(), static_cast<uint32_t>(m_writes.size()), m_writes.data(), 0,
 							   nullptr);
 	}
 }
 
-auto RendererDescriptors::collectImageInfos(const uint32_t iCount) const -> std::vector<VkDescriptorImageInfo> {
+auto RendererDescriptors::collectImageInfos(const uint32_t iCount) -> bool {
 	const auto& defaults = getDefaults();
 	const VkDescriptorImageInfo fallback{.sampler = defaults.image.textureSampler,
 										 .imageView = defaults.image.textureImageView,
 										 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL};
+	m_imageInfos.clear();
 	if (fallback.sampler == nullptr || fallback.imageView == nullptr)
-		return {};
+		return false;
 	auto& globalTextures = Descriptors::get();
-	std::vector<VkDescriptorImageInfo> infos;
-	infos.reserve(iCount);
+	m_imageInfos.reserve(iCount);
 	for (const auto& id: m_textureBind) {
-		if (infos.size() >= iCount)
+		if (m_imageInfos.size() >= iCount)
 			break;
 		if (!globalTextures.isTextureRegistered(id)) {
-			infos.push_back(fallback);
+			m_imageInfos.push_back(fallback);
 			continue;
 		}
 		const auto& texData = globalTextures.getTextureData(id);
 		if (texData.textureSampler == nullptr || texData.textureImageView == nullptr) {
-			infos.push_back(fallback);
+			m_imageInfos.push_back(fallback);
 			continue;
 		}
-		infos.push_back({.sampler = texData.textureSampler,
-						 .imageView = texData.textureImageView,
-						 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
+		m_imageInfos.push_back({.sampler = texData.textureSampler,
+								.imageView = texData.textureImageView,
+								.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL});
 	}
-	while (infos.size() < iCount) infos.push_back(fallback);
-	return infos;
+	while (m_imageInfos.size() < iCount) m_imageInfos.push_back(fallback);
+	return true;
 }
 
 auto RendererDescriptors::getDescriptorSet(const uint32_t iFrame) -> VkDescriptorSet* {
-	if (m_dirty || *m_ring.currentPtr() == nullptr) {
-		if (VkDescriptorSet set = m_ring.acquire(); set != nullptr)
-			writeDescriptor(set, iFrame);
+	const uint64_t serial = VulkanHandler::get().getFrameSerial();
+	if (m_dirty || m_setSerial != serial || *m_ring.currentPtr() == nullptr || hasStaleStorage()) {
+		if (VkDescriptorSet set = m_ring.acquire(iFrame, serial); set != nullptr)
+			writeDescriptor(set);
+		m_setSerial = serial;
 		m_dirty = false;
 	}
 	return m_ring.currentPtr();

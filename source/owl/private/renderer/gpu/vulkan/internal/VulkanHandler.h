@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "FrameRing.h"
 #include "VulkanCore.h"
 
 #if OWL_WITH_GUI
@@ -15,12 +16,16 @@
 #endif
 #include <renderer/gpu/vulkan/Framebuffer.h>
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
+#include <functional>
 #include <map>
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 /**
@@ -159,16 +164,23 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the current command buffer.
-	 * @return The current command buffer.
+	 *  Get the command buffer of the frame being recorded, starting the frame when none is.
+	 * @return The frame command buffer, null when the handler is not running.
 	 */
-	[[nodiscard]] auto getCurrentCommandBuffer() const -> VkCommandBuffer;
+	[[nodiscard]] auto getCurrentCommandBuffer() -> VkCommandBuffer;
 
 	/**
 	 * @brief
-	 *  Clear .
+	 *  Get the frame command buffer only while a render pass is open on a target that can be drawn to.
+	 * @return The command buffer, null outside a render pass.
 	 */
-	void clear() const;
+	[[nodiscard]] auto getRenderPassCommandBuffer() const -> VkCommandBuffer;
+
+	/**
+	 * @brief
+	 *  Clear the first colour attachment and the depth of the current framebuffer, inside its render pass.
+	 */
+	void clear();
 
 	/**
 	 * @brief
@@ -204,16 +216,14 @@ public:
 					  VkPipelineVertexInputStateCreateInfo iVertexInputInfo, bool iDoubleSided = true) -> int32_t;
 
 	// Command buffer data
-	/// True while a batch (command buffer) is being recorded.
+	/// True while a render pass (batch) is open in the frame command buffer.
 	bool inBatch = false;
-	/// True while a frame is in progress (between begin/end frame).
+	/// True while a frame is being recorded (between begin and end frame).
 	bool inFrame = false;
 	/// Desired depth test state for the next batch (off by default; Renderer3D enables it around 3D mesh draws).
 	bool depthTestEnabled = false;
 	/// Desired depth write state for the next batch (on by default; disabled for the blended transparent pass).
 	bool depthWriteEnabled = true;
-	/// True until the main target's first batch of the frame is submitted (gates the image-available wait).
-	bool firstBatch = true;
 
 	/**
 	 * @brief
@@ -231,21 +241,77 @@ public:
 
 	/**
 	 * @brief
-	 *  Begin batch.
+	 *  Open a render pass on the current framebuffer in the frame command buffer (idempotent).
+	 *
+	 *  The first pass of a frame on a framebuffer clears its depth (and the swapchain image); later ones load it.
 	 */
 	void beginBatch();
 
 	/**
 	 * @brief
-	 *  End batch.
+	 *  Close the open render pass; nothing is submitted.
 	 */
 	void endBatch();
 
 	/**
 	 * @brief
-	 *  Begin frame.
+	 *  Start a frame on the main framebuffer: wait for its frame slot, acquire a swapchain image, begin the
+	 *  frame command buffer.
 	 */
 	void beginFrame();
+
+	/**
+	 * @brief
+	 *  Submit what the frame recorded so far and wait for it, then go on recording (CPU read-back mid-frame).
+	 */
+	void flushFrame();
+
+	/**
+	 * @brief
+	 *  Record transfer commands in the frame command buffer, or in a one-shot command buffer outside a frame.
+	 *
+	 *  The commands run after every earlier GPU access and before every later one (memory barriers on both sides);
+	 *  an open render pass is closed first.
+	 * @param[in] iRecord Callback recording the commands into the given command buffer.
+	 */
+	void recordTransfer(const std::function<void(VkCommandBuffer)>& iRecord);
+
+	/**
+	 * @brief
+	 *  Record commands in a one-shot command buffer, submit it and wait for it (the frame recorded so far is flushed
+	 *  first): for read-backs the CPU needs now.
+	 * @param[in] iRecord Callback recording the commands into the given command buffer.
+	 */
+	void submitNow(const std::function<void(VkCommandBuffer)>& iRecord);
+
+	/**
+	 * @brief
+	 *  Destroy a resource once the GPU no longer uses it: after every frame recorded so far is complete.
+	 * @param[in] iRelease Callback destroying the resource (run immediately when the handler is not running).
+	 */
+	void deferRelease(std::function<void()> iRelease);
+
+	/**
+	 * @brief
+	 *  Allocate host-visible memory valid for the frame being recorded (uniforms, streamed buffers, staging).
+	 * @param[in] iSize Size in bytes.
+	 * @return The region, empty on failure.
+	 */
+	[[nodiscard]] auto allocateTransient(VkDeviceSize iSize) -> RingSlice;
+
+	/**
+	 * @brief
+	 *  Serial of the frame being recorded (or of the last one recorded); starts at 1, grows by one per frame.
+	 * @return The frame serial.
+	 */
+	[[nodiscard]] auto getFrameSerial() const -> uint64_t { return m_frameSerial; }
+
+	/**
+	 * @brief
+	 *  Check a frame command buffer is recording.
+	 * @return True between the start of a frame and its submission.
+	 */
+	[[nodiscard]] auto isRecording() const -> bool { return m_recording; }
 
 	/**
 	 * @brief
@@ -307,6 +373,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Get the framebuffer the next batch renders into.
+	 * @return The current framebuffer.
+	 */
+	[[nodiscard]] auto getCurrentFramebuffer() const -> Framebuffer* { return m_currentFramebuffer; }
+
+	/**
+	 * @brief
 	 *  Check whether main framebuffer.
 	 * @return True when main framebuffer.
 	 */
@@ -331,6 +404,111 @@ private:
 	 */
 	void createSwapChain();
 
+	/**
+	 * @brief
+	 *  Create the per-frame command buffers, fences and semaphores.
+	 */
+	void createFrames();
+
+	/**
+	 * @brief
+	 *  Destroy the per-frame objects (the device must be idle).
+	 */
+	void releaseFrames();
+
+	/**
+	 * @brief
+	 *  Wait for a frame slot, run the releases it unlocks and start recording in it.
+	 * @return True when the command buffer is recording.
+	 */
+	auto startFrame() -> bool;
+
+	/**
+	 * @brief
+	 *  Acquire the next swapchain image, recreating the swapchain once when it is out of date.
+	 */
+	void acquireImage();
+
+	/**
+	 * @brief
+	 *  Begin the frame command buffer (timestamps, global barrier).
+	 * @return True on success.
+	 */
+	auto beginCommandBuffer() -> bool;
+
+	/**
+	 * @brief
+	 *  End the frame command buffer and submit it.
+	 * @param[in] iLast True for the frame's last submission (signals the frame fence and the present semaphore).
+	 * @param[in] iFence Fence signalled by the submission.
+	 * @return True on success.
+	 */
+	auto submitCommandBuffer(bool iLast, VkFence iFence) -> bool;
+
+	/**
+	 * @brief
+	 *  Run the deferred releases of every completed frame.
+	 */
+	void runReleases();
+
+	/**
+	 * @brief
+	 *  Recreate the swapchain at the current surface size (the device waits idle).
+	 */
+	void recreateSwapChain();
+
+	/**
+	 * @brief
+	 *  Record a memory barrier between every earlier and every later command.
+	 * @param[in] iCmd Command buffer.
+	 */
+	static void recordFullBarrier(VkCommandBuffer iCmd);
+
+	/**
+	 * @brief
+	 *  Record a memory barrier making every earlier device write visible to the host (before a submission ends).
+	 * @param[in] iCmd Command buffer.
+	 */
+	static void recordHostBarrier(VkCommandBuffer iCmd);
+
+	/// Objects of one frame in flight.
+	struct FrameContext {
+		VkCommandBuffer commandBuffer = nullptr;///< Primary command buffer recording the whole frame.
+		VkFence fence = nullptr;///< Signalled when the frame's last submission completes.
+		VkSemaphore imageAvailable = nullptr;///< Signalled by the swapchain image acquisition.
+		uint64_t serial = 0;///< Serial of the frame last recorded in this slot.
+	};
+	/// Frames in flight.
+	std::array<FrameContext, g_maxFrameInFlight> m_frames{};
+	/// Slot of the frame being recorded.
+	uint32_t m_frameSlot = 0;
+	/// Serial of the frame being recorded (or of the last one).
+	uint64_t m_frameSerial = 0;
+	/// Serial of the last frame known complete on the GPU.
+	uint64_t m_completedSerial = 0;
+	/// True while the frame command buffer records.
+	bool m_recording = false;
+	/// True once commands were recorded since the command buffer began (a flush without them is skipped).
+	bool m_pendingCommands = false;
+	/// True during `release()`: deferred releases run at once.
+	bool m_releasing = false;
+	/// True when this frame acquired a swapchain image.
+	bool m_imageAcquired = false;
+	/// True once a submission of this frame waited on the image-available semaphore.
+	bool m_imageWaited = false;
+	/// True when the last submitted frame has an image to present.
+	bool m_presentPending = false;
+	/// Swapchain image to present.
+	uint32_t m_presentImage = 0;
+	/// Fence of the mid-frame submissions (`flushFrame`).
+	VkFence m_flushFence = nullptr;
+	/// Alignment of the transient allocations (uniform and storage offsets).
+	VkDeviceSize m_transientAlignment = 256;
+	/// Per-frame host-visible memory.
+	FrameRing m_ring;
+	/// Deferred releases, tagged with the serial of the last frame that may use the resource.
+	std::deque<std::pair<uint64_t, std::function<void()>>> m_releases;
+
 	/// The current state of the handler.
 	State m_state = State::Uninitialized;
 	/// Enable Validation layers.
@@ -339,7 +517,7 @@ private:
 	bool m_debugMessage = false;
 	/// True when the swap-chain needs to be recreated on the next frame (window resize).
 	bool m_resize = false;
-	/// Begin timestamp query of the recording batch (set only while GPU timing is on).
+	/// Begin timestamp query of the recording command buffer (set only while GPU timing is on).
 	std::optional<uint32_t> m_batchTimestamp;
 	/// Render pass used by the ImGui overlay layer.
 	VkRenderPass m_imGuiRenderPass{};

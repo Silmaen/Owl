@@ -104,16 +104,17 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 		createImage(m_textureId, m_specification.size);
 	}
 	auto& data = vkd.getTextureData(m_textureId);
-	internal::transitionImageLayout(data.textureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-									data.mipLevels);
-	internal::copyBufferToImage(staging.buffer, data.textureImage, m_specification.size);
-	if (data.mipLevels > 1)
-		internal::generateMipmaps(data.textureImage, m_specification.size, data.mipLevels);
-	else
-		internal::transitionImageLayout(data.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-										VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	internal::freeBuffer(staging);
+	internal::VulkanHandler::get().recordTransfer([&data, &staging, this](VkCommandBuffer iCmd) -> void {
+		internal::transitionImageLayout(iCmd, data.textureImage, VK_IMAGE_LAYOUT_UNDEFINED,
+										VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, data.mipLevels);
+		internal::copyBufferToImage(iCmd, staging.buffer, data.textureImage, m_specification.size);
+		if (data.mipLevels > 1)
+			internal::generateMipmaps(iCmd, data.textureImage, m_specification.size, data.mipLevels);
+		else
+			internal::transitionImageLayout(iCmd, data.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+											VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	});
+	internal::releaseBuffer(staging);
 	if (data.textureImageView == nullptr)
 		data.createView();
 	if (data.textureSampler == nullptr)
@@ -132,8 +133,6 @@ void Texture2D::setFilterMode(const FilterMode iMode) {
 	data.nearest = iMode == FilterMode::Nearest;
 	if (data.textureSampler == nullptr)
 		return;
-	// The batches read the sampler from TextureData each frame; the old one may still be in flight.
-	internal::FrameProfiler::get().deviceWaitIdle(internal::VulkanCore::get().getLogicalDevice());
 	data.createSampler();
 }
 

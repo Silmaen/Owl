@@ -17,6 +17,7 @@
 #include "renderer/gpu/vulkan/GraphContext.h"
 #include "utils.h"
 
+#include <algorithm>
 #include <limits>
 
 namespace owl::renderer::gpu::vulkan::internal {
@@ -464,6 +465,11 @@ void VulkanCore::updateSurfaceInformation() { m_phyProps->updateSurfaceInformati
 
 auto VulkanCore::getMaxSamplerAnisotropy() const -> float { return m_phyProps->properties.limits.maxSamplerAnisotropy; }
 
+auto VulkanCore::getMinBufferOffsetAlignment() const -> VkDeviceSize {
+	const auto& limits = m_phyProps->properties.limits;
+	return std::max<VkDeviceSize>({limits.minUniformBufferOffsetAlignment, limits.minStorageBufferOffsetAlignment, 16});
+}
+
 auto VulkanCore::beginSingleTimeCommands() const -> VkCommandBuffer {
 	const auto& core = get();
 	const VkCommandBufferAllocateInfo allocInfo{.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -509,16 +515,22 @@ void VulkanCore::endSingleTimeCommands(VkCommandBuffer iCommandBuffer) const {
 								  .pCommandBuffers = &iCommandBuffer,
 								  .signalSemaphoreCount = 0,
 								  .pSignalSemaphores = nullptr};
-	if (const VkResult result = vkQueueSubmit(core.getGraphicQueue(), 1, &submitInfo, VK_NULL_HANDLE);
+	constexpr VkFenceCreateInfo fenceInfo{.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, .pNext = nullptr, .flags = {}};
+	VkFence fence = nullptr;
+	if (const VkResult result = vkCreateFence(core.getLogicalDevice(), &fenceInfo, nullptr, &fence);
 		result != VK_SUCCESS) {
+		OWL_CORE_ERROR("Vulkan: failed to create the fence of a single time command buffer.")
+		return;
+	}
+	if (const VkResult result = vkQueueSubmit(core.getGraphicQueue(), 1, &submitInfo, fence); result != VK_SUCCESS) {
 		OWL_CORE_ERROR("Vulkan: failed to submit to queue for single time command buffer.")
+		vkDestroyFence(core.getLogicalDevice(), fence, nullptr);
 		return;
 	}
 	profiler.countSubmit();
-	if (const VkResult result = profiler.queueWaitIdle(core.getGraphicQueue()); result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan: failed to wait for idle queue for single time command buffer.")
-		return;
-	}
+	profiler.countFenceWait();
+	vkWaitForFences(core.getLogicalDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+	vkDestroyFence(core.getLogicalDevice(), fence, nullptr);
 
 	vkFreeCommandBuffers(core.getLogicalDevice(), m_commandPool, 1, &iCommandBuffer);
 }

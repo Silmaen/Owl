@@ -8,22 +8,24 @@
 
 #pragma once
 
+#include "internal/FrameRing.h"
 #include "internal/MemoryAllocator.h"
 #include "renderer/gpu/StorageBuffer.h"
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
+#include <vector>
 
 namespace owl::renderer::gpu::vulkan {
 
 /**
  * @brief
- *  Vulkan-backed Shader Storage Buffer Object — owns a `VkBuffer` with
- *  `VK_BUFFER_USAGE_STORAGE_BUFFER_BIT` and the descriptor wiring for the
- *  binding slot it was created with. Self-contained (does not go through
- *  the central `Descriptors` singleton) so each compute pass / instanced
- *  drawer can manage its own SSBOs without colliding with `Renderer2D`'s
- *  shared descriptor layout.
+ *  Vulkan-backed Shader Storage Buffer Object.
+ *
+ *  A buffer the CPU never writes (compute output) lives in one persistent, mapped `VkBuffer`. Once `setData` is
+ *  called, the buffer is *streamed*: the CPU content is kept in a shadow copy and every frame that reads it gets its
+ *  own copy in the frame ring, made at the first use after each write. Several writes in one frame thus give each
+ *  draw the content it was recorded with, and no write ever touches memory a frame in flight still reads.
  */
 class StorageBuffer final : public renderer::gpu::StorageBuffer {
 public:
@@ -89,10 +91,22 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the underlying VkBuffer handle (used by compute pipeline setup).
-	 * @return The Vulkan buffer handle.
+	 *  Region of a buffer the GPU reads in the frame being recorded.
 	 */
-	[[nodiscard]] auto getHandle() const -> VkBuffer { return m_buffer.buffer; }
+	struct View {
+		VkBuffer buffer = nullptr;///< Buffer handle.
+		VkDeviceSize offset = 0;///< Offset of the region.
+		VkDeviceSize range = 0;///< Size of the region.
+		uint64_t version = 0;///< Changes whenever the region changes.
+	};
+
+	/**
+	 * @brief
+	 *  Get the region holding the buffer content for the frame being recorded, copying the CPU content into the
+	 *  frame ring when it changed or was not copied in this frame yet.
+	 * @return The region; empty when the buffer does not exist.
+	 */
+	[[nodiscard]] auto resolve() -> View;
 
 	/**
 	 * @brief
@@ -109,8 +123,22 @@ public:
 	[[nodiscard]] auto getBinding() const -> uint32_t { return m_binding; }
 
 private:
-	/// Persistently mapped buffer and its allocation.
+	/// Persistently mapped buffer (GPU-written content, or streamed content outside a frame).
 	internal::AllocatedBuffer m_buffer;
+	/// CPU content of a streamed buffer.
+	std::vector<uint8_t> m_shadow;
+	/// Bytes of the shadow that hold data.
+	uint32_t m_extent = 0;
+	/// True once the CPU wrote the buffer.
+	bool m_streamed = false;
+	/// True when the shadow changed since the last copy.
+	bool m_dirty = false;
+	/// Frame-ring copy of the shadow.
+	internal::RingSlice m_slice;
+	/// Frame serial of `m_slice`.
+	uint64_t m_sliceSerial = 0;
+	/// Version of the region given by `resolve`.
+	uint64_t m_version = 0;
 	/// Buffer size in bytes.
 	uint32_t m_size = 0;
 	/// Shader binding slot.

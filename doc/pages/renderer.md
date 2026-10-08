@@ -171,10 +171,10 @@ can register layer types without touching engine sources.
 ### Per-renderer descriptor blocks (Vulkan)
 
 Each high-level renderer (`Renderer2D`, `RendererTilemap`, future renderers)
-owns its own Vulkan `VkDescriptorSetLayout` plus a fence-recycled
-`DescriptorRing` that hands every draw a distinct descriptor set (recycled once
-the submit fence of the batch that last bound it has signalled), matching
-exactly the bindings its shaders declare. The pattern lives behind a
+owns its own Vulkan `VkDescriptorSetLayout` plus a `DescriptorRing` that hands
+every draw a distinct descriptor set from pools owned by each frame in flight
+(reset in one call when the frame slot comes back), matching exactly the
+bindings its shaders declare. The pattern lives behind a
 backend-neutral API so OpenGL and the headless `Null` backend can no-op every
 call:
 
@@ -214,7 +214,8 @@ This pattern fixes two pre-existing pathologies:
   didn't sample, which NVIDIA's strict validation rejects.
 - **Per-pass UBO race.** Two `Renderer2D` layers using different VPs in the
   same frame used to memcpy into the same `VkBuffer` for binding 0,
-  producing visible flicker. Per-renderer UBOs scope each pass cleanly.
+  producing visible flicker. Uniform blocks are now copied into the frame ring
+  at each change, so every draw reads the block set before it.
 
 The same machinery also supports `BindingType::StorageBuffer` slots —
 the instanced `Renderer2D` rewrite (v0.2.0 Phase 1) declares binding 2
@@ -503,6 +504,38 @@ A renderer's descriptor set is written at draw time, from the UBO, SSBO and text
 binding its layout declares is written: a binding nothing was bound to gets a default resource (1x1 white texture,
 zeroed uniform or storage buffer). With the validation layers on (`--validation` in the frame bench, *Use Debugging*
 in Owl Nest), the sample scenes run with zero message on NVIDIA, Intel and lavapipe; keep it that way.
+
+### Vulkan frames in flight
+
+Two frames are in flight. Each owns one primary command buffer that records the whole frame — every framebuffer
+pass, the clears, the layout transitions, the uploads and the compute dispatches — submitted once at `endFrame`
+(waiting on the swapchain image's acquire semaphore, signalling a render-finished semaphore owned by that image).
+The CPU waits only for the frame slot it reuses, two frames back.
+
+```mermaid
+sequenceDiagram
+    participant CPU
+    participant GPU
+    CPU->>CPU: wait fence of slot N mod 2 (frame N-2), run deferred releases, rewind ring and pools
+    CPU->>CPU: acquire swapchain image, record passes, copies, dispatches
+    CPU->>GPU: one vkQueueSubmit (frame N)
+    CPU->>CPU: present, record frame N+1 while the GPU draws frame N
+```
+
+- **Batches are render passes**, not submissions: `beginBatch` opens a pass on the current framebuffer, `endBatch`
+  closes it. The first pass of a frame on a framebuffer clears its depth (the swapchain image is cleared to the clear
+  colour); later passes load every attachment, so successive layers keep what earlier ones drew on any GPU.
+  `RenderCommand::clear` clears the first colour attachment and the depth inside the pass (`vkCmdClearAttachments`).
+- **Off-screen colour images** stay in the attachment layout between passes and go to the sampled layout at
+  `Framebuffer::unbind`; the transitions are barriers in the frame command buffer.
+- **Uniform blocks and streamed storage buffers** (any SSBO the CPU wrote) are copied into a per-frame VMA ring at the
+  first draw after each change; a buffer only the GPU writes (compute output) stays in one persistent mapped buffer.
+- **Uploads** (vertex, index, texture data) are recorded in the frame with a staging region; outside a frame they go
+  through a one-shot submission waited on its own fence. Resources are destroyed through `deferRelease`, once every
+  frame recorded so far is complete.
+- **Read-backs**: `readPixel` copies the pixel into a per-slot buffer and returns the value read two frames earlier
+  (as OpenGL does); `StorageBuffer::getData` and `readColorAttachment` flush the frame so far and wait for it (the
+  raycaster's two reads per frame are the remaining stall, counted as `fence_wait` by the frame bench).
 
 ## Image tests {#render-image-tests}
 
@@ -839,10 +872,9 @@ A `Framebuffer` represents an off-screen render target with one or more typed at
 | `isUpsideDown()`             | Backend-specific Y-flip (Vulkan vs OpenGL) |
 
 The editor viewport uses a framebuffer with `Rgba8` + `RedInteger` + `Depth24Stencil8`
-to render the scene and support mouse-based entity picking. On OpenGL `readPixel` never stalls: it queues the read
-into a pixel pack buffer behind a fence and returns the latest completed one, a frame or two late, so the viewport
-checks that the entity still exists. Vulkan still reads synchronously (one queue drain per hovered frame), until the
-phase C work on frames in flight.
+to render the scene and support mouse-based entity picking. `readPixel` never stalls: OpenGL queues the read into a
+pixel pack buffer behind a fence, Vulkan records a copy into a per-frame read-back slot; both return the latest
+completed value, a frame or two late, so the viewport checks that the entity still exists.
 
 ## Shader System
 

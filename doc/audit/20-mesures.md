@@ -762,3 +762,26 @@ docker/run.sh --gui env VK_ICD_FILENAMES=/etc/vulkan/icd.d/nvidia_icd.json tasks
 
 Une boucle scènes × configurations × 5 répétitions, puis la médiane des médianes par série (`summary.<série>.median`
 de chaque JSON) ; comparer `cpu_total_ms`, `gpu_busy_ms`, `gpu_span_ms`, `queue_wait_idle` et `device_wait_idle`.
+
+### 8.5 Après le socle Vulkan (PR-28, PR-29)
+
+2026-10-08, branche `Feature/VulkanFoundation` : même protocole, 3 répétitions de 1 000 frames, avant et après mesurés le
+même jour (load average 3 à 12), Vulkan en `immediate`. OpenGL / NVIDIA, inchangé, sert de témoin (0,37 à 1,15 ms dans
+les deux campagnes). « Vidages » = `vkQueueWaitIdle` + `vkDeviceWaitIdle`, « attentes » = `fence_wait`.
+
+| Scène              | GPU    | CPU avant | CPU après | p99 avant | p99 après | Vidages      | Soumissions | Attentes après |
+|--------------------|--------|-----------|-----------|-----------|-----------|--------------|-------------|----------------|
+| `main_menu`        | NVIDIA | 0,92      | 0,41      | 3,19      | 0,65      | 2 → 0        | 5 → 1       | 0              |
+| `main_menu`        | Intel  | 1,97      | 0,44      | 3,07      | 0,58      | 2 → 0        | 5 → 1       | 0              |
+| `world_map`        | NVIDIA | 1,32      | 0,42      | 6,70      | 0,61      | 3 → 0        | 6 → 1       | 0              |
+| `world_map`        | Intel  | 3,06      | 0,55      | 4,45      | 0,73      | 3 → 0        | 6 → 1       | 0              |
+| `platformer_house` | NVIDIA | 1,32      | 0,43      | 4,42      | 0,63      | 3 → 0        | 6 → 1       | 0              |
+| `platformer_house` | Intel  | 2,86      | 0,50      | 3,98      | 0,64      | 3 → 0        | 6 → 1       | 0              |
+| `raycast_demo`     | NVIDIA | 0,97      | 0,74      | 1,42      | 0,96      | 4 → 0        | 7 → 2       | 1              |
+| `raycast_demo`     | Intel  | 3,06      | 2,43      | 4,58      | 3,32      | 4 → 0        | 7 → 2       | 1              |
+| `voxel_terrain`    | NVIDIA | 0,45      | 0,40      | 7,53      | 0,54      | 1 → 0        | 3 → 1       | 0              |
+| `voxel_terrain`    | Intel  | 1,45      | 0,47      | 1,96      | 0,65      | 1 → 0        | 3 → 1       | 0              |
+
+Vulkan rejoint OpenGL sur les scènes 2D et voxel ; le GPU Intel passe de 0,79 à 1,06 ms de travail par frame 2D à 0,35 à
+0,51 ms (plus de transitions ni de clears one-shot). Reste le raycast : ses deux lectures CPU par frame
+(`StorageBuffer::getData`, nombre de touches et z-buffer) vident la frame en cours une fois (B-01, à supprimer).

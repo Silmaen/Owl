@@ -19,34 +19,33 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
 
 - **OpenGL bindings are global state.** `Renderer2D`, `RendererTilemap` and `Renderer3D` share UBO binding
   0: every renderer must call its UBO `bind()` before its draws. A no-op `bind()` = silent collision.
-- **Vulkan: open the batch before recording binds.** `RenderAPI::drawData` lazily calls `beginBatch()`,
-  which resets the command buffer and would wipe binds already recorded. `beginBatch()` is idempotent;
-  never reset the in-flight fence twice without a submit in between.
-- **Vulkan descriptor sets are per draw.** `internal::DescriptorRing` hands a distinct set to every draw,
-  recycled by **submit fence**, not frame index (each framebuffer batch is its own submit). Never "fix"
-  descriptor errors with `UPDATE_AFTER_BIND`: with a shared set every draw samples the last write.
-- **Shared model UBO.** `Renderer3D::drawMesh` writes the model matrix into one shared UBO, so several
-  `drawMesh` calls with different models in one frame are last-write-wins on Vulkan. Use `drawMeshes`
-  with a shared model (voxel bakes the chunk origin into vertices). Real fix (push constant, SSBO or
-  dynamic UBO) is due with static meshes — verify the current state before relying on either behaviour.
+- **Vulkan: one command buffer per frame, two frames in flight.** A batch is a render pass in it, not a
+  submission; the frame is submitted once at `endFrame`. Never wait on a queue or the device in a frame:
+  a CPU read-back goes through `VulkanHandler::flushFrame` / `submitNow` (counted as `fence_wait`).
+- **Vulkan: nothing the GPU may still read is written or destroyed in place.** CPU data reaches the GPU
+  through the frame ring (UBO, streamed SSBO, staging) or a copy recorded in the frame; destruction goes
+  through `VulkanHandler::deferRelease` (`releaseBuffer`, `TextureData::freeTexture`, framebuffers).
+- **Vulkan descriptor sets are per draw.** `internal::DescriptorRing` hands a distinct set to every draw
+  from pools owned by the frame slot, reset when the slot comes back. Never "fix" descriptor errors with
+  `UPDATE_AFTER_BIND`: with a shared set every draw samples the last write.
+- **Uniforms are versioned per draw.** A UBO set between two draws gives each its own copy (frame ring), so
+  several `drawMesh` models or 2D cameras in one frame are correct on Vulkan as on OpenGL.
 - **One attachment layout for every framebuffer** (`Surface`, `RedInteger`, `Depth24Stencil8`, swapchain
   included) so all pipelines stay render-pass compatible.
 - **Pipelines are deduplicated** in `VulkanHandler::pushPipeline` (key = shader name, sidedness, set
   layout, render pass, vertex input; refcounted). Never build a pipeline per mesh.
-- **No GPU resource creation inside a render pass** (`endSingleTimeCommands` waits on the queue). Build
-  meshes and textures beforehand (`Scene::prepareVoxelRenderData()`, run by `renderWithStack` before any layer).
+- **Uploads close the render pass.** A buffer or texture upload in a frame is recorded outside any pass
+  (the next draw reopens one that loads the attachments): build meshes and textures before the layers
+  draw (`Scene::prepareVoxelRenderData()`, run by `renderWithStack` before any layer) to keep passes whole.
 - **Process-static GPU holders** (e.g. `gui::IconBank`) must be cleared by their owner before device
   teardown (`EditorLayer::onDetach()`), or they leak at `vkDestroyDevice`.
-- **One 2D camera per frame.** Renderer2D's view-projection UBO is shared too: mixing a perspective and an
-  ortho `Renderer2D` scene in one frame applies the last camera to every 2D draw. World-space HUD goes
-  through the perspective camera.
 - **Blend is always on** (both backends); transparency only toggles depth-write (dynamic state on Vulkan).
   Transparent geometry is sorted back-to-front in its own pass.
 - **Vulkan flips projection Y** (`proj(1,1) *= -1`): any screen→NDC ray or picking math is backend
   dependent (`isOpenGl ? -y : y`). Iso / gizmo projections must follow the same convention.
 - **Tiling an atlas cell with `frac(uv)`** needs all three: half-texel inset of the cell, self-tileable
   textures, and `SampleGrad` with the continuous (non-fract) UV derivatives. `Texture2D::setFilterMode`
-  works on both backends; on Vulkan it waits for the device (never call it per frame).
+  works on both backends (the old sampler is released once the frames using it are done).
 
 - **Vulkan descriptors are written at draw time** (`RendererDescriptors::getDescriptorSet`, from
   `bindPipeline`), after the draw's SSBO binds; every declared binding is written, unbound ones with a default

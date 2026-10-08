@@ -10,6 +10,7 @@
 
 #include "DescriptorRing.h"
 #include "Descriptors.h"// for TextureData
+#include "FrameRing.h"
 #include <vulkan/vulkan.h>
 
 #include <cstddef>
@@ -19,6 +20,10 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
+namespace owl::renderer::gpu::vulkan {
+class StorageBuffer;
+}// namespace owl::renderer::gpu::vulkan
 
 namespace owl::renderer::gpu::vulkan::internal {
 
@@ -114,37 +119,33 @@ public:
 
 	/**
 	 * @brief
-	 *  Copy `iData` into the host-mapped uniform buffer of the current
-	 *  in-flight frame for `iBinding`.
+	 *  Set the content of a uniform block. Draws recorded from now on read it: the block is copied into the frame
+	 *  ring when the next descriptor set is written, so draws recorded before keep the previous content.
 	 * @param[in] iBinding Shader binding slot (must have been registered).
 	 * @param[in] iData Source bytes.
 	 * @param[in] iSize Byte count.
 	 */
-	void setUniformData(uint32_t iBinding, const void* iData, size_t iSize) const;
+	void setUniformData(uint32_t iBinding, const void* iData, size_t iSize);
 
 	/**
 	 * @brief
-	 *  Bind an external SSBO to a storage-buffer descriptor slot. Used by
-	 *  `vulkan::StorageBuffer::bind` to attach a per-instance SSBO that lives
-	 *  outside this descriptor block (the SSBO owns its `VkBuffer`; we only
-	 *  retain the handle so `updateDescriptor` can write it into the per-frame
-	 *  descriptor sets). Idempotent — re-binding the same slot replaces the
-	 *  previous handle.
+	 *  Bind an external SSBO to a storage-buffer descriptor slot. The region written into a descriptor set is
+	 *  resolved at draw time (`StorageBuffer::resolve`), so a draw sees the content set before it. Idempotent —
+	 *  re-binding the same slot replaces the previous buffer.
 	 * @param[in] iBinding Shader binding slot (must be declared as
 	 *  `VK_DESCRIPTOR_TYPE_STORAGE_BUFFER` in the layout).
-	 * @param[in] iBuffer Backing `VkBuffer` (non-owning).
-	 * @param[in] iSize Buffer size in bytes (`VK_WHOLE_SIZE` is also accepted).
+	 * @param[in] iBuffer The storage buffer (non-owning).
 	 */
-	void bindStorageBuffer(uint32_t iBinding, VkBuffer iBuffer, VkDeviceSize iSize);
+	void bindStorageBuffer(uint32_t iBinding, StorageBuffer* iBuffer);
 
 	/**
 	 * @brief
 	 *  Clear any storage-buffer binding that references `iBuffer` across every
-	 *  registered renderer block. Call this when the backing `VkBuffer` is
-	 *  destroyed so stale handles are never written into a descriptor set.
-	 * @param[in] iBuffer The `VkBuffer` being destroyed.
+	 *  registered renderer block. Call this when the buffer is destroyed so it is
+	 *  never written into a descriptor set again.
+	 * @param[in] iBuffer The storage buffer being destroyed.
 	 */
-	static void unbindStorageBuffer(VkBuffer iBuffer);
+	static void unbindStorageBuffer(const StorageBuffer* iBuffer);
 
 	/**
 	 * @brief
@@ -170,9 +171,9 @@ public:
 	/**
 	 * @brief
 	 *  Descriptor set the current draw must bind. Acquires and writes a fresh set from the
-	 *  fence-recycled ring when the bind state changed since the last draw or a batch was
-	 *  submitted, so each draw sees exactly the UBO, SSBO and textures bound before it.
-	 * @param[in] iFrame Active in-flight frame index (selects the per-frame UBO buffers).
+	 *  per-frame ring when the bind state, a uniform block or a streamed storage buffer changed
+	 *  since the last draw, so each draw sees exactly the UBO, SSBO and textures bound before it.
+	 * @param[in] iFrame Frame slot recording the draw.
 	 * @return Pointer to the current descriptor set handle (null handle when the ring is exhausted).
 	 */
 	auto getDescriptorSet(uint32_t iFrame) -> VkDescriptorSet*;
@@ -191,15 +192,6 @@ public:
 	 * @return Pointer to the layout handle.
 	 */
 	auto getDescriptorSetLayout() -> VkDescriptorSetLayout* { return &m_layout; }
-
-	/**
-	 * @brief
-	 *  Tag the descriptor sets every registered renderer acquired during the
-	 *  just-submitted batch with that batch's fence, so they are recycled only
-	 *  once the GPU is done with them. Call right after `vkQueueSubmit`.
-	 * @param[in] iFence The fence the submitted command buffer signals.
-	 */
-	static void notifySubmitAll(VkFence iFence);
 
 	/**
 	 * @brief
@@ -259,21 +251,22 @@ public:
 	};
 
 private:
-	/// Per-binding uniform-buffer storage (one mapped buffer per frame).
+	/// Per-binding uniform block: CPU content, copied into the frame ring when it changes.
 	struct UboBinding {
-		std::vector<AllocatedBuffer> buffers;///< Per in-flight frame.
-		uint32_t size = 0;///< Buffer size in bytes.
+		std::vector<uint8_t> shadow;///< CPU content of the block.
+		uint32_t size = 0;///< Block size in bytes.
+		RingSlice slice;///< Frame-ring copy read by the draws.
+		uint64_t sliceSerial = 0;///< Frame serial of the copy.
+		bool dirty = true;///< True when the content changed since the copy.
 	};
 
 	/**
 	 * @brief
-	 *  External SSBO handle attached to a storage-buffer binding. The buffer
-	 *  is owned by `vulkan::StorageBuffer`; we only need the handle to write
-	 *  it into the descriptor set.
+	 *  External SSBO attached to a storage-buffer binding (owned by `vulkan::StorageBuffer`).
 	 */
 	struct StorageBinding {
-		VkBuffer buffer{nullptr};///< Non-owning handle.
-		VkDeviceSize size{0};///< Range to bind (VK_WHOLE_SIZE accepted).
+		StorageBuffer* buffer{nullptr};///< Non-owning.
+		uint64_t version{0};///< Version of its region written into the current set.
 	};
 
 	/// Renderer namespace key.
@@ -286,8 +279,16 @@ private:
 	uint32_t m_textureArrayCount = 0;
 	/// Descriptor set layout for this renderer.
 	VkDescriptorSetLayout m_layout{nullptr};
-	/// Fence-recycled ring handing a distinct descriptor set to every draw.
+	/// Per-frame ring handing a distinct descriptor set to every draw.
 	DescriptorRing m_ring;
+	/// Frame serial of the current set.
+	uint64_t m_setSerial = 0;
+	/// Scratch buffer infos of a set write (kept to avoid per-draw allocations).
+	std::vector<VkDescriptorBufferInfo> m_bufferInfos;
+	/// Scratch image infos of a set write.
+	std::vector<VkDescriptorImageInfo> m_imageInfos;
+	/// Scratch writes of a set write.
+	std::vector<VkWriteDescriptorSet> m_writes;
 	/// Registered UBO bindings keyed by binding slot.
 	std::unordered_map<uint32_t, UboBinding> m_uniformBindings;
 	/// Registered SSBO bindings keyed by binding slot.
@@ -300,7 +301,7 @@ private:
 	 *  texture array) is per-renderer.
 	 */
 	std::vector<uint32_t> m_textureBind;
-	/// True when the bind state changed (or a batch was submitted) since the current set was written.
+	/// True when the bind state or a uniform block changed since the current set was written.
 	bool m_dirty = true;
 
 	/**
@@ -308,18 +309,32 @@ private:
 	 *  Write the current UBO + SSBO + texture-bind state into a freshly acquired set. Every
 	 *  declared binding is written: bindings nothing was bound to get a default resource.
 	 * @param[in] iSet The descriptor set to write.
-	 * @param[in] iFrame Active in-flight frame index (selects the per-frame UBO buffers).
 	 */
-	void writeDescriptor(VkDescriptorSet iSet, size_t iFrame);
+	void writeDescriptor(VkDescriptorSet iSet);
+
+	/**
+	 * @brief
+	 *  Check a streamed storage buffer bound here changed since the current set was written.
+	 * @return True when a new set is needed.
+	 */
+	[[nodiscard]] auto hasStaleStorage() const -> bool;
+
+	/**
+	 * @brief
+	 *  Region of a uniform block for the frame being recorded, copied into the frame ring if needed.
+	 * @param[in,out] ioUbo The block.
+	 * @return The buffer info, empty buffer on failure.
+	 */
+	[[nodiscard]] static auto resolveUniform(UboBinding& ioUbo) -> VkDescriptorBufferInfo;
 
 	/**
 	 * @brief
 	 *  Image infos for the texture array: the bound textures in order, padded up to the array size
 	 *  with the default white texture (also used for any unloaded texture).
 	 * @param[in] iCount Number of slots of the texture array.
-	 * @return One info per slot, or nothing when the default texture is missing.
+	 * @return False when the default texture is missing (nothing collected into `m_imageInfos`).
 	 */
-	[[nodiscard]] auto collectImageInfos(uint32_t iCount) const -> std::vector<VkDescriptorImageInfo>;
+	auto collectImageInfos(uint32_t iCount) -> bool;
 };
 
 }// namespace owl::renderer::gpu::vulkan::internal

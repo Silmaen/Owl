@@ -132,11 +132,9 @@ public:
 
 	/**
 	 * @brief
-	 *  Wait for a queue to drain and count it.
-	 * @param[in] iQueue The queue to wait for.
-	 * @return The Vulkan result.
+	 *  Count a blocking fence wait outside the frame pacing (one-shot submission, mid-frame read-back).
 	 */
-	auto queueWaitIdle(VkQueue iQueue) -> VkResult;
+	void countFenceWait() { ++m_counters.fenceWaits; }
 
 	/**
 	 * @brief
