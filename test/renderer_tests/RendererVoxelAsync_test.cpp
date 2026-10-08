@@ -54,7 +54,8 @@ protected:
 
 	void SetUp() override {
 		m_previousConfig = renderer::RendererVoxel::getMeshingConfig();
-		renderer::RendererVoxel::setMeshingConfig({});
+		// A generous time budget: the default 2 ms is one upload on a slow (emulated, Debug) agent; budget tests set theirs.
+		renderer::RendererVoxel::setMeshingConfig({.uploadBudgetMs = 1000.f});
 		renderer::RendererVoxel::clearCache();
 		m_start = renderer::RendererVoxel::getStatistics();
 	}
