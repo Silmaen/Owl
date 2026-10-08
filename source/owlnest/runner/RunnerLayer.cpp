@@ -462,7 +462,7 @@ auto RunnerLayer::stepScenario() -> bool {
 		return true;
 	// Frames count, not seconds: finish the async work (scene transitions, texture decodes) before each one.
 	app::Application::get().getTaskScheduler().waitEmptyQueue();
-	if (!m_scenario->beginFrame(*m_activeScene))
+	if (!m_scenario->beginFrame(m_activeScene))
 		return true;
 	auto& app = app::Application::get();
 	const auto errors = core::Log::getLogBuffer().getErrorCount();

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <owlgui.h>
+#include <owl.h>
 
 #include <chrono>
 #include <cstddef>
