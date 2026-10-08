@@ -6,32 +6,38 @@
 #
 # Bundles the Markdown documentation pages from `doc/pages/` plus the canonical
 # repository-root files (README, CONTRIBUTING) into
-# `engine_assets/help/`, generates an `index.yml` describing each page, and
+# `<build>/help/` (installed as `assets/help/`), generates an `index.yml` describing each page, and
 # scrubs Doxygen-specific syntax (`{#page-anchor}`, `[TOC]`) so the bundled
 # pages render cleanly in the in-editor `HelpPanel` (md4c-based renderer).
 #
-# Image references are normalised to point at `engine_assets/help/images/`:
+# Image references are normalised to point at `<build>/help/images/`:
 #  * `../images/foo.svg` (Doxygen INPUT convention) -> `images/foo.svg`
 #  * `engine_assets/<dir>/foo.png` (project-relative paths used in the README,
 #    such as `engine_assets/logo/logo_owl.png`) -> `images/foo.png`
-#  * `https://...` images are downloaded once at configure time, cached under
-#    `images/badges/<sha1>.svg`, and the reference is rewritten to the local
-#    path. shields.io URLs all return SVG so the renderer picks them up via
-#    `lunasvg` like any other local SVG image.
+#  * `https://...` images are read from the cache `images/badges/<sha1>.svg`
+#    and the reference is rewritten to the local path. A missing one is
+#    downloaded only with OWL_HELP_FETCH_BADGES=ON: by default the configure
+#    never uses the network and the reference stays remote. shields.io URLs all
+#    return SVG so the renderer picks them up via `lunasvg` like any other local
+#    SVG image.
 #
 # External text links (`[text](https://...)`) are PRESERVED — the renderer
 # routes them to the user's default browser at click time (see
 # `core::utils::openExternalUrl`).
 # =============================================================================
 
-# Download an HTTPS image into the local cache and return its bundled path
-# (relative to the help root). Reuses the on-disk cache when available.
-# Empty OUT_LOCAL when the download fails (caller leaves the URL untouched).
+# Return the bundled path (relative to the help root) of a cached HTTPS image,
+# downloading it first when OWL_HELP_FETCH_BADGES is ON. Empty OUT_LOCAL when it
+# is neither cached nor downloaded (caller leaves the URL untouched).
 function(_owl_help_fetch_image IMG_URL CACHE_DIR OUT_LOCAL)
     string(SHA1 HASH "${IMG_URL}")
     # All shields.io and other badge providers return SVG (lunasvg handles them).
     set(LOCAL_NAME "${HASH}.svg")
     set(LOCAL_PATH "${CACHE_DIR}/${LOCAL_NAME}")
+    if (NOT EXISTS "${LOCAL_PATH}" AND NOT ${PROJECT_PREFIX}_HELP_FETCH_BADGES)
+        set(${OUT_LOCAL} "" PARENT_SCOPE)
+        return()
+    endif ()
     if (NOT EXISTS "${LOCAL_PATH}")
         file(DOWNLOAD "${IMG_URL}" "${LOCAL_PATH}"
                 STATUS DL_STATUS
@@ -88,7 +94,9 @@ function(_owl_help_extract_title IN_FILE OUT_VAR)
 endfunction()
 
 function(owl_bundle_help_assets)
-    set(HELP_DIR "${CMAKE_SOURCE_DIR}/engine_assets/help")
+    # In the build tree: the configure writes nothing in the sources (audit G-09).
+    set(HELP_DIR "${CMAKE_BINARY_DIR}/help")
+    set(${PROJECT_PREFIX}_HELP_DIR "${HELP_DIR}" PARENT_SCOPE)
     set(IMG_OUT_DIR "${HELP_DIR}/images")
     set(BADGE_CACHE_DIR "${IMG_OUT_DIR}/badges")
     file(MAKE_DIRECTORY "${HELP_DIR}")
@@ -157,7 +165,7 @@ function(owl_bundle_help_assets)
     # ---- Index ----
     # Each entry: id (basename without extension), title (first H1 line, scrubbed),
     # category (parent directory: "pages" → "guides", root → "reference"),
-    # path (file basename relative to engine_assets/help/).
+    # path (file basename relative to the help root).
     set(INDEX_CONTENT "Help:\n  Version: 1\n  Pages:\n")
     foreach (HELP_FILE IN LISTS OWL_HELP_PAGES OWL_HELP_ROOT_FILES)
         if (NOT EXISTS "${HELP_FILE}")

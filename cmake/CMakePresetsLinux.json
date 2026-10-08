@@ -57,6 +57,9 @@
         "linux-base",
         "clang-release"
       ],
+      "cacheVariables": {
+        "OWL_HELP_FETCH_BADGES": "ON"
+      },
       "vendor": {
         "silmaen": {
           "docker_image": "builder-ubuntu2604",

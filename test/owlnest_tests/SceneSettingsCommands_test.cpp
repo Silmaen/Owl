@@ -22,9 +22,7 @@ namespace {
 auto renderersYaml(const std::string& iName, const bool iEnabled) -> std::string {
 	renderer::EnabledRenderersConfig config;
 	config.entries.push_back({.name = iName, .enabled = iEnabled, .overrides = {}});
-	YAML::Emitter emitter;
-	emitter << config.toYaml();
-	return emitter.c_str();
+	return config.toYaml();
 }
 
 }// namespace

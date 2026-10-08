@@ -11,6 +11,7 @@
 
 #include "core/external/yaml.h"
 #include "renderer/RenderLayerFactory.h"
+#include "renderer/RenderStackYaml.h"
 
 namespace owl::renderer {
 
@@ -46,11 +47,12 @@ void RendererVoxelLayer::onEndFrame() {
 	RendererVoxel::endScene();
 }
 
-void RendererVoxelLayer::applyConfig(const YAML::Node& iConfig) {
-	if (!iConfig || !iConfig.IsMap())
+void RendererVoxelLayer::applyConfig(const std::string& iConfig) {
+	const auto config = parseYamlText(iConfig);
+	if (!config || !config.IsMap())
 		return;
-	m_config.sunDirection = readVec3(iConfig["SunDirection"], m_config.sunDirection);
-	m_config.ambient = readVec3(iConfig["Ambient"], m_config.ambient);
+	m_config.sunDirection = readVec3(config["SunDirection"], m_config.sunDirection);
+	m_config.ambient = readVec3(config["Ambient"], m_config.ambient);
 }
 
 }// namespace owl::renderer

@@ -1,8 +1,9 @@
 """
 Consumer check of the OwlEngine Conan package (run by `conan create .`).
 
-Builds a program against the CMake config the engine installs (`find_package(OwlEngine)`, `Owl::OwlEngine`),
-the way a downstream project such as OwlDrone does, then runs it.
+Builds two programs against the CMake config the engine installs, the way a downstream project such as OwlDrone
+does, then runs them: one linked to `Owl::OwlEngine` alone (EnTT is its only public dependency), one to the optional
+`Owl::Gui` (`find_package(OwlEngine COMPONENTS Gui)`, imgui).
 """
 
 import os
@@ -34,4 +35,5 @@ class OwlEngineTestConan(ConanFile):
 
     def test(self):
         if can_run(self):
-            self.run(os.path.join(self.cpp.build.bindir, "owl_test_package"), env="conanrun")
+            for program in ("owl_test_package", "owl_test_package_gui"):
+                self.run(os.path.join(self.cpp.build.bindir, program), env="conanrun")

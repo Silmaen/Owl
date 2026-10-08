@@ -12,11 +12,6 @@
 #include "math/vectors.h"
 #include "renderer/Camera.h"
 
-OWL_DIAG_PUSH
-OWL_DIAG_DISABLE_CLANG("-Wshadow")
-#include <yaml-cpp/yaml.h>
-OWL_DIAG_POP
-
 #include <string>
 
 namespace owl::scene {
@@ -119,13 +114,13 @@ public:
 	 * @brief
 	 *  Apply a configuration block (project default + scene override merged).
 	 *
-	 * Called once per scene activation, before the first `onBeginFrame`. The YAML node
+	 * Called once per scene activation, before the first `onBeginFrame`. The YAML text
 	 * is the merged result of the project's `DefaultConfig` and the scene's
-	 * `Overrides` for this layer instance. May be a null/empty node when neither
-	 * provides anything.
-	 * @param[in] iConfig YAML node holding the merged config (may be Null).
+	 * `Overrides` for this layer instance: a map, empty (`{}`) when neither
+	 * provides anything. Text keeps yaml-cpp out of the public headers.
+	 * @param[in] iConfig YAML text of the merged config map.
 	 */
-	virtual void applyConfig(const YAML::Node& iConfig) = 0;
+	virtual void applyConfig(const std::string& iConfig) = 0;
 
 	/**
 	 * @brief

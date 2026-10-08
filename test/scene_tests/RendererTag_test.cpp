@@ -8,6 +8,8 @@
 
 #include "testHelper.h"
 
+#include "core/external/yaml.h"
+
 #include <app/Application.h>
 #include <renderer/RenderStack.h>
 #include <scene/Entity.h>
@@ -93,7 +95,7 @@ TEST(RendererTagComponent, sceneEnabledRenderersRoundTrip) {
 	enabled.entries.push_back({.name = "world", .enabled = true, .overrides = {}});
 	YAML::Node hudOverride;
 	hudOverride["Hidden"] = false;
-	enabled.entries.push_back({.name = "hud", .enabled = true, .overrides = hudOverride});
+	enabled.entries.push_back({.name = "hud", .enabled = true, .overrides = YAML::Dump(hudOverride)});
 
 	const owl::scene::SceneSerializer saver(sc);
 	const auto fs = std::filesystem::temp_directory_path() / "enabledRenderersRoundTrip.yml";
@@ -108,8 +110,8 @@ TEST(RendererTagComponent, sceneEnabledRenderersRoundTrip) {
 	EXPECT_EQ(cfg.entries[0].name, "world");
 	EXPECT_TRUE(cfg.entries[0].enabled);
 	EXPECT_EQ(cfg.entries[1].name, "hud");
-	ASSERT_TRUE(cfg.entries[1].overrides);
-	EXPECT_EQ(cfg.entries[1].overrides["Hidden"].as<bool>(), false);
+	ASSERT_FALSE(cfg.entries[1].overrides.empty());
+	EXPECT_EQ(YAML::Load(cfg.entries[1].overrides)["Hidden"].as<bool>(), false);
 
 	std::filesystem::remove(fs);
 	owl::app::Application::invalidate();

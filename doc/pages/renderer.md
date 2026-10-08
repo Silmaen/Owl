@@ -160,7 +160,10 @@ walks in reverse so layers can flush nested resources cleanly.
 3. Invoke `MyLayer::registerWithFactory()` from `Renderer::initShaders` so the
    type is available before any project loads.
 4. Bump the project YAML to reference the new `Type: MyType` and any
-   `DefaultConfig` keys your `applyConfig` consumes.
+   `DefaultConfig` keys your `applyConfig` consumes. `applyConfig` receives the
+   merged `DefaultConfig` + scene `Overrides` map as YAML text (`{}` when empty),
+   and `RendererStackEntry::defaultConfig` / `EnabledRenderersConfig::Entry::overrides`
+   hold YAML text too: the public headers never expose yaml-cpp.
 
 The factory pattern keeps the engine extensible: third-party code (mods, tests)
 can register layer types without touching engine sources.

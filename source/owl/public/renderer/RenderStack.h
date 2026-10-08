@@ -22,20 +22,14 @@ namespace owl::renderer {
  * Stored in `owl_project.yml` under `RendererStack:`. Combined with the scene's
  * `EnabledRenderers` overrides at scene activation time.
  */
-// NOLINTBEGIN(bugprone-exception-escape)
-// `YAML::Node::operator=` may throw `InvalidNode`; the implicit copy/move-assignment
-// of this struct inherits that, but in practice the entries we copy/move are always
-// well-formed and the throw never happens. Suppress here rather than at every call
-// site (vector reallocation, `std::swap`, …).
 struct OWL_API RendererStackEntry {
 	/// Factory type key (e.g. `"Renderer2D"`).
 	std::string typeKey;
 	/// Runtime instance name (unique within the stack, used by scenes and entities).
 	std::string name;
-	/// Default config (project-level). May be empty.
-	YAML::Node defaultConfig;
+	/// Default config (project-level), as YAML text. Empty when there is none.
+	std::string defaultConfig;
 };
-// NOLINTEND(bugprone-exception-escape)
 
 /**
  * @brief
@@ -72,22 +66,22 @@ struct OWL_API RendererStackConfig {
 
 	/**
 	 * @brief
-	 *  Serialize the config to a YAML node.
-	 * @return The YAML node (a sequence of maps).
+	 *  Serialize the config to YAML text.
+	 * @return The YAML text (a sequence of maps).
 	 */
-	[[nodiscard]] auto toYaml() const -> YAML::Node;
+	[[nodiscard]] auto toYaml() const -> std::string;
 
 	/**
 	 * @brief
-	 *  Parse the config from a YAML node.
+	 *  Parse the config from YAML text.
 	 *
-	 * Accepts a sequence node where each item has `Type` (required), `Name`
+	 * Accepts a sequence where each item has `Type` (required), `Name`
 	 * (required, unique), and optional `DefaultConfig`. Invalid items are
-	 * skipped with a warning.
-	 * @param[in] iNode The YAML sequence node.
+	 * skipped with a warning; text that does not parse gives an empty config.
+	 * @param[in] iYaml The YAML text of the sequence.
 	 * @return The parsed config.
 	 */
-	[[nodiscard]] static auto fromYaml(const YAML::Node& iNode) -> RendererStackConfig;
+	[[nodiscard]] static auto fromYaml(const std::string& iYaml) -> RendererStackConfig;
 };
 
 /**
@@ -102,21 +96,15 @@ struct OWL_API RendererStackConfig {
  * (with its project-default config).
  */
 struct OWL_API EnabledRenderersConfig {
-	// NOLINTBEGIN(bugprone-exception-escape)
-	// `YAML::Node::operator=` may throw `InvalidNode`; the implicit copy/move-assignment
-	// of this struct inherits that, but in practice the entries we copy/move are always
-	// well-formed and the throw never happens. Suppress here rather than at every call
-	// site (vector reallocation, `std::swap` in the editor's settings panel, …).
 	/// Per-renderer-instance enable + override.
 	struct Entry {
 		/// Instance name from the project stack.
 		std::string name;
 		/// Whether this renderer is active for the scene.
 		bool enabled = true;
-		/// Override config for this scene (merged on top of project DefaultConfig).
-		YAML::Node overrides;
+		/// Override config for this scene, as YAML text (merged on top of project DefaultConfig). Empty when none.
+		std::string overrides;
 	};
-	// NOLINTEND(bugprone-exception-escape)
 
 	/// Ordered entries (preserved in the order written by the user).
 	std::vector<Entry> entries;
@@ -138,18 +126,18 @@ struct OWL_API EnabledRenderersConfig {
 
 	/**
 	 * @brief
-	 *  Serialize the config to a YAML node.
-	 * @return The YAML node (a sequence of maps).
+	 *  Serialize the config to YAML text.
+	 * @return The YAML text (a sequence of maps).
 	 */
-	[[nodiscard]] auto toYaml() const -> YAML::Node;
+	[[nodiscard]] auto toYaml() const -> std::string;
 
 	/**
 	 * @brief
-	 *  Parse the config from a YAML node.
-	 * @param[in] iNode The YAML sequence node.
+	 *  Parse the config from YAML text (an empty config when it does not parse).
+	 * @param[in] iYaml The YAML text of the sequence.
 	 * @return The parsed config.
 	 */
-	[[nodiscard]] static auto fromYaml(const YAML::Node& iNode) -> EnabledRenderersConfig;
+	[[nodiscard]] static auto fromYaml(const std::string& iYaml) -> EnabledRenderersConfig;
 };
 
 /**

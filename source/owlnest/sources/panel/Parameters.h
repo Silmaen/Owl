@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <owl.h>
+#include <owlgui.h>
 
 namespace owl::nest::panel {
 /**

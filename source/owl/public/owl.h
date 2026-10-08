@@ -50,8 +50,8 @@
 #include "math/Transform.h"
 #include "math/simpleFunctions.h"
 
+// The headers that include imgui come with <owlgui.h> (target Owl::Gui).
 #include "gui/component/render.h"
-#include "gui/utils.h"
 #include "gui/widgets/ButtonBar.h"
 // ------- scene -----------
 #include "scene/Entity.h"

@@ -85,7 +85,7 @@ public:
 	 *  Apply the merged YAML configuration (lighting).
 	 * @param[in] iConfig The merged config node.
 	 */
-	void applyConfig(const YAML::Node& iConfig) override;
+	void applyConfig(const std::string& iConfig) override;
 
 	/**
 	 * @brief

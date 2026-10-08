@@ -53,7 +53,7 @@ Doxyfile
 *.log
 agent-*
 
-# Generated help bundle (owl_bundle_help_assets in cmake/HelpAssets.cmake)
+# Help bundle left by a configure older than <build>/help (cmake/HelpAssets.cmake)
 /engine_assets/help/
 
 # Conan test_package build folder

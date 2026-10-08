@@ -282,6 +282,17 @@ docker/run.sh poetry run python ci_action.py Build linux-fuzz
 docker/run.sh poetry run python ci_action.py Fuzz linux-fuzz -- --time=60
 ```
 
+## Dependency report
+
+On `main`, Build Linux x64 / Clang ends with the `DependencyReport` action: `conan graph outdated` on `conanfile.py`
+(every option on) against ConanCenter. It drops the false positives (`cci.<date>` snapshots and date versions sorted
+above a semantic version), logs each real update as a warning, writes `output/dependency_report.json` and publishes
+the count as the `OutdatedDependencies` statistic. It never fails the build (audit G-08).
+
+```bash
+docker/run.sh poetry run python ci_action.py DependencyReport linux-clang-release
+```
+
 ## Include check
 
 A recent libstdc++ (MSYS2 MinGW) no longer includes `<cstdint>`, `<mutex>`, … transitively, so a file that

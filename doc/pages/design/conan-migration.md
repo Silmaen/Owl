@@ -147,8 +147,11 @@ docker/run.sh poetry run conan create . --profile:all conan/profiles/linux-clang
   the export keeping only `OWL_BUILD_SHARED`, `OWL_PLATFORM_<OS>` and `cxx_std_23` (G-01); `CMAKE_INSTALL_PREFIX` of
   the presets no longer overridden (G-06); `core/external/spdlog.h` moved to `private/` (A-19); version read from
   `CMakeLists.txt` by both recipes and the version test (G-19, F-06).
-- yaml-cpp becomes a public dependency (`find_dependency(yaml-cpp)`, `transitive_headers`): `renderer/RenderLayer.h`
-  includes it and `<owl.h>` reaches it. It leaves the public headers with PR-27 (G-07).
+- Public dependencies (phase D): EnTT only for `Owl::OwlEngine`; imgui only through the optional `Owl::Gui` target
+  (`find_package(OwlEngine COMPONENTS Gui)`, its own `OwlEngineGuiTargets.cmake`), for `<owlgui.h>` and the three
+  `gui/` headers that include imgui. yaml-cpp is private: the render-stack configuration crosses the public API as
+  YAML text (`RendererStackEntry::defaultConfig`, `RenderLayer::applyConfig`). `test_package` builds one program on
+  `Owl::OwlEngine` alone and one on `Owl::Gui`.
 - Shared only: a static OwlEngine exports `OwlEnginePrivate` and every private dependency; the recipe refuses
   `shared=False` until that is designed (static consumers through CMakeDeps, or the private dependencies exported).
 - `libOwlEngine.so` keeps `$ORIGIN` as its only RPATH, so GNU ld finds its own shared dependencies (glfw, OpenAL Soft,
@@ -247,8 +250,9 @@ Phase 0, before anything else of v0.3.0:
 
 - EnTT 4.0.0 and Taskflow 4.1.0 are in, through local recipes until ConanCenter has them
 - The lagging direct versions (G-08) are in too, through local recipes: OpenAL Soft 1.25.2, msdfgen 1.13,
-  msdf-atlas-gen 1.4, tinyobjloader rc13. Left: a lockfile update report in CI (`conan graph outdated`, whose
-  `cci.*` hits are false positives); the transitive versions follow their recipes
+  msdf-atlas-gen 1.4, tinyobjloader rc13. The `DependencyReport` CI action (`conan graph outdated` against
+  ConanCenter, `cci.*` and date false positives dropped) lists what lags on every `main` build of Build Linux x64 /
+  Clang, without failing it; the transitive versions follow their recipes
 
 Later:
 
@@ -256,13 +260,16 @@ Later:
 - Propose the twelve local recipes (or their new versions) to ConanCenter, msdf-atlas-gen as a library option, the
   libmp3lame clang-cl fix
 - imgui-color-text-edit v1.92.9: port `CodeEditorDocument` to the `DocPos` cursor API, then bump the recipe
-- v1.0.0: the OwlEngine Conan package published and run by the `Package` action (PR-09), a static variant, YAML
-  out of the public headers (PR-27)
+- v1.0.0: the OwlEngine Conan package published and run by the `Package` action (PR-09), a static variant, hidden
+  symbol visibility (PR-27)
 
 ## Fewer public dependencies (phase D)
 
-Target: `find_package(OwlEngine)` exposes **EnTT** only, plus **imgui** through the optional `Owl::Gui` target.
+Done: `find_package(OwlEngine)` exposes **EnTT** only, plus **imgui** through the optional `Owl::Gui` target.
 
-- spdlog behind an `owl::log` facade
-- yaml-cpp out of the public headers (A-03, G-07); rapidyaml as a private replacement to evaluate (fiche 5)
+- spdlog was already private: the log macros of `core/Log.h` never include it
+- yaml-cpp left the public headers (A-03, G-07): the render-stack configuration is YAML text in the public structures,
+  converted by the private `renderer/RenderStackYaml.h`; rapidyaml as a private replacement to evaluate (fiche 5)
+- imgui: `<owl.h>` no longer includes `gui/utils.h`; `<owlgui.h>` adds it with `gui/widgets/AssetField.h` and
+  `gui/widgets/CurveEditor.h`, for `Owl::Gui` consumers (the editor)
 - To evaluate: miniaudio instead of OpenAL Soft + libsndfile; a single image loader instead of stb_image + libpng

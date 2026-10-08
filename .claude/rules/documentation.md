@@ -43,11 +43,12 @@ If an SVG already exists, keep it alongside the mermaid version for Doxygen comp
 
 ### Doxygen Configuration
 
-- Config template: `DoxyfileTemplate` (relative paths from build dir)
+- Config template: `DoxyfileTemplate`, configured into `<build>/Doxyfile` (paths from `@PROJECT_SOURCE_DIR@`)
 - INPUT includes: `source/owl/public`, `README.md`, `CHANGELOG.md`, `ROADMAP.md`, `CONTRIBUTING.md`, `doc/`
 - Custom header with mermaid.js: `doc/header.html`
 - Theme: doxygen-awesome with dark mode toggle
-- Build: `cmake --build <build_dir> --target documentation`
+- Build: `cmake --build <build_dir> --target documentation` (the target exists when Doxygen is found;
+  `OWL_ENABLE_DOCUMENTATION=ON` requires it)
 
 ## Roadmap and changelog: three levels
 

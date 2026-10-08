@@ -10,6 +10,12 @@ install(EXPORT OwlEngineTargets
         NAMESPACE Owl::
         DESTINATION lib/cmake/OwlEngine
         COMPONENT Engine)
+# Owl::Gui in a file of its own: OwlEngineConfig.cmake loads it (and imgui) only for the Gui component.
+install(EXPORT OwlEngineGuiTargets
+        FILE OwlEngineGuiTargets.cmake
+        NAMESPACE Owl::
+        DESTINATION lib/cmake/OwlEngine
+        COMPONENT Engine)
 # Create file for use of find_package
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(

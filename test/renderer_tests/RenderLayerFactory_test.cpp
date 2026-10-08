@@ -23,7 +23,7 @@ public:
 	void onBeginFrame(const owl::renderer::Camera&) override {}
 	void onRender(owl::scene::Scene&) override {}
 	void onEndFrame() override {}
-	void applyConfig(const YAML::Node&) override {}
+	void applyConfig(const std::string&) override {}
 
 private:
 	std::string m_name;

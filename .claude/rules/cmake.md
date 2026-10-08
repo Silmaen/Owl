@@ -27,19 +27,18 @@ Adding a new `.cpp` or `.h` file requires no CMakeLists.txt modification.
 **Never call `find_package()` directly** for Conan-managed packages. Use the wrapper (it maps the Conan
 names that differ, see `cmake/Conan.cmake`):
 ```cmake
-owl_target_link_libraries(TargetName PRIVATE|PUBLIC|INTERFACE ModuleName REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(TargetName PRIVATE|PUBLIC|INTERFACE ModuleName REQUIRED)
 ```
 
 Options:
-- `FORCE_RELEASE` (via `${THIRD_PARTY_RELEASE}`) — use release build in debug mode
 - `MODULE_TARGET X::Y` — when the CMake target name differs from the package name
 - `REQUIRED`, `QUIET`, `CONFIG` — forwarded to `find_package()`
 
 Examples:
 ```cmake
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED ${THIRD_PARTY_RELEASE})
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw3 MODULE_TARGET glfw REQUIRED ${THIRD_PARTY_RELEASE})
-owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw3 MODULE_TARGET glfw REQUIRED)
+owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED)
 ```
 
 ## Adding a New Dependency
@@ -83,27 +82,6 @@ Tests are auto-discovered from `test/` subdirectories. See testing rules.
 
 ## Options (`OWL_*`)
 
-| Option                                    | Default    | Description                                                                                                                                   |
-|-------------------------------------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| `OWL_BUILD_SHARED`                        | ON         | Build engine as shared library                                                                                                                |
-| `OWL_BUILD_NEST`                          | ON         | Build Owl Nest editor                                                                                                                         |
-| `OWL_TESTING`                             | ON         | Enable unit tests                                                                                                                             |
-| `OWL_ENABLE_COVERAGE`                     | OFF        | Code coverage (auto-enabled in debug presets)                                                                                                 |
-| `OWL_ENABLE_MEMORY_TRACKER`               | OFF        | Install global `new`/`delete` overrides so `TrackerAPI` records every allocation (opt-in in every build type, Debug included; feeds Tracy)    |
-| `OWL_ENABLE_STACKTRACE`                   | OFF        | Memory tracker stacktrace (implies `OWL_ENABLE_MEMORY_TRACKER`; performance impact)                                                           |
-| `OWL_PROFILER`                            | none       | Backend of the `OWL_PROFILE_*` macros: `none`, `tracy` (from Conan) or `chrome` (JSON files)                                                  |
-| `OWL_ENABLE_PROFILING`                    | OFF        | Deprecated alias of `OWL_PROFILER=chrome`                                                                                                     |
-| `OWL_LOG_LEVEL`                           | trace      | Lowest log level compiled in (`trace` … `off`); lower `OWL_*` log macros evaluate nothing                                                     |
-| `OWL_USE_RELEASE_THIRD_PARTY`             | ON         | Use release builds of third-party libraries                                                                                                   |
-| `OWL_ENABLE_VULKAN_LAYERS`                | OFF        | Copy Vulkan layers to binary directory                                                                                                        |
-| `OWL_ENABLE_CLANG_TIDY`                   | OFF        | Enable clang-tidy static analysis                                                                                                             |
-| `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF        | AddressSanitizer (CI presets)                                                                                                                 |
-| `OWL_ENABLE_THREAD_SANITIZER`             | OFF        | ThreadSanitizer (CI presets)                                                                                                                  |
-| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF        | UBSanitizer (CI presets)                                                                                                                      |
-| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF        | MemorySanitizer (Clang-only, CI presets)                                                                                                      |
-| `OWL_ENABLE_DOCUMENTATION`                | OFF        | Enable Doxygen documentation generation                                                                                                       |
-| `OWL_PACKAGING`                           | OFF        | Enable packaging mode                                                                                                                         |
-| `OWL_BENCHMARK`                           | OFF        | Build the `owl_bench` micro-benchmark harness (`bench/`, see `bench/README.md`)                                                               |
-| `OWL_INCLUDE_CHECK`                       | OFF        | Add `owl_include_check`: every header and source compiled alone, no PCH, strict libc++ (Clang only, `linux-include-check` preset)             |
-| `OWL_TEST_SHUFFLE`                        | OFF        | Run every test binary with `--gtest_shuffle` (ON in the sanitizer presets; seed via `GTEST_RANDOM_SEED`)                                      |
-| `OWL_FUZZING`                             | OFF        | Build the libFuzzer targets in `fuzz/` (Clang only; instruments the engine, combine with ASan)                                                |
+The one reference table is *CMake Options* in `doc/pages/building.md`: declare every new option with `option()` (or
+a `CACHE` variable) and add its row there in the same change. Third parties are Release in every build type
+(`OWL_USE_RELEASE_THIRD_PARTY`, through `CMAKE_MAP_IMPORTED_CONFIG_DEBUG` in the top-level `CMakeLists.txt`).

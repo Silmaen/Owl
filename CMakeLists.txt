@@ -28,6 +28,10 @@ option(${PROJECT_PREFIX}_USE_CCACHE "Use ccache (or sccache) as a compiler launc
 option(${PROJECT_PREFIX}_BENCHMARK "Build the micro-benchmark harness in bench/" OFF)
 option(${PROJECT_PREFIX}_INCLUDE_CHECK "Add the owl_include_check target: every header and source compiled alone against strict libc++, without PCH (Clang only)" OFF)
 option(${PROJECT_PREFIX}_FUZZING "Build the libFuzzer targets in fuzz/ (Clang only, instruments the engine)" OFF)
+option(${PROJECT_PREFIX}_ENABLE_DOCUMENTATION "Require Doxygen (otherwise the documentation target exists only when Doxygen is found)" OFF)
+option(${PROJECT_PREFIX}_HELP_FETCH_BADGES "Download the remote badge images of the help pages missing from the local cache (network)" OFF)
+option(${PROJECT_PREFIX}_ENABLE_RENDERER_VERBOSE_CAPABILITIES "Log every capability of the graphics device at start-up" OFF)
+option(${PROJECT_PREFIX}_ENABLE_SHADER_REFLECT_RESOURCES "Log the resources reflected from every compiled shader" OFF)
 
 #
 # ---=== Base Configs ===---
@@ -48,12 +52,13 @@ endif ()
 #
 # ---=== Bundle help pages ===---
 # Copy the Markdown documentation pages from `doc/pages/` plus the canonical
-# README/CHANGELOG/CONTRIBUTING into `engine_assets/help/`, and generate a
-# small `index.yml` describing each page (id, title, category). The runtime
-# `HelpPanel` reads this directory; the existing `engine_assets/` install
-# rule embeds it into packaged builds automatically.
+# README/CONTRIBUTING into `<build>/help/`, and generate a small `index.yml`
+# describing each page (id, title, category). The runtime `HelpPanel` reads it
+# from the build tree, or from `assets/help/` where both CPack components
+# install it.
 include(HelpAssets)
 owl_bundle_help_assets()
+target_compile_definitions(${CMAKE_PROJECT_NAME}_BaseTest INTERFACE ${PROJECT_PREFIX}_HELP_BUILD_DIR="${${PROJECT_PREFIX}_HELP_DIR}")
 
 #
 # ---=== The Program ===---

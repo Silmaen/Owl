@@ -16,7 +16,6 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <sstream>
 #include <vector>
 
 namespace owl::nest::panel {
@@ -28,9 +27,7 @@ constexpr auto g_windowName = "Scene Settings";
 auto serializeConfig(const renderer::EnabledRenderersConfig& iConfig) -> std::string {
 	if (iConfig.isEmpty())
 		return {};
-	std::stringstream ss;
-	ss << iConfig.toYaml();
-	return ss.str();
+	return iConfig.toYaml();
 }
 
 auto indexOfEntry(const renderer::EnabledRenderersConfig& iConfig, const std::string& iName) -> size_t {
@@ -163,8 +160,11 @@ auto SceneSettings::renderRendererStackSection() -> bool {
 		if (projectEntry != nullptr) {
 			ImGui::Indent();
 			if (ImGui::CollapsingHeader("Overrides")) {
-				if (renderLayerOverridesEditor(projectEntry->typeKey, entry.overrides))
+				auto overrides = entry.overrides.empty() ? YAML::Node{} : YAML::Load(entry.overrides);
+				if (renderLayerOverridesEditor(projectEntry->typeKey, overrides)) {
+					entry.overrides = YAML::Dump(overrides);
 					changed = true;
+				}
 			}
 			ImGui::Unindent();
 		}
@@ -210,7 +210,6 @@ auto SceneSettings::renderAddLayerSection() -> bool {
 			renderer::EnabledRenderersConfig::Entry newEntry;
 			newEntry.name = entry->name;
 			newEntry.enabled = true;
-			newEntry.overrides = YAML::Node{YAML::NodeType::Map};
 			sceneCfg.entries.push_back(std::move(newEntry));
 			added = true;
 		}

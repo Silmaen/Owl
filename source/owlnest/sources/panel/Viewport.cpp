@@ -20,7 +20,7 @@
 #include <scene/component/VoxelWorld.h>
 
 #include <gui/IconBank.h>
-#include <owl.h>
+#include <owlgui.h>
 #include <scene/SceneSerializer.h>
 #include <scene/TilemapAsset.h>
 #include <scene/component/RaycastDoor.h>

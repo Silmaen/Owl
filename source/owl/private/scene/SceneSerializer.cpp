@@ -14,6 +14,7 @@
 #include "core/Serializer.h"
 #include "core/SerializerImpl.h"
 #include "platform/AtomicFile.h"
+#include "renderer/RenderStackYaml.h"
 #include "scene/Entity.h"
 #include "scene/component/componentsSerialization.h"
 
@@ -247,7 +248,7 @@ auto SceneSerializer::serializeToString() const -> std::string {
 	sOut.getImpl()->emitter << YAML::Key << "Scene" << YAML::Value << "untitled";
 	emitFormatVersion(sOut.getImpl()->emitter, g_sceneFormat);
 	if (const auto& enabled = mp_scene->getEnabledRenderers(); !enabled.isEmpty()) {
-		sOut.getImpl()->emitter << YAML::Key << "EnabledRenderers" << YAML::Value << enabled.toYaml();
+		sOut.getImpl()->emitter << YAML::Key << "EnabledRenderers" << YAML::Value << renderer::enabledToYaml(enabled);
 	}
 	serializePhysicsSettings(sOut.getImpl()->emitter, mp_scene->getPhysicsSettings());
 	sOut.getImpl()->emitter << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
@@ -347,7 +348,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	std::vector<Entity> created;
 	try {
 		if (const auto enabled = sData.getImpl()->node["EnabledRenderers"]; enabled)
-			mp_scene->getEnabledRenderers() = renderer::EnabledRenderersConfig::fromYaml(enabled);
+			mp_scene->getEnabledRenderers() = renderer::enabledFromYaml(enabled);
 		mp_scene->getPhysicsSettings() = deserializePhysicsSettings(sData.getImpl()->node["Physics"]);
 		SeenUuids seen;
 		if (auto entities = sData.getImpl()->node["Entities"]; entities && entities.IsSequence()) {

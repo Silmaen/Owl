@@ -127,7 +127,7 @@ public:
 	 *  Apply config.
 	 * @param[in] iConfig YAML node describing the layer configuration.
 	 */
-	void applyConfig(const YAML::Node& iConfig) override;
+	void applyConfig(const std::string& iConfig) override;
 
 	/**
 	 * @brief

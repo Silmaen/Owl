@@ -16,6 +16,7 @@ This page explains how to configure, build, and test the Owl engine.
 | Python     | 3.12+   | For CI tooling and Conan                      |
 | Poetry     |         | Python dependency manager                     |
 | Conan      | 2       | C++ dependency manager (installed via Poetry) |
+| Doxygen    | 1.9.1+  | Optional: API documentation (with Graphviz)   |
 
 Install Python dependencies:
 
@@ -41,9 +42,24 @@ runs reuse the Conan cache. The shared libraries from the cache are copied next 
 `-DOWL_CONAN_HOME=<dir>` selects a dedicated cache, `-DOWL_CONAN_PROFILE` another profile, `-DOWL_CONAN_LOCKFILE=`
 (empty) resolves without the lockfile, and `OWL_CONAN_CACHE_URL` adds a binary cache server (the CI uses one).
 
-The engine is also a Conan package, checked by `test_package/` (a program built on `find_package(OwlEngine)`);
+Once the Conan cache holds the packages, a configure needs neither the network nor Doxygen: `poetry sync` runs only
+when the venv is missing or `poetry.lock` changed since the build tree last synced, the badge images of the help pages
+come from their local cache (`-DOWL_HELP_FETCH_BADGES=ON`, set by the packaged presets `linux-clang-release`,
+`windows-clang-release` and `package-linux`, downloads the missing ones), and the `documentation` target exists only
+when Doxygen is found (`-DOWL_ENABLE_DOCUMENTATION=ON` requires it). The `Doxyfile` is generated in the build tree.
+
+The engine is also a Conan package, checked by `test_package/` (two programs built on `find_package(OwlEngine)`);
 publishing it is a v1.0.0 item, until then other projects use the packaged `OwlEngine` archive (see
-[Packaging](#packaging)):
+[Packaging](#packaging)). `Owl::OwlEngine` (`<owl.h>`) exposes EnTT as its only dependency; the headers that include
+imgui (`<owlgui.h>`, `gui/utils.h`, `gui/widgets/AssetField.h`, `gui/widgets/CurveEditor.h`) come with the optional
+`Owl::Gui` target:
+
+```cmake
+find_package(OwlEngine CONFIG REQUIRED COMPONENTS Gui)  # COMPONENTS Gui only for Owl::Gui (needs imgui)
+target_link_libraries(my_game PRIVATE Owl::OwlEngine)
+target_link_libraries(my_tools PRIVATE Owl::Gui)
+```
+
 
 ```bash
 poetry run conan create . --profile:all conan/profiles/linux-clang --lockfile conan.lock --lockfile-partial --build=missing
@@ -222,26 +238,35 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 
 ## CMake Options
 
-| Option                                    | Default | Description                                                                      |
-|-------------------------------------------|---------|----------------------------------------------------------------------------------|
-| `OWL_BUILD_SHARED`                        | ON      | Build engine as shared library                                                   |
-| `OWL_BUILD_NEST`                          | ON      | Build Owl Nest editor                                                            |
-| `OWL_TESTING`                             | ON      | Enable unit tests                                                                |
-| `OWL_ENABLE_COVERAGE`                     | OFF     | Code coverage (auto-enabled in debug presets)                                    |
-| `OWL_ENABLE_STACKTRACE`                   | OFF     | Memory tracker stacktrace (performance impact)                                   |
-| `OWL_ENABLE_PROFILING`                    | OFF     | Profiling output                                                                 |
-| `OWL_USE_RELEASE_THIRD_PARTY`             | ON      | Use release builds of third-party libraries                                      |
-| `OWL_ENABLE_VULKAN_LAYERS`                | OFF     | Copy Vulkan layers to binary directory                                           |
-| `OWL_ENABLE_CLANG_TIDY`                   | OFF     | Enable clang-tidy static analysis                                                |
-| `OWL_ENABLE_ADDRESS_SANITIZER`            | OFF     | AddressSanitizer                                                                 |
-| `OWL_ENABLE_THREAD_SANITIZER`             | OFF     | ThreadSanitizer                                                                  |
-| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF     | UndefinedBehaviorSanitizer                                                       |
-| `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only)                                                     |
-| `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation                                          |
-| `OWL_CONAN_PROFILE`                       | (auto)  | Conan profile, default `conan/profiles/<os>-<compiler>`                          |
-| `OWL_CONAN_HOME`                          | (empty) | `CONAN_HOME` for the install (empty: Conan's default)                            |
-| `OWL_CONAN_BUILD`                         | missing | Value of `conan install --build`                                                 |
-| `OWL_FUZZING`                             | OFF     | libFuzzer targets in `fuzz/` (Clang-only)                                        |
-| `OWL_ENABLE_MEMORY_TRACKER`               | OFF     | Allocation tracker, opt-in in every build type (Debug included)                  |
-| `OWL_PROFILER`                            | none    | `OWL_PROFILE_*` backend: `none`, `tracy` or `chrome` ([Profiling](profiling.md)) |
-| `OWL_LOG_LEVEL`                           | trace   | Lowest log level compiled in (`trace` to `off`)                                  |
+| Option                                     | Default | Description                                                                      |
+|--------------------------------------------|---------|----------------------------------------------------------------------------------|
+| `OWL_BUILD_SHARED`                         | ON      | Build engine as shared library                                                   |
+| `OWL_BUILD_NEST`                           | ON      | Build Owl Nest editor                                                            |
+| `OWL_TESTING`                              | ON      | Enable unit tests                                                                |
+| `OWL_ENABLE_COVERAGE`                      | OFF     | Code coverage (auto-enabled in debug presets)                                    |
+| `OWL_ENABLE_STACKTRACE`                    | OFF     | Memory tracker stacktrace (performance impact)                                   |
+| `OWL_ENABLE_PROFILING`                     | OFF     | Profiling output                                                                 |
+| `OWL_USE_RELEASE_THIRD_PARTY`              | ON      | Use release builds of third-party libraries                                      |
+| `OWL_ENABLE_VULKAN_LAYERS`                 | OFF     | Copy Vulkan layers to binary directory                                           |
+| `OWL_ENABLE_CLANG_TIDY`                    | OFF     | Enable clang-tidy static analysis                                                |
+| `OWL_ENABLE_ADDRESS_SANITIZER`             | OFF     | AddressSanitizer                                                                 |
+| `OWL_ENABLE_THREAD_SANITIZER`              | OFF     | ThreadSanitizer                                                                  |
+| `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER`  | OFF     | UndefinedBehaviorSanitizer                                                       |
+| `OWL_ENABLE_MEMORY_SANITIZER`              | OFF     | MemorySanitizer (Clang-only)                                                     |
+| `OWL_ENABLE_DOCUMENTATION`                 | OFF     | Require Doxygen (otherwise `documentation` exists only when Doxygen is found)    |
+| `OWL_HELP_FETCH_BADGES`                    | OFF     | Download the help badges missing from the cache (ON in the packaged presets)     |
+| `OWL_ENABLE_RENDERER_VERBOSE_CAPABILITIES` | OFF     | Log every capability of the graphics device at start-up                          |
+| `OWL_ENABLE_SHADER_REFLECT_RESOURCES`      | OFF     | Log the resources reflected from every compiled shader                           |
+| `OWL_USE_CCACHE`                           | ON      | ccache (or sccache) as compiler launcher when available                          |
+| `OWL_BENCHMARK`                            | OFF     | `owl_bench` micro-benchmark harness (`bench/`)                                   |
+| `OWL_INCLUDE_CHECK`                        | OFF     | `owl_include_check`: every header and source compiled alone (Clang only)         |
+| `OWL_TEST_SHUFFLE`                         | OFF     | Run every test binary with `--gtest_shuffle`                                     |
+| `OWL_RENDER_TESTS`                         | ON      | Image tests (`test/render_tests`, label `render`)                                |
+| `OWL_TEST_TIMEOUT`                         | 600     | Per test binary CTest timeout, in seconds                                        |
+| `OWL_CONAN_PROFILE`                        | (auto)  | Conan profile, default `conan/profiles/<os>-<compiler>`                          |
+| `OWL_CONAN_HOME`                           | (empty) | `CONAN_HOME` for the install (empty: Conan's default)                            |
+| `OWL_CONAN_BUILD`                          | missing | Value of `conan install --build`                                                 |
+| `OWL_FUZZING`                              | OFF     | libFuzzer targets in `fuzz/` (Clang-only)                                        |
+| `OWL_ENABLE_MEMORY_TRACKER`                | OFF     | Allocation tracker, opt-in in every build type (Debug included)                  |
+| `OWL_PROFILER`                             | none    | `OWL_PROFILE_*` backend: `none`, `tracy` or `chrome` ([Profiling](profiling.md)) |
+| `OWL_LOG_LEVEL`                            | trace   | Lowest log level compiled in (`trace` to `off`)                                  |

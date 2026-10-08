@@ -1,12 +1,24 @@
 @PACKAGE_INIT@
 
 include(CMakeFindDependencyMacro)
+# EnTT is the only public dependency of Owl::OwlEngine.
 find_dependency(EnTT CONFIG)
-find_dependency(imgui CONFIG)
-find_dependency(yaml-cpp CONFIG)
 
 if (NOT TARGET Owl::OwlEngine)
     include("${CMAKE_CURRENT_LIST_DIR}/OwlEngineTargets.cmake")
+endif ()
+
+# Optional component Gui (find_package(OwlEngine COMPONENTS Gui)): Owl::Gui, the engine plus imgui, for the
+# headers that include imgui (<owlgui.h>, gui/utils.h, gui/widgets/AssetField.h, gui/widgets/CurveEditor.h).
+set(OwlEngine_Gui_FOUND FALSE)
+if ("Gui" IN_LIST OwlEngine_FIND_COMPONENTS)
+    find_package(imgui CONFIG QUIET)
+    if (imgui_FOUND)
+        if (NOT TARGET Owl::Gui)
+            include("${CMAKE_CURRENT_LIST_DIR}/OwlEngineGuiTargets.cmake")
+        endif ()
+        set(OwlEngine_Gui_FOUND TRUE)
+    endif ()
 endif ()
 
 check_required_components(OwlEngine)

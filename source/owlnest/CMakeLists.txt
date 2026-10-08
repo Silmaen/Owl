@@ -19,7 +19,7 @@ set_target_properties(${RUNNER_NAME} PROPERTIES FOLDER "App")
 target_import_so_files(${RUNNER_NAME})
 
 # yaml
-owl_target_link_libraries(${RUNNER_NAME} PRIVATE yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${RUNNER_NAME} PRIVATE yaml-cpp REQUIRED)
 # ----==== app Runner ====----
 
 #
@@ -37,24 +37,23 @@ file(GLOB_RECURSE HDRS CONFIGURE_DEPENDS
 add_library(${OWL_NEST_CORE} STATIC ${SRCS} ${HDRS})
 set_target_properties(${OWL_NEST_CORE} PROPERTIES FOLDER "App")
 target_include_directories(${OWL_NEST_CORE} PUBLIC sources)
-target_link_libraries(${OWL_NEST_CORE} PUBLIC ${ENGINE_NAME})
+target_link_libraries(${OWL_NEST_CORE} PUBLIC Owl::Gui)
 target_compile_definitions(${OWL_NEST_CORE} PUBLIC OWL_ASSETS_LOCATION="source/owlnest/assets")
+# The help bundle of this build tree, used when no asset directory holds `help/` (a package installs it in assets/).
+target_compile_definitions(${OWL_NEST_CORE} PUBLIC OWL_HELP_BUILD_DIR="${${PROJECT_PREFIX}_HELP_DIR}")
 
 # ----==== third party ====----
 
 # magic_enum
-owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC magic_enum REQUIRED ${THIRD_PARTY_RELEASE})
-
-# ImGui
-owl_target_link_libraries(${ENGINE_NAME} PRIVATE imgui REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC magic_enum REQUIRED)
 
 # imgui_color_text_edit (syntax-highlighting text editor widget)
-owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC imgui_color_text_edit REQUIRED ${THIRD_PARTY_RELEASE}
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC imgui_color_text_edit REQUIRED
         MODULE_TARGET "imgui_color_text_edit::imgui_color_text_edit")
 
 # md4c (CommonMark + GFM tables/strikethrough/autolinks parser, used by the
 # editor's MarkdownPreview / HelpPanel renderer).
-owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC md4c REQUIRED ${THIRD_PARTY_RELEASE}
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC md4c REQUIRED
         MODULE_TARGET "md4c::md4c")
 
 # lunasvg (live SVG rendering for the code editor preview)
@@ -64,7 +63,7 @@ owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC md4c REQUIRED ${THIRD_PARTY_RE
 # CMake never has to resolve that property; here we link it into a real
 # target which forces full resolution.
 find_package(Threads REQUIRED)
-owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC lunasvg REQUIRED ${THIRD_PARTY_RELEASE})
+owl_target_link_libraries(${OWL_NEST_CORE} PUBLIC lunasvg REQUIRED)
 
 # yaml
 find_package(yaml-cpp REQUIRED)

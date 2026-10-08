@@ -161,7 +161,8 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase B — tests without a window: scripted headless runner (`OwlRunner --scenario`)
 - ![Done][done] Phase B — benchmarks in CI: compiled on every PR, nightly run against a baseline (+15 % fails)
 - ![Done][done] Phase B — module dependency check, CI tooling tests
-- ![Planned][planned] Phase D — public dependencies reduced to EnTT (+ `Owl::Gui`)
+- ![Done][done] Phase D — public dependencies reduced to EnTT (+ `Owl::Gui`) ([details](design/conan-migration.md))
+- ![Done][done] Phase D — configure without network or Doxygen, CMake clean-up (PR-26)
 - ![Planned][planned] Phase D — hot reload of assets, Slang shaders and Lua scripts
 - ![Planned][planned] Phase D — autosave, crash recovery, session restore, error messages, project templates
 - ![Planned][planned] Phase D — documentation faithful to the code and checked in CI
