@@ -103,8 +103,6 @@ set_target_properties(clean_bin PROPERTIES FOLDER "Utils")
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Include CPack package
-if (${PROJECT_PREFIX}_PACKAGING)
-    include(CPackConfig.cmake)
-    include(CPack)
-endif ()
+include(CPackConfig.cmake)
+include(CPack)
 # ----------------------------------------------------------------------------------------------------------------------

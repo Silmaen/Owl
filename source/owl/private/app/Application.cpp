@@ -110,33 +110,18 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 			OWL_CORE_ERROR("Failed to open asset pack: {}.", packPath.string())
 		}
 	}
-	// Looking for asset Directories
+	// Lowest priority first: a development tree finds the engine and app assets above the working directory.
 	{
-		const bool hasPack = hasOpenPack();
-#if defined(OWL_DEVELOPMENT) || defined(OWL_PACKAGE_ENGINE)
-		// first (lowest priority) - Engine assets.
-		if (const auto engineAsset = searchAssets("engine_assets"); engineAsset.has_value()) {
-			m_assetDirectories.push_front({"Engine assets", engineAsset.value()});
-		} else if (!hasPack) {
-			OWL_CORE_ERROR("Unable to find engine assets.")
-		}
-#endif
-		// second working dir asset directory
-		if (exists(m_workingDirectory / "assets")) {
+		if (const auto engineAssets = searchAssets("engine_assets"); engineAssets.has_value())
+			m_assetDirectories.push_front({"Engine assets", engineAssets.value()});
+		if (exists(m_workingDirectory / "assets"))
 			m_assetDirectories.push_front({"working dir assets", m_workingDirectory / "assets"});
-		} else if (!hasPack) {
-			OWL_CORE_WARN("Unable to find working dir assets.")
-		}
-#ifdef OWL_DEVELOPMENT
-		// third app asset if any.
 		if (!m_initParams.assetsPattern.empty()) {
-			if (const auto engineAsset = searchAssets(m_initParams.assetsPattern); engineAsset.has_value()) {
-				m_assetDirectories.push_front({"App assets", engineAsset.value()});
-			} else if (!hasPack) {
-				OWL_CORE_ERROR("Unable to find app assets.")
-			}
+			if (const auto appAssets = searchAssets(m_initParams.assetsPattern); appAssets.has_value())
+				m_assetDirectories.push_front({"App assets", appAssets.value()});
 		}
-#endif
+		if (m_assetDirectories.empty() && !hasOpenPack())
+			OWL_CORE_ERROR("Application: No asset directory found from '{}'.", m_workingDirectory.string())
 	}
 
 	// Create the renderer

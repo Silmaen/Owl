@@ -1,9 +1,10 @@
 """
-Action to publish built packages to a remote server.
+Action to publish the packaged archives (Engine SDK, Owl Nest) to a remote server.
 """
 
 import re
 from datetime import datetime
+from pathlib import Path
 
 from ci import log
 from ci.actions.base.action import BaseAction, PresetConfig
@@ -18,15 +19,18 @@ from ci.utils.publish import (
 )
 from ci.utils.secrets import get_secret, reject_secret_args
 
+PACKAGE_TYPES: dict[str, str] = {"OwlEngine": "e", "OwlNest": "a"}
+"""The archive base name of each CPack component and its revision type on the publication site."""
+
 
 class PublishPackage(BaseAction):
     """
-    Action to publish built packages to a remote server.
+    Action to publish the packaged archives (Engine SDK, Owl Nest) to a remote server.
     """
 
     def run(self, preset: PresetConfig, extra_args=None) -> int:
         """
-        Publish a built package for the given preset.
+        Publish the archive of every component CPack wrote in the preset tree.
         :param preset: The preset configuration.
         :param extra_args: Required: --url, --login (the password comes from
             OWL_DEPLOY_PASSWORD, never from the command line). Optional: --hash, --dry-run.
@@ -60,68 +64,57 @@ class PublishPackage(BaseAction):
             log.error(f"Missing publication password: set {DEPLOY_PASSWORD_ENV}.")
             return 1
 
-        # Validate that preset has OWL_PACKAGE_NAME
         if not preset.run_package:
-            log.error(f"Preset '{preset.cmake_preset}' does not have OWL_PACKAGE_NAME set.")
+            log.error(f"Preset '{preset.cmake_preset}' is not a packaged tree (vendor 'package' flag).")
             return 1
 
-        # Determine package type from preset name
-        preset_name = preset.cmake_preset
-        if "app" in preset_name:
-            pkg_type = "a"
-        elif "engine" in preset_name:
-            pkg_type = "e"
-        else:
-            log.error(f"Cannot determine package type from preset name: {preset_name}")
-            return 1
-
-        # Get version and hash
         version = get_project_version()
         if version == "Bad Version":
             log.error("Could not determine project version from CMakeLists.txt.")
             return 1
-
         git_hash = git_hash[:7] if git_hash else get_git_hash()
         if git_hash in ["0000000", "", None]:
             log.error("Could not determine git hash.")
             return 1
-
-        # Get platform info
         plat = get_platform_info()
 
-        # Get package name from cache variables
-        base_name = (preset.raw_config or {}).get("cacheVariables", {}).get("OWL_PACKAGE_NAME", "")
-        friendly_name = " ".join(re.findall("[A-Z][^A-Z]*", base_name))
-
-        # Build package filename
         ext = preset.archive_format or "tar.gz"
-        os_str = plat["os"].replace(" ", "-")
-        filename = f"{base_name}-{version}-{git_hash}-{os_str}-{plat['arch']}.{ext}"
-
-        # Check that the package file exists
-        packages_folder = preset.get_build_dir()
-        package_file = packages_folder / filename
-
-        revision = Revision(
-            rev_type=pkg_type,
-            branch=version,
-            file=package_file,
-            hash=git_hash,
-            name=friendly_name,
-            flavor_name=f"{plat['os']} {plat['arch']}",
-            date=datetime.now().isoformat(),
-        )
-
-        log.info(f"Package info: {revision}, user={login}, url={url}")
-
-        if dry_run:
-            if not package_file.exists():
-                log.warning(f"Package file not found (dry-run): {package_file}")
-            log.info("Dry-run mode: skipping actual publication.")
-            return 0
-
-        if not package_file.exists():
-            log.error(f"Package file not found: {package_file}")
+        archives = find_archives(preset.get_build_dir(), version, git_hash, ext)
+        if not archives:
+            log.error(f"No OwlEngine / OwlNest {version}-{git_hash} archive in {preset.get_build_dir()}.")
             return 1
+        result = 0
+        for base_name, package_file in archives:
+            revision = Revision(
+                rev_type=PACKAGE_TYPES[base_name],
+                branch=version,
+                file=package_file,
+                hash=git_hash,
+                name=" ".join(re.findall("[A-Z][^A-Z]*", base_name)),
+                flavor_name=f"{plat['os']} {plat['arch']}",
+                date=datetime.now().isoformat(),
+            )
+            log.info(f"Package info: {revision}, user={login}, url={url}")
+            if dry_run:
+                log.info("Dry-run mode: skipping actual publication.")
+                continue
+            result = push_revision(url, login, password, revision) or result
+        return result
 
-        return push_revision(url, login, password, revision)
+
+def find_archives(folder: Path, version: str, git_hash: str, ext: str) -> list[tuple[str, Path]]:
+    """
+    Find the archives CPack wrote for one version and commit, one per component.
+
+    :param folder: The packaged build tree (or the folder the archives were downloaded into).
+    :param version: The project version.
+    :param git_hash: The abbreviated commit hash.
+    :param ext: The archive extension (`tar.gz` or `zip`).
+    :return: The package base name and the archive of each component found, Engine first.
+    """
+    found: list[tuple[str, Path]] = []
+    for base_name in PACKAGE_TYPES:
+        matches = sorted(folder.glob(f"{base_name}-{version}-{git_hash}-*.{ext}"))
+        if matches:
+            found.append((base_name, matches[-1]))
+    return found

@@ -45,9 +45,9 @@ docker/run.sh poetry run conan create . --profile:all conan/profiles/linux-clang
 
 ## OwlEngine for other projects
 
-- Until v1.0.0, consumers (e.g. OwlDrone) use the packaged archive (`package-engine-*` presets, CPack): it installs
-  `lib/`, `include/`, `assets/`, `lib/cmake/OwlEngine/`; `find_package(OwlEngine CONFIG REQUIRED)` +
-  `Owl::OwlEngine`. Moving a public header breaks them.
+- Until v1.0.0, consumers (e.g. OwlDrone) use the `OwlEngine` archive (`cpack` in a release tree, `Engine`
+  component): it installs `lib/`, `include/`, `assets/`, `lib/cmake/OwlEngine/`; `find_package(OwlEngine CONFIG
+  REQUIRED)` + `Owl::OwlEngine`. Moving a public header breaks them.
 - `conan create` already packages OwlEngine (`owlengine/<version>`, shared only) and builds `test_package/` against
   the installed CMake config: a public header that includes an undeclared dependency, or a build flag leaking into
   the export, breaks it. Publishing it is a v1.0.0 item.

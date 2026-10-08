@@ -60,7 +60,7 @@ Windows agents):
 | Sanitizers Address, Thread, Undefined    | `linux-sanitizer-*`                                              | Green                                    |
 | Build Linux arm64 / Clang, GCC (nightly) | `linux-*` on the arm64 agent                                     | Green once the dependency cache was warm |
 | Build Windows x64 / Clang, GCC           | `windows-*`                                                      | Green                                    |
-| Packages (nightly)                       | `package-engine-*`, `package-app-nest-*`                         | Ship the Conan shared libraries          |
+| Packages (nightly)                       | Release trees (`*-clang-release`), `package-linux` (arm64)       | Ship the Conan shared libraries          |
 
 ### Profiles and build types
 
@@ -135,8 +135,8 @@ docker/run.sh poetry run conan create . --profile:all conan/profiles/linux-clang
 ```
 
 - `owlengine/<version>`, version read from `project(VERSION)` in `CMakeLists.txt` (single source, as in
-  `owl_engine.py` and `version_test.cpp` now). Engine only: no editor, no tests, `OWL_PACKAGING` +
-  `OWL_PACKAGE_ENGINE`, Conan drives CMake (`OWL_CONAN_INSTALL=OFF`, `conan_toolchain.cmake`).
+  `owl_engine.py` and `version_test.cpp` now). Engine only: no editor, no tests (the `Engine` install
+  component), Conan drives CMake (`OWL_CONAN_INSTALL=OFF`, `conan_toolchain.cmake`).
 - Consumers use the CMake config the engine installs (`lib/cmake/OwlEngine/`, `Owl::OwlEngine`, the one OwlDrone and
   the CPack archives use): the recipe sets `cmake_find_mode` to `none`, so `test_package` checks that file and not a
   Conan-generated one.

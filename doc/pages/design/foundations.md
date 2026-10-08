@@ -113,8 +113,8 @@ Every fix lands with its regression test.
 - ![Done][done] Diff-scoped clang-tidy: a `ClangTidy` action driven by `compile_commands.json`, analysing on a
   pull request only the `.cpp` files the diff can affect (include closure from `ninja -t deps`), everything elsewhere
   or when in doubt, one job per available core by default (H-03)
-- ![Planned][planned] ClangTidy multi-process with the static analyzer, honest coverage report
-  (PR-19: H-03, F-07, F-04, F-08, F-09, H-07)
+- ![In Progress][progress] ClangTidy multi-process with the static analyzer on the tests too, coverage gate, dead
+  `NOLINT` check (PR-19: H-03, F-07, F-04, F-08, F-09, H-07); open: lowering the cognitive-complexity threshold (75)
 - ![Done][done] Module dependency direction checked in CodeStyle; the 10-module cycle broken
   (PR-20: A-01, A-13)
 - ![Done][done] Tests for the CI tooling itself: pytest, ruff and mypy in CodeStyle (PR-34: H-04, H-08)
@@ -123,18 +123,20 @@ Every fix lands with its regression test.
 
 ### Packages without a rebuild
 
-Today each platform builds its two packages (Engine SDK, Owl Nest) in their own trees, apart from the tested builds.
-Reusing the tested tree is not possible as is:
+![Done][done] Each platform used to build its two packages (Engine SDK, Owl Nest) in their own trees, apart from the
+tested builds, with `OWL_DEVELOPMENT` / `OWL_PACKAGE_ENGINE` telling a package from a development build. Now:
 
-- the tested builds are development builds (`OWL_DEVELOPMENT`: assets searched in the repository), the packages are
-  not; shipping the tested tree would ship a development binary;
-- the Engine SDK is multi-config (Debug + Release, documentation, `lib/` / `include/` / `assets/` layout,
-  `OWL_PACKAGE_ENGINE`), Owl Nest is a Release application with everything in `bin/`.
+- the asset lookup is a run-time decision: `assets/` next to the working directory, then `engine_assets/` and the
+  application's assets found above it (a development tree); no build switch is left;
+- every tree runs `cpack` and writes one archive per CPack component, `OwlEngine-…` (`lib/`, `include/`, `assets/`,
+  CMake config) and `OwlNest-…` (`bin/<platform>_<arch>/`: Nest, the runner, shared libraries, assets), copying
+  only what ships from a tree that also holds tests and their outputs;
+- on `main`, the Clang builds package the release tree they have just tested (`Package Release`); the nightly x64
+  package configurations publish those archives and the documentation without building; arm64, which has no tested
+  release tree, builds `package-linux` (the release build without tests).
 
-The work: make the asset lookup a runtime decision instead of `OWL_DEVELOPMENT` / `OWL_PACKAGE_ENGINE`, produce both
-archives from one packaging tree with CPack components, and make that preset the release preset the Clang builds
-already build and test, so the archive ships exactly what was tested. Packages run on `main` only, so this saves
-agent time, not pull-request latency.
+The SDK is now Release only (it was Debug + Release): a Debug consumer links the Release library through CMake's
+imported-configuration fallback.
 
 ## Phase D — Usability & dependency reduction
 

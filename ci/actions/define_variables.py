@@ -51,6 +51,9 @@ class DefineTeamCityVariables(BaseAction):
 
         if preset.release_preset not in [None, ""]:
             set_teamcity_parameter("release_preset", preset.release_preset)
+            release = PresetConfig(preset.release_preset)
+            # The tested release tree is the one packaged: no package job rebuilds it.
+            set_teamcity_parameter("package_release", str(release.run_package).lower())
         if preset.cmake_preset not in [None, ""]:
             set_teamcity_parameter("cmake_preset", preset.cmake_preset)
         if preset.run_tests is not None:

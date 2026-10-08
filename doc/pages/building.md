@@ -42,7 +42,8 @@ runs reuse the Conan cache. The shared libraries from the cache are copied next 
 (empty) resolves without the lockfile, and `OWL_CONAN_CACHE_URL` adds a binary cache server (the CI uses one).
 
 The engine is also a Conan package, checked by `test_package/` (a program built on `find_package(OwlEngine)`);
-publishing it is a v1.0.0 item, until then other projects use the packaged archive (`package-engine-*` presets):
+publishing it is a v1.0.0 item, until then other projects use the packaged `OwlEngine` archive (see
+[Packaging](#packaging)):
 
 ```bash
 poetry run conan create . --profile:all conan/profiles/linux-clang --lockfile conan.lock --lockfile-partial --build=missing
@@ -92,14 +93,22 @@ cmake --build output/build/<preset>
 | `linux-sanitizer-undefined-behavior` | UndefinedBehaviorSanitizer   |
 | `linux-include-check`                | Strict-libc++ include check  |
 
-#### Packaging Presets
+#### Packaging
 
-| Preset                     | Description                        |
-|----------------------------|------------------------------------|
-| `package-engine-linux`     | Package engine library for Linux   |
-| `package-engine-windows`   | Package engine library for Windows |
-| `package-app-nest-linux`   | Package Owl Nest for Linux         |
-| `package-app-nest-windows` | Package Owl Nest for Windows       |
+`cpack` works in any build tree and writes one archive per component: `OwlEngine-<version>-<hash>-<platform>` (the
+SDK: `lib/`, `include/`, `assets/`, `lib/cmake/OwlEngine/`) and, when the editor is built, `OwlNest-…` (Owl Nest, the
+runner, their shared libraries and assets in `bin/<platform>_<arch>/`). The CI packages the release tree it has just
+tested (`linux-clang-release`, `windows-clang-release`), so the archive holds the tested binaries; `package-linux`
+(the same build without the tests) packages arm64, which has no tested release tree.
+
+```bash
+docker/run.sh cmake --build output/build/linux-clang-release
+cd output/build/linux-clang-release && ../../../docker/run.sh cpack
+```
+
+The binaries decide at run time where their assets are: `assets/` next to the working directory first, then, in a
+development tree, `engine_assets/` and the application's assets found above it. No build switch tells a package from
+a development build.
 
 ## Running Tests
 
@@ -229,7 +238,6 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_ENABLE_UNDEFINED_BEHAVIOR_SANITIZER` | OFF     | UndefinedBehaviorSanitizer                                                       |
 | `OWL_ENABLE_MEMORY_SANITIZER`             | OFF     | MemorySanitizer (Clang-only)                                                     |
 | `OWL_ENABLE_DOCUMENTATION`                | OFF     | Enable Doxygen documentation generation                                          |
-| `OWL_PACKAGING`                           | OFF     | Enable packaging mode                                                            |
 | `OWL_CONAN_PROFILE`                       | (auto)  | Conan profile, default `conan/profiles/<os>-<compiler>`                          |
 | `OWL_CONAN_HOME`                          | (empty) | `CONAN_HOME` for the install (empty: Conan's default)                            |
 | `OWL_CONAN_BUILD`                         | missing | Value of `conan install --build`                                                 |

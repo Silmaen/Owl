@@ -153,7 +153,7 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase B — diff-scoped clang-tidy CI action, parallel by default (H-03)
 - ![Done][done] Phase B — blocking sanitizers, shuffled test order, LSan job removed (PR-11)
 - ![Done][done] Phase B — CI in two parallel levels, fast subset for `Experiment/*` PRs, `PR Ready` merge gate
-- ![Planned][planned] Phase B — package once per platform from the tested release tree, no rebuild ([details](design/foundations.md))
+- ![Done][done] Phase B — package once per platform from the tested release tree, no rebuild ([details](design/foundations.md))
 - ![Done][done] Phase B — Tracy behind `OWL_PROFILE_*`, memory tracker opt-in, cheaper logs (PR-16, [Profiling](profiling.md))
 - ![Done][done] Phase B — runner frame bench: `OwlRunner --frame-bench`, GPU timestamps, Vulkan/OpenGL baseline (PR-17)
 - ![Done][done] Phase B — editor tests: `owlnest_tests` (undo, every command family, snapshots)

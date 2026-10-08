@@ -144,8 +144,6 @@ class OwlEngineConan(ConanFile):
         tc.cache_variables["OWL_BUILD_NEST"] = False
         tc.cache_variables["OWL_TESTING"] = False
         tc.cache_variables["OWL_PROFILER"] = "tracy" if self.options.tracy else "none"
-        tc.cache_variables["OWL_PACKAGING"] = True
-        tc.cache_variables["OWL_PACKAGE_ENGINE"] = True
         tc.cache_variables["OWL_USE_CCACHE"] = False
         tc.generate()
 

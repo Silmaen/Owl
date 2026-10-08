@@ -36,7 +36,13 @@
       "inherits": [
         "toolset-mingw",
         "clang-release"
-      ]
+      ],
+      "vendor": {
+        "silmaen": {
+          "package": true,
+          "archive_format": "zip"
+        }
+      }
     },
     {
       "name": "windows-clang-debug",

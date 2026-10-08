@@ -15,7 +15,7 @@ import pytest
 import requests
 
 from ci.actions.publish_doc import PublishDoc
-from ci.actions.publish_package import PublishPackage
+from ci.actions.publish_package import PublishPackage, find_archives
 from ci.tests.conftest import FAKE_PASSWORD
 from ci.utils import publish, secrets
 from ci.utils.publish import Revision, normalize_server_url, push_revision
@@ -124,7 +124,7 @@ def test_publication_never_downloads_code() -> None:
 
 @pytest.mark.parametrize("action", [PublishPackage, PublishDoc])
 def test_publish_actions_refuse_password_argument(action: type, masked_caplog: pytest.LogCaptureFixture) -> None:
-    preset = SimpleNamespace(cmake_preset="package-engine-linux")
+    preset = SimpleNamespace(cmake_preset="package-linux")
     code = action().run(preset, ["--url=https://h", "--login=bob", f"--password={FAKE_PASSWORD}"])
     assert code == 1
     assert "OWL_DEPLOY_PASSWORD" in masked_caplog.text
@@ -136,6 +136,28 @@ def test_publish_actions_require_password_env(
     action: type, monkeypatch: pytest.MonkeyPatch, masked_caplog: pytest.LogCaptureFixture
 ) -> None:
     monkeypatch.delenv(publish.DEPLOY_PASSWORD_ENV, raising=False)
-    preset = SimpleNamespace(cmake_preset="package-engine-linux")
+    preset = SimpleNamespace(cmake_preset="package-linux")
     assert action().run(preset, ["--url=https://h", "--login=bob"]) == 1
     assert publish.DEPLOY_PASSWORD_ENV in masked_caplog.text
+
+
+def test_find_archives_keeps_one_archive_per_component(tmp_path: Path) -> None:
+    for name in [
+        "OwlEngine-0.3.0-abcdef1-linux-glibc_2.43-x64.tar.gz",
+        "OwlNest-0.3.0-abcdef1-linux-glibc_2.43-x64.tar.gz",
+        "OwlNest-0.3.0-1234567-linux-glibc_2.43-x64.tar.gz",
+        "OwlEngine-0.3.0-abcdef1-linux-glibc_2.43-x64.zip",
+    ]:
+        (tmp_path / name).write_bytes(b"x")
+    found = find_archives(tmp_path, "0.3.0", "abcdef1", "tar.gz")
+    assert [(base, path.name) for base, path in found] == [
+        ("OwlEngine", "OwlEngine-0.3.0-abcdef1-linux-glibc_2.43-x64.tar.gz"),
+        ("OwlNest", "OwlNest-0.3.0-abcdef1-linux-glibc_2.43-x64.tar.gz"),
+    ]
+    assert find_archives(tmp_path, "0.3.0", "fedcba9", "tar.gz") == []
+
+
+def test_publish_package_needs_a_packaged_tree(masked_caplog: pytest.LogCaptureFixture) -> None:
+    preset: Any = SimpleNamespace(cmake_preset="linux-clang-debug", run_package=False)
+    assert PublishPackage().run(preset, ["--url=https://h", "--login=bob", "--dry-run=true"]) == 1
+    assert "not a packaged tree" in masked_caplog.text

@@ -12,9 +12,6 @@ file(GLOB_RECURSE HDRS_PRIVATE CONFIGURE_DEPENDS
 add_library(${ENGINE_NAME}Private INTERFACE)
 target_include_directories(${ENGINE_NAME}Private INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/private>)
 target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PROJECT_PREFIX}_ENGINE_BUILD)
-if (${PROJECT_PREFIX}_PACKAGE_ENGINE)
-    target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PROJECT_PREFIX}_PACKAGE_ENGINE)
-endif ()
 target_sources(${ENGINE_NAME}Private INTERFACE ${HDRS_PRIVATE})
 
 # exclude precompiled headers from source
@@ -188,31 +185,42 @@ endif ()
 # ------------------------------------------------------------------------------
 #    Installations
 # ------------------------------------------------------------------------------
-if (${PROJECT_PREFIX}_PACKAGE_ENGINE)
+# Two CPack components from one tree: the Engine SDK (lib/, include/, assets/, CMake config) and, with the editor,
+# the Nest application (everything in bin/<platform>_<arch>/, third-party shared libraries included).
+install(TARGETS ${ENGINE_NAME}
+        EXPORT OwlEngineTargets
+        COMPONENT Engine
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        RUNTIME DESTINATION bin
+        FRAMEWORK DESTINATION lib
+        FILE_SET HEADERS DESTINATION include
+)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
+        DESTINATION assets
+        COMPONENT Engine
+)
+if (${PROJECT_PREFIX}_BUILD_NEST)
     install(TARGETS ${ENGINE_NAME}
-            EXPORT OwlEngineTargets
-            LIBRARY DESTINATION lib
-            ARCHIVE DESTINATION lib
-            RUNTIME DESTINATION bin
-            FRAMEWORK DESTINATION lib
-            FILE_SET HEADERS DESTINATION include
-            COMPONENT Engine
-    )
-    install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
-            DESTINATION assets
-            COMPONENT Engine
-    )
-else ()
-    install(TARGETS ${ENGINE_NAME}
+            COMPONENT Nest
             LIBRARY DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
             RUNTIME DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
             FRAMEWORK DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
     )
+    # The tested tree also holds the tests and what their runs wrote (logs, configs, caches): copy only what ships.
     install(DIRECTORY ${CMAKE_BINARY_DIR}/bin/
             DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
+            COMPONENT Nest
+            FILES_MATCHING
+            PATTERN "*.so*"
+            PATTERN "*.dll"
+            REGEX "/slang-standard-module[^/]*/"
+            PATTERN "owl_*" EXCLUDE
+            PATTERN "cache" EXCLUDE
+            PATTERN "render_tests" EXCLUDE
     )
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
             DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}/assets
-            COMPONENT Engine
+            COMPONENT Nest
     )
 endif ()

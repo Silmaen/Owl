@@ -106,6 +106,8 @@ class PresetConfig:
                     self.release_preset = vendor_conf["release_preset"]
                 if "publish_doc" in vendor_conf:
                     self.publish_doc = is_true(vendor_conf["publish_doc"])
+                if "package" in vendor_conf:
+                    self.run_package = is_true(vendor_conf["package"])
 
         if "generator" in self.raw_config:
             self.cmake_generator = self.raw_config["generator"]
@@ -123,8 +125,6 @@ class PresetConfig:
                 self.run_documentation = is_true(cache_variables["OWL_ENABLE_DOCUMENTATION"]) and (
                     "Release" in self.cmake_build_types or self.release_preset not in [None, ""]
                 )
-            if "OWL_PACKAGE_NAME" in cache_variables:
-                self.run_package = cache_variables["OWL_PACKAGE_NAME"] not in [None, ""]
             if "CMAKE_CXX_COMPILER" in cache_variables:
                 self.compiler = cache_variables["CMAKE_CXX_COMPILER"]
 

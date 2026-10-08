@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Packages without a rebuild: `cpack` writes the `OwlEngine` and `OwlNest` archives (CPack components) from the release tree the Clang builds test on `main`, the nightly x64 package jobs only publish them, and assets are located at run time (`OWL_DEVELOPMENT`, `OWL_PACKAGE_ENGINE`, `OWL_PACKAGING` and the `package-engine-*` / `package-app-nest-*` presets removed, `package-linux` for arm64).
 - Engine modules are layered (`core` up to `gui`) and the public headers follow it, checked by the CodeStyle `module-deps` sub-check: the 10-module include cycle is gone. `PhysicsSettings` and `PhysicsSnapshot` moved to `scene` (aliases kept in `physics`), `MeshLoader` to `data::geometry` (alias kept in `data`), and `GameExporterSettings::rendererStack` became `rendererStackYaml`; `input::Input::init()` without argument picks GLFW.
 - Tests: the per-binary ctest timeout drops from 1 h to 10 min (`OWL_TEST_TIMEOUT`, 1 h on the emulated arm64), so a hung binary no longer stalls a build for hours.
 - CI: the emulated arm64 nightly builds Clang only, on a `linux-emulated` preset without coverage, benchmarks or image tests, so it fits its time limit.

@@ -162,6 +162,42 @@ TEST(Core, ApplicationAssetDirectoryAddRemove) {
 	Log::invalidate();
 }
 
+TEST(Core, ApplicationFindsThePackagedAndTheDevelopmentAssets) {
+	Log::init(Log::Level::Off);
+	const auto previous = std::filesystem::current_path();
+	const auto root = std::filesystem::temp_directory_path() / "owl_app_asset_lookup";
+	std::filesystem::remove_all(root);
+	std::filesystem::create_directories(root / "bin" / "assets");
+	std::filesystem::create_directories(root / "engine_assets");
+	std::filesystem::create_directories(root / "game" / "assets");
+	std::filesystem::current_path(root / "bin");
+	{
+		const AppParams params{.name = "packaged",
+							   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+							   .hasGui = false,
+							   .isDummy = true};
+		auto app = owl::mkShared<Application>(params);
+		ASSERT_EQ(app->getAssetDirectories().size(), 2u);
+		EXPECT_EQ(app->getAssetDirectories().front().assetsPath, root / "bin" / "assets");
+		EXPECT_EQ(app->getAssetDirectories().back().assetsPath, root / "engine_assets");
+		Application::invalidate();
+	}
+	{
+		const AppParams params{.name = "development",
+							   .assetsPattern = "game/assets",
+							   .renderer = owl::renderer::gpu::RenderAPI::Type::Null,
+							   .hasGui = false,
+							   .isDummy = true};
+		auto app = owl::mkShared<Application>(params);
+		ASSERT_EQ(app->getAssetDirectories().size(), 3u);
+		EXPECT_EQ(app->getAssetDirectories().front().assetsPath, root / "game" / "assets");
+		Application::invalidate();
+	}
+	std::filesystem::current_path(previous);
+	std::filesystem::remove_all(root);
+	Log::invalidate();
+}
+
 TEST(Core, fileToString) {
 	Log::init(Log::Level::Off);
 	const std::string superStr = "yoho\nI'm fine!\n";

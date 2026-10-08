@@ -56,7 +56,14 @@
       "inherits": [
         "linux-base",
         "clang-release"
-      ]
+      ],
+      "vendor": {
+        "silmaen": {
+          "docker_image": "builder-ubuntu2604",
+          "package": true,
+          "publish_doc": true
+        }
+      }
     },
     {
       "name": "linux-clang-debug",

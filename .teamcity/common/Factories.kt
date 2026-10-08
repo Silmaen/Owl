@@ -107,11 +107,11 @@ fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<
 }
 
 /**
- * One package. Never triggered by a pull request, nor by each push to `main`: packages are
- * built once a night from `main` (when it changed), because each one publishes to the site;
- * a manual run packages on demand. It waits for the
- * configuration that built and tested the same platform: an archive built from code whose
- * tests fail has no business existing.
+ * The packages of one platform. Never triggered by a pull request, nor by each push to `main`:
+ * they are published once a night from `main` (when it changed), because each one publishes to
+ * the site; a manual run packages on demand. It waits for the configuration that built and tested
+ * the same platform: an archive built from code whose tests fail has no business existing.
+ * Built and published here: the platforms without a tested release tree (arm64, emulated).
  *
  * @param idValue The configuration id.
  * @param buildName The configuration name.
@@ -121,12 +121,48 @@ fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<
  * @param extraParams Platform-specific parameters (docker platform for arm64).
  */
 fun packageBuild(idValue: String, buildName: String, cmakePreset: String, platformName: String,
-                 tested: BuildType, nightly: Boolean = false, extraParams: ParametrizedWithType.() -> Unit = {}) =
-        presetBuild(idValue, buildName, cmakePreset, onPullRequest = false, nightly = nightly,
+                 tested: BuildType, extraParams: ParametrizedWithType.() -> Unit = {}) =
+        presetBuild(idValue, buildName, cmakePreset, onPullRequest = false, nightly = true,
                 gates = listOf(codeStyle, tested)) {
             params {
                 param("platform", platformName)
                 param("architecture", "amd64")
+                param("publish_package", "true")
                 extraParams()
             }
+        }
+
+/**
+ * The packages of a platform whose tested build packages its release tree on `main`
+ * (`Package_Release_Main`): this configuration rebuilds nothing, it publishes the archives (and
+ * the documentation) of that build, same commit. Nightly, like [packageBuild].
+ *
+ * @param idValue The configuration id.
+ * @param buildName The configuration name.
+ * @param releasePreset The release preset of the tested build: the archives land in its tree.
+ * @param platformName The agent platform, `Linux` or `Windows`.
+ * @param tested The configuration that built, tested and packaged that platform.
+ * @param archive The archive extension of the platform.
+ */
+fun publishBuild(idValue: String, buildName: String, releasePreset: String, platformName: String,
+                 tested: BuildType, archive: String) =
+        presetBuild(idValue, buildName, releasePreset, onPullRequest = false, nightly = true,
+                gates = listOf(codeStyle, tested)) {
+            params {
+                param("platform", platformName)
+                param("architecture", "amd64")
+                param("publish_package", "true")
+            }
+            dependencies {
+                artifacts(tested) {
+                    buildRule = sameChainOrLastFinished()
+                    artifactRules = """
+                        OwlEngine-*.$archive => output/build/$releasePreset
+                        OwlNest-*.$archive => output/build/$releasePreset
+                        ?:Documentation.zip!** => output/build/$releasePreset/Documentation/html
+                    """.trimIndent()
+                }
+            }
+            // The archives come from the tested build: cleaning, building or packaging again would lose them.
+            disableSettings("Clean_Output_Folder", "Build_Preset", "Test_Preset", "Deploy")
         }
