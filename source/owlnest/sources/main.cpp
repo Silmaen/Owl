@@ -144,6 +144,7 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 #endif
 			.icon = "icons/logo_owl_icon.png",
 			.argCount = iArgc,
+			.hotReload = true,
 	});
 }
 

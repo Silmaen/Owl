@@ -87,6 +87,14 @@ public:
 	 */
 	void setFilterMode(FilterMode iMode) override;
 
+protected:
+	/**
+	 * @brief
+	 *  Replace the GPU image by a new one of the given specification; the old one is released safely.
+	 * @param[in] iSpecs Specification of the new image.
+	 */
+	void reallocate(const Specification& iSpecs) override;
+
 private:
 	/// OpenGL binding.
 	uint32_t m_textureId = 0;

@@ -123,6 +123,19 @@ void Texture2D::setFilterMode(const FilterMode iMode) {
 		applySamplerFilter(m_textureId, iMode, m_mipLevels);
 }
 
+void Texture2D::reallocate(const Specification& iSpecs) {
+	OWL_PROFILE_FUNCTION()
+
+	BindingTable::forgetTexture(m_textureId);
+	glDeleteTextures(1, &m_textureId);
+	m_specification = iSpecs;
+	m_mipLevels = m_specification.getMipLevelCount();
+	glCreateTextures(GL_TEXTURE_2D, 1, &m_textureId);
+	glTextureStorage2D(m_textureId, static_cast<GLsizei>(m_mipLevels), glInternalDataFormat(m_specification.format),
+					   static_cast<GLsizei>(m_specification.size.x()), static_cast<GLsizei>(m_specification.size.y()));
+	applySamplerFilter(m_textureId, m_specification.filterMode, m_mipLevels);
+}
+
 void Texture2D::setData(void* iData, [[maybe_unused]] const uint32_t iSize) {
 	OWL_PROFILE_FUNCTION()
 

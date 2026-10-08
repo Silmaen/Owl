@@ -192,6 +192,10 @@ auto parseFrameBenchOptions(const int iArgc, char** iArgv, const std::filesystem
 			options.validation = true;
 			continue;
 		}
+		if (arg == "--hot-reload") {
+			options.hotReload = true;
+			continue;
+		}
 		if (!hasValue)
 			return unexpected<std::string>{std::format("missing value for {}", arg)};
 		++i;
@@ -374,6 +378,7 @@ auto FrameBench::toJson() const -> std::string {
 	json += std::format("  \"device\": \"{}\",\n", escapeJson(m_device));
 	json += std::format("  \"present_mode\": \"{}\",\n", escapeJson(m_presentMode));
 	json += std::format("  \"vsync_requested\": {},\n", m_options.vSync);
+	json += std::format("  \"hot_reload\": {},\n", m_options.hotReload);
 	json += std::format("  \"gpu_timestamps\": {},\n", m_gpuTimed);
 	json += std::format("  \"window\": [{}, {}],\n", m_windowSize.x(), m_windowSize.y());
 	json += std::format("  \"timestep_ms\": {:.4f},\n", m_options.timeStepMs);

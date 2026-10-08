@@ -163,7 +163,7 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase B — module dependency check, CI tooling tests
 - ![Done][done] Phase D — public dependencies reduced to EnTT (+ `Owl::Gui`) ([details](design/conan-migration.md))
 - ![Done][done] Phase D — configure without network or Doxygen, CMake clean-up (PR-26)
-- ![Planned][planned] Phase D — hot reload of assets, Slang shaders and Lua scripts
+- ![Done][done] Phase D — hot reload of assets, Slang shaders and Lua scripts ([Editor](editor.md#editor-hot-reload))
 - ![Planned][planned] Phase D — autosave, crash recovery, session restore, error messages, project templates
 - ![Planned][planned] Phase D — documentation faithful to the code and checked in CI
 - ![Done][done] Phase C — Vulkan foundation first, as soon as the image tests land ([RHI](design/owl-rhi.md))

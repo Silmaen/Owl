@@ -30,6 +30,7 @@
 #include "panel/VoxelPalette.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -219,6 +220,16 @@ public:
 	 * @param[in] iAbsolutePath The absolute path of the saved `.owltileset` asset.
 	 */
 	void onTilesetSaved(const std::filesystem::path& iAbsolutePath);
+
+	/**
+	 * @brief
+	 *  Hot reload: take a file changed on disk into account in the open documents.
+	 *
+	 * Tilesets, tilemaps and Lua scripts are reloaded in every open scene (edited and played copies); a scene file
+	 * reloads its document when it has no unsaved edit and is not playing (otherwise a warning keeps the edits).
+	 * @param[in] iFile The changed file.
+	 */
+	void onAssetFileChanged(const std::filesystem::path& iFile);
 
 	/**
 	 * @brief
@@ -703,6 +714,8 @@ private:
 #endif
 	/// Open documents (scenes for now; later also Lua scripts, node graphs...).
 	DocumentManager m_documents;
+	/// Id of the hot reload listener registered at attach.
+	uint32_t m_hotReloadListener = 0;
 
 	/**
 	 * @brief

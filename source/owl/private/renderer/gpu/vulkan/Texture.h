@@ -94,6 +94,14 @@ public:
 	 */
 	void setFilterMode(FilterMode iMode) override;
 
+protected:
+	/**
+	 * @brief
+	 *  Replace the GPU image by a new one of the given specification; the old one is released safely.
+	 * @param[in] iSpecs Specification of the new image.
+	 */
+	void reallocate(const Specification& iSpecs) override;
+
 private:
 	/// Vulkan-side texture identifier (registered with the descriptor pool / bindless table).
 	uint32_t m_textureId = 0;

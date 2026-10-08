@@ -38,6 +38,7 @@ auto Parameters::apply() -> bool {
 	params.sound = m_localParams.sound;
 	params.useDebugging = m_localParams.useDebugging;
 	params.frameLogFrequency = m_localParams.frameLogFrequency;
+	app::Application::get().setHotReloadEnabled(m_localParams.hotReload);
 
 	const auto configPath = app::Application::get().getWorkingDirectory() / "config.yml";
 	params.saveToFile(configPath);
@@ -107,6 +108,9 @@ void Parameters::onImGuiRender() {// NOLINT(readability-function-cognitive-compl
 		// --- Debug Section ---
 		if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
 			ImGui::Checkbox("Use Debugging", &m_localParams.useDebugging);
+			ImGui::Checkbox("Hot Reload", &m_localParams.hotReload);
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("Reload textures, shaders, scenes, tilesets and scripts when their file changes.");
 			auto freq = static_cast<int>(m_localParams.frameLogFrequency);
 			if (ImGui::InputInt("Frame Log Frequency", &freq)) {
 				if (freq >= 0)

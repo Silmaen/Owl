@@ -194,6 +194,17 @@ public:
 
 	/**
 	 * @brief
+	 *  Visit every loaded asset.
+	 * @tparam Visitor Callable taking `(const std::string& name, const shared<DataType>& asset)`.
+	 * @param[in] iVisitor Called once per asset, in no particular order.
+	 */
+	template<typename Visitor>
+	void forEach(const Visitor& iVisitor) const {
+		for (const auto& [name, asset]: m_assets) iVisitor(name, asset.get());
+	}
+
+	/**
+	 * @brief
 	 *  Get a lis of asset file found in the asset folders.
 	 * @return The list of asset founds.
 	 */

@@ -561,6 +561,20 @@ The hook keeps firing until the call returns, so a script cannot swallow the err
   the game from a runaway or buggy script; they are not a security boundary for
   untrusted code from the network.
 
+## Hot reload {#scripting-hot-reload}
+
+In Play (editor) and in the development runner, saving a `.lua` file replaces every running instance of that script
+(`Scene::onAssetFileChanged`):
+
+1. a fresh instance compiles the new file; if it fails, the error is logged and **the previous instance keeps
+   running**;
+2. it receives the current value of each property of the component (`speed` changed by the script itself is kept,
+   a property the old instance lost falls back to the scene's value);
+3. `on_create` runs, then the old instance is dropped **without** `on_destroy`.
+
+Other globals start from the new file: keep the state that must survive in properties. See
+[Editor](editor.md#editor-hot-reload).
+
 ## Asset Packing
 
 Lua scripts referenced by `LuaScript` components are automatically discovered by the

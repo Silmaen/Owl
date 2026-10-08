@@ -13,6 +13,7 @@
 #include <input/KeyCodes.h>
 #include <input/MouseCode.h>
 #include <physics/PhysicCommand.h>
+#include <platform/FileWatcher.h>
 #include <renderer/TextureDecoder.h>
 #include <renderer/gpu/Framebuffer.h>
 #include <scene/SaveManager.h>
@@ -179,6 +180,9 @@ RunnerLayer::RunnerLayer(ScenarioTest iScenario)
 void RunnerLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
+	m_hotReloadListener = app::Application::get().getHotReload().addListener(
+			[this](const std::filesystem::path& iFile) -> void { onAssetFileChanged(iFile); });
+
 	if (m_frameBench) {
 		attachFrameBench();
 		return;
@@ -297,8 +301,29 @@ auto RunnerLayer::loadScene(const std::string& iSceneName) -> bool {
 		return false;
 	}
 	m_activeScene = newScene;
+	m_scenePath = iSceneName;
 	installRenderStack();
 	return true;
+}
+
+void RunnerLayer::onAssetFileChanged(const std::filesystem::path& iFile) {
+	if (!m_activeScene || m_transition)
+		return;
+	if (iFile.extension() != ".owl") {
+		static_cast<void>(m_activeScene->onAssetFileChanged(iFile));
+		return;
+	}
+	if (m_scenePath.empty() || !platform::isSameFile(m_scenePath, iFile))
+		return;
+	const auto previous = m_activeScene;
+	if (!loadScene(m_scenePath.string())) {
+		OWL_CORE_ERROR("Hot reload: Scene '{}' failed to load, the running one is kept.", m_scenePath.string())
+		m_activeScene = previous;
+		return;
+	}
+	if (previous->status != scene::Scene::Status::Editing)
+		previous->onEndRuntime();
+	OWL_CORE_INFO("Hot reload: Scene '{}' reloaded.", m_scenePath.string())
 }
 
 void RunnerLayer::initSmokeTest() {
@@ -492,6 +517,7 @@ void RunnerLayer::installRenderStack() {
 void RunnerLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
 
+	app::Application::get().getHotReload().removeListener(m_hotReloadListener);
 	finishFrameBench(/*iInterrupted=*/true);
 	m_captureTarget.reset();
 	// unload the active scene.
@@ -739,6 +765,7 @@ void RunnerLayer::finishTransition() {
 	m_teleportTargetName = transition->targetName;
 
 	m_activeScene = newScene;
+	m_scenePath = std::filesystem::path(transition->sourceName);
 
 	installRenderStack();
 

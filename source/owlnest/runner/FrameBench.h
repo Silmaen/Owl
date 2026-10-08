@@ -49,6 +49,8 @@ struct FrameBenchOptions {
 	bool vSync{false};
 	/// Enable the Vulkan validation layers.
 	bool validation{false};
+	/// Watch the asset directories during the run, to check the hot reload costs nothing on the frame.
+	bool hotReload{false};
 	/// When the runner started (set by `createApplication`), origin of the start-up times; epoch when unknown.
 	core::Timestep::time_point processStart;
 };

@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OWL_REQUIRE_MODULE(<MODULE>)` (`testHelper.h`) skips a test whose module is not built.
 - Architecture page: the engine's extension points (renderer-stack layers, application layers, extra data) and those the open component registry and the phased systems will add.
 - `DependencyReport` CI action, run on every `main` build of Build Linux x64 / Clang: the Conan dependencies with a newer version on ConanCenter (`conan graph outdated`, `cci.*` false positives dropped), logged and counted, never failing the build.
+- Hot reload in Owl Nest and the development runner: textures, scenes, tilesets, tilemaps and Lua scripts reload when their file changes, a failed reload keeps the previous version with an error naming the file ([Editor](editor.md#editor-hot-reload)).
+- Slang shaders recompile and swap live on Vulkan and OpenGL; the pipelines of the draws using them are rebuilt with their own state and binding block, a compilation error keeps the running binaries.
+- `platform::FileWatcher` polls directory trees on a background thread, so watching costs one atomic read per frame; `app::HotReload` dispatches the changes (`AppParams::hotReload`, *Hot Reload* in *Parameters*, `OwlRunner --no-hot-reload`, `--frame-bench --hot-reload`), never with an asset pack open.
 - `stylemix` image test: a voxel world, perspective Renderer2D sprites, a `Space: Screen` HUD (canvas, text, progress bar) and the voxel crosshair in one frame, on Vulkan and OpenGL.
 - Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the nightly bench pinned to the agent that measured it.
 - CodeStyle `test-assertions` sub-check: every gtest test asserts something; the 26 that only ran code now check its effect (or say `EXPECT_NO_THROW`), e.g. a trigger timer is seen firing and stopping.

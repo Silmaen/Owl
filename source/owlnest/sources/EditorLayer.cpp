@@ -492,6 +492,8 @@ void EditorLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
 	app::Application::get().enableDocking();
+	m_hotReloadListener = app::Application::get().getHotReload().addListener(
+			[this](const std::filesystem::path& iFile) -> void { onAssetFileChanged(iFile); });
 
 	if (const auto f = app::Application::get().getWorkingDirectory() / "OwlNest_settings.yml"; exists(f))
 		m_settings.loadFromFile(f);
@@ -670,6 +672,8 @@ void EditorLayer::onAttach() {
 
 void EditorLayer::onDetach() {
 	OWL_PROFILE_FUNCTION()
+
+	app::Application::get().getHotReload().removeListener(m_hotReloadListener);
 
 	// Sync keybinding overrides before saving
 	m_settings.keybindingOverrides = m_actionRegistry.getOverrides();

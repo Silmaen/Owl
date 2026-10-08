@@ -167,6 +167,17 @@ public:
 
 	/**
 	 * @brief
+	 *  Hot reload: replace the scene by its file's content after a change on disk.
+	 *
+	 * Nothing happens while playing or with unsaved edits (a warning names the file and keeps the edits), nor when the
+	 * file holds what the editor would save (its own save). A file that fails to load keeps the open scene.
+	 * @param[in] iViewportSize Size of the viewport, given to the new scene.
+	 * @return True when the scene was replaced.
+	 */
+	auto reloadFromDisk(const math::vec2ui& iViewportSize) -> bool;
+
+	/**
+	 * @brief
 	 *  Install a freshly deserialized scene as both editor and active (main thread only).
 	 */
 	void applyLoadedScene(const shared<scene::Scene>& iScene, const std::filesystem::path& iPath,

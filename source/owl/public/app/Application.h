@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "app/HotReload.h"
 #include "app/layer/LayerStack.h"
 #include "core/Macros.h"
 #include "core/Timestep.h"
@@ -85,6 +86,8 @@ struct OWL_API AppParams {
 	bool useConfigFile{true};
 	/// Synchronise presentation with the display (set before the swap chain is created).
 	bool vSync{true};
+	/// Reload the assets that change on disk (editor, development runner); never active with an asset pack open.
+	bool hotReload{false};
 
 	/**
 	 * @brief
@@ -394,6 +397,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Access to the hot reload of the assets.
+	 * @return The hot reload.
+	 */
+	[[nodiscard]] auto getHotReload() -> HotReload& { return m_hotReload; }
+
+	/**
+	 * @brief
+	 *  Turn the hot reload on or off; it stays off while an asset pack is open.
+	 * @param[in] iEnabled True to watch the asset directories.
+	 */
+	void setHotReloadEnabled(bool iEnabled);
+
+	/**
+	 * @brief
 	 *  Open an asset pack file for runtime loading.
 	 * @param[in] iPackFile Path to the pack file.
 	 * @return True if the pack was opened successfully.
@@ -497,6 +514,8 @@ private:
 	static Application* s_instance;
 	/// The task Scheduler.
 	core::task::Scheduler m_scheduler;
+	/// Watches the asset directories and reloads what changed.
+	HotReload m_hotReload;
 	/// The asset pack reader.
 	data::assets::pack::PackReader m_packReader;
 	/// Mark the main entrypoint function as friend.
