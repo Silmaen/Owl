@@ -9,6 +9,7 @@
 
 #include "scene/SceneSerializer.h"
 
+#include "EntityLinkMigration.h"
 #include "app/Application.h"
 #include "core/FormatVersionYaml.h"
 #include "core/Serializer.h"
@@ -74,7 +75,8 @@ SceneSerializer::SceneSerializer(const shared<Scene>& iScene) : mp_scene(iScene)
 
 namespace {
 
-constexpr std::array<core::MigrationStep, 0> g_sceneMigrations{};
+// 1 -> 2: entity links reference their target by UUID.
+constexpr std::array<core::MigrationStep, 1> g_sceneMigrations{&bindEntityLinksByName};
 constexpr core::DocumentFormat g_sceneFormat{.name = "Scene", .migrations = g_sceneMigrations};
 
 auto toSceneLoadError(const core::FormatError iError) -> SceneLoadError {
@@ -296,6 +298,7 @@ auto SceneSerializer::serializeToString() const -> std::string {
 	sOut.getImpl()->emitter << YAML::BeginMap;
 	sOut.getImpl()->emitter << YAML::Key << "Scene" << YAML::Value << "untitled";
 	emitFormatVersion(sOut.getImpl()->emitter, g_sceneFormat);
+	mp_scene->assignEntityLinkIds();
 	if (const auto& enabled = mp_scene->getEnabledRenderers(); !enabled.isEmpty()) {
 		sOut.getImpl()->emitter << YAML::Key << "EnabledRenderers" << YAML::Value << renderer::enabledToYaml(enabled);
 	}

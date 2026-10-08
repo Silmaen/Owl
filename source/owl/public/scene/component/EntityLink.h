@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "core/UUID.h"
 #include "scene/Entity.h"
 
 #include <string>
@@ -17,9 +18,15 @@ namespace owl::scene::component {
 /**
  * @brief
  *  Component to describe link between entities.
+ *
+ * The target is referenced by UUID (`linkedEntityId`), so renaming it keeps the link and duplicating a linked group
+ * relinks the copies together. The name stays for display and as a fallback: a link without UUID, or whose UUID is
+ * not in the scene (prefab instantiated elsewhere), binds to the first entity of that name.
  */
 struct OWL_API EntityLink {
-	/// the name of the linked entity.
+	/// UUID of the linked entity (0: not bound yet, resolved from `linkedEntityName`).
+	core::UUID linkedEntityId{0};
+	/// The name of the linked entity (display, and fallback when the UUID is unset or absent).
 	std::string linkedEntityName;
 
 	/**

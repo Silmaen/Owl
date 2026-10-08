@@ -270,14 +270,41 @@ public:
 
 	/**
 	 * @brief
-	 *  Pre-populate every `EntityLink.linkedEntity` from its `linkedEntityName`.
+	 *  Bind every `EntityLink` to its target before the first runtime frame.
 	 *
-	 * Called at `onStartRuntime` so the per-frame link-update loop starts with
-	 * a warm cache and never falls into the O(N²) "scan all Tag components for
-	 * the matching name" path on the first tick. Tag renames still trigger a
-	 * one-tick rescan from the runtime loop's mismatch check.
+	 * Called at `onStartRuntime` so the per-frame link-update loop starts with a warm cache. A link binds by
+	 * `linkedEntityId` first, then by `linkedEntityName` (one tag index for all the name lookups); a missing target
+	 * is reported once and the link ignored.
 	 */
 	void resolveAllEntityLinks();
+
+	/**
+	 * @brief
+	 *  Bind one `EntityLink` to its target: by UUID, else by name (then its UUID is set).
+	 *
+	 * A target found by UUID also refreshes `linkedEntityName`, so a renamed target keeps its link.
+	 * @param[in,out] ioLink The link to bind.
+	 * @return True when the target exists.
+	 */
+	auto resolveEntityLink(component::EntityLink& ioLink) const -> bool;
+
+	/**
+	 * @brief
+	 *  Give every `EntityLink` that has only a name the UUID of the first entity of that name (silent).
+	 *
+	 * Run before saving, so an authored link survives a later rename of its target.
+	 */
+	void assignEntityLinkIds();
+
+	/**
+	 * @brief
+	 *  Point the `EntityLink`s of some entities at new UUIDs (duplication, prefab instantiation).
+	 * @param[in] iEntities The entities whose links are remapped.
+	 * @param[in] iRemap Old target UUID to new target UUID; targets absent from it are kept.
+	 */
+	static void remapEntityLinks(const std::vector<Entity>& iEntities,
+								 const std::unordered_map<core::UUID, core::UUID>& iRemap);
+
 
 	/**
 	 * @brief

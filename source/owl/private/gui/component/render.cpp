@@ -483,7 +483,11 @@ void renderProps(Trigger& ioComponent) {
 	}
 }
 
-void renderProps(EntityLink& ioComponent) { ImGui::InputText("linked Entity Name", &ioComponent.linkedEntityName); }
+void renderProps(EntityLink& ioComponent) {
+	// A new name designates a new target: drop the UUID so the link binds by name again.
+	if (ImGui::InputText("linked Entity Name", &ioComponent.linkedEntityName))
+		ioComponent.linkedEntityId = core::UUID{0};
+}
 
 void renderProps(BackgroundTexture& ioComponent) {
 	constexpr std::array modeNames = {"Background", "Skybox"};

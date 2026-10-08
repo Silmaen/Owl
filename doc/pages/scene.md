@@ -356,14 +356,18 @@ See [Lua Scripting > Trigger System](scripting.md) for callback details and exam
 
 #### EntityLink
 
-| Field              | Type     | Default | Description                  |
-|--------------------|----------|---------|------------------------------|
-| `linkedEntityName` | `string` | `""`    | Name of the entity to follow |
+| Field              | Type     | Default | Description                                                      |
+|--------------------|----------|---------|------------------------------------------------------------------|
+| `linkedEntityId`   | `UUID`   | `0`     | UUID of the entity to follow (written only once bound)           |
+| `linkedEntityName` | `string` | `""`    | Its name: display, and fallback when the UUID is unset or absent |
 
 YAML key: `EntityLink`. The linked entity's world position is copied to this entity
-each frame, converting to local space when parented. A link whose target does not exist
-(misspelt name, target destroyed or renamed) is ignored, with one warning, until an entity
-with that name appears.
+each frame, converting to local space when parented. The link binds by UUID first, so renaming the target keeps it;
+a link without UUID, or whose UUID is not in the scene (a prefab instantiated elsewhere), binds to the first entity
+with that name and takes its UUID. Saving a scene binds its name-only links, typing a new name in the inspector
+rebinds by name. `duplicateSubtree()` and prefab instantiation point the links between members of the copy at the
+copies; links to entities outside it are kept. A link whose target does not exist is ignored, with one warning,
+until the target appears.
 
 #### NativeScript
 
@@ -633,7 +637,8 @@ Every file the engine writes carries a root `FormatVersion` integer:
 | `settings.yml`, `game_settings.yml` | `SettingsManager::format()`                    |
 | `owl_project.yml` (Owl Nest)        | `nest::Project::format()`                      |
 
-The prefab `Version` key is something else: it counts the edits of one prefab and feeds
+Scenes and prefabs are at version 2: the 1 → 2 migration (`bindEntityLinksByName`) gives each name-only
+`EntityLink` the UUID of the first entity of the document with that tag. The prefab `Version` key is something else: it counts the edits of one prefab and feeds
 `PrefabLink::syncedVersion`. A save embeds its scene with the scene's own `FormatVersion`.
 
 On load, `core::upgradeDocument` (or `upgradeYamlDocument` inside the engine) reads the version:
