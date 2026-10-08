@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from ci.utils.preset import PresetConfig
 
@@ -8,7 +7,7 @@ class BaseAction(ABC):
     """Abstract base class for all CI actions."""
 
     @abstractmethod
-    def run(self, preset: PresetConfig, extra_args: Optional[list[str]] = None) -> int:
+    def run(self, preset: PresetConfig, extra_args: list[str] | None = None) -> int:
         """
         Execute the action.
         :param preset: The preset to use for the action.
@@ -17,19 +16,19 @@ class BaseAction(ABC):
         """
         pass
 
-    def __call__(self, preset: PresetConfig, extra_args: Optional[list[str]] = None) -> int:
+    def __call__(self, preset: PresetConfig, extra_args: list[str] | None = None) -> int:
         """Allow the action to be called directly."""
         return self.run(preset, extra_args)
 
     @staticmethod
-    def parse_extra_args(extra_args: Optional[list[str]]) -> dict[str, str]:
+    def parse_extra_args(extra_args: list[str] | None) -> dict[str, str]:
         """
         Parse extra arguments into a dictionary.
         Supports formats: --key=value and --flag (stored as key: "true").
         :param extra_args: List of extra arguments.
         :return: Dictionary of parsed arguments.
         """
-        result = {}
+        result: dict[str, str] = {}
         if not extra_args:
             return result
         for arg in extra_args:

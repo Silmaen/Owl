@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the nightly bench pinned to the agent that measured it.
+- CodeStyle `python` sub-check: `ruff check`, `ruff format --check`, `mypy` and the `ci/tests` pytest suite (never run in CI before) on the CI code (configured in `pyproject.toml`; `black`, never run, removed).
 - `OwlRunner --scenario <file.owltest>`: scripted headless runs (frames, held inputs, expectations on entities and the game state), with four sample scenarios run by CTest (label `scenario`).
 - `OwlRunner --frame-bench` measures the cold start (`startup_ms`: engine ready, first frame), so start-up time has a number on a real backend.
 - Wayland smoke test (`owl_wayland_smoke`, label `wayland`): the runner presents frames on a headless weston with Vulkan and OpenGL; skipped where weston is missing.
@@ -85,6 +86,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- CI build logs: only compiler, linker and Ninja errors show as errors in TeamCity, warnings as warnings (every compiler line was red).
+- CI: the native `DefineTeamCityVariables` step runs on a host Python older than 3.12 again, and the TeamCity step ids say what they build (`Build_Preset`, `Build_Release_Main`).
 - MinGW Release: the physics tests link again, passing the exported `PhysicsSettings` limits by value (an odr-use of a `static constexpr` member of an `OWL_API` class needs an import MinGW never emits).
 - CI: build artifacts leave out the test executables, keeping the Windows `BuildArtefact.zip` under the server's 300 MB limit.
 - Windows: test binaries and `OwlRunner` exit again: the Box2D solver pool is released with the physics world and the Lua watchdog is never destroyed, so no static destructor waits for threads Windows already killed.

@@ -4,7 +4,7 @@ Action to deploy the project using CPack for a given preset.
 
 from ci import log
 from ci.actions.base.action import BaseAction, PresetConfig
-from ci.utils.run import run_command, MODE_BY_COLOR
+from ci.utils.run import MODE_BY_COLOR, run_command
 
 
 class Package(BaseAction):
@@ -20,6 +20,7 @@ class Package(BaseAction):
         :return: Exit code indicating success or failure.
         """
         from os import chdir, curdir
+
         log.info(f"Deploying project with preset: {preset}")
         build_dir = preset.get_build_dir()
 
@@ -29,13 +30,9 @@ class Package(BaseAction):
             return 1
         cwd = curdir
         chdir(build_dir)
-        build_result = run_command(
-            ["cpack"], detection_mode=MODE_BY_COLOR
-        )
+        build_result = run_command(["cpack"], detection_mode=MODE_BY_COLOR)
         chdir(cwd)
         if build_result != 0:
             log.error("CMake build failed.")
             return build_result
         return 0
-
-

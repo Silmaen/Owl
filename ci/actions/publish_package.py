@@ -1,20 +1,22 @@
 """
 Action to publish built packages to a remote server.
 """
+
 import re
+from datetime import datetime
+
 from ci import log
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.publish import (
     DEPLOY_PASSWORD_ENV,
     Revision,
-    get_project_version,
     get_git_hash,
     get_platform_info,
+    get_project_version,
     normalize_server_url,
     push_revision,
 )
 from ci.utils.secrets import get_secret, reject_secret_args
-from datetime import datetime
 
 
 class PublishPackage(BaseAction):
@@ -60,8 +62,7 @@ class PublishPackage(BaseAction):
 
         # Validate that preset has OWL_PACKAGE_NAME
         if not preset.run_package:
-            log.error(
-                f"Preset '{preset.cmake_preset}' does not have OWL_PACKAGE_NAME set.")
+            log.error(f"Preset '{preset.cmake_preset}' does not have OWL_PACKAGE_NAME set.")
             return 1
 
         # Determine package type from preset name
@@ -80,10 +81,7 @@ class PublishPackage(BaseAction):
             log.error("Could not determine project version from CMakeLists.txt.")
             return 1
 
-        if not git_hash:
-            git_hash = get_git_hash()
-        else:
-            git_hash = git_hash[:7]
+        git_hash = git_hash[:7] if git_hash else get_git_hash()
         if git_hash in ["0000000", "", None]:
             log.error("Could not determine git hash.")
             return 1
@@ -92,7 +90,7 @@ class PublishPackage(BaseAction):
         plat = get_platform_info()
 
         # Get package name from cache variables
-        base_name = preset.raw_config["cacheVariables"]["OWL_PACKAGE_NAME"]
+        base_name = (preset.raw_config or {}).get("cacheVariables", {}).get("OWL_PACKAGE_NAME", "")
         friendly_name = " ".join(re.findall("[A-Z][^A-Z]*", base_name))
 
         # Build package filename

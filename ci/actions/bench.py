@@ -13,7 +13,6 @@ from __future__ import annotations
 import json
 import shutil
 from dataclasses import dataclass
-from pathlib import Path
 
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
@@ -135,8 +134,9 @@ class Bench(BaseAction):
             regressions = compare(baseline, current, threshold)
         log.info(f"Bench: {len(medians(current))} benchmarks against the baseline, threshold +{threshold:.0%}.")
         for reg in regressions:
-            log.error(f"Bench: {reg.name} regressed: {reg.current_ns:.0f} ns vs {reg.baseline_ns:.0f} ns "
-                      f"(x{reg.ratio:.2f}).")
+            log.error(
+                f"Bench: {reg.name} regressed: {reg.current_ns:.0f} ns vs {reg.baseline_ns:.0f} ns (x{reg.ratio:.2f})."
+            )
         if regressions:
             log.error(f"Bench: {len(regressions)} benchmark(s) slower than the baseline beyond the threshold.")
             return 1

@@ -61,8 +61,15 @@ def test_push_package(tmp_path: Path, fake_post: _FakePost, masked_caplog: pytes
     secrets.register_secret(FAKE_PASSWORD)
     package = tmp_path / "OwlEngine-0.3.0-abcdef0-linux-x64.tar.gz"
     package.write_bytes(b"payload")
-    rev = Revision(rev_type="e", branch="0.3.0", file=package, hash="abcdef0", name="Owl Engine",
-                   flavor_name="linux x64", date="2026-10-05")
+    rev = Revision(
+        rev_type="e",
+        branch="0.3.0",
+        file=package,
+        hash="abcdef0",
+        name="Owl Engine",
+        flavor_name="linux x64",
+        date="2026-10-05",
+    )
     assert push_revision("delivery.example.org", "bob", FAKE_PASSWORD, rev) == 0
     (call,) = fake_post.calls
     assert call["url"] == "https://delivery.example.org/api"
@@ -97,8 +104,9 @@ def test_push_refuses_plain_http(tmp_path: Path, fake_post: _FakePost) -> None:
     assert fake_post.calls == []
 
 
-def test_push_error_body_is_masked(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
-                                   masked_caplog: pytest.LogCaptureFixture) -> None:
+def test_push_error_body_is_masked(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, masked_caplog: pytest.LogCaptureFixture
+) -> None:
     secrets.register_secret(FAKE_PASSWORD)
     monkeypatch.setattr(requests, "post", _FakePost(500, f"bad credentials {FAKE_PASSWORD}".encode()))
     package = tmp_path / "p.zip"
@@ -124,10 +132,10 @@ def test_publish_actions_refuse_password_argument(action: type, masked_caplog: p
 
 
 @pytest.mark.parametrize("action", [PublishPackage, PublishDoc])
-def test_publish_actions_require_password_env(action: type, monkeypatch: pytest.MonkeyPatch,
-                                              masked_caplog: pytest.LogCaptureFixture) -> None:
+def test_publish_actions_require_password_env(
+    action: type, monkeypatch: pytest.MonkeyPatch, masked_caplog: pytest.LogCaptureFixture
+) -> None:
     monkeypatch.delenv(publish.DEPLOY_PASSWORD_ENV, raising=False)
     preset = SimpleNamespace(cmake_preset="package-engine-linux")
     assert action().run(preset, ["--url=https://h", "--login=bob"]) == 1
     assert publish.DEPLOY_PASSWORD_ENV in masked_caplog.text
-

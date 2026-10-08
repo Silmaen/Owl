@@ -9,23 +9,23 @@ Entry point for all the CI actions.
 # of forwarding it to the interpreter, producing
 # `The option "-u" does not exist`). Setting `PYTHONUNBUFFERED` here means the
 # CI command line can drop the flag entirely and still get streaming logs.
+import io
 import os
 import sys
 
 os.environ.setdefault("PYTHONUNBUFFERED", "1")
-try:
-    sys.stdout.reconfigure(line_buffering=True)
-    sys.stderr.reconfigure(line_buffering=True)
-except AttributeError:
-    pass
+for _stream in (sys.stdout, sys.stderr):
+    if isinstance(_stream, io.TextIOWrapper):
+        _stream.reconfigure(line_buffering=True)
 
 
 def main():
     from argparse import ArgumentParser
+
+    from ci import Path, log
     from ci.actions import get_actions
-    from ci import log, Path
-    from ci.utils.preset import PresetConfig
     from ci.utils.cmake import list_cmake_presets
+    from ci.utils.preset import PresetConfig
 
     action_list = get_actions()
 
@@ -35,19 +35,10 @@ def main():
         description="Select and run a CI action for a given preset.",
         epilog=f"use `{name} Help help` to get more information about available actions and presets.",
     )
-    parser.add_argument(
-        "action", type=str, choices=action_list.keys(),
-        help="The CI action to perform."
-    )
-    parser.add_argument(
-        "preset", type=str, choices=list_cmake_presets(), help="The preset to check."
-    )
-    parser.add_argument(
-        "-v", "--verbose", action="count", help="Enable verbose logging."
-    )
-    parser.add_argument(
-        "-q", "--quiet", action="count", help="Reduce logging verbosity."
-    )
+    parser.add_argument("action", type=str, choices=action_list.keys(), help="The CI action to perform.")
+    parser.add_argument("preset", type=str, choices=list_cmake_presets(), help="The preset to check.")
+    parser.add_argument("-v", "--verbose", action="count", help="Enable verbose logging.")
+    parser.add_argument("-q", "--quiet", action="count", help="Reduce logging verbosity.")
     args, remaining = parser.parse_known_args()
 
     # Filter out the '--' separator if present, keep only --key=value or --flag args
@@ -60,14 +51,13 @@ def main():
     # lockfile).  `needs_refresh` is cheap on the happy path — one `poetry env info --path`
     # call + one file read — and only spawns a full Python import test when the platform
     # signature doesn't match. See `ci/utils/venv.py`.
-    from ci.utils.venv import needs_refresh, current_platform_signature
     import os
+
+    from ci.utils.venv import current_platform_signature, needs_refresh
+
     if "OWL_CI_REFRESH_VENV" not in os.environ and needs_refresh():
         os.environ["OWL_CI_REFRESH_VENV"] = "1"
-        log.info(
-            "Poetry venv appears broken for this host — forcing refresh "
-            f"(now: {current_platform_signature()})"
-        )
+        log.info(f"Poetry venv appears broken for this host — forcing refresh (now: {current_platform_signature()})")
         # Actions other than `Build` invoke `poetry run conan` (or another venv-resident
         # tool) before any CMake configure step runs — that means `cmake/Poetry.cmake`'s
         # in-CMake `poetry env remove --all` + `poetry sync` would arrive too late and the
@@ -77,6 +67,7 @@ def main():
         # abort — CMake will retry the same operations and surface a clearer error on its own
         # path if the underlying problem is unrelated to platform drift.
         from ci.utils.run import run_command
+
         log.info("Refreshing Poetry venv inline (poetry env remove --all + poetry sync --no-root)...")
         run_command(["poetry", "env", "remove", "--all", "--quiet"])
         sync_status = run_command(["poetry", "sync", "--no-root"])
@@ -91,6 +82,7 @@ def main():
             os.environ.pop("OWL_CI_REFRESH_VENV", None)
             # Stamp the venv so the next ci_action.py run skips the import probe.
             from ci.utils.venv import get_poetry_venv_path, write_marker
+
             stamped = get_poetry_venv_path()
             if stamped is not None:
                 write_marker(stamped)

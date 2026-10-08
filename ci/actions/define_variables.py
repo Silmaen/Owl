@@ -32,8 +32,10 @@ class DefineTeamCityVariables(BaseAction):
         parsed = self.parse_extra_args(extra_args)
         emulated = parsed.get("emulated") == "true"
         if emulated:
-            log.info("Emulated agent flag set: forcing coverage / documentation / "
-                     "publish_doc / release_preset off in the exported TeamCity variables.")
+            log.info(
+                "Emulated agent flag set: forcing coverage / documentation / "
+                "publish_doc / release_preset off in the exported TeamCity variables."
+            )
             preset.run_coverage = False
             preset.run_documentation = False
             preset.publish_doc = False
@@ -54,20 +56,13 @@ class DefineTeamCityVariables(BaseAction):
         if preset.run_tests is not None:
             set_teamcity_parameter("run_tests", str(preset.run_tests).lower())
         if preset.run_package is not None:
-            set_teamcity_parameter("run_package",
-                                   str(preset.run_package).lower())
+            set_teamcity_parameter("run_package", str(preset.run_package).lower())
         if preset.run_coverage is not None:
-            set_teamcity_parameter(
-                "run_coverage", str(preset.run_coverage).lower()
-            )
+            set_teamcity_parameter("run_coverage", str(preset.run_coverage).lower())
         if preset.run_documentation is not None:
-            set_teamcity_parameter(
-                "run_documentation", str(preset.run_documentation).lower()
-            )
+            set_teamcity_parameter("run_documentation", str(preset.run_documentation).lower())
         if preset.publish_doc is not None:
-            set_teamcity_parameter(
-                "publish_doc", str(preset.publish_doc).lower()
-            )
+            set_teamcity_parameter("publish_doc", str(preset.publish_doc).lower())
         artifact_path = """+:output/build/%cmake_preset%/bin => BuildArtefact.zip!bin/debug/
 +:output/build/%cmake_preset%/lib => BuildArtefact.zip!lib/debug/
 +:output/build/%cmake_preset%/test/*.xml => BuildArtefact.zip!test/debug/

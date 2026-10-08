@@ -7,19 +7,20 @@ bind-mounted workspace holding the venv — the ARM64 job ends up loading wheels
 x86_64 and crashes at import (classic case: `cryptography/_rust.abi3.so: cannot open shared
 object file`).
 
-This module detects the situation by importing a compiled extension of the venv (Pillow's).  Running inside the target venv (we're invoked via `poetry run python3
-ci_action.py`), an `ImportError` proves the venv is broken for this host — `ci_action.py`
-then exports `OWL_CI_REFRESH_VENV=1`, which `cmake/Poetry.cmake` consumes to `poetry env
-remove --all` + `poetry sync` and (re)stamp the venv with a platform marker.
+This module detects the situation by importing a compiled extension of the venv (Pillow's). Running inside
+the target venv (we're invoked via `poetry run python3 ci_action.py`), an `ImportError` proves the venv is
+broken for this host — `ci_action.py` then exports `OWL_CI_REFRESH_VENV=1`, which `cmake/Poetry.cmake`
+consumes to `poetry env remove --all` + `poetry sync` and (re)stamp the venv with a platform marker.
 
 The marker is informational — a fast visual cue in the venv directory about what host built
 it — and lets `needs_refresh` answer without importing anything when it already matches.
 """
+
 from __future__ import annotations
 
+import contextlib
 import platform
 from pathlib import Path
-
 
 MARKER_FILENAME = ".owl_platform"
 
@@ -29,12 +30,14 @@ def current_platform_signature() -> str:
     :return: A short platform fingerprint — `<arch>-<os>-<impl>-<pyver>` — suitable for diffing
         venvs across runs.
     """
-    return "-".join([
-        platform.machine() or "unknown-arch",
-        platform.system() or "unknown-os",
-        platform.python_implementation(),
-        platform.python_version(),
-    ])
+    return "-".join(
+        [
+            platform.machine() or "unknown-arch",
+            platform.system() or "unknown-os",
+            platform.python_implementation(),
+            platform.python_version(),
+        ]
+    )
 
 
 def get_poetry_venv_path() -> Path | None:
@@ -94,10 +97,8 @@ def write_marker(venv_path: Path) -> None:
     Called by `cmake/Poetry.cmake` after every successful `poetry sync --no-root`.  Silent on
     I/O errors — a missing marker just means the next run will fall back to the import test.
     """
-    try:
+    with contextlib.suppress(OSError):
         (venv_path / MARKER_FILENAME).write_text(current_platform_signature(), encoding="utf-8")
-    except OSError:
-        pass
 
 
 def needs_refresh() -> bool:
@@ -118,14 +119,3 @@ def needs_refresh() -> bool:
     if platform_matches_marker(venv_path):
         return False
     return venv_import_broken()
-
-
-def write_marker(venv_path: Path) -> None:
-    """
-    Persist the current platform signature into the venv so the next run can compare against it.
-    Silent on I/O errors — a missing marker just means the next run will refresh defensively.
-    """
-    try:
-        (venv_path / MARKER_FILENAME).write_text(current_platform_signature(), encoding="utf-8")
-    except OSError:
-        pass

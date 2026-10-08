@@ -24,9 +24,7 @@ class Documentation(BaseAction):
             build_dir = preset.get_build_dir()
             if preset.release_preset not in [None, ""]:
                 build_dir = preset.get_release_build_dir()
-            exit_code = run_command(
-                ["cmake", "--build", f"{build_dir}", "--target",
-                 "documentation"])
+            exit_code = run_command(["cmake", "--build", f"{build_dir}", "--target", "documentation"])
             if exit_code != 0:
                 log.error("Documentation generation failed.")
                 return exit_code

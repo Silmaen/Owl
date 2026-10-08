@@ -2,7 +2,7 @@
 Utility function for running application commands.
 """
 
-from logging import INFO, WARNING, ERROR
+from logging import ERROR, INFO, WARNING
 from pathlib import Path
 from typing import IO
 
@@ -18,17 +18,27 @@ MODE_FOR_NINJA = 2
 current_level = INFO
 next_level = INFO
 
-# list of regex patterns to exclude from ninja error detection
-ninja_error_exclusions = [
-    r"^\[(\d+)/(\d+)\]",  # Ninja build progress [n/m]
-    r"^\[\d+%\]",  # Ninja percentage progress [XX%]
-    r"^\s*Building ",  # Building target lines
-    r"^\s*Linking ",  # Linking target lines
-    r"^CPack:.*",
-    r"^Scanning dependencies of target .*",
-    r"^ Importing .*",
-    r"^ninja: no work to do.",
-]
+
+_NINJA_ERROR_RE = r"(: (fatal )?error:|^FAILED:|^ninja: build stopped|undefined reference to|^CMake Error)"
+_NINJA_WARNING_RE = r"(: warning:|^CMake Warning)"
+
+
+def _ninja_level(line: str) -> int:
+    """
+    Level of one line of a Ninja (or CMake) build: only a compiler or linker error, a failed edge or a stopped build
+    is an error, a compiler warning is a warning, everything else (progress, notes, include traces) is information.
+
+    :param line: The output line, without ANSI codes.
+    :return: The logging level.
+    """
+    import re
+
+    line = _strip_ansi_codes(line)
+    if re.search(_NINJA_ERROR_RE, line):
+        return ERROR
+    if re.search(_NINJA_WARNING_RE, line):
+        return WARNING
+    return INFO
 
 
 def _determine_log_level(line: str, mode: int = MODE_BY_CONTENT) -> int:
@@ -53,10 +63,7 @@ def _determine_log_level(line: str, mode: int = MODE_BY_CONTENT) -> int:
             next_level = INFO
         return current_level
     elif mode == MODE_FOR_NINJA:
-        for pattern in ninja_error_exclusions:
-            if re.search(pattern, line):
-                return INFO
-        return ERROR
+        return _ninja_level(line)
     else:
         # old content-based detection (may trigger false positives)
         line_lower = line.lower()
@@ -83,9 +90,7 @@ def _strip_ansi_codes(text: str) -> str:
     return ansi_escape.sub("", text)
 
 
-def run_command(command: list[str] | str,
-                detection_mode: int = MODE_BY_CONTENT,
-                cwd: Path | None = None) -> int:
+def run_command(command: list[str] | str, detection_mode: int = MODE_BY_CONTENT, cwd: Path | None = None) -> int:
     """
     Runs a potentially long command as a subprocess and logs its output in real-time.
 
@@ -143,9 +148,7 @@ def run_command(command: list[str] | str,
         process.wait()
         return process.returncode
     except FileNotFoundError:
-        log.error(
-            f"Command not found: {command[0]}. Make sure it's installed and in PATH."
-        )
+        log.error(f"Command not found: {command[0]}. Make sure it's installed and in PATH.")
         return 1
     except Exception as e:
         log.error(f"Error running command '{redact_command(command)}': {e}")
@@ -174,9 +177,7 @@ def run_command_capture_output(command: list[str] | str) -> tuple[int, str]:
         stdout, stderr = process.communicate()
         return process.returncode, stdout
     except FileNotFoundError:
-        log.error(
-            f"Command not found: {command[0]}. Make sure it's installed and in PATH."
-        )
+        log.error(f"Command not found: {command[0]}. Make sure it's installed and in PATH.")
         return 1, ""
     except Exception as e:
         log.error(f"Error running command '{redact_command(command)}': {e}")

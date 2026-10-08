@@ -29,7 +29,7 @@ val includeCheck = BuildType {
             dockerRunParameters = "%docker_parameters%"
         }
     }
-    disableSettings("Build_Release", "Test_Release")
+    disableSettings("Build_Preset", "Test_Preset")
 
     features {
         githubBridge()

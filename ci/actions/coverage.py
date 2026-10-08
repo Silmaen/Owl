@@ -1,6 +1,7 @@
 """
 Action to run code coverage analysis and upload the results to a coverage tracking service.
 """
+
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
 
@@ -21,15 +22,26 @@ class Coverage(BaseAction):
         try:
             # we only need to run gcovr, assuming tests have already been run with coverage flags
             from ci.utils.run import run_command
+
             gcov_executable = "gcov"
             if preset.compiler and "clang" in preset.compiler:
                 gcov_executable = "llvm-cov gcov"
             exit_code = run_command(
-                ["gcovr", "-j", "0", "-r", f"{root}", "-o",
-                 f'{preset.get_build_dir() / "Coverage" / "index.html"}',
-                 '--gcov-executable', f'{gcov_executable}',
-                 '--gcov-ignore-parse-errors', 'suspicious_hits.warn_once_per_file',
-                 "."])
+                [
+                    "gcovr",
+                    "-j",
+                    "0",
+                    "-r",
+                    f"{root}",
+                    "-o",
+                    f"{preset.get_build_dir() / 'Coverage' / 'index.html'}",
+                    "--gcov-executable",
+                    f"{gcov_executable}",
+                    "--gcov-ignore-parse-errors",
+                    "suspicious_hits.warn_once_per_file",
+                    ".",
+                ]
+            )
             if exit_code != 0:
                 log.error("Coverage analysis failed.")
                 return exit_code

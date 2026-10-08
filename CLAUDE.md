@@ -48,7 +48,7 @@ docker/run.sh --perf perf ...                                      # ptrace / pe
 | `Build`                                            | Configure + build the preset.                                                                  |
 | `Test`                                             | CTest with reports.                                                                            |
 | `Coverage`                                         | gcovr through `gcovr.cfg` (never pass filters on the CLI); use `linux-clang-debug`.            |
-| `CodeStyle`                                        | Read-only gate: clang-format, codespell, comment quality, `m_*` docs, cpp-style bans, headers. |
+| `CodeStyle`                                        | Read-only gate: clang-format, codespell, comment quality, docs, cpp-style, headers, ruff/mypy. |
 | `ClangTidy`                                        | clang-tidy (or `--tool=analyzer`) over `compile_commands.json`; PR = diff-scoped.              |
 | `Documentation`                                    | Doxygen with `WARN_AS_ERROR=YES`.                                                              |
 | `Package`, `Clean`, `PublishDoc`, `PublishPackage` | As named; also `DefineTeamCityVariables`, `Help`.                                              |

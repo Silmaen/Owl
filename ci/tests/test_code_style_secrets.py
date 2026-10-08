@@ -33,7 +33,7 @@ def test_secret_shapes_are_detected(text: str, kind: str) -> None:
 @pytest.mark.parametrize(
     "text",
     [
-        "extraArgs = \"--url=%deploy_url% --login=%deploy_login%\"",
+        'extraArgs = "--url=%deploy_url% --login=%deploy_login%"',
         "export OWL_DEPLOY_PASSWORD='%deploy_passwd%'",
         "remote add -n <name> -u <protocol>://<url[:port]>",
         "https://example.org:8080/path",
@@ -48,5 +48,5 @@ def test_placeholders_are_not_flagged(text: str) -> None:
 def test_repository_has_no_committed_secret() -> None:
     tracked = _tracked_files()
     assert any(p.name == "pyproject.toml" for p in tracked)
-    assert not any(".git" in p.relative_to(root).parts or "output" == p.relative_to(root).parts[0] for p in tracked)
+    assert not any(".git" in p.relative_to(root).parts or p.relative_to(root).parts[0] == "output" for p in tracked)
     assert _check_secrets() == 0

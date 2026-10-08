@@ -9,11 +9,13 @@ readme = "README.md"
 python = "^3.12"
 
 [tool.poetry.group.build.dependencies]
-black = "^26.1.0"
 gcovr = "^8.6"
 codespell = "^2.3.0"
 requests = "^2.33.1"
 requests-toolbelt = "^1.0.0"
+ruff = "^0.16.10"
+mypy = "^2.4.0"
+types-requests = "^2.33.0.20261006"
 
 [tool.poetry.group.dev.dependencies]
 rich = "^14.3.2"
@@ -21,6 +23,26 @@ pillow = "^12.1.1"
 cairosvg = "^2.9.0"
 conan = "^2.33.0"
 pytest = "^9.1.1"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+include = ["ci/**/*.py", "ci_action.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# The package sets up sys.path and logging before its own imports.
+"ci/__init__.py" = ["E402"]
+# The CodeStyle checks call their nested helpers inside the loop iteration that defines them.
+"ci/actions/code_style.py" = ["B023"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["ci", "ci_action.py"]
+ignore_missing_imports = true
+check_untyped_defs = true
 
 [tool.pytest.ini_options]
 testpaths = ["ci/tests"]

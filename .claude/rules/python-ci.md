@@ -68,7 +68,10 @@ it never rewrites sources. Sub-checks (all on by default):
 7. **std-includes** — every file under `source/`, `test/`, `bench/` includes the
    standard header of each `std::` symbol / `uint*_t` / `size_t` it names
    (`ci/utils/std_includes.py`; a `.cpp` may rely on its own header and `owlpch.h`).
-7. **secrets** — git-tracked files scanned for private keys, GitHub / AWS /
+8. **python** — `ruff check`, `ruff format --check`, `mypy` and `pytest ci/tests` on `ci/` and `ci_action.py` (configuration in
+   `pyproject.toml`: 120 columns, rules `E F W I UP B SIM`); fix with `poetry run ruff check --fix` and
+   `poetry run ruff format`.
+9. **secrets** — git-tracked files scanned for private keys, GitHub / AWS /
    Slack tokens and passwords in URLs; a tracked `.env` fails. Prints the kind
    and position only, never the match.
 
@@ -77,8 +80,7 @@ separate `Documentation` action that builds doxygen with `WARN_AS_ERROR=YES`.
 
 Each sub-check can be disabled with `-- --no-<name>=true`:
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`, `--no-std-includes`.
-`--no-cpp-style`, `--no-structural`, `--no-secrets`.
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-python`, `--no-secrets`.
 
 **Report findings through `_diag()`**, never `log.error()` directly. It prints
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — the
@@ -107,7 +109,9 @@ class MyAction(BaseAction):
 
 ## Code Conventions
 
-- Type hints on all function signatures
+- Type hints on all function signatures; the code passes `ruff` and `mypy` (CodeStyle `python` sub-check)
+- Build output through `run_command(..., MODE_FOR_NINJA)`: only `: error:`, `FAILED:`, a stopped build and link
+  errors are logged as errors, `: warning:` as warnings, the rest as information
 - Use `pathlib.Path` for file paths (not string concatenation)
 - Logging via `ci.log` (standard Python logging, autoconfigured for TeamCity/Rich)
 - Return `int` exit codes from actions (0 = success)

@@ -5,7 +5,7 @@ Action to build the project using CMake and Ninja for a given preset.
 from ci import log, root
 from ci.actions.base.action import BaseAction, PresetConfig
 from ci.utils.preset import get_build_dir
-from ci.utils.run import run_command, MODE_BY_COLOR, MODE_FOR_NINJA
+from ci.utils.run import MODE_BY_COLOR, MODE_FOR_NINJA, run_command
 
 
 class Build(BaseAction):

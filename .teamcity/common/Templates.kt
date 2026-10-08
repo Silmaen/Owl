@@ -82,11 +82,11 @@ val globalBuild = Template {
         }
 
         script {
-            ciAction("Build", "Build_Release", displayName = "Build")
+            ciAction("Build", "Build_Preset", displayName = "Build")
         }
 
         script {
-            ciAction("Test", "Test_Release", displayName = "Test")
+            ciAction("Test", "Test_Preset", displayName = "Test")
             conditions {
                 equals("run_tests", "true")
             }
@@ -111,7 +111,7 @@ val globalBuild = Template {
         }
 
         script {
-            ciAction("Build", "Build_Debug", displayName = "Build Release",
+            ciAction("Build", "Build_Release_Main", displayName = "Build Release",
                 preset = "%release_preset%")
             conditions {
                 doesNotMatch("release_preset", "^${'$'}")
@@ -133,7 +133,7 @@ val globalBuild = Template {
         }
 
         script {
-            ciAction("Test", "Test_Debug", displayName = "Test Release",
+            ciAction("Test", "Test_Release_Main", displayName = "Test Release",
                 preset = "%release_preset%")
             conditions {
                 doesNotMatch("release_preset", "^${'$'}")

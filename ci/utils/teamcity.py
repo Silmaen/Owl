@@ -17,12 +17,14 @@ def set_teamcity_parameter(name: str, value: str) -> None:
     if "TEAMCITY_VERSION" in os.environ:
         log.debug(f"Setting TeamCity parameter: {name}={value}")
         # escape special characters according to TeamCity documentation
-        value = (value.replace("|", "||")
-                 .replace("'", "|'")
-                 .replace("\n", "|n")
-                 .replace("\r", "|r")
-                 .replace("[", "|[")
-                 .replace("]", "|]"))
+        value = (
+            value.replace("|", "||")
+            .replace("'", "|'")
+            .replace("\n", "|n")
+            .replace("\r", "|r")
+            .replace("[", "|[")
+            .replace("]", "|]")
+        )
         print(f"##teamcity[setParameter name='{name}' value='{value}']")
     else:
         log.warning(f"Not in TeamCity, setting environment variable: {name}={value}")

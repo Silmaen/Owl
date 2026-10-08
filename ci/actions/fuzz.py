@@ -72,8 +72,10 @@ class Fuzz(BaseAction):
         seconds = int(args.get("time", DEFAULT_SECONDS))
         fuzzers = find_fuzzers(preset.get_build_dir() / "bin", args.get("fuzzer"))
         if not fuzzers:
-            log.error(f"Fuzz: no {FUZZER_GLOB} in {preset.get_build_dir() / 'bin'}; build the preset with "
-                      f"OWL_FUZZING=ON first.")
+            log.error(
+                f"Fuzz: no {FUZZER_GLOB} in {preset.get_build_dir() / 'bin'}; build the preset with "
+                f"OWL_FUZZING=ON first."
+            )
             return 1
         failed = []
         for binary in fuzzers:
@@ -82,8 +84,10 @@ class Fuzz(BaseAction):
             (work_dir / "corpus").mkdir(parents=True, exist_ok=True)
             (work_dir / "artifacts").mkdir(parents=True, exist_ok=True)
             log.info(f"Fuzz: {binary.name} for {seconds} s.")
-            if run_command(fuzzer_command(binary, work_dir, root / "fuzz" / "corpus" / name, seconds),
-                           cwd=work_dir) != 0:
+            if (
+                run_command(fuzzer_command(binary, work_dir, root / "fuzz" / "corpus" / name, seconds), cwd=work_dir)
+                != 0
+            ):
                 log.error(f"Fuzz: {binary.name} found a failing input, see {work_dir.relative_to(root)}/artifacts.")
                 failed.append(binary.name)
         if failed:
