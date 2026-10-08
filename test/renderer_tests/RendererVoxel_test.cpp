@@ -10,7 +10,9 @@
 
 #include <renderer/RenderLayerFactory.h>
 #include <renderer/RendererVoxelLayer.h>
+#if OWL_WITH_RENDER
 #include <renderer/utils/shaderFileUtils.h>
+#endif
 
 #include <filesystem>
 #include <fstream>
@@ -20,6 +22,8 @@
 
 using namespace owl;
 
+// The shader checks need the Slang compiler of the render module.
+#if OWL_WITH_RENDER
 namespace {
 auto findRoot() -> std::filesystem::path {
 	auto cwd = std::filesystem::current_path();
@@ -51,6 +55,7 @@ TEST(RendererVoxel, VoxelShaderCompiles) {
 	EXPECT_TRUE(gl.success);
 	core::Log::invalidate();
 }
+#endif
 
 TEST(RendererVoxel, LayerRegistersAndCreates) {
 	core::Log::init(core::Log::Level::Off);

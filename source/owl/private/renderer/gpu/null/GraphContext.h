@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "core/external/glfw3.h"
 #include "renderer/gpu/GraphContext.h"
 
 namespace owl::renderer::gpu::null {
@@ -31,7 +30,7 @@ public:
 	 *  Default constructor.
 	 * @param[in,out] ioWindow The window into render context.
 	 */
-	explicit GraphContext(GLFWwindow* ioWindow);
+	explicit GraphContext(void* ioWindow);
 
 	/**
 	 * @brief

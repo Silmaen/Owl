@@ -10,8 +10,10 @@
 #include "renderer/Renderer.h"
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/null/StorageBuffer.h"
+#if OWL_WITH_RENDER
 #include "renderer/gpu/opengl/StorageBuffer.h"
 #include "renderer/gpu/vulkan/StorageBuffer.h"
+#endif
 
 #include <cstdint>
 
@@ -23,10 +25,16 @@ auto StorageBuffer::create(const uint32_t iSize, const uint32_t iBinding, [[mayb
 	switch (api) {
 		case RenderAPI::Type::Null:
 			return mkShared<null::StorageBuffer>(iSize, iBinding);
+#if OWL_WITH_RENDER
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::StorageBuffer>(iSize, iBinding);
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::StorageBuffer>(iSize, iBinding);
+#else
+		case RenderAPI::Type::OpenGL:
+		case RenderAPI::Type::Vulkan:
+			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+#endif
 	}
 	OWL_CORE_ERROR("Unknown RendererAPI ({}).", static_cast<int>(api))
 	return nullptr;

@@ -16,6 +16,8 @@
 #include "internal/utils.h"
 #include "renderer/TextureDecoder.h"
 
+#include <cstring>
+
 namespace owl::renderer::gpu::vulkan {
 
 namespace {

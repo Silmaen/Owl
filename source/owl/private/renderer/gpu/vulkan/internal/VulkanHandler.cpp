@@ -86,6 +86,7 @@ void VulkanHandler::release() {
 	m_state = State::Uninitialized;
 }
 
+#if OWL_WITH_GUI
 namespace {
 void func(const VkResult iResult) {
 	if (iResult != VK_SUCCESS)
@@ -132,6 +133,7 @@ auto VulkanHandler::toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplV
 			.CustomShaderFragCreateInfo = {},
 	};
 }
+#endif
 
 void VulkanHandler::createCore() {
 	auto& core = VulkanCore::get();

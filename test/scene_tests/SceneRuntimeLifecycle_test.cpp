@@ -35,6 +35,8 @@ protected:
 		m_dir = std::filesystem::temp_directory_path() / "owl_scene_runtime_lifecycle_test";
 		std::filesystem::remove_all(m_dir);
 		std::filesystem::create_directories(m_dir);
+		OWL_REQUIRE_MODULE(PHYSICS);
+		OWL_REQUIRE_MODULE(SCRIPT);
 	}
 
 	void TearDown() override {

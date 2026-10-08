@@ -18,6 +18,8 @@
 #include "internal/VulkanHandler.h"
 #include "internal/utils.h"
 
+#include <cstring>
+
 namespace owl::renderer::gpu::vulkan {
 
 Framebuffer::Framebuffer(FramebufferSpecification iSpec) : m_specs{std::move(iSpec)} {

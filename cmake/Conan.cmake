@@ -56,6 +56,18 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
     else ()
         set(_owl_conan_tracy False)
     endif ()
+    # One recipe option per engine module (lower-case name), so a module turned OFF drops its packages.
+    set(_owl_conan_modules "")
+    foreach (_owl_module RENDER PHYSICS AUDIO SCRIPT GUI)
+        string(TOLOWER "${_owl_module}" _owl_module_lower)
+        if (${PROJECT_PREFIX}_MODULE_${_owl_module})
+            string(APPEND _owl_conan_modules "&:${_owl_module_lower}=True\n")
+        else ()
+            string(APPEND _owl_conan_modules "&:${_owl_module_lower}=False\n")
+        endif ()
+    endforeach ()
+    unset(_owl_module)
+    unset(_owl_module_lower)
 
     set(_owl_conan_env)
     if (${PROJECT_PREFIX}_CONAN_HOME)
@@ -207,7 +219,8 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
             "&:shared=${_owl_conan_shared}\n"
             "&:testing=${_owl_conan_testing}\n"
             "&:nest=${_owl_conan_nest}\n"
-            "&:tracy=${_owl_conan_tracy}\n\n"
+            "&:tracy=${_owl_conan_tracy}\n"
+            "${_owl_conan_modules}\n"
             # Recipes running a Python generator at build time (glad needs jinja2) get the interpreter running
             # Conan, which has jinja2, not the first Python on PATH (MSYS2's on Windows, without it). Conan
             # renders profiles as Jinja templates, with `os` (hence `os.sys`) in scope.
@@ -309,6 +322,7 @@ unset(_owl_conan_shared)
 unset(_owl_conan_testing)
 unset(_owl_conan_nest)
 unset(_owl_conan_tracy)
+unset(_owl_conan_modules)
 unset(_owl_conan_env)
 unset(_owl_conan_local_recipes)
 unset(_owl_conan_update)

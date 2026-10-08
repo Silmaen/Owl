@@ -9,9 +9,11 @@
 #include "owlpch.h"
 
 #include "input/Input.h"
-#include "input/glfw/Input.h"
 #include "input/null/Input.h"
 #include "window/Window.h"
+#if OWL_WITH_RENDER
+#include "input/glfw/Input.h"
+#endif
 
 namespace owl::input {
 
@@ -26,9 +28,15 @@ void Input::init(const window::Type& iType) {
 	if (m_instance)
 		m_instance.reset();
 	m_type = iType;
+#if !OWL_WITH_RENDER
+	// GLFW not built (OWL_MODULE_RENDER=OFF): the Null window comes with the Null input.
+	m_type = window::Type::Null;
+#endif
 	switch (m_type) {
 		case window::Type::Glfw:
+#if OWL_WITH_RENDER
 			m_instance = mkUniq<glfw::Input>();
+#endif
 			return;
 		case window::Type::Null:
 			m_instance = mkUniq<null::Input>();

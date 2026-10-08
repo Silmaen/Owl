@@ -8,10 +8,12 @@
 #include "owlpch.h"
 
 #include "null/DrawData.h"
+#if OWL_WITH_RENDER
 #include "opengl/DrawData.h"
+#include "vulkan/DrawData.h"
+#endif
 #include "renderer/Renderer.h"
 #include "renderer/gpu/DrawData.h"
-#include "vulkan/DrawData.h"
 
 namespace owl::renderer::gpu {
 
@@ -22,10 +24,16 @@ auto DrawData::create() -> shared<DrawData> {
 	switch (api) {
 		case RenderAPI::Type::Null:
 			return mkShared<null::DrawData>();
+#if OWL_WITH_RENDER
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::DrawData>();
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::DrawData>();
+#else
+		case RenderAPI::Type::OpenGL:
+		case RenderAPI::Type::Vulkan:
+			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+#endif
 	}
 	OWL_CORE_ERROR("Unknown RendererAPI ({}).", static_cast<int>(api))
 	return nullptr;

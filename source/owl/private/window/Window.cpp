@@ -9,9 +9,11 @@
 #include "owlpch.h"
 
 #include "core/Log.h"
-#include "glfw/Window.h"
 #include "null/Window.h"
 #include "window/Window.h"
+#if OWL_WITH_RENDER
+#include "glfw/Window.h"
+#endif
 
 #include <cctype>
 
@@ -88,7 +90,13 @@ auto makeAppId(const std::string_view iName) -> std::string {
 auto Window::create(const Properties& iProps) -> uniq<Window> {
 	switch (iProps.winType) {
 		case Type::Glfw:
+#if OWL_WITH_RENDER
 			return mkUniq<glfw::Window>(iProps);
+#else
+			// GLFW not built (OWL_MODULE_RENDER=OFF): the engine runs headless.
+			OWL_CORE_WARN("Window: GLFW not built in (OWL_MODULE_RENDER=OFF), using the Null window.")
+			return mkUniq<null::Window>(iProps);
+#endif
 		case Type::Null:
 			return mkUniq<null::Window>(iProps);
 	}

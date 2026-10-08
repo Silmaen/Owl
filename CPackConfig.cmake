@@ -11,11 +11,23 @@ install(EXPORT OwlEngineTargets
         DESTINATION lib/cmake/OwlEngine
         COMPONENT Engine)
 # Owl::Gui in a file of its own: OwlEngineConfig.cmake loads it (and imgui) only for the Gui component.
-install(EXPORT OwlEngineGuiTargets
-        FILE OwlEngineGuiTargets.cmake
-        NAMESPACE Owl::
-        DESTINATION lib/cmake/OwlEngine
-        COMPONENT Engine)
+if (${PROJECT_PREFIX}_MODULE_GUI)
+    install(EXPORT OwlEngineGuiTargets
+            FILE OwlEngineGuiTargets.cmake
+            NAMESPACE Owl::
+            DESTINATION lib/cmake/OwlEngine
+            COMPONENT Engine)
+endif ()
+# The engine modules built in, as find_package(OwlEngine COMPONENTS ...) names them.
+set(${PROJECT_PREFIX}_PACKAGE_MODULES "")
+foreach (_owl_module Render Physics Audio Script Gui)
+    string(TOUPPER "${_owl_module}" _owl_module_upper)
+    if (${PROJECT_PREFIX}_MODULE_${_owl_module_upper})
+        list(APPEND ${PROJECT_PREFIX}_PACKAGE_MODULES ${_owl_module})
+    endif ()
+endforeach ()
+unset(_owl_module)
+unset(_owl_module_upper)
 # Create file for use of find_package
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(

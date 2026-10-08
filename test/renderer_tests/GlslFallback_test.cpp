@@ -6,6 +6,8 @@
  * All modification must get authorization from the author.
  */
 
+// Slang and SPIRV-Cross come with the render module.
+#if OWL_WITH_RENDER
 #include "testHelper.h"
 
 #include <core/Log.h>
@@ -91,3 +93,4 @@ TEST(GlslFallback, cacheKeyCoversBackendModuleAndSource) {
 	EXPECT_NE(key.find("slang="), std::string::npos);
 	EXPECT_NE(key.find("BACKEND_OPENGL=1"), std::string::npos);
 }
+#endif

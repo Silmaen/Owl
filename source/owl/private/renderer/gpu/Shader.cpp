@@ -9,12 +9,12 @@
 
 #include "app/Application.h"
 #include "null/Shader.h"
-#include "opengl/Shader.h"
 #include "renderer/Renderer.h"
 #include "renderer/gpu/Shader.h"
+#if OWL_WITH_RENDER
+#include "opengl/Shader.h"
 #include "vulkan/Shader.h"
-
-#include "renderer/utils/shaderFileUtils.h"
+#endif
 
 #include <magic_enum/magic_enum.hpp>
 
@@ -84,12 +84,18 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 		case RenderAPI::Type::Null:
 			shader = mkShared<null::Shader>(name, renderer, sources);
 			break;
+#if OWL_WITH_RENDER
 		case RenderAPI::Type::OpenGL:
 			shader = mkShared<opengl::Shader>(name, renderer, sources);
 			break;
 		case RenderAPI::Type::Vulkan:
 			shader = mkShared<vulkan::Shader>(name, renderer, sources);
 			break;
+#else
+		case RenderAPI::Type::OpenGL:
+		case RenderAPI::Type::Vulkan:
+			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+#endif
 	}
 	sources.clear();
 	sources.shrink_to_fit();

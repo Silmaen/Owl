@@ -35,12 +35,28 @@ class OwlEngineConan(ConanFile):
     topics = ("game-engine", "ecs", "vulkan", "opengl")
     package_type = "library"
     settings = "os", "arch", "compiler", "build_type"
-    options = {"shared": [True, False], "testing": [True, False], "nest": [True, False], "tracy": [True, False]}
+    options = {
+        "shared": [True, False],
+        "testing": [True, False],
+        "nest": [True, False],
+        "tracy": [True, False],
+        # Engine modules (OWL_MODULE_*): one turned off drops its packages.
+        "render": [True, False],
+        "physics": [True, False],
+        "audio": [True, False],
+        "script": [True, False],
+        "gui": [True, False],
+    }
     default_options = {
         "shared": True,
         "testing": False,
         "nest": False,
         "tracy": False,
+        "render": True,
+        "physics": True,
+        "audio": True,
+        "script": True,
+        "gui": True,
         # Tracy client: zones cost a flag test until a profiler connects, nothing is buffered before.
         "tracy/*:on_demand": True,
         # LGPL libraries stay shared; imgui is shared so the engine and the editor see one context.
@@ -88,40 +104,43 @@ class OwlEngineConan(ConanFile):
         if not self.options.shared:
             # A static OwlEngine exports its private dependencies (OwlEnginePrivate): not packaged yet.
             raise ConanInvalidConfiguration(f"{self.ref}: only the shared library is packaged for now")
+        if self.options.gui and not self.options.render:
+            raise ConanInvalidConfiguration(f"{self.ref}: the gui module needs the render module")
 
     def requirements(self):
         # The only public dependency of Owl::OwlEngine (scene/Scene.h, scene/Entity.h include it).
         self.requires("entt/4.0.0", transitive_headers=True)
-        # Public through the optional Owl::Gui target only (<owlgui.h>); force: the imgui-based recipes pin another
-        # imgui version.
-        self.requires("imgui/1.92.9b-docking", transitive_headers=True, force=True)
-        # Private dependencies.
-        self.requires("box2d/3.1.1")
         self.requires("cpptrace/1.0.4")
-        self.requires("glad/2.0.8")
-        self.requires("glfw/3.4")
-        self.requires("imguizmo/1.10")
-        self.requires("lua/5.5.0")
-        self.requires("lunasvg/3.5.0")
         self.requires("magic_enum/0.9.8")
         self.requires("msdf-atlas-gen/1.4")
         self.requires("nativefiledialog-extended/1.4.1")
-        self.requires("openal-soft/1.25.2")
-        self.requires("libsndfile/1.2.2")
-        self.requires("slang/2026.19")
         self.requires("spdlog/1.17.0")
-        self.requires("spirv-cross/1.4.357.0")
         self.requires("stb/cci.20240531")
         self.requires("taskflow/4.1.0")
         self.requires("tinygltf/2.9.7")
         self.requires("tinyobjloader/2.0.0-rc13")
         self.requires("ufbx/0.23.1")
-        self.requires("vulkan-headers/1.4.357.0")
-        self.requires("vulkan-loader/1.4.357.0")
-        self.requires("vulkan-utility-libraries/1.4.357.0")
         self.requires("yaml-cpp/0.9.0")
         self.requires("zstd/1.5.7")
-        # Profiler client behind the OWL_PROFILE_* macros (OWL_PROFILER=tracy), private to the engine.
+        if self.options.render:
+            self.requires("glad/2.0.8")
+            self.requires("glfw/3.4")
+            self.requires("lunasvg/3.5.0")
+            self.requires("slang/2026.19")
+            self.requires("spirv-cross/1.4.357.0")
+            self.requires("vulkan-headers/1.4.357.0")
+            self.requires("vulkan-loader/1.4.357.0")
+            self.requires("vulkan-utility-libraries/1.4.357.0")
+        if self.options.physics:
+            self.requires("box2d/3.1.1")
+        if self.options.audio:
+            self.requires("openal-soft/1.25.2")
+            self.requires("libsndfile/1.2.2")
+        if self.options.script:
+            self.requires("lua/5.5.0")
+        if self.options.gui:
+            self.requires("imgui/1.92.9b-docking", transitive_headers=True, force=True)
+            self.requires("imguizmo/1.10")
         if self.options.tracy:
             self.requires("tracy/0.13.1")
         # Owl Nest only.
@@ -145,6 +164,8 @@ class OwlEngineConan(ConanFile):
         tc.cache_variables["OWL_TESTING"] = False
         tc.cache_variables["OWL_PROFILER"] = "tracy" if self.options.tracy else "none"
         tc.cache_variables["OWL_USE_CCACHE"] = False
+        for module in ("render", "physics", "audio", "script", "gui"):
+            tc.cache_variables[f"OWL_MODULE_{module.upper()}"] = bool(self.options.get_safe(module))
         tc.generate()
 
     def build(self):
@@ -162,4 +183,7 @@ class OwlEngineConan(ConanFile):
         self.cpp_info.builddirs = ["."]
         self.cpp_info.libs = ["OwlEngine"]
         self.cpp_info.resdirs = ["assets"]
-        self.cpp_info.defines = ["OWL_BUILD_SHARED", f"OWL_PLATFORM_{str(self.settings.os).upper()}"]
+        self.cpp_info.defines = ["OWL_BUILD_SHARED", f"OWL_PLATFORM_{str(self.settings.os).upper()}"] + [
+            f"OWL_WITH_{module.upper()}={int(bool(self.options.get_safe(module)))}"
+            for module in ("render", "physics", "audio", "script", "gui")
+        ]

@@ -10,13 +10,16 @@
 #include "renderer/gpu/RendererDescriptors.h"
 
 #include "renderer/gpu/RenderCommand.h"
+#if OWL_WITH_RENDER
 #include "vulkan/internal/RendererDescriptors.h"
+#endif
 
 #include <cstdint>
 #include <span>
 
 namespace owl::renderer::gpu {
 
+#if OWL_WITH_RENDER
 namespace {
 
 auto toVkDescriptorType(const BindingType iType) -> VkDescriptorType {
@@ -89,5 +92,22 @@ RendererDescriptors::ScopedActive::~ScopedActive() {
 		return;
 	vulkan::internal::RendererDescriptors::setActive(static_cast<vulkan::internal::RendererDescriptors*>(mp_state));
 }
+#else
+// GPU backends not built (OWL_MODULE_RENDER=OFF): the Null backend has no descriptor set.
+void RendererDescriptors::declare([[maybe_unused]] const std::string& iRenderer,
+								  [[maybe_unused]] std::span<const BindingDecl> iBindings) {}
+
+void RendererDescriptors::release([[maybe_unused]] const std::string& iRenderer) {}
+
+void RendererDescriptors::releaseAll() {}
+
+RendererDescriptors::ScopedActive::ScopedActive([[maybe_unused]] const std::string& iRenderer) {}
+
+RendererDescriptors::ScopedActive::~ScopedActive() {
+	// Never engaged without the Vulkan backend: nothing to restore.
+	m_engaged = false;
+	mp_state = nullptr;
+}
+#endif
 
 }// namespace owl::renderer::gpu

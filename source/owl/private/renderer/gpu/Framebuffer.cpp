@@ -8,11 +8,13 @@
 #include "owlpch.h"
 
 #include "null/Framebuffer.h"
+#if OWL_WITH_RENDER
 #include "opengl/Framebuffer.h"
+#include "vulkan/Framebuffer.h"
+#endif
 #include "renderer/Renderer.h"
 #include "renderer/gpu/Framebuffer.h"
 #include "renderer/gpu/RenderAPI.h"
-#include "vulkan/Framebuffer.h"
 
 namespace owl::renderer::gpu {
 
@@ -21,10 +23,16 @@ auto Framebuffer::create(const FramebufferSpecification& iSpec) -> shared<Frameb
 	switch (api) {
 		case RenderAPI::Type::Null:
 			return mkShared<null::Framebuffer>(iSpec);
+#if OWL_WITH_RENDER
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::Framebuffer>(iSpec);
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::Framebuffer>(iSpec);
+#else
+		case RenderAPI::Type::OpenGL:
+		case RenderAPI::Type::Vulkan:
+			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+#endif
 	}
 	OWL_CORE_ERROR("Unknown RendererAPI ({}).", static_cast<int>(api))
 	return nullptr;

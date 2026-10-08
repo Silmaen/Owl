@@ -10,7 +10,9 @@
 
 #include "VulkanCore.h"
 
+#if OWL_WITH_GUI
 #include <backends/imgui_impl_vulkan.h>
+#endif
 #include <renderer/gpu/vulkan/Framebuffer.h>
 
 #include <cstddef>
@@ -144,7 +146,9 @@ public:
 	 * @param[in,out] ioFormats Filled with the swapchain colour formats expected by ImGui.
 	 * @return Populated init-info ready to be passed to `ImGui_ImplVulkan_Init`.
 	 */
+#if OWL_WITH_GUI
 	[[nodiscard]] auto toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplVulkan_InitInfo;
+#endif
 
 	/**
 	 * @brief
