@@ -95,12 +95,12 @@ TEST(PhysicMultiThread, WorkerCountSettings) {
 	EXPECT_EQ(settings.getEffectiveWorkerCount(10), 1u);
 	EXPECT_GE(settings.getEffectiveWorkerCount(PhysicsSettings::autoThreadingMinBodies), 1u);
 	EXPECT_LE(settings.getEffectiveWorkerCount(PhysicsSettings::autoThreadingMinBodies),
-			  PhysicsSettings::maxAutoWorkerCount);
+			  uint32_t{PhysicsSettings::maxAutoWorkerCount});
 	settings.workerCount = 1;
 	EXPECT_EQ(settings.getEffectiveWorkerCount(0), 1u);
 	settings.workerCount = 1000;
-	EXPECT_EQ(settings.getEffectiveWorkerCount(0), PhysicsSettings::maxWorkerCount);
-	EXPECT_EQ(settings.clamped().workerCount, PhysicsSettings::maxWorkerCount);
+	EXPECT_EQ(settings.getEffectiveWorkerCount(0), uint32_t{PhysicsSettings::maxWorkerCount});
+	EXPECT_EQ(settings.clamped().workerCount, uint32_t{PhysicsSettings::maxWorkerCount});
 	EXPECT_EQ(PhysicCommand::getWorkerCount(), 0u);
 	Scene scene;
 	scene.getPhysicsSettings().workerCount = 2;

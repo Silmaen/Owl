@@ -223,7 +223,7 @@ TEST(PhysicsSettings, ClampedKeepsFieldsInRange) {
 	auto clamped = settings.clamped();
 	EXPECT_FLOAT_EQ(clamped.tickRate, PhysicsSettings::minTickRate);
 	EXPECT_EQ(clamped.maxStepsPerFrame, 1u);
-	EXPECT_EQ(clamped.solverSubSteps, PhysicsSettings::maxSolverSubSteps);
+	EXPECT_EQ(clamped.solverSubSteps, uint32_t{PhysicsSettings::maxSolverSubSteps});
 	settings.tickRate = std::numeric_limits<float>::quiet_NaN();
 	EXPECT_FLOAT_EQ(settings.clamped().tickRate, PhysicsSettings::defaultTickRate);
 	EXPECT_NEAR(PhysicsSettings{}.getStepSeconds(), 1.0 / 60.0, 1e-12);
