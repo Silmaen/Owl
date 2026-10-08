@@ -9,6 +9,7 @@
 
 #include "app/Application.h"
 #include "null/Shader.h"
+#include "platform/FileUtils.h"
 #include "renderer/Renderer.h"
 #include "renderer/gpu/Shader.h"
 #if OWL_WITH_RENDER
@@ -97,12 +98,36 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
 #endif
 	}
-	sources.clear();
-	sources.shrink_to_fit();
+	if (shader) {
+		if (sources.size() == 1)
+			shader->m_sourcePath = sources.front();
+		else if (const auto slang = std::filesystem::path(iFile.string() + ".slang"); is_regular_file(slang))
+			shader->m_sourcePath = slang;
+		else if (iFile.extension() == ".slang" && is_regular_file(iFile))
+			shader->m_sourcePath = iFile;
+	}
 	return shader;
 }
 
 Shader::~Shader() = default;
+
+auto Shader::reload() -> bool {
+	OWL_PROFILE_FUNCTION()
+
+	if (m_sourcePath.empty() || !std::filesystem::is_regular_file(m_sourcePath)) {
+		OWL_CORE_ERROR("Shader: Cannot reload {}, source file '{}' not found.", getFullName(), m_sourcePath.string())
+		return false;
+	}
+	if (!recompile(platform::fileToString(m_sourcePath))) {
+		OWL_CORE_ERROR("Shader: Reload of {} failed ({}), the previous version stays in use.", getFullName(),
+					   m_sourcePath.string())
+		return false;
+	}
+	++m_generation;
+	onRecompiled();
+	OWL_CORE_INFO("Shader: {} reloaded from {}.", getFullName(), m_sourcePath.string())
+	return true;
+}
 
 auto Shader::decomposeName(const std::string& iFullName) -> ShaderName {
 	ShaderName result;

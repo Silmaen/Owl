@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "DrawData.h"
 #include "Shader.h"
 #include "app/Application.h"
 #include "internal/VulkanHandler.h"
@@ -109,7 +110,8 @@ void Shader::createShader(const std::string& iSlangSource) {
 	const auto start = std::chrono::steady_clock::now();
 
 	renderer::utils::createCacheDirectoryIfNeeded(getRenderer(), "vulkan");
-	compileOrGetVulkanBinaries(iSlangSource);
+	if (auto binaries = compileOrGetVulkanBinaries(iSlangSource); binaries.has_value())
+		m_vulkanSpirv = std::move(*binaries);
 
 	const auto timer = std::chrono::steady_clock::now() - start;
 	double duration =
@@ -117,12 +119,23 @@ void Shader::createShader(const std::string& iSlangSource) {
 	OWL_CORE_INFO("Compilation of shader {} in {} ms.", getName(), duration)
 }
 
-void Shader::compileOrGetVulkanBinaries(const std::string& iSlangSource) {
+auto Shader::recompile(const std::string& iSlangSource) -> bool {
 	OWL_PROFILE_FUNCTION()
 
-	auto& shaderData = m_vulkanSpirv;
-	shaderData.clear();
+	auto binaries = compileOrGetVulkanBinaries(iSlangSource);
+	if (!binaries.has_value())
+		return false;
+	m_vulkanSpirv = std::move(*binaries);
+	return true;
+}
 
+void Shader::onRecompiled() { DrawData::rebuildPipelines(*this); }
+
+auto Shader::compileOrGetVulkanBinaries(const std::string& iSlangSource) const
+		-> std::optional<std::unordered_map<ShaderType, std::vector<uint32_t>>> {
+	OWL_PROFILE_FUNCTION()
+
+	std::unordered_map<ShaderType, std::vector<uint32_t>> shaderData;
 	const auto cacheKey =
 			renderer::utils::getShaderCacheKey(iSlangSource, getRenderer() + "/" + getName(), /*iForVulkan=*/true);
 	bool allCached = true;
@@ -146,7 +159,7 @@ void Shader::compileOrGetVulkanBinaries(const std::string& iSlangSource) {
 		auto compiled = renderer::utils::compileSlangToSpirv(iSlangSource, getName(), true);
 		if (!compiled.success) {
 			OWL_CORE_ERROR("Slang compilation failed for shader '{}'.", getName())
-			return;
+			return std::nullopt;
 		}
 		shaderData = std::move(compiled.spirvData);
 		for (auto&& [stage, data]: shaderData) {
@@ -159,8 +172,8 @@ void Shader::compileOrGetVulkanBinaries(const std::string& iSlangSource) {
 		}
 	}
 	for (auto&& [stage, data]: shaderData)
-
 		renderer::utils::shaderReflect(getName(), getRenderer(), "vulkan", stage, data);
+	return shaderData;
 }
 
 auto Shader::getStagesInfo() -> std::vector<VkPipelineShaderStageCreateInfo> {

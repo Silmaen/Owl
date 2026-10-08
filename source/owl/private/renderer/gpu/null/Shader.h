@@ -136,5 +136,14 @@ public:
 	 * @param[in] iValue Shader's variable's value.
 	 */
 	void setMat4(const std::string& iName, const math::mat4& iValue) override;
+
+protected:
+	/**
+	 * @brief
+	 *  Compile the new Slang source for Vulkan without any GPU, so that a reload reports the same errors headless.
+	 * @param[in] iSlangSource The new Slang source.
+	 * @return True when every entry point compiles.
+	 */
+	auto recompile(const std::string& iSlangSource) -> bool override;
 };
 }// namespace owl::renderer::gpu::null

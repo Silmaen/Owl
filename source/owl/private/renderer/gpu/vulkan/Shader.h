@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -144,6 +145,21 @@ public:
 	 */
 	auto getStagesInfo() -> std::vector<VkPipelineShaderStageCreateInfo>;
 
+protected:
+	/**
+	 * @brief
+	 *  Compile a new Slang source; the SPIR-V in use is replaced only when every stage compiles.
+	 * @param[in] iSlangSource The new Slang source.
+	 * @return True when the new SPIR-V is in use.
+	 */
+	auto recompile(const std::string& iSlangSource) -> bool override;
+
+	/**
+	 * @brief
+	 *  Rebuild the pipelines of the draws using this shader.
+	 */
+	void onRecompiled() override;
+
 private:
 	/**
 	 * @brief
@@ -154,10 +170,12 @@ private:
 
 	/**
 	 * @brief
-	 *  Compile the Slang source to Vulkan SPIR-V (or load it from cache when valid).
+	 *  Compile the Slang source to Vulkan SPIR-V, or read it from the cache when it is valid.
 	 * @param[in] iSlangSource The Slang shader source code.
+	 * @return The SPIR-V of every stage, or nothing when the compilation failed (logged).
 	 */
-	void compileOrGetVulkanBinaries(const std::string& iSlangSource);
+	[[nodiscard]] auto compileOrGetVulkanBinaries(const std::string& iSlangSource) const
+			-> std::optional<std::unordered_map<ShaderType, std::vector<uint32_t>>>;
 
 	/// SPIR-V binaries (one entry per shader stage) compiled for the Vulkan backend.
 	std::unordered_map<ShaderType, std::vector<uint32_t>> m_vulkanSpirv;

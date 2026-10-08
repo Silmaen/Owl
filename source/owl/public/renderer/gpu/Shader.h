@@ -218,8 +218,49 @@ public:
 		return specification;
 	}
 
+	/**
+	 * @brief
+	 *  Get the Slang file the shader was compiled from.
+	 * @return The source file, empty for a shader built from a string.
+	 */
+	[[nodiscard]] auto getSourcePath() const -> const std::filesystem::path& { return m_sourcePath; }
+
+	/**
+	 * @brief
+	 *  Get the number of successful reloads: 0 for the shader as first compiled.
+	 * @return The generation of the binaries in use.
+	 */
+	[[nodiscard]] auto getGeneration() const -> uint32_t { return m_generation; }
+
+	/**
+	 * @brief
+	 *  Recompile the shader from its source file and swap the binaries in use (hot reload). On a read or compilation
+	 *  error the previous binaries stay in use and the Slang diagnostic (file, line, message) is logged.
+	 * @return True when the new binaries are in use.
+	 */
+	auto reload() -> bool;
+
+protected:
+	/**
+	 * @brief
+	 *  Compile a new Slang source and swap it in only when every stage compiles and links.
+	 * @param[in] iSlangSource The new Slang source.
+	 * @return True when the new binaries are in use; false keeps the previous ones.
+	 */
+	virtual auto recompile(const std::string& iSlangSource) -> bool = 0;
+
+	/**
+	 * @brief
+	 *  Called after a successful reload, once the generation is bumped: rebuild what was made from the old binaries.
+	 */
+	virtual void onRecompiled() {}
+
 private:
 	/// Shader's name.
 	Specification m_specs;
+	/// Slang file of the shader, watched by the hot reload.
+	std::filesystem::path m_sourcePath;
+	/// Successful reload count.
+	uint32_t m_generation = 0;
 };
 }// namespace owl::renderer::gpu

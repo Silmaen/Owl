@@ -23,13 +23,13 @@ namespace owl::renderer::gpu::vulkan {
  */
 class OWL_API DrawData final : public owl::renderer::gpu::DrawData {
 public:
-	DrawData(const DrawData&) = default;
+	DrawData(const DrawData&) = delete;
 
-	DrawData(DrawData&&) = default;
+	DrawData(DrawData&&) = delete;
 
-	auto operator=(const DrawData&) -> DrawData& = default;
+	auto operator=(const DrawData&) -> DrawData& = delete;
 
-	auto operator=(DrawData&&) -> DrawData& = default;
+	auto operator=(DrawData&&) -> DrawData& = delete;
 
 	DrawData() = default;
 
@@ -120,7 +120,23 @@ public:
 	 */
 	[[nodiscard]] auto getName() const -> std::string { return std::format("{}_{}", m_renderer, m_shaderName); }
 
+	/**
+	 * @brief
+	 *  Rebuild the pipeline of every live draw using a shader, after the shader was recompiled (hot reload).
+	 *  Each pipeline keeps its fixed-function state, vertex input and descriptor set layout; the old one is
+	 *  released once the frames recorded with it are done.
+	 * @param[in] iShader The recompiled shader.
+	 */
+	static void rebuildPipelines(const Shader& iShader);
+
 private:
+	/**
+	 * @brief
+	 *  Build (or rebuild) the pipeline from the shader, the buffers' vertex input and the pipeline state.
+	 * @param[in] iSetLayout Descriptor set layout to build with; null takes the active renderer block's.
+	 */
+	void buildPipeline(VkDescriptorSetLayout iSetLayout);
+
 	/// index of the pipeline.
 	int32_t m_pipelineId = -1;
 	/// Pointer to the shader/pipeline.

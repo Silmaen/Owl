@@ -8,6 +8,7 @@
 #include "owlpch.h"
 
 #include "Shader.h"
+#include "renderer/utils/shaderFileUtils.h"
 
 namespace owl::renderer::gpu::null {
 
@@ -40,6 +41,10 @@ void Shader::setFloat3(const std::string&, const math::vec3&) {}
 void Shader::setFloat4(const std::string&, const math::vec4&) {}
 
 void Shader::setMat4(const std::string&, const math::mat4&) {}
+
+auto Shader::recompile(const std::string& iSlangSource) -> bool {
+	return renderer::utils::compileSlangToSpirv(iSlangSource, getName(), /*iForVulkan=*/true).success;
+}
 
 
 }// namespace owl::renderer::gpu::null

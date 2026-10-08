@@ -157,8 +157,10 @@ void Shader::compile(const std::string& iSlangSource) {
 	const auto start = std::chrono::steady_clock::now();
 
 	renderer::utils::createCacheDirectoryIfNeeded(getRenderer(), "opengl");
-	compileOrGetOpenGlBinaries(iSlangSource);
-	createProgram();
+	if (auto binaries = compileOrGetOpenGlBinaries(iSlangSource); binaries.has_value())
+		m_openGlSpirv = std::move(*binaries);
+	m_programId = createProgram(m_openGlSpirv);
+	OWL_CORE_ASSERT(m_programId != 0, std::format("Failed to create shader {}", getName()))
 
 	const auto timer = std::chrono::steady_clock::now() - start;
 	double duration =
@@ -166,12 +168,26 @@ void Shader::compile(const std::string& iSlangSource) {
 	OWL_CORE_INFO("Compilation of shader {} in {} ms.", getName(), duration)
 }
 
-void Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) {
+auto Shader::recompile(const std::string& iSlangSource) -> bool {
 	OWL_PROFILE_FUNCTION()
 
-	auto& shaderData = m_openGlSpirv;
-	shaderData.clear();
+	auto binaries = compileOrGetOpenGlBinaries(iSlangSource);
+	if (!binaries.has_value())
+		return false;
+	const uint32_t program = createProgram(*binaries);
+	if (program == 0)
+		return false;
+	glDeleteProgram(m_programId);
+	m_programId = program;
+	m_openGlSpirv = std::move(*binaries);
+	return true;
+}
 
+auto Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) const
+		-> std::optional<std::unordered_map<ShaderType, std::vector<uint32_t>>> {
+	OWL_PROFILE_FUNCTION()
+
+	std::unordered_map<ShaderType, std::vector<uint32_t>> shaderData;
 	const auto cacheKey =
 			renderer::utils::getShaderCacheKey(iSlangSource, getRenderer() + "/" + getName(), /*iForVulkan=*/false);
 	bool allCached = true;
@@ -195,37 +211,39 @@ void Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) {
 		auto compiled = renderer::utils::compileSlangToSpirv(iSlangSource, getName(), false);
 		if (!compiled.success) {
 			OWL_CORE_ERROR("Slang compilation failed for shader '{}'.", getName())
-			return;
+			return std::nullopt;
 		}
 		shaderData = std::move(compiled.spirvData);
 		for (auto&& [stage, data]: shaderData) {
 			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
 			if (!renderer::utils::writeCachedShader(cachedPath, data))
-
 				OWL_CORE_WARN("Failed to write the compiled shader.")
 			renderer::utils::writeShaderHash(cachedPath, cacheKey);
 		}
 	}
 	for (auto&& [stage, data]: shaderData)
-
 		renderer::utils::shaderReflect(getName(), getRenderer(), "opengl", stage, data);
+	return shaderData;
 }
 
-void Shader::createProgram() {
+auto Shader::createProgram(const std::unordered_map<ShaderType, std::vector<uint32_t>>& iSpirv) const -> uint32_t {
 	const GLuint program = glCreateProgram();
-
-	// list of shader's id
 	std::vector<GLuint> shaderIDs;
-	for (auto&& [stage, spirv]: m_openGlSpirv) {
+	bool stagesCompiled = !iSpirv.empty();
+	for (auto&& [stage, spirv]: iSpirv) {
 		const GLuint shaderId = createShaderObject(stage, spirv, getName());
-		if (shaderId == 0)
+		if (shaderId == 0) {
+			stagesCompiled = false;
 			continue;
+		}
 		shaderIDs.push_back(shaderId);
 		glAttachShader(program, shaderId);
 	}
-	glLinkProgram(program);
 	GLint isLinked = 0;
-	glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+	if (stagesCompiled) {
+		glLinkProgram(program);
+		glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+	}
 	if (isLinked == GL_FALSE) {
 		OWL_CORE_ERROR("Shader linking failed ({}).", getName())
 		GLint maxLength = 0;
@@ -237,14 +255,13 @@ void Shader::createProgram() {
 		}
 		glDeleteProgram(program);
 		for (const auto id: shaderIDs) glDeleteShader(id);
-		OWL_CORE_ASSERT(false, std::format("Failed to create shader {}", getName()))
-		return;
+		return 0;
 	}
 	for (const auto id: shaderIDs) {
 		glDetachShader(program, id);
 		glDeleteShader(id);
 	}
-	m_programId = program;
+	return program;
 }
 
 void Shader::bind() const {
