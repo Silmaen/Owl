@@ -101,6 +101,9 @@ TEST(FrameBenchRun, NullBackendWritesReport) {
 	EXPECT_EQ(report["frames_measured"].as<uint32_t>(), 8u);
 	EXPECT_FALSE(report["interrupted"].as<bool>());
 	EXPECT_FALSE(report["gpu_timestamps"].as<bool>());
+	const auto startup = report["startup_ms"];
+	EXPECT_GT(startup["engine_ready"].as<double>(), 0.0);
+	EXPECT_GE(startup["first_frame"].as<double>(), startup["engine_ready"].as<double>());
 	const auto summary = report["summary"];
 	EXPECT_EQ(summary["cpu_total_ms"]["count"].as<uint32_t>(), 8u);
 	EXPECT_GT(summary["cpu_total_ms"]["median"].as<double>(), 0.0);

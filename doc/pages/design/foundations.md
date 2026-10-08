@@ -90,8 +90,8 @@ Every fix lands with its regression test.
 
 ## Phase B — Safety nets
 
-- ![In Progress][progress] Engine benchmark harness `bench/` behind `OWL_BENCHMARK` (scene, frame, Renderer2D,
-  YAML, voxel, Lua, physics, startup)
+- ![Done][done] Engine benchmark harness `bench/` behind `OWL_BENCHMARK` (scene, frame, Renderer2D, YAML, voxel,
+  Lua, physics, Slang, startup); the real runner's cold start in `OwlRunner --frame-bench` (`startup_ms`)
 - ![Done][done] `owlnest_tests` category: undo, commands, snapshots; the empty round-trip assertions fixed
   (PR-02: E-03, F-02, C-07, P-14)
 - ![Done][done] Sanitizers that fail the build (ASan, UBSan, TSan), `--gtest_shuffle`, LSan job folded into
@@ -229,7 +229,7 @@ Measured on the `bench/` harness, Null backend unless stated (source: `doc/audit
 | Scene load per entity                   | 134 µs (10 000 entities: 1.34 s)                 | < 10 µs                               |
 | Box2D step, 5 000 bodies in contact     | 4.88 ms (single thread)                          | < 1.5 ms (multi-thread, fixed step)   |
 | Voxel meshing                           | on workers, streaming frame peak 0.35 ms (PR-24) | off the main thread, per-frame budget |
-| Cold start (real runner, GPU backend)   | not measured (226 ms for a Null dummy app)       | measured, then shaders precompiled    |
+| Cold start (real runner, GPU backend)   | ~400 ms to first frame on lavapipe / llvmpipe    | measured, then shaders precompiled    |
 
 ## Exit criteria
 

@@ -149,7 +149,7 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase A — game export tested end to end, sample run headless ([Export](design/game-export.md))
 - ![Done][done] Phase A — full Wayland: icon, editor multi-window, X11 kept ([details](design/windowing-input.md))
 - ![Done][done] Phase A — OpenGL compatibility backend fixed and tested, mipmaps and Nearest filtering on both backends
-- ![In Progress][progress] Phase B — engine benchmark harness `bench/` (`OWL_BENCHMARK`)
+- ![Done][done] Phase B — engine benchmark harness `bench/` (`OWL_BENCHMARK`), runner cold start measured
 - ![Done][done] Phase B — diff-scoped clang-tidy CI action, parallel by default (H-03)
 - ![Done][done] Phase B — blocking sanitizers, shuffled test order, LSan job removed (PR-11)
 - ![Done][done] Phase B — CI in two parallel levels, fast subset for `Experiment/*` PRs, `PR Ready` merge gate

@@ -49,6 +49,8 @@ struct FrameBenchOptions {
 	bool vSync{false};
 	/// Enable the Vulkan validation layers.
 	bool validation{false};
+	/// When the runner started (set by `createApplication`), origin of the start-up times; epoch when unknown.
+	core::Timestep::time_point processStart{};
 };
 
 /**
@@ -132,6 +134,13 @@ public:
 	 * @return The bench options.
 	 */
 	[[nodiscard]] auto getOptions() const -> const FrameBenchOptions& { return m_options; }
+
+	/**
+	 * @brief
+	 *  Record the start-up time to an engine ready to load a scene (window, renderer, shaders); call first thing in
+	 *  the layer's attach.
+	 */
+	void onEngineReady();
 
 	/**
 	 * @brief
@@ -236,6 +245,10 @@ private:
 	std::string m_presentMode;
 	/// Window size at start.
 	math::vec2ui m_windowSize{0, 0};
+	/// Milliseconds from the runner start to `onEngineReady()`: window, renderer and shaders.
+	std::optional<double> m_startupEngineMs;
+	/// Milliseconds from the runner start to the first frame.
+	std::optional<double> m_startupFirstFrameMs;
 };
 
 }// namespace owl::nest::runner

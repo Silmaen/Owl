@@ -333,6 +333,7 @@ auto RunnerLayer::stepSmokeTest() -> bool {
 }
 
 void RunnerLayer::attachFrameBench() {
+	m_frameBench->onEngineReady();
 	auto& app = app::Application::get();
 	const auto& options = m_frameBench->getOptions();
 	m_config.gameName = "OwlFrameBench";

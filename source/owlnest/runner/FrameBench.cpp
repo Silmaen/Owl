@@ -242,6 +242,13 @@ FrameBench::FrameBench(FrameBenchOptions iOptions)
 	m_samples.reserve(m_options.frames);
 }
 
+void FrameBench::onEngineReady() {
+	if (m_options.processStart != core::Timestep::time_point{})
+		m_startupEngineMs =
+				std::chrono::duration<double, std::milli>(core::Timestep::clock::now() - m_options.processStart)
+						.count();
+}
+
 void FrameBench::start() {
 	auto& app = app::Application::get();
 	app.setFrameTimingsEnabled(true);
@@ -263,6 +270,8 @@ void FrameBench::start() {
 
 void FrameBench::onFrameStart() {
 	const auto now = core::Timestep::clock::now();
+	if (m_calls == 0 && m_options.processStart != core::Timestep::time_point{})
+		m_startupFirstFrameMs = std::chrono::duration<double, std::milli>(now - m_options.processStart).count();
 	const auto counters = renderer::gpu::RenderCommand::getRenderCounters();
 	if (m_current.has_value()) {
 		auto& sample = m_samples[*m_current];
@@ -370,6 +379,8 @@ auto FrameBench::toJson() const -> std::string {
 	json += std::format("  \"frames_requested\": {},\n", m_options.frames);
 	json += std::format("  \"frames_measured\": {},\n", m_samples.size());
 	json += std::format("  \"interrupted\": {},\n", m_interrupted);
+	json += std::format("  \"startup_ms\": {{\"engine_ready\": {}, \"first_frame\": {}}},\n",
+						jsonNumber(m_startupEngineMs), jsonNumber(m_startupFirstFrameMs));
 	const auto series = makeSeries();
 	json += "  \"summary\": {\n";
 	for (size_t s = 0; s < series.size(); ++s) {
@@ -396,6 +407,9 @@ auto FrameBench::toText() const -> std::string {
 	std::string text = std::format("Frame bench: {} | backend {} | device {} | present {} | {} frames{}\n",
 								   m_options.scene.filename().string(), backendName(m_options.backend), m_device,
 								   m_presentMode, m_samples.size(), m_interrupted ? " (interrupted)" : "");
+	if (m_startupFirstFrameMs.has_value())
+		text += std::format("start-up: engine ready {:.1f} ms, first frame {:.1f} ms\n",
+							m_startupEngineMs.value_or(0.0), *m_startupFirstFrameMs);
 	text += std::format("{:<22} {:>6} {:>10} {:>10} {:>10} {:>10} {:>10}\n", "series", "count", "median", "p95", "p99",
 						"iqr", "max");
 	for (const auto& series: makeSeries()) {

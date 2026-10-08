@@ -116,6 +116,13 @@ every Vulkan command buffer (`gpu_busy_ms` is their sum, `gpu_span_ms` first to 
 (`GL_TIMESTAMP`) at `beginFrame` / `endFrame` on OpenGL. The text summary gives count, median, p95, p99,
 interquartile range and maximum of every series.
 
+It also measures the cold start of the real runner (`startup_ms` in the report, `start-up:` line in the summary):
+`engine_ready` from the entry of `createApplication` to an engine able to load a scene (window, renderer, shader
+compilation or cache), `first_frame` to the start of the first frame (scene loaded, render stack installed). The
+dynamic loader and static initialisers before `main` are not counted. On lavapipe / llvmpipe (October 2026, warm
+SPIR-V cache) the `mixed` image-test scene starts in about 365 ms to an engine ready and 400 ms to the first frame,
+with either backend.
+
 Pick the device with the driver's own variables: `VK_ICD_FILENAMES=/etc/vulkan/icd.d/nvidia_icd.json` (or
 `/usr/share/vulkan/icd.d/intel_icd.json`, `lvp_icd.json`) for Vulkan,
 `__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia` or `__GLX_VENDOR_LIBRARY_NAME=mesa

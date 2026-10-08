@@ -122,8 +122,8 @@ public:
 };
 
 namespace {
-auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::filesystem::path& iCallerDir)
-		-> shared<app::Application> {
+auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::filesystem::path& iCallerDir,
+								 const core::Timestep::time_point iProcessStart) -> shared<app::Application> {
 	auto options = nest::runner::parseFrameBenchOptions(iArgc, iArgv, iCallerDir);
 	if (!options.has_value()) {
 		std::fputs("OwlRunner --frame-bench: ", stderr);
@@ -134,6 +134,7 @@ auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::files
 				   stderr);
 		std::exit(2);// NOLINT(concurrency-mt-unsafe)
 	}
+	options->processStart = iProcessStart;
 	const bool headless = options->backend == renderer::gpu::RenderAPI::Type::Null;
 	return mkShared<OwlNest>(
 			app::AppParams{
@@ -159,6 +160,7 @@ auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::files
 OWL_DIAG_POP
 
 auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
+	const auto processStart = core::Timestep::clock::now();
 	const auto callerDir = std::filesystem::current_path();
 	if (iArgc > 0 && iArgv[0] != nullptr) {
 		if (const auto exeDir = std::filesystem::absolute(std::filesystem::path(iArgv[0])).parent_path();
@@ -168,7 +170,7 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 	}
 
 	if (nest::runner::hasFrameBenchFlag(iArgc, iArgv))
-		return createFrameBenchApplication(iArgc, iArgv, callerDir);
+		return createFrameBenchApplication(iArgc, iArgv, callerDir, processStart);
 
 	const auto workDir = std::filesystem::current_path();
 	const auto [packFile, gameName, icon, width, height] = readEarlyConfig(workDir);
