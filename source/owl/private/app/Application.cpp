@@ -14,6 +14,7 @@
 #include "core/external/yaml.h"
 #include "core/utils/StringUtils.h"
 #include "data/assets/pack/PackExtractor.h"
+#include "gui/UiLayer.h"
 #include "input/Input.h"
 #include "renderer/Renderer.h"
 #include "sound/SoundSystem.h"

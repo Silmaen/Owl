@@ -7,14 +7,14 @@
  */
 #include "owlpch.h"
 
-#include "physics/PhysicsSettings.h"
+#include "scene/PhysicsSettings.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <thread>
 
-namespace owl::physics {
+namespace owl::scene {
 
 auto PhysicsSettings::getStepSeconds() const -> double { return 1.0 / static_cast<double>(clamped().tickRate); }
 
@@ -40,4 +40,4 @@ OWL_DIAG_DISABLE_CLANG("-Wfloat-equal")
 auto PhysicsSettings::operator==(const PhysicsSettings& iOther) const -> bool = default;
 OWL_DIAG_POP
 
-}// namespace owl::physics
+}// namespace owl::scene

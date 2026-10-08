@@ -14,6 +14,7 @@
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 #include <scene/component/components.h>
+#include <window/Window.h>
 
 using namespace owl::scene;
 

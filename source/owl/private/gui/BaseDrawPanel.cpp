@@ -10,6 +10,7 @@
 #include "app/Application.h"
 #include "debug/Profiler.h"
 #include "gui/BaseDrawPanel.h"
+#include "gui/UiLayer.h"
 #include "gui/utils.h"
 #include <imgui.h>
 

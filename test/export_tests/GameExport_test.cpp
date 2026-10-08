@@ -145,7 +145,7 @@ protected:
 				.windowSize = {800, 600},
 				.fullscreen = false,
 				.resizable = true,
-				.rendererStack = {},
+				.rendererStackYaml = {},
 				.packFlags = PackFlags::Default};
 	}
 

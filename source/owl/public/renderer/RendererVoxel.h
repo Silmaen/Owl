@@ -11,10 +11,13 @@
 #include "math/Transform.h"
 #include "math/vectors.h"
 #include "renderer/Camera.h"
-#include "scene/component/VoxelWorld.h"
 
 #include <cstdint>
 #include <optional>
+
+namespace owl::scene::component {
+struct VoxelWorld;
+}// namespace owl::scene::component
 
 namespace owl::renderer {
 

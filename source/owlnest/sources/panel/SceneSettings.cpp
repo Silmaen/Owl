@@ -226,17 +226,17 @@ auto SceneSettings::renderAddLayerSection() -> bool {
 void SceneSettings::renderPhysicsSection() const {
 	if (!ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
 		return;
-	const physics::PhysicsSettings before = m_scene->getPhysicsSettings();
-	physics::PhysicsSettings edited = before;
+	const scene::PhysicsSettings before = m_scene->getPhysicsSettings();
+	scene::PhysicsSettings edited = before;
 	ImGui::SetNextItemWidth(160.f);
-	ImGui::DragFloat("Tick rate", &edited.tickRate, 1.f, physics::PhysicsSettings::minTickRate,
-					 physics::PhysicsSettings::maxTickRate, "%.0f Hz");
+	ImGui::DragFloat("Tick rate", &edited.tickRate, 1.f, scene::PhysicsSettings::minTickRate,
+					 scene::PhysicsSettings::maxTickRate, "%.0f Hz");
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Fixed physics steps per second, whatever the frame rate.");
 	auto maxSteps = static_cast<int>(edited.maxStepsPerFrame);
 	ImGui::SetNextItemWidth(160.f);
 	if (ImGui::DragInt("Max steps per frame", &maxSteps, 0.2f, 1,
-					   static_cast<int>(physics::PhysicsSettings::maxStepsLimit)))
+					   static_cast<int>(scene::PhysicsSettings::maxStepsLimit)))
 		edited.maxStepsPerFrame = static_cast<uint32_t>(std::max(maxSteps, 1));
 	if (ImGui::IsItemHovered())
 		ImGui::SetTooltip("Time beyond this many steps in one frame is dropped: the game slows down instead of "
@@ -244,11 +244,11 @@ void SceneSettings::renderPhysicsSection() const {
 	auto subSteps = static_cast<int>(edited.solverSubSteps);
 	ImGui::SetNextItemWidth(160.f);
 	if (ImGui::DragInt("Solver sub-steps", &subSteps, 0.1f, 1,
-					   static_cast<int>(physics::PhysicsSettings::maxSolverSubSteps)))
+					   static_cast<int>(scene::PhysicsSettings::maxSolverSubSteps)))
 		edited.solverSubSteps = static_cast<uint32_t>(std::max(subSteps, 1));
 	auto workers = static_cast<int>(edited.workerCount);
 	ImGui::SetNextItemWidth(160.f);
-	if (ImGui::DragInt("Solver threads", &workers, 0.1f, 0, static_cast<int>(physics::PhysicsSettings::maxWorkerCount),
+	if (ImGui::DragInt("Solver threads", &workers, 0.1f, 0, static_cast<int>(scene::PhysicsSettings::maxWorkerCount),
 					   workers == 0 ? "auto" : "%d"))
 		edited.workerCount = static_cast<uint32_t>(std::max(workers, 0));
 	if (ImGui::IsItemHovered())

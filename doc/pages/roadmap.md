@@ -160,7 +160,7 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase B — image tests on lavapipe / llvmpipe, validation clean, OpenGL GLSL fallback (PR-18)
 - ![Done][done] Phase B — tests without a window: scripted headless runner (`OwlRunner --scenario`)
 - ![Done][done] Phase B — benchmarks in CI: compiled on every PR, nightly run against a baseline (+15 % fails)
-- ![Planned][planned] Phase B — module dependency check, CI tooling tests
+- ![Done][done] Phase B — module dependency check, CI tooling tests
 - ![Planned][planned] Phase D — public dependencies reduced to EnTT (+ `Owl::Gui`)
 - ![Planned][planned] Phase D — hot reload of assets, Slang shaders and Lua scripts
 - ![Planned][planned] Phase D — autosave, crash recovery, session restore, error messages, project templates

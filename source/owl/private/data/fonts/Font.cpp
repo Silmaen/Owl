@@ -10,6 +10,7 @@
 #include "data/fonts/Font.h"
 
 #include "app/Application.h"
+#include "renderer/gpu/Texture.h"
 
 #undef INFINITE
 #include <msdf-atlas-gen/msdf-atlas-gen.h>

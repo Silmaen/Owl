@@ -24,6 +24,31 @@ module.
 | `gui`                                                                     | ImGui widgets (`widgets`) and per-component render helpers (`component`).                                                                                                                                                                                         |
 | `event`, `input`, `window`, `sound`, `script`, `debug`, `physics`, `math` | Their namesake domain.                                                                                                                                                                                                                                            |
 
+## Dependency direction (layers)
+
+A public header of a module includes only its own module and modules of a **lower** layer; two modules of one layer
+do not include each other. `CodeStyle` enforces it (`module-deps`, stack in `ci/utils/module_deps.py`). Private
+implementation files may reach up (e.g. `data/assets/AssetSearchPaths.cpp` reads the application's asset folders).
+
+| Layer | Modules                               |
+|-------|---------------------------------------|
+| 11    | `gui`                                 |
+| 10    | `app`                                 |
+| 9     | `physics`                             |
+| 8     | `scene`                               |
+| 7     | `sound`                               |
+| 6     | `io`, `window`                        |
+| 5     | `renderer`                            |
+| 4     | `data`                                |
+| 3     | `event`                               |
+| 2     | `input`                               |
+| 1     | `math`, `debug`, `platform`, `script` |
+| 0     | `core`                                |
+
+To use a higher module from a public header, forward-declare its type (`Application.h` does it for `gui::UiLayer`,
+`Renderer2D.h` for `scene::component::SpriteRenderer`) or move the shared type down (`scene::PhysicsSettings`,
+`scene::PhysicsSnapshot`, aliased in `physics`). A new module gets a layer in `LAYERS`.
+
 ## Key distinctions (learned the hard way)
 
 - **`io` is devices, not files.** `io/` is for external device / peripheral channels (`serial`, `video`)

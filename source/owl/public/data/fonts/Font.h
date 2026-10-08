@@ -9,12 +9,15 @@
 #pragma once
 
 #include "core/Core.h"
-#include "renderer/gpu/Texture.h"
 
 #include "math/box.h"
 
 #include <filesystem>
 #include <string>
+
+namespace owl::renderer::gpu {
+class Texture2D;
+}// namespace owl::renderer::gpu
 
 namespace owl::data::fonts {
 

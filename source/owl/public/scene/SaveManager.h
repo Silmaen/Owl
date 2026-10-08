@@ -10,7 +10,7 @@
 
 #include "Scene.h"
 #include "core/FormatVersion.h"
-#include "physics/PhysicCommand.h"
+#include "scene/PhysicsSnapshot.h"
 
 #include <cstdint>
 #include <filesystem>
@@ -87,7 +87,7 @@ public:
 		/// Why the save file could not be read, when its format version is the cause.
 		std::optional<core::FormatError> formatError;
 		/// Physics snapshots to apply after onStartRuntime (keyed by entity UUID).
-		std::unordered_map<uint64_t, physics::PhysicCommand::PhysicsSnapshot> physicsSnapshots;
+		std::unordered_map<uint64_t, PhysicsSnapshot> physicsSnapshots;
 	};
 
 	/**

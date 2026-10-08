@@ -10,6 +10,7 @@
 
 #include <input/Input.h>
 #include <renderer/CameraOrthoController.h>
+#include <window/Window.h>
 
 #include <chrono>
 

@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <input/Input.h>
+#include <window/Window.h>
 
 using namespace owl::input;
 

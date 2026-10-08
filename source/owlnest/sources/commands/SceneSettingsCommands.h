@@ -137,7 +137,7 @@ public:
 	 * @param[in] iBefore Settings prior to the edit.
 	 * @param[in] iAfter Settings after the edit.
 	 */
-	ModifyPhysicsSettingsCommand(const physics::PhysicsSettings& iBefore, const physics::PhysicsSettings& iAfter);
+	ModifyPhysicsSettingsCommand(const scene::PhysicsSettings& iBefore, const scene::PhysicsSettings& iAfter);
 
 	/**
 	 * @brief
@@ -183,9 +183,9 @@ public:
 
 private:
 	/// Settings before the edit.
-	physics::PhysicsSettings m_before;
+	scene::PhysicsSettings m_before;
 	/// Settings after the edit.
-	physics::PhysicsSettings m_after;
+	scene::PhysicsSettings m_after;
 };
 
 }// namespace owl::nest::commands

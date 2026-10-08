@@ -18,9 +18,10 @@
 #include <sound/SoundHandle.h>
 
 #include <algorithm>
+#include <bit>
 #include <chrono>
 #include <cmath>
-#include <cstring>
+#include <cstdint>
 
 using namespace owl;
 
@@ -251,7 +252,10 @@ TEST_F(SceneRuntimeTest, OnViewportResizeUpdatesNonFixedCameras) {
 							[](const float iV) -> bool { return std::isfinite(iV); }));
 	EXPECT_FALSE(std::all_of(freeBefore.data(), freeBefore.data() + 16,
 							 [](const float iV) -> bool { return std::isfinite(iV); }));
-	EXPECT_EQ(std::memcmp(fixedAfter.data(), fixedBefore.data(), sizeof(float) * 16), 0);
+	EXPECT_TRUE(std::equal(fixedAfter.data(), fixedAfter.data() + 16, fixedBefore.data(),
+						   [](const float iA, const float iB) -> bool {
+							   return std::bit_cast<uint32_t>(iA) == std::bit_cast<uint32_t>(iB);
+						   }));
 }
 
 // duplicateEntity makes a root entity. Already covered in SceneHierarchy_test, but

@@ -27,6 +27,8 @@ Sub-checks (all on by default):
   symbol (and `uint32_t` / `size_t`) it names, instead of relying on a
   transitive include (see `ci/utils/std_includes.py`). A `.cpp` may rely on
   its own header and on `owlpch.h`.
+* **module-deps** — a public header includes only its own module and lower layers of the engine's layer stack
+  (`ci/utils/module_deps.py`), so the public API stays acyclic.
 * **test-assertions** — every `TEST` / `TEST_F` / `TEST_P` asserts something (gtest macro or an `expect…` /
   `assert…` / `check…` helper); a smoke test says so with `EXPECT_NO_THROW` (`ci/utils/test_assertions.py`).
 * **nolint** — every check named by a `NOLINT(...)` marker is one `.clang-tidy` enables (`clang-tidy
@@ -44,8 +46,8 @@ Doxygen is **deliberately not** run here — the project already has a separate
 
 Each sub-check can be disabled with extra args (`-- --no-<name>=true`):
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-test-assertions`, `--no-nolint`, `--no-python`,
-`--no-secrets`.
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-module-deps`, `--no-test-assertions`, `--no-nolint`,
+`--no-python`, `--no-secrets`.
 
 Every finding is reported through `_diag()` as a GNU/clang-style diagnostic —
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — including
@@ -1351,6 +1353,27 @@ def _check_secrets() -> int:
 # ────────────────────────────────────────────────────────────────────────────
 
 
+def _check_module_deps() -> int:
+    """
+    Flag the public headers that include a module of the same or a higher layer.
+
+    :return: The number of upward includes.
+    """
+    from ci.utils.module_deps import LAYER_OF, upward_includes
+
+    log.info("code-style: module layering audit...")
+    public = root / "source" / "owl" / "public"
+    found = upward_includes(public, _iter_sources([public], HEADER_EXTENSIONS))
+    for entry in found:
+        if entry.module not in LAYER_OF or entry.target not in LAYER_OF:
+            message = f"module `{entry.module if entry.module not in LAYER_OF else entry.target}` has no layer"
+        else:
+            message = f"`{entry.module}` (layer {LAYER_OF[entry.module]}) must not include `{entry.target}` "
+            message += f"(layer {LAYER_OF[entry.target]}): forward-declare, or move the code to its layer"
+        _diag(entry.path, entry.line, "module-deps", message)
+    return len(found)
+
+
 def _check_test_assertions() -> int:
     """
     Flag the tests whose body asserts nothing.
@@ -1421,6 +1444,7 @@ class CodeStyle(BaseAction):
         --no-cpp-style=true         skip cpp-style convention audit
         --no-structural=true        skip file-header / OWL_API audit
         --no-std-includes=true      skip standard-library include audit
+        --no-module-deps=true       skip the module layering audit
         --no-test-assertions=true   skip the test-without-assertion audit
         --no-nolint=true            skip the dead NOLINT audit
         --no-python=true            skip ruff / mypy on the CI code
@@ -1447,6 +1471,7 @@ class CodeStyle(BaseAction):
             "cpp-style": opts.get("no-cpp-style", "false") == "true",
             "structural": opts.get("no-structural", "false") == "true",
             "std-includes": opts.get("no-std-includes", "false") == "true",
+            "module-deps": opts.get("no-module-deps", "false") == "true",
             "test-assertions": opts.get("no-test-assertions", "false") == "true",
             "nolint": opts.get("no-nolint", "false") == "true",
             "python": opts.get("no-python", "false") == "true",
@@ -1470,6 +1495,8 @@ class CodeStyle(BaseAction):
             results.append(("structural", _check_structural()))
         if not skip["std-includes"]:
             results.append(("std-includes", _check_std_includes()))
+        if not skip["module-deps"]:
+            results.append(("module-deps", _check_module_deps()))
         if not skip["test-assertions"]:
             results.append(("test-assertions", _check_test_assertions()))
         if not skip["nolint"]:

@@ -10,6 +10,7 @@
 
 #include <input/Input.h>
 #include <renderer/CameraEditor.h>
+#include <window/Window.h>
 
 using namespace owl::renderer;
 using namespace owl::renderer::gpu;

@@ -30,7 +30,7 @@ using namespace owl::math;
 using namespace owl::data::geometry;
 using namespace owl::data::geometry::extradata;
 
-namespace owl::data {
+namespace owl::data::geometry {
 
 auto MeshLoader::loadObj([[maybe_unused]] const std::filesystem::path& iFilePath) -> shared<StaticMesh> {
 	shared<StaticMesh> mesh = mkShared<StaticMesh>();
@@ -432,4 +432,4 @@ auto MeshLoader::loadGltf([[maybe_unused]] const std::filesystem::path& iFilePat
 	return mesh;
 }
 
-}// namespace owl::data
+}// namespace owl::data::geometry

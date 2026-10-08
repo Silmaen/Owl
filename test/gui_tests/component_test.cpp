@@ -8,6 +8,7 @@
 
 #include "testHelper.h"
 
+#include <gui/UiLayer.h>
 #include <gui/component/render.h>
 #include <scene/component/components.h>
 

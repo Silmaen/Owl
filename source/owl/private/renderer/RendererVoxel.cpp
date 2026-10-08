@@ -16,6 +16,7 @@
 #include "math/matrixCreation.h"
 #include "renderer/Renderer3D.h"
 #include "renderer/utils/FrustumCullingPass.h"
+#include "scene/component/VoxelWorld.h"
 
 #include <algorithm>
 #include <array>

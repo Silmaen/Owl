@@ -127,8 +127,8 @@ void writeRunnerConfig(const ExportSettings& iSettings, const std::filesystem::p
 	out << YAML::Key << "WindowHeight" << YAML::Value << iSettings.windowSize.y();
 	out << YAML::Key << "Fullscreen" << YAML::Value << iSettings.fullscreen;
 	out << YAML::Key << "Resizable" << YAML::Value << iSettings.resizable;
-	if (!iSettings.rendererStack.isEmpty())
-		out << YAML::Key << "RendererStack" << YAML::Value << iSettings.rendererStack.toYaml();
+	if (!iSettings.rendererStackYaml.empty())
+		out << YAML::Key << "RendererStack" << YAML::Value << YAML::Load(iSettings.rendererStackYaml);
 	out << YAML::EndMap;
 	out << YAML::EndMap;
 	std::ofstream file(iGameDir / "runner.yml");

@@ -11,6 +11,7 @@
 #include <app/Application.h>
 #include <renderer/Renderer.h>
 #include <renderer/Renderer2D.h>
+#include <scene/component/SpriteRenderer.h>
 
 #include <cstddef>
 #include <cstdint>

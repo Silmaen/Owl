@@ -103,7 +103,7 @@ auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const 
 			.windowSize = {window.width, window.height},
 			.fullscreen = window.fullscreen,
 			.resizable = window.resizable,
-			.rendererStack = rendererStack,
+			.rendererStackYaml = rendererStack.isEmpty() ? std::string{} : YAML::Dump(rendererStack.toYaml()),
 			.packFlags = data::assets::pack::PackFlags::Default};
 }
 

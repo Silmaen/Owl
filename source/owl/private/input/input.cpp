@@ -11,6 +11,7 @@
 #include "input/Input.h"
 #include "input/glfw/Input.h"
 #include "input/null/Input.h"
+#include "window/Window.h"
 
 namespace owl::input {
 
@@ -18,6 +19,8 @@ window::Type Input::m_type = window::Type::Glfw;
 uniq<Input> Input::m_instance = nullptr;
 
 Input::~Input() = default;
+
+void Input::init() { init(window::Type::Glfw); }
 
 void Input::init(const window::Type& iType) {
 	if (m_instance)

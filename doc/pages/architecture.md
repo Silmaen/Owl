@@ -35,6 +35,24 @@ structure. **The folder path maps 1:1 to the namespace** (`data/geometry/` is `o
 camera controllers are `renderer`, not `input`; lifecycle is `app`, primitives are `core`) — are documented in
 `.claude/rules/module-layout.md`.
 
+Modules are layered: a public header includes only its own module and lower layers, so the public API has no
+dependency cycle (checked by CodeStyle `module-deps`).
+
+| Layer | Modules                               |
+|-------|---------------------------------------|
+| 11    | `gui`                                 |
+| 10    | `app`                                 |
+| 9     | `physics`                             |
+| 8     | `scene`                               |
+| 7     | `sound`                               |
+| 6     | `io`, `window`                        |
+| 5     | `renderer`                            |
+| 4     | `data`                                |
+| 3     | `event`                               |
+| 2     | `input`                               |
+| 1     | `math`, `debug`, `platform`, `script` |
+| 0     | `core`                                |
+
 **Dedicated guides:** [Renderer](renderer.md) · [Scene & Components](scene.md) ·
 [Events & Input](event_input.md) · [Physics](physics.md) · [Sound](sound.md) ·
 [Lua Scripting](scripting.md) · [Editor (Owl Nest)](editor.md) ·

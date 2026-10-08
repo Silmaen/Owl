@@ -11,7 +11,17 @@
 #include "core/Core.h"
 #include "input/KeyCodes.h"
 #include "input/MouseCode.h"
-#include "window/Window.h"
+#include "math/vectors.h"
+
+#include <cstdint>
+
+/**
+ * @brief
+ *  Windowing back-ends (declared here so `input` does not depend on the `window` module).
+ */
+namespace owl::window {
+enum struct Type : uint8_t;
+}// namespace owl::window
 
 namespace owl::input {
 /**
@@ -42,10 +52,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Initialize the input for the GLFW windowing back-end.
+	 */
+	static void init();
+
+	/**
+	 * @brief
 	 *  Initialize the input;
 	 * @param[in] iType the type of input.
 	 */
-	static void init(const window::Type& iType = window::Type::Glfw);
+	static void init(const window::Type& iType);
 
 	/**
 	 * @brief

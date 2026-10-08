@@ -115,7 +115,7 @@ Every fix lands with its regression test.
   or when in doubt, one job per available core by default (H-03)
 - ![Planned][planned] ClangTidy multi-process with the static analyzer, honest coverage report
   (PR-19: H-03, F-07, F-04, F-08, F-09, H-07)
-- ![Planned][planned] Module dependency direction checked in CodeStyle; the 10-module cycle broken
+- ![Done][done] Module dependency direction checked in CodeStyle; the 10-module cycle broken
   (PR-20: A-01, A-13)
 - ![Done][done] Tests for the CI tooling itself: pytest, ruff and mypy in CodeStyle (PR-34: H-04, H-08)
 - ![Done][done] Benchmarks in CI with a regression threshold against a stored baseline: compiled on every pull
