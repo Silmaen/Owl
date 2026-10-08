@@ -16,7 +16,6 @@
 namespace owl::nest {
 
 namespace {
-// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 auto buildKeyNameMap() -> const std::unordered_map<input::KeyCode, std::string>& {
 	static const std::unordered_map<input::KeyCode, std::string> map = {
 			{input::key::Space, "Space"},
@@ -104,7 +103,6 @@ auto buildNameKeyMap() -> const std::unordered_map<std::string, input::KeyCode>&
 	}
 	return map;
 }
-// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
 auto modifierCount(const Modifiers iMod) -> int {
 	int count = 0;

@@ -176,7 +176,7 @@ auto createZipArchive(const std::filesystem::path& iSourceDir, const std::filesy
 	const auto cmd = std::format(
 			"powershell -NoProfile -Command \"Compress-Archive -Path '{}\\*' -DestinationPath '{}' -Force\"",
 			iSourceDir.string(), iOutputZip.string());
-	// NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c,bugprone-command-processor) No zip API: use PowerShell.
+	// NOLINTNEXTLINE(bugprone-command-processor) No zip API: use PowerShell.
 	return std::system(cmd.c_str()) == 0;
 }
 #endif

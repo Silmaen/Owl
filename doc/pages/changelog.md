@@ -81,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- 97 dead `NOLINT` check names (checks `.clang-tidy` does not enable), and the CodeStyle `nolint` sub-check that keeps them out.
 - DepManager: `depmanager.yml`, `cmake/Depmanager.cmake`, `owl_engine.py`, the `ConfigureRemote` CI action and the *Define Remote* TeamCity step; Conan 2 is the only provider (`OWL_DEPENDENCY_PROVIDER` is gone) and other projects take OwlEngine from the packaged archive.
 - Unused `tinyxml2`, `zeus` and `debugbreak` dependencies (`OWL_DEBUG_BREAK()` in `core/Assert.h` replaces `debug_break()`).
 - LeakSanitizer preset, option and TeamCity job: on Linux ASan already reports leaks.

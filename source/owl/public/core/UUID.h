@@ -31,7 +31,7 @@ public:
 
 	UUID();
 
-	// NOLINTBEGIN(google-explicit-constructor,hicpp-explicit-conversions)
+	// NOLINTBEGIN(google-explicit-constructor)
 	UUID(const uint64_t iUuid) : m_uuid{iUuid} {}
 
 	/**
@@ -46,7 +46,7 @@ public:
 	 * @return Access const to internal ID.
 	 */
 	operator uint64_t() const { return m_uuid; }
-	// NOLINTEND(google-explicit-constructor,hicpp-explicit-conversions)
+	// NOLINTEND(google-explicit-constructor)
 
 private:
 	/// The uuid code.

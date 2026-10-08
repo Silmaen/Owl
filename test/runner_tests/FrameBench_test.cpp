@@ -93,7 +93,6 @@ TEST(FrameBenchRun, NullBackendWritesReport) {
 	// cmd /c strips the first and last quote of a line that starts with one: wrap the whole line.
 	command = std::format(R"("{}")", command);
 #endif
-	// NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c)
 	ASSERT_EQ(std::system(command.c_str()), 0);
 	ASSERT_TRUE(exists(out));
 	const auto report = YAML::LoadFile(out.string());

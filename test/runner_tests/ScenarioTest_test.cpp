@@ -170,7 +170,6 @@ TEST_F(ScenarioFile, RunnerFailsOnABrokenExpectation) {
 #ifdef OWL_PLATFORM_WINDOWS
 	command = std::format(R"("{}")", command);
 #endif
-	// NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c)
 	EXPECT_NE(std::system(command.c_str()), 0);
 #endif
 }

@@ -33,7 +33,6 @@ enum struct ThemePreset : uint8_t {
  * @brief
  *  Definition of the GUI theme.
  */
-// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 struct OWL_API Theme {
 	math::vec4 text{0.753f, 0.753f, 0.753f, 1.0};
 	math::vec4 windowBackground{0.1f, 0.105f, 0.11f, 1.0f};
@@ -132,6 +131,5 @@ struct OWL_API Theme {
 	 */
 	static auto getPresetNames() -> std::vector<std::pair<ThemePreset, std::string>>;
 };
-// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
 }// namespace owl::gui

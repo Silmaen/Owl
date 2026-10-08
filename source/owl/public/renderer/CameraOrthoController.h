@@ -121,11 +121,9 @@ private:
 	/// Camera's rotation in degrees, in the anti-clockwise direction.
 	float m_cameraRotation{0.0f};
 
-	// NOLINTBEGIN(*-magic-numbers)
 	/// Camera's Translation speed.
 	float m_cameraTranslationSpeed{5.0f};
 	/// Camera's Rotation Speed.
 	float m_cameraRotationSpeed{180.0f};
-	// NOLINTEND(*-magic-numbers)
 };
 }// namespace owl::renderer

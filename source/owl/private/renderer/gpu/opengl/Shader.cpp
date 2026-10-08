@@ -71,7 +71,6 @@ auto isSpirvSupported() -> bool {
 }
 
 auto detectShaderFormat() -> ShaderFormat {
-	// NOLINTNEXTLINE(concurrency-mt-unsafe): read once, the engine never writes the environment.
 	if (const char* forced = std::getenv("OWL_OPENGL_SHADERS"); forced != nullptr) {
 		const std::string_view value{forced};
 		if (value == "glsl")

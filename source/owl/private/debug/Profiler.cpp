@@ -39,7 +39,6 @@ auto getProfilerBackend() noexcept -> ProfilerBackend {
 #endif
 }
 
-// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast) same layout as Tracy's struct, checked by the asserts above
 ProfileZone::ProfileZone([[maybe_unused]] const ProfileSourceLocation* iLocation) noexcept {
 #ifdef OWL_PROFILER_TRACY
 	const auto ctx = ___tracy_emit_zone_begin(reinterpret_cast<const ___tracy_source_location_data*>(iLocation), 1);
@@ -47,7 +46,6 @@ ProfileZone::ProfileZone([[maybe_unused]] const ProfileSourceLocation* iLocation
 	m_active = ctx.active;
 #endif
 }
-// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast)
 
 ProfileZone::~ProfileZone() {
 #ifdef OWL_PROFILER_TRACY

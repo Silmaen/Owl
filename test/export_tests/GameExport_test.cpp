@@ -73,7 +73,7 @@ auto readPackEntry(const std::filesystem::path& iPack, const std::string& iEntry
 
 #ifdef OWL_PLATFORM_LINUX
 auto runCommand(const std::string& iCommand) -> int {
-	// NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c,bugprone-command-processor) Launching the game is the test.
+	// NOLINTNEXTLINE(bugprone-command-processor) Launching the game is the test.
 	const int status = std::system(iCommand.c_str());
 	return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }

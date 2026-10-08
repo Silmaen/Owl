@@ -70,10 +70,12 @@ Sub-checks (all on by default):
 7. **std-includes** — every file under `source/`, `test/`, `bench/` includes the
    standard header of each `std::` symbol / `uint*_t` / `size_t` it names
    (`ci/utils/std_includes.py`; a `.cpp` may rely on its own header and `owlpch.h`).
-8. **python** — `ruff check`, `ruff format --check`, `mypy` and `pytest ci/tests` on `ci/` and `ci_action.py` (configuration in
+8. **nolint** — a `NOLINT(...)` naming a check `.clang-tidy` does not enable is dead: it fails the gate
+   (`clang-tidy --list-checks`; `clang-analyzer-*` always counts).
+9. **python** — `ruff check`, `ruff format --check`, `mypy` and `pytest ci/tests` on `ci/` and `ci_action.py` (configuration in
    `pyproject.toml`: 120 columns, rules `E F W I UP B SIM`); fix with `poetry run ruff check --fix` and
    `poetry run ruff format`.
-9. **secrets** — git-tracked files scanned for private keys, GitHub / AWS /
+10. **secrets** — git-tracked files scanned for private keys, GitHub / AWS /
    Slack tokens and passwords in URLs; a tracked `.env` fails. Prints the kind
    and position only, never the match.
 
@@ -82,7 +84,7 @@ separate `Documentation` action that builds doxygen with `WARN_AS_ERROR=YES`.
 
 Each sub-check can be disabled with `-- --no-<name>=true`:
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-python`, `--no-secrets`.
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-nolint`, `--no-python`, `--no-secrets`.
 
 **Report findings through `_diag()`**, never `log.error()` directly. It prints
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — the

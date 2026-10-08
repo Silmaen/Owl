@@ -36,12 +36,12 @@ auto SettingsManager::getUserDirectory() -> std::filesystem::path {
 	const std::string name = s_gameName.empty() ? "OwlGame" : s_gameName;
 	std::filesystem::path baseDir;
 #if defined(OWL_PLATFORM_WINDOWS)
-	if (const char* appdata = std::getenv("APPDATA"); appdata != nullptr)// NOLINT(concurrency-mt-unsafe)
+	if (const char* appdata = std::getenv("APPDATA"); appdata != nullptr)
 		baseDir = appdata;
 	else
 		baseDir = std::filesystem::temp_directory_path();
 #else
-	if (const char* home = std::getenv("HOME"); home != nullptr)// NOLINT(concurrency-mt-unsafe)
+	if (const char* home = std::getenv("HOME"); home != nullptr)
 		baseDir = std::filesystem::path(home) / ".local" / "share";
 	else
 		baseDir = std::filesystem::temp_directory_path();

@@ -79,7 +79,6 @@ public:
 	auto operator=(HomeGuard&&) -> HomeGuard& = delete;
 
 	explicit HomeGuard(const std::filesystem::path& iHome) {
-		// NOLINTNEXTLINE(concurrency-mt-unsafe)
 		if (const char* previous = std::getenv(k_Variable); previous != nullptr)
 			m_previous = previous;
 		set(iHome.string());
@@ -96,7 +95,6 @@ private:
 	static void set(const std::string& iValue) { _putenv_s(k_Variable, iValue.c_str()); }
 #else
 	static constexpr const char* k_Variable = "HOME";
-	// NOLINTNEXTLINE(concurrency-mt-unsafe)
 	static void set(const std::string& iValue) { setenv(k_Variable, iValue.c_str(), 1); }
 #endif
 	/// Value to restore.

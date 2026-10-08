@@ -946,7 +946,7 @@ auto Scene::layerHasContent(const std::string& iLayerName, const bool iIsFirst) 
 			return it->second;
 	}
 
-	auto* self = const_cast<Scene*>(this);// NOLINT(cppcoreguidelines-pro-type-const-cast)
+	auto* self = const_cast<Scene*>(this);
 	const auto matches = [&](const entt::entity e) -> bool {
 		const Entity ent{e, self};
 		if (!isEffectivelyVisible(ent, /*iEditorMode=*/false))
@@ -2176,9 +2176,7 @@ void Scene::onViewportResize(const math::vec2ui& iSize) {
 
 auto Scene::getAllEntities() const -> std::vector<Entity> {
 	std::vector<Entity> entities;
-	for (auto&& [e]: registry.storage<entt::entity>()->each()) {
-		entities.emplace_back(e, const_cast<Scene*>(this));
-	}// NOLINT(cppcoreguidelines-pro-type-const-cast)
+	for (auto&& [e]: registry.storage<entt::entity>()->each()) { entities.emplace_back(e, const_cast<Scene*>(this)); }
 	return entities;
 }
 
@@ -2194,7 +2192,7 @@ auto Scene::duplicateEntity(const Entity& iEntity) -> Entity {
 }
 
 auto Scene::getPrimaryCamera() const -> Entity {
-	auto* self = const_cast<Scene*>(this);// NOLINT(cppcoreguidelines-pro-type-const-cast)
+	auto* self = const_cast<Scene*>(this);
 	for (const auto view = registry.view<component::Camera>(); const auto entity: view) {
 		if (view.get<component::Camera>(entity).primary)
 			return Entity{entity, self};
@@ -2203,7 +2201,7 @@ auto Scene::getPrimaryCamera() const -> Entity {
 }
 
 auto Scene::getPrimaryPlayer() const -> Entity {
-	auto* self = const_cast<Scene*>(this);// NOLINT(cppcoreguidelines-pro-type-const-cast)
+	auto* self = const_cast<Scene*>(this);
 
 	if (m_primaryPlayerCache != entt::null && registry.valid(m_primaryPlayerCache)) {
 		if (const auto* player = registry.try_get<component::Player>(m_primaryPlayerCache);
@@ -2229,7 +2227,7 @@ auto Scene::getEntityCount() const -> uint32_t {
 }
 
 auto Scene::findEntityByUUID(const core::UUID iUuid) const -> Entity {
-	auto* self = const_cast<Scene*>(this);// NOLINT(cppcoreguidelines-pro-type-const-cast)
+	auto* self = const_cast<Scene*>(this);
 	if (const auto it = m_uuidIndex.find(iUuid); it != m_uuidIndex.end()) {
 		if (registry.valid(it->second) && registry.try_get<component::ID>(it->second) != nullptr &&
 			registry.get<component::ID>(it->second).id == iUuid)

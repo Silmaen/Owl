@@ -27,6 +27,8 @@ Sub-checks (all on by default):
   symbol (and `uint32_t` / `size_t`) it names, instead of relying on a
   transitive include (see `ci/utils/std_includes.py`). A `.cpp` may rely on
   its own header and on `owlpch.h`.
+* **nolint** — every check named by a `NOLINT(...)` marker is one `.clang-tidy` enables (`clang-tidy
+  --list-checks`; static-analyzer checks always count), so no suppression is dead weight (`ci/utils/nolint.py`).
 * **python** — `ruff check`, `ruff format --check`, `mypy` and the `ci/tests/` pytest suite on the CI's own
   code (`ci/`, `ci_action.py`),
   configured in `pyproject.toml` (see `ci/utils/python_lint.py`).
@@ -40,7 +42,7 @@ Doxygen is **deliberately not** run here — the project already has a separate
 
 Each sub-check can be disabled with extra args (`-- --no-<name>=true`):
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-python`, `--no-secrets`.
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-nolint`, `--no-python`, `--no-secrets`.
 
 Every finding is reported through `_diag()` as a GNU/clang-style diagnostic —
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — including
@@ -1346,6 +1348,27 @@ def _check_secrets() -> int:
 # ────────────────────────────────────────────────────────────────────────────
 
 
+def _check_nolint() -> int:
+    """
+    Flag `NOLINT(...)` markers naming a clang-tidy check that never runs.
+
+    :return: The number of dead check names.
+    """
+    from ci.utils.nolint import active_checks, dead_suppressions
+
+    log.info("code-style: dead NOLINT audit...")
+    active = active_checks(root)
+    if active is None:
+        log.warning("nolint: clang-tidy not found, audit skipped")
+        return 0
+    dead = dead_suppressions(_iter_sources(SOURCE_ROOTS, CXX_EXTENSIONS), active)
+    for entry in dead:
+        _diag(
+            entry.path, entry.line, "nolint", f"`{entry.check}` is not enabled in .clang-tidy: drop it from the NOLINT"
+        )
+    return len(dead)
+
+
 def _check_python() -> int:
     """
     Lint and type-check the CI code with ruff and mypy (configuration in `pyproject.toml`).
@@ -1375,6 +1398,7 @@ class CodeStyle(BaseAction):
         --no-cpp-style=true         skip cpp-style convention audit
         --no-structural=true        skip file-header / OWL_API audit
         --no-std-includes=true      skip standard-library include audit
+        --no-nolint=true            skip the dead NOLINT audit
         --no-python=true            skip ruff / mypy on the CI code
         --no-secrets=true           skip committed-secret scan
     """
@@ -1399,6 +1423,7 @@ class CodeStyle(BaseAction):
             "cpp-style": opts.get("no-cpp-style", "false") == "true",
             "structural": opts.get("no-structural", "false") == "true",
             "std-includes": opts.get("no-std-includes", "false") == "true",
+            "nolint": opts.get("no-nolint", "false") == "true",
             "python": opts.get("no-python", "false") == "true",
             "secrets": opts.get("no-secrets", "false") == "true",
         }
@@ -1420,6 +1445,8 @@ class CodeStyle(BaseAction):
             results.append(("structural", _check_structural()))
         if not skip["std-includes"]:
             results.append(("std-includes", _check_std_includes()))
+        if not skip["nolint"]:
+            results.append(("nolint", _check_nolint()))
         if not skip["python"]:
             results.append(("python (ruff, mypy, pytest)", _check_python()))
         if not skip["secrets"]:

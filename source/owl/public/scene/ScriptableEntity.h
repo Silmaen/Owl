@@ -35,14 +35,12 @@ public:
 	/// The actual entity.
 	Entity entity;
 
-	// NOLINTBEGIN(performance-trivially-destructible)
 	/**
 	 * @brief
 	 *  Destructor.
 	 */
 	~ScriptableEntity();
 
-	// NOLINTEND(performance-trivially-destructible)
 	/**
 	 * @brief
 	 *  Function called on script creation.

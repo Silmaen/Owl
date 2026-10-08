@@ -84,7 +84,6 @@ struct convert<owl::math::vec4> {
 	}
 };
 
-// NOLINTBEGIN(misc-use-anonymous-namespace)
 /**
  * @brief
  *  Stream a 3D vector into a YAML emitter as an inline flow sequence.
@@ -110,7 +109,6 @@ struct convert<owl::math::vec4> {
 	ioOut << BeginSeq << iVect.x() << iVect.y() << iVect.z() << iVect.w() << EndSeq;
 	return ioOut;
 }
-// NOLINTEND(misc-use-anonymous-namespace)
 
 }// namespace YAML
 /// @endcond

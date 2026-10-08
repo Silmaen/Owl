@@ -242,7 +242,6 @@ void SettingsPanel::handleKeyCapture(ActionEntry& ioAction, ActionRegistry& ioRe
 	}
 }
 
-// NOLINTBEGIN(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wswitch-enum")
@@ -348,6 +347,5 @@ auto SettingsPanel::ImGuiKeyToGlfwKey(const ImGuiKey iKey) -> int {
 }
 OWL_DIAG_POP
 
-// NOLINTEND(cppcoreguidelines-avoid-magic-numbers,readability-magic-numbers)
 
 }// namespace owl::nest::panel

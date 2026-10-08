@@ -123,7 +123,7 @@ Font::Font(const std::filesystem::path& iPath, const bool iIsDefault) : m_defaul
 	}
 	m_atlasTexture = createAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>(
 			"Test", static_cast<float>(emSize), m_data->glyphs, m_data->fontGeometry, size);
-#if 0// NOLINT(readability-avoid-unconditional-preprocessor-if)
+#if 0
 	msdfgen::Shape shape;
 	if (msdfgen::loadGlyph(shape, font, 'C'))
 	{

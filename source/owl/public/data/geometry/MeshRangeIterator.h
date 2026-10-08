@@ -127,8 +127,7 @@ public:
 	 */
 	auto operator++() -> MeshRangeIterator& {
 		m_cursor.moveNext();
-		std::apply([](auto&... iComp) -> auto { (iComp.moveNext(), ...); },
-				   m_cursor.m_components.value());// NOLINT(bugprone-unchecked-optional-access)
+		std::apply([](auto&... iComp) -> auto { (iComp.moveNext(), ...); }, m_cursor.m_components.value());
 		return *this;
 	}
 

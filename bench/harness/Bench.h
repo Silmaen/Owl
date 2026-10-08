@@ -31,16 +31,14 @@ namespace owl::bench {
  */
 template<typename T>
 inline void doNotOptimize(const T& iValue) {
-	asm volatile("" : : "r,m"(iValue) : "memory");// NOLINT(hicpp-no-assembler)
+	asm volatile("" : : "r,m"(iValue) : "memory");
 }
 
 /**
  * @brief
  *  Force the compiler to assume memory was clobbered.
  */
-inline void clobberMemory() {
-	asm volatile("" : : : "memory");// NOLINT(hicpp-no-assembler)
-}
+inline void clobberMemory() { asm volatile("" : : : "memory"); }
 
 /**
  * @brief

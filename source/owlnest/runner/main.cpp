@@ -141,7 +141,7 @@ auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::files
 				   "[--backend vulkan|opengl|null] [--out results.json] [--project <dir>] [--size WxH] "
 				   "[--timestep-ms T] [--vsync] [--validation] [--capture frame.png]\n",
 				   stderr);
-		std::exit(2);// NOLINT(concurrency-mt-unsafe)
+		std::exit(2);
 	}
 	options->processStart = iProcessStart;
 	const bool headless = options->backend == renderer::gpu::RenderAPI::Type::Null;
@@ -183,7 +183,7 @@ auto createScenarioApplication(const int iArgc, char** iArgv, const std::filesys
 		std::fputs(": ", stderr);
 		std::fputs(scenario.error().c_str(), stderr);
 		std::fputs(".\n", stderr);
-		std::exit(2);// NOLINT(concurrency-mt-unsafe)
+		std::exit(2);
 	}
 	return mkShared<OwlNest>(app::AppParams{.args = iArgv,
 											.name = "Owl Scenario",

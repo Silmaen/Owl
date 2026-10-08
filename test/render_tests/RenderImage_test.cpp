@@ -49,7 +49,6 @@ auto readFile(const std::filesystem::path& iPath) -> std::string {
 }
 
 auto getEnv(const char* iName) -> std::string {
-	// NOLINTNEXTLINE(concurrency-mt-unsafe): tests read the environment before spawning anything.
 	const char* value = std::getenv(iName);
 	return value == nullptr ? std::string{} : std::string{value};
 }
@@ -148,7 +147,6 @@ TEST_P(RenderImage, matchesReference) {
 									 getDriverEnvironment(backend), OWL_RUNNER_EXECUTABLE, sceneFile.string(),
 									 (root / "sample_project").string(), backend, g_warmupFrames, g_captureSize.x(),
 									 g_captureSize.y(), actualFile.string(), logFile.string());
-	// NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c): the runner must run in its own process (one GPU context).
 	const int status = std::system(command.c_str());
 	const auto log = readFile(logFile);
 	ASSERT_EQ(status, 0) << "OwlRunner failed, log: " << logFile;

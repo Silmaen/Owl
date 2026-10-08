@@ -151,9 +151,7 @@ auto CameraEditor::panSpeed() const -> std::pair<float, float> {
 	return {xFactor, yFactor};
 }
 
-// NOLINTBEGIN(readability-convert-member-functions-to-static)
 auto CameraEditor::rotationSpeed() const -> float { return 0.8f; }
-// NOLINTEND(readability-convert-member-functions-to-static)
 
 auto CameraEditor::zoomSpeed() const -> float {
 	const float distance = std::max(m_distance * 0.2f, 0.0f);

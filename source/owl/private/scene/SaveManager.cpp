@@ -47,12 +47,12 @@ auto SaveManager::getSaveDirectory() -> std::filesystem::path {
 	const std::string name = s_gameName.empty() ? "OwlGame" : s_gameName;
 	std::filesystem::path baseDir;
 #if defined(OWL_PLATFORM_WINDOWS)
-	if (const char* appdata = std::getenv("APPDATA"); appdata != nullptr)// NOLINT(concurrency-mt-unsafe)
+	if (const char* appdata = std::getenv("APPDATA"); appdata != nullptr)
 		baseDir = appdata;
 	else
 		baseDir = std::filesystem::temp_directory_path();
 #else
-	if (const char* home = std::getenv("HOME"); home != nullptr)// NOLINT(concurrency-mt-unsafe)
+	if (const char* home = std::getenv("HOME"); home != nullptr)
 		baseDir = std::filesystem::path(home) / ".local" / "share";
 	else
 		baseDir = std::filesystem::temp_directory_path();
@@ -80,7 +80,6 @@ auto SaveManager::save(const uint32_t iSlot, const shared<Scene>& iScene, const 
 		const auto now = std::chrono::system_clock::now();
 		const auto timeT = std::chrono::system_clock::to_time_t(now);
 		std::string timestamp(30, '\0');
-		// NOLINTNEXTLINE(concurrency-mt-unsafe)
 		if (const auto len =
 					std::strftime(timestamp.data(), timestamp.size(), "%Y-%m-%dT%H:%M:%S", std::localtime(&timeT)))
 			timestamp.resize(len);
