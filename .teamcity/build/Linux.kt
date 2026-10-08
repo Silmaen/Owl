@@ -1,11 +1,21 @@
 import jetbrains.buildServer.configs.kotlin.*
+import jetbrains.buildServer.configs.kotlin.buildSteps.script
 import jetbrains.buildServer.configs.kotlin.failureConditions.BuildFailureOnMetric
 import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
 
 val linuxGcc = presetBuild("Build_LinuxX64_Gcc", "GCC", "linux-gcc-debug")
 // Builds the release and Doxygen on it: it runs on documentation-only pull requests too.
 // It also measures the coverage: a line coverage more than one point below the last successful build fails it.
+// On `main` it ends with the dependency report (`conan graph outdated`, informative: never fails the build).
 val linuxClang = presetBuild("Build_LinuxX64_Clang", "Clang", "linux-clang-debug", onDraft = true, pathFilter = "") {
+    steps {
+        script {
+            ciAction("DependencyReport", "Dependency_Report", displayName = "Dependency Report")
+            conditions {
+                equals("teamcity.build.branch.is_default", "true")
+            }
+        }
+    }
     failureConditions {
         failOnMetricChange {
             id = "COVERAGE_DROP"
