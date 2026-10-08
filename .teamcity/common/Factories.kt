@@ -44,23 +44,29 @@ fun presetBuild(idValue: String, buildName: String, cmakePreset: String,
         after(*gates.toTypedArray())
     }
 
-    if (nightly) {
-        disableSettings("vcsTrigger")
-        triggers {
-            schedule {
-                id = "nightly"
-                schedulingPolicy = daily {
-                    hour = 2
-                }
-                branchFilter = """
-                    +:main
-                    +:refs/heads/main
-                """.trimIndent()
-                withPendingChangesOnly = true
+    if (nightly)
+        nightlyOnMain()
+    extra()
+}
+
+/**
+ * Builds `main` once a night, when it changed, instead of on every push.
+ */
+fun BuildType.nightlyOnMain() {
+    disableSettings("vcsTrigger")
+    triggers {
+        schedule {
+            id = "nightly"
+            schedulingPolicy = daily {
+                hour = 2
             }
+            branchFilter = """
+                +:main
+                +:refs/heads/main
+            """.trimIndent()
+            withPendingChangesOnly = true
         }
     }
-    extra()
 }
 
 /**
@@ -77,8 +83,10 @@ fun presetBuild(idValue: String, buildName: String, cmakePreset: String,
  * @param buildName The configuration name.
  * @param tool `tidy` or `analyzer`.
  * @param gates What must be green first.
+ * @param nightly Analyse `main` once a night instead of every pull request and push.
  */
-fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<BuildType>) = BuildType {
+fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<BuildType>,
+                  nightly: Boolean = false) = BuildType {
     id = RelativeId(idValue)
     name = buildName
     templates(globalBuild)
@@ -98,12 +106,15 @@ fun analysisBuild(idValue: String, buildName: String, tool: String, gates: List<
     }
 
     features {
-        githubBridge()
+        githubBridge(triggerOnPrReady = !nightly)
     }
 
     dependencies {
         after(*gates.toTypedArray())
     }
+
+    if (nightly)
+        nightlyOnMain()
 }
 
 /**

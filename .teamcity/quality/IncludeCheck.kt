@@ -32,7 +32,8 @@ val includeCheck = BuildType {
     disableSettings("Build_Preset", "Test_Preset")
 
     features {
-        githubBridge()
+        // On `main` only: Windows Clang catches most missing includes on a pull request.
+        githubBridge(triggerOnPrReady = false)
     }
 
     // Level 1, in parallel with Code Style: it waits for nothing.

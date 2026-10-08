@@ -45,7 +45,6 @@ flowchart TD
     Build --> Q[Quality]
     Lx --> LxC[Clang]
     Lx --> LxG[GCC]
-    Lx --> LxM[Clang Minimal Modules]
     La --> LaC[Clang]
     La --> LaG[GCC]
     Wx --> WxC[Clang]
@@ -140,27 +139,31 @@ flowchart LR
         IC[Include Check]
     end
     subgraph L2[Level 2: after Code Style]
-        LxC[Linux x64 Clang] & LxG[Linux x64 GCC] & LxM[Linux x64 Clang Minimal] & WxC[Windows x64 Clang]
+        LxC[Linux x64 Clang] & LxG[Linux x64 GCC] & WxC[Windows x64 Clang]
         WxG[Windows x64 GCC]
         SA[Sanitizer Address] & ST[Sanitizer Thread] & SU[Sanitizer UB]
         CT[Clang-Tidy] & AN[Static Analyzer]
         LaC[Linux arm64 Clang]
     end
-    CS --> LxC & LxG & LxM & WxC & WxG & SA & ST & SU & CT & AN & LaC
+    CS --> LxC & LxG & WxC & WxG & SA & ST & SU & CT & AN & LaC
     LxC --> PL[Packages Linux x64]
     WxC --> PW[Packages Windows x64]
     LaC --> PA[Packages Linux arm64]
     classDef draft fill:#fff3cd,stroke:#856404,color:#856404
     classDef mainOnly fill:#d1ecf1,stroke:#0c5460,color:#0c5460
+    classDef afterMerge fill:#e2e3e5,stroke:#383d41,color:#383d41
     class CS,LxC,WxC,SA draft
-    class LaC,LaG,PL,PW,PA mainOnly
+    class LaC,LaG,PL,PW,PA,ST,SU,AN mainOnly
+    class IC,LxG,WxG afterMerge
 ```
 
 - **Yellow**: also run on draft pull requests (fast feedback subset).
-- **Blue**: nightly on `main` only: arm64 is emulated and slow, packages publish to the site.
+- **Blue**: nightly on `main` only: arm64 is emulated and slow, packages publish to the site, the Thread and UB
+  sanitizers and the Static Analyzer are not pull-request checks.
 - arm64 builds the `linux-emulated` preset: Debug without coverage, benchmarks or image tests
   (`OWL_RENDER_TESTS=OFF`), since QEMU makes them hours long and lavapipe's output depends on the CPU.
-- Uncoloured: run on every ready pull request and on `main`.
+- **Grey**: every `main` push, never on a pull request (GCC parity, Include Check).
+- Uncoloured: run on every ready pull request and on `main` (Clang-Tidy).
 
 | File                      | Content                                                                              |
 |---------------------------|--------------------------------------------------------------------------------------|
@@ -189,16 +192,21 @@ says which presets exist, where they run and in which order.
 | Code Style                                 | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
 | Build Linux x64 / Clang (Doxygen)          | ✅           | —                | ✅        | ✅        | ✅                 | ✅           | ❌           |
 | Build Windows x64 / Clang                  | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
-| Build Linux x64 / GCC, Windows x64 / GCC   | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Build Linux x64 / Clang Minimal Modules    | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Build Linux x64 / GCC, Windows x64 / GCC   | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Build Linux arm64 / Clang, GCC (emulated)  | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Benchmarks (`linux-bench`)                 | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Fuzzing (`linux-fuzz`)                     | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | Sanitizer Address (+ LSan)                 | ✅           | —                | ✅        | ✅        | ✅                 | ⏭           | ❌           |
-| Sanitizer Thread, Sanitizer UB             | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
-| Clang-Tidy, Static Analyzer, Include Check | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Sanitizer Thread, Sanitizer UB             | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Clang-Tidy                                 | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
+| Static Analyzer                            | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+| Include Check                              | ✅           | —                | ❌        | ❌        | ❌                 | ❌           | ❌           |
 | PR Ready (merge gate, no agent)            | ✅           | —                | ❌        | ✅        | ⏭                 | ⏭           | ❌           |
 | Packages (one per platform, × 3)           | ❌           | ✅                | ❌        | ❌        | ❌                 | ❌           | ❌           |
+
+A ready pull request runs five checks (Code Style, Linux Clang, Windows Clang, Sanitizer Address, Clang-Tidy), the
+ones `PR Ready` requires: enough to catch most errors in under an hour of agents. GCC and Include Check run on every
+`main` push, the Thread and Undefined Behavior sanitizers and the Static Analyzer nightly.
 
 ✅ runs · ❌ not run · ⏭ a "Skipped" check is published, which GitHub counts as passing. A manual run, and *Re-run* in
 GitHub, always run a configuration.

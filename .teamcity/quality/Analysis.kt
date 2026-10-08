@@ -5,7 +5,8 @@ import jetbrains.buildServer.configs.kotlin.*
 private val analysisGates = listOf(codeStyle)
 
 val clangTidy = analysisBuild("Build_Quality_ClangTidy", "Clang-Tidy", "tidy", analysisGates)
-val staticAnalyzer = analysisBuild("Build_Quality_ClangAnalyzer", "Static Analyzer", "analyzer", analysisGates)
+val staticAnalyzer = analysisBuild("Build_Quality_ClangAnalyzer", "Static Analyzer", "analyzer", analysisGates,
+        nightly = true)
 
 val analysis = Project {
     id = RelativeId("Analysis")

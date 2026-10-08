@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Optional engine modules: `OWL_MODULE_RENDER`, `OWL_MODULE_PHYSICS`, `OWL_MODULE_AUDIO`, `OWL_MODULE_SCRIPT` and `OWL_MODULE_GUI` (Conan options `render`, `physics`, `audio`, `script`, `gui`) leave out a module and its third parties while its public API stays, backed by the Null backend or a no-op; `OWL_WITH_<MODULE>` and `find_package(OwlEngine COMPONENTS Physics)` tell a game what is built in.
-- `linux-clang-minimal` preset (every optional module off: 23 Conan packages instead of 47), built and tested on every pull request by *Clang Minimal Modules*.
+- `linux-clang-minimal` preset (every optional module off: 23 Conan packages instead of 47), for local checks.
 - `OWL_REQUIRE_MODULE(<MODULE>)` (`testHelper.h`) skips a test whose module is not built.
 - Architecture page: the engine's extension points (renderer-stack layers, application layers, extra data) and those the open component registry and the phased systems will add.
 - `DependencyReport` CI action, run on every `main` build of Build Linux x64 / Clang: the Conan dependencies with a newer version on ConanCenter (`conan graph outdated`, `cci.*` false positives dropped), logged and counted, never failing the build.
@@ -64,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Lighter pull-request CI: five checks (Code Style, Linux Clang, Windows Clang, Sanitizer Address, Clang-Tidy) gate `PR Ready`; GCC and Include Check run on `main`, the Thread and UB sanitizers and the Static Analyzer nightly, and the *Clang Minimal Modules* job is removed.
 - `find_package(OwlEngine)` exposes EnTT as its only public dependency: yaml-cpp left the public headers (render-stack `defaultConfig`, `overrides` and `RenderLayer::applyConfig` carry YAML text), and imgui comes with the optional `Owl::Gui` target (`COMPONENTS Gui`, `<owlgui.h>`), `<owl.h>` no longer including `gui/utils.h`; `test_package` checks both targets.
 - The help bundle is generated in `<build>/help/` instead of `engine_assets/help/`, installed as `assets/help/` by both CPack components; `HelpPanel` falls back to its build tree.
 - No public header names a yaml-cpp type any more (`AssetScanner` keeps its scene walk private), and CodeStyle (`public-deps`) rejects a public include of a third-party header the package does not provide.
