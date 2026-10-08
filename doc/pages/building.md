@@ -298,7 +298,7 @@ its public API stays, backed by the Null backend or a no-op, so a game compiles 
 - Tests: `physics_tests`, `script_tests` and `gui_tests` go with their module; a test elsewhere that needs a module
   starts with `OWL_REQUIRE_MODULE(PHYSICS)` (`testHelper.h`), which skips it.
 - `linux-clang-minimal` turns every module off: 23 Conan packages instead of 47, `libOwlEngine.so` 9.3 MB instead
-  of 13.7 MB (Release). The CI builds and tests it on every pull request (*Clang Minimal Modules*): one more agent
-  job, about 45 s of cold build and 3 s of tests on 32 cores, plus the configure.
+  of 13.7 MB (Release). Not built by the CI: build and test it locally after changing a module boundary or a
+  disabled stub (`private/*/disabled/`).
 - `conan create . -o "owlengine/*:physics=False"` packages a specialised engine; `test_package` checks `Owl::Gui`
   only when the package has the gui module.

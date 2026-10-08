@@ -2,7 +2,8 @@ import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.failureConditions.BuildFailureOnMetric
 import jetbrains.buildServer.configs.kotlin.failureConditions.failOnMetricChange
 
-val windowsGcc = presetBuild("Build_WindowsX64_Gcc", "GCC", "windows-gcc-debug")
+// GCC parity on `main` only: a pull request gets its verdict from Clang.
+val windowsGcc = presetBuild("Build_WindowsX64_Gcc", "GCC", "windows-gcc-debug", onPullRequest = false)
 
 val windowsClang = presetBuild("Build_WindowsX64_Clang", "Clang", "windows-clang-debug", onDraft = true) {
     failureConditions {

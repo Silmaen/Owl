@@ -192,7 +192,7 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
   (`scene::LevelTransition`) (PR-32: E-07, E-12)
 - ![Done][done] Optional CMake modules so each game can specialise the engine: `OWL_MODULE_RENDER`, `_PHYSICS`,
   `_AUDIO`, `_SCRIPT`, `_GUI` (and Conan options) around an always-built core; a module off drops its third parties
-  and keeps its public API (Null backend or no-op); `linux-clang-minimal` (every module off) runs in CI. See
+  and keeps its public API (Null backend or no-op); `linux-clang-minimal` (every module off) checks it locally. See
   [Building](../building.md#engine-modules)
     - Modules: core, render, physics, audio, script, Gui (`Owl::Gui`, the only one pulling imgui)
     - Extension points documented ([Architecture](../architecture.md#extension-points)): renderer-stack layers and
