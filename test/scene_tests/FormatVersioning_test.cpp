@@ -194,7 +194,8 @@ TEST_F(FormatVersioningTest, PrefabVersioning) {
 	const auto path = m_dir / "thing.owlprefab";
 	ASSERT_TRUE(PrefabSerializer::serialize(root, *scene, path, "Thing"));
 	const auto text = readText(path);
-	EXPECT_NE(text.find("FormatVersion: 1"), std::string::npos);
+	EXPECT_NE(text.find(std::format("FormatVersion: {}", PrefabSerializer::format().currentVersion())),
+			  std::string::npos);
 	EXPECT_TRUE(static_cast<bool>(PrefabSerializer::instantiate(path, mkShared<Scene>())));
 
 	writeText(path, withoutVersion(text));

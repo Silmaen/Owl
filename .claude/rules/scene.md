@@ -52,7 +52,9 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
 - In Play, EnTT hooks tie runtime resources to components (`PhysicCommand::init` for bodies,
   `onStartRuntime` for scripts and sounds): never create or destroy a Box2D body, script instance or
   runtime sound by hand next to an `addComponent` / `removeComponent`.
-- `duplicateEntity()` makes a root copy; `duplicateSubtree()` duplicates recursively with new UUIDs.
+- `duplicateEntity()` makes a root copy; `duplicateSubtree()` duplicates recursively with new UUIDs and points the
+  `EntityLink`s between the copies at the copies (prefab instantiation does the same). Entity references are UUIDs,
+  never names alone.
 - Only `parentId` is serialized; `childrenIds` is rebuilt after load by `rebuildHierarchyChildren()`.
 - Physics: Box2D bodies ignore the hierarchy. `PhysicCommand` works in world space and converts back to
   local. A non-physics child follows its physics parent; two physics entities move independently.

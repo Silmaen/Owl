@@ -1420,23 +1420,89 @@ void Scene::resolveAllEntityLinks() {
 	OWL_PROFILE_FUNCTION()
 
 	std::unordered_map<std::string, entt::entity> tagIndex;
-	for (const auto view = registry.view<component::Tag>(); const auto entity: view)
-		tagIndex.emplace(view.get<component::Tag>(entity).tag, entity);
+	const auto byName = [this, &tagIndex](const std::string& iName) -> Entity {
+		if (tagIndex.empty())
+			for (const auto view = registry.view<component::Tag>(); const auto entity: view)
+				tagIndex.emplace(view.get<component::Tag>(entity).tag, entity);
+		const auto it = tagIndex.find(iName);
+		return it != tagIndex.end() ? Entity{it->second, this} : Entity{};
+	};
 	for (const auto view = registry.view<component::EntityLink>(); const auto entity: view) {
 		auto& link = view.get<component::EntityLink>(entity);
-		if (link.linkedEntityName.empty()) {
-			link.linkedEntity = {};
-			continue;
+		link.linkedEntity = {};
+		if (link.linkedEntityId != core::UUID{0}) {
+			if (const Entity target = findEntityByUUID(link.linkedEntityId); target) {
+				link.linkedEntity = target;
+				link.linkedEntityName = target.getName();
+				link.wasUnresolvedReported = false;
+				continue;
+			}
 		}
-		if (const auto it = tagIndex.find(link.linkedEntityName); it != tagIndex.end()) {
-			link.linkedEntity = Entity{it->second, this};
+		if (link.linkedEntityName.empty())
+			continue;
+		if (const Entity target = byName(link.linkedEntityName); target) {
+			link.linkedEntity = target;
+			link.linkedEntityId = target.getUUID();
 			link.wasUnresolvedReported = false;
 			continue;
 		}
-		link.linkedEntity = {};
 		OWL_CORE_WARN("Scene: Entity link of '{}' targets missing entity '{}', link ignored.",
 					  Entity(entity, this).getName(), link.linkedEntityName)
 		link.wasUnresolvedReported = true;
+	}
+}
+
+auto Scene::resolveEntityLink(component::EntityLink& ioLink) const -> bool {
+	auto* self = const_cast<Scene*>(this);
+	ioLink.linkedEntity = {};
+	if (ioLink.linkedEntityId != core::UUID{0}) {
+		if (const Entity target = findEntityByUUID(ioLink.linkedEntityId); target) {
+			ioLink.linkedEntity = target;
+			ioLink.linkedEntityName = target.getName();
+			return true;
+		}
+	}
+	if (ioLink.linkedEntityName.empty())
+		return false;
+	for (const auto view = registry.view<component::Tag>(); const auto entity: view) {
+		if (view.get<component::Tag>(entity).tag == ioLink.linkedEntityName) {
+			ioLink.linkedEntity = Entity{entity, self};
+			ioLink.linkedEntityId = ioLink.linkedEntity.getUUID();
+			return true;
+		}
+	}
+	return false;
+}
+
+void Scene::assignEntityLinkIds() {
+	const auto links = registry.view<component::EntityLink>();
+	if (std::ranges::none_of(links, [&links](const entt::entity iEntity) -> bool {
+			const auto& link = links.get<component::EntityLink>(iEntity);
+			return link.linkedEntityId == core::UUID{0} && !link.linkedEntityName.empty();
+		}))
+		return;
+	std::unordered_map<std::string, core::UUID> tagIndex;
+	for (const auto view = registry.view<component::Tag, component::ID>(); const auto entity: view)
+		tagIndex.emplace(view.get<component::Tag>(entity).tag, view.get<component::ID>(entity).id);
+	for (const auto entity: links) {
+		auto& link = links.get<component::EntityLink>(entity);
+		if (link.linkedEntityId != core::UUID{0} || link.linkedEntityName.empty())
+			continue;
+		if (const auto it = tagIndex.find(link.linkedEntityName); it != tagIndex.end())
+			link.linkedEntityId = it->second;
+	}
+}
+
+void Scene::remapEntityLinks(const std::vector<Entity>& iEntities,
+							 const std::unordered_map<core::UUID, core::UUID>& iRemap) {
+	for (const auto& entity: iEntities) {
+		if (!entity || !entity.hasComponent<component::EntityLink>())
+			continue;
+		auto& link = entity.getComponent<component::EntityLink>();
+		if (const auto it = iRemap.find(link.linkedEntityId); it != iRemap.end()) {
+			link.linkedEntityId = it->second;
+			link.linkedEntity = {};
+		}
 	}
 }
 
@@ -1895,6 +1961,8 @@ void Scene::flushPendingDestructions() {
 }
 
 auto Scene::duplicateSubtree(const Entity& iEntity) -> Entity {
+	// Bind name-only links first, so the copies of a linked group link to each other, not to the originals.
+	assignEntityLinkIds();
 	// Duplicate the root entity.
 	Entity newRoot = createEntity(iEntity.getName());
 	copyCopiableComponents(newRoot, iEntity);
@@ -1902,6 +1970,8 @@ auto Scene::duplicateSubtree(const Entity& iEntity) -> Entity {
 	auto& [parentId, childrenIds] = newRoot.getComponent<component::Hierarchy>();
 	parentId = core::UUID{0};
 	childrenIds.clear();
+	std::unordered_map<core::UUID, core::UUID> remap{{iEntity.getUUID(), newRoot.getUUID()}};
+	std::vector<Entity> copies{newRoot};
 	std::vector<std::pair<Entity, Entity>> stack;
 	for (const auto childId: iEntity.getComponent<component::Hierarchy>().childrenIds) {
 		if (const Entity srcChild = findEntityByUUID(childId); srcChild)
@@ -1916,12 +1986,16 @@ auto Scene::duplicateSubtree(const Entity& iEntity) -> Entity {
 		pid = dstParent.getUUID();
 		c_ids.clear();
 		dstParent.getComponent<component::Hierarchy>().childrenIds.push_back(newChild.getUUID());
+		remap.emplace(srcEntity.getUUID(), newChild.getUUID());
+		copies.push_back(newChild);
 		// Push source children for further duplication.
 		for (const auto grandChildId: srcEntity.getComponent<component::Hierarchy>().childrenIds) {
 			if (const Entity srcGrandChild = findEntityByUUID(grandChildId); srcGrandChild)
 				stack.emplace_back(srcGrandChild, newChild);
 		}
 	}
+	// Links between members of the subtree follow the copies; links to outside entities are kept.
+	remapEntityLinks(copies, remap);
 	return newRoot;
 }
 

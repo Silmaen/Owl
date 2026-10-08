@@ -112,6 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SceneSerializer::deserialize`, `deserializeFromBuffer` and `applyParsed` return a `SceneLoadResult` (`owl::expected<void, SceneLoadError>`) instead of `bool`.
 - Each scene owns its physics world, its script bindings and its UI mouse state (`PhysicCommand` calls take the scene, `ScriptInstance::setScene`, `Scene::getUiInputState`): several scenes run side by side and a destroyed scene leaves nothing dangling.
 - `Scene::onUpdateRuntime` holds no gameplay any more: scripts, voxel player, raycast doors, physics, links, triggers, sound, animation and the game-over message are engine systems (`scene::systems`, `owl.*`), in the same order as before.
+- `EntityLink` references its target by UUID (`linkedEntityId`), the name kept for display and as fallback: renaming the target keeps the link, and `duplicateSubtree` and prefab instantiation relink the copies to each other; scene and prefab formats move to version 2, whose migration binds the old name-only links.
 
 ### Deprecated
 

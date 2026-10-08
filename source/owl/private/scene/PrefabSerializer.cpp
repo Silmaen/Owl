@@ -8,6 +8,8 @@
 #include "owlpch.h"
 
 #include "scene/PrefabSerializer.h"
+
+#include "EntityLinkMigration.h"
 #include "scene/SceneSerializer.h"
 
 #include "core/FormatVersionYaml.h"
@@ -31,7 +33,8 @@ namespace owl::scene {
 
 namespace {
 
-constexpr std::array<core::MigrationStep, 0> g_prefabMigrations{};
+// 1 -> 2: entity links reference their target by UUID.
+constexpr std::array<core::MigrationStep, 1> g_prefabMigrations{&bindEntityLinksByName};
 constexpr core::DocumentFormat g_prefabFormat{.name = "Prefab", .migrations = g_prefabMigrations};
 
 auto loadPrefabDocument(const std::filesystem::path& iFilepath) -> std::optional<YAML::Node> {
@@ -197,8 +200,15 @@ auto PrefabSerializer::instantiate(const std::filesystem::path& iFilepath, const
 			component::deserializeOptionalComponents(dstEntity, sEntity);
 		}
 
-		// Phase 5: Rebuild hierarchy in the target scene.
+		// Phase 5: Rebuild hierarchy in the target scene, relink the links between members of the instance.
 		ioScene->rebuildHierarchyChildren();
+		std::unordered_map<core::UUID, core::UUID> linkRemap;
+		std::vector<Entity> instanceEntities;
+		for (const auto& [canonical, instance]: uuidRemap) {
+			linkRemap.emplace(core::UUID{canonical}, core::UUID{instance});
+			instanceEntities.push_back(ioScene->findEntityByUUID(core::UUID{instance}));
+		}
+		Scene::remapEntityLinks(instanceEntities, linkRemap);
 		// Phase 6: Add PrefabLink to the root entity.
 		auto instanceRoot = ioScene->findEntityByUUID(core::UUID{uuidRemap[static_cast<uint64_t>(tempRoot.getUUID())]});
 		if (instanceRoot) {
@@ -411,6 +421,14 @@ auto PrefabSerializer::applyToInstance(const std::filesystem::path& iFilepath, c
 		if (auto stale = ioScene.findEntityByUUID(core::UUID{entry.instanceUuid}); stale)
 			ioScene.destroyEntity(stale);
 	}
+
+	std::unordered_map<core::UUID, core::UUID> linkRemap;
+	std::vector<Entity> instanceEntities;
+	for (const auto& [instanceUuid, canonicalUuid]: mapping) {
+		linkRemap.emplace(core::UUID{canonicalUuid}, core::UUID{instanceUuid});
+		instanceEntities.push_back(ioScene.findEntityByUUID(core::UUID{instanceUuid}));
+	}
+	Scene::remapEntityLinks(instanceEntities, linkRemap);
 
 	auto& updatedLink = ioInstanceRoot.getComponent<component::PrefabLink>();
 	updatedLink.overriddenComponents = pruneOverrides(link.overriddenComponents, mapping);

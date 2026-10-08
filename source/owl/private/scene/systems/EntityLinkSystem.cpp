@@ -14,20 +14,13 @@
 #include "scene/Scene.h"
 #include "scene/component/components.h"
 
+#include <tuple>
+
 namespace owl::scene::systems {
 
 void updateEntityLinks(Scene& ioScene, [[maybe_unused]] const SystemContext& iContext) {
 	OWL_PROFILE_FUNCTION()
 
-	const auto rescanTag = [&ioScene](component::EntityLink& ioLink) -> void {
-		ioLink.linkedEntity = {};
-		for (const auto view = ioScene.registry.view<component::Tag>(); const auto entity: view) {
-			if (view.get<component::Tag>(entity).tag == ioLink.linkedEntityName) {
-				ioLink.linkedEntity = {entity, &ioScene};
-				return;
-			}
-		}
-	};
 	const auto applyLocalFromWorld = [&ioScene](component::Transform& ioTransform, const Entity& iHost,
 												const math::Transform& iLinkedWorld) -> void {
 		const auto& [parentId, childrenIds] = iHost.getComponent<component::Hierarchy>();
@@ -54,10 +47,10 @@ void updateEntityLinks(Scene& ioScene, [[maybe_unused]] const SystemContext& iCo
 		if (!ioScene.isEffectivelyVisible(host, /*iEditorMode=*/false))
 			continue;
 		auto [transform, link] = view.get<component::Transform, component::EntityLink>(entity);
-		if (link.linkedEntityName.empty())
+		if (link.linkedEntityId == core::UUID{0} && link.linkedEntityName.empty())
 			continue;
-		if (!link.linkedEntity || link.linkedEntity.getComponent<component::Tag>().tag != link.linkedEntityName)
-			rescanTag(link);
+		if (!link.linkedEntity || link.linkedEntity.getUUID() != link.linkedEntityId)
+			std::ignore = ioScene.resolveEntityLink(link);
 		if (!link.linkedEntity) {
 			if (!link.wasUnresolvedReported)
 				OWL_CORE_WARN("Scene: Entity link of '{}' lost its target '{}', link ignored.", host.getName(),
