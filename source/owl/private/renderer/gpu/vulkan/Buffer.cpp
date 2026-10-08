@@ -59,13 +59,7 @@ void VertexBuffer::release() {
 		OWL_CORE_WARN("Vulkan vertex buffer: Trying to delete vertex buffer after VulkanHandler release...")
 		return;
 	}
-	const auto& vkc = internal::VulkanCore::get();
-	if (m_vertexBuffer != nullptr)
-		vkDestroyBuffer(vkc.getLogicalDevice(), m_vertexBuffer, nullptr);
-	m_vertexBuffer = nullptr;
-	if (m_vertexBufferMemory != nullptr)
-		vkFreeMemory(vkc.getLogicalDevice(), m_vertexBufferMemory, nullptr);
-	m_vertexBufferMemory = nullptr;
+	internal::freeBuffer(m_buffer);
 }
 
 void VertexBuffer::bind() const { bindAtBinding(0); }
@@ -76,7 +70,7 @@ void VertexBuffer::bindAtBinding(const uint32_t iBinding) const {
 		OWL_CORE_WARN("Vulkan vertex buffer: Trying to bind vertex buffer after VulkanHandler release...")
 		return;
 	}
-	const VkBuffer vertexBuffers[] = {m_vertexBuffer};
+	const VkBuffer vertexBuffers[] = {m_buffer.buffer};
 	constexpr VkDeviceSize offsets[] = {0};
 	vkCmdBindVertexBuffers(vkh.getCurrentCommandBuffer(), iBinding, 1, vertexBuffers, offsets);
 }
@@ -88,30 +82,13 @@ void VertexBuffer::setData(const void* iData, const uint32_t iSize) {
 		OWL_CORE_WARN("Vulkan vertex buffer: Trying to set vertex buffer data after VulkanHandler release...")
 		return;
 	}
-
-	if (iData != nullptr) {
-		VkBuffer stagingBuffer{nullptr};
-		VkDeviceMemory stagingBufferMemory{nullptr};
-		internal::createBuffer(iSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-							   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-							   stagingBuffer, stagingBufferMemory);
-		const auto& vkc = internal::VulkanCore::get();
-
-		void* dataInternal = nullptr;
-		vkMapMemory(vkc.getLogicalDevice(), stagingBufferMemory, 0, iSize, 0, &dataInternal);
-
-		OWL_DIAG_PUSH
-		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
-		memcpy(dataInternal, iData, iSize);
-		OWL_DIAG_POP
-
-		vkUnmapMemory(vkc.getLogicalDevice(), stagingBufferMemory);
-
-		internal::copyBuffer(stagingBuffer, m_vertexBuffer, iSize);
-
-		vkDestroyBuffer(vkc.getLogicalDevice(), stagingBuffer, nullptr);
-		vkFreeMemory(vkc.getLogicalDevice(), stagingBufferMemory, nullptr);
+	if (iData == nullptr || iSize == 0)
+		return;
+	if (iSize > m_buffer.size) {
+		OWL_CORE_WARN("Vulkan vertex buffer: setData of {} bytes beyond the capacity of {}.", iSize, m_buffer.size)
+		return;
 	}
+	internal::uploadToDeviceBuffer(m_buffer.buffer, iData, iSize);
 }
 
 auto VertexBuffer::getBindingDescription(const uint32_t iBinding, const bool iPerInstance) const
@@ -145,8 +122,8 @@ void VertexBuffer::createBuffer(const float* iData, const uint32_t iSize) {
 		return;
 	}
 	release();
-	internal::createBuffer(iSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-						   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_vertexBuffer, m_vertexBufferMemory);
+	m_buffer = internal::createBuffer(iSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+									  internal::MemoryUsage::Device, "vertexBuffer");
 	setData(iData, iSize);
 }
 
@@ -156,30 +133,10 @@ IndexBuffer::IndexBuffer(const uint32_t* iIndices, const uint32_t iSize) : m_cou
 		return;
 	}
 	const VkDeviceSize bufferSize = sizeof(uint32_t) * iSize;
-	internal::createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-						   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_indexBuffer, m_indexBufferMemory);
-
-	if (iIndices != nullptr) {
-		VkBuffer stagingBuffer{nullptr};
-		VkDeviceMemory stagingBufferMemory{nullptr};
-		internal::createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-							   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-							   stagingBuffer, stagingBufferMemory);
-		void* dataInternal{nullptr};
-		const auto& vkc = internal::VulkanCore::get();
-
-		vkMapMemory(vkc.getLogicalDevice(), stagingBufferMemory, 0, bufferSize, 0, &dataInternal);
-
-		OWL_DIAG_PUSH
-		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
-		memcpy(dataInternal, iIndices, bufferSize);
-		OWL_DIAG_POP
-
-		vkUnmapMemory(vkc.getLogicalDevice(), stagingBufferMemory);
-		internal::copyBuffer(stagingBuffer, m_indexBuffer, bufferSize);
-		vkDestroyBuffer(vkc.getLogicalDevice(), stagingBuffer, nullptr);
-		vkFreeMemory(vkc.getLogicalDevice(), stagingBufferMemory, nullptr);
-	}
+	m_buffer = internal::createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+									  internal::MemoryUsage::Device, "indexBuffer");
+	if (iIndices != nullptr && m_buffer.buffer != nullptr)
+		internal::uploadToDeviceBuffer(m_buffer.buffer, iIndices, bufferSize);
 }
 
 IndexBuffer::~IndexBuffer() { release(); }
@@ -189,14 +146,7 @@ void IndexBuffer::release() {
 		OWL_CORE_WARN("Vulkan vertex buffer: Trying to delete vertex buffer after VulkanHandler release...")
 		return;
 	}
-	const auto& vkc = internal::VulkanCore::get();
-
-	if (m_indexBuffer != nullptr)
-		vkDestroyBuffer(vkc.getLogicalDevice(), m_indexBuffer, nullptr);
-	m_indexBuffer = nullptr;
-	if (m_indexBufferMemory != nullptr)
-		vkFreeMemory(vkc.getLogicalDevice(), m_indexBufferMemory, nullptr);
-	m_indexBufferMemory = nullptr;
+	internal::freeBuffer(m_buffer);
 	m_count = 0;
 }
 
@@ -206,7 +156,7 @@ void IndexBuffer::bind() const {
 		OWL_CORE_WARN("Vulkan vertex buffer: Trying to bind vertex buffer after VulkanHandler release...")
 		return;
 	}
-	vkCmdBindIndexBuffer(vkh.getCurrentCommandBuffer(), m_indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(vkh.getCurrentCommandBuffer(), m_buffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 }
 
 void IndexBuffer::unbind() const {}

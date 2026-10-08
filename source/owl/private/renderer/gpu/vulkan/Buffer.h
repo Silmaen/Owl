@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "internal/MemoryAllocator.h"
 #include "renderer/gpu/Buffer.h"
 #include <vulkan/vulkan.h>
 
@@ -108,10 +109,8 @@ public:
 			-> std::vector<VkVertexInputAttributeDescription>;
 
 private:
-	/// The vulkan vertex buffer.
-	VkBuffer m_vertexBuffer{nullptr};
-	/// The vulkan vertex buffer memory.
-	VkDeviceMemory m_vertexBufferMemory{nullptr};
+	/// The device-local vertex buffer and its allocation.
+	internal::AllocatedBuffer m_buffer;
 
 	void createBuffer(const float* iData, uint32_t iSize);
 };
@@ -172,9 +171,7 @@ public:
 private:
 	/// Number of elements.
 	uint32_t m_count = 0;
-	/// Vulkan index buffer.
-	VkBuffer m_indexBuffer{nullptr};
-	/// Vulkan memory buffer.
-	VkDeviceMemory m_indexBufferMemory{nullptr};
+	/// The device-local index buffer and its allocation.
+	internal::AllocatedBuffer m_buffer;
 };
 }// namespace owl::renderer::gpu::vulkan

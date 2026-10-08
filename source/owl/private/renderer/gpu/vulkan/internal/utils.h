@@ -7,8 +7,11 @@
  */
 
 #pragma once
+#include "MemoryAllocator.h"
 #include "renderer/gpu/Framebuffer.h"
 #include <vulkan/vulkan.h>
+
+#include <cstddef>
 
 #include <cstdint>
 #include <string_view>
@@ -172,24 +175,41 @@ void copyBuffer(const VkBuffer& iSrcBuffer, const VkBuffer& iDstBuffer, VkDevice
 
 /**
  * @brief
- *  Allocate a Vulkan buffer with the requested usage and memory properties.
+ *  Create a buffer in a VMA sub-allocation.
  * @param[in] iSize Buffer size in bytes.
  * @param[in] iUsage Buffer usage flags.
- * @param[in] iProperties Required memory property flags (host-visible, device-local, ...).
- * @param[out] iBuffer Out: created buffer handle.
- * @param[out] iBufferMemory Out: bound memory allocation handle.
+ * @param[in] iMemory Memory placement (device-local, upload or read-back).
+ * @param[in] iName Debug name of the buffer.
+ * @return The buffer, empty on failure (logged).
  */
-void createBuffer(VkDeviceSize iSize, VkBufferUsageFlags iUsage, VkMemoryPropertyFlags iProperties, VkBuffer& iBuffer,
-				  VkDeviceMemory& iBufferMemory);
+[[nodiscard]] auto createBuffer(VkDeviceSize iSize, VkBufferUsageFlags iUsage, MemoryUsage iMemory,
+								std::string_view iName = {}) -> AllocatedBuffer;
 
 /**
  * @brief
- *  Free buffer.
- * @param[in] iDevice The Vulkan device handle.
- * @param[in] iBuffer The buffer.
- * @param[in] iBufferMemory The buffer memory handle.
+ *  Destroy a buffer now; the GPU must be done with it.
+ * @param[in,out] ioBuffer The buffer, reset to empty.
  */
-void freeBuffer(const VkDevice& iDevice, const VkBuffer& iBuffer, const VkDeviceMemory& iBufferMemory);
+void freeBuffer(AllocatedBuffer& ioBuffer);
+
+/**
+ * @brief
+ *  Copy bytes into a persistently mapped buffer.
+ * @param[in] iBuffer The mapped buffer.
+ * @param[in] iData Source bytes.
+ * @param[in] iSize Number of bytes.
+ * @param[in] iOffset Destination offset in bytes.
+ */
+void writeMapped(const AllocatedBuffer& iBuffer, const void* iData, size_t iSize, size_t iOffset = 0);
+
+/**
+ * @brief
+ *  Copy bytes into a device-local buffer through a staging buffer.
+ * @param[in] iDestination Device-local buffer (with `TRANSFER_DST` usage).
+ * @param[in] iData Source bytes.
+ * @param[in] iSize Number of bytes, copied at offset 0.
+ */
+void uploadToDeviceBuffer(VkBuffer iDestination, const void* iData, VkDeviceSize iSize);
 
 /**
  * @brief

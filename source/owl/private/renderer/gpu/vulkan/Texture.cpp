@@ -24,7 +24,6 @@ namespace {
 void createImage(const uint32_t iIndex, const math::vec2ui& iDimensions) {
 	auto& data = internal::Descriptors::get().getTextureData(iIndex);
 	data.createImage(iDimensions);
-	internal::Descriptors::get().bindTextureImage(iIndex);
 }
 
 }// namespace
@@ -65,36 +64,31 @@ void Texture2D::bind(uint32_t) const {
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
 void Texture2D::setData(void* iData, const uint32_t iSize) {
-	const auto& vkc = internal::VulkanCore::get();
 	if (const uint32_t expected = m_specification.getPixelSize() * m_specification.size.surface(); iSize != expected) {
 		OWL_CORE_ERROR("Vulkan Texture {}: Image size mismatch: expect {}, got {}.", m_path.string(), expected, iSize)
 		return;
 	}
-	VkBuffer stagingBuffer = nullptr;
-	VkDeviceMemory stagingBufferMemory = nullptr;
-
 	const VkDeviceSize imageSize = m_specification.size.surface() * 4ull;
-	internal::createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-						   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer,
-						   stagingBufferMemory);
-	void* dataPixel = nullptr;
-	vkMapMemory(vkc.getLogicalDevice(), stagingBufferMemory, 0, imageSize, 0, &dataPixel);
+	auto staging = internal::createBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, internal::MemoryUsage::Upload,
+										  "tex.staging");
+	if (staging.mapped == nullptr)
+		return;
 	if (m_specification.format == ImageFormat::Rgba8) {
 		// input data already in the right format, just copy
-		memcpy(dataPixel, iData, imageSize);
+		internal::writeMapped(staging, iData, imageSize);
 	} else if (m_specification.format == ImageFormat::Rgb8) {
 		// need to insert alpha channel.
 		const auto* dataChar = static_cast<uint8_t*>(iData);
-		auto* dataPixelChar = static_cast<uint8_t*>(dataPixel);
+		auto* dataPixelChar = static_cast<uint8_t*>(staging.mapped);
 		for (uint32_t i = 0, j = 0; j < iSize; i += 4, j += 3) {
 			memcpy(dataPixelChar + i, dataChar + j, 3);
 			*(dataPixelChar + i + 3) = 0xFFu;
 		}
 	} else {
 		OWL_CORE_ERROR("Vulkan Texture, image format {} not supported.", magic_enum::enum_name(m_specification.format))
+		internal::freeBuffer(staging);
 		return;
 	}
-	vkUnmapMemory(vkc.getLogicalDevice(), stagingBufferMemory);
 	auto& vkd = internal::Descriptors::get();
 	if (!vkd.isTextureRegistered(m_textureId)) {
 		m_textureId = vkd.registerNewTexture();
@@ -112,14 +106,14 @@ void Texture2D::setData(void* iData, const uint32_t iSize) {
 	auto& data = vkd.getTextureData(m_textureId);
 	internal::transitionImageLayout(data.textureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 									data.mipLevels);
-	internal::copyBufferToImage(stagingBuffer, data.textureImage, m_specification.size);
+	internal::copyBufferToImage(staging.buffer, data.textureImage, m_specification.size);
 	if (data.mipLevels > 1)
 		internal::generateMipmaps(data.textureImage, m_specification.size, data.mipLevels);
 	else
 		internal::transitionImageLayout(data.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 										VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	internal::freeBuffer(vkc.getLogicalDevice(), stagingBuffer, stagingBufferMemory);
+	internal::freeBuffer(staging);
 	if (data.textureImageView == nullptr)
 		data.createView();
 	if (data.textureSampler == nullptr)
