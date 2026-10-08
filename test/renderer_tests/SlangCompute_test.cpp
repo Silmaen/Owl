@@ -6,6 +6,8 @@
  * All modification must get authorization from the author.
  */
 
+// Slang and SPIRV-Cross come with the render module.
+#if OWL_WITH_RENDER
 #include "testHelper.h"
 
 #include <core/Macros.h>
@@ -182,3 +184,4 @@ TEST(SlangCompute, shippedRaycastStripeShaderCompiles) {
 	EXPECT_TRUE(resultGl.success);
 	owl::core::Log::invalidate();
 }
+#endif

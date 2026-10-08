@@ -12,6 +12,8 @@
 #include "internal/VulkanHandler.h"
 #include "internal/utils.h"
 
+#include <cstring>
+
 namespace owl::renderer::gpu::vulkan {
 
 namespace {

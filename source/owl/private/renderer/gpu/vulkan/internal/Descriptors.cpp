@@ -15,6 +15,7 @@
 #include "utils.h"
 
 #include <bit>
+#include <cstring>
 
 namespace owl::renderer::gpu::vulkan::internal {
 

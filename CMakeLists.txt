@@ -34,6 +34,38 @@ option(${PROJECT_PREFIX}_ENABLE_RENDERER_VERBOSE_CAPABILITIES "Log every capabil
 option(${PROJECT_PREFIX}_ENABLE_SHADER_REFLECT_RESOURCES "Log the resources reflected from every compiled shader" OFF)
 
 #
+# ---=== Engine modules ===---
+# The core is always built. A module turned OFF drops its third parties; its public API stays, backed by the Null
+# backend or a no-op (see doc/pages/building.md, "Engine modules").
+#
+option(${PROJECT_PREFIX}_MODULE_RENDER "OpenGL and Vulkan backends, GLFW window and input, Slang compiler (OFF: Null backends, headless)" ON)
+option(${PROJECT_PREFIX}_MODULE_PHYSICS "Box2D physics (OFF: PhysicCommand does nothing)" ON)
+option(${PROJECT_PREFIX}_MODULE_AUDIO "OpenAL sound backend and libsndfile decoding (OFF: Null sound backend)" ON)
+option(${PROJECT_PREFIX}_MODULE_SCRIPT "Lua scripting (OFF: scripts never load)" ON)
+option(${PROJECT_PREFIX}_MODULE_GUI "ImGui layer and widgets, target Owl::Gui (needs OWL_MODULE_RENDER)" ON)
+if (${PROJECT_PREFIX}_MODULE_GUI AND NOT ${PROJECT_PREFIX}_MODULE_RENDER)
+    message(STATUS "OWL_MODULE_GUI needs OWL_MODULE_RENDER: Gui module disabled")
+    set(${PROJECT_PREFIX}_MODULE_GUI OFF)
+endif ()
+set(${PROJECT_PREFIX}_ALL_MODULES ON)
+foreach (_owl_module RENDER PHYSICS AUDIO SCRIPT GUI)
+    if (NOT ${PROJECT_PREFIX}_MODULE_${_owl_module})
+        set(${PROJECT_PREFIX}_ALL_MODULES OFF)
+    endif ()
+endforeach ()
+unset(_owl_module)
+# The editor, the runner, the benchmarks and the fuzzers exercise every module.
+if (NOT ${PROJECT_PREFIX}_ALL_MODULES)
+    foreach (_owl_tool BUILD_NEST BENCHMARK FUZZING)
+        if (${PROJECT_PREFIX}_${_owl_tool})
+            message(STATUS "OWL_${_owl_tool} needs every engine module: disabled")
+            set(${PROJECT_PREFIX}_${_owl_tool} OFF)
+        endif ()
+    endforeach ()
+    unset(_owl_tool)
+endif ()
+
+#
 # ---=== Base Configs ===---
 
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_MODULE_PATH}")

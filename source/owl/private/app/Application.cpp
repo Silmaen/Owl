@@ -14,15 +14,18 @@
 #include "core/external/yaml.h"
 #include "core/utils/StringUtils.h"
 #include "data/assets/pack/PackExtractor.h"
-#include "gui/UiLayer.h"
 #include "input/Input.h"
 #include "renderer/Renderer.h"
 #include "sound/SoundSystem.h"
+#if OWL_WITH_GUI
+#include "gui/UiLayer.h"
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 #include <imgui.h>
 OWL_DIAG_POP
+
+#endif
 
 #include <atomic>
 #include <csignal>
@@ -180,6 +183,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 	mp_appWindow->setEventCallback([this]<typename T0>(T0&& ioPh1) -> auto { onEvent(std::forward<T0>(ioPh1)); });
 
 	// create the GUI layer
+#if OWL_WITH_GUI
 	if (m_initParams.hasGui) {
 		mp_imGuiLayer = mkShared<gui::UiLayer>();
 
@@ -197,6 +201,10 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 		OWL_CORE_TRACE("GUI Layer created.")
 	}
+#else
+	if (m_initParams.hasGui)
+		OWL_CORE_WARN("Application: ImGui not built in (OWL_MODULE_GUI=OFF), no GUI layer.")
+#endif
 
 	{
 		const auto requestedSound = m_initParams.isDummy ? sound::SoundAPI::Type::Null : m_initParams.sound;
@@ -229,6 +237,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 	// Compile renderer shaders with an ImGui loading screen.
 	{
+#if OWL_WITH_GUI
 		renderer::Renderer::initShaders([this](const uint32_t iCurrent, const uint32_t iTotal,
 											   const std::string& iName) -> void {
 			OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
@@ -255,6 +264,13 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 				mp_appWindow->onUpdate();
 			}
 		});
+#else
+		renderer::Renderer::initShaders([]([[maybe_unused]] const uint32_t iCurrent,
+										   [[maybe_unused]] const uint32_t iTotal,
+										   [[maybe_unused]] const std::string& iName) -> void {
+			OWL_CORE_INFO("Compiling shaders {}/{}: {}...", iCurrent + 1, iTotal, iName)
+		});
+#endif
 		m_scheduler.waitEmptyQueue();
 
 		OWL_CORE_INFO("Renderer initiated.")
@@ -270,13 +286,17 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 }
 
 void Application::enableDocking() const {
+#if OWL_WITH_GUI
 	if (mp_imGuiLayer)
 		mp_imGuiLayer->enableDocking();
+#endif
 }
 
 void Application::disableDocking() const {
+#if OWL_WITH_GUI
 	if (mp_imGuiLayer)
 		mp_imGuiLayer->disableDocking();
+#endif
 }
 
 Application::~Application() {
@@ -380,12 +400,14 @@ void Application::run() {
 				for (const auto& layer: m_layerStack) layer->onUpdate(m_stepper);
 			}
 			tLayers = now();
+#if OWL_WITH_GUI
 			if (mp_imGuiLayer) {
 				OWL_PROFILE_SCOPE("LayerStack onImUpdate")
 				mp_imGuiLayer->begin();
 				for (const auto& layer: m_layerStack) layer->onImGuiRender(m_stepper);
 				mp_imGuiLayer->end();
 			}
+#endif
 			tGui = now();
 
 			renderer::gpu::RenderCommand::endFrame();

@@ -40,19 +40,21 @@
 #include "renderer/CameraOrthoController.h"
 #include "window/Window.h"
 
+#include "io/serial/Manager.h"
+#include "math/Transform.h"
+#include "math/simpleFunctions.h"
+
 // -------- gui ------------
+// Only with the Gui module (OWL_MODULE_GUI); the headers that include imgui come with <owlgui.h> (target Owl::Gui).
+#if OWL_WITH_GUI
 #include "gui/BaseDrawPanel.h"
 #include "gui/BasePanel.h"
 #include "gui/Guizmo.h"
 #include "gui/Theme.h"
 #include "gui/UiLayer.h"
-#include "io/serial/Manager.h"
-#include "math/Transform.h"
-#include "math/simpleFunctions.h"
-
-// The headers that include imgui come with <owlgui.h> (target Owl::Gui).
 #include "gui/component/render.h"
 #include "gui/widgets/ButtonBar.h"
+#endif
 // ------- scene -----------
 #include "scene/Entity.h"
 #include "scene/GameState.h"

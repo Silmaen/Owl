@@ -199,6 +199,7 @@ TEST_F(SceneRobustnessTest, MissingFileIsUnreadable) {
 
 // C-17: a script hiding a trigger in on_update stops it in the same frame (the visibility cache is armed later).
 TEST_F(SceneRobustnessTest, TriggerHiddenByScriptDoesNotFireSameFrame) {
+	OWL_REQUIRE_MODULE(SCRIPT);
 	const auto script = writeFile("hide.lua", "function on_update(dt)\n    ui.set_visible(entity_id, false)\nend\n");
 	Scene scn;
 	scn.createEntity("Player").addComponent<component::Player>().primary = true;

@@ -6,6 +6,8 @@
  * All modification must get authorization from the author.
  */
 
+// Slang and SPIRV-Cross come with the render module.
+#if OWL_WITH_RENDER
 #include "testHelper.h"
 
 #include <app/Application.h>
@@ -158,3 +160,4 @@ TEST(ShaderFileUtils, ShaderReflectReturnsEmptyForEmptyData) {
 	EXPECT_TRUE(refl.sampledImages.empty());
 	core::Log::invalidate();
 }
+#endif

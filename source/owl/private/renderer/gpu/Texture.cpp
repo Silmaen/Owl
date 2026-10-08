@@ -13,10 +13,12 @@
 #include "core/task/Scheduler.h"
 #include "data/assets/pack/PackExtractor.h"
 #include "null/Texture.h"
-#include "opengl/Texture.h"
 #include "renderer/Renderer.h"
 #include "renderer/TextureDecoder.h"
+#if OWL_WITH_RENDER
+#include "opengl/Texture.h"
 #include "vulkan/Texture.h"
+#endif
 
 #include <algorithm>
 #include <bit>
@@ -107,6 +109,7 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 				OWL_CORE_WARN("Texture: failed to load '{}' (Null backend).", iFile.string())
 				return nullptr;
 			}
+#if OWL_WITH_RENDER
 		case RenderAPI::Type::OpenGL:
 			{
 				if (auto texture = mkShared<opengl::Texture2D>(iFile); texture->isLoaded())
@@ -121,6 +124,11 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 				OWL_CORE_WARN("Texture: failed to load '{}' (Vulkan backend).", iFile.string())
 				return nullptr;
 			}
+#else
+		case RenderAPI::Type::OpenGL:
+		case RenderAPI::Type::Vulkan:
+			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+#endif
 	}
 
 	OWL_CORE_ERROR("Texture: unknown render API ({}).", static_cast<int>(api))
@@ -133,10 +141,16 @@ auto Texture2D::create(const Specification& iSpecs) -> shared<Texture2D> {
 	switch (api) {
 		case RenderAPI::Type::Null:
 			return mkShared<null::Texture2D>(iSpecs);
+#if OWL_WITH_RENDER
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::Texture2D>(iSpecs);
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::Texture2D>(iSpecs);
+#else
+		case RenderAPI::Type::OpenGL:
+		case RenderAPI::Type::Vulkan:
+			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+#endif
 	}
 
 	OWL_CORE_ERROR("Texture: unknown render API ({}).", static_cast<int>(api))

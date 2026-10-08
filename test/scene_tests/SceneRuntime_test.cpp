@@ -161,6 +161,7 @@ TEST_F(SceneRuntimeTest, UpdateRuntimeReturnsEarlyOnDeath) {
 // PhysicBody-driven entities must update their transforms each frame and survive
 // shutdown via onEndRuntime.
 TEST_F(SceneRuntimeTest, PhysicBodyUpdatesTransformOverTime) {
+	OWL_REQUIRE_MODULE(PHYSICS);
 	scene::Scene scn;
 	auto ent = scn.createEntity("body");
 	{

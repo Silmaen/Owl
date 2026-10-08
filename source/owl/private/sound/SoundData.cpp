@@ -10,7 +10,9 @@
 #include "sound/SoundData.h"
 
 #include "null/SoundData.h"
+#if OWL_WITH_AUDIO
 #include "openal/SoundData.h"
+#endif
 #include "sound/SoundSystem.h"
 
 namespace owl::sound {
@@ -26,7 +28,11 @@ auto SoundData::create(const Specification& iSpec) -> shared<SoundData> {
 		case SoundAPI::Type::Null:
 			return mkShared<null::SoundData>(iSpec);
 		case SoundAPI::Type::OpenAl:
+#if OWL_WITH_AUDIO
 			return mkShared<openal::SoundData>(iSpec);
+#else
+			break;// OpenAL not built (OWL_MODULE_AUDIO=OFF)
+#endif
 	}
 	OWL_CORE_ERROR("Unknown Sound API Type!")
 	return nullptr;

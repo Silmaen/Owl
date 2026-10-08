@@ -6,9 +6,12 @@
  * All modification must get authorization from the author.
  */
 
+// The editor's project needs <owlgui.h>: only with the Gui module.
+#if OWL_WITH_GUI
 // NOLINTBEGIN: include the editor's project TU directly, the test targets do not link the editor.
 #include "../../source/owlnest/sources/Project.cpp"
 // NOLINTEND
+#endif
 
 #include "testHelper.h"
 
@@ -324,6 +327,7 @@ TEST_F(FormatVersioningTest, SettingsVersioning) {
 	SettingsManager::setGameName("");
 }
 
+#if OWL_WITH_GUI
 TEST_F(FormatVersioningTest, ProjectVersioning) {
 	nest::Project project;
 	project.name = "Versioned";
@@ -352,6 +356,7 @@ TEST_F(FormatVersioningTest, ProjectVersioning) {
 	EXPECT_EQ(future.name, "Untouched");
 	EXPECT_EQ(nest::Project::format().currentVersion(), 1u);
 }
+#endif
 
 TEST_F(FormatVersioningTest, EngineSampleAssetsStillLoad) {
 	const auto root = owl::test::getRootPath();

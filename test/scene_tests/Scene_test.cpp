@@ -145,6 +145,7 @@ void createMinGameScene(Scene& ioScene) {
 }// namespace
 
 TEST(Scene, RenderGame_loose) {
+	OWL_REQUIRE_MODULE(PHYSICS);
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	owl::input::Input::init(owl::window::Type::Null);
 	Scene sc;
@@ -181,6 +182,7 @@ TEST(Scene, RenderGame_loose) {
 
 
 TEST(Scene, RenderGame_win) {
+	OWL_REQUIRE_MODULE(PHYSICS);
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	owl::input::Input::init(owl::window::Type::Null);
 	Scene sc;

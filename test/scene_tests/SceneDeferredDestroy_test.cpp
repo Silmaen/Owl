@@ -77,6 +77,7 @@ end
 }// namespace
 
 TEST_F(SceneDeferredDestroyTest, SelfDestroyInOnUpdateKeepsVmAlive) {
+	OWL_REQUIRE_MODULE(SCRIPT);
 	const auto path = writeScript("self_destroy.lua", std::string(R"(
 function on_update(dt)
     scene.destroy_entity(entity_id)
@@ -104,6 +105,7 @@ end
 }
 
 TEST_F(SceneDeferredDestroyTest, CoinTriggerDoesNotCorruptOtherTrigger) {
+	OWL_REQUIRE_MODULE(SCRIPT);
 	const auto path = writeScript("coin.lua", std::string(R"(
 function on_coin_collected()
     gamestate.set("score", gamestate.get("score", 0) + 10)
@@ -149,6 +151,7 @@ TEST_F(SceneDeferredDestroyTest, DestroyIsDeferredUntilFlush) {
 }
 
 TEST_F(SceneDeferredDestroyTest, RuntimeDestroyCascadesToChildren) {
+	OWL_REQUIRE_MODULE(SCRIPT);
 	const auto path = writeScript("parent.lua", std::string(R"(
 function on_update(dt)
     scene.destroy_entity(entity_id)
@@ -173,6 +176,8 @@ end
 }
 
 TEST_F(SceneDeferredDestroyTest, RuntimeDestroyRemovesPhysicsBody) {
+	OWL_REQUIRE_MODULE(PHYSICS);
+	OWL_REQUIRE_MODULE(SCRIPT);
 	const auto path = writeScript("platform.lua", R"(
 function on_update(dt)
     scene.destroy_entity(entity_id)

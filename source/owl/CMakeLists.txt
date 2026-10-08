@@ -9,6 +9,44 @@ file(GLOB_RECURSE SRCS CONFIGURE_DEPENDS
 file(GLOB_RECURSE HDRS_PRIVATE CONFIGURE_DEPENDS
         private/*.h
 )
+# public headers (those in the package)
+file(GLOB_RECURSE HDRS_PUBLIC CONFIGURE_DEPENDS
+        public/*.h
+)
+
+# ---------========= Optional modules (OWL_MODULE_*) =========---------
+# A module turned OFF leaves out its backend sources and third parties. Its public API stays (Null backend, or the
+# no-op implementation of `<module>/disabled/`), except Gui whose headers leave the package. OWL_WITH_<MODULE> (0 or
+# 1) tells the code, the engine's as the consumers'.
+set(_owl_excluded "")
+if (NOT ${PROJECT_PREFIX}_MODULE_RENDER)
+    list(APPEND _owl_excluded "/private/renderer/gpu/(opengl|vulkan)/" "/private/(window|input)/glfw/"
+            "/private/renderer/utils/shaderFileUtils\\.(cpp|h)$" "/private/core/external/(glfw3|opengl46|slang|lunasvg)\\.h$")
+endif ()
+if (${PROJECT_PREFIX}_MODULE_PHYSICS)
+    list(APPEND _owl_excluded "/private/physics/disabled/")
+else ()
+    list(APPEND _owl_excluded "/private/physics/(PhysicCommand|SolverTaskPool)\\.(cpp|h)$")
+endif ()
+if (NOT ${PROJECT_PREFIX}_MODULE_AUDIO)
+    list(APPEND _owl_excluded "/private/sound/openal/" "/private/core/external/openal\\.h$")
+endif ()
+if (${PROJECT_PREFIX}_MODULE_SCRIPT)
+    list(APPEND _owl_excluded "/private/script/disabled/")
+else ()
+    list(APPEND _owl_excluded "/private/script/(LuaBindings|LuaEngine|ScriptEngine|ScriptInstance)\\.(cpp|h)$"
+            "/private/core/external/lua\\.h$")
+endif ()
+if (NOT ${PROJECT_PREFIX}_MODULE_GUI)
+    list(APPEND _owl_excluded "/(private|public)/gui/" "/public/owlgui\\.h$" "/private/core/external/imgui\\.h$")
+endif ()
+foreach (_owl_regex IN LISTS _owl_excluded)
+    list(FILTER SRCS EXCLUDE REGEX "${_owl_regex}")
+    list(FILTER HDRS_PRIVATE EXCLUDE REGEX "${_owl_regex}")
+    list(FILTER HDRS_PUBLIC EXCLUDE REGEX "${_owl_regex}")
+endforeach ()
+unset(_owl_regex)
+unset(_owl_excluded)
 add_library(${ENGINE_NAME}Private INTERFACE)
 target_include_directories(${ENGINE_NAME}Private INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/private>)
 target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PROJECT_PREFIX}_ENGINE_BUILD)
@@ -23,12 +61,6 @@ if (NOT ${PROJECT_PREFIX}_ENABLE_CLANG_TIDY)
         target_precompile_headers(${ENGINE_NAME}Private INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/private/${PROJECT_PREFIX_LOWER}pch.h)
     endif ()
 endif ()
-
-# public headers (those in the package)
-file(GLOB_RECURSE HDRS_PUBLIC CONFIGURE_DEPENDS
-        public/*.h
-
-)
 
 if (${PROJECT_PREFIX}_BUILD_SHARED)
     add_library(${ENGINE_NAME} SHARED)
@@ -56,6 +88,14 @@ target_include_directories(${ENGINE_NAME}
 # (editor, tests) inherit them, the installed package does not. It only exports what the public headers need.
 target_link_libraries(${ENGINE_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_PROJECT_NAME}_Base>)
 target_compile_features(${ENGINE_NAME} PUBLIC cxx_std_23)
+foreach (_owl_module RENDER PHYSICS AUDIO SCRIPT GUI)
+    if (${PROJECT_PREFIX}_MODULE_${_owl_module})
+        target_compile_definitions(${ENGINE_NAME} PUBLIC ${PROJECT_PREFIX}_WITH_${_owl_module}=1)
+    else ()
+        target_compile_definitions(${ENGINE_NAME} PUBLIC ${PROJECT_PREFIX}_WITH_${_owl_module}=0)
+    endif ()
+endforeach ()
+unset(_owl_module)
 if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
     target_compile_definitions(${ENGINE_NAME} INTERFACE $<INSTALL_INTERFACE:${PROJECT_PREFIX}_PLATFORM_WINDOWS>)
 elseif (${PROJECT_PREFIX}_PLATFORM_LINUX)
@@ -69,79 +109,56 @@ if (${PROJECT_PREFIX}_PLATFORM_LINUX)
 endif ()
 
 # ---------========= PRIVATE third party =========---------
-# box2d
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED)
-
-# lua
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lua CONFIG REQUIRED)
-
-# cpptrace
+# core
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace REQUIRED)
-
-# glad
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glad 2.0 REQUIRED)
-
-# GLFW
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw3 MODULE_TARGET glfw REQUIRED)
-
-# ImGuizmo
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE imguizmo REQUIRED)
-
-# lunasvg
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lunasvg REQUIRED)
-
-# magic_enum
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE magic_enum REQUIRED)
-
-# msdf-atlas-gen
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE msdf-atlas-gen REQUIRED)
-
-# NativeFile Dialog
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE nfd REQUIRED)
-
-# OpenAL
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE OpenAL CONFIG REQUIRED)
-
-# SndFile
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE SndFile REQUIRED MODULE_TARGET "SndFile::sndfile")
-
-# stb_image
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE stb_image REQUIRED)
-
 # libpng (PNG writing; already a dependency of msdf-atlas-gen)
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE PNG REQUIRED)
-
-# tinygltf
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE TinyGLTF REQUIRED MODULE_TARGET "tinygltf::tinygltf")
-
-# tinyobjloader
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE tinyobjloader REQUIRED)
-
-# ufbx
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE ufbx REQUIRED)
-
-# Vulkan
-owl_target_link_vulkan(${ENGINE_NAME})
-
-# spdlog
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE spdlog REQUIRED)
-
-# zstd
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE zstd REQUIRED MODULE_TARGET "zstd::libzstd_static")
-
-# taskflow
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Taskflow REQUIRED MODULE_TARGET "Taskflow::Taskflow")
-
+# yaml-cpp: the public headers carry YAML as text (renderer/RenderStack.h), never yaml-cpp types (audit G-07)
+owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED)
 # Tracy client (OWL_PROFILER=tracy): private, the OWL_PROFILE_* macros of the public headers never include it
 if (${PROJECT_PREFIX}_PROFILER_BACKEND STREQUAL "tracy")
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Tracy CONFIG REQUIRED MODULE_TARGET "Tracy::TracyClient")
 endif ()
 
-# yaml-cpp: the public headers carry YAML as text (renderer/RenderStack.h), never yaml-cpp types (audit G-07)
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE yaml-cpp REQUIRED)
+# render: GPU backends, GLFW, the window icon (lunasvg), Vulkan, SPIRV-Cross and Slang
+if (${PROJECT_PREFIX}_MODULE_RENDER)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glad 2.0 REQUIRED)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw3 MODULE_TARGET glfw REQUIRED)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lunasvg REQUIRED)
+    owl_target_link_vulkan(${ENGINE_NAME})
+endif ()
 
-# ImGui: private to the engine; the gui/ headers that include it come with Owl::Gui
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE imgui REQUIRED)
+# physics
+if (${PROJECT_PREFIX}_MODULE_PHYSICS)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE box2d REQUIRED)
+endif ()
+
+# audio
+if (${PROJECT_PREFIX}_MODULE_AUDIO)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE OpenAL CONFIG REQUIRED)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE SndFile REQUIRED MODULE_TARGET "SndFile::sndfile")
+endif ()
+
+# script
+if (${PROJECT_PREFIX}_MODULE_SCRIPT)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lua CONFIG REQUIRED)
+endif ()
+
+# gui: ImGui is private to the engine; the gui/ headers that include it come with Owl::Gui
+if (${PROJECT_PREFIX}_MODULE_GUI)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE imguizmo REQUIRED)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE imgui REQUIRED)
+endif ()
 
 # ---------========= PUBLIC third party =========---------
 
@@ -149,12 +166,14 @@ owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE imgui REQUIRED)
 owl_target_link_libraries(${ENGINE_NAME} PUBLIC EnTT REQUIRED)
 
 # Owl::Gui: the engine plus imgui, for the consumers of <owlgui.h> (the editor, a game's own tools)
-add_library(${ENGINE_NAME}Gui INTERFACE)
-add_library(Owl::Gui ALIAS ${ENGINE_NAME}Gui)
-set_target_properties(${ENGINE_NAME}Gui PROPERTIES EXPORT_NAME Gui)
-target_link_libraries(${ENGINE_NAME}Gui INTERFACE ${ENGINE_NAME} imgui::imgui)
-# Build tree only, as for the engine: imgui_stdlib and the backends (the editor uses imgui_stdlib).
-target_link_libraries(${ENGINE_NAME}Gui INTERFACE $<BUILD_INTERFACE:${PROJECT_PREFIX_LOWER}_imgui_bindings>)
+if (${PROJECT_PREFIX}_MODULE_GUI)
+    add_library(${ENGINE_NAME}Gui INTERFACE)
+    add_library(Owl::Gui ALIAS ${ENGINE_NAME}Gui)
+    set_target_properties(${ENGINE_NAME}Gui PROPERTIES EXPORT_NAME Gui)
+    target_link_libraries(${ENGINE_NAME}Gui INTERFACE ${ENGINE_NAME} imgui::imgui)
+    # Build tree only, as for the engine: imgui_stdlib and the backends (the editor uses imgui_stdlib).
+    target_link_libraries(${ENGINE_NAME}Gui INTERFACE $<BUILD_INTERFACE:${PROJECT_PREFIX_LOWER}_imgui_bindings>)
+endif ()
 
 
 # additional windows libs
@@ -168,26 +187,30 @@ if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
                 COMMENT "Copy the shared dll"
         )
     else ()
-        set(vulkan_libs
-                vulkan-1
-        )
-        foreach (l_lib ${vulkan_libs})
-            add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${VulkanLoader_DIR}/../../bin/${l_lib}.dll" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                    COMMAND_EXPAND_LISTS
-                    COMMENT "Copy the vulkan shared dll"
+        if (${PROJECT_PREFIX}_MODULE_RENDER)
+            set(vulkan_libs
+                    vulkan-1
             )
-        endforeach ()
-        add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different "${slang_DIR}/../../bin/slang.dll" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                COMMAND_EXPAND_LISTS
-                COMMENT "Copy the slang shared dll"
-        )
-        add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OpenAL_DIR}/../../../bin/OpenAL32$<$<CONFIG:Debug>:d>.dll" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                COMMAND_EXPAND_LISTS
-                COMMENT "Copy the OpenAL shared dll"
-        )
+            foreach (l_lib ${vulkan_libs})
+                add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD
+                        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${VulkanLoader_DIR}/../../bin/${l_lib}.dll" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                        COMMAND_EXPAND_LISTS
+                        COMMENT "Copy the vulkan shared dll"
+                )
+            endforeach ()
+            add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${slang_DIR}/../../bin/slang.dll" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                    COMMAND_EXPAND_LISTS
+                    COMMENT "Copy the slang shared dll"
+            )
+        endif ()
+        if (${PROJECT_PREFIX}_MODULE_AUDIO)
+            add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OpenAL_DIR}/../../../bin/OpenAL32$<$<CONFIG:Debug>:d>.dll" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+                    COMMAND_EXPAND_LISTS
+                    COMMENT "Copy the OpenAL shared dll"
+            )
+        endif ()
     endif ()
 elseif (${PROJECT_PREFIX}_PLATFORM_LINUX)
     target_import_so_files(${ENGINE_NAME})
@@ -206,10 +229,12 @@ install(TARGETS ${ENGINE_NAME}
         FRAMEWORK DESTINATION lib
         FILE_SET HEADERS DESTINATION include
 )
-install(TARGETS ${ENGINE_NAME}Gui
-        EXPORT OwlEngineGuiTargets
-        COMPONENT Engine
-)
+if (${PROJECT_PREFIX}_MODULE_GUI)
+    install(TARGETS ${ENGINE_NAME}Gui
+            EXPORT OwlEngineGuiTargets
+            COMPONENT Engine
+    )
+endif ()
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
         DESTINATION assets
         COMPONENT Engine

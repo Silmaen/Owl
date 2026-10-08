@@ -14,6 +14,12 @@
 #define TEST_DISABLED(test_case_name, test_name)                                                                       \
 	GTEST_TEST_(test_case_name, DISABLED_UNIT##_##test_name, ::testing::Test, ::testing::internal::GetTestTypeId())
 
+// Skip the current test (or every test of a fixture, from SetUp) when the engine module it needs is not built:
+// OWL_REQUIRE_MODULE(PHYSICS) skips under OWL_MODULE_PHYSICS=OFF.
+#define OWL_REQUIRE_MODULE(module)                                                                                     \
+	if constexpr (!OWL_WITH_##module)                                                                                  \
+	GTEST_SKIP() << "OWL_MODULE_" #module " is OFF"
+
 template<typename T>
 class TestWithParam : public ::testing::Test, public ::testing::WithParamInterface<T> {};
 
