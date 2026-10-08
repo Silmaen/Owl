@@ -181,9 +181,9 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
   [Owl RHI](owl-rhi.md)
 - ![Done][done] ABI — YAML out of the public API, hidden visibility by default, third-party symbols not
   exported (PR-27: A-03, G-07, A-10); the header weight (A-12) stays to watch, after a build-time measurement
-- ![In Progress][progress] Engine context and one world per scene (PR-33: A-04, D-15, A-08, A-07, F-05): each
-  scene owns its physics world, its script bindings and its UI mouse state; the engine context that owns the
-  application-wide singletons remains
+- ![Done][done] Engine context and one world per scene (PR-33: A-04, D-15, A-08, A-07, F-05): each scene owns its
+  physics world, its script bindings and its UI mouse state; `app::EngineContext` owns the screen transition, the
+  settings and the voxel mesh cache. See [Architecture](../architecture.md#engine-context)
 - ![Done][done] Phased systems; gameplay moved out of `Scene` (PR-36: A-02, C-14). See [Systems and phases](../scene.md#systems)
 - ![Done][done] Open component registry, after the EnTT 4 upgrade (PR-37: A-05, A-18). See
   [Game components](../scene.md#component-registry)
@@ -196,8 +196,8 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
   [Building](../building.md#engine-modules)
     - Modules: core, render, physics, audio, script, Gui (`Owl::Gui`, the only one pulling imgui)
     - Extension points documented ([Architecture](../architecture.md#extension-points)): renderer-stack layers and
-      application layers today; the open component registry (PR-37) and replaceable phased systems (PR-36) come with
-      their PRs
+      application layers, extra data, the open component registry (PR-37) and the replaceable phased systems
+      (PR-36)
 - ![Done][done] Typed Lua binding registry — one declaration per binding gives the Lua function, its
   documentation and (later) its visual-scripting node; documented-but-missing bindings either land or leave the docs
   (D-07, D-26). See [Visual scripting](visual-scripting.md)

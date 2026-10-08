@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "app/EngineContext.h"
 #include "app/HotReload.h"
 #include "app/layer/LayerStack.h"
 #include "core/Macros.h"
@@ -390,6 +391,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Engine state shared by the scenes of this application (screen transition, settings, voxel meshes).
+	 * @return The engine context.
+	 */
+	[[nodiscard]] auto getEngineContext() -> EngineContext& { return *mp_engineContext; }
+
+	/**
+	 * @brief
 	 *  Access to the task scheduler.
 	 * @return The task scheduler.
 	 */
@@ -516,6 +524,8 @@ private:
 	core::task::Scheduler m_scheduler;
 	/// Watches the asset directories and reloads what changed.
 	HotReload m_hotReload;
+	/// Engine state shared by the scenes, released before the renderer shuts down.
+	uniq<EngineContext> mp_engineContext = mkUniq<EngineContext>();
 	/// The asset pack reader.
 	data::assets::pack::PackReader m_packReader;
 	/// Mark the main entrypoint function as friend.

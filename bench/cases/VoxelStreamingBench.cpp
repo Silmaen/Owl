@@ -30,6 +30,11 @@ namespace owl::bench {
 
 namespace {
 
+// Voxel meshes of the test application's engine context.
+auto voxelCache() -> renderer::VoxelMeshCache& {
+	return app::Application::get().getEngineContext().getVoxelMeshCache();
+}
+
 constexpr uint32_t k_MaxSettleFrames = 1500;
 constexpr uint32_t k_SettledFrames = 5;
 constexpr float k_ChunkSize = 16.f;
@@ -135,7 +140,7 @@ void report(Runner& ioRunner, const std::string& iName, const FrameLog& iLog, co
 	ioRunner.metric(iName + "/wall_ms", iLog.wallNs / 1e6, "ms");
 	const auto& world = iScene.voxel.getComponent<scene::component::VoxelWorld>();
 	ioRunner.metric(iName + "/resident_chunks", static_cast<double>(world.world.chunkCount()), "chunks");
-	const auto stats = renderer::RendererVoxel::getStatistics();
+	const auto stats = renderer::RendererVoxel::getStatistics(voxelCache());
 	ioRunner.metric(iName + "/cached_meshes", static_cast<double>(stats.cachedMeshCount), "meshes");
 	ioRunner.metric(iName + "/uploaded_meshes", static_cast<double>(stats.uploadedMeshCount - iStart.uploadedMeshCount),
 					"meshes");
@@ -184,7 +189,7 @@ void runUntilSettled(FrameLog& ioLog, const StreamingScene& iScene, Frame&& iFra
 		ioLog.cpuNs.push_back(threadCpuNs() - start);
 		deadline += k_FramePeriod;
 		std::this_thread::sleep_until(deadline);
-		const auto stats = renderer::RendererVoxel::getStatistics();
+		const auto stats = renderer::RendererVoxel::getStatistics(voxelCache());
 		const uint32_t meshes = stats.cachedMeshCount;
 		const bool idle = world.pendingChunks.empty() && stats.pendingJobCount == 0 && stats.readyMeshCount == 0;
 		stable = idle && meshes == lastMeshes ? stable + 1 : 0;
@@ -198,7 +203,7 @@ void setVoxelStack() {
 	config.entries.push_back({.typeKey = "RendererVoxel", .name = "voxel_world", .defaultConfig = {}});
 	renderer::Renderer::setRenderStack(
 			renderer::RenderStack::buildFromConfig(config, renderer::EnabledRenderersConfig{}));
-	renderer::RendererVoxel::clearCache();
+	voxelCache().clear();
 }
 
 void runRuntimeWalk(Runner& ioRunner) {
@@ -209,7 +214,7 @@ void runRuntimeWalk(Runner& ioRunner) {
 	auto streaming = makeStreamingScene();
 	streaming.scene->onStartRuntime();
 	const auto step = makeStep();
-	const auto loadStats = renderer::RendererVoxel::getStatistics();
+	const auto loadStats = renderer::RendererVoxel::getStatistics(voxelCache());
 	FrameLog load;
 	const auto loadStart = std::chrono::steady_clock::now();
 	const double loadProcess = processCpuNs();
@@ -221,7 +226,7 @@ void runRuntimeWalk(Runner& ioRunner) {
 	// Walk 32 chunks along +X at one chunk every 16 frames (60 blocks per second at 60 fps), then settle.
 	constexpr uint32_t walkFrames = 32 * 16;
 	auto& translation = streaming.camera.getComponent<scene::component::Transform>().transform.translation();
-	const auto walkStats = renderer::RendererVoxel::getStatistics();
+	const auto walkStats = renderer::RendererVoxel::getStatistics(voxelCache());
 	FrameLog walk;
 	const auto walkStart = std::chrono::steady_clock::now();
 	const double walkProcess = processCpuNs();
@@ -234,7 +239,7 @@ void runRuntimeWalk(Runner& ioRunner) {
 	walk.wallNs = std::chrono::duration<double, std::nano>(std::chrono::steady_clock::now() - walkStart).count();
 	report(ioRunner, name + "/walk", walk, streaming, walkStats);
 	streaming.scene->onEndRuntime();
-	renderer::RendererVoxel::clearCache();
+	voxelCache().clear();
 	renderer::Renderer::setRenderStack(renderer::RenderStack{});
 }
 
@@ -247,7 +252,7 @@ void runEditorLoad(Runner& ioRunner) {
 	renderer::CameraEditor camera{45.f, 1.778f, 0.1f, 1000.f};
 	camera.setViewportSize({1280, 720});
 	const auto step = makeStep();
-	const auto loadStats = renderer::RendererVoxel::getStatistics();
+	const auto loadStats = renderer::RendererVoxel::getStatistics(voxelCache());
 	FrameLog load;
 	const auto start = std::chrono::steady_clock::now();
 	const double process = processCpuNs();
@@ -255,7 +260,7 @@ void runEditorLoad(Runner& ioRunner) {
 	load.processNs = processCpuNs() - process;
 	load.wallNs = std::chrono::duration<double, std::nano>(std::chrono::steady_clock::now() - start).count();
 	report(ioRunner, name, load, streaming, loadStats);
-	renderer::RendererVoxel::clearCache();
+	voxelCache().clear();
 	renderer::Renderer::setRenderStack(renderer::RenderStack{});
 }
 

@@ -19,6 +19,11 @@ using namespace owl;
 
 namespace {
 
+// Voxel meshes of the test application's engine context.
+auto voxelCache() -> renderer::VoxelMeshCache& {
+	return app::Application::get().getEngineContext().getVoxelMeshCache();
+}
+
 constexpr int k_Entity = 7;
 
 auto packKey(const math::vec3i& iCoord) -> uint64_t {
@@ -56,13 +61,13 @@ protected:
 		m_previousConfig = renderer::RendererVoxel::getMeshingConfig();
 		// A generous time budget: the default 2 ms is one upload on a slow (emulated, Debug) agent; budget tests set theirs.
 		renderer::RendererVoxel::setMeshingConfig({.uploadBudgetMs = 1000.f});
-		renderer::RendererVoxel::clearCache();
-		m_start = renderer::RendererVoxel::getStatistics();
+		voxelCache().clear();
+		m_start = renderer::RendererVoxel::getStatistics(voxelCache());
 	}
 
 	void TearDown() override {
 		settle();
-		renderer::RendererVoxel::clearCache();
+		voxelCache().clear();
 		renderer::RendererVoxel::setMeshingConfig(m_previousConfig);
 	}
 
@@ -90,18 +95,20 @@ protected:
 	}
 
 	static void frame(scene::component::VoxelWorld& ioWorld) {
-		renderer::RendererVoxel::beginPrepare();
-		renderer::RendererVoxel::prepareWorld(ioWorld, k_Entity);
+		renderer::RendererVoxel::beginPrepare(voxelCache());
+		renderer::RendererVoxel::prepareWorld(voxelCache(), ioWorld, k_Entity);
 	}
 
 	static void settle() { app::Application::get().getTaskScheduler().waitEmptyQueue(); }
 
-	static auto stats() -> renderer::RendererVoxel::Statistics { return renderer::RendererVoxel::getStatistics(); }
+	static auto stats() -> renderer::RendererVoxel::Statistics {
+		return renderer::RendererVoxel::getStatistics(voxelCache());
+	}
 
 	[[nodiscard]] auto discarded() const -> uint64_t { return stats().discardedMeshCount - m_start.discardedMeshCount; }
 
 	static auto isMeshed(scene::component::VoxelWorld& iWorld, const math::vec3i& iCoord) -> bool {
-		const auto revision = renderer::RendererVoxel::getMeshedRevision(k_Entity, iCoord);
+		const auto revision = renderer::RendererVoxel::getMeshedRevision(voxelCache(), k_Entity, iCoord);
 		return revision.has_value() && *revision == iWorld.world.getChunk(iCoord)->getRevision();
 	}
 
@@ -138,7 +145,7 @@ TEST_F(RendererVoxelAsyncTest, EditDuringMeshingDiscardsTheResult) {
 	settle();
 	frame(world);
 	EXPECT_EQ(discarded(), 1u);
-	EXPECT_FALSE(renderer::RendererVoxel::getMeshedRevision(k_Entity, math::vec3i{0, 0, 0}).has_value());
+	EXPECT_FALSE(renderer::RendererVoxel::getMeshedRevision(voxelCache(), k_Entity, math::vec3i{0, 0, 0}).has_value());
 	EXPECT_EQ(stats().pendingJobCount, 1u);
 	settle();
 	frame(world);
@@ -152,16 +159,16 @@ TEST_F(RendererVoxelAsyncTest, OldMeshStaysDrawnUntilItsReplacementIsUploaded) {
 	frame(world);
 	settle();
 	frame(world);
-	const auto first = renderer::RendererVoxel::getMeshedRevision(k_Entity, math::vec3i{0, 0, 0});
+	const auto first = renderer::RendererVoxel::getMeshedRevision(voxelCache(), k_Entity, math::vec3i{0, 0, 0});
 	ASSERT_TRUE(first.has_value());
 	world.world.setBlock(math::vec3i{9, 8, 8}, s_stone);
 	frame(world);
 	EXPECT_EQ(stats().cachedMeshCount, 1u);
-	EXPECT_EQ(renderer::RendererVoxel::getMeshedRevision(k_Entity, math::vec3i{0, 0, 0}), first);
+	EXPECT_EQ(renderer::RendererVoxel::getMeshedRevision(voxelCache(), k_Entity, math::vec3i{0, 0, 0}), first);
 	settle();
 	frame(world);
 	EXPECT_TRUE(isMeshed(world, math::vec3i{0, 0, 0}));
-	EXPECT_NE(renderer::RendererVoxel::getMeshedRevision(k_Entity, math::vec3i{0, 0, 0}), first);
+	EXPECT_NE(renderer::RendererVoxel::getMeshedRevision(voxelCache(), k_Entity, math::vec3i{0, 0, 0}), first);
 }
 
 TEST_F(RendererVoxelAsyncTest, UnloadDuringMeshingDiscardsTheResult) {
@@ -184,8 +191,9 @@ TEST_F(RendererVoxelAsyncTest, BorderEditRemeshesTheNeighborChunk) {
 	frame(world);
 	settle();
 	frame(world);
-	const auto ownBefore = renderer::RendererVoxel::getMeshedRevision(k_Entity, math::vec3i{0, 0, 0});
-	const auto neighborBefore = renderer::RendererVoxel::getMeshedRevision(k_Entity, math::vec3i{1, 0, 0});
+	const auto ownBefore = renderer::RendererVoxel::getMeshedRevision(voxelCache(), k_Entity, math::vec3i{0, 0, 0});
+	const auto neighborBefore =
+			renderer::RendererVoxel::getMeshedRevision(voxelCache(), k_Entity, math::vec3i{1, 0, 0});
 	ASSERT_TRUE(ownBefore.has_value());
 	ASSERT_TRUE(neighborBefore.has_value());
 	world.world.setBlock(math::vec3i{15, 8, 8}, data::voxel::g_AirBlock);
@@ -197,7 +205,7 @@ TEST_F(RendererVoxelAsyncTest, BorderEditRemeshesTheNeighborChunk) {
 	frame(world);
 	EXPECT_TRUE(isMeshed(world, math::vec3i{0, 0, 0}));
 	EXPECT_TRUE(isMeshed(world, math::vec3i{1, 0, 0}));
-	EXPECT_NE(renderer::RendererVoxel::getMeshedRevision(k_Entity, math::vec3i{1, 0, 0}), neighborBefore);
+	EXPECT_NE(renderer::RendererVoxel::getMeshedRevision(voxelCache(), k_Entity, math::vec3i{1, 0, 0}), neighborBefore);
 }
 
 TEST_F(RendererVoxelAsyncTest, UploadCountBudgetIsRespected) {
@@ -272,5 +280,5 @@ TEST_F(RendererVoxelAsyncTest, NearestChunksAreMeshedFirst) {
 	settle();
 	frame(world);
 	EXPECT_TRUE(isMeshed(world, math::vec3i{0, 0, 0}));
-	EXPECT_FALSE(renderer::RendererVoxel::getMeshedRevision(k_Entity, math::vec3i{8, 0, 0}).has_value());
+	EXPECT_FALSE(renderer::RendererVoxel::getMeshedRevision(voxelCache(), k_Entity, math::vec3i{8, 0, 0}).has_value());
 }

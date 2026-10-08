@@ -31,6 +31,10 @@
  * @brief
  *  Namespace for the scene elements.
  */
+namespace owl::app {
+class EngineContext;
+}// namespace owl::app
+
 namespace owl::physics {
 class PhysicCommand;
 /// Box2D world of one scene (defined by the physics module).
@@ -651,6 +655,20 @@ public:
 
 	/**
 	 * @brief
+	 *  Engine state this scene uses (screen transition, settings, voxel meshes): the application's one by default.
+	 * @return The engine context, or nullptr when the scene was created without application and none was given.
+	 */
+	[[nodiscard]] auto getEngineContext() const -> app::EngineContext* { return mp_engineContext; }
+
+	/**
+	 * @brief
+	 *  Give the scene the engine context it uses (tests create their own); kept by `copy()`.
+	 * @param[in] iContext The context, or nullptr to run without transition overlay nor voxel meshes.
+	 */
+	void setEngineContext(app::EngineContext* iContext) { mp_engineContext = iContext; }
+
+	/**
+	 * @brief
 	 *  Mouse state of the scene's runtime UI, kept by `UiInputSystem` from one frame to the next.
 	 */
 	struct UiInputState {
@@ -694,6 +712,8 @@ private:
 	UiInputState m_uiInputState;
 	/// Systems run every runtime frame, phase by phase.
 	SystemSchedule m_systems;
+	/// Engine state used by the scene (not owned).
+	app::EngineContext* mp_engineContext = nullptr;
 	/// Cached primary-player entity handle. `entt::null` means "not resolved yet".
 	mutable entt::entity m_primaryPlayerCache = entt::null;
 	/**

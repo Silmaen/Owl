@@ -327,9 +327,22 @@ The engine includes a task scheduler backed by [Taskflow](https://github.com/tas
 - **Private implementation**: `SchedulerImpl` owns a `tf::Executor` (thread pool sized to `hardware_concurrency`)
 - Taskflow is a PRIVATE dependency — not exposed in public headers
 
+## Engine Context
+
+`app::EngineContext` holds the engine state the scenes of one application share, which used to be static:
+the screen transition (`scene::ScreenTransition`), the game settings (`scene::SettingsManager`) and the voxel mesh
+cache (`renderer::VoxelMeshCache`). `Application` owns it (`getEngineContext()`) and releases it right after its
+layers, before the renderer shuts down, since the voxel meshes are GPU buffers. Every scene created while an
+application exists points at it (`Scene::getEngineContext()`), `Scene::copy()` keeps the pointer, and the Lua bindings
+reach it through the scene of the script. A scene created without application has none: its runtime frame then skips
+the transition overlay and the voxel meshes. A test creates its own context and gives it to its scenes
+(`Scene::setEngineContext`), so no state leaks from one test to the next. It is a plain owner with typed accessors,
+not a service locator; each scene keeps its own world (physics, script bindings, UI state).
+
 ## Game Settings
 
-The `SettingsManager` provides a persistent two-layer key-value store for game configuration:
+The `SettingsManager` (one per engine context, `EngineContext::getSettings()`) provides a persistent two-layer
+key-value store for game configuration:
 
 - **Game defaults** — loaded from `game_settings.yml` in the project assets (packed with the game)
 - **User overrides** — loaded from `settings.yml` in the user directory (`~/.local/share/<game>/`

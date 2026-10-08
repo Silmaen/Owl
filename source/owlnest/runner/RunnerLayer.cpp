@@ -207,33 +207,35 @@ void RunnerLayer::onAttach() {
 
 	// Initialize settings system.
 	if (!m_config.gameName.empty()) {
-		scene::SettingsManager::setGameName(m_config.gameName);
+		app::Application::get().getEngineContext().getSettings().setGameName(m_config.gameName);
 
 		scene::SaveManager::setGameName(m_config.gameName);
 	}
 
 	// Populate defaults from runner config.
-	scene::SettingsManager::setDefault(scene::SettingsManager::KeyResolutionWidth,
-									   static_cast<int64_t>(m_config.windowWidth));
+	app::Application::get().getEngineContext().getSettings().setDefault(scene::SettingsManager::KeyResolutionWidth,
+																		static_cast<int64_t>(m_config.windowWidth));
 
-	scene::SettingsManager::setDefault(scene::SettingsManager::KeyResolutionHeight,
-									   static_cast<int64_t>(m_config.windowHeight));
+	app::Application::get().getEngineContext().getSettings().setDefault(scene::SettingsManager::KeyResolutionHeight,
+																		static_cast<int64_t>(m_config.windowHeight));
 
-	scene::SettingsManager::setDefault(scene::SettingsManager::KeyFullscreen, m_config.fullscreen);
+	app::Application::get().getEngineContext().getSettings().setDefault(scene::SettingsManager::KeyFullscreen,
+																		m_config.fullscreen);
 
-	scene::SettingsManager::setDefault(scene::SettingsManager::KeyResizable, m_config.resizable);
+	app::Application::get().getEngineContext().getSettings().setDefault(scene::SettingsManager::KeyResizable,
+																		m_config.resizable);
 
-	scene::SettingsManager::setDefault(scene::SettingsManager::KeyVolumeMaster, 1.0f);
+	app::Application::get().getEngineContext().getSettings().setDefault(scene::SettingsManager::KeyVolumeMaster, 1.0f);
 
-	scene::SettingsManager::setDefault(scene::SettingsManager::KeyVolumeMusic, 1.0f);
+	app::Application::get().getEngineContext().getSettings().setDefault(scene::SettingsManager::KeyVolumeMusic, 1.0f);
 
-	scene::SettingsManager::setDefault(scene::SettingsManager::KeyVolumeSfx, 1.0f);
+	app::Application::get().getEngineContext().getSettings().setDefault(scene::SettingsManager::KeyVolumeSfx, 1.0f);
 	// Load game defaults from assets (game_settings.yml).
 	{
 		bool loaded = false;
 		for (const auto& [title, assetsPath]: app.getAssetDirectories()) {
 			if (const auto gameSettingsPath = assetsPath / "game_settings.yml"; exists(gameSettingsPath)) {
-				scene::SettingsManager::loadDefaults(gameSettingsPath);
+				app::Application::get().getEngineContext().getSettings().loadDefaults(gameSettingsPath);
 				loaded = true;
 				break;
 			}
@@ -243,20 +245,20 @@ void RunnerLayer::onAttach() {
 			if (auto data = app.loadFromPack("game_settings.yml"); data) {
 				const std::string content(data->begin(), data->end());
 
-				scene::SettingsManager::loadDefaultsFromString(content);
+				app::Application::get().getEngineContext().getSettings().loadDefaultsFromString(content);
 			}
 		}
 	}
 
 	// Load user overrides.
-	scene::SettingsManager::loadUserSettings();
+	app::Application::get().getEngineContext().getSettings().loadUserSettings();
 
 	// Apply window settings (from settings, with runner config as fallback).
 	auto& window = app.getWindow();
 	if (!m_config.gameName.empty())
 		window.setTitle(m_config.gameName);
 
-	scene::SettingsManager::applyBuiltins();
+	app::Application::get().getEngineContext().getSettings().applyBuiltins();
 
 	m_viewportSize = window.getSize();
 	if (!loadScene(m_config.firstScene)) {
@@ -388,9 +390,9 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 			OWL_WARN("{}: Cannot read {}/owl_project.yml ({}).", iMode, iProject.string(), iEx.what())
 		}
 		if (const auto gameSettings = iProject / "game_settings.yml"; exists(gameSettings))
-			scene::SettingsManager::loadDefaults(gameSettings);
+			app::Application::get().getEngineContext().getSettings().loadDefaults(gameSettings);
 	}
-	scene::SettingsManager::setGameName(m_config.gameName);
+	app::Application::get().getEngineContext().getSettings().setGameName(m_config.gameName);
 	input::Input::init(window::Type::Null);
 	m_viewportSize = app.getWindow().getSize();
 	m_activeScene = mkShared<scene::Scene>();
@@ -564,9 +566,9 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 				applyPendingTeleport();
 			} else {
 				if (m_transition) {
-					scene::ScreenTransition::update(timeStep.getSeconds());
-					scene::ScreenTransition::render(static_cast<float>(m_viewportSize.x()),
-													static_cast<float>(m_viewportSize.y()));
+					app::Application::get().getEngineContext().getScreenTransition().update(timeStep.getSeconds());
+					app::Application::get().getEngineContext().getScreenTransition().render(
+							static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
 					handleTeleportRequest();
 				} else {
 					// UiRect uses Y=0 at bottom; window mouse Y=0 at top → flip Y.
@@ -587,7 +589,9 @@ void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 						app::Application::get().close();
 						return;
 					}
-					if (const auto pending = scene::ScreenTransition::pendingLoadPath(); pending) {
+					if (const auto pending =
+								app::Application::get().getEngineContext().getScreenTransition().pendingLoadPath();
+						pending) {
 						m_activeScene->teleportRequest.pending = true;
 						m_activeScene->teleportRequest.levelName = *pending;
 						m_activeScene->teleportRequest.targetName.clear();

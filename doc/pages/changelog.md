@@ -113,6 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Each scene owns its physics world, its script bindings and its UI mouse state (`PhysicCommand` calls take the scene, `ScriptInstance::setScene`, `Scene::getUiInputState`): several scenes run side by side and a destroyed scene leaves nothing dangling.
 - `Scene::onUpdateRuntime` holds no gameplay any more: scripts, voxel player, raycast doors, physics, links, triggers, sound, animation and the game-over message are engine systems (`scene::systems`, `owl.*`), in the same order as before.
 - `EntityLink` references its target by UUID (`linkedEntityId`), the name kept for display and as fallback: renaming the target keeps the link, and `duplicateSubtree` and prefab instantiation relink the copies to each other; scene and prefab formats move to version 2, whose migration binds the old name-only links.
+- `app::EngineContext`, owned by `Application` and reached from each scene, holds the screen transition, the game settings and the voxel mesh cache instead of static storage: `ScreenTransition` and `SettingsManager` are instances, `RendererVoxel` takes a `VoxelMeshCache`, and an isolated test creates its own context.
 
 ### Deprecated
 
@@ -133,6 +134,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `RenderAPI` / `RenderCommand` `drawLine`, `drawLineInstanced`, `setDepthTest`, `setDepthMask`, `beginTextureLoad` and `endTextureLoad`, replaced by `PipelineState` and `bindTextures`.
 - `ScriptEngine::init`, `shutdown`, `isInitialized` and `getActiveScene`, and `PhysicCommand::releaseScene`: no global points to an active scene any more.
 - `Scene::updateRaycastDynamicWalls`, replaced by the `owl.raycast_walls` system.
+- `RendererVoxel::init`, `shutdown` and `clearCache` (now `VoxelMeshCache::clear`).
 
 ### Fixed
 

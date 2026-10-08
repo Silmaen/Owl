@@ -312,6 +312,8 @@ Application::~Application() {
 			mp_appWindow->getGraphContext()->waitIdle();
 		// 1. Release layers first — they may own GPU resources (e.g. ImGui Vulkan backend).
 		m_layerStack.clear();
+		// Its voxel meshes are GPU buffers: released while the device is still alive.
+		mp_engineContext.reset();
 
 		input::Input::invalidate();
 		// 2. Release Renderer2D / BackgroundRenderer resources (only if shaders were initialized).

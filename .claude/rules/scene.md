@@ -48,7 +48,9 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
   `on_destroy`, remove Box2D bodies and stop sounds before destroying anything.
 - Each scene owns its runtime world: Box2D world (`PhysicCommand::init(scene)`, kept in `Scene`, destroyed
   with it), script instances bound to it (`ScriptInstance::setScene`), UI mouse state
-  (`Scene::getUiInputState()`). Never keep a scene pointer in static state.
+  (`Scene::getUiInputState()`). Never keep a scene pointer in static state. State shared by the scenes of an
+  application (screen transition, settings, voxel mesh cache) lives in `app::EngineContext`, never in a static; a test
+  creates its own context and gives it to its scenes.
 - In Play, EnTT hooks tie runtime resources to components (`PhysicCommand::init` for bodies,
   `onStartRuntime` for scripts and sounds): never create or destroy a Box2D body, script instance or
   runtime sound by hand next to an `addComponent` / `removeComponent`.
@@ -87,7 +89,8 @@ Every entity carries the mandatory `Hierarchy` component (`parentId` UUID + `chi
 
 ## Settings
 
-- `SettingsManager` (static, two layers): defaults from `game_settings.yml` (project assets) + user
+- `SettingsManager` (one per `app::EngineContext`, reached through `Scene::getEngineContext()` or
+  `Application::getEngineContext()`, two layers): defaults from `game_settings.yml` (project assets) + user
   overrides in `settings.yml` (user dir).
 - Built-in keys auto-applied by `applyBuiltins()`: `resolution_width`, `resolution_height`, `fullscreen`,
   `resizable`, `volume_master`; `volume_music` / `volume_sfx` are stored for scripts only (no category mixing yet).

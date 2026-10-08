@@ -8,6 +8,7 @@
 
 #include "testHelper.h"
 
+#include <app/EngineContext.h>
 #include <core/Log.h>
 #include <scene/Entity.h>
 #include <scene/GameState.h>
@@ -383,7 +384,8 @@ TEST(LuaBindings, uiGettersFallbackWhenComponentMissing) {
 TEST(LuaBindings, uiTransitionsAndIsActive) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	scene::ScreenTransition::reset();// reset
+	app::EngineContext context;
+	scn->setEngineContext(&context);
 	const std::string script = "active1 = true\n"
 							   "function on_create()\n"
 							   "  active1 = ui.is_transition_active()\n"
@@ -400,7 +402,8 @@ TEST(LuaBindings, uiTransitionsAndIsActive) {
 	ASSERT_TRUE(inst.createFromBuffer(data, "ui_trans_test", 1));
 	inst.onCreate();
 	EXPECT_FALSE(inst.getPropertyBool("active1").value_or(true));
-	scene::ScreenTransition::reset();
+	// The bindings drive the transition of the scene's engine context.
+	EXPECT_TRUE(context.getScreenTransition().isActive());
 	core::Log::invalidate();
 }
 
@@ -533,8 +536,10 @@ TEST(LuaBindings, gamestateOpsWithoutActiveScene) {
 TEST(LuaBindings, settingsBindings) {
 	core::Log::init(core::Log::Level::Off);
 	auto scn = mkShared<scene::Scene>();
-	scene::SettingsManager::resetAllToDefaults();
-	scene::SettingsManager::set("flag", true);
+	app::EngineContext context;
+	scn->setEngineContext(&context);
+	context.getSettings().resetAllToDefaults();
+	context.getSettings().set("flag", true);
 	const std::string script = "vbool = nil\n"
 							   "vint = nil\n"
 							   "vstr = nil\n"

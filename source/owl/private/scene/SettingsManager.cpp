@@ -26,14 +26,11 @@ OWL_DIAG_POP
 #include <variant>
 namespace owl::scene {
 
-std::string SettingsManager::s_gameName;
-std::unordered_map<std::string, SettingsManager::Value> SettingsManager::s_defaults;
-std::unordered_map<std::string, SettingsManager::Value> SettingsManager::s_overrides;
 
-void SettingsManager::setGameName(const std::string& iGameName) { s_gameName = iGameName; }
+void SettingsManager::setGameName(const std::string& iGameName) { m_gameName = iGameName; }
 
-auto SettingsManager::getUserDirectory() -> std::filesystem::path {
-	const std::string name = s_gameName.empty() ? "OwlGame" : s_gameName;
+auto SettingsManager::getUserDirectory() const -> std::filesystem::path {
+	const std::string name = m_gameName.empty() ? "OwlGame" : m_gameName;
 	std::filesystem::path baseDir;
 #if defined(OWL_PLATFORM_WINDOWS)
 	if (const char* appdata = std::getenv("APPDATA"); appdata != nullptr)
@@ -52,7 +49,7 @@ auto SettingsManager::getUserDirectory() -> std::filesystem::path {
 	return userDir;
 }
 
-auto SettingsManager::getSettingsPath() -> std::filesystem::path { return getUserDirectory() / "settings.yml"; }
+auto SettingsManager::getSettingsPath() const -> std::filesystem::path { return getUserDirectory() / "settings.yml"; }
 
 namespace {
 
@@ -124,14 +121,14 @@ void SettingsManager::loadDefaults(const std::filesystem::path& iPath) {
 		return;
 	try {
 		if (auto entries = loadSettingsEntries(YAML::LoadFile(iPath.string()), "GameSettings", iPath.string()); entries)
-			s_defaults = std::move(*entries);
+			m_defaults = std::move(*entries);
 	} catch (...) { OWL_CORE_WARN("Failed to load game settings from {}.", iPath.string()) }
 }
 
 void SettingsManager::loadDefaultsFromString(const std::string& iContent) {
 	try {
 		if (auto entries = loadSettingsEntries(YAML::Load(iContent), "GameSettings", "<buffer>"); entries)
-			s_defaults = std::move(*entries);
+			m_defaults = std::move(*entries);
 	} catch (...) { OWL_CORE_WARN("Failed to parse game settings from string.") }
 }
 
@@ -141,11 +138,11 @@ void SettingsManager::loadUserSettings() {
 		return;
 	try {
 		if (auto entries = loadSettingsEntries(YAML::LoadFile(path.string()), "UserSettings", path.string()); entries)
-			s_overrides = std::move(*entries);
+			m_overrides = std::move(*entries);
 	} catch (...) { OWL_CORE_WARN("Failed to load user settings from {}.", path.string()) }
 }
 
-auto SettingsManager::saveUserSettings() -> bool {
+auto SettingsManager::saveUserSettings() const -> bool {
 	const auto path = getSettingsPath();
 	std::error_code ec;
 	create_directories(path.parent_path(), ec);
@@ -153,7 +150,7 @@ auto SettingsManager::saveUserSettings() -> bool {
 	out << YAML::BeginMap;
 	core::emitFormatVersion(out, g_settingsFormat);
 	out << YAML::Key << "UserSettings" << YAML::Value << YAML::BeginSeq;
-	for (const auto& [key, value]: s_overrides) serializeValue(out, key, value);
+	for (const auto& [key, value]: m_overrides) serializeValue(out, key, value);
 	out << YAML::EndSeq;
 	out << YAML::EndMap;
 	if (const auto written = platform::writeFileAtomic(path, out.c_str()); !written) {
@@ -164,42 +161,42 @@ auto SettingsManager::saveUserSettings() -> bool {
 	return true;
 }
 
-void SettingsManager::setDefault(const std::string& iKey, Value iValue) { s_defaults[iKey] = std::move(iValue); }
+void SettingsManager::setDefault(const std::string& iKey, Value iValue) { m_defaults[iKey] = std::move(iValue); }
 
-void SettingsManager::set(const std::string& iKey, Value iValue) { s_overrides[iKey] = std::move(iValue); }
+void SettingsManager::set(const std::string& iKey, Value iValue) { m_overrides[iKey] = std::move(iValue); }
 
-auto SettingsManager::get(const std::string& iKey) -> std::optional<Value> {
-	if (const auto it = s_overrides.find(iKey); it != s_overrides.end())
+auto SettingsManager::get(const std::string& iKey) const -> std::optional<Value> {
+	if (const auto it = m_overrides.find(iKey); it != m_overrides.end())
 		return it->second;
-	if (const auto it = s_defaults.find(iKey); it != s_defaults.end())
+	if (const auto it = m_defaults.find(iKey); it != m_defaults.end())
 		return it->second;
 	return std::nullopt;
 }
 
-auto SettingsManager::get(const std::string& iKey, const Value& iDefault) -> Value {
+auto SettingsManager::get(const std::string& iKey, const Value& iDefault) const -> Value {
 	if (const auto val = get(iKey); val.has_value())
 		return val.value();
 	return iDefault;
 }
 
-void SettingsManager::resetToDefault(const std::string& iKey) { s_overrides.erase(iKey); }
+void SettingsManager::resetToDefault(const std::string& iKey) { m_overrides.erase(iKey); }
 
-void SettingsManager::resetAllToDefaults() { s_overrides.clear(); }
+void SettingsManager::resetAllToDefaults() { m_overrides.clear(); }
 
-auto SettingsManager::hasOverride(const std::string& iKey) -> bool { return s_overrides.contains(iKey); }
+auto SettingsManager::hasOverride(const std::string& iKey) const -> bool { return m_overrides.contains(iKey); }
 
-auto SettingsManager::has(const std::string& iKey) -> bool {
-	return s_overrides.contains(iKey) || s_defaults.contains(iKey);
+auto SettingsManager::has(const std::string& iKey) const -> bool {
+	return m_overrides.contains(iKey) || m_defaults.contains(iKey);
 }
 
-auto SettingsManager::keys() -> std::vector<std::string> {
+auto SettingsManager::keys() const -> std::vector<std::string> {
 	std::unordered_set<std::string> allKeys;
-	for (const auto& key: s_defaults | std::views::keys) allKeys.insert(key);
-	for (const auto& key: s_overrides | std::views::keys) allKeys.insert(key);
+	for (const auto& key: m_defaults | std::views::keys) allKeys.insert(key);
+	for (const auto& key: m_overrides | std::views::keys) allKeys.insert(key);
 	return {allKeys.begin(), allKeys.end()};
 }
 
-void SettingsManager::applyBuiltins() {
+void SettingsManager::applyBuiltins() const {
 	if (!app::Application::instanced())
 		return;
 	auto& window = app::Application::get().getWindow();
@@ -221,9 +218,9 @@ void SettingsManager::applyBuiltins() {
 }
 
 void SettingsManager::clear() {
-	s_defaults.clear();
-	s_overrides.clear();
-	s_gameName.clear();
+	m_defaults.clear();
+	m_overrides.clear();
+	m_gameName.clear();
 }
 
 }// namespace owl::scene

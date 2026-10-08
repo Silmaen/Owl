@@ -262,7 +262,8 @@ void Viewport::onUpdate(const core::Timestep& iTimeStep) {
 				// Handle quit request from Lua (scene.quit()) → request stop.
 				if (activeScene->quitRequested)
 					mp_document->requestStop();
-				if (auto pending = scene::ScreenTransition::pendingLoadPath(); pending) {
+				if (auto pending = app::Application::get().getEngineContext().getScreenTransition().pendingLoadPath();
+					pending) {
 					activeScene->teleportRequest.pending = true;
 					activeScene->teleportRequest.levelName = *pending;
 					activeScene->teleportRequest.targetName.clear();

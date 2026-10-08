@@ -26,6 +26,11 @@ using namespace owl;
 
 namespace {
 
+// Voxel meshes of the test application's engine context.
+auto voxelCache() -> renderer::VoxelMeshCache& {
+	return app::Application::get().getEngineContext().getVoxelMeshCache();
+}
+
 class VoxelStreamingTest : public testing::Test {
 protected:
 	static void SetUpTestSuite() {
@@ -56,12 +61,12 @@ protected:
 		config.entries.push_back({.typeKey = "RendererVoxel", .name = "voxel_world", .defaultConfig = {}});
 		renderer::Renderer::setRenderStack(
 				renderer::RenderStack::buildFromConfig(config, renderer::EnabledRenderersConfig{}));
-		renderer::RendererVoxel::clearCache();
+		voxelCache().clear();
 	}
 
 	void TearDown() override {
 		settle();
-		renderer::RendererVoxel::clearCache();
+		voxelCache().clear();
 		renderer::Renderer::setRenderStack(renderer::RenderStack{});
 	}
 
@@ -120,7 +125,7 @@ protected:
 		for (int i = 0; i < 200; ++i) {
 			frame();
 			settle();
-			const auto stats = renderer::RendererVoxel::getStatistics();
+			const auto stats = renderer::RendererVoxel::getStatistics(voxelCache());
 			if (world().pendingChunks.empty() && stats.pendingJobCount == 0 && stats.readyMeshCount == 0 && i > 2)
 				return;
 		}
@@ -141,10 +146,10 @@ TEST_F(VoxelStreamingTest, EveryStreamedChunkEndsMeshedAgainstItsFinalNeighbors)
 	EXPECT_EQ(world().world.chunkCount(), 27u);
 	const int entityId = static_cast<int>(static_cast<entt::entity>(m_voxel));
 	world().world.forEachChunk([&](const math::vec3i& iCoord, const data::voxel::Chunk& iChunk) -> void {
-		EXPECT_EQ(renderer::RendererVoxel::getMeshedRevision(entityId, iCoord), iChunk.getRevision())
+		EXPECT_EQ(renderer::RendererVoxel::getMeshedRevision(voxelCache(), entityId, iCoord), iChunk.getRevision())
 				<< iCoord.x() << "," << iCoord.y() << "," << iCoord.z();
 	});
-	EXPECT_GT(renderer::RendererVoxel::getStatistics().cachedMeshCount, 0u);
+	EXPECT_GT(renderer::RendererVoxel::getStatistics(voxelCache()).cachedMeshCount, 0u);
 	m_scene->onEndRuntime();
 }
 

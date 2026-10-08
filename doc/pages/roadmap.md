@@ -168,7 +168,7 @@ rest of A and B, then D, then C, then E.
 - ![Planned][planned] Phase D — documentation faithful to the code and checked in CI
 - ![Done][done] Phase C — Vulkan foundation first, as soon as the image tests land ([RHI](design/owl-rhi.md))
 - ![Done][done] Phase C — Owl RHI named, OpenGL frozen as fallback, backend interface ready for more
-- ![In Progress][progress] Phase C — ABI cleanup, world per scene, phased systems, open component registry
+- ![Done][done] Phase C — ABI cleanup, world per scene, phased systems, open component registry
 - ![Done][done] Phase C — optional CMake modules so each game can specialise the engine
 - ![Done][done] Phase C — `EditorLayer` split (packager, ribbon, project opening), level transitions shared
 - ![Done][done] Phase C — editor command API: named, undoable commands for the editor, the runner and the tests

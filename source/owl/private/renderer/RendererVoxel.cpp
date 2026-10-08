@@ -86,17 +86,13 @@ struct Candidate {
 	float distance = 0.f;
 };
 
-struct InternalData {
+}// namespace
+
+struct VoxelMeshCache::Data {
 	std::unordered_map<int, EntityMeshes> entities;
 	shared<MeshSink> sink = mkShared<MeshSink>();
 	std::vector<MeshResult> drained;
 	std::vector<Candidate> candidates;
-	std::vector<Renderer3D::MeshHandle> opaqueDraws;
-	std::vector<std::pair<float, Renderer3D::MeshHandle>> transparentDraws;
-	std::vector<Renderer3D::MeshHandle> sortedTransparent;
-	math::vec3 cameraPosition{0.f, 0.f, 0.f};
-	math::mat4 viewProjection = math::identity<float, 4>();
-	uint32_t drawnMeshCount = 0;
 	uint32_t jobsInFlight = 0;
 	uint32_t uploadedThisFrame = 0;
 	Clock::duration uploadTimeThisFrame{};
@@ -104,7 +100,24 @@ struct InternalData {
 	RendererVoxel::Statistics counters;
 };
 
-shared<InternalData> g_Data;
+namespace {
+
+using CacheData = VoxelMeshCache::Data;
+
+// Per-frame draw state of the renderer (one camera per frame, whatever the cache).
+struct FrameData {
+	std::vector<Renderer3D::MeshHandle> opaqueDraws;
+	std::vector<std::pair<float, Renderer3D::MeshHandle>> transparentDraws;
+	std::vector<Renderer3D::MeshHandle> sortedTransparent;
+	math::vec3 cameraPosition{0.f, 0.f, 0.f};
+	math::mat4 viewProjection = math::identity<float, 4>();
+	uint32_t drawnMeshCount = 0;
+};
+
+auto frameData() -> FrameData& {
+	static FrameData data;
+	return data;
+}
 
 VoxelMeshingConfig g_Config;
 
@@ -182,17 +195,17 @@ auto hasGeometry(const MeshResult& iResult) -> bool {
 	return !iResult.opaque.indices.empty() || !iResult.transparent.indices.empty();
 }
 
-void install(ChunkEntry& ioEntry, const MeshResult& iResult) {
+void install(CacheData& ioData, ChunkEntry& ioEntry, const MeshResult& iResult) {
 	const auto start = Clock::now();
 	ioEntry.opaque = upload(iResult.opaque, Renderer3D::opaqueMeshState);
 	ioEntry.transparent = upload(iResult.transparent, Renderer3D::transparentMeshState);
 	const auto end = Clock::now();
 	ioEntry.meshedRevision = iResult.revision;
-	auto& counters = g_Data->counters;
+	auto& counters = ioData.counters;
 	if (hasGeometry(iResult)) {
-		++g_Data->uploadedThisFrame;
+		++ioData.uploadedThisFrame;
 		++counters.uploadedMeshCount;
-		g_Data->uploadTimeThisFrame += end - start;
+		ioData.uploadTimeThisFrame += end - start;
 	}
 	if (ioEntry.stale) {
 		const uint64_t latency = toNs(end - ioEntry.staleSince);
@@ -203,33 +216,33 @@ void install(ChunkEntry& ioEntry, const MeshResult& iResult) {
 	}
 }
 
-auto hasUploadBudget() -> bool {
-	if (g_Data->uploadedThisFrame == 0)
+auto hasUploadBudget(CacheData& ioData) -> bool {
+	if (ioData.uploadedThisFrame == 0)
 		return true;
-	return g_Data->uploadedThisFrame < g_Config.maxUploadsPerFrame &&
-		   std::chrono::duration<float, std::milli>(g_Data->uploadTimeThisFrame).count() < g_Config.uploadBudgetMs;
+	return ioData.uploadedThisFrame < g_Config.maxUploadsPerFrame &&
+		   std::chrono::duration<float, std::milli>(ioData.uploadTimeThisFrame).count() < g_Config.uploadBudgetMs;
 }
 
-void drainSink() {
+void drainSink(CacheData& ioData) {
 	{
-		const std::lock_guard<std::mutex> lock{g_Data->sink->mutex};
-		if (g_Data->sink->results.empty())
+		const std::lock_guard<std::mutex> lock{ioData.sink->mutex};
+		if (ioData.sink->results.empty())
 			return;
-		g_Data->drained.swap(g_Data->sink->results);
+		ioData.drained.swap(ioData.sink->results);
 	}
-	for (auto& result: g_Data->drained) {
-		if (g_Data->jobsInFlight > 0)
-			--g_Data->jobsInFlight;
-		auto& cache = g_Data->entities[result.entityId];
+	for (auto& result: ioData.drained) {
+		if (ioData.jobsInFlight > 0)
+			--ioData.jobsInFlight;
+		auto& cache = ioData.entities[result.entityId];
 		if (const auto it = cache.chunks.find(packKey(result.coord));
 			it != cache.chunks.end() && it->second.jobRevision == result.revision)
 			it->second.jobRevision = 0;
 		cache.ready.push_back(std::move(result));
 	}
-	g_Data->drained.clear();
+	ioData.drained.clear();
 }
 
-void uploadReady(EntityMeshes& ioCache, const data::voxel::VoxelWorld& iWorld) {
+void uploadReady(CacheData& ioData, EntityMeshes& ioCache, const data::voxel::VoxelWorld& iWorld) {
 	size_t kept = 0;
 	for (size_t i = 0; i < ioCache.ready.size(); ++i) {
 		auto& result = ioCache.ready[i];
@@ -237,25 +250,25 @@ void uploadReady(EntityMeshes& ioCache, const data::voxel::VoxelWorld& iWorld) {
 		const auto chunk = iWorld.getChunk(result.coord);
 		if (it == ioCache.chunks.end() || !chunk || chunk->getRevision() != result.revision ||
 			it->second.meshedRevision == result.revision) {
-			++g_Data->counters.discardedMeshCount;
+			++ioData.counters.discardedMeshCount;
 			continue;
 		}
-		if (hasGeometry(result) && !hasUploadBudget()) {
+		if (hasGeometry(result) && !hasUploadBudget(ioData)) {
 			if (kept != i)
 				ioCache.ready[kept] = std::move(result);
 			++kept;
 			continue;
 		}
-		install(it->second, result);
+		install(ioData, it->second, result);
 	}
 	ioCache.ready.resize(kept);
 }
 
 // Collect the chunks whose revision has neither a mesh nor a job, and drop the entries of unloaded chunks.
-void scanWorld(EntityMeshes& ioCache, const data::voxel::VoxelWorld& iWorld) {
-	const uint64_t stamp = ++g_Data->prepareStamp;
+void scanWorld(CacheData& ioData, EntityMeshes& ioCache, const data::voxel::VoxelWorld& iWorld) {
+	const uint64_t stamp = ++ioData.prepareStamp;
 	const auto now = Clock::now();
-	auto& candidates = g_Data->candidates;
+	auto& candidates = ioData.candidates;
 	candidates.clear();
 	iWorld.forEachChunk([&](const math::vec3i& iCoord, const data::voxel::Chunk& iChunk) -> void {
 		const uint64_t key = packKey(iCoord);
@@ -306,25 +319,25 @@ auto hasPendingNeighbor(const scene::component::VoxelWorld& iComponent, const ma
 	return false;
 }
 
-void meshNow(EntityMeshes& ioCache, const scene::component::VoxelWorld& iComponent, const TileGrid& iGrid,
-			 const int iEntityId) {
-	for (const auto& candidate: g_Data->candidates) {
+void meshNow(CacheData& ioData, EntityMeshes& ioCache, const scene::component::VoxelWorld& iComponent,
+			 const TileGrid& iGrid, const int iEntityId) {
+	for (const auto& candidate: ioData.candidates) {
 		const auto start = Clock::now();
 		const MeshResult result =
 				buildResult(data::voxel::ChunkNeighborhood::capture(iComponent.world, candidate.coord),
 							iComponent.registry, iGrid, iComponent.ambientOcclusion, iEntityId);
-		g_Data->counters.meshingNs += toNs(Clock::now() - start);
-		install(ioCache.chunks[candidate.key], result);
+		ioData.counters.meshingNs += toNs(Clock::now() - start);
+		install(ioData, ioCache.chunks[candidate.key], result);
 	}
 }
 
-void dispatchJobs(EntityMeshes& ioCache, const scene::component::VoxelWorld& iComponent, const TileGrid& iGrid,
-				  const int iEntityId) {
+void dispatchJobs(CacheData& ioData, EntityMeshes& ioCache, const scene::component::VoxelWorld& iComponent,
+				  const TileGrid& iGrid, const int iEntityId) {
 	auto& scheduler = app::Application::get().getTaskScheduler();
 	shared<const data::voxel::BlockRegistry> registry;
 	const bool ambientOcclusion = iComponent.ambientOcclusion;
-	for (const auto& candidate: g_Data->candidates) {
-		if (g_Data->jobsInFlight >= g_Config.maxJobsInFlight)
+	for (const auto& candidate: ioData.candidates) {
+		if (ioData.jobsInFlight >= g_Config.maxJobsInFlight)
 			break;
 		if (hasPendingNeighbor(iComponent, candidate.coord))
 			continue;
@@ -333,9 +346,9 @@ void dispatchJobs(EntityMeshes& ioCache, const scene::component::VoxelWorld& iCo
 		auto neighborhood = mkShared<const data::voxel::ChunkNeighborhood>(
 				data::voxel::ChunkNeighborhood::capture(iComponent.world, candidate.coord));
 		ioCache.chunks[candidate.key].jobRevision = neighborhood->getRevision();
-		++g_Data->jobsInFlight;
+		++ioData.jobsInFlight;
 		scheduler.pushTask(core::task::Task{
-				[neighborhood, registry, iGrid, ambientOcclusion, iEntityId, sink = g_Data->sink]() -> void {
+				[neighborhood, registry, iGrid, ambientOcclusion, iEntityId, sink = ioData.sink]() -> void {
 					const auto start = Clock::now();
 					MeshResult result = buildResult(*neighborhood, *registry, iGrid, ambientOcclusion, iEntityId);
 					const uint64_t elapsed = toNs(Clock::now() - start);
@@ -347,26 +360,16 @@ void dispatchJobs(EntityMeshes& ioCache, const scene::component::VoxelWorld& iCo
 }
 }// namespace
 
-void RendererVoxel::init() {
-	OWL_PROFILE_FUNCTION()
+VoxelMeshCache::VoxelMeshCache() : mp_data{mkUniq<Data>()} {}
 
-	g_Data = mkShared<InternalData>();
-}
+VoxelMeshCache::~VoxelMeshCache() = default;
 
-void RendererVoxel::shutdown() {
-	OWL_PROFILE_FUNCTION()
-
-	g_Data.reset();
-}
-
-void RendererVoxel::clearCache() {
-	if (!g_Data)
-		return;
-	g_Data->entities.clear();
-	const std::lock_guard<std::mutex> lock{g_Data->sink->mutex};
-	const auto finished = static_cast<uint32_t>(g_Data->sink->results.size());
-	g_Data->jobsInFlight -= std::min(g_Data->jobsInFlight, finished);
-	g_Data->sink->results.clear();
+void VoxelMeshCache::clear() {
+	mp_data->entities.clear();
+	const std::lock_guard<std::mutex> lock{mp_data->sink->mutex};
+	const auto finished = static_cast<uint32_t>(mp_data->sink->results.size());
+	mp_data->jobsInFlight -= std::min(mp_data->jobsInFlight, finished);
+	mp_data->sink->results.clear();
 }
 
 void RendererVoxel::beginScene(const Camera& iCamera, const VoxelConfig& iConfig) {
@@ -374,12 +377,10 @@ void RendererVoxel::beginScene(const Camera& iCamera, const VoxelConfig& iConfig
 
 	Renderer3D::beginScene(iCamera);
 	Renderer3D::setLighting(iConfig.sunDirection, iConfig.ambient);
-	if (g_Data) {
-		const math::vec4 worldPos = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
-		g_Data->cameraPosition = math::vec3{worldPos.x(), worldPos.y(), worldPos.z()};
-		g_Data->viewProjection = iCamera.getViewProjection();
-		g_Data->drawnMeshCount = 0;
-	}
+	const math::vec4 worldPos = inverse(iCamera.getView()) * math::vec4{0.f, 0.f, 0.f, 1.f};
+	frameData().cameraPosition = math::vec3{worldPos.x(), worldPos.y(), worldPos.z()};
+	frameData().viewProjection = iCamera.getViewProjection();
+	frameData().drawnMeshCount = 0;
 }
 
 void RendererVoxel::endScene() {
@@ -388,48 +389,48 @@ void RendererVoxel::endScene() {
 	Renderer3D::endScene();
 }
 
-void RendererVoxel::beginPrepare() {
-	if (!g_Data)
-		return;
-	g_Data->uploadedThisFrame = 0;
-	g_Data->uploadTimeThisFrame = {};
+void RendererVoxel::beginPrepare(VoxelMeshCache& ioCache) {
+	ioCache.mp_data->uploadedThisFrame = 0;
+	ioCache.mp_data->uploadTimeThisFrame = {};
 }
 
-void RendererVoxel::prepareWorld(scene::component::VoxelWorld& ioComponent, const int iEntityId) {
+void RendererVoxel::prepareWorld(VoxelMeshCache& ioCache, scene::component::VoxelWorld& ioComponent,
+								 const int iEntityId) {
 	OWL_PROFILE_FUNCTION()
 
-	if (!g_Data || !g_GpuDrawEnabled)
+	if (!g_GpuDrawEnabled)
 		return;
 	// No atlas yet (unconfigured, or not resolved before runtime starts): skip silently rather than warn per frame.
 	if (!ioComponent.tileset || !ioComponent.tileset->texture)
 		return;
 	ioComponent.tileset->texture->setFilterMode(gpu::FilterMode::Nearest);
 
-	drainSink();
-	auto& cache = g_Data->entities[iEntityId];
-	uploadReady(cache, ioComponent.world);
-	scanWorld(cache, ioComponent.world);
-	if (g_Data->candidates.empty())
+	auto& data = *ioCache.mp_data;
+	drainSink(data);
+	auto& cache = data.entities[iEntityId];
+	uploadReady(data, cache, ioComponent.world);
+	scanWorld(data, cache, ioComponent.world);
+	if (ioCache.mp_data->candidates.empty())
 		return;
-	std::ranges::sort(g_Data->candidates, {}, &Candidate::distance);
+	std::ranges::sort(ioCache.mp_data->candidates, {}, &Candidate::distance);
 	const TileGrid grid{.columns = ioComponent.tileset->columns,
 						.rows = ioComponent.tileset->rows,
 						.tileWidth = ioComponent.tileset->tileWidth,
 						.tileHeight = ioComponent.tileset->tileHeight};
 	if (g_Config.async && app::Application::instanced())
-		dispatchJobs(cache, ioComponent, grid, iEntityId);
+		dispatchJobs(data, cache, ioComponent, grid, iEntityId);
 	else
-		meshNow(cache, ioComponent, grid, iEntityId);
+		meshNow(data, cache, ioComponent, grid, iEntityId);
 }
 
-void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, const math::Transform& iWorldTransform,
-								   const int iEntityId) {
+void RendererVoxel::drawVoxelWorld(VoxelMeshCache& ioCache, scene::component::VoxelWorld& ioComponent,
+								   const math::Transform& iWorldTransform, const int iEntityId) {
 	OWL_PROFILE_FUNCTION()
 
-	if (!g_Data || !g_GpuDrawEnabled)
+	if (!g_GpuDrawEnabled)
 		return;
-	const auto cacheIt = g_Data->entities.find(iEntityId);
-	if (cacheIt == g_Data->entities.end())
+	const auto cacheIt = ioCache.mp_data->entities.find(iEntityId);
+	if (cacheIt == ioCache.mp_data->entities.end())
 		return;
 	if (!ioComponent.tileset || !ioComponent.tileset->texture)
 		return;
@@ -438,14 +439,14 @@ void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, co
 	auto& cache = cacheIt->second;
 	// All chunks share one model + atlas (origin baked in), so batch into one drawMeshes (state set once).
 	const math::mat4 worldMat = iWorldTransform();
-	const math::vec3 camPos = g_Data->cameraPosition;
+	const math::vec3 camPos = frameData().cameraPosition;
 	const math::vec4 camLocal = inverse(worldMat) * math::vec4{camPos.x(), camPos.y(), camPos.z(), 1.f};
 	cache.cameraLocal = math::vec3{camLocal.x(), camLocal.y(), camLocal.z()};
 	// Cull per chunk: planes from view-projection * model test each chunk's AABB in chunk-local (origin-baked) space.
 	const std::array<math::vec4, 6> planes =
-			utils::FrustumCullingPass::extractFrustumPlanes(g_Data->viewProjection * worldMat);
-	auto& opaque = g_Data->opaqueDraws;
-	auto& transparent = g_Data->transparentDraws;
+			utils::FrustumCullingPass::extractFrustumPlanes(frameData().viewProjection * worldMat);
+	auto& opaque = frameData().opaqueDraws;
+	auto& transparent = frameData().transparentDraws;
 	opaque.clear();
 	transparent.clear();
 	for (const auto& entry: cache.chunks | std::views::values) {
@@ -472,12 +473,12 @@ void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, co
 			transparent.emplace_back(dx * dx + dy * dy + dz * dz, entry.transparent);
 		}
 	}
-	g_Data->drawnMeshCount += static_cast<uint32_t>(opaque.size() + transparent.size());
+	frameData().drawnMeshCount += static_cast<uint32_t>(opaque.size() + transparent.size());
 	Renderer3D::drawMeshes(opaque, worldMat, textures);
 	if (!transparent.empty()) {
 		// Back-to-front so alpha-over compositing is correct without per-fragment sorting.
 		std::ranges::sort(transparent, [](const auto& iA, const auto& iB) -> bool { return iA.first > iB.first; });
-		auto& sorted = g_Data->sortedTransparent;
+		auto& sorted = frameData().sortedTransparent;
 		sorted.clear();
 		for (auto& mesh: transparent | std::views::values) sorted.push_back(std::move(mesh));
 		Renderer3D::drawMeshes(sorted, worldMat, textures);
@@ -487,30 +488,27 @@ void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, co
 	transparent.clear();
 }
 
-auto RendererVoxel::getStatistics() -> Statistics {
+auto RendererVoxel::getStatistics(const VoxelMeshCache& iCache) -> Statistics {
 	Statistics stats;
-	if (!g_Data)
-		return stats;
-	stats = g_Data->counters;
-	for (const auto& entity: g_Data->entities | std::views::values) {
+	stats = iCache.mp_data->counters;
+	for (const auto& entity: iCache.mp_data->entities | std::views::values) {
 		for (const auto& entry: entity.chunks | std::views::values)
 			stats.cachedMeshCount += static_cast<uint32_t>(entry.opaque != nullptr) +
 									 static_cast<uint32_t>(entry.transparent != nullptr);
 		stats.readyMeshCount += static_cast<uint32_t>(entity.ready.size());
 	}
-	stats.drawnMeshCount = g_Data->drawnMeshCount;
-	stats.pendingJobCount = g_Data->jobsInFlight;
-	stats.uploadedThisFrame = g_Data->uploadedThisFrame;
-	const std::lock_guard<std::mutex> lock{g_Data->sink->mutex};
-	stats.meshingNs += g_Data->sink->meshingNs;
+	stats.drawnMeshCount = frameData().drawnMeshCount;
+	stats.pendingJobCount = iCache.mp_data->jobsInFlight;
+	stats.uploadedThisFrame = iCache.mp_data->uploadedThisFrame;
+	const std::lock_guard<std::mutex> lock{iCache.mp_data->sink->mutex};
+	stats.meshingNs += iCache.mp_data->sink->meshingNs;
 	return stats;
 }
 
-auto RendererVoxel::getMeshedRevision(const int iEntityId, const math::vec3i& iCoord) -> std::optional<uint64_t> {
-	if (!g_Data)
-		return std::nullopt;
-	const auto entityIt = g_Data->entities.find(iEntityId);
-	if (entityIt == g_Data->entities.end())
+auto RendererVoxel::getMeshedRevision(const VoxelMeshCache& iCache, const int iEntityId, const math::vec3i& iCoord)
+		-> std::optional<uint64_t> {
+	const auto entityIt = iCache.mp_data->entities.find(iEntityId);
+	if (entityIt == iCache.mp_data->entities.end())
 		return std::nullopt;
 	const auto it = entityIt->second.chunks.find(packKey(iCoord));
 	if (it == entityIt->second.chunks.end() || it->second.meshedRevision == 0)
