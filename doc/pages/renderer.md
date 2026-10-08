@@ -7,8 +7,8 @@ management, cameras, framebuffers, and backend abstraction.
 
 ## Overview
 
-Owl provides a 2D batch renderer built on an abstract backend layer (OpenGL 4.5,
-Vulkan 1.4, or Null for headless). All rendering goes through static facade classes:
+Owl provides a 2D batch renderer built on the [Owl RHI](#renderer-owl-rhi) (Vulkan 1.4 reference, OpenGL 4.5
+fallback, or Null for headless). All rendering goes through static facade classes:
 `RenderCommand` for low-level GPU operations, `Renderer2D` for batched 2D primitives
 (quads, circles, lines, text), and `BackgroundRenderer` for fullscreen backgrounds.
 
@@ -38,14 +38,14 @@ renderer kind.
 | `rendererraycast::RendererRaycastLayer`          | `RenderLayer` adapter for the raycaster (factory key `"RendererRaycast"`)  |
 | `BackgroundRenderer`                             | Deferred fullscreen background/skybox rendering                            |
 | `RenderCommand`                                  | Static facade delegating to the active `RenderAPI`                         |
-| `RenderAPI`                                      | Abstract interface (OpenGL, Vulkan, Null)                                  |
+| `RenderAPI`                                      | Owl RHI backend interface (Vulkan, OpenGL, Null)                           |
 | `GraphContext`                                   | Graphics context abstraction (init, buffer swapping)                       |
 | `Camera`                                         | Base class: projection, view, viewProjection matrices                      |
 | `CameraOrtho`                                    | Standalone orthographic camera with position/rotation                      |
 | `CameraEditor`                                   | Editor orbit camera (focal point, pan, zoom, rotate)                       |
 | `SceneCamera`                                    | Scene camera supporting both orthographic and perspective                  |
 | `Framebuffer`                                    | Off-screen render target with typed attachments                            |
-| `DrawData`                                       | Vertex/index buffer + shader binding for a draw call                       |
+| `DrawData`                                       | Vertex/index buffers, shader and `PipelineState` of a draw                 |
 | `Shader`                                         | Abstract shader (Slang source, SPIR-V compiled)                            |
 | `Texture` / `Texture2D`                          | Abstract texture, 2D texture with file/spec creation                       |
 | `UniformBuffer`                                  | GPU-side uniform data block                                                |
@@ -168,15 +168,15 @@ walks in reverse so layers can flush nested resources cleanly.
 The factory pattern keeps the engine extensible: third-party code (mods, tests)
 can register layer types without touching engine sources.
 
-### Per-renderer descriptor blocks (Vulkan)
+### Per-renderer binding blocks {#renderer-blocks}
 
-Each high-level renderer (`Renderer2D`, `RendererTilemap`, future renderers)
-owns its own Vulkan `VkDescriptorSetLayout` plus a `DescriptorRing` that hands
-every draw a distinct descriptor set from pools owned by each frame in flight
-(reset in one call when the frame slot comes back), matching exactly the
-bindings its shaders declare. The pattern lives behind a
-backend-neutral API so OpenGL and the headless `Null` backend can no-op every
-call:
+Each high-level renderer (`Renderer2D`, `RendererTilemap`, `Renderer3D`, `RendererRaycast`) owns a binding block:
+the explicit bindings of the Owl RHI. On Vulkan it is a `VkDescriptorSetLayout` plus a `DescriptorRing` that hands
+every draw a distinct descriptor set from pools owned by each frame in flight (reset in one call when the frame slot
+comes back), matching exactly the bindings its shaders declare. On OpenGL it is an `opengl::BindingTable`: the
+uniform buffers and textures bound while the block is active are recorded, and a draw binds them again when another
+block changed the global GL bindings since (all renderers share uniform binding 0 and texture units from 0), so no
+renderer re-binds its UBO "just in case". Null ignores the blocks. The API is backend-neutral:
 
 ```c++
 // In MyRenderer::init(), declare the bindings the shaders use:
@@ -192,14 +192,14 @@ gpu::RendererDescriptors::declare("MyRenderer", myBindings);
 // renderer's GPU state — pipeline creation, UBO upload, texture binding,
 // the draw itself:
 const gpu::RendererDescriptors::ScopedActive scoped{"MyRenderer"};
-// ... drawData->init(), UniformBuffer::create(), texture->bind(),
+// ... drawData->init(), UniformBuffer::create(), RenderCommand::bindTextures(),
 // drawDataInstanced(), …
 
 // And in MyRenderer::shutdown():
 gpu::RendererDescriptors::release("MyRenderer");
 ```
 
-While a `ScopedActive` is alive on the current thread, `vulkan::UniformBuffer`,
+While a `ScopedActive` is alive, `vulkan::UniformBuffer`, `RenderCommand::bindTextures`,
 `vulkan::Texture2D::bind`, `VulkanHandler::pushPipeline` and
 `VulkanHandler::bindPipeline` all route through the matching descriptor
 block. Outside any scope they fall back to the legacy global `Descriptors`
@@ -457,33 +457,53 @@ renderer::Renderer3D::drawMesh(mesh, modelMatrix, {atlasTexture});
 renderer::Renderer3D::endScene();
 ```
 
-It owns its own per-renderer descriptor block (`RendererDescriptors`, no-op on Null / OpenGL) like the other
+It owns its own per-renderer descriptor block (`RendererDescriptors`) like the other
 renderers, so Vulkan per-draw descriptor selection routes correctly.
 
-## Backend Abstraction
+## Owl RHI {#renderer-owl-rhi}
 
-The `RenderAPI` class defines a platform-independent interface. A concrete implementation
-is selected at startup via `RenderCommand::create(Type)`.
+The Owl RHI is the render hardware interface every renderer draws through: the interfaces of
+`owl::renderer::gpu` (`source/owl/public/renderer/gpu/`) and one implementation per backend under
+`source/owl/private/renderer/gpu/{vulkan,opengl,null}`. The backend is chosen at startup by `RenderCommand::create(Type)`.
+Design and roadmap: [Owl RHI](design/owl-rhi.md).
 
-| Backend  | API         | Notes                                         |
-|----------|-------------|-----------------------------------------------|
-| `OpenGL` | OpenGL 4.5  | Fallback; SPIR-V shaders, GLSL without SPIR-V |
-| `Vulkan` | Vulkan 1.4+ | Modern low-level API; full desktop support    |
-| `Null`   | None        | Headless mode for servers or testing          |
+| Backend  | API         | Role                                                                  |
+|----------|-------------|-----------------------------------------------------------------------|
+| `Vulkan` | Vulkan 1.4+ | Reference backend: every feature lands here first                     |
+| `OpenGL` | OpenGL 4.5  | Fallback, frozen in features; SPIR-V shaders, GLSL without `gl_spirv` |
+| `Null`   | None        | Headless tests and benchmarks; records the state of each draw         |
 
-**Key `RenderAPI` methods:**
+A draw is fully described by two explicit objects, so no draw inherits state from the one before:
 
-| Method                        | Description                              |
-|-------------------------------|------------------------------------------|
-| `init()`                      | Initialize the graphics backend          |
-| `setViewport(x,y,w,h)`        | Set render viewport                      |
-| `setClearColor(vec4)`         | Set screen clear colour                  |
-| `clear()`                     | Clear the screen                         |
-| `drawData(data, cnt)`         | Issue a draw call with vertex/index data |
-| `drawLine(data, cnt)`         | Issue a line-mode draw call              |
-| `getMaxTextureSlots()`        | Query GPU texture slot limit             |
-| `beginFrame()` / `endFrame()` | Frame lifecycle (Vulkan swap chain)      |
-| `beginBatch()` / `endBatch()` | Batch render pass (Vulkan subpass)       |
+- **Pipeline state.** A `DrawData` gets its shader, vertex layout and `PipelineState` at `init`: topology
+  (`Triangles`, `Lines`), culling (`None`, `Back`, `Front`; front faces are counter-clockwise on both backends),
+  blending (`Alpha`, `Opaque`), depth test and depth write. Vulkan bakes topology, culling and blending into the
+  deduplicated pipeline and sets depth as dynamic state at each bind; OpenGL applies what differs from the previous
+  draw. The default is the painter-ordered 2D state (alpha blending, no depth); `Renderer3D::opaqueMeshState` and
+  `transparentMeshState` are the 3D ones (the voxel water uses the second).
+- **Bindings.** Uniform buffers, storage buffers and textures belong to a renderer block (`RendererDescriptors`,
+  below), and each draw uses the bindings of the block active when it is issued. `RenderCommand::bindTextures(span)`
+  sets the sampled textures of the block in slot order; `Texture2D::bind(slot)` changes one slot.
+
+| `RenderAPI` method                  | Role                                                                     |
+|-------------------------------------|--------------------------------------------------------------------------|
+| `init()`                            | Bring the backend up                                                     |
+| `setViewport` / `setClearColor`     | Viewport and clear colour                                                |
+| `clear()`                           | Clear the bound framebuffer (colour and depth)                           |
+| `drawData` / `drawDataInstanced`    | Draw a `DrawData` with its pipeline state and the active block bindings  |
+| `drawIndexedIndirect`               | GPU-driven draws (Vulkan, OpenGL 4.6)                                    |
+| `bindTextures(span)`                | Sampled textures of the active block                                     |
+| `storageBufferMemoryBarrier()`      | Compute writes visible to the next draws                                 |
+| `beginFrame()` / `endFrame()`       | Frame lifecycle (Vulkan: frame slot, swap chain image, one submission)   |
+| `beginBatch()` / `endBatch()`       | Render pass scope on the bound framebuffer (opened lazily by any draw)   |
+| `getRenderCounters`, GPU timestamps | Profiling (`OwlRunner --frame-bench`)                                    |
+
+**Adding a backend** (WebGPU is planned for v0.10.0): implement under `private/renderer/gpu/<backend>/` the classes
+`RenderAPI`, `GraphContext`, `DrawData`, `Shader`, `ComputeShader`, `Texture2D`, `Framebuffer`, `UniformBuffer`,
+`StorageBuffer`, `VertexBuffer` / `IndexBuffer`, add the enumerator to `RenderAPI::Type` and a case to each `create`
+factory (`private/renderer/gpu/*.cpp`), and give `RendererDescriptors` a branch for the backend's binding model. The
+renderers do not change: they only see `DrawData`, `PipelineState`, the renderer blocks and `RenderCommand`. Shaders
+are Slang, compiled to SPIR-V (`renderer::utils::compileSlangToSpirv`), which also targets WGSL and Metal.
 
 See [Architecture](architecture.md) for the backend selection and application startup flow.
 
@@ -652,9 +672,9 @@ Each draw primitive emits one `XxxInstance` struct into a CPU-side
 `StorageBuffer` and the renderer issues a single instanced drawcall —
 `glDrawElementsInstanced` / `vkCmdDrawIndexed` for quads / circles /
 text (shared 4-vertex unit quad VBO + `{0,1,2, 2,3,0}` index buffer)
-and `RenderAPI::drawLineInstanced` for lines (2-vertex unit segment +
-`{0, 1}` index buffer, LINE_LIST topology selected via the `"line"`
-shader name). The vertex shader transforms the unit quad / line by
+and the same instanced draw for lines (2-vertex unit segment +
+`{0, 1}` index buffer, the line `DrawData` created with
+`PipelineState::topology = Lines`). The vertex shader transforms the unit quad / line by
 `gInstances[gl_InstanceID].transform`; no CPU vertex math.
 
 **Instance layouts (std430):**
@@ -686,11 +706,11 @@ over when full triggers `nextBatch()` (flush + restart).
 
 **Flush order** (within a single render pass):
 
-1. Bind all texture slots
+1. Bind all texture slots (`RenderCommand::bindTextures`)
 2. Background (via `BackgroundRenderer::flushPending()`)
 3. Quads (`RenderCommand::drawDataInstanced`, 6 indices × N instances)
 4. Circles (`RenderCommand::drawDataInstanced`)
-5. Lines (`RenderCommand::drawLineInstanced`, 2 indices × N instances)
+5. Lines (`RenderCommand::drawDataInstanced`, 2 indices × N instances, line topology)
 6. Text (`RenderCommand::drawDataInstanced`)
 
 **Per-batch descriptor layout** declared in `Renderer2D::init`:

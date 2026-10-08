@@ -46,9 +46,10 @@ public:
 	 * @param[in] iRenderer Name of the shader's related renderer.
 	 * @param[in] iIndices List of vertex indices.
 	 * @param[in] iShaderName The shader name.
+	 * @param[in] iState Fixed-function state of every draw of this data.
 	 */
 	void init(const BufferLayout& iLayout, const std::string& iRenderer, std::vector<uint32_t>& iIndices,
-			  const std::string& iShaderName) override;
+			  const std::string& iShaderName, const PipelineState& iState) override;
 
 	/**
 	 * @brief
@@ -62,10 +63,11 @@ public:
 	 * @param[in] iRenderer Shader renderer name.
 	 * @param[in] iIndices Index list.
 	 * @param[in] iShaderName Shader file name.
+	 * @param[in] iState Fixed-function state of every draw of this data.
 	 */
 	void initInstanced(const BufferLayout& iVertexLayout, const BufferLayout& iInstanceLayout, uint32_t iVertexCapacity,
 					   uint32_t iInstanceCapacity, const std::string& iRenderer, std::vector<uint32_t>& iIndices,
-					   const std::string& iShaderName) override;
+					   const std::string& iShaderName, const PipelineState& iState) override;
 
 	/**
 	 * @brief

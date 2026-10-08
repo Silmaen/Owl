@@ -8,6 +8,8 @@
 #include "owlpch.h"
 
 #include "Texture.h"
+
+#include "BindingTable.h"
 #include "core/external/opengl46.h"
 #include "renderer/TextureDecoder.h"
 
@@ -102,6 +104,7 @@ Texture2D::Texture2D(const Specification& iSpecs)
 Texture2D::~Texture2D() {
 	OWL_PROFILE_FUNCTION()
 
+	BindingTable::forgetTexture(m_textureId);
 	glDeleteTextures(1, &m_textureId);
 }
 
@@ -109,6 +112,7 @@ void Texture2D::bind(const uint32_t iSlot) const {
 	OWL_PROFILE_FUNCTION()
 
 	glBindTextureUnit(iSlot, m_textureId);
+	BindingTable::recordTexture(iSlot, m_textureId);
 }
 
 void Texture2D::setFilterMode(const FilterMode iMode) {

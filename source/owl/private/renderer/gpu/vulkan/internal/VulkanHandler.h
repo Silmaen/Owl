@@ -13,7 +13,11 @@
 
 #if OWL_WITH_GUI
 #include <backends/imgui_impl_vulkan.h>
+<<<<<<< HEAD
 #endif
+=======
+#include <renderer/gpu/PipelineState.h>
+>>>>>>> 79e382d7 (Name the Owl RHI and give every draw an explicit pipeline state and binding block)
 #include <renderer/gpu/vulkan/Framebuffer.h>
 
 #include <array>
@@ -189,7 +193,7 @@ public:
 	struct PipeLineData {
 		VkPipeline pipeLine = nullptr;
 		VkPipelineLayout layout = nullptr;
-		/// Signature key (shader + layout + render pass + vertex format) shared pipelines are deduplicated by.
+		/// Signature key (shader, fixed-function state, layout, render pass, vertex format) of the deduplication.
 		size_t key = 0;
 		/// Number of live `DrawData` sharing this pipeline; the pipeline is destroyed when it reaches zero.
 		uint32_t refCount = 0;
@@ -209,21 +213,18 @@ public:
 	 * @param[in] iPipeLineName Name of the pipeline.
 	 * @param[in] iShaderStages Shader stage create-infos to bind into the pipeline.
 	 * @param[in] iVertexInputInfo Vertex input layout description.
-	 * @param[in] iDoubleSided When true, both faces are rendered.
+	 * @param[in] iState Fixed-function state: topology, culling and blending are baked in, depth stays dynamic.
 	 * @return The pipeline id (use it with `getPipeline`/`bindPipeline`).
 	 */
 	auto pushPipeline(const std::string& iPipeLineName, std::vector<VkPipelineShaderStageCreateInfo>& iShaderStages,
-					  VkPipelineVertexInputStateCreateInfo iVertexInputInfo, bool iDoubleSided = true) -> int32_t;
+					  VkPipelineVertexInputStateCreateInfo iVertexInputInfo, const gpu::PipelineState& iState)
+			-> int32_t;
 
 	// Command buffer data
 	/// True while a render pass (batch) is open in the frame command buffer.
 	bool inBatch = false;
 	/// True while a frame is being recorded (between begin and end frame).
 	bool inFrame = false;
-	/// Desired depth test state for the next batch (off by default; Renderer3D enables it around 3D mesh draws).
-	bool depthTestEnabled = false;
-	/// Desired depth write state for the next batch (on by default; disabled for the blended transparent pass).
-	bool depthWriteEnabled = true;
 
 	/**
 	 * @brief
@@ -234,10 +235,11 @@ public:
 
 	/**
 	 * @brief
-	 *  Bind a pipeline and its descriptor set into the current command buffer for upcoming draws.
+	 *  Bind a pipeline, the depth state of the draw and its descriptor set into the current command buffer.
 	 * @param[in] iId Pipeline identifier returned by `pushPipeline`.
+	 * @param[in] iState State of the draw: its depth test and write become the dynamic depth state.
 	 */
-	void bindPipeline(int32_t iId);
+	void bindPipeline(int32_t iId, const gpu::PipelineState& iState);
 
 	/**
 	 * @brief

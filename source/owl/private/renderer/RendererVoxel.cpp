@@ -172,10 +172,10 @@ auto buildResult(const data::voxel::ChunkNeighborhood& iNeighborhood, const data
 					  .transparent = toCpuMesh(set.transparent, origin, iGrid)};
 }
 
-auto upload(const CpuMesh& iMesh) -> Renderer3D::MeshHandle {
+auto upload(const CpuMesh& iMesh, const gpu::PipelineState& iState) -> Renderer3D::MeshHandle {
 	if (iMesh.indices.empty())
 		return nullptr;
-	return Renderer3D::createMesh(iMesh.vertices, iMesh.indices, "voxel");
+	return Renderer3D::createMesh(iMesh.vertices, iMesh.indices, "voxel", iState);
 }
 
 auto hasGeometry(const MeshResult& iResult) -> bool {
@@ -184,8 +184,8 @@ auto hasGeometry(const MeshResult& iResult) -> bool {
 
 void install(ChunkEntry& ioEntry, const MeshResult& iResult) {
 	const auto start = Clock::now();
-	ioEntry.opaque = upload(iResult.opaque);
-	ioEntry.transparent = upload(iResult.transparent);
+	ioEntry.opaque = upload(iResult.opaque, Renderer3D::opaqueMeshState);
+	ioEntry.transparent = upload(iResult.transparent, Renderer3D::transparentMeshState);
 	const auto end = Clock::now();
 	ioEntry.meshedRevision = iResult.revision;
 	auto& counters = g_Data->counters;
@@ -473,14 +473,14 @@ void RendererVoxel::drawVoxelWorld(scene::component::VoxelWorld& ioComponent, co
 		}
 	}
 	g_Data->drawnMeshCount += static_cast<uint32_t>(opaque.size() + transparent.size());
-	Renderer3D::drawMeshes(opaque, worldMat, textures, /*iDepthWrite=*/true);
+	Renderer3D::drawMeshes(opaque, worldMat, textures);
 	if (!transparent.empty()) {
 		// Back-to-front so alpha-over compositing is correct without per-fragment sorting.
 		std::ranges::sort(transparent, [](const auto& iA, const auto& iB) -> bool { return iA.first > iB.first; });
 		auto& sorted = g_Data->sortedTransparent;
 		sorted.clear();
 		for (auto& mesh: transparent | std::views::values) sorted.push_back(std::move(mesh));
-		Renderer3D::drawMeshes(sorted, worldMat, textures, /*iDepthWrite=*/false);
+		Renderer3D::drawMeshes(sorted, worldMat, textures);
 		sorted.clear();
 	}
 	opaque.clear();

@@ -8,6 +8,7 @@
 #pragma once
 
 #include "Buffer.h"
+#include "PipelineState.h"
 
 #include <cstdint>
 #include <string>
@@ -43,9 +44,10 @@ public:
 	 * @param[in] iRenderer Name of the shader's related renderer.
 	 * @param[in] iIndices List of vertex indices.
 	 * @param[in] iShaderName The shader name.
+	 * @param[in] iState Fixed-function state of every draw of this data.
 	 */
 	virtual void init(const BufferLayout& iLayout, const std::string& iRenderer, std::vector<uint32_t>& iIndices,
-					  const std::string& iShaderName) = 0;
+					  const std::string& iShaderName, const PipelineState& iState) = 0;
 
 	/**
 	 * @brief
@@ -66,17 +68,19 @@ public:
 	 * @param[in] iRenderer Name of the shader's related renderer.
 	 * @param[in] iIndices List of vertex indices used by the per-vertex VBO.
 	 * @param[in] iShaderName The shader name.
+	 * @param[in] iState Fixed-function state of every draw of this data.
 	 */
 	virtual void initInstanced(const BufferLayout& iVertexLayout, const BufferLayout& iInstanceLayout,
 							   uint32_t iVertexCapacity, uint32_t iInstanceCapacity, const std::string& iRenderer,
-							   std::vector<uint32_t>& iIndices, const std::string& iShaderName) {
+							   std::vector<uint32_t>& iIndices, const std::string& iShaderName,
+							   const PipelineState& iState) {
 		// Default implementation: backend doesn't support instancing. Fall
 		// back to the non-instanced path so the call site still produces a
 		// valid (if slower) draw.
 		static_cast<void>(iInstanceLayout);
 		static_cast<void>(iVertexCapacity);
 		static_cast<void>(iInstanceCapacity);
-		init(iVertexLayout, iRenderer, iIndices, iShaderName);
+		init(iVertexLayout, iRenderer, iIndices, iShaderName, iState);
 	}
 
 	/**
@@ -129,6 +133,17 @@ public:
 	 * @param[in] iRenderer Name of the shader's related renderer.
 	 */
 	virtual void setShader(const std::string& iShaderName, const std::string& iRenderer) = 0;
+
+	/**
+	 * @brief
+	 *  Get the fixed-function state given at `init`.
+	 * @return The pipeline state of every draw of this data.
+	 */
+	[[nodiscard]] auto getPipelineState() const -> const PipelineState& { return m_pipelineState; }
+
+protected:
+	/// Fixed-function state of the draws, set by `init` / `initInstanced`.
+	PipelineState m_pipelineState;
 };
 
 }// namespace owl::renderer::gpu

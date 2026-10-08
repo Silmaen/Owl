@@ -43,10 +43,13 @@ public:
 	 * @param[in] iRenderer Name of the shader's related renderer.
 	 * @param[in] iIndices List of vertex indices.
 	 * @param[in] iShaderName The shader name.
+	 * @param[in] iState Fixed-function state of every draw of this data (kept for `getPipelineState`).
 	 */
 	void init([[maybe_unused]] const BufferLayout& iLayout, [[maybe_unused]] const std::string& iRenderer,
-			  [[maybe_unused]] std::vector<uint32_t>& iIndices,
-			  [[maybe_unused]] const std::string& iShaderName) override {}
+			  [[maybe_unused]] std::vector<uint32_t>& iIndices, [[maybe_unused]] const std::string& iShaderName,
+			  const PipelineState& iState) override {
+		m_pipelineState = iState;
+	}
 
 	/**
 	 * @brief

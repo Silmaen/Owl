@@ -11,6 +11,7 @@
 #include "renderer/gpu/RenderAPI.h"
 
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -99,28 +100,18 @@ public:
 
 	/**
 	 * @brief
-	 *  Binding the draw of vertex array as line.
-	 * @param[in] iData Draw data to render.
-	 * @param[in] iIndexCount Number of vertex to draw (=0 all).
-	 */
-	void drawLine(const shared<DrawData>& iData, uint32_t iIndexCount) override;
-
-	/**
-	 * @brief
-	 *  Instanced line draw — uses the `LINE_LIST` pipeline selected by the
-	 *  shader name (the Vulkan backend keys topology off the name `"line"`).
-	 * @param[in] iData Draw data with index buffer `{0, 1}`.
-	 * @param[in] iIndexCount Indices per instance.
-	 * @param[in] iInstanceCount Number of instances.
-	 */
-	void drawLineInstanced(const shared<DrawData>& iData, uint32_t iIndexCount, uint32_t iInstanceCount) override;
-
-	/**
-	 * @brief
 	 *  Get the maximum number of texture slots.
 	 * @return Number of texture slots.
 	 */
 	[[nodiscard]] auto getMaxTextureSlots() const -> uint32_t override { return 16; }
+
+	/**
+	 * @brief
+	 *  Set the sampled textures of the active renderer block (slot `i` = `iTextures[i]`); the descriptor set of the
+	 *  next draw is rewritten only when the list changed.
+	 * @param[in] iTextures Textures in slot order.
+	 */
+	void bindTextures(std::span<const shared<Texture2D>> iTextures) override;
 
 	/**
 	 * @brief
@@ -134,17 +125,6 @@ public:
 		 */
 	void beginBatch() override;
 
-	/**
-	 * @brief
-	 *  Reset value for the texture load.
-	 */
-	void beginTextureLoad() override;
-
-	/**
-	 * @brief
-	 *  Ends texture load.
-	 */
-	void endTextureLoad() override;
 
 	/**
 	 * @brief
@@ -164,19 +144,6 @@ public:
 	 */
 	void endFrame() override;
 
-	/**
-	 * @brief
-	 *  Enable or disable depth buffer writing.
-	 * @param[in] iEnabled True to enable depth writing, false to disable.
-	 */
-	void setDepthMask(bool iEnabled) override;
-
-	/**
-	 * @brief
-	 *  Set the depth test.
-	 * @param[in] iEnabled Enable flag.
-	 */
-	void setDepthTest(bool iEnabled) override;
 
 	/**
 	 * @brief

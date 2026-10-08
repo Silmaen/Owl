@@ -172,7 +172,7 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 - ![Done][done] Vulkan foundation — real frames in flight, no `vkQueueWaitIdle` on the hot path, transitions
   inside the frame, correct `loadOp`, swapchain image used only after acquisition (PR-28: B-01, B-02, B-04, B-19)
 - ![Done][done] Per-frame uniform ring and VMA sub-allocation (PR-29: B-03, B-11, B-23)
-- ![Planned][planned] Owl RHI named and documented; Vulkan reference, OpenGL frozen fallback, Null for tests;
+- ![Done][done] Owl RHI named and documented; Vulkan reference, OpenGL frozen fallback, Null for tests;
   pipeline objects and explicit bindings instead of global state and call-order conventions (B-07). See
   [Owl RHI](owl-rhi.md)
 - ![Done][done] ABI — YAML out of the public API, hidden visibility by default, third-party symbols not

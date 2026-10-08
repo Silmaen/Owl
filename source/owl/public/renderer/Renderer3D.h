@@ -61,6 +61,12 @@ public:
 	/// Opaque handle to a GPU-resident mesh created by `createMesh`.
 	using MeshHandle = shared<gpu::DrawData>;
 
+	/// Pipeline state of an opaque mesh: depth tested and written.
+	static constexpr gpu::PipelineState opaqueMeshState{.depthTest = true, .depthWrite = true};
+
+	/// Pipeline state of a blended mesh drawn back-to-front: depth tested, not written.
+	static constexpr gpu::PipelineState transparentMeshState{.depthTest = true, .depthWrite = false};
+
 	/**
 	 * @brief
 	 *  Initialize the renderer (descriptor block, scene UBO, default texture, shader).
@@ -103,10 +109,12 @@ public:
 	 * @param[in] iVertices The mesh vertices.
 	 * @param[in] iIndices Triangle indices into `iVertices`.
 	 * @param[in] iShaderName Shader used to draw the mesh (defaults to `mesh3d`; e.g. `voxel` for frac-tiled faces).
+	 * @param[in] iState Pipeline state of every draw of the mesh (`transparentMeshState` for blended geometry).
 	 * @return A handle usable with `drawMesh`.
 	 */
 	[[nodiscard]] static auto createMesh(std::span<const Mesh3DVertex> iVertices, std::span<const uint32_t> iIndices,
-										 const std::string& iShaderName = "mesh3d") -> MeshHandle;
+										 const std::string& iShaderName = "mesh3d",
+										 const gpu::PipelineState& iState = opaqueMeshState) -> MeshHandle;
 
 	/**
 	 * @brief
@@ -132,10 +140,9 @@ public:
 	 * @param[in] iMeshes The mesh handles to draw.
 	 * @param[in] iModel The shared model (object-to-world) matrix.
 	 * @param[in] iTextures Textures bound to slots `1..N` in order.
-	 * @param[in] iDepthWrite Whether the pass writes depth (`false` for the blended back-to-front transparent pass).
 	 */
 	static void drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat4& iModel,
-						   std::span<const shared<gpu::Texture2D>> iTextures = {}, bool iDepthWrite = true);
+						   std::span<const shared<gpu::Texture2D>> iTextures = {});
 };
 
 }// namespace owl::renderer

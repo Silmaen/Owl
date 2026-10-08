@@ -53,12 +53,12 @@ auto Texture2D::operator==(const Texture& iOther) const -> bool {
 	return bob.m_textureId == m_textureId;
 }
 
-void Texture2D::bind(uint32_t) const {
+void Texture2D::bind(const uint32_t iSlot) const {
 	if (auto* const rd = internal::RendererDescriptors::getActive(); rd != nullptr) {
-		rd->textureBind(m_textureId);
+		rd->textureBind(iSlot, m_textureId);
 		return;
 	}
-	internal::Descriptors::get().textureBind(m_textureId);
+	internal::Descriptors::get().textureBind(iSlot, m_textureId);
 }
 
 OWL_DIAG_PUSH

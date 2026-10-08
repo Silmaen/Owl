@@ -64,15 +64,14 @@ struct BindingDecl {
 
 /**
  * @brief
- *  Per-renderer descriptor-set declaration API. Each high-level renderer
- *  (`Renderer2D`, `RendererTilemap`, future `RendererRaycast` stripe-emission)
- *  calls `declare()` once at init with the union of bindings used by all of
- *  its shaders, then wraps its `beginScene`/flush in a `ScopedActive` so the
- *  Vulkan backend routes per-draw descriptor-set selection, pipeline-layout
- *  creation and `Texture2D::bind` to the right per-renderer block.
+ *  Renderer blocks: the explicit bindings of the Owl RHI. Each high-level renderer (`Renderer2D`,
+ *  `RendererTilemap`, `Renderer3D`, `RendererRaycast`) calls `declare()` once at init with the union of the bindings
+ *  of its shaders, then wraps its init and its draws in a `ScopedActive`. Uniform buffers, textures
+ *  (`RenderCommand::bindTextures`, `Texture2D::bind`) and storage buffers bound while a block is active belong to it,
+ *  and every draw uses the bindings of its block, whatever another renderer bound in between.
  *
- *  Null and OpenGL backends no-op every call — OpenGL has no descriptor-set
- *  concept, and the headless Null backend has no GPU state to track.
+ *  Vulkan writes the block into a descriptor set at draw time; OpenGL records the uniform buffers and textures of the
+ *  block and binds them again before a draw when another block changed the global GL bindings; Null ignores it.
  */
 class OWL_API RendererDescriptors {
 public:
@@ -111,11 +110,9 @@ public:
 
 	/**
 	 * @brief
-	 *  RAII guard that makes `iRenderer`'s descriptor block the active one
-	 *  on the current thread. While alive, `Texture2D::bind`, pipeline-layout
-	 *  creation and the per-draw descriptor-set bind route through this
-	 *  renderer's block. The previous active is restored on destruction so
-	 *  guards nest cleanly.
+	 *  RAII guard that makes `iRenderer`'s block the active one. While alive, buffer and texture binds,
+	 *  pipeline-layout creation and the bindings of every draw route through this renderer's block. The previous
+	 *  active is restored on destruction so guards nest cleanly.
 	 */
 	class OWL_API ScopedActive final {
 	public:
@@ -145,6 +142,8 @@ public:
 		void* mp_state = nullptr;
 		/// True when this scope actually installed itself as active.
 		bool m_engaged = false;
+		/// True when the installed block is an OpenGL binding table.
+		bool m_openGl = false;
 	};
 };
 

@@ -14,6 +14,7 @@
 #include "renderer/gpu/UniformBuffer.h"
 
 #include <array>
+#include <cstddef>
 #include <cstdint>
 #include <span>
 
@@ -35,9 +36,21 @@ struct InternalData {
 	shared<gpu::UniformBuffer> sceneUniformBuffer;
 	shared<gpu::Texture2D> whiteTexture;
 	SceneUbo scene;
+	std::array<shared<gpu::Texture2D>, k_MaxTextureSlots> textureSlots;
 };
 
 shared<InternalData> g_Data;
+
+void bindMeshTextures(const std::span<const shared<gpu::Texture2D>> iTextures) {
+	auto& slots = g_Data->textureSlots;
+	slots[0] = g_Data->whiteTexture;
+	size_t count = 1;
+	for (const auto& texture: iTextures) {
+		if (texture && count < slots.size())
+			slots[count++] = texture;
+	}
+	gpu::RenderCommand::bindTextures(std::span{slots}.first(count));
+}
 }// namespace
 
 static_assert(sizeof(Mesh3DVertex) == 56, "Mesh3DVertex must stay tightly packed for direct VBO upload.");
@@ -89,7 +102,6 @@ void Renderer3D::shutdown() {
 void Renderer3D::beginScene(const Camera& iCamera) {
 	OWL_PROFILE_FUNCTION()
 
-	// Open the batch up-front (like Renderer2D::flush) so drawMesh's binds aren't wiped by the lazy beginBatch().
 	gpu::RenderCommand::beginBatch();
 	g_Data->scene.viewProjection = iCamera.getViewProjection();
 }
@@ -102,7 +114,7 @@ void Renderer3D::setLighting(const math::vec3& iSunDirection, const math::vec3& 
 }
 
 auto Renderer3D::createMesh(std::span<const Mesh3DVertex> iVertices, std::span<const uint32_t> iIndices,
-							const std::string& iShaderName) -> MeshHandle {
+							const std::string& iShaderName, const gpu::PipelineState& iState) -> MeshHandle {
 	auto draw = gpu::DrawData::create();
 	std::vector<uint32_t> indices{iIndices.begin(), iIndices.end()};
 	const gpu::RendererDescriptors::ScopedActive scoped{k_RendererKey};
@@ -112,7 +124,7 @@ auto Renderer3D::createMesh(std::span<const Mesh3DVertex> iVertices, std::span<c
 				{"i_TexIndex", gpu::ShaderDataType::Int},
 				{"i_TileRect", gpu::ShaderDataType::Float4},
 				{"i_Ao", gpu::ShaderDataType::Float}},
-			   k_ShaderFolder, indices, iShaderName);
+			   k_ShaderFolder, indices, iShaderName, iState);
 	draw->setVertexData(iVertices.data(), static_cast<uint32_t>(iVertices.size() * sizeof(Mesh3DVertex)));
 	return draw;
 }
@@ -127,28 +139,12 @@ void Renderer3D::drawMesh(const MeshHandle& iMesh, const math::mat4& iModel,
 
 	g_Data->scene.model = iModel;
 	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);
-	// Re-assert our scene UBO: siblings share OpenGL uniform binding 0, last-bound wins (no-op on Vulkan).
-	g_Data->sceneUniformBuffer->bind();
-
-	gpu::RenderCommand::beginTextureLoad();
-	g_Data->whiteTexture->bind(0);
-	uint32_t slot = 1;
-	for (const auto& texture: iTextures) {
-		if (texture && slot < k_MaxTextureSlots) {
-			texture->bind(slot);
-			++slot;
-		}
-	}
-	gpu::RenderCommand::endTextureLoad();
-
-	iMesh->bind();
-	gpu::RenderCommand::setDepthTest(true);
+	bindMeshTextures(iTextures);
 	gpu::RenderCommand::drawData(iMesh, iMesh->getIndexCount());
-	gpu::RenderCommand::setDepthTest(false);
 }
 
 void Renderer3D::drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat4& iModel,
-							std::span<const shared<gpu::Texture2D>> iTextures, const bool iDepthWrite) {
+							std::span<const shared<gpu::Texture2D>> iTextures) {
 	OWL_PROFILE_FUNCTION()
 
 	if (iMeshes.empty())
@@ -157,31 +153,11 @@ void Renderer3D::drawMeshes(std::span<const MeshHandle> iMeshes, const math::mat
 
 	g_Data->scene.model = iModel;
 	g_Data->sceneUniformBuffer->setData(&g_Data->scene, sizeof(SceneUbo), 0);
-	g_Data->sceneUniformBuffer->bind();
-
-	gpu::RenderCommand::beginTextureLoad();
-	g_Data->whiteTexture->bind(0);
-	uint32_t slot = 1;
-	for (const auto& texture: iTextures) {
-		if (texture && slot < k_MaxTextureSlots) {
-			texture->bind(slot);
-			++slot;
-		}
-	}
-	gpu::RenderCommand::endTextureLoad();
-
-	gpu::RenderCommand::setDepthTest(true);
-	if (!iDepthWrite)
-		gpu::RenderCommand::setDepthMask(false);
+	bindMeshTextures(iTextures);
 	for (const auto& mesh: iMeshes) {
-		if (!mesh || mesh->getIndexCount() == 0)
-			continue;
-		mesh->bind();
-		gpu::RenderCommand::drawData(mesh, mesh->getIndexCount());
+		if (mesh && mesh->getIndexCount() > 0)
+			gpu::RenderCommand::drawData(mesh, mesh->getIndexCount());
 	}
-	if (!iDepthWrite)
-		gpu::RenderCommand::setDepthMask(true);
-	gpu::RenderCommand::setDepthTest(false);
 }
 
 }// namespace owl::renderer

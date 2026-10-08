@@ -288,9 +288,8 @@ auto emitWallStripesGpu(const WallStripeContext& iCtx) -> bool {
 	g_state->tileUvRectsSsbo->bind(/*iBinding=*/4u);
 
 	gpu::RenderCommand::beginBatch();
-	gpu::RenderCommand::beginTextureLoad();
-	iCtx.atlas->bind(0);
-	gpu::RenderCommand::endTextureLoad();
+	const std::array atlas{std::dynamic_pointer_cast<gpu::Texture2D>(iCtx.atlas)};
+	gpu::RenderCommand::bindTextures(atlas);
 
 	const uint32_t instanceCount = iCtx.numRays * utils::RaycastDDAPass::kMaxHitsPerColumn;
 	gpu::RenderCommand::drawDataInstanced(g_state->stripeDrawData, /*iIndexCount=*/6u, instanceCount);
@@ -350,7 +349,7 @@ void RendererRaycast::init() {
 	{
 		std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
 		g_state->stripeDrawData->init({{"i_CornerIndex", gpu::ShaderDataType::Int}}, "raycast_stripe", indices,
-									  "raycast_stripe");
+									  "raycast_stripe", {});
 		constexpr std::array<int32_t, 4> corners{0, 1, 2, 3};
 		g_state->stripeDrawData->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(int32_t)));
 	}

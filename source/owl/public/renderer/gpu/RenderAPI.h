@@ -12,26 +12,26 @@
 #include "math/vectors.h"
 
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
 namespace owl::renderer::gpu {
 class StorageBuffer;
+class Texture2D;
 }// namespace owl::renderer::gpu
 
 /**
  * @brief
- *  Backend abstractions for the renderer module.
+ *  The Owl RHI: the render hardware interface every renderer draws through.
  *
- * Hosts the GPU-API-agnostic interfaces (`RenderAPI`, `RenderCommand`,
- * `Texture`, `Shader`, `Buffer`, `DrawData`, `Framebuffer`, `GraphContext`,
- * `UniformBuffer`) plus the data enums they share (`ImageFormat`,
- * `FilterMode`, `LoadState`, `ShaderType`, `ShaderDataType`). Concrete
- * implementations live under sub-namespaces — `owl::renderer::gpu::null`
- * for the headless backend, `owl::renderer::gpu::opengl` for OpenGL,
- * `owl::renderer::gpu::vulkan` for Vulkan. The selected backend is
- * chosen at runtime by `RenderCommand::create(Type)` and carried as a
- * `uniq<RenderAPI>` for the engine's lifetime.
+ * Hosts the GPU-API-agnostic interfaces (`RenderAPI`, `RenderCommand`, `Texture`, `Shader`, `Buffer`, `DrawData`,
+ * `PipelineState`, `RendererDescriptors`, `Framebuffer`, `GraphContext`, `UniformBuffer`, `StorageBuffer`,
+ * `ComputeShader`) plus the data enums they share. A draw is a `DrawData` (shader, vertex layout and fixed-function
+ * `PipelineState`, all given at `init`) drawn with the bindings recorded in the active renderer block
+ * (`RendererDescriptors::ScopedActive`); no draw inherits state from the previous one. Backends live under
+ * sub-namespaces: `vulkan` (reference), `opengl` (frozen fallback) and `null` (headless tests). The backend is chosen
+ * at runtime by `RenderCommand::create(Type)`. See the *Owl RHI* section of the renderer documentation.
  */
 namespace owl::renderer::gpu {
 /**
@@ -129,7 +129,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Binding the draw of vertex array.
+	 *  Draw a `DrawData` with its pipeline state and the bindings of the active renderer block.
 	 * @param[in] iData Draw data to render.
 	 * @param[in] iIndexCount Number of vertex to draw (=0 all).
 	 */
@@ -137,9 +137,8 @@ public:
 
 	/**
 	 * @brief
-	 *  Issue an instanced draw using a `DrawData` initialised via
-	 *  `initInstanced`. Maps to `vkCmdDrawIndexed(..., instanceCount, ...)`
-	 *  on Vulkan and `glDrawElementsInstanced` on OpenGL.
+	 *  Issue an instanced draw using a `DrawData` initialised via `initInstanced` (or reading its instances from a
+	 *  storage buffer). Primitives follow the `PipelineState::topology` of the draw data.
 	 * @param[in] iData Draw data to render.
 	 * @param[in] iIndexCount Number of indices per instance.
 	 * @param[in] iInstanceCount Number of instances to draw.
@@ -148,31 +147,18 @@ public:
 
 	/**
 	 * @brief
-	 *  Binding the draw of vertex array as line.
-	 * @param[in] iData Draw data to render.
-	 * @param[in] iIndexCount Number of vertex to draw (=0 all).
-	 */
-	virtual void drawLine(const shared<DrawData>& iData, uint32_t iIndexCount = 0) = 0;
-
-	/**
-	 * @brief
-	 *  Instanced line draw. Pairs with `drawDataInstanced` but emits
-	 *  `GL_LINES` / `VK_PRIMITIVE_TOPOLOGY_LINE_LIST` primitives instead
-	 *  of triangles. The shader pipeline must have been created with a
-	 *  line topology (the Vulkan backend keys off the shader name
-	 *  `"line"` for that).
-	 * @param[in] iData Draw data to render.
-	 * @param[in] iIndexCount Number of indices per instance (typically 2).
-	 * @param[in] iInstanceCount Number of instances to draw.
-	 */
-	virtual void drawLineInstanced(const shared<DrawData>& iData, uint32_t iIndexCount, uint32_t iInstanceCount) = 0;
-
-	/**
-	 * @brief
 	 *  Get the maximum number of texture slots.
 	 * @return Number of texture slots.
 	 */
 	[[nodiscard]] virtual auto getMaxTextureSlots() const -> uint32_t = 0;
+
+	/**
+	 * @brief
+	 *  Set the sampled textures of the active renderer block: slot `i` samples `iTextures[i]` (a null entry or a slot
+	 *  past the span samples the default texture) for the next draws of that block.
+	 * @param[in] iTextures Textures in slot order.
+	 */
+	virtual void bindTextures(std::span<const shared<Texture2D>> iTextures) = 0;
 
 	/// Render API states.
 	enum struct State : uint8_t {
@@ -222,17 +208,6 @@ public:
 	 */
 	virtual void beginBatch() {}
 
-	/**
-	 * @brief
-	 *  Reset value for the texture load.
-	 */
-	virtual void beginTextureLoad() {}
-
-	/**
-	 * @brief
-	 *  Ends texture load.
-	 */
-	virtual void endTextureLoad() {}
 
 	/**
 	 * @brief
@@ -252,19 +227,6 @@ public:
 	 */
 	virtual void endFrame() {}
 
-	/**
-	 * @brief
-	 *  Enable or disable depth buffer writing.
-	 * @param[in] iEnabled True to enable depth writing, false to disable.
-	 */
-	virtual void setDepthMask([[maybe_unused]] bool iEnabled) {}
-
-	/**
-	 * @brief
-	 *  Enable or disable depth testing.
-	 * @param[in] iEnabled True to enable depth testing, false to disable.
-	 */
-	virtual void setDepthTest([[maybe_unused]] bool iEnabled) {}
 
 	/**
 	 * @brief

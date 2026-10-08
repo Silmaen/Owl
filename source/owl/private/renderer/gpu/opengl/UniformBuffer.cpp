@@ -8,6 +8,8 @@
 #include "owlpch.h"
 
 #include "UniformBuffer.h"
+
+#include "BindingTable.h"
 #include "core/external/opengl46.h"
 
 namespace owl::renderer::gpu::opengl {
@@ -15,16 +17,21 @@ namespace owl::renderer::gpu::opengl {
 UniformBuffer::UniformBuffer(const uint32_t iSize, const uint32_t iBinding) : m_binding{iBinding} {
 	glCreateBuffers(1, &m_rendererId);
 	glNamedBufferData(m_rendererId, iSize, nullptr, GL_DYNAMIC_DRAW);
-	glBindBufferBase(GL_UNIFORM_BUFFER, m_binding, m_rendererId);
+	bind();
 }
 
-UniformBuffer::~UniformBuffer() { glDeleteBuffers(1, &m_rendererId); }
+UniformBuffer::~UniformBuffer() {
+	BindingTable::forgetBuffer(m_rendererId);
+	glDeleteBuffers(1, &m_rendererId);
+}
 
-void UniformBuffer::bind() { glBindBufferBase(GL_UNIFORM_BUFFER, m_binding, m_rendererId); }
+void UniformBuffer::bind() {
+	glBindBufferBase(GL_UNIFORM_BUFFER, m_binding, m_rendererId);
+	BindingTable::recordUniformBuffer(m_binding, m_rendererId);
+}
 
 void UniformBuffer::setData(const void* iData, const uint32_t iSize, const uint32_t iOffset) {
 	glNamedBufferSubData(m_rendererId, iOffset, iSize, iData);
 }
-
 
 }// namespace owl::renderer::gpu::opengl

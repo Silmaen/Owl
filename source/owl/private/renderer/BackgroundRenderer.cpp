@@ -70,7 +70,7 @@ void BackgroundRenderer::init() {
 					{"i_InvVR2", gpu::ShaderDataType::Float4},
 					{"i_InvVR3", gpu::ShaderDataType::Float4},
 			},
-			"background", indices, "background");
+			"background", indices, "background", {.depthTest = false, .depthWrite = false});
 }
 
 void BackgroundRenderer::shutdown() {
@@ -113,7 +113,6 @@ void BackgroundRenderer::flushPending(const float iTexIndex) {
 
 	const auto& data = g_data->pendingData;
 
-	gpu::RenderCommand::setDepthMask(false);
 
 	// Extract matrix columns
 	const auto& m = data.inverseViewRotation;
@@ -172,8 +171,6 @@ void BackgroundRenderer::flushPending(const float iTexIndex) {
 	g_data->drawData->setVertexData(vertices.data(), static_cast<uint32_t>(vertices.size() * sizeof(BackgroundVertex)));
 
 	gpu::RenderCommand::drawData(g_data->drawData, 6);
-
-	gpu::RenderCommand::setDepthMask(true);
 
 	g_data->pending = false;
 }

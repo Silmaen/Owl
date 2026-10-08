@@ -14,6 +14,7 @@
 #include "renderer/gpu/vulkan/StorageBuffer.h"
 #include "utils.h"
 
+#include <algorithm>
 #include <bit>
 #include <cstring>
 
@@ -234,17 +235,21 @@ void RendererDescriptors::unbindStorageBuffer(const StorageBuffer* iBuffer) {
 	}
 }
 
-void RendererDescriptors::resetTextureBind() {
-	m_textureBind.clear();
+void RendererDescriptors::setTextures(const std::span<const uint32_t> iTextureIds) {
+	if (std::ranges::equal(m_textureBind, iTextureIds))
+		return;
+	m_textureBind.assign(iTextureIds.begin(), iTextureIds.end());
 	m_dirty = true;
 }
 
-void RendererDescriptors::textureBind(const uint32_t iIndex) {
-	m_textureBind.emplace_back(iIndex);
+void RendererDescriptors::textureBind(const uint32_t iSlot, const uint32_t iTextureId) {
+	if (iSlot >= m_textureBind.size())
+		m_textureBind.resize(iSlot + 1, 0);
+	if (m_textureBind[iSlot] == iTextureId)
+		return;
+	m_textureBind[iSlot] = iTextureId;
 	m_dirty = true;
 }
-
-void RendererDescriptors::commitTextureBind() { m_dirty = true; }
 
 auto RendererDescriptors::resolveUniform(UboBinding& ioUbo) -> VkDescriptorBufferInfo {
 	auto& vkh = VulkanHandler::get();

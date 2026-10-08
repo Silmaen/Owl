@@ -12,6 +12,7 @@
 #include "core/Core.h"
 
 #include <cstdint>
+#include <span>
 #include <string>
 #include <vector>
 
@@ -112,29 +113,12 @@ public:
 
 	/**
 	 * @brief
-	 *  Binding the draw of vertex array as lines.
-		 * @param[in] iData Draw data to render.
-		 * @param[in] iIndexCount Number of vertex to draw (=0 all).
-		 */
-	static void drawLine(const shared<DrawData>& iData, const uint32_t iIndexCount = 0) {
-		++m_drawCallCount;
-		m_renderAPI->drawLine(iData, iIndexCount);
-	}
-
-	/**
-	 * @brief
-	 *  Instanced line draw. Pairs with `drawDataInstanced` but emits
-	 *  `GL_LINES` / `VK_PRIMITIVE_TOPOLOGY_LINE_LIST` primitives.
-	 * @param[in] iData Draw data initialised via `init` with the index
-	 *  buffer `{0, 1}` and a shader name that selects a line-topology
-	 *  pipeline (e.g. `"line"`).
-	 * @param[in] iIndexCount Indices per instance (typically 2).
-	 * @param[in] iInstanceCount Number of instances to draw.
+	 *  Set the sampled textures of the active renderer block (slot `i` = `iTextures[i]`) for its next draws.
+	 * @param[in] iTextures Textures in slot order.
 	 */
-	static void drawLineInstanced(const shared<DrawData>& iData, const uint32_t iIndexCount,
-								  const uint32_t iInstanceCount) {
-		++m_drawCallCount;
-		m_renderAPI->drawLineInstanced(iData, iIndexCount, iInstanceCount);
+	static void bindTextures(const std::span<const shared<Texture2D>> iTextures) {
+		if (m_renderAPI)
+			m_renderAPI->bindTextures(iTextures);
 	}
 
 	/**
@@ -184,14 +168,6 @@ public:
 			m_renderAPI->beginBatch();
 	}
 
-	/**
-	 * @brief
-	 *  Reset value for the teture load.
-	 */
-	static void beginTextureLoad() {
-		if (m_renderAPI)
-			m_renderAPI->beginTextureLoad();
-	}
 
 	/**
 	 * @brief
@@ -220,34 +196,6 @@ public:
 			m_renderAPI->endFrame();
 	}
 
-	/**
-	 * @brief
-	 *  Ends texture load.
-	 */
-	static void endTextureLoad() {
-		if (m_renderAPI)
-			m_renderAPI->endTextureLoad();
-	}
-
-	/**
-	 * @brief
-	 *  Enable or disable depth buffer writing.
-	 * @param[in] iEnabled True to enable depth writing, false to disable.
-	 */
-	static void setDepthMask(const bool iEnabled) {
-		if (m_renderAPI)
-			m_renderAPI->setDepthMask(iEnabled);
-	}
-
-	/**
-	 * @brief
-	 *  Enable or disable depth testing.
-	 * @param[in] iEnabled True to enable depth testing, false to disable.
-	 */
-	static void setDepthTest(const bool iEnabled) {
-		if (m_renderAPI)
-			m_renderAPI->setDepthTest(iEnabled);
-	}
 
 	/**
 	 * @brief

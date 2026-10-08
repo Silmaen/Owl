@@ -214,7 +214,7 @@ void Renderer2D::init() {
 
 	const auto setupCornerVbo = [&quadIndices](const shared<gpu::DrawData>& iDraw,
 											   const std::string& iShaderName) -> void {
-		iDraw->init({{"i_CornerIndex", gpu::ShaderDataType::Int}}, "renderer2D", quadIndices, iShaderName);
+		iDraw->init({{"i_CornerIndex", gpu::ShaderDataType::Int}}, "renderer2D", quadIndices, iShaderName, {});
 		constexpr std::array<int32_t, 4> corners{0, 1, 2, 3};
 		iDraw->setVertexData(corners.data(), static_cast<uint32_t>(corners.size() * sizeof(int32_t)));
 	};
@@ -229,7 +229,8 @@ void Renderer2D::init() {
 	setupCornerVbo(g_Data->text.drawData, "text");
 
 	g_Data->line.drawData = gpu::DrawData::create();
-	g_Data->line.drawData->init({{"i_EndpointIndex", gpu::ShaderDataType::Int}}, "renderer2D", lineIndices, "line");
+	g_Data->line.drawData->init({{"i_EndpointIndex", gpu::ShaderDataType::Int}}, "renderer2D", lineIndices, "line",
+								{.topology = gpu::PrimitiveTopology::Lines});
 	{
 		constexpr std::array<int32_t, 2> endpoints{0, 1};
 		g_Data->line.drawData->setVertexData(endpoints.data(),
@@ -329,9 +330,7 @@ void Renderer2D::flush() {
 	shared<gpu::StorageBuffer> retiredSceneWorlds = g_Data->sceneWorldsDirty ? reserveSceneWorlds() : nullptr;
 	gpu::RenderCommand::beginBatch();
 	retiredSceneWorlds.reset();
-	gpu::RenderCommand::beginTextureLoad();
-	for (uint32_t i = 0; i < g_Data->textureSlotIndex; i++) g_Data->textureSlots[i]->bind(i);
-	gpu::RenderCommand::endTextureLoad();
+	gpu::RenderCommand::bindTextures(std::span{g_Data->textureSlots}.first(g_Data->textureSlotIndex));
 
 	if (g_Data->sceneWorldsDirty) {
 		g_Data->sceneWorldsDirty = false;
@@ -352,13 +351,6 @@ void Renderer2D::flush() {
 	BackgroundRenderer::flushPending(bgTexIndex);
 
 	RendererTilemap::flushPending();
-
-	// Re-assert our camera UBO: siblings share OpenGL uniform binding 0, last-bound wins (no-op on Vulkan).
-	g_Data->cameraUniformBuffer->bind();
-	// The tilemap rebinds OpenGL texture units 0..n to its atlases: give our slots back (Vulkan sets are per renderer).
-	if (gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::OpenGL) {
-		for (uint32_t i = 0; i < g_Data->textureSlotIndex; i++) g_Data->textureSlots[i]->bind(i);
-	}
 
 	if (!g_Data->quad.instances.empty()) {
 		const auto count = static_cast<uint32_t>(g_Data->quad.instances.size());
@@ -381,7 +373,7 @@ void Renderer2D::flush() {
 		g_Data->line.ssbo->setData(g_Data->line.instances.data(),
 								   static_cast<uint32_t>(count * sizeof(utils::LineInstance)), 0);
 		g_Data->line.ssbo->bind();
-		gpu::RenderCommand::drawLineInstanced(g_Data->line.drawData, /*iIndexCount=*/2u, count);
+		gpu::RenderCommand::drawDataInstanced(g_Data->line.drawData, /*iIndexCount=*/2u, count);
 		g_Data->stats.drawCalls++;
 	}
 	if (!g_Data->text.instances.empty()) {

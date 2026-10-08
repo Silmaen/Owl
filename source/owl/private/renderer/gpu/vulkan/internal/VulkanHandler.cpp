@@ -109,6 +109,28 @@ void func(const VkResult iResult) {
 	if (iResult != VK_SUCCESS)
 		OWL_CORE_ERROR("Vulkan Imgui: Error detected: {}.", resultString(iResult))
 }
+
+constexpr auto toVkTopology(const gpu::PrimitiveTopology iTopology) -> VkPrimitiveTopology {
+	switch (iTopology) {
+		case gpu::PrimitiveTopology::Triangles:
+			return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		case gpu::PrimitiveTopology::Lines:
+			return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	}
+	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+}
+
+constexpr auto toVkCullMode(const gpu::CullMode iMode) -> VkCullModeFlags {
+	switch (iMode) {
+		case gpu::CullMode::None:
+			return VK_CULL_MODE_NONE;
+		case gpu::CullMode::Back:
+			return VK_CULL_MODE_BACK_BIT;
+		case gpu::CullMode::Front:
+			return VK_CULL_MODE_FRONT_BIT;
+	}
+	return VK_CULL_MODE_NONE;
+}
 }// namespace
 
 auto VulkanHandler::toImGuiInfo(std::vector<VkFormat>& ioFormats) -> ImGui_ImplVulkan_InitInfo {
@@ -202,7 +224,8 @@ auto VulkanHandler::getRenderPassCommandBuffer() const -> VkCommandBuffer {
 
 auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 								 std::vector<VkPipelineShaderStageCreateInfo>& iShaderStages,
-								 VkPipelineVertexInputStateCreateInfo iVertexInputInfo, bool iDoubleSided) -> int32_t {
+								 VkPipelineVertexInputStateCreateInfo iVertexInputInfo,
+								 const gpu::PipelineState& iState) -> int32_t {
 	const auto& core = VulkanCore::get();
 	auto& vkd = Descriptors::get();
 	PipeLineData pData;
@@ -216,7 +239,9 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 		ioSeed ^= iValue + 0x9e3779b97f4a7c15ULL + (ioSeed << 6) + (ioSeed >> 2);
 	};
 	size_t key = std::hash<std::string>{}(iPipeLineName);
-	hashCombine(key, iDoubleSided ? 1ULL : 0ULL);
+	hashCombine(key, static_cast<size_t>(iState.topology));
+	hashCombine(key, static_cast<size_t>(iState.cullMode));
+	hashCombine(key, static_cast<size_t>(iState.blendMode));
 	hashCombine(key, std::bit_cast<uint64_t>(*setLayout));
 	hashCombine(key, std::bit_cast<uint64_t>(m_currentFramebuffer->getRenderPass()));
 	for (uint32_t i = 0; i < iVertexInputInfo.vertexBindingDescriptionCount; ++i) {
@@ -254,13 +279,11 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 		m_state = State::ErrorCreatingPipelineLayout;
 		return -1;
 	}
-	// TODO(Silmaen): find a better switch.
-	const bool isLine = iPipeLineName == "line";
 	const VkPipelineInputAssemblyStateCreateInfo inputAssembly{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
 			.pNext = nullptr,
 			.flags = {},
-			.topology = isLine ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+			.topology = toVkTopology(iState.topology),
 			.primitiveRestartEnable = VK_FALSE};
 	constexpr VkPipelineViewportStateCreateInfo viewportState{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -270,7 +293,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 			.pViewports = nullptr,
 			.scissorCount = 1,
 			.pScissors = nullptr};
-	const VkCullModeFlags cullMode = iDoubleSided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
+	const VkCullModeFlags cullMode = toVkCullMode(iState.cullMode);
 	const VkPipelineRasterizationStateCreateInfo rasterizer{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
 			.pNext = nullptr,
@@ -279,7 +302,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 			.rasterizerDiscardEnable = VK_FALSE,
 			.polygonMode = VK_POLYGON_MODE_FILL,
 			.cullMode = cullMode,
-			.frontFace = VK_FRONT_FACE_CLOCKWISE,
+			.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
 			.depthBiasEnable = VK_FALSE,
 			.depthBiasConstantFactor = 0.0f,
 			.depthBiasClamp = 0.0,
@@ -296,7 +319,7 @@ auto VulkanHandler::pushPipeline(const std::string& iPipeLineName,
 			.alphaToCoverageEnable = VK_FALSE,
 			.alphaToOneEnable = VK_FALSE};
 	std::vector<VkPipelineColorBlendAttachmentState> att = {
-			{.blendEnable = VK_TRUE,
+			{.blendEnable = iState.blendMode == gpu::BlendMode::Alpha ? VK_TRUE : VK_FALSE,
 			 .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
 			 .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
 			 .colorBlendOp = VK_BLEND_OP_ADD,
@@ -806,8 +829,6 @@ void VulkanHandler::beginBatch() {
 	vkCmdSetViewport(cmd, 0, 1, &viewport);
 	const VkRect2D scissor{.offset = {0, 0}, .extent = toExtent(m_currentFramebuffer->getSpecification().size)};
 	vkCmdSetScissor(cmd, 0, 1, &scissor);
-	vkCmdSetDepthTestEnable(cmd, depthTestEnabled ? VK_TRUE : VK_FALSE);
-	vkCmdSetDepthWriteEnable(cmd, depthWriteEnabled ? VK_TRUE : VK_FALSE);
 }
 
 void VulkanHandler::endBatch() {
@@ -852,7 +873,7 @@ void VulkanHandler::swapFrame() {
 	}
 }
 
-void VulkanHandler::bindPipeline(const int32_t iId) {
+void VulkanHandler::bindPipeline(const int32_t iId, const gpu::PipelineState& iState) {
 	if (m_state != State::Running)
 		return;
 	if (!m_pipeLines.contains(iId)) {
@@ -863,6 +884,8 @@ void VulkanHandler::bindPipeline(const int32_t iId) {
 	if (cmd == nullptr)
 		return;
 	vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeLines[iId].pipeLine);
+	vkCmdSetDepthTestEnable(cmd, iState.depthTest ? VK_TRUE : VK_FALSE);
+	vkCmdSetDepthWriteEnable(cmd, iState.depthTest && iState.depthWrite ? VK_TRUE : VK_FALSE);
 	const VkDescriptorSet* set = nullptr;
 	if (auto* const rd = RendererDescriptors::getActive(); rd != nullptr) {
 		set = rd->getDescriptorSet(getCurrentFrameIndex());
