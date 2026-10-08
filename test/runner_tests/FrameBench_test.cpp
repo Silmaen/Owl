@@ -87,8 +87,12 @@ TEST(FrameBenchRun, NullBackendWritesReport) {
 	const auto scene = owl::test::getRootPath() / "sample_project" / "scenes" / "platformer_house.owl";
 	const auto out = std::filesystem::temp_directory_path() / "owl_frame_bench_test.json";
 	std::filesystem::remove(out);
-	const auto command = std::format(R"("{}" --frame-bench "{}" --backend null --frames 8 --warmup 2 --out "{}")",
-									 OWL_RUNNER_EXECUTABLE, scene.string(), out.string());
+	auto command = std::format(R"("{}" --frame-bench "{}" --backend null --frames 8 --warmup 2 --out "{}")",
+							   OWL_RUNNER_EXECUTABLE, scene.string(), out.string());
+#ifdef OWL_PLATFORM_WINDOWS
+	// cmd /c strips the first and last quote of a line that starts with one: wrap the whole line.
+	command = std::format(R"("{}")", command);
+#endif
 	// NOLINTNEXTLINE(concurrency-mt-unsafe,cert-env33-c)
 	ASSERT_EQ(std::system(command.c_str()), 0);
 	ASSERT_TRUE(exists(out));
