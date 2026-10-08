@@ -58,6 +58,12 @@ and clean up. Fixtures that need GPU or audio must degrade to the Null backend i
 - CTest wraps the binary in `xvfb-run`; without a display or lavapipe the cases skip. About 8 s: run them in a
   CI stage of their own (`ctest -L render`, `-LE render` for the rest).
 
+## Scenario tests (`test/scenarios/*.owltest`, label `scenario`)
+
+- `OwlRunner --scenario <file>` plays a sample scene headless with injected inputs and checks the world (format:
+  `doc/pages/editor.md#scripted-headless-runs-scenario`). Each file is a CTest case, no CMake edit needed.
+- Pin thresholds loosely (a gameplay tweak should not break them) and check one behaviour per file.
+
 ## Expensive Test Fixtures
 
 For tests requiring slow one-time setup (e.g., a Slang compilation session), use `SetUpTestSuite`:

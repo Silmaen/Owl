@@ -50,8 +50,16 @@ struct FrameBenchOptions {
 	/// Enable the Vulkan validation layers.
 	bool validation{false};
 	/// When the runner started (set by `createApplication`), origin of the start-up times; epoch when unknown.
-	core::Timestep::time_point processStart{};
+	core::Timestep::time_point processStart;
 };
+
+/**
+ * @brief
+ *  Find the project a scene belongs to: the nearest parent directory holding an `owl_project.yml`.
+ * @param[in] iScene The scene file.
+ * @return The project directory, empty when none was found.
+ */
+[[nodiscard]] auto findProject(const std::filesystem::path& iScene) -> std::filesystem::path;
 
 /**
  * @brief

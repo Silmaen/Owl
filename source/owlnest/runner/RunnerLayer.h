@@ -9,6 +9,7 @@
 #pragma once
 
 #include "FrameBench.h"
+#include "ScenarioTest.h"
 
 #include <data/assets/pack/PackReader.h>
 #include <owl.h>
@@ -19,6 +20,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace owl::nest::runner {
@@ -101,6 +103,13 @@ public:
 	 * @param[in] iBench The frame bench options.
 	 */
 	explicit RunnerLayer(const FrameBenchOptions& iBench);
+
+	/**
+	 * @brief
+	 *  Constructor for a scripted headless run: the scene and the steps come from the scenario.
+	 * @param[in] iScenario The scenario.
+	 */
+	explicit RunnerLayer(ScenarioTest iScenario);
 
 	/**
 	 * @brief
@@ -209,9 +218,28 @@ private:
 
 	/**
 	 * @brief
+	 *  Load a scene straight from a source project (frame bench, scenario): project assets, renderer stack and
+	 *  game settings (no user settings, so the run does not depend on the machine), null input, the scene.
+	 * @param[in] iProject The project directory, empty for none.
+	 * @param[in] iScene The scene file.
+	 * @param[in] iMode Name of the mode, for the messages.
+	 * @return True when the scene was loaded; otherwise the exit code is 2 and the application closes.
+	 */
+	auto attachSourceScene(const std::filesystem::path& iProject, const std::filesystem::path& iScene,
+						   std::string_view iMode) -> bool;
+
+	/**
+	 * @brief
 	 *  Frame bench start-up: project assets and renderer stack, scene, null input, timings.
 	 */
 	void attachFrameBench();
+
+	/**
+	 * @brief
+	 *  Scenario step at the top of `onUpdate`: run the due expectations, set the inputs, stop when it is over.
+	 * @return False when the scenario is over and the frame must be skipped.
+	 */
+	auto stepScenario() -> bool;
 
 	/**
 	 * @brief
@@ -277,6 +305,8 @@ private:
 	uniq<FrameBench> m_frameBench;
 	/// Offscreen target the scene renders into when the frame bench writes a capture.
 	shared<renderer::gpu::Framebuffer> m_captureTarget;
+	/// Scripted headless run (nullptr in a normal run).
+	uniq<ScenarioTest> m_scenario;
 	/// Smoke-test options.
 	SmokeTest m_smokeTest;
 	/// Scenes left to play in smoke-test mode, in order.

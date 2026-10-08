@@ -59,16 +59,6 @@ auto parseSize(const std::string_view iText, math::vec2ui& oSize) -> bool {
 	return true;
 }
 
-auto findProject(const std::filesystem::path& iScene) -> std::filesystem::path {
-	for (auto dir = iScene.parent_path(); !dir.empty(); dir = dir.parent_path()) {
-		if (exists(dir / "owl_project.yml"))
-			return dir;
-		if (dir == dir.root_path())
-			break;
-	}
-	return {};
-}
-
 auto backendName(const renderer::gpu::RenderAPI::Type iType) -> std::string_view {
 	switch (iType) {
 		case renderer::gpu::RenderAPI::Type::Null:
@@ -159,6 +149,16 @@ auto jsonNumber(const std::optional<double>& iValue) -> std::string {
 }
 
 }// namespace
+
+auto findProject(const std::filesystem::path& iScene) -> std::filesystem::path {
+	for (auto dir = iScene.parent_path(); !dir.empty(); dir = dir.parent_path()) {
+		if (exists(dir / "owl_project.yml"))
+			return dir;
+		if (dir == dir.root_path())
+			break;
+	}
+	return {};
+}
 
 auto hasFrameBenchFlag(const int iArgc, char** iArgv) -> bool {
 	const std::span args(iArgv, static_cast<size_t>(std::max(iArgc, 0)));

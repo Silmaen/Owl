@@ -158,7 +158,7 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase B — runner frame bench: `OwlRunner --frame-bench`, GPU timestamps, Vulkan/OpenGL baseline (PR-17)
 - ![Done][done] Phase B — editor tests: `owlnest_tests` (undo, every command family, snapshots)
 - ![Done][done] Phase B — image tests on lavapipe / llvmpipe, validation clean, OpenGL GLSL fallback (PR-18)
-- ![Planned][planned] Phase B — tests without a window: scripted headless runner
+- ![Done][done] Phase B — tests without a window: scripted headless runner (`OwlRunner --scenario`)
 - ![Done][done] Phase B — benchmarks in CI: compiled on every PR, nightly run against a baseline (+15 % fails)
 - ![Planned][planned] Phase B — module dependency check, CI tooling tests
 - ![Planned][planned] Phase D — public dependencies reduced to EnTT (+ `Owl::Gui`)

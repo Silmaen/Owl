@@ -16,9 +16,11 @@
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -113,6 +115,13 @@ public:
 			pushLayer(mkShared<nest::runner::RunnerLayer>(iSmokeTest));
 	}
 
+	OwlNest(const app::AppParams& iParam, nest::runner::ScenarioTest iScenario) : Application(iParam) {
+		if (getState() == State::Running)
+			pushLayer(mkShared<nest::runner::RunnerLayer>(std::move(iScenario)));
+		else
+			setExitCode(4);
+	}
+
 	OwlNest(const app::AppParams& iParam, const nest::runner::FrameBenchOptions& iBench) : Application(iParam) {
 		if (getState() == State::Running)
 			pushLayer(mkShared<nest::runner::RunnerLayer>(iBench));
@@ -156,6 +165,39 @@ auto createFrameBenchApplication(const int iArgc, char** iArgv, const std::files
 			},
 			*options);
 }
+
+auto findScenarioFlag(const int iArgc, char** iArgv) -> std::optional<std::string> {
+	const std::span args(iArgv, static_cast<size_t>(iArgc));
+	for (size_t i = 1; i + 1 < args.size(); ++i)
+		if (std::string_view(args[i]) == "--scenario")
+			return std::string{args[i + 1]};
+	return std::nullopt;
+}
+
+auto createScenarioApplication(const int iArgc, char** iArgv, const std::filesystem::path& iCallerDir,
+							   const std::string& iFile) -> shared<app::Application> {
+	auto scenario = nest::runner::ScenarioTest::load(iCallerDir / iFile);
+	if (!scenario.has_value()) {
+		std::fputs("OwlRunner --scenario ", stderr);
+		std::fputs(iFile.c_str(), stderr);
+		std::fputs(": ", stderr);
+		std::fputs(scenario.error().c_str(), stderr);
+		std::fputs(".\n", stderr);
+		std::exit(2);// NOLINT(concurrency-mt-unsafe)
+	}
+	return mkShared<OwlNest>(app::AppParams{.args = iArgv,
+											.name = "Owl Scenario",
+#ifdef OWL_ASSETS_LOCATION
+											.assetsPattern = OWL_ASSETS_LOCATION,
+#endif
+											.argCount = iArgc,
+											.renderer = renderer::gpu::RenderAPI::Type::Null,
+											.sound = sound::SoundAPI::Type::Null,
+											.hasGui = false,
+											.isDummy = true,
+											.useConfigFile = false},
+							 std::move(*scenario));
+}
 }// namespace
 OWL_DIAG_POP
 
@@ -171,6 +213,8 @@ auto app::createApplication(int iArgc, char** iArgv) -> shared<Application> {
 
 	if (nest::runner::hasFrameBenchFlag(iArgc, iArgv))
 		return createFrameBenchApplication(iArgc, iArgv, callerDir, processStart);
+	if (const auto scenario = findScenarioFlag(iArgc, iArgv))
+		return createScenarioApplication(iArgc, iArgv, callerDir, *scenario);
 
 	const auto workDir = std::filesystem::current_path();
 	const auto [packFile, gameName, icon, width, height] = readEarlyConfig(workDir);

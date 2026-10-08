@@ -1,0 +1,8 @@
+# Walking right into the hazard drains the player's health: the runner switches to the game-over scene.
+scene: ../../sample_project/scenes/platformer_house.owl
+steps:
+  - frames: 30
+  - expect: {entity: GameOverTitle, exists: false}
+  - input: {key: Right, frames: 90}
+  - frames: 180
+  - expect: {entity: GameOverTitle, exists: true}

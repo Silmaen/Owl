@@ -760,6 +760,39 @@ OwlNest --export <project dir or owl_project.yml> <output dir>
 `--headless` uses the Null window, renderer and sound backends; `--smoke-test [frames]` plays every scene of the
 pack for that many frames and exits with code 1 if any error was logged. See [Game export](design/game-export.md).
 
+### Scripted headless runs (`--scenario`)
+
+`OwlRunner --scenario <file.owltest>` loads a scene straight from a source project (Null window, renderer, sound and
+input) and plays steps that inject inputs and check the world, at a fixed time step. Asynchronous work (scene
+transitions, texture decodes) is finished before every frame, so a scenario counts frames, not seconds, and gives
+the same result on any machine. It exits with 0 when every expectation holds and no error was logged, 1 otherwise,
+2 on a file it cannot read.
+
+```yaml
+# test/scenarios/platformer_walk.owltest
+scene: ../../sample_project/scenes/platformer_house.owl   # relative to the file; project found above it
+timestep_ms: 16.667                                       # optional
+steps:
+  - frames: 30                                            # play 30 frames, no input
+  - input: {key: Right, frames: 20}                       # hold keys (or `keys: [...]`, `mouse: Left`,
+                                                          # `mouse_pos: [x, y]`) for 20 frames
+  - expect: {player: true, translation.x: {greater: 5.0}}
+  - expect: {entity: GameOverTitle, exists: false}
+  - expect: {gamestate: health, equals: 1}
+```
+
+| Step     | Keys                                                                                              |
+|----------|---------------------------------------------------------------------------------------------------|
+| `frames` | Number of frames to play                                                                          |
+| `input`  | `key` / `keys` (`A`..`Z`, `D0`..`D9`, `Space`, `Enter`, `Escape`, `Tab`, arrows, `LeftShift`,     |
+|          | `LeftControl` or a key code), `mouse` (`Left`, `Right`, `Middle`), `mouse_pos`, `frames` (1)      |
+| `expect` | `entity: <tag>` or `player: true` with fields `translation.x/y/z`, `rotation.z`, `scale.x/y/z`,   |
+|          | `exists`; or `gamestate: <key>`. Each check is a value or `equals` / `greater` / `less`,          |
+|          | `tolerance` for a numeric `equals`                                                                |
+
+Expectations due at a step see the world left by the frames before it; positions are world-space. Every
+`test/scenarios/*.owltest` is a CTest case (label `scenario`).
+
 The Edit menu labels dynamically show the description of the next undo/redo action
 (e.g., "Undo Delete 'Player'").
 

@@ -28,9 +28,11 @@
 #include <cmath>
 #include <cstddef>
 #include <exception>
+#include <format>
 #include <fstream>
 #include <ios>
 #include <optional>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -171,11 +173,20 @@ RunnerLayer::RunnerLayer(const SmokeTest& iSmokeTest) : Layer("RunnerLayer"), m_
 RunnerLayer::RunnerLayer(const FrameBenchOptions& iBench)
 	: Layer("RunnerLayer"), m_frameBench{mkUniq<FrameBench>(iBench)} {}
 
+RunnerLayer::RunnerLayer(ScenarioTest iScenario)
+	: Layer("RunnerLayer"), m_scenario{mkUniq<ScenarioTest>(std::move(iScenario))} {}
+
 void RunnerLayer::onAttach() {
 	OWL_PROFILE_FUNCTION()
 
 	if (m_frameBench) {
 		attachFrameBench();
+		return;
+	}
+	if (m_scenario) {
+		if (attachSourceScene(m_scenario->getProject(), m_scenario->getScene(), "Scenario"))
+			OWL_INFO("Scenario: {} step(s) on {}.", m_scenario->getSteps().size(),
+					 m_scenario->getScene().filename().string())
 		return;
 	}
 	// Load the config file
@@ -332,40 +343,47 @@ auto RunnerLayer::stepSmokeTest() -> bool {
 	return true;
 }
 
-void RunnerLayer::attachFrameBench() {
-	m_frameBench->onEngineReady();
+auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const std::filesystem::path& iScene,
+									const std::string_view iMode) -> bool {
 	auto& app = app::Application::get();
-	const auto& options = m_frameBench->getOptions();
-	m_config.gameName = "OwlFrameBench";
-	if (!options.project.empty()) {
-		app.addAssetDirectory({"Frame bench project", options.project});
+	m_config.gameName = std::format("Owl{}", iMode);
+	if (!iProject.empty()) {
+		app.addAssetDirectory({std::format("{} project", iMode), iProject});
 		try {
-			const auto project = YAML::LoadFile((options.project / "owl_project.yml").string())["OwlProject"];
+			const auto project = YAML::LoadFile((iProject / "owl_project.yml").string())["OwlProject"];
 			if (project) {
 				get(project, "name", m_config.gameName);
 				if (const auto stack = project["RendererStack"]; stack)
 					m_config.rendererStack = renderer::RendererStackConfig::fromYaml(stack);
 			}
 		} catch (const std::exception& iEx) {
-			OWL_WARN("FrameBench: Cannot read {}/owl_project.yml ({}).", options.project.string(), iEx.what())
+			OWL_WARN("{}: Cannot read {}/owl_project.yml ({}).", iMode, iProject.string(), iEx.what())
 		}
-		if (const auto gameSettings = options.project / "game_settings.yml"; exists(gameSettings))
+		if (const auto gameSettings = iProject / "game_settings.yml"; exists(gameSettings))
 			scene::SettingsManager::loadDefaults(gameSettings);
 	}
-	// User settings are skipped on purpose: they would make the run depend on the machine.
 	scene::SettingsManager::setGameName(m_config.gameName);
 	input::Input::init(window::Type::Null);
 	m_viewportSize = app.getWindow().getSize();
 	m_activeScene = mkShared<scene::Scene>();
-	if (const scene::SceneSerializer sc(m_activeScene); !sc.deserialize(options.scene)) {
-		OWL_ERROR("FrameBench: Failed to load scene {}.", options.scene.string())
+	if (const scene::SceneSerializer sc(m_activeScene); !sc.deserialize(iScene)) {
+		OWL_ERROR("{}: Failed to load scene {}.", iMode, iScene.string())
 		m_activeScene.reset();
-		m_frameBench.reset();
 		app.setExitCode(2);
 		app.close();
-		return;
+		return false;
 	}
 	installRenderStack();
+	return true;
+}
+
+void RunnerLayer::attachFrameBench() {
+	m_frameBench->onEngineReady();
+	const auto& options = m_frameBench->getOptions();
+	if (!attachSourceScene(options.project, options.scene, "FrameBench")) {
+		m_frameBench.reset();
+		return;
+	}
 	if (!options.capture.empty()) {
 		using Format = renderer::gpu::AttachmentSpecification::Format;
 		using Tiling = renderer::gpu::AttachmentSpecification::Tiling;
@@ -411,6 +429,30 @@ void RunnerLayer::finishFrameBench(const bool iInterrupted) {
 	app.close();
 }
 
+auto RunnerLayer::stepScenario() -> bool {
+	if (!m_scenario || !m_activeScene)
+		return true;
+	// Frames count, not seconds: finish the async work (scene transitions, texture decodes) before each one.
+	app::Application::get().getTaskScheduler().waitEmptyQueue();
+	if (!m_scenario->beginFrame(*m_activeScene))
+		return true;
+	auto& app = app::Application::get();
+	const auto errors = core::Log::getLogBuffer().getErrorCount();
+	if (m_scenario->getFailureCount() > 0 || errors > 0) {
+		OWL_ERROR("Scenario: Failed, {}/{} expectation(s) failed, {} error log(s).", m_scenario->getFailureCount(),
+				  m_scenario->getCheckCount(), errors)
+		app.setExitCode(1);
+	} else {
+		OWL_INFO("Scenario: Passed, {} expectation(s).", m_scenario->getCheckCount())
+	}
+	if (m_activeScene->status != scene::Scene::Status::Editing)
+		m_activeScene->onEndRuntime();
+	m_scenario.reset();
+	m_activeScene.reset();
+	app.close();
+	return false;
+}
+
 auto RunnerLayer::stepFrameBench() -> bool {
 	if (!m_frameBench)
 		return true;
@@ -431,7 +473,7 @@ auto RunnerLayer::stepFrameBench() -> bool {
 }
 
 void RunnerLayer::updateSceneRuntime(const core::Timestep& iTimeStep) {
-	if (!m_frameBench)
+	if (!m_frameBench && !m_scenario)
 		updateCursorCapture(m_activeScene->wantsCursorCapture());
 	m_activeScene->onUpdateRuntime(iTimeStep);
 	if (m_frameBench)
@@ -493,11 +535,16 @@ void RunnerLayer::applyPendingTeleport() {
 void RunnerLayer::onUpdate(const core::Timestep& iTimeStep) {
 	OWL_PROFILE_FUNCTION()
 
-	if (!stepFrameBench())
+	if (!stepFrameBench() || !stepScenario())
 		return;
 	if (m_smokeTest.frames > 0 && m_activeScene != nullptr && stepSmokeTest())
 		return;
-	const core::Timestep& timeStep = m_frameBench ? m_frameBench->getTimeStep() : iTimeStep;
+	const auto fixedStep = [this, &iTimeStep]() -> const core::Timestep& {
+		if (m_frameBench)
+			return m_frameBench->getTimeStep();
+		return m_scenario ? m_scenario->getTimeStep() : iTimeStep;
+	};
+	const core::Timestep& timeStep = fixedStep();
 	const ScopedCaptureTarget captureScope{m_captureTarget};
 	// resize
 	if (m_activeScene != nullptr) {

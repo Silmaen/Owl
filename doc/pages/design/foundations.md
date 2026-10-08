@@ -108,7 +108,7 @@ Every fix lands with its regression test.
 - ![Done][done] Image-comparison render tests on lavapipe (Vulkan) and llvmpipe (OpenGL): six reference scenes per
   backend, Vulkan validation clean on the sample, OpenGL GLSL fallback for drivers without `GL_ARB_gl_spirv`
   (PR-18: F-01, B-06, B-20)
-- ![Planned][planned] Tests without a window: headless runner driven by scripted inputs (load scene, play N frames,
+- ![Done][done] Tests without a window: headless runner driven by scripted inputs (load scene, play N frames,
   assert on the world)
 - ![Done][done] Diff-scoped clang-tidy: a `ClangTidy` action driven by `compile_commands.json`, analysing on a
   pull request only the `.cpp` files the diff can affect (include closure from `ninja -t deps`), everything elsewhere
