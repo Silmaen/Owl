@@ -18,6 +18,7 @@
 #include <scene/component/RaycastDoor.h>
 #include <scene/component/RaycastPushWall.h>
 #include <scene/component/components.h>
+#include <scene/systems/EngineSystems.h>
 
 #include <cstdint>
 #include <string>
@@ -81,13 +82,13 @@ TEST_F(RaycastDynamicWallsTest, DoorOpeningProgressesAndLatchesOpen) {
 
 	// 1.0/4.0 = 0.25 s to reach full open. Step in 0.1 s chunks: 3 ticks should still be Opening,
 	// the 4th tick should latch Open.
-	scn.updateRaycastDynamicWalls(0.1f);
-	scn.updateRaycastDynamicWalls(0.1f);
+	scene::systems::updateRaycastDynamicWalls(scn, 0.1f);
+	scene::systems::updateRaycastDynamicWalls(scn, 0.1f);
 	const auto& d = door.getComponent<scene::component::RaycastDoor>();
 	EXPECT_EQ(d.state, scene::component::RaycastDoor::State::Opening);
 	EXPECT_GT(d.currentOffset, 0.f);
 	EXPECT_LT(d.currentOffset, 1.f);
-	scn.updateRaycastDynamicWalls(0.3f);
+	scene::systems::updateRaycastDynamicWalls(scn, 0.3f);
 	EXPECT_EQ(d.state, scene::component::RaycastDoor::State::Open);
 	EXPECT_FLOAT_EQ(d.currentOffset, 1.f);
 	EXPECT_NEAR(d.holdTimer, 1.f, 1e-3f);
@@ -99,12 +100,12 @@ TEST_F(RaycastDynamicWallsTest, DoorClosesAfterHoldElapses) {
 	auto& d = door.getComponent<scene::component::RaycastDoor>();
 	// Fast-forward to fully open.
 	d.state = scene::component::RaycastDoor::State::Opening;
-	scn.updateRaycastDynamicWalls(1.0f);
+	scene::systems::updateRaycastDynamicWalls(scn, 1.0f);
 	ASSERT_EQ(d.state, scene::component::RaycastDoor::State::Open);
 	// Hold expires after 0.2 s, then Closing animation runs for another 0.25 s back to zero.
-	scn.updateRaycastDynamicWalls(0.21f);
+	scene::systems::updateRaycastDynamicWalls(scn, 0.21f);
 	EXPECT_EQ(d.state, scene::component::RaycastDoor::State::Closing);
-	scn.updateRaycastDynamicWalls(1.0f);
+	scene::systems::updateRaycastDynamicWalls(scn, 1.0f);
 	EXPECT_EQ(d.state, scene::component::RaycastDoor::State::Idle);
 	EXPECT_FLOAT_EQ(d.currentOffset, 0.f);
 }
@@ -118,7 +119,7 @@ TEST_F(RaycastDynamicWallsTest, DoorAdvanceKeepsEntityTransformStaticOnlyPlateMo
 	door.getComponent<scene::component::RaycastDoor>().state = scene::component::RaycastDoor::State::Opening;
 	const float startX = door.getComponent<scene::component::Transform>().transform.translation().x();
 	const float startY = door.getComponent<scene::component::Transform>().transform.translation().y();
-	scn.updateRaycastDynamicWalls(0.25f);// 1 cell at speed 4 → 0.25 s to reach the open pose
+	scene::systems::updateRaycastDynamicWalls(scn, 0.25f);// 1 cell at speed 4 → 0.25 s to reach the open pose
 	const auto& d = door.getComponent<scene::component::RaycastDoor>();
 	EXPECT_EQ(d.state, scene::component::RaycastDoor::State::Open);
 	EXPECT_FLOAT_EQ(d.currentOffset, 1.f);
@@ -132,14 +133,14 @@ TEST_F(RaycastDynamicWallsTest, PushWallSlidesOnceAndStaysFinal) {
 	scene::Scene scn;
 	auto push = makePushScene(scn, 2.f, 4.f);
 	push.getComponent<scene::component::RaycastPushWall>().state = scene::component::RaycastPushWall::State::Moving;
-	scn.updateRaycastDynamicWalls(1.0f);// way past the 0.5 s needed to slide 2 cells
+	scene::systems::updateRaycastDynamicWalls(scn, 1.0f);// way past the 0.5 s needed to slide 2 cells
 	const auto& p = push.getComponent<scene::component::RaycastPushWall>();
 	EXPECT_EQ(p.state, scene::component::RaycastPushWall::State::Final);
 	EXPECT_FLOAT_EQ(p.currentOffset, 2.f);
 	// Y axis since slideDirection = {0,1}.
 	EXPECT_FLOAT_EQ(push.getComponent<scene::component::Transform>().transform.translation().y(), 2.f);
 	// Subsequent ticks must not push the wall further.
-	scn.updateRaycastDynamicWalls(1.0f);
+	scene::systems::updateRaycastDynamicWalls(scn, 1.0f);
 	EXPECT_FLOAT_EQ(p.currentOffset, 2.f);
 }
 

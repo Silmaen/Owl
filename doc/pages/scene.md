@@ -96,14 +96,42 @@ stateDiagram-v2
 
 ### Lifecycle Methods
 
-| Method                             | When Called        | What It Does                                                                           |
-|------------------------------------|--------------------|----------------------------------------------------------------------------------------|
-| `onStartRuntime()`                 | Play pressed       | Initialize physics, start sounds with `playOnStart`, reset animated sprites            |
-| `onUpdateRuntime(timestep)`        | Each frame (Play)  | Scripts, input, physics, entity links, triggers, sounds, animated sprites, then render |
-| `onRenderRuntime()`                | Each frame (Pause) | Render only, no simulation                                                             |
-| `onUpdateEditor(timestep, camera)` | Each frame (Edit)  | Render with editor camera                                                              |
-| `onEndRuntime()`                   | Stop pressed       | Stop sounds, destroy physics                                                           |
-| `onViewportResize(size)`           | Viewport resized   | Resize all cameras                                                                     |
+| Method                             | When Called        | What It Does                                                                |
+|------------------------------------|--------------------|-----------------------------------------------------------------------------|
+| `onStartRuntime()`                 | Play pressed       | Initialize physics, start sounds with `playOnStart`, reset animated sprites |
+| `onUpdateRuntime(timestep)`        | Each frame (Play)  | Runs the scene's systems phase by phase (below), then renders               |
+| `onRenderRuntime()`                | Each frame (Pause) | Render only, no simulation                                                  |
+| `onUpdateEditor(timestep, camera)` | Each frame (Edit)  | Render with editor camera                                                   |
+| `onEndRuntime()`                   | Stop pressed       | Stop sounds, destroy physics                                                |
+| `onViewportResize(size)`           | Viewport resized   | Resize all cameras                                                          |
+
+### Systems and phases {#systems}
+
+`onUpdateRuntime()` holds no gameplay: it runs the systems of the scene's `SystemSchedule`
+(`Scene::getSystems()`), phase by phase, then prepares the world transforms and renders. Within a phase, systems run
+in insertion order. Once the game is won or lost (`Victory` / `Death`), only the `Ended` phase runs.
+
+| Phase         | Engine systems                                                                  | Contract                                  |
+|---------------|---------------------------------------------------------------------------------|-------------------------------------------|
+| `Scripts`     | `owl.scripts` (native and Lua `on_update`)                                      | May move, create or destroy entities      |
+| `PrePhysics`  | `owl.fly_cameras`, `owl.voxel_players`, `owl.raycast_walls`, `owl.player_input` | Gameplay controllers before the step      |
+| `Physics`     | `owl.physics` (fixed-step Box2D, then `on_collision`)                           | Owns the physics step                     |
+| `PostPhysics` | `owl.entity_links`, `owl.triggers`                                              | Last phase allowed to change the world    |
+| `Late`        | `owl.sound`, `owl.sprite_animation`                                             | Reads the settled world (caches armed)    |
+| `Ended`       | `owl.game_over` ("Victory!" / "You loose!" message)                             | Replaces every other phase once game over |
+
+Every new scene copies `SystemSchedule::getDefault()`. A game changes it once, before loading its scenes, or edits
+one scene's schedule; `Scene::copy()` (Play) keeps the scene's schedule:
+
+```c++
+auto& systems = scene::SystemSchedule::getDefault();
+systems.add({.name = "game.score", .phase = scene::SystemPhase::PostPhysics, .update = &updateScore});
+systems.insertBefore("owl.physics", {.name = "game.wind", .phase = {}, .update = &applyWind});
+systems.replace("owl.game_over", &showMyGameOverScreen);
+systems.remove("owl.voxel_players");
+```
+
+The engine systems live in `scene::systems` (private, `source/owl/private/scene/systems/`).
 
 ## Component Reference {#components}
 
