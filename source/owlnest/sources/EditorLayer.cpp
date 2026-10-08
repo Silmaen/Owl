@@ -10,8 +10,6 @@
 
 #include "AssetKind.h"
 #include "EditorResources.h"
-#include "commands/EntityCommands.h"
-#include "commands/PrefabCommands.h"
 #include "document/AnimationDocument.h"
 #include "document/CodeEditorDocument.h"
 #include "document/NodeGraphDocument.h"
@@ -24,7 +22,6 @@
 #include <gui/utils.h>
 #include <physics/PhysicCommand.h>
 #include <platform/AtomicFile.h>
-#include <scene/PrefabSerializer.h>
 #include <scene/component/components.h>
 #include <sound/SoundCommand.h>
 #include <sound/SoundSystem.h>
@@ -323,6 +320,7 @@ void EditorLayer::onAttach() {
 	// Create the initial scene document. Its onAttach() initialises its own Viewport.
 	auto& initialDoc = ensureActiveSceneDocument();
 	m_sceneHierarchy.setUndoManager(&initialDoc.undoManager());
+	m_sceneHierarchy.setCommandRegistry(&m_commands);
 
 	utils::buildIconBank();
 
@@ -408,12 +406,12 @@ void EditorLayer::onAttach() {
 										auto* doc = activeSceneDocument();
 										if (doc == nullptr)
 											return;
-										if (auto ent = getSelectedEntity(); ent) {
-											doc->undoManager().push(
-													mkUniq<commands::DeleteEntityCommand>(ent, *doc->getActiveScene()));
-											doc->getActiveScene()->destroyEntity(ent);
-
+										if (const auto ent = getSelectedEntity(); ent) {
 											setSelectedEntity({});
+											std::ignore = m_commands.execute(
+													"entity.delete",
+													{{"entity", static_cast<int64_t>(static_cast<uint64_t>(ent.getUUID()))}},
+													doc->getActiveScene(), doc->undoManager());
 										}
 									});
 	// Undo/Redo
@@ -882,10 +880,10 @@ void EditorLayer::onDuplicateEntity() {
 	if (doc == nullptr || doc->state() != SceneDocument::State::Edit)
 		return;
 
-	if (const scene::Entity selectedEntity = m_sceneHierarchy.getSelectedEntity(); selectedEntity) {
-		auto dup = doc->getEditorScene()->duplicateEntity(selectedEntity);
-		doc->undoManager().push(mkUniq<commands::DuplicateEntityCommand>(selectedEntity, dup));
-	}
+	if (const scene::Entity selectedEntity = m_sceneHierarchy.getSelectedEntity(); selectedEntity)
+		std::ignore = m_commands.execute(
+				"entity.duplicate", {{"entity", static_cast<int64_t>(static_cast<uint64_t>(selectedEntity.getUUID()))}},
+				doc->getEditorScene(), doc->undoManager());
 }
 
 void EditorLayer::performUndo() {
@@ -937,23 +935,12 @@ void EditorLayer::instantiatePrefab(const std::filesystem::path& iPrefabPath, co
 	auto* doc = activeSceneDocument();
 	if (doc == nullptr || doc->state() != SceneDocument::State::Edit || !doc->getActiveScene())
 		return;
-	const auto& activeScene = doc->getActiveScene();
-	std::string assetPath = iAssetRelativePath;
-	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-		if (!assetPath.empty())
-			break;
-		if (const auto rel = iPrefabPath.lexically_relative(assetsPath); !rel.empty() && *rel.begin() != "..")
-			assetPath = rel.generic_string();
-	}
-	auto root = scene::PrefabSerializer::instantiate(iPrefabPath, activeScene, assetPath);
-	if (!root) {
-		OWL_WARN("Failed to instantiate prefab: {}.", iPrefabPath.string())
-		return;
-	}
-	const auto info = scene::PrefabSerializer::readInfo(iPrefabPath);
-	const auto name = info.has_value() ? info->name : iPrefabPath.stem().string();
-	doc->undoManager().push(mkUniq<commands::InstantiatePrefabCommand>(root, *activeScene, name));
-	setSelectedEntity(root);
+	commands::CommandArgs args{{"path", iPrefabPath.string()}};
+	if (!iAssetRelativePath.empty())
+		args.set("asset_path", iAssetRelativePath);
+	const auto& scene = doc->getActiveScene();
+	if (const auto result = m_commands.execute("prefab.instantiate", args, scene, doc->undoManager()); result)
+		setSelectedEntity(scene->findEntityByUUID(result->entity));
 }
 
 void EditorLayer::onContextualHelp() {

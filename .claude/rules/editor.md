@@ -32,6 +32,11 @@ same PR (see `ongoing-quality.md`, *Editor Coverage*).
   where nothing is edited (`InspectorEditTracker::serializationCount()` is the spy the tests check).
 - Gizmo: `Viewport` captures the transform before/after manipulation and pushes `ModifyEntityCommand`.
 - Selection is restored through each command's `selectAfterUndo` / `selectAfterRedo` hints.
+- **Command API** (`commands/CommandRegistry.h`, library `OwlNestCommands`, also linked by the runner): a discrete
+  scene change is a named command run by `CommandRegistry::execute` (or `CommandTarget::execute` from a panel),
+  never a direct scene write followed by a `push`. A new discrete action adds a `CommandSpec` (typed `ArgSpec`s,
+  description) and a test in `owlnest_tests/CommandRegistry_test.cpp`; it is then reachable from scenarios too.
+  Only gestures previewed live (inspector session, gizmo, brushes, node moves) `push` an already-applied command.
 
 ## Icons
 

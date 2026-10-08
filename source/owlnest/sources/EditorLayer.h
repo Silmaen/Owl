@@ -17,6 +17,7 @@
 #include "RecoveryManager.h"
 #include "RibbonBuilder.h"
 #include "VoxelBrush.h"
+#include "commands/CommandRegistry.h"
 #include "document/DocumentManager.h"
 #include "document/SceneDocument.h"
 #include "panel/AsyncProgressModal.h"
@@ -758,6 +759,8 @@ private:
 
 	/// Maps menu / keyboard / ribbon actions to their handlers.
 	ActionRegistry m_actionRegistry;
+	/// Named, undoable scene commands, issued by the panels, the shortcuts and the tests.
+	commands::CommandRegistry m_commands;
 	/// Scene and game packaging (wizard, validation, background export).
 	GamePackager m_packager{m_project, m_asyncProgress};
 };

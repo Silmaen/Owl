@@ -857,17 +857,45 @@ steps:
   - expect: {gamestate: health, equals: 1}
 ```
 
-| Step     | Keys                                                                                              |
-|----------|---------------------------------------------------------------------------------------------------|
-| `frames` | Number of frames to play                                                                          |
-| `input`  | `key` / `keys` (`A`..`Z`, `D0`..`D9`, `Space`, `Enter`, `Escape`, `Tab`, arrows, `LeftShift`,     |
-|          | `LeftControl` or a key code), `mouse` (`Left`, `Right`, `Middle`), `mouse_pos`, `frames` (1)      |
-| `expect` | `entity: <tag>` or `player: true` with fields `translation.x/y/z`, `rotation.z`, `scale.x/y/z`,   |
-|          | `exists`; or `gamestate: <key>`. Each check is a value or `equals` / `greater` / `less`,          |
-|          | `tolerance` for a numeric `equals`                                                                |
+| Step      | Keys                                                                                            |
+|-----------|-------------------------------------------------------------------------------------------------|
+| `frames`  | Number of frames to play                                                                        |
+| `input`   | `key` / `keys` (`A`..`Z`, `D0`..`D9`, `Space`, `Enter`, `Escape`, `Tab`, arrows, `LeftShift`,   |
+|           | `LeftControl` or a key code), `mouse` (`Left`, `Right`, `Middle`), `mouse_pos`, `frames` (1)    |
+| `expect`  | `entity: <tag>` or `player: true` with fields `translation.x/y/z`, `rotation.z`, `scale.x/y/z`, |
+|           | `exists`; or `gamestate: <key>`. Each check is a value or `equals` / `greater` / `less`,        |
+|           | `tolerance` for a numeric `equals`                                                              |
+| `command` | An editor command (see below) by name, its arguments under `args`:                              |
+|           | `{command: entity.delete, args: {entity: Crate}}`; a vector is a three-number list              |
+| `undo`    | Number of commands to undo                                                                      |
+| `redo`    | Number of commands to redo                                                                      |
 
-Expectations due at a step see the world left by the frames before it; positions are world-space. Every
+Expectations due at a step see the world left by the frames before it; positions are world-space. Commands run on
+the playing scene with an undo history of their own (`test/scenarios/editor_commands.owltest`). Every
 `test/scenarios/*.owltest` is a CTest case (label `scenario`).
+
+### Editor commands
+
+Every discrete change of a scene in Owl Nest (creating, deleting, duplicating, moving in the hierarchy, adding or
+removing a component, instantiating a prefab) is a named command of `commands::CommandRegistry`, run through the
+scene's undo manager: the hierarchy menus, the drag and drop, the Delete / Ctrl+D shortcuts, the scenario runner and
+the tests call the same commands with typed arguments, so every change is undoable whoever asked for it. A command
+that cannot run (unknown entity, wrong argument type, missing file) changes nothing and logs why.
+
+| Command                | Arguments                                                                    |
+|------------------------|------------------------------------------------------------------------------|
+| `entity.create`        | `name` (text, `Empty Entity`), `parent` (entity, root when absent)           |
+| `entity.delete`        | `entity`, `children` (bool: delete the subtree, else children move up)       |
+| `entity.duplicate`     | `entity`, `children` (bool: duplicate the subtree)                           |
+| `entity.reparent`      | `entity`, `parent` (root when absent); the world position is kept            |
+| `entity.rename`        | `entity`, `name`                                                             |
+| `entity.set_transform` | `entity`, `translation` / `rotation` (radians) / `scale` (three numbers)     |
+| `component.add`        | `entity`, `component` (display name `Circle Renderer` or file key)           |
+| `component.remove`     | `entity`, `component`                                                        |
+| `prefab.instantiate`   | `path` (prefab file), `asset_path` (link recorded, found from the folders)   |
+
+An entity argument is a UUID (integer) or a tag (first match). Continuous edits previewed live (inspector fields,
+gizmo drags, voxel brush strokes, tile painting, node moves) are recorded as one command when the gesture ends.
 
 The Edit menu labels dynamically show the description of the next undo/redo action
 (e.g., "Undo Delete 'Player'").

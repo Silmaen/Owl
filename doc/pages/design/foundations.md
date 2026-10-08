@@ -198,7 +198,7 @@ bench (PR-17) and the image tests (PR-18) of phase B are in place, and runs alon
 - ![Planned][planned] Typed Lua binding registry — one declaration per binding gives the Lua function, its
   documentation and (later) its visual-scripting node; documented-but-missing bindings either land or leave the docs
   (D-07, D-26). See [Visual scripting](visual-scripting.md)
-- ![Planned][planned] Editor command API — every editor mutation goes through a command executed by `UndoManager`;
+- ![Done][done] Editor command API — every editor mutation goes through a command executed by `UndoManager`;
   the same API drives the headless runner and the tests. See [MCP server](mcp-server.md)
 - ![Done][done] Dead code removed or wired: unused `parallelForEach`, shared `LuaEngine`, single-use
   `IFactory` (D-24, D-26, A-18)

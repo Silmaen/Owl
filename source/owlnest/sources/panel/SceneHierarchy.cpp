@@ -78,6 +78,10 @@ auto isComponentOverridden(const scene::Entity& iEntity, const std::string& iCom
 	return canonical.has_value() && link.isOverridden(*canonical, iComponentKey);
 }
 
+auto entityArgOf(const scene::Entity& iEntity) -> commands::ArgValue {
+	return static_cast<int64_t>(static_cast<uint64_t>(iEntity.getUUID()));
+}
+
 auto recordOverrides(const scene::Entity& iEntity, const std::string& iBeforeYaml) -> commands::PrefabOverrideChange {
 	const auto* scene = iEntity.getScene();
 	if (scene == nullptr)
@@ -183,9 +187,7 @@ void SceneHierarchy::renderHierarchy() {
 		ImGui::PushID("...");
 		if (ImGui::BeginPopupContextWindow(nullptr, 1)) {
 			if (gui::IconBank::instance().menuItem("add_entity", "Create Empty Entity")) {
-				auto entity = m_context->createEntity("Empty Entity");
-				if (mp_undoManager != nullptr)
-					mp_undoManager->push(mkUniq<commands::CreateEntityCommand>(entity));
+				std::ignore = getCommandTarget().execute("entity.create", {});
 			}
 			ImGui::EndPopup();
 		}
@@ -196,11 +198,8 @@ void SceneHierarchy::renderHierarchy() {
 			if (ImGui::BeginDragDropTarget()) {
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
 					const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
-					if (const auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child) {
-						if (mp_undoManager != nullptr)
-							mp_undoManager->push(mkUniq<commands::UnparentCommand>(child, *m_context));
-						m_context->unparent(child);
-					}
+					std::ignore = getCommandTarget().execute("entity.reparent",
+															 {{"entity", static_cast<int64_t>(droppedUuid)}});
 				}
 				ImGui::EndDragDropTarget();
 			}
@@ -340,11 +339,11 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 	if (ImGui::BeginDragDropTarget()) {
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HIERARCHY_ENTITY")) {
 			const uint64_t droppedUuid = *static_cast<const uint64_t*>(payload->Data);
-			if (const auto child = m_context->findEntityByUUID(core::UUID{droppedUuid}); child && child != iEntity) {
-				if (mp_undoManager != nullptr)
-					mp_undoManager->push(mkUniq<commands::ReparentCommand>(child, iEntity.getUUID(), *m_context));
-				m_context->setParent(child, iEntity);
-			}
+			if (core::UUID{droppedUuid} != iEntity.getUUID())
+				std::ignore = getCommandTarget().execute(
+						"entity.reparent",
+						{{"entity", static_cast<int64_t>(droppedUuid)},
+						 {"parent", static_cast<int64_t>(static_cast<uint64_t>(iEntity.getUUID()))}});
 		}
 
 		ImGui::EndDragDropTarget();
@@ -450,32 +449,19 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		return;
 	const auto& ib = gui::IconBank::instance();
 	// --- Create ---
-	if (ib.menuItem("add_entity", "Create Root Entity")) {
-		auto entity = m_context->createEntity("Empty Entity");
-		if (mp_undoManager != nullptr)
-			mp_undoManager->push(mkUniq<commands::CreateEntityCommand>(entity));
-	}
-	if (ib.menuItem("add_child_entity", "Create Child Entity")) {
-		auto child = m_context->createEntity("Child Entity");
-		m_context->setParent(child, iEntity);
-		if (mp_undoManager != nullptr)
-			mp_undoManager->push(mkUniq<commands::CreateEntityCommand>(child));
-	}
+	const auto target = getCommandTarget();
+	const commands::ArgValue entityArg = static_cast<int64_t>(static_cast<uint64_t>(iEntity.getUUID()));
+	if (ib.menuItem("add_entity", "Create Root Entity"))
+		std::ignore = target.execute("entity.create", {});
+	if (ib.menuItem("add_child_entity", "Create Child Entity"))
+		std::ignore = target.execute("entity.create", {{"name", std::string{"Child Entity"}}, {"parent", entityArg}});
 
 	ImGui::Separator();
 	// --- Duplicate ---
-	if (ib.menuItem("duplicate", "Duplicate Entity")) {
-		auto dup = m_context->duplicateEntity(iEntity);
-		if (mp_undoManager != nullptr)
-			mp_undoManager->push(mkUniq<commands::DuplicateEntityCommand>(iEntity, dup));
-	}
-	if (iHasChildren) {
-		if (ib.menuItem("duplicate", "Duplicate Subtree")) {
-			auto dup = m_context->duplicateSubtree(iEntity);
-			if (mp_undoManager != nullptr)
-				mp_undoManager->push(mkUniq<commands::DuplicateSubtreeCommand>(iEntity, dup, *m_context));
-		}
-	}
+	if (ib.menuItem("duplicate", "Duplicate Entity"))
+		std::ignore = target.execute("entity.duplicate", {{"entity", entityArg}});
+	if (iHasChildren && ib.menuItem("duplicate", "Duplicate Subtree"))
+		std::ignore = target.execute("entity.duplicate", {{"entity", entityArg}, {"children", true}});
 
 	// --- Prefab ---
 	ImGui::Separator();
@@ -498,13 +484,9 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 		}
 
 		ImGui::Separator();
-		if (ib.menuItem("prefab_icon", "Unlink Prefab")) {
-			auto before = EntitySnapshot::capture(iEntity);
-			iEntity.removeComponent<PrefabLink>();
-			if (mp_undoManager != nullptr)
-				mp_undoManager->push(mkUniq<commands::RemoveComponentCommand>(
-						std::move(before), EntitySnapshot::capture(iEntity), PrefabLink::name()));
-		}
+		if (ib.menuItem("prefab_icon", "Unlink Prefab"))
+			std::ignore = target.execute("component.remove",
+										 {{"entity", entityArg}, {"component", std::string{PrefabLink::name()}}});
 
 		ImGui::Separator();
 	}
@@ -538,32 +520,18 @@ void SceneHierarchy::drawEntityContextMenu(const scene::Entity& iEntity, const b
 
 	// --- Hierarchy ---
 	if (iParentId != core::UUID{0}) {
-		if (ib.menuItem("unparent", "Unparent")) {
-			if (mp_undoManager != nullptr)
-				mp_undoManager->push(mkUniq<commands::UnparentCommand>(iEntity, *m_context));
-			m_context->unparent(iEntity);
-		}
+		if (ib.menuItem("unparent", "Unparent"))
+			std::ignore = target.execute("entity.reparent", {{"entity", entityArg}});
 	}
 
 	ImGui::Separator();
 	// --- Delete ---
-	if (ib.menuItem("delete_entity", iHasChildren ? "Delete Entity Only" : "Delete Entity")) {
-		if (mp_undoManager != nullptr)
-			mp_undoManager->push(mkUniq<commands::DeleteEntityCommand>(iEntity, *m_context));
+	const bool deleteOne = ib.menuItem("delete_entity", iHasChildren ? "Delete Entity Only" : "Delete Entity");
+	const bool deleteAll = iHasChildren && ib.menuItem("delete_cascade", "Delete with Children");
+	if (deleteOne || deleteAll) {
 		if (m_selection == iEntity)
 			m_selection = {};
-		auto entity = iEntity;
-		m_context->destroyEntity(entity);
-	}
-	if (iHasChildren) {
-		if (ib.menuItem("delete_cascade", "Delete with Children")) {
-			if (mp_undoManager != nullptr)
-				mp_undoManager->push(mkUniq<commands::DeleteSubtreeCommand>(iEntity, *m_context));
-			if (m_selection == iEntity)
-				m_selection = {};
-			auto entity = iEntity;
-			m_context->destroyEntityWithChildren(entity);
-		}
+		std::ignore = target.execute("entity.delete", {{"entity", entityArg}, {"children", deleteAll}});
 	}
 
 	ImGui::EndPopup();
@@ -628,7 +596,8 @@ auto layerTypeKeyForEntity(const scene::Entity& iEntity) -> std::string {
 }
 
 template<isNamedComponent Comp>
-void addComponentPop(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const std::string& iLayerTypeKey) {
+void addComponentPop(scene::Entity& ioEntity, const commands::CommandTarget& iCommands,
+					 const std::string& iLayerTypeKey) {
 	if constexpr (isRaycastOnlyComponent<Comp>) {
 		if (!iLayerTypeKey.empty() && iLayerTypeKey != "RendererRaycast")
 			return;
@@ -645,22 +614,16 @@ void addComponentPop(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, co
 		else
 			clicked = ImGui::MenuItem(Comp::name());
 		if (clicked) {
-			auto before = EntitySnapshot::capture(ioEntity);
-			ioEntity.addComponent<Comp>();
-			auto overrides = recordOverrides(ioEntity, before.yamlData);
-			if (iUndoManager != nullptr) {
-				auto after = EntitySnapshot::capture(ioEntity);
-				auto cmd = mkUniq<commands::AddComponentCommand>(std::move(before), std::move(after), Comp::name());
-				cmd->setPrefabOverrides(std::move(overrides));
-				iUndoManager->push(std::move(cmd));
-			}
+			std::ignore = iCommands.execute(
+					"component.add", {{"entity", entityArgOf(ioEntity)}, {"component", std::string{Comp::name()}}});
 			ImGui::CloseCurrentPopup();
 		}
 	}
 }
 
 template<isNamedComponent T>
-void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, InspectorEditTracker& ioInspector) {
+void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const commands::CommandTarget& iCommands,
+				   InspectorEditTracker& ioInspector) {
 	constexpr ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
 												 ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
 												 ImGuiTreeNodeFlags_FramePadding;
@@ -721,31 +684,24 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, Insp
 		}
 		if (revertComponent)
 			revertComponentToPrefab(ioEntity, T::key(), T::name(), iUndoManager);
-		if (removeComponent) {
-			auto before = EntitySnapshot::capture(ioEntity);
-			ioEntity.removeComponent<T>();
-			auto overrides = recordOverrides(ioEntity, before.yamlData);
-			if (iUndoManager != nullptr) {
-				auto after = EntitySnapshot::capture(ioEntity);
-				auto cmd = mkUniq<commands::RemoveComponentCommand>(std::move(before), std::move(after), T::name());
-				cmd->setPrefabOverrides(std::move(overrides));
-				iUndoManager->push(std::move(cmd));
-			}
-		}
+		if (removeComponent)
+			std::ignore = iCommands.execute("component.remove",
+											{{"entity", entityArgOf(ioEntity)}, {"component", std::string{T::name()}}});
 		ImGui::PopID();
 	}
 }
 
 template<isNamedComponent... Component>
-void addComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const std::string& iLayerTypeKey,
-							const std::tuple<Component...>&) {
-	(..., addComponentPop<Component>(ioEntity, iUndoManager, iLayerTypeKey));
+void addComponentsFromTuple(scene::Entity& ioEntity, const commands::CommandTarget& iCommands,
+							const std::string& iLayerTypeKey, const std::tuple<Component...>&) {
+	(..., addComponentPop<Component>(ioEntity, iCommands, iLayerTypeKey));
 }
 
 template<isNamedComponent... Component>
-void drawComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, InspectorEditTracker& ioInspector,
+void drawComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoManager,
+							 const commands::CommandTarget& iCommands, InspectorEditTracker& ioInspector,
 							 const std::tuple<Component...>&) {
-	(..., drawComponent<Component>(ioEntity, iUndoManager, ioInspector));
+	(..., drawComponent<Component>(ioEntity, iUndoManager, iCommands, ioInspector));
 }
 
 }// namespace
@@ -809,11 +765,12 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 	}
 	if (ImGui::BeginPopup("AddComponent")) {
 		const std::string layerTypeKey = layerTypeKeyForEntity(m_selection);
-		addComponentsFromTuple(m_selection, mp_undoManager, layerTypeKey, OptionalComponents{});
+		addComponentsFromTuple(m_selection, getCommandTarget(), layerTypeKey, OptionalComponents{});
 		ImGui::EndPopup();
 	}
 	ImGui::PopItemWidth();
-	drawComponentsFromTuple(m_selection, mp_undoManager, m_inspector, gui::component::DrawableComponents{});
+	drawComponentsFromTuple(m_selection, mp_undoManager, getCommandTarget(), m_inspector,
+							gui::component::DrawableComponents{});
 }
 
 }// namespace owl::nest::panel

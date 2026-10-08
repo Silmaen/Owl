@@ -11,6 +11,7 @@
 #include <owlgui.h>
 
 #include "../UndoManager.h"
+#include "../commands/CommandRegistry.h"
 #include "InspectorEditTracker.h"
 
 #include <optional>
@@ -109,6 +110,22 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the command registry the hierarchy and the inspector menus issue their changes through.
+	 * @param[in] iCommands The registry (non-owning, may be null: the changes are then refused).
+	 */
+	void setCommandRegistry(const commands::CommandRegistry* iCommands) { mp_commands = iCommands; }
+
+	/**
+	 * @brief
+	 *  The registry bound to the edited scene and its undo manager.
+	 * @return The command target (invalid while no scene or undo manager is set).
+	 */
+	[[nodiscard]] auto getCommandTarget() const -> commands::CommandTarget {
+		return {.registry = mp_commands, .scene = m_context, .undo = mp_undoManager};
+	}
+
+	/**
+	 * @brief
 	 *  Track the currently active document so its custom panels can override the scene-based
 	 *        rendering when `Document::overridesGlobalPanels()` is true.
 	 * @param[in] iDoc Active document (non-owning, may be null when no document is open).
@@ -183,6 +200,8 @@ private:
 	InspectorEditTracker m_inspector;
 	/// Undo manager (non-owning, optional).
 	SceneUndoManager* mp_undoManager = nullptr;
+	/// Command registry (non-owning, optional).
+	const commands::CommandRegistry* mp_commands = nullptr;
 	/// Active document — when it `overridesGlobalPanels()` the panel delegates its content to it.
 	Document* mp_activeDocument = nullptr;
 	/// Owning editor layer — used for cross-document actions (e.g. opening a referenced asset).

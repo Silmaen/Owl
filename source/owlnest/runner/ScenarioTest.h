@@ -8,6 +8,9 @@
 
 #pragma once
 
+#include "UndoManager.h"
+#include "commands/CommandRegistry.h"
+
 #include <core/expected.h>
 #include <owl.h>
 #include <scene/Scene.h>
@@ -50,7 +53,7 @@ struct ScenarioCheck {
 
 /**
  * @brief
- *  One step of a scenario: play frames (holding inputs), or check the world.
+ *  One step of a scenario: play frames (holding inputs), check the world, or edit it through an editor command.
  */
 struct ScenarioStep {
 	/// Frames to play; 0 for an expectation.
@@ -69,6 +72,14 @@ struct ScenarioStep {
 	std::string gameState;
 	/// Comparisons of an expectation.
 	std::vector<ScenarioCheck> checks;
+	/// Editor command run by the step (`command:`), empty otherwise.
+	std::string command;
+	/// Arguments of the command.
+	commands::CommandArgs args;
+	/// Commands undone by the step (`undo: N`).
+	uint32_t undo{0};
+	/// Commands redone by the step (`redo: N`).
+	uint32_t redo{0};
 	/// Line of the step in the file, for the messages.
 	int line{0};
 };
@@ -127,12 +138,12 @@ public:
 
 	/**
 	 * @brief
-	 *  Advance before a frame: run the expectations due now on the state left by the previous frames, then set the
-	 *  inputs of the frame to play.
-	 * @param[in] iScene The running scene.
+	 *  Advance before a frame: run the expectations and the commands due now on the state left by the previous
+	 *  frames, then set the inputs of the frame to play.
+	 * @param[in] iScene The running scene, changed by the `command`, `undo` and `redo` steps.
 	 * @return True when the scenario is over (no frame left to play).
 	 */
-	auto beginFrame(const scene::Scene& iScene) -> bool;
+	auto beginFrame(const shared<scene::Scene>& iScene) -> bool;
 
 	/**
 	 * @brief
@@ -143,6 +154,17 @@ public:
 	 */
 	[[nodiscard]] static auto check(const ScenarioStep& iStep, const scene::Scene& iScene) -> std::string;
 
+private:
+	/**
+	 * @brief
+	 *  Run a step that plays no frame: an expectation, a command, an undo or a redo.
+	 * @param[in] iStep The step.
+	 * @param[in] iScene The running scene.
+	 * @return The failure message, empty on success.
+	 */
+	[[nodiscard]] auto runStep(const ScenarioStep& iStep, const shared<scene::Scene>& iScene) -> std::string;
+
+public:
 	/**
 	 * @brief
 	 *  Get the number of expectations that failed so far.
@@ -174,6 +196,10 @@ private:
 	uint32_t m_checks{0};
 	/// Expectations failed.
 	uint32_t m_failures{0};
+	/// Editor commands the `command` steps run (the same registry as Owl Nest).
+	commands::CommandRegistry m_commands;
+	/// Undo history of the commands run.
+	uniq<SceneUndoManager> m_undo = mkUniq<SceneUndoManager>();
 };
 
 }// namespace owl::nest::runner

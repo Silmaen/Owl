@@ -14,6 +14,7 @@
 #include <scene/Entity.h>
 #include <scene/component/components.h>
 
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cmath>
@@ -99,6 +100,41 @@ auto parseCheck(const std::string& iField, const YAML::Node& iNode, ScenarioChec
 	return false;
 }
 
+auto parseArgValue(const commands::ArgSpec& iSpec, const YAML::Node& iValue) -> std::optional<commands::ArgValue> {
+	if (iSpec.type == commands::ArgType::Vec3) {
+		if (!iValue.IsSequence() || iValue.size() != 3)
+			return std::nullopt;
+		return commands::ArgValue{math::vec3{iValue[0].as<float>(), iValue[1].as<float>(), iValue[2].as<float>()}};
+	}
+	if (!iValue.IsScalar())
+		return std::nullopt;
+	return commands::CommandRegistry::parseArg(iSpec.type, iValue.as<std::string>());
+}
+
+auto parseCommand(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
+	oStep.command = iNode["command"].as<std::string>();
+	static const commands::CommandRegistry s_registry;
+	const auto* spec = s_registry.find(oStep.command);
+	if (spec == nullptr)
+		return std::format("unknown command `{}`", oStep.command);
+	const auto args = iNode["args"];
+	if (!args)
+		return "";
+	if (!args.IsMap())
+		return "`args` is a map of the command arguments";
+	for (const auto& item: args) {
+		const auto key = item.first.as<std::string>();
+		const auto arg = std::ranges::find(spec->args, key, &commands::ArgSpec::name);
+		if (arg == spec->args.end())
+			return std::format("`{}` has no argument `{}`", oStep.command, key);
+		const auto value = parseArgValue(*arg, item.second);
+		if (!value)
+			return std::format("`{}`: `{}` has the wrong type", oStep.command, key);
+		oStep.args.set(key, *value);
+	}
+	return "";
+}
+
 auto parseStep(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 	oStep.line = iNode.Mark().line + 1;
 	if (const auto frames = iNode["frames"]; frames && !iNode["input"]) {
@@ -129,9 +165,19 @@ auto parseStep(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 			oStep.mousePos = math::vec2{pos[0].as<float>(), pos[1].as<float>()};
 		return oStep.frames == 0 ? "input frames must be positive" : "";
 	}
+	if (const auto undo = iNode["undo"]; undo) {
+		oStep.undo = undo.as<uint32_t>();
+		return oStep.undo == 0 ? "undo count must be positive" : "";
+	}
+	if (const auto redo = iNode["redo"]; redo) {
+		oStep.redo = redo.as<uint32_t>();
+		return oStep.redo == 0 ? "redo count must be positive" : "";
+	}
+	if (iNode["command"])
+		return parseCommand(iNode, oStep);
 	const auto expect = iNode["expect"];
 	if (!expect || !expect.IsMap())
-		return "a step is `frames`, `input` or `expect`";
+		return "a step is `frames`, `input`, `expect`, `command`, `undo` or `redo`";
 	if (const auto gameState = expect["gamestate"]; gameState) {
 		oStep.gameState = gameState.as<std::string>();
 		ScenarioCheck check;
@@ -258,6 +304,27 @@ auto ScenarioTest::load(const std::filesystem::path& iFile) -> expected<Scenario
 	return scenario;
 }
 
+auto ScenarioTest::runStep(const ScenarioStep& iStep, const shared<scene::Scene>& iScene) -> std::string {
+	for (uint32_t i = 0; i < iStep.undo; ++i) {
+		if (!m_undo->canUndo())
+			return std::format("line {}: nothing left to undo", iStep.line);
+		m_undo->undo(*iScene);
+	}
+	for (uint32_t i = 0; i < iStep.redo; ++i) {
+		if (!m_undo->canRedo())
+			return std::format("line {}: nothing left to redo", iStep.line);
+		m_undo->redo(*iScene);
+	}
+	if (iStep.undo > 0 || iStep.redo > 0)
+		return "";
+	if (!iStep.command.empty()) {
+		if (const auto result = m_commands.execute(iStep.command, iStep.args, iScene, *m_undo); !result)
+			return std::format("line {}: {}", iStep.line, result.error().message);
+		return "";
+	}
+	return check(iStep, *iScene);
+}
+
 auto ScenarioTest::check(const ScenarioStep& iStep, const scene::Scene& iScene) -> std::string {
 	if (!iStep.gameState.empty()) {
 		const auto& check = iStep.checks.front();
@@ -295,7 +362,7 @@ auto ScenarioTest::check(const ScenarioStep& iStep, const scene::Scene& iScene) 
 	return "";
 }
 
-auto ScenarioTest::beginFrame(const scene::Scene& iScene) -> bool {
+auto ScenarioTest::beginFrame(const shared<scene::Scene>& iScene) -> bool {
 	if (m_framesLeft > 0) {
 		--m_framesLeft;
 		if (m_framesLeft > 0)
@@ -303,8 +370,9 @@ auto ScenarioTest::beginFrame(const scene::Scene& iScene) -> bool {
 		++m_index;
 	}
 	while (m_index < m_steps.size() && m_steps[m_index].frames == 0) {
+		const auto& step = m_steps[m_index];
 		++m_checks;
-		if (const auto failure = check(m_steps[m_index], iScene); !failure.empty()) {
+		if (const auto failure = runStep(step, iScene); !failure.empty()) {
 			++m_failures;
 			OWL_ERROR("Scenario: {}.", failure)
 		}

@@ -44,6 +44,10 @@ foreach (child ${children})
         message(STATUS "OWL_MODULE_${_owl_test_module} is OFF, skipping '${child}'")
         continue()
     endif ()
+    if (${child} STREQUAL "runner_tests" AND NOT TARGET ${CMAKE_PROJECT_NAME}NestCommands)
+        message(STATUS "Owl Nest is not built, skipping 'runner_tests'")
+        continue()
+    endif ()
     if (IS_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${child})
         file(GLOB_RECURSE
                 SRCS CONFIGURE_DEPENDS
@@ -69,6 +73,7 @@ foreach (child ${children})
             if (${child} STREQUAL "runner_tests")
                 target_include_directories(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
                         ${CMAKE_SOURCE_DIR}/source/owlnest/runner)
+                target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${CMAKE_PROJECT_NAME}NestCommands)
                 target_sources(${PROJECT_PREFIX_LOWER}_${child}_unit_test PRIVATE
                         ${CMAKE_SOURCE_DIR}/source/owlnest/runner/FrameBench.cpp
                         ${CMAKE_SOURCE_DIR}/source/owlnest/runner/FrameBenchStats.cpp
