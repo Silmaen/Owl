@@ -63,7 +63,7 @@ add_subdirectory(source)
 #
 # ---=== TESTING PROCEDURES ===---
 #
-if (${PROJECT_PREFIX}_TESTING AND NOT ${PROJECT_PREFIX}_ENABLE_CLANG_TIDY)
+if (${PROJECT_PREFIX}_TESTING)
     enable_testing()
     add_subdirectory(test)
 endif ()

@@ -102,7 +102,7 @@ TEST(CoreCoverage, FactoryCreateProduct) {
 	TestProduct::s_pid = core::factoryRegisterType<TestProduct>();
 
 	// Single creation.
-	core::FactoryProduct* product = factory.createProduct("TestProduct");
+	const core::FactoryProduct* product = factory.createProduct("TestProduct");
 	ASSERT_NE(product, nullptr);
 	EXPECT_NE(product->getPid(), core::INVALID_FACTORY_PID);
 	// NOLINTBEGIN(cppcoreguidelines-owning-memory)
@@ -180,11 +180,11 @@ TEST(CoreCoverage, EventHandledFlagPropagation) {
 
 	// Dispatcher sets handled to true via OR.
 	event::EventDispatcher dispatcher(tick);
-	dispatcher.dispatch<event::AppTickEvent>([](event::Event&) { return true; });
+	dispatcher.dispatch<event::AppTickEvent>([](event::Event&) -> bool { return true; });
 	EXPECT_TRUE(tick.handled);
 
 	// Once handled, it stays handled even if a new dispatch returns false.
-	dispatcher.dispatch<event::AppTickEvent>([](event::Event&) { return false; });
+	dispatcher.dispatch<event::AppTickEvent>([](event::Event&) -> bool { return false; });
 	EXPECT_TRUE(tick.handled);
 }
 
@@ -194,7 +194,7 @@ TEST(CoreCoverage, EventDispatcherTypeMismatch) {
 
 	// Dispatch for a different type should return false and not call the callback.
 	bool called = false;
-	const bool dispatched = dispatcher.dispatch<event::AppTickEvent>([&called](event::Event&) {
+	const bool dispatched = dispatcher.dispatch<event::AppTickEvent>([&called](event::Event&) -> bool {
 		called = true;
 		return true;
 	});
@@ -423,7 +423,7 @@ TEST(CoreCoverage, AllocationStateResetState) {
 TEST(CoreCoverage, AllocationInfoToStrWithoutStacktrace) {
 	// In non-stacktrace builds, toStr should still produce a meaningful string.
 	int dummy = 0;
-	debug::AllocationInfo info(&dummy, 64);
+	const debug::AllocationInfo info(&dummy, 64);
 	const auto str = info.toStr(false, false);
 	EXPECT_FALSE(str.empty());
 	// Should mention the size.
@@ -435,7 +435,7 @@ TEST(CoreCoverage, AllocationInfoToStrWithoutStacktrace) {
 // ============================================================================
 
 TEST(CoreCoverage, SceneCameraDefaultIsOrthographic) {
-	scene::SceneCamera cam;
+	const scene::SceneCamera cam;
 	EXPECT_EQ(cam.getProjectionType(), scene::SceneCamera::ProjectionType::Orthographic);
 	EXPECT_FLOAT_EQ(cam.getOrthographicSize(), 10.0f);
 	EXPECT_FLOAT_EQ(cam.getOrthographicNearClip(), -1.0f);
@@ -520,6 +520,6 @@ TEST(CoreCoverage, SceneCameraCopyAndMove) {
 	EXPECT_FLOAT_EQ(camCopy.getPerspectiveVerticalFov(), math::radians(45.0f));
 
 	// Move constructor.
-	scene::SceneCamera camMove(std::move(cam));
+	const scene::SceneCamera camMove(std::move(cam));
 	EXPECT_EQ(camMove.getProjectionType(), scene::SceneCamera::ProjectionType::Perspective);
 }

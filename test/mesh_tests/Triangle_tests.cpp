@@ -26,7 +26,9 @@ TEST(Triangle, BasicOperations) {
 	triangle.setIndex(3);
 	EXPECT_EQ(triangle.getIndex(), 3);
 
-	MeshVertex v0, v1, v2;
+	MeshVertex v0;
+	MeshVertex v1;
+	MeshVertex v2;
 	v0.setIndex(0);
 	v1.setIndex(1);
 	v2.setIndex(2);

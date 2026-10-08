@@ -217,8 +217,8 @@ TEST_F(ChunkFixture, RevisionChangesOnlyWithContent) {
 }
 
 TEST_F(ChunkFixture, RevisionsAreUniqueAndCopiesKeepThem) {
-	Chunk first;
-	Chunk second;
+	const Chunk first;
+	const Chunk second;
 	EXPECT_NE(first.getRevision(), second.getRevision());
 	const Chunk copy{first};
 	EXPECT_EQ(copy.getRevision(), first.getRevision());

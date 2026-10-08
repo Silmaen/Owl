@@ -31,7 +31,7 @@ TEST(GameStateLua, setAndGetInt) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_int", 1));
 	inst.onCreate();
 
@@ -53,7 +53,7 @@ TEST(GameStateLua, setAndGetFloat) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_float", 1));
 	inst.onCreate();
 
@@ -75,7 +75,7 @@ TEST(GameStateLua, setAndGetString) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_string", 1));
 	inst.onCreate();
 
@@ -97,7 +97,7 @@ TEST(GameStateLua, setAndGetBool) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_bool", 1));
 	inst.onCreate();
 
@@ -120,7 +120,7 @@ TEST(GameStateLua, getWithDefault) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_default", 1));
 	inst.onCreate();
 
@@ -144,7 +144,7 @@ TEST(GameStateLua, getReturnsStoredValue) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_read", 1));
 	inst.onCreate();
 
@@ -168,7 +168,7 @@ TEST(GameStateLua, removeAndClear) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "gs_remove", 1));
 	inst.onCreate();
 

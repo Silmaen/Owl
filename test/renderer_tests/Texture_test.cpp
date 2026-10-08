@@ -46,7 +46,7 @@ TEST(TextureSpecifications, PixelSize) {
 
 // Round-trip Specification::toString/fromString — covers the parsing branches.
 TEST(TextureSpecifications, FromStringRoundTrip) {
-	Texture::Specification spec{.size = {640, 480}, .format = ImageFormat::Rgba8, .generateMips = false};
+	const Texture::Specification spec{.size = {640, 480}, .format = ImageFormat::Rgba8, .generateMips = false};
 	const std::string serialized = spec.toString();
 	Texture::Specification parsed;
 	parsed.fromString(serialized);

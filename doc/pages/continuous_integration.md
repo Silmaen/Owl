@@ -410,6 +410,11 @@ Two consequences for this repository:
 
 ## Clang-tidy scoping
 
+`linux-clang-tidy` builds the tests too (`OWL_TESTING=ON`), so both analyses cover `test/` (about 510 translation
+units): `test/.clang-tidy` inherits the root configuration minus the checks whose pattern is the point of a test
+(suspicious argument order, copies and moves under test, float loop counters, …), and the analyzer mode drops
+`EnumCastOutOfRange` and `FloatLoopCounter` on test files (`TEST_ANALYZER_EXCLUSIONS`).
+
 `Analysis / Clang-Tidy` is the only configuration this concerns. On a pull
 request it analyses only the translation units that pull request can change the
 verdict of. On `main`, on a manual run, and whenever the narrowing cannot be

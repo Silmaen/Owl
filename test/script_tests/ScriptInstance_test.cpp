@@ -59,7 +59,7 @@ TEST(ScriptInstance, createAndLifecycle) {
 									  "  destroyed = true\n"
 									  "end\n");
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	EXPECT_FALSE(inst.isValid());
 	EXPECT_TRUE(inst.create(path.string(), 42));
 	EXPECT_TRUE(inst.isValid());
@@ -98,7 +98,7 @@ TEST(ScriptInstance, createFromBuffer) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	EXPECT_TRUE(inst.createFromBuffer(data, "buf_inst", 1));
 	EXPECT_TRUE(inst.isValid());
 	inst.onCreate();
@@ -119,7 +119,7 @@ TEST(ScriptInstance, propertyRoundTrip) {
 	const std::string script = "speed = 0\nname = ''\nflag = false\ncount = 0\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "props", 1));
 
 	inst.setProperty("speed", 3.14f);
@@ -149,7 +149,7 @@ TEST(ScriptInstance, onCollision) {
 							   "end\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "collision", 1));
 
 	inst.onCollision(12345);
@@ -169,7 +169,7 @@ TEST(ScriptInstance, missingCallbacksDoNotCrash) {
 	const std::string script = "-- no callbacks defined\n";
 	const std::vector<uint8_t> data(script.begin(), script.end());
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	ASSERT_TRUE(inst.createFromBuffer(data, "empty_script", 1));
 
 	// These should not crash.
@@ -185,7 +185,7 @@ TEST(ScriptInstance, missingCallbacksDoNotCrash) {
 TEST(ScriptInstance, invalidInstanceOperations) {
 	core::Log::init(core::Log::Level::Off);
 
-	ScriptInstance inst;
+	const ScriptInstance inst;
 	EXPECT_FALSE(inst.isValid());
 
 	// These should not crash on invalid instance.
@@ -209,8 +209,8 @@ TEST(ScriptInstance, isolatedStates) {
 	const std::vector<uint8_t> data1(script1.begin(), script1.end());
 	const std::vector<uint8_t> data2(script2.begin(), script2.end());
 
-	ScriptInstance inst1;
-	ScriptInstance inst2;
+	const ScriptInstance inst1;
+	const ScriptInstance inst2;
 	ASSERT_TRUE(inst1.createFromBuffer(data1, "script1", 1));
 	ASSERT_TRUE(inst2.createFromBuffer(data2, "script2", 2));
 

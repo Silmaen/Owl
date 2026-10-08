@@ -296,7 +296,7 @@ public:
 	 * @see MeshExtraDataRangeImpl
 	 */
 	template<typename ExtraDataType>
-	auto createTriangleExtraDataRange() const -> std::vector<shared<ExtraDataType>> {
+	[[nodiscard]] auto createTriangleExtraDataRange() const -> std::vector<shared<ExtraDataType>> {
 		auto cluster = getTriangleExtraData(core::getFactoryPid<ExtraDataType>());
 		if (cluster == nullptr)
 			return {};

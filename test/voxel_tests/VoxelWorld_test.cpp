@@ -120,7 +120,7 @@ TEST_F(VoxelWorldFixture, EnumerationHelpers) {
 	world.setBlock(math::vec3i{32, 0, 0}, 1);
 	EXPECT_EQ(world.chunkCoordinates().size(), 2u);
 	size_t visited = 0;
-	world.forEachChunk([&visited](const math::vec3i&, const Chunk&) { ++visited; });
+	world.forEachChunk([&visited](const math::vec3i&, const Chunk&) -> void { ++visited; });
 	EXPECT_EQ(visited, 2u);
 	world.clear();
 	EXPECT_EQ(world.chunkCount(), 0u);

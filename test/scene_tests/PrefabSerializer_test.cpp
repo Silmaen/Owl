@@ -372,7 +372,7 @@ TEST(PrefabSerializer, ApplyToInstanceInvalidEntity) {
 	core::Log::init(core::Log::Level::Off);
 
 	auto scene = mkShared<Scene>();
-	Entity invalid;
+	const Entity invalid;
 	EXPECT_FALSE(PrefabSerializer::applyToInstance("/tmp/whatever.owlprefab", invalid, *scene));
 
 	core::Log::invalidate();
@@ -477,7 +477,7 @@ TEST(PrefabSerializer, RevertInstanceInvalidEntity) {
 	core::Log::init(core::Log::Level::Off);
 
 	auto scene = mkShared<Scene>();
-	Entity invalid;
+	const Entity invalid;
 	EXPECT_FALSE(PrefabSerializer::revertInstance("/tmp/whatever.owlprefab", invalid, *scene));
 
 	core::Log::invalidate();

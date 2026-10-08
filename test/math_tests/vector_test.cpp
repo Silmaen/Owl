@@ -90,7 +90,7 @@ TEST(math, vectorsComponents) {
 
 
 TEST(math, vectorCrossProduct) {
-	vec3 test{1, 2, 3};
+	const vec3 test{1, 2, 3};
 	constexpr vec3 test2{3, 4, 1};
 	vec3 res = test ^ test2;
 	EXPECT_NEAR(res.x(), -10, 0.001);

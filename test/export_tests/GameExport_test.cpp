@@ -49,7 +49,7 @@ void writeFile(const std::filesystem::path& iPath, const std::string& iContent) 
 }
 
 auto readFile(const std::filesystem::path& iPath) -> std::string {
-	std::ifstream in(iPath, std::ios::binary);
+	const std::ifstream in(iPath, std::ios::binary);
 	std::stringstream buffer;
 	buffer << in.rdbuf();
 	return buffer.str();

@@ -450,8 +450,8 @@ TEST(EntityComponentCoverage, PrefabLink) {
 	auto& pl = ent.addComponent<component::PrefabLink>();
 	pl.prefabAssetPath = "prefabs/enemy.owlprefab";
 	pl.syncedVersion = 3;
-	pl.uuidMapping.push_back({100, 200});
-	pl.overriddenComponents.push_back("200:Transform");
+	pl.uuidMapping.emplace_back(100, 200);
+	pl.overriddenComponents.emplace_back("200:Transform");
 	EXPECT_TRUE(ent.hasComponent<component::PrefabLink>());
 	EXPECT_EQ(ent.getComponent<component::PrefabLink>().prefabAssetPath, "prefabs/enemy.owlprefab");
 	EXPECT_EQ(ent.getComponent<component::PrefabLink>().syncedVersion, 3u);

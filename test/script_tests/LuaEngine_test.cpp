@@ -35,7 +35,7 @@ auto writeTempScript(const std::filesystem::path& iDir, const std::string& iFile
 
 TEST(LuaEngine, creation) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	EXPECT_TRUE(engine.isValid());
 	EXPECT_NE(engine.getState(), nullptr);
 	owl::core::Log::invalidate();
@@ -43,7 +43,7 @@ TEST(LuaEngine, creation) {
 
 TEST(LuaEngine, loadAndCallFunction) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	const auto dir = std::filesystem::temp_directory_path() / "owl_luaengine_test_1";
@@ -68,7 +68,7 @@ TEST(LuaEngine, loadAndCallFunction) {
 
 TEST(LuaEngine, loadBuffer) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	const std::string script = "greeting = 'hello from buffer'";
@@ -85,7 +85,7 @@ TEST(LuaEngine, loadBuffer) {
 
 TEST(LuaEngine, syntaxError) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	const std::string script = "this is not valid lua!!!";
@@ -98,7 +98,7 @@ TEST(LuaEngine, syntaxError) {
 
 TEST(LuaEngine, runtimeError) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	const std::string script = "function crashMe()\n  error('boom')\nend\n";
@@ -112,7 +112,7 @@ TEST(LuaEngine, runtimeError) {
 
 TEST(LuaEngine, callFunctionWithFloatArg) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	const std::string script = "function on_update(dt)\n  delta = dt\nend\n";
@@ -130,7 +130,7 @@ TEST(LuaEngine, callFunctionWithFloatArg) {
 
 TEST(LuaEngine, callFunctionWithIntArg) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	const std::string script = "function on_collision(otherId)\n  collider = otherId\nend\n";
@@ -148,7 +148,7 @@ TEST(LuaEngine, callFunctionWithIntArg) {
 
 TEST(LuaEngine, callNonExistentFunction) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	EXPECT_FALSE(engine.callFunction("nope"));
@@ -160,7 +160,7 @@ TEST(LuaEngine, callNonExistentFunction) {
 
 TEST(LuaEngine, globalGetSet) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	// Float
@@ -197,7 +197,7 @@ TEST(LuaEngine, globalGetSet) {
 
 TEST(LuaEngine, wrongTypeReturnsNullopt) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	engine.setGlobal("aString", std::string("text"));
@@ -216,7 +216,7 @@ TEST(LuaEngine, wrongTypeReturnsNullopt) {
 
 TEST(LuaEngine, sandboxing) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	// io library should not be available.
@@ -228,7 +228,7 @@ TEST(LuaEngine, sandboxing) {
 	EXPECT_FALSE(val.value());
 
 	// os library should not be available.
-	LuaEngine engine2;
+	const LuaEngine engine2;
 	const std::string scriptOs = "result = (os ~= nil)";
 	const std::vector<uint8_t> dataOs(scriptOs.begin(), scriptOs.end());
 	ASSERT_TRUE(engine2.loadBuffer(dataOs, "sandbox_os"));
@@ -237,7 +237,7 @@ TEST(LuaEngine, sandboxing) {
 	EXPECT_FALSE(val.value());
 
 	// dofile should not be available.
-	LuaEngine engine3;
+	const LuaEngine engine3;
 	const std::string scriptDofile = "result = (dofile ~= nil)";
 	const std::vector<uint8_t> dataDofile(scriptDofile.begin(), scriptDofile.end());
 	ASSERT_TRUE(engine3.loadBuffer(dataDofile, "sandbox_dofile"));
@@ -246,7 +246,7 @@ TEST(LuaEngine, sandboxing) {
 	EXPECT_FALSE(val.value());
 
 	// math library SHOULD be available.
-	LuaEngine engine4;
+	const LuaEngine engine4;
 	const std::string scriptMath = "result = (math ~= nil)";
 	const std::vector<uint8_t> dataMath(scriptMath.begin(), scriptMath.end());
 	ASSERT_TRUE(engine4.loadBuffer(dataMath, "sandbox_math"));
@@ -259,7 +259,7 @@ TEST(LuaEngine, sandboxing) {
 
 TEST(LuaEngine, loadNonexistentFile) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	EXPECT_FALSE(engine.loadScript("/nonexistent/path/to/script.lua"));

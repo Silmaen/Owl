@@ -65,14 +65,14 @@ void roundTrip(const char* iCaseName, Mutate&& iMutate, Verify&& iVerify) {
 TEST(ComponentRoundTrip, UiRect) {
 	roundTrip(
 			"UiRect",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& rect = iEnt.addComponent<scene::component::UiRect>();
 				rect.anchor = scene::component::UiRect::Anchor::BottomRight;
 				rect.pivot = {0.25f, 0.75f};
 				rect.size = {200.f, 50.f};
 				rect.anchorOffset = {-10.f, 5.f};
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& rect = iEnt.getComponent<scene::component::UiRect>();
 				EXPECT_EQ(rect.anchor, scene::component::UiRect::Anchor::BottomRight);
 				EXPECT_NEAR(rect.pivot.x(), 0.25f, 0.001f);
@@ -87,7 +87,7 @@ TEST(ComponentRoundTrip, UiRect) {
 TEST(ComponentRoundTrip, UiText) {
 	roundTrip(
 			"UiText",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& uiText = iEnt.addComponent<scene::component::UiText>();
 				uiText.text = "hello";
 				uiText.color = {0.1f, 0.2f, 0.3f, 0.4f};
@@ -96,7 +96,7 @@ TEST(ComponentRoundTrip, UiText) {
 				uiText.kerning = 1.5f;
 				uiText.lineSpacing = 2.f;
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& t = iEnt.getComponent<scene::component::UiText>();
 				EXPECT_EQ(t.text, "hello");
 				EXPECT_NEAR(t.color.x(), 0.1f, 0.01f);
@@ -110,7 +110,7 @@ TEST(ComponentRoundTrip, UiText) {
 TEST(ComponentRoundTrip, UiButton) {
 	roundTrip(
 			"UiButton",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& b = iEnt.addComponent<scene::component::UiButton>();
 				b.normalColor = {0.1f, 0.2f, 0.3f, 1.f};
 				b.hoverColor = {0.2f, 0.3f, 0.4f, 1.f};
@@ -118,7 +118,7 @@ TEST(ComponentRoundTrip, UiButton) {
 				b.disabledColor = {0.0f, 0.0f, 0.0f, 0.5f};
 				b.onClickCallback = "do_thing";
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& b = iEnt.getComponent<scene::component::UiButton>();
 				EXPECT_NEAR(b.normalColor.x(), 0.1f, 0.01f);
 				EXPECT_NEAR(b.hoverColor.x(), 0.2f, 0.01f);
@@ -132,7 +132,7 @@ TEST(ComponentRoundTrip, UiButton) {
 TEST(ComponentRoundTrip, UiSlider) {
 	roundTrip(
 			"UiSlider",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& s = iEnt.addComponent<scene::component::UiSlider>();
 				s.value = 0.6f;
 				s.minValue = -1.f;
@@ -142,7 +142,7 @@ TEST(ComponentRoundTrip, UiSlider) {
 				s.handleColor = {0.3f, 0.3f, 0.3f, 1.f};
 				s.onValueChangedCallback = "value_cb";
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& s = iEnt.getComponent<scene::component::UiSlider>();
 				EXPECT_NEAR(s.value, 0.6f, 0.001f);
 				EXPECT_NEAR(s.minValue, -1.f, 0.001f);
@@ -155,13 +155,13 @@ TEST(ComponentRoundTrip, UiSlider) {
 TEST(ComponentRoundTrip, UiProgressBar) {
 	roundTrip(
 			"UiProgressBar",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& p = iEnt.addComponent<scene::component::UiProgressBar>();
 				p.value = 0.42f;
 				p.backgroundColor = {0.05f, 0.05f, 0.05f, 1.f};
 				p.fillColor = {0.5f, 0.7f, 0.5f, 1.f};
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& p = iEnt.getComponent<scene::component::UiProgressBar>();
 				EXPECT_NEAR(p.value, 0.42f, 0.001f);
 				EXPECT_NEAR(p.backgroundColor.x(), 0.05f, 0.01f);
@@ -172,11 +172,11 @@ TEST(ComponentRoundTrip, UiProgressBar) {
 TEST(ComponentRoundTrip, UiImage) {
 	roundTrip(
 			"UiImage",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& img = iEnt.addComponent<scene::component::UiImage>();
 				img.tint = {0.5f, 0.6f, 0.7f, 1.f};
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& img = iEnt.getComponent<scene::component::UiImage>();
 				EXPECT_NEAR(img.tint.x(), 0.5f, 0.01f);
 				EXPECT_NEAR(img.tint.y(), 0.6f, 0.01f);
@@ -186,7 +186,7 @@ TEST(ComponentRoundTrip, UiImage) {
 TEST(ComponentRoundTrip, UiPanel) {
 	roundTrip(
 			"UiPanel",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& p = iEnt.addComponent<scene::component::UiPanel>();
 				p.backgroundColor = {0.4f, 0.4f, 0.4f, 0.9f};
 				p.borderColor = {1.f, 0.8f, 0.f, 1.f};
@@ -194,7 +194,7 @@ TEST(ComponentRoundTrip, UiPanel) {
 				p.spacing = 4.f;
 				p.padding = 6.f;
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& p = iEnt.getComponent<scene::component::UiPanel>();
 				EXPECT_NEAR(p.backgroundColor.w(), 0.9f, 0.01f);
 				EXPECT_NEAR(p.borderColor.y(), 0.8f, 0.01f);
@@ -207,14 +207,14 @@ TEST(ComponentRoundTrip, UiPanel) {
 TEST(ComponentRoundTrip, Trigger) {
 	roundTrip(
 			"Trigger",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& trig = iEnt.addComponent<scene::component::Trigger>();
 				trig.trigger.type = scene::SceneTrigger::TriggerType::Timer;
 				trig.trigger.timerDuration = 1.5f;
 				trig.trigger.timerRepeating = true;
 				trig.trigger.callbackName = "on_tick";
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& t = iEnt.getComponent<scene::component::Trigger>();
 				EXPECT_EQ(t.trigger.type, scene::SceneTrigger::TriggerType::Timer);
 				EXPECT_NEAR(t.trigger.timerDuration, 1.5f, 0.001f);
@@ -226,12 +226,12 @@ TEST(ComponentRoundTrip, Trigger) {
 TEST(ComponentRoundTrip, TriggerInteraction) {
 	roundTrip(
 			"TriggerInteraction",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& trig = iEnt.addComponent<scene::component::Trigger>();
 				trig.trigger.type = scene::SceneTrigger::TriggerType::Interaction;
 				trig.trigger.interactionRange = 3.5f;
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& t = iEnt.getComponent<scene::component::Trigger>();
 				EXPECT_EQ(t.trigger.type, scene::SceneTrigger::TriggerType::Interaction);
 				EXPECT_NEAR(t.trigger.interactionRange, 3.5f, 0.001f);
@@ -241,13 +241,13 @@ TEST(ComponentRoundTrip, TriggerInteraction) {
 TEST(ComponentRoundTrip, TriggerTeleport) {
 	roundTrip(
 			"TriggerTeleport",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& trig = iEnt.addComponent<scene::component::Trigger>();
 				trig.trigger.type = scene::SceneTrigger::TriggerType::Teleport;
 				trig.trigger.levelName = "level_2";
 				trig.trigger.targetName = "spawn_a";
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& t = iEnt.getComponent<scene::component::Trigger>();
 				EXPECT_EQ(t.trigger.levelName, "level_2");
 				EXPECT_EQ(t.trigger.targetName, "spawn_a");
@@ -257,7 +257,7 @@ TEST(ComponentRoundTrip, TriggerTeleport) {
 TEST(ComponentRoundTrip, SoundSource) {
 	roundTrip(
 			"SoundSource",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& [sound] = iEnt.addComponent<scene::component::SoundSource>();
 				sound.soundAsset = "music/intro.wav";
 				sound.category = scene::SceneSound::Category::Music;
@@ -269,7 +269,7 @@ TEST(ComponentRoundTrip, SoundSource) {
 				sound.maxDistance = 25.f;
 				sound.rolloff = 0.8f;
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& [sound] = iEnt.getComponent<scene::component::SoundSource>();
 				EXPECT_EQ(sound.soundAsset, "music/intro.wav");
 				EXPECT_EQ(sound.category, scene::SceneSound::Category::Music);
@@ -286,14 +286,14 @@ TEST(ComponentRoundTrip, SoundSource) {
 TEST(ComponentRoundTrip, BackgroundTexture) {
 	roundTrip(
 			"BackgroundTexture",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& bg = iEnt.addComponent<scene::component::BackgroundTexture>();
 				bg.mode = scene::component::BackgroundTexture::Mode::Skybox;
 				bg.type = scene::component::BackgroundTexture::Type::Gradient;
 				bg.color = {0.1f, 0.2f, 0.3f, 1.f};
 				bg.topColor = {0.4f, 0.5f, 0.6f, 1.f};
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& bg = iEnt.getComponent<scene::component::BackgroundTexture>();
 				EXPECT_EQ(bg.mode, scene::component::BackgroundTexture::Mode::Skybox);
 				EXPECT_EQ(bg.type, scene::component::BackgroundTexture::Type::Gradient);
@@ -305,7 +305,7 @@ TEST(ComponentRoundTrip, BackgroundTexture) {
 TEST(ComponentRoundTrip, PrefabLink) {
 	roundTrip(
 			"PrefabLink",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& link = iEnt.addComponent<scene::component::PrefabLink>();
 				link.prefabAssetPath = "prefabs/enemy.owlprefab";
 				link.syncedVersion = 5;
@@ -314,7 +314,7 @@ TEST(ComponentRoundTrip, PrefabLink) {
 				link.overriddenComponents.emplace_back("2001:Transform");
 				link.overriddenComponents.emplace_back("2002:Tag");
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& link = iEnt.getComponent<scene::component::PrefabLink>();
 				EXPECT_EQ(link.prefabAssetPath, "prefabs/enemy.owlprefab");
 				EXPECT_EQ(link.syncedVersion, 5u);
@@ -329,7 +329,7 @@ TEST(ComponentRoundTrip, PrefabLink) {
 TEST(ComponentRoundTrip, PhysicBody) {
 	roundTrip(
 			"PhysicBody",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& [body] = iEnt.addComponent<scene::component::PhysicBody>();
 				body.type = scene::SceneBody::BodyType::Kinematic;
 				body.density = 2.f;
@@ -338,7 +338,7 @@ TEST(ComponentRoundTrip, PhysicBody) {
 				body.fixedRotation = true;
 				body.colliderSize = {2.f, 1.f, 1.f};
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				const auto& [body] = iEnt.getComponent<scene::component::PhysicBody>();
 				EXPECT_EQ(body.type, scene::SceneBody::BodyType::Kinematic);
 				EXPECT_NEAR(body.density, 2.f, 0.01f);
@@ -421,7 +421,7 @@ TEST(UiRect, ComputePositionWithPivotAndOffset) {
 TEST(ComponentRoundTrip, VoxelWorld) {
 	roundTrip(
 			"VoxelWorld",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& vw = iEnt.addComponent<scene::component::VoxelWorld>();
 				data::voxel::BlockType stone;
 				stone.name = "stone";
@@ -438,7 +438,7 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 				vw.editorStreamRadius = 12;
 				vw.editorStreamHeight = 5;
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				ASSERT_TRUE(iEnt.hasComponent<scene::component::VoxelWorld>());
 				const auto& vw = iEnt.getComponent<scene::component::VoxelWorld>();
 				ASSERT_EQ(vw.registry.count(), 2u);// air + stone
@@ -458,12 +458,12 @@ TEST(ComponentRoundTrip, VoxelWorld) {
 TEST(ComponentRoundTrip, FlyCamera) {
 	roundTrip(
 			"FlyCamera",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& fly = iEnt.addComponent<scene::component::FlyCamera>();
 				fly.moveSpeed = 12.5f;
 				fly.lookSpeed = 2.25f;
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				ASSERT_TRUE(iEnt.hasComponent<scene::component::FlyCamera>());
 				const auto& fly = iEnt.getComponent<scene::component::FlyCamera>();
 				EXPECT_FLOAT_EQ(fly.moveSpeed, 12.5f);
@@ -474,7 +474,7 @@ TEST(ComponentRoundTrip, FlyCamera) {
 TEST(ComponentRoundTrip, VoxelPlayer) {
 	roundTrip(
 			"VoxelPlayer",
-			[](scene::Entity& iEnt) {
+			[](scene::Entity& iEnt) -> void {
 				auto& vp = iEnt.addComponent<scene::component::VoxelPlayer>();
 				vp.walkSpeed = 6.5f;
 				vp.runSpeed = 11.f;
@@ -486,7 +486,7 @@ TEST(ComponentRoundTrip, VoxelPlayer) {
 				vp.placeBlock = 4;
 				vp.captureCursor = true;
 			},
-			[](const scene::Entity& iEnt) {
+			[](const scene::Entity& iEnt) -> void {
 				ASSERT_TRUE(iEnt.hasComponent<scene::component::VoxelPlayer>());
 				const auto& vp = iEnt.getComponent<scene::component::VoxelPlayer>();
 				EXPECT_FLOAT_EQ(vp.walkSpeed, 6.5f);

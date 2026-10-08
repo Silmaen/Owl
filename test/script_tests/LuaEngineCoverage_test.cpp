@@ -35,7 +35,7 @@ auto writeTempScript(const std::filesystem::path& iDir, const std::string& iFile
 
 TEST(LuaEngineCoverage, loadfileIsBlocked) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	// loadfile should have been removed by sandboxing.
@@ -51,7 +51,7 @@ TEST(LuaEngineCoverage, loadfileIsBlocked) {
 
 TEST(LuaEngineCoverage, ioLibIsBlocked) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	// Attempting to use io should fail.
@@ -66,7 +66,7 @@ TEST(LuaEngineCoverage, ioLibIsBlocked) {
 
 TEST(LuaEngineCoverage, osLibIsBlocked) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	// Attempting to use os should fail.
@@ -80,7 +80,7 @@ TEST(LuaEngineCoverage, osLibIsBlocked) {
 
 TEST(LuaEngineCoverage, safeLibsAvailable) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	// table library should be available.
@@ -95,7 +95,7 @@ TEST(LuaEngineCoverage, safeLibsAvailable) {
 
 	// string library should be available.
 	{
-		LuaEngine engine2;
+		const LuaEngine engine2;
 		const std::string script = "result = (string ~= nil)";
 		const std::vector<uint8_t> data(script.begin(), script.end());
 		ASSERT_TRUE(engine2.loadBuffer(data, "string_check"));
@@ -106,7 +106,7 @@ TEST(LuaEngineCoverage, safeLibsAvailable) {
 
 	// utf8 library should be available.
 	{
-		LuaEngine engine3;
+		const LuaEngine engine3;
 		const std::string script = "result = (utf8 ~= nil)";
 		const std::vector<uint8_t> data(script.begin(), script.end());
 		ASSERT_TRUE(engine3.loadBuffer(data, "utf8_check"));
@@ -117,7 +117,7 @@ TEST(LuaEngineCoverage, safeLibsAvailable) {
 
 	// coroutine library should be available.
 	{
-		LuaEngine engine4;
+		const LuaEngine engine4;
 		const std::string script = "result = (coroutine ~= nil)";
 		const std::vector<uint8_t> data(script.begin(), script.end());
 		ASSERT_TRUE(engine4.loadBuffer(data, "coroutine_check"));
@@ -131,7 +131,7 @@ TEST(LuaEngineCoverage, safeLibsAvailable) {
 
 TEST(LuaEngineCoverage, loadBufferSyntaxError) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	// Syntax error in buffer.
@@ -144,7 +144,7 @@ TEST(LuaEngineCoverage, loadBufferSyntaxError) {
 
 TEST(LuaEngineCoverage, loadBufferRuntimeError) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	// Runtime error during chunk execution (top level code that errors).
@@ -157,7 +157,7 @@ TEST(LuaEngineCoverage, loadBufferRuntimeError) {
 
 TEST(LuaEngineCoverage, callFunctionWithFloatRuntimeError) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	const std::string script = "function crashFloat(dt)\n  error('float boom')\nend\n";
@@ -170,7 +170,7 @@ TEST(LuaEngineCoverage, callFunctionWithFloatRuntimeError) {
 
 TEST(LuaEngineCoverage, callFunctionWithIntRuntimeError) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	const std::string script = "function crashInt(id)\n  error('int boom')\nend\n";
@@ -183,7 +183,7 @@ TEST(LuaEngineCoverage, callFunctionWithIntRuntimeError) {
 
 TEST(LuaEngineCoverage, emptyBuffer) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	// Empty buffer should load successfully (empty chunk).
@@ -195,7 +195,7 @@ TEST(LuaEngineCoverage, emptyBuffer) {
 
 TEST(LuaEngineCoverage, loadScriptBadSyntax) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	const auto dir = owl::test::getRootPath() / "output" / "test_tmp_lua_cov";
@@ -208,7 +208,7 @@ TEST(LuaEngineCoverage, loadScriptBadSyntax) {
 
 TEST(LuaEngineCoverage, getGlobalWrongTypes) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	LuaEngine engine;
+	const LuaEngine engine;
 	ASSERT_TRUE(engine.isValid());
 
 	// Set an integer and try to read it as other types.
@@ -230,8 +230,8 @@ TEST(LuaEngineCoverage, multipleScriptsIsolation) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 
 	// Two engines should be isolated.
-	LuaEngine engine1;
-	LuaEngine engine2;
+	const LuaEngine engine1;
+	const LuaEngine engine2;
 	ASSERT_TRUE(engine1.isValid());
 	ASSERT_TRUE(engine2.isValid());
 

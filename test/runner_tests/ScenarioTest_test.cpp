@@ -170,6 +170,7 @@ TEST_F(ScenarioFile, RunnerFailsOnABrokenExpectation) {
 #ifdef OWL_PLATFORM_WINDOWS
 	command = std::format(R"("{}")", command);
 #endif
+	// NOLINTNEXTLINE(bugprone-command-processor) The scenario is played by the runner process itself.
 	EXPECT_NE(std::system(command.c_str()), 0);
 #endif
 }

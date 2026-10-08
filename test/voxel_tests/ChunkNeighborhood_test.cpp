@@ -48,20 +48,27 @@ struct Palette {
 };
 
 // Random blocks (with random orientations) over the 3x3x3 chunks around the origin chunk.
+// 70 % stone, 20 % glass, 10 % water.
+auto pick(const Palette& iPalette, const int iRoll) -> BlockId {
+	if (iRoll < 7)
+		return iPalette.stone;
+	return iRoll < 9 ? iPalette.glass : iPalette.water;
+}
+
 auto makeRandomWorld(const Palette& iPalette, const uint32_t iSeed, const double iDensity) -> VoxelWorld {
 	VoxelWorld world;
 	std::mt19937 rng(iSeed);
 	std::bernoulli_distribution solid(iDensity);
 	std::uniform_int_distribution<int> kind(0, 9);
 	std::uniform_int_distribution<int> orientation(0, 5);
-	const int32_t size = static_cast<int32_t>(g_ChunkSize);
+	const auto size = static_cast<int32_t>(g_ChunkSize);
 	for (int32_t y = -size; y < 2 * size; ++y) {
 		for (int32_t z = -size; z < 2 * size; ++z) {
 			for (int32_t x = -size; x < 2 * size; ++x) {
 				if (!solid(rng))
 					continue;
 				const int k = kind(rng);
-				const BlockId id = k < 7 ? iPalette.stone : (k < 9 ? iPalette.glass : iPalette.water);
+				const BlockId id = pick(iPalette, k);
 				world.setBlock(math::vec3i{x, y, z}, id,
 							   packMeta({.orientation = static_cast<BlockOrientation>(orientation(rng)), .state = 0}));
 			}
@@ -72,7 +79,7 @@ auto makeRandomWorld(const Palette& iPalette, const uint32_t iSeed, const double
 
 auto liveMesh(const VoxelWorld& iWorld, const BlockRegistry& iRegistry, const math::vec3i& iCoord, const bool iAo)
 		-> ChunkMeshSet {
-	const int32_t size = static_cast<int32_t>(g_ChunkSize);
+	const auto size = static_cast<int32_t>(g_ChunkSize);
 	const ChunkMesher::NeighborProvider neighbor = [&](const int32_t iX, const int32_t iY,
 													   const int32_t iZ) -> BlockId {
 		return iWorld.getBlock(math::vec3i{iCoord.x() * size + iX, iCoord.y() * size + iY, iCoord.z() * size + iZ});

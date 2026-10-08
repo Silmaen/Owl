@@ -19,7 +19,7 @@
         "OWL_ENABLE_CLANG_TIDY": "ON",
         "OWL_ENABLE_COVERAGE": "OFF",
         "OWL_ENABLE_STACKTRACE": "OFF",
-        "OWL_TESTING": "OFF"
+        "OWL_TESTING": "ON"
       },
       "vendor": {
         "silmaen": {

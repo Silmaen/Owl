@@ -46,7 +46,7 @@ TEST(FrameBenchStats, SummarizeUnsortedSeries) {
 
 TEST(FrameBenchOptions, ParseAndReject) {
 	const auto scene = owl::test::getRootPath() / "sample_project" / "scenes" / "main_menu.owl";
-	std::string sceneArg = scene.string();
+	const std::string sceneArg = scene.string();
 	std::array<std::string, 12> storage{"OwlRunner", "--frame-bench", sceneArg, "--frames", "42",      "--warmup",
 										"3",         "--backend",     "null",   "--size",   "640x480", "--vsync"};
 	std::vector<char*> argv;
@@ -93,6 +93,7 @@ TEST(FrameBenchRun, NullBackendWritesReport) {
 	// cmd /c strips the first and last quote of a line that starts with one: wrap the whole line.
 	command = std::format(R"("{}")", command);
 #endif
+	// NOLINTNEXTLINE(bugprone-command-processor) The bench is the runner process itself.
 	ASSERT_EQ(std::system(command.c_str()), 0);
 	ASSERT_TRUE(exists(out));
 	const auto report = YAML::LoadFile(out.string());

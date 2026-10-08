@@ -109,7 +109,7 @@ TEST(SoundCoverage, stopEntitySoundInvalidEntity) {
 	SoundSystem::init();
 
 	// Default-constructed entity is invalid.
-	owl::scene::Entity invalidEntity;
+	const owl::scene::Entity invalidEntity;
 	SoundHelper::stopEntitySound(invalidEntity);// Should not crash.
 
 	SoundCommand::invalidate();
@@ -121,7 +121,7 @@ TEST(SoundCoverage, playEntitySoundInvalidEntity) {
 	SoundCommand::create(SoundAPI::Type::Null);
 	SoundSystem::init();
 
-	owl::scene::Entity invalidEntity;
+	const owl::scene::Entity invalidEntity;
 	EXPECT_EQ(SoundHelper::playEntitySound(invalidEntity), invalidSoundHandle);
 
 	SoundCommand::invalidate();

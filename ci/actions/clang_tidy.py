@@ -66,6 +66,29 @@ TOOL_ARGS: dict[str, list[str]] = {
 }
 TOOL_LABELS: dict[str, str] = {"tidy": "clang-tidy", "analyzer": "clang static analyzer"}
 
+# Analyzer checks a test is right to trip: it casts out-of-range values to test enum validation, and samples
+# curves with float loop counters. `test/.clang-tidy` relaxes the tidy set; the analyzer set is given on the
+# command line, which overrides any configuration file, so the test exclusions are added here.
+TEST_ANALYZER_EXCLUSIONS: tuple[str, ...] = (
+    "clang-analyzer-optin.core.EnumCastOutOfRange",
+    "clang-analyzer-security.FloatLoopCounter",
+)
+
+
+def tool_arguments(tool: str, source: Path) -> list[str]:
+    """
+    clang-tidy arguments selecting the check set of a tool for one translation unit.
+
+    :param tool: ``tidy`` or ``analyzer``.
+    :param source: The translation unit.
+    :return: The arguments; analyzer runs on a test file also exclude `TEST_ANALYZER_EXCLUSIONS`.
+    """
+    arguments = list(TOOL_ARGS[tool])
+    if tool == "analyzer" and (root / "test") in source.parents:
+        arguments[0] += "".join(f",-{check}" for check in TEST_ANALYZER_EXCLUSIONS)
+    return arguments
+
+
 # Repo-relative paths whose change invalidates the file-level mapping: compiler
 # flags, dependency versions or the check list itself moved, so every
 # translation unit needs re-analysing regardless of what else the diff touches.
@@ -563,13 +586,14 @@ class ClangTidy(BaseAction):
         if tool not in TOOL_ARGS:
             log.error(f"clang-tidy: unknown --tool={tool!r}, expected tidy or analyzer.")
             return 1
-        tool_args = TOOL_ARGS[tool]
 
         ordered = sorted(selected)
         log.info(f"Running {executable} on {len(ordered)} translation unit(s) with {jobs} parallel job(s).")
         failed: list[Path] = []
         with ThreadPoolExecutor(max_workers=jobs) as pool:
-            results = pool.map(lambda source: _analyse(executable, build_dir, source, tool_args), ordered)
+            results = pool.map(
+                lambda source: _analyse(executable, build_dir, source, tool_arguments(tool, source)), ordered
+            )
             for index, (source, status, output) in enumerate(results, start=1):
                 log.info(f"[{index}/{len(ordered)}] {_rel(source)}")
                 for line in output.splitlines():

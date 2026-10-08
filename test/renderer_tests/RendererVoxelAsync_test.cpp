@@ -206,7 +206,7 @@ TEST_F(RendererVoxelAsyncTest, UploadCountBudgetIsRespected) {
 	addSeparateChunks(world, 6);
 	frame(world);
 	settle();
-	for (uint32_t expected: {2u, 4u, 6u}) {
+	for (const uint32_t expected: {2u, 4u, 6u}) {
 		frame(world);
 		EXPECT_LE(stats().uploadedThisFrame, 2u);
 		EXPECT_EQ(stats().cachedMeshCount, expected);
@@ -220,7 +220,7 @@ TEST_F(RendererVoxelAsyncTest, UploadTimeBudgetStillLetsOneUploadThrough) {
 	addSeparateChunks(world, 3);
 	frame(world);
 	settle();
-	for (uint32_t expected: {1u, 2u, 3u}) {
+	for (const uint32_t expected: {1u, 2u, 3u}) {
 		frame(world);
 		EXPECT_EQ(stats().uploadedThisFrame, 1u);
 		EXPECT_EQ(stats().cachedMeshCount, expected);

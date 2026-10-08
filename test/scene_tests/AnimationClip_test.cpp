@@ -25,7 +25,7 @@ protected:
 }// namespace
 
 TEST_F(AnimationClipFixture, RoundTripDefault) {
-	AnimationClip clip;
+	const AnimationClip clip;
 	const auto yaml = clip.serializeToString("default");
 
 	AnimationClip restored;
@@ -69,7 +69,7 @@ TEST_F(AnimationClipFixture, RoundTripCustomFields) {
 }
 
 TEST_F(AnimationClipFixture, EmptySpeedCurveIsOmitted) {
-	AnimationClip clip;
+	const AnimationClip clip;
 	const auto yaml = clip.serializeToString();
 	EXPECT_EQ(yaml.find("speedCurve"), std::string::npos);
 }

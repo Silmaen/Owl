@@ -31,6 +31,7 @@
 
 using namespace owl;
 using namespace owl::script;
+using namespace std::string_literals;
 
 namespace {
 
@@ -106,7 +107,8 @@ TEST_F(LuaSandbox, dangerousGlobalsAbsent) {
 }
 
 TEST_F(LuaSandbox, hostRejectsBytecode) {
-	const std::string bytecode = "\x1bLua\x55\x00 fake binary chunk";
+	// A string literal keeps the embedded NUL: the whole fake chunk reaches the loader, not its first 5 bytes.
+	const std::string bytecode = "\x1bLua\x55\x00 fake binary chunk"s;
 	EXPECT_FALSE(engine.loadBuffer({bytecode.begin(), bytecode.end()}, "bytecode"));
 	EXPECT_EQ(engine.getLastStatus(), LuaStatus::LoadError);
 }

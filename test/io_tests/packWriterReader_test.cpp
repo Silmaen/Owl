@@ -200,7 +200,7 @@ TEST_F(PackWriterReaderTest, many_entries) {
 TEST_F(PackWriterReaderTest, empty_pack) {
 	const auto packPath = m_tempDir / "test_empty.owlpack";
 
-	PackWriter writer;
+	const PackWriter writer;
 	EXPECT_EQ(writer.entryCount(), 0u);
 	ASSERT_TRUE(writer.write(packPath));
 

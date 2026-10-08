@@ -600,7 +600,7 @@ TEST_F(AssetScannerTest, PackWriterProgressCallback) {
 	std::vector<std::pair<uint32_t, uint32_t>> progressCalls;
 	const auto packPath = m_tempDir / "test.owlpack";
 	const bool ok = writer.write(packPath, PackFlags::Default,
-								 [&progressCalls](const uint32_t iCurrent, const uint32_t iTotal) {
+								 [&progressCalls](const uint32_t iCurrent, const uint32_t iTotal) -> void {
 									 progressCalls.emplace_back(iCurrent, iTotal);
 								 });
 	EXPECT_TRUE(ok);

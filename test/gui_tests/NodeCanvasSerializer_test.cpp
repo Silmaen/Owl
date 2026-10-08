@@ -44,7 +44,7 @@ auto makeNode(const std::string& iTitle, math::vec2f iPos, std::vector<std::stri
 }// namespace
 
 TEST(NodeCanvasSerializer, EmptyCanvasRoundTrip) {
-	NodeCanvas src;
+	const NodeCanvas src;
 	const auto yaml = NodeCanvasSerializer::serializeToString(src, "empty");
 
 	NodeCanvas dst;

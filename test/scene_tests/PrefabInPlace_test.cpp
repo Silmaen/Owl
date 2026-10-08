@@ -72,7 +72,7 @@ protected:
 
 	void save() { ASSERT_TRUE(PrefabSerializer::serialize(m_srcRoot, m_source, m_prefabPath, "Crate")); }
 
-	auto sceneRef() -> shared<Scene> { return shared<Scene>(shared<Scene>{}, &m_scene); }
+	auto sceneRef() -> shared<Scene> { return {shared<Scene>{}, &m_scene}; }
 
 	[[nodiscard]] auto link() const -> PrefabLink& { return m_root.getComponent<PrefabLink>(); }
 

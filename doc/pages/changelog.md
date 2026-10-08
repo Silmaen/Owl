@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the nightly bench pinned to the agent that measured it.
+- clang-tidy and the static analyzer analyse the tests too (`test/.clang-tidy` relaxes only what a test is right to do); the 224 findings they raised are fixed.
 - Coverage gate: the `Coverage` action publishes the line and branch coverage to TeamCity, and the Linux Clang build fails when the line coverage drops more than one point below its last successful build.
 - CodeStyle `python` sub-check: `ruff check`, `ruff format --check`, `mypy` and the `ci/tests` pytest suite (never run in CI before) on the CI code (configured in `pyproject.toml`; `black`, never run, removed).
 - `OwlRunner --scenario <file.owltest>`: scripted headless runs (frames, held inputs, expectations on entities and the game state), with four sample scenarios run by CTest (label `scenario`).
@@ -88,6 +89,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `Matrix::norm()` is the Frobenius norm: it summed `a_ij * a_ji` (wrong for any non-symmetric matrix) and read out of range on a non-square one.
+- The Lua sandbox bytecode test loads its whole fake chunk: the literal was cut at its embedded NUL.
 - CodeStyle now checks `test/` and `source/owlnest/runner` (it pointed at a missing `source/owlrunner`, skipped in silence; a missing root now fails): 48 test file headers, typos and formatting fixed.
 - CI build logs: only compiler, linker and Ninja errors show as errors in TeamCity, warnings as warnings (every compiler line was red).
 - CI: the native `DefineTeamCityVariables` step runs on a host Python older than 3.12 again, and the TeamCity step ids say what they build (`Build_Preset`, `Build_Release_Main`).
