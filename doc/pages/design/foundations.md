@@ -113,8 +113,8 @@ Every fix lands with its regression test.
 - ![Done][done] Diff-scoped clang-tidy: a `ClangTidy` action driven by `compile_commands.json`, analysing on a
   pull request only the `.cpp` files the diff can affect (include closure from `ninja -t deps`), everything elsewhere
   or when in doubt, one job per available core by default (H-03)
-- ![In Progress][progress] ClangTidy multi-process with the static analyzer on the tests too, coverage gate, dead
-  `NOLINT` check (PR-19: H-03, F-07, F-04, F-08, F-09, H-07); open: lowering the cognitive-complexity threshold (75)
+- ![Done][done] ClangTidy multi-process with the static analyzer on the tests too, coverage gate, dead `NOLINT`
+  check (PR-19: H-03, F-07, F-04, F-08, F-09, H-07); cognitive-complexity threshold kept at 75
 - ![Done][done] Module dependency direction checked in CodeStyle; the 10-module cycle broken
   (PR-20: A-01, A-13)
 - ![Done][done] Tests for the CI tooling itself: pytest, ruff and mypy in CodeStyle (PR-34: H-04, H-08)
