@@ -36,7 +36,8 @@ camera controllers are `renderer`, not `input`; lifecycle is `app`, primitives a
 `.claude/rules/module-layout.md`.
 
 Modules are layered: a public header includes only its own module and lower layers, so the public API has no
-dependency cycle (checked by CodeStyle `module-deps`).
+dependency cycle (checked by CodeStyle `module-deps`). A public header includes no third-party header but EnTT, and
+imgui under `gui/` (CodeStyle `public-deps`): the other dependencies stay private to `libOwlEngine`.
 
 | Layer | Modules                               |
 |-------|---------------------------------------|

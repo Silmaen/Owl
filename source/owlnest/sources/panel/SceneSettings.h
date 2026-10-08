@@ -15,6 +15,10 @@
 
 #include <string>
 
+namespace YAML {
+class Node;
+}// namespace YAML
+
 namespace owl::nest::panel {
 
 /**

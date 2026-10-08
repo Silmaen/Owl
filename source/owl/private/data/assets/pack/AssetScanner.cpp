@@ -11,7 +11,9 @@
 #include "app/Application.h"
 
 #include <fstream>
+#include <optional>
 #include <regex>
+#include <set>
 #include <sstream>
 
 OWL_DIAG_PUSH
@@ -73,9 +75,16 @@ auto readYamlScalar(const std::filesystem::path& iFile, const char* iKey) -> std
 	return {};
 }
 
-}// namespace
+void scanSceneRecursive(const std::filesystem::path& iSceneFile, std::set<std::string>& ioVisitedScenes,
+						std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
 
-auto AssetScanner::resolveTexture(const std::string& iSerialized) -> std::optional<AssetReference> {
+void scanEntity(const YAML::Node& iEntity, const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
+				std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
+
+void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
+				 std::vector<std::string>* ioWarnings);
+
+auto resolveTexture(const std::string& iSerialized) -> std::optional<AssetReference> {
 	if (iSerialized.size() < 4)
 		return std::nullopt;
 	const auto key = iSerialized.substr(0, 4);
@@ -112,7 +121,7 @@ auto AssetScanner::resolveTexture(const std::string& iSerialized) -> std::option
 	return AssetReference{.packPath = packPath, .diskPath = resolvedPath, .assetType = AssetType::Texture};
 }
 
-auto AssetScanner::resolveFont(const std::string& iFontName) -> std::optional<AssetReference> {
+auto resolveFont(const std::string& iFontName) -> std::optional<AssetReference> {
 	if (iFontName.empty())
 		return std::nullopt;
 	if (!app::Application::instanced())
@@ -134,7 +143,7 @@ auto AssetScanner::resolveFont(const std::string& iFontName) -> std::optional<As
 	return std::nullopt;
 }
 
-auto AssetScanner::resolveSound(const std::string& iSoundAsset) -> std::optional<AssetReference> {
+auto resolveSound(const std::string& iSoundAsset) -> std::optional<AssetReference> {
 	if (iSoundAsset.empty())
 		return std::nullopt;
 	// Absolute path: resolve directly.
@@ -155,7 +164,7 @@ auto AssetScanner::resolveSound(const std::string& iSoundAsset) -> std::optional
 	return std::nullopt;
 }
 
-auto AssetScanner::resolveScript(const std::string& iScriptPath) -> std::optional<AssetReference> {
+auto resolveScript(const std::string& iScriptPath) -> std::optional<AssetReference> {
 	if (iScriptPath.empty())
 		return std::nullopt;
 	// If the path is absolute and exists, use it directly.
@@ -176,7 +185,7 @@ auto AssetScanner::resolveScript(const std::string& iScriptPath) -> std::optiona
 	return std::nullopt;
 }
 
-auto AssetScanner::resolveScene(const std::string& iLevelName) -> std::optional<std::filesystem::path> {
+auto resolveScene(const std::string& iLevelName) -> std::optional<std::filesystem::path> {
 	if (iLevelName.empty())
 		return std::nullopt;
 
@@ -200,9 +209,9 @@ auto AssetScanner::resolveScene(const std::string& iLevelName) -> std::optional<
 	return std::nullopt;
 }
 
-void AssetScanner::scanLuaScriptForScenes(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-recursion)
-										  std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
-										  std::vector<std::string>* ioWarnings) {
+void scanLuaScriptForScenes(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-recursion)
+							std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
+							std::vector<std::string>* ioWarnings) {
 	if (!exists(iScriptPath))
 		return;
 	std::ifstream scriptFile(iScriptPath);
@@ -221,8 +230,8 @@ void AssetScanner::scanLuaScriptForScenes(const std::filesystem::path& iScriptPa
 	}
 }
 
-void AssetScanner::scanLuaScriptForSounds(const std::filesystem::path& iScriptPath,
-										  std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+void scanLuaScriptForSounds(const std::filesystem::path& iScriptPath, std::vector<AssetReference>& ioAssets,
+							std::vector<std::string>* ioWarnings) {
 	if (!exists(iScriptPath))
 		return;
 	std::ifstream scriptFile(iScriptPath);
@@ -242,9 +251,9 @@ void AssetScanner::scanLuaScriptForSounds(const std::filesystem::path& iScriptPa
 	}
 }
 
-void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,// NOLINT(misc-no-recursion)
-									  std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
-									  std::vector<std::string>* ioWarnings) {
+void scanSceneRecursive(const std::filesystem::path& iSceneFile,// NOLINT(misc-no-recursion)
+						std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
+						std::vector<std::string>* ioWarnings) {
 	const auto sceneStr = iSceneFile.string();
 	if (ioVisitedScenes.contains(sceneStr))
 		return;
@@ -276,8 +285,8 @@ void AssetScanner::scanSceneRecursive(const std::filesystem::path& iSceneFile,//
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
-void AssetScanner::scanTilemap(const std::string& iTilemapPath, const std::string& iSceneName,
-							   std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+void scanTilemap(const std::string& iTilemapPath, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
+				 std::vector<std::string>* ioWarnings) {
 	const auto tilemapRef = resolveDataAsset(iTilemapPath);
 	if (!tilemapRef) {
 		pushWarning(ioWarnings, "Tilemap", iTilemapPath, iSceneName);
@@ -290,8 +299,8 @@ void AssetScanner::scanTilemap(const std::string& iTilemapPath, const std::strin
 		scanTileset(tilesetPath, iSceneName, ioAssets, ioWarnings);
 }
 
-void AssetScanner::scanTileset(const std::string& iTilesetPath, const std::string& iSceneName,
-							   std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
+				 std::vector<std::string>* ioWarnings) {
 	const auto tilesetRef = resolveDataAsset(iTilesetPath);
 	if (!tilesetRef) {
 		pushWarning(ioWarnings, "Tileset", iTilesetPath, iSceneName);
@@ -309,9 +318,9 @@ void AssetScanner::scanTileset(const std::string& iTilesetPath, const std::strin
 	}
 }
 
-void AssetScanner::scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
-							  const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
-							  std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
+void scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recursion)
+				const std::string& iSceneName, std::set<std::string>& ioVisitedScenes,
+				std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings) {
 	const auto addTextureField = [&](const YAML::Node& iComponent) -> void {
 		if (auto tex = iComponent["texture"]; tex) {
 			const auto val = tex.as<std::string>();
@@ -380,7 +389,7 @@ void AssetScanner::scanEntity(const YAML::Node& iEntity,// NOLINT(misc-no-recurs
 			scanTileset(path.as<std::string>(), iSceneName, ioAssets, ioWarnings);
 }
 
-void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
+void collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 	if (!app::Application::instanced())
 		return;
 	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
@@ -423,6 +432,8 @@ void AssetScanner::collectEngineAssets(std::vector<AssetReference>& ioAssets) {
 		}
 	}
 }
+
+}// namespace
 
 auto AssetScanner::scanScene(const std::filesystem::path& iSceneFile, std::vector<std::string>* oWarnings)
 		-> std::vector<AssetReference> {
