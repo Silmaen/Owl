@@ -85,7 +85,7 @@ Every fix lands with its regression test.
   window icon; an automated test exports the sample project and runs it headless. See [Game export](game-export.md)
 - ![Done][done] Full Wayland support — Owl icon, editor multi-window (detached ImGui windows), X11 kept as an
   option. See [Windowing and input](windowing-input.md)
-- ![In Progress][progress] OpenGL backend fixed and tested as the compatibility backend: honest version check, asynchronous
+- ![Done][done] OpenGL backend fixed and tested as the compatibility backend: honest version check, asynchronous
   picking (B-16), mipmaps generated and Nearest filtering honoured on both backends (B-18)
 
 ## Phase B — Safety nets

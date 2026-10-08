@@ -144,11 +144,11 @@ rest of A and B, then D, then C, then E.
 - ![Done][done] Phase 0 — Conan 2 on ConanCenter, missing recipes first, every preset green in CI ([Conan](design/conan-migration.md))
 - ![Done][done] Phase 0 — breaking upgrades first: EnTT 4, Taskflow 4.1, lagging dependencies
 - ![Done][done] Phase 0 — DepManager and `owl_engine.py` removed: Conan the only provider, consumers on the packaged archive
-- ![In Progress][progress] Phase A — every confirmed correctness bug fixed with its regression test (PR-01 to PR-25)
+- ![Done][done] Phase A — every confirmed correctness bug fixed with its regression test (PR-01 to PR-25; B-19 in phase C)
 - ![Done][done] Phase A — `on_collision` implemented from Box2D contact events (D-07)
 - ![Done][done] Phase A — game export tested end to end, sample run headless ([Export](design/game-export.md))
 - ![Done][done] Phase A — full Wayland: icon, editor multi-window, X11 kept ([details](design/windowing-input.md))
-- ![In Progress][progress] Phase A — OpenGL compatibility backend fixed and tested, mipmaps and Nearest filtering on both backends
+- ![Done][done] Phase A — OpenGL compatibility backend fixed and tested, mipmaps and Nearest filtering on both backends
 - ![In Progress][progress] Phase B — engine benchmark harness `bench/` (`OWL_BENCHMARK`)
 - ![Done][done] Phase B — diff-scoped clang-tidy CI action, parallel by default (H-03)
 - ![Done][done] Phase B — blocking sanitizers, shuffled test order, LSan job removed (PR-11)
