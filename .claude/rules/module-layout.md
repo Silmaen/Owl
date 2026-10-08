@@ -29,6 +29,7 @@ module.
 A public header of a module includes only its own module and modules of a **lower** layer; two modules of one layer
 do not include each other. `CodeStyle` enforces it (`module-deps`, stack in `ci/utils/module_deps.py`). Private
 implementation files may reach up (e.g. `data/assets/AssetSearchPaths.cpp` reads the application's asset folders).
+A public header includes no third-party header but EnTT (imgui in `gui/`): `public-deps`, same check.
 
 | Layer | Modules                               |
 |-------|---------------------------------------|

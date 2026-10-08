@@ -28,7 +28,8 @@ Sub-checks (all on by default):
   transitive include (see `ci/utils/std_includes.py`). A `.cpp` may rely on
   its own header and on `owlpch.h`.
 * **module-deps** — a public header includes only its own module and lower layers of the engine's layer stack
-  (`ci/utils/module_deps.py`), so the public API stays acyclic.
+  (`ci/utils/module_deps.py`), so the public API stays acyclic; it includes no third-party header but EnTT
+  (and imgui in `gui/`), the only ones the package provides.
 * **test-assertions** — every `TEST` / `TEST_F` / `TEST_P` asserts something (gtest macro or an `expect…` /
   `assert…` / `check…` helper); a smoke test says so with `EXPECT_NO_THROW` (`ci/utils/test_assertions.py`).
 * **nolint** — every check named by a `NOLINT(...)` marker is one `.clang-tidy` enables (`clang-tidy
@@ -1359,7 +1360,7 @@ def _check_module_deps() -> int:
 
     :return: The number of upward includes.
     """
-    from ci.utils.module_deps import LAYER_OF, upward_includes
+    from ci.utils.module_deps import LAYER_OF, third_party_includes, upward_includes
 
     log.info("code-style: module layering audit...")
     public = root / "source" / "owl" / "public"
@@ -1371,7 +1372,12 @@ def _check_module_deps() -> int:
             message = f"`{entry.module}` (layer {LAYER_OF[entry.module]}) must not include `{entry.target}` "
             message += f"(layer {LAYER_OF[entry.target]}): forward-declare, or move the code to its layer"
         _diag(entry.path, entry.line, "module-deps", message)
-    return len(found)
+    leaks = third_party_includes(public, _iter_sources([public], HEADER_EXTENSIONS))
+    for entry in leaks:
+        message = f"public header includes `<{entry.target}>`, which the package does not provide: "
+        message += "keep the dependency private (pimpl, text, forward declaration)"
+        _diag(entry.path, entry.line, "public-deps", message)
+    return len(found) + len(leaks)
 
 
 def _check_test_assertions() -> int:

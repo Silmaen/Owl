@@ -72,3 +72,47 @@ def upward_includes(public_root: Path, files: Iterable[Path]) -> list[UpwardIncl
             if module not in LAYER_OF or target not in LAYER_OF or LAYER_OF[target] >= LAYER_OF[module]:
                 found.append(UpwardInclude(path, number, module, target))
     return found
+
+
+PUBLIC_THIRD_PARTY: dict[str, tuple[str, ...]] = {
+    "entt/": (),
+    "imgui": ("gui",),
+    "intrin.h": (),
+    "TargetConditionals.h": (),
+}
+"""Third-party headers a public header may include (prefix → allowed modules, empty for all): EnTT is the only
+public dependency of `Owl::OwlEngine`, imgui comes with `Owl::Gui`, the others are system headers."""
+
+_ANGLE_INCLUDE_RE = re.compile(r"^\s*#\s*include\s*<([^>]+)>")
+
+
+def third_party_includes(public_root: Path, files: Iterable[Path]) -> list[UpwardInclude]:
+    """
+    Find the includes of public headers that pull a third-party header the package does not provide.
+
+    :param public_root: `source/owl/public`.
+    :param files: The public headers to check.
+    :return: One entry per offending include, `target` holding the included header.
+    """
+    found: list[UpwardInclude] = []
+    for path in files:
+        parts = path.relative_to(public_root).parts
+        module = parts[0] if len(parts) > 1 else ""
+        try:
+            lines = path.read_text(errors="replace").splitlines()
+        except OSError:
+            continue
+        for number, line in enumerate(lines, start=1):
+            match = _ANGLE_INCLUDE_RE.match(line)
+            if match is None:
+                continue
+            header = match.group(1)
+            if "/" not in header and "." not in header:
+                continue  # a standard library header
+            if "/" in header and (public_root / header.split("/")[0]).is_dir():
+                continue  # an Owl header spelt with angle brackets
+            allowed = [modules for prefix, modules in PUBLIC_THIRD_PARTY.items() if header.startswith(prefix)]
+            if allowed and (not allowed[0] or module in allowed[0]):
+                continue
+            found.append(UpwardInclude(path, number, module, header))
+    return found

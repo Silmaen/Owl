@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from ci import root
-from ci.utils.module_deps import LAYER_OF, upward_includes
+from ci.utils.module_deps import LAYER_OF, third_party_includes, upward_includes
 
 
 def _header(public: Path, module: str, text: str) -> Path:
@@ -30,3 +30,15 @@ def test_only_includes_of_the_same_or_a_higher_layer_are_reported(tmp_path: Path
     found = upward_includes(tmp_path, [down, up, umbrella])
 
     assert [(f.module, f.line, f.target) for f in found] == [("renderer", 2, "scene")]
+
+
+def test_only_third_party_headers_the_package_provides_are_allowed(tmp_path: Path) -> None:
+    for module in ("core", "scene", "gui"):
+        (tmp_path / module).mkdir()
+    scene = _header(tmp_path, "scene", "#include <entt/entt.hpp>\n#include <core/Core.h>\n#include <yaml-cpp/yaml.h>\n")
+    core = _header(tmp_path, "core", "#include <vector>\n#include <imgui.h>\n")
+    gui = _header(tmp_path, "gui", "#include <imgui.h>\n")
+
+    found = third_party_includes(tmp_path, [scene, core, gui])
+
+    assert [(f.module, f.line, f.target) for f in found] == [("scene", 3, "yaml-cpp/yaml.h"), ("core", 2, "imgui.h")]
