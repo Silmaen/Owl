@@ -20,14 +20,6 @@
 
 namespace owl::scene {
 
-ScreenTransition::Type ScreenTransition::s_type = Type::None;
-float ScreenTransition::s_duration = 0.f;
-float ScreenTransition::s_elapsed = 0.f;
-math::vec4 ScreenTransition::s_color{0.f, 0.f, 0.f, 1.f};
-ScreenTransition::Phase ScreenTransition::s_phase = ScreenTransition::Phase::Idle;
-std::optional<ScreenTransition::SceneLoadRequest> ScreenTransition::s_request;
-bool ScreenTransition::s_loadDispatched = false;
-float ScreenTransition::s_loadingHeld = 0.f;
 
 namespace {
 
@@ -149,12 +141,12 @@ void renderLoadingScreen(const math::vec4& iColor, const float iElapsed, const f
 }// namespace
 
 void ScreenTransition::play(const Type iType, const float iDuration, const math::vec4& iColor) {
-	s_type = iType;
-	s_duration = std::max(iDuration, 0.001f);
-	s_elapsed = 0.f;
-	s_color = iColor;
-	if (s_phase == Phase::Idle)
-		s_phase = (iType == Type::None) ? Phase::Idle : Phase::OutAnim;
+	m_type = iType;
+	m_duration = std::max(iDuration, 0.001f);
+	m_elapsed = 0.f;
+	m_color = iColor;
+	if (m_phase == Phase::Idle)
+		m_phase = (iType == Type::None) ? Phase::Idle : Phase::OutAnim;
 }
 
 void ScreenTransition::start(const Type iType, const float iDuration) {
@@ -162,132 +154,132 @@ void ScreenTransition::start(const Type iType, const float iDuration) {
 }
 
 void ScreenTransition::requestSceneLoad(const SceneLoadRequest& iRequest) {
-	s_request = iRequest;
-	s_loadDispatched = false;
-	s_loadingHeld = 0.f;
-	s_phase = Phase::OutAnim;
-	s_type = iRequest.outType;
-	s_duration = std::max(iRequest.outDuration, 0.001f);
-	s_elapsed = 0.f;
-	s_color = iRequest.color;
+	m_request = iRequest;
+	m_loadDispatched = false;
+	m_loadingHeld = 0.f;
+	m_phase = Phase::OutAnim;
+	m_type = iRequest.outType;
+	m_duration = std::max(iRequest.outDuration, 0.001f);
+	m_elapsed = 0.f;
+	m_color = iRequest.color;
 }
 
 void ScreenTransition::update(const float iDeltaTime) {
-	switch (s_phase) {
+	switch (m_phase) {
 		case Phase::Idle:
 			return;
 		case Phase::OutAnim:
 			{
-				if (s_type == Type::None) {
+				if (m_type == Type::None) {
 					// Direct `play(None, …)` was used — nothing to animate, drop straight to Idle.
-					s_phase = Phase::Idle;
+					m_phase = Phase::Idle;
 					return;
 				}
-				s_elapsed += iDeltaTime;
-				if (s_elapsed >= s_duration) {
-					if (s_request.has_value()) {
-						s_phase = Phase::Loading;
-						s_loadingHeld = 0.f;
+				m_elapsed += iDeltaTime;
+				if (m_elapsed >= m_duration) {
+					if (m_request.has_value()) {
+						m_phase = Phase::Loading;
+						m_loadingHeld = 0.f;
 					} else {
 						// Primitive overlay: no orchestrator follow-up.
-						s_type = Type::None;
-						s_phase = Phase::Idle;
+						m_type = Type::None;
+						m_phase = Phase::Idle;
 					}
 				}
 				return;
 			}
 		case Phase::Loading:
 			{
-				s_loadingHeld += iDeltaTime;
-				if (!s_request.has_value())
+				m_loadingHeld += iDeltaTime;
+				if (!m_request.has_value())
 					return;// awaiting host call — keep showing the loading screen.
-				if (s_loadDispatched && s_loadingHeld >= s_request->minHoldDuration) {
-					s_phase = Phase::InAnim;
-					s_type = s_request->inType;
-					s_duration = std::max(s_request->inDuration, 0.001f);
-					s_elapsed = 0.f;
+				if (m_loadDispatched && m_loadingHeld >= m_request->minHoldDuration) {
+					m_phase = Phase::InAnim;
+					m_type = m_request->inType;
+					m_duration = std::max(m_request->inDuration, 0.001f);
+					m_elapsed = 0.f;
 				}
 				return;
 			}
 		case Phase::InAnim:
 			{
-				s_elapsed += iDeltaTime;
-				if (s_elapsed >= s_duration) {
-					s_phase = Phase::Idle;
-					s_type = Type::None;
-					s_request.reset();
-					s_loadDispatched = false;
-					s_loadingHeld = 0.f;
+				m_elapsed += iDeltaTime;
+				if (m_elapsed >= m_duration) {
+					m_phase = Phase::Idle;
+					m_type = Type::None;
+					m_request.reset();
+					m_loadDispatched = false;
+					m_loadingHeld = 0.f;
 				}
 				return;
 			}
 	}
 }
 
-void ScreenTransition::render(const float iViewportWidth, const float iViewportHeight) {
-	if (s_phase == Phase::Idle)
+void ScreenTransition::render(const float iViewportWidth, const float iViewportHeight) const {
+	if (m_phase == Phase::Idle)
 		return;
 
 	const renderer::CameraOrtho cam(0.f, iViewportWidth, 0.f, iViewportHeight);
 	renderer::Renderer2D::beginScene(cam);
 
-	switch (s_phase) {
+	switch (m_phase) {
 		case Phase::Idle:
 			break;
 		case Phase::OutAnim:
 		case Phase::InAnim:
 			{
-				const float progress = std::clamp(s_elapsed / s_duration, 0.f, 1.f);
-				renderOverlay(s_type, progress, s_color, iViewportWidth, iViewportHeight);
+				const float progress = std::clamp(m_elapsed / m_duration, 0.f, 1.f);
+				renderOverlay(m_type, progress, m_color, iViewportWidth, iViewportHeight);
 				break;
 			}
 		case Phase::Loading:
-			renderLoadingScreen(s_color, s_loadingHeld, iViewportWidth, iViewportHeight);
+			renderLoadingScreen(m_color, m_loadingHeld, iViewportWidth, iViewportHeight);
 			break;
 	}
 
 	renderer::Renderer2D::endScene();
 }
 
-auto ScreenTransition::isActive() -> bool { return s_phase != Phase::Idle; }
+auto ScreenTransition::isActive() const -> bool { return m_phase != Phase::Idle; }
 
-auto ScreenTransition::getProgress() -> float {
-	switch (s_phase) {
+auto ScreenTransition::getProgress() const -> float {
+	switch (m_phase) {
 		case Phase::Idle:
 			return 1.f;
 		case Phase::OutAnim:
 		case Phase::InAnim:
-			return s_duration <= 0.f ? 1.f : std::clamp(s_elapsed / s_duration, 0.f, 1.f);
+			return m_duration <= 0.f ? 1.f : std::clamp(m_elapsed / m_duration, 0.f, 1.f);
 		case Phase::Loading:
-			if (s_request.has_value() && s_request->minHoldDuration > 0.f)
-				return std::clamp(s_loadingHeld / s_request->minHoldDuration, 0.f, 1.f);
+			if (m_request.has_value() && m_request->minHoldDuration > 0.f)
+				return std::clamp(m_loadingHeld / m_request->minHoldDuration, 0.f, 1.f);
 			return 1.f;
 	}
 	return 1.f;
 }
 
-auto ScreenTransition::getType() -> Type { return s_type; }
+auto ScreenTransition::getType() const -> Type { return m_type; }
 
-auto ScreenTransition::getColor() -> const math::vec4& { return s_color; }
+auto ScreenTransition::getColor() const -> const math::vec4& { return m_color; }
 
-auto ScreenTransition::getPhase() -> Phase { return s_phase; }
+auto ScreenTransition::getPhase() const -> Phase { return m_phase; }
 
 auto ScreenTransition::pendingLoadPath() -> std::optional<std::string> {
-	if (s_phase != Phase::Loading || !s_request.has_value() || s_loadDispatched)
+	if (m_phase != Phase::Loading || !m_request.has_value() || m_loadDispatched)
 		return std::nullopt;
-	s_loadDispatched = true;
-	return s_request->scenePath;
+	m_loadDispatched = true;
+	return m_request->scenePath;
 }
 
 void ScreenTransition::reset() {
-	s_type = Type::None;
-	s_duration = 0.f;
-	s_elapsed = 0.f;
-	s_color = math::vec4{0.f, 0.f, 0.f, 1.f};
-	s_phase = Phase::Idle;
-	s_request.reset();
-	s_loadDispatched = false;
-	s_loadingHeld = 0.f;
+	m_type = Type::None;
+	m_duration = 0.f;
+	m_elapsed = 0.f;
+	m_color = math::vec4{0.f, 0.f, 0.f, 1.f};
+	m_phase = Phase::Idle;
+	m_request.reset();
+	m_loadDispatched = false;
+	m_loadingHeld = 0.f;
 }
 
 }// namespace owl::scene

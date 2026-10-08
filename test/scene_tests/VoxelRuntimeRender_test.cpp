@@ -26,6 +26,11 @@ using namespace owl;
 
 namespace {
 
+// Voxel meshes of the test application's engine context.
+auto voxelCache() -> renderer::VoxelMeshCache& {
+	return app::Application::get().getEngineContext().getVoxelMeshCache();
+}
+
 class VoxelRuntimeRenderTest : public testing::Test {
 protected:
 	static void SetUpTestSuite() {
@@ -56,11 +61,11 @@ protected:
 		config.entries.push_back({.typeKey = "RendererVoxel", .name = "voxel_world", .defaultConfig = {}});
 		renderer::Renderer::setRenderStack(
 				renderer::RenderStack::buildFromConfig(config, renderer::EnabledRenderersConfig{}));
-		renderer::RendererVoxel::clearCache();
+		voxelCache().clear();
 	}
 
 	void TearDown() override {
-		renderer::RendererVoxel::clearCache();
+		voxelCache().clear();
 		renderer::Renderer::setRenderStack(renderer::RenderStack{});
 	}
 
@@ -107,8 +112,8 @@ auto makeVoxelScene() -> shared<scene::Scene> {
 template<typename Frame>
 void frameThenUpload(Frame&& iFrame) {
 	iFrame();
-	EXPECT_EQ(renderer::RendererVoxel::getStatistics().cachedMeshCount, 0u);
-	EXPECT_GE(renderer::RendererVoxel::getStatistics().pendingJobCount, 1u);
+	EXPECT_EQ(renderer::RendererVoxel::getStatistics(voxelCache()).cachedMeshCount, 0u);
+	EXPECT_GE(renderer::RendererVoxel::getStatistics(voxelCache()).pendingJobCount, 1u);
 	app::Application::get().getTaskScheduler().waitEmptyQueue();
 	iFrame();
 }
@@ -118,9 +123,9 @@ void frameThenUpload(Frame&& iFrame) {
 TEST_F(VoxelRuntimeRenderTest, RuntimeFrameMeshesAndDrawsVoxelWorld) {
 	const auto sc = makeVoxelScene();
 	sc->onStartRuntime();
-	EXPECT_EQ(renderer::RendererVoxel::getStatistics().cachedMeshCount, 0u);
+	EXPECT_EQ(renderer::RendererVoxel::getStatistics(voxelCache()).cachedMeshCount, 0u);
 	frameThenUpload([&]() -> void { sc->onUpdateRuntime(makeStep(16)); });
-	const auto stats = renderer::RendererVoxel::getStatistics();
+	const auto stats = renderer::RendererVoxel::getStatistics(voxelCache());
 	EXPECT_GE(stats.cachedMeshCount, 1u);
 	EXPECT_GE(stats.drawnMeshCount, 1u);
 	sc->onEndRuntime();
@@ -130,7 +135,7 @@ TEST_F(VoxelRuntimeRenderTest, PausedFrameKeepsDrawingVoxelWorld) {
 	const auto sc = makeVoxelScene();
 	sc->onStartRuntime();
 	frameThenUpload([&]() -> void { sc->onRenderRuntime(); });
-	const auto stats = renderer::RendererVoxel::getStatistics();
+	const auto stats = renderer::RendererVoxel::getStatistics(voxelCache());
 	EXPECT_GE(stats.cachedMeshCount, 1u);
 	EXPECT_GE(stats.drawnMeshCount, 1u);
 	sc->onEndRuntime();
@@ -141,7 +146,7 @@ TEST_F(VoxelRuntimeRenderTest, EditorFrameUsesTheSamePreparation) {
 	renderer::CameraEditor camera{45.f, 1.778f, 0.1f, 1000.f};
 	camera.setViewportSize({1280, 720});
 	frameThenUpload([&]() -> void { sc->onUpdateEditor(makeStep(16), camera); });
-	EXPECT_GE(renderer::RendererVoxel::getStatistics().cachedMeshCount, 1u);
+	EXPECT_GE(renderer::RendererVoxel::getStatistics(voxelCache()).cachedMeshCount, 1u);
 }
 
 TEST_F(VoxelRuntimeRenderTest, SynchronousModeMeshesInTheFrame) {
@@ -150,7 +155,7 @@ TEST_F(VoxelRuntimeRenderTest, SynchronousModeMeshesInTheFrame) {
 	const auto sc = makeVoxelScene();
 	sc->onStartRuntime();
 	sc->onUpdateRuntime(makeStep(16));
-	const auto stats = renderer::RendererVoxel::getStatistics();
+	const auto stats = renderer::RendererVoxel::getStatistics(voxelCache());
 	EXPECT_GE(stats.cachedMeshCount, 1u);
 	EXPECT_GE(stats.drawnMeshCount, 1u);
 	EXPECT_EQ(stats.pendingJobCount, 0u);

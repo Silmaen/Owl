@@ -33,7 +33,11 @@ namespace owl::scene {
  */
 class OWL_API SettingsManager final {
 public:
-	SettingsManager() = delete;
+	/**
+	 * @brief
+	 *  Default constructor: empty state.
+	 */
+	SettingsManager() = default;
 
 	/// Value type (same as GameState::Value).
 	using Value = std::variant<int64_t, float, std::string, bool>;
@@ -43,48 +47,48 @@ public:
 	 *  Set the game name (for user directory path).
 	 * @param[in] iGameName The game name.
 	 */
-	static void setGameName(const std::string& iGameName);
+	void setGameName(const std::string& iGameName);
 
 	/**
 	 * @brief
 	 *  Get the game's user directory (parent of saves/).
 	 * @return The user directory path.
 	 */
-	[[nodiscard]] static auto getUserDirectory() -> std::filesystem::path;
+	[[nodiscard]] auto getUserDirectory() const -> std::filesystem::path;
 
 	/**
 	 * @brief
 	 *  Get the user settings file path.
 	 * @return Path to settings.yml in the user directory.
 	 */
-	[[nodiscard]] static auto getSettingsPath() -> std::filesystem::path;
+	[[nodiscard]] auto getSettingsPath() const -> std::filesystem::path;
 
 	/**
 	 * @brief
 	 *  Load game defaults from a YAML file (game_settings.yml in assets).
 	 * @param[in] iPath Path to the game defaults file.
 	 */
-	static void loadDefaults(const std::filesystem::path& iPath);
+	void loadDefaults(const std::filesystem::path& iPath);
 
 	/**
 	 * @brief
 	 *  Load game defaults from a YAML string (for pack-based loading).
 	 * @param[in] iContent The YAML content as a string.
 	 */
-	static void loadDefaultsFromString(const std::string& iContent);
+	void loadDefaultsFromString(const std::string& iContent);
 
 	/**
 	 * @brief
 	 *  Load user overrides from settings.yml.
 	 */
-	static void loadUserSettings();
+	void loadUserSettings();
 
 	/**
 	 * @brief
 	 *  Save user overrides to settings.yml, atomically: a failed save keeps the previous file.
 	 * @return True on success.
 	 */
-	[[nodiscard]] static auto saveUserSettings() -> bool;
+	[[nodiscard]] auto saveUserSettings() const -> bool;
 
 	/**
 	 * @brief
@@ -99,7 +103,7 @@ public:
 	 * @param[in] iKey The key.
 	 * @param[in] iValue The default value.
 	 */
-	static void setDefault(const std::string& iKey, Value iValue);
+	void setDefault(const std::string& iKey, Value iValue);
 
 	/**
 	 * @brief
@@ -107,7 +111,7 @@ public:
 	 * @param[in] iKey The key.
 	 * @param[in] iValue The value.
 	 */
-	static void set(const std::string& iKey, Value iValue);
+	void set(const std::string& iKey, Value iValue);
 
 	/**
 	 * @brief
@@ -115,7 +119,7 @@ public:
 	 * @param[in] iKey The key.
 	 * @return The value, or nullopt if not found.
 	 */
-	[[nodiscard]] static auto get(const std::string& iKey) -> std::optional<Value>;
+	[[nodiscard]] auto get(const std::string& iKey) const -> std::optional<Value>;
 
 	/**
 	 * @brief
@@ -124,7 +128,7 @@ public:
 	 * @param[in] iDefault Fallback if key not found.
 	 * @return The value.
 	 */
-	[[nodiscard]] static auto get(const std::string& iKey, const Value& iDefault) -> Value;
+	[[nodiscard]] auto get(const std::string& iKey, const Value& iDefault) const -> Value;
 
 	/**
 	 * @brief
@@ -134,7 +138,7 @@ public:
 	 * @return The value if found and matching type, or nullopt.
 	 */
 	template<typename T>
-	[[nodiscard]] static auto getAs(const std::string& iKey) -> std::optional<T> {
+	[[nodiscard]] auto getAs(const std::string& iKey) const -> std::optional<T> {
 		if (const auto val = get(iKey); val.has_value()) {
 			if (const auto* ptr = std::get_if<T>(&val.value()))
 				return *ptr;
@@ -147,34 +151,34 @@ public:
 	 *  Remove a user override (reverts to default).
 	 * @param[in] iKey The key.
 	 */
-	static void resetToDefault(const std::string& iKey);
+	void resetToDefault(const std::string& iKey);
 
 	/**
 	 * @brief
 	 *  Reset all user overrides to defaults.
 	 */
-	static void resetAllToDefaults();
+	void resetAllToDefaults();
 
 	/**
 	 * @brief
 	 *  Check if a user override exists for a key.
 	 * @return True when override is present.
 	 */
-	[[nodiscard]] static auto hasOverride(const std::string& iKey) -> bool;
+	[[nodiscard]] auto hasOverride(const std::string& iKey) const -> bool;
 
 	/**
 	 * @brief
 	 *  Check if a key exists (in overrides or defaults).
 	 * @return True when has is present.
 	 */
-	[[nodiscard]] static auto has(const std::string& iKey) -> bool;
+	[[nodiscard]] auto has(const std::string& iKey) const -> bool;
 
 	/**
 	 * @brief
 	 *  Get all keys (union of defaults and overrides).
 	 * @return The std vector.
 	 */
-	[[nodiscard]] static auto keys() -> std::vector<std::string>;
+	[[nodiscard]] auto keys() const -> std::vector<std::string>;
 
 	/**
 	 * @brief
@@ -183,13 +187,13 @@ public:
 	 * Applies resolution, fullscreen, resizable to the window, and
 	 * master volume to the sound listener.
 	 */
-	static void applyBuiltins();
+	void applyBuiltins() const;
 
 	/**
 	 * @brief
 	 *  Clear all data (defaults + overrides). Used for testing.
 	 */
-	static void clear();
+	void clear();
 
 	/// Built-in setting key constants.
 	static constexpr auto KeyResolutionWidth = "resolution_width";
@@ -208,11 +212,11 @@ public:
 
 private:
 	/// Game name for directory path.
-	static std::string s_gameName;
+	std::string m_gameName;
 	/// Game defaults (from game_settings.yml).
-	static std::unordered_map<std::string, Value> s_defaults;
+	std::unordered_map<std::string, Value> m_defaults;
 	/// User overrides (from settings.yml).
-	static std::unordered_map<std::string, Value> s_overrides;
+	std::unordered_map<std::string, Value> m_overrides;
 };
 
 }// namespace owl::scene

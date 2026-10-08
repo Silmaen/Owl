@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "core/Core.h"
 #include "math/Transform.h"
 #include "math/vectors.h"
 #include "renderer/Camera.h"
@@ -47,6 +48,53 @@ struct VoxelMeshingConfig {
 	uint32_t maxJobsInFlight = 32;
 };
 
+class RendererVoxel;
+
+/**
+ * @brief
+ *  GPU meshes of the voxel worlds of one engine context, keyed by entity and chunk, and their meshing jobs.
+ *
+ * Owned by `app::EngineContext`, so two applications (or two isolated tests) never share meshes. Release it before
+ * the renderer shuts down: it holds GPU buffers.
+ */
+class OWL_API VoxelMeshCache final {
+public:
+	/**
+	 * @brief
+	 *  Create an empty cache.
+	 */
+	VoxelMeshCache();
+
+	/**
+	 * @brief
+	 *  Destroy the cache and its GPU meshes.
+	 */
+	~VoxelMeshCache();
+
+	VoxelMeshCache(const VoxelMeshCache&) = delete;
+
+	VoxelMeshCache(VoxelMeshCache&&) = delete;
+
+	auto operator=(const VoxelMeshCache&) -> VoxelMeshCache& = delete;
+
+	auto operator=(VoxelMeshCache&&) -> VoxelMeshCache& = delete;
+
+	/**
+	 * @brief
+	 *  Drop all cached meshes and the finished meshes not uploaded yet (call on scene transitions to avoid stale
+	 *  geometry). A job still running delivers later and is installed only if its chunk revision still matches.
+	 */
+	void clear();
+
+	/// Cache contents (opaque, defined by the renderer).
+	struct Data;
+
+private:
+	friend class RendererVoxel;
+	/// The contents.
+	uniq<Data> mp_data;
+};
+
 /**
  * @brief
  *  Draws `scene::component::VoxelWorld` entities in 3D on top of `Renderer3D`.
@@ -77,11 +125,11 @@ public:
 		uint32_t readyMeshCount = 0;
 		/// Chunk meshes uploaded since the last `beginPrepare`.
 		uint32_t uploadedThisFrame = 0;
-		/// Chunk meshes uploaded since `init`.
+		/// Chunk meshes uploaded since the cache was created.
 		uint64_t uploadedMeshCount = 0;
-		/// Meshing results dropped since `init` because their chunk changed or unloaded meanwhile.
+		/// Meshing results dropped since the cache was created because their chunk changed or unloaded meanwhile.
 		uint64_t discardedMeshCount = 0;
-		/// Time spent meshing since `init` (workers and synchronous path), in nanoseconds.
+		/// Time spent meshing since the cache was created (workers and synchronous path), in nanoseconds.
 		uint64_t meshingNs = 0;
 		/// Sum of the latencies from a chunk needing a mesh to its upload, in nanoseconds.
 		uint64_t latencyNsTotal = 0;
@@ -90,18 +138,6 @@ public:
 		/// Number of latencies summed in `latencyNsTotal`.
 		uint64_t latencyCount = 0;
 	};
-
-	/**
-	 * @brief
-	 *  Initialize the renderer (resets the mesh / texture caches).
-	 */
-	static void init();
-
-	/**
-	 * @brief
-	 *  Release cached meshes and textures.
-	 */
-	static void shutdown();
 
 	/**
 	 * @brief
@@ -120,8 +156,9 @@ public:
 	/**
 	 * @brief
 	 *  Open a new upload budget window (call once per frame, before the `prepareWorld` calls of that frame).
+	 * @param[in,out] ioCache The mesh cache.
 	 */
-	static void beginPrepare();
+	static void beginPrepare(VoxelMeshCache& ioCache);
 
 	/**
 	 * @brief
@@ -136,47 +173,45 @@ public:
 	 * creates GPU buffers, pipelines and textures, which submit single-time command buffers and therefore must not
 	 * run while a frame's command buffer is being recorded. `drawVoxelWorld` then only binds and draws these cached
 	 * resources.
+	 * @param[in,out] ioCache The mesh cache.
 	 * @param[in,out] ioComponent The voxel world component (its chunks are only read).
 	 * @param[in] iEntityId The entity id (keys the per-entity mesh cache).
 	 */
-	static void prepareWorld(scene::component::VoxelWorld& ioComponent, int iEntityId);
+	static void prepareWorld(VoxelMeshCache& ioCache, scene::component::VoxelWorld& ioComponent, int iEntityId);
 
 	/**
 	 * @brief
 	 *  Draw one voxel world entity from its cached meshes (built by `prepareWorld`).
+	 * @param[in,out] ioCache The mesh cache.
 	 * @param[in,out] ioComponent The voxel world component.
 	 * @param[in] iWorldTransform The entity world transform.
 	 * @param[in] iEntityId The entity id (keys the per-entity mesh cache).
 	 */
-	static void drawVoxelWorld(scene::component::VoxelWorld& ioComponent, const math::Transform& iWorldTransform,
-							   int iEntityId);
-
-	/**
-	 * @brief
-	 *  Drop all cached meshes and the finished meshes not uploaded yet (call on scene transitions to avoid stale
-	 *  geometry). A job still running delivers later and is installed only if its chunk revision still matches.
-	 */
-	static void clearCache();
+	static void drawVoxelWorld(VoxelMeshCache& ioCache, scene::component::VoxelWorld& ioComponent,
+							   const math::Transform& iWorldTransform, int iEntityId);
 
 	/**
 	 * @brief
 	 *  Read the mesh counters.
+	 * @param[in] iCache The mesh cache.
 	 * @return The cached mesh count, the meshes drawn since the last `beginScene` and the meshing counters.
 	 */
-	[[nodiscard]] static auto getStatistics() -> Statistics;
+	[[nodiscard]] static auto getStatistics(const VoxelMeshCache& iCache) -> Statistics;
 
 	/**
 	 * @brief
 	 *  Chunk revision the cached mesh of a chunk was built from (diagnostics and tests).
+	 * @param[in] iCache The mesh cache.
 	 * @param[in] iEntityId The voxel world entity id.
 	 * @param[in] iCoord The chunk coordinate.
 	 * @return The revision of the uploaded mesh, or `std::nullopt` while the chunk has no mesh yet.
 	 */
-	[[nodiscard]] static auto getMeshedRevision(int iEntityId, const math::vec3i& iCoord) -> std::optional<uint64_t>;
+	[[nodiscard]] static auto getMeshedRevision(const VoxelMeshCache& iCache, int iEntityId, const math::vec3i& iCoord)
+			-> std::optional<uint64_t>;
 
 	/**
 	 * @brief
-	 *  Set how chunk meshes are built and uploaded (kept across `init` / `shutdown`).
+	 *  Set how chunk meshes are built and uploaded (shared by every cache).
 	 * @param[in] iConfig The meshing configuration.
 	 */
 	static void setMeshingConfig(const VoxelMeshingConfig& iConfig);

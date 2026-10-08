@@ -10,6 +10,7 @@
 
 #include "LuaBindings.h"
 
+#include "app/EngineContext.h"
 #include "core/Macros.h"
 #include "core/external/lua.h"
 #include "input/Input.h"
@@ -42,6 +43,21 @@
 namespace owl::script {
 
 namespace {
+auto contextOf(lua_State* iState) -> app::EngineContext* {
+	const auto* boundScene = getBoundScene(iState);
+	return boundScene != nullptr ? boundScene->getEngineContext() : nullptr;
+}
+
+auto transitionOf(lua_State* iState) -> scene::ScreenTransition* {
+	auto* context = contextOf(iState);
+	return context != nullptr ? &context->getScreenTransition() : nullptr;
+}
+
+auto settingsOf(lua_State* iState) -> scene::SettingsManager* {
+	auto* context = contextOf(iState);
+	return context != nullptr ? &context->getSettings() : nullptr;
+}
+
 auto findEntity(lua_State* iState) -> std::optional<scene::Entity> {
 	const auto* activeScene = getBoundScene(iState);
 	if (activeScene == nullptr)
@@ -341,7 +357,8 @@ auto luaSceneTransitionTo(lua_State* iState) -> int {
 			req.inType = scene::ScreenTransition::Type::FadeIn;
 			break;
 	}
-	scene::ScreenTransition::requestSceneLoad(req);
+	if (auto* transition = transitionOf(iState); transition != nullptr)
+		transition->requestSceneLoad(req);
 	return 0;
 }
 
@@ -489,18 +506,21 @@ auto luaUiSetButtonEnabled(lua_State* iState) -> int {
 
 auto luaUiTransitionFadeIn(lua_State* iState) -> int {
 	const auto duration = static_cast<float>(luaL_checknumber(iState, 1));
-	scene::ScreenTransition::start(scene::ScreenTransition::Type::FadeIn, duration);
+	if (auto* transition = transitionOf(iState); transition != nullptr)
+		transition->start(scene::ScreenTransition::Type::FadeIn, duration);
 	return 0;
 }
 
 auto luaUiTransitionFadeOut(lua_State* iState) -> int {
 	const auto duration = static_cast<float>(luaL_checknumber(iState, 1));
-	scene::ScreenTransition::start(scene::ScreenTransition::Type::FadeOut, duration);
+	if (auto* transition = transitionOf(iState); transition != nullptr)
+		transition->start(scene::ScreenTransition::Type::FadeOut, duration);
 	return 0;
 }
 
 auto luaUiIsTransitionActive(lua_State* iState) -> int {
-	lua_pushboolean(iState, scene::ScreenTransition::isActive() ? 1 : 0);
+	const auto* transition = transitionOf(iState);
+	lua_pushboolean(iState, transition != nullptr && transition->isActive() ? 1 : 0);
 	return 1;
 }
 
@@ -523,7 +543,8 @@ auto luaUiTransitionPlay(lua_State* iState) -> int {
 		OWL_CORE_WARN("Lua ui.transition_play: unknown transition type '{}'.", typeName)
 		return 0;
 	}
-	scene::ScreenTransition::play(type, duration, color);
+	if (auto* transition = transitionOf(iState); transition != nullptr)
+		transition->play(type, duration, color);
 	return 0;
 }
 
@@ -781,20 +802,24 @@ auto luaPushwallGetState(lua_State* iState) -> int {
 
 auto luaSettingsSet(lua_State* iState) -> int {
 	const char* key = luaL_checkstring(iState, 1);
+	auto* settings = settingsOf(iState);
+	if (settings == nullptr)
+		return 0;
 	if (lua_isboolean(iState, 2) != 0)
-		scene::SettingsManager::set(key, lua_toboolean(iState, 2) != 0);
+		settings->set(key, lua_toboolean(iState, 2) != 0);
 	else if (lua_isinteger(iState, 2) != 0)
-		scene::SettingsManager::set(key, static_cast<int64_t>(lua_tointeger(iState, 2)));
+		settings->set(key, static_cast<int64_t>(lua_tointeger(iState, 2)));
 	else if (lua_isnumber(iState, 2) != 0)
-		scene::SettingsManager::set(key, static_cast<float>(lua_tonumber(iState, 2)));
+		settings->set(key, static_cast<float>(lua_tonumber(iState, 2)));
 	else if (lua_isstring(iState, 2) != 0)
-		scene::SettingsManager::set(key, std::string(lua_tostring(iState, 2)));
+		settings->set(key, std::string(lua_tostring(iState, 2)));
 	return 0;
 }
 
 auto luaSettingsGet(lua_State* iState) -> int {
 	const char* key = luaL_checkstring(iState, 1);
-	const auto val = scene::SettingsManager::get(key);
+	const auto* settings = settingsOf(iState);
+	const auto val = settings != nullptr ? settings->get(key) : std::nullopt;
 	if (!val.has_value()) {
 		if (lua_gettop(iState) >= 2)
 			lua_pushvalue(iState, 2);
@@ -819,27 +844,33 @@ auto luaSettingsGet(lua_State* iState) -> int {
 }
 
 auto luaSettingsSave(lua_State* iState) -> int {
-	lua_pushboolean(iState, scene::SettingsManager::saveUserSettings() ? 1 : 0);
+	const auto* settings = settingsOf(iState);
+	lua_pushboolean(iState, settings != nullptr && settings->saveUserSettings() ? 1 : 0);
 	return 1;
 }
 
-auto luaSettingsLoad([[maybe_unused]] lua_State* iState) -> int {// NOLINT(readability-non-const-parameter)
-	scene::SettingsManager::loadUserSettings();
+auto luaSettingsLoad(lua_State* iState) -> int {
+	if (auto* settings = settingsOf(iState); settings != nullptr)
+		settings->loadUserSettings();
 	return 0;
 }
 
 auto luaSettingsReset(lua_State* iState) -> int {
-	scene::SettingsManager::resetToDefault(luaL_checkstring(iState, 1));
+	const char* key = luaL_checkstring(iState, 1);
+	if (auto* settings = settingsOf(iState); settings != nullptr)
+		settings->resetToDefault(key);
 	return 0;
 }
 
-auto luaSettingsResetAll([[maybe_unused]] lua_State* iState) -> int {// NOLINT(readability-non-const-parameter)
-	scene::SettingsManager::resetAllToDefaults();
+auto luaSettingsResetAll(lua_State* iState) -> int {
+	if (auto* settings = settingsOf(iState); settings != nullptr)
+		settings->resetAllToDefaults();
 	return 0;
 }
 
-auto luaSettingsApply([[maybe_unused]] lua_State* iState) -> int {// NOLINT(readability-non-const-parameter)
-	scene::SettingsManager::applyBuiltins();
+auto luaSettingsApply(lua_State* iState) -> int {
+	if (const auto* settings = settingsOf(iState); settings != nullptr)
+		settings->applyBuiltins();
 	return 0;
 }
 

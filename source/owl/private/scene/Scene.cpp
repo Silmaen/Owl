@@ -26,6 +26,7 @@
 
 #include "ScriptLoader.h"
 #include "app/Application.h"
+#include "app/EngineContext.h"
 #include "core/task/Scheduler.h"
 #include "core/task/Task.h"
 #include "data/voxel/Chunk.h"
@@ -274,7 +275,9 @@ void disconnectRuntimeHooks(entt::registry& ioRegistry) {
 
 }// namespace
 
-Scene::Scene() : m_systems{SystemSchedule::getDefault()} {}
+Scene::Scene()
+	: m_systems{SystemSchedule::getDefault()},
+	  mp_engineContext{app::Application::instanced() ? &app::Application::get().getEngineContext() : nullptr} {}
 
 Scene::~Scene() {
 	disconnectRuntimeHooks(registry);
@@ -289,6 +292,7 @@ auto Scene::copy(const shared<Scene>& iOther) -> shared<Scene> {
 	newScene->m_enabledRenderers = iOther->m_enabledRenderers;
 	newScene->m_physicsSettings = iOther->m_physicsSettings;
 	newScene->m_systems = iOther->m_systems;
+	newScene->mp_engineContext = iOther->mp_engineContext;
 
 	auto& srcSceneRegistry = iOther->registry;
 	auto& dstSceneRegistry = newScene->registry;
@@ -461,7 +465,8 @@ void Scene::onStartRuntime() {
 			trigger.startTimer();
 	}
 	// Drop cached voxel meshes from a previous run; renderWithStack() rebuilds them on the next rendered frame.
-	renderer::RendererVoxel::clearCache();
+	if (mp_engineContext != nullptr)
+		mp_engineContext->getVoxelMeshCache().clear();
 	// Generation requested by the scene this one was copied from completes into that scene, not this one.
 	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view)
 		view.get<component::VoxelWorld>(entity).pendingChunks.clear();
@@ -568,9 +573,11 @@ void Scene::renderRuntimeFrame(const core::Timestep& iTimeStep) {
 
 	renderWithStack(*mainCamera);
 
-	ScreenTransition::update(iTimeStep.getSeconds());
-
-	ScreenTransition::render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
+	if (mp_engineContext == nullptr)
+		return;
+	auto& transition = mp_engineContext->getScreenTransition();
+	transition.update(iTimeStep.getSeconds());
+	transition.render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
 }
 
 void Scene::onRenderRuntime() {
@@ -642,7 +649,9 @@ void Scene::onRenderRuntime() {
 		viewRotation(2, 3) = 0.0f;
 		m_inverseViewRotation = inverse(mainCamera->getProjection() * viewRotation);
 		renderWithStack(*mainCamera);
-		ScreenTransition::render(static_cast<float>(m_viewportSize.x()), static_cast<float>(m_viewportSize.y()));
+		if (mp_engineContext != nullptr)
+			mp_engineContext->getScreenTransition().render(static_cast<float>(m_viewportSize.x()),
+														   static_cast<float>(m_viewportSize.y()));
 	}
 	m_worldTransformCacheActive = false;
 }
@@ -991,15 +1000,19 @@ void Scene::prepareVoxelRenderData() {
 
 	// Ensure tileset atlases are resolved before meshing (gated/cheap).
 	resolveAllTilemapAssets();
-	renderer::RendererVoxel::beginPrepare();
-	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view) {
-		renderer::RendererVoxel::prepareWorld(view.get<component::VoxelWorld>(entity), static_cast<int>(entity));
-	}
+	if (mp_engineContext == nullptr)
+		return;
+	auto& cache = mp_engineContext->getVoxelMeshCache();
+	renderer::RendererVoxel::beginPrepare(cache);
+	for (const auto view = registry.view<component::VoxelWorld>(); const auto entity: view)
+		renderer::RendererVoxel::prepareWorld(cache, view.get<component::VoxelWorld>(entity), static_cast<int>(entity));
 }
 
 void Scene::renderVoxelWorlds(const bool iEditorMode) {
 	OWL_PROFILE_FUNCTION()
 
+	if (mp_engineContext == nullptr)
+		return;
 	for (const auto view = registry.view<component::Transform, component::VoxelWorld>(); const auto entity: view) {
 		const Entity ent{entity, this};
 		if (!isEffectivelyVisible(ent, iEditorMode))
@@ -1008,7 +1021,8 @@ void Scene::renderVoxelWorlds(const bool iEditorMode) {
 			continue;
 		auto& voxelWorld = view.get<component::VoxelWorld>(entity);
 		const math::Transform worldTransform = getWorldTransform(ent);
-		renderer::RendererVoxel::drawVoxelWorld(voxelWorld, worldTransform, static_cast<int>(entity));
+		renderer::RendererVoxel::drawVoxelWorld(mp_engineContext->getVoxelMeshCache(), voxelWorld, worldTransform,
+												static_cast<int>(entity));
 	}
 }
 

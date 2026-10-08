@@ -44,7 +44,11 @@ namespace owl::scene {
  */
 class OWL_API ScreenTransition final {
 public:
-	ScreenTransition() = delete;
+	/**
+	 * @brief
+	 *  Default constructor: empty state.
+	 */
+	ScreenTransition() = default;
 
 	/**
 	 * @brief
@@ -118,7 +122,7 @@ public:
 	 * @param[in] iColor RGBA tint (alpha is multiplied with the animated
 	 * factor — pass `1` for fully solid).
 	 */
-	static void play(Type iType, float iDuration, const math::vec4& iColor);
+	void play(Type iType, float iDuration, const math::vec4& iColor);
 
 	/**
 	 * @brief
@@ -126,7 +130,7 @@ public:
 	 * @param[in] iType Overlay kind.
 	 * @param[in] iDuration Duration in seconds.
 	 */
-	static void start(Type iType, float iDuration);
+	void start(Type iType, float iDuration);
 
 	/**
 	 * @brief
@@ -139,14 +143,14 @@ public:
 	 * at least `minHoldDuration` seconds before the in-anim plays.
 	 * @param[in] iRequest The load parameters.
 	 */
-	static void requestSceneLoad(const SceneLoadRequest& iRequest);
+	void requestSceneLoad(const SceneLoadRequest& iRequest);
 
 	/**
 	 * @brief
 	 *  Advance the active overlay / orchestrator (call once per frame).
 	 * @param[in] iDeltaTime Frame delta time in seconds.
 	 */
-	static void update(float iDeltaTime);
+	void update(float iDeltaTime);
 
 	/**
 	 * @brief
@@ -155,21 +159,21 @@ public:
 	 * @param[in] iViewportWidth Viewport width in pixels.
 	 * @param[in] iViewportHeight Viewport height in pixels.
 	 */
-	static void render(float iViewportWidth, float iViewportHeight);
+	void render(float iViewportWidth, float iViewportHeight) const;
 
 	/**
 	 * @brief
 	 *  Check if a transition is currently active.
 	 * @return True when a transition is in progress.
 	 */
-	[[nodiscard]] static auto isActive() -> bool;
+	[[nodiscard]] auto isActive() const -> bool;
 
 	/**
 	 * @brief
 	 *  Get the current transition progress (0..1).
 	 * @return Progress in `[0, 1]`; 0 when no transition is active.
 	 */
-	[[nodiscard]] static auto getProgress() -> float;
+	[[nodiscard]] auto getProgress() const -> float;
 
 	/**
 	 * @brief
@@ -178,21 +182,21 @@ public:
 	 *  both report `Type::None`.
 	 * @return The active transition type.
 	 */
-	[[nodiscard]] static auto getType() -> Type;
+	[[nodiscard]] auto getType() const -> Type;
 
 	/**
 	 * @brief
 	 *  Configured cover colour (undefined while `Idle`).
 	 * @return The configured cover colour.
 	 */
-	[[nodiscard]] static auto getColor() -> const math::vec4&;
+	[[nodiscard]] auto getColor() const -> const math::vec4&;
 
 	/**
 	 * @brief
 	 *  Current orchestrator phase.
 	 * @return The current phase.
 	 */
-	[[nodiscard]] static auto getPhase() -> Phase;
+	[[nodiscard]] auto getPhase() const -> Phase;
 
 	/**
 	 * @brief
@@ -202,31 +206,31 @@ public:
 	 * Subsequent calls during the same orchestrator run return `nullopt`.
 	 * @return The scene path if a swap is due, otherwise `nullopt`.
 	 */
-	[[nodiscard]] static auto pendingLoadPath() -> std::optional<std::string>;
+	[[nodiscard]] auto pendingLoadPath() -> std::optional<std::string>;
 
 	/**
 	 * @brief
 	 *  Drop any in-flight overlay or orchestrator state.
 	 */
-	static void reset();
+	void reset();
 
 private:
 	/// Active overlay kind (also used during the OutAnim / InAnim phases).
-	static Type s_type;
+	Type m_type{Type::None};
 	/// Configured duration of the active overlay (seconds).
-	static float s_duration;
+	float m_duration{0.f};
 	/// Elapsed time since the active overlay started (seconds).
-	static float s_elapsed;
+	float m_elapsed{0.f};
 	/// Active tint colour.
-	static math::vec4 s_color;
+	math::vec4 m_color{0.f, 0.f, 0.f, 1.f};
 	/// Orchestrator phase (`Idle` for direct `play` / `start` calls).
-	static Phase s_phase;
+	Phase m_phase{ScreenTransition::Phase::Idle};
 	/// Pending request (consumed once during the `Loading` phase).
-	static std::optional<SceneLoadRequest> s_request;
+	std::optional<SceneLoadRequest> m_request;
 	/// Whether the host has been handed the load path yet for the current run.
-	static bool s_loadDispatched;
+	bool m_loadDispatched{false};
 	/// Time held in the `Loading` phase (seconds).
-	static float s_loadingHeld;
+	float m_loadingHeld{0.f};
 };
 
 }// namespace owl::scene

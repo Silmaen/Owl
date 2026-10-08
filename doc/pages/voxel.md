@@ -191,8 +191,9 @@ A voxel world reaches the screen through two pieces:
   disabled, so the blend composites correctly. The entity must carry a `RendererTag` routing it to the voxel layer;
   `Scene::render` only draws voxel worlds when the active layer is voxel-capable (mirroring the raycast path).
   Finished meshes are uploaded by `Scene::renderWithStack` before the first layer draws, so the editor viewport and
-  the exported game (`OwlRunner`) share the same path; `RendererVoxel::getStatistics()` reports the cached and drawn
-  mesh counts and the meshing counters.
+  the exported game (`OwlRunner`) share the same path; `RendererVoxel::getStatistics(cache)` reports the cached and
+  drawn mesh counts and the meshing counters of a `VoxelMeshCache` (one per engine context, see
+  [Architecture](architecture.md#engine-context)).
 
 The sample project ships a `voxel_terrain.owl` scene — an endless seeded procedural landscape (see *Procedural
 Terrain* below), textured from the dedicated `voxel_blocks` tileset (16 block faces: grass, dirt, stone, sand, wood,
@@ -267,7 +268,7 @@ sequenceDiagram
   are rebuilt against it. A chunk whose neighbour is still being generated waits for it rather than being meshed
   twice.
 - **Budget.** Uploads run in `RendererVoxel::prepareWorld`, outside any render pass, within the window opened by
-  `RendererVoxel::beginPrepare()` once per frame. An all-air chunk drops its mesh without a job.
+  `RendererVoxel::beginPrepare(cache)` once per frame. An all-air chunk drops its mesh without a job.
 
 `RendererVoxel::setMeshingConfig` tunes it (`VoxelMeshingConfig`):
 

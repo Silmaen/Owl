@@ -299,33 +299,31 @@ TEST_F(FormatVersioningTest, AnimationClipVersioning) {
 
 TEST_F(FormatVersioningTest, SettingsVersioning) {
 	const HomeGuard home(m_dir);
-	SettingsManager::clear();
-	SettingsManager::setGameName("OwlFormatTest");
-	SettingsManager::set("volume", 0.5f);
-	ASSERT_TRUE(SettingsManager::saveUserSettings());
-	const auto path = SettingsManager::getSettingsPath();
+	SettingsManager settings;
+	settings.setGameName("OwlFormatTest");
+	settings.set("volume", 0.5f);
+	ASSERT_TRUE(settings.saveUserSettings());
+	const auto path = settings.getSettingsPath();
 	ASSERT_TRUE(path.string().starts_with(m_dir.string()));
 	const auto text = readText(path);
 	EXPECT_NE(text.find("FormatVersion: 1"), std::string::npos);
 
-	SettingsManager::resetAllToDefaults();
-	SettingsManager::loadUserSettings();
-	EXPECT_FLOAT_EQ(SettingsManager::getAs<float>("volume").value(), 0.5f);
+	settings.resetAllToDefaults();
+	settings.loadUserSettings();
+	EXPECT_FLOAT_EQ(settings.getAs<float>("volume").value(), 0.5f);
 
 	writeText(path, withoutVersion(text));
-	SettingsManager::resetAllToDefaults();
-	SettingsManager::loadUserSettings();
-	EXPECT_TRUE(SettingsManager::hasOverride("volume"));
+	settings.resetAllToDefaults();
+	settings.loadUserSettings();
+	EXPECT_TRUE(settings.hasOverride("volume"));
 
 	writeText(path, withVersion(text, "4"));
-	SettingsManager::resetAllToDefaults();
-	SettingsManager::loadUserSettings();
-	EXPECT_FALSE(SettingsManager::hasOverride("volume"));
+	settings.resetAllToDefaults();
+	settings.loadUserSettings();
+	EXPECT_FALSE(settings.hasOverride("volume"));
 
-	SettingsManager::loadDefaultsFromString("GameSettings:\n  - {key: speed, type: float, value: 2.5}\n");
-	EXPECT_FLOAT_EQ(SettingsManager::getAs<float>("speed").value(), 2.5f);
-	SettingsManager::clear();
-	SettingsManager::setGameName("");
+	settings.loadDefaultsFromString("GameSettings:\n  - {key: speed, type: float, value: 2.5}\n");
+	EXPECT_FLOAT_EQ(settings.getAs<float>("speed").value(), 2.5f);
 }
 
 #if OWL_WITH_GUI
