@@ -30,10 +30,8 @@ constexpr VkDeviceSize g_defaultBufferSize = 4096;
 
 // Resources written into declared bindings nothing was bound to, so every descriptor a shader reads is valid.
 struct DefaultResources {
-	VkBuffer uniform = nullptr;// Zeroed uniform buffer.
-	VkDeviceMemory uniformMemory = nullptr;// Memory of the uniform buffer.
-	VkBuffer storage = nullptr;// Zeroed storage buffer.
-	VkDeviceMemory storageMemory = nullptr;// Memory of the storage buffer.
+	AllocatedBuffer uniform;// Zeroed uniform buffer.
+	AllocatedBuffer storage;// Zeroed storage buffer.
 	TextureData image;// 1x1 opaque white texture.
 };
 
@@ -42,60 +40,34 @@ auto getDefaults() -> DefaultResources& {
 	return sDefaults;
 }
 
-void createZeroedBuffer(const VkBufferUsageFlags iUsage, VkBuffer& oBuffer, VkDeviceMemory& oMemory) {
-	const auto& core = VulkanCore::get();
-	createBuffer(g_defaultBufferSize, iUsage,
-				 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, oBuffer, oMemory);
-	void* mapped = nullptr;
-	if (oMemory == nullptr ||
-		vkMapMemory(core.getLogicalDevice(), oMemory, 0, g_defaultBufferSize, 0, &mapped) != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan RendererDescriptors: Failed to map a default buffer.")
-		return;
-	}
-
-	OWL_DIAG_PUSH
-	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
-	memset(mapped, 0, g_defaultBufferSize);
-	OWL_DIAG_POP
-
-	vkUnmapMemory(core.getLogicalDevice(), oMemory);
+auto createZeroedBuffer(const VkBufferUsageFlags iUsage, const std::string_view iName) -> AllocatedBuffer {
+	auto buffer = createBuffer(g_defaultBufferSize, iUsage, MemoryUsage::Upload, iName);
+	const std::vector<uint8_t> zeros(g_defaultBufferSize, 0);
+	writeMapped(buffer, zeros.data(), zeros.size());
+	return buffer;
 }
 
 void createWhiteImage(TextureData& oImage) {
-	const auto& core = VulkanCore::get();
 	constexpr uint32_t white = 0xffffffff;
-	VkBuffer staging = nullptr;
-	VkDeviceMemory stagingMemory = nullptr;
-	createBuffer(sizeof(white), VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-				 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging, stagingMemory);
-	void* mapped = nullptr;
-	if (vkMapMemory(core.getLogicalDevice(), stagingMemory, 0, sizeof(white), 0, &mapped) == VK_SUCCESS) {
-
-		OWL_DIAG_PUSH
-		OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
-		memcpy(mapped, &white, sizeof(white));
-		OWL_DIAG_POP
-
-		vkUnmapMemory(core.getLogicalDevice(), stagingMemory);
-	}
+	auto staging = createBuffer(sizeof(white), VK_BUFFER_USAGE_TRANSFER_SRC_BIT, MemoryUsage::Upload, "staging");
+	writeMapped(staging, &white, sizeof(white));
 	oImage.debugName = "rd.defaultWhite";
 	oImage.createImage({1, 1});
-	vkBindImageMemory(core.getLogicalDevice(), oImage.textureImage, oImage.textureImageMemory, 0);
 	transitionImageLayout(oImage.textureImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	copyBufferToImage(staging, oImage.textureImage, {1, 1});
+	copyBufferToImage(staging.buffer, oImage.textureImage, {1, 1});
 	transitionImageLayout(oImage.textureImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 						  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	freeBuffer(core.getLogicalDevice(), staging, stagingMemory);
+	freeBuffer(staging);
 	oImage.createView();
 	oImage.createSampler();
 }
 
 void ensureDefaults() {
 	auto& defaults = getDefaults();
-	if (defaults.uniform == nullptr)
-		createZeroedBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, defaults.uniform, defaults.uniformMemory);
-	if (defaults.storage == nullptr)
-		createZeroedBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, defaults.storage, defaults.storageMemory);
+	if (defaults.uniform.buffer == nullptr)
+		defaults.uniform = createZeroedBuffer(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, "rd.defaultUniform");
+	if (defaults.storage.buffer == nullptr)
+		defaults.storage = createZeroedBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, "rd.defaultStorage");
 	if (defaults.image.textureImage == nullptr)
 		createWhiteImage(defaults.image);
 }
@@ -177,20 +149,7 @@ void RendererDescriptors::release() {
 	auto* const device = core.getLogicalDevice();
 
 	for (auto& ubo: m_uniformBindings | std::views::values) {
-		for (size_t i = 0; i < ubo.buffers.size(); ++i) {
-			if (i < ubo.mapped.size() && ubo.mapped[i] != nullptr) {
-				vkUnmapMemory(device, ubo.memory[i]);
-				ubo.mapped[i] = nullptr;
-			}
-			if (ubo.buffers[i] != nullptr) {
-				vkDestroyBuffer(device, ubo.buffers[i], nullptr);
-				ubo.buffers[i] = nullptr;
-			}
-			if (i < ubo.memory.size() && ubo.memory[i] != nullptr) {
-				vkFreeMemory(device, ubo.memory[i], nullptr);
-				ubo.memory[i] = nullptr;
-			}
-		}
+		for (auto& buffer: ubo.buffers) freeBuffer(buffer);
 	}
 	m_uniformBindings.clear();
 	m_storageBindings.clear();
@@ -210,48 +169,28 @@ void RendererDescriptors::releaseDefaults() {
 		return;
 	}
 	auto* const device = VulkanCore::get().getLogicalDevice();
-	if (defaults.uniform != nullptr)
-		freeBuffer(device, defaults.uniform, defaults.uniformMemory);
-	if (defaults.storage != nullptr)
-		freeBuffer(device, defaults.storage, defaults.storageMemory);
+	freeBuffer(defaults.uniform);
+	freeBuffer(defaults.storage);
 	// TextureData::freeTexture would recreate the global single-image pool, already released at this point.
 	auto& image = defaults.image;
 	if (image.textureSampler != nullptr)
 		vkDestroySampler(device, image.textureSampler, nullptr);
 	if (image.textureImageView != nullptr)
 		vkDestroyImageView(device, image.textureImageView, nullptr);
-	if (image.textureImage != nullptr)
-		vkDestroyImage(device, image.textureImage, nullptr);
-	if (image.textureImageMemory != nullptr)
-		vkFreeMemory(device, image.textureImageMemory, nullptr);
+	AllocatedImage allocated{.image = image.textureImage, .allocation = image.textureImageMemory};
+	MemoryAllocator::get().destroyImage(allocated);
 	defaults = DefaultResources{};
 }
 
 void RendererDescriptors::registerUniform(const uint32_t iBinding, const uint32_t iSize) {
-	const auto& core = VulkanCore::get();
-	auto* const device = core.getLogicalDevice();
-	auto& [buffers, memory, mapped, size] = m_uniformBindings[iBinding];
-	for (size_t i = 0; i < buffers.size() && i < g_maxFrameInFlight; ++i) {
-		if (i < mapped.size() && mapped[i] != nullptr)
-			vkUnmapMemory(device, memory[i]);
-		if (buffers[i] != nullptr)
-			vkDestroyBuffer(device, buffers[i], nullptr);
-		if (i < memory.size() && memory[i] != nullptr)
-			vkFreeMemory(device, memory[i], nullptr);
-	}
-	buffers.assign(g_maxFrameInFlight, nullptr);
-	memory.assign(g_maxFrameInFlight, nullptr);
-	mapped.assign(g_maxFrameInFlight, nullptr);
+	auto& [buffers, size] = m_uniformBindings[iBinding];
+	for (auto& buffer: buffers) freeBuffer(buffer);
+	buffers.assign(g_maxFrameInFlight, {});
 	size = iSize;
 	m_dirty = true;
-	for (size_t i = 0; i < g_maxFrameInFlight; i++) {
-		createBuffer(iSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-					 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, buffers[i], memory[i]);
-		if (const auto result = vkMapMemory(device, memory[i], 0, iSize, 0, &mapped[i]); result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan RendererDescriptors[{}]: failed to map UBO (binding={}, frame={}).", m_rendererName,
-						   iBinding, i)
-		}
-	}
+	for (auto& buffer: buffers)
+		buffer = createBuffer(iSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, MemoryUsage::Upload,
+							  "rd.ubo:" + m_rendererName);
 }
 
 void RendererDescriptors::setUniformData(const uint32_t iBinding, const void* iData, const size_t iSize) const {
@@ -263,13 +202,9 @@ void RendererDescriptors::setUniformData(const uint32_t iBinding, const void* iD
 		return;
 	}
 	const auto frame = vkh.getCurrentFrameIndex();
-	if (frame >= it->second.mapped.size() || it->second.mapped[frame] == nullptr)
+	if (frame >= it->second.buffers.size())
 		return;
-
-	OWL_DIAG_PUSH
-	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
-	memcpy(it->second.mapped[frame], iData, iSize);
-	OWL_DIAG_POP
+	writeMapped(it->second.buffers[frame], iData, iSize);
 }
 
 void RendererDescriptors::bindStorageBuffer(const uint32_t iBinding, VkBuffer iBuffer, const VkDeviceSize iSize) {
@@ -337,16 +272,16 @@ void RendererDescriptors::writeDescriptor(VkDescriptorSet iSet, const size_t iFr
 								   .pBufferInfo = nullptr,
 								   .pTexelBufferView = nullptr};
 		if (type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-			VkDescriptorBufferInfo info{.buffer = defaults.uniform, .offset = 0, .range = g_defaultBufferSize};
+			VkDescriptorBufferInfo info{.buffer = defaults.uniform.buffer, .offset = 0, .range = g_defaultBufferSize};
 			if (const auto it = m_uniformBindings.find(binding); it != m_uniformBindings.end() &&
 																 iFrame < it->second.buffers.size() &&
-																 it->second.buffers[iFrame] != nullptr)
-				info = {.buffer = it->second.buffers[iFrame], .offset = 0, .range = it->second.size};
+																 it->second.buffers[iFrame].buffer != nullptr)
+				info = {.buffer = it->second.buffers[iFrame].buffer, .offset = 0, .range = it->second.size};
 			if (info.buffer == nullptr)
 				continue;
 			write.pBufferInfo = &bufferInfos.emplace_back(info);
 		} else if (type == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER) {
-			VkDescriptorBufferInfo info{.buffer = defaults.storage, .offset = 0, .range = g_defaultBufferSize};
+			VkDescriptorBufferInfo info{.buffer = defaults.storage.buffer, .offset = 0, .range = g_defaultBufferSize};
 			if (const auto it = m_storageBindings.find(binding);
 				it != m_storageBindings.end() && it->second.buffer != nullptr)
 				info = {.buffer = it->second.buffer, .offset = 0, .range = it->second.size};

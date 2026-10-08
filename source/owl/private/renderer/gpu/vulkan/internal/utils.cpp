@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 
 namespace owl::renderer::gpu::vulkan::internal {
 
@@ -77,47 +78,33 @@ void copyBuffer(const VkBuffer& iSrcBuffer, const VkBuffer& iDstBuffer, const Vk
 	core.endSingleTimeCommands(commandBuffer);
 }
 
-void createBuffer(const VkDeviceSize iSize, const VkBufferUsageFlags iUsage, const VkMemoryPropertyFlags iProperties,
-				  VkBuffer& iBuffer, VkDeviceMemory& iBufferMemory) {
-	const auto& core = VulkanCore::get();
-	const VkBufferCreateInfo bufferInfo{.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-										.pNext = nullptr,
-										.flags = {},
-										.size = iSize,
-										.usage = iUsage,
-										.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-										.queueFamilyIndexCount = 0,
-										.pQueueFamilyIndices = nullptr};
-
-	if (const VkResult result = vkCreateBuffer(core.getLogicalDevice(), &bufferInfo, nullptr, &iBuffer);
-		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan buffer: failed to create vertex buffer ({}).", resultString(result))
-		return;
-	}
-
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(core.getLogicalDevice(), iBuffer, &memRequirements);
-
-	const VkMemoryAllocateInfo allocInfo{.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-										 .pNext = nullptr,
-										 .allocationSize = memRequirements.size,
-										 .memoryTypeIndex =
-												 core.findMemoryTypeIndex(memRequirements.memoryTypeBits, iProperties)};
-
-	if (const VkResult result = vkAllocateMemory(core.getLogicalDevice(), &allocInfo, nullptr, &iBufferMemory);
-		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan vertex buffer: failed to allocate memory buffer ({}).", resultString(result))
-		return;
-	}
-
-	if (const VkResult result = vkBindBufferMemory(core.getLogicalDevice(), iBuffer, iBufferMemory, 0);
-		result != VK_SUCCESS)
-		OWL_CORE_ERROR("Vulkan vertex buffer: failed to bind memory buffer ({}).", resultString(result))
+auto createBuffer(const VkDeviceSize iSize, const VkBufferUsageFlags iUsage, const MemoryUsage iMemory,
+				  const std::string_view iName) -> AllocatedBuffer {
+	return MemoryAllocator::get().createBuffer(iSize, iUsage, iMemory, iName);
 }
 
-void freeBuffer(const VkDevice& iDevice, const VkBuffer& iBuffer, const VkDeviceMemory& iBufferMemory) {
-	vkFreeMemory(iDevice, iBufferMemory, nullptr);
-	vkDestroyBuffer(iDevice, iBuffer, nullptr);
+void freeBuffer(AllocatedBuffer& ioBuffer) { MemoryAllocator::get().destroyBuffer(ioBuffer); }
+
+void writeMapped(const AllocatedBuffer& iBuffer, const void* iData, const size_t iSize, const size_t iOffset) {
+	if (iBuffer.mapped == nullptr || iData == nullptr || iSize == 0 || iOffset + iSize > iBuffer.size)
+		return;
+
+	OWL_DIAG_PUSH
+	OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
+	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
+	memcpy(static_cast<uint8_t*>(iBuffer.mapped) + iOffset, iData, iSize);
+	OWL_DIAG_POP
+}
+
+void uploadToDeviceBuffer(VkBuffer iDestination, const void* iData, const VkDeviceSize iSize) {
+	if (iDestination == nullptr || iData == nullptr || iSize == 0)
+		return;
+	auto staging = createBuffer(iSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, MemoryUsage::Upload, "staging");
+	if (staging.buffer == nullptr)
+		return;
+	writeMapped(staging, iData, iSize);
+	copyBuffer(staging.buffer, iDestination, iSize);
+	freeBuffer(staging);
 }
 
 namespace {

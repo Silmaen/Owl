@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "MemoryAllocator.h"
 #include "math/vectors.h"
 #include <cstddef>
 #include <cstdint>
@@ -23,7 +24,7 @@ namespace owl::renderer::gpu::vulkan::internal {
  */
 struct TextureData {
 	VkImage textureImage = nullptr;
-	VkDeviceMemory textureImageMemory = nullptr;
+	VmaAllocation textureImageMemory = nullptr;
 	VkImageView textureImageView = nullptr;
 	VkSampler textureSampler = nullptr;
 	VkDescriptorSet textureDescriptorSet = nullptr;
@@ -131,8 +132,6 @@ public:
 	 * @return Reference to the texture data.
 	 */
 	auto getTextureData(uint32_t iIndex) -> TextureData&;
-
-	void bindTextureImage(uint32_t iIndex);
 
 	void unregisterTexture(uint32_t iIndex);
 
@@ -322,21 +321,14 @@ private:
 	std::vector<VkDescriptorSet> m_descriptorSets;
 	/**
 	 * @brief
-	 *  Per-binding UBO storage. Each binding owns its own per-frame
-	 *  `VkBuffer` + memory + persistent map so a renderer can hold
-	 *  multiple uniform blocks simultaneously (e.g. tilemap_instanced
-	 *  uses binding 0 for the camera UBO and binding 2 for its
-	 *  per-draw config UBO).
+	 *  Per-binding UBO storage: one persistently mapped buffer per in-flight frame.
 	 */
 	struct UboBinding {
-		std::vector<VkBuffer> buffers;///< Per in-flight frame.
-		std::vector<VkDeviceMemory> memory;///< Backing memory per frame.
-		std::vector<void*> mapped;///< Persistent host map per frame.
+		std::vector<AllocatedBuffer> buffers;///< Per in-flight frame.
 		uint32_t size = 0;///< Buffer size in bytes.
 	};
 	/// All currently registered UBO bindings keyed by binding slot.
 	std::unordered_map<uint32_t, UboBinding> m_uniformBindings;
-	uint32_t m_bindedTexture = 0;
 	std::vector<uint32_t> m_textureBind;
 
 	/**

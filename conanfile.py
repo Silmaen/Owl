@@ -130,6 +130,7 @@ class OwlEngineConan(ConanFile):
             self.requires("spirv-cross/1.4.357.0")
             self.requires("vulkan-headers/1.4.357.0")
             self.requires("vulkan-loader/1.4.357.0")
+            self.requires("vulkan-memory-allocator/3.3.0")
             self.requires("vulkan-utility-libraries/1.4.357.0")
         if self.options.physics:
             self.requires("box2d/3.1.1")

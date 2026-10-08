@@ -259,11 +259,9 @@ public:
 	};
 
 private:
-	/// Per-binding uniform-buffer storage (one VkBuffer + map per frame).
+	/// Per-binding uniform-buffer storage (one mapped buffer per frame).
 	struct UboBinding {
-		std::vector<VkBuffer> buffers;///< Per in-flight frame.
-		std::vector<VkDeviceMemory> memory;///< Backing memory per frame.
-		std::vector<void*> mapped;///< Persistent host map per frame.
+		std::vector<AllocatedBuffer> buffers;///< Per in-flight frame.
 		uint32_t size = 0;///< Buffer size in bytes.
 	};
 

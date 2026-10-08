@@ -39,14 +39,10 @@ void TextureData::freeTexture() {
 		vkDestroyImageView(core.getLogicalDevice(), textureImageView, nullptr);
 		textureImageView = nullptr;
 	}
-	if (textureImage != nullptr) {
-		vkDestroyImage(core.getLogicalDevice(), textureImage, nullptr);
-		textureImage = nullptr;
-	}
-	if (textureImageMemory != nullptr) {
-		vkFreeMemory(core.getLogicalDevice(), textureImageMemory, nullptr);
-		textureImageMemory = nullptr;
-	}
+	AllocatedImage image{.image = textureImage, .allocation = textureImageMemory};
+	MemoryAllocator::get().destroyImage(image);
+	textureImage = nullptr;
+	textureImageMemory = nullptr;
 }
 
 void TextureData::createDescriptorSet() {
@@ -151,7 +147,6 @@ void TextureData::createSampler() {
 
 void TextureData::createImage(const math::vec2ui& iDimensions) {
 	freeTexture();
-	const auto& vkc = VulkanCore::get();
 	const VkImageCreateInfo imageInfo{
 			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 			.pNext = nullptr,
@@ -169,25 +164,9 @@ void TextureData::createImage(const math::vec2ui& iDimensions) {
 			.queueFamilyIndexCount = 0,
 			.pQueueFamilyIndices = nullptr,
 			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
-	if (const VkResult result = vkCreateImage(vkc.getLogicalDevice(), &imageInfo, nullptr, &textureImage);
-		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Texture: failed to create image ({}).", internal::resultString(result))
-		return;
-	}
-	vkc.setObjectName(VK_OBJECT_TYPE_IMAGE, std::bit_cast<uint64_t>(textureImage), "tex.image:" + debugName);
-	VkMemoryRequirements memRequirements;
-	vkGetImageMemoryRequirements(vkc.getLogicalDevice(), textureImage, &memRequirements);
-	const VkMemoryAllocateInfo allocInfo{.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-										 .pNext = nullptr,
-										 .allocationSize = memRequirements.size,
-										 .memoryTypeIndex = vkc.findMemoryTypeIndex(
-												 memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)};
-	if (const VkResult result = vkAllocateMemory(vkc.getLogicalDevice(), &allocInfo, nullptr, &textureImageMemory);
-		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Texture: failed to allocate image memory ({}).", internal::resultString(result))
-	}
-	vkc.setObjectName(VK_OBJECT_TYPE_DEVICE_MEMORY, std::bit_cast<uint64_t>(textureImageMemory),
-					  "tex.memory:" + debugName);
+	const auto image = MemoryAllocator::get().createImage(imageInfo, "tex.image:" + debugName);
+	textureImage = image.image;
+	textureImageMemory = image.allocation;
 }
 
 Descriptors::Descriptors() = default;
@@ -207,14 +186,7 @@ void Descriptors::release() {
 	}
 	m_textures.clear();
 	for (auto& [binding, ubo]: m_uniformBindings) {
-		for (size_t i = 0; i < g_maxFrameInFlight; ++i) {
-			if (i < ubo.mapped.size() && ubo.mapped[i] != nullptr)
-				vkUnmapMemory(core.getLogicalDevice(), ubo.memory[i]);
-			if (i < ubo.buffers.size() && ubo.buffers[i] != nullptr)
-				vkDestroyBuffer(core.getLogicalDevice(), ubo.buffers[i], nullptr);
-			if (i < ubo.memory.size() && ubo.memory[i] != nullptr)
-				vkFreeMemory(core.getLogicalDevice(), ubo.memory[i], nullptr);
-		}
+		for (auto& buffer: ubo.buffers) freeBuffer(buffer);
 	}
 	m_uniformBindings.clear();
 	if (m_singleImageDescriptorPool != nullptr) {
@@ -311,10 +283,10 @@ void Descriptors::updateDescriptor(const size_t iFrame) {
 	std::vector<std::pair<uint32_t, VkDescriptorBufferInfo>> uboInfos;
 	uboInfos.reserve(m_uniformBindings.size());
 	for (const auto& [binding, ubo]: m_uniformBindings) {
-		if (iFrame >= ubo.buffers.size() || ubo.buffers[iFrame] == nullptr)
+		if (iFrame >= ubo.buffers.size() || ubo.buffers[iFrame].buffer == nullptr)
 			continue;
 		uboInfos.emplace_back(binding, VkDescriptorBufferInfo{
-											   .buffer = ubo.buffers[iFrame],
+											   .buffer = ubo.buffers[iFrame].buffer,
 											   .offset = 0,
 											   .range = ubo.size,
 									   });
@@ -377,28 +349,12 @@ void Descriptors::updateDescriptor(const size_t iFrame) {
 }
 
 void Descriptors::registerUniform(const uint32_t iBinding, const uint32_t iSize) {
-	const auto& core = VulkanCore::get();
 	auto& ubo = m_uniformBindings[iBinding];
-	for (size_t i = 0; i < ubo.buffers.size() && i < g_maxFrameInFlight; ++i) {
-		if (i < ubo.mapped.size() && ubo.mapped[i] != nullptr)
-			vkUnmapMemory(core.getLogicalDevice(), ubo.memory[i]);
-		if (ubo.buffers[i] != nullptr)
-			vkDestroyBuffer(core.getLogicalDevice(), ubo.buffers[i], nullptr);
-		if (i < ubo.memory.size() && ubo.memory[i] != nullptr)
-			vkFreeMemory(core.getLogicalDevice(), ubo.memory[i], nullptr);
-	}
-	ubo.buffers.assign(g_maxFrameInFlight, nullptr);
-	ubo.memory.assign(g_maxFrameInFlight, nullptr);
-	ubo.mapped.assign(g_maxFrameInFlight, nullptr);
+	for (auto& buffer: ubo.buffers) freeBuffer(buffer);
+	ubo.buffers.assign(g_maxFrameInFlight, {});
 	ubo.size = iSize;
-	for (size_t i = 0; i < g_maxFrameInFlight; i++) {
-		createBuffer(iSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-					 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, ubo.buffers[i],
-					 ubo.memory[i]);
-		if (const auto result = vkMapMemory(core.getLogicalDevice(), ubo.memory[i], 0, iSize, 0, &ubo.mapped[i]);
-			result != VK_SUCCESS)
-			OWL_CORE_ERROR("Vulkan: Failed to map uniform buffer (binding={}, frame={}).", iBinding, i)
-	}
+	for (auto& buffer: ubo.buffers)
+		buffer = createBuffer(iSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, MemoryUsage::Upload, "descriptors.ubo");
 }
 
 void Descriptors::setUniformData(const uint32_t iBinding, const void* iData, const size_t iSize) const {
@@ -409,13 +365,9 @@ void Descriptors::setUniformData(const uint32_t iBinding, const void* iData, con
 		return;
 	}
 	const auto frame = vkh.getCurrentFrameIndex();
-	if (frame >= it->second.mapped.size() || it->second.mapped[frame] == nullptr)
+	if (frame >= it->second.buffers.size())
 		return;
-
-	OWL_DIAG_PUSH
-	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
-	memcpy(it->second.mapped[frame], iData, iSize);
-	OWL_DIAG_POP
+	writeMapped(it->second.buffers[frame], iData, iSize);
 }
 
 auto Descriptors::registerNewTexture() -> uint32_t { return m_textures.registerNewTexture(); }
@@ -429,14 +381,6 @@ auto Descriptors::isTextureRegistered(const uint32_t iIndex) const -> bool {
 auto Descriptors::getTextureData(const uint32_t iIndex) -> TextureData& { return *m_textures.getTextureData(iIndex); }
 
 void Descriptors::unregisterTexture(const uint32_t iIndex) { m_textures.unregisterTexture(iIndex); }
-
-void Descriptors::bindTextureImage(const uint32_t iIndex) {
-	if (iIndex == m_bindedTexture)
-		return;
-	vkBindImageMemory(VulkanCore::get().getLogicalDevice(), m_textures.getTextureData(iIndex)->textureImage,
-					  m_textures.getTextureData(iIndex)->textureImageMemory, 0);
-	m_bindedTexture = iIndex;
-}
 
 void Descriptors::resetTextureBind() { m_textureBind.clear(); }
 

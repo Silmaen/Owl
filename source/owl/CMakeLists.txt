@@ -136,6 +136,8 @@ if (${PROJECT_PREFIX}_MODULE_RENDER)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw3 MODULE_TARGET glfw REQUIRED)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lunasvg REQUIRED)
     owl_target_link_vulkan(${ENGINE_NAME})
+    # Vulkan Memory Allocator (header only)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE VulkanMemoryAllocator REQUIRED MODULE_TARGET "GPUOpen::VulkanMemoryAllocator")
 endif ()
 
 # physics

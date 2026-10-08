@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "internal/MemoryAllocator.h"
 #include "renderer/gpu/StorageBuffer.h"
 #include <vulkan/vulkan.h>
 
@@ -91,7 +92,7 @@ public:
 	 *  Get the underlying VkBuffer handle (used by compute pipeline setup).
 	 * @return The Vulkan buffer handle.
 	 */
-	[[nodiscard]] auto getHandle() const -> VkBuffer { return m_buffer; }
+	[[nodiscard]] auto getHandle() const -> VkBuffer { return m_buffer.buffer; }
 
 	/**
 	 * @brief
@@ -108,10 +109,8 @@ public:
 	[[nodiscard]] auto getBinding() const -> uint32_t { return m_binding; }
 
 private:
-	/// Underlying VkBuffer handle.
-	VkBuffer m_buffer{nullptr};
-	/// Backing device memory.
-	VkDeviceMemory m_memory{nullptr};
+	/// Persistently mapped buffer and its allocation.
+	internal::AllocatedBuffer m_buffer;
 	/// Buffer size in bytes.
 	uint32_t m_size = 0;
 	/// Shader binding slot.

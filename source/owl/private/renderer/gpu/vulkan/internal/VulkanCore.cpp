@@ -11,6 +11,7 @@
 #include "VulkanCore.h"
 
 #include "FrameProfiler.h"
+#include "MemoryAllocator.h"
 #include "VulkanHandler.h"
 #include "app/Application.h"
 #include "renderer/gpu/vulkan/GraphContext.h"
@@ -97,13 +98,16 @@ void VulkanCore::init(const VulkanConfiguration& iConfiguration) {
 	createLogicalDevice();
 	createQueues();
 	createCommandPool();
-	if (isHealthy())
+	if (!MemoryAllocator::get().init(m_instance, m_physicalDevice, m_logicalDevice))
+		m_state = State::Error;
+	if (isHealthy() && m_state != State::Error)
 		m_state = State::Initialized;
 }
 
 void VulkanCore::release() {
 	FrameProfiler::get().deviceWaitIdle(m_logicalDevice);
 	FrameProfiler::get().release();
+	MemoryAllocator::get().release();
 	if (m_commandPool != nullptr) {
 		vkDestroyCommandPool(m_logicalDevice, m_commandPool, nullptr);
 		OWL_CORE_TRACE("Vulkan: commandPool destroyed.")
@@ -457,21 +461,6 @@ auto VulkanCore::getQueueIndices() const -> std::vector<uint32_t> {
 }
 
 void VulkanCore::updateSurfaceInformation() { m_phyProps->updateSurfaceInformation(); }
-
-OWL_DIAG_PUSH
-OWL_DIAG_DISABLE_CLANG16("-Wunsafe-buffer-usage")
-auto VulkanCore::findMemoryTypeIndex(const uint32_t iTypeFilter, const VkMemoryPropertyFlags iMemProperties) const
-		-> uint32_t {
-	for (uint32_t i = 0; i < m_phyProps->memoryProperties.memoryTypeCount; i++) {
-		if (((iTypeFilter & (1 << i)) != 0u) &&
-			(m_phyProps->memoryProperties.memoryTypes[i].propertyFlags & iMemProperties) == iMemProperties) {
-			return i;
-		}
-	}
-	OWL_CORE_ERROR("Vulkan PhysicalDevice: failed to find suitable memory type!")
-	return std::numeric_limits<uint32_t>::max();
-}
-OWL_DIAG_POP
 
 auto VulkanCore::getMaxSamplerAnisotropy() const -> float { return m_phyProps->properties.limits.maxSamplerAnisotropy; }
 

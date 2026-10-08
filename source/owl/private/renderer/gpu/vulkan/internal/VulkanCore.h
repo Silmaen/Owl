@@ -293,16 +293,6 @@ public:
 
 	/**
 	 * @brief
-	 *  Search for a memory type index.
-	 * @param[in] iTypeFilter Filter on type.
-	 * @param[in] iMemProperties Memory properties.
-	 * @return The memory type index.
-	 */
-	[[nodiscard]] auto findMemoryTypeIndex(uint32_t iTypeFilter, VkMemoryPropertyFlags iMemProperties) const
-			-> uint32_t;
-
-	/**
-	 * @brief
 	 *  Get the max sampler anisotropy.
 	 * @return The max sampler anisotropy.
 	 */

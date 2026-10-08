@@ -10,6 +10,7 @@
 
 #include <vulkan/vulkan_core.h>
 
+#include "internal/MemoryAllocator.h"
 #include "renderer/gpu/Framebuffer.h"
 
 #include <cstdint>
@@ -335,7 +336,7 @@ private:
 	 */
 	struct Image {
 		VkImage image;
-		VkDeviceMemory imageMemory;
+		VmaAllocation imageMemory;
 		VkImageView imageView;
 		VkSampler imageSampler;
 		VkDescriptorSet descriptorSet;

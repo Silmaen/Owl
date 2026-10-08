@@ -157,9 +157,8 @@ void Framebuffer::cleanup() {
 		if (view != nullptr)
 			vkDestroyImageView(vkc.getLogicalDevice(), view, nullptr);
 		if (memory != nullptr) {
-			vkFreeMemory(vkc.getLogicalDevice(), memory, nullptr);
-			if (image != nullptr)
-				vkDestroyImage(vkc.getLogicalDevice(), image, nullptr);
+			internal::AllocatedImage allocated{.image = image, .allocation = memory};
+			internal::MemoryAllocator::get().destroyImage(allocated);
 		}
 	}
 	m_images.clear();
@@ -170,78 +169,28 @@ void Framebuffer::cleanup() {
 }
 
 auto Framebuffer::readPixel(const uint32_t iAttachmentIndex, const int iX, const int iY) -> int {
-	const auto& vkc = internal::VulkanCore::get();
 	const auto& [format, tiling] = m_specs.attachments[iAttachmentIndex];
 	const uint32_t imgIndex = attToImgIdx(iAttachmentIndex);
-	VkBuffer stagingBuffer = nullptr;
-	{
-		const VkBufferCreateInfo bufferCi{.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-										  .pNext = nullptr,
-										  .flags = {},
-										  .size = internal::attachmentFormatToSize(format),
-										  .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-										  .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-										  .queueFamilyIndexCount = 0,
-										  .pQueueFamilyIndices = nullptr};
-		if (const VkResult result = vkCreateBuffer(vkc.getLogicalDevice(), &bufferCi, nullptr, &stagingBuffer);
-			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Framebuffer ({}): failed to create staging buffer ({}).", m_specs.debugName,
-						   internal::resultString(result))
-			return 0;
-		}
-	}
-	VkDeviceMemory stagingBufferMemory = nullptr;
-	{
-		VkMemoryRequirements memRequirements;
-		vkGetBufferMemoryRequirements(vkc.getLogicalDevice(), stagingBuffer, &memRequirements);
-		const VkMemoryAllocateInfo allocInfo{
-				.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-				.pNext = nullptr,
-				.allocationSize = memRequirements.size,
-				.memoryTypeIndex = vkc.findMemoryTypeIndex(memRequirements.memoryTypeBits,
-														   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-																   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)};
-		if (const VkResult result = vkAllocateMemory(vkc.getLogicalDevice(), &allocInfo, nullptr, &stagingBufferMemory);
-			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Framebuffer ({}): failed to allocate staging buffer memory ({}).", m_specs.debugName,
-						   internal::resultString(result))
-			vkDestroyBuffer(vkc.getLogicalDevice(), stagingBuffer, nullptr);
-			return 0;
-		}
-		if (const VkResult result = vkBindBufferMemory(vkc.getLogicalDevice(), stagingBuffer, stagingBufferMemory, 0);
-			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Framebuffer ({}): failed to bind staging buffer memory ({}).", m_specs.debugName,
-						   internal::resultString(result))
-			vkDestroyBuffer(vkc.getLogicalDevice(), stagingBuffer, nullptr);
-			vkFreeMemory(vkc.getLogicalDevice(), stagingBufferMemory, nullptr);
-			return 0;
-		}
+	auto staging = internal::createBuffer(internal::attachmentFormatToSize(format), VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+										  internal::MemoryUsage::Readback, "fb.readPixel");
+	if (staging.mapped == nullptr) {
+		OWL_CORE_ERROR("Vulkan Framebuffer ({}): failed to create staging buffer.", m_specs.debugName)
+		return 0;
 	}
 	internal::transitionImageLayout(m_images[imgIndex].image, VK_IMAGE_LAYOUT_UNDEFINED,
 									VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-	internal::copyImageToBuffer(m_images[imgIndex].image, stagingBuffer, {1, 1}, {iX, iY});
+	internal::copyImageToBuffer(m_images[imgIndex].image, staging.buffer, {1, 1}, {iX, iY});
 	internal::transitionImageLayout(m_images[imgIndex].image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 									isMainTarget() ? VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
 												   : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-	void* data = nullptr;
-	if (const VkResult result = vkMapMemory(vkc.getLogicalDevice(), stagingBufferMemory, 0,
-											internal::attachmentFormatToSize(format), 0, &data);
-		result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Framebuffer ({}): failed to map memory ({}).", m_specs.debugName,
-					   internal::resultString(result))
-		vkDestroyBuffer(vkc.getLogicalDevice(), stagingBuffer, nullptr);
-		vkFreeMemory(vkc.getLogicalDevice(), stagingBufferMemory, nullptr);
-		return 0;
-	}
 	int32_t pixel = 0;
 
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
-	memcpy(&pixel, data, internal::attachmentFormatToSize(format));
+	memcpy(&pixel, staging.mapped, internal::attachmentFormatToSize(format));
 	OWL_DIAG_POP
 
-	vkDestroyBuffer(vkc.getLogicalDevice(), stagingBuffer, nullptr);
-	vkFreeMemory(vkc.getLogicalDevice(), stagingBufferMemory, nullptr);
+	internal::freeBuffer(staging);
 	return pixel;
 }
 
@@ -260,12 +209,9 @@ auto Framebuffer::readColorAttachment(const uint32_t iAttachmentIndex) -> std::v
 	const auto& vkc = internal::VulkanCore::get();
 	internal::FrameProfiler::get().deviceWaitIdle(vkc.getLogicalDevice());
 	const VkDeviceSize size = static_cast<VkDeviceSize>(m_specs.size.surface()) * 4;
-	VkBuffer staging = nullptr;
-	VkDeviceMemory stagingMemory = nullptr;
-	internal::createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-						   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging,
-						   stagingMemory);
-	if (staging == nullptr || stagingMemory == nullptr) {
+	auto staging = internal::createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, internal::MemoryUsage::Readback,
+										  "fb.readback");
+	if (staging.mapped == nullptr) {
 		OWL_CORE_ERROR("Vulkan Framebuffer ({}): Failed to create the read-back buffer.", m_specs.debugName)
 		return {};
 	}
@@ -273,24 +219,17 @@ auto Framebuffer::readColorAttachment(const uint32_t iAttachmentIndex) -> std::v
 	// unbind() leaves the colour images in SHADER_READ_ONLY_OPTIMAL; give them back in that layout.
 	internal::transitionImageLayout(image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 									VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-	internal::copyImageToBuffer(image, staging, m_specs.size);
+	internal::copyImageToBuffer(image, staging.buffer, m_specs.size);
 	internal::transitionImageLayout(image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 									VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	std::vector<uint8_t> pixels(static_cast<size_t>(size));
-	void* mapped = nullptr;
-	if (vkMapMemory(vkc.getLogicalDevice(), stagingMemory, 0, size, 0, &mapped) != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan Framebuffer ({}): Failed to map the read-back buffer.", m_specs.debugName)
-		internal::freeBuffer(vkc.getLogicalDevice(), staging, stagingMemory);
-		return {};
-	}
 
 	OWL_DIAG_PUSH
 	OWL_DIAG_DISABLE_CLANG20("-Wunsafe-buffer-usage-in-libc-call")
-	memcpy(pixels.data(), mapped, pixels.size());
+	memcpy(pixels.data(), staging.mapped, pixels.size());
 	OWL_DIAG_POP
 
-	vkUnmapMemory(vkc.getLogicalDevice(), stagingMemory);
-	internal::freeBuffer(vkc.getLogicalDevice(), staging, stagingMemory);
+	internal::freeBuffer(staging);
 	if (const VkFormat vkFormat = internal::attachmentFormatToVulkan(format);
 		vkFormat == VK_FORMAT_B8G8R8A8_UNORM || vkFormat == VK_FORMAT_B8G8R8A8_SRGB) {
 		for (size_t i = 0; i + 3 < pixels.size(); i += 4) std::swap(pixels[i], pixels[i + 2]);
@@ -428,37 +367,11 @@ void Framebuffer::createImages() {
 				.queueFamilyIndexCount = 1,
 				.pQueueFamilyIndices = nullptr,
 				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED};
-		if (const VkResult result = vkCreateImage(vkc.getLogicalDevice(), &imageInfo, nullptr, &m_images[i].image);
-			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Framebuffer ({}): failed to create image ({}).", m_specs.debugName,
-						   internal::resultString(result))
+		const auto allocated = internal::MemoryAllocator::get().createImage(imageInfo, "fb.image:" + m_specs.debugName);
+		if (allocated.image == nullptr)
 			return;
-		}
-		VkMemoryRequirements memRequirements;
-
-		vkGetImageMemoryRequirements(vkc.getLogicalDevice(), m_images[i].image, &memRequirements);
-		const VkMemoryAllocateInfo allocInfo{
-				.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-				.pNext = nullptr,
-				.allocationSize = memRequirements.size,
-				.memoryTypeIndex =
-						vkc.findMemoryTypeIndex(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)};
-		if (const VkResult result =
-
-					vkAllocateMemory(vkc.getLogicalDevice(), &allocInfo, nullptr, &m_images[i].imageMemory);
-			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Framebuffer ({}): failed to allocate image memory ({}).", m_specs.debugName,
-						   internal::resultString(result))
-			return;
-		}
-		if (const VkResult result =
-
-					vkBindImageMemory(vkc.getLogicalDevice(), m_images[i].image, m_images[i].imageMemory, 0);
-			result != VK_SUCCESS) {
-			OWL_CORE_ERROR("Vulkan Framebuffer ({}): failed to bind image memory ({}).", m_specs.debugName,
-						   internal::resultString(result))
-			return;
-		}
+		m_images[i].image = allocated.image;
+		m_images[i].imageMemory = allocated.allocation;
 
 		if (isDepth)
 			continue;
