@@ -57,6 +57,9 @@ get confirmation. A passing headless (Null backend) test is evidence the path wo
 - **OpenGL shader path**: SPIR-V when the driver has GL 4.6 or `GL_ARB_gl_spirv` (built-ins remapped by
   `remapBuiltinsForOpenGl`), GLSL 4.50 from spirv-cross otherwise (llvmpipe). `OWL_OPENGL_SHADERS=glsl|spirv`
   forces it; check both when touching a shader.
+- **One element type per storage buffer in a shader.** On the OpenGL SPIR-V path NVIDIA binds every SSBO sharing a
+  block type to one buffer (two `StructuredBuffer<float4x4>` read the same data); wrap the element in a struct of its
+  own. `SlangCompute.shippedShadersGiveEachStorageBufferItsOwnBlockType` checks it; llvmpipe (GLSL path) never shows it.
 
 ## Vulkan validation
 

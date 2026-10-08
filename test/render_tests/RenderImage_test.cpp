@@ -189,7 +189,8 @@ INSTANTIATE_TEST_SUITE_P(Scenes, RenderImage,
 										 RenderCase{"tilemap", "vulkan"}, RenderCase{"tilemap", "opengl"},
 										 RenderCase{"raycast", "vulkan"}, RenderCase{"raycast", "opengl"},
 										 RenderCase{"voxel", "vulkan"}, RenderCase{"voxel", "opengl"},
-										 RenderCase{"mixed", "vulkan"}, RenderCase{"mixed", "opengl"}),
+										 RenderCase{"mixed", "vulkan"}, RenderCase{"mixed", "opengl"},
+										 RenderCase{"stylemix", "vulkan"}, RenderCase{"stylemix", "opengl"}),
 						 [](const testing::TestParamInfo<RenderCase>& iInfo) -> std::string {
 							 return iInfo.param.scene + "_" + iInfo.param.backend;
 						 });

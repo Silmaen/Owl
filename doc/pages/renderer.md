@@ -539,17 +539,18 @@ sequenceDiagram
 
 ## Image tests {#render-image-tests}
 
-`test/render_tests` (`owl_render_tests_unit_test`, CTest label `render`) renders six reference scenes on lavapipe
+`test/render_tests` (`owl_render_tests_unit_test`, CTest label `render`) renders seven reference scenes on lavapipe
 (Vulkan) and llvmpipe (OpenGL) and compares each capture to a versioned PNG:
 
-| Scene     | Covers                                                                         |
-|-----------|--------------------------------------------------------------------------------|
-| `sprites` | Gradient background, plain, rotated, textured, tiled and tinted quads, circles |
-| `text`    | World-space MSDF text (multi-line, rotated) and a screen-space UI label        |
-| `tilemap` | Instanced tilemap with several tilesets                                        |
-| `raycast` | GPU raycaster: walls, doors, billboard sprites, floor and ceiling              |
-| `voxel`   | Procedural voxel terrain with water, seen by the voxel player                  |
-| `mixed`   | Platformer level: tilemap, sprites, animated sprite, HUD text and panel        |
+| Scene      | Covers                                                                         |
+|------------|--------------------------------------------------------------------------------|
+| `sprites`  | Gradient background, plain, rotated, textured, tiled and tinted quads, circles |
+| `text`     | World-space MSDF text (multi-line, rotated) and a screen-space UI label        |
+| `tilemap`  | Instanced tilemap with several tilesets                                        |
+| `raycast`  | GPU raycaster: walls, doors, billboard sprites, floor and ceiling              |
+| `voxel`    | Procedural voxel terrain with water, seen by the voxel player                  |
+| `mixed`    | Platformer level: tilemap, sprites, animated sprite, HUD text and panel        |
+| `stylemix` | Voxel terrain, perspective sprites, `Space: Screen` HUD, voxel crosshair       |
 
 Each case runs `OwlRunner --frame-bench <scene> --capture <png>` (320 x 180, 60 warm-up frames, fixed time step, Vulkan
 validation on) in its own process, then compares RGB per pixel: a pixel differs above 24 / 255 on a channel, the test
