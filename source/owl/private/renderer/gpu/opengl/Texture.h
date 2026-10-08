@@ -90,5 +90,7 @@ public:
 private:
 	/// OpenGL binding.
 	uint32_t m_textureId = 0;
+	/// Mipmap levels allocated, fixed at creation (`Specification::getMipLevelCount`).
+	uint32_t m_mipLevels = 1;
 };
 }// namespace owl::renderer::gpu::opengl

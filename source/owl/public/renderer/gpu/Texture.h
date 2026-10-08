@@ -96,10 +96,17 @@ public:
 		math::vec2ui size;
 		/// Pixel format.
 		ImageFormat format = ImageFormat::Rgba8;
-		/// If mips should be generated. Force-disabled when `filterMode == Nearest`.
-		bool generateMips = true;
+		/// Generate the full mipmap chain on upload (off by default: atlases would bleed between tiles when minified).
+		bool generateMips = false;
 		/// Sampler filtering — `Nearest` disables mipmaps and snaps to texels.
 		FilterMode filterMode = FilterMode::Linear;
+
+		/**
+		 * @brief
+		 *  Number of mipmap levels the backends allocate for this specification.
+		 * @return The full chain (down to 1×1) when `generateMips` is set with `Linear` filtering, 1 otherwise.
+		 */
+		[[nodiscard]] auto getMipLevelCount() const -> uint32_t;
 
 		/**
 		 * @brief
@@ -187,9 +194,9 @@ public:
 	 *
 	 * Useful when the texture is loaded by an asset path (which uses the default
 	 * `Linear` filter) but the consumer wants pixel-perfect output (e.g. the
-	 * raycaster wall atlas). Updates the GPU sampler parameters in-place; a
-	 * Vulkan backend that uses a shared sampler may treat this as a no-op for
-	 * now (TODO: per-texture sampler).
+	 * raycaster wall atlas). Updates the GPU sampler in place (Vulkan waits for
+	 * the device to be idle first). The mipmap levels stay those allocated at
+	 * creation: switching to `Linear` does not add any.
 	 * @param[in] iMode The new filter mode.
 	 */
 	virtual void setFilterMode([[maybe_unused]] FilterMode iMode) { m_specification.filterMode = iMode; }

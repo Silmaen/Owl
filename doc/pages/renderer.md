@@ -714,11 +714,18 @@ render pass (critical for Vulkan's `DONT_CARE` loadOp).
 
 ### Specification
 
-| Field          | Type           | Default  | Description        |
-|----------------|----------------|----------|--------------------|
-| `size`         | `math::vec2ui` | `{0, 0}` | Texture dimensions |
-| `format`       | `ImageFormat`  | `Rgba8`  | Pixel format       |
-| `generateMips` | `bool`         | `true`   | Generate mipmaps   |
+| Field          | Type           | Default  | Description                                                     |
+|----------------|----------------|----------|-----------------------------------------------------------------|
+| `size`         | `math::vec2ui` | `{0, 0}` | Texture dimensions                                              |
+| `format`       | `ImageFormat`  | `Rgba8`  | Pixel format                                                    |
+| `generateMips` | `bool`         | `false`  | Generate the full mipmap chain on upload (`Linear` filter only) |
+| `filterMode`   | `FilterMode`   | `Linear` | `Linear` (bilinear, trilinear with mips) or `Nearest`           |
+
+Both backends sample the same way: `Linear` magnifies and minifies linearly (Vulkan adds anisotropy), trilinearly when
+the texture has mipmaps; `Nearest` snaps to texels and ignores mipmaps. Mipmaps are off by default, so an atlas never
+bleeds between cells when minified; ask for them where a texture is drawn smaller than its size (Owl Nest's icon
+atlas). `setFilterMode()` switches the sampler at run time (on Vulkan after a device wait: load time and editor actions
+only); the mipmap levels stay those allocated at creation.
 
 ### ImageFormat
 

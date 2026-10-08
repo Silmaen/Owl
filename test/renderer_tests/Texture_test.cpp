@@ -53,6 +53,30 @@ TEST(TextureSpecifications, FromStringRoundTrip) {
 	EXPECT_TRUE(parsed.generateMips);
 }
 
+TEST(TextureSpecifications, MipmapsAreOffByDefault) {
+	const Texture::Specification spec{.size = {256, 64}};
+	EXPECT_FALSE(spec.generateMips);
+	EXPECT_EQ(spec.getMipLevelCount(), 1u);
+	Texture::Specification parsed;
+	parsed.generateMips = true;
+	parsed.fromString("32:32:Rgba8");
+	EXPECT_FALSE(parsed.generateMips);
+}
+
+TEST(TextureSpecifications, MipLevelCountCoversTheFullChain) {
+	Texture::Specification spec{.size = {256, 64}, .generateMips = true};
+	EXPECT_EQ(spec.getMipLevelCount(), 9u);
+	spec.size = {300, 17};
+	EXPECT_EQ(spec.getMipLevelCount(), 9u);
+	spec.size = {1, 1};
+	EXPECT_EQ(spec.getMipLevelCount(), 1u);
+	spec.size = {0, 0};
+	EXPECT_EQ(spec.getMipLevelCount(), 1u);
+	spec.size = {256, 64};
+	spec.filterMode = FilterMode::Nearest;
+	EXPECT_EQ(spec.getMipLevelCount(), 1u);
+}
+
 // Texture2D::createFromSerialized with no API initialised still handles the
 // short / unknown-prefix cases and returns nullptr.
 TEST(Texture, CreateFromSerializedShortAndUnknown) {

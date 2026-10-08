@@ -79,6 +79,14 @@ public:
 	 */
 	void setData(void* iData, uint32_t iSize) override;
 
+	/**
+	 * @brief
+	 *  Switch the sampler between linear and nearest filtering.
+	 * Waits for the device to be idle before replacing the sampler: meant for load time and editor actions.
+	 * @param[in] iMode The new filter mode.
+	 */
+	void setFilterMode(FilterMode iMode) override;
+
 private:
 	/// Vulkan-side texture identifier (registered with the descriptor pool / bindless table).
 	uint32_t m_textureId = 0;
