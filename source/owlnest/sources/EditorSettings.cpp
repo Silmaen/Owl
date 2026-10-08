@@ -9,7 +9,10 @@
 #include "EditorSettings.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <fstream>
+#include <optional>
+#include <string>
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
@@ -19,8 +22,54 @@ OWL_DIAG_POP
 
 namespace owl::nest {
 
+namespace {
+
+auto projectKey(const std::filesystem::path& iProjectDir) -> std::string {
+	auto normal = iProjectDir.lexically_normal();
+	if (!normal.has_filename() && normal.has_relative_path())
+		normal = normal.parent_path();
+	return normal.generic_string();
+}
+
+auto readSession(const YAML::Node& iNode) -> ProjectSession {
+	ProjectSession session;
+	if (const auto docs = iNode["documents"]; docs && docs.IsSequence()) {
+		for (const auto& doc: docs) session.documents.push_back(doc.as<std::string>());
+	}
+	session.activeDocument = iNode["active"].as<std::string>("");
+	session.selectedEntity = iNode["selectedEntity"].as<uint64_t>(0);
+	return session;
+}
+
+}// namespace
+
+auto ProjectSession::toStored(const std::filesystem::path& iProjectDir, const std::filesystem::path& iFile)
+		-> std::string {
+	const auto relative = iFile.lexically_normal().lexically_relative(iProjectDir.lexically_normal());
+	if (relative.empty() || *relative.begin() == "..")
+		return iFile.lexically_normal().generic_string();
+	return relative.generic_string();
+}
+
+auto ProjectSession::resolve(const std::filesystem::path& iProjectDir, const std::string& iStored)
+		-> std::filesystem::path {
+	const std::filesystem::path stored{iStored};
+	return stored.is_absolute() ? stored : (iProjectDir / stored).lexically_normal();
+}
+
+void EditorSettings::setProjectSession(const std::filesystem::path& iProjectDir, const ProjectSession& iSession) {
+	projectSessions[projectKey(iProjectDir)] = iSession;
+}
+
+auto EditorSettings::getProjectSession(const std::filesystem::path& iProjectDir) const
+		-> std::optional<ProjectSession> {
+	if (const auto it = projectSessions.find(projectKey(iProjectDir)); it != projectSessions.end())
+		return it->second;
+	return std::nullopt;
+}
+
 void EditorSettings::pushRecentProject(const std::filesystem::path& iProjectDir) {
-	const auto canonical = iProjectDir.lexically_normal().generic_string();
+	const auto canonical = projectKey(iProjectDir);
 	// Remove any existing entry for this project.
 	std::erase_if(recentProjects, [&canonical](const std::string& iEntry) -> bool { return iEntry == canonical; });
 	// Insert at the front.
@@ -31,7 +80,7 @@ void EditorSettings::pushRecentProject(const std::filesystem::path& iProjectDir)
 }
 
 void EditorSettings::removeRecentProject(const std::filesystem::path& iProjectDir) {
-	const auto canonical = iProjectDir.lexically_normal().generic_string();
+	const auto canonical = projectKey(iProjectDir);
 	std::erase_if(recentProjects, [&canonical](const std::string& iEntry) -> bool { return iEntry == canonical; });
 }
 
@@ -69,6 +118,13 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 			recentProjects.clear();
 			for (const auto& entry: recents) recentProjects.push_back(entry.as<std::string>());
 		}
+		if (const auto sessions = config["projectSessions"]; sessions && sessions.IsSequence()) {
+			projectSessions.clear();
+			for (const auto& session: sessions) {
+				if (const auto project = session["project"].as<std::string>(""); !project.empty())
+					projectSessions[project] = readSession(session);
+			}
+		}
 	}
 }
 
@@ -94,6 +150,26 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	if (!recentProjects.empty()) {
 		out << YAML::Key << "recentProjects" << YAML::Value << YAML::BeginSeq;
 		for (const auto& path: recentProjects) out << path;
+		out << YAML::EndSeq;
+	}
+	// Sessions of projects that left the recent list are dropped, which bounds the file.
+	if (std::ranges::any_of(recentProjects, [this](const std::string& iProject) -> bool {
+			return projectSessions.contains(iProject);
+		})) {
+		out << YAML::Key << "projectSessions" << YAML::Value << YAML::BeginSeq;
+		for (const auto& project: recentProjects) {
+			const auto it = projectSessions.find(project);
+			if (it == projectSessions.end())
+				continue;
+			out << YAML::BeginMap;
+			out << YAML::Key << "project" << YAML::Value << project;
+			out << YAML::Key << "documents" << YAML::Value << YAML::BeginSeq;
+			for (const auto& doc: it->second.documents) out << doc;
+			out << YAML::EndSeq;
+			out << YAML::Key << "active" << YAML::Value << it->second.activeDocument;
+			out << YAML::Key << "selectedEntity" << YAML::Value << it->second.selectedEntity;
+			out << YAML::EndMap;
+		}
 		out << YAML::EndSeq;
 	}
 	out << YAML::EndMap;

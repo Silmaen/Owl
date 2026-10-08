@@ -11,12 +11,48 @@
 #include <owlgui.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace owl::nest {
+
+/**
+ * @brief
+ *  What the editor restores when a project is opened again: open tabs, active tab and selection.
+ */
+struct ProjectSession {
+	/// Files of the open documents, in tab order, relative to the project when inside it.
+	std::vector<std::string> documents;
+	/// File of the active document (same form as `documents`); empty when none.
+	std::string activeDocument;
+	/// UUID of the entity selected in the active scene; 0 when none.
+	uint64_t selectedEntity = 0;
+
+	/**
+	 * @brief
+	 *  Form a file is stored in: relative to the project when inside it, absolute otherwise.
+	 * @param[in] iProjectDir The project directory.
+	 * @param[in] iFile The absolute file.
+	 * @return The stored form, generic separators.
+	 */
+	[[nodiscard]] static auto toStored(const std::filesystem::path& iProjectDir, const std::filesystem::path& iFile)
+			-> std::string;
+
+	/**
+	 * @brief
+	 *  Absolute file of a stored entry.
+	 * @param[in] iProjectDir The project directory.
+	 * @param[in] iStored The stored form.
+	 * @return The absolute file.
+	 */
+	[[nodiscard]] static auto resolve(const std::filesystem::path& iProjectDir, const std::string& iStored)
+			-> std::filesystem::path;
+};
+
 /**
  * @brief
  *  Structure holding editor-specific settings persisted across sessions.
@@ -53,6 +89,25 @@ struct EditorSettings {
 	std::unordered_map<std::string, std::string> keybindingOverrides;
 	/// Recently opened project directories (most recent first).
 	std::vector<std::string> recentProjects;
+	/// Last session of each recent project, keyed like `recentProjects`.
+	std::unordered_map<std::string, ProjectSession> projectSessions;
+
+	/**
+	 * @brief
+	 *  Remember the session of a project (replaces the previous one).
+	 * @param[in] iProjectDir The project directory.
+	 * @param[in] iSession The session.
+	 */
+	void setProjectSession(const std::filesystem::path& iProjectDir, const ProjectSession& iSession);
+
+	/**
+	 * @brief
+	 *  Get the last session of a project.
+	 * @param[in] iProjectDir The project directory.
+	 * @return The session, or nothing when none was saved.
+	 */
+	[[nodiscard]] auto getProjectSession(const std::filesystem::path& iProjectDir) const
+			-> std::optional<ProjectSession>;
 
 	/**
 	 * @brief

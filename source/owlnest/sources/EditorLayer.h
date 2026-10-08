@@ -731,6 +731,19 @@ private:
 
 	/**
 	 * @brief
+	 *  Remember the open tabs, the active tab and the selection of the open project in the settings.
+	 */
+	void saveProjectSession();
+
+	/**
+	 * @brief
+	 *  Reopen the tabs of the open project's last session, its active tab and its selection.
+	 * @return True when at least one document was reopened.
+	 */
+	auto restoreProjectSession() -> bool;
+
+	/**
+	 * @brief
 	 *  Apply the user's choice in the recovery modal.
 	 * @param[in] iChoice The choice made this frame.
 	 */

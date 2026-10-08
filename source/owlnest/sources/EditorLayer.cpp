@@ -675,6 +675,7 @@ void EditorLayer::onDetach() {
 
 	app::Application::get().getHotReload().removeListener(m_hotReloadListener);
 
+	saveProjectSession();
 	// Sync keybinding overrides before saving
 	m_settings.keybindingOverrides = m_actionRegistry.getOverrides();
 	m_settings.saveToFile(app::Application::get().getWorkingDirectory() / "OwlNest_settings.yml");
@@ -2224,6 +2225,8 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	m_settings.pushRecentProject(iDir);
 	startProjectRecovery();
 
+	if (restoreProjectSession())
+		return;
 	if (!m_project.firstScene.empty()) {
 		const auto scenePath = m_project.projectDirectory / m_project.firstScene;
 		if (exists(scenePath))
@@ -2276,6 +2279,7 @@ void EditorLayer::closeProject() {
 		return;
 	app::Application::get().removeAssetDirectory(m_project.projectDirectory);
 	m_contentBrowser.attach();
+	saveProjectSession();
 	m_recovery.autosave(m_documents);
 	m_recovery.setDirectory({});
 	m_project = {};
