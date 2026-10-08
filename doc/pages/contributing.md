@@ -70,6 +70,8 @@ The user documentation lives in `doc/pages/` and changes in the same pull reques
   output. The in-editor help panel does **not** execute JavaScript: mermaid blocks render as plain code blocks
   there. Prefer mermaid for architecture / flow / sequence diagrams; the SVGs in `doc/images/` remain valid for
   static figures.
+- Every symbol, file or `OWL_*` option a page cites between backticks must exist: the Code Style gate checks it
+  (see [Continuous Integration](continuous_integration.md)).
 - `doc/pages/changelog.md` gets one line under `[Unreleased]` per change, and `doc/pages/roadmap.md` the badge of
   the item.
 

@@ -164,7 +164,7 @@ imported-configuration fallback.
 - ![Done][done] Project templates (empty 2D, raycast, voxel, mixed-style) in the new-project dialogue
 - ![Done][done] Documentation faithful to the code — Lua, renderer, README, guides (PR-15: I-01, I-02, I-03,
   I-04, I-05, D-07, B-16, B-18)
-- ![Planned][planned] Identifiers cited in `doc/pages` checked in CI (PR-39: I-01, I-09)
+- ![Done][done] Identifiers cited in `doc/pages` checked in CI (PR-39: I-01, I-09)
 - ![Planned][planned] Proportionate Doxygen — public API documented, no boilerplate `@brief` on trivial members
   (PR-38: I-06, I-07)
 

@@ -273,7 +273,9 @@ Two configurations deliberately have **no** filter, because those paths are
 their input:
 
 - **Code Style** — codespell and the markdown checks read `doc/` and the root
-  markdown files.
+  markdown files; `doc-identifiers` checks that every symbol, file or `OWL_*` option cited between backticks in
+  `doc/pages` exists in the repository (`ci/utils/doc_identifiers.py`: the changelog, the roadmap and the design
+  pages are skipped, the short list of names living elsewhere is `EXCEPTIONS`, each with its reason).
 - **Linux x64 Clang** — the only BT whose preset sets `OWL_ENABLE_DOCUMENTATION=ON`; it builds the release
   everywhere (its tests stay on `main`) and Doxygen documents it, with `WARN_AS_ERROR=YES`
   over `doc/`, `README.md`, `CHANGELOG.md`, `ROADMAP.md` and `CONTRIBUTING.md`.

@@ -77,10 +77,14 @@ Sub-checks (all on by default):
    `assert…` / `check…` helper); a smoke test uses `EXPECT_NO_THROW`.
 9. **nolint** — a `NOLINT(...)` naming a check `.clang-tidy` does not enable is dead: it fails the gate
    (`clang-tidy --list-checks`; `clang-analyzer-*` always counts).
-10. **python** — `ruff check`, `ruff format --check`, `mypy` and `pytest ci/tests` on `ci/` and `ci_action.py` (configuration in
+10. **doc-identifiers** — every symbol, file or `OWL_*` option cited between backticks in `doc/pages` exists in
+   the repository (`ci/utils/doc_identifiers.py`); the changelog, the roadmap and the design pages are skipped, and
+   `EXCEPTIONS` keeps the few names that live elsewhere, each with its reason. Fix the page, never widen the list
+   for a renamed symbol.
+11. **python** — `ruff check`, `ruff format --check`, `mypy` and `pytest ci/tests` on `ci/` and `ci_action.py` (configuration in
    `pyproject.toml`: 120 columns, rules `E F W I UP B SIM`); fix with `poetry run ruff check --fix` and
    `poetry run ruff format`.
-11. **secrets** — git-tracked files scanned for private keys, GitHub / AWS /
+12. **secrets** — git-tracked files scanned for private keys, GitHub / AWS /
    Slack tokens and passwords in URLs; a tracked `.env` fails. Prints the kind
    and position only, never the match.
 
@@ -89,8 +93,8 @@ separate `Documentation` action that builds doxygen with `WARN_AS_ERROR=YES`.
 
 Each sub-check can be disabled with `-- --no-<name>=true`:
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
-`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-test-assertions`, `--no-nolint`, `--no-python`,
-`--no-secrets`.
+`--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-test-assertions`, `--no-nolint`,
+`--no-doc-identifiers`, `--no-python`, `--no-secrets`.
 
 **Report findings through `_diag()`**, never `log.error()` directly. It prints
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — the
