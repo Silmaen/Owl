@@ -91,6 +91,21 @@
       }
     },
     {
+      "name": "linux-emulated",
+      "inherits": "linux-clang-debug",
+      "cacheVariables": {
+        "OWL_ENABLE_COVERAGE": "OFF",
+        "OWL_ENABLE_DOCUMENTATION": "OFF",
+        "OWL_BENCHMARK": "OFF",
+        "OWL_RENDER_TESTS": "OFF"
+      },
+      "vendor": {
+        "silmaen": {
+          "release_preset": ""
+        }
+      }
+    },
+    {
       "name": "linux-bench",
       "inherits": "linux-clang-release",
       "cacheVariables": {

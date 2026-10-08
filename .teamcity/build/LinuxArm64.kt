@@ -1,16 +1,15 @@
 import jetbrains.buildServer.configs.kotlin.*
 
-// Emulated through Docker on the x64 agents: 50 to 90 minutes each, so `main` only, once a night.
-val arm64Gcc = presetBuild("Build_LinuxArm64_Gcc", "GCC", "linux-gcc-debug", onPullRequest = false, nightly = true)
-val arm64Clang = presetBuild("Build_LinuxArm64_Clang", "Clang", "linux-clang-debug", onPullRequest = false, nightly = true)
+// Emulated through Docker on the x64 agents, so `main` only, once a night, and kept light: Clang only (GCC is covered
+// on x64), `linux-emulated` = Debug without coverage, benchmarks or image tests (lavapipe under QEMU, CPU-dependent).
+val arm64Clang = presetBuild("Build_LinuxArm64_Clang", "Clang", "linux-emulated", onPullRequest = false, nightly = true)
 
 val linuxArm64 = Project {
     id = RelativeId("Build_LinuxArm64")
     name = "Build Linux arm64"
 
-    buildType(arm64Gcc)
     buildType(arm64Clang)
-    buildTypesOrder = arrayListOf(arm64Gcc, arm64Clang)
+    buildTypesOrder = arrayListOf(arm64Clang)
 
     params {
         param("platform", "Linux")

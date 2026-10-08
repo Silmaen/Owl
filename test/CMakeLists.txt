@@ -2,6 +2,7 @@
 file(GLOB children CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/*)
 
 option(${PROJECT_PREFIX}_TEST_SHUFFLE "Run every gtest binary with --gtest_shuffle (seed from GTEST_RANDOM_SEED, else random and logged)" OFF)
+option(${PROJECT_PREFIX}_RENDER_TESTS "Build the image tests (OwlRunner on lavapipe / llvmpipe, label render)" ON)
 set(${PROJECT_PREFIX}_TEST_EXTRA_ARGS)
 if (${PROJECT_PREFIX}_TEST_SHUFFLE)
     list(APPEND ${PROJECT_PREFIX}_TEST_EXTRA_ARGS --gtest_shuffle)
@@ -18,6 +19,10 @@ find_package(GTest REQUIRED)
 
 foreach (child ${children})
     if (${child} MATCHES "test_helper")
+        continue()
+    endif ()
+    if (${child} STREQUAL "render_tests" AND NOT ${PROJECT_PREFIX}_RENDER_TESTS)
+        message(STATUS "OWL_RENDER_TESTS is OFF, skipping 'render_tests'")
         continue()
     endif ()
     if (${child} STREQUAL "owlnest_tests" AND NOT TARGET ${CMAKE_PROJECT_NAME}NestCore)

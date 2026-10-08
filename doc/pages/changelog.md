@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- CI: the emulated arm64 nightly builds Clang only, on a `linux-emulated` preset without coverage, benchmarks or image tests, so it fits its time limit.
 - EnTT 4.0.0 (C++20), Taskflow 4.1.0, OpenAL Soft 1.25.2, msdfgen 1.13, msdf-atlas-gen 1.4 and tinyobjloader rc13, through local Conan recipes until ConanCenter publishes them.
 - CI on teamcity-github-bridge 1.11.0: PR Ready keeps a fixed check name (`checkName`), pull requests get labels by changed paths and are assigned to their author.
 - TeamCity: Include Check and PR Ready move to the root beside Code Style (GitHub checks `Include Check` and `PR Ready`).
@@ -78,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Windows: the frame bench runner test quotes its whole command line, which `cmd /c` otherwise mangles.
 - TSan builds: the Lua time quota fires again, the watchdog setting the hook from its own thread because TSan holds back the interrupt signal.
 - TSan: the Vulkan image tests no longer fail on races inside lavapipe and the validation layer, suppressed by library in `test/tsan.supp`.
 - Windows: packed assets keep `/` in their pack paths (`AssetScanner` wrote `scenes\level.owl`), so an exported game finds its scenes, fonts and textures.

@@ -21,7 +21,7 @@ The CI surface covers:
 
 | Area               | Coverage                                                                                    |
 |--------------------|---------------------------------------------------------------------------------------------|
-| Build / Test       | Linux x64, Linux ARM64 (Docker-emulated), Windows x64 — Clang + GCC each                    |
+| Build / Test       | Linux x64 and Windows x64 — Clang + GCC each; Linux ARM64 (Docker-emulated) — Clang only    |
 | Quality            | clang-tidy, 3 blocking sanitizers (Address + Leak, Thread, UB), Code Style aggregator       |
 | Packaging          | Engine + Owl Nest, per platform — only on `main`                                            |
 | GitHub integration | Draft PR suppression, Check Runs (tests, timings, diff annotations), ready_for_review reuse |
@@ -135,9 +135,9 @@ flowchart LR
         LxC[Linux x64 Clang] & LxG[Linux x64 GCC] & WxC[Windows x64 Clang] & WxG[Windows x64 GCC]
         SA[Sanitizer Address] & ST[Sanitizer Thread] & SU[Sanitizer UB]
         CT[Clang-Tidy] & AN[Static Analyzer]
-        LaC[Linux arm64 Clang] & LaG[Linux arm64 GCC]
+        LaC[Linux arm64 Clang]
     end
-    CS --> LxC & LxG & WxC & WxG & SA & ST & SU & CT & AN & LaC & LaG
+    CS --> LxC & LxG & WxC & WxG & SA & ST & SU & CT & AN & LaC
     LxC --> PL[Packages Linux x64]
     WxC --> PW[Packages Windows x64]
     LaC --> PA[Packages Linux arm64]
@@ -149,6 +149,8 @@ flowchart LR
 
 - **Yellow**: also run on draft pull requests (fast feedback subset).
 - **Blue**: nightly on `main` only: arm64 is emulated and slow, packages publish to the site.
+- arm64 builds the `linux-emulated` preset: Debug without coverage, benchmarks or image tests
+  (`OWL_RENDER_TESTS=OFF`), since QEMU makes them hours long and lavapipe's output depends on the CPU.
 - Uncoloured: run on every ready pull request and on `main`.
 
 | File                      | Content                                                                              |
