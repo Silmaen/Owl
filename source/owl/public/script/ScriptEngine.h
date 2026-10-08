@@ -69,8 +69,8 @@ struct OWL_API ScriptQuotas {
  * @brief
  *  Global script engine manager (singleton pattern).
  *
- * Manages the shared Lua state, script loading/caching, and provides
- * the bridge between the engine and Lua scripts.
+ * Holds the scene the scripts act on, the default quotas and the property parser. It owns no Lua state:
+ * every ScriptInstance owns its own.
  */
 class OWL_API ScriptEngine final {
 public:
@@ -105,23 +105,6 @@ public:
 	 * @return True if initialized.
 	 */
 	[[nodiscard]] static auto isInitialized() -> bool;
-
-	/**
-	 * @brief
-	 *  Load a Lua script from a file.
-	 * @param[in] iPath Path to the .lua file.
-	 * @return True on success.
-	 */
-	[[nodiscard]] static auto loadScript(const std::filesystem::path& iPath) -> bool;
-
-	/**
-	 * @brief
-	 *  Load a Lua script from a memory buffer.
-	 * @param[in] iData Buffer containing the Lua source code.
-	 * @param[in] iName Chunk name for error messages.
-	 * @return True on success.
-	 */
-	[[nodiscard]] static auto loadScriptFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName) -> bool;
 
 	/**
 	 * @brief

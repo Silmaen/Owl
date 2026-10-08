@@ -11,7 +11,6 @@
 #include "script/ScriptEngine.h"
 
 #include "core/external/lua.h"
-#include "script/LuaBindings.h"
 #include "script/LuaEngine.h"
 
 #include <cstdint>
@@ -19,9 +18,7 @@
 namespace owl::script {
 class ScriptEngine::Impl {
 public:
-	// The shared Lua engine.
-	LuaEngine engine;
-	// The active scene.
+	// The scene the script instances act on; each instance owns its Lua state.
 	scene::Scene* activeScene = nullptr;
 };
 
@@ -109,12 +106,6 @@ void ScriptEngine::init(scene::Scene* iScene) {
 
 	s_impl = mkUniq<Impl>();
 	s_impl->activeScene = iScene;
-	if (!s_impl->engine.isValid()) {
-		OWL_CORE_ERROR("ScriptEngine: Failed to initialize Lua engine.")
-		s_impl.reset();
-		return;
-	}
-	registerBindings(s_impl->engine.getState());
 	OWL_CORE_TRACE("ScriptEngine: Initialized.")
 }
 
@@ -125,19 +116,7 @@ void ScriptEngine::shutdown() {
 	OWL_CORE_TRACE("ScriptEngine: Shut down.")
 }
 
-auto ScriptEngine::isInitialized() -> bool { return s_impl != nullptr && s_impl->engine.isValid(); }
-
-auto ScriptEngine::loadScript(const std::filesystem::path& iPath) -> bool {
-	if (!isInitialized())
-		return false;
-	return s_impl->engine.loadScript(iPath);
-}
-
-auto ScriptEngine::loadScriptFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName) -> bool {
-	if (!isInitialized())
-		return false;
-	return s_impl->engine.loadBuffer(iData, iName);
-}
+auto ScriptEngine::isInitialized() -> bool { return s_impl != nullptr; }
 
 auto ScriptEngine::extractProperties(const std::filesystem::path& iPath) -> std::vector<ScriptProperty> {
 	const LuaEngine tempEngine;
