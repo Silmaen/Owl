@@ -161,6 +161,7 @@ auto Shader::compileOrGetVulkanBinaries(const std::string& iSlangSource) const
 	return shaderData;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion): one retry at most, after the rejected SPIR-V is compiled again.
 auto Shader::getStagesInfo() -> std::vector<VkPipelineShaderStageCreateInfo> {
 	auto& vkh = internal::VulkanHandler::get();
 	const auto& vkc = internal::VulkanCore::get();

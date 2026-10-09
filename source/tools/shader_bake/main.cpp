@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <cstdio>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <format>
@@ -50,7 +51,7 @@ auto bakeShader(const std::filesystem::path& iSourceFile, const std::filesystem:
 			printLine(stderr, "OwlShaderBake: {} failed for {}.", iSourceFile.string(), api);
 			return -1;
 		}
-		const auto cacheKey = getShaderCacheKey(source, renderer + "/" + name, forVulkan);
+		const auto cacheKey = getShaderCacheKey(source, std::format("{}/{}", renderer, name), forVulkan);
 		for (const auto& [stage, spirv]: compiled.spirvData) {
 			const auto output = iAssetsDir / getPrecompiledShaderPath(name, renderer, api, stage);
 			std::filesystem::create_directories(output.parent_path());
@@ -65,9 +66,7 @@ auto bakeShader(const std::filesystem::path& iSourceFile, const std::filesystem:
 	return stages;
 }
 
-}// namespace
-
-auto main(const int iArgc, char** iArgv) -> int {
+auto bake(const int iArgc, char** iArgv) -> int {
 	const std::span args(iArgv, static_cast<size_t>(iArgc));
 	if (args.size() != 3) {
 		printLine(stderr, "Usage: OwlShaderBake <engine shaders folder> <output assets folder>");
@@ -96,4 +95,19 @@ auto main(const int iArgc, char** iArgv) -> int {
 				 elapsed.count(), failures);
 	owl::core::Log::invalidate();
 	return failures == 0 ? 0 : 1;
+}
+
+}// namespace
+
+auto main(const int iArgc, char** iArgv) -> int {
+	try {
+		return bake(iArgc, iArgv);
+	} catch (const std::exception& iError) {
+		std::fputs("OwlShaderBake: ", stderr);
+		std::fputs(iError.what(), stderr);
+		std::fputs("\n", stderr);
+	} catch (...) {
+		std::fputs("OwlShaderBake: unknown error.\n", stderr);
+	}
+	return 1;
 }

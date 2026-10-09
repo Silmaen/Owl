@@ -133,8 +133,9 @@ TEST(PhysicMultiThread, ParallelPoseCopyMatchesSerialCopy) {
 		std::vector<Entity> boxes;
 		for (uint32_t i = 0; i < 1200; ++i) {
 			auto box = scene.createEntity("box");
+			const uint32_t rowIndex = i / 200;
 			box.getComponent<component::Transform>().transform.translation() = {
-					-150.f + 1.5f * static_cast<float>(i % 200), 2.f + 1.5f * static_cast<float>(i / 200), 0.f};
+					-150.f + 1.5f * static_cast<float>(i % 200), 2.f + 1.5f * static_cast<float>(rowIndex), 0.f};
 			box.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Dynamic;
 			boxes.push_back(box);
 		}

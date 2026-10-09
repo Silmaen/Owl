@@ -12,6 +12,7 @@
 
 #include "core/SerializerImpl.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
@@ -48,13 +49,13 @@ auto canReadWithoutMigration(const core::YamlNode& iRoot, const core::DocumentFo
 	// Only the 1 -> 2 step exists: a new step must extend this shortcut or drop it.
 	if (current != 2)
 		return false;
-	for (const auto entity: iRoot["Entities"]) {
-		if (!entity.isMap())
-			continue;
-		if (const auto link = entity["EntityLink"]; link.isMap() && !link["linkedEntityId"] && link["linkedEntityName"])
-			return false;
-	}
-	return true;
+	const auto entities = iRoot["Entities"];
+	return std::all_of(entities.begin(), entities.end(), [](const auto& iEntity) -> bool {
+		if (!iEntity.isMap())
+			return true;
+		const auto link = iEntity["EntityLink"];
+		return !(link.isMap() && !link["linkedEntityId"] && link["linkedEntityName"]);
+	});
 }
 
 }// namespace owl::scene

@@ -60,6 +60,7 @@ void DrawData::initInstanced(const BufferLayout& iVertexLayout, const BufferLayo
 	buildPipeline(nullptr);
 }
 
+// NOLINTNEXTLINE(misc-no-recursion): one retry at most, after the rejected SPIR-V is compiled again.
 void DrawData::buildPipeline(VkDescriptorSetLayout iSetLayout) {
 	if (!mp_shader)
 		return;

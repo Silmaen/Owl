@@ -231,6 +231,7 @@ auto YamlNode::getLine() const noexcept -> size_t {
 	return 1 + static_cast<size_t>(std::count(arena.begin(), text.str, '\n'));
 }
 
+// NOLINTNEXTLINE(misc-no-recursion): one call per nesting level of the document, bounded by its depth.
 auto YamlNode::isSameAs(const YamlNode& iOther) const noexcept -> bool {
 	if (isDefined() != iOther.isDefined())
 		return false;
