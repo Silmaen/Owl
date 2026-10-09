@@ -143,6 +143,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- 10 000-sprite CPU frame under its v0.3.0 target: world matrices in a persistent dense per-entity cache, checked by compare and recomposed only on change (no per-frame maps, no matrix decomposition), inherited visibility computed in the same pass: `editor_update/flat10000` 2.60 → 0.33 ms, 1 000-deep chains 10× cheaper to query and build.
+- `math::Transform::operator()` builds the TRS matrix in closed form and skips the trigonometry of null angles (74 → 4.2 ns), Renderer2D finds a texture slot by pointer before the backend compare: transient quads 86 → 17 ns, scene-world quads 10.8 → 9.4 ns.
 - Box2D under its v0.3.0 target: built with AVX2 on x86_64 (`OWL_PHYSICS_AVX2`, local recipe; physics stays off with an error on a CPU without AVX2), two spare solver threads for the tree rebuild and island split, poses copied to the entities in parallel: 5 000 bodies in contact step in 1.44 ms on 8 workers instead of 1.68 ms, 4.46 ms instead of 5.01 ms single-threaded.
 - Raycast: the CPU walks the DDA itself for the column depths and stats instead of reading the GPU pass back twice per frame, so the frame no longer drains mid-way (Vulkan: one submission, no fence wait; `raycast_demo` 1.5 to 3.5 times faster on both backends).
 - Vulkan: successive batches on one framebuffer share a render pass, and `RenderCommand::clear` no longer clears again a pass that just cleared on load (Intel: 40 µs less GPU per 2D frame).

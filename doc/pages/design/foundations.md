@@ -237,8 +237,8 @@ Measured on the `bench/` harness, Null backend unless stated (source: `doc/audit
 
 | Indicator                               | Measured today                                   | v0.3.0 target                         |
 |-----------------------------------------|--------------------------------------------------|---------------------------------------|
-| CPU frame, 10 000 sprites (`flat10000`) | 2.52 ms                                          | < 0.5 ms                              |
-| Renderer2D cost per quad                | 10.5 ns (`worldIndex`), 86 ns (transient)        | < 10 ns on every path                 |
+| CPU frame, 10 000 sprites (`flat10000`) | 0.33 ms (0.46 ms `forest10000`)                  | < 0.5 ms                              |
+| Renderer2D cost per quad                | 9.4 ns (`worldIndex`), 14-24 ns (transient)      | < 10 ns on every path                 |
 | GPU queue drains per frame (Vulkan)     | 2 to 4 in the runner, ≥ 10 in the editor         | 0                                     |
 | Runner frame, Vulkan vs OpenGL (NVIDIA) | 0.47–0.52 vs 0.33–0.36 ms, present-bound         | Vulkan ≤ OpenGL                       |
 | Scene load per entity                   | 134 µs (10 000 entities: 1.34 s)                 | < 10 µs                               |

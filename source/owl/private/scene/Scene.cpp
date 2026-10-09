@@ -522,11 +522,9 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	const auto tPhysicsEnd = now();
 	m_systems.run(SystemPhase::PostPhysics, *this, context);
 	// Every mutating phase (scripts, physics, links, trigger callbacks) is done: arm the per-pass caches.
-	m_visibilityCache.clear();
 	m_layerContentCacheFirst.clear();
 	m_layerContentCacheNotFirst.clear();
 	m_inUpdatePass = true;
-	m_worldTransformCache.clear();
 	m_worldTransformCacheActive = true;
 	prepareWorldTransforms();
 	m_systems.run(SystemPhase::Late, *this, context);
@@ -583,7 +581,6 @@ void Scene::renderRuntimeFrame(const core::Timestep& iTimeStep) {
 void Scene::onRenderRuntime() {
 	OWL_PROFILE_FUNCTION()
 
-	m_worldTransformCache.clear();
 	m_worldTransformCacheActive = true;
 	prepareWorldTransforms();
 
@@ -660,10 +657,8 @@ void Scene::onUpdateEditor(const core::Timestep& iTimeStep, const renderer::Came
 	OWL_PROFILE_FUNCTION()
 
 	m_toastTimer = std::max(0.f, m_toastTimer - iTimeStep.getSeconds());
-	m_visibilityCache.clear();
 	m_layerContentCacheFirst.clear();
 	m_layerContentCacheNotFirst.clear();
-	m_worldTransformCache.clear();
 	m_inUpdatePass = true;
 	m_worldTransformCacheActive = true;
 	prepareWorldTransforms();
@@ -1692,88 +1687,189 @@ auto Scene::getChildren(const Entity& iEntity) const -> std::vector<Entity> {
 	return children;
 }
 
+namespace {
+// Exact comparison of two transforms (a NaN or a signed zero only costs a recomposition).
+auto sameTransform(const math::Transform& iLeft, const math::Transform& iRight) -> bool {
+	return iLeft.translation() == iRight.translation() && iLeft.rotation() == iRight.rotation() &&
+		   iLeft.scale() == iRight.scale();
+}
+
+// Index of an entity in the dense per-entity caches.
+auto denseIndex(const entt::entity iHandle) -> size_t { return static_cast<size_t>(entt::to_entity(iHandle)); }
+
+// Own visibility of an entity in game (0) and editor (1) mode; no `Visibility` component means visible.
+auto selfVisibility(const entt::storage_for_t<const component::Visibility>* iStorage, const entt::entity iHandle)
+		-> std::array<bool, 2> {
+	if (iStorage == nullptr || !iStorage->contains(iHandle))
+		return {true, true};
+	const auto& vis = iStorage->get(iHandle);
+	return {vis.gameVisible, vis.editorVisible};
+}
+}// namespace
+
+auto Scene::parentOf(const entt::entity iEntity, const core::UUID iParentId) const -> entt::entity {
+	if (const size_t index = denseIndex(iEntity); index < m_worldNodes.size()) {
+		// A live handle keeps its UUID (never rewritten) and its mandatory Transform / Hierarchy.
+		if (const auto& node = m_worldNodes[index];
+			node.handle == iEntity && node.parentId == iParentId && registry.valid(node.parent))
+			return node.parent;
+	}
+	const Entity parent = findEntityByUUID(iParentId);
+	if (!parent || !registry.all_of<component::Transform, component::Hierarchy>(static_cast<entt::entity>(parent)))
+		return entt::null;
+	return static_cast<entt::entity>(parent);
+}
+
+auto Scene::resolveWorldNode(const entt::entity iEntity, const core::UUID iForbiddenAncestor) const -> WorldNode* {
+	struct Link {
+		entt::entity handle;
+		entt::entity parent;
+		core::UUID parentId;
+	};
+	// An entry checked in the current pass is trusted only while nothing can move: inside prepare and the armed tail.
+	const bool trustPass = (m_preparingWorlds || m_worldTransformCacheActive) && iForbiddenAncestor == core::UUID{0};
+	// Storages fetched once: each registry.get<T>() pays a pool lookup by type.
+	const auto* hierarchies = registry.storage<component::Hierarchy>();
+	const auto* transforms = registry.storage<component::Transform>();
+	if (hierarchies == nullptr || transforms == nullptr)
+		return nullptr;
+	const auto* visibilities = m_preparingWorlds ? registry.storage<component::Visibility>() : nullptr;
+	thread_local std::vector<Link> chain;
+	chain.clear();
+	const size_t maxChain = registry.storage<entt::entity>()->size();
+	entt::entity current = iEntity;
+	while (true) {
+		const size_t index = denseIndex(current);
+		if (index >= m_worldNodes.size())
+			m_worldNodes.resize(std::max(index + 1, m_worldNodes.size() * 2));
+		if (trustPass) {
+			if (const auto& node = m_worldNodes[index]; node.handle == current && node.checkedPass == m_worldPass)
+				break;
+		}
+		if (chain.size() > maxChain) {
+			OWL_CORE_WARN("Scene: Circular hierarchy detected above entity {}.",
+						  static_cast<uint64_t>(registry.get<component::ID>(iEntity).id))
+			return nullptr;
+		}
+		const core::UUID parentId = hierarchies->get(current).parentId;
+		if (parentId == core::UUID{0}) {
+			chain.push_back({.handle = current, .parent = entt::null, .parentId = parentId});
+			break;
+		}
+		if (parentId == iForbiddenAncestor)
+			return nullptr;
+		const entt::entity parent = parentOf(current, parentId);
+		chain.push_back({.handle = current, .parent = parent, .parentId = parentId});
+		if (parent == entt::null)
+			break;
+		current = parent;
+	}
+	// Back down from the top: an entry is recomposed only if its local transform, parent or parent's world changed.
+	for (const auto& [handle, parent, parentId]: chain | std::views::reverse) {
+		auto& node = m_worldNodes[denseIndex(handle)];
+		const WorldNode* parentNode = parent == entt::null ? nullptr : &m_worldNodes[denseIndex(parent)];
+		const uint64_t parentStamp = parentNode == nullptr ? 0 : parentNode->stamp;
+		const auto& local = transforms->get(handle).transform;
+		if (node.stamp == 0 || node.handle != handle || node.parent != parent || node.parentStamp != parentStamp ||
+			!sameTransform(node.local, local)) {
+			node.handle = handle;
+			node.parent = parent;
+			node.local = local;
+			node.world = parentNode == nullptr ? local() : parentNode->world * local();
+			node.parentStamp = parentStamp;
+			node.stamp = ++m_worldStamp;
+		}
+		node.parentId = parentId;
+		node.checkedPass = m_worldPass;
+		if (m_preparingWorlds && node.visibilityPass != m_worldPass) {
+			// The parent was resolved earlier in this prepare, so its visibility is current.
+			node.visible = selfVisibility(visibilities, handle);
+			if (parentNode != nullptr) {
+				node.visible[0] = node.visible[0] && parentNode->visible[0];
+				node.visible[1] = node.visible[1] && parentNode->visible[1];
+			}
+			node.visibilityPass = m_worldPass;
+		}
+		if (m_preparingWorlds && node.slotPass != m_worldPass) {
+			node.slot = static_cast<uint32_t>(m_worldMatrices.size());
+			node.slotPass = m_worldPass;
+			m_worldMatrices.push_back(node.world);
+		}
+	}
+	return &m_worldNodes[denseIndex(iEntity)];
+}
+
 auto Scene::composeWorldMatrix(const Entity& iEntity, const core::UUID iForbiddenAncestor) const
 		-> std::optional<math::mat4> {
-	math::mat4 worldMat = iEntity.getComponent<component::Transform>().transform();
-	core::UUID ancestorId = iEntity.getComponent<component::Hierarchy>().parentId;
-	const size_t maxAncestors = registry.storage<entt::entity>()->size();
-	size_t ancestors = 0;
-	while (ancestorId != core::UUID{0}) {
-		if (ancestorId == iForbiddenAncestor)
-			return std::nullopt;
-		if (++ancestors > maxAncestors) {
-			OWL_CORE_WARN("Scene: Circular hierarchy detected above entity {}.",
-						  static_cast<uint64_t>(iEntity.getUUID()))
-			return std::nullopt;
-		}
-		const Entity ancestor = findEntityByUUID(ancestorId);
-		if (!ancestor)
-			break;
-		worldMat = ancestor.getComponent<component::Transform>().transform() * worldMat;
-		ancestorId = ancestor.getComponent<component::Hierarchy>().parentId;
-	}
-	return worldMat;
+	if (const auto* node = resolveWorldNode(static_cast<entt::entity>(iEntity), iForbiddenAncestor); node != nullptr)
+		return node->world;
+	return std::nullopt;
 }
 
 auto Scene::getWorldTransform(const Entity& iEntity) const -> math::Transform {
-	const auto handle = static_cast<entt::entity>(iEntity);
-	if (m_worldTransformCacheActive) {
-		if (const auto it = m_worldTransformCache.find(handle); it != m_worldTransformCache.end())
-			return it->second;
+	const auto& local = iEntity.getComponent<component::Transform>().transform;
+	if (iEntity.getComponent<component::Hierarchy>().parentId == core::UUID{0})
+		return local;
+	auto* node = resolveWorldNode(static_cast<entt::entity>(iEntity), core::UUID{0});
+	// A root's world is its local transform: hand it back as is rather than a decomposition of its matrix.
+	if (node == nullptr || node->parent == entt::null)
+		return local;
+	if (node->decomposedStamp != node->stamp) {
+		node->worldTransform = math::Transform{node->world};
+		node->decomposedStamp = node->stamp;
 	}
-	math::Transform result = iEntity.getComponent<component::Transform>().transform;
-	if (iEntity.getComponent<component::Hierarchy>().parentId != core::UUID{0}) {
-		if (const auto worldMat = composeWorldMatrix(iEntity, core::UUID{0}); worldMat.has_value())
-			result = math::Transform{*worldMat};
-	}
-	if (m_worldTransformCacheActive)
-		m_worldTransformCache.emplace(handle, result);
-	return result;
+	return node->worldTransform;
 }
 
 void Scene::prepareWorldTransforms() const {
 	OWL_PROFILE_FUNCTION()
 
-	m_entityToWorldIndex.clear();
 	m_worldMatrices.clear();
-
-	// Pre-order stack of (entity, parent slot); children are pushed reversed so siblings stay left-to-right.
-	thread_local std::vector<std::pair<entt::entity, int32_t>> stack;
-	stack.clear();
-	for (const auto e: registry.view<component::Transform, component::Hierarchy>()) {
-		if (registry.get<component::Hierarchy>(e).parentId == core::UUID{0})
-			stack.emplace_back(e, -1);
-	}
-
-	while (!stack.empty()) {
-		const auto [e, parentSlot] = stack.back();
-		stack.pop_back();
-
-		const math::mat4 localMat = registry.get<component::Transform>(e).transform();
-		const math::mat4 worldMat =
-				parentSlot < 0 ? localMat : m_worldMatrices[static_cast<size_t>(parentSlot)] * localMat;
-		const auto slot = static_cast<int32_t>(m_worldMatrices.size());
-		m_entityToWorldIndex.emplace(e, static_cast<uint32_t>(slot));
-		m_worldMatrices.push_back(worldMat);
-		m_worldTransformCache.insert_or_assign(e, math::Transform{worldMat});
-
-		const core::UUID uuid = registry.get<component::ID>(e).id;
-		for (const auto& childId: registry.get<component::Hierarchy>(e).childrenIds | std::views::reverse) {
-			// Only follow children that point back here, so a stale childrenIds list can never loop the walk.
-			if (const Entity child = findEntityByUUID(childId);
-				child && child.hasComponent<component::Transform>() &&
-				child.getComponent<component::Hierarchy>().parentId == uuid)
-				stack.emplace_back(static_cast<entt::entity>(child), slot);
+	++m_worldPass;
+	// Each entity is checked once, after its ancestors: slots stay parents-before-children whatever the view order.
+	m_preparingWorlds = true;
+	const auto* visibilities = registry.storage<component::Visibility>();
+	for (const auto [entity, transform, hierarchy]:
+		 registry.view<component::Transform, component::Hierarchy>().each()) {
+		if (hierarchy.parentId != core::UUID{0}) {
+			static_cast<void>(resolveWorldNode(entity, core::UUID{0}));
+			continue;
 		}
+		// Root fast path, the same check as resolveWorldNode without the chain bookkeeping.
+		const size_t index = denseIndex(entity);
+		if (index >= m_worldNodes.size())
+			m_worldNodes.resize(std::max(index + 1, m_worldNodes.size() * 2));
+		auto& node = m_worldNodes[index];
+		if (node.handle == entity && node.checkedPass == m_worldPass)
+			continue;
+		if (node.stamp == 0 || node.handle != entity || node.parent != entt::null ||
+			!sameTransform(node.local, transform.transform)) {
+			node.handle = entity;
+			node.parent = entt::null;
+			node.local = transform.transform;
+			node.world = transform.transform();
+			node.parentStamp = 0;
+			node.stamp = ++m_worldStamp;
+		}
+		node.parentId = core::UUID{0};
+		node.checkedPass = m_worldPass;
+		node.visible = selfVisibility(visibilities, entity);
+		node.visibilityPass = m_worldPass;
+		node.slot = static_cast<uint32_t>(m_worldMatrices.size());
+		node.slotPass = m_worldPass;
+		m_worldMatrices.push_back(node.world);
 	}
+	m_preparingWorlds = false;
 
 	renderer::Renderer2D::setSceneWorlds(m_worldMatrices);
 }
 
 auto Scene::getWorldIndex(const Entity& iEntity) const -> uint32_t {
 	const auto handle = static_cast<entt::entity>(iEntity);
-	if (const auto it = m_entityToWorldIndex.find(handle); it != m_entityToWorldIndex.end())
-		return it->second;
+	if (const size_t index = denseIndex(handle); index < m_worldNodes.size()) {
+		if (const auto& node = m_worldNodes[index]; node.handle == handle && node.slotPass == m_worldPass)
+			return node.slot;
+	}
 	return std::numeric_limits<uint32_t>::max();
 }
 
@@ -1794,49 +1890,38 @@ auto Scene::wantsCursorCapture() const -> bool {
 }
 
 auto Scene::isEffectivelyVisible(const Entity& iEntity, const bool iEditorMode) const -> bool {
-	const auto isSelfVisible = [&](const entt::entity iHandle) -> bool {
-		const auto* vis = registry.try_get<component::Visibility>(iHandle);
-		return vis == nullptr || (iEditorMode ? vis->editorVisible : vis->gameVisible);
-	};
-	const auto cacheKey = [iEditorMode](const entt::entity iHandle) -> uint64_t {
-		return (static_cast<uint64_t>(static_cast<uint32_t>(iHandle)) << 1) | (iEditorMode ? 1ULL : 0ULL);
-	};
-	// Climb to a cached ancestor or the root, then resolve downwards so every visited ancestor is cached too.
-	thread_local std::vector<entt::entity> chain;
-	chain.clear();
-	const size_t maxChain = registry.storage<entt::entity>()->size();
-	bool inheritedVisible = true;
-	auto current = static_cast<entt::entity>(iEntity);
-	while (true) {
-		if (m_inUpdatePass) {
-			if (const auto it = m_visibilityCache.find(cacheKey(current)); it != m_visibilityCache.end()) {
-				inheritedVisible = it->second;
-				break;
-			}
-		} else if (!isSelfVisible(current)) {
-			return false;
+	const size_t mode = iEditorMode ? 1 : 0;
+	const auto handle = static_cast<entt::entity>(iEntity);
+	// In an update pass, prepareWorldTransforms() has just computed the inherited visibility of every entity.
+	if (m_inUpdatePass) {
+		if (const size_t index = denseIndex(handle); index < m_worldNodes.size()) {
+			if (const auto& node = m_worldNodes[index]; node.handle == handle && node.visibilityPass == m_worldPass)
+				return node.visible[mode];
 		}
-		chain.push_back(current);
-		if (chain.size() > maxChain) {
+	}
+	const auto* visibilities = registry.storage<component::Visibility>();
+	const auto* hierarchies = registry.storage<component::Hierarchy>();
+	const size_t maxChain = registry.storage<entt::entity>()->size();
+	size_t visited = 0;
+	auto current = handle;
+	while (true) {
+		if (!selfVisibility(visibilities, current)[mode])
+			return false;
+		if (hierarchies == nullptr || !hierarchies->contains(current))
+			return true;
+		if (++visited > maxChain) {
 			OWL_CORE_WARN("Scene: Circular hierarchy detected above entity {}.",
 						  static_cast<uint64_t>(iEntity.getUUID()))
-			break;
+			return true;
 		}
-		const core::UUID parentId = registry.get<component::Hierarchy>(current).parentId;
+		const core::UUID parentId = hierarchies->get(current).parentId;
 		if (parentId == core::UUID{0})
-			break;
-		const Entity parent = findEntityByUUID(parentId);
-		if (!parent)
-			break;
-		current = static_cast<entt::entity>(parent);
+			return true;
+		const entt::entity parent = parentOf(current, parentId);
+		if (parent == entt::null)
+			return true;
+		current = parent;
 	}
-	if (!m_inUpdatePass)
-		return true;
-	for (const auto handle: chain | std::views::reverse) {
-		inheritedVisible = inheritedVisible && isSelfVisible(handle);
-		m_visibilityCache.emplace(cacheKey(handle), inheritedVisible);
-	}
-	return inheritedVisible;
 }
 
 void Scene::setParent(const Entity& iChild, const Entity& iNewParent) const {

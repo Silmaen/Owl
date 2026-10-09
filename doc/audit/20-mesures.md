@@ -926,3 +926,50 @@ Avant (`a9758729`, SSE2) / après alternés, 3 répétitions, médiane des médi
 
 La cible (< 1,5 ms en multi-thread) est tenue à 8 workers (1,44 ms) ; le nombre automatique de workers reste
 plafonné à 4 (2,0 ms), le relever est à trancher par le mainteneur.
+
+### 9.5 Frame à 10 000 sprites et Renderer2D
+
+Cause, par callgrind sur `onUpdateEditor` et `runQuads` : `prepareWorldTransforms` refaisait chaque frame trois
+`unordered_map` (indice de slot, `Transform` décomposé, visibilité), une décomposition `Transform(mat4)` par entité et un
+`Transform::operator()` générique (trois `rotate` avec normalisation d'axe et quatre produits de mat4, 74 ns). Hors
+frame, `getWorldTransform` recomposait toute la chaîne, d'où le O(profondeur²) des chaînes de 1 000. Côté Renderer2D,
+tout le surcoût transitoire était dans `Transform::operator()` ; le chemin texturé appelait en plus un `operator==`
+virtuel (`dynamic_cast`) par slot.
+
+Corrections : cache dense des matrices monde par entité (indexé par `entt::to_entity`, persistant entre frames), sans
+crochet d'écriture : une entrée reste valide tant que son `Transform` local, son parent (handle versionné et UUID) et le
+tampon de version du parent sont inchangés, vérifiés en remontant la chaîne (quelques comparaisons par niveau, sans
+limite de profondeur ni récursion, boucles détectées) ; une entrée recomposée prend un nouveau tampon, ses descendants
+suivent. Pendant `prepareWorldTransforms` et la fin de tick armée, une entrée vérifiée dans la passe est reprise telle
+quelle (O(1)). Une racine rend son `Transform` local exact, un enfant une décomposition mise en cache par tampon. La
+visibilité héritée des deux modes est calculée dans la même passe (plus de cache de visibilité séparé). Pools EnTT
+récupérés une fois par appel. `Transform::operator()` en forme fermée T·Rz·Ry·Rx·S, sin / cos sautés pour un angle nul ;
+Renderer2D : chemin `worldIndex` sans appel, recherche du slot de texture par pointeur avant la comparaison du backend.
+Images de référence inchangées (`ctest`, `render` compris), tests de hiérarchie, scénarios et `linux-clang-minimal` verts.
+
+`taskset -c 6`, avant (`44fe5125`) / après alternés, 3 répétitions, médiane des médianes, load average 3,3 à 5,3 :
+
+| Banc                                        | Avant    | Après    |
+|---------------------------------------------|----------|----------|
+| `frame/editor_update/flat10000`             | 2,60 ms  | 0,330 ms |
+| `frame/editor_update/forest10000`           | 3,15 ms  | 0,462 ms |
+| `frame/editor_update/chain1000`             | 312 µs   | 38,7 µs  |
+| `frame/runtime_update/logic_flat10000`      | 1,97 ms  | 0,140 ms |
+| `frame/runtime_update/render_flat10000`     | 2,61 ms  | 0,334 ms |
+| `scene/prepare_world_transforms/flat10000`  | 1,68 ms  | 139 µs   |
+| `scene/prepare_world_transforms/forest10000`| 2,06 ms  | 272 µs   |
+| `scene/world_transform/forest10000_all`     | 2,34 ms  | 352 µs   |
+| `scene/world_transform/chain1000_all`       | 54,4 ms  | 5,57 ms  |
+| `scene/set_parent/chain1000_build`          | 54,8 ms  | 5,71 ms  |
+| `renderer2d/transform_to_matrix` (par quad) | 74,3 ns  | 4,2 ns   |
+| `renderer2d/quads_world_index/10000`        | 10,8 ns  | 9,4 ns   |
+| `renderer2d/quads_color/10000`              | 86,4 ns  | 16,8 ns  |
+| `renderer2d/quads_16_textures/10000`        | 94,4 ns  | 24,2 ns  |
+| `renderer2d/circles/10000`                  | 84,6 ns  | 13,8 ns  |
+
+La frame à 10 000 sprites tient sa cible (0,33 ms, 0,46 ms en forêt) ; le Renderer2D ne la tient que sur le chemin
+`worldIndex` (tous les sprites de scène). Reste, à trancher : le chemin transitoire paie l'écriture d'une mat4 de 64 o
+par quad (sous 10 ns il faudrait passer le TRS au shader), le chemin texturé deux opérations atomiques de `shared_ptr`
+chez l'appelant (8 ns, `Quad2DData::texture` possédant ; une référence non possédante changerait l'API publique), et les
+chaînes restent O(profondeur) par lecture hors frame (11 ns par niveau, contre 107) faute de crochet d'écriture sur
+`Transform`.

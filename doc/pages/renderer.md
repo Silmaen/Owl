@@ -289,10 +289,10 @@ flowchart LR
   bound at different slot numbers across descriptor blocks.
 - Per-instance footprint dropped: `QuadInstance` 128 → 80 bytes,
   `CircleInstance` 96 → 48 bytes, `TextInstance` 128 → 80 bytes. `Scene`
-  pre-fills `m_worldTransformCache` in the same pre-order walk so the CPU
+  keeps the world matrices in a persistent per-entity cache so the CPU
   consumers that genuinely need a world matrix (raycast DDA, physics sync,
-  `EntityLink`, the editor inspector / gizmo) keep their O(1) cache hit
-  without a GPU readback.
+  `EntityLink`, the editor inspector / gizmo) read them without a GPU
+  readback and without recomposing an unchanged entity.
 
 ### Canonical instanced pipeline & clean-up (Phase 5)
 

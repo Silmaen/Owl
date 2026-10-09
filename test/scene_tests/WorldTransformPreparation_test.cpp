@@ -104,3 +104,63 @@ TEST_F(WorldTransformPreparationFixture, RepeatedPrepareIsIdempotent) {
 	const auto secondIdx = sc.getWorldIndex(a);
 	EXPECT_EQ(firstIdx, secondIdx);
 }
+
+TEST_F(WorldTransformPreparationFixture, CachedWorldFollowsAncestorEdits) {
+	scene::Scene sc;
+	const auto root = sc.createEntity("root");
+	const auto middle = sc.createEntity("middle");
+	const auto leaf = sc.createEntity("leaf");
+	sc.setParent(middle, root);
+	sc.setParent(leaf, middle);
+	leaf.getComponent<scene::component::Transform>().transform.translation() = math::vec3{1.f, 0.f, 0.f};
+	EXPECT_NEAR(sc.getWorldTransform(leaf).translation().x(), 1.f, 1e-5f);
+	// Writing a local transform directly (no hook) must still be seen by the cached world of every descendant.
+	root.getComponent<scene::component::Transform>().transform.translation() = math::vec3{10.f, 0.f, 0.f};
+	EXPECT_NEAR(sc.getWorldTransform(leaf).translation().x(), 11.f, 1e-5f);
+	middle.getComponent<scene::component::Transform>().transform.translation() = math::vec3{0.f, 5.f, 0.f};
+	sc.prepareWorldTransforms();
+	const auto frameWorld = sc.getWorldMatrices()[sc.getWorldIndex(leaf)];
+	EXPECT_NEAR(frameWorld(0, 3), 11.f, 1e-5f);
+	EXPECT_NEAR(frameWorld(1, 3), 5.f, 1e-5f);
+}
+
+TEST_F(WorldTransformPreparationFixture, CachedWorldFollowsReparentAndDestruction) {
+	scene::Scene sc;
+	auto first = sc.createEntity("first");
+	const auto second = sc.createEntity("second");
+	const auto child = sc.createEntity("child");
+	first.getComponent<scene::component::Transform>().transform.translation() = math::vec3{1.f, 0.f, 0.f};
+	second.getComponent<scene::component::Transform>().transform.translation() = math::vec3{0.f, 2.f, 0.f};
+	sc.setParent(child, first);
+	child.getComponent<scene::component::Transform>().transform.translation() = math::vec3{0.f, 0.f, 3.f};
+	sc.prepareWorldTransforms();
+	EXPECT_NEAR(sc.getWorldTransform(child).translation().x(), 1.f, 1e-5f);
+	// Reparent by editing the hierarchy behind setParent's back: the cache keys on the parent UUID.
+	child.getComponent<scene::component::Hierarchy>().parentId = second.getUUID();
+	const auto moved = sc.getWorldTransform(child);
+	EXPECT_NEAR(moved.translation().x(), 0.f, 1e-5f);
+	EXPECT_NEAR(moved.translation().y(), 2.f, 1e-5f);
+	EXPECT_NEAR(moved.translation().z(), 3.f, 1e-5f);
+	// Back under the first parent, then destroy it: the child becomes a root and its slot follows.
+	child.getComponent<scene::component::Hierarchy>().parentId = first.getUUID();
+	sc.prepareWorldTransforms();
+	sc.destroyEntity(first);
+	EXPECT_EQ(sc.getWorldIndex(first), std::numeric_limits<uint32_t>::max());
+	sc.prepareWorldTransforms();
+	EXPECT_NEAR(sc.getWorldTransform(child).translation().z(), 3.f, 1e-5f);
+	EXPECT_EQ(sc.getWorldMatrices().size(), 2u);
+}
+
+TEST_F(WorldTransformPreparationFixture, RecycledEntityGetsFreshWorld) {
+	scene::Scene sc;
+	auto old = sc.createEntity("old");
+	old.getComponent<scene::component::Transform>().transform.translation() = math::vec3{7.f, 0.f, 0.f};
+	sc.prepareWorldTransforms();
+	sc.destroyEntity(old);
+	// The new entity may reuse the old index: its world must come from its own transform.
+	const auto fresh = sc.createEntity("fresh");
+	sc.prepareWorldTransforms();
+	const auto world = sc.getWorldMatrices()[sc.getWorldIndex(fresh)];
+	EXPECT_NEAR(world(0, 3), 0.f, 1e-5f);
+	EXPECT_EQ(sc.getWorldMatrices().size(), 1u);
+}

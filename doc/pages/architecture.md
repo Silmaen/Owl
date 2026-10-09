@@ -236,8 +236,8 @@ For root entities (`parentId == 0`), local equals world (zero overhead).
 ### Visibility Inheritance
 
 If any ancestor is hidden (editor or game mode), the entity is effectively hidden.
-`Scene::isEffectivelyVisible()` walks the parent chain to check; results are memoised per pass in `m_visibilityCache` so
-sibling entities sharing the same root chain only pay the walk once per tick.
+`Scene::isEffectivelyVisible()` walks the parent chain to check; during a tick it reads the visibility computed once
+per entity by `prepareWorldTransforms()`, so sibling entities sharing the same root chain only pay the walk once.
 
 ### Hierarchy Operations
 

@@ -123,14 +123,33 @@ struct InternalData {
 namespace {
 shared<utils::InternalData> g_Data;
 
-auto resolveWorldIndex(const int32_t iRequested, const math::Transform& iTransform) -> int32_t {
-	if (iRequested >= 0)
-		return iRequested;
+// Transient path of resolveWorldIndex, kept out of line so the scene-world path stays a compare.
+[[gnu::noinline]] auto allocateTransientTransform(const math::Transform& iTransform) -> int32_t {
 	if (g_Data->transientWorlds.size() >= utils::g_maxTransientWorldsPerBatch)
 		Renderer2D::nextBatch();
 	const auto slot = static_cast<int32_t>(g_Data->transientWorlds.size());
 	g_Data->transientWorlds.push_back(iTransform());
 	return -(slot + 1);
+}
+
+inline auto resolveWorldIndex(const int32_t iRequested, const math::Transform& iTransform) -> int32_t {
+	return iRequested >= 0 ? iRequested : allocateTransientTransform(iTransform);
+}
+
+// Texture slot of a quad's texture, binding it to a new slot (or starting a new batch) when needed.
+auto textureSlotOf(const shared<gpu::Texture>& iTexture) -> uint32_t {
+	// Same object first (no virtual call), then the backend identity (two objects can wrap one GPU texture).
+	for (uint32_t i = 1; i < g_Data->textureSlotIndex; ++i)
+		if (g_Data->textureSlots[i].get() == iTexture.get())
+			return i;
+	for (uint32_t i = 1; i < g_Data->textureSlotIndex; ++i)
+		if (*g_Data->textureSlots[i] == *iTexture)
+			return i;
+	if (g_Data->textureSlotIndex >= utils::g_MaxTextureSlots)
+		Renderer2D::nextBatch();
+	const uint32_t index = g_Data->textureSlotIndex++;
+	g_Data->textureSlots[index] = std::static_pointer_cast<gpu::Texture2D>(iTexture);
+	return index;
 }
 
 auto allocateTransientWorld(const math::mat4& iMatrix) -> int32_t {
@@ -487,23 +506,7 @@ void Renderer2D::drawQuad(const Quad2DData& iQuadData) {
 
 	if (g_Data->quad.instances.size() >= utils::g_maxQuadsPerBatch)
 		nextBatch();
-	uint32_t textureIndex = 0;
-	if (iQuadData.texture != nullptr) {
-		for (uint32_t i = 1; i < g_Data->textureSlotIndex; i++) {
-			if (*g_Data->textureSlots[i] == *iQuadData.texture) {
-				textureIndex = i;
-				break;
-			}
-		}
-		if (textureIndex == 0) {
-			if (g_Data->textureSlotIndex >= utils::g_MaxTextureSlots)
-				nextBatch();
-			textureIndex = g_Data->textureSlotIndex;
-			g_Data->textureSlots[g_Data->textureSlotIndex] =
-					std::static_pointer_cast<gpu::Texture2D>(iQuadData.texture);
-			g_Data->textureSlotIndex++;
-		}
-	}
+	const uint32_t textureIndex = iQuadData.texture == nullptr ? 0 : textureSlotOf(iQuadData.texture);
 	const int32_t worldIndex = resolveWorldIndex(iQuadData.worldIndex, iQuadData.transform);
 	g_Data->quad.instances.push_back(utils::QuadInstance{.worldIndex = worldIndex,
 														 ._pad0 = {0u, 0u, 0u},
