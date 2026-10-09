@@ -97,8 +97,8 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
 - `math::mat4{1.f}` is **not** identity (positional fill). Use `math::identity<float, 4>()`.
 - Slang matrices default to row-major: declare `column_major float4x4` for C++ uploads.
 - `getRootPath()` (test helper) loops forever when CWD is the project root.
-- Slang: ~74 ms cold and ~20 ms per shader in Release (`bench/`, 2026-10); still share the session across
-  tests with `SetUpTestSuite`. Debug + coverage builds are much slower (not measured yet).
+- Slang 2026.19: ~165 ms cold and 21–35 ms per shader in Release (`bench/`, 2026-10); engine shaders are
+  precompiled at build time (`OwlShaderBake`), still share the session across tests with `SetUpTestSuite`. Debug + coverage builds are much slower (not measured yet).
 - After changing the layout of a widely included public header (`Scene.h`, components), an incremental
   build can keep a stale object → heap corruption in an unrelated test. Rebuild with `--clean-first`
   before trusting the results.

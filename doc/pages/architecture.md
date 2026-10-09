@@ -203,6 +203,10 @@ Shaders are written in **Slang** (`.slang` files), a single-source shading langu
 3. **Reflection**: `shaderReflect()` uses spirv-cross to extract uniform buffers and sampled images from the SPIR-V
    bytecode
 4. **Caching**: SPIR-V binaries are cached as `.spv` files with hash-based validation
+5. **Precompiled**: the build runs the shader bake tool (`source/tools/shader_bake/main.cpp`), which writes the
+   SPIR-V of every engine shader, for both APIs, to `bin/assets/shaders/<renderer>/spirv/<api>/`
+   (`getPrecompiledShaderPath`); both CPack components install it and a game pack embeds it. `loadOrCompileSpirv` reads it first, then the cache, and compiles with Slang only
+   when neither matches the cache key of the current source (an edited shader, a game shader, hot reload)
 
 See [Renderer > Shader System](renderer.md) for the shader class API.
 

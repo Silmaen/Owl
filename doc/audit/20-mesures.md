@@ -973,3 +973,46 @@ par quad (sous 10 ns il faudrait passer le TRS au shader), le chemin texturé de
 chez l'appelant (8 ns, `Quad2DData::texture` possédant ; une référence non possédante changerait l'API publique), et les
 chaînes restent O(profondeur) par lecture hors frame (11 ns par niveau, contre 107) faute de crochet d'écriture sur
 `Transform`.
+
+### 9.6 Démarrage à froid et compilation Slang
+
+Régression de Slang (§3.9 : `compile_cold` 74 → 165 ms, `voxel_vulkan` 21,7 → 35,3 ms) : la bibliothèque, pas Owl.
+L'audit tournait sur Slang 2026.1 (Vulkan SDK via DepManager), la branche sur 2026.19 (recette Conan). Même binaire
+`owl_bench`, mêmes shaders du jour, seule `libslang-compiler` remplacée par celle de 2026.1 : `compile_cold` 93,6 ms,
+`quad_vulkan` 16,5 ms, `voxel_vulkan` 20,1 ms, `all_engine_shaders_vulkan` (12) 176 ms, contre 172 / 21,1 / 35,0 /
+270 ms avec 2026.19 ; les changements de shaders (types de blocs, `PipelineState`) n'y sont pour rien. Callgrind par
+compilation de `voxel` : 261 contre 162 M instructions, dont l'édition de liens IR (`cloneInst` 161 contre 46 M,
+`specializeModule` 48 contre 10 M) et la vérification sémantique (+65 %). Ni une session Slang partagée entre
+compilations (gain nul) ni `-O0` (−7 %, code produit différent) ne compensent : non corrigé côté Owl, revenir à
+2026.1 serait une décision de dépendance. Effet de bord corrigé : 2026.19 écrit `warning[E41012]`, que le filtre ne
+reconnaissait plus.
+
+Démarrage : Slang sort du chemin de démarrage. `OwlShaderBake` compile au build les 12 shaders du moteur pour Vulkan et
+OpenGL (42 étages, 0,7 s) dans `bin/assets/shaders/<renderer>/spirv/<api>/`, installés dans les composants Engine et
+Nest et embarqués dans un `.owlpack` (l'`AssetScanner` prend tout `shaders/`). `loadOrCompileSpirv` lit ce SPIR-V,
+puis le cache, et ne compile qu'à défaut de clé correspondant à la source (shader modifié, hot reload, shader de jeu).
+Les compute shaders, recompilés à chaque démarrage faute de cache (création de la session globale comprise), y
+passent aussi. Le GLSL du repli OpenGL reste traduit par spirv-cross au chargement : pas de Slang, et les deux pilotes
+mesurés ingèrent le SPIR-V.
+
+Frame bench `platformer_house`, `taskset -c 2-7`, 300 frames (le démarrage n'en dépend pas), 3 répétitions, médiane ;
+avant (`69514ab0`) puis après, à cinq minutes d'intervalle, load average 1,6 à 6,3. « Froid » : `bin/cache/shader`
+vidé avant le lancement. Millisecondes `engine_ready` / `first_frame` :
+
+| Configuration   | Avant, froid | Avant, chaud | Après, froid | Après, chaud |
+|-----------------|--------------|--------------|--------------|--------------|
+| Vulkan / NVIDIA | 833 / 860    | 544 / 571    | 410 / 438    | 379 / 406    |
+| OpenGL / NVIDIA | 633 / 667    | 458 / 489    | 270 / 302    | 277 / 308    |
+| Vulkan / Intel  | 598 / 629    | 412 / 444    | 232 / 269    | 232 / 266    |
+| OpenGL / Intel  | 624 / 653    | 429 / 456    | 260 / 288    | 252 / 281    |
+
+Paquet : `cpack -G TGZ` du build release, archives extraites hors du dépôt ; le runner du composant Nest lit les 42
+fichiers de son `assets/` (`Using precompiled … from <paquet>/assets`), Vulkan et OpenGL, cache vide ou chaud (265 à
+302 ms jusqu'à `engine_ready` sur Intel), et le scénario `platformer_walk.owltest` passe ; un jeu exporté par
+`OwlNest --export` extrait les 42 fichiers de son pack. Aucune ligne Slang dans ces journaux. Validation Vulkan
+(`--validation`, NVIDIA et Intel, `platformer_house`, `raycast_demo`, `voxel_terrain`) sans message, `ctest` (render
+compris) vert.
+
+Le démarrage tombe de 630-860 à 270-440 ms jusqu'à la première frame à froid et ne dépend plus du cache ; ce qui
+reste sur NVIDIA Vulkan (~170 ms de plus qu'Intel) n'est pas décomposé ici (pilote, création des pipelines sans
+`VkPipelineCache` : à mesurer).

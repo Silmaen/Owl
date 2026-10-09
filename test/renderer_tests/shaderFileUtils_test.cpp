@@ -18,6 +18,8 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <string>
+#include <utility>
 #include <vector>
 
 using namespace owl;
@@ -158,6 +160,68 @@ TEST(ShaderFileUtils, ShaderReflectReturnsEmptyForEmptyData) {
 	const auto refl = renderer::utils::shaderReflect("noop", "vulkan", "1.4", ShaderType::Vertex, {});
 	EXPECT_TRUE(refl.uniformBuffers.empty());
 	EXPECT_TRUE(refl.sampledImages.empty());
+	core::Log::invalidate();
+}
+TEST(ShaderFileUtils, PrecompiledPathSitsUnderTheRendererSpirvFolder) {
+	EXPECT_EQ(renderer::utils::getPrecompiledShaderPath("quad", "renderer2D", "vulkan", ShaderType::Fragment),
+			  std::filesystem::path("shaders") / "renderer2D" / "spirv" / "vulkan" / "quad.frag.spv");
+}
+
+TEST(ShaderFileUtils, LoadOrCompileUsesThePrecompiledStagesWithoutSlang) {
+	core::Log::init(core::Log::Level::Off);
+	// Without an application, the asset search path is the working directory.
+	const auto root = std::filesystem::current_path();
+	const auto folder = root / "shaders" / "owl_test_precompiled";
+	std::filesystem::remove_all(folder);
+	// Not Slang: only a precompiled hit can succeed.
+	const std::string source = "not a slang source";
+	const auto key = renderer::utils::getShaderCacheKey(source, "owl_test_precompiled/fake", true);
+	const std::vector<uint32_t> vert{0x07230203, 1, 2};
+	const std::vector<uint32_t> frag{0x07230203, 3, 4, 5};
+	for (const auto& [stage, data]: {std::pair{ShaderType::Vertex, vert}, std::pair{ShaderType::Fragment, frag}}) {
+		const auto file =
+				root / renderer::utils::getPrecompiledShaderPath("fake", "owl_test_precompiled", "vulkan", stage);
+		std::filesystem::create_directories(file.parent_path());
+		ASSERT_TRUE(renderer::utils::writeCachedShader(file, data));
+		renderer::utils::writeShaderHash(file, key);
+	}
+	const auto stages = renderer::utils::loadOrCompileSpirv(source, "fake", "owl_test_precompiled", true,
+															{ShaderType::Vertex, ShaderType::Fragment});
+	ASSERT_TRUE(stages.has_value());
+	EXPECT_EQ(stages->at(ShaderType::Vertex), vert);
+	EXPECT_EQ(stages->at(ShaderType::Fragment), frag);
+	// The OpenGL output was not baked, and an edited source does not match the stored hash: both compile, and fail.
+	EXPECT_FALSE(renderer::utils::loadOrCompileSpirv(source, "fake", "owl_test_precompiled", false,
+													 {ShaderType::Vertex, ShaderType::Fragment})
+						 .has_value());
+	EXPECT_FALSE(renderer::utils::loadOrCompileSpirv(source + " edited", "fake", "owl_test_precompiled", true,
+													 {ShaderType::Vertex, ShaderType::Fragment})
+						 .has_value());
+	std::filesystem::remove_all(folder);
+	core::Log::invalidate();
+}
+
+TEST(ShaderFileUtils, LoadOrCompileFillsThenReadsTheCache) {
+	core::Log::init(core::Log::Level::Off);
+	auto app = makeDummyApp("shaderLoadOrCompile");
+	const std::string source = "[shader(\"compute\")]\n[numthreads(1, 1, 1)]\n"
+							   "void computeMain(uint3 iId: SV_DispatchThreadID) {}\n";
+	const auto cached =
+			renderer::utils::getShaderCachedPath("owl_empty", "owl_test_cache", "vulkan", ShaderType::Compute);
+	std::filesystem::remove_all(renderer::utils::getCacheDirectory("owl_test_cache", ""));
+	const auto compiled =
+			renderer::utils::loadOrCompileSpirv(source, "owl_empty", "owl_test_cache", true, {ShaderType::Compute});
+	ASSERT_TRUE(compiled.has_value());
+	ASSERT_FALSE(compiled->at(ShaderType::Compute).empty());
+	const auto key = renderer::utils::getShaderCacheKey(source, "owl_test_cache/owl_empty", true);
+	EXPECT_TRUE(renderer::utils::isShaderCacheValid(cached, key));
+	const auto again =
+			renderer::utils::loadOrCompileSpirv(source, "owl_empty", "owl_test_cache", true, {ShaderType::Compute});
+	ASSERT_TRUE(again.has_value());
+	EXPECT_EQ(again->at(ShaderType::Compute), compiled->at(ShaderType::Compute));
+	std::filesystem::remove_all(renderer::utils::getCacheDirectory("owl_test_cache", ""));
+	app::Application::invalidate();
+	app.reset();
 	core::Log::invalidate();
 }
 #endif

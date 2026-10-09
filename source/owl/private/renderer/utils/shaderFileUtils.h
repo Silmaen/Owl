@@ -184,11 +184,56 @@ OWL_API auto isShaderCacheValid(const std::filesystem::path& iCachedPath, const 
  */
 OWL_API void writeShaderHash(const std::filesystem::path& iCachedPath, const std::string& iSource);
 
+/**
+ * @brief
+ *  Path of a stage compiled at build time, relative to an asset folder.
+ * @param[in] iShaderName Shader name (file stem of the Slang source).
+ * @param[in] iRenderer Renderer folder (`renderer2D`, `bitonic_sort`...).
+ * @param[in] iRendererApi Graphics API folder (`vulkan` or `opengl`).
+ * @param[in] iType Shader stage.
+ * @return `shaders/<renderer>/spirv/<api>/<name>.<stage>.spv`, with its `.hash` next to it.
+ */
+OWL_API auto getPrecompiledShaderPath(const std::string& iShaderName, const std::string& iRenderer,
+									  const std::string& iRendererApi, const gpu::ShaderType& iType)
+		-> std::filesystem::path;
+
+/// SPIR-V per stage, as the backends consume it.
+using SpirvStages = std::unordered_map<gpu::ShaderType, std::vector<uint32_t>>;
+
+/**
+ * @brief
+ *  Get the SPIR-V of a shader without compiling it when its output is already known.
+ *
+ *  In order: the stages compiled at build time (`getPrecompiledShaderPath` in an asset folder), the cache of the
+ *  working directory, then a Slang compilation whose output goes to that cache. Each one is used only when its
+ *  hash matches `getShaderCacheKey` of the current source, so an edited source (hot reload) is compiled again.
+ * @param[in] iSource Slang source of the shader.
+ * @param[in] iShaderName Shader name (Slang module name).
+ * @param[in] iRenderer Renderer folder of the shader.
+ * @param[in] iForVulkan True for the Vulkan target, false for OpenGL.
+ * @param[in] iStages Stages that must all be found for a stored output to be used.
+ * @return The SPIR-V per stage, or `std::nullopt` when the compilation fails.
+ */
+OWL_API auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderName,
+								const std::string& iRenderer, bool iForVulkan,
+								const std::vector<gpu::ShaderType>& iStages) -> std::optional<SpirvStages>;
+
+/// Output of `compileSlangToSpirv`.
 struct SlangCompilationResult {
-	std::unordered_map<gpu::ShaderType, std::vector<uint32_t>> spirvData;
+	/// SPIR-V of every entry point found (`vertexMain`, `fragmentMain`, `computeMain`).
+	SpirvStages spirvData;
+	/// True when the module loaded and at least one entry point compiled.
 	bool success = false;
 };
 
+/**
+ * @brief
+ *  Compile a Slang source to SPIR-V, one module per entry point.
+ * @param[in] iSource Slang source.
+ * @param[in] iModuleName Slang module name.
+ * @param[in] iForVulkan True for `spirv_1_6` with `BACKEND_VULKAN`, false for `glsl_450` with `BACKEND_OPENGL`.
+ * @return The SPIR-V per stage and the success flag.
+ */
 OWL_API auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleName, bool iForVulkan)
 		-> SlangCompilationResult;
 

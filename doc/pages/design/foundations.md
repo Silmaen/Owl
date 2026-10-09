@@ -229,7 +229,8 @@ reorganised, made discoverable and consistent. See [Owl Nest UI](nest-ui.md).
 - ![Planned][planned] Persistent, chunked and culled tilemap (PR-31: B-13)
 - ![Planned][planned] Faster scene loading (YAML path optimised or replaced, prefab instantiation without a YAML
   round-trip per entity)
-- ![Planned][planned] Shaders precompiled at pack time, so the runner never compiles Slang at startup
+- ![Done][done] Shaders precompiled at build time (both CPack components, embedded in a game pack), so the runner
+  and the editor never compile Slang at startup
 
 ## Performance targets
 
@@ -244,7 +245,7 @@ Measured on the `bench/` harness, Null backend unless stated (source: `doc/audit
 | Scene load per entity                   | 134 µs (10 000 entities: 1.34 s)                 | < 10 µs                               |
 | Box2D step, 5 000 bodies in contact     | 4.46 ms (single thread), 1.44 ms (8 workers)     | < 1.5 ms (multi-thread, fixed step)   |
 | Voxel meshing                           | on workers, streaming frame peak 0.35 ms (PR-24) | off the main thread, per-frame budget |
-| Cold start (real runner, GPU backend)   | ~400 ms to first frame on lavapipe / llvmpipe    | measured, then shaders precompiled    |
+| Cold start (real runner, GPU backend)   | 270-440 ms to first frame, no Slang compilation  | measured, then shaders precompiled    |
 | Lua: create / memory / empty update     | 28 µs / 9.0 KB / 44 ns                           | ≤ audit: 30.5 µs / 8.97 KB / 43.5 ns  |
 
 ## Exit criteria

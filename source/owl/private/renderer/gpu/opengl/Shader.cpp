@@ -156,7 +156,6 @@ void Shader::compile(const std::string& iSlangSource) {
 
 	const auto start = std::chrono::steady_clock::now();
 
-	renderer::utils::createCacheDirectoryIfNeeded(getRenderer(), "opengl");
 	if (auto binaries = compileOrGetOpenGlBinaries(iSlangSource); binaries.has_value())
 		m_openGlSpirv = std::move(*binaries);
 	m_programId = createProgram(m_openGlSpirv);
@@ -187,41 +186,12 @@ auto Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) const
 		-> std::optional<std::unordered_map<ShaderType, std::vector<uint32_t>>> {
 	OWL_PROFILE_FUNCTION()
 
-	std::unordered_map<ShaderType, std::vector<uint32_t>> shaderData;
-	const auto cacheKey =
-			renderer::utils::getShaderCacheKey(iSlangSource, getRenderer() + "/" + getName(), /*iForVulkan=*/false);
-	bool allCached = true;
-	for (const auto stage: {ShaderType::Vertex, ShaderType::Fragment}) {
-		const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
-		if (!renderer::utils::isShaderCacheValid(cachedPath, cacheKey)) {
-			allCached = false;
-			break;
-		}
-	}
-
-	if (allCached) {
-		for (const auto stage: {ShaderType::Vertex, ShaderType::Fragment}) {
-			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
-
-			OWL_CORE_INFO("Using cached OpenGL Shader {}-{}.", getName(), magic_enum::enum_name(stage))
-			shaderData[stage] = renderer::utils::readCachedShader(cachedPath);
-		}
-	} else {
-		OWL_CORE_TRACE("Compiling Slang shader '{}' for OpenGL...", getName())
-		auto compiled = renderer::utils::compileSlangToSpirv(iSlangSource, getName(), false);
-		if (!compiled.success) {
-			OWL_CORE_ERROR("Slang compilation failed for shader '{}'.", getName())
-			return std::nullopt;
-		}
-		shaderData = std::move(compiled.spirvData);
-		for (auto&& [stage, data]: shaderData) {
-			const auto cachedPath = renderer::utils::getShaderCachedPath(getName(), getRenderer(), "opengl", stage);
-			if (!renderer::utils::writeCachedShader(cachedPath, data))
-				OWL_CORE_WARN("Failed to write the compiled shader.")
-			renderer::utils::writeShaderHash(cachedPath, cacheKey);
-		}
-	}
-	for (auto&& [stage, data]: shaderData)
+	auto shaderData =
+			renderer::utils::loadOrCompileSpirv(iSlangSource, getName(), getRenderer(),
+												/*iForVulkan=*/false, {ShaderType::Vertex, ShaderType::Fragment});
+	if (!shaderData.has_value())
+		return std::nullopt;
+	for (auto&& [stage, data]: *shaderData)
 		renderer::utils::shaderReflect(getName(), getRenderer(), "opengl", stage, data);
 	return shaderData;
 }

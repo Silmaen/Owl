@@ -74,13 +74,14 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 	const std::string source = loadSlangSource(iShaderName, iRenderer);
 	if (source.empty())
 		return;
-	const auto compiled = renderer::utils::compileSlangToSpirv(source, iShaderName, /*iForVulkan=*/true);
-	if (!compiled.success) {
+	const auto compiled = renderer::utils::loadOrCompileSpirv(source, iShaderName, iRenderer, /*iForVulkan=*/true,
+															  {ShaderType::Compute});
+	if (!compiled.has_value()) {
 		OWL_CORE_ERROR("Vulkan compute shader: Slang compilation failed for '{}'.", m_name)
 		return;
 	}
-	const auto it = compiled.spirvData.find(ShaderType::Compute);
-	if (it == compiled.spirvData.end() || it->second.empty()) {
+	const auto it = compiled->find(ShaderType::Compute);
+	if (it == compiled->end() || it->second.empty()) {
 		OWL_CORE_ERROR("Vulkan compute shader: no `computeMain` entry point in '{}'.", m_name)
 		return;
 	}

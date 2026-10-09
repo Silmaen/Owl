@@ -10,6 +10,7 @@
 
 #include "app/Application.h"
 #include "core/external/slang.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "shaderFileUtils.h"
 
 OWL_DIAG_PUSH
@@ -25,6 +26,7 @@ OWL_DIAG_POP
 #include <cctype>
 #include <exception>
 #include <format>
+#include <functional>
 #include <mutex>
 #include <slang-tag-version.h>
 
@@ -308,8 +310,8 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 	if (diagnosticBlob != nullptr && diagnosticBlob->getBufferSize() > 0) {
 		const std::string_view diag(static_cast<const char*>(diagnosticBlob->getBufferPointer()),
 									diagnosticBlob->getBufferSize());
-		// Filter out harmless warning 41012 (capabilities auto-upgrade)
-		if (diag.find("warning 41012") == std::string_view::npos)
+		// Filter out harmless warning 41012 (capabilities auto-upgrade), "warning 41012" or "warning[E41012]"
+		if (diag.find("41012") == std::string_view::npos)
 
 			OWL_CORE_WARN("Slang: Warnings for '{}': {}.", iModuleName, diag)
 	}
@@ -366,6 +368,72 @@ auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleN
 
 	result.success = true;
 	return result;
+}
+
+auto getPrecompiledShaderPath(const std::string& iShaderName, const std::string& iRenderer,
+							  const std::string& iRendererApi, const gpu::ShaderType& iType) -> std::filesystem::path {
+	return std::filesystem::path("shaders") / iRenderer / "spirv" / iRendererApi /
+		   (iShaderName + getCacheExtension(iType));
+}
+
+namespace {
+auto readValidStages(const std::vector<gpu::ShaderType>& iStages, const std::string& iCacheKey,
+					 const std::function<std::filesystem::path(gpu::ShaderType)>& iPathOf)
+		-> std::optional<SpirvStages> {
+	for (const auto stage: iStages)
+		if (!isShaderCacheValid(iPathOf(stage), iCacheKey))
+			return std::nullopt;
+	SpirvStages stages;
+	for (const auto stage: iStages) stages[stage] = readCachedShader(iPathOf(stage));
+	return stages;
+}
+}// namespace
+
+auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderName, const std::string& iRenderer,
+						const bool iForVulkan, const std::vector<gpu::ShaderType>& iStages)
+		-> std::optional<SpirvStages> {
+	OWL_PROFILE_FUNCTION()
+
+	const std::string api = iForVulkan ? "vulkan" : "opengl";
+	const auto cacheKey = getShaderCacheKey(iSource, iRenderer + "/" + iShaderName, iForVulkan);
+	// A direct lookup per asset folder: AssetLibrary::find walks every sub-folder on a miss.
+	for (const auto& folder: data::assets::getAssetSearchPaths()) {
+		if (auto stages = readValidStages(iStages, cacheKey,
+										  [&](const gpu::ShaderType iStage) -> std::filesystem::path {
+											  return folder /
+													 getPrecompiledShaderPath(iShaderName, iRenderer, api, iStage);
+										  });
+			stages.has_value()) {
+			OWL_CORE_INFO("Using precompiled {} shader {}/{} from {}.", api, iRenderer, iShaderName, folder.string())
+			return stages;
+		}
+	}
+	if (app::Application::instanced()) {
+		if (auto stages = readValidStages(iStages, cacheKey,
+										  [&](const gpu::ShaderType iStage) -> std::filesystem::path {
+											  return getShaderCachedPath(iShaderName, iRenderer, api, iStage);
+										  });
+			stages.has_value()) {
+			OWL_CORE_INFO("Using cached {} shader {}/{}.", api, iRenderer, iShaderName)
+			return stages;
+		}
+	}
+	OWL_CORE_INFO("Compiling Slang shader {}/{} for {}.", iRenderer, iShaderName, api)
+	auto compiled = compileSlangToSpirv(iSource, iShaderName, iForVulkan);
+	if (!compiled.success) {
+		OWL_CORE_ERROR("Slang compilation failed for shader {}/{} ({}).", iRenderer, iShaderName, api)
+		return std::nullopt;
+	}
+	if (app::Application::instanced()) {
+		createCacheDirectoryIfNeeded(iRenderer, api);
+		for (const auto& [stage, data]: compiled.spirvData) {
+			const auto cachedPath = getShaderCachedPath(iShaderName, iRenderer, api, stage);
+			if (!writeCachedShader(cachedPath, data))
+				OWL_CORE_WARN("Failed to write the compiled shader {}.", cachedPath.string())
+			writeShaderHash(cachedPath, cacheKey);
+		}
+	}
+	return std::move(compiled.spirvData);
 }
 
 }// namespace owl::renderer::utils

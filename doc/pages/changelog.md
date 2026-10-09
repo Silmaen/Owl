@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `OwlShaderBake` build tool (render module): compiles every `engine_assets/shaders/*/slang/*.slang` for Vulkan and OpenGL during the build, in the layout of `renderer::utils::getPrecompiledShaderPath`.
 - Frame bench `cpu_pace_wait_ms`: CPU time a Vulkan frame waits on its fence and swapchain image, to tell engine work from presentation pacing.
 - Optional engine modules: `OWL_MODULE_RENDER`, `OWL_MODULE_PHYSICS`, `OWL_MODULE_AUDIO`, `OWL_MODULE_SCRIPT` and `OWL_MODULE_GUI` (Conan options `render`, `physics`, `audio`, `script`, `gui`) leave out a module and its third parties while its public API stays, backed by the Null backend or a no-op; `OWL_WITH_<MODULE>` and `find_package(OwlEngine COMPONENTS Physics)` tell a game what is built in.
 - `linux-clang-minimal` preset (every optional module off: 23 Conan packages instead of 47), for local checks.
@@ -143,6 +144,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Runner and editor start without compiling Slang: the build compiles the engine shaders to SPIR-V (`OwlShaderBake`, into `bin/assets`, installed in both CPack components and embedded in a game pack), compute shaders included, and `renderer::utils::loadOrCompileSpirv` uses them before the cache when their key matches the source; first frame 630-860 → 270-440 ms with an empty cache, 440-570 → 270-410 ms with a warm one.
+- Slang warning 41012 is filtered again: Slang 2026.19 prints it as `warning[E41012]`.
 - 10 000-sprite CPU frame under its v0.3.0 target: world matrices in a persistent dense per-entity cache, checked by compare and recomposed only on change (no per-frame maps, no matrix decomposition), inherited visibility computed in the same pass: `editor_update/flat10000` 2.60 → 0.33 ms, 1 000-deep chains 10× cheaper to query and build.
 - `math::Transform::operator()` builds the TRS matrix in closed form and skips the trigonometry of null angles (74 → 4.2 ns), Renderer2D finds a texture slot by pointer before the backend compare: transient quads 86 → 17 ns, scene-world quads 10.8 → 9.4 ns.
 - Box2D under its v0.3.0 target: built with AVX2 on x86_64 (`OWL_PHYSICS_AVX2`, local recipe; physics stays off with an error on a CPU without AVX2), two spare solver threads for the tree rebuild and island split, poses copied to the entities in parallel: 5 000 bodies in contact step in 1.44 ms on 8 workers instead of 1.68 ms, 4.46 ms instead of 5.01 ms single-threaded.
