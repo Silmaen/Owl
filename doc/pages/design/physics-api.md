@@ -17,7 +17,7 @@ code, Lua bindings and the editor only see the interface. One physics world per 
 - Fixed-step simulation: accumulator, bounded steps per frame, interpolated transforms, per-scene settings
   (PR-22: D-05) — done
 - Multi-threaded Box2D solver on a dedicated Taskflow executor, automatic above 2 000 dynamic bodies
-  (PR-22: P-12, D-14) — done; AVX2 Box2D build left to the package migration
+  (PR-22: P-12, D-14) — done; Box2D built with AVX2 on x86_64 (`OWL_PHYSICS_AVX2`) — done
 - Bodies destroyed with their entity, no ghost collider (PR-13: C-08, D-04)
 - `on_collision` implemented from Box2D contact events, with the other entity (D-07, I-02) — done
 

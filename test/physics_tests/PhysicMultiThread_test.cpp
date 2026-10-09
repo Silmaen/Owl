@@ -117,3 +117,45 @@ TEST(PhysicMultiThread, WorkerCountSettings) {
 	PhysicCommand::destroy(scene);
 	core::Log::invalidate();
 }
+
+// Above 1 024 bodies a multi-threaded world copies the poses to the entities in parallel: every box, and a child
+// body converted to its parent's space in the serial pass, must match the single-threaded copy.
+TEST(PhysicMultiThread, ParallelPoseCopyMatchesSerialCopy) {
+	core::Log::init(core::Log::Level::Off);
+	const auto run = [](const uint32_t iWorkers) -> std::vector<math::vec3f> {
+		Scene scene;
+		scene.getPhysicsSettings().workerCount = iWorkers;
+		auto ground = scene.createEntity("ground");
+		ground.getComponent<component::Transform>().transform.scale() = {400.f, 1.f, 1.f};
+		ground.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Static;
+		auto parent = scene.createEntity("parent");
+		parent.getComponent<component::Transform>().transform.translation() = {10.f, 0.f, 0.f};
+		std::vector<Entity> boxes;
+		for (uint32_t i = 0; i < 1200; ++i) {
+			auto box = scene.createEntity("box");
+			box.getComponent<component::Transform>().transform.translation() = {
+					-150.f + 1.5f * static_cast<float>(i % 200), 2.f + 1.5f * static_cast<float>(i / 200), 0.f};
+			box.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Dynamic;
+			boxes.push_back(box);
+		}
+		scene.setParent(boxes.back(), parent);
+		PhysicCommand::init(scene);
+		for (int f = 0; f < 30; ++f) PhysicCommand::frame(scene, makeFrame(16'667));
+		std::vector<math::vec3f> positions;
+		positions.reserve(boxes.size());
+		for (const auto& box: boxes)
+			positions.push_back(box.getComponent<component::Transform>().transform.translation());
+		PhysicCommand::destroy(scene);
+		return positions;
+	};
+	const auto mono = run(1);
+	const auto multi = run(4);
+	ASSERT_EQ(mono.size(), multi.size());
+	for (size_t i = 0; i < mono.size(); ++i) {
+		EXPECT_NEAR(mono[i].x(), multi[i].x(), 1e-2f) << "box " << i;
+		EXPECT_NEAR(mono[i].y(), multi[i].y(), 1e-2f) << "box " << i;
+	}
+	// The child box (world x near 148.5) is written in its parent's space: minus the parent's 10.
+	EXPECT_NEAR(multi.back().x(), 138.5f, 0.5f);
+	core::Log::invalidate();
+}

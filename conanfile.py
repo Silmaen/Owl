@@ -167,6 +167,8 @@ class OwlEngineConan(ConanFile):
         tc.cache_variables["OWL_USE_CCACHE"] = False
         for module in ("render", "physics", "audio", "script", "gui"):
             tc.cache_variables[f"OWL_MODULE_{module.upper()}"] = bool(self.options.get_safe(module))
+        if self.options.physics:
+            tc.cache_variables["OWL_PHYSICS_AVX2"] = bool(self.dependencies["box2d"].options.get_safe("avx2"))
         tc.generate()
 
     def build(self):

@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <type_traits>
 
 namespace tf {
 class Executor;
@@ -30,6 +31,10 @@ namespace owl::physics {
  * The executor is dedicated to the solver instead of shared with `core::task::Scheduler`: within a
  * step, Box2D's solver tasks spin-wait on each other, so all of them must run at once, and a long
  * Scheduler job holding a worker would stall the physics step until it ends.
+ *
+ * The executor has two threads more than `workerCount`: Box2D runs the tree rebuild and an island
+ * split beside its `workerCount` solver stage tasks, which wait on each other, so a side task holding
+ * one of their threads would delay the whole stage.
  *
  * Each `enqueueTask` call is split into at most `workerCount` ranges of at least `minRange` items,
  * each run by one executor worker. The worker index handed to Box2D is the range index, not the
@@ -53,7 +58,7 @@ public:
 	/**
 	 * @brief
 	 *  Start the worker threads.
-	 * @param[in] iWorkerCount Number of worker threads, at least 2.
+	 * @param[in] iWorkerCount Box2D worker count, at least 2 (the executor starts two threads more).
 	 */
 	explicit SolverTaskPool(uint32_t iWorkerCount);
 
@@ -82,6 +87,26 @@ public:
 	 *  Recycle the task records; call after each `b2World_Step`, when every task has finished.
 	 */
 	void recycle() { m_usedGroups = 0; }
+
+	/**
+	 * @brief
+	 *  Run a function over `[0, iCount)` split into at most `workerCount` ranges, the last one on the calling
+	 *  thread; return when every range has run. Call it between steps, never from a Box2D task.
+	 * @tparam Fn Callable taking the range bounds `(begin, end)`.
+	 * @param[in] iCount Number of items.
+	 * @param[in] iMinRange Minimum number of items per range.
+	 * @param[in] iBody The function run on each range.
+	 */
+	template<typename Fn>
+	void parallelFor(const size_t iCount, const size_t iMinRange, Fn&& iBody) {
+		using Body = std::remove_reference_t<Fn>;
+		runRanges(
+				iCount, iMinRange,
+				[](void* iContext, const size_t iBegin, const size_t iEnd) -> void {
+					(*static_cast<Body*>(iContext))(iBegin, iEnd);
+				},
+				const_cast<void*>(static_cast<const void*>(&iBody)));
+	}
 
 private:
 	/**
@@ -113,6 +138,19 @@ private:
 	 * @param[in] iUserContext The pool.
 	 */
 	static void finish(void* iUserTask, void* iUserContext);
+
+	/// Type-erased range function of `parallelFor`.
+	using RangeFn = void (*)(void* iContext, size_t iBegin, size_t iEnd);
+
+	/**
+	 * @brief
+	 *  Non-template body of `parallelFor`.
+	 * @param[in] iCount Number of items.
+	 * @param[in] iMinRange Minimum number of items per range.
+	 * @param[in] iBody The range function.
+	 * @param[in] iContext The context passed back to the range function.
+	 */
+	void runRanges(size_t iCount, size_t iMinRange, RangeFn iBody, void* iContext);
 
 	/**
 	 * @brief

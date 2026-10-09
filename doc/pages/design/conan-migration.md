@@ -184,7 +184,7 @@ Checked on 2026-10-05 with `conan search -r conancenter` (Conan 2.33). "Owl (Con
 
 | Dependency            | DepManager     | Owl (Conan)     | Source                | Linkage | Note                                                                           |
 |-----------------------|----------------|-----------------|-----------------------|---------|--------------------------------------------------------------------------------|
-| box2d                 | 3.1.1          | 3.1.1           | ConanCenter           | static  | Latest on ConanCenter                                                          |
+| box2d                 | 3.1.1          | 3.1.1           | local recipe          | static  | Latest upstream; ConanCenter's recipe plus an `avx2` option                    |
 | cpptrace              | 1.0.4          | 1.0.4           | ConanCenter           | static  | Pulls libdwarf 2.1.0 (DepManager: 2.2.0)                                       |
 | debugbreak            | 1.0            | —               | removed               | —       | Replaced by `OWL_DEBUG_BREAK()` in `core/Assert.h`                             |
 | entt                  | 3.15.0         | 4.0.0           | local recipe          | header  | ConanCenter stops at 3.16.0; its recipe, C++20 for 4.x                         |
@@ -244,6 +244,7 @@ ConanCenter as is.
 | `openal-soft` 1.25.2                 | ConanCenter stops at 1.24.3: its recipe, `-Werror=function-effects` off (libstdc++ is not `nonblocking`)        |
 | `msdfgen` 1.13                       | ConanCenter stops at 1.12 (needed by msdf-atlas-gen 1.4): its recipe, unchanged                                 |
 | `tinyobjloader` 2.0.0-rc13           | ConanCenter stops at rc10: its recipe, unchanged                                                                |
+| `box2d` 3.1.1                        | ConanCenter's recipe has no AVX2 switch: its recipe plus `avx2` (default on, x86_64 only, `BOX2D_AVX2`)         |
 
 ## What remains
 

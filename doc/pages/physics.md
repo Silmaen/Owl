@@ -206,14 +206,26 @@ the engine), owned by each multi-threaded world and destroyed with it.
 - **Dedicated executor.** The pool does not share the `core::task::Scheduler` threads: within a step, Box2D's
   solver tasks spin-wait on each other, so they must all run at once, and a long Scheduler job holding a worker
   would stall the step.
+- **Spare threads.** The executor has two threads more than `workerCount`: Box2D runs the tree rebuild and an
+  island split beside its solver stage tasks, which wait on each other, so a side task holding one of their
+  threads would delay the stage. The last range of a split task runs on the thread calling `b2World_Step`.
 - **Reproducibility.** Each task is split into at most `workerCount` ranges, and Box2D receives the range index
   as its worker index. A given worker count therefore gives the same result on every run; different counts
   differ slightly (Box2D merges per-worker state, such as the island-split candidate, in an order that depends
   on how bodies were partitioned).
 
-Measured on the 5 000-box pile of `bench/` (i9-13950HX, loaded machine, five physical cores): 5.1 ms per
-step single-threaded, 3.9 ms with 2 workers, 3.2 ms with 4, 2.9 ms with 8. The Box2D 3.1.1 package is built
-with SSE2, not AVX2 (`BOX2D_AVX2`); the AVX2 build is left to the package migration.
+- **AVX2.** On x86_64 the Box2D package is built with AVX2 (8-wide solver instead of SSE2's 4-wide;
+  `OWL_PHYSICS_AVX2`, on by default, recipe option `box2d/*:avx2`). A CPU without AVX2 (before Haswell or
+  Excavator) would crash on an illegal instruction: `PhysicCommand::init` checks the CPU first, logs an error and
+  leaves the world uninitialised, so the game runs without physics; build with `-DOWL_PHYSICS_AVX2=OFF` for such
+  machines. arm64 keeps Box2D's NEON path.
+
+- **Pose copy.** Above 1 024 bodies, a multi-threaded world also spreads the per-frame copy of the poses to the
+  entities over the executor; children of a hierarchy are written afterwards, on the calling thread, since they
+  read their parent's world transform.
+
+Measured on the 5 000-box pile of `bench/` (`physics/step_settled*`, i9-13950HX, `taskset -c 0-15`), per step:
+4.5 ms single-threaded, 3.3 ms with 2 workers, 2.0 ms with 4, 1.44 ms with 8.
 
 ## Physics API
 

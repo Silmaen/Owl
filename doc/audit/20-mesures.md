@@ -893,3 +893,36 @@ frame Vulkan reste au plancher de présentation du pilote (NVIDIA) ou au GPU (In
 0,03 à 0,11 ms au-dessus d'OpenGL (sauf `voxel_terrain` NVIDIA). « Vulkan ≤ OpenGL » n'est donc pas atteignable au
 temps mur sous Wayland sans toucher à la présentation ; à trancher : mesurer la cible sur le travail (hors attente de
 présentation), ou alléger la cible principale Vulkan (profondeur et identifiant seulement quand un calque les utilise).
+
+### 9.4 Box2D, 5 000 corps au contact
+
+Pistes : Box2D 3.2 n'existe pas (ni sur ConanCenter ni en amont, dernière étiquette `v3.1.1`) ; la recette
+ConanCenter 3.1.1 n'a pas d'option AVX2, d'où une recette locale (`conan/recipes/box2d`, la même plus `avx2`).
+Décomposition par `b2World_GetProfile` et chronos temporaires dans `PhysicCommand::frame`, sur les 60 pas mesurés
+de `step_settled_mt8` : 1,36 ms de `b2World_Step` (paires 0,29, narrow phase 0,33, solveur 0,74 dont contraintes
+0,48) et 0,10 ms de copie des poses vers l'ECS, en série. La pile « tassée » ne l'est pas : après 600 pas les
+colonnes de 25 caisses se sont effondrées (vitesse max 25 m/s, 5 000 corps éveillés), d'où des paires nouvelles et
+une île coupée à chaque pas.
+
+Corrections : Box2D en AVX2 sur x86_64 (`OWL_PHYSICS_AVX2`, option `box2d/*:avx2`, sans objet sur arm64), avec
+un contrôle du CPU à `PhysicCommand::init` (sans AVX2 : erreur au journal et monde non créé, au lieu d'une
+instruction illégale) ; deux threads de plus que `workerCount` dans l'exécuteur, car la reconstruction d'arbre et la
+coupe d'île tournent à côté des tâches du solveur, qui s'attendent ; copie des poses (`captureCurrent`,
+`writeTransforms`) répartie sur l'exécuteur au-delà de 1 024 corps, les enfants d'une hiérarchie restant en série.
+Essais abandonnés : dernière plage exécutée sur le thread appelant (−0,03 ms à 8 workers, +0,1 à 0,15 ms à 2 et 4),
+plages entrelacées (4 par worker, +0,05 ms), pool maison à attente active (aucun gain). `PhysicMultiThread` et
+`PhysicFixedStep` restent déterministes (3 passes identiques).
+
+Avant (`a9758729`, SSE2) / après alternés, 3 répétitions, médiane des médianes, `taskset -c 0-15`, load average
+5,6 à 5,8 :
+
+| Banc (5 000 corps)     | Avant   | Après   |
+|------------------------|---------|---------|
+| `step_settled`         | 5,01 ms | 4,46 ms |
+| `step_settled_mt2`     | 3,59 ms | 3,28 ms |
+| `step_settled_mt4`     | 2,40 ms | 2,00 ms |
+| `step_settled_mt8`     | 1,68 ms | 1,44 ms |
+| `step_falling_mt8`     | 528 µs  | 450 µs  |
+
+La cible (< 1,5 ms en multi-thread) est tenue à 8 workers (1,44 ms) ; le nombre automatique de workers reste
+plafonné à 4 (2,0 ms), le relever est à trancher par le mainteneur.

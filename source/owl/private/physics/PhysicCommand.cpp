@@ -16,6 +16,7 @@
 #include <box2d/box2d.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <cstdint>
 #include <map>
@@ -27,7 +28,19 @@ namespace owl::physics {
 
 namespace {
 
+// An AVX2 Box2D on a CPU without AVX2: physics stays off instead of crashing on an illegal instruction.
+auto isCpuUnsupported() -> bool {
+#ifdef OWL_PHYSICS_AVX2
+	static const bool unsupported = __builtin_cpu_supports("avx2") == 0;
+	return unsupported;
+#else
+	return false;
+#endif
+}
+
 inline void logNotInitialized(const char* iFunc) {
+	if (isCpuUnsupported())
+		return;
 	OWL_CORE_WARN("Physic: {} called before initialisation; ignoring.", iFunc)
 }
 
@@ -37,6 +50,15 @@ inline void logNullEntity(const char* iFunc) { OWL_CORE_WARN("Physic: {} called 
 
 class PhysicsWorld {
 public:
+	// Body whose pose is copied to its entity each frame, with the last two step poses for interpolation.
+	struct SyncedBody {
+		entt::entity entity;
+		uint64_t bodyId;
+		b2BodyId body;
+		b2Transform previous;
+		b2Transform current;
+	};
+
 	PhysicsWorld() = default;
 
 	~PhysicsWorld() = default;
@@ -128,21 +150,71 @@ public:
 		for (auto& tracked: synced) tracked.previous = iFromWorld ? b2Body_GetTransform(tracked.body) : tracked.current;
 	}
 
+	// Below this many bodies the per-frame copies stay on the calling thread (dispatch costs more than it saves).
+	static constexpr size_t parallelSyncMinBodies = 1024;
+	static constexpr size_t parallelSyncMinRange = 256;
+
 	void captureCurrent() {
-		for (auto& tracked: synced) tracked.current = b2Body_GetTransform(tracked.body);
+		const auto capture = [this](const size_t iBegin, const size_t iEnd) -> void {
+			for (size_t i = iBegin; i < iEnd; ++i) synced[i].current = b2Body_GetTransform(synced[i].body);
+		};
+		if (taskPool != nullptr && synced.size() >= parallelSyncMinBodies)
+			taskPool->parallelFor(synced.size(), parallelSyncMinRange, capture);
+		else
+			capture(0, synced.size());
 	}
 
 	void writeTransforms(scene::Scene& ioScene, const float iAlpha) const {
-		for (const auto& tracked: synced) {
-			auto* transform = ioScene.registry.try_get<scene::component::Transform>(tracked.entity);
-			if (transform == nullptr)
-				continue;
-			const b2Vec2 position =
-					iAlpha >= 1.f ? tracked.current.p : b2Lerp(tracked.previous.p, tracked.current.p, iAlpha);
-			const float angle = b2Rot_GetAngle(iAlpha >= 1.f ? tracked.current.q
-															 : b2NLerp(tracked.previous.q, tracked.current.q, iAlpha));
-			writeWorldPose(ioScene, tracked.entity, transform->transform, position, angle);
+		if (taskPool == nullptr || synced.size() < parallelSyncMinBodies) {
+			for (const auto& tracked: synced) writeTransform(ioScene, tracked, iAlpha);
+			return;
 		}
+		// Roots are written in parallel; a child reads its parent's world transform, so children get a serial pass.
+		std::atomic<bool> hasChildren{false};
+		taskPool->parallelFor(synced.size(), parallelSyncMinRange,
+							  [&ioScene, &hasChildren, iAlpha, this](const size_t iBegin, const size_t iEnd) -> void {
+								  for (size_t i = iBegin; i < iEnd; ++i) {
+									  const auto& tracked = synced[i];
+									  if (ioScene.registry.get<scene::component::Hierarchy>(tracked.entity).parentId !=
+										  core::UUID{0}) {
+										  hasChildren.store(true, std::memory_order_relaxed);
+										  continue;
+									  }
+									  if (auto* transform =
+												  ioScene.registry.try_get<scene::component::Transform>(tracked.entity);
+										  transform != nullptr) {
+										  const auto [position, angle] = interpolatedPose(tracked, iAlpha);
+										  writeRootPose(transform->transform, position, angle);
+									  }
+								  }
+							  });
+		if (!hasChildren.load(std::memory_order_relaxed))
+			return;
+		for (const auto& tracked: synced)
+			if (ioScene.registry.get<scene::component::Hierarchy>(tracked.entity).parentId != core::UUID{0})
+				writeTransform(ioScene, tracked, iAlpha);
+	}
+
+	static void writeTransform(scene::Scene& ioScene, const SyncedBody& iTracked, const float iAlpha) {
+		auto* transform = ioScene.registry.try_get<scene::component::Transform>(iTracked.entity);
+		if (transform == nullptr)
+			return;
+		const auto [position, angle] = interpolatedPose(iTracked, iAlpha);
+		writeWorldPose(ioScene, iTracked.entity, transform->transform, position, angle);
+	}
+
+	[[nodiscard]] static auto interpolatedPose(const SyncedBody& iTracked, const float iAlpha)
+			-> std::pair<b2Vec2, float> {
+		if (iAlpha >= 1.f)
+			return {iTracked.current.p, b2Rot_GetAngle(iTracked.current.q)};
+		return {b2Lerp(iTracked.previous.p, iTracked.current.p, iAlpha),
+				b2Rot_GetAngle(b2NLerp(iTracked.previous.q, iTracked.current.q, iAlpha))};
+	}
+
+	static void writeRootPose(math::Transform& ioTransform, const b2Vec2 iPosition, const float iAngle) {
+		ioTransform.translation().x() = iPosition.x;
+		ioTransform.translation().y() = iPosition.y;
+		ioTransform.rotation().z() = iAngle;
 	}
 
 	static void writeWorldPose(scene::Scene& ioScene, const entt::entity iEntity, math::Transform& ioTransform,
@@ -159,9 +231,7 @@ public:
 				return;
 			}
 		}
-		ioTransform.translation().x() = iPosition.x;
-		ioTransform.translation().y() = iPosition.y;
-		ioTransform.rotation().z() = iAngle;
+		writeRootPose(ioTransform, iPosition, iAngle);
 	}
 
 	void forgetContacts(const core::UUID iEntity) {
@@ -317,13 +387,6 @@ public:
 	std::vector<PhysicCommand::CollisionEvent> collisionBegins;
 	size_t frameEventsStart = 0;
 
-	struct SyncedBody {
-		entt::entity entity;
-		uint64_t bodyId;
-		b2BodyId body;
-		b2Transform previous;
-		b2Transform current;
-	};
 	std::vector<SyncedBody> synced;
 	std::unordered_map<uint64_t, size_t> syncedIndex;
 	PhysicsSettings settings;
@@ -355,6 +418,10 @@ auto runningWorld(const scene::Entity& iEntity, const char* iFunc) -> PhysicsWor
 void PhysicCommand::init(scene::Scene& ioScene) {
 	if (isInitialized(ioScene))
 		destroy(ioScene);
+	if (isCpuUnsupported()) {
+		OWL_CORE_ERROR("Physic: Box2D is built with AVX2, which this CPU lacks; physics disabled.")
+		return;
+	}
 	const auto world = mkShared<PhysicsWorld>();
 	ioScene.m_physicsWorld = world;
 	world->settings = ioScene.getPhysicsSettings().clamped();

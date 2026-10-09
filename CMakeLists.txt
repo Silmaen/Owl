@@ -40,6 +40,7 @@ option(${PROJECT_PREFIX}_ENABLE_SHADER_REFLECT_RESOURCES "Log the resources refl
 #
 option(${PROJECT_PREFIX}_MODULE_RENDER "OpenGL and Vulkan backends, GLFW window and input, Slang compiler (OFF: Null backends, headless)" ON)
 option(${PROJECT_PREFIX}_MODULE_PHYSICS "Box2D physics (OFF: PhysicCommand does nothing)" ON)
+option(${PROJECT_PREFIX}_PHYSICS_AVX2 "Build Box2D with AVX2 on x86_64 (a CPU without AVX2 then runs without physics)" ON)
 option(${PROJECT_PREFIX}_MODULE_AUDIO "OpenAL sound backend and libsndfile decoding (OFF: Null sound backend)" ON)
 option(${PROJECT_PREFIX}_MODULE_SCRIPT "Lua scripting (OFF: scripts never load)" ON)
 option(${PROJECT_PREFIX}_MODULE_GUI "ImGui layer and widgets, target Owl::Gui (needs OWL_MODULE_RENDER)" ON)

@@ -286,6 +286,7 @@ See [Windowing and input](design/windowing-input.md) for the details and the GLF
 | `OWL_LOG_LEVEL`                            | trace   | Lowest log level compiled in (`trace` to `off`)                                  |
 | `OWL_MODULE_RENDER`                        | ON      | OpenGL / Vulkan backends, GLFW, Slang ([Engine modules](#engine-modules))        |
 | `OWL_MODULE_PHYSICS`                       | ON      | Box2D physics ([Engine modules](#engine-modules))                                |
+| `OWL_PHYSICS_AVX2`                         | ON      | Box2D built with AVX2 on x86_64 ([Physics](physics.md#multi-threaded-solver))    |
 | `OWL_MODULE_AUDIO`                         | ON      | OpenAL backend, libsndfile ([Engine modules](#engine-modules))                   |
 | `OWL_MODULE_SCRIPT`                        | ON      | Lua scripting ([Engine modules](#engine-modules))                                |
 | `OWL_MODULE_GUI`                           | ON      | ImGui layer, widgets, `Owl::Gui` ([Engine modules](#engine-modules))             |
