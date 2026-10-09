@@ -24,8 +24,10 @@ using namespace owl::scene;
 
 namespace {
 
-auto recorder(std::vector<std::string>& ioLog, const std::string& iName) -> SystemFunction {
-	return [&ioLog, iName](Scene&, const SystemContext&) -> void { ioLog.push_back(iName); };
+// The name is a literal: a capture that fits std::function's inline buffer keeps the static analyzer from losing the
+// heap copy a captured std::string would need (false NewDeleteLeaks).
+auto recorder(std::vector<std::string>& ioLog, const char* iName) -> SystemFunction {
+	return [&ioLog, iName](Scene&, const SystemContext&) -> void { ioLog.emplace_back(iName); };
 }
 
 auto makeStep(const int iMs) -> core::Timestep {

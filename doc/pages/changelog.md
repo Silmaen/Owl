@@ -147,6 +147,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Nightly sanitizers: TSan ignores the GLib / Pango races of the GTK stack GLFW loads (`test/tsan.supp`), and the static analyzer no longer reports a false leak in `SystemSchedule_test.cpp`.
 - `conan create` exports `source/tools`, which the engine build needs since `OwlShaderBake`.
 - Runner and editor start without compiling Slang: the build compiles the engine shaders to SPIR-V (`OwlShaderBake`, into `bin/assets`, installed in both CPack components and embedded in a game pack), compute shaders included, and `renderer::utils::loadOrCompileSpirv` uses them before the cache when their key matches the source; first frame 630-860 → 270-440 ms with an empty cache, 440-570 → 270-410 ms with a warm one.
 - Slang warning 41012 is filtered again: Slang 2026.19 prints it as `warning[E41012]`.
