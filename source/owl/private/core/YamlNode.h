@@ -75,7 +75,7 @@ public:
 	 * @brief
 	 *  Forward iterator over the children of a map or a sequence.
 	 */
-	class Iterator final {
+	class OWL_API Iterator final {
 	public:
 		using iterator_category = std::forward_iterator_tag;///< Iterator category.
 		using value_type = YamlNode;///< Iterated value.
