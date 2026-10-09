@@ -144,6 +144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `conan create` exports `source/tools`, which the engine build needs since `OwlShaderBake`.
 - Runner and editor start without compiling Slang: the build compiles the engine shaders to SPIR-V (`OwlShaderBake`, into `bin/assets`, installed in both CPack components and embedded in a game pack), compute shaders included, and `renderer::utils::loadOrCompileSpirv` uses them before the cache when their key matches the source; first frame 630-860 → 270-440 ms with an empty cache, 440-570 → 270-410 ms with a warm one.
 - Slang warning 41012 is filtered again: Slang 2026.19 prints it as `warning[E41012]`.
 - 10 000-sprite CPU frame under its v0.3.0 target: world matrices in a persistent dense per-entity cache, checked by compare and recomposed only on change (no per-frame maps, no matrix decomposition), inherited visibility computed in the same pass: `editor_update/flat10000` 2.60 → 0.33 ms, 1 000-deep chains 10× cheaper to query and build.

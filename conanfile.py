@@ -94,6 +94,7 @@ class OwlEngineConan(ConanFile):
         "!engine_assets/help/*",
         "source/CMakeLists.txt",
         "source/owl/*",
+        "source/tools/*",
     )
 
     def set_version(self):
