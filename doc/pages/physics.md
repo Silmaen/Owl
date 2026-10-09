@@ -214,11 +214,11 @@ the engine), owned by each multi-threaded world and destroyed with it.
   differ slightly (Box2D merges per-worker state, such as the island-split candidate, in an order that depends
   on how bodies were partitioned).
 
-- **AVX2.** On x86_64 the Box2D package is built with AVX2 (8-wide solver instead of SSE2's 4-wide;
-  `OWL_PHYSICS_AVX2`, on by default, recipe option `box2d/*:avx2`). A CPU without AVX2 (before Haswell or
-  Excavator) would crash on an illegal instruction: `PhysicCommand::init` checks the CPU first, logs an error and
-  leaves the world uninitialised, so the game runs without physics; build with `-DOWL_PHYSICS_AVX2=OFF` for such
-  machines. arm64 keeps Box2D's NEON path.
+- **AVX2.** On x86_64 the Box2D package can be built with AVX2 (8-wide solver instead of SSE2's 4-wide, about
+  15 % faster; `-DOWL_PHYSICS_AVX2=ON`, recipe option `box2d/*:avx2`). It is off by default: virtualised CI agents
+  and CPUs before Haswell or Excavator have no AVX2. Such a binary on such a CPU would crash on an illegal
+  instruction: `PhysicCommand::init` checks the CPU first, logs an error and leaves the world uninitialised, so the
+  game runs without physics. arm64 keeps Box2D's NEON path.
 
 - **Pose copy.** Above 1 024 bodies, a multi-threaded world also spreads the per-frame copy of the poses to the
   entities over the executor; children of a hierarchy are written afterwards, on the calling thread, since they

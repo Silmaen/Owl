@@ -66,6 +66,8 @@ class OwlEngineConan(ConanFile):
         # plutovg (lunasvg's) drops dllimport only with PLUTOVG_BUILD_STATIC, which its recipe does not export.
         "plutovg/*:shared": True,
         "glfw/*:shared": True,
+        # SSE2 solver by default: virtualised agents and older CPUs have no AVX2 (opt in with -o "box2d/*:avx2=True").
+        "box2d/*:avx2": False,
         "openal-soft/*:shared": True,
         "libsndfile/*:shared": True,
         "libsndfile/*:programs": False,
