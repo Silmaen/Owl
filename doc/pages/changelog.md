@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Frame bench `cpu_pace_wait_ms`: CPU time a Vulkan frame waits on its fence and swapchain image, to tell engine work from presentation pacing.
 - Optional engine modules: `OWL_MODULE_RENDER`, `OWL_MODULE_PHYSICS`, `OWL_MODULE_AUDIO`, `OWL_MODULE_SCRIPT` and `OWL_MODULE_GUI` (Conan options `render`, `physics`, `audio`, `script`, `gui`) leave out a module and its third parties while its public API stays, backed by the Null backend or a no-op; `OWL_WITH_<MODULE>` and `find_package(OwlEngine COMPONENTS Physics)` tell a game what is built in.
 - `linux-clang-minimal` preset (every optional module off: 23 Conan packages instead of 47), for local checks.
 - `OWL_REQUIRE_MODULE(<MODULE>)` (`testHelper.h`) skips a test whose module is not built.
@@ -142,6 +143,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Raycast: the CPU walks the DDA itself for the column depths and stats instead of reading the GPU pass back twice per frame, so the frame no longer drains mid-way (Vulkan: one submission, no fence wait; `raycast_demo` 1.5 to 3.5 times faster on both backends).
+- Vulkan: successive batches on one framebuffer share a render pass, and `RenderCommand::clear` no longer clears again a pass that just cleared on load (Intel: 40 µs less GPU per 2D frame).
 - Lua back under its audit cost: the bindings are light C functions instead of one closure each, the bound scene and `time.delta()` live on the C++ side of the state, `coroutine.wrap` is no longer a Lua chunk compiled per state and the callback names are interned once: creating an instance is 40 % faster and a third smaller, an empty callback a third cheaper.
 - Sanitizers: `SceneComponent.name` compares the component names as strings, not pointers, and LeakSanitizer ignores the GTK caches libdecor leaves in the Wayland smoke test (`test/lsan.supp`).
 - `main` builds again: the conflict marker left in `VulkanHandler.h` is resolved and the `MemoryAllocator` singleton lives in its source file, so hidden visibility no longer duplicates it (`-Wunique-object-duplication`); `linux-clang-minimal` builds and passes again (Null shader reload without Slang, hot-reload tests skipped without the render or script module).

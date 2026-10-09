@@ -112,8 +112,7 @@ void RenderAPI::beginBatch() {
 }
 
 void RenderAPI::endBatch() {
-	auto& vkh = internal::VulkanHandler::get();
-	vkh.endBatch();
+	// The render pass stays open for the next batch on the same framebuffer (see the declaration).
 }
 
 void RenderAPI::nextSubpass() {

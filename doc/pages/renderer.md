@@ -248,10 +248,10 @@ flowchart LR
 - Per-tile UV rects + tilemap grid + tile meta upload only on cache miss
   (`(tilemap, tileset, layer)` key) — static scenes pay zero per-frame
   upload cost.
-- `zBuffer[]` is read back into the renderer's CPU mirror so the legacy
-  CPU sprite / door / pushwall occlusion paths keep working. A future PR
-  can move those consumers to GPU-side `zBuffer[]` indexing to drop the
-  readback.
+- The CPU sprite / door / pushwall occlusion paths need each column's
+  opaque depth: the renderer walks the same DDA on the CPU (`cpuWalkColumn`,
+  no stripe emission) to fill its `zBuffer` mirror and the stats, which costs
+  less than reading `zBuffer[]` back (a read-back drains the frame mid-way).
 - The Null backend keeps a CPU walk fallback so headless tests stay green
   and the visual output is byte-identical.
 
@@ -552,10 +552,13 @@ sequenceDiagram
     CPU->>CPU: present, record frame N+1 while the GPU draws frame N
 ```
 
-- **Batches are render passes**, not submissions: `beginBatch` opens a pass on the current framebuffer, `endBatch`
-  closes it. The first pass of a frame on a framebuffer clears its depth (the swapchain image is cleared to the clear
-  colour); later passes load every attachment, so successive layers keep what earlier ones drew on any GPU.
-  `RenderCommand::clear` clears the first colour attachment and the depth inside the pass (`vkCmdClearAttachments`).
+- **Batches share render passes**, not submissions: `beginBatch` opens a pass on the current framebuffer, `endBatch`
+  leaves it open for the next batch on the same framebuffer; a framebuffer change, an upload, a compute dispatch, a
+  read-back, a batch after the overlay subpass or the end of the frame closes it. The first pass of a frame on a
+  framebuffer clears its depth (the swapchain image is cleared to the clear colour); later passes load every
+  attachment, so successive layers keep what earlier ones drew on any GPU. `RenderCommand::clear` clears the first
+  colour attachment and the depth inside the pass (`vkCmdClearAttachments`), except right after that clearing pass
+  began with the same colour and nothing drawn (a second full-screen clear costs 40 µs per frame on Intel).
 - **Off-screen colour images** stay in the attachment layout between passes and go to the sampled layout at
   `Framebuffer::unbind`; the transitions are barriers in the frame command buffer.
 - **Uniform blocks and streamed storage buffers** (any SSBO the CPU wrote) are copied into a per-frame VMA ring at the
@@ -564,8 +567,8 @@ sequenceDiagram
   through a one-shot submission waited on its own fence. Resources are destroyed through `deferRelease`, once every
   frame recorded so far is complete.
 - **Read-backs**: `readPixel` copies the pixel into a per-slot buffer and returns the value read two frames earlier
-  (as OpenGL does); `StorageBuffer::getData` and `readColorAttachment` flush the frame so far and wait for it (the
-  raycaster's two reads per frame are the remaining stall, counted as `fence_wait` by the frame bench).
+  (as OpenGL does); `StorageBuffer::getData` and `readColorAttachment` flush the frame so far and wait for it (counted
+  as `fence_wait` by the frame bench; no sample scene does it per frame).
 
 ## Image tests {#render-image-tests}
 

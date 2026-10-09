@@ -850,3 +850,46 @@ traceback, bac à sable).
 Lua revient au niveau de l'audit sur la création et l'appel vide ; restent 55 o par instance (+0,6 %, le `Quota` élargi
 de la scène, du delta et du cache des noms) et 3 à 5 % sur `get_set_position` et `arith_100`, à la limite du bruit entre
 campagnes (load average 7 contre 11 à l'audit).
+
+### 9.3 Vulkan contre OpenGL au frame bench
+
+Cause, par chronos temporaires dans `VulkanHandler::startFrame` puis `INTEL_MEASURE=draw` (temps GPU par événement,
+pilotes anv et iris) : le `cpu_begin_frame_ms` Vulkan n'est pas du travail du moteur mais l'attente du rythme de
+présentation. Sur NVIDIA (PRIME vers l'écran Intel, Wayland, `immediate`), `vkAcquireNextImageKHR` bloque 0,35 ms ;
+avec 4 à 6 images au lieu de 3, l'attente passe sur la fence de frame (la soumission attend le sémaphore de l'image),
+et `vkcube --present_mode 0` en 1280 × 720 tourne à 0,48 ms par frame : c'est le plancher du chemin de présentation,
+OpenGL l'atteint plus vite (EGL bloque 0,23 ms dans le swap, compté dans `cpu_present_ms`). Sur Intel la frame
+attend le GPU : 338 µs de travail par frame `main_menu` en Vulkan contre 218 µs en OpenGL, dont 39 µs pour un
+`vkCmdClearAttachments` redondant juste après la passe qui efface au chargement, et la profondeur et l'attachement
+d'identifiant que la cible principale Vulkan porte (le framebuffer par défaut OpenGL n'en a pas). Le raycast lisait
+deux SSBO par frame (`StorageBuffer::getData`), soit une soumission et une attente de fence en Vulkan et un
+`glGetBufferSubData` bloquant en OpenGL.
+
+Corrections : le raycast parcourt le DDA sur le CPU pour les profondeurs de colonne et les statistiques (le même
+`cpuWalkColumn` que le backend Null, sans émission) au lieu de relire la passe GPU ; les lots successifs sur un même
+framebuffer partagent une passe de rendu (4 à 2 passes par frame 2D) ; `RenderCommand::clear` ne réefface plus une
+passe qui vient d'effacer au chargement ; le frame bench rapporte `cpu_pace_wait_ms` (fence de frame + acquisition
+d'image, Vulkan). Images de référence inchangées (`ctest -L render`), validation sans message sur NVIDIA et lavapipe.
+
+Avant (`5ee02064`) / après alternés, 3 répétitions, médiane des médianes, ms par frame, load average 7 à 12 ;
+« travail » = `cpu_total` moins l'attente de présentation (`cpu_pace_wait_ms` en Vulkan, `cpu_present_ms` en OpenGL) :
+
+| Scène              | GPU    | Vulkan avant | Vulkan après | OpenGL avant | OpenGL après | Travail Vulkan / OpenGL après |
+|--------------------|--------|--------------|--------------|--------------|--------------|-------------------------------|
+| `main_menu`        | NVIDIA | 0,478        | 0,475        | 0,329        | 0,329        | 0,140 / 0,100                 |
+| `main_menu`        | Intel  | 0,390        | 0,350        | 0,231        | 0,232        | 0,116 / 0,086                 |
+| `world_map`        | NVIDIA | 0,504        | 0,496        | 0,341        | 0,341        | 0,143 / 0,086                 |
+| `world_map`        | Intel  | 0,562        | 0,519        | 0,373        | 0,370        | 0,158 / 0,117                 |
+| `platformer_house` | NVIDIA | 0,495        | 0,494        | 0,336        | 0,336        | 0,162 / 0,104                 |
+| `platformer_house` | Intel  | 0,505        | 0,466        | 0,247        | 0,247        | 0,184 / 0,099                 |
+| `raycast_demo`     | NVIDIA | 0,796        | 0,519        | 0,584        | 0,359        | 0,358 / 0,321                 |
+| `raycast_demo`     | Intel  | 1,465        | 0,418        | 0,941        | 0,623        | 0,370 / 0,342                 |
+| `voxel_terrain`    | NVIDIA | 0,484        | 0,483        | 0,330        | 0,331        | 0,119 / 0,171                 |
+| `voxel_terrain`    | Intel  | 0,368        | 0,351        | 0,329        | 0,359        | 0,193 / 0,081                 |
+
+Raycast : 2 → 1 soumission, 1 → 0 attente de fence, frame divisée par 1,5 à 3,5 sur les deux backends ; GPU Intel des
+scènes 2D 0,36-0,52 → 0,32-0,48 ms. Le raycast Vulkan passe sous OpenGL sur Intel (0,42 contre 0,62 ms) ; ailleurs la
+frame Vulkan reste au plancher de présentation du pilote (NVIDIA) ou au GPU (Intel), et le travail CPU Vulkan reste
+0,03 à 0,11 ms au-dessus d'OpenGL (sauf `voxel_terrain` NVIDIA). « Vulkan ≤ OpenGL » n'est donc pas atteignable au
+temps mur sous Wayland sans toucher à la présentation ; à trancher : mesurer la cible sur le travail (hors attente de
+présentation), ou alléger la cible principale Vulkan (profondeur et identifiant seulement quand un calque les utilise).

@@ -147,6 +147,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Check whether the next batch is the first of the frame on this framebuffer (its pass clears on load).
+	 * @param[in] iFrameSerial Serial of the frame being recorded.
+	 * @return True when no pass of this frame began on this framebuffer yet.
+	 */
+	[[nodiscard]] auto isFirstPassOf(const uint64_t iFrameSerial) const -> bool { return m_passSerial != iFrameSerial; }
+
+	/**
+	 * @brief
 	 *  Check a render pass of this frame already ran on the framebuffer.
 	 * @param[in] iFrameSerial Serial of the frame being recorded.
 	 * @return True once a batch of that frame was opened.

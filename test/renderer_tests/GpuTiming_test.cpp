@@ -28,6 +28,7 @@ TEST(GpuTiming, NullBackendIsNoOp) {
 	EXPECT_EQ(counters.queueWaitIdles, 0u);
 	EXPECT_EQ(counters.deviceWaitIdles, 0u);
 	EXPECT_EQ(counters.fenceWaits, 0u);
+	EXPECT_DOUBLE_EQ(counters.paceWaitMs, 0.0);
 	RenderCommand::setGpuTimestampsEnabled(false);
 	RenderCommand::invalidate();
 	EXPECT_FALSE(RenderCommand::hasGpuTimestamps());

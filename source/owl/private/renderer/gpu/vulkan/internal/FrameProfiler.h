@@ -138,6 +138,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Add CPU time blocked by the frame pacing (frame fence and swapchain image acquisition).
+	 * @param[in] iMs Blocked time in milliseconds.
+	 */
+	void addPaceWait(const double iMs) { m_counters.paceWaitMs += iMs; }
+
+	/**
+	 * @brief
 	 *  Wait for the device to drain and count it.
 	 * @param[in] iDevice The device to wait for.
 	 * @return The Vulkan result.

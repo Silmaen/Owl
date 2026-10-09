@@ -129,6 +129,10 @@ public:
 	/**
 	 * @brief
 	 *  Ends draw call for the current batch.
+	 *
+	 *  The render pass stays open, so the next batch on the same framebuffer draws in it instead of storing and
+	 *  reloading every attachment; a framebuffer change, a transfer, a compute dispatch, a read-back, a batch after
+	 *  the overlay subpass or the end of the frame closes it.
 	 */
 	void endBatch() override;
 

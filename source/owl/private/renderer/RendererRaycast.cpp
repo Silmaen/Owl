@@ -90,6 +90,9 @@ constexpr float g_YSideDarken = 0.7f;
 // Numerical floor for perpendicular-distance to avoid division by zero on grazing rays.
 constexpr float g_MinPerpDist = 1e-4f;
 
+// Column depth without an opaque wall, as written by `raycast_dda.slang`.
+constexpr float g_NoWallDepth = 1e30f;
+
 // Squared-length floor used when picking a fallback for degenerate camera vectors.
 constexpr float g_DirEpsilonSq = 1e-8f;
 
@@ -260,21 +263,19 @@ auto emitWallStripesGpu(const WallStripeContext& iCtx) -> bool {
 	ubo.entityId = iCtx.entityId;
 	ubo._pad = 0u;
 
-	thread_local std::vector<uint32_t> hitCountReadback;
-	hitCountReadback.assign(iCtx.numRays, 0u);
-	if (const auto& hitBuf = g_state->ddaPass->getHitCountBuffer())
-		hitBuf->getData(hitCountReadback.data(), iCtx.numRays * static_cast<uint32_t>(sizeof(uint32_t)), 0);
-	if (const auto& zBuf = g_state->ddaPass->getZBufferBuffer()) {
-		g_state->zBufferPerColumn.resize(iCtx.numRays);
-		zBuf->getData(g_state->zBufferPerColumn.data(), iCtx.numRays * static_cast<uint32_t>(sizeof(float)), 0);
-	}
+	// Column depths (occlusion) and stats from a CPU walk: a read-back of the GPU pass drains the frame (B-01).
+	thread_local std::vector<CpuColumnHit> hits;
+	g_state->zBufferPerColumn.resize(iCtx.numRays);
 	for (uint32_t col = 0; col < iCtx.numRays; ++col) {
-		const uint32_t hits = hitCountReadback[col];
+		cpuWalkColumn(iCtx, col, hits);
 		g_state->stats.stripeCount++;
-		if (hits == 0)
+		if (hits.empty())
 			g_state->stats.missCount++;
 		else
-			g_state->stats.hitCount += hits;
+			g_state->stats.hitCount += static_cast<uint32_t>(hits.size());
+		const auto opaque =
+				std::ranges::find_if(hits, [](const CpuColumnHit& iHit) -> bool { return !iHit.transparent; });
+		g_state->zBufferPerColumn[col] = opaque == hits.end() ? g_NoWallDepth : opaque->perpDist;
 	}
 
 	const gpu::RendererDescriptors::ScopedActive scoped{"RendererRaycast"};

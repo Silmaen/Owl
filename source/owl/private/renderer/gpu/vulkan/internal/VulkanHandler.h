@@ -532,6 +532,10 @@ private:
 
 	/// Clear colour applied at the start of each render pass.
 	math::vec4 m_clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+	/// Clear colour given to the open render pass.
+	math::vec4 m_passClearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+	/// The open pass cleared the swapchain on load and nothing was recorded in it since.
+	bool m_passCleared = false;
 
 	/// List of pipelines.
 	std::map<int32_t, PipeLineData> m_pipeLines;
