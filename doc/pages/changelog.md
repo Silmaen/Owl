@@ -91,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tests: the per-binary ctest timeout drops from 1 h to 10 min (`OWL_TEST_TIMEOUT`, 1 h on the emulated arm64), so a hung binary no longer stalls a build for hours.
 - CI: the emulated arm64 nightly builds Clang only, on a `linux-emulated` preset without coverage, benchmarks or image tests, so it fits its time limit.
 - EnTT 4.0.0 (C++20), Taskflow 4.1.0, OpenAL Soft 1.25.2, msdfgen 1.13, msdf-atlas-gen 1.4 and tinyobjloader rc13, through local Conan recipes until ConanCenter publishes them.
+- Third-party dependencies at their latest versions: glfw 3.5.1 (local recipe, its Wayland seat patch now upstream), freetype 2.14.3 and tinyxml2 11.0.0 (msdfgen recipe), libalsa 1.2.16.1 (OpenAL Soft recipe), brotli 1.2.0, flac 1.5.0 and plutovg 1.3.3 (overrides), CMake 4.4.4 build tool, wayland-protocols 1.49 (file dialogs).
 - CI on teamcity-github-bridge 1.11.0: PR Ready keeps a fixed check name (`checkName`), pull requests get labels by changed paths and are assigned to their author.
 - TeamCity: Include Check and PR Ready move to the root beside Code Style (GitHub checks `Include Check` and `PR Ready`).
 - CI: Windows builds compute the coverage on `main` only, no longer on pull requests.

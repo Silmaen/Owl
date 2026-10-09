@@ -8,11 +8,11 @@ required_conan_version = ">=2.0"
 
 
 class GlfwConan(ConanFile):
-    """GLFW 3.4 with both Linux backends, built against the system X11 and Wayland development files.
+    """GLFW 3.5 with both Linux backends, built against the system X11 and Wayland development files.
 
     ConanCenter's recipe builds X11 only by default; with Wayland on it pulls its own libwayland and libxkbcommon,
     which then shadow the system ones next to the binaries and break the GPU drivers (Mesa's Vulkan ICDs need the
-    system libwayland). GLFW 3.4 dlopens every platform library, so nothing is linked nor shipped here.
+    system libwayland). GLFW dlopens every platform library, so nothing is linked nor shipped here.
     """
 
     name = "glfw"
@@ -63,11 +63,6 @@ class GlfwConan(ConanFile):
     def build(self):
         src_cmake = os.path.join(self.source_folder, "src", "CMakeLists.txt")
         replace_in_file(self, src_cmake, "POSITION_INDEPENDENT_CODE ON", "")
-        replace_in_file(self, src_cmake, 'target_link_libraries(glfw PRIVATE "-static-libgcc")', "")
-        # A compositor without input devices (headless weston in CI) announces no wl_seat: 3.4 dereferenced it.
-        replace_in_file(self, os.path.join(self.source_folder, "src", "wl_init.c"),
-                        "if (wl_seat_get_version(_glfw.wl.seat) >= WL_KEYBOARD_REPEAT_INFO_SINCE_VERSION)",
-                        "if (_glfw.wl.seat && wl_seat_get_version(_glfw.wl.seat) >= WL_KEYBOARD_REPEAT_INFO_SINCE_VERSION)")
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
@@ -93,5 +88,5 @@ class GlfwConan(ConanFile):
             self.cpp_info.system_libs.extend(["m", "pthread", "dl", "rt"])
         elif self.settings.os == "Windows":
             self.cpp_info.system_libs.append("gdi32")
-        # GLFW 3.4 loads its platform and GL libraries at run time: nothing else to link.
+        # GLFW loads its platform and GL libraries at run time: nothing else to link.
         self.cpp_info.requires = []

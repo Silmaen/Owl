@@ -126,7 +126,7 @@ class OwlEngineConan(ConanFile):
         self.requires("zstd/1.5.7")
         if self.options.render:
             self.requires("glad/2.0.8")
-            self.requires("glfw/3.4")
+            self.requires("glfw/3.5.1")
             self.requires("lunasvg/3.5.0")
             self.requires("slang/2026.19")
             self.requires("spirv-cross/1.4.357.0")
@@ -150,6 +150,10 @@ class OwlEngineConan(ConanFile):
         if self.options.nest:
             self.requires("imgui-color-text-edit/cci.20260417")
             self.requires("md4c/0.5.2")
+        # Transitive versions newer than the ones their ConanCenter recipes pin.
+        self.requires("brotli/1.2.0", override=True)
+        self.requires("flac/1.5.0", override=True)
+        self.requires("plutovg/1.3.3", override=True)
 
     def build_requirements(self):
         if self.options.testing:

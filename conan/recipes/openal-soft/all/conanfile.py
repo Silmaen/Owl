@@ -61,7 +61,7 @@ class OpenALSoftConan(ConanFile):
 
     def requirements(self):
         if self.settings.os == "Linux":
-            self.requires("libalsa/1.2.10")
+            self.requires("libalsa/1.2.16.1")
 
     def build_requirements(self):
         self.tool_requires("cmake/[>=3.21]")

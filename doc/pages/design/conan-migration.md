@@ -72,7 +72,7 @@ Windows agents):
 - One binary set per compiler: Release, Debug, coverage, clang-tidy and the sanitizers of one compiler share it.
 
 Every profile replaces the build tools the recipes ask in their own ranges by one version, the highest resolved
-(`[replace_tool_requires]`: `cmake/4.4.3`, `pkgconf/2.5.1`), so each agent builds and caches one copy of each. CMake 4
+(`[replace_tool_requires]`: `cmake/4.4.4`, `pkgconf/2.5.1`), so each agent builds and caches one copy of each. CMake 4
 refuses a `cmake_minimum_required` below 3.5, still declared by a few upstream projects: the profiles set
 `CMAKE_POLICY_VERSION_MINIMUM=3.5` in `[buildenv]`.
 
@@ -95,11 +95,11 @@ to `conan install`, so a ConanCenter recipe update never changes a build silentl
 `conanfile.py` or of a local recipe, or to pick newer revisions:
 
 ```bash
-docker/run.sh poetry run conan lock create . --profile:all conan/profiles/linux-clang -o "&:testing=True" -o "&:nest=True" -o "&:tracy=True" --lockfile-out conan.lock
+docker/run.sh poetry run conan lock create . --profile:all conan/profiles/linux-clang -o "&:testing=True" -o "&:nest=True" -o "&:tracy=True" --lockfile="" --lockfile-out conan.lock --update
 docker/run.sh poetry run conan lock create . --profile:all conan/profiles/linux-gcc -o "&:testing=True" -o "&:nest=True" -o "&:tracy=True" --lockfile conan.lock --lockfile-out conan.lock
 ```
 
-The first command re-resolves from scratch; the second adds what the GCC profile resolves differently. A new profile
+The first command re-resolves from scratch (`--lockfile=""`: Conan otherwise reads the `conan.lock` of the current folder; `--update`: the newest version of each range on the remotes, not the cached one); the second adds what the GCC profile resolves differently. A new profile
 (Windows, arm64) is added the same way, with `--lockfile conan.lock`. Run them with the same `CONAN_HOME` as the build
 (`-DOWL_CONAN_HOME`), where `cmake/Conan.cmake` registered the `owl-local` remote. A local recipe's revision is a hash
 of its content: regenerating without changing a recipe only moves its timestamp, a diff not worth committing.
@@ -179,7 +179,7 @@ symbols). With Conan every dependency is built by the agent's own compiler.
 
 ## Inventory
 
-Checked on 2026-10-05 with `conan search -r conancenter` (Conan 2.33). "Owl (Conan)" is the version Owl uses;
+Checked on 2026-10-09 with `conan search -r conancenter` (Conan 2.33). "Owl (Conan)" is the version Owl uses;
 "DepManager" the one `depmanager.yml` pinned when it was removed.
 
 | Dependency            | DepManager     | Owl (Conan)     | Source                | Linkage | Note                                                                           |
@@ -188,17 +188,17 @@ Checked on 2026-10-05 with `conan search -r conancenter` (Conan 2.33). "Owl (Con
 | cpptrace              | 1.0.4          | 1.0.4           | ConanCenter           | static  | Pulls libdwarf 2.1.0 (DepManager: 2.2.0)                                       |
 | debugbreak            | 1.0            | —               | removed               | —       | Replaced by `OWL_DEBUG_BREAK()` in `core/Assert.h`                             |
 | entt                  | 3.15.0         | 4.0.0           | local recipe          | header  | ConanCenter stops at 3.16.0; its recipe, C++20 for 4.x                         |
-| freetype              | 2.13.3         | 2.13.2          | ConanCenter           | static  | Transitive, pinned by msdfgen 1.12 (2.14.3 on ConanCenter)                     |
+| freetype              | 2.13.3         | 2.14.3          | ConanCenter           | static  | Transitive, pinned by the msdfgen recipe; pulls brotli 1.2.0 (override)        |
 | glad                  | 2.0.4          | 2.0.8           | ConanCenter           | static  | Generated at build time: GL 4.6 compatibility                                  |
-| glfw                  | 3.4.0          | 3.4             | local recipe          | shared  | ConanCenter: X11 only, or its own libwayland; both backends, system Wayland    |
+| glfw                  | 3.4.0          | 3.5.1           | local recipe          | shared  | ConanCenter: X11 only, or its own libwayland; both backends, system Wayland    |
 | googletest            | 1.17.0         | 1.18.0          | ConanCenter (`gtest`) | static  |                                                                                |
 | imgui                 | 1.92.7-docking | 1.92.9b-docking | ConanCenter           | shared  | Backends compiled by Owl (see above)                                           |
 | imgui_color_text_edit | 1.92.7         | cci.20260417    | local recipe          | static  | Absent; DepManager's commit (v1.92.9 rewrote the cursor API)                   |
 | imguizmo              | 1.92.7         | 1.10            | local recipe          | static  | ConanCenter's cci.20231114 does not build with imgui 1.92                      |
 | libpng                | 1.6.50         | 1.6.58          | ConanCenter           | static  | Transitive (msdf-atlas-gen)                                                    |
-| libsndfile            | 1.2.2          | 1.2.2           | ConanCenter           | shared  | LGPL: kept shared                                                              |
+| libsndfile            | 1.2.2          | 1.2.2           | ConanCenter           | shared  | LGPL: kept shared; flac 1.5.0 and libalsa 1.2.16.1 forced (override)           |
 | lua                   | 5.5.0          | 5.5.0           | ConanCenter           | static  |                                                                                |
-| lunasvg               | 3.5.0          | 3.5.0           | ConanCenter           | static  | Pulls plutovg 1.3.2                                                            |
+| lunasvg               | 3.5.0          | 3.5.0           | ConanCenter           | static  | Pulls plutovg, forced to 1.3.3 (override)                                      |
 | magic_enum            | 0.9.7          | 0.9.8           | ConanCenter           | header  |                                                                                |
 | md4c                  | 0.5.2          | 0.5.2           | ConanCenter           | static  |                                                                                |
 | msdf-atlas-gen        | 1.3            | 1.4             | local recipe          | static  | ConanCenter packages the tool only; this one builds the library                |
@@ -213,7 +213,7 @@ Checked on 2026-10-05 with `conan search -r conancenter` (Conan 2.33). "Owl (Con
 | taskflow              | 4.0.0          | 4.1.0           | local recipe          | header  | ConanCenter stops at 4.0.0; its recipe, unchanged                              |
 | tinygltf              | 2.9.6          | 2.9.7           | ConanCenter           | header  | Pulls nlohmann_json                                                            |
 | tinyobjloader         | 2.0.0-rc13     | 2.0.0-rc13      | local recipe          | static  | ConanCenter stops at rc10: its recipe, without the rc10 patch (upstream since) |
-| tinyxml2              | 11.0.0         | —               | removed               | —       | Declared, never used (10.0.0 still comes in through msdfgen-ext)               |
+| tinyxml2              | 11.0.0         | —               | removed               | —       | Declared, never used (11.0.0 still comes in through msdfgen-ext)               |
 | tracy                 | —              | 0.13.1          | ConanCenter           | static  | Optional (`tracy` option), `on_demand`; 0.14.1 upstream                        |
 | ufbx                  | 0.20.1         | 0.23.1          | local recipe          | static  | Absent from ConanCenter (single source file)                                   |
 | vulkan                | 1.4.341 (SDK)  | 1.4.357.0       | ConanCenter           | shared  | vulkan-headers, vulkan-loader, vulkan-utility-libraries                        |
@@ -222,6 +222,26 @@ Checked on 2026-10-05 with `conan search -r conancenter` (Conan 2.33). "Owl (Con
 | zeus                  | 1.3.1          | —               | removed               | —       | Dead fallback branch of `core/expected.h`                                      |
 | zlib                  | 1.3.1          | 1.3.2           | ConanCenter           | static  | Transitive                                                                     |
 | zstd                  | 1.5.7          | 1.5.7           | ConanCenter           | static  |                                                                                |
+
+### Dependency round (2026-10-09)
+
+Every dependency moved to the latest version on ConanCenter, or upstream for a local recipe; `owl_bench` unchanged
+(141 benchmarks, geometric mean +0.2 %, none beyond 5 % once re-measured).
+
+| Dependency        | Before | After    | How                                                                      |
+|-------------------|--------|----------|--------------------------------------------------------------------------|
+| glfw              | 3.4    | 3.5.1    | Local recipe; the Wayland seat and `-static-libgcc` patches are upstream |
+| freetype          | 2.13.2 | 2.14.3   | msdfgen recipe                                                           |
+| tinyxml2          | 10.0.0 | 11.0.0   | msdfgen recipe                                                           |
+| libalsa           | 1.2.10 | 1.2.16.1 | OpenAL Soft recipe (libsndfile's range follows)                          |
+| brotli            | 1.1.0  | 1.2.0    | `override` (freetype)                                                    |
+| flac              | 1.4.2  | 1.5.0    | `override` (libsndfile)                                                  |
+| plutovg           | 1.3.2  | 1.3.3    | `override` (lunasvg)                                                     |
+| cmake (build)     | 4.4.3  | 4.4.4    | Profiles' `[replace_tool_requires]`                                      |
+| wayland-protocols | 1.45   | 1.49     | nativefiledialog-extended second source                                  |
+
+Kept: imgui-color-text-edit at cci.20260417 (v1.92.9 rewrote the cursor API, see below), simde 0.8.2 (0.8.4 is a
+release candidate), tracy 0.13.1 (latest on ConanCenter, 0.14.1 upstream). Everything else was already the latest.
 
 ## Local recipes (`conan/recipes/`)
 
@@ -242,10 +262,11 @@ ConanCenter as is.
 | `libmp3lame` 3.100                   | ConanCenter's recipe, except MinGW Clang builds with autotools: upstream takes every Windows Clang for clang-cl |
 | `entt` 4.0.0                         | ConanCenter stops at 3.16.0: its recipe, requiring C++20 from 4.x                                               |
 | `taskflow` 4.1.0                     | ConanCenter stops at 4.0.0: its recipe, unchanged                                                               |
-| `openal-soft` 1.25.2                 | ConanCenter stops at 1.24.3: its recipe, `-Werror=function-effects` off (libstdc++ is not `nonblocking`)        |
-| `msdfgen` 1.13                       | ConanCenter stops at 1.12 (needed by msdf-atlas-gen 1.4): its recipe, unchanged                                 |
+| `openal-soft` 1.25.2                 | ConanCenter stops at 1.24.3: its recipe on libalsa 1.2.16.1, `-Werror=function-effects` off (libstdc++)         |
+| `msdfgen` 1.13                       | ConanCenter stops at 1.12 (needed by msdf-atlas-gen 1.4): its recipe, on freetype 2.14.3 and tinyxml2 11.0.0    |
 | `tinyobjloader` 2.0.0-rc13           | ConanCenter stops at rc10: its recipe, unchanged                                                                |
 | `box2d` 3.1.1                        | ConanCenter's recipe has no AVX2 switch: its recipe plus `avx2` (default on, x86_64 only, `BOX2D_AVX2`)         |
+| `glfw` 3.5.1                         | ConanCenter stops at 3.4 and builds Wayland on its own libwayland: both backends, system libraries dlopened     |
 
 ## What remains
 
@@ -260,7 +281,7 @@ Phase 0, before anything else of v0.3.0:
 Later:
 
 - Vulkan validation layers (`OWL_ENABLE_VULKAN_LAYERS`) from `vulkan-validationlayers`
-- Propose the twelve local recipes (or their new versions) to ConanCenter, msdf-atlas-gen as a library option, the
+- Propose the local recipes (or their new versions) to ConanCenter, msdf-atlas-gen as a library option, the
   libmp3lame clang-cl fix
 - imgui-color-text-edit v1.92.9: port `CodeEditorDocument` to the `DocPos` cursor API, then bump the recipe
 - v1.0.0: the OwlEngine Conan package published and run by the `Package` action (PR-09), a static variant, hidden
