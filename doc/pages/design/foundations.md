@@ -245,6 +245,7 @@ Measured on the `bench/` harness, Null backend unless stated (source: `doc/audit
 | Box2D step, 5 000 bodies in contact     | 4.88 ms (single thread)                          | < 1.5 ms (multi-thread, fixed step)   |
 | Voxel meshing                           | on workers, streaming frame peak 0.35 ms (PR-24) | off the main thread, per-frame budget |
 | Cold start (real runner, GPU backend)   | ~400 ms to first frame on lavapipe / llvmpipe    | measured, then shaders precompiled    |
+| Lua: create / memory / empty update     | 28 µs / 9.0 KB / 44 ns                           | ≤ audit: 30.5 µs / 8.97 KB / 43.5 ns  |
 
 ## Exit criteria
 

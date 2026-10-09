@@ -10,7 +10,6 @@
 
 #include "script/ScriptInstance.h"
 
-#include "core/external/lua.h"
 #include "script/LuaBindings.h"
 #include "script/LuaEngine.h"
 
@@ -20,6 +19,15 @@
 #include <string_view>
 
 namespace owl::script {
+
+namespace {
+// Built once: the callbacks run every frame.
+constexpr std::string_view g_OnCreate = "on_create";
+constexpr std::string_view g_OnUpdate = "on_update";
+constexpr std::string_view g_OnDestroy = "on_destroy";
+constexpr std::string_view g_OnCollision = "on_collision";
+}// namespace
+
 struct ScriptInstance::Impl {
 	// Per-instance Lua engine (isolated state).
 	LuaEngine engine;
@@ -44,7 +52,7 @@ struct ScriptInstance::Impl {
 	void bind(const std::string& iName, const uint64_t iEntityId) {
 		entityId = iEntityId;
 		name = iName;
-		engine.setErrorContext(std::format("script '{}' on {}", name, owner()));
+		engine.setErrorContext([this]() -> std::string { return std::format("script '{}' on {}", name, owner()); });
 	}
 
 	void checkQuota(const std::string_view iFunction, const bool iCalled) {
@@ -135,28 +143,26 @@ auto ScriptInstance::getQuotas() const -> ScriptQuotas {
 void ScriptInstance::onCreate() const {
 	if (!isValid() || mp_impl->disabled)
 		return;
-	mp_impl->checkQuota("on_create", mp_impl->engine.callFunction("on_create"));
+	mp_impl->checkQuota(g_OnCreate, mp_impl->engine.callFunction(g_OnCreate));
 }
 
 void ScriptInstance::onUpdate(const float iDeltaTime) const {
 	if (!isValid() || mp_impl->disabled)
 		return;
-	// Store delta time in Lua registry for the time.delta() binding.
-	lua_pushnumber(mp_impl->engine.getState(), static_cast<lua_Number>(iDeltaTime));
-	lua_setfield(mp_impl->engine.getState(), LUA_REGISTRYINDEX, "owl_dt");
-	mp_impl->checkQuota("on_update", mp_impl->engine.callFunction("on_update", iDeltaTime));
+	mp_impl->engine.setDeltaTime(static_cast<double>(iDeltaTime));
+	mp_impl->checkQuota(g_OnUpdate, mp_impl->engine.callFunction(g_OnUpdate, iDeltaTime));
 }
 
 void ScriptInstance::onDestroy() const {
 	if (!isValid() || mp_impl->disabled)
 		return;
-	mp_impl->checkQuota("on_destroy", mp_impl->engine.callFunction("on_destroy"));
+	mp_impl->checkQuota(g_OnDestroy, mp_impl->engine.callFunction(g_OnDestroy));
 }
 
 void ScriptInstance::onCollision(const uint64_t iOtherEntityId) const {
 	if (!isValid() || mp_impl->disabled)
 		return;
-	mp_impl->checkQuota("on_collision", mp_impl->engine.callFunction("on_collision", iOtherEntityId));
+	mp_impl->checkQuota(g_OnCollision, mp_impl->engine.callFunction(g_OnCollision, iOtherEntityId));
 }
 
 auto ScriptInstance::callFunction(const std::string& iName) const -> bool {

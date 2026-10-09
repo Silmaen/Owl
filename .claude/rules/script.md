@@ -26,7 +26,10 @@ User-facing reference: `doc/pages/scripting.md` (guide) and `doc/pages/lua-api.m
   watchdog thread (signal → count hook). Quota exceeded → instance disabled; plain error → logged, retried.
 - Every host call into Lua goes through `LuaEngine::protectedCall` (pcall + traceback); host reads/writes
   of globals are raw (`pushRawGlobal`), never `lua_getglobal` / `lua_getfield` on script tables.
-- Bindings are registered through `LuaEngine::registerGuardedTable` (exception trampoline). In a binding,
+- Registry bindings are light C functions `guarded<fn>` (`LuaEngine::callGuarded`, exception trampoline, no closure
+  per state) registered by `LuaEngine::registerTable`; any other C function goes through
+  `LuaEngine::registerGuardedTable`. The bound scene and the delta time live in the state's `LuaEngine::Quota`
+  (`setHostPointer`, `setDeltaTime`), not in the Lua registry. In a binding,
   call every `luaL_check*` **before** creating any object with a non-trivial destructor: a Lua error
   `longjmp`s over the binding's frame. Throw a C++ exception instead when a check comes later.
 - Lifecycle: `Scene::onStartRuntime()` creates each instance bound to its scene (`ScriptInstance::setScene`,

@@ -68,7 +68,7 @@ struct LuaBinding {
 	std::string_view table;
 	/// Function name in the table (`get_position`).
 	std::string_view name;
-	/// The C function; it checks its arguments with `luaL_check*` before creating any C++ object.
+	/// The C function, under `LuaEngine::callGuarded`; it calls `luaL_check*` before creating any C++ object.
 	LuaFunction function{nullptr};
 	/// One-sentence description.
 	std::string_view description;
@@ -113,14 +113,14 @@ OWL_API auto generateLuaReference() -> std::string;
 /**
  * @brief
  *  Register every binding of getLuaBindings into a Lua state, one global table per LuaTable, each function
- *  wrapped by `LuaEngine::registerGuardedTable`.
+ *  under the exception trampoline of `LuaEngine::callGuarded`.
  * @param[in] iState The Lua state to register bindings into.
  */
 OWL_API void registerBindings(lua_State* iState);
 
 /**
  * @brief
- *  Bind a Lua state to the scene its bindings act on (stored in the state's registry).
+ *  Bind a Lua state to the scene its bindings act on (host pointer of its LuaEngine).
  * @param[in] iState The Lua state.
  * @param[in] iScene The scene, or nullptr to unbind.
  */

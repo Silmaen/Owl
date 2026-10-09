@@ -142,6 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Lua back under its audit cost: the bindings are light C functions instead of one closure each, the bound scene and `time.delta()` live on the C++ side of the state, `coroutine.wrap` is no longer a Lua chunk compiled per state and the callback names are interned once: creating an instance is 40 % faster and a third smaller, an empty callback a third cheaper.
 - Sanitizers: `SceneComponent.name` compares the component names as strings, not pointers, and LeakSanitizer ignores the GTK caches libdecor leaves in the Wayland smoke test (`test/lsan.supp`).
 - `main` builds again: the conflict marker left in `VulkanHandler.h` is resolved and the `MemoryAllocator` singleton lives in its source file, so hidden visibility no longer duplicates it (`-Wunique-object-duplication`); `linux-clang-minimal` builds and passes again (Null shader reload without Slang, hot-reload tests skipped without the render or script module).
 - `core_task` scheduler tests no longer fail on a loaded machine: they wait for the worker (condition and 30 s deadline) instead of sleeping 5 ms.

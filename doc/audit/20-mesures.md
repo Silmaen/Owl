@@ -785,3 +785,68 @@ les deux campagnes). « Vidages » = `vkQueueWaitIdle` + `vkDeviceWaitIdle`, « 
 Vulkan rejoint OpenGL sur les scènes 2D et voxel ; le GPU Intel passe de 0,79 à 1,06 ms de travail par frame 2D à 0,35 à
 0,51 ms (plus de transitions ni de clears one-shot). Reste le raycast : ses deux lectures CPU par frame
 (`StorageBuffer::getData`, nombre de touches et z-buffer) vident la frame en cours une fois (B-01, à supprimer).
+
+## 9. Chantier des cibles de perf (2026-10-09)
+
+Branche `Feature/PerformanceTargets` : une sous-section par étape, chacune mesurée avant / après le même jour.
+
+### 9.1 État initial du jour
+
+Protocole : celui du §2 (`owl_bench`, `taskset -c 6`, 15 échantillons, médiane) et du §8.1 (frame bench,
+`taskset -c 2-7`, 1 000 frames après 120 de chauffe), avec **3 répétitions** par configuration et la médiane des 3
+médianes. Build `linux-clang-release-bench` (clang 22.1.2) de la branche au 2026-10-09 (`599ec352`, code de `main`),
+load average 3,3 à 7,3. Physique multi-thread sur `taskset -c 0-15`. Session de bureau verrouillée pendant le frame
+bench (présentation `immediate` sans compositeur, sans effet attendu sur le CPU). Données, non versionnées :
+`output/bench-initial/`, `output/frame-bench-initial/`.
+
+| Indicateur                                        | Audit                    | Aujourd'hui                        |
+|---------------------------------------------------|--------------------------|------------------------------------|
+| Frame CPU, 10 000 sprites (`editor_update`)       | 2,52 ms                  | 2,60 ms                            |
+| Coût par quad Renderer2D, `worldIndex` / transit. | 10,5 / 86 ns             | 10,4 / 86,1 ns                     |
+| Vidages de file par frame Vulkan, runner          | 2 à 4                    | 0 (1 soumission, 2 en raycast)     |
+| Frame runner Vulkan / OpenGL, NVIDIA (5 scènes)   | 0,61-2,04 / 0,35-0,76 ms | 0,48-0,79 / 0,33-0,59 ms           |
+| Frame runner Vulkan / OpenGL, Intel (5 scènes)    | 0,74-3,54 / 0,19-1,01 ms | 0,40-1,62 / 0,23-0,90 ms           |
+| Chargement de scène par entité (10 000 entités)   | 134 µs                   | 122 µs                             |
+| Pas Box2D, 5 000 corps au contact                 | 4,88 ms (1 thread)       | 5,03 ms (1 thread), 1,64 ms (8)    |
+| Maillage voxel, pic de frame en streaming         | 0,35 ms (PR-24)          | non remesuré                       |
+| Démarrage, application factice Null               | 226 ms                   | 236 ms                             |
+| Démarrage runner GPU, jusqu'à la première frame   | ~400 ms (lavapipe)       | 415-632 ms (NVIDIA / Intel, Slang) |
+| Lua, `create_instance/empty_script`               | 30,5 µs                  | 47,5 µs                            |
+| Lua, mémoire par instance                         | 8 965 o                  | 13 457 o                           |
+| Lua, `on_update/empty/1_instance`                 | 43,5 ns                  | 67,3 ns                            |
+| Lua, `get_set_position`, 1 000 instances          | 261 ns                   | 376 ns                             |
+
+Le socle Vulkan (§8.5) a tenu ses promesses ; restent hors cible la frame à 10 000 sprites, le chargement de scène et
+la physique mono-thread, et Lua a régressé de 45 à 55 % depuis l'audit.
+
+### 9.2 Régression Lua
+
+Cause, par callgrind (`--toggle-collect` sur `ScriptInstance::onUpdate`, puis sur la création) : le durcissement du
+bac à sable et le registre typé, pas Lua (5.5.0 avant comme après). Par état, chacun des 70 bindings était une closure
+C (`guardedBinding` + la fonction en upvalue) : 70 allocations de 64 o, soit les 4,5 Kio de l'écart mémoire ;
+`coroutine.wrap` était un chunk Lua compilé à chaque état (16 % des instructions de la création). Par appel, le nom du
+callback et la clé `owl_dt` étaient hachés et internés à chaque frame, et chaque binding relisait la scène liée par
+`lua_getfield(REGISTRY, "owl_scene")` ; `lua_insert` du gestionnaire d'erreur et `lua_remove` du global coûtaient deux
+rotations de pile.
+
+Correction : bindings en fonctions C légères `guarded<fn>` (aucune allocation), `coroutine.wrap` en C sur le
+`coroutine.resume` du bac à sable, scène liée et delta stockés dans le `Quota` de l'état, noms des callbacks
+internés une fois (référence de registre, 16 noms au plus), gestionnaire d'erreur poussé avant la fonction,
+contexte d'erreur formaté seulement en cas d'erreur. Aucune fonctionnalité retirée (quotas, chien de garde,
+traceback, bac à sable).
+
+`taskset -c 6`, avant (`599ec352`) / après alternés, médiane de 3 passes, load average 6,8 à 7,5 :
+
+| Cas (par instance)                      | Audit   | Avant    | Après   |
+|-----------------------------------------|---------|----------|---------|
+| `create_instance/empty_script`          | 30,5 µs | 48,3 µs  | 28,1 µs |
+| `memory/bytes_per_instance`             | 8 965 o | 13 452 o | 9 020 o |
+| `on_update/empty/1_instance`            | 43,5 ns | 65,4 ns  | 43,8 ns |
+| `on_update/empty/1000_instances`        | 84,3 ns | 164 ns   | 80,1 ns |
+| `on_update/get_set_position/1_instance` | 133 ns  | 188 ns   | 140 ns  |
+| `on_update/get_set_position/1000_inst.` | 261 ns  | 365 ns   | 258 ns  |
+| `on_update/arith_100/1000_instances`    | 597 ns  | 657 ns   | 615 ns  |
+
+Lua revient au niveau de l'audit sur la création et l'appel vide ; restent 55 o par instance (+0,6 %, le `Quota` élargi
+de la scène, du delta et du cache des noms) et 3 à 5 % sur `get_set_position` et `arith_100`, à la limite du bruit entre
+campagnes (load average 7 contre 11 à l'audit).

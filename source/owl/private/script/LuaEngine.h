@@ -14,6 +14,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -127,9 +128,10 @@ public:
 	/**
 	 * @brief
 	 *  Name the owner of this state in every error message (e.g. the script and its entity).
-	 * @param[in] iContext Text inserted after the failing callback name; empty to drop it.
+	 * @param[in] iContext Called on error only, returns the text inserted after the failing callback name;
+	 * empty to drop it.
 	 */
-	void setErrorContext(const std::string& iContext) const;
+	void setErrorContext(const std::function<std::string()>& iContext) const;
 
 	/**
 	 * @brief
@@ -143,6 +145,56 @@ public:
 	 * @param[in] iFunctions Null-terminated list of functions.
 	 */
 	static void registerGuardedTable(lua_State* iState, const char* iTableName, const luaL_Reg* iFunctions);
+
+	/**
+	 * @brief
+	 *  Run a C function under the exception trampoline of `registerGuardedTable`.
+	 * @param[in] iState The Lua state.
+	 * @param[in] iFunction The function to run.
+	 * @return The number of results of the function.
+	 */
+	static auto callGuarded(lua_State* iState, int (*iFunction)(lua_State*)) -> int;
+
+	/**
+	 * @brief
+	 *  Register C functions as a global table, as light functions: each one calls `callGuarded` itself.
+	 * @param[in] iState The Lua state.
+	 * @param[in] iTableName Name of the global table.
+	 * @param[in] iFunctions Null-terminated list of functions.
+	 * @param[in] iCount Number of functions, to size the table once.
+	 */
+	static void registerTable(lua_State* iState, const char* iTableName, const luaL_Reg* iFunctions, int iCount);
+
+	/**
+	 * @brief
+	 *  Attach a host pointer to a state created by a LuaEngine (the scene the bindings act on).
+	 * @param[in] iState The Lua state, or any of its coroutines.
+	 * @param[in] iPointer The pointer, or nullptr.
+	 */
+	static void setHostPointer(lua_State* iState, void* iPointer);
+
+	/**
+	 * @brief
+	 *  Get the host pointer given to `setHostPointer`.
+	 * @param[in] iState The Lua state, or any of its coroutines.
+	 * @return The pointer, or nullptr.
+	 */
+	[[nodiscard]] static auto getHostPointer(lua_State* iState) -> void*;
+
+	/**
+	 * @brief
+	 *  Store the frame delta time read by the `time.delta()` binding.
+	 * @param[in] iDeltaTime Delta time in seconds.
+	 */
+	void setDeltaTime(double iDeltaTime) const;
+
+	/**
+	 * @brief
+	 *  Get the delta time given to `setDeltaTime`.
+	 * @param[in] iState The Lua state, or any of its coroutines.
+	 * @return Delta time in seconds, 0 before the first update.
+	 */
+	[[nodiscard]] static auto getDeltaTime(lua_State* iState) -> double;
 
 	/**
 	 * @brief
@@ -175,7 +227,7 @@ public:
 	 * @param[in] iName Function name.
 	 * @return True on success.
 	 */
-	[[nodiscard]] auto callFunction(const std::string& iName) const -> bool;
+	[[nodiscard]] auto callFunction(std::string_view iName) const -> bool;
 
 	/**
 	 * @brief
@@ -184,7 +236,7 @@ public:
 	 * @param[in] iArg Float argument.
 	 * @return True on success.
 	 */
-	[[nodiscard]] auto callFunction(const std::string& iName, float iArg) const -> bool;
+	[[nodiscard]] auto callFunction(std::string_view iName, float iArg) const -> bool;
 
 	/**
 	 * @brief
@@ -193,7 +245,7 @@ public:
 	 * @param[in] iArg Integer argument.
 	 * @return True on success.
 	 */
-	[[nodiscard]] auto callFunction(const std::string& iName, uint64_t iArg) const -> bool;
+	[[nodiscard]] auto callFunction(std::string_view iName, uint64_t iArg) const -> bool;
 
 	// ---- Global variable access ----
 	/**
@@ -274,11 +326,14 @@ private:
 	/**
 	 * @brief
 	 *  Call the function under its arguments on top of the stack, in protected mode and under the quotas.
+	 *
+	 * Everything from the message handler up is popped.
+	 * @param[in] iHandler Stack index of the message handler, below the function.
 	 * @param[in] iArgCount Number of arguments above the function.
 	 * @param[in] iWhat Description of the call for error messages.
 	 * @return True on success.
 	 */
-	[[nodiscard]] auto protectedCall(int iArgCount, const std::string& iWhat) const -> bool;
+	[[nodiscard]] auto protectedCall(int iHandler, int iArgCount, std::string_view iWhat) const -> bool;
 
 	/**
 	 * @brief
@@ -305,11 +360,19 @@ private:
 
 	/**
 	 * @brief
-	 *  Push a global function, or record LuaStatus::Missing and push nothing.
-	 * @param[in] iName Function name.
-	 * @return True if the function was pushed.
+	 *  Push a name as a Lua string, from a registry reference for the first names used.
+	 * @param[in] iName The name.
 	 */
-	[[nodiscard]] auto pushGlobalFunction(const std::string& iName) const -> bool;
+	void pushName(std::string_view iName) const;
+
+	/**
+	 * @brief
+	 *  Push the message handler, the global table and a global function, or record LuaStatus::Missing and push
+	 *  nothing.
+	 * @param[in] iName Function name.
+	 * @return Stack index of the message handler, 0 if the function is missing.
+	 */
+	[[nodiscard]] auto pushGlobalFunction(std::string_view iName) const -> int;
 
 	/// Quota bookkeeping (stable address, given to the allocator).
 	uniq<Quota> mp_quota;
