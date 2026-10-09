@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Application::setExitCode()`: `main` returns it, and 1 when the application ended in the `Error` state.
 - `scene::SystemSchedule`: the runtime frame is a list of named systems in fixed phases (`SystemPhase`) that a game adds, replaces or removes, for every scene (`getDefault()`) or one (`Scene::getSystems()`).
 - `scene::ComponentRegistry`: a game registers its own components, which scenes and prefabs then save and load, duplication and the Play copy keep, and the editor adds, removes and inspects (`component.add`, inspector body), replacing the closed component lists for these uses.
+- CodeStyle `doc-identifiers` sub-check: a symbol, a file or an `OWL_*` option cited between backticks in `doc/pages` must exist in the repository, so a rename can no longer leave a page describing code that is gone.
 
 ### Changed
 
@@ -115,6 +116,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Scene::onUpdateRuntime` holds no gameplay any more: scripts, voxel player, raycast doors, physics, links, triggers, sound, animation and the game-over message are engine systems (`scene::systems`, `owl.*`), in the same order as before.
 - `EntityLink` references its target by UUID (`linkedEntityId`), the name kept for display and as fallback: renaming the target keeps the link, and `duplicateSubtree` and prefab instantiation relink the copies to each other; scene and prefab formats move to version 2, whose migration binds the old name-only links.
 - `app::EngineContext`, owned by `Application` and reached from each scene, holds the screen transition, the game settings and the voxel mesh cache instead of static storage: `ScreenTransition` and `SettingsManager` are instances, `RendererVoxel` takes a `VoxelMeshCache`, and an isolated test creates its own context.
+- Documentation faithful to the code: renderer namespaces and vertex layout, editor ribbon paths, TeamCity DSL names, built-in settings, a Docker Quick Start, one contributor guide (`doc/pages/contributing.md`) and a security policy limited to the latest minor release.
+- Doxygen really checks the public API: `EXTRACT_ALL` no longer hides the undocumented elements, so the `documentation` target fails on any of them, and the ~650 that were missing (members, enum values, parameters) are documented.
 
 ### Deprecated
 

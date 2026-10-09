@@ -21,6 +21,7 @@
  */
 namespace owl::io::video {
 
+/// Maximum number of video devices probed.
 constexpr size_t g_maxDevices = 10;
 
 /**

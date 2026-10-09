@@ -58,6 +58,7 @@ struct IsWriteExtraDataPid
  */
 template<bool IsConst, MeshElementType ElementType, typename... Components>
 struct OWL_API MeshCursorInitializer {
+	/// Mesh type of the cursor.
 	using MeshType = MeshCursorBase<IsConst, ElementType>::MeshType;
 
 	MeshCursorInitializer() = default;
@@ -178,6 +179,7 @@ class OWL_API MeshCursor : details::MeshCursorInitializer<IsConst, ElementType, 
 	using MeshType = MeshCursorBase<IsConst, ElementType>::MeshType;
 
 public:
+	/// Tuple of the iterated component types.
 	using ComponentsT = std::tuple<typename std::remove_cvref_t<Components>::ComponentType...>;
 
 	/**

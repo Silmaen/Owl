@@ -22,7 +22,9 @@ namespace owl::gui::widgets {
  *  Base widget's data information.
  */
 struct WidgetData {
+	/// Unique ImGui identifier.
 	std::string id;
+	/// False hides the widget.
 	bool visible = true;
 };
 
@@ -50,12 +52,30 @@ public:
 	 */
 	virtual ~Widget() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	Widget(const Widget&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	Widget(Widget&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const Widget&) -> Widget& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(Widget&&) -> Widget& = default;
 
 	/**

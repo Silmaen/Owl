@@ -21,18 +21,18 @@ namespace owl::renderer::gpu {
  *  Type of data.
  */
 enum struct ShaderDataType : uint8_t {
-	None = 0,
-	Float,
-	Float2,
-	Float3,
-	Float4,
-	Mat3,
-	Mat4,
-	Int,
-	Int2,
-	Int3,
-	Int4,
-	Bool
+	None = 0,///< No type.
+	Float,///< `float`.
+	Float2,///< `float2`.
+	Float3,///< `float3`.
+	Float4,///< `float4`.
+	Mat3,///< `float3x3`.
+	Mat4,///< `float4x4`.
+	Int,///< `int`.
+	Int2,///< `int2`.
+	Int3,///< `int3`.
+	Int4,///< `int4`.
+	Bool///< `bool`.
 };
 
 /**
@@ -141,8 +141,11 @@ struct OWL_API BufferElement {
  */
 class OWL_API BufferLayout {
 public:
+	/// List of the layout elements.
 	using element_type = std::vector<BufferElement>;
+	/// Iterator on the elements.
 	using iterator = element_type::iterator;
+	/// Const iterator on the elements.
 	using const_iterator = element_type::const_iterator;
 
 	BufferLayout() = default;
@@ -229,12 +232,30 @@ private:
  */
 class OWL_API VertexBuffer {
 public:
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	VertexBuffer(const VertexBuffer&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	VertexBuffer(VertexBuffer&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const VertexBuffer&) -> VertexBuffer& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(VertexBuffer&&) -> VertexBuffer& = default;
 
 	VertexBuffer() = default;// ---UNCOVER---
@@ -289,12 +310,30 @@ private:
  */
 class OWL_API IndexBuffer {
 public:
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	IndexBuffer(const IndexBuffer&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	IndexBuffer(IndexBuffer&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const IndexBuffer&) -> IndexBuffer& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(IndexBuffer&&) -> IndexBuffer& = default;
 
 	/**

@@ -332,10 +332,10 @@ public:
 	 *  State of the application.
 	 */
 	enum struct State : uint8_t {
-		Created,/// Application just created.
-		Running,/// Application is running.
-		Stopped,/// Application Stopped.
-		Error/// Application in error.
+		Created,///< Application just created.
+		Running,///< Application is running.
+		Stopped,///< Application Stopped.
+		Error///< Application in error.
 	};
 
 	/**

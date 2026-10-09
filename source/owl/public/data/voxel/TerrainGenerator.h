@@ -89,12 +89,30 @@ struct TerrainParams {
  */
 class OWL_API TerrainGenerator {
 public:
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	TerrainGenerator(const TerrainGenerator&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	TerrainGenerator(TerrainGenerator&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const TerrainGenerator&) -> TerrainGenerator& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(TerrainGenerator&&) -> TerrainGenerator& = default;
 
 	/**

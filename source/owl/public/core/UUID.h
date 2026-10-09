@@ -21,17 +21,40 @@ namespace owl::core {
  */
 class OWL_API UUID {
 public:
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	UUID(const UUID&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	UUID(UUID&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const UUID&) -> UUID& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(UUID&&) -> UUID& = default;
 
 	UUID();
 
 	// NOLINTBEGIN(google-explicit-constructor)
+	/**
+	 * @brief
+	 *  Wrap an existing value.
+	 * @param[in] iUuid The UUID value.
+	 */
 	UUID(const uint64_t iUuid) : m_uuid{iUuid} {}
 
 	/**

@@ -28,12 +28,30 @@ class OWL_API Entity final {
 public:
 	Entity() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	Entity(const Entity&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	Entity(Entity&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const Entity&) -> Entity& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(Entity&&) -> Entity& = default;
 
 	/**

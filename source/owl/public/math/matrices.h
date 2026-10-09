@@ -384,8 +384,8 @@ private:
 	std::array<BaseType, NCol * NRow> m_data;
 };
 
-using mat2 = Matrix<float, 2, 2>;
-using mat3 = Matrix<float, 3, 3>;
-using mat4 = Matrix<float, 4, 4>;
+using mat2 = Matrix<float, 2, 2>;///< 2x2 float matrix.
+using mat3 = Matrix<float, 3, 3>;///< 3x3 float matrix.
+using mat4 = Matrix<float, 4, 4>;///< 4x4 float matrix.
 
 }// namespace owl::math

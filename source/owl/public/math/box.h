@@ -27,12 +27,34 @@ class Box {
 public:
 	constexpr Box() noexcept = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 * @param[in] iOther The object to copy.
+	 */
 	constexpr Box(const Box& iOther) noexcept = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 * @param[in,out] ioOther The object to move.
+	 */
 	constexpr Box(Box&& ioOther) noexcept = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @param[in] iOther The object to copy.
+	 * @return A reference to this object.
+	 */
 	constexpr auto operator=(const Box& iOther) noexcept -> Box& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @param[in,out] ioOther The object to move.
+	 * @return A reference to this object.
+	 */
 	constexpr auto operator=(Box&& ioOther) noexcept -> Box& = default;
 
 	constexpr ~Box() = default;
@@ -215,20 +237,20 @@ private:
 
 
 // Specialization.
-using box2f = Box<float, 2>;
-using box3f = Box<float, 3>;
-using box4f = Box<float, 4>;
-using box2d = Box<double, 2>;
-using box3d = Box<double, 3>;
-using box4d = Box<double, 4>;
-using box2i = Box<int32_t, 2>;
-using box3i = Box<int32_t, 3>;
-using box4i = Box<int32_t, 4>;
-using box2ui = Box<uint32_t, 2>;
-using box3ui = Box<uint32_t, 3>;
-using box4ui = Box<uint32_t, 4>;
-using box2ui8 = Box<uint8_t, 2>;
-using box3ui8 = Box<uint8_t, 3>;
-using box4ui8 = Box<uint8_t, 4>;
+using box2f = Box<float, 2>;///< 2D box of `float`.
+using box3f = Box<float, 3>;///< 3D box of `float`.
+using box4f = Box<float, 4>;///< 4D box of `float`.
+using box2d = Box<double, 2>;///< 2D box of `double`.
+using box3d = Box<double, 3>;///< 3D box of `double`.
+using box4d = Box<double, 4>;///< 4D box of `double`.
+using box2i = Box<int32_t, 2>;///< 2D box of `int32_t`.
+using box3i = Box<int32_t, 3>;///< 3D box of `int32_t`.
+using box4i = Box<int32_t, 4>;///< 4D box of `int32_t`.
+using box2ui = Box<uint32_t, 2>;///< 2D box of `uint32_t`.
+using box3ui = Box<uint32_t, 3>;///< 3D box of `uint32_t`.
+using box4ui = Box<uint32_t, 4>;///< 4D box of `uint32_t`.
+using box2ui8 = Box<uint8_t, 2>;///< 2D box of `uint8_t`.
+using box3ui8 = Box<uint8_t, 3>;///< 3D box of `uint8_t`.
+using box4ui8 = Box<uint8_t, 4>;///< 4D box of `uint8_t`.
 
 }// namespace owl::math

@@ -1030,6 +1030,7 @@ private:
 	friend class physics::PhysicCommand;
 };
 
+/// @cond
 template<>
 OWL_API void Scene::onComponentAdded<component::ID>(const Entity& iEntity, component::ID& ioComponent);
 
@@ -1146,5 +1147,6 @@ OWL_API void Scene::onComponentAdded<component::FlyCamera>(const Entity& iEntity
 template<>
 OWL_API void Scene::onComponentAdded<component::VoxelPlayer>(const Entity& iEntity,
 															 component::VoxelPlayer& ioComponent);
+/// @endcond
 
 }// namespace owl::scene

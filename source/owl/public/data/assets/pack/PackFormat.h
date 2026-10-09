@@ -31,18 +31,30 @@ constexpr uint64_t g_maxEntrySize = 1ULL << 30U;
 
 /// Pack file flags.
 enum struct PackFlags : uint8_t {
-	None = 0,
-	Compressed = 1 << 0,
-	Obfuscated = 1 << 1,
-	Default = Compressed | Obfuscated,
+	None = 0,///< No flag.
+	Compressed = 1 << 0,///< Blocks compressed with zstd.
+	Obfuscated = 1 << 1,///< Table of contents obfuscated.
+	Default = Compressed | Obfuscated,///< Compressed and obfuscated.
 };
 
-/// Bitwise OR for PackFlags.
+/**
+ * @brief
+ *  Combine two sets of pack flags.
+ * @param[in] iLhs First flags.
+ * @param[in] iRhs Second flags.
+ * @return The flags set in either.
+ */
 constexpr auto operator|(const PackFlags iLhs, const PackFlags iRhs) -> PackFlags {
 	return static_cast<PackFlags>(static_cast<uint16_t>(iLhs) | static_cast<uint16_t>(iRhs));
 }
 
-/// Bitwise AND for PackFlags.
+/**
+ * @brief
+ *  Intersect two sets of pack flags.
+ * @param[in] iLhs First flags.
+ * @param[in] iRhs Second flags.
+ * @return The flags set in both.
+ */
 constexpr auto operator&(const PackFlags iLhs, const PackFlags iRhs) -> PackFlags {
 	return static_cast<PackFlags>(static_cast<uint16_t>(iLhs) & static_cast<uint16_t>(iRhs));
 }
@@ -51,28 +63,38 @@ constexpr auto operator&(const PackFlags iLhs, const PackFlags iRhs) -> PackFlag
  * @brief
  *  Check if a flag is set.
  * @return True when flag is present.
+ * @param[in] iFlags The flags to test.
+ * @param[in] iFlag The flag looked for.
  */
 constexpr auto hasFlag(const PackFlags iFlags, const PackFlags iFlag) -> bool { return (iFlags & iFlag) == iFlag; }
 
 /// Type of asset stored in the pack.
 enum struct AssetType : uint8_t {
-	Scene = 0,
-	Texture = 1,
-	Font = 2,
-	Sound = 3,
-	Mesh = 4,
-	Other = 5,
-	Script = 6,
+	Scene = 0,///< A scene (`.owl`).
+	Texture = 1,///< An image.
+	Font = 2,///< A font.
+	Sound = 3,///< A sound.
+	Mesh = 4,///< A 3D model.
+	Other = 5,///< Any other file.
+	Script = 6,///< A Lua script.
 };
 /// Pack file header (40 bytes, fixed size).
 struct PackHeader {
+	/// Magic bytes `OWLP`.
 	std::array<char, 4> magic = g_packMagic;
+	/// Format version (`g_packVersion`).
 	uint16_t version = g_packVersion;
+	/// `PackFlags` of the pack.
 	uint16_t flags = static_cast<uint16_t>(PackFlags::Default);
+	/// Number of entries in the table of contents.
 	uint32_t entryCount = 0;
+	/// Reserved, zero.
 	uint32_t reserved = 0;
+	/// Offset of the table of contents in the file.
 	uint64_t tocOffset = 0;
+	/// Stored (compressed) size of the table of contents.
 	uint64_t tocSize = 0;
+	/// Size of the table of contents once decompressed.
 	uint64_t tocOriginalSize = 0;
 };
 
@@ -80,11 +102,17 @@ static_assert(sizeof(PackHeader) == 40, "PackHeader must be 40 bytes");
 
 /// Table of contents entry.
 struct TocEntry {
+	/// Hash of the entry path.
 	uint64_t pathHash = 0;
+	/// Path of the asset inside the pack.
 	std::string path;
+	/// Offset of the entry data in the file.
 	uint64_t dataOffset = 0;
+	/// Stored (compressed) size of the entry.
 	uint64_t dataSize = 0;
+	/// Size of the entry once decompressed.
 	uint64_t originalSize = 0;
+	/// Kind of asset.
 	AssetType assetType = AssetType::Other;
 };
 

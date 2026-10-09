@@ -93,12 +93,30 @@ public:
 
 	~Tileset() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	Tileset(const Tileset&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	Tileset(Tileset&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const Tileset&) -> Tileset& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(Tileset&&) -> Tileset& = default;
 
 	/**

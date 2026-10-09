@@ -69,12 +69,30 @@ class OWL_API Texture {
 public:
 	Texture() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	Texture(const Texture&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	Texture(Texture&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const Texture&) -> Texture& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(Texture&&) -> Texture& = default;
 
 	/**

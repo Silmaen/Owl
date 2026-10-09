@@ -659,24 +659,24 @@ private:
 };
 
 // Specialization.
-using vec2f = Vector<float, 2>;
-using vec3f = Vector<float, 3>;
-using vec4f = Vector<float, 4>;
-using vec2d = Vector<double, 2>;
-using vec3d = Vector<double, 3>;
-using vec4d = Vector<double, 4>;
-using vec2i = Vector<int32_t, 2>;
-using vec3i = Vector<int32_t, 3>;
-using vec4i = Vector<int32_t, 4>;
-using vec2ui = Vector<uint32_t, 2>;
-using vec3ui = Vector<uint32_t, 3>;
-using vec4ui = Vector<uint32_t, 4>;
-using vec2ui8 = Vector<uint8_t, 2>;
-using vec3ui8 = Vector<uint8_t, 3>;
-using vec4ui8 = Vector<uint8_t, 4>;
+using vec2f = Vector<float, 2>;///< 2D vector of `float`.
+using vec3f = Vector<float, 3>;///< 3D vector of `float`.
+using vec4f = Vector<float, 4>;///< 4D vector of `float`.
+using vec2d = Vector<double, 2>;///< 2D vector of `double`.
+using vec3d = Vector<double, 3>;///< 3D vector of `double`.
+using vec4d = Vector<double, 4>;///< 4D vector of `double`.
+using vec2i = Vector<int32_t, 2>;///< 2D vector of `int32_t`.
+using vec3i = Vector<int32_t, 3>;///< 3D vector of `int32_t`.
+using vec4i = Vector<int32_t, 4>;///< 4D vector of `int32_t`.
+using vec2ui = Vector<uint32_t, 2>;///< 2D vector of `uint32_t`.
+using vec3ui = Vector<uint32_t, 3>;///< 3D vector of `uint32_t`.
+using vec4ui = Vector<uint32_t, 4>;///< 4D vector of `uint32_t`.
+using vec2ui8 = Vector<uint8_t, 2>;///< 2D vector of `uint8_t`.
+using vec3ui8 = Vector<uint8_t, 3>;///< 3D vector of `uint8_t`.
+using vec4ui8 = Vector<uint8_t, 4>;///< 4D vector of `uint8_t`.
 
-using vec2 = vec2f;
-using vec3 = vec3f;
-using vec4 = vec4f;
+using vec2 = vec2f;///< 2D float vector, the default one.
+using vec3 = vec3f;///< 3D float vector, the default one.
+using vec4 = vec4f;///< 4D float vector, the default one.
 
 }// namespace owl::math

@@ -41,9 +41,13 @@ class OWL_API MeshCursorBase;
 template<>
 class OWL_API MeshCursorBase<true, MeshElementType::Vertex> {
 public:
+	/// Distance between two cursors.
 	using difference_type = std::ptrdiff_t;
+	/// Mesh type of the cursor.
 	using MeshType = const StaticMesh;
+	/// Iterator on the extra data containers.
 	using ExtraDataIterator = ::owl::data::extradata::ExtraDataContainer::ConstExtraDataIterator;
+	/// Const iterator on the extra data containers.
 	using ConstExtraDataIterator = ::owl::data::extradata::ExtraDataContainer::ConstExtraDataIterator;
 
 	/**
@@ -126,6 +130,11 @@ public:
 	}
 
 protected:
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 * @param[in] iOther The object to copy.
+	 */
 	MeshCursorBase(const MeshCursorBase& iOther) = default;
 
 	/**
@@ -204,9 +213,17 @@ protected:
 template<>
 class OWL_API MeshCursorBase<false, MeshElementType::Vertex> : public MeshCursorBase<true, MeshElementType::Vertex> {
 public:
+	/// Mesh type of the cursor.
 	using MeshType = StaticMesh;
+	/// Read-only cursor this one extends.
 	using BaseCursor = MeshCursorBase<true, MeshElementType::Vertex>;
 
+	/**
+	 * @brief
+	 *  Create a cursor on a vertex.
+	 * @param[in] iMesh The mesh.
+	 * @param[in] iIndex Index of the vertex.
+	 */
 	MeshCursorBase(const MeshType& iMesh, const size_t iIndex) : BaseCursor(iMesh, iIndex) {}
 
 	/**
@@ -227,8 +244,11 @@ public:
 template<>
 class OWL_API MeshCursorBase<true, MeshElementType::Triangle> : public MeshCursorBase<true, MeshElementType::Vertex> {
 public:
+	/// Distance between two cursors.
 	using difference_type = std::ptrdiff_t;
+	/// Mesh type of the cursor.
 	using MeshType = const StaticMesh;
+	/// Vertex cursor this one extends.
 	using BaseCursor = MeshCursorBase<true, MeshElementType::Vertex>;
 
 	/**
@@ -258,9 +278,17 @@ template<>
 class OWL_API
 		MeshCursorBase<false, MeshElementType::Triangle> : public MeshCursorBase<true, MeshElementType::Triangle> {
 public:
+	/// Mesh type of the cursor.
 	using MeshType = StaticMesh;
+	/// Read-only cursor this one extends.
 	using BaseCursor = MeshCursorBase<true, MeshElementType::Triangle>;
 
+	/**
+	 * @brief
+	 *  Create a cursor on a triangle.
+	 * @param[in] iMesh The mesh.
+	 * @param[in] iIndex Index of the triangle.
+	 */
 	MeshCursorBase(const MeshType& iMesh, const size_t iIndex) : BaseCursor(iMesh, iIndex) {}
 
 	/**

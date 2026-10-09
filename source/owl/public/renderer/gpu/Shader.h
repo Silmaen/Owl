@@ -36,12 +36,30 @@ enum struct ShaderType : uint8_t {
  */
 class OWL_API Shader {
 public:
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	Shader(const Shader&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	Shader(Shader&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const Shader&) -> Shader& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(Shader&&) -> Shader& = default;
 
 	/**
@@ -57,6 +75,7 @@ public:
 	 *  the shader's specifications.
 	 */
 	struct Specification {
+		/// Name and renderer of the shader.
 		ShaderName shaderName;
 	};
 

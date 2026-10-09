@@ -31,7 +31,9 @@ class OWL_API MeshVertexCoordinate;
  *  Read structure for point's coordinates.
  */
 struct Coordinate {
+	/// Type of the read data.
 	using DataType = math::vec3;
+	/// Component reading it.
 	using ComponentType = MeshVertexCoordinate<>;
 };
 
@@ -40,7 +42,9 @@ struct Coordinate {
  *  Read/Write structure for point's coordinates.
  */
 struct EditCoordinate {
+	/// Type of the edited data.
 	using DataType = math::vec3;
+	/// Component editing it.
 	using ComponentType = EditMeshVertexCoordinate;
 };
 
@@ -58,6 +62,7 @@ constexpr inline EditCoordinate EditCoordinates;
 template<bool IsConst, geometry::MeshElementType ElementType>
 class OWL_API MeshComponentBase {
 public:
+	/// Cursor type of the component.
 	using CursorType = geometry::MeshCursorBase<IsConst, ElementType>;
 
 	/**
@@ -87,6 +92,7 @@ protected:
 template<bool IsConst>
 class OWL_API MeshVertexCoordinate : public MeshComponentBase<IsConst, geometry::MeshElementType::Vertex> {
 public:
+	/// Cursor type of the component.
 	using CursorType = MeshComponentBase<IsConst, geometry::MeshElementType::Vertex>::CursorType;
 
 	/**
@@ -156,7 +162,7 @@ public:
 	[[nodiscard]] auto value() const -> math::vec3 { return m_pointIte->getPosition(); }
 
 protected:
-	// Utiliser le bon type d'itérateur selon IsConst
+	/// Iterator on the vertices, const when the component is.
 	using PointIterator = std::conditional_t<IsConst, std::vector<geometry::primitive::MeshVertex>::const_iterator,
 											 std::vector<geometry::primitive::MeshVertex>::iterator>;
 	/// Iterator on point.

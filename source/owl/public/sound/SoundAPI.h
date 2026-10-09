@@ -30,7 +30,8 @@ public:
 
 	/**
 	 * @brief
-	 *  Default constructor.
+	 *  Create the API of a sound backend.
+	 * @param[in] iType The backend type.
 	 */
 	explicit SoundAPI(const Type& iType) : m_type{iType} {}
 

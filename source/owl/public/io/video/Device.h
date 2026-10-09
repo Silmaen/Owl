@@ -23,7 +23,8 @@ class OWL_API Device {
 public:
 	/**
 	 * @brief
-	 *  Default Constructor.
+	 *  Create a video device.
+	 * @param[in] iName Name of the device.
 	 */
 	explicit Device(std::string iName);
 

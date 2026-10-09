@@ -45,18 +45,21 @@ public:
 	/**
 	 * @brief
 	 *  Default copy affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(const ScenePlayer&) -> ScenePlayer& = default;
 
 	/**
 	 * @brief
 	 *  Default move affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(ScenePlayer&&) -> ScenePlayer& = default;
 
 	/**
 	 * @brief
 	 *  Look the inputs for actions.
+	 * @param[in] iPlayer The player entity.
 	 */
 	void parseInputs(const Entity& iPlayer) const;
 

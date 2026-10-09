@@ -22,6 +22,7 @@
  *  Base namespace for serial IO operations.
  */
 namespace owl::io::serial {
+/// Friendly name of a device that reports none.
 // NOLINTNEXTLINE(bugprone-throwing-static-initialization)
 static const std::string g_deviceFriendlyName{"unknown"};
 
@@ -52,12 +53,14 @@ public:
 	/**
 	 * @brief
 	 *  Copy assignation.
+	 * @return A reference to this object.
 	 */
 	auto operator=(const Device&) -> Device& = default;
 
 	/**
 	 * @brief
 	 *  Move assignation.
+	 * @return A reference to this object.
 	 */
 	auto operator=(Device&&) -> Device& = default;
 

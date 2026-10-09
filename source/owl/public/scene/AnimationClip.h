@@ -56,12 +56,30 @@ public:
 
 	~AnimationClip() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	AnimationClip(const AnimationClip&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	AnimationClip(AnimationClip&&) noexcept = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const AnimationClip&) -> AnimationClip& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(AnimationClip&&) noexcept -> AnimationClip& = default;
 
 	/**

@@ -38,12 +38,30 @@ public:
 	 */
 	~Triangle() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	Triangle(const Triangle&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	Triangle(Triangle&&) noexcept = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const Triangle&) -> Triangle& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(Triangle&&) noexcept -> Triangle& = default;
 
 	/**

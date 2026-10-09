@@ -31,7 +31,9 @@ class OWL_API Font final {
 public:
 	/**
 	 * @brief
-	 *  Default constructor.
+	 *  Load a font from a file.
+	 * @param[in] iPath Path of the font file.
+	 * @param[in] iIsDefault True for the default font.
 	 */
 	explicit Font(const std::filesystem::path& iPath, bool iIsDefault = false);
 
@@ -56,12 +58,14 @@ public:
 	/**
 	 * @brief
 	 *  Default copy affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(const Font&) -> Font& = default;
 
 	/**
 	 * @brief
 	 *  Default move affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(Font&&) -> Font& = default;
 

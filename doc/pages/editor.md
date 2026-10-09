@@ -194,7 +194,7 @@ the open documents and tracks which one is **active**. Global panels
 
 Key types live in `source/owlnest/sources/document/`: `Document` (interface),
 `DocumentManager`, `SceneDocument`, `CodeEditorDocument`, `NodeGraphDocument`,
-`SceneFlowDocument`, `DocumentTabBar`.
+`SceneFlowDocument`, `AnimationDocument`, `TilemapDocument`, `TilesetDocument`.
 
 ### Scene Flow view
 
@@ -727,46 +727,45 @@ The `Project` class (`source/owlnest/sources/Project.h`) holds three fields: `na
 
 ### Workflow Operations
 
-The editor menus are organized around three axes: **File** (project), **Edit**
-(history + settings), and **Current** (active scene).
+The ribbon tabs hold the workflow commands: **File** (project), **Edit** (history and settings) and **Scene**
+(active scene, disabled if no project is loaded).
 
 **File** — project operations:
 
-| Operation     | Menu Path             | Description                                          |
-|---------------|-----------------------|------------------------------------------------------|
-| New Project   | File > New Project    | Name, folder and template of a new project (below)   |
-| Open Project  | File > Open Project   | Select a directory containing `owl_project.yml`      |
-| Open Recent   | File > Open Recent    | Sub-menu of recently opened projects (up to 10)      |
-| Save Project  | File > Save Project   | Write current project settings to YAML               |
-| Close Project | File > Close Project  | Unload the project and clear the asset browser       |
-| Pack Game     | File > Pack Game      | Scan and pack all project assets (async, see below)  |
-| Welcome       | File > Welcome Screen | Re-open the welcome screen when no project is loaded |
+| Operation     | Ribbon button              | Description                                         |
+|---------------|----------------------------|-----------------------------------------------------|
+| New Project   | File > Project > New       | Name, folder and template of a new project (below)  |
+| Open Project  | File > Project > Open      | Select a directory containing `owl_project.yml`     |
+| Save Project  | File > Project > Save      | Write current project settings to YAML              |
+| Close Project | File > Project > Close     | Unload the project and clear the asset browser      |
+| Open Recent   | File > Recent > Recent     | Drop-down of recently opened projects (up to 10)    |
+| New object    | File > Object > New        | New scene, animation, tilemap or tileset            |
+| Pack Game     | File > Package > Pack Game | Scan and pack all project assets (async, see below) |
 
 **Edit** — history and settings:
 
-| Operation        | Menu Path               | Description                                     |
-|------------------|-------------------------|-------------------------------------------------|
-| Undo             | Edit > Undo             | Reverse the most recent editing action (Ctrl+Z) |
-| Redo             | Edit > Redo             | Re-apply an undone action (Ctrl+Y)              |
-| Engine Settings  | Edit > Engine Settings  | Engine parameters dialog                        |
-| Editor Settings  | Edit > Editor Settings  | Theme, stats toggle, keybindings                |
-| Project Settings | Edit > Project Settings | Edit the active project's metadata              |
+| Operation        | Ribbon button             | Description                                     |
+|------------------|---------------------------|-------------------------------------------------|
+| Undo             | Edit > History > Undo     | Reverse the most recent editing action (Ctrl+Z) |
+| Redo             | Edit > History > Redo     | Re-apply an undone action (Ctrl+Y)              |
+| Engine Settings  | Edit > Settings > Engine  | Engine parameters dialog                        |
+| Editor Settings  | Edit > Settings > Editor  | Theme, stats toggle, keybindings                |
+| Project Settings | Edit > Settings > Project | Edit the active project's metadata              |
 
-**Current** — active scene operations (disabled if no project is loaded):
+**Scene** — active scene operations:
 
-| Operation     | Menu Path                 | Description                                             |
-|---------------|---------------------------|---------------------------------------------------------|
-| New Scene     | Current > New Scene       | Clear the viewport and start a fresh scene              |
-| Open Scene    | Current > Open Scene      | Load a `.owl` file (async read + deserialize)           |
-| Save Scene    | Current > Save Scene      | Save to the current path (async write)                  |
-| Save Scene as | Current > Save Scene as.. | Save to a new path                                      |
-| Import Scene  | Current > Import Scene    | Copy an external `.owl` file into the project           |
-| Pack Scene    | Current > Pack Scene      | Pack the current scene's assets into `.owlpack` (async) |
+| Operation     | Ribbon button                | Description                                             |
+|---------------|------------------------------|---------------------------------------------------------|
+| New Scene     | Scene > File > New           | Clear the viewport and start a fresh scene              |
+| Open Scene    | Scene > File > Open          | Load a `.owl` file (async read + deserialize)           |
+| Save Scene    | Scene > File > Save          | Save to the current path (async write)                  |
+| Save Scene as | Scene > File > Save As       | Save to a new path                                      |
+| Import Scene  | Scene > File > Import        | Copy an external `.owl` file into the project           |
+| Pack Scene    | Scene > Package > Pack Scene | Pack the current scene's assets into `.owlpack` (async) |
 
-**Welcome screen.** When the editor starts without a loaded project, a Welcome modal is
+**Welcome screen.** When the editor starts without a loaded project, a Welcome window is
 shown with **New Project**, **Open Project**, and a list of recent projects (double-click
-to open, `x` to remove). The modal is closable via its `×` button and can be reopened
-from **File > Welcome Screen**.
+to open, `x` to remove). Once closed with its `×` button, it stays closed for the session.
 
 **Async operations.** Pack Game, Pack Scene, Open Scene, and Save Scene all run off the
 main thread via a progress modal (`AsyncProgressModal`). Pack Game additionally runs a
@@ -862,7 +861,7 @@ steps:
 | `frames`  | Number of frames to play                                                                        |
 | `input`   | `key` / `keys` (`A`..`Z`, `D0`..`D9`, `Space`, `Enter`, `Escape`, `Tab`, arrows, `LeftShift`,   |
 |           | `LeftControl` or a key code), `mouse` (`Left`, `Right`, `Middle`), `mouse_pos`, `frames` (1)    |
-| `expect`  | `entity: <tag>` or `player: true` with fields `translation.x/y/z`, `rotation.z`, `scale.x/y/z`, |
+| `expect`  | `entity: <tag>` or `player: true` with fields `translation.*`, `rotation.z`, `scale.*`,         |
 |           | `exists`; or `gamestate: <key>`. Each check is a value or `equals` / `greater` / `less`,        |
 |           | `tolerance` for a numeric `equals`                                                              |
 | `command` | An editor command (see below) by name, its arguments under `args`:                              |

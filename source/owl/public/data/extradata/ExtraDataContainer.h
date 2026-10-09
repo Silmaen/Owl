@@ -20,9 +20,13 @@ namespace owl::data::extradata {
  */
 class OWL_API ExtraDataContainer {
 public:
+	/// Shared pointer to an extra data.
 	using ExtraDataPtr = shared<ExtraDataBase>;
+	/// List of extra data.
 	using ExtraDataList = std::vector<ExtraDataPtr>;
+	/// Iterator on the extra data.
 	using ExtraDataIterator = ExtraDataList::iterator;
+	/// Const iterator on the extra data.
 	using ConstExtraDataIterator = ExtraDataList::const_iterator;
 
 	ExtraDataContainer() = delete;

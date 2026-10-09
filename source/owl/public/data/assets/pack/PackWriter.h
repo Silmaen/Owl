@@ -26,10 +26,19 @@ public:
 
 	PackWriter(const PackWriter&) = delete;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	PackWriter(PackWriter&&) = default;
 
 	auto operator=(const PackWriter&) -> PackWriter& = delete;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(PackWriter&&) -> PackWriter& = default;
 
 	/**

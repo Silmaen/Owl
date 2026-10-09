@@ -23,7 +23,12 @@ namespace owl::scene::component {
  */
 struct OWL_API UiButton {
 	/// Button visual state (runtime only, not serialized).
-	enum struct State : uint8_t { Normal, Hovered, Pressed, Disabled };
+	enum struct State : uint8_t {
+		Normal,///< Idle.
+		Hovered,///< Under the cursor.
+		Pressed,///< Held down.
+		Disabled,///< Not interactive.
+	};
 	/// Current runtime state.
 	State state = State::Normal;
 	/// Colour in normal state.

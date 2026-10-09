@@ -81,12 +81,14 @@ public:
 	/**
 	 * @brief
 	 *  Default copy affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(const Asset&) -> Asset& = default;
 
 	/**
 	 * @brief
 	 *  Default move affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(Asset&&) -> Asset& = default;
 

@@ -28,12 +28,30 @@ class OWL_API StorageBuffer {
 public:
 	StorageBuffer() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	StorageBuffer(const StorageBuffer&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	StorageBuffer(StorageBuffer&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const StorageBuffer&) -> StorageBuffer& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(StorageBuffer&&) -> StorageBuffer& = default;
 
 	/**

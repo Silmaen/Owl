@@ -34,6 +34,8 @@ Sub-checks (all on by default):
   `assert…` / `check…` helper); a smoke test says so with `EXPECT_NO_THROW` (`ci/utils/test_assertions.py`).
 * **nolint** — every check named by a `NOLINT(...)` marker is one `.clang-tidy` enables (`clang-tidy
   --list-checks`; static-analyzer checks always count), so no suppression is dead weight (`ci/utils/nolint.py`).
+* **doc-identifiers** — every symbol, file or `OWL_*` option cited between backticks in `doc/pages` exists in the
+  repository (the changelog, the roadmap and the design pages excepted; `ci/utils/doc_identifiers.py`).
 * **python** — `ruff check`, `ruff format --check`, `mypy` and the `ci/tests/` pytest suite on the CI's own
   code (`ci/`, `ci_action.py`),
   configured in `pyproject.toml` (see `ci/utils/python_lint.py`).
@@ -48,7 +50,7 @@ Doxygen is **deliberately not** run here — the project already has a separate
 Each sub-check can be disabled with extra args (`-- --no-<name>=true`):
 `--no-format`, `--no-typos`, `--no-comment-quality`, `--no-doc-audit`,
 `--no-cpp-style`, `--no-structural`, `--no-std-includes`, `--no-module-deps`, `--no-test-assertions`, `--no-nolint`,
-`--no-python`, `--no-secrets`.
+`--no-doc-identifiers`, `--no-python`, `--no-secrets`.
 
 Every finding is reported through `_diag()` as a GNU/clang-style diagnostic —
 `<repo-relative path>:<line>:<column>: error: <check>: <message>` — including
@@ -1421,6 +1423,28 @@ def _check_nolint() -> int:
     return len(dead)
 
 
+def _check_doc_identifiers() -> int:
+    """
+    Flag the identifiers cited in `doc/pages` that name nothing of the repository.
+
+    :return: The number of stale citations.
+    """
+    from ci.utils.doc_identifiers import build_index, doc_pages, stale_identifiers, tracked_files
+
+    log.info("code-style: identifiers cited in the documentation...")
+    index = build_index(root, tracked_files(root))
+    found = stale_identifiers(doc_pages(root), index)
+    for entry in found:
+        _diag(
+            entry.path,
+            entry.line,
+            "doc-identifiers",
+            f"`{entry.span}` ({entry.kind}) does not exist: update the page, or add a justified exception",
+            column=entry.column,
+        )
+    return len(found)
+
+
 def _check_python() -> int:
     """
     Lint and type-check the CI code with ruff and mypy (configuration in `pyproject.toml`).
@@ -1453,6 +1477,7 @@ class CodeStyle(BaseAction):
         --no-module-deps=true       skip the module layering audit
         --no-test-assertions=true   skip the test-without-assertion audit
         --no-nolint=true            skip the dead NOLINT audit
+        --no-doc-identifiers=true   skip the check of the identifiers cited in doc/pages
         --no-python=true            skip ruff / mypy on the CI code
         --no-secrets=true           skip committed-secret scan
     """
@@ -1480,6 +1505,7 @@ class CodeStyle(BaseAction):
             "module-deps": opts.get("no-module-deps", "false") == "true",
             "test-assertions": opts.get("no-test-assertions", "false") == "true",
             "nolint": opts.get("no-nolint", "false") == "true",
+            "doc-identifiers": opts.get("no-doc-identifiers", "false") == "true",
             "python": opts.get("no-python", "false") == "true",
             "secrets": opts.get("no-secrets", "false") == "true",
         }
@@ -1507,6 +1533,8 @@ class CodeStyle(BaseAction):
             results.append(("test-assertions", _check_test_assertions()))
         if not skip["nolint"]:
             results.append(("nolint", _check_nolint()))
+        if not skip["doc-identifiers"]:
+            results.append(("doc-identifiers", _check_doc_identifiers()))
         if not skip["python"]:
             results.append(("python (ruff, mypy, pytest)", _check_python()))
         if not skip["secrets"]:

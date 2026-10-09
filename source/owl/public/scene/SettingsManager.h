@@ -163,13 +163,15 @@ public:
 	 * @brief
 	 *  Check if a user override exists for a key.
 	 * @return True when override is present.
+	 * @param[in] iKey The setting key.
 	 */
 	[[nodiscard]] auto hasOverride(const std::string& iKey) const -> bool;
 
 	/**
 	 * @brief
 	 *  Check if a key exists (in overrides or defaults).
-	 * @return True when has is present.
+	 * @return True when the key exists.
+	 * @param[in] iKey The setting key.
 	 */
 	[[nodiscard]] auto has(const std::string& iKey) const -> bool;
 

@@ -25,6 +25,7 @@ namespace owl::sound {
  */
 class OWL_API SoundSystem {
 public:
+	/// Library of the loaded sounds.
 	using SoundLibrary = data::assets::AssetLibrary<SoundData>;
 
 	/**

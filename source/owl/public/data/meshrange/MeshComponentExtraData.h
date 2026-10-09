@@ -40,7 +40,9 @@ class MeshExtraDataWriterPid;
  */
 template<typename TExtraData, geometry::MeshElementType ElementType>
 struct OWL_API ReadMeshExtraData {
+	/// Type of the read extra data.
 	using DataType = TExtraData;
+	/// Component reading it.
 	using ComponentType = MeshExtraDataReader<TExtraData, ElementType>;
 
 	/**
@@ -66,6 +68,7 @@ struct OWL_API ReadMeshExtraData {
  */
 template<typename TExtraData>
 struct OWL_API ReadMeshVertexExtraData : public ReadMeshExtraData<TExtraData, geometry::MeshElementType::Vertex> {
+	/// Component reading it.
 	using ComponentType = MeshExtraDataReader<TExtraData, geometry::MeshElementType::Vertex>;
 	using ReadMeshExtraData<TExtraData, geometry::MeshElementType::Vertex>::ReadMeshExtraData;
 };
@@ -76,6 +79,7 @@ struct OWL_API ReadMeshVertexExtraData : public ReadMeshExtraData<TExtraData, ge
  */
 template<typename TExtraData>
 struct OWL_API ReadMeshTriangleExtraData : public ReadMeshExtraData<TExtraData, geometry::MeshElementType::Triangle> {
+	/// Component reading it.
 	using ComponentType = MeshExtraDataReader<TExtraData, geometry::MeshElementType::Triangle>;
 	using ReadMeshExtraData<TExtraData, geometry::MeshElementType::Triangle>::ReadMeshExtraData;
 };
@@ -87,6 +91,7 @@ struct OWL_API ReadMeshTriangleExtraData : public ReadMeshExtraData<TExtraData, 
  */
 template<typename TExtraData, geometry::MeshElementType ElementType>
 struct OWL_API WriteMeshExtraData : public ReadMeshExtraData<TExtraData, ElementType> {
+	/// Component writing it.
 	using ComponentType = MeshExtraDataWriter<TExtraData, ElementType>;
 	using ReadMeshExtraData<TExtraData, ElementType>::ReadMeshExtraData;
 };
@@ -97,6 +102,7 @@ struct OWL_API WriteMeshExtraData : public ReadMeshExtraData<TExtraData, Element
  */
 template<typename TExtraData>
 struct OWL_API WriteMeshVertexExtraData : public WriteMeshExtraData<TExtraData, geometry::MeshElementType::Vertex> {
+	/// Component writing it.
 	using ComponentType = MeshExtraDataWriter<TExtraData, geometry::MeshElementType::Vertex>;
 	using WriteMeshExtraData<TExtraData, geometry::MeshElementType::Vertex>::WriteMeshExtraData;
 };
@@ -107,6 +113,7 @@ struct OWL_API WriteMeshVertexExtraData : public WriteMeshExtraData<TExtraData, 
  */
 template<typename TExtraData>
 struct OWL_API WriteMeshTriangleExtraData : public WriteMeshExtraData<TExtraData, geometry::MeshElementType::Triangle> {
+	/// Component writing it.
 	using ComponentType = MeshExtraDataWriter<TExtraData, geometry::MeshElementType::Triangle>;
 	using WriteMeshExtraData<TExtraData, geometry::MeshElementType::Triangle>::WriteMeshExtraData;
 };
@@ -118,6 +125,7 @@ struct OWL_API WriteMeshTriangleExtraData : public WriteMeshExtraData<TExtraData
  */
 template<typename ExtraDataConversionType, geometry::MeshElementType ElementType>
 struct OWL_API ReadMeshExtraDataPid : public ReadMeshExtraData<ExtraDataConversionType, ElementType> {
+	/// Component reading it.
 	using ComponentType = MeshExtraDataReaderPid<ExtraDataConversionType, ElementType>;
 	using ReadMeshExtraData<ExtraDataConversionType, ElementType>::ReadMeshExtraData;
 };
@@ -129,6 +137,7 @@ struct OWL_API ReadMeshExtraDataPid : public ReadMeshExtraData<ExtraDataConversi
  */
 template<typename ExtraDataConversionType, geometry::MeshElementType ElementType>
 struct OWL_API WriteMeshExtraDataPid : public ReadMeshExtraDataPid<ExtraDataConversionType, ElementType> {
+	/// Component writing it.
 	using ComponentType = MeshExtraDataWriterPid<ExtraDataConversionType, ElementType>;
 	using ReadMeshExtraDataPid<ExtraDataConversionType, ElementType>::ReadMeshExtraDataPID;
 };
@@ -169,6 +178,7 @@ public:
 	/**
 	 * @brief
 	 *  Assignment operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(const MeshExtraDataReader&) -> MeshExtraDataReader& = default;
 
@@ -241,6 +251,7 @@ public:
 	}
 
 protected:
+	/// Iterator on the extra data values.
 	using ExtraDataIterator = typename std::vector<typename TExtraData::Type>::iterator;
 	/// Extra data to iterate.
 	const ReadMeshExtraData<TExtraData, ElementType>* m_extraData;
@@ -288,6 +299,7 @@ class OWL_API MeshTriangleExtraDataReader : public MeshExtraDataReader<TExtraDat
 template<typename TExtraData, geometry::MeshElementType ElementType>
 class OWL_API MeshExtraDataWriter : public MeshExtraDataReader<TExtraData, ElementType> {
 public:
+	/// Reader this writer extends.
 	using BaseExtraDataReader = MeshExtraDataReader<TExtraData, ElementType>;
 
 	/**
@@ -381,8 +393,17 @@ public:
 			reset(iIndex);
 	}
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	MeshExtraDataReaderPid(const MeshExtraDataReaderPid&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const MeshExtraDataReaderPid&) -> MeshExtraDataReaderPid& = default;
 
 	MeshExtraDataReaderPid(MeshExtraDataReaderPid&&) noexcept = delete;
@@ -438,6 +459,7 @@ public:
 	}
 
 protected:
+	/// Iterator on the extra data values.
 	using ExtraDataIterator = typename std::vector<typename ExtraDataConversionType::Type>::iterator;
 	/// Iterator on extra data.
 	ExtraDataIterator m_extraDataIte;
@@ -487,6 +509,7 @@ class OWL_API MeshTriangleExtraDataReaderPid
 template<typename ExtraDataConversionType, geometry::MeshElementType ElementType>
 class OWL_API MeshExtraDataWriterPid : public MeshExtraDataReaderPid<ExtraDataConversionType, ElementType> {
 public:
+	/// Reader this writer extends.
 	using BaseExtraDataReader = MeshExtraDataReaderPid<ExtraDataConversionType, ElementType>;
 
 	/**
@@ -515,6 +538,12 @@ public:
 		*ptr = iExtraData;
 	}
 
+	/**
+	 * @brief
+	 *  Set the extra data of the current point from constructor arguments.
+	 * @tparam Args Types of the constructor arguments.
+	 * @param[in] iArgs Arguments forwarded to the extra data constructor.
+	 */
 	template<typename... Args>
 	void setValue(Args&&... iArgs) {
 		ExtraDataConversionType ed(std::forward<Args>(iArgs)...);

@@ -142,6 +142,7 @@ public:
 	 * The callback runs each frame after `ImGui::Begin` of the main dockspace window
 	 * and before `ImGui::DockSpace`. Intended for a ribbon or application toolbar
 	 * that should sit above the docked panels. Pass an empty function to disable.
+	 * @param[in] iCallback The callback, or an empty function.
 	 */
 	void setTopBarCallback(std::function<void()> iCallback) { m_topBarCallback = std::move(iCallback); }
 

@@ -58,12 +58,30 @@ public:
 
 	~TilemapAsset() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	TilemapAsset(const TilemapAsset&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	TilemapAsset(TilemapAsset&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const TilemapAsset&) -> TilemapAsset& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(TilemapAsset&&) -> TilemapAsset& = default;
 
 	/**

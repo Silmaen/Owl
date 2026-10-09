@@ -36,12 +36,30 @@ public:
 
 	~GameState() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	GameState(const GameState&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	GameState(GameState&&) noexcept = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const GameState&) -> GameState& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(GameState&&) noexcept -> GameState& = default;
 
 	/**

@@ -151,10 +151,19 @@ class OWL_API RenderStack {
 public:
 	RenderStack(const RenderStack&) = delete;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	RenderStack(RenderStack&&) = default;
 
 	auto operator=(const RenderStack&) -> RenderStack& = delete;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(RenderStack&&) -> RenderStack& = default;
 
 	/**

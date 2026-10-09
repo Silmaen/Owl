@@ -101,6 +101,10 @@ public:
 	 */
 	Chunk(const Chunk& iOther);
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	Chunk(Chunk&&) = default;
 
 	/**
@@ -111,6 +115,11 @@ public:
 	 */
 	auto operator=(const Chunk& iOther) -> Chunk&;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(Chunk&&) -> Chunk& = default;
 
 	/**

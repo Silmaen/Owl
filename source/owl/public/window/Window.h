@@ -30,8 +30,8 @@ namespace owl::window {
  *  Types of input Manager.
  */
 enum struct Type : uint8_t {
-	Null,/// Windows null
-	Glfw/// Windows managed by Glfw library.
+	Null,///< Windows null
+	Glfw///< Windows managed by Glfw library.
 };
 
 /**

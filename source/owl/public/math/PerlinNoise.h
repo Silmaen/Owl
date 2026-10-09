@@ -27,12 +27,30 @@ namespace owl::math {
  */
 class OWL_API PerlinNoise {
 public:
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	PerlinNoise(const PerlinNoise&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	PerlinNoise(PerlinNoise&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const PerlinNoise&) -> PerlinNoise& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(PerlinNoise&&) -> PerlinNoise& = default;
 
 	/**

@@ -77,7 +77,7 @@ checks that the client builds and answers a capture handshake, not a full captur
     - Vulkan: one `Vulkan batch` zone per command buffer submit (each framebuffer batch), with timestamp queries
       collected at the start of the next batch, outside the render pass. Skipped with a warning when the device has
       no `timestampComputeAndGraphics`.
-    - Finer GPU zones (per render pass, per renderer) need a backend-neutral `OWL_PROFILE_GPU_SCOPE`; left for the
+    - Finer GPU zones (per render pass, per renderer) need a backend-neutral GPU scope macro; left for the
       Owl RHI work.
 - **Allocations**: only with the memory tracker (`-DOWL_ENABLE_MEMORY_TRACKER=ON`), whose `operator new` /
   `operator delete` overrides forward every allocation to Tracy's memory view.

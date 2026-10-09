@@ -94,6 +94,11 @@ struct BlockMeta {
 	/// Free gameplay / editor state byte (not interpreted by the mesher).
 	uint8_t state = 0;
 
+	/**
+	 * @brief
+	 *  Compare two block metadata field by field.
+	 * @return True when every field is equal.
+	 */
 	auto operator==(const BlockMeta&) const noexcept -> bool = default;
 };
 
@@ -218,12 +223,30 @@ public:
 
 	~BlockRegistry() = default;
 
+	/**
+	 * @brief
+	 *  Copy constructor.
+	 */
 	BlockRegistry(const BlockRegistry&) = default;
 
+	/**
+	 * @brief
+	 *  Move constructor.
+	 */
 	BlockRegistry(BlockRegistry&&) = default;
 
+	/**
+	 * @brief
+	 *  Copy assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(const BlockRegistry&) -> BlockRegistry& = default;
 
+	/**
+	 * @brief
+	 *  Move assignment operator.
+	 * @return A reference to this object.
+	 */
 	auto operator=(BlockRegistry&&) -> BlockRegistry& = default;
 
 	/**

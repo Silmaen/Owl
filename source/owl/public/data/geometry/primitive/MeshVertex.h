@@ -48,12 +48,14 @@ public:
 	/**
 	 * @brief
 	 *  Default copy affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(const MeshVertex&) -> MeshVertex& = default;
 
 	/**
 	 * @brief
 	 *  Default move affectation operator.
+	 * @return A reference to this object.
 	 */
 	auto operator=(MeshVertex&&) -> MeshVertex& = default;
 
