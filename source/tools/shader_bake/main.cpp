@@ -13,7 +13,8 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
-#include <print>
+#include <format>
+#include <utility>
 #include <span>
 #include <sstream>
 #include <string>
@@ -22,6 +23,12 @@
 // OpenGL, written where `loadOrCompileSpirv` looks first (`getPrecompiledShaderPath` under the output folder).
 
 namespace {
+
+// Not std::println: on MinGW its console path lives in libstdc++exp, which nothing links.
+template<typename... Args>
+void printLine(std::FILE* iStream, std::format_string<Args...> iFormat, Args&&... iArgs) {
+	std::fputs(std::format(iFormat, std::forward<Args>(iArgs)...).append("\n").c_str(), iStream);
+}
 
 auto readText(const std::filesystem::path& iPath) -> std::string {
 	const std::ifstream file(iPath, std::ios::binary);
@@ -40,7 +47,7 @@ auto bakeShader(const std::filesystem::path& iSourceFile, const std::filesystem:
 		const std::string api = forVulkan ? "vulkan" : "opengl";
 		const auto compiled = compileSlangToSpirv(source, name, forVulkan);
 		if (!compiled.success) {
-			std::println(stderr, "OwlShaderBake: {} failed for {}.", iSourceFile.string(), api);
+			printLine(stderr, "OwlShaderBake: {} failed for {}.", iSourceFile.string(), api);
 			return -1;
 		}
 		const auto cacheKey = getShaderCacheKey(source, renderer + "/" + name, forVulkan);
@@ -48,7 +55,7 @@ auto bakeShader(const std::filesystem::path& iSourceFile, const std::filesystem:
 			const auto output = iAssetsDir / getPrecompiledShaderPath(name, renderer, api, stage);
 			std::filesystem::create_directories(output.parent_path());
 			if (!writeCachedShader(output, spirv)) {
-				std::println(stderr, "OwlShaderBake: cannot write {}.", output.string());
+				printLine(stderr, "OwlShaderBake: cannot write {}.", output.string());
 				return -1;
 			}
 			writeShaderHash(output, cacheKey);
@@ -63,7 +70,7 @@ auto bakeShader(const std::filesystem::path& iSourceFile, const std::filesystem:
 auto main(const int iArgc, char** iArgv) -> int {
 	const std::span args(iArgv, static_cast<size_t>(iArgc));
 	if (args.size() != 3) {
-		std::println(stderr, "Usage: OwlShaderBake <engine shaders folder> <output assets folder>");
+		printLine(stderr, "Usage: OwlShaderBake <engine shaders folder> <output assets folder>");
 		return 2;
 	}
 	const std::filesystem::path shadersDir{args[1]};
@@ -85,7 +92,7 @@ auto main(const int iArgc, char** iArgv) -> int {
 		}
 	}
 	const auto elapsed = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start);
-	std::println("OwlShaderBake: {} shaders, {} SPIR-V stages in {:.0f} ms, {} failures.", shaders, stages,
+	printLine(stdout, "OwlShaderBake: {} shaders, {} SPIR-V stages in {:.0f} ms, {} failures.", shaders, stages,
 				 elapsed.count(), failures);
 	owl::core::Log::invalidate();
 	return failures == 0 ? 0 : 1;
