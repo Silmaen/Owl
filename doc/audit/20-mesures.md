@@ -1072,3 +1072,65 @@ La cible (< 10 µs par entité à 10 000 entités) est tenue en YAML : 7,3 µs, 
 création d'entités et de composants. Un format binaire cuit dans les `.owlpack` (non fait) ne gagnerait que le
 parsing : ~1,5 à 2 µs par entité, soit ×4, au prix d'un second format à versionner et à migrer à côté du YAML que
 l'éditeur garde ; à trancher par le mainteneur, sans urgence au vu de la cible.
+
+### 9.8 Shaders recompilés au besoin, démarrage Vulkan sur NVIDIA
+
+**Politique des shaders.** Le SPIR-V stocké (cache du répertoire de travail, puis sortie d'`OwlShaderBake`) passe par
+`checkSpirv` avant tout pilote : en-tête, instructions qui remplissent le fichier, `OpFunctionEnd` en dernier (une coupe
+entre deux instructions), `OpMemoryModel` et un point d'entrée de l'étage attendu. Un fichier absent, illisible,
+tronqué, d'une autre clé (source ou version de Slang) ou d'un autre étage est recompilé depuis la source Slang et mis
+en cache ; un refus du pilote (Vulkan `vkCreateShaderModule`, `vkCreateGraphicsPipelines`, `vkCreateComputePipelines` ;
+OpenGL compilation, édition de liens ou échec de spirv-cross pour le repli GLSL) déclenche une recompilation unique
+(`recompileSpirv`), jamais pour un SPIR-V qui sort du compilateur. Le cache est lu avant la sortie précompilée, pour
+qu'un précompilé refusé ne le soit qu'une fois ; une entrée de cache refusée est effacée. Le journal donne le fichier,
+la raison et la recompilation (`stored SPIR-V rejected, …/line.vert.spv: truncated: the instruction at word 297
+needs 4 words, 2 left` puis `recompiled, the cache now holds the new SPIR-V`). Essai sur les quatre configurations
+(`platformer_house`, cache vide puis chaud, et repli GLSL `OWL_OPENGL_SHADERS=glsl` sur les deux pilotes OpenGL) avec,
+dans `bin/assets`, `quad` aux étages permutés, `circle.frag` aléatoire, `line.vert` tronqué, `text` absent et
+`raycast_dda.comp` remplacé par un fragment : tout est recompilé, rendu et relu du cache au lancement suivant, sans
+plantage. Avant le contrôle d'étage, les permutations atteignaient le pilote : NVIDIA (Vulkan et OpenGL) et Mesa
+(OpenGL, pipeline graphique Vulkan) les refusent proprement et la recompilation prend le relais, mais ANV meurt en
+SIGFPE dans le `vkCreateComputePipelines` suivant le refus d'un module invalide (comportement indéfini, d'où le
+contrôle en amont). Tests : `ShaderFileUtils.{Corrupt,Truncated,Absent}CachedSpirvIsRecompiled`,
+`CachedSpirvOf{AnotherKey,AnotherStage}IsRecompiled`, `CorruptPrecompiledSpirvIsRecompiled`,
+`RecompileSpirvReplacesRefusedStoredOutput`, `CheckSpirvRejectsMalformedModules`.
+
+**Démarrage Vulkan NVIDIA.** Chronos ciblés (non commités), `platformer_house`, cache chaud, médiane de 3, ms :
+
+| Étape                                              | NVIDIA | Intel | Écart |
+|----------------------------------------------------|--------|-------|-------|
+| Fenêtre GLFW (chargement de l'ICD compris)         | 167    | 132   | +35   |
+| `vkCreateInstance`                                 | 8,1    | 1,7   | +6    |
+| Choix du périphérique physique                     | 7,8    | 10,3  | −3    |
+| `vkCreateDevice`                                   | 89     | 9,1   | +80   |
+| Swapchain                                          | 43     | 8,7   | +34   |
+| Shaders et pipelines (`initShaders`)               | 30     | 26    | +4    |
+| dont `vkCreate{Graphics,Compute}Pipelines` (7 + 1) | 1,0    | 0,8   | 0     |
+| Police, scène, prêt → première frame               | 78     | 88    | −10   |
+| Première frame                                     | 438    | 279   | +159  |
+
+Les ~160 ms sont dans le pilote : création du périphérique, swapchain en PRIME offload, chargement de l'ICD. Les
+pipelines coûtent 1 ms, parce que les pilotes ont leur propre cache disque (`~/.cache/nvidia`, cache Mesa). Prototype
+de `VkPipelineCache` persistant (`bin/cache/pipeline`, non commité) : avec les caches pilote, pipelines 0,9 → 0,8 ms
+une fois le fichier rempli, et 0,9 → 10 ms au premier lancement sur NVIDIA (un cache applicatif vide court-circuite
+celui du pilote) ; sans eux (`__GL_SHADER_DISK_CACHE=0`, `MESA_SHADER_CACHE_DISABLE=true`), 96 → 0,9 ms sur NVIDIA et
+55 → 0,2 ms sur Intel, cas qu'un poste réel ne rencontre qu'après une purge du cache pilote. Piste explorée, tant pis :
+rien n'est ajouté. Le premier lancement après une veille du GPU NVIDIA (D3cold) ajoute ~2 s à la fenêtre ; c'est
+l'origine des valeurs aberrantes ci-dessous, écartées par la médiane.
+
+`startup_ms` (`engine_ready` / `first_frame`), `taskset -c 2-7`, 300 frames, avant (`2cd5202e`) et après alternés,
+3 répétitions (5 pour OpenGL, relancé sous moins de charge), médiane, load average 5 à 11 ; « froid » : `bin/cache/shader`
+vidé :
+
+| Configuration   | Avant, froid | Avant, chaud | Après, froid | Après, chaud |
+|-----------------|--------------|--------------|--------------|--------------|
+| Vulkan / NVIDIA | 423 / 444¹   | 397 / 425    | 394 / 414    | 399 / 420    |
+| OpenGL / NVIDIA | 331 / 363    | 305 / 336    | 324 / 353    | 314 / 342    |
+| Vulkan / Intel  | 253 / 284    | 250 / 280    | 252 / 279    | 252 / 282    |
+| OpenGL / Intel  | 292 / 321    | 297 / 322    | 278 / 302    | 279 / 305    |
+
+¹ seule mesure sur trois sans réveil du GPU (2 355 / 2 376 ms pour les deux autres).
+
+Validation Vulkan (`--validation`, NVIDIA et Intel, `platformer_house`, `raycast_demo`, `voxel_terrain`, cache vide et
+chaud) sans message, `ctest` (render compris) vert. La recompilation au besoin ne coûte rien au démarrage nominal, et
+l'écart NVIDIA restant relève du pilote, pas des pipelines.

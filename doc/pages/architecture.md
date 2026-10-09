@@ -205,8 +205,14 @@ Shaders are written in **Slang** (`.slang` files), a single-source shading langu
 4. **Caching**: SPIR-V binaries are cached as `.spv` files with hash-based validation
 5. **Precompiled**: the build runs the shader bake tool (`source/tools/shader_bake/main.cpp`), which writes the
    SPIR-V of every engine shader, for both APIs, to `bin/assets/shaders/<renderer>/spirv/<api>/`
-   (`getPrecompiledShaderPath`); both CPack components install it and a game pack embeds it. `loadOrCompileSpirv` reads it first, then the cache, and compiles with Slang only
-   when neither matches the cache key of the current source (an edited shader, a game shader, hot reload)
+   (`getPrecompiledShaderPath`); both CPack components install it and a game pack embeds it. `loadOrCompileSpirv` reads
+   the cache, then this output, and compiles with Slang only when neither matches the cache key of the current source
+   (an edited shader, a game shader, hot reload, another Slang version)
+6. **Recovery**: stored SPIR-V is checked before a driver sees it (`checkSpirv`: header, instructions that fill the
+   file, `OpFunctionEnd` last, an entry point of the expected stage); an absent, truncated, garbled or misplaced file,
+   or one the driver still refuses (Vulkan module or pipeline creation, OpenGL compilation, spirv-cross translation of
+   the GLSL fallback: `recompileSpirv`), is compiled again from the Slang source and the result goes to the cache,
+   which is read first at the next start. The log names the file, the reason and the recompilation
 
 See [Renderer > Shader System](renderer.md) for the shader class API.
 

@@ -9,12 +9,14 @@
 #pragma once
 
 #include "renderer/gpu/Shader.h"
+#include "renderer/utils/shaderFileUtils.h"
 #include <vulkan/vulkan.h>
 
 #include <cstdint>
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -145,6 +147,14 @@ public:
 	 */
 	auto getStagesInfo() -> std::vector<VkPipelineShaderStageCreateInfo>;
 
+	/**
+	 * @brief
+	 *  Replace stored SPIR-V that the driver refused by a compilation of the Slang source (cached for the next run).
+	 * @param[in] iReason What refused it, for the log.
+	 * @return True when new SPIR-V is in use and worth a new try; false when it was already freshly compiled.
+	 */
+	auto recoverRejectedSpirv(std::string_view iReason) -> bool;
+
 protected:
 	/**
 	 * @brief
@@ -175,9 +185,13 @@ private:
 	 * @return The SPIR-V of every stage, or nothing when the compilation failed (logged).
 	 */
 	[[nodiscard]] auto compileOrGetVulkanBinaries(const std::string& iSlangSource) const
-			-> std::optional<std::unordered_map<ShaderType, std::vector<uint32_t>>>;
+			-> std::optional<renderer::utils::LoadedSpirv>;
 
 	/// SPIR-V binaries (one entry per shader stage) compiled for the Vulkan backend.
 	std::unordered_map<ShaderType, std::vector<uint32_t>> m_vulkanSpirv;
+	/// Folder the SPIR-V in use was read from, empty when it was compiled by this process.
+	std::filesystem::path m_spirvOrigin;
+	/// Slang source of the SPIR-V in use, to compile it again when the driver refuses the stored output.
+	std::string m_slangSource;
 };
 }// namespace owl::renderer::gpu::vulkan

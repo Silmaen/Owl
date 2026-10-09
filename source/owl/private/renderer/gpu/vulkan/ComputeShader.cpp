@@ -13,6 +13,7 @@
 #include "StorageBuffer.h"
 #include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
+#include "internal/utils.h"
 #include "renderer/Renderer.h"
 #include "renderer/utils/shaderFileUtils.h"
 
@@ -23,6 +24,7 @@ OWL_DIAG_DISABLE_GCC("-Wshadow")
 #include <spirv_cross.hpp>
 OWL_DIAG_POP
 
+#include <format>
 #include <sstream>
 
 namespace owl::renderer::gpu::vulkan {
@@ -80,8 +82,8 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 		OWL_CORE_ERROR("Vulkan compute shader: Slang compilation failed for '{}'.", m_name)
 		return;
 	}
-	const auto it = compiled->find(ShaderType::Compute);
-	if (it == compiled->end() || it->second.empty()) {
+	const auto it = compiled->stages.find(ShaderType::Compute);
+	if (it == compiled->stages.end() || it->second.empty()) {
 		OWL_CORE_ERROR("Vulkan compute shader: no `computeMain` entry point in '{}'.", m_name)
 		return;
 	}
@@ -102,15 +104,34 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 		return;
 	}
 
+	if (auto problem = createPipeline(spirv); problem.has_value()) {
+		// Stored SPIR-V the driver refuses: compile it again once, and retry.
+		const auto again = renderer::utils::recompileSpirv(source, iShaderName, iRenderer, /*iForVulkan=*/true,
+														   compiled->origin, *problem);
+		const auto* const retry = again.has_value() && again->stages.contains(ShaderType::Compute)
+										  ? &again->stages.at(ShaderType::Compute)
+										  : nullptr;
+		if (retry == nullptr || createPipeline(*retry).has_value()) {
+			OWL_CORE_ERROR("Vulkan compute shader: {} for '{}'.", *problem, m_name)
+			return;
+		}
+	}
+
+	if (!m_bindings.empty())
+		m_ring.init(m_descriptorLayout, {{.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+										  .descriptorCount = static_cast<uint32_t>(m_bindings.size())}});
+	m_ready = true;
+}
+
+auto ComputeShader::createPipeline(const std::vector<uint32_t>& iSpirv) -> std::optional<std::string> {
+	auto* const device = internal::VulkanCore::get().getLogicalDevice();
 	VkShaderModuleCreateInfo moduleInfo{};
 	moduleInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	moduleInfo.codeSize = spirv.size() * sizeof(uint32_t);
-	moduleInfo.pCode = spirv.data();
+	moduleInfo.codeSize = iSpirv.size() * sizeof(uint32_t);
+	moduleInfo.pCode = iSpirv.data();
 	VkShaderModule shaderModule{nullptr};
-	if (vkCreateShaderModule(device, &moduleInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan compute shader: failed to create shader module for '{}'.", m_name)
-		return;
-	}
+	if (const auto result = vkCreateShaderModule(device, &moduleInfo, nullptr, &shaderModule); result != VK_SUCCESS)
+		return std::format("vkCreateShaderModule failed ({})", internal::resultString(result));
 
 	// Slang collapses every entry point name to the SPIR-V canonical `main`.
 	const VkPipelineShaderStageCreateInfo stageInfo{.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
@@ -130,15 +151,10 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 	const auto result = vkCreateComputePipelines(device, nullptr, 1, &pipelineInfo, nullptr, &m_pipeline);
 	vkDestroyShaderModule(device, shaderModule, nullptr);
 	if (result != VK_SUCCESS) {
-		OWL_CORE_ERROR("Vulkan compute shader: vkCreateComputePipelines failed for '{}' (code {}).", m_name,
-					   static_cast<int>(result))
-		return;
+		m_pipeline = nullptr;
+		return std::format("vkCreateComputePipelines failed ({})", internal::resultString(result));
 	}
-
-	if (!m_bindings.empty())
-		m_ring.init(m_descriptorLayout, {{.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-										  .descriptorCount = static_cast<uint32_t>(m_bindings.size())}});
-	m_ready = true;
+	return std::nullopt;
 }
 
 ComputeShader::~ComputeShader() {

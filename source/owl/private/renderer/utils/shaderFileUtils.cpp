@@ -25,7 +25,9 @@ OWL_DIAG_POP
 
 #include <cctype>
 #include <exception>
+#include <expected>
 #include <format>
+#include <fstream>
 #include <functional>
 #include <mutex>
 #include <slang-tag-version.h>
@@ -376,55 +378,148 @@ auto getPrecompiledShaderPath(const std::string& iShaderName, const std::string&
 		   (iShaderName + getCacheExtension(iType));
 }
 
+auto checkSpirv(const std::vector<uint32_t>& iSpirv, const gpu::ShaderType iStage) -> std::optional<std::string> {
+	constexpr size_t headerWords = 5;
+	constexpr uint32_t opMemoryModel = 14;
+	constexpr uint32_t opEntryPoint = 15;
+	constexpr uint32_t opFunctionEnd = 56;
+	if (iSpirv.empty())
+		return "empty";
+	if (iSpirv.size() < headerWords)
+		return std::format("{} words, shorter than the SPIR-V header", iSpirv.size());
+	if (iSpirv[0] != spv::MagicNumber)
+		return std::format("magic number {:#010x} instead of {:#010x}", iSpirv[0], spv::MagicNumber);
+	if (iSpirv[3] == 0)
+		return "zero id bound";
+	const auto model = [iStage]() -> std::optional<uint32_t> {
+		switch (iStage) {
+			case gpu::ShaderType::Vertex:
+				return spv::ExecutionModelVertex;
+			case gpu::ShaderType::Geometry:
+				return spv::ExecutionModelGeometry;
+			case gpu::ShaderType::Fragment:
+				return spv::ExecutionModelFragment;
+			case gpu::ShaderType::Compute:
+				return spv::ExecutionModelGLCompute;
+			case gpu::ShaderType::None:
+				break;
+		}
+		return std::nullopt;
+	}();
+	bool memoryModel = false;
+	bool entryPoint = false;
+	uint32_t lastOpCode = 0;
+	for (size_t i = headerWords; i < iSpirv.size();) {
+		const uint32_t wordCount = iSpirv[i] >> 16u;
+		if (wordCount == 0)
+			return std::format("null instruction at word {}", i);
+		if (i + wordCount > iSpirv.size())
+			return std::format("truncated: the instruction at word {} needs {} words, {} left", i, wordCount,
+							   iSpirv.size() - i);
+		const uint32_t opCode = iSpirv[i] & 0xffffu;
+		lastOpCode = opCode;
+		memoryModel = memoryModel || opCode == opMemoryModel;
+		entryPoint = entryPoint ||
+					 (opCode == opEntryPoint && wordCount >= 2 && (!model.has_value() || iSpirv[i + 1] == *model));
+		i += wordCount;
+	}
+	// Function definitions come last, and an entry point needs one: a module cut between two instructions ends early.
+	if (lastOpCode != opFunctionEnd)
+		return "truncated: the module does not end with OpFunctionEnd";
+	if (!memoryModel || !entryPoint)
+		return model.has_value() ? std::format("no OpMemoryModel or no {} entry point", magic_enum::enum_name(iStage))
+								 : std::string{"no OpMemoryModel or no OpEntryPoint"};
+	return std::nullopt;
+}
+
 namespace {
-auto readValidStages(const std::vector<gpu::ShaderType>& iStages, const std::string& iCacheKey,
-					 const std::function<std::filesystem::path(gpu::ShaderType)>& iPathOf)
-		-> std::optional<SpirvStages> {
-	for (const auto stage: iStages)
-		if (!isShaderCacheValid(iPathOf(stage), iCacheKey))
-			return std::nullopt;
+// Why stored SPIR-V is not used.
+struct StoredProblem {
+	// Kind of refusal, from the least to the most severe.
+	enum struct Kind : uint8_t {
+		// No file: a normal miss, not logged.
+		Absent,
+		// Key of another source or Slang version: expected after an edit, logged as information.
+		Outdated,
+		// Unreadable, truncated or garbled file: logged as a warning.
+		Damaged
+	};
+	// Kind of refusal.
+	Kind kind = Kind::Absent;
+	// Files and reasons, for the log.
+	std::string reason;
+};
+
+// Read one stored stage when its key matches and its content is a well-formed module of that stage.
+auto readStoredStage(const std::filesystem::path& iFile, const std::string& iCacheKey, const gpu::ShaderType iStage)
+		-> std::expected<std::vector<uint32_t>, StoredProblem> {
+	using enum StoredProblem::Kind;
+	std::error_code error;
+	if (!exists(iFile, error))
+		return std::unexpected{StoredProblem{.kind = Absent, .reason = "absent"}};
+	if (!isShaderCacheValid(iFile, iCacheKey))
+		return std::unexpected{
+				StoredProblem{.kind = Outdated, .reason = "key of another source or Slang version, or no .hash"}};
+	const auto bytes = file_size(iFile, error);
+	if (error || bytes == 0)
+		return std::unexpected{
+				StoredProblem{.kind = Damaged,
+							  .reason = std::format("unreadable or empty ({})", error ? error.message() : "0 bytes")}};
+	if (bytes % sizeof(uint32_t) != 0)
+		return std::unexpected{
+				StoredProblem{.kind = Damaged,
+							  .reason = std::format("{} bytes, not a whole number of SPIR-V words", bytes)}};
+	// Read from disk, not the in-memory cache: a file replaced since must be checked again.
+	std::vector<uint32_t> words(static_cast<size_t>(bytes) / sizeof(uint32_t));
+	std::ifstream in(iFile, std::ios::in | std::ios::binary);
+	if (!in.read(reinterpret_cast<char*>(words.data()), static_cast<std::streamsize>(bytes)))
+		return std::unexpected{StoredProblem{.kind = Damaged, .reason = "read error"}};
+	if (auto problem = checkSpirv(words, iStage); problem.has_value())
+		return std::unexpected{StoredProblem{.kind = Damaged, .reason = std::move(*problem)}};
+	return words;
+}
+
+// Read every stage of a shader from one folder; absent only when no stage file exists, else the worst refusal.
+auto readStoredStages(const std::vector<gpu::ShaderType>& iStages, const std::string& iCacheKey,
+					  const std::function<std::filesystem::path(gpu::ShaderType)>& iPathOf)
+		-> std::expected<SpirvStages, StoredProblem> {
 	SpirvStages stages;
-	for (const auto stage: iStages) stages[stage] = readCachedShader(iPathOf(stage));
+	StoredProblem worst;
+	size_t absent = 0;
+	for (const auto stage: iStages) {
+		const auto file = iPathOf(stage);
+		auto words = readStoredStage(file, iCacheKey, stage);
+		if (words.has_value()) {
+			stages[stage] = std::move(*words);
+			continue;
+		}
+		if (words.error().kind == StoredProblem::Kind::Absent)
+			++absent;
+		worst.kind = std::max(worst.kind, words.error().kind);
+		worst.reason += std::format("{}{}: {}", worst.reason.empty() ? "" : "; ", file.string(), words.error().reason);
+	}
+	if (absent == iStages.size())
+		return std::unexpected{StoredProblem{}};
+	if (!worst.reason.empty()) {
+		// A stage missing beside present ones is a damaged set.
+		if (absent > 0)
+			worst.kind = StoredProblem::Kind::Damaged;
+		return std::unexpected{worst};
+	}
 	return stages;
 }
-}// namespace
 
-auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderName, const std::string& iRenderer,
-						const bool iForVulkan, const std::vector<gpu::ShaderType>& iStages)
-		-> std::optional<SpirvStages> {
-	OWL_PROFILE_FUNCTION()
-
+// Compile a shader from its Slang source and store the result in the working directory cache.
+auto compileAndCache(const std::string& iSource, const std::string& iShaderName, const std::string& iRenderer,
+					 const bool iForVulkan) -> std::optional<LoadedSpirv> {
 	const std::string api = iForVulkan ? "vulkan" : "opengl";
-	const auto cacheKey = getShaderCacheKey(iSource, iRenderer + "/" + iShaderName, iForVulkan);
-	// A direct lookup per asset folder: AssetLibrary::find walks every sub-folder on a miss.
-	for (const auto& folder: data::assets::getAssetSearchPaths()) {
-		if (auto stages = readValidStages(iStages, cacheKey,
-										  [&](const gpu::ShaderType iStage) -> std::filesystem::path {
-											  return folder /
-													 getPrecompiledShaderPath(iShaderName, iRenderer, api, iStage);
-										  });
-			stages.has_value()) {
-			OWL_CORE_INFO("Using precompiled {} shader {}/{} from {}.", api, iRenderer, iShaderName, folder.string())
-			return stages;
-		}
-	}
-	if (app::Application::instanced()) {
-		if (auto stages = readValidStages(iStages, cacheKey,
-										  [&](const gpu::ShaderType iStage) -> std::filesystem::path {
-											  return getShaderCachedPath(iShaderName, iRenderer, api, iStage);
-										  });
-			stages.has_value()) {
-			OWL_CORE_INFO("Using cached {} shader {}/{}.", api, iRenderer, iShaderName)
-			return stages;
-		}
-	}
-	OWL_CORE_INFO("Compiling Slang shader {}/{} for {}.", iRenderer, iShaderName, api)
 	auto compiled = compileSlangToSpirv(iSource, iShaderName, iForVulkan);
 	if (!compiled.success) {
 		OWL_CORE_ERROR("Slang compilation failed for shader {}/{} ({}).", iRenderer, iShaderName, api)
 		return std::nullopt;
 	}
 	if (app::Application::instanced()) {
+		const auto cacheKey = getShaderCacheKey(iSource, iRenderer + "/" + iShaderName, iForVulkan);
 		createCacheDirectoryIfNeeded(iRenderer, api);
 		for (const auto& [stage, data]: compiled.spirvData) {
 			const auto cachedPath = getShaderCachedPath(iShaderName, iRenderer, api, stage);
@@ -433,7 +528,95 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 			writeShaderHash(cachedPath, cacheKey);
 		}
 	}
-	return std::move(compiled.spirvData);
+	return LoadedSpirv{.stages = std::move(compiled.spirvData), .origin = {}};
+}
+}// namespace
+
+auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderName, const std::string& iRenderer,
+						const bool iForVulkan, const std::vector<gpu::ShaderType>& iStages)
+		-> std::optional<LoadedSpirv> {
+	OWL_PROFILE_FUNCTION()
+
+	const std::string api = iForVulkan ? "vulkan" : "opengl";
+	const auto cacheKey = getShaderCacheKey(iSource, iRenderer + "/" + iShaderName, iForVulkan);
+	bool damaged = false;
+	// The cache is ours: a refused entry is removed, so that it is not refused again at every start.
+	const auto tryFolder = [&](const std::function<std::filesystem::path(gpu::ShaderType)>& iPathOf,
+							   const bool iRemoveRefused) -> std::optional<LoadedSpirv> {
+		auto stages = readStoredStages(iStages, cacheKey, iPathOf);
+		if (stages.has_value())
+			return LoadedSpirv{.stages = std::move(*stages), .origin = iPathOf(iStages.front()).parent_path()};
+		if (iRemoveRefused && stages.error().kind != StoredProblem::Kind::Absent) {
+			std::error_code error;
+			for (const auto stage: iStages) {
+				std::filesystem::remove(iPathOf(stage), error);
+				std::filesystem::remove(iPathOf(stage).string() + ".hash", error);
+			}
+		}
+		if (stages.error().kind == StoredProblem::Kind::Damaged) {
+			OWL_CORE_WARN("Shader {}/{} ({}): stored SPIR-V rejected, {}.", iRenderer, iShaderName, api,
+						  stages.error().reason)
+			damaged = true;
+		} else if (stages.error().kind == StoredProblem::Kind::Outdated) {
+			OWL_CORE_INFO("Shader {}/{} ({}): stored SPIR-V outdated, {}.", iRenderer, iShaderName, api,
+						  stages.error().reason)
+		}
+		return std::nullopt;
+	};
+	if (iStages.empty())
+		return compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
+	if (app::Application::instanced()) {
+		if (auto loaded = tryFolder(
+					[&](const gpu::ShaderType iStage) -> std::filesystem::path {
+						return getShaderCachedPath(iShaderName, iRenderer, api, iStage);
+					},
+					true);
+			loaded.has_value()) {
+			OWL_CORE_INFO("Using cached {} shader {}/{}.", api, iRenderer, iShaderName)
+			return loaded;
+		}
+	}
+	// A direct lookup per asset folder: AssetLibrary::find walks every sub-folder on a miss.
+	for (const auto& folder: data::assets::getAssetSearchPaths()) {
+		if (auto loaded = tryFolder(
+					[&](const gpu::ShaderType iStage) -> std::filesystem::path {
+						return folder / getPrecompiledShaderPath(iShaderName, iRenderer, api, iStage);
+					},
+					false);
+			loaded.has_value()) {
+			OWL_CORE_INFO("Using precompiled {} shader {}/{} from {}.", api, iRenderer, iShaderName, folder.string())
+			return loaded;
+		}
+	}
+	if (!damaged) {
+		OWL_CORE_INFO("Compiling Slang shader {}/{} for {}.", iRenderer, iShaderName, api)
+		return compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
+	}
+	OWL_CORE_WARN("Shader {}/{} ({}): no usable stored SPIR-V, recompiling from the Slang source.", iRenderer,
+				  iShaderName, api)
+	auto loaded = compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
+	if (loaded.has_value())
+		OWL_CORE_WARN("Shader {}/{} ({}): recompiled, the cache now holds the new SPIR-V.", iRenderer, iShaderName, api)
+	return loaded;
+}
+
+auto recompileSpirv(const std::string& iSource, const std::string& iShaderName, const std::string& iRenderer,
+					const bool iForVulkan, const std::filesystem::path& iOrigin, const std::string_view iReason)
+		-> std::optional<LoadedSpirv> {
+	OWL_PROFILE_FUNCTION()
+
+	const std::string api = iForVulkan ? "vulkan" : "opengl";
+	if (iOrigin.empty()) {
+		OWL_CORE_ERROR("Shader {}/{} ({}): SPIR-V just compiled from the Slang source rejected, {}.", iRenderer,
+					   iShaderName, api, iReason)
+		return std::nullopt;
+	}
+	OWL_CORE_WARN("Shader {}/{} ({}): stored SPIR-V from {} rejected, {}; recompiling from the Slang source.",
+				  iRenderer, iShaderName, api, iOrigin.string(), iReason)
+	auto loaded = compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
+	if (loaded.has_value())
+		OWL_CORE_WARN("Shader {}/{} ({}): recompiled, the cache now holds the new SPIR-V.", iRenderer, iShaderName, api)
+	return loaded;
 }
 
 }// namespace owl::renderer::utils

@@ -39,6 +39,32 @@ auto loadSlangSource(const std::string& iShaderName, const std::string& iRendere
 	ss << in.rdbuf();
 	return ss.str();
 }
+// Build and link a compute program from SPIR-V; 0 when the stage or the link fails (logged).
+auto linkProgram(const std::vector<uint32_t>& iSpirv, const std::string& iName) -> GLuint {
+	const GLuint shaderId = createShaderObject(ShaderType::Compute, iSpirv, iName);
+	if (shaderId == 0)
+		return 0;
+	const GLuint program = glCreateProgram();
+	glAttachShader(program, shaderId);
+	glLinkProgram(program);
+	GLint isLinked = 0;
+	glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
+	if (isLinked == GL_FALSE) {
+		GLint logLen = 0;
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLen);
+		if (logLen > 0) {
+			std::vector<GLchar> log(static_cast<size_t>(logLen));
+			glGetProgramInfoLog(program, logLen, &logLen, log.data());
+			OWL_CORE_ERROR("OpenGL compute shader: link failed for '{}': {}.", iName, log.data())
+		}
+		glDeleteShader(shaderId);
+		glDeleteProgram(program);
+		return 0;
+	}
+	glDetachShader(program, shaderId);
+	glDeleteShader(shaderId);
+	return program;
+}
 }// namespace
 
 ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& iRenderer)
@@ -52,36 +78,20 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 		OWL_CORE_ERROR("OpenGL compute shader: Slang compilation failed for '{}'.", m_name)
 		return;
 	}
-	const auto it = compiled->find(ShaderType::Compute);
-	if (it == compiled->end() || it->second.empty()) {
+	const auto it = compiled->stages.find(ShaderType::Compute);
+	if (it == compiled->stages.end() || it->second.empty()) {
 		OWL_CORE_ERROR("OpenGL compute shader: no `computeMain` entry point in '{}'.", m_name)
 		return;
 	}
-	const auto& spirv = it->second;
-
-	const GLuint shaderId = createShaderObject(ShaderType::Compute, spirv, m_name);
-	if (shaderId == 0)
+	m_programId = linkProgram(it->second, m_name);
+	if (m_programId != 0)
 		return;
-	const GLuint program = glCreateProgram();
-	glAttachShader(program, shaderId);
-	glLinkProgram(program);
-	GLint isLinked = 0;
-	glGetProgramiv(program, GL_LINK_STATUS, &isLinked);
-	if (isLinked == GL_FALSE) {
-		GLint logLen = 0;
-		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLen);
-		if (logLen > 0) {
-			std::vector<GLchar> log(static_cast<size_t>(logLen));
-			glGetProgramInfoLog(program, logLen, &logLen, log.data());
-			OWL_CORE_ERROR("OpenGL compute shader: link failed for '{}': {}.", m_name, log.data())
-		}
-		glDeleteShader(shaderId);
-		glDeleteProgram(program);
-		return;
-	}
-	glDetachShader(program, shaderId);
-	glDeleteShader(shaderId);
-	m_programId = program;
+	// Stored SPIR-V the driver (or the GLSL translation) refuses: compile it again once, and retry.
+	if (const auto again =
+				renderer::utils::recompileSpirv(source, iShaderName, iRenderer, /*iForVulkan=*/false, compiled->origin,
+												"the OpenGL driver or the GLSL translation refused it");
+		again.has_value() && again->stages.contains(ShaderType::Compute))
+		m_programId = linkProgram(again->stages.at(ShaderType::Compute), m_name);
 }
 
 ComputeShader::~ComputeShader() {

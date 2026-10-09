@@ -61,8 +61,11 @@ float4 texColor = u_Textures[NonUniformResourceIndex(texIndex)].Sample(u_Sampler
 
 - Source: `engine_assets/shaders/<renderer>/slang/<name>.slang`
 - Compiled at build time by `OwlShaderBake` (`source/tools/`) into `bin/assets/shaders/<renderer>/spirv/<api>/`;
-  at runtime `loadOrCompileSpirv()` reads that output, then the `.spv` cache, and calls `compileSlangToSpirv()` only
+  at runtime `loadOrCompileSpirv()` reads the `.spv` cache, then that output, and calls `compileSlangToSpirv()` only
   when neither matches the cache key (hash-based invalidation): never put Slang back on the startup path
+- Stored SPIR-V goes through `checkSpirv()` before any driver: invalid SPIR-V is undefined behaviour (Mesa ANV crashed
+  with SIGFPE on the next compute pipeline). A refusal by the driver goes through `recompileSpirv()` once (Vulkan
+  `Shader::recoverRejectedSpirv`, `DrawData::buildPipeline`, compute shaders; OpenGL `Shader::buildProgram`)
 - Reflection via spirv-cross extracts uniform buffers and sampled images
 - Measured in Release (`bench/`, Slang 2026.19): ~165 ms cold session, 21–35 ms per shader, 270 ms for all 12
   (2026.1 was ~95 ms, 16–20 ms, 176 ms: the slowdown is inside Slang's IR linking, not Owl).

@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -202,21 +203,64 @@ using SpirvStages = std::unordered_map<gpu::ShaderType, std::vector<uint32_t>>;
 
 /**
  * @brief
+ *  Check that a word stream is a well-formed SPIR-V module, before a driver reads it.
+ *
+ *  The header (magic number, non-zero id bound), instructions that fill the stream exactly and end with
+ *  `OpFunctionEnd`, the `OpMemoryModel` and an `OpEntryPoint` of the expected stage. Catches truncated, garbled, foreign or misplaced files: a driver given
+ *  invalid SPIR-V is in undefined behaviour (Mesa can crash on the next pipeline), so it must not see them. What only
+ *  the driver can judge (types, capabilities) is caught at module or pipeline creation.
+ * @param[in] iSpirv SPIR-V words.
+ * @param[in] iStage Stage the module must have an entry point for, or `ShaderType::None` to accept any.
+ * @return Why the module is rejected, or nothing when it is well formed.
+ */
+OWL_API auto checkSpirv(const std::vector<uint32_t>& iSpirv, gpu::ShaderType iStage = gpu::ShaderType::None)
+		-> std::optional<std::string>;
+
+/// SPIR-V of a shader and where it comes from.
+struct LoadedSpirv {
+	/// SPIR-V per stage.
+	SpirvStages stages;
+	/// Folder of the stored stages that were read, empty when they were just compiled from the Slang source.
+	std::filesystem::path origin;
+};
+
+/**
+ * @brief
  *  Get the SPIR-V of a shader without compiling it when its output is already known.
  *
- *  In order: the stages compiled at build time (`getPrecompiledShaderPath` in an asset folder), the cache of the
- *  working directory, then a Slang compilation whose output goes to that cache. Each one is used only when its
- *  hash matches `getShaderCacheKey` of the current source, so an edited source (hot reload) is compiled again.
+ *  In order: the cache of the working directory, the stages compiled at build time (`getPrecompiledShaderPath` in an
+ *  asset folder), then a Slang compilation whose output goes to that cache. Stored stages are used only when their
+ *  hash matches `getShaderCacheKey` of the current source and `checkSpirv` accepts them, so an edited source (hot
+ *  reload), another Slang version or a damaged file is compiled again; every rejected file is logged with its reason.
+ *  The cache comes first so that a stored output a driver refused (`recompileSpirv`) stays replaced.
  * @param[in] iSource Slang source of the shader.
  * @param[in] iShaderName Shader name (Slang module name).
  * @param[in] iRenderer Renderer folder of the shader.
  * @param[in] iForVulkan True for the Vulkan target, false for OpenGL.
  * @param[in] iStages Stages that must all be found for a stored output to be used.
- * @return The SPIR-V per stage, or `std::nullopt` when the compilation fails.
+ * @return The SPIR-V per stage and its origin, or `std::nullopt` when the compilation fails.
  */
 OWL_API auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderName,
 								const std::string& iRenderer, bool iForVulkan,
-								const std::vector<gpu::ShaderType>& iStages) -> std::optional<SpirvStages>;
+								const std::vector<gpu::ShaderType>& iStages) -> std::optional<LoadedSpirv>;
+
+/**
+ * @brief
+ *  Compile a shader again after a driver refused its stored SPIR-V, and put the result in the cache.
+ *
+ *  Logs the rejected folder, the reason and the outcome. SPIR-V that was just compiled (empty origin) is not
+ *  compiled again: the same output would be refused the same way.
+ * @param[in] iSource Slang source of the shader.
+ * @param[in] iShaderName Shader name (Slang module name).
+ * @param[in] iRenderer Renderer folder of the shader.
+ * @param[in] iForVulkan True for the Vulkan target, false for OpenGL.
+ * @param[in] iOrigin `LoadedSpirv::origin` of the refused SPIR-V.
+ * @param[in] iReason What refused it, for the log.
+ * @return The new SPIR-V (empty origin), or `std::nullopt` when nothing better can be produced.
+ */
+OWL_API auto recompileSpirv(const std::string& iSource, const std::string& iShaderName, const std::string& iRenderer,
+							bool iForVulkan, const std::filesystem::path& iOrigin, std::string_view iReason)
+		-> std::optional<LoadedSpirv>;
 
 /// Output of `compileSlangToSpirv`.
 struct SlangCompilationResult {
