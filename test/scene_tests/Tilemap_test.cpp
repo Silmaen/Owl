@@ -142,7 +142,8 @@ layers:
     tiles: "1,2,3,4"
 )";
 	const core::Serializer node;
-	node.getImpl()->node.reset(YAML::Load(yaml));
+	const core::YamlDocument document{yaml};
+	node.getImpl()->node = document.getRoot();
 
 	component::Tilemap restored;
 	restored.deserialize(node);

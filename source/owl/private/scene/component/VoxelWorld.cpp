@@ -39,7 +39,7 @@ auto renderKindFrom(const std::string& iName) -> data::voxel::BlockRenderKind {
 	return data::voxel::BlockRenderKind::Opaque;
 }
 
-void parseTerrain(const YAML::Node& iNode, data::voxel::TerrainParams& oTerrain) {
+void parseTerrain(const core::YamlNode& iNode, data::voxel::TerrainParams& oTerrain) {
 	if (iNode["Seed"])
 		oTerrain.seed = iNode["Seed"].as<uint32_t>();
 	if (iNode["Frequency"])
@@ -66,7 +66,7 @@ void parseTerrain(const YAML::Node& iNode, data::voxel::TerrainParams& oTerrain)
 		oTerrain.biomes = iNode["Biomes"].as<bool>();
 	if (iNode["BiomeFrequency"])
 		oTerrain.biomeFrequency = iNode["BiomeFrequency"].as<float>();
-	if (const auto ids = iNode["BlockIds"]; ids && ids.IsSequence() && ids.size() >= 5) {
+	if (const auto ids = iNode["BlockIds"]; ids && ids.isSequence() && ids.size() >= 5) {
 		oTerrain.stone = ids[0].as<uint16_t>();
 		oTerrain.grass = ids[1].as<uint16_t>();
 		oTerrain.dirt = ids[2].as<uint16_t>();
@@ -145,24 +145,24 @@ void VoxelWorld::serialize(const core::Serializer& iOut) const {
 
 void VoxelWorld::deserialize(const core::Serializer& iNode) {
 	const auto& node = iNode.getImpl()->node;
-	if (const auto sun = node["SunDirection"]; sun && sun.IsSequence() && sun.size() >= 3)
+	if (const auto sun = node["SunDirection"]; sun && sun.isSequence() && sun.size() >= 3)
 		sunDirection = math::vec3{sun[0].as<float>(), sun[1].as<float>(), sun[2].as<float>()};
-	if (const auto amb = node["Ambient"]; amb && amb.IsSequence() && amb.size() >= 3)
+	if (const auto amb = node["Ambient"]; amb && amb.isSequence() && amb.size() >= 3)
 		ambient = math::vec3{amb[0].as<float>(), amb[1].as<float>(), amb[2].as<float>()};
 	tilesetPath.clear();
 	tileset.reset();
 	if (const auto ts = node["Tileset"]; ts)
 		tilesetPath = ts.as<std::string>();
 	registry = data::voxel::BlockRegistry{};
-	if (const auto blocks = node["Blocks"]; blocks && blocks.IsSequence()) {
-		for (const auto& blockNode: blocks) {
+	if (const auto blocks = node["Blocks"]; blocks && blocks.isSequence()) {
+		for (const auto blockNode: blocks) {
 			data::voxel::BlockType block;
 			if (blockNode["name"])
 				block.name = blockNode["name"].as<std::string>();
 			block.renderKind = blockNode["render"] ? renderKindFrom(blockNode["render"].as<std::string>())
 												   : data::voxel::BlockRenderKind::Opaque;
 			block.solid = blockNode["solid"] ? blockNode["solid"].as<bool>() : true;
-			if (const auto faces = blockNode["faces"]; faces && faces.IsSequence()) {
+			if (const auto faces = blockNode["faces"]; faces && faces.isSequence()) {
 				for (size_t f = 0; f < data::voxel::g_FaceCount && f < faces.size(); ++f)
 					block.faceTextures[f] = faces[f].as<uint16_t>();
 			}
@@ -181,13 +181,13 @@ void VoxelWorld::deserialize(const core::Serializer& iNode) {
 	if (const auto ao = node["AmbientOcclusion"]; ao)
 		ambientOcclusion = ao.as<bool>();
 	terrain = data::voxel::TerrainParams{};
-	if (const auto t = node["Terrain"]; t && t.IsMap())
+	if (const auto t = node["Terrain"]; t && t.isMap())
 		parseTerrain(t, terrain);
 	world.clear();
-	if (const auto chunks = node["Chunks"]; chunks && chunks.IsSequence()) {
-		for (const auto& chunkNode: chunks) {
+	if (const auto chunks = node["Chunks"]; chunks && chunks.isSequence()) {
+		for (const auto chunkNode: chunks) {
 			const auto coordNode = chunkNode["Coord"];
-			if (!coordNode || !coordNode.IsSequence() || coordNode.size() < 3)
+			if (!coordNode || !coordNode.isSequence() || coordNode.size() < 3)
 				continue;
 			const math::vec3i coord{coordNode[0].as<int32_t>(), coordNode[1].as<int32_t>(), coordNode[2].as<int32_t>()};
 			const auto chunk = world.getOrCreateChunk(coord);

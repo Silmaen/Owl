@@ -116,21 +116,22 @@ auto enabledToYaml(const EnabledRenderersConfig& iConfig) -> YAML::Node {
 	return out;
 }
 
-auto enabledFromYaml(const YAML::Node& iNode) -> EnabledRenderersConfig {
+auto enabledFromYaml(const core::YamlNode& iNode) -> EnabledRenderersConfig {
 	EnabledRenderersConfig cfg;
-	if (!iNode || !iNode.IsSequence())
+	if (!iNode || !iNode.isSequence())
 		return cfg;
-	for (const auto& item: iNode) {
-		if (!item.IsMap())
+	for (const auto item: iNode) {
+		if (!item.isMap())
 			continue;
 		EnabledRenderersConfig::Entry entry;
-		if (const auto n = item["Name"]; n && n.IsScalar())
+		if (const auto n = item["Name"]; n && n.isScalar())
 			entry.name = n.as<std::string>();
 		if (entry.name.empty())
 			continue;
 		if (const auto e = item["Enabled"])
 			entry.enabled = e.as<bool>(true);
-		entry.overrides = dumpYamlText(item["Overrides"]);
+		if (const auto overrides = item["Overrides"]; overrides.size() > 0)
+			entry.overrides = overrides.emit();
 		cfg.entries.push_back(std::move(entry));
 	}
 	return cfg;
@@ -167,7 +168,15 @@ auto EnabledRenderersConfig::find(const std::string& iName) const -> const Entry
 auto EnabledRenderersConfig::toYaml() const -> std::string { return YAML::Dump(enabledToYaml(*this)); }
 
 auto EnabledRenderersConfig::fromYaml(const std::string& iYaml) -> EnabledRenderersConfig {
-	return enabledFromYaml(parseYamlText(iYaml));
+	if (iYaml.empty())
+		return {};
+	try {
+		const core::YamlDocument document{iYaml};
+		return enabledFromYaml(document.getRoot());
+	} catch (const core::YamlError& iError) {
+		OWL_CORE_WARN("RenderStack: Invalid YAML config ignored ({}).", iError.what())
+		return {};
+	}
 }
 
 // ---------------------------------------------------------------- RenderStack

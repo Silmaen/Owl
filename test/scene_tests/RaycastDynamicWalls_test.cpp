@@ -159,7 +159,8 @@ TEST_F(RaycastDynamicWallsTest, DoorYamlRoundTrip) {
 	outSerializer.getImpl()->emitter << YAML::EndMap;
 	const std::string yamlText = outSerializer.getImpl()->emitter.c_str();
 
-	const YAML::Node root = YAML::Load(yamlText);
+	const core::YamlDocument document{yamlText};
+	const auto root = document.getRoot();
 	ASSERT_TRUE(root[scene::component::RaycastDoor::key()]);
 	scene::component::RaycastDoor restored;
 	const core::Serializer inSerializer;
@@ -191,7 +192,8 @@ TEST_F(RaycastDynamicWallsTest, PushWallYamlRoundTrip) {
 	outSerializer.getImpl()->emitter << YAML::EndMap;
 	const std::string yamlText = outSerializer.getImpl()->emitter.c_str();
 
-	const YAML::Node root = YAML::Load(yamlText);
+	const core::YamlDocument document{yamlText};
+	const auto root = document.getRoot();
 	ASSERT_TRUE(root[scene::component::RaycastPushWall::key()]);
 	scene::component::RaycastPushWall restored;
 	const core::Serializer inSerializer;

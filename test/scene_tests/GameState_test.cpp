@@ -121,7 +121,7 @@ TEST(GameState, serializeRoundTrip) {
 	// Deserialize.
 	const YAML::Node root = YAML::Load(serializer.getImpl()->emitter.c_str());
 	core::Serializer deserCtx;
-	deserCtx.getImpl()->node = root;
+	deserCtx.getImpl()->document = root;
 
 	GameState loaded;
 	loaded.deserialize(deserCtx);

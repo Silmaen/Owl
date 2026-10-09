@@ -72,7 +72,7 @@ void PrefabLink::deserialize(const core::Serializer& iNode) {
 		syncedVersion = iNode.getImpl()->node["syncedVersion"].as<uint32_t>();
 	if (auto mappingNode = iNode.getImpl()->node["uuidMapping"]; mappingNode) {
 		uuidMapping.clear();
-		for (const auto& entry: mappingNode) {
+		for (const auto entry: mappingNode) {
 			uuidMapping.push_back({
 					.instanceUuid = entry["inst"].as<uint64_t>(),
 					.canonicalUuid = entry["canon"].as<uint64_t>(),
@@ -81,7 +81,7 @@ void PrefabLink::deserialize(const core::Serializer& iNode) {
 	}
 	if (auto overridesNode = iNode.getImpl()->node["overrides"]; overridesNode) {
 		overriddenComponents.clear();
-		for (const auto& entry: overridesNode) overriddenComponents.push_back(entry.as<std::string>());
+		for (const auto entry: overridesNode) overriddenComponents.push_back(entry.as<std::string>());
 	}
 }
 

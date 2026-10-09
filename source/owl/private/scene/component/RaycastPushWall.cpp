@@ -36,7 +36,7 @@ void RaycastPushWall::deserialize(const core::Serializer& iNode) {
 		tilesetPath = node["tilesetPath"].as<std::string>();
 	if (node["tileIndex"])
 		tileIndex = node["tileIndex"].as<uint32_t>();
-	if (auto sdNode = node["slideDirection"]; sdNode && sdNode.IsSequence() && sdNode.size() >= 2)
+	if (auto sdNode = node["slideDirection"]; sdNode && sdNode.isSequence() && sdNode.size() >= 2)
 		slideDirection = {sdNode[0].as<float>(), sdNode[1].as<float>()};
 	if (node["slideDistance"])
 		slideDistance = node["slideDistance"].as<float>();

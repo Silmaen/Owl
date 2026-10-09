@@ -14,7 +14,10 @@
 #include "scene/Entity.h"
 #include "scene/component/components.h"
 
+#include <array>
+#include <cstddef>
 #include <string>
+#include <string_view>
 
 namespace owl::scene::component {
 
@@ -30,29 +33,55 @@ inline void serializeComponents(const Entity& iEntity, const core::Serializer& i
 
 /**
  * @brief
- *  Deserialize one registered component of an entity when its key is in the entity node.
+ *  Deserialize the components of an entity node: the mandatory ones (Transform, Visibility, Hierarchy) when present,
+ *  then every optional registered component found, in registry order.
  * @param[in,out] ioEntity The Entity to fill.
- * @param[in] iNode The YAML entity node.
- * @param[in] iDesc The component descriptor.
+ * @param[in] iEntityNode The YAML entity node (a map of component keys).
+ * @param[in] iScratch Serializer whose `node` is pointed at each component value in turn (reused across calls).
+ * @param[in] iMandatory Also read the mandatory components.
  */
-inline void deserializeComponent(Entity& ioEntity, const core::Serializer& iNode, const ComponentDescriptor& iDesc) {
-	if (auto node = iNode.getImpl()->node[iDesc.key]; node) {
-		const core::Serializer sNode;
-		sNode.getImpl()->node.reset(node);
-		iDesc.deserialize(ioEntity, sNode);
+inline void deserializeComponents(Entity& ioEntity, const core::YamlNode& iEntityNode, const core::Serializer& iScratch,
+								  const bool iMandatory) {
+	static constexpr size_t g_maxKeys = 64;
+	std::array<core::YamlNode, g_maxKeys> values;
+	std::array<std::string_view, g_maxKeys> keys;
+	size_t count = 0;
+	for (const auto child: iEntityNode) {
+		if (count == g_maxKeys)
+			break;
+		keys[count] = child.getKey();
+		values[count++] = child;
 	}
-}
-
-/**
- * @brief
- *  Deserialize every optional registered component found in an entity node.
- * @param[in,out] ioEntity The Entity to fill.
- * @param[in] iNode The YAML entity node.
- */
-inline void deserializeOptionalComponents(Entity& ioEntity, const core::Serializer& iNode) {
-	for (const auto& desc: ComponentRegistry::getAll())
-		if (desc.optional)
-			deserializeComponent(ioEntity, iNode, desc);
+	const auto lookup = [&](const std::string_view iKey) -> const core::YamlNode* {
+		for (size_t i = 0; i < count; ++i)
+			if (keys[i] == iKey)
+				return &values[i];
+		return nullptr;
+	};
+	auto& slot = iScratch.getImpl()->node;
+	if (iMandatory) {
+		if (const auto* value = lookup(Transform::key()); value != nullptr) {
+			slot = *value;
+			ioEntity.getComponent<Transform>().deserialize(iScratch);
+		}
+		if (const auto* value = lookup(Visibility::key()); value != nullptr) {
+			slot = *value;
+			ioEntity.getComponent<Visibility>().deserialize(iScratch);
+		}
+		if (const auto* value = lookup(Hierarchy::key()); value != nullptr) {
+			slot = *value;
+			ioEntity.getComponent<Hierarchy>().deserialize(iScratch);
+		}
+	}
+	for (const auto& desc: ComponentRegistry::getAll()) {
+		if (!desc.optional)
+			continue;
+		if (const auto* value = lookup(desc.key); value != nullptr) {
+			slot = *value;
+			desc.deserialize(ioEntity, iScratch);
+		}
+	}
+	slot = {};
 }
 
 }// namespace owl::scene::component

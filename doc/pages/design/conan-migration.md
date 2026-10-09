@@ -205,6 +205,7 @@ Checked on 2026-10-05 with `conan search -r conancenter` (Conan 2.33). "Owl (Con
 | msdfgen               | 1.12.1         | 1.13            | local recipe          | static  | ConanCenter stops at 1.12: its recipe, unchanged                               |
 | nfd (extended)        | 1.2.1          | 1.4.1           | local recipe          | static  | Absent from ConanCenter; GTK 3 + wayland-client (system)                       |
 | openal                | 1.24.3         | 1.25.2          | local recipe          | shared  | `openal-soft`, ConanCenter stops at 1.24.3; LGPL: shared                       |
+| rapidyaml             | —              | 0.15.2          | ConanCenter           | static  | Read side of scenes, prefabs and snapshots; pulls c4core and fast_float        |
 | slang                 | (Vulkan SDK)   | 2026.19         | local recipe          | shared  | Upstream release binaries (DepManager: 2026.1)                                 |
 | spdlog                | 1.16.0         | 1.17.0          | ConanCenter           | static  | `use_std_fmt`: no fmt dependency                                               |
 | spirv-cross           | (Vulkan SDK)   | 1.4.357.0       | ConanCenter           | static  | Only the core/glsl/cpp/reflect components                                      |

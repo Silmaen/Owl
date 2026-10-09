@@ -33,18 +33,18 @@ void emitSpeedCurve(YAML::Emitter& ioEmitter, const math::Curve& iCurve) {
 	ioEmitter << YAML::EndMap;
 }
 
-void readSpeedCurve(const YAML::Node& iNode, math::Curve& oCurve) {
+void readSpeedCurve(const core::YamlNode& iNode, math::Curve& oCurve) {
 	oCurve.clear();
-	if (!iNode || !iNode.IsMap())
+	if (!iNode || !iNode.isMap())
 		return;
 	if (const auto interp = iNode["interpolation"]) {
 		const auto cast = magic_enum::enum_cast<math::CurveInterpolation>(interp.as<std::string>());
 		if (cast.has_value())
 			oCurve.setInterpolation(cast.value());
 	}
-	if (const auto keys = iNode["keys"]; keys && keys.IsSequence()) {
-		for (const auto& entry: keys) {
-			if (entry.IsSequence() && entry.size() >= 2)
+	if (const auto keys = iNode["keys"]; keys && keys.isSequence()) {
+		for (const auto entry: keys) {
+			if (entry.isSequence() && entry.size() >= 2)
 				oCurve.addKey({entry[0].as<float>(), entry[1].as<float>()});
 		}
 	}
@@ -93,7 +93,7 @@ void AnimatedSpriteRenderer::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["loop"])
 		loop = iNode.getImpl()->node["loop"].as<bool>();
 	readSpeedCurve(iNode.getImpl()->node["speedCurve"], speedCurve);
-	if (auto rsNode = iNode.getImpl()->node["raycastSize"]; rsNode && rsNode.IsSequence() && rsNode.size() >= 2)
+	if (auto rsNode = iNode.getImpl()->node["raycastSize"]; rsNode && rsNode.isSequence() && rsNode.size() >= 2)
 		raycastSize = {rsNode[0].as<float>(), rsNode[1].as<float>()};
 	if (iNode.getImpl()->node["raycastZOffset"])
 		raycastZOffset = iNode.getImpl()->node["raycastZOffset"].as<float>();

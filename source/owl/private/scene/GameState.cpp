@@ -76,7 +76,7 @@ void GameState::serialize(const core::Serializer& iOut) const {
 
 void GameState::deserialize(const core::Serializer& iNode) {
 	m_data.clear();
-	const auto gsNode = iNode.getImpl()->node["GameState"];
+	const auto gsNode = iNode.getImpl()->document["GameState"];
 	if (!gsNode || !gsNode.IsSequence())
 		return;
 	for (const auto& entry: gsNode) {

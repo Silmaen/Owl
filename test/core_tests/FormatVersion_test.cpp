@@ -24,7 +24,7 @@ using namespace owl::core;
 namespace {
 
 auto renameOldToMid(const Serializer& ioDocument) -> bool {
-	auto& root = ioDocument.getImpl()->node;
+	auto& root = ioDocument.getImpl()->document;
 	if (!root["old"])
 		return false;
 	root["mid"] = root["old"].as<int>() * 10;
@@ -33,7 +33,7 @@ auto renameOldToMid(const Serializer& ioDocument) -> bool {
 }
 
 auto renameMidToNew(const Serializer& ioDocument) -> bool {
-	auto& root = ioDocument.getImpl()->node;
+	auto& root = ioDocument.getImpl()->document;
 	if (!root["mid"])
 		return false;
 	root["new"] = root["mid"].as<int>() + 1;
@@ -42,7 +42,7 @@ auto renameMidToNew(const Serializer& ioDocument) -> bool {
 }
 
 auto throwingStep(const Serializer& ioDocument) -> bool {
-	if (ioDocument.getImpl()->node["a"])
+	if (ioDocument.getImpl()->document["a"])
 		throw std::runtime_error("boom");
 	return true;
 }
@@ -75,11 +75,11 @@ TEST_F(FormatVersionTest, CurrentVersionCountsMigrations) {
 
 TEST_F(FormatVersionTest, MissingVersionReadsAsVersionOne) {
 	const Serializer document;
-	document.getImpl()->node = YAML::Load("Scene: x\n");
+	document.getImpl()->document = YAML::Load("Scene: x\n");
 	const auto version = readFormatVersion(document);
 	ASSERT_TRUE(version);
 	EXPECT_EQ(*version, g_UnversionedFormat);
-	document.getImpl()->node = YAML::Load("- a\n- b\n");
+	document.getImpl()->document = YAML::Load("- a\n- b\n");
 	EXPECT_EQ(readFormatVersion(document).value(), g_UnversionedFormat);
 }
 
@@ -142,10 +142,10 @@ TEST_F(FormatVersionTest, FailingMigrationIsReported) {
 
 TEST_F(FormatVersionTest, SerializerVariantMigratesInPlace) {
 	const Serializer document;
-	document.getImpl()->node = YAML::Load("old: 1\n");
+	document.getImpl()->document = YAML::Load("old: 1\n");
 	const auto version = upgradeDocument(g_fakeFormat, document, "test");
 	ASSERT_TRUE(version);
-	EXPECT_EQ(document.getImpl()->node["new"].as<int>(), 11);
+	EXPECT_EQ(document.getImpl()->document["new"].as<int>(), 11);
 	EXPECT_EQ(readFormatVersion(document).value(), 3u);
 }
 

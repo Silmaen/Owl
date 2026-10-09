@@ -1016,3 +1016,59 @@ compris) vert.
 Le démarrage tombe de 630-860 à 270-440 ms jusqu'à la première frame à froid et ne dépend plus du cache ; ce qui
 reste sur NVIDIA Vulkan (~170 ms de plus qu'Intel) n'est pas décomposé ici (pilote, création des pipelines sans
 `VkPipelineCache` : à mesurer).
+
+### 9.7 Chargement de scène, prefabs et instantanés
+
+Cause, par callgrind (`--toggle-collect` sur `applyParsed`, puis `parseBuffer` et `PrefabSerializer::instantiate`) :
+hors parsing, l'essentiel restait dans yaml-cpp. Les composants lisaient leur nœud par l'`operator[]` non constant,
+qui crée un nœud par clé absente et fusionne les `memory_holder` (75 % de `applyParsed`) ; chaque composant présent
+construisait un `core::Serializer` (un `YAML::Emitter`) ; les 40 descripteurs optionnels cherchaient chacun leur clé
+dans l'entité. Le parsing seul coûtait 50 µs par entité de 300 o (scanner à expressions régulières, un nœud alloué
+par valeur). L'instanciation de prefab réécrivait chaque entité en YAML pour la relire et reconstruisait la
+hiérarchie de toute la scène cible (76 % du coût dans une scène de 10 000 entités). Les scènes du sample, sans
+`FormatVersion`, passaient toutes par la migration 1 → 2 (85 % du chargement) : yaml-cpp, migration, réécriture.
+
+Corrections : rapidyaml 0.15.2 (ConanCenter, privé au moteur, statique) lit les scènes, prefabs et instantanés ;
+yaml-cpp écrit toujours, le format ne change pas. `core::YamlNode` est une vue en lecture seule qui reprend les
+règles de yaml-cpp (clé absente fausse, valeur vide ou `~` nulle et lue `null` en chaîne, booléens `yes` / `On` /
+`TRUE`, entiers décimaux ou `0x`, `.inf` / `.nan`, indexer un scalaire lève une erreur), si bien que les
+`deserialize` des composants n'ont changé que de type ; `YamlDocument` possède l'arbre. Les clés d'une entité sont
+lues une fois puis servies aux descripteurs dans l'ordre du registre, avec un seul `Serializer` réutilisé. Un
+document à la version courante, ou de format 1 sans `EntityLink` nommé sans identifiant, est lu tel quel ; les autres
+passent par `upgradeDocumentText` (yaml-cpp) puis sont relus. `applyEntityFromString` compare les composants par
+structure (`isSameAs`), plus par texte réémis. Le prefab copie ses composants par le registre (la sérialisation ne
+sert qu'à un composant de jeu non copiable) et ne lie que les enfants de l'instance. `EnabledRenderers` et
+`EnabledRenderersConfig::fromYaml` lisent aussi par rapidyaml.
+
+`taskset -c 6`, avant (`de59b4ba`) / après alternés, 3 répétitions, médiane des médianes, par entité sauf
+`sample/load` (par scène), load average 3,1 à 7,6 :
+
+| Banc                                         | Avant   | Après      |
+|----------------------------------------------|---------|------------|
+| `serialize/scene_from_string/10000`          | 121 µs  | 7,31 µs    |
+| `serialize/scene_from_string/1000`           | 116 µs  | 2,76 µs    |
+| `serialize/scene_parse_only/10000`           | 49,5 µs | 5,92 µs    |
+| `serialize/scene_parse_only/1000`            | 48,1 µs | 1,6-3,8 µs |
+| `serialize/entity_from_string/scene1`        | 107 µs  | 2,91 µs    |
+| `serialize/entity_from_string/scene10000`    | 143 µs  | 14,3 µs    |
+| `serialize/scene_to_string/10000` (écriture) | 22,9 µs | 22,9 µs    |
+| `prefab/instantiate/10_entities/scene0`      | 242 µs  | 4,91 µs    |
+| `prefab/instantiate/10_entities/scene10000`  | 373 µs  | 5,80 µs    |
+| `prefab/instantiate/100_entities/scene10000` | 252 µs  | 3,88 µs    |
+| `sample/load/main_menu`                      | 2,75 ms | 90 µs      |
+| `sample/load/platformer_house`               | 6,24 ms | 198 µs     |
+| `sample/load/raycast_demo`                   | 14,8 ms | 408 µs     |
+| `sample/load/world_map`                      | 2,25 ms | 75 µs      |
+| `sample/load/voxel_terrain`                  | 563 µs  | 26 µs      |
+
+Scénarios (`OwlRunner --scenario`, `taskset -c 2-7`, temps mur du processus, médiane de 3) : 162-178 ms contre
+177-181 ms, `world_map_walk` 83 contre 87 ms ; le démarrage domine. `parse_only/1000` est bimodal selon que l'arbre
+retombe sur des pages déjà servies ; à 10 000 entités, l'arbre (~27 Mo) est remappé et refauté à chaque chargement :
+avec `GLIBC_TUNABLES=glibc.malloc.mmap_threshold=…` (aucun `munmap`), `scene_from_string/10000` tombe à 3,7 µs et le
+parsing à 2,3 µs. `entity_from_string/scene10000` garde le parcours de la scène qui retrouve les enfants de l'entité
+recréée (`linkIntoHierarchy`, réduit à la seule réserve `Hierarchy`).
+
+La cible (< 10 µs par entité à 10 000 entités) est tenue en YAML : 7,3 µs, dont 5,9 µs de parsing et 1,4 µs de
+création d'entités et de composants. Un format binaire cuit dans les `.owlpack` (non fait) ne gagnerait que le
+parsing : ~1,5 à 2 µs par entité, soit ×4, au prix d'un second format à versionner et à migrer à côté du YAML que
+l'éditeur garde ; à trancher par le mainteneur, sans urgence au vu de la cible.

@@ -39,7 +39,7 @@ void SpriteRenderer::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["color"])
 		color = iNode.getImpl()->node["color"].as<math::vec4>();
 	if (auto tfNode = iNode.getImpl()->node["tilingFactor"]; tfNode) {
-		if (tfNode.IsSequence() && tfNode.size() >= 2)
+		if (tfNode.isSequence() && tfNode.size() >= 2)
 			tilingFactor = {tfNode[0].as<float>(), tfNode[1].as<float>()};
 		else
 			tilingFactor = {tfNode.as<float>(), tfNode.as<float>()};
@@ -47,7 +47,7 @@ void SpriteRenderer::deserialize(const core::Serializer& iNode) {
 	if (iNode.getImpl()->node["texture"])
 		texture = renderer::gpu::Texture2D::createFromSerializedForDeserialize(
 				iNode.getImpl()->node["texture"].as<std::string>());
-	if (auto rsNode = iNode.getImpl()->node["raycastSize"]; rsNode && rsNode.IsSequence() && rsNode.size() >= 2)
+	if (auto rsNode = iNode.getImpl()->node["raycastSize"]; rsNode && rsNode.isSequence() && rsNode.size() >= 2)
 		raycastSize = {rsNode[0].as<float>(), rsNode[1].as<float>()};
 	if (iNode.getImpl()->node["raycastZOffset"])
 		raycastZOffset = iNode.getImpl()->node["raycastZOffset"].as<float>();

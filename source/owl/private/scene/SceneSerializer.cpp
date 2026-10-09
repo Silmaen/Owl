@@ -98,40 +98,27 @@ void serializeEntity(const core::Serializer& iOut, const Entity& iEntity) {
 	iOut.getImpl()->emitter << YAML::EndMap;// Entity
 }
 
-auto createEntityFromNode(const shared<Scene>& ioScene, const core::Serializer& iNode, const uint64_t iUuid) -> Entity {
+auto createEntityFromNode(const shared<Scene>& ioScene, const core::YamlNode& iNode, const uint64_t iUuid) -> Entity {
 	std::string name;
-	if (auto tagComponent = iNode.getImpl()->node["Tag"]; tagComponent && tagComponent["tag"])
+	if (const auto tagComponent = iNode["Tag"]; tagComponent && tagComponent["tag"])
 		name = tagComponent["tag"].as<std::string>();
 	OWL_CORE_TRACE("Deserialized entity with ID = {0}, name = {1}.", iUuid, name)
 	return ioScene->createEntityWithUUID(core::UUID{iUuid}, name);
 }
 
-void deserializeEntityComponents(Entity& ioEntity, const core::Serializer& iNode) {
-	const core::Serializer sNode;
-	if (sNode.getImpl()->node.reset(iNode.getImpl()->node["Transform"]); sNode.getImpl()->node)
-		ioEntity.getComponent<component::Transform>().deserialize(sNode);
-	if (sNode.getImpl()->node.reset(iNode.getImpl()->node["Visibility"]); sNode.getImpl()->node)
-		ioEntity.getComponent<component::Visibility>().deserialize(sNode);
-	if (sNode.getImpl()->node.reset(iNode.getImpl()->node["Hierarchy"]); sNode.getImpl()->node)
-		ioEntity.getComponent<component::Hierarchy>().deserialize(sNode);
-	component::deserializeOptionalComponents(ioEntity, iNode);
-}
-
 using SeenUuids = std::unordered_set<uint64_t>;
 
-auto isValidEntityNode(const YAML::Node& iNode) -> bool {
-	return iNode.IsMap() && iNode["Entity"] && iNode["Entity"].IsScalar();
-}
+auto isValidEntityNode(const core::YamlNode& iNode) -> bool { return iNode.isMap() && iNode["Entity"].isScalar(); }
 
-auto describeEntityNode(const YAML::Node& iNode, const size_t iIndex) -> std::string {
+auto describeEntityNode(const core::YamlNode& iNode, const size_t iIndex) -> std::string {
 	std::string label = std::format("#{}", iIndex);
 	try {
-		if (iNode.IsMap() && iNode["Entity"] && iNode["Entity"].IsScalar())
-			label += std::format(" (id {})", iNode["Entity"].Scalar());
-		if (iNode.IsMap() && iNode["Tag"] && iNode["Tag"]["tag"] && iNode["Tag"]["tag"].IsScalar())
-			label += std::format(" '{}'", iNode["Tag"]["tag"].Scalar());
-		if (const auto mark = iNode.Mark(); mark.line >= 0)
-			label += std::format(" at line {}", mark.line + 1);
+		if (iNode.isMap() && iNode["Entity"].isScalar())
+			label += std::format(" (id {})", iNode["Entity"].getScalar());
+		if (iNode.isMap() && iNode["Tag"].isMap() && iNode["Tag"]["tag"].isScalar())
+			label += std::format(" '{}'", iNode["Tag"]["tag"].getScalar());
+		if (const auto line = iNode.getLine(); line > 0)
+			label += std::format(" at line {}", line);
 	} catch (...) { label += " (unreadable)"; }
 	return label;
 }
@@ -189,9 +176,9 @@ void serializePhysicsSettings(YAML::Emitter& ioEmitter, const PhysicsSettings& i
 	ioEmitter << YAML::EndMap;
 }
 
-auto deserializePhysicsSettings(const YAML::Node& iNode) -> PhysicsSettings {
+auto deserializePhysicsSettings(const core::YamlNode& iNode) -> PhysicsSettings {
 	PhysicsSettings settings;
-	if (!iNode || !iNode.IsMap())
+	if (!iNode.isMap())
 		return settings;
 	settings.tickRate = iNode["tickRate"].as<float>(settings.tickRate);
 	settings.maxStepsPerFrame = iNode["maxStepsPerFrame"].as<uint32_t>(settings.maxStepsPerFrame);
@@ -215,24 +202,34 @@ void linkIntoHierarchy(Scene& ioScene, const Entity& iEntity) {
 			hierarchy.parentId = core::UUID{0};
 		}
 	}
-	for (const auto view = ioScene.registry.view<component::Hierarchy, component::ID>(); const auto handle: view) {
-		if (view.get<component::Hierarchy>(handle).parentId == uuid &&
-			std::ranges::find(hierarchy.childrenIds, view.get<component::ID>(handle).id) == hierarchy.childrenIds.end())
-			hierarchy.childrenIds.push_back(view.get<component::ID>(handle).id);
+	for (const auto [handle, other]: ioScene.registry.view<component::Hierarchy>().each()) {
+		if (other.parentId != uuid)
+			continue;
+		if (const auto childId = ioScene.registry.get<component::ID>(handle).id;
+			std::ranges::find(hierarchy.childrenIds, childId) == hierarchy.childrenIds.end())
+			hierarchy.childrenIds.push_back(childId);
 	}
 }
 
+// The current value is written then read back, so that it compares with the incoming one structurally.
+auto isUnchanged(const core::Serializer& iCurrent, const std::string_view iKey, const core::YamlNode& iIncoming)
+		-> bool {
+	const core::YamlDocument current{iCurrent.getImpl()->emitter.c_str()};
+	return current.getRoot()[iKey].isSameAs(iIncoming);
+}
+
 template<typename Component>
-auto componentYaml(const Component& iComponent) -> std::string {
+auto isComponentUnchanged(const Component& iComponent, const core::YamlNode& iIncoming) -> bool {
 	const core::Serializer sOut;
 	sOut.getImpl()->emitter << YAML::BeginMap;
 	iComponent.serialize(sOut);
 	sOut.getImpl()->emitter << YAML::EndMap;
-	return YAML::Dump(YAML::Load(sOut.getImpl()->emitter.c_str())[Component::key()]);
+	return isUnchanged(sOut, Component::key(), iIncoming);
 }
 
 template<typename Component>
-void applyComponent(Entity& ioEntity, const YAML::Node& iEntityNode, const bool iMandatory) {
+void applyComponent(Entity& ioEntity, const core::YamlNode& iEntityNode, const bool iMandatory,
+					const core::Serializer& iScratch) {
 	const auto node = iEntityNode[Component::key()];
 	const bool present = ioEntity.hasComponent<Component>();
 	if (!node) {
@@ -242,23 +239,23 @@ void applyComponent(Entity& ioEntity, const YAML::Node& iEntityNode, const bool 
 			ioEntity.removeComponent<Component>();
 		return;
 	}
-	if (present && componentYaml(ioEntity.getComponent<Component>()) == YAML::Dump(node))
+	if (present && isComponentUnchanged(ioEntity.getComponent<Component>(), node))
 		return;
 	auto& comp = ioEntity.addOrReplaceComponent<Component>();
-	const core::Serializer sNode;
-	sNode.getImpl()->node.reset(node);
-	comp.deserialize(sNode);
+	iScratch.getImpl()->node = node;
+	comp.deserialize(iScratch);
 }
 
-auto descriptorYaml(const ComponentDescriptor& iDesc, const Entity& iEntity) -> std::string {
+auto isDescriptorUnchanged(const ComponentDescriptor& iDesc, const Entity& iEntity, const core::YamlNode& iIncoming)
+		-> bool {
 	const core::Serializer sOut;
 	sOut.getImpl()->emitter << YAML::BeginMap;
 	iDesc.serialize(iEntity, sOut);
 	sOut.getImpl()->emitter << YAML::EndMap;
-	return YAML::Dump(YAML::Load(sOut.getImpl()->emitter.c_str())[iDesc.key]);
+	return isUnchanged(sOut, iDesc.key, iIncoming);
 }
 
-void applyOptionalComponents(Entity& ioEntity, const YAML::Node& iEntityNode) {
+void applyOptionalComponents(Entity& ioEntity, const core::YamlNode& iEntityNode, const core::Serializer& iScratch) {
 	for (const auto& desc: ComponentRegistry::getAll()) {
 		if (!desc.optional)
 			continue;
@@ -269,13 +266,13 @@ void applyOptionalComponents(Entity& ioEntity, const YAML::Node& iEntityNode) {
 				desc.remove(ioEntity);
 			continue;
 		}
-		if (present && descriptorYaml(desc, ioEntity) == YAML::Dump(node))
+		if (present && isDescriptorUnchanged(desc, ioEntity, node))
 			continue;
-		const core::Serializer sNode;
-		sNode.getImpl()->node.reset(node);
-		desc.deserialize(ioEntity, sNode);
+		iScratch.getImpl()->node = node;
+		desc.deserialize(ioEntity, iScratch);
 	}
 }
+
 
 auto serializeComponentByKey(const Entity& iEntity, const std::string_view iKey) -> std::string {
 	const auto& all = ComponentRegistry::getAll();
@@ -349,23 +346,27 @@ auto SceneSerializer::parseBuffer(const std::vector<uint8_t>& iData, const std::
 	ParsedScene out;
 	out.sourceName = iSourceName;
 	try {
-		const std::string yamlStr(iData.begin(), iData.end());
-		out.serializer = mkShared<core::Serializer>();
-		out.serializer->getImpl()->node.reset(YAML::Load(yamlStr));
-		auto& root = out.serializer->getImpl()->node;
-		if (!root.IsMap() || !root["Scene"] || !root["Scene"].IsScalar()) {
+		const std::string_view text{reinterpret_cast<const char*>(iData.data()), iData.size()};
+		auto document = mkShared<const core::YamlDocument>(text, iSourceName);
+		if (const auto head = document->getRoot(); !head.isMap() || !head["Scene"].isScalar()) {
 			out.error = std::string{describe(SceneLoadError::NotAScene)};
 			out.failure = SceneLoadError::NotAScene;
-			out.serializer.reset();
 			return out;
 		}
-		if (const auto version = upgradeYamlDocument(g_sceneFormat, root, iSourceName); !version) {
-			out.error = std::string{describe(version.error())};
-			out.failure = toSceneLoadError(version.error());
-			out.serializer.reset();
-			return out;
+		if (!canReadWithoutMigration(document->getRoot(), g_sceneFormat)) {
+			std::string migrated{text};
+			if (const auto version = upgradeDocumentText(g_sceneFormat, migrated, iSourceName); !version) {
+				out.error = std::string{describe(version.error())};
+				out.failure = toSceneLoadError(version.error());
+				return out;
+			}
+			document = mkShared<const core::YamlDocument>(migrated, iSourceName);
 		}
-		if (const auto entities = root["Entities"]; entities && !entities.IsNull() && !entities.IsSequence()) {
+		out.serializer = mkShared<core::Serializer>();
+		out.serializer->getImpl()->source = document;
+		out.serializer->getImpl()->node = document->getRoot();
+		const auto root = document->getRoot();
+		if (const auto entities = root["Entities"]; entities && !entities.isNull() && !entities.isSequence()) {
 			out.error = std::string{describe(SceneLoadError::NotAScene)};
 			out.failure = SceneLoadError::NotAScene;
 			out.serializer.reset();
@@ -401,7 +402,7 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 	const auto previousPhysics = mp_scene->getPhysicsSettings();
 	const auto& source = iParsed.sourceName.empty() ? iParsed.sceneName : iParsed.sourceName;
 	std::vector<Entity> created;
-	YAML::Node current;
+	core::YamlNode current;
 	std::optional<size_t> currentIndex;
 	const auto fail = [&](const std::string_view iReason) -> SceneLoadResult {
 		const auto where = currentIndex ? std::format("entity {}", describeEntityNode(current, *currentIndex))
@@ -414,22 +415,23 @@ auto SceneSerializer::applyParsed(const ParsedScene& iParsed) const -> SceneLoad
 		return unexpected{SceneLoadError::InvalidEntity};
 	};
 	try {
-		if (const auto enabled = sData.getImpl()->node["EnabledRenderers"]; enabled)
+		const auto& root = sData.getImpl()->node;
+		if (const auto enabled = root["EnabledRenderers"]; enabled)
 			mp_scene->getEnabledRenderers() = renderer::enabledFromYaml(enabled);
-		mp_scene->getPhysicsSettings() = deserializePhysicsSettings(sData.getImpl()->node["Physics"]);
+		mp_scene->getPhysicsSettings() = deserializePhysicsSettings(root["Physics"]);
 		SeenUuids seen;
-		if (auto entities = sData.getImpl()->node["Entities"]; entities && entities.IsSequence()) {
+		if (const auto entities = root["Entities"]; entities.isSequence()) {
 			created.reserve(entities.size());
-			for (auto entity: entities) {
+			seen.reserve(entities.size());
+			const core::Serializer scratch;
+			for (const auto entity: entities) {
 				currentIndex = created.size();
-				current.reset(entity);
+				current = entity;
 				if (!isValidEntityNode(entity))
 					return fail("has no `Entity:` id");
-				const core::Serializer sEntity;
-				sEntity.getImpl()->node.reset(entity);
 				const auto uuid = uniqueUuid(entity["Entity"].as<uint64_t>(), seen, source);
-				created.push_back(createEntityFromNode(mp_scene, sEntity, uuid));
-				deserializeEntityComponents(created.back(), sEntity);
+				created.push_back(createEntityFromNode(mp_scene, entity, uuid));
+				component::deserializeComponents(created.back(), entity, scratch, true);
 			}
 		}
 	} catch (const std::exception& iEx) { return fail(std::format("is malformed ({})", iEx.what())); } catch (...) {
@@ -452,11 +454,12 @@ auto SceneSerializer::serializeEntityToString(const Entity& iEntity) -> std::str
 
 auto SceneSerializer::deserializeEntityFromString(const shared<Scene>& ioScene, const std::string& iYamlData) -> bool {
 	try {
-		const core::Serializer sEntity;
-		sEntity.getImpl()->node.reset(YAML::Load(iYamlData));
-		const auto uuid = sEntity.getImpl()->node["Entity"].as<uint64_t>();
-		auto entity = createEntityFromNode(ioScene, sEntity, uuid);
-		deserializeEntityComponents(entity, sEntity);
+		const core::YamlDocument document{iYamlData};
+		const auto root = document.getRoot();
+		const auto uuid = root["Entity"].as<uint64_t>();
+		auto entity = createEntityFromNode(ioScene, root, uuid);
+		const core::Serializer scratch;
+		component::deserializeComponents(entity, root, scratch, true);
 		linkIntoHierarchy(*ioScene, entity);
 	} catch (...) {
 		OWL_CORE_ERROR("Unable to deserialize entity from string.")
@@ -471,7 +474,8 @@ auto SceneSerializer::applyEntityFromString(const Entity& iEntity, const std::st
 		return false;
 	}
 	try {
-		const auto node = YAML::Load(iYamlData);
+		const core::YamlDocument document{iYamlData};
+		const auto node = document.getRoot();
 		if (!node["Entity"] || core::UUID{node["Entity"].as<uint64_t>()} != iEntity.getUUID()) {
 			OWL_CORE_ERROR("SceneSerializer: Entity data does not describe entity {}.",
 						   static_cast<uint64_t>(iEntity.getUUID()))
@@ -480,9 +484,10 @@ auto SceneSerializer::applyEntityFromString(const Entity& iEntity, const std::st
 		Entity entity = iEntity;
 		if (const auto tag = node["Tag"]; tag && tag["tag"])
 			entity.getComponent<component::Tag>().tag = tag["tag"].as<std::string>();
-		applyComponent<component::Transform>(entity, node, true);
-		applyComponent<component::Visibility>(entity, node, true);
-		applyOptionalComponents(entity, node);
+		const core::Serializer scratch;
+		applyComponent<component::Transform>(entity, node, true, scratch);
+		applyComponent<component::Visibility>(entity, node, true, scratch);
+		applyOptionalComponents(entity, node, scratch);
 	} catch (...) {
 		OWL_CORE_ERROR("SceneSerializer: Unable to apply entity data from string.")
 		return false;

@@ -227,8 +227,8 @@ reorganised, made discoverable and consistent. See [Owl Nest UI](nest-ui.md).
   14.3 → 0.35 ms (PR-24: D-08, P-09, B-15)
 - ![Planned][planned] Renderer2D per-frame transients, 2D sort order, UTF-8 text (PR-30: B-09, B-10, D-18)
 - ![Planned][planned] Persistent, chunked and culled tilemap (PR-31: B-13)
-- ![Planned][planned] Faster scene loading (YAML path optimised or replaced, prefab instantiation without a YAML
-  round-trip per entity)
+- ![Done][done] Faster scene loading: rapidyaml reads scenes, prefabs and snapshots, prefab instantiation copies
+  through the component registry (10 000 entities: 1.21 s → 73 ms)
 - ![Done][done] Shaders precompiled at build time (both CPack components, embedded in a game pack), so the runner
   and the editor never compile Slang at startup
 
@@ -242,7 +242,7 @@ Measured on the `bench/` harness, Null backend unless stated (source: `doc/audit
 | Renderer2D cost per quad                | 9.4 ns (`worldIndex`), 14-24 ns (transient)      | < 10 ns on every path                 |
 | GPU queue drains per frame (Vulkan)     | 2 to 4 in the runner, ≥ 10 in the editor         | 0                                     |
 | Runner frame, Vulkan vs OpenGL (NVIDIA) | 0.47–0.52 vs 0.33–0.36 ms, present-bound         | Vulkan ≤ OpenGL                       |
-| Scene load per entity                   | 134 µs (10 000 entities: 1.34 s)                 | < 10 µs                               |
+| Scene load per entity                   | 7.3 µs (10 000 entities: 73 ms), prefab 4-6 µs   | < 10 µs                               |
 | Box2D step, 5 000 bodies in contact     | 4.46 ms (single thread), 1.44 ms (8 workers)     | < 1.5 ms (multi-thread, fixed step)   |
 | Voxel meshing                           | on workers, streaming frame peak 0.35 ms (PR-24) | off the main thread, per-frame budget |
 | Cold start (real runner, GPU backend)   | 270-440 ms to first frame, no Slang compilation  | measured, then shaders precompiled    |

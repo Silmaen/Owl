@@ -67,6 +67,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Scenes, prefabs and entity snapshots are read with rapidyaml (`core::YamlNode`, yaml-cpp still writes, files unchanged): a 10 000-entity scene loads in 7.3 µs per entity instead of 121, an undo snapshot in 2.9 µs instead of 107.
+- Prefab instantiation copies the components through the registry and links only the instance's children: 4-6 µs per entity instead of 240-370.
+- A format 1 scene or prefab without a name-only `EntityLink` is read as is, without the yaml-cpp migration pass: the sample scenes load 22 to 36 times faster.
 - Lighter pull-request CI: five checks (Code Style, Linux Clang, Windows Clang, Sanitizer Address, Clang-Tidy) gate `PR Ready`; GCC and Include Check run on `main`, the Thread and UB sanitizers and the Static Analyzer nightly, and the *Clang Minimal Modules* job is removed.
 - `find_package(OwlEngine)` exposes EnTT as its only public dependency: yaml-cpp left the public headers (render-stack `defaultConfig`, `overrides` and `RenderLayer::applyConfig` carry YAML text), and imgui comes with the optional `Owl::Gui` target (`COMPONENTS Gui`, `<owlgui.h>`), `<owl.h>` no longer including `gui/utils.h`; `test_package` checks both targets.
 - The help bundle is generated in `<build>/help/` instead of `engine_assets/help/`, installed as `assets/help/` by both CPack components; `HelpPanel` falls back to its build tree.

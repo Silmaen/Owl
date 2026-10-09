@@ -667,11 +667,16 @@ A `core::DocumentFormat` is a name plus an ordered list of `core::MigrationStep`
 `migrations.size() + 1` and adding a migration is what bumps the version. To change a format:
 
 1. Write a step `auto migrateV1toV2(const core::Serializer& ioDocument) -> bool` in the format's
-   `.cpp`. It edits the YAML root in place (`ioDocument.getImpl()->node`), logs and returns false
+   `.cpp`. It edits the YAML root in place (`ioDocument.getImpl()->document`), logs and returns false
    when it cannot convert, and never touches `FormatVersion`.
 2. Append it to the format's migration array (`g_sceneMigrations` in `SceneSerializer.cpp`, ...).
 3. Change the writer to the new layout; it stamps the new version through `emitFormatVersion`.
 4. Keep an old-version file as a test fixture and check it loads through the migration.
+
+Scenes, prefabs and entity snapshots are read with rapidyaml (`core::YamlNode`, the reading rules of yaml-cpp):
+a document at the current version, or a format 1 one without a name-only `EntityLink`, is read directly; any other
+goes through the yaml-cpp migration chain (`upgradeDocumentText`) first. A new scene or prefab step must update that
+shortcut (`canReadWithoutMigration`). Components read their value from `getImpl()->node`; writing stays on yaml-cpp.
 
 ### Atomic writes
 

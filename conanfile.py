@@ -121,6 +121,7 @@ class OwlEngineConan(ConanFile):
         self.requires("tinygltf/2.9.7")
         self.requires("tinyobjloader/2.0.0-rc13")
         self.requires("ufbx/0.23.1")
+        self.requires("rapidyaml/0.15.2")
         self.requires("yaml-cpp/0.9.0")
         self.requires("zstd/1.5.7")
         if self.options.render:
