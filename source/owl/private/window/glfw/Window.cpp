@@ -10,8 +10,8 @@
 
 #include <stb_image.h>
 
-#include "Window.h"
 #include "WaylandDecorations.h"
+#include "Window.h"
 #include "core/Log.h"
 #include "debug/Profiler.h"
 #include "event/AppEvent.h"
@@ -67,7 +67,7 @@ void glfwErrorCallback(int iError, const char* iDescription) {
 	}
 }
 
-/// Skip libdecor when the compositor draws the decorations: its GTK plugin costs about 100 ms of start-up for nothing.
+// Skip libdecor when the compositor draws the decorations: its GTK plugin costs start-up time for nothing.
 void hintWaylandDecorations(const Platform iRequested) {
 	const char* display = std::getenv("WAYLAND_DISPLAY");
 	const bool serverSide = (iRequested == Platform::Wayland || iRequested == Platform::Auto) && display != nullptr &&

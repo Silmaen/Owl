@@ -12,6 +12,7 @@
 #include <window/glfw/WaylandDecorations.h>
 
 #include <cstdlib>
+#include <string>
 
 #include <optional>
 

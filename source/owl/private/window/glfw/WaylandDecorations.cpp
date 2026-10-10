@@ -23,8 +23,7 @@ namespace owl::window::glfw {
 #ifdef OWL_PLATFORM_LINUX
 namespace {
 
-// Minimal libwayland-client ABI: the opaque types and the exported functions behind the inline registry helpers of
-// wayland-client-protocol.h, so the engine needs neither the Wayland headers nor a link-time dependency.
+// The libwayland-client ABI behind the inline registry helpers: no Wayland header nor link-time dependency.
 struct WlInterface;
 using DisplayConnectFn = void* (*) (const char*);
 using DisplayDisconnectFn = void (*)(void*);
@@ -34,19 +33,17 @@ using ProxyMarshalFlagsFn = void* (*) (void*, uint32_t, const WlInterface*, uint
 using ProxyAddListenerFn = int (*)(void*, void (**)(), void*);
 using ProxyDestroyFn = void (*)(void*);
 
-/// Opcode of `wl_display.get_registry`.
+// Opcode of `wl_display.get_registry`.
 constexpr uint32_t g_displayGetRegistry = 1;
 
-/// Layout of `wl_registry_listener`.
+// Layout of `wl_registry_listener`.
 struct RegistryListener {
-	/// `global` event: one compositor global.
 	void (*global)(void*, void*, uint32_t, const char*, uint32_t);
-	/// `global_remove` event.
 	void (*globalRemove)(void*, void*, uint32_t);
 };
 
-void onGlobal(void* ioFound, [[maybe_unused]] void* iRegistry, [[maybe_unused]] uint32_t iName,
-			  const char* iInterface, [[maybe_unused]] uint32_t iVersion) {
+void onGlobal(void* ioFound, [[maybe_unused]] void* iRegistry, [[maybe_unused]] uint32_t iName, const char* iInterface,
+			  [[maybe_unused]] uint32_t iVersion) {
 	if (std::string_view{iInterface} == "zxdg_decoration_manager_v1")
 		*static_cast<bool*>(ioFound) = true;
 }
@@ -55,7 +52,6 @@ void onGlobalRemove([[maybe_unused]] void* iData, [[maybe_unused]] void* iRegist
 
 template<typename Fn>
 auto symbol(void* iLibrary, const char* iName) -> Fn {
-	// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast): dlsym returns the function address as void*.
 	return reinterpret_cast<Fn>(dlsym(iLibrary, iName));
 }
 
@@ -83,7 +79,7 @@ auto compositorDrawsDecorations() -> bool {
 					marshalFlags(display, g_displayGetRegistry, registryInterface, getVersion(display), 0, nullptr);
 			static constexpr RegistryListener listener{.global = onGlobal, .globalRemove = onGlobalRemove};
 			if (registry != nullptr) {
-				// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast,cppcoreguidelines-pro-type-const-cast): libwayland's listener ABI is an array of function pointers.
+				// libwayland reads the listener as an array of function pointers.
 				addListener(registry, reinterpret_cast<void (**)()>(const_cast<RegistryListener*>(&listener)), &found);
 				roundtrip(display);
 				destroy(registry);
