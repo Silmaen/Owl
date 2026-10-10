@@ -14,6 +14,7 @@
 #include "codeEditor/MarkdownPreview.h"
 #include "codeEditor/SvgPreview.h"
 
+#include <cstddef>
 #include <filesystem>
 #include <optional>
 #include <string>
@@ -25,10 +26,11 @@ namespace owl::nest {
  * @brief
  *  Text-editor document: edits any supported source / config / markup file.
  *
- * Backed by the vendored `ImGuiColorTextEdit` widget (MIT, see
- * `source/owl/private/gui/external/ImGuiColorTextEdit/`). Built-in syntax
- * highlighting for Lua, C, C++; custom definitions for Python, YAML, JSON,
- * Markdown, and XML/SVG (see `codeEditor::LanguageDefinitions`).
+ * Backed by the `ImGuiColorTextEdit` widget (goossens fork, Conan package
+ * `imgui-color-text-edit`), which also brings selection, multi-cursor and the
+ * find / replace bar. Built-in syntax highlighting for Lua, C, C++, Python, JSON
+ * and Markdown; custom definitions for YAML, XML/SVG and Bash (see
+ * `codeEditor::applyLanguage`).
  *
  * The document owns its own undo stack via the embedded `TextEditor` (the
  * document-level `UndoManager` stays empty — editor undo is separate from the
@@ -36,6 +38,15 @@ namespace owl::nest {
  */
 class CodeEditorDocument final : public Document {
 public:
+	/**
+	 * @brief
+	 *  Position of the main cursor as shown on the status line.
+	 */
+	struct CursorLocation {
+		size_t line = 0;///< Zero-based line.
+		size_t column = 0;///< Zero-based visual column (tabs expanded).
+	};
+
 	CodeEditorDocument(const CodeEditorDocument&) = delete;
 
 	CodeEditorDocument(CodeEditorDocument&&) = delete;
@@ -166,9 +177,24 @@ public:
 	/**
 	 * @brief
 	 *  Load the file at `iPath` into the editor. Returns false on I/O error.
+	 * @param[in] iPath The file to load.
 	 * @return True on success, false otherwise.
 	 */
 	auto loadFromFile(const std::filesystem::path& iPath) -> bool;
+
+	/**
+	 * @brief
+	 *  Location of the main cursor, (0, 0) before the document is attached.
+	 * @return The line and visual column of the main cursor.
+	 */
+	[[nodiscard]] auto cursorLocation() const -> CursorLocation;
+
+	/**
+	 * @brief
+	 *  The embedded text-editor widget (editing, selection, search, undo), null before `onAttach`.
+	 * @return The widget, or nullptr when the document is not attached.
+	 */
+	[[nodiscard]] auto editor() const -> TextEditor* { return mp_editor.get(); }
 
 	/**
 	 * @brief

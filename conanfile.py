@@ -150,7 +150,7 @@ class OwlEngineConan(ConanFile):
             self.requires("tracy/0.13.1")
         # Owl Nest only.
         if self.options.nest:
-            self.requires("imgui-color-text-edit/cci.20260417")
+            self.requires("imgui-color-text-edit/1.92.9")
             self.requires("md4c/0.5.2")
         # Transitive versions newer than the ones their ConanCenter recipes pin.
         self.requires("brotli/1.2.0", override=True)

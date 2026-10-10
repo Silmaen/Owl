@@ -193,7 +193,7 @@ Checked on 2026-10-09 with `conan search -r conancenter` (Conan 2.33). "Owl (Con
 | glfw                  | 3.4.0          | 3.5.1           | local recipe          | shared  | ConanCenter: X11 only, or its own libwayland; both backends, system Wayland    |
 | googletest            | 1.17.0         | 1.18.0          | ConanCenter (`gtest`) | static  |                                                                                |
 | imgui                 | 1.92.7-docking | 1.92.9b-docking | ConanCenter           | shared  | Backends compiled by Owl (see above)                                           |
-| imgui_color_text_edit | 1.92.7         | cci.20260417    | local recipe          | static  | Absent; DepManager's commit (v1.92.9 rewrote the cursor API)                   |
+| imgui_color_text_edit | 1.92.7         | 1.92.9          | local recipe          | static  | Absent; upstream tag, `DocPos` cursor API                                      |
 | imguizmo              | 1.92.7         | 1.10            | local recipe          | static  | ConanCenter's cci.20231114 does not build with imgui 1.92                      |
 | libpng                | 1.6.50         | 1.6.58          | ConanCenter           | static  | Transitive (msdf-atlas-gen)                                                    |
 | libsndfile            | 1.2.2          | 1.2.2           | ConanCenter           | shared  | LGPL: kept shared; flac 1.5.0 and libalsa 1.2.16.1 forced (override)           |
@@ -240,8 +240,9 @@ Every dependency moved to the latest version on ConanCenter, or upstream for a l
 | cmake (build)     | 4.4.3  | 4.4.4    | Profiles' `[replace_tool_requires]`                                      |
 | wayland-protocols | 1.45   | 1.49     | nativefiledialog-extended second source                                  |
 
-Kept: imgui-color-text-edit at cci.20260417 (v1.92.9 rewrote the cursor API, see below), simde 0.8.2 (0.8.4 is a
-release candidate), tracy 0.13.1 (latest on ConanCenter, 0.14.1 upstream). Everything else was already the latest.
+Kept: simde 0.8.2 (0.8.4 is a release candidate), tracy 0.13.1 (latest on ConanCenter, 0.14.1 upstream). Everything
+else was already the latest. imgui-color-text-edit followed (cci.20260417 → v1.92.9): `CodeEditorDocument` reads the
+`DocPos` cursor (glyph index, turned into the visual column of the status line).
 
 ## Local recipes (`conan/recipes/`)
 
@@ -255,7 +256,7 @@ ConanCenter as is.
 |--------------------------------------|-----------------------------------------------------------------------------------------------------------------|
 | `slang` 2026.19                      | Absent; building it pulls LLVM-sized dependencies, so the recipe repackages the upstream release binaries       |
 | `ufbx` 0.23.1                        | Absent; one `.c` file, upstream ships no build system                                                           |
-| `imgui-color-text-edit` cci.20260417 | Absent (goossens fork); pinned to the DepManager commit until the v1.92.9 cursor API is adopted                 |
+| `imgui-color-text-edit` 1.92.9       | Absent (goossens fork); the upstream release tag                                                                |
 | `imguizmo` 1.10                      | ConanCenter's only recent version (cci.20231114) calls `BeginChildFrame`, removed in imgui 1.92                 |
 | `nativefiledialog-extended` 1.4.1    | Absent; the GitHub archive lacks the `wayland-protocols` submodule, fetched as a second source                  |
 | `msdf-atlas-gen` 1.4                 | ConanCenter's recipe packages the command-line tool only; this one builds the library on ConanCenter's msdfgen  |
@@ -283,7 +284,6 @@ Later:
 - Vulkan validation layers (`OWL_ENABLE_VULKAN_LAYERS`) from `vulkan-validationlayers`
 - Propose the local recipes (or their new versions) to ConanCenter, msdf-atlas-gen as a library option, the
   libmp3lame clang-cl fix
-- imgui-color-text-edit v1.92.9: port `CodeEditorDocument` to the `DocPos` cursor API, then bump the recipe
 - v1.0.0: the OwlEngine Conan package published and run by the `Package` action (PR-09), a static variant, hidden
   symbol visibility (PR-27)
 
