@@ -148,6 +148,33 @@ public:
 
 	/**
 	 * @brief
+	 *  Register a callback rendered at the bottom of the main dockspace window, below the docked panels.
+	 *
+	 * The dockspace shrinks by one frame height (with spacing) to leave room for it. Intended for a status bar.
+	 * Pass an empty function to disable.
+	 * @param[in] iCallback The callback, or an empty function.
+	 */
+	void setBottomBarCallback(std::function<void()> iCallback) { m_bottomBarCallback = std::move(iCallback); }
+
+	/**
+	 * @brief
+	 *  Register a callback run each frame just before `ImGui::DockSpace`, with the dockspace ID.
+	 *
+	 * The only point in the frame where the dock tree can be rebuilt with the `DockBuilder` API.
+	 * Pass an empty function to disable.
+	 * @param[in] iCallback The callback, or an empty function.
+	 */
+	void setDockLayoutCallback(std::function<void(uint32_t)> iCallback) { m_dockLayoutCallback = std::move(iCallback); }
+
+	/**
+	 * @brief
+	 *  ID of the main dockspace, as submitted on the last frame.
+	 * @return The dockspace ID, 0 before the first docked frame.
+	 */
+	[[nodiscard]] static auto getDockSpaceId() -> uint32_t;
+
+	/**
+	 * @brief
 	 *  Pixel size at which the dedicated code-editor font was rasterised on `onAttach`.
 	 *
 	 * Rendering at this size is crisp; other sizes would require bitmap scaling.
@@ -192,6 +219,10 @@ private:
 	std::string m_iniFilePath;
 	/// Optional top-bar rendered between the dockspace window `Begin` and `DockSpace()`.
 	std::function<void()> m_topBarCallback;
+	/// Optional bottom bar rendered after `DockSpace()`, below the docked panels.
+	std::function<void()> m_bottomBarCallback;
+	/// Optional callback run before `DockSpace()` to (re)build the dock tree.
+	std::function<void(uint32_t)> m_dockLayoutCallback;
 	/// Dedicated code-editor font (Roboto at `codeFontSize()`). Set in `onAttach`.
 	ImFont* mp_codeFont = nullptr;
 

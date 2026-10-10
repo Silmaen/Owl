@@ -44,21 +44,27 @@ stateDiagram-v2
 
 ![Editor Panels](../images/editor_panels.svg)
 
-The default arrangement uses ImGui docking to organize the workspace into four
-major zones:
+The default arrangement uses ImGui docking:
 
-- **Left column** -- Scene Hierarchy (top) and Properties (bottom), stacked
-  vertically
-- **Centre** -- Viewport, the main rendering area with an overlaid toolbar
-  and optional Stats window
-- **Bottom strip** -- Content Browser and Log as tabbed panels spanning the
-  centre and right regions
-- **Right / floating** -- Additional panels (Settings, Parameters, Project
-  Settings) appear as dockable windows or modal dialogs
+- **Centre** -- the open documents (scenes, scripts, graphs, tilemaps...) as tabs, the viewport with its overlaid
+  toolbar
+- **Right column** -- Scene Hierarchy (top) and Properties (bottom); Tile Palette, Voxel Palette, Scene Settings and
+  Help join Properties as tabs
+- **Bottom strip** -- Content Browser, Log and Stats as tabs under the documents
+- **Status bar** -- one line under everything: the simulation mode (`EDIT`, `PLAYING`, `PAUSED`, the bar turns blue
+  while the scene runs), the active document and its entity count, the last autosave, the graphics backend, and the
+  warnings and errors logged since you last looked; clicking a counter opens the Log
 
-All panels can be rearranged, resized, and tabbed together freely through
-the ImGui docking system. The layout is initialized by `EditorLayer::onAttach()`
-and persists via the ImGui `imgui.ini` file.
+Two presets are available from **File > Views** and the shortcuts: **Default** (`Alt+1`) and **Hierarchy Left**
+(`Alt+2`), which moves the Scene Hierarchy to its own column left of the documents. **Reset Layout** puts every panel
+back in the place of the current preset. The preset is saved in `OwlNest_settings.yml` (`layoutPreset`).
+
+Panels tied to a document only show with it: the Tile Palette with the active tilemap, the Voxel Palette when the
+scene holds a `VoxelWorld`.
+
+All panels can still be rearranged, resized and tabbed together freely; the arrangement persists in
+`OwlNest_imgui.ini`. The default layout is built on the first launch, when the saved one has no split, and once
+after an editor update changes it (`layoutVersion`).
 
 ## Ribbon Menu
 
@@ -516,7 +522,7 @@ boom. Fix: fix the script at the first line of the traceback; the callback runs 
 
 ### Stats
 
-The Stats panel is a small overlay window that displays real-time performance
+The Stats panel, a tab of the bottom strip, displays real-time performance
 information. It can be toggled via the **Show Stats Panel** checkbox in
 **Edit > Editor Settings** (General section).
 

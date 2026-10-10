@@ -14,6 +14,17 @@ All of it lands in v0.3.0 as phase E of [Foundations](foundations.md): an ergono
 maintainer, with no new feature. It opens with a review of the main workflows (pain points listed, target layout
 agreed), then the three parts below.
 
+## Plan agreed on 10/10/2026
+
+One pull request, iterated locally: shell and layout, design tokens and typography, icons, widget kit, ribbon,
+viewport overlays, panels, assistance, then polish. Decisions: Owl amber as the only accent (blue kept for Play
+mode), Lucide for action glyphs and hand-redrawn duotone SVGs for asset kinds and components, only Owl Dark and Owl
+Light themes, command palette on `Ctrl+K`, panels on the right by default with an optional left column, thumbnails
+filling their whole tile.
+
+- **Shell and layout** — ![Done][done]: default dock layout built on the first launch (`DockLayout`), presets
+  Default and Hierarchy Left, Reset Layout, a status bar, document-bound panels shown only with their document.
+
 ## Interaction basics
 
 - Tooltips on every button, field and icon (extends the `fieldTooltip()` helper of v0.1.1 to the whole editor)

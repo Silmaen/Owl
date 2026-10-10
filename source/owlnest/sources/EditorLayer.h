@@ -11,6 +11,7 @@
 #include <owlgui.h>
 
 #include "ActionRegistry.h"
+#include "DockLayout.h"
 #include "EditorSettings.h"
 #include "GamePackager.h"
 #include "Project.h"
@@ -32,8 +33,10 @@
 #include "panel/SceneHierarchy.h"
 #include "panel/SceneSettings.h"
 #include "panel/SettingsPanel.h"
+#include "panel/StatusBar.h"
 #include "panel/VoxelPalette.h"
 
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
@@ -488,6 +491,26 @@ private:
 	 */
 	void renderWelcomeScreen();
 
+	/**
+	 * @brief
+	 *  Switch the panel arrangement and rebuild the dock tree on the next frame.
+	 * @param[in] iPreset The arrangement.
+	 */
+	void applyLayoutPreset(LayoutPreset iPreset);
+
+	/**
+	 * @brief
+	 *  Gather the state shown by the status bar.
+	 * @return The status bar state.
+	 */
+	[[nodiscard]] auto buildStatusInfo() const -> panel::StatusInfo;
+
+	/**
+	 * @brief
+	 *  Draw the status bar and route its requests (open the Log).
+	 */
+	void renderStatusBar();
+
 
 	/**
 	 * @brief
@@ -644,6 +667,12 @@ private:
 	/// Deallocation counter from the previous frame, for the memory profiler readout.
 	size_t m_lastDeallocCalls = 0;
 #endif
+	/// Default dock tree, presets and the decision to rebuild it.
+	DockLayout m_dockLayout;
+	/// One-line bar under the docked panels.
+	panel::StatusBar m_statusBar;
+	/// When the last autosave wrote something; empty before the first one.
+	std::optional<std::chrono::steady_clock::time_point> m_lastAutosave;
 	/// Per-frame Vulkan counter deltas and their 2 s maxima, for the Stats panel.
 	panel::GpuCounterMonitor m_gpuCounters;
 	/// Open documents (scenes for now; later also Lua scripts, node graphs...).

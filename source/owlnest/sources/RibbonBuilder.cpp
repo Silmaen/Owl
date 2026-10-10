@@ -117,6 +117,26 @@ void RibbonBuilder::build() {
 							  .isEnabled = [this]() -> bool { return mp_editor->m_project.isLoaded(); },
 							  .onClick = [this]() -> void { mp_editor->openSceneFlowView(); },
 							  .size = Size::Large});
+	m_ribbon.addButton(fileTab, gViews,
+					   Button{.iconName = "scene_hierarchy",
+							  .label = "Hierarchy Left",
+							  .tooltip = "Move the Hierarchy to its own column left of the documents (Alt+2; Alt+1 "
+										 "puts it back on the right)",
+							  .isChecked = [this]() -> bool {
+								  return mp_editor->m_dockLayout.getPreset() == LayoutPreset::HierarchyLeft;
+							  },
+							  .onClick = [this]() -> void {
+								  mp_editor->applyLayoutPreset(mp_editor->m_dockLayout.getPreset() ==
+																			   LayoutPreset::HierarchyLeft
+																	   ? LayoutPreset::Default
+																	   : LayoutPreset::HierarchyLeft);
+							  }});
+	m_ribbon.addButton(
+			fileTab, gViews,
+			Button{.iconName = "viewport",
+				   .label = "Reset Layout",
+				   .tooltip = "Put every panel back in its default place",
+				   .onClick = [this]() -> void { mp_editor->applyLayoutPreset(mp_editor->m_dockLayout.getPreset()); }});
 	const auto gAssets = m_ribbon.addGroup(fileTab, "Assets");
 	m_ribbon.addButton(fileTab, gAssets,
 					   Button{.iconName = "new_scene",

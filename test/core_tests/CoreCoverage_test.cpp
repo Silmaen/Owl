@@ -95,6 +95,7 @@ TEST(CoreCoverage, LogMacrosAllLevels) {
 	core::Log::init(core::Log::Level::Trace);
 	core::Log::getLogBuffer().clear();
 	const auto errorsBefore = core::Log::getLogBuffer().getErrorCount();
+	const auto warningsBefore = core::Log::getLogBuffer().getWarningCount();
 
 	// Every core and client macro reaches the log buffer.
 	OWL_CORE_TRACE("trace message {}.", 1)
@@ -110,6 +111,7 @@ TEST(CoreCoverage, LogMacrosAllLevels) {
 	OWL_CRITICAL("client critical {}.", 50)
 	EXPECT_EQ(core::Log::getLogBuffer().getEntries().size(), 10u);
 	EXPECT_EQ(core::Log::getLogBuffer().getErrorCount() - errorsBefore, 4u);// error + critical, core and client
+	EXPECT_EQ(core::Log::getLogBuffer().getWarningCount() - warningsBefore, 2u);
 	core::Log::invalidate();
 }
 

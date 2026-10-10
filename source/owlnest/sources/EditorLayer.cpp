@@ -17,6 +17,7 @@
 #include "document/TilemapDocument.h"
 #include "document/TilesetDocument.h"
 
+#include <debug/LogSink.h>
 #include <gui/FontPreviewCache.h>
 #include <gui/IconBank.h>
 #include <gui/utils.h>
@@ -318,6 +319,8 @@ void EditorLayer::onAttach() {
 		}
 	}
 
+	m_dockLayout.setPreset(DockLayout::presetFromName(m_settings.layoutPreset));
+
 	// Create the initial scene document. Its onAttach() initialises its own Viewport.
 	auto& initialDoc = ensureActiveSceneDocument();
 	m_sceneHierarchy.setUndoManager(&initialDoc.undoManager());
@@ -454,18 +457,29 @@ void EditorLayer::onAttach() {
 									});
 	m_actionRegistry.registerAction("help.context", "Help", {input::key::F1, Modifiers::None},
 									[this]() -> void { onContextualHelp(); });
+	m_actionRegistry.registerAction("view.layoutDefault", "Layout: Default", {input::key::D1, Modifiers::Alt},
+									[this]() -> void { applyLayoutPreset(LayoutPreset::Default); });
+	m_actionRegistry.registerAction("view.layoutHierarchyLeft", "Layout: Hierarchy Left", {input::key::D2, Modifiers::Alt},
+									[this]() -> void { applyLayoutPreset(LayoutPreset::HierarchyLeft); });
+	m_actionRegistry.registerAction("view.resetLayout", "Reset Layout", {},
+									[this]() -> void { applyLayoutPreset(m_dockLayout.getPreset()); });
 	// clang-format on
 
 	// Apply saved keybinding overrides
 	m_actionRegistry.loadOverrides(m_settings.keybindingOverrides);
 
 	m_ribbonBuilder.build();
-	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr)
+	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr) {
 		ui->setTopBarCallback([this]() -> void {
 			m_ribbonBuilder.onRender();
 
 			renderRecentProjectsPopup();
 		});
+		ui->setBottomBarCallback([this]() -> void { renderStatusBar(); });
+		ui->setDockLayoutCallback([this](const uint32_t iDockSpaceId) -> void {
+			std::ignore = m_dockLayout.onDockSpace(iDockSpaceId, m_settings.layoutVersion);
+		});
+	}
 
 	m_contentBrowser.attach();
 	m_contentBrowser.setSceneOpenCallback([this](const std::filesystem::path& iPath) -> void { openScene(iPath); });
@@ -494,8 +508,11 @@ void EditorLayer::onDetach() {
 
 	m_contentBrowser.detach();
 	OWL_TRACE("EditorLayer: deleted editor FrameBuffer.")
-	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr)
+	if (auto ui = app::Application::get().getImGuiLayer(); ui != nullptr) {
 		ui->setTopBarCallback({});
+		ui->setBottomBarCallback({});
+		ui->setDockLayoutCallback({});
+	}
 	m_ribbonBuilder.clear();
 
 	// Unsaved changes survive a quit too: Nest asks nothing on exit.
@@ -513,8 +530,8 @@ void EditorLayer::onUpdate(const core::Timestep& iTimeStep) {
 	gui::FontPreviewCache::get().pumpPending();
 
 	m_recovery.setInterval(static_cast<float>(m_settings.autosaveIntervalSeconds));
-	if (m_recovery.onUpdate(iTimeStep.getSeconds()))
-		m_recovery.autosave(m_documents);
+	if (m_recovery.onUpdate(iTimeStep.getSeconds()) && m_recovery.autosave(m_documents) > 0)
+		m_lastAutosave = std::chrono::steady_clock::now();
 
 	auto* activeDoc = activeSceneDocument();
 	for (const auto& docPtr: m_documents.list()) {
@@ -604,7 +621,6 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		}
 	}
 
-	renderStats(iTimeStep);
 	const auto* activeBefore = m_documents.getActive();
 	std::vector<Document*> renderList;
 	renderList.reserve(m_documents.list().size());
@@ -680,6 +696,8 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		syncActiveDocumentPanels();
 	}
 	m_logPanel.onImGuiRender();
+	// After the Content Browser and the Log: the first window submitted to a dock group is its shown tab.
+	renderStats(iTimeStep);
 	m_settingsPanel.onImGuiRender(m_settings, m_actionRegistry);
 	m_helpPanel.onImGuiRender(iTimeStep);
 	m_voxelPalette.onImGuiRender(m_voxelBrush);
@@ -753,6 +771,37 @@ void EditorLayer::renderWelcomeScreen() {
 	ImGui::End();
 	if (!open)
 		m_showWelcomeScreen = false;
+}
+
+void EditorLayer::applyLayoutPreset(const LayoutPreset iPreset) {
+	m_dockLayout.request(iPreset);
+	m_settings.layoutPreset = DockLayout::getPresetName(iPreset);
+}
+
+auto EditorLayer::buildStatusInfo() const -> panel::StatusInfo {
+	panel::StatusInfo info;
+	if (const auto* doc = m_documents.getActive(); doc != nullptr)
+		info.document = doc->title();
+	if (const auto* playing = findPlayingSceneDocument(); playing != nullptr)
+		info.mode = playing->state() == SceneDocument::State::Pause ? panel::StatusInfo::Mode::Pause
+																	: panel::StatusInfo::Mode::Play;
+	if (const auto* scene = activeSceneDocument(); scene != nullptr && scene == m_documents.getActive()) {
+		if (const auto& active = scene->getActiveScene(); active)
+			info.entityCount = active->getEntityCount();
+	}
+	if (m_lastAutosave.has_value())
+		info.secondsSinceAutosave =
+				std::chrono::duration<float>(std::chrono::steady_clock::now() - *m_lastAutosave).count();
+	info.backend = std::string{magic_enum::enum_name(renderer::gpu::RenderCommand::getApi())};
+	info.warningCount = core::Log::getLogBuffer().getWarningCount();
+	info.errorCount = core::Log::getLogBuffer().getErrorCount();
+	return info;
+}
+
+void EditorLayer::renderStatusBar() {
+	m_statusBar.onImGuiRender(buildStatusInfo());
+	if (m_statusBar.consumeOpenLogRequest())
+		ImGui::SetWindowFocus(panelWindow::log);
 }
 
 void EditorLayer::renderStats(const core::Timestep& iTimeStep) {

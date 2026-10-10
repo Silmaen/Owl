@@ -26,12 +26,16 @@ OWL_DIAG_DISABLE_CLANG("-Wzero-as-null-pointer-constant")
 #include <ImGuizmo.h>
 OWL_DIAG_POP
 
+#include <cstdint>
+
 namespace owl::gui {
 
 namespace {
 float g_uiFontSize = 20.f;
 // Requested code-editor font size, applied on the next `UiLayer::onAttach`.
 float g_codeFontSize = 13.f;
+// ID of the main dockspace, refreshed each docked frame.
+uint32_t g_dockSpaceId = 0;
 std::vector<shared<renderer::gpu::Texture>> g_deferredTextureReleases;
 
 auto resolveAssetFile(const std::filesystem::path& iRelative) -> std::filesystem::path {
@@ -52,6 +56,8 @@ void UiLayer::setUiFontSize(const float iSize) { g_uiFontSize = std::clamp(iSize
 void UiLayer::setCodeFontSize(const float iSize) { g_codeFontSize = std::clamp(iSize, 8.f, 48.f); }
 
 auto UiLayer::codeFontSize() -> float { return g_codeFontSize; }
+
+auto UiLayer::getDockSpaceId() -> uint32_t { return g_dockSpaceId; }
 
 UiLayer::UiLayer() : Layer("ImGuiLayer") {}
 
@@ -347,11 +353,17 @@ void UiLayer::initializeDocking() const {
 	style.WindowMinSize.x = 370.0f;
 	if ((io.ConfigFlags & ImGuiConfigFlags_DockingEnable) != 0) {
 		const ImGuiID dockSpaceId = ImGui::GetID("OwlDockSpace");
-		ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, 0.0f), dockSpaceFlags);
+		g_dockSpaceId = dockSpaceId;
+		if (m_dockLayoutCallback)
+			m_dockLayoutCallback(dockSpaceId);
+		const float bottomBarHeight = m_bottomBarCallback ? ImGui::GetFrameHeightWithSpacing() : 0.0f;
+		ImGui::DockSpace(dockSpaceId, ImVec2(0.0f, -bottomBarHeight), dockSpaceFlags);
 	} else {
 		OWL_CORE_WARN("Docking is not enabled.")
 	}
 	style.WindowMinSize.x = minWinSizeX;
+	if (m_bottomBarCallback)
+		m_bottomBarCallback();
 }
 
 }// namespace owl::gui

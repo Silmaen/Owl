@@ -59,7 +59,8 @@ public:
 
 	/**
 	 * @brief
-	 *  Render the panel and update the shared brush state.
+	 *  Render the panel and update the shared brush state; nothing is shown (and the brush is off) while the
+	 *  scene has no `VoxelWorld`.
 	 * @param[in,out] ioBrush The shared voxel-brush state the viewport consumes.
 	 */
 	void onImGuiRender(VoxelBrush& ioBrush);

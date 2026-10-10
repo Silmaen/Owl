@@ -59,16 +59,14 @@ void VoxelPalette::saveStructure(const std::string& iName) const {
 }
 
 void VoxelPalette::onImGuiRender(VoxelBrush& ioBrush) {
+	auto* voxelWorld = findVoxelWorld(m_scene);
+	if (voxelWorld == nullptr) {
+		ioBrush.active = false;
+		return;
+	}
 	if (!m_visible)
 		return;
 	if (!ImGui::Begin("Voxel Palette", &m_visible)) {
-		ImGui::End();
-		return;
-	}
-	auto* voxelWorld = findVoxelWorld(m_scene);
-	if (voxelWorld == nullptr) {
-		ImGui::TextDisabled("No VoxelWorld in the active scene.");
-		ioBrush.active = false;
 		ImGui::End();
 		return;
 	}

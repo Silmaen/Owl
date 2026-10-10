@@ -217,8 +217,9 @@ void TilemapDocument::onImGuiRender() {
 	}
 	ImGui::End();
 
-	// Palette panel — always rendered (`m_palette.onImGuiRender` opens its own window).
-	m_palette.onImGuiRender(&m_asset);
+	// Only the active tilemap owns the shared "Tile Palette" window, so it leaves with the last tilemap tab.
+	if (mp_editorLayer != nullptr && mp_editorLayer->getDocumentManager().getActive() == this)
+		m_palette.onImGuiRender(&m_asset);
 }
 
 void TilemapDocument::renderHierarchyPanel() {

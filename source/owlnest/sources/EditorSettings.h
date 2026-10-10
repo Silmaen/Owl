@@ -85,6 +85,10 @@ struct EditorSettings {
 	bool showCameraGizmos = true;
 	/// Seconds between two autosaves of the modified documents (crash recovery); 0 disables the autosave.
 	int autosaveIntervalSeconds = 60;
+	/// Panel arrangement (`DockLayout::getPresetName`).
+	std::string layoutPreset = "Default";
+	/// Generation of the saved dock layout; an older one is rebuilt once (`DockLayout::version`).
+	int layoutVersion = 0;
 	/// Custom keybinding overrides (action ID -> shortcut string). Only non-default bindings.
 	std::unordered_map<std::string, std::string> keybindingOverrides;
 	/// Recently opened project directories (most recent first).
