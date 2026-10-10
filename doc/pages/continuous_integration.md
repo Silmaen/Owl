@@ -298,10 +298,20 @@ docker/run.sh poetry run python ci_action.py Fuzz linux-fuzz -- --time=60
 
 ## Dependency report
 
-On `main`, Build Linux x64 / Clang ends with the `DependencyReport` action: `conan graph outdated` on `conanfile.py`
-(every option on) against ConanCenter. It drops the false positives (`cci.<date>` snapshots and date versions sorted
-above a semantic version), logs each real update as a warning, writes `output/dependency_report.json` and publishes
-the count as the `OutdatedDependencies` statistic. It never fails the build (audit G-08).
+On `main`, Build Linux x64 / Clang ends with the `DependencyReport` action. It never fails the build (audit G-08).
+
+- ConanCenter: `conan graph outdated` on `conanfile.py` (every option on) resolves the whole graph, transitive
+  packages and build tools included, the local recipes through the `owl-local` remote (registered as
+  `cmake/Conan.cmake` does, so the result does not depend on the cache); every version of each flagged package is
+  then listed on ConanCenter, because Conan's own "latest" sorts `cci.<date>` snapshots above semantic versions and
+  can hide a real update.
+- Upstream: the tags of the GitHub or GitLab repository of each source of `conan/recipes/` (second sources
+  included); sources pinned to a commit or hosted elsewhere are not checked.
+
+An update counts within its scheme (semantic or date), with the same flavour (`-docking`), and as a pre-release only
+after a pre-release; `KNOWN_FALSE_POSITIVES` keeps the few older versions that sort higher (ImGuizmo 1.83). Each update
+is logged as a warning, the list written to `output/dependency_report.json` and its count published as the
+`OutdatedDependencies` statistic (`-- --no-upstream` skips the tags).
 
 ```bash
 docker/run.sh poetry run python ci_action.py DependencyReport linux-clang-release

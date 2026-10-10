@@ -22,8 +22,9 @@ poetry run python ci_action.py <Action> <preset> [-v] [-q] [-- --extra=args]
 Available actions: Build, Test, Coverage, Clean, Documentation, CodeStyle, ClangTidy, IncludeCheck, Bench, Fuzz,
 DependencyReport, Package, Help, DefineTeamCityVariables, PublishDoc, PublishPackage.
 
-`DependencyReport <preset>` lists the Conan dependencies with a newer version on ConanCenter (`conan graph
-outdated`, false positives dropped); informative, it always returns 0.
+`DependencyReport <preset>` lists the dependencies with a newer version: every package of the Conan graph
+(transitive ones included) on ConanCenter, the local recipes' sources upstream (their tags); false positives
+dropped, informative, it always returns 0.
 
 `Fuzz <preset>` runs every `owl_*_fuzzer` of a preset built with `OWL_FUZZING=ON` (`linux-fuzz`) for a fixed time;
 any crash, leak or timeout fails it (see `doc/pages/continuous_integration.md#fuzzing`).

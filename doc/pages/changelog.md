@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest session restore: opening a project again reopens its tabs, the active tab and the selected entity (`ProjectSession` in `OwlNest_settings.yml`).
 - Owl Nest autosave and crash recovery: modified documents are copied aside every 60 s and at exit (`RecoveryManager`, outside the project), and the next opening of the project offers to recover them.
 - Actionable error messages: scene, Lua script and pack failures name the file, the entity (tag, id, line) and end with a `Fix:` hint, in the editor log and the runner (`scene::fixHint`, `pack::describe` / `pack::fixHint`, `ScriptInstance::setEntityName`).
+- Windowing evaluation in `windowing-input.md`: Owl stays on GLFW (SDL3 rejected, gamepads included), OpenAL Soft is kept, SDL GPU is not an option.
 - Benchmarks: first baseline `bench/baseline/linux-bench.json` (141 benchmarks, 112 metrics, median of 5 runs), the nightly bench pinned to the agent that measured it.
 - CodeStyle `test-assertions` sub-check: every gtest test asserts something; the 26 that only ran code now check its effect (or say `EXPECT_NO_THROW`), e.g. a trigger timer is seen firing and stopping.
 - clang-tidy and the static analyzer analyse the tests too (`test/.clang-tidy` relaxes only what a test is right to do); the 224 findings they raised are fixed.
@@ -67,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Wayland start-up skips libdecor and the GTK stack it loads when the compositor draws the decorations itself (KWin, wlroots, COSMIC): 30 ms less on KDE Plasma 6.
 - Scenes, prefabs and entity snapshots are read with rapidyaml (`core::YamlNode`, yaml-cpp still writes, files unchanged): a 10 000-entity scene loads in 7.3 µs per entity instead of 121, an undo snapshot in 2.9 µs instead of 107.
 - Prefab instantiation copies the components through the registry and links only the instance's children: 4-6 µs per entity instead of 240-370.
 - A format 1 scene or prefab without a name-only `EntityLink` is read as is, without the yaml-cpp migration pass: the sample scenes load 22 to 36 times faster.
@@ -92,6 +94,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CI: the emulated arm64 nightly builds Clang only, on a `linux-emulated` preset without coverage, benchmarks or image tests, so it fits its time limit.
 - EnTT 4.0.0 (C++20), Taskflow 4.1.0, OpenAL Soft 1.25.2, msdfgen 1.13, msdf-atlas-gen 1.4 and tinyobjloader rc13, through local Conan recipes until ConanCenter publishes them.
 - Third-party dependencies at their latest versions: glfw 3.5.1 (local recipe, its Wayland seat patch now upstream), freetype 2.14.3 and tinyxml2 11.0.0 (msdfgen recipe), libalsa 1.2.16.1 (OpenAL Soft recipe), brotli 1.2.0, flac 1.5.0 and plutovg 1.3.3 (overrides), CMake 4.4.4 build tool, wayland-protocols 1.49 (file dialogs).
+- Owl Nest code editor on imgui-color-text-edit 1.92.9 (its `DocPos` cursor API; the status line still shows the visual column), with headless tests of editing, search, undo and save.
+- Performance targets get a status: Vulkan ≤ OpenGL (PRIME present floor), Box2D (1.68 ms SSE2 by default) and the Renderer2D quads off `worldIndex` (14-24 ns) accepted as measured, the shader cache read before the precompiled SPIR-V validated.
 - CI on teamcity-github-bridge 1.11.0: PR Ready keeps a fixed check name (`checkName`), pull requests get labels by changed paths and are assigned to their author.
 - TeamCity: Include Check and PR Ready move to the root beside Code Style (GitHub checks `Include Check` and `PR Ready`).
 - CI: Windows builds compute the coverage on `main` only, no longer on pull requests.
@@ -148,7 +152,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `DependencyReport` sees every package of the graph (flac, libalsa: resolved through `owl-local` whatever the cache holds), finds the update a `cci.*` snapshot hid (plutovg 1.3.3) and checks the local recipes' sources upstream (glfw, wayland-protocols); run on the tree before the dependency round, it lists the nine updates made.
 - Nightly sanitizers: TSan ignores the GLib / Pango races of the GTK stack GLFW loads (`test/tsan.supp`), and the static analyzer no longer reports a false leak in `SystemSchedule_test.cpp`.
+- Sanitizer Thread on `main`: the races inside the glycin image loader, GIO and the Vulkan validation layer (uninstrumented system libraries) are suppressed, so `owl_wayland_smoke` and the Vulkan image tests pass again.
 - `conan create` exports `source/tools`, which the engine build needs since `OwlShaderBake`.
 - Runner and editor start without compiling Slang: the build compiles the engine shaders to SPIR-V (`OwlShaderBake`, into `bin/assets`, installed in both CPack components and embedded in a game pack), compute shaders included, and `renderer::utils::loadOrCompileSpirv` uses them before the cache when their key matches the source; first frame 630-860 → 270-440 ms with an empty cache, 440-570 → 270-410 ms with a warm one.
 - Slang warning 41012 is filtered again: Slang 2026.19 prints it as `warning[E41012]`.

@@ -10,6 +10,7 @@
 
 #include <stb_image.h>
 
+#include "WaylandDecorations.h"
 #include "Window.h"
 #include "core/Log.h"
 #include "debug/Profiler.h"
@@ -20,6 +21,7 @@
 #include "renderer/gpu/RenderAPI.h"
 #include "renderer/gpu/RenderCommand.h"
 
+#include <cstdlib>
 #include <thread>
 
 namespace owl::window::glfw {
@@ -65,6 +67,16 @@ void glfwErrorCallback(int iError, const char* iDescription) {
 	}
 }
 
+// Skip libdecor when the compositor draws the decorations: its GTK plugin costs start-up time for nothing.
+void hintWaylandDecorations(const Platform iRequested) {
+	const char* display = std::getenv("WAYLAND_DISPLAY");
+	const bool serverSide = (iRequested == Platform::Wayland || iRequested == Platform::Auto) && display != nullptr &&
+							*display != '\0' && compositorDrawsDecorations();
+	glfwInitHint(GLFW_WAYLAND_LIBDECOR, serverSide ? GLFW_WAYLAND_DISABLE_LIBDECOR : GLFW_WAYLAND_PREFER_LIBDECOR);
+	if (serverSide)
+		OWL_CORE_INFO("GLFW: The compositor draws the window decorations, libdecor not loaded.")
+}
+
 auto initGlfw(const Platform iRequested) -> bool {
 	OWL_PROFILE_FUNCTION()
 
@@ -76,6 +88,7 @@ auto initGlfw(const Platform iRequested) -> bool {
 	} else {
 		glfwInitHint(GLFW_PLATFORM, hint);
 	}
+	hintWaylandDecorations(iRequested);
 	bool success = glfwInit() == GLFW_TRUE;
 	if (!success && hint != GLFW_ANY_PLATFORM) {
 		OWL_CORE_WARN("GLFW: Could not initialise the {} platform, falling back to auto.", platformName(iRequested))

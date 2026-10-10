@@ -10,6 +10,7 @@
 
 #include "EditorLayer.h"
 #include "EditorSettings.h"
+#include "codeEditor/TextLayout.h"
 #include "external/imgui_text_edit.h"
 
 #include <app/Application.h>
@@ -153,16 +154,21 @@ void CodeEditorDocument::onImGuiRender() {
 			else if (m_language == codeEditor::Language::Xml)
 				m_svgPreview.render(ImVec2{previewW, bodyH});
 		}
-		// Footer status line.
-		int line = 0;
-		int column = 0;
-		mp_editor->GetMainCursor(line, column);
-		ImGui::TextDisabled("%s | Line %d, Col %d | %s", codeEditor::languageName(m_language), line + 1, column + 1,
+		const auto [line, column] = cursorLocation();
+		ImGui::TextDisabled("%s | Line %zu, Col %zu | %s", codeEditor::languageName(m_language), line + 1, column + 1,
 							mp_editor->IsOverwriteEnabled() ? "OVR" : "INS");
 	}
 	ImGui::End();
 	if (codeFont != nullptr)
 		ImGui::PopFont();
+}
+
+auto CodeEditorDocument::cursorLocation() const -> CursorLocation {
+	if (!mp_editor)
+		return {};
+	const auto pos = mp_editor->GetMainCursorPosition();
+	return {.line = pos.line,
+			.column = codeEditor::visualColumn(mp_editor->GetLineText(pos.line), pos.index, mp_editor->GetTabSize())};
 }
 
 auto CodeEditorDocument::save() -> bool {

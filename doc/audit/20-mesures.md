@@ -1134,3 +1134,15 @@ vidé :
 Validation Vulkan (`--validation`, NVIDIA et Intel, `platformer_house`, `raycast_demo`, `voxel_terrain`, cache vide et
 chaud) sans message, `ctest` (render compris) vert. La recompilation au besoin ne coûte rien au démarrage nominal, et
 l'écart NVIDIA restant relève du pilote, pas des pipelines.
+
+### 9.9 Conclusion : décisions du mainteneur (2026-10-10)
+
+| Cible                            | Décision                                                                                                             |
+|----------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| Frame runner Vulkan ≤ OpenGL     | Acceptée en l'état : plancher de présentation PRIME sous Wayland, travail hors attente 0,03-0,11 ms au-dessus (§9.3) |
+| Pas Box2D < 1,5 ms, 5 000 corps  | Écart accepté : 1,68 ms à 8 workers en SSE2 par défaut, 1,44 ms en AVX2 optionnel (§9.4)                             |
+| SPIR-V stocké                    | Validé : le cache est lu avant le SPIR-V précompilé, un précompilé refusé ne l'est qu'une fois (§9.8)                |
+| Coût par quad Renderer2D < 10 ns | Gardé : les quads hors `worldIndex` restent à 14-24 ns, sans TRS passé au shader ni API non possédante (§9.5)        |
+
+Les autres cibles sont tenues ; seule reste à mesurer la cible « 0 vidage par frame » dans l'éditeur (le runner est à
+0 depuis le §8.5). Le tableau des cibles de `doc/pages/design/foundations.md` porte ces statuts.

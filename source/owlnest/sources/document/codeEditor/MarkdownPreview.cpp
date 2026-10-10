@@ -367,7 +367,7 @@ void MarkdownPreview::renderCodeBlock(const MdCodeBlock& iCb, size_t& ioCodeInde
 	const int lines = std::clamp(countLines(iCb.text), 1, 30);
 	const float height = static_cast<float>(lines) * lineH + 16.0f;
 	const std::string title = "##md_code_" + std::to_string(ioCodeIndex);
-	entry.editor->Render(title.c_str(), ImVec2{0.0f, height}, /*border=*/true);
+	entry.editor->Render(title.c_str(), ImVec2{0.0f, height}, ImGuiChildFlags_Borders);
 	if (codeFont != nullptr)
 		ImGui::PopFont();
 }
