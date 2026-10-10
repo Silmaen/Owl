@@ -40,6 +40,7 @@ falls back to `auto` with a warning instead of aborting. The platform in use is 
 | Cursor capture         | Pointer constraints + relative pointer (GLFW)                              | Grab + raw motion                 |
 | Fullscreen             | `xdg_toplevel.set_fullscreen` on the primary monitor; position ignored     | Video mode switch                 |
 | Title, resize          | Supported                                                                  | Supported                         |
+| Decorations            | Server-side when offered (libdecor then skipped), else libdecor            | Window manager                    |
 
 1. `platform::installDesktopEntry` writes `$XDG_DATA_HOME/applications/<app_id>.desktop` (`NoDisplay=true`, so no
    menu entry) and only rewrites it when its content changes; opt out with `installDesktopEntry: false` in
@@ -136,6 +137,11 @@ fixed it upstream.
   for the frame callback with a 20 ms timeout. Owl still paces OpenGL itself: on the headless weston of the smoke
   test, interval 1 gives irregular frames (median 13.3 ms, p95 20.8 ms, the timeout firing every other frame) where
   the pacer holds 16.67 ms ± 0.1 ms. To be measured again on a visible desktop before switching.
+- **libdecor loads GTK.** With libdecor, `glfwInit` loads its GTK plugin (GTK, Pango, the glycin image loader and its
+  threads) even when the compositor draws the decorations itself. The engine asks the compositor first
+  (`zxdg_decoration_manager_v1`, KWin, wlroots, COSMIC) and tells GLFW to skip libdecor then: start-up drops from
+  309 ms to 279 ms on KDE Plasma 6 (Vulkan, warm, median of 3). GNOME and weston have no server-side decorations
+  and keep libdecor.
 
 ## SDL3 evaluation (v0.3.0, Done): rejected
 

@@ -9,6 +9,9 @@
 #include "testHelper.h"
 
 #include <window/Window.h>
+#include <window/glfw/WaylandDecorations.h>
+
+#include <cstdlib>
 
 #include <optional>
 
@@ -64,3 +67,16 @@ TEST(WindowPlatform, nullWindow) {
 	EXPECT_EQ(wnd->getPresentedFrames(), 2u);
 	owl::core::Log::invalidate();
 }
+
+#ifdef OWL_PLATFORM_LINUX
+TEST(WindowPlatform, noCompositorNoServerDecorations) {
+	const char* previous = std::getenv("WAYLAND_DISPLAY");
+	const std::string saved = previous != nullptr ? previous : "";
+	setenv("WAYLAND_DISPLAY", "owl-test-no-such-compositor", 1);
+	EXPECT_FALSE(owl::window::glfw::compositorDrawsDecorations());
+	if (previous != nullptr)
+		setenv("WAYLAND_DISPLAY", saved.c_str(), 1);
+	else
+		unsetenv("WAYLAND_DISPLAY");
+}
+#endif
