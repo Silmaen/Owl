@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <functional>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -149,6 +150,32 @@ private:
 	std::atomic<bool> m_scanInProgress = false;
 	/// Request a rescan of the current directory on the next frame.
 	bool m_rescanRequested = false;
+	/// Text typed in the search field; filters the current folder by name.
+	std::string m_searchFilter;
+	/// Show a list of rows instead of a grid of tiles.
+	bool m_listView = false;
+	/// Side of a grid tile, in pixels (the thumbnail size).
+	float m_tileSize = 88.f;
+	/// Image thumbnails of the current folder, by file path; cleared when the folder changes.
+	std::unordered_map<std::string, shared<renderer::gpu::Texture2D>> m_thumbnails;
+	/// Folder the thumbnails belong to.
+	std::filesystem::path m_thumbnailFolder;
+
+	/**
+	 * @brief
+	 *  Thumbnail of an image file, loaded on first use (a few per frame, so a large folder never stalls a frame).
+	 * @param[in] iPath The file.
+	 * @param[in,out] ioBudget Loads still allowed this frame.
+	 * @return The texture, or null when the file is not an image or not loaded yet.
+	 */
+	auto getThumbnail(const std::filesystem::path& iPath, int& ioBudget) -> shared<renderer::gpu::Texture2D>;
+
+	/**
+	 * @brief
+	 *  Open a file with the editor matching its type, or enter a folder.
+	 * @param[in] iEntry The folder or file.
+	 */
+	void openEntry(const std::filesystem::directory_entry& iEntry);
 
 	/**
 	 * @brief

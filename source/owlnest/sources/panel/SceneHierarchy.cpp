@@ -17,7 +17,11 @@
 #include "../document/Document.h"
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
 #include <gui/utils.h>
+#include <gui/widgets/EmptyState.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/SearchField.h>
 #include <gui/widgets/SectionHeader.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
@@ -29,6 +33,8 @@
 #include <scene/PrefabSerializer.h>
 
 #include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <format>
@@ -125,6 +131,43 @@ void drawOverrideMarker(const gui::widgets::SectionHeaderResult& iHeader) {
 		ImGui::SetTooltip("Overrides the prefab: kept by Update from Prefab");
 }
 
+// Icon of the component that best says what an entity is, null for a plain group.
+auto entityIconName(const scene::Entity& iEntity) -> const char* {
+	if (iEntity.hasComponent<Camera>())
+		return "comp_camera";
+	if (iEntity.hasComponent<SpriteRenderer>())
+		return "comp_sprite";
+	if (iEntity.hasComponent<AnimatedSpriteRenderer>())
+		return "comp_animated_sprite";
+	if (iEntity.hasComponent<CircleRenderer>())
+		return "comp_circle";
+	if (iEntity.hasComponent<Text>())
+		return "comp_text";
+	if (iEntity.hasComponent<UiButton>())
+		return "comp_ui_button";
+	if (iEntity.hasComponent<UiText>())
+		return "comp_ui_text";
+	if (iEntity.hasComponent<UiImage>())
+		return "comp_ui_image";
+	if (iEntity.hasComponent<UiPanel>())
+		return "comp_ui_panel";
+	if (iEntity.hasComponent<Canvas>())
+		return "comp_canvas";
+	if (iEntity.hasComponent<VoxelWorld>())
+		return "comp_voxel_world";
+	if (iEntity.hasComponent<Player>())
+		return "comp_player";
+	if (iEntity.hasComponent<Trigger>())
+		return "comp_trigger";
+	if (iEntity.hasComponent<SoundSource>())
+		return "comp_sound";
+	if (iEntity.hasComponent<LuaScript>())
+		return "comp_lua_script";
+	if (iEntity.hasComponent<PhysicBody>())
+		return "comp_physics";
+	return nullptr;
+}
+
 auto componentIconName(const char* iCompName) -> const char* {
 	static const std::unordered_map<std::string_view, const char*> map = {
 			{"Transform", "comp_transform"},     {"Camera", "comp_camera"},
@@ -180,6 +223,12 @@ void SceneHierarchy::renderHierarchy() {
 	}
 
 	if (m_context) {
+		renderHierarchyToolbar();
+		if (!m_searchFilter.empty()) {
+			renderSearchResults();
+			ImGui::End();
+			return;
+		}
 		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
 			m_selection = {};
 
@@ -208,6 +257,44 @@ void SceneHierarchy::renderHierarchy() {
 		}
 	}
 	ImGui::End();
+}
+
+void SceneHierarchy::renderHierarchyToolbar() {
+	if (gui::widgets::iconButton("addEntity", {.glyph = gui::icon::plus,
+											   .tooltip = "Add entity",
+											   .description = "Create an empty entity, or a child of the selection."}))
+		ImGui::OpenPopup("##addEntity");
+	if (ImGui::BeginPopup("##addEntity")) {
+		const auto& iconBank = gui::IconBank::instance();
+		if (iconBank.menuItem("add_entity", "Empty entity"))
+			std::ignore = getCommandTarget().execute("entity.create", {});
+		if (iconBank.menuItem("add_child_entity", "Child of the selection", nullptr, static_cast<bool>(m_selection)))
+			std::ignore = getCommandTarget().execute(
+					"entity.create", {{"parent", static_cast<int64_t>(static_cast<uint64_t>(m_selection.getUUID()))}});
+		ImGui::EndPopup();
+	}
+	ImGui::SameLine();
+	std::ignore = gui::widgets::searchField("##hierarchySearch", m_searchFilter, "Search entities");
+	ImGui::Separator();
+}
+
+void SceneHierarchy::renderSearchResults() {
+	size_t matches = 0;
+	for (const auto& entity: m_context->getAllEntities()) {
+		if (!entity.hasComponent<Tag>())
+			continue;
+		const auto& tag = entity.getComponent<Tag>().tag;
+		if (!gui::widgets::matchesFilter(tag, m_searchFilter))
+			continue;
+		++matches;
+		ImGui::PushID(static_cast<int>(static_cast<uint32_t>(entity)));
+		if (ImGui::Selectable(tag.c_str(), entity == m_selection))
+			m_selection = entity;
+		ImGui::PopID();
+	}
+	if (matches == 0)
+		std::ignore = gui::widgets::emptyState(gui::icon::search, "No entity matches",
+											   "Check the spelling, or clear the search to see the whole scene.");
 }
 
 void SceneHierarchy::renderRootEntities() {
@@ -314,11 +401,24 @@ void SceneHierarchy::drawEntityNode(const scene::Entity& iEntity) {
 	// Tint prefab instance entities with a distinct colour.
 	const bool isPartOfPrefab = static_cast<bool>(findPrefabRoot(iEntity, *m_context));
 	if (isPartOfPrefab)
-
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.4f, 0.7f, 1.0f, 1.0f});
+		ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(gui::UiLayer::getTheme().info));
 
 	ImGui::PushID(static_cast<int>(static_cast<uint32_t>(iEntity)));
-	const bool open = ImGui::TreeNodeEx(tag.c_str(), flag);
+	const char* entityIcon = entityIconName(iEntity);
+	const float iconSize = ImGui::GetFontSize();
+	const std::string label = entityIcon != nullptr ? std::format("{}{}###node", std::string(4, ' '), tag)
+													: std::format("{}###node", tag);
+	const bool open = ImGui::TreeNodeEx(label.c_str(), flag);
+	if (entityIcon != nullptr) {
+		if (const auto info = gui::IconBank::instance().getIcon(entityIcon, iconSize); info.has_value()) {
+			const auto min = ImGui::GetItemRectMin();
+			const float x = std::floor(min.x + ImGui::GetTreeNodeToLabelSpacing());
+			const float y = std::floor(min.y + (ImGui::GetItemRectSize().y - iconSize) * 0.5f);
+			ImGui::GetWindowDrawList()->AddImage(static_cast<ImTextureID>(info->textureId), {x, y},
+												 {x + iconSize, y + iconSize}, gui::vec(info->uv0),
+												 gui::vec(info->uv1));
+		}
+	}
 	const bool treeNodeClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen();
 
 	// Bind context menu to the tree node item (must be right after TreeNodeEx).
@@ -550,6 +650,10 @@ void SceneHierarchy::renderProperties() {
 		m_inspector.beginFrame(m_selection, m_context.get(), mp_undoManager);
 		if (m_selection)
 			drawComponents(m_selection);
+		else if (m_context)
+			std::ignore = gui::widgets::emptyState(gui::icon::mousePointer2, "No entity selected",
+												   "Click an entity in the viewport or in the Hierarchy to edit its "
+												   "components here.");
 		m_inspector.endFrame(m_context.get(), mp_undoManager);
 	}
 	ImGui::End();

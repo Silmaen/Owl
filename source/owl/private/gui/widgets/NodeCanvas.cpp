@@ -9,6 +9,9 @@
 
 #include "gui/widgets/NodeCanvas.h"
 
+#include "gui/UiLayer.h"
+#include "gui/utils.h"
+
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_DISABLE_CLANG("-Wshadow")
@@ -229,10 +232,10 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 		const float fontSize = ImGui::GetFontSize() * m_viewState.mFactor;
 
 		if (!node.title.empty()) {
-			constexpr float kMinTitleFontSize = 8.0f;
 			constexpr float kTopGap = 3.0f;
 			const float zoom = m_viewState.mFactor;
-			const float titleFontSize = std::max(kMinTitleFontSize, ImGui::GetFontSize() * zoom);
+			// Readable whatever the zoom: never below three quarters of the UI font.
+			const float titleFontSize = std::max(ImGui::GetFontSize() * 0.75f, ImGui::GetFontSize() * zoom);
 			const auto titleSize = font->CalcTextSizeA(titleFontSize, FLT_MAX, 0.0f, node.title.c_str());
 			const float nodeTopScreen = iRectangle.Max.y - computeNodeSize(node).y * zoom;
 			const float idealTopY = nodeTopScreen + kTopGap;
@@ -587,7 +590,11 @@ struct NodeCanvas::Impl final : public GraphEditor::Delegate {
 
 NodeCanvas::Impl::~Impl() = default;
 
-NodeCanvas::NodeCanvas() : mp_impl{mkUniq<Impl>(*this)} { mp_impl->m_options.mDrawIONameOnHover = false; }
+NodeCanvas::NodeCanvas() : mp_impl{mkUniq<Impl>(*this)} {
+	mp_impl->m_options.mDrawIONameOnHover = false;
+	// The GraphEditor minimap draws its view frame as huge white triangles with ImGui 1.92: it stays off.
+	mp_impl->m_options.mMinimap = ImRect{ImVec2{0.f, 0.f}, ImVec2{0.f, 0.f}};
+}
 
 NodeCanvas::~NodeCanvas() = default;
 
@@ -769,6 +776,18 @@ void NodeCanvas::onRender() {
 
 	mp_impl->m_canvasOriginScreen = ImGui::GetCursorScreenPos();
 	mp_impl->m_nodeScreenRects.clear();
+	{
+		const auto& theme = UiLayer::getTheme();
+		const auto color = [](const math::vec4& iColor) -> ImU32 { return ImGui::GetColorU32(vec(iColor)); };
+		auto& options = mp_impl->m_options;
+		options.mBackgroundColor = color(Theme::mix(theme.surface0, theme.surface1, 0.5f));
+		options.mGridColor = color(Theme::withAlpha(theme.line, 0.45f));
+		options.mGridColor2 = color(theme.line);
+		options.mSelectedNodeBorderColor = color(theme.accent);
+		options.mQuadSelection = color(Theme::withAlpha(theme.accent, 0.12f));
+		options.mQuadSelectionBorder = color(theme.accent);
+		options.mFrameFocus = color(Theme::withAlpha(theme.accent, 0.5f));
+	}
 	mp_impl->mp_canvasDrawList = nullptr;
 	GraphEditor::FitOnScreen* fitPtr =
 			(mp_impl->m_pendingFit != GraphEditor::Fit_None) ? &mp_impl->m_pendingFit : nullptr;

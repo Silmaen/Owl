@@ -10,7 +10,11 @@
 
 #include <debug/LogSink.h>
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
+#include <gui/widgets/Badge.h>
+#include <gui/widgets/IconButton.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <ctime>
@@ -129,64 +133,33 @@ auto formatTimestamp(const std::chrono::system_clock::time_point& iTime) -> std:
 void LogPanel::onImGuiRender() {
 	ImGui::Begin("Log");
 
-	// Toolbar: Clear, Auto-scroll, level filters, logger filters, search
-	if (gui::IconBank::instance().iconButton("delete", "Clear"))
-
+	// Toolbar: clear, follow, level and logger filter chips, search.
+	if (gui::widgets::iconButton("clear", {.glyph = gui::icon::eraser, .tooltip = "Clear the log"}))
 		core::Log::getLogBuffer().clear();
-
 	ImGui::SameLine();
-
-	ImGui::Checkbox("Auto-scroll", &m_autoScroll);
-
+	if (gui::widgets::iconButton("follow", {.glyph = gui::icon::arrowDown,
+											.tooltip = "Follow new messages",
+											.description = "Keep the view scrolled to the latest message.",
+											.selected = m_autoScroll}))
+		m_autoScroll = !m_autoScroll;
 	ImGui::SameLine();
-
-	ImGui::Text("|");
-
+	const auto chipToggle = [](const char* iLabel, bool& ioFlag) -> void {
+		if (gui::widgets::chip(iLabel, ioFlag))
+			ioFlag = !ioFlag;
+		ImGui::SameLine();
+	};
+	chipToggle("Trace", m_showTrace);
+	chipToggle("Debug", m_showDebug);
+	chipToggle("Info", m_showInfo);
+	chipToggle("Warning", m_showWarning);
+	chipToggle("Error", m_showError);
+	chipToggle("Critical", m_showCritical);
+	ImGui::Dummy({ImGui::GetFontSize() * 0.5f, 0.f});
 	ImGui::SameLine();
-
-	ImGui::Checkbox("Trace", &m_showTrace);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Debug", &m_showDebug);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Info", &m_showInfo);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Warn", &m_showWarning);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Error", &m_showError);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("Critical", &m_showCritical);
-
-	ImGui::SameLine();
-
-	ImGui::Text("|");
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("OWL", &m_showCore);
-
-	ImGui::SameLine();
-
-	ImGui::Checkbox("APP", &m_showApp);
-
-	ImGui::SameLine();
-
-	ImGui::Text("|");
-
-	ImGui::SameLine();
-
-	ImGui::SetNextItemWidth(150.0f);
-
-	ImGui::InputText("##Search", m_searchBuffer.data(), m_searchBuffer.size());
+	chipToggle("Engine##logger", m_showCore);
+	chipToggle("Game##logger", m_showApp);
+	ImGui::SetNextItemWidth(std::max(ImGui::GetFontSize() * 8.f, ImGui::GetContentRegionAvail().x));
+	ImGui::InputTextWithHint("##Search", "Filter messages", m_searchBuffer.data(), m_searchBuffer.size());
 
 	ImGui::Separator();
 

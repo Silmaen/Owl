@@ -54,10 +54,11 @@ OWL_API auto propertyReset(bool iModified) -> bool;
  * @param[in,out] ioValues Two to four components.
  * @param[in] iSpeed Drag speed.
  * @param[in] iFormat Number format.
+ * @param[in] iWidth Total width of the row, 0 to fill the available width.
  * @return True if a component changed.
  */
-OWL_API auto vectorField(const char* iId, std::span<float> ioValues, float iSpeed = 0.1f, const char* iFormat = "%.2f")
-		-> bool;
+OWL_API auto vectorField(const char* iId, std::span<float> ioValues, float iSpeed = 0.1f, const char* iFormat = "%.2f",
+						 float iWidth = 0.f) -> bool;
 
 /**
  * @brief

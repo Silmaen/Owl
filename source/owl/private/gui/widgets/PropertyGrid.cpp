@@ -83,13 +83,15 @@ auto propertyReset(const bool iModified) -> bool {
 	return clicked;
 }
 
-auto vectorField(const char* iId, const std::span<float> ioValues, const float iSpeed, const char* iFormat) -> bool {
+auto vectorField(const char* iId, const std::span<float> ioValues, const float iSpeed, const char* iFormat,
+				 const float iWidth) -> bool {
 	if (ioValues.empty())
 		return false;
 	constexpr float spacing = 3.f;
 	constexpr float markWidth = 3.f;
 	const auto count = static_cast<float>(ioValues.size());
-	const float width = (ImGui::GetContentRegionAvail().x - spacing * (count - 1.f)) / count;
+	const float total = iWidth > 0.f ? iWidth : ImGui::GetContentRegionAvail().x;
+	const float width = (total - spacing * (count - 1.f)) / count;
 	const float rounding = UiLayer::getTheme().frameRounding;
 	bool changed = false;
 	ImGui::PushID(iId);

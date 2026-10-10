@@ -462,6 +462,8 @@ void EditorLayer::onAttach() {
 			[this](const std::filesystem::path& iPath) -> void { openTilesetFile(iPath); });
 
 	newScene();
+	if (!m_startupProject.empty())
+		openProject(m_startupProject);
 	if (!m_project.isLoaded())
 		m_backstage.open();
 }

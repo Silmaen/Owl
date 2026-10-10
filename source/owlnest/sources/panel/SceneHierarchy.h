@@ -165,6 +165,18 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the Add entity button and the search field above the tree.
+	 */
+	void renderHierarchyToolbar();
+
+	/**
+	 * @brief
+	 *  Draw the entities whose name matches the search, as a flat selectable list.
+	 */
+	void renderSearchResults();
+
+	/**
+	 * @brief
 	 *  Draw root entities. Falls back to a flat list when the active `RenderStack` has 0 or 1
 	 * layer; otherwise groups roots into a tree node per layer (entities are routed by their
 	 * `RendererTag` — untagged ones land under the first layer).
@@ -194,6 +206,8 @@ private:
 	shared<scene::Scene> m_context = nullptr;
 	/// The selected item
 	scene::Entity m_selection;
+	/// Text typed in the hierarchy search field; non-empty shows a flat list of the matching entities.
+	std::string m_searchFilter;
 	/// Entity name when the name field was activated (set while a rename is being typed).
 	std::optional<std::string> m_renameBefore;
 	/// Turns the property edits into undo steps, serializing only while a component is edited.

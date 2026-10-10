@@ -9,19 +9,65 @@
 #include "ContentBrowser.h"
 
 #include <gui/IconBank.h>
+#include <gui/IconFont.h>
+#include <gui/UiLayer.h>
 #include <gui/utils.h>
+#include <gui/widgets/Badge.h>
+#include <gui/widgets/EmptyState.h>
+#include <gui/widgets/IconButton.h>
+#include <gui/widgets/SearchField.h>
+#include <gui/widgets/Tooltip.h>
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 #include <platform/FileDialog.h>
 
 #include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
+#include <unordered_map>
 
 namespace owl::nest::panel {
 
 namespace {
+// Family of an asset: the colour of its tile bar and the name shown under it.
+struct KindInfo {
+	math::vec4 color;
+	const char* label;
+};
+
+auto rgb(const uint32_t iHex) -> math::vec4 {
+	return {static_cast<float>((iHex >> 16U) & 0xFFU) / 255.f, static_cast<float>((iHex >> 8U) & 0xFFU) / 255.f,
+			static_cast<float>(iHex & 0xFFU) / 255.f, 1.f};
+}
+
+auto describeKind(const std::filesystem::path& iPath, const bool iDirectory) -> KindInfo {
+	if (iDirectory)
+		return {rgb(0xc09a55), "Folder"};
+	static const std::unordered_map<std::string, KindInfo> kinds = {
+			{".owl", {rgb(0xd8a520), "Scene"}},          {".owlprefab", {rgb(0x4f8fe0), "Prefab"}},
+			{".png", {rgb(0xe0534a), "Texture"}},        {".jpg", {rgb(0xe0534a), "Texture"}},
+			{".jpeg", {rgb(0xe0534a), "Texture"}},       {".svg", {rgb(0xe0534a), "Vector image"}},
+			{".owltileset", {rgb(0xe48a3a), "Tileset"}}, {".owltilemap", {rgb(0xd65fb8), "Tilemap"}},
+			{".wav", {rgb(0x3faa72), "Sound"}},          {".ogg", {rgb(0x3faa72), "Sound"}},
+			{".flac", {rgb(0x3faa72), "Sound"}},         {".mp3", {rgb(0x3faa72), "Sound"}},
+			{".lua", {rgb(0x2fb5a0), "Lua script"}},     {".py", {rgb(0x2fb5a0), "Python"}},
+			{".c", {rgb(0x5b8fd6), "C source"}},         {".cpp", {rgb(0x5b8fd6), "C++ source"}},
+			{".h", {rgb(0x5b8fd6), "Header"}},           {".hpp", {rgb(0x5b8fd6), "Header"}},
+			{".glsl", {rgb(0xa274e8), "Shader"}},        {".slang", {rgb(0xa274e8), "Shader"}},
+			{".ttf", {rgb(0x9a7ae0), "Font"}},           {".otf", {rgb(0x9a7ae0), "Font"}},
+			{".owlanim", {rgb(0xef6c8f), "Animation"}},  {".owlflow", {rgb(0x5aa2f0), "Node graph"}},
+			{".obj", {rgb(0x7fb83e), "3D model"}},       {".fbx", {rgb(0x7fb83e), "3D model"}},
+			{".gltf", {rgb(0x7fb83e), "3D model"}},      {".glb", {rgb(0x7fb83e), "3D model"}},
+			{".yml", {rgb(0x8a929e), "Settings"}},       {".yaml", {rgb(0x8a929e), "Settings"}},
+			{".json", {rgb(0x8a929e), "Data"}},          {".md", {rgb(0x8a929e), "Document"}}};
+	if (const auto it = kinds.find(iPath.extension().string()); it != kinds.end())
+		return it->second;
+	return {rgb(0x8a929e), "File"};
+}
+
 auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<gui::IconBank::IconInfo> {
 	const auto& iconBank = gui::IconBank::instance();
 	if (is_directory(iPath))
@@ -79,6 +125,96 @@ auto getFileIcon(const std::filesystem::path& iPath) -> std::optional<gui::IconB
 	if (iPath.extension() == ".md")
 		return iconBank.getIcon("md_icon");
 	return iconBank.getIcon("text_icon");
+}
+
+// What a tile shows and where.
+struct TileView {
+	std::filesystem::path path;
+	std::string name;
+	bool directory = false;
+	shared<renderer::gpu::Texture2D> thumbnail;
+	ImVec2 min;
+	ImVec2 max;
+	float width = 0.f;
+	float height = 0.f;
+	float thumbSize = 0.f;
+	bool list = false;
+	bool hovered = false;
+	bool selected = false;
+};
+
+void drawTile(ImDrawList* iDraw, const TileView& iTile) {
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto toU32 = [](const math::vec4& iColor) -> ImU32 { return ImGui::GetColorU32(gui::vec(iColor)); };
+	const auto kind = describeKind(iTile.path, iTile.directory);
+	math::vec4 background = iTile.list ? gui::Theme::withAlpha(theme.surface0, 0.f) : theme.surface2;
+	if (iTile.hovered)
+		background = theme.surface3;
+	if (iTile.selected)
+		background = theme.getSelection();
+	iDraw->AddRectFilled(iTile.min, iTile.max, toU32(background), theme.frameRounding);
+	if (iTile.selected && !iTile.list)
+		iDraw->AddRect(iTile.min, iTile.max, toU32(theme.accent), theme.frameRounding);
+	const auto icon = getFileIcon(iTile.path);
+	const auto thumbnail = iTile.thumbnail;
+	const auto thumbTexture = gui::imTexture(thumbnail);
+	if (iTile.list) {
+		const float iconSize = ImGui::GetFontSize();
+		const float y = std::floor(iTile.min.y + (iTile.height - iconSize) * 0.5f);
+		iDraw->AddRectFilled({iTile.min.x + 4.f, y + 1.f}, {iTile.min.x + 7.f, y + iconSize - 1.f}, toU32(kind.color),
+							 1.f);
+		if (thumbTexture.has_value())
+			iDraw->AddImage(thumbTexture.value(), {iTile.min.x + 12.f, y},
+							{iTile.min.x + 12.f + iconSize, y + iconSize}, {0, 1}, {1, 0});
+		else if (icon.has_value())
+			iDraw->AddImage(static_cast<ImTextureID>(icon->textureId), {iTile.min.x + 12.f, y},
+							{iTile.min.x + 12.f + iconSize, y + iconSize}, gui::vec(icon->uv0), gui::vec(icon->uv1));
+		const float textY = std::floor(iTile.min.y + (iTile.height - ImGui::GetTextLineHeight()) * 0.5f);
+		iDraw->AddText({iTile.min.x + 20.f + iconSize, textY}, toU32(theme.text), iTile.name.c_str());
+		iDraw->AddText({iTile.min.x + std::max(iTile.width * 0.6f, 220.f), textY}, toU32(theme.textDisabled),
+					   kind.label);
+	} else {
+		// Thumbnail area: the image fills the square; other kinds show their icon, centred.
+		const ImVec2 thumbMin{iTile.min.x + 1.f, iTile.min.y + 1.f};
+		const ImVec2 thumbMax{iTile.max.x - 1.f, iTile.min.y + iTile.thumbSize};
+		iDraw->AddRectFilled(thumbMin, thumbMax,
+							 toU32(gui::Theme::mix(theme.surface0, kind.color, thumbTexture.has_value() ? 0.f : 0.08f)),
+							 theme.frameRounding, ImDrawFlags_RoundCornersTop);
+		if (thumbTexture.has_value()) {
+			const auto size = thumbnail->getSize();
+			const float ratio = size.y() > 0 ? static_cast<float>(size.x()) / static_cast<float>(size.y()) : 1.f;
+			// Cover the square: crop the long side so the image keeps its proportions.
+			ImVec2 uv0{0.f, 1.f};
+			ImVec2 uv1{1.f, 0.f};
+			if (ratio > 1.f) {
+				const float crop = (1.f - 1.f / ratio) * 0.5f;
+				uv0.x = crop;
+				uv1.x = 1.f - crop;
+			} else if (ratio < 1.f) {
+				const float crop = (1.f - ratio) * 0.5f;
+				uv0.y = 1.f - crop;
+				uv1.y = crop;
+			}
+			iDraw->AddImageRounded(thumbTexture.value(), thumbMin, thumbMax, uv0, uv1, IM_COL32_WHITE,
+								   theme.frameRounding, ImDrawFlags_RoundCornersTop);
+		} else if (icon.has_value()) {
+			const float iconSize = std::floor(iTile.thumbSize * 0.5f);
+			const ImVec2 iconMin{std::floor(iTile.min.x + (iTile.width - iconSize) * 0.5f),
+								 std::floor(iTile.min.y + (iTile.thumbSize - iconSize) * 0.5f)};
+			iDraw->AddImage(static_cast<ImTextureID>(icon->textureId), iconMin,
+							{iconMin.x + iconSize, iconMin.y + iconSize}, gui::vec(icon->uv0), gui::vec(icon->uv1));
+		}
+		iDraw->AddRectFilled({iTile.min.x, iTile.min.y + iTile.thumbSize},
+							 {iTile.max.x, iTile.min.y + iTile.thumbSize + 2.f}, toU32(kind.color));
+		const ImVec4 clip{iTile.min.x + 6.f, iTile.min.y + iTile.thumbSize + 4.f, iTile.max.x - 4.f,
+						  iTile.max.y - ImGui::GetFontSize() * 0.9f - 2.f};
+		iDraw->AddText(ImGui::GetFont(), ImGui::GetFontSize() * 0.92f, {clip.x, clip.y}, toU32(theme.text),
+					   iTile.name.c_str(), nullptr, iTile.width - 10.f, &clip);
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Caption);
+		iDraw->AddText({iTile.min.x + 6.f, iTile.max.y - ImGui::GetFontSize() - 4.f}, toU32(theme.textDisabled),
+					   kind.label);
+		gui::UiLayer::popTextStyle();
+	}
 }
 
 }// namespace
@@ -149,152 +285,209 @@ void ContentBrowser::onImGuiRender() {
 }
 
 void ContentBrowser::renderTopBand() {
-	if (m_currentPath != m_currentRootPath) {
-		const auto& iconBank = gui::IconBank::instance();
-		bool clicked = false;
-		if (const auto iconInfo = iconBank.getIcon("back")) {
-			constexpr float btnSize = 20.0f;
-			ImGui::PushStyleColor(ImGuiCol_Button, gui::vec(math::vec4{0.f, 0.f, 0.f, 0.f}));
-			clicked = ImGui::ImageButton("##back", static_cast<ImTextureID>(iconInfo->textureId),
-										 gui::vec(math::vec2{btnSize, btnSize}), gui::vec(iconInfo->uv0),
-										 gui::vec(iconInfo->uv1));
-			ImGui::PopStyleColor();
-		} else {
-			clicked = ImGui::Button("Back");
-		}
-		if (clicked)
-			m_currentPath = m_currentPath.parent_path();
-		if (ImGui::IsItemHovered())
-			ImGui::SetTooltip("Back");
-	}
+	const auto& theme = gui::UiLayer::getTheme();
 	for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-		ImGui::SameLine();
-		if (assetsPath == m_currentRootPath) {
-			ImGui::Text("%s", title.c_str());
-			continue;
-		}
-		if (ImGui::Button(title.c_str())) {
+		if (gui::widgets::chip(std::format("{}##root", title).c_str(), assetsPath == m_currentRootPath) &&
+			assetsPath != m_currentRootPath) {
 			m_currentRootPath = assetsPath;
 			m_currentPath = m_currentRootPath;
 		}
+		ImGui::SameLine();
+	}
+	ImGui::Dummy({ImGui::GetFontSize() * 0.5f, 0.f});
+	ImGui::SameLine();
+	if (gui::widgets::iconButton("back", {.glyph = gui::icon::arrowLeft,
+										  .tooltip = "Parent folder",
+										  .disabled = m_currentPath == m_currentRootPath}))
+		m_currentPath = m_currentPath.parent_path();
+	ImGui::SameLine();
+	// Breadcrumb: the root, then every folder down to the current one, each clickable.
+	std::vector<std::filesystem::path> crumbs;
+	for (auto path = m_currentPath; !path.empty(); path = path.parent_path()) {
+		crumbs.push_back(path);
+		if (path == m_currentRootPath || path == path.parent_path())
+			break;
+	}
+	std::ranges::reverse(crumbs);
+	for (size_t i = 0; i < crumbs.size(); ++i) {
+		const bool last = i + 1 == crumbs.size();
+		const auto name = i == 0 ? std::string{"Root"} : crumbs[i].filename().string();
+		ImGui::AlignTextToFramePadding();
+		if (last) {
+			gui::UiLayer::pushTextStyle(gui::TextStyle::Strong);
+			ImGui::TextUnformatted(name.c_str());
+			gui::UiLayer::popTextStyle();
+		} else {
+			ImGui::PushStyleColor(ImGuiCol_Text, gui::vec(theme.textMuted));
+			if (ImGui::Selectable(std::format("{}##crumb{}", name, i).c_str(), false, ImGuiSelectableFlags_None,
+								  ImGui::CalcTextSize(name.c_str())))
+				m_currentPath = crumbs[i];
+			ImGui::PopStyleColor();
+			ImGui::SameLine();
+			ImGui::TextColored(gui::vec(theme.textDisabled), "%s", gui::icon::chevronRight);
+		}
+		ImGui::SameLine();
+	}
+	const float right = ImGui::GetFontSize() * 18.f;
+	ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(), ImGui::GetWindowContentRegionMax().x - right));
+	ImGui::BeginChild("##cbSearchBox", {ImGui::GetFontSize() * 10.f, ImGui::GetFrameHeight()}, ImGuiChildFlags_None,
+					  ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBackground);
+	std::ignore = gui::widgets::searchField("##search", m_searchFilter, "Search this folder");
+	ImGui::EndChild();
+	ImGui::SameLine();
+	if (gui::widgets::iconButton("grid",
+								 {.glyph = gui::icon::layoutGrid, .tooltip = "Grid view", .selected = !m_listView}))
+		m_listView = false;
+	ImGui::SameLine();
+	if (gui::widgets::iconButton("list", {.glyph = gui::icon::list, .tooltip = "List view", .selected = m_listView}))
+		m_listView = true;
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(ImGui::GetFontSize() * 4.5f);
+	ImGui::BeginDisabled(m_listView);
+	ImGui::SliderFloat("##tileSize", &m_tileSize, 56.f, 160.f, "");
+	ImGui::EndDisabled();
+	gui::widgets::itemTooltip("Thumbnail size");
+	ImGui::Separator();
+}
+
+auto ContentBrowser::getThumbnail(const std::filesystem::path& iPath, int& ioBudget)
+		-> shared<renderer::gpu::Texture2D> {
+	const auto ext = iPath.extension().string();
+	if (ext != ".png" && ext != ".jpg" && ext != ".jpeg")
+		return nullptr;
+	const auto key = iPath.string();
+	if (const auto it = m_thumbnails.find(key); it != m_thumbnails.end())
+		return it->second;
+	if (ioBudget <= 0)
+		return nullptr;
+	--ioBudget;
+	auto texture = renderer::gpu::Texture2D::create(iPath);
+	m_thumbnails[key] = texture;
+	return texture;
+}
+
+void ContentBrowser::openEntry(const std::filesystem::directory_entry& iEntry) {
+	const auto& path = iEntry.path();
+	if (iEntry.is_directory()) {
+		m_currentPath /= path.filename();
+		m_searchFilter.clear();
+	} else if (path.extension() == ".owl" && m_sceneOpenCallback) {
+		m_sceneOpenCallback(path);
+	} else if (path.extension() == ".owlflow" && m_nodeGraphOpenCallback) {
+		m_nodeGraphOpenCallback(path);
+	} else if (path.extension() == ".owlanim" && m_animationOpenCallback) {
+		m_animationOpenCallback(path);
+	} else if (path.extension() == ".owltilemap" && m_tilemapOpenCallback) {
+		m_tilemapOpenCallback(path);
+	} else if (path.extension() == ".owltileset" && m_tilesetOpenCallback) {
+		m_tilesetOpenCallback(path);
+	} else if (m_codeOpenCallback) {
+		static const std::vector<std::string> codeExts = {".lua", ".py",       ".c",   ".cpp", ".cc",   ".cxx",
+														  ".h",   ".hpp",      ".hxx", ".yml", ".yaml", ".json",
+														  ".md",  ".markdown", ".svg", ".xml"};
+		if (std::ranges::find(codeExts, path.extension().string()) != codeExts.end())
+			m_codeOpenCallback(path);
 	}
 }
 
 void ContentBrowser::renderContent() {
-	constexpr float padding = 25.0f;
-	constexpr float thumbnailSize = 80.0f;
-	constexpr float cellSize = thumbnailSize + padding;
-	// setup array of icons
-	const float panelWidth = ImGui::GetContentRegionAvail().x;
-	int columnCount = static_cast<int>(panelWidth / cellSize);
-	columnCount = std::max(columnCount, 1);
-
-	ImGui::Columns(columnCount, nullptr, false);
-
+	if (m_thumbnailFolder != m_currentPath) {
+		for (auto& [key, texture]: m_thumbnails) gui::UiLayer::deferTextureRelease(std::move(texture));
+		m_thumbnails.clear();
+		m_thumbnailFolder = m_currentPath;
+	}
+	ImGui::BeginChild("##cbItems", {0.f, 0.f}, ImGuiChildFlags_None);
+	const float spacing = ImGui::GetStyle().ItemSpacing.x;
+	const float labelHeight = ImGui::GetTextLineHeight() * 2.f + ImGui::GetFontSize() * 0.9f + 8.f;
+	const float tileWidth = m_listView ? ImGui::GetContentRegionAvail().x : m_tileSize;
+	const float tileHeight = m_listView ? ImGui::GetFrameHeight() : m_tileSize + labelHeight;
+	const int columns = m_listView ? 1
+								   : std::max(1, static_cast<int>((ImGui::GetContentRegionAvail().x + spacing) /
+																  (tileWidth + spacing)));
+	int budget = 3;
 	bool openContextMenu = false;
-	uint32_t item = 0;
+	int column = 0;
+	size_t shown = 0;
+	auto* draw = ImGui::GetWindowDrawList();
 	for (const auto& directoryEntry: m_cachedEntries) {
-		++item;
 		const auto& path = directoryEntry.path();
-		auto relativePath = relative(path, m_currentRootPath);
-		const std::string filenameString = relativePath.filename().string();
-
-		ImGui::PushID(filenameString.c_str());
-
-		ImGui::PushStyleColor(ImGuiCol_Button, gui::vec(math::vec4{0.f, 0.f, 0.f, 0.f}));
-		const auto iconInfo = getFileIcon(path);
-		constexpr auto thumbSizeVec = gui::vec(math::vec2{thumbnailSize, thumbnailSize});
-		if (iconInfo.has_value()) {
-			ImGui::ImageButton(std::format("content_btn_{}", item).c_str(),
-							   static_cast<ImTextureID>(iconInfo->textureId), thumbSizeVec, gui::vec(iconInfo->uv0),
-							   gui::vec(iconInfo->uv1));
-		} else {
-			ImGui::Button(filenameString.c_str(), thumbSizeVec);
-		}
-
-		// Right-click context menu — defer OpenPopup to outside the PushID scope
-		if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+		const auto relativePath = relative(path, m_currentRootPath);
+		const std::string name = path.filename().string();
+		if (!gui::widgets::matchesFilter(name, m_searchFilter))
+			continue;
+		++shown;
+		if (column > 0)
+			ImGui::SameLine(0.f, spacing);
+		ImGui::PushID(name.c_str());
+		const bool clicked = ImGui::InvisibleButton("##tile", {tileWidth, tileHeight});
+		const bool hovered = ImGui::IsItemHovered();
+		const auto min = ImGui::GetItemRectMin();
+		const ImVec2 max{min.x + tileWidth, min.y + tileHeight};
+		const bool selected = path == m_selectedPath;
+		if (clicked)
+			m_selectedPath = path;
+		if (hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
 			m_selectedPath = path;
 			m_renaming = false;
 			openContextMenu = true;
 		}
-		// Drag source (existing)
 		if (ImGui::BeginDragDropSource()) {
 			ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", relativePath.string().c_str(),
 									  relativePath.string().size() + 1);
-
+			ImGui::TextUnformatted(name.c_str());
 			ImGui::EndDragDropSource();
 		}
-
-		// Drop target: folders accept items
 		if (directoryEntry.is_directory() && ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-				const auto* droppedRelPath = static_cast<const char*>(payload->Data);
-				const std::filesystem::path sourcePath = m_currentRootPath / droppedRelPath;
-				if (exists(sourcePath) && sourcePath != path) {
+				const std::filesystem::path sourcePath = m_currentRootPath / static_cast<const char*>(payload->Data);
+				if (exists(sourcePath) && sourcePath != path)
 					moveItem(sourcePath, path);
-				}
 			}
-
 			ImGui::EndDragDropTarget();
 		}
+		if (hovered && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+			openEntry(directoryEntry);
 
-		ImGui::PopStyleColor();
-		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-			if (directoryEntry.is_directory()) {
-				m_currentPath /= path.filename();
-			} else if (path.extension() == ".owl" && m_sceneOpenCallback) {
-				m_sceneOpenCallback(path);
-			} else if (path.extension() == ".owlflow" && m_nodeGraphOpenCallback) {
-				m_nodeGraphOpenCallback(path);
-			} else if (path.extension() == ".owlanim" && m_animationOpenCallback) {
-				m_animationOpenCallback(path);
-			} else if (path.extension() == ".owltilemap" && m_tilemapOpenCallback) {
-				m_tilemapOpenCallback(path);
-			} else if (path.extension() == ".owltileset" && m_tilesetOpenCallback) {
-				m_tilesetOpenCallback(path);
-			} else if (m_codeOpenCallback) {
-				const auto ext = path.extension().string();
-				static const std::vector<std::string> codeExts = {".lua", ".py",       ".c",   ".cpp", ".cc",   ".cxx",
-																  ".h",   ".hpp",      ".hxx", ".yml", ".yaml", ".json",
-																  ".md",  ".markdown", ".svg", ".xml"};
-				if (std::ranges::find(codeExts, ext) != codeExts.end())
-
-					m_codeOpenCallback(path);
-			}
-		}
-		if (iconInfo.has_value())
-
-			ImGui::TextWrapped("%s", filenameString.c_str());
-
-		ImGui::NextColumn();
-
+		drawTile(draw, {.path = path,
+						.name = name,
+						.directory = directoryEntry.is_directory(),
+						.thumbnail = getThumbnail(path, budget),
+						.min = min,
+						.max = max,
+						.width = tileWidth,
+						.height = tileHeight,
+						.thumbSize = m_tileSize,
+						.list = m_listView,
+						.hovered = hovered,
+						.selected = selected});
+		const auto kind = describeKind(path, directoryEntry.is_directory());
+		gui::widgets::itemTooltip(name.c_str(), nullptr, kind.label);
 		ImGui::PopID();
+		column = (column + 1) % columns;
 	}
+	if (shown == 0)
+		std::ignore = gui::widgets::emptyState(m_searchFilter.empty() ? gui::icon::folderOpen : gui::icon::search,
+											   m_searchFilter.empty() ? "This folder is empty" : "Nothing matches",
+											   m_searchFilter.empty()
+													   ? "Drop files from your file manager, or right-click to import."
+													   : "Check the spelling, or clear the search.");
 
-	ImGui::Columns(1);
-
-	// Right-click on empty space
 	if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
 		m_selectedPath.clear();
 		m_renaming = false;
 		openContextMenu = true;
 	}
-	// Open the popup at window level (outside any PushID scope)
+	if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		m_selectedPath.clear();
+	ImGui::EndChild();
 	if (openContextMenu)
-
 		ImGui::OpenPopup("ContentBrowserContextMenu");
-
-	// Drop target for the content area background (move items to current dir)
 	if (ImGui::BeginDragDropTarget()) {
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
-			const auto* droppedRelPath = static_cast<const char*>(payload->Data);
-			const std::filesystem::path sourcePath = m_currentRootPath / droppedRelPath;
-			if (exists(sourcePath) && sourcePath.parent_path() != m_currentPath) {
+			const std::filesystem::path sourcePath = m_currentRootPath / static_cast<const char*>(payload->Data);
+			if (exists(sourcePath) && sourcePath.parent_path() != m_currentPath)
 				moveItem(sourcePath, m_currentPath);
-			}
 		}
-
 		ImGui::EndDragDropTarget();
 	}
 }

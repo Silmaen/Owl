@@ -10,11 +10,13 @@
 
 #include "app/Application.h"
 #include "gui/FontPreviewCache.h"
+#include "gui/IconFont.h"
 #include "gui/UiLayer.h"
 #include "gui/component/render.h"
 #include "gui/utils.h"
 #include "gui/widgets/AssetField.h"
 #include "gui/widgets/CurveEditor.h"
+#include "gui/widgets/IconButton.h"
 #include "gui/widgets/PropertyGrid.h"
 
 #include "input/KeyCodes.h"
@@ -27,7 +29,11 @@
 #include <imgui_internal.h>
 #include <imgui_stdlib.h>
 
+#include <array>
+#include <cfloat>
+#include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <format>
 
 using namespace owl::scene;
@@ -36,16 +42,113 @@ using namespace owl::scene::component;
 namespace owl::gui::component {
 
 namespace {
+namespace prop {
+
+// Inspector rows, same signatures as the ImGui calls they replace: the label on the left (38 %), the widget after it.
+template<typename Draw>
+auto row(const char* iLabel, Draw&& iDraw) -> bool {
+	const char* hidden = std::strstr(iLabel, "##");
+	const size_t visible = hidden != nullptr ? static_cast<size_t>(hidden - iLabel) : std::strlen(iLabel);
+	if (visible == 0)
+		return std::forward<Draw>(iDraw)(iLabel);
+	const float startX = ImGui::GetCursorPosX();
+	const float labelWidth = std::floor(ImGui::GetContentRegionAvail().x * 0.38f);
+	ImGui::AlignTextToFramePadding();
+	ImGui::PushStyleColor(ImGuiCol_Text, vec(UiLayer::getTheme().textMuted));
+	ImGui::TextUnformatted(iLabel, iLabel + visible);
+	ImGui::PopStyleColor();
+	ImGui::SameLine(startX + labelWidth);
+	ImGui::SetNextItemWidth(-FLT_MIN);
+	const std::string id = std::string{"##"} + iLabel;
+	return std::forward<Draw>(iDraw)(id.c_str());
+}
+
+auto DragFloat(const char* iLabel, float* ioValue, const float iSpeed = 1.f, const float iMin = 0.f,
+			   const float iMax = 0.f, const char* iFormat = "%.3f", const ImGuiSliderFlags iFlags = 0) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool {
+		return ImGui::DragFloat(iId, ioValue, iSpeed, iMin, iMax, iFormat, iFlags);
+	});
+}
+
+auto DragFloat2(const char* iLabel, float* ioValues, const float iSpeed = 1.f, const float iMin = 0.f,
+				const float iMax = 0.f, const char* iFormat = "%.3f", const ImGuiSliderFlags iFlags = 0) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool {
+		return ImGui::DragFloat2(iId, ioValues, iSpeed, iMin, iMax, iFormat, iFlags);
+	});
+}
+
+auto DragInt(const char* iLabel, int* ioValue, const float iSpeed = 1.f, const int iMin = 0, const int iMax = 0,
+			 const char* iFormat = "%d", const ImGuiSliderFlags iFlags = 0) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool {
+		return ImGui::DragInt(iId, ioValue, iSpeed, iMin, iMax, iFormat, iFlags);
+	});
+}
+
+template<typename... Args>
+auto ColorEdit4(const char* iLabel, Args&&... iArgs) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool { return ImGui::ColorEdit4(iId, std::forward<Args>(iArgs)...); });
+}
+
+template<typename... Args>
+auto ColorEdit3(const char* iLabel, Args&&... iArgs) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool { return ImGui::ColorEdit3(iId, std::forward<Args>(iArgs)...); });
+}
+
+template<typename... Args>
+auto Checkbox(const char* iLabel, Args&&... iArgs) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool { return ImGui::Checkbox(iId, std::forward<Args>(iArgs)...); });
+}
+
+template<typename... Args>
+auto InputText(const char* iLabel, Args&&... iArgs) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool { return ImGui::InputText(iId, std::forward<Args>(iArgs)...); });
+}
+
+auto InputTextMultiline(const char* iLabel, std::string* ioText, const ImVec2& iSize = {0.f, 0.f},
+						const ImGuiInputTextFlags iFlags = 0) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool { return ImGui::InputTextMultiline(iId, ioText, iSize, iFlags); });
+}
+
+template<typename... Args>
+auto BeginCombo(const char* iLabel, Args&&... iArgs) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool { return ImGui::BeginCombo(iId, std::forward<Args>(iArgs)...); });
+}
+
+template<typename... Args>
+auto Combo(const char* iLabel, Args&&... iArgs) -> bool {
+	return row(iLabel, [&](const char* iId) -> bool { return ImGui::Combo(iId, std::forward<Args>(iArgs)...); });
+}
+
+}// namespace prop
+}// namespace
+
+
+namespace {
 void fieldTooltip(const char* iText) {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 		ImGui::SetTooltip("%s", iText);
 }
 
 void drawVec3Control(const std::string& iLabel, math::vec3& iValues, const float iResetValue = 0.0f) {
-	if (!widgets::beginProperties(std::format("##vec3_{}", iLabel).c_str()))
-		return;
-	std::ignore = widgets::propertyVec3(iLabel.c_str(), iValues, {iResetValue, iResetValue, iResetValue});
-	widgets::endProperties();
+	std::ignore = prop::row(iLabel.c_str(), [&](const char* iId) -> bool {
+		const float resetWidth = ImGui::GetFrameHeight() + ImGui::GetStyle().ItemSpacing.x;
+		std::array values{iValues.x(), iValues.y(), iValues.z()};
+		const bool changed =
+				widgets::vectorField(iId, values, 0.1f, "%.2f", ImGui::GetContentRegionAvail().x - resetWidth);
+		if (changed)
+			iValues = {values[0], values[1], values[2]};
+		const bool modified = std::abs(iValues.x() - iResetValue) > 1e-6f ||
+							  std::abs(iValues.y() - iResetValue) > 1e-6f ||
+							  std::abs(iValues.z() - iResetValue) > 1e-6f;
+		if (!modified)
+			return changed;
+		ImGui::SameLine();
+		if (widgets::iconButton("##reset", {.glyph = icon::rotateCcw, .tooltip = "Reset to default"})) {
+			iValues = {iResetValue, iResetValue, iResetValue};
+			return true;
+		}
+		return changed;
+	});
 }
 
 auto tilePickField(const char* iLabel, const shared<scene::Tileset>& iTileset, uint32_t& ioTileIndex) -> bool {
@@ -127,9 +230,9 @@ void renderProps(Transform& ioComponent) {
 
 void renderProps(Camera& ioComponent) {
 	auto& camera = ioComponent.camera;
-	ImGui::Checkbox("Primary", &ioComponent.primary);
+	prop::Checkbox("Primary", &ioComponent.primary);
 	fieldTooltip("Mark this camera as the primary camera. Only one primary camera per scene at runtime.");
-	if (ImGui::BeginCombo("Projection", std::string(magic_enum::enum_name(camera.getProjectionType())).c_str())) {
+	if (prop::BeginCombo("Projection", std::string(magic_enum::enum_name(camera.getProjectionType())).c_str())) {
 		for (const SceneCamera::ProjectionType& projType: magic_enum::enum_values<SceneCamera::ProjectionType>()) {
 			const bool isSelected = camera.getProjectionType() == projType;
 			if (ImGui::Selectable(std::string(magic_enum::enum_name(projType)).c_str(), isSelected))
@@ -142,57 +245,57 @@ void renderProps(Camera& ioComponent) {
 	fieldTooltip("Perspective: 3D with vanishing point. Orthographic: 2D/isometric with parallel projection.");
 	if (camera.getProjectionType() == SceneCamera::ProjectionType::Perspective) {
 		float perspectiveVerticalFov = math::degrees(camera.getPerspectiveVerticalFov());
-		if (ImGui::DragFloat("Vertical FOV", &perspectiveVerticalFov))
+		if (prop::DragFloat("Vertical FOV", &perspectiveVerticalFov))
 			camera.setPerspectiveVerticalFov(math::radians(perspectiveVerticalFov));
 		fieldTooltip("Vertical field of view in degrees. Typical values: 60-90 degrees.");
 		float perspectiveNear = camera.getPerspectiveNearClip();
-		if (ImGui::DragFloat("Near", &perspectiveNear))
+		if (prop::DragFloat("Near", &perspectiveNear))
 			camera.setPerspectiveNearClip(perspectiveNear);
 		fieldTooltip("Near clipping plane distance. Objects closer than this are not rendered.");
 		float perspectiveFar = camera.getPerspectiveFarClip();
-		if (ImGui::DragFloat("Far", &perspectiveFar))
+		if (prop::DragFloat("Far", &perspectiveFar))
 			camera.setPerspectiveFarClip(perspectiveFar);
 		fieldTooltip("Far clipping plane distance. Objects farther than this are not rendered.");
 	}
 	if (camera.getProjectionType() == SceneCamera::ProjectionType::Orthographic) {
 		float orthoSize = camera.getOrthographicSize();
-		if (ImGui::DragFloat("Size", &orthoSize))
+		if (prop::DragFloat("Size", &orthoSize))
 			camera.setOrthographicSize(orthoSize);
 		fieldTooltip("Vertical half-size of the visible area in world units. Smaller = more zoomed in.");
 		float orthoNear = camera.getOrthographicNearClip();
-		if (ImGui::DragFloat("Near", &orthoNear))
+		if (prop::DragFloat("Near", &orthoNear))
 			camera.setOrthographicNearClip(orthoNear);
 		fieldTooltip("Near clipping plane distance.");
 		float orthoFar = camera.getOrthographicFarClip();
-		if (ImGui::DragFloat("Far", &orthoFar))
+		if (prop::DragFloat("Far", &orthoFar))
 			camera.setOrthographicFarClip(orthoFar);
 		fieldTooltip("Far clipping plane distance.");
-		ImGui::Checkbox("Fixed Aspect Ratio", &ioComponent.fixedAspectRatio);
+		prop::Checkbox("Fixed Aspect Ratio", &ioComponent.fixedAspectRatio);
 		fieldTooltip("Lock aspect ratio to prevent distortion when the viewport resizes.");
 	}
 }
 
 void renderProps(SpriteRenderer& ioComponent) {
-	ImGui::ColorEdit4("Color", ioComponent.color.data());
+	prop::ColorEdit4("Color", ioComponent.color.data());
 	widgets::textureField("Texture", ioComponent.texture);
 	// Tiling: linked by default (same X and Y), checkbox to unlink.
 	static bool s_tilingLinked = true;
-	ImGui::Checkbox("Link Tiling X/Y", &s_tilingLinked);
+	prop::Checkbox("Link Tiling X/Y", &s_tilingLinked);
 	if (s_tilingLinked) {
 		auto uniform = ioComponent.tilingFactor.x();
-		if (ImGui::DragFloat("Tiling Factor", &uniform, 0.1f, 0.0f, 100.0f))
+		if (prop::DragFloat("Tiling Factor", &uniform, 0.1f, 0.0f, 100.0f))
 			ioComponent.tilingFactor = {uniform, uniform};
 	} else {
-		ImGui::DragFloat2("Tiling Factor", &ioComponent.tilingFactor.x(), 0.1f, 0.0f, 100.0f);
+		prop::DragFloat2("Tiling Factor", &ioComponent.tilingFactor.x(), 0.1f, 0.0f, 100.0f);
 	}
 	if (ImGui::CollapsingHeader("Raycast (billboard)")) {
 		fieldTooltip("Optional overrides used only when the entity is rendered through a "
 					 "RendererRaycast layer. Leave at defaults to inherit from Transform.");
-		ImGui::DragFloat2("Size", &ioComponent.raycastSize.x(), 0.05f, 0.0f, 16.0f, "%.2f");
+		prop::DragFloat2("Size", &ioComponent.raycastSize.x(), 0.05f, 0.0f, 16.0f, "%.2f");
 		fieldTooltip("World size of the billboard in cells (X = width, Y = height). When either component is 0 "
 					 "(default), the renderer falls back to Transform.scale.xy. Use this to keep the editor scale "
 					 "small and the first-person size large (or vice-versa).");
-		ImGui::DragFloat("Z Offset", &ioComponent.raycastZOffset, 0.025f, -4.0f, 4.0f, "%.3f");
+		prop::DragFloat("Z Offset", &ioComponent.raycastZOffset, 0.025f, -4.0f, 4.0f, "%.3f");
 		fieldTooltip("Vertical offset added to Transform.translation.z when the sprite is drawn in raycast view. "
 					 "Positive values raise the sprite (lamps, ceiling decals); negative values lower it (floor "
 					 "stains, half-buried props).");
@@ -200,25 +303,25 @@ void renderProps(SpriteRenderer& ioComponent) {
 }
 
 void renderProps(AnimatedSpriteRenderer& ioComponent) {
-	ImGui::ColorEdit4("Color", ioComponent.color.data());
+	prop::ColorEdit4("Color", ioComponent.color.data());
 	widgets::textureField("Spritesheet", ioComponent.texture);
 
 	const int maxFrame = static_cast<int>(std::max(ioComponent.columns * ioComponent.rows, 1u) - 1);
 	int cols = static_cast<int>(ioComponent.columns);
-	if (ImGui::DragInt("Columns", &cols, 1, 1, 256))
+	if (prop::DragInt("Columns", &cols, 1, 1, 256))
 		ioComponent.columns = static_cast<uint32_t>(std::max(cols, 1));
 	int rows = static_cast<int>(ioComponent.rows);
-	if (ImGui::DragInt("Rows", &rows, 1, 1, 256))
+	if (prop::DragInt("Rows", &rows, 1, 1, 256))
 		ioComponent.rows = static_cast<uint32_t>(std::max(rows, 1));
 	int first = static_cast<int>(ioComponent.firstFrame);
-	if (ImGui::DragInt("First Frame", &first, 1, 0, maxFrame))
+	if (prop::DragInt("First Frame", &first, 1, 0, maxFrame))
 		ioComponent.firstFrame = static_cast<uint32_t>(std::clamp(first, 0, maxFrame));
 	int last = static_cast<int>(ioComponent.lastFrame);
-	if (ImGui::DragInt("Last Frame", &last, 1, static_cast<int>(ioComponent.firstFrame), maxFrame))
+	if (prop::DragInt("Last Frame", &last, 1, static_cast<int>(ioComponent.firstFrame), maxFrame))
 		ioComponent.lastFrame =
 				static_cast<uint32_t>(std::clamp(last, static_cast<int>(ioComponent.firstFrame), maxFrame));
-	ImGui::DragFloat("Frame Duration", &ioComponent.frameDuration, 0.01f, 0.001f, 10.0f, "%.3f s");
-	ImGui::Checkbox("Loop", &ioComponent.loop);
+	prop::DragFloat("Frame Duration", &ioComponent.frameDuration, 0.01f, 0.001f, 10.0f, "%.3f s");
+	prop::Checkbox("Loop", &ioComponent.loop);
 	ImGui::Text("Current Frame: %u", ioComponent.m_currentFrame);
 	if (ImGui::CollapsingHeader("Speed Curve")) {
 		fieldTooltip("Optional speed remap. Empty = constant playback speed; non-empty multiplies dt by "
@@ -228,27 +331,27 @@ void renderProps(AnimatedSpriteRenderer& ioComponent) {
 	if (ImGui::CollapsingHeader("Raycast (billboard)")) {
 		fieldTooltip("Optional overrides used only when the entity is rendered through a "
 					 "RendererRaycast layer. Leave at defaults to inherit from Transform.");
-		ImGui::DragFloat2("Size", &ioComponent.raycastSize.x(), 0.05f, 0.0f, 16.0f, "%.2f");
+		prop::DragFloat2("Size", &ioComponent.raycastSize.x(), 0.05f, 0.0f, 16.0f, "%.2f");
 		fieldTooltip("World size of the billboard in cells (X = width, Y = height). When either component is 0 "
 					 "(default), the renderer falls back to Transform.scale.xy.");
-		ImGui::DragFloat("Z Offset", &ioComponent.raycastZOffset, 0.025f, -4.0f, 4.0f, "%.3f");
+		prop::DragFloat("Z Offset", &ioComponent.raycastZOffset, 0.025f, -4.0f, 4.0f, "%.3f");
 		fieldTooltip("Vertical offset added to Transform.translation.z when drawn in raycast view. Positive raises, "
 					 "negative lowers.");
 	}
 }
 
 void renderProps(CircleRenderer& ioComponent) {
-	ImGui::ColorEdit4("Color", ioComponent.color.data());
-	ImGui::DragFloat("Thickness", &ioComponent.thickness, 0.025f, 0.0f, 1.0f);
-	ImGui::DragFloat("Fade", &ioComponent.fade, 0.00025f, 0.0f, 1.0f);
+	prop::ColorEdit4("Color", ioComponent.color.data());
+	prop::DragFloat("Thickness", &ioComponent.thickness, 0.025f, 0.0f, 1.0f);
+	prop::DragFloat("Fade", &ioComponent.fade, 0.00025f, 0.0f, 1.0f);
 }
 
 void renderProps(Text& ioComponent) {
-	ImGui::InputTextMultiline("Text String", &ioComponent.text, {0, 70});
+	prop::InputTextMultiline("Text String", &ioComponent.text, {0, 70});
 	if (app::Application::instanced()) {
 		auto& fontLib = app::Application::get().getFontLibrary();
 		const std::string display = ioComponent.font->isDefault() ? "(default)" : ioComponent.font->getName();
-		if (ImGui::BeginCombo("Font", display.c_str())) {
+		if (prop::BeginCombo("Font", display.c_str())) {
 			for (const auto& font: data::fonts::FontLibrary::getFoundFontNames()) {
 				if (ImGui::Selectable(font.c_str(), ioComponent.font->getName() == font)) {
 					ioComponent.font = fontLib.getFont(font);
@@ -272,9 +375,9 @@ void renderProps(Text& ioComponent) {
 		}
 	}
 
-	ImGui::ColorEdit4("Color", ioComponent.color.data());
-	ImGui::DragFloat("Kerning", &ioComponent.kerning, 0.025f);
-	ImGui::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.025f);
+	prop::ColorEdit4("Color", ioComponent.color.data());
+	prop::DragFloat("Kerning", &ioComponent.kerning, 0.025f);
+	prop::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.025f);
 }
 
 void renderProps(PhysicBody& ioComponent) {
@@ -290,7 +393,7 @@ void renderProps(PhysicBody& ioComponent) {
 		return "";
 	};
 	const std::string currentName{magic_enum::enum_name(ioComponent.body.type)};
-	if (ImGui::BeginCombo("Type", currentName.c_str())) {
+	if (prop::BeginCombo("Type", currentName.c_str())) {
 		for (const auto& name: magic_enum::enum_names<SceneBody::BodyType>()) {
 			const std::string sName{name};
 			const auto type = magic_enum::enum_cast<SceneBody::BodyType>(sName).value_or(SceneBody::BodyType::Static);
@@ -302,25 +405,25 @@ void renderProps(PhysicBody& ioComponent) {
 		ImGui::EndCombo();
 	}
 	fieldTooltip(bodyTypeDesc(ioComponent.body.type));
-	ImGui::Checkbox("Fixed Rotation", &ioComponent.body.fixedRotation);
+	prop::Checkbox("Fixed Rotation", &ioComponent.body.fixedRotation);
 	fieldTooltip("Lock rotation — the body cannot spin (useful for platformer characters).");
 	drawVec3Control("Size", ioComponent.body.colliderSize, 1.0f);
-	ImGui::DragFloat("Density", &ioComponent.body.density, 0.00025f, 0.0f, 10.0f);
+	prop::DragFloat("Density", &ioComponent.body.density, 0.00025f, 0.0f, 10.0f);
 	fieldTooltip("Material density. Affects mass proportionally to collider size.");
-	ImGui::DragFloat("Restitution", &ioComponent.body.restitution, 0.00025f, 0.0f, 1.0f);
+	prop::DragFloat("Restitution", &ioComponent.body.restitution, 0.00025f, 0.0f, 1.0f);
 	fieldTooltip("Bounciness. 0 = no bounce, 1 = perfectly elastic.");
-	ImGui::DragFloat("Friction", &ioComponent.body.friction, 0.00025f, 0.0f, 1.0f);
+	prop::DragFloat("Friction", &ioComponent.body.friction, 0.00025f, 0.0f, 1.0f);
 	fieldTooltip("Surface friction coefficient. 0 = ice, 1 = rubber.");
 }
 
 void renderProps(Player& ioComponent) {
-	ImGui::Checkbox("Primary", &ioComponent.primary);
+	prop::Checkbox("Primary", &ioComponent.primary);
 	fieldTooltip("Mark this entity as the primary player. Only one primary player per scene.");
-	ImGui::DragFloat("Linear Impulse", &ioComponent.player.linearImpulse, 0.025f, 0.0f, 10.0f);
+	prop::DragFloat("Linear Impulse", &ioComponent.player.linearImpulse, 0.025f, 0.0f, 10.0f);
 	fieldTooltip("Horizontal impulse magnitude applied when moving left/right.");
-	ImGui::DragFloat("Jump Impulse", &ioComponent.player.jumpImpulse, 0.025f, 0.0f, 10.0f);
+	prop::DragFloat("Jump Impulse", &ioComponent.player.jumpImpulse, 0.025f, 0.0f, 10.0f);
 	fieldTooltip("Vertical impulse magnitude applied on jump.");
-	ImGui::Checkbox("Can jump", &ioComponent.player.canJump);
+	prop::Checkbox("Can jump", &ioComponent.player.canJump);
 	fieldTooltip("Whether the player is allowed to jump. Toggle off for floating/swimming characters.");
 }
 
@@ -348,7 +451,7 @@ void renderProps(Trigger& ioComponent) {
 	};
 	// the type.
 	const std::string currentName{magic_enum::enum_name(ioComponent.trigger.type)};
-	if (ImGui::BeginCombo("Type", currentName.c_str())) {
+	if (prop::BeginCombo("Type", currentName.c_str())) {
 		for (const auto& name: magic_enum::enum_names<SceneTrigger::TriggerType>()) {
 			const std::string sName{name};
 			const auto type = magic_enum::enum_cast<SceneTrigger::TriggerType>(sName).value_or(
@@ -367,7 +470,7 @@ void renderProps(Trigger& ioComponent) {
 		ImGui::SetTooltip("%s", triggerDescription(ioComponent.trigger.type));
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Victory ||
 		ioComponent.trigger.type == SceneTrigger::TriggerType::Death) {
-		ImGui::InputText("Scene", &ioComponent.trigger.levelName);
+		prop::InputText("Scene", &ioComponent.trigger.levelName);
 
 		fieldTooltip("Path to the scene to load (e.g. scenes/victory.owl). Leave empty to use the built-in screen.");
 		if (ioComponent.trigger.levelName.empty())
@@ -375,24 +478,24 @@ void renderProps(Trigger& ioComponent) {
 			ImGui::TextDisabled("Empty = built-in screen");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Teleport) {
-		ImGui::InputText("Level Name", &ioComponent.trigger.levelName);
+		prop::InputText("Level Name", &ioComponent.trigger.levelName);
 
 		fieldTooltip("Destination scene path (e.g. scenes/level2.owl).");
 
-		ImGui::InputText("Target Name", &ioComponent.trigger.targetName);
+		prop::InputText("Target Name", &ioComponent.trigger.targetName);
 
 		fieldTooltip("Name of the entity (Target trigger) that marks where the player appears in the new scene.");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Timer) {
-		ImGui::DragFloat("Duration (s)", &ioComponent.trigger.timerDuration, 0.1f, 0.01f, 3600.0f);
+		prop::DragFloat("Duration (s)", &ioComponent.trigger.timerDuration, 0.1f, 0.01f, 3600.0f);
 
 		fieldTooltip("Time in seconds before the callback fires.");
 
-		ImGui::Checkbox("Repeating", &ioComponent.trigger.timerRepeating);
+		prop::Checkbox("Repeating", &ioComponent.trigger.timerRepeating);
 
 		fieldTooltip("If checked, the timer restarts after each fire. Otherwise it fires once.");
 
-		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+		prop::InputText("Callback", &ioComponent.trigger.callbackName);
 
 		fieldTooltip("Lua function name to call. Defaults to on_timer if empty.");
 		if (ioComponent.trigger.callbackName.empty())
@@ -400,11 +503,11 @@ void renderProps(Trigger& ioComponent) {
 			ImGui::TextDisabled("Default: on_timer");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::Interaction) {
-		ImGui::DragFloat("Interaction Range", &ioComponent.trigger.interactionRange, 0.05f, 0.1f, 20.0f);
+		prop::DragFloat("Interaction Range", &ioComponent.trigger.interactionRange, 0.05f, 0.1f, 20.0f);
 
 		fieldTooltip("Distance within which the player can press E to interact.");
 
-		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+		prop::InputText("Callback", &ioComponent.trigger.callbackName);
 
 		fieldTooltip("Lua function name to call. Defaults to on_interact if empty.");
 		if (ioComponent.trigger.callbackName.empty())
@@ -412,7 +515,7 @@ void renderProps(Trigger& ioComponent) {
 			ImGui::TextDisabled("Default: on_interact");
 	}
 	if (ioComponent.trigger.type == SceneTrigger::TriggerType::LuaCallback) {
-		ImGui::InputText("Callback", &ioComponent.trigger.callbackName);
+		prop::InputText("Callback", &ioComponent.trigger.callbackName);
 
 		fieldTooltip("Lua function name to call when the player overlaps. Defaults to on_triggered if empty.");
 		if (ioComponent.trigger.callbackName.empty())
@@ -429,30 +532,30 @@ void renderProps(Trigger& ioComponent) {
 
 void renderProps(EntityLink& ioComponent) {
 	// A new name designates a new target: drop the UUID so the link binds by name again.
-	if (ImGui::InputText("linked Entity Name", &ioComponent.linkedEntityName))
+	if (prop::InputText("linked Entity Name", &ioComponent.linkedEntityName))
 		ioComponent.linkedEntityId = core::UUID{0};
 }
 
 void renderProps(BackgroundTexture& ioComponent) {
 	constexpr std::array modeNames = {"Background", "Skybox"};
 	int modeIndex = static_cast<int>(ioComponent.mode);
-	if (ImGui::Combo("Mode", &modeIndex, modeNames.data(), static_cast<int>(modeNames.size())))
+	if (prop::Combo("Mode", &modeIndex, modeNames.data(), static_cast<int>(modeNames.size())))
 		ioComponent.mode = static_cast<BackgroundTexture::Mode>(modeIndex);
 
 	if (ioComponent.mode == BackgroundTexture::Mode::Background) {
 		constexpr std::array typeNames = {"Solid Color", "Gradient", "Texture"};
 		int typeIndex = static_cast<int>(ioComponent.type);
-		if (ImGui::Combo("Type", &typeIndex, typeNames.data(), static_cast<int>(typeNames.size())))
+		if (prop::Combo("Type", &typeIndex, typeNames.data(), static_cast<int>(typeNames.size())))
 			ioComponent.type = static_cast<BackgroundTexture::Type>(typeIndex);
 
 		if (ioComponent.type == BackgroundTexture::Type::SolidColor) {
-			ImGui::ColorEdit4("Color", ioComponent.color.data());
+			prop::ColorEdit4("Color", ioComponent.color.data());
 		} else if (ioComponent.type == BackgroundTexture::Type::Gradient) {
-			ImGui::ColorEdit4("Bottom Color", ioComponent.color.data());
-			ImGui::ColorEdit4("Top Color", ioComponent.topColor.data());
+			prop::ColorEdit4("Bottom Color", ioComponent.color.data());
+			prop::ColorEdit4("Top Color", ioComponent.topColor.data());
 		} else {
 			// Texture mode
-			ImGui::ColorEdit4("Tint", ioComponent.color.data());
+			prop::ColorEdit4("Tint", ioComponent.color.data());
 			widgets::textureField("Texture", ioComponent.texture);
 		}
 	} else {
@@ -462,12 +565,12 @@ void renderProps(BackgroundTexture& ioComponent) {
 }
 
 void renderProps(Visibility& ioComponent) {
-	ImGui::Checkbox("Game Visible", &ioComponent.gameVisible);
-	ImGui::Checkbox("Editor Visible", &ioComponent.editorVisible);
+	prop::Checkbox("Game Visible", &ioComponent.gameVisible);
+	prop::Checkbox("Editor Visible", &ioComponent.editorVisible);
 }
 
 void renderProps(SoundSource& ioComponent) {
-	ImGui::InputText("Sound Asset", &ioComponent.sound.soundAsset);
+	prop::InputText("Sound Asset", &ioComponent.sound.soundAsset);
 	fieldTooltip("Path to the audio file relative to the project (e.g. sounds/explosion.wav).");
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::Sound, dropped))
 		ioComponent.sound.soundAsset = dropped.string();
@@ -497,7 +600,7 @@ void renderProps(SoundSource& ioComponent) {
 	ImGui::EndDisabled();
 	fieldTooltip("Preview the sound with current volume and pitch. Not spatialized.");
 	const std::string currentCategory{magic_enum::enum_name(ioComponent.sound.category)};
-	if (ImGui::BeginCombo("Category", currentCategory.c_str())) {
+	if (prop::BeginCombo("Category", currentCategory.c_str())) {
 		for (const auto& catName: magic_enum::enum_names<SceneSound::Category>()) {
 			const std::string sName{catName};
 			if (ImGui::Selectable(sName.c_str(), currentCategory == sName))
@@ -507,31 +610,31 @@ void renderProps(SoundSource& ioComponent) {
 		ImGui::EndCombo();
 	}
 	fieldTooltip("Category of the sound: SFX, Music, or Ambient (stored, not used for mixing yet).");
-	ImGui::DragFloat("Volume", &ioComponent.sound.volume, 0.01f, 0.0f, 2.0f);
+	prop::DragFloat("Volume", &ioComponent.sound.volume, 0.01f, 0.0f, 2.0f);
 	fieldTooltip("Gain factor (0 = silent, 1 = normal, 2 = 200%).");
-	ImGui::DragFloat("Pitch", &ioComponent.sound.pitch, 0.01f, 0.1f, 3.0f);
+	prop::DragFloat("Pitch", &ioComponent.sound.pitch, 0.01f, 0.1f, 3.0f);
 	fieldTooltip("Pitch multiplier. 1 = normal, 0.5 = octave down, 2 = octave up.");
-	ImGui::Checkbox("Loop", &ioComponent.sound.loop);
+	prop::Checkbox("Loop", &ioComponent.sound.loop);
 	fieldTooltip("If checked, the sound restarts automatically after it finishes.");
-	ImGui::Checkbox("Spatial", &ioComponent.sound.spatial);
+	prop::Checkbox("Spatial", &ioComponent.sound.spatial);
 	fieldTooltip("Enable 3D positional audio (mono sources only; stereo is not spatialized).");
-	ImGui::Checkbox("Play On Start", &ioComponent.sound.playOnStart);
+	prop::Checkbox("Play On Start", &ioComponent.sound.playOnStart);
 	fieldTooltip("Automatically start playback when the scene enters Play mode.");
 	if (ioComponent.sound.spatial) {
-		ImGui::DragFloat("Max Distance", &ioComponent.sound.maxDistance, 0.5f, 1.0f, 500.0f);
+		prop::DragFloat("Max Distance", &ioComponent.sound.maxDistance, 0.5f, 1.0f, 500.0f);
 		fieldTooltip("Maximum audible distance in world units.");
-		ImGui::DragFloat("Rolloff", &ioComponent.sound.rolloff, 0.01f, 0.0f, 10.0f);
+		prop::DragFloat("Rolloff", &ioComponent.sound.rolloff, 0.01f, 0.0f, 10.0f);
 		fieldTooltip("Distance attenuation curve. Higher = faster falloff.");
 	}
 }
 
 void renderProps(SoundListener& ioComponent) {
-	ImGui::Checkbox("Primary", &ioComponent.primary);
+	prop::Checkbox("Primary", &ioComponent.primary);
 	fieldTooltip("Mark as the active listener (the 'ear' for 3D audio). Only one primary per scene.");
 }
 
 void renderProps(LuaScript& ioComponent) {
-	ImGui::InputText("Script Path", &ioComponent.scriptPath);
+	prop::InputText("Script Path", &ioComponent.scriptPath);
 	if (std::filesystem::path dropped; widgets::assetDropTarget(widgets::AssetKind::LuaScript, dropped)) {
 		ioComponent.scriptPath = dropped.string();
 		ioComponent.properties = script::ScriptEngine::extractProperties(ioComponent.scriptPath);
@@ -550,28 +653,28 @@ void renderProps(LuaScript& ioComponent) {
 				case script::ScriptPropertyType::Float:
 					{
 						auto val = std::get<float>(prop.value);
-						if (ImGui::DragFloat(prop.name.c_str(), &val, 0.1f))
+						if (prop::DragFloat(prop.name.c_str(), &val, 0.1f))
 							prop.value = val;
 						break;
 					}
 				case script::ScriptPropertyType::Int:
 					{
 						auto val = static_cast<int>(std::get<int64_t>(prop.value));
-						if (ImGui::DragInt(prop.name.c_str(), &val))
+						if (prop::DragInt(prop.name.c_str(), &val))
 							prop.value = static_cast<int64_t>(val);
 						break;
 					}
 				case script::ScriptPropertyType::String:
 					{
 						auto val = std::get<std::string>(prop.value);
-						if (ImGui::InputText(prop.name.c_str(), &val))
+						if (prop::InputText(prop.name.c_str(), &val))
 							prop.value = val;
 						break;
 					}
 				case script::ScriptPropertyType::Bool:
 					{
 						auto val = std::get<bool>(prop.value);
-						if (ImGui::Checkbox(prop.name.c_str(), &val))
+						if (prop::Checkbox(prop.name.c_str(), &val))
 							prop.value = val;
 						break;
 					}
@@ -583,7 +686,7 @@ void renderProps(LuaScript& ioComponent) {
 
 void renderProps(Canvas& ioComponent) {
 	const std::string currentSpace{magic_enum::enum_name(ioComponent.space)};
-	if (ImGui::BeginCombo("Space", currentSpace.c_str())) {
+	if (prop::BeginCombo("Space", currentSpace.c_str())) {
 		for (const auto& spaceName: magic_enum::enum_names<Canvas::Space>()) {
 			const std::string sName{spaceName};
 			if (ImGui::Selectable(sName.c_str(), currentSpace == sName))
@@ -592,13 +695,13 @@ void renderProps(Canvas& ioComponent) {
 		ImGui::EndCombo();
 	}
 	fieldTooltip("ScreenOverlay: always on top, scaled to window. WorldSpace: rendered in the 3D scene.");
-	ImGui::DragInt("Sort Order", &ioComponent.sortOrder);
+	prop::DragInt("Sort Order", &ioComponent.sortOrder);
 	fieldTooltip("Higher sort order renders on top. Used to layer multiple canvases.");
 }
 
 void renderProps(UiRect& ioComponent) {
 	const std::string currentAnchor{magic_enum::enum_name(ioComponent.anchor)};
-	if (ImGui::BeginCombo("Anchor", currentAnchor.c_str())) {
+	if (prop::BeginCombo("Anchor", currentAnchor.c_str())) {
 		for (const auto& anchorName: magic_enum::enum_names<UiRect::Anchor>()) {
 			const std::string sName{anchorName};
 			if (ImGui::Selectable(sName.c_str(), currentAnchor == sName))
@@ -608,19 +711,19 @@ void renderProps(UiRect& ioComponent) {
 	}
 	fieldTooltip("Reference point on the parent canvas (e.g. TopLeft, Center). Widget is positioned relative to this.");
 	float pivotArr[2] = {ioComponent.pivot.x(), ioComponent.pivot.y()};
-	if (ImGui::DragFloat2("Pivot", pivotArr, 0.01f, 0.0f, 1.0f)) {
+	if (prop::DragFloat2("Pivot", pivotArr, 0.01f, 0.0f, 1.0f)) {
 		ioComponent.pivot.x() = pivotArr[0];
 		ioComponent.pivot.y() = pivotArr[1];
 	}
 	fieldTooltip("Origin within the widget itself (0,0) = top-left, (0.5,0.5) = center, (1,1) = bottom-right.");
 	float sizeArr[2] = {ioComponent.size.x(), ioComponent.size.y()};
-	if (ImGui::DragFloat2("Size", sizeArr, 1.0f, 0.0f, 10000.0f)) {
+	if (prop::DragFloat2("Size", sizeArr, 1.0f, 0.0f, 10000.0f)) {
 		ioComponent.size.x() = sizeArr[0];
 		ioComponent.size.y() = sizeArr[1];
 	}
 	fieldTooltip("Width and height of the widget in pixels.");
 	float offsetArr[2] = {ioComponent.anchorOffset.x(), ioComponent.anchorOffset.y()};
-	if (ImGui::DragFloat2("Offset", offsetArr, 1.0f)) {
+	if (prop::DragFloat2("Offset", offsetArr, 1.0f)) {
 		ioComponent.anchorOffset.x() = offsetArr[0];
 		ioComponent.anchorOffset.y() = offsetArr[1];
 	}
@@ -628,11 +731,11 @@ void renderProps(UiRect& ioComponent) {
 }
 
 void renderProps(UiText& ioComponent) {
-	ImGui::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
-	ImGui::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));
-	ImGui::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
+	prop::InputTextMultiline("Text", &ioComponent.text, ImVec2(0, 60));
+	prop::ColorEdit4("Color", reinterpret_cast<float*>(&ioComponent.color));
+	prop::DragFloat("Font Size", &ioComponent.fontSize, 0.5f, 1.0f, 200.0f);
 	const std::string currentAlign{magic_enum::enum_name(ioComponent.alignment)};
-	if (ImGui::BeginCombo("Alignment", currentAlign.c_str())) {
+	if (prop::BeginCombo("Alignment", currentAlign.c_str())) {
 		for (const auto& alignName: magic_enum::enum_names<UiText::Alignment>()) {
 			const std::string sName{alignName};
 			if (ImGui::Selectable(sName.c_str(), currentAlign == sName))
@@ -641,21 +744,21 @@ void renderProps(UiText& ioComponent) {
 		}
 		ImGui::EndCombo();
 	}
-	ImGui::DragFloat("Kerning", &ioComponent.kerning, 0.1f);
-	ImGui::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.1f);
+	prop::DragFloat("Kerning", &ioComponent.kerning, 0.1f);
+	prop::DragFloat("Line Spacing", &ioComponent.lineSpacing, 0.1f);
 }
 
 void renderProps(UiImage& ioComponent) {
 	widgets::textureField("Texture", ioComponent.texture);
-	ImGui::ColorEdit4("Tint", reinterpret_cast<float*>(&ioComponent.tint));
+	prop::ColorEdit4("Tint", reinterpret_cast<float*>(&ioComponent.tint));
 }
 
 void renderProps(UiPanel& ioComponent) {
-	ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
-	ImGui::ColorEdit4("Border Color", reinterpret_cast<float*>(&ioComponent.borderColor));
-	ImGui::DragFloat("Border Width", &ioComponent.borderWidth, 0.5f, 0.0f, 20.0f);
+	prop::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
+	prop::ColorEdit4("Border Color", reinterpret_cast<float*>(&ioComponent.borderColor));
+	prop::DragFloat("Border Width", &ioComponent.borderWidth, 0.5f, 0.0f, 20.0f);
 	const std::string currentLayout{magic_enum::enum_name(ioComponent.layout)};
-	if (ImGui::BeginCombo("Layout", currentLayout.c_str())) {
+	if (prop::BeginCombo("Layout", currentLayout.c_str())) {
 		for (const auto& layoutName: magic_enum::enum_names<UiPanel::Layout>()) {
 			const std::string sName{layoutName};
 			if (ImGui::Selectable(sName.c_str(), currentLayout == sName))
@@ -664,42 +767,42 @@ void renderProps(UiPanel& ioComponent) {
 		ImGui::EndCombo();
 	}
 	if (ioComponent.layout != UiPanel::Layout::None) {
-		ImGui::DragFloat("Spacing", &ioComponent.spacing, 0.5f, 0.0f, 100.0f);
-		ImGui::DragFloat("Padding", &ioComponent.padding, 0.5f, 0.0f, 100.0f);
+		prop::DragFloat("Spacing", &ioComponent.spacing, 0.5f, 0.0f, 100.0f);
+		prop::DragFloat("Padding", &ioComponent.padding, 0.5f, 0.0f, 100.0f);
 	}
 }
 
 void renderProps(UiButton& ioComponent) {
-	ImGui::ColorEdit4("Normal Color", reinterpret_cast<float*>(&ioComponent.normalColor));
+	prop::ColorEdit4("Normal Color", reinterpret_cast<float*>(&ioComponent.normalColor));
 	fieldTooltip("Button background color in the default (not hovered, not pressed) state.");
-	ImGui::ColorEdit4("Hover Color", reinterpret_cast<float*>(&ioComponent.hoverColor));
+	prop::ColorEdit4("Hover Color", reinterpret_cast<float*>(&ioComponent.hoverColor));
 	fieldTooltip("Button background color when the mouse is hovering over it.");
-	ImGui::ColorEdit4("Pressed Color", reinterpret_cast<float*>(&ioComponent.pressedColor));
+	prop::ColorEdit4("Pressed Color", reinterpret_cast<float*>(&ioComponent.pressedColor));
 	fieldTooltip("Button background color while the mouse button is held down.");
-	ImGui::ColorEdit4("Disabled Color", reinterpret_cast<float*>(&ioComponent.disabledColor));
+	prop::ColorEdit4("Disabled Color", reinterpret_cast<float*>(&ioComponent.disabledColor));
 	fieldTooltip("Button background color when disabled (cannot be clicked).");
-	ImGui::InputText("On Click Callback", &ioComponent.onClickCallback);
+	prop::InputText("On Click Callback", &ioComponent.onClickCallback);
 	fieldTooltip("Lua function name to call when the button is clicked (e.g. on_play_clicked).");
 }
 
 void renderProps(UiSlider& ioComponent) {
-	ImGui::DragFloat("Value", &ioComponent.value, 0.01f, ioComponent.minValue, ioComponent.maxValue);
+	prop::DragFloat("Value", &ioComponent.value, 0.01f, ioComponent.minValue, ioComponent.maxValue);
 	fieldTooltip("Current slider value, clamped between Min and Max.");
-	ImGui::DragFloat("Min", &ioComponent.minValue, 0.1f);
+	prop::DragFloat("Min", &ioComponent.minValue, 0.1f);
 	fieldTooltip("Minimum allowed value.");
-	ImGui::DragFloat("Max", &ioComponent.maxValue, 0.1f);
+	prop::DragFloat("Max", &ioComponent.maxValue, 0.1f);
 	fieldTooltip("Maximum allowed value.");
-	ImGui::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));
-	ImGui::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));
-	ImGui::ColorEdit4("Handle Color", reinterpret_cast<float*>(&ioComponent.handleColor));
-	ImGui::InputText("On Value Changed", &ioComponent.onValueChangedCallback);
+	prop::ColorEdit4("Track Color", reinterpret_cast<float*>(&ioComponent.trackColor));
+	prop::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));
+	prop::ColorEdit4("Handle Color", reinterpret_cast<float*>(&ioComponent.handleColor));
+	prop::InputText("On Value Changed", &ioComponent.onValueChangedCallback);
 	fieldTooltip("Lua function called when the value changes. Receives the new value in _slider_value.");
 }
 
 void renderProps(UiProgressBar& ioComponent) {
-	ImGui::DragFloat("Value", &ioComponent.value, 0.01f, 0.0f, 1.0f);
-	ImGui::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
-	ImGui::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));
+	prop::DragFloat("Value", &ioComponent.value, 0.01f, 0.0f, 1.0f);
+	prop::ColorEdit4("Background", reinterpret_cast<float*>(&ioComponent.backgroundColor));
+	prop::ColorEdit4("Fill Color", reinterpret_cast<float*>(&ioComponent.fillColor));
 }
 
 void renderProps(PrefabLink& ioComponent) {
@@ -715,7 +818,7 @@ void renderProps(RendererTag& ioComponent) {
 	const auto& layers = stack.getLayers();
 	const char* preview =
 			ioComponent.rendererName.empty() ? "(default — first layer)" : ioComponent.rendererName.c_str();
-	if (ImGui::BeginCombo("Layer", preview)) {
+	if (prop::BeginCombo("Layer", preview)) {
 		const bool defaultSelected = ioComponent.rendererName.empty();
 		if (ImGui::Selectable("(default — first layer)", defaultSelected))
 			ioComponent.rendererName.clear();
@@ -816,7 +919,7 @@ auto interactionKeyCombo(const char* iLabel, input::KeyCode& ioKey) -> bool {
 		}
 	}
 	bool changed = false;
-	if (ImGui::BeginCombo(iLabel, preview)) {
+	if (prop::BeginCombo(iLabel, preview)) {
 		for (const auto& entry: entries) {
 			const bool selected = entry.code == ioKey;
 			if (ImGui::Selectable(entry.name, selected)) {
@@ -856,7 +959,7 @@ void renderProps(RaycastDoor& ioComponent) {
 	using OD = RaycastDoor::OpeningDirection;
 	constexpr std::array kDirLabels{"North", "South", "East", "West"};
 	const auto dirIndex = static_cast<size_t>(ioComponent.openingDirection);
-	if (ImGui::BeginCombo("Opening Direction", kDirLabels[dirIndex])) {
+	if (prop::BeginCombo("Opening Direction", kDirLabels[dirIndex])) {
 		for (size_t i = 0; i < kDirLabels.size(); ++i) {
 			const bool selected = i == dirIndex;
 			if (ImGui::Selectable(kDirLabels[i], selected))
@@ -868,16 +971,16 @@ void renderProps(RaycastDoor& ioComponent) {
 	}
 	fieldTooltip("Cardinal direction the plate retracts to when opening. The door always slides "
 				 "exactly one cell (plus a 1-pixel margin so the plate is fully hidden when open).");
-	ImGui::DragFloat("Open Speed", &ioComponent.slideSpeed, 0.1f, 0.0f, 32.0f, "%.2f c/s");
+	prop::DragFloat("Open Speed", &ioComponent.slideSpeed, 0.1f, 0.0f, 32.0f, "%.2f c/s");
 	fieldTooltip("Animation speed while opening, in cells per second.");
-	ImGui::DragFloat("Hold Time", &ioComponent.holdTime, 0.1f, 0.0f, 60.0f, "%.2f s");
+	prop::DragFloat("Hold Time", &ioComponent.holdTime, 0.1f, 0.0f, 60.0f, "%.2f s");
 	fieldTooltip("How long the door stays fully open before automatically closing. 0 = close immediately.");
-	ImGui::DragFloat("Close Speed", &ioComponent.closeSpeed, 0.1f, 0.0f, 32.0f, "%.2f c/s");
+	prop::DragFloat("Close Speed", &ioComponent.closeSpeed, 0.1f, 0.0f, 32.0f, "%.2f c/s");
 	fieldTooltip("Animation speed while closing, in cells per second.");
 	interactionKeyCombo("Interaction Key", ioComponent.interactionKey);
 	fieldTooltip("Key the player presses to open the door when in range. Pick (disabled) to drive activation "
 				 "exclusively from Lua via door.activate(entity_id).");
-	ImGui::DragFloat("Interaction Range", &ioComponent.interactionRange, 0.05f, 0.0f, 8.0f, "%.2f cells");
+	prop::DragFloat("Interaction Range", &ioComponent.interactionRange, 0.05f, 0.0f, 8.0f, "%.2f cells");
 	fieldTooltip("Maximum distance between the player and the door's current centre for the built-in "
 				 "interaction key to fire.");
 	ImGui::Separator();
@@ -917,16 +1020,16 @@ void renderProps(RaycastPushWall& ioComponent) {
 	tilePickField("Tile", ioComponent.tileset, ioComponent.tileIndex);
 	fieldTooltip("Click the thumbnail to pick the block tile from the tileset atlas. Sampled on every "
 				 "face of the moving cube.");
-	ImGui::DragFloat2("Slide Direction", ioComponent.slideDirection.data(), 0.05f, -1.0f, 1.0f, "%.2f");
+	prop::DragFloat2("Slide Direction", ioComponent.slideDirection.data(), 0.05f, -1.0f, 1.0f, "%.2f");
 	fieldTooltip("Unit-length vector along which the pushwall slides when triggered.");
-	ImGui::DragFloat("Slide Distance", &ioComponent.slideDistance, 0.05f, 0.0f, 16.0f, "%.2f cells");
+	prop::DragFloat("Slide Distance", &ioComponent.slideDistance, 0.05f, 0.0f, 16.0f, "%.2f cells");
 	fieldTooltip("Total travel distance, in cells. Pushwalls slide once and stay at Final.");
-	ImGui::DragFloat("Slide Speed", &ioComponent.slideSpeed, 0.1f, 0.0f, 32.0f, "%.2f c/s");
+	prop::DragFloat("Slide Speed", &ioComponent.slideSpeed, 0.1f, 0.0f, 32.0f, "%.2f c/s");
 	fieldTooltip("Animation speed while moving, in cells per second.");
 	interactionKeyCombo("Interaction Key", ioComponent.interactionKey);
 	fieldTooltip("Key the player presses to trigger the pushwall when in range. "
 				 "Pick (disabled) to drive activation exclusively from Lua via pushwall.activate(entity_id).");
-	ImGui::DragFloat("Interaction Range", &ioComponent.interactionRange, 0.05f, 0.0f, 8.0f, "%.2f cells");
+	prop::DragFloat("Interaction Range", &ioComponent.interactionRange, 0.05f, 0.0f, 8.0f, "%.2f cells");
 	fieldTooltip("Maximum distance between the player and the pushwall's current centre for the built-in "
 				 "interaction key to fire.");
 	ImGui::Separator();
@@ -965,49 +1068,49 @@ void renderProps(VoxelWorld& ioComponent) {
 	}
 	ImGui::Separator();
 	drawVec3Control("Sun Direction", ioComponent.sunDirection);
-	ImGui::ColorEdit3("Ambient", ioComponent.ambient.data());
-	if (ImGui::Checkbox("Ambient Occlusion", &ioComponent.ambientOcclusion)) {
+	prop::ColorEdit3("Ambient", ioComponent.ambient.data());
+	if (prop::Checkbox("Ambient Occlusion", &ioComponent.ambientOcclusion)) {
 		for (const auto& coord: ioComponent.world.chunkCoordinates())
 			if (const auto chunk = ioComponent.world.getChunk(coord))
 				chunk->markDirty();
 	}
 	fieldTooltip("Bake per-vertex ambient occlusion that darkens concave block edges; off gives flat lighting.");
 	ImGui::Separator();
-	ImGui::Checkbox("Procedural Terrain", &ioComponent.proceduralTerrain);
+	prop::Checkbox("Procedural Terrain", &ioComponent.proceduralTerrain);
 	fieldTooltip("Stream chunks in/out around the camera from the seed below, instead of authored chunks.");
 	if (ioComponent.proceduralTerrain) {
 		auto& t = ioComponent.terrain;
 		auto dragU32 = [](const char* iLabel, uint32_t& ioValue, const int iMin, const int iMax) -> void {
 			int v = static_cast<int>(ioValue);
-			if (ImGui::DragInt(iLabel, &v, 1.f, iMin, iMax))
+			if (prop::DragInt(iLabel, &v, 1.f, iMin, iMax))
 				ioValue = static_cast<uint32_t>(std::clamp(v, iMin, iMax));
 		};
 		auto dragId = [](const char* iLabel, data::voxel::BlockId& ioValue) -> void {
 			int v = static_cast<int>(ioValue);
-			if (ImGui::DragInt(iLabel, &v, 1.f, 0, 65535))
+			if (prop::DragInt(iLabel, &v, 1.f, 0, 65535))
 				ioValue = static_cast<data::voxel::BlockId>(std::clamp(v, 0, 65535));
 		};
 		dragU32("Seed", t.seed, 0, 1000000);
-		ImGui::DragFloat("Frequency", &t.frequency, 0.001f, 0.001f, 0.5f, "%.4f");
+		prop::DragFloat("Frequency", &t.frequency, 0.001f, 0.001f, 0.5f, "%.4f");
 		dragU32("Octaves", t.octaves, 1, 8);
-		ImGui::DragFloat("Lacunarity", &t.lacunarity, 0.05f, 1.f, 4.f);
-		ImGui::DragFloat("Persistence", &t.persistence, 0.02f, 0.f, 1.f);
-		ImGui::DragInt("Base Height", &t.baseHeight);
-		ImGui::DragInt("Amplitude", &t.amplitude, 1.f, 0, 256);
-		ImGui::DragInt("Sea Level", &t.seaLevel);
-		ImGui::DragInt("Dirt Depth", &t.dirtDepth, 1.f, 0, 32);
-		ImGui::DragFloat("Cave Frequency", &t.caveFrequency, 0.005f, 0.f, 0.5f, "%.3f");
-		ImGui::DragFloat("Cave Threshold", &t.caveThreshold, 0.02f, 0.f, 2.f);
+		prop::DragFloat("Lacunarity", &t.lacunarity, 0.05f, 1.f, 4.f);
+		prop::DragFloat("Persistence", &t.persistence, 0.02f, 0.f, 1.f);
+		prop::DragInt("Base Height", &t.baseHeight);
+		prop::DragInt("Amplitude", &t.amplitude, 1.f, 0, 256);
+		prop::DragInt("Sea Level", &t.seaLevel);
+		prop::DragInt("Dirt Depth", &t.dirtDepth, 1.f, 0, 32);
+		prop::DragFloat("Cave Frequency", &t.caveFrequency, 0.005f, 0.f, 0.5f, "%.3f");
+		prop::DragFloat("Cave Threshold", &t.caveThreshold, 0.02f, 0.f, 2.f);
 		fieldTooltip("Cave noise above this carves rock to air; >= 1 disables caves.");
-		ImGui::Checkbox("Biomes", &t.biomes);
+		prop::Checkbox("Biomes", &t.biomes);
 		fieldTooltip("Vary the surface block by a low-frequency biome field (desert / plains / snow / mountain).");
 		if (t.biomes)
-			ImGui::DragFloat("Biome Frequency", &t.biomeFrequency, 0.001f, 0.001f, 0.1f, "%.4f");
-		ImGui::DragInt("Stream Radius", &ioComponent.streamRadius, 1.f, 0, 32);
-		ImGui::DragInt("Stream Height", &ioComponent.streamHeight, 1.f, 0, 16);
+			prop::DragFloat("Biome Frequency", &t.biomeFrequency, 0.001f, 0.001f, 0.1f, "%.4f");
+		prop::DragInt("Stream Radius", &ioComponent.streamRadius, 1.f, 0, 32);
+		prop::DragInt("Stream Height", &ioComponent.streamHeight, 1.f, 0, 16);
 		fieldTooltip("Runtime view distance in chunks (horizontal radius / vertical half-extent), around the player.");
-		ImGui::DragInt("Editor Stream Radius", &ioComponent.editorStreamRadius, 1.f, 0, 32);
-		ImGui::DragInt("Editor Stream Height", &ioComponent.editorStreamHeight, 1.f, 0, 16);
+		prop::DragInt("Editor Stream Radius", &ioComponent.editorStreamRadius, 1.f, 0, 32);
+		prop::DragInt("Editor Stream Height", &ioComponent.editorStreamHeight, 1.f, 0, 16);
 		fieldTooltip("View distance used while editing (usually larger, to see further); applies in the editor only.");
 		dragId("Stone Block", t.stone);
 		dragId("Grass Block", t.grass);
@@ -1026,34 +1129,34 @@ void renderProps(VoxelWorld& ioComponent) {
 }
 
 void renderProps(VoxelPlayer& ioComponent) {
-	ImGui::DragFloat("Walk Speed", &ioComponent.walkSpeed, 0.1f, 0.f, 50.f, "%.2f");
-	ImGui::DragFloat("Run Speed", &ioComponent.runSpeed, 0.1f, 0.f, 50.f, "%.2f");
-	ImGui::DragFloat("Jump Speed", &ioComponent.jumpSpeed, 0.1f, 0.f, 50.f, "%.2f");
-	ImGui::DragFloat("Gravity", &ioComponent.gravity, 0.5f, 0.f, 100.f, "%.2f");
-	ImGui::DragFloat("Look Speed", &ioComponent.lookSpeed, 0.05f, 0.05f, 10.f, "%.2f");
-	ImGui::DragFloat("Mouse Sensitivity", &ioComponent.mouseSensitivity, 0.0005f, 0.0001f, 0.05f, "%.4f");
+	prop::DragFloat("Walk Speed", &ioComponent.walkSpeed, 0.1f, 0.f, 50.f, "%.2f");
+	prop::DragFloat("Run Speed", &ioComponent.runSpeed, 0.1f, 0.f, 50.f, "%.2f");
+	prop::DragFloat("Jump Speed", &ioComponent.jumpSpeed, 0.1f, 0.f, 50.f, "%.2f");
+	prop::DragFloat("Gravity", &ioComponent.gravity, 0.5f, 0.f, 100.f, "%.2f");
+	prop::DragFloat("Look Speed", &ioComponent.lookSpeed, 0.05f, 0.05f, 10.f, "%.2f");
+	prop::DragFloat("Mouse Sensitivity", &ioComponent.mouseSensitivity, 0.0005f, 0.0001f, 0.05f, "%.4f");
 	fieldTooltip(
 			"Radians per pixel while the cursor is captured (left-click the viewport to capture, Esc to release).");
-	ImGui::DragFloat("Fly Speed", &ioComponent.flySpeed, 0.5f, 0.f, 100.f, "%.2f");
-	ImGui::DragFloat("Super Speed x", &ioComponent.superSpeedMultiplier, 0.1f, 1.f, 20.f, "%.2f");
+	prop::DragFloat("Fly Speed", &ioComponent.flySpeed, 0.5f, 0.f, 100.f, "%.2f");
+	prop::DragFloat("Super Speed x", &ioComponent.superSpeedMultiplier, 0.1f, 1.f, 20.f, "%.2f");
 	fieldTooltip("Fly mode: double-tap Space to toggle, J toggles super-speed; WASD horizontal, Space up, Shift down.");
 	drawVec3Control("Half Extents", ioComponent.halfExtents, 0.4f);
 	fieldTooltip("Half the player collision box on each axis (the transform is its centre / eye).");
-	ImGui::DragFloat("Reach", &ioComponent.reach, 0.25f, 1.f, 32.f, "%.2f");
+	prop::DragFloat("Reach", &ioComponent.reach, 0.25f, 1.f, 32.f, "%.2f");
 	fieldTooltip("Targeting-ray length in blocks. Left-click breaks the targeted block, right-click places one.");
 	int placeBlock = static_cast<int>(ioComponent.placeBlock);
-	if (ImGui::DragInt("Place Block", &placeBlock, 0.1f, 1, 65535))
+	if (prop::DragInt("Place Block", &placeBlock, 0.1f, 1, 65535))
 		ioComponent.placeBlock = static_cast<data::voxel::BlockId>(std::max(1, placeBlock));
 	fieldTooltip("Block id placed on right-click (an index into the targeted world's block registry).");
-	ImGui::Checkbox("Capture Cursor", &ioComponent.captureCursor);
+	prop::Checkbox("Capture Cursor", &ioComponent.captureCursor);
 	fieldTooltip("Let clicking the viewport hide/lock the cursor for mouse-look (Esc frees it). Off keeps a normal "
 				 "cursor and disables block break / place.");
 }
 
 void renderProps(FlyCamera& ioComponent) {
-	ImGui::DragFloat("Move Speed", &ioComponent.moveSpeed, 0.1f, 0.1f, 200.f, "%.2f");
+	prop::DragFloat("Move Speed", &ioComponent.moveSpeed, 0.1f, 0.1f, 200.f, "%.2f");
 	fieldTooltip("Translation speed in world units per second (WASD move, Space/E up, Left-Shift/Q down).");
-	ImGui::DragFloat("Look Speed", &ioComponent.lookSpeed, 0.05f, 0.05f, 10.f, "%.2f");
+	prop::DragFloat("Look Speed", &ioComponent.lookSpeed, 0.05f, 0.05f, 10.f, "%.2f");
 	fieldTooltip("Rotation speed in radians per second for the arrow-key look controls.");
 }
 

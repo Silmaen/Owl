@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GUI widget kit (`gui/widgets/`): `beginProperties` / `propertyFloat` / `propertyVec3` / `propertyBool` label-value grid with reset to default, `vectorField` with axis marks, `sectionHeader` with a menu button, `iconButton`, `richTooltip` with shortcut, `searchField` and `matchesFilter`, `emptyState`, `badge` and `chip`, and `ToastQueue` notifications.
 - Owl Nest ribbon reorganised: File button opening a full File screen (projects, packaging, settings, help, exit; it replaces the welcome window), Home and View tabs, the active document's tab in the accent colour, quick access Save / Undo / Redo, collapse with `Ctrl+F1`; `Ribbon::setBackstage`, `addQuickAccess`, `setCollapsed`, `selectTab` and button shortcuts.
 - Owl Nest viewport overlays: gizmo tools and snap (top-left), Play / Pause / Step / Stop (top-centre), camera markers and stats toggles (top-right), a frame-time chip (bottom-left), the axis gizmo (bottom-right) and a play-colour frame while the scene runs; the ribbon drops its Playback and Gizmo groups; `ActionRegistry::run`.
+- Owl Nest panels: the inspector puts every label on the left of its field; the Hierarchy gets an Add button, a name search and component icons; the Content Browser gets root chips, a breadcrumb, search, grid / list views, image thumbnails filling their tile and a colour per asset family; the Log filters become chips; empty panels say what to do.
+- `OwlNest --project <dir>` opens a project at start-up.
 - Owl Nest inspector: component headers and vector fields use the kit (⋮ menu, reset buttons), and saving a document shows a toast.
 - Owl Nest UI font Inter (Regular, SemiBold) in `engine_assets/fonts/inter/`, text roles `gui::TextStyle` (`UiLayer::pushTextStyle`) and scaling to the primary monitor content scale (`UiLayer::getDpiScale`).
 - Owl Nest Stats panel: Vulkan submits, queue / device drains, fence waits and pace wait per frame, with their maximum over the last 2 s.
@@ -168,6 +170,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Owl Nest node canvas (Scene Flow): the GraphEditor minimap no longer covers the canvas with white triangles, node titles stay readable when zoomed out, and the canvas follows the theme.
 - Editor icons drawn with the `white` keyword (components, panels...) follow the theme text colour, so they no longer stay white in Owl Light.
 - Owl Nest Ctrl and Alt shortcuts work while a panel (hierarchy, properties, content browser...) has the keyboard focus, not only with the viewport focused.
 - Box2D runs on `workerCount` threads again, without the two spare threads that slowed the 2-worker step of a settled 5 000-body pile by 60 % on the nightly benchmark agent.

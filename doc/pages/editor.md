@@ -284,8 +284,13 @@ The Scene Hierarchy panel displays all entities in the active scene as a tree vi
 Entities with children (via the `Hierarchy` component) expand to show nested items.
 Root entities have `parentId == 0` and appear at the top level.
 
+**Toolbar.** The **+** button creates an empty entity or a child of the selection; the search field filters the
+entities by name (every word, case-insensitive) and shows the matches as a flat list. Each entity shows the icon
+of its main component (camera, sprite, text, UI element, voxel world...); prefab instances are drawn in the info
+colour.
+
 **Selection.** Clicking an entity selects it. The selection is shared with the
-Properties panel and the viewport gizmo.
+Properties panel and the viewport gizmo; with nothing selected, Properties says how to select one.
 
 **Drag-drop reparenting.** Drag an entity node onto another entity to make it a
 child. The engine calls `Scene::setParent()` which checks for circular references
@@ -457,31 +462,15 @@ The schema mirrors the corresponding fields of `AnimatedSpriteRenderer` 1:1, so 
 The Content Browser provides a file grid view of the project's asset directory. It
 supports navigation, file operations, and drag-drop integration with other panels.
 
-**Navigation toolbar.** A breadcrumb-style path bar at the top with a back button.
-The browser roots at the project's asset directory and prevents navigation above it.
+**Toolbar.** The asset roots as chips (project, application, engine), the parent folder button, a clickable
+breadcrumb from the root to the current folder, a search field filtering the folder by name, the grid / list toggle
+and the thumbnail size. The browser never goes above the selected root.
 
-**File type icons.** Files are displayed with type-specific icons loaded from the
-icon bank. Each icon shares the same file-frame template, carries an extension ribbon
-label (e.g. `WAV`, `CPP`) and a central type glyph:
-
-| Category  | Extensions                              | Central glyph            |
-|-----------|-----------------------------------------|--------------------------|
-| Scene     | `.owl`                                  | Isometric scene floor    |
-| Prefab    | `.owlprefab`                            | Puzzle-piece "P" badge   |
-| Animation | `.owlanim`                              | Filmstrip with play head |
-| Image     | `.png`, `.jpg`, `.svg`                  | Frame with sun + peaks   |
-| Font      | `.ttf`                                  | "Aa" sample              |
-| Config    | `.yml`, `.json`                         | Gear / curly braces      |
-| Shader    | `.glsl`                                 | GPU chip with pins       |
-| Script    | `.lua`                                  | Crescent moon + star     |
-| Sound     | `.wav`, `.mp3`, `.ogg`, `.flac`         | Speaker with waves       |
-| Mesh      | `.obj`, `.gltf`, `.glb`, `.fbx`         | Isometric cube wireframe |
-| Source    | `.py`, `.cpp`/`.cxx`, `.h`/`.hpp`, `.c` | Language-specific glyph  |
-| Doc       | `.md`                                   | Markdown mark + arrow    |
-| Fallback  | plain text                              | Text lines               |
-
-Folders use a distinct folder icon. The secondary accent (amber `#ffc726`) highlights
-glyph details; the primary colour follows the active ImGui theme text colour.
+**Tiles.** Images (`.png`, `.jpg`) show their own thumbnail, filling the tile and cropped to its square; the
+thumbnails load a few per frame and are dropped when you leave the folder. Other files show the duotone icon of
+their kind, centred. A bar under the tile carries the colour of the family (scene, prefab, texture, tileset,
+tilemap, sound, script, code, shader, font, animation, node graph, 3D model, data, folder) and the kind is written
+under the name. An empty folder, or a search with no match, says so and how to go on.
 
 **Interactions:**
 
@@ -501,10 +490,10 @@ glyph details; the primary colour follows the active ImGui theme text colour.
 The Log panel displays a scrolling view of engine and application log messages. It
 supports filtering by log level and logger source.
 
-**Level filters.** Toggle buttons for each severity level: Trace, Debug, Info,
-Warning, Error, Critical. Disabled levels are hidden from the output.
+**Level filters.** One chip per severity level: Trace, Debug, Info, Warning, Error, Critical. A level whose chip is
+off is hidden from the output.
 
-**Logger filters.** Separate toggles for Core (engine) and App (application) loggers.
+**Logger filters.** Two more chips: Engine (the `OWL` logger) and Game (the `APP` logger).
 
 **Text search.** A search field filters visible messages by substring match.
 
@@ -804,7 +793,8 @@ turned into `_`):
 | `<GameName>.zip` (Windows) | Archive of the game folder, next to it                             |
 | icon                       | The project icon, at its project-relative path                     |
 
-The same export runs without a window from the command line, which CI uses:
+`OwlNest --project <project dir or owl_project.yml>` opens a project at start-up, its last session included, instead
+of showing the File screen. The same export runs without a window from the command line, which CI uses:
 
 ```bash
 OwlNest --export <project dir or owl_project.yml> <output dir>

@@ -32,6 +32,8 @@ filling their whole tile.
   field, empty state, badge, chip and toasts in `gui/widgets/`; the inspector headers and vectors use it.
 - **Ribbon** — ![Done][done]: File screen, Home / View / document tabs, quick access, collapse, one large button
   per group.
+- **Panels** — ![Done][done]: label-left inspector, Hierarchy search / add / icons, Content Browser breadcrumb /
+  search / views / thumbnails, Log chips, empty states, node canvas fixed and themed.
 - **Viewport overlays** — ![Done][done]: tools, playback, display toggles, frame-time chip and axis gizmo float over
   the view; play-colour frame while playing.
 

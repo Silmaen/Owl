@@ -391,6 +391,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Project to open when the layer is attached (`OwlNest --project <dir>`), instead of showing the File screen.
+	 * @param[in] iProject Project folder or `owl_project.yml`.
+	 */
+	void setStartupProject(const std::filesystem::path& iProject) { m_startupProject = iProject; }
+
+	/**
+	 * @brief
 	 *  Render the snap-step preset popup (triggered from the viewport snap button).
 	 *
 	 * Shows fraction / multiple presets when a `Tilemap` exists in the active scene, or raw
@@ -648,6 +655,8 @@ private:
 	renderer::CameraOrthoController m_cameraController;
 	/// The File screen (projects, packaging, settings, help); shown at start-up without a project.
 	panel::Backstage m_backstage;
+	/// Project opened at attach time; empty to show the File screen instead.
+	std::filesystem::path m_startupProject;
 	/// Pending document id to close (awaits dirty-confirmation modal). 0 when idle.
 	core::UUID m_pendingCloseDocId{0};
 	/// True when the close-confirmation modal should open on the next frame.
